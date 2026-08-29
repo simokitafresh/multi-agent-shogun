@@ -6993,10 +6993,12 @@ for _, _, insight_id in sorted(eligible):
 PY
 }
 
-# Re-read the ordered inventory while excluding IDs that already own a
-# durable lease.  This lets another pending ID progress when the highest
-# priority one is still owned by a live worker.
-_reflux_first_pending_insight_id() {
+# Read queue/insights.yaml once and return both the raw pending count and the
+# first dispatchable ID.  The old implementation parsed this 650KB ledger in
+# _reflux_insight_pending_count and then parsed it again while resolving
+# active/terminal owners.  Keeping the count and selection in one Python
+# process makes the inventory snapshot a single-cycle observation.
+_reflux_insight_inventory_snapshot() {
     local insights_file="${1:-$SCRIPT_DIR/queue/insights.yaml}"
     local candidate ledger="${REFLUX_INSIGHT_RESERVATION_LEDGER:-$SCRIPT_DIR/logs/reflux_insight_reservations.tsv}"
     [ -r "$insights_file" ] || return 1
@@ -7052,6 +7054,19 @@ except yaml.YAMLError:
 if not isinstance(rows, list):
     raise SystemExit(1)
 
+pending_count = sum(
+    1
+    for row in rows
+    if isinstance(row, dict) and str(row.get("status") or "").strip().lower() == "pending"
+)
+pending_ids = {
+    str(row.get("id") or "").strip()
+    for row in rows
+    if isinstance(row, dict)
+    and str(row.get("status") or "").strip().lower() == "pending"
+    and str(row.get("id") or "").strip()
+}
+
 blocked = set()
 ledger_path = pathlib.Path(ledger_text)
 try:
@@ -7067,16 +7082,24 @@ def contains_id(value, insight_id):
     pattern = r"(?<![0-9A-Za-z_-])" + re.escape(insight_id) + r"(?![0-9A-Za-z_-])"
     return re.search(pattern, value) is not None
 
+candidate_pattern = None
+if pending_ids:
+    alternatives = "|".join(
+        sorted((re.escape(item) for item in pending_ids), key=len, reverse=True)
+    )
+    candidate_pattern = re.compile(
+        r"(?<![0-9A-Za-z_-])(?:" + alternatives + r")(?![0-9A-Za-z_-])"
+    )
+
+def block_ids_in(value):
+    if candidate_pattern is not None:
+        blocked.update(match.group(0) for match in candidate_pattern.finditer(value))
+
 for task_path in sorted((root / "queue" / "tasks").glob("*.yaml")):
     task = read_yaml(task_path)
     status = str(task.get("status") or "").strip().lower()
     if status in active_statuses:
-        text = repr(task)
-        for row in rows:
-            if isinstance(row, dict):
-                insight_id = str(row.get("id") or "").strip()
-                if insight_id and contains_id(text, insight_id):
-                    blocked.add(insight_id)
+        block_ids_in(repr(task))
 
 report_dirs = (
     root / "queue" / "reports",
@@ -7092,12 +7115,7 @@ for report_path in sorted(set(report_paths)):
     status = str(report.get("status") or "").strip().lower()
     parent = str(report.get("parent_cmd") or "").strip()
     if parent.startswith("cmd_reflux_insight_") and status in active_statuses | terminal_statuses:
-        text = repr(report)
-        for row in rows:
-            if isinstance(row, dict):
-                insight_id = str(row.get("id") or "").strip()
-                if insight_id and contains_id(text, insight_id):
-                    blocked.add(insight_id)
+        block_ids_in(repr(report))
 
 fallback = None
 candidates = []
@@ -7115,12 +7133,25 @@ for index, row in enumerate(rows):
         score += 10
     candidates.append((-score, index, insight_id))
 if candidates:
-    print(sorted(candidates)[0][2])
+    first_id = sorted(candidates)[0][2]
 elif fallback:
     # Keep a blocked pending ID as the compatibility signal for the caller's
     # dirty-target guard; no reservation is granted until dispatch-time claim.
-    print(fallback)
+    first_id = fallback
+else:
+    first_id = "-"
+print(f"{pending_count}\t{first_id}")
 PY
+}
+
+# Compatibility wrapper for callers that only need the selected ID.  The
+# inventory snapshot itself uses _reflux_insight_inventory_snapshot directly,
+# so it never performs a second queue/insights.yaml parse for the count.
+_reflux_first_pending_insight_id() {
+    local snapshot="" first_id=""
+    snapshot=$(_reflux_insight_inventory_snapshot "${1:-$SCRIPT_DIR/queue/insights.yaml}") || return 1
+    first_id="${snapshot#*$'\t'}"
+    [ "$first_id" = "-" ] || printf '%s\n' "$first_id"
 }
 
 # Atomically claim a stable insight ID at the reflux dispatch boundary.  A
@@ -7801,9 +7832,9 @@ _reflux_promotion_release_reservation() {
 
 _reflux_inventory_snapshot() {
     local insights_file="${1:-$SCRIPT_DIR/queue/insights.yaml}"
-    local insight_count first_insight backlink_count first_backlink backlink_status promotion_count first_promotion promotion_status total
-    insight_count=$(_reflux_insight_pending_count "$insights_file")
-    first_insight=$(_reflux_first_pending_insight_id "$insights_file" 2>/dev/null || true)
+    local insight_count first_insight backlink_count first_backlink backlink_status promotion_count first_promotion promotion_status total insight_snapshot
+    insight_snapshot=$(_reflux_insight_inventory_snapshot "$insights_file" 2>/dev/null || true)
+    IFS=$'\t' read -r insight_count first_insight <<< "$insight_snapshot"
     IFS=$'\t' read -r backlink_count first_backlink backlink_status < <(_reflux_zero_backlink_inventory)
     IFS=$'\t' read -r promotion_count first_promotion promotion_status < <(_reflux_promotion_inventory)
     [[ "$insight_count" =~ ^[0-9]+$ ]] || insight_count=0
