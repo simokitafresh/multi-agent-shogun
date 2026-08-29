@@ -13016,6 +13016,7 @@ codd:
 | cmd | `cmd_karo_hotfix_commander_inbox_identity_all_directives_20260829` (`scripts/inbox_write.sh`, `tests/unit/test_inbox_write.bats`) |
 | lesson | `L1672` task runnerの外部worktree dispatchは実行境界を明示する |
 | cmd | `cmd_karo_hotfix_tmux_live_sendkeys_guard_20260830` (`scripts/lib/tmux_live_send_guard.sh`, `scripts/reset_layout.sh`, `tests/unit/test_reset_layout.bats`) |
+| cmd | `cmd_karo_hotfix_task_supplement_identity_20260830` (`scripts/inbox_write.sh`, `tests/unit/test_inbox_write.bats`) |
 | causal_chain | `[[cmd_karo_hotfix_hook_failure_utf8_boundary_20260829]]` (L1669) |
 | causal_chain | `[[cmd_karo_hotfix_tmux_live_sendkeys_guard_20260830]]` (L1672) |
 
@@ -15462,6 +15463,7 @@ codd:
 | discussion | `queue/lord_conversation.jsonl` 2026-08-29T13:38:10.964833+00:00 git pre-commit semantic propagation for context/projects changes |
 | discussion | `queue/lord_conversation.jsonl` 2026-08-29T15:44:40.204603+00:00 git pre-commit semantic propagation for context/projects changes |
 | discussion | `queue/lord_conversation.jsonl` 2026-08-29T19:40:43.640349+00:00 git pre-commit semantic propagation for context/projects changes |
+| discussion | `queue/lord_conversation.jsonl` 2026-08-29T22:54:55.680889+00:00 git pre-commit semantic propagation for context/projects changes |
 | causal_chain | `[[cmd_karo_hotfix_lessons_yaml_format_restore_20260727]]` (L1389) |
 
 ## infra_design_intent — インフラ設計意図カタログ
@@ -15590,6 +15592,7 @@ codd:
 | causal | `cmd_karo_hotfix_commander_inbox_identity_all_directives_20260829` files_modified: [[infra_design_intent]] |
 | causal | `cmd_karo_hotfix_t190_push_lane_automation_20260830` files_modified: [[infra_design_intent]] |
 | causal | `cmd_karo_hotfix_t190_push_lane_timeout_proof_20260830` files_modified: [[infra_design_intent]] |
+| causal | `cmd_karo_hotfix_task_supplement_identity_20260830` files_modified: [[infra_design_intent]] |
 | causal_chain | `[[cmd_karo_fix_same_cmd_pending_symlink_20260804]]` (L1556) |
 
 ## scope_integrity_lifecycle — スコープ鮮度ライフサイクル
@@ -15796,6 +15799,7 @@ codd:
 | causal | `cmd_karo_hotfix_t114_reflux_task_id_nudge_20260828` files_modified: [[yaml_safe_write]] |
 | causal | `cmd_karo_hotfix_t122_memory_self_reinforce_20260828` files_modified: [[yaml_safe_write]] |
 | causal | `cmd_karo_hotfix_commander_inbox_identity_all_directives_20260829` files_modified: [[yaml_safe_write]] |
+| causal | `cmd_karo_hotfix_task_supplement_identity_20260830` files_modified: [[yaml_safe_write]] |
 | causal_chain | `[[cmd_karo_ci_red_remaining_unit_202607151950]]` (L1041) |
 | causal_chain | `[[cmd_karo_hotfix_report_hook_result_canonicalization_20260729]]` (L1448) |
 | causal_chain | `[[cmd_4192]]` (L1450) |
