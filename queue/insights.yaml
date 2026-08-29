@@ -4897,7 +4897,10 @@ insights:
   priority: "medium"
   source: "manual"
   fix_known: false
-  status: pending
+  status: resolved
+  resolved_reason: "一次情報を再確認した結果、この観測は2026-08-27時点のidle自走不足を示す期限付きの手動insightであり、現在の未解決行動ではない。ambiguity観点は既存のL4強制・遡及適用で環境へ反映済みで、追加の実修正やdecision_candidateは不要と判定した。"
+  action_artifact: "target=queue/insights.yaml:INS-20260827-122902722-e032;verified_at=2026-08-30T04:28:00+09:00;current_controls=scripts/gunshi_log_append.sh:L94-L111 and scripts/gates/gate_gunshi_cs_checklist.sh:L227-L262;semantic_refs=docs/semantic-index/index.md:L10238-L10245 and context/training-cycle.md:L1101-L1104;historical_fix=docs/research/gunshi_idle_ambiguity_cold_enforcement_20260625.md;decision_candidate=none"
+  resolved_at: "2026-08-30T04:29:56+09:00"
 - id: INS-20260827-122827372-e4d0
   ts: "2026-08-27T12:28:27+09:00"
   insight: "review-bundle background taskでinbox_mark_readを&&で連結すると、手動既読化との競合でexit 2が頻発する。review_bundle.py singleの成功後にinbox_mark_readを分離実行するか、bundle内にmark_read機能を統合すべき"
