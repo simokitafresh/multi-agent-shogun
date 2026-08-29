@@ -16,14 +16,20 @@ setup() {
 
 run_hook() {
     local command="$1" tool="${2:-Bash}" field="${3:-command}" payload
+    local agent_id="${TMUX_AGENT_ID:-${SHOGUN_AGENT_ID:-saizo}}"
     payload="$(python3 -c 'import json,sys; print(json.dumps({"tool_name":sys.argv[2],"tool_input":{sys.argv[3]:sys.argv[1]}}))' "$command" "$tool" "$field")"
-    run env BATS_TEST_FILENAME="$BATS_TEST_FILENAME" bash -c 'printf "%s" "$1" | bash "$2"' _ "$payload" "$HOOK"
+    # Synthetic hook subprocesses must not inherit the invoking agent's pane.
+    # BATS_TEST_FILENAME intentionally keeps the test-only preflight bypass,
+    # while an explicit agent identity exercises the intended downstream guard.
+    run env BATS_TEST_FILENAME="$BATS_TEST_FILENAME" TMUX_PANE= TMUX_AGENT_ID="$agent_id" bash -c 'printf "%s" "$1" | bash "$2"' _ "$payload" "$HOOK"
 }
 
 run_dispatch() {
     local command="$1" payload
+    local agent_id="${TMUX_AGENT_ID:-${SHOGUN_AGENT_ID:-saizo}}"
     payload="$(python3 -c 'import json,sys; print(json.dumps({"tool_name":"Bash","tool_input":{"command":sys.argv[1]}}))' "$command")"
-    run env BATS_TEST_FILENAME="$BATS_TEST_FILENAME" bash -c 'printf "%s" "$1" | bash "$2"' _ "$payload" "$ROOT/.claude/hooks/pretool-dispatch.sh"
+    # Keep dispatch tests deterministic when run from karo's real tmux pane.
+    run env BATS_TEST_FILENAME="$BATS_TEST_FILENAME" TMUX_PANE= TMUX_AGENT_ID="$agent_id" bash -c 'printf "%s" "$1" | bash "$2"' _ "$payload" "$ROOT/.claude/hooks/pretool-dispatch.sh"
 }
 
 @test "Claude pretool dispatchのlive chainは直接batsをBLOCKしrunner file modeを許可" {
