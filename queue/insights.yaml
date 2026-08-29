@@ -3919,7 +3919,10 @@ insights:
   priority: "medium"
   source: "skill_script_refs:34d514111a9d215f"
   fix_known: false
-  status: pending
+  status: resolved
+  resolved_reason: "一次情報で gate_skill_script_refs.sh を実走し、rc=2 は REVIEW_REQUIRED だが FOLLOWUP_ACTIVE=31 がレビュー要求を被覆していることを確認。走査41 SKILL.md・script参照82件・参照あり30件で、参照先実在、SKILL鮮度、例示静的パス、日時付き副作用実走マーカーの4検査は全てOK。context/semantic-map.md の Skill設計ルールと既存skill_script_refs解消記録にも合致し、対象SKILL本文の追加修正およびdecision_candidateは不要のため対象insightのみresolveする。"
+  action_artifact: "target=queue/insights.yaml:INS-20260826-131338015-c47d;gate=scripts/gates/gate_skill_script_refs.sh;gate_rc=2;result=REVIEW_REQUIRED;scanned=41_SKILL.md;script_refs=82;referenced=30;followup_active=31;followup_covers_review_required=yes;checks=missing_refs0/stale_refs0/example_paths_missing0/side_effect_markers_missing0;semantic=context/semantic-map.md:Skill設計ルール;prior_pattern=INS-20260826-120441215-ba3f;inventory_before=insights_pending100/zero_backlinks11/promotions0/total111;verified_at=2026-08-29T15:49:00+09:00"
+  resolved_at: "2026-08-29T15:52:46+09:00"
 - id: INS-20260826-133029116-4b4d
   ts: "2026-08-26T13:30:29+09:00"
   insight: "[[publish後main収束の根治 — diverged履歴をconvergeする際にorigin親だけの変更や競合pa]] NO_MATCH purpose pending alias: cmd_complete時にdeploy_task.logでNO_MATCHだったpurpose。類似概念TOP3: agent_formation_management(編成管理; alias=既存の広いdirty差分inbox1 — CMD受領済み; score=13.6) / shogun_android_app(将軍Androidアプリ; alias=F001改訂 — 殿との会話ブロック基準で将軍直接実行とcmd委任を区別; score=12.6) / operational_ontology(操作的オントロジー; alias=SSOT全方位偵察 周回2 — 全PJリポジトリ横断のSSOT棚卸し; score=9.6)。既存概念aliasesへの自動昇格候補"
