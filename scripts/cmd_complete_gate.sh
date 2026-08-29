@@ -10774,6 +10774,8 @@ PY
             modified_base="$(basename "$modified")"
             modified_stem="${modified_base%.*}"
             if [ "$modified" = "$ref" ] \
+                || [[ "$modified" == "$ref"/* ]] \
+                || [[ "$modified" == */"$ref"/* ]] \
                 || [[ "$modified" == */"$ref" ]] \
                 || [ "$modified_base" = "$ref_base" ] \
                 || [[ "$modified_base" == *"$ref_base"* ]] \
