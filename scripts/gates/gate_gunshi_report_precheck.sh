@@ -717,11 +717,16 @@ if [ -n "${PROJECT_DIR:-}" ] && [ -d "$PROJECT_DIR" ]; then
     if [ -n "${FILES_MODIFIED:-}" ]; then
         COMMIT_FOUND=0
         while IFS= read -r fpath; do
+            # Report-format rules represent repository-root files as
+            # ./name, while Git/cross_repo_commits use name.  Compare the
+            # canonical repo-relative spelling so a valid external root file
+            # is not rejected as absent.
+            _pre3_fpath="${fpath#./}"
             # batch dataから判定 (per-file git log不要)
-            if echo "$_PRE_CMD_FILES" | grep -qF "$fpath" 2>/dev/null; then
+            if echo "$_PRE_CMD_FILES" | grep -qFx "$_pre3_fpath" 2>/dev/null; then
                 echo "  PASS: $fpath → cmd commit found"
                 COMMIT_FOUND=1
-            elif [ -f "$PROJECT_DIR/$fpath" ] 2>/dev/null || [ -f "$fpath" ] 2>/dev/null; then
+            elif [ -f "$PROJECT_DIR/$_pre3_fpath" ] 2>/dev/null || [ -f "$fpath" ] 2>/dev/null; then
                 echo "  WARN: $fpath → commit not found"
                 echo "    → FILE EXISTS (untracked/uncommitted)"
             else
