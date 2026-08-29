@@ -3609,7 +3609,10 @@ insights:
   priority: "medium"
   source: "cmd_complete_gate:l6_horizontal:cmd_4394"
   fix_known: false
-  status: pending
+  status: resolved
+  resolved_reason: "一次情報で対象INS-20260825-010500981-cd3cを確認。scripts/gates/gate_diagnose_check.sh L11/L60-L88/L239-L249に同一忍者×同一BLOCK理由の連続計数と2回以上でexit 1を強制するDIVERGENT実装が現存し、context/gunshi-codd-analysis.md L36とcontext/codd.md L121にも仮説転換の知識が既存。semantic_search DIVERGENTは既存知識を返し、候補固有IDはsemantic-map未登録だが既存防御で充足済み。新規修正・decision_candidate不要。"
+  action_artifact: "primary=scripts/gates/gate_diagnose_check.sh:L11,L60-L88,L239-L249;context=context/gunshi-codd-analysis.md:L36,context/codd.md:L121;memory_db=INS-20260825-010500981-cd3c hit;semantic_search=DIVERGENT hit;new_fix=none"
+  resolved_at: "2026-08-29T14:29:45+09:00"
 - id: INS-20260825-010501829-1d01
   ts: "2026-08-25T01:05:01+09:00"
   insight: "同パターンLevel5未満候補: source_cmd=cmd_4394; matched=家老,block; current_pattern=家老deploy blocked六割の内訳分解 — block理由別分布を確定し支配理由の前倒し根治候補を特定する; candidate_level=4; candidate=将軍がACにpush記載(習慣)→忍者push不可→bc:no→gate BLOCK→家老WA。Check 22 WARN→将軍がpush削除→bc全yes→BLOCK消滅=正の複利; source=gunshi_review_log_cmd_2179_to_cmd_2231.yaml"
