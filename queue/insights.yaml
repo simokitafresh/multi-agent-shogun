@@ -7905,3 +7905,10 @@ insights:
   source: "semantic_index_update"
   fix_known: false
   status: pending
+- id: INS-20260829-165247558-30f5
+  ts: "2026-08-29T16:52:47+09:00"
+  insight: "semantic_map_generate新規ファイル候補: `scripts/shogun_backup.py` は semantic index未登録。既存概念へのfile追加または新概念定義を検討せよ"
+  priority: "low"
+  source: "semantic_map_generate:new_file"
+  fix_known: false
+  status: pending
