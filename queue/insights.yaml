@@ -3377,7 +3377,10 @@ insights:
   priority: "medium"
   source: "cmd_complete_gate:l6_horizontal:cmd_4377"
   fix_known: false
-  status: pending
+  status: resolved
+  resolved_reason: "一次情報で対象と現行経路を照合。cmd_1855由来の進行中月差異は既知の構造問題だが、現行のscripts/deploy_task_report_publication_fast.py:256-257、scripts/deploy_task/report.sh:1334-1335、scripts/deploy_task.sh:2839-2840が月次ACへ進行中月除外を自動付与しておりGP-184相当の防御が実装済み。追加コード修正と新規decision_candidateは不要。"
+  action_artifact: "target=queue/insights.yaml:INS-20260824-141802275-7094;root_cause=cmd_1855進行中月差異;existing_defense=scripts/deploy_task_report_publication_fast.py:256-257,scripts/deploy_task/report.sh:1334-1335,scripts/deploy_task.sh:2839-2840;context=context/dm-signal-ops.md:462;research=docs/research/gunshi_idle_wa_qm_pattern_20260413.md:62-66;decision_candidate=none;additional_code_change=none"
+  resolved_at: "2026-08-29T13:50:24+09:00"
 - id: INS-20260824-151439818-fd9c
   ts: "2026-08-24T15:14:39+09:00"
   insight: "semantic_index_update未登録[[リンク]]ターゲット: [[殿指示_今クリアされても今より強くてニューゲーム_20260824]] は既存aliasesに一致なし。類似概念TOP3: strong_new_game_completion_contract(強くてニューゲーム完遂契約; alias=今クリアされても今より強くてニューゲーム; score=57.4) / karo_strong_new_game_20260818_0650(半蔵fixture報告閉鎖から才蔵reflux再公開・10:40 cron検証へ進む家老復帰点; alias=今クリアされても今より強くてニューゲーム; score=57.4) / creator_brainwashing_defense(創造主の洗脳防御; alias=殿指示; score=23.7)。概念定義とaliases追加を検討せよ"
