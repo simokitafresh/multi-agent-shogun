@@ -4575,7 +4575,10 @@ insights:
   priority: "medium"
   source: "manual"
   fix_known: false
-  status: pending
+  status: resolved
+  resolved_reason: "一次確認で現行実装が吸収済み。DM-Signal origin/main=a4f2b2789492950b3e1cf813ba6c0ca0757f2320、5b4e27ebはancestor、context/dm-signal-frontend.mdの記録境界=d87339a4、d87339a4..origin/mainのfrontend差分=0。現行checkerはsource_commit境界から計数するため対象偽ALERTは再発しない。"
+  action_artifact: "scripts/context_freshness_check.sh:1060-1099 source_commit境界計数; scripts/gates/gate_context_freshness.sh:1115-1145 境界/equivalence判定; context/dm-signal-frontend.md:3 source_commit=d87339a4; primary commands: git merge-base --is-ancestor 5b4e27eb origin/main=0, git rev-list --count d87339a4..origin/main -- frontend=0"
+  resolved_at: "2026-08-30T00:26:29+09:00"
 - id: INS-20260827-045548522-f2b3
   ts: "2026-08-27T04:55:48+09:00"
   insight: "gate_context_freshness 偽ALERT 2件目(04:54, context/dm-signal-frontend.md): 『source commits 27件 since last_updated=2026-08-27, latest 7cd8867b』と報告するが、DM-signal origin/main=d87339a4 は境界と一致し d87339a4..origin/main の frontend commit は 0。7cd8867b(08-17)は境界の祖先。集計が last_updated 日付基準+HEAD(rb6-cleanup-20260814 ブランチ、origin/main+9)基準で、境界commit基準になっていない=T16(marker基準化)の未適用箇所。自動化ターゲット: gate_context_freshness の DOC_LANE_ALERT 生成前に『境界commit..origin/main の対象パス差分 0 件なら ALERT を出さない』guard"
