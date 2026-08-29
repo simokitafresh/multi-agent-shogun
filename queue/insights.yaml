@@ -4675,7 +4675,10 @@ insights:
   priority: "medium"
   source: "manual"
   fix_known: false
-  status: pending
+  status: resolved
+  resolved_reason: "一次情報で現行経路を再確認した結果、logs/ninja_monitor.log:5316 の作業前在庫は83/11/0/94。現行 scripts/ninja_monitor.sh:9811-9845 は report_path の存在確認後に archive fallback を行うが、queue/reports 配下の実在regular file・worker/task/parent/report identity検証を持たない。修正commit dd88b7bce40ff9b8eafc99085d06426bb8219dcf は現HEAD祖先でなく、欠陥は現行コードに残る。planned scope外のため実修正せず decision_candidate に整理した。"
+  action_artifact: "decision_candidate=reinstate report outbox realpath+regular-file+worker/task/parent/report identity checks in scripts/ninja_monitor.sh;source=scripts/ninja_monitor.sh:9811-9845;prior_fix=dd88b7bce40ff9b8eafc99085d06426bb8219dcf non-ancestor;scope=cmd_reflux_insight_202608300218_tobisaru queue/insights.yaml only"
+  resolved_at: "2026-08-30T02:23:45+09:00"
 - id: INS-20260827-082752980-3c62
   ts: "2026-08-27T08:27:52+09:00"
   insight: "semantic_index_update新概念候補: discussion:task notification task type artifact watch lifecycle task type summary Stopped w は 既存aliasesに一致なし。概念定義とaliases追加を検討せよ"
