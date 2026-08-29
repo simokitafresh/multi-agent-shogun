@@ -1001,20 +1001,51 @@ print("\n".join(values[key] for key in required))
 PY
 }
 
-# Karo-directed control-plane notifications require their own management
-# identity.  Information-only types are an explicit closed set.  Every other
-# type, including a future/unknown type, is treated as an action request and
-# must carry an explicit envelope; this prevents a new producer from silently
-# reintroducing taskless mail.  Never recover a cmd_id from free-form prose.
-inbox_karo_message_requires_identity() {
+# Karo-directed control-plane messages have three deliberately separate
+# contracts.  Keep the information set synchronized with
+# inbox_mark_read.sh's auto-info SSOT; only these six types may omit a
+# commander envelope.  The second set is not information: these are the
+# existing cases below that derive identity from a trusted task/report/event
+# source.  Every other type, including future/unknown types, is an action
+# request and must carry an explicit envelope.  Never recover a cmd_id from
+# free-form prose.
+inbox_karo_message_is_information_type() {
     case "$1" in
-        low|info|gate_clear|heartbeat|status_update|retro_answer|bulletin_notify|task_new|task_assigned|report_received|report_submitted|task_done|report_completed|report_done|report_ready|task_failed|review_report|accept_report|run_cmd_complete|report_review|report_review_result|report_revision|retro_result|infra_bug_suspected|infra_bug_report|infra_bug|investigation_result)
-            return 1
-            ;;
-        *)
+        low|info|gate_clear|heartbeat|status_update|retro_answer) return 0 ;;
+        *) return 1 ;;
+    esac
+}
+
+inbox_karo_message_has_dedicated_identity() {
+    case "$1" in
+        task_assigned|report_received|report_submitted|task_done|report_completed|report_done|report_ready|task_failed|review_report|accept_report|run_cmd_complete|report_review|report_review_result|report_revision)
             return 0
             ;;
+        *)
+            return 1
+            ;;
     esac
+}
+
+inbox_karo_message_has_separate_identity_lane() {
+    # These lanes validate their own identity below (retro event_id or the
+    # evidence-bound investigation fields).  They are not generic commander
+    # exemptions and must not be added to the dedicated-generation set above.
+    case "$1" in
+        retro_result|infra_bug_suspected|infra_bug_report|infra_bug|investigation_result|bulletin_notify)
+            return 0
+            ;;
+        *)
+            return 1
+            ;;
+    esac
+}
+
+inbox_karo_message_requires_identity() {
+    inbox_karo_message_is_information_type "$1" && return 1
+    inbox_karo_message_has_dedicated_identity "$1" && return 1
+    inbox_karo_message_has_separate_identity_lane "$1" && return 1
+    return 0
 }
 
 inbox_commander_directive_identity() {
@@ -2245,7 +2276,11 @@ ACTION="${5:-}"
 COMMANDER_DIRECTIVE_TASK_ID=""
 COMMANDER_DIRECTIVE_SUBJECT_TASK_ID=""
 COMMANDER_DIRECTIVE_PARENT_CMD=""
-if [ "$TARGET" = "karo" ] && inbox_karo_message_requires_identity "$TYPE"; then
+# Keep the dedicated shogun task_new policy gate as the first rejection for
+# that forbidden route; every other task_new-to-karo send still requires the
+# commander envelope through the generic boundary below.
+if [ "$TARGET" = "karo" ] && inbox_karo_message_requires_identity "$TYPE" \
+    && ! { [ "$FROM" = "shogun" ] && [ "$TYPE" = "task_new" ]; }; then
     _commander_directive_identity=$(inbox_commander_directive_identity "$CONTENT" 2>/dev/null || true)
     if [ -z "$_commander_directive_identity" ]; then
         echo "BLOCK: ${TYPE} to karo requires explicit task_id=commander_directive subject_task_id=<task> parent_cmd=<cmd> identity envelope" >&2

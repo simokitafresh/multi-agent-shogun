@@ -3346,6 +3346,27 @@ assert "task_id" not in info[0] and "subject_task_id" not in info[0]
 print("information_false_positive_block=0")
 PY
     [ "$status" -eq 0 ]
+
+    for type in low info gate_clear heartbeat status_update retro_answer; do
+        run _run_inbox_write karo "${type} informational" "$type" ninja_monitor notify_karo
+        [ "$status" -eq 0 ]
+    done
+    run python3 - "$TEST_TMPDIR/queue/inbox/karo.yaml" <<'PY'
+import sys, yaml
+messages = (yaml.safe_load(open(sys.argv[1])) or {}).get("messages", [])
+info_types = {"low", "info", "gate_clear", "heartbeat", "status_update", "retro_answer"}
+info = [m for m in messages if m.get("type") in info_types]
+assert {m.get("type") for m in info} == info_types, info
+assert all("task_id" not in m and "subject_task_id" not in m and "parent_cmd" not in m for m in info), info
+print("information_types=6 identity_fields=0")
+PY
+    [ "$status" -eq 0 ]
+
+    for type in task_new task_supplement task_cancel cmd_new gate_alert gate_block gate_fail destructive_warn stale_cmd cmd_pending; do
+        run _run_inbox_write karo "${type} missing identity" "$type" ninja_monitor notify_karo
+        [ "$status" -eq 2 ]
+        [[ "$output" == *"requires explicit task_id=commander_directive"* ]]
+    done
 }
 
 # test_necessity: review-pending notifications persist the management
