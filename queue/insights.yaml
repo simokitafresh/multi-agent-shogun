@@ -5232,8 +5232,8 @@ insights:
   fix_known: false
   status: resolved
   resolved_reason: "一次情報で対象事象と現行実装を照合した。scripts/shutsujin_departure.sh:L210-L220はAGENTS_WINDOW_TARGETをshogun:agentsへ解決し、scripts/reset_layout.sh:L108はTMUX_WINDOWまたはshogun:agentsを採用するが、SHOGUN_ALLOW_LIVE_SENDKEYS等のattached本番session送出BLOCKは実装されていない。現行tmuxもshogun attached=1を確認した。提案ガードは未実装であり、今回のplanned_pathsはqueue/insights.yamlのみのため、コード修正ではなくdecision_candidateとして整理する。"
-  action_artifact: "target=queue/insights.yaml:INS-20260827-152607331-368a;primary=scripts/shutsujin_departure.sh:L210-L220;scripts/reset_layout.sh:L108,L449,L673-L724;runtime=tmux list-sessions shogun attached=1;semantic=bash scripts/semantic_search.sh \"shutsujin reset_layout live send-keys session isolation\";decision_candidate=shutsujin/reset_layoutの送出先をTMUX socket/sessionから導出し、attachedな本番shogunへのsend-keysを明示許可なしでBLOCKするガードを別cmdで設計・実装"
-  resolved_at: "2026-08-30T07:05:22+09:00"
+  action_artifact: "target=queue/insights.yaml:INS-20260827-152607331-368a;primary=scripts/shutsujin_departure.sh:L210-L220;scripts/reset_layout.sh:L108,L449,L673-L724;runtime=tmux list-sessions shogun attached=1;semantic=bash scripts/semantic_search.sh \"shutsujin reset_layout live send-keys session isolation\";decision_candidate=shutsujin/reset_layoutの送出先をTMUX socket/sessionから導出し、attachedな本番shogunへのsend-keysを明示許可なしでBLOCKするガードを別cmdで設計・実装;task=cmd_reflux_insight_202608300702_tobisaru_exact;revalidation=2026-08-30T07:13:00+09:00"
+  resolved_at: "2026-08-30T07:13:50+09:00"
 - id: INS-20260827-154150764-9c93
   ts: "2026-08-27T15:41:50+09:00"
   insight: "semantic_index_update新概念候補: discussion:走行中のものをしっかり最後まで家老にや達成させよう は 既存aliasesに一致なし。概念定義とaliases追加を検討せよ"
