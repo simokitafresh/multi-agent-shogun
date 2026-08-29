@@ -1,4 +1,4 @@
-# session_alerts — generated: 2026-08-29T10:14:03+0900
-[DONE] 走行中cmd実測突合: busy 1名。capture-pane未確認で状況報告するな
-[DONE] failed task残置: hayate — 真因確認と再配備/クローズを確定せよ
-[DONE] monitor lifecycle 失敗行 19行/60分 — 壁の所有者を一次で確認
+# session_alerts — generated: 2026-08-29T12:56:07+0900
+[DONE] 走行中cmd実測突合: busy 2名。capture-pane未確認で状況報告するな
+[DONE] monitor lifecycle 失敗行 2行/60分 — 壁の所有者を一次で確認
+[DONE] deepdive追体験未完了: 全Phase実行まで作業禁止(stop hookがBLOCKする)。bash scripts/deepdive_replay.sh shogun <md> <Phase> "<自問>"
