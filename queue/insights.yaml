@@ -5009,7 +5009,10 @@ insights:
   priority: "medium"
   source: "manual"
   fix_known: false
-  status: pending
+  status: resolved
+  resolved_reason: "一次情報でINS-20260827-133711892の前提を再検証。active hookは.githooks/pre-pushと.git/hooks/pre-pushが同一hashで、flock待ち後にholderのkill -0を確認し死亡時はstale/abnormalとしてBLOCKする。外側180秒固定timeoutは現HEADのcmd_karo_hotfix_t190_push_lane_timeout_proof_20260830_normal(42bcfd492)とtimeout floor修正(952644f34)で、pre-push実測とpush実測からfactor=3・下限60秒の動的timeoutへ置換済み。新規実装修正・decision_candidateは不要。"
+  action_artifact: "target=queue/insights.yaml:INS-20260827-134118601-227c;primary=.githooks/pre-push:L365-L384,.git/hooks/pre-push:sha256=aa2fdefc6fcf3fd019c4b53c1dd03350a6fbb5f6df6bc221f7a8128b12cd23f0;scripts/ninja_monitor.sh:L387-L463,L508-L512,L2691-L2730;commits=42bcfd492,952644f34 both ancestors of HEAD;decision_candidate=none"
+  resolved_at: "2026-08-30T05:45:46+09:00"
 - id: INS-20260827-135606711-9e36
   ts: "2026-08-27T13:56:06+09:00"
   insight: "semantic_index_update新概念候補: discussion:今後他のPCに将軍システムをクローンずるときに問題が起きないようにしたい。readmeを読み込み整合性があるようにしよう は 既存aliasesに一致なし。概念定義とaliases追加を検討せよ"
