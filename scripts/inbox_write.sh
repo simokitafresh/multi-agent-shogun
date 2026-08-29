@@ -18,6 +18,9 @@
 #   review_result        — レビュー結果（軍師→家老）
 #   review_feedback      — GATEフィードバック（家老→軍師）
 #   report_review        — 忍者報告一次レビュー依頼（家老→軍師）
+#   review_report        — review-pending状態Aの構造化起床（monitor→軍師）
+#   accept_report        — review-pending状態Bの構造化起床（monitor→家老）
+#   run_cmd_complete     — review-pending状態Cの構造化起床（monitor→家老）
 #   report_review_result — 忍者報告レビュー結果（軍師→家老）
 #   report_revision      — 正式RC後の忍者への修正通知
 #   workaround_feedback  — workaround原因共有（家老→軍師）
@@ -958,6 +961,46 @@ inbox_type_is_report_lifecycle() {
     return 1
 }
 
+inbox_type_is_review_pending_nudge() {
+    case "$1" in
+        review_report|accept_report|run_cmd_complete) return 0 ;;
+    esac
+    return 1
+}
+
+# Review-pending monitor events must carry identity in dedicated fields.  The
+# receiver must never recover task/cmd identity from free-form prose.
+inbox_review_pending_identity() {
+    local content="$1"
+    INBOX_NUDGE_CONTENT="$content" python3 - <<'PY'
+import os, re, sys
+content = os.environ.get("INBOX_NUDGE_CONTENT", "")
+values = {}
+for token in content.split():
+    if "=" not in token:
+        continue
+    key, value = token.split("=", 1)
+    if key in {"task_id", "subject_task_id", "parent_cmd", "report_fingerprint", "report", "review_pending_state"}:
+        values[key] = value
+required = ("task_id", "subject_task_id", "parent_cmd", "report_fingerprint", "report", "review_pending_state")
+if any(not values.get(key) for key in required):
+    raise SystemExit(1)
+if values["task_id"] != "commander_directive":
+    raise SystemExit(1)
+if not re.fullmatch(r"[A-Za-z0-9_.:-]+", values["subject_task_id"]):
+    raise SystemExit(1)
+if not re.fullmatch(r"cmd_[A-Za-z0-9_.:-]+", values["parent_cmd"]):
+    raise SystemExit(1)
+if not re.fullmatch(r"[0-9a-f]{64}", values["report_fingerprint"]):
+    raise SystemExit(1)
+if values["review_pending_state"] not in {"A", "B", "C"}:
+    raise SystemExit(1)
+if not re.fullmatch(r"(?:queue/)?(?:archive/)?reports/[A-Za-z0-9_.-]+\.yaml|[A-Za-z0-9_.-]+_report_[A-Za-z0-9_.-]+\.yaml", values["report"]):
+    raise SystemExit(1)
+print("\n".join(values[key] for key in required))
+PY
+}
+
 inbox_validate_investigation_result() {
     local target="$1" from_agent="$2" content="$3"
     local field value
@@ -1509,6 +1552,42 @@ for message in data.get("messages") or []:
     if not isinstance(message, dict) or message.get("read") is not False:
         continue
     if str(message.get("from", "")) == os.environ["INBOX_DEDUPE_FROM"] and str(message.get("content", "")) == os.environ["INBOX_DEDUPE_CONTENT"]:
+        sys.exit(0)
+sys.exit(1)
+PY
+}
+
+# Review-pending nudges are actionable work.  An unread matching event is an
+# in-flight delivery and is suppressed; a read matching event was consumed and
+# must be eligible for a lost-wakeup retry.
+inbox_review_pending_duplicate_locked() {
+    local inbox_file="$1" sender="$2" task_id="$3" subject_task_id="$4" parent_cmd="$5" fingerprint="$6" state="$7"
+    [ -s "$inbox_file" ] || return 1
+    INBOX_NUDGE_FILE="$inbox_file" INBOX_NUDGE_FROM="$sender" \
+    INBOX_NUDGE_TASK_ID="$task_id" INBOX_NUDGE_SUBJECT_TASK_ID="$subject_task_id" \
+    INBOX_NUDGE_PARENT_CMD="$parent_cmd" INBOX_NUDGE_FINGERPRINT="$fingerprint" \
+    INBOX_NUDGE_STATE="$state" python3 - <<'PY'
+import os, sys, yaml
+try:
+    data = yaml.safe_load(open(os.environ["INBOX_NUDGE_FILE"], encoding="utf-8")) or {}
+except (OSError, yaml.YAMLError):
+    sys.exit(1)
+wanted = (
+    os.environ["INBOX_NUDGE_FROM"], os.environ["INBOX_NUDGE_TASK_ID"],
+    os.environ["INBOX_NUDGE_SUBJECT_TASK_ID"],
+    os.environ["INBOX_NUDGE_PARENT_CMD"], os.environ["INBOX_NUDGE_FINGERPRINT"],
+    os.environ["INBOX_NUDGE_STATE"],
+)
+for message in data.get("messages") or []:
+    if not isinstance(message, dict) or message.get("read") is not False:
+        continue
+    actual = (
+        str(message.get("from") or ""), str(message.get("task_id") or ""),
+        str(message.get("subject_task_id") or ""),
+        str(message.get("parent_cmd") or ""), str(message.get("report_fingerprint") or ""),
+        str(message.get("review_pending_state") or ""),
+    )
+    if actual == wanted:
         sys.exit(0)
 sys.exit(1)
 PY
@@ -2123,6 +2202,34 @@ if [ "$TYPE" = "report_review_result" ] && [ "$FROM" = "gunshi" ] && printf '%s'
 fi
 ACTION="${5:-}"
 
+REVIEW_PENDING_NUDGE_TASK_ID=""
+REVIEW_PENDING_NUDGE_SUBJECT_TASK_ID=""
+REVIEW_PENDING_NUDGE_PARENT_CMD=""
+REVIEW_PENDING_NUDGE_FINGERPRINT=""
+REVIEW_PENDING_NUDGE_REPORT=""
+REVIEW_PENDING_NUDGE_STATE=""
+if inbox_type_is_review_pending_nudge "$TYPE"; then
+    case "$TYPE:$TARGET:$ACTION" in
+        review_report:gunshi:review_report|accept_report:karo:accept_report|run_cmd_complete:karo:run_cmd_complete) ;;
+        *)
+            echo "BLOCK: review-pending nudge target/action mismatch: type=$TYPE target=$TARGET action=${ACTION:-missing}" >&2
+            exit 2
+            ;;
+    esac
+    _review_pending_identity=$(inbox_review_pending_identity "$CONTENT" 2>/dev/null || true)
+    if [ -z "$_review_pending_identity" ]; then
+        echo "BLOCK: review-pending nudge requires task_id/subject_task_id/parent_cmd/report_fingerprint/report/review_pending_state" >&2
+        exit 2
+    fi
+    mapfile -t _review_pending_values <<< "$_review_pending_identity"
+    REVIEW_PENDING_NUDGE_TASK_ID="${_review_pending_values[0]:-}"
+    REVIEW_PENDING_NUDGE_SUBJECT_TASK_ID="${_review_pending_values[1]:-}"
+    REVIEW_PENDING_NUDGE_PARENT_CMD="${_review_pending_values[2]:-}"
+    REVIEW_PENDING_NUDGE_FINGERPRINT="${_review_pending_values[3]:-}"
+    REVIEW_PENDING_NUDGE_REPORT="${_review_pending_values[4]:-}"
+    REVIEW_PENDING_NUDGE_STATE="${_review_pending_values[5]:-}"
+fi
+
 # Escalation messages must carry the self-trial receipt before any durable
 # mailbox write.  The shared helper intentionally scopes the check to
 # type=escalation; ordinary BLOCK/FAIL notifications use their existing lanes.
@@ -2255,7 +2362,7 @@ if [ "${INBOX_WRITE_TEST:-}" != "1" ]; then
     # cmd_4357 の自動レビュー依頼(ninja_monitor→gunshi, type=review_draft)は正規経路。
     # 2026-08-27 00:15 実証: この制限が自動依頼を毎回BLOCKし(stderrは捨てられ)、報告10本がUN-GATEDで滞留した。
     if [ "$FROM" = "ninja_monitor" ] && [ "$TARGET" != "karo" ] && [ "$TARGET" != "shogun" ] \
-        && ! { [ "$TARGET" = "gunshi" ] && [ "$TYPE" = "review_draft" ]; }; then
+        && ! { [ "$TARGET" = "gunshi" ] && { [ "$TYPE" = "review_draft" ] || [ "$TYPE" = "review_report" ]; }; }; then
         echo "ERROR: ninja_monitor can send only to karo or shogun (except review_draft to gunshi)." >&2
         exit 1
     fi
@@ -2866,6 +2973,9 @@ case "$TYPE" in
         STRUCTURED_REPORT_FINGERPRINT=$(inbox_report_fingerprint "$_structured_candidate" "$STRUCTURED_REPORT_ID:$STRUCTURED_REPORT_VERSION") || exit 1
         _identity_fields=(report_id "$STRUCTURED_REPORT_ID" report_identity_version "$STRUCTURED_REPORT_VERSION" report_fingerprint "$STRUCTURED_REPORT_FINGERPRINT" report_path "$STRUCTURED_REPORT_PATH" task_id "$STRUCTURED_TASK_ID" parent_cmd "$STRUCTURED_PARENT_CMD")
         ;;
+    review_report|accept_report|run_cmd_complete)
+        _identity_fields=(task_id "$REVIEW_PENDING_NUDGE_TASK_ID" subject_task_id "$REVIEW_PENDING_NUDGE_SUBJECT_TASK_ID" parent_cmd "$REVIEW_PENDING_NUDGE_PARENT_CMD" report_fingerprint "$REVIEW_PENDING_NUDGE_FINGERPRINT" report "$REVIEW_PENDING_NUDGE_REPORT" review_pending_state "$REVIEW_PENDING_NUDGE_STATE")
+        ;;
     report_review|report_review_result|report_revision)
         _structured_candidate=$(inbox_extract_report_path_from_content "$CONTENT")
         if [ -z "$_structured_candidate" ] && [ "$TYPE" = "report_revision" ] && [ -f "$SCRIPT_DIR/queue/tasks/${TARGET}.yaml" ]; then
@@ -3035,7 +3145,14 @@ while [ $attempt -lt $max_attempts ]; do
             printf 'messages: []\n' > "$INBOX"
         fi
 
-        if inbox_type_is_report_lifecycle "$TYPE" && [ -n "${STRUCTURED_REPORT_ID:-}" ]; then
+        if inbox_type_is_review_pending_nudge "$TYPE"; then
+            if inbox_review_pending_duplicate_locked "$INBOX" "$FROM" \
+                "$REVIEW_PENDING_NUDGE_TASK_ID" "$REVIEW_PENDING_NUDGE_SUBJECT_TASK_ID" \
+                "$REVIEW_PENDING_NUDGE_PARENT_CMD" "$REVIEW_PENDING_NUDGE_FINGERPRINT" \
+                "$REVIEW_PENDING_NUDGE_STATE"; then
+                exit 20
+            fi
+        elif inbox_type_is_report_lifecycle "$TYPE" && [ -n "${STRUCTURED_REPORT_ID:-}" ]; then
             _existing_event_id=$(inbox_report_event_duplicate_locked "$INBOX" "$TARGET" "$TYPE" "$FROM" "$STRUCTURED_REPORT_ID" "$STRUCTURED_REPORT_VERSION" "$STRUCTURED_REPORT_FINGERPRINT" "$STRUCTURED_REVISION_FINGERPRINT") || _existing_event_id=""
             if [ -n "$_existing_event_id" ]; then
                 printf 'DUPLICATE_MSG_ID=%s\n' "$_existing_event_id"

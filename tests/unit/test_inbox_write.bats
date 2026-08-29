@@ -3284,3 +3284,45 @@ _autoread_env() {
     [ "${lines[0]}" = "commander_directive" ]
     [ "${lines[1]}" = "cmd_x_normal" ]
 }
+
+# test_necessity: review-pending notifications persist the management
+# task_id separately from the subject task and a consumed event can wake again.
+@test "review-pending nudge persists structured identity and retries after read" {
+    root="$BATS_TEST_TMPDIR/review-pending-nudge"
+    mkdir -p "$root/queue/inbox" "$root/queue/tasks" "$root/scripts"
+    ln -s "$PROJECT_ROOT/scripts/lib" "$root/scripts/lib"
+    content="review_pending_state=A task_id=commander_directive subject_task_id=cmd_subject_normal parent_cmd=cmd_subject report_fingerprint=0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef report=queue/reports/hanzo_report_cmd_subject.yaml"
+    run env INBOX_WRITE_ROOT_OVERRIDE="$root" INBOX_WRITE_TEST=1 INBOX_REVIEW_CONTEXT_DISABLE=1 DEFENSE_OVERHEAD_ENABLED=0 \
+        bash "$PROJECT_ROOT/scripts/inbox_write.sh" gunshi "$content" review_report ninja_monitor review_report
+    [ "$status" -eq 0 ]
+    python3 - "$root/queue/inbox/gunshi.yaml" <<'PY'
+import sys, yaml
+messages = (yaml.safe_load(open(sys.argv[1])) or {}).get("messages", [])
+assert len(messages) == 1
+message = messages[0]
+expected = {
+    "task_id": "commander_directive",
+    "subject_task_id": "cmd_subject_normal",
+    "parent_cmd": "cmd_subject",
+    "report_fingerprint": "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef",
+    "report": "queue/reports/hanzo_report_cmd_subject.yaml",
+    "review_pending_state": "A",
+    "action": "review_report",
+}
+for key, value in expected.items():
+    assert message.get(key) == value, (key, message)
+assert message["read"] is False
+print("structured_fields=7 first_read=false")
+PY
+    sed -i 's/read: false/read: true/' "$root/queue/inbox/gunshi.yaml"
+    run env INBOX_WRITE_ROOT_OVERRIDE="$root" INBOX_WRITE_TEST=1 INBOX_REVIEW_CONTEXT_DISABLE=1 DEFENSE_OVERHEAD_ENABLED=0 \
+        bash "$PROJECT_ROOT/scripts/inbox_write.sh" gunshi "$content" review_report ninja_monitor review_report
+    [ "$status" -eq 0 ]
+    python3 - "$root/queue/inbox/gunshi.yaml" <<'PY'
+import sys, yaml
+messages = (yaml.safe_load(open(sys.argv[1])) or {}).get("messages", [])
+assert len(messages) == 2
+assert sum(not bool(x.get("read")) for x in messages) == 1
+print("retry_after_read=1 unread_wakeup=1")
+PY
+}
