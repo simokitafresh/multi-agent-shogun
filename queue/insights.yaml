@@ -4939,7 +4939,10 @@ insights:
   priority: "medium"
   source: "manual"
   fix_known: false
-  status: pending
+  status: resolved
+  resolved_reason: "一次情報で現行コードを再確認した結果、対象の自動化ターゲットは既に解消済み。safe_send_clearのCodex経路がcodex_config_apply_agentを必須実行し、respawn-pane -kで家老を再起動するため、追加実修正・decision_candidateは不要。"
+  action_artifact: "target=queue/insights.yaml:INS-20260827-125425547-9fdf;primary=scripts/ninja_monitor.sh:3460-3516,11838-11861;implementation=scripts/lib/cli_lookup.sh:613-668;history=git:2360a18a70433905e98bfabb4dbb48853f1ac3e2;verification=現行clear経路のconfig apply+Codex respawn実装をrg/git showで確認;decision_candidate=none"
+  resolved_at: "2026-08-30T05:01:33+09:00"
 - id: INS-20260827-130259597-833a
   ts: "2026-08-27T13:02:59+09:00"
   insight: "semantic_index_update新概念候補: discussion:回転 before afterを最新の状況にアップデートせよ は 既存aliasesに一致なし。概念定義とaliases追加を検討せよ"
