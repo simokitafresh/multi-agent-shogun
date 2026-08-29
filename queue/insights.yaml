@@ -7775,39 +7775,57 @@ insights:
   priority: "low"
   source: "semantic_index_update"
   fix_known: false
-  status: pending
+  status: resolved
+  resolved_reason: "semantic map generation verified the candidate is represented or intentionally ignored"
+  action_artifact: "semantic_map=/home/simokitafresh/multi-agent-shogun/context/semantic-map.md;semantic_index=/home/simokitafresh/multi-agent-shogun/docs/semantic-index/index.md"
+  resolved_at: "2026-08-29T16:06:24+09:00"
 - id: INS-20260829-160547489-8045
   ts: "2026-08-29T16:05:47+09:00"
   insight: "semantic_index_update未登録[[リンク]]ターゲット: [[commander_directive_未着地_D0_1d4d1f271]] は既存aliasesに一致なし。類似概念TOP3: creator_brainwashing_defense(創造主の洗脳防御; alias=source lord directive causal; score=10.8) / commander_role_ssot_analysis(Commanderロール SSOT分析; alias=commander role; score=10.6) / semantic_dictionary_design(セマンティック辞書構想; alias=source shogun d0 fix; score=10.5)。概念定義とaliases追加を検討せよ"
   priority: "low"
   source: "semantic_index_update"
   fix_known: false
-  status: pending
+  status: resolved
+  resolved_reason: "semantic map generation verified the candidate is represented or intentionally ignored"
+  action_artifact: "semantic_map=/home/simokitafresh/multi-agent-shogun/context/semantic-map.md;semantic_index=/home/simokitafresh/multi-agent-shogun/docs/semantic-index/index.md"
+  resolved_at: "2026-08-29T16:06:24+09:00"
 - id: INS-20260829-160554036-1972
   ts: "2026-08-29T16:05:54+09:00"
   insight: "semantic_index_update未登録[[リンク]]ターゲット: [[preflight_自己記録除外_45f31a6dc]] は既存aliasesに一致なし。類似概念TOP3: silent_fallback_quality(Silent Fallback品質; alias=preflight script欠落はfail closed; score=15.8) / local_memory_db(ローカル記憶DB; alias=three_layer_preflight memory 124; score=13.4) / provisional_hidden-infrastructure-gate-hook-canonical-manifest-20260731(仮: Hidden Infrastructure Gate Hook Canonical Manifest 20260731; alias=provisional_hidden-infrastructure-gate-hook-canonical-manifest-20260731; score=4.6)。概念定義とaliases追加を検討せよ"
   priority: "low"
   source: "semantic_index_update"
   fix_known: false
-  status: pending
+  status: resolved
+  resolved_reason: "semantic map generation verified the candidate is represented or intentionally ignored"
+  action_artifact: "semantic_map=/home/simokitafresh/multi-agent-shogun/context/semantic-map.md;semantic_index=/home/simokitafresh/multi-agent-shogun/docs/semantic-index/index.md"
+  resolved_at: "2026-08-29T16:06:24+09:00"
 - id: INS-20260829-160601212-66c1
   ts: "2026-08-29T16:06:01+09:00"
   insight: "semantic_index_update未登録[[リンク]]ターゲット: [[T183_prepush_deadlock]] は既存aliasesに一致なし。類似概念TOP3: gate_quality_framework(ゲート品質統合フレームワーク; alias=last_updated threshold check; score=8.2) / report_quality_protocol(忍者報告品質プロトコル; alias=purpose_validation check; score=7.0) / semantic_dictionary_design(セマンティック辞書構想; alias=source kotaro ac1 check; score=6.5)。概念定義とaliases追加を検討せよ"
   priority: "low"
   source: "semantic_index_update"
   fix_known: false
-  status: pending
+  status: resolved
+  resolved_reason: "semantic map generation verified the candidate is represented or intentionally ignored"
+  action_artifact: "semantic_map=/home/simokitafresh/multi-agent-shogun/context/semantic-map.md;semantic_index=/home/simokitafresh/multi-agent-shogun/docs/semantic-index/index.md"
+  resolved_at: "2026-08-29T16:06:24+09:00"
 - id: INS-20260829-160607980-6524
   ts: "2026-08-29T16:06:07+09:00"
   insight: "semantic_index_update未登録[[リンク]]ターゲット: [[T185_Render_env_IaC]] は既存aliasesに一致なし。類似概念TOP3: dm_fusion_app(DM-Fusionアプリ; alias=Render Node service; score=13.4) / dmsignal_operations(DM-Signal運用; alias=Render CLI; score=13.0) / dmsignal_fe_experience_deploy(DM-Signal体感主導デプロイ; alias=Render live後CDP検分; score=12.6)。概念定義とaliases追加を検討せよ"
   priority: "low"
   source: "semantic_index_update"
   fix_known: false
-  status: pending
+  status: resolved
+  resolved_reason: "semantic map generation verified the candidate is represented or intentionally ignored"
+  action_artifact: "semantic_map=/home/simokitafresh/multi-agent-shogun/context/semantic-map.md;semantic_index=/home/simokitafresh/multi-agent-shogun/docs/semantic-index/index.md"
+  resolved_at: "2026-08-29T16:06:24+09:00"
 - id: INS-20260829-160616286-6f05
   ts: "2026-08-29T16:06:16+09:00"
   insight: "semantic_index_update未登録[[リンク]]ターゲット: [[session_save_20260829_1250]] は既存aliasesに一致なし。類似概念TOP3: deepdive_principles(deepdive原理; alias=session_save_20260829_1207; score=43.8) / creator_brainwashing_defense(創造主の洗脳防御; alias=session_save_20260811_0316; score=43.1) / semantic_dictionary_design(セマンティック辞書構想; alias=session save karo 走行5系統; score=21.3)。概念定義とaliases追加を検討せよ"
   priority: "low"
   source: "semantic_index_update"
   fix_known: false
-  status: pending
+  status: resolved
+  resolved_reason: "semantic map generation verified the candidate is represented or intentionally ignored"
+  action_artifact: "semantic_map=/home/simokitafresh/multi-agent-shogun/context/semantic-map.md;semantic_index=/home/simokitafresh/multi-agent-shogun/docs/semantic-index/index.md"
+  resolved_at: "2026-08-29T16:06:24+09:00"
