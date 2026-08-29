@@ -95,6 +95,25 @@ setup() {
   [ "$(git -C "$FIX" rev-parse HEAD)" = "$before" ]
 }
 
+# test_necessity: a target-side ours-equivalent merge has a non-empty
+# first-parent/second-parent tree diff but an identical merge/first-parent tree;
+# safe convergence must block it before ref movement.
+@test "target-side ours-equivalent tree regression blocks before ref update" {
+  git -C "$FIX" worktree add -q -b side "$BATS_TEST_TMPDIR/side"
+  printf 'side-b\n' > "$BATS_TEST_TMPDIR/side/b.txt"
+  git -C "$BATS_TEST_TMPDIR/side" add b.txt
+  git -C "$BATS_TEST_TMPDIR/side" commit -qm side-b
+  git -C "$BATS_TEST_TMPDIR/next" merge -s ours --no-ff side -m "ours regression fixture" >/dev/null
+  target="$(git -C "$BATS_TEST_TMPDIR/next" rev-parse HEAD)"
+  before="$(git -C "$FIX" rev-parse HEAD)"
+
+  run bash "$FIX/scripts/safe_shared_main_ff.sh" "$target"
+  [ "$status" -eq 2 ]
+  [[ "$output" == *"ours-equivalent merge"* ]]
+  [[ "$output" == *"target_new_merges=1"* ]]
+  [ "$(git -C "$FIX" rev-parse HEAD)" = "$before" ]
+}
+
 @test "concurrent convergence is serialized and both callers succeed" {
   target="$(git -C "$BATS_TEST_TMPDIR/next" rev-parse HEAD)"
   bash "$FIX/scripts/safe_shared_main_ff.sh" "$target" > "$BATS_TEST_TMPDIR/first.out" 2>&1 &
