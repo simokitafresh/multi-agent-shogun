@@ -4695,7 +4695,10 @@ insights:
   priority: "medium"
   source: "manual"
   fix_known: false
-  status: pending
+  status: resolved
+  resolved_reason: "現行 .githooks/pre-push が成功・失敗の終端で wall_ms と affected_count を logs/defense_overhead.jsonl に記録し、wall_ms>300000 を WARN 表示することを現物と commit 0c5d31eb2 で確認済み"
+  action_artifact: ".githooks/pre-push:38-60,566; commit 0c5d31eb298ee8bc62448bfebf66ca4122c2ce70"
+  resolved_at: "2026-08-30T02:42:44+09:00"
 - id: INS-20260827-085910663-c3ee
   ts: "2026-08-27T08:59:10+09:00"
   insight: "[[実際にどれくらい効率よくinbox1]] semantic_stress_test candidate_aliases: NO_MATCH source=lord query=実際にどれくらい効率よくinbox1"
