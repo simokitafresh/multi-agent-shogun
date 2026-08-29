@@ -4877,7 +4877,10 @@ insights:
   priority: "medium"
   source: "manual"
   fix_known: false
-  status: pending
+  status: resolved
+  resolved_reason: "一次情報で対象と現行実装を照合した。scripts/insight_write.sh:L594-L607 は queue/insights.yaml の自動scope-commitと3回retry(3/6/9秒)を実装し、09eb0bd91で導入済み。scripts/ninja_scope_commit.sh:L770-L780 は fuser で保持プロセスを確認し、現時点の .git/index.lock も不在だった。一方、age>90s の明示判定は未実装であり、ninja_scope_commit.shへの追加は本taskのplanned_paths外なので decision_candidate として家老へ引き継ぐ。"
+  action_artifact: "target=queue/insights.yaml:INS-20260827-114622978-c4f3;existing_fix=git:09eb0bd91;snapshot=git index.lock absent at 2026-08-30T04:20:00+09:00;implementation=scripts/insight_write.sh:L594-L607 retry 3/6/9s;safety=scripts/ninja_scope_commit.sh:L770-L780 fuser no-process guard;decision_candidate=ninja_scope_commit.sh stale index.lock age>90s判定+短時間retryを別taskで設計・実装"
+  resolved_at: "2026-08-30T04:20:00+09:00"
 - id: INS-20260827-120946142-c4ac
   ts: "2026-08-27T12:09:46+09:00"
   insight: "semantic_index_update新概念候補: discussion:task notification task id bhzlplux9 task id tool use id toolu 01RhN25RPW5vRMvLUZ は 既存aliasesに一致なし。概念定義とaliases追加を検討せよ"
