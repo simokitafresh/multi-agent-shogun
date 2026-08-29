@@ -4278,7 +4278,10 @@ insights:
   priority: "medium"
   source: "manual"
   fix_known: false
-  status: pending
+  status: resolved
+  resolved_reason: "一次情報で現行DM-Signalを再確認した結果、旧 .github/workflows/test.yml は現ツリーに存在せず、現行 .github/workflows/pytest.yml は backend/tests を実行する構成で固定本数239の判定を含まない。後続の本リポジトリ記録にshard inventory/ledger不一致の修正履歴があり、今回scopeで追加実修正は不要と判定した。"
+  action_artifact: "target=queue/insights.yaml:INS-20260826-223220033-55fe;primary=/mnt/c/Python_app/DM-signal/.github/workflows/pytest.yml:L1-L66;context=context/senkyoku-log.md:L1518-L1520;context=context/infrastructure.md:L1566-L1571;semantic=bash scripts/semantic_search.sh INS-20260826-223220033-55fe;memory=memory_db semantic lookup;decision_candidate=現行workflowに旧shard inventory invariantを再導入する必要があるかはDM-Signal専用cmdで判断"
+  resolved_at: "2026-08-29T21:37:33+09:00"
 - id: INS-20260826-224117211-5631
   ts: "2026-08-26T22:41:17+09:00"
   insight: "[[artifactもアップデートして]] semantic_stress_test candidate_aliases: NO_MATCH source=lord query=artifactもアップデートして"
