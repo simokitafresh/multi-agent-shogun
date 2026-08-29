@@ -4907,7 +4907,10 @@ insights:
   priority: "medium"
   source: "manual"
   fix_known: false
-  status: pending
+  status: resolved
+  resolved_reason: "一次情報を再確認した結果、現行のreview_bundle.py single経路およびreview_approval.shにinbox_mark_readの呼出し・&&連結は存在せず、既存の分離構造で対象事象は解消済み。追加実修正・decision_candidateは不要と判定した。"
+  action_artifact: "target=queue/insights.yaml:INS-20260827-122827372-e4d0;verified_at=2026-08-30T04:38:46+09:00;code=scripts/review_bundle.py single/batch/notify and scripts/review_approval.sh;rg=review_bundle/inbox_mark_read direct-chain 0 matches;decision_candidate=none"
+  resolved_at: "2026-08-30T04:38:46+09:00"
 - id: INS-20260827-123334194-3557
   ts: "2026-08-27T12:33:34+09:00"
   insight: "deepdive_replay.sh の receipt 書込みが末尾にあるため、呼び出し側が | head で出力を切ると SIGPIPE で receipt が残らず追体験が虚偽になる(07:56 Phase8/9)。receipt 書込みを本文出力の前(または trap EXIT)へ移し、head で切られても receipt が残る構造にする"
