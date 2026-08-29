@@ -7724,3 +7724,10 @@ insights:
   source: "semantic_index_update"
   fix_known: false
   status: pending
+- id: INS-20260829-143406867-cbd5
+  ts: "2026-08-29T14:34:06+09:00"
+  insight: "[[生成nudgeにtask idがない問題は実観測済みで]] semantic_stress_test candidate_aliases: NO_MATCH source=lord query=生成nudgeにtask_idがない問題は実観測済みで、 Unit5ではnudgeを命令扱いせず正規LGTMを待っている。はバグではないか？命令扱いしないメリットとデメリットを教えてくれ"
+  priority: "low"
+  source: "semantic_stress_test"
+  fix_known: false
+  status: pending
