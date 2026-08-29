@@ -332,6 +332,63 @@ inbox_task_assignment_identity_fields() {
     printf '%s\n' "$task_id" "$parent_cmd"
 }
 
+# task_supplement notifications are consumed by the ninja's current-task
+# filter. Bind the explicit identity from the message into dedicated fields
+# and reject stale, malformed, or taskless supplements before persistence.
+# Unlike task_assigned, this lane must not silently borrow the destination
+# task identity: a supplement can arrive after a re-deployment and must prove
+# which task it belongs to.
+inbox_task_supplement_identity() {
+    local target="$1"
+    local content="$2"
+    local task_yaml="$SCRIPT_DIR/queue/tasks/${target}.yaml"
+    local current_task_id="" current_parent_cmd=""
+    local supplied_task_id="" supplied_parent_cmd=""
+    local token value
+    local task_id_count=0 parent_cmd_count=0
+
+    if [ ! -f "$task_yaml" ]; then
+        echo "BLOCK: task_supplement requires current destination task identity (missing task YAML: ${task_yaml})" >&2
+        return 2
+    fi
+
+    current_task_id=$(inbox_yaml_field_get "$task_yaml" "task_id" "")
+    current_parent_cmd=$(inbox_yaml_field_get "$task_yaml" "parent_cmd" "")
+    if [ -z "$current_task_id" ] || [ -z "$current_parent_cmd" ]; then
+        echo "BLOCK: task_supplement requires non-empty current task_id and parent_cmd" >&2
+        return 2
+    fi
+
+    for token in $content; do
+        case "$token" in
+            task_id=*)
+                value="${token#task_id=}"
+                task_id_count=$((task_id_count + 1))
+                supplied_task_id="$value"
+                ;;
+            parent_cmd=*)
+                value="${token#parent_cmd=}"
+                parent_cmd_count=$((parent_cmd_count + 1))
+                supplied_parent_cmd="$value"
+                ;;
+        esac
+    done
+
+    if [ "$task_id_count" -ne 1 ] || [ "$parent_cmd_count" -ne 1 ] \
+        || [[ ! "$supplied_task_id" =~ ^[A-Za-z0-9_.:-]+$ ]] \
+        || [[ ! "$supplied_parent_cmd" =~ ^cmd_[A-Za-z0-9_.:-]+$ ]]; then
+        echo "BLOCK: task_supplement requires exactly one valid task_id=<id> and parent_cmd=<cmd>" >&2
+        return 2
+    fi
+
+    if [ "$supplied_task_id" != "$current_task_id" ] || [ "$supplied_parent_cmd" != "$current_parent_cmd" ]; then
+        echo "BLOCK: task_supplement identity mismatch: supplied=${supplied_task_id}/${supplied_parent_cmd} current=${current_task_id}/${current_parent_cmd}" >&2
+        return 2
+    fi
+
+    printf '%s\n' "$supplied_task_id" "$supplied_parent_cmd"
+}
+
 report_yaml_is_template() {
     local report_path="$1"
     local verdict=""
@@ -1458,13 +1515,21 @@ forward_gunshi_review_result_to_active_ninjas() {
 
         # cmd_idフィルタ: 忍者のtask YAMLのparent_cmdと一致する場合のみ転送
         local ninja_parent_cmd=""
+        local ninja_task_id=""
+        local review_body=""
         local task_file="$SCRIPT_DIR/queue/tasks/${ninja}.yaml"
         ninja_parent_cmd=$(inbox_yaml_field_get "$task_file" "parent_cmd" "")
         if [ "$ninja_parent_cmd" != "$review_cmd_id" ]; then
             continue  # この忍者の担当cmdではない→スキップ
         fi
 
-        forward_message="軍師レビュー補足: $review_content"
+        ninja_task_id=$(inbox_yaml_field_get "$task_file" "task_id" "")
+        # The review_result body carries Karo's commander envelope for its
+        # own mailbox. Remove those two tokens before replacing them with the
+        # recipient ninja's identity; task_supplement requires one unambiguous
+        # pair and must not reject its own generated fan-out.
+        review_body=$(printf '%s' "$review_content" | sed -E 's/(^|[[:space:]])task_id=[^[:space:]]+/\1/g; s/(^|[[:space:]])parent_cmd=[^[:space:]]+/\1/g')
+        forward_message="task_id=${ninja_task_id} parent_cmd=${ninja_parent_cmd} 軍師レビュー補足: ${review_body}"
         if ! INBOX_WRITE_ROOT_OVERRIDE="$SCRIPT_DIR" \
             INBOX_WRITE_TEST="${INBOX_WRITE_TEST:-}" \
             bash "$SELF_SCRIPT_PATH" \
@@ -3069,6 +3134,16 @@ case "$TYPE" in
         ;;
     review_report|accept_report|run_cmd_complete)
         _identity_fields=(task_id "$REVIEW_PENDING_NUDGE_TASK_ID" subject_task_id "$REVIEW_PENDING_NUDGE_SUBJECT_TASK_ID" parent_cmd "$REVIEW_PENDING_NUDGE_PARENT_CMD" report_fingerprint "$REVIEW_PENDING_NUDGE_FINGERPRINT" report "$REVIEW_PENDING_NUDGE_REPORT" review_pending_state "$REVIEW_PENDING_NUDGE_STATE")
+        ;;
+    task_supplement)
+        # Only ninja destinations have a current task binding. Karo-directed
+        # task_supplement messages use the commander identity gate above and
+        # retain that established control-plane contract.
+        if target_is_ninja "$TARGET"; then
+            _supplement_identity=$(inbox_task_supplement_identity "$TARGET" "$CONTENT") || exit 2
+            mapfile -t _supplement_values <<< "$_supplement_identity"
+            _identity_fields=(task_id "${_supplement_values[0]:-}" parent_cmd "${_supplement_values[1]:-}")
+        fi
         ;;
     report_review|report_review_result|report_revision)
         _structured_candidate=$(inbox_extract_report_path_from_content "$CONTENT")
