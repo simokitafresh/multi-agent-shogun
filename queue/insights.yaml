@@ -8055,3 +8055,10 @@ insights:
   source: "semantic_stress_test"
   fix_known: false
   status: pending
+- id: INS-20260829-213547619-5b8c
+  ts: "2026-08-29T21:35:47+09:00"
+  insight: "[[根治しているのか？再発リスクはゼロか？]] semantic_stress_test candidate_aliases: NO_MATCH source=lord query=根治しているのか？再発リスクはゼロか？"
+  priority: "low"
+  source: "semantic_stress_test"
+  fix_known: false
+  status: pending
