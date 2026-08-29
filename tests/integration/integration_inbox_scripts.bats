@@ -22,11 +22,11 @@ teardown() {
 }
 
 @test "integration inbox scripts: write then mark-read preserves one message atomically" {
-    run env INBOX_WRITE_TEST=1 bash "$TEST_TMP/scripts/inbox_write.sh" karo "integration smoke" wake_up test_runner
+    run env INBOX_WRITE_TEST=1 bash "$TEST_TMP/scripts/inbox_write.sh" karo "task_id=commander_directive subject_task_id=cmd_integration_inbox_scripts_normal parent_cmd=cmd_integration_inbox_scripts integration smoke" wake_up test_runner
     [ "$status" -eq 0 ]
 
     [ -f "$TEST_TMP/queue/inbox/karo.yaml" ]
-    grep -q "content: 'integration smoke'" "$TEST_TMP/queue/inbox/karo.yaml"
+    grep -q "content: 'task_id=commander_directive subject_task_id=cmd_integration_inbox_scripts_normal parent_cmd=cmd_integration_inbox_scripts integration smoke'" "$TEST_TMP/queue/inbox/karo.yaml"
     grep -q "read: false" "$TEST_TMP/queue/inbox/karo.yaml"
 
     msg_id="$(awk -F"'" '/^[[:space:]]*id:/ { print $2; exit }' "$TEST_TMP/queue/inbox/karo.yaml")"
