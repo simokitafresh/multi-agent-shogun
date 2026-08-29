@@ -7783,3 +7783,10 @@ insights:
   source: "semantic_index_update"
   fix_known: false
   status: pending
+- id: INS-20260829-160554036-1972
+  ts: "2026-08-29T16:05:54+09:00"
+  insight: "semantic_index_update未登録[[リンク]]ターゲット: [[preflight_自己記録除外_45f31a6dc]] は既存aliasesに一致なし。類似概念TOP3: silent_fallback_quality(Silent Fallback品質; alias=preflight script欠落はfail closed; score=15.8) / local_memory_db(ローカル記憶DB; alias=three_layer_preflight memory 124; score=13.4) / provisional_hidden-infrastructure-gate-hook-canonical-manifest-20260731(仮: Hidden Infrastructure Gate Hook Canonical Manifest 20260731; alias=provisional_hidden-infrastructure-gate-hook-canonical-manifest-20260731; score=4.6)。概念定義とaliases追加を検討せよ"
+  priority: "low"
+  source: "semantic_index_update"
+  fix_known: false
+  status: pending
