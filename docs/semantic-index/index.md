@@ -3495,6 +3495,7 @@ codd:
 | discussion | `queue/lord_conversation.jsonl` 2026-08-29T08:09:52+09:00 30分loop(殿指示08-27 14:34「進捗を確認し、利他の精神でつまりを解消し、artifactを更新せよ」恒久): (1)capture-pane全pane/陣形図/gate_metrics/rev-list origin/CI  |
 | discussion | `queue/lord_conversation.jsonl` 2026-08-29T08:41:13+09:00 2026-08-29 08:40 将軍 D0(可逆): database PJ の Render cron crn-d2vqn6buibrs73dla6vg(Stockdata-API-daily-update、実 schedule 30  |
 | discussion | `queue/lord_conversation.jsonl` 2026-08-29T08:49:17+09:00 30分loop(殿指示08-27 14:34「進捗を確認し、利他の精神でつまりを解消し、artifactを更新せよ」恒久): (1)capture-pane全pane/陣形図/gate_metrics/rev-list origin/CI  |
+| discussion | `queue/lord_conversation.jsonl` 2026-08-29T09:09:51+09:00 30分loop(殿指示08-27 14:34「進捗を確認し、利他の精神でつまりを解消し、artifactを更新せよ」恒久): (1)capture-pane全pane/陣形図/gate_metrics/rev-list origin/CI  |
 | causal_chain | `[[cmd_karo_hotfix_deploy_report_template_quote_escape_202607020530]]` (L924) |
 | causal_chain | `[[cmd_reflux_insight_202607071717_tobisaru]]` (L961) |
 | causal_chain | `[[cmd_karo_hotfix_report_notify_inprogress_guard_202607101913]]` (L1026) |
@@ -8399,6 +8400,7 @@ codd:
 | cmd | `cmd_karo_hotfix_deploy_task_worktree_phase_accounting_20260829` |
 | discussion | `queue/lord_conversation.jsonl` 2026-08-29T07:05:53+09:00 2026-08-29 07:03 将軍 D0(第11便 復帰直後): ninja_monitor.sh の bounded worker(_ninja_monitor_run_bounded_done_check/_run_bounded_ |
 | cmd | `cmd_karo_hotfix_deploy_worktree_prepare_opt_20260829` |
+| cmd | `cmd_karo_hotfix_monitor_reflux_inventory_speed_v2_20260829` |
 | causal_chain | `[[cmd_karo_hotfix_deploy_task_latency_yaml_bug_20260702010845]]` (L918) |
 | causal_chain | `[[cmd_karo_hotfix_deploy_task_yaml_speed_recon_guard_202607020133]]` (L919) |
 | causal_chain | `[[cmd_karo_hotfix_ga162_hook_failure_pre_push_202607021402]]` (L930) |
@@ -14371,6 +14373,7 @@ codd:
 | discussion | `queue/lord_conversation.jsonl` 2026-08-28T18:36:10+09:00 saizoが放置されていないか？確認せよ |
 | cmd | `cmd_reflux_insight_202608281530_saizo` |
 | discussion | `queue/lord_conversation.jsonl` 2026-08-29T07:56:35+09:00 b3t0sah8f toolu_018Fbq1WbPCTFCUsXup6oSxq /tmp/claude-1000/-home-simokitafresh-multi-agent-shogun/290a263c-8050-4156-a66d |
+| discussion | `queue/lord_conversation.jsonl` 2026-08-29T08:58:26+09:00 b2jp40ptv toolu_01NMYwgBbq2nksbvVzQ8kkxJ /tmp/claude-1000/-home-simokitafresh-multi-agent-shogun/290a263c-8050-4156-a66d |
 | causal_chain | `[[cmd_karo_cycle2_bugverify_b7_b19_20260727]]` (L1376) |
 
 ## provisional_tobisaru — 仮: Tobisaru
@@ -15166,6 +15169,7 @@ codd:
 | discussion | `queue/lord_conversation.jsonl` 2026-08-28T22:08:20.839166+00:00 git pre-commit semantic propagation for context/projects changes |
 | discussion | `queue/lord_conversation.jsonl` 2026-08-28T22:25:33.118498+00:00 git pre-commit semantic propagation for context/projects changes |
 | discussion | `queue/lord_conversation.jsonl` 2026-08-28T23:43:55.014094+00:00 git pre-commit semantic propagation for context/projects changes |
+| discussion | `queue/lord_conversation.jsonl` 2026-08-28T23:50:24.364612+00:00 git pre-commit semantic propagation for context/projects changes |
 | causal_chain | `[[cmd_karo_hotfix_lessons_yaml_format_restore_20260727]]` (L1389) |
 
 ## infra_design_intent — インフラ設計意図カタログ

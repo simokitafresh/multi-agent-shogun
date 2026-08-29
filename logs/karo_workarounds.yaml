@@ -1,16 +1,3 @@
-- cmd_id: cmd_karo_hotfix_gate_publication_single_truth
-  timestamp: '2026-08-23T12:25:22Z'
-  ninja: system
-  workaround: false
-  event_kind: hotfix
-  auto_captured: true
-  category: rework_auto_capture
-  detail: 'cmd_complete_gate completed rework event'
-  root_cause: 'automatic completion observation'
-  lesson_required: false
-  lesson_disposition: not_applicable
-  lesson_reference: 'not_applicable'
-  resolved_by_cmd: 'cmd_karo_hotfix_gate_publication_single_truth'
 - cmd_id: cmd_karo_hotfix_three_layer_all_action_guard
   timestamp: '2026-08-23T13:13:20Z'
   ninja: system
@@ -1302,3 +1289,16 @@
   lesson_disposition: not_applicable
   lesson_reference: 'not_applicable'
   resolved_by_cmd: 'cmd_karo_hotfix_review_singleflight_receipt_token_20260829'
+- cmd_id: cmd_karo_hotfix_monitor_reflux_inventory_speed_v2_20260829
+  timestamp: '2026-08-29T00:33:24Z'
+  ninja: system
+  workaround: false
+  event_kind: hotfix
+  auto_captured: true
+  category: rework_auto_capture
+  detail: 'cmd_complete_gate completed rework event'
+  root_cause: 'automatic completion observation'
+  lesson_required: false
+  lesson_disposition: not_applicable
+  lesson_reference: 'not_applicable'
+  resolved_by_cmd: 'cmd_karo_hotfix_monitor_reflux_inventory_speed_v2_20260829'
