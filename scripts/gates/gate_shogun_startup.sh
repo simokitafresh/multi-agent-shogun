@@ -2045,6 +2045,64 @@ else
     echo "  OK: 30分超のbatsプロセスなし"
 fi
 
+# --- Gate 10.08: monitor lifecycle 失敗行(直近60分) ---
+# 2026-08-29 00:40 将軍Q6自動化ターゲット(LS124/型十弾-2): hotfix live 後の機構固有失敗行
+# (rc=64 / SNAPSHOT-HEARTBEAT-FAIL / LIFECYCLE-BACKGROUND-FAIL / STAGE1-* / FALLBACK)は pane や
+# 陣形図に出ず、将軍が手で awk を打つまで見えなかった(00:38 に 5 行/h を手動検出)。起動時に機械表示する。
+echo "■ monitor lifecycle 失敗行(直近60分)"
+_mon_log="$SCRIPT_DIR/logs/ninja_monitor.log"
+if [ -s "$_mon_log" ]; then
+    _mon_since=$(date -d '-60 min' '+%Y-%m-%d %H:%M' 2>/dev/null || date '+%Y-%m-%d %H:%M')
+    # 2026-08-29 07:03 将軍 D0: (a)set -e 下で失敗行 0 件のとき grep の exit 1 が代入を落とし gate 自体が
+    # 途中終了(startup_gate_exit=1)→以降の Gate 10.09(Codex 上限)が一度も走らなかった。`|| true` で健全時に落ちない。
+    # (b)固定語彙(rc=64/HEARTBEAT/STAGE1)は 05:09 以降の新語 AUTO-DONE-BOUNDED-FAIL 630 行を数えなかった
+    # (検知器の出力は検知器の盲点を継承する LS-A09(37))。`-FAIL:`/`-TIMEOUT:`/rc>=2 の正規表現に広げ、
+    # no-op 契約の rc=1 行(BOUNDED-FAIL rc=1、ninja_monitor 側でも同刻に抑止済)だけ除外する。
+    _mon_fail=$(awk -v t="[$_mon_since" 'substr($0,1,17) >= t' "$_mon_log" 2>/dev/null \
+        | grep -E 'rc=64|rc=([2-9]|[1-9][0-9]+)( |$)|[A-Z0-9-]+-(FAIL|TIMEOUT):|STAGE1-[A-Z-]*(FAIL|TIMEOUT)|CODEX-RESPAWN-FALLBACK|RESPAWN-FALLBACK' 2>/dev/null \
+        | grep -vE 'REPORT-PENDING-BLOCK|REVIEW-PENDING-SKIP|BOUNDED-FAIL: [a-z]+ rc=1( |$)' 2>/dev/null || true)
+    _mon_fail_n=$(printf '%s\n' "$_mon_fail" | grep -c . 2>/dev/null || echo 0)
+    if [ "${_mon_fail_n:-0}" -gt 0 ]; then
+        echo "  WARN: lifecycle 失敗行 ${_mon_fail_n}行/60分(集計: awk ts>=-60min logs/ninja_monitor.log | grep -E 'rc=64|rc>=2|*-FAIL:|*-TIMEOUT:|RESPAWN-FALLBACK' -v 'REPORT-PENDING-BLOCK|REVIEW-PENDING-SKIP|BOUNDED-FAIL rc=1'。1行=daemon 機構の失敗ログ1行、忍者側の pending と no-op 契約 rc=1 は除外 INS-054212)"
+        printf '%s\n' "$_mon_fail" | awk '{k=$0; sub(/^\[[^]]*\] */,"",k); sub(/ .*/,"",k); c[k]++} END{for(k in c) printf "    %s ×%d\n", k, c[k]}'
+        printf '%s\n' "$_mon_fail" | tail -2 | cut -c1-160 | sed 's/^/    /'
+        echo "  → 走行中 hotfix の対象なら task/掲示板で壁の名前を確認(型十弾-1)。誰も持っていなければ将軍が壁を名指しして 1 通"
+        alerts+=("monitor lifecycle 失敗行 ${_mon_fail_n}行/60分 — 壁の所有者を一次で確認")
+    else
+        echo "  OK: 直近60分の lifecycle 失敗行 0"
+    fi
+else
+    echo "  SKIP: logs/ninja_monitor.log なし"
+fi
+
+# --- Gate 10.09: Codex 利用上限/警告 pane(INS-20260829-044158) ---
+# 2026-08-29 00:40 才蔵 pane の『weekly limit <25%』を将軍が事実報告だけで流し、04:40 に家老+忍者が
+# 週次上限で全停止(T174)。pane の文言は陣形図・inbox に出ない。起動時と loop で機械計数する。
+echo "■ Codex 利用上限/警告 pane"
+_cx_hit=(); _cx_warn=()
+# shellcheck source=scripts/lib/pane_lookup.sh
+[ -f "$SCRIPT_DIR/scripts/lib/pane_lookup.sh" ] && source "$SCRIPT_DIR/scripts/lib/pane_lookup.sh"
+for _cx_a in karo hayate kagemaru hanzo saizo kotaro tobisaru; do
+    _cx_p="$(pane_lookup "$_cx_a" 2>/dev/null || true)"
+    [ -n "$_cx_p" ] || continue
+    _cx_txt="$(tmux capture-pane -t "$_cx_p" -p 2>/dev/null | tail -40 || true)"
+    if printf '%s' "$_cx_txt" | grep -qE "hit your usage limit|try again at [A-Z][a-z]{2} [0-9]"; then
+        _cx_hit+=("$_cx_a")
+    elif printf '%s' "$_cx_txt" | grep -qE "usage limit reset available|less than 25% of your weekly|weekly limit"; then
+        _cx_warn+=("$_cx_a")
+    fi
+done
+if [ "${#_cx_hit[@]}" -gt 0 ]; then
+    echo "  ALERT: 上限到達 ${#_cx_hit[@]} pane(${_cx_hit[*]})(集計: capture-pane tail -40 | grep 'hit your usage limit|try again at'。1件=pane 1)"
+    echo "  → 便停止。将軍は殿の明示指示なしに CLI 切替/reset 消費をしない。推薦=新アカウント device-auth(T80)/代替=/shogun-cli-switch で Claude へ"
+    alerts+=("Codex 上限到達 ${#_cx_hit[@]} pane(${_cx_hit[*]}) — 殿へ裁定要請済みか確認")
+elif [ "${#_cx_warn[@]}" -gt 0 ]; then
+    echo "  WARN: 上限警告 ${#_cx_warn[@]} pane(${_cx_warn[*]})=停止前兆(00:40→04:40 の 4h で全停止した実績)"
+    alerts+=("Codex 上限警告 ${#_cx_warn[@]} pane(${_cx_warn[*]}) — 先送りせず殿へ前もって報告")
+else
+    echo "  OK: 上限/警告 pane 0"
+fi
+
 # --- Gate 10.1: 便回転チェック(GATE CLEAR済み未回収在庫) ---
 # 2026-08-11: 便1時間ゼロを殿指摘まで検出できなかった事故の環境埋込み(Q6自動化ターゲット)。
 # 掲示板の「完了レビュー LGTM」status:open = 軍師LGTM済みだが家老ACCEPT/GATE未了の在庫。

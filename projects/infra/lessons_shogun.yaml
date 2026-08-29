@@ -434,6 +434,7 @@ lessons:
   created_at: '2026-07-27'
   automated: true
   enforcement: 'Level1のまま(2026-07-27疾風一次確認=検知箇所なし)。昇格案=decision_candidate(cmd_reflux_promotion_202607270408_hayate)。全文→docs/research/lessons_shogun_superseded_archive_20260724.md §LS113-enforcement全文'
+  superseded_by: 'LS-A04 (LS-A04(27/35)のパス規則(target_path は repo 相対)へ統合。Level1 のまま昇格候補は decision_candidate に残存(枠を空ける))'
 - id: 'LS114'
   title: 'セーブcommitでもWIP内容の既存guard違反を持ち込む'
   origin: '[[cmd_4176]]'
@@ -531,3 +532,19 @@ lessons:
   created_at: '2026-08-28'
   automated: true
   enforcement: 'automated:false — 自動化ターゲット: ninja_monitor が CODEX-RESPAWN 成功時に RESPAWN-OK 行を必ず出し、gate_shogun_startup に直近 N 時間の RESPAWN 試行 vs OK 比を表示(FALLBACK 率>20% で WARN)'
+- id: 'LS125'
+  title: '配備スキルの逃げ道と家老 ACCEPT 再試験 — 待ちを忍者/家老の作業に変換する構造は入口の validator と pane guard で構造型に塞ぐ'
+  origin: '未指定'
+  detail: '2026-08-29 00:49-00:50 殿裁定 2 件: (1)『1時間後に再確認を忍者に配備=配備スキルの品質バグ』。一次: deploy_task ten_min_contract の long-runtime exception が 08-28/29 に 16 回(45m×9/30m×5/90m×2)、半蔵 AC4『live後1時間 gate_metrics で証明』measured_runtime_sec=3600・影丸 AC『本番1時間観測 中央値』=観測窓が忍者 AC に入り 3600 秒の機械的待ちに人質化(CTX 消費・STAGE1 respawn 成果消失 T152・reflux 枠死)。将軍は T161 を『影丸 CLEAR 後予約』で先送りしていた(洗脳#5)。(2)『家老自身がテストして再検証は回転速度を落とすバグ』。一次: 家老 pane pid 3855596 配下で影丸 publish worktree の bats 走行(2 分超)、scrollback に run_tests 14 回(BATS_CACHE=0 再走 3・all 1)、karo-operations.md:157『再実走を家老が奪うな』は文章規則で不発(型十一弾-2)。(3)殿 00:55『バグは根治したか？環境に強制を埋め込まなければ再燃する』→将軍は下知 2 通(委任=洗脳#3)で止まっていた。修正=D0 62ea70daf: time_contract_validator が観測窓語(live後/本番N時間観測/N時間の証明/gate_metrics で証明)を long-runtime 理由と AC 本文から検出し BLOCK(本番 task で半蔵/影丸 BLOCK・疾風/才蔵 PASS)、pre-bash-combined に karo-retest guard(家老 pane の run_tests/bats を BLOCK、KARO_TEST_REASON=e2e|ci_diag のみ通す)、contract bats 2+3。型=待ちを人の作業に変換する箇所は『理由文』で通さず入口 validator+pane guard で構造型に塞ぐ'
+  source_cmd: 'session_20260829_0055'
+  created_at: '2026-08-29'
+  automated: true
+  enforcement: 'Level4: scripts/lib/time_contract_validator.py _observation_window_hits(BLOCK)+.claude/hooks/pre-bash-combined.sh karo-retest guard(BLOCK)。bats tests/unit/test_time_contract_validator.bats #7-8・test_pre_bash_combined.bats #23-25。本番 proof=適用後 24h の deploy log に long-runtime exception×観測理由 0 行・家老 pane run_tests 0 行(次弾: gate_shogun_startup で計数)'
+- id: 'LS126'
+  title: '検知器の語彙は固定語でなく失敗の形で書き、健全時(0件)の exit code で gate が自壊しないことを先に試せ'
+  origin: '[[殿指示_強くてニューゲーム_20260829_0645]] -> [[T176_monitor_rc契約_gate自壊]] -> [[LS-A09(37)検知器の盲点継承]] -> [[LS126]]'
+  detail: '2026-08-29 06:55-07:05(第11便 復帰直後): (1)ninja_monitor.sh の bounded worker が rc=1(check_and_update_done_task/auto_void の no-op 契約=報告なし・review 待ち・対象外)を AUTO-DONE/AUTO-VOID-BOUNDED-FAIL と記録し、本日 819 行(637+182)が全て rc=1=情報 0(LS096 粒度バグ)、stderr は >/dev/null(型5弾-2)。05:09 以降 1 日中出ていたが、(2)起動 Gate 10.08 は固定語彙(rc=64/HEARTBEAT-FAIL/STAGE1-*/FALLBACK)しか数えず新語を検知せず、さらに set -e 下で失敗行 0 件のとき grep の exit 1 が代入を落とし gate 自体が途中終了(startup_gate_exit=1)=Gate 10.09(Codex 上限=T174 再発検知)が一度も走っていなかった。第10便で自分が書いた検知器が自分の盲点(語彙・健全時 exit)で死んでいた=LS-A09(37)『検知器の出力は検知器の盲点を継承する』の起動 gate 版。修正 D0 f1f218758: monitor は rc>=2 のみ FAIL+stderr tail、gate は || true+正規表現(-FAIL:|-TIMEOUT:|rc>=2、rc=1 no-op 除外)、contract bats 141/141、gate rc=0 で 10.09 走行を実測。広げた語彙で GATE-IMPROVEMENT-FAIL rc=1(p̄鮮度 API 不達 ALERT)等 15 行/h が即見えた(T177)。型: 検知器を書いたら (a)語彙は失敗の形(正規表現)にし固定語で閉じない (b)0 件・健全時の経路で exit code を先に試す(set -e の代入落ち) (c)新しい失敗語が増える構造(log 行を型別 uniq -c)を loop に置く'
+  source_cmd: 'T176'
+  created_at: '2026-08-29'
+  automated: true
+  enforcement: 'Level4: scripts/ninja_monitor.sh _ninja_monitor_run_bounded_done_check/_run_bounded_auto_void(rc>=2 のみ FAIL)+tests/unit/test_ninja_monitor_stall.bats『bounded done-check logs failure only for rc>=2』+scripts/gates/gate_shogun_startup.sh Gate 10.08(|| true+正規表現)。本番 proof=新世代で BOUNDED-FAIL rc=1 0 行(06:58 以降)・startup_gate_exit=0'
