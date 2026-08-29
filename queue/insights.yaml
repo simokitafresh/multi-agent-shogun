@@ -4850,6 +4850,7 @@ insights:
   resolved_reason: "現行ninja_monitor.shがfailed/done taskでもcompleted/doneかつPASSかつbinary全yesのreportをfingerprint単位で自動review対象にする実装済み。専用回帰テストでpositive 2、negative 4、duplicate 0を確認したため解決。"
   action_artifact: "primary=scripts/ninja_monitor.sh:9803-9911;fix_commit=934916642f;regression=tests/unit/test_ninja_monitor_stall.bats:402-488;inventory_before_task_snapshot=79/11/0/90;inventory_before_live=78/11/0/89;promotion_pause=queue/gates/reflux_promotion.paused"
   resolved_at: "2026-08-30T04:02:14+09:00"
+  last_seen: "2026-08-30T04:04:00+09:00"
 - id: INS-20260827-104311154-a642
   ts: "2026-08-27T10:43:11+09:00"
   insight: "semantic_index_update新概念候補: discussion:task notification task id b0g366o3l task id tool use id toolu 014Wp8w61TQanA1dgi は 既存aliasesに一致なし。概念定義とaliases追加を検討せよ"
