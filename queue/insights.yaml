@@ -7513,3 +7513,10 @@ insights:
   resolved_reason: "semantic map generation verified the candidate is represented or intentionally ignored"
   action_artifact: "semantic_map=/home/simokitafresh/multi-agent-shogun/context/semantic-map.md;semantic_index=/home/simokitafresh/multi-agent-shogun/docs/semantic-index/index.md"
   resolved_at: "2026-08-29T10:25:01+09:00"
+- id: INS-20260829-102550931-f1a6
+  ts: "2026-08-29T10:25:50+09:00"
+  insight: "cmd_complete NO_MATCH aliases候補: cmd_karo_hotfix_context_freshness_runtime_speed_v2_20260829 hayate lesson_candidate: 9p履歴証跡はsubject/pathを単一git showへ統合する source commitのsubjectとchanged pathsを別git履歴走査で取得するとraw ALERTごとに9p I/Oを重複する。git show --format=%s --name-onlyの単一bounded呼出しとcapture contract testで証跡を維持しながら走査回数を半減できる。"
+  priority: "low"
+  source: "cmd_complete_gate:memory_phase"
+  fix_known: false
+  status: pending
