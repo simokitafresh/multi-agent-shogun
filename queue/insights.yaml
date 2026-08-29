@@ -4635,7 +4635,10 @@ insights:
   priority: "medium"
   source: "manual"
   fix_known: false
-  status: pending
+  status: resolved
+  resolved_reason: "一次確認: durable idle anchor実装(cmd_karo_hotfix_reflux_idle_anchor_20260827)とlive再配備証跡を確認済み。追加実装不要"
+  action_artifact: "scripts/ninja_monitor.sh:_reflux_idle_first_seen_load/persist/clear;context/infrastructure.md:L1650;semantic-map/docs-semantic-index:T47_idle起点固定hotfix;archive-report:queue/archive/reports/hayate_report_cmd_karo_hotfix_reflux_idle_anchor_20260827_20260827.yaml;live:logs/ninja_monitor.log:14793-14795,15172-15174"
+  resolved_at: "2026-08-30T01:26:32+0900"
 - id: INS-20260827-074239660-c598
   ts: "2026-08-27T07:42:39+09:00"
   insight: "semantic_index_update新概念候補: discussion:refluxってなんだ？ は 既存aliasesに一致なし。概念定義とaliases追加を検討せよ"
