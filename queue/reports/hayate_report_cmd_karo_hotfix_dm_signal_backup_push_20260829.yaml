@@ -1,0 +1,198 @@
+worker_id: hayate
+report_id: rpt-6886b5aa-5960-445b-a29f-bdb36aa110ea
+report_identity_version: 2
+task_id: cmd_karo_hotfix_dm_signal_backup_push_20260829_normal
+parent_cmd: cmd_karo_hotfix_dm_signal_backup_push_20260829
+task_type: hotfix
+timestamp: '2026-08-29T17:10:34+09:00'
+status: failed
+ac_version_read: 58476d63
+task_contract_snapshot:
+  ac_fingerprint: 58476d63
+  acceptance_criteria:
+  - description: 前提を一次確認する。/mnt/c/Python_app/DM-signalの現branch、HEAD、originとの差、未push
+      commit全件を数値とhashで列挙し、rb6-cleanup-20260814をforceなし通常pushしてorigin..HEAD count
+      0を証明する。既知4 commitとの差異を報告する
+    id: AC1
+  - description: git for-each-refでupstream空のlocal branchを省略なく全件列挙し、各branchをforceなし--set-upstreamでoriginへpushする。完了後upstream空branch
+      0、各local tipが対応origin tipと一致、force使用0を集計コマンドと生出力で証明する。失敗branchが1件でもあればPASSにせずBLOCKする
+    id: AC2
+  final_checkpoint: null
+  investigation_contract: null
+  issued_cmd_id: cmd_karo_hotfix_dm_signal_backup_push_20260829
+  parent_cmd: cmd_karo_hotfix_dm_signal_backup_push_20260829
+  project: dm-signal
+  purpose: DM-signalの未push commitとupstream未設定local branchを全てoriginへ通常pushし、PC故障時の復元をgit
+    clone一手にする
+  reflux_commit_contract: null
+  seam_contract: null
+  task_id: cmd_karo_hotfix_dm_signal_backup_push_20260829_normal
+reflux_commit_contract: null
+result:
+  summary: AC1はmerge+通常pushでHEADとorigin/rb6-cleanup-20260814を2854041dce673096372a2303797b7074133ac0c7へ一致させorigin..HEAD=0/0。AC2は186本をforceなし--set-upstreamで試行し54成功・132失敗（非fast-forward131、GitHub
+    100MB制限1）のためFAIL。
+  details: '一次実測: 作業前 rb6-cleanup-20260814 は HEAD=e0f4f9854a01695709e6e03936c7f32295a734cc、origin先との差は
+    ahead=4/behind=4。local-only 4件とorigin-only 4件は別系統だった。origin側を通常mergeしmerge commit=e88aa71ec507b5dfb39bff8ba372347de47aaec3を作成、通常push後に追補commit=2854041dce673096372a2303797b7074133ac0c7を作成・通常pushした。最終HEAD=origin/rb6-cleanup-20260814=2854041dce673096372a2303797b7074133ac0c7、rev-list
+    --left-right --count=0 0。
+
+    AC2: git for-each-refでupstream空186本を完全列挙し、各branchへ git push --set-upstream origin
+    <branch>:<branch> を実行。結果 attempted=186, pass=54, fail=132。失敗132の内訳は既存origin先への非fast-forward131、fix/cmd_2382_yotsume_open_parityのGitHub
+    pre-receive 100MB超ファイル拒否1。再集計後 local_total=216, upstream_empty=132, origin同名tip一致58,
+    不一致4。force option occurrences=0、refspec plus occurrences=0。任務帰属 run_tests.sh task
+    は初回・報告直前とも task scope is empty rc=2（receipt run_tests_20260829T080927_3933054.json）。
+
+    merge tree適用時にlocal-only記事が一時的に消えたため、HEAD^1から marketing-director/content/articles/shogun/sengoku-25-spiral-improvement.md
+    を復元し、追補commitで通常pushした。既存dirty stateはmodified=1/untracked=10のまま保存し、他の既存変更は取り込んでいない。
+
+    '
+purpose_validation:
+  cmd_purpose: 未push commitとupstream未設定local branchをoriginへ通常pushし、clone復元可能な状態にする
+  fit: true
+  purpose_gap: AC1は達成したが、AC2は132本が通常push条件を満たさずupstream空132本が残存
+simplicity_check: 既存git fetch、merge、push、for-each-refのみで実施し、新規仕組みは追加していない
+assumption_check: origin同名branchが存在する場合も通常pushで自動的に収束すると仮定してはならず、131本は非fast-forwardで拒否された
+task_clarity:
+  score: 100
+  unclear_points: なし
+  discretion_fills: divergedなAC1 branchはforce禁止を守りnon-FF mergeで両系統を保持した
+status_detail: BLOCKED
+test_triage: unknown_after_scope_block
+causal_verification:
+  cause_checked: '作業前の一次git rev-listでlocal-only4件とorigin-only4件の別系統を確認した。
+
+    AC2の失敗は131本がorigin同名先と非fast-forward、1本がGitHub 100MB制限であることをpush出力で確認した。
+
+    merge tree適用でlocal-only記事が消える差分を親commitとのcat-file/diffで発見し、復元commitを作成してpush後存在rc=0を確認した。
+
+    '
+  design_intent_checked: 通常push・forceなし・歴史を改変しないことを維持し、既存dirty変更を作業対象へ混入させない
+  evidence: git fetch origin --prune; git rev-list --left-right --count; git for-each-ref;
+    186回のgit push --set-upstream; GitHub pre-receive出力; git show e88aa71e/2854041d;
+    run_tests receipt
+  origin: '[[cmd_karo_hotfix_dm_signal_backup_push_20260829_normal]] -> [[diverged_branch_and_large_file_boundary]]
+    -> [[AC2_BLOCK]]'
+commit_contract:
+  required: true
+  reason: code_or_unclassified_task
+  task_type: hotfix
+  planned_paths: []
+  repo_root: /mnt/c/Python_app/DM-signal
+cross_repo_commits:
+- repo: /mnt/c/Python_app/DM-signal
+  commit_hash: 2854041dce673096372a2303797b7074133ac0c7
+  paths:
+  - marketing-director/content/articles/shogun/sengoku-25-spiral-improvement.md
+ac_evidence_mapping:
+  AC1: git -C /mnt/c/Python_app/DM-signal fetch origin rb6-cleanup-20260814; git rev-list
+    --left-right --count HEAD...origin/rb6-cleanup-20260814 => 0 0; HEAD and origin
+    tip both 2854041dce673096372a2303797b7074133ac0c7; pre-push local-only4/origin-only4
+    listed
+  AC2: git for-each-ref upstream-empty complete list count=186; per-branch git push
+    --set-upstream attempted=186/pass=54/fail=132; post count upstream_empty=132;
+    force=0; failure names and causes recorded in result.details
+semantic_validation:
+  classification_axis: 分類軸なし(偶然の一致)。本cmdはGit branch/refの集合操作であり、意味分類の判定対象を持たない
+  recount: 分類軸なしのためN×M再計算は該当なし。branch集合はlocal_total=216、upstream_empty=132、origin同名tip一致58、不一致4としてgit
+    for-each-refから再計数
+  actual: 意味分類の漏れではなく、AC2の失敗はGitの非fast-forward131件とGitHubサイズ制限1件という実行結果
+  result: PASS
+files_modified:
+- path: marketing-director/content/articles/shogun/sengoku-25-spiral-improvement.md
+  change: merge treeで一時削除されたlocal-only記事をHEAD^1から復元し、追補commitとしてoriginへ通常push
+lesson_candidate:
+  found: true
+  title: 二tree read-tree mergeはlocal-only pathを保持しない
+  detail: diverged branchの通常merge中にread-tree -m -u HEAD MERGE_HEADを二treeで適用すると、local-only
+    pathがremote tree側の状態で消える。merge commitの親と現treeをdiffし、消失pathを復元してからpushする検査を追加すべき
+  project: dm-signal
+  origin: '[[cmd_karo_hotfix_dm_signal_backup_push_20260829_normal]] -> [[二tree_merge_local_only_path_loss]]
+    -> [[追補commit復元]]'
+lessons_useful:
+- id: L311
+  useful: true
+  reason: report-write経由でbatch記入し、lessons_usefulをlist形式・具体reason付きで保持するために直接使用した
+memory_references:
+- id: MEM001
+  source: semantic_search
+  query: DM-signalの未push commitとupstream未設定local branchを全てoriginへ通常pushし、PC故障時の復元をgit
+    clone一手にする description 前提を一次確認する。/mnt/c/Python_app/DM-signalの現branch、HEAD、originとの差
+  summary: 'source_file: /mnt/c/tools/multi-agent-shogun/queue/insights.yaml'
+  used: false
+  useful: false
+  reason: ''
+- id: MEM002
+  source: semantic_search
+  query: DM-signalの未push commitとupstream未設定local branchを全てoriginへ通常pushし、PC故障時の復元をgit
+    clone一手にする description 前提を一次確認する。/mnt/c/Python_app/DM-signalの現branch、HEAD、originとの差
+  summary: '- file: `skills/*/SKILL.md`'
+  used: false
+  useful: false
+  reason: ''
+- id: MEM003
+  source: semantic_search
+  query: DM-signalの未push commitとupstream未設定local branchを全てoriginへ通常pushし、PC故障時の復元をgit
+    clone一手にする description 前提を一次確認する。/mnt/c/Python_app/DM-signalの現branch、HEAD、originとの差
+  summary: '- discussion: 殿指摘2026-06-20: 各論hookは100億パターンに対応できない。スキル知識を三層記憶に貫通させよ'
+  used: false
+  useful: false
+  reason: ''
+skill_candidate:
+  found: false
+decision_candidate:
+  found: false
+knowledge_candidate:
+  found: false
+assumption_invalidation:
+  found: false
+  affected_cmds: []
+  detail: ''
+hook_failures:
+  count: 0
+post_deploy_evidence:
+  required: false
+operational_simulation:
+  command: git -C /mnt/c/Python_app/DM-signal for-each-ref + per-branch git push --set-upstream
+    origin <branch>:<branch>
+  expected: 186/186 branch pushes succeed; upstream_empty=0; local and origin tips
+    all equal; force=0
+  actual: 186 attempts, 54 pass, 132 fail; upstream_empty=132; 131 non-fast-forward
+    and 1 GitHub 100MB rejection; force=0
+  result: FAIL
+binary_checks:
+  AC1:
+  - check: 前提を一次確認する
+    result: 'yes'
+  - check: /mnt/c/Python_app/DM-signalの現branch、HEAD、originとの差、未push commit全件を列挙し、rb6-cleanup-20260814をforceなし通常pushしてorigin..HEAD
+      count 0を証明する
+    result: 'yes'
+  - check: 既知4 commitとの差異を報告する
+    result: 'yes'
+  AC2:
+  - check: git for-each-refでupstream空のlocal branchを省略なく全件列挙し、各branchをforceなし--set-upstreamでoriginへpushする
+    result: 'no'
+  - check: 完了後upstream空branch 0、各local tipが対応origin tipと一致、force使用0を集計コマンドと生出力で証明する
+    result: 'no'
+  - check: 失敗branchが1件でもあればPASSにせずBLOCKする
+    result: 'yes'
+  commit:
+  - check: git commitが完了したか(untracked/modified=0)
+    result: 'no'
+self_gate_check:
+  lesson_ref: PASS
+  lesson_candidate: PASS
+  status_valid: PASS
+  purpose_fit: PASS
+verdict: FAIL
+commit_identity_evidence:
+  source: stdout
+  run_id: cmd_karo_hotfix_dm_signal_backup_push_20260829_normal
+  commit_hash: 2854041dce673096372a2303797b7074133ac0c7
+completed_at: '2026-08-29T08:11:39+00:00'
+test_results:
+  command: git -C /mnt/c/Python_app/DM-signal for-each-ref + per-branch git push --set-upstream
+    origin <branch>:<branch>
+  expected: 186/186 branch pushes succeed; upstream_empty=0; local and origin tips
+    all equal; force=0
+  actual: 186 attempts, 54 pass, 132 fail; upstream_empty=132; 131 non-fast-forward
+    and 1 GitHub 100MB rejection; force=0
+  result: FAIL
