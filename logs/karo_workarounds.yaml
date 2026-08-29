@@ -1,29 +1,3 @@
-- cmd_id: cmd_karo_hotfix_cmd4403_batch7_retry_three_layer_preflight_speedup_20260826
-  timestamp: '2026-08-25T18:07:54Z'
-  ninja: system
-  workaround: false
-  event_kind: hotfix
-  auto_captured: true
-  category: rework_auto_capture
-  detail: 'cmd_complete_gate completed rework event'
-  root_cause: 'automatic completion observation'
-  lesson_required: false
-  lesson_disposition: not_applicable
-  lesson_reference: 'not_applicable'
-  resolved_by_cmd: 'cmd_karo_hotfix_cmd4403_batch7_retry_three_layer_preflight_speedup_20260826'
-- cmd_id: cmd_karo_hotfix_cmd4403_batch8_retry_ninja_scope_commit_speedup_20260826
-  timestamp: '2026-08-25T18:10:26Z'
-  ninja: system
-  workaround: false
-  event_kind: hotfix
-  auto_captured: true
-  category: rework_auto_capture
-  detail: 'cmd_complete_gate completed rework event'
-  root_cause: 'automatic completion observation'
-  lesson_required: false
-  lesson_disposition: not_applicable
-  lesson_reference: 'not_applicable'
-  resolved_by_cmd: 'cmd_karo_hotfix_cmd4403_batch8_retry_ninja_scope_commit_speedup_20260826'
 - cmd_id: cmd_karo_hotfix_cmd4403_batch6_retry_cmd_skeleton_phase_breakdown_20260826
   timestamp: '2026-08-25T18:20:31Z'
   ninja: system
@@ -1300,3 +1274,29 @@
   lesson_disposition: not_applicable
   lesson_reference: 'not_applicable'
   resolved_by_cmd: 'cmd_karo_hotfix_dm_signal_backup_push_20260829'
+- cmd_id: cmd_karo_hotfix_command_scope_directory_prefix_20260829
+  timestamp: '2026-08-29T12:10:42Z'
+  ninja: system
+  workaround: false
+  event_kind: hotfix
+  auto_captured: true
+  category: rework_auto_capture
+  detail: 'cmd_complete_gate completed rework event'
+  root_cause: 'automatic completion observation'
+  lesson_required: false
+  lesson_disposition: not_applicable
+  lesson_reference: 'not_applicable'
+  resolved_by_cmd: 'cmd_karo_hotfix_command_scope_directory_prefix_20260829'
+- cmd_id: cmd_karo_hotfix_lifecycle_worker_singleton_unit4_20260829
+  timestamp: '2026-08-29T12:23:06Z'
+  ninja: system
+  workaround: false
+  event_kind: hotfix
+  auto_captured: true
+  category: rework_auto_capture
+  detail: 'cmd_complete_gate completed rework event'
+  root_cause: 'automatic completion observation'
+  lesson_required: false
+  lesson_disposition: not_applicable
+  lesson_reference: 'not_applicable'
+  resolved_by_cmd: 'cmd_karo_hotfix_lifecycle_worker_singleton_unit4_20260829'

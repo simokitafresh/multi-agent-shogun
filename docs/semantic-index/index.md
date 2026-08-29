@@ -3528,6 +3528,7 @@ codd:
 | discussion | `queue/lord_conversation.jsonl` 2026-08-29T18:10:28+09:00 30分loop(殿指示08-27 14:34「進捗を確認し、利他の精神でつまりを解消し、artifactを更新せよ」恒久): (1)capture-pane全pane/陣形図/gate_metrics/rev-list origin/CI  |
 | discussion | `queue/lord_conversation.jsonl` 2026-08-29T18:39:51+09:00 30分loop(殿指示08-27 14:34「進捗を確認し、利他の精神でつまりを解消し、artifactを更新せよ」恒久): (1)capture-pane全pane/陣形図/gate_metrics/rev-list origin/CI  |
 | discussion | `queue/lord_conversation.jsonl` 2026-08-29T20:55:53+09:00 30分loop(殿指示08-27 14:34「進捗を確認し、利他の精神でつまりを解消し、artifactを更新せよ」恒久): (1)capture-pane全pane/陣形図/gate_metrics/rev-list origin/CI  |
+| discussion | `queue/lord_conversation.jsonl` 2026-08-29T21:10:27+09:00 30分loop(殿指示08-27 14:34「進捗を確認し、利他の精神でつまりを解消し、artifactを更新せよ」恒久): (1)capture-pane全pane/陣形図/gate_metrics/rev-list origin/CI  |
 | causal_chain | `[[cmd_karo_hotfix_deploy_report_template_quote_escape_202607020530]]` (L924) |
 | causal_chain | `[[cmd_reflux_insight_202607071717_tobisaru]]` (L961) |
 | causal_chain | `[[cmd_karo_hotfix_report_notify_inprogress_guard_202607101913]]` (L1026) |
@@ -9127,6 +9128,7 @@ codd:
 | discussion | `queue/lord_conversation.jsonl` 2026-08-29T06:44:53+09:00 続けて |
 | discussion | `queue/lord_conversation.jsonl` 2026-08-29T12:54:04+09:00 続けて |
 | discussion | `queue/lord_conversation.jsonl` 2026-08-29T20:56:18+09:00 続けて |
+| causal | `cmd_karo_hotfix_command_scope_directory_prefix_20260829` files_modified: [[cdp_browser_capability]] |
 | causal_chain | `[[cmd_karo_cdp_t5_endpoint_qualification_20260802]]` (L1529) |
 | causal_chain | `[[cmd_karo_cdp_t5_auth_dom_probe_20260802]]` (L1530) |
 
@@ -10086,6 +10088,7 @@ codd:
 | causal | `cmd_karo_hotfix_gate_completion_event_pairing_20260828` files_modified: [[cmd_quality_logging]] |
 | causal | `cmd_karo_hotfix_gate_wait_state_20260828` files_modified: [[cmd_quality_logging]] |
 | causal | `cmd_karo_hotfix_postclear_inprogress_terminalization_20260829` files_modified: [[cmd_quality_logging]] |
+| causal | `cmd_karo_hotfix_command_scope_directory_prefix_20260829` files_modified: [[cmd_quality_logging]] |
 | causal_chain | `[[cmd_3622_kotaro_r3]]` (infra:L893) |
 
 ## task_modifier_injection — タスク修飾子注入
@@ -12959,6 +12962,7 @@ codd:
 | cmd | `cmd_karo_hotfix_run_tests_receipt_task_identity_20260829` |
 | lesson | `L1669` Failure detailのbyte capはUTF-8境界安全decodeを必須とする |
 | cmd | `cmd_karo_hotfix_prebash_preflight_fixture_20260829` (`tests/unit/test_pre_bash_combined.bats`) |
+| cmd | `cmd_karo_hotfix_command_scope_directory_prefix_20260829` (`scripts/cmd_complete_gate.sh`, `tests/unit/test_cmd_complete_gate.bats`) |
 | causal_chain | `[[cmd_karo_hotfix_hook_failure_utf8_boundary_20260829]]` (L1669) |
 
 ## provisional_gate_hook_quality_contract — 仮: Gate Hook Quality Contract
@@ -13747,6 +13751,10 @@ codd:
 | cmd | `cmd_reflux_insight_202608291722_saizo` (`queue/insights.yaml`) |
 | causal | `cmd_reflux_insight_202608291817_tobisaru` files_modified: [[provisional_insights]] |
 | cmd | `cmd_reflux_insight_202608291817_tobisaru` (`queue/insights.yaml`) |
+| causal | `cmd_reflux_insight_202608291825_kagemaru` files_modified: [[provisional_insights]] |
+| cmd | `cmd_reflux_insight_202608291825_kagemaru` (`queue/insights.yaml`) |
+| causal | `cmd_reflux_insight_202608292111_hayate` files_modified: [[provisional_insights]] |
+| cmd | `cmd_reflux_insight_202608292111_hayate` (`queue/insights.yaml`) |
 | causal_chain | `[[cmd_reflux_insight_202608040505_kagemaru]]` (L1545) |
 
 ## provisional_heavy_job_admission — 仮: Heavy Job Admission
@@ -15325,6 +15333,7 @@ codd:
 | discussion | `queue/lord_conversation.jsonl` 2026-08-29T04:26:19.091982+00:00 git pre-commit semantic propagation for context/projects changes |
 | discussion | `queue/lord_conversation.jsonl` 2026-08-29T05:18:15.948327+00:00 git pre-commit semantic propagation for context/projects changes |
 | discussion | `queue/lord_conversation.jsonl` 2026-08-29T07:03:06.474280+00:00 git pre-commit semantic propagation for context/projects changes |
+| discussion | `queue/lord_conversation.jsonl` 2026-08-29T12:01:01.582834+00:00 git pre-commit semantic propagation for context/projects changes |
 | causal_chain | `[[cmd_karo_hotfix_lessons_yaml_format_restore_20260727]]` (L1389) |
 
 ## infra_design_intent — インフラ設計意図カタログ
@@ -16784,6 +16793,8 @@ codd:
 | discussion | `queue/lord_conversation.jsonl` 2026-08-29T09:17:27.242838+00:00 git pre-commit semantic propagation for context/projects changes |
 | discussion | `queue/lord_conversation.jsonl` 2026-08-29T09:49:59.170648+00:00 git pre-commit semantic propagation for context/projects changes |
 | discussion | `queue/lord_conversation.jsonl` 2026-08-29T11:58:10.826288+00:00 git pre-commit semantic propagation for context/projects changes |
+| discussion | `queue/lord_conversation.jsonl` 2026-08-29T12:03:10.486788+00:00 git pre-commit semantic propagation for context/projects changes |
+| discussion | `queue/lord_conversation.jsonl` 2026-08-29T12:09:38.896140+00:00 git pre-commit semantic propagation for context/projects changes |
 | causal_chain | `[[cmd_karo_hotfix_ga161_obsidian_link_context_freshness_202607021348]]` (L926) |
 | causal_chain | `[[cmd_3648]]` (L933) |
 | causal_chain | `[[cmd_karo_ci_fix_ga191_followup_202607071752]]` (L963) |
