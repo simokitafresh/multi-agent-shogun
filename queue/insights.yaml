@@ -3561,6 +3561,8 @@ insights:
   resolved_reason: "cmd_4399でpreflight本体は合計2518ms（最長checks_main1129ms、44.84%）と確認し、120秒超の主因ではないことを確定。cmd_4401でpublish外側経路を2573msから2359msへ8.3%短縮済み。tmp残骸は現logsでcmd_design_quality系44件・gunshi_review_log系16件（対象記録の7件と不一致）を確認し未解消のため、10件超の削除や範囲外修正はせず別decision candidateへ分離した。"
   action_artifact: "docs/research/cmd_4393_role_waste_synthesis_20260825.md;queue/reports/tobisaru_report_cmd_4399.yaml;queue/reports/saizo_report_cmd_4401.yaml;logs/cmd_save_preflight_phases.log;logs/cmd_publish_timing.log;logs/cmd_design_quality.yaml.tmp.*;logs/gunshi_review_log.yaml.tmp.*"
   resolved_at: "2026-08-29T14:15:51+09:00"
+  occurrence_count: 1
+  last_seen: "2026-08-29T14:23:30+09:00"
 - id: INS-20260825-002355916-8ee1
   ts: "2026-08-25T00:23:55+09:00"
   insight: "semantic_index_update新概念候補: discussion:task notification task id bnyi7zley task id tool use id toolu 013fWzPNY13tfMhsWA は 既存aliasesに一致なし。概念定義とaliases追加を検討せよ"
