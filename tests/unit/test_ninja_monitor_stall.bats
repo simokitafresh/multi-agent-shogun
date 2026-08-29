@@ -7605,3 +7605,105 @@ YAML
     [ "$status" -eq 0 ]
     [ "$output" = "under_threshold=0 pass=1 mixed_fail=1 duplicate=0" ]
 }
+
+# test_necessity: T190 must not publish when the local branch has no commits
+# beyond origin/main; this fixture proves the no-op path without touching git.
+@test "T190 push lane no-op keeps zero unpushed commits at zero push" {
+    run env PROJECT_ROOT="$PROJECT_ROOT" bash -c '
+        set -euo pipefail
+        export NINJA_MONITOR_LIB_ONLY=1
+        source "$PROJECT_ROOT/scripts/ninja_monitor.sh"
+        unset NINJA_MONITOR_LIB_ONLY
+        root="$BATS_TEST_TMPDIR/push-lane-noop"
+        mkdir -p "$root/logs" "$root/state"
+        SCRIPT_DIR="$root" STATE_DIR="$root/state" LOG="$root/logs/monitor.log"
+        PUSH_LANE_LOG="$root/logs/push.log" PUSH_LANE_LOCK_FILE="$root/state/push.lock"
+        git() {
+            case "$*" in
+                *"rev-list --count"*) printf "0\n" ;;
+                *) return 0 ;;
+            esac
+        }
+        push_lane_publish_one() { printf "unexpected-push\n" >> "$PUSH_LANE_LOG"; return 1; }
+        check_push_lane GREEN
+        test "$(grep -c "NOOP unpushed=0 push=0" "$PUSH_LANE_LOG")" -eq 1
+        test "$(grep -c "unexpected-push" "$PUSH_LANE_LOG" 2>/dev/null || true)" -eq 0
+        printf "fixture=noop unpushed=0 push=0 skip=0\n"
+    '
+    [ "$status" -eq 0 ]
+    [ "$output" = "fixture=noop unpushed=0 push=0 skip=0" ]
+}
+
+# test_necessity: a RED CI result is a hard zero-push boundary even when an
+# aged first-parent commit exists locally.
+@test "T190 push lane blocks every push while CI is RED" {
+    run env PROJECT_ROOT="$PROJECT_ROOT" bash -c '
+        set -euo pipefail
+        export NINJA_MONITOR_LIB_ONLY=1
+        source "$PROJECT_ROOT/scripts/ninja_monitor.sh"
+        unset NINJA_MONITOR_LIB_ONLY
+        root="$BATS_TEST_TMPDIR/push-lane-red"
+        mkdir -p "$root/logs" "$root/state"
+        SCRIPT_DIR="$root" STATE_DIR="$root/state" LOG="$root/logs/monitor.log"
+        PUSH_LANE_LOG="$root/logs/push.log" PUSH_LANE_LOCK_FILE="$root/state/push.lock"
+        git() {
+            case "$*" in
+                *"rev-list --count"*) printf "2\n" ;;
+                *) return 0 ;;
+            esac
+        }
+        push_lane_publish_one() { printf "unexpected-push\n" >> "$PUSH_LANE_LOG"; return 1; }
+        check_push_lane RED:12345
+        test "$(grep -c "WAIT ci=RED:12345 unpushed=2 push=0" "$PUSH_LANE_LOG")" -eq 1
+        test "$(grep -c "unexpected-push" "$PUSH_LANE_LOG" 2>/dev/null || true)" -eq 0
+        printf "fixture=red unpushed=2 push=0 skip=0\n"
+    '
+    [ "$status" -eq 0 ]
+    [ "$output" = "fixture=red unpushed=2 push=0 skip=0" ]
+}
+
+# test_necessity: the green/aged fixture proves oldest-first single-commit
+# publication and the post-push ancestry re-GATE handoff.
+@test "T190 push lane publishes one aged first-parent commit and regates WAIT" {
+    run env PROJECT_ROOT="$PROJECT_ROOT" bash -c '
+        set -euo pipefail
+        export NINJA_MONITOR_LIB_ONLY=1
+        source "$PROJECT_ROOT/scripts/ninja_monitor.sh"
+        unset NINJA_MONITOR_LIB_ONLY
+        root="$BATS_TEST_TMPDIR/push-lane-green"
+        mkdir -p "$root/logs" "$root/state"
+        SCRIPT_DIR="$root" STATE_DIR="$root/state" LOG="$root/logs/monitor.log"
+        PUSH_LANE_LOG="$root/logs/push.log" PUSH_LANE_LOCK_FILE="$root/state/push.lock"
+        PUSH_LANE_GATE_METRICS="$root/logs/gate_metrics.log"
+        PUSH_LANE_MIN_AGE_SEC=600
+        oldest_sha=0123456789012345678901234567890123456789
+        printf "2026-08-30T00:00:00\tcmd_wait\tWAIT\tWAIT:report_commit_main_ancestry\n2026-08-30T00:01:00\tcmd_wait\tWAIT\tci_readiness:WAIT\n2026-08-30T00:02:00\tcmd_still\tWAIT\tWAIT:report_commit_main_ancestry\n2026-08-30T00:03:00\tcmd_clear\tWAIT\tWAIT:report_commit_main_ancestry\n2026-08-30T00:04:00\tcmd_clear\tCLEAR\tgate_done\n" > "$PUSH_LANE_GATE_METRICS"
+        test "$(push_lane_waiting_ancestry_cmds)" = "cmd_still"
+        git() {
+            case "$*" in
+                *"rev-list --count"*) printf "2\n" ;;
+                *"rev-list --first-parent --reverse"*) printf "%s\n" "$oldest_sha" ;;
+                *"show -s --format=%ct"*) printf "100\n" ;;
+                *"symbolic-ref --quiet --short HEAD"*) printf "main\n" ;;
+                *"merge-base --is-ancestor"*) return 0 ;;
+                *"rev-parse --git-path hooks"*) printf "%s\n" "$root/hooks" ;;
+                *) return 0 ;;
+            esac
+        }
+        push_lane_pre_push_hook_ready() { return 0; }
+        push_lane_publish_one() {
+            test "$1" = "$root"
+            test "$2" = origin
+            test "$3" = "$oldest_sha"
+            printf "published=%s\n" "$3" >> "$root/publish.log"
+        }
+        push_lane_regate_waiting_cmds() { printf "regated=%s\n" "$1" >> "$root/regate.log"; }
+        check_push_lane GREEN
+        test "$(cat "$root/publish.log")" = "published=$oldest_sha"
+        test "$(cat "$root/regate.log")" = "regated=$root"
+        grep -q "PASS ci=GREEN unpushed_before=2 sha=$oldest_sha.*force=0 hook=1 commits=1" "$PUSH_LANE_LOG"
+        printf "fixture=green unpushed_before=2 published=1 regated=1 force=0 skip=0\n"
+    '
+    [ "$status" -eq 0 ]
+    [ "$output" = "fixture=green unpushed_before=2 published=1 regated=1 force=0 skip=0" ]
+}
