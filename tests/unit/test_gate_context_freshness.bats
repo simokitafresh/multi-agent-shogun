@@ -34,6 +34,49 @@ SH
   [[ "$output" != *"先頭の last_updated を 2026-07-20"* ]]
 }
 
+# test_necessity: source evidence must preserve the subject and changed-path
+# proof while obtaining both from one source-history walk; otherwise each raw
+# ALERT repeats the dominant 9p history scan and can exceed the gate budget.
+@test "source evidence combines subject and changed paths in one git walk" {
+  local git_capture="$BATS_TEST_TMPDIR/git-capture"
+  local git_bin="$BATS_TEST_TMPDIR/git-bin"
+  local source_hash
+  mkdir -p "$git_bin"
+  cat > "$git_bin/git" <<'SH'
+#!/usr/bin/env bash
+printf '%s\n' "$*" >> "$GIT_CAPTURE"
+exec /usr/bin/git "$@"
+SH
+  chmod +x "$git_bin/git"
+  source_hash="$(git -C "$ROOT" rev-parse e44e8ac3f)"
+  cat > "$FIXTURE_ROOT/scripts/check.sh" <<SH
+#!/usr/bin/env bash
+printf '%s\n' 'ALERT: context/infrastructure.md source commits 1件 since last_updated=2026-07-19 repo=$ROOT root_fallback=yes owner=infra-platform update_trigger=root-fallback latest: $source_hash fixture'
+SH
+  chmod +x "$FIXTURE_ROOT/scripts/check.sh"
+
+  run env \
+    PATH="$git_bin:$PATH" \
+    GIT_CAPTURE="$git_capture" \
+    CONTEXT_FRESHNESS_ROOT="$FIXTURE_ROOT" \
+    CONTEXT_FRESHNESS_CHECK_SCRIPT="$FIXTURE_ROOT/scripts/check.sh" \
+    CONTEXT_FRESHNESS_NTFY_SCRIPT=/bin/true \
+    CONTEXT_FRESHNESS_ALERT_STATE_DIR="$BATS_TEST_TMPDIR/source-evidence-state" \
+    CONTEXT_FRESHNESS_GATE_DISABLE_CACHE=1 \
+    CONTEXT_FRESHNESS_TODAY=2026-07-20 \
+    bash "$ROOT/scripts/gates/gate_context_freshness.sh"
+
+  [ "$status" -eq 1 ]
+  [[ "$output" == *"source_evidence: source_commit=$source_hash"* ]]
+  [[ "$output" == *"source_subject="* ]]
+  [[ "$output" == *"source_paths="* ]]
+  local combined_count old_diff_count
+  combined_count="$(grep -c -- "show --format=%s --name-only" "$git_capture" || true)"
+  old_diff_count="$(grep -c -- "diff-tree --root --no-commit-id --name-only -r $source_hash" "$git_capture" || true)"
+  [ "$combined_count" -eq 1 ]
+  [ "$old_diff_count" -eq 0 ]
+}
+
 @test "ALERT template preserves registry owner and routes to the doc lane" {
   cat > "$FIXTURE_ROOT/scripts/check.sh" <<'SH'
 #!/usr/bin/env bash

@@ -128,15 +128,24 @@ source_commit_evidence() {
     local repo=""
     local subject=""
     local paths=""
+    local metadata=""
+    local metadata_paths=""
     local path
     local -a changed_paths=()
 
     [[ "$alert_line" =~ repo=([^[:space:]]+) ]] || return 1
     repo="${BASH_REMATCH[1]}"
     [[ -d "$repo" ]] || return 1
-    subject="$(bounded_git -C "$repo" show -s --format=%s "$latest_hash" 2>/dev/null || true)"
+    # Obtain the subject and changed paths from one source-history walk.  The
+    # former separate `show -s` + `diff-tree` calls repeated the dominant 9p
+    # history scan for every raw ALERT.
+    metadata="$(bounded_git -C "$repo" show --format=%s --name-only --no-renames --no-ext-diff --no-color "$latest_hash" 2>/dev/null || true)"
+    subject="${metadata%%$'\n'*}"
     [[ -n "$subject" ]] || return 1
-    mapfile -t changed_paths < <(bounded_git -C "$repo" diff-tree --root --no-commit-id --name-only -r "$latest_hash" 2>/dev/null)
+    if [[ "$metadata" == *$'\n'* ]]; then
+        metadata_paths="${metadata#*$'\n'}"
+        mapfile -t changed_paths < <(printf '%s\n' "$metadata_paths")
+    fi
     ((${#changed_paths[@]} > 0)) || return 1
     for path in "${changed_paths[@]}"; do
         [[ -n "$path" ]] || continue
