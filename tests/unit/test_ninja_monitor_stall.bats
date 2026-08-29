@@ -7701,7 +7701,7 @@ YAML
         check_push_lane GREEN
         test "$(cat "$root/publish.log")" = "published=$oldest_sha"
         test "$(cat "$root/regate.log")" = "regated=$root"
-        grep -q "PASS ci=GREEN unpushed_before=2 sha=$oldest_sha.*force=0 hook=1 commits=1" "$PUSH_LANE_LOG"
+        grep -q "PUSH ci=GREEN unpushed_before=2 sha=$oldest_sha.*force=0 hook=1 commits=1" "$PUSH_LANE_LOG"
         printf "fixture=green unpushed_before=2 published=1 regated=1 force=0 skip=0\n"
     '
     [ "$status" -eq 0 ]
@@ -7750,4 +7750,61 @@ YAML
     '
     [ "$status" -eq 0 ]
     [ "$output" = "fixture=publish_failure return=73 push=0 block=1 lock_reacquired=1 skip=0" ]
+}
+
+# test_necessity: the push lane timeout must be derived from the latest
+# pre-push wall measurement rather than inheriting the generic 120-second
+# lifecycle ceiling.
+@test "T190 push lane derives timeout from pre-push telemetry" {
+    run env PROJECT_ROOT="$PROJECT_ROOT" bash -c '
+        set -euo pipefail
+        export NINJA_MONITOR_LIB_ONLY=1 NINJA_MONITOR_FUNCTION_TIMING_LOG=disabled
+        source "$PROJECT_ROOT/scripts/ninja_monitor.sh"
+        unset NINJA_MONITOR_LIB_ONLY
+        root="$BATS_TEST_TMPDIR/push-lane-timeout-basis"
+        mkdir -p "$root/logs"
+        PUSH_LANE_PREPUSH_METRICS="$root/logs/defense_overhead.jsonl"
+        printf "%s\n" \
+            "{\"source\":\"pre_push\",\"check_id\":\"pre_push_total\",\"wall_ms\":1200}" \
+            "{\"source\":\"pre_push\",\"check_id\":\"pre_push_total\",\"wall_ms\":1632}" \
+            "{\"source\":\"pre_push\",\"check_id\":\"pre_push_total\",\"wall_ms\":-1}" \
+            "{\"source\":\"other\",\"check_id\":\"pre_push_total\",\"wall_ms\":999999}" \
+            > "$PUSH_LANE_PREPUSH_METRICS"
+        test "$(push_lane_latest_prepush_wall_ms)" -eq 1632
+        test "$(PUSH_LANE_TIMEOUT_MARGIN_SEC=5 push_lane_timeout_sec)" -eq 7
+        printf "latest_prepush_wall_ms=1632 timeout_sec=7 fallback=unused skip=0\n"
+    '
+    [ "$status" -eq 0 ]
+    [ "$output" = "latest_prepush_wall_ms=1632 timeout_sec=7 fallback=unused skip=0" ]
+}
+
+# test_necessity: a bounded push worker timeout must leave one durable TIMEOUT
+# proof in push_lane.log and the monitor log must preserve its exact command and
+# rc for diagnosis and next-cycle retry.
+@test "T190 push lane worker timeout records one proof row and command" {
+    run env PROJECT_ROOT="$PROJECT_ROOT" bash -c '
+        set -euo pipefail
+        export NINJA_MONITOR_LIB_ONLY=1 NINJA_MONITOR_FUNCTION_TIMING_LOG=disabled
+        source "$PROJECT_ROOT/scripts/ninja_monitor.sh"
+        unset NINJA_MONITOR_LIB_ONLY
+        _NINJA_MONITOR_LIB_MODE=0
+        root="$BATS_TEST_TMPDIR/push-lane-worker-timeout"
+        mkdir -p "$root/state" "$root/logs"
+        printf "#!/usr/bin/env bash\nsleep 5\n" > "$root/worker.sh"
+        chmod +x "$root/worker.sh"
+        STATE_DIR="$root/state"; LOG="$root/logs/monitor.log"
+        PUSH_LANE_LOG="$root/logs/push_lane.log"
+        PUSH_LANE_PREPUSH_METRICS="$root/logs/missing.jsonl"
+        PUSH_LANE_TIMEOUT_SEC=1
+        NINJA_MONITOR_LIFECYCLE_WORKER_SCRIPT="$root/worker.sh"
+        ninja_monitor_business_owner_is_current() { return 0; }
+        _ninja_monitor_run_lifecycle_background push_lane check_push_lane GREEN
+        sleep 3
+        test "$(grep -c "TIMEOUT phase=worker command=check_push_lane_GREEN rc=124 timeout=1s" "$PUSH_LANE_LOG")" -eq 1
+        test "$(grep -c "LIFECYCLE-BACKGROUND-TIMEOUT: key=push_lane timeout=1s rc=124 command=check_push_lane_GREEN" "$LOG")" -eq 1
+        test "$(grep -c "TIMEOUT phase=worker" "$PUSH_LANE_LOG")" -eq 1
+        printf "timeout=1 rc=124 command=check_push_lane_GREEN push_lane_timeout_rows=1 skip=0\n"
+    '
+    [ "$status" -eq 0 ]
+    [ "$output" = "timeout=1 rc=124 command=check_push_lane_GREEN push_lane_timeout_rows=1 skip=0" ]
 }
