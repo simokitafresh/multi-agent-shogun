@@ -1635,7 +1635,7 @@ insights:
   priority: "high"
   source: "self_retro"
   fix_known: true
-  status: pending
+  status: resolved
   target_file: "/mnt/c/tools/multi-agent-shogun/logs/self_retro.jsonl"
   verify_command: "grep -Fq '7b534cd0d26e81a202c377c9ce02e5a9b89048239d2b6b9d52c05be08b4acba8' '/mnt/c/tools/multi-agent-shogun/logs/self_retro.jsonl'"
   insight_summary_hash: "e0ed30878d32158a81fc544135aee164dadc8f073b93ae9aee388fdcc5ecd8dd"
@@ -1645,6 +1645,9 @@ insights:
     status: "passed"
     exit_code: 0
     output: ""
+  resolved_reason: "GATE CLEAR: cmd_karo_hotfix_monitor_reflux_inventory_speed_v2_20260829 completed declared remediation"
+  action_artifact: "cmd=cmd_karo_hotfix_monitor_reflux_inventory_speed_v2_20260829;gate=cmd_complete_gate;result=CLEAR"
+  resolved_at: "2026-08-29T09:33:31+09:00"
 - id: INS-20260821-095036102-8f0b
   ts: "2026-08-21T09:50:36+09:00"
   insight: "同パターンLevel5未満候補: source_cmd=cmd_reflux_insight_202608210935_kagemaru; matched=yaml; current_pattern=; candidate_level=4; candidate=split_deploy_ac_scope 2件(cmd_1796)。全AC binary_checks注入→担当外no→FAIL→手動修正。×10回=10回WA=負の複利。task YAMLにac_assigned追加→deploy_task.shで担当ACのみstub生成; source=gunshi_gp_tracker.yaml"
