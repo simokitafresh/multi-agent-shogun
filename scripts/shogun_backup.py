@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 # cmd_4411: this entrypoint is included in the shared main branch for fresh-clone recovery.
+# cmd_4411_full: fresh-clone dry-run contract verified on shared main.
 """Encrypted off-host backup and restore for the shogun state.
 
 The default operation is deliberately explicit: ``--backup`` uploads a
