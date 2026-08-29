@@ -1551,3 +1551,11 @@
 - 意図: 復帰直後に T157(影丸 task 消失)の検知器を startup gate へ埋め、報告在庫 4 件(19h/20h/6h50m)を機械抽出で回収し、殿下問『報告ミスの手戻り/本番 push 後 AC は構造バグでは』に一次(BLOCK 49 中 39=待ち)で答えて可逆配備、殿裁定『バグは即時根治せよ』『バグを覚醒して根治せよ』で T159/T162/T163 と家老 task_id 6 回目を根治する。
 - 結果: CLEAR 08-28 全日 104(reflux 46/hotfix 45/ci_fix 20/番号 7=PJ 0)。終端=T154(1,862→3)/T155(PD 6 件)/T157/T158(在庫 4/4)/T159/T162。T160 本番 proof=`WAIT WAIT:report_commit_main_ancestry`×3→CLEAR 00:08。T129 cycle 中央値 75.8→48.3s。T163 家老自縛 12 分→theirs 採用+D012 拡張 aab97637d。commander_directive 着地 63500db6f。artifact スマホ是正 2 弾(4195fd131/c59f17bb4)。CI RED 10-12 回目(ci_fix 2 unit CLEAR、push 中 rev-list 18 48)。
 - 因果: [[session_save_20260829_0032]] -> [[復帰後の型_第十一弾]] -> [[T159_argv再現]] -> [[commander_directive]] -> [[T163_D012拡張]] -> [[T160_WAIT本番proof]] -> [[artifact_スマホ縦並び]]
+
+## 2026-08-29 06:50-12:07（将軍 /clear 復帰 第11便・監視の死角と本番退行の根治、PJ e2e 到達、一回終わり）
+- 意図: 復帰直後の一次で monitor の粒度バグ(BOUNDED-FAIL rc=1 819 行=情報 0)と起動 Gate 10.08 の自壊(0 件で set -e 落ち、Gate 10.09 未走行)を D0(f1f218758、LS126)。結果: 新世代 BOUNDED-FAIL 0、gate rc=0、広げた語彙で load 18 の壁が即見えた(T176/T177/T178)。
+- 意図: T178 monitor 負荷を家老 3 unit で切除(reflux snapshot 5.1→3.0s/context_freshness 単一 git show 24.9s/shared root ff)。結果: load 18→5、11:10 以降失敗行 0。将軍の初回計測(200s/111s)は影丸再測で反証(型十三弾-3)。
+- 意図: T173(database cron fail-fast)の層 C=本番 run。結果: 08:30 run が『NTFY_TOPIC not set』で発火→Render env 3 件欠落(NTFY_TOPIC/EODHD/TIINGO)を将軍が可逆 D0→手動 run successful・skipped 0・13 銘柄=本日 PJ e2e 1 件目(T179)。projects/database.yaml に実 schedule 08:30+required_env 4 件。
+- 意図: T180 本番退行=push lane の `git merge -s ours` が祖先 commit の内容を捨てた(9 単位 18 ファイル、殿裁定 00:49 の根治や D012 拡張も消失)。結果: 将軍 4 本+家老 21045aa00 を git apply で再適用・着地(rev-list 0 0)、飛猿 guard 3598e3d5b(ours 相当 merge BLOCK+復旧監査 18/18)。
+- 殿裁定 10:26『一回終わりを作ろう。速度向上は走行分完了で指示待ち、バグ根治は継続』→速度 lane 凍結(新規配備 0)、根治 lane 継続。本日 CLEAR 52(hotfix 28/exact 18/ci_fix 3)、PJ 1、finalize 29%、CI GREEN。
+- origin: `[[殿指示_強くてニューゲーム_20260829_1207]] -> [[T176_monitor_rc契約_gate自壊]] -> [[T179_Render_env欠落]] -> [[T180_merge_s_ours_退行]] -> [[殿裁定_一回終わり_20260829_1026]] -> [[復帰後の型_第十三弾]] -> [[session_save_20260829_1207]]`
