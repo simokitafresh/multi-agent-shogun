@@ -168,6 +168,15 @@ test_execution:
 - **enforcement**: agent_respawn.sh 作業中ガード(e3712b4a9)/codex_inbox_priority_guard.sh(42f09d54b)/cli_lookup 接尾辞自己修復+BASH_REMATCH 排除(bc9f4a8c6)/script_update.sh bash フォールバック(2df2ecdee)/inbox_write gunshi 宛 review_draft 許可+stderr 記録(c17a92d8e)。未自動化: push 単位 1 commit の強制(pre-push hook で origin..pushed が first-parent 1 段を超えたら WARN)。
 - origin: `[[殿裁定_1commitずつpush_20260826]] -> [[家老の行動型_1通1単位]] -> [[つまり3本根治_20260827]]`
 
+## 復帰後の型・第十四弾 5則（2026-08-29 12:56-16:04 第12便: commander_directive 未着地/受け手の自己強化/grep|tail 誤読/便停止 3 層/Render 通知の根治判定から・将軍自身に適用）
+
+1. **『根治済』と型に書く前に `git grep <token> HEAD -- <file>` で hunk 存否を見よ。書いた根治は commit されて初めて存在する。** 型十一弾-2 の『inbox_write で commander_directive 束縛(bats 121/121)』は inbox_write.sh に一度も commit されておらず(`git log --all -S`=doc のみ)、14:09-14:20 に家老が将軍指示を『task_id 空/commander_directive≠現 task』で通算 10 回未適用にした。D0 1d4d1f271(束縛+contract bats #122、本番 msg_141051 で `task_id: commander_directive` を確認)。LS-A09(49)。
+2. **受け手の判断規則は送り手の field を直しても閉じない。受け手が自分の記憶DB 自己記録(『未適用』)を preflight で再注入し自己強化する経路を遮断せよ。** 束縛後も家老は拒否した。一次: 記憶DB agent=karo『未適用』3 件が three_layer_preflight の visibility を素通り→45f31a6dc(管理職の summary/detail『未適用/processing evidence』を自分への recall から除外+contract bats、62/62)。家老が殿の疑問文 14:32『命令扱いしないのはバグではないか？』を『現 task_id 一致命令』へ変換し撤回を求めた→将軍は記憶DB で疑問文と判定し撤回せず(LS120)、三者合意 blt_143841(全 entry exact task_id 必須・管理職宛 exact 値=commander_directive・nudge 三状態 A/B/C+durable ledger)へ収束。
+3. **在庫判定は task_id ごとに `grep -c`。`grep | tail -N` で『0 行』と読むな。** 12:58 に review_log を `grep … | tail -6` で見て『疾風/飛猿 lost-wakeup』と誤診し軍師に二重レビューを課した(実際は LGTM 12:23/12:32 済)。撤回は 3 点セットで即掲示板(13:06)。否定判定の型五弾-1 の grep 版。
+4. **便停止の壁は 3 層(push lane→家老 ACCEPT→gate ancestry)。名指しは『LGTM 済∧gate_metrics 0 行 20 分超』と `rev-list` で行い、家老へは順序付き 1 通(①push ②古い順 GATE ③再 gate)。** 13:22-14:58 の 1h36m 停止は pre-push が receipt 9,079 件を process substitution で逐次検証し early return で pipe deadlock=家老根治 T183(4 commit)。将軍の順序付き 1 通(msg_144054)は commander_directive として初受理され、5 分で 5 件 CLEAR。家老 CTX 高騰時の単一ターン 30 分超は壁の兆候。
+5. **外部監視の通知(Render 等)は events API の時系列で『既知の失敗か新規か』を判定し、『根治か？』には『構造型(origin/main のコード)に在るか』と『状態のみ(dashboard env)か』を分けて答えよ。状態のみは IaC 化 unit を可逆で即打つ。** 15:22 の cron 失敗通知は 08:30/08:41 の既知失敗(T173/T179)、fail-fast は origin/main に在るが env は render.yaml 宣言 0・平文 token・cron 二重定義=T185(才蔵、CLEAR 16:01、将軍 checkpoint PASS)。『殿の意に沿わねば申されよ』は hook が洗脳#3 で BLOCK=可逆なら追補 AC で自分で決める。
+- origin: `[[殿指示_強くてニューゲーム_20260829_1604]] -> [[commander_directive_未着地_D0_1d4d1f271]] -> [[preflight_自己記録除外_45f31a6dc]] -> [[T183_prepush_deadlock]] -> [[T185_Render_env_IaC]] -> [[復帰後の型_第十四弾]]`
+
 ## 復帰後の型・第十三弾 5則（2026-08-29 06:50-12:07 第11便: monitor 粒度バグ/Render env 欠落/計測反証/merge -s ours 退行/一回終わりから・将軍自身に適用）
 
 1. **検知器を書いたら、語彙は固定語でなく失敗の形(正規表現)にし、健全時(0 件)の exit code で自壊しないことを先に試せ。** 復帰直後の一次で monitor の AUTO-DONE/AUTO-VOID-BOUNDED-FAIL rc=1(no-op 契約)が本日 819 行=情報 0、かつ第10便で自分が書いた Gate 10.08 が `set -e`+grep exit 1 で 0 件時に自壊し Gate 10.09(Codex 上限検知)が一度も走っていなかった。D0 f1f218758(rc≥2 のみ FAIL+stderr tail、`|| true`+`-FAIL:|-TIMEOUT:|rc>=2`)。検知器の出力は検知器の盲点を継承する(LS-A09(37))の起動 gate 版(LS126)。

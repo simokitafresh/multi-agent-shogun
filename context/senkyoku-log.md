@@ -1562,3 +1562,10 @@
 - 12:41 殿指示『T178/T177/T176/T163 を覚醒確認し終了まで家老を導け』→T163(D012 本番発火 rc=2)・T176(BOUNDED-FAIL 0 行 2.5h、gate rc=0)は終端 [x]。T178/T177 は凍結解除: 残る壁=gate_context_freshness shared root 単発 133.7s と idle 時 load 7-10→家老 unit4(影丸 12:46 配備)/unit5 直列。追補=[[session_save_20260829_1250]]
 - 2026-08-29 15:16 `cmd_karo_hotfix_review_bundle_cmd_id_unit1_20260829_normal`完了: `review_bundle.py single` mapping型review-entryのcmd_id欠落を`--cmd`補完し、既存値mismatchを永続化前にBLOCK。修正前0/3→修正後3/3、timestamp保持3/3、task test 9/9 PASS・SKIP0、commit `05798e80eaf44b133fe6583e0906aa4feb05efb9`、report gate PASS。origin: [[mapping_review_entry_cmd_id欠落]] -> [[single_wrapper境界検査欠落]] -> [[cmd_id補完とmismatch_BLOCK]]
 - 2026-08-29 15:46 `cmd_reflux_insight_202608291536_hayate_exact`完了: 対象INS-20260826-120441215-ba3fを一次検証後resolve。gate rc=2だが4検査OK・FOLLOWUP_ACTIVE=31で被覆、reflux在庫101/11/0/112→100/11/0/111、commit `647915a5699cacfb3254a56964b069c0282f6290`、report gate PASS。origin: [[INS-20260826-120441215-ba3f]] -> [[gate_skill_script_refs]] -> [[skill_script_refs既存follow-up被覆]] -> [[reflux resolve]]
+
+## 2026-08-29 12:56-16:04（将軍 /clear 復帰 第12便・4 件終端、便停止 3 層の根治、家老未適用 10 回の構造根治、Render 通知の IaC 化）
+- 意図: 殿指示 12:41 の T163/T176/T177/T178 を終端まで。結果: 4 件全て [x](T178=shared root 140.2s→29.6s、idle load 3.4=<4×3、python パーサ 0)。
+- 意図: 便停止 1h36m(13:22-14:58)の壁を名指す。結果: pre-push デッドロック(receipt 9,079 件)=家老根治 T183、復旧後 5 分で 5 件 CLEAR。将軍は 12:59 に『軍師 lost-wakeup』と誤診(grep|tail)→撤回。
+- 意図: 家老が将軍指示を 10 回未適用にする真因。結果: commander_directive 束縛が未 commit(D0 1d4d1f271)+受け手の自己記録再注入(45f31a6dc)。殿の疑問文 14:32 を家老が裁定化→撤回せず、三者合意 nudge 三状態→T184(unit1 CLEAR、unit2 走行)。
+- 意図: 殿の Render cron 失敗通知と『根治か？再発ゼロか？』。結果: 既知失敗、fail-fast は構造型・env は状態のみ→T185 IaC 化 CLEAR 16:01(残=明日 08:30 run)。
+- origin: `[[殿指示_強くてニューゲーム_20260829_1604]] -> [[commander_directive_未着地_D0_1d4d1f271]] -> [[preflight_自己記録除外_45f31a6dc]] -> [[T183_prepush_deadlock]] -> [[T185_Render_env_IaC]] -> [[復帰後の型_第十四弾]]`
