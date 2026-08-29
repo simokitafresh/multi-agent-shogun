@@ -8477,6 +8477,8 @@ codd:
 | causal | `cmd_4411` files_modified: [[agent_formation_management]] |
 | causal | `cmd_karo_hotfix_t190_push_lane_automation_20260830` files_modified: [[agent_formation_management]] |
 | cmd | `cmd_karo_hotfix_t190_push_lane_automation_20260830` (`scripts/ninja_monitor.sh`, `tests/unit/test_ninja_monitor_stall.bats`) |
+| causal | `cmd_karo_hotfix_t190_push_lane_timeout_proof_20260830` files_modified: [[agent_formation_management]] |
+| cmd | `cmd_karo_hotfix_t190_push_lane_timeout_proof_20260830` (`scripts/ninja_monitor.sh`, `tests/unit/test_ninja_monitor_stall.bats`) |
 | causal_chain | `[[cmd_karo_hotfix_deploy_task_latency_yaml_bug_20260702010845]]` (L918) |
 | causal_chain | `[[cmd_karo_hotfix_deploy_task_yaml_speed_recon_guard_202607020133]]` (L919) |
 | causal_chain | `[[cmd_karo_hotfix_ga162_hook_failure_pre_push_202607021402]]` (L930) |
@@ -9760,6 +9762,7 @@ codd:
 | discussion | `queue/lord_conversation.jsonl` 2026-08-29T16:15:39.684162+00:00 git pre-commit semantic propagation for context/projects changes |
 | discussion | `queue/lord_conversation.jsonl` 2026-08-29T17:15:54.213478+00:00 git pre-commit semantic propagation for context/projects changes |
 | discussion | `queue/lord_conversation.jsonl` 2026-08-29T17:36:39.031910+00:00 git pre-commit semantic propagation for context/projects changes |
+| discussion | `queue/lord_conversation.jsonl` 2026-08-29T18:40:53.667060+00:00 git pre-commit semantic propagation for context/projects changes |
 
 ## simple_ocr — Simple OCR（画像OCR Webアプリ）
 
@@ -10323,6 +10326,7 @@ codd:
 | causal | `cmd_karo_hotfix_idle_load_unit5_20260829` files_modified: [[training_cycle_quality]] |
 | causal | `cmd_karo_hotfix_review_pending_formal_lgtm_unit3_20260829` files_modified: [[training_cycle_quality]] |
 | causal | `cmd_karo_hotfix_t190_push_lane_automation_20260830` files_modified: [[training_cycle_quality]] |
+| causal | `cmd_karo_hotfix_t190_push_lane_timeout_proof_20260830` files_modified: [[training_cycle_quality]] |
 
 ## report_quality_protocol — 忍者報告品質プロトコル
 
@@ -11139,6 +11143,7 @@ codd:
 | causal | `cmd_karo_hotfix_idle_load_unit5_20260829` files_modified: [[daemon_supervision]] |
 | causal | `cmd_karo_hotfix_review_pending_formal_lgtm_unit3_20260829` files_modified: [[daemon_supervision]] |
 | causal | `cmd_karo_hotfix_t190_push_lane_automation_20260830` files_modified: [[daemon_supervision]] |
+| causal | `cmd_karo_hotfix_t190_push_lane_timeout_proof_20260830` files_modified: [[daemon_supervision]] |
 
 ## openpbx_reference — OpenPBX(コリ先生PBX MVP)
 
@@ -11444,6 +11449,7 @@ codd:
 | causal | `cmd_karo_hotfix_review_pending_formal_lgtm_unit3_20260829` files_modified: [[infrastructure_ops]] |
 | causal | `cmd_4411` files_modified: [[infrastructure_ops]] |
 | causal | `cmd_karo_hotfix_t190_push_lane_automation_20260830` files_modified: [[infrastructure_ops]] |
+| causal | `cmd_karo_hotfix_t190_push_lane_timeout_proof_20260830` files_modified: [[infrastructure_ops]] |
 | causal_chain | `[[cmd_3632]]` (L917) |
 | causal_chain | `[[cmd_karo_hotfix_auto_update_pane_spawn_202607031806]]` (L949) |
 | causal_chain | `[[cmd_3969]]` (L1043) |
@@ -15530,6 +15536,7 @@ codd:
 | causal | `cmd_karo_hotfix_review_pending_formal_lgtm_unit3_20260829` files_modified: [[infra_design_intent]] |
 | causal | `cmd_karo_hotfix_commander_inbox_identity_all_directives_20260829` files_modified: [[infra_design_intent]] |
 | causal | `cmd_karo_hotfix_t190_push_lane_automation_20260830` files_modified: [[infra_design_intent]] |
+| causal | `cmd_karo_hotfix_t190_push_lane_timeout_proof_20260830` files_modified: [[infra_design_intent]] |
 | causal_chain | `[[cmd_karo_fix_same_cmd_pending_symlink_20260804]]` (L1556) |
 
 ## scope_integrity_lifecycle — スコープ鮮度ライフサイクル
@@ -16869,6 +16876,7 @@ codd:
 | discussion | `queue/lord_conversation.jsonl` 2026-08-29T12:09:38.896140+00:00 git pre-commit semantic propagation for context/projects changes |
 | discussion | `queue/lord_conversation.jsonl` 2026-08-29T12:58:26.956245+00:00 git pre-commit semantic propagation for context/projects changes |
 | discussion | `queue/lord_conversation.jsonl` 2026-08-29T18:29:29.966720+00:00 git pre-commit semantic propagation for context/projects changes |
+| discussion | `queue/lord_conversation.jsonl` 2026-08-29T18:41:14.464507+00:00 git pre-commit semantic propagation for context/projects changes |
 | causal_chain | `[[cmd_karo_hotfix_ga161_obsidian_link_context_freshness_202607021348]]` (L926) |
 | causal_chain | `[[cmd_3648]]` (L933) |
 | causal_chain | `[[cmd_karo_ci_fix_ga191_followup_202607071752]]` (L963) |
@@ -17143,6 +17151,7 @@ codd:
 | causal | `cmd_karo_hotfix_idle_load_unit5_20260829` files_modified: [[inbox_evidence_durability]] |
 | causal | `cmd_karo_hotfix_review_pending_formal_lgtm_unit3_20260829` files_modified: [[inbox_evidence_durability]] |
 | causal | `cmd_karo_hotfix_t190_push_lane_automation_20260830` files_modified: [[inbox_evidence_durability]] |
+| causal | `cmd_karo_hotfix_t190_push_lane_timeout_proof_20260830` files_modified: [[inbox_evidence_durability]] |
 
 ## hook_json_command_boundary — hook JSONコマンド境界
 
@@ -17359,6 +17368,7 @@ codd:
 | causal | `cmd_karo_hotfix_review_pending_formal_lgtm_unit3_20260829` files_modified: [[active_task_clear_fail_closed]] |
 | causal | `cmd_4411` files_modified: [[active_task_clear_fail_closed]] |
 | causal | `cmd_karo_hotfix_t190_push_lane_automation_20260830` files_modified: [[active_task_clear_fail_closed]] |
+| causal | `cmd_karo_hotfix_t190_push_lane_timeout_proof_20260830` files_modified: [[active_task_clear_fail_closed]] |
 
 ## karo_strong_new_game_20260818_0650 — 家老復帰点（fixture→republish→cron）
 
