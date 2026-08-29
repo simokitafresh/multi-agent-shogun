@@ -581,6 +581,32 @@ def install_cron(args: argparse.Namespace) -> dict[str, Any]:
     return result
 
 
+def dry_run(args: argparse.Namespace) -> dict[str, Any]:
+    """Validate the CLI contract without touching local state or Drive."""
+    operation = "backup" if args.backup else "restore" if args.restore else "install_cron"
+    if operation == "restore":
+        return {
+            "operation": operation,
+            "dry_run": True,
+            "backup_id": args.restore,
+            "drive_folder": args.drive_folder,
+            "destination": str(Path(args.destination).expanduser().resolve()),
+            "dm_destination": str(Path(args.dm_destination).expanduser().resolve()),
+            "planned": "download manifest, verify artifact sha256, extract DB/projects/queue/logs/env",
+        }
+    if operation == "install_cron":
+        return {"operation": operation, "dry_run": True, "schedule": args.cron_schedule, "marker": MARKER}
+    return {
+        "operation": operation,
+        "dry_run": True,
+        "root": str(Path(args.root).expanduser().resolve()),
+        "dm_root": str(Path(args.dm_root).expanduser().resolve()),
+        "drive_folder": args.drive_folder,
+        "planned_artifacts": ["memory_db", "projects", "queue", "gate_metrics", "dm_signal_env", "manifest"],
+        "planned": "online DB backup, gzip/tar, external-key encryption, Drive upload, list and sha256 verification",
+    }
+
+
 def shlex_quote(value: str) -> str:
     import shlex
 
@@ -609,12 +635,17 @@ def parser() -> argparse.ArgumentParser:
     parser.add_argument("--backup-id")
     parser.add_argument("--cron-schedule", default="0 3 * * *")
     parser.add_argument("--temp-dir", default=None)
+    parser.add_argument("--dry-run", action="store_true", help="print the operation plan without local or Drive changes")
     return parser
 
 
 def main(argv: list[str] | None = None) -> int:
     args = parser().parse_args(argv)
     try:
+        if args.dry_run:
+            result = dry_run(args)
+            print(json.dumps(result, indent=2, sort_keys=True))
+            return 0
         if args.backup:
             result = backup(args)
         elif args.restore:
