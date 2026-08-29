@@ -215,11 +215,38 @@ def tar_directory(source: Path, destination: Path, arcname: str) -> None:
     if not source.is_dir():
         fail(f"required directory is missing: {source}")
     # queue/inbox is a repo-level symlink to the durable external mailbox.
-    # Dereference existing links so a new machine receives the mailbox data,
-    # while safe_extract still handles the small set of historical dangling
-    # links as portable relative links.
-    with tarfile.open(destination, "w:gz", dereference=True) as archive:
-        archive.add(source, arcname=arcname, recursive=True)
+    # Materialize links whose targets exist, but retain dangling historical
+    # links as links.  tarfile's global dereference=True cannot represent the
+    # latter because it calls stat() on the missing target.
+    seen_dirs: set[tuple[int, int]] = set()
+
+    def add_tree(path: Path, name: str, archive: tarfile.TarFile) -> None:
+        if path.is_symlink():
+            if path.exists():
+                target = path.resolve()
+                if target.is_dir():
+                    add_tree(target, name, archive)
+                else:
+                    add_tree(target, name, archive)
+            else:
+                archive.addfile(archive.gettarinfo(path, arcname=name, recursive=False))
+            return
+        stat_result = path.stat()
+        if path.is_dir():
+            identity = (stat_result.st_dev, stat_result.st_ino)
+            if identity in seen_dirs:
+                return
+            seen_dirs.add(identity)
+            archive.addfile(archive.gettarinfo(path, arcname=name, recursive=False))
+            for child in sorted(path.iterdir(), key=lambda item: item.name):
+                add_tree(child, f"{name}/{child.name}", archive)
+            return
+        info = archive.gettarinfo(path, arcname=name, recursive=False)
+        with path.open("rb") as source_handle:
+            archive.addfile(info, source_handle)
+
+    with tarfile.open(destination, "w:gz", dereference=False) as archive:
+        add_tree(source, arcname, archive)
 
 
 def openssl_encrypt(source: Path, destination: Path, key: Path) -> None:
