@@ -214,7 +214,11 @@ def gzip_file(source: Path, destination: Path) -> None:
 def tar_directory(source: Path, destination: Path, arcname: str) -> None:
     if not source.is_dir():
         fail(f"required directory is missing: {source}")
-    with tarfile.open(destination, "w:gz") as archive:
+    # queue/inbox is a repo-level symlink to the durable external mailbox.
+    # Dereference existing links so a new machine receives the mailbox data,
+    # while safe_extract still handles the small set of historical dangling
+    # links as portable relative links.
+    with tarfile.open(destination, "w:gz", dereference=True) as archive:
         archive.add(source, arcname=arcname, recursive=True)
 
 
