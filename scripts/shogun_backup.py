@@ -229,7 +229,7 @@ def tar_directory(source: Path, destination: Path, arcname: str) -> None:
                 else:
                     add_tree(target, name, archive)
             else:
-                archive.addfile(archive.gettarinfo(path, arcname=name, recursive=False))
+                archive.addfile(archive.gettarinfo(path, arcname=name))
             return
         stat_result = path.stat()
         if path.is_dir():
@@ -237,11 +237,11 @@ def tar_directory(source: Path, destination: Path, arcname: str) -> None:
             if identity in seen_dirs:
                 return
             seen_dirs.add(identity)
-            archive.addfile(archive.gettarinfo(path, arcname=name, recursive=False))
+            archive.addfile(archive.gettarinfo(path, arcname=name))
             for child in sorted(path.iterdir(), key=lambda item: item.name):
                 add_tree(child, f"{name}/{child.name}", archive)
             return
-        info = archive.gettarinfo(path, arcname=name, recursive=False)
+        info = archive.gettarinfo(path, arcname=name)
         with path.open("rb") as source_handle:
             archive.addfile(info, source_handle)
 
