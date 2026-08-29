@@ -1156,9 +1156,9 @@ YAML
     [ "$(grep -c "^  parent_cmd: 'cmd_task_identity_new'" "$TEST_TMPDIR/queue/inbox/testninja.yaml")" -eq 1 ]
 }
 
-# test_necessity: 途中補足はtask_assignedの帰属fieldを再生成せず、既存の
-# task_supplement transportを維持する。
-@test "task_supplement: mid-task supplement does not borrow assignment identity" {
+# test_necessity: task_supplementは本文の明示identityを構造fieldへ昇格し、
+# 欠落/不一致を永続化前にBLOCK、正当値はaction付きで一件だけ保存する。
+@test "task_supplement: identity is required, matched, and action is preserved" {
     setup_basic_test_env
     mkdir -p "$TEST_TMPDIR/queue/tasks"
     cat > "$TEST_TMPDIR/queue/tasks/testninja.yaml" <<'YAML'
@@ -1168,13 +1168,23 @@ task:
   parent_cmd: cmd_task_identity_002
 YAML
 
-    run _run_inbox_write testninja "配備" task_assigned karo
+    run _run_inbox_write testninja "identityなし" task_supplement gunshi notify_karo
+    [ "$status" -eq 2 ]
+    [[ "$output" == *"requires exactly one valid task_id"* ]]
+    [ ! -e "$TEST_TMPDIR/queue/inbox/testninja.yaml" ]
+
+    run _run_inbox_write testninja "task_id=cmd_other_normal parent_cmd=cmd_other stale補足" task_supplement gunshi notify_karo
+    [ "$status" -eq 2 ]
+    [[ "$output" == *"identity mismatch"* ]]
+    [ ! -e "$TEST_TMPDIR/queue/inbox/testninja.yaml" ]
+
+    run _run_inbox_write testninja "task_id=cmd_task_identity_002_normal parent_cmd=cmd_task_identity_002 正当補足" task_supplement gunshi notify_karo
     [ "$status" -eq 0 ]
-    run _run_inbox_write testninja "途中補足" task_supplement gunshi
-    [ "$status" -eq 0 ]
-    [ "$(grep -c "^  type: 'task_assigned'" "$TEST_TMPDIR/queue/inbox/testninja.yaml")" -eq 1 ]
+    [ "$(grep -c "^- action: 'notify_karo'" "$TEST_TMPDIR/queue/inbox/testninja.yaml")" -eq 1 ]
     [ "$(grep -c "^  type: 'task_supplement'" "$TEST_TMPDIR/queue/inbox/testninja.yaml")" -eq 1 ]
     [ "$(grep -c "^  task_id: 'cmd_task_identity_002_normal'" "$TEST_TMPDIR/queue/inbox/testninja.yaml")" -eq 1 ]
+    [ "$(grep -c "^  parent_cmd: 'cmd_task_identity_002'" "$TEST_TMPDIR/queue/inbox/testninja.yaml")" -eq 1 ]
+    echo "missing=1 mismatch=1 valid=1 action_regression_fail=0 skip=0"
 }
 
 # test_necessity: 同一通知の再送は既存のexactly-once pending dedupeを維持し、
@@ -2941,12 +2951,14 @@ MOCK
     cat > "$TEST_TMPDIR/queue/tasks/ninja_a.yaml" <<'YAML'
 task:
   status: assigned
+  task_id: cmd_999_normal
   parent_cmd: cmd_999
 YAML
 
     cat > "$TEST_TMPDIR/queue/tasks/ninja_b.yaml" <<'YAML'
 task:
   status: in_progress
+  task_id: cmd_999_normal
   parent_cmd: cmd_999
 YAML
 
