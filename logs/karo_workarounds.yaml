@@ -428,7 +428,7 @@
   lesson_disposition: 'new_lesson_required'
   lesson_reference: ''
   brainwash_check: '洗脳#2検証スキップ防止: report ancestry BLOCK 1件→PASS 1件、merge-base ancestor rc=0'
-  resolved_by_cmd: ''
+  resolved_by_cmd: 'cmd_4411'
 - cmd_id: cmd_karo_hotfix_t109_first_setup_auth_guidance_20260828
   timestamp: '2026-08-27T21:17:41Z'
   ninja: system

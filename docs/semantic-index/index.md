@@ -917,6 +917,7 @@ codd:
 | causal | `cmd_4400` files_modified: [[three_layer_memory_system]] |
 | discussion | `queue/lord_conversation.jsonl` 2026-08-28T14:17:38+09:00 三つのらせん＋今のらせんの４つを三層記憶に貫通させておいて |
 | causal_chain | `[[cmd_karo_recon_memory_cache_mtime_freshness_20260726]]` (L1343) |
+| causal | `cmd_4411` files_modified: [[three_layer_memory_system]] |
 
 ## creator_brainwashing_defense — 創造主の洗脳防御
 
@@ -4996,6 +4997,7 @@ codd:
 | causal_chain | `[[cmd_karo_hotfix_deploy_task_latency_yaml_bug_20260702010845]]` (L918) |
 | causal_chain | `[[cmd_karo_hotfix_ga416_p_average_dns_fallback_20260730]]` (L1481) |
 | causal_chain | `[[cmd_reflux_insight_202608071301_hayate]]` (L1571) |
+| causal | `cmd_4411` files_modified: [[growth_loop]] |
 
 ## correct_result_velocity — 正しい結果が出る速度
 
@@ -6052,6 +6054,7 @@ codd:
 | causal | `cmd_karo_hotfix_commit_ledger_single_lock` files_modified: [[verify_dont_imagine]] |
 | causal | `cmd_4385` files_modified: [[verify_dont_imagine]] |
 | causal | `cmd_4400` files_modified: [[verify_dont_imagine]] |
+| causal | `cmd_4411` files_modified: [[verify_dont_imagine]] |
 
 ## ultimate_state_principle — 究極系原則
 
@@ -8504,6 +8507,7 @@ codd:
 | causal_chain | `[[cmd_reflux_backlink_202608201818_kagemaru]]` (L1626) |
 | causal_chain | `[[cmd_reflux_backlink_202608201856_saizo]]` (L1627) |
 | causal_chain | `[[cmd_karo_ci_fix_33176429634_startup_owner_20260828]]` (L1668) |
+| causal | `cmd_4411` files_modified: [[agent_formation_management]] |
 
 ## visibility_tier_masking — Visibility Tier制マスク
 
@@ -8653,6 +8657,7 @@ codd:
 | causal | `cmd_4400` files_modified: [[shogun_android_app]] |
 | discussion | `queue/lord_conversation.jsonl` 2026-08-27T15:13:14+09:00 bh5f61uwq toolu_01BE85PXtAPk4pKKb9nTXwnY /tmp/claude-1000/-mnt-c-tools-multi-agent-shogun/448325f6-c09d-4b07-8345-9ed749 |
 | discussion | `queue/lord_conversation.jsonl` 2026-08-27T21:43:22+09:00 bdlr2b2qa toolu_016yij9p9ZkMVjWApk9DTLMC /tmp/claude-1000/-mnt-c-tools-multi-agent-shogun/0457a0cb-e539-4b83-8437-c6a8b1 |
+| causal | `cmd_4411` files_modified: [[shogun_android_app]] |
 
 ## cdp_browser_capability — CDP(ブラウザ操作能力)
 
@@ -11423,6 +11428,7 @@ codd:
 | causal_chain | `[[cmd_karo_hotfix_gunshi_cs_remediation_generation_20260801]]` (L1504) |
 | causal_chain | `[[cmd_karo_hotfix_safe_shared_convergence_202608191137]]` (L1615) |
 | causal_chain | `[[cmd_karo_hotfix_function_coverage_20260828]]` (L1664) |
+| causal | `cmd_4411` files_modified: [[infrastructure_ops]] |
 
 ## context_freshness_retry_budget — context鮮度git再試行予算
 
@@ -12373,6 +12379,7 @@ codd:
 | causal | `cmd_4385` files_modified: [[multi_cli_event_commonization]] |
 | causal | `cmd_4400` files_modified: [[multi_cli_event_commonization]] |
 | causal | `cmd_karo_hotfix_t114_reflux_task_id_nudge_20260828` files_modified: [[multi_cli_event_commonization]] |
+| causal | `cmd_4411` files_modified: [[multi_cli_event_commonization]] |
 
 ## codex_goal_mode — Codex /goal 自律目標モード
 
@@ -12586,6 +12593,7 @@ codd:
 | causal | `cmd_4400` files_modified: [[causal_verification_l0_l7]] |
 | causal | `cmd_karo_hotfix_deploy_ctx_guard_20260828` files_modified: [[causal_verification_l0_l7]] |
 | causal | `cmd_karo_hotfix_pending_decision_infra_bundle_20260828` files_modified: [[causal_verification_l0_l7]] |
+| causal | `cmd_4411` files_modified: [[causal_verification_l0_l7]] |
 
 ## test_quality_framework — テスト品質統合フレームワーク
 
@@ -15334,6 +15342,7 @@ codd:
 | discussion | `queue/lord_conversation.jsonl` 2026-08-29T05:18:15.948327+00:00 git pre-commit semantic propagation for context/projects changes |
 | discussion | `queue/lord_conversation.jsonl` 2026-08-29T07:03:06.474280+00:00 git pre-commit semantic propagation for context/projects changes |
 | discussion | `queue/lord_conversation.jsonl` 2026-08-29T12:01:01.582834+00:00 git pre-commit semantic propagation for context/projects changes |
+| discussion | `queue/lord_conversation.jsonl` 2026-08-29T12:23:38.943620+00:00 git pre-commit semantic propagation for context/projects changes |
 | causal_chain | `[[cmd_karo_hotfix_lessons_yaml_format_restore_20260727]]` (L1389) |
 
 ## infra_design_intent — インフラ設計意図カタログ
@@ -17282,6 +17291,7 @@ codd:
 | causal | `cmd_karo_hotfix_archive_symlink_auto_idle_20260829` files_modified: [[active_task_clear_fail_closed]] |
 | causal | `cmd_karo_hotfix_idle_load_unit5_20260829` files_modified: [[active_task_clear_fail_closed]] |
 | causal | `cmd_karo_hotfix_review_pending_formal_lgtm_unit3_20260829` files_modified: [[active_task_clear_fail_closed]] |
+| causal | `cmd_4411` files_modified: [[active_task_clear_fail_closed]] |
 
 ## karo_strong_new_game_20260818_0650 — 家老復帰点（fixture→republish→cron）
 
