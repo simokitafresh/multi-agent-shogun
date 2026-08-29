@@ -8279,3 +8279,10 @@ insights:
   source: "manual"
   fix_known: false
   status: pending
+- id: INS-20260830-060552754-46f4
+  ts: "2026-08-30T06:05:52+09:00"
+  insight: "hayateのreflux報告でstatus=revision_requestedのままverdict=PASSとなるパターンが2回再発(0340,0550)。疾風のreport-write経路またはRC修正時にstatus=completedへの更新が漏れている。家老側でhayateのreport-writeフローを確認し、status自動更新をgateに追加する候補。"
+  priority: "medium"
+  source: "manual"
+  fix_known: false
+  status: pending
