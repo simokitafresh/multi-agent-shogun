@@ -2087,6 +2087,7 @@ codd:
 | discussion | `queue/lord_conversation.jsonl` 2026-08-19T14:39:13+09:00 session_save_20260819_1440: 【復帰点】(1)秘奥義21体組合せ探索 完了: cmd_4355剪定(答え4体=加速D-常勝/加速D-激攻/加速R-鉄壁/追い風-激攻 Sharpe2.681、3体で低下)・cmd_4 |
 | causal | `cmd_4373` files_modified: [[recalculate_pipeline]] |
 | discussion | `queue/lord_conversation.jsonl` 2026-08-26T14:50:04+09:00 2026-08-26 14:50 T15 fullrecalc run416(588s): weights MATCH/change_log delta0/signals md5 MISMATCH。分解(家老): signals 34526 |
+| discussion | `queue/lord_conversation.jsonl` 2026-08-29T16:52:05+09:00 殿裁定 2026-08-29 16:51『DM-signal outputs は現在本番環境で使用中のモノ以外は不要』。将軍一次(16:52): backend/app で outputs/ を読む本番コードは 0 件(recalculat |
 | causal_chain | `[[cmd_3633]]` (L916) |
 | causal_chain | `[[cmd_karo_hotfix_recalculate_sync_end_date_20260729]]` (L1447) |
 | causal_chain | `[[cmd_karo_hotfix_deploy_task_yaml_speed_recon_guard_202607020133]]` (L919) |
@@ -3520,6 +3521,8 @@ codd:
 | discussion | `queue/lord_conversation.jsonl` 2026-08-29T15:09:50+09:00 30分loop(殿指示08-27 14:34「進捗を確認し、利他の精神でつまりを解消し、artifactを更新せよ」恒久): (1)capture-pane全pane/陣形図/gate_metrics/rev-list origin/CI  |
 | discussion | `queue/lord_conversation.jsonl` 2026-08-29T15:39:51+09:00 30分loop(殿指示08-27 14:34「進捗を確認し、利他の精神でつまりを解消し、artifactを更新せよ」恒久): (1)capture-pane全pane/陣形図/gate_metrics/rev-list origin/CI  |
 | discussion | `queue/lord_conversation.jsonl` 2026-08-29T16:09:51+09:00 30分loop(殿指示08-27 14:34「進捗を確認し、利他の精神でつまりを解消し、artifactを更新せよ」恒久): (1)capture-pane全pane/陣形図/gate_metrics/rev-list origin/CI  |
+| discussion | `queue/lord_conversation.jsonl` 2026-08-29T16:46:23+09:00 30分loop(殿指示08-27 14:34「進捗を確認し、利他の精神でつまりを解消し、artifactを更新せよ」恒久): (1)capture-pane全pane/陣形図/gate_metrics/rev-list origin/CI  |
+| discussion | `queue/lord_conversation.jsonl` 2026-08-29T17:09:51+09:00 30分loop(殿指示08-27 14:34「進捗を確認し、利他の精神でつまりを解消し、artifactを更新せよ」恒久): (1)capture-pane全pane/陣形図/gate_metrics/rev-list origin/CI  |
 | causal_chain | `[[cmd_karo_hotfix_deploy_report_template_quote_escape_202607020530]]` (L924) |
 | causal_chain | `[[cmd_reflux_insight_202607071717_tobisaru]]` (L961) |
 | causal_chain | `[[cmd_karo_hotfix_report_notify_inprogress_guard_202607101913]]` (L1026) |
@@ -4232,6 +4235,7 @@ codd:
 | discussion | `queue/lord_conversation.jsonl` 2026-08-23T10:52:34+09:00 【殿ntfy】[SIGNAL CHANGE ALERT] confirmed-month holding_signal changes: count=3554 portfolios=10 dates=2013-07-01〜2026-08-2 |
 | discussion | `queue/lord_conversation.jsonl` 2026-08-23T11:10:02+09:00 【殿ntfy】[SIGNAL CHANGE ALERT] confirmed-month holding_signal changes: count=3554 portfolios=10 dates=2013-07-01〜2026-08-2 |
 | causal | `cmd_4373` files_modified: [[production_parity]] |
+| discussion | `queue/lord_conversation.jsonl` 2026-08-29T16:28:32+09:00 T106 DM-signal の ext4 移設について詳しく教えてくれ。asis/tobe whyが欲しい |
 | causal_chain | `[[cmd_karo_hotfix_shogun_startup_defer_skill_refs_202607020421]]` (L921) |
 | causal_chain | `[[cmd_karo_hotfix_ga168_lesson_health_202607021948]]` (L939) |
 
@@ -6176,6 +6180,7 @@ codd:
 | discussion | `queue/lord_conversation.jsonl` 2026-08-27T19:56:38+09:00 b8d5x6035 toolu_01PZJWfrmsWGFtenp17y31vW /tmp/claude-1000/-mnt-c-tools-multi-agent-shogun/0457a0cb-e539-4b83-8437-c6a8b1 |
 | discussion | `queue/lord_conversation.jsonl` 2026-08-28T18:12:27+09:00 bpeewgbwf toolu_01UCUfFCodYDEniriruwJVyw /tmp/claude-1000/-home-simokitafresh-multi-agent-shogun/16434314-f798-4484-b5e7 |
 | discussion | `queue/lord_conversation.jsonl` 2026-08-28T18:56:35+09:00 bbkblsxii toolu_01W7jwsLKRsNkZeatMcfBTWf /tmp/claude-1000/-home-simokitafresh-multi-agent-shogun/16434314-f798-4484-b5e7 |
+| discussion | `queue/lord_conversation.jsonl` 2026-08-29T16:54:22+09:00 殿裁定 2026-08-29 16:53『本番で使用中の PF を作成するために使ったものは残しておく必要がある』(16:51『本番使用中以外は不要』の補足)。保持集合(一次 16:55)=outputs/grid_search/shin_ |
 
 ## shin_shijin_design — 四神設計
 
@@ -8440,6 +8445,9 @@ codd:
 | discussion | `queue/lord_conversation.jsonl` 2026-08-29T12:08:41+09:00 session_save_20260829_1207 復帰点(将軍 /clear 復帰 第11便、08-29 06:50-12:07)。主軸=(1)復帰直後の一次で monitor 粒度バグ(BOUNDED-FAIL rc=1 819 行) |
 | causal | `cmd_karo_hotfix_idle_load_unit5_20260829` files_modified: [[agent_formation_management]] |
 | cmd | `cmd_karo_hotfix_idle_load_unit5_20260829` (`scripts/ninja_monitor.sh`, `tests/unit/test_ninja_monitor_stall.bats`) |
+| discussion | `queue/lord_conversation.jsonl` 2026-08-29T16:25:27+09:00 b1v9ezcxj toolu_01HkLXGEL16nAigMJiuQAU4m /tmp/claude-1000/-home-simokitafresh-multi-agent-shogun/b40b7045-ff88-4a88-b288 |
+| discussion | `queue/lord_conversation.jsonl` 2026-08-29T16:26:25+09:00 shogun_d0_detector_dedupe_20260829_1626: ninja_monitor.sh の script_size_alert/lesson_deprecation_candidates 検知器が同一候補集合を毎 |
+| discussion | `queue/lord_conversation.jsonl` 2026-08-29T17:00:35+09:00 bgedte5jy toolu_014xU3jkda8FJddBP6asKqV3 /tmp/claude-1000/-home-simokitafresh-multi-agent-shogun/b40b7045-ff88-4a88-b288 |
 | causal_chain | `[[cmd_karo_hotfix_deploy_task_latency_yaml_bug_20260702010845]]` (L918) |
 | causal_chain | `[[cmd_karo_hotfix_deploy_task_yaml_speed_recon_guard_202607020133]]` (L919) |
 | causal_chain | `[[cmd_karo_hotfix_ga162_hook_failure_pre_push_202607021402]]` (L930) |
@@ -13718,6 +13726,8 @@ codd:
 | cmd | `cmd_reflux_insight_202608291536_hayate` (`queue/insights.yaml`) |
 | causal | `cmd_reflux_insight_202608291546_kotaro` files_modified: [[provisional_insights]] |
 | cmd | `cmd_reflux_insight_202608291546_kotaro` (`queue/insights.yaml`) |
+| causal | `cmd_reflux_insight_202608291614_saizo` files_modified: [[provisional_insights]] |
+| cmd | `cmd_reflux_insight_202608291614_saizo` (`queue/insights.yaml`) |
 | causal_chain | `[[cmd_reflux_insight_202608040505_kagemaru]]` (L1545) |
 
 ## provisional_heavy_job_admission — 仮: Heavy Job Admission
