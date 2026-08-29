@@ -8020,3 +8020,10 @@ insights:
   source: "semantic_index_update"
   fix_known: false
   status: pending
+- id: INS-20260829-213416173-4e1d
+  ts: "2026-08-29T21:34:16+09:00"
+  insight: "semantic_index_update未登録[[リンク]]ターゲット: [[T106_DM-signal_ext4移設]] は既存aliasesに一致なし。類似概念TOP3: dm_signal_pf_restore_guardrails(DM-Signal PF復元運用ガードレール; alias=dm_signal; score=22.2) / dmsignal_operations(DM-Signal運用; alias=dm-signal ops; score=21.8) / ac_merit_review_integrity(AC本旨レビュー整合性; alias=cmd_4408_ext4移設; score=13.5)。概念定義とaliases追加を検討せよ"
+  priority: "low"
+  source: "semantic_index_update"
+  fix_known: false
+  status: pending
