@@ -3627,6 +3627,7 @@ EOF
 cat > "$SCRIPT_DIR/queue/tasks/hanzo.yaml" <<'"'"'EOF'"'"'
 task:
   status: done
+  task_id: cmd_pending_review_normal
   parent_cmd: cmd_pending_review
 EOF
 
@@ -3657,8 +3658,37 @@ fi
     [ "$status" -eq 0 ]
     [[ "$output" == *"KARO-PENDING-INBOX"* ]]
     [[ "$output" == *"INBOX-WRITE-CALLED: to=karo type=pending_work"* ]]
+    [[ "$output" == *"task_id=commander_directive subject_task_id=cmd_pending_review_normal parent_cmd=cmd_pending_review"* ]]
     [[ "$output" == *"未処理の忍者done/failed報告"* ]]
     [[ "$output" != *"DIRECT_NUDGE:inbox0"* ]]
+}
+
+# test_necessity: the live monitor gate-clear-required producer must bind the
+# current task YAML identity instead of relying on the prose parent command.
+@test "clear receipt required notification carries commander identity" {
+    run bash -lc '
+set -euo pipefail
+PROJECT_ROOT="'"$PROJECT_ROOT"'"
+export NINJA_MONITOR_LIB_ONLY=1
+source "$PROJECT_ROOT/scripts/ninja_monitor.sh"
+unset NINJA_MONITOR_LIB_ONLY
+
+TMP_ROOT="$NINJA_MONITOR_TEST_ROOT/clear-required-identity"
+SCRIPT_DIR="$TMP_ROOT"; STATE_DIR="$TMP_ROOT/state"; LOG="$TMP_ROOT/monitor.log"
+mkdir -p "$SCRIPT_DIR/queue/tasks" "$SCRIPT_DIR/queue/gates/cmd_clear" "$STATE_DIR"
+cat > "$SCRIPT_DIR/queue/tasks/hayate.yaml" <<'EOF'
+task:
+  task_id: cmd_clear_normal
+EOF
+send_inbox_message() { printf "%s|%s|%s\\n" "$1" "$3" "$2"; }
+log() { printf "%s\\n" "$1" >> "$LOG"; }
+
+_notify_clear_receipt_required_once hayate cmd_clear
+test -f "$SCRIPT_DIR/queue/gates/cmd_clear/clear_required_hayate.notified"
+printf "%s\\n" "clear_identity=task_id=commander_directive subject_task_id=cmd_clear_normal parent_cmd=cmd_clear"
+'
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"clear_identity=task_id=commander_directive subject_task_id=cmd_clear_normal parent_cmd=cmd_clear"* ]]
 }
 
 # test_necessity: terminal pending work must be persisted while Karo is busy;

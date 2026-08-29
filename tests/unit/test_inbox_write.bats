@@ -270,14 +270,14 @@ setup() {
     mkdir -p "$TEST_TMPDIR/logs"
     export DEFENSE_OVERHEAD_REPO_ROOT="$TEST_TMPDIR"
     export DEFENSE_OVERHEAD_LEDGER="$TEST_TMPDIR/logs/defense_overhead.jsonl"
-    local bad='先送りCRITICAL案件'
+    local bad='task_id=commander_directive subject_task_id=cmd_escalation_normal parent_cmd=cmd_escalation 先送りCRITICAL案件'
     run bash "$TEST_INBOX_WRITE" karo "$bad" escalation testninja notify_karo
     [ "$status" -eq 2 ]
     [[ "$output" == *'Template:'* ]]
     [[ "$output" == *'試行コマンド:'* ]]
     [ ! -e "$TEST_INBOX_DIR/karo.yaml" ]
 
-    local good=$'試行コマンド: bash scripts/check.sh\nexit_code: 1\n特定した不足: queue item remains unresolved\n次の行動: 家老レーンで是正する\n実行者: karo'
+    local good=$'task_id=commander_directive subject_task_id=cmd_escalation_normal parent_cmd=cmd_escalation\n試行コマンド: bash scripts/check.sh\nexit_code: 1\n特定した不足: queue item remains unresolved\n次の行動: 家老レーンで是正する\n実行者: karo'
     run bash "$TEST_INBOX_WRITE" karo "$good" escalation testninja notify_karo
     [ "$status" -eq 0 ]
     grep -q "type: 'escalation'" "$TEST_INBOX_DIR/karo.yaml"
@@ -292,7 +292,7 @@ setup() {
 
 @test "non-escalation BLOCK prose is not a false positive" {
     setup_basic_test_env
-    run bash "$TEST_INBOX_WRITE" karo 'gate BLOCK通知: FAILではなく監視継続' gate_block testninja notify_karo
+    run bash "$TEST_INBOX_WRITE" karo 'task_id=commander_directive subject_task_id=cmd_gate_block_normal parent_cmd=cmd_gate_block gate BLOCK通知: FAILではなく監視継続' gate_block testninja notify_karo
     [ "$status" -eq 0 ]
     grep -q "type: 'gate_block'" "$TEST_INBOX_DIR/karo.yaml"
 }
@@ -310,7 +310,7 @@ YAML
 status: pending
 verdict: FAIL
 YAML
-    run bash "$TEST_INBOX_WRITE" karo "idle" idle_notice testninja idle
+    run bash "$TEST_INBOX_WRITE" karo "task_id=commander_directive subject_task_id=cmd_idle_notice_normal parent_cmd=cmd_idle_notice idle" idle_notice testninja idle
     [ "$status" -eq 0 ]
     grep -q "type: 'failed_unclosed'" "$TEST_INBOX_DIR/karo.yaml"
     grep -q "action: 'review_failed_task'" "$TEST_INBOX_DIR/karo.yaml"
@@ -321,7 +321,7 @@ status: completed
 verdict: FAIL
 status_detail: BLOCKED
 YAML
-    run bash "$TEST_INBOX_WRITE" karo "idle closed" idle_notice testninja idle
+    run bash "$TEST_INBOX_WRITE" karo "task_id=commander_directive subject_task_id=cmd_idle_notice_normal parent_cmd=cmd_idle_notice idle closed" idle_notice testninja idle
     [ "$status" -eq 0 ]
     grep -q "type: 'idle_notice'" "$TEST_INBOX_DIR/karo.yaml"
 }
@@ -377,7 +377,7 @@ YAML
     # 回答族でないtypeは同じ保留があってもretro扱いしない(誤判定0)。
     for other_type in gate_block bulletin_notify status_update analysis_result; do
         rm -f "$TEST_INBOX_DIR/karo.yaml"
-        run bash "$TEST_INBOX_WRITE" karo "unrelated $other_type" "$other_type" testninja notify_karo
+        run bash "$TEST_INBOX_WRITE" karo "task_id=commander_directive subject_task_id=cmd_${other_type}_normal parent_cmd=cmd_${other_type} unrelated $other_type" "$other_type" testninja notify_karo
         [ "$status" -eq 0 ]
         ! grep -q "event_id: 'event:family'" "$TEST_INBOX_DIR/karo.yaml"
     done
@@ -2761,7 +2761,7 @@ printf '%s\n' "$1" > "$INBOX_WRITE_BG_LOG"
 EOF
     chmod +x "$TEST_TMPDIR/scripts/cmd_complete_gate.sh"
     export INBOX_WRITE_BG_LOG="$TEST_TMPDIR/cmd_complete_gate.log"
-    printf 'parent_cmd: cmd_karo_auto_review_gate\nstatus: completed\ncommit_hash: abc123abc123abc123abc123abc123abc123abc1\nresult:\n  summary: ok\n' > "$TEST_TMPDIR/queue/reports/testninja_report_cmd_karo_auto_review_gate.yaml"
+    printf 'task_id: cmd_karo_auto_review_gate_normal\nparent_cmd: cmd_karo_auto_review_gate\nstatus: completed\ncommit_hash: abc123abc123abc123abc123abc123abc123abc1\nresult:\n  summary: ok\n' > "$TEST_TMPDIR/queue/reports/testninja_report_cmd_karo_auto_review_gate.yaml"
 
     cat > "$TEST_TMPDIR/queue/gates/cmd_karo_auto_review_gate/review_gate.done" <<'EOF'
 timestamp: 2026-04-21T13:00:00
@@ -2827,7 +2827,7 @@ EOF
     ln -sf "$PROJECT_ROOT/scripts/lib/review_approval.sh" "$TEST_TMPDIR/scripts/lib/review_approval.sh"
     ln -sf "$PROJECT_ROOT/scripts/lib/report_commit_identity.py" "$TEST_TMPDIR/scripts/lib/report_commit_identity.py"
     ln -sf "$PROJECT_ROOT/scripts/bulletin_write.sh" "$TEST_TMPDIR/scripts/bulletin_write.sh"
-    printf 'parent_cmd: cmd_guard\nstatus: completed\ncommit_hash: abc123abc123abc123abc123abc123abc123abc1\nresult:\n  summary: ok\n' > "$TEST_TMPDIR/queue/reports/ninja_report_cmd_guard.yaml"
+    printf 'task_id: cmd_guard_normal\nparent_cmd: cmd_guard\nstatus: completed\ncommit_hash: abc123abc123abc123abc123abc123abc123abc1\nresult:\n  summary: ok\n' > "$TEST_TMPDIR/queue/reports/ninja_report_cmd_guard.yaml"
     REVIEW_APPROVAL_ROOT="$TEST_TMPDIR" REVIEW_APPROVAL_NO_TRIGGER=1 REVIEW_APPROVAL_SKIP_LEDGER_CHECK=1 bash "$PROJECT_ROOT/scripts/review_approval.sh" cmd_guard gunshi LGTM "$TEST_TMPDIR/queue/reports/ninja_report_cmd_guard.yaml"
     local content
     local -a contents=(
@@ -2838,7 +2838,7 @@ EOF
     )
 
     for content in "${contents[@]}"; do
-        run _run_inbox_write karo "$content" report_review_result gunshi
+        run _run_inbox_write karo "$content task_id=commander_directive subject_task_id=cmd_guard_normal parent_cmd=cmd_guard" report_review_result gunshi
         [ "$status" -eq 0 ]
         [[ "$output" != *"contradictory report_review_result"* ]]
     done
@@ -2879,17 +2879,17 @@ YAML
     [ "$status" -eq 0 ]
     run _run_inbox_write testninja "通常レビュー" report_review karo
     [ "$status" -eq 0 ]
-    run _run_inbox_write karo "非忍者宛revision" report_revision gunshi
+    run _run_inbox_write karo "非忍者宛revision task_id=commander_directive subject_task_id=cmd_revision_normal parent_cmd=cmd_revision" report_revision gunshi
     [ "$status" -eq 0 ]
 }
 
 @test "review notification contradiction guard ignores valid non-contradictory forms" {
     setup_basic_test_env
-    run _run_inbox_write karo "verdict: FAIL; gate_prediction: BLOCK" report_review_result gunshi
+    run _run_inbox_write karo "verdict: FAIL; gate_prediction: BLOCK task_id=commander_directive subject_task_id=cmd_contradiction_normal parent_cmd=cmd_contradiction" report_review_result gunshi
     [ "$status" -eq 0 ]
-    run _run_inbox_write karo "draft review verdict: APPROVE; gate_prediction: BLOCK" review_result gunshi
+    run _run_inbox_write karo "draft review verdict: APPROVE; gate_prediction: BLOCK task_id=commander_directive subject_task_id=cmd_contradiction_normal parent_cmd=cmd_contradiction" review_result gunshi
     [ "$status" -eq 0 ]
-    run _run_inbox_write karo "説明文ではBLOCK文字列を扱うが gate_prediction: CLEAR" report_review_result gunshi
+    run _run_inbox_write karo "説明文ではBLOCK文字列を扱うが gate_prediction: CLEAR task_id=commander_directive subject_task_id=cmd_contradiction_normal parent_cmd=cmd_contradiction" report_review_result gunshi
     [ "$status" -eq 0 ]
 }
 
@@ -2911,8 +2911,11 @@ source: deploy_preflight
 note: placeholder
 EOF
 
-    run _run_inbox_write karo "cmd_karo_auto_review_gate testninja報告レビュー。verdict: FAIL。" report_review_result gunshi
-    [ "$status" -eq 0 ]
+    run _run_inbox_write karo "cmd_karo_auto_review_gate testninja報告レビュー。verdict: FAIL。task_id=commander_directive subject_task_id=cmd_karo_auto_review_gate_normal parent_cmd=cmd_karo_auto_review_gate" report_review_result gunshi
+    # report_review_result without a resolvable report is now rejected by the
+    # post-case dedicated identity boundary before any review side effect.
+    [ "$status" -eq 2 ]
+    [[ "$output" == *"dedicated identity resolved no non-empty task_id"* ]]
     [[ "$output" != *"review_gate.done updated"* ]]
     [[ "$output" != *"cmd_complete_gate.sh started in background"* ]]
 
@@ -2952,7 +2955,7 @@ task:
   status: idle
 YAML
 
-    run _run_inbox_write karo "cmd_999 verdict: FAIL 要確認" review_result gunshi
+    run _run_inbox_write karo "cmd_999 verdict: FAIL 要確認 task_id=commander_directive subject_task_id=cmd_999_normal parent_cmd=cmd_999" review_result gunshi
     [ "$status" -eq 0 ]
 
     # grep検証 (python3不要)
@@ -2985,7 +2988,7 @@ task:
   parent_cmd: cmd_other
 YAML
 
-    run _run_inbox_write karo "知識利用全員化D0レビュー完了。verdict: LGTM" review_result gunshi
+    run _run_inbox_write karo "知識利用全員化D0レビュー完了。verdict: LGTM task_id=commander_directive subject_task_id=cmd_knowledge_normal parent_cmd=cmd_knowledge" review_result gunshi
     [ "$status" -eq 0 ]
     grep -q "^  type: 'review_result'" "$TEST_TMPDIR/queue/inbox/karo.yaml"
     [ ! -f "$TEST_TMPDIR/queue/inbox/ninja_a.yaml" ]
@@ -3011,7 +3014,7 @@ task:
   status: in_progress
 YAML
 
-    run _run_inbox_write karo "軍師レビュー補足: 既存補足" task_supplement gunshi
+    run _run_inbox_write karo "task_id=commander_directive subject_task_id=cmd_review_supplement_normal parent_cmd=cmd_review_supplement 軍師レビュー補足: 既存補足" task_supplement gunshi
     [ "$status" -eq 0 ]
 
     # grep検証 (python3不要)
@@ -3245,6 +3248,11 @@ _autoread_env() {
     run _run_inbox_write karo "$body" investigation_result testninja reply_required
     [ "$status" -eq 0 ]
     grep -q "type: 'investigation_result'" "$TEST_TMPDIR/queue/inbox/karo.yaml"
+    grep -q "^  task_id: 'cmd_probe'" "$TEST_TMPDIR/queue/inbox/karo.yaml"
+    grep -q "^  check_id: 'gate_1'" "$TEST_TMPDIR/queue/inbox/karo.yaml"
+    grep -q "^  occurred_at: '2026-08-01T21:00:00+09:00'" "$TEST_TMPDIR/queue/inbox/karo.yaml"
+    grep -q "^  evidence: 'logs/probe.log'" "$TEST_TMPDIR/queue/inbox/karo.yaml"
+    grep -q "^  impact: 'delay_2m'" "$TEST_TMPDIR/queue/inbox/karo.yaml"
     grep -q "read: false" "$TEST_TMPDIR/queue/inbox/karo.yaml"
     grep -q '^  status: in_progress$' "$TEST_TMPDIR/queue/tasks/testninja.yaml"
     [ ! -e "$TEST_TMPDIR/queue/inbox/gunshi.yaml" ]
@@ -3272,6 +3280,24 @@ _autoread_env() {
     [ ! -e "$TEST_TMPDIR/queue/inbox/karo.yaml" ]
 }
 
+# test_necessity: dedicated report/review producers must not persist a
+# taskless row when report resolution or the report's own task_id is missing.
+@test "dedicated report identity rejects missing path and empty task_id" {
+    setup_basic_test_env
+    mkdir -p "$TEST_TMPDIR/queue/reports"
+
+    run _run_inbox_write karo "review without report" report_review ninja_monitor notify_karo
+    [ "$status" -eq 2 ]
+    [[ "$output" == *"dedicated identity resolved no non-empty task_id"* ]]
+    [ ! -e "$TEST_TMPDIR/queue/inbox/karo.yaml" ]
+
+    printf 'parent_cmd: cmd_empty_identity\nstatus: completed\ncommit_hash: abc123abc123abc123abc123abc123abc123abc1\nresult:\n  summary: ready\n' > "$TEST_TMPDIR/queue/reports/ninja_report_cmd_empty_identity.yaml"
+    run _run_inbox_write karo "report: queue/reports/ninja_report_cmd_empty_identity.yaml" report_review ninja_monitor notify_karo
+    [ "$status" -eq 2 ]
+    [[ "$output" == *"dedicated identity resolved no non-empty task_id"* ]]
+    [ ! -e "$TEST_TMPDIR/queue/inbox/karo.yaml" ]
+}
+
 @test "commander target task_assigned binds empty task_id to commander_directive" {
     # test_necessity: commander(karo/gunshi/shogun) 宛 task_assigned の task_id が空のままだと受け手の task_id フィルタが指示を『適用せず既読化』する(2026-08-28/29 に 8 回再発)。空を固定トークンへ束縛する不変量。
     local tmp; tmp=$(mktemp -d)
@@ -3283,6 +3309,90 @@ _autoread_env() {
     [ "$status" -eq 0 ]
     [ "${lines[0]}" = "commander_directive" ]
     [ "${lines[1]}" = "cmd_x_normal" ]
+}
+
+# test_necessity: 家老宛の判断要求3型は固定管理task_idと対象task/cmdを
+# 保存し、identityを欠く新規送信は保存前に拒否する。
+@test "karo directive types persist structured identity and reject missing identity" {
+    setup_basic_test_env
+    local type content
+    for type in pending_work review_draft_result gate_clear_required task_supplement cmd_new gate_alert; do
+        content="task_id=commander_directive subject_task_id=cmd_${type}_normal parent_cmd=cmd_${type} directive"
+        run _run_inbox_write karo "$content" "$type" ninja_monitor notify_karo
+        [ "$status" -eq 0 ]
+    done
+
+    run python3 - "$TEST_TMPDIR/queue/inbox/karo.yaml" <<'PY'
+import sys, yaml
+messages = (yaml.safe_load(open(sys.argv[1])) or {}).get("messages", [])
+wanted = {"pending_work", "review_draft_result", "gate_clear_required"}
+actual = {m.get("type") for m in messages if m.get("type") in wanted}
+assert actual == wanted, messages
+for message in messages:
+    if message.get("type") in wanted:
+        assert message.get("task_id") == "commander_directive", message
+        assert message.get("subject_task_id", "").startswith("cmd_"), message
+        assert message.get("parent_cmd", "").startswith("cmd_"), message
+print("directive_identity=3/3 missing=0")
+PY
+    [ "$status" -eq 0 ]
+
+    for type in pending_work review_draft_result gate_clear_required task_supplement cmd_new gate_alert; do
+        run _run_inbox_write karo "${type} missing identity" "$type" ninja_monitor notify_karo
+        [ "$status" -eq 2 ]
+        [[ "$output" == *"requires explicit task_id=commander_directive"* ]]
+    done
+    [ "$(grep -c '^  type: '\''pending_work'\''' "$TEST_TMPDIR/queue/inbox/karo.yaml")" -eq 1 ]
+    [ "$(grep -c '^  type: '\''review_draft_result'\''' "$TEST_TMPDIR/queue/inbox/karo.yaml")" -eq 1 ]
+    [ "$(grep -c '^  type: '\''gate_clear_required'\''' "$TEST_TMPDIR/queue/inbox/karo.yaml")" -eq 1 ]
+
+    run _run_inbox_write karo "future_action missing identity" future_action ninja_monitor notify_karo
+    [ "$status" -eq 2 ]
+    [[ "$output" == *"requires explicit task_id=commander_directive"* ]]
+    run _run_inbox_write karo "task_id=commander_directive subject_task_id=cmd_future_normal parent_cmd=cmd_future future_action" future_action ninja_monitor notify_karo
+    [ "$status" -eq 0 ]
+    run python3 - "$TEST_TMPDIR/queue/inbox/karo.yaml" <<'PY'
+import sys, yaml
+messages = (yaml.safe_load(open(sys.argv[1])) or {}).get("messages", [])
+future = [m for m in messages if m.get("type") == "future_action"]
+assert len(future) == 1 and future[0].get("task_id") == "commander_directive", future
+assert future[0].get("subject_task_id") == "cmd_future_normal"
+assert future[0].get("parent_cmd") == "cmd_future"
+print("unknown_with_identity=1 unknown_missing_saved=0")
+PY
+    [ "$status" -eq 0 ]
+    run _run_inbox_write karo "informational message" info ninja_monitor notify_karo
+    [ "$status" -eq 0 ]
+    run python3 - "$TEST_TMPDIR/queue/inbox/karo.yaml" <<'PY'
+import sys, yaml
+messages = (yaml.safe_load(open(sys.argv[1])) or {}).get("messages", [])
+info = [m for m in messages if m.get("type") == "info"]
+assert len(info) == 1
+assert "task_id" not in info[0] and "subject_task_id" not in info[0]
+print("information_false_positive_block=0")
+PY
+    [ "$status" -eq 0 ]
+
+    for type in low info gate_clear heartbeat status_update retro_answer; do
+        run _run_inbox_write karo "${type} informational" "$type" ninja_monitor notify_karo
+        [ "$status" -eq 0 ]
+    done
+    run python3 - "$TEST_TMPDIR/queue/inbox/karo.yaml" <<'PY'
+import sys, yaml
+messages = (yaml.safe_load(open(sys.argv[1])) or {}).get("messages", [])
+info_types = {"low", "info", "gate_clear", "heartbeat", "status_update", "retro_answer"}
+info = [m for m in messages if m.get("type") in info_types]
+assert {m.get("type") for m in info} == info_types, info
+assert all("task_id" not in m and "subject_task_id" not in m and "parent_cmd" not in m for m in info), info
+print("information_types=6 identity_fields=0")
+PY
+    [ "$status" -eq 0 ]
+
+    for type in task_new task_supplement task_cancel cmd_new gate_alert gate_block gate_fail destructive_warn stale_cmd cmd_pending; do
+        run _run_inbox_write karo "${type} missing identity" "$type" ninja_monitor notify_karo
+        [ "$status" -eq 2 ]
+        [[ "$output" == *"requires explicit task_id=commander_directive"* ]]
+    done
 }
 
 # test_necessity: review-pending notifications persist the management

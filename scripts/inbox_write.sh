@@ -523,7 +523,7 @@ notify_karo_duplicate_deploy_block() {
     INBOX_WRITE_DUP_BLOCK_NOTIFY=0 \
         bash "$SELF_SCRIPT_PATH" \
             karo \
-            "[duplicate_deploy_gate] BLOCKED: parent_cmd=${parent_cmd} target=${target} duplicates=${duplicate_summary}" \
+            "task_id=commander_directive subject_task_id=${target} parent_cmd=${parent_cmd} [duplicate_deploy_gate] BLOCKED: parent_cmd=${parent_cmd} target=${target} duplicates=${duplicate_summary}" \
             deploy_blocked \
             inbox_write >/dev/null 2>&1 || true
 }
@@ -998,6 +998,77 @@ if values["review_pending_state"] not in {"A", "B", "C"}:
 if not re.fullmatch(r"(?:queue/)?(?:archive/)?reports/[A-Za-z0-9_.-]+\.yaml|[A-Za-z0-9_.-]+_report_[A-Za-z0-9_.-]+\.yaml", values["report"]):
     raise SystemExit(1)
 print("\n".join(values[key] for key in required))
+PY
+}
+
+# Karo-directed control-plane messages have three deliberately separate
+# contracts.  Keep the information set synchronized with
+# inbox_mark_read.sh's auto-info SSOT; only these six types may omit a
+# commander envelope.  The second set is not information: these are the
+# existing cases below that derive identity from a trusted task/report/event
+# source.  Every other type, including future/unknown types, is an action
+# request and must carry an explicit envelope.  Never recover a cmd_id from
+# free-form prose.
+inbox_karo_message_is_information_type() {
+    case "$1" in
+        low|info|gate_clear|heartbeat|status_update|retro_answer) return 0 ;;
+        *) return 1 ;;
+    esac
+}
+
+inbox_karo_message_has_dedicated_identity() {
+    case "$1" in
+        task_assigned|report_received|report_submitted|task_done|report_completed|report_done|report_ready|task_failed|review_report|accept_report|run_cmd_complete|report_review|report_review_result|report_revision)
+            return 0
+            ;;
+        *)
+            return 1
+            ;;
+    esac
+}
+
+inbox_karo_message_has_separate_identity_lane() {
+    # These lanes validate their own identity below (retro event_id or the
+    # evidence-bound investigation fields).  They are not generic commander
+    # exemptions and must not be added to the dedicated-generation set above.
+    case "$1" in
+        retro_result|infra_bug_suspected|infra_bug_report|infra_bug|investigation_result|bulletin_notify)
+            return 0
+            ;;
+        *)
+            return 1
+            ;;
+    esac
+}
+
+inbox_karo_message_requires_identity() {
+    inbox_karo_message_is_information_type "$1" && return 1
+    inbox_karo_message_has_dedicated_identity "$1" && return 1
+    inbox_karo_message_has_separate_identity_lane "$1" && return 1
+    return 0
+}
+
+inbox_commander_directive_identity() {
+    local content="$1"
+    INBOX_DIRECTIVE_CONTENT="$content" python3 - <<'PY'
+import os, re
+
+content = os.environ.get("INBOX_DIRECTIVE_CONTENT", "")
+values = {}
+for token in content.split():
+    if "=" not in token:
+        continue
+    key, value = token.split("=", 1)
+    if key in {"task_id", "subject_task_id", "parent_cmd"}:
+        values[key] = value
+
+if values.get("task_id") != "commander_directive":
+    raise SystemExit(1)
+if not re.fullmatch(r"[A-Za-z0-9_.:-]+", values.get("subject_task_id", "")):
+    raise SystemExit(1)
+if not re.fullmatch(r"cmd_[A-Za-z0-9_.:-]+", values.get("parent_cmd", "")):
+    raise SystemExit(1)
+print("\n".join(values[key] for key in ("task_id", "subject_task_id", "parent_cmd")))
 PY
 }
 
@@ -2202,6 +2273,25 @@ if [ "$TYPE" = "report_review_result" ] && [ "$FROM" = "gunshi" ] && printf '%s'
 fi
 ACTION="${5:-}"
 
+COMMANDER_DIRECTIVE_TASK_ID=""
+COMMANDER_DIRECTIVE_SUBJECT_TASK_ID=""
+COMMANDER_DIRECTIVE_PARENT_CMD=""
+# Keep the dedicated shogun task_new policy gate as the first rejection for
+# that forbidden route; every other task_new-to-karo send still requires the
+# commander envelope through the generic boundary below.
+if [ "$TARGET" = "karo" ] && inbox_karo_message_requires_identity "$TYPE" \
+    && ! { [ "$FROM" = "shogun" ] && [ "$TYPE" = "task_new" ]; }; then
+    _commander_directive_identity=$(inbox_commander_directive_identity "$CONTENT" 2>/dev/null || true)
+    if [ -z "$_commander_directive_identity" ]; then
+        echo "BLOCK: ${TYPE} to karo requires explicit task_id=commander_directive subject_task_id=<task> parent_cmd=<cmd> identity envelope" >&2
+        exit 2
+    fi
+    mapfile -t _commander_directive_values <<< "$_commander_directive_identity"
+    COMMANDER_DIRECTIVE_TASK_ID="${_commander_directive_values[0]:-}"
+    COMMANDER_DIRECTIVE_SUBJECT_TASK_ID="${_commander_directive_values[1]:-}"
+    COMMANDER_DIRECTIVE_PARENT_CMD="${_commander_directive_values[2]:-}"
+fi
+
 REVIEW_PENDING_NUDGE_TASK_ID=""
 REVIEW_PENDING_NUDGE_SUBJECT_TASK_ID=""
 REVIEW_PENDING_NUDGE_PARENT_CMD=""
@@ -2936,11 +3026,15 @@ STRUCTURED_REPORT_FINGERPRINT=""
 STRUCTURED_REVISION_FINGERPRINT=""
 case "$TYPE" in
     task_assigned)
-        # Bind assignment identity from the destination task only.  In
-        # particular, never copy report_id/task_id from sender prose or a
-        # report notification into this deployment event.
-        mapfile -t _assignment_values < <(inbox_task_assignment_identity_fields "$TARGET")
-        _identity_fields=(task_id "${_assignment_values[0]:-}" parent_cmd "${_assignment_values[1]:-}")
+        if [ "$TARGET" = "karo" ] && inbox_karo_message_requires_identity "$TYPE"; then
+            _identity_fields=(task_id "$COMMANDER_DIRECTIVE_TASK_ID" subject_task_id "$COMMANDER_DIRECTIVE_SUBJECT_TASK_ID" parent_cmd "$COMMANDER_DIRECTIVE_PARENT_CMD")
+        else
+            # Bind assignment identity from the destination task only.  In
+            # particular, never copy report_id/task_id from sender prose or a
+            # report notification into this deployment event.
+            mapfile -t _assignment_values < <(inbox_task_assignment_identity_fields "$TARGET")
+            _identity_fields=(task_id "${_assignment_values[0]:-}" parent_cmd "${_assignment_values[1]:-}")
+        fi
         ;;
     report_received|report_submitted|task_done|report_completed|report_done|report_ready|task_failed)
         if [ -z "${STRUCTURED_REPORT_ID:-}" ]; then
@@ -2991,9 +3085,54 @@ case "$TYPE" in
             STRUCTURED_REPORT_FINGERPRINT=$(inbox_report_fingerprint "$_structured_candidate" "$STRUCTURED_REPORT_ID:$STRUCTURED_REPORT_VERSION") || exit 1
             STRUCTURED_REVISION_FINGERPRINT=$(inbox_report_revision_fingerprint "$TYPE" "$ACTION" "$CONTENT")
             _identity_fields=(report_id "$STRUCTURED_REPORT_ID" report_identity_version "$STRUCTURED_REPORT_VERSION" report_fingerprint "$STRUCTURED_REPORT_FINGERPRINT" revision_request_fingerprint "$STRUCTURED_REVISION_FINGERPRINT" report_path "$STRUCTURED_REPORT_PATH" task_id "$STRUCTURED_TASK_ID" parent_cmd "$STRUCTURED_PARENT_CMD")
+        else
+            # A review message without a resolvable report may still carry an
+            # explicit commander envelope. Keep that identity structured;
+            # otherwise the post-case validator below rejects the taskless
+            # message before it can enter the mailbox.
+            _fallback_identity=$(inbox_commander_directive_identity "$CONTENT" 2>/dev/null || true)
+            if [ -n "$_fallback_identity" ]; then
+                mapfile -t _fallback_values <<< "$_fallback_identity"
+                _identity_fields=(task_id "${_fallback_values[0]:-}" subject_task_id "${_fallback_values[1]:-}" parent_cmd "${_fallback_values[2]:-}")
+            fi
+        fi
+        ;;
+    investigation_result)
+        # This lane has its own evidence contract rather than a commander
+        # envelope. Preserve every validated identity field structurally so
+        # consumers never need to parse the free-form content again.
+        for _investigation_field in task_id check_id occurred_at evidence impact; do
+            _investigation_value=$(printf '%s\n' "$CONTENT" | sed -n "s/.*${_investigation_field}=\\([^[:space:]]\\+\\).*/\\1/p" | head -1)
+            _identity_fields+=("$_investigation_field" "$_investigation_value")
+        done
+        ;;
+    *)
+        if [ "$TARGET" = "karo" ] && inbox_karo_message_requires_identity "$TYPE"; then
+            _identity_fields=(task_id "$COMMANDER_DIRECTIVE_TASK_ID" subject_task_id "$COMMANDER_DIRECTIVE_SUBJECT_TASK_ID" parent_cmd "$COMMANDER_DIRECTIVE_PARENT_CMD")
         fi
         ;;
 esac
+
+# Dedicated generators must not silently fall back to a taskless durable row
+# when their case branch could not resolve a report/task identity. Validate
+# the constructed structure after all case handling and before persistence.
+if [ "$TARGET" = "karo" ]; then
+    case "$TYPE" in
+        review_report|accept_report|run_cmd_complete|report_review|report_review_result|report_revision)
+            _dedicated_task_id=""
+            for ((_identity_i=0; _identity_i<${#_identity_fields[@]}; _identity_i+=2)); do
+                if [ "${_identity_fields[_identity_i]}" = "task_id" ]; then
+                    _dedicated_task_id="${_identity_fields[_identity_i+1]:-}"
+                    break
+                fi
+            done
+            if [ -z "$_dedicated_task_id" ]; then
+                echo "BLOCK: ${TYPE} dedicated identity resolved no non-empty task_id; report/task identity is required before persistence" >&2
+                exit 2
+            fi
+            ;;
+    esac
+fi
 
 # Duplicate-notification suppression, decided on structure alone.
 # Order of structural sources, strongest first:

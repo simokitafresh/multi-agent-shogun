@@ -4758,7 +4758,10 @@ check_idle_backlog_alert() {
 
     local backlog_ids
     backlog_ids=$(printf '%s\n' "${backlog_lines[@]}" | cut -d'|' -f1 | paste -sd, -)
-    local message="【IDLE-BACKLOG-ALERT】idle継続${threshold}秒超: ${eligible_idle[*]}。未配備次標的=${backlog_ids}。掲示板宣言=${next_target:-未宣言}。監視周期=${POLL_INTERVAL:-20}秒。配備判断せよ。"
+    local directive_subject_task_id directive_parent_cmd
+    IFS='|' read -r directive_parent_cmd _unused_timestamp _unused_delegated_at <<< "${backlog_lines[0]}"
+    directive_subject_task_id="$directive_parent_cmd"
+    local message="task_id=commander_directive subject_task_id=${directive_subject_task_id} parent_cmd=${directive_parent_cmd} 【IDLE-BACKLOG-ALERT】idle継続${threshold}秒超: ${eligible_idle[*]}。未配備次標的=${backlog_ids}。掲示板宣言=${next_target:-未宣言}。監視周期=${POLL_INTERVAL:-20}秒。配備判断せよ。"
     log "IDLE-BACKLOG-ALERT: generation=$generation idle=${eligible_idle[*]} backlog_count=${#backlog_lines[@]} false_alert=0"
     if notify_karo_durable pending_work karo "$message"; then
         _idle_backlog_alert_atomic_write "$marker_file" "$generation" || return 1
@@ -5452,10 +5455,13 @@ _notify_clear_receipt_required_once() {
     local name="$1" parent_cmd="$2"
     local flag_dir="$SCRIPT_DIR/queue/gates/$parent_cmd"
     local flag="$flag_dir/clear_required_${name}.notified"
+    local subject_task_id=""
+    local task_file="$SCRIPT_DIR/queue/tasks/${name}.yaml"
+    [ -f "$task_file" ] && subject_task_id=$(yaml_field_get "$task_file" task_id "" 2>/dev/null || true)
     mkdir -p "$flag_dir"
     if ( set -C; : > "$flag" ) 2>/dev/null; then
         send_inbox_message karo \
-            "${name}のreport完了を検知したがCLEAR receiptが未成立。${parent_cmd}のcmd_complete_gate CLEAR完了までtaskを非終端で保持する。" \
+            "task_id=commander_directive subject_task_id=${subject_task_id} parent_cmd=${parent_cmd} ${name}のreport完了を検知したがCLEAR receiptが未成立。${parent_cmd}のcmd_complete_gate CLEAR完了までtaskを非終端で保持する。" \
             gate_clear_required ninja_monitor || true
     fi
 }
@@ -10628,7 +10634,9 @@ check_inbox_renudge() {
                         # notify_karo_durableがreturn 0(direct成功またはoutbox永続化成功)の
                         # 場合のみ世代を確定する。return 1(outbox永続化自体が失敗)ならmarkerを
                         # 書かず、次サイクルで同一fpのまま再試行させる(AC3)。
-                        if notify_karo_durable pending_work karo "未処理の忍者done/failed報告が残っている。queue/tasks と queue/reports を確認し、レビュー/完了処理/次配備を判断せよ。gate_detail=${_karo_pending_reason_text:-UN-GATED}"; then
+                        local _directive_worker _directive_subject_task_id _directive_parent_cmd _directive_status _directive_report _directive_reason
+                        IFS='|' read -r _directive_worker _directive_subject_task_id _directive_parent_cmd _directive_status _directive_report _directive_reason <<< "${_kentry_sorted[0]}"
+                        if notify_karo_durable pending_work karo "task_id=commander_directive subject_task_id=${_directive_subject_task_id} parent_cmd=${_directive_parent_cmd} 未処理の忍者done/failed報告が残っている。queue/tasks と queue/reports を確認し、レビュー/完了処理/次配備を判断せよ。gate_detail=${_karo_pending_reason_text:-UN-GATED}"; then
                             _karo_pending_work_mark_notified "$_karo_pending_fp"
                         else
                             log "KARO-PENDING-INBOX-RETRY: notify_karo_durable failed to persist (outbox append failed), generation not marked, will retry next cycle"
