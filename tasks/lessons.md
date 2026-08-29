@@ -16181,3 +16181,16 @@ sqlite3.Connection.backup()を使うとページ(4096byte)単位のread syscall�
 - **when**: 未設定
 - **how**: 未設定
 - source commitのsubjectとchanged pathsを別git履歴走査で取得するとraw ALERTごとに9p I/Oを重複する。git show --format=%s --name-onlyの単一bounded呼出しとcapture contract testで証跡を維持しながら走査回数を半減できる。
+
+### L1671: pipefail下のheadはidentity producerの後続出力を失わせる
+- **日付**: 2026-08-29
+- **出典**: cmd_karo_ci_fix_33253680471_commander_identity
+- **記録者**: hayate
+- **tags**: [infra,testing]
+- **subdomain**: infra
+- **target_files**: [tests/unit/test_inbox_write.bats]
+- **origin**: [[cmd_karo_ci_fix_33253680471_commander_identity]]
+- **enforcement**: 未自動化
+- **when**: 未設定
+- **how**: 未設定
+- 複数行を返すidentity関数へhead -1をpipeすると、set -euo pipefail環境でproducerがSIGPIPEとなり後続のstructured identityが欠落する。複数行契約はmapfileで全量受けてから必要要素を選ぶ。
