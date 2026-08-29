@@ -4445,7 +4445,10 @@ insights:
   priority: "medium"
   source: "manual"
   fix_known: false
-  status: pending
+  status: resolved
+  resolved_reason: "一次情報で現行防御と回帰契約を確認済み。tests/unit/test_heavy_job_admission.bats の single-flight orphan lock holder recovery ケース(ケース42、87/87 PASS、SKIP 0、実測2.729秒)が stale owner の terminal receipt 回収を検証し、scripts/run_tests.sh の既存実装(基礎修正62b8f657a、後続の fixture root/tree identity 防御を含む)で本事象を解消済み。追加実修正・decision_candidateは不要。"
+  action_artifact: "target=queue/insights.yaml:INS-20260827-014159161-2e9c;primary=tests/unit/test_heavy_job_admission.bats:L671-L729;implementation=scripts/run_tests.sh:1938-2000;test_receipt=logs/test_receipts/run_tests_20260829T135130_2935762.json;git=62b8f657a07730b4a70301129ba22aca2e747b4a;decision_candidate=none"
+  resolved_at: "2026-08-29T22:55:28+09:00"
 - id: INS-20260827-020805059-47f8
   ts: "2026-08-27T02:08:05+09:00"
   insight: "deploy_task 397秒timeout/cmd_publish 300秒timeoutの真因(01:59): .git/worktrees stale metadata 724件(gitdir実体不在624件)。git worktree add/prune は全entryを走査するためdrvfs上で毎回数分。git worktree prune で724→103(1m35s)、list 9.6s。自動化ターゲット: ninja_monitor の run_lock_cleanup 同様に .git/worktrees の実体不在entryを定期prune(1h)+deploy_task.sh の worktree add 前に件数閾値で prune"
