@@ -4118,7 +4118,10 @@ insights:
   priority: "medium"
   source: "manual"
   fix_known: false
-  status: pending
+  status: resolved
+  resolved_reason: "既知修正済み: Codex配達成功を対象メッセージ行のread遷移でのみ確定するT21契約が現行実装と回帰テストで検証済み"
+  action_artifact: "f5fd3538761c0b0c2fc11b823e4db5f86a548868; scripts/inbox_write.sh:1180-1258; tests/unit/test_inbox_write_codex_delivery.bats:1-109"
+  resolved_at: "2026-08-29T18:31:28+09:00"
 - id: INS-20260826-194515313-ad66
   ts: "2026-08-26T19:45:15+09:00"
   insight: "semantic_index_update新概念候補: discussion:artifactの更新も頼む は 既存aliasesに一致なし。概念定義とaliases追加を検討せよ"
