@@ -361,8 +361,11 @@ check_legacy_ext4_path_residuals() {
     # 除外列挙(logs/docs/.codd/.hanzo_worktrees…5927 件の証拠パス)ではなく、生きた消費者の
     # ルートだけを肯定列挙して rg する(cmd_4409 AC の対象=scripts/config/skills/instructions/
     # .claude/.codex/CLAUDE.md/AGENTS.md/README*)。ループ廃止、実測 gate 全体 2.0s。
+    # 2026-08-30 08:47 将軍: scripts/shogun_backup.py は旧 root を「復元時の歴史的絶対 symlink の
+    # 書換対象(known_roots)」として意図的に保持する(cmd_4411 隔離復元 AC2)。残存参照ではなく復元互換なので除外。
     matches=$(cd "$root" 2>/dev/null && rg -l -I --hidden --fixed-strings \
         --glob '!**/*.bak' --glob '!**/migrate_*' --glob '!scripts/gates/gate_shogun_startup.sh' \
+        --glob '!scripts/shogun_backup.py' \
         "$old_root" scripts config skills instructions .claude .codex CLAUDE.md AGENTS.md README.md README_ja.md 2>/dev/null | sort -u) || true
     if [ -n "$matches" ]; then
         n=$(printf '%s\n' "$matches" | grep -c .)
