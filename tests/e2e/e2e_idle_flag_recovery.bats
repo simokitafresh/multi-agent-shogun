@@ -70,7 +70,7 @@ YAML
     local watcher_pid
     watcher_pid="$(start_inbox_watcher "karo" 0 "claude")"
 
-    run bash "$E2E_QUEUE/scripts/inbox_write.sh" "karo" "/clear" "clear_command" "karo"
+    run bash "$E2E_QUEUE/scripts/inbox_write.sh" "karo" "task_id=commander_directive subject_task_id=subtask_e2e_idle_010a parent_cmd=cmd_e2e_idle_010a /clear" "clear_command" "karo"
     [ "$status" -eq 0 ]
 
     wait_for_yaml_value "$task_file" "task.status" "done" 45
