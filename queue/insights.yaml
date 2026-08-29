@@ -8128,3 +8128,10 @@ insights:
   source: "skill_script_refs:40d0bfa49fef218b"
   fix_known: false
   status: pending
+- id: INS-20260829-230126951-9d8a
+  ts: "2026-08-29T23:01:26+09:00"
+  insight: "semantic_index_update新概念候補: discussion:確か前にDM signalのログインページをどう作るか相談しなかったっけ？そのアーティファクトある？ は 既存aliasesに一致なし。概念定義とaliases追加を検討せよ"
+  priority: "low"
+  source: "semantic_index_update"
+  fix_known: false
+  status: pending
