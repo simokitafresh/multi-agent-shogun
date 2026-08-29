@@ -7656,3 +7656,10 @@ insights:
   source: "semantic_index_update"
   fix_known: false
   status: pending
+- id: INS-20260829-125430362-dcdb
+  ts: "2026-08-29T12:54:30+09:00"
+  insight: "semantic_index_update未登録[[リンク]]ターゲット: [[殿指示_T178_T177_T176_T163_終端まで_20260829_1241]] は既存aliasesに一致なし。類似概念TOP3: known_unknowns_principle(無知の知; alias=T178 T177 T176 T163の進捗を覚醒して確認し; score=19.6) / creator_brainwashing_defense(創造主の洗脳防御; alias=殿指示; score=11.4) / strong_new_game_completion_contract(強くてニューゲーム完遂契約; alias=殿指示_強くてニューゲーム_20260813_1648; score=10.1)。概念定義とaliases追加を検討せよ"
+  priority: "low"
+  source: "semantic_index_update"
+  fix_known: false
+  status: pending
