@@ -3496,6 +3496,7 @@ codd:
 | discussion | `queue/lord_conversation.jsonl` 2026-08-29T08:41:13+09:00 2026-08-29 08:40 将軍 D0(可逆): database PJ の Render cron crn-d2vqn6buibrs73dla6vg(Stockdata-API-daily-update、実 schedule 30  |
 | discussion | `queue/lord_conversation.jsonl` 2026-08-29T08:49:17+09:00 30分loop(殿指示08-27 14:34「進捗を確認し、利他の精神でつまりを解消し、artifactを更新せよ」恒久): (1)capture-pane全pane/陣形図/gate_metrics/rev-list origin/CI  |
 | discussion | `queue/lord_conversation.jsonl` 2026-08-29T09:09:51+09:00 30分loop(殿指示08-27 14:34「進捗を確認し、利他の精神でつまりを解消し、artifactを更新せよ」恒久): (1)capture-pane全pane/陣形図/gate_metrics/rev-list origin/CI  |
+| discussion | `queue/lord_conversation.jsonl` 2026-08-29T09:39:50+09:00 30分loop(殿指示08-27 14:34「進捗を確認し、利他の精神でつまりを解消し、artifactを更新せよ」恒久): (1)capture-pane全pane/陣形図/gate_metrics/rev-list origin/CI  |
 | causal_chain | `[[cmd_karo_hotfix_deploy_report_template_quote_escape_202607020530]]` (L924) |
 | causal_chain | `[[cmd_reflux_insight_202607071717_tobisaru]]` (L961) |
 | causal_chain | `[[cmd_karo_hotfix_report_notify_inprogress_guard_202607101913]]` (L1026) |
@@ -13602,6 +13603,10 @@ codd:
 | cmd | `cmd_reflux_insight_202608290335_tobisaru` (`queue/insights.yaml`) |
 | causal | `cmd_reflux_insight_202608290733_saizo` files_modified: [[provisional_insights]] |
 | cmd | `cmd_reflux_insight_202608290733_saizo` (`queue/insights.yaml`) |
+| causal | `cmd_reflux_insight_202608290834_saizo` files_modified: [[provisional_insights]] |
+| cmd | `cmd_reflux_insight_202608290834_saizo` (`queue/insights.yaml`) |
+| causal | `cmd_reflux_insight_202608290855_kotaro` files_modified: [[provisional_insights]] |
+| cmd | `cmd_reflux_insight_202608290855_kotaro` (`queue/insights.yaml`) |
 | causal_chain | `[[cmd_reflux_insight_202608040505_kagemaru]]` (L1545) |
 
 ## provisional_heavy_job_admission — 仮: Heavy Job Admission
@@ -15170,6 +15175,7 @@ codd:
 | discussion | `queue/lord_conversation.jsonl` 2026-08-28T22:25:33.118498+00:00 git pre-commit semantic propagation for context/projects changes |
 | discussion | `queue/lord_conversation.jsonl` 2026-08-28T23:43:55.014094+00:00 git pre-commit semantic propagation for context/projects changes |
 | discussion | `queue/lord_conversation.jsonl` 2026-08-28T23:50:24.364612+00:00 git pre-commit semantic propagation for context/projects changes |
+| discussion | `queue/lord_conversation.jsonl` 2026-08-29T00:36:17.891637+00:00 git pre-commit semantic propagation for context/projects changes |
 | causal_chain | `[[cmd_karo_hotfix_lessons_yaml_format_restore_20260727]]` (L1389) |
 
 ## infra_design_intent — インフラ設計意図カタログ
