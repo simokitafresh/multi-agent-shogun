@@ -3629,7 +3629,10 @@ insights:
   priority: "medium"
   source: "cmd_complete_gate:l6_horizontal:cmd_4394"
   fix_known: false
-  status: pending
+  status: resolved
+  resolved_reason: "一次情報で対象候補を確認。根因のtarget_filesなし教訓がtag_fallbackで無差別注入される問題は、GP-221/GP-3231の既存実装でtarget_path一致教訓だけに限定済みで解消済み。"
+  action_artifact: "primary=queue/insights.yaml:INS-20260825-010502795-e527;memory_db=scripts/memory_db_query.sh --search INS-20260825-010502795-e527;semantic_search=semantic_search.sh target_files tag_fallback useful rate;causal_backlinks=0 direct INS backlink;implementation=scripts/deploy_task.sh:6753-6768;test=tests/unit/test_deploy_task_ac_handling.bats:1840-1900;new_fix=none;decision_candidate=none"
+  resolved_at: "2026-08-29T15:26:54+09:00"
 - id: INS-20260825-012609355-a8d1
   ts: "2026-08-25T01:26:09+09:00"
   insight: "semantic_index_update新概念候補: discussion:task notification task id b0q9n3paa task id tool use id toolu 01Cu9mLcLSpeutDCch は 既存aliasesに一致なし。概念定義とaliases追加を検討せよ"
