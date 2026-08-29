@@ -278,6 +278,14 @@ source_commit_is_equivalent_to_recorded_boundary() {
     [[ "$rel_path" == context/*.md && -f "$file" && -r "$file" ]] || return 1
     [[ "$alert_line" =~ latest:[[:space:]]*([0-9a-f]{7,40}) ]] || return 1
     latest_hash="${BASH_REMATCH[1]}"
+    # Ordinary source alerts have no equivalence claim. Skip canonical-repo
+    # and ancestry probes unless the checker explicitly marks this candidate
+    # or the context already carries a source_equivalent boundary; those
+    # probes are the expensive 9p leaf of the normal gate path.
+    if [[ "$alert_line" != *source_equivalent* ]] && \
+        ! head -n 10 "$file" | grep -q 'reason:source_equivalent'; then
+        return 1
+    fi
     [[ "$alert_line" =~ repo=([^[:space:]]+) ]] || return 1
     reported_repo="${BASH_REMATCH[1]}"
     canonical_repo="$(canonical_source_repo_for_context "$rel_path" 2>/dev/null || true)"
@@ -288,7 +296,7 @@ source_commit_is_equivalent_to_recorded_boundary() {
     }
     repo="$canonical_repo"
     [[ -d "$repo" ]] || return 1
-    [[ "$alert_line" == *source_equivalent* ]] && source_equivalent_hint=1
+    source_equivalent_hint=1
     [[ "$alert_line" =~ update_trigger=([^[:space:]]+) ]] || return 1
     trigger="${BASH_REMATCH[1]}"
 
@@ -563,10 +571,21 @@ for report_dir in ("queue/reports", "queue/archive/reports"):
     for cmd in candidate_cmds:
         report_paths.update(glob.glob(os.path.join(root, report_dir, f"*{cmd}*.yaml")))
 if not report_paths:
-    # Keep compatibility with legacy/nonstandard report filenames only when
-    # the source subject has no command identity to narrow the search.
-    report_paths.update(glob.glob(os.path.join(root, "queue", "reports", "*_report_*.yaml")))
-    report_paths.update(glob.glob(os.path.join(root, "queue", "archive", "reports", "*_report_*.yaml")))
+    # Keep compatibility with legacy/nonstandard report filenames while
+    # avoiding a full YAML parse or Python file-open loop over every archived
+    # report. The source hash is already resolved above, so one raw-text
+    # prefilter preserves exact report matching and bounds this fallback to
+    # reports that can actually match.
+    report_roots = [os.path.join(root, item) for item in ("queue/reports", "queue/archive/reports")]
+    try:
+        matches = subprocess.run(
+            ["rg", "-l", "--fixed-strings", "--glob", "*_report_*.yaml", wanted, *report_roots],
+            check=False, capture_output=True, text=True,
+        )
+        if matches.returncode in (0, 1):
+            report_paths.update(line for line in matches.stdout.splitlines() if line)
+    except OSError:
+        pass
 
 def same_command(source_cmd, parent_cmd):
     if source_cmd == parent_cmd:
