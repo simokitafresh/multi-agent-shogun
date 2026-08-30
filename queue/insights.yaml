@@ -10415,3 +10415,10 @@ insights:
   resolved_reason: "semantic map generation verified the candidate is represented or intentionally ignored"
   action_artifact: "semantic_map=/home/simokitafresh/multi-agent-shogun/context/semantic-map.md;semantic_index=/home/simokitafresh/multi-agent-shogun/docs/semantic-index/index.md"
   resolved_at: "2026-08-31T01:39:27+09:00"
+- id: INS-20260831-014142168-865a
+  ts: "2026-08-31T01:41:42+09:00"
+  insight: "[[page 8c917039f82f292b js 1 GET 503 Service Unavailable n @ p]] semantic_stress_test candidate_aliases: NO_MATCH source=lord query=page-8c917039f82f292b.js:1 GET 503 (Service Unavailable) n @ page-8c917039f82…"
+  priority: "low"
+  source: "semantic_stress_test"
+  fix_known: false
+  status: pending
