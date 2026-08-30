@@ -10315,3 +10315,10 @@ insights:
   resolved_reason: "semantic index candidate was absorbed into a registered concept"
   action_artifact: "semantic_index=/home/simokitafresh/multi-agent-shogun/docs/semantic-index/index.md"
   resolved_at: "2026-08-31T00:27:47+09:00"
+- id: INS-20260831-005029007-0ed0
+  ts: "2026-08-31T00:50:29+09:00"
+  insight: "semantic_index_update新概念候補: discussion:Googleサインインは現在設定されていません。と表示されるぞ は 既存aliasesに一致なし。概念定義とaliases追加を検討せよ"
+  priority: "low"
+  source: "semantic_index_update"
+  fix_known: false
+  status: pending
