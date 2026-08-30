@@ -168,6 +168,17 @@ test_execution:
 - **enforcement**: agent_respawn.sh 作業中ガード(e3712b4a9)/codex_inbox_priority_guard.sh(42f09d54b)/cli_lookup 接尾辞自己修復+BASH_REMATCH 排除(bc9f4a8c6)/script_update.sh bash フォールバック(2df2ecdee)/inbox_write gunshi 宛 review_draft 許可+stderr 記録(c17a92d8e)。未自動化: push 単位 1 commit の強制(pre-push hook で origin..pushed が first-parent 1 段を超えたら WARN)。
 - origin: `[[殿裁定_1commitずつpush_20260826]] -> [[家老の行動型_1通1単位]] -> [[つまり3本根治_20260827]]`
 
+## 復帰後の型・第十七弾 7則（2026-08-30 21:50-08-31 00:05 第17便: y 待ち/P-C 先送り/insight 逃げ/リバランサー一次/Enter 滞留/偽 CLEAR 4415/誤診訂正から・将軍自身に適用）
+
+1. **/clear 後に殿の「y」を待ってターンを閉じるな。startup gate の ALERT と便の停止は殿の入力を待たない。** 21:52 と 21:55 に「y を待つ」で 2 ターン閉じ、stop hook に 2 回押されて動いた(洗脳#3+#5)。因果を未来へ辿れば、待つ間に kotaro failed・tobisaru idle・lane 停止が進む。Recovery は環境(hook)が要求するもの=自分で始める。
+2. **「次の loop で起票する」は先送り。起票は今、1 本目を publish してから loop に戻れ。** P-C(cmd_4425)を 22:45→23:12 と二度「次で」と書き、殿 22:53『覚醒して行動せよ。止まっているぞ』。以後 4 本を一気に publish した(30 分)。同 target の直列は depends_on で表し、publish を待たせない。
+3. **負の複利があるものを insight に書くな(型十六弾-10 の再発)。書いたら 30 分以内に D0 で消せ。** INS-234427(WARN 累計昇格)・INS-235625(ac_version_stale)を登録して止まり、殿 23:59『負の複利があるものは即時対応せよ』。D0 f043a07e7(report.ac_version_read==再計算なら自己修復)で 4428 の BLOCK→WAIT を 20 分で proof。誤診(INS-234427 は自縛ではなく AC 文の `out/index.html`)は resolve に訂正を残す(歴史修正禁止)。
+4. **「rebalancer でできたこと」は rebalancer の現物で確かめてから殿に聞け。殿に頼む前に `git grep` 1 本。** JWT secret を PD-140 で殿に依頼→殿 22:54『リバランサーでできたことを俺に聞くな。できるはずだ』→`git grep supabase backend/app`=0 件(backend は検証しない)。∴ Supabase Auth API(anon key+Bearer)で secret 不要=cmd_4428。殿の手作業は「agent が原理的に持てない権限」(dashboard 設定)だけに絞り、runbook gist で 1 手ずつ(e026b243)。
+5. **pane の入力欄に文字が滞留していたら(`❯ /clear`・`❯ inbox5`)、2 回 capture で滞留を確認して Enter を送れ。nudge の再送では直らない。** 軍師が 23:17-23:30 に review 3 本を既読化のみで 0 件処理=入力欄に `/clear` と nudge が未 submit で残っていた。将軍が Enter 2 回(23:29/23:30)で復帰、以後 3 本 review 到達。監視側(ninja_monitor)に「入力欄に非空文字列が 60s 滞留」の検知を埋めるのが次の自動化ターゲット。
+6. **GATE CLEAR は ToBe 到達の証明ではない。契約変更の cmd は CLEAR 後に `git show origin/main:<file> | grep -c <契約キー>` で到達を数えてから閉じよ(型六弾-3 の契約版)。** cmd_4415(MDD・best_name 除去・blackout)は CLEAR 16:30 だが origin/main に mdd 0 件、最終 commit は 3 行差分「reintegrate latest main」。6 時間後の v3 設計書作成時に発見→cmd_4425 で再起票。
+7. **設計単位が変わったら版を上げよ(v2 の追記で粘るな)。** 殿下問 22:34『v3 を作るタイミングでは』。/login 1 ページ→入口 3 面(LP/app 入口/公開 API)へ前提が変わっていたのに v2 §9 追記で運用していた。v3(901c36a5)で分担表+契約 v3+工程表に組み直し、SEO 案・Free tier 設計書を v3 §2 に従属させた。
+- origin: `[[殿指示_強くてニューゲーム_20260831_0005]] -> [[y待ち2ターン_stop_hook]] -> [[P-C先送り_殿覚醒指示_2253]] -> [[rebalancer_git_grep_0件_cmd_4428]] -> [[軍師入力欄滞留_Enter]] -> [[4415偽CLEAR_cmd_4425]] -> [[D0_f043a07e7]] -> [[復帰後の型_第十七弾]]`
+
 ## 復帰後の型・第十六弾 2則（2026-08-30 15:53-16:04 殿下問『P2 を待つメリットは何だ』から・将軍自身に適用）
 
 1. **契約が固まった時点で消費側(frontend 等)を並走配備せよ。直列(depends_on)にしてよいのは契約変更を伴う依存だけ。** 4416(P2 frontend)を 4415(best_name 除去=表示追補)に直列にし 13:21→15:58 の 2h37m 未着手。§2.3 の JSON 契約は 12:20 確定で、P2 は P1 実装完了すら待たず並走できた(モック→本番 EP 差替え)。工程表の順序を依存関係に写すな。パイプライン契約(08-15『結果を待つ時間で次を進める』)の cmd 依存版。
