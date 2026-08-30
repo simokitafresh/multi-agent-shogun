@@ -9831,7 +9831,10 @@ insights:
   priority: "low"
   source: "semantic_stress_test"
   fix_known: false
-  status: pending
+  status: resolved
+  resolved_reason: "semantic index candidate was absorbed into a registered concept"
+  action_artifact: "semantic_index=/home/simokitafresh/multi-agent-shogun/docs/semantic-index/index.md"
+  resolved_at: "2026-08-30T20:22:59+09:00"
 - id: INS-20260830-202159283-70de
   ts: "2026-08-30T20:21:59+09:00"
   insight: "semantic_index_update新概念候補: discussion:着手せよ は 既存aliasesに一致なし。概念定義とaliases追加を検討せよ"
@@ -9845,11 +9848,17 @@ insights:
   priority: "low"
   source: "semantic_stress_test"
   fix_known: false
-  status: pending
+  status: resolved
+  resolved_reason: "semantic index candidate was absorbed into a registered concept"
+  action_artifact: "semantic_index=/home/simokitafresh/multi-agent-shogun/docs/semantic-index/index.md"
+  resolved_at: "2026-08-30T20:23:00+09:00"
 - id: INS-20260830-202224764-8871
   ts: "2026-08-30T20:22:24+09:00"
   insight: "[[LP SEO P0 — JSON LD Organization・WebSite・FAQPage と OG Twitte]] semantic_stress_test candidate_aliases: NO_MATCH source=cmds query=LP SEO P0 — JSON-LD(Organization・WebSite・FAQPage)と OG/Twitter 画像と検索語入り title/description を lp 配下に追加する"
   priority: "low"
   source: "semantic_stress_test"
   fix_known: false
-  status: pending
+  status: resolved
+  resolved_reason: "semantic index candidate was absorbed into a registered concept"
+  action_artifact: "semantic_index=/home/simokitafresh/multi-agent-shogun/docs/semantic-index/index.md"
+  resolved_at: "2026-08-30T20:23:00+09:00"
