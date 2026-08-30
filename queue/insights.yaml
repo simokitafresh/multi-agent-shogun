@@ -9714,3 +9714,10 @@ insights:
   source: "semantic_index_update"
   fix_known: false
   status: pending
+- id: INS-20260830-195743467-3bee
+  ts: "2026-08-30T19:57:43+09:00"
+  insight: "[[Search Console の所有者 殿の Google アカウント 既定 殿が登録]] semantic_stress_test candidate_aliases: NO_MATCH source=lord query=Search Console の所有者=殿の Google アカウント(既定: 殿が登録、将軍が TXT)。についてステップバイステップで追記して"
+  priority: "low"
+  source: "semantic_stress_test"
+  fix_known: false
+  status: pending
