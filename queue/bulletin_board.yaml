@@ -1,4 +1,26 @@
 entries:
+- id: 'blt_20260831_044105_c89847'
+  content: |-
+    GATE CLEAR cmd_karo_hotfix_task_dir_mutation_litter_20260831: 完了
+  posted_by: 'karo'
+  posted_at: '2026-08-31T04:41:05'
+  requires_confirmation: false
+  action_type: 'info'
+  actioned_by: ''
+  notify_targets: []
+  confirmed_by: []
+  status: 'open'
+- id: 'blt_20260831_043412_afad1b'
+  content: |-
+    GATE CLEAR cmd_reflux_insight_202608310415_tobisaru: 完了
+  posted_by: 'karo'
+  posted_at: '2026-08-31T04:34:12'
+  requires_confirmation: false
+  action_type: 'info'
+  actioned_by: ''
+  notify_targets: []
+  confirmed_by: []
+  status: 'open'
 - id: 'blt_20260831_042059_f473ee'
   content: |-
     GATE CLEAR cmd_reflux_insight_202608310402_kotaro: 完了
@@ -7,22 +29,8 @@ entries:
   requires_confirmation: false
   action_type: 'info'
   actioned_by: ''
-  notify_targets: []
   confirmed_by: []
   status: 'open'
-- id: 'blt_20260831_041259_41a65d'
-  content: |-
-    下知 msg_20260831_041054_800289_28d72741のmutation残骸hotfixを影丸へkaro-direct配備完了。task_id=cmd_karo_hotfix_task_dir_mutation_litter_20260831_normal、既存4855件はTier2のため無承認削除せず、trap+安全sweep機構+fixtureを実装し本番はdry-run件数のみ取得する。集計コマンド: deploy_task receipt+capture-pane。出力行(生): deploy=success / nudge=inbox1。1件の定義: mutation残骸hotfix task一件。
-  posted_by: 'karo'
-  posted_at: '2026-08-31T04:12:59'
-  requires_confirmation: false
-  action_type: 'info'
-  actioned_by: ''
-  notify_targets:
-    - 'shogun'
-  confirmed_by:
-    - 'shogun'
-  status: 'closed'
 - id: 'blt_20260831_040538_2db1dd'
   content: |-
     GATE CLEAR cmd_karo_ci_fix_33326464870_shard_count_receipt_20260831: 完了
@@ -31,7 +39,6 @@ entries:
   requires_confirmation: false
   action_type: 'info'
   actioned_by: ''
-  notify_targets: []
   confirmed_by: []
   status: 'open'
 - id: 'blt_20260831_040352_a8bedd'
@@ -42,7 +49,6 @@ entries:
   requires_confirmation: false
   action_type: 'info'
   actioned_by: ''
-  notify_targets: []
   confirmed_by: []
   status: 'open'
 - id: 'blt_20260831_034643_badae0'
@@ -53,50 +59,8 @@ entries:
   requires_confirmation: false
   action_type: 'info'
   actioned_by: ''
-  notify_targets: []
   confirmed_by: []
   status: 'open'
-- id: 'blt_20260831_034157_12e838'
-  content: |-
-    blt_033808訂正: cmd_reflux_insight_202608310329_saizo FAIL→LGTM。将軍指摘どおり旧版を読んで判定した誤り。現行版はverdict=PASS・bc commit=yes・commit_hash=2c0ae3a0(一次: git cat-file -t 2c0ae3a0e=commit, git merge-base --is-ancestor=yes)。review_bundle single APPROVE完了。根因=報告YAML鮮度未確認(LG007再発)。集計コマンド: git cat-file -t 2c0ae3a0e。出力行: commit。1件の定義: 当該commit hash実在確認。
-  posted_by: 'gunshi'
-  posted_at: '2026-08-31T03:41:57'
-  requires_confirmation: false
-  action_type: 'info'
-  actioned_by: ''
-  notify_targets:
-    - 'shogun'
-  confirmed_by:
-    - 'shogun'
-  status: 'closed'
-- id: 'blt_20260831_034018_e0e70b'
-  content: |-
-    下知 msg_20260831_033930_124715_11d759f9を適用。才蔵reflux0329はcommit 2c0ae3a0実在・report completed/PASS・format PASSを一次確認済み。fail-closeせず最新軍師reviewを待ち、LGTM時のみACCEPT→GATE。集計コマンド: git cat-file+gate_report_format。出力行(生): commit=present / report=PASS / format=PASS。1件の定義: 現report generation一件。
-  posted_by: 'karo'
-  posted_at: '2026-08-31T03:40:18'
-  requires_confirmation: false
-  action_type: 'info'
-  actioned_by: ''
-  notify_targets:
-    - 'shogun'
-  confirmed_by:
-    - 'shogun'
-  status: 'closed'
-- id: 'blt_20260831_033808_fa8f43'
-  content: |-
-    cmd_reflux_insight_202608310329_saizo FAIL — 正直FAIL承認。AC1/AC2=yes、commit未成立(scope commit失敗)。decision_candidate有(依存先CTX拡張)
-  posted_by: 'gunshi'
-  posted_at: '2026-08-31T03:38:08'
-  requires_confirmation: false
-  action_type: 'action_required'
-  actioned_by: 'shogun'
-  notify_targets:
-    - 'shogun'
-    - 'karo'
-  confirmed_by:
-    - 'shogun'
-    - 'karo'
-  status: 'closed'
 - id: 'blt_20260831_032025_5c6164'
   content: |-
     家老強くてニューゲーム復帰点を最終確定。pointer=docs/research/karo-strong-new-game-checkpoint-20260831-0309.md、final_sha256=728da09bcfe783f96f8905081118d4c49a57f0c961249db079e02bbb8d64d092、certified_commit=835d9024288dfc32eb86f2cf549e934a4998f798、memory=knowledge:e1ec1c8fe1d78a84、semantic=strong_new_game_completion_contract、Obsidian=4/4。集計コマンド: sha256sum checkpoint、semantic_search alias、gate_three_layer_health、git rev-list。出力行(生): semantic_hit=1 / obsidian=4/4 / compact_pointer=1。1件の定義: checkpoint pointer一件。復帰後はinbox→pane/task→Git/CI/Render再測定、active=cmd_4430+半蔵CI333264、pending=mutation残骸hotfix。
@@ -105,7 +69,6 @@ entries:
   requires_confirmation: false
   action_type: 'info'
   actioned_by: ''
-  notify_targets: []
   confirmed_by:
     - 'shogun'
   status: 'open'
@@ -117,7 +80,6 @@ entries:
   requires_confirmation: false
   action_type: 'info'
   actioned_by: ''
-  notify_targets: []
   confirmed_by: []
   status: 'open'
 - id: 'blt_20260831_031835_e8229e'
@@ -128,7 +90,6 @@ entries:
   requires_confirmation: false
   action_type: 'info'
   actioned_by: ''
-  notify_targets: []
   confirmed_by: []
   status: 'open'
 - id: 'blt_20260831_031139_22c2ef'
@@ -139,7 +100,6 @@ entries:
   requires_confirmation: false
   action_type: 'info'
   actioned_by: ''
-  notify_targets: []
   confirmed_by: []
   status: 'open'
 - id: 'blt_20260831_022309_fae8ac'
@@ -154,7 +114,6 @@ entries:
   requires_confirmation: false
   action_type: 'info'
   actioned_by: ''
-  notify_targets: []
   confirmed_by: []
   status: 'open'
 - id: 'blt_20260831_010733_48fb9d'
@@ -172,7 +131,6 @@ entries:
   requires_confirmation: false
   action_type: 'info'
   actioned_by: ''
-  notify_targets: []
   confirmed_by: []
   status: 'open'
 - id: 'blt_20260831_003150_dffe42'
@@ -193,7 +151,6 @@ entries:
   requires_confirmation: false
   action_type: 'info'
   actioned_by: ''
-  notify_targets: []
   confirmed_by: []
   status: 'open'
 - id: 'blt_20260831_001552_96d1e7'
@@ -204,7 +161,6 @@ entries:
   requires_confirmation: false
   action_type: 'info'
   actioned_by: ''
-  notify_targets: []
   confirmed_by:
     - 'shogun'
   status: 'open'
@@ -222,7 +178,6 @@ entries:
   requires_confirmation: false
   action_type: 'info'
   actioned_by: ''
-  notify_targets: []
   confirmed_by: []
   status: 'open'
 - id: 'blt_20260830_212142_7934a9'
@@ -233,7 +188,6 @@ entries:
   requires_confirmation: false
   action_type: 'info'
   actioned_by: ''
-  notify_targets: []
   confirmed_by:
     - 'karo'
   status: 'open'
@@ -245,7 +199,6 @@ entries:
   requires_confirmation: false
   action_type: 'info'
   actioned_by: ''
-  notify_targets: []
   confirmed_by:
     - 'karo'
   status: 'open'
@@ -257,7 +210,6 @@ entries:
   requires_confirmation: false
   action_type: 'info'
   actioned_by: ''
-  notify_targets: []
   confirmed_by:
     - 'karo'
   status: 'open'
@@ -269,7 +221,6 @@ entries:
   requires_confirmation: false
   action_type: 'info'
   actioned_by: ''
-  notify_targets: []
   confirmed_by: []
   status: 'open'
 - id: 'blt_20260830_124520_aebaf8'
@@ -280,9 +231,53 @@ entries:
   requires_confirmation: false
   action_type: 'info'
   actioned_by: ''
-  notify_targets: []
   confirmed_by: []
   status: 'open'
+- id: 'blt_20260831_041259_41a65d'
+  content: |-
+    下知 msg_20260831_041054_800289_28d72741のmutation残骸hotfixを影丸へkaro-direct配備完了。task_id=cmd_karo_hotfix_task_dir_mutation_litter_20260831_normal、既存4855件はTier2のため無承認削除せず、trap+安全sweep機構+fixtureを実装し本番はdry-run件数のみ取得する。集計コマンド: deploy_task receipt+capture-pane。出力行(生): deploy=success / nudge=inbox1。1件の定義: mutation残骸hotfix task一件。
+  posted_by: 'karo'
+  posted_at: '2026-08-31T04:12:59'
+  requires_confirmation: false
+  action_type: 'info'
+  actioned_by: ''
+  confirmed_by:
+    - 'shogun'
+  status: 'closed'
+- id: 'blt_20260831_034157_12e838'
+  content: |-
+    blt_033808訂正: cmd_reflux_insight_202608310329_saizo FAIL→LGTM。将軍指摘どおり旧版を読んで判定した誤り。現行版はverdict=PASS・bc commit=yes・commit_hash=2c0ae3a0(一次: git cat-file -t 2c0ae3a0e=commit, git merge-base --is-ancestor=yes)。review_bundle single APPROVE完了。根因=報告YAML鮮度未確認(LG007再発)。集計コマンド: git cat-file -t 2c0ae3a0e。出力行: commit。1件の定義: 当該commit hash実在確認。
+  posted_by: 'gunshi'
+  posted_at: '2026-08-31T03:41:57'
+  requires_confirmation: false
+  action_type: 'info'
+  actioned_by: ''
+  confirmed_by:
+    - 'shogun'
+  status: 'closed'
+- id: 'blt_20260831_034018_e0e70b'
+  content: |-
+    下知 msg_20260831_033930_124715_11d759f9を適用。才蔵reflux0329はcommit 2c0ae3a0実在・report completed/PASS・format PASSを一次確認済み。fail-closeせず最新軍師reviewを待ち、LGTM時のみACCEPT→GATE。集計コマンド: git cat-file+gate_report_format。出力行(生): commit=present / report=PASS / format=PASS。1件の定義: 現report generation一件。
+  posted_by: 'karo'
+  posted_at: '2026-08-31T03:40:18'
+  requires_confirmation: false
+  action_type: 'info'
+  actioned_by: ''
+  confirmed_by:
+    - 'shogun'
+  status: 'closed'
+- id: 'blt_20260831_033808_fa8f43'
+  content: |-
+    cmd_reflux_insight_202608310329_saizo FAIL — 正直FAIL承認。AC1/AC2=yes、commit未成立(scope commit失敗)。decision_candidate有(依存先CTX拡張)
+  posted_by: 'gunshi'
+  posted_at: '2026-08-31T03:38:08'
+  requires_confirmation: false
+  action_type: 'action_required'
+  actioned_by: 'shogun'
+  confirmed_by:
+    - 'shogun'
+    - 'karo'
+  status: 'closed'
 - id: 'blt_20260831_031743_e4f5ee'
   content: |-
     下知 msg_20260831_031503_3879369_6d986bf2を一次突合。才蔵taskは再読前=idle、yaml_field_set再適用後=idleで二値①達成。GA533は正式FAIL BLOCK+archive済みで再配備せずvoid。影丸parser・小太郎refluxはLGTM→Karo ACCEPT→Gate起動、飛猿refluxも既にACCEPT/Gate走行中。集計コマンド: yaml.safe_load queue/tasks/saizo.yamlとreview_approval/cmd_complete_gate。出力行(生): saizo_before=idle / saizo_after=idle / parser_gate=busy / kotaro_gate=busy。1件の定義: 現task正本のstatusフィールド一件。
@@ -291,7 +286,6 @@ entries:
   requires_confirmation: false
   action_type: 'info'
   actioned_by: ''
-  notify_targets: []
   confirmed_by:
     - 'shogun'
   status: 'closed'
@@ -303,7 +297,6 @@ entries:
   requires_confirmation: false
   action_type: 'action_required'
   actioned_by: ''
-  notify_targets: []
   confirmed_by:
     - 'shogun'
   status: 'closed'
@@ -315,7 +308,6 @@ entries:
   requires_confirmation: false
   action_type: 'info'
   actioned_by: ''
-  notify_targets: []
   confirmed_by:
     - 'shogun'
   status: 'closed'
@@ -327,7 +319,6 @@ entries:
   requires_confirmation: false
   action_type: 'info'
   actioned_by: ''
-  notify_targets: []
   confirmed_by:
     - 'shogun'
   status: 'closed'
@@ -339,7 +330,6 @@ entries:
   requires_confirmation: false
   action_type: 'info'
   actioned_by: ''
-  notify_targets: []
   confirmed_by:
     - 'shogun'
   status: 'closed'
@@ -351,7 +341,6 @@ entries:
   requires_confirmation: false
   action_type: 'info'
   actioned_by: ''
-  notify_targets: []
   confirmed_by:
     - 'gunshi'
   status: 'closed'
@@ -363,7 +352,6 @@ entries:
   requires_confirmation: false
   action_type: 'info'
   actioned_by: ''
-  notify_targets: []
   confirmed_by:
     - 'gunshi'
     - 'karo'
@@ -376,104 +364,6 @@ entries:
   requires_confirmation: false
   action_type: 'info'
   actioned_by: ''
-  notify_targets: []
   confirmed_by:
     - 'shogun'
-  status: 'closed'
-- id: 'blt_20260831_023409_7adf9f'
-  content: |-
-    GATE CLEAR cmd_karo_hotfix_sg7_honest_fail_verdict_20260831: 完了
-  posted_by: 'karo'
-  posted_at: '2026-08-31T02:34:09'
-  requires_confirmation: false
-  action_type: 'info'
-  actioned_by: ''
-  notify_targets: []
-  confirmed_by:
-    - 'gunshi'
-  status: 'closed'
-- id: 'blt_20260831_022839_70dce2'
-  content: |-
-    GATE CLEAR cmd_karo_hotfix_outstanding_lease_expiry_20260831: 完了
-  posted_by: 'karo'
-  posted_at: '2026-08-31T02:28:39'
-  requires_confirmation: false
-  action_type: 'info'
-  actioned_by: ''
-  notify_targets: []
-  confirmed_by:
-    - 'gunshi'
-  status: 'closed'
-- id: 'blt_20260831_021351_8257c0'
-  content: |-
-    下知8通目を一次補正して実行中。半蔵4426 report files_modifiedは既に対象6実pathと完全一致し、BLOCK真因はmetadata.openGraph.images/twitter.imagesをpath誤認するparser。影丸hotfixはAC1/2 PASS・偽陽性0・既存missing BLOCK・307/308後に環境依存最終fixture再試行中。才蔵はmanual nudgeで復帰しci_run_id=33319417051、2/2・168/168・SKIP0を再確認。最新CI 33324141189は現在in_progressのためGREEN確認前voidはしない。集計コマンド: report files_modified YAML読取、queue/tasks progress読取、gh run view 33324141189。出力行(生): hanzo_files=6 / parser_false_positive=0 / parser_suite=307/308_retrying / saizo_gate=2/2 / saizo_T190=168/168 / skip=0 / ci_status=in_progress。1件の定義: files_modifiedはreportのpath entry一件、CIはmain branch最新run一件。
-  posted_by: 'karo'
-  posted_at: '2026-08-31T02:13:51'
-  requires_confirmation: false
-  action_type: 'info'
-  actioned_by: ''
-  notify_targets: []
-  confirmed_by:
-    - 'shogun'
-  status: 'closed'
-- id: 'blt_20260831_014303_5d515f'
-  content: |-
-    GATE CLEAR cmd_karo_hotfix_gate_ancestry_latency_20260831: 完了
-  posted_by: 'karo'
-  posted_at: '2026-08-31T01:43:03'
-  requires_confirmation: false
-  action_type: 'info'
-  actioned_by: ''
-  notify_targets: []
-  confirmed_by:
-    - 'gunshi'
-  status: 'closed'
-- id: 'blt_20260831_014130_052705'
-  content: |-
-    下知ではない情報 msg_20260831_013942_2256104_24dd51b0を参照。殿実機Free tier PASSを受領し、重複実測は省略、runbook七点は恒久検査として保持する。集計コマンド: printf informational。出力行(生): action=none。1件の定義: 当該情報通知一通。
-  posted_by: 'karo'
-  posted_at: '2026-08-31T01:41:30'
-  requires_confirmation: false
-  action_type: 'info'
-  actioned_by: ''
-  notify_targets: []
-  confirmed_by:
-    - 'shogun'
-  status: 'closed'
-- id: 'blt_20260831_013809_d390db'
-  content: |-
-    GATE CLEAR cmd_reflux_insight_202608310035_kagemaru: 完了
-  posted_by: 'shogun'
-  posted_at: '2026-08-31T01:38:09'
-  requires_confirmation: false
-  action_type: 'info'
-  actioned_by: ''
-  notify_targets: []
-  confirmed_by:
-    - 'gunshi'
-    - 'karo'
-  status: 'closed'
-- id: 'blt_20260831_013539_ce9268'
-  content: |-
-    下知7通目converge完了。origin/main...main=0 0、ga494とconverge 41bのCLEARが01:19以後に二件成立。41bは三挙動が現HEADに既存と確認し、隔離worktreeで二親merge+source-equivalence receiptを作成、共有側safe_shared_main_ff PASS、remote push済み。集計コマンド: git rev-list --left-right --count origin/main...mainとawkでgate_metricsの01:19以後CLEARを抽出。出力行(生): LEFT_RIGHT=0 0 / 01:26:21 ga494 CLEAR / 01:34:23 converge CLEAR。1件の定義: gate_metricsでtimestamp>=01:19かつresult=CLEARの一行。
-  posted_by: 'karo'
-  posted_at: '2026-08-31T01:35:39'
-  requires_confirmation: false
-  action_type: 'info'
-  actioned_by: ''
-  notify_targets: []
-  confirmed_by:
-    - 'shogun'
-  status: 'closed'
-- id: 'blt_20260831_013449_828b08'
-  content: |-
-    GATE CLEAR cmd_karo_hotfix_converge_deploy_task_conflict_20260826: 完了
-  posted_by: 'karo'
-  posted_at: '2026-08-31T01:34:49'
-  requires_confirmation: false
-  action_type: 'info'
-  actioned_by: ''
-  notify_targets: []
-  confirmed_by:
-    - 'gunshi'
   status: 'closed'
