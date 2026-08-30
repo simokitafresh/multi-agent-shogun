@@ -1,3 +1,4 @@
+<!-- gist-master: d2165f9b8fd4a3fbd464c101ab66f9e9 cloudflare_dm-signal-jp_domain_runbook_20260830.md -->
 # DM-Signal LP ドメイン runbook — dm-signal.com を Cloudflare Registrar で取得し Render LP に接続する（ステップ・バイ・ステップ）
 
 > 版: 2026-08-30 17:22(殿裁定 16:42『別サイトでやろう』/17:14『.jp にこだわらない』)。旧 .jp 手順は廃止(このファイル名は gist URL 維持のため据え置き)。
