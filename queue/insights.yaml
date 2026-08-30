@@ -8332,3 +8332,10 @@ insights:
   resolved_reason: "semantic map generation verified the candidate is represented or intentionally ignored"
   action_artifact: "semantic_map=/home/simokitafresh/multi-agent-shogun/context/semantic-map.md;semantic_index=/home/simokitafresh/multi-agent-shogun/docs/semantic-index/index.md"
   resolved_at: "2026-08-30T07:40:02+09:00"
+- id: INS-20260830-095142091-bfae
+  ts: "2026-08-30T09:51:42+09:00"
+  insight: "review_pending_nudge.tsvのfingerprint(3ff9b95...)とreview_bundleのfingerprint(552e058...)が不一致でnudgeがクリアされない。review_approval.shがnudge TSVをfingerprint一致で削除する仕組みが必要"
+  priority: "medium"
+  source: "manual"
+  fix_known: false
+  status: pending
