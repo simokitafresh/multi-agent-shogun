@@ -2170,6 +2170,41 @@ else
     echo "  OK: task done∧CLEAR無し(20分超) 0件"
 fi
 
+# --- Gate 10.1c: 便回転チェック(WAIT:report_commit_main_ancestry 30分超 ∧ report commit が main に無い=dangling) ---
+# 2026-08-31 00:30: ga494 hotfix が 23:31→00:22 の 1h WAIT ancestry。report commit 8ffd8804b は
+# git cat-file では実在するが main/origin/main のどちらの祖先でもなく(dangling)、掲示板・task に壁の名前が無かった。
+# Gate 10.1/10.1b は task done/LGTM 在庫しか見ないため、report 済み∧commit 未合流の便停止を見落とす。
+# 一次情報(gate_metrics の WAIT 行の最古時刻 + 報告YAML commit_hash + git merge-base)で名指しする。
+echo "■ 便回転チェック(WAIT ancestry 30分超∧report commit dangling)"
+_anc_stall=0
+_anc_lines=()
+if [ -f "$_gm_log" ]; then
+    _anc_now=$(date +%s)
+    for _acmd in $(awk -F'\t' '$3=="WAIT" && $4 ~ /report_commit_main_ancestry/ {print $2}' "$_gm_log" | sort -u); do
+        _last=$(awk -F'\t' -v c="$_acmd" '$2==c {s=$3} END{print s}' "$_gm_log")
+        [ "$_last" = "WAIT" ] || continue
+        _first_ts=$(awk -F'\t' -v c="$_acmd" '$2==c && $3=="WAIT" && $4 ~ /report_commit_main_ancestry/ {print $1; exit}' "$_gm_log")
+        _fe=$(date -d "$_first_ts" +%s 2>/dev/null) || continue
+        _aage=$(( (_anc_now - _fe) / 60 ))
+        [ "$_aage" -ge 30 ] || continue
+        _rep=$(ls -t "$SCRIPT_DIR"/queue/reports/*_report_${_acmd}.yaml 2>/dev/null | head -1)
+        _rh=""
+        [ -n "$_rep" ] && _rh=$(grep -m1 -E '^\s*commit_hash:' "$_rep" | awk '{print $2}' | tr -d "'\"")
+        _rstate="report_hash_missing"
+        if [ -n "$_rh" ]; then
+            if git -C "$SCRIPT_DIR" merge-base --is-ancestor "$_rh" main 2>/dev/null; then _rstate="on_main"; else _rstate="dangling"; fi
+        fi
+        [ "$_rstate" = "on_main" ] && continue
+        _anc_stall=$((_anc_stall+1)); _anc_lines+=("${_acmd}(${_aage}分 ${_rstate} ${_rh:0:9})")
+    done
+fi
+if [ "$_anc_stall" -gt 0 ]; then
+    echo "  WARN: WAIT ancestry 30分超∧report commit 未合流 ${_anc_stall}件: ${_anc_lines[*]} — merge を家老へ順序付き1通(cherry-pick/rebase は D012 禁止)"
+    if [ "$overall" != "ALERT" ] && [ "$overall" != "BLOCK" ]; then overall="WARN"; fi
+else
+    echo "  OK: WAIT ancestry 30分超∧report commit 未合流 0件"
+fi
+
 # --- Gate 10.2: 週次品質指標トレンド ---
 # cmd_4250: K/D block migrated to the Karo lane; no Shogun execution.
 # --- Gate 12: 三層学習ループ健全性 ---
