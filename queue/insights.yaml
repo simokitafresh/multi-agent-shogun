@@ -7018,6 +7018,13 @@ insights:
   resolved_reason: "現行実装で解決済み: source_equivalentは将軍nudgeなしのinfo掲示板記録へ自動終端し、同一contextのmarkerを1行へ圧縮する"
   action_artifact: "scripts/gates/gate_context_freshness.sh;tests/unit/test_gate_context_freshness.bats;context/infrastructure.md"
   resolved_at: "2026-08-30T16:55:08+09:00"
+- id: INS-20260830-170433314-bf5f
+  ts: "2026-08-30T17:04:33+09:00"
+  insight: "semantic_index_update未登録[[リンク]]ターゲット: [[dm-signal.jp_ドメインrunbook_20260830]] は既存aliasesに一致なし。類似概念TOP3: dmsignal_operations(DM-Signal運用; alias=dm-signal ops; score=21.6) / dm_signal_pf_restore_guardrails(DM-Signal PF復元運用ガードレール; alias=dm signal jp を Cloudflare で取ろう; score=21.2) / dm_fusion_app(DM-Fusionアプリ; alias=SPYとTQQQはDM-Signal monthly_returns; score=12.9)。概念定義とaliases追加を検討せよ"
+  priority: "low"
+  source: "semantic_index_update"
+  fix_known: false
+  status: pending
 - id: INS-20260830-170045084-3f45
   ts: "2026-08-30T17:00:45+09:00"
   insight: "semantic_index_update新概念候補: discussion:Cloudflareの手順をgistで共有してくれ。最新情報で頼む は 既存aliasesに一致なし。概念定義とaliases追加を検討せよ"
