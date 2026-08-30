@@ -51,6 +51,27 @@
 - 画像 WebP・`loading=lazy`(表は文字なので現状影響小)。Core Web Vitals は静的サイトのため合格見込み(Console の CWV レポートで確認)。
 - 404 頁・`/ja/` 末尾スラッシュ統一(sitemap は `/ja/`、リンクは `/ja`。どちらかに 301)。
 
+## §2.1 P0-1 Search Console 登録 — ステップ・バイ・ステップ
+
+> 役割: **殿=Step 1・2・5(Google 画面、計 5 分)**、将軍=Step 3・4・6(Cloudflare API と確認)。殿の操作は「プロパティ追加→TXT 文字列を将軍へ→確認ボタン」の 3 回だけ。
+
+| Step | 誰 | 操作 | 所要 | 完了の二値 |
+|---|---|---|---|---|
+| 0 前提 | 将軍 | Cloudflare の新トークン(rotate 後)が `.env.cloudflare` に入り `GET /zones/{id}` が success | 1 分 | `tokens/verify` = active |
+| 1 プロパティ追加 | **殿** | https://search.google.com/search-console → 左上「プロパティを追加」→ **左の「ドメイン」**(URL プレフィックスではない)に `dm-signal.com` → 続行 | 1 分 | 「DNS レコードでのドメイン所有権の確認」画面が出る |
+| 2 TXT を将軍へ | **殿** | 画面の `google-site-verification=…` の文字列をコピーし、将軍へそのまま貼る(トークンではないので会話に貼って可) | 1 分 | 将軍が受領 |
+| 3 TXT 追加 | 将軍 | Cloudflare API: `POST /zones/{zid}/dns_records {"type":"TXT","name":"dm-signal.com","content":"google-site-verification=…","ttl":1}`。既存の CNAME @ は触らない(TXT は apex に共存可) | 1 分 | API success=true ∧ `dig TXT dm-signal.com`(または `nslookup -type=TXT`)に値が出る |
+| 4 伝播確認 | 将軍 | 公開リゾルバ 1.1.1.1 / 8.8.8.8 の両方で TXT が返るまで待つ(通常 1〜5 分) | 〜5 分 | 両リゾルバで一致 |
+| 5 確認ボタン | **殿** | Step 1 の画面に戻り「確認」 | 1 分 | 「所有権を確認しました」。失敗なら Step 4 を再確認して再押下(TXT は消さない=以後の再確認にも使う) |
+| 6 sitemap 送信 | 将軍(殿の画面でも可) | 左メニュー「サイトマップ」→ `https://dm-signal.com/sitemap.xml` を送信 | 1 分 | ステータス「成功しました」・検出 URL 2(→P1-1 で増加) |
+| 7 初期設定 | 殿 | 「設定→ユーザーと権限」で将軍用に **フル権限ユーザー追加は不要**(週報は API でなく画面値を殿が転記 or 将軍が Console API 用 OAuth を後日) / 「国際ターゲティング」は hreflang 対称化(P0-2)後に自動 | 2 分 | — |
+| 8 初回データ | 将軍 | 24〜48h 後に「ページのインデックス登録」で `/` `/ja/` が「登録済み」。未登録なら「URL 検査→インデックス登録をリクエスト」を 2 URL に手動実行 | 翌日 | 登録 2/2 |
+
+- 補足 1: **「ドメイン」プロパティ**を選ぶ理由=`www`/`http`/`https`/サブドメイン(将来の `app.` `signals.`)を 1 つで束ねられる。URL プレフィックスだと LP・app で別プロパティになる。
+- 補足 2: TXT 方式を選ぶ理由=Cloudflare が DNS 権威なので将軍が API で 1 手、LP の HTML(Render 静的出力)を触らずに済む。HTML タグ方式は deploy が要る。
+- 補足 3: Bing Webmaster(P0-6)は Console 登録後に「Google Search Console からインポート」で 2 分。
+- 補足 4: Console のデータは将軍が読めないため、週報の §4 指標は **殿が数値 3 つ(表示/クリック/平均掲載順位)を貼る** か、後日 Search Console API(OAuth、殿の 1 回承認)を将軍に許可するかの二択。既定=当面は殿が貼る。
+
 ## §3 やらないこと(禁則)
 - 価格・無料期間の文言(`first month free`/`初月無料`/`free trial`)は書かない(殿裁定 13:41、設計書 v2 §4)。
 - 個別 PF 名・Secret の数値を索引可能な頁に出さない(§2.3 契約)。
