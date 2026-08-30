@@ -14056,6 +14056,8 @@ codd:
 | discussion | `queue/lord_conversation.jsonl` 2026-08-30T14:13:27+09:00 a2960c5a6876dd5bd toolu_016E6n5M95U3Lvw1RuqZq8rj /tmp/claude-1000/-home-simokitafresh-multi-agent-shogun/290a263c-8050-4 |
 | causal | `cmd_reflux_insight_202608301413_hanzo` files_modified: [[provisional_insights]] |
 | cmd | `cmd_reflux_insight_202608301413_hanzo` (`queue/insights.yaml`) |
+| causal | `cmd_reflux_insight_202608301522_kagemaru` files_modified: [[provisional_insights]] |
+| cmd | `cmd_reflux_insight_202608301522_kagemaru` (`queue/insights.yaml`) |
 | causal_chain | `[[cmd_reflux_insight_202608040505_kagemaru]]` (L1545) |
 
 ## provisional_heavy_job_admission — 仮: Heavy Job Admission
