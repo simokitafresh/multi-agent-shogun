@@ -208,6 +208,22 @@ a{color:var(--accent)}
   </table></div>
   <p style="margin-top:8px">FE は 08-18 以来 deploy なし = 本版が次の FE deploy。P1 は本番書込みなし、P2 以降 revert 可。</p>
 
+  <h2>§6.5 実装前 穴チェック(殿指示 13:07、一次 13:05-13:12)</h2>
+  <div class="tbl"><table>
+    <tr><th>#</th><th>穴</th><th>塞ぎ方</th></tr>
+    <tr><td>H1</td><td><strong>フォルダ単位の非表示(L1.5)を無視して数えていた</strong>(helper と global settings が存在。今日の 45 本は hidden folder 0 で件数不変)</td><td>EP と独立再計算は <code>visibility_helpers</code> の同じ関数を通す。jsonb 直読み禁止</td></tr>
+    <tr><td>H3</td><td>失効判定の TZ(Render UTC vs auth.py JST)</td><td>blackout も <code>is_password_expired</code>(JST)を使う</td></tr>
+    <tr><td>H4</td><td>「computed」が嘘になる窓(月末〜再計算完了)</td><td><code>month_closed</code> を signals 最新日で判定、false は "are being computed"</td></tr>
+    <tr><td>H5</td><td>rotate 後も帯が最長 24h 残る</td><td>ISR revalidate 1h、帯だけ client no-store fetch。サービス跨ぎ revalidate は持たない</td></tr>
+    <tr><td>H6</td><td>公開 EP の濫用</td><td>slowapi 60/min・30/min、enum 検証、IP/UA 生保存なし、90 日削除</td></tr>
+    <tr><td>H7</td><td>server component の API 到達(NEXT_PUBLIC のみ)</td><td>Render FE env に <code>API_HOST</code>。ローカル <code>next build && next start</code> で確認可</td></tr>
+    <tr><td>H8</td><td>TQQQ Sharpe の Rf</td><td>metrics_impl の rf_annual loader を再利用、SPY==benchmark 2 桁一致で固定</td></tr>
+    <tr><td>H9</td><td>cmd_4413 に best_name が残る</td><td>cmd_4415 で除去</td></tr>
+    <tr><td>H10</td><td><strong>deploy 後にしか確認できない AC を忍者に持たせると便が止まる</strong>(殿 13:08)</td><td>AC を 2 層に分離: 忍者=隔離 clone で完結 / 家老レーン post-deploy チェック(本番 curl・CDP・smoke)。起票規則: AC に本番/Render/deploy 後/CDP を書かない</td></tr>
+    <tr><td>H12</td><td>ISR と client boundary の hydration</td><td>next build 出力で /login が ISR、console hydration warning 0(ローカル)</td></tr>
+    <tr><td>H13</td><td>metrics 無し PF</td><td>metrics ある PF のみ集計、欠落数を meta.skipped に出す</td></tr>
+  </table></div>
+
   <h2>§6 未決(殿裁定待ち)</h2>
   <ol class="steps">
     <li>(解決 10:41 殿裁定)Secret 件数=73 で確定(FoF 6 本含む)</li>

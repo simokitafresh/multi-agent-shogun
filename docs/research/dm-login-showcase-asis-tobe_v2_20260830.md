@@ -182,7 +182,7 @@
 | frontend | `app/login/**`(page・新規 components)、`app/login/` 配下の `metadata` export、新規 `app/robots.ts` / `app/sitemap.ts`、文言設定ファイル | `components/route-access-boundary.tsx` の認証分岐(`/login` 以外を `/login` へ replace する部分)、`lib/viewer-auth.ts`・`lib/auth-state-reset.ts`・`lib/api-client.ts`・`app/layout.tsx`(metadata 以外)・ログイン後ページ全て |
 | deploy | FE/BE とも live と origin/main の差分は本設計分のみ(13:05 実測 0) | 他の未 deploy 変更を同乗させない(deploy 直前に `git diff --stat <live sha> origin/main` で本設計パス以外 0 を確認) |
 | DB | 新テーブル(追記専用)への INSERT のみ | 既存テーブルへの書込み 0(readonly_query で before/after の行数一致) |
-- 二値 AC(P1/P2 共通): (a) 変更ファイル一覧が allowlist の外 0 件 (b) `route-access-boundary.tsx` の認証分岐の関数が `git blame`/diff で不変(diff 0 行) (c) 既存 test ファイルの diff 0 かつ選択実行 PASS (d) 本番ログイン→`/`→既存ページ 3 本(dashboard/portfolio/signals)の HTTP 200 と表示が deploy 前後で同一(CDP 1 枚ずつ) (e) BE deploy 後に既存 EP(`/api/signals` 等)の smoke が 200。
+- 二値 AC(P1/P2 共通・忍者 AC): (a) 変更ファイル一覧が allowlist の外 0 件 (b) `route-access-boundary.tsx` の認証分岐の関数が diff 0 行 (c) 既存 test ファイルの diff 0 かつ選択実行 PASS。**deploy 後確認(家老レーン、忍者 AC に書かない・§6.5 H10)**: (d) 本番ログイン→`/`→既存ページ 3 本の 200 と表示が deploy 前後で同一(CDP) (e) BE deploy 後に既存 EP smoke 200。
 - ISR 化(§2.6)は `/login` ルートを server component にするだけで、layout の RouteAccessBoundary は client のまま(境界 (b) を守る)。
 
 ---
@@ -251,6 +251,29 @@
 3. (解決 12:18 殿裁定)**表記= total return(%)・×N 倍・CAGR レンジの併記(§3.1 v3)**。以下は経緯:  事実=since inception が +3,139%〜+75,619%(白虎)。案 A=% のまま(餌として最強)、案 B=「×32 / ×757」倍率、案 C=CAGR 併記(years=0 に cagr なし → EP で `(1+tr)^(12/months)-1` を算出)。将軍推奨=**C**(信憑性を保ちつつ interest を引く)。
 4. 群行 "up to X%" を Standard/Premium で出すか(前版から継続)。
 5. Coupon 説明「note 不要」の正確性(1.1 の通り auth.py にクーポン分岐はない → クーポン=別 env key の tier パスワードか、Legacy `VIEWER_PASS` か要確認)。
+
+## §6.5 実装前 穴チェック
+| # | 穴 | 一次事実 | 塞ぎ方(契約/AC) |
+|---|---|---|---|
+| H1 | **フォルダ単位の非表示(L1.5)を無視して数えていた** | `visibility_helpers.check_hide_folder`(folder hidden=true が PF 設定を上書き)と `global_visibility_settings` が存在。tier_visibility_settings.folder_settings に hidden=true のフォルダあり(オリジナル/裏 等)。13:12 実測: シグナル公開 45 本のフォルダは メンバーシップ/シン四神/GSシン忍法 のみで hidden 0=**今日の件数は不変** | EP と独立再計算は jsonb 直読みではなく **`visibility_helpers` の同じ関数(check_hide_portfolio_or_folder + global)**を通す。AC: 生 jsonb 集計との差分 0 を初回だけ記録し、以後は helper 経由のみ |
+| H2 | hide_signal 未設定 PF の扱い | NewStandard の DM-safe は hide_signal キーなし(None)→COALESCE false で可視 | H1 と同じ helper に委ねる(helper の既定値が正) |
+| H3 | 「失効」判定のタイムゾーン | Render は UTC、auth.py は `is_password_expired`(JST)で判定 | blackout.active も **同じ `is_password_expired`** を使う(UTC 判定だと 09:00 JST まで帯がずれる) |
+| H4 | 帯の「New signals are computed」が嘘になる窓 | 月末失効〜翌営業日の再計算完了まで、新月のシグナルは未計算(signals 最新 08-28、series_end 07-31) | `month_closed = (signals.max(date) ≥ 前月末) ∧ (series_end == 前月末)`。false の間は帯文言を "New signals for {month} are being computed." に切替(日時は書かない) |
+| H5 | キャッシュの鮮度(rotate 後 24h 帯が残る) | ISR 24h だと殿の note 発表後も最長 24h 帯が消えない | **ISR は revalidate 3600**(1h)。帯の状態だけは client で `cache: no-store` の軽量 fetch(`/api/public/showcase/blackout`)=rotate 即反映。BE→FE の on-demand revalidate(サービス跨ぎ・秘密トークン)は持たない |
+| H6 | 公開 EP の濫用 | slowapi は存在(`core/rate_limiter.py`、auth は 5/min) | showcase GET 60/min・event POST 30/min per IP。event は `step`/`ua_class` を enum 検証、IP・UA 生文字列は保存しない、テーブルは日次集計後 90 日で削除(cap) |
+| H7 | server component からの API 到達 | FE は `NEXT_PUBLIC_API_HOST`(ビルド時公開値)のみ。ISR はサーバー側 fetch | サーバー用 `API_HOST`(fallback `NEXT_PUBLIC_API_HOST`)を Render FE env に追加。**ローカルでは `next build && next start` で ISR 生成を確認できる**(deploy 不要) |
+| H8 | TQQQ Sharpe の Rf | metrics_impl は `rf_annual` 系列を DB から読む(L41-55) | benchmarks は同じ loader を再利用。AC: SPY.sharpe == Basic-DM benchmark Sharpe(2 桁) |
+| H9 | cmd_4413 の契約に `best_name` が残る | 12:48 裁定前の発令 | cmd_4415(AC1)で除去。4413 は名前を返す実装で CLEAR してよい(4415 が上書き) |
+| H10 | **deploy しないと検証できない AC を忍者に持たせると便が止まる**(殿 13:08) | §2.7 AC(d)(e)と P4 は本番 deploy 後にしか確認できない | **AC を 2 層に分離**: 忍者 AC=隔離 clone で完結(pytest/TestClient、`next build && next start` へのローカル curl、HTML 焼き込み grep)。deploy 後確認(本番 curl/CDP/既存 EP smoke)は **家老レーンの post-deploy チェックリスト**(§5 末尾)に置き、忍者 task の AC に書かない |
+| H11 | Secret 集計に FoF 実験 6 本(CAGR 153%)が入る | 殿裁定 10:41 で本番どおり含める | 含める(確定)。脚注 "including experimental fund-of-funds" は入れない(Secret の中身に触れない) |
+| H12 | ISR 化と client の RouteAccessBoundary の hydration | boundary は layout で children を包む。/login はサーバー描画された HTML を hydrate する | AC: `next build` の出力に /login が ISR(○)で出る ∧ ブラウザ console に hydration warning 0(ローカル `next start` で確認) |
+| H13 | metrics(years=0)が無い PF | 新規 PF は再計算前は行なし | 集計は metrics のある PF のみ、`n` はその数。欠落数を EP の `meta.skipped` に出す(AC: skipped==0 を今日の値で固定しない) |
+| H14 | 文言の直書き | 現行はコンポーネント直書き | P3 で設定値化(既定)。P2a/P2b は EN/JA 文言を 1 ファイル(`login-copy.ts`)に置く |
+
+### §5 補足 — AC の 2 層分離(殿 13:08「デプロイしないと確認できないものを忍者の AC に組み込むと流れが止まる」)
+- **忍者 AC(隔離 clone で完結)**: pytest/TestClient、`next build && next start` に対するローカル curl(HTML 焼き込み・metadata・robots)、選択実行 test、allowlist 外 diff 0、boundary 認証分岐 diff 0。
+- **家老レーン post-deploy チェック(忍者 AC に書かない)**: 本番 `/login` curl で数値焼き込み、既存 EP smoke 200、ログイン後 3 ページ CDP 同一、P4 の殿実機。deploy 後 30 分以内に家老が実施し掲示板へ生貼付。
+- 起票規則: cmd の AC に「本番/Render/deploy 後/CDP」を含めない。含める場合は `task_type: post_deploy_check` の別 task として家老が分離配備する。
 
 ## §7 因果リンク
 - [[殿観測_ログインページさみしい_20260818_1550]] -> [[login_showcase_mock_v1-v11]] -> [[dm-login-showcase-asis-tobe_20260818]](ToBe v0.3・未実装) -> [[殿指示_asis本番リアルタイム化_20260830_1007]] -> **[[dm-login-showcase-asis-tobe_v2_20260830]]** <- [[殿裁定_login金額なし_20260830_1020]] / [[殿参照_摩擦優先_note_dataana2020_20260830_1021]]
