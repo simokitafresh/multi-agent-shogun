@@ -6434,6 +6434,122 @@ YAML
     [ ! -s "$base/git_push_calls.log" ]
 }
 
+# test_necessity: source publication must consume the complete parent/child
+# cross_repo_commits union, prefer commit_contract.repo_root over a cleaned
+# task-worktree path, and publish only to canonical origin/main.
+@test "AC1/AC2: cross-repo source union publishes canonical main with complete receipt" {
+    local base="$BATS_TEST_TMPDIR/ac1-ac2-cross-repo-union"
+    local generation=1212121212121212121212121212121212121212121212121212121212121212
+    local parent_sha child_sha
+    _push_overlap_repo_init "$base"
+    mkdir -p "$base/repo/scripts" "$base/repo/tests/unit" "$base/repo/docs"
+    printf 'parent-a\n' > "$base/repo/scripts/cmd_complete_gate.sh"
+    printf 'parent-b\n' > "$base/repo/tests/unit/test_cmd_complete_gate.bats"
+    git -C "$base/repo" add scripts/cmd_complete_gate.sh tests/unit/test_cmd_complete_gate.bats
+    git -C "$base/repo" commit -q -m "union parent"
+    parent_sha="$(git -C "$base/repo" rev-parse HEAD)"
+    printf 'child-a\n' > "$base/repo/scripts/cmd_complete_gate.sh"
+    printf 'child-c\n' > "$base/repo/docs/c.md"
+    printf 'child-d\n' > "$base/repo/docs/d.md"
+    printf 'child-e\n' > "$base/repo/docs/e.md"
+    git -C "$base/repo" add scripts/cmd_complete_gate.sh docs/c.md docs/d.md docs/e.md
+    git -C "$base/repo" commit -q -m "union child"
+    child_sha="$(git -C "$base/repo" rev-parse HEAD)"
+    git -C "$base/repo" push -q origin HEAD:refs/heads/feature
+    git -C "$base/repo" config branch.main.remote origin
+    git -C "$base/repo" config branch.main.merge refs/heads/feature
+    git -C "$base/repo" update-ref refs/remotes/origin/feature "$child_sha"
+
+    cat > "$base/report.yaml" <<YAML
+report_id: rpt-union-canonical
+commit_hash: $child_sha
+commit_contract:
+  repo_root: $base/repo
+cross_repo_commits:
+- repo: $base/stale-source-worktree
+  commit_hash: $child_sha
+  paths:
+  - scripts/cmd_complete_gate.sh
+  - docs/c.md
+  - docs/d.md
+  - docs/e.md
+- repo: $base/stale-source-worktree
+  commit_hash: $parent_sha
+  paths:
+  - scripts/cmd_complete_gate.sh
+  - tests/unit/test_cmd_complete_gate.bats
+YAML
+    cat > "$base/task.yaml" <<YAML
+task:
+  target_path: $base/stale-source-worktree
+  report_path: $base/report.yaml
+  commit_contract:
+    repo_root: $base/repo
+YAML
+    _push_overlap_install_git_call_counter "$base"
+
+    run env PATH="$base/bin:$PATH" CMD_COMPLETE_GATE_PUSH_REPOS_REAL=1 \
+        CMD_COMPLETE_GATE_SOURCE_PUBLISH_RECEIPT="$base/receipt.json" \
+        SHOGUN_COMPLETION_GENERATION="$generation" \
+        CMD_COMPLETE_GATE_TASK_FILE="$base/task.yaml" \
+        bash "$PUSH_RUNNER" "$base" "$PUSH_HELPERS_FILE" "$base/task.yaml" "cmd_ac1_ac2_union_probe"
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"$base/repo"* ]]
+    [[ "$output" == *"git push: OK ($base/repo; source-only fast-forward; remote_contains_source_rc=0)"* ]]
+    [ "$(grep -c . "$base/git_push_calls.log")" -eq 1 ]
+    [ "$(git --git-dir "$base/origin.git" show refs/heads/main:scripts/cmd_complete_gate.sh)" = "child-a" ]
+    [ "$(git --git-dir "$base/origin.git" show refs/heads/main:tests/unit/test_cmd_complete_gate.bats)" = "parent-b" ]
+    [ "$(git --git-dir "$base/origin.git" show refs/heads/main:docs/c.md)" = "child-c" ]
+    [ "$(git --git-dir "$base/origin.git" show refs/heads/main:docs/d.md)" = "child-d" ]
+    [ "$(git --git-dir "$base/origin.git" show refs/heads/main:docs/e.md)" = "child-e" ]
+    python3 - "$base/receipt.json" "$base/repo" "$generation" "$parent_sha" "$child_sha" <<'PY'
+import json, sys
+data = json.load(open(sys.argv[1], encoding='utf-8'))
+assert data['completion_generation'] == sys.argv[3]
+entries = [item for item in data['entries'] if item['repo'] == sys.argv[2]]
+assert {item['source_sha'] for item in entries} == {sys.argv[4], sys.argv[5]}
+assert len(entries) == 2
+assert all(item['remote_contains_source_rc'] == 0 for item in entries)
+PY
+}
+
+# test_necessity: a missing member of the declared commit/path contract must
+# stop before push rather than silently publishing a partial union.
+@test "AC1/AC2: cross-repo union with a missing declared path BLOCKs" {
+    local base="$BATS_TEST_TMPDIR/ac1-ac2-cross-repo-missing-path"
+    local source_sha
+    _push_overlap_repo_init "$base"
+    printf 'source-a\n' > "$base/repo/source-a.txt"
+    printf 'source-b\n' > "$base/repo/source-b.txt"
+    git -C "$base/repo" add source-a.txt source-b.txt
+    git -C "$base/repo" commit -q -m "union missing path source"
+    source_sha="$(git -C "$base/repo" rev-parse HEAD)"
+    cat > "$base/report.yaml" <<YAML
+report_id: rpt-union-missing-path
+commit_hash: $source_sha
+cross_repo_commits:
+- repo: $base/repo
+  commit_hash: $source_sha
+  paths:
+  - source-a.txt
+YAML
+    cat > "$base/task.yaml" <<YAML
+task:
+  target_path: $base/repo
+  report_path: $base/report.yaml
+  commit_contract:
+    repo_root: $base/repo
+YAML
+    _push_overlap_install_git_call_counter "$base"
+
+    run env PATH="$base/bin:$PATH" CMD_COMPLETE_GATE_PUSH_REPOS_REAL=1 \
+        CMD_COMPLETE_GATE_TASK_FILE="$base/task.yaml" \
+        bash "$PUSH_RUNNER" "$base" "$PUSH_HELPERS_FILE" "$base/task.yaml" "cmd_ac1_ac2_missing_path_probe"
+    [ "$status" -ne 0 ]
+    [[ "$output" == *"git push: BLOCK"* ]]
+    [ "$(grep -c . "$base/git_push_calls.log" || true)" -eq 0 ]
+}
+
 @test "AC2: a non-overlapping dirty file does not block the push (git push is still called and succeeds)" {
     local base="$BATS_TEST_TMPDIR/ac2-nonoverlap"
     _push_overlap_repo_init "$base"
