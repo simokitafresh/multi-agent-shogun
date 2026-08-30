@@ -25,6 +25,7 @@
 | 08-30 | 殿の言葉(要旨) | 事実→制約→判断→効果 |
 |---|---|---|
 | 10:20 | メインページにプランの額はいらない。他サービスも入会時に遷移したページに価格を書く。現時点で課金は note 経由 | 事実=課金・価格提示は note メンバーシップ側にある。制約=/login は課金ページではなく、価格を二重管理すると note 側改定時に乖離する。判断=**/login に金額を書かない**。プラン名・PF 数・「Get it on note →」のみ。効果=§2.2-5 と §3.1 ラベルから ¥ を撤去、価格は note リンク先に一本化 |
+| 10:21 | https://note.com/dataana2020/n/n17bd615c8f64 を参考にしてくれ(五十嵐「入口を変えただけで会員登録 1.6 倍」) | 事実=記事の結論は『使われない理由は魅力不足ではなく摩擦。効いたのは説明・特典・文言ではなく経路修正(着地ページを変える・ボタンを画面内に入れる)。区間ごとに数えると一箇所が突出して悪く、たいてい思っていた場所と違う。初見ユーザーとしてシークレット窓+スマホで自分で通せ』。制約=/login は未認証の全訪問者が着地する唯一の経路であり、摩擦の有無を今は計測していない。判断=ショーウィンドウ(魅力)より先に**摩擦除去と区間計測**を置く(§2.5)。効果=§5 の順序を P1 計測→P2a 摩擦→P2b ショーウィンドウへ組み替え、P4 を『初見ユーザー実機通し』に変更 |
 
 ---
 
@@ -120,6 +121,18 @@
 - 失敗時: 401 "Password expired" を **「This month's password has expired ／ 当月パスワードは失効しました」+ blackout 案内**、その他 401 は現行文の EN+JA 化。
 - ブラックアウト中(`blackout.active`)はカード上部に帯「Blackout until early {month} — new password on note ／ ブラックアウト中」。
 
+### 2.5 摩擦優先の原則（殿参照 10:21 の記事を本設計への拘束に変換）
+「摩擦を取る → それから魅力を足す」。/login の摩擦候補を先に潰し、区間で数えてから餌(§3.1 表)を足す。
+| # | 摩擦候補(AsIs 現物) | 対処(ToBe) | 計測区間 |
+|---|---|---|---|
+| F1 | 未認証で `/` 等に来た人は `RouteAccessBoundary` が `/login` へ replace。着地までの空白フレーム(白画面)の有無・秒数を計測していない | 着地前の空白 0 フレームを AC(SSR で /login を即描画、または boundary の判定を同期化) | `/` 到達 → `/login` 描画 |
+| F2 | モバイルで入力+ボタンが初期 viewport 内にあるか未確認(現物は中央 1 カード=たぶん見えるが、ショーウィンドウを上に積むと**確実に画面外へ出る**) | ≤860px は下部 sticky バー「Sign in」を**初期表示から常時**出す(§3.2 のボトムシート)。ボタンは常に画面内 | /login 描画 → 入力 focus |
+| F3 | ブラックアウト中も「正しくありません」と同文で返る(auth.py 401 の detail を画面が読まない) | 失効 401 は専用文+「note で 9 月分を取る →」リンク(§2.4) | 送信 → 401 expired / 401 wrong / 成功 |
+| F4 | パスワードは note の記事内にあり、/login からその記事へ 1 タップで行けない | サインインカードに「This month's password is on note →」(membership URL) | /login → note 遷移 |
+| F5 | 言語 JA のみ(EN 読者は入口で詰む) | EN 主・JA 従(§4) | — |
+- **区間計測(P1 と同時)**: `POST /api/public/showcase/event`(認証不要・body={step, ua_class, ts}、step ∈ {login_view, input_focus, submit, ok, expired, wrong, note_click})を 1 日分だけ集計して `logs`/DB 1 表に落とす。**「どこで消えているか」を数字で出してから**§3.1 の魅力側を最適化する。
+- **初見ユーザー通し(P4)**: シークレット窓 × スマホ実機 × PC の 2 経路で「未認証で `/` に来る → /login → note でパスワードを見る → 戻って入力 → `/`」を殿自身と将軍(CDP モバイル幅)が通す。ボタンが画面外だった瞬間を 0 件にする。
+
 ---
 
 ## §3 画面仕様
@@ -155,17 +168,17 @@
 
 ---
 
-## §5 実装単位（小さく 1 層ずつ・可逆・儀式なし）
+## §5 実装単位（小さく 1 層ずつ・可逆・儀式なし。順序=摩擦→計測→魅力）
 | 手 | 内容 | 二値 AC |
 |---|---|---|
-| P0 | 数値表記の殿裁定(§6-3)と Secret 件数定義(§6-1) | 裁定 2 件が本設計書 §6 に「事実→制約→判断→効果」で記載済み |
-| P1 | backend `GET /api/public/showcase`(read-only、cache 1h、tier 非依存、password 系非送信) | 未認証 curl: free 行に holding/momentum あり・basic 4 行に**キーなし**・count(4/13/10/secret) が DB 集計と一致・レスポンスに `password`/`env` 文字列 0 件 |
-| P2 | frontend `/login` を §2.2 構造へ(SignInCard 2 variant + レスポンシブ + blackout 帯) | 860px 境界切替・sticky/ボトムシート動作・既存ログイン成功経路が従来どおり(7 層リセット→`/`) |
-| P3 | 文言・導線 URL を設定値化、EN/JA 規則、金額ゼロ | 「毎営業日/today」grep 0、`¥|円|yen` grep 0、note URL がコンポーネント直書き 0 |
-| P4 | 本番 CDP 2 枚(モバイル/PC) + 殿実機 | 殿確認 |
-- push/deploy は家老レーン(FE は 08-18 以来 deploy なし=本版が次の FE deploy)。P1 は read-only 新 EP で本番書込みなし。P2 以降 revert 可。
-
----
+| P0 | 殿裁定(§6-1 試作 FoF・§6-3 数値表記) | §6 に事実→制約→判断→効果で記載済み |
+| P1 | backend: `GET /api/public/showcase`(read-only・cache 1h・tier 非依存・password 系非送信)+ `POST …/showcase/event`(区間計測) | 未認証 curl: free 行に holding/momentum あり・basic 4 行に**キーなし**・count(4/13/10/secret) が DB 集計と一致・レスポンスに `password`/`env` 文字列 0 件・event 7 step が 1 表に落ちる |
+| P2a | frontend 摩擦除去: モバイル sticky「Sign in」バー+ボトムシート、失効 401 専用文+note リンク、EN/JA、着地空白 0 フレーム(§2.5 F1-F5) | 375×667 で初期 viewport にボタンあり・失効時に専用文・`/`→`/login` の白画面 0 フレーム(CDP screencast) |
+| P2b | frontend ショーウィンドウ: §2.2 構造+§3.1 表(データは P1) | 860px 切替・既存ログイン成功経路が従来どおり(7 層リセット→`/`) |
+| P3 | 文言・導線 URL を設定値化、金額ゼロ | 「毎営業日/today」grep 0、`¥|円|yen` grep 0、note URL 直書き 0 |
+| P4 | 初見ユーザー通し(§2.5)+本番 CDP 2 枚 | 殿実機(シークレット×スマホ)で「ボタンが画面外」0 件、将軍 CDP モバイル幅 1 枚+PC 1 枚 |
+- push/deploy は家老レーン(FE は 08-18 以来 deploy なし=本版が次の FE deploy)。P1 は read-only 新 EP+追記専用 event で本番書込み最小。P2 以降 revert 可。
+- 1 週間後に event 集計で「突出して悪い区間」を 1 つ特定し、そこだけを次弾にする(記事の教え: たいてい思っていた場所と違う)。
 
 ## §6 未決（殿裁定待ち。裁定は「事実→制約→判断→効果」で追記）
 1. **Secret 件数(73)に試作 FoF を含めるか**: 事実=Secret 73 のうち 6 本は admin 作成の試作 FoF(Sharpe4/CAGR4/greedy2 08-19、New Fund of Funds ×3 07-01。type=fof、metrics・signals は計算済み、可視 tier 0)。`is_active`・metrics 有無では区別できない(いずれも揃っている)。案 A=そのまま 73(「存在する PF 数」として正しい)/ 案 B=試作は admin で `is_active=false` にして件数から自然に外す(データ側の整理、可逆)/ 案 C=EP に除外名リストを持つ(非推奨・固定値)。将軍推奨=**B**(画面ロジックに例外を持ち込まない)。
@@ -175,6 +188,6 @@
 5. Coupon 説明「note 不要」の正確性(1.1 の通り auth.py にクーポン分岐はない → クーポン=別 env key の tier パスワードか、Legacy `VIEWER_PASS` か要確認)。
 
 ## §7 因果リンク
-- [[殿観測_ログインページさみしい_20260818_1550]] -> [[login_showcase_mock_v1-v11]] -> [[dm-login-showcase-asis-tobe_20260818]](ToBe v0.3・未実装) -> [[殿指示_asis本番リアルタイム化_20260830_1007]] -> **[[dm-login-showcase-asis-tobe_v2_20260830]]**
+- [[殿観測_ログインページさみしい_20260818_1550]] -> [[login_showcase_mock_v1-v11]] -> [[dm-login-showcase-asis-tobe_20260818]](ToBe v0.3・未実装) -> [[殿指示_asis本番リアルタイム化_20260830_1007]] -> **[[dm-login-showcase-asis-tobe_v2_20260830]]** <- [[殿裁定_login金額なし_20260830_1020]] / [[殿参照_摩擦優先_note_dataana2020_20260830_1021]]
 - ← [[dm-login-boundary-asis-tobe_20260817]](第 0 段) / [[tier別可視性完成形]](cmd_3837) / [[visibility_philosophy]](projects/dm-signal.yaml)
 - 一次証拠: Render deploys API(10:10)、`git diff 812f0b7a1 origin/main`、readonly_query 7 本(10:14-10:18)、`metrics_impl.py:1386`、`auth.py:21-70`
