@@ -6521,7 +6521,8 @@ PY
     _push_overlap_repo_init "$base"
     printf 'source-a\n' > "$base/repo/source-a.txt"
     printf 'source-b\n' > "$base/repo/source-b.txt"
-    git -C "$base/repo" add source-a.txt source-b.txt
+    printf 'source-c\n' > "$base/repo/source-c.txt"
+    git -C "$base/repo" add source-a.txt source-b.txt source-c.txt
     git -C "$base/repo" commit -q -m "union missing path source"
     source_sha="$(git -C "$base/repo" rev-parse HEAD)"
     cat > "$base/report.yaml" <<YAML
