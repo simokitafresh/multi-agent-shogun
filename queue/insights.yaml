@@ -6678,7 +6678,10 @@ insights:
   priority: "medium"
   source: "manual"
   fix_known: false
-  status: pending
+  status: resolved
+  resolved_reason: 一次情報で4bfd65d91をshogun_commit_verdictへ投入しobject=commit、ancestor_HEAD=no、ancestor_origin/main=no、refs=0を再確認した。現行cmd_complete_gateはtyped commit_contract.repo_rootを解決してorigin/main到達判定する7ec56316a回帰防御とテストを備えるため、ancestry誤判定の根因は既存修正済みと整理した。CLEAR通知へのrefs同梱は現行未実装の観測強化であり、別判断候補として報告へ残した。
+  action_artifact: "scripts/cmd_complete_gate.sh:resolve_report_commit_repo;tests/unit/test_cmd_complete_gate.bats:8123-8149;git:7ec56316a7e682af5b9d1ee668a0501018ed622b;proof:scripts/shogun_commit_verdict.sh 4bfd65d91 --no-fetch;decision_candidate:CLEAR通知へrefsを同梱するか"
+  resolved_at: "2026-08-30T14:19:34+09:00"
 - id: INS-20260828-101441890-c025
   ts: "2026-08-28T10:14:41+09:00"
   insight: "semantic_index_update新概念候補: discussion:task notification task id bqw3t19j7 task id tool use id toolu 01MoTs1NY2Kv43MqDk は 既存aliasesに一致なし。概念定義とaliases追加を検討せよ"
