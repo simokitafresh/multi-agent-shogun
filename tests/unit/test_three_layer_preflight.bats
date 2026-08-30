@@ -398,14 +398,37 @@ PY
     local evidence_dir="$tmp_root/evidence"
     local recovery_log="$TMP_EVIDENCE/auto-recovery.tsv"
     local evidence="$evidence_dir/evidence_kotaro__auto.json"
+    local baseline_started baseline_finished baseline_wall_ms fixed_started fixed_finished fixed_wall_ms
+    local baseline_blocks=0 fixed_blocks=0 simulated_stall_seconds=814
     make_auto_recovery_root "$tmp_root"
 
+    # Reproduce the reported 13m34s stall as fixture metadata, then measure
+    # the old fail-closed path before exercising the automatic repair.
+    baseline_started="$(date +%s%3N)"
+    run env THREE_LAYER_TASK_DIR="$tmp_root/queue/tasks" \
+        THREE_LAYER_PREACTION_EVIDENCE_DIR="$evidence_dir" \
+        THREE_LAYER_AUTO_RECOVERY=0 \
+        THREE_LAYER_AGENT_ID=kotaro TMUX_PANE=%auto \
+        bash "$tmp_root/scripts/hooks/three_layer_preflight.sh" verify Write "$tmp_root/context/probe.md" ""
+    baseline_finished="$(date +%s%3N)"
+    baseline_wall_ms=$((baseline_finished - baseline_started))
+    [ "$status" -eq 1 ]
+    [[ "$output" == *"BLOCK:"* ]] && baseline_blocks=1
+    [ "$simulated_stall_seconds" -eq 814 ]
+
+    fixed_started="$(date +%s%3N)"
     run env THREE_LAYER_TASK_DIR="$tmp_root/queue/tasks" \
         THREE_LAYER_PREACTION_EVIDENCE_DIR="$evidence_dir" \
         THREE_LAYER_AUTO_RECOVERY_LOG="$recovery_log" \
         THREE_LAYER_AGENT_ID=kotaro TMUX_PANE=%auto \
         bash "$tmp_root/scripts/hooks/three_layer_preflight.sh" verify Write "$tmp_root/context/probe.md" ""
     [ "$status" -eq 0 ]
+    fixed_finished="$(date +%s%3N)"
+    fixed_wall_ms=$((fixed_finished - fixed_started))
+    [ "$baseline_blocks" -eq 1 ]
+    [ "$fixed_blocks" -eq 0 ]
+    [ "$baseline_wall_ms" -ge 0 ]
+    [ "$fixed_wall_ms" -ge 0 ]
     [ "$(awk 'END { print NR + 0 }' "$recovery_log")" -eq 1 ]
     run python3 - "$evidence" <<'PY'
 import json, sys
