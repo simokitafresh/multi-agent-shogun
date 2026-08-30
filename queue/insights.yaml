@@ -8760,3 +8760,10 @@ insights:
   source: "semantic_index_update"
   fix_known: false
   status: pending
+- id: INS-20260830-144137431-6db7
+  ts: "2026-08-30T14:41:37+09:00"
+  insight: "semantic_index_update未登録[[リンク]]ターゲット: [[復旧の契約_戻せ直すな]] は既存aliasesに一致なし。類似概念TOP3: semantic_dictionary_design(セマンティック辞書構想; alias=殿直命2026 復旧に不要なコードを増やすな; score=2.0) / rebalancer_app(Rebalancerアプリ; alias=これもらせんで直すべき点だな; score=1.9) / correct_result_velocity(正しい結果が出る速度を最適化; alias=曖昧な診断を直す; score=1.9)。概念定義とaliases追加を検討せよ"
+  priority: "low"
+  source: "semantic_index_update"
+  fix_known: false
+  status: pending
