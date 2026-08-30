@@ -9846,3 +9846,10 @@ insights:
   source: "semantic_stress_test"
   fix_known: false
   status: pending
+- id: INS-20260830-202224764-8871
+  ts: "2026-08-30T20:22:24+09:00"
+  insight: "[[LP SEO P0 — JSON LD Organization・WebSite・FAQPage と OG Twitte]] semantic_stress_test candidate_aliases: NO_MATCH source=cmds query=LP SEO P0 — JSON-LD(Organization・WebSite・FAQPage)と OG/Twitter 画像と検索語入り title/description を lp 配下に追加する"
+  priority: "low"
+  source: "semantic_stress_test"
+  fix_known: false
+  status: pending
