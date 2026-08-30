@@ -9536,3 +9536,10 @@ insights:
   source: "semantic_index_update"
   fix_known: false
   status: pending
+- id: INS-20260830-183115469-80d9
+  ts: "2026-08-30T18:31:15+09:00"
+  insight: "cmd 正本の acceptance_criteria/command を Edit した後、配備済み task の ac_version(deploy_task.sh:1769 sha256)と正本の再計算値を突合し不一致なら将軍 inbox へ WARN。実証: cmd_4419 AC3 を 17:52 に正本 Edit したが task 43594047 のまま 3 度 FAIL(18:16)。軍師検証 blt_183043=構造型で妥当"
+  priority: "medium"
+  source: "manual"
+  fix_known: false
+  status: pending
