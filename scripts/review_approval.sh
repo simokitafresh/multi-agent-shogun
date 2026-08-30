@@ -208,11 +208,20 @@ fail_close=0
 if [ "$report_status" = "failed" ] && [ "$role:$result" = "karo:ACCEPT" ] && [ "$report_verdict" = "FAIL" ]; then
   fail_close=1
 fi
+# A truthful failed report can be approved as a report attestation by Gunshi.
+# This records review quality without turning the failed implementation into a
+# successful completion; the later review_all_reports_ready path still excludes
+# it from CLEAR until Karo performs the explicit fail-close.
+honest_fail=0
+if [ "$report_status" = "failed" ] && [ "$report_verdict" = "FAIL" ] \
+  && [ "$role:$result" = "gunshi:LGTM" ] && [ "$requested_scope" = report ]; then
+  honest_fail=1
+fi
 failed_rc=0
 if [ "$report_status" = "failed" ] && [ "$role:$result" = "karo:RC" ] && [ "$report_verdict" = "FAIL" ]; then
   failed_rc=1
 fi
-[ "$report_status" = "completed" ] || [ "$fail_close" = 1 ] || [ "$failed_rc" = 1 ] || [ "$role:$result" = "karo:RC_REVOKE" ] || {
+[ "$report_status" = "completed" ] || [ "$fail_close" = 1 ] || [ "$honest_fail" = 1 ] || [ "$failed_rc" = 1 ] || [ "$role:$result" = "karo:RC_REVOKE" ] || {
   if [ "$report_verdict" = "PASS" ]; then
     echo "BLOCK: nonterminal report cannot carry verdict=PASS (status=${report_status:-missing}); normalize atomically: bash scripts/report_field_set.sh '$report' status completed" >&2
     exit 1
@@ -226,6 +235,7 @@ fi
 # precheck deliberately precedes the fingerprint commit-identity gate; normal
 # completed reports and failed reports for another task never receive it.
 identity_exempt="$fail_close"
+[ "$honest_fail" = 1 ] && identity_exempt=1
 if [ "$failed_rc" = 1 ]; then
   failed_rc_boundary=$(python3 - "$ROOT" "$report" "$cmd_id" <<'PY'
 import pathlib, sys, yaml
@@ -545,6 +555,7 @@ if [ "$role" = gunshi ] && [ "$result" = LGTM ] \
   && [ -f "$ROOT/scripts/review_bundle.py" ]; then
   sg7_archive_args=()
   [[ "$report_rel" = queue/archive/reports/* ]] && sg7_archive_args+=(--allow-archived)
+  [ "$honest_fail" = 1 ] && sg7_archive_args+=(--allow-honest-fail)
   python3 "$ROOT/scripts/review_bundle.py" generate \
     --cmd "$cmd_id" --verdict APPROVE --report "$report_rel" "${sg7_archive_args[@]}" >/dev/null || {
       echo "BLOCK: SG7 bundle generation failed: $cmd_id $report_rel" >&2

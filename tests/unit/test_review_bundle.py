@@ -599,6 +599,62 @@ def test_review_and_report_verdict_axes_contract(
             review_bundle.generate(args)
 
 
+def test_honest_failed_report_normalizes_lgtm_to_approve_without_clearing(tmp_path, monkeypatch):
+    """test_necessity: truthful FAIL remains report evidence while its review axis is APPROVE."""
+    root = _root(tmp_path)
+    cmd = "cmd_karo_honest_fail"
+    report = root / f"queue/reports/worker_report_{cmd}.yaml"
+    report.write_text(
+        f"parent_cmd: {cmd}\ntask_id: {cmd}_normal\nworker_id: worker\nreport_id: rpt-honest\n"
+        "status: failed\nverdict: FAIL\nbinary_checks: {AC1: [{result: no}]}\n"
+        "result: {summary: measured failure}\n",
+        encoding="utf-8",
+    )
+    (root / "queue/tasks/worker.yaml").write_text(
+        f"task:\n  parent_cmd: {cmd}\n  task_id: {cmd}_normal\n  report_filename: {report.name}\n",
+        encoding="utf-8",
+    )
+    (root / "queue/gates" / cmd).mkdir(parents=True, exist_ok=True)
+    (root / "queue/shogun_to_karo.yaml").write_text(
+        f"commands:\n  {cmd}:\n    acceptance_criteria: [one]\n"
+        "    target_path: scripts/review_bundle.py\n    project: infra\n",
+        encoding="utf-8",
+    )
+
+    captured = {}
+    old_batch = review_bundle.batch
+
+    def capture_batch(args):
+        captured.update(review_bundle.load(args.manifest)["reviews"][0])
+        return 0
+
+    monkeypatch.setattr(review_bundle, "batch", capture_batch)
+    entry = root / "review-entry.yaml"
+    entry.write_text(
+        "cmd_id: " + cmd + "\nreview_type: report\nverdict: LGTM\nreport_verdict: FAIL\n",
+        encoding="utf-8",
+    )
+    args = SimpleNamespace(
+        root=str(root), cmd=cmd, report=str(report), verdict="FAIL",
+        review_entry=str(entry), fail_reason=None, correction_scope="auto",
+    )
+    assert review_bundle.single(args) == 0
+    assert captured["verdict"] == "APPROVE"
+    assert captured["correction_scope"] == "report"
+    assert captured["allow_honest_fail"] is True
+
+    generated = SimpleNamespace(
+        root=str(root), cmd=cmd, report=str(report), verdict="APPROVE",
+        allow_archived=False, fail_reason=None, allow_honest_fail=True,
+    )
+    assert review_bundle.generate(generated) == 0
+    review = review_bundle.load(root / "queue/gates" / cmd / "sg7_bundle.json")["review"]
+    assert review["verdict"] == "APPROVE"
+    assert review["report_verdict"] == "FAIL"
+    assert not (root / "queue/gates" / cmd / "review_gate.done").exists()
+    monkeypatch.setattr(review_bundle, "batch", old_batch)
+
+
 def test_approve_accepts_completed_pass_no_improvement_from_autogen_snapshot(tmp_path):
     """test_necessity: APPROVE must preserve a measured no-improvement report as a valid success state.
 

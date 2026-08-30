@@ -142,9 +142,9 @@ if [ "$ENTRY_REVIEW_TYPE" = "report" ] && [[ "$ENTRY" =~ verdict:[[:space:]]*LGT
 fi
 
 # --- LGTM bundle guard: sg7_bundle.json必須(lgtm_bundle_guard, cmd_4157) ---
-# LGTM記載とbundle生成を不可分にする。bundle未生成のままreview_logへLGTM記載を禁止する
-# report_verdict=FAILの正当なFAIL報告ではsg7_bundle不要(GATE適用外・registry未登録)
-if [ "$ENTRY_REVIEW_TYPE" = "report" ] && [[ "$ENTRY" =~ verdict:[[:space:]]*LGTM ]] && ! echo "$ENTRY" | grep -Pq 'report_verdict:\s*FAIL'; then
+# LGTM記載とbundle生成を不可分にする。正直FAILもAPPROVE review bundleを先に
+# 生成し、report_verdict=FAILはbundle内の別軸として保持する。
+if [ "$ENTRY_REVIEW_TYPE" = "report" ] && [[ "$ENTRY" =~ verdict:[[:space:]]*LGTM ]]; then
     _lbg_cmd_id=$(python3 -c "
 import sys, yaml
 entry = yaml.safe_load(sys.argv[1])

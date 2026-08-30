@@ -173,6 +173,48 @@ def _correction_scope(value):
     return scope
 
 
+def _entry_review_verdict(entry):
+    """Return the typed reviewer decision, if the entry declares one."""
+    if not isinstance(entry, dict):
+        return ""
+    return str(entry.get("verdict") or entry.get("review_verdict") or "").strip().upper()
+
+
+def _is_honest_fail_review(item, report_data):
+    """Recognize the narrow report-attestation lane for a truthful FAIL."""
+    entry = item.get("review_entry") if isinstance(item, dict) else None
+    if not isinstance(entry, dict) or not isinstance(report_data, dict):
+        return False
+    report_state = (
+        str(report_data.get("status") or "").strip(),
+        str(report_data.get("verdict") or "").strip().upper(),
+    )
+    return (
+        report_state == ("failed", "FAIL")
+        and str(entry.get("review_type") or "").strip().lower() == "report"
+        and _entry_review_verdict(entry) in {"LGTM", "APPROVE"}
+        and str(entry.get("report_verdict") or "").strip().upper() == "FAIL"
+    )
+
+
+def _normalize_review_item(root, item):
+    """Bind the review axis to the review entry, not the report verdict."""
+    entry_verdict = _entry_review_verdict(item.get("review_entry"))
+    if entry_verdict in {"LGTM", "APPROVE"}:
+        item["verdict"] = "APPROVE"
+    elif entry_verdict in {"FAIL", "REQUEST_CHANGES"}:
+        item["verdict"] = "FAIL"
+    report_path = Path(str(item.get("report") or ""))
+    if not report_path.is_absolute():
+        report_path = root / report_path
+    if report_path.is_file() and item.get("verdict") == "APPROVE":
+        report_data = load(report_path)
+        if _is_honest_fail_review(item, report_data):
+            item["correction_scope"] = "report"
+            item["allow_honest_fail"] = True
+    return item
+
+
 def _saved_command(root, cmd_id):
     paths = [root / "queue/shogun_to_karo.yaml", root / f"queue/reopened_cmds/{cmd_id}.yaml"]
     paths += [Path(p) for p in sorted(glob.glob(str(root / f"queue/archive/cmds/{cmd_id}_*.yaml")), reverse=True)]
@@ -234,7 +276,8 @@ def _split_command(root, report, cmd_id, report_path):
     return command, source
 
 
-def find_command(root, cmd_id, report=None, report_path=None, requested_verdict=None):
+def find_command(root, cmd_id, report=None, report_path=None, requested_verdict=None,
+                 allow_honest_fail=False):
     saved = _saved_command(root, cmd_id)
     if saved:
         return saved
@@ -250,6 +293,8 @@ def find_command(root, cmd_id, report=None, report_path=None, requested_verdict=
         # FAIL accepts either a rejected success claim or an already self-reported failure.
         allowed = ({("completed", "PASS"), ("failed", "FAIL")} if requested_verdict == "FAIL"
                    else _APPROVE_REPORT_STATES)
+        if requested_verdict == "APPROVE" and allow_honest_fail:
+            allowed = set(allowed) | {("failed", "FAIL")}
         if state not in allowed:
             expected = " or ".join(f"{status}/{verdict}" for status, verdict in sorted(allowed))
             raise ValueError(f"autogen spec fallback requires {expected} report")
@@ -424,20 +469,23 @@ def generate(args):
     if str(report_data.get("parent_cmd") or "") != args.cmd: raise ValueError("report parent_cmd contradicts requested cmd")
     report_ref = report_arg if report_arg.is_relative_to(root) else report
     verdict = args.verdict.upper()
-    command, source = find_command(root, args.cmd, report_data, report_ref, verdict)
+    allow_honest_fail = bool(getattr(args, "allow_honest_fail", False))
+    report_state = (str(report_data.get("status") or "").strip(), str(report_data.get("verdict") or "").upper())
+    honest_fail = allow_honest_fail and report_state == ("failed", "FAIL")
+    command, source = find_command(root, args.cmd, report_data, report_ref, verdict, honest_fail)
     if verdict == "APPROVE":
-        report_state = (str(report_data.get("status") or ""), str(report_data.get("verdict") or "").upper())
-        if report_state not in _APPROVE_REPORT_STATES:
+        if report_state not in _APPROVE_REPORT_STATES and not honest_fail:
             raise ValueError("APPROVE requires completed/PASS or completed/PASS_NO_IMPROVEMENT report")
-        hook_failures = report_data.get("hook_failures")
-        if isinstance(hook_failures, dict) and int(hook_failures.get("count") or 0) != 0:
-            _require_hook_failures_resolved(hook_failures)
-        checks = report_data.get("binary_checks")
-        # yaml.safe_load coerces bare yes/no to booleans; treat them as equivalent
-        results = [("yes" if item.get("result") is True else "no" if item.get("result") is False else str(item.get("result") or "").lower()) for group in (checks or {}).values() if isinstance(group, list) for item in group if isinstance(item, dict)] if isinstance(checks, dict) else []
-        if not results or any(result != "yes" for result in results):
-            raise ValueError("APPROVE requires all binary checks resolved yes")
-    review = {"cmd_id": args.cmd, "verdict": verdict, "reviewer": "gunshi", "reviewed_at": datetime.now().astimezone().isoformat(timespec="seconds"), "report": str(report_ref.relative_to(root)), "report_fingerprint": hashlib.sha256(report.read_bytes()).hexdigest(), "cmd_spec_source": str(source.relative_to(root)), "cmd_spec_summary": summary(command), "dashboard_line": dashboard_line(report_data, args.cmd)}
+        if not honest_fail:
+            hook_failures = report_data.get("hook_failures")
+            if isinstance(hook_failures, dict) and int(hook_failures.get("count") or 0) != 0:
+                _require_hook_failures_resolved(hook_failures)
+            checks = report_data.get("binary_checks")
+            # yaml.safe_load coerces bare yes/no to booleans; treat them as equivalent
+            results = [("yes" if item.get("result") is True else "no" if item.get("result") is False else str(item.get("result") or "").lower()) for group in (checks or {}).values() if isinstance(group, list) for item in group if isinstance(item, dict)] if isinstance(checks, dict) else []
+            if not results or any(result != "yes" for result in results):
+                raise ValueError("APPROVE requires all binary checks resolved yes")
+    review = {"cmd_id": args.cmd, "verdict": verdict, "report_verdict": report_state[1], "reviewer": "gunshi", "reviewed_at": datetime.now().astimezone().isoformat(timespec="seconds"), "report": str(report_ref.relative_to(root)), "report_fingerprint": hashlib.sha256(report.read_bytes()).hexdigest(), "cmd_spec_source": str(source.relative_to(root)), "cmd_spec_summary": summary(command), "dashboard_line": dashboard_line(report_data, args.cmd)}
     if verdict == "FAIL":
         if not args.fail_reason: raise ValueError("FAIL requires --fail-reason")
         review["karo_attention"] = args.fail_reason
@@ -540,6 +588,11 @@ def _batch_precheck(root, item):
             raise ValueError("precheck_na requires non-empty reason and evidence")
         return {"status": "N/A", "reason": str(na["reason"]), "evidence": str(na["evidence"]), "duration_ms": round((time.monotonic() - started) * 1000)}
     report = str(item["report"])
+    report_path = Path(report)
+    if not report_path.is_absolute():
+        report_path = root / report_path
+    report_data = load(report_path) if report_path.is_file() else {}
+    honest_fail = _is_honest_fail_review(item, report_data)
     proc = subprocess.run(
         ["bash", str(root / "scripts/gates/gate_gunshi_report_precheck.sh"), report],
         cwd=root, text=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
@@ -548,8 +601,9 @@ def _batch_precheck(root, item):
     if proc.returncode != 0:
         # FAIL verdict accepts precheck BLOCK (e.g. bc:no on failed reports).
         # The precheck observation is recorded but does not prevent bundle generation.
-        if str(item.get("verdict", "")).upper() == "FAIL":
-            return {"status": "BLOCK_ACCEPTED", "reason": f"precheck BLOCK accepted for FAIL verdict (rc={proc.returncode})", "evidence": evidence, "duration_ms": round((time.monotonic() - started) * 1000)}
+        if str(item.get("verdict", "")).upper() == "FAIL" or honest_fail:
+            reason = "honest FAIL report attestation" if honest_fail else "FAIL review verdict"
+            return {"status": "BLOCK_ACCEPTED", "reason": f"precheck BLOCK accepted for {reason} (rc={proc.returncode})", "evidence": evidence, "duration_ms": round((time.monotonic() - started) * 1000)}
         # A precheck can exit non-zero after emitting only advisory warnings.
         # The shell gate's authoritative result is its final ERRORS count, not
         # the process status alone.  Treat only the explicit zero-error case as
@@ -563,7 +617,8 @@ def _batch_precheck(root, item):
 
 def _batch_generate(root, item, precheck):
     argv = argparse.Namespace(root=str(root), cmd=str(item["cmd"]), verdict=str(item["verdict"]).upper(),
-                              report=str(item["report"]), fail_reason=item.get("fail_reason"), allow_archived=False)
+                              report=str(item["report"]), fail_reason=item.get("fail_reason"), allow_archived=False,
+                              allow_honest_fail=bool(item.get("allow_honest_fail", False)))
     generate(argv)
     path = root / f"queue/gates/{item['cmd']}/sg7_bundle.json"
     bundle = load(path); bundle["review"]["precheck"] = precheck; atomic_json(path, bundle)
@@ -577,9 +632,10 @@ def batch(args):
     required = {"cmd", "report", "verdict", "review_entry"}
     for item in items:
         if not isinstance(item, dict) or not required.issubset(item): raise ValueError("each review requires cmd/report/verdict/review_entry")
-        if str(item["verdict"]).upper() not in {"APPROVE", "FAIL"}: raise ValueError("batch verdict must be APPROVE or FAIL")
         if not isinstance(item["review_entry"], dict): raise ValueError("review_entry must be a mapping")
         item["correction_scope"] = _correction_scope(item.get("correction_scope"))
+        _normalize_review_item(root, item)
+        if str(item["verdict"]).upper() not in {"APPROVE", "FAIL"}: raise ValueError("batch verdict must be APPROVE or FAIL")
     cmds = [str(x["cmd"]) for x in items]; reports = [str(x["report"]) for x in items]
     if len(set(cmds)) != len(cmds) or len(set(reports)) != len(reports): raise ValueError("batch cmd/report values must be unique")
 
@@ -653,6 +709,7 @@ def _singleflight_token(root, args, entry):
     payload = {
         "cmd": str(args.cmd),
         "report": str(report_path),
+        "verdict": _entry_review_verdict(entry) or str(getattr(args, "verdict", "")).upper(),
         "correction_scope": _correction_scope(getattr(args, "correction_scope", None)),
         "report_sha256": hashlib.sha256(report_path.read_bytes()).hexdigest() if report_path.is_file() else "missing",
         "contract": contract,
@@ -691,6 +748,9 @@ def single(args):
     correction_scope = _correction_scope(getattr(args, "correction_scope", None))
     item = {"cmd": args.cmd, "report": args.report, "verdict": args.verdict,
             "correction_scope": correction_scope, "review_entry": entry}
+    _normalize_review_item(Path(args.root).resolve(), item)
+    args.verdict = item["verdict"]
+    args.correction_scope = item["correction_scope"]
     precheck_na = entry.get("precheck_na")
     if precheck_na is not None:
         if not isinstance(precheck_na, dict):
@@ -731,7 +791,7 @@ def single(args):
 
 def build_parser():
     p = argparse.ArgumentParser(); p.add_argument("--root", default=str(Path(__file__).resolve().parents[1])); subs = p.add_subparsers(dest="action", required=True)
-    g = subs.add_parser("generate"); g.add_argument("--cmd", required=True); g.add_argument("--verdict", required=True, choices=("APPROVE", "FAIL")); g.add_argument("--report", required=True); g.add_argument("--fail-reason"); g.add_argument("--allow-archived", action="store_true"); g.set_defaults(func=generate, direct_cli=True)
+    g = subs.add_parser("generate"); g.add_argument("--cmd", required=True); g.add_argument("--verdict", required=True, choices=("APPROVE", "FAIL")); g.add_argument("--report", required=True); g.add_argument("--fail-reason"); g.add_argument("--allow-archived", action="store_true"); g.add_argument("--allow-honest-fail", action="store_true"); g.set_defaults(func=generate, direct_cli=True)
     n = subs.add_parser("notify"); n.add_argument("--cmd", required=True); n.add_argument("--bundle", required=True); n.set_defaults(func=notify)
     c = subs.add_parser("consume"); c.add_argument("--cmd", required=True); c.add_argument("--bundle", required=True); c.add_argument("--expect-verdict", choices=("APPROVE", "FAIL")); c.set_defaults(func=consume)
     b = subs.add_parser("batch"); b.add_argument("--manifest", required=True); b.add_argument("--max-workers", type=int, default=5); b.set_defaults(func=batch)
