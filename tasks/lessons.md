@@ -16285,3 +16285,29 @@ sqlite3.Connection.backup()を使うとページ(4096byte)単位のread syscall�
 - **when**: 未設定
 - **how**: 未設定
 - When a wrapped test runner exits before publishing its receipt, the outer runner must first restore a reasoned receipt and then publish one adjacent rc sidecar from that receipt rc. Next check: success/failure/timeout fixtures assert receipt rc equals sidecar rc and no temp artifact remains.
+
+### L1679: GA-532一次ログはtask起票時に永続保存し分類可能にする
+- **日付**: 2026-08-30
+- **出典**: cmd_karo_hotfix_ga532_doc_no_changelog_20260830
+- **記録者**: kotaro
+- **tags**: [infra,testing,gate,yaml]
+- **subdomain**: infra
+- **target_files**: [scripts/hooks/git-pre-commit.sh,tests/unit/test_git_pre_commit_doc_no_changelog.bats]
+- **origin**: [[cmd_karo_hotfix_ga532_doc_no_changelog_20260830]]
+- **enforcement**: 未自動化
+- **when**: 未設定
+- **how**: 未設定
+- task YAMLがlegacy=2/total=1002を指定しても、一次ログ2件がrepo・archive・worktreeへ残らず、ninja/exit_code/detail/対象行の全件分類ができなかった。次回はalert生成時に対象ログの保存pathとhashをtaskへ固定し、欠落時は分類不能BLOCKへ直結する。
+
+### L1680: hook失敗混在バッチは期待GA-PUSH1を抑止しlegacy実失敗を残す
+- **日付**: 2026-08-30
+- **出典**: cmd_karo_hotfix_ga531_push_dirty_overlap_20260830
+- **記録者**: hayate
+- **tags**: [infra,testing,gate]
+- **subdomain**: infra
+- **target_files**: [tests/unit/test_gate_improvement_trigger.bats]
+- **origin**: [[cmd_karo_hotfix_ga531_push_dirty_overlap_20260830]]
+- **enforcement**: 未自動化
+- **when**: 未設定
+- **how**: 未設定
+- GA-531では新規8件がexpected_ga_push1=5とlegacy=3に混在した。期待BLOCKだけを抑止するとlegacy実失敗を見逃すため、分類合計がnew_countと一致すること、legacyが1件以上ならALERTを維持することを次回チェックとしてcontract化する。

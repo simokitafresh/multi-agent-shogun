@@ -1,5 +1,5 @@
 # CMD年代記
-<!-- last_updated: 2026-08-30 -->
+<!-- last_updated: 2026-08-31 -->
 
 > 完了cmdの1行索引。詳細は queue/archive/cmds/{cmd_id}.yaml 参照。
 
@@ -53,13 +53,6 @@
 |-----|-------|---------|------|------------|
 | cmd_1696 | 影丸(Sonnet 4.6)の@model_nameが「Opus」と誤表示。根因: model_detect.shのバナー検出パターンが (Opus|Haiku)のみでSonnetが欠落。Sonnetバナーがマッチせずキャッシュの古い値が返される。 加えて、陣形図(karo_snapshot.txt)にモデル情報列がなく、編成状態が不可視。 | infra | 04-03 | model_detect.shにSonnet検出パターン追加 |
 | cmd_1697 | cmd_save.sh L152-153のgrep "scope_mode:"/"scout_exempt:"がcmdブロック内にマッチしない場合、 set -eで即exit 1。|| trueがないのが原因。cmd_1696でscout_exemptなし初回BLOCK発生の根因。 | infra | 04-03 | cmd_save.sh L152-153のgrep scop |
-
-## 2026-07
-
-| cmd | title | project | date | key_result |
-|-----|-------|---------|------|------------|
-�し、古 |
-| cmd_4199 | 殿指示2026-07-31「執行日だけの感度分析。シグナルはN=0固定。変更するのは翌月の執行日だけ」。設計書v1.5(docs/research/execution-delay-sensitivity-asis-tobe-5w1h_20260731.md)に基づき、新規凍結snapshotでcmd_4198再計測+E=0-7の執行遅延感度分析を実行し、デュアルモメンタム戦略の執行タイミングに対するロバストネスを確認する | dm-signal | 07-31 | AC1-5完了: 凍結DB SHA前後一致、producti |
 
 ## 2026-08
 
@@ -253,3 +246,5 @@
 | cmd_4421 | 殿指示 2026-08-30 19:51『seo 案をまとめて gist に共有して』→SEO 案 v1(docs/research/dm-signal-lp-seo-plan_20260830.md §2 P0-3〜P0-5)→殿裁定 20:04『やったぞ。進めてくれ』(Search Console 所有権確認+sitemap 送信済、§5 の既定案=title 文言案採用・OG 画像に数値なし・docs/faq は app 側のまま)。LP(dm-signal.com)は JSON-LD 0・og:image 0・twitter card 0 のため、検索結果とシェアカードで評価される土台を静的出力のまま足す。hreflang は既に 3 本(en/ja/x-default)あり対象外 | dm-signal | 08-30 | LPのEN/JAページへJSON-LD 3型、OG画像、SE |
 | cmd_4423 | 殿裁定 2026-08-30 20:21『着手せよ』+殿要件 20:17『登録してログインすると free のクーポンが表示、ワンクリックでコピーできるようにして動線をスムーズに。すでにメンバーが誤解しないようにしよう』+20:18『登録者は rebalancer と同じ Supabase の既存にまとめる』(設計書 v3 §2 項目 2・4・5)。契約=cmd_4422 の GET /api/public/free-coupon(Bearer=Supabase access token、応答キー coupon・expires_at・plan・scope)。本 cmd は frontend だけを作り、backend(4422)と並走する(パイプライン契約)。EP が未 deploy の間はモック応答で AC を満たし、本番 EP 差替えは env のみ | dm-signal | 08-30 | Free Google OAuth entry, Supab |
 | cmd_4422 | 殿裁定 2026-08-30 20:21『着手せよ』(設計書 v3 docs/research/dm-free-tier-google-auth-asis-tobe_v3_20260830.md §2 ToBe)。殿要件 20:15-20:20: Google 登録者に当月の Free クーポン(=Free tier の月次パスワード、有効期限と期間は他 tier と同一ローテーション)を表示し Basic-DualMomentum のみ閲覧できる Free tier を作る。登録者は rebalancer と同じ Supabase の auth.users に統合(新テーブルは Supabase 側の product_logins のみ、本 cmd の対象外)。本 cmd は backend の契約 2 点(Free tier 行+クーポン EP)だけを作り、frontend の /free(F2)と LP CTA(F3)は契約確定で並走させる(パイプライン契約) | dm-signal | 08-30 | Free tier migration and Supaba |
+| cmd_4428 | 殿指摘 2026-08-30 22:54『リバランサーでできたことを俺に聞くな。できるはずだ』。一次(22:56 git grep): rebalancer backend/app に supabase/jwt/bearer の参照 0 件=rebalancer は backend で JWT を検証せず、frontend の supabase-js(auth-context.tsx:56 signInWithOAuth)と RLS だけで成立している。cmd_4422(F1)は HS256+SUPABASE_JWT_SECRET で検証する実装(631bbc9c)だが、secret の正本は Supabase 設定のみで rebalancer の Render env にも無い(家老 22:50 一次 key 0)。secret 無しで backend が本人性を確かめる標準手段=Supabase Auth REST GET {SUPABASE_URL}/auth/v1/user(apikey=anon key、Authorization: Bearer <access_token>)。anon key と URL は frontend と同値で既に Render に投入済(22:52)。本 cmd は free-coupon EP の検証をこの方式へ差し替え、env は SUPABASE_URL と SUPABASE_ANON_KEY のみにする | dm-signal | 08-31 | Free coupon authentication now |
+| cmd_4425 | 殿裁定 2026-08-30 12:46『MDD も追加』12:48『表内にベスト PF 名は不要』12:49『Sharpe/MDD はベストだけ』12:58『日時は書かない』で確定した公開契約 v3(設計書 v3 §2.4、gist 901c36a5)が、cmd_4415 GATE CLEAR(16:30)にもかかわらず origin/main に到達していない(22:40 一次: git show origin/main:backend/app/api/public_showcase.py で mdd/drawdown 0 件、best_name・sharpe_avg・until_hint 残存。4415 最終 commit f8a33e00 は 3 行差分)。本番 EP(22:02 curl)も同じ v1 形。LP の表は EP の現物に従うため MDD 列が出せず、契約外キー(best_name)が公開されている。本 cmd は契約 v3 を backend に実装し contract test で固定する | dm-signal | 08-31 | 公開showcase契約v3を実装し、MDD・ブラックアウト |

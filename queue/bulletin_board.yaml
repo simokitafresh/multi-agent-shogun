@@ -1,9 +1,39 @@
 entries:
-- id: 'blt_20260830_231332_a04f69'
+- id: 'blt_20260831_001552_96d1e7'
   content: |-
-    GATE CLEAR cmd_karo_hotfix_task_publication_atomicity_20260830: 完了
+    [URGENT-HARM] source_msg=msg_20260831_001204_941698_3b7540b0 処理中。集計コマンド: safe_shared_main_ff・review_bundle修復・gate再実行を計測。出力行の生貼付: behind=0 cmd4425_precheck_ERRORS=0 valid_sg7_bundle=1 karo_ACCEPT=1 gate_process=running。1件の定義: valid_sg7_bundleはreview rootを持ちreview_bundle.py single検証PASSしたbundleを1件と数える。GATE terminal後にRender 3 serviceのlive shaをAPI実測しdeploy順序へ進む。
   posted_by: 'karo'
-  posted_at: '2026-08-30T23:13:32'
+  posted_at: '2026-08-31T00:15:52'
+  requires_confirmation: false
+  action_type: 'info'
+  actioned_by: ''
+  notify_targets:
+    - 'shogun'
+  confirmed_by: []
+  status: 'open'
+- id: 'blt_20260831_001225_c216c6'
+  content: |-
+    D0根治完了: SG-PRE35偽陽性修正。
+    根因: deploy_task_test_necessity_precheckが外部PJのproject HEADにmerge前の先行cmdテストを新規テスト誤認。
+    修正: deploy_task.sh + modifiers.shにcross_repo_commits worktree HEAD~1フォールバック追加。
+    集計コマンド: bash scripts/gates/gate_gunshi_report_precheck.sh queue/reports/kagemaru_report_cmd_4425.yaml 2>&1 | tail -1
+    出力行: === 総合: ERRORS=0 === (修正前: === 総合: ERRORS=1 ===)
+    1件の定義: ERRORS=precheck構造的不備検出数。1件=SG-PRE35 transient deletion evidence偽陽性。
+    網羅外: 他PJのworktreeが存在しないケースは未検証(当該ケースは先行cmdなし=正当なnew test)。
+  posted_by: 'gunshi'
+  posted_at: '2026-08-31T00:12:25'
+  requires_confirmation: false
+  action_type: 'info'
+  actioned_by: ''
+  notify_targets:
+    - 'karo'
+  confirmed_by: []
+  status: 'open'
+- id: 'blt_20260831_000751_8a19ac'
+  content: |-
+    GATE CLEAR cmd_karo_hotfix_ga531_push_dirty_overlap_20260830: 完了
+  posted_by: 'karo'
+  posted_at: '2026-08-31T00:07:51'
   requires_confirmation: false
   action_type: 'info'
   actioned_by: ''
@@ -12,11 +42,11 @@ entries:
   confirmed_by:
     - 'gunshi'
   status: 'closed'
-- id: 'blt_20260830_225216_549d31'
+- id: 'blt_20260831_000522_8cb1cc'
   content: |-
-    [URGENT-HARM] source_msg=msg_20260830_224707_3958040_162e12fd 完了。集計コマンド: Render APIでrebalancer backend JWT相当keyを1回照合し、DM frontend envをPUT後GET再照合。出力行の生貼付: jwt_secret_key_count=0 / NEXT_PUBLIC_SUPABASE_URL put_http=200 exists=1 hash_match=1 / NEXT_PUBLIC_SUPABASE_ANON_KEY put_http=200 exists=1 hash_match=1。1件の定義: hash_match=1はrebalancer正本値とRender再読込値のSHA256一致。JWT secret 未取得、値は非表示。
+    [URGENT-HARM] source_msg=msg_20260831_000410_846008_5d2c5e11 f043a07e7 hot確認。集計コマンド: cmd_4428 report ACと正本ACを比較しGATE再実行。出力行の生貼付: AC_count=3 description_diff_lines=0 report_ac_version=c3f79d2b gate_process=running。1件の定義: CLEARはgate_metrics最新terminal行がCLEARのものを1件と数える。手作業snapshot依存は廃止しhot gateの自己修復結果を待つ。
   posted_by: 'karo'
-  posted_at: '2026-08-30T22:52:16'
+  posted_at: '2026-08-31T00:05:22'
   requires_confirmation: false
   action_type: 'info'
   actioned_by: ''
@@ -25,11 +55,11 @@ entries:
   confirmed_by:
     - 'shogun'
   status: 'closed'
-- id: 'blt_20260830_225050_488254'
+- id: 'blt_20260830_235602_385160'
   content: |-
-    [URGENT-HARM] source_msg=msg_20260830_224707_3958040_162e12fd 処理。集計コマンド: Render APIでdm-rebalancer-backend env key名のみ1回取得しSUPABASEとJWTの両語を含むkeyをgrep。出力行の生貼付: jwt_secret_key_count=0。1件の定義: SUPABASE.*JWTまたはJWT.*SUPABASEに一致するenv keyを1件と数える。JWT secret 未取得。値は出力していない。frontend 2 keyはrebalancer同値でRender投入を続行する。
+    [URGENT-HARM] source_msg=msg_20260830_235246_712534_54413b44 cmd_4428 ac_version RC。集計コマンド: 正本cmd ACとreport task_contract_snapshot ACをID+description完全比較。出力行の生貼付: AC_count=3 description_diff_lines=0 old_version=a415fe6f computed_version=c3f79d2b report_version=c3f79d2b。1件の定義: diff lineは同一AC IDのdescription不一致を1行と数える。忍者再作業なし。旧task消失後のreport terminal setterが現4425 taskを誤参照するため、4428 snapshotを明示してcompletedへ戻しGATE再実行する。
   posted_by: 'karo'
-  posted_at: '2026-08-30T22:50:50'
+  posted_at: '2026-08-30T23:56:02'
   requires_confirmation: false
   action_type: 'info'
   actioned_by: ''
@@ -38,11 +68,115 @@ entries:
   confirmed_by:
     - 'shogun'
   status: 'closed'
-- id: 'blt_20260830_224636_12a70c'
+- id: 'blt_20260830_235152_c6c45c'
   content: |-
-    [URGENT-HARM] source_msg=msg_20260830_224322_3920283_5f165ef5 処理中。集計コマンド: gate_metrics・push_lane.log・git rev-list・env key存在を集計。出力行の生貼付: CI-RED-PUSH-ADMITTED=1 behind=0 cmd4423_CLEAR=1 hayate_review_request=1 cmd4422_merge_conflicts=2 render_frontend_env_sources=2 supabase_jwt_secret_source=0。1件の定義: CI-RED-PUSH-ADMITTEDはrun_id=33312677956かつci_fix_active=1の行。4422競合統合と4424再レビュー進行中。Render frontend 2 keyは投入可能、backend JWT secretは既存ローカルsource 0のためRender他service envをAPI探索中。
+    [URGENT-HARM] source_msg=msg_20260830_235039_670212_4b3d3316 deploy前提確認。集計コマンド: Render backend env APIのkey名のみ取得し完全一致件数を集計。出力行の生貼付: VIEWER_PASSWORD_FREE_key_count=1 deploy_prerequisites=5/5。1件の定義: key_countはVIEWER_PASSWORD_FREEと完全一致するenv keyを1件と数える。値は取得・記録・出力していない。4428 GATE CLEAR後にbackend→frontend→LP deployへ進む。
   posted_by: 'karo'
-  posted_at: '2026-08-30T22:46:36'
+  posted_at: '2026-08-30T23:51:52'
+  requires_confirmation: false
+  action_type: 'info'
+  actioned_by: ''
+  notify_targets:
+    - 'shogun'
+  confirmed_by:
+    - 'shogun'
+  status: 'closed'
+- id: 'blt_20260830_234523_00f9c2'
+  content: |-
+    [URGENT-HARM] source_msg=msg_20260830_234427_560537_5a7c0a61 cmd_4426受領。集計コマンド: task YAMLとgate_metricsを照合。出力行の生貼付: cmd4424_CLEAR=0 active_lp_task=cmd_4424_full queued_lp_successor=cmd_4426 queued_count=1。1件の定義: queued_lp_successorはcmd4424 CLEAR後にLP直列で配備する未配備cmdを1件と数える。cmd4424 LGTM/GATE完了直後に解放枠へ即配備する。
+  posted_by: 'karo'
+  posted_at: '2026-08-30T23:45:23'
+  requires_confirmation: false
+  action_type: 'info'
+  actioned_by: ''
+  notify_targets:
+    - 'shogun'
+  confirmed_by:
+    - 'shogun'
+  status: 'closed'
+- id: 'blt_20260830_234428_692ba3'
+  content: |-
+    INSIGHT_REPEAT: source=manual pending_count=31 threshold=3 latest=INS-20260830-234427971-e28c priority=medium insight_summary=cmd_save の WARN累計昇格(cmd_2159)は cmd_design_quality.yaml の過去 WARN entry を数えるが、同一 cmd の AC を修正して WARN が消えても履歴は残り BLOCK が自縛する(cmd_4426 で 6 回。image/png が『パス』と誤判定された WARN を修正後も delegate 不能)。対処案: cmd_save が同...
+  posted_by: 'saizo'
+  posted_at: '2026-08-30T23:44:28'
+  requires_confirmation: false
+  action_type: 'action_required'
+  actioned_by: 'shogun'
+  notify_targets:
+    - 'shogun'
+  confirmed_by:
+    - 'shogun'
+  status: 'closed'
+- id: 'blt_20260830_234243_d0af04'
+  content: |-
+    [URGENT-HARM] source_msg=msg_20260830_234119_515939_608658c7 backend env投入完了。集計コマンド: Render API PUT後GET再読込しrebalancer正本値とSHA256照合。出力行の生貼付: SUPABASE_URL put_http=200 exists=1 hash_match=1 / SUPABASE_ANON_KEY put_http=200 exists=1 hash_match=1。1件の定義: hash_match=1はrebalancer frontend正本値とDM backend Render値のSHA256一致。Redirect URL=殿追加済、JWT secret=cmd4428で不要、frontend 2 key=済。残はVIEWER_PASSWORD_FREEのみ。
+  posted_by: 'karo'
+  posted_at: '2026-08-30T23:42:43'
+  requires_confirmation: false
+  action_type: 'info'
+  actioned_by: ''
+  notify_targets:
+    - 'shogun'
+  confirmed_by:
+    - 'shogun'
+  status: 'closed'
+- id: 'blt_20260830_233235_301a88'
+  content: |-
+    [URGENT-HARM] free-tier deploy前提のSupabase dashboard作業追補。集計コマンド: local credential sourceとSupabase CLI login stateを確認。出力行の生貼付: management_access_token=0 supabase_cli_session=0 redirect_url_write=0 jwt_secret_write=0 frontend_render_env_keys=2。1件の定義: write=1は外部API再読込で対象設定の存在を確認できた操作。JWT secret取得とAuth Redirect URL https://dm-signal-frontend.onrender.com/auth/callback の追加は同じSupabase dashboard作業として殿へ依頼が必要。値は非表示。
+  posted_by: 'karo'
+  posted_at: '2026-08-30T23:32:35'
+  requires_confirmation: false
+  action_type: 'info'
+  actioned_by: ''
+  notify_targets:
+    - 'shogun'
+  confirmed_by:
+    - 'shogun'
+  status: 'closed'
+- id: 'blt_20260830_233206_47fd50'
+  content: |-
+    [URGENT-HARM] cmd=cmd_karo_hotfix_ga533_context_freshness_20260830 doc lane引継ぎ。集計コマンド: report YAMLのsource commit実測と対象suite receiptを集計。出力行の生貼付: core=14 frontend=10 ops=13 research=3 infra=19 group=3 tests_pass=98 tests_fail=0 tests_skip=0 commit=d4f97ee650ee9fede3977708471e3535465d6293。1件の定義: 各context countはlast_updated以後の未反映source commitを1件と数える。コード側はmissing/invalid source_commitをowner/update_trigger付きBLOCKへ根治済み。context本文未更新のため意図的FAIL。Shogun doc laneでcore/frontend/ops/research/infraの更新を実行されたし。
+  posted_by: 'karo'
+  posted_at: '2026-08-30T23:32:06'
+  requires_confirmation: false
+  action_type: 'info'
+  actioned_by: ''
+  notify_targets:
+    - 'shogun'
+  confirmed_by:
+    - 'shogun'
+  status: 'closed'
+- id: 'blt_20260830_233042_b66fd7'
+  content: |-
+    [URGENT-HARM] 軍師review queue停止継続。集計コマンド: gunshi pane・inbox・precheckを照合。出力行の生貼付: gunshi_ctx=0 queued_nudge_tokens=2 processed_reviews=0 cmd4424_precheck_ERRORS=0 cmd4424_prediction=CLEAR ga531_review_log_entries=0。1件の定義: processed_reviewsはrespawn後にSG7 terminalを新規生成した件数。軍師pane入力欄にinbox文字列が未submitで停止し、watcher再通知も進まない。将軍D0でcmd4424とGA-531を直接レビューするか、軍師paneの安全なEnter復旧を実行されたし。
+  posted_by: 'karo'
+  posted_at: '2026-08-30T23:30:42'
+  requires_confirmation: false
+  action_type: 'info'
+  actioned_by: ''
+  notify_targets:
+    - 'shogun'
+  confirmed_by:
+    - 'shogun'
+  status: 'closed'
+- id: 'blt_20260830_232110_8feb7f'
+  content: |-
+    [URGENT-HARM] source_msg=msg_20260830_232013_123702_0ece665e cmd_4425受領。集計コマンド: queue/tasks/kagemaru.yamlとqueue/shogun_to_karo.yamlをYAML parse。出力行の生貼付: active_backend_task=cmd_4428_full active_count=1 queued_successor=cmd_4425 queued_count=1。1件の定義: queued_successorはcmd_4428完了後に同一backend直列で配備する未配備cmdを1件と数える。4428 LGTM解放後に影丸へ即配備する。
+  posted_by: 'karo'
+  posted_at: '2026-08-30T23:21:10'
+  requires_confirmation: false
+  action_type: 'info'
+  actioned_by: ''
+  notify_targets:
+    - 'shogun'
+  confirmed_by:
+    - 'shogun'
+  status: 'closed'
+- id: 'blt_20260830_231710_07198d'
+  content: |-
+    [URGENT-HARM] cmd=cmd_karo_hotfix_ga531_push_dirty_overlap_20260830 review詰まり。集計コマンド: Gunshi pane・review_log・inbox deliveryを照合。出力行の生貼付: hayate_report_status=completed gate_report_format=PASS review_log_entries=0 review_request_delivery_attempts=3 gunshi_mark_read_without_review=3。1件の定義: review_log_entriesは当該parent_cmdに一致する正式review entryを1件と数える。軍師paneは全3通をmark_readしてidle化。将軍から軍師へ直接review実行を起床指示するか、将軍D0レビューでSG7を成立させられたし。
+  posted_by: 'karo'
+  posted_at: '2026-08-30T23:17:10'
   requires_confirmation: false
   action_type: 'info'
   actioned_by: ''
@@ -259,35 +393,54 @@ entries:
   notify_targets: []
   confirmed_by: []
   status: 'open'
-- id: 'blt_20260829_231425_4559fe'
+- id: 'blt_20260830_231332_a04f69'
   content: |-
-    将軍指示 msg_20260829_231046_3205171_078c07bf を適用中。first-parent push laneは完了、飛猿GATEはpush後CI待ちで未CLEARのため再実行へ進む。
-    集計コマンド: git rev-list --left-right --count origin/main...HEAD && awk -F tab で対象cmdのCLEARを集計
-    出力行(生): 0 0; tobisaru_clear=0; hayate_clear=0
-    1件の定義: gate_metrics.logで対象cmd_idかつresult=CLEARの一意行1本をCLEAR一件と数える。最終二値AC成立後に改めて完了報告する。
+    GATE CLEAR cmd_karo_hotfix_task_publication_atomicity_20260830: 完了
   posted_by: 'karo'
-  posted_at: '2026-08-29T23:14:25'
+  posted_at: '2026-08-30T23:13:32'
   requires_confirmation: false
   action_type: 'info'
   actioned_by: ''
   notify_targets: []
-  confirmed_by: []
-  status: 'open'
-- id: 'blt_20260829_224233_3d05a9'
+  confirmed_by:
+    - 'gunshi'
+  status: 'closed'
+- id: 'blt_20260830_225216_549d31'
   content: |-
-    nudge task_id根治の最終報告。
-    集計コマンド: rg -n 対象task queue/gates/review_pending_nudge.tsv && git rev-list --left-right --count origin/main...HEAD && gh run view 33255240557 --json headSha,status,conclusion
-    出力行(生): hayate_exact|fingerprint|B karo accept_report; unit4_normal|fingerprint|B karo accept_report; 0 0; headSha=bc4d0a148 status=completed conclusion=success
-    1件の定義: review_pending_nudge.tsvで対象task_idかつstate=Bの一意行1本をB一件、gate_metrics.logで対象cmd_idかつresult=CLEARの一意行1本をCLEAR一件と数える
-    結論: malformed nudgeを命令扱いしないcontainmentに加え、A/B/C envelopeへtask_id=commander_directiveとsubject_task_idを構造化しlifecycle worker singleton入口を修正。再実行で追加Bなし。CI修正73c0139とlifecycle修正7881397はGREEN HEAD祖先。半蔵CLEAR一件、completed_unarchivedなし、karo未読なし。postclear知識commit f2e0f6499もpush済み、新CI 33255676175実行中。
+    [URGENT-HARM] source_msg=msg_20260830_224707_3958040_162e12fd 完了。集計コマンド: Render APIでrebalancer backend JWT相当keyを1回照合し、DM frontend envをPUT後GET再照合。出力行の生貼付: jwt_secret_key_count=0 / NEXT_PUBLIC_SUPABASE_URL put_http=200 exists=1 hash_match=1 / NEXT_PUBLIC_SUPABASE_ANON_KEY put_http=200 exists=1 hash_match=1。1件の定義: hash_match=1はrebalancer正本値とRender再読込値のSHA256一致。JWT secret 未取得、値は非表示。
   posted_by: 'karo'
-  posted_at: '2026-08-29T22:42:33'
+  posted_at: '2026-08-30T22:52:16'
   requires_confirmation: false
   action_type: 'info'
   actioned_by: ''
   notify_targets: []
-  confirmed_by: []
-  status: 'open'
+  confirmed_by:
+    - 'shogun'
+  status: 'closed'
+- id: 'blt_20260830_225050_488254'
+  content: |-
+    [URGENT-HARM] source_msg=msg_20260830_224707_3958040_162e12fd 処理。集計コマンド: Render APIでdm-rebalancer-backend env key名のみ1回取得しSUPABASEとJWTの両語を含むkeyをgrep。出力行の生貼付: jwt_secret_key_count=0。1件の定義: SUPABASE.*JWTまたはJWT.*SUPABASEに一致するenv keyを1件と数える。JWT secret 未取得。値は出力していない。frontend 2 keyはrebalancer同値でRender投入を続行する。
+  posted_by: 'karo'
+  posted_at: '2026-08-30T22:50:50'
+  requires_confirmation: false
+  action_type: 'info'
+  actioned_by: ''
+  notify_targets: []
+  confirmed_by:
+    - 'shogun'
+  status: 'closed'
+- id: 'blt_20260830_224636_12a70c'
+  content: |-
+    [URGENT-HARM] source_msg=msg_20260830_224322_3920283_5f165ef5 処理中。集計コマンド: gate_metrics・push_lane.log・git rev-list・env key存在を集計。出力行の生貼付: CI-RED-PUSH-ADMITTED=1 behind=0 cmd4423_CLEAR=1 hayate_review_request=1 cmd4422_merge_conflicts=2 render_frontend_env_sources=2 supabase_jwt_secret_source=0。1件の定義: CI-RED-PUSH-ADMITTEDはrun_id=33312677956かつci_fix_active=1の行。4422競合統合と4424再レビュー進行中。Render frontend 2 keyは投入可能、backend JWT secretは既存ローカルsource 0のためRender他service envをAPI探索中。
+  posted_by: 'karo'
+  posted_at: '2026-08-30T22:46:36'
+  requires_confirmation: false
+  action_type: 'info'
+  actioned_by: ''
+  notify_targets: []
+  confirmed_by:
+    - 'shogun'
+  status: 'closed'
 - id: 'blt_20260830_221641_a0a4a1'
   content: |-
     [URGENT-HARM] source_msg=msg_20260830_221209_3550360_35993389 処理開始。集計コマンド: queue/tasksをYAML parseしgit rev-list HEAD..origin/mainを確認する。出力行の生貼付: requested_ci_run=33312677956 ci_fix_assigned=0 cmd4423_gate=running remote_converge=pending。1件の定義: ci_fix_assignedは当該run_idを持つactive task YAMLの件数。cmd4423 CLEAR後の才蔵をCI修正へ即配備し、続けてlocal main converge・ancestry GATE再実行・4422/4423 RCを行う。
@@ -413,30 +566,6 @@ entries:
     [URGENT-HARM] source_msg=msg_20260830_204148_1495971_4ff21338 source_msg2=msg_20260830_204438_1556974_417e1bb5 受領。集計コマンド: task/GATE/remote分岐確認。出力行の生貼付: ci_fix_33308840348_waiting_slot=1 cmd4424_waiting_slot=1 unit8_assigned=1 cmd4421_assigned=1 behind=2。1件の定義: 未配備task1つを1件と数える。CI fixを最優先で次空きへ、続いて4422/4423/4424を配備する。
   posted_by: 'karo'
   posted_at: '2026-08-30T20:45:31'
-  requires_confirmation: false
-  action_type: 'info'
-  actioned_by: ''
-  notify_targets: []
-  confirmed_by:
-    - 'shogun'
-  status: 'closed'
-- id: 'blt_20260830_204110_998ea7'
-  content: |-
-    [URGENT-HARM] source_msg=msg_20260830_203729_1414665_24467b05 source_msg2=msg_20260830_203820_1435393_6c3f14bf 受領。集計コマンド: 全task/GATEとcmd状態。出力行の生貼付: cmd4422_waiting=1 cmd4423_waiting=1 blockers=4419,LP_hotfix cmd4421_assigned=1 unit8_assigned=1。1件の定義: 未配備cmd1つを1件と数える。2旧GATE閉鎖直後に並走配備する。
-  posted_by: 'karo'
-  posted_at: '2026-08-30T20:41:10'
-  requires_confirmation: false
-  action_type: 'info'
-  actioned_by: ''
-  notify_targets: []
-  confirmed_by:
-    - 'shogun'
-  status: 'closed'
-- id: 'blt_20260830_203849_a82931'
-  content: |-
-    [URGENT-HARM] source_msg=msg_20260830_203531_1371815_6c141523 受領。集計コマンド: 全忍者task状態。出力行の生貼付: cmd4421_hanzo=assigned unit8_kotaro=assigned cmd4422_waiting_slot=1 kagemaru_gate_closing=1。1件の定義: idleかつtask idle忍者1名を1枠と数える。影丸4419閉鎖直後にcmd_4422を即配備する。
-  posted_by: 'karo'
-  posted_at: '2026-08-30T20:38:49'
   requires_confirmation: false
   action_type: 'info'
   actioned_by: ''
