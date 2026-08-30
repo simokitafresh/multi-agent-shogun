@@ -10,7 +10,7 @@ on:
 
 concurrency:
   group: test-${{ github.workflow }}-${{ github.ref }}
-  cancel-in-progress: true
+  cancel-in-progress: false  # 2026-08-30 将軍 D0: 1 commit ずつ push(殿裁定 08-26)×cancel で直近 40 run 中 31 cancelled=CI 検証ゼロ。各 SHA を完走させる
 
 jobs:
   unit-tests:
