@@ -9102,3 +9102,10 @@ insights:
   source: "semantic_index_update"
   fix_known: false
   status: pending
+- id: INS-20260830-163544459-fbdb
+  ts: "2026-08-30T16:35:44+09:00"
+  insight: "semantic_index_update未登録[[リンク]]ターゲット: [[LS-A09]] は既存aliasesに一致なし。類似概念TOP3: semantic_dictionary_design(セマンティック辞書構想; alias=LS A24 post deploy check; score=8.8) / inbox_processing_discipline(inbox処理規律; alias=LS049; score=5.7) / lesson_lifecycle(教訓ライフサイクル管理; alias=LK-A01; score=5.0)。概念定義とaliases追加を検討せよ"
+  priority: "low"
+  source: "semantic_index_update"
+  fix_known: false
+  status: pending
