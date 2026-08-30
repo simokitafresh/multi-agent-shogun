@@ -16324,3 +16324,16 @@ sqlite3.Connection.backup()を使うとページ(4096byte)単位のread syscall�
 - **when**: 未設定
 - **how**: 未設定
 - command parserはmetadata.openGraph.images/twitter.imagesのようなproperty表現をfilesystem path候補から除外する。ただし右辺が既知の実ファイル拡張子なら除外せず欠落検出をfail-closedに維持する。
+
+### L1682: CI compatibility fixtureはfile rootを分離する
+- **日付**: 2026-08-31
+- **出典**: cmd_karo_ci_fix_33326464870_shard_count_receipt_20260831
+- **記録者**: hanzo
+- **tags**: [infra,inbox,testing]
+- **subdomain**: infra
+- **target_files**: [.github/workflows/test.yml,scripts/inbox_write.sh]
+- **origin**: [[cmd_karo_ci_fix_33326464870_shard_count_receipt_20260831]]
+- **enforcement**: 未自動化
+- **when**: 未設定
+- **how**: 未設定
+- aggregate Bats rootで共有fixture suiteを実行するとT190のtimeout環境値とsuite stateが混線し、FAIL時は診断tailがreceipt observedへ二重計上される。compatibilityはBATS_SPLIT_FILES=1かつfile jobs=1で各rootを分離し、receiptはrequested tapとcanonical artifactを別pathにする。
