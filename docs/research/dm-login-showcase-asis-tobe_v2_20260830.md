@@ -38,6 +38,7 @@
 | 12:58 | ブラックアウトはどう表現する。note に誘導+パスワード発表をお楽しみにという期待感をあおるのがいいか？発表日時は俺が任意で決めているので具体的にしたくない | 事実=ブラックアウトは『月末で旧パスワード失効〜殿が note で新パスワードを発表するまで』で、発表時刻は固定されていない(viewer_tiers は expires_at=月末と last_rotated_at しか持たない)。制約=日時・カウントダウン・『early September』のような時期の示唆も出さない。判断=**ブラックアウト帯は『新しい月のシグナルは計算済み。パスワードは note で発表』の期待感+note 誘導のみ。日時表現ゼロ**。状態判定は `max(password_expires_at) < today ∧ last_rotated_at ≤ expires_at`(=まだ配布されていない)。効果=§2.4 を書き換え、EP `blackout` から `until_hint` を削除し `{active, month_closed}` に |
 | 13:04 | ログインページは単独でログイン後の本番には影響しないよな？ | 事実(13:05 一次)=①BE/FE とも origin/main と live deploy の差分 0(BE 5a5556af7・FE 812f0b7a1)=次の deploy に載るのは本設計の変更だけ。②/login が触る共有物は 3 つ: `RouteAccessBoundary`(layout で全ルートを包む。`pathname==="/login"` 分岐のみ)、`app/layout.tsx` の metadata、BE の同一 Render サービス(deploy で再起動)。③認証 API(`/api/auth/verify-viewer`)・7 層リセット・ログイン後ページのコードには一切触れない。制約=共有物に手を入れると波及する。判断=**影響境界を契約化(§2.7)**: 変更許可パス allowlist、RouteAccessBoundary の認証分岐は sha 固定で不変、metadata は /login ページ単位、BE は新 router+追記専用テーブルのみ、既存テストは無変更で全 PASS。効果=P1/P2 の AC に境界チェックを追加 |
 | 13:10 | 実装準備ができたら教えてくれ。ログインページは後から修正すればいいから、ログイン機構が壊れなければ実際に実装してから修正すればいい。デザインは全体で統一されていなければならない。ログインページはライトモードを基準とする | 事実=設計は §0〜§6.5 で確定済み、cmd_4413(P1)走行中・cmd_4415 待機。制約=唯一の底線は**ログイン機構(verify-viewer→7 層リセット→/)が壊れないこと**(§2.7 の不変 AC)。判断=**見た目・文言・表の細部は実装後に殿が本番を見て直す(反復前提)。deploy 前の完璧化を求めない。デザインは既存 `globals.css` トークンと ui コンポーネントに統一し、/login はライトモードを基準(OS のダーク設定でも /login はライト固定)**。効果=§3.3 にライト固定と統一規則、§5 の順序を P1→P2(frontend 1 cmd)→deploy→殿の本番確認→修正 cmd へ簡素化、cmd_4416(frontend)を起票 |
+| 13:41 | basic プランの初月無料は撤廃した。ドクタープレミアムの初月無料も撤廃した | 事実=note の Basic(¥1,000)・ドクタープレミアム(¥20,000 招待制)から初月無料が消えた(殿宣言)。制約=/login は金額を書かない(10:20)ため価格は出ないが、『first month free / 初月無料』の文言が §1.3/§2.2 に残っていた。判断=**/login とプランカードから無料訴求を全て除去。禁則語に『first month free / 初月無料 / free trial』を追加**(Basic-DM 行のラベルは Public · no sign-in=公開表示の意味に限定)。効果=§1.3 表・§2.2-5 から撤去、§4 禁則語に追加、cmd_4416 の文言 grep に含める(家老経由)。projects/dm-signal.yaml・context/dm-signal.md の tier 価格表も更新(家老) |
 
 ---
 
@@ -72,7 +73,7 @@
 
 | tier(DB) | note プラン | 可視 PF | 08-18 比 |
 |---|---|---|---|
-| Basic | ベーシック(初月無料) | **5** | ±0(DM-safe・GSシン分身-常勝・シン白虎-激攻・Basic-DualMomentum・Ave-X) |
+| Basic | ベーシック | **5** | ±0(DM-safe・GSシン分身-常勝・シン白虎-激攻・Basic-DualMomentum・Ave-X) |
 | NewStandard | スタンダード | **17** | ±0 |
 | Standard(古参) | 非公開 | 22 | ±0 |
 | AddOn | 裏Ave7 非公開 | 22 | ±0 |
@@ -125,7 +126,7 @@
 2. H1 "What to hold this month — computed, not guessed." / JA「今月、何を保有すべきか。月に一回、ルールで自動計算。」
 3. リード 1 段落(EN。月末クローズで月 1 回リバランス・20 年超の月次実績・ルールベースで再現可能)
 4. **Current signals 表**(§3.1、ラベル方式 v13)
-5. プラン 3 枚(**金額なし・殿裁定 10:20**): Basic(PF 5・first month free) / Standard(PF 17) / Premium(by invitation)。各カードは「See plans on note →」(membership URL)で価格へ遷移。Coupon は独立カードにせず、サインインカードの補足 1 行(「Have a coupon? Use it here」)
+5. プラン 3 枚(**金額なし・殿裁定 10:20**): Basic(PF 5) / Standard(PF 17) / Premium(by invitation)。各カードは「See plans on note →」(membership URL)で価格へ遷移。Coupon は独立カードにせず、サインインカードの補足 1 行(「Have a coupon? Use it here」)
 6. 導線 4 本: What is Dual Momentum?(note JA) / Join on note(membership) / Weekly report / @TokyoJibika
 7. サインインカード(§3.2)
 8. フッタ: © / Not investment advice / Data: monthly close, US ETFs
@@ -195,7 +196,7 @@
 
 | 行 | PF 数 | Total return | ×N | CAGR | Sharpe(best) | MDD(best) | Holding · Signals |
 |---|---|---|---|---|---|---|---|
-| **Basic-DualMomentum** | 1 | +3,139% | ×32 | 16.4% | 0.89 | −41.0% | **Shown**(holding / momentum / components) |
+| **Basic-DualMomentum** · Public · no sign-in | 1 | +3,139% | ×32 | 16.4% | 0.89 | −41.0% | **Shown**(holding / momentum / components) |
 | **Basic plan** | 3 | +5,290% 〜 +11,321% | ×54 〜 ×114 | 14.1% 〜 39.2% | 1.11 | −23.3% | Sign in |
 | **Standard plan** | 17 | +22,047% 〜 +77,078% | ×221 〜 ×772 | 14.1% 〜 52.2% | 1.28 | −22.8% | Sign in |
 | **Premium plan** · by invitation | 25 | +23,725% 〜 +106,789% | ×238 〜 ×1,069 | 14.1% 〜 68.7% | 1.40 | −21.2% | Invitation |
@@ -233,6 +234,7 @@
 - ログイン前 EN 主・JA 従(`.ja` 小字)。ログイン後 EN のみ(範囲外)。
 - 頻度: once a month / this month。「毎営業日」「today」禁止(grep 0 件が AC)。
 - **金額禁止(殿裁定 10:20)**: /login に ¥・価格・「¥1,000」等の金額を書かない(grep `¥|円|yen` 0 件が AC)。価格は note membership ページへのリンクで示す。
+- **無料訴求禁止(殿裁定 13:41)**: 『first month free / 初月無料 / free trial』を書かない(初月無料は Basic・ドクタープレミアムとも撤廃済み)。Basic-DM 行のラベルは Public · no sign-in(公開表示の意味に限定)。
 - **追加 1**: 総リターンは `Intl.NumberFormat` で桁区切り、符号付き、%(小数なし)。**追加 2**: ブラックアウト帯・失効エラーは EN+JA 必須(今週から実需)。
 
 ---
