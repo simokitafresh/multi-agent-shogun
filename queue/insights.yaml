@@ -10041,3 +10041,10 @@ insights:
   source: "semantic_index_update"
   fix_known: false
   status: pending
+- id: INS-20260830-211534604-1633
+  ts: "2026-08-30T21:15:34+09:00"
+  insight: "[[意志依存はバグだ]] semantic_stress_test candidate_aliases: NO_MATCH source=lord query=意志依存はバグだ。環境に埋め込んだか？"
+  priority: "low"
+  source: "semantic_stress_test"
+  fix_known: false
+  status: pending
