@@ -7165,7 +7165,10 @@ insights:
   priority: "medium"
   source: "manual"
   fix_known: false
-  status: pending
+  status: resolved
+  resolved_reason: 一次情報で対象INSと現行実装を照合。scripts/cmd_complete_gate.shのparse_isoはaware時刻をJSTへ正規化済みで、commit 5aa75df8cの再発テストも現行treeに存在するため、追加修正とdecision_candidateは不要。
+  action_artifact: "target=queue/insights.yaml:INS-20260828-143433273-1cbc;source=scripts/cmd_complete_gate.sh:L4643-L4658;fix_commit=5aa75df8c98c676e6364cafba52259fbc923b451;tests=tests/unit/test_cmd_complete_gate.bats:UTC-aware-normalization,finalize-bound;memory=memory_db_query:INS-20260828-143433273-1cbc;semantic=semantic_search:semantic_dictionary_design;backlinks=causal_backlink_counts.sh:11;decision_candidate=none"
+  resolved_at: "2026-08-30T18:16:31+09:00"
 - id: INS-20260828-144652633-720d
   ts: "2026-08-28T14:46:52+09:00"
   insight: "[[artifact auto react Auto replied to comment thread on Artifa]] semantic_stress_test candidate_aliases: NO_MATCH source=lord query=artifact-auto-react Auto-replied to comment thread on Artifact: \"将軍 全体状況マップ\" …"
