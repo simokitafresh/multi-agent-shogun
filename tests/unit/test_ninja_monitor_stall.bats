@@ -1293,6 +1293,40 @@ cat "$TEST_LOG"
     [[ "$output" == *"UNDEPLOYED-CMD: cmd_undeployed"* ]]
 }
 
+# test_necessity: terminal void/cancelled commands must not re-enter the
+# undeployed candidate set merely because delegated_at remains populated.
+@test "check_undeployed_cmds: void command with delegated_at is excluded" {
+    DELEGATED_AT=$(date -d "20 minutes ago" "+%Y-%m-%dT%H:%M:%S")
+    run bash -lc '
+set -euo pipefail
+PROJECT_ROOT="'"$PROJECT_ROOT"'"
+DELEGATED_AT="'"$DELEGATED_AT"'"
+export NINJA_MONITOR_LIB_ONLY=1
+source "$PROJECT_ROOT/scripts/ninja_monitor.sh"
+unset NINJA_MONITOR_LIB_ONLY
+TMP_ROOT="$NINJA_MONITOR_TEST_ROOT"; mkdir -p "$TMP_ROOT/queue" "$TMP_ROOT/scripts" "$TMP_ROOT/logs"
+SCRIPT_DIR="$TMP_ROOT"; LOG="$TMP_ROOT/monitor.log"
+TEST_NTFY="$TMP_ROOT/ntfy.log"; : > "$TEST_NTFY"; export TEST_NTFY
+cat > "$SCRIPT_DIR/queue/shogun_to_karo.yaml" <<EOF
+commands:
+  cmd_4414:
+    status: void
+    delegated_at: "$DELEGATED_AT"
+EOF
+cat > "$SCRIPT_DIR/scripts/ntfy.sh" <<EOF
+#!/usr/bin/env bash
+printf "%s\\n" "\${1:-}" >> "$TEST_NTFY"
+EOF
+chmod +x "$SCRIPT_DIR/scripts/ntfy.sh"
+log() { echo "$1" >> "$LOG"; }
+check_undeployed_cmds
+test "$(wc -l < "$TEST_NTFY" | tr -d " ")" -eq 0
+printf "status=void delegated_at=present notification=0 skip=1\\n"
+'
+    [ "$status" -eq 0 ]
+    [ "$output" = "status=void delegated_at=present notification=0 skip=1" ]
+}
+
 @test "check_undeployed_cmds: 配備済み(status=in_progress)なら通知しない" {
     # GA-IA2(2026-08-04): 旧契約「delegated=配備済み」は誤前提(cmd_4228が
     # delegatedのままidle忍者4名で35分停滞しても無通知だった実証事故)。
@@ -5561,7 +5595,7 @@ PY
         root="$BATS_TEST_TMPDIR/gate-stall-bounded"
         mkdir -p "$root/state"
         printf "check_gate_stall() { sleep 5; }\\n" > "$root/worker.sh"
-        STATE_DIR="$root/state"; LOG="$root/monitor.log"; _NM_SCRIPT_PATH="$root/worker.sh"
+        SCRIPT_DIR="$root"; STATE_DIR="$root/state"; LOG="$root/monitor.log"; _NM_SCRIPT_PATH="$root/worker.sh"
         GATE_STALL_TIMEOUT=1
         _ninja_monitor_run_bounded_gate_stall
         _ninja_monitor_run_bounded_gate_stall
@@ -7662,9 +7696,9 @@ YAML
     [ "$output" = "fixture=red unpushed=2 push=0 skip=0" ]
 }
 
-# test_necessity: the green/aged fixture proves oldest-first single-commit
-# publication and the post-push ancestry re-GATE handoff.
-@test "T190 push lane publishes one aged first-parent commit and regates WAIT" {
+# test_necessity: the green/aged fixture proves one contiguous first-parent
+# batch publication and the post-push ancestry re-GATE handoff.
+@test "T190 push lane publishes contiguous batch and regates WAIT" {
     run env PROJECT_ROOT="$PROJECT_ROOT" bash -c '
         set -euo pipefail
         export NINJA_MONITOR_LIB_ONLY=1
@@ -7677,14 +7711,17 @@ YAML
         PUSH_LANE_GATE_METRICS="$root/logs/gate_metrics.log"
         PUSH_LANE_MIN_AGE_SEC=600
         oldest_sha=0123456789012345678901234567890123456789
+        batch_tip_sha=abcdefabcdefabcdefabcdefabcdefabcdefabcd
+        remote_sha=1111111111111111111111111111111111111111
         printf "2026-08-30T00:00:00\tcmd_wait\tWAIT\tWAIT:report_commit_main_ancestry\n2026-08-30T00:01:00\tcmd_wait\tWAIT\tci_readiness:WAIT\n2026-08-30T00:02:00\tcmd_still\tWAIT\tWAIT:report_commit_main_ancestry\n2026-08-30T00:03:00\tcmd_clear\tWAIT\tWAIT:report_commit_main_ancestry\n2026-08-30T00:04:00\tcmd_clear\tCLEAR\tgate_done\n" > "$PUSH_LANE_GATE_METRICS"
         test "$(push_lane_waiting_ancestry_cmds)" = "cmd_still"
         git() {
             case "$*" in
                 *"rev-list --count"*) printf "2\n" ;;
-                *"rev-list --first-parent --reverse"*) printf "%s\n" "$oldest_sha" ;;
+                *"rev-list --first-parent --reverse"*) printf "%s\n%s\n" "$oldest_sha" "$batch_tip_sha" ;;
                 *"show -s --format=%ct"*) printf "100\n" ;;
                 *"symbolic-ref --quiet --short HEAD"*) printf "main\n" ;;
+                *"rev-parse origin/main"*) printf "%s\n" "$remote_sha" ;;
                 *"merge-base --is-ancestor"*) return 0 ;;
                 *"rev-parse --git-path hooks"*) printf "%s\n" "$root/hooks" ;;
                 *) return 0 ;;
@@ -7694,20 +7731,57 @@ YAML
         push_lane_publish_one() {
             test "$1" = "$root"
             test "$2" = origin
-            test "$3" = "$oldest_sha"
+            test "$3" = "$batch_tip_sha"
             printf "published=%s\n" "$3" >> "$root/publish.log"
         }
         push_lane_regate_waiting_cmds() { printf "regated=%s\n" "$1" >> "$root/regate.log"; }
         check_push_lane GREEN
-        test "$(cat "$root/publish.log")" = "published=$oldest_sha"
+        test "$(cat "$root/publish.log")" = "published=$batch_tip_sha"
         test "$(cat "$root/regate.log")" = "regated=$root"
         test "$(grep -c "PUSH ci=GREEN" "$PUSH_LANE_LOG")" -eq 1
         grep -Eq "PUSH ci=GREEN .*push_wall_ms=[0-9]+" "$PUSH_LANE_LOG"
-        grep -q "PUSH ci=GREEN unpushed_before=2 sha=$oldest_sha.*force=0 hook=1 commits=1" "$PUSH_LANE_LOG"
-        printf "fixture=green unpushed_before=2 published=1 regated=1 force=0 skip=0\n"
+        grep -q "PUSH ci=GREEN unpushed_before=2 sha=$batch_tip_sha oldest=$oldest_sha.*force=0 hook=1 commits=2" "$PUSH_LANE_LOG"
+        printf "fixture=green unpushed_before=2 published=1 batch=2 regated=1 force=0 skip=0\n"
     '
     [ "$status" -eq 0 ]
-    [ "$output" = "fixture=green unpushed_before=2 published=1 regated=1 force=0 skip=0" ]
+    [ "$output" = "fixture=green unpushed_before=2 published=1 batch=2 regated=1 force=0 skip=0" ]
+}
+
+# test_necessity: a timed-out gh probe may reuse only a fresh durable cache;
+# the expected identity is built without nested shell quotes.
+@test "T190 gh timeout uses matching durable CI cache" {
+    run env PROJECT_ROOT="$PROJECT_ROOT" bash -c '
+        set -euo pipefail
+        export NINJA_MONITOR_LIB_ONLY=1 NINJA_MONITOR_FUNCTION_TIMING_LOG=disabled
+        source "$PROJECT_ROOT/scripts/ninja_monitor.sh"
+        unset NINJA_MONITOR_LIB_ONLY
+        root="$BATS_TEST_TMPDIR/push-lane-ci-cache"
+        mkdir -p "$root/bin" "$root/logs" "$root/state"
+        cat > "$root/bin/gh" <<"EOF"
+#!/usr/bin/env bash
+sleep 5
+EOF
+        chmod +x "$root/bin/gh"
+        export PATH="$root/bin:$PATH" PUSH_LANE_GH_TIMEOUT_SEC=1
+        SCRIPT_DIR="$root" STATE_DIR="$root/state" PUSH_LANE_LOG="$root/logs/push.log"
+        current_sha=feedfacefeedfacefeedfacefeedfacefeedface
+        success_sha=0000000000000000000000000000000000000001
+        PUSH_LANE_CI_CACHE_FILE="$root/state/ci.tsv"
+        git() {
+            case "$*" in
+                *"rev-parse origin/main"*) printf "%s\n" "$current_sha" ;;
+                *"merge-base --is-ancestor"*) return 0 ;;
+                *) return 0 ;;
+            esac
+        }
+        printf "v1\\tmain\\t%s\\t500\\t%s\\t499\\t%s\\t%s\\n" "$current_sha" "$current_sha" "$success_sha" "$(date +%s)" > "$PUSH_LANE_CI_CACHE_FILE"
+        result=$(push_lane_ci_unknown_fallback "$root" main)
+        printf -v expected_result "500\\t%s\\t499\\t%s" "$current_sha" "$success_sha"
+        test "$result" = "$expected_result"
+        printf "gh_timeout=1 cache_match=1 generation=500 remote_match=1 push=0 skip=0\\n"
+    '
+    [ "$status" -eq 0 ]
+    [ "$output" = "gh_timeout=1 cache_match=1 generation=500 remote_match=1 push=0 skip=0" ]
 }
 
 # test_necessity: a publish failure must return its non-zero status while
@@ -7724,12 +7798,14 @@ YAML
         PUSH_LANE_LOG="$root/logs/push.log" PUSH_LANE_LOCK_FILE="$root/state/push.lock"
         PUSH_LANE_MIN_AGE_SEC=600
         oldest_sha=abcdefabcdefabcdefabcdefabcdefabcdefabcd
+        remote_sha=1111111111111111111111111111111111111111
         git() {
             case "$*" in
                 *"rev-list --count"*) printf "1\n" ;;
                 *"rev-list --first-parent --reverse"*) printf "%s\n" "$oldest_sha" ;;
                 *"show -s --format=%ct"*) printf "100\n" ;;
                 *"symbolic-ref --quiet --short HEAD"*) printf "main\n" ;;
+                *"rev-parse origin/main"*) printf "%s\n" "$remote_sha" ;;
                 *"merge-base --is-ancestor"*) return 0 ;;
                 *) return 0 ;;
             esac
@@ -7794,11 +7870,33 @@ YAML
         PUSH_LANE_LOG="$root/logs/push_lane.log"
         printf "%s\n" "{\"source\":\"pre_push\",\"check_id\":\"pre_push_total\",\"wall_ms\":12000}" > "$PUSH_LANE_PREPUSH_METRICS"
         printf "PUSH ci=GREEN push_wall_ms=7000\n" > "$PUSH_LANE_LOG"
-        test "$(PUSH_LANE_TIMEOUT_FACTOR=3 PUSH_LANE_TIMEOUT_MIN_SEC=1 push_lane_timeout_sec)" -eq 43
-        printf "pre_push_wall_ms=12000 push_wall_ms=7000 factor=3 timeout_sec=43 floor=1 skip=0\n"
+        test "$(PUSH_LANE_TIMEOUT_FACTOR=3 PUSH_LANE_TIMEOUT_MIN_SEC=1 push_lane_timeout_sec)" -eq 58
+        printf "pre_push_wall_ms=12000 push_wall_ms=7000 gh_timeout_sec=15 factor=3 timeout_sec=58 floor=1 skip=0\n"
     '
     [ "$status" -eq 0 ]
-    [ "$output" = "pre_push_wall_ms=12000 push_wall_ms=7000 factor=3 timeout_sec=43 floor=1 skip=0" ]
+    [ "$output" = "pre_push_wall_ms=12000 push_wall_ms=7000 gh_timeout_sec=15 factor=3 timeout_sec=58 floor=1 skip=0" ]
+}
+
+# test_necessity: the CI/gh status wall time must contribute to the push
+# worker timeout, because it is part of check_push_lane_GREEN's wall clock.
+@test "T190 push lane timeout includes CI status wall telemetry" {
+    run env PROJECT_ROOT="$PROJECT_ROOT" bash -c '
+        set -euo pipefail
+        export NINJA_MONITOR_LIB_ONLY=1 NINJA_MONITOR_FUNCTION_TIMING_LOG=disabled
+        source "$PROJECT_ROOT/scripts/ninja_monitor.sh"
+        unset NINJA_MONITOR_LIB_ONLY
+        root="$BATS_TEST_TMPDIR/push-lane-timeout-ci"
+        mkdir -p "$root/logs"
+        PUSH_LANE_PREPUSH_METRICS="$root/logs/defense_overhead.jsonl"
+        PUSH_LANE_LOG="$root/logs/push_lane.log"
+        printf "%s\n" "{\"source\":\"pre_push\",\"check_id\":\"pre_push_total\",\"wall_ms\":12000}" > "$PUSH_LANE_PREPUSH_METRICS"
+        printf "PUSH ci=GREEN push_wall_ms=7000\nCI-CHECK status=UNKNOWN command=ci_status_check.sh rc=0 ci_check_wall_ms=5000\n" > "$PUSH_LANE_LOG"
+        test "$(PUSH_LANE_TIMEOUT_FACTOR=3 PUSH_LANE_TIMEOUT_MIN_SEC=1 push_lane_timeout_sec)" -eq 58
+        test "$(push_lane_latest_ci_check_wall_ms)" -eq 5000
+        printf "pre_push_wall_ms=12000 push_wall_ms=7000 ci_check_wall_ms=5000 gh_timeout_sec=15 factor=3 timeout_sec=58 floor=1 skip=0\n"
+    '
+    [ "$status" -eq 0 ]
+    [ "$output" = "pre_push_wall_ms=12000 push_wall_ms=7000 ci_check_wall_ms=5000 gh_timeout_sec=15 factor=3 timeout_sec=58 floor=1 skip=0" ]
 }
 
 # test_necessity: a bounded push worker timeout must leave one durable TIMEOUT
@@ -7830,4 +7928,211 @@ YAML
     '
     [ "$status" -eq 0 ]
     [ "$output" = "timeout=1 rc=124 command=check_push_lane_GREEN push_lane_timeout_rows=1 skip=0" ]
+}
+
+# test_necessity: the outer gate-stall worker budget must cover every active
+# per-command timeout plus margin, capped at a finite safety maximum.
+@test "T190 gate stall outer timeout scales with active command count" {
+    run env PROJECT_ROOT="$PROJECT_ROOT" bash -c '
+        set -euo pipefail
+        export NINJA_MONITOR_LIB_ONLY=1 NINJA_MONITOR_FUNCTION_TIMING_LOG=disabled
+        source "$PROJECT_ROOT/scripts/ninja_monitor.sh"
+        unset NINJA_MONITOR_LIB_ONLY
+        root="$BATS_TEST_TMPDIR/gate-stall-budget"
+        mkdir -p "$root/queue/gates"
+        for cmd in cmd_a cmd_b cmd_c cmd_d cmd_e; do
+            mkdir -p "$root/queue/gates/$cmd"
+            : > "$root/queue/gates/$cmd/review_gate.done"
+        done
+        SCRIPT_DIR="$root"
+        GATE_STALL_TIMEOUT=120 GATE_STALL_ITEM_TIMEOUT_SEC=30 GATE_STALL_TIMEOUT_MARGIN_SEC=10 GATE_STALL_TIMEOUT_MAX_SEC=600
+        test "$(_gate_stall_worker_timeout_sec)" -eq 160
+        GATE_STALL_TIMEOUT_MAX_SEC=150
+        test "$(_gate_stall_worker_timeout_sec)" -eq 150
+        printf "active=5 item_timeout=30 margin=10 derived=160 cap=150 bounded=1 skip=0\n"
+    '
+    [ "$status" -eq 0 ]
+    [ "$output" = "active=5 item_timeout=30 margin=10 derived=160 cap=150 bounded=1 skip=0" ]
+}
+
+# test_necessity: an in-progress newest run may admit a push only when the
+# newest completed success is same-branch, an ancestor, and current is remote.
+@test "T190 UNKNOWN in-progress CI admits same-head completed success" {
+    run env PROJECT_ROOT="$PROJECT_ROOT" bash -c '
+        set -euo pipefail
+        export NINJA_MONITOR_LIB_ONLY=1 NINJA_MONITOR_FUNCTION_TIMING_LOG=disabled
+        source "$PROJECT_ROOT/scripts/ninja_monitor.sh"
+        unset NINJA_MONITOR_LIB_ONLY
+        root="$BATS_TEST_TMPDIR/push-lane-ci-fallback-pass"
+        mkdir -p "$root/bin" "$root/logs" "$root/state"
+        cat > "$root/bin/gh" <<"EOF"
+#!/usr/bin/env bash
+cat "$GH_RUNS_FILE"
+EOF
+        chmod +x "$root/bin/gh"
+        cat > "$root/runs.json" <<"EOF"
+[{"status":"in_progress","conclusion":null,"headBranch":"main","headSha":"feedfacefeedfacefeedfacefeedfacefeedface","databaseId":200,"createdAt":"2026-08-30T11:00:00Z"},{"status":"completed","conclusion":"cancelled","headBranch":"main","headSha":"feedfacefeedfacefeedfacefeedfacefeedface","databaseId":201,"createdAt":"2026-08-30T10:30:00Z"},{"status":"completed","conclusion":"success","headBranch":"main","headSha":"feedfacefeedfacefeedfacefeedfacefeedface","databaseId":199,"createdAt":"2026-08-30T10:00:00Z"}]
+EOF
+        export PATH="$root/bin:$PATH" GH_RUNS_FILE="$root/runs.json"
+        SCRIPT_DIR="$root" STATE_DIR="$root/state" LOG="$root/logs/monitor.log"
+        PUSH_LANE_LOG="$root/logs/push.log" PUSH_LANE_LOCK_FILE="$root/state/push.lock"
+        PUSH_LANE_MIN_AGE_SEC=600
+        oldest_sha=0123456789012345678901234567890123456789
+        git() {
+            case "$*" in
+                *"rev-list --count"*) printf "1\n" ;;
+                *"rev-list --first-parent --reverse"*) printf "%s\n" "$oldest_sha" ;;
+                *"show -s --format=%ct"*) printf "100\n" ;;
+                *"symbolic-ref --quiet --short HEAD"*) printf "main\n" ;;
+                *"rev-parse origin/main"*) printf "feedfacefeedfacefeedfacefeedfacefeedface\n" ;;
+                *"merge-base --is-ancestor"*) return 0 ;;
+                *) return 0 ;;
+            esac
+        }
+        push_lane_pre_push_hook_ready() { return 0; }
+        push_lane_publish_one() { printf "published=%s\n" "$3" > "$root/publish.log"; }
+        check_push_lane UNKNOWN
+        test "$(cat "$root/publish.log")" = "published=$oldest_sha"
+        grep -q "CI-FALLBACK ci=UNKNOWN->GREEN current_run=200 completed_success_run=199 .*ancestry=1 remote_head=1" "$PUSH_LANE_LOG"
+        grep -q "PUSH ci=GREEN .*force=0 hook=1 commits=1" "$PUSH_LANE_LOG"
+        printf "current=in_progress completed=success same_branch=1 same_head=1 published=1 push=1 skip=0\n"
+    '
+    [ "$status" -eq 0 ]
+    [ "$output" = "current=in_progress completed=success same_branch=1 same_head=1 published=1 push=1 skip=0" ]
+}
+
+# test_necessity: failure, no-conclusion, non-ancestor, remote-head, and
+# branch mismatch must remain fail-closed when CI status starts as UNKNOWN.
+@test "T190 UNKNOWN CI fallback rejects failure no-conclusion and mismatched head" {
+    run env PROJECT_ROOT="$PROJECT_ROOT" bash -c '
+        set -euo pipefail
+        export NINJA_MONITOR_LIB_ONLY=1 NINJA_MONITOR_FUNCTION_TIMING_LOG=disabled
+        source "$PROJECT_ROOT/scripts/ninja_monitor.sh"
+        unset NINJA_MONITOR_LIB_ONLY
+        root="$BATS_TEST_TMPDIR/push-lane-ci-fallback-fail"
+        mkdir -p "$root/bin" "$root/logs"
+        cat > "$root/bin/gh" <<"EOF"
+#!/usr/bin/env bash
+cat "$GH_RUNS_FILE"
+EOF
+        chmod +x "$root/bin/gh"
+        export PATH="$root/bin:$PATH"
+        export GH_RUNS_FILE="$root/runs.json"
+        SCRIPT_DIR="$root"
+        current_sha=feedfacefeedfacefeedfacefeedfacefeedface
+        other_sha=deadbeefdeadbeefdeadbeefdeadbeefdeadbeef
+        cases=(failure no_conclusion branch_mismatch ancestry_mismatch remote_mismatch)
+        for kind in "${cases[@]}"; do
+            case "$kind" in
+                failure) completed_conclusion=failure completed_branch=main completed_sha=$current_sha ;;
+                no_conclusion) completed_conclusion=null completed_branch=main completed_sha=$current_sha ;;
+                branch_mismatch) completed_conclusion=success completed_branch=release completed_sha=$current_sha ;;
+                ancestry_mismatch) completed_conclusion=success completed_branch=main completed_sha=$other_sha ;;
+                remote_mismatch) completed_conclusion=success completed_branch=main completed_sha=$current_sha ;;
+            esac
+            printf "[{\"status\":\"in_progress\",\"conclusion\":null,\"headBranch\":\"main\",\"headSha\":\"%s\",\"databaseId\":300,\"createdAt\":\"2026-08-30T11:00:00Z\"},{\"status\":\"completed\",\"conclusion\":\"%s\",\"headBranch\":\"%s\",\"headSha\":\"%s\",\"databaseId\":299,\"createdAt\":\"2026-08-30T10:00:00Z\"}]\n" "$current_sha" "$completed_conclusion" "$completed_branch" "$completed_sha" > "$GH_RUNS_FILE"
+            git() {
+                case "$*" in
+                    *"rev-parse origin/main"*)
+                        if [ "$kind" = remote_mismatch ]; then printf "%s\n" "$other_sha"; else printf "%s\n" "$current_sha"; fi ;;
+                    *"merge-base --is-ancestor"*)
+                        if [ "$kind" = ancestry_mismatch ]; then return 1; else return 0; fi ;;
+                    *) return 0 ;;
+                esac
+            }
+            if push_lane_ci_unknown_fallback "$root" main; then
+                printf "unexpected-pass=%s\n" "$kind"
+                exit 1
+            fi
+        done
+        printf "failure=0 no_conclusion=0 branch_mismatch=0 ancestry_mismatch=0 remote_mismatch=0 push=0 skip=0\n"
+    '
+    [ "$status" -eq 0 ]
+    [ "$output" = "failure=0 no_conclusion=0 branch_mismatch=0 ancestry_mismatch=0 remote_mismatch=0 push=0 skip=0" ]
+}
+
+# test_necessity: delegated_at alone must not notify a command whose declared
+# dependency is still active; after dependency CLEAR exactly one notification
+# is allowed.
+@test "T190 undeployed dependency waits for CLEAR then notifies once" {
+    DELEGATED_AT=$(date -d "20 minutes ago" "+%Y-%m-%dT%H:%M:%S")
+    run bash -lc '
+set -euo pipefail
+PROJECT_ROOT="'"$PROJECT_ROOT"'"
+DELEGATED_AT="'"$DELEGATED_AT"'"
+export NINJA_MONITOR_LIB_ONLY=1
+source "$PROJECT_ROOT/scripts/ninja_monitor.sh"
+unset NINJA_MONITOR_LIB_ONLY
+TMP_ROOT="$NINJA_MONITOR_TEST_ROOT"; mkdir -p "$TMP_ROOT/queue" "$TMP_ROOT/scripts" "$TMP_ROOT/logs"
+SCRIPT_DIR="$TMP_ROOT"; LOG="$TMP_ROOT/monitor.log"; cycle=0
+TEST_NTFY="$TMP_ROOT/ntfy.log"; : > "$TEST_NTFY"; export TEST_NTFY
+cat > "$SCRIPT_DIR/queue/shogun_to_karo.yaml" <<EOF
+commands:
+  cmd_4415:
+    status: pending
+    delegated_at: "$DELEGATED_AT"
+    depends_on: cmd_4413
+EOF
+cat > "$SCRIPT_DIR/scripts/ntfy.sh" <<EOF
+#!/usr/bin/env bash
+printf "%s\\n" "\${1:-}" >> "$TEST_NTFY"
+EOF
+cat > "$SCRIPT_DIR/scripts/inbox_write.sh" <<EOF
+#!/usr/bin/env bash
+exit 0
+EOF
+chmod +x "$SCRIPT_DIR/scripts/ntfy.sh" "$SCRIPT_DIR/scripts/inbox_write.sh"
+log() { echo "$1" >> "$LOG"; }
+ninja_monitor_business_owner_is_current() { return 0; }
+check_undeployed_cmds
+test "$(wc -l < "$TEST_NTFY" | tr -d " ")" -eq 0
+printf "2026-08-30T13:00:00\\tcmd_4413\\tCLEAR\\tgate_done\\n" > "$TMP_ROOT/logs/gate_metrics.log"
+cycle=1
+check_undeployed_cmds
+test "$(wc -l < "$TEST_NTFY" | tr -d " ")" -eq 1
+printf "dependency_clear=1 before_notification=0 after_notification=1 skip=0\\n"
+'
+    [ "$status" -eq 0 ]
+    [ "$output" = "dependency_clear=1 before_notification=0 after_notification=1 skip=0" ]
+}
+
+# test_necessity: network/DNS rc128 is retryable with no push advancement,
+# while an unrelated rc128 remains a fail-closed push failure.
+@test "T190 push rc128 network error retries and nonnetwork error blocks" {
+    run env PROJECT_ROOT="$PROJECT_ROOT" bash -c '
+        set -euo pipefail
+        export NINJA_MONITOR_LIB_ONLY=1
+        source "$PROJECT_ROOT/scripts/ninja_monitor.sh"
+        unset NINJA_MONITOR_LIB_ONLY
+        root="$BATS_TEST_TMPDIR/push-lane-network-rc128"
+        mkdir -p "$root/logs" "$root/state"
+        SCRIPT_DIR="$root" STATE_DIR="$root/state" LOG="$root/logs/monitor.log"
+        PUSH_LANE_LOG="$root/logs/push.log" PUSH_LANE_LOCK_FILE="$root/state/push.lock"
+        PUSH_LANE_MIN_AGE_SEC=600
+        oldest_sha=0123456789012345678901234567890123456789
+        remote_sha=1111111111111111111111111111111111111111
+        git() {
+            case "$*" in
+                *"rev-list --count"*) printf "1\\n" ;;
+                *"rev-list --first-parent --reverse"*) printf "%s\\n" "$oldest_sha" ;;
+                *"show -s --format=%ct"*) printf "100\\n" ;;
+                *"symbolic-ref --quiet --short HEAD"*) printf "main\\n" ;;
+                *"rev-parse origin/main"*) printf "%s\\n" "$remote_sha" ;;
+                *"merge-base --is-ancestor"*) return 0 ;;
+                *) return 0 ;;
+            esac
+        }
+        push_lane_pre_push_hook_ready() { return 0; }
+        push_lane_regate_waiting_cmds() { :; }
+        push_lane_publish_one() { printf "fatal: Could not resolve host github.com\\n"; return 128; }
+        check_push_lane GREEN
+        grep -q "RETRY reason=network_failure rc=128 .*push=0 next_cycle=1" "$PUSH_LANE_LOG"
+        push_lane_publish_one() { printf "fatal: invalid local ref\\n"; return 128; }
+        if check_push_lane GREEN; then exit 1; else rc=$?; fi
+        test "$rc" -eq 128
+        grep -q "BLOCK reason=push_failed rc=128" "$PUSH_LANE_LOG"
+        printf "network_rc128=retry nonnetwork_rc128=fail_closed push_advance=0 skip=0\\n"
+    '
+    [ "$status" -eq 0 ]
+    [ "$output" = "network_rc128=retry nonnetwork_rc128=fail_closed push_advance=0 skip=0" ]
 }

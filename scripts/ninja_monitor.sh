@@ -368,7 +368,7 @@ check_ci_red_parallelization_guard() {
 
 # T190: publish the oldest first-parent commit after CI has returned GREEN.
 # This is deliberately a post-CLEAR lane: it never bypasses the pre-push hook,
-# never force-pushes, and advances one commit per monitor cycle.  A successful
+# never force-pushes, and advances one bounded contiguous batch per monitor cycle.  A successful
 # publication then re-runs only commands whose latest gate result is the
 # ancestry WAIT, allowing the existing gate to produce the terminal evidence.
 push_lane_log() {
@@ -439,8 +439,79 @@ print(latest)
 PY
 }
 
+push_lane_latest_ci_check_wall_ms() {
+    local log_file="${PUSH_LANE_LOG:-${STATE_DIR:-/tmp}/ninja_monitor_push_lane.log}"
+    [ -f "$log_file" ] || return 1
+    awk '
+        match($0, /(^|[[:space:]])ci_check_wall_ms=[0-9]+([[:space:]]|$)/) {
+            value=substr($0, RSTART, RLENGTH)
+            sub(/^.*ci_check_wall_ms=/, "", value)
+            sub(/[[:space:]].*$/, "", value)
+            latest=value
+        }
+        END { if (latest != "") print latest; else exit 1 }
+    ' "$log_file"
+}
+
+push_lane_gh_probe_timeout_sec() {
+    local observed_ms observed_sec fallback_sec
+    fallback_sec="${PUSH_LANE_GH_TIMEOUT_SEC:-15}"
+    [[ "$fallback_sec" =~ ^[0-9]+$ ]] && [ "$fallback_sec" -gt 0 ] || fallback_sec=15
+    observed_ms=$(push_lane_latest_ci_check_wall_ms 2>/dev/null || true)
+    if [[ "$observed_ms" =~ ^[0-9]+$ ]]; then
+        observed_sec=$(( (observed_ms + 999) / 1000 ))
+        [ "$observed_sec" -gt "$fallback_sec" ] && fallback_sec="$observed_sec"
+    fi
+    printf '%s\n' "$fallback_sec"
+}
+
+push_lane_ci_cache_path() {
+    printf '%s\n' "${PUSH_LANE_CI_CACHE_FILE:-${STATE_DIR:-/tmp}/ninja_monitor_push_lane_ci.tsv}"
+}
+
+push_lane_ci_cache_write() {
+    local branch remote_tip current_run current_sha success_run success_sha
+    local cache_file tmp now
+    branch="${1:-}"; remote_tip="${2:-}"; current_run="${3:-}"; current_sha="${4:-}"
+    success_run="${5:-}"; success_sha="${6:-}"
+    cache_file=$(push_lane_ci_cache_path)
+    now="${EPOCHSECONDS:-$(date +%s)}"
+    mkdir -p "${cache_file%/*}" 2>/dev/null || return 1
+    tmp="${cache_file}.tmp.$$"
+    printf 'v1\t%s\t%s\t%s\t%s\t%s\t%s\t%s\n' \
+        "$branch" "$remote_tip" "$current_run" "$current_sha" \
+        "$success_run" "$success_sha" "$now" > "$tmp" || return 1
+    {
+        flock -x 9 || exit 1
+        mv -- "$tmp" "$cache_file"
+    } 9>"${cache_file}.lock"
+}
+
+push_lane_ci_cached_fallback() {
+    local repo="$1" branch="$2" remote_ref="$3" cache_file
+    local version cached_branch cached_remote current_run current_sha success_run success_sha cached_at
+    local remote_tip now max_age
+    cache_file=$(push_lane_ci_cache_path)
+    [ -f "$cache_file" ] || return 1
+    IFS=$'\t' read -r version cached_branch cached_remote current_run current_sha \
+        success_run success_sha cached_at < "$cache_file" || return 1
+    [ "$version" = v1 ] && [ "$cached_branch" = "$branch" ] || return 1
+    [[ "$cached_at" =~ ^[0-9]+$ ]] || return 1
+    max_age="${PUSH_LANE_CI_CACHE_MAX_AGE_SEC:-900}"
+    [[ "$max_age" =~ ^[0-9]+$ ]] || max_age=900
+    now="${EPOCHSECONDS:-$(date +%s)}"
+    [ "$now" -ge "$cached_at" ] && [ "$((now - cached_at))" -le "$max_age" ] || return 1
+    remote_tip=$(git -C "$repo" rev-parse "$remote_ref" 2>/dev/null || true)
+    [ -n "$remote_tip" ] && [ "$remote_tip" = "$cached_remote" ] || return 1
+    [ "$current_sha" = "$remote_tip" ] || return 1
+    [[ "$current_run" =~ ^[0-9]+$ && "$success_run" =~ ^[0-9]+$ ]] || return 1
+    [[ "$current_sha" =~ ^[0-9a-fA-F]{40}$ && "$success_sha" =~ ^[0-9a-fA-F]{40}$ ]] || return 1
+    git -C "$repo" merge-base --is-ancestor "$success_sha" "$current_sha" 2>/dev/null || return 1
+    printf '%s\t%s\t%s\t%s\n' "$current_run" "$current_sha" "$success_run" "$success_sha"
+}
+
 push_lane_timeout_sec() {
-    local measured_ms push_ms factor min_sec fallback_sec timeout_sec
+    local measured_ms push_ms gh_timeout_sec factor min_sec fallback_sec timeout_sec
     min_sec="${PUSH_LANE_TIMEOUT_MIN_SEC:-60}"
     [[ "$min_sec" =~ ^[0-9]+$ ]] || min_sec=60
     factor="${PUSH_LANE_TIMEOUT_FACTOR:-3}"
@@ -455,12 +526,63 @@ push_lane_timeout_sec() {
     fi
     measured_ms=$(push_lane_latest_prepush_wall_ms 2>/dev/null || true)
     push_ms=$(push_lane_latest_push_wall_ms 2>/dev/null || true)
+    gh_timeout_sec=$(push_lane_gh_probe_timeout_sec)
     [[ "$measured_ms" =~ ^[0-9]+$ ]] || measured_ms=0
     [[ "$push_ms" =~ ^[0-9]+$ ]] || push_ms=0
-    timeout_sec=$(( (factor * measured_ms + push_ms + 999) / 1000 ))
+    timeout_sec=$(( gh_timeout_sec + (factor * measured_ms + push_ms + 999) / 1000 ))
     [ "$timeout_sec" -gt 0 ] || timeout_sec="$fallback_sec"
     [ "$timeout_sec" -ge "$min_sec" ] || timeout_sec="$min_sec"
     printf '%s\n' "$timeout_sec"
+}
+
+# GitHub may report UNKNOWN while the newest run is still in progress.  A
+# push is safe to admit only when that newest run and the newest completed run
+# are on the same branch, the completed success is an ancestor of current,
+# and current is the canonical origin/main tip.
+# Keep this probe bounded and fail closed: a missing CLI, malformed response,
+# failure/cancellation, or head mismatch must never become GREEN.
+push_lane_ci_unknown_fallback() {
+    local repo="$1" branch="$2" gh_repo remote_ref runs decision probe_timeout
+    local current_run current_sha success_run success_sha remote_tip
+    gh_repo="${PUSH_LANE_GH_REPO:-simokitafresh/multi-agent-shogun}"
+    remote_ref="${PUSH_LANE_REMOTE_REF:-origin/main}"
+    [ -n "$branch" ] || return 1
+    command -v gh >/dev/null 2>&1 || return 1
+    command -v jq >/dev/null 2>&1 || return 1
+    probe_timeout=$(push_lane_gh_probe_timeout_sec)
+    if ! runs=$(timeout "$probe_timeout" gh run list --repo "$gh_repo" --workflow test.yml \
+        --branch "$branch" --limit 20 \
+        --json status,conclusion,headBranch,headSha,databaseId,createdAt 2>/dev/null); then
+        push_lane_ci_cached_fallback "$repo" "$branch" "$remote_ref"
+        return $?
+    fi
+    [ -n "$runs" ] && [ "$runs" != "[]" ] || return 1
+    decision=$(jq -r --arg branch "$branch" '
+        (sort_by(.createdAt) | reverse) as $runs
+        | ($runs[0] // {}) as $current
+        | ($runs | map(select((.status // "" | ascii_downcase) == "completed"
+                              and (.conclusion // "" | ascii_downcase) == "success"
+                              and (.headBranch // "") == $branch)) | .[0] // {}) as $completed
+        | ($current.status // "" | ascii_downcase) as $current_status
+        | if ($current_status != "in_progress"
+              or ($current.headBranch // "") != $branch
+              or ($current.headSha // "") == ""
+              or ($completed.headSha // "") == ""
+              or ($current.databaseId // "") == ""
+              or ($completed.databaseId // "") == "")
+          then ""
+          else [($current.databaseId // ""), $current.headSha,
+                ($completed.databaseId // ""), $completed.headSha] | @tsv
+          end' <<<"$runs" 2>/dev/null) || return 1
+    IFS=$'\t' read -r current_run current_sha success_run success_sha <<< "$decision"
+    [[ "$current_run" =~ ^[0-9]+$ && "$success_run" =~ ^[0-9]+$ ]] || return 1
+    [[ "$current_sha" =~ ^[0-9a-fA-F]{40}$ && "$success_sha" =~ ^[0-9a-fA-F]{40}$ ]] || return 1
+    remote_tip=$(git -C "$repo" rev-parse "$remote_ref" 2>/dev/null || true)
+    [ "$remote_tip" = "$current_sha" ] || return 1
+    git -C "$repo" merge-base --is-ancestor "$success_sha" "$current_sha" 2>/dev/null || return 1
+    push_lane_ci_cache_write "$branch" "$remote_tip" "$current_run" "$current_sha" \
+        "$success_run" "$success_sha" || return 1
+    printf '%s\t%s\t%s\t%s\n' "$current_run" "$current_sha" "$success_run" "$success_sha"
 }
 
 push_lane_waiting_ancestry_cmds() {
@@ -517,6 +639,7 @@ check_push_lane() {
     local repo="${PUSH_LANE_REPO:-$SCRIPT_DIR}" remote_name="${PUSH_LANE_REMOTE_NAME:-origin}"
     local remote_ref="${PUSH_LANE_REMOTE_REF:-origin/main}" count oldest commit_epoch now age min_age
     local branch lock_file lock_fd push_rc push_started_us push_finished_us push_wall_ms
+    local max_commits commit_list batch_tip batch_count remote_tip_before remote_tip_now
     local push_output
 
     [[ "${PUSH_LANE_ENABLED:-1}" == "1" ]] || return 0
@@ -530,6 +653,19 @@ check_push_lane() {
         return 0
     fi
 
+    # UNKNOWN is normally fail-closed.  The only exception is a bounded,
+    # same-branch/same-head completed-success fallback for a newest
+    # in-progress run.  RED and every other UNKNOWN shape remain blocked.
+    if [[ "$ci_status" == UNKNOWN ]]; then
+        local fallback_details
+        fallback_details=$(push_lane_ci_unknown_fallback "$repo" "$(git -C "$repo" symbolic-ref --quiet --short HEAD 2>/dev/null || true)" 2>/dev/null || true)
+        if [[ "$fallback_details" == *$'\t'* ]]; then
+            local fallback_current_run fallback_current_sha fallback_success_run fallback_success_sha
+            IFS=$'\t' read -r fallback_current_run fallback_current_sha fallback_success_run fallback_success_sha <<< "$fallback_details"
+            ci_status=GREEN
+            push_lane_log "CI-FALLBACK ci=UNKNOWN->GREEN current_run=$fallback_current_run completed_success_run=$fallback_success_run current_head=$fallback_current_sha success_head=$fallback_success_sha ancestry=1 remote_head=1"
+        fi
+    fi
     # RED and UNKNOWN are both fail-closed.  In particular, a RED run must
     # leave the push count at zero even when the local branch is old enough.
     if [[ "$ci_status" != GREEN ]]; then
@@ -546,7 +682,16 @@ check_push_lane() {
         push_lane_log "BLOCK reason=pre_push_hook_missing_or_not_executable push=0"
         return 0
     }
-    oldest=$(git -C "$repo" rev-list --first-parent --reverse "$remote_ref..HEAD" 2>/dev/null | sed -n '1p')
+    max_commits="${PUSH_LANE_MAX_COMMITS:-20}"
+    [[ "$max_commits" =~ ^[0-9]+$ ]] || max_commits=20
+    [ "$max_commits" -gt 0 ] 2>/dev/null || max_commits=20
+    remote_tip_before=$(git -C "$repo" rev-parse "$remote_ref" 2>/dev/null || true)
+    [[ "$remote_tip_before" =~ ^[0-9a-fA-F]{40}$ ]] || {
+        push_lane_log "BLOCK reason=remote_tip_unresolved remote=$remote_ref push=0"
+        return 0
+    }
+    commit_list=$(git -C "$repo" rev-list --first-parent --reverse "$remote_ref..HEAD" 2>/dev/null || true)
+    oldest=$(printf '%s\n' "$commit_list" | sed -n '1p')
     [[ "$oldest" =~ ^[0-9a-f]{40}$ ]] || {
         push_lane_log "BLOCK reason=oldest_first_parent_unresolved push=0"
         return 0
@@ -568,6 +713,12 @@ check_push_lane() {
         push_lane_log "BLOCK reason=remote_tip_not_ancestor oldest=$oldest push=0"
         return 0
     }
+    batch_tip=$(printf '%s\n' "$commit_list" | head -n "$max_commits" | tail -n 1)
+    batch_count=$(printf '%s\n' "$commit_list" | head -n "$max_commits" | awk 'NF { n++ } END { print n + 0 }')
+    [[ "$batch_tip" =~ ^[0-9a-fA-F]{40}$ && "$batch_count" =~ ^[1-9][0-9]*$ ]] || {
+        push_lane_log "BLOCK reason=batch_resolution_failed push=0"
+        return 0
+    }
 
     lock_file="${PUSH_LANE_LOCK_FILE:-${STATE_DIR:-/tmp}/ninja_monitor_push_lane.lock}"
     mkdir -p "${lock_file%/*}" 2>/dev/null || return 0
@@ -583,7 +734,14 @@ check_push_lane() {
     # even when callers enable `set -e` around the monitor function.
     push_started_us="${EPOCHREALTIME/./}"
     push_started_us="${push_started_us:0:16}"
-    if push_output=$(push_lane_publish_one "$repo" "$remote_name" "$oldest" 2>&1); then
+    remote_tip_now=$(git -C "$repo" rev-parse "$remote_ref" 2>/dev/null || true)
+    if [ "$remote_tip_now" != "$remote_tip_before" ]; then
+        push_lane_log "BLOCK reason=remote_tip_moved before=$remote_tip_before after=${remote_tip_now:-missing} push=0"
+        flock -u "$lock_fd"
+        exec {lock_fd}>&-
+        return 0
+    fi
+    if push_output=$(push_lane_publish_one "$repo" "$remote_name" "$batch_tip" 2>&1); then
         push_rc=0
     else
         push_rc=$?
@@ -593,10 +751,14 @@ check_push_lane() {
     push_wall_ms=$(( (push_finished_us - push_started_us + 999) / 1000 ))
     [ "$push_wall_ms" -ge 0 ] 2>/dev/null || push_wall_ms=0
     if [ "$push_rc" -eq 0 ]; then
-        push_lane_log "PUSH ci=GREEN unpushed_before=$count sha=$oldest age=${age}s force=0 hook=1 commits=1 push_wall_ms=$push_wall_ms"
+        push_lane_log "PUSH ci=GREEN unpushed_before=$count sha=$batch_tip oldest=$oldest age=${age}s force=0 hook=1 commits=$batch_count max_commits=$max_commits batch_contiguous=1 push_wall_ms=$push_wall_ms"
         push_lane_regate_waiting_cmds "$repo"
+    elif [ "$push_rc" -eq 128 ] && printf '%s\n' "$push_output" | grep -Eiq \
+        'could not resolve host|temporary failure in name resolution|network is unreachable|connection timed out|connection reset'; then
+        push_lane_log "RETRY reason=network_failure rc=128 sha=$batch_tip oldest=$oldest force=0 hook=1 commits=$batch_count push=0 next_cycle=1 output=${push_output//$'\n'/\\n}"
+        push_rc=0
     else
-        push_lane_log "BLOCK reason=push_failed rc=$push_rc sha=$oldest force=0 hook=1 push_wall_ms=$push_wall_ms output=${push_output//$'\n'/\\n}"
+        push_lane_log "BLOCK reason=push_failed rc=$push_rc sha=$batch_tip oldest=$oldest force=0 hook=1 commits=$batch_count push_wall_ms=$push_wall_ms output=${push_output//$'\n'/\\n}"
     fi
     flock -u "$lock_fd"
     exec {lock_fd}>&-
@@ -2427,6 +2589,7 @@ declare -A GATE_STALL_ACTIVE_CMDS # 現役cmd集合（active task/queue command/
 # を全件GATE-STALL通知し将軍/家老inboxへ数十件のstorm。監視対象は「直近の両承認」だけで
 # よいので上限窓(既定24h)を置き、queue/archive/cmds に完了記録がある cmd も除外する。
 GATE_STALL_MAX_MIN=${GATE_STALL_MAX_MIN:-1440}
+GATE_STALL_ITEM_TIMEOUT_SEC=${GATE_STALL_ITEM_TIMEOUT_SEC:-30}
 
 _gate_stall_marker_epoch() {
     local marker="$1" timestamp
@@ -2520,7 +2683,10 @@ check_gate_stall() {
         return 0
     fi
     local now=$EPOCHSECONDS marker cmd marker_epoch elapsed_sec elapsed_min gate_dir
-    local gate_lock_fd gate_output block_message
+    local gate_lock_fd gate_output block_message gate_rc item_timeout_sec
+    item_timeout_sec="$GATE_STALL_ITEM_TIMEOUT_SEC"
+    [[ "$item_timeout_sec" =~ ^[0-9]+$ ]] || item_timeout_sec=30
+    [ "$item_timeout_sec" -gt 0 ] 2>/dev/null || item_timeout_sec=30
     _gate_stall_refresh_active_cmds
 
     while IFS= read -r marker; do
@@ -2553,7 +2719,15 @@ check_gate_stall() {
             eval "exec ${gate_lock_fd}>&-"
             continue
         fi
-        if gate_output=$(bash "$SCRIPT_DIR/scripts/cmd_complete_gate.sh" "$cmd" 2>&1); then
+        if gate_output=$(timeout --signal=TERM --kill-after=2 "$item_timeout_sec" \
+            bash "$SCRIPT_DIR/scripts/cmd_complete_gate.sh" "$cmd" 2>&1); then
+            gate_rc=0
+        else
+            gate_rc=$?
+        fi
+        if [ "$gate_rc" -eq 124 ] || [ "$gate_rc" -eq 137 ]; then
+            log "GATE-STALL-ITEM-TIMEOUT: cmd=${cmd} command=cmd_complete_gate.sh timeout=${item_timeout_sec}s rc=${gate_rc} retry=next-cycle"
+        elif [ "$gate_rc" -eq 0 ]; then
             log "GATE-AUTO-CLEAR: ${cmd} elapsed=${elapsed_min}min"
         elif printf '%s\n' "$gate_output" | grep -Fq 'GATE WAIT:'; then
             # External waits are retryable state, not terminal BLOCK. Keep the
@@ -2582,15 +2756,42 @@ check_gate_stall() {
 }
 
 GATE_STALL_TIMEOUT=${GATE_STALL_TIMEOUT:-120}
+GATE_STALL_TIMEOUT_MARGIN_SEC=${GATE_STALL_TIMEOUT_MARGIN_SEC:-10}
+GATE_STALL_TIMEOUT_MAX_SEC=${GATE_STALL_TIMEOUT_MAX_SEC:-600}
+
+_gate_stall_worker_timeout_sec() {
+    local base item margin cap active derived
+    base="$GATE_STALL_TIMEOUT"
+    [[ "$base" =~ ^[0-9]+$ ]] || base=120
+    [ "$base" -gt 0 ] 2>/dev/null || base=120
+    item="$GATE_STALL_ITEM_TIMEOUT_SEC"
+    [[ "$item" =~ ^[0-9]+$ ]] || item=30
+    [ "$item" -gt 0 ] 2>/dev/null || item=30
+    margin="$GATE_STALL_TIMEOUT_MARGIN_SEC"
+    [[ "$margin" =~ ^[0-9]+$ ]] || margin=10
+    cap="$GATE_STALL_TIMEOUT_MAX_SEC"
+    [[ "$cap" =~ ^[0-9]+$ ]] || cap=600
+    [ "$cap" -gt 0 ] 2>/dev/null || cap=600
+    active=$(find "$SCRIPT_DIR/queue/gates" -mindepth 2 -maxdepth 2 \
+        -type f -name review_gate.done -print 2>/dev/null | awk 'END { print NR + 0 }')
+    [[ "$active" =~ ^[0-9]+$ ]] || active=0
+    if [ "$active" -eq 0 ]; then
+        derived="$base"
+    else
+        derived=$((active * item + margin))
+    fi
+    [ "$derived" -gt "$base" ] || derived="$base"
+    [ "$derived" -le "$cap" ] || derived="$cap"
+    printf '%s\n' "$derived"
+}
 
 # gate stall can block on a completion-gate subprocess while the monitor is
 # trying to publish its next snapshot. Keep exactly one generation-fenced
 # worker and return the observe loop immediately; the worker retains the
 # existing gate lock and retry semantics.
 _ninja_monitor_run_bounded_gate_stall() {
-    local timeout_sec="${GATE_STALL_TIMEOUT:-120}" lock_file lock_fd worker_pid
-    [[ "$timeout_sec" =~ ^[0-9]+$ ]] || timeout_sec=120
-    [ "$timeout_sec" -gt 0 ] 2>/dev/null || timeout_sec=120
+    local timeout_sec lock_file lock_fd worker_pid
+    timeout_sec="$(_gate_stall_worker_timeout_sec)"
 
     if [ "${_NINJA_MONITOR_LIB_MODE:-0}" = "1" ]; then
         check_gate_stall
@@ -10414,6 +10615,72 @@ list_pending_cmds_cached() {
     [ -n "$_PENDING_CMDS_CACHE" ] && printf '%s\n' "$_PENDING_CMDS_CACHE"
 }
 
+pending_cmd_status() {
+    local target_cmd="$1" command_file="$SCRIPT_DIR/queue/shogun_to_karo.yaml"
+    [ -f "$command_file" ] || return 0
+    python3 - "$command_file" "$target_cmd" <<'PY'
+import sys
+import yaml
+
+path, target = sys.argv[1:]
+try:
+    data = yaml.safe_load(open(path, encoding="utf-8")) or {}
+except (OSError, yaml.YAMLError):
+    raise SystemExit(0)
+commands = data.get("commands", {}) if isinstance(data, dict) else {}
+item = commands.get(target, {}) if isinstance(commands, dict) else {}
+if isinstance(item, dict):
+    print(str(item.get("status") or "").strip())
+PY
+}
+
+pending_cmd_dependencies() {
+    local target_cmd="$1" command_file="$SCRIPT_DIR/queue/shogun_to_karo.yaml"
+    [ -f "$command_file" ] || return 0
+    python3 - "$command_file" "$target_cmd" <<'PY'
+import sys
+import yaml
+
+path, target = sys.argv[1:]
+try:
+    data = yaml.safe_load(open(path, encoding="utf-8")) or {}
+except (OSError, yaml.YAMLError):
+    raise SystemExit(0)
+commands = data.get("commands", {}) if isinstance(data, dict) else {}
+item = commands.get(target, {}) if isinstance(commands, dict) else {}
+value = item.get("depends_on") if isinstance(item, dict) else None
+if isinstance(value, list):
+    for dependency in value:
+        dependency = str(dependency or "").strip()
+        if dependency and dependency.lower() not in {"none", "null"}:
+            print(dependency)
+elif value is not None:
+    dependency = str(value).strip()
+    if dependency and dependency.lower() not in {"none", "null"}:
+        print(dependency)
+PY
+}
+
+pending_cmd_dependency_ready() {
+    local dependency="$1" gate_dir metrics_file
+    [ -n "$dependency" ] || return 0
+    gate_dir="$SCRIPT_DIR/queue/gates/$dependency"
+    [ -f "$gate_dir/archive.done" ] && return 0
+    if [ -f "$gate_dir/completion_tail.log" ] && \
+       grep -Fqx -- "[cmd_complete] COMPLETE $dependency" "$gate_dir/completion_tail.log"; then
+        return 0
+    fi
+    compgen -G "$SCRIPT_DIR/queue/archive/cmds/${dependency}_*.yaml" >/dev/null 2>&1 && return 0
+    metrics_file="$SCRIPT_DIR/logs/gate_metrics.log"
+    [ -f "$metrics_file" ] && awk -F '\t' -v dependency="$dependency" \
+        '$2 == dependency && ($3 == "CLEAR" || $3 == "COMPLETE") { found=1 } END { exit !found }' \
+        "$metrics_file" && return 0
+    case "$(pending_cmd_status "$dependency")" in
+        completed|done) return 0 ;;
+    esac
+    return 1
+}
+
 # queue/shogun_to_karo.yaml の委任状態だけでは配備済みか判定できない。
 # 忍者taskの親cmdと状態を一次照合し、配備済みのcmdは未配備通知から除外する。
 # 戻り値は、exact parent_cmdに一致する配備済みstatusのうち最初の1件。
@@ -10601,7 +10868,24 @@ check_undeployed_cmds() {
     while IFS='|' read -r cmd_id _cmd_timestamp delegated_at _deferred_until _defer_reason _restart_condition; do
         [ -z "$cmd_id" ] && continue
         [ -z "$delegated_at" ] && continue
+        local command_status
+        command_status=$(pending_cmd_status "$cmd_id")
+        case "$command_status" in
+            void|canceled|cancelled|completed|done)
+                log "UNDEPLOYED-CMD-SKIP: ${cmd_id} status=${command_status}"
+                continue
+                ;;
+        esac
         current_pending["$cmd_id"]=1
+        local dependency dependency_blocked=0
+        while IFS= read -r dependency; do
+            if ! pending_cmd_dependency_ready "$dependency"; then
+                log "UNDEPLOYED-CMD-SKIP: ${cmd_id} dependency=${dependency} not_clear"
+                dependency_blocked=1
+                break
+            fi
+        done < <(pending_cmd_dependencies "$cmd_id")
+        [ "$dependency_blocked" -eq 0 ] || continue
 
         # 委任済みでも、忍者taskのexact parent_cmdと配備済みstatusが存在すれば
         # 実配備済み。未配備通知のdedupeより先に照合し、status遷移後の再誤通知も防ぐ。
@@ -14619,7 +14903,18 @@ while true; do
     # CI status: 5分間隔でキャッシュ更新（GitHubAPI毎サイクル呼出し→1708ms/cycle削減 L4-R24）
     _ci_check_now=$EPOCHSECONDS
     if (( _ci_check_now - CI_STATUS_CHECK_LAST >= CI_STATUS_CHECK_INTERVAL )); then
-        CI_STATUS_CACHE=$(bash "$SCRIPT_DIR/scripts/ci_status_check.sh" --status 2>/dev/null || echo "UNKNOWN")
+        _ci_status_started_us="${EPOCHREALTIME/./}"
+        _ci_status_started_us="${_ci_status_started_us:0:16}"
+        _ci_status_rc=0
+        CI_STATUS_CACHE=$(bash "$SCRIPT_DIR/scripts/ci_status_check.sh" --status 2>/dev/null) || {
+            _ci_status_rc=$?
+            CI_STATUS_CACHE="UNKNOWN"
+        }
+        _ci_status_finished_us="${EPOCHREALTIME/./}"
+        _ci_status_finished_us="${_ci_status_finished_us:0:16}"
+        _ci_status_wall_ms=$(( (_ci_status_finished_us - _ci_status_started_us + 999) / 1000 ))
+        [ "$_ci_status_wall_ms" -ge 0 ] 2>/dev/null || _ci_status_wall_ms=0
+        push_lane_log "CI-CHECK status=$CI_STATUS_CACHE command=ci_status_check.sh rc=$_ci_status_rc ci_check_wall_ms=$_ci_status_wall_ms"
         CI_STATUS_CHECK_LAST=$_ci_check_now
     fi
     current_ci_status="$CI_STATUS_CACHE"

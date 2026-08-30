@@ -2389,6 +2389,65 @@ EOF
     [[ "$output" == *"BLOCK_REASONS="* ]]
 }
 
+# test_necessity: HTTP endpoints and URLs are destinations, not files that can
+# be modified; this permanent contract prevents command-scope false positives.
+# regression_justification: cmd_4413 was BLOCKed because
+# /api/public/showcase/event was extracted as a missing file.
+@test "command/files_modified coverage ignores API routes and absolute URLs" {
+    _write_command_coverage_fixture \
+        "POST /api/public/showcase/event と https://example.com/api/public/showcase/event を確認" \
+        "  - path: docs/research/showcase.md
+    change: modified"
+
+    run _run_command_files_modified_coverage_with_state
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"SKIP (command欄に拡張子付きファイル参照なし)"* ]]
+    [[ "$output" != *"COMMAND_SCOPE_MISSING"* ]]
+    [[ "$output" != *"missing: /api/public/showcase/event"* ]]
+    [[ "$output" != *"missing: https://example.com/api/public/showcase/event"* ]]
+    [[ "$output" == *"ALL_CLEAR=true"* ]]
+    [[ "$output" == *"BLOCK_REASONS="* ]]
+}
+
+# test_necessity: An API route must be ignored while a real repository file in
+# the same command remains covered by files_modified.
+# regression_justification: A broad route exemption could hide a genuine
+# backend/app/api/*.py omission in the same command.
+@test "command/files_modified coverage keeps real file refs beside API routes" {
+    _write_command_coverage_fixture \
+        "POST /api/public/showcase/event を実装し backend/app/api/signals.py を修正" \
+        "  - path: backend/app/api/signals.py
+    change: modified" \
+        "backend/app/api"
+
+    run _run_command_files_modified_coverage_with_state
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"OK (command欄ファイル参照 全1件がfiles_modifiedに記載済み)"* ]]
+    [[ "$output" != *"COMMAND_SCOPE_MISSING"* ]]
+    [[ "$output" != *"missing: /api/public/showcase/event"* ]]
+    [[ "$output" == *"ALL_CLEAR=true"* ]]
+}
+
+# test_necessity: A missing real repository file remains a blocking scope
+# violation after API-route filtering.
+# regression_justification: The route fix must not turn true-positive scope
+# omissions into a false CLEAR.
+@test "command/files_modified coverage still blocks missing real file refs" {
+    _write_command_coverage_fixture \
+        "POST /api/public/showcase/event を実装し backend/app/api/missing.py を修正" \
+        "  - path: backend/app/api/signals.py
+    change: modified" \
+        "backend/app/api"
+
+    run _run_command_files_modified_coverage_with_state
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"COMMAND_SCOPE_MISSING"* ]]
+    [[ "$output" == *"missing: backend/app/api/missing.py"* ]]
+    [[ "$output" != *"missing: /api/public/showcase/event"* ]]
+    [[ "$output" == *"ALL_CLEAR=false"* ]]
+    [[ "$output" == *"BLOCK_REASONS=command_files_modified_mismatch"* ]]
+}
+
 @test "command/files_modified coverage still checks real uppercase files" {
     touch "$TEST_PROJECT/README.md"
 
