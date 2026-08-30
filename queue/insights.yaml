@@ -8686,3 +8686,10 @@ insights:
   source: "semantic_index_update"
   fix_known: false
   status: pending
+- id: INS-20260830-140615091-49e4
+  ts: "2026-08-30T14:06:15+09:00"
+  insight: "LGTM済みreportの重複review_report通知が繰り返し到着する。家老publish/配備サイクルが再送する構造。review_bundle.py LGTM後のfingerprintで重複検知→自動既読化するインフラ改善候補"
+  priority: "medium"
+  source: "manual"
+  fix_known: false
+  status: pending
