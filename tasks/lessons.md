@@ -16272,3 +16272,16 @@ sqlite3.Connection.backup()を使うとページ(4096byte)単位のread syscall�
 - **when**: 未設定
 - **how**: 未設定
 - atomic owner record置換の短い読取失敗をwatcherが即時終了すると後継起動が失われる。parent生存中だけbounded retryし、generation CASとheartbeat fenceを維持する。
+
+### L1678: receipt and rc sidecar must share terminal rc SSOT
+- **日付**: 2026-08-30
+- **出典**: cmd_karo_ci_fix_33308840348_receipt_missing_20260830
+- **記録者**: tobisaru
+- **tags**: [infra,testing,api,testing]
+- **subdomain**: infra
+- **target_files**: [scripts/run_tests.sh,tests/unit/test_run_tests.bats]
+- **origin**: [[cmd_karo_ci_fix_33308840348_receipt_missing_20260830]]
+- **enforcement**: 未自動化
+- **when**: 未設定
+- **how**: 未設定
+- When a wrapped test runner exits before publishing its receipt, the outer runner must first restore a reasoned receipt and then publish one adjacent rc sidecar from that receipt rc. Next check: success/failure/timeout fixtures assert receipt rc equals sidecar rc and no temp artifact remains.

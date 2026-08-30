@@ -1,7 +1,6 @@
-# session_alerts — generated: 2026-08-30T18:16:27+0900
-[DONE] 走行中cmd実測突合: busy 5名。capture-pane未確認で状況報告するな
-[DONE] failed task残置: kagemaru — 真因確認と再配備/クローズを確定せよ
-[DONE] monitor lifecycle 失敗行 5行/60分 — 壁の所有者を一次で確認
-[DONE] 本番 queue 汚染: fixture 2件/task missing 0行
-[DONE] 幻スキル参照: 1件
+# session_alerts — generated: 2026-08-30T21:51:04+0900
+[DONE] 掲示板action_required未対応: 1件
+[DONE] 走行中cmd実測突合: busy 3名。capture-pane未確認で状況報告するな
+[DONE] failed task残置: kotaro — 真因確認と再配備/クローズを確定せよ
+[DONE] monitor lifecycle 失敗行 85行/60分 — 壁の所有者を一次で確認
 [DONE] deepdive追体験未完了: 全Phase実行まで作業禁止(stop hookがBLOCKする)。bash scripts/deepdive_replay.sh shogun <md> <Phase> "<自問>"
