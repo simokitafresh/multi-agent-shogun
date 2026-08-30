@@ -10618,3 +10618,10 @@ insights:
   source: "semantic_stress_test"
   fix_known: false
   status: pending
+- id: INS-20260831-031808481-ca3c
+  ts: "2026-08-31T03:18:08+09:00"
+  insight: "[[殿指摘 01 41『 の問題点 total return と ×N は up to 〜 のほうがいい]] semantic_stress_test candidate_aliases: NO_MATCH source=cmds query=殿指摘 2026-08-31 01:41『 の問題点: total return と ×N は up to 〜 のほうがいい。コントラストがデザインガイドに即していない』+01:43 スクショ『note 誘導が小さくて弱い』。同時指摘の MDD 欠落は LP 再 build(01:50)で、Basic-DM Sharpe 欠落は backend hotfix"
+  priority: "low"
+  source: "semantic_stress_test"
+  fix_known: false
+  status: pending
