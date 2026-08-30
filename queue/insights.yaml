@@ -10523,3 +10523,10 @@ insights:
   source: "semantic_index_update"
   fix_known: false
   status: pending
+- id: INS-20260831-022539984-3fc0
+  ts: "2026-08-31T02:25:39+09:00"
+  insight: "semantic_index_update未登録cmd originノード: [[og:image_404_20260830_2202]] は既存aliasesに一致なし。類似概念TOP3: deepdive_principles(deepdive原理; alias=session_save_20260828_1420; score=5.6) / creator_brainwashing_defense(創造主の洗脳防御; alias=session_save_20260811_0316; score=5.6) / sg_pre31_semantic_validation(SG-PRE31意味検算; alias=gunshi_idle_lg048_automate_sg_pre31_20260706; score=5.2)。概念定義とaliases追加を検討せよ"
+  priority: "low"
+  source: "semantic_index_update"
+  fix_known: false
+  status: pending
