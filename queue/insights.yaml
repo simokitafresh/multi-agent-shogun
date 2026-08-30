@@ -7404,7 +7404,10 @@ insights:
   priority: "medium"
   source: "manual"
   fix_known: false
-  status: pending
+  status: resolved
+  resolved_reason: "一次情報で現行防御を確認。scripts/cmd_complete_gate.sh:14497-14501 は segment_status=BLOCK を終端BLOCKにせず GATE WAIT と WAIT:throughput_segment_invalid へ分類し、scripts/cmd_complete_gate.sh:5507-5522 は逆順区間を na(reason)+segment_invalid として可視化する。scripts/review_approval.sh:282-290 は一致するGunshi LGTM前のKaro ACCEPTを拒否する。対応回帰は test_cmd_complete_gate.bats 309/309 PASS SKIP0 と test_review_approval.bats 14/14 PASS SKIP0。追加実装修正・decision_candidateは不要。"
+  action_artifact: "target=queue/insights.yaml:INS-20260828-174306350-1a99;primary=scripts/cmd_complete_gate.sh:L5507-L5522,L14497-L14501;primary=scripts/review_approval.sh:L282-L290;regression=logs/test_receipts/run_tests_20260830T190819_739855.json:309/309 PASS SKIP0,logs/test_receipts/run_tests_20260830T190819_739866.json:14/14 PASS SKIP0;decision_candidate=none;promotion_pause=queue/gates/reflux_promotion.paused"
+  resolved_at: "2026-08-31T04:10:51+09:00"
 - id: INS-20260828-181240393-9ce4
   ts: "2026-08-28T18:12:40+09:00"
   insight: "daemon 文脈の再現は環境(PATH)だけでなく trap も含む: ninja_monitor の function_timing DEBUG trap が BASH_REMATCH を潰し respawn_recovery.sh L28 が invalid variable name(T35 同型再発)。lib で BASH_REMATCH を使うと monitor 内で壊れる→lib 契約 bats に『trap '' DEBUG 下で動く』を標準 fixture 化(gate: scripts/lib/*.sh の BASH_REMATCH を WARN)"
@@ -7534,7 +7537,10 @@ insights:
   priority: "medium"
   source: "manual"
   fix_known: false
-  status: pending
+  status: resolved
+  resolved_reason: "一次確認で現行scripts/cmd_complete_gate.sh:11565-11580はSG7 bundle欠落をBLOCKとして即終了しreview_pending WAITへ分類しないことを確認した。今回のplanned_pathsはqueue/insights.yamlのみのためコード修正は範囲外であり、実装cmd起票が必要なdecision_candidateとして整理した。"
+  action_artifact: "primary=scripts/cmd_complete_gate.sh:11565-11580;logs=logs/gate_metrics.log:501-503;decision_candidate=SG7 bundle欠落をWAIT review_pendingへ分類する実装cmdを別起票;report=queue/reports/tobisaru_report_cmd_reflux_insight_202608310415_tobisaru.yaml"
+  resolved_at: "2026-08-31T04:25:00+09:00"
 - id: INS-20260828-190605105-fce5
   ts: "2026-08-28T19:06:05+09:00"
   insight: "[[T129 residual — mechanical lifecycle lanesを独立検証し]] NO_MATCH purpose pending alias: cmd_complete時にdeploy_task.logでNO_MATCHだったpurpose。類似概念TOP3: infra_throughput_outcome_design(インフラスループット・アウトカム設計; alias=C4 lifecycle transaction; score=9.9) / production_parity(本番パリティ; alias=pending_confirmed_lifecycle; score=9.3) / partial_turnover_execution_method(Partial Turnover実験実行・完了証跡方法論; alias=ログイン導線AsIs棚卸し read only — 認証切替・データ層・HTTPキャッシュの現物契約; score=8.5)。既存概念aliasesへの自動昇格候補"

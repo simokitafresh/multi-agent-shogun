@@ -3718,6 +3718,7 @@ codd:
 | discussion | `queue/lord_conversation.jsonl` 2026-08-31T02:39:50+09:00 30分loop(殿指示08-27 14:34「進捗を確認し、利他の精神でつまりを解消し、artifactを更新せよ」恒久): (1)capture-pane全pane/陣形図/gate_metrics/rev-list origin/CI  |
 | discussion | `queue/lord_conversation.jsonl` 2026-08-31T03:09:51+09:00 30分loop(殿指示08-27 14:34「進捗を確認し、利他の精神でつまりを解消し、artifactを更新せよ」恒久): (1)capture-pane全pane/陣形図/gate_metrics/rev-list origin/CI  |
 | discussion | `queue/lord_conversation.jsonl` 2026-08-31T03:39:51+09:00 30分loop(殿指示08-27 14:34「進捗を確認し、利他の精神でつまりを解消し、artifactを更新せよ」恒久): (1)capture-pane全pane/陣形図/gate_metrics/rev-list origin/CI  |
+| discussion | `queue/lord_conversation.jsonl` 2026-08-31T04:09:50+09:00 30分loop(殿指示08-27 14:34「進捗を確認し、利他の精神でつまりを解消し、artifactを更新せよ」恒久): (1)capture-pane全pane/陣形図/gate_metrics/rev-list origin/CI  |
 | causal_chain | `[[cmd_karo_hotfix_deploy_report_template_quote_escape_202607020530]]` (L924) |
 | causal_chain | `[[cmd_reflux_insight_202607071717_tobisaru]]` (L961) |
 | causal_chain | `[[cmd_karo_hotfix_report_notify_inprogress_guard_202607101913]]` (L1026) |
@@ -10067,6 +10068,8 @@ codd:
 | discussion | `queue/lord_conversation.jsonl` 2026-08-30T14:00:46.160361+00:00 git pre-commit semantic propagation for context/projects changes |
 | discussion | `queue/lord_conversation.jsonl` 2026-08-30T15:27:23.111566+00:00 git pre-commit semantic propagation for context/projects changes |
 | discussion | `queue/lord_conversation.jsonl` 2026-08-30T18:12:10.223885+00:00 git pre-commit semantic propagation for context/projects changes |
+| discussion | `queue/lord_conversation.jsonl` 2026-08-30T18:47:09.444984+00:00 git pre-commit semantic propagation for context/projects changes |
+| discussion | `queue/lord_conversation.jsonl` 2026-08-30T19:04:26.556568+00:00 git pre-commit semantic propagation for context/projects changes |
 
 ## simple_ocr — Simple OCR（画像OCR Webアプリ）
 
@@ -13397,6 +13400,8 @@ codd:
 | discussion | `queue/lord_conversation.jsonl` 2026-08-31T02:23:25+09:00 bk6cljs4y toolu_01B7nnVZavB353pxh1D426mE /tmp/claude-1000/-home-simokitafresh-multi-agent-shogun/2c3fb475-59fe-49bf-bf8d |
 | discussion | `queue/lord_conversation.jsonl` 2026-08-31T02:23:51+09:00 b0vxperyi toolu_01UQ3FYuskU7LZHdyD9RK2Yd /tmp/claude-1000/-home-simokitafresh-multi-agent-shogun/2c3fb475-59fe-49bf-bf8d |
 | cmd | `cmd_karo_hotfix_command_file_token_parser_20260831` (`scripts/cmd_complete_gate.sh`, `tests/unit/test_cmd_complete_gate.bats`) |
+| causal | `cmd_karo_ci_fix_33326464870_shard_count_receipt_20260831` files_modified: [[provisional_test]] |
+| cmd | `cmd_karo_ci_fix_33326464870_shard_count_receipt_20260831` (`.github/workflows/test.yml`, `scripts/inbox_write.sh`) |
 | causal_chain | `[[cmd_karo_hotfix_hook_failure_utf8_boundary_20260829]]` (L1669) |
 | causal_chain | `[[cmd_karo_hotfix_tmux_live_sendkeys_guard_20260830]]` (L1672) |
 
@@ -14297,6 +14302,10 @@ codd:
 | cmd | `cmd_reflux_insight_202608310257_tobisaru` (`queue/insights.yaml`) |
 | causal | `cmd_reflux_insight_202608310329_saizo` files_modified: [[provisional_insights]] |
 | cmd | `cmd_reflux_insight_202608310329_saizo` (`queue/insights.yaml`) |
+| causal | `cmd_reflux_insight_202608310338_kagemaru` files_modified: [[provisional_insights]] |
+| cmd | `cmd_reflux_insight_202608310338_kagemaru` (`queue/insights.yaml`) |
+| causal | `cmd_reflux_insight_202608310402_kotaro` files_modified: [[provisional_insights]] |
+| cmd | `cmd_reflux_insight_202608310402_kotaro` (`queue/insights.yaml`) |
 | causal_chain | `[[cmd_reflux_insight_202608040505_kagemaru]]` (L1545) |
 
 ## provisional_heavy_job_admission — 仮: Heavy Job Admission
@@ -15918,6 +15927,7 @@ codd:
 | discussion | `queue/lord_conversation.jsonl` 2026-08-30T16:53:23.684214+00:00 git pre-commit semantic propagation for context/projects changes |
 | discussion | `queue/lord_conversation.jsonl` 2026-08-30T17:34:26.691902+00:00 git pre-commit semantic propagation for context/projects changes |
 | discussion | `queue/lord_conversation.jsonl` 2026-08-30T18:20:47.608528+00:00 git pre-commit semantic propagation for context/projects changes |
+| discussion | `queue/lord_conversation.jsonl` 2026-08-30T19:07:25.424229+00:00 git pre-commit semantic propagation for context/projects changes |
 | causal_chain | `[[cmd_karo_hotfix_lessons_yaml_format_restore_20260727]]` (L1389) |
 
 ## infra_design_intent — インフラ設計意図カタログ
@@ -16051,6 +16061,7 @@ codd:
 | causal | `cmd_karo_hotfix_t190_gate_stall_p95_unit5_20260830` files_modified: [[infra_design_intent]] |
 | causal | `cmd_karo_hotfix_t190_push_merge_recovery_unit6_20260830` files_modified: [[infra_design_intent]] |
 | causal | `cmd_karo_hotfix_push_red_nonblocking_20260830` files_modified: [[infra_design_intent]] |
+| causal | `cmd_karo_ci_fix_33326464870_shard_count_receipt_20260831` files_modified: [[infra_design_intent]] |
 | causal_chain | `[[cmd_karo_fix_same_cmd_pending_symlink_20260804]]` (L1556) |
 
 ## scope_integrity_lifecycle — スコープ鮮度ライフサイクル
@@ -16258,6 +16269,7 @@ codd:
 | causal | `cmd_karo_hotfix_t122_memory_self_reinforce_20260828` files_modified: [[yaml_safe_write]] |
 | causal | `cmd_karo_hotfix_commander_inbox_identity_all_directives_20260829` files_modified: [[yaml_safe_write]] |
 | causal | `cmd_karo_hotfix_task_supplement_identity_20260830` files_modified: [[yaml_safe_write]] |
+| causal | `cmd_karo_ci_fix_33326464870_shard_count_receipt_20260831` files_modified: [[yaml_safe_write]] |
 | causal_chain | `[[cmd_karo_ci_red_remaining_unit_202607151950]]` (L1041) |
 | causal_chain | `[[cmd_karo_hotfix_report_hook_result_canonicalization_20260729]]` (L1448) |
 | causal_chain | `[[cmd_4192]]` (L1450) |
@@ -17708,6 +17720,8 @@ codd:
 | causal | `cmd_karo_hotfix_hook_argument_text_false_positive_20260802` files_modified: [[hook_json_command_boundary]] |
 | causal | `cmd_karo_hotfix_live_direct_bats_guard_202608101934` files_modified: [[hook_json_command_boundary]] |
 | causal | `cmd_karo_hotfix_shared_dirty_code_cleanup_20260814` files_modified: [[hook_json_command_boundary]] |
+| lesson | `L1682` CI compatibility fixtureはfile rootを分離する |
+| causal_chain | `[[cmd_karo_ci_fix_33326464870_shard_count_receipt_20260831]]` (L1682) |
 
 ## push_batch_operation — 正規push batch運用
 
