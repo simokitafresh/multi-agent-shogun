@@ -6838,7 +6838,7 @@ insights:
   resolved_reason: 一次情報で現行生成経路・tracked artifact・consumer参照・既存修正を突合した。現行 build_instructions.sh は claude-prefix を生成せず、.build_cache にも該当cacheがなくconsumer参照も0、566471a0c が残存2行を $SHOGUN_ROOT 化済み。新規コード修正は不要。非出力tracked生成物4本のretire要否は家老判断を要する decision_candidate として整理した。
   action_artifact: "target=queue/insights.yaml:INS-20260828-130105672-8adf;source=git:566471a0c633ad518f3856b48ef6eca91e7d5d12;build=scripts/build_instructions.sh:L313-L345 default outputs are unprefixed and profile outputs are non-claude-prefixed;tracked=instructions/generated/claude-*.md 4/4;cache=instructions/generated/.build_cache claude-cache 0;consumer=rg --hidden scoped 0;semantic=semantic_search top_concept=semantic_dictionary_design;inventory_before=57/11/0/68;new_code=0;decision_candidate=家老判断:非出力tracked generated 4本のretire要否"
   resolved_at: "2026-08-30T15:59:35+09:00"
-  last_seen: "2026-08-30T15:59:35+09:00"
+  last_seen: "2026-08-30T16:05:30+09:00"
 - id: INS-20260828-130335413-40cd
   ts: "2026-08-28T13:03:35+09:00"
   insight: "semantic_index_update新概念候補: discussion:task notification task type artifact auto react task type summary Auto replied t は 既存aliasesに一致なし。概念定義とaliases追加を検討せよ"
@@ -8981,11 +8981,17 @@ insights:
   priority: "low"
   source: "semantic_index_update"
   fix_known: false
-  status: pending
+  status: resolved
+  resolved_reason: "semantic map generation verified the candidate is represented or intentionally ignored"
+  action_artifact: "semantic_map=/home/simokitafresh/multi-agent-shogun/context/semantic-map.md;semantic_index=/home/simokitafresh/multi-agent-shogun/docs/semantic-index/index.md"
+  resolved_at: "2026-08-30T16:04:23+09:00"
 - id: INS-20260830-160406883-1441
   ts: "2026-08-30T16:04:06+09:00"
   insight: "semantic_index_update未登録[[リンク]]ターゲット: [[パイプライン契約_20260815]] は既存aliasesに一致なし。類似概念TOP3: gs_ninpo_research(GS忍法研究; alias=L0パイプライン; score=4.0) / creator_brainwashing_defense(創造主の洗脳防御; alias=殿指示_インフラバグは直せ迂回禁止_20260817_1955; score=3.4) / semantic_dictionary_design(セマンティック辞書構想; alias=lord_ruling_20260810_2152; score=3.2)。概念定義とaliases追加を検討せよ"
   priority: "low"
   source: "semantic_index_update"
   fix_known: false
-  status: pending
+  status: resolved
+  resolved_reason: "semantic map generation verified the candidate is represented or intentionally ignored"
+  action_artifact: "semantic_map=/home/simokitafresh/multi-agent-shogun/context/semantic-map.md;semantic_index=/home/simokitafresh/multi-agent-shogun/docs/semantic-index/index.md"
+  resolved_at: "2026-08-30T16:04:23+09:00"
