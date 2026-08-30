@@ -43,9 +43,9 @@
 2. `cmd_karo_ci_fix_33326464870_shard_count_receipt_20260831_normal`（半蔵、acknowledged）
    - 最新CI RED: shard 2とcompatibility。shard 2実測はdeclared=533/observed=640/skip=0/rc=1。
    - 次手: FAIL0/SKIP0/declared=observed→commit→push→最新main CI GREEN。
-3. `cmd_karo_ci_fix_33312677956_two_contracts_20260830_normal`（才蔵、failedへ遷移中）
+3. `cmd_karo_ci_fix_33312677956_two_contracts_20260830_normal`（才蔵、FAIL archive済み・idle）
    - 旧二契約は2/2・168/168・SKIP0だが、後続runの別失敗を混ぜずfailure_mismatchで終端。
-   - 次手: report/task `failed`確認→正直FAIL review/accept/archive→idle。
+   - 終端: 正直FAIL review/accept、report archive、task idle。後続CI修正は半蔵taskへ分離済み。
 4. `cmd_karo_hotfix_command_file_token_parser_20260831_normal`（影丸、done）
    - commit=`83d3aa21...`、contract=`308/308 PASS`、偽陽性0。cmd_4426は既にCLEAR。
    - 次手: 軍師LGTM→家老ACCEPT→hotfix GATE CLEAR→archive/idle。
