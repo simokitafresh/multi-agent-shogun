@@ -6834,7 +6834,11 @@ insights:
   priority: "medium"
   source: "shogun"
   fix_known: false
-  status: pending
+  status: resolved
+  resolved_reason: 一次情報で現行生成経路・tracked artifact・consumer参照・既存修正を突合した。現行 build_instructions.sh は claude-prefix を生成せず、.build_cache にも該当cacheがなくconsumer参照も0、566471a0c が残存2行を $SHOGUN_ROOT 化済み。新規コード修正は不要。非出力tracked生成物4本のretire要否は家老判断を要する decision_candidate として整理した。
+  action_artifact: "target=queue/insights.yaml:INS-20260828-130105672-8adf;source=git:566471a0c633ad518f3856b48ef6eca91e7d5d12;build=scripts/build_instructions.sh:L313-L345 default outputs are unprefixed and profile outputs are non-claude-prefixed;tracked=instructions/generated/claude-*.md 4/4;cache=instructions/generated/.build_cache claude-cache 0;consumer=rg --hidden scoped 0;semantic=semantic_search top_concept=semantic_dictionary_design;inventory_before=57/11/0/68;new_code=0;decision_candidate=家老判断:非出力tracked generated 4本のretire要否"
+  resolved_at: "2026-08-30T15:59:35+09:00"
+  last_seen: "2026-08-30T15:59:35+09:00"
 - id: INS-20260828-130335413-40cd
   ts: "2026-08-28T13:03:35+09:00"
   insight: "semantic_index_update新概念候補: discussion:task notification task type artifact auto react task type summary Auto replied t は 既存aliasesに一致なし。概念定義とaliases追加を検討せよ"
