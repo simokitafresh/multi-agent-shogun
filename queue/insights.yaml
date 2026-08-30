@@ -7014,7 +7014,10 @@ insights:
   priority: "medium"
   source: "shogun"
   fix_known: false
-  status: pending
+  status: resolved
+  resolved_reason: "現行実装で解決済み: source_equivalentは将軍nudgeなしのinfo掲示板記録へ自動終端し、同一contextのmarkerを1行へ圧縮する"
+  action_artifact: "scripts/gates/gate_context_freshness.sh;tests/unit/test_gate_context_freshness.bats;context/infrastructure.md"
+  resolved_at: "2026-08-30T16:55:08+09:00"
 - id: INS-20260828-141838896-76f6
   ts: "2026-08-28T14:18:38+09:00"
   insight: "semantic_index_update未登録[[リンク]]ターゲット: [[四つのらせん_20260828]] は既存aliasesに一致なし。類似概念TOP3: spiral_canon_sengoku25(らせん最適の正本型(第二十五話); alias=らせんの型; score=3.3) / gs_ninpo_research(GS忍法研究; alias=run_29612495809; score=2.8) / semantic_dictionary_design(セマンティック辞書構想; alias=らせん定義の補正; score=2.7)。概念定義とaliases追加を検討せよ"
@@ -9175,3 +9178,10 @@ insights:
   resolved_reason: "semantic index candidate was absorbed into a registered concept"
   action_artifact: "semantic_index=/home/simokitafresh/multi-agent-shogun/docs/semantic-index/index.md"
   resolved_at: "2026-08-30T16:45:15+09:00"
+- id: INS-20260830-165527968-6283
+  ts: "2026-08-30T16:55:27+09:00"
+  insight: "[[殿裁定 16 42『別サイトでやろう』 16 44『dm signal jp を Cloudflare で取ろう]] semantic_stress_test candidate_aliases: NO_MATCH source=cmds query=殿裁定 2026-08-30 16:42『別サイトでやろう』+16:44『dm-signal.jp を Cloudflare で取ろう。設計書 §9 を書き換えて cmd を起票せよ』。設計書 v2 §9(LP 別サイト)を実装する。cmd_4416(app の /login)とは repo 内ディレクトリが分離(lp/ 新設)し衝突 0。deploy・Re"
+  priority: "low"
+  source: "semantic_stress_test"
+  fix_known: false
+  status: pending
