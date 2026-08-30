@@ -8803,3 +8803,10 @@ insights:
   source: "semantic_stress_test"
   fix_known: false
   status: pending
+- id: INS-20260830-145557540-d043
+  ts: "2026-08-30T14:55:57+09:00"
+  insight: "[[cmd 4413で発生したPydanticUndefinedAnnotation ShowcaseEventPayloa]] NO_MATCH purpose pending alias: cmd_complete時にdeploy_task.logでNO_MATCHだったpurpose。類似概念TOP3: cmd_quality_logging(cmd設計品質ログ; alias=completed cmd archive; score=16.1) / agent_formation_management(編成管理; alias=same_cmd_redeploy; score=15.2) / gate_quality_framework(ゲート品質統合フレームワーク; alias=cmd completeのarchive成功後symlinkを未退避reportとして再計数する競合を修正し; score=15.1)。既存概念aliasesへの自動昇格候補"
+  priority: "low"
+  source: "semantic_index_update"
+  fix_known: false
+  status: pending
