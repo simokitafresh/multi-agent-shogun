@@ -1,4 +1,143 @@
 commands:
+  cmd_4425:
+    title: "showcase 契約 v3 — GET /api/public/showcase から best_name/sharpe_avg/*_best_name/until_hint を除去し、mdd_best(plans/secret/hero)・benchmarks mdd・blackout{active,month_closed,n_signals}・meta.skipped を追加する(cmd_4415 未到達分の再実装)"
+    status: draft
+    project: dm-signal
+    purpose: "殿裁定 2026-08-30 12:46『MDD も追加』12:48『表内にベスト PF 名は不要』12:49『Sharpe/MDD はベストだけ』12:58『日時は書かない』で確定した公開契約 v3(設計書 v3 §2.4、gist 901c36a5)が、cmd_4415 GATE CLEAR(16:30)にもかかわらず origin/main に到達していない(22:40 一次: git show origin/main:backend/app/api/public_showcase.py で mdd/drawdown 0 件、best_name・sharpe_avg・until_hint 残存。4415 最終 commit f8a33e00 は 3 行差分)。本番 EP(22:02 curl)も同じ v1 形。LP の表は EP の現物に従うため MDD 列が出せず、契約外キー(best_name)が公開されている。本 cmd は契約 v3 を backend に実装し contract test で固定する"
+    scope_mode: FULL
+    target_path: /mnt/c/Python_app/DM-signal/backend
+    acceptance_criteria:
+      AC1:
+        description: "public_showcase.py の showcase レスポンスから best_name・sharpe_avg・sharpe_best_name・mdd_best_name・until_hint を削除し、hero に mdd、plans[] と secret に mdd_best(metrics『Maximum Drawdown』close.portfolio の最浅=最大値)、benchmarks[] に mdd(SPY/TQQQ の月次系列から算出)を追加し、blackout を {active, month_closed, n_signals} にする(active は auth.py の is_password_expired と同じ JST 判定、month_closed=signals 最新 date ≥ 前月末 ∧ series_end == 前月末、n_signals=basic/standard/premium のシグナル公開 PF 数の合計)。meta.skipped(metrics 欠落 PF 数)を追加する"
+        binary_check: "TestClient の GET /api/public/showcase JSON を文字列化して best_name・sharpe_avg・sharpe_best_name・mdd_best_name・until_hint の出現 0 件 ∧ mdd_best が plans 3 件+secret 1 件=4 件 ∧ hero.mdd が数値 ∧ benchmarks の mdd が 2 件 ∧ blackout のキー集合が {active, month_closed, n_signals} と一致 ∧ meta.skipped が整数 か?"
+      AC2:
+        description: "mdd_best・benchmarks mdd・n_signals を DB から独立に再計算する contract test(SQLite fixture、既存 test_public_showcase_contract.py に追記)が EP の値と一致し、集合の定義(hide_portfolio=false ∧ hide_signal=false)は visibility_helpers の同じ関数を EP と test の両方が通ることを確認する。各 test に test_necessity を 1 行で宣言する"
+        binary_check: "独立再計算 test で mdd_best 4 件・benchmarks mdd 2 件・n_signals の一致が全て assert PASS ∧ EP と test が visibility_helpers の同一関数を呼ぶ(grep で関数名が両ファイルに各 1 件以上) ∧ 追加 test 全件に非空の test_necessity ∧ pytest -q backend/tests/test_public_showcase_contract.py が PASS SKIP 0 か?"
+      AC3:
+        description: "変更が backend/app/api/public_showcase.py と backend/tests/test_public_showcase_contract.py(と必要なら backend/app/api の新規 helper 1 本)のみで、auth.py・visibility_helpers.py・既存 EP・既存 test の diff が 0 行であり、既存 test の選択実行(backend/tests/test_auth*.py と test_public_showcase_contract.py)が PASS することを確認する"
+        binary_check: "git diff --name-only の集合が public_showcase.py・test_public_showcase_contract.py(+api 配下の新規 helper 最大 1 本)のみ ∧ auth.py と visibility_helpers.py の diff 0 行 ∧ 選択実行 pytest が PASS SKIP 0 か?"
+    command: |
+      1. public_showcase.py の plans/secret/hero/benchmarks/blackout を契約 v3 に合わせ、除去 5 キーの出現 0 と mdd_best 4 件・benchmarks mdd 2 件・blackout キー集合・meta.skipped を TestClient で確認する
+      2. 独立再計算 contract test(mdd_best/benchmarks mdd/n_signals、visibility_helpers 同一関数)を追記し、test_necessity 付きで pytest PASS SKIP 0 を確認する
+      3. 変更ファイル集合と auth.py/visibility_helpers.py の diff 0 行、選択実行 PASS を報告 YAML に生貼付する
+    assumptions:
+      claim: "origin/main の backend/app/api/public_showcase.py に best_name(L141 付近)・until_hint(L331)・sharpe_avg が残存し mdd/drawdown は 0 件(2026-08-30 22:40 git show | grep -c)。本番 GET /api/public/showcase(22:02 curl)の plans[0] は {n:2, best_name:'Ave-X', sharpe_avg:0.98, sharpe_best_name:'Ave-X'}、blackout={active:false, until_hint:null}、benchmarks に mdd なし。metrics_json.metrics に『Maximum Drawdown』(close.portfolio/benchmark)が全 PF にある(設計書 v2 §0 12:46 実測: Basic-DM −41.0%、SPY −52.9%、TQQQ −80.1%)。ticker_monthly_returns に SPY(1993-01〜)・TQQQ(2010-02〜)。visibility_helpers.check_hide_portfolio_or_folder が存在(v2 §6.5 H1)。数値の算出元: git show origin/main:backend/app/api/public_showcase.py | grep -c -iE 'mdd|drawdown' → 0 件、grep -c best_name → 1 件以上、grep -c until_hint → 1 件以上"
+      source: "docs/research/dm-login-showcase-asis-tobe_v3_20260830.md §1.2・§2.4、docs/research/dm-login-showcase-asis-tobe_v2_20260830.md §0(12:46/12:48/12:49/12:58)・§3.1・§6.5 H1/H3/H4/H13、backend/app/api/public_showcase.py、backend/app/api/auth.py(is_password_expired)"
+      trust: verified
+    depends_on: none
+    timeout_minutes: 40
+    estimated_minutes: 15
+    split_decision: "AC3 本=1 道具(公開 EP 1 本の契約変更: フィールド差替え・独立再計算 test・境界 diff 0 の 3 手)。LP 表への MDD 列追加は別 cmd(EP 到達後に LP lane)。cmd_4422 と同 target(backend)だが触るファイルは public_showcase.py の showcase 関数のみで free-coupon EP と分離=家老が 4422 CLEAR 後に直列配備"
+    quality_gate:
+      q1_firefighting: "消火ではない。GATE CLEAR≠ToBe 到達(型六弾-3)を grep で検出した契約未到達の根本実装"
+      q2_learning: "忍者は契約駆動の EP 変更、独立再計算 contract test、可視性 helper の共有を学ぶ"
+      q3_next_quality: "LP の表に MDD 列と blackout n_signals が出せる。契約外キーの公開 0。4415 型の偽 CLEAR を contract test が二度と通さない"
+      q4_depth: "medium — 設計書 v2 §0 の裁定 4 本と §6.5 の穴 H1/H3/H4/H13 を全て契約に写す"
+      q5_verified_source: "code_reading — git show origin/main:backend/app/api/public_showcase.py を 2026-08-30 22:40 に grep(mdd 0・best_name/until_hint 残存)。production_verified — https://dm-signal-backend.onrender.com/api/public/showcase を 22:02 curl(plans[0] に best_name/sharpe_avg、blackout に until_hint)"
+      q6_not_hiding: "契約外キーを LP 側で隠すのではなく EP から削る(設計書 v3 §2.4 最終行)。4415 の CLEAR を取り消さず、未到達の事実を設計書 §1.2 に残す"
+      q7_definition_verified: "『契約 v3』=設計書 v3 §2.4 のキー集合(確認日 2026-08-30)。『mdd_best』=metrics『Maximum Drawdown』close.portfolio の最浅(v2 §0 12:46)。『blackout.active』=auth.py is_password_expired と同判定(v2 §6.5 H3)。『month_closed』=v2 §6.5 H4"
+      q8_why_what: "WHY: 裁定済み契約が本番に届かず、契約外キーが公開され MDD 列が出せない / WHAT: 除去 5 キー 0 件、mdd_best 4 件、benchmarks mdd 2 件、hero.mdd、blackout {active,month_closed,n_signals}、meta.skipped、独立再計算 test PASS、境界 diff 0 / WHEN: 今セッション、4422 CLEAR 後に直列 / WHERE: DM-signal backend / WHO: 忍者 1 名 / HOW: showcase 関数のフィールド差替え+test 追記 / 複利: 契約を test が固定するため以後の EP 変更で退行しない"
+      q9_firefighting_root_cause: "根本対応。4415 が『reintegrate latest main』で契約変更を落とした構造(merge で hunk 消失)に対し、contract test で契約を固定する"
+      q10_knowledge_boundary: "検証済み: EP の現物キー、metrics の MDD 格納、裁定 4 本。スコープ外: LP 表の MDD 列(別 cmd)、free-coupon EP(4422)、deploy(家老)"
+      q11_not_already_done: "git show origin/main:backend/app/api/public_showcase.py | grep -c -iE 'mdd|drawdown' → 0 件(2026-08-30 22:40) / curl showcase | grep -c best_name → 1 件以上(22:02) / semantic_search.sh 'showcase mdd_best 契約 v3' → cmd_4415 のみ(未到達)"
+      q_ambiguity: "benchmarks mdd の期間は SPY=2003-10〜・TQQQ=2010-03〜(v2 §3.1)に固定。n_signals の集合は basic/standard/premium のシグナル公開 PF(重複なし)に固定。曖昧さは 2 値に閉じる"
+      q12_lord_30min_cost: "no — 殿裁定 12:46/12:48/12:49/12:58 で確定済み、設計書 v3 §6-3 の既定案=起票"
+      diagnosis: "BLOCK理由: 該当なし(新規起票) / 対策: 該当なし"
+    environment_change: "type=lesson; file=docs/research/dm-login-showcase-asis-tobe_v3_20260830.md; pattern=GATE CLEAR ≠ ToBe 到達"
+    origin: "[[殿裁定_MDD追加_20260830_1246]] -> [[cmd_4415_契約未到達_f8a33e00]] -> [[設計書v3_§1.2_偽CLEAR検出]] -> [[cmd_4425_showcase_契約v3]]"
+  cmd_4426:
+    title: "LP og:image hotfix — dm-signal.com の EN/JA で og:image が 404 のため、静的 PNG(1200×630)を lp/public に置き metadata で明示参照して 200 にする"
+    status: draft
+    project: dm-signal
+    purpose: "cmd_4421(SEO P0-4、21:35 CLEAR)で og/twitter meta は完備したが、og:image=https://dm-signal.com/opengraph-image.png が EN/JA とも 404(2026-08-30 22:02 curl、content-type text/html)。lp/app/opengraph-image.tsx は next/og ImageResponse で、next.config は output:'export'+trailingSlash:true のため静的出力に PNG が含まれていない疑い。SNS 共有カードに画像が出ず LP 流入の e2e を損なう(SEO 案 v2 §0/§6、gist 5edb5f6d)。本 cmd は ImageResponse 依存を外し、静的 PNG を明示参照する"
+    scope_mode: FULL
+    target_path: /mnt/c/Python_app/DM-signal/lp
+    acceptance_criteria:
+      AC1:
+        description: "lp/public/og/en.png と lp/public/og/ja.png(1200×630、ブランド+タイトル文言のみ、数値なし=SEO 案 §5-3 既定)を生成して置き、lp/app/page.tsx と lp/app/ja/page.tsx の metadata.openGraph.images と twitter.images を各言語の絶対 URL(site-url helper 経由)に差し替え、lp/app/opengraph-image.tsx と lp/app/ja/opengraph-image.tsx を削除する。next build(output export)の out に og/en.png と og/ja.png が存在し、out の EN/JA index の og:image が各 PNG を指すことを確認する"
+        binary_check: "out/og/en.png と out/og/ja.png が存在し PNG ヘッダ(89 50 4E 47)で 1200×630 ∧ out/index.html と out/ja/index.html の property=og:image content が各 PNG の絶対 URL 各 1 件 ∧ twitter:image も同 URL ∧ opengraph-image.tsx が 0 本 か?"
+      AC2:
+        description: "ローカル static serve(out)で /og/en.png と /og/ja.png が 200 かつ content-type image/png で返り、EN/JA の og:image:width/height が 1200/630 のまま、JSON-LD 3 型と hreflang 3 本と title(cmd_4421 の成果)が不変であることを確認する"
+        binary_check: "ローカル curl で 2 PNG が 200 ∧ content-type image/png ∧ og:image:width=1200・height=630 各 1 件 ∧ EN/JA の @type Organization/WebSite/FAQPage 各 1 件 ∧ hrefLang 3 種 か?"
+      AC3:
+        description: "変更が lp/public/og/*、lp/app/page.tsx、lp/app/ja/page.tsx、opengraph-image.tsx 2 本の削除(と site-url helper の関数 1 本まで)に限られ、cmd_4424 が触る landing-page.tsx と copy/*.ts の diff が 0 行、tsc と next build が exit 0 であることを確認する"
+        binary_check: "git diff --name-only の集合が上記に含まれる ∧ landing-page.tsx・copy/en.ts・copy/ja.ts の diff 0 行 ∧ tsc exit 0 ∧ next build exit 0 か?"
+    command: |
+      1. 静的 PNG 2 枚を生成して lp/public/og に置き、page.tsx(EN/JA)の metadata.openGraph.images/twitter.images を絶対 URL に差し替え、opengraph-image.tsx 2 本を削除して out の og:image を確認する
+      2. ローカル static serve で 2 PNG の 200/image/png と、JSON-LD・hreflang・title の不変を確認する
+      3. 変更ファイル集合・landing-page/copy の diff 0・tsc/next build exit 0 を報告 YAML に生貼付する
+    assumptions:
+      claim: "本番 https://dm-signal.com/ の og:image content=https://dm-signal.com/opengraph-image.png、curl -o /dev/null -w %{http_code} で 404、content-type text/html(2026-08-30 22:02)。/ja/opengraph-image.png も 404。origin/main の lp/app/opengraph-image.tsx と lp/app/ja/opengraph-image.tsx は next/og ImageResponse(cmd_4421 71e0b94d で追加、各 28 行)。lp/next.config.mjs は output:'export'・trailingSlash:true・images.unoptimized:true。lp/lib/site-url.ts に絶対 URL helper。数値の算出元: curl -s -o /dev/null -w %{http_code} https://dm-signal.com/opengraph-image.png → 404、git ls-tree origin/main lp | grep -c opengraph-image → 2 件"
+      source: "docs/research/dm-signal-lp-seo-plan_20260830.md §0・§6(hotfix 行)、lp/app/opengraph-image.tsx、lp/next.config.mjs、lp/lib/site-url.ts"
+      trust: verified
+    depends_on: none
+    timeout_minutes: 30
+    estimated_minutes: 10
+    estimated_minutes_note: "PNG 生成はスクリプト(node canvas or python PIL)でよい。デザインは背景 #0b1220・文字 #f8fafc・ブランド行 #93c5fd(現 ImageResponse と同じ)"
+    split_decision: "AC3 本=1 道具(og 画像 1 組: 静的 PNG・metadata 参照・不変確認の 3 手で 10 分)。cmd_4424(landing-page/copy)とは触るファイルが交わらないため並走可"
+    quality_gate:
+      q1_firefighting: "消火ではない。静的 export で成立しない生成方式を、成立する静的資産へ置き換える構造対応"
+      q2_learning: "忍者は Next 静的 export と metadata image route の制約、SNS カードの検証手順を学ぶ"
+      q3_next_quality: "SNS/検索の共有カードに画像が出る。SEO 案 §2 P0-4 が終端(画像 200)に到達"
+      q4_depth: "shallow — 変更 2 ページ+資産 2 枚、原因は config 制約で明確"
+      q5_verified_source: "production_verified — https://dm-signal.com/ と /opengraph-image.png を 2026-08-30 22:02 curl(404)。code_reading — git show origin/main:lp/app/opengraph-image.tsx・lp/next.config.mjs を 22:04 読了"
+      q6_not_hiding: "画像が出ない事実を meta 削除で隠さず、画像を実在させる。数値を載せない既定(SEO 案 §5-3)を守る"
+      q7_definition_verified: "『og:image 404』=本番 curl の http_code(確認日 2026-08-30 22:02)。『静的 PNG』=lp/public 配下の実ファイル(next 生成物ではない)。『1200×630』=OG 推奨サイズ(SEO 案 §2 P0-4)"
+      q8_why_what: "WHY: 静的 export で ImageResponse の画像が出力されず共有カードが空 / WHAT: PNG 2 枚が 200/image/png、og:image が各 PNG、opengraph-image.tsx 0 本、JSON-LD/hreflang/title 不変、tsc/next build exit 0 / WHEN: 今セッション、4424 と並走 / WHERE: DM-signal lp / WHO: 忍者 1 名 / HOW: 静的資産+metadata 明示 / 複利: 以後の LP 変更で画像経路が壊れない"
+      q9_firefighting_root_cause: "根本対応。生成方式を export 制約に合う方式へ変える(config を変えない)"
+      q10_knowledge_boundary: "検証済み: 404 の事実、config、tsx の現物。スコープ外: 画像デザインの殿確認(deploy 後に殿実機)、Render deploy(家老)"
+      q11_not_already_done: "git ls-tree origin/main lp/public 2>/dev/null | grep -c og → 0 件(2026-08-30 22:04) / curl https://dm-signal.com/og/en.png → 404 / semantic_search.sh 'og:image 静的 PNG lp' → 該当 cmd なし"
+      q_ambiguity: "画像の文言は EN=en.title・JA=ja.title(現 ImageResponse と同じ)に固定。数値は載せない(SEO 案 §5-3 既定)。曖昧さは 2 値に閉じる"
+      q12_lord_30min_cost: "no — SEO 案 §5-3 既定案(画像に数値を載せない)で進める。表現は deploy 後に殿実機で確認"
+      diagnosis: "BLOCK理由: 該当なし(新規起票) / 対策: 該当なし"
+    environment_change: "type=lesson; file=docs/research/dm-signal-lp-seo-plan_20260830.md; pattern=og:image"
+    origin: "[[cmd_4421_SEO_P0]] -> [[og:image_404_20260830_2202]] -> [[静的export制約]] -> [[cmd_4426_og_image_hotfix]]"
+  cmd_4427:
+    title: "FAQ EN 版 — app の /faq(JA 459 行)に EN 版を追加し、言語切替と hreflang/metadata を付けて LP EN からの導線先を英語にする"
+    status: draft
+    project: dm-signal
+    purpose: "殿方向性 2026-08-30 13:25『Docs/FAQ をログインページからのリンクに』→cmd_4418 で /docs /faq を公開したが、/faq は JA のみ(22:35 curl: lang=ja、hreflang 0)。LP EN(dm-signal.com/)の FAQ 抜粋と Read the docs は英語読者を app の JA FAQ へ送っており、設計書 v3 §2.2(app /docs /faq=公開ドキュメント、FAQ は JA→EN 追加)と SEO 案 v2 §1(検索意図 dual momentum signals)に反する。本 cmd は FAQ の EN 版を追加する"
+    scope_mode: FULL
+    target_path: /mnt/c/Python_app/DM-signal/frontend
+    acceptance_criteria:
+      AC1:
+        description: "frontend/app/faq の文言を EN/JA の 2 ファイル(faq-copy.en.ts / faq-copy.ja.ts など)に分離し、/faq を EN 主(既定)・/faq/ja(または ?lang=ja)を JA とし、各ページに metadata(title/description 言語別)と hreflang(en/ja/x-default)を付ける。全 Q&A が EN/JA で同数であることを確認する"
+        binary_check: "EN と JA の Q&A 件数が一致(算出元: 各 copy の配列 length を生貼付) ∧ EN ページの lang=en・JA ページの lang=ja ∧ 両ページに hreflang 3 種 ∧ metadata title が言語別 か?"
+      AC2:
+        description: "EN 訳は JA の各 Q&A に 1:1 対応し、禁則語(毎営業日/today/¥/円/yen/first month free/初月無料/free trial)が EN/JA とも 0 件、note 導線 URL は marketing-info.md 現物(tokyojibika)のみであることを確認する"
+        binary_check: "禁則語 grep が EN/JA とも 0 件 ∧ note URL が tokyojibika 以外 0 件 ∧ EN の Q 見出しと JA の Q 見出しの数が一致 か?"
+      AC3:
+        description: "変更が frontend/app/faq 配下(と route-access-boundary の public 判定リストに /faq/ja を足す 1 行まで)に限られ、boundary の認証分岐の diff が 0 行、既存 test の削除がなく、tsc と next build(output export)が exit 0 で out に faq と faq/ja の index が生成されることを確認する"
+        binary_check: "git diff --name-only の集合が app/faq/** と boundary の public リスト 1 行以内 ∧ boundary の認証分岐関数の diff 0 行 ∧ tsc exit 0 ∧ next build exit 0 ∧ out/faq/index.html と out/faq/ja/index.html が存在 か?"
+    command: |
+      1. faq 文言を EN/JA の copy 2 ファイルに分離し、/faq(EN)と /faq/ja(JA)を metadata・hreflang 付きで生成して Q&A 件数一致を確認する
+      2. EN 訳の 1:1 対応、禁則語 grep 0、note URL の現物一致を確認する
+      3. 変更ファイル集合・boundary 認証分岐 diff 0・tsc/next build exit 0・out の 2 index を報告 YAML に生貼付する
+    assumptions:
+      claim: "本番 https://dm-signal-frontend.onrender.com/faq は 200、HTML の lang=ja が 1 件、hreflang 0 件(2026-08-30 22:35 curl)。origin/main の frontend/app/faq/page.tsx は 459 行の JA 静的コンテンツ(設計書 v2 §8.2 13:27 一次)、frontend/app/docs/page.tsx は 67 行 EN。route-access-boundary.tsx の isPublicPath に /docs と /faq(origin/main 22:37 git show L26-33)。note 導線の現物 URL は marketing-director/marketing-info.md L507-508(tokyojibika、membership)。数値の算出元: curl https://dm-signal-frontend.onrender.com/faq | grep -c 'lang=\"ja\"' → 1 件、grep -c hreflang → 0 件"
+      source: "docs/research/dm-login-showcase-asis-tobe_v3_20260830.md §2.2・§5 P-F、docs/research/dm-login-showcase-asis-tobe_v2_20260830.md §8.2、docs/research/dm-signal-lp-seo-plan_20260830.md §1、frontend/app/faq/page.tsx、frontend/components/route-access-boundary.tsx"
+      trust: verified
+    depends_on: none
+    timeout_minutes: 45
+    estimated_minutes: 20
+    split_decision: "AC3 本=1 道具(FAQ の言語分離 1 組: copy 分離・EN 訳・metadata/hreflang の 3 手)。cmd_4423(app/free・login・boundary の /free 行)とは触るファイルが交わらない(boundary は /faq/ja の 1 行のみ)ため並走可。LP 側の FAQ 抜粋リンク先の切替は別 cmd(EN 到達後)"
+    quality_gate:
+      q1_firefighting: "消火ではない。公開ドキュメントを英語読者に届ける品質向上(設計書 v3 §2.2 の分担)"
+      q2_learning: "忍者は copy 駆動の i18n 分離、hreflang/metadata、禁則語 grep を学ぶ"
+      q3_next_quality: "LP EN→FAQ EN の 1 本道が揃い、docs/faq の index 評価(SEO 案 §5-4 既定=app canonical)が英語で立つ"
+      q4_depth: "medium — 459 行の翻訳と i18n 分離。設計は v3 §2.2 で確定"
+      q5_verified_source: "production_verified — https://dm-signal-frontend.onrender.com/faq を 2026-08-30 22:35 curl(lang=ja、hreflang 0)。code_reading — git show origin/main:frontend/components/route-access-boundary.tsx を 22:37 読了(L26-33 public 判定)"
+      q6_not_hiding: "JA を消さず EN を足す。訳は 1:1 対応で件数を機械確認し、抜けを作らない"
+      q7_definition_verified: "『FAQ EN 版』=frontend/app/faq の EN ルート(設計書 v3 §2.2、確認日 2026-08-30)。『禁則語』=設計書 v3 §4(v2 §4 継承)。『note 導線 URL』=marketing-info.md L507-508 現物"
+      q8_why_what: "WHY: LP EN の導線先 FAQ が JA のみで英語読者が詰む / WHAT: EN/JA Q&A 件数一致、lang/hreflang/metadata 言語別、禁則語 0、note URL 現物、boundary 認証分岐 diff 0、tsc/next build exit 0、out に 2 index / WHEN: 今セッション、4423/4425/4426 と並走 / WHERE: DM-signal frontend / WHO: 忍者 1 名 / HOW: copy 分離+EN ルート追加 / 複利: 以後の FAQ 追記が EN/JA 同時に強制される(件数一致 test)"
+      q9_firefighting_root_cause: "根本対応。文言をコンポーネント直書きから copy へ分離し(v2 §6.5 H14)、言語追加を構造にする"
+      q10_knowledge_boundary: "検証済み: /faq の現物言語、boundary の public 判定、note URL。スコープ外: /docs の JA 版(未要件)、LP 側リンク切替(別 cmd)、deploy(家老)"
+      q11_not_already_done: "curl https://dm-signal-frontend.onrender.com/faq | grep -c hreflang → 0 件(2026-08-30 22:35) / git ls-tree origin/main frontend/app/faq | grep -c -iE 'en\\.|copy' → 0 件(22:37) / semantic_search.sh 'FAQ EN 翻訳 hreflang' → 該当 cmd なし"
+      q_ambiguity: "EN を既定(/faq)、JA を /faq/ja に固定(LP EN/JA の hreflang と対応)。訳の文体は docs/page.tsx の EN に合わせる。曖昧さは 2 値に閉じる"
+      q12_lord_30min_cost: "no — 殿方向性 13:25 と設計書 v3 §2.2 で確定。SEO 案 §5-4 の既定(app canonical)で進める"
+      diagnosis: "BLOCK理由: 該当なし(新規起票) / 対策: 該当なし"
+    environment_change: "type=lesson; file=docs/research/dm-login-showcase-asis-tobe_v3_20260830.md; pattern=FAQ は JA→EN 追加"
+    origin: "[[殿方向性_DocsFAQ導線_20260830_1325]] -> [[cmd_4418_docs_faq公開]] -> [[FAQ_JAのみ_22:35一次]] -> [[cmd_4427_faq_en]]"
   cmd_4424:
     title: "Free tier F3 — LP に『Free で始める(Google)』CTA を Sign in と並べて追加し /free?from=lp へ導線を付け、Members/Free の入口文言を EN/JA で二分する"
     status: delegated
@@ -46,53 +185,6 @@ commands:
     environment_change: "type=lesson; file=docs/research/dm-free-tier-google-auth-asis-tobe_v3_20260830.md; pattern=product_logins"
     delegated_at: "\"2026-08-30T20:44:38\""
     origin: "[[殿要件_クーポンUX_20260830_2017]] -> [[殿下問_経路記録_20260830_2019]] -> [[cmd_4423_free_tier_frontend]] -> [[cmd_4424_free_tier_lp_cta]]"
-  cmd_4422:
-    title: "Free tier F1 — backend に Free tier 行の migration と Supabase JWT 検証付き GET /api/public/free-coupon を追加する(既存 tier 認証不変)"
-    status: delegated
-    project: dm-signal
-    purpose: "殿裁定 2026-08-30 20:21『着手せよ』(設計書 v3 docs/research/dm-free-tier-google-auth-asis-tobe_v3_20260830.md §2 ToBe)。殿要件 20:15-20:20: Google 登録者に当月の Free クーポン(=Free tier の月次パスワード、有効期限と期間は他 tier と同一ローテーション)を表示し Basic-DualMomentum のみ閲覧できる Free tier を作る。登録者は rebalancer と同じ Supabase の auth.users に統合(新テーブルは Supabase 側の product_logins のみ、本 cmd の対象外)。本 cmd は backend の契約 2 点(Free tier 行+クーポン EP)だけを作り、frontend の /free(F2)と LP CTA(F3)は契約確定で並走させる(パイプライン契約)"
-    scope_mode: FULL
-    target_path: /mnt/c/Python_app/DM-signal/backend
-    acceptance_criteria:
-      AC1:
-        description: "migrations に viewer_tiers へ name=Free・password_env_key=VIEWER_PASS_FREE・display_order=既存最大の次 の行を冪等に挿入(既存行があれば更新しない)し、同 tier の TierVisibilitySettings を Basic-DualMomentum 以外の全 portfolio hide(hide_portfolio と hide_signal と hide_components の各段を helper の契約どおり)で初期化し、隔離 clone の SQLite で migration を二度実行して Free 行が単一・既存 tier の行と password_env_key が不変であることを確認する。本番 DB 書込みの契約: restore 手順=Free 行と対応 tier_visibility_settings 行を name=Free で DELETE する SQL を migration のコメントと報告 YAML に記載、実行 identity=backend 起動時の run_migrations(Render backend サービス)のみで忍者は本番 DB に接続しない、破壊時復元証跡=隔離 SQLite で実行前後の viewer_tiers 全行 SELECT を報告 YAML に生貼付し既存行の差分が空であること、変更前バックアップ実行済みであること(本番適用は家老 lane: deploy 前に Render Postgres の復元点(PITR 時刻または手動 snapshot ID)を取得して掲示板に記載、忍者は隔離 SQLite のみ)"
-        binary_check: "migration 二度実行後 viewer_tiers の name=Free の行数が実行前の既存 tier 行数に対して一つ増のみ(算出元: SELECT count(*) FROM viewer_tiers を実行前後で生貼付) ∧ 既存 tier の password_env_key 集合が実行前後で同一 ∧ Free の visibility で is_public_signal_portfolio が真の portfolio が Basic-DualMomentum のみ ∧ restore SQL・実行 identity・実行前後 SELECT が報告 YAML にある か?"
-      AC2:
-        description: "public_showcase の router に GET /api/public/free-coupon を追加し、Authorization Bearer の Supabase access token を SUPABASE_JWT_SECRET(HS256)で検証(iss と exp と aud=authenticated を確認)して、Free tier の password_env_key の値(coupon)と password_expires_at(expires_at)と plan=Free と scope=Basic-DualMomentum を返し、token 無しと不正 token と期限切れ token は 401、Free tier 未設定または env 未設定は 503 とし、rate limit は既存 GET /api/public/showcase と同じ limiter 文字列(算出元: git show origin/main:backend/app/api/public_showcase.py | grep -c '30/minute' → 1、2026-08-30 20:22)を付け、contract test を既存 test ファイルへ追加(test_necessity 付き)して確認する"
-        binary_check: "正しい HS256 token で 200 かつ応答キーが coupon・expires_at・plan・scope の集合と一致(算出元: 設計書 v3 §2 項目 3 の返却キー列挙) ∧ token 無し/不正/期限切れが 401 ∧ env 未設定で 503 ∧ 応答に他 tier の password 文字列が含まれない ∧ contract test FAIL 0 SKIP 0 か?"
-      AC3:
-        description: "変更が backend 配下の migrations と public_showcase の api と contract test と、必要なら visibility helper の呼出しのみで、既存 test の削除が無く、既存の verify_viewer(auth.py)と showcase GET/event の挙動が不変(既存 contract test PASS)であることを、変更対象に限定した pytest 選択実行 FAIL 0 SKIP 0 で確認する"
-        binary_check: "変更ファイルが migrations・public_showcase・contract test・helper 呼出しの集合内のみ(算出元: git diff --name-only を生貼付) ∧ auth.py の diff が空 ∧ 既存 test 削除が無い ∧ 選択実行 FAIL 0 SKIP 0 か?"
-    command: |
-      1. migrations に Free tier 行と visibility 初期化を冪等に追加し、隔離 SQLite で二度実行して Free 行単一・既存不変・restore SQL・実行前後 SELECT を確認する
-      2. GET /api/public/free-coupon を HS256 検証付きで追加し、200/401/503 と既存と同じ rate limit を contract test で確認する
-      3. auth.py diff 空・既存 test 削除なし・選択実行 FAIL 0 SKIP 0 を報告 YAML に生貼付する
-    assumptions:
-      claim: "origin/main の backend/app/db/models.py L666 ViewerTier(id/name/display_order/password_env_key/password_expires_at L679/last_rotated_at L680)と L683 TierVisibilitySettings(tier_id/hidden_pages/portfolio_settings/folder_settings)、migrations.py L799-818 で viewer_tiers 作成と列追加、auth.py L23 verify_viewer が password_env_key を os.getenv で照合し L45 is_password_expired、public_showcase.py L24 router prefix /api/public と limiter、requirements に PyJWT 無し(httpx のみ、2026-08-30 20:22 git show)。数値の算出元: git show origin/main:backend/app/api/public_showcase.py | grep -c '30/minute' → 1 件、grep -c 'HTTP_201_CREATED' → 1 件(応答コード 200/401/503 は FastAPI 標準)、grep -c 'free-coupon' → 0 件、git show origin/main:backend/app/db/migrations.py | grep -c 'viewer_tiers' → 5 件以上(L799-828)。Supabase の access token は既定で HS256(project の JWT secret)。rebalancer は同一 Supabase プロジェクトで Google provider 稼働(frontend/lib/auth-context.tsx L56)"
-      source: "docs/research/dm-free-tier-google-auth-asis-tobe_v3_20260830.md §1-§2、backend/app/db/models.py、backend/app/db/migrations.py、backend/app/api/auth.py、backend/app/api/public_showcase.py、backend/requirements.txt"
-      trust: verified
-    depends_on: none
-    timeout_minutes: 30
-    estimated_minutes: 10
-    split_decision: "AC3 本=1 道具(backend の Free tier 契約 1 組。migration 行・EP・contract test の 3 手で 10 分)。frontend /free は F2、LP CTA は F3 に分離(契約=本 cmd の JSON 4 キー)"
-    quality_gate:
-      q1_firefighting: "消火ではない。Free tier(Google 登録→月次クーポン)の backend 契約を既存 tier 機構の 1 行+EP 1 本で足す品質向上"
-      q2_learning: "忍者は冪等 migration、JWT(HS256)検証の境界(iss/exp/aud)、既存 tier 認証を触らずに新 tier を足す型を学ぶ"
-      q3_next_quality: "F2(/free)と F3(LP CTA)が本 cmd の JSON 4 キーを契約として並走でき、月次ローテーション運用に Free 1 行を足すだけで継続する"
-      q4_depth: "shallow — 変更 3 ファイル。設計書 v3 §2 に契約が明文化済み"
-      q5_verified_source: "code_reading — git show origin/main:backend/app/db/models.py(L666-700)・migrations.py(L799-828)・api/auth.py(L1-58)・api/public_showcase.py(L24)・requirements.txt を 2026-08-30 20:22 に読了。production_verified — 本番 GET /api/public/showcase 200・POST event 201 を 19:45 curl"
-      q6_not_hiding: "他 tier の password は応答に含めない。既存 verify_viewer と showcase EP は diff 0。Free の可視範囲は Basic-DualMomentum のみ(3 段 hide を helper の契約で設定)"
-      q7_definition_verified: "『Free クーポン』= Free tier の password_env_key の当月値(確認日: 2026-08-30、殿 20:16『有効期限を他と同じにして毎月変更』)。『Basic-DualMomentum のみ』= public_signal 集合が 1 件(設計書 v2 §2 の is_public_signal_portfolio)。『Supabase access token』= HS256 JWT(iss=<project>/auth/v1、aud=authenticated)"
-      q8_why_what: "WHY: Google 登録者へ当月 Free クーポンを返す backend 契約が無い / WHAT: migration 2 回後 Free 1 件・既存 tier 不変・public_signal 1 件、EP 200/401/503・4 キー・他 tier password 0・rate limit 30/minute、変更 4 本以内・auth.py diff 0・選択実行 FAIL 0 SKIP 0 / WHEN: 今セッション、F2 と並走 / WHERE: /mnt/c/Python_app/DM-signal/backend / WHO: 忍者 1 名 / HOW: 冪等 migration+HS256 検証 EP+contract test / 複利: 新サービスの tier 追加が『行 1 つ+env 1 つ』で済む型が本番に 1 つ立つ=正の複利"
-      q9_firefighting_root_cause: "根本対応。個人ごとのクーポン発行や DB 保存を作らず、既存 tier 機構に Free 行を足して月次ローテーションと同期させる"
-      q10_knowledge_boundary: "検証済み: ViewerTier/visibility の現物・verify_viewer・router prefix・requirements。スコープ外: frontend /free(F2)、LP CTA(F3)、Supabase 側 product_logins 表、env 値の投入と deploy(家老)、月次パスワード配布運用(殿)"
-      q11_not_already_done: "git show origin/main:backend/app/api/public_showcase.py | grep -c 'free-coupon' → 0 件(2026-08-30 20:22) / git show origin/main:backend/app/db/migrations.py | grep -c 'VIEWER_PASS_FREE' → 0 件 / git show origin/main:backend/requirements.txt | grep -ci jwt → 0 件 / semantic_search.sh 'Free tier Google auth coupon' → 該当 cmd なし(設計書 v3 のみ)"
-      q_ambiguity: "JWT 検証方式は HS256+SUPABASE_JWT_SECRET に固定(JWKS/RS256 は将来 Supabase が既定を変えた時に追補)。曖昧さは env 1 つに閉じる"
-      q12_lord_30min_cost: "no — 殿裁定 20:21『着手せよ』、未決は既定案で確定"
-      diagnosis: "BLOCK理由: 該当なし(新規起票) / 対策: 該当なし"
-    environment_change: "type=lesson; file=docs/research/dm-free-tier-google-auth-asis-tobe_v3_20260830.md; pattern=free-coupon"
-    delegated_at: "\"2026-08-30T20:33:30\""
-    origin: "[[殿方向性_FreeTier_GoogleAuth_20260830_1314]] -> [[dm-free-tier-google-auth_v3]] -> [[殿裁定_着手_20260830_2021]] -> [[cmd_4422_free_tier_backend]]"
   cmd_4414:
     title: "/login ショーウィンドウ P1b — 公開集計 EP に Sharpe(プラン平均/ベスト)・SPY/TQQQ 比較行・Secret 集計値を追補する"
     status: void
