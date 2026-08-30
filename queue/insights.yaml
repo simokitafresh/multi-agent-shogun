@@ -10226,7 +10226,10 @@ insights:
   priority: "low"
   source: "semantic_stress_test"
   fix_known: false
-  status: pending
+  status: resolved
+  resolved_reason: "semantic index candidate was absorbed into a registered concept"
+  action_artifact: "semantic_index=/home/simokitafresh/multi-agent-shogun/docs/semantic-index/index.md"
+  resolved_at: "2026-08-30T23:49:47+09:00"
 - id: INS-20260830-234259736-48d0
   ts: "2026-08-30T23:42:59+09:00"
   insight: "[[showcase 契約 v3 — GET api public showcase から best name sharpe]] semantic_stress_test candidate_aliases: NO_MATCH source=cmds query=showcase 契約 v3 — GET /api/public/showcase から best_name/sharpe_avg/*_best_name/until_hint を除去し、mdd_best(plans/secret/hero)・benchmarks mdd・blackout{active,month_closed,n_signals}・met"
@@ -10239,5 +10242,12 @@ insights:
   insight: "cmd_save の WARN累計昇格(cmd_2159)は cmd_design_quality.yaml の過去 WARN entry を数えるが、同一 cmd の AC を修正して WARN が消えても履歴は残り BLOCK が自縛する(cmd_4426 で 6 回。image/png が『パス』と誤判定された WARN を修正後も delegate 不能)。対処案: cmd_save が同一 cmd で当該 WARN 0 件の run を記録した時点で過去 entry へ [resolved:] を自動付与、または昇格判定を『直近 run に WARN あり』に限定。あわせて check_ac_file_paths は MIME(image/png)等 拡張子なし 2 語を path 候補から除外"
   priority: "medium"
   source: "manual"
+  fix_known: false
+  status: pending
+- id: INS-20260830-234947379-6d17
+  ts: "2026-08-30T23:49:47+09:00"
+  insight: "semantic_index_update新概念候補: discussion:enviromentも書いたよ は 既存aliasesに一致なし。概念定義とaliases追加を検討せよ"
+  priority: "low"
+  source: "semantic_index_update"
   fix_known: false
   status: pending
