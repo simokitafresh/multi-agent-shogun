@@ -7038,7 +7038,7 @@ insights:
   resolved_reason: "一次確認: gate_skill_script_refs.sh実走はrc=2(REVIEW_REQUIRED)だが、参照先実在・SKILL鮮度・例示静的パス・日時付き副作用実走マーカーの4検査は全てOK。FOLLOWUP_ACTIVE=31かつFOLLOWUP_COVERS_REVIEW_REQUIRED=yesで既存レビュー要求に被覆され、追加実修正とdecision_candidateは不要のため対象IDのみ解決。"
   action_artifact: "target=queue/insights.yaml:INS-20260830-171207057-8df1;gate=scripts/gates/gate_skill_script_refs.sh;gate_rc=2;result=REVIEW_REQUIRED;scanned=41_SKILL.md;script_refs=82;referenced=30;deduped=31;followup_active=31;followup_covers_review_required=yes;checks=missing_refs0/stale_refs0/example_paths_missing0/side_effect_markers_missing0;inventory_before=insights_pending:57/zero_backlinks:11/promotions:0/total:68;decision_candidate=none"
   resolved_at: "2026-08-30T17:53:18+09:00"
-  last_seen: "2026-08-30T17:57:48+09:00"
+  last_seen: "2026-08-30T18:03:17+09:00"
 - id: INS-20260830-170433314-bf5f
   ts: "2026-08-30T17:04:33+09:00"
   insight: "semantic_index_update未登録[[リンク]]ターゲット: [[dm-signal.jp_ドメインrunbook_20260830]] は既存aliasesに一致なし。類似概念TOP3: dmsignal_operations(DM-Signal運用; alias=dm-signal ops; score=21.6) / dm_signal_pf_restore_guardrails(DM-Signal PF復元運用ガードレール; alias=dm signal jp を Cloudflare で取ろう; score=21.2) / dm_fusion_app(DM-Fusionアプリ; alias=SPYとTQQQはDM-Signal monthly_returns; score=12.9)。概念定義とaliases追加を検討せよ"
@@ -9462,25 +9462,37 @@ insights:
   priority: "low"
   source: "semantic_index_update"
   fix_known: false
-  status: pending
+  status: resolved
+  resolved_reason: "semantic map generation verified the candidate is represented or intentionally ignored"
+  action_artifact: "semantic_map=/home/simokitafresh/multi-agent-shogun/context/semantic-map.md;semantic_index=/home/simokitafresh/multi-agent-shogun/docs/semantic-index/index.md"
+  resolved_at: "2026-08-30T18:02:56+09:00"
 - id: INS-20260830-180052304-2043
   ts: "2026-08-30T18:00:52+09:00"
   insight: "[[殿裁定 『別サイトでやろう』 『 jp にこだわらない』 LP dm signal com 予定]] NO_MATCH purpose pending alias: cmd_complete時にdeploy_task.logでNO_MATCHだったpurpose。類似概念TOP3: dm_signal_pf_restore_guardrails(DM-Signal PF復元運用ガードレール; alias=dm signal jp を Cloudflare で取ろう; score=14.3) / dmsignal_operations(DM-Signal運用; alias=dm-signal.com_ドメインrunbook_20260830; score=12.8) / creator_brainwashing_defense(創造主の洗脳防御; alias=source shogun 殿裁定 LP 別サイト; score=10.8)。既存概念aliasesへの自動昇格候補"
   priority: "low"
   source: "semantic_index_update"
   fix_known: false
-  status: pending
+  status: resolved
+  resolved_reason: "semantic map generation verified the candidate is represented or intentionally ignored"
+  action_artifact: "semantic_map=/home/simokitafresh/multi-agent-shogun/context/semantic-map.md;semantic_index=/home/simokitafresh/multi-agent-shogun/docs/semantic-index/index.md"
+  resolved_at: "2026-08-30T18:02:56+09:00"
 - id: INS-20260830-180120354-7745
   ts: "2026-08-30T18:01:20+09:00"
   insight: "[[SEO的に有効な手を考えてくれ]] semantic_stress_test candidate_aliases: NO_MATCH source=lord query=SEO的に有効な手を考えてくれ"
   priority: "low"
   source: "semantic_stress_test"
   fix_known: false
-  status: pending
+  status: resolved
+  resolved_reason: "semantic index candidate was absorbed into a registered concept"
+  action_artifact: "semantic_index=/home/simokitafresh/multi-agent-shogun/docs/semantic-index/index.md"
+  resolved_at: "2026-08-30T18:02:47+09:00"
 - id: INS-20260830-180224036-d0a4
   ts: "2026-08-30T18:02:24+09:00"
   insight: "semantic_index_update未登録[[リンク]]ターゲット: [[殿実機確認_LP_20260830_1753]] は既存aliasesに一致なし。類似概念TOP3: creator_brainwashing_defense(創造主の洗脳防御; alias=source shogun 殿裁定 LP 別サイト; score=8.0) / semantic_dictionary_design(セマンティック辞書構想; alias=faq に EN 版を追加して LP の導線先にする; score=6.4) / known_unknowns_principle(無知の知; alias=確認; score=6.2)。概念定義とaliases追加を検討せよ"
   priority: "low"
   source: "semantic_index_update"
   fix_known: false
-  status: pending
+  status: resolved
+  resolved_reason: "semantic index candidate was absorbed into a registered concept"
+  action_artifact: "semantic_index=/home/simokitafresh/multi-agent-shogun/docs/semantic-index/index.md"
+  resolved_at: "2026-08-30T18:02:47+09:00"
