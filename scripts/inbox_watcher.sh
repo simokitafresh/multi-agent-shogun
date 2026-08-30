@@ -495,6 +495,77 @@ current_task_id_for_nudge() {
     ' "$task_file"
 }
 
+# Return a fingerprint of unread task_assigned message IDs bound to the
+# destination task's current task_id and parent_cmd.  Unrelated task/empty-task
+# rows must not expire a generation lease, while a newly appended ID for the
+# current task must create a fresh delivery obligation.
+current_task_assignment_fingerprint() {
+    local task_file="${SCRIPT_DIR}/queue/tasks/${AGENT_ID}.yaml"
+    [ -f "$task_file" ] || { printf '%s\n' '-'; return 0; }
+
+    local task_identity current_task_id current_parent_cmd matching_ids
+    task_identity=$(awk '
+        function strip(value) {
+            gsub(/^[[:space:]]+|[[:space:]]+$/, "", value)
+            gsub(/^["'"'"']|["'"'"']$/, "", value)
+            return value
+        }
+        /^[[:space:]]*task_id:/ && $0 !~ /_ac_task_id:/ && task_id == "" {
+            value=$0; sub(/^[^:]*:[[:space:]]*/, "", value); task_id=strip(value)
+        }
+        /^[[:space:]]*parent_cmd:/ && parent_cmd == "" {
+            value=$0; sub(/^[^:]*:[[:space:]]*/, "", value); parent_cmd=strip(value)
+        }
+        END { print task_id "\t" parent_cmd }
+    ' "$task_file")
+    IFS=$'\t' read -r current_task_id current_parent_cmd <<< "$task_identity"
+    if [ -z "$current_task_id" ] || [ -z "$current_parent_cmd" ]; then
+        printf '%s\n' '-'
+        return 0
+    fi
+
+    matching_ids=$(awk -v wanted_task="$current_task_id" -v wanted_parent="$current_parent_cmd" '
+        function strip(value) {
+            gsub(/^[[:space:]]+|[[:space:]]+$/, "", value)
+            gsub(/^["'"'"']|["'"'"']$/, "", value)
+            return value
+        }
+        function assign(line,    key,value,pos) {
+            pos=index(line, ":")
+            if (pos == 0) return
+            key=strip(substr(line, 1, pos - 1))
+            value=strip(substr(line, pos + 1))
+            if (key == "id") message_id=value
+            else if (key == "read") message_read=value
+            else if (key == "type") message_type=value
+            else if (key == "task_id") message_task=value
+            else if (key == "parent_cmd") message_parent=value
+        }
+        function flush_message() {
+            if (message_read == "false" && message_type == "task_assigned" &&
+                message_task == wanted_task && message_parent == wanted_parent &&
+                message_id != "") ids[++count]=message_id
+        }
+        function reset_message() {
+            message_id=""; message_read=""; message_type=""
+            message_task=""; message_parent=""
+        }
+        /^- / {
+            if (in_message) flush_message()
+            reset_message(); in_message=1; assign(substr($0, 3)); next
+        }
+        in_message && /^  [A-Za-z0-9_.-]+:/ { assign(substr($0, 3)) }
+        END {
+            if (in_message) flush_message()
+            for (i=1; i<=count; i++) for (j=i+1; j<=count; j++)
+                if (ids[j] < ids[i]) { tmp=ids[i]; ids[i]=ids[j]; ids[j]=tmp }
+            for (i=1; i<=count; i++) printf "%s%s", (i==1 ? "" : ","), ids[i]
+        }
+    ' "$INBOX")
+    [ -n "$matching_ids" ] || { printf '%s\n' '-'; return 0; }
+    fingerprint_unread_ids "$matching_ids"
+}
+
 priority_deadline_sec() {
     local priority="${1:-normal}"
     local deadline
@@ -692,7 +763,8 @@ current_outstanding_lease_file() {
 # from another unread set must not suppress a new nudge.
 migrate_legacy_fingerprint_lease() {
     local fingerprint="${1:-}" unread_count="${2:-0}" generation="${3:-${CURRENT_CLI_GENERATION:-}}"
-    local safe_fp legacy_file lease_file
+    local task_assignment_fp="${4:--}"
+    local safe_fp legacy_file lease_file lease_scope_fp
     [ -n "$fingerprint" ] && [ "$fingerprint" != "-" ] || return 1
     [ -n "$generation" ] || return 1
     [ "$generation" = "${CURRENT_CLI_GENERATION:-}" ] || return 1
@@ -713,7 +785,11 @@ migrate_legacy_fingerprint_lease() {
         if ! ( set -C; : > "$lease_file" ) 2>/dev/null; then
             return 1
         fi
-        printf '%s\t%s\t%s\n' "$generation" "$unread_count" "$fingerprint" > "$lease_file"
+        lease_scope_fp="$fingerprint"
+        if [ "$task_assignment_fp" != "-" ]; then
+            lease_scope_fp="$task_assignment_fp"
+        fi
+        printf '%s\t%s\t%s\n' "$generation" "$unread_count" "$lease_scope_fp" > "$lease_file"
     fi
     rm -f -- "$legacy_file"
     echo "[$(date)] [LEGACY-LEASE-MIGRATED] $AGENT_ID fingerprint=$fingerprint generation=$generation" >&2
@@ -1067,11 +1143,15 @@ send_wakeup() {
         [ ! -f "$idle_flag" ] && touch "$idle_flag"
     fi
 
-    # Tier 1.5: Debounce repeated nudge storms is now enforced by one
-    # outstanding lease per CLI generation (normal/high nudge paths).
-    # Fingerprint changes are observed for diagnostics, but cannot create a
-    # second delivery obligation until the inbox becomes empty or the CLI
-    # generation changes. The check and claim decision share one flock.
+    # Tier 1.5: Debounce repeated nudge storms is enforced by one outstanding
+    # lease per CLI generation and current-task assignment-ID set. Unrelated
+    # unread rows cannot expire a task lease; a new current-task ID can.
+    # The check and claim decision share one flock.
+    local current_task_fp="-"
+    if [ "$has_task_assigned" = "true" ]; then
+        current_task_fp=$(current_task_assignment_fingerprint 2>/dev/null || printf '%s' '-')
+    fi
+
     if [ -n "$current_fp" ] && [ "$current_fp" != "-" ]; then
         local atomic_result decision log_line atomic_result_file
         atomic_result_file="${STATE_DIR}/inbox_watcher_atomic_result_${AGENT_ID}_${BASHPID}"
@@ -1081,7 +1161,8 @@ send_wakeup() {
             _now="$EPOCHSECONDS"
 
             # A changed unread set is only diagnostic while the same CLI
-            # generation owns a lease; it is not a new delivery obligation.
+            # generation owns a lease, except for a new current-task
+            # assignment-ID set, which is a new delivery obligation.
             _prev_fp=""
             if [ -f "$FINGERPRINT_FILE" ]; then
                 IFS= read -r _prev_fp < "$FINGERPRINT_FILE" 2>/dev/null || true
@@ -1105,15 +1186,26 @@ send_wakeup() {
             # A self-restarted watcher inherits the CLI generation.  Migrate
             # only the matching legacy fingerprint token before evaluating the
             # generation lease, so restart does not paste a duplicate nudge.
-            migrate_legacy_fingerprint_lease "$current_fp" "$unread_count" "${CURRENT_CLI_GENERATION:-}" >/dev/null || true
-            if [ -n "$_lease_file" ] && [ -e "$_lease_file" ]; then
+            migrate_legacy_fingerprint_lease "$current_fp" "$unread_count" "${CURRENT_CLI_GENERATION:-}" "$current_task_fp" >/dev/null || true
+            _lease_expired=0
+            if [ -n "$_lease_file" ] && [ -e "$_lease_file" ] && [ "$current_task_fp" != "-" ]; then
+                _lease_scope_fp=""
+                IFS=$'\t' read -r _lease_generation _lease_count _lease_scope_fp < "$_lease_file" 2>/dev/null || true
+                if [ "$_lease_scope_fp" != "$current_task_fp" ]; then
+                    rm -f -- "$_lease_file"
+                    _lease_expired=1
+                    printf 'send\t[TASK-LEASE-EXPIRED] New current-task unread ID set for %s generation=%s\n' "$AGENT_ID" "${CURRENT_CLI_GENERATION:-unknown}" > "$atomic_result_file"
+                fi
+            fi
+            if [ "$_lease_expired" -eq 0 ] && [ -n "$_lease_file" ] && [ -e "$_lease_file" ]; then
                 # A smaller unread count is not an acknowledgement of the
                 # already delivered nudge: auto-read and unrelated reads can
                 # change the count while the same generation is still active.
-                # The lease is released only by the no-unread branch below or
-                # by CLI generation invalidation.
-                printf 'skip\t[OUTSTANDING-LEASE] Suppressing normal nudge for %s generation=%s until unread=0 or generation-change\n' "$AGENT_ID" "${CURRENT_CLI_GENERATION:-unknown}" > "$atomic_result_file"
-            else
+                # The lease is released by the no-unread branch below, CLI
+                # generation invalidation, or a new current-task assignment-ID
+                # set (handled above).
+                printf 'skip\t[OUTSTANDING-LEASE] Suppressing normal nudge for %s generation=%s until unread=0, generation-change, or current-task-set-change\n' "$AGENT_ID" "${CURRENT_CLI_GENERATION:-unknown}" > "$atomic_result_file"
+            elif [ "$_lease_expired" -eq 0 ]; then
                 printf 'send\t[LEASE-AVAILABLE] Claiming normal nudge for %s generation=%s\n' "$AGENT_ID" "${CURRENT_CLI_GENERATION:-unknown}" > "$atomic_result_file"
             fi
         ) 201>"$STATE_LOCK_FILE"; then
@@ -1180,6 +1272,7 @@ send_wakeup() {
             current_fp="$live_fp"
             fp_kind="inbox"
             if [ "$live_has_task" = "true" ]; then
+                current_task_fp=$(current_task_assignment_fingerprint 2>/dev/null || printf '%s' '-')
                 current_fp=$(task_publication_fingerprint "$live_fp" 2>/dev/null || printf '%s' "$live_fp")
                 [ "$current_fp" = "$live_fp" ] || fp_kind="task"
             fi
@@ -1212,11 +1305,10 @@ send_wakeup() {
             echo "[$(date)] [BUSY-QUEUE-CLAIM] Claimed single queued nudge for $AGENT_ID fingerprint=$current_fp generation=${claim_generation:-unknown}" >&2
         fi
         if [ -n "$current_fp" ] && [ "$current_fp" != "-" ]; then
-            local safe_fp sent_token sent_mtime sent_elapsed lease_generation
-            # Normal/high nudges are leased by CLI generation, not by unread
-            # fingerprint. inbox_write.sh rearm deliberately preserves this
-            # lease, so a delivery-verification retry cannot create a second
-            # nudge in the same CLI turn.
+            local safe_fp sent_token sent_mtime sent_elapsed lease_generation lease_scope_fp
+            # Normal/high nudges are leased by CLI generation. For task-bound
+            # messages, the lease scope is the current-task assignment-ID set;
+            # inbox_write.sh rearm preserves it so retries cannot duplicate.
             lease_generation=$(respawn_recovery_generation "$PANE_TARGET" 2>/dev/null || true)
             lease_generation="${lease_generation:-${CURRENT_CLI_GENERATION:-}}"
             if [ -n "$lease_generation" ]; then
@@ -1230,7 +1322,7 @@ send_wakeup() {
             fi
             if ! ( set -C; : > "$sent_token" ) 2>/dev/null; then
                 if [ -n "$lease_generation" ]; then
-                    echo "[$(date)] [OUTSTANDING-LEASE] Skipping ${priority} nudge for $AGENT_ID until unread=0 or generation-change: generation=$lease_generation fingerprint=$current_fp" >&2
+                    echo "[$(date)] [OUTSTANDING-LEASE] Skipping ${priority} nudge for $AGENT_ID until unread=0, generation-change, or current-task-set-change: generation=$lease_generation fingerprint=$current_fp" >&2
                 else
                     echo "[$(date)] [SEND-LEASE] Skipping delivered fingerprint for $AGENT_ID until ACK/set change: $current_fp kind=$fp_kind" >&2
                 fi
@@ -1241,7 +1333,11 @@ send_wakeup() {
                 # Persist the observed unread count with the lease so a later
                 # read transition can be recognized as an ACK even when other
                 # unread messages remain.
-                printf '%s\t%s\t%s\n' "$lease_generation" "$unread_count" "$current_fp" > "$sent_token"
+                lease_scope_fp="$current_fp"
+                if [ "$current_task_fp" != "-" ]; then
+                    lease_scope_fp="$current_task_fp"
+                fi
+                printf '%s\t%s\t%s\n' "$lease_generation" "$unread_count" "$lease_scope_fp" > "$sent_token"
             fi
         fi
         # Force-exit copy-mode if active (mouse scroll → copy-mode → nudge配信失敗を防止)

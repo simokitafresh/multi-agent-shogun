@@ -118,6 +118,110 @@ printf "high_after_empty_send=%s\n" "$(grep -c "^paste$" "$tmp/events")"
     [[ "$output" == *"OUTSTANDING-LEASE"* ]]
 }
 
+# test_necessity: same-generation unrelated unread rows cannot suppress a new
+# current-task assignment, while the same current-task ID set remains deduped
+# and the confirmation guard never pastes the nudge into a prompt.
+@test "current-task assignment ID expires only its bounded generation lease" {
+    run bash -c '
+set -euo pipefail
+root="'"$PROJECT_ROOT"'"
+tmp="$(mktemp -d)"
+trap "rm -rf \"$tmp\"" EXIT
+mkdir -p "$tmp/root/scripts/lib" "$tmp/root/lib" "$tmp/root/queue/inbox" "$tmp/root/queue/tasks" "$tmp/state"
+for f in lock_path.sh cli_lookup.sh tmux_utils.sh script_update.sh inbox_nudge_policy.sh respawn_recovery.sh pane_confirmation_guard.sh; do
+  ln -s "$root/scripts/lib/$f" "$tmp/root/scripts/lib/$f"
+done
+ln -s "$root/lib/agent_state.sh" "$tmp/root/lib/agent_state.sh"
+ln -s "$root/scripts/inbox_watcher.sh" "$tmp/root/scripts/inbox_watcher.sh"
+cat > "$tmp/root/queue/tasks/fixture.yaml" <<YAML
+task_id: current-task
+parent_cmd: cmd_current
+YAML
+cat > "$tmp/root/queue/inbox/fixture.yaml" <<YAML
+messages:
+- id: msg-current-1
+  type: task_assigned
+  read: false
+  task_id: current-task
+  parent_cmd: cmd_current
+- id: msg-other-1
+  type: task_assigned
+  read: false
+  task_id: other-task
+  parent_cmd: cmd_other
+- id: msg-empty-1
+  type: task_assigned
+  read: false
+  task_id: ""
+  parent_cmd: ""
+YAML
+export SHOGUN_STATE_DIR="$tmp/state" INBOX_WATCHER_LIB_ONLY=1
+source "$tmp/root/scripts/inbox_watcher.sh" fixture dummy-pane
+unset INBOX_WATCHER_LIB_ONLY
+get_effective_cli_type() { echo codex; }
+agent_has_self_watch() { return 1; }
+check_agent_busy() { return 0; }
+respawn_recovery_generation() { echo generation-1; }
+CURRENT_CLI_GENERATION=generation-1
+pane_input_line_has_text() { return 1; }
+sleep() { :; }
+timeout() { shift; "$@"; }
+_pane_has_confirmation_prompt() { return 1; }
+tmux() {
+  case "$1" in
+    display-message)
+      case "${*: -1}" in
+        *agent_id*) echo fixture ;;
+        *pane_in_mode*) echo 0 ;;
+        *) echo active ;;
+      esac
+      ;;
+    show-options) echo codex ;;
+    set-buffer) : ;;
+    paste-buffer) printf "paste\n" >> "$tmp/events" ;;
+    send-keys) printf "enter\n" >> "$tmp/events" ;;
+    set-option) : ;;
+  esac
+}
+paste_count() { [ -f "$tmp/events" ] && grep -c "^paste$" "$tmp/events" || echo 0; }
+
+send_wakeup 3 true initial-fp normal false false msg-current-1
+send_wakeup 3 true initial-fp normal false false msg-current-1
+printf "same_set_pastes=%s\n" "$(paste_count)"
+
+cat >> "$tmp/root/queue/inbox/fixture.yaml" <<YAML
+- id: msg-current-2
+  type: task_assigned
+  read: false
+  task_id: current-task
+  parent_cmd: cmd_current
+YAML
+send_wakeup 4 true changed-fp normal false false msg-current-2
+printf "new_current_id_pastes=%s\n" "$(paste_count)"
+
+cat >> "$tmp/root/queue/inbox/fixture.yaml" <<YAML
+- id: msg-current-3
+  type: task_assigned
+  read: false
+  task_id: current-task
+  parent_cmd: cmd_current
+YAML
+_pane_has_confirmation_prompt() { return 0; }
+if send_wakeup 5 true changed-again normal false false msg-current-3; then
+  guard_rc=0
+else
+  guard_rc=$?
+fi
+printf "confirmation_rc=%s\n" "$guard_rc"
+printf "confirmation_pastes=%s\n" "$(paste_count)"
+'
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"same_set_pastes=1"* ]]
+    [[ "$output" == *"new_current_id_pastes=2"* ]]
+    [[ "$output" == *"confirmation_rc=2"* ]]
+    [[ "$output" == *"confirmation_pastes=2"* ]]
+}
+
 # test_necessity: watcher自己再起動時、同一CLI世代の旧fingerprint tokenを
 # generation leaseへ引き継ぎ、旧paste直後の重複pasteを防ぐ契約を守る。
 @test "legacy fingerprint lease migrates across watcher restart without duplicate paste" {
