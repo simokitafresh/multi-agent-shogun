@@ -8486,3 +8486,10 @@ insights:
   source: "semantic_stress_test"
   fix_known: false
   status: pending
+- id: INS-20260830-125625722-af4d
+  ts: "2026-08-30T12:56:25+09:00"
+  insight: "[[一番下に比較としてS＆P500指数（SPY）とTQQQを入れよう]] semantic_stress_test candidate_aliases: NO_MATCH source=lord query=一番下に比較としてS＆P500指数（SPY）とTQQQを入れよう。sharpe ratioも同じように入れよう"
+  priority: "low"
+  source: "semantic_stress_test"
+  fix_known: false
+  status: pending
