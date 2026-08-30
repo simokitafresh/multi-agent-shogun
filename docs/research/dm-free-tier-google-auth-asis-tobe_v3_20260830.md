@@ -1,7 +1,8 @@
 <!-- gist-master: 897501e0162e556a682ae32a2eca19c3 dm-free-tier-google-auth-asis-tobe_v3_20260830.md -->
-# DM-Signal Free tier(Google 登録→月次クーポン) AsIs/ToBe v3.1 — 2026-08-30 22:30(v3 骨子 20:20)
+# DM-Signal Free tier(Google 登録→月次クーポン) AsIs/ToBe v3.2 — 2026-08-30 23:20(v3.1 22:30 / v3 骨子 20:20)
 
 > 殿方向性 13:14(後回し)→20:15-20:18 具体化→**殿裁定 20:21『着手せよ』**→F1/F2/F3=cmd_4422/4423/4424 を並走配備(20:40-20:44)。SEO 案(v2、gist 5edb5f6d)とは別レーン。
+> **v3.2(23:20)**: 殿指摘 22:54『リバランサーでできたことを俺に聞くな。できるはずだ』→一次(22:56 `git grep` rebalancer backend/app: supabase/jwt/bearer **0 件**)=rebalancer は backend で JWT を検証せず frontend supabase-js+RLS のみ。∴ DM も secret を持たない **Supabase Auth API 方式(`GET {SUPABASE_URL}/auth/v1/user`、apikey=anon key+Bearer)** へ差し替え=cmd_4428(23:08 delegated、4422 CLEAR 22:59 の後に backend 直列)。PD-140(殿へ JWT secret 投入依頼)は撤回・解決。
 > **v3.1(22:30)**: 3 cmd の実装到達を報告 YAML・gate_metrics・本番 curl の一次で突合し §1.5/§2/§4/§5 に状態を記す。未 deploy(backend EP 404)・未決は殿の裁定/家老 lane の残として明示。
 
 ## §0 殿の要件(事実→制約→判断)
@@ -27,12 +28,12 @@
 | F3 cmd_4424(LP) | 半蔵 | f9011787 | **BLOCK 22:11** `ninja_test_receipt_invalid`+`command_files_modified_mismatch`(RC 中。files_modified に lp/ の baseline 21 ファイルを列挙=対象 4 ファイルに絞る要) | `components/landing-page.tsx`+`copy/{en,ja}.ts`: Members/Free 二分・Google Free CTA(`/free?from=lp`)・footer リンク・既存 `lp_cta_click` beacon(新 step 追加なし=cmd AC2) | 未 deploy(dm-signal.com の href に `/free` 0 件) |
 
 - 設計との差分(正): F1 は JWKS でなく **HS256+`SUPABASE_JWT_SECRET`**(Render env に要投入)。F3 の event は §5 v3 の `signup_google` でなく **既存 `lp_cta_click` を流用**(cmd_4424 AC2 で「新 step は追加しない」と明示。`from=lp` クエリが経路記録の起点)。§4-5 `product_logins` は 3 cmd のどれにも含まれず **未実装**(後段 cmd)。
-- deploy 前提 4 点(家老 lane、未着手): Render backend env `SUPABASE_JWT_SECRET`・frontend env `NEXT_PUBLIC_SUPABASE_URL/ANON_KEY`・Supabase Auth Redirect URL に `https://dm-signal-frontend.onrender.com/auth/callback`・殿 `VIEWER_PASSWORD_FREE`(月次)。
+- deploy 前提 4 点(v3.2 状態): frontend env `NEXT_PUBLIC_SUPABASE_URL/ANON_KEY`=**投入済(22:52、rebalancer 正本と hash 一致)** / backend env=`SUPABASE_URL`・`SUPABASE_ANON_KEY`(同値、家老投入。**`SUPABASE_JWT_SECRET` は不要**=4428) / Supabase Auth Redirect URL `https://dm-signal-frontend.onrender.com/auth/callback`(家老) / 殿 `VIEWER_PASSWORD_FREE`(月次クーポン値)。
 
 ## §2 ToBe(最小構成、既存機構不変)
 1. **Free tier 1 行**(F1 実装済・未 deploy): `viewer_tiers` に `Free`(password_env_key=`VIEWER_PASSWORD_FREE`、hide=Basic-DualMomentum 以外すべて hide、`password_expires_at` は他 tier と同じ月末)。ローテーション運用に 1 行追加。
 2. **`/free` ページ(frontend、static export)**(F2 実装済 CLEAR・未 deploy): `supabase-js` で `signInWithOAuth({provider:"google"})`(rebalancer と同じ env・同じプロジェクト)。セッション取得後、backend `GET /api/public/free-coupon`(Authorization: Bearer <supabase access_token>)を呼ぶ。
-3. **backend EP `GET /api/public/free-coupon`**(F1 実装済・RC 中): Supabase の `SUPABASE_JWT_SECRET`(HS256)で JWT を検証→`os.getenv(free_tier.password_env_key)` と `password_expires_at` を返す(未認証 401、rate limit)。DB 書込み 0。登録者の記録は `auth.users`(Supabase)に既にある。任意で `showcase_events` に `signup_google`/`coupon_copy` step(計測)。
+3. **backend EP `GET /api/public/free-coupon`**(F1 4422 CLEAR 22:59。検証方式は cmd_4428 で差し替え): Supabase Auth API `GET /auth/v1/user`(apikey=`SUPABASE_ANON_KEY`+Bearer access_token、timeout 5s)で本人性を検証(secret 不要。HS256+`SUPABASE_JWT_SECRET` は 4428 で除去)→`os.getenv(free_tier.password_env_key)` と `password_expires_at` を返す(未認証 401、rate limit)。DB 書込み 0。登録者の記録は `auth.users`(Supabase)に既にある。任意で `showcase_events` に `signup_google`/`coupon_copy` step(計測)。
 4. **UX**(F2 実装済): クーポンカード(コード・有効期限「〜YYYY-MM-DD」・「Basic-DualMomentum のみ」)+**Copy ボタン(navigator.clipboard)**+**「このクーポンでサインイン」ボタン=`/login?coupon=<code>` でプリフィル**(SignInCard は既存 input に初期値を入れるだけ、照合は従来の verify_viewer)。
 5. **誤解防止(既存メンバー)**(F2 `/login` 二分=実装済、F3 LP 二分=RC 中): LP と `/login` の入口を 2 枠に分ける — 「**Members**: note に記載の当月パスワード」/「**Free**: Google で登録して当月クーポン」。`/free` 冒頭に「Free は Basic-DualMomentum のみ。Basic/Standard/Premium の方は従来どおり note のパスワードをお使いください」。Free クーポンを有料導線(note 誘導文)に混ぜない。既存の 5 tier パスワードには一切触れない。
 
