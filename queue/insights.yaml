@@ -9594,3 +9594,10 @@ insights:
   source: "semantic_index_update"
   fix_known: false
   status: pending
+- id: INS-20260830-192638465-546c
+  ts: "2026-08-30T19:26:38+09:00"
+  insight: "[[LPとログイン画面はどこまで進んで]] semantic_stress_test candidate_aliases: NO_MATCH source=lord query=LPとログイン画面はどこまで進んで、何が残っているんだ？表形式で明確にしてくれ"
+  priority: "low"
+  source: "semantic_stress_test"
+  fix_known: false
+  status: pending
