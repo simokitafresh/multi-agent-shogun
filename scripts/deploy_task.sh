@@ -10107,6 +10107,7 @@ deploy_task_source_contract_precheck() {
         echo "BLOCK: deployment source not found: ${source_file}" >&2
         return 2
     }
+
     deploy_task_ten_min_contract_precheck "$source_file" "$cmd_id" || return $?
 
     # Level5: automatically derive the shard manifest at the common deployment entrance.

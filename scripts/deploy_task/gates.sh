@@ -873,6 +873,74 @@ deploy_task_ten_min_contract_precheck() {
     return 0
 }
 
+# Classify worker AC text that belongs to the Karo post-deploy lane.  This is a
+# warning-only classifier: local pytest/TestClient/next build+start/curl/diff
+# checks remain worker-owned and are not production proof.
+deploy_task_warn_post_deploy_ac() {
+    local source_file="$1"
+    local cmd_id="${2:-}"
+    [ -f "$source_file" ] || return 0
+    python3 - "$source_file" "$cmd_id" <<'POST_DEPLOY_AC_PY'
+import re
+import sys
+import yaml
+
+yaml.SafeLoader = getattr(yaml, "CSafeLoader", yaml.SafeLoader)
+path, requested_cmd = sys.argv[1:]
+try:
+    document = yaml.safe_load(open(path, encoding="utf-8")) or {}
+except (OSError, yaml.YAMLError):
+    raise SystemExit(0)
+
+commands = document.get("commands") if isinstance(document, dict) else None
+if isinstance(commands, dict):
+    task = commands.get(requested_cmd, {})
+elif isinstance(commands, list):
+    task = next((item for item in commands if isinstance(item, dict) and str(item.get("id", "")).strip() == requested_cmd), {})
+else:
+    task = document.get("task", document) if isinstance(document, dict) else {}
+if not isinstance(task, dict):
+    raise SystemExit(0)
+
+criteria = task.get("acceptance_criteria") or task.get("ac") or []
+if isinstance(criteria, list):
+    rows = [(str(item.get("id") or f"AC{n}"), item) for n, item in enumerate(criteria, 1)]
+elif isinstance(criteria, dict) and any(re.fullmatch(r"AC\d+", str(key)) for key in criteria):
+    rows = [(str(key), value) for key, value in criteria.items() if re.fullmatch(r"AC\d+", str(key))]
+elif criteria not in (None, ""):
+    rows = [("AC1", criteria)]
+else:
+    rows = []
+
+def text(value):
+    if isinstance(value, dict):
+        fields = [value[key] for key in ("description", "criteria", "check", "title", "command") if key in value]
+        if not fields:
+            fields = [nested for key, nested in value.items() if key not in {"id", "binary_check"}]
+        return " ".join(text(item) for item in fields)
+    if isinstance(value, list):
+        return " ".join(text(item) for item in value)
+    return str(value or "")
+
+patterns = (
+    ("本番", r"本番"), ("Render", r"\brender\b"),
+    ("deploy後", r"(?:deploy|デプロイ)\s*(?:後|after)"),
+    ("CDP", r"\bcdp\b"), ("live", r"\blive\b"),
+    ("production", r"\bproduction\b"),
+)
+for ac_id, value in rows:
+    ac_text = text(value)
+    matched = [name for name, pattern in patterns if re.search(pattern, ac_text, re.IGNORECASE)]
+    if matched:
+        print(
+            f"WARNING: post_deploy_ac {ac_id} contains {','.join(matched)} keyword(s); "
+            "split production proof to post_deploy_check Karo lane "
+            "(local worker verification remains in the ninja AC)",
+            file=sys.stderr,
+        )
+POST_DEPLOY_AC_PY
+}
+
 # Validate the immutable deployment source before reset_stale_fields or publish.
 # A rejected deployment must leave the worker's existing task byte-identical.
 deploy_task_source_contract_precheck() {
@@ -884,6 +952,8 @@ deploy_task_source_contract_precheck() {
         echo "BLOCK: deployment source not found: ${source_file}" >&2
         return 2
     }
+    deploy_task_warn_post_deploy_ac "$source_file" "$cmd_id" || \
+        log "WARN: post-deploy AC routing detector unavailable for ${source_file}"
     deploy_task_ten_min_contract_precheck "$source_file" "$cmd_id" || return $?
 
     # Level5: automatically derive the shard manifest at the common deployment entrance.
