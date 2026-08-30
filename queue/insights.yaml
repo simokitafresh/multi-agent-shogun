@@ -8898,3 +8898,10 @@ insights:
   source: "semantic_index_update"
   fix_known: false
   status: pending
+- id: INS-20260830-155617922-073a
+  ts: "2026-08-30T15:56:17+09:00"
+  insight: "semantic_index_update未登録[[リンク]]ターゲット: [[CI_cancel_in_progress_1commit_push_空転]] は既存aliasesに一致なし。類似概念TOP3: skill_routing(スキルルーティング; alias=commit; score=11.6) / provisional_pre-push(仮: Pre Push; alias=provisional_pre-push; score=10.7) / agent_formation_management(編成管理; alias=deploy_task push_allowed; score=9.3)。概念定義とaliases追加を検討せよ"
+  priority: "low"
+  source: "semantic_index_update"
+  fix_known: false
+  status: pending
