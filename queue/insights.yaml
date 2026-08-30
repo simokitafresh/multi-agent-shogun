@@ -9327,3 +9327,10 @@ insights:
   source: "semantic_stress_test"
   fix_known: false
   status: pending
+- id: INS-20260830-172414853-9d7a
+  ts: "2026-08-30T17:24:14+09:00"
+  insight: "[[LP 別サイト P2 — app の docs と faq を未認証で公開し]] semantic_stress_test candidate_aliases: NO_MATCH source=cmds query=LP 別サイト P2 — app の docs と faq を未認証で公開し、faq に EN 版を追加して LP の導線先にする"
+  priority: "low"
+  source: "semantic_stress_test"
+  fix_known: false
+  status: pending
