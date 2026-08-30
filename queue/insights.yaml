@@ -8659,3 +8659,10 @@ insights:
   source: "manual"
   fix_known: false
   status: pending
+- id: INS-20260830-133855521-c64e
+  ts: "2026-08-30T13:38:55+09:00"
+  insight: "lord_conversation教訓候補: target=shogun trigger=inbound_lord detail=未決や未裁定があれば今のうちに相談しよう"
+  priority: "medium"
+  source: "lord_conversation:lesson_candidate"
+  fix_known: false
+  status: pending
