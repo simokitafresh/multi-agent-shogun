@@ -164,6 +164,16 @@ get_next_alert_id() {
     printf "GA-%03d" "$next"
 }
 
+# Karo's control-plane inbox requires every actionable gate alert to carry a
+# structured commander envelope.  Keep the subject task unique per alert
+# while making parent_cmd identify the gate that caused it.
+gate_alert_identity() {
+    local gate_name="$1"
+    local alert_id="$2"
+    printf 'task_id=commander_directive subject_task_id=gate_alert_%s_%s parent_cmd=cmd_gate_improvement_%s\n' \
+        "$gate_name" "$alert_id" "$gate_name"
+}
+
 # --- gate_alerts.yaml記録 ---
 record_alert() {
     local alert_id="$1"
@@ -171,6 +181,8 @@ record_alert() {
     local alert_detail="$3"
     local timestamp
     timestamp=$(date '+%Y-%m-%dT%H:%M:%S%z')
+    local identity_subject="gate_alert_${gate_name}_${alert_id}"
+    local identity_parent="cmd_gate_improvement_${gate_name}"
 
     # ファイルが存在しなければヘッダ作成
     if [ ! -f "$ALERTS_FILE" ]; then
@@ -180,6 +192,9 @@ record_alert() {
     cat >> "$ALERTS_FILE" <<EOF
   - alert_id: ${alert_id}
     gate: ${gate_name}
+    task_id: commander_directive
+    subject_task_id: ${identity_subject}
+    parent_cmd: ${identity_parent}
     detected_at: "${timestamp}"
     alert_detail: "${alert_detail}"
     three_questions_sent: true
@@ -245,6 +260,9 @@ send_alert() {
     supplement=$(get_gate_supplement "$gate_name")
     local message
     message=$(build_three_questions "$gate_name" "$alert_id" "$alert_lines" "$supplement")
+    local identity
+    identity=$(gate_alert_identity "$gate_name" "$alert_id")
+    message="${identity}"$'\n'"${message}"
 
     bash "$SCRIPT_DIR/scripts/inbox_write.sh" karo "$message" gate_alert gate_improvement_trigger
     record_alert "$alert_id" "$gate_name" "$alert_lines"
@@ -696,8 +714,11 @@ PY
         alert_id=$(get_next_alert_id)
 
         # hook版穴検出3問（タスク指定のQ1-Q3）
+        local identity
+        identity=$(gate_alert_identity "$gate_name" "$alert_id")
         local message
         message=$(cat <<EOF
+${identity}
 【hook穴検出3問】${gate_name} ALERT (alert_id: ${alert_id})
 検知内容: ${alert_lines}
 最新失敗: ${latest_detail}
