@@ -125,3 +125,85 @@ valid_split() {
     [ "$status" -eq 0 ]
     [[ "$output" == *"long-runtime exception"* ]]
 }
+
+# test_necessity: 次CI/次のrun/next CI run は忍者の将来観測を表すためBLOCKし、handoff・過去実績の同語彙は誤検出しない。
+@test "long-runtime例外: 将来CI観測語彙3種はACでBLOCKされる" {
+    {
+        printf '%s\n' "task:"
+        printf '%s\n' "    estimated_minutes: 30"
+        printf '%s\n' "    acceptance_criteria:"
+        printf '%s\n' "      - {id: AC1, description: 次CIでshard6 successを確認する}"
+        printf '%s\n' "      - {id: AC2, description: 次の run でcompatibility successを確認する}"
+        printf '%s\n' "      - {id: AC3, description: next CI run でshard successをverifyする}"
+        printf '%s\n' "    execution_env:"
+        printf '%s\n' "      long_runtime_reason: fixture実行に30分かかるため"
+        printf '%s\n' "      measured_runtime_sec: 1800"
+    } >"$TMP_YAML"
+    run python3 "$VALIDATOR" "$TMP_YAML"
+    [ "$status" -eq 2 ]
+    [[ "$output" == *"hits=AC1, AC2, AC3"* ]]
+}
+
+# test_necessity: long_runtime_reason に将来CIの待機を隠して忍者を拘束する経路をBLOCKする。
+@test "long-runtime例外: 将来CI観測語彙は理由でもBLOCKされる" {
+    {
+        printf '%s\n' "task:"
+        printf '%s\n' "    estimated_minutes: 30"
+        printf '%s\n' "    acceptance_criteria:"
+        printf '%s\n' "      - {id: AC1, description: fixtureの互換性契約を検証する}"
+        printf '%s\n' "    execution_env:"
+        printf '%s\n' "      long_runtime_reason: next CI runの完走を待つため"
+        printf '%s\n' "      measured_runtime_sec: 1800"
+    } >"$TMP_YAML"
+    run python3 "$VALIDATOR" "$TMP_YAML"
+    [ "$status" -eq 2 ]
+    [[ "$output" == *"hits=long_runtime_reason"* ]]
+}
+
+# test_necessity: 家老のpost_push_ci_proofへのhandoffは忍者の観測窓ではなく、将来語彙を含んでもPASSする。
+@test "long-runtime例外: post_push_ci_proof handoffはPASSする" {
+    {
+        printf '%s\n' "task:"
+        printf '%s\n' "    estimated_minutes: 30"
+        printf '%s\n' "    acceptance_criteria:"
+        printf '%s\n' "      - {id: AC1, description: 次CI success確認は家老post_push_ci_proofへのhandoffへ移管済み}"
+        printf '%s\n' "    execution_env:"
+        printf '%s\n' "      long_runtime_reason: fixture実行に30分かかるため"
+        printf '%s\n' "      measured_runtime_sec: 1800"
+    } >"$TMP_YAML"
+    run python3 "$VALIDATOR" "$TMP_YAML"
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"long-runtime exception"* ]]
+}
+
+# test_necessity: 完了済みCI runの実績記述は、同じ将来語彙を含んでも観測窓として扱わない。
+@test "long-runtime例外: 過去CI実績文はPASSする" {
+    {
+        printf '%s\n' "task:"
+        printf '%s\n' "    estimated_minutes: 30"
+        printf '%s\n' "    acceptance_criteria:"
+        printf '%s\n' "      - {id: AC1, description: \"過去CI実績: next CI run 33299727799 completed success cancelled=false\"}"
+        printf '%s\n' "    execution_env:"
+        printf '%s\n' "      long_runtime_reason: fixture実行に30分かかるため"
+        printf '%s\n' "      measured_runtime_sec: 1800"
+    } >"$TMP_YAML"
+    run python3 "$VALIDATOR" "$TMP_YAML"
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"long-runtime exception"* ]]
+}
+
+# test_necessity: 修正後などの説明に過去語が混ざっても、次CIの確認を要求するACはBLOCKする。
+@test "long-runtime例外: 過去語を含む将来CI確認はBLOCKする" {
+    {
+        printf '%s\n' "task:"
+        printf '%s\n' "    estimated_minutes: 30"
+        printf '%s\n' "    acceptance_criteria:"
+        printf '%s\n' "      - {id: AC1, description: 修正後の次CIでshard6 successを確認する}"
+        printf '%s\n' "    execution_env:"
+        printf '%s\n' "      long_runtime_reason: fixture実行に30分かかるため"
+        printf '%s\n' "      measured_runtime_sec: 1800"
+    } >"$TMP_YAML"
+    run python3 "$VALIDATOR" "$TMP_YAML"
+    [ "$status" -eq 2 ]
+    [[ "$output" == *"hits=AC1"* ]]
+}
