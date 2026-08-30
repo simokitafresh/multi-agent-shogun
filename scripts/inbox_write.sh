@@ -935,9 +935,20 @@ inbox_reconcile_terminal_task_generation() {
 inbox_deliver_report_review_generation() {
     local ninja="$1" report_path="$2" parent_cmd="$3" fingerprint="$4"
     local report_base="${report_path##*/}"
+    # fingerprint DEDUPE: 同一parent_cmd+fingerprintの通知は1回のみ送信
+    if [ -n "$fingerprint" ] && [ -n "$parent_cmd" ]; then
+        local dedupe_dir="${SELF_SCRIPT_DIR:-$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)}/queue/gates/${parent_cmd}"
+        local dedupe_file="${dedupe_dir}/gunshi_review_notify_${fingerprint:0:16}.done"
+        mkdir -p "$dedupe_dir" 2>/dev/null || true
+        [ -f "$dedupe_file" ] && return 0
+    fi
     bash "$SELF_SCRIPT_PATH" gunshi \
         "${ninja}報告完了。レビュー依頼: ${parent_cmd} report=${report_base}" \
         report_review karo notify_gunshi >/dev/null 2>&1
+    # 送信成功後にDEDUPEフラグ記録
+    if [ -n "${dedupe_file:-}" ]; then
+        printf '%s\n' "$(date '+%Y-%m-%dT%H:%M:%S')" > "$dedupe_file" 2>/dev/null || true
+    fi
 }
 
 inbox_cmd_id_from_report_filename() {
