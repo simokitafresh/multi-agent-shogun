@@ -8776,3 +8776,10 @@ insights:
   resolved_reason: "semantic map generation verified the candidate is represented or intentionally ignored"
   action_artifact: "semantic_map=/home/simokitafresh/multi-agent-shogun/context/semantic-map.md;semantic_index=/home/simokitafresh/multi-agent-shogun/docs/semantic-index/index.md"
   resolved_at: "2026-08-30T14:41:56+09:00"
+- id: INS-20260830-144523032-473c
+  ts: "2026-08-30T14:45:23+09:00"
+  insight: "semantic_index_update新概念候補: discussion:task notification task id b60v9jo4f task id tool use id toolu 0189DPrupLK66CpaVv は 既存aliasesに一致なし。概念定義とaliases追加を検討せよ"
+  priority: "low"
+  source: "semantic_index_update"
+  fix_known: false
+  status: pending
