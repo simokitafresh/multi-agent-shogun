@@ -7247,7 +7247,10 @@ insights:
   priority: "medium"
   source: "manual"
   fix_known: false
-  status: pending
+  status: resolved
+  resolved_reason: 現行実装を一次確認し解決。a837e9a8c で task_supplement の本文に現task YAML由来の完全な task_id/parent_cmd を付与し、受信側で構造化identityを厳密照合。契約テスト49/109 PASS。元insightの接尾辞不一致と本文欠落の再発条件を現行経路で封鎖。
+  action_artifact: "scripts/inbox_write.sh@a837e9a8c; tests/unit/test_inbox_write.bats:49,109 PASS; pre_inventory=60/14/594/668"
+  resolved_at: "2026-08-31T02:45:00+09:00"
 - id: INS-20260828-155616982-2ef4
   ts: "2026-08-28T15:56:16+09:00"
   insight: "INS-155454 訂正(家老一次 blt_155537): 才蔵 ACK-STALL の直接経路は接尾辞不一致ではなく、formal RC nudge(task_supplement msg_154601)の本文に task_id 文字列が無く、構造 field task_id=…_exact だけにあった。忍者は本文(LLM が読む文)で一致判定するため、構造 field に入っていても本文に無ければ『task_id 欠落』で既読化する。修正 1 unit: RC/task_supplement/report_format_fix の本文先頭に task_id=<task YAML の task_id> を機械挿入(inbox_write 側、type 別に共通)。効果計測=task_id 欠落既読化 0/日。origin: [[INS-155454]] -> [[RC_nudge本文にtask_id無し]] -> [[才蔵ACK-STALL_15:46]]"
