@@ -9570,3 +9570,10 @@ insights:
   source: "manual"
   fix_known: false
   status: pending
+- id: INS-20260830-190120538-e122
+  ts: "2026-08-30T19:01:20+09:00"
+  insight: "semantic_map_generate新規ファイル候補: `tests/unit/test_inbox_watcher.bats` は semantic index未登録。既存概念へのfile追加または新概念定義を検討せよ"
+  priority: "low"
+  source: "semantic_map_generate:new_file"
+  fix_known: false
+  status: pending
