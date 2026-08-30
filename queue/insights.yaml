@@ -9898,3 +9898,10 @@ insights:
   resolved_reason: "semantic map generation verified the candidate is represented or intentionally ignored"
   action_artifact: "semantic_map=/home/simokitafresh/multi-agent-shogun/context/semantic-map.md;semantic_index=/home/simokitafresh/multi-agent-shogun/docs/semantic-index/index.md"
   resolved_at: "2026-08-30T20:45:29+09:00"
+- id: INS-20260830-210446922-22a7
+  ts: "2026-08-30T21:04:46+09:00"
+  insight: "semantic_index_update新概念候補: discussion:T202 T201 T198 T196 T195 T193 T188の進捗を表形式で報告せよ は 既存aliasesに一致なし。概念定義とaliases追加を検討せよ"
+  priority: "low"
+  source: "semantic_index_update"
+  fix_known: false
+  status: pending
