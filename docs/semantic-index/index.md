@@ -3190,6 +3190,12 @@ codd:
 | discussion | `queue/lord_conversation.jsonl` 2026-08-30T17:47:10+09:00 [[将軍訂正_hreflang誤読_20260830_1748]] knowledge:b3a553dd4 の『hreflang が HTML に無い』は誤り: grep -c は大小文字区別、HTML は hrefLang(React 属 |
 | discussion | `queue/lord_conversation.jsonl` 2026-08-30T17:48:46+09:00 abd3f584ed07a12d5 toolu_01KHcDUWcAqrN14gJqZx4CTQ /tmp/claude-1000/-home-simokitafresh-multi-agent-shogun/290a263c-8050-4 |
 | discussion | `queue/lord_conversation.jsonl` 2026-08-30T17:55:55+09:00 [[殿実機確認_LP_20260830_1753]] 殿『リンク先がおかしい』『LP と /login がほぼ同じ=誤解を生む』『アドレスを dm-signal.com/dashboard のように更新できるか』。一次: (a)LP の c |
+| cmd | `cmd_4418` LP 別サイト P2 — app の docs と faq を未認証で公開し、faq に EN 版を追加して LP の導線先にする |
+| causal | `cmd_4418` origin: [[殿裁定_LP別サイト_20260830_1642]] -> [[dm-login-showcase-asis-tobe_v2_20260830]] -> [[cmd_4418_docs_faq_public]] |
+| discussion | `queue/lord_conversation.jsonl` 2026-08-30T18:02:01+09:00 [[cmd_4418_docs_faq公開_本番到達_20260830_1800]] GATE CLEAR 18:00、FE deploy 9e1c77764 live(boundary L29-31 に docs/faq public 判 |
+| cmd | `cmd_4417` LP 別サイト — DM-signal/lp に EN(/)+JA(/ja)の静的 LP を新設し showcase をビルド時 fetch で表に焼き、hreflang・robots・sitemap・CTA を置く |
+| causal | `cmd_4417` origin: [[殿裁定_LP別サイト_20260830_1642]] -> [[dm-login-showcase-asis-tobe_v2_20260830]] -> [[cmd_4417_lp_site]] |
+| discussion | `queue/lord_conversation.jsonl` 2026-08-30T18:04:32+09:00 [[cmd_4417_CLEAR_だが_jp直書き残存_20260830_1803]] 4417 GATE CLEAR 18:02 と LP deploy 4a9c1d43c live 後も canonical/hreflang/sitem |
 | causal_chain | `[[cmd_3749]]` (L974) |
 | causal_chain | `[[cmd_training_L1_report-write_20260708020332]]` (L977) |
 | causal_chain | `[[cmd_reflux_insight_202607071717_tobisaru]]` (L961) |
@@ -3245,8 +3251,6 @@ codd:
 | causal_chain | `[[cmd_karo_ci_fix_33156085995_ga505_source_equivalent_20260828]]` (L1666) |
 | causal_chain | `[[cmd_karo_hotfix_ga527_doc_no_changelog_20260830]]` (L1673) |
 | causal_chain | `[[cmd_karo_hotfix_observation_window_ci_terms_20260830]]` (L1676) |
-| cmd | `cmd_4418` LP 別サイト P2 — app の docs と faq を未認証で公開し、faq に EN 版を追加して LP の導線先にする |
-| causal | `cmd_4418` origin: [[殿裁定_LP別サイト_20260830_1642]] -> [[dm-login-showcase-asis-tobe_v2_20260830]] -> [[cmd_4418_docs_faq_public]] |
 
 ## investment_knowledge_base — 投資知識辞書
 
@@ -11133,6 +11137,7 @@ codd:
 | discussion | `queue/lord_conversation.jsonl` 2026-08-30T14:30:16+09:00 ac5207c35a7612515 toolu_01J4jmC3JHeKhWzGczsoF5RQ /tmp/claude-1000/-home-simokitafresh-multi-agent-shogun/290a263c-8050-4 |
 | discussion | `queue/lord_conversation.jsonl` 2026-08-30T15:37:44+09:00 a64a8ddc5c41c07bb toolu_01L1XahA3THHnvvvCxh5oNuo /tmp/claude-1000/-home-simokitafresh-multi-agent-shogun/290a263c-8050-4 |
 | discussion | `queue/lord_conversation.jsonl` 2026-08-30T17:33:53+09:00 a1afb06e169a08738 toolu_01S92PY4jGodSSD5B1MR2mSd /tmp/claude-1000/-home-simokitafresh-multi-agent-shogun/290a263c-8050-4 |
+| discussion | `queue/lord_conversation.jsonl` 2026-08-30T18:05:06+09:00 ada03a48281fd6d96 toolu_0135GFssHu2teVwiJAzbiSLM /tmp/claude-1000/-home-simokitafresh-multi-agent-shogun/290a263c-8050-4 |
 | causal_chain | `[[cmd_karo_hotfix_bc_result_empty_high_freq_insight_202607020526]]` (L923) |
 | causal_chain | `[[cmd_3683]]` (L947) |
 | causal_chain | `[[cmd_karo_ci_fix_ga191_bats_count_202607071728]]` (L962) |
@@ -15728,6 +15733,7 @@ codd:
 | discussion | `queue/lord_conversation.jsonl` 2026-08-30T08:12:31.729229+00:00 git pre-commit semantic propagation for context/projects changes |
 | discussion | `queue/lord_conversation.jsonl` 2026-08-30T08:18:10.947713+00:00 git pre-commit semantic propagation for context/projects changes |
 | discussion | `queue/lord_conversation.jsonl` 2026-08-30T08:30:34.565789+00:00 git pre-commit semantic propagation for context/projects changes |
+| discussion | `queue/lord_conversation.jsonl` 2026-08-30T09:01:36.947386+00:00 git pre-commit semantic propagation for context/projects changes |
 | causal_chain | `[[cmd_karo_hotfix_lessons_yaml_format_restore_20260727]]` (L1389) |
 
 ## infra_design_intent — インフラ設計意図カタログ
