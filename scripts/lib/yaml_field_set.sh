@@ -1407,6 +1407,7 @@ yaml_field_set() {
     esac
     if [ "$block_id" = "task" ]; then
         case "$field" in
+            acceptance_criteria) _yfs_structured_type="list" ;;
             test_necessity) _yfs_structured_type="list_or_mapping" ;;
             commit_contract) _yfs_structured_type="mapping" ;;
             investigation_contract) _yfs_structured_type="mapping" ;;

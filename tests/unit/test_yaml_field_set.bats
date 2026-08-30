@@ -218,6 +218,54 @@ PY
     [ "$status" -eq 0 ]
 }
 
+# test_necessity: task publication must keep the three acceptance criteria as a
+# YAML list so downstream AC iteration cannot silently operate on characters
+# from a scalarized string.
+@test "task acceptance_criteria: three-item input stays a structured list" {
+    local yaml="$TEST_TMPDIR/task_acceptance_criteria.yaml"
+    local payload='[{"id":"AC1","description":"first"},{"id":"AC2","description":"second"},{"id":"AC3","description":"third"}]'
+    cat > "$yaml" <<'EOF'
+task:
+  status: assigned
+  acceptance_criteria: []
+EOF
+
+    run bash "$YFS" "$yaml" task acceptance_criteria "$payload"
+    [ "$status" -eq 0 ]
+    run python3 - "$yaml" <<'PY'
+import sys, yaml
+value = yaml.safe_load(open(sys.argv[1], encoding="utf-8"))["task"]["acceptance_criteria"]
+assert isinstance(value, list), type(value)
+assert len(value) == 3, value
+assert [item["id"] for item in value] == ["AC1", "AC2", "AC3"], value
+print("AC_LIST_OK=1 COUNT=3")
+PY
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"AC_LIST_OK=1 COUNT=3"* ]]
+}
+
+# test_necessity: scalar and mapping values must not enter the list-only
+# acceptance_criteria contract or partially rewrite the task YAML.
+@test "task acceptance_criteria: non-list input is fail-closed and byte-identical" {
+    local yaml="$TEST_TMPDIR/task_acceptance_criteria_scalar.yaml"
+    cat > "$yaml" <<'EOF'
+task:
+  status: assigned
+  acceptance_criteria:
+  - id: AC1
+    description: keep
+EOF
+
+    for payload in "not-a-list" '{"id":"AC1"}'; do
+        cp "$yaml" "$yaml.before"
+        run bash "$YFS" "$yaml" task acceptance_criteria "$payload"
+        [ "$status" -eq 2 ]
+        [[ "$output" == *"task.acceptance_criteria must be a YAML list"* ]]
+        run cmp -s "$yaml.before" "$yaml"
+        [ "$status" -eq 0 ]
+    done
+}
+
 @test "list item id block: 既存フィールド値の更新" {
     cat > "$TEST_TMPDIR/test.yaml" <<'EOF'
 - id: AC1

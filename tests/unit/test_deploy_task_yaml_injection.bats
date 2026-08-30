@@ -2291,6 +2291,29 @@ PY
     [ "$status" -eq 0 ]
 }
 
+# test_necessity: cmd_4424's collision path must arm the task/report
+# transaction before resolve_cmd_to_task can publish status=assigned, and the
+# executable wrapper must propagate BLOCK so EXIT rollback observes nonzero.
+@test "normal deployment collision fixture arms rollback before task publication" {
+    run python3 - "$PROJECT_ROOT/scripts/deploy_task/main.sh" "$PROJECT_ROOT/scripts/deploy_task.sh" <<'PY'
+import sys
+
+main = open(sys.argv[1], encoding="utf-8").read()
+wrapper = open(sys.argv[2], encoding="utf-8").read()
+
+guard = main.index('deploy_task_guard_worker_assignment "$task_yaml" "$CMD_ID"')
+transaction = main.index('deploy_task_yaml_transaction_begin "$task_yaml" "$normal_cmd_source"')
+resolve = main.index('resolve_cmd_to_task "$CMD_ID" "$NINJA_NAME"')
+collision = main.index('deploy_task_guard_target_path_collision "$task_yaml" "$NINJA_NAME"')
+assert guard < transaction < resolve < collision, (guard, transaction, resolve, collision)
+assert 'deploy_task_main "$@"\n    _deploy_task_main_rc=$?' in wrapper
+assert 'exit "$_deploy_task_main_rc"' in wrapper
+print("NORMAL_COLLISION_ROLLBACK_ORDER_OK=1")
+PY
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"NORMAL_COLLISION_ROLLBACK_ORDER_OK=1"* ]]
+}
+
 # test_necessity: issued_at helper失敗時にRecorded偽成功ログを出さず、invalid旧taskもvalid sourceのatomic publishでVALIDへ置換できる不変量を守る。
 @test "issued_at failure logs no Recorded and valid source replaces invalid destination" {
     tmpdir="$(mktemp -d)"; dest="$tmpdir/task.yaml"; source_yaml="$tmpdir/source.yaml"; log_file="$tmpdir/log"
