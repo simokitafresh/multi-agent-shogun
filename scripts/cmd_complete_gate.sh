@@ -1081,8 +1081,12 @@ if not isinstance(contract, dict):
 report_contract = report.get("commit_contract") or {}
 if not isinstance(report_contract, dict):
     report_contract = {}
-canonical = [contract.get("repo_root"), report_contract.get("repo_root"),
-             report.get("repo_root"), repo_hint]
+canonical = list(dict.fromkeys(
+    str(value).strip() for value in
+    (contract.get("repo_root"), report_contract.get("repo_root"),
+     report.get("repo_root"), repo_hint)
+    if str(value or "").strip()
+))
 generation = ""
 for value in (report.get("report_generation"), report.get("report_generation_fingerprint"),
               report.get("report_fingerprint"), report.get("report_id"),

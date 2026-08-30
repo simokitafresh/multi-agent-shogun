@@ -6502,6 +6502,7 @@ YAML
     [ "$(git --git-dir "$base/origin.git" show refs/heads/main:docs/c.md)" = "child-c" ]
     [ "$(git --git-dir "$base/origin.git" show refs/heads/main:docs/d.md)" = "child-d" ]
     [ "$(git --git-dir "$base/origin.git" show refs/heads/main:docs/e.md)" = "child-e" ]
+    [ "$(git --git-dir "$base/origin.git" show refs/heads/feature:scripts/cmd_complete_gate.sh)" = "child-a" ]
     python3 - "$base/receipt.json" "$base/repo" "$generation" "$parent_sha" "$child_sha" <<'PY'
 import json, sys
 data = json.load(open(sys.argv[1], encoding='utf-8'))
