@@ -94,53 +94,6 @@ commands:
     environment_change: "type=lesson; file=docs/research/dm-login-showcase-asis-tobe_v3_20260830.md; pattern=FAQ（JA→EN 追加）"
     delegated_at: "\"2026-08-30T23:47:12\""
     origin: "[[殿方向性_DocsFAQ導線_20260830_1325]] -> [[cmd_4418_docs_faq公開]] -> [[FAQ_JAのみ_22:35一次]] -> [[cmd_4427_faq_en]]"
-  cmd_4424:
-    title: "Free tier F3 — LP に『Free で始める(Google)』CTA を Sign in と並べて追加し /free?from=lp へ導線を付け、Members/Free の入口文言を EN/JA で二分する"
-    status: delegated
-    project: dm-signal
-    purpose: "殿裁定 2026-08-30 20:21『着手せよ』+殿要件 20:17『動線をスムーズに。すでにメンバーが誤解しないように』+20:19『LP 経由か rebalancer 経由かが見えたほうがいい』(設計書 v3 §2 項目 5・§4-5 経路記録)。LP(lp/、dm-signal.com)の hero と footer の CTA は Sign in と Read the docs だけで Free への入口が無い。本 cmd は LP に Free CTA と入口二分の文言だけを足す(frontend /free は cmd_4423、backend は cmd_4422 と並走)。CTA の遷移先 /free?from=lp が経路記録(source=lp)の起点になる"
-    scope_mode: FULL
-    target_path: /mnt/c/Python_app/DM-signal/lp
-    acceptance_criteria:
-      AC1:
-        description: "landing-page の hero CTA 群に『Start free with Google / Google で無料で始める』ボタン(href=appUrl の /free に from=lp クエリ付き)を Sign in の隣に追加し、footer の nav にも同リンクを加え、copy の en と ja に freeCta と入口二分の見出し(Members=note の当月パスワード / Free=Google で登録して当月クーポン)と『Free は Basic-DualMomentum のみ』の 1 文を閉じ、next build(output export)の out の EN と JA の index に free の href が hero と footer の各一つずつあることを確認する"
-        binary_check: "EN/JA の out index に href が /free?from=lp を含む a 要素が各二つ(hero と footer) ∧ Sign in の a 要素は従来どおり /login ∧ Members と Free の見出しが EN/JA 各一つ ∧ Basic-DualMomentum のみ の文言 EN/JA 各一つ か?"
-      AC2:
-        description: "Free CTA の押下で既存の showcase event(step=lp_cta_click、cmd_4419 で追加済)を送る既存導線と同じ経路を通し(新 step は追加しない)、CTA の文言が価格・無料期間を示さず(Free はプラン名であり期間ではない)、note 課金導線(getOnNote)の文言と混ざらないことを確認する"
-        binary_check: "Free CTA の onClick が既存の lp_cta_click 送信関数を呼ぶ(または同じ a 要素の data 属性で既存 listener が拾う) ∧ 毎営業日/today/soon/¥/円/first month free/初月無料/free trial の grep 0 ∧ getOnNote の文言が不変 か?"
-      AC3:
-        description: "変更が lp 配下の landing-page と copy の en と ja のみで、既存 test の削除が無く、tsc と next build が PASS し、375×667 の Playwright(ローカル static serve)で hero の Sign in と Free CTA が初期 viewport 内に並ぶ(算出元: cmd_4420 の AC1 と同じ viewport、rg -c '375' queue/shogun_to_karo.yaml → 1 件以上)ことを確認する"
-        binary_check: "変更ファイルが landing-page・copy en・copy ja の集合内のみ(算出元: git diff --name-only を生貼付) ∧ 既存 test 削除が無い ∧ tsc と next build exit 0 ∧ 375×667 で Sign in と Free CTA が初期 viewport 内 か?"
-    command: |
-      1. copy に freeCta と入口二分の文言を EN/JA で足し、landing-page の hero と footer に Free CTA(/free?from=lp)を追加して out の href を確認する
-      2. Free CTA を既存 lp_cta_click 経路に載せ、禁則 grep 0 と getOnNote 不変を確認する
-      3. 変更ファイル集合・tsc/next build exit 0・375×667 の viewport 検証を報告 YAML に生貼付する
-    assumptions:
-      claim: "origin/main の lp/components/landing-page.tsx L66 に hero の Sign in(appUrl /login)、L67 に Read the docs、L95 に footer nav、lp/copy/en.ts L21 signIn・L39 getOnNote・L41 readDocs(2026-08-30 20:38 git show)。lp/lib/showcase.ts L40 appUrl(NEXT_PUBLIC_APP_HOST 既定 dm-signal-frontend.onrender.com)。showcase event の step に lp_view と lp_cta_click(cmd_4419、backend e94cda07 live、本番 POST 201 を 19:45 curl)。数値の算出元: git show origin/main:lp/components/landing-page.tsx | grep -c 'appUrl(\"/login\")' → 1 件、grep -c '/free' → 0 件、rg -c '375' queue/shogun_to_karo.yaml → 1 件以上"
-      source: "docs/research/dm-free-tier-google-auth-asis-tobe_v3_20260830.md §2 項目 5・§4-5、lp/components/landing-page.tsx、lp/copy/en.ts、lp/copy/ja.ts、lp/lib/showcase.ts"
-      trust: verified
-    depends_on: none
-    timeout_minutes: 30
-    estimated_minutes: 10
-    split_decision: "AC3 本=1 道具(LP の Free 導線 1 組: CTA 追加・event 経路・build/viewport の 3 手で 10 分)。/free 本体は cmd_4423、backend は cmd_4422 に分離。並走可(遷移先はパスのみの契約)"
-    quality_gate:
-      q1_firefighting: "消火ではない。LP に Free の入口を足し、経路記録(from=lp)の起点を作る品質向上"
-      q2_learning: "忍者は copy 駆動の CTA 追加、既存 event 経路の再利用、入口二分の文言設計を学ぶ"
-      q3_next_quality: "LP→/free→クーポン→/login の 1 本道が揃い、post_deploy_check と SEO 案 §4 の区間表(lp_view→lp_cta_click→…)が Free 経路も数えられる"
-      q4_depth: "shallow — 変更 3 ファイル。設計書 v3 §2 項目 5 に文言方針が明文化済み"
-      q5_verified_source: "code_reading — git show origin/main:lp/components/landing-page.tsx(L60-95)・lp/copy/en.ts・lp/lib/showcase.ts を 2026-08-30 20:38 に読了。production_verified — https://dm-signal.com/ を 19:34 curl(Sign in→/login、note→tokyojibika)"
-      q6_not_hiding: "Free を『無料期間』と誤読させる語を使わない(§3 禁則)。note 課金導線の文言は不変。Sign in の遷移先は不変"
-      q7_definition_verified: "『Free CTA』= /free?from=lp への a 要素(設計書 v3 §2 項目 5、§4-5 source=lp。確認日: 2026-08-30)。『lp_cta_click』= cmd_4419 の step enum(public_showcase.py L62-74)。『入口二分』= Members/Free の見出し 2 つ"
-      q8_why_what: "WHY: LP に Free の入口が無く、経路記録の起点(from=lp)も無い / WHAT: EN/JA の out に /free?from=lp の a 要素各二つ、Sign in は /login 不変、Members/Free 見出し各一つ、Basic-DualMomentum のみ 各一つ、lp_cta_click 経路、禁則 grep 0、getOnNote 不変、tsc/next build exit 0、375×667 で両 CTA が viewport 内 / WHEN: 今セッション、4422/4423 と並走 / WHERE: /mnt/c/Python_app/DM-signal/lp / WHO: 忍者 1 名 / HOW: copy 追加+CTA 2 箇所+既存 event 経路 / 複利: 経路記録 source=lp が最初から入るため、LP→Free→note の転換率が初日から数えられる"
-      q9_firefighting_root_cause: "根本対応。LP と /free の役割分担(LP=説明と入口、/free=登録とクーポン)を崩さず入口だけ足す"
-      q10_knowledge_boundary: "検証済み: landing-page の CTA 位置、copy キー、event step。スコープ外: /free 本体(4423)、backend(4422)、deploy(家老)、product_logins 表(Supabase 側)"
-      q11_not_already_done: "git show origin/main:lp/components/landing-page.tsx | grep -c '/free' → 0 件(2026-08-30 20:38) / git show origin/main:lp/copy/en.ts | grep -ci 'google' → 0 件 / semantic_search.sh 'LP free CTA google' → 該当 cmd なし"
-      q_ambiguity: "CTA の文言は EN『Start free with Google』JA『Google で無料で始める』に固定(殿裁定なければ既定)。from クエリは lp に固定。曖昧さは copy の 2 値に閉じる"
-      q12_lord_30min_cost: "no — 殿裁定 20:21 と要件 20:17-20:19 で確定"
-      diagnosis: "BLOCK理由: 該当なし(新規起票) / 対策: 該当なし"
-    environment_change: "type=lesson; file=docs/research/dm-free-tier-google-auth-asis-tobe_v3_20260830.md; pattern=product_logins"
-    delegated_at: "\"2026-08-30T20:44:38\""
-    origin: "[[殿要件_クーポンUX_20260830_2017]] -> [[殿下問_経路記録_20260830_2019]] -> [[cmd_4423_free_tier_frontend]] -> [[cmd_4424_free_tier_lp_cta]]"
   cmd_4414:
     title: "/login ショーウィンドウ P1b — 公開集計 EP に Sharpe(プラン平均/ベスト)・SPY/TQQQ 比較行・Secret 集計値を追補する"
     status: void
