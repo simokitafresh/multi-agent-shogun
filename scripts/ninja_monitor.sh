@@ -2589,7 +2589,78 @@ declare -A GATE_STALL_ACTIVE_CMDS # 現役cmd集合（active task/queue command/
 # を全件GATE-STALL通知し将軍/家老inboxへ数十件のstorm。監視対象は「直近の両承認」だけで
 # よいので上限窓(既定24h)を置き、queue/archive/cmds に完了記録がある cmd も除外する。
 GATE_STALL_MAX_MIN=${GATE_STALL_MAX_MIN:-1440}
-GATE_STALL_ITEM_TIMEOUT_SEC=${GATE_STALL_ITEM_TIMEOUT_SEC:-30}
+# Use the measured completion-gate wall cohort after cold start.  The explicit
+# value remains a bounded fallback when telemetry is unavailable or incomplete.
+GATE_STALL_ITEM_TIMEOUT_SEC=${GATE_STALL_ITEM_TIMEOUT_SEC:-}
+GATE_STALL_ITEM_TIMEOUT_MIN_SEC=${GATE_STALL_ITEM_TIMEOUT_MIN_SEC:-30}
+GATE_STALL_ITEM_TIMEOUT_MAX_SEC=${GATE_STALL_ITEM_TIMEOUT_MAX_SEC:-120}
+GATE_STALL_ITEM_TIMEOUT_SAMPLE_SIZE=${GATE_STALL_ITEM_TIMEOUT_SAMPLE_SIZE:-20}
+GATE_STALL_ITEM_TIMEOUT_MULTIPLIER=${GATE_STALL_ITEM_TIMEOUT_MULTIPLIER:-1.5}
+GATE_STALL_TIMING_LOG=${GATE_STALL_TIMING_LOG:-$SCRIPT_DIR/logs/cmd_complete_gate_function_timing.jsonl}
+
+_gate_stall_item_timeout_sec() {
+    local floor cap sample_size multiplier timing_log configured derived
+    floor="$GATE_STALL_ITEM_TIMEOUT_MIN_SEC"
+    [[ "$floor" =~ ^[0-9]+$ ]] || floor=30
+    [ "$floor" -gt 0 ] 2>/dev/null || floor=30
+    cap="$GATE_STALL_ITEM_TIMEOUT_MAX_SEC"
+    [[ "$cap" =~ ^[0-9]+$ ]] || cap=120
+    [ "$cap" -ge "$floor" ] 2>/dev/null || cap="$floor"
+    sample_size="$GATE_STALL_ITEM_TIMEOUT_SAMPLE_SIZE"
+    [[ "$sample_size" =~ ^[0-9]+$ ]] || sample_size=20
+    [ "$sample_size" -gt 0 ] 2>/dev/null || sample_size=20
+    multiplier="$GATE_STALL_ITEM_TIMEOUT_MULTIPLIER"
+    [[ "$multiplier" =~ ^[0-9]+([.][0-9]+)?$ ]] || multiplier=1.5
+    timing_log="$GATE_STALL_TIMING_LOG"
+
+    configured="$GATE_STALL_ITEM_TIMEOUT_SEC"
+    if ! [[ "$configured" =~ ^[0-9]+$ ]] || [ "$configured" -le 0 ] 2>/dev/null; then
+        configured="$floor"
+    fi
+    if derived=$(python3 - "$timing_log" "$sample_size" "$multiplier" <<'PY'
+import json
+import math
+import re
+import sys
+
+path, required_text, multiplier_text = sys.argv[1:]
+required = int(required_text)
+multiplier = float(multiplier_text)
+values = []
+try:
+    with open(path, encoding="utf-8") as fh:
+        for line in fh:
+            try:
+                row = json.loads(line)
+            except (TypeError, ValueError):
+                continue
+            if row.get("script") != "cmd_complete_gate.sh" or row.get("function") != "main":
+                continue
+            elapsed = row.get("elapsed_us")
+            match = re.search(r"-(\d{16})$", str(row.get("execution_id", "")))
+            if not match or not isinstance(elapsed, (int, float)) or elapsed <= 0:
+                continue
+            values.append((int(match.group(1)), float(elapsed)))
+except OSError:
+    values = []
+
+if len(values) < required:
+    raise SystemExit(1)
+values.sort(key=lambda item: item[0])
+recent = sorted(item[1] for item in values[-required:])
+rank = max(1, math.ceil(len(recent) * 0.95))
+print(math.ceil((recent[rank - 1] / 1_000_000) * multiplier))
+PY
+    ); then
+        [[ "$derived" =~ ^[0-9]+$ ]] || derived=""
+    else
+        derived=""
+    fi
+    [ -n "$derived" ] || derived="$configured"
+    [ "$derived" -ge "$floor" ] 2>/dev/null || derived="$floor"
+    [ "$derived" -le "$cap" ] 2>/dev/null || derived="$cap"
+    printf '%s\n' "$derived"
+}
 
 _gate_stall_marker_epoch() {
     local marker="$1" timestamp
@@ -2684,9 +2755,7 @@ check_gate_stall() {
     fi
     local now=$EPOCHSECONDS marker cmd marker_epoch elapsed_sec elapsed_min gate_dir
     local gate_lock_fd gate_output block_message gate_rc item_timeout_sec
-    item_timeout_sec="$GATE_STALL_ITEM_TIMEOUT_SEC"
-    [[ "$item_timeout_sec" =~ ^[0-9]+$ ]] || item_timeout_sec=30
-    [ "$item_timeout_sec" -gt 0 ] 2>/dev/null || item_timeout_sec=30
+    item_timeout_sec="$(_gate_stall_item_timeout_sec)"
     _gate_stall_refresh_active_cmds
 
     while IFS= read -r marker; do
@@ -2764,9 +2833,7 @@ _gate_stall_worker_timeout_sec() {
     base="$GATE_STALL_TIMEOUT"
     [[ "$base" =~ ^[0-9]+$ ]] || base=120
     [ "$base" -gt 0 ] 2>/dev/null || base=120
-    item="$GATE_STALL_ITEM_TIMEOUT_SEC"
-    [[ "$item" =~ ^[0-9]+$ ]] || item=30
-    [ "$item" -gt 0 ] 2>/dev/null || item=30
+    item="$(_gate_stall_item_timeout_sec)"
     margin="$GATE_STALL_TIMEOUT_MARGIN_SEC"
     [[ "$margin" =~ ^[0-9]+$ ]] || margin=10
     cap="$GATE_STALL_TIMEOUT_MAX_SEC"

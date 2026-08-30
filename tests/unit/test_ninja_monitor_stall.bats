@@ -7955,6 +7955,82 @@ EOF
     [ "$output" = "active=5 item_timeout=30 margin=10 derived=160 cap=150 bounded=1 skip=0" ]
 }
 
+# test_necessity: the item timeout is derived from the latest complete
+# cmd_complete_gate main-wall cohort, multiplied by 1.5 and clamped to a
+# bounded interval; incomplete telemetry must use the bounded fallback.
+@test "T190 gate stall item timeout derives p95 and handles shortage" {
+    run env PROJECT_ROOT="$PROJECT_ROOT" bash -c '
+        set -euo pipefail
+        export NINJA_MONITOR_LIB_ONLY=1 NINJA_MONITOR_FUNCTION_TIMING_LOG=disabled
+        source "$PROJECT_ROOT/scripts/ninja_monitor.sh"
+        unset NINJA_MONITOR_LIB_ONLY
+        root="$BATS_TEST_TMPDIR/gate-stall-item-budget"
+        mkdir -p "$root/logs"
+        GATE_STALL_TIMING_LOG="$root/logs/cmd_complete_gate_function_timing.jsonl"
+        GATE_STALL_ITEM_TIMEOUT_SEC=30
+        GATE_STALL_ITEM_TIMEOUT_MIN_SEC=30
+        GATE_STALL_ITEM_TIMEOUT_MAX_SEC=120
+        GATE_STALL_ITEM_TIMEOUT_SAMPLE_SIZE=20
+        GATE_STALL_ITEM_TIMEOUT_MULTIPLIER=1.5
+        for i in $(seq 1 20); do
+            us=$((i * 1000000))
+            printf "{\"script\":\"cmd_complete_gate.sh\",\"execution_id\":\"cmd_fixture-%016d\",\"function\":\"main\",\"elapsed_us\":%d}\n" "$i" "$us" >> "$GATE_STALL_TIMING_LOG"
+        done
+        # nearest-rank p95=19s, ceil(19*1.5)=29, then the 30s floor applies.
+        test "$(_gate_stall_item_timeout_sec)" -eq 30
+        sed -i -e "19s/\\\"elapsed_us\\\":[0-9]*/\\\"elapsed_us\\\":80000000/" \
+            -e "20s/\\\"elapsed_us\\\":[0-9]*/\\\"elapsed_us\\\":80000000/" "$GATE_STALL_TIMING_LOG"
+        # nearest-rank p95=80s, ceil(80*1.5)=120, the upper bound.
+        test "$(_gate_stall_item_timeout_sec)" -eq 120
+        head -n 3 "$GATE_STALL_TIMING_LOG" > "$GATE_STALL_TIMING_LOG.short"
+        mv "$GATE_STALL_TIMING_LOG.short" "$GATE_STALL_TIMING_LOG"
+        test "$(_gate_stall_item_timeout_sec)" -eq 30
+        GATE_STALL_ITEM_TIMEOUT_SEC=999
+        test "$(_gate_stall_item_timeout_sec)" -eq 120
+        printf "samples=20 p95=19s multiplier=1.5 floor=30 cap=120 shortage_fallback=30 bounded=1\n"
+    '
+    [ "$status" -eq 0 ]
+    [ "$output" = "samples=20 p95=19s multiplier=1.5 floor=30 cap=120 shortage_fallback=30 bounded=1" ]
+}
+
+# test_necessity: a normal completion at the measured wall must not be marked
+# as a timeout, while a true hang past the derived budget must produce one
+# rc=124 item timeout and remain eligible for the next cycle.
+@test "T190 gate stall measured budget separates normal completion from hang" {
+    run env PROJECT_ROOT="$PROJECT_ROOT" bash -c '
+        set -euo pipefail
+        export NINJA_MONITOR_LIB_ONLY=1 NINJA_MONITOR_FUNCTION_TIMING_LOG=disabled
+        source "$PROJECT_ROOT/scripts/ninja_monitor.sh"
+        unset NINJA_MONITOR_LIB_ONLY
+        root="$BATS_TEST_TMPDIR/gate-stall-item-signals"
+        mkdir -p "$root/logs" "$root/queue/gates/cmd_normal" "$root/queue/tasks" "$root/scripts" "$root/state"
+        SCRIPT_DIR="$root"; STATE_DIR="$root/state"; LOG="$root/logs/monitor.log"
+        GATE_STALL_TIMING_LOG="$root/logs/cmd_complete_gate_function_timing.jsonl"
+        GATE_STALL_ITEM_TIMEOUT_MIN_SEC=1
+        GATE_STALL_ITEM_TIMEOUT_MAX_SEC=3
+        GATE_STALL_ITEM_TIMEOUT_SAMPLE_SIZE=20
+        GATE_STALL_ITEM_TIMEOUT_MULTIPLIER=1.5
+        for i in $(seq 1 20); do
+            printf "{\"script\":\"cmd_complete_gate.sh\",\"execution_id\":\"cmd_fixture-%016d\",\"function\":\"main\",\"elapsed_us\":1000000}\n" "$i" >> "$GATE_STALL_TIMING_LOG"
+        done
+        printf "timestamp: %s\nresult: LGTM\n" "$(date -Iseconds)" > "$root/queue/gates/cmd_normal/review_gate.done"
+        printf "task:\n  parent_cmd: cmd_normal\n  status: in_progress\n" > "$root/queue/tasks/active.yaml"
+        : > "$root/logs/gate_metrics.log"
+        printf "#!/usr/bin/env bash\nsleep 1\n" > "$root/scripts/cmd_complete_gate.sh"
+        chmod +x "$root/scripts/cmd_complete_gate.sh"
+        ninja_monitor_business_owner_is_current() { return 0; }
+        ninja_monitor_worker_owner_is_current() { return 0; }
+        check_gate_stall
+        test "$(grep -c "GATE-STALL-ITEM-TIMEOUT" "$LOG" || true)" -eq 0
+        sed -i "s/sleep 1/sleep 5/" "$root/scripts/cmd_complete_gate.sh"
+        check_gate_stall
+        test "$(grep -c "GATE-STALL-ITEM-TIMEOUT: cmd=cmd_normal.*rc=124" "$LOG")" -eq 1
+        printf "normal_timeout=0 hang_rc124=1 retry=next-cycle false_positive=0\n"
+    '
+    [ "$status" -eq 0 ]
+    [ "$output" = "normal_timeout=0 hang_rc124=1 retry=next-cycle false_positive=0" ]
+}
+
 # test_necessity: an in-progress newest run may admit a push only when the
 # newest completed success is same-branch, an ancestor, and current is remote.
 @test "T190 UNKNOWN in-progress CI admits same-head completed success" {
