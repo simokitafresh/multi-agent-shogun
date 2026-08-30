@@ -37,6 +37,15 @@ def since(iso):
 rows = [dict(st=m.group(1), id=m.group(2), ev=m.group(3), title=m.group(4), why=m.group(5))
         for m in re.finditer(r'^- \[(.)\] (T\d+[a-z]?|K\d+)\((.*?)\) (.*?) ★(.*)$', s, re.M)]
 cnt = {k: sum(1 for r in rows if r['st'] == k) for k in 'x~ '}
+# 2026-08-30 14:16: ★区切り/ID 形式を欠く行は regex に落ちず artifact から黙って消える(T192/T193 で実証)。
+# 取りこぼし=0 を機械判定し、1 行でもあれば exit 2 で止める(html_missing=[] の盲点)。
+_all_rows = re.findall(r'^- \[.\] .*$', s, re.M)
+_dropped = [l for l in _all_rows if not re.match(r'^- \[(.)\] (T\d+[a-z]?|K\d+)\((.*?)\) (.*?) ★(.*)$', l)]
+if _dropped:
+    sys.stderr.write(f"todo_map_render: {len(_dropped)} row(s) dropped by regex (★区切り or ID 形式欠落):\n")
+    for l in _dropped:
+        sys.stderr.write('  ' + l[:120] + '\n')
+    sys.exit(2)
 
 def segs(ev):
     return [x.strip() for x in ev.split('; ') if x.strip()]
