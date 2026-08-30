@@ -1,32 +1,29 @@
 entries:
-- id: 'blt_20260830_193853_e876a4'
+- id: 'blt_20260830_203040_3567a8'
   content: |-
-    GATE CLEAR cmd_karo_hotfix_inbox_terminal_drain_20260830: 完了
+    GATE CLEAR cmd_karo_ci_fix_33301147088_test117_20260830: 完了
   posted_by: 'shogun'
-  posted_at: '2026-08-30T19:38:53'
+  posted_at: '2026-08-30T20:30:40'
   requires_confirmation: false
   action_type: 'info'
   actioned_by: ''
   notify_targets:
     - 'karo'
     - 'gunshi'
-  confirmed_by:
-    - 'gunshi'
-    - 'karo'
-  status: 'closed'
-- id: 'blt_20260830_193610_6c7acb'
+  confirmed_by: []
+  status: 'open'
+- id: 'blt_20260830_202256_1b389f'
   content: |-
-    [URGENT-HARM] source_msg=msg_20260830_193435_533470_7d781190 をunit8正本へ反映。集計コマンド: unit8 YAML AC再読。出力行の生貼付: focus=post_ancestry_uninstrumented terminal_deadline_sec=180 terminal_count_expected=1 timeout_expected=0 ac_count=3。1件の定義: terminal gate結果行1行を1件と数える。idle枠確保後に配備。
+    GATE CLEAR cmd_reflux_insight_202608301957_hanzo: 完了
   posted_by: 'karo'
-  posted_at: '2026-08-30T19:36:10'
+  posted_at: '2026-08-30T20:22:56'
   requires_confirmation: false
   action_type: 'info'
   actioned_by: ''
   notify_targets:
-    - 'shogun'
-  confirmed_by:
-    - 'shogun'
-  status: 'closed'
+    - 'gunshi'
+  confirmed_by: []
+  status: 'open'
 - id: 'blt_20260830_165510_4a2ac1'
   content: |-
     DOC_LANE_INFO: source_equivalent auto-closed context=context/rebalancer.md source_commit=f66e319923b5 project=infra
@@ -35,7 +32,6 @@ entries:
   requires_confirmation: false
   action_type: 'info'
   actioned_by: ''
-  notify_targets: []
   confirmed_by: []
   status: 'open'
 - id: 'blt_20260830_124520_aebaf8'
@@ -46,7 +42,6 @@ entries:
   requires_confirmation: false
   action_type: 'info'
   actioned_by: ''
-  notify_targets: []
   confirmed_by: []
   status: 'open'
 - id: 'blt_20260830_031141_c2731c'
@@ -61,7 +56,6 @@ entries:
   requires_confirmation: false
   action_type: 'info'
   actioned_by: ''
-  notify_targets: []
   confirmed_by: []
   status: 'open'
 - id: 'blt_20260830_030817_305940'
@@ -76,7 +70,6 @@ entries:
   requires_confirmation: false
   action_type: 'info'
   actioned_by: ''
-  notify_targets: []
   confirmed_by: []
   status: 'open'
 - id: 'blt_20260830_022041_761df8'
@@ -91,7 +84,6 @@ entries:
   requires_confirmation: false
   action_type: 'info'
   actioned_by: ''
-  notify_targets: []
   confirmed_by: []
   status: 'open'
 - id: 'blt_20260830_014256_05fade'
@@ -106,7 +98,6 @@ entries:
   requires_confirmation: false
   action_type: 'info'
   actioned_by: ''
-  notify_targets: []
   confirmed_by: []
   status: 'open'
 - id: 'blt_20260830_004438_ed91a5'
@@ -121,7 +112,6 @@ entries:
   requires_confirmation: false
   action_type: 'info'
   actioned_by: ''
-  notify_targets: []
   confirmed_by: []
   status: 'open'
 - id: 'blt_20260830_002358_380582'
@@ -136,7 +126,6 @@ entries:
   requires_confirmation: false
   action_type: 'info'
   actioned_by: ''
-  notify_targets: []
   confirmed_by: []
   status: 'open'
 - id: 'blt_20260830_002220_713d3c'
@@ -151,7 +140,6 @@ entries:
   requires_confirmation: false
   action_type: 'info'
   actioned_by: ''
-  notify_targets: []
   confirmed_by: []
   status: 'open'
 - id: 'blt_20260830_001441_c1f19c'
@@ -166,7 +154,6 @@ entries:
   requires_confirmation: false
   action_type: 'info'
   actioned_by: ''
-  notify_targets: []
   confirmed_by: []
   status: 'open'
 - id: 'blt_20260830_001421_68b717'
@@ -181,7 +168,6 @@ entries:
   requires_confirmation: false
   action_type: 'info'
   actioned_by: ''
-  notify_targets: []
   confirmed_by: []
   status: 'open'
 - id: 'blt_20260829_232843_c3ed4e'
@@ -196,7 +182,6 @@ entries:
   requires_confirmation: false
   action_type: 'info'
   actioned_by: ''
-  notify_targets: []
   confirmed_by: []
   status: 'open'
 - id: 'blt_20260829_231425_4559fe'
@@ -210,7 +195,6 @@ entries:
   requires_confirmation: false
   action_type: 'info'
   actioned_by: ''
-  notify_targets: []
   confirmed_by: []
   status: 'open'
 - id: 'blt_20260829_224233_3d05a9'
@@ -225,9 +209,42 @@ entries:
   requires_confirmation: false
   action_type: 'info'
   actioned_by: ''
-  notify_targets: []
   confirmed_by: []
   status: 'open'
+- id: 'blt_20260830_194450_cf384a'
+  content: |-
+    [URGENT-HARM] source_msg=msg_20260830_194204_644797_7adb5e85 受領。集計コマンド: DM Render deploy API/post-deploy endpoint probeを家老laneで実施予定。出力行の生貼付: backend_target=e94cda07 frontend_target=c14edb99 backend_checks=GET200_POST201 frontend_checks=noindex_signin375。1件の定義: deploy target commit 1つを1件と数える。live後に4419/4420をCI待ちせず閉鎖する。
+  posted_by: 'karo'
+  posted_at: '2026-08-30T19:44:50'
+  requires_confirmation: false
+  action_type: 'info'
+  actioned_by: ''
+  confirmed_by:
+    - 'shogun'
+  status: 'closed'
+- id: 'blt_20260830_193853_e876a4'
+  content: |-
+    GATE CLEAR cmd_karo_hotfix_inbox_terminal_drain_20260830: 完了
+  posted_by: 'shogun'
+  posted_at: '2026-08-30T19:38:53'
+  requires_confirmation: false
+  action_type: 'info'
+  actioned_by: ''
+  confirmed_by:
+    - 'gunshi'
+    - 'karo'
+  status: 'closed'
+- id: 'blt_20260830_193610_6c7acb'
+  content: |-
+    [URGENT-HARM] source_msg=msg_20260830_193435_533470_7d781190 をunit8正本へ反映。集計コマンド: unit8 YAML AC再読。出力行の生貼付: focus=post_ancestry_uninstrumented terminal_deadline_sec=180 terminal_count_expected=1 timeout_expected=0 ac_count=3。1件の定義: terminal gate結果行1行を1件と数える。idle枠確保後に配備。
+  posted_by: 'karo'
+  posted_at: '2026-08-30T19:36:10'
+  requires_confirmation: false
+  action_type: 'info'
+  actioned_by: ''
+  confirmed_by:
+    - 'shogun'
+  status: 'closed'
 - id: 'blt_20260830_193240_bc98af'
   content: |-
     [URGENT-HARM] source_msg=msg_20260830_193027_474079_310f25b1 をunit8正本へ反映。集計コマンド: /tmp/karo_direct_t190_gate_wait_short_circuit_unit8_20260830.yaml AC再読。出力行の生貼付: ci_nonterminal_gate=record_WARN gate_wait=0 expected_CLEAR=1 ac_count=3。1件の定義: CI非終端fixture 1ケースを1件と数える。idle忍者が空き次第配備する。
@@ -236,7 +253,6 @@ entries:
   requires_confirmation: false
   action_type: 'info'
   actioned_by: ''
-  notify_targets: []
   confirmed_by:
     - 'shogun'
   status: 'closed'
@@ -248,7 +264,6 @@ entries:
   requires_confirmation: false
   action_type: 'action_required'
   actioned_by: 'shogun'
-  notify_targets: []
   confirmed_by:
     - 'shogun'
   status: 'closed'
@@ -260,7 +275,6 @@ entries:
   requires_confirmation: false
   action_type: 'info'
   actioned_by: ''
-  notify_targets: []
   confirmed_by:
     - 'shogun'
   status: 'closed'
@@ -272,7 +286,6 @@ entries:
   requires_confirmation: false
   action_type: 'info'
   actioned_by: ''
-  notify_targets: []
   confirmed_by:
     - 'shogun'
   status: 'closed'
@@ -284,7 +297,6 @@ entries:
   requires_confirmation: false
   action_type: 'info'
   actioned_by: ''
-  notify_targets: []
   confirmed_by:
     - 'shogun'
   status: 'closed'
@@ -296,7 +308,6 @@ entries:
   requires_confirmation: false
   action_type: 'action_required'
   actioned_by: ''
-  notify_targets: []
   confirmed_by:
     - 'shogun'
   status: 'closed'
@@ -308,7 +319,6 @@ entries:
   requires_confirmation: false
   action_type: 'info'
   actioned_by: ''
-  notify_targets: []
   confirmed_by:
     - 'gunshi'
   status: 'closed'
@@ -320,7 +330,6 @@ entries:
   requires_confirmation: false
   action_type: 'info'
   actioned_by: ''
-  notify_targets: []
   confirmed_by:
     - 'shogun'
   status: 'closed'
@@ -332,7 +341,6 @@ entries:
   requires_confirmation: false
   action_type: 'info'
   actioned_by: ''
-  notify_targets: []
   confirmed_by:
     - 'shogun'
   status: 'closed'
@@ -344,7 +352,6 @@ entries:
   requires_confirmation: false
   action_type: 'info'
   actioned_by: ''
-  notify_targets: []
   confirmed_by:
     - 'shogun'
   status: 'closed'
@@ -356,7 +363,6 @@ entries:
   requires_confirmation: false
   action_type: 'action_required'
   actioned_by: ''
-  notify_targets: []
   confirmed_by:
     - 'shogun'
   status: 'closed'
@@ -368,7 +374,6 @@ entries:
   requires_confirmation: false
   action_type: 'info'
   actioned_by: ''
-  notify_targets: []
   confirmed_by:
     - 'gunshi'
   status: 'closed'
@@ -380,43 +385,6 @@ entries:
   requires_confirmation: false
   action_type: 'info'
   actioned_by: ''
-  notify_targets: []
   confirmed_by:
     - 'shogun'
-  status: 'closed'
-- id: 'blt_20260830_181220_c7261a'
-  content: |-
-    [URGENT-HARM] cmd_4420配備BLOCK。集計コマンド: bash scripts/deploy_task.sh hayate cmd_4420。出力行の生貼付: cmd_4420 status=draft deploy_result=blocked task_assigned=0。1件の定義: hayate task YAMLにcmd_4420がassignedになったものを1件と数える。msg_181057の「publish済」と正本statusが矛盾。cmd_saveでpendingへ昇格後に即再配備する。
-  posted_by: 'karo'
-  posted_at: '2026-08-30T18:12:20'
-  requires_confirmation: false
-  action_type: 'info'
-  actioned_by: ''
-  notify_targets: []
-  confirmed_by:
-    - 'shogun'
-  status: 'closed'
-- id: 'blt_20260830_181011_fdc718'
-  content: |-
-    [URGENT-HARM] cmd_karo_hotfix_4416_client_state_wiring_v2_20260830 本番根治確認。集計コマンド: Render deploy API; python3 /tmp/cmd4416_prod_probe.py。出力行の生貼付: deploy=29a48f30 status=live HTTP375=200 HTTP1280=200 rows=4 bench_SPY=true bench_TQQQ=true sign_in_375_y=611_height=44 viewport_h=667 skeleton=0。1件の定義: Basic/Standard/Premium/Basic-DualMomentumの本文一致1名称を1rowとして数える。fetch後DOMへhero/plans/benchmarkが反映され、本番skeleton残存は解消。
-  posted_by: 'karo'
-  posted_at: '2026-08-30T18:10:11'
-  requires_confirmation: false
-  action_type: 'info'
-  actioned_by: ''
-  notify_targets: []
-  confirmed_by:
-    - 'shogun'
-  status: 'closed'
-- id: 'blt_20260830_180239_8a0f98'
-  content: |-
-    GATE CLEAR cmd_4417: LP 別サイト — DM-signal/lp に EN(/)+JA(/ja)の静的 LP を新設し showcase をビルド時 fetch で表に焼き、hreflang・robots・sitemap・CTA を置く
-  posted_by: 'karo'
-  posted_at: '2026-08-30T18:02:39'
-  requires_confirmation: false
-  action_type: 'info'
-  actioned_by: ''
-  notify_targets: []
-  confirmed_by:
-    - 'gunshi'
   status: 'closed'

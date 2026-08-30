@@ -16259,3 +16259,16 @@ sqlite3.Connection.backup()を使うとページ(4096byte)単位のread syscall�
 - **when**: 未設定
 - **how**: 未設定
 - 次CI・次のrun・next CI runを単純文字列で追加すると、家老post_push_ci_proof handoffや過去CI実績まで誤検出し得る。将来観測はBLOCKし、handoff/過去実績はPASSする文脈fixtureを同一contractへ固定する。
+
+### L1677: hot-reload owner record transient readはbounded retryでsuccessor admissionへ接続する
+- **日付**: 2026-08-30
+- **出典**: cmd_karo_ci_fix_33301147088_test117_20260830
+- **記録者**: kotaro
+- **tags**: [infra,ninja-monitor,inbox]
+- **subdomain**: infra
+- **target_files**: [scripts/ninja_monitor.sh]
+- **origin**: [[cmd_karo_ci_fix_33301147088_test117_20260830]]
+- **enforcement**: 未自動化
+- **when**: 未設定
+- **how**: 未設定
+- atomic owner record置換の短い読取失敗をwatcherが即時終了すると後継起動が失われる。parent生存中だけbounded retryし、generation CASとheartbeat fenceを維持する。
