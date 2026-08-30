@@ -1,24 +1,27 @@
 <!-- gist-master: 5edb5f6d5fab4e9578bc35fbfacf95b7 dm-signal-lp-seo-plan_20260830.md -->
-# DM-Signal LP(dm-signal.com) SEO 案 v1 — 2026-08-30 19:55
+# DM-Signal LP(dm-signal.com) SEO 案 v2 — 2026-08-30 22:05(v1 19:55)
 
 > 作成: 将軍。殿指示 19:51『seo 案をまとめて gist に共有して』。前提=殿裁定 16:42『別サイト』、17:14 `.com`、17:59 SEO 案(JSON-LD/noindex/Search Console/月次シグナル頁)。
 > 本文は結論+根拠。殿の裁定が要る箇所は **【裁定】** で明示。裁定後に cmd 化する(起票は裁定後、LS115)。
+> **v2(22:05)**: 殿裁定 20:04『やったぞ。進めてくれ』→cmd_4421(P0-3〜P0-5)GATE CLEAR 21:35(DM main 71e0b94d)・本番 live を 22:02 curl で再計測。**残バグ 1 件=`og:image` が 404**(§0/§6)。
 
-## §0 AsIs(2026-08-30 19:52 本番 curl 一次)
+## §0 AsIs(2026-08-30 22:02 本番 curl 一次で再計測。v1=19:52)
 
 | 項目 | EN `/` | JA `/ja` | 判定 |
 |---|---|---|---|
-| title | `DM-Signal \| Dual Momentum, made clear` | `DM-Signal \| デュアルモメンタムを明快に` | ○(ブランド+価値。検索語は未含有) |
-| meta description | あり(since inception / sign in) | あり | ○ |
+| title | `Dual Momentum signals & track record \| DM-Signal` | `デュアルモメンタムのシグナルと実績 \| DM-Signal` | ○ **P0-5 live**(4421。v1 案どおり) |
+| meta description | `Explore Dual Momentum signals and a transparent track record since inception…` | あり | ○(検索語含有、4421) |
 | canonical | `https://dm-signal.com/` | あり | ○(`.jp` 0 件、19:34 修正済) |
 | hreflang | 3 件(en/ja/x-default) | 3 件 | ○(20:06 再確認: `hrefLang` camelCase で grep 漏れ。P0-2 は不要) |
-| OG / Twitter card | og 1 件 | — | △ `og:image` 未確認 |
-| JSON-LD | **0** | 0 | × |
+| OG / Twitter card | og 10 件+twitter 7 件(`og:locale=en_US`、`twitter:card=summary_large_image`) | 同 | △ **meta は完備、`og:image`=`/opengraph-image.png` が 404**(EN/JA 両方。`lp/app/opengraph-image.tsx` は `next/og` ImageResponse で `output: "export"`+`trailingSlash: true` 構成=静的出力に画像が含まれていない疑い。P0-4 未達) |
+| JSON-LD | `Organization`・`WebSite`・`FAQPage`(Q&A 3 組) | 同 3 型 | ○ **P0-3 live**(4421、`lp/components/structured-data.tsx`)。Rich Results Test は未実行 |
 | sitemap.xml / robots.txt | 200(`/`, `/ja/` の 2 URL) | — | ○(lastmod 無し) |
-| Search Console | **未登録** | — | × |
+| Search Console | **登録済**(20:01 殿が Cloudflare 自動確認で所有権確認) | — | ○ 残=sitemap 送信・索引 2/2 の確認(§2.1 Step 6・8) |
 | app 側 `/login` | `noindex` 1(4420 live) | — | ○(LP が評価を受ける側) |
 | 配信 | Cloudflare proxy、HTML `s-maxage=300` | — | ○(速い。更新は 5 分遅延) |
 | 計測 | `lp_view` / `lp_cta_click` を backend へ POST(4419 live、201) | — | ○(区間計測の土台) |
+| 外部導線 | href: note membership 6・`/login` 2・`/faq` 1(誤リンク修正 19:34 live) | 同 | ○ |
+| Free CTA(4424) | `/free?from=lp` 導線は **未 live**(f9011787 は origin/main 未着) | — | — SEO 上は app 側 `/free` を noindex にする(§3 追記) |
 
 ## §1 方針(結論 3 行)
 
@@ -31,12 +34,12 @@
 ### P0 — 土台(各 10 分以内、可逆)
 | # | 施策 | 中身 | 二値 AC | 担当 |
 |---|---|---|---|---|
-| P0-1 | **Search Console 登録+sitemap 送信** | ドメインプロパティ(DNS TXT を Cloudflare に 1 行)。`sitemap.xml` 送信 | Console に `dm-signal.com` 所有確認済 ∧ sitemap 取得成功 | **【裁定】殿の Google アカウントで登録**(将軍が TXT を打つ。トークン再発行後) |
-| P0-2 | hreflang 対称化 | `/` と `/ja` の双方に `en`・`ja`・`x-default` の 3 本 | 両ページ hreflang 3 件 | 忍者(lp/app/layout.tsx) |
-| P0-3 | JSON-LD | `Organization`(+sameAs: note)、`WebSite`、FAQ 節に `FAQPage` | Rich Results Test で 3 型 valid | 忍者 |
-| P0-4 | OG/Twitter 完備 | `og:image`(1200×630、EN/JA)、`og:locale`、`twitter:card=summary_large_image` | 両ページ og 6 件以上 ∧ 画像 200 | 忍者+**【裁定】画像の表現(数値を載せるか)** |
-| P0-5 | title/description に検索語 | EN `Dual Momentum signals & track record \| DM-Signal`、JA `デュアルモメンタムのシグナルと実績 \| DM-Signal`(案) | grep 各 1 | **【裁定】文言** |
-| P0-6 | Bing Webmaster | Console からインポート(5 分) | 登録済 | 将軍 |
+| P0-1 | **Search Console 登録+sitemap 送信** | ドメインプロパティ(Cloudflare 自動確認) | Console に `dm-signal.com` 所有確認済 ∧ sitemap 取得成功 | **所有確認=済(20:01 殿)**。残=sitemap 送信(殿の画面 1 分)・索引 2/2 |
+| P0-2 | hreflang 対称化 | `/` と `/ja` の双方に `en`・`ja`・`x-default` の 3 本 | 両ページ hreflang 3 件 | **不要(既に 3 本、20:06 確認)** |
+| P0-3 | JSON-LD | `Organization`(+sameAs: note)、`WebSite`、FAQ 節に `FAQPage` | Rich Results Test で 3 型 valid | **live(4421、21:35 CLEAR)**。残=Rich Results Test 1 回(将軍) |
+| P0-4 | OG/Twitter 完備 | `og:image`(1200×630、EN/JA)、`og:locale`、`twitter:card=summary_large_image` | 両ページ og 6 件以上 ∧ 画像 200 | meta=live(4421)、**画像 404=未達**→hotfix(§6)。画像は既定案(ブランド+タイトルのみ、数値なし)で実装済 |
+| P0-5 | title/description に検索語 | EN `Dual Momentum signals & track record \| DM-Signal`、JA `デュアルモメンタムのシグナルと実績 \| DM-Signal` | grep 各 1 | **live(4421、既定案の文言)** |
+| P0-6 | Bing Webmaster | Console からインポート(5 分) | 登録済 | 未(殿の画面。Console 登録済なので今できる) |
 
 ### P1 — 鮮度と面積(9 月)
 | # | 施策 | 中身 | 効果の根拠 |
@@ -78,6 +81,7 @@
 - 個別 PF 名・Secret の数値を索引可能な頁に出さない(§2.3 契約)。
 - 4〜5 桁 % の煽り見出し(信憑性を損なう。§6 未決 3 と同じ)。
 - キーワード詰め込み・購入リンク。
+- app 側の `/free`(4423/4424 の Google 登録入口)は `/login` と同じく `noindex`(入口は LP に集約、§1-1)。live 後に `curl /free | grep robots` で 1 件を確認する。
 
 ## §4 計測(週報に固定)
 | 指標 | 出所 | 目標(初月) |
@@ -86,15 +90,20 @@
 | `lp_view→lp_cta_click` 率 | showcase_events(4419) | 5% |
 | `lp_cta_click→login_view→ok` 率 | 同上 | 区間ごとに数え、最も落ちる区間を先に直す |
 
-## §5 殿の裁定が要る 4 点(既定案付き。返答なければ既定案で進む)
-1. Search Console の所有者=殿の Google アカウント(既定: 殿が登録、将軍が TXT)。
-2. title/description の文言(既定: §2 P0-5 案)。
-3. OG 画像に数値を載せるか(既定: 載せない=ブランド+タグラインのみ)。
-4. docs/faq を LP 配下へ移すか(既定: 移さず app 側 canonical、LP から内部リンクのみ)。
+## §5 殿の裁定 4 点(v2: 状態)
+1. Search Console の所有者=殿の Google アカウント → **決(20:01 殿が自動確認で登録)**。
+2. title/description の文言 → 殿 20:04『進めてくれ』=既定案採用、**live**。
+3. OG 画像に数値を載せるか → 既定案(載せない)で実装済。画像 404 の hotfix 後に殿実機で表現を確認。
+4. docs/faq を LP 配下へ移すか → 未決。既定案(移さず app 側 canonical、LP から内部リンク `/faq` 1 件済)で進行中。
 
-## §6 工程(裁定後)
-- cmd A(P0-2〜P0-5、忍者 1 名、10 分×4、隔離 clone で AC)→家老 deploy→post_deploy_check(Rich Results/hreflang)。
-- cmd B(P1-1 月次シグナル頁、忍者 1 名)→sitemap 自動更新。
-- 将軍: P0-1/P0-6 の登録、週報への §4 固定。
+## §6 工程(v2: 状態)
+| 手 | 内容 | 状態(22:05) |
+|---|---|---|
+| cmd A | P0-3〜P0-5(cmd_4421、忍者 1 名) | **完了**: GATE CLEAR 21:35、DM main 71e0b94d、本番 live(§0) |
+| hotfix | `og:image` 404: `output: "export"`+`trailingSlash` で `opengraph-image.tsx` の PNG が out に出ない疑い。対処案=`lp/public/opengraph-image.png` を静的 PNG(1200×630、EN/JA 各 1)として置き `metadata.openGraph.images` で明示参照(ImageResponse 依存を外す)。二値 AC=EN/JA の `og:image` URL が 200 ∧ `content-type: image/png` | **未起票**(次 cmd。post_deploy_check に curl 2 本) |
+| 将軍 | Search Console sitemap 送信・索引 2/2(§2.1 Step 6・8)、P0-6 Bing、Rich Results Test | sitemap 送信=殿の画面(1 分)。索引は 24-48h 後 |
+| cmd B | P1-1 月次シグナル頁(EN/JA)+sitemap lastmod | 未起票(9 月) |
+| 週報 | §4 の 3 指標固定 | Console 初回データ後 |
+
 
 origin: `[[殿裁定_LP別サイト_20260830_1642]] -> [[dm-signal.com_LP本番到達_20260830_1744]] -> [[SEO案_v1_20260830]]`
