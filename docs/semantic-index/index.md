@@ -11049,6 +11049,7 @@ codd:
 | discussion | `queue/lord_conversation.jsonl` 2026-08-29T12:07:56+09:00 session_save_20260829_1207_gunshi: 軍師復帰点(第11便 06:45-12:07)。本セッション実績: draft APPROVE 12件(database_cron/ga508_context/reflu |
 | discussion | `queue/lord_conversation.jsonl` 2026-08-29T12:56:16+09:00 session_save_20260829_1250_gunshi: 軍師復帰点(第11便継続 12:07→12:50)。12:07以降の追加: reflux LGTM追加(tobisaru/hayate/kotaro/hanzo/saiz |
 | discussion | `queue/lord_conversation.jsonl` 2026-08-29T14:34:01+09:00 では将軍と軍師と協議し、共通見解としてバグを根治せよ |
+| discussion | `queue/lord_conversation.jsonl` 2026-08-30T14:30:16+09:00 ac5207c35a7612515 toolu_01J4jmC3JHeKhWzGczsoF5RQ /tmp/claude-1000/-home-simokitafresh-multi-agent-shogun/290a263c-8050-4 |
 | causal_chain | `[[cmd_karo_hotfix_bc_result_empty_high_freq_insight_202607020526]]` (L923) |
 | causal_chain | `[[cmd_3683]]` (L947) |
 | causal_chain | `[[cmd_karo_ci_fix_ga191_bats_count_202607071728]]` (L962) |
@@ -13038,6 +13039,7 @@ codd:
 |------|----------|
 | file | `queue/shogun_todo_map.md` |
 | causal | `cmd_4413` -> [[provisional_shogun_todo_map]] (auto_generated) |
+| cmd | `cmd_3330` backfill — | session_20260612_shogun_ac2_cycles_mtdux_complete | AC2第1-2サイクル本番着地+第二サイクルレビュー通過+mtd-ux全PR完遂+裁可型是正 |
 
 ## provisional_shogun-todo-map — 仮: Shogun Todo Map
 
@@ -13059,6 +13061,7 @@ codd:
 |------|----------|
 | file | `docs/dashboard/shogun-todo-map.html` |
 | causal | `cmd_4413` -> [[provisional_shogun-todo-map]] (auto_generated) |
+| cmd | `cmd_4260` backfill — | cmd_4260 | 殿下知2026-08-10 00:09(並列起票)。タスクリストv2.3のT-α5行(1タスク)のみを実装する(1作業1CMD則)。依存T-α2は完了済みで解放。正本=/ho |
 
 ## provisional_2026-07 — 仮: 2026 07
 
@@ -14018,6 +14021,8 @@ codd:
 | causal | `cmd_reflux_insight_202608301247_tobisaru` files_modified: [[provisional_insights]] |
 | cmd | `cmd_reflux_insight_202608301247_tobisaru` (`queue/insights.yaml`) |
 | discussion | `queue/lord_conversation.jsonl` 2026-08-30T14:13:27+09:00 a2960c5a6876dd5bd toolu_016E6n5M95U3Lvw1RuqZq8rj /tmp/claude-1000/-home-simokitafresh-multi-agent-shogun/290a263c-8050-4 |
+| causal | `cmd_reflux_insight_202608301413_hanzo` files_modified: [[provisional_insights]] |
+| cmd | `cmd_reflux_insight_202608301413_hanzo` (`queue/insights.yaml`) |
 | causal_chain | `[[cmd_reflux_insight_202608040505_kagemaru]]` (L1545) |
 
 ## provisional_heavy_job_admission — 仮: Heavy Job Admission
@@ -17091,6 +17096,7 @@ codd:
 | discussion | `queue/lord_conversation.jsonl` 2026-08-30T01:17:21.884558+00:00 git pre-commit semantic propagation for context/projects changes |
 | discussion | `queue/lord_conversation.jsonl` 2026-08-30T03:47:12.007303+00:00 git pre-commit semantic propagation for context/projects changes |
 | discussion | `queue/lord_conversation.jsonl` 2026-08-30T04:36:08.422541+00:00 git pre-commit semantic propagation for context/projects changes |
+| discussion | `queue/lord_conversation.jsonl` 2026-08-30T05:27:40.264534+00:00 git pre-commit semantic propagation for context/projects changes |
 | causal_chain | `[[cmd_karo_hotfix_ga161_obsidian_link_context_freshness_202607021348]]` (L926) |
 | causal_chain | `[[cmd_3648]]` (L933) |
 | causal_chain | `[[cmd_karo_ci_fix_ga191_followup_202607071752]]` (L963) |
