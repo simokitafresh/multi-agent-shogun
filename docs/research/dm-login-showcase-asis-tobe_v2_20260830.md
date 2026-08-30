@@ -307,6 +307,17 @@
 - 順序: 本設計 P2(cmd_4416)deploy → 殿確認 → **v3 設計書(LP EN/JA + Free tier + docs/faq 公開)** を AsIs(rebalancer Google auth・FAQ 現物・検索流入の現状 0)から起こす。
 
 
+## §9 LP 別サイト（殿裁定 2026-08-30 16:42『別サイトでやろう』・16:44『dm-signal.jp を Cloudflare で取ろう』）
+- **事実→制約→判断→効果**: 事実=Render FE/BE とも custom domain 0 件(16:43 Render API)、FE は static_site(output:export)で boundary が全ルートを包む。制約=LP は毎日変える対象で、アプリの deploy・CI・影響境界に縛られると 1 文言修正に検分一式が要る。判断=**LP は別 Render static site**(同 DM-signal repo の `lp/` を別サービスで publish)、**ドメイン dm-signal.jp(Cloudflare Registrar+DNS)を LP の apex/www に当て、app は当面 `dm-signal-frontend.onrender.com` のまま**(後日 `app.dm-signal.jp` へ 1 手)。効果=影響境界 0・リリース周期分離・ビルド時 fetch で初回 HTML に数値(ISR 断念の SEO 課題が解ける)。
+- **リポジトリ/ビルド**: `DM-signal/lp/`(独立 package.json、Next.js `output: export`、tokens は frontend の globals.css の色・書体の値を複製して `lp/app/globals.css` に固定)。Render static site 新規: root dir `lp`、build `npm ci && npm run build`、publish `lp/out`。**ビルド時 fetch**: `GET /api/public/showcase` を build で取得し表に焼く(帯 blackout だけ client no-store)。BE は CORS で `https://dm-signal.jp`/`https://www.dm-signal.jp` を許可(1 行)。
+- **ルート/言語**: `/`=EN、`/ja`=JA。文言は `lp/copy/en.ts`・`lp/copy/ja.ts` の 2 ファイルに閉じる(コンポーネント内の直書き 0)。`<link rel="alternate" hreflang="en|ja|x-default">` を相互指定、metadata title/description 言語別、robots(全許可)/sitemap(2 URL)。
+- **構造(両言語共通)**: ①H1+リード(30 秒で分かる) ②showcase 表(§3.1 v3 と同じ列・英語脚注 Data through) ③3 プランカード(金額なし、§4 禁則 0) ④CTA『Sign in』→`https://dm-signal-frontend.onrender.com/login`(env `NEXT_PUBLIC_APP_HOST` で差替え可)、『Read the docs』→app の /docs、note 導線 ⑤FAQ 抜粋 3 問→app の /faq ⑥フッタ。§3.3 ライト固定。
+- **計測**: `POST /api/public/showcase/event` の step enum に `lp_view` `lp_cta_click` を追加(backend、cmd_4419)。LP から `ua_class`+`lang` を送る。広告は言語別 URL に UTM。
+- **docs/faq 公開**: app 側 `app/docs`(67 行)・`app/faq`(459 行 JA)を boundary の public に追加し、FAQ の EN 版を追加(cmd_4418)。LP の導線先。
+- **ドメイン手順(家老レーン、殿の操作=Cloudflare で dm-signal.jp 購入のみ)**: ①Render で LP static site 作成→`dm-signal-lp.onrender.com` で実装確認 ②Render custom domain に `dm-signal.jp` と `www.dm-signal.jp` を追加 ③Cloudflare DNS: apex `A 216.24.57.1`、`www CNAME dm-signal-lp.onrender.com`(初期は DNS only=グレー雲、TLS は Render 自動) ④Search Console にドメイン登録(TXT 1 行) ⑤`NEXT_PUBLIC_APP_HOST` は app の現 URL。
+- **起票(並走、相互 depends_on なし)**: cmd_4417=`lp/` EN+JA LP(1 名) / cmd_4418=docs・faq 公開+FAQ EN(1 名、app frontend) / cmd_4419=backend CORS+event enum 2 語(1 名)。deploy・custom domain・DNS は家老 post_deploy_check。
+- **終端**: `dm-signal.jp/` と `/ja` が 200 ∧ HTML に表の数値・hreflang ∧ 禁則語 0 ∧ CTA が app の /login へ到達 ∧ event に lp_view が記録。
+
 ## §7 因果リンク
 - [[殿観測_ログインページさみしい_20260818_1550]] -> [[login_showcase_mock_v1-v11]] -> [[dm-login-showcase-asis-tobe_20260818]](ToBe v0.3・未実装) -> [[殿指示_asis本番リアルタイム化_20260830_1007]] -> **[[dm-login-showcase-asis-tobe_v2_20260830]]** <- [[殿裁定_login金額なし_20260830_1020]] / [[殿参照_摩擦優先_note_dataana2020_20260830_1021]]
 - ← [[dm-login-boundary-asis-tobe_20260817]](第 0 段) / [[tier別可視性完成形]](cmd_3837) / [[visibility_philosophy]](projects/dm-signal.yaml)
