@@ -1,7 +1,4 @@
-# session_alerts — generated: 2026-08-31T00:16:27+0900
-[TODO] 未確認GATE CLEAR: 1件
-[TODO] 追体験自動化ターゲット: WARN (自動化ターゲット未記入)
+# session_alerts — generated: 2026-08-31T00:30:33+0900
+[DONE] 追体験自動化ターゲット: Gate 10.1c commit 8652081df(本番 WARN 2件実測)・掲示板 Q6 投稿・軍師検証 blt_003540 妥当
 [DONE] 走行中cmd実測突合: busy 3名。capture-pane未確認で状況報告するな
-[TODO] failed task残置: tobisaru — 真因確認と再配備/クローズを確定せよ
-[TODO] monitor lifecycle 失敗行 14行/60分 — 壁の所有者を一次で確認
-[DONE] deepdive追体験未完了: 全Phase実行まで作業禁止(stop hookがBLOCKする)。bash scripts/deepdive_replay.sh shogun <md> <Phase> "<自問>"
+[DONE] monitor lifecycle 失敗行: GATE-STALL-ITEM-TIMEOUT ga494×4/converge×2(dangling→家老 msg_002923/003153)・ga531×2(00:07 CLEAR 済)・kotaro×1(00:28 CLEAR 済)・push_lane×2(remote_tip_not_ancestor→家老 converge ③)

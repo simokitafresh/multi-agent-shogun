@@ -1586,3 +1586,4 @@
 - 2026-08-30 `cmd_4428_full` 完了: Free coupon の認証をローカルJWT秘密から Supabase Auth REST (`/auth/v1/user`) へ差し替え、Auth API契約・timeout/5xx・設定欠落をMockTransportで固定。commit `c385c9c7c7f83329c1c69fd2e478a554f10d1580`、task runner 5/5 PASS・SKIP0、report gate PASS。
 - 2026-08-31 00:05 第17便: 復帰(y 待ち 2 ターン→hook)、設計書 3 本(SEO v2/Free tier v3.2/入口 3 面 v3)、起票 4428/4425/4426/4427、D0 accuracy 8d9660e84・ac_version 自己修復 f043a07e7、殿 Redirect URL+VIEWER_PASSWORD_FREE(deploy 前提 5/5)、lane 4-5 度目解放。残=4428 CLEAR→deploy→post_deploy_check、T206 doc lane
 - 2026-08-31 00:36 第18便復帰: 4425/4424 CLEAR=ToBe 到達(契約キー grep)。ga494/converge hotfix の report commit dangling(main 未合流)で 1h+ WAIT ancestry=便停止を Gate 10.1c(8652081df)で機械検知、家老へ 1通×2。
+- 2026-08-31 00:36 `cmd_karo_hotfix_ga533_context_freshness_20260830_normal`完了: 既存 d4f97ee6 を再利用し、source boundary owner/trigger伝播と fresh-context BLOCK を 67/67+31/31 PASS・SKIP0で再検証。実運用caller 7件、context本文は非対象のため未解消ALERTをFAILとして家老へ task_failed 通知。
