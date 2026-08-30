@@ -8488,21 +8488,30 @@ insights:
   priority: "low"
   source: "semantic_stress_test"
   fix_known: false
-  status: pending
+  status: resolved
+  resolved_reason: "semantic index candidate was absorbed into a registered concept"
+  action_artifact: "semantic_index=/home/simokitafresh/multi-agent-shogun/docs/semantic-index/index.md"
+  resolved_at: "2026-08-30T12:59:10+09:00"
 - id: INS-20260830-125625722-af4d
   ts: "2026-08-30T12:56:25+09:00"
   insight: "[[一番下に比較としてS＆P500指数（SPY）とTQQQを入れよう]] semantic_stress_test candidate_aliases: NO_MATCH source=lord query=一番下に比較としてS＆P500指数（SPY）とTQQQを入れよう。sharpe ratioも同じように入れよう"
   priority: "low"
   source: "semantic_stress_test"
   fix_known: false
-  status: pending
+  status: resolved
+  resolved_reason: "semantic index candidate was absorbed into a registered concept"
+  action_artifact: "semantic_index=/home/simokitafresh/multi-agent-shogun/docs/semantic-index/index.md"
+  resolved_at: "2026-08-30T12:59:10+09:00"
 - id: INS-20260830-125637053-b9d1
   ts: "2026-08-30T12:56:37+09:00"
   insight: "[[殿裁定 12 30『SPY TQQQ 比較と Sharpe』 12 32『secret の数値』 12 46『MDD も]] semantic_stress_test candidate_aliases: NO_MATCH source=cmds query=殿裁定 2026-08-30 12:30『SPY/TQQQ 比較と Sharpe』+12:32『secret の数値』+12:46『MDD も追加しよう』。cmd_4414(12:37 発令、cmd_4413 CLEAR まで未配備)に MDD を加えた置換 cmd。cmd_4414 は家老が void する(未配備のため途中修正ではなく差し替え)。設計書"
   priority: "low"
   source: "semantic_stress_test"
   fix_known: false
-  status: pending
+  status: resolved
+  resolved_reason: "semantic index candidate was absorbed into a registered concept"
+  action_artifact: "semantic_index=/home/simokitafresh/multi-agent-shogun/docs/semantic-index/index.md"
+  resolved_at: "2026-08-30T12:59:10+09:00"
 - id: INS-20260830-125646745-7256
   ts: "2026-08-30T12:56:46+09:00"
   insight: "[[殿指示 10 07『asis を今の本番として tobe を考えよう』→ 設計書 v2 docs research dm]] semantic_stress_test candidate_aliases: NO_MATCH source=cmds query=殿指示 2026-08-30 10:07『asis を今の本番として tobe を考えよう』→ 設計書 v2(docs/research/dm-login-showcase-asis-tobe_v2_20260830.md、gist 3236e0df)§2.3/§3.1 v3 の公開データ契約を backend に実装する。殿裁定 12:18-12:20"
@@ -8519,25 +8528,44 @@ insights:
   priority: "low"
   source: "semantic_stress_test"
   fix_known: false
-  status: pending
+  status: resolved
+  resolved_reason: "semantic index candidate was absorbed into a registered concept"
+  action_artifact: "semantic_index=/home/simokitafresh/multi-agent-shogun/docs/semantic-index/index.md"
+  resolved_at: "2026-08-30T12:59:10+09:00"
 - id: INS-20260830-125704953-e409
   ts: "2026-08-30T12:57:04+09:00"
   insight: "[[login ショーウィンドウ P1b 改 — 公開集計 EP に Sharpe・MDD プラン平均 最浅 ・SPY TQ]] semantic_stress_test candidate_aliases: NO_MATCH source=cmds query=/login ショーウィンドウ P1b(改) — 公開集計 EP に Sharpe・MDD(プラン平均/最浅)・SPY/TQQQ 比較行・Secret 集計値を追補する(cmd_4414 を置換)"
   priority: "low"
   source: "semantic_stress_test"
   fix_known: false
-  status: pending
+  status: resolved
+  resolved_reason: "semantic index candidate was absorbed into a registered concept"
+  action_artifact: "semantic_index=/home/simokitafresh/multi-agent-shogun/docs/semantic-index/index.md"
+  resolved_at: "2026-08-30T12:59:10+09:00"
 - id: INS-20260830-125713540-e628
   ts: "2026-08-30T12:57:13+09:00"
   insight: "[[login ショーウィンドウ P1 — 未認証の公開集計 EP GET api public showcase と区間計]] semantic_stress_test candidate_aliases: NO_MATCH source=cmds query=/login ショーウィンドウ P1 — 未認証の公開集計 EP GET /api/public/showcase と区間計測 POST /api/public/showcase/event を read-only で実装する"
   priority: "low"
   source: "semantic_stress_test"
   fix_known: false
-  status: pending
+  status: resolved
+  resolved_reason: "semantic index candidate was absorbed into a registered concept"
+  action_artifact: "semantic_index=/home/simokitafresh/multi-agent-shogun/docs/semantic-index/index.md"
+  resolved_at: "2026-08-30T12:59:10+09:00"
 - id: INS-20260830-125721508-f95f
   ts: "2026-08-30T12:57:21+09:00"
   insight: "[[login ショーウィンドウ P1b — 公開集計 EP に Sharpe プラン平均 ベスト ・SPY TQQQ 比較]] semantic_stress_test candidate_aliases: NO_MATCH source=cmds query=/login ショーウィンドウ P1b — 公開集計 EP に Sharpe(プラン平均/ベスト)・SPY/TQQQ 比較行・Secret 集計値を追補する"
   priority: "low"
   source: "semantic_stress_test"
+  fix_known: false
+  status: resolved
+  resolved_reason: "semantic index candidate was absorbed into a registered concept"
+  action_artifact: "semantic_index=/home/simokitafresh/multi-agent-shogun/docs/semantic-index/index.md"
+  resolved_at: "2026-08-30T12:59:10+09:00"
+- id: INS-20260830-125910786-4203
+  ts: "2026-08-30T12:59:10+09:00"
+  insight: "semantic_index_update新概念候補: discussion:だいぶいいな。ブラックアウトはどう表現する。現在ならnoteに誘導＋パスワード発表をお楽しみにという期待感をあおるのがいいか？パスワード発表の日時は俺が任意で決 は 既存aliasesに一致なし。概念定義とaliases追加を検討せよ"
+  priority: "low"
+  source: "semantic_index_update"
   fix_known: false
   status: pending
