@@ -331,12 +331,18 @@ END {
 }
 
 build_notify_message() {
-    local msg="$1" cmd_id="$2"
+    local msg="$1" cmd_id="$2" body
     if message_has_cmd_id "$msg" "$cmd_id"; then
-        printf '%s' "$msg"
+        body="$msg"
     else
-        printf '%s: %s' "$cmd_id" "$msg"
+        body="${cmd_id}: ${msg}"
     fi
+    # 2026-08-30 20:36 将軍 D0: inbox_write の commander identity envelope(d9d036f10)を
+    # cmd_new にも要求するようになり cmd_4422 の委任が BLOCK した。欠けていれば先頭に付与する。
+    if [[ "$body" != *"task_id=commander_directive"* ]]; then
+        body="task_id=commander_directive subject_task_id=${cmd_id} parent_cmd=${cmd_id} ${body}"
+    fi
+    printf '%s' "$body"
 }
 
 cmd_is_archived() {

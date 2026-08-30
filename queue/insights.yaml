@@ -9814,4 +9814,87 @@ insights:
   priority: "low"
   source: "semantic_index_update"
   fix_known: false
-  status: pending
+  status: resolved
+  resolved_reason: "semantic map generation verified the candidate is represented or intentionally ignored"
+  action_artifact: "semantic_map=/home/simokitafresh/multi-agent-shogun/context/semantic-map.md;semantic_index=/home/simokitafresh/multi-agent-shogun/docs/semantic-index/index.md"
+  resolved_at: "2026-08-30T20:23:13+09:00"
+- id: INS-20260830-202143793-a6cf
+  ts: "2026-08-30T20:21:43+09:00"
+  insight: "[[これは別のアイデアだ]] semantic_stress_test candidate_aliases: NO_MATCH source=lord query=これは別のアイデアだ。google authで登録するとfreeのクーポン"
+  priority: "low"
+  source: "semantic_stress_test"
+  fix_known: false
+  status: resolved
+  resolved_reason: "semantic index candidate was absorbed into a registered concept"
+  action_artifact: "semantic_index=/home/simokitafresh/multi-agent-shogun/docs/semantic-index/index.md"
+  resolved_at: "2026-08-30T20:21:58+09:00"
+- id: INS-20260830-202158690-1c24
+  ts: "2026-08-30T20:21:58+09:00"
+  insight: "[[登録してログインするとfreeのクーポンが表示]] semantic_stress_test candidate_aliases: NO_MATCH source=lord query=登録してログインするとfreeのクーポンが表示、ワンクリックでコピーできるようにして動線をスムーズに。すでにメンバーが誤解しないようにしよう"
+  priority: "low"
+  source: "semantic_stress_test"
+  fix_known: false
+  status: resolved
+  resolved_reason: "semantic index candidate was absorbed into a registered concept"
+  action_artifact: "semantic_index=/home/simokitafresh/multi-agent-shogun/docs/semantic-index/index.md"
+  resolved_at: "2026-08-30T20:22:59+09:00"
+- id: INS-20260830-202159283-70de
+  ts: "2026-08-30T20:21:59+09:00"
+  insight: "semantic_index_update新概念候補: discussion:着手せよ は 既存aliasesに一致なし。概念定義とaliases追加を検討せよ"
+  priority: "low"
+  source: "semantic_index_update"
+  fix_known: false
+  status: resolved
+  resolved_reason: "semantic map generation verified the candidate is represented or intentionally ignored"
+  action_artifact: "semantic_map=/home/simokitafresh/multi-agent-shogun/context/semantic-map.md;semantic_index=/home/simokitafresh/multi-agent-shogun/docs/semantic-index/index.md"
+  resolved_at: "2026-08-30T20:23:13+09:00"
+- id: INS-20260830-202212094-aae2
+  ts: "2026-08-30T20:22:12+09:00"
+  insight: "[[googleのほうでcloudflareのサイトを自動で承認したぞ]] semantic_stress_test candidate_aliases: NO_MATCH source=lord query=googleのほうでcloudflareのサイトを自動で承認したぞ"
+  priority: "low"
+  source: "semantic_stress_test"
+  fix_known: false
+  status: resolved
+  resolved_reason: "semantic index candidate was absorbed into a registered concept"
+  action_artifact: "semantic_index=/home/simokitafresh/multi-agent-shogun/docs/semantic-index/index.md"
+  resolved_at: "2026-08-30T20:23:00+09:00"
+- id: INS-20260830-202224764-8871
+  ts: "2026-08-30T20:22:24+09:00"
+  insight: "[[LP SEO P0 — JSON LD Organization・WebSite・FAQPage と OG Twitte]] semantic_stress_test candidate_aliases: NO_MATCH source=cmds query=LP SEO P0 — JSON-LD(Organization・WebSite・FAQPage)と OG/Twitter 画像と検索語入り title/description を lp 配下に追加する"
+  priority: "low"
+  source: "semantic_stress_test"
+  fix_known: false
+  status: resolved
+  resolved_reason: "semantic index candidate was absorbed into a registered concept"
+  action_artifact: "semantic_index=/home/simokitafresh/multi-agent-shogun/docs/semantic-index/index.md"
+  resolved_at: "2026-08-30T20:23:00+09:00"
+- id: INS-20260830-202708551-4dc2
+  ts: "2026-08-30T20:27:08+09:00"
+  insight: "semantic_index_update新概念候補: discussion:task notification task id bplpkbay0 task id tool use id toolu 01LxhEkYm6C1Q22pKe は 既存aliasesに一致なし。概念定義とaliases追加を検討せよ"
+  priority: "low"
+  source: "semantic_index_update"
+  fix_known: false
+  status: resolved
+  resolved_reason: "semantic map generation verified the candidate is represented or intentionally ignored"
+  action_artifact: "semantic_map=/home/simokitafresh/multi-agent-shogun/context/semantic-map.md;semantic_index=/home/simokitafresh/multi-agent-shogun/docs/semantic-index/index.md"
+  resolved_at: "2026-08-30T20:30:40+09:00"
+- id: INS-20260830-203735304-b2f9
+  ts: "2026-08-30T20:37:35+09:00"
+  insight: "semantic_index_update新概念候補: discussion:task notification task id b30uef8y3 task id tool use id toolu 01VMrX7HAHo9QgkX2M は 既存aliasesに一致なし。概念定義とaliases追加を検討せよ"
+  priority: "low"
+  source: "semantic_index_update"
+  fix_known: false
+  status: resolved
+  resolved_reason: "semantic map generation verified the candidate is represented or intentionally ignored"
+  action_artifact: "semantic_map=/home/simokitafresh/multi-agent-shogun/context/semantic-map.md;semantic_index=/home/simokitafresh/multi-agent-shogun/docs/semantic-index/index.md"
+  resolved_at: "2026-08-30T20:40:38+09:00"
+- id: INS-20260830-204253523-9f1d
+  ts: "2026-08-30T20:42:53+09:00"
+  insight: "semantic_index_update新概念候補: discussion:task notification task id b38bz38g7 task id tool use id toolu 01HByMPHo5gKTT1D7Z は 既存aliasesに一致なし。概念定義とaliases追加を検討せよ"
+  priority: "low"
+  source: "semantic_index_update"
+  fix_known: false
+  status: resolved
+  resolved_reason: "semantic map generation verified the candidate is represented or intentionally ignored"
+  action_artifact: "semantic_map=/home/simokitafresh/multi-agent-shogun/context/semantic-map.md;semantic_index=/home/simokitafresh/multi-agent-shogun/docs/semantic-index/index.md"
+  resolved_at: "2026-08-30T20:45:29+09:00"

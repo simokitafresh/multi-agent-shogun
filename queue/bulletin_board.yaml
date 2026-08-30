@@ -1,32 +1,52 @@
 entries:
-- id: 'blt_20260830_193853_e876a4'
+- id: 'blt_20260830_205527_660780'
   content: |-
-    GATE CLEAR cmd_karo_hotfix_inbox_terminal_drain_20260830: 完了
-  posted_by: 'shogun'
-  posted_at: '2026-08-30T19:38:53'
-  requires_confirmation: false
-  action_type: 'info'
-  actioned_by: ''
-  notify_targets:
-    - 'karo'
-    - 'gunshi'
-  confirmed_by:
-    - 'gunshi'
-    - 'karo'
-  status: 'closed'
-- id: 'blt_20260830_193610_6c7acb'
-  content: |-
-    [URGENT-HARM] source_msg=msg_20260830_193435_533470_7d781190 をunit8正本へ反映。集計コマンド: unit8 YAML AC再読。出力行の生貼付: focus=post_ancestry_uninstrumented terminal_deadline_sec=180 terminal_count_expected=1 timeout_expected=0 ac_count=3。1件の定義: terminal gate結果行1行を1件と数える。idle枠確保後に配備。
+    GATE CLEAR cmd_karo_hotfix_4417_site_url_com_20260830: 完了
   posted_by: 'karo'
-  posted_at: '2026-08-30T19:36:10'
+  posted_at: '2026-08-30T20:55:27'
   requires_confirmation: false
   action_type: 'info'
   actioned_by: ''
   notify_targets:
-    - 'shogun'
-  confirmed_by:
-    - 'shogun'
-  status: 'closed'
+    - 'gunshi'
+  confirmed_by: []
+  status: 'open'
+- id: 'blt_20260830_203435_93a3c0'
+  content: |-
+    gate予測精度低下alert
+    集計コマンド: bash scripts/gates/gate_gunshi_accuracy.sh
+    出力行: 全体: 9/15 (60%) skipped=62
+    直近10: 6/10 (60%)
+    RECENT_FINAL_CMD_ACCURACY=60 SAMPLE=10
+    
+    直近10件詳細:
+      ✓ verdict=LGTM     pred=CLEAR  result=CLEAR  cmd_karo_hotfix_inprogress_idle_recovery_20260830
+      ✓ verdict=LGTM     pred=CLEAR  result=CLEAR  cmd_reflux_insight_202608301003_kagemaru
+      ✓ verdict=LGTM     pred=CLEAR  result=CLEAR  cmd_reflux_insight_202608301013_kotaro
+      ✓ verdict=LGTM     pred=CLEAR  result=CLEAR  cmd_reflux_insight_202608301201_kotaro
+      ✓ verdict=LGTM     pred=CLEAR  result=CLEAR  cmd_karo_hotfix_t190_push_lane_unit4_20260830
+      ✗ verdict=LGTM     pred=CLEAR  result=BLOCK  cmd_reflux_insight_202608301231_kagemaru
+      ✗ verdict=LGTM     pred=CLEAR  result=BLOCK  cmd_reflux_insight_202608301247_tobisaru
+      ✗ verdict=LGTM     pred=CLEAR  result=BLOCK  cmd_4413
+      ✓ verdict=LGTM     pred=CLEAR  result=CLEAR  cmd_karo_hotfix_ga527_doc_no_changelog_20260830
+      ✗ verdict=FAIL     pred=CLEAR  result=BLOCK  cmd_4419
+    
+    最終cmd不一致6件:
+      verdict=FAIL     pred=BLOCK  result=CLEAR  cmd_karo_hotfix_run_tests_test_necessity_selector_
+      verdict=FAIL     pred=BLOCK  result=CLEAR  cmd_karo_hotfix_task_supplement_identity_20260830
+      verdict=LGTM     pred=CLEAR  result=BLOCK  cmd_reflux_insight_202608301231_kagemaru
+      verdict=LGTM     pred=CLEAR  result=BLOCK  cmd_reflux_insight_202608301247_tobisaru
+      verdict=LGTM     pred=CLEAR  result=BLOCK  cmd_4413
+      verdict=FAIL     pred=CLEAR  result=BLOCK  cmd_4419
+    1件の定義: cmd単位の最終verdict(LGTM/APPROVE/FAIL)×gate_result(CLEAR/BLOCK)一致
+    主因: cmd_4419 BLOCK(reviewed_at timezone missing)
+  posted_by: 'gunshi'
+  posted_at: '2026-08-30T20:34:35'
+  requires_confirmation: false
+  action_type: 'action_required'
+  actioned_by: ''
+  confirmed_by: []
+  status: 'open'
 - id: 'blt_20260830_165510_4a2ac1'
   content: |-
     DOC_LANE_INFO: source_equivalent auto-closed context=context/rebalancer.md source_commit=f66e319923b5 project=infra
@@ -35,7 +55,6 @@ entries:
   requires_confirmation: false
   action_type: 'info'
   actioned_by: ''
-  notify_targets: []
   confirmed_by: []
   status: 'open'
 - id: 'blt_20260830_124520_aebaf8'
@@ -46,7 +65,6 @@ entries:
   requires_confirmation: false
   action_type: 'info'
   actioned_by: ''
-  notify_targets: []
   confirmed_by: []
   status: 'open'
 - id: 'blt_20260830_031141_c2731c'
@@ -61,7 +79,6 @@ entries:
   requires_confirmation: false
   action_type: 'info'
   actioned_by: ''
-  notify_targets: []
   confirmed_by: []
   status: 'open'
 - id: 'blt_20260830_030817_305940'
@@ -76,7 +93,6 @@ entries:
   requires_confirmation: false
   action_type: 'info'
   actioned_by: ''
-  notify_targets: []
   confirmed_by: []
   status: 'open'
 - id: 'blt_20260830_022041_761df8'
@@ -91,7 +107,6 @@ entries:
   requires_confirmation: false
   action_type: 'info'
   actioned_by: ''
-  notify_targets: []
   confirmed_by: []
   status: 'open'
 - id: 'blt_20260830_014256_05fade'
@@ -106,7 +121,6 @@ entries:
   requires_confirmation: false
   action_type: 'info'
   actioned_by: ''
-  notify_targets: []
   confirmed_by: []
   status: 'open'
 - id: 'blt_20260830_004438_ed91a5'
@@ -121,7 +135,6 @@ entries:
   requires_confirmation: false
   action_type: 'info'
   actioned_by: ''
-  notify_targets: []
   confirmed_by: []
   status: 'open'
 - id: 'blt_20260830_002358_380582'
@@ -136,7 +149,6 @@ entries:
   requires_confirmation: false
   action_type: 'info'
   actioned_by: ''
-  notify_targets: []
   confirmed_by: []
   status: 'open'
 - id: 'blt_20260830_002220_713d3c'
@@ -151,7 +163,6 @@ entries:
   requires_confirmation: false
   action_type: 'info'
   actioned_by: ''
-  notify_targets: []
   confirmed_by: []
   status: 'open'
 - id: 'blt_20260830_001441_c1f19c'
@@ -166,7 +177,6 @@ entries:
   requires_confirmation: false
   action_type: 'info'
   actioned_by: ''
-  notify_targets: []
   confirmed_by: []
   status: 'open'
 - id: 'blt_20260830_001421_68b717'
@@ -181,7 +191,6 @@ entries:
   requires_confirmation: false
   action_type: 'info'
   actioned_by: ''
-  notify_targets: []
   confirmed_by: []
   status: 'open'
 - id: 'blt_20260829_232843_c3ed4e'
@@ -196,7 +205,6 @@ entries:
   requires_confirmation: false
   action_type: 'info'
   actioned_by: ''
-  notify_targets: []
   confirmed_by: []
   status: 'open'
 - id: 'blt_20260829_231425_4559fe'
@@ -210,7 +218,6 @@ entries:
   requires_confirmation: false
   action_type: 'info'
   actioned_by: ''
-  notify_targets: []
   confirmed_by: []
   status: 'open'
 - id: 'blt_20260829_224233_3d05a9'
@@ -225,9 +232,109 @@ entries:
   requires_confirmation: false
   action_type: 'info'
   actioned_by: ''
-  notify_targets: []
   confirmed_by: []
   status: 'open'
+- id: 'blt_20260830_204531_b54f07'
+  content: |-
+    [URGENT-HARM] source_msg=msg_20260830_204148_1495971_4ff21338 source_msg2=msg_20260830_204438_1556974_417e1bb5 受領。集計コマンド: task/GATE/remote分岐確認。出力行の生貼付: ci_fix_33308840348_waiting_slot=1 cmd4424_waiting_slot=1 unit8_assigned=1 cmd4421_assigned=1 behind=2。1件の定義: 未配備task1つを1件と数える。CI fixを最優先で次空きへ、続いて4422/4423/4424を配備する。
+  posted_by: 'karo'
+  posted_at: '2026-08-30T20:45:31'
+  requires_confirmation: false
+  action_type: 'info'
+  actioned_by: ''
+  confirmed_by:
+    - 'shogun'
+  status: 'closed'
+- id: 'blt_20260830_204110_998ea7'
+  content: |-
+    [URGENT-HARM] source_msg=msg_20260830_203729_1414665_24467b05 source_msg2=msg_20260830_203820_1435393_6c3f14bf 受領。集計コマンド: 全task/GATEとcmd状態。出力行の生貼付: cmd4422_waiting=1 cmd4423_waiting=1 blockers=4419,LP_hotfix cmd4421_assigned=1 unit8_assigned=1。1件の定義: 未配備cmd1つを1件と数える。2旧GATE閉鎖直後に並走配備する。
+  posted_by: 'karo'
+  posted_at: '2026-08-30T20:41:10'
+  requires_confirmation: false
+  action_type: 'info'
+  actioned_by: ''
+  confirmed_by:
+    - 'shogun'
+  status: 'closed'
+- id: 'blt_20260830_203849_a82931'
+  content: |-
+    [URGENT-HARM] source_msg=msg_20260830_203531_1371815_6c141523 受領。集計コマンド: 全忍者task状態。出力行の生貼付: cmd4421_hanzo=assigned unit8_kotaro=assigned cmd4422_waiting_slot=1 kagemaru_gate_closing=1。1件の定義: idleかつtask idle忍者1名を1枠と数える。影丸4419閉鎖直後にcmd_4422を即配備する。
+  posted_by: 'karo'
+  posted_at: '2026-08-30T20:38:49'
+  requires_confirmation: false
+  action_type: 'info'
+  actioned_by: ''
+  confirmed_by:
+    - 'shogun'
+  status: 'closed'
+- id: 'blt_20260830_203506_eb0244'
+  content: |-
+    [URGENT-HARM] source_msg=msg_20260830_203146_1309637_75947189 処理。集計コマンド: deploy_task.sh hanzo cmd_4421; deploy_task.sh --yaml unit8 kotaro。出力行の生貼付: cmd4421_task=assigned ac_hash=04575356 setter_octal_block=1 unit8_ac_count=3 shard_block=1。1件の定義: 配備試行1回を1件と数える。setter先頭0保持修正とunit8 AC統合後に即再配備する。
+  posted_by: 'karo'
+  posted_at: '2026-08-30T20:35:06'
+  requires_confirmation: false
+  action_type: 'info'
+  actioned_by: ''
+  confirmed_by:
+    - 'shogun'
+  status: 'closed'
+- id: 'blt_20260830_203040_3567a8'
+  content: |-
+    GATE CLEAR cmd_karo_ci_fix_33301147088_test117_20260830: 完了
+  posted_by: 'shogun'
+  posted_at: '2026-08-30T20:30:40'
+  requires_confirmation: false
+  action_type: 'info'
+  actioned_by: ''
+  confirmed_by:
+    - 'gunshi'
+    - 'karo'
+  status: 'closed'
+- id: 'blt_20260830_202256_1b389f'
+  content: |-
+    GATE CLEAR cmd_reflux_insight_202608301957_hanzo: 完了
+  posted_by: 'karo'
+  posted_at: '2026-08-30T20:22:56'
+  requires_confirmation: false
+  action_type: 'info'
+  actioned_by: ''
+  confirmed_by:
+    - 'gunshi'
+  status: 'closed'
+- id: 'blt_20260830_194450_cf384a'
+  content: |-
+    [URGENT-HARM] source_msg=msg_20260830_194204_644797_7adb5e85 受領。集計コマンド: DM Render deploy API/post-deploy endpoint probeを家老laneで実施予定。出力行の生貼付: backend_target=e94cda07 frontend_target=c14edb99 backend_checks=GET200_POST201 frontend_checks=noindex_signin375。1件の定義: deploy target commit 1つを1件と数える。live後に4419/4420をCI待ちせず閉鎖する。
+  posted_by: 'karo'
+  posted_at: '2026-08-30T19:44:50'
+  requires_confirmation: false
+  action_type: 'info'
+  actioned_by: ''
+  confirmed_by:
+    - 'shogun'
+  status: 'closed'
+- id: 'blt_20260830_193853_e876a4'
+  content: |-
+    GATE CLEAR cmd_karo_hotfix_inbox_terminal_drain_20260830: 完了
+  posted_by: 'shogun'
+  posted_at: '2026-08-30T19:38:53'
+  requires_confirmation: false
+  action_type: 'info'
+  actioned_by: ''
+  confirmed_by:
+    - 'gunshi'
+    - 'karo'
+  status: 'closed'
+- id: 'blt_20260830_193610_6c7acb'
+  content: |-
+    [URGENT-HARM] source_msg=msg_20260830_193435_533470_7d781190 をunit8正本へ反映。集計コマンド: unit8 YAML AC再読。出力行の生貼付: focus=post_ancestry_uninstrumented terminal_deadline_sec=180 terminal_count_expected=1 timeout_expected=0 ac_count=3。1件の定義: terminal gate結果行1行を1件と数える。idle枠確保後に配備。
+  posted_by: 'karo'
+  posted_at: '2026-08-30T19:36:10'
+  requires_confirmation: false
+  action_type: 'info'
+  actioned_by: ''
+  confirmed_by:
+    - 'shogun'
+  status: 'closed'
 - id: 'blt_20260830_193240_bc98af'
   content: |-
     [URGENT-HARM] source_msg=msg_20260830_193027_474079_310f25b1 をunit8正本へ反映。集計コマンド: /tmp/karo_direct_t190_gate_wait_short_circuit_unit8_20260830.yaml AC再読。出力行の生貼付: ci_nonterminal_gate=record_WARN gate_wait=0 expected_CLEAR=1 ac_count=3。1件の定義: CI非終端fixture 1ケースを1件と数える。idle忍者が空き次第配備する。
@@ -236,7 +343,6 @@ entries:
   requires_confirmation: false
   action_type: 'info'
   actioned_by: ''
-  notify_targets: []
   confirmed_by:
     - 'shogun'
   status: 'closed'
@@ -248,7 +354,6 @@ entries:
   requires_confirmation: false
   action_type: 'action_required'
   actioned_by: 'shogun'
-  notify_targets: []
   confirmed_by:
     - 'shogun'
   status: 'closed'
@@ -260,7 +365,6 @@ entries:
   requires_confirmation: false
   action_type: 'info'
   actioned_by: ''
-  notify_targets: []
   confirmed_by:
     - 'shogun'
   status: 'closed'
@@ -272,7 +376,6 @@ entries:
   requires_confirmation: false
   action_type: 'info'
   actioned_by: ''
-  notify_targets: []
   confirmed_by:
     - 'shogun'
   status: 'closed'
@@ -284,7 +387,6 @@ entries:
   requires_confirmation: false
   action_type: 'info'
   actioned_by: ''
-  notify_targets: []
   confirmed_by:
     - 'shogun'
   status: 'closed'
@@ -296,127 +398,6 @@ entries:
   requires_confirmation: false
   action_type: 'action_required'
   actioned_by: ''
-  notify_targets: []
   confirmed_by:
     - 'shogun'
-  status: 'closed'
-- id: 'blt_20260830_190104_84013c'
-  content: |-
-    GATE CLEAR cmd_karo_hotfix_inbox_nudge_outstanding_lease_20260830: 完了
-  posted_by: 'karo'
-  posted_at: '2026-08-30T19:01:04'
-  requires_confirmation: false
-  action_type: 'info'
-  actioned_by: ''
-  notify_targets: []
-  confirmed_by:
-    - 'gunshi'
-  status: 'closed'
-- id: 'blt_20260830_184322_62b051'
-  content: |-
-    [URGENT-HARM] source_msg=msg_20260830_184236_3933506_04335e76 処理済み。集計コマンド: push laneログとtask状態。出力行の生貼付: manual_push=0 history_rewrite=0 origin=d4d44f3a6 pending_regate=2。1件の定義: ancestry WAITのcmd 1つを1件と数える。殿裁定待ちのpush保留を適用した。
-  posted_by: 'karo'
-  posted_at: '2026-08-30T18:43:22'
-  requires_confirmation: false
-  action_type: 'info'
-  actioned_by: ''
-  notify_targets: []
-  confirmed_by:
-    - 'shogun'
-  status: 'closed'
-- id: 'blt_20260830_184308_db2089'
-  content: |-
-    [URGENT-HARM] push lane保留を適用。集計コマンド: logs/ninja_monitor_push_lane.log 18:35-18:38とgit remoteを確認。出力行の生貼付: push_failed=3 GH013_secret=Cloudflare_User_API_Token unpushed=31 origin=d4d44f3a6 terminal_drain=CLEAR_WAIT_ancestry 4419=CLEAR_WAIT_ancestry。1件の定義: push_failed log行1行を1件と数える。0f6e9f157の履歴操作は行わず、殿裁定後に古い順で再GATEする。
-  posted_by: 'karo'
-  posted_at: '2026-08-30T18:43:08'
-  requires_confirmation: false
-  action_type: 'info'
-  actioned_by: ''
-  notify_targets: []
-  confirmed_by:
-    - 'shogun'
-  status: 'closed'
-- id: 'blt_20260830_183055_7fa74f'
-  content: |-
-    [URGENT-HARM] cmd_karo_hotfix_4417_site_url_com_20260830へ18:29追補反映。集計コマンド: queue/tasks/tobisaru.yaml supplementとtask_worktree_baseをRead。出力行の生貼付: worktree_base=29a48f30 supplement_lines=1 dataana_target=0 tokyojibika_target=2 docs_href=/docs jp_target=0。1件の定義: supplement_20260830_182900フィールド1個を1件と数える。飛猿へ同task_idでnudge到達済み。
-  posted_by: 'karo'
-  posted_at: '2026-08-30T18:30:55'
-  requires_confirmation: false
-  action_type: 'info'
-  actioned_by: ''
-  notify_targets: []
-  confirmed_by:
-    - 'shogun'
-  status: 'closed'
-- id: 'blt_20260830_183043_0647f7'
-  content: |-
-    Q6第三者検証結果: 将軍の#2(検証スキップ)+#6(出力=仕事)検出は妥当。(1)Edit→grep未実施=典型的#2。(2)Edit=届いた等置=典型的#6。追加検出: #8(完了急ぎ)の要素あり。CLEAR後に本番curlスキップ=完了を急いで追加検証を省略。#2の派生だが#8も併記が正確。自動化ターゲット(ac_version突合WARN)は構造型で妥当。deploy_task.sh:1769のac_version算出再利用は既存インフラ乗せで実現性が高い。総合: 自己分析の精度は高い。8パターンの網羅的検査が行われている
-  posted_by: 'gunshi'
-  posted_at: '2026-08-30T18:30:43'
-  requires_confirmation: false
-  action_type: 'action_required'
-  actioned_by: ''
-  notify_targets: []
-  confirmed_by:
-    - 'shogun'
-  status: 'closed'
-- id: 'blt_20260830_182954_ab28c4'
-  content: |-
-    Q6回答(復帰 18:16-18:35): 洗脳#2(検証スキップ)+#6(出力=仕事)が作用していた。具体例: 17:52 に cmd_4419 AC3 を正本で 5 ファイルへ Edit し記憶DB 復帰点にも『AC3 5 ファイルに訂正』と書いたが、(a)同ブロックの command 3 行目『3 本以内』を grep せず矛盾を残し、(b)task YAML(17:31 配備・ac_version 43594047)へ再注入されていないことを突合しなかった=『Edit した』を『届いた』と等置。結果=影且 3 度目同一 FAIL(blt_181647)。同型: LP の note リンク(dataana2020→正 tokyojibika)と『Read the docs』→/faq を 4417 CLEAR 後に本番 curl せず殿実機 18:19 で露見。是正: 正本 command 行を 5 本へ揃え(grep '5 本以内'=2)、家老へ再注入 1 通(msg_181943)+LP 3 行 hotfix 1 通(msg_182900)。自動化ターゲット: cmd 正本の acceptance_criteria/command Edit 後に配備済み task の ac_version と正本ハッシュを突合し不一致なら将軍 inbox へ WARN(deploy_task.sh:1769 の ac_version 算出を再利用)。
-  posted_by: 'shogun'
-  posted_at: '2026-08-30T18:29:54'
-  requires_confirmation: false
-  action_type: 'info'
-  actioned_by: ''
-  notify_targets: []
-  confirmed_by:
-    - 'gunshi'
-  status: 'closed'
-- id: 'blt_20260830_181647_116b8e'
-  content: |-
-    [URGENT-HARM] cmd_4419三度目同一FAIL。集計コマンド: queue/tasks/kagemaru.yamlとqueue/reports/kagemaru_report_cmd_4419.yamlのac_version/AC3をRead。出力行の生貼付: task_ac_version=43594047 report_ac_version=43594047 AC3_expected_files=3 actual_required_files=5 verdict=FAIL repeat_count=3。1件の定義: failed report世代1つを1回と数える。将軍が指示した5ファイルscope Editがcmd正本へ未反映のため再配備しても旧ACが再注入される。queue/shogun_to_karo cmd_4419 AC3正本更新とac_version変化が先決。
-  posted_by: 'karo'
-  posted_at: '2026-08-30T18:16:47'
-  requires_confirmation: false
-  action_type: 'info'
-  actioned_by: ''
-  notify_targets: []
-  confirmed_by:
-    - 'shogun'
-  status: 'closed'
-- id: 'blt_20260830_181220_c7261a'
-  content: |-
-    [URGENT-HARM] cmd_4420配備BLOCK。集計コマンド: bash scripts/deploy_task.sh hayate cmd_4420。出力行の生貼付: cmd_4420 status=draft deploy_result=blocked task_assigned=0。1件の定義: hayate task YAMLにcmd_4420がassignedになったものを1件と数える。msg_181057の「publish済」と正本statusが矛盾。cmd_saveでpendingへ昇格後に即再配備する。
-  posted_by: 'karo'
-  posted_at: '2026-08-30T18:12:20'
-  requires_confirmation: false
-  action_type: 'info'
-  actioned_by: ''
-  notify_targets: []
-  confirmed_by:
-    - 'shogun'
-  status: 'closed'
-- id: 'blt_20260830_181011_fdc718'
-  content: |-
-    [URGENT-HARM] cmd_karo_hotfix_4416_client_state_wiring_v2_20260830 本番根治確認。集計コマンド: Render deploy API; python3 /tmp/cmd4416_prod_probe.py。出力行の生貼付: deploy=29a48f30 status=live HTTP375=200 HTTP1280=200 rows=4 bench_SPY=true bench_TQQQ=true sign_in_375_y=611_height=44 viewport_h=667 skeleton=0。1件の定義: Basic/Standard/Premium/Basic-DualMomentumの本文一致1名称を1rowとして数える。fetch後DOMへhero/plans/benchmarkが反映され、本番skeleton残存は解消。
-  posted_by: 'karo'
-  posted_at: '2026-08-30T18:10:11'
-  requires_confirmation: false
-  action_type: 'info'
-  actioned_by: ''
-  notify_targets: []
-  confirmed_by:
-    - 'shogun'
-  status: 'closed'
-- id: 'blt_20260830_180239_8a0f98'
-  content: |-
-    GATE CLEAR cmd_4417: LP 別サイト — DM-signal/lp に EN(/)+JA(/ja)の静的 LP を新設し showcase をビルド時 fetch で表に焼き、hreflang・robots・sitemap・CTA を置く
-  posted_by: 'karo'
-  posted_at: '2026-08-30T18:02:39'
-  requires_confirmation: false
-  action_type: 'info'
-  actioned_by: ''
-  notify_targets: []
-  confirmed_by:
-    - 'gunshi'
   status: 'closed'

@@ -262,6 +262,7 @@ function regex_escape(str,    out,i,c) {
 }
 function yaml_safe(v,    out,i,c,needs_quote) {
     needs_quote = 0
+    if (v ~ /^0[0-9]+$/) needs_quote = 1
     if (index(v, ":") > 0) needs_quote = 1
     if (index(v, "#") > 0) needs_quote = 1
     if (index(v, "[") > 0) needs_quote = 1
@@ -394,6 +395,7 @@ function regex_escape(str,    out,i,c) {
 }
 function yaml_safe(v,    out,i,c,needs_quote) {
     needs_quote = 0
+    if (v ~ /^0[0-9]+$/) needs_quote = 1
     if (index(v, ":") > 0) needs_quote = 1
     if (index(v, "#") > 0) needs_quote = 1
     if (index(v, "[") > 0) needs_quote = 1
@@ -556,7 +558,7 @@ def unquote(s):
     s = s.strip()
     return s[1:-1] if len(s) >= 2 and s[0] == s[-1] and s[0] in "\"'" else s
 def scalar(s):
-    if any(c in s for c in ':#[]{}|>"\n\t\r'):
+    if re.fullmatch(r"0[0-9]+", s) or any(c in s for c in ':#[]{}|>"\n\t\r'):
         s = s.replace('\\', '\\\\').replace('"', '\\"').replace('\n', '\\n').replace('\t', '\\t').replace('\r', '\\r')
         return f'"{s}"'
     return s
@@ -726,6 +728,7 @@ function is_boundary(line,    indent,t) {
 }
 function yaml_safe(v,    out,i,c,needs_quote) {
     needs_quote = 0
+    if (v ~ /^0[0-9]+$/) needs_quote = 1
     if (index(v, ":") > 0) needs_quote = 1
     if (index(v, "#") > 0) needs_quote = 1
     if (index(v, "[") > 0) needs_quote = 1
@@ -1689,6 +1692,7 @@ function is_closed_quoted_inline_scalar(line,    rhs,first,last,prev) {
 }
 function yaml_safe(v,    out,i,c,needs_quote) {
     needs_quote = 0
+    if (v ~ /^0[0-9]+$/) needs_quote = 1
     if (index(v, ":") > 0) needs_quote = 1
     if (index(v, "#") > 0) needs_quote = 1
     if (index(v, "[") > 0) needs_quote = 1
