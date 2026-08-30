@@ -8783,3 +8783,10 @@ insights:
   source: "semantic_index_update"
   fix_known: false
   status: pending
+- id: INS-20260830-144621659-5e45
+  ts: "2026-08-30T14:46:21+09:00"
+  insight: "semantic_index_update未登録[[リンク]]ターゲット: [[post_deploy_check]] は既存aliasesに一致なし。類似概念TOP3: agent_formation_management(編成管理; alias=deploy; score=36.1) / dmsignal_fe_experience_deploy(DM-Signal体感主導デプロイ; alias=post-deploy FE正しさ検分; score=27.5) / scope_integrity_lifecycle(スコープ鮮度ライフサイクル; alias=deploy scope; score=18.3)。概念定義とaliases追加を検討せよ"
+  priority: "low"
+  source: "semantic_index_update"
+  fix_known: false
+  status: pending
