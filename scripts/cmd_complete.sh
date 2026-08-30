@@ -689,7 +689,16 @@ except FileExistsError:
         data = json.load(open(path, encoding="utf-8"))
     except (OSError, ValueError):
         raise SystemExit(1)
-    raise SystemExit(0 if all(data.get(k) == v for k, v in expected.items()) else 1)
+    if all(data.get(k) == v for k, v in expected.items()):
+        raise SystemExit(0)
+    # 2026-08-30 21:10 将軍 D0: 殺された gate run(ITEM-TIMEOUT 期)の予約が別 generation のまま残ると
+    # 完了処理が永久に『reservation invalid』になる(cmd_4419: 2h12m 前の予約で家老 27 分停滞)。
+    # 30 分以上前の予約は stale として置換する(worker は private tmux session で single-flight のため安全)。
+    stale_after_ns = 30 * 60 * 1_000_000_000
+    persisted = data.get("persisted_at_ns") or 0
+    if time.time_ns() - int(persisted) < stale_after_ns:
+        raise SystemExit(1)
+    fd = os.open(path, os.O_WRONLY | os.O_TRUNC)
 with os.fdopen(fd, "w", encoding="utf-8") as fh:
     data = dict(expected, persisted_at_ns=time.time_ns())
     json.dump(data, fh, sort_keys=True); fh.write("\n"); fh.flush(); os.fsync(fh.fileno())
