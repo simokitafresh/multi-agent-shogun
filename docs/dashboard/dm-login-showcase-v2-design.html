@@ -83,7 +83,7 @@ a{color:var(--accent)}
     <tr><td>is_active 合計</td><td></td><td class="num">102</td><td class="delta">+4</td></tr>
   </table></div>
   <ul style="margin-top:10px">
-    <li>新規 active: Sharpe4 / CAGR4 / greedy2(08-19)+ New Fund of Funds ×3 — 作業名の PF が Secret 件数に混入(未決 1)</li>
+    <li>新規 active: Sharpe4 / CAGR4 / greedy2(08-19)+ New Fund of Funds ×3(07-01)— いずれも admin 作成の試作 FoF(type=fof、metrics/signals 計算済み、可視 tier 0)。Secret 件数 73 に含まれる(未決 1)</li>
     <li>Basic-DualMomentum は古参 2 tier(Standard/AddOn)で <code>hide_portfolio=true</code> — 公開 PF なのにログイン後の古参会員に非表示(未決 2)</li>
     <li><code>total_return</code> = <code>(1+monthly).prod()-1</code>(小数)。series end 2026-07-31、calculated 08-29</li>
   </ul>
@@ -119,7 +119,7 @@ a{color:var(--accent)}
         <li>認証不要・tier 非依存・cache 1h・<strong>新規テーブル不要</strong></li>
         <li><code>as_of</code> {series_end, next_close} / <code>blackout</code> {active, until_hint}(password・env key は決して返さない)</li>
         <li>free 行(Basic-DM)のみ holding/momentum を返す。basic 4 行は<strong>キー自体を返さない</strong>(フロントがぼかしを描く)</li>
-        <li>群 count は EP が tier 設定から導出: Basic +4 / Standard +13 / Premium +10 / Secret 73−作業PF</li>
+        <li>群 count は EP が tier 設定から導出: Basic +4 / Standard +13 / Premium +10 / Secret 73(未決 1 次第で 67)</li>
         <li>401 "Password expired" → EN+JA の失効文+ブラックアウト帯</li>
       </ul></div>
   </div>
@@ -150,7 +150,7 @@ a{color:var(--accent)}
 
   <h2>§6 未決(殿裁定待ち)</h2>
   <ol class="steps">
-    <li><strong>Secret 件数から作業 PF を除くか</strong> — 案: <code>is_active ∧ portfolio_metrics(years=0) あり</code> を条件に数える</li>
+    <li><strong>Secret 件数 73 に試作 FoF 6 本を含めるか</strong> — A: そのまま 73 / B: 試作を admin で is_active=false にして自然に外す(将軍推奨) / C: EP に除外名リスト(非推奨)</li>
     <li><strong>Basic-DM の古参 tier 非表示</strong> — 案: admin で Standard/AddOn を false に(可逆)</li>
     <li><strong>総リターン表記</strong> — A: % のまま / B: ×N 倍率 / C: CAGR 併記(将軍推奨 C)</li>
     <li>群行 "up to X%" を Standard/Premium で出すか</li>
