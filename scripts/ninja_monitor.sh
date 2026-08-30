@@ -714,6 +714,12 @@ check_push_lane() {
     fi
     # UNKNOWN remains fail-closed, as do malformed/non-GREEN statuses.  A RED
     # status reaches the normal guarded FF path only after the admission above.
+    # 殿裁定 2026-08-30 19:29『CI green を待つのはナンセンス』: run 未着手/評価不能の UNKNOWN は
+    # push を止めない(admit)。RED は従来どおり ci_fix 1 名の境界で扱う。
+    if [[ "$ci_status" == UNKNOWN && "$push_ci" != RED ]]; then
+        push_lane_log "CI-UNKNOWN-ADMIT ci=UNKNOWN unpushed=$count (殿裁定 08-30 19:29 CI 待ち禁止)"
+        ci_status=GREEN
+    fi
     if [[ "$ci_status" != GREEN && "$push_ci" != RED ]]; then
         push_lane_log "WAIT ci=$ci_status unpushed=$count push=0"
         return 0
