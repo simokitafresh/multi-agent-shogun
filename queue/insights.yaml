@@ -8586,3 +8586,10 @@ insights:
   source: "semantic_stress_test"
   fix_known: false
   status: pending
+- id: INS-20260830-130638163-81dd
+  ts: "2026-08-30T13:06:38+09:00"
+  insight: "[[ログインページは単独でログイン後の本番には影響しないよな？]] semantic_stress_test candidate_aliases: NO_MATCH source=lord query=ログインページは単独でログイン後の本番には影響しないよな？"
+  priority: "low"
+  source: "semantic_stress_test"
+  fix_known: false
+  status: pending
