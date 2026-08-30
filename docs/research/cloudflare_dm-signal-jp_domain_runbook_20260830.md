@@ -1,71 +1,78 @@
-<!-- gist-master: d2165f9b8fd4a3fbd464c101ab66f9e9 cloudflare_dm-signal-jp_domain_runbook_20260830.md -->
-# DM-Signal LP ドメイン — Cloudflare Registrar 取得・DNS・Render 接続 runbook（2026-08-30 17:15 改版: 殿裁定『.jp にこだわらない』）
+# DM-Signal LP ドメイン runbook — dm-signal.com を Cloudflare Registrar で取得し Render LP に接続する（ステップ・バイ・ステップ）
 
-> 対象: DM-Signal LP 別サイト(設計書 v2 §9)。殿裁定 16:42『別サイトでやろう』/16:44『dm-signal.jp を Cloudflare で取ろう』。
-> **一次確認で判明した前提修正**: **Cloudflare Registrar は .jp を扱えない**(サポート TLD 外。2025-07 時点の技術記事と 2026-08-30 の Cloudflare Registrar docs で一致)。∴ **取得は国内レジストラ、DNS/SSL 管理は Cloudflare(無料プラン)** の二段構成にする。.com/.net なら Cloudflare Registrar 一体で済む(参考: 代替案 §6)。
+> 版: 2026-08-30 17:22(殿裁定 16:42『別サイトでやろう』/17:14『.jp にこだわらない』)。旧 .jp 手順は廃止(このファイル名は gist URL 維持のため据え置き)。
+> 役割分担: **殿=Step 1〜2 のみ(購入+API トークン)**。Step 3 以降は将軍/家老が実行し、殿は最後に確認だけ。
+> 一次根拠: Render 公式 [Custom Domains](https://render.com/docs/custom-domains) / [Configure Cloudflare DNS](https://render.com/docs/configure-cloudflare-dns)、Cloudflare Registrar [対応 TLD](https://developers.cloudflare.com/registrar/top-level-domains/)。
 
-## §0a 改版（殿裁定 2026-08-30 17:14『.jp にこだわらない』）
-- **Cloudflare Registrar 一体で完結する TLD を選ぶ**: 推薦 **`dm-signal.com`**(第 2 候補 `dmsignal.com`、第 3 `dm-signal.io`)。17:14 の `dig NS` で 6 候補(dm-signal.com / dmsignal.com / dm-signal.io / dm-signal.app / dm-signal.net / dmsignal.app)とも NS レコード無し=未登録の公算大(最終確認は Cloudflare の検索画面)。
-- 費用: Cloudflare Registrar は原価販売(.com ≈ US$10.5/年、.io ≈ US$33/年、.app ≈ US$14/年。マークアップ 0、Whois 代行込み)。
-- **殿の操作は 1 回**: Cloudflare ダッシュボード → Domain Registration → Register Domains → `dm-signal.com` を検索→購入(自動更新 ON)。購入と同時にゾーンが作られ、ネームサーバーは Cloudflare 固定=§1〜§3(国内レジストラ・NS 変更)は**不要**。
-- 以後は §4(DNS: CNAME @ と www→`<lp>.onrender.com`、DNS only、AAAA 削除、SSL=Full)→§5(Render custom domain)→§7(将軍 API 代行=ゾーン限定トークン)の順。所要 30 分以内。
-- app 側は後日 `app.dm-signal.com` に CNAME 1 行で移せる(§6)。
+## Step 0 — 前提(確認済み 17:14)
+- `dm-signal.com` は `dig NS` で NS 無し=未登録の公算大(第 2 候補 `dmsignal.com`、第 3 `dm-signal.io`)。最終判定は Step 1 の検索画面。
+- Render: FE `dm-signal-frontend.onrender.com`(app、変更なし)・BE `dm-signal-backend.onrender.com`。LP 用 static site は Step 4 で新設。
+- .com は Cloudflare Registrar 対応=購入と同時にゾーン作成・NS 設定・SSL 発行まで Cloudflare 内で完結。
 
-## §0 全体像（.jp を選ぶ場合の旧手順。§0a 採用後は §1-§3 不要）（殿の操作は §1 と §3 の 2 回だけ）
-| # | 誰 | 何を | 所要 |
-|---|---|---|---|
-| 1 | 殿 | 国内レジストラで `dm-signal.jp` を取得 | 10 分 |
-| 2 | 殿 | Cloudflare(無料)にサイト追加→ネームサーバー 2 本を控える | 5 分 |
-| 3 | 殿 | レジストラ側でネームサーバーを Cloudflare の 2 本へ変更 | 5 分(反映 数分〜24h) |
-| 4 | 将軍/家老 | Cloudflare DNS に Render 向け CNAME 2 行(DNS only)+AAAA 削除+SSL=Full | 5 分 |
-| 5 | 家老 | Render LP static site に custom domain 2 件追加→TLS 自動発行→verify | 10 分 |
-| 6 | 将軍 | Search Console 登録(TXT 1 行)、hreflang/sitemap 確認 | 10 分 |
+## Step 1 — 殿: ドメイン購入(5 分)
+1. https://dash.cloudflare.com → 左メニュー **Domain Registration → Register Domains**。
+2. 検索欄に `dm-signal.com` → 「Available」なら **Purchase**(価格は原価 ≈ US$10.5/年、マークアップ 0)。
+3. 登録者情報(氏名・住所・メール)を入力。**Whois 代行は自動で ON**(Cloudflare が代理公開)。**Auto-renew ON**。
+4. 支払い完了→ドメイン一覧に `dm-signal.com` が **Active** で並ぶ。ネームサーバーは Cloudflare 固定(変更不要)。
+- 完了条件: Domain Registration の一覧に `dm-signal.com / Active`。
 
-## §1 取得（国内レジストラ）
-- 候補: **Xserver ドメイン**(技術記事の実績あり、ネームサーバー変更が管理画面から可) / **Value-Domain** / お名前.com(更新時に「サービス維持調整費」10〜20% 上乗せの報告あり=避けたい)。
-- 汎用 JP(`dm-signal.jp`)は**日本国内に住所があれば個人・法人どちらでも登録可**。登録者情報(氏名・住所)は Whois 代行が使える。
-- 取得時の設定: **ネームサーバーは後で変えるので既定のまま**でよい。自動更新 ON。DNSSEC は OFF のまま(Cloudflare 移行後に必要なら Cloudflare 側で有効化)。
-- 費用目安: 取得 ¥1,000〜3,000/年、更新 ¥3,000 前後/年(レジストラで差。表示価格に維持調整費が乗るかを確認)。
+## Step 2 — 殿: 将軍用 API トークン発行(3 分。手動で DNS を打つなら省略可)
+1. 右上アイコン → **My Profile → API Tokens → Create Token**。
+2. テンプレート **「Edit zone DNS」** を選択 → Permissions に **Zone / SSL and Certificates / Edit** を 1 行追加。
+3. Zone Resources: **Include / Specific zone / dm-signal.com**(このゾーンだけ)。
+4. Continue → Create Token → 表示されたトークンを将軍へ(1 回しか表示されない)。
+- 完了条件: トークン文字列を将軍が受領(将軍は `~/.bashrc` の `CLOUDFLARE_LP_TOKEN` に保存)。
 
-## §2 Cloudflare にサイト追加（無料プラン）
-1. Cloudflare ダッシュボード → **Add a site** → `dm-signal.jp` → **Free** プラン。
-2. Cloudflare が既存 DNS を走査して一覧を出す(新規ドメインなので空でよい)。
-3. 表示される **ネームサーバー 2 本**(例: `xxx.ns.cloudflare.com` / `yyy.ns.cloudflare.com`)を控える。
-
-## §3 レジストラでネームサーバー変更（殿）
-- レジストラ管理画面 → ドメイン `dm-signal.jp` → ネームサーバー設定 → 「他社のネームサーバーを使う」→ §2 の 2 本を入力して保存。
-- 確認: `nslookup -type=ns dm-signal.jp` が cloudflare の NS を返せば完了(反映は数分〜最大 24h。Cloudflare 側は「Active」表示になる)。
-
-## §4 Cloudflare DNS（将軍/家老。Render 公式 docs 2026-08-30 版）
-Render の Cloudflare 向け公式手順は **apex も www も CNAME**(Cloudflare の CNAME flattening で apex に CNAME を置ける)。A レコードの IP は使わない。
+## Step 3 — 将軍: Cloudflare DNS と SSL(API または画面。5 分)
+Render 公式の Cloudflare 手順どおり **apex も www も CNAME**(A レコード IP は使わない)。
 | Type | Name | Target | Proxy |
 |---|---|---|---|
-| CNAME | `@` | `<LP サービス名>.onrender.com`(例 `dm-signal-lp.onrender.com`) | **DNS only(グレー雲)** で開始 |
-| CNAME | `www` | 同上 | **DNS only** で開始 |
-- **AAAA レコードは全て削除**(Render は IPv6 未対応)。
-- **SSL/TLS → Overview → 暗号化モード = Full**(Render 公式の指定。Full(strict) でも可だが公式は Full)。
-- Render 側で証明書が発行され Verified になった**後**に、必要なら Proxy を **Proxied(オレンジ雲)** に切替可(WAF/キャッシュを使う場合)。初期は DNS only のまま運用してよい。
-- Cloudflare の「Always Use HTTPS」は Render 側が HTTP→HTTPS リダイレクトするので ON にしても二重にならない。
+| CNAME | `@` | `dm-signal-lp.onrender.com`(Step 4 の LP サービス名) | **DNS only**(グレー雲) |
+| CNAME | `www` | `dm-signal-lp.onrender.com` | **DNS only** |
+- **AAAA レコードがあれば全削除**(Render は IPv6 未対応)。
+- **SSL/TLS → Overview → 暗号化モード = Full**。
+- API 例(将軍実行):
+  ```bash
+  Z=$(curl -s -H "Authorization: Bearer $CLOUDFLARE_LP_TOKEN" "https://api.cloudflare.com/client/v4/zones?name=dm-signal.com" | jq -r .result[0].id)
+  for n in "@" "www"; do curl -s -X POST -H "Authorization: Bearer $CLOUDFLARE_LP_TOKEN" -H "Content-Type: application/json" \
+    "https://api.cloudflare.com/client/v4/zones/$Z/dns_records" \
+    -d "{\"type\":\"CNAME\",\"name\":\"$n\",\"content\":\"dm-signal-lp.onrender.com\",\"proxied\":false,\"ttl\":1}"; done
+  curl -s -X PATCH -H "Authorization: Bearer $CLOUDFLARE_LP_TOKEN" "https://api.cloudflare.com/client/v4/zones/$Z/settings/ssl" -d '{"value":"full"}'
+  ```
+- 完了条件: `dig +short CNAME www.dm-signal.com` が `dm-signal-lp.onrender.com.`、`dig +short dm-signal.com` が Render の IP を返す(CNAME flattening)。
 
-## §5 Render 側（家老 post_deploy_check）
-1. LP 用 **Static Site** を作成(repo=DM-Signal、Root Directory=`lp`、Build=`npm ci && npm run build`、Publish=`out`)。まず `dm-signal-lp.onrender.com` で動作確認。
-2. Settings → **Custom Domains → Add**: `dm-signal.jp` と `www.dm-signal.jp` の 2 件。
-3. Render が DNS を検証→**TLS 証明書を自動発行・自動更新**。HTTP は自動で HTTPS へリダイレクト。
-4. 検証: `curl -sI https://dm-signal.jp/` と `https://www.dm-signal.jp/ja` が 200、証明書の発行者が Let's Encrypt/Google Trust。
-5. 環境変数: `NEXT_PUBLIC_API_HOST=https://dm-signal-backend.onrender.com`、`NEXT_PUBLIC_APP_HOST=https://dm-signal-frontend.onrender.com`。backend の CORS に `https://dm-signal.jp`/`https://www.dm-signal.jp` を追加(cmd_4419)。
+## Step 4 — 家老: Render に LP static site を作る(10 分。cmd_4417 の CLEAR 後)
+1. Render Dashboard → **New → Static Site** → repo `DM-Signal`、branch `main`。
+2. **Root Directory = `lp`**、Build Command = `npm ci && npm run build`、Publish Directory = `out`。
+3. 環境変数: `NEXT_PUBLIC_API_HOST=https://dm-signal-backend.onrender.com`、`NEXT_PUBLIC_APP_HOST=https://dm-signal-frontend.onrender.com`。
+4. サービス名を `dm-signal-lp` にする(→ `dm-signal-lp.onrender.com`)。Deploy → `https://dm-signal-lp.onrender.com/` と `/ja` が 200。
+- 完了条件: onrender URL で EN/JA が表示(表の数値・Sign in ボタン・hreflang)。
 
-## §6 代替案（.jp にこだわらない場合）
-- `dm-signal.com` 等なら **Cloudflare Registrar で取得〜DNS〜SSL が 1 画面**で完結(原価販売・上乗せなし)。§1/§3 が不要になる。
-- app 側を後日 `app.dm-signal.jp` へ移す時は §4 に CNAME `app`→`dm-signal-frontend.onrender.com` を 1 行足し、Render FE に custom domain を追加するだけ(cookie 非依存なのでログイン機構に影響なし)。
+## Step 5 — 家老: Render に custom domain を付ける(5 分+証明書待ち)
+1. LP サービス → **Settings → Custom Domains → Add**: `dm-signal.com` → 続けて `www.dm-signal.com`。
+2. Render が DNS を検証(Step 3 が済んでいれば数分で **Verified**)→ TLS 証明書を自動発行・自動更新。HTTP→HTTPS は自動リダイレクト。
+3. `curl -sI https://dm-signal.com/` と `https://www.dm-signal.com/ja` が 200。
+- 完了条件: 両ドメインが Render で Verified、ブラウザで鍵マーク。
+- 任意: 証明書発行後に Cloudflare の Proxy を **Proxied(オレンジ雲)** にすると WAF/キャッシュが使える(初期は DNS only のままでよい)。
 
-## §7 将軍が API で代行できる範囲
-- Cloudflare DNS の CNAME 追加/AAAA 削除/SSL モード変更: **Zone:DNS Edit + Zone:SSL and Certificates Edit** 権限の API トークン(対象ゾーン=dm-signal.jp のみ)があれば将軍が実行する。トークンは Cloudflare → My Profile → API Tokens → Create Token(テンプレ「Edit zone DNS」+ SSL 権限追加、対象ゾーン限定)。
-- Render custom domain 追加/verify: 既存 `RENDER_API_KEY` で家老レーンが実行可。
-- Search Console: 殿の Google アカウントで「ドメイン プロパティ」追加→表示される TXT を将軍が Cloudflare DNS に登録→殿が「確認」。
+## Step 6 — backend: CORS(cmd_4419、家老 deploy)
+- `origins` に `https://dm-signal.com` と `https://www.dm-signal.com`(+ env `LP_ORIGINS`)が入った backend を deploy。
+- 完了条件: `curl -sI -H "Origin: https://dm-signal.com" https://dm-signal-backend.onrender.com/api/public/showcase | grep -i access-control-allow-origin` が `https://dm-signal.com`。
 
-## Sources（2026-08-30 17:00-17:05 確認）
-- Cloudflare Registrar 対応 TLD: https://developers.cloudflare.com/registrar/top-level-domains/ / https://www.cloudflare.com/tld-policies/ (.jp 非掲載=非対応)
-- .jp を Cloudflare DNS で使う手順(Xserver ドメイン実績): https://zenn.dev/nanyanen/articles/9feea6e0bac1ed / https://izanami.dev/post/2aa15b13-7a82-42e0-b856-c8afea0cfb5a
+## Step 7 — 将軍+殿: 検索エンジン(10 分)
+1. 殿の Google アカウントで Search Console → **プロパティを追加 → ドメイン** → `dm-signal.com` → 表示される TXT 値を将軍へ。
+2. 将軍が Cloudflare DNS に `TXT @ <値>` を追加(API 1 行)→ 殿が「確認」を押す。
+3. サイトマップ `https://dm-signal.com/sitemap.xml` を送信(EN/JA の 2 URL、hreflang は各ページ内)。
+- 完了条件: Search Console で所有権確認済み・サイトマップ「成功」。
+
+## Step 8 — 殿: 実機確認(初見ユーザー通し、§2.5)
+- シークレット窓×スマホで `https://dm-signal.com/` → 30 秒で分かるか、Sign in が画面内か、`/ja` に切替できるか、CTA が app の /login に着地するか。
+- 気づきは区間(lp_view→lp_cta_click→login_view→submit→ok)で 1 箇所名指し(記事の教え: たいてい思っていた場所と違う)。
+
+## 後日(任意)
+- app を `app.dm-signal.com` に移す: Step 3 に `CNAME app → dm-signal-frontend.onrender.com` を 1 行、Render FE に custom domain 追加、LP の `NEXT_PUBLIC_APP_HOST` を差替え。ログイン機構は cookie 非依存なので影響なし。
+
+## Sources(2026-08-30 17:00-17:22 確認)
 - Render Custom Domains: https://render.com/docs/custom-domains
 - Render × Cloudflare DNS(CNAME @/www、DNS only→Proxied、SSL=Full、AAAA 削除): https://render.com/docs/configure-cloudflare-dns
-- お名前.com の維持調整費の言及: https://note.com/sphere_/n/nbdaae33112b2
+- Cloudflare Registrar 対応 TLD(.com 対応・.jp 非対応): https://developers.cloudflare.com/registrar/top-level-domains/ / https://www.cloudflare.com/tld-policies/
