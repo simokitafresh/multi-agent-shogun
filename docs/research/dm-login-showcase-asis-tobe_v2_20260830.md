@@ -2,6 +2,7 @@
 # DM-Signal /login ショーウィンドウ — AsIs / ToBe 設計書 v2（2026-08-30）
 
 - 版: **AsIs v2.0（本番リアルタイム 2026-08-30 10:10-10:20 JST 実測）/ ToBe v1.0**
+- **→ 次版: `docs/research/dm-login-showcase-asis-tobe_v3_20260830.md`（2026-08-30 22:45。設計単位が「/login 1 ページ」から「入口 3 面（LP / app 入口 / 公開 API）」へ変わったため。本版は経緯の正本、現行の正本は v3）**
 - 前版: `docs/research/dm-login-showcase-asis-tobe_20260818.md`（gist 0e15f28f、ToBe v0.3 = ラベル方式）。**前版 ToBe は 1 手も実装されていない**（下記 §1.0）。本版は前版 ToBe を「今の本番」で再検証し、差分を反映した実装可能な版。
 - モック: 前版 artifact fa111b2b（正本 `docs/dashboard/dm-signal-login-showcase.html` v13）を継承。本版で変えるのは数値・件数・データ契約・実装順序。
 - 原則(前版から継承): ToBe は理想(現実のコード名で縛らない)。AsIs は現物。殿裁定は「事実→制約→判断→効果」で記す。
