@@ -9334,3 +9334,10 @@ insights:
   source: "semantic_stress_test"
   fix_known: false
   status: pending
+- id: INS-20260830-172441516-c87c
+  ts: "2026-08-30T17:24:41+09:00"
+  insight: "[[殿裁定 16 42『別サイトでやろう』 17 14『 jp にこだわらない』 LP dm signal com 予定]] semantic_stress_test candidate_aliases: NO_MATCH source=cmds query=殿裁定 2026-08-30 16:42『別サイトでやろう』+17:14『.jp にこだわらない』(LP=dm-signal.com 予定、設計書 v2 §9)。LP は別オリジンから GET /api/public/showcase(ビルド時 fetch と帯の client fetch)と POST /api/public/showcase/event"
+  priority: "low"
+  source: "semantic_stress_test"
+  fix_known: false
+  status: pending
