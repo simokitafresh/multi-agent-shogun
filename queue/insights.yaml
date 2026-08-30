@@ -8703,3 +8703,10 @@ insights:
   source: "semantic_index_update"
   fix_known: false
   status: pending
+- id: INS-20260830-141033220-f35e
+  ts: "2026-08-30T14:10:33+09:00"
+  insight: "semantic_map_generate新規ファイル候補: `.tmp-receipt-worktree/` は semantic index未登録。既存概念へのfile追加または新概念定義を検討せよ"
+  priority: "low"
+  source: "semantic_map_generate:new_file"
+  fix_known: false
+  status: pending
