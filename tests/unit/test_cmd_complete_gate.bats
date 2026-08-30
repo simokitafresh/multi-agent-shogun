@@ -2093,6 +2093,42 @@ EOF
     [[ "$output" == *"BLOCK_REASONS="* ]]
 }
 
+# test_necessity: cmd_4426's metadata.openGraph.images/twitter.images is a
+# property expression, not a file.  The same command must still enforce every
+# real extension-bearing path in files_modified.
+# regression_justification: cmd_4426 was false-BLOCKed when the slash between
+# two dot-separated metadata properties was parsed as a filesystem path.
+@test "command/files_modified coverage ignores slash-delimited property chains while keeping cmd_4426 files" {
+    _write_command_coverage_fixture \
+        "lp/app/page.tsx と lp/app/ja/page.tsx の metadata.openGraph.images/twitter.images を差し替え、lp/app/opengraph-image.tsx と lp/app/ja/opengraph-image.tsx を削除し、lp/public/og-en.png と lp/public/og-ja.png を追加する。https://dm-signal.com/og-en.png を確認" \
+        "  - path: lp/app/page.tsx
+    change: modified
+  - path: lp/app/ja/page.tsx
+    change: modified
+  - path: lp/app/opengraph-image.tsx
+    change: modified
+  - path: lp/app/ja/opengraph-image.tsx
+    change: modified
+  - path: lp/public/og-en.png
+    change: added
+  - path: lp/public/og-ja.png
+    change: added" \
+        "lp"
+
+    run collect_cmd_command_file_refs "$TEST_CMD_ID" ""
+    [ "$status" -eq 0 ]
+    [ "$(printf '%s\n' "$output" | wc -l)" -eq 6 ]
+    [[ "$output" != *"metadata.openGraph.images/twitter.images"* ]]
+    [[ "$output" != *"https://dm-signal.com/og-en.png"* ]]
+
+    run _run_command_files_modified_coverage_with_state
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"OK (command欄ファイル参照 全6件がfiles_modifiedに記載済み)"* ]]
+    [[ "$output" != *"COMMAND_SCOPE_MISSING"* ]]
+    [[ "$output" == *"ALL_CLEAR=true"* ]]
+    [[ "$output" == *"BLOCK_REASONS="* ]]
+}
+
 @test "command/files_modified coverage keeps explicit relative and absolute paths strict" {
     local absolute_target="$TEST_PROJECT/scripts/absolute_target"
     mkdir -p "$(dirname "$absolute_target")"
