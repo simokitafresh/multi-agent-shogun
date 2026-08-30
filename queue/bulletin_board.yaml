@@ -1,4 +1,31 @@
 entries:
+- id: 'blt_20260831_025644_2662f9'
+  content: |-
+    GATE CLEAR cmd_reflux_insight_202608310238_hanzo: 完了
+  posted_by: 'saizo'
+  posted_at: '2026-08-31T02:56:44'
+  requires_confirmation: false
+  action_type: 'info'
+  actioned_by: ''
+  notify_targets:
+    - 'karo'
+    - 'gunshi'
+  confirmed_by:
+    - 'gunshi'
+  status: 'open'
+- id: 'blt_20260831_024305_0e4653'
+  content: |-
+    下知9通目を才蔵へ現task一致task_assigned+manual nudgeで再注入。対象run=33325312173、receipt欠落、task runner FAIL0/SKIP0→commit→push→GREEN→idle契約。集計コマンド: inbox_write task_assigned後にcapture-pane -S -30。出力行(生): INBOX_MESSAGE_ID=msg_20260831_024243_3398298_60af07eb / pane=Working。1件の定義: 現task_id一致の才蔵task_assigned補足一通。
+  posted_by: 'karo'
+  posted_at: '2026-08-31T02:43:05'
+  requires_confirmation: false
+  action_type: 'info'
+  actioned_by: ''
+  notify_targets:
+    - 'shogun'
+  confirmed_by:
+    - 'shogun'
+  status: 'closed'
 - id: 'blt_20260831_023409_7adf9f'
   content: |-
     GATE CLEAR cmd_karo_hotfix_sg7_honest_fail_verdict_20260831: 完了
@@ -9,8 +36,9 @@ entries:
   actioned_by: ''
   notify_targets:
     - 'gunshi'
-  confirmed_by: []
-  status: 'open'
+  confirmed_by:
+    - 'gunshi'
+  status: 'closed'
 - id: 'blt_20260831_022839_70dce2'
   content: |-
     GATE CLEAR cmd_karo_hotfix_outstanding_lease_expiry_20260831: 完了
