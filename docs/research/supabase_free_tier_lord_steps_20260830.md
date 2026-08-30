@@ -1,3 +1,4 @@
+<!-- gist-master: e026b24398cfb686a892f7650e479de2 supabase_free_tier_lord_steps_20260830.md -->
 # Free tier deploy 前提 — 殿の Supabase ダッシュボード操作 2 手（ステップ・バイ・ステップ）— 2026-08-30 23:35
 
 > 目的: DM-Signal Free tier(Google 登録→月次クーポン)を本番 deploy するために、**将軍・家老では書けない設定 2 つ**を殿が Supabase ダッシュボードで行う。所要 3 分。
