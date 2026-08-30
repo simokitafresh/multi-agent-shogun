@@ -7354,7 +7354,10 @@ insights:
   priority: "medium"
   source: "manual"
   fix_known: false
-  status: pending
+  status: resolved
+  resolved_reason: "一次情報で未解消を確認。scripts/deploy_task.sh:L851-L895/L976-L978はdepends_on検出時に現ACと依存先status/purposeだけをstderr表示し、依存先paneのCTX取得・revision_requestedまたはCTX>70%時のWARN+分離提案を実装していない。今回planned_pathsはqueue/insights.yamlのみのためコード修正は行わず、別実装cmdのdecision_candidateとして整理した。"
+  action_artifact: "target=queue/insights.yaml:7351;primary=scripts/deploy_task.sh:L851-L895,L976-L978(current behavior);test=tests/unit/test_deploy_task_lifecycle.bats:L669-L690(status/purpose+AC only;no CTX/revision assertion);memory=bash scripts/memory_db_query.sh --search INS-20260828-164735814-904e(exact target lookup);semantic=SEMANTIC_DISABLE_CAUSAL=1 SEMANTIC_DISABLE_LLM=1 SEMANTIC_DISABLE_MEMORY_DB=1 bash scripts/semantic_search.sh INS-20260828-164735814-904e(no exact indexed entry);decision_candidate=別実装cmdで依存先task statusと実pane CTXを一次取得し、revision_requestedまたはCTX>70%ならWARNと分離提案を配備前に表示する機構+regression testを実装;inventory_before=insights_pending:59,zero_backlinks:15,promotions:0(effective;pause marker present),total:74"
+  resolved_at: "2026-08-31T03:33:39+09:00"
 - id: INS-20260828-170139520-04c9
   ts: "2026-08-28T17:01:39+09:00"
   insight: "respawn resolver(3da552c)は codex.js を解決するが node bin を PATH に入れず、daemon PATH(nvm 無し)では pane が status 127 で死ぬ。GATE CLEAR≠本番 proof(LS124 の第 2 例)。hotfix の AC に『daemon PATH で respawn した pane が alive』を含める+FALLBACK 時の tmux/pane stderr を log へ"
