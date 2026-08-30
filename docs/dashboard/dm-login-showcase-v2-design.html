@@ -162,6 +162,16 @@ a{color:var(--accent)}
   </table></div>
   <p style="margin-top:8px">区間計測: <code>POST /api/public/showcase/event</code>(step ∈ login_view / input_focus / submit / ok / expired / wrong / note_click)を 1 表に集計し、<strong>どこで消えているかを数字で出してから</strong>魅力側を最適化。P4 は「シークレット窓 × スマホ実機で初見ユーザーとして通す」。</p>
 
+  <h2>§2.6 描画・更新方針 — 殿下問 12:54「daily 更新か、期間明記の static か」</h2>
+  <div class="tbl"><table>
+    <tr><th>観点</th><th>AsIs</th><th>ToBe</th></tr>
+    <tr><td>数値の鮮度</td><td>metrics は毎日再計算(calculated_at 08-30)だが系列は月末基準(end 07-31)=月 1 回しか変わらない</td><td>EP cache 1h、表示は「Data through {series_end}」明記。daily の見た目更新は不要(値が変わらない)</td></tr>
+    <tr><td>描画</td><td><code>"use client"</code> CSR、HTML 本文は空(title のみ)</td><td><strong>ISR</strong>: server component 化、<code>revalidate 86400</code>+月末再計算後の on-demand revalidate。初回 HTML に数値・H1・脚注を焼き込む</td></tr>
+    <tr><td>SEO</td><td>robots.txt / sitemap / metadata なし=検索エンジンから空</td><td>/login に metadata(EN)、robots.txt・sitemap 追加、/login のみ index 許可</td></tr>
+    <tr><td>動線</td><td><code>/</code>→<code>/login</code> replace の白画面リスク(F1)</td><td>ISR で /login が即描画=F1 の解消と同じ手</td></tr>
+  </table></div>
+  <p style="margin-top:8px">結論: <strong>「static に見える ISR」</strong>= 期間明記+SEO 可+自動更新。CSR の daily fetch は SEO ゼロで値も変わらないので採らない。「realtime」とは書かない(月次データを日次に見せない)。P2b AC: 本番 /login の HTML に表の数値が含まれる・脚注に Data through 日付・metadata description(EN)。</p>
+
   <h2>§3 実装単位(可逆・1 層ずつ。順序=摩擦→計測→魅力)</h2>
   <div class="tbl"><table>
     <tr><th>手</th><th>内容</th><th>二値 AC</th></tr>

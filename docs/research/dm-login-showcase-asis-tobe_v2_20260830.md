@@ -34,6 +34,7 @@
 | 12:46 | MDD も追加しよう | 事実=metrics に『Maximum Drawdown』(close.portfolio/benchmark)が全 PF にある(12:47 実測: Basic-DM −41.0%、Basic 平均 −36.5%/最浅 −23.3%(DM-safe)、Standard −47.0%/−22.8%(GSシン分身-鉄壁)、Premium −44.1%/−21.2%(GSシン四つ目-鉄壁)、Secret −29.9%/−9.8%、SPY 2003-10〜 −52.9%(Basic-DM 行の benchmark 値と一致)、TQQQ 2010-03〜 −80.1%)。制約=リターンだけの表は片面。判断=**MDD 列(プラン行は平均 / 最浅)を追加**。効果=§3.1 に MDD 列、§2.3 に `mdd_avg/mdd_best`、benchmarks に `mdd`。cmd_4414 は未配備(4413 CLEAR まで保留)のため void し、MDD 込みの cmd_4415 に差し替える |
 | 12:48 | 表内にベストの PF 名は不要。期間の注釈は表外に小さく英語表記。平均とベストは『平均〜ベスト』(『/』ではなくレンジの『〜』) | 事実=表内の PF 名(Ave-X 等)と期間注記が行を長くし、『/』は比率にも読める。制約=公開できるのは集計値のみ(PF 名は Basic-DM 以外出さない)。判断=**全プラン行の値は『平均 〜 ベスト』のレンジ表記、PF 名なし、期間は表外の英語脚注**。効果=§3.1 表を書き換え、§2.3 の `best_name`/`sharpe_best_name`/`mdd_best_name` を契約から削除(hero の name のみ) |
 | 12:49 | Sharpe と MDD は平均は不要。ベストだけでいい | 事実=Sharpe/MDD の平均はプラン内のばらつきで薄まり、読者が使うのはベスト値。判断=**Sharpe 列=ベスト(最大)、MDD 列=ベスト(最浅)の単値。レンジ表記は Total return/×N/CAGR の 3 列のみ**。効果=§3.1 表と §2.3 契約から sharpe_avg/mdd_avg を削除 |
+| 12:54 | ログイン画面の数値データはリアルタイム更新(daily)にできるか？期間を明記して static にしたほうが SEO やユーザー動線としてベターか？ | 事実=①数値の出所 `portfolio_metrics(years=0)` は毎日再計算される(12:55 実測 calculated_at=2026-08-30 が 101 行)が、系列は月末クローズ基準で end_date=2026-07-31 のまま=**数字が動くのは月 1 回(月末クローズ翌日)**。②現行 /login は `"use client"` の CSR で、本番 HTML は `<title>DM-Signal</title>` のみ(12:11 curl)。robots.txt/sitemap/metadata なし=**検索エンジンには空ページ**。制約=daily 更新にしても表示値は月内不変。判断=**両立させる: サーバー側で HTML に数値を焼き込む ISR(revalidate 24h+月末再計算後の on-demand revalidate)+『Data through 2026-07-31』の期間明記**。訪問者には static に見え、実体は EP から毎日自動再生成。効果=§2.6 描画・更新方針を新設、P2b の AC に『初回 HTML に数値が含まれる(curl で表の数値が HTML 本文に存在)』『as_of の月末日が表外脚注に出る』を追加 |
 
 ---
 
@@ -152,6 +153,17 @@
 | F5 | 言語 JA のみ(EN 読者は入口で詰む) | EN 主・JA 従(§4) | — |
 - **区間計測(P1 と同時)**: `POST /api/public/showcase/event`(認証不要・body={step, ua_class, ts}、step ∈ {login_view, input_focus, submit, ok, expired, wrong, note_click})を 1 日分だけ集計して `logs`/DB 1 表に落とす。**「どこで消えているか」を数字で出してから**§3.1 の魅力側を最適化する。
 - **初見ユーザー通し(P4)**: シークレット窓 × スマホ実機 × PC の 2 経路で「未認証で `/` に来る → /login → note でパスワードを見る → 戻って入力 → `/`」を殿自身と将軍(CDP モバイル幅)が通す。ボタンが画面外だった瞬間を 0 件にする。
+
+### 2.6 描画・更新方針（殿下問 12:54 への答え）
+| 観点 | AsIs(現物) | ToBe |
+|---|---|---|
+| 数値の鮮度 | metrics は毎日再計算(calculated_at 08-30)だが系列は月末基準(end 07-31)=月 1 回しか変わらない | EP は cache 1h、表示は「Data through {series_end}」を明記。**daily の見た目更新は不要**(値が変わらない) |
+| 描画 | `"use client"` CSR。HTML 本文は空(title のみ) | **ISR**: `/login` を server component 化し EP を `fetch(..., { next: { revalidate: 86400 } })`、月末再計算完了後に on-demand `revalidatePath('/login')`。初回 HTML に表の数値・H1・脚注が含まれる |
+| SEO | robots.txt / sitemap / page metadata なし。検索エンジンから見て空 | `metadata`(title/description EN、og)を /login に付与、robots.txt と sitemap を追加、`/login` を index 許可(ログイン後ページは noindex) |
+| 動線 | 未認証は `/`→`/login` replace(白画面リスク §2.5 F1) | ISR で `/login` 自体が即描画される=F1 の解消と同じ手 |
+| 数字の信頼 | — | 期間(inception〜series_end)を脚注で固定。「realtime」と書かない(月次データを日次に見せない=殿 08-18 17:28『毎営業日は月次にふさわしくない』と同じ規則) |
+- 結論: 「static に見える ISR」= 期間明記+SEO 可+自動更新。CSR の daily fetch は SEO ゼロで値も変わらないので採らない。
+- P2b の AC に追加: `curl -s https://dm-signal-frontend.onrender.com/login | grep -c '+3,139%'` が 1 以上(HTML 焼き込み)、脚注に `Data through 2026-07-31` 形式の日付が存在、`/login` の metadata description が EN で存在。
 
 ---
 
