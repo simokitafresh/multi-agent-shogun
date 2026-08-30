@@ -5840,11 +5840,23 @@ auto_void_if_parent_cmd_completed() {
             exit 1
         fi
         # Completed parent_cmd/tasks must not remain report-wait targets for the next cmd.
-        awk '
+        # Keep the same-directory rename atomic, but arm a local trap first: this
+        # worker is interruptible and an awk/rename failure must not litter the
+        # queue/tasks directory with an uncommitted mutation temporary.
+        local task_mutation_tmp="${task_file}.tmp.$$"
+        _auto_void_cleanup_task_mutation_tmp() {
+            [ -n "${task_mutation_tmp:-}" ] && rm -f -- "$task_mutation_tmp"
+        }
+        trap _auto_void_cleanup_task_mutation_tmp EXIT HUP INT TERM
+        if ! awk '
             /^[[:space:]]+parent_cmd:[[:space:]]*/ { next }
             /^[[:space:]]+task_id:[[:space:]]*/ { next }
             { print }
-        ' "$task_file" > "${task_file}.tmp.$$" && mv "${task_file}.tmp.$$" "$task_file"
+        ' "$task_file" > "$task_mutation_tmp" || ! mv -- "$task_mutation_tmp" "$task_file"; then
+            log "ERROR: task mutation publish failed for ${name}; temporary cleaned"
+            exit 1
+        fi
+        trap - EXIT HUP INT TERM
         _ninja_monitor_observe_call "auto_void:voided_at:$name" yaml_field_set "$task_file" "task" "voided_at" "$voided_at" 2>/dev/null || true
         _ninja_monitor_observe_call "auto_void:void_reason:$name" yaml_field_set "$task_file" "task" "void_reason" "parent_cmd_completed_by_$(basename "$still_completed_report")" 2>/dev/null || true
     ) 200>"$lock_file" || return 1
@@ -13653,6 +13665,58 @@ run_worktree_metadata_cleanup() {
     log "WORKTREE-METADATA: repo=$repo entries_before=$entries_before missing_before=$missing_before pruned=$pruned entries_after=$entries_after missing_after=$missing_after"
 }
 
+# ═══ queue/tasks mutation residue sweep ═══
+# deploy-task writers use same-directory candidates for atomic publication. A
+# process interruption can leave candidate/backup/lock/tmp siblings behind;
+# never touch a live holder and never delete the live queue by default.
+TASK_MUTATION_SWEEP_AGE_SEC="${TASK_MUTATION_SWEEP_AGE_SEC:-600}"
+TASK_MUTATION_SWEEP_APPLY="${TASK_MUTATION_SWEEP_APPLY:-0}"
+TASK_MUTATION_SWEEP_QUARANTINE_DIR="${TASK_MUTATION_SWEEP_QUARANTINE_DIR:-${STATE_DIR:-/tmp}/task-mutation-quarantine}"
+
+run_task_mutation_residue_sweep() {
+    local tasks_dir="${TASK_MUTATION_SWEEP_DIR:-$SCRIPT_DIR/queue/tasks}"
+    local age_threshold="${TASK_MUTATION_SWEEP_AGE_SEC:-600}"
+    local apply="${TASK_MUTATION_SWEEP_APPLY:-0}"
+    local now="${EPOCHSECONDS:-$(date +%s)}"
+    local path mtime age
+    local scanned=0 eligible=0 active=0 moved=0
+    local quarantine="${TASK_MUTATION_SWEEP_QUARANTINE_DIR:-${STATE_DIR:-/tmp}/task-mutation-quarantine}"
+
+    [[ "$age_threshold" =~ ^[0-9]+$ ]] || age_threshold=600
+    [ -d "$tasks_dir" ] || return 0
+
+    while IFS= read -r -d '' path; do
+        scanned=$((scanned + 1))
+        mtime=$(stat -c %Y -- "$path" 2>/dev/null || true)
+        [[ "$mtime" =~ ^[0-9]+$ ]] || continue
+        age=$((now - mtime))
+        [ "$age" -ge "$age_threshold" ] || continue
+
+        # flock is the authoritative holder check for the mutation artifact.
+        # A non-blocking success means no process currently owns the path.
+        if ! flock -n "$path" -c ':' 2>/dev/null; then
+            active=$((active + 1))
+            continue
+        fi
+        eligible=$((eligible + 1))
+        log "TASK-MUTATION-SWEEP-CANDIDATE: path=$path age_sec=$age holder=dead apply=$apply"
+        if [ "$apply" = "1" ]; then
+            mkdir -p "$quarantine" 2>/dev/null || continue
+            if mv -- "$path" "$quarantine/" 2>/dev/null; then
+                moved=$((moved + 1))
+            else
+                log "TASK-MUTATION-SWEEP-BLOCK: path=$path reason=quarantine_move_failed"
+            fi
+        fi
+    done < <(
+        find "$tasks_dir" -maxdepth 1 -type f \
+            \( -name '*.mutation.*' -o -name '*.tmp' -o -name '*.tmp.*' \) \
+            -print0 2>/dev/null
+    )
+
+    log "TASK-MUTATION-SWEEP: dir=$tasks_dir scanned=$scanned eligible=$eligible active_holder=$active apply=$apply moved=$moved"
+}
+
 # ═══ /tmp lock file定期cleanup ═══
 # lock_path.shが生成するshogun_lock_*.lock + auto_deploy_*.lockが蓄積(10000+件)
 # flockはfd操作のため古いファイルは安全に削除可能
@@ -14684,6 +14748,10 @@ if [ "${1:-}" = "--lifecycle-worker" ]; then
     "$lifecycle_worker_function" "$@"
     exit $?
 fi
+
+# Reconcile interrupted task mutations before the first daemon observe cycle.
+# The default is a dry-run; explicit apply only quarantines dead, old artifacts.
+run_task_mutation_residue_sweep
 
 NINJA_MONITOR_OWNER_WATCH_OWNER_PID="$$"
 NINJA_MONITOR_OWNER_WATCH_PARENT_PID="$$"

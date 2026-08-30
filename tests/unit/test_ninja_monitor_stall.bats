@@ -5436,6 +5436,78 @@ cat "$TEST_LOG"
     [[ "$output" != *"CLEAR:"* ]]
 }
 
+# test_necessity: interrupted task mutation artifacts are only candidates after
+# the age/holder boundary, dry-run never changes live queue state, and explicit
+# apply quarantines only dead-holder artifacts.
+@test "task mutation residue sweep is stale-holder gated and dry-run by default" {
+    run env PROJECT_ROOT="$PROJECT_ROOT" bash -c '
+        set -euo pipefail
+        export NINJA_MONITOR_LIB_ONLY=1 NINJA_MONITOR_FUNCTION_TIMING_LOG=disabled
+        source "$PROJECT_ROOT/scripts/ninja_monitor.sh"
+        unset NINJA_MONITOR_LIB_ONLY
+        root="$BATS_TEST_TMPDIR/task-mutation-sweep"
+        tasks="$root/queue/tasks"; quarantine="$root/quarantine"
+        mkdir -p "$tasks" "$root/state"
+        printf "task:\n  status: assigned\n" > "$tasks/hayate.yaml"
+        for suffix in candidate candidate.bak candidate.lock tmp.123; do
+            : > "$tasks/hayate.yaml.mutation.dead.$suffix"
+            touch -d "20 minutes ago" "$tasks/hayate.yaml.mutation.dead.$suffix"
+        done
+        active="$tasks/hayate.yaml.mutation.active.lock"
+        : > "$active"; touch -d "20 minutes ago" "$active"
+        flock "$active" -c "sleep 2" & holder=$!
+        sleep 0.1
+        SCRIPT_DIR="$root"; STATE_DIR="$root/state"; LOG="$root/sweep.log"
+        TASK_MUTATION_SWEEP_DIR="$tasks" TASK_MUTATION_SWEEP_AGE_SEC=600 TASK_MUTATION_SWEEP_APPLY=0 \
+            run_task_mutation_residue_sweep
+        test "$(find "$tasks" -maxdepth 1 -type f | wc -l)" -eq 6
+        grep -q "scanned=5 eligible=4 active_holder=1 apply=0 moved=0" "$LOG"
+        wait "$holder"
+        TASK_MUTATION_SWEEP_DIR="$tasks" TASK_MUTATION_SWEEP_AGE_SEC=600 \
+            TASK_MUTATION_SWEEP_APPLY=1 TASK_MUTATION_SWEEP_QUARANTINE_DIR="$quarantine" \
+            run_task_mutation_residue_sweep
+        test "$(find "$tasks" -maxdepth 1 -type f | wc -l)" -eq 1
+        test "$(find "$quarantine" -maxdepth 1 -type f | wc -l)" -eq 5
+        grep -q "scanned=5 eligible=5 active_holder=0 apply=1 moved=5" "$LOG"
+        printf "dry_run_live_files=6 active_holder=1 apply_moved=5 quarantine=5\n"
+    '
+    [ "$status" -eq 0 ]
+    [ "$output" = "dry_run_live_files=6 active_holder=1 apply_moved=5 quarantine=5" ]
+}
+
+# test_necessity: the auto-void task rewrite must remove its temporary on a
+# rename failure, proving the EXIT/signal trap covers the abnormal path.
+@test "auto void task mutation trap removes failed publish temporary" {
+    run env PROJECT_ROOT="$PROJECT_ROOT" bash -c '
+        set -euo pipefail
+        export NINJA_MONITOR_LIB_ONLY=1 NINJA_MONITOR_FUNCTION_TIMING_LOG=disabled
+        source "$PROJECT_ROOT/scripts/ninja_monitor.sh"
+        unset NINJA_MONITOR_LIB_ONLY
+        root="$BATS_TEST_TMPDIR/task-mutation-trap"
+        mkdir -p "$root/queue/tasks" "$root/queue/reports" "$root/state"
+        SCRIPT_DIR="$root"; STATE_DIR="$root/state"; LOG="$root/log"
+        printf "task:\n  status: assigned\n  task_id: current\n  parent_cmd: cmd-parent\n" > "$root/queue/tasks/saizo.yaml"
+        printf "worker_id: hayate\ntask_id: current\nparent_cmd: cmd-parent\nstatus: completed\nverdict: PASS\n" > "$root/queue/reports/hayate_report_cmd-parent.yaml"
+        declare -A PANE_TARGETS
+        ninja_monitor_worker_owner_is_current() { return 0; }
+        task_lifecycle_set_idle() { return 0; }
+        yaml_field_set() { return 0; }
+        send_inbox_message() { return 0; }
+        safe_send_clear() { return 0; }
+        tmux() { return 0; }
+        log() { printf "%s\n" "$1" >> "$LOG"; }
+        mv() { return 1; }
+        if auto_void_if_parent_cmd_completed saizo "" TEST; then
+            exit 1
+        fi
+        test -z "$(find "$root/queue/tasks" -maxdepth 1 -name 'saizo.yaml.tmp.*' -print -quit)"
+        grep -q "task mutation publish failed.*temporary cleaned" "$LOG"
+        printf "publish_failed=1 temp_residue=0\n"
+    '
+    [ "$status" -eq 0 ]
+    [ "$output" = "publish_failed=1 temp_residue=0" ]
+}
+
 # =============================================================================
 # snapshot_idle tests (merged from test_ninja_monitor_snapshot_idle.bats)
 # =============================================================================
