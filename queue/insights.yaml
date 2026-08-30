@@ -10583,3 +10583,10 @@ insights:
   source: "semantic_index_update"
   fix_known: false
   status: pending
+- id: INS-20260831-031644648-31c8
+  ts: "2026-08-31T03:16:44+09:00"
+  insight: "semantic_index_update未登録[[リンク]]ターゲット: [[GATE_CLEAR自己通知根治]] は既存aliasesに一致なし。類似概念TOP3: semantic_dictionary_design(セマンティック辞書構想; alias=GATE CLEAR; score=22.5) / skill_routing(スキルルーティング; alias=GATE CLEAR後処理; score=21.6) / gunshi_review_lifecycle(軍師レビューライフサイクル; alias=gate_result同期; score=21.4)。概念定義とaliases追加を検討せよ"
+  priority: "low"
+  source: "semantic_index_update"
+  fix_known: false
+  status: pending
