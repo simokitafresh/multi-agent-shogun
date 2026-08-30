@@ -6246,7 +6246,10 @@ insights:
   priority: "medium"
   source: "manual"
   fix_known: false
-  status: pending
+  status: resolved
+  resolved_reason: "T108 source_equivalent自動終端は既に実装済みで、対象repoのcommit解決・origin/main祖先性・境界更新・将軍無通知のDOC_LANE_INFOを回帰試験3/3 PASS SKIP0で確認したため追加修正不要"
+  action_artifact: "scripts/gates/gate_context_freshness.sh:271-397; tests/unit/test_gate_context_freshness.bats:447-543 (bats source-equivalent 3/3 PASS SKIP0); context/infrastructure.md:379; docs/semantic-index/index.md:3086-3087; data/multi_agent_shogun_memory.db DOC_LANE_INFO実績"
+  resolved_at: "2026-08-30T10:17:50+09:00"
 - id: INS-20260828-055343134-dad4
   ts: "2026-08-28T05:53:43+09:00"
   insight: "本日の DOC_LANE_REQUEST source_equivalent 4 件(dm-signal.md)は source_commit が 06-12/07-06 の旧 commit(e805b0d9/40a1d740/5e9ea355/1a5f5149)で、順不同に境界を過去へ動かした結果 05:52 に DOC_LANE_ALERT 8 件(既反映)を誘発。source_equivalent request の source_commit は origin/main tip 以外を出さない(or 受け側で tip へ丸める)契約を T108 自動化に含める。origin=[[DOC_LANE_REQUEST_旧commit境界_20260828]] -> [[境界後退で偽ALERT]] -> [[T108_tip固定契約]]"
