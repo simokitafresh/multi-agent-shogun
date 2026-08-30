@@ -10520,7 +10520,7 @@ auto_request_report_review() {
 # 家老 1 lane の直列(CTX 80%・27 分停滞)に乗り、done 忍者 4 名が再配備不可で idle した。
 # cmd_1144『LGTM→家老はスタンプのみ』を機械化: LGTM ∧ report completed/PASS ∧ karo.yaml 不在 ∧
 # archive 未完 ∧ LGTM から AUTO_KARO_ACCEPT_DELAY_SEC 経過 → review_approval.sh karo ACCEPT を代行する。
-AUTO_KARO_ACCEPT_DELAY_SEC=${AUTO_KARO_ACCEPT_DELAY_SEC:-300}
+AUTO_KARO_ACCEPT_DELAY_SEC=${AUTO_KARO_ACCEPT_DELAY_SEC:-1800}  # 21:27 殿指摘『軍師 LGTM の抜けを家老が指摘する例は多い』(実測 30/2593=1.2%)→家老の判断窓を 30 分確保し、窓を過ぎた停滞だけ代行
 auto_karo_accept_after_lgtm() {
     local gunshi_file cmd_dir cmd_id karo_file report_rel report_full result verdict status lgtm_ts now age fail_marker accept_err
     now=$(date +%s)
@@ -10557,6 +10557,10 @@ auto_karo_accept_after_lgtm() {
         if accept_err=$(bash "$SCRIPT_DIR/scripts/review_approval.sh" "$cmd_id" karo ACCEPT "$report_full" auto 2>&1 >/dev/null); then
             rm -f "$fail_marker"
             log "KARO-ACCEPT-AUTO: cmd=$cmd_id report=${report_full##*/} lgtm_age_s=$age (LGTM+PASS、家老スタンプ代行)"
+            # 家老の目(目的整合・LGTM の抜け)を残す: 代行を家老へ通知し、疑義があれば archive 前に RC_REVOKE できるようにする。
+            bash "$SCRIPT_DIR/scripts/inbox_write.sh" karo \
+                "task_id=commander_directive subject_task_id=${cmd_id} parent_cmd=${cmd_id} [KARO-ACCEPT-AUTO] ${cmd_id} は軍師 LGTM から ${age}s 家老 ACCEPT が無かったため monitor が代行した(report=${report_full##*/})。目的整合に疑義があれば review_approval.sh ${cmd_id} karo RC_REVOKE <report> <理由> で取り消せ。" \
+                task_assigned ninja_monitor read_task >/dev/null 2>&1 || true
         else
             printf '%s' "$lgtm_ts" > "$fail_marker"
             log "KARO-ACCEPT-AUTO-FAIL: cmd=$cmd_id report=${report_full##*/} reason=$(printf '%s' "$accept_err" | tail -1 | cut -c1-120)"
