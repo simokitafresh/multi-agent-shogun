@@ -6721,7 +6721,10 @@ insights:
   priority: "medium"
   source: "manual"
   fix_known: false
-  status: pending
+  status: resolved
+  resolved_reason: "一次情報（三層記憶・semantic search・Obsidian原文・AGENTS.md・既存commit 89510dbaa）を照合し、9763378fa後の家老task_idフィルタ誤適用は既存のpositive_rule焼込みとmark_read対応証跡ガードで解消済み。今回の新規実修正・decision_candidateは不要。"
+  action_artifact: "target=queue/insights.yaml:INS-20260828-104226307-40f3;memory=semantic_search+preflight_memory_db;semantic=semantic_search;obsidian=docs/obsidian-promoted/task_id-inbox_watcher-9763378fa-10-31-4-lgtm-clear-loop-block-watcher-db-claude.-insight-ins-20260828-104226307-40f3.md;existing_fix=AGENTS.md:378-379;commit=89510dbaa;decision_candidate=none"
+  resolved_at: "2026-08-30T15:28:35+09:00"
 - id: INS-20260828-110750065-8a7f
   ts: "2026-08-28T11:07:50+09:00"
   insight: "semantic_index_update新概念候補: discussion:task notification task id bia6j3wql task id tool use id toolu 013FjTsZ5Y8yR8MUKx は 既存aliasesに一致なし。概念定義とaliases追加を検討せよ"
