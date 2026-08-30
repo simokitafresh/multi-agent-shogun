@@ -168,6 +168,17 @@ test_execution:
 - **enforcement**: agent_respawn.sh 作業中ガード(e3712b4a9)/codex_inbox_priority_guard.sh(42f09d54b)/cli_lookup 接尾辞自己修復+BASH_REMATCH 排除(bc9f4a8c6)/script_update.sh bash フォールバック(2df2ecdee)/inbox_write gunshi 宛 review_draft 許可+stderr 記録(c17a92d8e)。未自動化: push 単位 1 commit の強制(pre-push hook で origin..pushed が first-parent 1 段を超えたら WARN)。
 - origin: `[[殿裁定_1commitずつpush_20260826]] -> [[家老の行動型_1通1単位]] -> [[つまり3本根治_20260827]]`
 
+## 復帰後の型・第十八弾 7則（2026-08-31 00:23-03:00 第18便: Free tier 殿実機 4 段/LP 4 点/Cloudflare 地域言語/dangling 便停止から・将軍自身に適用）
+
+1. **『前提 N/N 到達』は env の存在(二次)でなく build/live の時刻(一次)で言え。static export(NEXT_PUBLIC_*)は env 投入→build の順序が契約、Render は API 経由の env 変更で自動 redeploy しない。** 00:45 に 5/5 と書いた直後、殿実機 00:49『Google サインインは現在設定されていません』=FE build 22:09 < env 22:52 で chunk に supabase.co 0 件。以後 deploy 前提は『env 投入時刻 < live build createdAt ∧ chunk に key ≥1』で判定(家老 runbook 870fb92ee)。
+2. **設計書の env 名・返却 JSON は現物(既存 tier 行・既存 EP の実応答)から引け。並走 cmd の API 契約は返却 JSON 例を設計書と両 AC に置け。** ①DB `password_env_key=VIEWER_PASS_FREE`(既存命名)に対し設計書は `VIEWER_PASSWORD_FREE`→503。②backend `{success,data:{coupon}}` vs FE トップレベル `coupon`→『取得できませんでした』。どちらも 4422/4423 を並走させた時に将軍が契約を書かなかった穴。是正は可逆 D0(env 追加+再 deploy 01:05、hotfix 9d71556d 01:25)。hero に `mdd` を足して `sharpe` を漏らした 4425 も同根→hotfix 10d59c8d+contract test でキー集合を固定。
+3. **エラー本文を握りつぶす UI は、殿に理由を聞く前に可視化 hotfix を先に入れよ(可逆・挙動不変)。** callback が『失敗しました。もう一度』だけを出し原因が見えなかった→6e033013 で `error_description`/`error.message` を表示。診断可視化は 1 往復を消す。
+4. **build-time fetch の静的サイト(LP)は backend 契約変更後に再 build せよ。** 4425(mdd)が 00:13 live でも LP は 23:27 build のまま MDD『—』。backend live→LP 再 build を post_deploy_check の対に置く(『LP build 時刻 > backend live 時刻』)。
+5. **記憶DB の状態記述は一次(スクショ/API)で再確認してから使え。誤りは resolve に訂正を残す。** 08-30 19:55『プロキシ有効(オレンジ雲)』は誤りで、01:50 殿スクショは DNS のみ。Redirect Rule は proxied でしか効かないため、誤記のまま進めば『ルールを入れたのに効かない』往復になった。
+6. **report commit が main の祖先でない(dangling)便停止は Gate 10.1c(8652081df)が起動時に名指しする。壁の名前が task/掲示板に無ければ将軍が順序付き 1 通、あれば二重下知しない。** ga494(8ffd8804b)/converge(41b011c25)が 1h+ WAIT ancestry、gate 自体も monitor の 180s timeout で kill され続けていた(律速 check_report_commit_main_ancestry median 143s→小太郎 hotfix)。家老が『依存』で doc 編集を待ち行列に置いたら『依存なしの編集は今』と 1 行で訂正する。
+7. **手作業を殿に頼む前に、保管 credential を verify せよ(rotate 後の未反映は自分側の壁)。** `.env.cloudflare` のトークンは Invalid、zone_id は仮値だった。殿の dashboard 権限が要る手順は runbook gist(9559feb8)に Step 化し、各 Step 後に将軍が API/curl で到達を確認する型(3 Step 6 分で完了)。
+- origin: `[[殿指示_強くてニューゲーム_20260831_0259]] -> [[FE_env未焼込_00:49]] -> [[VIEWER_PASS_FREE不一致_01:04]] -> [[callback可視化_6e033013]] -> [[data封筒_9d71556d]] -> [[hero_sharpe_10d59c8d]] -> [[Gate_10.1c_dangling]] -> [[Cloudflare_jp-to-ja_02:13]] -> [[復帰後の型_第十八弾]]`
+
 ## 復帰後の型・第十七弾 7則（2026-08-30 21:50-08-31 00:05 第17便: y 待ち/P-C 先送り/insight 逃げ/リバランサー一次/Enter 滞留/偽 CLEAR 4415/誤診訂正から・将軍自身に適用）
 
 1. **/clear 後に殿の「y」を待ってターンを閉じるな。startup gate の ALERT と便の停止は殿の入力を待たない。** 21:52 と 21:55 に「y を待つ」で 2 ターン閉じ、stop hook に 2 回押されて動いた(洗脳#3+#5)。因果を未来へ辿れば、待つ間に kotaro failed・tobisaru idle・lane 停止が進む。Recovery は環境(hook)が要求するもの=自分で始める。
