@@ -1,3 +1,4 @@
+<!-- gist-master: 9559feb8b3dfebda5183d792c7edbade cloudflare_dm-signal_geo_language_runbook_20260831.md -->
 # Cloudflare 手順 — dm-signal.com 地域別言語優先(日本→/ja/、その他→EN)+API トークン再発行 — 2026-08-31 01:55
 
 > 殿下問 01:44『日本からのアクセスは日本語表示優先、日本以外は英語優先にできるか？』→将軍推薦=Cloudflare Redirect Rule(コード変更 0・可逆)→殿 01:46『よい』。
