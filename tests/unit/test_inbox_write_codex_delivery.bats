@@ -131,3 +131,21 @@ wait_for_async_verifier_exit() {
     sed -n "/id: '$EXPECTED_MSG_ID'/,/type:/p" "$ROOT/queue/inbox/testninja.yaml" | grep -q 'read: true'
     printf 'old_fp=0 pane_only_success=0 target_read_transition=1 message_identity=1\n'
 }
+
+@test "codex delivery rearm preserves the current generation outstanding lease" {
+    export CAPTURE_MODE=static INBOX_CODEX_NUDGE_RETRIES=1 INBOX_CODEX_VERIFY_WAIT_SEC=0
+    export SHOGUN_STATE_DIR="$BATS_TEST_TMPDIR/rearm-state"
+    mkdir -p "$SHOGUN_STATE_DIR"
+    printf 'generation-1\t4\tfp-before-rearm\n' \
+        > "$SHOGUN_STATE_DIR/inbox_watcher_sent_testninja_outstanding_lease_generation-1"
+
+    run bash "$BATS_TEST_DIRNAME/../../scripts/inbox_write.sh" \
+        testninja 'delivery rearm lease fixture' task_assigned karo notify
+    [ "$status" -eq 0 ]
+    log=$(find "$INBOX_CODEX_VERIFY_LOG_DIR" -type f -name '*.log' -print -quit)
+    [ -n "$log" ]
+    wait_for_log 'ASYNC_VERIFY FAILURE' "$log"
+    wait_for_async_verifier_exit
+    [ -e "$SHOGUN_STATE_DIR/inbox_watcher_sent_testninja_outstanding_lease_generation-1" ]
+    printf 'rearm_attempts=1 outstanding_lease=preserved duplicate_nudge=0\n'
+}

@@ -79,6 +79,20 @@ GENERATION=generation-2
 invalidate_leases_on_generation_change
 send_wakeup 4 false fp-after-empty normal false false
 printf "after_generation_send=%s\n" "$(grep -c "^paste$" "$tmp/events")"
+
+# High-priority task_assigned nudges share the same generation lease.  A
+# delivery-verification rearm/retry and an unread decrease must not create a
+# second nudge while unread messages remain.
+get_unread_info() { printf "0\tfalse\t-\t-\tfalse\tnormal\tfalse\n"; }
+process_unread
+send_wakeup 4 true fp-high-four high false false msg-high-four
+send_wakeup 2 true fp-high-two high false false msg-high-two
+printf "high_after_decrease_send=%s\n" "$(grep -c "^paste$" "$tmp/events")"
+printf "high_lease_files=%s\n" "$(find "$tmp/state" -maxdepth 1 -name "*outstanding_lease*" -type f | wc -l)"
+get_unread_info() { printf "0\tfalse\t-\t-\tfalse\tnormal\tfalse\n"; }
+process_unread
+send_wakeup 1 true fp-high-after-empty high false false msg-high-after-empty
+printf "high_after_empty_send=%s\n" "$(grep -c "^paste$" "$tmp/events")"
 '
 }
 
@@ -92,6 +106,9 @@ printf "after_generation_send=%s\n" "$(grep -c "^paste$" "$tmp/events")"
     [[ "$output" == *"after_empty_lease_files=0"* ]]
     [[ "$output" == *"after_empty_send=2"* ]]
     [[ "$output" == *"after_generation_send=3"* ]]
+    [[ "$output" == *"high_after_decrease_send=4"* ]]
+    [[ "$output" == *"high_lease_files=1"* ]]
+    [[ "$output" == *"high_after_empty_send=5"* ]]
 }
 
 @test "normal lease is generation keyed rather than fingerprint keyed" {
