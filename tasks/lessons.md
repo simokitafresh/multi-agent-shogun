@@ -16246,3 +16246,16 @@ sqlite3.Connection.backup()を使うとページ(4096byte)単位のread syscall�
 - **when**: 未設定
 - **how**: 未設定
 - workflowのcancel-in-progressをfalseへ変更してもcompatibility内の2fixtureがtrueを検査し続け、CIで2件FAILした。workflow変更時に全compatibility testの関連literalを同一commitで再計数し、旧契約残存0を確認する。
+
+### L1676: 将来CI語彙は時間軸別fixtureで遮断する
+- **日付**: 2026-08-30
+- **出典**: cmd_karo_hotfix_observation_window_ci_terms_20260830
+- **記録者**: kagemaru
+- **tags**: [infra,testing,gate]
+- **subdomain**: infra
+- **target_files**: [scripts/lib/time_contract_validator.py,tests/unit/test_time_contract_validator.bats]
+- **origin**: [[cmd_karo_hotfix_observation_window_ci_terms_20260830]]
+- **enforcement**: 未自動化
+- **when**: 未設定
+- **how**: 未設定
+- 次CI・次のrun・next CI runを単純文字列で追加すると、家老post_push_ci_proof handoffや過去CI実績まで誤検出し得る。将来観測はBLOCKし、handoff/過去実績はPASSする文脈fixtureを同一contractへ固定する。
