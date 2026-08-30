@@ -10705,3 +10705,10 @@ insights:
   source: "semantic_index_update"
   fix_known: false
   status: pending
+- id: INS-20260831-052233922-0d3e
+  ts: "2026-08-31T05:22:33+09:00"
+  insight: "semantic_index_update新概念候補: discussion:level3まで全て完了させるためのロードマップをステップバイステップでgist共有してくれ は 既存aliasesに一致なし。概念定義とaliases追加を検討せよ"
+  priority: "low"
+  source: "semantic_index_update"
+  fix_known: false
+  status: pending
