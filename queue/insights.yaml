@@ -7209,6 +7209,7 @@ insights:
   resolved_reason: "Primary-source verification confirms the reported fix is already present: source-equivalent markers compact to one latest marker under lock and the informational bulletin uses an empty notification selector plus no-op inbox writer; regression contract passes 30/30 with SKIP 0."
   action_artifact: "scripts/gates/gate_context_freshness.sh;tests/unit/test_gate_context_freshness.bats;commits=c092febfc, f9db668ca, 3f7035401;test_receipt=logs/test_receipts/run_tests_20260830T110023_857869.json"
   resolved_at: "2026-08-30T20:03:01+09:00"
+  occurrence_count: 1
 - id: INS-20260828-150156367-4900
   ts: "2026-08-28T15:01:56+09:00"
   insight: "semantic_index_update新概念候補: cmd_complete:cmd_karo_hotfix_finalize_timezone_20260828 は 既存aliasesに一致なし。概念定義とaliases追加を検討せよ"
