@@ -2374,6 +2374,44 @@ assert data["result"] == "FAIL"
 assert data["rc"] == 23
 assert data["skip_count"] == 0
 PY
+  [ "$(cat "${receipt%.json}.rc")" = 23 ]
+}
+
+# test_necessity: every compatibility terminal outcome publishes exactly one
+# atomic rc sidecar whose value matches the terminal receipt rc; stale temp
+# files must not remain visible to the shard verifier.
+# regression_justification: the compatibility shard previously had no durable
+# rc artifact when its inner runner terminated before publishing a receipt.
+@test "terminal outcomes publish matching atomic receipt rc sidecars" {
+  for outcome in success failure timeout; do
+    receipt="$TMPROOT/receipts/$outcome.json"
+    mkdir -p "$TMPROOT/receipts"
+    expected=0
+    if [ "$outcome" != success ]; then
+      expected=23
+      [ "$outcome" = timeout ] && expected=124
+      printf '#!/usr/bin/env bash\nexit %s\n' "$expected" >"$TMPROOT/scripts/run_with_receipt.sh"
+      chmod +x "$TMPROOT/scripts/run_with_receipt.sh"
+    else
+      cp "$ROOT/scripts/run_with_receipt.sh" "$TMPROOT/scripts/run_with_receipt.sh"
+    fi
+    run env PATH="$TMPROOT/bin:$PATH" REPO_ROOT="$TMPROOT" \
+      RUN_TESTS_RECEIPT_PATH="$receipt" SHOGUN_HEAVY_JOB_LOCK_HELD=1 \
+      BATS_CACHE=0 BATS_INNER_JOBS=1 \
+      bash "$TMPROOT/scripts/run_tests.sh" file "$TMPROOT/tests/unit/sample.bats"
+    [ "$status" -eq "$expected" ]
+    rc_file="${receipt%.json}.rc"
+    [ -s "$receipt" ]
+    [ -s "$rc_file" ]
+    [ "$(cat "$rc_file")" = "$expected" ]
+    python3 - "$receipt" "$expected" <<'PY'
+import json, sys
+data = json.load(open(sys.argv[1], encoding="utf-8"))
+assert data["rc"] == int(sys.argv[2]), data
+assert data["complete"] is True, data
+PY
+    [ "$(find "$TMPROOT/receipts" -maxdepth 1 -name '*.tmp.*' -type f | wc -l)" -eq 0 ]
+  done
 }
 
 # test_necessity: truncated tool output must be recoverable from selection or run identity without rerunning tests.
