@@ -9629,3 +9629,10 @@ insights:
   source: "semantic_stress_test"
   fix_known: false
   status: pending
+- id: INS-20260830-192739142-4ced
+  ts: "2026-08-30T19:27:39+09:00"
+  insight: "[[殿実機確認 17 53『LP ページとログインページがほぼ同じだ]] semantic_stress_test candidate_aliases: NO_MATCH source=cmds query=殿実機確認 2026-08-30 17:53『LP ページとログインページがほぼ同じだ。これは誤解や勘違いを生みそうだ』。原因=将軍が §2.2 の同じ構造(表・プラン 3 枚・導線 4 本・FAQ)を cmd_4416(/login)と cmd_4417(LP)の両方に適用したこと。LP が別サイトで live(dm-signal.com)になった今、/l"
+  priority: "low"
+  source: "semantic_stress_test"
+  fix_known: false
+  status: pending
