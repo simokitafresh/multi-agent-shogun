@@ -9049,3 +9049,10 @@ insights:
   source: "semantic_index_update"
   fix_known: false
   status: pending
+- id: INS-20260830-162029820-6e63
+  ts: "2026-08-30T16:20:29+09:00"
+  insight: "semantic_index_update未登録[[リンク]]ターゲット: [[push保留デッドロック]] は既存aliasesに一致なし。類似概念TOP3: push_batch_operation(正規push batch運用; alias=push保留; score=33.0) / provisional_pre-push(仮: Pre Push; alias=pre-push; score=2.9) / dm_signal_refactor_mission(DM-Signalリファクタ任務; alias=push禁止窓; score=2.9)。概念定義とaliases追加を検討せよ"
+  priority: "low"
+  source: "semantic_index_update"
+  fix_known: false
+  status: pending
