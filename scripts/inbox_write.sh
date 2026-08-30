@@ -3430,21 +3430,6 @@ while [ $attempt -lt $max_attempts ]; do
         elif inbox_pending_duplicate_locked "$INBOX" "$FROM" "$CONTENT"; then
             exit 20
         fi
-        # report_review to gunshi dedup: フラグ存在時は書込み前に抑止
-        if [ "$TYPE" = "report_review" ] && [ "$TARGET" = "gunshi" ]; then
-            _pre_dr_cmd_id="${STRUCTURED_PARENT_CMD:-}"
-            [ -z "$_pre_dr_cmd_id" ] && _pre_dr_cmd_id=$(printf '%s' "$CONTENT" | grep -oP 'cmd_\w+' | head -1 || true)
-            _pre_dr_rpath="${STRUCTURED_REPORT_PATH:-}"
-            [ -z "$_pre_dr_rpath" ] && _pre_dr_rpath=$(printf '%s' "$CONTENT" | grep -oP '(?<=report=)\S+' | head -1 || true)
-            _pre_dr_ninja=$(basename "${_pre_dr_rpath}" 2>/dev/null | grep -oP '^[a-z]+(?=_report_)' || true)
-            if [ -n "$_pre_dr_cmd_id" ] && [ -n "$_pre_dr_ninja" ]; then
-                _pre_dr_flag="$SCRIPT_DIR/queue/gates/${_pre_dr_cmd_id}/gunshi_report_review_notify_${_pre_dr_ninja}.done"
-                if [ -f "$_pre_dr_flag" ]; then
-                    echo "[inbox_write] DEDUP: report_review to gunshi already sent for $_pre_dr_cmd_id/$_pre_dr_ninja (flag=$_pre_dr_flag)" >&2
-                    exit 20
-                fi
-            fi
-        fi
         inbox_append_message_locked "$INBOX" "$_msg_block" || exit 1
 
     ) 200>"$LOCKFILE" || _persist_rc=$?
@@ -3588,8 +3573,10 @@ while [ $attempt -lt $max_attempts ]; do
         # Review notifications are persistence-only. Fingerprints are bound at
         # review time by scripts/review_approval.sh, never on delayed delivery.
 
-        # 重複report_review防止: type=report_review to=gunshi 時にgunshi_notify.shと同じフラグを書く
-        # gunshi_notify.sh(cmd_complete_gate.sh経由)が後から発火しても重複送信しない
+        # Keep the legacy notification marker as an observability artifact for
+        # callers that still inspect it.  Dedupe is decided by the durable
+        # message identity above; this marker must never suppress a distinct
+        # sender, type, or report fingerprint.
         if [ "$TYPE" = "report_review" ] && [ "$TARGET" = "gunshi" ]; then
             _dr_cmd_id="${STRUCTURED_PARENT_CMD:-}"
             [ -z "$_dr_cmd_id" ] && _dr_cmd_id=$(printf '%s' "$CONTENT" | grep -oP 'cmd_\w+' | head -1 || true)
@@ -3600,13 +3587,13 @@ while [ $attempt -lt $max_attempts ]; do
                 _dr_gates_dir="$SCRIPT_DIR/queue/gates/${_dr_cmd_id}"
                 mkdir -p "$_dr_gates_dir"
                 _dr_flag="${_dr_gates_dir}/gunshi_report_review_notify_${_dr_ninja}.done"
-                if [ -f "$_dr_flag" ]; then
-                    echo "[inbox_write] DEDUP: report_review to gunshi already sent for $_dr_cmd_id/$_dr_ninja (flag=$_dr_flag)" >&2
-                    return 0 2>/dev/null || true
+                if [ ! -f "$_dr_flag" ]; then
+                    {
+                        echo "timestamp: $(date +%Y-%m-%dT%H:%M:%S)"
+                        echo "ninja: ${_dr_ninja}"
+                        echo "source: inbox_write_dedup"
+                    } > "$_dr_flag"
                 fi
-                echo "timestamp: $(date +%Y-%m-%dT%H:%M:%S)" > "$_dr_flag"
-                echo "ninja: ${_dr_ninja}" >> "$_dr_flag"
-                echo "source: inbox_write_dedup" >> "$_dr_flag"
             fi
         fi
 
