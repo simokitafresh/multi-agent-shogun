@@ -31,6 +31,15 @@
 - JWT secret のコピー(cmd_4428 で不要化)。
 - Google provider の設定(rebalancer で設定済み、同一プロジェクトなので共用)。
 
+## post_deploy_check（Free tier、同一live revisionで上から順に二値確認）
+
+1. **env→build順序**: Render APIでfrontend live deployの`createdAt`が`NEXT_PUBLIC_SUPABASE_URL`と`NEXT_PUBLIC_SUPABASE_ANON_KEY`の更新時刻より後である。後でなければBLOCKし、env更新後にclear-cache redeployする。
+2. **static chunk焼込み**: `GET /free`のHTMLからpage chunk URLを抽出し、`curl`したchunk内の`supabase.co`一致が1件以上である。0件ならBLOCKし、Googleサインイン操作へ進まない。
+3. **Googleサインイン→クーポン**: `/free`でGoogleサインインし、`/auth/callback`を経て`/free`へ戻り、クーポンコードと有効期限が表示される。
+4. **Copy**: Copy押下後、クリップボード値が表示中のクーポンコードと完全一致する。
+5. **クーポン引継ぎ**: 「このクーポンでサインイン」から`/login?coupon=`へ遷移し、入力欄が同じクーポン値でプリフィルされる。
+6. **Free可視範囲**: クーポンでサインイン後、Basic-DualMomentumのみ表示される。併せて既存5 tierのログイン不変を確認する。
+
 ## 完了後
 殿が「2 手やった」と一言 → 家老が F1/F2/F3(cmd_4422/4423/4424+4428)を deploy → post_deploy_check(Google サインイン→クーポン表示→Copy→`/login?coupon=`→Basic-DM 表示 ∧ 既存 5 tier ログイン不変)→ 掲示板へ生貼付。
 
