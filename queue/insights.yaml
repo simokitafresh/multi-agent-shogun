@@ -9082,3 +9082,10 @@ insights:
   source: "semantic_index_update"
   fix_known: false
   status: pending
+- id: INS-20260830-163101482-0439
+  ts: "2026-08-30T16:31:01+09:00"
+  insight: "semantic_index_update未登録cmd originノード: [[dm-login-showcase-asis-tobe_v2_20260830]] は既存aliasesに一致なし。類似概念TOP3: provisional_dm-login-boundary-asis-tobe_20260817(仮: Dm Login Boundary Asis Tobe 20260817; alias=dm login showcase asis tobe 20260818 mdを参照にログインページの改良について設計書; score=33.5) / growth_loop(学習ループ; alias=dm-monthly-trade-bug-asis-tobe-5w1h_20260802; score=22.1) / admin_ui_redesign_asis_tobe(DM-Signal Admin画面一覧性改修設計書; alias=admin ui redesign asis tobe 5w1h 20260724 mdを確認せよ; score=14.7)。概念定義とaliases追加を検討せよ"
+  priority: "low"
+  source: "semantic_index_update"
+  fix_known: false
+  status: pending

@@ -52,59 +52,6 @@ commands:
       diagnosis: "BLOCK理由: 該当なし(cmd_4413 の preflight で判明した 4 フィールドを雛形時点で記入) / 対策: 該当なし"
     delegated_at: "\"2026-08-30T12:37:28\""
     origin: "[[殿裁定_sharpe_spy_tqqq_20260830_1230]] -> [[dm-login-showcase-asis-tobe_v2_20260830]] -> [[cmd_4414_showcase_sharpe_benchmarks]]"
-  cmd_4415:
-    title: "/login ショーウィンドウ P1b(改) — 公開集計 EP に Sharpe・MDD(プラン平均/最浅)・SPY/TQQQ 比較行・Secret 集計値を追補する(cmd_4414 を置換)"
-    status: delegated
-    project: dm-signal
-    purpose: "殿裁定 2026-08-30 12:30『SPY/TQQQ 比較と Sharpe』+12:32『secret の数値』+12:46『MDD も追加しよう』。cmd_4414(12:37 発令、cmd_4413 CLEAR まで未配備)に MDD を加えた置換 cmd。cmd_4414 は家老が void する(未配備のため途中修正ではなく差し替え)。設計書 v2 §2.3(plans[].sharpe_*/mdd_*、benchmarks[] に mdd、secret 集計)・§3.1 v3(Sharpe 列+MDD 列+SPY/TQQQ 2 行+Secret 数値)が契約"
-    scope_mode: FULL
-    target_path: /mnt/c/Python_app/DM-signal/backend
-    acceptance_criteria:
-      AC1:
-        description: "GET /api/public/showcase の plans[] に sharpe_best(最大)と mdd_best(最浅=最大値)(metrics_json.metrics の『Sharpe Ratio』『Maximum Drawdown』close.portfolio、集合は cmd_4413 と同一関数、平均は返さない=殿裁定 12:49)を、hero に sharpe/mdd を、secret に n/avg_total_return/best_total_return/avg_multiple/best_multiple/cagr_min/cagr_max/sharpe_best/mdd_best を追加し、plans[]/secret から PF 名フィールド(best_name 等)を全て除去(殿裁定 12:48: 表内に PF 名なし)したうえで、未認証 curl の値を readonly_query からの独立再計算と全項目一致で確認する"
-        binary_check: "plans 3 行+hero+secret の追加フィールドが独立再計算と不一致 0 ∧ 応答 JSON 中の PF 名が Basic-DualMomentum の 1 件のみ(他の active PF 名 0 件) か?"
-      AC2:
-        description: "benchmarks[] に SPY(2003-10〜series_end)と TQQQ(2010-03〜series_end)の total_return/multiple/cagr/sharpe/mdd を ticker_monthly_returns から算出して追加し(Sharpe は metrics_impl.py:977-983 の式と Rf 系列を、MDD は同 metrics_impl の月次 DD 式を共用)、SPY の sharpe と mdd が Basic-DualMomentum 行の metrics『Sharpe Ratio』『Maximum Drawdown』close.benchmark と小数 2 桁で一致することを確認する"
-        binary_check: "benchmarks が 2 件 ∧ SPY.sharpe と SPY.mdd が Basic-DM benchmark 値と 2 桁一致 ∧ TQQQ.since == 2010-03 ∧ 各 total_return が ticker_monthly_returns からの独立再計算と一致 か?"
-      AC3:
-        description: "追加フィールドの contract test(test_necessity: Sharpe/MDD の出所が metrics 配列であること、benchmarks の Sharpe/MDD が PF と同じ式・Rf 系列であること、secret.best_name が常に null であること)を追加し、選択実行(pytest で cmd_4413 の contract test ファイル+本 cmd の追加 test のみ)で FAIL 0 SKIP 0 を確認する"
-        binary_check: "選択実行 pytest が FAIL 0 ∧ SKIP 0 ∧ 新規 test に非空 test_necessity ∧ 削除 test 0 か?"
-    command: |
-      1. cmd_4413 の集合関数/集計関数を拡張して plans[].sharpe_*/mdd_*・hero.sharpe/mdd・secret 集計(best_name null)を返し、未認証 curl と独立再計算の全項目一致を確認する
-      2. ticker_monthly_returns から SPY/TQQQ の benchmarks[](total/×N/CAGR/Sharpe/MDD)を metrics_impl の式を共用して算出し、SPY の sharpe/mdd が Basic-DM の benchmark 値と 2 桁一致することを確認する
-      3. contract test 3 本(test_necessity 付き)を追加し、選択実行 pytest で FAIL 0 SKIP 0 を報告 YAML に生貼付する
-    assumptions:
-      claim: "本番 DB 実測(2026-08-30 12:33〜12:47 readonly_query): metrics に『Sharpe Ratio』『Maximum Drawdown』(close.portfolio/benchmark)が全 PF にあり、Basic-DM Sharpe 0.89/MDD −41.0%、benchmark(SPY 2003-10〜) Sharpe 0.63/MDD −52.9%。signals 集合の MDD 平均/最浅: Basic −36.5%/−23.3%、NewStandard −47.0%/−22.8%、premium −44.1%/−21.2%、Secret −29.9%/−9.8%。ticker_monthly_returns に SPY 1993-01〜、TQQQ 2010-02〜(TQQQ 2010-03〜 MDD −80.1%)"
-      source: "docs/research/dm-login-showcase-asis-tobe_v2_20260830.md §2.3/§3.1 v3、backend/app/services/metrics_impl.py:977-983、本番 readonly_query 2026-08-30 12:33/12:35/12:47"
-      trust: verified
-    depends_on: cmd_4413
-    measurement_source: "production 本番 DB readonly_query 実測 evidence(db_capability_launcher.py、2026-08-30 JST 12時33分〜12時47分、metrics Sharpe Ratio/Maximum Drawdown・Secret 73 本・ticker_monthly_returns SPY/TQQQ)。ローカル計測は含まない"
-    serial_dependency_evidence: "AC1(集計関数の拡張)→AC2(benchmarks は同 EP の同一応答に同居し Sharpe/MDD 式を共用)→AC3(contract test が AC1/AC2 の関数を参照)。cmd_4413 の集合定義関数を再利用するため depends_on cmd_4413"
-    environment_change: "type=lesson; file=projects/infra/lessons_shogun.yaml; pattern=cmd_4154初回preflightで数値絶対値WARN"
-    timeout_minutes: 45
-    estimated_minutes: 30
-    execution_env:
-      runtime_constraints: "DM-signal backend venv で pytest。本番 DB は readonly_query のみ。新テーブルなし"
-      long_runtime_reason: "cmd_4413 の EP/関数を拡張する 3 AC が同一応答契約に同居し、分割すると Sharpe/MDD/benchmarks/secret で集合定義や式が別実装になる"
-      measured_runtime_sec: 1200
-    split_decision: "AC3 本=1 道具(cmd_4413 契約の追補)。cmd_4413 CLEAR 後に配備(depends_on)。cmd_4414 は本 cmd に吸収(void)"
-    quality_gate:
-      q1_firefighting: "消火ではない。殿裁定 12:30/12:32/12:46 で確定した比較軸(Sharpe・MDD・SPY/TQQQ・Secret 数値)を、発令済み cmd_4413 を止めず未配備の cmd_4414 を差し替えて 1 便で追補する品質向上"
-      q2_learning: "忍者は Sharpe/MDD の出所(metrics 配列)と式・Rf 系列の共用、ベンチマーク期間の明示を実装で学ぶ。設計書 §2.3/§3.1 に契約と実測値が明文化済み"
-      q3_next_quality: "P2b(frontend 表)が完成契約(8 列)に乗れるため、列追加で frontend を作り直す往復が消える"
-      q4_depth: "shallow — 既存 EP のフィールド追加と算出"
-      q5_verified_source: "production_verified — 2026-08-30 12:33 readonly_query で Sharpe 45 行、12:35 で Secret 73 行、12:47 で MDD(signals 集合+Secret+benchmark)を実測、ticker_monthly_returns の SPY/TQQQ 範囲を実測。code_reading — metrics_impl.py:977-983 を 12:33 に読了"
-      q6_not_hiding: "Secret の best_name を null にするのは殿裁定 12:32 であり隠蔽ではない。TQQQ の Sharpe/MDD 将軍概算(Rf=0、0.90/−80.1%)は設計書に明記し EP は共用式で再計算する"
-      q7_definition_verified: "『Sharpe』= metrics[Sharpe Ratio].close.portfolio(年率・Rf 控除)。『MDD』= metrics[Maximum Drawdown].close.portfolio(月次、負の小数)。『最浅』= MDD の最大値(0 に最も近い)。『比較期間』= SPY 2003-10〜、TQQQ 2010-03〜(確認日: 2026-08-30 12:47 本番 DB)"
-      q8_why_what: "WHY: 表に Sharpe・MDD・市場比較・Secret の数字が無いと『どれだけ良いか/どれだけ耐えるか』が伝わらない(殿 12:30/12:32/12:46) / WHAT: plans[].sharpe_*/mdd_*・hero.sharpe/mdd・benchmarks[] 2 件(mdd 含む)・secret 集計 11 フィールドを 2026-08-30 実測値どおり返し、SPY の sharpe/mdd が Basic-DM benchmark と 2 桁一致 / WHEN: cmd_4413 CLEAR 後 / WHERE: /mnt/c/Python_app/DM-signal/backend / WHO: 家老配備の忍者 1 名 / HOW: cmd_4413 の集合関数と metrics_impl の式を共用 / 複利: 式と Rf 系列を 1 か所で共用する選択を 10 回繰り返せば指標を増やすたびに整合が自動で保たれる=正の複利。EP 内で別式を書けば指標ごとに乖離が積み上がる負の複利"
-      q9_firefighting_root_cause: "根本対応。比較指標の乖離の根因=式と Rf 系列の重複実装。metrics_impl の式を共用し、SPY の sharpe/mdd == Basic-DM benchmark を AC で固定する"
-      q10_knowledge_boundary: "検証済み: metrics Sharpe/MDD の所在と値、Secret 73 本の metrics、ticker_monthly_returns 範囲。スコープ外: frontend 表示(P2b)、TQQQ の Rf 込み Sharpe 正確値(EP 実装で確定)、未決 2/5"
-      q11_not_already_done: "rg -c 'benchmarks' /mnt/c/Python_app/DM-signal/backend/app/api → 0件 / rg -c 'mdd_avg' /mnt/c/Python_app/DM-signal/backend → 0件(2026-08-30 12:48) / cmd_4414 は MDD を含まず未配備(karo_snapshot 0 件)=本 cmd が置換"
-      q_ambiguity: "『MDD も同じように』= プラン行と同じ平均/ベスト(最浅)形式(殿 12:46)。比較行の期間は各行に明記。曖昧さは解消済み"
-      q12_lord_30min_cost: "no — 殿裁定 4 本は反映済み"
-      diagnosis: "BLOCK理由: 該当なし(cmd_4413/4414 の preflight で判明したフィールドを雛形時点で記入) / 対策: 該当なし"
-    delegated_at: "\"2026-08-30T12:52:41\""
-    origin: "[[殿裁定_MDD追加_20260830_1246]] -> [[dm-login-showcase-asis-tobe_v2_20260830]] -> [[cmd_4415_showcase_sharpe_mdd_benchmarks]]"
   cmd_4416:
     title: "/login ショーウィンドウ P2 — frontend /login を ISR・ライトモード固定・摩擦除去・表 v3・EN/JA 文言 1 ファイルで組み直す(ログイン機構は不変)"
     status: delegated
