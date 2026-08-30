@@ -5,6 +5,180 @@ setup() {
     PROJECT_ROOT="$(cd "$BATS_TEST_DIRNAME/../.." && pwd)"
 }
 
+# test_necessity: the recovery budget must survive a monitor process restart,
+# while a changed progress fingerprint opens exactly one new generation.
+@test "in_progress idle recovery persists bounded state across restart" {
+    run bash -lc '
+set -euo pipefail
+PROJECT_ROOT="'"$PROJECT_ROOT"'"
+ROOT="$BATS_TEST_TMPDIR/persistent-idle-recovery"
+STATE="$ROOT/state"; TASK="$ROOT/queue/tasks/kagemaru.yaml"
+mkdir -p "$ROOT/queue/tasks" "$ROOT/queue/reports" "$STATE"
+cat > "$TASK" <<EOF
+task:
+  status: in_progress
+  task_id: cmd_persistent_idle
+  parent_cmd: cmd_persistent_idle_parent
+EOF
+RESPAWNS="$ROOT/respawns.log"; : > "$RESPAWNS"
+
+run_worker() (
+    export SHOGUN_STATE_DIR="$STATE" NINJA_MONITOR_LIB_ONLY=1
+    source "$PROJECT_ROOT/scripts/ninja_monitor.sh"
+    unset NINJA_MONITOR_LIB_ONLY
+    SCRIPT_DIR="$ROOT"; STATE_DIR="$STATE"
+    IN_PROGRESS_IDLE_RECOVERY_WAIT_SEC=0
+    log() { :; }
+    send_inbox_message() { :; }
+    check_idle() { return 0; }
+    _pane_has_active_background_compute() { return 1; }
+    _pane_has_confirmation_prompt() { return 1; }
+    recover_dead_active_pane() { return 1; }
+    cli_launch_cmd() { printf "/opt/codex/bin/codex\\n"; }
+    respawn_recovery_launch_command() { printf "%s\\n" "$2"; }
+    _respawn_with_cli_verification() { printf "%s\\n" "$2" >> "$RESPAWNS"; return 0; }
+    respawn_recovery_generation() { printf "4242:99\\n"; }
+    respawn_recovery_notify() { return 0; }
+    PANE_TARGETS[kagemaru]="pane"
+    check_stall kagemaru
+)
+
+run_worker
+state_file="$STATE/in_progress_idle_recovery_kagemaru.tsv"
+test -f "$state_file"
+case "$state_file" in "$STATE"/*) ;; *) exit 1 ;; esac
+test "$(wc -l < "$RESPAWNS")" -eq 1
+run_worker
+test "$(wc -l < "$RESPAWNS")" -eq 1
+now=$(date -Iseconds)
+bash "$PROJECT_ROOT/scripts/lib/yaml_field_set.sh" "$TASK" task progress_updated_at "$now"
+run_worker
+test "$(wc -l < "$RESPAWNS")" -eq 2
+test "$(cut -f4 "$state_file")" -eq 1
+printf "state_path=contained restart_budget=1 progress_new_generation=1 respawns=2 false_positive=0\\n"
+'
+    [ "$status" -eq 0 ]
+    [ "$output" = "state_path=contained restart_budget=1 progress_new_generation=1 respawns=2 false_positive=0" ]
+}
+
+# test_necessity: in_progress+idle must receive one task-identity nudge and at
+# most one generation-bound respawn, while a later progress update restarts the
+# recovery clock instead of reusing stale idle time.
+@test "in_progress idle recovery is bounded and progress-aware" {
+    run bash -lc '
+set -euo pipefail
+PROJECT_ROOT="'"$PROJECT_ROOT"'"
+export NINJA_MONITOR_LIB_ONLY=1
+source "$PROJECT_ROOT/scripts/ninja_monitor.sh"
+unset NINJA_MONITOR_LIB_ONLY
+SCRIPT_DIR="'"$BATS_TEST_TMPDIR"'/in-progress-idle-recovery"
+STATE_DIR="$SCRIPT_DIR/state"
+IN_PROGRESS_IDLE_RECOVERY_WAIT_SEC=0
+mkdir -p "$SCRIPT_DIR/queue/tasks" "$SCRIPT_DIR/queue/reports" "$SCRIPT_DIR/logs" "$STATE_DIR"
+TEST_LOG="$SCRIPT_DIR/logs/monitor.log"; TEST_MESSAGES="$SCRIPT_DIR/logs/messages.log"
+RESPAWNS="$SCRIPT_DIR/logs/respawns.log"
+: > "$TEST_LOG"; : > "$TEST_MESSAGES"; : > "$RESPAWNS"
+log() { printf "%s\n" "$1" >> "$TEST_LOG"; }
+send_inbox_message() { printf "%s|%s|%s\n" "$1" "$3" "$2" >> "$TEST_MESSAGES"; }
+check_idle() { return 0; }
+_pane_has_active_background_compute() { return 1; }
+_pane_has_confirmation_prompt() { return 1; }
+cli_launch_cmd() { printf "/opt/codex/bin/codex --model test\n"; }
+respawn_recovery_launch_command() { printf "%s\n" "$2"; }
+_respawn_with_cli_verification() { printf "%s\n" "$2" >> "$RESPAWNS"; return 0; }
+respawn_recovery_generation() { printf "4242:99\n"; }
+respawn_recovery_notify() { return 0; }
+PANE_TARGETS[kagemaru]="shogun:2.4"; PANE_TARGETS[saizo]="shogun:2.6"
+declare -A STALL_FIRST_SEEN STALL_NOTIFIED STALL_COUNT PANE_TARGETS ACTIVE_IDLE_RECOVERY_SENT
+cat > "$SCRIPT_DIR/queue/tasks/kagemaru.yaml" <<EOF
+task:
+  status: in_progress
+  task_id: cmd_idle_missing_progress
+  parent_cmd: cmd_idle_recovery
+  deployed_at: "$(date -Iseconds)"
+EOF
+check_stall kagemaru
+grep -q "task_id=cmd_idle_missing_progress" "$TEST_MESSAGES"
+IN_PROGRESS_IDLE_RECOVERY_FIRST_SEEN[kagemaru]=$((EPOCHSECONDS - 61))
+check_stall kagemaru
+check_stall kagemaru
+test "$(wc -l < "$RESPAWNS")" -eq 1
+grep -q "IN-PROGRESS-IDLE-RESPAWN-PASS: kagemaru task=cmd_idle_missing_progress" "$TEST_LOG"
+grep -q "IN-PROGRESS-IDLE-RESPAWN-EXHAUSTED: kagemaru" "$TEST_LOG"
+progress_before=$(date -d "2 minutes ago" -Iseconds)
+cat > "$SCRIPT_DIR/queue/tasks/saizo.yaml" <<EOF
+task:
+  status: in_progress
+  task_id: cmd_idle_progress_present
+  parent_cmd: cmd_idle_recovery
+  progress_updated_at: "$progress_before"
+EOF
+check_stall saizo
+test "$(wc -l < "$RESPAWNS")" -eq 2
+progress_after=$(date -Iseconds)
+cat > "$SCRIPT_DIR/queue/tasks/saizo.yaml" <<EOF
+task:
+  status: in_progress
+  task_id: cmd_idle_progress_present
+  parent_cmd: cmd_idle_recovery
+  progress_updated_at: "$progress_after"
+EOF
+check_stall saizo
+test "$(wc -l < "$RESPAWNS")" -eq 3
+printf "nudge_identity=1 respawn_generations=3 bounded=1 progress_reset=1 false_positive=0\n"
+'
+    [ "$status" -eq 0 ]
+    [ "$output" = "nudge_identity=1 respawn_generations=3 bounded=1 progress_reset=1 false_positive=0" ]
+}
+
+# test_necessity: active recovery must remain suppressed for confirmation
+# prompts, progressing background compute, and post-report evidence waiting.
+@test "in_progress idle recovery honors safety suppressors" {
+    run bash -lc '
+set -euo pipefail
+PROJECT_ROOT="'"$PROJECT_ROOT"'"
+export NINJA_MONITOR_LIB_ONLY=1
+source "$PROJECT_ROOT/scripts/ninja_monitor.sh"
+unset NINJA_MONITOR_LIB_ONLY
+SCRIPT_DIR="'"$BATS_TEST_TMPDIR"'/in-progress-idle-guards"
+STATE_DIR="$SCRIPT_DIR/state"
+mkdir -p "$SCRIPT_DIR/queue/tasks" "$SCRIPT_DIR/queue/reports" "$SCRIPT_DIR/logs" "$STATE_DIR"
+TEST_MESSAGES="$SCRIPT_DIR/logs/messages.log"; RESPAWNS="$SCRIPT_DIR/logs/respawns.log"
+: > "$TEST_MESSAGES"; : > "$RESPAWNS"
+log() { :; }
+send_inbox_message() { printf "%s|%s|%s\n" "$1" "$3" "$2" >> "$TEST_MESSAGES"; }
+check_idle() { return 0; }
+GUARD=none
+_pane_has_active_background_compute() { [ "$GUARD" = background ]; }
+_pane_has_confirmation_prompt() { [ "$GUARD" = confirmation ]; }
+cli_launch_cmd() { printf "/opt/codex/bin/codex --model test\n"; }
+respawn_recovery_launch_command() { printf "%s\n" "$2"; }
+_respawn_with_cli_verification() { printf "%s\n" "$2" >> "$RESPAWNS"; return 0; }
+respawn_recovery_generation() { printf "4242:99\n"; }
+respawn_recovery_notify() { return 0; }
+PANE_TARGETS[kotaro]="shogun:2.7"
+declare -A STALL_FIRST_SEEN STALL_NOTIFIED STALL_COUNT PANE_TARGETS ACTIVE_IDLE_RECOVERY_SENT
+cat > "$SCRIPT_DIR/queue/tasks/kotaro.yaml" <<'EOF'
+task:
+  status: in_progress
+  task_id: cmd_idle_guarded
+  parent_cmd: cmd_idle_recovery
+EOF
+GUARD=confirmation; check_stall kotaro
+GUARD=background; check_stall kotaro
+GUARD=none
+report="$SCRIPT_DIR/queue/reports/kotaro_report_cmd_idle_recovery.yaml"
+printf "%s\n" "parent_cmd: cmd_idle_recovery" "task_id: cmd_idle_guarded" "status: completed" > "$report"
+find_matching_report_file() { printf "%s\n" "$report"; }
+report_monitor_state() { printf "awaiting_evidence\n"; }
+check_stall kotaro
+test ! -s "$TEST_MESSAGES"; test ! -s "$RESPAWNS"
+printf "confirmation=0 background=0 awaiting_evidence=0 false_positive=0\n"
+'
+    [ "$status" -eq 0 ]
+    [ "$output" = "confirmation=0 background=0 awaiting_evidence=0 false_positive=0" ]
+}
+
 # test_necessity: the primary done-check loop must not serialize a slow report
 # gate into the monitor cycle, while its per-agent single-flight lease remains
 # retryable after a failed worker.
@@ -459,7 +633,7 @@ run_check_stall_order_case() {
         cat > "$SCRIPT_DIR/queue/tasks/alpha.yaml" <<EOF
 task:
   task_id: fixture_active
-  status: in_progress
+  status: assigned
   deployed_at: "$(date -Iseconds)"
 EOF
         calls=0
