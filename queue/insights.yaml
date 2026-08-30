@@ -10611,3 +10611,10 @@ insights:
   source: "semantic_stress_test"
   fix_known: false
   status: pending
+- id: INS-20260831-031736891-2955
+  ts: "2026-08-31T03:17:36+09:00"
+  insight: "[[LP 表示品質 — プラン行の Total return と ×N を up to 表記へ]] semantic_stress_test candidate_aliases: NO_MATCH source=cmds query=LP 表示品質 — プラン行の Total return と ×N を up to 表記へ、コントラストをデザインガイドの比率へ、note 誘導をボタン化して CTA 列に並べる"
+  priority: "low"
+  source: "semantic_stress_test"
+  fix_known: false
+  status: pending
