@@ -7660,6 +7660,24 @@ for path in paths:
                     stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL,
                 ).returncode == 0:
                     continue  # infra既存テスト — new_testではない
+        # cross_repo_commits worktreeのHEAD~1に存在すれば先行cmdで作成済み(偽陽性根治)
+        cross_repos = report.get("cross_repo_commits") or []
+        found_in_worktree = False
+        for cr in cross_repos:
+            wt = str(cr.get("repo") or "").strip()
+            if not wt or not os.path.isdir(wt):
+                continue
+            wt_real = os.path.realpath(wt)
+            wt_candidate = os.path.realpath(os.path.join(wt_real, repo_relative))
+            if wt_candidate.startswith(wt_real + os.sep):
+                if subprocess.run(
+                    ["git", "-C", wt_real, "cat-file", "-e", f"HEAD~1:{repo_relative}"],
+                    stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL,
+                ).returncode == 0:
+                    found_in_worktree = True
+                    break
+        if found_in_worktree:
+            continue  # worktree先行cmd既存テスト — new_testではない
         new_tests.append(repo_relative)
 
 if not new_tests:

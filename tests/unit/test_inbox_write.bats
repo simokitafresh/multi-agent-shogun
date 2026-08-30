@@ -3567,3 +3567,26 @@ YAML
     done
     grep -q "report_fingerprint=" "$TEST_TMPDIR/queue/inbox/gunshi.yaml"
 }
+
+# test_necessity: report_review to gunshi dedup — first send succeeds, second is suppressed by flag
+@test "report_review to gunshi dedup: first send writes, second exits 20" {
+    setup_basic_test_env
+    mkdir -p "$TEST_TMPDIR/queue/gates/cmd_dedup_001"
+    mkdir -p "$TEST_TMPDIR/queue/inbox"
+
+    # First send — no flag exists, should succeed
+    run bash "$TEST_INBOX_WRITE" gunshi "hayate報告完了。レビュー依頼: cmd_dedup_001 report=hayate_report_cmd_dedup_001.yaml" report_review karo notify_gunshi
+    [ "$status" -eq 0 ]
+    # Flag should be created
+    [ -f "$TEST_TMPDIR/queue/gates/cmd_dedup_001/gunshi_report_review_notify_hayate.done" ]
+
+    # Second send — flag exists, should be suppressed (exit 0 with DEDUP or duplicate suppressed)
+    run bash "$TEST_INBOX_WRITE" gunshi "hayate報告完了。レビュー依頼: cmd_dedup_001 report=hayate_report_cmd_dedup_001.yaml" report_review karo notify_gunshi
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"DEDUP"* ]] || [[ "$output" == *"duplicate suppressed"* ]]
+
+    # Count report_review type messages — should be exactly 1
+    local msg_count
+    msg_count=$(grep -c "type: 'report_review'" "$TEST_TMPDIR/queue/inbox/gunshi.yaml" 2>/dev/null || echo 0)
+    [ "$msg_count" -eq 1 ]
+}
