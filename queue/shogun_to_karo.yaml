@@ -47,53 +47,6 @@ commands:
     environment_change: "type=lesson; file=docs/research/dm-signal-lp-seo-plan_20260830.md; pattern=og:image"
     delegated_at: "\"2026-08-30T23:44:27\""
     origin: "[[cmd_4421_SEO_P0]] -> [[og:image_404_20260830_2202]] -> [[静的export制約]] -> [[cmd_4426_og_image_hotfix]]"
-  cmd_4427:
-    title: "FAQ EN 版 — app の /faq(JA 459 行)に EN 版を追加し、言語切替と hreflang/metadata を付けて LP EN からの導線先を英語にする"
-    status: delegated
-    project: dm-signal
-    purpose: "殿方向性 2026-08-30 13:25『Docs/FAQ をログインページからのリンクに』→cmd_4418 で /docs /faq を公開したが、/faq は JA のみ(22:35 curl: lang=ja、hreflang 0)。LP EN(dm-signal.com/)の FAQ 抜粋と Read the docs は英語読者を app の JA FAQ へ送っており、設計書 v3 §2.2(app /docs /faq=公開ドキュメント、FAQ は JA→EN 追加)と SEO 案 v2 §1(検索意図 dual momentum signals)に反する。本 cmd は FAQ の EN 版を追加する"
-    scope_mode: FULL
-    target_path: /mnt/c/Python_app/DM-signal/frontend
-    acceptance_criteria:
-      AC1:
-        description: "frontend/app/faq の文言を EN/JA の 2 ファイル(faq-copy.en.ts / faq-copy.ja.ts など)に分離し、/faq を EN 主(既定)・/faq/ja(または ?lang=ja)を JA とし、各ページに metadata(title/description 言語別)と hreflang(en/ja/x-default)を付ける。全 Q&A が EN/JA で同数であることを確認する"
-        binary_check: "EN と JA の Q&A 件数が一致(算出元: 各 copy の配列 length を生貼付) ∧ EN ページの lang=en・JA ページの lang=ja ∧ 両ページに hreflang 3 種 ∧ metadata title が言語別 か?"
-      AC2:
-        description: "EN 訳は JA の各 Q&A に 1:1 対応し、禁則語(毎営業日/today/¥/円/yen/first month free/初月無料/free trial)が EN/JA とも 0 件、note 導線 URL は marketing-info.md 現物(tokyojibika)のみであることを確認する"
-        binary_check: "禁則語 grep が EN/JA とも 0 件 ∧ note URL が tokyojibika 以外 0 件 ∧ EN の Q 見出しと JA の Q 見出しの数が一致 か?"
-      AC3:
-        description: "変更が frontend/app/faq 配下(と route-access-boundary の public 判定リストに /faq/ja を足す 1 行まで)に限られ、boundary の認証分岐の diff が 0 行、既存 test の削除がなく、tsc と next build(output export)が exit 0 で out に faq と faq/ja の index が生成されることを確認する"
-        binary_check: "git diff --name-only の集合が app/faq/** と boundary の public リスト 1 行以内 ∧ boundary の認証分岐関数の diff 0 行 ∧ tsc exit 0 ∧ next build exit 0 ∧ out/faq/index.html と out/faq/ja/index.html が存在 か?"
-    command: |
-      1. faq 文言を EN/JA の copy 2 ファイルに分離し、/faq(EN)と /faq/ja(JA)を metadata・hreflang 付きで生成して Q&A 件数一致を確認する
-      2. EN 訳の 1:1 対応、禁則語 grep 0、note URL の現物一致を確認する
-      3. 変更ファイル集合・boundary 認証分岐 diff 0・tsc/next build exit 0・out の 2 index を報告 YAML に生貼付する
-    assumptions:
-      claim: "本番 https://dm-signal-frontend.onrender.com/faq は 200、HTML の lang=ja が 1 件、hreflang 0 件(2026-08-30 22:35 curl)。origin/main の frontend/app/faq/page.tsx は 459 行の JA 静的コンテンツ(設計書 v2 §8.2 13:27 一次)、frontend/app/docs/page.tsx は 67 行 EN。route-access-boundary.tsx の isPublicPath に /docs と /faq(origin/main 22:37 git show L26-33)。note 導線の現物 URL は marketing-director/marketing-info.md L507-508(tokyojibika、membership)。数値の算出元: curl https://dm-signal-frontend.onrender.com/faq | grep -c 'lang=\"ja\"' → 1 件、grep -c hreflang → 0 件"
-      source: "docs/research/dm-login-showcase-asis-tobe_v3_20260830.md §2.2・§5 P-F、docs/research/dm-login-showcase-asis-tobe_v2_20260830.md §8.2、docs/research/dm-signal-lp-seo-plan_20260830.md §1、frontend/app/faq/page.tsx、frontend/components/route-access-boundary.tsx"
-      trust: verified
-    depends_on: cmd_4423
-    timeout_minutes: 45
-    estimated_minutes: 10
-    split_decision: "AC3 本=1 道具(FAQ の言語分離 1 組: copy 分離・EN 訳・metadata/hreflang の 3 手)。cmd_4423(app/free・login・boundary の /free 行)とは触るファイルが交わらない(boundary は /faq/ja の 1 行のみ)ため並走可。LP 側の FAQ 抜粋リンク先の切替は別 cmd(EN 到達後)"
-    quality_gate:
-      q1_firefighting: "消火ではない。公開ドキュメントを英語読者に届ける品質向上(設計書 v3 §2.2 の分担)"
-      q2_learning: "忍者は copy 駆動の i18n 分離、hreflang/metadata、禁則語 grep を学ぶ"
-      q3_next_quality: "LP EN→FAQ EN の 1 本道が揃い、docs/faq の index 評価(SEO 案 §5-4 既定=app canonical)が英語で立つ"
-      q4_depth: "medium — 459 行の翻訳と i18n 分離。設計は v3 §2.2 で確定"
-      q5_verified_source: "production_verified — https://dm-signal-frontend.onrender.com/faq を 2026-08-30 22:35 curl(lang=ja、hreflang 0)。code_reading — git show origin/main:frontend/components/route-access-boundary.tsx を 22:37 読了(L26-33 public 判定)"
-      q6_not_hiding: "JA を消さず EN を足す。訳は 1:1 対応で件数を機械確認し、抜けを作らない"
-      q7_definition_verified: "『FAQ EN 版』=frontend/app/faq の EN ルート(設計書 v3 §2.2、確認日 2026-08-30)。『禁則語』=設計書 v3 §4(v2 §4 継承)。『note 導線 URL』=marketing-info.md L507-508 現物"
-      q8_why_what: "WHY: LP EN の導線先 FAQ が JA のみで英語読者が詰む / WHAT: EN/JA Q&A 件数一致、lang/hreflang/metadata 言語別、禁則語 0、note URL 現物、boundary 認証分岐 diff 0、tsc/next build exit 0、out に 2 index / WHEN: 今セッション、4423/4425/4426 と並走 / WHERE: DM-signal frontend / WHO: 忍者 1 名 / HOW: copy 分離+EN ルート追加 / 複利: 以後の FAQ 追記が EN/JA 同時に強制される(件数一致 test)"
-      q9_firefighting_root_cause: "root_cause: cmd_4418 は『公開化』のみを AC にし、LP EN/JA(設計書 v3 §2.2)との言語対応を AC に含めなかったため FAQ が JA 直書き 459 行のまま公開された / prevention: 文言を copy 2 ファイルへ分離し EN/JA の Q&A 件数一致を test に置く(以後の FAQ 追記は片言語だけでは build が通らない構造)"
-      q10_knowledge_boundary: "検証済み: /faq の現物言語、boundary の public 判定、note URL。スコープ外: /docs の JA 版(未要件)、LP 側リンク切替(別 cmd)、deploy(家老)"
-      q11_not_already_done: "curl https://dm-signal-frontend.onrender.com/faq | grep -c hreflang → 0 件(2026-08-30 22:35) / git ls-tree origin/main frontend/app/faq | grep -c -iE 'en\\.|copy' → 0 件(22:37) / semantic_search.sh 'FAQ EN 翻訳 hreflang' → 該当 cmd なし"
-      q_ambiguity: "EN を既定(/faq)、JA を /faq/ja に固定(LP EN/JA の hreflang と対応)。訳の文体は docs/page.tsx の EN に合わせる。曖昧さは 2 値に閉じる"
-      q12_lord_30min_cost: "no — 殿方向性 13:25 と設計書 v3 §2.2 で確定。SEO 案 §5-4 の既定(app canonical)で進める"
-      diagnosis: "BLOCK理由: 該当なし(新規起票) / 対策: 該当なし"
-    environment_change: "type=lesson; file=docs/research/dm-login-showcase-asis-tobe_v3_20260830.md; pattern=FAQ（JA→EN 追加）"
-    delegated_at: "\"2026-08-30T23:47:12\""
-    origin: "[[殿方向性_DocsFAQ導線_20260830_1325]] -> [[cmd_4418_docs_faq公開]] -> [[FAQ_JAのみ_22:35一次]] -> [[cmd_4427_faq_en]]"
   cmd_4414:
     title: "/login ショーウィンドウ P1b — 公開集計 EP に Sharpe(プラン平均/ベスト)・SPY/TQQQ 比較行・Secret 集計値を追補する"
     status: void

@@ -10451,10 +10451,23 @@ insights:
   priority: "low"
   source: "semantic_index_update"
   fix_known: false
-  status: pending
+  status: resolved
+  resolved_reason: "semantic index candidate was absorbed into a registered concept"
+  action_artifact: "semantic_index=/home/simokitafresh/multi-agent-shogun/docs/semantic-index/index.md"
+  resolved_at: "2026-08-31T01:53:07+09:00"
 - id: INS-20260831-015247593-ef80
   ts: "2026-08-31T01:52:47+09:00"
   insight: "[[cmd complete gateのcommand files modified照合がmetadata openGrap]] NO_MATCH purpose pending alias: cmd_complete時にdeploy_task.logでNO_MATCHだったpurpose。類似概念TOP3: cmd_quality_logging(cmd設計品質ログ; alias=cmd complete gateのtiming計測が全report YAMLを毎回parseするボトルネックを; score=16.4) / provisional_cmd_gate_scaffold(仮: Cmd Gate Scaffold; alias=provisional_cmd_gate_scaffold; score=13.0) / command_files_modified_verification(Command×Files Modified照合; alias=command_files_modified_mismatch; score=11.5)。既存概念aliasesへの自動昇格候補"
+  priority: "low"
+  source: "semantic_index_update"
+  fix_known: false
+  status: resolved
+  resolved_reason: "semantic index candidate was absorbed into a registered concept"
+  action_artifact: "semantic_index=/home/simokitafresh/multi-agent-shogun/docs/semantic-index/index.md"
+  resolved_at: "2026-08-31T01:53:07+09:00"
+- id: INS-20260831-015309980-cf12
+  ts: "2026-08-31T01:53:09+09:00"
+  insight: "semantic_index_update未登録cmd originノード: [[殿方向性_DocsFAQ導線_20260830_1325]] は既存aliasesに一致なし。類似概念TOP3: creator_brainwashing_defense(創造主の洗脳防御; alias=session_save_20260811_0316; score=4.0) / semantic_dictionary_design(セマンティック辞書構想; alias=lord_fix_2items_20260811_1337; score=3.8) / project_database(Stock Database; alias=database_cron_run_successful_20260829; score=3.8)。概念定義とaliases追加を検討せよ"
   priority: "low"
   source: "semantic_index_update"
   fix_known: false
