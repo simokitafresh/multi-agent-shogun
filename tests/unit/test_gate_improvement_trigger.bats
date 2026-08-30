@@ -113,6 +113,95 @@ run_hook_failure_fixture() {
         bash "$PROJECT_ROOT/scripts/gate_improvement_trigger.sh"
 }
 
+run_ga_push1_classification_fixture() {
+    local root="$FIXTURE_ROOT/ga-push1-classification"
+    local hook_hash
+    mkdir -p "$root/scripts/gates" "$root/bin" "$root/tmp" "$root/logs/hook_artifacts" \
+        "$root/.githooks" "$root/.git/hooks"
+    cp "$TEMPLATE_ROOT/scripts/inbox_write.sh" "$root/scripts/inbox_write.sh"
+    cp "$TEMPLATE_ROOT/scripts/ntfy.sh" "$root/scripts/ntfy.sh"
+    cp "$TEMPLATE_ROOT/bin/gh" "$root/bin/gh"
+    chmod +x "$root/scripts/inbox_write.sh" "$root/scripts/ntfy.sh" "$root/bin/gh"
+    for gate in gate_lesson_health.sh gate_cmd_state.sh gate_context_freshness.sh gate_p_average_freshness.sh; do
+        printf '%s\n' '#!/usr/bin/env bash' 'printf "%s\n" "--- 総合判定: OK ---"' \
+            > "$root/scripts/gates/$gate"
+        chmod +x "$root/scripts/gates/$gate"
+    done
+    printf '%s\n' '#!/usr/bin/env bash' 'exit 0' > "$root/.githooks/pre-push"
+    cp "$root/.githooks/pre-push" "$root/.git/hooks/pre-push"
+    hook_hash="$(sha256sum "$root/.githooks/pre-push" | awk '{print $1}')"
+
+    local i artifact
+    for i in 1 2 3; do
+        artifact="$root/logs/hook_artifacts/expected-$i.log"
+        printf '%s\n' \
+            '[pre-push] BLOCK(GA-PUSH1): pushしようとしているcommitと、作業ツリーの未commit変更が同一pathを差している。' \
+            '[pre-push] 重複path:' \
+            '  scripts/example.sh' > "$artifact"
+    done
+    printf '%s\n' \
+        '- timestamp: 2026-08-30T15:33:37+09:00' \
+        '  hook: pre-push' \
+        '  exit_code: 1' \
+        '  artifact: logs/hook_artifacts/expected-1.log' \
+        "  hook_sha256: $hook_hash" \
+        '  detail: GA-PUSH1 safety block' \
+        '- timestamp: 2026-08-30T15:33:39+09:00' \
+        '  hook: pre-push' \
+        '  exit_code: 1' \
+        '  artifact: logs/hook_artifacts/expected-2.log' \
+        "  hook_sha256: $hook_hash" \
+        '  detail: GA-PUSH1 safety block' \
+        '- timestamp: 2026-08-30T15:33:40+09:00' \
+        '  hook: pre-push' \
+        '  exit_code: 1' \
+        '  artifact: logs/hook_artifacts/expected-3.log' \
+        "  hook_sha256: $hook_hash" \
+        '  detail: GA-PUSH1 safety block' > "$root/logs/hook_failures.yaml"
+    run env PATH="$root/bin:$PATH" TMPDIR="$root/tmp" \
+        GATE_IMPROVEMENT_ROOT="$root" GATE_IMPROVEMENT_NOW=1770000000 \
+        GATE_IMPROVEMENT_DEDUP_WINDOW_SECONDS=0 \
+        bash "$PROJECT_ROOT/scripts/gate_improvement_trigger.sh"
+}
+
+run_ga_push1_negative_fixture() {
+    local root="$FIXTURE_ROOT/ga-push1-classification"
+    local hook_hash
+    hook_hash="$(sha256sum "$root/.githooks/pre-push" | awk '{print $1}')"
+    printf '%s\n' 0 > "$root/logs/gate_state/gate_improvement_hook_last_count"
+    printf '%s\n' \
+        '- timestamp: 2026-08-30T15:33:37+09:00' \
+        '  hook: pre-push' \
+        '  exit_code: 1' \
+        '  artifact: logs/hook_artifacts/expected-1.log' \
+        "  hook_sha256: $hook_hash" \
+        '  detail: GA-PUSH1 safety block' \
+        '- timestamp: 2026-08-30T15:33:39+09:00' \
+        '  hook: pre-push' \
+        '  exit_code: 1' \
+        '  artifact: logs/hook_artifacts/expected-2.log' \
+        "  hook_sha256: $hook_hash" \
+        '  detail: GA-PUSH1 safety block' \
+        '- timestamp: 2026-08-30T15:33:40+09:00' \
+        '  hook: pre-push' \
+        '  exit_code: 1' \
+        '  artifact: logs/hook_artifacts/expected-3.log' \
+        "  hook_sha256: $hook_hash" \
+        '  detail: GA-PUSH1 safety block' \
+        '- timestamp: 2026-08-30T15:34:00+09:00' \
+        '  hook: pre-push' \
+        '  exit_code: 1' \
+        '  artifact: logs/hook_artifacts/unexpected.log' \
+        "  hook_sha256: $hook_hash" \
+        '  detail: selected test failed' > "$root/logs/hook_failures.yaml"
+    printf '%s\n' '[pre-push] BLOCK(TEST): selected test failed' \
+        > "$root/logs/hook_artifacts/unexpected.log"
+    run env PATH="$root/bin:$PATH" TMPDIR="$root/tmp" \
+        GATE_IMPROVEMENT_ROOT="$root" GATE_IMPROVEMENT_NOW=1770000000 \
+        GATE_IMPROVEMENT_DEDUP_WINDOW_SECONDS=0 \
+        bash "$PROJECT_ROOT/scripts/gate_improvement_trigger.sh"
+}
+
 assert_gate_identity() {
     local calls_file="$1" gate_name="$2"
     grep -Eq "task_id=commander_directive subject_task_id=gate_alert_${gate_name}_GA-[0-9]+ parent_cmd=cmd_gate_improvement_${gate_name}" \
@@ -171,4 +260,21 @@ assert_gate_record_identity() {
     [[ "$output" != *"BLOCK:"* ]]
     assert_gate_identity "$FIXTURE_ROOT/hook-failure/inbox_calls.log" hook_failure
     assert_gate_record_identity "$FIXTURE_ROOT/hook-failure/logs/gate_alerts.yaml" hook_failure
+}
+
+# test_necessity: the GA-530 production artifacts are intentional GA-PUSH1
+# safety blocks, while an unrelated pre-push failure must remain actionable.
+@test "expected GA-PUSH1 safety blocks are suppressed but unexpected failures alert" {
+    run_ga_push1_classification_fixture
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"expected GA-PUSH1 safety BLOCKs ignored (expected=3"* ]]
+    [[ "$output" != *"SENT: hook_failure"* ]]
+
+    run_ga_push1_negative_fixture
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"SENT: hook_failure"* ]]
+    grep -q 'expected_ga_push1=3' \
+        "$FIXTURE_ROOT/ga-push1-classification/logs/gate_alerts.yaml"
+    grep -q 'current_generation=1' \
+        "$FIXTURE_ROOT/ga-push1-classification/logs/gate_alerts.yaml"
 }
