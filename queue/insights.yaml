@@ -7762,6 +7762,7 @@ insights:
   resolved_reason: "既知修正を一次確認: commit 6a21d5765759d1e597ed7e3920ec2e461d232ed8 が report_commit_main_ancestry/review_two_phase_pending/throughput_segment_invalid を GATE WAIT と自動再GATEへ分離し、契約違反だけをBLOCKに限定。現行context/infrastructure.md §T160にも反映済み。"
   action_artifact: "commit=6a21d5765759d1e597ed7e3920ec2e461d232ed8; files=scripts/cmd_complete_gate.sh,scripts/ninja_monitor.sh; context=context/infrastructure.md#T160"
   resolved_at: "2026-08-31T04:33:04+09:00"
+  occurrence_count: 1
 - id: INS-20260828-222959233-89be
   ts: "2026-08-28T22:29:59+09:00"
   insight: "構造バグ候補(殿下問 22:28): 本番 push/live 後でしか計測できない AC(1h 窓・CTX-RESET 行・FALLBACK 0 等、本日 map 20 行)を GATE 前の task AC に置くと、task が人質化(T129 依存 1h WAIT/T140)し RC 中の auto clear で成果消失(T152)する。設計=AC を『実装 AC(GATE 前・隔離で二値)』と『本番 proof(GATE 後・monitor が終端条件を自動計測して map 行を閉じる)』に分離し、proof は task ではなく監視器の責務にする"
