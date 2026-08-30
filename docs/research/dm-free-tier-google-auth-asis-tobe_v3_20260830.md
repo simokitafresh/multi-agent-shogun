@@ -35,7 +35,7 @@
 3. Free tier の可視範囲=Basic-DualMomentum の**パフォーマンス+シグナル**両方か、パフォーマンスのみか → 既定=両方(13:14『閲覧できる』)。
 4. 月次クーポンの切替日=他 tier と同日(既定)。
 
-5. **経路と利用の記録(殿 20:19『リバランサー経由か LP 経由か、DM だけか両方か見えたほうがいい』)** → 既定案=**Supabase プロジェクトは 1 つのまま**(1 人 1 アカウント。分けると両方利用が突合不能)。追加は 1 表: `product_registrations(user_id, product{rebalancer|dm-signal}, source{lp|rebalancer|dm-login|direct}, first_seen_at)`(RLS: 本人 insert/select のみ、集計は service role)。入口に `?from=` を付けて初回サインインで 1 行。rebalancer は既存利用から `rebalancer` 行を後付け。月次継続は DM 側 `coupon_fetch` イベント(user は hash)で数える。指標=rebalancer→DM 転換率、LP→Free→note 転換率、両方利用率。
+5. **経路と利用の記録(殿 20:19-20:20)** → 既定案=**Supabase プロジェクトは 1 つ**(1 人 1 アカウント)。**行で持ち、列で持たない**: 追記表 `product_logins(user_id, product, source, logged_in_at)`(product=`rebalancer`/`dm-signal`/将来の値、source=`lp`/`rebalancer`/`dm-login`/`direct`。RLS: 本人 insert のみ、集計は service role)。新サービスは `product` の値が増えるだけでスキーマ不変。見やすさは view `product_users(user_id, product, first_seen, last_seen, logins)` で列の形に(実体は行)。users/profile に `logged_in_xxx` 列を足す方式は、サービス追加ごとにスキーマ変更+RLS 更新が要り、回数・時期・経路が残らないため不採用。登録日は `auth.users.created_at` で既に分かる。指標=rebalancer→DM 転換率・LP→Free→note 転換率・両方利用率・月次継続(coupon_fetch)。
 
 ## §5 工程(裁定後、各 10 分・可逆)
 - 偵察 1: Supabase プロジェクトの Google provider 設定と JWKS URL、`auth.users` の件数、rebalancer の env 名(5 要件で報告)。
