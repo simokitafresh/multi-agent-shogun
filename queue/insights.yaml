@@ -8995,3 +8995,10 @@ insights:
   resolved_reason: "semantic map generation verified the candidate is represented or intentionally ignored"
   action_artifact: "semantic_map=/home/simokitafresh/multi-agent-shogun/context/semantic-map.md;semantic_index=/home/simokitafresh/multi-agent-shogun/docs/semantic-index/index.md"
   resolved_at: "2026-08-30T16:04:23+09:00"
+- id: INS-20260830-160820233-3a92
+  ts: "2026-08-30T16:08:20+09:00"
+  insight: "semantic_index_update未登録[[リンク]]ターゲット: [[将軍撤回_CI_RED原因誤読_20260830_1608]] は既存aliasesに一致なし。類似概念TOP3: strong_new_game_completion_contract(強くてニューゲーム完遂契約; alias=CI RED一担当原則; score=14.2) / creator_brainwashing_defense(創造主の洗脳防御; alias=殿裁定2026 CI GREENを待つ必要はない; score=13.8) / semantic_dictionary_design(セマンティック辞書構想; alias=GA_304_CI_FAIL; score=13.7)。概念定義とaliases追加を検討せよ"
+  priority: "low"
+  source: "semantic_index_update"
+  fix_known: false
+  status: pending
