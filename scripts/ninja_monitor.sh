@@ -368,7 +368,7 @@ check_ci_red_parallelization_guard() {
 
 # T190: publish the oldest first-parent commit after CI has returned GREEN.
 # This is deliberately a post-CLEAR lane: it never bypasses the pre-push hook,
-# never force-pushes, and advances one bounded contiguous batch per monitor cycle.  A successful
+# never force-pushes, and advances one first-parent commit per monitor cycle.  A successful
 # publication then re-runs only commands whose latest gate result is the
 # ancestry WAIT, allowing the existing gate to produce the terminal evidence.
 push_lane_log() {
@@ -637,9 +637,10 @@ push_lane_publish_one() {
 check_push_lane() {
     local ci_status="${1:-${CI_STATUS_CACHE:-UNKNOWN}}"
     local repo="${PUSH_LANE_REPO:-$SCRIPT_DIR}" remote_name="${PUSH_LANE_REMOTE_NAME:-origin}"
-    local remote_ref="${PUSH_LANE_REMOTE_REF:-origin/main}" count oldest commit_epoch now age min_age
+    local remote_ref="${PUSH_LANE_REMOTE_REF:-origin/main}" count now age min_age
     local branch lock_file lock_fd push_rc push_started_us push_finished_us push_wall_ms
-    local max_commits commit_list batch_tip batch_count remote_tip_before remote_tip_now
+    local commit_list first_ancestor candidate candidate_epoch candidate_age
+    local remote_tip_before remote_tip_now candidate_scan_started
     local push_output
 
     [[ "${PUSH_LANE_ENABLED:-1}" == "1" ]] || return 0
@@ -682,43 +683,45 @@ check_push_lane() {
         push_lane_log "BLOCK reason=pre_push_hook_missing_or_not_executable push=0"
         return 0
     }
-    max_commits="${PUSH_LANE_MAX_COMMITS:-20}"
-    [[ "$max_commits" =~ ^[0-9]+$ ]] || max_commits=20
-    [ "$max_commits" -gt 0 ] 2>/dev/null || max_commits=20
     remote_tip_before=$(git -C "$repo" rev-parse "$remote_ref" 2>/dev/null || true)
     [[ "$remote_tip_before" =~ ^[0-9a-fA-F]{40}$ ]] || {
         push_lane_log "BLOCK reason=remote_tip_unresolved remote=$remote_ref push=0"
         return 0
     }
     commit_list=$(git -C "$repo" rev-list --first-parent --reverse "$remote_ref..HEAD" 2>/dev/null || true)
-    oldest=$(printf '%s\n' "$commit_list" | sed -n '1p')
-    [[ "$oldest" =~ ^[0-9a-f]{40}$ ]] || {
+    first_ancestor=""
+    # A merge can make the first-parent walk start at commits that are not
+    # descendants of the remote tip even though HEAD is.  The remote tip is
+    # the fail-closed boundary; within that boundary, select the first
+    # first-parent commit that is actually FF-pushable.
+    if ! git -C "$repo" merge-base --is-ancestor "$remote_ref" HEAD 2>/dev/null; then
+        push_lane_log "BLOCK reason=remote_tip_not_ancestor remote=$remote_tip_before push=0"
+        return 0
+    fi
+    while IFS= read -r candidate; do
+        [[ "$candidate" =~ ^[0-9a-fA-F]{40}$ ]] || continue
+        if git -C "$repo" merge-base --is-ancestor "$remote_tip_before" "$candidate" 2>/dev/null; then
+            first_ancestor="$candidate"
+            break
+        fi
+    done <<< "$commit_list"
+    [[ "$first_ancestor" =~ ^[0-9a-fA-F]{40}$ ]] || {
         push_lane_log "BLOCK reason=oldest_first_parent_unresolved push=0"
         return 0
     }
-    commit_epoch=$(git -C "$repo" show -s --format=%ct "$oldest" 2>/dev/null || true)
-    [[ "$commit_epoch" =~ ^[0-9]+$ ]] || {
-        push_lane_log "BLOCK reason=oldest_commit_timestamp_unresolved sha=$oldest push=0"
+    candidate_epoch=$(git -C "$repo" show -s --format=%ct "$first_ancestor" 2>/dev/null || true)
+    [[ "$candidate_epoch" =~ ^[0-9]+$ ]] || {
+        push_lane_log "BLOCK reason=oldest_commit_timestamp_unresolved sha=$first_ancestor push=0"
         return 0
     }
     min_age="${PUSH_LANE_MIN_AGE_SEC:-600}"
     [[ "$min_age" =~ ^[0-9]+$ ]] || min_age=600
     now="${EPOCHSECONDS:-$(date +%s)}"
-    age=$((now - commit_epoch))
+    age=$((now - candidate_epoch))
     if [ "$age" -lt "$min_age" ]; then
-        push_lane_log "WAIT ci=GREEN unpushed=$count oldest=$oldest age=${age}s threshold=${min_age}s push=0"
+        push_lane_log "WAIT ci=GREEN unpushed=$count oldest=$first_ancestor age=${age}s threshold=${min_age}s push=0"
         return 0
     fi
-    git -C "$repo" merge-base --is-ancestor "$remote_ref" "$oldest" 2>/dev/null || {
-        push_lane_log "BLOCK reason=remote_tip_not_ancestor oldest=$oldest push=0"
-        return 0
-    }
-    batch_tip=$(printf '%s\n' "$commit_list" | head -n "$max_commits" | tail -n 1)
-    batch_count=$(printf '%s\n' "$commit_list" | head -n "$max_commits" | awk 'NF { n++ } END { print n + 0 }')
-    [[ "$batch_tip" =~ ^[0-9a-fA-F]{40}$ && "$batch_count" =~ ^[1-9][0-9]*$ ]] || {
-        push_lane_log "BLOCK reason=batch_resolution_failed push=0"
-        return 0
-    }
 
     lock_file="${PUSH_LANE_LOCK_FILE:-${STATE_DIR:-/tmp}/ninja_monitor_push_lane.lock}"
     mkdir -p "${lock_file%/*}" 2>/dev/null || return 0
@@ -741,28 +744,60 @@ check_push_lane() {
         exec {lock_fd}>&-
         return 0
     fi
-    if push_output=$(push_lane_publish_one "$repo" "$remote_name" "$batch_tip" 2>&1); then
-        push_rc=0
-    else
-        push_rc=$?
-    fi
-    push_finished_us="${EPOCHREALTIME/./}"
-    push_finished_us="${push_finished_us:0:16}"
-    push_wall_ms=$(( (push_finished_us - push_started_us + 999) / 1000 ))
-    [ "$push_wall_ms" -ge 0 ] 2>/dev/null || push_wall_ms=0
-    if [ "$push_rc" -eq 0 ]; then
-        push_lane_log "PUSH ci=GREEN unpushed_before=$count sha=$batch_tip oldest=$oldest age=${age}s force=0 hook=1 commits=$batch_count max_commits=$max_commits batch_contiguous=1 push_wall_ms=$push_wall_ms"
-        push_lane_regate_waiting_cmds "$repo"
-    elif [ "$push_rc" -eq 128 ] && printf '%s\n' "$push_output" | grep -Eiq \
-        'could not resolve host|temporary failure in name resolution|network is unreachable|connection timed out|connection reset'; then
-        push_lane_log "RETRY reason=network_failure rc=128 sha=$batch_tip oldest=$oldest force=0 hook=1 commits=$batch_count push=0 next_cycle=1 output=${push_output//$'\n'/\\n}"
-        push_rc=0
-    else
-        push_lane_log "BLOCK reason=push_failed rc=$push_rc sha=$batch_tip oldest=$oldest force=0 hook=1 commits=$batch_count push_wall_ms=$push_wall_ms output=${push_output//$'\n'/\\n}"
-    fi
+    candidate_scan_started=0
+    while IFS= read -r candidate; do
+        [[ "$candidate" =~ ^[0-9a-fA-F]{40}$ ]] || continue
+        if [ "$candidate" = "$first_ancestor" ]; then
+            candidate_scan_started=1
+        fi
+        [ "$candidate_scan_started" -eq 1 ] || continue
+        git -C "$repo" merge-base --is-ancestor "$remote_tip_before" "$candidate" 2>/dev/null || continue
+        candidate_epoch=$(git -C "$repo" show -s --format=%ct "$candidate" 2>/dev/null || true)
+        [[ "$candidate_epoch" =~ ^[0-9]+$ ]] || {
+            push_lane_log "BLOCK reason=commit_timestamp_unresolved sha=$candidate push=0"
+            flock -u "$lock_fd"
+            exec {lock_fd}>&-
+            return 0
+        }
+        candidate_age=$((now - candidate_epoch))
+        if [ "$candidate_age" -lt "$min_age" ]; then
+            push_lane_log "WAIT ci=GREEN unpushed=$count oldest=$candidate age=${candidate_age}s threshold=${min_age}s push=0"
+            flock -u "$lock_fd"
+            exec {lock_fd}>&-
+            return 0
+        fi
+        push_started_us="${EPOCHREALTIME/./}"
+        push_started_us="${push_started_us:0:16}"
+        if push_output=$(push_lane_publish_one "$repo" "$remote_name" "$candidate" 2>&1); then
+            push_rc=0
+        else
+            push_rc=$?
+        fi
+        push_finished_us="${EPOCHREALTIME/./}"
+        push_finished_us="${push_finished_us:0:16}"
+        push_wall_ms=$(( (push_finished_us - push_started_us + 999) / 1000 ))
+        [ "$push_wall_ms" -ge 0 ] 2>/dev/null || push_wall_ms=0
+        if [ "$push_rc" -eq 0 ]; then
+            push_lane_log "PUSH ci=GREEN unpushed_before=$count sha=$candidate oldest=$first_ancestor age=${candidate_age}s force=0 hook=1 commits=1 batch_contiguous=1 push_wall_ms=$push_wall_ms"
+            push_lane_regate_waiting_cmds "$repo"
+        elif printf '%s\n' "$push_output" | grep -Fq 'GA-PUSH1'; then
+            push_lane_log "SKIP reason=ga_push1_dirty_overlap sha=$candidate rc=$push_rc next=1 push=0"
+            continue
+        elif [ "$push_rc" -eq 128 ] && printf '%s\n' "$push_output" | grep -Eiq \
+            'could not resolve host|temporary failure in name resolution|network is unreachable|connection timed out|connection reset'; then
+            push_lane_log "RETRY reason=network_failure rc=128 sha=$candidate oldest=$first_ancestor force=0 hook=1 commits=1 push=0 next_cycle=1 output=${push_output//$'\n'/\\n}"
+            push_rc=0
+        else
+            push_lane_log "BLOCK reason=push_failed rc=$push_rc sha=$candidate oldest=$first_ancestor force=0 hook=1 commits=1 push_wall_ms=$push_wall_ms output=${push_output//$'\n'/\\n}"
+        fi
+        flock -u "$lock_fd"
+        exec {lock_fd}>&-
+        return "$push_rc"
+    done <<< "$commit_list"
+    push_lane_log "BLOCK reason=ga_push1_all_candidates_skipped first=$first_ancestor push=0"
     flock -u "$lock_fd"
     exec {lock_fd}>&-
-    return "$push_rc"
+    return 1
 }
 
 # --- lib-only mode: skip daemon initialization (tmux/settings依存) ---

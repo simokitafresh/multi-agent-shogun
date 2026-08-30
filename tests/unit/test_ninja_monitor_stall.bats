@@ -7696,9 +7696,9 @@ YAML
     [ "$output" = "fixture=red unpushed=2 push=0 skip=0" ]
 }
 
-# test_necessity: the green/aged fixture proves one contiguous first-parent
-# batch publication and the post-push ancestry re-GATE handoff.
-@test "T190 push lane publishes contiguous batch and regates WAIT" {
+# test_necessity: the green/aged fixture proves one first-parent publication
+# and the post-push ancestry re-GATE handoff.
+@test "T190 push lane publishes one first-parent commit and regates WAIT" {
     run env PROJECT_ROOT="$PROJECT_ROOT" bash -c '
         set -euo pipefail
         export NINJA_MONITOR_LIB_ONLY=1
@@ -7736,15 +7736,141 @@ YAML
         }
         push_lane_regate_waiting_cmds() { printf "regated=%s\n" "$1" >> "$root/regate.log"; }
         check_push_lane GREEN
-        test "$(cat "$root/publish.log")" = "published=$batch_tip_sha"
+        test "$(cat "$root/publish.log")" = "published=$oldest_sha"
         test "$(cat "$root/regate.log")" = "regated=$root"
         test "$(grep -c "PUSH ci=GREEN" "$PUSH_LANE_LOG")" -eq 1
         grep -Eq "PUSH ci=GREEN .*push_wall_ms=[0-9]+" "$PUSH_LANE_LOG"
-        grep -q "PUSH ci=GREEN unpushed_before=2 sha=$batch_tip_sha oldest=$oldest_sha.*force=0 hook=1 commits=2" "$PUSH_LANE_LOG"
-        printf "fixture=green unpushed_before=2 published=1 batch=2 regated=1 force=0 skip=0\n"
+        grep -q "PUSH ci=GREEN unpushed_before=2 sha=$oldest_sha oldest=$oldest_sha.*force=0 hook=1 commits=1" "$PUSH_LANE_LOG"
+        printf "fixture=green unpushed_before=2 published=1 commits=1 regated=1 force=0 skip=0\n"
     '
     [ "$status" -eq 0 ]
-    [ "$output" = "fixture=green unpushed_before=2 published=1 batch=2 regated=1 force=0 skip=0" ]
+    [ "$output" = "fixture=green unpushed_before=2 published=1 commits=1 regated=1 force=0 skip=0" ]
+}
+
+# test_necessity: a merged side branch can leave older first-parent entries
+# outside the remote ancestry. The lane must select the first actual FF
+# candidate instead of permanently blocking.
+@test "T190 push lane recovers a merged branch from the first FF candidate" {
+    run env PROJECT_ROOT="$PROJECT_ROOT" bash -c '
+        set -euo pipefail
+        export NINJA_MONITOR_LIB_ONLY=1
+        source "$PROJECT_ROOT/scripts/ninja_monitor.sh"
+        unset NINJA_MONITOR_LIB_ONLY
+        root="$BATS_TEST_TMPDIR/push-lane-merged-branch"
+        mkdir -p "$root/logs" "$root/state"
+        SCRIPT_DIR="$root" STATE_DIR="$root/state" LOG="$root/logs/monitor.log"
+        PUSH_LANE_LOG="$root/logs/push.log" PUSH_LANE_LOCK_FILE="$root/state/push.lock"
+        PUSH_LANE_MIN_AGE_SEC=600
+        remote_sha=1111111111111111111111111111111111111111
+        premerge_sha=2222222222222222222222222222222222222222
+        merge_sha=3333333333333333333333333333333333333333
+        postmerge_sha=4444444444444444444444444444444444444444
+        git() {
+            case "$*" in
+                *"rev-list --count"*) printf "3\n" ;;
+                *"rev-list --first-parent --reverse"*) printf "%s\n%s\n%s\n" "$premerge_sha" "$merge_sha" "$postmerge_sha" ;;
+                *"show -s --format=%ct"*) printf "100\n" ;;
+                *"symbolic-ref --quiet --short HEAD"*) printf "main\n" ;;
+                *"rev-parse origin/main"*) printf "%s\n" "$remote_sha" ;;
+                *"merge-base --is-ancestor origin/main HEAD"*) return 0 ;;
+                *"merge-base --is-ancestor $remote_sha $premerge_sha"*) return 1 ;;
+                *"merge-base --is-ancestor $remote_sha"*) return 0 ;;
+                *) return 0 ;;
+            esac
+        }
+        push_lane_pre_push_hook_ready() { return 0; }
+        push_lane_publish_one() { printf "published=%s\n" "$3" > "$root/publish.log"; }
+        push_lane_regate_waiting_cmds() { :; }
+        check_push_lane GREEN
+        test "$(cat "$root/publish.log")" = "published=$merge_sha"
+        grep -q "PUSH ci=GREEN .*sha=$merge_sha .*commits=1" "$PUSH_LANE_LOG"
+        test "$(grep -c "reason=remote_tip_not_ancestor" "$PUSH_LANE_LOG" || true)" -eq 0
+        printf "merged_branch=1 first_ff=$merge_sha published=1 block=0 false_positive=0 skip=0\n"
+    '
+    [ "$status" -eq 0 ]
+    [ "$output" = "merged_branch=1 first_ff=3333333333333333333333333333333333333333 published=1 block=0 false_positive=0 skip=0" ]
+}
+
+# test_necessity: an unmerged branch remains fail-closed even when its
+# first-parent commits are old enough to publish.
+@test "T190 push lane keeps an unmerged branch blocked" {
+    run env PROJECT_ROOT="$PROJECT_ROOT" bash -c '
+        set -euo pipefail
+        export NINJA_MONITOR_LIB_ONLY=1
+        source "$PROJECT_ROOT/scripts/ninja_monitor.sh"
+        unset NINJA_MONITOR_LIB_ONLY
+        root="$BATS_TEST_TMPDIR/push-lane-unmerged-branch"
+        mkdir -p "$root/logs" "$root/state"
+        SCRIPT_DIR="$root" STATE_DIR="$root/state" LOG="$root/logs/monitor.log"
+        PUSH_LANE_LOG="$root/logs/push.log" PUSH_LANE_LOCK_FILE="$root/state/push.lock"
+        PUSH_LANE_MIN_AGE_SEC=600
+        remote_sha=1111111111111111111111111111111111111111
+        candidate_sha=2222222222222222222222222222222222222222
+        git() {
+            case "$*" in
+                *"rev-list --count"*) printf "1\n" ;;
+                *"rev-list --first-parent --reverse"*) printf "%s\n" "$candidate_sha" ;;
+                *"symbolic-ref --quiet --short HEAD"*) printf "main\n" ;;
+                *"rev-parse origin/main"*) printf "%s\n" "$remote_sha" ;;
+                *"merge-base --is-ancestor origin/main HEAD"*) return 1 ;;
+                *) return 0 ;;
+            esac
+        }
+        push_lane_pre_push_hook_ready() { return 0; }
+        push_lane_publish_one() { printf "unexpected-push\n" > "$root/publish.log"; return 1; }
+        check_push_lane GREEN
+        test ! -e "$root/publish.log"
+        test "$(grep -c "BLOCK reason=remote_tip_not_ancestor" "$PUSH_LANE_LOG")" -eq 1
+        printf "unmerged_branch=1 block=1 push=0 false_positive=0 skip=0\n"
+    '
+    [ "$status" -eq 0 ]
+    [ "$output" = "unmerged_branch=1 block=1 push=0 false_positive=0 skip=0" ]
+}
+
+# test_necessity: GA-PUSH1 is a candidate-local failure. It is recorded once,
+# then the lane tries the next eligible first-parent candidate.
+@test "T190 push lane skips GA-PUSH1 candidate and advances" {
+    run env PROJECT_ROOT="$PROJECT_ROOT" bash -c '
+        set -euo pipefail
+        export NINJA_MONITOR_LIB_ONLY=1
+        source "$PROJECT_ROOT/scripts/ninja_monitor.sh"
+        unset NINJA_MONITOR_LIB_ONLY
+        root="$BATS_TEST_TMPDIR/push-lane-ga-push1"
+        mkdir -p "$root/logs" "$root/state"
+        SCRIPT_DIR="$root" STATE_DIR="$root/state" LOG="$root/logs/monitor.log"
+        PUSH_LANE_LOG="$root/logs/push.log" PUSH_LANE_LOCK_FILE="$root/state/push.lock"
+        PUSH_LANE_MIN_AGE_SEC=600
+        remote_sha=1111111111111111111111111111111111111111
+        blocked_sha=2222222222222222222222222222222222222222
+        next_sha=3333333333333333333333333333333333333333
+        git() {
+            case "$*" in
+                *"rev-list --count"*) printf "2\n" ;;
+                *"rev-list --first-parent --reverse"*) printf "%s\n%s\n" "$blocked_sha" "$next_sha" ;;
+                *"show -s --format=%ct"*) printf "100\n" ;;
+                *"symbolic-ref --quiet --short HEAD"*) printf "main\n" ;;
+                *"rev-parse origin/main"*) printf "%s\n" "$remote_sha" ;;
+                *"merge-base --is-ancestor"*) return 0 ;;
+                *) return 0 ;;
+            esac
+        }
+        push_lane_pre_push_hook_ready() { return 0; }
+        push_lane_publish_one() {
+            printf "%s\n" "$3" >> "$root/publish.log"
+            if [ "$3" = "$blocked_sha" ]; then
+                printf "[pre-push] BLOCK(GA-PUSH1): dirty overlap\n"
+                return 1
+            fi
+        }
+        push_lane_regate_waiting_cmds() { :; }
+        check_push_lane GREEN
+        test "$(tr "\n" " " < "$root/publish.log")" = "$blocked_sha $next_sha "
+        test "$(grep -c "SKIP reason=ga_push1_dirty_overlap sha=$blocked_sha" "$PUSH_LANE_LOG")" -eq 1
+        test "$(grep -c "PUSH ci=GREEN .*sha=$next_sha .*commits=1" "$PUSH_LANE_LOG")" -eq 1
+        printf "ga_push1_skip=1 next_candidate=1 published=1 push=1 false_positive=0\n"
+    '
+    [ "$status" -eq 0 ]
+    [ "$output" = "ga_push1_skip=1 next_candidate=1 published=1 push=1 false_positive=0" ]
 }
 
 # test_necessity: a timed-out gh probe may reuse only a fresh durable cache;
