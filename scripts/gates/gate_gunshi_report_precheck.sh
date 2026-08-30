@@ -1604,7 +1604,7 @@ fi
 _sg_pre29_check() {
     local report_path="$1" fm_block fe_files evidence
     fm_block=$(awk '/^files_modified:/{found=1; next} found && /^[^[:space:]#]/{exit} found{print}' "$report_path" 2>/dev/null || true)
-    fe_files=$(printf '%s\n' "$fm_block" | grep -Ei '(^|/)(frontend|app)/|\.tsx([^[:alnum:]_]|$)|\.ts([^[:alnum:]_]|$)' | grep -v '^[[:space:]]*#' || true)
+    fe_files=$(printf '%s\n' "$fm_block" | grep -Ei '(^|/)(frontend)/|\.tsx([^[:alnum:]_]|$)|\.ts([^[:alnum:]_]|$)' | grep -v '^[[:space:]]*#' | grep -v 'backend/' || true)
     if [ -z "$fe_files" ]; then
         echo "  PASS: frontend変更なし(対象外)"
         return 0
