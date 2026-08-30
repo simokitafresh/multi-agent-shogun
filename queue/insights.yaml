@@ -8853,3 +8853,10 @@ insights:
   source: "semantic_index_update"
   fix_known: false
   status: pending
+- id: INS-20260830-153057807-2239
+  ts: "2026-08-30T15:30:57+09:00"
+  insight: "semantic_index_update未登録[[リンク]]ターゲット: [[first_parent_merge_ancestry_gap]] は既存aliasesに一致なし。類似概念TOP3: lesson_lifecycle(教訓ライフサイクル管理; alias=escalation_handler_gap; score=13.1) / test_quality_framework(テスト品質統合フレームワーク; alias=regression test gap; score=13.0) / training_cycle_quality(忍者修行サイクル品質; alias=first pass rate; score=12.7)。概念定義とaliases追加を検討せよ"
+  priority: "low"
+  source: "semantic_index_update"
+  fix_known: false
+  status: pending
