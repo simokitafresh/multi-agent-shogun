@@ -14096,6 +14096,31 @@ _ninja_monitor_launch_hot_reload_successor() {
         bash "$script_path" >> "$LOG" 2>&1 &
 }
 
+# Owner records are atomically replaced during takeover.  A watcher that
+# observes the replacement window must retry while its predecessor is still
+# alive; treating one transient read failure as a clean exit loses the only
+# successor launch opportunity.
+_ninja_monitor_read_hot_reload_owner_record() {
+    local owner_file="$1"
+    local parent_pid="$2"
+    local attempts=0
+    local max_attempts="${NINJA_MONITOR_HOT_RELOAD_OWNER_READ_RETRIES:-20}"
+    local retry_sec="${NINJA_MONITOR_HOT_RELOAD_OWNER_READ_RETRY_SEC:-0.05}"
+    [[ "$max_attempts" =~ ^[0-9]+$ ]] || max_attempts=20
+    [[ "$retry_sec" =~ ^[0-9]+([.][0-9]+)?$ ]] || retry_sec=0.05
+
+    while [ "$attempts" -lt "$max_attempts" ]; do
+        if ninja_monitor_read_owner_record "$owner_file"; then
+            return 0
+        fi
+        [ -d "/proc/${parent_pid}" ] || return 1
+        attempts=$((attempts + 1))
+        sleep "$retry_sec"
+    done
+    log "HOT-RELOAD-WATCH-BLOCK: owner_record_read_retries=${max_attempts} parent_pid=${parent_pid}"
+    return 1
+}
+
 _ninja_monitor_hot_reload_watch() {
     local script_path="$1"
     local start_mtime="$2"
@@ -14110,7 +14135,7 @@ _ninja_monitor_hot_reload_watch() {
 
     while [ -d "/proc/${parent_pid}" ]; do
         IFS=$'\t' read -r owner_pid owner_generation owner_heartbeat _legacy_mtime _legacy_fingerprint \
-            < <(ninja_monitor_read_owner_record "$owner_file") || return 0
+            < <(_ninja_monitor_read_hot_reload_owner_record "$owner_file" "$parent_pid") || return 0
         _ninja_monitor_owner_record_matches "$owner_file" "$generation" "$parent_pid" || return 0
 
         current_mtime="$(stat -c %Y "$script_path" 2>/dev/null || true)"
@@ -14118,7 +14143,7 @@ _ninja_monitor_hot_reload_watch() {
             # stat on /mnt/c can itself stall.  Ownership may have changed
             # while it was blocked, so revalidate immediately before launch.
             IFS=$'\t' read -r owner_pid owner_generation owner_heartbeat _legacy_mtime _legacy_fingerprint \
-                < <(ninja_monitor_read_owner_record "$owner_file") || return 0
+                < <(_ninja_monitor_read_hot_reload_owner_record "$owner_file" "$parent_pid") || return 0
             _ninja_monitor_owner_record_matches "$owner_file" "$generation" "$parent_pid" || return 0
             log "HOT-RELOAD-DETECTED: generation=${generation} mtime ${start_mtime} -> ${current_mtime}"
             _ninja_monitor_launch_hot_reload_successor "$script_path" "$generation" "$current_mtime"
@@ -14136,7 +14161,8 @@ start_ninja_monitor_hot_reload_watch() {
     # supervisor pgrep predicate can match it.
     export -f log close_inherited_non_stdio_fds ninja_monitor_read_owner_record \
         _ninja_monitor_pid_is_live _ninja_monitor_owner_record_matches \
-        _ninja_monitor_launch_hot_reload_successor _ninja_monitor_hot_reload_watch
+        _ninja_monitor_launch_hot_reload_successor \
+        _ninja_monitor_read_hot_reload_owner_record _ninja_monitor_hot_reload_watch
     NINJA_MONITOR_WATCH_SCRIPT_PATH="$_NM_SCRIPT_PATH"
     NINJA_MONITOR_WATCH_START_MTIME="$_NM_START_MTIME"
     NINJA_MONITOR_WATCH_GENERATION="$NINJA_MONITOR_GENERATION"
