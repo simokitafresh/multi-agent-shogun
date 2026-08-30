@@ -342,10 +342,11 @@ def test_single_review_failure_reopens_only_after_approval_state_change(tmp_path
 
 
 @pytest.mark.parametrize("receipt_kind", ["matching", "stale", "mismatch"])
+@pytest.mark.parametrize("receipt_type", ["report_received", "task_failed"])
 def test_single_review_failure_token_only_changes_for_late_matching_receipt(
-    tmp_path, monkeypatch, receipt_kind
+    tmp_path, monkeypatch, receipt_kind, receipt_type
 ):
-    """test_necessity: only a new exact report receipt may reopen a failed review terminal."""
+    """test_necessity: only an exact PASS/FAIL terminal receipt may reopen a failed review terminal."""
     root = _root(tmp_path)
     cmd = "cmd_singleflight_receipt"
     report = root / "queue/reports/worker_report_cmd_singleflight_receipt.yaml"
@@ -385,7 +386,7 @@ def test_single_review_failure_token_only_changes_for_late_matching_receipt(
     digest = hashlib.sha256(report.read_bytes()).hexdigest()
     receipt = {
         "messages": [{
-            "type": "report_received",
+            "type": receipt_type,
             "report_id": "rpt-singleflight-receipt",
             "report_identity_version": 2,
             "report_fingerprint": digest if receipt_kind == "matching" else "0" * 64,

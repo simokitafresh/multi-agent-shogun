@@ -69,7 +69,7 @@ def _receipt_generation_identity(root, report_path, report):
             if not isinstance(message, dict):
                 continue
             if (
-                message.get("type") == "report_received"
+                message.get("type") in {"report_received", "task_failed"}
                 and
                 str(message.get("report_id") or "") == report_id
                 and str(message.get("report_identity_version") or "") == version
@@ -713,7 +713,9 @@ def _singleflight_token(root, args, entry):
         "correction_scope": _correction_scope(getattr(args, "correction_scope", None)),
         "report_sha256": hashlib.sha256(report_path.read_bytes()).hexdigest() if report_path.is_file() else "missing",
         "contract": contract,
-        # Only an exact durable report_received receipt is a new generation.
+        # Only an exact durable terminal report receipt is a new generation.
+        # PASS reports arrive as report_received; honest FAIL reports arrive as
+        # task_failed and carry the same immutable identity envelope.
         # Stale or mismatched receipts intentionally collapse to None so they
         # cannot reopen a failure terminal by changing the token.
         "report_receipt": _receipt_generation_identity(root, report_path, report),
