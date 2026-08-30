@@ -9249,3 +9249,10 @@ insights:
   source: "cmd_complete_gate:skill_script_refs:cmd_karo_hotfix_t190_gate_slow_sections_unit7_20260830"
   fix_known: false
   status: pending
+- id: INS-20260830-171632544-93a9
+  ts: "2026-08-30T17:16:32+09:00"
+  insight: "semantic_index_update未登録[[リンク]]ターゲット: [[dm-signal.jp_ドメインrunbook_20260830]] は既存aliasesに一致なし。類似概念TOP3: dmsignal_operations(DM-Signal運用; alias=dm-signal ops; score=21.6) / dm_signal_pf_restore_guardrails(DM-Signal PF復元運用ガードレール; alias=dm signal jp を Cloudflare で取ろう; score=21.2) / dm_fusion_app(DM-Fusionアプリ; alias=SPYとTQQQはDM-Signal monthly_returns; score=12.9)。概念定義とaliases追加を検討せよ"
+  priority: "low"
+  source: "semantic_index_update"
+  fix_known: false
+  status: pending
