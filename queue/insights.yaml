@@ -9615,3 +9615,10 @@ insights:
   source: "semantic_stress_test"
   fix_known: false
   status: pending
+- id: INS-20260830-192713046-170b
+  ts: "2026-08-30T19:27:13+09:00"
+  insight: "[[家老のinboxの増え方が異常ではないかinbox33]] semantic_stress_test candidate_aliases: NO_MATCH source=lord query=家老のinboxの増え方が異常ではないかinbox33"
+  priority: "low"
+  source: "semantic_stress_test"
+  fix_known: false
+  status: pending
