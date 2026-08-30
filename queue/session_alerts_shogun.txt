@@ -1,4 +1,4 @@
-# session_alerts — generated: 2026-08-31T00:30:33+0900
-[DONE] 追体験自動化ターゲット: Gate 10.1c commit 8652081df(本番 WARN 2件実測)・掲示板 Q6 投稿・軍師検証 blt_003540 妥当
+# session_alerts — generated: 2026-08-31T03:02:53+0900
 [DONE] 走行中cmd実測突合: busy 3名。capture-pane未確認で状況報告するな
-[DONE] monitor lifecycle 失敗行: GATE-STALL-ITEM-TIMEOUT ga494×4/converge×2(dangling→家老 msg_002923/003153)・ga531×2(00:07 CLEAR 済)・kotaro×1(00:28 CLEAR 済)・push_lane×2(remote_tip_not_ancestor→家老 converge ③)
+[DONE] monitor lifecycle 失敗行 8行/60分 — 壁の所有者を一次で確認(03:07 一次: push_lane rc=1=CI RED run 33325312173→才蔵 ci_fix(家老再配備 03:05)、REFLUX-AUTO-DEPLOY-FAIL tobisaru×2→02:57 再配備 DEPLOY_RECEIPT success=解消。所有者あり、二重下知なし)
+[DONE] deepdive追体験未完了: 全Phase実行まで作業禁止(stop hookがBLOCKする)。bash scripts/deepdive_replay.sh shogun <md> <Phase> "<自問>"

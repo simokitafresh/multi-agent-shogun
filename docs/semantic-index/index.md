@@ -507,6 +507,7 @@ codd:
 | discussion | `queue/lord_conversation.jsonl` 2026-08-30T04:58:36.344064+00:00 git pre-commit semantic propagation for context/projects changes |
 | discussion | `queue/lord_conversation.jsonl` 2026-08-30T09:13:59.942403+00:00 git pre-commit semantic propagation for context/projects changes |
 | discussion | `queue/lord_conversation.jsonl` 2026-08-30T15:32:39.996542+00:00 git pre-commit semantic propagation for context/projects changes |
+| discussion | `queue/lord_conversation.jsonl` 2026-08-30T18:01:12.493102+00:00 git pre-commit semantic propagation for context/projects changes |
 
 ## unread_cmd_new_deployment_guard — 未読cmd_new配備漏れ防止
 
@@ -3713,6 +3714,7 @@ codd:
 | discussion | `queue/lord_conversation.jsonl` 2026-08-31T01:41:30+09:00 https://dm-signal.com/の問題点を列挙する。MDDが表示されていない、basic-dual momentumのsharpeが表示されていない。total return,xNはup to~のほうがいい。コントラストがデザイ |
 | discussion | `queue/lord_conversation.jsonl` 2026-08-31T02:10:00+09:00 30分loop(殿指示08-27 14:34「進捗を確認し、利他の精神でつまりを解消し、artifactを更新せよ」恒久): (1)capture-pane全pane/陣形図/gate_metrics/rev-list origin/CI  |
 | discussion | `queue/lord_conversation.jsonl` 2026-08-31T02:39:50+09:00 30分loop(殿指示08-27 14:34「進捗を確認し、利他の精神でつまりを解消し、artifactを更新せよ」恒久): (1)capture-pane全pane/陣形図/gate_metrics/rev-list origin/CI  |
+| discussion | `queue/lord_conversation.jsonl` 2026-08-31T03:09:51+09:00 30分loop(殿指示08-27 14:34「進捗を確認し、利他の精神でつまりを解消し、artifactを更新せよ」恒久): (1)capture-pane全pane/陣形図/gate_metrics/rev-list origin/CI  |
 | causal_chain | `[[cmd_karo_hotfix_deploy_report_template_quote_escape_202607020530]]` (L924) |
 | causal_chain | `[[cmd_reflux_insight_202607071717_tobisaru]]` (L961) |
 | causal_chain | `[[cmd_karo_hotfix_report_notify_inprogress_guard_202607101913]]` (L1026) |
@@ -5014,6 +5016,9 @@ codd:
 | discussion | `queue/lord_conversation.jsonl` 2026-08-30T21:46:57+09:00 いまクリアされても今より強くてニューゲームできるようにせよ |
 | discussion | `queue/lord_conversation.jsonl` 2026-08-30T22:05:04+09:00 いまクリアされても今より強くてニューゲームできるようにせinbox1 |
 | discussion | `queue/lord_conversation.jsonl` 2026-08-31T00:05:23+09:00 今クリアされても今より強くてニューゲームできるようにせよ |
+| discussion | `queue/lord_conversation.jsonl` 2026-08-31T02:59:39+09:00 いまクリアされても今より強くてニューゲームできるようにせよ |
+| discussion | `queue/lord_conversation.jsonl` 2026-08-31T02:59:45+09:00 いまクリアされても今より強くてニューゲームできるようにせよ |
+| discussion | `queue/lord_conversation.jsonl` 2026-08-31T03:07:31+09:00 いまクリアされても今より強くてニューゲームできるようにせよ |
 | causal_chain | `[[cmd_reflux_insight_202607081406_saizo]]` (L991) |
 | causal_chain | `[[cmd_karo_hotfix_gunshi_deepdive_recurrence_20260727]]` (L1408) |
 
@@ -6123,6 +6128,7 @@ codd:
 | discussion | `queue/lord_conversation.jsonl` 2026-08-30T21:33:30+09:00 将軍事故 2026-08-30 21:31: python heredoc の assert が失敗して tmp が空のまま『bash -n tmp && mv tmp scripts/ninja_monitor.sh』が通り、ninja_ |
 | discussion | `queue/lord_conversation.jsonl` 2026-08-30T21:35:43+09:00 デーモンは正常か？多重起動していないか？サイレントキルになっていないか？確認してすくりぷとで再起動せよ |
 | discussion | `queue/lord_conversation.jsonl` 2026-08-31T01:54:10+09:00 先送りや放置がないか覚醒して確認せよ |
+| discussion | `queue/lord_conversation.jsonl` 2026-08-31T03:05:03+09:00 saizoは放置されているのではないか？確認して対応せよ |
 | causal_chain | `[[cmd_3633]]` (L916) |
 | causal_chain | `[[cmd_3646]]` (L929) |
 | causal_chain | `[[cmd_3649]]` (L932) |
@@ -8711,6 +8717,7 @@ codd:
 | discussion | `queue/lord_conversation.jsonl` 2026-08-31T00:55:20+09:00 bvgjvvvco toolu_01XXJwPmqVE1dCeVpYCWCa6z /tmp/claude-1000/-home-simokitafresh-multi-agent-shogun/b40b7045-ff88-4a88-b288 |
 | discussion | `queue/lord_conversation.jsonl` 2026-08-31T01:05:32+09:00 barjouhx5 toolu_01BDsjtiWZChLqhQ8P6n2zZN /tmp/claude-1000/-home-simokitafresh-multi-agent-shogun/b40b7045-ff88-4a88-b288 |
 | discussion | `queue/lord_conversation.jsonl` 2026-08-31T02:30:22+09:00 LP 殿指摘 4 点(2026-08-31 01:41-01:43)の処置: ①MDD 全行『—』=LP build 23:27 が backend 4425 live 00:13 より古い→LP 再 build 01:50 live で  |
+| discussion | `queue/lord_conversation.jsonl` 2026-08-31T03:00:47+09:00 session_save_20260831_0300_gunshi: 軍師セッション(23:28-03:00)。Report review 10件(LGTM 8件: ga531/cmd_4428/cmd_4425/three_layer/r |
 | causal_chain | `[[cmd_karo_hotfix_deploy_task_latency_yaml_bug_20260702010845]]` (L918) |
 | causal_chain | `[[cmd_karo_hotfix_deploy_task_yaml_speed_recon_guard_202607020133]]` (L919) |
 | causal_chain | `[[cmd_karo_hotfix_ga162_hook_failure_pre_push_202607021402]]` (L930) |
@@ -9761,6 +9768,7 @@ codd:
 | discussion | `queue/lord_conversation.jsonl` 2026-08-31T00:43:25+09:00 Free tier 設計書 v3.3(08-31 00:45、gist 897501e0): F1 4422(5b50424e CLEAR 22:59)+4428(c385c9c7 CLEAR 00:06)=backend live ce3 |
 | discussion | `queue/lord_conversation.jsonl` 2026-08-31T01:03:41+09:00 Free tier 503 真因(2026-08-31 01:04): 本番 viewer_tiers Free 行 password_env_key=VIEWER_PASS_FREE(既存 tier 命名 VIEWER_PASS_* 準拠 |
 | discussion | `queue/lord_conversation.jsonl` 2026-08-31T01:25:43+09:00 Free tier 4 段目(2026-08-31 01:22): サインイン成功後の /free『クーポンを取得できませんでした』の真因=backend free-coupon は {success,data:{coupon,expire |
+| discussion | `queue/lord_conversation.jsonl` 2026-08-31T03:01:05+09:00 session_save_20260831_0300(先に session_save_20260831_0005 を読め): 第18便(00:23 y 復帰〜03:00)。①復帰: deepdive 16/16、Q6 軍師検証妥当、Gate |
 | causal_chain | `[[cmd_reflux_backlink_202607281529_hanzo]]` (L1433) |
 | causal_chain | `[[cmd_4202]]` (L1500) |
 | causal_chain | `[[cmd_karo_hotfix_report_shared_provenance_fp_20260802]]` (L1521) |
@@ -14278,6 +14286,8 @@ codd:
 | cmd | `cmd_reflux_insight_202608310035_kagemaru` (`queue/insights.yaml`) |
 | causal | `cmd_reflux_insight_202608310238_hanzo` files_modified: [[provisional_insights]] |
 | cmd | `cmd_reflux_insight_202608310238_hanzo` (`queue/insights.yaml`) |
+| causal | `cmd_reflux_insight_202608310257_tobisaru` files_modified: [[provisional_insights]] |
+| cmd | `cmd_reflux_insight_202608310257_tobisaru` (`queue/insights.yaml`) |
 | causal_chain | `[[cmd_reflux_insight_202608040505_kagemaru]]` (L1545) |
 
 ## provisional_heavy_job_admission — 仮: Heavy Job Admission
