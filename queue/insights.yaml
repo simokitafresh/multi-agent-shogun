@@ -10196,3 +10196,10 @@ insights:
   source: "semantic_stress_test"
   fix_known: false
   status: pending
+- id: INS-20260830-234141913-8ddb
+  ts: "2026-08-30T23:41:41+09:00"
+  insight: "[[free coupon の認証検証を Supabase Auth API 方式 GET auth v1 user]] semantic_stress_test candidate_aliases: NO_MATCH source=cmds query=free-coupon の認証検証を Supabase Auth API 方式(GET /auth/v1/user、apikey=anon key+Bearer access_token)へ差し替え、SUPABASE_JWT_SECRET 依存を除去する(rebalancer と同じく secret を持たない)"
+  priority: "low"
+  source: "semantic_stress_test"
+  fix_known: false
+  status: pending
