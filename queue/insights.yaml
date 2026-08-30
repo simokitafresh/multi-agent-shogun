@@ -8823,3 +8823,10 @@ insights:
   source: "semantic_index_update"
   fix_known: false
   status: pending
+- id: INS-20260830-150735133-50f7
+  ts: "2026-08-30T15:07:35+09:00"
+  insight: "LGTM→本番502: cmd_4413のPydantic前方参照(ShowcaseEventPayload)を軍師レビューで見落とし。pre-mortemでPydantic型解決順序を検査する観点が不在。adversarial reviewで682行を確認したがimport/type resolution orderは検査対象外だった。教訓候補: Pydantic modelのforward reference/TYPE_CHECKING importはpre-mortemの必須チェック項目に追加すべき"
+  priority: "medium"
+  source: "manual"
+  fix_known: false
+  status: pending
