@@ -9215,3 +9215,10 @@ insights:
   source: "semantic_index_update"
   fix_known: false
   status: pending
+- id: INS-20260830-170106930-4907
+  ts: "2026-08-30T17:01:06+09:00"
+  insight: "SKILL.md追従cmd候補: cmd_karo_hotfix_t190_gate_slow_sections_unit7_20260830 で scripts変更(scripts/cmd_complete_gate.sh)後にSKILL.md参照鮮度WARN。追従cmdを起票して skills/codd-fix/SKILL.md <- scripts/cmd_complete_gate.sh (newer: scripts/cmd_complete_gate.sh) を解消せよ。"
+  priority: "medium"
+  source: "cmd_complete_gate:skill_script_refs:cmd_karo_hotfix_t190_gate_slow_sections_unit7_20260830"
+  fix_known: false
+  status: pending
