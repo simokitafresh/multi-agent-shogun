@@ -379,3 +379,18 @@ assert count == 1, count
 PY
     [ "$status" -eq 0 ]
 }
+
+# test_necessity: 型十五弾-6 の不変量 — 本文が名指す "commit <hash>" が repo に存在しない時は必ず WARN を出し(反映前通知の検出)、存在する hash には WARN を出さない。BLOCK にはしない(fail-open)。
+@test "knowledge writer WARNs on a named commit hash that does not exist in the repo, and stays silent for an existing one" {
+    setup_knowledge_write_fixture
+    local existing
+    existing="$(git -C "$BATS_TEST_DIRNAME/../.." rev-parse --short HEAD)"
+    run env SHOGUN_MEMORY_DB="$KW_DB" THREE_LAYER_CHAIN_LOG="$KW_ROOT/logs/chain.log" \
+        THREE_LAYER_CHAIN_STATE_DIR="$KW_ROOT/state" \
+        bash "$BATS_TEST_DIRNAME/../../scripts/memory_db_knowledge_write.sh" \
+        "[[fixture]] 設計書を commit deadbeef01 で反映、map は commit ${existing}" "kw-fixture-hash"
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"WARN: knowledge text names commit deadbeef01"* ]]
+    [[ "$output" != *"names commit ${existing}"* ]]
+    teardown_knowledge_write_fixture
+}
