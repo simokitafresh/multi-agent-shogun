@@ -9563,3 +9563,10 @@ insights:
   source: "manual"
   fix_known: false
   status: pending
+- id: INS-20260830-184757130-18fd
+  ts: "2026-08-30T18:47:57+09:00"
+  insight: "LGTM済みcmdの再通知ループ: cmd_karo_hotfix_inbox_terminal_drain_20260830とcmd_4419のreport_review通知が家老inbox処理中に軍師inboxへ繰り返し到着(各6-9回)。原因=cmd_complete処理中にinbox_write→watcher→nudgeが連鎖発火。hanzoが修正中のinbox_terminal_drain hotfixが根治する対象だが、nudge多重送信(inbox_nudge_outstanding_lease)も併発。2件のhotfixマージ後に再発確認すべき"
+  priority: "medium"
+  source: "manual"
+  fix_known: false
+  status: pending
