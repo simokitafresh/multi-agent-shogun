@@ -935,20 +935,31 @@ inbox_reconcile_terminal_task_generation() {
 inbox_deliver_report_review_generation() {
     local ninja="$1" report_path="$2" parent_cmd="$3" fingerprint="$4"
     local report_base="${report_path##*/}"
-    # fingerprint DEDUPE: 同一parent_cmd+fingerprintの通知は1回のみ送信
+    # fingerprint DEDUPE: 同一parent_cmd+fingerprintの通知は1回のみ送信(atomic flock)
     if [ -n "$fingerprint" ] && [ -n "$parent_cmd" ]; then
         local dedupe_dir="${SELF_SCRIPT_DIR:-$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)}/queue/gates/${parent_cmd}"
-        local dedupe_file="${dedupe_dir}/gunshi_review_notify_${fingerprint:0:16}.done"
+        local dedupe_file="${dedupe_dir}/gunshi_review_notify_${fingerprint}.done"
+        local dedupe_lock="${dedupe_dir}/gunshi_review_notify.lock"
         mkdir -p "$dedupe_dir" 2>/dev/null || true
-        [ -f "$dedupe_file" ] && return 0
+        local _drf_fd
+        if exec {_drf_fd}>"$dedupe_lock" && flock -w 3 "$_drf_fd"; then
+            if [ -f "$dedupe_file" ]; then
+                flock -u "$_drf_fd"; eval "exec ${_drf_fd}>&-"
+                return 0
+            fi
+        else
+            [ -n "${_drf_fd:-}" ] && eval "exec ${_drf_fd}>&-"
+        fi
     fi
     bash "$SELF_SCRIPT_PATH" gunshi \
         "${ninja}報告完了。レビュー依頼: ${parent_cmd} report=${report_base}" \
-        report_review karo notify_gunshi >/dev/null 2>&1
-    # 送信成功後にDEDUPEフラグ記録
+        report_review karo notify_gunshi \
+        "report_fingerprint=${fingerprint}" >/dev/null 2>&1
+    # 送信成功後にDEDUPEフラグ記録(flock保持中)
     if [ -n "${dedupe_file:-}" ]; then
         printf '%s\n' "$(date '+%Y-%m-%dT%H:%M:%S')" > "$dedupe_file" 2>/dev/null || true
     fi
+    [ -n "${_drf_fd:-}" ] && { flock -u "$_drf_fd" 2>/dev/null; eval "exec ${_drf_fd}>&-"; } || true
 }
 
 inbox_cmd_id_from_report_filename() {
