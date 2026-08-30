@@ -2414,6 +2414,10 @@ declare -A UNCOMMITTED_BLOCK_SENT # commit未完了BLOCK送信済みフラグ �
 declare -A CLEAR_BLOCKED_TS        # T1: agent別CLEAR-BLOCKED epoch秒リスト(窓内のみ保持) — key: agent_name, value: "epoch1 epoch2 ..."
 declare -A CLEAR_BLOCKED_NOTIFIED  # T2: 窓内しきい値到達→通知済みフラグ(再送抑止) — key: agent_name, value: "1"
 declare -A ACTIVE_IDLE_RECOVERY_SENT # active task+idle時の忍者再通知済みフラグ — key: "ninja:task_id:reason", value: "1"
+declare -A IN_PROGRESS_IDLE_RECOVERY_FIRST_SEEN # in_progress+idle recovery起点 — key: agent
+declare -A IN_PROGRESS_IDLE_RECOVERY_FINGERPRINT # task/report世代+進捗指紋 — key: agent
+declare -A IN_PROGRESS_IDLE_RECOVERY_NUDGE_SENT # 初回task_assigned送達済み — key: agent
+declare -A IN_PROGRESS_IDLE_RECOVERY_RESPAWNS # 世代内respawn回数 — key: agent
 declare -A GATE_STALL_ACTIVE_CMDS # 現役cmd集合（active task/queue command/live report）
 
 # review_gate.doneが両承認の完了証跡になった後、cmd_complete_gateのCLEAR/BLOCK終端が
@@ -9569,6 +9573,229 @@ _check_ack_to_progress_stall() {
     return 0
 }
 
+# Codexがtask_assigned nudgeを受け取りread=trueになっても、CLIは通常の
+# 入力待ちへ戻るだけでtask YAMLを再開しないことがある。STAGE1はactive task
+# のclearを正しく抑止しているため、この状態を別の有限recovery laneへ渡す。
+# task/reportの世代とprogressが不変の間だけ時計を進め、別世代・進捗・
+# confirmation/background/evidence待ちは必ずrespawn対象から除外する。
+_in_progress_idle_recovery_fingerprint() {
+    local name="$1" task_file="$SCRIPT_DIR/queue/tasks/${name}.yaml"
+    local task_values report_file report_values
+    [ -f "$task_file" ] || return 1
+
+    task_values=$(awk '
+        BEGIN { pc=""; ti=""; ai=""; ri=""; rv=""; da=""; rda=""; pa="" }
+        /^[ \t]*parent_cmd:/ { v=$0; sub(/^[^:]*:[ \t]*/,"",v); gsub(/'"'"'|"/,"",v); pc=v }
+        /^[ \t]*task_id:/ && !/^[ \t]*_ac_task_id:/ && ti=="" { v=$0; sub(/^[^:]*:[ \t]*/,"",v); gsub(/'"'"'|"/,"",v); ti=v }
+        /^[ \t]*_ac_task_id:/ && ai=="" { v=$0; sub(/^[^:]*:[ \t]*/,"",v); gsub(/'"'"'|"/,"",v); ai=v }
+        /^[ \t]*report_id:/ && ri=="" { v=$0; sub(/^[^:]*:[ \t]*/,"",v); gsub(/'"'"'|"/,"",v); ri=v }
+        /^[ \t]*report_identity_version:/ && rv=="" { v=$0; sub(/^[^:]*:[ \t]*/,"",v); gsub(/'"'"'|"/,"",v); rv=v }
+        /^[ \t]*deployed_at:/ { v=$0; sub(/^[^:]*:[ \t]*/,"",v); gsub(/'"'"'|"/,"",v); da=v }
+        /^[ \t]*retry_deployed_at:/ { v=$0; sub(/^[^:]*:[ \t]*/,"",v); gsub(/'"'"'|"/,"",v); rda=v }
+        /^[ \t]*progress_updated_at:/ { v=$0; sub(/^[^:]*:[ \t]*/,"",v); gsub(/'"'"'|"/,"",v); pa=v }
+        END { print pc "|" (ti!="" ? ti : ai) "|" ri "|" rv "|" da "|" rda "|" pa }
+    ' "$task_file")
+
+    report_file=$(find_matching_report_file "$name" 2>/dev/null || true)
+    report_values="missing"
+    if [ -n "$report_file" ] && [ -f "$report_file" ]; then
+        report_values=$(awk '
+            BEGIN { pc=""; ti=""; ri=""; rv=""; ts="" }
+            /^[ \t]*parent_cmd:/ { v=$0; sub(/^[^:]*:[ \t]*/,"",v); gsub(/'"'"'|"/,"",v); pc=v }
+            /^[ \t]*task_id:/ && ti=="" { v=$0; sub(/^[^:]*:[ \t]*/,"",v); gsub(/'"'"'|"/,"",v); ti=v }
+            /^[ \t]*report_id:/ && ri=="" { v=$0; sub(/^[^:]*:[ \t]*/,"",v); gsub(/'"'"'|"/,"",v); ri=v }
+            /^[ \t]*report_identity_version:/ && rv=="" { v=$0; sub(/^[^:]*:[ \t]*/,"",v); gsub(/'"'"'|"/,"",v); rv=v }
+            /^[ \t]*timestamp:/ && ts=="" { v=$0; sub(/^[^:]*:[ \t]*/,"",v); gsub(/'"'"'|"/,"",v); ts=v }
+            END { print pc "|" ti "|" ri "|" rv "|" ts }
+        ' "$report_file")
+    fi
+
+    printf '%s\0%s\0%s\n' "$task_values" "$report_file" "$report_values" | sha256sum | awk '{print $1}'
+}
+
+_in_progress_idle_recovery_state_file() {
+    local name="$1"
+    name=$(printf '%s' "$name" | tr -c 'A-Za-z0-9_.-' '_')
+    printf '%s/in_progress_idle_recovery_%s.tsv\n' "${STATE_DIR:-/tmp}" "$name"
+}
+
+_in_progress_idle_recovery_load_state() {
+    local name="$1" state_file="$2"
+    local fingerprint first_seen nudge_sent respawns
+    if [ -f "$state_file" ]; then
+        IFS=$'\t' read -r fingerprint first_seen nudge_sent respawns < "$state_file" || true
+        if [[ "$fingerprint" =~ ^[0-9a-f]{64}$ ]] && \
+           [[ "$first_seen" =~ ^[0-9]+$ ]] && \
+           [[ "$nudge_sent" =~ ^[01]$ ]] && \
+           [[ "$respawns" =~ ^[0-9]+$ ]]; then
+            IN_PROGRESS_IDLE_RECOVERY_FINGERPRINT[$name]="$fingerprint"
+            IN_PROGRESS_IDLE_RECOVERY_FIRST_SEEN[$name]="$first_seen"
+            IN_PROGRESS_IDLE_RECOVERY_NUDGE_SENT[$name]="$nudge_sent"
+            IN_PROGRESS_IDLE_RECOVERY_RESPAWNS[$name]="$respawns"
+            return 0
+        fi
+    fi
+    unset "IN_PROGRESS_IDLE_RECOVERY_FIRST_SEEN[$name]"
+    unset "IN_PROGRESS_IDLE_RECOVERY_FINGERPRINT[$name]"
+    unset "IN_PROGRESS_IDLE_RECOVERY_NUDGE_SENT[$name]"
+    unset "IN_PROGRESS_IDLE_RECOVERY_RESPAWNS[$name]"
+}
+
+_in_progress_idle_recovery_save_state() {
+    local state_file="$1" name="$2" tmp
+    tmp=$(mktemp "${state_file}.tmp.XXXXXX") || return 1
+    printf '%s\t%s\t%s\t%s\n' \
+        "${IN_PROGRESS_IDLE_RECOVERY_FINGERPRINT[$name]:-}" \
+        "${IN_PROGRESS_IDLE_RECOVERY_FIRST_SEEN[$name]:-0}" \
+        "${IN_PROGRESS_IDLE_RECOVERY_NUDGE_SENT[$name]:-0}" \
+        "${IN_PROGRESS_IDLE_RECOVERY_RESPAWNS[$name]:-0}" > "$tmp"
+    if ! mv -f -- "$tmp" "$state_file"; then
+        rm -f -- "$tmp"
+        return 1
+    fi
+}
+
+_in_progress_idle_recovery_acquire() {
+    local name="$1" state_file="$2" lock_fd
+    exec {lock_fd}>"${state_file}.lock" || return 1
+    if ! flock -n "$lock_fd"; then
+        eval "exec ${lock_fd}>&-"
+        log "IN-PROGRESS-IDLE-RECOVERY-SKIP: $name reason=state_lock_busy"
+        return 1
+    fi
+    IN_PROGRESS_IDLE_RECOVERY_LOCK_FD="$lock_fd"
+    return 0
+}
+
+_in_progress_idle_recovery_release() {
+    local lock_fd="${IN_PROGRESS_IDLE_RECOVERY_LOCK_FD:-}"
+    [ -n "$lock_fd" ] || return 0
+    flock -u "$lock_fd" 2>/dev/null || true
+    eval "exec ${lock_fd}>&-"
+    IN_PROGRESS_IDLE_RECOVERY_LOCK_FD=""
+}
+
+_reset_in_progress_idle_recovery() {
+    local name="$1"
+    unset "IN_PROGRESS_IDLE_RECOVERY_FIRST_SEEN[$name]"
+    unset "IN_PROGRESS_IDLE_RECOVERY_FINGERPRINT[$name]"
+    unset "IN_PROGRESS_IDLE_RECOVERY_NUDGE_SENT[$name]"
+    unset "IN_PROGRESS_IDLE_RECOVERY_RESPAWNS[$name]"
+    local state_file lock_fd
+    state_file=$(_in_progress_idle_recovery_state_file "$name")
+    mkdir -p "$(dirname "$state_file")" 2>/dev/null || return 0
+    exec {lock_fd}>"$state_file.lock" || return 0
+    if flock -n "$lock_fd"; then
+        rm -f -- "$state_file"
+        flock -u "$lock_fd"
+    fi
+    eval "exec $lock_fd>&-"
+}
+
+_respawn_in_progress_idle_recovery() {
+    local name="$1" target="$2" task_id="$3" expected_fingerprint="$4"
+    local current_fingerprint launch_command launch resolved_generation
+
+    current_fingerprint=$(_in_progress_idle_recovery_fingerprint "$name" 2>/dev/null || true)
+    if [ -z "$current_fingerprint" ] || [ "$current_fingerprint" != "$expected_fingerprint" ]; then
+        log "IN-PROGRESS-IDLE-RESPAWN-SKIP: $name task=$task_id reason=generation_changed"
+        return 1
+    fi
+
+    launch=$(cli_launch_cmd "$name" 2>/dev/null || true)
+    if [ -z "$launch" ]; then
+        log "IN-PROGRESS-IDLE-RESPAWN-BLOCK: $name task=$task_id reason=launch_command_missing"
+        return 1
+    fi
+    launch_command=$(respawn_recovery_launch_command "$SCRIPT_DIR" "$launch" 2>/dev/null || true)
+    if [ -z "$launch_command" ]; then
+        log "IN-PROGRESS-IDLE-RESPAWN-BLOCK: $name task=$task_id reason=launch_command_unresolved"
+        return 1
+    fi
+
+    if ! _respawn_with_cli_verification "$target" "$name" "$launch_command" "IN-PROGRESS-IDLE-RESPAWN"; then
+        log "IN-PROGRESS-IDLE-RESPAWN-FAIL: $name task=$task_id retry=next-cycle"
+        return 1
+    fi
+
+    resolved_generation=$(respawn_recovery_generation "$target" 2>/dev/null || true)
+    if [ -n "$resolved_generation" ]; then
+        if respawn_recovery_notify "$SCRIPT_DIR" "$name" "$resolved_generation" in-progress-idle-recovery; then
+            log "IN-PROGRESS-IDLE-RESPAWN-NOTIFY: $name task=$task_id generation=$resolved_generation"
+        else
+            log "IN-PROGRESS-IDLE-RESPAWN-NOTIFY-BLOCK: $name task=$task_id generation=$resolved_generation"
+        fi
+    else
+        log "IN-PROGRESS-IDLE-RESPAWN-NOTIFY-BLOCK: $name task=$task_id reason=generation_unavailable"
+    fi
+    log "IN-PROGRESS-IDLE-RESPAWN-PASS: $name task=$task_id generation=$expected_fingerprint"
+    return 0
+}
+
+_check_in_progress_idle_recovery() {
+    local name="$1" task_file="$SCRIPT_DIR/queue/tasks/${name}.yaml"
+    local task_id="$2" target="$3" now fingerprint first_seen elapsed wait_sec max_respawns respawns state_file
+    [ -f "$task_file" ] || return 0
+
+    state_file=$(_in_progress_idle_recovery_state_file "$name")
+    mkdir -p "$(dirname "$state_file")" 2>/dev/null || return 0
+    _in_progress_idle_recovery_acquire "$name" "$state_file" || return 0
+    _in_progress_idle_recovery_load_state "$name" "$state_file"
+
+    fingerprint=$(_in_progress_idle_recovery_fingerprint "$name" 2>/dev/null || true)
+    if [ -z "$fingerprint" ]; then
+        _in_progress_idle_recovery_release
+        return 0
+    fi
+    now=$EPOCHSECONDS
+    if [ "${IN_PROGRESS_IDLE_RECOVERY_FINGERPRINT[$name]:-}" != "$fingerprint" ]; then
+        IN_PROGRESS_IDLE_RECOVERY_FINGERPRINT[$name]="$fingerprint"
+        IN_PROGRESS_IDLE_RECOVERY_FIRST_SEEN[$name]="$now"
+        IN_PROGRESS_IDLE_RECOVERY_NUDGE_SENT[$name]=0
+        IN_PROGRESS_IDLE_RECOVERY_RESPAWNS[$name]=0
+        log "IN-PROGRESS-IDLE-RECOVERY-WATCH: $name task=$task_id fingerprint=$fingerprint first_observation=1"
+    fi
+
+    if [ "${IN_PROGRESS_IDLE_RECOVERY_NUDGE_SENT[$name]:-0}" != "1" ]; then
+        if send_inbox_message "$name" "task_id=${task_id} in_progress+idleを初回観測。taskを再開しprogressを更新せよ。" task_assigned; then
+            IN_PROGRESS_IDLE_RECOVERY_NUDGE_SENT[$name]=1
+            log "IN-PROGRESS-IDLE-RECOVERY-NUDGE: $name task=$task_id sent=1"
+        else
+            log "IN-PROGRESS-IDLE-RECOVERY-NUDGE-BLOCK: $name task=$task_id sent=0"
+        fi
+    fi
+
+    first_seen=${IN_PROGRESS_IDLE_RECOVERY_FIRST_SEEN[$name]:-$now}
+    elapsed=$((now - first_seen))
+    wait_sec="${IN_PROGRESS_IDLE_RECOVERY_WAIT_SEC:-60}"
+    [[ "$wait_sec" =~ ^[0-9]+$ ]] || wait_sec=60
+    if [ "$elapsed" -lt "$wait_sec" ]; then
+        _in_progress_idle_recovery_save_state "$state_file" "$name" || log "IN-PROGRESS-IDLE-RECOVERY-STATE-BLOCK: $name reason=save_before_wait"
+        _in_progress_idle_recovery_release
+        return 0
+    fi
+
+    max_respawns="${IN_PROGRESS_IDLE_RECOVERY_MAX_RESPAWNS:-1}"
+    [[ "$max_respawns" =~ ^[1-9][0-9]*$ ]] || max_respawns=1
+    respawns="${IN_PROGRESS_IDLE_RECOVERY_RESPAWNS[$name]:-0}"
+    if [ "$respawns" -ge "$max_respawns" ]; then
+        log "IN-PROGRESS-IDLE-RESPAWN-EXHAUSTED: $name task=$task_id respawns=${respawns}/${max_respawns}"
+        _in_progress_idle_recovery_save_state "$state_file" "$name" || log "IN-PROGRESS-IDLE-RECOVERY-STATE-BLOCK: $name reason=save_exhausted"
+        _in_progress_idle_recovery_release
+        return 0
+    fi
+
+    IN_PROGRESS_IDLE_RECOVERY_RESPAWNS[$name]=$((respawns + 1))
+    if ! _in_progress_idle_recovery_save_state "$state_file" "$name"; then
+        log "IN-PROGRESS-IDLE-RECOVERY-STATE-BLOCK: $name task=$task_id reason=save_before_respawn"
+        _in_progress_idle_recovery_release
+        return 0
+    fi
+    _respawn_in_progress_idle_recovery "$name" "$target" "$task_id" "$fingerprint" || true
+    _in_progress_idle_recovery_save_state "$state_file" "$name" || log "IN-PROGRESS-IDLE-RECOVERY-STATE-BLOCK: $name reason=save_after_respawn"
+    _in_progress_idle_recovery_release
+}
+
 check_stall() {
     local name="$1"
     local task_file="$SCRIPT_DIR/queue/tasks/${name}.yaml"
@@ -9685,7 +9912,12 @@ check_stall() {
         return
     fi
 
-    if [ -n "$deployed_at_val" ]; then
+    # assigned/acknowledged are still within startup grace.  An in_progress
+    # task, however, has already crossed the worker hand-off boundary: a
+    # Codex prompt waiting immediately after deployment must enter the
+    # identity-bound recovery lane in this cycle, even when deployed_at is
+    # less than five minutes old.
+    if { [ "$status" = "assigned" ] || [ "$status" = "acknowledged" ]; } && [ -n "$deployed_at_val" ]; then
         local deployed_epoch
         deployed_epoch=$(date -d "$deployed_at_val" +%s 2>/dev/null || echo "")
         if [ -n "$deployed_epoch" ]; then
@@ -9740,6 +9972,16 @@ check_stall() {
         return
     fi
 
+    # in_progress+idle is not eligible for ordinary auto-clear, but a Codex
+    # prompt that remains idle after a delivered/read nudge must not remain in
+    # STAGE1 forever.  This lane sends one identity-bound resume nudge and
+    # promotes the unchanged generation to one bounded respawn after 60s.
+    if [ "$status" = "in_progress" ]; then
+        _check_in_progress_idle_recovery "$name" "$task_id" "$target"
+    else
+        _reset_in_progress_idle_recovery "$name"
+    fi
+
     # assigned/acknowledged tasks that are already idle have not entered the
     # timed STALL path yet. Recover them immediately after the same compute
     # and confirmation guards used by the timed path. Reuse the bounded
@@ -9759,26 +10001,10 @@ check_stall() {
         fi
     fi
 
-    # in_progress without any progress timestamp is not evidence of forward
-    # motion.  The old path waited the full in_progress_stall_min before the
-    # first recovery nudge (cmd_4043: about 29 minutes idle).  Re-send once on
-    # first idle observation; a current progress timestamp, evidence wait, or
-    # active background compute has already returned above.
-    if [ "$status" = "in_progress" ] && [ -z "$last_progress" ]; then
-        local no_progress_key="${name}:${task_id}:initial_no_progress"
-        if [ "${ACTIVE_IDLE_RECOVERY_SENT[$no_progress_key]:-}" != "1" ]; then
-            ACTIVE_IDLE_RECOVERY_SENT[$no_progress_key]="1"
-            send_inbox_message "$name" "in_progressだがprogress_updated_at未記録のidleを検知。task YAMLを再確認し、作業再開またはprogress更新せよ。" task_assigned
-            log "STALL-NO-PROGRESS-RESEND: $name task=$task_id first_idle=true"
-        else
-            log "STALL-NO-PROGRESS-RESEND-SKIP: $name task=$task_id duplicate"
-        fi
-    fi
-
     # idle状態 → 停滞追跡開始 or 経過確認
     local now
     now=$EPOCHSECONDS
-    if [ -z "${STALL_FIRST_SEEN[$name]}" ]; then
+    if [ -z "${STALL_FIRST_SEEN[$name]:-}" ]; then
         STALL_FIRST_SEEN[$name]=$now
         log "STALL-WATCH: $name has ${status} task $task_id and is idle (tracking started)"
         _evaluate_active_idle_report_recovery_background "$name" "$task_file" "$status" "$task_id" 0 "$STALL_THRESHOLD_MIN"
