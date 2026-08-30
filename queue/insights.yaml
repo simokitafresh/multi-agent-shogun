@@ -8702,7 +8702,10 @@ insights:
   priority: "low"
   source: "semantic_index_update"
   fix_known: false
-  status: pending
+  status: resolved
+  resolved_reason: "semantic map generation verified the candidate is represented or intentionally ignored"
+  action_artifact: "semantic_map=/home/simokitafresh/multi-agent-shogun/context/semantic-map.md;semantic_index=/home/simokitafresh/multi-agent-shogun/docs/semantic-index/index.md"
+  resolved_at: "2026-08-30T14:10:58+09:00"
 - id: INS-20260830-141033220-f35e
   ts: "2026-08-30T14:10:33+09:00"
   insight: "semantic_map_generate新規ファイル候補: `.tmp-receipt-worktree/` は semantic index未登録。既存概念へのfile追加または新概念定義を検討せよ"
