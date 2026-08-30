@@ -84,5 +84,5 @@
 - [x] inbox unread、monitor owner、Git relation/dirty、CI、Render、PD、insightを一次記録。
 - [x] 新規免疫のcommit/test/Gate結果を記録。
 - [x] 未配備mutation残骸hotfixを固定ID・正本path・依存付きで記録。
-- [ ] checkpoint owner commitを作成し、SHA256とcommitをcompact_stateへ追記する。
-- [ ] memory DB・semantic index・Obsidian因果辺・掲示板へpointerを貫通する。
+- [x] checkpoint owner commit=`c72ba1b28213abe91630040f9c78d88976cee2b6`を作成。
+- [ ] SHA256とpointerをcompact_state・memory DB・semantic index・Obsidian因果辺・掲示板へ貫通する。
