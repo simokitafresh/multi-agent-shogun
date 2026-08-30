@@ -9839,3 +9839,10 @@ insights:
   source: "semantic_index_update"
   fix_known: false
   status: pending
+- id: INS-20260830-202212094-aae2
+  ts: "2026-08-30T20:22:12+09:00"
+  insight: "[[googleのほうでcloudflareのサイトを自動で承認したぞ]] semantic_stress_test candidate_aliases: NO_MATCH source=lord query=googleのほうでcloudflareのサイトを自動で承認したぞ"
+  priority: "low"
+  source: "semantic_stress_test"
+  fix_known: false
+  status: pending
