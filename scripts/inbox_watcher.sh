@@ -684,22 +684,6 @@ current_outstanding_lease_file() {
     outstanding_lease_file_for_generation "$generation"
 }
 
-outstanding_lease_acknowledged() {
-    local lease_file="$1"
-    local current_count="$2"
-    local lease_generation lease_count lease_fp
-    [ -f "$lease_file" ] || return 1
-    IFS=$'\t' read -r lease_generation lease_count lease_fp < "$lease_file" 2>/dev/null || true
-    [[ "$lease_count" =~ ^[0-9]+$ ]] || return 1
-    [[ "$current_count" =~ ^[0-9]+$ ]] || return 1
-    if [ "$current_count" -lt "$lease_count" ]; then
-        rm -f "$lease_file"
-        echo "[$(date)] [OUTSTANDING-LEASE-ACK] ACK observed for $AGENT_ID generation=${lease_generation:-unknown} unread=${lease_count}->${current_count}" >&2
-        return 0
-    fi
-    return 1
-}
-
 # ─── Resolve effective CLI type ───
 # Prefer pane @agent_cli (runtime truth) and fall back to settings.yaml.
 # If unresolved, choose codex-safe path.
@@ -1083,11 +1067,12 @@ send_wakeup() {
 
             _lease_file="$(current_outstanding_lease_file 2>/dev/null || true)"
             if [ -n "$_lease_file" ] && [ -e "$_lease_file" ]; then
-                if outstanding_lease_acknowledged "$_lease_file" "$unread_count"; then
-                    printf 'send\t[LEASE-ACK] ACK released normal nudge lease for %s generation=%s\n' "$AGENT_ID" "${CURRENT_CLI_GENERATION:-unknown}" > "$atomic_result_file"
-                else
-                    printf 'skip\t[OUTSTANDING-LEASE] Suppressing normal nudge for %s generation=%s until ACK/unread=0\n' "$AGENT_ID" "${CURRENT_CLI_GENERATION:-unknown}" > "$atomic_result_file"
-                fi
+                # A smaller unread count is not an acknowledgement of the
+                # already delivered nudge: auto-read and unrelated reads can
+                # change the count while the same generation is still active.
+                # The lease is released only by the no-unread branch below or
+                # by CLI generation invalidation.
+                printf 'skip\t[OUTSTANDING-LEASE] Suppressing normal nudge for %s generation=%s until unread=0 or generation-change\n' "$AGENT_ID" "${CURRENT_CLI_GENERATION:-unknown}" > "$atomic_result_file"
             else
                 printf 'send\t[LEASE-AVAILABLE] Claiming normal nudge for %s generation=%s\n' "$AGENT_ID" "${CURRENT_CLI_GENERATION:-unknown}" > "$atomic_result_file"
             fi
@@ -1472,11 +1457,14 @@ process_unread() {
         # No unread → clear fingerprint
         if [ -f "$FINGERPRINT_FILE" ]; then
             rm -f "$FINGERPRINT_FILE"
-            rm -f "${STATE_DIR}/inbox_watcher_sent_fingerprint_${AGENT_ID}"
-            rm -f "${STATE_DIR}/inbox_watcher_sent_${AGENT_ID}_"*
-            clear_deferred_nudge
             echo "[$(date)] [FP-RESET] No unread, cleared fingerprint for $AGENT_ID" >&2
         fi
+        # An empty inbox is the only normal-path acknowledgement boundary.
+        # Clear every lease variant (including a lease created without a
+        # fingerprint file) so the next unread set can claim one delivery.
+        rm -f "${STATE_DIR}/inbox_watcher_sent_fingerprint_${AGENT_ID}"
+        rm -f "${STATE_DIR}/inbox_watcher_sent_${AGENT_ID}_"*
+        clear_deferred_nudge
         rm -f "$BUSY_QUEUE_CLAIM_FILE"
         clear_first_unread_seen
     fi
