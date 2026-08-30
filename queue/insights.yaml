@@ -9021,4 +9021,14 @@ insights:
   priority: "low"
   source: "semantic_index_update"
   fix_known: false
+  status: resolved
+  resolved_reason: "semantic map generation verified the candidate is represented or intentionally ignored"
+  action_artifact: "semantic_map=/home/simokitafresh/multi-agent-shogun/context/semantic-map.md;semantic_index=/home/simokitafresh/multi-agent-shogun/docs/semantic-index/index.md"
+  resolved_at: "2026-08-30T16:12:39+09:00"
+- id: INS-20260830-161328670-d2da
+  ts: "2026-08-30T16:13:28+09:00"
+  insight: "semantic_index_update未登録[[リンク]]ターゲット: [[CI_RED診断]] は既存aliasesに一致なし。類似概念TOP3: strong_new_game_completion_contract(強くてニューゲーム完遂契約; alias=CI RED一担当原則; score=21.3) / infrastructure_ops(インフラ運用基盤; alias=CI redは解消したか; score=21.1) / report_quality_protocol(忍者報告品質プロトコル; alias=ci greenはどうなった？; score=19.9)。概念定義とaliases追加を検討せよ"
+  priority: "low"
+  source: "semantic_index_update"
+  fix_known: false
   status: pending
