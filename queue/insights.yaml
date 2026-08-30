@@ -6618,7 +6618,10 @@ insights:
   priority: "medium"
   source: "manual"
   fix_known: false
-  status: pending
+  status: resolved
+  resolved_reason: "一次確認済み。findとrg --no-ignoreでreport実在を再確認し、将軍側の否定判定契約と総当たりverdictを確認した。家老recovery/報告契約への2経路強制は現物未実装のため、別hotfix cmdのdecision_candidateとして整理する。"
+  action_artifact: "instructions/shogun.md; scripts/shogun_commit_verdict.sh; instructions/karo.md(2経路契約未実装); queue/reports/*cmd_4409*"
+  resolved_at: "2026-08-30T14:02:30+09:00"
 - id: INS-20260828-094420377-413d
   ts: "2026-08-28T09:44:20+09:00"
   insight: "semantic_index_update新概念候補: discussion:裁定待ちに関して推奨と内容の説明をしてくれ は 既存aliasesに一致なし。概念定義とaliases追加を検討せよ"
