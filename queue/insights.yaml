@@ -8500,3 +8500,10 @@ insights:
   source: "semantic_stress_test"
   fix_known: false
   status: pending
+- id: INS-20260830-125646745-7256
+  ts: "2026-08-30T12:56:46+09:00"
+  insight: "[[殿指示 10 07『asis を今の本番として tobe を考えよう』→ 設計書 v2 docs research dm]] semantic_stress_test candidate_aliases: NO_MATCH source=cmds query=殿指示 2026-08-30 10:07『asis を今の本番として tobe を考えよう』→ 設計書 v2(docs/research/dm-login-showcase-asis-tobe_v2_20260830.md、gist 3236e0df)§2.3/§3.1 v3 の公開データ契約を backend に実装する。殿裁定 12:18-12:20"
+  priority: "low"
+  source: "semantic_stress_test"
+  fix_known: false
+  status: pending
