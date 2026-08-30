@@ -16220,3 +16220,16 @@ sqlite3.Connection.backup()を使うとページ(4096byte)単位のread syscall�
 - **when**: 未設定
 - **how**: 未設定
 - Q1: 変更の部分一致を履歴と信じ一般設計見出しまでBLOCKした。Q2: 設定問題ではなくhook regexのコード品質欠陥だった。Q3: 明示的履歴語の正例、変更内容等の負例、版遷移と行形式の類似語をcommit前に二値検証する。
+
+### L1674: hook_failure改善トリガーはartifact意味分類で意図的安全BLOCKを除外する
+- **日付**: 2026-08-30
+- **出典**: cmd_karo_hotfix_ga530_expected_pre_push_block_20260830
+- **記録者**: kagemaru
+- **tags**: [infra,testing,gate]
+- **subdomain**: infra
+- **target_files**: [scripts/gate_improvement_trigger.sh,tests/unit/test_gate_improvement_trigger.bats]
+- **origin**: [[cmd_karo_hotfix_ga530_expected_pre_push_block_20260830]]
+- **enforcement**: 未自動化
+- **when**: 未設定
+- **how**: 未設定
+- GA-PUSH1は正しい安全BLOCKだが、hook_failuresの非0件数だけを数える改善トリガーは3件を品質失敗として再警報した。hook_failure行のartifact実体を読み、意図的安全BLOCKの標識が揃った場合だけ抑止し、証拠欠損や別失敗はfail-closedで警報する。

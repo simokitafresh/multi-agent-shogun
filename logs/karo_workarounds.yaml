@@ -1,16 +1,3 @@
-- cmd_id: cmd_karo_hotfix_cutover_relocate_20260827
-  timestamp: '2026-08-27T12:10:43Z'
-  ninja: system
-  workaround: false
-  event_kind: hotfix
-  auto_captured: true
-  category: rework_auto_capture
-  detail: 'cmd_complete_gate completed rework event'
-  root_cause: 'automatic completion observation'
-  lesson_required: false
-  lesson_disposition: not_applicable
-  lesson_reference: 'not_applicable'
-  resolved_by_cmd: 'cmd_karo_hotfix_cutover_relocate_20260827'
 - cmd_id: cmd_karo_hotfix_t87_ext4_speed_rebaseline_20260827
   timestamp: '2026-08-27T13:56:40Z'
   ninja: system
@@ -1300,3 +1287,16 @@
   lesson_disposition: not_applicable
   lesson_reference: 'not_applicable'
   resolved_by_cmd: 'cmd_karo_hotfix_t190_push_merge_recovery_unit6_20260830'
+- cmd_id: cmd_karo_hotfix_ga530_expected_pre_push_block_20260830
+  timestamp: '2026-08-30T07:19:06Z'
+  ninja: system
+  workaround: false
+  event_kind: hotfix
+  auto_captured: true
+  category: rework_auto_capture
+  detail: 'cmd_complete_gate completed rework event'
+  root_cause: 'automatic completion observation'
+  lesson_required: false
+  lesson_disposition: not_applicable
+  lesson_reference: 'not_applicable'
+  resolved_by_cmd: 'cmd_karo_hotfix_ga530_expected_pre_push_block_20260830'
