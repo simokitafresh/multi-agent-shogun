@@ -1,5 +1,6 @@
 # インフラコンテキスト
-<!-- last_updated: 2026-08-31 2026-08-31 将軍doc lane GA-535: SG-PRE9c根治/litter trap/three_layer容量/dedupe 4行反映 -->
+<!-- last_updated: 2026-08-31 context_freshness reviewed source boundary(ci_fix 6b622373d=FP vocabulary locale independent、infra 4 行反映済みの続き) -->
+<!-- source_commit:6b622373d reason:context_freshness reviewed source boundary(ci_fix 6b622373d=FP vocabulary locale independent、infra 4 行反映済みの続き) evidence:context_freshness_check context=context/infrastructure.md commit=6b622373d -->
 <!-- source_commit:f396ead46 reason:2026-08-31 将軍doc lane GA-535: SG-PRE9c根治/litter trap/three_layer容量/dedupe 4行反映 evidence:tail -4 context/infrastructure.md に4行(4e705dd2d) -->
 <!-- source_commit:146b6888cc00 reason:approved_source_commit evidence:blt_20260830_192111_57c73f infra.md に v2 節追記 -->
 <!-- source_commit:ce69ed97490e reason:cmd_karo_hotfix_gate_alert_identity_envelope_20260830(DOC_LANE_REQUEST blt_20260830_093831_327430) evidence:gate_improvement.log BLOCK 0, GATE-IMPROVEMENT-DONE 09:32, gate CLEAR 09:36:10 -->
