@@ -8359,3 +8359,10 @@ insights:
   resolved_reason: "semantic map generation verified the candidate is represented or intentionally ignored"
   action_artifact: "semantic_map=/home/simokitafresh/multi-agent-shogun/context/semantic-map.md;semantic_index=/home/simokitafresh/multi-agent-shogun/docs/semantic-index/index.md"
   resolved_at: "2026-08-30T10:17:12+09:00"
+- id: INS-20260830-101845488-55e2
+  ts: "2026-08-30T10:18:45+09:00"
+  insight: "semantic_index_update新概念候補: discussion:作業 PFってなんだ？ は 既存aliasesに一致なし。概念定義とaliases追加を検討せよ"
+  priority: "low"
+  source: "semantic_index_update"
+  fix_known: false
+  status: pending
