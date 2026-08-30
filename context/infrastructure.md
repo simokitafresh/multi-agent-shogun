@@ -403,3 +403,7 @@ source boundary一致taskはregistryのowner/update_triggerからcontext_update_
 - **run_tests runner fixture の構造 writer 依存(CI RED 10/11 回目、疾風 a3e312e2a+飛猿 f8adbd091)**: `tests/unit/test_run_tests.bats` の runner fixture に structural writer 依存を copy(shard 1/4/6/compat)、startup owner fixture(飛猿)。ci_fix は家老自立で 2 unit 並列。
 - **報告在庫の便欠落(T158)**: forced_idle 世代の report(影丸 reflux 0158 19h/runner_portability 20h/才蔵 1530 6h50m)が gate_metrics 0・archive 0 で滞留。回収は将軍 loop の『completed∧未CLEAR(本日 mtime)』機械抽出→順序付き 1 通。構造根治は T124 INS(forced_idle は report 実在 task を idle 化しない)。
 - **artifact のスマホ表示(殿指摘 22:56/23:22)**: `table-layout:fixed`+全要素 `overflow-wrap:anywhere`+`.wrap-x{overflow-x:visible}` で 1 文字折返し。是正=表は自コンテナ横スクロール、本文 `word-break:normal`、48rem 以下は `.row{display:block}`(grid 列を弄らず block へ落とす)。
+- **SG-PRE9c(LG043)偽陽性根治(f396ead46)**: unclear_points の測定時点差記述を AC 未達語と誤検知する歴史的 FP を修正。precheck が旧 main engine を使う自己 FP 循環は『先に origin/main へ公開→同 generation 再レビュー』で解く。
+- **task mutation 残骸根治(952c3ff0b)**: ninja_monitor の mutation writer が全経路 trap 回収+起動 sweep(holder pid 死亡∧age>10 分・既定 dry-run)。既存 4.8k 件の apply は Tier2=殿裁可待ち。
+- **three_layer_cache 容量統一(5e45c0cd5)**: capacity 分母統一+回収不能 overflow は fail-closed。
+- **report_review 重複通知 dedupe(dbcd4c67+小太郎 hotfix)**: 同一 cmd×ninja×type の軍師宛通知はフラグ存在で即 exit=2 通目以降 0 件。

@@ -458,3 +458,7 @@ L122(キャッシュ無効化), L121(API実コード確認) → `context/dm-sign
 
 結論: 認証は`/login`ルート境界(`components/route-access-boundary.tsx`)で切替、認証主体が変わる瞬間に7層(React state/handoff sessionStorage/localStorage/api-cache+ETag IndexedDB/SW CacheStorage)をハードリセット(`resetAuthScopedClientState`)、キャッシュキーとBE ETag/Cache-Controlに主体(tier/admin)を含める(no-store)。adminは`/admin/login`のみ(一般UIからリンクなし)。是正: 文言=「パスワードもしくはクーポンコード」(cmd_4332)、`/admin`配下は認証後protectedツリー(Provider内)で描画(cmd_4333、useViewerPermissions Provider外例外の根治)。殿確認14:28 OK。origin/main `55b81b43` FE live。第1段(identity/entitlement)は殿合図待ち。
 → 正本 `docs/research/dm-login-boundary-asis-tobe_20260817.md`(gist 0d23e0c3)
+
+## 29. Free tier 入口 live の 3 是正 (2026-08-31)
+
+結論: `/free` は backend の `{success,data:{coupon}}` 封筒を受ける(9d71556d、トップレベル `coupon` 前提は 4422/4423 契約不一致)。auth callback は `error_description`/`exchangeCodeForSession error.message` を画面に出す(6e033013、診断可視化で殿往復 1 回を消す)。FAQ は EN/JA 二言語 route+metadata で公開(5001d88e、cmd_4427)。
