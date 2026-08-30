@@ -284,6 +284,25 @@
 - 本設計との接点: (1) 表 v3 の「Free · full access」行= Free tier の中身そのもの(Basic-DM のみ)。(2) 現行 auth は tier パスワード照合(auth.py)で個人アカウントの概念がない → Google auth は新しい境界(第 0 段設計書 `dm-login-boundary-asis-tobe_20260817.md` の拡張)。(3) 区間計測 event(P1)の `ok/expired/wrong` に `signup_google` step を足せば導入効果を同じ表で測れる。
 - 順序: 本設計(P1→P2→deploy→殿確認→修正)を先に終えてから、Free tier は別設計書 v3 で AsIs(rebalancer の Google auth 実装)を一次確認して起こす。
 
+### 8.2 SEO・広告・LP 構成（殿 13:25「日本語 LP と英語 LP を別々に。ログインページ自体にも軽度な LP 効果。Docs/FAQ をログインページからのリンクに」）
+- 一次(13:27): `app/docs/page.tsx`(67 行)・`app/faq/page.tsx`(459 行、JA)は **API も認証状態も参照しない静的コンテンツ**で、`RouteAccessBoundary` が `/login` 以外を protected にしているだけで隠れている。公開化は boundary の public リストに `/docs` `/faq` を足す 1 行(§2.7 の認証分岐そのものではなく public 判定の追加)+ SSR/metadata 化。
+- 将軍の見解=賛成、役割分担はこう切る:
+
+| ページ | 役割 | 言語 | index |
+|---|---|---|---|
+| `/` (未認証時) | **EN LP**(広告の着地・検索の入口。Dual Momentum の説明、表 v3、CTA=Sign in / Join on note) | EN | index |
+| `/ja` | **JA LP**(note 読者・日本の検索向け。同じ骨格、文言と導線が JA) | JA | index、`hreflang` で `/` と対 |
+| `/login` | **軽い LP + サインイン**(本設計 v2 のショーウィンドウ)。LP の CTA 先。表 v3・帯・note 導線 | EN 主 JA 従 | index |
+| `/docs` `/faq` | 公開化して `/login`・両 LP のフッタからリンク。FAQ は JA 459 行が現物 → EN 版は翻訳 task | JA→EN 追加 | index |
+| データページ(dashboard 等) | 従来どおり認証 | EN | noindex |
+
+- **軽度な LP 効果の線引き**: `/login` は「30 秒で分かる+すぐ入れる」まで。長い説明・比較表・お客様の声は LP 側に置き、/login には入れない(§2.5 摩擦優先: ボタンが常に画面内)。
+- **未認証で `/` に来た人の着地**: 今は `/` → `/login` へ replace(§2.5 F1)。LP 化後は `/` が EN LP として描画され、CTA で `/login` へ。日本語ブラウザ(`Accept-Language: ja`)は `/ja` へ 302(or 上部バナーで切替)。
+- **広告**: 言語別 LP に UTM を付け、P1 の event に `lp_view` `lp_cta_click` `signup_google`(将来)を追加=同じ表で「LP→/login→sign in→note」の落ち幅を数える。広告の勝敗はこの区間表だけで判定する(五十嵐記事の教え)。
+- **SEO 骨格**: `robots.ts`(LP/login/docs/faq を許可、データページを disallow)、`sitemap.ts`(4 URL+hreflang)、各ページ `metadata`(title/description/og、言語別)、構造化データ(FAQPage を /faq に、Organization をルートに)。数値は ISR で HTML に焼く(§2.6)。
+- 順序: 本設計 P2(cmd_4416)deploy → 殿確認 → **v3 設計書(LP EN/JA + Free tier + docs/faq 公開)** を AsIs(rebalancer Google auth・FAQ 現物・検索流入の現状 0)から起こす。
+
+
 ## §7 因果リンク
 - [[殿観測_ログインページさみしい_20260818_1550]] -> [[login_showcase_mock_v1-v11]] -> [[dm-login-showcase-asis-tobe_20260818]](ToBe v0.3・未実装) -> [[殿指示_asis本番リアルタイム化_20260830_1007]] -> **[[dm-login-showcase-asis-tobe_v2_20260830]]** <- [[殿裁定_login金額なし_20260830_1020]] / [[殿参照_摩擦優先_note_dataana2020_20260830_1021]]
 - ← [[dm-login-boundary-asis-tobe_20260817]](第 0 段) / [[tier別可視性完成形]](cmd_3837) / [[visibility_philosophy]](projects/dm-signal.yaml)

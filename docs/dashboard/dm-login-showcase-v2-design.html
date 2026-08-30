@@ -224,6 +224,17 @@ a{color:var(--accent)}
     <tr><td>H13</td><td>metrics 無し PF</td><td>metrics ある PF のみ集計、欠落数を meta.skipped に出す</td></tr>
   </table></div>
 
+  <h2>§8 将来方向 — Free tier(13:14)と SEO・広告・LP(13:25)</h2>
+  <div class="tbl"><table>
+    <tr><th>ページ</th><th>役割</th><th>言語</th><th>index</th></tr>
+    <tr><td><code>/</code>(未認証時)</td><td>EN LP(広告着地・検索入口、表 v3、CTA=Sign in / Join on note)</td><td>EN</td><td>index</td></tr>
+    <tr><td><code>/ja</code></td><td>JA LP(note 読者向け、同じ骨格)</td><td>JA</td><td>index・hreflang 対</td></tr>
+    <tr><td><code>/login</code></td><td>軽い LP+サインイン(本設計 v2)。LP の CTA 先</td><td>EN 主 JA 従</td><td>index</td></tr>
+    <tr><td><code>/docs</code> <code>/faq</code></td><td>公開化(現物は API・認証非依存の静的 67/459 行、boundary の public 追加 1 行)。/login と LP のフッタからリンク。FAQ EN は翻訳 task</td><td>JA→EN</td><td>index</td></tr>
+    <tr><td>データページ</td><td>従来どおり認証</td><td>EN</td><td>noindex</td></tr>
+  </table></div>
+  <p style="margin-top:8px">軽度な LP 効果の線引き: /login は「30 秒で分かる+すぐ入れる」まで(長い説明・比較・声は LP 側)。広告は言語別 LP に UTM、P1 の event に lp_view / lp_cta_click / signup_google を足して「LP→/login→sign in→note」の落ち幅で勝敗判定。SEO 骨格=robots/sitemap(hreflang)/metadata/FAQPage 構造化データ+ISR 焼き込み。Free tier(Google auth 登録→無料クーポン→Basic-DM のみ)と合わせて v3 設計書で起こす(本設計 deploy 後)。</p>
+
   <h2>§6 未決(殿裁定待ち)</h2>
   <ol class="steps">
     <li>(解決 10:41 殿裁定)Secret 件数=73 で確定(FoF 6 本含む)</li>
