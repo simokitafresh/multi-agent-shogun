@@ -10224,3 +10224,10 @@ insights:
   source: "semantic_stress_test"
   fix_known: false
   status: pending
+- id: INS-20260830-234259736-48d0
+  ts: "2026-08-30T23:42:59+09:00"
+  insight: "[[showcase 契約 v3 — GET api public showcase から best name sharpe]] semantic_stress_test candidate_aliases: NO_MATCH source=cmds query=showcase 契約 v3 — GET /api/public/showcase から best_name/sharpe_avg/*_best_name/until_hint を除去し、mdd_best(plans/secret/hero)・benchmarks mdd・blackout{active,month_closed,n_signals}・met"
+  priority: "low"
+  source: "semantic_stress_test"
+  fix_known: false
+  status: pending
