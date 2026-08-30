@@ -10451,6 +10451,11 @@ target_paths = [p.strip().strip("`'\"") for p in target_paths if str(p).strip()]
 pattern = re.compile(
     r"(?<![A-Za-z0-9_./-])"
     r"("
+    # HTTP(S)/FTP URLs are command destinations, not repository paths. Keep
+    # the complete URL in one match so its path suffix cannot be reinterpreted
+    # as a file reference by the path alternatives below.
+    r"(?:https?://|ftp://)[A-Za-z0-9.-]+(?::[0-9]+)?(?:/[A-Za-z0-9_.~:/?#\[\]@!$&'()*+,;=%-]*)?"
+    r"|"
     # Absolute paths are explicit references even when their basename has no
     # extension (for example, /tmp/fixture/README).
     r"/(?:[A-Za-z0-9_.-]+/)*[A-Za-z0-9_.-]+"
@@ -10485,6 +10490,25 @@ def ref_matches_target(ref, target):
     if ref.startswith(target.rstrip("/") + "/"):
         return True
     return os.path.basename(ref) == os.path.basename(target)
+
+def is_probable_api_route_or_url(ref):
+    # API routes (for example /api/public/showcase/event) and absolute web
+    # URLs describe HTTP endpoints, not files that can appear in
+    # files_modified. Preserve a genuine repository file or an explicit
+    # target_path match, including extension-bearing files, so this filter
+    # cannot weaken the existing true-positive scope check.
+    clean_ref = ref.strip().strip("`'\".,:;()[]{}")
+    if re.match(r"^(?:https?|ftp)://", clean_ref, re.IGNORECASE):
+        return True
+    if clean_ref != "/api" and not clean_ref.startswith("/api/"):
+        return False
+    if any(ref_matches_target(clean_ref, target) for target in target_paths):
+        return False
+    if script_dir:
+        candidate = os.path.join(script_dir, clean_ref.lstrip("/"))
+        if os.path.isfile(candidate):
+            return False
+    return True
 
 def is_design_spec_instruction_ref(ref, local_text, sentence_tail, match_start):
     # "設計書docs/spec/foo.mdの変更1-4を実装" means implement the changes
@@ -10578,6 +10602,8 @@ refs = []
 for idx, match in enumerate(matches):
     ref = match.group(1).strip().strip("`'\".,:;()[]{}")
     if not ref or ref in seen:
+        continue
+    if is_probable_api_route_or_url(ref):
         continue
     if is_probable_product_token(ref):
         continue
