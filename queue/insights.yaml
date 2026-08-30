@@ -10582,21 +10582,30 @@ insights:
   priority: "low"
   source: "semantic_index_update"
   fix_known: false
-  status: pending
+  status: resolved
+  resolved_reason: "semantic index candidate was absorbed into a registered concept"
+  action_artifact: "semantic_index=/home/simokitafresh/multi-agent-shogun/docs/semantic-index/index.md"
+  resolved_at: "2026-08-31T03:18:37+09:00"
 - id: INS-20260831-031644648-31c8
   ts: "2026-08-31T03:16:44+09:00"
   insight: "semantic_index_update未登録[[リンク]]ターゲット: [[GATE_CLEAR自己通知根治]] は既存aliasesに一致なし。類似概念TOP3: semantic_dictionary_design(セマンティック辞書構想; alias=GATE CLEAR; score=22.5) / skill_routing(スキルルーティング; alias=GATE CLEAR後処理; score=21.6) / gunshi_review_lifecycle(軍師レビューライフサイクル; alias=gate_result同期; score=21.4)。概念定義とaliases追加を検討せよ"
   priority: "low"
   source: "semantic_index_update"
   fix_known: false
-  status: pending
+  status: resolved
+  resolved_reason: "semantic index candidate was absorbed into a registered concept"
+  action_artifact: "semantic_index=/home/simokitafresh/multi-agent-shogun/docs/semantic-index/index.md"
+  resolved_at: "2026-08-31T03:18:37+09:00"
 - id: INS-20260831-031654985-5572
   ts: "2026-08-31T03:16:54+09:00"
   insight: "semantic_index_update未登録[[リンク]]ターゲット: [[karo_checkpoint_20260831_0309]] は既存aliasesに一致なし。類似概念TOP3: strong_new_game_completion_contract(強くてニューゲーム完遂契約; alias=karo_clear_recovery_checkpoint; score=23.0) / skill_routing(スキルルーティング; alias=karo_direct; score=22.0) / gate_bypass_prevention(ゲート迂回防止; alias=karo_notify; score=21.3)。概念定義とaliases追加を検討せよ"
   priority: "low"
   source: "semantic_index_update"
   fix_known: false
-  status: pending
+  status: resolved
+  resolved_reason: "semantic index candidate was absorbed into a registered concept"
+  action_artifact: "semantic_index=/home/simokitafresh/multi-agent-shogun/docs/semantic-index/index.md"
+  resolved_at: "2026-08-31T03:18:37+09:00"
 - id: INS-20260831-031713085-e7ac
   ts: "2026-08-31T03:17:13+09:00"
   insight: "[[gateclearがinbox1]] semantic_stress_test candidate_aliases: NO_MATCH source=lord query=gateclearがinbox1"
