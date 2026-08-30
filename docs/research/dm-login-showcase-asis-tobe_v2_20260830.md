@@ -26,6 +26,7 @@
 |---|---|---|
 | 10:20 | メインページにプランの額はいらない。他サービスも入会時に遷移したページに価格を書く。現時点で課金は note 経由 | 事実=課金・価格提示は note メンバーシップ側にある。制約=/login は課金ページではなく、価格を二重管理すると note 側改定時に乖離する。判断=**/login に金額を書かない**。プラン名・PF 数・「Get it on note →」のみ。効果=§2.2-5 と §3.1 ラベルから ¥ を撤去、価格は note リンク先に一本化 |
 | 10:21 | https://note.com/dataana2020/n/n17bd615c8f64 を参考にしてくれ(五十嵐「入口を変えただけで会員登録 1.6 倍」) | 事実=記事の結論は『使われない理由は魅力不足ではなく摩擦。効いたのは説明・特典・文言ではなく経路修正(着地ページを変える・ボタンを画面内に入れる)。区間ごとに数えると一箇所が突出して悪く、たいてい思っていた場所と違う。初見ユーザーとしてシークレット窓+スマホで自分で通せ』。制約=/login は未認証の全訪問者が着地する唯一の経路であり、摩擦の有無を今は計測していない。判断=ショーウィンドウ(魅力)より先に**摩擦除去と区間計測**を置く(§2.5)。効果=§5 の順序を P1 計測→P2a 摩擦→P2b ショーウィンドウへ組み替え、P4 を『初見ユーザー実機通し』に変更 |
+| 10:41 | 本番を使うから secret 件数に試作 FoF も含めよ。Current signals 表に齟齬がある。パフォーマンスだけ閲覧できるとシグナルまで閲覧できるがごっちゃになっているのでは | 事実=tier 可視性は 3 段(hide_portfolio=パフォーマンス閲覧 / hide_signal=シグナル閲覧 / hide_components=構成閲覧)で、将軍の件数は hide_portfolio=false だけで数えていた(本番実測 10:43: Basic はパフォーマンス 5 本・シグナル 3 本、premium は 28/25)。制約=「+N PF with plan」はシグナルが見える本数として読まれる。判断=**Secret 件数は active かつ非公開の全 PF(FoF 6 本含む)=73 で確定(未決 1 解決)**。**表は「パフォーマンス閲覧」と「シグナル閲覧」を別の段として扱う**。効果=§1.3 に 3 段実測、§2.3 の row に `performance_plan`/`signals_plan`、§3.1 を 2 段ラベルへ書き換え |
 
 ---
 
@@ -68,6 +69,20 @@
 | どの tier にも出ない(Secret) | — | **73** | **+3** |
 | is_active 合計 | | **102** | **+4**(98→102) |
 
+**3 段の可視性(本番実測 10:43。1 件=is_active PF で hide_portfolio=false ∧(段ごとに)hide_signal=false / hide_components=false)**
+
+| tier | パフォーマンス閲覧 | シグナル閲覧 | 構成(components)閲覧 |
+|---|---|---|---|
+| Basic | 5 | **3**(Basic-DM・DM-safe・Ave-X) | 1(Basic-DM) |
+| NewStandard | 17 | 17 | 1 |
+| Standard(古参) | 22 | 14 | 0 |
+| AddOn | 22 | 18 | 0 |
+| premium | 28 | **25**(奥義-GS-分身 ×3 はパフォーマンスのみ) | 1 |
+
+- Basic でパフォーマンスのみ=シン白虎-激攻・GSシン分身-常勝(hide_signal=true)。この 2 本のシグナルは Standard から。
+- premium でパフォーマンスのみ=奥義-GS-分身-常勝/激攻/鉄壁。
+- 構成(components)が見えるのは全 tier で Basic-DualMomentum の 1 本だけ。
+
 - premium 専用(NewStandard/Basic 非可視)10 本の現物: DM-safe-2 / GSシン四つ目-常勝・激攻・鉄壁 / 劇薬DMオリジナル・スムーズ / 奥義-GS-分身-常勝・激攻・鉄壁 / 裏Ave-X。加えて Ave-X(Basic 可視・NewStandard 非可視)も premium で再可視。∴ premium で新たに見える 11 本 = 代表 GSシン四つ目-常勝 1 + 群 10(前版「+10」と同値)。
 - **新規 active 3 本(08-19 作成、folder「オリジナル」)**: Sharpe4 / CAGR4 / greedy2 — いずれも `type=fof`、`pipeline_config`=EqualWeight・selection blocks 0(=固定構成の等ウェイト FoF)、構成は全て**秘奥義** PF: Sharpe4={加速D-激攻, 加速R-鉄壁, 追い風-激攻, 四つ目-鉄壁}×25%、CAGR4={加速D-激攻, 四つ目-激攻, 追い風-激攻, 抜き身-激攻}×25%、greedy2={加速R-鉄壁, 追い風-激攻}×50%。weights 最新 08-03、metrics 2 行(years=0 total_return: CAGR4 15,907 / greedy2 8,373 / Sharpe4 3,279 = 秘奥義 EW-FoF)、可視 tier 0=Secret 群。同じく `New Fund of Funds`(+`_copy`/`_copy_copy`、07-01)={秘奥義-加速D-激攻, 奥義-GS-抜き身-激攻} EW、可視 tier 0。名前は選定基準(Sharpe 上位 4/CAGR 上位 4/greedy 2)そのまま=**殿が admin で組んだ秘奥義 FoF と見られる**(誰が何の目的で作ったかは DB に記録なし → §6 未決 1 は「これらを Secret 件数に含めるか」)。
 - **Basic-DualMomentum の tier フラグ**: Basic/NewStandard/premium = 全 false(公開可)、**Standard(古参)/AddOn = hide_portfolio=true, hide_components=true**。前版 ToBe「全 tier で false を保証」は**未達**(古参 2 tier)。公開 EP は tier 非依存なので画面には影響しないが、古参会員がログイン後に Basic-DM を見られない不整合として §6 未決 2。
@@ -107,12 +122,13 @@
 ### 2.3 公開データ契約 `GET /api/public/showcase`（認証不要・tier 非依存・cache 1h）
 - `as_of`: {series_end: "2026-07-31", next_close: "2026-08-31", calculated_at}
 - `blackout`: {active: bool, until_hint: "early September"} ← `viewer_tiers.password_expires_at` の max から算出(**数値のみ。パスワードや env key は決して返さない**)
-- `rows[]`(ラベル方式の順): 
-  - `{name, label: "free", holding, momentum, total_return, inception}` ← Basic-DualMomentum のみ完全公開(`signals.holding_signal`/`momentum_data`)
-  - `{name, label: "basic", total_return, inception}` ×4 ← holding/momentum **キー自体を返さない**
-  - `{group: true, label: "standard", count: 13, max_total_return}` ← NewStandard 可視 17 − Basic と重なる 4 本(Basic-DM・DM-safe・分身常勝・白虎激攻)= **13**(シン四神 11 + 分身激攻/鉄壁 2)
-  - `{name: "GSシン四つ目-常勝", label: "premium", total_return}` + `{group, label: "premium", count: 10, max_total_return}` ← premium 可視 28 − NewStandard 可視 17 = 11、代表 1 を除いて **10**
-  - `{group, label: "secret", count}` ← active − premium 可視 − Ave-X(§6 未決 1)
+- `rows[]`(ラベル方式の順)。**各 row は 2 段の到達プランを持つ**: `performance_plan`(パフォーマンスが見える最小プラン)と `signals_plan`(シグナルが見える最小プラン)。導出は tier 設定の hide_portfolio / hide_signal から(フロント固定値ゼロ)。
+  - `{name: "Basic-DualMomentum", performance_plan: "free", signals_plan: "free", holding, momentum, total_return, inception}` ← 唯一の完全公開(構成まで)
+  - `{name: "DM-safe", performance_plan: "basic", signals_plan: "basic", total_return, inception}` / `{name: "Ave-X", …同…}` ← holding/momentum **キー自体を返さない**
+  - `{name: "シン白虎-激攻", performance_plan: "basic", signals_plan: "standard", total_return}` / `{name: "GSシン分身-常勝", …同…}` ← Basic ではパフォーマンスのみ
+  - `{group: true, signals_plan: "standard", count, max_total_return}` ← Standard で**シグナル**が新たに見える本数 = NewStandard signal 17 − Basic signal 3 = **14**(白虎激攻・分身常勝を含む)
+  - `{name: "GSシン四つ目-常勝", performance_plan: "premium", signals_plan: "premium", total_return}` + `{group, signals_plan: "premium", count, max_total_return}` ← premium signal 25 − NewStandard signal 17 − 代表 1 = **7**(DM-safe-2・四つ目 ×2・劇薬 ×2・Ave-X・裏Ave-X)。`{group, performance_plan: "premium", signals_plan: null, count: 3}` ← 奥義-GS-分身 ×3 はパフォーマンスのみ
+  - `{group, label: "secret", count: 73}` ← active 102 − premium performance 28 − Ave-X(Basic のみ)1 = **73**(FoF 6 本含む・殿裁定 10:41)
 - 出所: `portfolio_metrics(years=0)`, `signals`(Basic-DM 最新 date), `tier_visibility_settings`, `viewer_tiers.password_expires_at`。**新規テーブル不要**。count は EP 内で導出(フロントに固定値を書かない)。
 - 非送信の原則: 代表 4 行の保有/モメンタムはフロントがぼかしバーを描く(データは来ない)。
 
@@ -137,18 +153,23 @@
 
 ## §3 画面仕様
 
-### 3.1 Current signals 表（列: Portfolio / Holding / Momentum / Total return since inception）— 本番件数で確定
-| 行 | ラベル | +N | Holding/Momentum | Total return |
-|---|---|---|---|---|
-| Basic-DualMomentum | Free trial · full access(緑) | — | 表示 | +3,139%(2003-) |
-| DM-safe | Basic plan | +4 PF with Basic | ぼかし | +1,411% |
-| シン白虎-激攻 / GSシン分身-常勝 / Ave-X | Basic plan | — | ぼかし | +75,619% / +10,982% / +11,321% |
-| シン四神 ×11 · GSシン分身 ×2(群) | Standard plan | +13 PF with Standard | ぼかし | up to X% |
-| GSシン四つ目-常勝 | Premium plan · by invitation(紫) | +10 PF with Premium | ぼかし | +17,181% |
-| Ave-X(再掲) · 裏Ave-X · DM-safe-2 · 四つ目 ×2 · 劇薬 ×2 · 奥義 ×3(群) | Premium plan · by invitation | — | ぼかし | up to X% |
-| 73 portfolios | Secret(灰) | Not viewable | Not disclosed | — |
-- +N の定義(本番導出・10:14 実測から): Free 1 / Basic = Basic 可視 5 − 1 = **4** / Standard = NewStandard 可視 17 − Basic と重なる 4 = **13** / Premium = premium 可視 28 − NewStandard 17 − 代表 1 = **10** / Secret = active 102 − premium 28 − Ave-X(Basic のみ可視)1 = **73**。**件数は全て EP が tier 設定から導出し、フロントに固定値を書かない**(AC: 未認証 curl の count と DB 集計の一致を二値判定)。前版 §3.1 と同値(件数は 08-18 から Secret +3・premium 内訳 +1 のみ変動)。
-- ヘッダ右: "Series through {series_end} · next rebalance {next_close} close"。**「today/毎営業日」禁止**。
+### 3.1 Current signals 表（列: Portfolio / Holding / Momentum / Total return since inception）— 2 段ラベル方式(Performance / Signals)
+各行の Portfolio セル= ①PF 名 ②到達ラベル(pill)= **"Performance: {plan} · Signals: {plan}"**(同一なら 1 語) ③群行は「+N PF signals with {plan}」。ゾーン見出し行は置かない(殿 17:41)。
+
+| 行 | ラベル | Holding/Momentum | Total return |
+|---|---|---|---|
+| Basic-DualMomentum | Free · full access(緑) | 表示 | +3,139%(2003-) |
+| DM-safe / Ave-X | Basic(performance + signals) | ぼかし | +1,411% / +11,321% |
+| シン白虎-激攻 / GSシン分身-常勝 | Performance: Basic · Signals: Standard | ぼかし | +75,619% / +10,982% |
+| シン四神 ×11 · GSシン分身 ×2 · DM-safe(群) | +14 PF signals with Standard | ぼかし | up to X% |
+| GSシン四つ目-常勝 | Premium · by invitation(紫) | ぼかし | +17,181% |
+| DM-safe-2 · 四つ目 ×2 · 劇薬 ×2 · Ave-X · 裏Ave-X(群) | +7 PF signals with Premium | ぼかし | up to X% |
+| 奥義-GS-分身 ×3(群) | Performance only · Premium | — | up to X% |
+| 73 portfolios | Secret(灰) | Not viewable | Not disclosed |
+
+- 件数の定義(本番 10:43 実測、EP が tier 設定から導出): Free signals 1 / Basic signals 3(+2) / Standard signals 17(+14) / Premium signals 25(+8=代表 1+群 7)、Premium performance-only 3 / Secret 73(=active 102 − premium performance 28 − Ave-X 1。FoF 6 本含む)。
+- **齟齬の再発防止(AC)**: 未認証 curl の各 row の `performance_plan`/`signals_plan` を、`tier_visibility_settings` の hide_portfolio/hide_signal から独立に再計算した値と全行一致(二値)。「+N」は必ず **signals** の増分であり performance の増分を混ぜない。
+- ヘッダ右: "Series through {series_end} · next rebalance {next_close} close"。「today/毎営業日」禁止。
 
 ### 3.2 レスポンシブ 2 パターン（前版継承）
 - >860px: 2 カラム(左ショーウィンドウ / 右 sticky リッチカード)。
@@ -181,7 +202,7 @@
 - 1 週間後に event 集計で「突出して悪い区間」を 1 つ特定し、そこだけを次弾にする(記事の教え: たいてい思っていた場所と違う)。
 
 ## §6 未決（殿裁定待ち。裁定は「事実→制約→判断→効果」で追記）
-1. **Secret 件数(73)に秘奥義 EW-FoF 6 本を含めるか**: 事実=Secret 73 のうち 6 本は folder「オリジナル」の等ウェイト FoF(Sharpe4/CAGR4/greedy2 08-19、New Fund of Funds ×3 07-01。構成は秘奥義 PF、metrics・signals 計算済み、可視 tier 0)。`is_active`・metrics 有無では他の Secret PF と区別できない。案 A=そのまま 73(「存在する PF 数」として正しい。秘奥義 FoF も Secret の一部)/ 案 B=殿が「これは正式 PF ではない」と判断するものだけ admin で `is_active=false` にして件数から自然に外す(データ側の整理、可逆)/ 案 C=EP に除外名リスト(非推奨・固定値)。将軍推奨=**A**(件数の定義を『active かつ非公開の PF 数』で固定し、画面ロジックに例外を持ち込まない。整理したい PF があれば B を殿が個別に)。
+1. (解決 10:41 殿裁定)**Secret 件数=73 で確定(FoF 6 本含む。「本番を使う」)**。以下は経緯:  事実=Secret 73 のうち 6 本は folder「オリジナル」の等ウェイト FoF(Sharpe4/CAGR4/greedy2 08-19、New Fund of Funds ×3 07-01。構成は秘奥義 PF、metrics・signals 計算済み、可視 tier 0)。`is_active`・metrics 有無では他の Secret PF と区別できない。案 A=そのまま 73(「存在する PF 数」として正しい。秘奥義 FoF も Secret の一部)/ 案 B=殿が「これは正式 PF ではない」と判断するものだけ admin で `is_active=false` にして件数から自然に外す(データ側の整理、可逆)/ 案 C=EP に除外名リスト(非推奨・固定値)。将軍推奨=**A**(件数の定義を『active かつ非公開の PF 数』で固定し、画面ロジックに例外を持ち込まない。整理したい PF があれば B を殿が個別に)。
 2. **Basic-DM の古参 tier(Standard/AddOn)で hide_portfolio=true**: 公開 PF なのにログイン後の古参会員に非表示。案=admin で 2 tier を false に(可逆・DB 設定変更のみ)。
 3. **総リターンの表記**: 事実=since inception が +3,139%〜+75,619%(白虎)。案 A=% のまま(餌として最強)、案 B=「×32 / ×757」倍率、案 C=CAGR 併記(years=0 に cagr なし → EP で `(1+tr)^(12/months)-1` を算出)。将軍推奨=**C**(信憑性を保ちつつ interest を引く)。
 4. 群行 "up to X%" を Standard/Premium で出すか(前版から継続)。
