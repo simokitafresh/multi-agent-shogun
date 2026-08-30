@@ -36,6 +36,7 @@
 | 12:49 | Sharpe と MDD は平均は不要。ベストだけでいい | 事実=Sharpe/MDD の平均はプラン内のばらつきで薄まり、読者が使うのはベスト値。判断=**Sharpe 列=ベスト(最大)、MDD 列=ベスト(最浅)の単値。レンジ表記は Total return/×N/CAGR の 3 列のみ**。効果=§3.1 表と §2.3 契約から sharpe_avg/mdd_avg を削除 |
 | 12:54 | ログイン画面の数値データはリアルタイム更新(daily)にできるか？期間を明記して static にしたほうが SEO やユーザー動線としてベターか？ | 事実=①数値の出所 `portfolio_metrics(years=0)` は毎日再計算される(12:55 実測 calculated_at=2026-08-30 が 101 行)が、系列は月末クローズ基準で end_date=2026-07-31 のまま=**数字が動くのは月 1 回(月末クローズ翌日)**。②現行 /login は `"use client"` の CSR で、本番 HTML は `<title>DM-Signal</title>` のみ(12:11 curl)。robots.txt/sitemap/metadata なし=**検索エンジンには空ページ**。制約=daily 更新にしても表示値は月内不変。判断=**両立させる: サーバー側で HTML に数値を焼き込む ISR(revalidate 24h+月末再計算後の on-demand revalidate)+『Data through 2026-07-31』の期間明記**。訪問者には static に見え、実体は EP から毎日自動再生成。効果=§2.6 描画・更新方針を新設、P2b の AC に『初回 HTML に数値が含まれる(curl で表の数値が HTML 本文に存在)』『as_of の月末日が表外脚注に出る』を追加 |
 | 12:58 | ブラックアウトはどう表現する。note に誘導+パスワード発表をお楽しみにという期待感をあおるのがいいか？発表日時は俺が任意で決めているので具体的にしたくない | 事実=ブラックアウトは『月末で旧パスワード失効〜殿が note で新パスワードを発表するまで』で、発表時刻は固定されていない(viewer_tiers は expires_at=月末と last_rotated_at しか持たない)。制約=日時・カウントダウン・『early September』のような時期の示唆も出さない。判断=**ブラックアウト帯は『新しい月のシグナルは計算済み。パスワードは note で発表』の期待感+note 誘導のみ。日時表現ゼロ**。状態判定は `max(password_expires_at) < today ∧ last_rotated_at ≤ expires_at`(=まだ配布されていない)。効果=§2.4 を書き換え、EP `blackout` から `until_hint` を削除し `{active, month_closed}` に |
+| 13:04 | ログインページは単独でログイン後の本番には影響しないよな？ | 事実(13:05 一次)=①BE/FE とも origin/main と live deploy の差分 0(BE 5a5556af7・FE 812f0b7a1)=次の deploy に載るのは本設計の変更だけ。②/login が触る共有物は 3 つ: `RouteAccessBoundary`(layout で全ルートを包む。`pathname==="/login"` 分岐のみ)、`app/layout.tsx` の metadata、BE の同一 Render サービス(deploy で再起動)。③認証 API(`/api/auth/verify-viewer`)・7 層リセット・ログイン後ページのコードには一切触れない。制約=共有物に手を入れると波及する。判断=**影響境界を契約化(§2.7)**: 変更許可パス allowlist、RouteAccessBoundary の認証分岐は sha 固定で不変、metadata は /login ページ単位、BE は新 router+追記専用テーブルのみ、既存テストは無変更で全 PASS。効果=P1/P2 の AC に境界チェックを追加 |
 
 ---
 
@@ -173,6 +174,16 @@
 | 数字の信頼 | — | 期間(inception〜series_end)を脚注で固定。「realtime」と書かない(月次データを日次に見せない=殿 08-18 17:28『毎営業日は月次にふさわしくない』と同じ規則) |
 - 結論: 「static に見える ISR」= 期間明記+SEO 可+自動更新。CSR の daily fetch は SEO ゼロで値も変わらないので採らない。
 - P2b の AC に追加: `curl -s https://dm-signal-frontend.onrender.com/login | grep -c '+3,139%'` が 1 以上(HTML 焼き込み)、脚注に `Data through 2026-07-31` 形式の日付が存在、`/login` の metadata description が EN で存在。
+
+### 2.7 影響境界（殿下問 13:04「ログイン後の本番に影響しないか」への契約）
+| 層 | 触ってよいもの(allowlist) | 触らないもの(不変を AC で固定) |
+|---|---|---|
+| backend | 新規 `app/api/public_showcase.py`(router `/api/public/*`)、新規 migration 1 本(追記専用 event テーブル)、`main.py` の router 登録 1 行、新規 test | `app/api/auth.py`・`visibility_helpers.py`・既存 EP・既存テーブル・既存 test(diff 0) |
+| frontend | `app/login/**`(page・新規 components)、`app/login/` 配下の `metadata` export、新規 `app/robots.ts` / `app/sitemap.ts`、文言設定ファイル | `components/route-access-boundary.tsx` の認証分岐(`/login` 以外を `/login` へ replace する部分)、`lib/viewer-auth.ts`・`lib/auth-state-reset.ts`・`lib/api-client.ts`・`app/layout.tsx`(metadata 以外)・ログイン後ページ全て |
+| deploy | FE/BE とも live と origin/main の差分は本設計分のみ(13:05 実測 0) | 他の未 deploy 変更を同乗させない(deploy 直前に `git diff --stat <live sha> origin/main` で本設計パス以外 0 を確認) |
+| DB | 新テーブル(追記専用)への INSERT のみ | 既存テーブルへの書込み 0(readonly_query で before/after の行数一致) |
+- 二値 AC(P1/P2 共通): (a) 変更ファイル一覧が allowlist の外 0 件 (b) `route-access-boundary.tsx` の認証分岐の関数が `git blame`/diff で不変(diff 0 行) (c) 既存 test ファイルの diff 0 かつ選択実行 PASS (d) 本番ログイン→`/`→既存ページ 3 本(dashboard/portfolio/signals)の HTTP 200 と表示が deploy 前後で同一(CDP 1 枚ずつ) (e) BE deploy 後に既存 EP(`/api/signals` 等)の smoke が 200。
+- ISR 化(§2.6)は `/login` ルートを server component にするだけで、layout の RouteAccessBoundary は client のまま(境界 (b) を守る)。
 
 ---
 

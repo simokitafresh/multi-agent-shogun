@@ -186,6 +186,16 @@ a{color:var(--accent)}
   </table></div>
   <p style="margin-top:8px">結論: <strong>「static に見える ISR」</strong>= 期間明記+SEO 可+自動更新。CSR の daily fetch は SEO ゼロで値も変わらないので採らない。「realtime」とは書かない(月次データを日次に見せない)。P2b AC: 本番 /login の HTML に表の数値が含まれる・脚注に Data through 日付・metadata description(EN)。</p>
 
+  <h2>§2.7 影響境界 — 殿下問 13:04「ログイン後の本番に影響しないか」</h2>
+  <div class="tbl"><table>
+    <tr><th>層</th><th>触ってよい(allowlist)</th><th>触らない(AC で不変固定)</th></tr>
+    <tr><td>backend</td><td>新規 <code>public_showcase.py</code>(/api/public/*)、追記専用テーブル migration 1 本、router 登録 1 行、新規 test</td><td><code>auth.py</code>・<code>visibility_helpers.py</code>・既存 EP・既存テーブル・既存 test</td></tr>
+    <tr><td>frontend</td><td><code>app/login/**</code>、/login の metadata、新規 robots/sitemap、文言設定</td><td><code>route-access-boundary.tsx</code> の認証分岐、viewer-auth / auth-state-reset / api-client、layout(metadata 以外)、ログイン後ページ全て</td></tr>
+    <tr><td>deploy</td><td>FE/BE とも live と origin/main の差分は本設計分のみ(13:05 実測 0)</td><td>他の未 deploy 変更を同乗させない</td></tr>
+    <tr><td>DB</td><td>新テーブルへの INSERT のみ</td><td>既存テーブル書込み 0</td></tr>
+  </table></div>
+  <p style="margin-top:8px">AC: 変更ファイルが allowlist 外 0 件 / route-access-boundary の認証分岐 diff 0 / 既存 test diff 0 かつ PASS / deploy 前後でログイン後ページ 3 本の 200 と表示同一(CDP) / 既存 EP smoke 200。ISR 化は /login ルートのみ server component、layout の boundary は client のまま。</p>
+
   <h2>§3 実装単位(可逆・1 層ずつ。順序=摩擦→計測→魅力)</h2>
   <div class="tbl"><table>
     <tr><th>手</th><th>内容</th><th>二値 AC</th></tr>
