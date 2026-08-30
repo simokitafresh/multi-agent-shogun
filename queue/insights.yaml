@@ -10111,10 +10111,23 @@ insights:
   priority: "low"
   source: "semantic_index_update"
   fix_known: false
-  status: pending
+  status: resolved
+  resolved_reason: "semantic map generation verified the candidate is represented or intentionally ignored"
+  action_artifact: "semantic_map=/home/simokitafresh/multi-agent-shogun/context/semantic-map.md;semantic_index=/home/simokitafresh/multi-agent-shogun/docs/semantic-index/index.md"
+  resolved_at: "2026-08-30T21:37:12+09:00"
 - id: INS-20260830-213640178-79a4
   ts: "2026-08-30T21:36:40+09:00"
   insight: "semantic_index_update未登録cmd originノード: [[SEO案_v1_20260830]] は既存aliasesに一致なし。類似概念TOP3: semantic_dictionary_design(セマンティック辞書構想; alias=promotion v1 2は指示があるでも待機せよ; score=13.0) / creator_brainwashing_defense(創造主の洗脳防御; alias=殿指示 v1 v3 3の16回場当たり修正で混乱; score=10.3) / growth_loop(学習ループ; alias=弾スループット全体のボトルネック改善 AsIs ToBe 5W1H v1 0 も同じ形式にアップデートしてくれ; score=7.1)。概念定義とaliases追加を検討せよ"
+  priority: "low"
+  source: "semantic_index_update"
+  fix_known: false
+  status: resolved
+  resolved_reason: "semantic map generation verified the candidate is represented or intentionally ignored"
+  action_artifact: "semantic_map=/home/simokitafresh/multi-agent-shogun/context/semantic-map.md;semantic_index=/home/simokitafresh/multi-agent-shogun/docs/semantic-index/index.md"
+  resolved_at: "2026-08-30T21:37:12+09:00"
+- id: INS-20260830-214226045-442d
+  ts: "2026-08-30T21:42:26+09:00"
+  insight: "semantic_index_update新概念候補: discussion:npm install g @openai codex は 既存aliasesに一致なし。概念定義とaliases追加を検討せよ"
   priority: "low"
   source: "semantic_index_update"
   fix_known: false
