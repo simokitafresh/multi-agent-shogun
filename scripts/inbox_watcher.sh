@@ -684,6 +684,42 @@ current_outstanding_lease_file() {
     outstanding_lease_file_for_generation "$generation"
 }
 
+# Before generation leases were introduced, a delivered unread set left a
+# fingerprint-keyed sent token behind.  A watcher self-restart keeps the CLI
+# process (and therefore its generation) alive, so that token is still a
+# valid delivery lease and must be carried forward instead of sending again.
+# Only the currently observed fingerprint is eligible: stale legacy tokens
+# from another unread set must not suppress a new nudge.
+migrate_legacy_fingerprint_lease() {
+    local fingerprint="${1:-}" unread_count="${2:-0}" generation="${3:-${CURRENT_CLI_GENERATION:-}}"
+    local safe_fp legacy_file lease_file
+    [ -n "$fingerprint" ] && [ "$fingerprint" != "-" ] || return 1
+    [ -n "$generation" ] || return 1
+    [ "$generation" = "${CURRENT_CLI_GENERATION:-}" ] || return 1
+    [[ "$unread_count" =~ ^[0-9]+$ ]] || return 1
+    local observed_generation
+    observed_generation="$(respawn_recovery_generation "$PANE_TARGET" 2>/dev/null || true)"
+    [ -n "$observed_generation" ] && [ "$observed_generation" = "$generation" ] || return 1
+
+    safe_fp="${fingerprint//[^A-Za-z0-9_.-]/_}"
+    legacy_file="${STATE_DIR}/inbox_watcher_sent_${AGENT_ID}_${safe_fp}"
+    [ -e "$legacy_file" ] || return 1
+    lease_file="$(outstanding_lease_file_for_generation "$generation")" || return 1
+
+    # This function is called while STATE_LOCK_FILE is held.  Claim the new
+    # lease with noclobber so a concurrent/reentrant caller cannot overwrite
+    # an already established generation lease.
+    if [ ! -e "$lease_file" ]; then
+        if ! ( set -C; : > "$lease_file" ) 2>/dev/null; then
+            return 1
+        fi
+        printf '%s\t%s\t%s\n' "$generation" "$unread_count" "$fingerprint" > "$lease_file"
+    fi
+    rm -f -- "$legacy_file"
+    echo "[$(date)] [LEGACY-LEASE-MIGRATED] $AGENT_ID fingerprint=$fingerprint generation=$generation" >&2
+    return 0
+}
+
 # ─── Resolve effective CLI type ───
 # Prefer pane @agent_cli (runtime truth) and fall back to settings.yaml.
 # If unresolved, choose codex-safe path.
@@ -1066,6 +1102,10 @@ send_wakeup() {
             fi
 
             _lease_file="$(current_outstanding_lease_file 2>/dev/null || true)"
+            # A self-restarted watcher inherits the CLI generation.  Migrate
+            # only the matching legacy fingerprint token before evaluating the
+            # generation lease, so restart does not paste a duplicate nudge.
+            migrate_legacy_fingerprint_lease "$current_fp" "$unread_count" "${CURRENT_CLI_GENERATION:-}" >/dev/null || true
             if [ -n "$_lease_file" ] && [ -e "$_lease_file" ]; then
                 # A smaller unread count is not an acknowledgement of the
                 # already delivered nudge: auto-read and unrelated reads can
