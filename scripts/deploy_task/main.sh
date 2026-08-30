@@ -191,6 +191,23 @@ except Exception:
         deploy_task_release_lock "$deploy_lock_fd" "$deploy_lock_file"
         return 1
     fi
+    # Normal cmd deployments resolve the incoming command into the worker task
+    # before the target-overlap guard can inspect the complete reservation.
+    # Snapshot task/report now so any later collision BLOCK restores the exact
+    # pre-deploy bytes; otherwise resolve_cmd_to_task can leak status=assigned
+    # into an idle worker slot (cmd_4424 ghost assignment).
+    if [ -n "$CMD_ID" ] && [ "$DIRECT_MODE" != true ] &&
+       [ "${DEPLOY_TASK_YAML_TX_ARMED:-0}" != "1" ]; then
+        local normal_cmd_source
+        normal_cmd_source=$(resolve_cmd_source_path "$CMD_ID") || {
+            deploy_task_release_lock "$deploy_lock_fd" "$deploy_lock_file"
+            return 2
+        }
+        deploy_task_yaml_transaction_begin "$task_yaml" "$normal_cmd_source" "$NINJA_NAME" "$CMD_ID" || {
+            deploy_task_release_lock "$deploy_lock_fd" "$deploy_lock_file"
+            return 1
+        }
+    fi
     if [ -n "$CMD_ID" ] && { [ "$DIRECT_MODE" != true ] || [ -z "$YAML_FILE" ]; }; then
         # --direct without --yaml mutates the worker task while deriving the
         # training template below.  Arm the same task/report transaction used
@@ -647,5 +664,4 @@ except Exception:
         log "${NINJA_NAME}: delayed re-nudge not scheduled (delivery evidence already present)"
     fi
 }
-
 

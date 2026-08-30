@@ -11864,6 +11864,7 @@ fi
 
 if [[ "${BASH_SOURCE[0]}" == "$0" && "${DEPLOY_TASK_LIB_ONLY:-0}" != "1" ]]; then
     deploy_task_main "$@"
+    _deploy_task_main_rc=$?
     if declare -F function_coverage_finish >/dev/null 2>&1; then
         function_coverage_finish 2>/dev/null || true
     fi
@@ -11872,4 +11873,5 @@ if [[ "${BASH_SOURCE[0]}" == "$0" && "${DEPLOY_TASK_LIB_ONLY:-0}" != "1" ]]; the
     # cmd_1337: dashboard update remains a post-deployment side effect.
     # Source(lib-only)利用時は起動しない。
     bash "$SCRIPT_DIR/scripts/dashboard_auto_section.sh" &
+    exit "$_deploy_task_main_rc"
 fi
