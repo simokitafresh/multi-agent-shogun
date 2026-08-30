@@ -9341,3 +9341,10 @@ insights:
   source: "semantic_stress_test"
   fix_known: false
   status: pending
+- id: INS-20260830-172453336-abaf
+  ts: "2026-08-30T17:24:53+09:00"
+  insight: "[[LP 別サイト P3 — backend の CORS 許可に LP ドメインを追加し showcase event の]] semantic_stress_test candidate_aliases: NO_MATCH source=cmds query=LP 別サイト P3 — backend の CORS 許可に LP ドメインを追加し showcase event の step enum に lp_view と lp_cta_click を加える"
+  priority: "low"
+  source: "semantic_stress_test"
+  fix_known: false
+  status: pending
