@@ -574,6 +574,70 @@ print(query)
 PY
 }
 
+# A missing/failed receipt can otherwise leave a newly recovered agent unable
+# to issue the very command that would repair the receipt. Recovery is
+# automatic only at the task-entry boundary (or when the caller explicitly
+# declares recovery mode); arbitrary callers without a current task remain
+# fail-closed. This removes the model-dependent deadlock without weakening the
+# normal verifier contract for taskless callers.
+auto_recovery_eligible() {
+    [[ "${THREE_LAYER_AUTO_RECOVERY:-1}" == 1 ]] || return 1
+    if [[ "${THREE_LAYER_RECOVERY_MODE:-0}" == 1 ]]; then
+        return 0
+    fi
+    local task_dir="${THREE_LAYER_TASK_DIR:-$ROOT/queue/tasks}"
+    local task_file="$task_dir/$agent_id.yaml"
+    [[ -f "$task_file" ]] || return 1
+    python3 - "$task_file" <<'PY'
+import sys, yaml
+
+try:
+    task = (yaml.safe_load(open(sys.argv[1], encoding="utf-8")) or {}).get("task") or {}
+except Exception:
+    raise SystemExit(1)
+raise SystemExit(0 if str(task.get("status") or "") in {"assigned", "acknowledged", "in_progress"} else 1)
+PY
+}
+
+auto_recovery_prompt() {
+    if [[ -n "${THREE_LAYER_AUTO_RECOVERY_PROMPT:-}" ]]; then
+        printf '%s\n' "$THREE_LAYER_AUTO_RECOVERY_PROMPT"
+        return 0
+    fi
+    # inboxN is the stable Recovery/initial-task sentinel. Ninja issue()
+    # expands it to the current task's purpose, ACs, and target paths.
+    if is_ninja_agent "$agent_id"; then
+        printf 'inbox1\n'
+        return 0
+    fi
+    # Management roles have no inboxN task expansion. Use their task context
+    # when available, otherwise use a bounded recovery probe.
+    task_context_query "$agent_id" 2>/dev/null || printf 'three layer preflight recovery\n'
+}
+
+auto_recover_missing_evidence() {
+    auto_recovery_eligible || return 1
+    [[ "${THREE_LAYER_AUTO_RECOVERY_ATTEMPTED:-0}" == 0 ]] || return 1
+    local recovery_prompt recovery_rc=0 started_ms finished_ms log_file log_dir
+    recovery_prompt="$(auto_recovery_prompt)" || return 1
+    [[ -n "${recovery_prompt//[[:space:]]/}" ]] || return 1
+    recovery_prompt="${recovery_prompt//$'\t'/ }"
+    recovery_prompt="${recovery_prompt//$'\n'/ }"
+    started_ms="$(date +%s%3N)"
+    issue "$recovery_prompt" >/dev/null 2>&1 || recovery_rc=$?
+    finished_ms="$(date +%s%3N)"
+    log_file="${THREE_LAYER_AUTO_RECOVERY_LOG:-}"
+    if [[ -n "$log_file" ]]; then
+        log_dir="${log_file%/*}"
+        [[ "$log_dir" == "$log_file" ]] && log_dir=.
+        mkdir -p "$log_dir" 2>/dev/null || true
+        printf '%s\tagent=%s\tpane=%s\ttrigger=missing_or_failed_evidence\tprompt=%s\trc=%s\twall_ms=%s\n' \
+            "$(date -Iseconds)" "$agent_id" "$pane_id" "$recovery_prompt" "$recovery_rc" "$((finished_ms - started_ms))" \
+            >>"$log_file" 2>/dev/null || true
+    fi
+    return "$recovery_rc"
+}
+
 # cmd_karo_hotfix_evidence_utf8_truncate: head -c byte-truncates and can split a
 # multi-byte UTF-8 codepoint in half, producing invalid UTF-8 in the evidence
 # JSON (json.load then fails for every downstream consumer). Truncate at the
@@ -1002,7 +1066,7 @@ root = os.path.realpath(os.environ["RECOVERY_ROOT"])
 # root, never the caller's cwd, while retaining an exact-path allowlist.
 script_path = os.path.realpath(os.path.join(root, tokens[1])) if not os.path.isabs(tokens[1]) else os.path.realpath(tokens[1])
 if script == "three_layer_preflight.sh" and script_path == os.path.join(root, "scripts/hooks/three_layer_preflight.sh"):
-    raise SystemExit(0 if len(tokens) >= 3 and tokens[2] == "issue" else 1)
+    raise SystemExit(0 if len(tokens) >= 3 and tokens[2] in {"issue", "recover"} else 1)
 if script in {"memory_db_query.sh", "semantic_search.sh"} and script_path == os.path.join(root, "scripts", script):
     raise SystemExit(0)
 raise SystemExit(1)
@@ -1067,6 +1131,15 @@ PY
       } 9>"$publish_lock"
     )" || verify_rc=$?
     if [[ "$verify_rc" -ne 0 ]]; then
+        # A Recovery/initial-task action must not depend on the weak model
+        # deciding to run the printed repair command. Retry once through the
+        # allowlisted issuer, then re-read the receipt. The environment guard
+        # prevents a failed retry from recursing indefinitely.
+        if [[ "${THREE_LAYER_AUTO_RECOVERY_ATTEMPTED:-0}" == 0 ]] \
+            && auto_recover_missing_evidence; then
+            THREE_LAYER_AUTO_RECOVERY_ATTEMPTED=1 verify "$tool_name" "$target" "$command"
+            return $?
+        fi
         # fail-closed(殿裁定2026-07-21「作業前探索の強制が最重要」)。必須の構造強制(Read-before-Edit同型)。
         echo "BLOCK: 三層preflight証跡が無効または失敗状態。作業前に三層記憶検索を完了せよ。復旧: bash scripts/hooks/three_layer_preflight.sh issue \"<今の作業内容1行>\" で再発行せよ" >&2
         return 1
@@ -1076,7 +1149,8 @@ PY
 
 case "${1:-}" in
     issue) shift; issue "${1:-}" ;;
+    recover) shift; THREE_LAYER_RECOVERY_MODE=1 THREE_LAYER_AUTO_RECOVERY_PROMPT="${1:-}" auto_recover_missing_evidence ;;
     resolve-rg) resolve_rg ;;
     verify) shift; verify "$@" ;;
-    *) echo "Usage: $0 issue|verify <tool_name> [target] [command]" >&2; exit 2 ;;
+    *) echo "Usage: $0 issue|recover|verify <tool_name> [target] [command]" >&2; exit 2 ;;
 esac
