@@ -21,7 +21,7 @@ import sys
 from pathlib import Path
 
 source = "\n\n".join(Path(path).read_text(encoding="utf-8") for path in sys.argv[1:])
-names = """record_block_reason record_wait_reason append_line_locked append_lesson_tracking dispatch_gate_notification_async send_high_notification send_info_cmd_notification log_gate_stderr_file lesson_done_satisfies_lesson_candidate_registration cmd_status_is_canceled level_heading check_context_update resolve_report_file update_lesson_impact_tsv build_clear_duration_metric build_clear_throughput_metric binary_checks_warn_reason report_has_commit_binary_check_yes collect_report_files_modified discover_reports_for_cmd collect_parent_cmd_report_files_modified has_parent_cmd_report collect_git_show_w_files collect_report_commit_hash collect_cmd_phase_git_files check_self_grade_commit_file_coverage is_lessons_useful_empty_warn_task_type handle_empty_lessons_useful_check validate_lesson_feedback_set detect_task_types _check_lc_found lesson_candidate_status preflight_gate_flags collect_report_modified_files load_validated_sg7_context collect_cmd_command_file_refs collect_report_verified_existing_deps collect_task_readonly_refs check_command_files_modified_coverage check_scope_drift check_wtf_likelihood check_script_wiring resolve_task_repo_dir cmd_requires_cdp_production_check run_cdp_production_check cmd_requires_dm_signal_production_smoke dm_signal_report_deploy_sha resolve_dm_signal_render_live_sha run_dm_signal_production_smoke_check append_codd_registry_entry run_codd_propagate_update normalize_block_reason_to_workaround_categories update_karo_workaround_resolutions classify_completed_rework_event_kind capture_completed_rework_event compute_task_ac_version check_task_ac_version_integrity resolve_ci_expected_head resolve_report_commit_repo report_ci_push_state report_commit_main_ancestry_state check_report_commit_main_ancestry resolve_ninja_test_receipt_path validate_ninja_test_receipt check_ninja_test_receipts""".split()
+names = """record_block_reason record_wait_reason append_line_locked append_lesson_tracking dispatch_gate_notification_async send_high_notification send_info_cmd_notification log_gate_stderr_file lesson_done_satisfies_lesson_candidate_registration cmd_status_is_canceled level_heading check_context_update resolve_report_file update_lesson_impact_tsv build_clear_duration_metric build_clear_throughput_metric binary_checks_warn_reason report_has_commit_binary_check_yes collect_report_files_modified discover_reports_for_cmd collect_parent_cmd_report_files_modified has_parent_cmd_report collect_git_show_w_files collect_report_commit_hash collect_cmd_phase_git_files check_self_grade_commit_file_coverage is_lessons_useful_empty_warn_task_type handle_empty_lessons_useful_check validate_lesson_feedback_set detect_task_types _check_lc_found lesson_candidate_status preflight_gate_flags collect_report_modified_files load_validated_sg7_context collect_cmd_command_file_refs collect_report_verified_existing_deps collect_task_readonly_refs check_command_files_modified_coverage check_scope_drift check_wtf_likelihood check_script_wiring resolve_task_repo_dir cmd_requires_cdp_production_check run_cdp_production_check cmd_requires_dm_signal_production_smoke dm_signal_report_deploy_sha resolve_dm_signal_render_live_sha run_dm_signal_production_smoke_check append_codd_registry_entry run_codd_propagate_update normalize_block_reason_to_workaround_categories update_karo_workaround_resolutions classify_completed_rework_event_kind capture_completed_rework_event compute_task_ac_version check_task_ac_version_integrity resolve_ci_expected_head resolve_report_commit_repo report_ci_push_state report_commit_main_ancestry_state report_source_only_equivalence_state check_report_commit_main_ancestry resolve_ninja_test_receipt_path validate_ninja_test_receipt check_ninja_test_receipts""".split()
 for name in names:
     match = re.search(rf"(?m)^{re.escape(name)}\(\) \{{.*?^\}}", source, re.DOTALL)
     if match is None:
@@ -7460,7 +7460,7 @@ run_report_main_ancestry_state() {
         COMMIT_REPO_RESOLVER_MAIN="$PROJECT_ROOT/scripts/gates/gate_report_format_main.py" \
         CMD_COMPLETE_GATE_CI_REPO_DIR="$repo" \
         CMD_COMPLETE_GATE_CI_REPORT="$report" \
-        CMD_COMPLETE_GATE_TASK_FILE="$task" bash "$SRC_GATE_SCRIPT"
+        CMD_COMPLETE_GATE_TASK_FILE="$task" bash "$SRC_GATE_SCRIPT" cmd_report_ancestry_probe
 }
 
 run_report_main_ancestry_check() {
@@ -7899,6 +7899,142 @@ run_commit_repo_resolution() {
     run_report_main_ancestry_state "$repo" "$report"
     [ "$status" -eq 0 ]
     [[ "$output" == *"WAIT: UNPUSHED:"* ]]
+}
+
+# test_necessity: a non-ancestor report commit may pass terminal ancestry only
+# when the task-worktree marker, canonical publication, durable receipt, and
+# every report-owned path all identify the same source-only publication.
+# regression_justification: source-only publication previously passed its own
+# remote check but terminal ancestry unconditionally returned WAIT forever.
+@test "terminal report ancestry accepts exact source-only publication equivalence" {
+    local base="$BATS_TEST_TMPDIR/report-ancestry-source-equivalence"
+    local repo="$base/repo" report="$base/report.yaml" task="$base/task.yaml"
+    local marker="$base/task-worktree.json" receipt="$base/source-only.receipt.json"
+    local cmd_id="cmd_source_equivalence_probe"
+    local generation="aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+    local task_generation="bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+    mkdir -p "$repo/scripts" "$repo/tests/unit"
+    git init -q "$repo"
+    git -C "$repo" config user.email test@example.com
+    git -C "$repo" config user.name test
+    printf 'shared\n' > "$repo/state"
+    printf 'gate source\n' > "$repo/scripts/cmd_complete_gate.sh"
+    printf 'gate test\n' > "$repo/tests/unit/test_cmd_complete_gate.bats"
+    git -C "$repo" add .
+    git -C "$repo" commit -qm base
+    local base_sha="$(git -C "$repo" rev-parse HEAD)"
+    printf 'source-only\n' > "$repo/source-only.txt"
+    git -C "$repo" add source-only.txt
+    git -C "$repo" commit -qm source
+    local source_sha="$(git -C "$repo" rev-parse HEAD)"
+    local published_commit
+    published_commit="$(git -C "$repo" commit-tree "$(git -C "$repo" rev-parse "$base_sha^{tree}")" -p "$base_sha" -m published)"
+    git -C "$repo" update-ref refs/remotes/origin/main "$published_commit"
+    mkdir -p "$base/worktree"
+    cat > "$marker" <<JSON
+{"version":1,"state":"active","task_id":"$cmd_id-normal","parent_cmd":"$cmd_id","generation":"$task_generation","repo":"$repo","worktree":"$base/worktree","published_commit":"$published_commit"}
+JSON
+    cat > "$task" <<YAML
+task:
+  task_id: $cmd_id-normal
+  parent_cmd: $cmd_id
+  task_worktree_required: true
+  task_worktree_generation: $task_generation
+  task_worktree_marker: $marker
+  task_worktree_workdir: $base/worktree
+  report_path: $report
+YAML
+    cat > "$report" <<YAML
+verdict: PASS
+commit_hash: $source_sha
+report_id: rpt-source-equivalence
+files_modified:
+  - path: scripts/cmd_complete_gate.sh
+  - path: tests/unit/test_cmd_complete_gate.bats
+YAML
+    cat > "$receipt" <<JSON
+{"version":1,"state":"published","cmd_id":"$cmd_id","completion_generation":"$generation","entries":[{"cmd_id":"$cmd_id","completion_generation":"$generation","report_generation":"rpt-source-equivalence","repo":"$repo","source_sha":"$source_sha","remote_tip":"$published_commit","remote_contains_source_rc":0}]}
+JSON
+
+    run env CMD_COMPLETE_GATE_REPORT_MAIN_ANCESTRY_ONLY=1 \
+        CMD_COMPLETE_GATE_CI_REPO_DIR="$repo" CMD_COMPLETE_GATE_CI_REPORT="$report" \
+        CMD_COMPLETE_GATE_TASK_FILE="$task" CMD_ID="$cmd_id" \
+        SHOGUN_COMPLETION_GENERATION="$generation" \
+        CMD_COMPLETE_GATE_SOURCE_PUBLISH_RECEIPT="$receipt" \
+        bash "$SRC_GATE_SCRIPT" "$cmd_id"
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"source-only-equivalent to canonical publication"* ]]
+
+    cp "$marker" "$marker.good"
+    cp "$receipt" "$receipt.good"
+    rm -f "$receipt"
+    run env CMD_COMPLETE_GATE_REPORT_MAIN_ANCESTRY_ONLY=1 \
+        CMD_COMPLETE_GATE_CI_REPO_DIR="$repo" CMD_COMPLETE_GATE_CI_REPORT="$report" \
+        CMD_COMPLETE_GATE_TASK_FILE="$task" CMD_ID="$cmd_id" \
+        SHOGUN_COMPLETION_GENERATION="$generation" \
+        CMD_COMPLETE_GATE_SOURCE_PUBLISH_RECEIPT="$receipt" \
+        bash "$SRC_GATE_SCRIPT" "$cmd_id"
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"WAIT: UNPUSHED:"* ]]
+    cp "$receipt.good" "$receipt"
+
+    python3 - "$marker" <<'PY'
+import json, sys
+path = sys.argv[1]
+data = json.load(open(path))
+data['task_id'] = 'wrong-task'
+with open(path, 'w') as handle:
+    json.dump(data, handle)
+PY
+    run env CMD_COMPLETE_GATE_REPORT_MAIN_ANCESTRY_ONLY=1 \
+        CMD_COMPLETE_GATE_CI_REPO_DIR="$repo" CMD_COMPLETE_GATE_CI_REPORT="$report" \
+        CMD_COMPLETE_GATE_TASK_FILE="$task" CMD_ID="$cmd_id" \
+        SHOGUN_COMPLETION_GENERATION="$generation" \
+        CMD_COMPLETE_GATE_SOURCE_PUBLISH_RECEIPT="$receipt" \
+        bash "$SRC_GATE_SCRIPT" "$cmd_id"
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"WAIT: UNPUSHED:"* ]]
+    cp "$marker.good" "$marker"
+
+    run env CMD_COMPLETE_GATE_REPORT_MAIN_ANCESTRY_ONLY=1 \
+        CMD_COMPLETE_GATE_CI_REPO_DIR="$repo" CMD_COMPLETE_GATE_CI_REPORT="$report" \
+        CMD_COMPLETE_GATE_TASK_FILE="$task" CMD_ID="$cmd_id" \
+        SHOGUN_COMPLETION_GENERATION="cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc" \
+        CMD_COMPLETE_GATE_SOURCE_PUBLISH_RECEIPT="$receipt" \
+        bash "$SRC_GATE_SCRIPT" "$cmd_id"
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"WAIT: UNPUSHED:"* ]]
+
+    python3 - "$marker" "$source_sha" <<'PY'
+import json, sys
+path, source = sys.argv[1:]
+data = json.load(open(path))
+data['published_commit'] = source
+with open(path, 'w') as handle:
+    json.dump(data, handle)
+PY
+    run env CMD_COMPLETE_GATE_REPORT_MAIN_ANCESTRY_ONLY=1 \
+        CMD_COMPLETE_GATE_CI_REPO_DIR="$repo" CMD_COMPLETE_GATE_CI_REPORT="$report" \
+        CMD_COMPLETE_GATE_TASK_FILE="$task" CMD_ID="$cmd_id" \
+        SHOGUN_COMPLETION_GENERATION="$generation" \
+        CMD_COMPLETE_GATE_SOURCE_PUBLISH_RECEIPT="$receipt" \
+        bash "$SRC_GATE_SCRIPT" "$cmd_id"
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"WAIT: UNPUSHED:"* ]]
+    cp "$marker.good" "$marker"
+
+    cat >> "$report" <<YAML
+  - path: source-only.txt
+YAML
+    run env CMD_COMPLETE_GATE_REPORT_MAIN_ANCESTRY_ONLY=1 \
+        CMD_COMPLETE_GATE_CI_REPO_DIR="$repo" CMD_COMPLETE_GATE_CI_REPORT="$report" \
+        CMD_COMPLETE_GATE_TASK_FILE="$task" CMD_ID="$cmd_id" \
+        SHOGUN_COMPLETION_GENERATION="$generation" \
+        CMD_COMPLETE_GATE_SOURCE_PUBLISH_RECEIPT="$receipt" \
+        bash "$SRC_GATE_SCRIPT" "$cmd_id"
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"WAIT: UNPUSHED:"* ]]
+    printf 'pass=1 fail_closed=5 false_positive=0\n'
 }
 
 # test_necessity: a report whose commit belongs to an explicitly declared
