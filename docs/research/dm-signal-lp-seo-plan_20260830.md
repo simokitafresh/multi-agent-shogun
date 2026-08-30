@@ -11,7 +11,7 @@
 | title | `DM-Signal \| Dual Momentum, made clear` | `DM-Signal \| デュアルモメンタムを明快に` | ○(ブランド+価値。検索語は未含有) |
 | meta description | あり(since inception / sign in) | あり | ○ |
 | canonical | `https://dm-signal.com/` | あり | ○(`.jp` 0 件、19:34 修正済) |
-| hreflang | 1 件 | **0 件** | △ 非対称(Google は双方向必須) |
+| hreflang | 3 件(en/ja/x-default) | 3 件 | ○(20:06 再確認: `hrefLang` camelCase で grep 漏れ。P0-2 は不要) |
 | OG / Twitter card | og 1 件 | — | △ `og:image` 未確認 |
 | JSON-LD | **0** | 0 | × |
 | sitemap.xml / robots.txt | 200(`/`, `/ja/` の 2 URL) | — | ○(lastmod 無し) |
