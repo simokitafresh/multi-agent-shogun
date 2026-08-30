@@ -9277,3 +9277,81 @@ EOF
     [ "$status" -eq 0 ]
     [[ "$output" == *"first=PUSHED: cached second=PUSHED: cached calls=1"* ]]
 }
+
+# test_necessity: an active task with a missing report must terminalize as
+# retryable WAIT immediately. Sleeping 3x60s while holding the CMD_ID gate lock
+# can exhaust the monitor's 180s item timeout before any terminal row exists.
+# regression_justification: the former GP-026 retry loop kept the gate process
+# alive for up to 180s and caused a lock/monitor-timeout race.
+@test "active missing report short-circuits to terminal WAIT without fixed sleep" {
+    run python3 - "$SRC_GATE_SCRIPT" <<'PY'
+import pathlib
+import re
+import sys
+
+text = pathlib.Path(sys.argv[1]).read_text(encoding="utf-8")
+start = text.index('if [ "${#REPORT_WAIT_NINJAS[@]}" -gt 0 ]; then')
+end = text.index('if [ "${#REPORT_WAIT_NINJAS[@]}" -gt 0 ] && [ "${#REPORT_MISSING_FILES[@]}" -gt 0 ]; then', start)
+block = text[start:end]
+assert 'gate_detail_begin "report_wait.short_circuit" external_wait' in block
+assert 'record_wait_reason "WAIT:report_yaml_missing:' in block
+assert 'sleep "$WAIT_INTERVAL"' not in block
+assert 'WAIT_MAX_RETRIES=' not in block
+assert 'WAIT_INTERVAL=' not in block
+assert '次周期で再確認' in block
+assert block.rstrip().endswith('gate_detail_finish\nfi')
+print('active_missing_report=WAIT immediate=1 fixed_sleep=0 item_timeout_safe=1')
+PY
+    [ "$status" -eq 0 ]
+    [ "$output" = "active_missing_report=WAIT immediate=1 fixed_sleep=0 item_timeout_safe=1" ]
+}
+
+# test_necessity: an active task whose report is still absent must produce one
+# durable terminal WAIT row within the monitor item budget, while a report that
+# appears during the non-blocking recheck must keep the normal path.
+@test "active missing report fixture terminalizes WAIT within item budget" {
+    TEST_CMD_ID="cmd_karo_missing_report_fixture"
+    local task="$TEST_PROJECT/queue/tasks/sasuke.yaml"
+    local metrics="$TEST_PROJECT/logs/gate_metrics.log"
+    local phase_log="$TEST_PROJECT/logs/cmd_complete_gate_phases.log"
+    mkdir -p "$TEST_PROJECT/queue/gates/$TEST_CMD_ID"
+    cat > "$task" <<EOF
+task:
+  parent_cmd: $TEST_CMD_ID
+  task_type: impl
+  status: in_progress
+  report_filename: sasuke_report_${TEST_CMD_ID}.yaml
+  project: infra
+EOF
+    cat > "$TEST_PROJECT/queue/gates/$TEST_CMD_ID/review_gate.done" <<'EOF'
+timestamp: 2026-08-30T20:00:00+09:00
+result: PASS
+EOF
+    printf '#!/usr/bin/env bash\nexit 0\n' > "$TEST_PROJECT/scripts/lesson_check.sh"
+    printf '#!/usr/bin/env bash\nexit 0\n' > "$TEST_PROJECT/scripts/gates/gate_design_cmd_handoff.sh"
+    chmod +x "$TEST_PROJECT/scripts/lesson_check.sh" "$TEST_PROJECT/scripts/gates/gate_design_cmd_handoff.sh"
+    : > "$metrics"
+
+    local started finished elapsed
+    started=$(date +%s)
+    run timeout 20 env \
+        GATE_METRICS_LOG="$metrics" \
+        CMD_COMPLETE_GATE_PHASE_LOG="$phase_log" \
+        CMD_COMPLETE_GATE_SUBPHASE_LOG=disabled \
+        CMD_COMPLETE_GATE_DETAIL_LOG="$TEST_PROJECT/logs/details.log" \
+        CMD_COMPLETE_GATE_TMUX_BIN=/bin/false \
+        CDP_SKIP=1 SKILL_GATE_FEEDBACK_DISABLE=1 \
+        REVIEW_APPROVAL_ROOT="$TEST_PROJECT" \
+        bash "$TEST_PROJECT/scripts/cmd_complete_gate.sh" "$TEST_CMD_ID"
+    finished=$(date +%s)
+    elapsed=$((finished - started))
+
+    [ "$status" -eq 1 ]
+    [ "$elapsed" -lt 20 ]
+    [ "$(grep -c $'\t'"$TEST_CMD_ID"$'\tWAIT\t' "$metrics" || true)" -eq 1 ]
+    grep -Fq "WAIT:report_yaml_missing:sasuke_report_${TEST_CMD_ID}.yaml" "$metrics"
+    grep -Fq "GATE WAIT: 待機理由=" <<< "$output"
+    [[ "$output" != *"60秒後に再チェック"* ]]
+    grep -Fq $'\t'"$TEST_CMD_ID"$'\texternal_wait\treport_wait.short_circuit\t' "$TEST_PROJECT/logs/details.log"
+    printf "terminal_wait_rows=1 timeout=0 elapsed_lt_20s=1 fixed_sleep=0\n"
+}

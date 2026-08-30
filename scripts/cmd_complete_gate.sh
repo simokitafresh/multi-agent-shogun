@@ -12188,39 +12188,34 @@ for task_file in "${MATCHING_TASK_FILES[@]}"; do
     fi
 done
 
-# GP-026 B案(cmd_1332): WAIT忍者がいる場合はretry 3回×60秒=最大180秒
+# GP-026 B案(cmd_1332) の旧固定retryを撤去する。active taskの報告未着は
+# 次周期で再評価できる外部WAITであり、現プロセスが3回×60秒
+# sleepしてから終端行を書くと、monitorの180秒item timeoutと
+# 同一CMD_ID lockを争合させる。一次の未着を即時WAITとして終端化し、
+# reportが到着した次周期で初めて後続ゲートを評価する。
 if [ "${#REPORT_WAIT_NINJAS[@]}" -gt 0 ]; then
-    WAIT_MAX_RETRIES=3
-    WAIT_INTERVAL=60
-    for wait_retry in $(seq 1 $WAIT_MAX_RETRIES); do
-        # 未解決WAIT忍者がいるか確認
-        STILL_WAITING=()
-        for ninja_name in "${REPORT_WAIT_NINJAS[@]}"; do
-            report_file=$(resolve_report_file "$ninja_name")
-            if [ ! -f "$report_file" ]; then
-                STILL_WAITING+=("$ninja_name")
-            fi
-        done
-        [ "${#STILL_WAITING[@]}" -eq 0 ] && break
-
-        echo "  [WAIT] retry ${wait_retry}/${WAIT_MAX_RETRIES}: ${#STILL_WAITING[@]}名の報告待ち。${WAIT_INTERVAL}秒後に再チェック..."
-        sleep "$WAIT_INTERVAL"
-
-        for ninja_name in "${STILL_WAITING[@]}"; do
-            report_file=$(resolve_report_file "$ninja_name")
-            if [ -f "$report_file" ]; then
-                REPORT_FOUND_COUNT=$((REPORT_FOUND_COUNT + 1))
-                echo "  ${ninja_name}: OK (retry ${wait_retry}で発見: $(basename "$report_file"))"
-                notify_gunshi_for_report "$ninja_name" "$report_file" "$CMD_ID"
-            elif [ "$wait_retry" -eq "$WAIT_MAX_RETRIES" ]; then
-                REPORT_MISSING_FILES+=("$(basename "$report_file")")
-                echo "  [CRITICAL] ${ninja_name}: MISSING ← retry ${WAIT_MAX_RETRIES}回後も報告YAML不在: $(basename "$report_file")"
-            fi
-        done
+    gate_detail_begin "report_wait.short_circuit" external_wait
+    for ninja_name in "${REPORT_WAIT_NINJAS[@]}"; do
+        report_file=$(resolve_report_file "$ninja_name")
+        if [ -f "$report_file" ]; then
+            REPORT_FOUND_COUNT=$((REPORT_FOUND_COUNT + 1))
+            echo "  ${ninja_name}: OK (non-blocking recheckで発見: $(basename "$report_file"))"
+            notify_gunshi_for_report "$ninja_name" "$report_file" "$CMD_ID"
+        else
+            REPORT_MISSING_FILES+=("$(basename "$report_file")")
+            record_wait_reason "WAIT:report_yaml_missing:$(basename "$report_file")"
+            echo "  [WAIT] ${ninja_name}: 報告YAML未着を即時WAIT（次周期で再確認。sleepなし）"
+        fi
     done
+    gate_detail_finish
 fi
 
-if [ "$REPORT_TASK_COUNT" -ge 1 ] && [ "$REPORT_FOUND_COUNT" -eq 0 ]; then
+if [ "${#REPORT_WAIT_NINJAS[@]}" -gt 0 ] && [ "${#REPORT_MISSING_FILES[@]}" -gt 0 ]; then
+    # Active missing reports are retryable WAIT, not terminal report-format
+    # failures. Keep terminal BLOCK precedence when another non-transient
+    # missing report has already populated BLOCK_REASONS.
+    ALL_CLEAR=false
+elif [ "$REPORT_TASK_COUNT" -ge 1 ] && [ "$REPORT_FOUND_COUNT" -eq 0 ]; then
     echo "  [CRITICAL] BLOCK: タスク${REPORT_TASK_COUNT}件に対して報告YAML 0件"
     for missing_f in "${REPORT_MISSING_FILES[@]}"; do
         record_block_reason "report_yaml_missing:${missing_f}"
