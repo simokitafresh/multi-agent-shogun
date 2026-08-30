@@ -952,9 +952,16 @@ inbox_deliver_report_review_generation() {
                 if [ -f "$_gunshi_inbox" ] && grep -q "report_fingerprint=${fingerprint}" "$_gunshi_inbox" 2>/dev/null; then
                     _inbox_has=true
                 fi
-                local _approval_dir="${dedupe_dir}"
-                if compgen -G "${_approval_dir}/gunshi_*approval*${fingerprint}*" >/dev/null 2>&1; then
-                    _approval_has=true
+                local _approval_base="${dedupe_dir}/review_approvals/reports"
+                if [ -d "$_approval_base" ]; then
+                    local _ap_file
+                    for _ap_file in "${_approval_base}"/*/gunshi.yaml; do
+                        [ -f "$_ap_file" ] || continue
+                        if grep -q "fingerprint: ${fingerprint}" "$_ap_file" 2>/dev/null && grep -q "result: LGTM" "$_ap_file" 2>/dev/null; then
+                            _approval_has=true
+                            break
+                        fi
+                    done
                 fi
                 if [ "$_inbox_has" = true ] || [ "$_approval_has" = true ]; then
                     flock -u "$_drf_fd"; eval "exec ${_drf_fd}>&-"
