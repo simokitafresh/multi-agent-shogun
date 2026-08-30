@@ -10452,3 +10452,10 @@ insights:
   source: "semantic_index_update"
   fix_known: false
   status: pending
+- id: INS-20260831-015247593-ef80
+  ts: "2026-08-31T01:52:47+09:00"
+  insight: "[[cmd complete gateのcommand files modified照合がmetadata openGrap]] NO_MATCH purpose pending alias: cmd_complete時にdeploy_task.logでNO_MATCHだったpurpose。類似概念TOP3: cmd_quality_logging(cmd設計品質ログ; alias=cmd complete gateのtiming計測が全report YAMLを毎回parseするボトルネックを; score=16.4) / provisional_cmd_gate_scaffold(仮: Cmd Gate Scaffold; alias=provisional_cmd_gate_scaffold; score=13.0) / command_files_modified_verification(Command×Files Modified照合; alias=command_files_modified_mismatch; score=11.5)。既存概念aliasesへの自動昇格候補"
+  priority: "low"
+  source: "semantic_index_update"
+  fix_known: false
+  status: pending
