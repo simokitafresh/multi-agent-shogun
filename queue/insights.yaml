@@ -10189,3 +10189,10 @@ insights:
   source: "semantic_index_update"
   fix_known: false
   status: pending
+- id: INS-20260830-234113837-ffff
+  ts: "2026-08-30T23:41:13+09:00"
+  insight: "[[FAQ EN 版 — app の faq JA 459 行 に EN 版を追加し]] semantic_stress_test candidate_aliases: NO_MATCH source=cmds query=FAQ EN 版 — app の /faq(JA 459 行)に EN 版を追加し、言語切替と hreflang/metadata を付けて LP EN からの導線先を英語にする"
+  priority: "low"
+  source: "semantic_stress_test"
+  fix_known: false
+  status: pending
