@@ -117,7 +117,7 @@ a{color:var(--accent)}
     <div class="card"><h3>公開データ契約 <code>GET /api/public/showcase</code></h3>
       <ul>
         <li>認証不要・tier 非依存・cache 1h・<strong>新規テーブル不要</strong></li>
-        <li><code>as_of</code> {series_end, next_close} / <code>blackout</code> {active, until_hint}(password・env key は決して返さない)</li>
+        <li><code>as_of</code> {series_end, next_close} / <code>blackout</code> {active, month_closed, n_signals}(時期示唆・password・env key は決して返さない)</li>
         <li>free 行(Basic-DM)のみ holding/momentum を返す。basic 4 行は<strong>キー自体を返さない</strong>(フロントがぼかしを描く)</li>
         <li><code>hero</code>(Basic-DM 完全公開)+ <code>plans[]</code>(basic/standard/premium: n・avg/best total_return・×N・cagr_min/max・sharpe_best・mdd_best、PF 名なし)+ <code>benchmarks[]</code>(SPY 2003-10〜 / TQQQ 2010-03〜)+ <code>secret</code>(count=73 と集計値、best_name は null=殿裁定 12:32)。個別 PF の holding/momentum は返さない</li>
         <li>401 "Password expired" → EN+JA の失効文+ブラックアウト帯</li>
@@ -149,6 +149,20 @@ a{color:var(--accent)}
   <p style="margin-top:8px">殿裁定 12:48/12:49: 表内に PF 名なし、期間は表外の英語脚注、Total/×N は「平均 〜 ベスト」、Sharpe/MDD はベストのみ。Sharpe = metrics「Sharpe Ratio」(年率・Rf 控除)、MDD = metrics「Maximum Drawdown」(月次)。† TQQQ は将軍が Rf=0 で概算、EP は共用式で再計算。</p>
   <p style="margin-top:8px">集合=<strong>シグナルまで公開している PF だけ</strong>(hide_portfolio ∧ hide_signal、殿裁定 12:19)。パフォーマンスのみ可視の PF(Basic の白虎激攻・分身常勝、Premium の奥義 ×3)は計算に入れない。行構成は Basic-DM / Basic / Standard / Premium / Secret の 5 つに確定(殿裁定 12:20)。CAGR = (1+tr)^(12/months)−1 を EP で算出。AC: 未認証 curl の plan 行 n/avg/best/×N/CAGR が DB 独立再計算と全行一致。</p>
   <p style="margin-top:8px">レスポンシブ: &gt;860px = 2 カラム+sticky リッチカード / ≤860px = 1 カラム+末尾シンプルカード+下部 sticky バー→ボトムシート。トークンは <code>globals.css</code> 既存のみ。文言は EN 主 JA 従、「毎営業日 / today」禁止、<strong>金額(¥)は書かない</strong>(殿裁定 10:20: 課金は note 経由、価格は note 側に一本化)。</p>
+
+  <h2>§2.4 ブラックアウト表現 — 殿裁定 12:58「日時は書かない・期待感+note 誘導」</h2>
+  <div class="grid2">
+    <div class="card"><h3>帯(サインインカード上部、active=true)</h3>
+      <p><strong>August is closed. New signals for September are computed.<br>The password unlocks them — announced on note.</strong><br><span style="color:var(--ink-2)">8 月のシグナルは確定。9 月のパスワードは note で発表します。お楽しみに。</span></p>
+      <p>ボタン「Get notified on note →」。直下に "New month's holdings are ready for 45 portfolios"(EP の n_signals、保有内容は出さない)。月名は series_end から自動。</p></div>
+    <div class="card"><h3>禁則と判定</h3>
+      <ul>
+        <li>カウントダウン・日時・「soon / early September / 近日」を<strong>使わない</strong>(発表タイミングは殿の裁量)</li>
+        <li>判定: <code>max(password_expires_at) &lt; today ∧ last_rotated_at ≤ expires_at</code>。rotate で自動解除。EP は <code>{active, month_closed, n_signals}</code> のみ</li>
+        <li>失効 401: 「This password has expired ／ このパスワードは失効しました」+同じ note 誘導。入力欄は残す</li>
+        <li>通常時は帯なし、カード内 1 行 "This month's password is on note →"</li>
+      </ul></div>
+  </div>
 
   <h2>§2.5 摩擦優先 — 殿参照 10:21(note「入口を変えただけで登録 1.6 倍」)</h2>
   <p>記事の結論: 使われない理由は魅力不足ではなく<strong>摩擦</strong>。効いたのは説明・特典・文言ではなく<strong>経路修正</strong>(着地ページ・ボタンを画面内へ)。区間で数えると一箇所が突出して悪く、たいてい思っていた場所と違う。→ ショーウィンドウ(魅力)より先に摩擦除去と区間計測を置く。</p>

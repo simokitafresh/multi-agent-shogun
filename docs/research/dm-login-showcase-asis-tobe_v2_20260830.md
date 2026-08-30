@@ -35,6 +35,7 @@
 | 12:48 | 表内にベストの PF 名は不要。期間の注釈は表外に小さく英語表記。平均とベストは『平均〜ベスト』(『/』ではなくレンジの『〜』) | 事実=表内の PF 名(Ave-X 等)と期間注記が行を長くし、『/』は比率にも読める。制約=公開できるのは集計値のみ(PF 名は Basic-DM 以外出さない)。判断=**全プラン行の値は『平均 〜 ベスト』のレンジ表記、PF 名なし、期間は表外の英語脚注**。効果=§3.1 表を書き換え、§2.3 の `best_name`/`sharpe_best_name`/`mdd_best_name` を契約から削除(hero の name のみ) |
 | 12:49 | Sharpe と MDD は平均は不要。ベストだけでいい | 事実=Sharpe/MDD の平均はプラン内のばらつきで薄まり、読者が使うのはベスト値。判断=**Sharpe 列=ベスト(最大)、MDD 列=ベスト(最浅)の単値。レンジ表記は Total return/×N/CAGR の 3 列のみ**。効果=§3.1 表と §2.3 契約から sharpe_avg/mdd_avg を削除 |
 | 12:54 | ログイン画面の数値データはリアルタイム更新(daily)にできるか？期間を明記して static にしたほうが SEO やユーザー動線としてベターか？ | 事実=①数値の出所 `portfolio_metrics(years=0)` は毎日再計算される(12:55 実測 calculated_at=2026-08-30 が 101 行)が、系列は月末クローズ基準で end_date=2026-07-31 のまま=**数字が動くのは月 1 回(月末クローズ翌日)**。②現行 /login は `"use client"` の CSR で、本番 HTML は `<title>DM-Signal</title>` のみ(12:11 curl)。robots.txt/sitemap/metadata なし=**検索エンジンには空ページ**。制約=daily 更新にしても表示値は月内不変。判断=**両立させる: サーバー側で HTML に数値を焼き込む ISR(revalidate 24h+月末再計算後の on-demand revalidate)+『Data through 2026-07-31』の期間明記**。訪問者には static に見え、実体は EP から毎日自動再生成。効果=§2.6 描画・更新方針を新設、P2b の AC に『初回 HTML に数値が含まれる(curl で表の数値が HTML 本文に存在)』『as_of の月末日が表外脚注に出る』を追加 |
+| 12:58 | ブラックアウトはどう表現する。note に誘導+パスワード発表をお楽しみにという期待感をあおるのがいいか？発表日時は俺が任意で決めているので具体的にしたくない | 事実=ブラックアウトは『月末で旧パスワード失効〜殿が note で新パスワードを発表するまで』で、発表時刻は固定されていない(viewer_tiers は expires_at=月末と last_rotated_at しか持たない)。制約=日時・カウントダウン・『early September』のような時期の示唆も出さない。判断=**ブラックアウト帯は『新しい月のシグナルは計算済み。パスワードは note で発表』の期待感+note 誘導のみ。日時表現ゼロ**。状態判定は `max(password_expires_at) < today ∧ last_rotated_at ≤ expires_at`(=まだ配布されていない)。効果=§2.4 を書き換え、EP `blackout` から `until_hint` を削除し `{active, month_closed}` に |
 
 ---
 
@@ -129,7 +130,7 @@
 
 ### 2.3 公開データ契約 `GET /api/public/showcase`（認証不要・tier 非依存・cache 1h）
 - `as_of`: {series_end: "2026-07-31", next_close: "2026-08-31", calculated_at}
-- `blackout`: {active: bool, until_hint: "early September"} ← `viewer_tiers.password_expires_at` の max から算出(**数値のみ。パスワードや env key は決して返さない**)
+- `blackout`: {active: bool, month_closed: bool, n_signals: int} ← `viewer_tiers.password_expires_at`/`last_rotated_at` から算出(§2.4。**時期示唆・パスワード・env key は決して返さない**)
 - `hero`: Basic-DualMomentum 1 本 `{name, holding, momentum, components, total_return, multiple, cagr, inception, benchmark_total_return}`(完全公開)
 - `plans[]`(basic / standard / premium の順): `{plan, n, avg_total_return, best_total_return, avg_multiple, best_multiple, cagr_min, cagr_max, sharpe_best, mdd_best}`(PF 名は返さない=殿裁定 12:48。Sharpe/MDD はベストのみ=12:49。Sharpe/MDD は metrics の『Sharpe Ratio』『Maximum Drawdown』close.portfolio) ← 集合= hide_portfolio=false ∧ hide_signal=false(§3.1)。**個別 PF の holding/momentum は返さない**(best_name のみ)
 - `benchmarks[]`: `{symbol: "SPY", since: "2003-10", total_return, multiple, cagr, sharpe, mdd}` / `{symbol: "TQQQ", since: "2010-03", …}` ← `ticker_monthly_returns` から EP が算出(Sharpe は PF と同じ Rf 系列)
@@ -137,10 +138,18 @@
 - 出所: `portfolio_metrics(years=0)`, `signals`(Basic-DM 最新 date), `tier_visibility_settings`, `viewer_tiers.password_expires_at`。**新規テーブル不要**。count は EP 内で導出(フロントに固定値を書かない)。
 - 非送信の原則: 代表 4 行の保有/モメンタムはフロントがぼかしバーを描く(データは来ない)。
 
-### 2.4 サインイン
+### 2.4 サインインとブラックアウト表現（殿裁定 12:58: 日時は書かない・期待感+note 誘導）
 - API 変更なし。入力 1 本のまま。
-- 失敗時: 401 "Password expired" を **「This month's password has expired ／ 当月パスワードは失効しました」+ blackout 案内**、その他 401 は現行文の EN+JA 化。
-- ブラックアウト中(`blackout.active`)はカード上部に帯「Blackout until early {month} — new password on note ／ ブラックアウト中」。
+- **状態判定(EP `blackout`)**: `active = max(viewer_tiers.password_expires_at) < today ∧ max(last_rotated_at) ≤ max(password_expires_at)`(=月末で失効し、まだ新パスワードが配布されていない)。配布(rotate)されると自動で `active=false`。`month_closed = series_end の翌月に入っている` を併せて返す。**`until_hint` 等の時期示唆フィールドは持たない**。
+- **ブラックアウト帯(active=true のとき、サインインカード上部)**:
+  - EN 主: **"August is closed. New signals for September are computed. The password unlocks them — announced on note."**
+  - JA 従: 「8 月のシグナルは確定。9 月のパスワードは note で発表します。お楽しみに。」
+  - ボタン: **"Get notified on note →"**(note membership/フォロー URL)。カウントダウン・日時・「soon/early September/近日」の語を**使わない**(発表タイミングは殿の裁量)。
+  - 月名は `series_end` から自動(8 月/9 月は固定文言にしない)。
+- **通常時(active=false)**: 帯なし。カード内 1 行 "This month's password is on note →"。
+- **失効パスワードでの 401**(auth.py "Password expired"): 「This password has expired ／ このパスワードは失効しました」+ 帯と同じ note 誘導 1 行。入力欄は残す(新パスワードを持つ人はそのまま入れる)。
+- 期待感の根拠を数字で: 帯の直下に "New month's holdings are ready for {n_signals} portfolios"(=Basic/Standard/Premium の signals 数 45 本の合計、EP から)。**保有内容は出さない**。Basic-DualMomentum(完全公開)の当月保有は帯の外(表の hero 行)で通常どおり見える=「無料の 1 本は今すぐ見られる、他は note で」の導線。
+- 文言はコンポーネント直書きせず設定値(P3)。EN/JA 規則 §4。
 
 ### 2.5 摩擦優先の原則（殿参照 10:21 の記事を本設計への拘束に変換）
 「摩擦を取る → それから魅力を足す」。/login の摩擦候補を先に潰し、区間で数えてから餌(§3.1 表)を足す。
