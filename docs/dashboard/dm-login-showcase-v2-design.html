@@ -119,7 +119,7 @@ a{color:var(--accent)}
         <li>認証不要・tier 非依存・cache 1h・<strong>新規テーブル不要</strong></li>
         <li><code>as_of</code> {series_end, next_close} / <code>blackout</code> {active, until_hint}(password・env key は決して返さない)</li>
         <li>free 行(Basic-DM)のみ holding/momentum を返す。basic 4 行は<strong>キー自体を返さない</strong>(フロントがぼかしを描く)</li>
-        <li><code>hero</code>(Basic-DM 完全公開)+ <code>plans[]</code>(basic/standard/premium: n・avg/best total_return・×N・cagr_min/max・sharpe_avg/best・mdd_avg/best、PF 名なし)+ <code>benchmarks[]</code>(SPY 2003-10〜 / TQQQ 2010-03〜)+ <code>secret</code>(count=73 と集計値、best_name は null=殿裁定 12:32)。個別 PF の holding/momentum は返さない</li>
+        <li><code>hero</code>(Basic-DM 完全公開)+ <code>plans[]</code>(basic/standard/premium: n・avg/best total_return・×N・cagr_min/max・sharpe_best・mdd_best、PF 名なし)+ <code>benchmarks[]</code>(SPY 2003-10〜 / TQQQ 2010-03〜)+ <code>secret</code>(count=73 と集計値、best_name は null=殿裁定 12:32)。個別 PF の holding/momentum は返さない</li>
         <li>401 "Password expired" → EN+JA の失効文+ブラックアウト帯</li>
       </ul></div>
   </div>
@@ -136,17 +136,17 @@ a{color:var(--accent)}
 
   <h3>Current signals 表 — 集計方式 v3(殿 12:18: Basic-DM 単体 + プラン毎の平均 / ベスト / ×N / CAGR レンジ)</h3>
   <div class="tbl"><table>
-    <tr><th>行</th><th>PF 数</th><th>Total return</th><th>×N</th><th>CAGR</th><th>Sharpe</th><th>MDD</th><th>Holding · Signals</th></tr>
+    <tr><th>行</th><th>PF 数</th><th>Total return</th><th>×N</th><th>CAGR</th><th>Sharpe (best)</th><th>MDD (best)</th><th>Holding · Signals</th></tr>
     <tr><td><strong>Basic-DualMomentum</strong><br><span class="pill free">Free · full access</span></td><td class="num">1</td><td class="num">+3,139%</td><td class="num">×32</td><td class="num">16.4%</td><td class="num">0.89</td><td class="num">−41.0%</td><td>Shown</td></tr>
-    <tr><td><strong>Basic plan</strong></td><td class="num">3</td><td class="num">+5,290% 〜 +11,321%</td><td class="num">×54 〜 ×114</td><td class="num">14.1% 〜 39.2%</td><td class="num">0.95 〜 1.11</td><td class="num">−36.5% 〜 −23.3%</td><td>Sign in</td></tr>
-    <tr><td><strong>Standard plan</strong></td><td class="num">17</td><td class="num">+22,047% 〜 +77,078%</td><td class="num">×221 〜 ×772</td><td class="num">14.1% 〜 52.2%</td><td class="num">0.96 〜 1.28</td><td class="num">−47.0% 〜 −22.8%</td><td>Sign in</td></tr>
-    <tr><td><strong>Premium plan</strong><br><span class="pill prem">by invitation</span></td><td class="num">25</td><td class="num">+23,725% 〜 +106,789%</td><td class="num">×238 〜 ×1,069</td><td class="num">14.1% 〜 68.7%</td><td class="num">1.03 〜 1.40</td><td class="num">−44.1% 〜 −21.2%</td><td>Invitation</td></tr>
-    <tr><td><strong>Secret</strong><br><span class="pill secret">Secret</span></td><td class="num">73</td><td class="num">+535,294% 〜 +5,405,515%</td><td class="num">×5,354 〜 ×54,056</td><td class="num">10.5% 〜 153.1%</td><td class="num">1.71 〜 2.48</td><td class="num">−29.9% 〜 −9.8%</td><td class="secret">Not viewable</td></tr>
+    <tr><td><strong>Basic plan</strong></td><td class="num">3</td><td class="num">+5,290% 〜 +11,321%</td><td class="num">×54 〜 ×114</td><td class="num">14.1% 〜 39.2%</td><td class="num">1.11</td><td class="num">−23.3%</td><td>Sign in</td></tr>
+    <tr><td><strong>Standard plan</strong></td><td class="num">17</td><td class="num">+22,047% 〜 +77,078%</td><td class="num">×221 〜 ×772</td><td class="num">14.1% 〜 52.2%</td><td class="num">1.28</td><td class="num">−22.8%</td><td>Sign in</td></tr>
+    <tr><td><strong>Premium plan</strong><br><span class="pill prem">by invitation</span></td><td class="num">25</td><td class="num">+23,725% 〜 +106,789%</td><td class="num">×238 〜 ×1,069</td><td class="num">14.1% 〜 68.7%</td><td class="num">1.40</td><td class="num">−21.2%</td><td>Invitation</td></tr>
+    <tr><td><strong>Secret</strong><br><span class="pill secret">Secret</span></td><td class="num">73</td><td class="num">+535,294% 〜 +5,405,515%</td><td class="num">×5,354 〜 ×54,056</td><td class="num">10.5% 〜 153.1%</td><td class="num">2.48</td><td class="num">−9.8%</td><td class="secret">Not viewable</td></tr>
     <tr><td><em>S&amp;P 500 (SPY)</em></td><td>—</td><td class="num">+1,026%</td><td class="num">×11</td><td class="num">11.2%</td><td class="num">0.63</td><td class="num">−52.9%</td><td>—</td></tr>
     <tr><td><em>TQQQ</em></td><td>—</td><td class="num">+29,383%</td><td class="num">×295</td><td class="num">41.4%</td><td class="num">0.90†</td><td class="num">−80.1%</td><td>—</td></tr>
   </table></div>
-  <p style="margin-top:6px;font-size:.78rem;color:var(--ink-2)">Plan rows show average 〜 best across portfolios whose signals are included in the plan. Total return, ×N and CAGR since each portfolio's inception (2003–2016); MDD is the maximum monthly drawdown. SPY since 2003-10 (same window as Basic-DualMomentum); TQQQ since 2010-03 (inception). Sharpe uses excess return over the risk-free rate. Not investment advice.</p>
-  <p style="margin-top:8px">殿裁定 12:48: 表内に PF 名なし、期間は表外の英語脚注、平均とベストは「平均 〜 ベスト」のレンジ表記。Sharpe = metrics「Sharpe Ratio」(年率・Rf 控除)、MDD = metrics「Maximum Drawdown」(月次)。† TQQQ は将軍が Rf=0 で概算、EP は共用式で再計算。</p>
+  <p style="margin-top:6px;font-size:.78rem;color:var(--ink-2)">Plan rows: total return and ×N show average 〜 best across portfolios whose signals are included in the plan; CAGR shows min 〜 max; Sharpe and MDD show the best portfolio. Total return, ×N and CAGR since each portfolio's inception (2003–2016); MDD is the maximum monthly drawdown. SPY since 2003-10 (same window as Basic-DualMomentum); TQQQ since 2010-03 (inception). Sharpe uses excess return over the risk-free rate. Not investment advice.</p>
+  <p style="margin-top:8px">殿裁定 12:48/12:49: 表内に PF 名なし、期間は表外の英語脚注、Total/×N は「平均 〜 ベスト」、Sharpe/MDD はベストのみ。Sharpe = metrics「Sharpe Ratio」(年率・Rf 控除)、MDD = metrics「Maximum Drawdown」(月次)。† TQQQ は将軍が Rf=0 で概算、EP は共用式で再計算。</p>
   <p style="margin-top:8px">集合=<strong>シグナルまで公開している PF だけ</strong>(hide_portfolio ∧ hide_signal、殿裁定 12:19)。パフォーマンスのみ可視の PF(Basic の白虎激攻・分身常勝、Premium の奥義 ×3)は計算に入れない。行構成は Basic-DM / Basic / Standard / Premium / Secret の 5 つに確定(殿裁定 12:20)。CAGR = (1+tr)^(12/months)−1 を EP で算出。AC: 未認証 curl の plan 行 n/avg/best/×N/CAGR が DB 独立再計算と全行一致。</p>
   <p style="margin-top:8px">レスポンシブ: &gt;860px = 2 カラム+sticky リッチカード / ≤860px = 1 カラム+末尾シンプルカード+下部 sticky バー→ボトムシート。トークンは <code>globals.css</code> 既存のみ。文言は EN 主 JA 従、「毎営業日 / today」禁止、<strong>金額(¥)は書かない</strong>(殿裁定 10:20: 課金は note 経由、価格は note 側に一本化)。</p>
 

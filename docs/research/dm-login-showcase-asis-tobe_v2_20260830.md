@@ -33,6 +33,7 @@
 | 12:32 | secret の数値も入れよう | 事実=Secret 73 本は全て metrics(years=0)あり(12:35 実測: 平均 +535,294%・ベスト +5,405,515%(秘奥義-追い風-激攻)、×5,354/×54,056、CAGR 10.5%〜153.1%、Sharpe 平均 1.71/ベスト 2.48(Sharpe4)、期間 105〜196 か月)。制約=名前・保有・シグナルは非公開のまま。判断=**Secret 行にも集計値(平均/ベスト/×N/CAGR レンジ/Sharpe)を出す。ベスト PF 名は出さない**(Secret の存在は数字で示し、正体は伏せる)。効果=§3.1 Secret 行を数値化、§2.3 `secret` に集計フィールド、best_name は null |
 | 12:46 | MDD も追加しよう | 事実=metrics に『Maximum Drawdown』(close.portfolio/benchmark)が全 PF にある(12:47 実測: Basic-DM −41.0%、Basic 平均 −36.5%/最浅 −23.3%(DM-safe)、Standard −47.0%/−22.8%(GSシン分身-鉄壁)、Premium −44.1%/−21.2%(GSシン四つ目-鉄壁)、Secret −29.9%/−9.8%、SPY 2003-10〜 −52.9%(Basic-DM 行の benchmark 値と一致)、TQQQ 2010-03〜 −80.1%)。制約=リターンだけの表は片面。判断=**MDD 列(プラン行は平均 / 最浅)を追加**。効果=§3.1 に MDD 列、§2.3 に `mdd_avg/mdd_best`、benchmarks に `mdd`。cmd_4414 は未配備(4413 CLEAR まで保留)のため void し、MDD 込みの cmd_4415 に差し替える |
 | 12:48 | 表内にベストの PF 名は不要。期間の注釈は表外に小さく英語表記。平均とベストは『平均〜ベスト』(『/』ではなくレンジの『〜』) | 事実=表内の PF 名(Ave-X 等)と期間注記が行を長くし、『/』は比率にも読める。制約=公開できるのは集計値のみ(PF 名は Basic-DM 以外出さない)。判断=**全プラン行の値は『平均 〜 ベスト』のレンジ表記、PF 名なし、期間は表外の英語脚注**。効果=§3.1 表を書き換え、§2.3 の `best_name`/`sharpe_best_name`/`mdd_best_name` を契約から削除(hero の name のみ) |
+| 12:49 | Sharpe と MDD は平均は不要。ベストだけでいい | 事実=Sharpe/MDD の平均はプラン内のばらつきで薄まり、読者が使うのはベスト値。判断=**Sharpe 列=ベスト(最大)、MDD 列=ベスト(最浅)の単値。レンジ表記は Total return/×N/CAGR の 3 列のみ**。効果=§3.1 表と §2.3 契約から sharpe_avg/mdd_avg を削除 |
 
 ---
 
@@ -129,9 +130,9 @@
 - `as_of`: {series_end: "2026-07-31", next_close: "2026-08-31", calculated_at}
 - `blackout`: {active: bool, until_hint: "early September"} ← `viewer_tiers.password_expires_at` の max から算出(**数値のみ。パスワードや env key は決して返さない**)
 - `hero`: Basic-DualMomentum 1 本 `{name, holding, momentum, components, total_return, multiple, cagr, inception, benchmark_total_return}`(完全公開)
-- `plans[]`(basic / standard / premium の順): `{plan, n, avg_total_return, best_total_return, avg_multiple, best_multiple, cagr_min, cagr_max, sharpe_avg, sharpe_best, mdd_avg, mdd_best}`(PF 名は返さない=殿裁定 12:48。Sharpe/MDD は metrics の『Sharpe Ratio』『Maximum Drawdown』close.portfolio) ← 集合= hide_portfolio=false ∧ hide_signal=false(§3.1)。**個別 PF の holding/momentum は返さない**(best_name のみ)
+- `plans[]`(basic / standard / premium の順): `{plan, n, avg_total_return, best_total_return, avg_multiple, best_multiple, cagr_min, cagr_max, sharpe_best, mdd_best}`(PF 名は返さない=殿裁定 12:48。Sharpe/MDD はベストのみ=12:49。Sharpe/MDD は metrics の『Sharpe Ratio』『Maximum Drawdown』close.portfolio) ← 集合= hide_portfolio=false ∧ hide_signal=false(§3.1)。**個別 PF の holding/momentum は返さない**(best_name のみ)
 - `benchmarks[]`: `{symbol: "SPY", since: "2003-10", total_return, multiple, cagr, sharpe, mdd}` / `{symbol: "TQQQ", since: "2010-03", …}` ← `ticker_monthly_returns` から EP が算出(Sharpe は PF と同じ Rf 系列)
-- `secret`: `{count: 73, n, avg_total_return, best_total_return, best_name: null, avg_multiple, best_multiple, cagr_min, cagr_max, sharpe_avg, sharpe_best, mdd_avg, mdd_best}`(殿裁定 12:32/12:46。名前は返さない) ← active 102 − premium performance 28 − Ave-X(Basic のみ)1(殿裁定 10:41、FoF 6 本含む)
+- `secret`: `{count: 73, n, avg_total_return, best_total_return, best_name: null, avg_multiple, best_multiple, cagr_min, cagr_max, sharpe_best, mdd_best}`(殿裁定 12:32/12:46/12:49。名前は返さない) ← active 102 − premium performance 28 − Ave-X(Basic のみ)1(殿裁定 10:41、FoF 6 本含む)
 - 出所: `portfolio_metrics(years=0)`, `signals`(Basic-DM 最新 date), `tier_visibility_settings`, `viewer_tiers.password_expires_at`。**新規テーブル不要**。count は EP 内で導出(フロントに固定値を書かない)。
 - 非送信の原則: 代表 4 行の保有/モメンタムはフロントがぼかしバーを描く(データは来ない)。
 
@@ -159,19 +160,19 @@
 ### 3.1 Current signals 表 — 集計方式 v3（殿 12:18: Basic-DM 単体 + プラン毎の平均/ベスト/×N/CAGR レンジ）
 5 行で完結。個別 PF 名は Basic-DM とベスト PF 名以外出さない。数値は本番 `portfolio_metrics(years=0)` から EP が集計(12:20 実測、series end 2026-07-31)。
 
-| 行 | PF 数 | Total return | ×N | CAGR | Sharpe | MDD | Holding · Signals |
+| 行 | PF 数 | Total return | ×N | CAGR | Sharpe(best) | MDD(best) | Holding · Signals |
 |---|---|---|---|---|---|---|---|
 | **Basic-DualMomentum** | 1 | +3,139% | ×32 | 16.4% | 0.89 | −41.0% | **Shown**(holding / momentum / components) |
-| **Basic plan** | 3 | +5,290% 〜 +11,321% | ×54 〜 ×114 | 14.1% 〜 39.2% | 0.95 〜 1.11 | −36.5% 〜 −23.3% | Sign in |
-| **Standard plan** | 17 | +22,047% 〜 +77,078% | ×221 〜 ×772 | 14.1% 〜 52.2% | 0.96 〜 1.28 | −47.0% 〜 −22.8% | Sign in |
-| **Premium plan** · by invitation | 25 | +23,725% 〜 +106,789% | ×238 〜 ×1,069 | 14.1% 〜 68.7% | 1.03 〜 1.40 | −44.1% 〜 −21.2% | Invitation |
-| **Secret** | 73 | +535,294% 〜 +5,405,515% | ×5,354 〜 ×54,056 | 10.5% 〜 153.1% | 1.71 〜 2.48 | −29.9% 〜 −9.8% | Not viewable |
+| **Basic plan** | 3 | +5,290% 〜 +11,321% | ×54 〜 ×114 | 14.1% 〜 39.2% | 1.11 | −23.3% | Sign in |
+| **Standard plan** | 17 | +22,047% 〜 +77,078% | ×221 〜 ×772 | 14.1% 〜 52.2% | 1.28 | −22.8% | Sign in |
+| **Premium plan** · by invitation | 25 | +23,725% 〜 +106,789% | ×238 〜 ×1,069 | 14.1% 〜 68.7% | 1.40 | −21.2% | Invitation |
+| **Secret** | 73 | +535,294% 〜 +5,405,515% | ×5,354 〜 ×54,056 | 10.5% 〜 153.1% | 2.48 | −9.8% | Not viewable |
 | *S&P 500 (SPY)* | — | +1,026% | ×11 | 11.2% | 0.63 | −52.9% | — |
 | *TQQQ* | — | +29,383% | ×295 | 41.4% | 0.90† | −80.1% | — |
 
-表外脚注(小・英語): "Plan rows show average 〜 best across portfolios whose signals are included in the plan. Total return, ×N and CAGR since each portfolio's inception (2003–2016); MDD is the maximum monthly drawdown. SPY since 2003-10 (same window as Basic-DualMomentum); TQQQ since 2010-03 (inception). Sharpe uses excess return over the risk-free rate. Not investment advice."
+表外脚注(小・英語): "Plan rows: total return and ×N show average 〜 best across portfolios whose signals are included in the plan; CAGR shows min 〜 max; Sharpe and MDD show the best portfolio. Total return, ×N and CAGR since each portfolio's inception (2003–2016); MDD is the maximum monthly drawdown. SPY since 2003-10 (same window as Basic-DualMomentum); TQQQ since 2010-03 (inception). Sharpe uses excess return over the risk-free rate. Not investment advice."
 
-- レンジの意味(殿裁定 12:48): 左=プラン内 PF の平均、右=ベスト(MDD は最浅)。CAGR は min〜max。表内に PF 名は出さない(Basic-DM のみ固有名)。
+- レンジの意味(殿裁定 12:48/12:49): Total return・×N は『平均 〜 ベスト』、CAGR は min〜max。Sharpe は最大値、MDD は最浅値の単値(平均なし)。表内に PF 名は出さない(Basic-DM のみ固有名)。
 - 期間の注釈は表内に置かず、表外脚注に英語で小さく置く。
 - Sharpe は `metrics_json.metrics[name="Sharpe Ratio"].close.portfolio`(年率、Rf 控除、`metrics_impl.py:977-983`)。SPY 0.63 は Basic-DM 行の `close.benchmark`(同じ Rf 控除)。† TQQQ の 0.90 は将軍が `ticker_monthly_returns` から Rf=0 で概算した値(12:33)。EP は PF と同じ Rf 系列で再計算する(AC)。
 - 比較行の期間: SPY は Basic-DM と同じ 2003-10〜、TQQQ は 2010-03〜。各行に期間を明記し、プラン行(起点 2003〜2013 が混在)との単純比較ではないことを注記 "periods differ; see inception"。
