@@ -10476,11 +10476,96 @@ PY
     echo "$report_gate_output" | grep -q '^PASS'
 }
 
+_stable_report_generation() {
+    local report_full="$1" generation
+    [ -f "$report_full" ] || return 1
+    generation=$(sha256sum "$report_full" 2>/dev/null | awk '{print $1}') || return 1
+    [[ "$generation" =~ ^[0-9a-f]{64}$ ]] || return 1
+    printf '%s\n' "$generation"
+}
+
+# Review approvals carry two identities with different meanings:
+# `fingerprint` is the normalized review payload, while `generation` is the
+# immutable report publication generation.  Review re-delivery must use the
+# latter.  Otherwise metadata-only report rewrites can look like a new review
+# while a formally approved report is still the same generation.
+_report_generation_has_terminal_review() {
+    local report_full="$1" parent_cmd="$2" generation="$3"
+    local report_rel key approval_dir role_file result stored_generation marker
+    [ -f "$report_full" ] && [ -n "$parent_cmd" ] && [ -n "$generation" ] || return 1
+
+    report_rel="queue/reports/${report_full##*/}"
+    key=$(review_report_key "$report_rel" 2>/dev/null || true)
+    [ -n "$key" ] || return 1
+    approval_dir="$SCRIPT_DIR/queue/gates/$parent_cmd/review_approvals/reports/$key"
+    for role_file in gunshi.yaml karo.yaml; do
+        [ -f "$approval_dir/$role_file" ] || continue
+        result=$(review_approval_value "$approval_dir/$role_file" result 2>/dev/null || true)
+            case "$role_file:$result" in
+            gunshi.yaml:LGTM|karo.yaml:ACCEPT)
+                stored_generation=$(review_approval_value "$approval_dir/$role_file" generation 2>/dev/null || true)
+                # Pre-generation approval receipts used the raw report hash in
+                # `fingerprint`.  Accept that value only when it is exactly
+                # the stable generation; normalized fingerprints never pass
+                # this compatibility branch.
+                [ -n "$stored_generation" ] || \
+                    stored_generation=$(review_approval_value "$approval_dir/$role_file" fingerprint 2>/dev/null || true)
+                [ "$stored_generation" = "$generation" ] && return 0
+                ;;
+        esac
+    done
+
+    # Keep the existing report-keyed normalized approval check as a migration
+    # fallback for receipts created before `generation` was persisted.  The
+    # stable-generation marker remains the identity used for every new write.
+    if _pending_task_canonical_review_state "$parent_cmd" "$report_full" >/dev/null 2>&1; then
+        return 0
+    fi
+
+    # review_gate.done is only terminal evidence when its generation-bound
+    # receipt agrees with the current report.  Do not treat an unbound legacy
+    # marker as proof: stale markers are exactly what caused the re-send storm.
+    marker="$SCRIPT_DIR/queue/gates/$parent_cmd/review_gate.done"
+    [ -f "$marker" ] || return 1
+    stored_generation=$(awk -F': ' '$1 == "generation" || $1 == "completion_generation" {print $2; exit}' "$marker" 2>/dev/null || true)
+    if [ "$stored_generation" = "$generation" ]; then
+        return 0
+    fi
+    for marker in \
+        "$SCRIPT_DIR/queue/gates/$parent_cmd/semantic_causal_audit.generation.json" \
+        "$SCRIPT_DIR/queue/gates/$parent_cmd/gate_worker.clear.json"; do
+        [ -f "$marker" ] || continue
+        stored_generation=$(python3 - "$marker" <<'PY'
+import json, sys
+try:
+    value = json.load(open(sys.argv[1], encoding="utf-8")).get("completion_generation", "")
+except (OSError, ValueError, TypeError):
+    value = ""
+print(str(value))
+PY
+)
+        [ "$stored_generation" = "$generation" ] && return 0
+    done
+    return 1
+}
+
+_write_report_generation_marker() {
+    local marker="$1" generation="$2" marker_tmp
+    marker_tmp="${marker}.tmp.$$"
+    printf 'timestamp: %s\ngeneration: %s\n' "$(date -Iseconds)" "$generation" > "$marker_tmp" || return 1
+    mv -f -- "$marker_tmp" "$marker"
+}
+
 auto_request_report_review() {
     local report_full="$1" parent_cmd="$2" strict_failed_pass="${3:-0}"
-    local report_base gate_dir marker lock_fd fingerprint marker_fp
+    local report_base gate_dir marker lock_fd fingerprint marker_fp generation marker_generation=""
     report_base=${report_full##*/}
     [ -n "$parent_cmd" ] || return 1
+    generation=$(_stable_report_generation "$report_full" 2>/dev/null || true)
+    [ -n "$generation" ] || {
+        log "REPORT-REVIEW-AUTO-SKIP: report=$report_base parent_cmd=$parent_cmd reason=generation_unavailable"
+        return 1
+    }
     if [ "$strict_failed_pass" = "1" ]; then
         if ! _report_is_pass_review_candidate "$report_full"; then
             log "REPORT-REVIEW-AUTO-SKIP: report=$report_base parent_cmd=$parent_cmd reason=not_completed_pass_all_binary_yes"
@@ -10491,9 +10576,9 @@ auto_request_report_review() {
             log "REPORT-REVIEW-AUTO-SKIP: report=$report_base parent_cmd=$parent_cmd reason=fingerprint_unavailable"
             return 1
         }
-        if _pending_task_canonical_review_state "$parent_cmd" "$report_full" >/dev/null 2>&1; then
-            log "REPORT-REVIEW-AUTO-SKIP: report=$report_base parent_cmd=$parent_cmd reason=reviewed_generation"
-            return 1
+        if _report_generation_has_terminal_review "$report_full" "$parent_cmd" "$generation"; then
+            log "REPORT-REVIEW-AUTO-SKIP: report=$report_base parent_cmd=$parent_cmd reason=reviewed_generation generation=$generation"
+            return 0
         fi
     fi
     gate_dir="$SCRIPT_DIR/queue/gates/$parent_cmd"
@@ -10503,23 +10588,21 @@ auto_request_report_review() {
     exec {lock_fd}>"$gate_dir/review_request.lock"
     flock -n "$lock_fd" || { eval "exec ${lock_fd}>&-"; return 0; }
     marker_fp=""
-    if [ "$strict_failed_pass" = "1" ] && [ -f "$marker" ]; then
-        marker_fp=$(awk -F': ' '$1 == "fingerprint" {print $2; exit}' "$marker" 2>/dev/null || true)
+    if [ -f "$marker" ]; then
+        marker_generation=$(awk -F': ' '$1 == "generation" {print $2; exit}' "$marker" 2>/dev/null || true)
+        # Legacy markers only carried the normalized fingerprint.  They are
+        # not a stable-generation receipt and are intentionally replayed once
+        # during migration unless formal terminal evidence above already won.
     fi
-    if { [ "$strict_failed_pass" = "1" ] && [ "$marker_fp" != "$fingerprint" ]; } ||
-       { [ "$strict_failed_pass" != "1" ] && [ ! -f "$marker" ]; }; then
-        if bash "$SCRIPT_DIR/scripts/inbox_write.sh" gunshi \
+    if [ "$marker_generation" != "$generation" ]; then
+        if INBOX_WRITE_ROOT_OVERRIDE="$SCRIPT_DIR" bash "$SCRIPT_DIR/scripts/inbox_write.sh" gunshi \
             "忍者報告の自動レビュー依頼。report=${report_base} parent_cmd=${parent_cmd}" \
             review_draft ninja_monitor review_request >/dev/null 2>>"$SCRIPT_DIR/logs/report_review_auto_request.err"; then
-            if [ "$strict_failed_pass" = "1" ]; then
-                printf 'timestamp: %s\nreport: %s\nparent_cmd: %s\nfingerprint: %s\n' \
-                    "$(date -Iseconds)" "$report_base" "$parent_cmd" "$fingerprint" > "$marker"
-                log "REPORT-REVIEW-AUTO-REQUEST: report=$report_base parent_cmd=$parent_cmd fingerprint=$fingerprint"
-            else
-                printf 'timestamp: %s\nreport: %s\nparent_cmd: %s\n' \
-                    "$(date -Iseconds)" "$report_base" "$parent_cmd" > "$marker"
-                log "REPORT-REVIEW-AUTO-REQUEST: report=$report_base parent_cmd=$parent_cmd"
-            fi
+            _write_report_generation_marker "$marker" "$generation" || {
+                log "REPORT-REVIEW-AUTO-REQUEST-BLOCK: report=$report_base parent_cmd=$parent_cmd reason=marker_write_failed"
+                return 1
+            }
+            log "REPORT-REVIEW-AUTO-REQUEST: report=$report_base parent_cmd=$parent_cmd generation=$generation fingerprint=${fingerprint:-unavailable}"
         else
             log "REPORT-REVIEW-AUTO-REQUEST-BLOCK: report=$report_base parent_cmd=$parent_cmd"
         fi
@@ -10582,7 +10665,8 @@ auto_karo_accept_after_lgtm() {
 
 # 2026-08-30 21:31 殿裁定: 時間経過での ACCEPT 代行は黙認=品質バイパス(タイムアウトはフォールバックと同じでサイレントに負の複利)。呼出しを撤去。LGTM 後の家老 ACCEPT 停滞は T184 review-pending nudge(状態 B)で家老を起こす。承認は代行しない。
 repair_terminal_report_outboxes() {
-    local name task_file report_path report_full status task_status parent_cmd
+    local name task_file report_path report_full status task_status parent_cmd generation
+    local report_marker report_marker_generation report_lock_fd
     for name in "${NINJA_NAMES[@]}"; do
         task_file="$SCRIPT_DIR/queue/tasks/${name}.yaml"
         [ -f "$task_file" ] || continue
@@ -10608,13 +10692,35 @@ repair_terminal_report_outboxes() {
             auto_request_report_review "$report_full" "$parent_cmd" 1 || true
             continue
         fi
-        if bash "${REPORT_OUTBOX_INBOX_WRITE_PATH:-$SCRIPT_DIR/scripts/inbox_write.sh}" karo \
-            "${name}報告完了。report=${report_full##*/}" report_received "$name" notify_karo \
-            >/dev/null 2>&1; then
-            auto_request_report_review "$report_full" "$parent_cmd" || true
-        else
-            log "REPORT-OUTBOX-REPAIR-BLOCK: $name report=${report_full##*/}"
+        generation=$(_stable_report_generation "$report_full" 2>/dev/null || true)
+        [ -n "$generation" ] || {
+            log "REPORT-OUTBOX-REPAIR-BLOCK: $name report=${report_full##*/} reason=generation_unavailable"
+            continue
+        }
+        report_marker="$SCRIPT_DIR/queue/gates/$parent_cmd/report_received.${report_full##*/}.done"
+        report_marker_generation=""
+        mkdir -p "$SCRIPT_DIR/queue/gates/$parent_cmd"
+        exec {report_lock_fd}>"$SCRIPT_DIR/queue/gates/$parent_cmd/report_received.lock"
+        if ! flock -n "$report_lock_fd"; then
+            eval "exec ${report_lock_fd}>&-"
+            continue
         fi
+        if [ -f "$report_marker" ]; then
+            report_marker_generation=$(awk -F': ' '$1 == "generation" {print $2; exit}' "$report_marker" 2>/dev/null || true)
+        fi
+        if [ "$report_marker_generation" != "$generation" ]; then
+            if INBOX_WRITE_ROOT_OVERRIDE="$SCRIPT_DIR" bash "${REPORT_OUTBOX_INBOX_WRITE_PATH:-$SCRIPT_DIR/scripts/inbox_write.sh}" karo \
+                "${name}報告完了。report=${report_full##*/}" report_received "$name" notify_karo \
+                >/dev/null 2>&1; then
+                _write_report_generation_marker "$report_marker" "$generation" || \
+                    log "REPORT-OUTBOX-REPAIR-BLOCK: $name report=${report_full##*/} reason=marker_write_failed"
+            else
+                log "REPORT-OUTBOX-REPAIR-BLOCK: $name report=${report_full##*/}"
+            fi
+        fi
+        flock -u "$report_lock_fd" || true
+        eval "exec ${report_lock_fd}>&-"
+        auto_request_report_review "$report_full" "$parent_cmd" || true
     done
 }
 

@@ -481,10 +481,127 @@ grep -q "REPORT-REVIEW-AUTO-SKIP:.*done_reviewed.*reviewed_generation" "$ROOT/mo
 printf "positive=2 negatives=4 duplicate=0 done=1 marker=1\\n"
 '
     [ "$status" -eq 0 ]
-    if [ "$status" -ne 0 ]; then
-        printf "failed_pass_review_debug status=%s output=%s\\n" "$status" "$output"
-    fi
     [ "$output" = "positive=2 negatives=4 duplicate=0 done=1 marker=1" ]
+}
+
+# test_necessity: report-review and report_received repair lanes must converge
+# on one immutable report generation, recognize generation-bound terminal
+# evidence, and leave the generation marker absent when delivery fails.
+@test "report review and report outbox dedupe use stable generation" {
+    run bash -lc '
+set -euo pipefail
+PROJECT_ROOT="'"$PROJECT_ROOT"'"
+export NINJA_MONITOR_LIB_ONLY=1 NINJA_MONITOR_FUNCTION_TIMING_LOG=disabled
+source "$PROJECT_ROOT/scripts/ninja_monitor.sh"
+unset NINJA_MONITOR_LIB_ONLY
+
+ROOT="'"$BATS_TEST_TMPDIR"'/stable-report-generation"
+mkdir -p "$ROOT/queue/tasks" "$ROOT/queue/reports" "$ROOT/queue/gates" "$ROOT/scripts/gates" "$ROOT/logs"
+cat > "$ROOT/scripts/gates/gate_report_format.sh" <<SH
+#!/usr/bin/env bash
+echo "PASS: fixture report format"
+SH
+cat > "$ROOT/scripts/inbox_write.sh" <<SH
+#!/usr/bin/env bash
+if [ -f "$ROOT/fail_once" ]; then
+    rm -f "$ROOT/fail_once"
+    exit 1
+fi
+printf "%s|%s|%s|%s\\n" "\$1" "\$3" "\$4" "\$2" >> "$ROOT/review_requests.log"
+SH
+chmod +x "$ROOT/scripts/gates/gate_report_format.sh" "$ROOT/scripts/inbox_write.sh"
+log() { printf "%s\\n" "\$1" >> "$ROOT/monitor.log"; }
+# Keep the fixture focused on delivery identity; the production helper
+# commit-identity gate is exercised by the report-format suite.
+review_report_fingerprint() { printf "%s\\n" normalized-review-payload; }
+NINJA_NAMES=(hanzo)
+SCRIPT_DIR="$ROOT"
+STATE_DIR="$ROOT/state"
+
+report="$ROOT/queue/reports/hanzo_report_cmd_stable.yaml"
+cat > "$report" <<YAML
+worker_id: hanzo
+task_id: cmd_stable_normal
+parent_cmd: cmd_stable
+report_id: rpt-stable
+report_identity_version: 2
+status: completed
+verdict: PASS
+commit_hash: "0000000000000000000000000000000000000000"
+binary_checks:
+  AC1:
+    - check: fixture
+      result: yes
+YAML
+
+auto_request_report_review "$report" cmd_stable 1
+auto_request_report_review "$report" cmd_stable 1
+test "$(grep -c "|review_draft|" "$ROOT/review_requests.log")" -eq 1
+generation=$(sha256sum "$report" | awk "{print \$1}")
+marker="$ROOT/queue/gates/cmd_stable/review_request.hanzo_report_cmd_stable.yaml.done"
+grep -q "^generation: $generation$" "$marker"
+
+rm -f "$marker"
+key=$(review_report_key queue/reports/hanzo_report_cmd_stable.yaml)
+mkdir -p "$ROOT/queue/gates/cmd_stable/review_approvals/reports/$key"
+cat > "$ROOT/queue/gates/cmd_stable/review_approvals/reports/$key/gunshi.yaml" <<EOF
+result: LGTM
+generation: $generation
+fingerprint: normalized-review-payload
+report: queue/reports/hanzo_report_cmd_stable.yaml
+EOF
+auto_request_report_review "$report" cmd_stable 1
+test "$(grep -c "|review_draft|" "$ROOT/review_requests.log")" -eq 1
+
+rm -f "$ROOT/queue/gates/cmd_stable/review_approvals/reports/$key/gunshi.yaml"
+cat > "$ROOT/queue/gates/cmd_stable/review_gate.done" <<EOF
+result: LGTM
+generation: $generation
+EOF
+auto_request_report_review "$report" cmd_stable 1
+test "$(grep -c "|review_draft|" "$ROOT/review_requests.log")" -eq 1
+
+rm -f "$ROOT/queue/gates/cmd_stable/review_gate.done"
+printf "payload: changed\\n" >> "$report"
+new_generation=$(sha256sum "$report" | awk "{print \$1}")
+test "$new_generation" != "$generation"
+auto_request_report_review "$report" cmd_stable 1
+auto_request_report_review "$report" cmd_stable 1
+test "$(grep -c "|review_draft|" "$ROOT/review_requests.log")" -eq 2
+
+rm -f "$ROOT/queue/gates/cmd_stable/review_request.hanzo_report_cmd_stable.yaml.done"
+touch "$ROOT/fail_once"
+auto_request_report_review "$report" cmd_stable 1
+test ! -e "$ROOT/queue/gates/cmd_stable/review_request.hanzo_report_cmd_stable.yaml.done"
+auto_request_report_review "$report" cmd_stable 1
+test "$(grep -c "|review_draft|" "$ROOT/review_requests.log")" -eq 3
+
+cat > "$ROOT/queue/tasks/hanzo.yaml" <<YAML
+task:
+  status: in_progress
+  task_id: cmd_parent_normal
+  parent_cmd: cmd_parent
+  report_path: queue/reports/hanzo_report_cmd_parent.yaml
+YAML
+cat > "$ROOT/queue/reports/hanzo_report_cmd_parent.yaml" <<YAML
+worker_id: hanzo
+task_id: cmd_parent_normal
+parent_cmd: cmd_parent
+report_id: rpt-parent
+report_identity_version: 2
+status: completed
+verdict: PASS
+YAML
+repair_terminal_report_outboxes
+repair_terminal_report_outboxes
+test "$(grep -c "|report_received|" "$ROOT/review_requests.log")" -eq 1
+test "$(grep -c "|review_draft|" "$ROOT/review_requests.log")" -eq 4
+parent_generation=$(sha256sum "$ROOT/queue/reports/hanzo_report_cmd_parent.yaml" | awk "{print \$1}")
+grep -q "^generation: $parent_generation$" "$ROOT/queue/gates/cmd_parent/report_received.hanzo_report_cmd_parent.yaml.done"
+printf "%s\\n" "same_generation=0 new_generation=1 failed_retry=1 parent_report_received=1 review_draft=4"
+'
+    [ "$status" -eq 0 ]
+    [ "$output" = "same_generation=0 new_generation=1 failed_retry=1 parent_report_received=1 review_draft=4" ]
 }
 
 # test_necessity: a completed report with durable Gunshi LGTM is terminal
