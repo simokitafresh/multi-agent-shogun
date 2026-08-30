@@ -411,16 +411,15 @@ def main():
                 # 証跡に頼らず同一局所文脈の完了証跡と組み合わせて免除する。
                 # 「未解決事項を確認したが残存」には完了証跡がなく、
                 # 「未解決だったがresolve可能」には resolved 状態がないため維持する。
-                local_after = lower_text[end:min(len(lower_text), end + 96)]
+                local_after = lower_text[end:min(len(lower_text), end + 192)]
                 local_resolved_history = (
                     term == '未解決'
                     and re.search(
                         r'(?:前提|事項|項目|問題|課題)?(?:を|は)?'
-                        r'(?:(?:現行)?(?:実装|コード)で)?'
-                        r'(?:照合|確認|検証)'
-                        r'[^。！？]{0,48}'
-                        r'(?:対象|当該|該当)?\s*'
-                        r'(?:status\s*[:=]\s*resolved|resolvedへ(?:遷移|更新)|解決済み|解決済)',
+                        r'[^。！？]{0,96}(?:照合|確認|検証)'
+                        r'[^。！？]{0,96}'
+                        r'(?:status\s*[:=]\s*resolved|resolvedへ(?:遷移|更新)|解決済み|解決済|'
+                        r'既知(?:の)?(?:実装|対応)(?:の存在)?を確認|(?:追加)?decision[_ ]candidateなし)',
                         local_after,
                     )
                 )
