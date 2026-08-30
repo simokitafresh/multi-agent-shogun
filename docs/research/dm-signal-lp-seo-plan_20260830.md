@@ -67,6 +67,7 @@
 | 7 初期設定 | 殿 | 「設定→ユーザーと権限」で将軍用に **フル権限ユーザー追加は不要**(週報は API でなく画面値を殿が転記 or 将軍が Console API 用 OAuth を後日) / 「国際ターゲティング」は hreflang 対称化(P0-2)後に自動 | 2 分 | — |
 | 8 初回データ | 将軍 | 24〜48h 後に「ページのインデックス登録」で `/` `/ja/` が「登録済み」。未登録なら「URL 検査→インデックス登録をリクエスト」を 2 URL に手動実行 | 翌日 | 登録 2/2 |
 
+- **実績(2026-08-30 20:01)**: 殿が Search Console の「DNS プロバイダで自動確認(Cloudflare)」を使い、Step 1〜5 を一括完了(Google が Cloudflare に TXT を自動追加・自動確認)。将軍の TXT 手作業(Step 3-4)は不要になった。残=Step 6 sitemap 送信・Step 8 索引確認。
 - 補足 1: **「ドメイン」プロパティ**を選ぶ理由=`www`/`http`/`https`/サブドメイン(将来の `app.` `signals.`)を 1 つで束ねられる。URL プレフィックスだと LP・app で別プロパティになる。
 - 補足 2: TXT 方式を選ぶ理由=Cloudflare が DNS 権威なので将軍が API で 1 手、LP の HTML(Render 静的出力)を触らずに済む。HTML タグ方式は deploy が要る。
 - 補足 3: Bing Webmaster(P0-6)は Console 登録後に「Google Search Console からインポート」で 2 分。
