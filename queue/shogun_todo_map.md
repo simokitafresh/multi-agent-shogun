@@ -1,10 +1,10 @@
-# 将軍 全体状況マップ(やることリスト) — 2026-08-26 13:55 作成 / 08-31 05:42 更新(loop#6)(T212 Agent Readiness)(loop#1 T211)(殿指示 02:59『強くてニューゲーム』保存 T210)(殿指示 20:43『強くてニューゲーム』保存 T156+T157 bats 本番汚染)(殿指示14:34: 進捗確認・つまり解消)
+# 将軍 全体状況マップ(やることリスト) — 2026-08-26 13:55 作成 / 08-31 06:12 更新(loop#7)(T212 Agent Readiness)(loop#1 T211)(殿指示 02:59『強くてニューゲーム』保存 T210)(殿指示 20:43『強くてニューゲーム』保存 T156+T157 bats 本番汚染)(殿指示14:34: 進捗確認・つまり解消)
 # ★殿裁定 2026-08-29 10:26『バグの修正は必須だが、一回終わりを作ろう。速度向上は今取り掛かっているタスクたちを全て完了させたら一旦俺の指示を待て。バグの根治は俺の指示を待たずに継続せよ』→ 速度 lane は走行分の終端で凍結(新規配備 0、家老 blt_102819 で適用確認)。バグ根治 lane(T180/CI RED/便停止/Guard14)は継続。
 # 原則(殿13:52-13:54): シングルタスクを高速に切替える。優先順位なし=全部やる。依存は構造としてだけ記す。一定時間ごと(各inbox処理後・30分毎)に更新。 ★らせんの原理: ①計測器を律速の名指しから仕込み本番に常設→②1 unit だけ切る(1 unit/commit)→③計測を一段深く→④計測器は残す。切るのは機械的待ちのみ。逸脱チェック3問(名指しから始めたか/一段深くしたか/本番に残るか)。対象=速度/デッドコード/リファクタ/知識。成果指標=PJ 成果の e2e と件数
 # artifact: https://claude.ai/code/artifact/5da62854-f81f-4d53-908b-2fe464031f36 (HTML正本 docs/dashboard/shogun-todo-map.html。更新=正本Edit→Artifact再公開 同file_path)
 # 記法: [ ] 未 / [~] 走行中(担当) / [x] 済(証跡)。★=速度向上へのつながり1行必須
 
-- [~] T213(03:42→05:42 loop#6) 現在値: CLEAR 本日 25(PJ5/infra20)で直近 30 分 0=done 在庫 3(影丸 0454 偽陽性 BLOCK 待ち/半蔵 LG043 hotfix done 05:28/飛猿 0523)→家老へ順序付き 1 通(msg 05:42、LG043 GATE→0454 再 review→0523→才蔵 0514 正直 FAIL fail-close)。疾風 4430=3h09m だが pane 進行中(12m26s 新表示)。rev-list 6/16(push lane 05:40 走行中、次 loop で収束確認)。CI GREEN 維持。litter 4,864。markdown トグル未 ON(curl text/html)。終端条件=CLEAR 3 行 ∧ saizo idle ∧ rev-list 0 0 ∧ 4430 CLEAR ★偽陽性根治(LG043)を先に通すと review lane の機械 BLOCK 1 類型が恒久に消える
+- [~] T213(03:42→06:12 loop#7) 現在値: CLEAR 本日 25 のまま 60 分 0=壁 2 枚: (a)家老が『LGTM 成立待ち』で停止していたが review_log 05:43 に APPROVE 実在→名指し 1 通(msg 06:12) (b)f396ead46 が CI run 33334577571 failure=新規 RED→push 保留→ancestry WAIT 積上げ(0523 4 連)→ci_fix 1 unit を同 1 通で下知。done 在庫 5(0454/LG043/dedupe/0523/才蔵 failed)。疾風 4430=3h39m 進行中。rev-list 8/18。litter 4,864。markdown トグル未 ON。終端条件=CLEAR 4 行 ∧ saizo idle ∧ CI GREEN ∧ rev-list 0 0 ∧ 4430 CLEAR ★『成立済み承認の見落とし』を検知する gate(review_log LGTM∧ACCEPT 無し 15 分)が次の自動化ターゲット
 
 - [~] T212(03:15 殿提示 Agent Readiness 診断→05:22 殿指示『Level3 まで全て完了』) 現在値: Level1 4/5(Content-Signal live 03:23)。ロードマップ v1.0=gist da1b7617(f3fb04633、殿操作 3 回に限定・依存順 2-1→2-2→2-3 のみ直列)。次=将軍 D0 静的系(1-1 api-catalog/1-3 auth.md/1-2b link rel/2-1 OAuth Discovery)→cmd 2-2〜2-7 起票。終端条件=診断 Rescan Level1 5/5 ∧ Level2 3/3 ∧ Level3 8/8 ★agent 経由の新流入面を read-only で開く(書き込みは別裁定)
 
