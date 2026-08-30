@@ -940,7 +940,10 @@ PY
 ) || return 1
     task_worktree_repo=$(printf '%s\n' "$publish_meta" | sed -n '1p')
     contract_repo=$(printf '%s\n' "$publish_meta" | sed -n '2p')
-    for candidate in "$task_worktree_repo" "$contract_repo"; do
+    # The worktree is the editing source, but the explicit commit contract is
+    # the publication owner.  Prefer it so a cleaned/branch-tracking task
+    # worktree can never redirect publication away from canonical origin/main.
+    for candidate in "$contract_repo" "$task_worktree_repo"; do
         [ -n "$candidate" ] || continue
         if root=$(git -C "$candidate" rev-parse --show-toplevel 2>/dev/null); then
             printf '%s\n' "$root"
@@ -1035,6 +1038,172 @@ PY
     ) || return 1
     git -C "$repo" cat-file -e "${source_sha}^{commit}" 2>/dev/null || return 1
     printf '%s\n' "$source_sha"
+}
+
+# Resolve every publication source declared by a task report.  A report may
+# retain the historical task-worktree path after that worktree has been
+# cleaned, while commit_contract.repo_root remains the canonical repository
+# that owns the commits and remote.  Prefer that explicit canonical root, then
+# fall back to the entry path only when it is still a resolvable git repo.
+# NUL framing keeps paths and repository names lossless for the caller.
+resolve_task_source_records() {
+    local task_file="$1" repo_hint="${2:-}"
+    python3 - "$task_file" "$repo_hint" "$SCRIPT_DIR" <<'PY'
+import os
+import re
+import subprocess
+import sys
+import yaml
+
+task_file, repo_hint, script_dir = sys.argv[1:]
+try:
+    task_doc = yaml.safe_load(open(task_file, encoding="utf-8")) or {}
+except (OSError, yaml.YAMLError):
+    raise SystemExit(1)
+task = task_doc.get("task", task_doc) if isinstance(task_doc, dict) else {}
+if not isinstance(task, dict):
+    raise SystemExit(1)
+report_ref = str(task.get("report_path") or task.get("report_filename") or "").strip()
+if not report_ref:
+    raise SystemExit(1)
+report_path = os.path.abspath(report_ref if os.path.isabs(report_ref)
+                               else os.path.join(script_dir, report_ref))
+try:
+    report = yaml.safe_load(open(report_path, encoding="utf-8")) or {}
+except (OSError, yaml.YAMLError):
+    raise SystemExit(1)
+if not isinstance(report, dict):
+    raise SystemExit(1)
+
+contract = task.get("commit_contract") or report.get("commit_contract") or {}
+if not isinstance(contract, dict):
+    contract = {}
+report_contract = report.get("commit_contract") or {}
+if not isinstance(report_contract, dict):
+    report_contract = {}
+canonical = list(dict.fromkeys(
+    str(value).strip() for value in
+    (contract.get("repo_root"), report_contract.get("repo_root"),
+     report.get("repo_root"), repo_hint)
+    if str(value or "").strip()
+))
+generation = ""
+for value in (report.get("report_generation"), report.get("report_generation_fingerprint"),
+              report.get("report_fingerprint"), report.get("report_id"),
+              task.get("report_generation"), task.get("report_id")):
+    if str(value or "").strip():
+        generation = str(value).strip()
+        break
+
+entries = report.get("cross_repo_commits")
+fallback_primary = not isinstance(entries, list) or not entries
+if fallback_primary:
+    entries = [{"repo": None, "commit_hash": report.get("commit_hash"),
+                "paths": report.get("files_modified") or []}]
+
+seen = set()
+for entry in entries:
+    if not isinstance(entry, dict):
+        continue
+    sha = str(entry.get("commit_hash") or "").strip().lower()
+    if not re.fullmatch(r"[0-9a-f]{40}", sha):
+        continue
+    paths = entry.get("paths") or []
+    if not isinstance(paths, list):
+        continue
+    normalized_paths = []
+    for item in paths:
+        value = item.get("path") if isinstance(item, dict) else item
+        value = str(value or "").strip()
+        if value and value not in normalized_paths:
+            normalized_paths.append(value)
+    derive_paths = fallback_primary and not normalized_paths
+    candidates = list(canonical)
+    candidates.insert(0, entry.get("repo"))
+    selected = ""
+    for candidate in candidates:
+        candidate = str(candidate or "").strip()
+        if not candidate:
+            continue
+        if not os.path.isabs(candidate):
+            candidate = os.path.join(script_dir, candidate)
+        candidate = os.path.realpath(candidate)
+        if not os.path.isdir(candidate):
+            continue
+        try:
+            probe = subprocess.run(["git", "-C", candidate, "cat-file", "-e", sha + "^{commit}"],
+                                   stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL,
+                                   timeout=5)
+        except (OSError, subprocess.TimeoutExpired):
+            continue
+        if probe.returncode == 0:
+            selected = candidate
+            break
+    if not selected:
+        raise SystemExit(1)
+    if derive_paths:
+        try:
+            raw_paths = subprocess.check_output(
+                ["git", "-C", selected, "diff-tree", "--root", "--no-commit-id",
+                 "--name-only", "-r", "-z", sha],
+                stderr=subprocess.DEVNULL, timeout=5,
+            )
+        except (OSError, subprocess.CalledProcessError, subprocess.TimeoutExpired):
+            raise SystemExit(1)
+        normalized_paths = [value.decode("utf-8") for value in raw_paths.split(b"\0") if value]
+    if not normalized_paths:
+        continue
+    key = (selected, sha, generation, tuple(normalized_paths))
+    if key in seen:
+        continue
+    seen.add(key)
+    for value in (selected, sha, generation, str(len(normalized_paths)), *normalized_paths):
+        sys.stdout.buffer.write(value.encode("utf-8") + b"\0")
+PY
+}
+
+# Source reports are commonly written newest-first. Cherry-picking or taking
+# final path state in that order loses parent/child intent, so order only the
+# declared commits by their ancestry while retaining report order for
+# unrelated commits.
+order_source_commits() {
+    local repo="$1"
+    shift
+    python3 - "$repo" "$@" <<'PY'
+import subprocess
+import sys
+
+repo = sys.argv[1]
+declared = list(dict.fromkeys(sys.argv[2:]))
+declared_set = set(declared)
+parents = {}
+for sha in declared:
+    try:
+        raw = subprocess.check_output(
+            ["git", "-C", repo, "rev-list", "--parents", "-n", "1", sha],
+            text=True, stderr=subprocess.DEVNULL, timeout=5,
+        ).split()
+    except (OSError, subprocess.CalledProcessError, subprocess.TimeoutExpired):
+        raise SystemExit(1)
+    parents[sha] = [value for value in raw[1:] if value in declared_set]
+children = {sha: [] for sha in declared}
+indegree = {sha: len(values) for sha, values in parents.items()}
+for child, values in parents.items():
+    for parent in values:
+        children[parent].append(child)
+ready = [sha for sha in declared if indegree[sha] == 0]
+ordered = []
+while ready:
+    current = ready.pop(0)
+    ordered.append(current)
+    for child in children[current]:
+        indegree[child] -= 1
+        if indegree[child] == 0:
+            ready.append(child)
+if len(ordered) != len(declared):
+    raise SystemExit(1)
+print("\n".join(ordered))
+PY
 }
 
 mark_task_worktree_published() {
@@ -1687,6 +1856,7 @@ discover_cmd_report_cross_repo_sources() {
 import glob
 import os
 import re
+import subprocess
 import sys
 import yaml
 
@@ -1711,24 +1881,62 @@ for pattern in (
         if parent != cmd_id or str(report.get("status") or "").strip() != "completed":
             continue
         matched_report = True
+        report_contract = report.get("commit_contract") or {}
+        if not isinstance(report_contract, dict):
+            report_contract = {}
+        canonical_roots = [
+            report_contract.get("repo_root"),
+            report.get("repo_root"),
+        ]
+        report_generation = ""
+        for value in (
+            report.get("report_generation"), report.get("report_generation_fingerprint"),
+            report.get("report_fingerprint"), report.get("report_id"),
+        ):
+            if str(value or "").strip():
+                report_generation = str(value).strip()
+                break
         entries = report.get("cross_repo_commits") or []
         if not isinstance(entries, list):
             entries = []
         for entry in entries:
             if not isinstance(entry, dict):
                 continue
-            repo = str(entry.get("repo") or "").strip()
+            entry_repo = str(entry.get("repo") or "").strip()
             sha = str(entry.get("commit_hash") or "").strip().lower()
             paths = entry.get("paths") or []
-            if not repo or not os.path.isabs(repo) or not re.fullmatch(r"[0-9a-f]{40}", sha):
+            if not re.fullmatch(r"[0-9a-f]{40}", sha):
                 continue
             if not isinstance(paths, list) or not paths or any(not isinstance(p, str) or not p or "\x00" in p for p in paths):
                 continue
-            key = (os.path.realpath(repo), sha, tuple(paths))
+            candidates = [*canonical_roots, entry_repo, root]
+            repo = ""
+            for candidate in candidates:
+                candidate = str(candidate or "").strip()
+                if not candidate:
+                    continue
+                if not os.path.isabs(candidate):
+                    candidate = os.path.join(root, candidate)
+                candidate = os.path.realpath(candidate)
+                if not os.path.isdir(candidate):
+                    continue
+                try:
+                    probe = subprocess.run(
+                        ["git", "-C", candidate, "cat-file", "-e", sha + "^{commit}"],
+                        stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, timeout=5,
+                    )
+                except (OSError, subprocess.TimeoutExpired):
+                    continue
+                if probe.returncode == 0:
+                    repo = candidate
+                    break
+            if not repo:
+                continue
+            key = (repo, sha, tuple(paths))
             if key in seen:
                 continue
             seen.add(key)
-            for value in (key[0], sha, str(len(paths)), *paths):
+            for value in (key[0], sha, report_generation, str(len(paths)), *paths):
                 sys.stdout.buffer.write(value.encode("utf-8") + b"\0")
         # A taskless parent report may be a platform-repository completion and
         # therefore has no cross_repo_commits block. Its primary commit/path
@@ -1748,7 +1956,8 @@ for pattern in (
                 if value and value not in ("no-code-change", "no_code_change") and value not in primary_paths:
                     primary_paths.append(value)
         primary_repo = str(
-            report.get("repo_root")
+            report_contract.get("repo_root")
+            or report.get("repo_root")
             or snapshot.get("repo_root")
             or root
         ).strip()
@@ -1761,7 +1970,8 @@ for pattern in (
             key = (primary_repo, primary_sha, tuple(primary_paths))
             if key not in seen:
                 seen.add(key)
-                for value in (key[0], primary_sha, str(len(primary_paths)), *primary_paths):
+                for value in (key[0], primary_sha, report_generation,
+                              str(len(primary_paths)), *primary_paths):
                     sys.stdout.buffer.write(value.encode("utf-8") + b"\0")
     # Live reports are the canonical lifecycle slot.  Only consult the large
     # archive when no completed live report exists for this command; otherwise
@@ -2908,9 +3118,10 @@ push_task_repositories() {
     local -a repos=() eligible_task_files=()
     local -a receipt_pairs=()
     local saw_task_file=0
-    local report_repo report_source report_path_count path_index path report_sources_tmp report_sources_fd
+    local report_repo report_source report_generation report_path_count path_index path report_sources_tmp report_sources_fd
+    local source_repo source_generation source_path_count source_valid=true task_repo
     local -a report_paths=()
-    local -A seen_repos=() report_sources_by_repo=() receipt_pair_seen=()
+    local -A seen_repos=() report_sources_by_repo=() task_sources_by_repo=() receipt_pair_seen=()
 
     for task_file in "$@"; do
         [ -f "$task_file" ] || continue
@@ -2936,6 +3147,37 @@ push_task_repositories() {
         fi
     done
 
+    # Expand task-backed reports to the complete cross-repository source/path
+    # union before selecting a publication repo. This also lets an explicit
+    # commit_contract.repo_root replace a stale task-worktree path.
+    for task_file in "${eligible_task_files[@]}"; do
+        task_repo=$(resolve_task_publish_repo_dir "$task_file" 2>/dev/null || true)
+        while IFS= read -r -d '' source_repo \
+            && IFS= read -r -d '' source_sha \
+            && IFS= read -r -d '' source_generation \
+            && IFS= read -r -d '' source_path_count; do
+            [[ "$source_path_count" =~ ^[0-9]+$ ]] && [ "$source_path_count" -gt 0 ] || {
+                source_valid=false
+                break
+            }
+            report_paths=()
+            for ((path_index=0; path_index<source_path_count; path_index++)); do
+                IFS= read -r -d '' path || { source_valid=false; break 2; }
+                report_paths+=("$path")
+            done
+            if ! report_source_paths_match_commit "$source_repo" "$source_sha" \
+                "$source_path_count" "${report_paths[@]}"; then
+                source_valid=false
+                continue
+            fi
+            if [[ ! "${seen_repos[$source_repo]+_}" ]]; then
+                seen_repos["$source_repo"]=1
+                repos+=("$source_repo")
+            fi
+            task_sources_by_repo["$source_repo"]+="${source_sha}|${source_generation}"$'\n'
+        done < <(resolve_task_source_records "$task_file" "$task_repo" 2>/dev/null || true)
+    done
+
     # A historical premature archive can remove the task before GATE CLEAR.
     # In that case the completed report's exact cross-repo commit/path
     # contract is the only accepted repository source.  Never guess platform
@@ -2957,6 +3199,7 @@ push_task_repositories() {
         unlink "$report_sources_tmp" || return 1
         while IFS= read -r -d '' report_repo \
             && IFS= read -r -d '' report_source \
+            && IFS= read -r -d '' report_generation \
             && IFS= read -r -d '' path_count; do
             [[ "$path_count" =~ ^[0-9]+$ ]] && [ "$path_count" -gt 0 ] || return 1
             report_paths=()
@@ -2972,7 +3215,7 @@ push_task_repositories() {
                 seen_repos["$report_repo"]=1
                 repos+=("$report_repo")
             fi
-            report_sources_by_repo["$report_repo"]+="${report_source}"$'\n'
+            report_sources_by_repo["$report_repo"]+="${report_source}|${report_generation}"$'\n'
         done <&"$report_sources_fd"
         exec {report_sources_fd}<&-
         [ "${#repos[@]}" -gt 0 ] || repos=("$SCRIPT_DIR")
@@ -2984,11 +3227,14 @@ push_task_repositories() {
             continue
         fi
 
-        upstream_ref=$(git -C "$repo" rev-parse --abbrev-ref --symbolic-full-name '@{upstream}' 2>/dev/null || true)
-        upstream_sha=$(git -C "$repo" rev-parse '@{upstream}' 2>/dev/null || true)
-        [ -n "$upstream_ref" ] || { echo "  git push: BLOCK ($repo upstream missing)"; return 1; }
-        remote="${upstream_ref%%/*}"
-        push_ref="refs/heads/${upstream_ref#*/}"
+        # Publication is always against the gate's canonical boundary. A
+        # task branch may track origin/feature, but it is never a valid target
+        # for completion publication.
+        upstream_ref="origin/main"
+        upstream_sha=$(git -C "$repo" rev-parse "$upstream_ref" 2>/dev/null || true)
+        remote="origin"
+        push_ref="refs/heads/main"
+        [ -n "$upstream_sha" ] || { echo "  git push: BLOCK ($repo canonical origin/main missing)"; return 1; }
         remote_tip=$(git -C "$repo" ls-remote "$remote" "$push_ref" 2>/dev/null | awk 'NR==1 {print $1}')
         [[ "$remote_tip" =~ ^[0-9a-f]{40}$ ]] || { echo "  git push: BLOCK ($repo remote tip unavailable)"; return 1; }
 
@@ -2996,20 +3242,25 @@ push_task_repositories() {
         all_sources_ok=true
         if [ "${#eligible_task_files[@]}" -eq 0 ] && [ -n "${report_sources_by_repo[$repo]:-}" ]; then
             while IFS= read -r source_sha; do
-                [ -n "$source_sha" ] && source_commits+=("$source_sha")
+                [ -n "$source_sha" ] || continue
+                source_commits+=("${source_sha%%|*}")
             done <<< "${report_sources_by_repo[$repo]}"
         else
-            for task_file in "${eligible_task_files[@]}"; do
-                [ -f "$task_file" ] || continue
-            [ "$(resolve_task_publish_repo_dir "$task_file")" = "$repo" ] || continue
-                source_sha=$(resolve_push_source_commit "$task_file" "$repo" 2>/dev/null || true)
-                if [[ "$source_sha" =~ ^[0-9a-f]{40}$ ]]; then
-                    source_commits+=("$source_sha")
-                else
-                    all_sources_ok=false
-                fi
-            done
+            while IFS= read -r source_sha; do
+                [ -n "$source_sha" ] || continue
+                source_commits+=("${source_sha%%|*}")
+            done <<< "${task_sources_by_repo[$repo]:-}"
         fi
+        if [ "${#source_commits[@]}" -gt 0 ]; then
+            local -a ordered_source_commits=()
+            mapfile -t ordered_source_commits < <(order_source_commits "$repo" "${source_commits[@]}" 2>/dev/null)
+            if [ "${#ordered_source_commits[@]}" -ne "${#source_commits[@]}" ]; then
+                all_sources_ok=false
+            else
+                source_commits=("${ordered_source_commits[@]}")
+            fi
+        fi
+        [ "$source_valid" = true ] || all_sources_ok=false
         if [ "$all_sources_ok" != true ] || [ "${#source_commits[@]}" -eq 0 ]; then
             echo "  git push: BLOCK ($repo report source commit unavailable)"
             return 1
@@ -3026,25 +3277,31 @@ push_task_repositories() {
         receipt_expected=true
         receipt_pairs=()
         receipt_pair_seen=()
-        if ! [[ "${SHOGUN_COMPLETION_GENERATION:-}" =~ ^[0-9a-f]{64}$ ]] \
-            || [ "${#eligible_task_files[@]}" -eq 0 ]; then
+        if ! [[ "${SHOGUN_COMPLETION_GENERATION:-}" =~ ^[0-9a-f]{64}$ ]]; then
             receipt_expected=false
         else
-            for task_file in "${eligible_task_files[@]}"; do
-                [ "$(resolve_task_publish_repo_dir "$task_file")" = "$repo" ] || continue
-                source_sha=$(resolve_push_source_commit "$task_file" "$repo" 2>/dev/null || true)
-                source_report_generation=$(resolve_publish_report_generation "$task_file" "$SCRIPT_DIR" 2>/dev/null || true)
+            local source_records_for_repo=""
+            if [ "${#eligible_task_files[@]}" -gt 0 ]; then
+                source_records_for_repo="${task_sources_by_repo[$repo]:-}"
+                [ -n "$source_records_for_repo" ] || receipt_expected=false
+            else
+                source_records_for_repo="${report_sources_by_repo[$repo]:-}"
+            fi
+            while IFS= read -r source_record; do
+                [ -n "$source_record" ] || continue
+                source_sha="${source_record%%|*}"
+                source_report_generation="${source_record#*|}"
                 if ! [[ "$source_sha" =~ ^[0-9a-f]{40}$ ]] || [ -z "$source_report_generation" ]; then
                     receipt_expected=false
                     continue
                 fi
-                [ -n "$legacy_task_file" ] || legacy_task_file="$task_file"
+                [ -n "$legacy_task_file" ] || legacy_task_file="${eligible_task_files[0]:-}"
                 local receipt_pair_key="${source_sha}|${source_report_generation}"
                 if [ -z "${receipt_pair_seen[$receipt_pair_key]+yes}" ]; then
                     receipt_pairs+=("$source_sha" "$source_report_generation")
                     receipt_pair_seen["$receipt_pair_key"]=1
                 fi
-            done
+            done <<< "$source_records_for_repo"
             [ "${#receipt_pairs[@]}" -gt 0 ] || receipt_expected=false
         fi
 
@@ -3103,11 +3360,10 @@ push_task_repositories() {
             # source contracts do not carry the deployment base and therefore
             # retain the existing ancestry/equivalence behavior.
             if [ "${#eligible_task_files[@]}" -gt 0 ]; then
-                for task_file in "${eligible_task_files[@]}"; do
-                    [ "$(resolve_task_publish_repo_dir "$task_file")" = "$repo" ] || continue
-                    source_sha=$(resolve_push_source_commit "$task_file" "$repo" 2>/dev/null || true)
+                local noop_task_file="${eligible_task_files[0]}"
+                for source_sha in "${source_commits[@]}"; do
                     if ! [[ "$source_sha" =~ ^[0-9a-f]{40}$ ]] \
-                        || ! pass_no_improvement_base_tree_noop "$task_file" "$repo" "$source_sha" "$remote_tip"; then
+                        || ! pass_no_improvement_base_tree_noop "$noop_task_file" "$repo" "$source_sha" "$remote_tip"; then
                         source_noop_all=false
                         break
                     fi
