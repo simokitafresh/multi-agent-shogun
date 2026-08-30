@@ -3210,6 +3210,10 @@ codd:
 | discussion | `queue/lord_conversation.jsonl` 2026-08-30T20:02:54+09:00 Search Console dm-signal.com 所有権確認 2026-08-30 20:01: 殿が Console の DNS プロバイダ自動確認(Cloudflare 連携)で完了、Google が TXT を自動追加。将軍の |
 | discussion | `queue/lord_conversation.jsonl` 2026-08-30T20:04:56+09:00 殿裁定 2026-08-30 20:04『やったぞ。進めてくれ』: Search Console sitemap 送信完了(P0-1 閉)。SEO 案 §5 の裁定 3 点は既定案で確定=title/description は §2 P0- |
 | discussion | `queue/lord_conversation.jsonl` 2026-08-30T20:21:19+09:00 殿下問 2026-08-30 20:20『テーブルにカラムを増やしてどのサイトでログインしたか分かるようにするか？今後別サービスの時にも便利な方』→将軍推薦=行で持ち列で持たない: product_logins(user_id, produ |
+| discussion | `queue/lord_conversation.jsonl` 2026-08-30T20:37:15+09:00 2026-08-30 20:30-20:40 起票 lane の 2 根治(将軍 D0): (1)cmd_save.sh の前 cmd BLOCK 数から checks=warn_missing_prev_cmd_lesson(meta-B |
+| discussion | `queue/lord_conversation.jsonl` 2026-08-30T20:45:23+09:00 Free tier 3 cmd 委任完了 2026-08-30 20:44: cmd_4422(F1 backend)20:33、cmd_4423(F2 frontend)20:37、cmd_4424(F3 LP CTA /free?fro |
+| cmd | `cmd_4419` LP 別サイト P3 — backend の CORS 許可に LP ドメインを追加し showcase event の step enum に lp_view と lp_cta_click を加える |
+| causal | `cmd_4419` origin: [[殿裁定_LP別サイト_20260830_1642]] -> [[dm-login-showcase-asis-tobe_v2_20260830]] -> [[cmd_4419_backend_cors_event]] |
 | causal_chain | `[[cmd_3749]]` (L974) |
 | causal_chain | `[[cmd_training_L1_report-write_20260708020332]]` (L977) |
 | causal_chain | `[[cmd_reflux_insight_202607071717_tobisaru]]` (L961) |
@@ -3664,6 +3668,7 @@ codd:
 | discussion | `queue/lord_conversation.jsonl` 2026-08-30T19:09:51+09:00 30分loop(殿指示08-27 14:34「進捗を確認し、利他の精神でつまりを解消し、artifactを更新せよ」恒久): (1)capture-pane全pane/陣形図/gate_metrics/rev-list origin/CI  |
 | discussion | `queue/lord_conversation.jsonl` 2026-08-30T19:43:03+09:00 30分loop(殿指示08-27 14:34「進捗を確認し、利他の精神でつまりを解消し、artifactを更新せよ」恒久): (1)capture-pane全pane/陣形図/gate_metrics/rev-list origin/CI  |
 | discussion | `queue/lord_conversation.jsonl` 2026-08-30T20:09:51+09:00 30分loop(殿指示08-27 14:34「進捗を確認し、利他の精神でつまりを解消し、artifactを更新せよ」恒久): (1)capture-pane全pane/陣形図/gate_metrics/rev-list origin/CI  |
+| discussion | `queue/lord_conversation.jsonl` 2026-08-30T20:40:33+09:00 30分loop(殿指示08-27 14:34「進捗を確認し、利他の精神でつまりを解消し、artifactを更新せよ」恒久): (1)capture-pane全pane/陣形図/gate_metrics/rev-list origin/CI  |
 | causal_chain | `[[cmd_karo_hotfix_deploy_report_template_quote_escape_202607020530]]` (L924) |
 | causal_chain | `[[cmd_reflux_insight_202607071717_tobisaru]]` (L961) |
 | causal_chain | `[[cmd_karo_hotfix_report_notify_inprogress_guard_202607101913]]` (L1026) |
@@ -9968,6 +9973,7 @@ codd:
 | discussion | `queue/lord_conversation.jsonl` 2026-08-30T20:18:02+09:00 登録者データはリバランサーと同じでsupabaseの既存のものにまとめればいいのでは？ |
 | discussion | `queue/lord_conversation.jsonl` 2026-08-30T20:19:29+09:00 確かに別々に分けたほうが今後はいいか。リバランサー経由か、LP経由か、DM-signalだけを登録したのか、リバランサーと両方利用したのか見えたほうが今後のサービス展開に役に立つ？ |
 | discussion | `queue/lord_conversation.jsonl` 2026-08-30T20:20:31+09:00 殿下問 2026-08-30 20:19『リバランサー経由/LP 経由/DM だけ/両方が見えたほうが今後のサービス展開に役立つ？』→将軍回答: 役立つ。Supabase プロジェクトは分けず 1 人 1 アカウント維持、product_r |
+| discussion | `queue/lord_conversation.jsonl` 2026-08-30T11:55:44.557104+00:00 git pre-commit semantic propagation for context/projects changes |
 
 ## simple_ocr — Simple OCR（画像OCR Webアプリ）
 
@@ -10022,6 +10028,7 @@ codd:
 | discussion | `queue/lord_conversation.jsonl` 2026-05-16T15:54:07+09:00 ２と３は順序が逆だ。google vision api単独だと余分な情報が多すぎる→Google Vision API + 除外パターンマッチ→LLMの性能向上で解決できないかと思いClaude Vision / GPT-4o に画像を直接 |
 | discussion | `queue/lord_conversation.jsonl` 2026-05-27T13:46:55+09:00 009をアップデートしたから確認して。俺らはお薬手帳OCRとかをやっただろう？その経験からgoogle cloud vision APIの優秀さを知った。だからnotebooklmにOCRをまかすのはどうかな |
 | discussion | `queue/lord_conversation.jsonl` 2026-08-23T00:26:27+09:00 baveirq1o toolu_01BpsKqghpmNoCrZipzkGkKU /tmp/claude-1000/-mnt-c-tools-multi-agent-shogun/c2ef8a7a-235a-4331-b2cd-aaad13 |
+| discussion | `queue/lord_conversation.jsonl` 2026-08-30T20:32:00+09:00 b5hip6o7o toolu_01WAjGCocReEe7TLZ2d1X73V /tmp/claude-1000/-home-simokitafresh-multi-agent-shogun/b40b7045-ff88-4a88-b288 |
 
 ## kj_series — KJシリーズ
 
@@ -15782,6 +15789,7 @@ codd:
 | discussion | `queue/lord_conversation.jsonl` 2026-08-30T09:09:31.626958+00:00 git pre-commit semantic propagation for context/projects changes |
 | discussion | `queue/lord_conversation.jsonl` 2026-08-30T10:40:14.986542+00:00 git pre-commit semantic propagation for context/projects changes |
 | discussion | `queue/lord_conversation.jsonl` 2026-08-30T11:11:26.102147+00:00 git pre-commit semantic propagation for context/projects changes |
+| discussion | `queue/lord_conversation.jsonl` 2026-08-30T11:30:47.472544+00:00 git pre-commit semantic propagation for context/projects changes |
 | causal_chain | `[[cmd_karo_hotfix_lessons_yaml_format_restore_20260727]]` (L1389) |
 
 ## infra_design_intent — インフラ設計意図カタログ

@@ -1,7 +1,195 @@
 commands:
+  cmd_4424:
+    title: "Free tier F3 — LP に『Free で始める(Google)』CTA を Sign in と並べて追加し /free?from=lp へ導線を付け、Members/Free の入口文言を EN/JA で二分する"
+    status: delegated
+    project: dm-signal
+    purpose: "殿裁定 2026-08-30 20:21『着手せよ』+殿要件 20:17『動線をスムーズに。すでにメンバーが誤解しないように』+20:19『LP 経由か rebalancer 経由かが見えたほうがいい』(設計書 v3 §2 項目 5・§4-5 経路記録)。LP(lp/、dm-signal.com)の hero と footer の CTA は Sign in と Read the docs だけで Free への入口が無い。本 cmd は LP に Free CTA と入口二分の文言だけを足す(frontend /free は cmd_4423、backend は cmd_4422 と並走)。CTA の遷移先 /free?from=lp が経路記録(source=lp)の起点になる"
+    scope_mode: FULL
+    target_path: /mnt/c/Python_app/DM-signal/lp
+    acceptance_criteria:
+      AC1:
+        description: "landing-page の hero CTA 群に『Start free with Google / Google で無料で始める』ボタン(href=appUrl の /free に from=lp クエリ付き)を Sign in の隣に追加し、footer の nav にも同リンクを加え、copy の en と ja に freeCta と入口二分の見出し(Members=note の当月パスワード / Free=Google で登録して当月クーポン)と『Free は Basic-DualMomentum のみ』の 1 文を閉じ、next build(output export)の out の EN と JA の index に free の href が hero と footer の各一つずつあることを確認する"
+        binary_check: "EN/JA の out index に href が /free?from=lp を含む a 要素が各二つ(hero と footer) ∧ Sign in の a 要素は従来どおり /login ∧ Members と Free の見出しが EN/JA 各一つ ∧ Basic-DualMomentum のみ の文言 EN/JA 各一つ か?"
+      AC2:
+        description: "Free CTA の押下で既存の showcase event(step=lp_cta_click、cmd_4419 で追加済)を送る既存導線と同じ経路を通し(新 step は追加しない)、CTA の文言が価格・無料期間を示さず(Free はプラン名であり期間ではない)、note 課金導線(getOnNote)の文言と混ざらないことを確認する"
+        binary_check: "Free CTA の onClick が既存の lp_cta_click 送信関数を呼ぶ(または同じ a 要素の data 属性で既存 listener が拾う) ∧ 毎営業日/today/soon/¥/円/first month free/初月無料/free trial の grep 0 ∧ getOnNote の文言が不変 か?"
+      AC3:
+        description: "変更が lp 配下の landing-page と copy の en と ja のみで、既存 test の削除が無く、tsc と next build が PASS し、375×667 の Playwright(ローカル static serve)で hero の Sign in と Free CTA が初期 viewport 内に並ぶ(算出元: cmd_4420 の AC1 と同じ viewport、rg -c '375' queue/shogun_to_karo.yaml → 1 件以上)ことを確認する"
+        binary_check: "変更ファイルが landing-page・copy en・copy ja の集合内のみ(算出元: git diff --name-only を生貼付) ∧ 既存 test 削除が無い ∧ tsc と next build exit 0 ∧ 375×667 で Sign in と Free CTA が初期 viewport 内 か?"
+    command: |
+      1. copy に freeCta と入口二分の文言を EN/JA で足し、landing-page の hero と footer に Free CTA(/free?from=lp)を追加して out の href を確認する
+      2. Free CTA を既存 lp_cta_click 経路に載せ、禁則 grep 0 と getOnNote 不変を確認する
+      3. 変更ファイル集合・tsc/next build exit 0・375×667 の viewport 検証を報告 YAML に生貼付する
+    assumptions:
+      claim: "origin/main の lp/components/landing-page.tsx L66 に hero の Sign in(appUrl /login)、L67 に Read the docs、L95 に footer nav、lp/copy/en.ts L21 signIn・L39 getOnNote・L41 readDocs(2026-08-30 20:38 git show)。lp/lib/showcase.ts L40 appUrl(NEXT_PUBLIC_APP_HOST 既定 dm-signal-frontend.onrender.com)。showcase event の step に lp_view と lp_cta_click(cmd_4419、backend e94cda07 live、本番 POST 201 を 19:45 curl)。数値の算出元: git show origin/main:lp/components/landing-page.tsx | grep -c 'appUrl(\"/login\")' → 1 件、grep -c '/free' → 0 件、rg -c '375' queue/shogun_to_karo.yaml → 1 件以上"
+      source: "docs/research/dm-free-tier-google-auth-asis-tobe_v3_20260830.md §2 項目 5・§4-5、lp/components/landing-page.tsx、lp/copy/en.ts、lp/copy/ja.ts、lp/lib/showcase.ts"
+      trust: verified
+    depends_on: none
+    timeout_minutes: 30
+    estimated_minutes: 10
+    split_decision: "AC3 本=1 道具(LP の Free 導線 1 組: CTA 追加・event 経路・build/viewport の 3 手で 10 分)。/free 本体は cmd_4423、backend は cmd_4422 に分離。並走可(遷移先はパスのみの契約)"
+    quality_gate:
+      q1_firefighting: "消火ではない。LP に Free の入口を足し、経路記録(from=lp)の起点を作る品質向上"
+      q2_learning: "忍者は copy 駆動の CTA 追加、既存 event 経路の再利用、入口二分の文言設計を学ぶ"
+      q3_next_quality: "LP→/free→クーポン→/login の 1 本道が揃い、post_deploy_check と SEO 案 §4 の区間表(lp_view→lp_cta_click→…)が Free 経路も数えられる"
+      q4_depth: "shallow — 変更 3 ファイル。設計書 v3 §2 項目 5 に文言方針が明文化済み"
+      q5_verified_source: "code_reading — git show origin/main:lp/components/landing-page.tsx(L60-95)・lp/copy/en.ts・lp/lib/showcase.ts を 2026-08-30 20:38 に読了。production_verified — https://dm-signal.com/ を 19:34 curl(Sign in→/login、note→tokyojibika)"
+      q6_not_hiding: "Free を『無料期間』と誤読させる語を使わない(§3 禁則)。note 課金導線の文言は不変。Sign in の遷移先は不変"
+      q7_definition_verified: "『Free CTA』= /free?from=lp への a 要素(設計書 v3 §2 項目 5、§4-5 source=lp。確認日: 2026-08-30)。『lp_cta_click』= cmd_4419 の step enum(public_showcase.py L62-74)。『入口二分』= Members/Free の見出し 2 つ"
+      q8_why_what: "WHY: LP に Free の入口が無く、経路記録の起点(from=lp)も無い / WHAT: EN/JA の out に /free?from=lp の a 要素各二つ、Sign in は /login 不変、Members/Free 見出し各一つ、Basic-DualMomentum のみ 各一つ、lp_cta_click 経路、禁則 grep 0、getOnNote 不変、tsc/next build exit 0、375×667 で両 CTA が viewport 内 / WHEN: 今セッション、4422/4423 と並走 / WHERE: /mnt/c/Python_app/DM-signal/lp / WHO: 忍者 1 名 / HOW: copy 追加+CTA 2 箇所+既存 event 経路 / 複利: 経路記録 source=lp が最初から入るため、LP→Free→note の転換率が初日から数えられる"
+      q9_firefighting_root_cause: "根本対応。LP と /free の役割分担(LP=説明と入口、/free=登録とクーポン)を崩さず入口だけ足す"
+      q10_knowledge_boundary: "検証済み: landing-page の CTA 位置、copy キー、event step。スコープ外: /free 本体(4423)、backend(4422)、deploy(家老)、product_logins 表(Supabase 側)"
+      q11_not_already_done: "git show origin/main:lp/components/landing-page.tsx | grep -c '/free' → 0 件(2026-08-30 20:38) / git show origin/main:lp/copy/en.ts | grep -ci 'google' → 0 件 / semantic_search.sh 'LP free CTA google' → 該当 cmd なし"
+      q_ambiguity: "CTA の文言は EN『Start free with Google』JA『Google で無料で始める』に固定(殿裁定なければ既定)。from クエリは lp に固定。曖昧さは copy の 2 値に閉じる"
+      q12_lord_30min_cost: "no — 殿裁定 20:21 と要件 20:17-20:19 で確定"
+      diagnosis: "BLOCK理由: 該当なし(新規起票) / 対策: 該当なし"
+    environment_change: "type=lesson; file=docs/research/dm-free-tier-google-auth-asis-tobe_v3_20260830.md; pattern=product_logins"
+    delegated_at: "\"2026-08-30T20:44:38\""
+    origin: "[[殿要件_クーポンUX_20260830_2017]] -> [[殿下問_経路記録_20260830_2019]] -> [[cmd_4423_free_tier_frontend]] -> [[cmd_4424_free_tier_lp_cta]]"
+  cmd_4423:
+    title: "Free tier F2 — frontend に /free(Google サインイン→当月クーポン表示→Copy→/login プリフィル)と /auth/callback と入口二分文言を追加する(既存ログイン機構不変)"
+    status: delegated
+    project: dm-signal
+    purpose: "殿裁定 2026-08-30 20:21『着手せよ』+殿要件 20:17『登録してログインすると free のクーポンが表示、ワンクリックでコピーできるようにして動線をスムーズに。すでにメンバーが誤解しないようにしよう』+20:18『登録者は rebalancer と同じ Supabase の既存にまとめる』(設計書 v3 §2 項目 2・4・5)。契約=cmd_4422 の GET /api/public/free-coupon(Bearer=Supabase access token、応答キー coupon・expires_at・plan・scope)。本 cmd は frontend だけを作り、backend(4422)と並走する(パイプライン契約)。EP が未 deploy の間はモック応答で AC を満たし、本番 EP 差替えは env のみ"
+    scope_mode: FULL
+    target_path: /mnt/c/Python_app/DM-signal/frontend
+    acceptance_criteria:
+      AC1:
+        description: "frontend に @supabase/supabase-js を追加し、rebalancer と同じ env 名(NEXT_PUBLIC_SUPABASE_URL・NEXT_PUBLIC_SUPABASE_ANON_KEY)で client を作る lib と、/free ページ(Google でサインインボタン→signInWithOAuth provider google、redirectTo=/auth/callback)と /auth/callback ページ(セッション確立後 /free へ戻る)を static export 互換(client component、動的 route なし)で追加し、サインイン済みなら GET /api/public/free-coupon を Bearer で呼び、クーポン・有効期限・『Basic-DualMomentum のみ』の表示と Copy ボタン(navigator.clipboard、押下後に Copied 表示)と『このクーポンでサインイン』ボタン(/login?coupon=<code> へ遷移)を出し、next build(output export)の out に free と auth/callback の index が生成されることを確認する"
+        binary_check: "out に free の index と auth の callback の index が各一つ ∧ /free の未サインイン状態で Google ボタンのみ表示(クーポン DOM なし) ∧ サインイン済みモック(fetch を差し替えた Playwright ローカル)でクーポン文字列・expires・Copy・サインインボタンが初期 viewport 内 ∧ Copy 押下でクリップボードにクーポンと一致 ∧ サインインボタンの遷移先が /login?coupon=<code> か?"
+      AC2:
+        description: "/login の SignInCard が URL の coupon クエリを初期値として password 入力にプリフィルし(照合は既存 verify_viewer のまま、frontend の認証コードは diff 0)、/login と /free の文言を login-copy に EN/JA で閉じて入口を二分(Members=note に記載の当月パスワード / Free=Google で登録して当月クーポン)し、/free に『Free は Basic-DualMomentum のみ。Basic/Standard/Premium の方は従来どおり note のパスワード』を明示し、Free クーポンの文言を note 課金導線に混ぜないことを確認する"
+        binary_check: "/login?coupon=X で password 入力の value が X ∧ 認証系 4 ファイル(route-access-boundary・viewer-auth・auth-state-reset・api-client)の diff が空 ∧ login-copy に Members と Free の見出しが EN/JA 各一つ ∧ /free に Basic-DualMomentum のみ の文言 EN/JA ∧ 毎営業日/today/soon/¥/円/first month free/初月無料/free trial の grep 0 か?"
+      AC3:
+        description: "変更が frontend 配下の free・auth/callback・login(page・sign-in-card・login-copy)・lib の supabase client・package.json のみで、既存 test の削除が無く、tsc と next build が PASS し、変更対象に限定した選択実行で FAIL 0 SKIP 0 であることを確認する"
+        binary_check: "変更ファイルが free・auth/callback・login 三本・lib supabase・package.json の集合内のみ(算出元: git diff --name-only を生貼付) ∧ 既存 test 削除が無い ∧ tsc と next build exit 0 ∧ 選択実行 FAIL 0 SKIP 0 か?"
+    command: |
+      1. supabase client lib と /free と /auth/callback を追加し、out の生成とモック Playwright でクーポン表示・Copy・遷移先を確認する
+      2. SignInCard の coupon プリフィルと login-copy の入口二分文言(EN/JA)を追加し、認証 4 ファイル diff 空と禁則 grep 0 を確認する
+      3. 変更ファイル集合・tsc/next build exit 0・選択実行 FAIL 0 SKIP 0 を報告 YAML に生貼付する
+    assumptions:
+      claim: "origin/main の frontend/app/login/sign-in-card.tsx に password state と Input(id viewer-password、L34-44)、login-copy.ts L10-16 に『This month's password or coupon code / 当月パスワードもしくはクーポンコード』文言、frontend/package.json に supabase 無し(算出元: git show origin/main:frontend/package.json | grep -c supabase → 0 件、2026-08-30 20:24)、/login は 4420 で最小化・noindex(本番 c14edb99 live、curl noindex 1)。rebalancer は frontend/lib/supabase.ts(createClient、NEXT_PUBLIC_SUPABASE_URL/ANON_KEY)と auth-context.tsx L56 signInWithOAuth provider google、redirectTo=/auth/callback(同時刻 git show)。クーポン EP の契約=cmd_4422 AC2(応答キー coupon・expires_at・plan・scope)。Playwright は 4420 で 375×667 の viewport 検証に使用済(算出元: rg -c '375' queue/shogun_to_karo.yaml → 1 件以上)"
+      source: "docs/research/dm-free-tier-google-auth-asis-tobe_v3_20260830.md §1-§2、frontend/app/login/sign-in-card.tsx、frontend/app/login/login-copy.ts、frontend/package.json、/mnt/c/Python_app/rebalancer/frontend/lib/supabase.ts、auth-context.tsx"
+      trust: verified
+    depends_on: none
+    timeout_minutes: 30
+    estimated_minutes: 10
+    split_decision: "AC3 本=1 道具(frontend の Free 導線 1 組: /free+callback、プリフィル+文言、build/test の 3 手で 10 分)。backend 契約は cmd_4422、LP CTA は F3 に分離。4422 と並走(契約=JSON 4 キー、未 deploy 中はモック)"
+    quality_gate:
+      q1_firefighting: "消火ではない。Google 登録者がクーポンを受け取り 1 クリックで /login に入る動線と、既存メンバーが誤解しない入口二分を足す品質向上"
+      q2_learning: "忍者は static export での OAuth callback、clipboard API、URL クエリからの安全なプリフィル(既存認証を触らない)、EN/JA 文言を copy に閉じる型を学ぶ"
+      q3_next_quality: "F3(LP CTA)が /free への導線を足すだけで完結し、post_deploy_check が『サインイン→クーポン→Copy→/login→Basic-DM』の 1 本道で検証できる"
+      q4_depth: "shallow — 新規 2 ページ+lib 1+既存 2 ファイルの小変更。設計書 v3 §2 に契約が明文化済み"
+      q5_verified_source: "code_reading — git show origin/main:frontend/app/login/sign-in-card.tsx・login-copy.ts・package.json、rebalancer frontend/lib/supabase.ts・auth-context.tsx を 2026-08-30 20:24 に読了。production_verified — 本番 /login(c14edb99)を 19:45 curl(noindex 1・プラン語 0)"
+      q6_not_hiding: "既存の認証 4 ファイルは diff 0。クーポンは EP からのみ取得し frontend に埋め込まない。Free の文言を note 課金導線に混ぜない(殿要件 20:17)"
+      q7_definition_verified: "『クーポン』= cmd_4422 EP の coupon(Free tier の当月パスワード、確認日: 2026-08-30)。『プリフィル』= SignInCard の password state 初期値(sign-in-card.tsx L9-15)。『入口二分』= Members(note パスワード)/Free(Google 登録)の見出し 2 つ(設計書 v3 §2 項目 5)"
+      q8_why_what: "WHY: Google 登録者がクーポンを受け取る画面と /login への 1 クリック動線が無く、既存メンバーと Free の入口が混ざる / WHAT: out に free と auth/callback、未サインインで Google ボタンのみ、サインイン済みでクーポン・expires・Copy・サインインボタンが viewport 内、Copy=クーポン一致、/login?coupon=X で value X、認証 4 ファイル diff 空、Members/Free 見出し EN/JA、禁則 grep 0、tsc/next build exit 0、選択実行 FAIL 0 SKIP 0 / WHEN: 今セッション、4422 と並走 / WHERE: /mnt/c/Python_app/DM-signal/frontend / WHO: 忍者 1 名 / HOW: supabase-js+client component 2 ページ+SignInCard 初期値+copy / 複利: rebalancer と同じ Supabase/同じ env 名で 1 アカウント化=以後の製品追加が同型で済む"
+      q9_firefighting_root_cause: "根本対応。個人向けクーポン DB や独自認証を作らず、Supabase Auth(既存)と tier パスワード(既存)を 1 画面で橋渡しする"
+      q10_knowledge_boundary: "検証済み: SignInCard/login-copy/package.json の現物、rebalancer の OAuth 実装、本番 /login。スコープ外: backend EP(4422)、LP CTA(F3)、Supabase Redirect URL と Render env の投入(家老/殿)、product_logins 表(Supabase 側、別 cmd)"
+      q11_not_already_done: "git ls-tree -r --name-only origin/main frontend/app | grep -c '^frontend/app/free' → 0 件(2026-08-30 20:24) / git show origin/main:frontend/package.json | grep -c supabase → 0 件 / git show origin/main:frontend/app/login/sign-in-card.tsx | grep -c coupon → 0 件 / semantic_search.sh 'Google sign in coupon prefill' → 該当 cmd なし"
+      q_ambiguity: "EP 未 deploy 中の検証はモック fetch で行う(契約キー固定)。callback は静的ページ+client 側で session を拾う方式に固定(PKCE の code は supabase-js が処理)。曖昧さは env 2 つに閉じる"
+      q12_lord_30min_cost: "no — 殿裁定 20:21 と要件 20:17-20:18 で確定"
+      diagnosis: "BLOCK理由: 該当なし(新規起票) / 対策: 該当なし"
+    environment_change: "type=lesson; file=docs/research/dm-free-tier-google-auth-asis-tobe_v3_20260830.md; pattern=Copy"
+    delegated_at: "\"2026-08-30T20:37:28\""
+    origin: "[[殿要件_クーポンUX_20260830_2017]] -> [[dm-free-tier-google-auth_v3]] -> [[cmd_4422_free_tier_backend]] -> [[cmd_4423_free_tier_frontend]]"
+  cmd_4422:
+    title: "Free tier F1 — backend に Free tier 行の migration と Supabase JWT 検証付き GET /api/public/free-coupon を追加する(既存 tier 認証不変)"
+    status: delegated
+    project: dm-signal
+    purpose: "殿裁定 2026-08-30 20:21『着手せよ』(設計書 v3 docs/research/dm-free-tier-google-auth-asis-tobe_v3_20260830.md §2 ToBe)。殿要件 20:15-20:20: Google 登録者に当月の Free クーポン(=Free tier の月次パスワード、有効期限と期間は他 tier と同一ローテーション)を表示し Basic-DualMomentum のみ閲覧できる Free tier を作る。登録者は rebalancer と同じ Supabase の auth.users に統合(新テーブルは Supabase 側の product_logins のみ、本 cmd の対象外)。本 cmd は backend の契約 2 点(Free tier 行+クーポン EP)だけを作り、frontend の /free(F2)と LP CTA(F3)は契約確定で並走させる(パイプライン契約)"
+    scope_mode: FULL
+    target_path: /mnt/c/Python_app/DM-signal/backend
+    acceptance_criteria:
+      AC1:
+        description: "migrations に viewer_tiers へ name=Free・password_env_key=VIEWER_PASS_FREE・display_order=既存最大の次 の行を冪等に挿入(既存行があれば更新しない)し、同 tier の TierVisibilitySettings を Basic-DualMomentum 以外の全 portfolio hide(hide_portfolio と hide_signal と hide_components の各段を helper の契約どおり)で初期化し、隔離 clone の SQLite で migration を二度実行して Free 行が単一・既存 tier の行と password_env_key が不変であることを確認する。本番 DB 書込みの契約: restore 手順=Free 行と対応 tier_visibility_settings 行を name=Free で DELETE する SQL を migration のコメントと報告 YAML に記載、実行 identity=backend 起動時の run_migrations(Render backend サービス)のみで忍者は本番 DB に接続しない、破壊時復元証跡=隔離 SQLite で実行前後の viewer_tiers 全行 SELECT を報告 YAML に生貼付し既存行の差分が空であること、変更前バックアップ実行済みであること(本番適用は家老 lane: deploy 前に Render Postgres の復元点(PITR 時刻または手動 snapshot ID)を取得して掲示板に記載、忍者は隔離 SQLite のみ)"
+        binary_check: "migration 二度実行後 viewer_tiers の name=Free の行数が実行前の既存 tier 行数に対して一つ増のみ(算出元: SELECT count(*) FROM viewer_tiers を実行前後で生貼付) ∧ 既存 tier の password_env_key 集合が実行前後で同一 ∧ Free の visibility で is_public_signal_portfolio が真の portfolio が Basic-DualMomentum のみ ∧ restore SQL・実行 identity・実行前後 SELECT が報告 YAML にある か?"
+      AC2:
+        description: "public_showcase の router に GET /api/public/free-coupon を追加し、Authorization Bearer の Supabase access token を SUPABASE_JWT_SECRET(HS256)で検証(iss と exp と aud=authenticated を確認)して、Free tier の password_env_key の値(coupon)と password_expires_at(expires_at)と plan=Free と scope=Basic-DualMomentum を返し、token 無しと不正 token と期限切れ token は 401、Free tier 未設定または env 未設定は 503 とし、rate limit は既存 GET /api/public/showcase と同じ limiter 文字列(算出元: git show origin/main:backend/app/api/public_showcase.py | grep -c '30/minute' → 1、2026-08-30 20:22)を付け、contract test を既存 test ファイルへ追加(test_necessity 付き)して確認する"
+        binary_check: "正しい HS256 token で 200 かつ応答キーが coupon・expires_at・plan・scope の集合と一致(算出元: 設計書 v3 §2 項目 3 の返却キー列挙) ∧ token 無し/不正/期限切れが 401 ∧ env 未設定で 503 ∧ 応答に他 tier の password 文字列が含まれない ∧ contract test FAIL 0 SKIP 0 か?"
+      AC3:
+        description: "変更が backend 配下の migrations と public_showcase の api と contract test と、必要なら visibility helper の呼出しのみで、既存 test の削除が無く、既存の verify_viewer(auth.py)と showcase GET/event の挙動が不変(既存 contract test PASS)であることを、変更対象に限定した pytest 選択実行 FAIL 0 SKIP 0 で確認する"
+        binary_check: "変更ファイルが migrations・public_showcase・contract test・helper 呼出しの集合内のみ(算出元: git diff --name-only を生貼付) ∧ auth.py の diff が空 ∧ 既存 test 削除が無い ∧ 選択実行 FAIL 0 SKIP 0 か?"
+    command: |
+      1. migrations に Free tier 行と visibility 初期化を冪等に追加し、隔離 SQLite で二度実行して Free 行単一・既存不変・restore SQL・実行前後 SELECT を確認する
+      2. GET /api/public/free-coupon を HS256 検証付きで追加し、200/401/503 と既存と同じ rate limit を contract test で確認する
+      3. auth.py diff 空・既存 test 削除なし・選択実行 FAIL 0 SKIP 0 を報告 YAML に生貼付する
+    assumptions:
+      claim: "origin/main の backend/app/db/models.py L666 ViewerTier(id/name/display_order/password_env_key/password_expires_at L679/last_rotated_at L680)と L683 TierVisibilitySettings(tier_id/hidden_pages/portfolio_settings/folder_settings)、migrations.py L799-818 で viewer_tiers 作成と列追加、auth.py L23 verify_viewer が password_env_key を os.getenv で照合し L45 is_password_expired、public_showcase.py L24 router prefix /api/public と limiter、requirements に PyJWT 無し(httpx のみ、2026-08-30 20:22 git show)。数値の算出元: git show origin/main:backend/app/api/public_showcase.py | grep -c '30/minute' → 1 件、grep -c 'HTTP_201_CREATED' → 1 件(応答コード 200/401/503 は FastAPI 標準)、grep -c 'free-coupon' → 0 件、git show origin/main:backend/app/db/migrations.py | grep -c 'viewer_tiers' → 5 件以上(L799-828)。Supabase の access token は既定で HS256(project の JWT secret)。rebalancer は同一 Supabase プロジェクトで Google provider 稼働(frontend/lib/auth-context.tsx L56)"
+      source: "docs/research/dm-free-tier-google-auth-asis-tobe_v3_20260830.md §1-§2、backend/app/db/models.py、backend/app/db/migrations.py、backend/app/api/auth.py、backend/app/api/public_showcase.py、backend/requirements.txt"
+      trust: verified
+    depends_on: none
+    timeout_minutes: 30
+    estimated_minutes: 10
+    split_decision: "AC3 本=1 道具(backend の Free tier 契約 1 組。migration 行・EP・contract test の 3 手で 10 分)。frontend /free は F2、LP CTA は F3 に分離(契約=本 cmd の JSON 4 キー)"
+    quality_gate:
+      q1_firefighting: "消火ではない。Free tier(Google 登録→月次クーポン)の backend 契約を既存 tier 機構の 1 行+EP 1 本で足す品質向上"
+      q2_learning: "忍者は冪等 migration、JWT(HS256)検証の境界(iss/exp/aud)、既存 tier 認証を触らずに新 tier を足す型を学ぶ"
+      q3_next_quality: "F2(/free)と F3(LP CTA)が本 cmd の JSON 4 キーを契約として並走でき、月次ローテーション運用に Free 1 行を足すだけで継続する"
+      q4_depth: "shallow — 変更 3 ファイル。設計書 v3 §2 に契約が明文化済み"
+      q5_verified_source: "code_reading — git show origin/main:backend/app/db/models.py(L666-700)・migrations.py(L799-828)・api/auth.py(L1-58)・api/public_showcase.py(L24)・requirements.txt を 2026-08-30 20:22 に読了。production_verified — 本番 GET /api/public/showcase 200・POST event 201 を 19:45 curl"
+      q6_not_hiding: "他 tier の password は応答に含めない。既存 verify_viewer と showcase EP は diff 0。Free の可視範囲は Basic-DualMomentum のみ(3 段 hide を helper の契約で設定)"
+      q7_definition_verified: "『Free クーポン』= Free tier の password_env_key の当月値(確認日: 2026-08-30、殿 20:16『有効期限を他と同じにして毎月変更』)。『Basic-DualMomentum のみ』= public_signal 集合が 1 件(設計書 v2 §2 の is_public_signal_portfolio)。『Supabase access token』= HS256 JWT(iss=<project>/auth/v1、aud=authenticated)"
+      q8_why_what: "WHY: Google 登録者へ当月 Free クーポンを返す backend 契約が無い / WHAT: migration 2 回後 Free 1 件・既存 tier 不変・public_signal 1 件、EP 200/401/503・4 キー・他 tier password 0・rate limit 30/minute、変更 4 本以内・auth.py diff 0・選択実行 FAIL 0 SKIP 0 / WHEN: 今セッション、F2 と並走 / WHERE: /mnt/c/Python_app/DM-signal/backend / WHO: 忍者 1 名 / HOW: 冪等 migration+HS256 検証 EP+contract test / 複利: 新サービスの tier 追加が『行 1 つ+env 1 つ』で済む型が本番に 1 つ立つ=正の複利"
+      q9_firefighting_root_cause: "根本対応。個人ごとのクーポン発行や DB 保存を作らず、既存 tier 機構に Free 行を足して月次ローテーションと同期させる"
+      q10_knowledge_boundary: "検証済み: ViewerTier/visibility の現物・verify_viewer・router prefix・requirements。スコープ外: frontend /free(F2)、LP CTA(F3)、Supabase 側 product_logins 表、env 値の投入と deploy(家老)、月次パスワード配布運用(殿)"
+      q11_not_already_done: "git show origin/main:backend/app/api/public_showcase.py | grep -c 'free-coupon' → 0 件(2026-08-30 20:22) / git show origin/main:backend/app/db/migrations.py | grep -c 'VIEWER_PASS_FREE' → 0 件 / git show origin/main:backend/requirements.txt | grep -ci jwt → 0 件 / semantic_search.sh 'Free tier Google auth coupon' → 該当 cmd なし(設計書 v3 のみ)"
+      q_ambiguity: "JWT 検証方式は HS256+SUPABASE_JWT_SECRET に固定(JWKS/RS256 は将来 Supabase が既定を変えた時に追補)。曖昧さは env 1 つに閉じる"
+      q12_lord_30min_cost: "no — 殿裁定 20:21『着手せよ』、未決は既定案で確定"
+      diagnosis: "BLOCK理由: 該当なし(新規起票) / 対策: 該当なし"
+    environment_change: "type=lesson; file=docs/research/dm-free-tier-google-auth-asis-tobe_v3_20260830.md; pattern=free-coupon"
+    delegated_at: "\"2026-08-30T20:33:30\""
+    origin: "[[殿方向性_FreeTier_GoogleAuth_20260830_1314]] -> [[dm-free-tier-google-auth_v3]] -> [[殿裁定_着手_20260830_2021]] -> [[cmd_4422_free_tier_backend]]"
+  cmd_4421:
+    title: "LP SEO P0 — JSON-LD(Organization・WebSite・FAQPage)と OG/Twitter 画像と検索語入り title/description を lp 配下に追加する"
+    status: delegated
+    project: dm-signal
+    purpose: "殿指示 2026-08-30 19:51『seo 案をまとめて gist に共有して』→SEO 案 v1(docs/research/dm-signal-lp-seo-plan_20260830.md §2 P0-3〜P0-5)→殿裁定 20:04『やったぞ。進めてくれ』(Search Console 所有権確認+sitemap 送信済、§5 の既定案=title 文言案採用・OG 画像に数値なし・docs/faq は app 側のまま)。LP(dm-signal.com)は JSON-LD 0・og:image 0・twitter card 0 のため、検索結果とシェアカードで評価される土台を静的出力のまま足す。hreflang は既に 3 本(en/ja/x-default)あり対象外"
+    scope_mode: FULL
+    target_path: /mnt/c/Python_app/DM-signal/lp
+    acceptance_criteria:
+      AC1:
+        description: "lp の EN と JA ページに JSON-LD を 3 型(Organization は name DM-Signal・url SITE_URL・sameAs に note https://note.com/tokyojibika、WebSite は url と inLanguage、FAQPage は copy の faq 配列から生成)で埋め込み、next build(output export)の out の index と ja の index に script type application/ld+json が各 3 件あり、Google Rich Results 相当の構文検証(schema の必須項目=@context・@type・name/url・mainEntity の Question/Answer)を node の JSON.parse と必須キー検査で通すことを確認する"
+        binary_check: "out の EN と JA に ld+json script が各 3 件 ∧ 3 件とも JSON.parse 成功 ∧ FAQPage の mainEntity 件数が copy.faq の件数と一致 ∧ 個別 PF 名・Secret 数値・初月無料/free trial の文字列が ld+json 内に 0 か?"
+      AC2:
+        description: "lp/app に opengraph-image.tsx(next/og ImageResponse、1200×630、EN)と lp/app/ja に同 JA 版を追加し、ブランド名と各言語のタグライン(copy の title)だけを描き(数値・%・PF 名は描かない)、EN と JA の metadata に openGraph.images・openGraph.locale(en_US/ja_JP)・twitter.card=summary_large_image・twitter.title/description を設定し、out に画像ファイルが生成され index の meta og:image と twitter:card が各 1 件あることを確認する"
+        binary_check: "out に EN と JA の opengraph 画像が各 1 件(PNG、幅 1200 高 630) ∧ EN と JA の index に og:image 1・og:locale 1・twitter:card 1 ∧ 画像描画テキストに数字と % が 0 か?"
+      AC3:
+        description: "copy の en と ja の title と description を検索語入りに更新(EN title=Dual Momentum signals & track record | DM-Signal、JA title=デュアルモメンタムのシグナルと実績 | DM-Signal、description は各 120〜155 字で dual momentum/デュアルモメンタム と signals/シグナル を含み価格や無料期間の語を含めない)し、out の index の title と meta description が更新値と一致し、既存の lp typecheck と next build が PASS することを確認する"
+        binary_check: "EN/JA の out index の title と description が指定値と一致 ∧ description の文字数が 120〜155 ∧ 毎営業日/today/soon/¥/円/first month free/初月無料/free trial の grep 0 ∧ tsc と next build が exit 0 か?"
+    command: |
+      1. lp のページに JSON-LD 3 型(Organization・WebSite・FAQPage)を copy から生成して埋め込み、out の index で 3 件と JSON.parse を確認する
+      2. opengraph-image.tsx を EN/JA に追加し metadata の openGraph.images・locale・twitter を設定し、out の画像と meta を確認する
+      3. copy の title/description を指定値へ更新し、out の title/description・文字数・禁則 grep 0・tsc/next build exit 0 を報告 YAML に生貼付する
+    assumptions:
+      claim: "origin/main の lp/app/page.tsx L7-11 と lp/app/ja/page.tsx L7-11 に metadata(title/description/alternates.languages 3 本/openGraph に images なし)、lp/app/layout.tsx L5-8 に metadataBase=SITE_URL、lp/copy/en.ts L4-5 に title/description、lp/lib/site-url.ts に SITE_URL(2026-08-30 20:05 git show)。origin/main の lp に ld+json 0・images 0・twitter 0・opengraph-image 0(同時刻 grep)。本番 https://dm-signal.com/ と /ja に hrefLang 3 本(20:06 curl)。next の output export で opengraph-image.tsx は静的画像として出力される(Next.js Metadata Files 仕様)"
+      source: "docs/research/dm-signal-lp-seo-plan_20260830.md §0/§2/§5、lp/app/page.tsx、lp/app/ja/page.tsx、lp/app/layout.tsx、lp/copy/en.ts、lp/copy/ja.ts、lp/lib/site-url.ts"
+      trust: verified
+    depends_on: none
+    timeout_minutes: 30
+    estimated_minutes: 10
+    split_decision: "AC3 本=1 道具(lp の SEO メタ 1 組。JSON-LD・OG 画像・title の 3 手で 10 分)。Search Console(P0-1)は殿が完了済、月次シグナル頁(P1-1)は別 cmd に分離"
+    quality_gate:
+      q1_firefighting: "消火ではない。LP が検索結果とシェアカードで評価される土台(構造化データ・OG 画像・検索語)を足す品質向上"
+      q2_learning: "忍者は Next.js Metadata Files(opengraph-image)の静的出力、schema.org 3 型の必須項目、copy 駆動で EN/JA を同時に満たす型を学ぶ"
+      q3_next_quality: "P1-1 の月次シグナル頁が同じ metadata/JSON-LD の型を再利用でき、Search Console の索引・リッチリザルトが計測できる"
+      q4_depth: "shallow — 変更は lp の page 2 本+copy 2 本+画像 route 2 本。設計は SEO 案 §2 に明文化済み"
+      q5_verified_source: "code_reading — git show origin/main:lp/app/page.tsx・ja/page.tsx・layout.tsx・copy/en.ts・lib/site-url.ts を 2026-08-30 20:05 に読了。production_verified — https://dm-signal.com/ と /ja を 20:06 curl(hrefLang 3・ld+json 0・og:image 0)"
+      q6_not_hiding: "OG 画像に数値を描かない(殿裁定既定案)。JSON-LD に個別 PF 名・Secret 数値・価格を入れない(§3 禁則)。hreflang は既存 3 本を触らない"
+      q7_definition_verified: "『JSON-LD 3 型』= schema.org Organization/WebSite/FAQPage(確認日: 2026-08-30、SEO 案 §2 P0-3)。『OG 画像』= 1200×630 PNG、next/og ImageResponse の静的出力(Next.js Metadata Files)。『検索語』= dual momentum/signals・デュアルモメンタム/シグナル(SEO 案 §1)"
+      q8_why_what: "WHY: LP は JSON-LD 0・og:image 0・twitter 0 で検索結果とシェアで評価されない / WHAT: EN/JA に ld+json 各 3 件・OG 画像 1200×630 各 1 件・og:locale/twitter:card 各 1・title/description 指定値と description 120〜155 字・禁則 grep 0・tsc と next build exit 0 / WHEN: 今セッション / WHERE: /mnt/c/Python_app/DM-signal/lp / WHO: 忍者 1 名 / HOW: copy 駆動で JSON-LD 生成+opengraph-image.tsx+copy 更新 / 複利: 月次シグナル頁(P1-1)が同じ metadata 型を継承し、毎月の新 URL が自動で構造化データ付きになる=正の複利"
+      q9_firefighting_root_cause: "根本対応。個別ページに手書きせず copy 駆動で生成するため EN/JA と将来の頁で乖離しない"
+      q10_knowledge_boundary: "検証済み: metadata の現物・本番 hreflang 3・ld+json 0。スコープ外: Search Console 操作(殿)、月次シグナル頁(P1-1)、docs/faq の canonical(既定=app 側のまま)、deploy(家老)"
+      q11_not_already_done: "git show origin/main:lp/app/layout.tsx origin/main:lp/components/landing-page.tsx | grep -c 'ld+json' → 0 件(2026-08-30 20:05) / git show origin/main:lp/app/page.tsx | grep -c images → 0 件 / git ls-tree -r origin/main lp/app | grep -c opengraph-image → 0 件 / semantic_search.sh 'JSON-LD OG image structured data LP' → 該当 cmd なし"
+      q_ambiguity: "description の字数は 120〜155 字(EN は半角、JA は全角換算せず文字数)と定義。曖昧さは copy の 2 値に閉じる"
+      q12_lord_30min_cost: "no — 殿裁定 20:04 で既定案確定"
+      diagnosis: "BLOCK理由: 該当なし(新規起票) / 対策: 該当なし"
+    environment_change: "type=lesson; file=docs/research/dm-signal-lp-seo-plan_20260830.md; pattern=P0-3"
+    delegated_at: "\"2026-08-30T20:14:12\""
+    origin: "[[殿裁定_LP別サイト_20260830_1642]] -> [[SEO案_v1_20260830]] -> [[殿裁定_SEO既定案_20260830_2004]] -> [[cmd_4421_lp_seo_p0]]"
   cmd_4420:
     title: "/login 最小化 — LP(dm-signal.com)との重複を解消し、/login をブランド行+サインイン+LP への 1 導線に絞る(ログイン機構不変)"
-    status: draft
+    status: delegated
     project: dm-signal
     purpose: "殿実機確認 2026-08-30 17:53『LP ページとログインページがほぼ同じだ。これは誤解や勘違いを生みそうだ』。原因=将軍が §2.2 の同じ構造(表・プラン 3 枚・導線 4 本・FAQ)を cmd_4416(/login)と cmd_4417(LP)の両方に適用したこと。LP が別サイトで live(dm-signal.com)になった今、/login は『すぐ入る』だけに絞り、説明・表・プラン・FAQ は LP に一本化する。ログイン機構(SignInCard・7 層リセット・boundary)は触らない"
     scope_mode: FULL
@@ -49,55 +237,8 @@ commands:
       q_ambiguity: "『ほぼ同じ』の解消基準=表・プラン・FAQ が /login に無いこと(DOM 0)で二値化。曖昧さは AC1 で解消"
       q12_lord_30min_cost: "no — 殿実機確認 17:53 で方向確定"
       diagnosis: "BLOCK理由: 該当なし(新規起票) / 対策: 該当なし"
+    delegated_at: "\"2026-08-30T18:12:37\""
     origin: "[[殿実機確認_LP_20260830_1753]] -> [[LPと/loginの同構造]] -> [[cmd_4420_login_minimal]]"
-  cmd_4419:
-    title: "LP 別サイト P3 — backend の CORS 許可に LP ドメインを追加し showcase event の step enum に lp_view と lp_cta_click を加える"
-    status: delegated
-    project: dm-signal
-    purpose: "殿裁定 2026-08-30 16:42『別サイトでやろう』+17:14『.jp にこだわらない』(LP=dm-signal.com 予定、設計書 v2 §9)。LP は別オリジンから GET /api/public/showcase(ビルド時 fetch と帯の client fetch)と POST /api/public/showcase/event を呼ぶため、backend の CORS origins に LP オリジンを追加し、event の step enum に lp_view と lp_cta_click を加える(§9 計測)。cmd_4417(lp 配下)・cmd_4418(frontend)とは変更ファイルが分離"
-    scope_mode: FULL
-    target_path: /mnt/c/Python_app/DM-signal/backend
-    acceptance_criteria:
-      AC1:
-        description: "main.py の origins に LP オリジン(https://dm-signal.com と https://www.dm-signal.com、および LP の onrender オリジンを env LP_ORIGINS で追加可)を加え、隔離 clone の TestClient で Origin ヘッダを LP オリジンにした GET /api/public/showcase と POST /api/public/showcase/event が CORS 許可ヘッダ付きで応答し、無関係オリジンには許可ヘッダが付かないことを確認する"
-        binary_check: "LP オリジン 2 件+env 追加分で access-control-allow-origin が一致 ∧ 無関係オリジンで許可ヘッダ 0 ∧ 既存 origins の順序と値が不変 か?"
-      AC2:
-        description: "public_showcase の event step Literal に lp_view と lp_cta_click を追加し、body に lang(en か ja、任意)を受けて保存し、既存 7 step の挙動が不変であることを contract test(既存 test ファイルへ追加、test_necessity 付き)で確認する"
-        binary_check: "lp_view と lp_cta_click の POST が 2xx ∧ 未知 step が 4xx のまま ∧ 既存 7 step の test が全て PASS ∧ lang が en か ja 以外なら 4xx か?"
-      AC3:
-        description: "【将軍訂正 17:52: AC2 の lang 永続化に model と migration が必要なため許可 scope を広げる】変更が backend 配下の main.py と showcase の api と contract test と showcase の model と migrations 1 本のみで、既存 test の削除 0 であり、変更対象に限定した pytest 選択実行で FAIL 0 SKIP 0 を確認する"
-        binary_check: "変更ファイルが 5 本以内(main.py・api・contract test・model・migration) ∧ 既存 test 削除 0 ∧ 選択実行 FAIL 0 SKIP 0 か?"
-    command: |
-      1. main.py の origins に LP オリジンと env LP_ORIGINS を加え、TestClient で許可/非許可オリジンの応答ヘッダを確認する
-      2. event step に lp_view と lp_cta_click と lang を追加し、contract test で既存 7 step 不変と新 2 step の 2xx を確認する
-      3. 変更ファイル 3 本以内・既存 test 削除 0・選択実行 FAIL 0 SKIP 0 を報告 YAML に生貼付する
-    assumptions:
-      claim: "origin/main の backend/app/main.py L182 に origins リスト、L197 で CORSMiddleware に渡し L217 で origin in origins 判定(2026-08-30 16:46 git show)。public_showcase.py L63 に step Literal 7 値(login_view/input_focus/submit/ok/expired/wrong/note_click)。LP ドメインは dm-signal.com 予定(殿 17:14『.jp にこだわらない』、未購入)のため env で追加可にする"
-      source: "docs/research/dm-login-showcase-asis-tobe_v2_20260830.md §9、backend/app/main.py L182-217、backend/app/api/public_showcase.py L63、backend/tests/test_public_showcase_contract.py"
-      trust: verified
-    depends_on: none
-    serial_dependency_evidence: "AC1(CORS)→AC2(event enum は同じ api ファイル)→AC3(選択実行は AC1/AC2 の完成後)。同一 backend の 2 ファイルで小さく、分割すると test の重複が増えるため 1 名直列"
-    environment_change: "type=lesson; file=docs/research/dm-login-showcase-asis-tobe_v2_20260830.md; pattern=lp_cta_click"
-    timeout_minutes: 30
-    estimated_minutes: 10
-    split_decision: "AC3 本=1 道具(backend の LP 対応 1 組、origins 追加と Literal 追加と contract test の 3 手で 10 分)。LP 本体は cmd_4417、docs/faq 公開は cmd_4418 に分離済み"
-    quality_gate:
-      q1_firefighting: "消火ではない。LP 別サイト(殿裁定 16:42)が別オリジンから EP を呼べるようにし、LP の区間計測を足す品質向上"
-      q2_learning: "忍者は CORS 許可の限定(無関係オリジンに付けない)、enum 追加時の既存 contract 不変、env による将来ドメイン追加の型を学ぶ"
-      q3_next_quality: "LP のドメインが決まっても env 1 行で追加でき、計測 step が揃うため LP の区間表(§2.5 の教え)がそのまま使える"
-      q4_depth: "shallow — 変更 2 ファイル+test、設計書 §9 に計測 step と CORS が明文化済み"
-      q5_verified_source: "code_reading — git show origin/main:backend/app/main.py で origins(L182/L197/L217)、public_showcase.py L63 の Literal 7 値を 2026-08-30 16:46 に読了。production_verified — 本番 GET /api/public/showcase 200 を 16:31 に curl"
-      q6_not_hiding: "CORS は LP オリジンのみ追加し全許可にしない。event に生 UA/IP は保存しない(既存契約どおり)"
-      q7_definition_verified: "『origins』= main.py の allow_origins リスト(確認日: 2026-08-30 16:46)。『step』= public_showcase.py の Literal(7 値、同日)"
-      q8_why_what: "WHY: LP は別オリジンなので CORS 無しでは帯の client fetch と event POST が失敗する / WHAT: origins に dm-signal.com 系 2 件+env LP_ORIGINS、step に lp_view と lp_cta_click と lang、無関係オリジン許可 0、既存 7 step 不変、選択実行 FAIL 0 SKIP 0 / WHEN: 今セッション、4417/4418 と並走 / WHERE: /mnt/c/Python_app/DM-signal/backend / WHO: 忍者 1 名(idle) / HOW: origins 追加+Literal 追加+contract test / 複利: env でドメイン追加できる型を 1 度作れば app のドメイン移行時も 1 行で済む=正の複利"
-      q9_firefighting_root_cause: "根本対応。オリジン固定の CORS を env で拡張可能にし、LP のドメイン確定を待たずに backend を先に整える"
-      q10_knowledge_boundary: "検証済み: origins の位置と判定、step Literal 7 値、showcase 200。スコープ外: LP 本体(4417)、docs/faq(4418)、ドメイン購入と DNS(殿・家老)、deploy(家老)"
-      q11_not_already_done: "git show origin/main:backend/app/main.py | grep -c 'dm-signal.com' → 0 件(2026-08-30 16:46) / git show origin/main:backend/app/api/public_showcase.py | grep -c 'lp_view' → 0 件 / semantic_search.sh 'CORS origins lp_view event' → 該当 cmd なし"
-      q_ambiguity: "LP ドメイン未確定のため env LP_ORIGINS で追加可とし、dm-signal.com 系 2 件は既定で入れる。曖昧さは env で吸収"
-      q12_lord_30min_cost: "no — 殿裁定 16:42/17:14 で確定"
-      diagnosis: "BLOCK理由: 該当なし(新規起票) / 対策: 該当なし"
-    delegated_at: "\"2026-08-30T17:25:34\""
-    origin: "[[殿裁定_LP別サイト_20260830_1642]] -> [[dm-login-showcase-asis-tobe_v2_20260830]] -> [[cmd_4419_backend_cors_event]]"
   cmd_4414:
     title: "/login ショーウィンドウ P1b — 公開集計 EP に Sharpe(プラン平均/ベスト)・SPY/TQQQ 比較行・Secret 集計値を追補する"
     status: void
