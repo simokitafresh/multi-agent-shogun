@@ -9235,6 +9235,20 @@ _cleanup_stale_keys() {
         [ -z "${active[$agent_part]}" ] && unset "ACTIVE_IDLE_RECOVERY_SENT[$key]"
     done
 
+    # agent名キーの配列: in_progress+idle recoveryの状態も非アクティブagentを削除
+    for key in "${!IN_PROGRESS_IDLE_RECOVERY_FIRST_SEEN[@]}"; do
+        [ -z "${active[$key]}" ] && unset "IN_PROGRESS_IDLE_RECOVERY_FIRST_SEEN[$key]"
+    done
+    for key in "${!IN_PROGRESS_IDLE_RECOVERY_FINGERPRINT[@]}"; do
+        [ -z "${active[$key]}" ] && unset "IN_PROGRESS_IDLE_RECOVERY_FINGERPRINT[$key]"
+    done
+    for key in "${!IN_PROGRESS_IDLE_RECOVERY_NUDGE_SENT[@]}"; do
+        [ -z "${active[$key]}" ] && unset "IN_PROGRESS_IDLE_RECOVERY_NUDGE_SENT[$key]"
+    done
+    for key in "${!IN_PROGRESS_IDLE_RECOVERY_RESPAWNS[@]}"; do
+        [ -z "${active[$key]}" ] && unset "IN_PROGRESS_IDLE_RECOVERY_RESPAWNS[$key]"
+    done
+
     for key in "${!STALL_COUNT[@]}"; do
         agent_part="${key%%:*}"
         [ -z "${active[$agent_part]}" ] && unset "STALL_COUNT[$key]"
