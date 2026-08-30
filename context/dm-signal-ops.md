@@ -1,5 +1,6 @@
 # DM-signal 運用コンテキスト
-<!-- last_updated: 2026-08-26 T05 shogun doc lane reviewed source boundary (2026-08-26) -->
+<!-- last_updated: 2026-08-31 2026-08-31 将軍doc lane GA-535: §101 deploy契約+Agent Readiness反映 -->
+<!-- source_commit:10d59c8d reason:2026-08-31 将軍doc lane GA-535: §101 deploy契約+Agent Readiness反映 evidence:grep -c '§101' context/dm-signal-ops.md=1(4e705dd2d) -->
 <!-- source_commit:d87339a4 reason:T05 shogun doc lane reviewed source boundary (2026-08-26) evidence:git -C /mnt/c/Python_app/DM-signal log <marker>..origin/main: core/ops=研究系(cmd_4372-4376)+記事のみ・core/ops知識変更なし; research=cmd_4372/4374/4376は末尾§へ反映済; frontend=frontend/配下変更は08-17 cmd_4324-4333のみで§28反映済、残りはbackend(ops§100反映済)/記事/研究。ローカルcloneはoriginと履歴分岐(同subject別hash)のためorigin/main tipを境界にする -->
 <!-- source_commit:5a5556af reason:context_freshness reviewed source boundary evidence:context_freshness_check context=context/dm-signal-ops.md commit=5a5556af -->
 <!-- source_commit:e7a6c59d reason:context_freshness reviewed source boundary evidence:context_freshness_check context=context/dm-signal-ops.md commit=e7a6c59d -->

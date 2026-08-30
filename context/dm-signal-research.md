@@ -1,5 +1,6 @@
 # DM-signal 研究コンテキスト
-<!-- last_updated: 2026-08-29 T188 DM-signal push 退避(DOC_LANE_REQUEST blt_210228) -->
+<!-- last_updated: 2026-08-31 2026-08-31 将軍doc lane GA-535: 3869db45/71d3b78d/67ffac99=cleanup manifest/recon記録で結論変更なし -->
+<!-- source_commit:3869db45 reason:2026-08-31 将軍doc lane GA-535: 3869db45/71d3b78d/67ffac99=cleanup manifest/recon記録で結論変更なし evidence:git log --oneline -1 3869db45=cleanup manifest -->
 <!-- source_commit:2854041dce67 reason:T188 DM-signal push 退避(DOC_LANE_REQUEST blt_210228) evidence:git -C /mnt/c/Python_app/DM-signal show --stat 2854041dce67 -->
 <!-- source_commit:da3470694ad7 reason:T189 outputs 整理 追補(DOC_LANE_REQUEST blt_184928) evidence:git -C /mnt/c/Python_app/DM-signal show --stat da3470694ad7 -->
 <!-- source_commit:dbfe34dd935b reason:T189 outputs 整理(cmd_karo_t189_outputs_cleanup_20260829、殿裁定 16:51/16:53/16:56) evidence:git -C /mnt/c/Python_app/DM-signal show --stat dbfe34dd935b -->

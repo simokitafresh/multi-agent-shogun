@@ -1,5 +1,6 @@
 # DM-signal フロントエンド コンテキスト（索引）
-<!-- last_updated: 2026-08-27 2026-08-27 将軍doc lane: DOC_LANE_REQUEST 5b4e27eb(cmd_4333 LoginModal再利用)を反映し境界をDM-signal origin/main tipへ -->
+<!-- last_updated: 2026-08-31 2026-08-31 将軍doc lane GA-535: §29 Free tier 3是正を反映 -->
+<!-- source_commit:9d71556d reason:2026-08-31 将軍doc lane GA-535: §29 Free tier 3是正を反映 evidence:grep -c '## 29\.' context/dm-signal-frontend.md=1(4e705dd2d) -->
 <!-- source_commit:d87339a4 reason:2026-08-27 将軍doc lane: DOC_LANE_REQUEST 5b4e27eb(cmd_4333 LoginModal再利用)を反映し境界をDM-signal origin/main tipへ evidence:context/dm-signal-frontend.md §2026-08-27 追加; git -C /mnt/c/Python_app/DM-signal show --stat 5b4e27eb6330 -->
 
 <!-- source_commit:55b81b43 reason:context_freshness reviewed source boundary evidence:context_freshness_check context=context/dm-signal-frontend.md commit=55b81b43 -->
