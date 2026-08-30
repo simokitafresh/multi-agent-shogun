@@ -10522,7 +10522,7 @@ auto_request_report_review() {
 # archive 未完 ∧ LGTM から AUTO_KARO_ACCEPT_DELAY_SEC 経過 → review_approval.sh karo ACCEPT を代行する。
 AUTO_KARO_ACCEPT_DELAY_SEC=${AUTO_KARO_ACCEPT_DELAY_SEC:-300}
 auto_karo_accept_after_lgtm() {
-    local gunshi_file cmd_dir cmd_id karo_file report_rel report_full result verdict status lgtm_ts now age
+    local gunshi_file cmd_dir cmd_id karo_file report_rel report_full result verdict status lgtm_ts now age fail_marker accept_err
     now=$(date +%s)
     for gunshi_file in "$SCRIPT_DIR"/queue/gates/*/review_approvals/reports/*/gunshi.yaml; do
         [ -f "$gunshi_file" ] || continue
@@ -10549,10 +10549,17 @@ auto_karo_accept_after_lgtm() {
         status=$(yaml_field_get "$report_full" status "" 2>/dev/null || true)
         verdict=$(yaml_field_get "$report_full" verdict "" 2>/dev/null || true)
         [ "$status" = "completed" ] && [ "$verdict" = "PASS" ] || continue
-        if bash "$SCRIPT_DIR/scripts/review_approval.sh" "$cmd_id" karo ACCEPT "$report_full" auto >/dev/null 2>&1; then
+        # 失敗(例: LGTM が現 report 世代と不一致)は同じ gunshi.yaml 世代では再試行しない(21:15-21:18 に 58 行のストーム)。
+        fail_marker="${gunshi_file%/gunshi.yaml}/.auto_accept_fail"
+        if [ -f "$fail_marker" ] && [ "$(cat "$fail_marker" 2>/dev/null)" = "$lgtm_ts" ]; then
+            continue
+        fi
+        if accept_err=$(bash "$SCRIPT_DIR/scripts/review_approval.sh" "$cmd_id" karo ACCEPT "$report_full" auto 2>&1 >/dev/null); then
+            rm -f "$fail_marker"
             log "KARO-ACCEPT-AUTO: cmd=$cmd_id report=${report_full##*/} lgtm_age_s=$age (LGTM+PASS、家老スタンプ代行)"
         else
-            log "KARO-ACCEPT-AUTO-FAIL: cmd=$cmd_id report=${report_full##*/} rc=$?"
+            printf '%s' "$lgtm_ts" > "$fail_marker"
+            log "KARO-ACCEPT-AUTO-FAIL: cmd=$cmd_id report=${report_full##*/} reason=$(printf '%s' "$accept_err" | tail -1 | cut -c1-120)"
         fi
     done
 }
