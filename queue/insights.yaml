@@ -8912,3 +8912,10 @@ insights:
   source: "semantic_index_update"
   fix_known: false
   status: pending
+- id: INS-20260830-155635832-9c5d
+  ts: "2026-08-30T15:56:35+09:00"
+  insight: "semantic_index_update未登録[[リンク]]ターゲット: [[速度の本質4則]] は既存aliasesに一致なし。類似概念TOP3: defense_hierarchy(防御階層原則(Level 1-6); alias=速度; score=18.6) / spiral_canon_sengoku25(らせん最適の正本型(第二十五話); alias=速度のらせん; score=3.0) / growth_loop(学習ループ; alias=品質と速度は一体; score=2.5)。概念定義とaliases追加を検討せよ"
+  priority: "low"
+  source: "semantic_index_update"
+  fix_known: false
+  status: pending
