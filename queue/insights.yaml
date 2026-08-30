@@ -5997,7 +5997,10 @@ insights:
   priority: "medium"
   source: "manual"
   fix_known: false
-  status: pending
+  status: resolved
+  resolved_reason: "一次確認: mode644は現行の意図された状態だが、report_receivedとcmd_complete_gateの3経路はbash経由へ修正済みでPermission denied問題は解消済み"
+  action_artifact: "target=queue/insights.yaml:INS-20260828-001724426-69d3;primary=stat scripts/gates/gate_report_format.sh (644), scripts/inbox_write.sh, scripts/cmd_complete_gate.sh;history=f0b7399a63480918010c6326a311cfef3462b065,5cc96726aaf1a9d52814cbe5ab9a711b68a0855e;verification=tests/unit/test_inbox_write.bats,tests/unit/test_cmd_complete_gate.bats mode644 bash paths PASS"
+  resolved_at: "2026-08-30T10:08:45+09:00"
 - id: INS-20260828-003943039-c03d
   ts: "2026-08-28T00:39:43+09:00"
   insight: "semantic_index_update新概念候補: lesson:L1655 は 既存aliasesに一致なし。概念定義とaliases追加を検討せよ"
