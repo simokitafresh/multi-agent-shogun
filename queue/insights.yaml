@@ -9976,3 +9976,10 @@ insights:
   source: "semantic_index_update"
   fix_known: false
   status: pending
+- id: INS-20260830-211147611-fcc2
+  ts: "2026-08-30T21:11:47+09:00"
+  insight: "[[idle忍者が4人もいるぞ]] semantic_stress_test candidate_aliases: NO_MATCH source=lord query=idle忍者が4人もいるぞ"
+  priority: "low"
+  source: "semantic_stress_test"
+  fix_known: false
+  status: pending
