@@ -9185,3 +9185,10 @@ insights:
   source: "semantic_stress_test"
   fix_known: false
   status: pending
+- id: INS-20260830-165548008-c955
+  ts: "2026-08-30T16:55:48+09:00"
+  insight: "[[LP 別サイト — DM signal lp に EN JA ja の静的 LP を新設し showcase をビルド時]] semantic_stress_test candidate_aliases: NO_MATCH source=cmds query=LP 別サイト — DM-signal/lp に EN(/)+JA(/ja)の静的 LP を新設し showcase をビルド時 fetch で表に焼き、hreflang・robots・sitemap・CTA を置く"
+  priority: "low"
+  source: "semantic_stress_test"
+  fix_known: false
+  status: pending
