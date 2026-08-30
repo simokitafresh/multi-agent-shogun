@@ -1,5 +1,6 @@
 # DM-signal フロントエンド コンテキスト（索引）
-<!-- last_updated: 2026-08-31 2026-08-31 将軍doc lane GA-535: §29 Free tier 3是正を反映 -->
+<!-- last_updated: 2026-08-31 2026-08-31 06:45 将軍doc lane GA-535: 境界を origin/main tip へ是正(8-hex 旧hotfix markerだと分岐外祖先が非除外で1390/789/1588件の偽ALERT) -->
+<!-- source_commit:9734518397066f644bd7c7180bccc276d2bf5947 reason:2026-08-31 06:45 将軍doc lane GA-535: 境界を origin/main tip へ是正(8-hex 旧hotfix markerだと分岐外祖先が非除外で1390/789/1588件の偽ALERT) evidence:git -C /mnt/c/Python_app/DM-signal rev-list --count <tip>..origin/main=0 -->
 <!-- source_commit:9d71556d reason:2026-08-31 将軍doc lane GA-535: §29 Free tier 3是正を反映 evidence:grep -c '## 29\.' context/dm-signal-frontend.md=1(4e705dd2d) -->
 <!-- source_commit:d87339a4 reason:2026-08-27 将軍doc lane: DOC_LANE_REQUEST 5b4e27eb(cmd_4333 LoginModal再利用)を反映し境界をDM-signal origin/main tipへ evidence:context/dm-signal-frontend.md §2026-08-27 追加; git -C /mnt/c/Python_app/DM-signal show --stat 5b4e27eb6330 -->
 
