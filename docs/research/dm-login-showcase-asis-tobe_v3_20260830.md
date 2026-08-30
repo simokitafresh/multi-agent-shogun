@@ -1,3 +1,4 @@
+<!-- gist-master: 901c36a5b617082128ffdce43ad25c10 dm-login-showcase-asis-tobe_v3_20260830.md -->
 # DM-Signal 入口 3 面（LP / app 入口 / 公開 API）— AsIs / ToBe 設計書 v3（2026-08-30 22:45）
 
 - 版: **AsIs v3.0（本番リアルタイム 2026-08-30 22:02-22:40 JST 実測）/ ToBe v3.0**
