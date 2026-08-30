@@ -9393,3 +9393,13 @@ EOF
     grep -Fq $'\t'"$TEST_CMD_ID"$'\texternal_wait\treport_wait.short_circuit\t' "$TEST_PROJECT/logs/details.log"
     printf "terminal_wait_rows=1 timeout=0 elapsed_lt_20s=1 fixed_sleep=0\n"
 }
+# test_necessity: GATE CLEAR must persist a bulletin without waking Karo via bulletin_notify/inbox1.
+@test "GATE CLEAR bulletin never notifies Karo or Gunshi" {
+  run grep -c 'BULLETIN_NOTIFY=karo,gunshi' "$PROJECT_ROOT/scripts/cmd_complete_gate.sh"
+  [ "$status" -eq 1 ]
+  [ "$output" -eq 0 ]
+
+  run grep -c 'BULLETIN_NOTIFY=karo timeout 10 bash .*bulletin_write.sh" karo "GATE CLEAR' "$PROJECT_ROOT/scripts/cmd_complete_gate.sh"
+  [ "$status" -eq 0 ]
+  [ "$output" -eq 2 ]
+}

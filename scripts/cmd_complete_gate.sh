@@ -11985,7 +11985,7 @@ if [ -f "$GATES_DIR/emergency.override" ]; then
         /^  [a-zA-Z_].*:$/ { sub(/^[[:space:]]*/, ""); sub(/:$/, ""); cur_id=$0 }
         cur_id == cmd && /title:/ { sub(/.*title:[[:space:]]*"?/, ""); sub(/"?$/, ""); print; exit }
     ' "$SCRIPT_DIR/queue/shogun_to_karo.yaml" 2>/dev/null || true)
-    if BULLETIN_NOTIFY=karo,gunshi timeout 10 bash "$SCRIPT_DIR/scripts/bulletin_write.sh" "GATE CLEAR ${CMD_ID}: ${_blt_title_eo:-完了}" false 2>/dev/null; then
+    if BULLETIN_NOTIFY=karo timeout 10 bash "$SCRIPT_DIR/scripts/bulletin_write.sh" karo "GATE CLEAR ${CMD_ID}: ${_blt_title_eo:-完了}" false 2>/dev/null; then
         echo "  bulletin: OK"
     else
         echo "  [INFO] bulletin: WARN (failed, non-blocking)" >&2
@@ -14848,7 +14848,7 @@ PY
         /^  [a-zA-Z_].*:$/ { sub(/^[[:space:]]*/, ""); sub(/:$/, ""); cur_id=$0 }
         cur_id == cmd && /title:/ { sub(/.*title:[[:space:]]*"?/, ""); sub(/"?$/, ""); print; exit }
     ' "$SCRIPT_DIR/queue/shogun_to_karo.yaml" 2>/dev/null || true)
-    (BULLETIN_NOTIFY=karo,gunshi timeout 10 bash "$SCRIPT_DIR/scripts/bulletin_write.sh" "GATE CLEAR ${CMD_ID}: ${_blt_title:-完了}" false >/dev/null 2>&1 || true) &
+    (BULLETIN_NOTIFY=karo timeout 10 bash "$SCRIPT_DIR/scripts/bulletin_write.sh" karo "GATE CLEAR ${CMD_ID}: ${_blt_title:-完了}" false >/dev/null 2>&1 || true) &
     echo "  bulletin: queued (async)"
 
     # ─── gunshi review_feedback自動送信（GATE CLEAR） ───
