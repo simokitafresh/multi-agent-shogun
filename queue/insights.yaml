@@ -8479,3 +8479,10 @@ insights:
   source: "semantic_index_update"
   fix_known: false
   status: pending
+- id: INS-20260830-125615794-2f1f
+  ts: "2026-08-30T12:56:15+09:00"
+  insight: "[[ログイン画面の数値データはリアルタイム更新（dayly）にできるか？期間を明記してstaticにしたほうがSEOやユーザ]] semantic_stress_test candidate_aliases: NO_MATCH source=lord query=ログイン画面の数値データはリアルタイム更新（dayly）にできるか？期間を明記してstaticにしたほうがSEOやユーザー動線としてベターか？"
+  priority: "low"
+  source: "semantic_stress_test"
+  fix_known: false
+  status: pending
