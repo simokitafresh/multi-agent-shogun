@@ -8400,3 +8400,10 @@ insights:
   source: "semantic_stress_test"
   fix_known: false
   status: pending
+- id: INS-20260830-121929056-2f3a
+  ts: "2026-08-30T12:19:29+09:00"
+  insight: "[[Current signals 表 がわかりづらいね]] semantic_stress_test candidate_aliases: NO_MATCH source=lord query=Current signals 表 がわかりづらいね。basic dualmomentum単体、その後はplan毎の平均とベストのtotal perfomanceとxN倍、CAGRを1005％～2547％のようなレンジで書くのがシンプルかな"
+  priority: "low"
+  source: "semantic_stress_test"
+  fix_known: false
+  status: pending
