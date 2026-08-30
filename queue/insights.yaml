@@ -10234,3 +10234,10 @@ insights:
   source: "semantic_stress_test"
   fix_known: false
   status: pending
+- id: INS-20260830-234427971-e28c
+  ts: "2026-08-30T23:44:27+09:00"
+  insight: "cmd_save の WARN累計昇格(cmd_2159)は cmd_design_quality.yaml の過去 WARN entry を数えるが、同一 cmd の AC を修正して WARN が消えても履歴は残り BLOCK が自縛する(cmd_4426 で 6 回。image/png が『パス』と誤判定された WARN を修正後も delegate 不能)。対処案: cmd_save が同一 cmd で当該 WARN 0 件の run を記録した時点で過去 entry へ [resolved:] を自動付与、または昇格判定を『直近 run に WARN あり』に限定。あわせて check_ac_file_paths は MIME(image/png)等 拡張子なし 2 語を path 候補から除外"
+  priority: "medium"
+  source: "manual"
+  fix_known: false
+  status: pending
