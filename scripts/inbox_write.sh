@@ -937,7 +937,7 @@ inbox_deliver_report_review_generation() {
     local report_base="${report_path##*/}"
     # fingerprint DEDUPE: 同一parent_cmd+fingerprintの通知は1回のみ送信(atomic flock)
     if [ -n "$fingerprint" ] && [ -n "$parent_cmd" ]; then
-        local dedupe_dir="${SELF_SCRIPT_DIR:-$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)}/queue/gates/${parent_cmd}"
+        local dedupe_dir="${INBOX_WRITE_ROOT_OVERRIDE:-${SELF_SCRIPT_DIR:-$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)}}/queue/gates/${parent_cmd}"
         local dedupe_file="${dedupe_dir}/gunshi_review_notify_${fingerprint}.done"
         local dedupe_lock="${dedupe_dir}/gunshi_review_notify.lock"
         mkdir -p "$dedupe_dir" 2>/dev/null || true
