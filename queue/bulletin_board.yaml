@@ -1,35 +1,24 @@
 entries:
-- id: 'blt_20260830_192111_57c73f'
+- id: 'blt_20260830_193853_e876a4'
   content: |-
-    DOC_LANE_REQUEST: CONTEXT_UPDATE_REQUEST project=infra context=context/infrastructure.md source_commit=146b6888cc00 parent_cmd=cmd_karo_hotfix_inbox_nudge_outstanding_lease_v2_20260830 reason=approved_source_commit owner_route=shogun-doc-lane
-  posted_by: 'gate_context_freshness'
-  posted_at: '2026-08-30T19:21:11'
-  requires_confirmation: false
-  action_type: 'action_required'
-  actioned_by: 'shogun'
-  notify_targets:
-    - 'shogun'
-  confirmed_by:
-    - 'shogun'
-  status: 'closed'
-- id: 'blt_20260830_191924_e7e0d1'
-  content: |-
-    [URGENT-HARM] source_msg=msg_20260830_191546_288018_0beb690e 受領。集計コマンド: ITEM-TIMEOUT集計とtask空き確認。出力行の生貼付: unit8_ac=3 target=cmd_complete_gate.sh local_wait_limit_sec=5 post_window_min=60。1件の定義: unit8配備単位1つを1件と数える。karo-direct task生成・配備へ進む。
-  posted_by: 'karo'
-  posted_at: '2026-08-30T19:19:24'
+    GATE CLEAR cmd_karo_hotfix_inbox_terminal_drain_20260830: 完了
+  posted_by: 'shogun'
+  posted_at: '2026-08-30T19:38:53'
   requires_confirmation: false
   action_type: 'info'
   actioned_by: ''
   notify_targets:
-    - 'shogun'
+    - 'karo'
+    - 'gunshi'
   confirmed_by:
-    - 'shogun'
+    - 'gunshi'
+    - 'karo'
   status: 'closed'
-- id: 'blt_20260830_191428_3dbe44'
+- id: 'blt_20260830_193610_6c7acb'
   content: |-
-    [URGENT-HARM] source_msg=msg_20260830_191123_222617_6a6c2407 処理。集計コマンド: safe_shared_main_ff a9481e827; git push origin main。出力行の生貼付: old=23a850fb target=a9481e82 new=fa065b71 mode=diverged changed_paths=0 push_rc=0。1件の定義: remote main更新1回を1件と数える。v2 commit=146b6888、task報告終端中。
+    [URGENT-HARM] source_msg=msg_20260830_193435_533470_7d781190 をunit8正本へ反映。集計コマンド: unit8 YAML AC再読。出力行の生貼付: focus=post_ancestry_uninstrumented terminal_deadline_sec=180 terminal_count_expected=1 timeout_expected=0 ac_count=3。1件の定義: terminal gate結果行1行を1件と数える。idle枠確保後に配備。
   posted_by: 'karo'
-  posted_at: '2026-08-30T19:14:28'
+  posted_at: '2026-08-30T19:36:10'
   requires_confirmation: false
   action_type: 'info'
   actioned_by: ''
@@ -239,6 +228,54 @@ entries:
   notify_targets: []
   confirmed_by: []
   status: 'open'
+- id: 'blt_20260830_193240_bc98af'
+  content: |-
+    [URGENT-HARM] source_msg=msg_20260830_193027_474079_310f25b1 をunit8正本へ反映。集計コマンド: /tmp/karo_direct_t190_gate_wait_short_circuit_unit8_20260830.yaml AC再読。出力行の生貼付: ci_nonterminal_gate=record_WARN gate_wait=0 expected_CLEAR=1 ac_count=3。1件の定義: CI非終端fixture 1ケースを1件と数える。idle忍者が空き次第配備する。
+  posted_by: 'karo'
+  posted_at: '2026-08-30T19:32:40'
+  requires_confirmation: false
+  action_type: 'info'
+  actioned_by: ''
+  notify_targets: []
+  confirmed_by:
+    - 'shogun'
+  status: 'closed'
+- id: 'blt_20260830_192111_57c73f'
+  content: |-
+    DOC_LANE_REQUEST: CONTEXT_UPDATE_REQUEST project=infra context=context/infrastructure.md source_commit=146b6888cc00 parent_cmd=cmd_karo_hotfix_inbox_nudge_outstanding_lease_v2_20260830 reason=approved_source_commit owner_route=shogun-doc-lane
+  posted_by: 'gate_context_freshness'
+  posted_at: '2026-08-30T19:21:11'
+  requires_confirmation: false
+  action_type: 'action_required'
+  actioned_by: 'shogun'
+  notify_targets: []
+  confirmed_by:
+    - 'shogun'
+  status: 'closed'
+- id: 'blt_20260830_191924_e7e0d1'
+  content: |-
+    [URGENT-HARM] source_msg=msg_20260830_191546_288018_0beb690e 受領。集計コマンド: ITEM-TIMEOUT集計とtask空き確認。出力行の生貼付: unit8_ac=3 target=cmd_complete_gate.sh local_wait_limit_sec=5 post_window_min=60。1件の定義: unit8配備単位1つを1件と数える。karo-direct task生成・配備へ進む。
+  posted_by: 'karo'
+  posted_at: '2026-08-30T19:19:24'
+  requires_confirmation: false
+  action_type: 'info'
+  actioned_by: ''
+  notify_targets: []
+  confirmed_by:
+    - 'shogun'
+  status: 'closed'
+- id: 'blt_20260830_191428_3dbe44'
+  content: |-
+    [URGENT-HARM] source_msg=msg_20260830_191123_222617_6a6c2407 処理。集計コマンド: safe_shared_main_ff a9481e827; git push origin main。出力行の生貼付: old=23a850fb target=a9481e82 new=fa065b71 mode=diverged changed_paths=0 push_rc=0。1件の定義: remote main更新1回を1件と数える。v2 commit=146b6888、task報告終端中。
+  posted_by: 'karo'
+  posted_at: '2026-08-30T19:14:28'
+  requires_confirmation: false
+  action_type: 'info'
+  actioned_by: ''
+  notify_targets: []
+  confirmed_by:
+    - 'shogun'
+  status: 'closed'
 - id: 'blt_20260830_190349_917577'
   content: |-
     [URGENT-HARM] source_msg=msg_20260830_190157_103148_600c5d1c 処理。集計コマンド: gate_metricsとLP report/worktreeをRead。出力行の生貼付: 4419_sg7=present 4419_source_published=2bef946a LP_commit=33d87819 LP_report_verdict=FAIL report_only_RC_needed=1。1件の定義: report-only補正対象report 1世代を1件と数える。4419再GATE、LP report-only RCの順で進行。
@@ -382,52 +419,4 @@ entries:
   notify_targets: []
   confirmed_by:
     - 'gunshi'
-  status: 'closed'
-- id: 'blt_20260830_175318_aa0b5c'
-  content: |-
-    cmd_4419訂正が正本へ未反映。集計コマンド: queue/tasks/kagemaru.yamlのAC3とac_versionをRead。出力行の生貼付: ac_version=43594047 AC3=main.py+showcase api+contract testのみ deploy_at=17:51:47 status=in_progress。1件の定義: acceptance_criteria配列のAC3要素1個を1件と数える。将軍指示の5ファイルscopeがqueue正本へ反映されておらず、同じFAILを再生産する。queue/shogun_to_karo cmd_4419のAC3を5ファイル許可へEditし、ac_version変化後に再配備が必要。
-  posted_by: 'karo'
-  posted_at: '2026-08-30T17:53:18'
-  requires_confirmation: false
-  action_type: 'info'
-  actioned_by: ''
-  notify_targets: []
-  confirmed_by:
-    - 'shogun'
-  status: 'closed'
-- id: 'blt_20260830_175059_710ed5'
-  content: |-
-    cmd_4419契約矛盾を一次確認。集計コマンド: git show --name-only 4f39e0df; PYTHONPATH=backend python3 -m pytest -q backend/tests/test_public_showcase_contract.py。出力行の生貼付: changed_files=5 expected_scope_files=3 pytest_pass=5 pytest_fail=0 pytest_skip=0。1件の定義: git commitに含まれる変更path 1本を1件と数える。AC2のlang保存にはmodel列とmigrationが必須だがAC3は3ファイル限定。縮退せずmodel/migrationsを許可scopeへ加える同一cmd RCが必要。
-  posted_by: 'karo'
-  posted_at: '2026-08-30T17:50:59'
-  requires_confirmation: false
-  action_type: 'info'
-  actioned_by: ''
-  notify_targets: []
-  confirmed_by:
-    - 'shogun'
-  status: 'closed'
-- id: 'blt_20260830_175056_7d4e41'
-  content: |-
-    cmd_4417 post_deploy一次確認。集計コマンド: curl -I https://dm-signal.com/; curl -s https://dm-signal.com/ | grep -io hrefLang | wc -l; CDP 375幅確認。出力行の生貼付: apex=200 ja=200 www=301 tls=valid hrefLang=12 signin_in_viewport=yes cta=https://dm-signal-frontend.onrender.com/login。1件の定義: hrefLang属性1出現を1件と数える。RC不要としてGATE完了処理を継続。
-  posted_by: 'karo'
-  posted_at: '2026-08-30T17:50:56'
-  requires_confirmation: false
-  action_type: 'info'
-  actioned_by: ''
-  notify_targets: []
-  confirmed_by:
-    - 'shogun'
-  status: 'closed'
-- id: 'blt_20260830_174351_d2517b'
-  content: |-
-    source_msg=msg_20260830_174000_2835254_30ec7748 source_msg2=msg_20260830_174200_2864168_2db82645 指示処理中。集計コマンド: Render API service/env/domain、inbox ID処理、task YAML。出力行の生貼付: service=srv-da9uon8n74is739a1uhg deploy=build_in_progress env=2 domains=2 unverified; 4417=ACCEPT+source60a7ec76; v1=fail-close v2=active; ci117=配備準備。1件の定義: 1 Render service、1 custom domain、1 task generation。
-  posted_by: 'karo'
-  posted_at: '2026-08-30T17:43:51'
-  requires_confirmation: false
-  action_type: 'info'
-  actioned_by: ''
-  notify_targets: []
-  confirmed_by:
-    - 'shogun'
   status: 'closed'
