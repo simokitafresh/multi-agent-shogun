@@ -152,6 +152,42 @@ _OBSERVATION_WINDOW_RE = re.compile(
     r"|(gate_metrics|ninja_monitor\.log|monitor).{0,30}(で|から).{0,20}(証明|proof)",
     re.IGNORECASE,
 )
+_FUTURE_CI_RE = re.compile(
+    r"次\s*CI|次の\s*run|next\s+CI\s+run",
+    re.IGNORECASE,
+)
+_CI_HANDOFF_RE = re.compile(
+    r"(?:post[_-]?push[_-]?ci[_-]?proof|production[_-]?proof)"
+    r".{0,80}(?:handoff|移管|委譲|除外)"
+    r"|(?:handoff|移管|委譲|除外).{0,80}"
+    r"(?:post[_-]?push[_-]?ci[_-]?proof|production[_-]?proof)",
+    re.IGNORECASE,
+)
+_PAST_CI_RECORD_RE = re.compile(
+    r"(?:過去|既存|直近|実績|履歴).{0,80}(?:CI|run)"
+    r"|(?:CI|run).{0,80}(?:過去|既存|直近|実績|履歴)"
+    r"|run\s*#?\d+.{0,80}(?:completed|successful|success|failed|cancelled|完了|成功|失敗|キャンセル)",
+    re.IGNORECASE,
+)
+_CI_FUTURE_ACTION_RE = re.compile(
+    r"確認|検証|待|観測|監視|proof|証明|verify",
+    re.IGNORECASE,
+)
+
+
+def _is_exempt_ci_text(text: str) -> bool:
+    """Keep handoff instructions and historical CI records out of future waits."""
+    if _CI_HANDOFF_RE.search(text):
+        return True
+    if not _PAST_CI_RECORD_RE.search(text):
+        return False
+    return not (_FUTURE_CI_RE.search(text) and _CI_FUTURE_ACTION_RE.search(text))
+
+
+def _is_observation_window_text(text: str) -> bool:
+    if _is_exempt_ci_text(text):
+        return False
+    return bool(_OBSERVATION_WINDOW_RE.search(text) or _FUTURE_CI_RE.search(text))
 
 
 def _observation_window_hits(entry: dict, reason: str) -> list[str]:
@@ -168,7 +204,7 @@ def _observation_window_hits(entry: dict, reason: str) -> list[str]:
             texts.append((str(key), str(value)))
     hits: list[str] = []
     for label, text in texts:
-        if text and _OBSERVATION_WINDOW_RE.search(text):
+        if text and _is_observation_window_text(text):
             hits.append(label)
     return hits
 
