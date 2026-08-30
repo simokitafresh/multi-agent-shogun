@@ -8393,3 +8393,10 @@ insights:
   resolved_reason: "semantic map generation verified the candidate is represented or intentionally ignored"
   action_artifact: "semantic_map=/home/simokitafresh/multi-agent-shogun/context/semantic-map.md;semantic_index=/home/simokitafresh/multi-agent-shogun/docs/semantic-index/index.md"
   resolved_at: "2026-08-30T12:01:38+09:00"
+- id: INS-20260830-121915059-627e
+  ts: "2026-08-30T12:19:15+09:00"
+  insight: "[[本番を使うからsecret件数に試作FoFも含めよ]] semantic_stress_test candidate_aliases: NO_MATCH source=lord query=本番を使うからsecret件数に試作FoFも含めよ。Current signals 表に齟齬がある。多分パフォーマンスだけ閲覧できるとシグナルまで閲覧できるがごっちゃになっているのでは？"
+  priority: "low"
+  source: "semantic_stress_test"
+  fix_known: false
+  status: pending
