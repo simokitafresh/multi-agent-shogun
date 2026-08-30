@@ -9814,7 +9814,10 @@ insights:
   priority: "low"
   source: "semantic_index_update"
   fix_known: false
-  status: pending
+  status: resolved
+  resolved_reason: "semantic map generation verified the candidate is represented or intentionally ignored"
+  action_artifact: "semantic_map=/home/simokitafresh/multi-agent-shogun/context/semantic-map.md;semantic_index=/home/simokitafresh/multi-agent-shogun/docs/semantic-index/index.md"
+  resolved_at: "2026-08-30T20:23:13+09:00"
 - id: INS-20260830-202143793-a6cf
   ts: "2026-08-30T20:21:43+09:00"
   insight: "[[これは別のアイデアだ]] semantic_stress_test candidate_aliases: NO_MATCH source=lord query=これは別のアイデアだ。google authで登録するとfreeのクーポン"
@@ -9841,7 +9844,10 @@ insights:
   priority: "low"
   source: "semantic_index_update"
   fix_known: false
-  status: pending
+  status: resolved
+  resolved_reason: "semantic map generation verified the candidate is represented or intentionally ignored"
+  action_artifact: "semantic_map=/home/simokitafresh/multi-agent-shogun/context/semantic-map.md;semantic_index=/home/simokitafresh/multi-agent-shogun/docs/semantic-index/index.md"
+  resolved_at: "2026-08-30T20:23:13+09:00"
 - id: INS-20260830-202212094-aae2
   ts: "2026-08-30T20:22:12+09:00"
   insight: "[[googleのほうでcloudflareのサイトを自動で承認したぞ]] semantic_stress_test candidate_aliases: NO_MATCH source=lord query=googleのほうでcloudflareのサイトを自動で承認したぞ"
