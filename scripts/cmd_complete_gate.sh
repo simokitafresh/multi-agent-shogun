@@ -10877,6 +10877,26 @@ def is_probable_slash_enum(ref):
     first_component = clean_ref.split("/", 1)[0]
     return not (script_dir and os.path.isdir(os.path.join(script_dir, first_component)))
 
+def is_probable_property_slash_token(ref):
+    # Metadata expressions such as "metadata.openGraph.images/twitter.images"
+    # use a slash to place two dot-separated properties side by side.  They
+    # are not filesystem paths, even though the final property happens to
+    # resemble an extension-bearing basename.  Keep known file extensions
+    # strict so a real path such as "src.v2/page.ts" remains fail-closed.
+    clean_ref = ref.strip().strip("`'\".,:;()[]{}")
+    if clean_ref.count("/") != 1:
+        return False
+    left, right = clean_ref.split("/", 1)
+    identifier = r"[A-Za-z_$][A-Za-z0-9_$]*"
+    property_chain = re.compile(rf"^{identifier}(?:\.{identifier})+$")
+    if not property_chain.fullmatch(left) or not property_chain.fullmatch(right):
+        return False
+    known_extensions = {
+        "sh", "py", "md", "yaml", "yml", "json", "toml", "js", "ts",
+        "tsx", "jsx", "css", "html", "sql", "csv",
+    }
+    return right.rsplit(".", 1)[-1].lower() not in known_extensions
+
 def is_bare_temp_location(ref):
     # A bare temporary root describes where an isolated clone/fixture runs;
     # it is a directory boundary, never a repository file that can appear in
@@ -10895,6 +10915,8 @@ for idx, match in enumerate(matches):
     if is_probable_api_route_or_url(ref):
         continue
     if is_probable_product_token(ref):
+        continue
+    if is_probable_property_slash_token(ref):
         continue
     if is_probable_slash_enum(ref):
         continue
