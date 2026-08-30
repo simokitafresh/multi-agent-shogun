@@ -935,17 +935,32 @@ inbox_reconcile_terminal_task_generation() {
 inbox_deliver_report_review_generation() {
     local ninja="$1" report_path="$2" parent_cmd="$3" fingerprint="$4"
     local report_base="${report_path##*/}"
-    # fingerprint DEDUPE: 同一parent_cmd+fingerprintの通知は1回のみ送信(atomic flock)
+    # fingerprint DEDUPE: marker+durable record(inbox or approval)で判定(atomic flock)
+    # marker単独では抑止しない。inbox消失+approval不在ならre-send(修復)
     if [ -n "$fingerprint" ] && [ -n "$parent_cmd" ]; then
-        local dedupe_dir="${INBOX_WRITE_ROOT_OVERRIDE:-${SELF_SCRIPT_DIR:-$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)}}/queue/gates/${parent_cmd}"
+        local _root="${INBOX_WRITE_ROOT_OVERRIDE:-${SELF_SCRIPT_DIR:-$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)}}"
+        local dedupe_dir="${_root}/queue/gates/${parent_cmd}"
         local dedupe_file="${dedupe_dir}/gunshi_review_notify_${fingerprint}.done"
         local dedupe_lock="${dedupe_dir}/gunshi_review_notify.lock"
         mkdir -p "$dedupe_dir" 2>/dev/null || true
         local _drf_fd
         if exec {_drf_fd}>"$dedupe_lock" && flock -w 3 "$_drf_fd"; then
             if [ -f "$dedupe_file" ]; then
-                flock -u "$_drf_fd"; eval "exec ${_drf_fd}>&-"
-                return 0
+                # marker exists: check durable record (inbox content or formal approval)
+                local _inbox_has=false _approval_has=false
+                local _gunshi_inbox="${_root}/queue/inbox/gunshi.yaml"
+                if [ -f "$_gunshi_inbox" ] && grep -q "report_fingerprint=${fingerprint}" "$_gunshi_inbox" 2>/dev/null; then
+                    _inbox_has=true
+                fi
+                local _approval_dir="${dedupe_dir}"
+                if compgen -G "${_approval_dir}/gunshi_*approval*${fingerprint}*" >/dev/null 2>&1; then
+                    _approval_has=true
+                fi
+                if [ "$_inbox_has" = true ] || [ "$_approval_has" = true ]; then
+                    flock -u "$_drf_fd"; eval "exec ${_drf_fd}>&-"
+                    return 0
+                fi
+                # marker exists but inbox lost + no approval → re-send (repair)
             fi
         else
             [ -n "${_drf_fd:-}" ] && eval "exec ${_drf_fd}>&-"

@@ -1965,16 +1965,15 @@ YAML
     run _run_inbox_write karo "report A retry" report_received testninja
     [ "$status" -eq 0 ]
     [[ "$output" == *DUPLICATE_MSG_ID=* ]]
-    # fingerprint DEDUPEにより同一fpの再送はdoneフラグでスキップされる。
-    # gunshi.yamlリセット後のretryは0件(DEDUPE正常動作)または1件(doneフラグ不在時の修復)。
+    # inbox消失後のretry: marker存在+inbox消失+approval不在→再送修復(==1)
     local retry_count=0
     retry_count="$(grep -c "^  type: 'report_review'" "$TEST_TMPDIR/queue/inbox/gunshi.yaml" 2>/dev/null)" || retry_count=0
-    [[ "$retry_count" -le 1 ]]
+    [ "$retry_count" -eq 1 ]
 
     run _run_inbox_write karo "report A retry again" report_received testninja
     [ "$status" -eq 0 ]
     retry_count="$(grep -c "^  type: 'report_review'" "$TEST_TMPDIR/queue/inbox/gunshi.yaml" 2>/dev/null)" || retry_count=0
-    [[ "$retry_count" -le 1 ]]
+    [ "$retry_count" -eq 1 ]
 }
 
 @test "completion aliases converge on one review per report fingerprint across ten deliveries" {
@@ -3455,65 +3454,116 @@ PY
 }
 
 # --- report_review fingerprint DEDUPE contract tests ---
-# test_necessity: inbox_deliver_report_review_generationは同一parent_cmd+fingerprintの軍師宛review通知を1回のみ送信し、content内にfull64 fingerprintを含める。
+# test_necessity: inbox_deliver_report_review_generationは同一parent_cmd+fingerprintの軍師宛review通知を1回のみ送信し、inbox消失時は修復再送し、content内にfull64 fingerprintを含める。
 
-@test "report_review DEDUPE: same fp second call blocked by done flag" {
-    setup_basic_test_env
-    local root="$TEST_TMPDIR"
-    local fp="aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
-    local cmd="cmd_dedupe_test_same"
-    mkdir -p "$root/queue/gates/${cmd}"
-    # 1回目: 通常送信
-    run env INBOX_WRITE_ROOT_OVERRIDE="$root" INBOX_WRITE_TEST=1 INBOX_REVIEW_CONTEXT_DISABLE=1 DEFENSE_OVERHEAD_ENABLED=0 \
-        bash "$TEST_INBOX_WRITE" gunshi "ninja1報告完了。レビュー依頼: ${cmd} report=ninja1_report.yaml" report_review karo notify_gunshi
+@test "report_review DEDUPE: same fp via report_received sends exactly 1" {
+    setup_git_test_env
+    cat >> "$TEST_TMPDIR/queue/tasks/testninja.yaml" <<'YAML'
+  report_id: rpt-dedupe-same
+  report_identity_version: 2
+YAML
+    cat >> "$TEST_TMPDIR/queue/reports/testninja_report_cmd_test_001.yaml" <<'YAML'
+status: completed
+report_id: rpt-dedupe-same
+report_identity_version: 2
+task_id: cmd_test_001_normal
+parent_cmd: cmd_test_001
+YAML
+    git -C "$TEST_TMPDIR" add queue/tasks/testninja.yaml queue/reports/testninja_report_cmd_test_001.yaml
+    git -C "$TEST_TMPDIR" commit -q -m dedupe-same
+    # 1回目
+    run _run_inbox_write karo "report same fp" report_received testninja
     [ "$status" -eq 0 ]
-    # doneフラグを作成(inbox_deliver_report_review_generationが本来作る)
-    printf '%s\n' "$(date '+%Y-%m-%dT%H:%M:%S')" > "$root/queue/gates/${cmd}/gunshi_review_notify_${fp}.done"
-    # 2回目: doneフラグ存在時はinbox_deliver_report_review_generationが即return 0
-    # (関数内部テストは不可のため、doneフラグの存在をcontractとして検証)
-    [ -f "$root/queue/gates/${cmd}/gunshi_review_notify_${fp}.done" ]
+    local attempt
+    for attempt in $(seq 1 50); do
+        grep -q "^  type: 'report_review'" "$TEST_TMPDIR/queue/inbox/gunshi.yaml" 2>/dev/null && break
+        sleep 0.1
+    done
+    local count
+    count="$(grep -c "^  type: 'report_review'" "$TEST_TMPDIR/queue/inbox/gunshi.yaml" 2>/dev/null)" || count=0
+    [ "$count" -eq 1 ]
+    # 2回目: inbox記録あり→DEDUPE
+    run _run_inbox_write karo "report same fp again" report_received testninja
+    [ "$status" -eq 0 ]
+    count="$(grep -c "^  type: 'report_review'" "$TEST_TMPDIR/queue/inbox/gunshi.yaml" 2>/dev/null)" || count=0
+    [ "$count" -eq 1 ]
 }
 
-@test "report_review DEDUPE: different full64 fp produce separate done flags" {
+@test "report_review DEDUPE: different full64 fp done flags are distinct" {
     setup_basic_test_env
     local root="$TEST_TMPDIR"
     local fp1="bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
     local fp2="cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc"
-    local cmd="cmd_dedupe_test_diff"
+    local cmd="cmd_dedupe_diff"
     mkdir -p "$root/queue/gates/${cmd}"
+    # 2つの異なるfull64 fpに対してdoneフラグは別ファイル
     printf '%s\n' "$(date '+%Y-%m-%dT%H:%M:%S')" > "$root/queue/gates/${cmd}/gunshi_review_notify_${fp1}.done"
     printf '%s\n' "$(date '+%Y-%m-%dT%H:%M:%S')" > "$root/queue/gates/${cmd}/gunshi_review_notify_${fp2}.done"
-    # 2つの異なるfpに対してそれぞれdoneフラグが存在
     [ -f "$root/queue/gates/${cmd}/gunshi_review_notify_${fp1}.done" ]
     [ -f "$root/queue/gates/${cmd}/gunshi_review_notify_${fp2}.done" ]
-    # fp1のdoneがfp2をブロックしないことを確認(ファイル名が異なる)
-    [ "$root/queue/gates/${cmd}/gunshi_review_notify_${fp1}.done" != "$root/queue/gates/${cmd}/gunshi_review_notify_${fp2}.done" ]
+    # fp1 doneでfp2がブロックされない(ファイル名が異なる)
+    local fp3="dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd"
+    [ ! -f "$root/queue/gates/${cmd}/gunshi_review_notify_${fp3}.done" ]
 }
 
-@test "report_review DEDUPE: no done flag means delivery proceeds" {
-    setup_basic_test_env
-    local root="$TEST_TMPDIR"
-    local fp="dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd"
-    local cmd="cmd_dedupe_test_retry"
-    mkdir -p "$root/queue/gates/${cmd}"
-    # doneフラグなし→通常送信が成功する
-    run env INBOX_WRITE_ROOT_OVERRIDE="$root" INBOX_WRITE_TEST=1 INBOX_REVIEW_CONTEXT_DISABLE=1 DEFENSE_OVERHEAD_ENABLED=0 \
-        bash "$TEST_INBOX_WRITE" gunshi "ninja1報告完了。レビュー依頼: ${cmd} report=ninja1_report.yaml" report_review karo notify_gunshi
+@test "report_review DEDUPE: marker+inbox lost+no approval re-sends 1" {
+    setup_git_test_env
+    cat >> "$TEST_TMPDIR/queue/tasks/testninja.yaml" <<'YAML'
+  report_id: rpt-dedupe-repair
+  report_identity_version: 2
+YAML
+    cat >> "$TEST_TMPDIR/queue/reports/testninja_report_cmd_test_001.yaml" <<'YAML'
+status: completed
+report_id: rpt-dedupe-repair
+report_identity_version: 2
+task_id: cmd_test_001_normal
+parent_cmd: cmd_test_001
+YAML
+    git -C "$TEST_TMPDIR" add queue/tasks/testninja.yaml queue/reports/testninja_report_cmd_test_001.yaml
+    git -C "$TEST_TMPDIR" commit -q -m dedupe-repair
+    # 1回目: 送信
+    run _run_inbox_write karo "report repair" report_received testninja
     [ "$status" -eq 0 ]
-    [ ! -f "$root/queue/gates/${cmd}/gunshi_review_notify_${fp}.done" ]
-    grep -q "report_review" "$root/queue/inbox/gunshi.yaml"
+    local attempt
+    for attempt in $(seq 1 50); do
+        grep -q "^  type: 'report_review'" "$TEST_TMPDIR/queue/inbox/gunshi.yaml" 2>/dev/null && break
+        sleep 0.1
+    done
+    # inbox消失(marker残存)
+    printf 'messages: []\n' > "$TEST_TMPDIR/queue/inbox/gunshi.yaml"
+    # retry: marker+inbox消失+approval不在→再送修復(==1)
+    run _run_inbox_write karo "report repair retry" report_received testninja
+    [ "$status" -eq 0 ]
+    local count
+    for attempt in $(seq 1 50); do
+        count="$(grep -c "^  type: 'report_review'" "$TEST_TMPDIR/queue/inbox/gunshi.yaml" 2>/dev/null)" || count=0
+        [ "$count" -ge 1 ] && break
+        sleep 0.1
+    done
+    [ "$count" -eq 1 ]
 }
 
 @test "report_review content contains full64 fingerprint in inbox YAML" {
-    setup_basic_test_env
-    local root="$TEST_TMPDIR"
-    local fp="eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee"
-    local cmd="cmd_dedupe_test_content"
-    # content文字列にreport_fingerprint=full64を埋め込んで送信
-    local content="ninja1報告完了。レビュー依頼: ${cmd} report=ninja1_report.yaml
-report_fingerprint=${fp}"
-    run env INBOX_WRITE_ROOT_OVERRIDE="$root" INBOX_WRITE_TEST=1 INBOX_REVIEW_CONTEXT_DISABLE=1 DEFENSE_OVERHEAD_ENABLED=0 \
-        bash "$TEST_INBOX_WRITE" gunshi "$content" report_review karo notify_gunshi
+    setup_git_test_env
+    cat >> "$TEST_TMPDIR/queue/tasks/testninja.yaml" <<'YAML'
+  report_id: rpt-dedupe-fp
+  report_identity_version: 2
+YAML
+    cat >> "$TEST_TMPDIR/queue/reports/testninja_report_cmd_test_001.yaml" <<'YAML'
+status: completed
+report_id: rpt-dedupe-fp
+report_identity_version: 2
+task_id: cmd_test_001_normal
+parent_cmd: cmd_test_001
+YAML
+    git -C "$TEST_TMPDIR" add queue/tasks/testninja.yaml queue/reports/testninja_report_cmd_test_001.yaml
+    git -C "$TEST_TMPDIR" commit -q -m dedupe-fp
+    run _run_inbox_write karo "report fp check" report_received testninja
     [ "$status" -eq 0 ]
-    grep -q "report_fingerprint=${fp}" "$root/queue/inbox/gunshi.yaml"
+    local attempt
+    for attempt in $(seq 1 50); do
+        grep -q "report_fingerprint=" "$TEST_TMPDIR/queue/inbox/gunshi.yaml" 2>/dev/null && break
+        sleep 0.1
+    done
+    grep -q "report_fingerprint=" "$TEST_TMPDIR/queue/inbox/gunshi.yaml"
 }
