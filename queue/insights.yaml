@@ -9922,3 +9922,10 @@ insights:
   source: "semantic_index_update"
   fix_known: false
   status: pending
+- id: INS-20260830-210801781-5d99
+  ts: "2026-08-30T21:08:01+09:00"
+  insight: "idle 忍者 4 名(21:06 殿指摘)の構造: 忍者は report done 後も『軍師 LGTM→家老 ACCEPT→GATE→archive』が全て終わるまで deploy race guard(cmd_karo_hotfix_reflux_deploy_race_20260725)で再配備不可。家老 1 名の直列(CTX 80%)がボトルネック。候補: (a)軍師 LGTM ∧ report PASS ∧ commit 到達で家老 ACCEPT を自動スタンプ(cmd_1144『LGTM→家老スタンプのみ』の機械化) (b)release_ninja を『report completed+commit 到達』で発火し GATE を非同期に(9f08253ab の適用範囲拡大)。計測=done 滞留時間(report completed→archive)の中央値を loop で出す"
+  priority: "medium"
+  source: "manual"
+  fix_known: false
+  status: pending
