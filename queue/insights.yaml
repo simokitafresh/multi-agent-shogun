@@ -9556,3 +9556,10 @@ insights:
   resolved_reason: "semantic map generation verified the candidate is represented or intentionally ignored"
   action_artifact: "semantic_map=/home/simokitafresh/multi-agent-shogun/context/semantic-map.md;semantic_index=/home/simokitafresh/multi-agent-shogun/docs/semantic-index/index.md"
   resolved_at: "2026-08-30T18:39:58+09:00"
+- id: INS-20260830-184218481-c3bc
+  ts: "2026-08-30T18:42:18+09:00"
+  insight: "自動 commit(insights auto-commit/reflux dirty-guard)の前に secret パターン(cfut_|sk-|ghp_|AKIA|Bearer [A-Za-z0-9]{30,})を staged diff で grep し、検出したら redact してから commit する pre-commit guard。実証: 17:47 0f6e9f157 に CLOUDFLARE_LP_TOKEN が混入→GitHub push protection で 31 commit 18:45 まで停止。混入経路=lord_conversation の本文→semantic_index_update 候補→insights.yaml"
+  priority: "medium"
+  source: "manual"
+  fix_known: false
+  status: pending
