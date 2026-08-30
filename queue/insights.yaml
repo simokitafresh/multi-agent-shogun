@@ -10359,3 +10359,10 @@ insights:
   source: "semantic_stress_test"
   fix_known: false
   status: pending
+- id: INS-20260831-010222845-c560
+  ts: "2026-08-31T01:02:22+09:00"
+  insight: "[[You are UPDATING an existing design document to reflect sour]] semantic_stress_test candidate_aliases: NO_MATCH source=lord query=You are UPDATING an existing design document to reflect source code changes. The code diff below shows what changed in the source code. The…"
+  priority: "low"
+  source: "semantic_stress_test"
+  fix_known: false
+  status: pending
