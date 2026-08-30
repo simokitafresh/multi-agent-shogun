@@ -5990,6 +5990,7 @@ insights:
   resolved_reason: "一次情報で現行反映を再確認。instructions/shogun.md:L262に隔離検証ACを入力marker 0+metadata/cwd差分0としlive出力差分を判定しない契約、および隔離sessionのagent_id接尾辞契約が現存する。context/senkyoku-log.md:L1514はcmd_4410 AC1-3完了を記録し、semantic_searchのMemory/Obsidian因果もA/B経路の本番入力混入なし・metadata/cwd不変を示す。追加実装・decision_candidateは不要のため対象IDのみ解決する。"
   action_artifact: "target=queue/insights.yaml:INS-20260828-001645016-4136;primary=instructions/shogun.md:L262;history=context/senkyoku-log.md:L1514;memory=semantic_search cmd_4410 AC3;obsidian=docs/obsidian-promoted/cmd_4410-ac3-pane-capture-0-ac-0-marker-0-pane-metadata-cwd-0-ac-marker-0-metada-insight-ins-20260828-001645016-4136.md;new_fix=none;decision_candidate=none"
   resolved_at: "2026-08-30T09:54:42+09:00"
+  last_seen: "2026-08-30T10:02:17+09:00"
 - id: INS-20260828-001724426-69d3
   ts: "2026-08-28T00:17:24+09:00"
   insight: "ext4移設後にgate_report_format.sh Permission denied発生(才蔵quality_monitor)。chmod +xが必要な可能性。auto clear cmd_context問題と同じext4移設後遺症群"
