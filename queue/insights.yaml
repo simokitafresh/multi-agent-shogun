@@ -7404,7 +7404,10 @@ insights:
   priority: "medium"
   source: "manual"
   fix_known: false
-  status: pending
+  status: resolved
+  resolved_reason: "一次情報で現行防御を確認。scripts/cmd_complete_gate.sh:14497-14501 は segment_status=BLOCK を終端BLOCKにせず GATE WAIT と WAIT:throughput_segment_invalid へ分類し、scripts/cmd_complete_gate.sh:5507-5522 は逆順区間を na(reason)+segment_invalid として可視化する。scripts/review_approval.sh:282-290 は一致するGunshi LGTM前のKaro ACCEPTを拒否する。対応回帰は test_cmd_complete_gate.bats 309/309 PASS SKIP0 と test_review_approval.bats 14/14 PASS SKIP0。追加実装修正・decision_candidateは不要。"
+  action_artifact: "target=queue/insights.yaml:INS-20260828-174306350-1a99;primary=scripts/cmd_complete_gate.sh:L5507-L5522,L14497-L14501;primary=scripts/review_approval.sh:L282-L290;regression=logs/test_receipts/run_tests_20260830T190819_739855.json:309/309 PASS SKIP0,logs/test_receipts/run_tests_20260830T190819_739866.json:14/14 PASS SKIP0;decision_candidate=none;promotion_pause=queue/gates/reflux_promotion.paused"
+  resolved_at: "2026-08-31T04:10:51+09:00"
 - id: INS-20260828-181240393-9ce4
   ts: "2026-08-28T18:12:40+09:00"
   insight: "daemon 文脈の再現は環境(PATH)だけでなく trap も含む: ninja_monitor の function_timing DEBUG trap が BASH_REMATCH を潰し respawn_recovery.sh L28 が invalid variable name(T35 同型再発)。lib で BASH_REMATCH を使うと monitor 内で壊れる→lib 契約 bats に『trap '' DEBUG 下で動く』を標準 fixture 化(gate: scripts/lib/*.sh の BASH_REMATCH を WARN)"
