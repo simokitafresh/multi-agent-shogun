@@ -1592,6 +1592,31 @@ print(f"TEST_RECEIPT_FALLBACK path={receipt} rc={failure_rc} reason=inner_receip
 PY
 }
 
+write_run_tests_rc_file() {
+    local receipt="$1"
+    local rc="$2"
+    local rc_file="${RUN_TESTS_RC_PATH:-${receipt%.json}.rc}"
+    local rc_dir rc_tmp
+    [[ "$rc" =~ ^[0-9]+$ ]] || {
+        printf 'BLOCK: terminal rc must be a nonnegative integer: %s\n' "$rc" >&2
+        return 2
+    }
+    rc_dir="$(dirname -- "$rc_file")"
+    mkdir -p -- "$rc_dir"
+    rc_tmp="$(mktemp "${rc_file}.tmp.XXXXXX")" || {
+        printf 'BLOCK: terminal rc sidecar temp creation failed: %s\n' "$rc_file" >&2
+        return 2
+    }
+    if ! printf '%s\n' "$rc" >"$rc_tmp"; then
+        printf 'BLOCK: terminal rc sidecar write failed: %s\n' "$rc_file" >&2
+        return 2
+    fi
+    if ! mv -f -- "$rc_tmp" "$rc_file"; then
+        printf 'BLOCK: terminal rc sidecar publish failed: %s\n' "$rc_file" >&2
+        return 2
+    fi
+}
+
 recover_run_tests_terminal_receipt() {
     local identity="$1" receipt=""
     if [ -f "$identity" ]; then
@@ -2699,6 +2724,17 @@ if [[ "${BASH_SOURCE[0]:-$0}" == "${0}" ]]; then
             write_run_tests_missing_receipt "$_receipt" "$_rc" "$_selected_paths" \
                 "$_source_head" "$_run_id" "$_source_fp"
         fi
+        # The shard verifier consumes a receipt and an adjacent return-code
+        # file. Publish the sidecar from the receipt's terminal rc after the
+        # missing-receipt fallback, so success, ordinary failure, and timeout
+        # all expose the same terminal identity. The temp-file rename keeps
+        # readers from observing a partially written rc value.
+        _receipt_rc=2
+        if _parsed_receipt_rc="$(read_run_tests_receipt_rc "$_receipt" 2>/dev/null)"; then
+            _receipt_rc="$_parsed_receipt_rc"
+        fi
+        write_run_tests_rc_file "$_receipt" "$_receipt_rc" \
+            || { printf 'TEST_RECEIPT_RC_FAIL path=%s rc=%s\n' "$_receipt" "$_receipt_rc" >&2; exit 2; }
         _output_sha256="$(python3 -c 'import json,sys; print(json.load(open(sys.argv[1]))["output_sha256"])' "$_receipt")"
         # Timing rows are a terminal-success cohort.  A failed test run still
         # publishes its receipt, but must never make either timing ledger
@@ -2713,14 +2749,10 @@ if [[ "${BASH_SOURCE[0]:-$0}" == "${0}" ]]; then
           "$_selector_input_fp" "$_mode" "$REPO_ROOT" "$_run_id" "$_source_head" "$_source_fp" "${2:-}"
         rm -f "$_pending_file_batch" "$_pending_suite_batch"
         rm -f "$_selected_paths"
-        # This branch runs under nounset.  A truncated/missing receipt must
-        # therefore have a value before any parser or validator can fail.
+        # This branch runs under nounset.  A truncated/missing receipt already
+        # has a terminal rc sidecar before any parser or validator can fail.
         # Invalid receipt identity is an infrastructure BLOCK (rc=2), never a
         # guessed test failure rc=1 and never an unbound-variable abort.
-        _receipt_rc=2
-        if _parsed_receipt_rc="$(read_run_tests_receipt_rc "$_receipt" 2>/dev/null)"; then
-            _receipt_rc="$_parsed_receipt_rc"
-        fi
         if ! validate_run_tests_terminal_receipt "$_receipt" >/dev/null; then
             printf 'TEST_RECEIPT_FAIL path=%s\n' "$_receipt" >&2
             [ "$_receipt_rc" -ne 0 ] || _receipt_rc=1
