@@ -9402,3 +9402,10 @@ insights:
   resolved_reason: "semantic map generation verified the candidate is represented or intentionally ignored"
   action_artifact: "semantic_map=/home/simokitafresh/multi-agent-shogun/context/semantic-map.md;semantic_index=/home/simokitafresh/multi-agent-shogun/docs/semantic-index/index.md"
   resolved_at: "2026-08-30T17:40:15+09:00"
+- id: INS-20260830-174638879-23ae
+  ts: "2026-08-30T17:46:38+09:00"
+  insight: "semantic_index_update未登録[[リンク]]ターゲット: [[dm-signal.com_LP本番到達_20260830_1744]] は既存aliasesに一致なし。類似概念TOP3: dmsignal_operations(DM-Signal運用; alias=dm-signal.com_ドメインrunbook_20260830; score=31.5) / dm_signal_pf_restore_guardrails(DM-Signal PF復元運用ガードレール; alias=T106_DM-signal_ext4移設; score=22.0) / provisional_dm-login-boundary-asis-tobe_20260817(仮: Dm Login Boundary Asis Tobe 20260817; alias=dm-login-boundary-asis-tobe_20260817; score=12.3)。概念定義とaliases追加を検討せよ"
+  priority: "low"
+  source: "semantic_index_update"
+  fix_known: false
+  status: pending
