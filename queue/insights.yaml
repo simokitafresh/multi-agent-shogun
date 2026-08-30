@@ -7988,7 +7988,7 @@ insights:
   fix_known: false
   status: resolved
   resolved_reason: "現行実装で解消済み。review_bundle.pyの_single_review_entryがmappingへcmd_idを自動注入し不一致を永続化前に拒否する。commit 05798e80eaf44b133fe6583e0906aa4feb05efb9で実装・回帰テスト追加済み、run_tests file tests/unit/test_review_bundle.batsは9/9 PASS・SKIP 0。"
-  action_artifact: "commit=05798e80eaf44b133fe6583e0906aa4feb05efb9; source=scripts/review_bundle.py:729-746; test=tests/unit/test_review_bundle.bats:single binds missing mapping cmd_id and blocks mismatches before persistence; receipt=logs/test_receipts/run_tests_20260830T201747_1795105.json"
+  action_artifact: "commit=05798e80eaf44b133fe6583e0906aa4feb05efb9; source=scripts/review_bundle.py:729-746; test=tests/unit/test_review_bundle.bats:single binds missing mapping cmd_id and blocks mismatches before persistence; receipt=logs/test_receipts/run_tests_20260830T201747_1795105.json; verification_task=cmd_reflux_insight_202608310514_saizo_exact; verification_inventory=52/14/597/663"
   resolved_at: "2026-08-31T05:18:53+09:00"
 - id: INS-20260829-142205571-a8cd
   ts: "2026-08-29T14:22:05+09:00"
