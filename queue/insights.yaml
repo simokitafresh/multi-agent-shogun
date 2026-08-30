@@ -10478,3 +10478,10 @@ insights:
   resolved_reason: "semantic map generation verified the candidate is represented or intentionally ignored"
   action_artifact: "semantic_map=/home/simokitafresh/multi-agent-shogun/context/semantic-map.md;semantic_index=/home/simokitafresh/multi-agent-shogun/docs/semantic-index/index.md"
   resolved_at: "2026-08-31T01:53:30+09:00"
+- id: INS-20260831-020723951-240c
+  ts: "2026-08-31T02:07:23+09:00"
+  insight: "semantic_index_update新概念候補: discussion:multi agent shogun env cloudflareが見つからない は 既存aliasesに一致なし。概念定義とaliases追加を検討せよ"
+  priority: "low"
+  source: "semantic_index_update"
+  fix_known: false
+  status: pending
