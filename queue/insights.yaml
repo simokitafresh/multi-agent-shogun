@@ -9961,7 +9961,10 @@ insights:
   priority: "low"
   source: "semantic_index_update"
   fix_known: false
-  status: pending
+  status: resolved
+  resolved_reason: "semantic map generation verified the candidate is represented or intentionally ignored"
+  action_artifact: "semantic_map=/home/simokitafresh/multi-agent-shogun/context/semantic-map.md;semantic_index=/home/simokitafresh/multi-agent-shogun/docs/semantic-index/index.md"
+  resolved_at: "2026-08-30T21:18:24+09:00"
 - id: INS-20260830-211124096-a656
   ts: "2026-08-30T21:11:24+09:00"
   insight: "[[T202 T201 T198 T196 T195 T193 T188の進捗を表形式で報告せよ]] semantic_stress_test candidate_aliases: NO_MATCH source=lord query=T202 / T201 / T198 / T196 / T195 / T193 / T188の進捗を表形式で報告せよ"
@@ -9975,7 +9978,10 @@ insights:
   priority: "low"
   source: "semantic_index_update"
   fix_known: false
-  status: pending
+  status: resolved
+  resolved_reason: "semantic map generation verified the candidate is represented or intentionally ignored"
+  action_artifact: "semantic_map=/home/simokitafresh/multi-agent-shogun/context/semantic-map.md;semantic_index=/home/simokitafresh/multi-agent-shogun/docs/semantic-index/index.md"
+  resolved_at: "2026-08-30T21:18:25+09:00"
 - id: INS-20260830-211147611-fcc2
   ts: "2026-08-30T21:11:47+09:00"
   insight: "[[idle忍者が4人もいるぞ]] semantic_stress_test candidate_aliases: NO_MATCH source=lord query=idle忍者が4人もいるぞ"
@@ -10040,11 +10046,21 @@ insights:
   priority: "low"
   source: "semantic_index_update"
   fix_known: false
-  status: pending
+  status: resolved
+  resolved_reason: "semantic map generation verified the candidate is represented or intentionally ignored"
+  action_artifact: "semantic_map=/home/simokitafresh/multi-agent-shogun/context/semantic-map.md;semantic_index=/home/simokitafresh/multi-agent-shogun/docs/semantic-index/index.md"
+  resolved_at: "2026-08-30T21:18:25+09:00"
 - id: INS-20260830-211534604-1633
   ts: "2026-08-30T21:15:34+09:00"
   insight: "[[意志依存はバグだ]] semantic_stress_test candidate_aliases: NO_MATCH source=lord query=意志依存はバグだ。環境に埋め込んだか？"
   priority: "low"
   source: "semantic_stress_test"
+  fix_known: false
+  status: pending
+- id: INS-20260830-212117785-631d
+  ts: "2026-08-30T21:21:17+09:00"
+  insight: "[[殿裁定 『着手せよ』 殿要件 『登録してログインすると free のクーポンが表示]] NO_MATCH purpose pending alias: cmd_complete時にdeploy_task.logでNO_MATCHだったpurpose。類似概念TOP3: growth_loop(学習ループ; alias=殿裁定 20 21『着手せよ』 設計書 v3 docs research dm free tier google aut; score=11.9) / semantic_dictionary_design(セマンティック辞書構想; alias=殿裁定 『インサイトに登録すること自体が究極の先送りだ; score=8.8) / known_unknowns_principle(無知の知; alias=殿裁定 17 04 『 admin fofが縦に長くスクロールが大変だ; score=7.6)。既存概念aliasesへの自動昇格候補"
+  priority: "low"
+  source: "semantic_index_update"
   fix_known: false
   status: pending
