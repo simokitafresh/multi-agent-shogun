@@ -180,6 +180,8 @@ test_execution:
 8. **外部導線 URL(note・membership 等)は設計書の参考記事でなく marketing-info.md の現物から引き、CLEAR 後に本番 curl で href を数えよ。** 4417 の忍者が参考記事著者 dataana2020 を membership URL に採り、FAQ 節の『Read the docs』が /faq を指したまま live→殿実機 18:19。将軍も CLEAR 後に `curl | grep -oE 'href=...'` を打っていなかった(#2+#8)。
 9. **CI green を待つな(殿裁定 2026-08-30 19:29『CI green を待つという完全にナンセンスな発想が諸悪の根源』)。** GATE の ci_readiness WAIT は CLEAR→archive→再配備の鎖を CI 所要時間分止め、19:00-19:29 に忍者 5 名が GATE 待ち idle・LP 誤リンクの deploy も止まった。CI RED は ci_fix lane で後追い(裁定 07-16)。将軍は可逆な本番修正(LP リンク 33d87819)を CI を待たず main へ merge/push し 5 分で live(570ff5b1)。gate 側は家老 unit8 で ci_readiness を記録のみ(非ブロック)へ。
 10. **負の複利があるものを insight に登録するな。今 D0 で根治せよ(殿裁定 2026-08-30 21:11『insight に登録すること自体が究極の先送り』)。** 21:08 に『done 忍者の再配備ブロック・家老 ACCEPT 直列』を INS-210801 に書いて止まった→殿指摘→21:15 に monitor の auto_karo_accept_after_lgtm(fa67bef01)と cmd_complete の stale 予約置換(3d802cf09)で根治。判定=『これを放置すると毎 cmd/毎便で時間を失うか』が yes なら insight ではなく D0。
+11. **hot script の置換は『tmp が非空 ∧ 行数が元の 9 割以上 ∧ bash -n』を全て確認してから mv(殿の速度原則は安全底線の上にある)。** 21:31 に python heredoc の assert 失敗で空 tmp を `bash -n && mv` が通し、ninja_monitor.sh を 0 行で commit(4b4eb8434、15190 行削除)。HOT-RELOAD が空世代を拾えば全 daemon 停止だった。復旧=`git show HEAD~1:<path> >` で戻し f86923989。
+12. **時間経過での承認代行はフォールバックと同じでサイレントに負の複利(殿裁定 21:29-21:30)。** 停滞は『承認』ではなく『名指し nudge』で解く(T184 状態 A/B が既にある)。迷宮化の真因は『家老の速度で解けるものを機構で迂回した継ぎ足し』。シンプルな対応(家老の CTX・完了経路のバグ根治)を極限まで。
 - origin(追補2): `[[4419_正本Edit_task未再注入_3度FAIL]] -> [[LP_note_dataana2020_docs→faq_20260830_1819]] -> [[ac_version突合WARN_INS-183115]]`
 - origin(追補): `[[殿実機確認_LP_20260830_1753]] -> [[jp直書き残存]] -> [[4420_publish誤報]] -> [[LPと/loginの同構造]] -> [[hreflang誤読]]`
 - origin: `[[殿下問_P2を待つメリット_20260830_1600]] -> [[4416_直列2h37m]] -> [[契約確定で消費側並走]] -> [[復帰後の型_第十六弾]]`
