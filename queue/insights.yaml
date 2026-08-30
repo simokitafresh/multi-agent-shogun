@@ -8343,7 +8343,10 @@ insights:
   priority: "medium"
   source: "manual"
   fix_known: false
-  status: pending
+  status: resolved
+  resolved_reason: "一次情報で旧事象と現行修正を照合。cmd_reflux_insight_202608292131_saizoはarchive.doneおよびterminal_review_manifest.jsonまで終端済みで、現行ninja_monitor.shのreview_pending判定はreport-keyed approvalのLGTM結果・normalized/raw fingerprint・report pathを全て一致確認する。追加実修正・decision_candidateは不要。"
+  action_artifact: "target=queue/insights.yaml:INS-20260829-214923725-4b2f;fix=5f1bcd4b09911c85aa9f9f1cad7666b6f5bbc85b;code=scripts/ninja_monitor.sh:5083-5091;regression=tests/unit/test_ninja_monitor_stall.bats:174-242;proof=queue/gates/cmd_reflux_insight_202608292131_saizo/terminal_review_manifest.json,archive.done"
+  resolved_at: "2026-08-31T05:30:16+09:00"
 - id: INS-20260829-222816580-6f3a
   ts: "2026-08-29T22:28:16+09:00"
   insight: "semantic_index_update新概念候補: lesson:L1671 は 既存aliasesに一致なし。概念定義とaliases追加を検討せよ"
