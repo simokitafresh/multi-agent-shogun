@@ -9997,3 +9997,17 @@ insights:
   source: "semantic_stress_test"
   fix_known: false
   status: pending
+- id: INS-20260830-211225698-5aa3
+  ts: "2026-08-30T21:12:25+09:00"
+  insight: "[[Free tier F2 — frontend に free Google サインイン→当月クーポン表示→Copy→ l]] semantic_stress_test candidate_aliases: NO_MATCH source=cmds query=Free tier F2 — frontend に /free(Google サインイン→当月クーポン表示→Copy→/login プリフィル)と /auth/callback と入口二分文言を追加する(既存ログイン機構不変)"
+  priority: "low"
+  source: "semantic_stress_test"
+  fix_known: false
+  status: pending
+- id: INS-20260830-211225793-d975
+  ts: "2026-08-30T21:12:25+09:00"
+  insight: "[[殿裁定 20 21『着手せよ』 設計書 v3 docs research dm free tier google aut]] semantic_stress_test candidate_aliases: NO_MATCH source=cmds query=殿裁定 2026-08-30 20:21『着手せよ』(設計書 v3 docs/research/dm-free-tier-google-auth-asis-tobe_v3_20260830.md §2 ToBe)。殿要件 20:15-20:20: Google 登録者に当月の Free クーポン(=Free tier の月次パスワード、有効期限と期間は他 t"
+  priority: "low"
+  source: "semantic_stress_test"
+  fix_known: false
+  status: pending
