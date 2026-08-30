@@ -1,5 +1,6 @@
 # インフラコンテキスト
-<!-- last_updated: 2026-08-30 cmd_karo_hotfix_gate_alert_identity_envelope_20260830(DOC_LANE_REQUEST blt_20260830_093831_327430) -->
+<!-- last_updated: 2026-08-30 approved_source_commit -->
+<!-- source_commit:146b6888cc00 reason:approved_source_commit evidence:blt_20260830_192111_57c73f infra.md に v2 節追記 -->
 <!-- source_commit:ce69ed97490e reason:cmd_karo_hotfix_gate_alert_identity_envelope_20260830(DOC_LANE_REQUEST blt_20260830_093831_327430) evidence:gate_improvement.log BLOCK 0, GATE-IMPROVEMENT-DONE 09:32, gate CLEAR 09:36:10 -->
 <!-- source_commit:b132118b472d reason:cmd_karo_hotfix_tmux_live_sendkeys_guard(DOC_LANE_REQUEST blt_074928) evidence:git show --stat b132118b472d -->
 <!-- source_commit:869e6ad792cf reason:cmd_karo_hotfix_run_tests_test_necessity_selector(DOC_LANE_REQUEST blt_074340) evidence:git show --stat 869e6ad792cf -->
@@ -142,6 +143,7 @@ source boundary一致taskはregistryのowner/update_triggerからcontext_update_
 - **オフサイト退避 cron の daemon 環境差(小太郎 08ce18ac, 2026-08-30)**: 08-30 03:00 の初回 cron run が『BACKUP_FAIL: gws CLI is unavailable』(`shogun_backup.py` が `shutil.which("gws")` 依存、cron PATH に nvm 無し=型八弾-2)。`--install-cron` が crontab 行に `SHOGUN_GWS_BIN=<絶対 path>` を exact 1 件注入(bats 3/3)。将軍は同日 03:05 に手動 run で当日分を担保(backup_id shogun-20260829T180517Z、Drive 18 ファイル)。本番 proof=08-31 03:00 の成功 JSON。
 - **cmd_complete_gate の command/files_modified 照合をディレクトリ境界対応(才蔵 32612a1f1, 2026-08-29)**: cmd_4411 が 18:32 に `command_files_modified_mismatch` で BLOCK(command 欄の `scripts` 等ディレクトリ指定と files_modified の個別 path が不一致扱い)→`scripts/cmd_complete_gate.sh` に directory-boundary coverage 2 行+bats 41 行。修正前 297/298(回帰 1 FAIL)→修正後 477/477 SKIP 0。
 - **review-pending nudge 三状態の unit4=lifecycle worker singleton 早期終了の除外(半蔵 788139722, 2026-08-29)**: T184 三者合意(A/B/C 状態+durable ledger)の実装後、lifecycle worker の singleton 早期終了で『formal LGTM 済(状態 B)』の家老宛 nudge が 0 回だった→除外して 1 回だけ送信、再実行重複 0(ledger/nudge 0→1、bats +18 行)。unit1〜4 の全体像 → T184(`queue/shogun_todo_map.md`)。
+- **outstanding lease v2=inbox が空になるか generation が変わるまで lease を保持(疾風 146b6888c, 2026-08-30)**: v1 は unread が減った時点(ACK 観測)で lease を消して再 nudge していたため、複数通を 1 通ずつ処理する受け手に処理途中の nudge が重なった。v2 は `outstanding_lease_acknowledged` を撤去し、lease の解放条件を『unread 0 or generation 変化』の二値にする(inbox_watcher.sh +36/-... bats +27 行)。v3(疾風 走行中)は同 lease の regression contract。→ 家老 hotfix `cmd_karo_hotfix_inbox_nudge_outstanding_lease_v2_20260830`
 
 ## プラットフォーム運用
 

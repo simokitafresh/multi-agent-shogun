@@ -9583,4 +9583,77 @@ insights:
   priority: "low"
   source: "semantic_index_update"
   fix_known: false
-  status: pending
+  status: resolved
+  resolved_reason: "semantic map generation verified the candidate is represented or intentionally ignored"
+  action_artifact: "semantic_map=/home/simokitafresh/multi-agent-shogun/context/semantic-map.md;semantic_index=/home/simokitafresh/multi-agent-shogun/docs/semantic-index/index.md"
+  resolved_at: "2026-08-30T19:22:18+09:00"
+- id: INS-20260830-192525401-48af
+  ts: "2026-08-30T19:25:25+09:00"
+  insight: "semantic_index_update新概念候補: discussion:cloudflareのAPI問題によるpush不可は解決したか？ は 既存aliasesに一致なし。概念定義とaliases追加を検討せよ"
+  priority: "low"
+  source: "semantic_index_update"
+  fix_known: false
+  status: resolved
+  resolved_reason: "semantic map generation verified the candidate is represented or intentionally ignored"
+  action_artifact: "semantic_map=/home/simokitafresh/multi-agent-shogun/context/semantic-map.md;semantic_index=/home/simokitafresh/multi-agent-shogun/docs/semantic-index/index.md"
+  resolved_at: "2026-08-30T19:28:23+09:00"
+- id: INS-20260830-192638465-546c
+  ts: "2026-08-30T19:26:38+09:00"
+  insight: "[[LPとログイン画面はどこまで進んで]] semantic_stress_test candidate_aliases: NO_MATCH source=lord query=LPとログイン画面はどこまで進んで、何が残っているんだ？表形式で明確にしてくれ"
+  priority: "low"
+  source: "semantic_stress_test"
+  fix_known: false
+  status: resolved
+  resolved_reason: "semantic index candidate was absorbed into a registered concept"
+  action_artifact: "semantic_index=/home/simokitafresh/multi-agent-shogun/docs/semantic-index/index.md"
+  resolved_at: "2026-08-30T19:29:07+09:00"
+- id: INS-20260830-192646721-0d33
+  ts: "2026-08-30T19:26:46+09:00"
+  insight: "[[cloudflareのAPI問題によるpush不可は解決したか？]] semantic_stress_test candidate_aliases: NO_MATCH source=lord query=cloudflareのAPI問題によるpush不可は解決したか？"
+  priority: "low"
+  source: "semantic_stress_test"
+  fix_known: false
+  status: resolved
+  resolved_reason: "semantic index candidate was absorbed into a registered concept"
+  action_artifact: "semantic_index=/home/simokitafresh/multi-agent-shogun/docs/semantic-index/index.md"
+  resolved_at: "2026-08-30T19:29:07+09:00"
+- id: INS-20260830-192656201-4e35
+  ts: "2026-08-30T19:26:56+09:00"
+  insight: "[[T198 T199 T200 T196 T195 T193 T192 T190 T188の進捗を覚醒して更新せよ]] semantic_stress_test candidate_aliases: NO_MATCH source=lord query=T198 / T199 / T200 / T196 / T195 / T193 / T192 / T190 / T188の進捗を覚醒して更新せよ。つまりや停滞があれば解消せよ"
+  priority: "low"
+  source: "semantic_stress_test"
+  fix_known: false
+  status: resolved
+  resolved_reason: "semantic index candidate was absorbed into a registered concept"
+  action_artifact: "semantic_index=/home/simokitafresh/multi-agent-shogun/docs/semantic-index/index.md"
+  resolved_at: "2026-08-30T19:29:08+09:00"
+- id: INS-20260830-192713046-170b
+  ts: "2026-08-30T19:27:13+09:00"
+  insight: "[[家老のinboxの増え方が異常ではないかinbox33]] semantic_stress_test candidate_aliases: NO_MATCH source=lord query=家老のinboxの増え方が異常ではないかinbox33"
+  priority: "low"
+  source: "semantic_stress_test"
+  fix_known: false
+  status: resolved
+  resolved_reason: "semantic index candidate was absorbed into a registered concept"
+  action_artifact: "semantic_index=/home/simokitafresh/multi-agent-shogun/docs/semantic-index/index.md"
+  resolved_at: "2026-08-30T19:29:08+09:00"
+- id: INS-20260830-192727933-7e5c
+  ts: "2026-08-30T19:27:27+09:00"
+  insight: "[[login 最小化 — LP dm signal com との重複を解消し]] semantic_stress_test candidate_aliases: NO_MATCH source=cmds query=/login 最小化 — LP(dm-signal.com)との重複を解消し、/login をブランド行+サインイン+LP への 1 導線に絞る(ログイン機構不変)"
+  priority: "low"
+  source: "semantic_stress_test"
+  fix_known: false
+  status: resolved
+  resolved_reason: "semantic index candidate was absorbed into a registered concept"
+  action_artifact: "semantic_index=/home/simokitafresh/multi-agent-shogun/docs/semantic-index/index.md"
+  resolved_at: "2026-08-30T19:29:08+09:00"
+- id: INS-20260830-192739142-4ced
+  ts: "2026-08-30T19:27:39+09:00"
+  insight: "[[殿実機確認 17 53『LP ページとログインページがほぼ同じだ]] semantic_stress_test candidate_aliases: NO_MATCH source=cmds query=殿実機確認 2026-08-30 17:53『LP ページとログインページがほぼ同じだ。これは誤解や勘違いを生みそうだ』。原因=将軍が §2.2 の同じ構造(表・プラン 3 枚・導線 4 本・FAQ)を cmd_4416(/login)と cmd_4417(LP)の両方に適用したこと。LP が別サイトで live(dm-signal.com)になった今、/l"
+  priority: "low"
+  source: "semantic_stress_test"
+  fix_known: false
+  status: resolved
+  resolved_reason: "semantic index candidate was absorbed into a registered concept"
+  action_artifact: "semantic_index=/home/simokitafresh/multi-agent-shogun/docs/semantic-index/index.md"
+  resolved_at: "2026-08-30T19:29:08+09:00"
