@@ -1,5 +1,5 @@
 <!-- gist-master: 9559feb8b3dfebda5183d792c7edbade cloudflare_dm-signal_geo_language_runbook_20260831.md -->
-# Cloudflare 手順 — dm-signal.com 地域別言語優先(日本→/ja/、その他→EN)+API トークン再発行 — 2026-08-31 01:55
+# Cloudflare 手順 — dm-signal.com 地域別言語優先(日本→/ja/、その他→EN)+API トークン再発行 — 2026-08-31 01:55(**3 Step 完了 02:13**)
 
 > 殿下問 01:44『日本からのアクセスは日本語表示優先、日本以外は英語優先にできるか？』→将軍推薦=Cloudflare Redirect Rule(コード変更 0・可逆)→殿 01:46『よい』。
 > 一次(01:50 殿スクショ): DNS は `dm-signal.com`/`www` とも CNAME→`dm-signal-lp.onrender.com`、**プロキシ=DNS のみ(グレー雲)**。SSL/TLS=Full(08-30 19:54)。保管トークン(`.env.cloudflare`)は rotate 後で **Invalid API Token**、zone_id は仮値。
@@ -56,8 +56,8 @@
 - DNS 画面の推奨「メールが @dm-signal.com に届かず、なりすましの可能性」は LP ドメインでメールを使わないなら放置で実害なし。なりすまし防止だけ欲しければ TXT 2 行(`v=spf1 -all`、`_dmarc` に `v=DMARC1; p=reject`)。将軍 cmd で対応可。
 
 ## 完了の定義(二値)
-- [ ] Step 1: `curl -sI https://dm-signal.com/` に `server: cloudflare` 1 件 ∧ `/`・`/ja/` 200
-- [ ] Step 2: 殿の日本回線で `/`→`/ja/`(302)∧ 将軍 curl で `/` は EN 200
-- [ ] Step 3: `.env.cloudflare` 更新 ∧ tokens/verify=active ∧ zone 一致
+- [x] Step 1(02:13 API 実測): CNAME 2 行 proxied=True、`server: cloudflare`・`cf-ray …-NRT`、`/ja/` 200
+- [x] Step 2(02:13 API 実測): ruleset に 1 rule enabled、式一致、Static → https://dm-signal.com/ja/ 302。将軍 WSL(日本回線)の curl で `/`→302 `location: /ja/`(=JP 判定が効いている証跡)。EN 側は `/index.html` で 200(パス `/` のみ対象)
+- [x] Step 3(02:12): 殿からトークン+ゾーン ID 受領→`.env.cloudflare` 更新(chmod 600・gitignore)、tokens/verify=active、zones/{id}=dm-signal.com active
 
 origin: `[[殿下問_地域別言語優先_20260831_0144]] -> [[Cloudflare_Redirect_Rule_JP→ja]] -> [[DNSのみ→プロキシ済み]] -> [[トークンrotate未反映_Invalid_API_Token]]`
