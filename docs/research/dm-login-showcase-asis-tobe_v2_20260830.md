@@ -28,6 +28,7 @@
 | 10:21 | https://note.com/dataana2020/n/n17bd615c8f64 を参考にしてくれ(五十嵐「入口を変えただけで会員登録 1.6 倍」) | 事実=記事の結論は『使われない理由は魅力不足ではなく摩擦。効いたのは説明・特典・文言ではなく経路修正(着地ページを変える・ボタンを画面内に入れる)。区間ごとに数えると一箇所が突出して悪く、たいてい思っていた場所と違う。初見ユーザーとしてシークレット窓+スマホで自分で通せ』。制約=/login は未認証の全訪問者が着地する唯一の経路であり、摩擦の有無を今は計測していない。判断=ショーウィンドウ(魅力)より先に**摩擦除去と区間計測**を置く(§2.5)。効果=§5 の順序を P1 計測→P2a 摩擦→P2b ショーウィンドウへ組み替え、P4 を『初見ユーザー実機通し』に変更 |
 | 10:41 | 本番を使うから secret 件数に試作 FoF も含めよ。Current signals 表に齟齬がある。パフォーマンスだけ閲覧できるとシグナルまで閲覧できるがごっちゃになっているのでは | 事実=tier 可視性は 3 段(hide_portfolio=パフォーマンス閲覧 / hide_signal=シグナル閲覧 / hide_components=構成閲覧)で、将軍の件数は hide_portfolio=false だけで数えていた(本番実測 10:43: Basic はパフォーマンス 5 本・シグナル 3 本、premium は 28/25)。制約=「+N PF with plan」はシグナルが見える本数として読まれる。判断=**Secret 件数は active かつ非公開の全 PF(FoF 6 本含む)=73 で確定(未決 1 解決)**。**表は「パフォーマンス閲覧」と「シグナル閲覧」を別の段として扱う**。効果=§1.3 に 3 段実測、§2.3 の row に `performance_plan`/`signals_plan`、§3.1 を 2 段ラベルへ書き換え |
 | 12:18 | Current signals 表がわかりづらい。Basic-DualMomentum 単体、その後はプラン毎の平均とベストの total performance と ×N 倍、CAGR をレンジで書くのがシンプル | 事実=PF 行を並べる表は 8 行×2 段ラベルで読者が数える必要があった。制約=公開できる数値は tier 設定で決まる集合の集計値(個別 PF の保有・シグナルは出さない)。判断=**表を『Basic-DM 1 行 + プラン集計 3 行 + Secret 1 行』の 5 行にする**。各プラン行= PF 数 / 平均 total return / ベスト total return(PF 名) / ×N(平均・ベスト) / CAGR レンジ。効果=§3.1 を v3(集計方式)へ、§2.3 を plan 集計契約へ、未決 3(表記)は『% と ×N と CAGR レンジを併記』で解決 |
+| 12:19-12:20 | シグナルまで公開しているものだけで計算しよう。basic dual momentum / basic plan / standard plan / premium plan / secret の 5 つに分けよう | 事実=プランの集計集合には『パフォーマンスのみ可視』の PF(Basic の白虎激攻・分身常勝、premium の奥義 ×3)を含める余地があった。制約=会員が実際に使えるのはシグナルまで見える PF。判断=**集計集合= hide_portfolio=false ∧ hide_signal=false(シグナル公開 PF)に確定、表は 5 行(Basic-DM / Basic / Standard / Premium / Secret)に確定**。効果=§3.1 v3 の『要殿確認』を撤去、§2.3 `plans[]` の集合定義を固定、AC の独立再計算も同じ集合で |
 
 ---
 
@@ -161,7 +162,7 @@
 | **Premium plan** · by invitation | signals 25 PF | +23,725% / +106,789%(GSシン四つ目-激攻) | ×238 / ×1,069 | 14.1% 〜 68.7% | 招待制 |
 | **Secret** | 73 PF | Not disclosed | — | — | Not viewable |
 
-- 集合の定義(将軍の前提・要殿確認): 各プラン行は**そのプランでシグナルまで見える PF**(hide_portfolio=false ∧ hide_signal=false)で集計。パフォーマンスのみの PF(Basic の白虎激攻・分身常勝、premium の奥義 ×3)を含めると Basic 平均は +20,494%/ベスト +75,619%(白虎-激攻)、premium 平均 +40,172%/ベスト +365,962%(奥義-GS-分身-激攻)・CAGR 上限 76.1% になる。「Current *signals*」の表題に合わせ signals 集合を採用。
+- 集合の定義(殿裁定 12:19): 各プラン行は**そのプランでシグナルまで公開している PF**(hide_portfolio=false ∧ hide_signal=false)だけで計算する。パフォーマンスのみ可視の PF(Basic の白虎激攻・分身常勝、premium の奥義 ×3)は集計に入れない(参考: 入れると Basic 平均 +20,494%/premium ベスト +365,962% まで跳ね、実際に使える数字と乖離する)。行構成は 5 つ(Basic-DM / Basic / Standard / Premium / Secret)に確定(殿裁定 12:20)。
 - CAGR の算出: `(1+total_return)^(12/period_months)-1`(years=0 行に `cagr` がないため EP で算出)。period は 160〜275 か月(2003〜2013 起点)。
 - 平均は単純平均(PF 数で割る)。中央値ではない(殿の言葉「平均」に従う)。
 - 表題は "Current signals" のまま、副題 "Performance since inception, by plan"。
