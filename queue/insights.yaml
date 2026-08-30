@@ -7394,7 +7394,10 @@ insights:
   priority: "medium"
   source: "manual"
   fix_known: false
-  status: pending
+  status: resolved
+  resolved_reason: "一次情報で対象と発端を確認。現行deploy_task.shのreflux_commit_contract注入（scope=queue/insights.yaml、producer=source:self_retro、post-commit許可=occurrence_count/last_seen）とninja_scope_commit.shのID-union・task/parent subject契約が、対象のauto-commit巻き込みおよびcommit subject不一致を防御している。専用検証はscope commit 79/79、insight write 34/34、reflux契約注入を含むdeploy task YAML injection 79/79、全てSKIP=0。新規実修正・decision_candidateは不要。"
+  action_artifact: "target=queue/insights.yaml:INS-20260828-171408367-8773;primary=scripts/deploy_task.sh:L4641-L4708;primary=scripts/ninja_scope_commit.sh;regression=logs/test_receipts/run_tests_20260830T184237_203607.json,run_tests_20260830T184352_244800.json;verification=79/79+34/34+79/79,SKIP=0;decision_candidate=none"
+  resolved_at: "2026-08-31T03:45:46+09:00"
 - id: INS-20260828-174306350-1a99
   ts: "2026-08-28T17:43:06+09:00"
   insight: "cmd_complete_gate throughput_segment_invalid: fin_c=na(reversed_lgtm_to_karo_accept) で ci_fix を BLOCK(17:38 疾風 shard1)。家老 ACCEPT が軍師 LGTM より先の順序異常を計測器が BLOCK にしている=計測不能は BLOCK でなく segment=na で通す(T134 の finalize>e2e BLOCK とは別: 順序逆転は便を止める理由にならない)"
