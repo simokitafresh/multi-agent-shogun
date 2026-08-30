@@ -8493,3 +8493,10 @@ insights:
   source: "semantic_stress_test"
   fix_known: false
   status: pending
+- id: INS-20260830-125637053-b9d1
+  ts: "2026-08-30T12:56:37+09:00"
+  insight: "[[殿裁定 12 30『SPY TQQQ 比較と Sharpe』 12 32『secret の数値』 12 46『MDD も]] semantic_stress_test candidate_aliases: NO_MATCH source=cmds query=殿裁定 2026-08-30 12:30『SPY/TQQQ 比較と Sharpe』+12:32『secret の数値』+12:46『MDD も追加しよう』。cmd_4414(12:37 発令、cmd_4413 CLEAR まで未配備)に MDD を加えた置換 cmd。cmd_4414 は家老が void する(未配備のため途中修正ではなく差し替え)。設計書"
+  priority: "low"
+  source: "semantic_stress_test"
+  fix_known: false
+  status: pending
