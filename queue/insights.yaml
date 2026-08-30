@@ -7024,7 +7024,10 @@ insights:
   priority: "low"
   source: "semantic_index_update"
   fix_known: false
-  status: pending
+  status: resolved
+  resolved_reason: "semantic index candidate was absorbed into a registered concept"
+  action_artifact: "semantic_index=/home/simokitafresh/multi-agent-shogun/docs/semantic-index/index.md"
+  resolved_at: "2026-08-30T17:00:55+09:00"
 - id: INS-20260828-141838896-76f6
   ts: "2026-08-28T14:18:38+09:00"
   insight: "semantic_index_update未登録[[リンク]]ターゲット: [[四つのらせん_20260828]] は既存aliasesに一致なし。類似概念TOP3: spiral_canon_sengoku25(らせん最適の正本型(第二十五話); alias=らせんの型; score=3.3) / gs_ninpo_research(GS忍法研究; alias=run_29612495809; score=2.8) / semantic_dictionary_design(セマンティック辞書構想; alias=らせん定義の補正; score=2.7)。概念定義とaliases追加を検討せよ"
@@ -9205,3 +9208,10 @@ insights:
   resolved_reason: "semantic index candidate was absorbed into a registered concept"
   action_artifact: "semantic_index=/home/simokitafresh/multi-agent-shogun/docs/semantic-index/index.md"
   resolved_at: "2026-08-30T16:56:08+09:00"
+- id: INS-20260830-170055992-6dce
+  ts: "2026-08-30T17:00:55+09:00"
+  insight: "semantic_index_update新概念候補: discussion:task notification task id bssgjvxpv task id tool use id toolu 01VTV5DP5fuVAmNLgo は 既存aliasesに一致なし。概念定義とaliases追加を検討せよ"
+  priority: "low"
+  source: "semantic_index_update"
+  fix_known: false
+  status: pending
