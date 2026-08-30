@@ -23,6 +23,7 @@
 3. Zone Resources: **Include / Specific zone / dm-signal.com**(このゾーンだけ)。
 4. Continue → Create Token → 表示されたトークンを将軍へ(1 回しか表示されない)。
 - 完了条件: トークン文字列を将軍が受領(将軍は `~/.bashrc` の `CLOUDFLARE_LP_TOKEN` に保存)。
+- **トークン保管(殿指示 2026-08-30 18:42)**: 正本=`multi-agent-shogun/.env.cloudflare`(gitignore・chmod 600、`CLOUDFLARE_LP_TOKEN`/`CLOUDFLARE_LP_ZONE_ID`)。`~/.bashrc` は `set -a; . .env.cloudflare; set +a` で読み込むだけで値を持たない。トークン文字列を会話・insights・runbook・cmd 本文に貼るな(17:47 insights 自動 commit 0f6e9f157 に混入→GitHub push protection で push 31 件停止の実証)。
 
 ## Step 3 — 将軍: Cloudflare DNS と SSL(API または画面。5 分)
 > **実施済 2026-08-30 17:39**: CNAME `dm-signal.com`/`www` → `dm-signal-lp.onrender.com`(DNS only)作成、AAAA 0 件、解決確認(216.24.57.x)。**SSL=Full は未設定(トークン権限不足 403)**→殿が Step 2 の権限を足すか、画面 SSL/TLS → Overview → Full。
