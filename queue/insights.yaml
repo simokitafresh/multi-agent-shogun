@@ -10217,3 +10217,10 @@ insights:
   source: "semantic_stress_test"
   fix_known: false
   status: pending
+- id: INS-20260830-234240219-2e43
+  ts: "2026-08-30T23:42:40+09:00"
+  insight: "[[LP og image hotfix — dm signal com の EN JA で og image が 404 ]] semantic_stress_test candidate_aliases: NO_MATCH source=cmds query=LP og:image hotfix — dm-signal.com の EN/JA で og:image が 404 のため、静的 PNG(1200×630)を lp/public に置き metadata で明示参照して 200 にする"
+  priority: "low"
+  source: "semantic_stress_test"
+  fix_known: false
+  status: pending
