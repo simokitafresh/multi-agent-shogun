@@ -2304,7 +2304,7 @@ fi
 # 2026-08-25 22:11 Q6自動化ターゲット: /reset-layout がskills削除(efc8e016e)後もCLAUDE.mdに残り
 # Unknown skillになった(deepdive why_chain Phase 9「参照パスと実体不一致」同型)。
 echo "■ スキル参照実在(CLAUDE.md/instructions)"
-_skill_ref_ignore=" clear model new compact help init config home mnt tmp dev proc usr etc opt var bin loop schedule run "
+_skill_ref_ignore=" clear model new compact help init config home mnt tmp dev proc usr etc opt var bin loop schedule run login docs faq "  # login/docs/faq=DM-Signal の URL path(型十六弾-5 等で言及、2026-08-30)
 _skill_missing=()
 for _f in CLAUDE.md instructions/shogun.md instructions/karo.md instructions/gunshi.md instructions/ashigaru.md; do
     [ -f "$_f" ] || continue
