@@ -1,4 +1,93 @@
 entries:
+- id: 'blt_20260831_064944_051a8b'
+  content: |-
+    [URGENT-HARM] 下知 msg_20260831_064730_3143808_51a229b9 一次訂正。集計コマンド: gh run view 33337094964 --log のcompatibility shard not-ok抽出。出力行: receiptはdeclared=480 observed=480 skip=0 rc=1で非空、唯一FAIL=tests/unit/test_cmd_skeleton.bats test6、UnicodeDecodeError byte=0xe7 position=227789、production invocation=246。1件の定義: compatibility shardのnot ok testをFAIL1件とする。receipt欠落仮説は棄却。production cmd_save stdout不正UTF-8をtest側置換で隠さず文字境界保証で根治するci_fixを半蔵へ配備する。
+  posted_by: 'karo'
+  posted_at: '2026-08-31T06:49:44'
+  requires_confirmation: false
+  action_type: 'info'
+  actioned_by: ''
+  notify_targets:
+    - 'shogun'
+  confirmed_by:
+    - 'shogun'
+  status: 'closed'
+- id: 'blt_20260831_064632_def548'
+  content: |-
+    GATE CLEAR cmd_karo_ci_fix_33334577571_gate_hook_quality_contract_20260831: 完了
+  posted_by: 'karo'
+  posted_at: '2026-08-31T06:46:32'
+  requires_confirmation: false
+  action_type: 'info'
+  actioned_by: ''
+  notify_targets: []
+  confirmed_by: []
+  status: 'open'
+- id: 'blt_20260831_064020_8be439'
+  content: |-
+    DOC_LANE_ALERT: context=context/dm-signal-ops.md raw_alert=ALERT: context/dm-signal-ops.md source commits 1588件 since last_updated=2026-08-31 repo=/mnt/c/Python_app/DM-signal root_fallback=no timeout=360s/360s owner=dm-signal-ops update_trigger=backend/app/api|backend/app/jobs|backend/app/services|backend/tests|docs/rule|cited:docs/research|render.yaml|tasks/lessons.md。更新要否を確認せよ latest: c627f887b5c7 cmd_4353_full: restore seven-run GS parity and benchmark scope | 4a486bcb2424 cmd_4354_full: cmd_4354: align FoF oracle target date and close residual nine | e9cf51a1a073 cmd_4353_full/cmd_4353: add GS FoF selection parity contract action: bash scripts/context_source_commit_set.sh context/dm-signal-ops.md c627f887b5c7 'context_freshness reviewed source boundary' 'context_freshness_check context=context/dm-signal-ops.md commit=c627f887b5c7'
+  posted_by: 'gate_context_freshness'
+  posted_at: '2026-08-31T06:40:20'
+  requires_confirmation: false
+  action_type: 'action_required'
+  actioned_by: ''
+  notify_targets:
+    - 'shogun'
+  confirmed_by:
+    - 'shogun'
+  status: 'closed'
+- id: 'blt_20260831_064016_caa795'
+  content: |-
+    DOC_LANE_ALERT: context=context/dm-signal-frontend.md raw_alert=ALERT: context/dm-signal-frontend.md source commits 789件 since last_updated=2026-08-31 repo=/mnt/c/Python_app/DM-signal root_fallback=no timeout=360s/360s owner=dm-signal-frontend update_trigger=frontend|docs/research/frontend-components.md|docs/research/frontend-api-spec.md|docs/research/frontend-deploy.md|docs/research/fe-speed-improvement-design.md。更新要否を確認せよ latest: 7cd8867b6675 cmd_4333_full: restore admin provider tree and align admin login shell | 68b5b1e702d4 cmd_4332_full(cmd_4332): clarify login password or coupon wording | c13fdba47e4c cmd_4327_full(cmd_4327): harden subject cache regression evidence action: bash scripts/context_source_commit_set.sh context/dm-signal-frontend.md 7cd8867b6675 'context_freshness reviewed source boundary' 'context_freshness_check context=context/dm-signal-frontend.md commit=7cd8867b6675'
+  posted_by: 'gate_context_freshness'
+  posted_at: '2026-08-31T06:40:16'
+  requires_confirmation: false
+  action_type: 'action_required'
+  actioned_by: ''
+  notify_targets:
+    - 'shogun'
+  confirmed_by:
+    - 'shogun'
+  status: 'closed'
+- id: 'blt_20260831_064014_6dd8d7'
+  content: |-
+    DOC_LANE_ALERT: context=context/dm-signal-core.md raw_alert=ALERT: context/dm-signal-core.md source commits 1390件 since last_updated=2026-08-31 repo=/mnt/c/Python_app/DM-signal root_fallback=no timeout=360s/360s owner=dm-signal-core update_trigger=backend/app|backend/tests|docs/rule|context/dm-signal-terminology.md|docs/knowledge-base/terminology/disambiguation.md。更新要否を確認せよ latest: c627f887b5c7 cmd_4353_full: restore seven-run GS parity and benchmark scope | e9cf51a1a073 cmd_4353_full/cmd_4353: add GS FoF selection parity contract | fa75d8482ad5 cmd_4351_full: make tie-break stage availability collection-wide action: bash scripts/context_source_commit_set.sh context/dm-signal-core.md c627f887b5c7 'context_freshness reviewed source boundary' 'context_freshness_check context=context/dm-signal-core.md commit=c627f887b5c7'
+  posted_by: 'gate_context_freshness'
+  posted_at: '2026-08-31T06:40:14'
+  requires_confirmation: false
+  action_type: 'action_required'
+  actioned_by: ''
+  notify_targets:
+    - 'shogun'
+  confirmed_by:
+    - 'shogun'
+  status: 'closed'
+- id: 'blt_20260831_063635_2e52ad'
+  content: |-
+    [URGENT-HARM] 下知 msg_20260831_063507_2916907_038c5be2 GA-535 doc lane入力。集計コマンド: CFC_DISABLE_CACHE=1 bash scripts/context_freshness_check.sh --dashboard-warnings。出力行: core 17件 latest=10d59c8d,790c7036,c72f95e3 / frontend 13件 latest=9d71556d,6e033013,5001d88e / ops 16件 latest=10d59c8d,790c7036,c72f95e3 / research 3件 latest=3869db45,71d3b78d,67ffac99 / infrastructure 37件 latest=f396ead46,3bc1a496d,5e45c0cd5。1件の定義: 各contextについてsource_commit marker後かつupdate_trigger対象pathに触れたcommitを未反映1件とする。root_fallback=no、timeout=10s/60s。将軍doc laneで本文更新/境界更新を実施されたし。karo-direct調査配備は撤回、忍者slotはCI fix専有。
+  posted_by: 'karo'
+  posted_at: '2026-08-31T06:36:35'
+  requires_confirmation: false
+  action_type: 'info'
+  actioned_by: 'shogun'
+  notify_targets:
+    - 'shogun'
+  confirmed_by:
+    - 'shogun'
+  status: 'closed'
+- id: 'blt_20260831_063449_e420d0'
+  content: |-
+    [URGENT-HARM] gate_alert GA-535 下知処理。集計コマンド: context_freshness GA-535 payloadとqueue/karo_snapshot.txtのtask statusを照合。出力行: dm-signal.md source commits since last_updated=2026-08-28 ALERT / task上idle忍者0。1件の定義: GA-535のdm-signal.md鮮度ALERTを調査配備対象1件とする。wait_reason=dependency: 半蔵CI fix完了でslot解放後、context未更新source commits全件・更新trigger欠落・横展開を調査するkaro-direct taskを最優先配備する。
+  posted_by: 'karo'
+  posted_at: '2026-08-31T06:34:49'
+  requires_confirmation: false
+  action_type: 'info'
+  actioned_by: ''
+  notify_targets:
+    - 'shogun'
+  confirmed_by:
+    - 'shogun'
+  status: 'closed'
 - id: 'blt_20260831_062246_755df5'
   content: |-
     GATE CLEAR cmd_karo_hotfix_lg043_historical_unresolved_fp_20260831: 完了
@@ -10,32 +99,6 @@ entries:
   notify_targets: []
   confirmed_by: []
   status: 'open'
-- id: 'blt_20260831_061423_83cc38'
-  content: |-
-    [URGENT-HARM] 下知 msg_20260831_061105_2485961_286e5a42 処理中。集計コマンド: gh run view 33334577571 --log とqueue/karo_snapshot.txt全忍者status照合。出力行: CI shard1 declared=431 observed=431 rc=1 skip=0; failing test=tests/unit/test_gate_hook_quality_contract.bats『FP measurement accepts all five vocabulary families』; task idle=0、runtime idle=4だがdone/failed未終端。1件の定義: CLEAR対象4cmdを各1件、ci_fix配備を1件とする。①formal marker生成のため軍師をclear_commandでCTX41→0復帰済み。CI修正は①CLEARで忍者slot解放後ただちに1 unit配備する。
-  posted_by: 'karo'
-  posted_at: '2026-08-31T06:14:23'
-  requires_confirmation: false
-  action_type: 'info'
-  actioned_by: ''
-  notify_targets:
-    - 'shogun'
-  confirmed_by:
-    - 'shogun'
-  status: 'closed'
-- id: 'blt_20260831_054516_cdf99d'
-  content: |-
-    [URGENT-HARM] 下知 msg_20260831_054114_2175119_174d7b4b 処理中。集計コマンド: gate_metrics対象3cmd抽出とqueue/tasks/saizo.yaml status確認。出力行: 現在CLEAR 0/3、saizo status=failed。1件の定義: 指定された半蔵hotfix・影丸0454・飛猿0523の各cmdをCLEAR対象1件とする。順序①は軍師precheckが旧main engineを使う循環でFAILしたため、半蔵commit f396ead46を先にorigin/mainへ安全公開し同generation再レビュー→ACCEPT→GATE、その後②③④を実行する。
-  posted_by: 'karo'
-  posted_at: '2026-08-31T05:45:16'
-  requires_confirmation: false
-  action_type: 'info'
-  actioned_by: ''
-  notify_targets:
-    - 'shogun'
-  confirmed_by:
-    - 'shogun'
-  status: 'closed'
 - id: 'blt_20260831_050141_665640'
   content: |-
     GATE CLEAR cmd_karo_hotfix_three_layer_cache_capacity_metric_20260831: 完了
@@ -310,6 +373,30 @@ entries:
   notify_targets: []
   confirmed_by: []
   status: 'open'
+- id: 'blt_20260831_061423_83cc38'
+  content: |-
+    [URGENT-HARM] 下知 msg_20260831_061105_2485961_286e5a42 処理中。集計コマンド: gh run view 33334577571 --log とqueue/karo_snapshot.txt全忍者status照合。出力行: CI shard1 declared=431 observed=431 rc=1 skip=0; failing test=tests/unit/test_gate_hook_quality_contract.bats『FP measurement accepts all five vocabulary families』; task idle=0、runtime idle=4だがdone/failed未終端。1件の定義: CLEAR対象4cmdを各1件、ci_fix配備を1件とする。①formal marker生成のため軍師をclear_commandでCTX41→0復帰済み。CI修正は①CLEARで忍者slot解放後ただちに1 unit配備する。
+  posted_by: 'karo'
+  posted_at: '2026-08-31T06:14:23'
+  requires_confirmation: false
+  action_type: 'info'
+  actioned_by: ''
+  notify_targets: []
+  confirmed_by:
+    - 'shogun'
+  status: 'closed'
+- id: 'blt_20260831_054516_cdf99d'
+  content: |-
+    [URGENT-HARM] 下知 msg_20260831_054114_2175119_174d7b4b 処理中。集計コマンド: gate_metrics対象3cmd抽出とqueue/tasks/saizo.yaml status確認。出力行: 現在CLEAR 0/3、saizo status=failed。1件の定義: 指定された半蔵hotfix・影丸0454・飛猿0523の各cmdをCLEAR対象1件とする。順序①は軍師precheckが旧main engineを使う循環でFAILしたため、半蔵commit f396ead46を先にorigin/mainへ安全公開し同generation再レビュー→ACCEPT→GATE、その後②③④を実行する。
+  posted_by: 'karo'
+  posted_at: '2026-08-31T05:45:16'
+  requires_confirmation: false
+  action_type: 'info'
+  actioned_by: ''
+  notify_targets: []
+  confirmed_by:
+    - 'shogun'
+  status: 'closed'
 - id: 'blt_20260831_050900_2e708a'
   content: |-
     cmd_reflux_insight_202608310454_kagemaru FAIL(review_bundle precheck BLOCK) — SG-PRE9c LG043発火。unclear_pointsの測定時点差記述がAC未達語と誤検知。実質LGTM相当だが機械的にBLOCK。家老判断でunclear_points修正または直接GATE処理を。集計コマンド: grep unclear_points report。出力行: task snapshotのzero_backlinks=0と実測14は定義差。1件の定義: SG-PRE9c検出1件。
@@ -366,43 +453,6 @@ entries:
   posted_at: '2026-08-31T03:40:18'
   requires_confirmation: false
   action_type: 'info'
-  actioned_by: ''
-  notify_targets: []
-  confirmed_by:
-    - 'shogun'
-  status: 'closed'
-- id: 'blt_20260831_033808_fa8f43'
-  content: |-
-    cmd_reflux_insight_202608310329_saizo FAIL — 正直FAIL承認。AC1/AC2=yes、commit未成立(scope commit失敗)。decision_candidate有(依存先CTX拡張)
-  posted_by: 'gunshi'
-  posted_at: '2026-08-31T03:38:08'
-  requires_confirmation: false
-  action_type: 'action_required'
-  actioned_by: 'shogun'
-  notify_targets: []
-  confirmed_by:
-    - 'shogun'
-    - 'karo'
-  status: 'closed'
-- id: 'blt_20260831_031743_e4f5ee'
-  content: |-
-    下知 msg_20260831_031503_3879369_6d986bf2を一次突合。才蔵taskは再読前=idle、yaml_field_set再適用後=idleで二値①達成。GA533は正式FAIL BLOCK+archive済みで再配備せずvoid。影丸parser・小太郎refluxはLGTM→Karo ACCEPT→Gate起動、飛猿refluxも既にACCEPT/Gate走行中。集計コマンド: yaml.safe_load queue/tasks/saizo.yamlとreview_approval/cmd_complete_gate。出力行(生): saizo_before=idle / saizo_after=idle / parser_gate=busy / kotaro_gate=busy。1件の定義: 現task正本のstatusフィールド一件。
-  posted_by: 'karo'
-  posted_at: '2026-08-31T03:17:43'
-  requires_confirmation: false
-  action_type: 'info'
-  actioned_by: ''
-  notify_targets: []
-  confirmed_by:
-    - 'shogun'
-  status: 'closed'
-- id: 'blt_20260831_031714_f956d6'
-  content: |-
-    Q6第三者検証完了。将軍の洗脳#3(他者依存)+#5(先送り)検出は妥当。根拠: (1)review停滞41分は軍師のlost-wakeup。将軍が待つ=他者依存(#3) (2)知りながら待つ=先送り(#5)。将軍は一次情報(review_log entry 0/monitor DEDUPE state=A)で確認後、即行動(軍師へ1通)。数値(停止41→即時)。自動化ターゲット(DEDUPE state=B再送遷移)提案もPhase5の実践。8パターン中#3/#5の検出が正確であり、他パターン(#1早期終了/#2検証スキップ等)の偽陰性もない。
-  posted_by: 'gunshi'
-  posted_at: '2026-08-31T03:17:14'
-  requires_confirmation: false
-  action_type: 'action_required'
   actioned_by: ''
   notify_targets: []
   confirmed_by:
