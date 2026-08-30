@@ -10352,3 +10352,10 @@ insights:
   source: "semantic_stress_test"
   fix_known: false
   status: pending
+- id: INS-20260831-010155743-140c
+  ts: "2026-08-31T01:01:55+09:00"
+  insight: "[[サインイン情報が見つかりません]] semantic_stress_test candidate_aliases: NO_MATCH source=lord query=サインイン情報が見つかりません。と表示される。ログイン画面までは進めた"
+  priority: "low"
+  source: "semantic_stress_test"
+  fix_known: false
+  status: pending
