@@ -19,12 +19,13 @@
 
 ## Step 2 — 殿: 将軍用 API トークン発行(3 分。手動で DNS を打つなら省略可)
 1. 右上アイコン → **My Profile → API Tokens → Create Token**。
-2. テンプレート **「Edit zone DNS」** を選択 → Permissions に **Zone / SSL and Certificates / Edit** を 1 行追加。
+2. テンプレート **「Edit zone DNS」** を選択 → Permissions に **Zone / Zone Settings / Edit** を 1 行追加(SSL モード変更はこの権限。17:39 実測: 「SSL and Certificates」では `/settings/ssl` が 403)。
 3. Zone Resources: **Include / Specific zone / dm-signal.com**(このゾーンだけ)。
 4. Continue → Create Token → 表示されたトークンを将軍へ(1 回しか表示されない)。
 - 完了条件: トークン文字列を将軍が受領(将軍は `~/.bashrc` の `CLOUDFLARE_LP_TOKEN` に保存)。
 
 ## Step 3 — 将軍: Cloudflare DNS と SSL(API または画面。5 分)
+> **実施済 2026-08-30 17:39**: CNAME `dm-signal.com`/`www` → `dm-signal-lp.onrender.com`(DNS only)作成、AAAA 0 件、解決確認(216.24.57.x)。**SSL=Full は未設定(トークン権限不足 403)**→殿が Step 2 の権限を足すか、画面 SSL/TLS → Overview → Full。
 Render 公式の Cloudflare 手順どおり **apex も www も CNAME**(A レコード IP は使わない)。
 | Type | Name | Target | Proxy |
 |---|---|---|---|
