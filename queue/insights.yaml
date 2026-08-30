@@ -8802,10 +8802,23 @@ insights:
   priority: "low"
   source: "semantic_stress_test"
   fix_known: false
-  status: pending
+  status: resolved
+  resolved_reason: "semantic index candidate was absorbed into a registered concept"
+  action_artifact: "semantic_index=/home/simokitafresh/multi-agent-shogun/docs/semantic-index/index.md"
+  resolved_at: "2026-08-30T15:06:49+09:00"
 - id: INS-20260830-145557540-d043
   ts: "2026-08-30T14:55:57+09:00"
   insight: "[[cmd 4413で発生したPydanticUndefinedAnnotation ShowcaseEventPayloa]] NO_MATCH purpose pending alias: cmd_complete時にdeploy_task.logでNO_MATCHだったpurpose。類似概念TOP3: cmd_quality_logging(cmd設計品質ログ; alias=completed cmd archive; score=16.1) / agent_formation_management(編成管理; alias=same_cmd_redeploy; score=15.2) / gate_quality_framework(ゲート品質統合フレームワーク; alias=cmd completeのarchive成功後symlinkを未退避reportとして再計数する競合を修正し; score=15.1)。既存概念aliasesへの自動昇格候補"
+  priority: "low"
+  source: "semantic_index_update"
+  fix_known: false
+  status: resolved
+  resolved_reason: "semantic index candidate was absorbed into a registered concept"
+  action_artifact: "semantic_index=/home/simokitafresh/multi-agent-shogun/docs/semantic-index/index.md"
+  resolved_at: "2026-08-30T14:56:06+09:00"
+- id: INS-20260830-150649713-7aae
+  ts: "2026-08-30T15:06:49+09:00"
+  insight: "semantic_index_update新概念候補: discussion:task notification task id bd81lc9ws task id tool use id toolu 01L5jaFBae3RTcvsCK は 既存aliasesに一致なし。概念定義とaliases追加を検討せよ"
   priority: "low"
   source: "semantic_index_update"
   fix_known: false
