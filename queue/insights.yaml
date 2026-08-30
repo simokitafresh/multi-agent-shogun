@@ -10203,3 +10203,10 @@ insights:
   source: "semantic_stress_test"
   fix_known: false
   status: pending
+- id: INS-20260830-234203988-c6b9
+  ts: "2026-08-30T23:42:03+09:00"
+  insight: "[[SEO P0 4]] semantic_stress_test candidate_aliases: NO_MATCH source=cmds query=cmd_4421(SEO P0-4、21:35 CLEAR)で og/twitter meta は完備したが、og:image= が EN/JA とも 404(2026-08-30 22:02 curl、content-type text/html)。lp/app/opengraph-image.tsx は next/og ImageResponse で、n"
+  priority: "low"
+  source: "semantic_stress_test"
+  fix_known: false
+  status: pending
