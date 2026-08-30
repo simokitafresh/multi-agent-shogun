@@ -172,6 +172,14 @@ test_execution:
 
 1. **契約が固まった時点で消費側(frontend 等)を並走配備せよ。直列(depends_on)にしてよいのは契約変更を伴う依存だけ。** 4416(P2 frontend)を 4415(best_name 除去=表示追補)に直列にし 13:21→15:58 の 2h37m 未着手。§2.3 の JSON 契約は 12:20 確定で、P2 は P1 実装完了すら待たず並走できた(モック→本番 EP 差替え)。工程表の順序を依存関係に写すな。パイプライン契約(08-15『結果を待つ時間で次を進める』)の cmd 依存版。
 2. **殿の下問『全体を見てつまりは』には、設計書 §5/§6.5 と陣形図を突合して「今できる可逆な前段(env・runbook・既定案の DB 設定)」を列挙し、後段の完了を待たずに家老レーンで並走させよ。** 16:04 に H7 FE env API_HOST・post_deploy_check runbook 先行・§6-2 既定案(hide_portfolio)の 3 本を名指し。deploy 後に気づく待ち(白画面・smoke 未定義・裁定待ちのまま放置)を前倒しで潰す。
+3. **裁定で前提(ドメイン・URL・環境)が変わったら、発令済み cmd の本文と設計書の定数を grep して同時に書き換えよ。** 16:44 `.jp` 前提で §9/cmd_4417 を書き、17:14 `.com` へ変えた際に cmd 本文を更新せず、18:03 に canonical/hreflang/sitemap が `.jp` のまま本番到達(殿実機『リンク先がおかしい』)。裁定反映は『設計書→cmd→env』の 3 箇所を `rg` で 0 件確認してから。
+4. **background で回した publish/deploy の結果は rc と status を見てから『済』と言え。** 18:11 に cmd_4420『publish 済』と家老へ書いたが実態は cmd_save BLOCK・status=draft で、家老の deploy が BLOCK(blt_181220)。型十五弾-6 の background 版。
+5. **同じ構造を 2 ページに複製するな(1 ページ 1 目的)。** §2.2 を /login と LP の両方に適用し、殿実機『ほぼ同じで誤解を生む』→cmd_4420 で /login を入口に絞った。説明・表・プランは LP、入口は /login。
+6. **否定判定の grep は大小文字と属性名の表記を確認してから(型五弾-1 の grep 版)。** 17:47『hreflang 0 件』は `hrefLang`(React 属性)の見落とし=RC 不要のものを RC と名指しし 1 分で撤回。
+7. **発令済み cmd の正本を Edit したら、同ブロックの command 行も grep で揃え、配備済み task の ac_version が変わったことを見てから『訂正済』と言え。** 17:52 に 4419 AC3 を 5 本へ直したが command 3 行目『3 本以内』が残り、task(17:31 配備、ac_version 43594047)へは再注入されず 3 度同一 FAIL(blt_181647)。18:20 に正本を揃え再注入 1 通→ac_version 2d742f83 で到達確認。正本 Edit は task に自動で届かない(型十五弾-6 の cmd 版)。
+8. **外部導線 URL(note・membership 等)は設計書の参考記事でなく marketing-info.md の現物から引き、CLEAR 後に本番 curl で href を数えよ。** 4417 の忍者が参考記事著者 dataana2020 を membership URL に採り、FAQ 節の『Read the docs』が /faq を指したまま live→殿実機 18:19。将軍も CLEAR 後に `curl | grep -oE 'href=...'` を打っていなかった(#2+#8)。
+- origin(追補2): `[[4419_正本Edit_task未再注入_3度FAIL]] -> [[LP_note_dataana2020_docs→faq_20260830_1819]] -> [[ac_version突合WARN_INS-183115]]`
+- origin(追補): `[[殿実機確認_LP_20260830_1753]] -> [[jp直書き残存]] -> [[4420_publish誤報]] -> [[LPと/loginの同構造]] -> [[hreflang誤読]]`
 - origin: `[[殿下問_P2を待つメリット_20260830_1600]] -> [[4416_直列2h37m]] -> [[契約確定で消費側並走]] -> [[復帰後の型_第十六弾]]`
 
 ## 復帰後の型・第十五弾 6則（2026-08-29 16:04-08-30 13:30 第13便: 名前からの推定ラベル×2 訂正/可視性 3 段の見落とし/deploy 依存 AC/push lane 5 度停止/裁定の連続反映から・将軍自身に適用）
