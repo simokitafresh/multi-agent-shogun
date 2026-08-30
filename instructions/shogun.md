@@ -168,13 +168,14 @@ test_execution:
 - **enforcement**: agent_respawn.sh 作業中ガード(e3712b4a9)/codex_inbox_priority_guard.sh(42f09d54b)/cli_lookup 接尾辞自己修復+BASH_REMATCH 排除(bc9f4a8c6)/script_update.sh bash フォールバック(2df2ecdee)/inbox_write gunshi 宛 review_draft 許可+stderr 記録(c17a92d8e)。未自動化: push 単位 1 commit の強制(pre-push hook で origin..pushed が first-parent 1 段を超えたら WARN)。
 - origin: `[[殿裁定_1commitずつpush_20260826]] -> [[家老の行動型_1通1単位]] -> [[つまり3本根治_20260827]]`
 
-## 復帰後の型・第十五弾 5則（2026-08-29 16:04-08-30 13:30 第13便: 名前からの推定ラベル×2 訂正/可視性 3 段の見落とし/deploy 依存 AC/push lane 5 度停止/裁定の連続反映から・将軍自身に適用）
+## 復帰後の型・第十五弾 6則（2026-08-29 16:04-08-30 13:30 第13便: 名前からの推定ラベル×2 訂正/可視性 3 段の見落とし/deploy 依存 AC/push lane 5 度停止/裁定の連続反映から・将軍自身に適用）
 
 1. **名前から用途を推定してラベル(作業/試作)を付けるな。構成・作成日・フラグを本番で引いてから呼べ。** 08-30 10:18『作業 PF』→10:22『試作 FoF』と 2 度殿に問い返され、10:36 に config(EqualWeight・秘奥義 4 本)と weights を引いて初めて実体(殿が admin で組んだ秘奥義 EW-FoF)が分かった。推定ラベルは殿の時間を 2 往復奪う。
 2. **可視性・権限のような多段フラグは、1 段(hide_portfolio)で数えるな。helper(visibility_helpers)が持つ全段(portfolio/signal/components/folder/global)を列挙してから集計せよ。** 10:41 殿『パフォーマンス閲覧とシグナル閲覧がごっちゃ』、13:12 にフォルダ単位非表示(L1.5)も未考慮と判明(今日は件数不変だったが構造は穴)。EP と独立再計算は同じ helper 関数を通す契約にした。
 3. **忍者 AC は隔離 clone で二値判定できるものだけ。deploy 後にしか確認できない検証(本番 curl/CDP/Render smoke)は家老レーンの post_deploy_check へ分離せよ。** 13:08 殿『デプロイしないと確認できないものを忍者の AC に組み込むと流れが止まる』。将軍自身が §2.7 で本番 CDP を AC に書きかけた。lessons_shogun は上限 35 で BLOCK=記憶DB+設計書+家老 hotfix(post_deploy_ac_split)へ埋めた。
 4. **push lane が『ci=UNKNOWN で push=0』『rc=128 DNS 一過性を BLOCK』で止まる間は、将軍が手動 push(可逆)で便を通しつつ、根治(UNKNOWN 判定/一過性リトライ/束ね push)を unit4 の AC として名指しせよ。停止の回数と unpushed を毎 loop 記録する。** 08-30 は 5 度停止(09:08/10:20/10:41/12:42/13:15)、手動 push 5 回、最長 ancestry WAIT 1h55m(才蔵 0945)。
 5. **殿の裁定が連続する設計セッションでは、裁定ごとに『§0 に事実→制約→判断→効果で 1 行』『該当 § を書換』『commit→gist→artifact→記憶DB』を 1 手で閉じ、発令済み cmd に契約変更が及ぶ時は未配備なら void+置換 cmd、配備済みなら別 cmd(途中修正の二択)。** 08-30 は裁定 17 本(10:20〜13:25)を全て同手順で反映、cmd_4414 は void→4415、4413 は 4415 で上書きする契約にした。
+6. **ファイル反映は『書換→grep で 0/1 件を確認→commit hash を見る』を先に閉じ、通知(記憶DB・inbox・掲示板)はその後に送れ。** 13:44 に python heredoc の引用符ミスで設計書の書換が空振り(commit hash が前回のまま)したまま、記憶DB 書込と家老 1 通を先に送った。反映していない事実を三層に流すのは歴史修正と同じ害。順序=反映→確認→通知。
 - origin: `[[殿指示_強くてニューゲーム_20260830_1330]] -> [[作業PF_試作FoF_推定ラベル訂正]] -> [[可視性3段_folder_L1.5]] -> [[AC2層分離_post_deploy_check]] -> [[push_lane_5度停止_手動push5]] -> [[裁定17本_1手反映]]`
 
 ## 復帰後の型・第十四弾 5則（2026-08-29 12:56-16:04 第12便: commander_directive 未着地/受け手の自己強化/grep|tail 誤読/便停止 3 層/Render 通知の根治判定から・将軍自身に適用）
