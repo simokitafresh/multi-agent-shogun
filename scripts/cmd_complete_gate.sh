@@ -101,6 +101,22 @@ PY
             return 0
             ;;
         UNPUSHED:*)
+            # A source-only publisher may have rebuilt the report paths on a
+            # newer canonical tip, leaving the original commit non-ancestral.
+            # Promote that result only with the complete marker/receipt/path
+            # equivalence proof; every missing or mismatched fact remains WAIT.
+            if [ -n "$task_file" ] && [ -n "$report_commit" ] && [ "$report_commit" != "no-code-change" ]; then
+                local expected_head equivalence_state
+                expected_head="$(resolve_ci_expected_head "$repo_dir")"
+                if equivalence_state=$(report_source_only_equivalence_state \
+                    "$report_file" "$repo_dir" "$task_file" "$expected_head" \
+                    "${CMD_ID:-}" "${SHOGUN_COMPLETION_GENERATION:-}" \
+                    "${CMD_COMPLETE_GATE_SOURCE_PUBLISH_RECEIPT:-}" "$SCRIPT_DIR" 2>/dev/null); then
+                    printf 'PASS: report commit %s source-only-equivalent to canonical publication (%s)\n' \
+                        "$report_commit" "$equivalence_state"
+                    return 0
+                fi
+            fi
             # Source publication is deliberately a post-CLEAR asynchronous
             # lane.  The existing unpushed detector remains the source of
             # truth for follow-up recovery; an absent remote tip must not hold
@@ -500,11 +516,6 @@ if [ "${CMD_COMPLETE_GATE_CI_PUSH_STATE_ONLY:-0}" = "1" ]; then
     report_ci_push_state "${CMD_COMPLETE_GATE_CI_REPORT:?report required}" \
         "${CMD_COMPLETE_GATE_CI_REPO_DIR:-$PWD}" \
         "${CMD_COMPLETE_GATE_TASK_FILE:-}"
-    exit $?
-fi
-if [ "${CMD_COMPLETE_GATE_REPORT_MAIN_ANCESTRY_ONLY:-0}" = "1" ]; then
-    report_commit_main_ancestry_state "${CMD_COMPLETE_GATE_CI_REPORT:?report required}" \
-        "${CMD_COMPLETE_GATE_CI_REPO_DIR:-$SCRIPT_DIR}" "${CMD_COMPLETE_GATE_TASK_FILE:-}"
     exit $?
 fi
 # cmd_complete_gate.sh — cmd完了時の全ゲートフラグ確認スクリプト（ディレクトリ方式）
@@ -1444,6 +1455,145 @@ source_snapshot_matches_tip() {
     done < <(git -C "$repo" diff-tree --root --no-commit-id --name-only -r -z "$source_sha" 2>/dev/null)
     [ "$changed_count" -gt 0 ]
 }
+
+# Accept a non-ancestor report commit only after the source-only publication
+# identity and every report-owned path are independently proven equivalent.
+report_source_only_equivalence_state() {
+    local report_file="$1" repo_dir="$2" task_file="$3" expected_head="$4"
+    local cmd_id="${5:-${CMD_ID:-}}" completion_generation="${6:-${SHOGUN_COMPLETION_GENERATION:-}}"
+    local receipt_override="${7:-${CMD_COMPLETE_GATE_SOURCE_PUBLISH_RECEIPT:-}}"
+    local script_dir="${8:-${SCRIPT_DIR:-$PWD}}"
+    REPORT_FILE="$report_file" REPO_DIR="$repo_dir" TASK_FILE="$task_file" \
+    EXPECTED_HEAD="$expected_head" CMD_ID_VALUE="$cmd_id" COMPLETION_GENERATION="$completion_generation" \
+    RECEIPT_OVERRIDE="$receipt_override" SCRIPT_DIR_VALUE="$script_dir" python3 - <<'PY'
+import json, os, pathlib, re, subprocess, sys, yaml
+
+def fail(reason):
+    print(reason, file=sys.stderr)
+    raise SystemExit(1)
+
+def load(path):
+    try:
+        value = yaml.safe_load(pathlib.Path(path).read_text(encoding="utf-8")) or {}
+    except (OSError, yaml.YAMLError):
+        fail("input_unreadable")
+    return value if isinstance(value, dict) else {}
+
+repo = pathlib.Path(os.environ["REPO_DIR"]).resolve()
+report = load(os.environ["REPORT_FILE"])
+task_doc = load(os.environ["TASK_FILE"])
+task = task_doc.get("task", task_doc)
+if not isinstance(task, dict):
+    fail("task_invalid")
+source = str(report.get("commit_hash") or "").strip().lower()
+head = os.environ["EXPECTED_HEAD"].strip().lower()
+generation = os.environ["COMPLETION_GENERATION"].strip().lower()
+if not re.fullmatch(r"[0-9a-f]{40}", source) or not re.fullmatch(r"[0-9a-f]{40}", head):
+    fail("commit_identity_invalid")
+if not re.fullmatch(r"[0-9a-f]{64}", generation):
+    fail("completion_generation_invalid")
+
+task_id = str(task.get("task_id") or "").strip()
+parent_cmd = str(task.get("parent_cmd") or "").strip()
+marker_path = pathlib.Path(str(task.get("task_worktree_marker") or "").strip())
+worktree = pathlib.Path(str(task.get("task_worktree_workdir") or task.get("task_worktree_path") or "").strip())
+task_generation = str(task.get("task_worktree_generation") or "").strip().lower()
+if not task_id or not parent_cmd or not marker_path.is_file() or not worktree.is_dir():
+    fail("task_worktree_identity_missing")
+if not re.fullmatch(r"[0-9a-f]{64}", task_generation):
+    fail("task_worktree_generation_invalid")
+try:
+    marker = json.loads(marker_path.read_text(encoding="utf-8"))
+except (OSError, ValueError, TypeError):
+    fail("task_worktree_marker_invalid")
+if not isinstance(marker, dict) or (
+    marker.get("version") != 1 or marker.get("state") not in {"active", "published"}
+    or marker.get("task_id") != task_id or marker.get("parent_cmd") != parent_cmd
+    or str(marker.get("generation") or "").strip().lower() != task_generation
+    or pathlib.Path(str(marker.get("repo") or "")).resolve() != repo
+    or pathlib.Path(str(marker.get("worktree") or "")).resolve() != worktree.resolve()
+):
+    fail("task_worktree_marker_identity_mismatch")
+
+published = str(marker.get("published_commit") or "").strip().lower()
+if not re.fullmatch(r"[0-9a-f]{40}", published):
+    fail("published_commit_missing")
+def git(*args):
+    result = subprocess.run(["git", "-C", str(repo), *args], stdout=subprocess.PIPE,
+                            stderr=subprocess.DEVNULL, text=True, check=False)
+    if result.returncode:
+        fail("git_%s" % args[0].replace("-", "_"))
+    return result.stdout.strip()
+for commit in (source, published, head):
+    git("cat-file", "-e", "%s^{commit}" % commit)
+if subprocess.run(["git", "-C", str(repo), "merge-base", "--is-ancestor", published, head],
+                  stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, check=False).returncode:
+    fail("published_commit_not_in_canonical_main")
+
+files = report.get("files_modified")
+if not isinstance(files, list) or not files:
+    fail("report_paths_missing")
+paths = []
+for item in files:
+    value = item.get("path") if isinstance(item, dict) else item
+    value = str(value or "").strip()
+    path = pathlib.PurePosixPath(value)
+    if not value or path.is_absolute() or ".." in path.parts:
+        fail("report_path_invalid")
+    paths.append(str(path))
+def blob(commit, path):
+    result = subprocess.run(["git", "-C", str(repo), "rev-parse", "%s:%s" % (commit, path)],
+                            stdout=subprocess.PIPE, stderr=subprocess.DEVNULL, text=True, check=False)
+    return result.stdout.strip() if result.returncode == 0 else "__ABSENT__"
+for path in paths:
+    if blob(source, path) != blob(published, path):
+        fail("report_path_snapshot_mismatch:%s" % path)
+
+cmd_id = os.environ["CMD_ID_VALUE"].strip() or parent_cmd
+report_generation = next((str(report.get(key) or "").strip() for key in
+                          ("report_generation", "report_generation_fingerprint", "report_fingerprint", "report_id")
+                          if str(report.get(key) or "").strip()), "")
+if not cmd_id or not report_generation:
+    fail("report_generation_missing")
+receipt_value = os.environ["RECEIPT_OVERRIDE"].strip()
+receipt = pathlib.Path(receipt_value) if receipt_value else pathlib.Path(os.environ["SCRIPT_DIR_VALUE"]) / "queue/gates" / cmd_id / "source_only_publish.receipt.json"
+try:
+    receipt_data = json.loads(receipt.read_text(encoding="utf-8"))
+except (OSError, ValueError, TypeError):
+    fail("source_only_receipt_invalid")
+if not isinstance(receipt_data, dict) or receipt_data.get("version") != 1 \
+        or receipt_data.get("state") != "published" \
+        or receipt_data.get("cmd_id") != cmd_id \
+        or receipt_data.get("completion_generation") != generation:
+    fail("source_only_receipt_identity_mismatch")
+actual = set()
+for entry in receipt_data.get("entries") or []:
+    if not isinstance(entry, dict):
+        fail("source_only_receipt_entry_invalid")
+    if entry.get("repo") != str(repo):
+        continue
+    if (entry.get("cmd_id") != cmd_id or entry.get("completion_generation") != generation
+            or type(entry.get("remote_contains_source_rc")) is not int
+            or isinstance(entry.get("remote_contains_source_rc"), bool)
+            or entry.get("remote_contains_source_rc") != 0
+            or str(entry.get("remote_tip") or "").strip().lower() != published):
+        fail("source_only_receipt_entry_identity_mismatch")
+    entry_source = str(entry.get("source_sha") or "").strip().lower()
+    entry_report = str(entry.get("report_generation") or "").strip()
+    if not re.fullmatch(r"[0-9a-f]{40}", entry_source) or not entry_report:
+        fail("source_only_receipt_entry_invalid")
+    actual.add((entry_source, entry_report))
+if actual != {(source, report_generation)}:
+    fail("source_only_receipt_pair_mismatch")
+print("published=%s paths=%d matched=%d" % (published, len(paths), len(paths)))
+PY
+}
+
+if [ "${CMD_COMPLETE_GATE_REPORT_MAIN_ANCESTRY_ONLY:-0}" = "1" ]; then
+    report_commit_main_ancestry_state "${CMD_COMPLETE_GATE_CI_REPORT:?report required}" \
+        "${CMD_COMPLETE_GATE_CI_REPO_DIR:-$SCRIPT_DIR}" "${CMD_COMPLETE_GATE_TASK_FILE:-}"
+    exit $?
+fi
 
 # A PASS_NO_IMPROVEMENT corrective revert can legitimately finish at the exact
 # tree recorded when its task worktree was deployed.  If another publication
