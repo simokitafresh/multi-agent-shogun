@@ -3319,6 +3319,9 @@ count = sum(
     and entry.get("cmd_id") == cmd_id
     and entry.get("gate_result") == "BLOCK"
     and entry.get("source") == "cmd_save"
+    # 2026-08-30 20:30 将軍 D0: 『前 cmd 教訓未記録』の meta-BLOCK 自体を次 cmd の BLOCK に数えると
+    # cmd_4419→4420→4421→4422 と無限連鎖する(INS-201236)。meta check は除外する。
+    and entry.get("checks") != "warn_missing_prev_cmd_lesson"
 )
 print(count)
 PY
