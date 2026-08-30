@@ -7031,7 +7031,10 @@ insights:
   priority: "low"
   source: "semantic_index_update"
   fix_known: false
-  status: pending
+  status: resolved
+  resolved_reason: "semantic map generation verified the candidate is represented or intentionally ignored"
+  action_artifact: "semantic_map=/home/simokitafresh/multi-agent-shogun/context/semantic-map.md;semantic_index=/home/simokitafresh/multi-agent-shogun/docs/semantic-index/index.md"
+  resolved_at: "2026-08-30T17:12:23+09:00"
 - id: INS-20260830-170045084-3f45
   ts: "2026-08-30T17:00:45+09:00"
   insight: "semantic_index_update新概念候補: discussion:Cloudflareの手順をgistで共有してくれ。最新情報で頼む は 既存aliasesに一致なし。概念定義とaliases追加を検討せよ"
@@ -9228,7 +9231,10 @@ insights:
   priority: "low"
   source: "semantic_index_update"
   fix_known: false
-  status: pending
+  status: resolved
+  resolved_reason: "semantic map generation verified the candidate is represented or intentionally ignored"
+  action_artifact: "semantic_map=/home/simokitafresh/multi-agent-shogun/context/semantic-map.md;semantic_index=/home/simokitafresh/multi-agent-shogun/docs/semantic-index/index.md"
+  resolved_at: "2026-08-30T17:12:23+09:00"
 - id: INS-20260830-170106930-4907
   ts: "2026-08-30T17:01:06+09:00"
   insight: "SKILL.md追従cmd候補: cmd_karo_hotfix_t190_gate_slow_sections_unit7_20260830 で scripts変更(scripts/cmd_complete_gate.sh)後にSKILL.md参照鮮度WARN。追従cmdを起票して skills/codd-fix/SKILL.md <- scripts/cmd_complete_gate.sh (newer: scripts/cmd_complete_gate.sh) を解消せよ。"

@@ -16233,3 +16233,16 @@ sqlite3.Connection.backup()を使うとページ(4096byte)単位のread syscall�
 - **when**: 未設定
 - **how**: 未設定
 - GA-PUSH1は正しい安全BLOCKだが、hook_failuresの非0件数だけを数える改善トリガーは3件を品質失敗として再警報した。hook_failure行のartifact実体を読み、意図的安全BLOCKの標識が揃った場合だけ抑止し、証拠欠損や別失敗はfail-closedで警報する。
+
+### L1675: CI契約変更時は互換性fixtureの旧期待値を同一commitで同期する
+- **日付**: 2026-08-30
+- **出典**: cmd_karo_ci_fix_33298405219_two_shards_20260830
+- **記録者**: hayate
+- **tags**: [infra,testing,testing,process,git]
+- **subdomain**: infra
+- **target_files**: [tests/unit/test_run_tests.bats,tests/unit/test_heavy_job_admission.bats]
+- **origin**: [[cmd_karo_ci_fix_33298405219_two_shards_20260830]]
+- **enforcement**: 未自動化
+- **when**: 未設定
+- **how**: 未設定
+- workflowのcancel-in-progressをfalseへ変更してもcompatibility内の2fixtureがtrueを検査し続け、CIで2件FAILした。workflow変更時に全compatibility testの関連literalを同一commitで再計数し、旧契約残存0を確認する。
