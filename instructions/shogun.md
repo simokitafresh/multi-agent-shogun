@@ -178,6 +178,7 @@ test_execution:
 6. **否定判定の grep は大小文字と属性名の表記を確認してから(型五弾-1 の grep 版)。** 17:47『hreflang 0 件』は `hrefLang`(React 属性)の見落とし=RC 不要のものを RC と名指しし 1 分で撤回。
 7. **発令済み cmd の正本を Edit したら、同ブロックの command 行も grep で揃え、配備済み task の ac_version が変わったことを見てから『訂正済』と言え。** 17:52 に 4419 AC3 を 5 本へ直したが command 3 行目『3 本以内』が残り、task(17:31 配備、ac_version 43594047)へは再注入されず 3 度同一 FAIL(blt_181647)。18:20 に正本を揃え再注入 1 通→ac_version 2d742f83 で到達確認。正本 Edit は task に自動で届かない(型十五弾-6 の cmd 版)。
 8. **外部導線 URL(note・membership 等)は設計書の参考記事でなく marketing-info.md の現物から引き、CLEAR 後に本番 curl で href を数えよ。** 4417 の忍者が参考記事著者 dataana2020 を membership URL に採り、FAQ 節の『Read the docs』が /faq を指したまま live→殿実機 18:19。将軍も CLEAR 後に `curl | grep -oE 'href=...'` を打っていなかった(#2+#8)。
+9. **CI green を待つな(殿裁定 2026-08-30 19:29『CI green を待つという完全にナンセンスな発想が諸悪の根源』)。** GATE の ci_readiness WAIT は CLEAR→archive→再配備の鎖を CI 所要時間分止め、19:00-19:29 に忍者 5 名が GATE 待ち idle・LP 誤リンクの deploy も止まった。CI RED は ci_fix lane で後追い(裁定 07-16)。将軍は可逆な本番修正(LP リンク 33d87819)を CI を待たず main へ merge/push し 5 分で live(570ff5b1)。gate 側は家老 unit8 で ci_readiness を記録のみ(非ブロック)へ。
 - origin(追補2): `[[4419_正本Edit_task未再注入_3度FAIL]] -> [[LP_note_dataana2020_docs→faq_20260830_1819]] -> [[ac_version突合WARN_INS-183115]]`
 - origin(追補): `[[殿実機確認_LP_20260830_1753]] -> [[jp直書き残存]] -> [[4420_publish誤報]] -> [[LPと/loginの同構造]] -> [[hreflang誤読]]`
 - origin: `[[殿下問_P2を待つメリット_20260830_1600]] -> [[4416_直列2h37m]] -> [[契約確定で消費側並走]] -> [[復帰後の型_第十六弾]]`
