@@ -9622,3 +9622,10 @@ insights:
   source: "semantic_stress_test"
   fix_known: false
   status: pending
+- id: INS-20260830-192727933-7e5c
+  ts: "2026-08-30T19:27:27+09:00"
+  insight: "[[login 最小化 — LP dm signal com との重複を解消し]] semantic_stress_test candidate_aliases: NO_MATCH source=cmds query=/login 最小化 — LP(dm-signal.com)との重複を解消し、/login をブランド行+サインイン+LP への 1 導線に絞る(ログイン機構不変)"
+  priority: "low"
+  source: "semantic_stress_test"
+  fix_known: false
+  status: pending
