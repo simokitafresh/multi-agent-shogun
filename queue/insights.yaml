@@ -9962,3 +9962,17 @@ insights:
   source: "semantic_index_update"
   fix_known: false
   status: pending
+- id: INS-20260830-211124096-a656
+  ts: "2026-08-30T21:11:24+09:00"
+  insight: "[[T202 T201 T198 T196 T195 T193 T188の進捗を表形式で報告せよ]] semantic_stress_test candidate_aliases: NO_MATCH source=lord query=T202 / T201 / T198 / T196 / T195 / T193 / T188の進捗を表形式で報告せよ"
+  priority: "low"
+  source: "semantic_stress_test"
+  fix_known: false
+  status: pending
+- id: INS-20260830-211124533-4542
+  ts: "2026-08-30T21:11:24+09:00"
+  insight: "semantic_index_update未登録cmd originノード: [[LPと/loginの同構造]] は既存aliasesに一致なし。類似概念TOP3: loop_engineering(Loop Engineering論文; alias=nodding loop; score=4.6) / dm_fusion_app(DM-Fusionアプリ; alias=LIN/LOGトグル; score=4.0) / operational_ontology(操作的オントロジー; alias=Palantir ontology; score=3.8)。概念定義とaliases追加を検討せよ"
+  priority: "low"
+  source: "semantic_index_update"
+  fix_known: false
+  status: pending
