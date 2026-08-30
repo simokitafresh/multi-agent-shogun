@@ -16207,3 +16207,16 @@ sqlite3.Connection.backup()を使うとページ(4096byte)単位のread syscall�
 - **when**: 未設定
 - **how**: 未設定
 - 依存runner修正後も外部task worktreeではrunner modeとRUN_TESTS_ACTIVE継承がdispatch条件に影響する。task runnerの外部child起動はaggregate状態を持ち込まず、対象test engineを実走してrc=0・FAIL=0・SKIP=0をreceiptへ固定するチェックを次回追加すべきである。
+
+### L1673: doc_no_changelogは一般設計語と履歴語を分離せよ
+- **日付**: 2026-08-30
+- **出典**: cmd_karo_hotfix_ga527_doc_no_changelog_20260830
+- **記録者**: hanzo
+- **tags**: [infra,testing,testing,gate,git]
+- **subdomain**: infra
+- **target_files**: [scripts/hooks/git-pre-commit.sh,tests/unit/test_git_pre_commit_doc_no_changelog.bats]
+- **origin**: [[cmd_karo_hotfix_ga527_doc_no_changelog_20260830]]
+- **enforcement**: 未自動化
+- **when**: 未設定
+- **how**: 未設定
+- Q1: 変更の部分一致を履歴と信じ一般設計見出しまでBLOCKした。Q2: 設定問題ではなくhook regexのコード品質欠陥だった。Q3: 明示的履歴語の正例、変更内容等の負例、版遷移と行形式の類似語をcommit前に二値検証する。
