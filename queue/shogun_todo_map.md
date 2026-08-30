@@ -1,8 +1,10 @@
-# 将軍 全体状況マップ(やることリスト) — 2026-08-26 13:55 作成 / 08-31 03:25 更新(T212 Agent Readiness)(loop#1 T211)(殿指示 02:59『強くてニューゲーム』保存 T210)(殿指示 20:43『強くてニューゲーム』保存 T156+T157 bats 本番汚染)(殿指示14:34: 進捗確認・つまり解消)
+# 将軍 全体状況マップ(やることリスト) — 2026-08-26 13:55 作成 / 08-31 03:42 更新(loop#2 T213)(T212 Agent Readiness)(loop#1 T211)(殿指示 02:59『強くてニューゲーム』保存 T210)(殿指示 20:43『強くてニューゲーム』保存 T156+T157 bats 本番汚染)(殿指示14:34: 進捗確認・つまり解消)
 # ★殿裁定 2026-08-29 10:26『バグの修正は必須だが、一回終わりを作ろう。速度向上は今取り掛かっているタスクたちを全て完了させたら一旦俺の指示を待て。バグの根治は俺の指示を待たずに継続せよ』→ 速度 lane は走行分の終端で凍結(新規配備 0、家老 blt_102819 で適用確認)。バグ根治 lane(T180/CI RED/便停止/Guard14)は継続。
 # 原則(殿13:52-13:54): シングルタスクを高速に切替える。優先順位なし=全部やる。依存は構造としてだけ記す。一定時間ごと(各inbox処理後・30分毎)に更新。 ★らせんの原理: ①計測器を律速の名指しから仕込み本番に常設→②1 unit だけ切る(1 unit/commit)→③計測を一段深く→④計測器は残す。切るのは機械的待ちのみ。逸脱チェック3問(名指しから始めたか/一段深くしたか/本番に残るか)。対象=速度/デッドコード/リファクタ/知識。成果指標=PJ 成果の e2e と件数
 # artifact: https://claude.ai/code/artifact/5da62854-f81f-4d53-908b-2fe464031f36 (HTML正本 docs/dashboard/shogun-todo-map.html。更新=正本Edit→Artifact再公開 同file_path)
 # 記法: [ ] 未 / [~] 走行中(担当) / [x] 済(証跡)。★=速度向上へのつながり1行必須
+
+- [~] T213(03:42 第19便 loop#2) 現在値: CLEAR 本日 17(PJ5/infra12)、便停止 0(failed 残置 0・BLOCK 行 30 分 0・done∧CLEAR 無し 0)、才蔵 reflux0329 は軍師再 review APPROVE(将軍問い返し 03:39→再判定)・家老 LGTM 待ち ACCEPT 契約(blt_034018)、rev-list 0/1(push lane)、CI RED 継続(半蔵 ci_fix 33326464870 走行、新 run 33328512197 in_progress)、litter 4,854(+2)、bash -n 5/5 OK。finalize 比は report が archive で改名され mtime 突合 n=0=計測不能→gate_metrics に report_completed_at 列が要る。終端条件=半蔵 ci_fix CLEAR ∧ CI GREEN ∧ litter hotfix 配備(task に mutation 語) ★finalize 計測列を gate 側に持たせれば毎 loop の手計算を消す
 
 - [~] T212(03:15 殿提示 Cloudflare Agent Readiness 診断) 現在値: Level1 4/5(robots/sitemap/AI Crawler Rules 済+Content-Signal 97345183 live 03:23 curl 到達)、残=Markdown for agents(dashboard トグル=殿権限)。Level2 0/3・Level3 0/8 は AI エージェント操作前提=PJ e2e に効かず着手せず。終端条件=curl -H 'Accept: text/markdown' https://dm-signal.com/ja/ の content-type が text/markdown ∧ 診断 Level1 5/5 ★検索系 AI の LP 取り込み(SEO 延長)で導線 e2e に直結、コスト分単位
 
