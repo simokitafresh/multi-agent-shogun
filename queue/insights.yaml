@@ -9161,4 +9161,14 @@ insights:
   priority: "low"
   source: "semantic_stress_test"
   fix_known: false
+  status: resolved
+  resolved_reason: "semantic index candidate was absorbed into a registered concept"
+  action_artifact: "semantic_index=/home/simokitafresh/multi-agent-shogun/docs/semantic-index/index.md"
+  resolved_at: "2026-08-30T16:45:00+09:00"
+- id: INS-20260830-164505264-1841
+  ts: "2026-08-30T16:45:05+09:00"
+  insight: "[[dm signal jp を Cloudflare で取ろう]] semantic_stress_test candidate_aliases: NO_MATCH source=lord query=dm-signal.jp を Cloudflare で取ろう。設計書 §9 を書き換えて cmd を起票せよ"
+  priority: "low"
+  source: "semantic_stress_test"
+  fix_known: false
   status: pending
