@@ -170,7 +170,7 @@
 - Sharpe は `metrics_json.metrics[name="Sharpe Ratio"].close.portfolio`(年率、Rf 控除、`metrics_impl.py:977-983`)。SPY 0.63 は Basic-DM 行の `close.benchmark`(同じ Rf 控除)。† TQQQ の 0.90 は将軍が `ticker_monthly_returns` から Rf=0 で概算した値(12:33)。EP は PF と同じ Rf 系列で再計算する(AC)。
 - 比較行の期間: SPY は Basic-DM と同じ 2003-10〜、TQQQ は 2010-03〜。各行に期間を明記し、プラン行(起点 2003〜2013 が混在)との単純比較ではないことを注記 "periods differ; see inception"。
 - 集合の定義(殿裁定 12:19): 各プラン行は**そのプランでシグナルまで公開している PF**(hide_portfolio=false ∧ hide_signal=false)だけで計算する。パフォーマンスのみ可視の PF(Basic の白虎激攻・分身常勝、premium の奥義 ×3)は集計に入れない(参考: 入れると Basic 平均 +20,494%/premium ベスト +365,962% まで跳ね、実際に使える数字と乖離する)。行構成は 5 つ(Basic-DM / Basic / Standard / Premium / Secret)に確定(殿裁定 12:20)。
-- CAGR の算出: `(1+total_return)^(12/period_months)-1`(years=0 行に `cagr` がないため EP で算出)。period は 160〜275 か月(2003〜2013 起点)。
+- CAGR の出所: `metrics_json.metrics[name="Geometric Mean (annualized)"].close.portfolio`(years=0 行の `cagr` キーは無いが、metrics 配列に格納済み。`(1+total_return)^(12/period_months)-1` と一致することを 12:44 に確認: CAGR4 1.5314=153.1%、秘奥義-追い風-激攻 1.4491=144.9%)。EP は格納値を返し、式は AC の独立再計算側で使う。プラン行の period は 160〜275 か月、Secret は 105〜196 か月。
 - 平均は単純平均(PF 数で割る)。中央値ではない(殿の言葉「平均」に従う)。
 - 表題は "Current signals" のまま、副題 "Performance since inception, by plan"。
 - **齟齬の再発防止(AC)**: 未認証 curl の各 plan 行の n/avg/best/×N/cagr_min/max を、DB から独立に再計算した値と全行一致(二値)。集合の定義(hide_portfolio ∧ hide_signal)を EP とテストの両方に同じ 1 関数で置く。
