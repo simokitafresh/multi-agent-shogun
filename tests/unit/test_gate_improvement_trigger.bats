@@ -202,6 +202,52 @@ run_ga_push1_negative_fixture() {
         bash "$PROJECT_ROOT/scripts/gate_improvement_trigger.sh"
 }
 
+run_ga531_mixed_fixture() {
+    local root="$FIXTURE_ROOT/ga531-mixed"
+    local hook_hash artifact i
+    mkdir -p "$root/scripts/gates" "$root/bin" "$root/tmp" "$root/logs/hook_artifacts" \
+        "$root/.githooks" "$root/.git/hooks"
+    cp "$TEMPLATE_ROOT/scripts/inbox_write.sh" "$root/scripts/inbox_write.sh"
+    cp "$TEMPLATE_ROOT/scripts/ntfy.sh" "$root/scripts/ntfy.sh"
+    cp "$TEMPLATE_ROOT/bin/gh" "$root/bin/gh"
+    chmod +x "$root/scripts/inbox_write.sh" "$root/scripts/ntfy.sh" "$root/bin/gh"
+    for gate in gate_lesson_health.sh gate_cmd_state.sh gate_context_freshness.sh gate_p_average_freshness.sh; do
+        printf '%s\n' '#!/usr/bin/env bash' 'printf "%s\n" "--- 総合判定: OK ---"' \
+            > "$root/scripts/gates/$gate"
+        chmod +x "$root/scripts/gates/$gate"
+    done
+    printf '%s\n' '#!/usr/bin/env bash' 'exit 0' > "$root/.githooks/pre-push"
+    cp "$root/.githooks/pre-push" "$root/.git/hooks/pre-push"
+    hook_hash="$(sha256sum "$root/.githooks/pre-push" | awk '{print $1}')"
+
+    : > "$root/logs/hook_failures.yaml"
+    for i in 1 2 3; do
+        printf '%s\n' \
+            "- timestamp: 2026-08-30T19:56:4${i}+09:00" \
+            '  hook: pre-commit' \
+            '  exit_code: 1' \
+            '  detail: doc_no_changelog' >> "$root/logs/hook_failures.yaml"
+    done
+    for i in 1 2 3 4 5; do
+        artifact="$root/logs/hook_artifacts/expected-$i.log"
+        printf '%s\n' \
+            '[pre-push] BLOCK(GA-PUSH1): pushしようとしているcommitと、作業ツリーの未commit変更が同一pathを差している。' \
+            '[pre-push] 重複path:' \
+            '  context/semantic-map.md' > "$artifact"
+        printf '%s\n' \
+            "- timestamp: 2026-08-30T19:58:0${i}+09:00" \
+            '  hook: pre-push' \
+            '  exit_code: 1' \
+            "  artifact: logs/hook_artifacts/expected-$i.log" \
+            "  hook_sha256: $hook_hash" \
+            '  detail: GA-PUSH1 safety block' >> "$root/logs/hook_failures.yaml"
+    done
+    run env PATH="$root/bin:$PATH" TMPDIR="$root/tmp" \
+        GATE_IMPROVEMENT_ROOT="$root" GATE_IMPROVEMENT_NOW=1770000000 \
+        GATE_IMPROVEMENT_DEDUP_WINDOW_SECONDS=0 \
+        bash "$PROJECT_ROOT/scripts/gate_improvement_trigger.sh"
+}
+
 assert_gate_identity() {
     local calls_file="$1" gate_name="$2"
     grep -Eq "task_id=commander_directive subject_task_id=gate_alert_${gate_name}_GA-[0-9]+ parent_cmd=cmd_gate_improvement_${gate_name}" \
@@ -277,4 +323,19 @@ assert_gate_record_identity() {
         "$FIXTURE_ROOT/ga-push1-classification/logs/gate_alerts.yaml"
     grep -q 'current_generation=1' \
         "$FIXTURE_ROOT/ga-push1-classification/logs/gate_alerts.yaml"
+}
+
+# test_necessity: GA-531's eight-record production mix is a permanent
+# classification contract: five artifact-proven GA-PUSH1 safety blocks are
+# suppressed, while three legacy pre-commit failures remain actionable.
+# regression_justification: a mixed batch must not be collapsed into an
+# expected-only result or misreported as a current-generation recurrence.
+@test "GA-531 mixed batch counts every record and preserves legacy alerting" {
+    run_ga531_mixed_fixture
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"SENT: hook_failure"* ]]
+    grep -q 'ALERT: hook失敗 8件の新規レコード検知' \
+        "$FIXTURE_ROOT/ga531-mixed/logs/gate_alerts.yaml"
+    grep -q 'legacy=3 expected_ga_push1=5' \
+        "$FIXTURE_ROOT/ga531-mixed/logs/gate_alerts.yaml"
 }
