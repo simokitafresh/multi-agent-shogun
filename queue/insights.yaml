@@ -9915,3 +9915,10 @@ insights:
   source: "semantic_index_update"
   fix_known: false
   status: pending
+- id: INS-20260830-210745446-a58b
+  ts: "2026-08-30T21:07:45+09:00"
+  insight: "semantic_index_update新概念候補: discussion:尋常ではない遅延だな。誰かが我らのルールを無視してバグや不要な行為を重ねている。すぐに根治せよ は 既存aliasesに一致なし。概念定義とaliases追加を検討せよ"
+  priority: "low"
+  source: "semantic_index_update"
+  fix_known: false
+  status: pending
