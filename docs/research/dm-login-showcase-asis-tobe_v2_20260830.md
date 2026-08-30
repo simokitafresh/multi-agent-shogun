@@ -279,6 +279,11 @@
 - **家老レーン post-deploy チェック(忍者 AC に書かない)**: 本番 `/login` curl で数値焼き込み、既存 EP smoke 200、ログイン後 3 ページ CDP 同一、P4 の殿実機。deploy 後 30 分以内に家老が実施し掲示板へ生貼付。
 - 起票規則: cmd の AC に「本番/Render/deploy 後/CDP」を含めない。含める場合は `task_type: post_deploy_check` の別 task として家老が分離配備する。
 
+## §8 将来方向（殿 13:14「これは後でやればいい」— 本設計の範囲外、次の設計書の種）
+- **登録(Google auth)を rebalancer と同様にし、登録した人には無料クーポンが表示され Basic-DualMomentum だけが閲覧できる Free tier を作る**。
+- 本設計との接点: (1) 表 v3 の「Free · full access」行= Free tier の中身そのもの(Basic-DM のみ)。(2) 現行 auth は tier パスワード照合(auth.py)で個人アカウントの概念がない → Google auth は新しい境界(第 0 段設計書 `dm-login-boundary-asis-tobe_20260817.md` の拡張)。(3) 区間計測 event(P1)の `ok/expired/wrong` に `signup_google` step を足せば導入効果を同じ表で測れる。
+- 順序: 本設計(P1→P2→deploy→殿確認→修正)を先に終えてから、Free tier は別設計書 v3 で AsIs(rebalancer の Google auth 実装)を一次確認して起こす。
+
 ## §7 因果リンク
 - [[殿観測_ログインページさみしい_20260818_1550]] -> [[login_showcase_mock_v1-v11]] -> [[dm-login-showcase-asis-tobe_20260818]](ToBe v0.3・未実装) -> [[殿指示_asis本番リアルタイム化_20260830_1007]] -> **[[dm-login-showcase-asis-tobe_v2_20260830]]** <- [[殿裁定_login金額なし_20260830_1020]] / [[殿参照_摩擦優先_note_dataana2020_20260830_1021]]
 - ← [[dm-login-boundary-asis-tobe_20260817]](第 0 段) / [[tier別可視性完成形]](cmd_3837) / [[visibility_philosophy]](projects/dm-signal.yaml)
