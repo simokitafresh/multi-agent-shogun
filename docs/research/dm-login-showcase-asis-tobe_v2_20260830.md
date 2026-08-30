@@ -69,7 +69,7 @@
 | is_active 合計 | | **102** | **+4**(98→102) |
 
 - premium 専用(NewStandard/Basic 非可視)10 本の現物: DM-safe-2 / GSシン四つ目-常勝・激攻・鉄壁 / 劇薬DMオリジナル・スムーズ / 奥義-GS-分身-常勝・激攻・鉄壁 / 裏Ave-X。加えて Ave-X(Basic 可視・NewStandard 非可視)も premium で再可視。∴ premium で新たに見える 11 本 = 代表 GSシン四つ目-常勝 1 + 群 10(前版「+10」と同値)。
-- **新規 active 3 本(08-19 作成)**: Sharpe4 / CAGR4 / greedy2 — いずれも `type=fof`(Fund of Funds)、metrics 2 行・signals 最新 08-28 あり、可視 tier 0=Secret 群。同じく `New Fund of Funds`(+`_copy`/`_copy_copy`、07-01、fof、可視 tier 0)。Secret 群は件数のみ公開なので画面には出ないが、**admin で作った試作 FoF(名前が既定名/実験名のまま)も件数 73 に入る** → §6 未決 1。
+- **新規 active 3 本(08-19 作成、folder「オリジナル」)**: Sharpe4 / CAGR4 / greedy2 — いずれも `type=fof`、`pipeline_config`=EqualWeight・selection blocks 0(=固定構成の等ウェイト FoF)、構成は全て**秘奥義** PF: Sharpe4={加速D-激攻, 加速R-鉄壁, 追い風-激攻, 四つ目-鉄壁}×25%、CAGR4={加速D-激攻, 四つ目-激攻, 追い風-激攻, 抜き身-激攻}×25%、greedy2={加速R-鉄壁, 追い風-激攻}×50%。weights 最新 08-03、metrics 2 行(years=0 total_return: CAGR4 15,907 / greedy2 8,373 / Sharpe4 3,279 = 秘奥義 EW-FoF)、可視 tier 0=Secret 群。同じく `New Fund of Funds`(+`_copy`/`_copy_copy`、07-01)={秘奥義-加速D-激攻, 奥義-GS-抜き身-激攻} EW、可視 tier 0。名前は選定基準(Sharpe 上位 4/CAGR 上位 4/greedy 2)そのまま=**殿が admin で組んだ秘奥義 FoF と見られる**(誰が何の目的で作ったかは DB に記録なし → §6 未決 1 は「これらを Secret 件数に含めるか」)。
 - **Basic-DualMomentum の tier フラグ**: Basic/NewStandard/premium = 全 false(公開可)、**Standard(古参)/AddOn = hide_portfolio=true, hide_components=true**。前版 ToBe「全 tier で false を保証」は**未達**(古参 2 tier)。公開 EP は tier 非依存なので画面には影響しないが、古参会員がログイン後に Basic-DM を見られない不整合として §6 未決 2。
 - **総リターン(since inception)の現物**: `portfolio_metrics(years=0).metrics_json.total_return` = `(1+monthly).prod()-1`(`metrics_impl.py:1386`)= **倍率ではなく「+○○ 倍相当の小数」**(0.31=+31%、31.39=**+3,139%**)。calculated_at=2026-08-29、end_date=**2026-07-31**(月次系列。8 月末クローズ後に更新)。
 
@@ -112,7 +112,7 @@
   - `{name, label: "basic", total_return, inception}` ×4 ← holding/momentum **キー自体を返さない**
   - `{group: true, label: "standard", count: 13, max_total_return}` ← NewStandard 可視 17 − Basic と重なる 4 本(Basic-DM・DM-safe・分身常勝・白虎激攻)= **13**(シン四神 11 + 分身激攻/鉄壁 2)
   - `{name: "GSシン四つ目-常勝", label: "premium", total_return}` + `{group, label: "premium", count: 10, max_total_return}` ← premium 可視 28 − NewStandard 可視 17 = 11、代表 1 を除いて **10**
-  - `{group, label: "secret", count}` ← active − premium 可視 − Ave-X(§6 未決 1: 試作 FoF の扱いで 73 or 67)
+  - `{group, label: "secret", count}` ← active − premium 可視 − Ave-X(§6 未決 1)
 - 出所: `portfolio_metrics(years=0)`, `signals`(Basic-DM 最新 date), `tier_visibility_settings`, `viewer_tiers.password_expires_at`。**新規テーブル不要**。count は EP 内で導出(フロントに固定値を書かない)。
 - 非送信の原則: 代表 4 行の保有/モメンタムはフロントがぼかしバーを描く(データは来ない)。
 
@@ -146,7 +146,7 @@
 | シン四神 ×11 · GSシン分身 ×2(群) | Standard plan | +13 PF with Standard | ぼかし | up to X% |
 | GSシン四つ目-常勝 | Premium plan · by invitation(紫) | +10 PF with Premium | ぼかし | +17,181% |
 | Ave-X(再掲) · 裏Ave-X · DM-safe-2 · 四つ目 ×2 · 劇薬 ×2 · 奥義 ×3(群) | Premium plan · by invitation | — | ぼかし | up to X% |
-| 73 portfolios(未決 1 次第で 67) | Secret(灰) | Not viewable | Not disclosed | — |
+| 73 portfolios | Secret(灰) | Not viewable | Not disclosed | — |
 - +N の定義(本番導出・10:14 実測から): Free 1 / Basic = Basic 可視 5 − 1 = **4** / Standard = NewStandard 可視 17 − Basic と重なる 4 = **13** / Premium = premium 可視 28 − NewStandard 17 − 代表 1 = **10** / Secret = active 102 − premium 28 − Ave-X(Basic のみ可視)1 = **73**。**件数は全て EP が tier 設定から導出し、フロントに固定値を書かない**(AC: 未認証 curl の count と DB 集計の一致を二値判定)。前版 §3.1 と同値(件数は 08-18 から Secret +3・premium 内訳 +1 のみ変動)。
 - ヘッダ右: "Series through {series_end} · next rebalance {next_close} close"。**「today/毎営業日」禁止**。
 
@@ -181,7 +181,7 @@
 - 1 週間後に event 集計で「突出して悪い区間」を 1 つ特定し、そこだけを次弾にする(記事の教え: たいてい思っていた場所と違う)。
 
 ## §6 未決（殿裁定待ち。裁定は「事実→制約→判断→効果」で追記）
-1. **Secret 件数(73)に試作 FoF を含めるか**: 事実=Secret 73 のうち 6 本は admin 作成の試作 FoF(Sharpe4/CAGR4/greedy2 08-19、New Fund of Funds ×3 07-01。type=fof、metrics・signals は計算済み、可視 tier 0)。`is_active`・metrics 有無では区別できない(いずれも揃っている)。案 A=そのまま 73(「存在する PF 数」として正しい)/ 案 B=試作は admin で `is_active=false` にして件数から自然に外す(データ側の整理、可逆)/ 案 C=EP に除外名リストを持つ(非推奨・固定値)。将軍推奨=**B**(画面ロジックに例外を持ち込まない)。
+1. **Secret 件数(73)に秘奥義 EW-FoF 6 本を含めるか**: 事実=Secret 73 のうち 6 本は folder「オリジナル」の等ウェイト FoF(Sharpe4/CAGR4/greedy2 08-19、New Fund of Funds ×3 07-01。構成は秘奥義 PF、metrics・signals 計算済み、可視 tier 0)。`is_active`・metrics 有無では他の Secret PF と区別できない。案 A=そのまま 73(「存在する PF 数」として正しい。秘奥義 FoF も Secret の一部)/ 案 B=殿が「これは正式 PF ではない」と判断するものだけ admin で `is_active=false` にして件数から自然に外す(データ側の整理、可逆)/ 案 C=EP に除外名リスト(非推奨・固定値)。将軍推奨=**A**(件数の定義を『active かつ非公開の PF 数』で固定し、画面ロジックに例外を持ち込まない。整理したい PF があれば B を殿が個別に)。
 2. **Basic-DM の古参 tier(Standard/AddOn)で hide_portfolio=true**: 公開 PF なのにログイン後の古参会員に非表示。案=admin で 2 tier を false に(可逆・DB 設定変更のみ)。
 3. **総リターンの表記**: 事実=since inception が +3,139%〜+75,619%(白虎)。案 A=% のまま(餌として最強)、案 B=「×32 / ×757」倍率、案 C=CAGR 併記(years=0 に cagr なし → EP で `(1+tr)^(12/months)-1` を算出)。将軍推奨=**C**(信憑性を保ちつつ interest を引く)。
 4. 群行 "up to X%" を Standard/Premium で出すか(前版から継続)。
