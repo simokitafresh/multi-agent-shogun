@@ -1,3 +1,4 @@
+<!-- gist-master: 897501e0162e556a682ae32a2eca19c3 dm-free-tier-google-auth-asis-tobe_v3_20260830.md -->
 # DM-Signal Free tier(Google 登録→月次クーポン) AsIs/ToBe v3 骨子 — 2026-08-30 20:20
 
 > 殿方向性 13:14(後回し)→20:15-20:18 具体化。SEO 案(v1)とは別レーン。実装は殿の着手裁定後。
@@ -33,6 +34,8 @@
 2. `/free` の置き場: app(dm-signal-frontend、既定)か LP か → 既定=app(認証セッションと同一オリジン)。LP からは CTA「Free で始める(Google)」を追加。
 3. Free tier の可視範囲=Basic-DualMomentum の**パフォーマンス+シグナル**両方か、パフォーマンスのみか → 既定=両方(13:14『閲覧できる』)。
 4. 月次クーポンの切替日=他 tier と同日(既定)。
+
+5. **経路と利用の記録(殿 20:19『リバランサー経由か LP 経由か、DM だけか両方か見えたほうがいい』)** → 既定案=**Supabase プロジェクトは 1 つのまま**(1 人 1 アカウント。分けると両方利用が突合不能)。追加は 1 表: `product_registrations(user_id, product{rebalancer|dm-signal}, source{lp|rebalancer|dm-login|direct}, first_seen_at)`(RLS: 本人 insert/select のみ、集計は service role)。入口に `?from=` を付けて初回サインインで 1 行。rebalancer は既存利用から `rebalancer` 行を後付け。月次継続は DM 側 `coupon_fetch` イベント(user は hash)で数える。指標=rebalancer→DM 転換率、LP→Free→note 転換率、両方利用率。
 
 ## §5 工程(裁定後、各 10 分・可逆)
 - 偵察 1: Supabase プロジェクトの Google provider 設定と JWKS URL、`auth.users` の件数、rebalancer の env 名(5 要件で報告)。
