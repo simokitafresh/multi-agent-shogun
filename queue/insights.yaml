@@ -9601,3 +9601,10 @@ insights:
   source: "semantic_stress_test"
   fix_known: false
   status: pending
+- id: INS-20260830-192646721-0d33
+  ts: "2026-08-30T19:26:46+09:00"
+  insight: "[[cloudflareのAPI問題によるpush不可は解決したか？]] semantic_stress_test candidate_aliases: NO_MATCH source=lord query=cloudflareのAPI問題によるpush不可は解決したか？"
+  priority: "low"
+  source: "semantic_stress_test"
+  fix_known: false
+  status: pending
