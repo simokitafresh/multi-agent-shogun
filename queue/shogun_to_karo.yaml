@@ -46,53 +46,6 @@ commands:
     environment_change: "type=lesson; file=docs/research/dm-free-tier-google-auth-asis-tobe_v3_20260830.md; pattern=product_logins"
     delegated_at: "\"2026-08-30T20:44:38\""
     origin: "[[殿要件_クーポンUX_20260830_2017]] -> [[殿下問_経路記録_20260830_2019]] -> [[cmd_4423_free_tier_frontend]] -> [[cmd_4424_free_tier_lp_cta]]"
-  cmd_4423:
-    title: "Free tier F2 — frontend に /free(Google サインイン→当月クーポン表示→Copy→/login プリフィル)と /auth/callback と入口二分文言を追加する(既存ログイン機構不変)"
-    status: delegated
-    project: dm-signal
-    purpose: "殿裁定 2026-08-30 20:21『着手せよ』+殿要件 20:17『登録してログインすると free のクーポンが表示、ワンクリックでコピーできるようにして動線をスムーズに。すでにメンバーが誤解しないようにしよう』+20:18『登録者は rebalancer と同じ Supabase の既存にまとめる』(設計書 v3 §2 項目 2・4・5)。契約=cmd_4422 の GET /api/public/free-coupon(Bearer=Supabase access token、応答キー coupon・expires_at・plan・scope)。本 cmd は frontend だけを作り、backend(4422)と並走する(パイプライン契約)。EP が未 deploy の間はモック応答で AC を満たし、本番 EP 差替えは env のみ"
-    scope_mode: FULL
-    target_path: /mnt/c/Python_app/DM-signal/frontend
-    acceptance_criteria:
-      AC1:
-        description: "frontend に @supabase/supabase-js を追加し、rebalancer と同じ env 名(NEXT_PUBLIC_SUPABASE_URL・NEXT_PUBLIC_SUPABASE_ANON_KEY)で client を作る lib と、/free ページ(Google でサインインボタン→signInWithOAuth provider google、redirectTo=/auth/callback)と /auth/callback ページ(セッション確立後 /free へ戻る)を static export 互換(client component、動的 route なし)で追加し、サインイン済みなら GET /api/public/free-coupon を Bearer で呼び、クーポン・有効期限・『Basic-DualMomentum のみ』の表示と Copy ボタン(navigator.clipboard、押下後に Copied 表示)と『このクーポンでサインイン』ボタン(/login?coupon=<code> へ遷移)を出し、next build(output export)の out に free と auth/callback の index が生成されることを確認する"
-        binary_check: "out に free の index と auth の callback の index が各一つ ∧ /free の未サインイン状態で Google ボタンのみ表示(クーポン DOM なし) ∧ サインイン済みモック(fetch を差し替えた Playwright ローカル)でクーポン文字列・expires・Copy・サインインボタンが初期 viewport 内 ∧ Copy 押下でクリップボードにクーポンと一致 ∧ サインインボタンの遷移先が /login?coupon=<code> か?"
-      AC2:
-        description: "/login の SignInCard が URL の coupon クエリを初期値として password 入力にプリフィルし(照合は既存 verify_viewer のまま、frontend の認証コードは diff 0)、/login と /free の文言を login-copy に EN/JA で閉じて入口を二分(Members=note に記載の当月パスワード / Free=Google で登録して当月クーポン)し、/free に『Free は Basic-DualMomentum のみ。Basic/Standard/Premium の方は従来どおり note のパスワード』を明示し、Free クーポンの文言を note 課金導線に混ぜないことを確認する"
-        binary_check: "/login?coupon=X で password 入力の value が X ∧ 認証系 4 ファイル(route-access-boundary・viewer-auth・auth-state-reset・api-client)の diff が空 ∧ login-copy に Members と Free の見出しが EN/JA 各一つ ∧ /free に Basic-DualMomentum のみ の文言 EN/JA ∧ 毎営業日/today/soon/¥/円/first month free/初月無料/free trial の grep 0 か?"
-      AC3:
-        description: "変更が frontend 配下の free・auth/callback・login(page・sign-in-card・login-copy)・lib の supabase client・package.json のみで、既存 test の削除が無く、tsc と next build が PASS し、変更対象に限定した選択実行で FAIL 0 SKIP 0 であることを確認する"
-        binary_check: "変更ファイルが free・auth/callback・login 三本・lib supabase・package.json の集合内のみ(算出元: git diff --name-only を生貼付) ∧ 既存 test 削除が無い ∧ tsc と next build exit 0 ∧ 選択実行 FAIL 0 SKIP 0 か?"
-    command: |
-      1. supabase client lib と /free と /auth/callback を追加し、out の生成とモック Playwright でクーポン表示・Copy・遷移先を確認する
-      2. SignInCard の coupon プリフィルと login-copy の入口二分文言(EN/JA)を追加し、認証 4 ファイル diff 空と禁則 grep 0 を確認する
-      3. 変更ファイル集合・tsc/next build exit 0・選択実行 FAIL 0 SKIP 0 を報告 YAML に生貼付する
-    assumptions:
-      claim: "origin/main の frontend/app/login/sign-in-card.tsx に password state と Input(id viewer-password、L34-44)、login-copy.ts L10-16 に『This month's password or coupon code / 当月パスワードもしくはクーポンコード』文言、frontend/package.json に supabase 無し(算出元: git show origin/main:frontend/package.json | grep -c supabase → 0 件、2026-08-30 20:24)、/login は 4420 で最小化・noindex(本番 c14edb99 live、curl noindex 1)。rebalancer は frontend/lib/supabase.ts(createClient、NEXT_PUBLIC_SUPABASE_URL/ANON_KEY)と auth-context.tsx L56 signInWithOAuth provider google、redirectTo=/auth/callback(同時刻 git show)。クーポン EP の契約=cmd_4422 AC2(応答キー coupon・expires_at・plan・scope)。Playwright は 4420 で 375×667 の viewport 検証に使用済(算出元: rg -c '375' queue/shogun_to_karo.yaml → 1 件以上)"
-      source: "docs/research/dm-free-tier-google-auth-asis-tobe_v3_20260830.md §1-§2、frontend/app/login/sign-in-card.tsx、frontend/app/login/login-copy.ts、frontend/package.json、/mnt/c/Python_app/rebalancer/frontend/lib/supabase.ts、auth-context.tsx"
-      trust: verified
-    depends_on: none
-    timeout_minutes: 30
-    estimated_minutes: 10
-    split_decision: "AC3 本=1 道具(frontend の Free 導線 1 組: /free+callback、プリフィル+文言、build/test の 3 手で 10 分)。backend 契約は cmd_4422、LP CTA は F3 に分離。4422 と並走(契約=JSON 4 キー、未 deploy 中はモック)"
-    quality_gate:
-      q1_firefighting: "消火ではない。Google 登録者がクーポンを受け取り 1 クリックで /login に入る動線と、既存メンバーが誤解しない入口二分を足す品質向上"
-      q2_learning: "忍者は static export での OAuth callback、clipboard API、URL クエリからの安全なプリフィル(既存認証を触らない)、EN/JA 文言を copy に閉じる型を学ぶ"
-      q3_next_quality: "F3(LP CTA)が /free への導線を足すだけで完結し、post_deploy_check が『サインイン→クーポン→Copy→/login→Basic-DM』の 1 本道で検証できる"
-      q4_depth: "shallow — 新規 2 ページ+lib 1+既存 2 ファイルの小変更。設計書 v3 §2 に契約が明文化済み"
-      q5_verified_source: "code_reading — git show origin/main:frontend/app/login/sign-in-card.tsx・login-copy.ts・package.json、rebalancer frontend/lib/supabase.ts・auth-context.tsx を 2026-08-30 20:24 に読了。production_verified — 本番 /login(c14edb99)を 19:45 curl(noindex 1・プラン語 0)"
-      q6_not_hiding: "既存の認証 4 ファイルは diff 0。クーポンは EP からのみ取得し frontend に埋め込まない。Free の文言を note 課金導線に混ぜない(殿要件 20:17)"
-      q7_definition_verified: "『クーポン』= cmd_4422 EP の coupon(Free tier の当月パスワード、確認日: 2026-08-30)。『プリフィル』= SignInCard の password state 初期値(sign-in-card.tsx L9-15)。『入口二分』= Members(note パスワード)/Free(Google 登録)の見出し 2 つ(設計書 v3 §2 項目 5)"
-      q8_why_what: "WHY: Google 登録者がクーポンを受け取る画面と /login への 1 クリック動線が無く、既存メンバーと Free の入口が混ざる / WHAT: out に free と auth/callback、未サインインで Google ボタンのみ、サインイン済みでクーポン・expires・Copy・サインインボタンが viewport 内、Copy=クーポン一致、/login?coupon=X で value X、認証 4 ファイル diff 空、Members/Free 見出し EN/JA、禁則 grep 0、tsc/next build exit 0、選択実行 FAIL 0 SKIP 0 / WHEN: 今セッション、4422 と並走 / WHERE: /mnt/c/Python_app/DM-signal/frontend / WHO: 忍者 1 名 / HOW: supabase-js+client component 2 ページ+SignInCard 初期値+copy / 複利: rebalancer と同じ Supabase/同じ env 名で 1 アカウント化=以後の製品追加が同型で済む"
-      q9_firefighting_root_cause: "根本対応。個人向けクーポン DB や独自認証を作らず、Supabase Auth(既存)と tier パスワード(既存)を 1 画面で橋渡しする"
-      q10_knowledge_boundary: "検証済み: SignInCard/login-copy/package.json の現物、rebalancer の OAuth 実装、本番 /login。スコープ外: backend EP(4422)、LP CTA(F3)、Supabase Redirect URL と Render env の投入(家老/殿)、product_logins 表(Supabase 側、別 cmd)"
-      q11_not_already_done: "git ls-tree -r --name-only origin/main frontend/app | grep -c '^frontend/app/free' → 0 件(2026-08-30 20:24) / git show origin/main:frontend/package.json | grep -c supabase → 0 件 / git show origin/main:frontend/app/login/sign-in-card.tsx | grep -c coupon → 0 件 / semantic_search.sh 'Google sign in coupon prefill' → 該当 cmd なし"
-      q_ambiguity: "EP 未 deploy 中の検証はモック fetch で行う(契約キー固定)。callback は静的ページ+client 側で session を拾う方式に固定(PKCE の code は supabase-js が処理)。曖昧さは env 2 つに閉じる"
-      q12_lord_30min_cost: "no — 殿裁定 20:21 と要件 20:17-20:18 で確定"
-      diagnosis: "BLOCK理由: 該当なし(新規起票) / 対策: 該当なし"
-    environment_change: "type=lesson; file=docs/research/dm-free-tier-google-auth-asis-tobe_v3_20260830.md; pattern=Copy"
-    delegated_at: "\"2026-08-30T20:37:28\""
-    origin: "[[殿要件_クーポンUX_20260830_2017]] -> [[dm-free-tier-google-auth_v3]] -> [[cmd_4422_free_tier_backend]] -> [[cmd_4423_free_tier_frontend]]"
   cmd_4422:
     title: "Free tier F1 — backend に Free tier 行の migration と Supabase JWT 検証付き GET /api/public/free-coupon を追加する(既存 tier 認証不変)"
     status: delegated
