@@ -1,0 +1,161 @@
+<title>/login Showcase v2</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Zen+Kaku+Gothic+New:wght@400;500;700&family=Fraunces:opsz,wght@9..144,600&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+:root{
+  --paper:#f6f7f4; --ink:#1c2430; --ink-2:#4a5566; --line:#d9dee3; --card:#ffffff;
+  --accent:#0369a1; --accent-ink:#ffffff; --free:#1a7f4b; --prem:#6d3fb8; --secret:#7a8391;
+  --warn-bg:#fff4e0; --warn-ink:#7a4b00; --hl:#e8f1f8;
+}
+@media (prefers-color-scheme: dark){ :root:not([data-theme="light"]){
+  --paper:#12171d; --ink:#e6eaee; --ink-2:#a6b0bc; --line:#2b3440; --card:#1a2028;
+  --accent:#5eb3e6; --accent-ink:#0b1219; --free:#5ccf8f; --prem:#b592ee; --secret:#8b95a3;
+  --warn-bg:#3a2a0c; --warn-ink:#ffd58a; --hl:#1f2b36;
+}}
+:root[data-theme="dark"]{
+  --paper:#12171d; --ink:#e6eaee; --ink-2:#a6b0bc; --line:#2b3440; --card:#1a2028;
+  --accent:#5eb3e6; --accent-ink:#0b1219; --free:#5ccf8f; --prem:#b592ee; --secret:#8b95a3;
+  --warn-bg:#3a2a0c; --warn-ink:#ffd58a; --hl:#1f2b36;
+}
+body{background:var(--paper);color:var(--ink);font-family:"Zen Kaku Gothic New",system-ui,-apple-system,"Hiragino Sans","Noto Sans JP",sans-serif;line-height:1.7;margin:0}
+.wrap{max-width:980px;margin:0 auto;padding:40px 20px 80px}
+h1{font-family:Fraunces,"Zen Kaku Gothic New",serif;font-size:2.1rem;line-height:1.15;margin:0 0 6px;text-wrap:balance;font-weight:600}
+.sub{color:var(--ink-2);margin:0 0 28px;font-size:.95rem}
+h2{font-size:1.25rem;margin:44px 0 12px;padding-top:14px;border-top:2px solid var(--ink);text-wrap:balance}
+h3{font-size:1rem;margin:22px 0 8px;color:var(--ink)}
+p{max-width:68ch;margin:0 0 12px}
+.eyebrow{font-family:"IBM Plex Mono",monospace;font-size:.72rem;letter-spacing:.08em;text-transform:uppercase;color:var(--ink-2)}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+@media (max-width:760px){.grid2{grid-template-columns:1fr}}
+.card{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:16px 18px}
+.card h3{margin-top:0}
+.tbl{overflow-x:auto;border:1px solid var(--line);border-radius:10px;background:var(--card)}
+table{border-collapse:collapse;width:100%;font-size:.9rem;font-variant-numeric:tabular-nums}
+th,td{padding:8px 12px;border-bottom:1px solid var(--line);text-align:left;vertical-align:top}
+th{font-size:.75rem;letter-spacing:.06em;text-transform:uppercase;color:var(--ink-2);font-weight:500}
+tr:last-child td{border-bottom:none}
+td.num{font-family:"IBM Plex Mono",monospace;text-align:right;white-space:nowrap}
+.pill{display:inline-block;font-size:.72rem;padding:1px 8px;border-radius:999px;border:1px solid currentColor;line-height:1.5;margin-top:3px}
+.free{color:var(--free)}.basic{color:var(--accent)}.prem{color:var(--prem)}.secret{color:var(--secret)}
+.blur{display:inline-block;width:64px;height:10px;border-radius:5px;background:linear-gradient(90deg,var(--line),transparent);vertical-align:middle}
+.warn{background:var(--warn-bg);color:var(--warn-ink);border-radius:8px;padding:10px 14px;margin:14px 0;font-size:.92rem}
+.kv{display:grid;grid-template-columns:max-content 1fr;gap:4px 16px;font-size:.92rem}
+.kv dt{color:var(--ink-2)}.kv dd{margin:0}
+code{font-family:"IBM Plex Mono",monospace;font-size:.85em;background:var(--hl);padding:1px 5px;border-radius:4px}
+.delta{font-family:"IBM Plex Mono",monospace;color:var(--accent);font-weight:500}
+ol.steps{padding-left:1.2em}ol.steps li{margin-bottom:8px}
+ul{padding-left:1.2em}li{margin-bottom:4px}
+.foot{margin-top:40px;color:var(--ink-2);font-size:.82rem;border-top:1px solid var(--line);padding-top:12px}
+a{color:var(--accent)}
+</style>
+<div class="wrap">
+  <div class="eyebrow">DM-Signal · design doc · AsIs v2.0 / ToBe v1.0 · 2026-08-30 10:20 JST</div>
+  <h1>/login Showcase v2</h1>
+  <p class="sub">AsIs = 本番リアルタイム実測(Render deploy・origin/main・本番DB readonly)。ToBe = 08-18 の裁定(ショーウィンドウ・ラベル方式)を今の数値で再構成。正本 <code>docs/research/dm-login-showcase-asis-tobe_v2_20260830.md</code></p>
+
+  <div class="warn"><strong>今週の実需:</strong> 5 tier とも <code>password_expires_at = 2026-08-31</code>(明日失効)。9 月配布までブラックアウト → /login のブラックアウト案内(EN+JA)の優先度が最上位。</div>
+
+  <h2>§1 AsIs — 前版 ToBe は 0/4 手が実装済み</h2>
+  <div class="grid2">
+    <div class="card"><h3>デプロイ・コード</h3>
+      <dl class="kv">
+        <dt>FE(Render)</dt><dd>live <code>812f0b7a1</code> 2026-08-18 06:03 — 以降 deploy なし</dd>
+        <dt>BE(Render)</dt><dd>live <code>5a5556af7</code> 2026-08-23(Revert cmd_4337)</dd>
+        <dt>FE 差分</dt><dd><code>git diff 812f0b7a1 origin/main -- frontend</code> = 0</dd>
+        <dt>/login</dt><dd><code>frontend/app/login/page.tsx</code> 82 行、JA のみ、i18n 依存 0</dd>
+        <dt>公開 EP</dt><dd><code>/api/public</code>・showcase = 0 件(未実装)</dd>
+      </dl></div>
+    <div class="card"><h3>認証の現物 <code>auth.py:21</code></h3>
+      <ul>
+        <li>全 tier の <code>password_env_key</code> を順に compare_digest。クーポン専用分岐は<strong>ない</strong>(クーポン=いずれかの tier パスワード)</li>
+        <li>期限切れ tier は <strong>401 "Password expired"</strong>(画面は今どちらも同じ JA 文)</li>
+        <li>成功→7 層リセット→<code>/</code>。未認証で fetch は走らない=見せられる動的データはゼロ</li>
+      </ul></div>
+  </div>
+
+  <h3>本番 DB 実測(10:14-10:18 readonly_query)— 1 件 = is_active PF でその tier に可視な 1 本</h3>
+  <div class="tbl"><table>
+    <tr><th>tier</th><th>note プラン</th><th>可視 PF</th><th>08-18 比</th></tr>
+    <tr><td>Basic</td><td>ベーシック ¥1,000(初月無料)</td><td class="num">5</td><td>±0</td></tr>
+    <tr><td>NewStandard</td><td>スタンダード ¥8,000</td><td class="num">17</td><td>±0</td></tr>
+    <tr><td>Standard / AddOn(古参)</td><td>¥4,000 / ¥2,000 非公開</td><td class="num">22 / 22</td><td>±0</td></tr>
+    <tr><td>premium</td><td>ドクタープレミアム 招待制</td><td class="num">28</td><td class="delta">+1</td></tr>
+    <tr><td>Secret(どの tier にも出ない)</td><td>—</td><td class="num">73</td><td class="delta">+3</td></tr>
+    <tr><td>is_active 合計</td><td></td><td class="num">102</td><td class="delta">+4</td></tr>
+  </table></div>
+  <ul style="margin-top:10px">
+    <li>新規 active: Sharpe4 / CAGR4 / greedy2(08-19)+ New Fund of Funds ×3 — 作業名の PF が Secret 件数に混入(未決 1)</li>
+    <li>Basic-DualMomentum は古参 2 tier(Standard/AddOn)で <code>hide_portfolio=true</code> — 公開 PF なのにログイン後の古参会員に非表示(未決 2)</li>
+    <li><code>total_return</code> = <code>(1+monthly).prod()-1</code>(小数)。series end 2026-07-31、calculated 08-29</li>
+  </ul>
+
+  <h3>代表 PF の総リターン(since inception)</h3>
+  <div class="tbl"><table>
+    <tr><th>Portfolio</th><th>inception</th><th>total_return</th><th>表示例(%)</th></tr>
+    <tr><td>Basic-DualMomentum</td><td>2003-09</td><td class="num">31.39</td><td class="num">+3,139%</td></tr>
+    <tr><td>DM-safe</td><td>2006-01</td><td class="num">14.11</td><td class="num">+1,411%</td></tr>
+    <tr><td>GSシン分身-常勝</td><td>2012-04</td><td class="num">109.82</td><td class="num">+10,982%</td></tr>
+    <tr><td>Ave-X</td><td>2012-04</td><td class="num">113.21</td><td class="num">+11,321%</td></tr>
+    <tr><td>GSシン四つ目-常勝</td><td>2012-10</td><td class="num">171.81</td><td class="num">+17,181%</td></tr>
+    <tr><td>シン白虎-激攻</td><td>2010-10</td><td class="num">756.19</td><td class="num">+75,619%</td></tr>
+  </table></div>
+  <p style="margin-top:8px;color:var(--ink-2)">4〜5 桁 % は餌として強いが信憑性を損ないうる → 未決 3(将軍推奨: CAGR 併記。<code>cagr</code> は years=0 行に無いので EP で算出)。</p>
+
+  <h2>§2 ToBe v1.0 — 目的は不変、数値・契約・順序を今の本番で確定</h2>
+  <p>未認証訪問者が <strong>何のサービスか / どこからログインするか / なぜ会員になるか</strong> をスクロールなしで理解し、ブラックアウト週にも「待てば入れる・note で取れる」が一目で分かる。</p>
+  <div class="grid2">
+    <div class="card"><h3>情報構造(上から)</h3>
+      <ol class="steps">
+        <li>ブランド行 "DM-Signal · Dual Momentum signals · rebalanced once a month"</li>
+        <li>H1 "What to hold this month — computed, not guessed." / JA 副題</li>
+        <li>リード 1 段落(EN)</li>
+        <li><strong>Current signals 表</strong>(ラベル方式)</li>
+        <li>プラン 3 枚: Basic / Standard / Coupon</li>
+        <li>導線 4 本: What is DM? / Join on note / Weekly report / @TokyoJibika</li>
+        <li>サインインカード(rich / simple)</li>
+        <li>フッタ: Not investment advice · monthly close, US ETFs</li>
+      </ol></div>
+    <div class="card"><h3>公開データ契約 <code>GET /api/public/showcase</code></h3>
+      <ul>
+        <li>認証不要・tier 非依存・cache 1h・<strong>新規テーブル不要</strong></li>
+        <li><code>as_of</code> {series_end, next_close} / <code>blackout</code> {active, until_hint}(password・env key は決して返さない)</li>
+        <li>free 行(Basic-DM)のみ holding/momentum を返す。basic 4 行は<strong>キー自体を返さない</strong>(フロントがぼかしを描く)</li>
+        <li>群 count は EP が tier 設定から導出: Basic +4 / Standard +13 / Premium +10 / Secret 73−作業PF</li>
+        <li>401 "Password expired" → EN+JA の失効文+ブラックアウト帯</li>
+      </ul></div>
+  </div>
+
+  <h3>Current signals 表(本番件数で確定)</h3>
+  <div class="tbl"><table>
+    <tr><th>Portfolio</th><th>Holding / Momentum</th><th>Total return</th></tr>
+    <tr><td>Basic-DualMomentum<br><span class="pill free">Free trial · full access</span></td><td>表示</td><td class="num">+3,139%</td></tr>
+    <tr><td>DM-safe<br><span class="pill basic">Basic plan</span> <span class="basic">+4 PF with Basic</span></td><td><span class="blur"></span></td><td class="num">+1,411%</td></tr>
+    <tr><td>シン白虎-激攻 / GSシン分身-常勝 / Ave-X<br><span class="pill basic">Basic plan</span></td><td><span class="blur"></span></td><td class="num">+75,619% / +10,982% / +11,321%</td></tr>
+    <tr><td>シン四神 ×11 · GSシン分身 ×2<br><span class="pill basic">Standard plan</span> <span class="basic">+13 PF with Standard</span></td><td><span class="blur"></span></td><td class="num">up to X%</td></tr>
+    <tr><td>GSシン四つ目-常勝<br><span class="pill prem">Premium plan · by invitation</span> <span class="prem">+10 PF with Premium</span></td><td><span class="blur"></span></td><td class="num">+17,181%</td></tr>
+    <tr><td>Ave-X · 裏Ave-X · DM-safe-2 · 四つ目 ×2 · 劇薬 ×2 · 奥義 ×3<br><span class="pill prem">Premium plan · by invitation</span></td><td><span class="blur"></span></td><td class="num">up to X%</td></tr>
+    <tr><td>73 portfolios<br><span class="pill secret">Secret</span></td><td class="secret">Not viewable</td><td class="secret">Not disclosed</td></tr>
+  </table></div>
+  <p style="margin-top:8px">レスポンシブ: &gt;860px = 2 カラム+sticky リッチカード / ≤860px = 1 カラム+末尾シンプルカード+下部 sticky バー→ボトムシート。トークンは <code>globals.css</code> 既存のみ。文言は EN 主 JA 従、「毎営業日 / today」禁止。</p>
+
+  <h2>§3 実装単位(可逆・1 層ずつ)</h2>
+  <div class="tbl"><table>
+    <tr><th>手</th><th>内容</th><th>二値 AC</th></tr>
+    <tr><td>P0</td><td>未決 1・3 の殿裁定</td><td>§6 に事実→制約→判断→効果で記載済み</td></tr>
+    <tr><td>P1</td><td>BE <code>GET /api/public/showcase</code>(read-only)</td><td>未認証 curl: free 行に holding あり・basic 行にキーなし・count が DB 集計と一致・password/env 文字列 0</td></tr>
+    <tr><td>P2</td><td>FE /login を新構造へ(SignInCard 2 variant・blackout 帯)</td><td>860px 切替・sticky/シート動作・既存ログイン経路が従来どおり</td></tr>
+    <tr><td>P3</td><td>文言・URL 設定値化、EN/JA 規則</td><td>「毎営業日/today」grep 0・URL 直書き 0</td></tr>
+    <tr><td>P4</td><td>本番 CDP 2 枚+殿実機</td><td>殿確認</td></tr>
+  </table></div>
+  <p style="margin-top:8px">FE は 08-18 以来 deploy なし = 本版が次の FE deploy。P1 は本番書込みなし、P2 以降 revert 可。</p>
+
+  <h2>§6 未決(殿裁定待ち)</h2>
+  <ol class="steps">
+    <li><strong>Secret 件数から作業 PF を除くか</strong> — 案: <code>is_active ∧ portfolio_metrics(years=0) あり</code> を条件に数える</li>
+    <li><strong>Basic-DM の古参 tier 非表示</strong> — 案: admin で Standard/AddOn を false に(可逆)</li>
+    <li><strong>総リターン表記</strong> — A: % のまま / B: ×N 倍率 / C: CAGR 併記(将軍推奨 C)</li>
+    <li>群行 "up to X%" を Standard/Premium で出すか</li>
+    <li>Coupon「note 不要」の正確性(auth.py にクーポン分岐なし)</li>
+  </ol>
+
+  <div class="foot">一次証拠: Render deploys API 10:10 / <code>git diff 812f0b7a1 origin/main</code> / readonly_query 7 本 10:14-10:18 / <code>metrics_impl.py:1386</code> / <code>auth.py:21-70</code>。前版: dm-login-showcase-asis-tobe_20260818.md(gist 0e15f28f)・モック artifact fa111b2b。</div>
+</div>

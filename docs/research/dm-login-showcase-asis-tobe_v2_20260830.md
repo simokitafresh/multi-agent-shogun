@@ -1,3 +1,4 @@
+<!-- gist-master: 3236e0dfc698318bfc9d339eaac0cfe5 dm-login-showcase-asis-tobe_v2_20260830.md -->
 # DM-Signal /login ショーウィンドウ — AsIs / ToBe 設計書 v2（2026-08-30）
 
 - 版: **AsIs v2.0（本番リアルタイム 2026-08-30 10:10-10:20 JST 実測）/ ToBe v1.0**
