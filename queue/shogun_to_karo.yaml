@@ -1,57 +1,4 @@
 commands:
-  cmd_4413:
-    title: "/login ショーウィンドウ P1 — 未認証の公開集計 EP GET /api/public/showcase と区間計測 POST /api/public/showcase/event を read-only で実装する"
-    status: delegated
-    project: dm-signal
-    purpose: "殿指示 2026-08-30 10:07『asis を今の本番として tobe を考えよう』→ 設計書 v2(docs/research/dm-login-showcase-asis-tobe_v2_20260830.md、gist 3236e0df)§2.3/§3.1 v3 の公開データ契約を backend に実装する。殿裁定 12:18-12:20: 表は Basic-DualMomentum 単体+Basic/Standard/Premium の平均・ベスト total return・×N・CAGR レンジ+Secret 73、集計集合はシグナル公開 PF(hide_portfolio=false ∧ hide_signal=false)のみ。摩擦優先(§2.5)のため区間計測 event EP を同梱する"
-    scope_mode: FULL
-    target_path: /mnt/c/Python_app/DM-signal/backend
-    acceptance_criteria:
-      AC1:
-        description: "GET /api/public/showcase を認証なしで実装し(hero=Basic-DualMomentum の holding/momentum/components/total_return/multiple/cagr/inception/benchmark_total_return、plans[]=basic/standard/premium の n/avg_total_return/best_total_return/best_name/avg_multiple/best_multiple/cagr_min/cagr_max、secret.count、as_of、blackout)、未認証 curl の応答を tier_visibility_settings+portfolio_metrics(years=0) からの独立再計算(別関数・同じ集合定義 hide_portfolio=false ∧ hide_signal=false)と全項目一致で確認する"
-        binary_check: "未認証 curl 200 ∧ plans[] の n が basic=3/standard=17/premium=25 ∧ secret.count=73 ∧ 独立再計算との不一致 0 項目 ∧ 応答 JSON に password/env/holding(hero 以外) の文字列 0 件 か?"
-      AC2:
-        description: "POST /api/public/showcase/event(認証なし、body={step, ua_class}、step ∈ login_view/input_focus/submit/ok/expired/wrong/note_click、追記専用テーブル 1 表)を実装し、7 step を各 1 回 curl した後に readonly_query で 7 行が step 別に 1 行ずつ存在することを確認する"
-        binary_check: "7 step の curl が全て 2xx ∧ テーブル件数 7 ∧ step 別 DISTINCT 7 ∧ 未知 step が 4xx か?"
-      AC3:
-        description: "両 EP の contract test(test_necessity: 集合定義=hide_portfolio ∧ hide_signal が EP と再計算で同一関数であること、hero 以外に holding/momentum キーが無いこと、blackout が viewer_tiers.password_expires_at の max から導出されパスワード文字列を含まないこと)を追加し、選択実行(pytest で新規 contract test ファイルと backend/tests の visibility_helpers・auth 関連テストのみ)で FAIL 0 SKIP 0 を確認する"
-        binary_check: "選択実行 pytest(新規 contract test+visibility/auth 関連)が FAIL 0 ∧ SKIP 0 ∧ 新規 test に非空 test_necessity ∧ 削除 test 0 か?"
-    command: |
-      1. 設計書 v2 §2.3/§3.1 v3/§2.5 を読み、backend/app/api/public_showcase.py(仮)に GET /api/public/showcase を実装(集合定義は 1 関数 visible_signal_portfolios(tier) に集約、cache 1h、tier 非依存、hero 以外 holding/momentum 非送信、blackout は expires_at の max のみ)。未認証 curl と独立再計算の全項目一致を確認する
-      2. POST /api/public/showcase/event を追記専用テーブル(migration 1 本)で実装し、7 step の curl→readonly_query で step 別 1 行ずつを確認する
-      3. contract test 3 本(test_necessity 付き)を追加し backend 全 pytest を実行、FAIL 0 SKIP 0 を報告 YAML に生貼付する
-    assumptions:
-      claim: "本番 DB 実測(2026-08-30 10:43/12:20 readonly_query): signals 可視 PF 数 Basic 3/NewStandard 17/premium 25、Secret 73(active 102 − premium performance 28 − Ave-X 1)、portfolio_metrics(years=0).total_return=(1+monthly).prod()-1(metrics_impl.py:1386)、years=0 に cagr なし(EP で (1+tr)^(12/period_months)-1)。5 tier の password_expires_at=2026-08-31。showcase/api/public は backend に 0 件(2026-08-30 10:12 grep)"
-      source: "docs/research/dm-login-showcase-asis-tobe_v2_20260830.md §1.3/§2.3/§3.1、backend/app/services/metrics_impl.py:1386、backend/app/api/auth.py:21-70、backend/app/services/visibility_helpers.py"
-      trust: verified
-    depends_on: none
-    measurement_source: "production 本番 DB readonly_query 実測 evidence(db_capability_launcher.py、2026-08-30 JST 10時14分〜12時20分の 10 本、tier 可視性 3 段・portfolio_metrics years=0・viewer_tiers.password_expires_at)+ Render deploys API log(2026-08-30 10時10分 JST、FE live sha 812f0b7a1)。ローカル計測は含まない"
-    serial_dependency_evidence: "AC1(集合定義関数+GET EP)→AC2(event EP は同 router に同居)→AC3(contract test は AC1/AC2 の関数と EP を参照)の順に成果物が前段へ依存する。AC1 の visible_signal_portfolios() を AC3 の独立再計算 test が同一関数として import するため、分割すると集合定義が 2 か所に生まれ 10:41 の齟齬が再発する"
-    environment_change: "type=lesson; file=projects/infra/lessons_shogun.yaml; pattern=cmd_4154初回preflightで数値絶対値WARN"
-    timeout_minutes: 60
-    estimated_minutes: 45
-    execution_env:
-      runtime_constraints: "DM-signal backend venv で pytest。本番 DB は readonly_query のみ(db_capability_launcher)。event テーブルの migration は追記専用・既存表無変更"
-      long_runtime_reason: "backend 全 pytest(数百本)の全量実行と 2 EP+migration+contract test 3 本の実装が不可分。分割すると AC1 の独立再計算と AC3 の contract test が別 cmd で二重に集合定義を持つ"
-      measured_runtime_sec: 1800
-    split_decision: "AC3 本(EP1/EP2/test)=1 道具(公開 showcase 契約)。P2a/P2b(frontend)と P3(文言)は別 cmd(設計書 §5)"
-    quality_gate:
-      q1_firefighting: "消火ではない。08-18 の設計(ToBe v0.3)が 0/4 手のまま 12 日止まっていた実装を、殿裁定 5 本(金額なし/Secret 73/3 段可視性/集計方式 v3/シグナル公開集合)で確定した契約どおり初めて実装する品質向上"
-      q2_learning: "忍者は集合定義を 1 関数に集約し EP と再計算を同一関数で結ぶ設計(齟齬の構造防止)を実装で学ぶ。丸投げではなく設計書 §2.3/§3.1 に契約と AC が明文化済み"
-      q3_next_quality: "P2a/P2b(frontend)が本 EP の契約に乗るため、次 cmd は表示のみに集中でき、数値の齟齬(10:41 殿指摘)が再発しない"
-      q4_depth: "medium — 2 EP+migration+contract test。深堀りは設計書側で完了済み"
-      q5_verified_source: "production_verified — 2026-08-30 10:14-12:20 readonly_query 10 本で tier 可視性 3 段・total_return 単位・period_months・password_expires_at を実測。code_reading — metrics_impl.py:1386/auth.py:21-70 を 10:12 に読了"
-      q6_not_hiding: "hero 以外の holding/momentum を返さない設計は非送信であり隠蔽ではない(設計書 §2.3 に明記)。CAGR は years=0 に無いことを明記し EP 算出とした"
-      q7_definition_verified: "『シグナル公開 PF』= hide_portfolio=false ∧ hide_signal=false(殿裁定 12:19、確認日: 2026-08-30 10:43 本番 DB)。『Secret』= どの tier にも hide_portfolio=false が無い active PF(殿裁定 10:41、73 本)。『×N』= 1+total_return。『CAGR』= (1+total_return)^(12/period_months)-1"
-      q8_why_what: "WHY: /login が JA 単言語の門のままで未認証に見せる動的データがゼロ(FE deploy 812f0b7a1 2026-08-18 以来) / WHAT: GET /api/public/showcase(plans n=3/17/25、secret 73)と POST …/event(7 step)を 2026-08-30 実測値で実装し pytest FAIL 0 SKIP 0 / WHEN: 今セッション / WHERE: /mnt/c/Python_app/DM-signal/backend / WHO: 家老配備の忍者 1 名 / HOW: 設計書 v2 §2.3 契約+独立再計算 AC / 複利: 集合定義を 1 関数に集約する選択を 10 回繰り返せば、公開系 EP を追加するたびに再計算 test が同じ関数に乗り齟齬検出コストがゼロに近づく=正の複利。フロント固定値で 10 回繰り返せば tier 変更ごとに手直しが増える負の複利"
-      q9_firefighting_root_cause: "根本対応。数値齟齬の根因=集合定義がフロント固定値や人の集計に散らばること。EP と再計算を同一関数に集約し、フロント固定値ゼロにする"
-      q10_knowledge_boundary: "検証済み: tier 可視性 3 段の本番値、metrics 単位、expires_at。スコープ外: frontend 表示(P2a/P2b)、文言/URL 設定値化(P3)、Basic-DM の古参 tier hide 是正(未決 2)、クーポン経路(未決 5)"
-      q11_not_already_done: "rg -c 'api/public' /mnt/c/Python_app/DM-signal/backend/app → 0件 / rg -c 'showcase' /mnt/c/Python_app/DM-signal/backend/app → 0件(2026-08-30 10:12) / bash scripts/semantic_search.sh 'login showcase' → 設計書 v2 行のみ(実装 cmd なし)"
-      q_ambiguity: "『平均』は単純平均(殿の言葉どおり、中央値ではない)。『CAGR レンジ』は集合内の min〜max。曖昧さは設計書 §3.1 v3 で解消済み"
-      q12_lord_30min_cost: "no — 殿裁定 5 本は反映済み。忍者は設計書のみで実装可能"
-      diagnosis: "BLOCK理由: 初回 preflight で PD-104(q5 の『本番 DB 実測』に measurement_source なし)・30 分単体 task に serial_dependency_evidence なし・q8 複利なし・WARN 2 件(AC 絶対値/全件テスト)に environment_change なし=雛形にない 3 フィールドを記憶で省いた / 対策: measurement_source を本番 readonly_query の日時付きで、serial_dependency_evidence を AC1→AC3 の関数依存で記入、AC3 を選択実行へ、environment_change を LS(cmd_4154 絶対値 WARN)へ接続"
-    delegated_at: "\"2026-08-30T12:25:51\""
-    origin: "[[殿観測_ログインページさみしい_20260818_1550]] -> [[dm-login-showcase-asis-tobe_v2_20260830]] -> [[cmd_4413_public_showcase_ep]]"
   cmd_4414:
     title: "/login ショーウィンドウ P1b — 公開集計 EP に Sharpe(プラン平均/ベスト)・SPY/TQQQ 比較行・Secret 集計値を追補する"
     status: void
@@ -160,7 +107,7 @@ commands:
     origin: "[[殿裁定_MDD追加_20260830_1246]] -> [[dm-login-showcase-asis-tobe_v2_20260830]] -> [[cmd_4415_showcase_sharpe_mdd_benchmarks]]"
   cmd_4416:
     title: "/login ショーウィンドウ P2 — frontend /login を ISR・ライトモード固定・摩擦除去・表 v3・EN/JA 文言 1 ファイルで組み直す(ログイン機構は不変)"
-    status: draft
+    status: delegated
     project: dm-signal
     purpose: "殿裁定 2026-08-30 13:10『ログイン機構が壊れなければ実装してから直す。デザインは全体で統一。ログインページはライトモード基準』。設計書 v2(gist 3236e0df)§2.2 情報構造・§2.4 ブラックアウト表現・§2.5 摩擦除去(F1-F5)・§2.6 ISR・§2.7 影響境界・§3.1 表 v3(8 列+SPY/TQQQ)・§3.2 レスポンシブ・§3.3 ライト固定・§4 文言規則を frontend に実装する。データは cmd_4413/4415 の GET /api/public/showcase。忍者 AC は隔離 clone で完結(§6.5 H10)、deploy 後確認は家老 post_deploy_check"
     scope_mode: FULL
@@ -209,4 +156,5 @@ commands:
       q_ambiguity: "『ライトモード基準』= /login はライト固定でログイン後は不変(殿 13:10、設計書 §3.3)。『全体で統一』= 既存 globals.css トークンと ui コンポーネントのみ使用。曖昧さは解消済み"
       q12_lord_30min_cost: "no — 殿裁定 4 本(13:10)は反映済み。本番確認は deploy 後に殿が行う(殿の意図どおり)"
       diagnosis: "BLOCK理由: 該当なし(4413/4414/4415 の preflight で判明したフィールドを雛形時点で記入) / 対策: 該当なし"
+    delegated_at: "\"2026-08-30T13:17:22\""
     origin: "[[殿裁定_実装後修正_ライト固定_20260830_1310]] -> [[dm-login-showcase-asis-tobe_v2_20260830]] -> [[cmd_4416_login_frontend_isr]]"

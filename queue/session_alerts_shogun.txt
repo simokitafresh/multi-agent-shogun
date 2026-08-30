@@ -1,5 +1,5 @@
 # session_alerts — generated: 2026-08-30T14:00:14+0900
-[TODO] 追体験自動化ターゲット: WARN (自動化ターゲット未記入)
-[TODO] 走行中cmd実測突合: busy 1名。capture-pane未確認で状況報告するな
-[TODO] monitor lifecycle 失敗行 8行/60分 — 壁の所有者を一次で確認
-[TODO] deepdive追体験未完了: 全Phase実行まで作業禁止(stop hookがBLOCKする)。bash scripts/deepdive_replay.sh shogun <md> <Phase> "<自問>"
+[DONE] 追体験自動化ターゲット: WARN (自動化ターゲット未記入)
+[DONE] 走行中cmd実測突合: busy 1名。capture-pane未確認で状況報告するな
+[DONE] monitor lifecycle 失敗行 8行/60分 — 壁の所有者を一次で確認
+[DONE] deepdive追体験未完了: 全Phase実行まで作業禁止(stop hookがBLOCKする)。bash scripts/deepdive_replay.sh shogun <md> <Phase> "<自問>"
