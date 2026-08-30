@@ -8579,3 +8579,10 @@ insights:
   source: "semantic_index_update"
   fix_known: false
   status: pending
+- id: INS-20260830-130625744-5433
+  ts: "2026-08-30T13:06:25+09:00"
+  insight: "[[だいぶいいな]] semantic_stress_test candidate_aliases: NO_MATCH source=lord query=だいぶいいな。ブラックアウトはどう表現する。現在ならnoteに誘導＋パスワード発表をお楽しみにという期待感をあおるのがいいか？パスワード発表の日時は俺が任意で決めてるので具体的にしたくない"
+  priority: "low"
+  source: "semantic_stress_test"
+  fix_known: false
+  status: pending
