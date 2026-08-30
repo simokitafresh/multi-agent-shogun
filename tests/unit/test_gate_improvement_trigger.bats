@@ -6,6 +6,7 @@ setup() {
     export TEMPLATE_ROOT="$FIXTURE_ROOT/template"
     mkdir -p "$TEMPLATE_ROOT/scripts/gates" "$TEMPLATE_ROOT/bin" "$TEMPLATE_ROOT/tmp"
     printf '%s\n' '#!/usr/bin/env bash' \
+        'if [ "$3" = gate_alert ] && ! printf "%s" "$2" | grep -Eq "^task_id=commander_directive subject_task_id=gate_alert_[A-Za-z0-9._-]+_GA-[0-9]+ parent_cmd=cmd_gate_improvement_[A-Za-z0-9._-]+"; then exit 2; fi' \
         'printf "%s\n" "$*" >> "$GATE_IMPROVEMENT_ROOT/inbox_calls.log"' \
         > "$TEMPLATE_ROOT/scripts/inbox_write.sh"
     chmod +x "$TEMPLATE_ROOT/scripts/inbox_write.sh"
@@ -61,7 +62,8 @@ create_source_repo() {
 }
 
 run_fixture() {
-    local name="$1" state="$2" rc="$3" root="$FIXTURE_ROOT/$name"
+    local name="$1" state="$2" rc="$3" root
+    root="$FIXTURE_ROOT/$name"
     local source_repo="$root/source-repo" source_commit body
     mkdir -p "$root/scripts/gates" "$root/bin" "$root/tmp"
     cp "$TEMPLATE_ROOT/scripts/inbox_write.sh" "$root/scripts/inbox_write.sh"
@@ -89,6 +91,39 @@ run_fixture() {
         GATE_IMPROVEMENT_ROOT="$root" GATE_IMPROVEMENT_SOURCE_REPO="$source_repo" \
         GATE_IMPROVEMENT_NOW=1770000000 GATE_IMPROVEMENT_DEDUP_WINDOW_SECONDS=0 \
         bash "$PROJECT_ROOT/scripts/gate_improvement_trigger.sh"
+}
+
+run_hook_failure_fixture() {
+    local root="$FIXTURE_ROOT/hook-failure"
+    mkdir -p "$root/scripts/gates" "$root/bin" "$root/tmp" "$root/logs"
+    cp "$TEMPLATE_ROOT/scripts/inbox_write.sh" "$root/scripts/inbox_write.sh"
+    cp "$TEMPLATE_ROOT/scripts/ntfy.sh" "$root/scripts/ntfy.sh"
+    cp "$TEMPLATE_ROOT/bin/gh" "$root/bin/gh"
+    chmod +x "$root/scripts/inbox_write.sh" "$root/scripts/ntfy.sh" "$root/bin/gh"
+    for gate in gate_lesson_health.sh gate_cmd_state.sh gate_context_freshness.sh gate_p_average_freshness.sh; do
+        printf '%s\n' '#!/usr/bin/env bash' 'printf "%s\n" "--- 総合判定: OK ---"' \
+            > "$root/scripts/gates/$gate"
+        chmod +x "$root/scripts/gates/$gate"
+    done
+    printf '%s\n' '- timestamp: 2026-08-30T09:00:00+0900' \
+        > "$root/logs/hook_failures.yaml"
+    run env PATH="$root/bin:$PATH" TMPDIR="$root/tmp" \
+        GATE_IMPROVEMENT_ROOT="$root" GATE_IMPROVEMENT_NOW=1770000000 \
+        GATE_IMPROVEMENT_DEDUP_WINDOW_SECONDS=0 \
+        bash "$PROJECT_ROOT/scripts/gate_improvement_trigger.sh"
+}
+
+assert_gate_identity() {
+    local calls_file="$1" gate_name="$2"
+    grep -Eq "task_id=commander_directive subject_task_id=gate_alert_${gate_name}_GA-[0-9]+ parent_cmd=cmd_gate_improvement_${gate_name}" \
+        "$calls_file"
+}
+
+assert_gate_record_identity() {
+    local alerts_file="$1" gate_name="$2"
+    grep -Eq "task_id: commander_directive" "$alerts_file"
+    grep -Eq "subject_task_id: gate_alert_${gate_name}_GA-[0-9]+" "$alerts_file"
+    grep -Eq "parent_cmd: cmd_gate_improvement_${gate_name}" "$alerts_file"
 }
 
 # test_necessity: four source-equivalent publication states are a permanent
@@ -119,4 +154,21 @@ run_fixture() {
     [[ "$output" == *"SENT: context_freshness"* ]]
 
     printf '%s\n' 'fixtures=4 expected_notifications=3 observed_notifications=3 false_positive=0 false_negative=0'
+}
+
+# test_necessity: gate alerts are actionable control-plane messages; both
+# production send paths must persist a unique commander envelope and remain
+# compatible with inbox_write's fail-closed identity gate.
+@test "gate alerts carry identity envelopes on normal and hook paths" {
+    run_fixture pending pending 2
+    [ "$status" -eq 0 ]
+    [[ "$output" != *"BLOCK:"* ]]
+    assert_gate_identity "$FIXTURE_ROOT/pending/inbox_calls.log" context_freshness
+    assert_gate_record_identity "$FIXTURE_ROOT/pending/logs/gate_alerts.yaml" context_freshness
+
+    run_hook_failure_fixture
+    [ "$status" -eq 0 ]
+    [[ "$output" != *"BLOCK:"* ]]
+    assert_gate_identity "$FIXTURE_ROOT/hook-failure/inbox_calls.log" hook_failure
+    assert_gate_record_identity "$FIXTURE_ROOT/hook-failure/logs/gate_alerts.yaml" hook_failure
 }
