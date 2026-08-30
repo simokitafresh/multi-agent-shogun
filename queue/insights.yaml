@@ -8790,3 +8790,10 @@ insights:
   source: "semantic_index_update"
   fix_known: false
   status: pending
+- id: INS-20260830-144637872-55f0
+  ts: "2026-08-30T14:46:37+09:00"
+  insight: "[[同じinboxが連続で届いていないか？]] semantic_stress_test candidate_aliases: NO_MATCH source=lord query=同じinboxが連続で届いていないか？"
+  priority: "low"
+  source: "semantic_stress_test"
+  fix_known: false
+  status: pending
