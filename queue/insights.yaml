@@ -9298,7 +9298,10 @@ insights:
   priority: "low"
   source: "semantic_index_update"
   fix_known: false
-  status: pending
+  status: resolved
+  resolved_reason: "semantic map generation verified the candidate is represented or intentionally ignored"
+  action_artifact: "semantic_map=/home/simokitafresh/multi-agent-shogun/context/semantic-map.md;semantic_index=/home/simokitafresh/multi-agent-shogun/docs/semantic-index/index.md"
+  resolved_at: "2026-08-30T17:25:43+09:00"
 - id: INS-20260830-172314084-ac27
   ts: "2026-08-30T17:23:14+09:00"
   insight: "semantic_index_update未登録[[リンク]]ターゲット: [[dm-signal.com_ドメインrunbook_20260830]] は既存aliasesに一致なし。類似概念TOP3: dmsignal_operations(DM-Signal運用; alias=T188_DM-signal_push退避; score=21.2) / dm_signal_pf_restore_guardrails(DM-Signal PF復元運用ガードレール; alias=T106_DM-signal_ext4移設; score=21.1) / shogun_android_app(将軍Androidアプリ; alias=com.shogun.android; score=13.2)。概念定義とaliases追加を検討せよ"
@@ -9335,25 +9338,37 @@ insights:
   priority: "low"
   source: "semantic_stress_test"
   fix_known: false
-  status: pending
+  status: resolved
+  resolved_reason: "semantic index candidate was absorbed into a registered concept"
+  action_artifact: "semantic_index=/home/simokitafresh/multi-agent-shogun/docs/semantic-index/index.md"
+  resolved_at: "2026-08-30T17:26:01+09:00"
 - id: INS-20260830-172414853-9d7a
   ts: "2026-08-30T17:24:14+09:00"
   insight: "[[LP 別サイト P2 — app の docs と faq を未認証で公開し]] semantic_stress_test candidate_aliases: NO_MATCH source=cmds query=LP 別サイト P2 — app の docs と faq を未認証で公開し、faq に EN 版を追加して LP の導線先にする"
   priority: "low"
   source: "semantic_stress_test"
   fix_known: false
-  status: pending
+  status: resolved
+  resolved_reason: "semantic index candidate was absorbed into a registered concept"
+  action_artifact: "semantic_index=/home/simokitafresh/multi-agent-shogun/docs/semantic-index/index.md"
+  resolved_at: "2026-08-30T17:26:02+09:00"
 - id: INS-20260830-172441516-c87c
   ts: "2026-08-30T17:24:41+09:00"
   insight: "[[殿裁定 16 42『別サイトでやろう』 17 14『 jp にこだわらない』 LP dm signal com 予定]] semantic_stress_test candidate_aliases: NO_MATCH source=cmds query=殿裁定 2026-08-30 16:42『別サイトでやろう』+17:14『.jp にこだわらない』(LP=dm-signal.com 予定、設計書 v2 §9)。LP は別オリジンから GET /api/public/showcase(ビルド時 fetch と帯の client fetch)と POST /api/public/showcase/event"
   priority: "low"
   source: "semantic_stress_test"
   fix_known: false
-  status: pending
+  status: resolved
+  resolved_reason: "semantic index candidate was absorbed into a registered concept"
+  action_artifact: "semantic_index=/home/simokitafresh/multi-agent-shogun/docs/semantic-index/index.md"
+  resolved_at: "2026-08-30T17:26:02+09:00"
 - id: INS-20260830-172453336-abaf
   ts: "2026-08-30T17:24:53+09:00"
   insight: "[[LP 別サイト P3 — backend の CORS 許可に LP ドメインを追加し showcase event の]] semantic_stress_test candidate_aliases: NO_MATCH source=cmds query=LP 別サイト P3 — backend の CORS 許可に LP ドメインを追加し showcase event の step enum に lp_view と lp_cta_click を加える"
   priority: "low"
   source: "semantic_stress_test"
   fix_known: false
-  status: pending
+  status: resolved
+  resolved_reason: "semantic index candidate was absorbed into a registered concept"
+  action_artifact: "semantic_index=/home/simokitafresh/multi-agent-shogun/docs/semantic-index/index.md"
+  resolved_at: "2026-08-30T17:26:02+09:00"
