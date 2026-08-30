@@ -9305,21 +9305,30 @@ insights:
   priority: "low"
   source: "semantic_index_update"
   fix_known: false
-  status: pending
+  status: resolved
+  resolved_reason: "semantic index candidate was absorbed into a registered concept"
+  action_artifact: "semantic_index=/home/simokitafresh/multi-agent-shogun/docs/semantic-index/index.md"
+  resolved_at: "2026-08-30T17:25:17+09:00"
 - id: INS-20260830-172327395-37ba
   ts: "2026-08-30T17:23:27+09:00"
   insight: "semantic_index_update未登録[[リンク]]ターゲット: [[殿裁定_ドメインjp非固執_20260830_1714]] は既存aliasesに一致なし。類似概念TOP3: semantic_dictionary_design(セマンティック辞書構想; alias=殿裁定_LP別サイト_20260830_1642; score=22.7) / known_unknowns_principle(無知の知; alias=殿裁定 17 04 『 admin fofが縦に長くスクロールが大変だ; score=10.4) / db_price_data_range(DB価格データ範囲; alias=殿裁定 GSはネイティブ暦 本番と同一のDTB3暦 に統一; score=10.0)。概念定義とaliases追加を検討せよ"
   priority: "low"
   source: "semantic_index_update"
   fix_known: false
-  status: pending
+  status: resolved
+  resolved_reason: "semantic index candidate was absorbed into a registered concept"
+  action_artifact: "semantic_index=/home/simokitafresh/multi-agent-shogun/docs/semantic-index/index.md"
+  resolved_at: "2026-08-30T17:25:17+09:00"
 - id: INS-20260830-172339637-d452
   ts: "2026-08-30T17:23:39+09:00"
   insight: "[[cloudflare dm signal jp domain runbook 20260830 mdに jpのハナシは不]] semantic_stress_test candidate_aliases: NO_MATCH source=lord query=cloudflare_dm-signal-jp_domain_runbook_20260830.mdに.jpのハナシは不要だ。捨てぷバイステップで進められるようにしてくれ"
   priority: "low"
   source: "semantic_stress_test"
   fix_known: false
-  status: pending
+  status: resolved
+  resolved_reason: "semantic index candidate was absorbed into a registered concept"
+  action_artifact: "semantic_index=/home/simokitafresh/multi-agent-shogun/docs/semantic-index/index.md"
+  resolved_at: "2026-08-30T17:25:17+09:00"
 - id: INS-20260830-172349429-e6c4
   ts: "2026-08-30T17:23:49+09:00"
   insight: "[[殿方向性 13 25『ログイン後の Docs FAQ を login からのリンクに』 殿裁定 16 42『別サイトでや]] semantic_stress_test candidate_aliases: NO_MATCH source=cmds query=殿方向性 2026-08-30 13:25『ログイン後の Docs/FAQ を /login からのリンクに』+殿裁定 16:42『別サイトでやろう』(設計書 v2 §9: docs/faq 公開は LP の導線先)。app の docs(67 行)と faq(459 行 JA)は API・認証非依存の静的ページで、RouteAccessBoundary の"
