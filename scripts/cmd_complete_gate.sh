@@ -12516,7 +12516,27 @@ check_task_ac_version_integrity() {
         return 1
     fi
     if [ "$saved_ac_version" != "$computed_ac_version" ]; then
-        echo "  [CRITICAL] ${ninja_name}: NG ← task.ac_version stale (saved=${saved_ac_version}, computed=${computed_ac_version})"
+        # 2026-08-31 00:05 将軍 D0(殿裁定 21:11 負の複利は最速根治): 忍者が「現在の AC 本文」で
+        # 作業した証拠(report.ac_version_read == 再計算値)があるなら、task の保存値が古いだけで
+        # 作業の契約は満たされている(cmd_4428: deploy 時 a415fe6f→再注入で本文更新、report は
+        # c3f79d2b=再計算値と一致。AC 差分 0 行なのに BLOCK して便が止まった)。
+        # 保存値を再計算値へ自己修復(yaml_field_set 経由・atomic)し、BLOCK しない。
+        local _heal_report _heal_read
+        _heal_report=$(resolve_report_file "$ninja_name" 2>/dev/null || true)
+        _heal_read=""
+        if [ -n "$_heal_report" ] && [ -f "$_heal_report" ]; then
+            _heal_read=$(FIELD_GET_NO_LOG=1 field_get "$_heal_report" "ac_version_read" "")
+        fi
+        if [ -n "$_heal_read" ] && [ "$_heal_read" = "$computed_ac_version" ]; then
+            echo "  [INFO] ${ninja_name}: task.ac_version stale (saved=${saved_ac_version}) but report.ac_version_read=${_heal_read} == recomputed → 作業は現行 AC 本文と一致。task.ac_version を自己修復"
+            if bash "$SCRIPT_DIR/scripts/lib/yaml_field_set.sh" "$task_file" task ac_version "$computed_ac_version" >/dev/null 2>&1; then
+                echo "  ${ninja_name}: OK (task.ac_version healed ${saved_ac_version}→${computed_ac_version})"
+            else
+                echo "  ${ninja_name}: OK (task.ac_version heal write skipped; report read == recomputed)"
+            fi
+            return 0
+        fi
+        echo "  [CRITICAL] ${ninja_name}: NG ← task.ac_version stale (saved=${saved_ac_version}, computed=${computed_ac_version}, report_read=${_heal_read:-none})"
         record_block_reason "${ninja_name}:ac_version_stale:task=${saved_ac_version}:computed=${computed_ac_version}"
         return 1
     fi
