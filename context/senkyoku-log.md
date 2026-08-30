@@ -1581,3 +1581,4 @@
 
 ## 第15便 2026-08-30 14:00-18:13(将軍 /clear 復帰〜LP 別サイト本番到達)
 - 意図: /login ショーウィンドウ P1→P2 を本番へ、LP を別サイトで dm-signal.com に。結果: 4413/4415 BE 到達(本番停止 21 分を revert で復旧)、4416 /login 新版 live、4417 LP https://dm-signal.com live(殿購入から 8 分)、4418 docs/faq 公開、4419 CORS 走行、4420 /login 最小化 配備。因果: 将軍の AsIs 誤り(static export=ISR 不可)・契約更新漏れ(.jp)・同構造複製が殿の実機指摘 3 点を生み、当日中に hotfix/起票で回収。infra: CI cancel 空転を 1 行で止め本日初 GREEN、push worker の merge-FF/RED 保留を根治。
+- 2026-08-30 `cmd_karo_ci_fix_33308840348_receipt_missing_20260830`完了: `run_tests.sh` がreceipt復旧後にterminal rcを隣接 `.rc` sidecarへatomic公開。success/failure/timeoutのcontract 3/3、SKIP0、report gate PASS、commit `9cb74f4c72d19ae0feb0a38b2aa7ffcf7e03941a`。因果: [[CI receipt rc終端不一致]] -> [[receipt rc SSOT化]] -> [[compatibility shard sidecar公開]]。
