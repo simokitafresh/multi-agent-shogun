@@ -3178,6 +3178,7 @@ codd:
 | discussion | `queue/lord_conversation.jsonl` 2026-08-30T16:55:09+09:00 [[CI_cancel_in_progress_1commit_push_空転]] 終端: 疾風 ci_fix(2 test の cancel 期待値を false に整合、f6b6574a2)統合 tip ce96b216c の run  |
 | discussion | `queue/lord_conversation.jsonl` 2026-08-30T16:58:48+09:00 a760914dd282d2092 toolu_01EAcaHfobmnPbqMvQu9rXqT /tmp/claude-1000/-home-simokitafresh-multi-agent-shogun/290a263c-8050-4 |
 | discussion | `queue/lord_conversation.jsonl` 2026-08-30T17:04:31+09:00 [[dm-signal.jp_ドメインrunbook_20260830]] 一次 17:05: Cloudflare Registrar は .jp 非対応(docs/TLD policies+2025-07 技術記事)→取得は国内レジスト |
+| discussion | `queue/lord_conversation.jsonl` 2026-08-30T17:15:49+09:00 [[殿裁定_ドメインjp非固執_20260830_1714]] 殿『.jp にこだわらない』→Cloudflare Registrar 一体の TLD へ。推薦 dm-signal.com(第 2 dmsignal.com、第 3 dm-s |
 | causal_chain | `[[cmd_3749]]` (L974) |
 | causal_chain | `[[cmd_training_L1_report-write_20260708020332]]` (L977) |
 | causal_chain | `[[cmd_reflux_insight_202607071717_tobisaru]]` (L961) |
@@ -13260,6 +13261,9 @@ codd:
 | causal | `cmd_4333` -> [[provisional_dm-login-boundary-asis-tobe_20260817]] (auto_generated) |
 | cmd | `cmd_4333` admin/login回帰修正 — /admin配下の認証後描画をProviderツリー内へ戻す (`docs/research/dm-login-boundary-asis-tobe_20260817.md`) |
 | causal | `cmd_4333` origin: [[殿観測_admin_login_application_error_20260817]] -> [[cmd_4325で/admin配下がProviderツリー外]] -> [[認証後adminをprotectedツリーへ戻す]] |
+| cmd | `cmd_4416` /login ショーウィンドウ P2 — frontend /login を ISR・ライトモード固定・摩擦除去・表 v3・EN/JA 文言 1 ファイルで組み直す(ログイン機構は不変) (`docs/research/dm-login-showcase-asis-tobe_v2_20260830.md`, `queue/shogun_to_karo.yaml`) |
+| causal | `cmd_4416` origin: [[殿裁定_実装後修正_ライト固定_20260830_1310]] -> [[dm-login-showcase-asis-tobe_v2_20260830]] -> [[cmd_4416_login_frontend_isr]] |
+| causal | `cmd_4416` depends_on: cmd_4413 |
 
 ## provisional_gist_index_update — 仮: Gist Index Update
 
@@ -15695,6 +15699,7 @@ codd:
 | discussion | `queue/lord_conversation.jsonl` 2026-08-30T05:42:12.371042+00:00 git pre-commit semantic propagation for context/projects changes |
 | discussion | `queue/lord_conversation.jsonl` 2026-08-30T06:44:18.473091+00:00 git pre-commit semantic propagation for context/projects changes |
 | discussion | `queue/lord_conversation.jsonl` 2026-08-30T07:24:45.276957+00:00 git pre-commit semantic propagation for context/projects changes |
+| discussion | `queue/lord_conversation.jsonl` 2026-08-30T08:12:31.729229+00:00 git pre-commit semantic propagation for context/projects changes |
 | causal_chain | `[[cmd_karo_hotfix_lessons_yaml_format_restore_20260727]]` (L1389) |
 
 ## infra_design_intent — インフラ設計意図カタログ

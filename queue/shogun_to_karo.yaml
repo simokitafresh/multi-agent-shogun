@@ -1,4 +1,108 @@
 commands:
+  cmd_4418:
+    title: "LP 別サイト P2 — app の docs と faq を未認証で公開し、faq に EN 版を追加して LP の導線先にする"
+    status: delegated
+    project: dm-signal
+    purpose: "殿方向性 2026-08-30 13:25『ログイン後の Docs/FAQ を /login からのリンクに』+殿裁定 16:42『別サイトでやろう』(設計書 v2 §9: docs/faq 公開は LP の導線先)。app の docs(67 行)と faq(459 行 JA)は API・認証非依存の静的ページで、RouteAccessBoundary の protected 既定で隠れているだけ(将軍一次 13:27)。public 化と faq の EN 版を app frontend に実装する。cmd_4416(app の login 配下)・cmd_4417(lp 配下)とは変更ファイルが分離"
+    scope_mode: FULL
+    target_path: /mnt/c/Python_app/DM-signal/frontend
+    acceptance_criteria:
+      AC1:
+        description: "RouteAccessBoundary の public 判定に docs と faq のルートを追加し(既存の login 分岐の形式に揃える)、ローカル next build(output:export)後の static serve で未認証のまま docs と faq が本文つきで描画され、ログイン後ページ(dashboard 等)は従来どおり protected のままであることを Playwright で確認する"
+        binary_check: "未認証で docs と faq の本文(H1 と 1 段落以上)が描画 ∧ 未認証で dashboard は従来どおりログイン画面へ ∧ boundary の変更が public 判定の追加行のみ(他の分岐 diff 0) か?"
+      AC2:
+        description: "faq に EN 版(faq 配下の en ルート、文言は faq の copy ファイルに JA と並置)を追加し、JA 版と項目数が一致すること、hreflang(ja↔en)と metadata title/description(言語別)が両ページに含まれることを next build の出力 HTML で確認する"
+        binary_check: "faq JA と EN の項目数が一致 ∧ 両 HTML に hreflang と description が各 1 件以上 ∧ 毎営業日/today/soon/early/近日/¥/円/first month free/初月無料/free trial の grep 0 か?"
+      AC3:
+        description: "変更ファイルが boundary の 1 箇所・docs 配下・faq 配下・robots と sitemap(docs と faq の URL 追加)のみで、login 配下・viewer-auth・auth-state-reset・api-client・既存 test の diff が 0 であり、変更対象に限定した選択実行で FAIL 0 SKIP 0 を確認する"
+        binary_check: "allowlist 外の変更 0 ∧ login 配下と認証 3 ファイルの diff 0 行 ∧ 既存 test diff 0 ∧ 変更対象に限定した選択実行 FAIL 0 SKIP 0 か?"
+    command: |
+      1. route-access-boundary の public 判定に docs と faq を追加し、static serve の Playwright で未認証描画と dashboard の protected 維持を確認する
+      2. faq の EN 版を JA と同じ copy ファイル構造で追加し、hreflang・metadata・項目数一致・禁則語 0 を build 出力で確認する
+      3. allowlist 外 diff 0・認証 3 ファイルと login 配下 diff 0・robots と sitemap に docs と faq を追加・選択実行 FAIL 0 SKIP 0 を報告 YAML に生貼付する
+    assumptions:
+      claim: "frontend は output:export の静的 export(next.config 2026-08-30 16:34)。docs は 67 行・faq は 459 行 JA で API・認証非依存(将軍一次 13:27、wc 16:38)。RouteAccessBoundary は layout で全ルートを包み public 判定は login 分岐のみ(route-access-boundary.tsx L38 付近、16:34)。cmd_4416(login 配下)は半蔵 done、cmd_4417(lp 配下)は飛猿走行中で本 cmd と変更ファイルが重ならない"
+      source: "docs/research/dm-login-showcase-asis-tobe_v2_20260830.md §9/§4、frontend/components/route-access-boundary.tsx、frontend/app/docs/page.tsx、frontend/app/faq/page.tsx、frontend/next.config.mjs"
+      trust: verified
+    depends_on: none
+    serial_dependency_evidence: "AC1(boundary の public 化)→AC2(faq EN は AC1 で公開された faq に載せる)→AC3(diff 0 と選択実行は AC1/AC2 完成後にしか判定できない)。boundary と faq の 2 箇所を別忍者に分けると AC3 の allowlist 判定が二重になるため 1 名直列"
+    environment_change: "type=lesson; file=docs/research/dm-login-showcase-asis-tobe_v2_20260830.md; pattern=docs/faq 公開"
+    execution_env:
+      runtime_constraints: "DM-signal frontend で npm ci、next build(output:export)、Playwright はローカル static serve。本番・deploy・DNS は触らない"
+      long_runtime_reason: "boundary 変更+faq EN 翻訳(459 行 JA と項目数一致)+Playwright 確認は同一 frontend package で不可分"
+      measured_runtime_sec: 1500
+    timeout_minutes: 45
+    estimated_minutes: 25
+    split_decision: "AC3 本=1 道具(app の公開ページ 1 組)。LP 本体は cmd_4417、backend CORS+event は cmd_4419 に分離済み"
+    quality_gate:
+      q1_firefighting: "消火ではない。殿方向性 13:25 と裁定 16:42 の LP 導線先(docs/faq)を公開する品質向上"
+      q2_learning: "忍者は boundary の public 判定の形式、静的 export での言語別ページ、hreflang/metadata、禁則語 0 を設計書 §9/§4 で学ぶ"
+      q3_next_quality: "docs/faq が公開されると LP(4417)の導線先が実在し、以後の FAQ 追加は copy ファイル 1 本で JA/EN 同時に済む"
+      q4_depth: "shallow — 変更箇所が boundary 1 箇所+faq EN で、設計書 §9 に導線と終端が明文化済み"
+      q5_verified_source: "code_reading — route-access-boundary.tsx の public 判定(L38 付近)と docs(67 行)/faq(459 行)を 2026-08-30 13:27 と 16:38 に読了、next.config output:export を 16:34 に確認。production_verified — 本番 /login 200 と docs/faq が未認証で隠れることを 16:33 に curl(frontend 200)"
+      q6_not_hiding: "faq EN は翻訳であり原文 JA の項目数と一致させる。公開範囲は docs と faq のみでデータページは protected のまま=隠していない"
+      q7_definition_verified: "『public 化』= RouteAccessBoundary が認証状態を待たずに children を描画するルート集合に加えること(確認日: 2026-08-30 16:34)。『禁則語』= 設計書 §4+§2.4 の語群"
+      q8_why_what: "WHY: LP の CTA『Read the docs』『FAQ』の遷移先が未認証で見えないと導線が切れる(殿方向性 13:25) / WHAT: boundary の public 判定に docs と faq を追加し、faq EN 版を追加、両 HTML に hreflang と description、項目数一致、禁則語 0、login 配下と認証 3 ファイル diff 0 / WHEN: 今セッション、4416/4417 と並走 / WHERE: /mnt/c/Python_app/DM-signal/frontend / WHO: 忍者 1 名(idle) / HOW: boundary 1 行+copy ファイル並置+Playwright / 複利: 公開ページの追加が boundary 1 行+copy で済む型を固定=正の複利"
+      q9_firefighting_root_cause: "根本対応。静的で認証非依存のページが protected 既定で隠れている構造を、public 判定の明示で正す"
+      q10_knowledge_boundary: "検証済み: boundary の public 判定位置、docs/faq の行数と非依存性、static export。スコープ外: LP 本体(4417)、backend(4419)、app のドメイン移行、deploy(家老)"
+      q11_not_already_done: "rg -c 'faq' /mnt/c/Python_app/DM-signal/frontend/components/route-access-boundary.tsx → 0 件(2026-08-30 16:34) / ls /mnt/c/Python_app/DM-signal/frontend/app/faq → page.tsx のみ(EN 版なし、16:38) / semantic_search.sh 'docs faq 公開 public boundary' → 該当 cmd なし"
+      q_ambiguity: "『公開』の範囲は docs と faq の 2 ルートのみ。データページは含めない。曖昧さは §9 で解消済み"
+      q12_lord_30min_cost: "no — 殿方向性 13:25 と裁定 16:42 で確定"
+      diagnosis: "BLOCK理由: 該当なし(新規起票) / 対策: faq 配下の en ルート新設は殿方向性 13:25(EN/JA 別)による意図的新設"
+    delegated_at: "\"2026-08-30T17:17:28\""
+    origin: "[[殿裁定_LP別サイト_20260830_1642]] -> [[dm-login-showcase-asis-tobe_v2_20260830]] -> [[cmd_4418_docs_faq_public]]"
+  cmd_4417:
+    title: "LP 別サイト — DM-signal/lp に EN(/)+JA(/ja)の静的 LP を新設し showcase をビルド時 fetch で表に焼き、hreflang・robots・sitemap・CTA を置く"
+    status: delegated
+    project: dm-signal
+    purpose: "殿裁定 2026-08-30 16:42『別サイトでやろう』+16:44『dm-signal.jp を Cloudflare で取ろう。設計書 §9 を書き換えて cmd を起票せよ』。設計書 v2 §9(LP 別サイト)を実装する。cmd_4416(app の /login)とは repo 内ディレクトリが分離(lp/ 新設)し衝突 0。deploy・Render static site 作成・custom domain・DNS は家老 post_deploy_check(§9 ドメイン手順)"
+    scope_mode: FULL
+    target_path: /mnt/c/Python_app/DM-signal
+    acceptance_criteria:
+      AC1:
+        description: "lp/(独立 package.json、Next.js output:export、globals.css は frontend の色・書体トークン値を複製)に §9 の構造(H1+リード、showcase 表=§3.1 v3 と同じ列と英語脚注 Data through、プラン 3 枚 金額なし、CTA Sign in→NEXT_PUBLIC_APP_HOST の /login と Read the docs→/docs と note 導線、FAQ 抜粋 3 問→/faq、フッタ、§3.3 ライト固定)を /(EN)と /ja(JA)で実装し、文言は lp 配下 copy ディレクトリの en と ja の 2 ファイルに閉じ、next build で out 配下に EN の index と ja の index が生成され各 HTML に H1・metadata description・hreflang(en・ja・x-default)が含まれることを確認する"
+        binary_check: "next build 成功 ∧ EN の index と ja の index に H1・description・hreflang が各 1 件以上 ∧ コンポーネント内の文言直書き 0 ∧ 毎営業日/today/soon/early/近日/¥/円/first month free/初月無料/free trial の grep 0 か?"
+      AC2:
+        description: "showcase 表の数値はビルド時 fetch(GET NEXT_PUBLIC_API_HOST/api/public/showcase)で静的 HTML に焼き、帯(blackout)だけ client no-store fetch にし、robots.txt(全許可)と sitemap.xml(/ と /ja)を生成し、Playwright(ローカル static serve、375×667 と 1280 幅)で HTML 本文に total_return 文字列が存在し 375×667 の初期 viewport 内に Sign in ボタンがあることを確認する"
+        binary_check: "EN の index の本文に EP の total_return 文字列が 1 件以上(fetch 前の静的 HTML) ∧ out 配下に robots と sitemap が存在し sitemap に URL 2 件 ∧ 375×667 で Sign in ボタンの bounding box が初期 viewport 内 ∧ prefers-color-scheme dark エミュレートでも背景がライト か?"
+      AC3:
+        description: "変更が lp 配下のみで frontend 配下と backend 配下の diff が 0 であり、lp 配下に追加した test に限定した選択実行で FAIL 0 SKIP 0 を確認する"
+        binary_check: "lp 配下以外の変更 0 ∧ frontend 配下と backend 配下の diff 0 行 ∧ lp 配下の追加 test に限定した選択実行が FAIL 0 SKIP 0 か?"
+    command: |
+      1. 設計書 v2 §9/§3.1/§3.3/§4 を読み、lp/ を独立 package(output:export)で新設して EN/JA の 2 ルートと copy 2 ファイルを実装し、next build の out/ で H1・description・hreflang と禁則語 0 を確認する
+      2. ビルド時 fetch で表を静的 HTML に焼き、帯だけ client no-store にし、robots/sitemap を生成して Playwright(ローカル static serve)で 2 幅の本文と viewport 内 Sign in を確認する
+      3. lp 配下以外 diff 0・frontend 配下と backend 配下 diff 0・lp 配下の追加 test に限定した選択実行 FAIL 0 SKIP 0 を報告 YAML に生貼付する
+    assumptions:
+      claim: "DM-signal repo に lp/ は存在しない(git ls-tree origin/main 2026-08-30 16:46 で 0)。showcase EP は本番 200・plans basic/standard/premium・secret 73・best_name 除去済(curl 16:31)。frontend は output:export の静的 export(next.config 16:34)で、lp も同方式。Render LP static site とドメイン dm-signal.jp は未作成(Render API custom-domains 0 件 16:43)=家老レーンで deploy 後に付ける"
+      source: "docs/research/dm-login-showcase-asis-tobe_v2_20260830.md §9/§3.1/§3.3/§4、本番 GET /api/public/showcase、frontend/next.config.mjs、frontend/app/globals.css、Render API services/srv-d4ja8pp5pdvs739a5fsg"
+      trust: verified
+    depends_on: none
+    serial_dependency_evidence: "AC1(package 新設と 2 ルート・copy)→AC2(ビルド時 fetch・robots/sitemap・Playwright は AC1 の out/ に対して実行)→AC3(diff 0 と選択実行は AC1/AC2 の完成後にしか判定できない)。同一 package の実装で並列分割すると package.json/next.config が衝突するため 1 名直列"
+    environment_change: "type=lesson; file=docs/research/dm-login-showcase-asis-tobe_v2_20260830.md; pattern=LP 別サイト"
+    execution_env:
+      runtime_constraints: "DM-signal/lp で npm ci、next build(output:export)、Playwright はローカル static serve(out/)。ビルド時 fetch は本番 EP の GET のみ(書込みなし)。deploy・DNS は触らない"
+      long_runtime_reason: "package 新設+2 言語ルート+ビルド時 fetch+Playwright 2 幅は同一 package の実装で不可分"
+      measured_runtime_sec: 1800
+    timeout_minutes: 50
+    estimated_minutes: 30
+    split_decision: "AC3 本=1 道具(lp package 1 本)。docs/faq 公開は cmd_4418、backend CORS+event は cmd_4419 に分離"
+    quality_gate:
+      q1_firefighting: "消火ではない。殿裁定 16:42/16:44 の LP 別サイトを設計書 §9 どおり実装する品質向上"
+      q2_learning: "忍者は静的 export のビルド時 fetch、2 言語の文言ファイル分離、hreflang/robots/sitemap、禁則語 0 を設計書 §9/§4 で学ぶ"
+      q3_next_quality: "lp/ が app と分離されるため以後の LP 文言変更は app の deploy・影響境界検分なしで回り、言語追加は copy ファイル 1 本で済む"
+      q4_depth: "shallow — 設計書 §9 に構造・終端・ドメイン手順が明文化済み"
+      q5_verified_source: "production_verified — 本番 showcase 200 を 16:31 に curl、Render custom-domains 0 件を 16:43 に API 実測。code_reading — origin/main の git ls-tree で lp/ 不在(16:46)、frontend/next.config.mjs output:export(16:34)、backend/app/main.py origins(L182)と public_showcase.py step Literal(L63)を 16:46 に読了"
+      q6_not_hiding: "ビルド時 fetch は build 時点の数値で固定され、月次更新は再 deploy(家老レーンの月末 rebuild)で反映する点を §9 に明記。隠していない"
+      q7_definition_verified: "『ビルド時 fetch』= next build 中の server component fetch で静的 HTML に数値を焼くこと(output:export で許容、ISR 不使用。確認日: 2026-08-30 16:34)。『禁則語』= 設計書 §4+§2.4 の語群"
+      q8_why_what: "WHY: 殿裁定 16:42 別サイト=影響境界 0・リリース周期分離・初回 HTML に数値 / WHAT: lp/ に EN(/)と JA(/ja)を静的 export で新設し、out の HTML に H1・description・hreflang・total_return、robots/sitemap、禁則語 0、lp/ 以外 diff 0 / WHEN: 今セッション、cmd_4416 と並走 / WHERE: /mnt/c/Python_app/DM-signal/lp / WHO: 忍者 1 名(idle) / HOW: 独立 package+copy 2 ファイル+ビルド時 fetch+Playwright / 複利: LP を app から切り離す 1 回の選択で、以後の全 LP 変更が検分ゼロになる=正の複利"
+      q9_firefighting_root_cause: "根本対応。LP を app 内に置くと deploy・CI・boundary に毎回縛られる構造を、別 package で断つ"
+      q10_knowledge_boundary: "検証済み: lp/ 不在、showcase 200、static export 方式、custom domain 0。スコープ外: Render static site 作成・custom domain・Cloudflare DNS(家老 post_deploy_check)、docs/faq 公開(4418)、backend CORS+event(4419)、app の /login(4416)"
+      q11_not_already_done: "git ls-tree -r --name-only origin/main | grep -c '^lp/' → 0 件(2026-08-30 16:46) / rg -c 'hreflang' /mnt/c/Python_app/DM-signal/frontend/app → 0 件 / semantic_search.sh 'ランディングページ LP EN JA hreflang showcase' → LP 実装 cmd なし(16:38)"
+      q_ambiguity: "CTA の遷移先は env NEXT_PUBLIC_APP_HOST(現在 https://dm-signal-frontend.onrender.com)で固定し、app のドメイン移行時は env 1 行で追随。曖昧さは §9 で解消済み"
+      q12_lord_30min_cost: "no — 殿裁定 16:42/16:44 で確定"
+      diagnosis: "BLOCK理由: 該当なし(新規起票) / 対策: 新規ディレクトリ lp/ は殿裁定 16:42(別サイト)による意図的新設。app の frontend/ と分離するため"
+    delegated_at: "\"2026-08-30T17:01:12\""
+    origin: "[[殿裁定_LP別サイト_20260830_1642]] -> [[dm-login-showcase-asis-tobe_v2_20260830]] -> [[cmd_4417_lp_site]]"
   cmd_4414:
     title: "/login ショーウィンドウ P1b — 公開集計 EP に Sharpe(プラン平均/ベスト)・SPY/TQQQ 比較行・Secret 集計値を追補する"
     status: void
@@ -52,56 +156,3 @@ commands:
       diagnosis: "BLOCK理由: 該当なし(cmd_4413 の preflight で判明した 4 フィールドを雛形時点で記入) / 対策: 該当なし"
     delegated_at: "\"2026-08-30T12:37:28\""
     origin: "[[殿裁定_sharpe_spy_tqqq_20260830_1230]] -> [[dm-login-showcase-asis-tobe_v2_20260830]] -> [[cmd_4414_showcase_sharpe_benchmarks]]"
-  cmd_4416:
-    title: "/login ショーウィンドウ P2 — frontend /login を ISR・ライトモード固定・摩擦除去・表 v3・EN/JA 文言 1 ファイルで組み直す(ログイン機構は不変)"
-    status: delegated
-    project: dm-signal
-    purpose: "殿裁定 2026-08-30 13:10『ログイン機構が壊れなければ実装してから直す。デザインは全体で統一。ログインページはライトモード基準』。設計書 v2(gist 3236e0df)§2.2 情報構造・§2.4 ブラックアウト表現・§2.5 摩擦除去(F1-F5)・§2.6 ISR・§2.7 影響境界・§3.1 表 v3(8 列+SPY/TQQQ)・§3.2 レスポンシブ・§3.3 ライト固定・§4 文言規則を frontend に実装する。データは cmd_4413/4415 の GET /api/public/showcase。忍者 AC は隔離 clone で完結(§6.5 H10)、deploy 後確認は家老 post_deploy_check"
-    scope_mode: FULL
-    target_path: /mnt/c/Python_app/DM-signal/frontend
-    acceptance_criteria:
-      AC1:
-        description: "【将軍訂正 16:36: AsIs 誤り。FE は Render static_site(next.config output:export、out/ 配信)で ISR/next start は成立しない。ISR を捨て静的 export のまま実装する】app/login は静的 export 互換(server component 不可の部分は client component)で、§2.2 の構造(ブランド行/H1 EN+JA/リード/表 v3 8 列+SPY・TQQQ 2 行+英語脚注/プラン 3 枚 金額なし/導線 4 本/SignInCard rich・simple/フッタ)と §3.3 ライト固定を実装し、表・帯のデータは client 側で GET /api/public/showcase(NEXT_PUBLIC_API_HOST)を fetch(表=cache 1h 相当の再検証、帯=no-store)、初回描画はスケルトン→数値に置換する。next build(export)の out/login/index.html に H1・脚注の静的文言・metadata description(EN)が含まれ、Playwright(ローカル static serve)で fetch 後に表の数値(EP の値)が描画されることを確認する"
-        binary_check: "next build(output:export)が成功 ∧ out/login/index.html に H1 と description が各 1 件以上 ∧ Playwright で fetch 後に EP の total_return 文字列が DOM に 1 件以上 ∧ prefers-color-scheme dark をエミュレートした /login のスクリーンショット背景がライト(白系) ∧ ログイン後ページのテーマ挙動 diff 0 か?"
-      AC2:
-        description: "摩擦除去 §2.5 F2-F5 と §2.4 を実装する: ≤860px で初期 viewport 内に Sign in ボタン(sticky バー+ボトムシート)、blackout は client no-store fetch で帯(§2.4 文言、日時・soon 等の語なし、month_closed=false は being computed)、401 expired は専用文+note 誘導、EN 主 JA 従、文言と note URL は login-copy.ts 1 ファイル。Playwright(ローカル next start)で 375×667 の初期 viewport に Sign in ボタンが存在し、blackout モック応答で帯文言が切り替わることを確認する"
-        binary_check: "375×667 で Sign in ボタンの bounding box が viewport 内 ∧ blackout active/month_closed の 4 組合せで帯文言が §2.4 どおり ∧ 帯・脚注・エラー文に 毎営業日/today/soon/early/近日/¥/円 の grep 0 ∧ 文言直書き(コンポーネント内の日本語リテラル)0 か?"
-      AC3:
-        description: "影響境界 §2.7 とログイン機構不変を確認する: 変更ファイルが allowlist(app/login/**、login-copy.ts、app/robots.ts、app/sitemap.ts、新規 components)の外 0 件、route-access-boundary.tsx・viewer-auth.ts・auth-state-reset.ts・api-client.ts の diff 0、既存 test の diff 0、Playwright でローカル login フロー(正しいパスワード→/ へ遷移、誤り→エラー文、期限切れ→expired 文)が従来どおり通り、選択実行(既存 frontend test+本 cmd 追加 test)で FAIL 0 SKIP 0 を確認する"
-        binary_check: "allowlist 外の変更 0 ∧ 4 ファイルの diff 0 行 ∧ 既存 test diff 0 ∧ ログインフロー 3 経路 PASS ∧ 選択実行 FAIL 0 SKIP 0 ∧ next build の hydration warning 0 か?"
-    command: |
-      1. 設計書 v2 §2.2/§3.1/§3.3 を読み(§2.6 ISR は将軍訂正 16:36 で撤回=静的 export 維持)、app/login を静的 export 互換で組み直し、表・帯は client fetch(NEXT_PUBLIC_API_HOST)+スケルトン、表 v3・脚注・metadata・ライト固定を実装し、next build(export)の out/login/index.html と Playwright(ローカル static serve)で確認する
-      2. §2.4/§2.5 のブラックアウト帯(client no-store)・sticky Sign in・expired 文・EN/JA 文言 1 ファイル(login-copy.ts)を実装し、Playwright(ローカル)で viewport 内ボタンと帯文言 4 組合せを確認する
-      3. allowlist 外 diff 0・境界 4 ファイル diff 0・既存 test diff 0・ローカル login フロー 3 経路・選択実行 FAIL 0 SKIP 0 を報告 YAML に生貼付する
-    assumptions:
-      claim: "frontend は Next.js app router、next build/next start 運用(package.json)、ThemeProvider+tailwind darkMode class(13:15 現物)。/login は use client 82 行、RouteAccessBoundary は layout で全ルートを包み /login 分岐のみ。FE は live 812f0b7a1 と origin/main 差分 0(13:05)。データ契約は cmd_4413/4415 の GET /api/public/showcase(hero/plans[]/benchmarks[]/secret/as_of/blackout)。本番実測値(12:20-12:47)は設計書 §3.1"
-      source: "docs/research/dm-login-showcase-asis-tobe_v2_20260830.md §2.2-§2.7/§3/§4/§6.5、frontend/app/login/page.tsx、frontend/components/route-access-boundary.tsx、frontend/app/layout.tsx、frontend/tailwind.config.ts"
-      trust: verified
-    depends_on: cmd_4413  # 2026-08-30 15:56 将軍: 4415(best_name 除去=表示上の追補)との直列を解除。frontend/ と backend/ は path 分離、4416 は現 API 契約(best_name は無視)で実装可
-    measurement_source: "production 本番 DB readonly_query 実測 evidence(2026-08-30 JST 12時20分〜12時47分、表 v3 の値)+ Render deploys API log(2026-08-30 10時10分 JST、FE live sha 812f0b7a1)+ 本番 /login curl log(2026-08-30 12時11分、HTML は title のみ)。ローカル計測は AC の手段であり本番主張の根拠ではない"
-    serial_dependency_evidence: "AC1(server component 化と構造)→AC2(帯・sticky・文言は AC1 のコンポーネントに載る)→AC3(境界 diff と login フローは AC1/AC2 の完成後にしか判定できない)。データ契約は cmd_4415 の応答形に依存するため depends_on cmd_4415"
-    environment_change: "type=lesson; file=docs/research/dm-login-showcase-asis-tobe_v2_20260830.md; pattern=忍者 AC に書かない"
-    timeout_minutes: 90
-    estimated_minutes: 60
-    execution_env:
-      runtime_constraints: "DM-signal frontend で npm ci、next build/next start、Playwright はローカルのみ。本番・Render・CDP は使わない(post_deploy_check は家老レーン)"
-      long_runtime_reason: "server component 化・表・帯・sticky・文言・境界確認が 1 ページの同一コンポーネント群に載り、分割すると hydration と境界 diff の判定が 2 回に割れる"
-      measured_runtime_sec: 3000
-    split_decision: "AC3 本=1 道具(/login 1 ページ)。P3(robots/sitemap は本 cmd の allowlist に含む)。deploy と post_deploy_check は家老レーン(別 task)"
-    quality_gate:
-      q1_firefighting: "消火ではない。08-18 の設計以来 0 手だった /login の実装を、殿裁定 13:10『実装してから直す』に従い 1 cmd で本番へ出す品質向上。底線はログイン機構不変(AC3)"
-      q2_learning: "忍者は ISR・ライト固定・境界 allowlist・文言 1 ファイルを設計書の契約どおりに実装し、deploy に依存しない AC(隔離 clone 完結)の型を学ぶ"
-      q3_next_quality: "殿が本番を見て出す修正指示は login-copy.ts と表コンポーネントの差分だけになり、次 cmd が小さくなる"
-      q4_depth: "medium — 1 ページの組み直し(server component 化+5 要素)"
-      q5_verified_source: "production_verified — 本番 /login curl(12:11)と Render deploy sha(10:10)。code_reading — page.tsx 82 行/route-access-boundary.tsx/layout.tsx/tailwind.config.ts を 10:12-13:15 に読了。本番 DB 12:20-12:47 の表値"
-      q6_not_hiding: "帯の文言から日時・soon を除くのは殿裁定 12:58(発表タイミングは殿の裁量)であり隠蔽ではない。Secret の PF 名を出さないのは 12:48 裁定"
-      q7_definition_verified: "『ISR』= Next.js の revalidate 付き server rendering(確認日: 2026-08-30 13:15 package.json の next build/start)。『ライト固定』= /login 配下で dark クラス/prefers-color-scheme を無視しライトのトークンで描画。『allowlist』= 設計書 §2.7 の frontend 列"
-      q8_why_what: "WHY: /login が JA 単言語 CSR の門で SEO 空・価値提示ゼロ(FE deploy 812f0b7a1 2026-08-18 以来) / WHAT: /login を ISR(3600)・ライト固定・表 v3・帯・sticky・EN/JA 1 ファイルで組み直し、ログイン機構 4 ファイル diff 0・ローカル login フロー 3 経路 PASS / WHEN: cmd_4415 CLEAR 後 / WHERE: /mnt/c/Python_app/DM-signal/frontend / WHO: 家老配備の忍者 1 名 / HOW: 設計書 v2 §2-§4 契約+隔離 clone 完結 AC / 複利: 文言と URL を 1 ファイルに置く選択を 10 回繰り返せば殿の修正指示ごとの差分が 1 ファイルに収束=正の複利。直書きを繰り返せば修正のたびにコンポーネント全体を触る負の複利"
-      q9_firefighting_root_cause: "根本対応。/login が空だった根因=未認証で見せるデータ契約が無かったこと(cmd_4413/4415 で解消)と CSR。本 cmd は契約の上に ISR で HTML を焼き、以後は文言差分のみで回る"
-      q10_knowledge_boundary: "検証済み: FE 構成・deploy 差分 0・表値・境界 4 ファイル。スコープ外: deploy と post_deploy_check(家老レーン)、殿の本番確認後の修正(次 cmd)、未決 2/5"
-      q11_not_already_done: "rg -c 'showcase' /mnt/c/Python_app/DM-signal/frontend/app → 0件 / rg -c 'revalidate' /mnt/c/Python_app/DM-signal/frontend/app → 0件(13:15) / git log --since=2026-08-18 -- frontend/app/login → 0 commit"
-      q_ambiguity: "『ライトモード基準』= /login はライト固定でログイン後は不変(殿 13:10、設計書 §3.3)。『全体で統一』= 既存 globals.css トークンと ui コンポーネントのみ使用。曖昧さは解消済み"
-      q12_lord_30min_cost: "no — 殿裁定 4 本(13:10)は反映済み。本番確認は deploy 後に殿が行う(殿の意図どおり)"
-      diagnosis: "BLOCK理由: 該当なし(4413/4414/4415 の preflight で判明したフィールドを雛形時点で記入) / 対策: 該当なし"
-    delegated_at: "\"2026-08-30T13:17:22\""
-    origin: "[[殿裁定_実装後修正_ライト固定_20260830_1310]] -> [[dm-login-showcase-asis-tobe_v2_20260830]] -> [[cmd_4416_login_frontend_isr]]"
