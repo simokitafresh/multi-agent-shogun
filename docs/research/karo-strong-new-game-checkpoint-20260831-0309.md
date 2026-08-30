@@ -85,4 +85,4 @@
 - [x] 新規免疫のcommit/test/Gate結果を記録。
 - [x] 未配備mutation残骸hotfixを固定ID・正本path・依存付きで記録。
 - [x] checkpoint owner commit=`c72ba1b28213abe91630040f9c78d88976cee2b6`を作成。
-- [ ] SHA256とpointerをcompact_state・memory DB・semantic index・Obsidian因果辺・掲示板へ貫通する。
+- [x] pointerをcompact_stateへ反映。履歴上のfinalization前payload SHA256=`2c3c9e5aad4ca5508298c4904efc8f226da2c19b0fbaf6a4acccec094336928d`。memory DB=`knowledge:e1ec1c8fe1d78a84`、semantic=`strong_new_game_completion_contract`でalias hit、Obsidian因果辺4/4へ貫通。最終ファイルSHAはcompact_stateを正本とする。
