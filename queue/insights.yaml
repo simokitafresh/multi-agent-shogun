@@ -10011,3 +10011,17 @@ insights:
   source: "semantic_stress_test"
   fix_known: false
   status: pending
+- id: INS-20260830-211307858-a845
+  ts: "2026-08-30T21:13:07+09:00"
+  insight: "[[殿裁定 20 21『着手せよ』 殿要件 20 17『登録してログインすると free のクーポンが表示]] semantic_stress_test candidate_aliases: NO_MATCH source=cmds query=殿裁定 2026-08-30 20:21『着手せよ』+殿要件 20:17『登録してログインすると free のクーポンが表示、ワンクリックでコピーできるようにして動線をスムーズに。すでにメンバーが誤解しないようにしよう』+20:18『登録者は rebalancer と同じ Supabase の既存にまとめる』(設計書 v3 §2 項目 2・4・5)。契約=c"
+  priority: "low"
+  source: "semantic_stress_test"
+  fix_known: false
+  status: pending
+- id: INS-20260830-211308197-29ba
+  ts: "2026-08-30T21:13:08+09:00"
+  insight: "[[Free tier F3 — LP に『Free で始める Google 』CTA を Sign in と並べて追加し ]] semantic_stress_test candidate_aliases: NO_MATCH source=cmds query=Free tier F3 — LP に『Free で始める(Google)』CTA を Sign in と並べて追加し /free?from=lp へ導線を付け、Members/Free の入口文言を EN/JA で二分する"
+  priority: "low"
+  source: "semantic_stress_test"
+  fix_known: false
+  status: pending
