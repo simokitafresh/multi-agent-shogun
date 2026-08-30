@@ -8666,3 +8666,10 @@ insights:
   source: "lord_conversation:lesson_candidate"
   fix_known: false
   status: pending
+- id: INS-20260830-133933392-57b1
+  ts: "2026-08-30T13:39:33+09:00"
+  insight: "[[未決や未裁定があれば今のうちに相談しよう]] semantic_stress_test candidate_aliases: NO_MATCH source=lord query=未決や未裁定があれば今のうちに相談しよう"
+  priority: "low"
+  source: "semantic_stress_test"
+  fix_known: false
+  status: pending
