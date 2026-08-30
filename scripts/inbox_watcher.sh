@@ -663,6 +663,43 @@ invalidate_leases_on_generation_change() {
     CURRENT_CLI_GENERATION="$new_gen"
 }
 
+# Normal inbox nudges have one outstanding delivery obligation per CLI
+# generation.  Keep the lease under the existing sent-token namespace so
+# inbox_write.sh's verified-delivery rearm can release it without a second
+# state protocol.  The unread fingerprint remains diagnostic only; it must
+# not create a new lease when an unread message is appended during the same
+# CLI turn.
+outstanding_lease_file_for_generation() {
+    local generation="${1:-}"
+    local safe_generation
+    [ -n "$generation" ] || return 1
+    safe_generation="${generation//[^A-Za-z0-9_.-]/_}"
+    printf '%s/inbox_watcher_sent_%s_outstanding_lease_%s\n' \
+        "$STATE_DIR" "$AGENT_ID" "$safe_generation"
+}
+
+current_outstanding_lease_file() {
+    local generation="${1:-${CURRENT_CLI_GENERATION:-}}"
+    [ -n "$generation" ] || return 1
+    outstanding_lease_file_for_generation "$generation"
+}
+
+outstanding_lease_acknowledged() {
+    local lease_file="$1"
+    local current_count="$2"
+    local lease_generation lease_count lease_fp
+    [ -f "$lease_file" ] || return 1
+    IFS=$'\t' read -r lease_generation lease_count lease_fp < "$lease_file" 2>/dev/null || true
+    [[ "$lease_count" =~ ^[0-9]+$ ]] || return 1
+    [[ "$current_count" =~ ^[0-9]+$ ]] || return 1
+    if [ "$current_count" -lt "$lease_count" ]; then
+        rm -f "$lease_file"
+        echo "[$(date)] [OUTSTANDING-LEASE-ACK] ACK observed for $AGENT_ID generation=${lease_generation:-unknown} unread=${lease_count}->${current_count}" >&2
+        return 0
+    fi
+    return 1
+}
+
 # ─── Resolve effective CLI type ───
 # Prefer pane @agent_cli (runtime truth) and fall back to settings.yaml.
 # If unresolved, choose codex-safe path.
@@ -1010,9 +1047,11 @@ send_wakeup() {
         [ ! -f "$idle_flag" ] && touch "$idle_flag"
     fi
 
-    # Tier 1.5: Debounce repeated nudge storms (normal messages only)
-    # For normal inbox nudges, fingerprint compare/update and debounce
-    # check/refresh happen under one flock so duplicate watchers cannot both send.
+    # Tier 1.5: Debounce repeated nudge storms is now enforced by one
+    # outstanding lease per CLI generation (normal only).
+    # Fingerprint changes are observed for diagnostics, but cannot create a
+    # second delivery obligation until the existing lease is ACKed/rearmed or
+    # the inbox becomes empty. The check and claim decision share one flock.
     if [ "$priority" != "high" ] && [ -n "$current_fp" ] && [ "$current_fp" != "-" ]; then
         local atomic_result decision log_line atomic_result_file
         atomic_result_file="${STATE_DIR}/inbox_watcher_atomic_result_${AGENT_ID}_${BASHPID}"
@@ -1021,17 +1060,8 @@ send_wakeup() {
 
             _now="$EPOCHSECONDS"
 
-            if has_deferred_nudge_for_fp "$current_fp"; then
-                printf '%s' "$current_fp" > "$FINGERPRINT_FILE"
-                printf '%s' "$_now" > "$DEBOUNCE_FILE"
-                printf 'send\t[DEFERRED-RETRY] Previous nudge for %s was deferred before delivery; retrying while unread remains\n' "$AGENT_ID" > "$atomic_result_file"
-                exit 0
-            fi
-
-            # A changed unread set is a new delivery obligation, not a retry
-            # storm.  Compare the fingerprint before applying the time window;
-            # otherwise an unrelated earlier bulletin suppresses a later one for
-            # up to NORMAL_BATCH_WINDOW_SEC (observed: 02:32:47 -> 02:35).
+            # A changed unread set is only diagnostic while the same CLI
+            # generation owns a lease; it is not a new delivery obligation.
             _prev_fp=""
             if [ -f "$FINGERPRINT_FILE" ]; then
                 IFS= read -r _prev_fp < "$FINGERPRINT_FILE" 2>/dev/null || true
@@ -1040,44 +1070,27 @@ send_wakeup() {
             if [ "$current_fp" != "$_prev_fp" ]; then
                 printf '%s' "$current_fp" > "$FINGERPRINT_FILE"
                 printf '%s' "$_now" > "$DEBOUNCE_FILE"
-                printf 'send\t[FP-CHANGE] Unread set changed for %s (%s unread), sending nudge\n' "$AGENT_ID" "$unread_count" > "$atomic_result_file"
-                exit 0
+                echo "[$(date)] [FP-OBSERVED] Unread set changed for $AGENT_ID ($unread_count unread); evaluating generation lease" >&2
             fi
 
-            # The batch/debounce window applies only to the same fingerprint.
+            # Preserve the legacy debounce timestamp for diagnostics. It is no
+            # longer a send gate: the generation lease is the sole normal-path
+            # duplicate barrier.
             if [ -f "$DEBOUNCE_FILE" ]; then
                 _last=""
                 IFS= read -r _last < "$DEBOUNCE_FILE" 2>/dev/null || true
-                if [[ "$_last" =~ ^[0-9]+$ ]]; then
-                    _elapsed=$((_now - _last))
-                    _unread_age=$(get_first_unread_age)
-                    _window="$DEBOUNCE_SEC"
-                    [ "$batchable" = "true" ] && _window="$NORMAL_BATCH_WINDOW_SEC"
-                    if [ "$_elapsed" -lt "$_window" ]; then
-                        if [ "$batchable" = "true" ] || ! priority_deadline_reached "$priority" "$_unread_age"; then
-                            printf 'skip\t[BATCH-WINDOW] Skipping nudge (%ss < %ss) for %s\n' "$_elapsed" "$_window" "$AGENT_ID" > "$atomic_result_file"
-                            exit 0
-                        fi
-                        printf 'send\t[PRIORITY-DEADLINE] %s unread age %ss reached deadline during debounce for %s\n' "$priority" "$_unread_age" "$AGENT_ID" > "$atomic_result_file"
-                        exit 0
-                    fi
+            fi
+
+            _lease_file="$(current_outstanding_lease_file 2>/dev/null || true)"
+            if [ -n "$_lease_file" ] && [ -e "$_lease_file" ]; then
+                if outstanding_lease_acknowledged "$_lease_file" "$unread_count"; then
+                    printf 'send\t[LEASE-ACK] ACK released normal nudge lease for %s generation=%s\n' "$AGENT_ID" "${CURRENT_CLI_GENERATION:-unknown}" > "$atomic_result_file"
+                else
+                    printf 'skip\t[OUTSTANDING-LEASE] Suppressing normal nudge for %s generation=%s until ACK/unread=0\n' "$AGENT_ID" "${CURRENT_CLI_GENERATION:-unknown}" > "$atomic_result_file"
                 fi
+            else
+                printf 'send\t[LEASE-AVAILABLE] Claiming normal nudge for %s generation=%s\n' "$AGENT_ID" "${CURRENT_CLI_GENERATION:-unknown}" > "$atomic_result_file"
             fi
-
-            _fp_age=0
-            _fp_mtime=$(stat -c %Y "$FINGERPRINT_FILE" 2>/dev/null || echo 0)
-            if [[ "$_fp_mtime" =~ ^[0-9]+$ ]] && [ "$_fp_mtime" -gt 0 ]; then
-                _fp_age=$((_now - _fp_mtime))
-            fi
-            if [ "$_fp_age" -ge "$BACKOFF_SEC" ]; then
-                touch "$FINGERPRINT_FILE"
-                printf '%s' "$_now" > "$DEBOUNCE_FILE"
-                printf 'send\t[BACKOFF] Stale unread for %ss >= %ss, re-notifying %s\n' "$_fp_age" "$BACKOFF_SEC" "$AGENT_ID" > "$atomic_result_file"
-                exit 0
-            fi
-
-            _unread_age=$(get_first_unread_age)
-            printf 'skip\t[FP-SAME] Same unread set (age %ss), waiting for backoff for %s\n' "$_fp_age" "$AGENT_ID" > "$atomic_result_file"
         ) 201>"$STATE_LOCK_FILE"; then
             echo "[$(date)] WARNING: atomic wakeup state update failed for $AGENT_ID" >&2
             return 1
@@ -1174,13 +1187,37 @@ send_wakeup() {
             echo "[$(date)] [BUSY-QUEUE-CLAIM] Claimed single queued nudge for $AGENT_ID fingerprint=$current_fp generation=${claim_generation:-unknown}" >&2
         fi
         if [ -n "$current_fp" ] && [ "$current_fp" != "-" ]; then
-            local safe_fp sent_token sent_mtime sent_elapsed
-            safe_fp="${current_fp//[^A-Za-z0-9_.-]/_}"
-            sent_token="${STATE_DIR}/inbox_watcher_sent_${AGENT_ID}_${safe_fp}"
+            local safe_fp sent_token sent_mtime sent_elapsed lease_generation
+            if [ "$priority" != "high" ]; then
+                # Normal nudges are leased by CLI generation, not by unread
+                # fingerprint. inbox_write.sh removes this sent-token prefix
+                # when its exact-message ACK verification requests a rearm.
+                lease_generation=$(respawn_recovery_generation "$PANE_TARGET" 2>/dev/null || true)
+                lease_generation="${lease_generation:-${CURRENT_CLI_GENERATION:-}}"
+                if [ -n "$lease_generation" ]; then
+                    sent_token="$(outstanding_lease_file_for_generation "$lease_generation")"
+                fi
+            fi
+            if [ -z "$sent_token" ]; then
+                # Compatibility fallback for an unavailable generation: retain
+                # the old fingerprint lease rather than sending unboundedly.
+                safe_fp="${current_fp//[^A-Za-z0-9_.-]/_}"
+                sent_token="${STATE_DIR}/inbox_watcher_sent_${AGENT_ID}_${safe_fp}"
+            fi
             if ! ( set -C; : > "$sent_token" ) 2>/dev/null; then
-                echo "[$(date)] [SEND-LEASE] Skipping delivered fingerprint for $AGENT_ID until ACK/set change: $current_fp kind=$fp_kind" >&2
+                if [ "$priority" != "high" ] && [ -n "$lease_generation" ]; then
+                    echo "[$(date)] [OUTSTANDING-LEASE] Skipping normal nudge for $AGENT_ID until ACK/unread=0: generation=$lease_generation fingerprint=$current_fp" >&2
+                else
+                    echo "[$(date)] [SEND-LEASE] Skipping delivered fingerprint for $AGENT_ID until ACK/set change: $current_fp kind=$fp_kind" >&2
+                fi
                 printf 'dedup\t%s\t%s\t%s\n' "$unread_count" "$current_fp" "$fp_kind" > "$send_result_file"
                 exit 0
+            fi
+            if [ "$priority" != "high" ] && [ -n "$lease_generation" ]; then
+                # Persist the observed unread count with the lease so a later
+                # read transition can be recognized as an ACK even when other
+                # unread messages remain.
+                printf '%s\t%s\t%s\n' "$lease_generation" "$unread_count" "$current_fp" > "$sent_token"
             fi
         fi
         # Force-exit copy-mode if active (mouse scroll → copy-mode → nudge配信失敗を防止)
@@ -1213,11 +1250,13 @@ send_wakeup() {
         fi
         tmux set-buffer -b "nudge_${AGENT_ID}" "$nudge"
         if ! timeout "$SEND_KEYS_TIMEOUT" tmux paste-buffer -t "$PANE_TARGET" -b "nudge_${AGENT_ID}" -d 2>/dev/null; then
+            [ -n "$sent_token" ] && rm -f "$sent_token" 2>/dev/null || true
             echo "[$(date)] WARNING: paste-buffer timed out ($SEND_KEYS_TIMEOUT s)" >&2
             exit 1
         fi
         sleep 0.5
         if ! timeout "$SEND_KEYS_TIMEOUT" tmux send-keys -t "$PANE_TARGET" Enter 2>/dev/null; then
+            [ -n "$sent_token" ] && rm -f "$sent_token" 2>/dev/null || true
             echo "[$(date)] WARNING: send-keys Enter timed out ($SEND_KEYS_TIMEOUT s)" >&2
             exit 1
         fi
