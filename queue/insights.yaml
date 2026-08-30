@@ -9320,3 +9320,10 @@ insights:
   source: "semantic_stress_test"
   fix_known: false
   status: pending
+- id: INS-20260830-172349429-e6c4
+  ts: "2026-08-30T17:23:49+09:00"
+  insight: "[[殿方向性 13 25『ログイン後の Docs FAQ を login からのリンクに』 殿裁定 16 42『別サイトでや]] semantic_stress_test candidate_aliases: NO_MATCH source=cmds query=殿方向性 2026-08-30 13:25『ログイン後の Docs/FAQ を /login からのリンクに』+殿裁定 16:42『別サイトでやろう』(設計書 v2 §9: docs/faq 公開は LP の導線先)。app の docs(67 行)と faq(459 行 JA)は API・認証非依存の静的ページで、RouteAccessBoundary の"
+  priority: "low"
+  source: "semantic_stress_test"
+  fix_known: false
+  status: pending
