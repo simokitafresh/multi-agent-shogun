@@ -8636,3 +8636,10 @@ insights:
   source: "semantic_stress_test"
   fix_known: false
   status: pending
+- id: INS-20260830-132640330-473f
+  ts: "2026-08-30T13:26:40+09:00"
+  insight: "[[殿裁定 13 10『ログイン機構が壊れなければ実装してから直す]] semantic_stress_test candidate_aliases: NO_MATCH source=cmds query=殿裁定 2026-08-30 13:10『ログイン機構が壊れなければ実装してから直す。デザインは全体で統一。ログインページはライトモード基準』。設計書 v2(gist 3236e0df)§2.2 情報構造・§2.4 ブラックアウト表現・§2.5 摩擦除去(F1-F5)・§2.6 ISR・§2.7 影響境界・§3.1 表 v3(8 列+SPY/TQQQ)・§3"
+  priority: "low"
+  source: "semantic_stress_test"
+  fix_known: false
+  status: pending
