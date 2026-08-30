@@ -10748,3 +10748,10 @@ insights:
   source: "gate_loop_health"
   fix_known: false
   status: pending
+- id: INS-20260831-075313459-2ec4
+  ts: "2026-08-31T07:53:13+09:00"
+  insight: "report_review再送ループが軍師CTXを1.5h以上消費。dedupe hotfix(cmd_karo_hotfix_report_review_generation_dedupe)LGTM済みだがmainマージ前のため継続。軍師側の防御=approval marker存在時にmonitorのreport_review再送をsuppress(受信側)するか、inboxファイル肥大化をarchiveで抑止する仕組みが不在"
+  priority: "medium"
+  source: "manual"
+  fix_known: false
+  status: pending
