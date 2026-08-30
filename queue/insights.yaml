@@ -10615,24 +10615,43 @@ insights:
   priority: "low"
   source: "semantic_stress_test"
   fix_known: false
-  status: pending
+  status: resolved
+  resolved_reason: "semantic index candidate was absorbed into a registered concept"
+  action_artifact: "semantic_index=/home/simokitafresh/multi-agent-shogun/docs/semantic-index/index.md"
+  resolved_at: "2026-08-31T03:21:07+09:00"
 - id: INS-20260831-031724671-316f
   ts: "2026-08-31T03:17:24+09:00"
   insight: "[[C \\Users\\simok\\Downloads\\Agent Readiness Diagnostics dm sign]] semantic_stress_test candidate_aliases: NO_MATCH source=lord query=\"C:\\Users\\simok\\Downloads\\Agent Readiness _ Diagnostics _ dm-signal.com _ Simokitafresh@gmail.com's Account _ Cloudflare.html\" \"C:\\Users\\si…"
   priority: "low"
   source: "semantic_stress_test"
   fix_known: false
-  status: pending
+  status: resolved
+  resolved_reason: "semantic index candidate was absorbed into a registered concept"
+  action_artifact: "semantic_index=/home/simokitafresh/multi-agent-shogun/docs/semantic-index/index.md"
+  resolved_at: "2026-08-31T03:21:07+09:00"
 - id: INS-20260831-031736891-2955
   ts: "2026-08-31T03:17:36+09:00"
   insight: "[[LP 表示品質 — プラン行の Total return と ×N を up to 表記へ]] semantic_stress_test candidate_aliases: NO_MATCH source=cmds query=LP 表示品質 — プラン行の Total return と ×N を up to 表記へ、コントラストをデザインガイドの比率へ、note 誘導をボタン化して CTA 列に並べる"
   priority: "low"
   source: "semantic_stress_test"
   fix_known: false
-  status: pending
+  status: resolved
+  resolved_reason: "semantic index candidate was absorbed into a registered concept"
+  action_artifact: "semantic_index=/home/simokitafresh/multi-agent-shogun/docs/semantic-index/index.md"
+  resolved_at: "2026-08-31T03:21:07+09:00"
 - id: INS-20260831-031808481-ca3c
   ts: "2026-08-31T03:18:08+09:00"
   insight: "[[殿指摘 01 41『 の問題点 total return と ×N は up to 〜 のほうがいい]] semantic_stress_test candidate_aliases: NO_MATCH source=cmds query=殿指摘 2026-08-31 01:41『 の問題点: total return と ×N は up to 〜 のほうがいい。コントラストがデザインガイドに即していない』+01:43 スクショ『note 誘導が小さくて弱い』。同時指摘の MDD 欠落は LP 再 build(01:50)で、Basic-DM Sharpe 欠落は backend hotfix"
+  priority: "low"
+  source: "semantic_stress_test"
+  fix_known: false
+  status: resolved
+  resolved_reason: "semantic index candidate was absorbed into a registered concept"
+  action_artifact: "semantic_index=/home/simokitafresh/multi-agent-shogun/docs/semantic-index/index.md"
+  resolved_at: "2026-08-31T03:24:51+09:00"
+- id: INS-20260831-032457747-a9df
+  ts: "2026-08-31T03:24:57+09:00"
+  insight: "[[C \\Users\\simok\\Downloads\\Agent Readiness Diagnostics dm sign]] semantic_stress_test candidate_aliases: NO_MATCH source=lord query=\"C:\\Users\\simok\\Downloads\\Agent Readiness _ Diagnostics _ dm-signal.com _ Simokitafresh@gmail.com's Account _ Cloudflare.html\" \"C:\\Users\\si…"
   priority: "low"
   source: "semantic_stress_test"
   fix_known: false
