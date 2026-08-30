@@ -209,6 +209,26 @@ make_timeout_root() {
     chmod +x "$tmp_root/scripts/memory_db_query.sh" "$tmp_root/scripts/semantic_search.sh" "$tmp_root/bin/rg"
 }
 
+make_auto_recovery_root() {
+    local tmp_root="$1"
+    mkdir -p "$tmp_root/scripts/hooks" "$tmp_root/scripts" "$tmp_root/context" "$tmp_root/docs" "$tmp_root/queue/tasks"
+    cp "$ROOT/scripts/hooks/three_layer_preflight.sh" "$tmp_root/scripts/hooks/three_layer_preflight.sh"
+    cat > "$tmp_root/queue/tasks/kotaro.yaml" <<'YAML'
+task:
+  status: assigned
+  purpose: auto recovery task purpose
+  acceptance_criteria:
+    - id: AC1
+      description: auto recovery task acceptance
+  target_path:
+    - scripts/hooks/three_layer_preflight.sh
+YAML
+    printf '%s\n' 'auto recovery task purpose auto recovery task acceptance' > "$tmp_root/context/semantic-map.md"
+    printf '#!/usr/bin/env bash\nexit 0\n' > "$tmp_root/scripts/memory_db_query.sh"
+    printf '#!/usr/bin/env bash\nexit 0\n' > "$tmp_root/scripts/semantic_search.sh"
+    chmod +x "$tmp_root/scripts/memory_db_query.sh" "$tmp_root/scripts/semantic_search.sh"
+}
+
 @test "3層primary timeoutは実データfallback完了時のみsuccess" {
     local tmp_root="$TMP_EVIDENCE/timeout_success"
     make_timeout_root "$tmp_root"
@@ -369,6 +389,111 @@ for key in ("memory_wall_ms", "semantic_wall_ms", "obsidian_wall_ms", "total_wal
 assert int(data["total_wall_ms"]) < 10000
 PY
     [ "$status" -eq 0 ]
+}
+
+# test_necessity: Recovery/initial-task missing and failed receipts must issue
+# exactly once, while a valid receipt and the search-script break-glass do not.
+@test "Recovery/初回taskの欠落・failed証跡はissue相当を一度だけ自動実行する" {
+    local tmp_root="$TMP_EVIDENCE/auto-recovery-root"
+    local evidence_dir="$tmp_root/evidence"
+    local recovery_log="$TMP_EVIDENCE/auto-recovery.tsv"
+    local evidence="$evidence_dir/evidence_kotaro__auto.json"
+    local baseline_started baseline_finished baseline_wall_ms fixed_started fixed_finished fixed_wall_ms
+    local baseline_blocks=0 fixed_blocks=0 simulated_stall_seconds=814
+    make_auto_recovery_root "$tmp_root"
+
+    # Reproduce the reported 13m34s stall as fixture metadata, then measure
+    # the old fail-closed path before exercising the automatic repair.
+    baseline_started="$(date +%s%3N)"
+    run env THREE_LAYER_TASK_DIR="$tmp_root/queue/tasks" \
+        THREE_LAYER_PREACTION_EVIDENCE_DIR="$evidence_dir" \
+        THREE_LAYER_AUTO_RECOVERY=0 \
+        THREE_LAYER_AGENT_ID=kotaro TMUX_PANE=%auto \
+        bash "$tmp_root/scripts/hooks/three_layer_preflight.sh" verify Write "$tmp_root/context/probe.md" ""
+    baseline_finished="$(date +%s%3N)"
+    baseline_wall_ms=$((baseline_finished - baseline_started))
+    [ "$status" -eq 1 ]
+    [[ "$output" == *"BLOCK:"* ]] && baseline_blocks=1
+    [ "$simulated_stall_seconds" -eq 814 ]
+
+    fixed_started="$(date +%s%3N)"
+    run env THREE_LAYER_TASK_DIR="$tmp_root/queue/tasks" \
+        THREE_LAYER_PREACTION_EVIDENCE_DIR="$evidence_dir" \
+        THREE_LAYER_AUTO_RECOVERY_LOG="$recovery_log" \
+        THREE_LAYER_AGENT_ID=kotaro TMUX_PANE=%auto \
+        bash "$tmp_root/scripts/hooks/three_layer_preflight.sh" verify Write "$tmp_root/context/probe.md" ""
+    [ "$status" -eq 0 ]
+    fixed_finished="$(date +%s%3N)"
+    fixed_wall_ms=$((fixed_finished - fixed_started))
+    [ "$baseline_blocks" -eq 1 ]
+    [ "$fixed_blocks" -eq 0 ]
+    [ "$baseline_wall_ms" -ge 0 ]
+    [ "$fixed_wall_ms" -ge 0 ]
+    [ "$(awk 'END { print NR + 0 }' "$recovery_log")" -eq 1 ]
+    run python3 - "$evidence" <<'PY'
+import json, sys
+data = json.load(open(sys.argv[1], encoding="utf-8"))
+assert data["status"] == "success"
+assert all(data[layer] == "0" for layer in ("memory_db", "semantic", "obsidian"))
+PY
+    [ "$status" -eq 0 ]
+
+    run env THREE_LAYER_TASK_DIR="$tmp_root/queue/tasks" \
+        THREE_LAYER_PREACTION_EVIDENCE_DIR="$evidence_dir" \
+        THREE_LAYER_AUTO_RECOVERY_LOG="$recovery_log" \
+        THREE_LAYER_AGENT_ID=kotaro TMUX_PANE=%auto \
+        bash "$tmp_root/scripts/hooks/three_layer_preflight.sh" verify Read "$tmp_root/context/probe.md" ""
+    [ "$status" -eq 0 ]
+    [ "$(awk 'END { print NR + 0 }' "$recovery_log")" -eq 1 ]
+
+    python3 - "$evidence" <<'PY'
+import json, sys
+path = sys.argv[1]
+data = json.load(open(path, encoding="utf-8"))
+data["status"] = "failed"
+data["semantic"] = "1"
+open(path, "w", encoding="utf-8").write(json.dumps(data) + "\n")
+PY
+    run env THREE_LAYER_TASK_DIR="$tmp_root/queue/tasks" \
+        THREE_LAYER_PREACTION_EVIDENCE_DIR="$evidence_dir" \
+        THREE_LAYER_AUTO_RECOVERY_LOG="$recovery_log" \
+        THREE_LAYER_AGENT_ID=kotaro TMUX_PANE=%auto \
+        bash "$tmp_root/scripts/hooks/three_layer_preflight.sh" verify Edit "$tmp_root/context/probe.md" ""
+    [ "$status" -eq 0 ]
+    [ "$(awk 'END { print NR + 0 }' "$recovery_log")" -eq 2 ]
+
+    python3 - "$evidence" <<'PY'
+import json, sys
+path = sys.argv[1]
+data = json.load(open(path, encoding="utf-8"))
+data["status"] = "failed"
+data["obsidian"] = "2"
+open(path, "w", encoding="utf-8").write(json.dumps(data) + "\n")
+PY
+    run env THREE_LAYER_TASK_DIR="$tmp_root/queue/tasks" \
+        THREE_LAYER_PREACTION_EVIDENCE_DIR="$evidence_dir" \
+        THREE_LAYER_AUTO_RECOVERY_LOG="$recovery_log" \
+        THREE_LAYER_AGENT_ID=kotaro TMUX_PANE=%auto \
+        bash "$tmp_root/scripts/hooks/three_layer_preflight.sh" verify Bash "" "bash scripts/memory_db_query.sh --search test"
+    [ "$status" -eq 0 ]
+    [ "$(awk 'END { print NR + 0 }' "$recovery_log")" -eq 2 ]
+}
+
+@test "自動復旧不能な三層欠落は成功に偽装せずBLOCKする" {
+    local tmp_root="$TMP_EVIDENCE/auto-recovery-fail-root"
+    local evidence_dir="$tmp_root/evidence"
+    local recovery_log="$TMP_EVIDENCE/auto-recovery-fail.tsv"
+    make_auto_recovery_root "$tmp_root"
+    rm "$tmp_root/context/semantic-map.md"
+    run env THREE_LAYER_TASK_DIR="$tmp_root/queue/tasks" \
+        THREE_LAYER_PREACTION_EVIDENCE_DIR="$evidence_dir" \
+        THREE_LAYER_AUTO_RECOVERY_LOG="$recovery_log" \
+        THREE_LAYER_AGENT_ID=kotaro TMUX_PANE=%auto-fail \
+        THREE_LAYER_PRIMARY_TIMEOUT_SECONDS=0.05 THREE_LAYER_GLOBAL_BUDGET_MS=500 \
+        bash "$tmp_root/scripts/hooks/three_layer_preflight.sh" verify Write "$tmp_root/context/probe.md" ""
+    [ "$status" -eq 1 ]
+    [[ "$output" == *"BLOCK:"* ]]
+    [ "$(awk 'END { print NR + 0 }' "$recovery_log")" -eq 1 ]
 }
 
 @test "Claude Read trackerは三層preflight証跡なしでBLOCK" {
