@@ -7777,11 +7777,13 @@ run_report_blob_parity_state() {
     commit="$(git -C "$repo" rev-parse HEAD)"
     printf 'verdict: PASS\ncommit_hash: %s\n' "$commit" > "$report"
     git -C "$repo" rev-list "$(git -C "$repo" rev-parse refs/remotes/origin/main)" > "$snapshot"
+    local git_trace="$BATS_TEST_TMPDIR/ancestry-snapshot-git.trace"
 
-    run bash -c 'source "$1"; report_commit_main_ancestry_state "$2" "$3" "" "$4"' \
-        _ "$GATE_HELPERS_FILE" "$report" "$repo" "$snapshot"
+    run bash -c 'source "$1"; trace="$5"; git() { printf "%s\n" "$*" >> "$trace"; command git "$@"; }; report_commit_main_ancestry_state "$2" "$3" "" "$4"' \
+        _ "$GATE_HELPERS_FILE" "$report" "$repo" "$snapshot" "$git_trace"
     [ "$status" -eq 0 ]
     [[ "$output" == "PASS: PUSHED: report commit $commit contained by "* ]]
+    [ "$(grep -c 'merge-base --is-ancestor' "$git_trace" || true)" -eq 0 ]
 
     printf 'not-reachable\n' >> "$repo/state"
     git -C "$repo" add state

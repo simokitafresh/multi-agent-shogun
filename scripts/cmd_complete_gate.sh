@@ -61,7 +61,8 @@ report_ci_push_state_cached() {
     local report_file="$1"
     local repo_dir="${2:-$SCRIPT_DIR}"
     local task_file="${3:-}"
-    local report_key repo_key task_key cache_key
+    local ancestry_snapshot_file="${4:-}"
+    local report_key repo_key task_key snapshot_key cache_key
 
     if ! declare -p _CCG_REPORT_CI_PUSH_STATE_CACHE >/dev/null 2>&1; then
         declare -gA _CCG_REPORT_CI_PUSH_STATE_CACHE=()
@@ -69,11 +70,12 @@ report_ci_push_state_cached() {
     report_key="$(realpath -- "$report_file" 2>/dev/null || printf '%s' "$report_file")"
     repo_key="$(realpath -- "$repo_dir" 2>/dev/null || printf '%s' "$repo_dir")"
     task_key="$(realpath -- "$task_file" 2>/dev/null || printf '%s' "$task_file")"
-    cache_key="${report_key}"$'\034'"${repo_key}"$'\034'"${task_key}"
+    snapshot_key="$(realpath -- "$ancestry_snapshot_file" 2>/dev/null || printf '%s' "$ancestry_snapshot_file")"
+    cache_key="${report_key}"$'\034'"${repo_key}"$'\034'"${task_key}"$'\034'"${snapshot_key}"
     if [[ "${_CCG_REPORT_CI_PUSH_STATE_CACHE[$cache_key]+yes}" = yes ]]; then
         REPORT_CI_PUSH_STATE_CACHED="${_CCG_REPORT_CI_PUSH_STATE_CACHE[$cache_key]}"
     else
-        REPORT_CI_PUSH_STATE_CACHED="$(report_ci_push_state "$report_file" "$repo_dir" "$task_file")"
+        REPORT_CI_PUSH_STATE_CACHED="$(report_ci_push_state "$report_file" "$repo_dir" "$task_file" "$ancestry_snapshot_file")"
         _CCG_REPORT_CI_PUSH_STATE_CACHE["$cache_key"]="$REPORT_CI_PUSH_STATE_CACHED"
     fi
     printf '%s\n' "$REPORT_CI_PUSH_STATE_CACHED"
@@ -117,7 +119,7 @@ PY
     if declare -F gate_detail_begin >/dev/null 2>&1; then
         gate_detail_begin "post_source_checks.report_commit_main_ancestry.resolve_state" pure_processing
     fi
-    report_ci_push_state_cached "$report_file" "$repo_dir" "$task_file" >/dev/null
+    report_ci_push_state_cached "$report_file" "$repo_dir" "$task_file" "$ancestry_snapshot_file" >/dev/null
     state="$REPORT_CI_PUSH_STATE_CACHED"
     if declare -F gate_detail_finish >/dev/null 2>&1; then
         gate_detail_finish
