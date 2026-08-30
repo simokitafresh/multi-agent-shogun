@@ -8528,3 +8528,10 @@ insights:
   source: "semantic_stress_test"
   fix_known: false
   status: pending
+- id: INS-20260830-125721508-f95f
+  ts: "2026-08-30T12:57:21+09:00"
+  insight: "[[login ショーウィンドウ P1b — 公開集計 EP に Sharpe プラン平均 ベスト ・SPY TQQQ 比較]] semantic_stress_test candidate_aliases: NO_MATCH source=cmds query=/login ショーウィンドウ P1b — 公開集計 EP に Sharpe(プラン平均/ベスト)・SPY/TQQQ 比較行・Secret 集計値を追補する"
+  priority: "low"
+  source: "semantic_stress_test"
+  fix_known: false
+  status: pending
