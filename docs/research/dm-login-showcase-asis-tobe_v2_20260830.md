@@ -27,6 +27,7 @@
 | 10:20 | メインページにプランの額はいらない。他サービスも入会時に遷移したページに価格を書く。現時点で課金は note 経由 | 事実=課金・価格提示は note メンバーシップ側にある。制約=/login は課金ページではなく、価格を二重管理すると note 側改定時に乖離する。判断=**/login に金額を書かない**。プラン名・PF 数・「Get it on note →」のみ。効果=§2.2-5 と §3.1 ラベルから ¥ を撤去、価格は note リンク先に一本化 |
 | 10:21 | https://note.com/dataana2020/n/n17bd615c8f64 を参考にしてくれ(五十嵐「入口を変えただけで会員登録 1.6 倍」) | 事実=記事の結論は『使われない理由は魅力不足ではなく摩擦。効いたのは説明・特典・文言ではなく経路修正(着地ページを変える・ボタンを画面内に入れる)。区間ごとに数えると一箇所が突出して悪く、たいてい思っていた場所と違う。初見ユーザーとしてシークレット窓+スマホで自分で通せ』。制約=/login は未認証の全訪問者が着地する唯一の経路であり、摩擦の有無を今は計測していない。判断=ショーウィンドウ(魅力)より先に**摩擦除去と区間計測**を置く(§2.5)。効果=§5 の順序を P1 計測→P2a 摩擦→P2b ショーウィンドウへ組み替え、P4 を『初見ユーザー実機通し』に変更 |
 | 10:41 | 本番を使うから secret 件数に試作 FoF も含めよ。Current signals 表に齟齬がある。パフォーマンスだけ閲覧できるとシグナルまで閲覧できるがごっちゃになっているのでは | 事実=tier 可視性は 3 段(hide_portfolio=パフォーマンス閲覧 / hide_signal=シグナル閲覧 / hide_components=構成閲覧)で、将軍の件数は hide_portfolio=false だけで数えていた(本番実測 10:43: Basic はパフォーマンス 5 本・シグナル 3 本、premium は 28/25)。制約=「+N PF with plan」はシグナルが見える本数として読まれる。判断=**Secret 件数は active かつ非公開の全 PF(FoF 6 本含む)=73 で確定(未決 1 解決)**。**表は「パフォーマンス閲覧」と「シグナル閲覧」を別の段として扱う**。効果=§1.3 に 3 段実測、§2.3 の row に `performance_plan`/`signals_plan`、§3.1 を 2 段ラベルへ書き換え |
+| 12:18 | Current signals 表がわかりづらい。Basic-DualMomentum 単体、その後はプラン毎の平均とベストの total performance と ×N 倍、CAGR をレンジで書くのがシンプル | 事実=PF 行を並べる表は 8 行×2 段ラベルで読者が数える必要があった。制約=公開できる数値は tier 設定で決まる集合の集計値(個別 PF の保有・シグナルは出さない)。判断=**表を『Basic-DM 1 行 + プラン集計 3 行 + Secret 1 行』の 5 行にする**。各プラン行= PF 数 / 平均 total return / ベスト total return(PF 名) / ×N(平均・ベスト) / CAGR レンジ。効果=§3.1 を v3(集計方式)へ、§2.3 を plan 集計契約へ、未決 3(表記)は『% と ×N と CAGR レンジを併記』で解決 |
 
 ---
 
@@ -122,13 +123,9 @@
 ### 2.3 公開データ契約 `GET /api/public/showcase`（認証不要・tier 非依存・cache 1h）
 - `as_of`: {series_end: "2026-07-31", next_close: "2026-08-31", calculated_at}
 - `blackout`: {active: bool, until_hint: "early September"} ← `viewer_tiers.password_expires_at` の max から算出(**数値のみ。パスワードや env key は決して返さない**)
-- `rows[]`(ラベル方式の順)。**各 row は 2 段の到達プランを持つ**: `performance_plan`(パフォーマンスが見える最小プラン)と `signals_plan`(シグナルが見える最小プラン)。導出は tier 設定の hide_portfolio / hide_signal から(フロント固定値ゼロ)。
-  - `{name: "Basic-DualMomentum", performance_plan: "free", signals_plan: "free", holding, momentum, total_return, inception}` ← 唯一の完全公開(構成まで)
-  - `{name: "DM-safe", performance_plan: "basic", signals_plan: "basic", total_return, inception}` / `{name: "Ave-X", …同…}` ← holding/momentum **キー自体を返さない**
-  - `{name: "シン白虎-激攻", performance_plan: "basic", signals_plan: "standard", total_return}` / `{name: "GSシン分身-常勝", …同…}` ← Basic ではパフォーマンスのみ
-  - `{group: true, signals_plan: "standard", count, max_total_return}` ← Standard で**シグナル**が新たに見える本数 = NewStandard signal 17 − Basic signal 3 = **14**(白虎激攻・分身常勝を含む)
-  - `{name: "GSシン四つ目-常勝", performance_plan: "premium", signals_plan: "premium", total_return}` + `{group, signals_plan: "premium", count, max_total_return}` ← premium signal 25 − NewStandard signal 17 − 代表 1 = **7**(DM-safe-2・四つ目 ×2・劇薬 ×2・Ave-X・裏Ave-X)。`{group, performance_plan: "premium", signals_plan: null, count: 3}` ← 奥義-GS-分身 ×3 はパフォーマンスのみ
-  - `{group, label: "secret", count: 73}` ← active 102 − premium performance 28 − Ave-X(Basic のみ)1 = **73**(FoF 6 本含む・殿裁定 10:41)
+- `hero`: Basic-DualMomentum 1 本 `{name, holding, momentum, components, total_return, multiple, cagr, inception, benchmark_total_return}`(完全公開)
+- `plans[]`(basic / standard / premium の順): `{plan, n, avg_total_return, best_total_return, best_name, avg_multiple, best_multiple, cagr_min, cagr_max}` ← 集合= hide_portfolio=false ∧ hide_signal=false(§3.1)。**個別 PF の holding/momentum は返さない**(best_name のみ)
+- `secret`: `{count: 73}` ← active 102 − premium performance 28 − Ave-X(Basic のみ)1(殿裁定 10:41、FoF 6 本含む)
 - 出所: `portfolio_metrics(years=0)`, `signals`(Basic-DM 最新 date), `tier_visibility_settings`, `viewer_tiers.password_expires_at`。**新規テーブル不要**。count は EP 内で導出(フロントに固定値を書かない)。
 - 非送信の原則: 代表 4 行の保有/モメンタムはフロントがぼかしバーを描く(データは来ない)。
 
@@ -153,22 +150,22 @@
 
 ## §3 画面仕様
 
-### 3.1 Current signals 表（列: Portfolio / Holding / Momentum / Total return since inception）— 2 段ラベル方式(Performance / Signals)
-各行の Portfolio セル= ①PF 名 ②到達ラベル(pill)= **"Performance: {plan} · Signals: {plan}"**(同一なら 1 語) ③群行は「+N PF signals with {plan}」。ゾーン見出し行は置かない(殿 17:41)。
+### 3.1 Current signals 表 — 集計方式 v3（殿 12:18: Basic-DM 単体 + プラン毎の平均/ベスト/×N/CAGR レンジ）
+5 行で完結。個別 PF 名は Basic-DM とベスト PF 名以外出さない。数値は本番 `portfolio_metrics(years=0)` から EP が集計(12:20 実測、series end 2026-07-31)。
 
-| 行 | ラベル | Holding/Momentum | Total return |
-|---|---|---|---|
-| Basic-DualMomentum | Free · full access(緑) | 表示 | +3,139%(2003-) |
-| DM-safe / Ave-X | Basic(performance + signals) | ぼかし | +1,411% / +11,321% |
-| シン白虎-激攻 / GSシン分身-常勝 | Performance: Basic · Signals: Standard | ぼかし | +75,619% / +10,982% |
-| シン四神 ×11 · GSシン分身 ×2 · DM-safe(群) | +14 PF signals with Standard | ぼかし | up to X% |
-| GSシン四つ目-常勝 | Premium · by invitation(紫) | ぼかし | +17,181% |
-| DM-safe-2 · 四つ目 ×2 · 劇薬 ×2 · Ave-X · 裏Ave-X(群) | +7 PF signals with Premium | ぼかし | up to X% |
-| 奥義-GS-分身 ×3(群) | Performance only · Premium | — | up to X% |
-| 73 portfolios | Secret(灰) | Not viewable | Not disclosed |
+| 行 | 対象 | Total return(平均 / ベスト) | ×N(平均 / ベスト) | CAGR レンジ | 保有・シグナル |
+|---|---|---|---|---|---|
+| **Basic-DualMomentum** | 1 本・完全公開(2003-09〜) | +3,139%(bench +1,023%) | ×32 | 16.4% | **表示**(holding / momentum / 構成) |
+| **Basic plan** | signals 3 PF | +5,290% / +11,321%(Ave-X) | ×54 / ×114 | 14.1% 〜 39.2% | Sign in で表示 |
+| **Standard plan** | signals 17 PF | +22,047% / +77,078%(シン白虎-鉄壁) | ×221 / ×772 | 14.1% 〜 52.2% | Sign in で表示 |
+| **Premium plan** · by invitation | signals 25 PF | +23,725% / +106,789%(GSシン四つ目-激攻) | ×238 / ×1,069 | 14.1% 〜 68.7% | 招待制 |
+| **Secret** | 73 PF | Not disclosed | — | — | Not viewable |
 
-- 件数の定義(本番 10:43 実測、EP が tier 設定から導出): Free signals 1 / Basic signals 3(+2) / Standard signals 17(+14) / Premium signals 25(+8=代表 1+群 7)、Premium performance-only 3 / Secret 73(=active 102 − premium performance 28 − Ave-X 1。FoF 6 本含む)。
-- **齟齬の再発防止(AC)**: 未認証 curl の各 row の `performance_plan`/`signals_plan` を、`tier_visibility_settings` の hide_portfolio/hide_signal から独立に再計算した値と全行一致(二値)。「+N」は必ず **signals** の増分であり performance の増分を混ぜない。
+- 集合の定義(将軍の前提・要殿確認): 各プラン行は**そのプランでシグナルまで見える PF**(hide_portfolio=false ∧ hide_signal=false)で集計。パフォーマンスのみの PF(Basic の白虎激攻・分身常勝、premium の奥義 ×3)を含めると Basic 平均は +20,494%/ベスト +75,619%(白虎-激攻)、premium 平均 +40,172%/ベスト +365,962%(奥義-GS-分身-激攻)・CAGR 上限 76.1% になる。「Current *signals*」の表題に合わせ signals 集合を採用。
+- CAGR の算出: `(1+total_return)^(12/period_months)-1`(years=0 行に `cagr` がないため EP で算出)。period は 160〜275 か月(2003〜2013 起点)。
+- 平均は単純平均(PF 数で割る)。中央値ではない(殿の言葉「平均」に従う)。
+- 表題は "Current signals" のまま、副題 "Performance since inception, by plan"。
+- **齟齬の再発防止(AC)**: 未認証 curl の各 plan 行の n/avg/best/×N/cagr_min/max を、DB から独立に再計算した値と全行一致(二値)。集合の定義(hide_portfolio ∧ hide_signal)を EP とテストの両方に同じ 1 関数で置く。
 - ヘッダ右: "Series through {series_end} · next rebalance {next_close} close"。「today/毎営業日」禁止。
 
 ### 3.2 レスポンシブ 2 パターン（前版継承）
@@ -204,7 +201,7 @@
 ## §6 未決（殿裁定待ち。裁定は「事実→制約→判断→効果」で追記）
 1. (解決 10:41 殿裁定)**Secret 件数=73 で確定(FoF 6 本含む。「本番を使う」)**。以下は経緯:  事実=Secret 73 のうち 6 本は folder「オリジナル」の等ウェイト FoF(Sharpe4/CAGR4/greedy2 08-19、New Fund of Funds ×3 07-01。構成は秘奥義 PF、metrics・signals 計算済み、可視 tier 0)。`is_active`・metrics 有無では他の Secret PF と区別できない。案 A=そのまま 73(「存在する PF 数」として正しい。秘奥義 FoF も Secret の一部)/ 案 B=殿が「これは正式 PF ではない」と判断するものだけ admin で `is_active=false` にして件数から自然に外す(データ側の整理、可逆)/ 案 C=EP に除外名リスト(非推奨・固定値)。将軍推奨=**A**(件数の定義を『active かつ非公開の PF 数』で固定し、画面ロジックに例外を持ち込まない。整理したい PF があれば B を殿が個別に)。
 2. **Basic-DM の古参 tier(Standard/AddOn)で hide_portfolio=true**: 公開 PF なのにログイン後の古参会員に非表示。案=admin で 2 tier を false に(可逆・DB 設定変更のみ)。
-3. **総リターンの表記**: 事実=since inception が +3,139%〜+75,619%(白虎)。案 A=% のまま(餌として最強)、案 B=「×32 / ×757」倍率、案 C=CAGR 併記(years=0 に cagr なし → EP で `(1+tr)^(12/months)-1` を算出)。将軍推奨=**C**(信憑性を保ちつつ interest を引く)。
+3. (解決 12:18 殿裁定)**表記= total return(%)・×N 倍・CAGR レンジの併記(§3.1 v3)**。以下は経緯:  事実=since inception が +3,139%〜+75,619%(白虎)。案 A=% のまま(餌として最強)、案 B=「×32 / ×757」倍率、案 C=CAGR 併記(years=0 に cagr なし → EP で `(1+tr)^(12/months)-1` を算出)。将軍推奨=**C**(信憑性を保ちつつ interest を引く)。
 4. 群行 "up to X%" を Standard/Premium で出すか(前版から継続)。
 5. Coupon 説明「note 不要」の正確性(1.1 の通り auth.py にクーポン分岐はない → クーポン=別 env key の tier パスワードか、Legacy `VIEWER_PASS` か要確認)。
 
