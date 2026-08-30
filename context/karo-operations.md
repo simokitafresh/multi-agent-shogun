@@ -49,6 +49,7 @@
 - **karo_direct配備手順(将軍cmd不要の家老自立配備)**: (1)nested形式のtask YAMLを/tmpに作成(`task:`配下にparent_cmd/task_id/scout_exempt:true等を記載) (2)`cp /tmp/task.yaml queue/tasks/{ninja}.yaml` (3)`inbox_write.sh {ninja} "..." task_assigned karo`でnudge。deploy_task.sh --yamlはscout_gateを通るが、task YAML内のscout_exempt:trueで自動PASS(64ec3aa5)。
 - 配備前は毎回「五問チェック」を通す。Purpose / Decomposition / Headcount / Difficulty / Risk を1行で言えなければ配備するな。
 - **AC設計ミス事前検出（verdict_override防止）**: draft配備前に全AC/binary checkを実行順にシミュレートし、`(1)実現可能 (2)成果物の追跡/commit可能 (3)日時・本番更新で自然に変わる値を固定一致要件にしていない (4)推奨条件を必須ACに混入していない` を各yes/noで確認する。1つでもnoなら配備前にACを修正する。「後でverdict override」は禁止。origin: `[[verdict_override_6件中5件]] -> [[AC設計ミス]] -> [[draft配備前二値シミュレーション]]`
+- **忍者ACとpost-deploy検証の二層分離（殿裁定2026-08-30 13:08）**: 忍者taskのACは隔離cloneで二値判定できる `pytest` / `TestClient` / `next build && start` へのローカルcurl / `diff 0` に限定する。`本番` / `Render` / `deploy後` / `CDP` / `live` のcurl・smoke・画面確認は忍者ACへ転記せず、deploy後30分以内に家老が `task_type=post_deploy_check` レーンで実施し、一次出力を掲示板へ生貼付する。
 - **配備前にcmdの前提を現物確認せよ**。ダッシュボードの記載は過去の事実。CI赤→`dashboard.md AUTO_SECTION`のCI Status確認。本番障害→本番を直接確認。KARO_SECTIONの手書き情報は二次データ(LK043: cmd_1806事故)
 - implタスク配備前の偵察要否は `deploy_task.sh` が強制する。家老は `scout_exempt` を勝手に決めない。
 - **karo_direct配備のtask_type設定**: --yaml/手動配備時、偵察・context更新・調査系cmdは`task_type: recon`を設定せよ。デフォルトimplだと実装用教訓が過剰注入される(20件→7件に削減可能。deploy_task.sh L2318のrecon_modeフィルタが発動)。
@@ -71,6 +72,7 @@
 ## §2 分解
 
 - cmdは `scout_exempt` / `scout_only` / フルフロー の3分岐で読む。
+- 実装と本番確認は二層へ分ける。忍者taskは隔離環境で完結する実装AC、deploy後の本番curl/CDP/Render smoke/live確認は家老の `post_deploy_check` とし、前者の完了を後者待ちで止めない。
 - パターンは `recon / impl / impl_parallel / review / integrate` の5種。毎回ゼロから考えるな。
 - 追加と修正が混在したcmdは分離してから配備する。
 - 後続サブタスクは `blocked_by` + `auto_deploy: true` 付きで事前一括作成する。

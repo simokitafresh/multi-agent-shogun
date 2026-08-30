@@ -1,102 +1,212 @@
 commands:
-  cmd_4367:
-    title: "Track A単独偵察 — PF間低相関のSelection・FoF構築利用価値の現物確認+設計レビュー報告書(実装禁止)"
+  cmd_4413:
+    title: "/login ショーウィンドウ P1 — 未認証の公開集計 EP GET /api/public/showcase と区間計測 POST /api/public/showcase/event を read-only で実装する"
     status: delegated
     project: dm-signal
-    purpose: "殿下問2026-08-22 21:55『候補PF同士の低相関をPortfolio Selection・FoF構築に利用する価値があるか。実装はせず現物確認と設計レビューだけを行い、現状→仮説→最小実験→必要な新規指標→既存指標で代用できる部分→実装する価値があるか、の順で報告せよ』への独立検討Track A。旧cmd_4366はtask_id衝突の機構バグ露出でcanceled、家老合意(掲示板blt_20260822_223649)により1系統1cmdへ分割。本cmdはTrack A単独で完結し、Track B(cmd_4368)の成果物・報告を参照しない。将軍一次確認済みの境界: 相関計算はfof/correlation.py(観測用metadata保存)とward_two_stage_ew.py(weighting用Ward block)に実在し、selection側は相関を参照していない"
-    scope_mode: RESEARCH
-    target_path: /mnt/c/Python_app/DM-signal/backend/app/services
+    purpose: "殿指示 2026-08-30 10:07『asis を今の本番として tobe を考えよう』→ 設計書 v2(docs/research/dm-login-showcase-asis-tobe_v2_20260830.md、gist 3236e0df)§2.3/§3.1 v3 の公開データ契約を backend に実装する。殿裁定 12:18-12:20: 表は Basic-DualMomentum 単体+Basic/Standard/Premium の平均・ベスト total return・×N・CAGR レンジ+Secret 73、集計集合はシグナル公開 PF(hide_portfolio=false ∧ hide_signal=false)のみ。摩擦優先(§2.5)のため区間計測 event EP を同梱する"
+    scope_mode: FULL
+    target_path: /mnt/c/Python_app/DM-signal/backend
     acceptance_criteria:
       AC1:
-        description: "PF間return correlationの計算・保存・利用の全実在箇所を現物で特定し(fof/correlation.py、recalculate_fof.pyの保存点、ward_two_stage_ew.py、その他をrgで網羅)、各箇所についてlookback・計算頻度・保存先・利用目的(観測か配分か選択か)を表にし、selectionロジック(selection.py・各filter block)が相関・共分散を参照していないことのrg証跡とともに報告書へ記載する"
-        binary_check: "相関の実在箇所表(lookback・頻度・保存先・利用目的つき)とselection側不使用のrg証跡が報告書にあるか"
+        description: "GET /api/public/showcase を認証なしで実装し(hero=Basic-DualMomentum の holding/momentum/components/total_return/multiple/cagr/inception/benchmark_total_return、plans[]=basic/standard/premium の n/avg_total_return/best_total_return/best_name/avg_multiple/best_multiple/cagr_min/cagr_max、secret.count、as_of、blackout)、未認証 curl の応答を tier_visibility_settings+portfolio_metrics(years=0) からの独立再計算(別関数・同じ集合定義 hide_portfolio=false ∧ hide_signal=false)と全項目一致で確認する"
+        binary_check: "未認証 curl 200 ∧ plans[] の n が basic=3/standard=17/premium=25 ∧ secret.count=73 ∧ 独立再計算との不一致 0 項目 ∧ 応答 JSON に password/env/holding(hero 以外) の文字列 0 件 か?"
       AC2:
-        description: "殿下問の六項構成(現状・仮説・最小実験・必要な新規指標・既存指標で代用できる部分・実装する価値)で設計レビュー報告書をdocs/research配下に作成し、候補設計の比較(平均pairwise correlation最小化・最大相関抑制・inverse volatility・equal risk contribution・minimum variance・高ECR×低相関の二段階selection)と、批判的検討六論点(低相関だが低期待リターンPF混入によるCAGR低下・correlation regime shift・crisis時の相関上昇・FoF階層化による相関低下効果の内包可能性・派生PF同士の見かけ相関・短lookbackでの推定不安定)を、Point-in-Time厳守(t時点までの情報のみで選択しt+1以降で評価、MTD・未来情報混入禁止)の前提で全て含める。既存理論資産docs/research/knowledge-base/portfolio/nested-clustered-optimization.md(López de PradoのNCO=相関クラスタリング2段階最適化)を読み、代用できる部分と現物適用のギャップを設計比較へ反映する"
-        binary_check: "六項構成+候補設計比較+批判的検討六論点+PIT厳守記述+NCO資産とのギャップ整理が報告書に全て存在するか"
+        description: "POST /api/public/showcase/event(認証なし、body={step, ua_class}、step ∈ login_view/input_focus/submit/ok/expired/wrong/note_click、追記専用テーブル 1 表)を実装し、7 step を各 1 回 curl した後に readonly_query で 7 行が step 別に 1 行ずつ存在することを確認する"
+        binary_check: "7 step の curl が全て 2xx ∧ テーブル件数 7 ∧ step 別 DISTINCT 7 ∧ 未知 step が 4xx か?"
       AC3:
-        description: "殿提示の最小実験案(月次rebalance、相関lookbackは過去36Mまたは60Mのmonthly returns、既存selection ruleで上位候補へ絞った中から平均pairwise correlationが低い組合せを選ぶ、weightはequal weight、Controlは従来FoF、forward複数期間で比較、パラメータ最適化禁止)の実行可能性を既存資産(monthly_returnsの可用性・候補PF数・履歴月数・既存metricsのVolatility/MaxDD/Avg UWP/CAGR/Sharpe/Calmar/VDrag/ECR算出経路)と突合し、実行可能か・修正が要る点はどこかの判定を報告書へ記載する。実装・本番書込み・新規run起動は行わない"
-        binary_check: "最小実験案の実行可能性判定(既存データ・metrics経路との突合根拠つき)が報告書にあり、コード変更diffが0か"
+        description: "両 EP の contract test(test_necessity: 集合定義=hide_portfolio ∧ hide_signal が EP と再計算で同一関数であること、hero 以外に holding/momentum キーが無いこと、blackout が viewer_tiers.password_expires_at の max から導出されパスワード文字列を含まないこと)を追加し、選択実行(pytest で新規 contract test ファイルと backend/tests の visibility_helpers・auth 関連テストのみ)で FAIL 0 SKIP 0 を確認する"
+        binary_check: "選択実行 pytest(新規 contract test+visibility/auth 関連)が FAIL 0 ∧ SKIP 0 ∧ 新規 test に非空 test_necessity ∧ 削除 test 0 か?"
     command: |
-      1. backend/app/services配下と関連jobsを読み、相関の計算・保存・利用箇所とselection側不使用をrg証跡つきで確定する
-      2. 六項構成の設計レビュー報告書をdocs/research配下へ作成し、候補設計比較と批判的検討六論点とPIT厳守設計を記載する
-      3. 最小実験案を既存monthly returnsデータと既存metrics算出経路に突合し、実行可能性判定を報告書へ記載する
+      1. 設計書 v2 §2.3/§3.1 v3/§2.5 を読み、backend/app/api/public_showcase.py(仮)に GET /api/public/showcase を実装(集合定義は 1 関数 visible_signal_portfolios(tier) に集約、cache 1h、tier 非依存、hero 以外 holding/momentum 非送信、blackout は expires_at の max のみ)。未認証 curl と独立再計算の全項目一致を確認する
+      2. POST /api/public/showcase/event を追記専用テーブル(migration 1 本)で実装し、7 step の curl→readonly_query で step 別 1 行ずつを確認する
+      3. contract test 3 本(test_necessity 付き)を追加し backend 全 pytest を実行、FAIL 0 SKIP 0 を報告 YAML に生貼付する
     assumptions:
-      claim: "相関実在箇所は将軍が2026-08-22 21:56に一次確認: fof/correlation.pyはlookback_months=12・最短6ヶ月でnp.corrcoef、recalculate_fof.py L1522-1529で月初のみmomentum_data.component_correlationsへ保存、ward_two_stage_ew.pyはlookback_months既定36でsqrt(0.5*(1-rho))距離のWard clustering。selection.pyとfilter blockに相関参照なし(grep -rniE 'correlation|covariance' で確認)"
-      source: "backend/app/services/fof/correlation.py・backend/app/jobs/recalculate_fof.py・backend/app/services/pipeline/blocks/ward_two_stage_ew.py・backend/app/services/pipeline/selection.py の現物"
+      claim: "本番 DB 実測(2026-08-30 10:43/12:20 readonly_query): signals 可視 PF 数 Basic 3/NewStandard 17/premium 25、Secret 73(active 102 − premium performance 28 − Ave-X 1)、portfolio_metrics(years=0).total_return=(1+monthly).prod()-1(metrics_impl.py:1386)、years=0 に cagr なし(EP で (1+tr)^(12/period_months)-1)。5 tier の password_expires_at=2026-08-31。showcase/api/public は backend に 0 件(2026-08-30 10:12 grep)"
+      source: "docs/research/dm-login-showcase-asis-tobe_v2_20260830.md §1.3/§2.3/§3.1、backend/app/services/metrics_impl.py:1386、backend/app/api/auth.py:21-70、backend/app/services/visibility_helpers.py"
       trust: verified
     depends_on: none
-    timeout_minutes: 30
-    estimated_minutes: 15
-    split_decision:
-      boundary_ac_ids: [AC1, AC2, AC3]
-      integration_tasks: 1
-      review_round_trips: 1
+    measurement_source: "production 本番 DB readonly_query 実測 evidence(db_capability_launcher.py、2026-08-30 JST 10時14分〜12時20分の 10 本、tier 可視性 3 段・portfolio_metrics years=0・viewer_tiers.password_expires_at)+ Render deploys API log(2026-08-30 10時10分 JST、FE live sha 812f0b7a1)。ローカル計測は含まない"
+    serial_dependency_evidence: "AC1(集合定義関数+GET EP)→AC2(event EP は同 router に同居)→AC3(contract test は AC1/AC2 の関数と EP を参照)の順に成果物が前段へ依存する。AC1 の visible_signal_portfolios() を AC3 の独立再計算 test が同一関数として import するため、分割すると集合定義が 2 か所に生まれ 10:41 の齟齬が再発する"
+    environment_change: "type=lesson; file=projects/infra/lessons_shogun.yaml; pattern=cmd_4154初回preflightで数値絶対値WARN"
+    timeout_minutes: 60
+    estimated_minutes: 45
+    execution_env:
+      runtime_constraints: "DM-signal backend venv で pytest。本番 DB は readonly_query のみ(db_capability_launcher)。event テーブルの migration は追記専用・既存表無変更"
+      long_runtime_reason: "backend 全 pytest(数百本)の全量実行と 2 EP+migration+contract test 3 本の実装が不可分。分割すると AC1 の独立再計算と AC3 の contract test が別 cmd で二重に集合定義を持つ"
+      measured_runtime_sec: 1800
+    split_decision: "AC3 本(EP1/EP2/test)=1 道具(公開 showcase 契約)。P2a/P2b(frontend)と P3(文言)は別 cmd(設計書 §5)"
     quality_gate:
-      q1_firefighting: "品質向上。理由: 障害対応ではなく、選択ロジックの次期改良判断のための知識基盤を作る偵察であり、殿の裁定材料を事実で固める"
-      q2_learning: "奪わない。理由: 現物読解・設計比較・実行可能性判定は忍者が自力で完結できる読み取り作業であり、将軍は境界の一次確認のみで深掘りを委ねている"
-      q3_next_quality: "上がる。理由: 相関利用の実在境界(観測用と配分用はあるが選択用はない)が報告書で固定され、後続の実験cmd・実装cmdのACを事実に基づいて書ける"
-      q4_depth: "deep — 理由: 殿が批判的検討六論点とPIT厳守まで指定した設計レビューであり、浅い機能列挙では下問に答えられない"
-      q5_verified_source: "structure_verified — 将軍が2026-08-22 21:56に実行: grep -rniE 'correlation|covariance' backend/app → 6ファイル(exit 0)、grep -rn '_calculate_component_correlations' backend/app → 定義+利用2箇所(recalculate_fof.py L19・L1523)、fof/correlation.py全文・ward_two_stage_ew.py L20-110・recalculate_fof.py L1505-1545を現物Readし、相関=観測用保存(月初のみmomentum_dataへ)+weighting用block(Ward)のみでselection.py・filter block側の参照0件という構造境界を確認"
-      q6_not_hiding: "何も隠していない。実装・実験実行・本番書込みは範囲外であること、Ward blockの本番稼働実態は本cmdで確認すべき未検証点であること、Track B(cmd_4368)と同一ACの独立二重検討であることを明記"
-      q7_definition_verified: "低相関selection=候補PF群からPF間monthly return相関が低い組合せを選ぶこと(殿下問の定義)。ECR・VDrag・Avg UWPはα6指標の既存定義(確認日: 2026-08-22。semantic alpha_6_metricsにvolatility drag実在)"
-      q8_why_what: "WHY: 殿下問2026-08-22 21:55『低相関は独立したselection signalとして価値があるのか、既存metricsやFoF構造で既に吸収されているのか判断したい』 / WHAT: 相関実在箇所の全特定+六項構成設計レビュー報告書+最小実験案の実行可能性判定(Track A単独) / WHEN: 今セッション / WHERE: backend/app/services現物+docs/research報告書 / WHO: 忍者(家老分解) / HOW: rg証跡つき現物確認+設計比較 / 複利: 選択ロジック改良の全後続cmdがこの境界事実の上に立つ"
-      q9_firefighting_root_cause: "根本対応。理由: 場当たりの実装ではなく、実装価値の有無自体を現物と設計レビューで先に確定させる順序であり、殿の指定順序(調査→レビュー→判断)そのもの。分割起票自体もtask_id衝突機構バグへのシンプル解"
-      q10_knowledge_boundary: "検証済み=将軍一次確認の相関実在箇所とselection未使用。スコープ外=実装・実験実行・パラメータ探索・本番書込み・新規run起動・Track B成果物の参照。未検証=Ward blockの本番稼働実態、monthly returns履歴長、component_correlationsの保存データ実在量(本cmdで確認する)"
-      q11_not_already_done: "rg -c '低相関' context/cmd-chronicle.md → 0件。旧cmd_4366は同一ACだがtask_id衝突機構バグで配備が4回とも途中停止しcanceled(queue/reports現物は生成済みテンプレートのみで成果物0件)。本cmdは同一ACの分割再起票であり成果物の重複はない"
-      q_ambiguity: "曖昧さなし。実装禁止・報告書のみ・六項構成・PIT厳守・Track A単独完結は固定"
-      q12_lord_30min_cost: "no — 報告書受領後の価値判断のみ殿"
-      diagnosis: "BLOCK理由: 旧cmd_4366で初回preflight2件(q5表記+split_decision欠落)を是正済みの同型再起票 / 対策: 是正済みフィールドを引き継いで起票"
-    environment_change: "type=lesson; file=docs/research/nested-fof-hrp-herc-implementation.md; pattern=pairwise correlation"
-    delegated_at: "\"2026-08-22T22:40:59\""
-    origin: "[[殿下問_低相関selection価値_20260822_2155]] -> [[cmd_4366_task_id衝突canceled]] -> [[cmd_4367_TrackA分割起票]]"
-  cmd_4368:
-    title: "Track B単独偵察 — PF間低相関のSelection・FoF構築利用価値の現物確認+設計レビュー報告書(実装禁止)"
-    status: delegated
-    delegated_at: "2026-08-22T22:46:50"
-    delegation_note: "cmd_delegate重複ガードFP(言及≠委任、後に1753f4cabで根治)により委任inboxが送れず、家老へtask_assigned(msg_20260822_224435)で正規配備依頼→22:46 hayateへ配備済み(deploy_task.log実測)。statusはこの実態への事後整合(2026-08-23 00:25将軍是正)"
+      q1_firefighting: "消火ではない。08-18 の設計(ToBe v0.3)が 0/4 手のまま 12 日止まっていた実装を、殿裁定 5 本(金額なし/Secret 73/3 段可視性/集計方式 v3/シグナル公開集合)で確定した契約どおり初めて実装する品質向上"
+      q2_learning: "忍者は集合定義を 1 関数に集約し EP と再計算を同一関数で結ぶ設計(齟齬の構造防止)を実装で学ぶ。丸投げではなく設計書 §2.3/§3.1 に契約と AC が明文化済み"
+      q3_next_quality: "P2a/P2b(frontend)が本 EP の契約に乗るため、次 cmd は表示のみに集中でき、数値の齟齬(10:41 殿指摘)が再発しない"
+      q4_depth: "medium — 2 EP+migration+contract test。深堀りは設計書側で完了済み"
+      q5_verified_source: "production_verified — 2026-08-30 10:14-12:20 readonly_query 10 本で tier 可視性 3 段・total_return 単位・period_months・password_expires_at を実測。code_reading — metrics_impl.py:1386/auth.py:21-70 を 10:12 に読了"
+      q6_not_hiding: "hero 以外の holding/momentum を返さない設計は非送信であり隠蔽ではない(設計書 §2.3 に明記)。CAGR は years=0 に無いことを明記し EP 算出とした"
+      q7_definition_verified: "『シグナル公開 PF』= hide_portfolio=false ∧ hide_signal=false(殿裁定 12:19、確認日: 2026-08-30 10:43 本番 DB)。『Secret』= どの tier にも hide_portfolio=false が無い active PF(殿裁定 10:41、73 本)。『×N』= 1+total_return。『CAGR』= (1+total_return)^(12/period_months)-1"
+      q8_why_what: "WHY: /login が JA 単言語の門のままで未認証に見せる動的データがゼロ(FE deploy 812f0b7a1 2026-08-18 以来) / WHAT: GET /api/public/showcase(plans n=3/17/25、secret 73)と POST …/event(7 step)を 2026-08-30 実測値で実装し pytest FAIL 0 SKIP 0 / WHEN: 今セッション / WHERE: /mnt/c/Python_app/DM-signal/backend / WHO: 家老配備の忍者 1 名 / HOW: 設計書 v2 §2.3 契約+独立再計算 AC / 複利: 集合定義を 1 関数に集約する選択を 10 回繰り返せば、公開系 EP を追加するたびに再計算 test が同じ関数に乗り齟齬検出コストがゼロに近づく=正の複利。フロント固定値で 10 回繰り返せば tier 変更ごとに手直しが増える負の複利"
+      q9_firefighting_root_cause: "根本対応。数値齟齬の根因=集合定義がフロント固定値や人の集計に散らばること。EP と再計算を同一関数に集約し、フロント固定値ゼロにする"
+      q10_knowledge_boundary: "検証済み: tier 可視性 3 段の本番値、metrics 単位、expires_at。スコープ外: frontend 表示(P2a/P2b)、文言/URL 設定値化(P3)、Basic-DM の古参 tier hide 是正(未決 2)、クーポン経路(未決 5)"
+      q11_not_already_done: "rg -c 'api/public' /mnt/c/Python_app/DM-signal/backend/app → 0件 / rg -c 'showcase' /mnt/c/Python_app/DM-signal/backend/app → 0件(2026-08-30 10:12) / bash scripts/semantic_search.sh 'login showcase' → 設計書 v2 行のみ(実装 cmd なし)"
+      q_ambiguity: "『平均』は単純平均(殿の言葉どおり、中央値ではない)。『CAGR レンジ』は集合内の min〜max。曖昧さは設計書 §3.1 v3 で解消済み"
+      q12_lord_30min_cost: "no — 殿裁定 5 本は反映済み。忍者は設計書のみで実装可能"
+      diagnosis: "BLOCK理由: 初回 preflight で PD-104(q5 の『本番 DB 実測』に measurement_source なし)・30 分単体 task に serial_dependency_evidence なし・q8 複利なし・WARN 2 件(AC 絶対値/全件テスト)に environment_change なし=雛形にない 3 フィールドを記憶で省いた / 対策: measurement_source を本番 readonly_query の日時付きで、serial_dependency_evidence を AC1→AC3 の関数依存で記入、AC3 を選択実行へ、environment_change を LS(cmd_4154 絶対値 WARN)へ接続"
+    delegated_at: "\"2026-08-30T12:25:51\""
+    origin: "[[殿観測_ログインページさみしい_20260818_1550]] -> [[dm-login-showcase-asis-tobe_v2_20260830]] -> [[cmd_4413_public_showcase_ep]]"
+  cmd_4414:
+    title: "/login ショーウィンドウ P1b — 公開集計 EP に Sharpe(プラン平均/ベスト)・SPY/TQQQ 比較行・Secret 集計値を追補する"
+    status: void
     project: dm-signal
-    purpose: "殿下問2026-08-22 21:55『候補PF同士の低相関をPortfolio Selection・FoF構築に利用する価値があるか。実装はせず現物確認と設計レビューだけを行い、現状→仮説→最小実験→必要な新規指標→既存指標で代用できる部分→実装する価値があるか、の順で報告せよ』への独立検討Track B。旧cmd_4366はtask_id衝突の機構バグ露出でcanceled、家老合意(掲示板blt_20260822_223649)により1系統1cmdへ分割。本cmdはTrack B単独で完結し、Track A(cmd_4367)の成果物・報告を参照しない。将軍一次確認済みの境界: 相関計算はfof/correlation.py(観測用metadata保存)とward_two_stage_ew.py(weighting用Ward block)に実在し、selection側は相関を参照していない"
-    scope_mode: RESEARCH
-    target_path: /mnt/c/Python_app/DM-signal/backend/app/services
+    purpose: "殿裁定 2026-08-30 12:30『一番下に比較として S&P500(SPY)と TQQQ を入れよう。Sharpe ratio も同じように入れよう』+12:32『secret の数値も入れよう』。cmd_4413(P1)は 12:25 に発令済みのため、契約追補を本 cmd に分離する(cmd 途中修正の二択=別 CMD)。設計書 v2 §2.3(plans[].sharpe_avg/best、benchmarks[]、secret 集計)・§3.1 v3(Sharpe 列+SPY/TQQQ 2 行+Secret 数値)が契約"
+    scope_mode: FULL
+    target_path: /mnt/c/Python_app/DM-signal/backend
     acceptance_criteria:
       AC1:
-        description: "PF間return correlationの計算・保存・利用の全実在箇所を現物で特定し(fof/correlation.py、recalculate_fof.pyの保存点、ward_two_stage_ew.py、その他をrgで網羅)、各箇所についてlookback・計算頻度・保存先・利用目的(観測か配分か選択か)を表にし、selectionロジック(selection.py・各filter block)が相関・共分散を参照していないことのrg証跡とともに報告書へ記載する"
-        binary_check: "相関の実在箇所表(lookback・頻度・保存先・利用目的つき)とselection側不使用のrg証跡が報告書にあるか"
+        description: "GET /api/public/showcase の plans[] に sharpe_avg/sharpe_best/sharpe_best_name(metrics_json.metrics の『Sharpe Ratio』close.portfolio、集合は cmd_4413 と同一関数)を、secret に n/avg_total_return/best_total_return/avg_multiple/best_multiple/cagr_min/cagr_max/sharpe_avg/sharpe_best(best_name は null 固定)を追加し、未認証 curl の値を readonly_query からの独立再計算と全項目一致で確認する"
+        binary_check: "plans 3 行+secret の追加フィールドが独立再計算と不一致 0 ∧ secret.best_name が null ∧ 応答に Secret PF の名前文字列 0 件 か?"
       AC2:
-        description: "殿下問の六項構成(現状・仮説・最小実験・必要な新規指標・既存指標で代用できる部分・実装する価値)で設計レビュー報告書をdocs/research配下に作成し(Track Aと別ファイル名・担当名つき)、候補設計の比較(平均pairwise correlation最小化・最大相関抑制・inverse volatility・equal risk contribution・minimum variance・高ECR×低相関の二段階selection)と、批判的検討六論点(低相関だが低期待リターンPF混入によるCAGR低下・correlation regime shift・crisis時の相関上昇・FoF階層化による相関低下効果の内包可能性・派生PF同士の見かけ相関・短lookbackでの推定不安定)を、Point-in-Time厳守(t時点までの情報のみで選択しt+1以降で評価、MTD・未来情報混入禁止)の前提で全て含める。既存理論資産docs/research/knowledge-base/portfolio/nested-clustered-optimization.md(López de PradoのNCO=相関クラスタリング2段階最適化)を読み、代用できる部分と現物適用のギャップを設計比較へ反映する"
-        binary_check: "六項構成+候補設計比較+批判的検討六論点+PIT厳守記述+NCO資産とのギャップ整理が担当名つき別ファイルの報告書に全て存在するか"
+        description: "benchmarks[] に SPY(2003-10〜series_end)と TQQQ(2010-03〜series_end)の total_return/multiple/cagr/sharpe を ticker_monthly_returns から算出して追加し(Sharpe は PF 計算と同じ Rf 系列・同じ式 metrics_impl.py:977-983 を共用)、SPY の sharpe が Basic-DualMomentum 行の metrics『Sharpe Ratio』close.benchmark と小数 2 桁で一致することを確認する"
+        binary_check: "benchmarks が 2 件 ∧ SPY.sharpe == Basic-DM benchmark Sharpe(2 桁) ∧ TQQQ.since == 2010-03 ∧ 各 total_return が ticker_monthly_returns からの独立再計算と一致 か?"
       AC3:
-        description: "殿提示の最小実験案(月次rebalance、相関lookbackは過去36Mまたは60Mのmonthly returns、既存selection ruleで上位候補へ絞った中から平均pairwise correlationが低い組合せを選ぶ、weightはequal weight、Controlは従来FoF、forward複数期間で比較、パラメータ最適化禁止)の実行可能性を既存資産(monthly_returnsの可用性・候補PF数・履歴月数・既存metricsのVolatility/MaxDD/Avg UWP/CAGR/Sharpe/Calmar/VDrag/ECR算出経路)と突合し、実行可能か・修正が要る点はどこかの判定を報告書へ記載する。実装・本番書込み・新規run起動は行わない"
-        binary_check: "最小実験案の実行可能性判定(既存データ・metrics経路との突合根拠つき)が報告書にあり、コード変更diffが0か"
+        description: "追加フィールドの contract test(test_necessity: Sharpe の出所が metrics『Sharpe Ratio』であること、benchmarks の Sharpe が PF と同じ Rf 系列であること、secret.best_name が常に null であること)を追加し、選択実行(pytest で cmd_4413 の contract test ファイル+本 cmd の追加 test のみ)で FAIL 0 SKIP 0 を確認する"
+        binary_check: "選択実行 pytest が FAIL 0 ∧ SKIP 0 ∧ 新規 test に非空 test_necessity ∧ 削除 test 0 か?"
     command: |
-      1. backend/app/services配下と関連jobsを読み、相関の計算・保存・利用箇所とselection側不使用をrg証跡つきで確定する
-      2. 六項構成の設計レビュー報告書をdocs/research配下へ担当名つき別ファイルで作成し、候補設計比較と批判的検討六論点とPIT厳守設計を記載する
-      3. 最小実験案を既存monthly returnsデータと既存metrics算出経路に突合し、実行可能性判定を報告書へ記載する
+      1. cmd_4413 の visible_signal_portfolios()/集計関数を拡張して plans[].sharpe_* と secret 集計(best_name null)を返し、未認証 curl と独立再計算の全項目一致を確認する
+      2. ticker_monthly_returns から SPY/TQQQ の benchmarks[] を算出(Sharpe は metrics_impl の Sharpe 式・Rf 系列を共用)し、SPY.sharpe が Basic-DM の benchmark Sharpe と 2 桁一致することを確認する
+      3. contract test 3 本(test_necessity 付き)を追加し、選択実行 pytest で FAIL 0 SKIP 0 を報告 YAML に生貼付する
     assumptions:
-      claim: "相関実在箇所は将軍が2026-08-22 21:56に一次確認: fof/correlation.pyはlookback_months=12・最短6ヶ月でnp.corrcoef、recalculate_fof.py L1522-1529で月初のみmomentum_data.component_correlationsへ保存、ward_two_stage_ew.pyはlookback_months既定36でsqrt(0.5*(1-rho))距離のWard clustering。selection.pyとfilter blockに相関参照なし(grep -rniE 'correlation|covariance' で確認)"
-      source: "backend/app/services/fof/correlation.py・backend/app/jobs/recalculate_fof.py・backend/app/services/pipeline/blocks/ward_two_stage_ew.py・backend/app/services/pipeline/selection.py の現物"
+      claim: "本番 DB 実測(2026-08-30 12:33/12:35 readonly_query): metrics_json.metrics に『Sharpe Ratio』(close.portfolio/benchmark)が全 PF にあり、Basic-DM=0.89/benchmark 0.63。signals 集合の Sharpe 平均/ベスト Basic 0.95/1.11、NewStandard 0.96/1.28、premium 1.03/1.40。Secret 73 本は全て metrics あり(平均 +535,294%、Sharpe 平均 1.71/ベスト 2.48)。ticker_monthly_returns(symbol/year_month/monthly_return)に SPY 1993-01〜2026-08、TQQQ 2010-02〜2026-08。Sharpe 式は metrics_impl.py:977-983(monthly_excess.mean()/std*sqrt(12))"
+      source: "docs/research/dm-login-showcase-asis-tobe_v2_20260830.md §2.3/§3.1 v3、backend/app/services/metrics_impl.py:977-983、本番 readonly_query 2026-08-30 12:33/12:35"
       trust: verified
-    depends_on: none
-    timeout_minutes: 30
-    estimated_minutes: 15
-    split_decision:
-      boundary_ac_ids: [AC1, AC2, AC3]
-      integration_tasks: 1
-      review_round_trips: 1
+    depends_on: cmd_4413
+    measurement_source: "production 本番 DB readonly_query 実測 evidence(db_capability_launcher.py、2026-08-30 JST 12時33分〜12時35分、metrics Sharpe Ratio・Secret 73 本 metrics・ticker_monthly_returns SPY/TQQQ 範囲)。ローカル計測は含まない"
+    serial_dependency_evidence: "AC1(集計関数の拡張)→AC2(benchmarks は同 EP の同一応答に同居し Sharpe 式を共用)→AC3(contract test が AC1/AC2 の関数を参照)。cmd_4413 の集合定義関数を再利用するため depends_on cmd_4413"
+    environment_change: "type=lesson; file=projects/infra/lessons_shogun.yaml; pattern=cmd_4154初回preflightで数値絶対値WARN"
+    timeout_minutes: 45
+    estimated_minutes: 30
+    execution_env:
+      runtime_constraints: "DM-signal backend venv で pytest。本番 DB は readonly_query のみ。新テーブルなし(既存 metrics/ticker_monthly_returns の読取のみ)"
+      long_runtime_reason: "cmd_4413 の EP/関数を拡張する 3 AC が同一応答契約に同居し、分割すると Sharpe/benchmarks/secret で集合定義や Rf 系列が別実装になる"
+      measured_runtime_sec: 1200
+    split_decision: "AC3 本=1 道具(cmd_4413 契約の追補)。cmd_4413 CLEAR 後に配備(depends_on)"
     quality_gate:
-      q1_firefighting: "品質向上。理由: 障害対応ではなく、選択ロジックの次期改良判断のための知識基盤を作る偵察であり、殿の裁定材料を事実で固める"
-      q2_learning: "奪わない。理由: 現物読解・設計比較・実行可能性判定は忍者が自力で完結できる読み取り作業であり、将軍は境界の一次確認のみで深掘りを委ねている"
-      q3_next_quality: "上がる。理由: 独立2系統の突合により報告書の結論の頑健性が上がり、後続の実験cmd・実装cmdのACを事実に基づいて書ける"
-      q4_depth: "deep — 理由: 殿が批判的検討六論点とPIT厳守まで指定した設計レビューであり、浅い機能列挙では下問に答えられない"
-      q5_verified_source: "structure_verified — 将軍が2026-08-22 21:56に実行: grep -rniE 'correlation|covariance' backend/app → 6ファイル(exit 0)、grep -rn '_calculate_component_correlations' backend/app → 定義+利用2箇所(recalculate_fof.py L19・L1523)、fof/correlation.py全文・ward_two_stage_ew.py L20-110・recalculate_fof.py L1505-1545を現物Readし、相関=観測用保存(月初のみmomentum_dataへ)+weighting用block(Ward)のみでselection.py・filter block側の参照0件という構造境界を確認"
-      q6_not_hiding: "何も隠していない。実装・実験実行・本番書込みは範囲外であること、Ward blockの本番稼働実態は本cmdで確認すべき未検証点であること、Track A(cmd_4367)と同一ACの独立二重検討であることを明記"
-      q7_definition_verified: "低相関selection=候補PF群からPF間monthly return相関が低い組合せを選ぶこと(殿下問の定義)。ECR・VDrag・Avg UWPはα6指標の既存定義(確認日: 2026-08-22。semantic alpha_6_metricsにvolatility drag実在)"
-      q8_why_what: "WHY: 殿下問2026-08-22 21:55『低相関は独立したselection signalとして価値があるのか、既存metricsやFoF構造で既に吸収されているのか判断したい』 / WHAT: 相関実在箇所の全特定+六項構成設計レビュー報告書+最小実験案の実行可能性判定(Track B単独) / WHEN: 今セッション / WHERE: backend/app/services現物+docs/research報告書 / WHO: 忍者(家老分解) / HOW: rg証跡つき現物確認+設計比較 / 複利: 独立2系統の突合で結論の頑健性が上がる"
-      q9_firefighting_root_cause: "根本対応。理由: 場当たりの実装ではなく、実装価値の有無自体を現物と設計レビューで先に確定させる順序であり、殿の指定順序(調査→レビュー→判断)そのもの。分割起票自体もtask_id衝突機構バグへのシンプル解"
-      q10_knowledge_boundary: "検証済み=将軍一次確認の相関実在箇所とselection未使用。スコープ外=実装・実験実行・パラメータ探索・本番書込み・新規run起動・Track A成果物の参照。未検証=Ward blockの本番稼働実態、monthly returns履歴長、component_correlationsの保存データ実在量(本cmdで確認する)"
-      q11_not_already_done: "rg -c '低相関' context/cmd-chronicle.md → 0件。旧cmd_4366は同一ACだがtask_id衝突機構バグで配備が4回とも途中停止しcanceled(queue/reports現物は生成済みテンプレートのみで成果物0件)。cmd_4367はTrack Aで本cmdはTrack B、独立二重検討のため成果物は担当名つき別ファイルで重複しない"
-      q_ambiguity: "曖昧さなし。実装禁止・報告書のみ・六項構成・PIT厳守・Track B単独完結は固定"
-      q12_lord_30min_cost: "no — 報告書受領後の価値判断のみ殿"
-      diagnosis: "BLOCK理由: 旧cmd_4366で初回preflight2件(q5表記+split_decision欠落)を是正済みの同型再起票 / 対策: 是正済みフィールドを引き継いで起票"
-    environment_change: "type=lesson; file=docs/research/nested-fof-hrp-herc-implementation.md; pattern=pairwise correlation"
-    origin: "[[殿下問_低相関selection価値_20260822_2155]] -> [[cmd_4366_task_id衝突canceled]] -> [[cmd_4368_TrackB分割起票]]"
+      q1_firefighting: "消火ではない。殿裁定 12:30/12:32 で確定した比較軸(Sharpe・SPY/TQQQ・Secret 数値)を、発令済み cmd_4413 を止めずに別 cmd で追補する品質向上"
+      q2_learning: "忍者は Sharpe の出所(metrics 配列)と Rf 系列の共用、ベンチマーク期間の明示(2003-10/2010-03)を実装で学ぶ。設計書 §2.3/§3.1 に契約と実測値が明文化済み"
+      q3_next_quality: "P2b(frontend 表)が本追補を含む完成契約に乗れるため、表の列追加で frontend を作り直す往復が消える"
+      q4_depth: "shallow — 既存 EP のフィールド追加と算出。深堀りは設計書側で完了"
+      q5_verified_source: "production_verified — 2026-08-30 12:33 readonly_query で metrics Sharpe Ratio 45 行・12:35 で Secret 73 行を実測、ticker_monthly_returns の SPY/TQQQ 範囲を実測。code_reading — metrics_impl.py:977-983 を 12:33 に読了"
+      q6_not_hiding: "Secret の best_name を null にするのは殿裁定 12:32(正体は伏せ数字で示す)であり隠蔽ではない。TQQQ Sharpe の将軍概算(Rf=0、0.90)は設計書に†で明記し EP は Rf 込みで再計算する"
+      q7_definition_verified: "『Sharpe』= metrics_json.metrics[name=Sharpe Ratio].close.portfolio(年率・Rf 控除、確認日: 2026-08-30 12:33)。『比較期間』= SPY 2003-10〜series_end(Basic-DM と同期間)、TQQQ 2010-03〜series_end(上場来)。『Secret 集計』= どの tier にも hide_portfolio=false が無い active 73 本の years=0 metrics"
+      q8_why_what: "WHY: 表に Sharpe と市場比較(SPY/TQQQ)と Secret の数字が無いと『どれだけ良いか』が伝わらない(殿 12:30/12:32) / WHAT: plans[].sharpe_*・benchmarks[] 2 件・secret 集計 9 フィールドを 2026-08-30 実測値どおり返し、SPY.sharpe が Basic-DM benchmark と 2 桁一致 / WHEN: cmd_4413 CLEAR 後 / WHERE: /mnt/c/Python_app/DM-signal/backend / WHO: 家老配備の忍者 1 名 / HOW: cmd_4413 の集合関数と metrics_impl の Sharpe 式を共用 / 複利: Sharpe 式と Rf 系列を 1 か所で共用する選択を 10 回繰り返せば比較指標を増やすたびに整合が自動で保たれる=正の複利。EP 内で別式を書けば指標ごとに乖離が積み上がる負の複利"
+      q9_firefighting_root_cause: "根本対応。比較指標の乖離の根因=式と Rf 系列の重複実装。metrics_impl の Sharpe 式を共用し、SPY.sharpe==Basic-DM benchmark Sharpe を AC で固定する"
+      q10_knowledge_boundary: "検証済み: metrics Sharpe の所在と値、Secret 73 本の metrics、ticker_monthly_returns 範囲。スコープ外: frontend 表示(P2b)、TQQQ の Rf 込み Sharpe 正確値(EP 実装で確定)、未決 2/5"
+      q11_not_already_done: "rg -c 'benchmarks' /mnt/c/Python_app/DM-signal/backend/app/api → 0件 / rg -c 'sharpe_avg' /mnt/c/Python_app/DM-signal/backend → 0件(2026-08-30 12:36) / cmd_4413 の AC1 に sharpe/benchmarks/secret 集計は含まれない(queue/shogun_to_karo.yaml 現物)"
+      q_ambiguity: "『同じように』= プラン行と同じ平均/ベスト形式で Sharpe を出す(殿 12:30)。比較行の期間は各行に明記し単純比較でないことを注記(設計書 §3.1)。曖昧さは解消済み"
+      q12_lord_30min_cost: "no — 殿裁定 3 本は反映済み"
+      diagnosis: "BLOCK理由: 該当なし(cmd_4413 の preflight で判明した 4 フィールドを雛形時点で記入) / 対策: 該当なし"
+    delegated_at: "\"2026-08-30T12:37:28\""
+    origin: "[[殿裁定_sharpe_spy_tqqq_20260830_1230]] -> [[dm-login-showcase-asis-tobe_v2_20260830]] -> [[cmd_4414_showcase_sharpe_benchmarks]]"
+  cmd_4415:
+    title: "/login ショーウィンドウ P1b(改) — 公開集計 EP に Sharpe・MDD(プラン平均/最浅)・SPY/TQQQ 比較行・Secret 集計値を追補する(cmd_4414 を置換)"
+    status: delegated
+    project: dm-signal
+    purpose: "殿裁定 2026-08-30 12:30『SPY/TQQQ 比較と Sharpe』+12:32『secret の数値』+12:46『MDD も追加しよう』。cmd_4414(12:37 発令、cmd_4413 CLEAR まで未配備)に MDD を加えた置換 cmd。cmd_4414 は家老が void する(未配備のため途中修正ではなく差し替え)。設計書 v2 §2.3(plans[].sharpe_*/mdd_*、benchmarks[] に mdd、secret 集計)・§3.1 v3(Sharpe 列+MDD 列+SPY/TQQQ 2 行+Secret 数値)が契約"
+    scope_mode: FULL
+    target_path: /mnt/c/Python_app/DM-signal/backend
+    acceptance_criteria:
+      AC1:
+        description: "GET /api/public/showcase の plans[] に sharpe_best(最大)と mdd_best(最浅=最大値)(metrics_json.metrics の『Sharpe Ratio』『Maximum Drawdown』close.portfolio、集合は cmd_4413 と同一関数、平均は返さない=殿裁定 12:49)を、hero に sharpe/mdd を、secret に n/avg_total_return/best_total_return/avg_multiple/best_multiple/cagr_min/cagr_max/sharpe_best/mdd_best を追加し、plans[]/secret から PF 名フィールド(best_name 等)を全て除去(殿裁定 12:48: 表内に PF 名なし)したうえで、未認証 curl の値を readonly_query からの独立再計算と全項目一致で確認する"
+        binary_check: "plans 3 行+hero+secret の追加フィールドが独立再計算と不一致 0 ∧ 応答 JSON 中の PF 名が Basic-DualMomentum の 1 件のみ(他の active PF 名 0 件) か?"
+      AC2:
+        description: "benchmarks[] に SPY(2003-10〜series_end)と TQQQ(2010-03〜series_end)の total_return/multiple/cagr/sharpe/mdd を ticker_monthly_returns から算出して追加し(Sharpe は metrics_impl.py:977-983 の式と Rf 系列を、MDD は同 metrics_impl の月次 DD 式を共用)、SPY の sharpe と mdd が Basic-DualMomentum 行の metrics『Sharpe Ratio』『Maximum Drawdown』close.benchmark と小数 2 桁で一致することを確認する"
+        binary_check: "benchmarks が 2 件 ∧ SPY.sharpe と SPY.mdd が Basic-DM benchmark 値と 2 桁一致 ∧ TQQQ.since == 2010-03 ∧ 各 total_return が ticker_monthly_returns からの独立再計算と一致 か?"
+      AC3:
+        description: "追加フィールドの contract test(test_necessity: Sharpe/MDD の出所が metrics 配列であること、benchmarks の Sharpe/MDD が PF と同じ式・Rf 系列であること、secret.best_name が常に null であること)を追加し、選択実行(pytest で cmd_4413 の contract test ファイル+本 cmd の追加 test のみ)で FAIL 0 SKIP 0 を確認する"
+        binary_check: "選択実行 pytest が FAIL 0 ∧ SKIP 0 ∧ 新規 test に非空 test_necessity ∧ 削除 test 0 か?"
+    command: |
+      1. cmd_4413 の集合関数/集計関数を拡張して plans[].sharpe_*/mdd_*・hero.sharpe/mdd・secret 集計(best_name null)を返し、未認証 curl と独立再計算の全項目一致を確認する
+      2. ticker_monthly_returns から SPY/TQQQ の benchmarks[](total/×N/CAGR/Sharpe/MDD)を metrics_impl の式を共用して算出し、SPY の sharpe/mdd が Basic-DM の benchmark 値と 2 桁一致することを確認する
+      3. contract test 3 本(test_necessity 付き)を追加し、選択実行 pytest で FAIL 0 SKIP 0 を報告 YAML に生貼付する
+    assumptions:
+      claim: "本番 DB 実測(2026-08-30 12:33〜12:47 readonly_query): metrics に『Sharpe Ratio』『Maximum Drawdown』(close.portfolio/benchmark)が全 PF にあり、Basic-DM Sharpe 0.89/MDD −41.0%、benchmark(SPY 2003-10〜) Sharpe 0.63/MDD −52.9%。signals 集合の MDD 平均/最浅: Basic −36.5%/−23.3%、NewStandard −47.0%/−22.8%、premium −44.1%/−21.2%、Secret −29.9%/−9.8%。ticker_monthly_returns に SPY 1993-01〜、TQQQ 2010-02〜(TQQQ 2010-03〜 MDD −80.1%)"
+      source: "docs/research/dm-login-showcase-asis-tobe_v2_20260830.md §2.3/§3.1 v3、backend/app/services/metrics_impl.py:977-983、本番 readonly_query 2026-08-30 12:33/12:35/12:47"
+      trust: verified
+    depends_on: cmd_4413
+    measurement_source: "production 本番 DB readonly_query 実測 evidence(db_capability_launcher.py、2026-08-30 JST 12時33分〜12時47分、metrics Sharpe Ratio/Maximum Drawdown・Secret 73 本・ticker_monthly_returns SPY/TQQQ)。ローカル計測は含まない"
+    serial_dependency_evidence: "AC1(集計関数の拡張)→AC2(benchmarks は同 EP の同一応答に同居し Sharpe/MDD 式を共用)→AC3(contract test が AC1/AC2 の関数を参照)。cmd_4413 の集合定義関数を再利用するため depends_on cmd_4413"
+    environment_change: "type=lesson; file=projects/infra/lessons_shogun.yaml; pattern=cmd_4154初回preflightで数値絶対値WARN"
+    timeout_minutes: 45
+    estimated_minutes: 30
+    execution_env:
+      runtime_constraints: "DM-signal backend venv で pytest。本番 DB は readonly_query のみ。新テーブルなし"
+      long_runtime_reason: "cmd_4413 の EP/関数を拡張する 3 AC が同一応答契約に同居し、分割すると Sharpe/MDD/benchmarks/secret で集合定義や式が別実装になる"
+      measured_runtime_sec: 1200
+    split_decision: "AC3 本=1 道具(cmd_4413 契約の追補)。cmd_4413 CLEAR 後に配備(depends_on)。cmd_4414 は本 cmd に吸収(void)"
+    quality_gate:
+      q1_firefighting: "消火ではない。殿裁定 12:30/12:32/12:46 で確定した比較軸(Sharpe・MDD・SPY/TQQQ・Secret 数値)を、発令済み cmd_4413 を止めず未配備の cmd_4414 を差し替えて 1 便で追補する品質向上"
+      q2_learning: "忍者は Sharpe/MDD の出所(metrics 配列)と式・Rf 系列の共用、ベンチマーク期間の明示を実装で学ぶ。設計書 §2.3/§3.1 に契約と実測値が明文化済み"
+      q3_next_quality: "P2b(frontend 表)が完成契約(8 列)に乗れるため、列追加で frontend を作り直す往復が消える"
+      q4_depth: "shallow — 既存 EP のフィールド追加と算出"
+      q5_verified_source: "production_verified — 2026-08-30 12:33 readonly_query で Sharpe 45 行、12:35 で Secret 73 行、12:47 で MDD(signals 集合+Secret+benchmark)を実測、ticker_monthly_returns の SPY/TQQQ 範囲を実測。code_reading — metrics_impl.py:977-983 を 12:33 に読了"
+      q6_not_hiding: "Secret の best_name を null にするのは殿裁定 12:32 であり隠蔽ではない。TQQQ の Sharpe/MDD 将軍概算(Rf=0、0.90/−80.1%)は設計書に明記し EP は共用式で再計算する"
+      q7_definition_verified: "『Sharpe』= metrics[Sharpe Ratio].close.portfolio(年率・Rf 控除)。『MDD』= metrics[Maximum Drawdown].close.portfolio(月次、負の小数)。『最浅』= MDD の最大値(0 に最も近い)。『比較期間』= SPY 2003-10〜、TQQQ 2010-03〜(確認日: 2026-08-30 12:47 本番 DB)"
+      q8_why_what: "WHY: 表に Sharpe・MDD・市場比較・Secret の数字が無いと『どれだけ良いか/どれだけ耐えるか』が伝わらない(殿 12:30/12:32/12:46) / WHAT: plans[].sharpe_*/mdd_*・hero.sharpe/mdd・benchmarks[] 2 件(mdd 含む)・secret 集計 11 フィールドを 2026-08-30 実測値どおり返し、SPY の sharpe/mdd が Basic-DM benchmark と 2 桁一致 / WHEN: cmd_4413 CLEAR 後 / WHERE: /mnt/c/Python_app/DM-signal/backend / WHO: 家老配備の忍者 1 名 / HOW: cmd_4413 の集合関数と metrics_impl の式を共用 / 複利: 式と Rf 系列を 1 か所で共用する選択を 10 回繰り返せば指標を増やすたびに整合が自動で保たれる=正の複利。EP 内で別式を書けば指標ごとに乖離が積み上がる負の複利"
+      q9_firefighting_root_cause: "根本対応。比較指標の乖離の根因=式と Rf 系列の重複実装。metrics_impl の式を共用し、SPY の sharpe/mdd == Basic-DM benchmark を AC で固定する"
+      q10_knowledge_boundary: "検証済み: metrics Sharpe/MDD の所在と値、Secret 73 本の metrics、ticker_monthly_returns 範囲。スコープ外: frontend 表示(P2b)、TQQQ の Rf 込み Sharpe 正確値(EP 実装で確定)、未決 2/5"
+      q11_not_already_done: "rg -c 'benchmarks' /mnt/c/Python_app/DM-signal/backend/app/api → 0件 / rg -c 'mdd_avg' /mnt/c/Python_app/DM-signal/backend → 0件(2026-08-30 12:48) / cmd_4414 は MDD を含まず未配備(karo_snapshot 0 件)=本 cmd が置換"
+      q_ambiguity: "『MDD も同じように』= プラン行と同じ平均/ベスト(最浅)形式(殿 12:46)。比較行の期間は各行に明記。曖昧さは解消済み"
+      q12_lord_30min_cost: "no — 殿裁定 4 本は反映済み"
+      diagnosis: "BLOCK理由: 該当なし(cmd_4413/4414 の preflight で判明したフィールドを雛形時点で記入) / 対策: 該当なし"
+    delegated_at: "\"2026-08-30T12:52:41\""
+    origin: "[[殿裁定_MDD追加_20260830_1246]] -> [[dm-login-showcase-asis-tobe_v2_20260830]] -> [[cmd_4415_showcase_sharpe_mdd_benchmarks]]"
+  cmd_4416:
+    title: "/login ショーウィンドウ P2 — frontend /login を ISR・ライトモード固定・摩擦除去・表 v3・EN/JA 文言 1 ファイルで組み直す(ログイン機構は不変)"
+    status: draft
+    project: dm-signal
+    purpose: "殿裁定 2026-08-30 13:10『ログイン機構が壊れなければ実装してから直す。デザインは全体で統一。ログインページはライトモード基準』。設計書 v2(gist 3236e0df)§2.2 情報構造・§2.4 ブラックアウト表現・§2.5 摩擦除去(F1-F5)・§2.6 ISR・§2.7 影響境界・§3.1 表 v3(8 列+SPY/TQQQ)・§3.2 レスポンシブ・§3.3 ライト固定・§4 文言規則を frontend に実装する。データは cmd_4413/4415 の GET /api/public/showcase。忍者 AC は隔離 clone で完結(§6.5 H10)、deploy 後確認は家老 post_deploy_check"
+    scope_mode: FULL
+    target_path: /mnt/c/Python_app/DM-signal/frontend
+    acceptance_criteria:
+      AC1:
+        description: "app/login を server component(ISR revalidate 3600、サーバー用 API_HOST env fallback NEXT_PUBLIC_API_HOST)にし、§2.2 の構造(ブランド行/H1 EN+JA/リード/表 v3 8 列+SPY・TQQQ 2 行+英語脚注/プラン 3 枚 金額なし/導線 4 本/SignInCard rich・simple/フッタ)と §3.3 ライト固定を実装し、next build と next start に対するローカル curl で HTML 本文に表の数値(EP の値)・H1・脚注 Data through 日付・metadata description(EN)が含まれることを確認する"
+        binary_check: "next build 出力で /login が ISR ∧ ローカル curl の HTML に EP の total_return 文字列と Data through と description が各 1 件以上 ∧ prefers-color-scheme dark をエミュレートした /login のスクリーンショット背景がライト(白系) ∧ ログイン後ページのテーマ挙動 diff 0 か?"
+      AC2:
+        description: "摩擦除去 §2.5 F2-F5 と §2.4 を実装する: ≤860px で初期 viewport 内に Sign in ボタン(sticky バー+ボトムシート)、blackout は client no-store fetch で帯(§2.4 文言、日時・soon 等の語なし、month_closed=false は being computed)、401 expired は専用文+note 誘導、EN 主 JA 従、文言と note URL は login-copy.ts 1 ファイル。Playwright(ローカル next start)で 375×667 の初期 viewport に Sign in ボタンが存在し、blackout モック応答で帯文言が切り替わることを確認する"
+        binary_check: "375×667 で Sign in ボタンの bounding box が viewport 内 ∧ blackout active/month_closed の 4 組合せで帯文言が §2.4 どおり ∧ 帯・脚注・エラー文に 毎営業日/today/soon/early/近日/¥/円 の grep 0 ∧ 文言直書き(コンポーネント内の日本語リテラル)0 か?"
+      AC3:
+        description: "影響境界 §2.7 とログイン機構不変を確認する: 変更ファイルが allowlist(app/login/**、login-copy.ts、app/robots.ts、app/sitemap.ts、新規 components)の外 0 件、route-access-boundary.tsx・viewer-auth.ts・auth-state-reset.ts・api-client.ts の diff 0、既存 test の diff 0、Playwright でローカル login フロー(正しいパスワード→/ へ遷移、誤り→エラー文、期限切れ→expired 文)が従来どおり通り、選択実行(既存 frontend test+本 cmd 追加 test)で FAIL 0 SKIP 0 を確認する"
+        binary_check: "allowlist 外の変更 0 ∧ 4 ファイルの diff 0 行 ∧ 既存 test diff 0 ∧ ログインフロー 3 経路 PASS ∧ 選択実行 FAIL 0 SKIP 0 ∧ next build の hydration warning 0 か?"
+    command: |
+      1. 設計書 v2 §2.2/§2.6/§3.1/§3.3 を読み、app/login を server component(ISR 3600、API_HOST)で組み直して表 v3・脚注・metadata・ライト固定を実装し、next build と next start へのローカル curl で HTML 焼き込みを確認する
+      2. §2.4/§2.5 のブラックアウト帯(client no-store)・sticky Sign in・expired 文・EN/JA 文言 1 ファイル(login-copy.ts)を実装し、Playwright(ローカル)で viewport 内ボタンと帯文言 4 組合せを確認する
+      3. allowlist 外 diff 0・境界 4 ファイル diff 0・既存 test diff 0・ローカル login フロー 3 経路・選択実行 FAIL 0 SKIP 0 を報告 YAML に生貼付する
+    assumptions:
+      claim: "frontend は Next.js app router、next build/next start 運用(package.json)、ThemeProvider+tailwind darkMode class(13:15 現物)。/login は use client 82 行、RouteAccessBoundary は layout で全ルートを包み /login 分岐のみ。FE は live 812f0b7a1 と origin/main 差分 0(13:05)。データ契約は cmd_4413/4415 の GET /api/public/showcase(hero/plans[]/benchmarks[]/secret/as_of/blackout)。本番実測値(12:20-12:47)は設計書 §3.1"
+      source: "docs/research/dm-login-showcase-asis-tobe_v2_20260830.md §2.2-§2.7/§3/§4/§6.5、frontend/app/login/page.tsx、frontend/components/route-access-boundary.tsx、frontend/app/layout.tsx、frontend/tailwind.config.ts"
+      trust: verified
+    depends_on: cmd_4415
+    measurement_source: "production 本番 DB readonly_query 実測 evidence(2026-08-30 JST 12時20分〜12時47分、表 v3 の値)+ Render deploys API log(2026-08-30 10時10分 JST、FE live sha 812f0b7a1)+ 本番 /login curl log(2026-08-30 12時11分、HTML は title のみ)。ローカル計測は AC の手段であり本番主張の根拠ではない"
+    serial_dependency_evidence: "AC1(server component 化と構造)→AC2(帯・sticky・文言は AC1 のコンポーネントに載る)→AC3(境界 diff と login フローは AC1/AC2 の完成後にしか判定できない)。データ契約は cmd_4415 の応答形に依存するため depends_on cmd_4415"
+    environment_change: "type=lesson; file=docs/research/dm-login-showcase-asis-tobe_v2_20260830.md; pattern=忍者 AC に書かない"
+    timeout_minutes: 90
+    estimated_minutes: 60
+    execution_env:
+      runtime_constraints: "DM-signal frontend で npm ci、next build/next start、Playwright はローカルのみ。本番・Render・CDP は使わない(post_deploy_check は家老レーン)"
+      long_runtime_reason: "server component 化・表・帯・sticky・文言・境界確認が 1 ページの同一コンポーネント群に載り、分割すると hydration と境界 diff の判定が 2 回に割れる"
+      measured_runtime_sec: 3000
+    split_decision: "AC3 本=1 道具(/login 1 ページ)。P3(robots/sitemap は本 cmd の allowlist に含む)。deploy と post_deploy_check は家老レーン(別 task)"
+    quality_gate:
+      q1_firefighting: "消火ではない。08-18 の設計以来 0 手だった /login の実装を、殿裁定 13:10『実装してから直す』に従い 1 cmd で本番へ出す品質向上。底線はログイン機構不変(AC3)"
+      q2_learning: "忍者は ISR・ライト固定・境界 allowlist・文言 1 ファイルを設計書の契約どおりに実装し、deploy に依存しない AC(隔離 clone 完結)の型を学ぶ"
+      q3_next_quality: "殿が本番を見て出す修正指示は login-copy.ts と表コンポーネントの差分だけになり、次 cmd が小さくなる"
+      q4_depth: "medium — 1 ページの組み直し(server component 化+5 要素)"
+      q5_verified_source: "production_verified — 本番 /login curl(12:11)と Render deploy sha(10:10)。code_reading — page.tsx 82 行/route-access-boundary.tsx/layout.tsx/tailwind.config.ts を 10:12-13:15 に読了。本番 DB 12:20-12:47 の表値"
+      q6_not_hiding: "帯の文言から日時・soon を除くのは殿裁定 12:58(発表タイミングは殿の裁量)であり隠蔽ではない。Secret の PF 名を出さないのは 12:48 裁定"
+      q7_definition_verified: "『ISR』= Next.js の revalidate 付き server rendering(確認日: 2026-08-30 13:15 package.json の next build/start)。『ライト固定』= /login 配下で dark クラス/prefers-color-scheme を無視しライトのトークンで描画。『allowlist』= 設計書 §2.7 の frontend 列"
+      q8_why_what: "WHY: /login が JA 単言語 CSR の門で SEO 空・価値提示ゼロ(FE deploy 812f0b7a1 2026-08-18 以来) / WHAT: /login を ISR(3600)・ライト固定・表 v3・帯・sticky・EN/JA 1 ファイルで組み直し、ログイン機構 4 ファイル diff 0・ローカル login フロー 3 経路 PASS / WHEN: cmd_4415 CLEAR 後 / WHERE: /mnt/c/Python_app/DM-signal/frontend / WHO: 家老配備の忍者 1 名 / HOW: 設計書 v2 §2-§4 契約+隔離 clone 完結 AC / 複利: 文言と URL を 1 ファイルに置く選択を 10 回繰り返せば殿の修正指示ごとの差分が 1 ファイルに収束=正の複利。直書きを繰り返せば修正のたびにコンポーネント全体を触る負の複利"
+      q9_firefighting_root_cause: "根本対応。/login が空だった根因=未認証で見せるデータ契約が無かったこと(cmd_4413/4415 で解消)と CSR。本 cmd は契約の上に ISR で HTML を焼き、以後は文言差分のみで回る"
+      q10_knowledge_boundary: "検証済み: FE 構成・deploy 差分 0・表値・境界 4 ファイル。スコープ外: deploy と post_deploy_check(家老レーン)、殿の本番確認後の修正(次 cmd)、未決 2/5"
+      q11_not_already_done: "rg -c 'showcase' /mnt/c/Python_app/DM-signal/frontend/app → 0件 / rg -c 'revalidate' /mnt/c/Python_app/DM-signal/frontend/app → 0件(13:15) / git log --since=2026-08-18 -- frontend/app/login → 0 commit"
+      q_ambiguity: "『ライトモード基準』= /login はライト固定でログイン後は不変(殿 13:10、設計書 §3.3)。『全体で統一』= 既存 globals.css トークンと ui コンポーネントのみ使用。曖昧さは解消済み"
+      q12_lord_30min_cost: "no — 殿裁定 4 本(13:10)は反映済み。本番確認は deploy 後に殿が行う(殿の意図どおり)"
+      diagnosis: "BLOCK理由: 該当なし(4413/4414/4415 の preflight で判明したフィールドを雛形時点で記入) / 対策: 該当なし"
+    origin: "[[殿裁定_実装後修正_ライト固定_20260830_1310]] -> [[dm-login-showcase-asis-tobe_v2_20260830]] -> [[cmd_4416_login_frontend_isr]]"
