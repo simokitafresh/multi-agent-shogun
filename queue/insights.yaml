@@ -9982,7 +9982,10 @@ insights:
   priority: "low"
   source: "semantic_stress_test"
   fix_known: false
-  status: pending
+  status: resolved
+  resolved_reason: "semantic index candidate was absorbed into a registered concept"
+  action_artifact: "semantic_index=/home/simokitafresh/multi-agent-shogun/docs/semantic-index/index.md"
+  resolved_at: "2026-08-30T21:14:43+09:00"
 - id: INS-20260830-211208844-1bab
   ts: "2026-08-30T21:12:08+09:00"
   insight: "[[Free tier F1 — backend に Free tier 行の migration と Supabase J]] semantic_stress_test candidate_aliases: NO_MATCH source=cmds query=Free tier F1 — backend に Free tier 行の migration と Supabase JWT 検証付き GET /api/public/free-coupon を追加する(既存 tier 認証不変)"
@@ -9996,7 +9999,10 @@ insights:
   priority: "low"
   source: "semantic_stress_test"
   fix_known: false
-  status: pending
+  status: resolved
+  resolved_reason: "semantic index candidate was absorbed into a registered concept"
+  action_artifact: "semantic_index=/home/simokitafresh/multi-agent-shogun/docs/semantic-index/index.md"
+  resolved_at: "2026-08-30T21:14:44+09:00"
 - id: INS-20260830-211225698-5aa3
   ts: "2026-08-30T21:12:25+09:00"
   insight: "[[Free tier F2 — frontend に free Google サインイン→当月クーポン表示→Copy→ l]] semantic_stress_test candidate_aliases: NO_MATCH source=cmds query=Free tier F2 — frontend に /free(Google サインイン→当月クーポン表示→Copy→/login プリフィル)と /auth/callback と入口二分文言を追加する(既存ログイン機構不変)"
@@ -10010,7 +10016,10 @@ insights:
   priority: "low"
   source: "semantic_stress_test"
   fix_known: false
-  status: pending
+  status: resolved
+  resolved_reason: "semantic index candidate was absorbed into a registered concept"
+  action_artifact: "semantic_index=/home/simokitafresh/multi-agent-shogun/docs/semantic-index/index.md"
+  resolved_at: "2026-08-30T21:14:44+09:00"
 - id: INS-20260830-211307858-a845
   ts: "2026-08-30T21:13:07+09:00"
   insight: "[[殿裁定 20 21『着手せよ』 殿要件 20 17『登録してログインすると free のクーポンが表示]] semantic_stress_test candidate_aliases: NO_MATCH source=cmds query=殿裁定 2026-08-30 20:21『着手せよ』+殿要件 20:17『登録してログインすると free のクーポンが表示、ワンクリックでコピーできるようにして動線をスムーズに。すでにメンバーが誤解しないようにしよう』+20:18『登録者は rebalancer と同じ Supabase の既存にまとめる』(設計書 v3 §2 項目 2・4・5)。契約=c"
@@ -10023,5 +10032,12 @@ insights:
   insight: "[[Free tier F3 — LP に『Free で始める Google 』CTA を Sign in と並べて追加し ]] semantic_stress_test candidate_aliases: NO_MATCH source=cmds query=Free tier F3 — LP に『Free で始める(Google)』CTA を Sign in と並べて追加し /free?from=lp へ導線を付け、Members/Free の入口文言を EN/JA で二分する"
   priority: "low"
   source: "semantic_stress_test"
+  fix_known: false
+  status: pending
+- id: INS-20260830-211445797-4611
+  ts: "2026-08-30T21:14:45+09:00"
+  insight: "semantic_index_update新概念候補: discussion:意志依存はバグだ。環境に埋め込んだか？ は 既存aliasesに一致なし。概念定義とaliases追加を検討せよ"
+  priority: "low"
+  source: "semantic_index_update"
   fix_known: false
   status: pending
