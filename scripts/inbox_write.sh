@@ -951,10 +951,12 @@ inbox_deliver_report_review_generation() {
             [ -n "${_drf_fd:-}" ] && eval "exec ${_drf_fd}>&-"
         fi
     fi
+    local _content="${ninja}報告完了。レビュー依頼: ${parent_cmd} report=${report_base}"
+    [ -n "$fingerprint" ] && _content="${_content}
+report_fingerprint=${fingerprint}"
     bash "$SELF_SCRIPT_PATH" gunshi \
-        "${ninja}報告完了。レビュー依頼: ${parent_cmd} report=${report_base}" \
-        report_review karo notify_gunshi \
-        "report_fingerprint=${fingerprint}" >/dev/null 2>&1
+        "$_content" \
+        report_review karo notify_gunshi >/dev/null 2>&1
     # 送信成功後にDEDUPEフラグ記録(flock保持中)
     if [ -n "${dedupe_file:-}" ]; then
         printf '%s\n' "$(date '+%Y-%m-%dT%H:%M:%S')" > "$dedupe_file" 2>/dev/null || true
