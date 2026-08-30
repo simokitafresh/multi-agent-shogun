@@ -406,6 +406,23 @@ def main():
                     if term == '未解決'
                     else ('確認済み', '確認済', 'mismatch=0', '未確認0')
                 )
+                # 「未解決前提を現行実装で照合し、対象status=resolved」のように、
+                # 未解決だった対象を現行実装で照合して解消した履歴は、別欄の
+                # 証跡に頼らず同一局所文脈の完了証跡と組み合わせて免除する。
+                # 「未解決事項を確認したが残存」には完了証跡がなく、
+                # 「未解決だったがresolve可能」には resolved 状態がないため維持する。
+                local_after = lower_text[end:min(len(lower_text), end + 192)]
+                local_resolved_history = (
+                    term == '未解決'
+                    and re.search(
+                        r'(?:前提|事項|項目|問題|課題)?(?:を|は)?'
+                        r'[^。！？]{0,96}(?:照合|確認|検証)'
+                        r'[^。！？]{0,96}'
+                        r'(?:status\s*[:=]\s*resolved|resolvedへ(?:遷移|更新)|解決済み|解決済|'
+                        r'既知(?:の)?(?:実装|対応)(?:の存在)?を確認|(?:追加)?decision[_ ]candidateなし)',
+                        local_after,
+                    )
+                )
                 past_state_with_evidence = (
                     past_state
                     and any(marker in completion_evidence_text for marker in completion_markers)
@@ -439,6 +456,9 @@ def main():
                     # 過去状態は、別の完了証拠が報告内にある場合だけ免除する。
                     # 「未解決だったがresolve可能」のような可能性記述だけでは通さない。
                     or past_state_with_evidence
+                    # 未解決の対象を現行実装で照合し、同じ説明内で解消済みと
+                    # 記録した場合だけ免除する(歴史説明の局所判定)。
+                    or local_resolved_history
                 )
                 if completed_or_quoted:
                     benign_occurrence_count += 1

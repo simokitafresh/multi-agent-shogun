@@ -8306,7 +8306,7 @@ EOF
             : > "$root/queue/gates/$cmd/review_gate.done"
         done
         SCRIPT_DIR="$root"
-        GATE_STALL_TIMEOUT=120 GATE_STALL_ITEM_TIMEOUT_SEC=30 GATE_STALL_TIMEOUT_MARGIN_SEC=10 GATE_STALL_TIMEOUT_MAX_SEC=600
+        GATE_STALL_TIMING_LOG="$root/no_timing.jsonl" GATE_STALL_TIMEOUT=120 GATE_STALL_ITEM_TIMEOUT_SEC=30 GATE_STALL_ITEM_TIMEOUT_MIN_SEC=30 GATE_STALL_TIMEOUT_MARGIN_SEC=10 GATE_STALL_TIMEOUT_MAX_SEC=600
         test "$(_gate_stall_worker_timeout_sec)" -eq 160
         GATE_STALL_TIMEOUT_MAX_SEC=150
         test "$(_gate_stall_worker_timeout_sec)" -eq 150

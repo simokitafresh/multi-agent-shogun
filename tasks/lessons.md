@@ -16337,3 +16337,16 @@ sqlite3.Connection.backup()を使うとページ(4096byte)単位のread syscall�
 - **when**: 未設定
 - **how**: 未設定
 - aggregate Bats rootで共有fixture suiteを実行するとT190のtimeout環境値とsuite stateが混線し、FAIL時は診断tailがreceipt observedへ二重計上される。compatibilityはBATS_SPLIT_FILES=1かつfile jobs=1で各rootを分離し、receiptはrequested tapとcanonical artifactを別pathにする。
+
+### L1683: 容量ゲートは単一母数と回収可能性を同時にBLOCK判定する
+- **日付**: 2026-08-31
+- **出典**: cmd_karo_hotfix_three_layer_cache_capacity_metric_20260831
+- **記録者**: saizo
+- **tags**: [infra,gate,gate]
+- **subdomain**: infra
+- **target_files**: [scripts/gates/gate_three_layer_health.sh,tests/unit/test_gate_three_layer_health_capacity.bats,tests/unit/test_memory_db_query_rowid_watermark.bats]
+- **origin**: [[cmd_karo_hotfix_three_layer_cache_capacity_metric_20260831]]
+- **enforcement**: 未自動化
+- **when**: 未設定
+- **how**: 未設定
+- initial_scanとcleanup dry-runが異なる母数を使うと、容量超過の実態がstartup WARNへ固定される。cleanup後total_bytesを唯一の判定値にし、超過時は候補ありなら回収コマンド、候補なしならexternal_dependency BLOCKを出すことで、回収不能WARNの永続化を防ぐ

@@ -1,5 +1,7 @@
 # DM-signal コアコンテキスト
-<!-- last_updated: 2026-08-26 T05 shogun doc lane reviewed source boundary (2026-08-26) -->
+<!-- last_updated: 2026-08-31 2026-08-31 06:45 将軍doc lane GA-535: 境界を origin/main tip へ是正(8-hex 旧hotfix markerだと分岐外祖先が非除外で1390/789/1588件の偽ALERT) -->
+<!-- source_commit:9734518397066f644bd7c7180bccc276d2bf5947 reason:2026-08-31 06:45 将軍doc lane GA-535: 境界を origin/main tip へ是正(8-hex 旧hotfix markerだと分岐外祖先が非除外で1390/789/1588件の偽ALERT) evidence:git -C /mnt/c/Python_app/DM-signal rev-list --count <tip>..origin/main=0 -->
+<!-- source_commit:10d59c8d reason:2026-08-31 将軍doc lane GA-535: §96 contract v3+auth API反映 evidence:grep -c '§96' context/dm-signal-core.md=1(4e705dd2d) -->
 <!-- source_commit:d87339a4 reason:T05 shogun doc lane reviewed source boundary (2026-08-26) evidence:git -C /mnt/c/Python_app/DM-signal log <marker>..origin/main: core/ops=研究系(cmd_4372-4376)+記事のみ・core/ops知識変更なし; research=cmd_4372/4374/4376は末尾§へ反映済; frontend=frontend/配下変更は08-17 cmd_4324-4333のみで§28反映済、残りはbackend(ops§100反映済)/記事/研究。ローカルcloneはoriginと履歴分岐(同subject別hash)のためorigin/main tipを境界にする -->
 <!-- source_commit:5a5556af reason:context_freshness reviewed source boundary evidence:context_freshness_check context=context/dm-signal-core.md commit=5a5556af -->
 <!-- source_commit:e7a6c59d reason:context_freshness reviewed source boundary evidence:context_freshness_check context=context/dm-signal-core.md commit=e7a6c59d -->
@@ -555,3 +557,9 @@ null/NaN → INSUFFICIENT_DATA(灰)。Label→色変換は `labelToColorDot()` �
 
 ## §95 tier依存endpointのETag/Cache-Controlに主体を含める (cmd_4327, 2026-08-17)
 - `backend/app/utils/etag.py` `generate_etag`入力に主体(tier_id/is_admin/visible_ids)を含め、tier依存endpointは`Cache-Control: no-store`。別主体で同一ETag→304が成立しない不変量(`test_etag` PASS)。→ `docs/research/dm-login-boundary-asis-tobe_20260817.md`
+
+## §96 showcase contract v3 + free-coupon の Supabase Auth API 化 (2026-08-31)
+
+- 790c7036(cmd_4425): showcase 契約 v3=mdd 追加・best_name 除去・blackout。GATE CLEAR≠到達の再実装版(4415 偽 CLEAR の是正)。
+- 10d59c8d: `_build_hero` に sharpe(close.portfolio)追加+contract test で hero キー集合を固定(キー漏れ再発防止)。
+- c72f95e3(cmd_4428): free-coupon 検証を Supabase Auth API(anon key+Bearer)へ=JWT secret 不要。

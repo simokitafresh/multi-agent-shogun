@@ -32,13 +32,26 @@ write_cleanup() {
   chmod +x "$cleanup"
 }
 
-@test "later cleanup total above threshold makes final status WARN" {
-  write_cleanup "tmp cleanup: cache_dir=x candidates=0 bytes=0 total_bytes=20001 max_bytes=20000 mode=dry-run"
+@test "over-threshold capacity with reclaim candidates is an actionable BLOCK" {
+  write_cleanup "tmp cleanup: cache_dir=x candidates=2 bytes=20001 total_bytes=20001 max_bytes=20000 mode=dry-run"
   run env SHOGUN_THREE_LAYER_CACHE_WARN_BYTES=20000 bash "$fixture_root/scripts/gates/gate_three_layer_health.sh"
   [ "$status" -eq 2 ]
   [[ "$output" == *"bytes=12288 warn_bytes=20000"* ]]
+  [[ "$output" == *"observed_bytes=12288 source=initial_scan"* ]]
   [[ "$output" == *"adopted_bytes=20001 source=cleanup_dry_run"* ]]
-  [[ "$output" == *"STATUS: WARN"* ]]
+  [[ "$output" == *"BLOCK: cache容量が閾値超過(total_bytes=20001 > max_bytes=20000)、回収候補=2"* ]]
+  [[ "$output" == *"RECOVERY:"*"--apply"*"--max-bytes 20000"* ]]
+  [[ "$output" == *"STATUS: BLOCK"* ]]
+}
+
+@test "over-threshold capacity without reclaim candidates is an external-dependency BLOCK" {
+  write_cleanup "tmp cleanup: cache_dir=x candidates=0 bytes=0 total_bytes=20001 max_bytes=20000 mode=dry-run"
+  run env SHOGUN_THREE_LAYER_CACHE_WARN_BYTES=20000 bash "$fixture_root/scripts/gates/gate_three_layer_health.sh"
+  [ "$status" -eq 2 ]
+  [[ "$output" == *"adopted_bytes=20001 source=cleanup_dry_run"* ]]
+  [[ "$output" == *"external_dependency=protected_or_nonreclaimable"* ]]
+  [[ "$output" == *"回収不能をWARNで継続せず"* ]]
+  [[ "$output" == *"STATUS: BLOCK"* ]]
 }
 
 @test "both measurements within threshold preserve PASS including equality" {
@@ -54,7 +67,7 @@ write_cleanup() {
   run env SHOGUN_THREE_LAYER_CACHE_WARN_BYTES=100 bash "$fixture_root/scripts/gates/gate_three_layer_health.sh"
   [ "$status" -eq 2 ]
   [[ "$output" == *"total_bytesを解釈できない"* ]]
-  [[ "$output" == *"STATUS: WARN"* ]]
+  [[ "$output" == *"STATUS: BLOCK"* ]]
 }
 
 @test "nonnumeric cleanup total fails closed and dry-run executes once" {
@@ -68,7 +81,7 @@ EOF
   run env SHOGUN_THREE_LAYER_CACHE_WARN_BYTES=100 bash "$fixture_root/scripts/gates/gate_three_layer_health.sh"
   [ "$status" -eq 2 ]
   [ "$(wc -c < "$counter")" -eq 1 ]
-  [[ "$output" == *"STATUS: WARN"* ]]
+  [[ "$output" == *"STATUS: BLOCK"* ]]
 }
 
 # ─── cache追随gapのtelemetry (cmd_karo_impl_cache_gap_telemetry_20260726) ───
@@ -135,9 +148,9 @@ setup_gap_ledger() {
   write_cleanup "tmp cleanup: cache_dir=x candidates=0 bytes=0 total_bytes=20001 max_bytes=20000 mode=dry-run"
   run env SHOGUN_THREE_LAYER_CACHE_WARN_BYTES=20000 SHOGUN_MEMORY_DB="$db" \
     bash "$fixture_root/scripts/gates/gate_three_layer_health.sh"
-  # 既存契約(容量超過→WARN/exit 2)がtelemetry追加後も不変であること。
+  # 容量超過はtelemetry追加後もBLOCK/exit 2で、判定値と標準出力を汚染しない。
   [ "$status" -eq 2 ]
-  [[ "$output" == *"STATUS: WARN"* ]]
+  [[ "$output" == *"STATUS: BLOCK"* ]]
   # jsonl追記の副作用が標準出力へ混ざらないこと。
   [[ "$output" != *"defense_overhead"* ]]
   [[ "$output" != *'"check_id"'* ]]

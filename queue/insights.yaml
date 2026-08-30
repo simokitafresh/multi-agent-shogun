@@ -7758,14 +7758,21 @@ insights:
   priority: "medium"
   source: "manual"
   fix_known: false
-  status: pending
+  status: resolved
+  resolved_reason: "既知修正を一次確認: commit 6a21d5765759d1e597ed7e3920ec2e461d232ed8 が report_commit_main_ancestry/review_two_phase_pending/throughput_segment_invalid を GATE WAIT と自動再GATEへ分離し、契約違反だけをBLOCKに限定。現行context/infrastructure.md §T160にも反映済み。"
+  action_artifact: "commit=6a21d5765759d1e597ed7e3920ec2e461d232ed8; files=scripts/cmd_complete_gate.sh,scripts/ninja_monitor.sh; context=context/infrastructure.md#T160"
+  resolved_at: "2026-08-31T04:33:04+09:00"
+  occurrence_count: 1
 - id: INS-20260828-222959233-89be
   ts: "2026-08-28T22:29:59+09:00"
   insight: "構造バグ候補(殿下問 22:28): 本番 push/live 後でしか計測できない AC(1h 窓・CTX-RESET 行・FALLBACK 0 等、本日 map 20 行)を GATE 前の task AC に置くと、task が人質化(T129 依存 1h WAIT/T140)し RC 中の auto clear で成果消失(T152)する。設計=AC を『実装 AC(GATE 前・隔離で二値)』と『本番 proof(GATE 後・monitor が終端条件を自動計測して map 行を閉じる)』に分離し、proof は task ではなく監視器の責務にする"
   priority: "medium"
   source: "manual"
   fix_known: false
-  status: pending
+  status: resolved
+  resolved_reason: "一次情報で現行実装を確認: commit b3f730d84236a6e31c76d4c5dea66072e7c4fa88 の scripts/lib/production_proof.py が本番観測ACをworker ACから分離し、scripts/ninja_monitor.sh の check_production_proofs が観測窓満了後にtask YAML非接触でPRODUCTION-PROOF PASS/FAILを記録。context/infrastructure.md §T161 と scripts/lib/time_contract_validator.py も同契約を明記。新規修正・decision_candidateは不要。"
+  action_artifact: "target=queue/insights.yaml:INS-20260828-222959233-89be;existing_fix=git:b3f730d84236a6e31c76d4c5dea66072e7c4fa88;implementation=scripts/lib/production_proof.py+scripts/deploy_task.sh+scripts/ninja_monitor.sh:check_production_proofs;contract=context/infrastructure.md#T161,scripts/lib/time_contract_validator.py;test=run_tests.sh task selection=0 SKIP0;inventory_task_snapshot_before=54/0/68 (task YAML at 04:54:37);inventory_direct_before=54/14/595/663;inventory_after_raw=54/14/596/664;inventory_after_pause_aware=54/14/0/68;concurrent_commit=539e8560fa2fe771fdffadffb34d83ad8841d675 added INS-20260831-045819770-3ca3 at 04:58:19, offsetting target pending decrement"
+  resolved_at: "2026-08-31T04:58:56+09:00"
 - id: INS-20260828-225649545-55d9
   ts: "2026-08-28T22:56:49+09:00"
   insight: "semantic_index_update新概念候補: discussion:artifactがスマホで見ると文字が縦並びで読めないね は 既存aliasesに一致なし。概念定義とaliases追加を検討せよ"
@@ -7979,7 +7986,10 @@ insights:
   priority: "medium"
   source: "manual"
   fix_known: false
-  status: pending
+  status: resolved
+  resolved_reason: "現行実装で解消済み。review_bundle.pyの_single_review_entryがmappingへcmd_idを自動注入し不一致を永続化前に拒否する。commit 05798e80eaf44b133fe6583e0906aa4feb05efb9で実装・回帰テスト追加済み、run_tests file tests/unit/test_review_bundle.batsは9/9 PASS・SKIP 0。"
+  action_artifact: "commit=05798e80eaf44b133fe6583e0906aa4feb05efb9; source=scripts/review_bundle.py:729-746; test=tests/unit/test_review_bundle.bats:single binds missing mapping cmd_id and blocks mismatches before persistence; receipt=logs/test_receipts/run_tests_20260830T201747_1795105.json; verification_task=cmd_reflux_insight_202608310514_saizo_exact; verification_inventory=52/14/597/663"
+  resolved_at: "2026-08-31T05:18:53+09:00"
 - id: INS-20260829-142205571-a8cd
   ts: "2026-08-29T14:22:05+09:00"
   insight: "[[T178 T177の進捗はどうだ？つまりがあれば覚醒して将軍がヘルプせよ]] semantic_stress_test candidate_aliases: NO_MATCH source=lord query=T178 / T177の進捗はどうだ？つまりがあれば覚醒して将軍がヘルプせよ"
@@ -8333,7 +8343,10 @@ insights:
   priority: "medium"
   source: "manual"
   fix_known: false
-  status: pending
+  status: resolved
+  resolved_reason: "一次情報で旧事象と現行修正を照合。cmd_reflux_insight_202608292131_saizoはarchive.doneおよびterminal_review_manifest.jsonまで終端済みで、現行ninja_monitor.shのreview_pending判定はreport-keyed approvalのLGTM結果・normalized/raw fingerprint・report pathを全て一致確認する。追加実修正・decision_candidateは不要。"
+  action_artifact: "target=queue/insights.yaml:INS-20260829-214923725-4b2f;fix=5f1bcd4b09911c85aa9f9f1cad7666b6f5bbc85b;code=scripts/ninja_monitor.sh:5083-5091;regression=tests/unit/test_ninja_monitor_stall.bats:174-242;proof=queue/gates/cmd_reflux_insight_202608292131_saizo/terminal_review_manifest.json,archive.done"
+  resolved_at: "2026-08-31T05:30:16+09:00"
 - id: INS-20260829-222816580-6f3a
   ts: "2026-08-29T22:28:16+09:00"
   insight: "semantic_index_update新概念候補: lesson:L1671 は 既存aliasesに一致なし。概念定義とaliases追加を検討せよ"
@@ -10671,3 +10684,74 @@ insights:
   resolved_reason: "semantic index candidate was absorbed into a registered concept"
   action_artifact: "semantic_index=/home/simokitafresh/multi-agent-shogun/docs/semantic-index/index.md"
   resolved_at: "2026-08-31T03:40:21+09:00"
+- id: INS-20260831-042950473-5334
+  ts: "2026-08-31T04:29:50+09:00"
+  insight: "飛猿reflux insight報告(rpt-b2a95189 fingerprint dd25af3e)の重複通知が4回到着。LGTM+GATE CLEAR後もkaro/ninja_monitorがreport_reviewを再送し続けている。DEDUPE stateの認識不足またはapproval markerの可視性不足の疑い"
+  priority: "medium"
+  source: "manual"
+  fix_known: false
+  status: pending
+- id: INS-20260831-045819770-3ca3
+  ts: "2026-08-31T04:58:19+09:00"
+  insight: "semantic_index_update新概念候補: lesson:L1683 は 既存aliasesに一致なし。概念定義とaliases追加を検討せよ"
+  priority: "low"
+  source: "semantic_index_update"
+  fix_known: false
+  status: resolved
+  resolved_reason: "semantic index candidate was absorbed into a registered concept"
+  action_artifact: "semantic_index=/home/simokitafresh/multi-agent-shogun/docs/semantic-index/index.md"
+  resolved_at: "2026-08-31T05:01:57+09:00"
+- id: INS-20260831-052003874-e98d
+  ts: "2026-08-31T05:20:03+09:00"
+  insight: "semantic_index_update新概念候補: discussion:cloud flareの設定はベストになったか？以前htmlを渡したよな は 既存aliasesに一致なし。概念定義とaliases追加を検討せよ"
+  priority: "low"
+  source: "semantic_index_update"
+  fix_known: false
+  status: resolved
+  resolved_reason: "semantic map generation verified the candidate is represented or intentionally ignored"
+  action_artifact: "semantic_map=/home/simokitafresh/multi-agent-shogun/context/semantic-map.md;semantic_index=/home/simokitafresh/multi-agent-shogun/docs/semantic-index/index.md"
+  resolved_at: "2026-08-31T05:25:47+09:00"
+- id: INS-20260831-052233922-0d3e
+  ts: "2026-08-31T05:22:33+09:00"
+  insight: "semantic_index_update新概念候補: discussion:level3まで全て完了させるためのロードマップをステップバイステップでgist共有してくれ は 既存aliasesに一致なし。概念定義とaliases追加を検討せよ"
+  priority: "low"
+  source: "semantic_index_update"
+  fix_known: false
+  status: resolved
+  resolved_reason: "semantic index candidate was absorbed into a registered concept"
+  action_artifact: "semantic_index=/home/simokitafresh/multi-agent-shogun/docs/semantic-index/index.md"
+  resolved_at: "2026-08-31T05:25:41+09:00"
+- id: INS-20260831-052553268-f601
+  ts: "2026-08-31T05:25:53+09:00"
+  insight: "[[cloud flareの設定はベストになったか？以前htmlを渡したよな]] semantic_stress_test candidate_aliases: NO_MATCH source=lord query=cloud flareの設定はベストになったか？以前htmlを渡したよな"
+  priority: "low"
+  source: "semantic_stress_test"
+  fix_known: false
+  status: resolved
+  resolved_reason: "semantic index candidate was absorbed into a registered concept"
+  action_artifact: "semantic_index=/home/simokitafresh/multi-agent-shogun/docs/semantic-index/index.md"
+  resolved_at: "2026-08-31T05:40:12+09:00"
+- id: INS-20260831-052610585-5b8b
+  ts: "2026-08-31T05:26:10+09:00"
+  insight: "[[C \\Users\\simok\\Downloads\\Agent Readiness Diagnostics dm sign]] semantic_stress_test candidate_aliases: NO_MATCH source=lord query=\"C:\\Users\\simok\\Downloads\\Agent Readiness _ Diagnostics _ dm-signal.com _ Simokitafresh@gmail.com's Account _ Cloudflare.html\" \"C:\\Users\\si…"
+  priority: "low"
+  source: "semantic_stress_test"
+  fix_known: false
+  status: resolved
+  resolved_reason: "semantic index candidate was absorbed into a registered concept"
+  action_artifact: "semantic_index=/home/simokitafresh/multi-agent-shogun/docs/semantic-index/index.md"
+  resolved_at: "2026-08-31T05:40:13+09:00"
+- id: INS-20260831-060429518-c98f
+  ts: "2026-08-31T06:04:29+09:00"
+  insight: "高頻度FAIL: cmd_3264-AC2 target_path配下に未commit変更あり (20回発火) → GP-107(消火4問)で判定後にgate強化を検討せよ。auto-fix化は消火構造の可能性あり"
+  priority: "high"
+  source: "gate_loop_health"
+  fix_known: false
+  status: pending
+- id: INS-20260831-075313459-2ec4
+  ts: "2026-08-31T07:53:13+09:00"
+  insight: "report_review再送ループが軍師CTXを1.5h以上消費。dedupe hotfix(cmd_karo_hotfix_report_review_generation_dedupe)LGTM済みだがmainマージ前のため継続。軍師側の防御=approval marker存在時にmonitorのreport_review再送をsuppress(受信側)するか、inboxファイル肥大化をarchiveで抑止する仕組みが不在"
+  priority: "medium"
+  source: "manual"
+  fix_known: false
+  status: pending

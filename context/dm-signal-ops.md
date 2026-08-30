@@ -1,5 +1,7 @@
 # DM-signal 運用コンテキスト
-<!-- last_updated: 2026-08-26 T05 shogun doc lane reviewed source boundary (2026-08-26) -->
+<!-- last_updated: 2026-08-31 2026-08-31 06:45 将軍doc lane GA-535: 境界を origin/main tip へ是正(8-hex 旧hotfix markerだと分岐外祖先が非除外で1390/789/1588件の偽ALERT) -->
+<!-- source_commit:9734518397066f644bd7c7180bccc276d2bf5947 reason:2026-08-31 06:45 将軍doc lane GA-535: 境界を origin/main tip へ是正(8-hex 旧hotfix markerだと分岐外祖先が非除外で1390/789/1588件の偽ALERT) evidence:git -C /mnt/c/Python_app/DM-signal rev-list --count <tip>..origin/main=0 -->
+<!-- source_commit:10d59c8d reason:2026-08-31 将軍doc lane GA-535: §101 deploy契約+Agent Readiness反映 evidence:grep -c '§101' context/dm-signal-ops.md=1(4e705dd2d) -->
 <!-- source_commit:d87339a4 reason:T05 shogun doc lane reviewed source boundary (2026-08-26) evidence:git -C /mnt/c/Python_app/DM-signal log <marker>..origin/main: core/ops=研究系(cmd_4372-4376)+記事のみ・core/ops知識変更なし; research=cmd_4372/4374/4376は末尾§へ反映済; frontend=frontend/配下変更は08-17 cmd_4324-4333のみで§28反映済、残りはbackend(ops§100反映済)/記事/研究。ローカルcloneはoriginと履歴分岐(同subject別hash)のためorigin/main tipを境界にする -->
 <!-- source_commit:5a5556af reason:context_freshness reviewed source boundary evidence:context_freshness_check context=context/dm-signal-ops.md commit=5a5556af -->
 <!-- source_commit:e7a6c59d reason:context_freshness reviewed source boundary evidence:context_freshness_check context=context/dm-signal-ops.md commit=e7a6c59d -->
@@ -1208,3 +1210,9 @@ GA-144原因: `dm-signal-ops.md`のlast_updatedは2026-06-26で、2026-06-26以�
 - 結論: FoF選択フィルタ6種の同点解決は共通層 `backend/app/services/pipeline/selection.py` `select_top_n_deterministic`(①config依存スコア合成ε1e-9→②12M(両者13観測以上時のみ)→③設定来CAGR→④MaxDD小→⑤現保有維持→⑥設定来早い方、同率全採用廃止)。手①②(cmd_4334-4340)で配線集約→手③(cmd_4344 54e3e663+2f3e3c82)で切替、本番live 08-18 00:13、full run404で合否(a)期待差分=`docs/research/cmd_4342_fof_tiebreak_expected_diff.csv`(DM-Signal repo、959月)PF×月一致(b)2回目md5一致(c)標準PF変化0(d)時間≤2倍。戻し方=revert 2commit→push→deploy→full 1回。
 - 正本 → `docs/research/dm-fof-tiebreak-determinism-asis-tobe_20260817.md`(AsIs v1.4/ToBe v0.3、gist 1e0cab30、artifact 58f94a75)。乾式=§99(cmd_4331 949月は集計値のみ・参考値)。手④(GS fast path parity)未着手。
 - 補足(2026-08-18 06:55): 手③は補正1 cmd_4349(候補列をcomponent_order安定順=6段全同値の最終決着はpipeline_config記載順、set順/ID順ではない)・補正2 cmd_4351(②③④のデータ欠損skipを候補集合単位=比較器を全順序化)を経て本番f519002bで収束実証((b)run408↔409 md5一致)。合否(a)は補正oracle(cmd_4350 nested伝播+cmd_4352 期間換算)で8,504/9/57(残9=oracle境界)。運用原則(殿裁定08-18 00:45 PD-139相当): 外部(GitHub)障害中は安易なrevert/deployをしない。cron sync-fofは同一経路(sync_fof→recalculate_history_fast L3_fof→_recalculate_fof_history)。手④GS parity未着手。
+
+## §101 LP/Free tier deploy 契約 + Agent Readiness (2026-08-31)
+
+- deploy 前提は『env 投入時刻 < live build createdAt ∧ chunk に key ≥1』(static export は env→build 順序が契約、型十八弾-1)。
+- LP は build-time fetch=backend 契約変更後に LP 再 build 必須(『LP build 時刻 > backend live 時刻』を post_deploy_check の対に)。
+- robots.txt は静的正本 `lp/public/robots.txt`(Content-Signal: search=yes, ai-input=yes, ai-train=no、97345183)。Level3 ロードマップ → `docs/research/agent_readiness_level3_roadmap_20260831.md`(gist da1b7617)。

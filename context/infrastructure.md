@@ -1,5 +1,7 @@
 # インフラコンテキスト
-<!-- last_updated: 2026-08-30 approved_source_commit -->
+<!-- last_updated: 2026-08-31 context_freshness reviewed source boundary(ci_fix 6b622373d=FP vocabulary locale independent、infra 4 行反映済みの続き) -->
+<!-- source_commit:6b622373d reason:context_freshness reviewed source boundary(ci_fix 6b622373d=FP vocabulary locale independent、infra 4 行反映済みの続き) evidence:context_freshness_check context=context/infrastructure.md commit=6b622373d -->
+<!-- source_commit:f396ead46 reason:2026-08-31 将軍doc lane GA-535: SG-PRE9c根治/litter trap/three_layer容量/dedupe 4行反映 evidence:tail -4 context/infrastructure.md に4行(4e705dd2d) -->
 <!-- source_commit:146b6888cc00 reason:approved_source_commit evidence:blt_20260830_192111_57c73f infra.md に v2 節追記 -->
 <!-- source_commit:ce69ed97490e reason:cmd_karo_hotfix_gate_alert_identity_envelope_20260830(DOC_LANE_REQUEST blt_20260830_093831_327430) evidence:gate_improvement.log BLOCK 0, GATE-IMPROVEMENT-DONE 09:32, gate CLEAR 09:36:10 -->
 <!-- source_commit:b132118b472d reason:cmd_karo_hotfix_tmux_live_sendkeys_guard(DOC_LANE_REQUEST blt_074928) evidence:git show --stat b132118b472d -->
@@ -115,7 +117,7 @@
 <!-- source_commit:f8c49cbd7 reason:cmd_shogun_commit_reservation_ledger_phase1_20260805 evidence:reviewed -->
 <!-- source_commit:515f0214e reason:cmd_karo_hotfix_ga432_context_freshness reviewed source boundary evidence:cmd_complete_gate project=infra context=context/infrastructure.md commit=515f0214e -->
 <!-- source_commit:23a1ce61205ce4496ab11570583e8e8adcaeac4e reason:reflux backlink SSOT update reviewed evidence:incoming 0 to 1; runner69/69; target doc diff0 -->
-<!-- last_synced_lesson: L1682 -->
+<!-- last_synced_lesson: L1683 -->
 
 結論: 本ファイルは検索起点となる索引層。運用詳細・経緯・教訓本文は7つの詳細正本へ移設した。
 source boundary一致taskはregistryのowner/update_triggerからcontext_update_candidatesを自動注入し、未処理候補はcmd_complete_gateがBLOCK、明示処理済み/無関係はCLEAR。
@@ -166,7 +168,7 @@ source boundary一致taskはregistryのowner/update_triggerからcontext_update_
 結論: 詳細は `docs/research/infrastructure-lessons-reviews-operations.md` に保存。原文を省略せず移設済み。
 見出し: 前節「Infra教訓索引」の連続本文（source lines 1701-2123）。
 - L1503: 既存legacy欠損は不変multisetで隔離せよ（cmd_karo_hotfix_shared_operational_log_ownership_20260801）
-<!-- last_synced_lesson: L1682 -->
+<!-- last_synced_lesson: L1683 -->
 - L1504: appendとarchiveはreaderを含むgeneration transactionにせよ（cmd_karo_hotfix_gunshi_cs_remediation_generation_20260801）
 - L1505: 永続test宣言はtask正本に置く（cmd_4206）
 - L1506: active context DEFERはowner存在だけでなくdirty・baseline変化・fresh leaseの全ANDにせよ（cmd_karo_hotfix_active_context_gate_transient_20260801）
@@ -344,6 +346,7 @@ source boundary一致taskはregistryのowner/update_triggerからcontext_update_
 - L1680: hook失敗混在バッチは期待GA-PUSH1を抑止しlegacy実失敗を残す（cmd_karo_hotfix_ga531_push_dirty_overlap_20260830）
 - L1681: dot-separated property slash tokenのpath分類境界（cmd_karo_hotfix_command_file_token_parser_20260831）
 - L1682: CI compatibility fixtureはfile rootを分離する（cmd_karo_ci_fix_33326464870_shard_count_receipt_20260831）
+- L1683: 容量ゲートは単一母数と回収可能性を同時にBLOCK判定する（cmd_karo_hotfix_three_layer_cache_capacity_metric_20260831）
 
 ## 設計標準・テスト・因果
 
@@ -402,3 +405,7 @@ source boundary一致taskはregistryのowner/update_triggerからcontext_update_
 - **run_tests runner fixture の構造 writer 依存(CI RED 10/11 回目、疾風 a3e312e2a+飛猿 f8adbd091)**: `tests/unit/test_run_tests.bats` の runner fixture に structural writer 依存を copy(shard 1/4/6/compat)、startup owner fixture(飛猿)。ci_fix は家老自立で 2 unit 並列。
 - **報告在庫の便欠落(T158)**: forced_idle 世代の report(影丸 reflux 0158 19h/runner_portability 20h/才蔵 1530 6h50m)が gate_metrics 0・archive 0 で滞留。回収は将軍 loop の『completed∧未CLEAR(本日 mtime)』機械抽出→順序付き 1 通。構造根治は T124 INS(forced_idle は report 実在 task を idle 化しない)。
 - **artifact のスマホ表示(殿指摘 22:56/23:22)**: `table-layout:fixed`+全要素 `overflow-wrap:anywhere`+`.wrap-x{overflow-x:visible}` で 1 文字折返し。是正=表は自コンテナ横スクロール、本文 `word-break:normal`、48rem 以下は `.row{display:block}`(grid 列を弄らず block へ落とす)。
+- **SG-PRE9c(LG043)偽陽性根治(f396ead46)**: unclear_points の測定時点差記述を AC 未達語と誤検知する歴史的 FP を修正。precheck が旧 main engine を使う自己 FP 循環は『先に origin/main へ公開→同 generation 再レビュー』で解く。
+- **task mutation 残骸根治(952c3ff0b)**: ninja_monitor の mutation writer が全経路 trap 回収+起動 sweep(holder pid 死亡∧age>10 分・既定 dry-run)。既存 4.8k 件の apply は Tier2=殿裁可待ち。
+- **three_layer_cache 容量統一(5e45c0cd5)**: capacity 分母統一+回収不能 overflow は fail-closed。
+- **report_review 重複通知 dedupe(dbcd4c67+小太郎 hotfix)**: 同一 cmd×ninja×type の軍師宛通知はフラグ存在で即 exit=2 通目以降 0 件。

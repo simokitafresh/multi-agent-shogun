@@ -1,5 +1,7 @@
 # DM-signal フロントエンド コンテキスト（索引）
-<!-- last_updated: 2026-08-27 2026-08-27 将軍doc lane: DOC_LANE_REQUEST 5b4e27eb(cmd_4333 LoginModal再利用)を反映し境界をDM-signal origin/main tipへ -->
+<!-- last_updated: 2026-08-31 2026-08-31 06:45 将軍doc lane GA-535: 境界を origin/main tip へ是正(8-hex 旧hotfix markerだと分岐外祖先が非除外で1390/789/1588件の偽ALERT) -->
+<!-- source_commit:9734518397066f644bd7c7180bccc276d2bf5947 reason:2026-08-31 06:45 将軍doc lane GA-535: 境界を origin/main tip へ是正(8-hex 旧hotfix markerだと分岐外祖先が非除外で1390/789/1588件の偽ALERT) evidence:git -C /mnt/c/Python_app/DM-signal rev-list --count <tip>..origin/main=0 -->
+<!-- source_commit:9d71556d reason:2026-08-31 将軍doc lane GA-535: §29 Free tier 3是正を反映 evidence:grep -c '## 29\.' context/dm-signal-frontend.md=1(4e705dd2d) -->
 <!-- source_commit:d87339a4 reason:2026-08-27 将軍doc lane: DOC_LANE_REQUEST 5b4e27eb(cmd_4333 LoginModal再利用)を反映し境界をDM-signal origin/main tipへ evidence:context/dm-signal-frontend.md §2026-08-27 追加; git -C /mnt/c/Python_app/DM-signal show --stat 5b4e27eb6330 -->
 
 <!-- source_commit:55b81b43 reason:context_freshness reviewed source boundary evidence:context_freshness_check context=context/dm-signal-frontend.md commit=55b81b43 -->
@@ -458,3 +460,7 @@ L122(キャッシュ無効化), L121(API実コード確認) → `context/dm-sign
 
 結論: 認証は`/login`ルート境界(`components/route-access-boundary.tsx`)で切替、認証主体が変わる瞬間に7層(React state/handoff sessionStorage/localStorage/api-cache+ETag IndexedDB/SW CacheStorage)をハードリセット(`resetAuthScopedClientState`)、キャッシュキーとBE ETag/Cache-Controlに主体(tier/admin)を含める(no-store)。adminは`/admin/login`のみ(一般UIからリンクなし)。是正: 文言=「パスワードもしくはクーポンコード」(cmd_4332)、`/admin`配下は認証後protectedツリー(Provider内)で描画(cmd_4333、useViewerPermissions Provider外例外の根治)。殿確認14:28 OK。origin/main `55b81b43` FE live。第1段(identity/entitlement)は殿合図待ち。
 → 正本 `docs/research/dm-login-boundary-asis-tobe_20260817.md`(gist 0d23e0c3)
+
+## 29. Free tier 入口 live の 3 是正 (2026-08-31)
+
+結論: `/free` は backend の `{success,data:{coupon}}` 封筒を受ける(9d71556d、トップレベル `coupon` 前提は 4422/4423 契約不一致)。auth callback は `error_description`/`exchangeCodeForSession error.message` を画面に出す(6e033013、診断可視化で殿往復 1 回を消す)。FAQ は EN/JA 二言語 route+metadata で公開(5001d88e、cmd_4427)。
