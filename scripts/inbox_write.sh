@@ -1326,6 +1326,15 @@ rearm_codex_watcher_delivery() {
               "$state_dir/inbox_watcher_last_nudge_${target}"
         for token in "$state_dir"/inbox_watcher_sent_"${target}"_*; do
             [ -e "$token" ] || continue
+            case "$token" in
+                *_outstanding_lease_*)
+                    # The watcher lease is scoped to the current CLI
+                    # generation.  Delivery verification may rearm its
+                    # retry path, but must not turn that retry into a second
+                    # nudge for the same generation.
+                    continue
+                    ;;
+            esac
             rm -f -- "$token"
         done
         # Content is unchanged.  The mtime transition wakes the watcher's

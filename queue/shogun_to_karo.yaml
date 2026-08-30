@@ -1,108 +1,103 @@
 commands:
-  cmd_4418:
-    title: "LP 別サイト P2 — app の docs と faq を未認証で公開し、faq に EN 版を追加して LP の導線先にする"
-    status: delegated
+  cmd_4420:
+    title: "/login 最小化 — LP(dm-signal.com)との重複を解消し、/login をブランド行+サインイン+LP への 1 導線に絞る(ログイン機構不変)"
+    status: draft
     project: dm-signal
-    purpose: "殿方向性 2026-08-30 13:25『ログイン後の Docs/FAQ を /login からのリンクに』+殿裁定 16:42『別サイトでやろう』(設計書 v2 §9: docs/faq 公開は LP の導線先)。app の docs(67 行)と faq(459 行 JA)は API・認証非依存の静的ページで、RouteAccessBoundary の protected 既定で隠れているだけ(将軍一次 13:27)。public 化と faq の EN 版を app frontend に実装する。cmd_4416(app の login 配下)・cmd_4417(lp 配下)とは変更ファイルが分離"
+    purpose: "殿実機確認 2026-08-30 17:53『LP ページとログインページがほぼ同じだ。これは誤解や勘違いを生みそうだ』。原因=将軍が §2.2 の同じ構造(表・プラン 3 枚・導線 4 本・FAQ)を cmd_4416(/login)と cmd_4417(LP)の両方に適用したこと。LP が別サイトで live(dm-signal.com)になった今、/login は『すぐ入る』だけに絞り、説明・表・プラン・FAQ は LP に一本化する。ログイン機構(SignInCard・7 層リセット・boundary)は触らない"
     scope_mode: FULL
     target_path: /mnt/c/Python_app/DM-signal/frontend
     acceptance_criteria:
       AC1:
-        description: "RouteAccessBoundary の public 判定に docs と faq のルートを追加し(既存の login 分岐の形式に揃える)、ローカル next build(output:export)後の static serve で未認証のまま docs と faq が本文つきで描画され、ログイン後ページ(dashboard 等)は従来どおり protected のままであることを Playwright で確認する"
-        binary_check: "未認証で docs と faq の本文(H1 と 1 段落以上)が描画 ∧ 未認証で dashboard は従来どおりログイン画面へ ∧ boundary の変更が public 判定の追加行のみ(他の分岐 diff 0) か?"
+        description: "login 配下の page と login-experience を、ブランド行(DM-Signal)+1 行のリード+SignInCard+『About DM-Signal → https://dm-signal.com/(JA は /ja)』の 1 導線+ブラックアウト帯(§2.4、期限切れ時のみ表示)+フッタに絞り、showcase 表・プラン 3 枚・導線 4 本・FAQ 抜粋を /login から除去し、login-copy に EN/JA の文言を閉じ、next build(output:export)の out の login index に H1 と description があり、Playwright(ローカル static serve、375×667)で初期 viewport 内に Sign in ボタンと LP 導線がありスクロール量が 1 画面以内であることを確認する"
+        binary_check: "login index に H1 と description が各 1 件以上 ∧ 375×667 で Sign in と LP 導線が初期 viewport 内 ∧ ページ高が viewport の 1.5 倍以下 ∧ showcase 表・プラン・FAQ の DOM 0 ∧ 毎営業日/today/soon/early/近日/¥/円/first month free/初月無料/free trial の grep 0 か?"
       AC2:
-        description: "faq に EN 版(faq 配下の en ルート、文言は faq の copy ファイルに JA と並置)を追加し、JA 版と項目数が一致すること、hreflang(ja↔en)と metadata title/description(言語別)が両ページに含まれることを next build の出力 HTML で確認する"
-        binary_check: "faq JA と EN の項目数が一致 ∧ 両 HTML に hreflang と description が各 1 件以上 ∧ 毎営業日/today/soon/early/近日/¥/円/first month free/初月無料/free trial の grep 0 か?"
+        description: "/login に robots noindex(metadata robots index:false)を付け、LP(dm-signal.com)が検索評価を受ける側になるようにし、既存のログイン 3 経路(正しいパスワード→/、誤り→エラー文、期限切れ→expired 文+note 導線)が Playwright(ローカル)で従来どおり通ることを確認する"
+        binary_check: "login index の meta robots に noindex ∧ ログイン 3 経路 PASS ∧ expired 文と note 導線が表示 か?"
       AC3:
-        description: "変更ファイルが boundary の 1 箇所・docs 配下・faq 配下・robots と sitemap(docs と faq の URL 追加)のみで、login 配下・viewer-auth・auth-state-reset・api-client・既存 test の diff が 0 であり、変更対象に限定した選択実行で FAIL 0 SKIP 0 を確認する"
-        binary_check: "allowlist 外の変更 0 ∧ login 配下と認証 3 ファイルの diff 0 行 ∧ 既存 test diff 0 ∧ 変更対象に限定した選択実行 FAIL 0 SKIP 0 か?"
+        description: "変更ファイルが login 配下(page・login-experience・login-copy・showcase 系の削除)のみで、route-access-boundary・viewer-auth・auth-state-reset・api-client・既存 test の diff が 0 であり、変更対象に限定した選択実行で FAIL 0 SKIP 0 を確認する"
+        binary_check: "login 配下以外の変更 0 ∧ 認証 4 ファイルの diff 0 行 ∧ 既存 test diff 0(login 配下の test は更新可) ∧ 選択実行 FAIL 0 SKIP 0 か?"
     command: |
-      1. route-access-boundary の public 判定に docs と faq を追加し、static serve の Playwright で未認証描画と dashboard の protected 維持を確認する
-      2. faq の EN 版を JA と同じ copy ファイル構造で追加し、hreflang・metadata・項目数一致・禁則語 0 を build 出力で確認する
-      3. allowlist 外 diff 0・認証 3 ファイルと login 配下 diff 0・robots と sitemap に docs と faq を追加・選択実行 FAIL 0 SKIP 0 を報告 YAML に生貼付する
+      1. login 配下を最小構成(ブランド行・リード 1 行・SignInCard・LP 導線・帯・フッタ)に組み直し showcase 表とプランと FAQ を除去、Playwright 375×667 で viewport 内と高さを確認する
+      2. metadata robots noindex を付け、ログイン 3 経路を Playwright で確認する
+      3. login 配下以外 diff 0・認証 4 ファイル diff 0・選択実行 FAIL 0 SKIP 0 を報告 YAML に生貼付する
     assumptions:
-      claim: "frontend は output:export の静的 export(next.config 2026-08-30 16:34)。docs は 67 行・faq は 459 行 JA で API・認証非依存(将軍一次 13:27、wc 16:38)。RouteAccessBoundary は layout で全ルートを包み public 判定は login 分岐のみ(route-access-boundary.tsx L38 付近、16:34)。cmd_4416(login 配下)は半蔵 done、cmd_4417(lp 配下)は飛猿走行中で本 cmd と変更ファイルが重ならない"
-      source: "docs/research/dm-login-showcase-asis-tobe_v2_20260830.md §9/§4、frontend/components/route-access-boundary.tsx、frontend/app/docs/page.tsx、frontend/app/faq/page.tsx、frontend/next.config.mjs"
+      claim: "origin/main の frontend/app/login 配下は page.tsx(19 行)・login-experience.tsx・login-copy.ts・showcase.tsx・showcase-types.ts・sign-in-card.tsx・__tests__(2026-08-30 18:06 git ls-tree)。cmd_4416 は 17:16 に live、client 状態配線の hotfix v2(半蔵)が同 login 配下で走行中=本 cmd は v2 CLEAR 後に配備(同 target 直列)。LP は https://dm-signal.com/ と /ja が live(17:44)。frontend は output:export の静的 export"
+      source: "docs/research/dm-login-showcase-asis-tobe_v2_20260830.md §2.4/§3.3/§4/§9、frontend/app/login 配下(origin/main)、frontend/components/route-access-boundary.tsx、殿実機確認 17:53(lord_conversation)"
       trust: verified
-    depends_on: none
-    serial_dependency_evidence: "AC1(boundary の public 化)→AC2(faq EN は AC1 で公開された faq に載せる)→AC3(diff 0 と選択実行は AC1/AC2 完成後にしか判定できない)。boundary と faq の 2 箇所を別忍者に分けると AC3 の allowlist 判定が二重になるため 1 名直列"
-    environment_change: "type=lesson; file=docs/research/dm-login-showcase-asis-tobe_v2_20260830.md; pattern=docs/faq 公開"
-    execution_env:
-      runtime_constraints: "DM-signal frontend で npm ci、next build(output:export)、Playwright はローカル static serve。本番・deploy・DNS は触らない"
-      long_runtime_reason: "boundary 変更+faq EN 翻訳(459 行 JA と項目数一致)+Playwright 確認は同一 frontend package で不可分"
-      measured_runtime_sec: 1500
-    timeout_minutes: 45
-    estimated_minutes: 25
-    split_decision: "AC3 本=1 道具(app の公開ページ 1 組)。LP 本体は cmd_4417、backend CORS+event は cmd_4419 に分離済み"
-    quality_gate:
-      q1_firefighting: "消火ではない。殿方向性 13:25 と裁定 16:42 の LP 導線先(docs/faq)を公開する品質向上"
-      q2_learning: "忍者は boundary の public 判定の形式、静的 export での言語別ページ、hreflang/metadata、禁則語 0 を設計書 §9/§4 で学ぶ"
-      q3_next_quality: "docs/faq が公開されると LP(4417)の導線先が実在し、以後の FAQ 追加は copy ファイル 1 本で JA/EN 同時に済む"
-      q4_depth: "shallow — 変更箇所が boundary 1 箇所+faq EN で、設計書 §9 に導線と終端が明文化済み"
-      q5_verified_source: "code_reading — route-access-boundary.tsx の public 判定(L38 付近)と docs(67 行)/faq(459 行)を 2026-08-30 13:27 と 16:38 に読了、next.config output:export を 16:34 に確認。production_verified — 本番 /login 200 と docs/faq が未認証で隠れることを 16:33 に curl(frontend 200)"
-      q6_not_hiding: "faq EN は翻訳であり原文 JA の項目数と一致させる。公開範囲は docs と faq のみでデータページは protected のまま=隠していない"
-      q7_definition_verified: "『public 化』= RouteAccessBoundary が認証状態を待たずに children を描画するルート集合に加えること(確認日: 2026-08-30 16:34)。『禁則語』= 設計書 §4+§2.4 の語群"
-      q8_why_what: "WHY: LP の CTA『Read the docs』『FAQ』の遷移先が未認証で見えないと導線が切れる(殿方向性 13:25) / WHAT: boundary の public 判定に docs と faq を追加し、faq EN 版を追加、両 HTML に hreflang と description、項目数一致、禁則語 0、login 配下と認証 3 ファイル diff 0 / WHEN: 今セッション、4416/4417 と並走 / WHERE: /mnt/c/Python_app/DM-signal/frontend / WHO: 忍者 1 名(idle) / HOW: boundary 1 行+copy ファイル並置+Playwright / 複利: 公開ページの追加が boundary 1 行+copy で済む型を固定=正の複利"
-      q9_firefighting_root_cause: "根本対応。静的で認証非依存のページが protected 既定で隠れている構造を、public 判定の明示で正す"
-      q10_knowledge_boundary: "検証済み: boundary の public 判定位置、docs/faq の行数と非依存性、static export。スコープ外: LP 本体(4417)、backend(4419)、app のドメイン移行、deploy(家老)"
-      q11_not_already_done: "rg -c 'faq' /mnt/c/Python_app/DM-signal/frontend/components/route-access-boundary.tsx → 0 件(2026-08-30 16:34) / ls /mnt/c/Python_app/DM-signal/frontend/app/faq → page.tsx のみ(EN 版なし、16:38) / semantic_search.sh 'docs faq 公開 public boundary' → 該当 cmd なし"
-      q_ambiguity: "『公開』の範囲は docs と faq の 2 ルートのみ。データページは含めない。曖昧さは §9 で解消済み"
-      q12_lord_30min_cost: "no — 殿方向性 13:25 と裁定 16:42 で確定"
-      diagnosis: "BLOCK理由: 該当なし(新規起票) / 対策: faq 配下の en ルート新設は殿方向性 13:25(EN/JA 別)による意図的新設"
-    delegated_at: "\"2026-08-30T17:17:28\""
-    origin: "[[殿裁定_LP別サイト_20260830_1642]] -> [[dm-login-showcase-asis-tobe_v2_20260830]] -> [[cmd_4418_docs_faq_public]]"
-  cmd_4417:
-    title: "LP 別サイト — DM-signal/lp に EN(/)+JA(/ja)の静的 LP を新設し showcase をビルド時 fetch で表に焼き、hreflang・robots・sitemap・CTA を置く"
-    status: delegated
-    project: dm-signal
-    purpose: "殿裁定 2026-08-30 16:42『別サイトでやろう』+16:44『dm-signal.jp を Cloudflare で取ろう。設計書 §9 を書き換えて cmd を起票せよ』。設計書 v2 §9(LP 別サイト)を実装する。cmd_4416(app の /login)とは repo 内ディレクトリが分離(lp/ 新設)し衝突 0。deploy・Render static site 作成・custom domain・DNS は家老 post_deploy_check(§9 ドメイン手順)"
-    scope_mode: FULL
-    target_path: /mnt/c/Python_app/DM-signal
-    acceptance_criteria:
-      AC1:
-        description: "lp/(独立 package.json、Next.js output:export、globals.css は frontend の色・書体トークン値を複製)に §9 の構造(H1+リード、showcase 表=§3.1 v3 と同じ列と英語脚注 Data through、プラン 3 枚 金額なし、CTA Sign in→NEXT_PUBLIC_APP_HOST の /login と Read the docs→/docs と note 導線、FAQ 抜粋 3 問→/faq、フッタ、§3.3 ライト固定)を /(EN)と /ja(JA)で実装し、文言は lp 配下 copy ディレクトリの en と ja の 2 ファイルに閉じ、next build で out 配下に EN の index と ja の index が生成され各 HTML に H1・metadata description・hreflang(en・ja・x-default)が含まれることを確認する"
-        binary_check: "next build 成功 ∧ EN の index と ja の index に H1・description・hreflang が各 1 件以上 ∧ コンポーネント内の文言直書き 0 ∧ 毎営業日/today/soon/early/近日/¥/円/first month free/初月無料/free trial の grep 0 か?"
-      AC2:
-        description: "showcase 表の数値はビルド時 fetch(GET NEXT_PUBLIC_API_HOST/api/public/showcase)で静的 HTML に焼き、帯(blackout)だけ client no-store fetch にし、robots.txt(全許可)と sitemap.xml(/ と /ja)を生成し、Playwright(ローカル static serve、375×667 と 1280 幅)で HTML 本文に total_return 文字列が存在し 375×667 の初期 viewport 内に Sign in ボタンがあることを確認する"
-        binary_check: "EN の index の本文に EP の total_return 文字列が 1 件以上(fetch 前の静的 HTML) ∧ out 配下に robots と sitemap が存在し sitemap に URL 2 件 ∧ 375×667 で Sign in ボタンの bounding box が初期 viewport 内 ∧ prefers-color-scheme dark エミュレートでも背景がライト か?"
-      AC3:
-        description: "変更が lp 配下のみで frontend 配下と backend 配下の diff が 0 であり、lp 配下に追加した test に限定した選択実行で FAIL 0 SKIP 0 を確認する"
-        binary_check: "lp 配下以外の変更 0 ∧ frontend 配下と backend 配下の diff 0 行 ∧ lp 配下の追加 test に限定した選択実行が FAIL 0 SKIP 0 か?"
-    command: |
-      1. 設計書 v2 §9/§3.1/§3.3/§4 を読み、lp/ を独立 package(output:export)で新設して EN/JA の 2 ルートと copy 2 ファイルを実装し、next build の out/ で H1・description・hreflang と禁則語 0 を確認する
-      2. ビルド時 fetch で表を静的 HTML に焼き、帯だけ client no-store にし、robots/sitemap を生成して Playwright(ローカル static serve)で 2 幅の本文と viewport 内 Sign in を確認する
-      3. lp 配下以外 diff 0・frontend 配下と backend 配下 diff 0・lp 配下の追加 test に限定した選択実行 FAIL 0 SKIP 0 を報告 YAML に生貼付する
-    assumptions:
-      claim: "DM-signal repo に lp/ は存在しない(git ls-tree origin/main 2026-08-30 16:46 で 0)。showcase EP は本番 200・plans basic/standard/premium・secret 73・best_name 除去済(curl 16:31)。frontend は output:export の静的 export(next.config 16:34)で、lp も同方式。Render LP static site とドメイン dm-signal.jp は未作成(Render API custom-domains 0 件 16:43)=家老レーンで deploy 後に付ける"
-      source: "docs/research/dm-login-showcase-asis-tobe_v2_20260830.md §9/§3.1/§3.3/§4、本番 GET /api/public/showcase、frontend/next.config.mjs、frontend/app/globals.css、Render API services/srv-d4ja8pp5pdvs739a5fsg"
-      trust: verified
-    depends_on: none
-    serial_dependency_evidence: "AC1(package 新設と 2 ルート・copy)→AC2(ビルド時 fetch・robots/sitemap・Playwright は AC1 の out/ に対して実行)→AC3(diff 0 と選択実行は AC1/AC2 の完成後にしか判定できない)。同一 package の実装で並列分割すると package.json/next.config が衝突するため 1 名直列"
+    depends_on: cmd_4416
+    serial_dependency_evidence: "AC1(最小構成への組み直し)→AC2(noindex とログイン 3 経路は AC1 の page に載る)→AC3(diff 0 と選択実行は AC1/AC2 完成後)。同一 login 配下の 1 ページで不可分、半蔵 hotfix v2 と同 target のため v2 CLEAR 後に 1 名直列"
     environment_change: "type=lesson; file=docs/research/dm-login-showcase-asis-tobe_v2_20260830.md; pattern=LP 別サイト"
     execution_env:
-      runtime_constraints: "DM-signal/lp で npm ci、next build(output:export)、Playwright はローカル static serve(out/)。ビルド時 fetch は本番 EP の GET のみ(書込みなし)。deploy・DNS は触らない"
-      long_runtime_reason: "package 新設+2 言語ルート+ビルド時 fetch+Playwright 2 幅は同一 package の実装で不可分"
-      measured_runtime_sec: 1800
-    timeout_minutes: 50
-    estimated_minutes: 30
-    split_decision: "AC3 本=1 道具(lp package 1 本)。docs/faq 公開は cmd_4418、backend CORS+event は cmd_4419 に分離"
+      runtime_constraints: "DM-signal frontend で npm ci、next build(output:export)、Playwright はローカル static serve。本番・deploy は触らない"
+      long_runtime_reason: "組み直し+noindex+ログイン 3 経路確認は同一ページで不可分"
+      measured_runtime_sec: 1200
+    timeout_minutes: 40
+    estimated_minutes: 20
+    split_decision: "AC3 本=1 道具(/login 1 ページ)。LP 側の長文化は別 cmd(SEO 基盤・月次ページ)で扱う"
     quality_gate:
-      q1_firefighting: "消火ではない。殿裁定 16:42/16:44 の LP 別サイトを設計書 §9 どおり実装する品質向上"
-      q2_learning: "忍者は静的 export のビルド時 fetch、2 言語の文言ファイル分離、hreflang/robots/sitemap、禁則語 0 を設計書 §9/§4 で学ぶ"
-      q3_next_quality: "lp/ が app と分離されるため以後の LP 文言変更は app の deploy・影響境界検分なしで回り、言語追加は copy ファイル 1 本で済む"
-      q4_depth: "shallow — 設計書 §9 に構造・終端・ドメイン手順が明文化済み"
-      q5_verified_source: "production_verified — 本番 showcase 200 を 16:31 に curl、Render custom-domains 0 件を 16:43 に API 実測。code_reading — origin/main の git ls-tree で lp/ 不在(16:46)、frontend/next.config.mjs output:export(16:34)、backend/app/main.py origins(L182)と public_showcase.py step Literal(L63)を 16:46 に読了"
-      q6_not_hiding: "ビルド時 fetch は build 時点の数値で固定され、月次更新は再 deploy(家老レーンの月末 rebuild)で反映する点を §9 に明記。隠していない"
-      q7_definition_verified: "『ビルド時 fetch』= next build 中の server component fetch で静的 HTML に数値を焼くこと(output:export で許容、ISR 不使用。確認日: 2026-08-30 16:34)。『禁則語』= 設計書 §4+§2.4 の語群"
-      q8_why_what: "WHY: 殿裁定 16:42 別サイト=影響境界 0・リリース周期分離・初回 HTML に数値 / WHAT: lp/ に EN(/)と JA(/ja)を静的 export で新設し、out の HTML に H1・description・hreflang・total_return、robots/sitemap、禁則語 0、lp/ 以外 diff 0 / WHEN: 今セッション、cmd_4416 と並走 / WHERE: /mnt/c/Python_app/DM-signal/lp / WHO: 忍者 1 名(idle) / HOW: 独立 package+copy 2 ファイル+ビルド時 fetch+Playwright / 複利: LP を app から切り離す 1 回の選択で、以後の全 LP 変更が検分ゼロになる=正の複利"
-      q9_firefighting_root_cause: "根本対応。LP を app 内に置くと deploy・CI・boundary に毎回縛られる構造を、別 package で断つ"
-      q10_knowledge_boundary: "検証済み: lp/ 不在、showcase 200、static export 方式、custom domain 0。スコープ外: Render static site 作成・custom domain・Cloudflare DNS(家老 post_deploy_check)、docs/faq 公開(4418)、backend CORS+event(4419)、app の /login(4416)"
-      q11_not_already_done: "git ls-tree -r --name-only origin/main | grep -c '^lp/' → 0 件(2026-08-30 16:46) / rg -c 'hreflang' /mnt/c/Python_app/DM-signal/frontend/app → 0 件 / semantic_search.sh 'ランディングページ LP EN JA hreflang showcase' → LP 実装 cmd なし(16:38)"
-      q_ambiguity: "CTA の遷移先は env NEXT_PUBLIC_APP_HOST(現在 https://dm-signal-frontend.onrender.com)で固定し、app のドメイン移行時は env 1 行で追随。曖昧さは §9 で解消済み"
-      q12_lord_30min_cost: "no — 殿裁定 16:42/16:44 で確定"
-      diagnosis: "BLOCK理由: 該当なし(新規起票) / 対策: 新規ディレクトリ lp/ は殿裁定 16:42(別サイト)による意図的新設。app の frontend/ と分離するため"
-    delegated_at: "\"2026-08-30T17:01:12\""
-    origin: "[[殿裁定_LP別サイト_20260830_1642]] -> [[dm-login-showcase-asis-tobe_v2_20260830]] -> [[cmd_4417_lp_site]]"
+      q1_firefighting: "消火ではない。殿実機確認 17:53 の『同じで誤解を生む』を、役割分離(LP=説明・/login=入口)で構造的に解く品質向上"
+      q2_learning: "忍者は 1 ページ 1 目的の絞り込み、noindex による評価集約、ログイン機構不変の境界を学ぶ"
+      q3_next_quality: "/login が入口に専念すれば LP 側の変更が /login に波及せず、以後の LP 改善は LP だけで閉じる"
+      q4_depth: "shallow — 除去主体で新規要素は LP 導線と noindex のみ"
+      q5_verified_source: "production_verified — 本番 /login(4acb995a8)と https://dm-signal.com/ を 17:5x に curl/スクショで比較(構造同一)。code_reading — origin/main の login 配下 7 ファイルを 18:06 に ls-tree で確認"
+      q6_not_hiding: "帯(期限切れ告知)と expired 文・note 導線は残す(摩擦除去 F3 を守る)。除去するのは説明系のみ"
+      q7_definition_verified: "『最小構成』= ブランド行・リード 1 行・SignInCard・LP 導線 1 本・帯・フッタ(確認日: 2026-08-30 18:06、殿 17:53)。『ログイン 3 経路』= 正/誤/期限切れ(cmd_4416 AC3 と同定義)"
+      q8_why_what: "WHY: LP と /login が同じ内容で殿が『誤解を生む』と実機確認 / WHAT: /login を最小構成に絞り showcase 表・プラン・FAQ の DOM 0、noindex、375×667 で Sign in と LP 導線が viewport 内、認証 4 ファイル diff 0、ログイン 3 経路 PASS / WHEN: 半蔵 hotfix v2 CLEAR 後 / WHERE: /mnt/c/Python_app/DM-signal/frontend / WHO: 忍者 1 名 / HOW: 除去+noindex+Playwright / 複利: 入口と説明の分離を 1 度固定すれば以後の LP 改善が /login に波及しない=正の複利"
+      q9_firefighting_root_cause: "根本対応。同じ構造を 2 ページに複製した将軍の設計を、役割分離で正す"
+      q10_knowledge_boundary: "検証済み: login 配下の構成、LP live、4416 live と v2 走行。スコープ外: LP 側の長文化(別 cmd)、app のドメイン(app.dm-signal.com)、Search Console"
+      q11_not_already_done: "git show origin/main:frontend/app/login/page.tsx | grep -c noindex → 0 件(2026-08-30 18:06) / curl https://dm-signal-frontend.onrender.com/login | grep -c 'dm-signal.com' → 0 件(LP 導線なし) / semantic_search.sh 'login ページ 最小化 サインイン LP 差別化' → 該当 cmd なし"
+      q_ambiguity: "『ほぼ同じ』の解消基準=表・プラン・FAQ が /login に無いこと(DOM 0)で二値化。曖昧さは AC1 で解消"
+      q12_lord_30min_cost: "no — 殿実機確認 17:53 で方向確定"
+      diagnosis: "BLOCK理由: 該当なし(新規起票) / 対策: 該当なし"
+    origin: "[[殿実機確認_LP_20260830_1753]] -> [[LPと/loginの同構造]] -> [[cmd_4420_login_minimal]]"
+  cmd_4419:
+    title: "LP 別サイト P3 — backend の CORS 許可に LP ドメインを追加し showcase event の step enum に lp_view と lp_cta_click を加える"
+    status: delegated
+    project: dm-signal
+    purpose: "殿裁定 2026-08-30 16:42『別サイトでやろう』+17:14『.jp にこだわらない』(LP=dm-signal.com 予定、設計書 v2 §9)。LP は別オリジンから GET /api/public/showcase(ビルド時 fetch と帯の client fetch)と POST /api/public/showcase/event を呼ぶため、backend の CORS origins に LP オリジンを追加し、event の step enum に lp_view と lp_cta_click を加える(§9 計測)。cmd_4417(lp 配下)・cmd_4418(frontend)とは変更ファイルが分離"
+    scope_mode: FULL
+    target_path: /mnt/c/Python_app/DM-signal/backend
+    acceptance_criteria:
+      AC1:
+        description: "main.py の origins に LP オリジン(https://dm-signal.com と https://www.dm-signal.com、および LP の onrender オリジンを env LP_ORIGINS で追加可)を加え、隔離 clone の TestClient で Origin ヘッダを LP オリジンにした GET /api/public/showcase と POST /api/public/showcase/event が CORS 許可ヘッダ付きで応答し、無関係オリジンには許可ヘッダが付かないことを確認する"
+        binary_check: "LP オリジン 2 件+env 追加分で access-control-allow-origin が一致 ∧ 無関係オリジンで許可ヘッダ 0 ∧ 既存 origins の順序と値が不変 か?"
+      AC2:
+        description: "public_showcase の event step Literal に lp_view と lp_cta_click を追加し、body に lang(en か ja、任意)を受けて保存し、既存 7 step の挙動が不変であることを contract test(既存 test ファイルへ追加、test_necessity 付き)で確認する"
+        binary_check: "lp_view と lp_cta_click の POST が 2xx ∧ 未知 step が 4xx のまま ∧ 既存 7 step の test が全て PASS ∧ lang が en か ja 以外なら 4xx か?"
+      AC3:
+        description: "【将軍訂正 17:52: AC2 の lang 永続化に model と migration が必要なため許可 scope を広げる】変更が backend 配下の main.py と showcase の api と contract test と showcase の model と migrations 1 本のみで、既存 test の削除 0 であり、変更対象に限定した pytest 選択実行で FAIL 0 SKIP 0 を確認する"
+        binary_check: "変更ファイルが 5 本以内(main.py・api・contract test・model・migration) ∧ 既存 test 削除 0 ∧ 選択実行 FAIL 0 SKIP 0 か?"
+    command: |
+      1. main.py の origins に LP オリジンと env LP_ORIGINS を加え、TestClient で許可/非許可オリジンの応答ヘッダを確認する
+      2. event step に lp_view と lp_cta_click と lang を追加し、contract test で既存 7 step 不変と新 2 step の 2xx を確認する
+      3. 変更ファイル 3 本以内・既存 test 削除 0・選択実行 FAIL 0 SKIP 0 を報告 YAML に生貼付する
+    assumptions:
+      claim: "origin/main の backend/app/main.py L182 に origins リスト、L197 で CORSMiddleware に渡し L217 で origin in origins 判定(2026-08-30 16:46 git show)。public_showcase.py L63 に step Literal 7 値(login_view/input_focus/submit/ok/expired/wrong/note_click)。LP ドメインは dm-signal.com 予定(殿 17:14『.jp にこだわらない』、未購入)のため env で追加可にする"
+      source: "docs/research/dm-login-showcase-asis-tobe_v2_20260830.md §9、backend/app/main.py L182-217、backend/app/api/public_showcase.py L63、backend/tests/test_public_showcase_contract.py"
+      trust: verified
+    depends_on: none
+    serial_dependency_evidence: "AC1(CORS)→AC2(event enum は同じ api ファイル)→AC3(選択実行は AC1/AC2 の完成後)。同一 backend の 2 ファイルで小さく、分割すると test の重複が増えるため 1 名直列"
+    environment_change: "type=lesson; file=docs/research/dm-login-showcase-asis-tobe_v2_20260830.md; pattern=lp_cta_click"
+    timeout_minutes: 30
+    estimated_minutes: 10
+    split_decision: "AC3 本=1 道具(backend の LP 対応 1 組、origins 追加と Literal 追加と contract test の 3 手で 10 分)。LP 本体は cmd_4417、docs/faq 公開は cmd_4418 に分離済み"
+    quality_gate:
+      q1_firefighting: "消火ではない。LP 別サイト(殿裁定 16:42)が別オリジンから EP を呼べるようにし、LP の区間計測を足す品質向上"
+      q2_learning: "忍者は CORS 許可の限定(無関係オリジンに付けない)、enum 追加時の既存 contract 不変、env による将来ドメイン追加の型を学ぶ"
+      q3_next_quality: "LP のドメインが決まっても env 1 行で追加でき、計測 step が揃うため LP の区間表(§2.5 の教え)がそのまま使える"
+      q4_depth: "shallow — 変更 2 ファイル+test、設計書 §9 に計測 step と CORS が明文化済み"
+      q5_verified_source: "code_reading — git show origin/main:backend/app/main.py で origins(L182/L197/L217)、public_showcase.py L63 の Literal 7 値を 2026-08-30 16:46 に読了。production_verified — 本番 GET /api/public/showcase 200 を 16:31 に curl"
+      q6_not_hiding: "CORS は LP オリジンのみ追加し全許可にしない。event に生 UA/IP は保存しない(既存契約どおり)"
+      q7_definition_verified: "『origins』= main.py の allow_origins リスト(確認日: 2026-08-30 16:46)。『step』= public_showcase.py の Literal(7 値、同日)"
+      q8_why_what: "WHY: LP は別オリジンなので CORS 無しでは帯の client fetch と event POST が失敗する / WHAT: origins に dm-signal.com 系 2 件+env LP_ORIGINS、step に lp_view と lp_cta_click と lang、無関係オリジン許可 0、既存 7 step 不変、選択実行 FAIL 0 SKIP 0 / WHEN: 今セッション、4417/4418 と並走 / WHERE: /mnt/c/Python_app/DM-signal/backend / WHO: 忍者 1 名(idle) / HOW: origins 追加+Literal 追加+contract test / 複利: env でドメイン追加できる型を 1 度作れば app のドメイン移行時も 1 行で済む=正の複利"
+      q9_firefighting_root_cause: "根本対応。オリジン固定の CORS を env で拡張可能にし、LP のドメイン確定を待たずに backend を先に整える"
+      q10_knowledge_boundary: "検証済み: origins の位置と判定、step Literal 7 値、showcase 200。スコープ外: LP 本体(4417)、docs/faq(4418)、ドメイン購入と DNS(殿・家老)、deploy(家老)"
+      q11_not_already_done: "git show origin/main:backend/app/main.py | grep -c 'dm-signal.com' → 0 件(2026-08-30 16:46) / git show origin/main:backend/app/api/public_showcase.py | grep -c 'lp_view' → 0 件 / semantic_search.sh 'CORS origins lp_view event' → 該当 cmd なし"
+      q_ambiguity: "LP ドメイン未確定のため env LP_ORIGINS で追加可とし、dm-signal.com 系 2 件は既定で入れる。曖昧さは env で吸収"
+      q12_lord_30min_cost: "no — 殿裁定 16:42/17:14 で確定"
+      diagnosis: "BLOCK理由: 該当なし(新規起票) / 対策: 該当なし"
+    delegated_at: "\"2026-08-30T17:25:34\""
+    origin: "[[殿裁定_LP別サイト_20260830_1642]] -> [[dm-login-showcase-asis-tobe_v2_20260830]] -> [[cmd_4419_backend_cors_event]]"
   cmd_4414:
     title: "/login ショーウィンドウ P1b — 公開集計 EP に Sharpe(プラン平均/ベスト)・SPY/TQQQ 比較行・Secret 集計値を追補する"
     status: void

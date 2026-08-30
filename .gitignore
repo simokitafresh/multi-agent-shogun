@@ -320,3 +320,4 @@ tests/unit/_tmp_*.bats
 # Generated from the tracked semantic sources; rebuilt locally on demand.
 docs/semantic-index/index.md
 backup/
+.env.cloudflare

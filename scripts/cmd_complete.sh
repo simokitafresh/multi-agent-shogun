@@ -351,8 +351,8 @@ run_status_step() {
 
 archive_inbox_after_completion_hint() {
     local inbox_path="$ROOT_DIR/queue/inbox/karo.yaml"
-    local hint_id
-    local -a hint_ids=()
+    local hint_id terminal_id
+    local -a hint_ids=() terminal_ids=()
 
     if [[ -f "$inbox_path" ]]; then
         mapfile -t hint_ids < <(python3 - "$inbox_path" "$CMD_ID" <<'PY'
@@ -377,10 +377,45 @@ for message in messages:
         print(message_id)
 PY
         )
+
+        mapfile -t terminal_ids < <(python3 - "$inbox_path" "$CMD_ID" <<'PY'
+import sys
+import yaml
+
+path, cmd_id = sys.argv[1:]
+terminal_types = {
+    "report_received",
+    "report_review_result",
+    "accept_report",
+    "run_cmd_complete",
+    "gate_clear_required",
+}
+with open(path, encoding="utf-8") as fh:
+    data = yaml.safe_load(fh) or {}
+messages = data.get("messages", []) if isinstance(data, dict) else []
+for message in messages:
+    if not isinstance(message, dict):
+        continue
+    if message.get("read") is not False:
+        continue
+    if str(message.get("parent_cmd") or "") != cmd_id:
+        continue
+    if message.get("type") not in terminal_types:
+        continue
+    message_id = str(message.get("id") or "")
+    if message_id:
+        print(message_id)
+PY
+        )
     fi
 
+    printf '[cmd_complete] inbox_terminal_drain parent_cmd=%s selected=%d\n' \
+        "$CMD_ID" "$(( ${#hint_ids[@]} + ${#terminal_ids[@]} ))" >&2
     for hint_id in "${hint_ids[@]}"; do
         bash "$SCRIPT_DIR/inbox_mark_read.sh" karo "$hint_id"
+    done
+    for terminal_id in "${terminal_ids[@]}"; do
+        bash "$SCRIPT_DIR/inbox_mark_read.sh" karo "$terminal_id"
     done
     bash "$SCRIPT_DIR/inbox_archive.sh" karo
 }
