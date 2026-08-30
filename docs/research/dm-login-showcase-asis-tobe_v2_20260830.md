@@ -37,6 +37,7 @@
 | 12:54 | ログイン画面の数値データはリアルタイム更新(daily)にできるか？期間を明記して static にしたほうが SEO やユーザー動線としてベターか？ | 事実=①数値の出所 `portfolio_metrics(years=0)` は毎日再計算される(12:55 実測 calculated_at=2026-08-30 が 101 行)が、系列は月末クローズ基準で end_date=2026-07-31 のまま=**数字が動くのは月 1 回(月末クローズ翌日)**。②現行 /login は `"use client"` の CSR で、本番 HTML は `<title>DM-Signal</title>` のみ(12:11 curl)。robots.txt/sitemap/metadata なし=**検索エンジンには空ページ**。制約=daily 更新にしても表示値は月内不変。判断=**両立させる: サーバー側で HTML に数値を焼き込む ISR(revalidate 24h+月末再計算後の on-demand revalidate)+『Data through 2026-07-31』の期間明記**。訪問者には static に見え、実体は EP から毎日自動再生成。効果=§2.6 描画・更新方針を新設、P2b の AC に『初回 HTML に数値が含まれる(curl で表の数値が HTML 本文に存在)』『as_of の月末日が表外脚注に出る』を追加 |
 | 12:58 | ブラックアウトはどう表現する。note に誘導+パスワード発表をお楽しみにという期待感をあおるのがいいか？発表日時は俺が任意で決めているので具体的にしたくない | 事実=ブラックアウトは『月末で旧パスワード失効〜殿が note で新パスワードを発表するまで』で、発表時刻は固定されていない(viewer_tiers は expires_at=月末と last_rotated_at しか持たない)。制約=日時・カウントダウン・『early September』のような時期の示唆も出さない。判断=**ブラックアウト帯は『新しい月のシグナルは計算済み。パスワードは note で発表』の期待感+note 誘導のみ。日時表現ゼロ**。状態判定は `max(password_expires_at) < today ∧ last_rotated_at ≤ expires_at`(=まだ配布されていない)。効果=§2.4 を書き換え、EP `blackout` から `until_hint` を削除し `{active, month_closed}` に |
 | 13:04 | ログインページは単独でログイン後の本番には影響しないよな？ | 事実(13:05 一次)=①BE/FE とも origin/main と live deploy の差分 0(BE 5a5556af7・FE 812f0b7a1)=次の deploy に載るのは本設計の変更だけ。②/login が触る共有物は 3 つ: `RouteAccessBoundary`(layout で全ルートを包む。`pathname==="/login"` 分岐のみ)、`app/layout.tsx` の metadata、BE の同一 Render サービス(deploy で再起動)。③認証 API(`/api/auth/verify-viewer`)・7 層リセット・ログイン後ページのコードには一切触れない。制約=共有物に手を入れると波及する。判断=**影響境界を契約化(§2.7)**: 変更許可パス allowlist、RouteAccessBoundary の認証分岐は sha 固定で不変、metadata は /login ページ単位、BE は新 router+追記専用テーブルのみ、既存テストは無変更で全 PASS。効果=P1/P2 の AC に境界チェックを追加 |
+| 13:10 | 実装準備ができたら教えてくれ。ログインページは後から修正すればいいから、ログイン機構が壊れなければ実際に実装してから修正すればいい。デザインは全体で統一されていなければならない。ログインページはライトモードを基準とする | 事実=設計は §0〜§6.5 で確定済み、cmd_4413(P1)走行中・cmd_4415 待機。制約=唯一の底線は**ログイン機構(verify-viewer→7 層リセット→/)が壊れないこと**(§2.7 の不変 AC)。判断=**見た目・文言・表の細部は実装後に殿が本番を見て直す(反復前提)。deploy 前の完璧化を求めない。デザインは既存 `globals.css` トークンと ui コンポーネントに統一し、/login はライトモードを基準(OS のダーク設定でも /login はライト固定)**。効果=§3.3 にライト固定と統一規則、§5 の順序を P1→P2(frontend 1 cmd)→deploy→殿の本番確認→修正 cmd へ簡素化、cmd_4416(frontend)を起票 |
 
 ---
 
@@ -220,8 +221,11 @@
 - ≤860px: 1 カラム + 末尾シンプルカード + 下部 sticky バー「Sign in ／ ログイン」→ボトムシート(×/背景/Esc、safe-area、focus)。
 - `<SignInCard variant="rich"|"simple">` 1 コンポーネント 2 インスタンス。
 
-### 3.3 見た目（前版継承）
-- `globals.css` 既存トークンのみ(primary #0369a1、slate、ダーク対応)。最も濃い塗り=「Sign in」ボタンのみ。装飾・ヒーロー画像なし。
+### 3.3 見た目（前版継承 + 殿裁定 13:10）
+- `globals.css` 既存トークンのみ(primary #0369a1、slate)。**ログイン後ページと同じ ui コンポーネント(Button/Input/Card)と余白・角丸・フォントを使い、/login 専用の色や書体を作らない**(全体統一)。
+- **/login はライトモード固定**: ルート要素の dark クラス/`prefers-color-scheme: dark` に関わらず /login 配下はライトのトークンで描画する(`app/login/layout.tsx` で `data-theme="light"` 相当を強制し、ダーク用変数を上書き)。ログイン後ページのテーマ挙動は変えない(§2.7)。
+- 最も濃い塗り=「Sign in」ボタンのみ。装飾・ヒーロー画像なし。
+- AC(忍者・ローカル): `next build && next start` 後に `prefers-color-scheme: dark` をエミュレートした Playwright/CDP スクリーンショットで /login の背景が白系(#f8fafc〜#ffffff)、ログイン後ページはダークのまま。
 
 ---
 

@@ -148,7 +148,7 @@ a{color:var(--accent)}
   <p style="margin-top:6px;font-size:.78rem;color:var(--ink-2)">Plan rows: total return and ×N show average 〜 best across portfolios whose signals are included in the plan; CAGR shows min 〜 max; Sharpe and MDD show the best portfolio. Total return, ×N and CAGR since each portfolio's inception (2003–2016); MDD is the maximum monthly drawdown. SPY since 2003-10 (same window as Basic-DualMomentum); TQQQ since 2010-03 (inception). Sharpe uses excess return over the risk-free rate. Not investment advice.</p>
   <p style="margin-top:8px">殿裁定 12:48/12:49: 表内に PF 名なし、期間は表外の英語脚注、Total/×N は「平均 〜 ベスト」、Sharpe/MDD はベストのみ。Sharpe = metrics「Sharpe Ratio」(年率・Rf 控除)、MDD = metrics「Maximum Drawdown」(月次)。† TQQQ は将軍が Rf=0 で概算、EP は共用式で再計算。</p>
   <p style="margin-top:8px">集合=<strong>シグナルまで公開している PF だけ</strong>(hide_portfolio ∧ hide_signal、殿裁定 12:19)。パフォーマンスのみ可視の PF(Basic の白虎激攻・分身常勝、Premium の奥義 ×3)は計算に入れない。行構成は Basic-DM / Basic / Standard / Premium / Secret の 5 つに確定(殿裁定 12:20)。CAGR = (1+tr)^(12/months)−1 を EP で算出。AC: 未認証 curl の plan 行 n/avg/best/×N/CAGR が DB 独立再計算と全行一致。</p>
-  <p style="margin-top:8px">レスポンシブ: &gt;860px = 2 カラム+sticky リッチカード / ≤860px = 1 カラム+末尾シンプルカード+下部 sticky バー→ボトムシート。トークンは <code>globals.css</code> 既存のみ。文言は EN 主 JA 従、「毎営業日 / today」禁止、<strong>金額(¥)は書かない</strong>(殿裁定 10:20: 課金は note 経由、価格は note 側に一本化)。</p>
+  <p style="margin-top:8px">レスポンシブ: &gt;860px = 2 カラム+sticky リッチカード / ≤860px = 1 カラム+末尾シンプルカード+下部 sticky バー→ボトムシート。トークンは <code>globals.css</code> 既存のみ、ログイン後と同じ ui コンポーネント(全体統一・殿 13:10)、<strong>/login はライトモード固定</strong>(OS ダークでも白系、ログイン後のテーマは不変)。文言は EN 主 JA 従、「毎営業日 / today」禁止、<strong>金額(¥)は書かない</strong>(殿裁定 10:20: 課金は note 経由、価格は note 側に一本化)。</p>
 
   <h2>§2.4 ブラックアウト表現 — 殿裁定 12:58「日時は書かない・期待感+note 誘導」</h2>
   <div class="grid2">
