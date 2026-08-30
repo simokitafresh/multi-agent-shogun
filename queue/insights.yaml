@@ -7205,7 +7205,10 @@ insights:
   priority: "medium"
   source: "manual"
   fix_known: false
-  status: pending
+  status: resolved
+  resolved_reason: "Primary-source verification confirms the reported fix is already present: source-equivalent markers compact to one latest marker under lock and the informational bulletin uses an empty notification selector plus no-op inbox writer; regression contract passes 30/30 with SKIP 0."
+  action_artifact: "scripts/gates/gate_context_freshness.sh;tests/unit/test_gate_context_freshness.bats;commits=c092febfc, f9db668ca, 3f7035401;test_receipt=logs/test_receipts/run_tests_20260830T110023_857869.json"
+  resolved_at: "2026-08-30T20:03:01+09:00"
 - id: INS-20260828-150156367-4900
   ts: "2026-08-28T15:01:56+09:00"
   insight: "semantic_index_update新概念候補: cmd_complete:cmd_karo_hotfix_finalize_timezone_20260828 は 既存aliasesに一致なし。概念定義とaliases追加を検討せよ"
@@ -9732,5 +9735,12 @@ insights:
   insight: "semantic_index_update新概念候補: discussion:googleのほうでcloudflareのサイトを自動で承認したぞ は 既存aliasesに一致なし。概念定義とaliases追加を検討せよ"
   priority: "low"
   source: "semantic_index_update"
+  fix_known: false
+  status: pending
+- id: INS-20260830-200302548-4f67
+  ts: "2026-08-30T20:03:02+09:00"
+  insight: "[[claude flare側でやることは完了しているのか？]] semantic_stress_test candidate_aliases: NO_MATCH source=lord query=claude flare側でやることは完了しているのか？"
+  priority: "low"
+  source: "semantic_stress_test"
   fix_known: false
   status: pending
