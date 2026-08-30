@@ -824,7 +824,7 @@ print('ok')
     grep -q 'BATS_FILE_TIMEOUT_SECONDS=300' "$workflow"
     grep -q 'timeout-minutes: 12' "$workflow"
     grep -Fq 'group: test-${{ github.workflow }}-${{ github.ref }}' "$workflow"
-    grep -q 'cancel-in-progress: true' "$workflow"
+    grep -q 'cancel-in-progress: false' "$workflow"
     ! grep -q 'BATS_INNER_JOBS=8' "$workflow"
     grep -q 'tap="$GITHUB_WORKSPACE/test-results/shard-${{ matrix.shard }}-requested.tap"' "$workflow"
     grep -q 'compatibility: true' "$workflow"
