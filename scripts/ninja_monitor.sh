@@ -10537,6 +10537,11 @@ auto_karo_accept_after_lgtm() {
         lgtm_ts=$(stat -c %Y "$gunshi_file" 2>/dev/null || echo 0)
         age=$(( now - lgtm_ts ))
         [ "$age" -ge "$AUTO_KARO_ACCEPT_DELAY_SEC" ] || continue
+        if [ "$age" -gt "${AUTO_KARO_ACCEPT_MAX_AGE_SEC:-43200}" ]; then
+            # 12h 超の LGTM は放置在庫(08-26 の hotfix 等)。自動 ACCEPT で古い gate を蘇生させず、家老の棚卸し対象として記録のみ。
+            log "KARO-ACCEPT-AUTO-STALE: cmd=$cmd_id lgtm_age_s=$age (12h 超、家老棚卸し対象)"
+            continue
+        fi
         report_rel=$(awk -F': ' '$1=="report" {print $2; exit}' "$gunshi_file")
         [ -n "$report_rel" ] || continue
         [[ "$report_rel" = /* ]] && report_full="$report_rel" || report_full="$SCRIPT_DIR/$report_rel"
