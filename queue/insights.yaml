@@ -9774,10 +9774,23 @@ insights:
   priority: "low"
   source: "semantic_index_update"
   fix_known: false
-  status: pending
+  status: resolved
+  resolved_reason: "semantic map generation verified the candidate is represented or intentionally ignored"
+  action_artifact: "semantic_map=/home/simokitafresh/multi-agent-shogun/context/semantic-map.md;semantic_index=/home/simokitafresh/multi-agent-shogun/docs/semantic-index/index.md"
+  resolved_at: "2026-08-30T20:16:38+09:00"
 - id: INS-20260830-201617676-f95c
   ts: "2026-08-30T20:16:17+09:00"
   insight: "semantic_index_update新概念候補: discussion:がもらえる仕組みにしたいな。クーポンは有効期限を他のものと同じにして毎月変更したい。期間も同じだ。意味は分かるか？ は 既存aliasesに一致なし。概念定義とaliases追加を検討せよ"
+  priority: "low"
+  source: "semantic_index_update"
+  fix_known: false
+  status: resolved
+  resolved_reason: "semantic map generation verified the candidate is represented or intentionally ignored"
+  action_artifact: "semantic_map=/home/simokitafresh/multi-agent-shogun/context/semantic-map.md;semantic_index=/home/simokitafresh/multi-agent-shogun/docs/semantic-index/index.md"
+  resolved_at: "2026-08-30T20:16:38+09:00"
+- id: INS-20260830-201720873-42c9
+  ts: "2026-08-30T20:17:20+09:00"
+  insight: "semantic_index_update新概念候補: discussion:登録してログインするとfreeのクーポンが表示、ワンクリックでコピーできるようにして動線をスムーズに。すでにメンバーが誤解しないようにしよう は 既存aliasesに一致なし。概念定義とaliases追加を検討せよ"
   priority: "low"
   source: "semantic_index_update"
   fix_known: false
