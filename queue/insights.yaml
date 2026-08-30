@@ -10152,3 +10152,10 @@ insights:
   source: "skill_script_refs:1b0340d94cca3408"
   fix_known: false
   status: pending
+- id: INS-20260830-221414229-72f9
+  ts: "2026-08-30T22:14:14+09:00"
+  insight: "[[npm install g @openai codex]] semantic_stress_test candidate_aliases: NO_MATCH source=lord query=npm install -g @openai/codex"
+  priority: "low"
+  source: "semantic_stress_test"
+  fix_known: false
+  status: pending
