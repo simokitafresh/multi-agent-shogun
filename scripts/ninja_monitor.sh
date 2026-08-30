@@ -634,6 +634,32 @@ push_lane_publish_one() {
     git -C "$repo" push "$remote_name" "$sha:refs/heads/main"
 }
 
+push_lane_active_ci_fix_count() {
+    local tasks_dir="${PUSH_LANE_TASKS_DIR:-$SCRIPT_DIR/queue/tasks}"
+    [ -d "$tasks_dir" ] || { printf '0\n'; return 0; }
+    python3 - "$tasks_dir" <<'PY'
+import glob
+import os
+import sys
+import yaml
+
+active_statuses = {"assigned", "acknowledged", "in_progress"}
+count = 0
+for path in glob.glob(os.path.join(sys.argv[1], "*.yaml")):
+    try:
+        with open(path, encoding="utf-8") as handle:
+            document = yaml.safe_load(handle) or {}
+    except (OSError, yaml.YAMLError):
+        continue
+    task = document.get("task") if isinstance(document, dict) else None
+    if not isinstance(task, dict):
+        continue
+    if task.get("task_type") == "ci_fix" and task.get("status") in active_statuses:
+        count += 1
+print(count)
+PY
+}
+
 check_push_lane() {
     local ci_status="${1:-${CI_STATUS_CACHE:-UNKNOWN}}"
     local repo="${PUSH_LANE_REPO:-$SCRIPT_DIR}" remote_name="${PUSH_LANE_REMOTE_NAME:-origin}"
@@ -641,6 +667,7 @@ check_push_lane() {
     local branch lock_file lock_fd push_rc push_started_us push_finished_us push_wall_ms
     local commit_list first_ancestor candidate candidate_epoch candidate_age
     local remote_tip_before remote_tip_now candidate_scan_started
+    local push_ci=GREEN ci_run_id ci_fix_count
     local push_output
 
     [[ "${PUSH_LANE_ENABLED:-1}" == "1" ]] || return 0
@@ -667,9 +694,27 @@ check_push_lane() {
             push_lane_log "CI-FALLBACK ci=UNKNOWN->GREEN current_run=$fallback_current_run completed_success_run=$fallback_success_run current_head=$fallback_current_sha success_head=$fallback_success_sha ancestry=1 remote_head=1"
         fi
     fi
-    # RED and UNKNOWN are both fail-closed.  In particular, a RED run must
-    # leave the push count at zero even when the local branch is old enough.
-    if [[ "$ci_status" != GREEN ]]; then
+    # RED is admitted only while exactly one ci_fix task is active.  The
+    # ci_fix assignment is the explicit safety boundary: it keeps the repair
+    # lane live while preserving the existing FF, hook, and dirty-path gates.
+    if [[ "$ci_status" == RED:* ]]; then
+        ci_run_id="${ci_status#RED:}"
+        ci_run_id="${ci_run_id%%:*}"
+        if [[ ! "$ci_run_id" =~ ^[0-9]+$ ]]; then
+            push_lane_log "WAIT ci=$ci_status reason=missing_run_id push=0"
+            return 0
+        fi
+        ci_fix_count=$(push_lane_active_ci_fix_count)
+        if [ "$ci_fix_count" -ne 1 ]; then
+            push_lane_log "WAIT ci=$ci_status ci_fix_active=$ci_fix_count push=0"
+            return 0
+        fi
+        push_ci=RED
+        push_lane_log "CI-RED-PUSH-ADMITTED ci=RED run_id=$ci_run_id ci_fix_active=1"
+    fi
+    # UNKNOWN remains fail-closed, as do malformed/non-GREEN statuses.  A RED
+    # status reaches the normal guarded FF path only after the admission above.
+    if [[ "$ci_status" != GREEN && "$push_ci" != RED ]]; then
         push_lane_log "WAIT ci=$ci_status unpushed=$count push=0"
         return 0
     fi
@@ -719,7 +764,7 @@ check_push_lane() {
     now="${EPOCHSECONDS:-$(date +%s)}"
     age=$((now - candidate_epoch))
     if [ "$age" -lt "$min_age" ]; then
-        push_lane_log "WAIT ci=GREEN unpushed=$count oldest=$first_ancestor age=${age}s threshold=${min_age}s push=0"
+        push_lane_log "WAIT ci=$push_ci unpushed=$count oldest=$first_ancestor age=${age}s threshold=${min_age}s push=0"
         return 0
     fi
 
@@ -761,7 +806,7 @@ check_push_lane() {
         }
         candidate_age=$((now - candidate_epoch))
         if [ "$candidate_age" -lt "$min_age" ]; then
-            push_lane_log "WAIT ci=GREEN unpushed=$count oldest=$candidate age=${candidate_age}s threshold=${min_age}s push=0"
+            push_lane_log "WAIT ci=$push_ci unpushed=$count oldest=$candidate age=${candidate_age}s threshold=${min_age}s push=0"
             flock -u "$lock_fd"
             exec {lock_fd}>&-
             return 0
@@ -778,7 +823,11 @@ check_push_lane() {
         push_wall_ms=$(( (push_finished_us - push_started_us + 999) / 1000 ))
         [ "$push_wall_ms" -ge 0 ] 2>/dev/null || push_wall_ms=0
         if [ "$push_rc" -eq 0 ]; then
-            push_lane_log "PUSH ci=GREEN unpushed_before=$count sha=$candidate oldest=$first_ancestor age=${candidate_age}s force=0 hook=1 commits=1 batch_contiguous=1 push_wall_ms=$push_wall_ms"
+            if [ "$push_ci" = RED ]; then
+                push_lane_log "PUSH ci=RED run_id=$ci_run_id unpushed_before=$count sha=$candidate oldest=$first_ancestor age=${candidate_age}s force=0 hook=1 commits=1 batch_contiguous=1 push_wall_ms=$push_wall_ms"
+            else
+                push_lane_log "PUSH ci=GREEN unpushed_before=$count sha=$candidate oldest=$first_ancestor age=${candidate_age}s force=0 hook=1 commits=1 batch_contiguous=1 push_wall_ms=$push_wall_ms"
+            fi
             push_lane_regate_waiting_cmds "$repo"
         elif printf '%s\n' "$push_output" | grep -Fq 'GA-PUSH1'; then
             push_lane_log "SKIP reason=ga_push1_dirty_overlap sha=$candidate rc=$push_rc next=1 push=0"

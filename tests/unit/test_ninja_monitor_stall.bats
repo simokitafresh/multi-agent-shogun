@@ -7668,9 +7668,9 @@ YAML
     [ "$output" = "fixture=noop unpushed=0 push=0 skip=0" ]
 }
 
-# test_necessity: a RED CI result is a hard zero-push boundary even when an
-# aged first-parent commit exists locally.
-@test "T190 push lane blocks every push while CI is RED" {
+# test_necessity: a RED CI result remains a zero-push boundary when no active
+# ci_fix assignment exists, even when an aged first-parent commit exists.
+@test "T190 push lane waits for ci_fix before pushing while CI is RED" {
     run env PROJECT_ROOT="$PROJECT_ROOT" bash -c '
         set -euo pipefail
         export NINJA_MONITOR_LIB_ONLY=1
@@ -7688,12 +7688,58 @@ YAML
         }
         push_lane_publish_one() { printf "unexpected-push\n" >> "$PUSH_LANE_LOG"; return 1; }
         check_push_lane RED:12345
-        test "$(grep -c "WAIT ci=RED:12345 unpushed=2 push=0" "$PUSH_LANE_LOG")" -eq 1
+        test "$(grep -c "WAIT ci=RED:12345 ci_fix_active=0 push=0" "$PUSH_LANE_LOG")" -eq 1
         test "$(grep -c "unexpected-push" "$PUSH_LANE_LOG" 2>/dev/null || true)" -eq 0
         printf "fixture=red unpushed=2 push=0 skip=0\n"
     '
     [ "$status" -eq 0 ]
     [ "$output" = "fixture=red unpushed=2 push=0 skip=0" ]
+}
+
+# test_necessity: exactly one active ci_fix assignment admits a RED push while
+# retaining the normal first-parent FF path and recording the CI run identity.
+@test "T190 push lane admits one RED push with exactly one active ci_fix" {
+    run env PROJECT_ROOT="$PROJECT_ROOT" bash -c '
+        set -euo pipefail
+        export NINJA_MONITOR_LIB_ONLY=1
+        source "$PROJECT_ROOT/scripts/ninja_monitor.sh"
+        unset NINJA_MONITOR_LIB_ONLY
+        root="$BATS_TEST_TMPDIR/push-lane-red-ci-fix"
+        mkdir -p "$root/logs" "$root/state" "$root/queue/tasks"
+        SCRIPT_DIR="$root" STATE_DIR="$root/state" LOG="$root/logs/monitor.log"
+        PUSH_LANE_LOG="$root/logs/push.log" PUSH_LANE_LOCK_FILE="$root/state/push.lock"
+        PUSH_LANE_MIN_AGE_SEC=600
+        printf "task:\n  task_type: ci_fix\n  status: in_progress\n" > "$root/queue/tasks/hayate.yaml"
+        oldest_sha=0123456789012345678901234567890123456789
+        remote_sha=1111111111111111111111111111111111111111
+        git() {
+            case "$*" in
+                *"rev-list --count"*) printf "1\n" ;;
+                *"rev-list --first-parent --reverse"*) printf "%s\n" "$oldest_sha" ;;
+                *"show -s --format=%ct"*) printf "100\n" ;;
+                *"symbolic-ref --quiet --short HEAD"*) printf "main\n" ;;
+                *"rev-parse origin/main"*) printf "%s\n" "$remote_sha" ;;
+                *"merge-base --is-ancestor"*) return 0 ;;
+                *"rev-parse --git-path hooks"*) printf "%s\n" "$root/hooks" ;;
+                *) return 0 ;;
+            esac
+        }
+        push_lane_pre_push_hook_ready() { return 0; }
+        push_lane_publish_one() {
+            test "$1" = "$root"
+            test "$2" = origin
+            test "$3" = "$oldest_sha"
+            printf "published=%s\n" "$3" > "$root/publish.log"
+        }
+        push_lane_regate_waiting_cmds() { :; }
+        check_push_lane RED:12345:Unit-Tests
+        test "$(cat "$root/publish.log")" = "published=$oldest_sha"
+        grep -q "CI-RED-PUSH-ADMITTED ci=RED run_id=12345 ci_fix_active=1" "$PUSH_LANE_LOG"
+        grep -q "PUSH ci=RED run_id=12345 .*force=0 hook=1 commits=1" "$PUSH_LANE_LOG"
+        printf "ci_fix_active=1 red_run_id=12345 published=1 push=1 false_positive=0 skip=0\n"
+    '
+    [ "$status" -eq 0 ]
+    [ "$output" = "ci_fix_active=1 red_run_id=12345 published=1 push=1 false_positive=0 skip=0" ]
 }
 
 # test_necessity: the green/aged fixture proves one first-parent publication
