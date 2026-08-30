@@ -167,6 +167,8 @@
 - **初見ユーザー通し(P4)**: シークレット窓 × スマホ実機 × PC の 2 経路で「未認証で `/` に来る → /login → note でパスワードを見る → 戻って入力 → `/`」を殿自身と将軍(CDP モバイル幅)が通す。ボタンが画面外だった瞬間を 0 件にする。
 
 ### 2.6 描画・更新方針（殿下問 12:54 への答え）
+> **将軍訂正 2026-08-30 16:37(事実→制約→判断→効果)**: 事実=FE の Render サービスは static_site(build `npm run build`、publish `out/`)で next.config は `output: export`(16:34 Render API+現物)。制約=ISR/`next start`/server fetch は静的 export では成立しない(cmd_4416 半蔵の FAIL 自己申告で露見)。判断=ISR を撤回し静的 export を維持。表・帯は client fetch(NEXT_PUBLIC_API_HOST、表=1h 相当の再検証、帯=no-store)+スケルトン。H1/リード/脚注/metadata は静的 HTML に焼く。効果=infra 変更 0・ログイン機構不変のまま P2 を進める。H7 の API_HOST env は不要(残置・害なし)。初回 HTML に数値が無い SEO 課題は v3(Node 化 or ビルド時 fetch)で再検討。
+
 | 観点 | AsIs(現物) | ToBe |
 |---|---|---|
 | 数値の鮮度 | metrics は毎日再計算(calculated_at 08-30)だが系列は月末基準(end 07-31)=月 1 回しか変わらない | EP は cache 1h、表示は「Data through {series_end}」を明記。**daily の見た目更新は不要**(値が変わらない) |

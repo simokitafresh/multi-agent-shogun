@@ -61,8 +61,8 @@ commands:
     target_path: /mnt/c/Python_app/DM-signal/frontend
     acceptance_criteria:
       AC1:
-        description: "app/login を server component(ISR revalidate 3600、サーバー用 API_HOST env fallback NEXT_PUBLIC_API_HOST)にし、§2.2 の構造(ブランド行/H1 EN+JA/リード/表 v3 8 列+SPY・TQQQ 2 行+英語脚注/プラン 3 枚 金額なし/導線 4 本/SignInCard rich・simple/フッタ)と §3.3 ライト固定を実装し、next build と next start に対するローカル curl で HTML 本文に表の数値(EP の値)・H1・脚注 Data through 日付・metadata description(EN)が含まれることを確認する"
-        binary_check: "next build 出力で /login が ISR ∧ ローカル curl の HTML に EP の total_return 文字列と Data through と description が各 1 件以上 ∧ prefers-color-scheme dark をエミュレートした /login のスクリーンショット背景がライト(白系) ∧ ログイン後ページのテーマ挙動 diff 0 か?"
+        description: "【将軍訂正 16:36: AsIs 誤り。FE は Render static_site(next.config output:export、out/ 配信)で ISR/next start は成立しない。ISR を捨て静的 export のまま実装する】app/login は静的 export 互換(server component 不可の部分は client component)で、§2.2 の構造(ブランド行/H1 EN+JA/リード/表 v3 8 列+SPY・TQQQ 2 行+英語脚注/プラン 3 枚 金額なし/導線 4 本/SignInCard rich・simple/フッタ)と §3.3 ライト固定を実装し、表・帯のデータは client 側で GET /api/public/showcase(NEXT_PUBLIC_API_HOST)を fetch(表=cache 1h 相当の再検証、帯=no-store)、初回描画はスケルトン→数値に置換する。next build(export)の out/login/index.html に H1・脚注の静的文言・metadata description(EN)が含まれ、Playwright(ローカル static serve)で fetch 後に表の数値(EP の値)が描画されることを確認する"
+        binary_check: "next build(output:export)が成功 ∧ out/login/index.html に H1 と description が各 1 件以上 ∧ Playwright で fetch 後に EP の total_return 文字列が DOM に 1 件以上 ∧ prefers-color-scheme dark をエミュレートした /login のスクリーンショット背景がライト(白系) ∧ ログイン後ページのテーマ挙動 diff 0 か?"
       AC2:
         description: "摩擦除去 §2.5 F2-F5 と §2.4 を実装する: ≤860px で初期 viewport 内に Sign in ボタン(sticky バー+ボトムシート)、blackout は client no-store fetch で帯(§2.4 文言、日時・soon 等の語なし、month_closed=false は being computed)、401 expired は専用文+note 誘導、EN 主 JA 従、文言と note URL は login-copy.ts 1 ファイル。Playwright(ローカル next start)で 375×667 の初期 viewport に Sign in ボタンが存在し、blackout モック応答で帯文言が切り替わることを確認する"
         binary_check: "375×667 で Sign in ボタンの bounding box が viewport 内 ∧ blackout active/month_closed の 4 組合せで帯文言が §2.4 どおり ∧ 帯・脚注・エラー文に 毎営業日/today/soon/early/近日/¥/円 の grep 0 ∧ 文言直書き(コンポーネント内の日本語リテラル)0 か?"
@@ -70,7 +70,7 @@ commands:
         description: "影響境界 §2.7 とログイン機構不変を確認する: 変更ファイルが allowlist(app/login/**、login-copy.ts、app/robots.ts、app/sitemap.ts、新規 components)の外 0 件、route-access-boundary.tsx・viewer-auth.ts・auth-state-reset.ts・api-client.ts の diff 0、既存 test の diff 0、Playwright でローカル login フロー(正しいパスワード→/ へ遷移、誤り→エラー文、期限切れ→expired 文)が従来どおり通り、選択実行(既存 frontend test+本 cmd 追加 test)で FAIL 0 SKIP 0 を確認する"
         binary_check: "allowlist 外の変更 0 ∧ 4 ファイルの diff 0 行 ∧ 既存 test diff 0 ∧ ログインフロー 3 経路 PASS ∧ 選択実行 FAIL 0 SKIP 0 ∧ next build の hydration warning 0 か?"
     command: |
-      1. 設計書 v2 §2.2/§2.6/§3.1/§3.3 を読み、app/login を server component(ISR 3600、API_HOST)で組み直して表 v3・脚注・metadata・ライト固定を実装し、next build と next start へのローカル curl で HTML 焼き込みを確認する
+      1. 設計書 v2 §2.2/§3.1/§3.3 を読み(§2.6 ISR は将軍訂正 16:36 で撤回=静的 export 維持)、app/login を静的 export 互換で組み直し、表・帯は client fetch(NEXT_PUBLIC_API_HOST)+スケルトン、表 v3・脚注・metadata・ライト固定を実装し、next build(export)の out/login/index.html と Playwright(ローカル static serve)で確認する
       2. §2.4/§2.5 のブラックアウト帯(client no-store)・sticky Sign in・expired 文・EN/JA 文言 1 ファイル(login-copy.ts)を実装し、Playwright(ローカル)で viewport 内ボタンと帯文言 4 組合せを確認する
       3. allowlist 外 diff 0・境界 4 ファイル diff 0・既存 test diff 0・ローカル login フロー 3 経路・選択実行 FAIL 0 SKIP 0 を報告 YAML に生貼付する
     assumptions:
