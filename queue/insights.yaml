@@ -7769,7 +7769,10 @@ insights:
   priority: "medium"
   source: "manual"
   fix_known: false
-  status: pending
+  status: resolved
+  resolved_reason: "一次情報で現行実装を確認: commit b3f730d84236a6e31c76d4c5dea66072e7c4fa88 の scripts/lib/production_proof.py が本番観測ACをworker ACから分離し、scripts/ninja_monitor.sh の check_production_proofs が観測窓満了後にtask YAML非接触でPRODUCTION-PROOF PASS/FAILを記録。context/infrastructure.md §T161 と scripts/lib/time_contract_validator.py も同契約を明記。新規修正・decision_candidateは不要。"
+  action_artifact: "target=queue/insights.yaml:INS-20260828-222959233-89be;existing_fix=git:b3f730d84236a6e31c76d4c5dea66072e7c4fa88;implementation=scripts/lib/production_proof.py+scripts/deploy_task.sh+scripts/ninja_monitor.sh:check_production_proofs;contract=context/infrastructure.md#T161,scripts/lib/time_contract_validator.py;test=run_tests.sh task selection=0 SKIP0;inventory_task_snapshot_before=54/0/68 (task YAML at 04:54:37);inventory_direct_before=54/14/595/663;inventory_after_raw=54/14/596/664;inventory_after_pause_aware=54/14/0/68;concurrent_commit=539e8560fa2fe771fdffadffb34d83ad8841d675 added INS-20260831-045819770-3ca3 at 04:58:19, offsetting target pending decrement"
+  resolved_at: "2026-08-31T04:58:56+09:00"
 - id: INS-20260828-225649545-55d9
   ts: "2026-08-28T22:56:49+09:00"
   insight: "semantic_index_update新概念候補: discussion:artifactがスマホで見ると文字が縦並びで読めないね は 既存aliasesに一致なし。概念定義とaliases追加を検討せよ"
