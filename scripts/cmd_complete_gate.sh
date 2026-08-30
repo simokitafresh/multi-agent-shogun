@@ -49,6 +49,36 @@ _cges_ci_root="${_cges_ci_source%/scripts/cmd_complete_gate.sh}"
 source "$_cges_ci_root/scripts/lib/cmd_complete_gate_ci.sh"
 unset _cges_ci_source _cges_ci_root
 
+# A report's publication state is read once during the CI status phase and
+# again immediately before terminal ancestry. Both checks observe the same
+# immutable report/repository boundary within one gate process; repeating the
+# YAML parse and git ancestry probe only adds pure-processing latency. Keep a
+# process-local cache keyed by the complete input identity. It is never
+# persisted across gate runs, so a later retry observes fresh remote state.
+declare -gA _CCG_REPORT_CI_PUSH_STATE_CACHE=()
+REPORT_CI_PUSH_STATE_CACHED=""
+report_ci_push_state_cached() {
+    local report_file="$1"
+    local repo_dir="${2:-$SCRIPT_DIR}"
+    local task_file="${3:-}"
+    local report_key repo_key task_key cache_key
+
+    if ! declare -p _CCG_REPORT_CI_PUSH_STATE_CACHE >/dev/null 2>&1; then
+        declare -gA _CCG_REPORT_CI_PUSH_STATE_CACHE=()
+    fi
+    report_key="$(realpath -- "$report_file" 2>/dev/null || printf '%s' "$report_file")"
+    repo_key="$(realpath -- "$repo_dir" 2>/dev/null || printf '%s' "$repo_dir")"
+    task_key="$(realpath -- "$task_file" 2>/dev/null || printf '%s' "$task_file")"
+    cache_key="${report_key}"$'\034'"${repo_key}"$'\034'"${task_key}"
+    if [[ "${_CCG_REPORT_CI_PUSH_STATE_CACHE[$cache_key]+yes}" = yes ]]; then
+        REPORT_CI_PUSH_STATE_CACHED="${_CCG_REPORT_CI_PUSH_STATE_CACHE[$cache_key]}"
+    else
+        REPORT_CI_PUSH_STATE_CACHED="$(report_ci_push_state "$report_file" "$repo_dir" "$task_file")"
+        _CCG_REPORT_CI_PUSH_STATE_CACHE["$cache_key"]="$REPORT_CI_PUSH_STATE_CACHED"
+    fi
+    printf '%s\n' "$REPORT_CI_PUSH_STATE_CACHED"
+}
+
 report_commit_main_ancestry_state() {
     local report_file="$1"
     local repo_dir="${2:-$SCRIPT_DIR}"
@@ -87,7 +117,8 @@ PY
     if declare -F gate_detail_begin >/dev/null 2>&1; then
         gate_detail_begin "post_source_checks.report_commit_main_ancestry.resolve_state" pure_processing
     fi
-    state=$(report_ci_push_state "$report_file" "$repo_dir" "$task_file" "$ancestry_snapshot_file")
+    report_ci_push_state_cached "$report_file" "$repo_dir" "$task_file" >/dev/null
+    state="$REPORT_CI_PUSH_STATE_CACHED"
     if declare -F gate_detail_finish >/dev/null 2>&1; then
         gate_detail_finish
     fi
@@ -13999,7 +14030,8 @@ for task_file in "${MATCHING_TASK_FILES[@]}"; do
             BLOCK:*) CI_PUSH_STATE_BLOCK="$commit_repo_result"; break ;;
             *) task_repo_dir="$commit_repo_result" ;;
         esac
-        ci_push_state=$(report_ci_push_state "$report_file" "$task_repo_dir" "$task_file")
+        report_ci_push_state_cached "$report_file" "$task_repo_dir" "$task_file" >/dev/null
+        ci_push_state="$REPORT_CI_PUSH_STATE_CACHED"
         case "$ci_push_state" in
             PUSHED:*) CI_PUSH_DETECTED=true; _CI_PUSH_REPO_DIRS["$task_repo_dir"]=1 ;;
             BLOCK:*) CI_PUSH_STATE_BLOCK="$ci_push_state"; break ;;
