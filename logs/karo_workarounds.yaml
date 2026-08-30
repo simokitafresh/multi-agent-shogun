@@ -1300,3 +1300,16 @@
   lesson_disposition: not_applicable
   lesson_reference: 'not_applicable'
   resolved_by_cmd: 'cmd_karo_hotfix_push_red_nonblocking_20260830'
+- cmd_id: cmd_karo_hotfix_4416_client_state_wiring_v2_20260830
+  timestamp: '2026-08-30T09:08:55Z'
+  ninja: system
+  workaround: false
+  event_kind: hotfix
+  auto_captured: true
+  category: rework_auto_capture
+  detail: 'cmd_complete_gate completed rework event'
+  root_cause: 'automatic completion observation'
+  lesson_required: false
+  lesson_disposition: not_applicable
+  lesson_reference: 'not_applicable'
+  resolved_by_cmd: 'cmd_karo_hotfix_4416_client_state_wiring_v2_20260830'
