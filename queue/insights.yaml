@@ -9379,3 +9379,10 @@ insights:
   source: "semantic_index_update"
   fix_known: false
   status: pending
+- id: INS-20260830-173822533-04b3
+  ts: "2026-08-30T17:38:22+09:00"
+  insight: "semantic_index_update新概念候補: discussion:cfut Us9DDf3wD4O0hx8HH6EtDh3KnfIUgGRLMLuS6COxc52a1fa9 は 既存aliasesに一致なし。概念定義とaliases追加を検討せよ"
+  priority: "low"
+  source: "semantic_index_update"
+  fix_known: false
+  status: pending
