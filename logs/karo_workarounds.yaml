@@ -1,29 +1,3 @@
-- cmd_id: cmd_karo_hotfix_t108_doc_lane_source_equivalent_auto_close_20260828
-  timestamp: '2026-08-27T22:28:27Z'
-  ninja: system
-  workaround: false
-  event_kind: hotfix
-  auto_captured: true
-  category: rework_auto_capture
-  detail: 'cmd_complete_gate completed rework event'
-  root_cause: 'automatic completion observation'
-  lesson_required: false
-  lesson_disposition: not_applicable
-  lesson_reference: 'not_applicable'
-  resolved_by_cmd: 'cmd_karo_hotfix_t108_doc_lane_source_equivalent_auto_close_20260828'
-- cmd_id: cmd_karo_hotfix_t121_postclear_context_preserve_20260828
-  timestamp: '2026-08-27T22:45:55Z'
-  ninja: system
-  workaround: false
-  event_kind: hotfix
-  auto_captured: true
-  category: rework_auto_capture
-  detail: 'cmd_complete_gate completed rework event'
-  root_cause: 'automatic completion observation'
-  lesson_required: false
-  lesson_disposition: not_applicable
-  lesson_reference: 'not_applicable'
-  resolved_by_cmd: 'cmd_karo_hotfix_t121_postclear_context_preserve_20260828'
 - cmd_id: cmd_karo_hotfix_t108_r2_doc_lane_commit_validation_20260828
   timestamp: '2026-08-27T22:49:57Z'
   ninja: system
@@ -1298,3 +1272,29 @@
   lesson_disposition: not_applicable
   lesson_reference: 'not_applicable'
   resolved_by_cmd: 'cmd_karo_hotfix_gate_ancestry_latency_20260831'
+- cmd_id: cmd_karo_hotfix_outstanding_lease_expiry_20260831
+  timestamp: '2026-08-30T17:28:27Z'
+  ninja: system
+  workaround: false
+  event_kind: hotfix
+  auto_captured: true
+  category: rework_auto_capture
+  detail: 'cmd_complete_gate completed rework event'
+  root_cause: 'automatic completion observation'
+  lesson_required: false
+  lesson_disposition: not_applicable
+  lesson_reference: 'not_applicable'
+  resolved_by_cmd: 'cmd_karo_hotfix_outstanding_lease_expiry_20260831'
+- cmd_id: cmd_karo_hotfix_sg7_honest_fail_verdict_20260831
+  timestamp: '2026-08-30T17:33:57Z'
+  ninja: system
+  workaround: false
+  event_kind: hotfix
+  auto_captured: true
+  category: rework_auto_capture
+  detail: 'cmd_complete_gate completed rework event'
+  root_cause: 'automatic completion observation'
+  lesson_required: false
+  lesson_disposition: not_applicable
+  lesson_reference: 'not_applicable'
+  resolved_by_cmd: 'cmd_karo_hotfix_sg7_honest_fail_verdict_20260831'
