@@ -7226,7 +7226,10 @@ insights:
   priority: "medium"
   source: "manual"
   fix_known: false
-  status: pending
+  status: resolved
+  resolved_reason: "現行実装を一次確認。T100(88969097a)以降、runtime publishはshared mainへのfield-aware commitのみでorigin/mainへの直接pushを行わず、origin公開は家老の正規push経路へ委譲済み。回帰契約も確認できたため解決"
+  action_artifact: "scripts/cmd_complete_gate.sh:4072-4104; tests/unit/test_cmd_complete_gate_convergence.bats:90-108; context/infrastructure.md:388"
+  resolved_at: "2026-08-31T00:42:47+09:00"
 - id: INS-20260828-151604928-3458
   ts: "2026-08-28T15:16:04+09:00"
   insight: "auto clear 失敗鎖(殿下問 15:13): respawn FALLBACK 275/737(37%)・stderr 2>/dev/null で理由 0 行(ninja_monitor.sh:2590)・世代交代(AUTO-RESTART 56 回/日、ninja_monitor.sh 編集毎)中の respawn 失敗・3 失敗で forced_idle 49 回=CTX 残置 idle・deploy_task.sh に配備前 CTX ガード 0 件→CTX 38-61% の忍者へ配備。殿『やれ』15:14→(c)deploy CTX ガード msg_151538(飛猿)、(a)(b)stderr 可視化+世代交代委譲+forced_idle の CTX 条件 msg_151546(T129 CLEAR 後)。効果計測=1h の FALLBACK/forced_idle before 275/49。origin: [[T131_auto_clear根治]] -> [[respawn失敗37%_stderr捨て]] -> [[forced_idle_CTX残置]] -> [[deploy_CTXガード]]"
