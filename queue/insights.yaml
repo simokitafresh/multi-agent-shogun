@@ -6354,7 +6354,10 @@ insights:
   priority: "medium"
   source: "manual"
   fix_known: false
-  status: pending
+  status: resolved
+  resolved_reason: "一次情報で対象事象と現行実装・履歴を照合した結果、事象は未解消。scripts/cmd_complete_gate.sh:3434-3437 は現在も context/*.md を postclear runtime publish 対象に含み、tests/unit/test_cmd_complete_gate.bats:8674-8683 も context/infrastructure.md を publishable と検証する。T121 CLEAR の二次記録は存在するが現行HEADに対象コード修正差分はなく、追加実装は本taskのplanned scope外のため decision_candidate として整理して resolve する。"
+  action_artifact: "target=queue/insights.yaml:6351-6357;primary=scripts/cmd_complete_gate.sh:3432-3441 current context/*.md allowlist;test=tests/unit/test_cmd_complete_gate.bats:8674-8683 current context publishable contract PASS;history=git:e8ed1e8f0 runtime overwrite and git:700694ac5 doc lane T109;memory=memory_db_query exact INS-20260828-070934832-576f;semantic=bash scripts/semantic_search.sh exact INS-20260828-070934832-576f;inventory_before=insights_pending:58/zero_backlinks:12/promotions:0/total:70;decision_candidate=別cmdでpostclear_runtime_path_is_publishableからcontext/*.mdを除外または3-way mergeし、T109/T100/marker保持の回帰batsを追加して5/5以上PASSを確認;task=cmd_reflux_insight_202608301215_hanzo_exact"
+  resolved_at: "2026-08-30T12:27:02+09:00"
 - id: INS-20260828-072534837-b28a
   ts: "2026-08-28T07:25:34+09:00"
   insight: "semantic_index_update新概念候補: lesson:L1659 は 既存aliasesに一致なし。概念定義とaliases追加を検討せよ"
