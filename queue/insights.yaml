@@ -5385,7 +5385,7 @@ insights:
   resolved_reason: "一次情報で現行実装と設計履歴を照合。Codex launch_cmdに更新無効化は未実装で、pane_confirmation_guard.shもUpdate available/Press enter形式を検知しないため候補は未解消。ただしsettings変更を要するT105が殿承認待ちとしてqueue/shogun_todo_map.mdに正本記録され、追加コード修正は本taskのplanned scope外であるためdecision_candidateへ整理してresolveする。"
   action_artifact: "target=queue/insights.yaml:INS-20260827-180750639-05ce;primary=queue/insights.yaml:5378-5384,config/cli_profiles.yaml:18-31,98-125,scripts/lib/pane_confirmation_guard.sh:7-8;history=context/senkyoku-log.md:1526-1527,queue/shogun_todo_map.md:185;semantic=semantic_search exact INS-20260827-180750639-05ce;memory=memory_db_query exact INS-20260827-180750639-05ce;decision_candidate=T105 requires Lord approval for launch_cmd update-disable and watcher prompt-pattern guard"
   resolved_at: "2026-08-30T09:38:23+09:00"
-  last_seen: "\"2026-08-30\""
+  last_seen: "2026-08-30T09:38:42+09:00"
 - id: INS-20260827-181833111-018f
   ts: "2026-08-27T18:18:33+09:00"
   insight: "[[cd tmp tmp pVkgJWVlr0 clone && export PS1 \\ \\033 1;31m\\ karo]] semantic_stress_test candidate_aliases: NO_MATCH source=lord query=cd \"/tmp/tmp.pVkgJWVlr0/clone\" && export PS1='(\\[\\033[1;31m\\]karo\\[\\033[0m\\]) \\[\\033[1;32m\\]\\w\\[\\033[0m\\]$ ' && clear inbox1"
