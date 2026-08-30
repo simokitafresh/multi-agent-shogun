@@ -1,9 +1,17 @@
-# dm-signal.jp — 取得・Cloudflare DNS・Render 接続 runbook（2026-08-30 17:05 一次確認版）
+<!-- gist-master: d2165f9b8fd4a3fbd464c101ab66f9e9 cloudflare_dm-signal-jp_domain_runbook_20260830.md -->
+# DM-Signal LP ドメイン — Cloudflare Registrar 取得・DNS・Render 接続 runbook（2026-08-30 17:15 改版: 殿裁定『.jp にこだわらない』）
 
 > 対象: DM-Signal LP 別サイト(設計書 v2 §9)。殿裁定 16:42『別サイトでやろう』/16:44『dm-signal.jp を Cloudflare で取ろう』。
 > **一次確認で判明した前提修正**: **Cloudflare Registrar は .jp を扱えない**(サポート TLD 外。2025-07 時点の技術記事と 2026-08-30 の Cloudflare Registrar docs で一致)。∴ **取得は国内レジストラ、DNS/SSL 管理は Cloudflare(無料プラン)** の二段構成にする。.com/.net なら Cloudflare Registrar 一体で済む(参考: 代替案 §6)。
 
-## §0 全体像（殿の操作は §1 と §3 の 2 回だけ）
+## §0a 改版（殿裁定 2026-08-30 17:14『.jp にこだわらない』）
+- **Cloudflare Registrar 一体で完結する TLD を選ぶ**: 推薦 **`dm-signal.com`**(第 2 候補 `dmsignal.com`、第 3 `dm-signal.io`)。17:14 の `dig NS` で 6 候補(dm-signal.com / dmsignal.com / dm-signal.io / dm-signal.app / dm-signal.net / dmsignal.app)とも NS レコード無し=未登録の公算大(最終確認は Cloudflare の検索画面)。
+- 費用: Cloudflare Registrar は原価販売(.com ≈ US$10.5/年、.io ≈ US$33/年、.app ≈ US$14/年。マークアップ 0、Whois 代行込み)。
+- **殿の操作は 1 回**: Cloudflare ダッシュボード → Domain Registration → Register Domains → `dm-signal.com` を検索→購入(自動更新 ON)。購入と同時にゾーンが作られ、ネームサーバーは Cloudflare 固定=§1〜§3(国内レジストラ・NS 変更)は**不要**。
+- 以後は §4(DNS: CNAME @ と www→`<lp>.onrender.com`、DNS only、AAAA 削除、SSL=Full)→§5(Render custom domain)→§7(将軍 API 代行=ゾーン限定トークン)の順。所要 30 分以内。
+- app 側は後日 `app.dm-signal.com` に CNAME 1 行で移せる(§6)。
+
+## §0 全体像（.jp を選ぶ場合の旧手順。§0a 採用後は §1-§3 不要）（殿の操作は §1 と §3 の 2 回だけ）
 | # | 誰 | 何を | 所要 |
 |---|---|---|---|
 | 1 | 殿 | 国内レジストラで `dm-signal.jp` を取得 | 10 分 |
