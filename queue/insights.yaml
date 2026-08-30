@@ -10198,21 +10198,30 @@ insights:
   priority: "low"
   source: "semantic_stress_test"
   fix_known: false
-  status: pending
+  status: resolved
+  resolved_reason: "semantic index candidate was absorbed into a registered concept"
+  action_artifact: "semantic_index=/home/simokitafresh/multi-agent-shogun/docs/semantic-index/index.md"
+  resolved_at: "2026-08-31T00:05:52+09:00"
 - id: INS-20260830-234141913-8ddb
   ts: "2026-08-30T23:41:41+09:00"
   insight: "[[free coupon の認証検証を Supabase Auth API 方式 GET auth v1 user]] semantic_stress_test candidate_aliases: NO_MATCH source=cmds query=free-coupon の認証検証を Supabase Auth API 方式(GET /auth/v1/user、apikey=anon key+Bearer access_token)へ差し替え、SUPABASE_JWT_SECRET 依存を除去する(rebalancer と同じく secret を持たない)"
   priority: "low"
   source: "semantic_stress_test"
   fix_known: false
-  status: pending
+  status: resolved
+  resolved_reason: "semantic index candidate was absorbed into a registered concept"
+  action_artifact: "semantic_index=/home/simokitafresh/multi-agent-shogun/docs/semantic-index/index.md"
+  resolved_at: "2026-08-31T00:05:53+09:00"
 - id: INS-20260830-234203988-c6b9
   ts: "2026-08-30T23:42:03+09:00"
   insight: "[[SEO P0 4]] semantic_stress_test candidate_aliases: NO_MATCH source=cmds query=cmd_4421(SEO P0-4、21:35 CLEAR)で og/twitter meta は完備したが、og:image= が EN/JA とも 404(2026-08-30 22:02 curl、content-type text/html)。lp/app/opengraph-image.tsx は next/og ImageResponse で、n"
   priority: "low"
   source: "semantic_stress_test"
   fix_known: false
-  status: pending
+  status: resolved
+  resolved_reason: "semantic index candidate was absorbed into a registered concept"
+  action_artifact: "semantic_index=/home/simokitafresh/multi-agent-shogun/docs/semantic-index/index.md"
+  resolved_at: "2026-08-31T00:04:33+09:00"
 - id: INS-20260830-234224718-b8cf
   ts: "2026-08-30T23:42:24+09:00"
   insight: "[[殿方向性 13 25『Docs FAQ をログインページからのリンクに』→ で docs faq を公開したが]] semantic_stress_test candidate_aliases: NO_MATCH source=cmds query=殿方向性 2026-08-30 13:25『Docs/FAQ をログインページからのリンクに』→cmd_4418 で /docs /faq を公開したが、/faq は JA のみ(22:35 curl: lang=ja、hreflang 0)。LP EN(dm-signal.com/)の FAQ 抜粋と Read the docs は英語読者を app の"
@@ -10249,7 +10258,10 @@ insights:
   priority: "medium"
   source: "manual"
   fix_known: false
-  status: pending
+  status: resolved
+  resolved_reason: "訂正: 自縛ではない。昇格は当該 run に WARN がある時のみ発火。真因は AC 文中の out/index.html(親 out 不在)。表記修正で PASS(round 6)、gate 変更不要"
+  action_artifact: "queue/shogun_to_karo.yaml cmd_4426 AC 表記"
+  resolved_at: "2026-08-31T00:04:10+09:00"
 - id: INS-20260830-234947379-6d17
   ts: "2026-08-30T23:49:47+09:00"
   insight: "semantic_index_update新概念候補: discussion:enviromentも書いたよ は 既存aliasesに一致なし。概念定義とaliases追加を検討せよ"
@@ -10266,4 +10278,7 @@ insights:
   priority: "medium"
   source: "manual"
   fix_known: false
-  status: pending
+  status: resolved
+  resolved_reason: "D0: report.ac_version_read==再計算なら task.ac_version を自己修復し BLOCK しない(将軍 00:05)"
+  action_artifact: "scripts/cmd_complete_gate.sh f043a07e7"
+  resolved_at: "2026-08-31T00:04:09+09:00"
