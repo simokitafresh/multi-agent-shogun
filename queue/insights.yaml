@@ -8521,3 +8521,10 @@ insights:
   source: "semantic_stress_test"
   fix_known: false
   status: pending
+- id: INS-20260830-125713540-e628
+  ts: "2026-08-30T12:57:13+09:00"
+  insight: "[[login ショーウィンドウ P1 — 未認証の公開集計 EP GET api public showcase と区間計]] semantic_stress_test candidate_aliases: NO_MATCH source=cmds query=/login ショーウィンドウ P1 — 未認証の公開集計 EP GET /api/public/showcase と区間計測 POST /api/public/showcase/event を read-only で実装する"
+  priority: "low"
+  source: "semantic_stress_test"
+  fix_known: false
+  status: pending
