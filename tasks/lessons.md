@@ -16311,3 +16311,16 @@ sqlite3.Connection.backup()を使うとページ(4096byte)単位のread syscall�
 - **when**: 未設定
 - **how**: 未設定
 - GA-531では新規8件がexpected_ga_push1=5とlegacy=3に混在した。期待BLOCKだけを抑止するとlegacy実失敗を見逃すため、分類合計がnew_countと一致すること、legacyが1件以上ならALERTを維持することを次回チェックとしてcontract化する。
+
+### L1681: dot-separated property slash tokenのpath分類境界
+- **日付**: 2026-08-31
+- **出典**: cmd_karo_hotfix_command_file_token_parser_20260831
+- **記録者**: kagemaru
+- **tags**: [infra,cmd-quality]
+- **subdomain**: infra
+- **target_files**: [scripts/cmd_complete_gate.sh,tests/unit/test_cmd_complete_gate.bats]
+- **origin**: [[cmd_karo_hotfix_command_file_token_parser_20260831]]
+- **enforcement**: 未自動化
+- **when**: 未設定
+- **how**: 未設定
+- command parserはmetadata.openGraph.images/twitter.imagesのようなproperty表現をfilesystem path候補から除外する。ただし右辺が既知の実ファイル拡張子なら除外せず欠落検出をfail-closedに維持する。

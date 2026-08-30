@@ -10575,7 +10575,10 @@ insights:
   priority: "low"
   source: "semantic_index_update"
   fix_known: false
-  status: pending
+  status: resolved
+  resolved_reason: "semantic map generation verified the candidate is represented or intentionally ignored"
+  action_artifact: "semantic_map=/home/simokitafresh/multi-agent-shogun/context/semantic-map.md;semantic_index=/home/simokitafresh/multi-agent-shogun/docs/semantic-index/index.md"
+  resolved_at: "2026-08-31T03:19:05+09:00"
 - id: INS-20260831-031631677-c1c6
   ts: "2026-08-31T03:16:31+09:00"
   insight: "semantic_index_update未登録[[リンク]]ターゲット: [[inbox永久lease根治]] は既存aliasesに一致なし。類似概念TOP3: semantic_dictionary_design(セマンティック辞書構想; alias=semantic lesson boost; score=5.0) / production_parity(本番パリティ; alias=existing is None alert穴; score=4.7) / self_improving_agent_local_optima(自己改善エージェント局所最適脱出; alias=Initialization Bias; score=4.7)。概念定義とaliases追加を検討せよ"
