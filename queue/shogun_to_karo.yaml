@@ -130,7 +130,7 @@ commands:
       claim: "frontend は Next.js app router、next build/next start 運用(package.json)、ThemeProvider+tailwind darkMode class(13:15 現物)。/login は use client 82 行、RouteAccessBoundary は layout で全ルートを包み /login 分岐のみ。FE は live 812f0b7a1 と origin/main 差分 0(13:05)。データ契約は cmd_4413/4415 の GET /api/public/showcase(hero/plans[]/benchmarks[]/secret/as_of/blackout)。本番実測値(12:20-12:47)は設計書 §3.1"
       source: "docs/research/dm-login-showcase-asis-tobe_v2_20260830.md §2.2-§2.7/§3/§4/§6.5、frontend/app/login/page.tsx、frontend/components/route-access-boundary.tsx、frontend/app/layout.tsx、frontend/tailwind.config.ts"
       trust: verified
-    depends_on: cmd_4415
+    depends_on: cmd_4413  # 2026-08-30 15:56 将軍: 4415(best_name 除去=表示上の追補)との直列を解除。frontend/ と backend/ は path 分離、4416 は現 API 契約(best_name は無視)で実装可
     measurement_source: "production 本番 DB readonly_query 実測 evidence(2026-08-30 JST 12時20分〜12時47分、表 v3 の値)+ Render deploys API log(2026-08-30 10時10分 JST、FE live sha 812f0b7a1)+ 本番 /login curl log(2026-08-30 12時11分、HTML は title のみ)。ローカル計測は AC の手段であり本番主張の根拠ではない"
     serial_dependency_evidence: "AC1(server component 化と構造)→AC2(帯・sticky・文言は AC1 のコンポーネントに載る)→AC3(境界 diff と login フローは AC1/AC2 の完成後にしか判定できない)。データ契約は cmd_4415 の応答形に依存するため depends_on cmd_4415"
     environment_change: "type=lesson; file=docs/research/dm-login-showcase-asis-tobe_v2_20260830.md; pattern=忍者 AC に書かない"
