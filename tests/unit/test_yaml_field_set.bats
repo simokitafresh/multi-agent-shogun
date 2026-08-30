@@ -1445,3 +1445,18 @@ assert t['status']=='acknowledged' and s.tzinfo is not None
 PY
   [ "$status" -eq 0 ]
 }
+
+# test_necessity: AC fingerprints are fixed-width strings; a leading zero must
+# never be resolved as a YAML 1.1 octal integer during task publication.
+@test "yaml_field_set preserves leading-zero scalar as string" {
+  local yaml="$TEST_TMPDIR/leading_zero.yaml"
+  printf '%s\n' 'task:' '  ac_version: old' > "$yaml"
+  run bash "$YFS" "$yaml" task ac_version 04575356
+  [ "$status" -eq 0 ]
+  run python3 - "$yaml" <<'PY'
+import sys, yaml
+value = yaml.safe_load(open(sys.argv[1]))['task']['ac_version']
+assert value == '04575356', (type(value).__name__, value)
+PY
+  [ "$status" -eq 0 ]
+}
