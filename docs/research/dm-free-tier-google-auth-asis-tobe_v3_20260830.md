@@ -1,5 +1,5 @@
 <!-- gist-master: 897501e0162e556a682ae32a2eca19c3 dm-free-tier-google-auth-asis-tobe_v3_20260830.md -->
-# DM-Signal Free tier(Google 登録→月次クーポン) AsIs/ToBe v3.3 — 2026-08-31 00:45(v3.2 23:20 / v3.1 22:30 / v3 骨子 08-30 20:20)
+# DM-Signal Free tier(Google 登録→月次クーポン) AsIs/ToBe v3.3 — 2026-08-31 01:40(殿実機 PASS)(v3.2 23:20 / v3.1 22:30 / v3 骨子 08-30 20:20)
 
 > 殿方向性 13:14(後回し)→20:15-20:18 具体化→**殿裁定 20:21『着手せよ』**→F1/F2/F3=cmd_4422/4423/4424 を並走配備(20:40-20:44)。SEO 案(v2、gist 5edb5f6d)とは別レーン。
 > **v3.3(08-31 00:45)**: 殿指示 00:38『アップデートせよ』→ 4 cmd の **本番 live 到達を Render API・本番 curl・git 祖先の一次で突合**。F1(4422)+検証差替(4428)=backend live `ce3f7f09`(00:13 JST)、F2(4423)=frontend live `b853b762`(22:10 JST)、F3(4424)=LP live `4b305f49`(23:27 JST、CLEAR 00:26 より先に live=merge 経由)。deploy 前提 5/5 到達(env 3 種・Redirect URL・`VIEWER_PASSWORD_FREE`)。残=post_deploy_check 4 点(殿実機の Google サインイン)・Free tier 行の DB 目視・後段 cmd(`product_logins`/`/free` noindex)。
@@ -65,7 +65,7 @@
 | F2 cmd_4423 | `/free`+Copy+`/login?coupon=`+二分文言+callback | **CLEAR 22:17** b853b762 → **live**(22:10) |
 | F3 cmd_4424 | LP CTA `/free?from=lp`+二分文言(既存 `lp_cta_click`) | **CLEAR 00:26** f9011787 → **live** 4b305f49(23:27) |
 | deploy 前提 | Render env 2 種+frontend env 2 種+Supabase Redirect URL+`VIEWER_PASSWORD_FREE` | **5/5 到達**(00:44 Render API 実測+殿実施) |
-| 家老 post_deploy_check→殿実機 | Google サインイン→クーポン表示→Copy→`/login?coupon=`→Basic-DM 表示 ∧ 既存 5 tier ログイン不変 ∧ `viewer_tiers` に Free 行 | **未**(家老 lane。将軍 00:12/00:29 の順序付き 1 通で生貼付を要請済) |
+| 家老 post_deploy_check→殿実機 | Google サインイン→クーポン表示→Copy→`/login?coupon=`→Basic-DM 表示 ∧ 既存 5 tier ログイン不変 ∧ `viewer_tiers` に Free 行 | **殿実機 PASS 01:38『問題なく動作している』**(4 段の是正後: env 焼込→env 名→callback 可視化→返却形)。`viewer_tiers` Free 行は 01:02 DB 実測で存在。家老 runbook(870fb92ee/2c6b3b2ca)は次回 deploy 用の恒久検査として保持 |
 | 後段 cmd | `product_logins`(§4-5)+`/free` noindex(SEO 案 §3) | 未起票(post_deploy_check PASS 後) |
 
 origin: `[[殿方向性_FreeTier_GoogleAuth_20260830_1314]] -> [[殿要件_クーポン月次同期_20260830_2016]] -> [[殿提案_Supabase共用_20260830_2018]] -> [[殿指摘_rebalancerでできた_20260830_2254]] -> [[cmd_4428_AuthAPI]] -> [[dm-free-tier-google-auth_v3]] -> [[FreeTier_本番live_5of5_20260831_0045]]`
