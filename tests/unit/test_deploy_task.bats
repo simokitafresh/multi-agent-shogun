@@ -44,6 +44,45 @@ run_cached_report_template() {
     run_cached_deploy_task generate_report_template "$@"
 }
 
+run_post_deploy_ac_warning() {
+    run bash -c '
+        export DEPLOY_TASK_LIB_ONLY=1
+        source "$1/scripts/deploy_task.sh"
+        deploy_task_warn_post_deploy_ac "$2" "${3:-}"
+    ' _ "$TEST_PROJECT" "$1" "${2:-}"
+}
+
+# test_necessity: 配備入口が本番観測ACを家老post_deploy_checkへ戻し、ローカル検証ACを誤警告しない不変量を守る。
+@test "production observation AC warns with Karo post-deploy routing" {
+    local task="$BATS_TEST_TMPDIR/production-ac-task.yaml"
+    cat > "$task" <<'EOF'
+task:
+  acceptance_criteria:
+  - id: AC1
+    description: "実装後にRenderのdeploy後live endpointをCDPで確認する"
+EOF
+
+    run_post_deploy_ac_warning "$task"
+    [ "$status" -eq 0 ]
+    [ "$(grep -c 'WARNING: post_deploy_ac' <<< "$output")" -eq 1 ]
+    [[ "$output" == *"post_deploy_check Karo lane"* ]]
+}
+
+# test_necessity: pytest/TestClient/next build+start/local curl/diff0だけのworker検証をproduction proofへ誤分類しない不変量を守る。
+@test "local verification AC does not warn as post-deploy proof" {
+    local task="$BATS_TEST_TMPDIR/local-ac-task.yaml"
+    cat > "$task" <<'EOF'
+task:
+  acceptance_criteria:
+  - id: AC1
+    description: "pytestとTestClientを実行し、next build && next startへlocal curlしてdiff0を確認する"
+EOF
+
+    run_post_deploy_ac_warning "$task"
+    [ "$status" -eq 0 ]
+    [ "$(grep -c 'WARNING: post_deploy_ac' <<< "$output")" -eq 0 ]
+}
+
 # test_necessity: 全taskが殿の実験ファースト原文と一次確認の適用形をLevel5で受け取る不変量を守る。
 @test "all tasks receive experiment-first principle exactly once" {
     local task="$BATS_TEST_TMPDIR/experiment-first-task.yaml"
