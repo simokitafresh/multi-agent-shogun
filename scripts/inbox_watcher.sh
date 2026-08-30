@@ -663,12 +663,12 @@ invalidate_leases_on_generation_change() {
     CURRENT_CLI_GENERATION="$new_gen"
 }
 
-# Normal inbox nudges have one outstanding delivery obligation per CLI
+# Normal/high inbox nudges have one outstanding delivery obligation per CLI
 # generation.  Keep the lease under the existing sent-token namespace so
-# inbox_write.sh's verified-delivery rearm can release it without a second
-# state protocol.  The unread fingerprint remains diagnostic only; it must
-# not create a new lease when an unread message is appended during the same
-# CLI turn.
+# inbox_write.sh's verified-delivery rearm can coexist with it without a
+# second state protocol.  The unread fingerprint remains diagnostic only; it
+# must not create a new lease when an unread message is appended during the
+# same CLI turn.
 outstanding_lease_file_for_generation() {
     local generation="${1:-}"
     local safe_generation
@@ -1032,11 +1032,11 @@ send_wakeup() {
     fi
 
     # Tier 1.5: Debounce repeated nudge storms is now enforced by one
-    # outstanding lease per CLI generation (normal only).
+    # outstanding lease per CLI generation (normal/high nudge paths).
     # Fingerprint changes are observed for diagnostics, but cannot create a
-    # second delivery obligation until the existing lease is ACKed/rearmed or
-    # the inbox becomes empty. The check and claim decision share one flock.
-    if [ "$priority" != "high" ] && [ -n "$current_fp" ] && [ "$current_fp" != "-" ]; then
+    # second delivery obligation until the inbox becomes empty or the CLI
+    # generation changes. The check and claim decision share one flock.
+    if [ -n "$current_fp" ] && [ "$current_fp" != "-" ]; then
         local atomic_result decision log_line atomic_result_file
         atomic_result_file="${STATE_DIR}/inbox_watcher_atomic_result_${AGENT_ID}_${BASHPID}"
         if ! (
@@ -1173,15 +1173,14 @@ send_wakeup() {
         fi
         if [ -n "$current_fp" ] && [ "$current_fp" != "-" ]; then
             local safe_fp sent_token sent_mtime sent_elapsed lease_generation
-            if [ "$priority" != "high" ]; then
-                # Normal nudges are leased by CLI generation, not by unread
-                # fingerprint. inbox_write.sh removes this sent-token prefix
-                # when its exact-message ACK verification requests a rearm.
-                lease_generation=$(respawn_recovery_generation "$PANE_TARGET" 2>/dev/null || true)
-                lease_generation="${lease_generation:-${CURRENT_CLI_GENERATION:-}}"
-                if [ -n "$lease_generation" ]; then
-                    sent_token="$(outstanding_lease_file_for_generation "$lease_generation")"
-                fi
+            # Normal/high nudges are leased by CLI generation, not by unread
+            # fingerprint. inbox_write.sh rearm deliberately preserves this
+            # lease, so a delivery-verification retry cannot create a second
+            # nudge in the same CLI turn.
+            lease_generation=$(respawn_recovery_generation "$PANE_TARGET" 2>/dev/null || true)
+            lease_generation="${lease_generation:-${CURRENT_CLI_GENERATION:-}}"
+            if [ -n "$lease_generation" ]; then
+                sent_token="$(outstanding_lease_file_for_generation "$lease_generation")"
             fi
             if [ -z "$sent_token" ]; then
                 # Compatibility fallback for an unavailable generation: retain
@@ -1190,15 +1189,15 @@ send_wakeup() {
                 sent_token="${STATE_DIR}/inbox_watcher_sent_${AGENT_ID}_${safe_fp}"
             fi
             if ! ( set -C; : > "$sent_token" ) 2>/dev/null; then
-                if [ "$priority" != "high" ] && [ -n "$lease_generation" ]; then
-                    echo "[$(date)] [OUTSTANDING-LEASE] Skipping normal nudge for $AGENT_ID until ACK/unread=0: generation=$lease_generation fingerprint=$current_fp" >&2
+                if [ -n "$lease_generation" ]; then
+                    echo "[$(date)] [OUTSTANDING-LEASE] Skipping ${priority} nudge for $AGENT_ID until unread=0 or generation-change: generation=$lease_generation fingerprint=$current_fp" >&2
                 else
                     echo "[$(date)] [SEND-LEASE] Skipping delivered fingerprint for $AGENT_ID until ACK/set change: $current_fp kind=$fp_kind" >&2
                 fi
                 printf 'dedup\t%s\t%s\t%s\n' "$unread_count" "$current_fp" "$fp_kind" > "$send_result_file"
                 exit 0
             fi
-            if [ "$priority" != "high" ] && [ -n "$lease_generation" ]; then
+            if [ -n "$lease_generation" ]; then
                 # Persist the observed unread count with the lease so a later
                 # read transition can be recognized as an ACK even when other
                 # unread messages remain.
