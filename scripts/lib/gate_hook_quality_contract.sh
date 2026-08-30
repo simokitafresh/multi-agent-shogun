@@ -40,11 +40,14 @@ gate_hook_quality_contract_measurement_text() {
 
 # Keep the accepted FP vocabulary independent of grep's regex engine and the
 # runner locale.  A variable-backed [[ ]] pattern treats the vocabulary as a
-# literal substring, while the C locale makes the byte-oriented comparison
-# deterministic even when a caller exported a different locale.
+# literal substring.  Do not assign LC_ALL inside this function: under
+# `bash -x`, Bash emits the expanded Japanese operand using the active locale,
+# and a local C-locale assignment can corrupt the inherited UTF-8 xtrace
+# stream.  Literal substring matching does not invoke regex or case-folding,
+# so changing the caller's locale provides no determinism benefit here.
 gate_hook_quality_contract_has_measurement_vocabulary() {
     local text="${1:-}"
-    local LC_ALL=C term
+    local term
     for term in \
         "FP率" "FP計" "FP測" "false_positive" "false positive" \
         "false-positive" "falsepositive" "偽陽性" "誤発報" \
