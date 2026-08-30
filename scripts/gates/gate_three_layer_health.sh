@@ -318,18 +318,15 @@ else
     cache_bytes=0
 fi
 echo "cache_dir=$cache_dir bytes=$cache_bytes warn_bytes=$warn_bytes"
-echo "cache_capacity_measured_at=$(date -u +%Y-%m-%dT%H:%M:%SZ) adopted_bytes=$cache_bytes source=initial_scan"
-if [ "$cache_bytes" -gt "$warn_bytes" ]; then
-    echo "WARN: cache容量が閾値を超過。cleanup dry-runで対象を確認せよ。"
-    overall="WARN"
-else
-    echo "OK: cache容量は閾値内"
-fi
+# initial_scan is diagnostic only.  It walks the directory with a different
+# file-selection implementation from cleanup_three_layer_tmp.sh and therefore
+# cannot be the capacity verdict's denominator.
+echo "cache_capacity_measured_at=$(date -u +%Y-%m-%dT%H:%M:%SZ) observed_bytes=$cache_bytes source=initial_scan"
 
 echo "■ tmp残骸cleanup dry-run"
 if [ -x "$cleanup_script" ]; then
     cleanup_measured_at="$(date -u +%Y-%m-%dT%H:%M:%SZ)"
-    if cleanup_output="$(bash "$cleanup_script" --dry-run --cache-dir "$cache_dir" 2>&1)"; then
+    if cleanup_output="$(bash "$cleanup_script" --dry-run --cache-dir "$cache_dir" --max-bytes "$warn_bytes" 2>&1)"; then
         printf '%s\n' "$cleanup_output"
         cleanup_total_bytes="$(
             printf '%s\n' "$cleanup_output" |
@@ -337,26 +334,45 @@ if [ -x "$cleanup_script" ]; then
         )"
         case "$cleanup_total_bytes" in
             ''|*[!0-9]*)
-                echo "WARN: cleanup dry-runのtotal_bytesを解釈できない"
-                overall="WARN"
+                echo "BLOCK: cleanup dry-runのtotal_bytesを解釈できない。容量判定の母数を確定できない"
+                overall="BLOCK"
                 ;;
             *)
                 echo "cleanup_capacity_measured_at=$cleanup_measured_at adopted_bytes=$cleanup_total_bytes source=cleanup_dry_run"
                 if [ "$cleanup_total_bytes" -gt "$warn_bytes" ]; then
-                    echo "WARN: cleanup dry-run時点のcache容量が閾値を超過"
-                    overall="WARN"
+                    cleanup_candidates="$(
+                        printf '%s\n' "$cleanup_output" |
+                            awk '/mode=dry-run/ { for (i=1; i<=NF; i++) if ($i ~ /^candidates=/) { sub(/^candidates=/, "", $i); print $i; exit } }'
+                    )"
+                    case "$cleanup_candidates" in
+                        ''|*[!0-9]*)
+                            echo "BLOCK: cache容量超過だがcleanup dry-runのcandidatesを解釈できない。回収経路を証明できない"
+                            overall="BLOCK"
+                            ;;
+                        0)
+                            echo "BLOCK: cache容量が閾値超過(total_bytes=$cleanup_total_bytes > max_bytes=$warn_bytes)かつ回収候補0件。external_dependency=protected_or_nonreclaimable"
+                            echo "BLOCK: 回収不能をWARNで継続せず、保護対象/外部依存の解消後に再実行せよ"
+                            overall="BLOCK"
+                            ;;
+                        *)
+                            echo "BLOCK: cache容量が閾値超過(total_bytes=$cleanup_total_bytes > max_bytes=$warn_bytes)、回収候補=$cleanup_candidates"
+                            printf 'RECOVERY: bash %q --apply --cache-dir %q --max-bytes %q\n' \
+                                "$cleanup_script" "$cache_dir" "$warn_bytes"
+                            overall="BLOCK"
+                            ;;
+                    esac
                 fi
                 ;;
         esac
     else
         cleanup_status=$?
         printf '%s\n' "$cleanup_output"
-        echo "WARN: cleanup dry-run failed status=$cleanup_status"
-        overall="WARN"
+        echo "BLOCK: cleanup dry-run failed status=$cleanup_status。容量判定と回収経路を証明できない"
+        overall="BLOCK"
     fi
 else
-    echo "WARN: cleanup script not executable: $cleanup_script"
-    overall="WARN"
+    echo "BLOCK: cleanup script not executable: $cleanup_script。容量判定と回収経路を証明できない"
+    overall="BLOCK"
 fi
 
 echo "■ 三層連鎖(memory_db_knowledge_write.sh Layer2/3)失敗検知"
@@ -388,7 +404,7 @@ if [ -f "$chain_log" ]; then
     echo "chain_log=$chain_log 未貫通件数=$chain_fail_count"
     if [ "$chain_fail_count" -gt 0 ]; then
         echo "WARN: 三層連鎖Layer2/3の未貫通件数=$chain_fail_count。$chain_log を確認せよ。"
-        overall="WARN"
+        [ "$overall" = "BLOCK" ] || overall="WARN"
     else
         echo "OK: 三層連鎖失敗ゼロ"
     fi
@@ -415,7 +431,7 @@ fi
 echo "chain_state_dir=$chain_state_dir stale_pending=$stale_pending failed_results=$failed_results"
 if [ "$stale_pending" -gt 0 ] || [ "$failed_results" -gt 0 ]; then
     echo "WARN: durable三層連鎖の未完了/失敗を検出。pending/resultを確認せよ。"
-    overall="WARN"
+    [ "$overall" = "BLOCK" ] || overall="WARN"
 else
     echo "OK: durable三層連鎖の未完了/失敗ゼロ"
 fi

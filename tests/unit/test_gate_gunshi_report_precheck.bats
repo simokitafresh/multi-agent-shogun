@@ -471,6 +471,40 @@ YAML
   [[ "$output" == *"GATE_PREDICTION=CLEAR"* ]]
 }
 
+# test_necessity: LG043 must distinguish a historical unresolved precondition
+# that was explicitly checked and resolved in the same local explanation from
+# a still-unresolved item; this is the exact historical FP boundary.
+# regression_justification: cmd_karo_hotfix_lg043_historical_unresolved_fp_20260831
+# reproduces the report wording that was incorrectly treated as live work.
+@test "LG043 accepts locally resolved historical precondition evidence" {
+  run_engine "未解決前提を現行実装で照合し、対象status=resolved"
+  [ "$status" -eq 0 ]
+  [[ "$output" == *"BC_YES_CLARITY_CONTRADICTION=0"* ]]
+  [[ "$output" == *"GATE_PREDICTION=CLEAR"* ]]
+}
+
+# test_necessity: the regression must use the real reflux report wording,
+# including current-HEAD verification and the explicit no-decision outcome.
+# regression_justification: cmd_karo_hotfix_lg043_historical_unresolved_fp_20260831
+# identified this exact report as the remaining false-positive corpus member.
+@test "LG043 accepts reflux report historical implementation verification" {
+  run_engine "対象insightの未解決前提を現行HEADのコード・context・validatorで照合し、既知実装の存在を確認したため追加decision_candidateなし"
+  [ "$status" -eq 0 ]
+  [[ "$output" == *"BC_YES_CLARITY_CONTRADICTION=0"* ]]
+  [[ "$output" == *"GATE_PREDICTION=CLEAR"* ]]
+}
+
+# test_necessity: an unresolved item that remains after checking must continue
+# to block all-yes reports, even though it contains a verification verb.
+# regression_justification: the companion positive control for the local
+# resolved-history boundary required by cmd_karo_hotfix_lg043_historical_unresolved_fp_20260831.
+@test "LG043 keeps blocking unresolved item that remains after checking" {
+  run_engine "未解決事項を確認したが残存"
+  [ "$status" -eq 0 ]
+  [[ "$output" == *"BC_YES_CLARITY_CONTRADICTION=1"* ]]
+  [[ "$output" == *"GATE_PREDICTION=BLOCK"* ]]
+}
+
 @test "LG043 blocks a historical unresolved phrase without completion evidence" {
   run_engine "対象は未解決だったがresolve可能"
   [ "$status" -eq 0 ]

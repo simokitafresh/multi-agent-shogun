@@ -162,7 +162,7 @@ PY
         SHOGUN_THREE_LAYER_CLEANUP_SCRIPT="/bin/true" \
         bash "$HEALTH_SCRIPT"
     [[ "$output" == *"WARN: cacheが本体に追随していない"* ]]
-    [[ "$output" == *"STATUS: WARN"* ]]
+    [[ "$output" == *"STATUS: BLOCK"* ]]
 }
 
 # test_necessity: A corrupt published cache must fail closed and delegate its
