@@ -10210,3 +10210,10 @@ insights:
   source: "semantic_stress_test"
   fix_known: false
   status: pending
+- id: INS-20260830-234224718-b8cf
+  ts: "2026-08-30T23:42:24+09:00"
+  insight: "[[殿方向性 13 25『Docs FAQ をログインページからのリンクに』→ で docs faq を公開したが]] semantic_stress_test candidate_aliases: NO_MATCH source=cmds query=殿方向性 2026-08-30 13:25『Docs/FAQ をログインページからのリンクに』→cmd_4418 で /docs /faq を公開したが、/faq は JA のみ(22:35 curl: lang=ja、hreflang 0)。LP EN(dm-signal.com/)の FAQ 抜粋と Read the docs は英語読者を app の"
+  priority: "low"
+  source: "semantic_stress_test"
+  fix_known: false
+  status: pending
