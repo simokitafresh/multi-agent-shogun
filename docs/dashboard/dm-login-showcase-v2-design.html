@@ -75,9 +75,9 @@ a{color:var(--accent)}
   <h3>本番 DB 実測(10:14-10:18 readonly_query)— 1 件 = is_active PF でその tier に可視な 1 本</h3>
   <div class="tbl"><table>
     <tr><th>tier</th><th>note プラン</th><th>可視 PF</th><th>08-18 比</th></tr>
-    <tr><td>Basic</td><td>ベーシック ¥1,000(初月無料)</td><td class="num">5</td><td>±0</td></tr>
-    <tr><td>NewStandard</td><td>スタンダード ¥8,000</td><td class="num">17</td><td>±0</td></tr>
-    <tr><td>Standard / AddOn(古参)</td><td>¥4,000 / ¥2,000 非公開</td><td class="num">22 / 22</td><td>±0</td></tr>
+    <tr><td>Basic</td><td>ベーシック(初月無料)</td><td class="num">5</td><td>±0</td></tr>
+    <tr><td>NewStandard</td><td>スタンダード</td><td class="num">17</td><td>±0</td></tr>
+    <tr><td>Standard / AddOn(古参)</td><td>非公開</td><td class="num">22 / 22</td><td>±0</td></tr>
     <tr><td>premium</td><td>ドクタープレミアム 招待制</td><td class="num">28</td><td class="delta">+1</td></tr>
     <tr><td>Secret(どの tier にも出ない)</td><td>—</td><td class="num">73</td><td class="delta">+3</td></tr>
     <tr><td>is_active 合計</td><td></td><td class="num">102</td><td class="delta">+4</td></tr>
@@ -109,7 +109,7 @@ a{color:var(--accent)}
         <li>H1 "What to hold this month — computed, not guessed." / JA 副題</li>
         <li>リード 1 段落(EN)</li>
         <li><strong>Current signals 表</strong>(ラベル方式)</li>
-        <li>プラン 3 枚: Basic / Standard / Coupon</li>
+        <li>プラン 3 枚(<strong>金額なし・殿裁定 10:20</strong>): Basic(PF 5・first month free) / Standard(PF 17) / Premium(by invitation) → 価格は「See plans on note →」で note 側に一本化。Coupon はサインインカードの補足 1 行</li>
         <li>導線 4 本: What is DM? / Join on note / Weekly report / @TokyoJibika</li>
         <li>サインインカード(rich / simple)</li>
         <li>フッタ: Not investment advice · monthly close, US ETFs</li>
@@ -135,7 +135,7 @@ a{color:var(--accent)}
     <tr><td>Ave-X · 裏Ave-X · DM-safe-2 · 四つ目 ×2 · 劇薬 ×2 · 奥義 ×3<br><span class="pill prem">Premium plan · by invitation</span></td><td><span class="blur"></span></td><td class="num">up to X%</td></tr>
     <tr><td>73 portfolios<br><span class="pill secret">Secret</span></td><td class="secret">Not viewable</td><td class="secret">Not disclosed</td></tr>
   </table></div>
-  <p style="margin-top:8px">レスポンシブ: &gt;860px = 2 カラム+sticky リッチカード / ≤860px = 1 カラム+末尾シンプルカード+下部 sticky バー→ボトムシート。トークンは <code>globals.css</code> 既存のみ。文言は EN 主 JA 従、「毎営業日 / today」禁止。</p>
+  <p style="margin-top:8px">レスポンシブ: &gt;860px = 2 カラム+sticky リッチカード / ≤860px = 1 カラム+末尾シンプルカード+下部 sticky バー→ボトムシート。トークンは <code>globals.css</code> 既存のみ。文言は EN 主 JA 従、「毎営業日 / today」禁止、<strong>金額(¥)は書かない</strong>(殿裁定 10:20: 課金は note 経由、価格は note 側に一本化)。</p>
 
   <h2>§3 実装単位(可逆・1 層ずつ)</h2>
   <div class="tbl"><table>
@@ -143,7 +143,7 @@ a{color:var(--accent)}
     <tr><td>P0</td><td>未決 1・3 の殿裁定</td><td>§6 に事実→制約→判断→効果で記載済み</td></tr>
     <tr><td>P1</td><td>BE <code>GET /api/public/showcase</code>(read-only)</td><td>未認証 curl: free 行に holding あり・basic 行にキーなし・count が DB 集計と一致・password/env 文字列 0</td></tr>
     <tr><td>P2</td><td>FE /login を新構造へ(SignInCard 2 variant・blackout 帯)</td><td>860px 切替・sticky/シート動作・既存ログイン経路が従来どおり</td></tr>
-    <tr><td>P3</td><td>文言・URL 設定値化、EN/JA 規則</td><td>「毎営業日/today」grep 0・URL 直書き 0</td></tr>
+    <tr><td>P3</td><td>文言・URL 設定値化、EN/JA 規則、金額ゼロ</td><td>「毎営業日/today」grep 0・<code>¥|円|yen</code> grep 0・URL 直書き 0</td></tr>
     <tr><td>P4</td><td>本番 CDP 2 枚+殿実機</td><td>殿確認</td></tr>
   </table></div>
   <p style="margin-top:8px">FE は 08-18 以来 deploy なし = 本版が次の FE deploy。P1 は本番書込みなし、P2 以降 revert 可。</p>

@@ -22,6 +22,10 @@
 | 17:28 | 「毎営業日」→「月に一回」 | 文言規則 §4 |
 | 17:41 | PF 名の下にプランラベル、その下に「+N PF」 | ラベル方式(v13) |
 
+| 08-30 | 殿の言葉(要旨) | 事実→制約→判断→効果 |
+|---|---|---|
+| 10:20 | メインページにプランの額はいらない。他サービスも入会時に遷移したページに価格を書く。現時点で課金は note 経由 | 事実=課金・価格提示は note メンバーシップ側にある。制約=/login は課金ページではなく、価格を二重管理すると note 側改定時に乖離する。判断=**/login に金額を書かない**。プラン名・PF 数・「Get it on note →」のみ。効果=§2.2-5 と §3.1 ラベルから ¥ を撤去、価格は note リンク先に一本化 |
+
 ---
 
 ## §1 AsIs（本番リアルタイム 2026-08-30）
@@ -55,10 +59,10 @@
 
 | tier(DB) | note プラン | 可視 PF | 08-18 比 |
 |---|---|---|---|
-| Basic | ベーシック ¥1,000(初月無料) | **5** | ±0(DM-safe・GSシン分身-常勝・シン白虎-激攻・Basic-DualMomentum・Ave-X) |
-| NewStandard | スタンダード ¥8,000 | **17** | ±0 |
-| Standard(古参) | ¥4,000 非公開 | 22 | ±0 |
-| AddOn | 裏Ave7 ¥2,000 非公開 | 22 | ±0 |
+| Basic | ベーシック(初月無料) | **5** | ±0(DM-safe・GSシン分身-常勝・シン白虎-激攻・Basic-DualMomentum・Ave-X) |
+| NewStandard | スタンダード | **17** | ±0 |
+| Standard(古参) | 非公開 | 22 | ±0 |
+| AddOn | 裏Ave7 非公開 | 22 | ±0 |
 | premium | ドクタープレミアム 招待制 | **28** | **+1** |
 | どの tier にも出ない(Secret) | — | **73** | **+3** |
 | is_active 合計 | | **102** | **+4**(98→102) |
@@ -94,7 +98,7 @@
 2. H1 "What to hold this month — computed, not guessed." / JA「今月、何を保有すべきか。月に一回、ルールで自動計算。」
 3. リード 1 段落(EN。月末クローズで月 1 回リバランス・20 年超の月次実績・ルールベースで再現可能)
 4. **Current signals 表**(§3.1、ラベル方式 v13)
-5. プラン 3 枚: Basic ¥1,000(初月無料・PF 5) / Standard ¥8,000(PF 17) / Coupon(期間限定)
+5. プラン 3 枚(**金額なし・殿裁定 10:20**): Basic(PF 5・first month free) / Standard(PF 17) / Premium(by invitation)。各カードは「See plans on note →」(membership URL)で価格へ遷移。Coupon は独立カードにせず、サインインカードの補足 1 行(「Have a coupon? Use it here」)
 6. 導線 4 本: What is Dual Momentum?(note JA) / Join on note(membership) / Weekly report / @TokyoJibika
 7. サインインカード(§3.2)
 8. フッタ: © / Not investment advice / Data: monthly close, US ETFs
@@ -146,6 +150,7 @@
 ## §4 言語・文言規則（前版継承 + 追加 2 条）
 - ログイン前 EN 主・JA 従(`.ja` 小字)。ログイン後 EN のみ(範囲外)。
 - 頻度: once a month / this month。「毎営業日」「today」禁止(grep 0 件が AC)。
+- **金額禁止(殿裁定 10:20)**: /login に ¥・価格・「¥1,000」等の金額を書かない(grep `¥|円|yen` 0 件が AC)。価格は note membership ページへのリンクで示す。
 - **追加 1**: 総リターンは `Intl.NumberFormat` で桁区切り、符号付き、%(小数なし)。**追加 2**: ブラックアウト帯・失効エラーは EN+JA 必須(今週から実需)。
 
 ---
@@ -156,7 +161,7 @@
 | P0 | 数値表記の殿裁定(§6-3)と Secret 件数定義(§6-1) | 裁定 2 件が本設計書 §6 に「事実→制約→判断→効果」で記載済み |
 | P1 | backend `GET /api/public/showcase`(read-only、cache 1h、tier 非依存、password 系非送信) | 未認証 curl: free 行に holding/momentum あり・basic 4 行に**キーなし**・count(4/13/10/secret) が DB 集計と一致・レスポンスに `password`/`env` 文字列 0 件 |
 | P2 | frontend `/login` を §2.2 構造へ(SignInCard 2 variant + レスポンシブ + blackout 帯) | 860px 境界切替・sticky/ボトムシート動作・既存ログイン成功経路が従来どおり(7 層リセット→`/`) |
-| P3 | 文言・導線 URL を設定値化、EN/JA 規則 | 「毎営業日/today」grep 0、note URL がコンポーネント直書き 0 |
+| P3 | 文言・導線 URL を設定値化、EN/JA 規則、金額ゼロ | 「毎営業日/today」grep 0、`¥|円|yen` grep 0、note URL がコンポーネント直書き 0 |
 | P4 | 本番 CDP 2 枚(モバイル/PC) + 殿実機 | 殿確認 |
 - push/deploy は家老レーン(FE は 08-18 以来 deploy なし=本版が次の FE deploy)。P1 は read-only 新 EP で本番書込みなし。P2 以降 revert 可。
 
