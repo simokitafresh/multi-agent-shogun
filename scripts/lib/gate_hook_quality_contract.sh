@@ -39,17 +39,21 @@ gate_hook_quality_contract_measurement_text() {
 }
 
 # Keep the accepted FP vocabulary independent of grep's regex engine and the
-# runner locale. Quoted case patterns are literal substring checks; the only
-# glob metacharacters are the surrounding wildcards.
+# runner locale.  A variable-backed [[ ]] pattern treats the vocabulary as a
+# literal substring, while the C locale makes the byte-oriented comparison
+# deterministic even when a caller exported a different locale.
 gate_hook_quality_contract_has_measurement_vocabulary() {
     local text="${1:-}"
-    case "$text" in
-        *"FP率"*|*"FP計"*|*"FP測"*|*"false_positive"*|*"false positive"*|\
-        *"false-positive"*|*"falsepositive"*|*"偽陽性"*|*"誤発報"*|\
-        *"誤BLOCK"*|*"誤遮断"*|*"detector_fp_rate"*|*"gate_fire_log"*|\
-        *"loop_ledger"*|*"cmd_design_quality"*)
-            return 0 ;;
-    esac
+    local LC_ALL=C term
+    for term in \
+        "FP率" "FP計" "FP測" "false_positive" "false positive" \
+        "false-positive" "falsepositive" "偽陽性" "誤発報" \
+        "誤BLOCK" "誤遮断" "detector_fp_rate" "gate_fire_log" \
+        "loop_ledger" "cmd_design_quality"; do
+        if [[ "$text" == *"$term"* ]]; then
+            return 0
+        fi
+    done
     return 1
 }
 
