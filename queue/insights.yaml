@@ -10256,4 +10256,14 @@ insights:
   priority: "low"
   source: "semantic_index_update"
   fix_known: false
+  status: resolved
+  resolved_reason: "semantic map generation verified the candidate is represented or intentionally ignored"
+  action_artifact: "semantic_map=/home/simokitafresh/multi-agent-shogun/context/semantic-map.md;semantic_index=/home/simokitafresh/multi-agent-shogun/docs/semantic-index/index.md"
+  resolved_at: "2026-08-30T23:51:32+09:00"
+- id: INS-20260830-235625725-13fc
+  ts: "2026-08-30T23:56:25+09:00"
+  insight: "GATE ac_version_stale の構造穴(cmd_4428 23:46): 忍者が次 task(4425)へ切替わり旧 task YAML が消えた後、report の terminal setter が『現 task』を参照して ac_version(a415fe6f)を拾い、正本 computed(c3f79d2b)と不一致で BLOCK。AC 差分 0・忍者再作業なしの偽 BLOCK。対処案: cmd_complete_gate は task YAML でなく report 内 task_contract_snapshot(または archive/tasks の同 cmd)を ac_version の正本にする。殿裁定 21:30『忍者の解放条件を LGTM に下げる』の副作用として今後常態化する"
+  priority: "medium"
+  source: "manual"
+  fix_known: false
   status: pending
