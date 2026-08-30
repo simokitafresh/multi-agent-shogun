@@ -1,3 +1,4 @@
+<!-- gist-master: da1b7617d777b62864953792b77d5a78 agent_readiness_level3_roadmap_20260831.md -->
 # dm-signal.com Agent Readiness — Level 3 全完了ロードマップ v1.0
 
 - 作成: 2026-08-31 05:25 JST（殿指示 05:22『level3まで全て完了させるためのロードマップをステップバイステップで』）
