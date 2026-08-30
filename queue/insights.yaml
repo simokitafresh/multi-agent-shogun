@@ -9470,3 +9470,10 @@ insights:
   source: "semantic_index_update"
   fix_known: false
   status: pending
+- id: INS-20260830-180120354-7745
+  ts: "2026-08-30T18:01:20+09:00"
+  insight: "[[SEO的に有効な手を考えてくれ]] semantic_stress_test candidate_aliases: NO_MATCH source=lord query=SEO的に有効な手を考えてくれ"
+  priority: "low"
+  source: "semantic_stress_test"
+  fix_known: false
+  status: pending
