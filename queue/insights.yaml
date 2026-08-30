@@ -8578,18 +8578,34 @@ insights:
   priority: "low"
   source: "semantic_index_update"
   fix_known: false
-  status: pending
+  status: resolved
+  resolved_reason: "semantic map generation verified the candidate is represented or intentionally ignored"
+  action_artifact: "semantic_map=/home/simokitafresh/multi-agent-shogun/context/semantic-map.md;semantic_index=/home/simokitafresh/multi-agent-shogun/docs/semantic-index/index.md"
+  resolved_at: "2026-08-30T13:07:02+09:00"
 - id: INS-20260830-130625744-5433
   ts: "2026-08-30T13:06:25+09:00"
   insight: "[[だいぶいいな]] semantic_stress_test candidate_aliases: NO_MATCH source=lord query=だいぶいいな。ブラックアウトはどう表現する。現在ならnoteに誘導＋パスワード発表をお楽しみにという期待感をあおるのがいいか？パスワード発表の日時は俺が任意で決めてるので具体的にしたくない"
   priority: "low"
   source: "semantic_stress_test"
   fix_known: false
-  status: pending
+  status: resolved
+  resolved_reason: "semantic index candidate was absorbed into a registered concept"
+  action_artifact: "semantic_index=/home/simokitafresh/multi-agent-shogun/docs/semantic-index/index.md"
+  resolved_at: "2026-08-30T13:07:10+09:00"
 - id: INS-20260830-130638163-81dd
   ts: "2026-08-30T13:06:38+09:00"
   insight: "[[ログインページは単独でログイン後の本番には影響しないよな？]] semantic_stress_test candidate_aliases: NO_MATCH source=lord query=ログインページは単独でログイン後の本番には影響しないよな？"
   priority: "low"
   source: "semantic_stress_test"
+  fix_known: false
+  status: resolved
+  resolved_reason: "semantic index candidate was absorbed into a registered concept"
+  action_artifact: "semantic_index=/home/simokitafresh/multi-agent-shogun/docs/semantic-index/index.md"
+  resolved_at: "2026-08-30T13:07:10+09:00"
+- id: INS-20260830-130711017-571a
+  ts: "2026-08-30T13:07:11+09:00"
+  insight: "semantic_index_update新概念候補: discussion:では実装まえに穴がないかチェックしよう は 既存aliasesに一致なし。概念定義とaliases追加を検討せよ"
+  priority: "low"
+  source: "semantic_index_update"
   fix_known: false
   status: pending
