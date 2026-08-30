@@ -6431,7 +6431,10 @@ insights:
   priority: "medium"
   source: "manual"
   fix_known: false
-  status: pending
+  status: resolved
+  resolved_reason: "一次情報で scripts/inbox_watcher.sh:L889-L892 の家老・軍師・将軍への忍者専用task_id nudge除外、scripts/inbox_mark_read.sh:L190-L194,L298-L307 の家老未処理task_assigned既読化BLOCK、AGENTS.md:L378-L379 の家老・軍師task_idフィルタ対象外を確認した。既存修正と回帰テスト(test_inbox_mark_read 23/23、test_inbox_write 125/125、test_ninja_monitor_stall 154/154、test_three_layer_preflight 62/62)で提案根治を充足し、新規コード修正・decision_candidateは不要。"
+  action_artifact: "target=queue/insights.yaml:INS-20260828-074355934-a9c6;implementation=scripts/inbox_watcher.sh:L889-L892,scripts/inbox_mark_read.sh:L190-L194,L298-L307,AGENTS.md:L378-L379;commits=63f7f1b9b,89510dbaa,d7d03c3fe,d9d036f10,a837e9a8c;verification=tests/unit/test_inbox_mark_read.bats:23/23 PASS SKIP0,tests/unit/test_inbox_write.bats:125/125 PASS SKIP0,tests/unit/test_ninja_monitor_stall.bats:154/154 PASS SKIP0,tests/unit/test_three_layer_preflight.bats:62/62 PASS SKIP0"
+  resolved_at: "2026-08-30T12:54:26+09:00"
 - id: INS-20260828-074411190-6035
   ts: "2026-08-28T07:44:11+09:00"
   insight: "semantic_index_update未登録[[リンク]]ターゲット: [[T114忍者規則の家老転用]] は既存aliasesに一致なし。類似概念TOP3: report_quality_protocol(忍者報告品質プロトコル; alias=忍者や家老; score=3.1) / strong_new_game_completion_contract(強くてニューゲーム完遂契約; alias=T40実回転; score=2.0) / semantic_dictionary_design(セマンティック辞書構想; alias=忍者の改善実装待ちの間に家老は次層の1体計測を先行し; score=2.0)。概念定義とaliases追加を検討せよ"
