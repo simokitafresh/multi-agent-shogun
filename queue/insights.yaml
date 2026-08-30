@@ -7304,7 +7304,10 @@ insights:
   priority: "medium"
   source: "manual"
   fix_known: false
-  status: pending
+  status: resolved
+  resolved_reason: "現行一次情報で部分対応のみ確認: deploy_task.sh L2212-L2223 と既存commit 72fc07d15 は operational_simulation 4枠を生成するが値は空欄。gate_report_format_main.py L1700-L1722 は4項目欠落を検出するがFAIL文に報告行番号・具体例を出さない。提案全体は未完であり、実装はplanned_paths外のため別cmdへdecision_candidate化した。"
+  action_artifact: "target=queue/insights.yaml:INS-20260828-160855577-bdec;partial=72fc07d15,scripts/deploy_task.sh:L2212-L2223,scripts/gates/gate_report_format_main.py:L1700-L1722;decision_candidate=report templateへ具体的4枠記入例+gate FAILへ該当行番号/例を追加しLG055発火/reportを13→<=2で計測する別cmd;semantic=docs/obsidian-promoted/lg055-integration-cmd-requires-command-expected-actual-result-13-t129-22-d-18-re-insight-ins-20260828-160855577-bdec.md;decision_candidate=required"
+  resolved_at: "2026-08-31T03:03:33+09:00"
 - id: INS-20260828-161449053-c15a
   ts: "2026-08-28T16:14:49+09:00"
   insight: "semantic_index_update新概念候補: discussion:T137 T136 T129について説明してくれ は 既存aliasesに一致なし。概念定義とaliases追加を検討せよ"
