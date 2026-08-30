@@ -10516,6 +10516,43 @@ auto_request_report_review() {
     eval "exec ${lock_fd}>&-"
 }
 
+# 2026-08-30 21:15 将軍 D0(殿裁定 21:11『負の複利は最速で根治』): 軍師 LGTM 後の家老 ACCEPT が
+# 家老 1 lane の直列(CTX 80%・27 分停滞)に乗り、done 忍者 4 名が再配備不可で idle した。
+# cmd_1144『LGTM→家老はスタンプのみ』を機械化: LGTM ∧ report completed/PASS ∧ karo.yaml 不在 ∧
+# archive 未完 ∧ LGTM から AUTO_KARO_ACCEPT_DELAY_SEC 経過 → review_approval.sh karo ACCEPT を代行する。
+AUTO_KARO_ACCEPT_DELAY_SEC=${AUTO_KARO_ACCEPT_DELAY_SEC:-300}
+auto_karo_accept_after_lgtm() {
+    local gunshi_file cmd_dir cmd_id karo_file report_rel report_full result verdict status lgtm_ts now age
+    now=$(date +%s)
+    for gunshi_file in "$SCRIPT_DIR"/queue/gates/*/review_approvals/reports/*/gunshi.yaml; do
+        [ -f "$gunshi_file" ] || continue
+        karo_file="${gunshi_file%/gunshi.yaml}/karo.yaml"
+        [ -f "$karo_file" ] && continue
+        cmd_dir="${gunshi_file%%/review_approvals/*}"
+        cmd_id="${cmd_dir##*/}"
+        [ -f "$cmd_dir/archive.done" ] && continue
+        [ -f "$cmd_dir/review_gate.done" ] && continue
+        result=$(awk -F': ' '$1=="result" {print $2; exit}' "$gunshi_file")
+        [ "$result" = "LGTM" ] || continue
+        lgtm_ts=$(stat -c %Y "$gunshi_file" 2>/dev/null || echo 0)
+        age=$(( now - lgtm_ts ))
+        [ "$age" -ge "$AUTO_KARO_ACCEPT_DELAY_SEC" ] || continue
+        report_rel=$(awk -F': ' '$1=="report" {print $2; exit}' "$gunshi_file")
+        [ -n "$report_rel" ] || continue
+        [[ "$report_rel" = /* ]] && report_full="$report_rel" || report_full="$SCRIPT_DIR/$report_rel"
+        [ -f "$report_full" ] || continue
+        status=$(yaml_field_get "$report_full" status "" 2>/dev/null || true)
+        verdict=$(yaml_field_get "$report_full" verdict "" 2>/dev/null || true)
+        [ "$status" = "completed" ] && [ "$verdict" = "PASS" ] || continue
+        if bash "$SCRIPT_DIR/scripts/review_approval.sh" "$cmd_id" karo ACCEPT "$report_full" auto >/dev/null 2>&1; then
+            log "KARO-ACCEPT-AUTO: cmd=$cmd_id report=${report_full##*/} lgtm_age_s=$age (LGTM+PASS、家老スタンプ代行)"
+        else
+            log "KARO-ACCEPT-AUTO-FAIL: cmd=$cmd_id report=${report_full##*/} rc=$?"
+        fi
+    done
+}
+
+auto_karo_accept_after_lgtm || true
 repair_terminal_report_outboxes() {
     local name task_file report_path report_full status task_status parent_cmd
     for name in "${NINJA_NAMES[@]}"; do
