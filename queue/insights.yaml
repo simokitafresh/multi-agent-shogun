@@ -9608,3 +9608,10 @@ insights:
   source: "semantic_stress_test"
   fix_known: false
   status: pending
+- id: INS-20260830-192656201-4e35
+  ts: "2026-08-30T19:26:56+09:00"
+  insight: "[[T198 T199 T200 T196 T195 T193 T192 T190 T188の進捗を覚醒して更新せよ]] semantic_stress_test candidate_aliases: NO_MATCH source=lord query=T198 / T199 / T200 / T196 / T195 / T193 / T192 / T190 / T188の進捗を覚醒して更新せよ。つまりや停滞があれば解消せよ"
+  priority: "low"
+  source: "semantic_stress_test"
+  fix_known: false
+  status: pending
