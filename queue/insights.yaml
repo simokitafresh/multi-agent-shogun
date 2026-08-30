@@ -8629,3 +8629,10 @@ insights:
   source: "semantic_stress_test"
   fix_known: false
   status: pending
+- id: INS-20260830-132630271-ed99
+  ts: "2026-08-30T13:26:30+09:00"
+  insight: "[[login ショーウィンドウ P2 — frontend login を ISR・ライトモード固定・摩擦除去・表 v3・]] semantic_stress_test candidate_aliases: NO_MATCH source=cmds query=/login ショーウィンドウ P2 — frontend /login を ISR・ライトモード固定・摩擦除去・表 v3・EN/JA 文言 1 ファイルで組み直す(ログイン機構は不変)"
+  priority: "low"
+  source: "semantic_stress_test"
+  fix_known: false
+  status: pending
