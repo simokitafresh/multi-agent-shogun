@@ -30,6 +30,7 @@
 | 12:18 | Current signals 表がわかりづらい。Basic-DualMomentum 単体、その後はプラン毎の平均とベストの total performance と ×N 倍、CAGR をレンジで書くのがシンプル | 事実=PF 行を並べる表は 8 行×2 段ラベルで読者が数える必要があった。制約=公開できる数値は tier 設定で決まる集合の集計値(個別 PF の保有・シグナルは出さない)。判断=**表を『Basic-DM 1 行 + プラン集計 3 行 + Secret 1 行』の 5 行にする**。各プラン行= PF 数 / 平均 total return / ベスト total return(PF 名) / ×N(平均・ベスト) / CAGR レンジ。効果=§3.1 を v3(集計方式)へ、§2.3 を plan 集計契約へ、未決 3(表記)は『% と ×N と CAGR レンジを併記』で解決 |
 | 12:19-12:20 | シグナルまで公開しているものだけで計算しよう。basic dual momentum / basic plan / standard plan / premium plan / secret の 5 つに分けよう | 事実=プランの集計集合には『パフォーマンスのみ可視』の PF(Basic の白虎激攻・分身常勝、premium の奥義 ×3)を含める余地があった。制約=会員が実際に使えるのはシグナルまで見える PF。判断=**集計集合= hide_portfolio=false ∧ hide_signal=false(シグナル公開 PF)に確定、表は 5 行(Basic-DM / Basic / Standard / Premium / Secret)に確定**。効果=§3.1 v3 の『要殿確認』を撤去、§2.3 `plans[]` の集合定義を固定、AC の独立再計算も同じ集合で |
 | 12:30 | 一番下に比較として S&P500 指数(SPY)と TQQQ を入れよう。Sharpe ratio も同じように入れよう | 事実=metrics_json.metrics に『Sharpe Ratio』(Rf 控除・年率、`metrics_impl.py:977-983`)が全 PF にあり、`ticker_monthly_returns` に SPY(1993-01〜)・TQQQ(2010-02〜)がある。制約=比較の期間を揃えないと数字が意味を持たない(TQQQ は 2010 年起点)。判断=**表に Sharpe 列(プラン行は平均/ベスト)を追加し、最下段に SPY・TQQQ の比較 2 行**を置く。SPY は Basic-DM と同じ 2003-10〜、TQQQ は自身の 2010-03〜(各行に期間を明記)。効果=§3.1 v3 に Sharpe 列+比較 2 行、§2.3 に `benchmarks[]` と `sharpe_avg/best`、cmd_4413 は発令済みのため追補を別 cmd(P1b)で出す |
+| 12:32 | secret の数値も入れよう | 事実=Secret 73 本は全て metrics(years=0)あり(12:35 実測: 平均 +535,294%・ベスト +5,405,515%(秘奥義-追い風-激攻)、×5,354/×54,056、CAGR 10.5%〜153.1%、Sharpe 平均 1.71/ベスト 2.48(Sharpe4)、期間 105〜196 か月)。制約=名前・保有・シグナルは非公開のまま。判断=**Secret 行にも集計値(平均/ベスト/×N/CAGR レンジ/Sharpe)を出す。ベスト PF 名は出さない**(Secret の存在は数字で示し、正体は伏せる)。効果=§3.1 Secret 行を数値化、§2.3 `secret` に集計フィールド、best_name は null |
 
 ---
 
@@ -128,7 +129,7 @@
 - `hero`: Basic-DualMomentum 1 本 `{name, holding, momentum, components, total_return, multiple, cagr, inception, benchmark_total_return}`(完全公開)
 - `plans[]`(basic / standard / premium の順): `{plan, n, avg_total_return, best_total_return, best_name, avg_multiple, best_multiple, cagr_min, cagr_max, sharpe_avg, sharpe_best, sharpe_best_name}`(Sharpe は metrics の『Sharpe Ratio』close.portfolio) ← 集合= hide_portfolio=false ∧ hide_signal=false(§3.1)。**個別 PF の holding/momentum は返さない**(best_name のみ)
 - `benchmarks[]`: `{symbol: "SPY", since: "2003-10", total_return, multiple, cagr, sharpe}` / `{symbol: "TQQQ", since: "2010-03", …}` ← `ticker_monthly_returns` から EP が算出(Sharpe は PF と同じ Rf 系列)
-- `secret`: `{count: 73}` ← active 102 − premium performance 28 − Ave-X(Basic のみ)1(殿裁定 10:41、FoF 6 本含む)
+- `secret`: `{count: 73, n, avg_total_return, best_total_return, best_name: null, avg_multiple, best_multiple, cagr_min, cagr_max, sharpe_avg, sharpe_best}`(殿裁定 12:32。名前は返さない) ← active 102 − premium performance 28 − Ave-X(Basic のみ)1(殿裁定 10:41、FoF 6 本含む)
 - 出所: `portfolio_metrics(years=0)`, `signals`(Basic-DM 最新 date), `tier_visibility_settings`, `viewer_tiers.password_expires_at`。**新規テーブル不要**。count は EP 内で導出(フロントに固定値を書かない)。
 - 非送信の原則: 代表 4 行の保有/モメンタムはフロントがぼかしバーを描く(データは来ない)。
 
@@ -162,7 +163,7 @@
 | **Basic plan** | signals 3 PF | +5,290% / +11,321%(Ave-X) | ×54 / ×114 | 14.1% 〜 39.2% | 0.95 / 1.11(Ave-X) | Sign in で表示 |
 | **Standard plan** | signals 17 PF | +22,047% / +77,078%(シン白虎-鉄壁) | ×221 / ×772 | 14.1% 〜 52.2% | 0.96 / 1.28(GSシン分身-激攻) | Sign in で表示 |
 | **Premium plan** · by invitation | signals 25 PF | +23,725% / +106,789%(GSシン四つ目-激攻) | ×238 / ×1,069 | 14.1% 〜 68.7% | 1.03 / 1.40(GSシン四つ目-激攻) | 招待制 |
-| **Secret** | 73 PF | Not disclosed | — | — | — | Not viewable |
+| **Secret** | 73 PF(名前非公開) | +535,294% / +5,405,515%(PF 名は非公開) | ×5,354 / ×54,056 | 10.5% 〜 153.1% | 1.71 / 2.48 | Not viewable |
 | *S&P 500 (SPY)* | 比較・2003-10〜2026-07(Basic-DM と同期間) | +1,026% | ×11 | 11.2% | 0.63 | — |
 | *TQQQ* | 比較・2010-03〜2026-07(上場来) | +29,383% | ×295 | 41.4% | 0.90† | — |
 

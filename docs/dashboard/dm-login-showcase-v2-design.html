@@ -119,7 +119,7 @@ a{color:var(--accent)}
         <li>認証不要・tier 非依存・cache 1h・<strong>新規テーブル不要</strong></li>
         <li><code>as_of</code> {series_end, next_close} / <code>blackout</code> {active, until_hint}(password・env key は決して返さない)</li>
         <li>free 行(Basic-DM)のみ holding/momentum を返す。basic 4 行は<strong>キー自体を返さない</strong>(フロントがぼかしを描く)</li>
-        <li><code>hero</code>(Basic-DM 完全公開)+ <code>plans[]</code>(basic/standard/premium: n・avg/best total_return・best_name・×N・cagr_min/max・sharpe_avg/best)+ <code>benchmarks[]</code>(SPY 2003-10〜 / TQQQ 2010-03〜)+ <code>secret.count=73</code>。個別 PF の holding/momentum は返さない</li>
+        <li><code>hero</code>(Basic-DM 完全公開)+ <code>plans[]</code>(basic/standard/premium: n・avg/best total_return・best_name・×N・cagr_min/max・sharpe_avg/best)+ <code>benchmarks[]</code>(SPY 2003-10〜 / TQQQ 2010-03〜)+ <code>secret</code>(count=73 と集計値、best_name は null=殿裁定 12:32)。個別 PF の holding/momentum は返さない</li>
         <li>401 "Password expired" → EN+JA の失効文+ブラックアウト帯</li>
       </ul></div>
   </div>
@@ -141,7 +141,7 @@ a{color:var(--accent)}
     <tr><td><strong>Basic plan</strong></td><td>signals 3 PF</td><td class="num">+5,290% / +11,321%(Ave-X)</td><td class="num">×54 / ×114</td><td class="num">14.1% 〜 39.2%</td><td class="num">0.95 / 1.11</td><td>Sign in で表示</td></tr>
     <tr><td><strong>Standard plan</strong></td><td>signals 17 PF</td><td class="num">+22,047% / +77,078%(シン白虎-鉄壁)</td><td class="num">×221 / ×772</td><td class="num">14.1% 〜 52.2%</td><td class="num">0.96 / 1.28</td><td>Sign in で表示</td></tr>
     <tr><td><strong>Premium plan</strong><br><span class="pill prem">by invitation</span></td><td>signals 25 PF</td><td class="num">+23,725% / +106,789%(GSシン四つ目-激攻)</td><td class="num">×238 / ×1,069</td><td class="num">14.1% 〜 68.7%</td><td class="num">1.03 / 1.40</td><td>招待制</td></tr>
-    <tr><td><strong>Secret</strong><br><span class="pill secret">Secret</span></td><td>73 PF</td><td class="secret">Not disclosed</td><td>—</td><td>—</td><td>—</td><td class="secret">Not viewable</td></tr>
+    <tr><td><strong>Secret</strong><br><span class="pill secret">Secret</span></td><td>73 PF(名前非公開)</td><td class="num">+535,294% / +5,405,515%</td><td class="num">×5,354 / ×54,056</td><td class="num">10.5% 〜 153.1%</td><td class="num">1.71 / 2.48</td><td class="secret">Not viewable</td></tr>
     <tr><td><em>S&amp;P 500 (SPY)</em></td><td>比較 · 2003-10〜(Basic-DM と同期間)</td><td class="num">+1,026%</td><td class="num">×11</td><td class="num">11.2%</td><td class="num">0.63</td><td>—</td></tr>
     <tr><td><em>TQQQ</em></td><td>比較 · 2010-03〜(上場来)</td><td class="num">+29,383%</td><td class="num">×295</td><td class="num">41.4%</td><td class="num">0.90†</td><td>—</td></tr>
   </table></div>
