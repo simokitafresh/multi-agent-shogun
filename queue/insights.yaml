@@ -10597,3 +10597,10 @@ insights:
   source: "semantic_index_update"
   fix_known: false
   status: pending
+- id: INS-20260831-031713085-e7ac
+  ts: "2026-08-31T03:17:13+09:00"
+  insight: "[[gateclearがinbox1]] semantic_stress_test candidate_aliases: NO_MATCH source=lord query=gateclearがinbox1"
+  priority: "low"
+  source: "semantic_stress_test"
+  fix_known: false
+  status: pending
