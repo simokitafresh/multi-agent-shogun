@@ -60,6 +60,25 @@ if [[ "$knowledge_text" == "-" ]]; then
     knowledge_text="$(cat)"
 fi
 
+# 型十五弾-6(2026-08-30 13:44 実証): 反映→確認→通知の順序を構造型で守る。
+# 本文が "commit <hash>" を名指すのに、その hash が repo に存在しなければ
+# 「反映していない事実を三層へ流す」= 歴史修正と同害。非BLOCK の WARN で止める。
+# 検査対象は 7-40 桁 hex のみ。git 不在/非 repo なら黙って通す。
+_knowledge_commit_hash_guard() {
+    local text="$1" h
+    command -v git >/dev/null 2>&1 || return 0
+    git -C "$SCRIPT_DIR" rev-parse --git-dir >/dev/null 2>&1 || return 0
+    while read -r h; do
+        [[ -n "$h" ]] || continue
+        if ! git -C "$SCRIPT_DIR" cat-file -e "${h}^{commit}" 2>/dev/null; then
+            echo "WARN: knowledge text names commit ${h} but it does not exist in this repo — 反映→grep→commit hash 確認→通知の順序(型十五弾-6)。未反映のまま三層へ流していないか" >&2
+        fi
+    done < <(printf '%s
+' "$text" | grep -oE '(commit|コミット)[[:space:]]+[0-9a-f]{7,40}' | awk '{print $NF}' | sort -u)
+    return 0
+}
+_knowledge_commit_hash_guard "$knowledge_text"
+
 if [[ -z "${knowledge_text//[[:space:]]/}" ]]; then
     echo "ERROR: knowledge text is required" >&2
     exit 1

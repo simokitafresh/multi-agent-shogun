@@ -1,3 +1,5 @@
-# session_alerts — generated: 2026-08-30T09:11:26+0900
-[DONE 09:14 capture-pane 実施: 影丸 pane idle プロンプト(Context 32%)、task acknowledged 115min、家老が nudge 到達確認中(Working)] 走行中cmd実測突合: busy 1名。capture-pane未確認で状況報告するな
-[DONE 09:15 一次確認: push_lane FAIL 8=pre-push bats 一過性(手動 push 解消、09:12 WAIT 正常)、GATE-IMPROVEMENT-FAIL 3=identity 封筒必須化で gate_alert BLOCK(logs/gate_improvement.log)→所有者=家老、msg 09:15 で名指し] monitor lifecycle 失敗行 11行/60分 — 壁の所有者を一次で確認
+# session_alerts — generated: 2026-08-30T14:00:14+0900
+[TODO] 追体験自動化ターゲット: WARN (自動化ターゲット未記入)
+[TODO] 走行中cmd実測突合: busy 1名。capture-pane未確認で状況報告するな
+[TODO] monitor lifecycle 失敗行 8行/60分 — 壁の所有者を一次で確認
+[TODO] deepdive追体験未完了: 全Phase実行まで作業禁止(stop hookがBLOCKする)。bash scripts/deepdive_replay.sh shogun <md> <Phase> "<自問>"
