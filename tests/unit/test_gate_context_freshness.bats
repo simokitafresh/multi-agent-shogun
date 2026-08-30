@@ -439,6 +439,57 @@ SH
   [[ "$output" != *"ALERT: context/infrastructure.md"* ]]
 }
 
+@test "nested draft approval routes archived infra report to its owner" {
+  # test_necessity: live review logs may nest the APPROVE receipt under a
+  # review mapping; that receipt must consume the existing source ALERT path.
+  # regression_justification: GA-494 left an approved source commit as ALERT
+  # because only top-level review-log mappings were scanned.
+  local repo="$BATS_TEST_TMPDIR/approved-nested-infra"
+  mkdir -p "$repo/context" "$repo/scripts" "$repo/queue/archive/reports" "$repo/logs"
+  printf '<!-- last_updated: 2026-07-19 cmd_fixture -->\n' > "$repo/context/infrastructure.md"
+  git -C "$repo" init -q
+  git -C "$repo" config user.email fixture@example.invalid
+  git -C "$repo" config user.name fixture
+  git -C "$repo" add context/infrastructure.md
+  git -C "$repo" commit -qm "cmd_fixture_nested_normal: approved infra source"
+  local source_hash
+  source_hash="$(git -C "$repo" rev-parse HEAD)"
+  printf '%s\n' \
+    'status: completed' \
+    'verdict: PASS' \
+    'parent_cmd: cmd_fixture_nested' \
+    'commit_hash: 0000000000000000000000000000000000000000' \
+    > "$repo/queue/archive/reports/saizo_report_cmd_fixture_nested_20260823.yaml"
+  cat > "$repo/logs/gunshi_review_log.yaml" <<'YAML'
+- review:
+    cmd_id: cmd_fixture_nested
+    verdict: APPROVE
+- cmd_id: cmd_fixture_nested
+  review_type: report
+  verdict: LGTM
+YAML
+  cat > "$repo/scripts/check.sh" <<SH
+#!/usr/bin/env bash
+printf '%s\n' 'ALERT: context/infrastructure.md source commits 1件 since last_updated=2026-07-19 repo=$repo root_fallback=yes owner=infra-platform update_trigger=root-fallback latest: $source_hash cmd_fixture_nested_normal: approved infra source'
+SH
+  chmod +x "$repo/scripts/check.sh"
+
+  run env \
+    CONTEXT_FRESHNESS_ROOT="$repo" \
+    CONTEXT_FRESHNESS_CHECK_SCRIPT="$repo/scripts/check.sh" \
+    CONTEXT_FRESHNESS_NTFY_SCRIPT=/bin/true \
+    CONTEXT_FRESHNESS_ALERT_STATE_DIR="$BATS_TEST_TMPDIR/state-approved-nested-infra" \
+    CONTEXT_FRESHNESS_GATE_DISABLE_CACHE=1 \
+    CONTEXT_FRESHNESS_TODAY=2026-07-20 \
+    bash "$ROOT/scripts/gates/gate_context_freshness.sh"
+
+  [ "$status" -eq 0 ]
+  [[ "$output" == *"CONTEXT_UPDATE_REQUEST project=infra context=context/infrastructure.md"* ]]
+  [[ "$output" == *"parent_cmd=cmd_fixture_nested"* ]]
+  [[ "$output" == *"総合判定: OK"* ]]
+  [[ "$output" != *"ALERT: context/infrastructure.md"* ]]
+}
+
 # test_necessity: a reverted/divergent source commit with identical registered
 # trigger content must advance the source boundary through the existing
 # machine-readable doc-lane consumer instead of producing a false raw ALERT.
