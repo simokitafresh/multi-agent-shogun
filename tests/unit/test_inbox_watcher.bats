@@ -51,7 +51,7 @@ tmux() {
 }
 
 CURRENT_CLI_GENERATION="$GENERATION"
-for event in 2:fp-two 3:fp-three 4:fp-four 4:fp-four 4:fp-four; do
+for event in 3:fp-three 2:fp-two 4:fp-four 4:fp-four 4:fp-four; do
   count="${event%%:*}"
   fp="${event#*:}"
   send_wakeup "$count" false "$fp" normal false false
@@ -59,27 +59,38 @@ done
 printf "baseline_send=5 actual_send=%s\n" "$(grep -c "^paste$" "$tmp/events")"
 printf "lease_files=%s\n" "$(find "$tmp/state" -maxdepth 1 -name "*outstanding_lease*" -type f | wc -l)"
 
-# A read transition (unread 4 -> 1) is an ACK; the next normal nudge is then
-# allowed within the same generation even though one unread message remains.
-send_wakeup 1 false fp-after-ack normal false false
-printf "after_ack_send=%s\n" "$(grep -c "^paste$" "$tmp/events")"
+# A read transition (unread 3 -> 2) is not an ACK; the same generation lease
+# remains outstanding even though unread messages remain.
+send_wakeup 2 false fp-after-decrease normal false false
+send_wakeup 4 false fp-after-decrease normal false false
+printf "after_decrease_send=%s\n" "$(grep -c "^paste$" "$tmp/events")"
+
+# The empty-inbox boundary releases the lease, allowing the next unread set
+# to claim one delivery in the same CLI generation.
+get_unread_info() { printf "0\tfalse\t-\t-\tfalse\tnormal\tfalse\n"; }
+process_unread
+printf "after_empty_lease_files=%s\n" "$(find "$tmp/state" -maxdepth 1 -name "*outstanding_lease*" -type f | wc -l)"
+send_wakeup 1 false fp-after-empty normal false false
+printf "after_empty_send=%s\n" "$(grep -c "^paste$" "$tmp/events")"
 
 # A generation change invalidates the current-generation lease and permits
 # the same unread fingerprint to reach the replacement CLI.
 GENERATION=generation-2
 invalidate_leases_on_generation_change
-send_wakeup 4 false fp-after-ack normal false false
+send_wakeup 4 false fp-after-empty normal false false
 printf "after_generation_send=%s\n" "$(grep -c "^paste$" "$tmp/events")"
 '
 }
 
-@test "normal unread changes claim one generation lease (5 attempted, 1 delivered)" {
+@test "normal lease survives unread decrease and clears only at empty or generation change" {
     export GENERATION=generation-1
     run run_normal_fixture
     [ "$status" -eq 0 ]
     [[ "$output" == *"baseline_send=5 actual_send=1"* ]]
     [[ "$output" == *"lease_files=1"* ]]
-    [[ "$output" == *"after_ack_send=2"* ]]
+    [[ "$output" == *"after_decrease_send=1"* ]]
+    [[ "$output" == *"after_empty_lease_files=0"* ]]
+    [[ "$output" == *"after_empty_send=2"* ]]
     [[ "$output" == *"after_generation_send=3"* ]]
 }
 
