@@ -1276,10 +1276,15 @@ run_bats_files_parallel() {
             if [ "${pid_rc[$pid]:-0}" -ne 0 ]; then
                 [ "$_first_fail_rc" -ne 1 ] || _first_fail_rc="${pid_rc[$pid]}"
                 echo "==== $file ====" >&2
-                tail -120 "$out" >&2
+                # This diagnostic is captured by the public receipt wrapper as
+                # combined stdout/stderr. Keep its lines out of the TAP
+                # namespace: a failed file's tail otherwise repeats up to 120
+                # bare result records after the canonical aggregate and
+                # inflates observed_test_count (run 33376397043: 474 -> 594).
+                sed 's/^/FAILURE_DIAGNOSTIC: /' "$out" | tail -120 >&2
             elif awk -F '\t' -v p="$pid" '$1==p && $5>0 {found=1} END{exit !found}' "$stats"; then
                 echo "==== $file ====" >&2
-                tail -120 "$out" >&2
+                sed 's/^/FAILURE_DIAGNOSTIC: /' "$out" | tail -120 >&2
             fi
         done
         return "$_first_fail_rc"

@@ -695,6 +695,40 @@ SH
   [[ "$output" == *"==== $TMPROOT/tests/unit/sample.bats ===="* ]]
 }
 
+# test_necessity: receipt observed counts must represent the canonical TAP
+# stream exactly once even when a failed file's bounded diagnostic tail is
+# captured by the outer receipt wrapper.
+# regression_justification: run 33376397043 reproduced declared=474 and
+# observed=594 because 120 diagnostic TAP lines were re-counted as results.
+@test "failed file diagnostics cannot inflate receipt TAP counts" {
+  cat >"$TMPROOT/bin/bats" <<'SH'
+#!/usr/bin/env bash
+printf '1..2\nnot ok 1 broken\nok 2 healthy\n'
+exit 1
+SH
+  chmod +x "$TMPROOT/bin/bats"
+
+  run env PATH="$TMPROOT/bin:$PATH" REPO_ROOT="$TMPROOT" BATS_CACHE=0 \
+    RUN_TESTS_RECEIPT_DIR="$TMPROOT/logs/test_receipts" \
+    SHOGUN_HEAVY_JOB_LOCK_HELD=1 BATS_INNER_JOBS=1 \
+    bash "$TMPROOT/scripts/run_tests.sh" file "$TMPROOT/tests/unit/sample.bats"
+
+  [ "$status" -eq 1 ]
+  receipt="$(find "$TMPROOT/logs/test_receipts" -name '*.json' -type f | head -1)"
+  [ -n "$receipt" ]
+  run python3 - "$receipt" <<'PY'
+import json, sys
+data = json.load(open(sys.argv[1], encoding="utf-8"))
+assert data["declared_test_count"] == 2
+assert data["observed_test_count"] == 2
+assert data["result"] == "FAIL"
+assert data["rc"] == 1
+PY
+  [ "$status" -eq 0 ]
+  artifact="$(python3 -c 'import json,sys; print(json.load(open(sys.argv[1]))["artifact"])' "$receipt")"
+  grep -Fq 'FAILURE_DIAGNOSTIC: not ok 1 broken' "$artifact"
+}
+
 @test "source mode resolves repo root from run_tests path instead of caller argv zero" {
   run env -u REPO_ROOT bash -c '
     cd /
