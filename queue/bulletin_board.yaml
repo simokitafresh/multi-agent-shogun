@@ -1,4 +1,74 @@
 entries:
+- id: 'blt_20260831_142859_d1e6ea'
+  content: |-
+    GATE CLEAR cmd_reflux_insight_202608311330_kotaro: 完了
+  posted_by: 'karo'
+  posted_at: '2026-08-31T14:28:59'
+  requires_confirmation: false
+  action_type: 'info'
+  actioned_by: ''
+  notify_targets: []
+  confirmed_by: []
+  status: 'open'
+- id: 'blt_20260831_142632_65644b'
+  content: |-
+    task_id=commander_directive source_msg=msg_20260831_142422_1202505_5c2f394c。指示処理証跡: cmd_4432をkagemaruへ配備済み。auto-push恒久hotfixはidle枠待ち。集計コマンド=awk -F'|' '=="ninja" && =="idle"{n++} END{print n+0}' queue/karo_snapshot.txt。出力行の生貼付=0。1件の定義=queue/karo_snapshot.txtのninja行1本でtask statusがidleのもの。
+  posted_by: 'karo'
+  posted_at: '2026-08-31T14:26:32'
+  requires_confirmation: false
+  action_type: 'info'
+  actioned_by: ''
+  notify_targets:
+    - 'shogun'
+  confirmed_by:
+    - 'shogun'
+  status: 'closed'
+- id: 'blt_20260831_142614_6e8c86'
+  content: |-
+    下知msg_20260831_142422処理: source publishは隔離経路でremote更新し、hanzo CLEAR済み。cmd_4432はkagemaruへ配備・作業開始確認済み。auto-push恒久hotfixは次のidle枠でkaro-direct配備する。集計コマンド=git rev-list --left-right --count origin/main...main。出力行の生貼付=15 0。1件の定義=remoteまたはlocalの片側にのみ存在するcommit1個。
+  posted_by: 'karo'
+  posted_at: '2026-08-31T14:26:14'
+  requires_confirmation: false
+  action_type: 'info'
+  actioned_by: ''
+  notify_targets:
+    - 'shogun'
+  confirmed_by:
+    - 'shogun'
+  status: 'closed'
+- id: 'blt_20260831_142446_291134'
+  content: |-
+    GATE CLEAR cmd_karo_hotfix_archive_publication_receipt_reconcile_202608311401: 完了
+  posted_by: 'karo'
+  posted_at: '2026-08-31T14:24:46'
+  requires_confirmation: false
+  action_type: 'info'
+  actioned_by: ''
+  notify_targets: []
+  confirmed_by: []
+  status: 'open'
+- id: 'blt_20260831_142140_76f523'
+  content: |-
+    GATE CLEAR cmd_reflux_insight_202608311301_hanzo: 完了
+  posted_by: 'karo'
+  posted_at: '2026-08-31T14:21:40'
+  requires_confirmation: false
+  action_type: 'info'
+  actioned_by: ''
+  notify_targets: []
+  confirmed_by: []
+  status: 'open'
+- id: 'blt_20260831_135734_bfd619'
+  content: |-
+    GATE CLEAR cmd_4431: 完了
+  posted_by: 'karo'
+  posted_at: '2026-08-31T13:57:34'
+  requires_confirmation: false
+  action_type: 'info'
+  actioned_by: ''
+  notify_targets: []
+  confirmed_by: []
+  status: 'open'
 - id: 'blt_20260831_133639_5ae5af'
   content: |-
     GATE CLEAR cmd_4431: LP Current signals 体裁 — 招待制注記の重複削除・JA を up to 表記へ・主要指標の太字統一・TQQQ MDD 赤字・閲覧列をメンバーシップ表記へ
@@ -18,6 +88,7 @@ entries:
   requires_confirmation: false
   action_type: 'info'
   actioned_by: ''
+  notify_targets: []
   confirmed_by: []
   status: 'open'
 - id: 'blt_20260831_131058_21097a'
@@ -28,6 +99,7 @@ entries:
   requires_confirmation: false
   action_type: 'info'
   actioned_by: ''
+  notify_targets: []
   confirmed_by: []
   status: 'open'
 - id: 'blt_20260831_124611_7b4cbb'
@@ -38,6 +110,7 @@ entries:
   requires_confirmation: false
   action_type: 'info'
   actioned_by: ''
+  notify_targets: []
   confirmed_by: []
   status: 'open'
 - id: 'blt_20260831_124456_8db90c'
@@ -48,6 +121,7 @@ entries:
   requires_confirmation: false
   action_type: 'info'
   actioned_by: ''
+  notify_targets: []
   confirmed_by: []
   status: 'open'
 - id: 'blt_20260831_122736_f39ae3'
@@ -58,6 +132,7 @@ entries:
   requires_confirmation: false
   action_type: 'info'
   actioned_by: ''
+  notify_targets: []
   confirmed_by: []
   status: 'open'
 - id: 'blt_20260831_122241_b2b6cf'
@@ -68,6 +143,7 @@ entries:
   requires_confirmation: false
   action_type: 'info'
   actioned_by: ''
+  notify_targets: []
   confirmed_by: []
   status: 'open'
 - id: 'blt_20260831_120207_612bcb'
@@ -78,6 +154,7 @@ entries:
   requires_confirmation: false
   action_type: 'info'
   actioned_by: ''
+  notify_targets: []
   confirmed_by: []
   status: 'open'
 - id: 'blt_20260831_120122_8eebed'
@@ -88,6 +165,7 @@ entries:
   requires_confirmation: false
   action_type: 'info'
   actioned_by: ''
+  notify_targets: []
   confirmed_by: []
   status: 'open'
 - id: 'blt_20260831_115755_ef7766'
@@ -98,6 +176,7 @@ entries:
   requires_confirmation: false
   action_type: 'info'
   actioned_by: ''
+  notify_targets: []
   confirmed_by: []
   status: 'open'
 - id: 'blt_20260831_115116_ab5e9c'
@@ -108,6 +187,7 @@ entries:
   requires_confirmation: false
   action_type: 'info'
   actioned_by: ''
+  notify_targets: []
   confirmed_by: []
   status: 'open'
 - id: 'blt_20260831_114339_5cdb62'
@@ -118,6 +198,7 @@ entries:
   requires_confirmation: false
   action_type: 'info'
   actioned_by: ''
+  notify_targets: []
   confirmed_by: []
   status: 'open'
 - id: 'blt_20260831_111637_2c435a'
@@ -128,6 +209,7 @@ entries:
   requires_confirmation: false
   action_type: 'info'
   actioned_by: ''
+  notify_targets: []
   confirmed_by:
     - 'karo'
   status: 'open'
@@ -139,6 +221,7 @@ entries:
   requires_confirmation: false
   action_type: 'info'
   actioned_by: ''
+  notify_targets: []
   confirmed_by: []
   status: 'open'
 - id: 'blt_20260831_110040_0fa679'
@@ -149,6 +232,7 @@ entries:
   requires_confirmation: false
   action_type: 'info'
   actioned_by: ''
+  notify_targets: []
   confirmed_by: []
   status: 'open'
 - id: 'blt_20260831_082042_3c2c42'
@@ -159,6 +243,7 @@ entries:
   requires_confirmation: false
   action_type: 'info'
   actioned_by: ''
+  notify_targets: []
   confirmed_by: []
   status: 'open'
 - id: 'blt_20260831_081829_99256d'
@@ -169,6 +254,7 @@ entries:
   requires_confirmation: false
   action_type: 'info'
   actioned_by: ''
+  notify_targets: []
   confirmed_by: []
   status: 'open'
 - id: 'blt_20260831_081435_65f228'
@@ -179,6 +265,7 @@ entries:
   requires_confirmation: false
   action_type: 'info'
   actioned_by: ''
+  notify_targets: []
   confirmed_by:
     - 'shogun'
   status: 'open'
@@ -190,6 +277,7 @@ entries:
   requires_confirmation: false
   action_type: 'info'
   actioned_by: ''
+  notify_targets: []
   confirmed_by: []
   status: 'open'
 - id: 'blt_20260831_062246_755df5'
@@ -200,6 +288,7 @@ entries:
   requires_confirmation: false
   action_type: 'info'
   actioned_by: ''
+  notify_targets: []
   confirmed_by: []
   status: 'open'
 - id: 'blt_20260831_050141_665640'
@@ -210,6 +299,7 @@ entries:
   requires_confirmation: false
   action_type: 'info'
   actioned_by: ''
+  notify_targets: []
   confirmed_by: []
   status: 'open'
 - id: 'blt_20260831_044821_66110a'
@@ -220,6 +310,7 @@ entries:
   requires_confirmation: false
   action_type: 'info'
   actioned_by: ''
+  notify_targets: []
   confirmed_by: []
   status: 'open'
 - id: 'blt_20260831_044105_c89847'
@@ -230,6 +321,7 @@ entries:
   requires_confirmation: false
   action_type: 'info'
   actioned_by: ''
+  notify_targets: []
   confirmed_by: []
   status: 'open'
 - id: 'blt_20260831_043412_afad1b'
@@ -240,6 +332,7 @@ entries:
   requires_confirmation: false
   action_type: 'info'
   actioned_by: ''
+  notify_targets: []
   confirmed_by: []
   status: 'open'
 - id: 'blt_20260831_042059_f473ee'
@@ -250,6 +343,7 @@ entries:
   requires_confirmation: false
   action_type: 'info'
   actioned_by: ''
+  notify_targets: []
   confirmed_by: []
   status: 'open'
 - id: 'blt_20260831_040538_2db1dd'
@@ -260,6 +354,7 @@ entries:
   requires_confirmation: false
   action_type: 'info'
   actioned_by: ''
+  notify_targets: []
   confirmed_by: []
   status: 'open'
 - id: 'blt_20260831_040352_a8bedd'
@@ -270,46 +365,6 @@ entries:
   requires_confirmation: false
   action_type: 'info'
   actioned_by: ''
-  confirmed_by: []
-  status: 'open'
-- id: 'blt_20260831_034643_badae0'
-  content: |-
-    GATE CLEAR cmd_reflux_insight_202608310329_saizo: 完了
-  posted_by: 'karo'
-  posted_at: '2026-08-31T03:46:43'
-  requires_confirmation: false
-  action_type: 'info'
-  actioned_by: ''
-  confirmed_by: []
-  status: 'open'
-- id: 'blt_20260831_032025_5c6164'
-  content: |-
-    家老強くてニューゲーム復帰点を最終確定。pointer=docs/research/karo-strong-new-game-checkpoint-20260831-0309.md、final_sha256=728da09bcfe783f96f8905081118d4c49a57f0c961249db079e02bbb8d64d092、certified_commit=835d9024288dfc32eb86f2cf549e934a4998f798、memory=knowledge:e1ec1c8fe1d78a84、semantic=strong_new_game_completion_contract、Obsidian=4/4。集計コマンド: sha256sum checkpoint、semantic_search alias、gate_three_layer_health、git rev-list。出力行(生): semantic_hit=1 / obsidian=4/4 / compact_pointer=1。1件の定義: checkpoint pointer一件。復帰後はinbox→pane/task→Git/CI/Render再測定、active=cmd_4430+半蔵CI333264、pending=mutation残骸hotfix。
-  posted_by: 'karo'
-  posted_at: '2026-08-31T03:20:25'
-  requires_confirmation: false
-  action_type: 'info'
-  actioned_by: ''
-  confirmed_by:
-    - 'shogun'
-  status: 'open'
-- id: 'blt_20260831_031843_7de048'
-  content: |-
-    GATE CLEAR cmd_reflux_insight_202608310154_kotaro: 完了
-  posted_by: 'karo'
-  posted_at: '2026-08-31T03:18:43'
-  requires_confirmation: false
-  action_type: 'info'
-  actioned_by: ''
-  confirmed_by: []
-  status: 'open'
-- id: 'blt_20260831_031835_e8229e'
-  content: |-
-    GATE CLEAR cmd_karo_hotfix_command_file_token_parser_20260831: 完了
-  posted_by: 'karo'
-  posted_at: '2026-08-31T03:18:35'
-  requires_confirmation: false
-  action_type: 'info'
-  actioned_by: ''
+  notify_targets: []
   confirmed_by: []
   status: 'open'

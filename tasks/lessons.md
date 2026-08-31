@@ -16350,3 +16350,16 @@ sqlite3.Connection.backup()を使うとページ(4096byte)単位のread syscall�
 - **when**: 未設定
 - **how**: 未設定
 - initial_scanとcleanup dry-runが異なる母数を使うと、容量超過の実態がstartup WARNへ固定される。cleanup後total_bytesを唯一の判定値にし、超過時は候補ありなら回収コマンド、候補なしならexternal_dependency BLOCKを出すことで、回収不能WARNの永続化を防ぐ
+
+### L1684: remote-only絶対targetは既存parentからrepoを解決する
+- **日付**: 2026-08-31
+- **出典**: cmd_karo_hotfix_external_repo_worktree_remote_tip_20260831
+- **記録者**: saizo
+- **tags**: [infra,deploy-task,testing,git]
+- **subdomain**: infra
+- **target_files**: [scripts/deploy_task.sh,scripts/deploy_task/preflight.sh,tests/unit/test_task_worktree_lifecycle.bats]
+- **origin**: [[cmd_karo_hotfix_external_repo_worktree_remote_tip_20260831]]
+- **enforcement**: 未自動化
+- **when**: 未設定
+- **how**: 未設定
+- 未作成の絶対target fileへgit -Cを直接適用するとrepo解決に失敗し、誤ったcontrol checkoutのstale refをbaseに選ぶ。targetが未存在でも既存parentへ昇格してrepoを確定し、fetch前後ref一致とworktree内path存在を検証する。

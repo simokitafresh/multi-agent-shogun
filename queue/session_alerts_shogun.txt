@@ -1,4 +1,4 @@
-# session_alerts — generated: 2026-08-31T03:02:53+0900
-[DONE] 走行中cmd実測突合: busy 3名。capture-pane未確認で状況報告するな
-[DONE] monitor lifecycle 失敗行 8行/60分 — 壁の所有者を一次で確認(03:07 一次: push_lane rc=1=CI RED run 33325312173→才蔵 ci_fix(家老再配備 03:05)、REFLUX-AUTO-DEPLOY-FAIL tobisaru×2→02:57 再配備 DEPLOY_RECEIPT success=解消。所有者あり、二重下知なし)
+# session_alerts — generated: 2026-08-31T13:55:46+0900
+[DONE] 走行中cmd実測突合: busy 2名。capture-pane未確認で状況報告するな
+[DONE] 本番 queue 汚染: fixture 2件/task missing 0行
 [DONE] deepdive追体験未完了: 全Phase実行まで作業禁止(stop hookがBLOCKする)。bash scripts/deepdive_replay.sh shogun <md> <Phase> "<自問>"
