@@ -1,16 +1,3 @@
-- cmd_id: cmd_karo_hotfix_deploy_ctx_guard_20260828
-  timestamp: '2026-08-28T06:44:51Z'
-  ninja: system
-  workaround: false
-  event_kind: hotfix
-  auto_captured: true
-  category: rework_auto_capture
-  detail: 'cmd_complete_gate completed rework event'
-  root_cause: 'automatic completion observation'
-  lesson_required: false
-  lesson_disposition: not_applicable
-  lesson_reference: 'not_applicable'
-  resolved_by_cmd: 'cmd_karo_hotfix_deploy_ctx_guard_20260828'
 - cmd_id: cmd_karo_hotfix_t122_memory_self_reinforce_20260828
   timestamp: '2026-08-28T06:46:48Z'
   ninja: system
@@ -1298,3 +1285,16 @@
   lesson_disposition: not_applicable
   lesson_reference: 'not_applicable'
   resolved_by_cmd: 'cmd_karo_hotfix_run_tests_python_file_dispatch_202608311523'
+- cmd_id: cmd_karo_hotfix_review_generation_coordination_202608311641
+  timestamp: '2026-08-31T09:13:17Z'
+  ninja: system
+  workaround: false
+  event_kind: hotfix
+  auto_captured: true
+  category: rework_auto_capture
+  detail: 'cmd_complete_gate completed rework event'
+  root_cause: 'automatic completion observation'
+  lesson_required: false
+  lesson_disposition: not_applicable
+  lesson_reference: 'not_applicable'
+  resolved_by_cmd: 'cmd_karo_hotfix_review_generation_coordination_202608311641'

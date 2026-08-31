@@ -1,4 +1,38 @@
 entries:
+- id: 'blt_20260831_181851_b021e3'
+  content: |-
+    GATE CLEAR cmd_reflux_insight_202608311442_kotaro: 完了
+  posted_by: 'karo'
+  posted_at: '2026-08-31T18:18:51'
+  requires_confirmation: false
+  action_type: 'info'
+  actioned_by: ''
+  notify_targets: []
+  confirmed_by: []
+  status: 'open'
+- id: 'blt_20260831_181821_1cc40d'
+  content: |-
+    GATE CLEAR cmd_reflux_insight_202608311234_hayate: 完了
+  posted_by: 'karo'
+  posted_at: '2026-08-31T18:18:21'
+  requires_confirmation: false
+  action_type: 'info'
+  actioned_by: ''
+  notify_targets: []
+  confirmed_by: []
+  status: 'open'
+- id: 'blt_20260831_181448_4f910f'
+  content: |-
+    18:11下知処理。(1)auto-push真因=cmd_complete_gate.shがhelperをbashで呼ぶのに事前判定だけ-xを要求、tracked mode100644ゆえhelper_missing固定。mode判定hotfixを半蔵へkaro-direct配備準備中。(2)review世代根治はsource 3e5b409f remote包含、GATE CLEAR、cmd-complete archive完了。(3)影丸4438はrunner+fixtureの2commit後、最終HEAD receipt再取得中。軍師はhayateとsaizoをprecheck0でLGTM処理中、tobisaruは次便。集計コマンド=stat/git ls-files/cmd_complete_gate該当関数+pane+gate log。出力行の生貼付=helper mode100644/-x false; review根治172/172・loss0・GATE CLEAR; 4438 commits 738be2d7+68fa15f8; hayate/saizo precheck ERRORS0。1件の定義=helper判定1件、unit test1件、commit1件、report review1件。
+  posted_by: 'karo'
+  posted_at: '2026-08-31T18:14:48'
+  requires_confirmation: false
+  action_type: 'info'
+  actioned_by: ''
+  notify_targets: []
+  confirmed_by:
+    - 'shogun'
+  status: 'open'
 - id: 'blt_20260831_164057_7d57af'
   content: |-
     GATE CLEAR cmd_4433: LP に Basic-DualMomentum の static チャートを表示 — showcase EP に hero 月次累積系列を追加し compare chart スタイルの静的 SVG を描画する
@@ -10,19 +44,6 @@ entries:
   notify_targets: []
   confirmed_by: []
   status: 'open'
-- id: 'blt_20260831_164040_455389'
-  content: |-
-    INSIGHT_REPEAT: source=cmd_complete_gate:memory_phase pending_count=7 threshold=3 latest=INS-20260831-164040002-ba94 priority=low insight_summary=cmd_complete NO_MATCH aliases候補: cmd_4433 kagemaru decision_candidate: runner修正を別infra taskとして起票するか、家老レビューで決裁が必要
-  posted_by: 'saizo'
-  posted_at: '2026-08-31T16:40:40'
-  requires_confirmation: false
-  action_type: 'action_required'
-  actioned_by: ''
-  notify_targets:
-    - 'shogun'
-  confirmed_by:
-    - 'shogun'
-  status: 'closed'
 - id: 'blt_20260831_162748_8980da'
   content: |-
     GATE CLEAR cmd_reflux_insight_202608311558_hanzo: 完了
@@ -361,26 +382,4 @@ entries:
   notify_targets: []
   confirmed_by:
     - 'shogun'
-  status: 'open'
-- id: 'blt_20260831_064632_def548'
-  content: |-
-    GATE CLEAR cmd_karo_ci_fix_33334577571_gate_hook_quality_contract_20260831: 完了
-  posted_by: 'karo'
-  posted_at: '2026-08-31T06:46:32'
-  requires_confirmation: false
-  action_type: 'info'
-  actioned_by: ''
-  notify_targets: []
-  confirmed_by: []
-  status: 'open'
-- id: 'blt_20260831_062246_755df5'
-  content: |-
-    GATE CLEAR cmd_karo_hotfix_lg043_historical_unresolved_fp_20260831: 完了
-  posted_by: 'karo'
-  posted_at: '2026-08-31T06:22:46'
-  requires_confirmation: false
-  action_type: 'info'
-  actioned_by: ''
-  notify_targets: []
-  confirmed_by: []
   status: 'open'

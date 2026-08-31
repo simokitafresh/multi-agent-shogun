@@ -16402,3 +16402,29 @@ sqlite3.Connection.backup()を使うとページ(4096byte)単位のread syscall�
 - **when**: 未設定
 - **how**: 未設定
 - task/affected modeだけに存在する拡張子dispatchをfile modeが迂回し、絶対Python contract testをBatsとして実行してrc=1にした。公開入口ごとに同じsuffix engine契約と未知suffix BLOCKを通し、外部絶対pathはowner repo cwdで実行する契約testを維持する。
+
+### L1688: run_tests.sh taskのLP外部scope未対応
+- **日付**: 2026-08-31
+- **出典**: cmd_4434
+- **記録者**: kagemaru
+- **tags**: [dm-signal,frontend,testing,bash]
+- **subdomain**: infra
+- **target_files**: [lp/copy/en.ts,lp/copy/ja.ts,lp/components/landing-page.tsx]
+- **origin**: [[cmd_4434]]
+- **enforcement**: 未自動化
+- **when**: 未設定
+- **how**: 未設定
+- LPはexternal repo内のlpディレクトリにあり、run_tests.sh taskはbackend/frontendのテストエンジン写像しか持たないため、実装が正しくてもselection=0・rc=2となる。次回はLP用typecheck/build receipt経路またはtask明示のLP検証契約を追加すべきである。
+
+### L1689: Review markerはterminalではなくcurrent-generation delivery receiptに限定する
+- **日付**: 2026-08-31
+- **出典**: cmd_karo_hotfix_review_generation_coordination_202608311641
+- **記録者**: hanzo
+- **tags**: [infra,inbox,review]
+- **subdomain**: infra
+- **target_files**: [scripts/inbox_write.sh,scripts/ninja_monitor.sh,scripts/review_bundle.py,tests/unit/test_inbox_write.bats,tests/unit/test_ninja_monitor.bats]
+- **origin**: [[cmd_karo_hotfix_review_generation_coordination_202608311641]]
+- **enforcement**: 未自動化
+- **when**: 未設定
+- **how**: 未設定
+- 旧SG7 fingerprintとread済みrequestをterminalと誤認すると現世代LGTMが失われるため、未読中のみdedupeしcurrent raw generationのterminal approvalまで再提示する。

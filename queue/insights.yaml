@@ -11736,3 +11736,10 @@ insights:
   source: "semantic_index_update"
   fix_known: false
   status: pending
+- id: INS-20260831-181812584-bb00
+  ts: "2026-08-31T18:18:12+09:00"
+  insight: "[[殿厳命 『つまりはバグだ]] NO_MATCH purpose pending alias: cmd_complete時にdeploy_task.logでNO_MATCHだったpurpose。類似概念TOP3: known_unknowns_principle(無知の知; alias=つまりはバグだ; score=38.4) / gs_speed_e7_l0_full_confirm(GS道具磨きE7 L0 full実測; alias=殿厳命 timeout 300s強制。5分超え放置は最悪の行為; score=12.8) / growth_loop(学習ループ; alias=これはバグだ; score=3.1)。既存概念aliasesへの自動昇格候補"
+  priority: "low"
+  source: "semantic_index_update"
+  fix_known: false
+  status: pending
