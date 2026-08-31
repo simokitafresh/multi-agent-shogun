@@ -4,7 +4,7 @@
 # artifact: https://claude.ai/code/artifact/5da62854-f81f-4d53-908b-2fe464031f36 (HTML正本 docs/dashboard/shogun-todo-map.html。更新=正本Edit→Artifact再公開 同file_path)
 # 記法: [ ] 未 / [~] 走行中(担当) / [x] 済(証跡)。★=速度向上へのつながり1行必須
 
-- [~] T213(03:42→12:12 loop#18) 現在値: CLEAR 本日 36(PJ6/infra30)。escalation 5 件→27 分で全終端(将軍隔離 push+半蔵 fallback 根治 CLEAR 12:01+在庫再 GATE 5/5=家老 blt_120259)。**proof 開始: 12:02 以降 push 起因 ancestry WAIT 0 件**。残=小太郎 dedupe(旧 cmd INFO ループ+segment hotfix の terminal 未出→家老へ 1 通)。rev-list 11/9=fallback 適用後の lane 収束サイクル観測中。CI GREEN。litter 4,875(sweep apply=殿裁可待ち)。終端条件=dedupe 両 cmd terminal ∧ 13:02 時点 push 起因 WAIT 0 継続 ∧ rev-list 0 0 ★根治 proof が取れたら本日の便停止クラスは closed
+- [~] T213(03:42→12:52 loop#19) 現在値: CLEAR 本日 38(PJ6/infra32)。proof: 12:02 以降の push 起因 ancestry WAIT=1 件のみ(単発・lane 通過待ちの過渡)=fallback 根治は有効。殿裁定便: cmd_4431(Current signals 体裁 6 点)delegated 12:47(起票 gate 6 往復=全て将軍記入不備、LS126 ack 済)・basic n=2 は正値(hero 除外定義)と DB 一次で回答・FoF 77/101 本の訴求 1 行は次弾候補。残: dedupe 2 cmd terminal(家老追跡中)・4431 配備待ち。rev-list 12/7。CI GREEN。litter 4,876。終端条件=4431 CLEAR ∧ dedupe terminal 2/2 ∧ 13:02 proof 窓通過 ★体裁 cmd の AC 定型(太字基準=hero 行・赤字=ui-design-guide 比)を焼き増し可能にした
 
 - [~] T212(03:15 診断→05:22『Level3 まで』→09:24 Phase1 D0 済) 現在値: Level1 4/5+static 系 D0 完了(b2d3e7a live: api-catalog/auth.md×2/oauth-authorization-server 全 200・rel=api-catalog 1 件・issuer=Supabase 現物一致)=1-1/1-3/1-2b/2-1 done。残=Phase0 Markdown トグル(殿 1click)・1-2(a) Link ヘッダ(Transform 用トークン=殿)・2-8 DNS-AID(トークン=殿)・cmd 2-2〜2-7(次: 2-2 Protected Resource 起票)。終端条件=診断 Rescan Level1 5/5 ∧ Level2 3/3 ∧ Level3 8/8 ★agent 経由の新流入面を read-only で開く
 
