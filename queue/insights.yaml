@@ -8483,7 +8483,10 @@ insights:
   priority: "medium"
   source: "manual"
   fix_known: false
-  status: pending
+  status: resolved
+  resolved_reason: "一次情報で対象を再確認。現行はreview_pending_nudge.tsvを参照せず、review_approval.shのgunshi_notice.sentとreview_bundle.pyのsg7_notify.doneを報告SHA-256へ束縛する経路で、同一LGTM再試行は同一fingerprint・同一通知境界を維持する。fingerprintテスト3/3、SG7 bundleテスト9/9、SKIP=0。新規実装修正・decision_candidateは不要。"
+  action_artifact: "target=queue/insights.yaml:8480-8486;primary=scripts/review_approval.sh:607-619,927-941;primary=scripts/review_bundle.py:511-551;tests=run_tests.sh file tests/unit/test_review_approval_datetime_fingerprint.bats:3/3 SKIP0;tests=run_tests.sh file tests/unit/test_review_bundle.bats:9/9 SKIP0;task_preflight=run_tests.sh task queue/tasks/hayate.yaml rc0 tests0/0 SKIP0;decision_candidate=none"
+  resolved_at: "2026-08-31T12:46:03+09:00"
 - id: INS-20260830-100722420-87b8
   ts: "2026-08-30T10:07:22+09:00"
   insight: "semantic_index_update新概念候補: discussion:dm login showcase asis tobe mdを参照にログインページの改良について設計書を新しく作ろう。asisをリアルタイムの今の本番として、t は 既存aliasesに一致なし。概念定義とaliases追加を検討せよ"
