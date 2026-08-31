@@ -11449,3 +11449,10 @@ insights:
   source: "semantic_stress_test"
   fix_known: false
   status: pending
+- id: INS-20260831-163805716-ed9e
+  ts: "2026-08-31T16:38:05+09:00"
+  insight: "[[進捗と未着手について教えてくれ]] semantic_stress_test candidate_aliases: NO_MATCH source=lord query=進捗と未着手について教えてくれ"
+  priority: "low"
+  source: "semantic_stress_test"
+  fix_known: false
+  status: pending
