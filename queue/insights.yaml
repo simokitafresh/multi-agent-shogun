@@ -10775,3 +10775,10 @@ insights:
   source: "semantic_stress_test"
   fix_known: false
   status: pending
+- id: INS-20260831-091805351-0716
+  ts: "2026-08-31T09:18:05+09:00"
+  insight: "[[artifact watch lifecycle Stopped watching Artifact login Sho]] semantic_stress_test candidate_aliases: NO_MATCH source=lord query=artifact-watch-lifecycle Stopped watching Artifact: \"/login Showcase v2\" (connection lo…"
+  priority: "low"
+  source: "semantic_stress_test"
+  fix_known: false
+  status: pending
