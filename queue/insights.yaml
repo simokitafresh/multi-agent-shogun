@@ -11211,3 +11211,10 @@ insights:
   source: "lord_conversation:lesson_candidate"
   fix_known: false
   status: pending
+- id: INS-20260831-142136716-19e9
+  ts: "2026-08-31T14:21:36+09:00"
+  insight: "[[source commitがcanonical remote ancestorと再確認できたCLEAR済みcmdで公開r]] NO_MATCH purpose pending alias: cmd_complete時にdeploy_task.logでNO_MATCHだったpurpose。類似概念TOP3: semantic_dictionary_design(セマンティック辞書構想; alias=source; score=16.6) / creator_brainwashing_defense(創造主の洗脳防御; alias=source lord terminal; score=13.9) / google_classroom(Google Classroom Dashboard; alias=source commits N件だけのALERTでは; score=13.1)。既存概念aliasesへの自動昇格候補"
+  priority: "low"
+  source: "semantic_index_update"
+  fix_known: false
+  status: pending
