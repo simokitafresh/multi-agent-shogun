@@ -10922,3 +10922,10 @@ insights:
   source: "semantic_stress_test"
   fix_known: false
   status: pending
+- id: INS-20260831-131119113-4aea
+  ts: "2026-08-31T13:11:19+09:00"
+  insight: "[[殿裁定 12 24 12 32 スクショ付き Current signals テーブルの体裁のみを直す]] semantic_stress_test candidate_aliases: NO_MATCH source=cmds query=殿裁定 2026-08-31 12:24-12:32(スクショ付き): Current signals テーブルの体裁のみを直す。(1)Premium 行左列の招待制注記は閲覧列と重複で不要 (2)日本語ページの最大表記も up to へ (3)プラン行の Total return・×N・CAGR 最大側を Basic-DualMomentum 行と同じ太字"
+  priority: "low"
+  source: "semantic_stress_test"
+  fix_known: false
+  status: pending
