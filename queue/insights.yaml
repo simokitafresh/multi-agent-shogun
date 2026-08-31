@@ -12032,3 +12032,10 @@ insights:
   source: "semantic_stress_test"
   fix_known: false
   status: pending
+- id: INS-20260831-204201616-ff37
+  ts: "2026-08-31T20:42:01+09:00"
+  insight: "[[DM signalのデザインブックは参考にしてるのか？gistにも上げたはずだ]] semantic_stress_test candidate_aliases: NO_MATCH source=lord query=DM-signalのデザインブックは参考にしてるのか？gistにも上げたはずだ。統一感がなくLPの信頼感が極端に低い。俺はカードを使わないよな"
+  priority: "low"
+  source: "semantic_stress_test"
+  fix_known: false
+  status: pending
