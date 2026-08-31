@@ -1,4 +1,169 @@
 commands:
+  cmd_4436:
+    title: "LP に月次シグナル頁を追加 — /signals/2026-08 (EN/JA) を公開集計 EP から build 時に静的生成し sitemap へ lastmod 付きで載せる"
+    status: delegated
+    project: dm-signal
+    purpose: "SEO 案 §2 P1-1(月次シグナル頁=毎月 2 URL 増で索引面積と鮮度)。殿指示 2026-08-31 14:56『P1-1 も起票しよう。8 月も作成したほうがいいのでは』=9 月を待たず当月(2026-08)分から生成する。データは公開集計 EP(showcase)の既存契約のみを使い、個別 PF 名・Secret 数値は出さない(§2.3 契約)"
+    scope_mode: FULL
+    target_path: /mnt/c/Python_app/DM-signal/lp
+    acceptance_criteria:
+      AC1:
+        description: "LP に月次シグナル頁ルート(EN=/signals/<year-month>、JA=/ja/signals/<year-month>)を追加し、build 時に公開 showcase EP から当月分(初回=2026-08)を静的生成する。内容=当月の Basic-DualMomentum 保有シグナル・プラン集計(平均/ベスト、既存 up to 表記)・SPY/TQQQ 比較で、全て showcase EP 応答の既存フィールドのみから構成する"
+        binary_check: "隔離 build の出力に EN/JA の 2026-08 頁が各 1 ∧ 頁内の数値・保有が showcase EP 応答の独立 curl と一致 ∧ 個別 PF 名(hero 以外)・Secret 数値 0 件 か?"
+      AC2:
+        description: "sitemap に月次頁 URL(EN/JA)を lastmod 付きで自動追加し、既存 2 URL(/、/ja/)が維持されることを確認する。月が替われば build だけで新月分が増える生成構造にする(月をハードコードしない)"
+        binary_check: "sitemap の loc が 4 件以上(既存 2+月次 2) ∧ 月次 URL に lastmod あり ∧ 生成コードに 2026-08 のハードコード 0 件 か?"
+      AC3:
+        description: "月次頁の title/description に検索語(EN=dual momentum signals+年月、JA=デュアルモメンタム シグナル+年月)と canonical・hreflang を含め、既存トップ頁の meta と重複しないことを grep で確認する"
+        binary_check: "EN/JA 月次頁に検索語入り title ∧ canonical/hreflang あり ∧ トップ頁 title との完全一致 0 か?"
+      AC4:
+        description: "隔離 build(npm typecheck + build)を exit 0 で通し、AC1-AC3 の grep/curl 結果を報告 YAML に生貼付する"
+        binary_check: "typecheck exit 0 ∧ build exit 0 ∧ AC1-AC3 の生貼付あり か?"
+    command: |
+      1. LP に月次シグナル頁の動的ルート(build 時静的生成、月ハードコードなし)を実装し、公開 showcase EP から当月データを取得して EN/JA を生成する
+      2. sitemap 生成へ月次 URL+lastmod を追加する
+      3. 月次頁の meta(検索語 title/description・canonical・hreflang)を実装する
+      4. 隔離 build と grep/curl で AC1-AC3 を検証し報告 YAML に生貼付する
+    assumptions:
+      claim: "公開 showcase EP は未認証で hero(Basic-DM)集計・プラン集計(sharpe/cagr/up to 系)・benchmarks(SPY/TQQQ)を返す契約(cmd_4413/4414/4425 系譜、v3.1 §5 起票分全終端)。本番 sitemap は現在 2 URL(2026-08-31 14:50 curl 実測)。LP 実体は external repo worktree で解決(cmd_4431 実績)。latest signal の公開可否は showcase EP 既存応答に含まれる範囲のみ使用"
+      source: "本番 sitemap curl 14:50(loc 2 件) + docs/research/dm-signal-lp-seo-plan_20260830.md §2 P1-1 + docs/research/dm-login-showcase-asis-tobe_v3_20260830.md §5 + 殿指示 14:56"
+      trust: verified
+    depends_on: cmd_4434
+    serial_dependency_evidence: "LP repo の build 系(sitemap 生成・ルーティング)を触るため、同 repo を直列変更中の cmd_4432→4433→4434 の最後尾に接続。showcase EP のデータ契約は既存(4413/4425)のみ使用で backend 依存なし"
+    measurement_source: "本番 sitemap/showcase EP curl 実測(2026-08-31 14:50 JST)。ローカル計測は含まない"
+    environment_change: "type=lesson; file=projects/infra/lessons_shogun.yaml; pattern=cmd_4154初回preflightで数値絶対値WARN"
+    timeout_minutes: 40
+    estimated_minutes: 25
+    execution_env:
+      runtime_constraints: "external repo worktree で npm typecheck/build。backend 変更なし(公開 EP の読取のみ)"
+      long_runtime_reason: "頁生成・sitemap・meta の 3 要素が同一ルーティング実装を共有する単一変更系で、分割すると月次 URL の形が別実装になる"
+      measured_runtime_sec: 1500
+    split_decision:
+      boundary_ac_ids: [AC1, AC2, AC3, AC4]
+      integration_tasks: 1
+      review_round_trips: 0
+    origin: "[[殿指示_月次シグナル頁_8月から_20260831_1456]] -> [[SEO案v3_P1-1]] -> [[cmd_4436_monthly_signals_page]]"
+    quality_gate:
+      q1_firefighting: "品質向上。理由: SEO の索引面積・鮮度を増やす新規頁でありin障害対応ではない"
+      q2_learning: "奪わない。理由: ルーティング設計と頁レイアウトは忍者判断に残る(データ契約と meta 要件のみ AC で固定)"
+      q3_next_quality: "上がる。理由: 月が替われば build だけで新月分が増える構造=以後の月次 SEO 運用が 0 手になる"
+      q4_depth: "medium。P1-1 の設計を SEO 案の契約(§2.3 秘匿・§4 計測)と本番 sitemap 実測で裏取りし、月ハードコード禁止を AC 化した"
+      q5_verified_source: "production_verified: 本番 sitemap curl 14:50 → loc 2 件(月次頁なし)。code_reading: SEO 案 §2 P1-1 の契約と v3.1 §5(showcase EP 起票分全終端)"
+      q6_not_hiding: "隠さない。理由: 公開 EP の既存フィールドのみ使用し、個別 PF 名・Secret 数値 0 件を AC1 で検証する"
+      q7_definition_verified: "月次頁=EN/JA の /signals/<year-month>。内容=hero シグナル+プラン集計+SPY/TQQQ(showcase EP 既存契約)。8 月分=初回生成対象"
+      q8_why_what: "WHY: 索引 2 URL のみで面積・鮮度が不足(SEO 案 §2) / WHAT: 月次頁 EN/JA+sitemap lastmod / WHEN: cmd_4434 CLEAR 後 / WHERE: lp のみ / WHO: 忍者 1 名 / HOW: build 時静的生成→隔離 build 検証 / 複利: 毎月 2 URL が 0 手で増える"
+      q9_firefighting_root_cause: "消火ではない。新規 SEO 面の追加であり根本原因対応は不要"
+      q10_knowledge_boundary: "境界内。lp build/copy は 4430-4434、showcase EP 契約は 4413/4425 の直近系譜"
+      q11_not_already_done: "未実施を確認: 本番 sitemap curl 14:50 → loc 2 件のみ(signals 頁 0 件)、本番 /signals/2026-08 は未存在"
+      q_ambiguity: "低。頁内容は showcase EP 既存フィールドに限定、レイアウトは忍者裁量"
+      q12_lord_30min_cost: "no。build 生成頁で殿の確認は本番 1 目視で足りる"
+      diagnosis: "BLOCK理由: 初回起票のため既往BLOCKなし。想定リスク=月次頁に秘匿情報が漏れる/月ハードコードで 9 月に手作業が要る / 対策: AC1 の秘匿 0 件検証と AC2 のハードコード 0 件検証で二値化"
+    seam_contract: null
+    delegated_at: "\"2026-08-31T15:01:18\""
+    reflux_commit_contract: null
+  cmd_4435:
+    title: "app 側 /free に noindex を付与 — 検索入口を LP に集約する SEO 禁則の未実装 1 行を埋める"
+    status: delegated
+    project: dm-signal
+    purpose: "SEO 案 v3(2026-08-31 14:52 本番 curl 再計測)で発見した未達: app 側 /free が 200 で返るが meta robots noindex が 0 件。SEO 案 §3 禁則『/free は /login と同じく noindex(入口は LP に集約)』の未実装。/login は robots metadata 実装済み(origin/main frontend/app/login/page.tsx:7)で同方式を適用する"
+    scope_mode: FULL
+    target_path: /mnt/c/Python_app/DM-signal/frontend
+    acceptance_criteria:
+      AC1:
+        description: "app の free ページ(origin/main に実在、git ls-tree で確認済み。ローカル checkout は旧 branch のため worktree で origin/main から解決する)に、login ページと同方式(origin/main の login ページに robots metadata 実装済み)の noindex,nofollow を追加し、既存機能(クーポン取得フロー・data 封筒処理)に変更がないことを diff で確認する"
+        binary_check: "robots metadata 追加行のみの diff ∧ 既存ロジックの削除・変更 0 か?"
+      AC2:
+        description: "隔離 build(npm run build)を exit 0 で通し、出力の free ページ HTML に noindex が 1 件以上、login ページの noindex が従来どおり残ることを grep で確認する"
+        binary_check: "build exit 0 ∧ free 出力 HTML に noindex>=1 ∧ login 出力 HTML の noindex 残存 か?"
+    command: |
+      1. origin/main 起点の worktree で free ページに login 同方式の robots metadata(noindex,nofollow)を追加する
+      2. 隔離 build と grep で AC1-AC2 を検証し報告 YAML に生貼付する
+    assumptions:
+      claim: "本番 /free は 200 だが robots grep 0 件(2026-08-31 14:50 curl 実測)。/login は robots metadata 実装済み(git grep origin/main → frontend/app/login/page.tsx:7 robots)。/free の実体=origin/main frontend/app/free/page.tsx(git ls-tree で実在確認)"
+      source: "本番 curl 14:50 + git grep/ls-tree origin/main 実測 14:56 + docs/research/dm-signal-lp-seo-plan_20260830.md §3/§6"
+      trust: verified
+    depends_on: none
+    measurement_source: "本番 /free curl 実測(2026-08-31 14:50 JST、noindex 0 件)。ローカル計測は含まない"
+    environment_change: "type=lesson; file=projects/infra/lessons_shogun.yaml; pattern=cmd_4154初回preflightで数値絶対値WARN"
+    timeout_minutes: 15
+    estimated_minutes: 8
+    split_decision:
+      boundary_ac_ids: [AC1, AC2]
+      integration_tasks: 1
+      review_round_trips: 0
+    origin: "[[SEO案v3_20260831_1452]] -> [[§3禁則_free_noindex未実装]] -> [[cmd_4435_free_noindex]]"
+    quality_gate:
+      q1_firefighting: "品質向上。理由: SEO 禁則の未実装 1 行を埋める予防的対応であり障害対応ではない"
+      q2_learning: "奪わない。理由: 実装方式は /login の現物参照で忍者が確認し適用する"
+      q3_next_quality: "上がる。理由: 入口集約(noindex)の適用基準が /login・/free の 2 例に揃い、以後の app 側新ページで流用できる"
+      q4_depth: "shallow。1 行追加の軽量 cmd。本番 curl と origin/main 現物の裏取りのみで十分"
+      q5_verified_source: "production_verified: 本番 /free curl 14:50 → 200 かつ robots grep 0 件。code_reading: git grep origin/main → frontend/app/login/page.tsx:7 に robots 実装、git ls-tree で frontend/app/free/page.tsx 実在"
+      q6_not_hiding: "隠さない。理由: 表示・機能を変えず索引制御 meta のみ追加、検証は grep 生貼付で可視化"
+      q7_definition_verified: "noindex 方式=/login の robots metadata(origin/main frontend/app/login/page.tsx:7)と同形。対象=/free の出力 HTML"
+      q8_why_what: "WHY: 検索入口を LP に集約する禁則(SEO 案 §3)が /free で未実装 / WHAT: robots noindex 1 行 / WHEN: 即時(LP lane と独立、frontend 側のため 4432-4434 と衝突しない) / WHERE: frontend app free ページ / WHO: 忍者 1 名 / HOW: metadata 追加→隔離 build grep / 複利: 入口集約基準の統一"
+      q9_firefighting_root_cause: "消火ではない。禁則の未実装を埋める実装であり根本原因対応は不要"
+      q10_knowledge_boundary: "境界内。/free は 4423/4424 の直近系譜、noindex は 4420(/login)の直近実装"
+      q11_not_already_done: "未実施を確認: curl 本番 /free 14:50 → robots grep 0 件(/login は noindex 済との差分)"
+      q_ambiguity: "低。方式・対象・検証とも現物参照で固定済み"
+      q12_lord_30min_cost: "no。1 行追加で殿の確認は不要(curl 検証で完結)"
+      diagnosis: "BLOCK理由: 初回起票のため既往BLOCKなし。想定リスク=free ページの既存クーポンフロー破壊 / 対策: AC1 で追加行のみ diff・既存ロジック変更 0 を二値化"
+    seam_contract: null
+    delegated_at: "\"2026-08-31T14:59:31\""
+    reflux_commit_contract: null
+  cmd_4434:
+    title: "LP に FoF 訴求 1 行を追加 — Fund of Funds が主力(active の 7 割超)である旨を Current signals 近傍に EN/JA で明記する"
+    status: delegated
+    project: dm-signal
+    purpose: "殿裁定 2026-08-31 14:36『FoF 訴求 1 行を足す=採用』(発端=殿 12:39『FoF がウリ』)。現物確認: active 101 本中 77 本が FoF だが、本番 LP curl(14:02 保存 HTML)に Fund of Funds/FoF の語 0 件(grep 0)。入口 3 面 v3.1 §6-6 の裁定を実装する"
+    scope_mode: FULL
+    target_path: /mnt/c/Python_app/DM-signal/lp
+    acceptance_criteria:
+      AC1:
+        description: "LP の EN/JA 文言辞書(copy)に FoF 訴求 1 行(EN は Fund of Funds の語を含み、JA は FoF(ファンド・オブ・ファンズ) 表記を含む。数値を使う場合は active 中 FoF 比率の実測値のみ)を追加し、Current signals テーブル近傍(tableNote または表直上)に EN/JA 両ページで表示する"
+        binary_check: "隔離 build の EN index に Fund of Funds が 1 回以上 ∧ JA index に FoF が 1 回以上 ∧ 表示位置が Current signals セクション内 か?"
+      AC2:
+        description: "追加は訴求 1 行のみで、既存のテーブル・文言・リンク・挙動に変更がないことを diff で確認する(cmd_4432/4433 の変更と衝突しない)"
+        binary_check: "diff が copy 2 ファイル+表示コンポーネント 1 ファイルの追加行のみ ∧ 既存行の削除・変更 0 か?"
+      AC3:
+        description: "隔離 build(npm typecheck + build)を exit 0 で通し、EN・JA 出力 index への grep 結果を報告 YAML に生貼付する"
+        binary_check: "typecheck exit 0 ∧ build exit 0 ∧ AC1 の grep 生貼付あり か?"
+    command: |
+      1. lp/copy/en.ts・ja.ts に FoF 訴求 1 行を追加し、landing-page.tsx で Current signals 近傍に表示する
+      2. diff で追加行のみであることを確認する
+      3. 隔離 build と grep で AC1-AC2 を検証し報告 YAML に生貼付する
+    assumptions:
+      claim: "本番 LP HTML(14:02 curl 保存)に Fund of Funds/FoF の語 0 件を grep 実測。active 101 本中 77 本が FoF は殿 12:39 発言と設計書 v3.1 §6-6 の記載。LP 実体は external repo worktree で解決(cmd_4431 実績)"
+      source: "本番 https://dm-signal.com/ curl 14:02 grep 0 件 + docs/research/dm-login-showcase-asis-tobe_v3_20260830.md §6-6 + 殿裁定 14:36(knowledge:d1fb0c5aaf6d922c)"
+      trust: verified
+    depends_on: cmd_4433
+    serial_dependency_evidence: "cmd_4432(列整理)→cmd_4433(チャート)→本 cmd(訴求行)は同一 Current signals セクションの直列変更。並走すると copy/landing-page.tsx で衝突するため depends_on cmd_4433"
+    measurement_source: "本番 LP curl 実測(2026-08-31 14:02 JST、FoF 語 0 件)。ローカル計測は含まない"
+    environment_change: "type=lesson; file=projects/infra/lessons_shogun.yaml; pattern=cmd_4154初回preflightで数値絶対値WARN"
+    timeout_minutes: 20
+    estimated_minutes: 10
+    split_decision:
+      boundary_ac_ids: [AC1, AC2, AC3]
+      integration_tasks: 1
+      review_round_trips: 0
+    origin: "[[殿裁定_FoF訴求採用_20260831_1436]] -> [[入口3面v3.1_§6-6]] -> [[cmd_4434_FoF訴求行]]"
+    quality_gate:
+      q1_firefighting: "品質向上。理由: 主力商品(FoF)の訴求欠落を埋めるマーケティング改善であり障害対応ではない"
+      q2_learning: "奪わない。理由: 表示位置(tableNote か表直上か)と文言の最終形は忍者判断に残る"
+      q3_next_quality: "上がる。理由: 商品構成の訴求が LP に載り、以後の訴求文言変更の位置基準になる"
+      q4_depth: "shallow。1 行追加の軽量 cmd。裁定と現物 grep 0 件の裏取りのみで十分"
+      q5_verified_source: "production_verified: 本番 LP curl 14:02 保存 HTML に grep -c -i 'fund of funds|FoF' → 0 件。code_reading: 設計書 v3.1 §6-6 に active 101 本中 77 本が FoF の記載"
+      q6_not_hiding: "隠さない。理由: 追加は公開情報(商品構成の比率)のみで PF 名・数値の秘匿情報を出さない"
+      q7_definition_verified: "FoF 訴求 1 行=EN に Fund of Funds、JA に FoF(ファンド・オブ・ファンズ) を含む 1 文。位置=Current signals セクション内(§6-6 裁定)"
+      q8_why_what: "WHY: 主力 77/101 本が FoF なのに LP に語 0 回(殿 12:39) / WHAT: 訴求 1 行を EN/JA へ / WHEN: cmd_4433 CLEAR 後 / WHERE: lp copy+landing-page.tsx / WHO: 忍者 1 名 / HOW: copy 追加→隔離 build grep / 複利: 訴求文言の位置基準が固定される"
+      q9_firefighting_root_cause: "消火ではない。訴求追加であり根本原因対応は不要"
+      q10_knowledge_boundary: "境界内。lp は cmd_4430-4433 の直近系譜で知識鮮度が最高"
+      q11_not_already_done: "未実施を確認: grep -c -i 'fund of funds|FoF' 本番 LP HTML(14:02) → 0 件"
+      q_ambiguity: "低。文言の最終形は忍者裁量、必須語(Fund of Funds/FoF)と位置(Current signals 内)は AC で固定"
+      q12_lord_30min_cost: "no。1 行追加で殿の確認は本番 1 目視で足りる"
+      diagnosis: "BLOCK理由: 初回起票のため既往BLOCKなし。想定リスク=4432/4433 と同一ファイル衝突 / 対策: depends_on cmd_4433 の直列化と AC2 の追加行のみ diff 検証で衝突を構造的に排除"
+    seam_contract: null
+    delegated_at: "\"2026-08-31T14:46:11\""
+    reflux_commit_contract: null
   cmd_4414:
     title: "/login ショーウィンドウ P1b — 公開集計 EP に Sharpe(プラン平均/ベスト)・SPY/TQQQ 比較行・Secret 集計値を追補する"
     status: void

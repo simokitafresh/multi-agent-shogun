@@ -11522,3 +11522,10 @@ insights:
   source: "semantic_index_update"
   fix_known: false
   status: pending
+- id: INS-20260831-164110305-62e6
+  ts: "2026-08-31T16:41:10+09:00"
+  insight: "semantic_index_update未登録cmd originノード: [[cmd_4431_表体裁統一]] は既存aliasesに一致なし。類似概念TOP3: gate_bypass_prevention(ゲート迂回防止; alias=cmd_3132_L4化; score=22.2) / unread_cmd_new_deployment_guard(未読cmd_new配備漏れ防止; alias=cmd_3457配備漏れ; score=20.8) / strong_new_game_completion_contract(強くてニューゲーム完遂契約; alias=cmd_4200復帰点; score=20.4)。概念定義とaliases追加を検討せよ"
+  priority: "low"
+  source: "semantic_index_update"
+  fix_known: false
+  status: pending
