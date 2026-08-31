@@ -10929,3 +10929,10 @@ insights:
   source: "semantic_stress_test"
   fix_known: false
   status: pending
+- id: INS-20260831-131130557-8f89
+  ts: "2026-08-31T13:11:30+09:00"
+  insight: "[[LP Current signals 体裁 — 招待制注記の重複削除・JA を up to 表記へ・主要指標の太字統一・]] semantic_stress_test candidate_aliases: NO_MATCH source=cmds query=LP Current signals 体裁 — 招待制注記の重複削除・JA を up to 表記へ・主要指標の太字統一・TQQQ MDD 赤字・閲覧列をメンバーシップ表記へ"
+  priority: "low"
+  source: "semantic_stress_test"
+  fix_known: false
+  status: pending
