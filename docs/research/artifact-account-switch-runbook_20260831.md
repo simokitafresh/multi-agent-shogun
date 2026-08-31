@@ -1,3 +1,4 @@
+<!-- gist-master: 2caac114df25ac75dbfae8fc400851fb artifact-account-switch-runbook_20260831.md -->
 # Artifact アカウント切替継続 runbook — 殿指示 2026-08-31 17:48『アカウントを変えてもアーティファクトを同様に続けられるようにせよ』
 
 > 原理: **artifact URL はアカウント所有・repo の HTML 正本はアカウント非依存。** URL は使い捨ての「窓」、正本と生成パイプラインが本体。ゆえにアカウント切替時は「窓を開け直して索引を差し替える」だけで同一運用が続く。
