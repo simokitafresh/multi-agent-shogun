@@ -11320,3 +11320,10 @@ insights:
   source: "semantic_stress_test"
   fix_known: false
   status: pending
+- id: INS-20260831-145800448-d0f8
+  ts: "2026-08-31T14:58:00+09:00"
+  insight: "[[殿裁定 14 06『絵柄がじみすぎるな]] semantic_stress_test candidate_aliases: NO_MATCH source=cmds query=殿裁定 2026-08-31 14:06『絵柄がじみすぎるな。basic-dualmomentumのchartを表示しよう。compare chartと同じスタイルだがstaticなchartでいい』。現物確認: GET /api/public/showcase(origin/main backend/app/api/public_showcase.py)は"
+  priority: "low"
+  source: "semantic_stress_test"
+  fix_known: false
+  status: pending
