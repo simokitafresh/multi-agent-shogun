@@ -10967,3 +10967,10 @@ insights:
   source: "semantic_index_update"
   fix_known: false
   status: pending
+- id: INS-20260831-131513597-07f4
+  ts: "2026-08-31T13:15:13+09:00"
+  insight: "semantic_index_update新概念候補: discussion:karoにつまりがあるようだ。なにかインフラバグが隠れているのでは？覚醒して調査してくれ は 既存aliasesに一致なし。概念定義とaliases追加を検討せよ"
+  priority: "low"
+  source: "semantic_index_update"
+  fix_known: false
+  status: pending
