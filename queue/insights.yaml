@@ -10915,3 +10915,10 @@ insights:
   source: "semantic_stress_test"
   fix_known: false
   status: pending
+- id: INS-20260831-131107886-10d1
+  ts: "2026-08-31T13:11:07+09:00"
+  insight: "[[Image 7 LPのデザインの話をしよう]] semantic_stress_test candidate_aliases: NO_MATCH source=lord query=[Image #7] LPのデザインの話をしよう。左列のpremium planの横の・招待制は冗長で不要。最大は日本語ページもup to表記に。CAGRの最大のほうはBasic dualmomentumと同じ太字に。ｘNも同様に太字に。閲覧のサインインはメンバーシップとしたほ…"
+  priority: "low"
+  source: "semantic_stress_test"
+  fix_known: false
+  status: pending
