@@ -11552,3 +11552,10 @@ insights:
   source: "semantic_stress_test"
   fix_known: false
   status: pending
+- id: INS-20260831-174328253-26d6
+  ts: "2026-08-31T17:43:28+09:00"
+  insight: "[[スループットは改善しているか？つまりの真因を放置していないか？覚醒して対処せよ]] semantic_stress_test candidate_aliases: NO_MATCH source=lord query=スループットは改善しているか？つまりの真因を放置していないか？覚醒して対処せよ"
+  priority: "low"
+  source: "semantic_stress_test"
+  fix_known: false
+  status: pending
