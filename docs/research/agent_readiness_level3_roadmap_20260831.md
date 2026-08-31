@@ -3,7 +3,7 @@
 
 - 作成: 2026-08-31 05:25 JST（殿指示 05:22『level3まで全て完了させるためのロードマップをステップバイステップで』）
 - 対象: Cloudflare AI Crawl Control › Agent Readiness 診断（殿提示 HTML 2026-08-31 03:15 準拠）
-- 現状: Level1 4/5・Level2 0/3・Level3 0/8（Commerce は optional=本書対象外）
+- 現状(09:24 更新): Level1 4/5(残=Markdown トグル)・Level2 2/3+1-2(b)済(残=1-2(a) Link ヘッダ実体)・Level3 1/8(2-1 済)（Commerce は optional=本書対象外）
 - 前提事実（本番一次確認済み）: LP=Render static (`lp/`, autoDeploy)・BE=FastAPI (`dm-signal-backend.onrender.com`)・Auth=Supabase・zone proxied=ON・保管トークンは Single Redirect+zone read のみ
 
 ## 実装原則
