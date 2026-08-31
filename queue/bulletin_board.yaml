@@ -1,4 +1,67 @@
 entries:
+- id: 'blt_20260831_124611_7b4cbb'
+  content: |-
+    GATE CLEAR cmd_reflux_insight_202608311157_tobisaru: 完了
+  posted_by: 'karo'
+  posted_at: '2026-08-31T12:46:11'
+  requires_confirmation: false
+  action_type: 'info'
+  actioned_by: ''
+  notify_targets: []
+  confirmed_by: []
+  status: 'open'
+- id: 'blt_20260831_124456_8db90c'
+  content: |-
+    GATE CLEAR cmd_reflux_insight_202608311206_kagemaru: 完了
+  posted_by: 'karo'
+  posted_at: '2026-08-31T12:44:56'
+  requires_confirmation: false
+  action_type: 'info'
+  actioned_by: ''
+  notify_targets: []
+  confirmed_by: []
+  status: 'open'
+- id: 'blt_20260831_122736_f39ae3'
+  content: |-
+    DOC_LANE_INFO: source_equivalent auto-closed context=context/rebalancer.md source_commit=f66e319923b5 project=infra
+  posted_by: 'gate_context_freshness'
+  posted_at: '2026-08-31T12:27:36'
+  requires_confirmation: false
+  action_type: 'info'
+  actioned_by: ''
+  notify_targets:
+    - 'shogun'
+    - 'karo'
+    - 'gunshi'
+  confirmed_by: []
+  status: 'open'
+- id: 'blt_20260831_122241_b2b6cf'
+  content: |-
+    DOC_LANE_INFO: source_equivalent auto-closed context=context/rebalancer.md source_commit=ea45534ba9c6 project=infra
+  posted_by: 'gate_context_freshness'
+  posted_at: '2026-08-31T12:22:41'
+  requires_confirmation: false
+  action_type: 'info'
+  actioned_by: ''
+  notify_targets:
+    - 'shogun'
+    - 'karo'
+    - 'gunshi'
+  confirmed_by: []
+  status: 'open'
+- id: 'blt_20260831_121952_084dd7'
+  content: |-
+    [URGENT-HARM] 下知 msg_20260831_121138_3513206_5cfc51ad 実行中。集計コマンド: 2 cmdのreview_approvalsとlogs/gate_metrics最新terminalを照合。出力行: 新throughput=precheck ERRORS 1→0・軍師再レビュー起床済み・terminal0、旧generation_dedupe=gunshi LGTM1+karo ACCEPT1・GATE再実行済み・terminal WAIT1(throughput_segment_invalid)。1件の定義: 対象cmdごとに最新gate_metricsがCLEARまたはBLOCKの終端結果を1件とする。旧WAIT原因を現在追跡し、両cmd terminal 2/2まで継続する。
+  posted_by: 'karo'
+  posted_at: '2026-08-31T12:19:52'
+  requires_confirmation: false
+  action_type: 'info'
+  actioned_by: ''
+  notify_targets:
+    - 'shogun'
+  confirmed_by:
+    - 'shogun'
+  status: 'closed'
 - id: 'blt_20260831_120207_612bcb'
   content: |-
     GATE CLEAR cmd_karo_hotfix_safe_shared_main_ff_isolated_publish_fallback_20260831: 完了
@@ -54,45 +117,6 @@ entries:
   notify_targets: []
   confirmed_by: []
   status: 'open'
-- id: 'blt_20260831_114136_70c272'
-  content: |-
-    [URGENT-HARM] 下知 msg_20260831_113813_3149710_3e2b2a45 の第1段を実行。集計コマンド: queue/tasks/hanzo.yamlのtask_id/status/purpose/AC内fallback語をYAML集計。出力行: task_id=cmd_karo_hotfix_safe_shared_main_ff_isolated_publish_fallback_20260831_normal status=assigned fallback_mentions=2 deploy_PASS=1 deploy_BLOCK初回=1(AC3本→2本へ無損失統合後PASS)。1件の定義: deploy_task.shがtask YAMLとreport templateを原子公開し半蔵へtask_assignedを永続化したものを配備1件とする。第2段は将軍隔離push完了後にcompleted_unarchived在庫5本の再GATEを実行しCLEAR行を5/5計測する。
-  posted_by: 'karo'
-  posted_at: '2026-08-31T11:41:36'
-  requires_confirmation: false
-  action_type: 'info'
-  actioned_by: ''
-  notify_targets:
-    - 'shogun'
-  confirmed_by:
-    - 'shogun'
-  status: 'closed'
-- id: 'blt_20260831_113358_7205c5'
-  content: |-
-    nudge根因特定: reflux SG七 bundle生成済みだがconsume未実行のためnudgeループ継続。各cmdのbundleをconsumeせよ。cmd_id: idle_nudge_loop_diagnosis
-  posted_by: 'gunshi'
-  posted_at: '2026-08-31T11:33:58'
-  requires_confirmation: false
-  action_type: 'action_required'
-  actioned_by: ''
-  notify_targets:
-    - 'karo'
-  confirmed_by:
-    - 'karo'
-  status: 'closed'
-- id: 'blt_20260831_112700_202eb8'
-  content: |-
-    reflux insight nudgeが繰り返し到着中。全件review_bundle完了済みだがapproval消費未検知の可能性。殿裁定nudge根治指示に該当。cmd_id: idle_nudge_loop_diagnosis
-  posted_by: 'gunshi'
-  posted_at: '2026-08-31T11:27:00'
-  requires_confirmation: false
-  action_type: 'action_required'
-  actioned_by: ''
-  notify_targets:
-    - 'karo'
-  confirmed_by:
-    - 'karo'
-  status: 'closed'
 - id: 'blt_20260831_111637_2c435a'
   content: |-
     cmd_karo_hotfix_lg043_temporal_postposition_fp_20260831 draft APPROVE。AC設計明確でFN要件あり。conflict_of_interest記載済み(自分が発見したFP修正)。review_log記録済み
@@ -393,64 +417,6 @@ entries:
     網羅外: 他PJのworktreeが存在しないケースは未検証(当該ケースは先行cmdなし=正当なnew test)。
   posted_by: 'gunshi'
   posted_at: '2026-08-31T00:12:25'
-  requires_confirmation: false
-  action_type: 'info'
-  actioned_by: ''
-  notify_targets: []
-  confirmed_by: []
-  status: 'open'
-- id: 'blt_20260830_212142_7934a9'
-  content: |-
-    GATE CLEAR cmd_reflux_insight_202608301807_saizo: 完了
-  posted_by: 'gunshi'
-  posted_at: '2026-08-30T21:21:42'
-  requires_confirmation: false
-  action_type: 'info'
-  actioned_by: ''
-  notify_targets: []
-  confirmed_by:
-    - 'karo'
-  status: 'open'
-- id: 'blt_20260830_212138_1c439e'
-  content: |-
-    GATE CLEAR cmd_karo_hotfix_prepush_cmd_complete_gate_timeout_20260826: 完了
-  posted_by: 'gunshi'
-  posted_at: '2026-08-30T21:21:38'
-  requires_confirmation: false
-  action_type: 'info'
-  actioned_by: ''
-  notify_targets: []
-  confirmed_by:
-    - 'karo'
-  status: 'open'
-- id: 'blt_20260830_212122_92293d'
-  content: |-
-    GATE CLEAR cmd_karo_hotfix_inbox_nudge_outstanding_lease_v3_20260830: 完了
-  posted_by: 'gunshi'
-  posted_at: '2026-08-30T21:21:22'
-  requires_confirmation: false
-  action_type: 'info'
-  actioned_by: ''
-  notify_targets: []
-  confirmed_by:
-    - 'karo'
-  status: 'open'
-- id: 'blt_20260830_165510_4a2ac1'
-  content: |-
-    DOC_LANE_INFO: source_equivalent auto-closed context=context/rebalancer.md source_commit=f66e319923b5 project=infra
-  posted_by: 'gate_context_freshness'
-  posted_at: '2026-08-30T16:55:10'
-  requires_confirmation: false
-  action_type: 'info'
-  actioned_by: ''
-  notify_targets: []
-  confirmed_by: []
-  status: 'open'
-- id: 'blt_20260830_124520_aebaf8'
-  content: |-
-    DOC_LANE_INFO: source_equivalent auto-closed context=context/rebalancer.md source_commit=ea45534ba9c6 project=infra
-  posted_by: 'gate_context_freshness'
-  posted_at: '2026-08-30T12:45:20'
   requires_confirmation: false
   action_type: 'info'
   actioned_by: ''

@@ -52,3 +52,60 @@ commands:
       diagnosis: "BLOCK理由: 該当なし(cmd_4413 の preflight で判明した 4 フィールドを雛形時点で記入) / 対策: 該当なし"
     delegated_at: "\"2026-08-30T12:37:28\""
     origin: "[[殿裁定_sharpe_spy_tqqq_20260830_1230]] -> [[dm-login-showcase-asis-tobe_v2_20260830]] -> [[cmd_4414_showcase_sharpe_benchmarks]]"
+  cmd_4431:
+    title: "LP Current signals 体裁 — 招待制注記の重複削除・JA を up to 表記へ・主要指標の太字統一・TQQQ MDD 赤字・閲覧列をメンバーシップ表記へ"
+    status: pending
+    project: dm-signal
+    purpose: "殿裁定 2026-08-31 12:24-12:32(スクショ付き): Current signals テーブルの体裁のみを直す。(1)Premium 行左列の招待制注記は閲覧列と重複で不要 (2)日本語ページの最大表記も up to へ (3)プラン行の Total return・×N・CAGR 最大側を Basic-DualMomentum 行と同じ太字へ (4)TQQQ の MDD を赤字へ (5)閲覧列のサインインをメンバーシップ表記へ(リンク先・挙動は変えない=殿『リンク先はこの後で考える』)。対象は lp/copy と landing-page.tsx と globals.css のみ"
+    scope_mode: FULL
+    target_path: /mnt/c/Python_app/DM-signal/lp
+    acceptance_criteria:
+      AC1:
+        description: "Premium 行の左列セルからプラン名に併記された招待制注記(JA の中黒付き注記・EN の Invite-only 併記)を除去し、閲覧列の招待制/Invite-only 表示は変更しないことを隔離 build の EN・JA index で確認する"
+        binary_check: "EN・JA index の Premium 行左列セルにプラン名のみ ∧ 閲覧列に招待制(JA)/Invite-only(EN)が残る か?"
+      AC2:
+        description: "JA ページのプラン行 Total return・×N と tableNote の最大表記を EN と同じ up to 表記へ統一し、hero 行と SPY・TQQQ 行は単値のまま変えない"
+        binary_check: "JA index のプラン行 Total return・×N セルが up to で始まる ∧ JA index に最大 の表記が残存しない ∧ tableNote が up to 表記 か?"
+      AC3:
+        description: "プラン行の Total return・×N の up to 値と CAGR 範囲の最大側の数値を Basic-DualMomentum 行と同じ太字スタイルにし、CAGR の最小側と範囲記号は現行の細字のまま維持することを両言語 index の class/style で確認する"
+        binary_check: "プラン全行で Total return・×N・CAGR 最大側に hero 行と同一の太字クラスが付く ∧ CAGR 最小側と範囲記号に太字クラスが付かない か?"
+      AC4:
+        description: "TQQQ 行の MDD 値のみを負値強調の赤字にし、SPY 行とその他の行の MDD 配色は変更しない。赤字色は context/ui-design-guide.md のコントラスト基準(通常文字の基準比)以上をスクリプト算出で確認する"
+        binary_check: "TQQQ 行 MDD セルに赤字クラスが付く ∧ SPY 行 MDD に付かない ∧ 赤字色と背景のコントラスト比が基準以上(算出コマンドと出力を報告に生貼付) か?"
+      AC5:
+        description: "閲覧列のサインイン(JA)/Sign in(EN)表記をメンバーシップ(JA)/Membership(EN)へ変え、href・onClick 等の遷移挙動は一切変更しない(表示・招待制・非表示の他表記も不変)"
+        binary_check: "両言語 index の閲覧列に メンバーシップ/Membership が表示 ∧ サインイン/Sign in が残存しない ∧ 当該セルの href/挙動の diff が表記以外に無い か?"
+      AC6:
+        description: "表下の細字説明(tableNote)に MDD とSharpe の用語説明を初出の一度だけ追加する。JA は MDD(最大ドローダウン)・Sharpe(シャープレシオ)、EN は MDD (maximum drawdown)・Sharpe (Sharpe ratio) の形で、既存の説明文の流れを崩さず挿入する(殿指示 2026-08-31 12:34)"
+        binary_check: "EN・JA の tableNote に MDD と Sharpe の括弧書き説明が各一度だけ出現 ∧ 表の他所に重複挿入なし か?"
+    command: |
+      1. lp/copy の en.ts・ja.ts と landing-page.tsx を読み、Current signals テーブルの該当箇所(招待制注記・最大表記・閲覧列ラベル・tableNote)を特定する
+      2. AC1・AC2・AC5・AC6 の文言変更と AC3・AC4 の太字/赤字スタイル(globals.css のトークン利用)を実装する
+      3. 隔離 build を実行し、EN・JA の出力 index に対して各 AC の binary_check を grep とコントラスト算出スクリプトで確認して報告に生貼付する
+    quality_gate:
+      q1_firefighting: "品質向上。理由: 殿の実機レビュー指摘を反映する表示品質改善であり、障害対応ではない"
+      q2_learning: "奪わない。理由: 表記・スタイルの変更対象を AC で明示し、実装判断(クラス設計)は忍者に残る"
+      q3_next_quality: "上がる。理由: 太字・赤字の基準が hero 行と ui-design-guide に固定され、以後の表変更で流用できる"
+      q4_depth: "medium。殿のスクショ指摘 5 点を過不足なく AC 化し、リンク先変更(裁定保留)を明示的にスコープ外へ置いた"
+      q5_verified_source: "本番 curl(11:02)で up to/最大/note CTA の現行到達を確認済み。git grep 'サインイン' origin/main -- lp/copy → ja.ts 3件、git grep '招待制|Invite-only' origin/main -- lp → ja.ts 2件(現物実在)"
+      q6_not_hiding: "隠さない。理由: 表示体裁のみで挙動・データ・リンク先を変えず、変更点は全て AC の grep 生貼付で可視化する"
+      q7_definition_verified: "太字の基準=Basic-DualMomentum(hero)行の現行クラス、赤字の基準=context/ui-design-guide.md のコントラスト比。両方とも現物参照で定義"
+      q8_why_what: "WHY: 殿の実機レビュー 12:24 で表の視覚階層が不揃い / WHAT: Current signals 表の表記・太字・赤字・列ラベル 5 点 / WHEN: 即時 / WHERE: lp配下のみ / WHO: 忍者1名 / HOW: 文言+クラス変更→隔離build grep / 複利: 表スタイル基準が固定され以後の表変更に流用"
+      q9_firefighting_root_cause: "消火ではない。デザイン改善であり根本原因対応は不要"
+      q10_knowledge_boundary: "境界内。lp は cmd_4430 で同一 target を扱った直後で知識鮮度が高い"
+      q11_not_already_done: "未実施を確認: git grep 'サインイン' origin/main -- lp/copy → 3件残存、JA の最大表記残存は 12:24 殿スクショで確認。semantic_search 'LP Current signals 表 体裁 太字' → NO_MATCH(既存概念なし)"
+      q_ambiguity: "低。疑義 2 点(Total return 太字・リンク先)は殿裁定 12:32 で解消済み(太字にする・リンク先は本 cmd のスコープ外=別裁定の対象)"
+      q12_lord_30min_cost: "no。表示体裁のみで殿の確認は本番 1 目視で足りる"
+      diagnosis: "BLOCK理由: quality_gate 内に cmd 直下専用の timeout_minutes を置いた+environment_change を非構造化の散文で書いた / 対策: timeout_minutes を cmd 直下のみへ移し、environment_change を type;file;pattern の構造化 1 行(実在 pattern を grep 確認済み)へ修正"
+    timeout_minutes: 30
+    estimated_minutes: 20
+    depends_on: none
+    origin: "[[殿裁定_Current_signals体裁_20260831_1224]] -> [[cmd_4430_up_to表記]] -> [[cmd_4431_表体裁統一]]"
+    assumptions:
+      - claim: "現行 LP は cmd_4430 適用済みで、プラン行は EN=up to・JA=最大 表記、Premium 左列に招待制注記が併記されている(2026-08-31 12:24 殿スクショと 11:02 の本番 curl で確認済み)"
+        trust: verified
+        date: "2026-08-31"
+      - claim: "閲覧列の遷移挙動・リンク先は本 cmd で変更しない(殿 12:32『リンク先にはこの後で考える』)"
+        trust: verified
+        date: "2026-08-31"
+    environment_change: "type=lesson; file=queue/shogun_todo_map.md; pattern=up to 表記"

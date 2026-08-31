@@ -3741,6 +3741,8 @@ codd:
 | discussion | `queue/lord_conversation.jsonl` 2026-08-31T10:39:54+09:00 30分loop(殿指示08-27 14:34「進捗を確認し、利他の精神でつまりを解消し、artifactを更新せよ」恒久): (1)capture-pane全pane/陣形図/gate_metrics/rev-list origin/CI  |
 | discussion | `queue/lord_conversation.jsonl` 2026-08-31T11:09:50+09:00 30分loop(殿指示08-27 14:34「進捗を確認し、利他の精神でつまりを解消し、artifactを更新せよ」恒久): (1)capture-pane全pane/陣形図/gate_metrics/rev-list origin/CI  |
 | discussion | `queue/lord_conversation.jsonl` 2026-08-31T11:40:23+09:00 30分loop(殿指示08-27 14:34「進捗を確認し、利他の精神でつまりを解消し、artifactを更新せよ」恒久): (1)capture-pane全pane/陣形図/gate_metrics/rev-list origin/CI  |
+| discussion | `queue/lord_conversation.jsonl` 2026-08-31T12:09:50+09:00 30分loop(殿指示08-27 14:34「進捗を確認し、利他の精神でつまりを解消し、artifactを更新せよ」恒久): (1)capture-pane全pane/陣形図/gate_metrics/rev-list origin/CI  |
+| discussion | `queue/lord_conversation.jsonl` 2026-08-31T12:39:45+09:00 bbe84ty30 toolu_01HZfGBTjg7bbAAs7HBukcMz /tmp/claude-1000/-home-simokitafresh-multi-agent-shogun/fea632c9-b2e7-4dea-992f |
 | causal_chain | `[[cmd_karo_hotfix_deploy_report_template_quote_escape_202607020530]]` (L924) |
 | causal_chain | `[[cmd_reflux_insight_202607071717_tobisaru]]` (L961) |
 | causal_chain | `[[cmd_karo_hotfix_report_notify_inprogress_guard_202607101913]]` (L1026) |
@@ -5474,6 +5476,7 @@ codd:
 | discussion | `queue/lord_conversation.jsonl` 2026-08-30T18:19:12+09:00 LPのnoteメンバーシップのリンク先が間違っている。docsのリンク先がFAQになっている |
 | discussion | `queue/lord_conversation.jsonl` 2026-08-30T19:26:30+09:00 まだLPのリンクが直っていないのでは？ |
 | discussion | `queue/lord_conversation.jsonl` 2026-08-30T19:30:27+09:00 殿裁定 2026-08-30 19:29『CI green を待つという完全にナンセンスな発想が諸悪の根源だな』(文脈: 4419/terminal_drain が ci_readiness WAIT で 19:00-19:29 CLEAR |
+| discussion | `queue/lord_conversation.jsonl` 2026-08-31T12:32:45+09:00 TQQQのMDDは赤字にしよう。Total return も太字にする。今回はCurrent signalsの体裁だけのはなしだ。リンク先にはこの後で考える |
 | causal_chain | `[[cmd_karo_ci_fix_deploy_task_ci_red_202607072231]]` (L970) |
 | causal_chain | `[[cmd_karo_hotfix_ga220_dm_signal_research_freshness_202607110139]]` (L1031) |
 | causal_chain | `[[cmd_karo_impl_atomic_yaml_write_caller_log_20260727]]` (L1391) |
@@ -9798,6 +9801,9 @@ codd:
 | discussion | `queue/lord_conversation.jsonl` 2026-08-31T01:03:41+09:00 Free tier 503 真因(2026-08-31 01:04): 本番 viewer_tiers Free 行 password_env_key=VIEWER_PASS_FREE(既存 tier 命名 VIEWER_PASS_* 準拠 |
 | discussion | `queue/lord_conversation.jsonl` 2026-08-31T01:25:43+09:00 Free tier 4 段目(2026-08-31 01:22): サインイン成功後の /free『クーポンを取得できませんでした』の真因=backend free-coupon は {success,data:{coupon,expire |
 | discussion | `queue/lord_conversation.jsonl` 2026-08-31T03:01:05+09:00 session_save_20260831_0300(先に session_save_20260831_0005 を読め): 第18便(00:23 y 復帰〜03:00)。①復帰: deepdive 16/16、Q6 軍師検証妥当、Gate |
+| discussion | `queue/lord_conversation.jsonl` 2026-08-31T12:30:43+09:00 [Image #7] LPのデザインの話をしよう。左列のpremium planの横の・招待制は冗長で不要。最大は日本語ページもup to表記に。CAGRの最大のほうはBasic dualmomentumと同じ太字に。ｘNも同様に太字に。閲 |
+| discussion | `queue/lord_conversation.jsonl` 2026-08-31T12:34:51+09:00 PF数の数値に違和感がある。basic planは2でいいのか？ |
+| discussion | `queue/lord_conversation.jsonl` 2026-08-31T12:36:16+09:00 PF数の数値に違和感がある。basic planは2でいいのか？ 下の細字の説明にMDD（マックスドローダウン）,Sharpe（シャープレシオ）と初回のみ説明をくわえよう。英語版も直してくれ。 |
 | causal_chain | `[[cmd_reflux_backlink_202607281529_hanzo]]` (L1433) |
 | causal_chain | `[[cmd_4202]]` (L1500) |
 | causal_chain | `[[cmd_karo_hotfix_report_shared_provenance_fp_20260802]]` (L1521) |
@@ -10097,6 +10103,8 @@ codd:
 | discussion | `queue/lord_conversation.jsonl` 2026-08-30T19:34:41.255781+00:00 git pre-commit semantic propagation for context/projects changes |
 | discussion | `queue/lord_conversation.jsonl` 2026-08-30T19:41:26.849925+00:00 git pre-commit semantic propagation for context/projects changes |
 | discussion | `queue/lord_conversation.jsonl` 2026-08-31T02:51:40.310302+00:00 git pre-commit semantic propagation for context/projects changes |
+| discussion | `queue/lord_conversation.jsonl` 2026-08-31T02:58:22.914592+00:00 git pre-commit semantic propagation for context/projects changes |
+| discussion | `queue/lord_conversation.jsonl` 2026-08-31T03:01:29.342766+00:00 git pre-commit semantic propagation for context/projects changes |
 
 ## simple_ocr — Simple OCR（画像OCR Webアプリ）
 
@@ -13429,6 +13437,7 @@ codd:
 | cmd | `cmd_karo_hotfix_command_file_token_parser_20260831` (`scripts/cmd_complete_gate.sh`, `tests/unit/test_cmd_complete_gate.bats`) |
 | causal | `cmd_karo_ci_fix_33326464870_shard_count_receipt_20260831` files_modified: [[provisional_test]] |
 | cmd | `cmd_karo_ci_fix_33326464870_shard_count_receipt_20260831` (`.github/workflows/test.yml`, `scripts/inbox_write.sh`) |
+| discussion | `queue/lord_conversation.jsonl` 2026-08-31T12:39:43+09:00 bn0lmsutn toolu_019SRtmVKcmv7PtwLxBGJJhj /tmp/claude-1000/-home-simokitafresh-multi-agent-shogun/fea632c9-b2e7-4dea-992f |
 | causal_chain | `[[cmd_karo_hotfix_hook_failure_utf8_boundary_20260829]]` (L1669) |
 | causal_chain | `[[cmd_karo_hotfix_tmux_live_sendkeys_guard_20260830]]` (L1672) |
 
@@ -14347,6 +14356,10 @@ codd:
 | cmd | `cmd_reflux_insight_202608310913_kagemaru` (`queue/insights.yaml`) |
 | causal | `cmd_reflux_insight_202608310931_saizo` files_modified: [[provisional_insights]] |
 | cmd | `cmd_reflux_insight_202608310931_saizo` (`queue/insights.yaml`) |
+| causal | `cmd_reflux_insight_202608311206_kagemaru` files_modified: [[provisional_insights]] |
+| cmd | `cmd_reflux_insight_202608311206_kagemaru` (`queue/insights.yaml`) |
+| causal | `cmd_reflux_insight_202608311157_tobisaru` files_modified: [[provisional_insights]] |
+| cmd | `cmd_reflux_insight_202608311157_tobisaru` (`queue/insights.yaml`) |
 | causal_chain | `[[cmd_reflux_insight_202608040505_kagemaru]]` (L1545) |
 
 ## provisional_heavy_job_admission — 仮: Heavy Job Admission
