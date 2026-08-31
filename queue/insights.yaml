@@ -11992,3 +11992,10 @@ insights:
   source: "semantic_stress_test"
   fix_known: false
   status: pending
+- id: INS-20260831-204006573-9f20
+  ts: "2026-08-31T20:40:06+09:00"
+  insight: "[[殿裁定 20 32 20 36 『デザインしてるから嘘くさい]] semantic_stress_test candidate_aliases: NO_MATCH source=cmds query=殿裁定 2026-08-31 20:32-20:36: 『デザインしてるから嘘くさい。python で作ったチャートや表のほうがリアル感が強い。デザインでサギっぽくなっている』『DM-signal のデザインブック(page style MECE gist c50699ea)を参考にしろ。統一感がなく LP の信頼感が極端に低い。俺はカードを使わない』『すで"
+  priority: "low"
+  source: "semantic_stress_test"
+  fix_known: false
+  status: pending
