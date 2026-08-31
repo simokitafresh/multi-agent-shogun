@@ -11463,3 +11463,10 @@ insights:
   source: "semantic_stress_test"
   fix_known: false
   status: pending
+- id: INS-20260831-163825603-4d7e
+  ts: "2026-08-31T16:38:25+09:00"
+  insight: "[[SEO 案 §2 P1 1 月次シグナル頁 毎月 2 URL 増で索引面積と鮮度]] semantic_stress_test candidate_aliases: NO_MATCH source=cmds query=SEO 案 §2 P1-1(月次シグナル頁=毎月 2 URL 増で索引面積と鮮度)。殿指示 2026-08-31 14:56『P1-1 も起票しよう。8 月も作成したほうがいいのでは』=9 月を待たず当月(2026-08)分から生成する。データは公開集計 EP(showcase)の既存契約のみを使い、個別 PF 名・Secret 数値は出さない(§2.3 契"
+  priority: "low"
+  source: "semantic_stress_test"
+  fix_known: false
+  status: pending
