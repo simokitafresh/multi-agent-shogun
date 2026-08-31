@@ -885,6 +885,84 @@ SH
   done
 }
 
+# test_necessity: Public file mode must preserve suffix-owned engine dispatch,
+# reject unsupported suffixes before execution, and run an absolute Python
+# path from the owning repository root so imports resolve as they do in CI.
+# regression_justification: overlaps_existing=true; task/affected dispatch
+# coverage did not exercise the public file-mode entrypoint or external cwd.
+@test "file mode dispatches Python and Bats, rejects unknown, and preserves external cwd" {
+  external="$TMPROOT/external-project"
+  mkdir -p "$external/tests" "$external/package"
+  printf 'VALUE = 1\n' >"$external/package/__init__.py"
+  printf 'def test_external():\n    assert True\n' >"$external/tests/test_external.py"
+  git -C "$external" init -q
+  git -C "$external" config user.email test@example.invalid
+  git -C "$external" config user.name test
+  git -C "$external" add .
+  git -C "$external" commit -qm init
+
+  printf 'def test_owned():\n    assert True\n' >"$TMPROOT/tests/unit/owned.py"
+  printf '@test "owned" { true; }\n' >"$TMPROOT/tests/unit/owned.bats"
+  printf 'unsupported\n' >"$TMPROOT/tests/unit/owned.txt"
+  export ENGINE_LOG="$TMPROOT/file-dispatch-engine.log"
+  export REAL_PYTHON3="$(command -v python3)"
+  cat >"$TMPROOT/bin/python3" <<'SH'
+#!/usr/bin/env bash
+if [[ "${1:-}" == -m && "${2:-}" == pytest ]]; then
+  printf 'pytest|cwd=%s|args=%s\n' "$PWD" "$*" >>"$ENGINE_LOG"
+  printf '============================== 1 passed in 0.01s ==============================\n'
+  exit 0
+fi
+exec "$REAL_PYTHON3" "$@"
+SH
+  cat >"$TMPROOT/bin/bats" <<'SH'
+#!/usr/bin/env bash
+printf 'bats|cwd=%s|args=%s\n' "$PWD" "$*" >>"$ENGINE_LOG"
+printf '1..1\nok 1 owned\n'
+SH
+  chmod +x "$TMPROOT/bin/python3" "$TMPROOT/bin/bats"
+
+  run env PATH="$TMPROOT/bin:$PATH" REPO_ROOT="$TMPROOT" ENGINE_LOG="$ENGINE_LOG" REAL_PYTHON3="$REAL_PYTHON3" \
+    RUN_TESTS_SUITE_TIMEOUT_SEC=30 SHOGUN_HEAVY_JOB_LOCK_HELD=1 BATS_CACHE=0 BATS_INNER_JOBS=1 \
+    bash "$TMPROOT/scripts/run_tests.sh" file "$TMPROOT/tests/unit/owned.py"
+  [ "$status" -eq 0 ]
+  [ "$(grep -c '^pytest|' "$ENGINE_LOG")" -eq 1 ]
+  [ "$(grep -c '^bats|' "$ENGINE_LOG" || true)" -eq 0 ]
+
+  : >"$ENGINE_LOG"
+  run env PATH="$TMPROOT/bin:$PATH" REPO_ROOT="$TMPROOT" ENGINE_LOG="$ENGINE_LOG" REAL_PYTHON3="$REAL_PYTHON3" \
+    RUN_TESTS_SUITE_TIMEOUT_SEC=30 SHOGUN_HEAVY_JOB_LOCK_HELD=1 BATS_CACHE=0 BATS_INNER_JOBS=1 \
+    bash "$TMPROOT/scripts/run_tests.sh" file "$TMPROOT/tests/unit/owned.bats"
+  [ "$status" -eq 0 ]
+  [ "$(grep -c '^pytest|' "$ENGINE_LOG" || true)" -eq 0 ]
+  [ "$(grep -c '^bats|' "$ENGINE_LOG")" -eq 1 ]
+
+  : >"$ENGINE_LOG"
+  run env PATH="$TMPROOT/bin:$PATH" REPO_ROOT="$TMPROOT" ENGINE_LOG="$ENGINE_LOG" REAL_PYTHON3="$REAL_PYTHON3" \
+    RUN_TESTS_SUITE_TIMEOUT_SEC=30 SHOGUN_HEAVY_JOB_LOCK_HELD=1 BATS_CACHE=0 BATS_INNER_JOBS=1 \
+    bash "$TMPROOT/scripts/run_tests.sh" file "$TMPROOT/tests/unit/owned.py" "$TMPROOT/tests/unit/owned.bats"
+  [ "$status" -eq 0 ]
+  [ "$(grep -c '^pytest|' "$ENGINE_LOG")" -eq 1 ]
+  [ "$(grep -c '^bats|' "$ENGINE_LOG")" -eq 1 ]
+
+  : >"$ENGINE_LOG"
+  run env PATH="$TMPROOT/bin:$PATH" REPO_ROOT="$TMPROOT" ENGINE_LOG="$ENGINE_LOG" REAL_PYTHON3="$REAL_PYTHON3" \
+    RUN_TESTS_SUITE_TIMEOUT_SEC=30 SHOGUN_HEAVY_JOB_LOCK_HELD=1 BATS_CACHE=0 BATS_INNER_JOBS=1 \
+    bash "$TMPROOT/scripts/run_tests.sh" file "$TMPROOT/tests/unit/owned.txt"
+  [ "$status" -eq 2 ]
+  [[ "$output" == *"BLOCK: no task test engine for suffix"* ]]
+  [ "$(wc -l <"$ENGINE_LOG")" -eq 0 ]
+
+  : >"$ENGINE_LOG"
+  run env PATH="$TMPROOT/bin:$PATH" REPO_ROOT="$TMPROOT" ENGINE_LOG="$ENGINE_LOG" REAL_PYTHON3="$REAL_PYTHON3" \
+    RUN_TESTS_SUITE_TIMEOUT_SEC=30 SHOGUN_HEAVY_JOB_LOCK_HELD=1 BATS_CACHE=0 BATS_INNER_JOBS=1 \
+    bash "$TMPROOT/scripts/run_tests.sh" file "$external/tests/test_external.py"
+  [ "$status" -eq 0 ]
+  [ "$(grep -c '^pytest|' "$ENGINE_LOG")" -eq 1 ]
+  grep -Fq "cwd=$external" "$ENGINE_LOG"
+  echo "DISPATCH_METRICS cases=5 correct=5 false_positive=0 false_negative=0"
+}
+
 # test_necessity: affected=0 must finish inside the public receipt wrapper without acquiring the host-wide heavy admission lock.
 @test "affected zero skips admission while preserving terminal receipt" {
   cat >"$TMPROOT/scripts/test_select.sh" <<'SH'

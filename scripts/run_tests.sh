@@ -1247,7 +1247,9 @@ run_bats_files_parallel() {
 
 run_task_test_paths() {
     local -a selected=("$@") bats_paths=() pytest_paths=()
-    local path resolved
+    local -a pytest_root_order=()
+    local -A pytest_root_paths=()
+    local path resolved pytest_root
 
     for path in "${selected[@]}"; do
         resolved="$path"
@@ -1258,7 +1260,22 @@ run_task_test_paths() {
         fi
         case "$path" in
             *.bats) bats_paths+=("$path") ;;
-            *.py) pytest_paths+=("$path") ;;
+            *.py)
+                pytest_paths+=("$path")
+                pytest_root="$REPO_ROOT"
+                if [[ "$resolved" = /* ]]; then
+                    pytest_root="$(git -C "$(dirname -- "$resolved")" rev-parse --show-toplevel 2>/dev/null || true)"
+                    pytest_root="${pytest_root:-$REPO_ROOT}"
+                fi
+                if [[ -z "${pytest_root_paths[$pytest_root]+present}" ]]; then
+                    pytest_root_order+=("$pytest_root")
+                    pytest_root_paths["$pytest_root"]=""
+                fi
+                if [[ -n "${pytest_root_paths[$pytest_root]}" ]]; then
+                    pytest_root_paths["$pytest_root"]+=$'\n'
+                fi
+                pytest_root_paths["$pytest_root"]+="$path"
+                ;;
             *)
                 echo "BLOCK: no task test engine for suffix: $path" >&2
                 return 2
@@ -1274,21 +1291,27 @@ run_task_test_paths() {
     fi
     if [ "${#pytest_paths[@]}" -gt 0 ]; then
         printf 'TEST_DISPATCH engine=pytest files=%s\n' "${#pytest_paths[@]}"
-        local pytest_output pytest_rc=0 pytest_path
+        local pytest_output pytest_rc=0 pytest_path root_path
         pytest_output="$(mktemp)"
         for pytest_path in "${pytest_paths[@]}"; do
             printf 'START: %s pid=%s engine=pytest\n' "${pytest_path##*/}" "$$" >&2
         done
-        (cd "$REPO_ROOT" && env \
-            -u RUN_TESTS_RECEIPT_PATH \
-            -u RUN_TESTS_RUN_ID \
-            -u RUN_TESTS_COMMIT_SHA \
-            -u RUN_TESTS_SOURCE_FINGERPRINT \
-            -u RUN_TESTS_PENDING_FILE_BATCH \
-            -u RUN_TESTS_PENDING_SUITE_BATCH \
-            -u RUN_TESTS_SELECTED_PATHS_FILE \
-            python3 -m pytest -q "${pytest_paths[@]}") \
-            2>&1 | tee "$pytest_output" || pytest_rc=${PIPESTATUS[0]}
+        for root_path in "${pytest_root_order[@]}"; do
+            mapfile -t _pytest_root_tests <<<"${pytest_root_paths[$root_path]}"
+            (cd "$root_path" && env \
+                -u RUN_TESTS_RECEIPT_PATH \
+                -u RUN_TESTS_RUN_ID \
+                -u RUN_TESTS_COMMIT_SHA \
+                -u RUN_TESTS_SOURCE_FINGERPRINT \
+                -u RUN_TESTS_PENDING_FILE_BATCH \
+                -u RUN_TESTS_PENDING_SUITE_BATCH \
+                -u RUN_TESTS_SELECTED_PATHS_FILE \
+                python3 -m pytest -q "${_pytest_root_tests[@]}") \
+                2>&1 | tee -a "$pytest_output" || {
+                    pytest_rc=${PIPESTATUS[0]}
+                    break
+                }
+        done
         for pytest_path in "${pytest_paths[@]}"; do
             printf 'DONE: %s rc=%s engine=pytest\n' "${pytest_path##*/}" "$pytest_rc" >&2
         done
@@ -2131,11 +2154,15 @@ _run_tests_main() {
         file)
             shift
             test_files=("$@")
-            # Multiple files must use the same per-file process boundary as
-            # all/unit/affected. A single bats root shares formatter state and
-            # process-global fixture variables across files, producing
-            # order-dependent false failures in otherwise passing suites.
-            run_bats_files_parallel "${test_files[@]}"
+            [ "${#test_files[@]}" -gt 0 ] || {
+                echo "BLOCK: file mode requires at least one test path" >&2
+                exit 2
+            }
+            # File mode is the focused public primitive used by nested checks.
+            # Route each suffix to its owning engine so a Python contract is
+            # never parsed by bats-gather-tests. Bats retains its isolated
+            # per-file process boundary inside run_task_test_paths().
+            run_task_test_paths "${test_files[@]}"
             ;;
         affected)
             shift || true
