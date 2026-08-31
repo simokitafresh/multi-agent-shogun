@@ -524,10 +524,31 @@ def main():
             # assumption_check「判明したのは実行後であり」(2026-08-08)
             occurrences = list(re.finditer(re.escape(lower_term), lower_text))
             temporal_count = 0
+            # 「配備直後で存在しない」のように、時間境界の「後で」の直後が
+            # 状態記述になる用法も時間副詞として扱う。単に「後で」だけを
+            # 見て免除すると「後で対応」「後で実施」「後で確認」まで
+            # CLEARになるため、事象語/「直」+後でという局所境界に限定する。
+            temporal_stems = (
+                '直', '実行', '確認', '判明', '検証', '完了', '開始', '終了',
+                '配備', 'デプロイ', '登録', '更新', '変更', '適用', '発生',
+                '再現', '計測', '入力', '出力',
+            )
+            state_markers = (
+                '存在', 'ない', '無し', 'なし', 'であり', 'である', 'だった',
+                'となった', 'と判明', 'と確認', '発生', '検出', '観測',
+                '判定', '明らか',
+            )
             for occurrence in occurrences:
                 start, end = occurrence.span()
                 after = lower_text[end:min(len(lower_text), end + 8)]
+                before = lower_text[max(0, start - 16):start]
                 if after.startswith(('であり', 'である', 'だった', 'あり', 'ある', 'に', 'の')):
+                    temporal_count += 1
+                    continue
+                if (
+                    any(before.endswith(stem) for stem in temporal_stems)
+                    and any(after.startswith(marker) for marker in state_markers)
+                ):
                     temporal_count += 1
             if occurrences and temporal_count == len(occurrences):
                 return True
