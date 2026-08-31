@@ -1,3 +1,4 @@
+<!-- gist-master: e96628e3270d371ca6a87c214dea978e dm-signal-bing-richresults-runbook_20260831.md -->
 # Bing Webmaster 登録 + Rich Results Test — 殿用ステップ・バイ・ステップ runbook
 
 > 作成: 将軍 2026-08-31 15:12。対象=dm-signal.com。前提=Google Search Console 登録済み(2026-08-30 20:01 殿がCloudflare自動確認で完了)、sitemap.xml 200 application/xml・robots.txt に Sitemap 行あり(15:10 将軍実測)。
