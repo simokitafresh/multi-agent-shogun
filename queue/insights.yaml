@@ -12024,21 +12024,30 @@ insights:
   priority: "low"
   source: "semantic_index_update"
   fix_known: false
-  status: pending
+  status: resolved
+  resolved_reason: "semantic map generation verified the candidate is represented or intentionally ignored"
+  action_artifact: "semantic_map=/home/simokitafresh/multi-agent-shogun/context/semantic-map.md;semantic_index=/home/simokitafresh/multi-agent-shogun/docs/semantic-index/index.md"
+  resolved_at: "2026-08-31T20:42:39+09:00"
 - id: INS-20260831-204144647-35df
   ts: "2026-08-31T20:41:44+09:00"
   insight: "[[表に太字はいらない]] semantic_stress_test candidate_aliases: NO_MATCH source=lord query=表に太字はいらない。配色やフォント、フォントサイズはDM-signalに完全準拠せよ"
   priority: "low"
   source: "semantic_stress_test"
   fix_known: false
-  status: pending
+  status: resolved
+  resolved_reason: "semantic index candidate was absorbed into a registered concept"
+  action_artifact: "semantic_index=/home/simokitafresh/multi-agent-shogun/docs/semantic-index/index.md"
+  resolved_at: "2026-08-31T20:42:35+09:00"
 - id: INS-20260831-204201616-ff37
   ts: "2026-08-31T20:42:01+09:00"
   insight: "[[DM signalのデザインブックは参考にしてるのか？gistにも上げたはずだ]] semantic_stress_test candidate_aliases: NO_MATCH source=lord query=DM-signalのデザインブックは参考にしてるのか？gistにも上げたはずだ。統一感がなくLPの信頼感が極端に低い。俺はカードを使わないよな"
   priority: "low"
   source: "semantic_stress_test"
   fix_known: false
-  status: pending
+  status: resolved
+  resolved_reason: "semantic index candidate was absorbed into a registered concept"
+  action_artifact: "semantic_index=/home/simokitafresh/multi-agent-shogun/docs/semantic-index/index.md"
+  resolved_at: "2026-08-31T20:42:35+09:00"
 - id: INS-20260831-204217179-7600
   ts: "2026-08-31T20:42:17+09:00"
   insight: "[[すでにあるものを使え]] semantic_stress_test candidate_aliases: NO_MATCH source=lord query=すでにあるものを使え。チャートならDM-signalのchartをキャプチャーして使えばいい。それだけだろ"
