@@ -11778,14 +11778,20 @@ insights:
   priority: "low"
   source: "semantic_index_update"
   fix_known: false
-  status: pending
+  status: resolved
+  resolved_reason: "semantic map generation verified the candidate is represented or intentionally ignored"
+  action_artifact: "semantic_map=/home/simokitafresh/multi-agent-shogun/context/semantic-map.md;semantic_index=/home/simokitafresh/multi-agent-shogun/docs/semantic-index/index.md"
+  resolved_at: "2026-08-31T18:49:36+09:00"
 - id: INS-20260831-184823652-c771
   ts: "2026-08-31T18:48:23+09:00"
   insight: "semantic_index_update新概念候補: discussion:複雑にしないでA案でいいな。別にURLが変わるのは気にならない。 A 再公開 索引差替でいこうinbox1 は 既存aliasesに一致なし。概念定義とaliases追加を検討せよ"
   priority: "low"
   source: "semantic_index_update"
   fix_known: false
-  status: pending
+  status: resolved
+  resolved_reason: "semantic map generation verified the candidate is represented or intentionally ignored"
+  action_artifact: "semantic_map=/home/simokitafresh/multi-agent-shogun/context/semantic-map.md;semantic_index=/home/simokitafresh/multi-agent-shogun/docs/semantic-index/index.md"
+  resolved_at: "2026-08-31T18:49:37+09:00"
 - id: INS-20260831-184900724-08dc
   ts: "2026-08-31T18:49:00+09:00"
   insight: "[[複雑にしないでA案でいいな]] semantic_stress_test candidate_aliases: NO_MATCH source=lord query=複雑にしないでA案でいいな。別にURLが変わるのは気にならない。 A. 再公開+索引差替でいこうinbox1"
