@@ -21,7 +21,7 @@ import sys
 from pathlib import Path
 
 source = "\n\n".join(Path(path).read_text(encoding="utf-8") for path in sys.argv[1:])
-names = """record_block_reason record_wait_reason append_line_locked append_lesson_tracking dispatch_gate_notification_async send_high_notification send_info_cmd_notification log_gate_stderr_file lesson_done_satisfies_lesson_candidate_registration cmd_status_is_canceled level_heading check_context_update resolve_report_file update_lesson_impact_tsv build_clear_duration_metric build_clear_throughput_metric binary_checks_warn_reason report_has_commit_binary_check_yes collect_report_files_modified discover_reports_for_cmd collect_parent_cmd_report_files_modified has_parent_cmd_report collect_git_show_w_files collect_report_commit_hash collect_cmd_phase_git_files check_self_grade_commit_file_coverage is_lessons_useful_empty_warn_task_type handle_empty_lessons_useful_check validate_lesson_feedback_set detect_task_types _check_lc_found lesson_candidate_status preflight_gate_flags collect_report_modified_files load_validated_sg7_context collect_cmd_command_file_refs collect_report_verified_existing_deps collect_task_readonly_refs check_command_files_modified_coverage check_scope_drift check_wtf_likelihood check_script_wiring resolve_task_repo_dir cmd_requires_cdp_production_check run_cdp_production_check cmd_requires_dm_signal_production_smoke dm_signal_report_deploy_sha resolve_dm_signal_render_live_sha run_dm_signal_production_smoke_check append_codd_registry_entry run_codd_propagate_update normalize_block_reason_to_workaround_categories update_karo_workaround_resolutions classify_completed_rework_event_kind capture_completed_rework_event compute_task_ac_version check_task_ac_version_integrity resolve_ci_expected_head resolve_report_commit_repo report_ci_push_state_cached report_ci_push_state report_commit_main_ancestry_state report_source_only_equivalence_state check_report_commit_main_ancestry resolve_ninja_test_receipt_path validate_ninja_test_receipt check_ninja_test_receipts""".split()
+names = """record_block_reason record_wait_reason append_line_locked append_lesson_tracking dispatch_gate_notification_async send_high_notification send_info_cmd_notification log_gate_stderr_file lesson_done_satisfies_lesson_candidate_registration cmd_status_is_canceled level_heading check_context_update resolve_report_file update_lesson_impact_tsv build_clear_duration_metric build_clear_throughput_metric binary_checks_warn_reason report_has_commit_binary_check_yes collect_report_files_modified discover_reports_for_cmd collect_parent_cmd_report_files_modified has_parent_cmd_report collect_git_show_w_files collect_report_commit_hash collect_cmd_phase_git_files check_self_grade_commit_file_coverage is_lessons_useful_empty_warn_task_type handle_empty_lessons_useful_check validate_lesson_feedback_set detect_task_types _check_lc_found lesson_candidate_status preflight_gate_flags collect_report_modified_files load_validated_sg7_context collect_cmd_command_file_refs collect_report_verified_existing_deps collect_task_readonly_refs check_command_files_modified_coverage check_scope_drift check_wtf_likelihood check_script_wiring resolve_task_repo_dir cmd_requires_cdp_production_check run_cdp_production_check cmd_requires_dm_signal_production_smoke dm_signal_report_deploy_sha resolve_dm_signal_render_live_sha run_dm_signal_production_smoke_check append_codd_registry_entry run_codd_propagate_update normalize_block_reason_to_workaround_categories update_karo_workaround_resolutions classify_completed_rework_event_kind capture_completed_rework_event compute_task_ac_version check_task_ac_version_integrity resolve_ci_expected_head resolve_report_commit_repo report_ci_push_state_cached report_ci_push_state report_commit_main_ancestry_state report_source_only_equivalence_state check_report_commit_main_ancestry resolve_ninja_test_receipt_path validate_ninja_test_receipt check_ninja_test_receipts cmd_complete_gate_auto_push_ci_state cmd_complete_gate_auto_push_ancestry_wait""".split()
 for name in names:
     match = re.search(rf"(?m)^{re.escape(name)}\(\) \{{.*?^\}}", source, re.DOTALL)
     if match is None:
@@ -9292,6 +9292,41 @@ EOF
     [ "$status" -eq 0 ]
     [[ "$output" == *"WAIT: UNPUSHED:"* ]]
     [[ "$output" == *"wait=true"* ]]
+}
+
+# test_necessity: the completion gate must pass only the exact remote-tip CI
+# state to the isolated publisher; unknown/RED states must remain a no-push
+# WAIT and GREEN must be the sole admission token.
+@test "ancestry WAIT auto-push wiring is GREEN-only and preserves threshold" {
+    local repo="$BATS_TEST_TMPDIR/auto-push-wiring"
+    mkdir -p "$repo/scripts"
+    git init -q -b main "$repo"
+    git -C "$repo" config user.email test@example.com
+    git -C "$repo" config user.name test
+    printf 'base\n' > "$repo/state"
+    git -C "$repo" add state
+    git -C "$repo" commit -qm base
+    git init --bare -q "$repo/origin.git"
+    git -C "$repo" remote add origin "$repo/origin.git"
+    git -C "$repo" push -q -u origin main
+    printf 'ahead\n' >> "$repo/state"
+    git -C "$repo" commit -qam ahead
+    cat > "$repo/scripts/safe_shared_main_ff.sh" <<'EOF'
+#!/usr/bin/env bash
+printf 'publisher_ci=%s threshold=%s\n' "$3" "${SAFE_SHARED_MAIN_FF_AUTO_PUSH_THRESHOLD:-}"
+if [ "$3" = GREEN ]; then echo 'result=PASS'; else echo 'result=SKIP'; fi
+EOF
+    chmod +x "$repo/scripts/safe_shared_main_ff.sh"
+
+    run bash -c 'source "$1"; SCRIPT_DIR="$2"; CMD_COMPLETE_GATE_AUTO_PUSH_REPO="$2"; CMD_COMPLETE_GATE_AUTO_PUSH_THRESHOLD=7; CMD_COMPLETE_GATE_AUTO_PUSH_CI_STATE=UNKNOWN; cmd_complete_gate_auto_push_ancestry_wait' \
+        _ "$GATE_HELPERS_FILE" "$repo"
+    [ "$status" -eq 1 ]
+    [[ "$output" == *"publisher_ci=UNKNOWN threshold=7"*"result=SKIP"* ]]
+
+    run bash -c 'source "$1"; SCRIPT_DIR="$2"; CMD_COMPLETE_GATE_AUTO_PUSH_REPO="$2"; CMD_COMPLETE_GATE_AUTO_PUSH_THRESHOLD=7; CMD_COMPLETE_GATE_AUTO_PUSH_CI_STATE=GREEN; cmd_complete_gate_auto_push_ancestry_wait' \
+        _ "$GATE_HELPERS_FILE" "$repo"
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"publisher_ci=GREEN threshold=7"*"result=PASS"* ]]
 }
 
 # test_necessity: CI status and terminal ancestry share an immutable report and

@@ -18,6 +18,120 @@ if [[ -z "$TARGET" ]]; then
     exit 2
 fi
 
+# Publish an already-descendant local main without touching the shared
+# checkout.  This is deliberately a separate mode from convergence: callers
+# must provide an independently verified GREEN result for the exact remote
+# tip, and every non-eligible state returns success-with-no-push so a retrying
+# gate records WAIT instead of turning an external condition into a failure.
+safe_shared_main_auto_push() {
+    local repo="$1" threshold="${2:-1}" ci_state="${3:-}" remote_tip local_head
+    local relation behind ahead common_dir lock_file lock_fd before_head before_index before_dirty
+    local temp_parent clean_repo push_rc published_tip after_head after_index after_dirty
+
+    [[ "$threshold" =~ ^[1-9][0-9]*$ ]] || threshold=1
+    if [[ "$ci_state" != "GREEN" ]]; then
+        printf 'SAFE_SHARED_MAIN_AUTO_PUSH ci=%s push=0 result=SKIP reason=ci_not_green\n' "${ci_state:-UNKNOWN}"
+        return 0
+    fi
+    [[ "$(git -C "$repo" symbolic-ref --quiet --short HEAD 2>/dev/null || true)" == "main" ]] || {
+        printf 'SAFE_SHARED_MAIN_AUTO_PUSH push=0 result=SKIP reason=branch_not_main\n'
+        return 0
+    }
+    remote_tip="$(git -C "$repo" ls-remote origin refs/heads/main 2>/dev/null | awk 'NR==1 {print $1}')"
+    [[ "$remote_tip" =~ ^[0-9a-f]{40}$ ]] || {
+        printf 'SAFE_SHARED_MAIN_AUTO_PUSH push=0 result=SKIP reason=remote_tip_unresolved\n'
+        return 0
+    }
+    git -C "$repo" fetch -q origin refs/heads/main >/dev/null 2>&1 || {
+        printf 'SAFE_SHARED_MAIN_AUTO_PUSH remote_tip=%s push=0 result=SKIP reason=remote_tip_fetch_failed\n' "$remote_tip"
+        return 0
+    }
+    local_head="$(git -C "$repo" rev-parse HEAD 2>/dev/null || true)"
+    relation="$(git -C "$repo" rev-list --left-right --count "${remote_tip}...${local_head}" 2>/dev/null || true)"
+    read -r behind ahead <<< "$relation"
+    [[ "$behind" =~ ^[0-9]+$ && "$ahead" =~ ^[0-9]+$ ]] || {
+        printf 'SAFE_SHARED_MAIN_AUTO_PUSH remote_tip=%s push=0 result=SKIP reason=relation_unresolved\n' "$remote_tip"
+        return 0
+    }
+    if (( behind != 0 )); then
+        printf 'SAFE_SHARED_MAIN_AUTO_PUSH remote_tip=%s behind=%s ahead=%s push=0 result=SKIP reason=behind_or_diverged\n' "$remote_tip" "$behind" "$ahead"
+        return 0
+    fi
+    if (( ahead < threshold )); then
+        printf 'SAFE_SHARED_MAIN_AUTO_PUSH remote_tip=%s behind=%s ahead=%s threshold=%s push=0 result=SKIP reason=ahead_below_threshold\n' "$remote_tip" "$behind" "$ahead" "$threshold"
+        return 0
+    fi
+
+    common_dir="$(git -C "$repo" rev-parse --path-format=absolute --git-common-dir 2>/dev/null)" || return 1
+    lock_file="$common_dir/safe_shared_main_ff.lock"
+    exec {lock_fd}>"$lock_file" || return 1
+    if ! flock -n "$lock_fd"; then
+        eval "exec ${lock_fd}>&-"
+        printf 'SAFE_SHARED_MAIN_AUTO_PUSH remote_tip=%s behind=%s ahead=%s push=0 result=SKIP reason=publication_lock_busy\n' "$remote_tip" "$behind" "$ahead"
+        return 0
+    fi
+
+    before_head="$(git -C "$repo" rev-parse HEAD)"
+    before_index="$(git -C "$repo" diff --cached --binary | sha256sum | awk '{print $1}')"
+    before_dirty="$(git -C "$repo" status --porcelain=v1 --untracked-files=all | sha256sum | awk '{print $1}')"
+    temp_parent="$(mktemp -d "${TMPDIR:-/tmp}/safe-shared-main-auto-push.XXXXXX")" || {
+        flock -u "$lock_fd"; eval "exec ${lock_fd}>&-"; return 1;
+    }
+    clean_repo="$temp_parent/repo"
+    cleanup_auto_push() {
+        if [[ -d "$clean_repo" ]]; then
+            git -C "$repo" worktree remove --force "$clean_repo" >/dev/null 2>&1 || true
+        fi
+        rmdir "$temp_parent" 2>/dev/null || true
+        flock -u "$lock_fd"
+        eval "exec ${lock_fd}>&-"
+    }
+    if ! git -C "$repo" worktree add --detach "$clean_repo" "$remote_tip" >/dev/null 2>&1; then
+        cleanup_auto_push
+        printf 'SAFE_SHARED_MAIN_AUTO_PUSH remote_tip=%s behind=%s ahead=%s push=0 result=SKIP reason=isolated_worktree_unavailable\n' "$remote_tip" "$behind" "$ahead"
+        return 0
+    fi
+    if ! git -C "$clean_repo" merge-base --is-ancestor "$remote_tip" "$before_head"; then
+        cleanup_auto_push
+        printf 'SAFE_SHARED_MAIN_AUTO_PUSH remote_tip=%s behind=%s ahead=%s push=0 result=SKIP reason=remote_race_or_diverged\n' "$remote_tip" "$behind" "$ahead"
+        return 0
+    fi
+    if git -C "$clean_repo" push origin "${before_head}:refs/heads/main" >/dev/null 2>&1; then
+        published_tip="$(git -C "$repo" ls-remote origin refs/heads/main 2>/dev/null | awk 'NR==1 {print $1}')"
+        if [[ ! "$published_tip" =~ ^[0-9a-f]{40}$ ]] || ! git -C "$repo" merge-base --is-ancestor "$before_head" "$published_tip"; then
+            cleanup_auto_push
+            printf 'SAFE_SHARED_MAIN_AUTO_PUSH remote_tip=%s behind=%s ahead=%s push=0 result=SKIP reason=published_tip_unverified\n' "$remote_tip" "$behind" "$ahead"
+            return 0
+        fi
+        push_rc=0
+    else
+        push_rc=$?
+    fi
+    after_head="$(git -C "$repo" rev-parse HEAD 2>/dev/null || true)"
+    after_index="$(git -C "$repo" diff --cached --binary | sha256sum | awk '{print $1}')"
+    after_dirty="$(git -C "$repo" status --porcelain=v1 --untracked-files=all | sha256sum | awk '{print $1}')"
+    cleanup_auto_push
+    if (( push_rc != 0 )); then
+        printf 'SAFE_SHARED_MAIN_AUTO_PUSH remote_tip=%s behind=%s ahead=%s push=0 result=SKIP reason=push_competition_or_hook_failure\n' "$remote_tip" "$behind" "$ahead"
+        return 0
+    fi
+    if [[ "$before_head" != "$after_head" || "$before_index" != "$after_index" || "$before_dirty" != "$after_dirty" ]]; then
+        printf 'SAFE_SHARED_MAIN_AUTO_PUSH remote_tip=%s published=%s push=0 result=BLOCK reason=shared_state_changed\n' "$remote_tip" "$published_tip"
+        return 1
+    fi
+    printf 'SAFE_SHARED_MAIN_AUTO_PUSH remote_tip=%s published=%s behind=%s ahead=%s threshold=%s push=1 shared_head_unchanged=yes shared_index_unchanged=yes shared_dirty_unchanged=yes result=PASS\n' "$remote_tip" "$published_tip" "$behind" "$ahead" "$threshold"
+    return 0
+}
+
+if [[ "${1:-}" == "--auto-push-if-ready" ]]; then
+    [[ -n "${2:-}" && -n "${3:-}" && -z "${4:-}" ]] || {
+        echo "usage: bash scripts/safe_shared_main_ff.sh --auto-push-if-ready <repo> <ci-state>" >&2
+        exit 2
+    }
+    safe_shared_main_auto_push "$2" "${SAFE_SHARED_MAIN_FF_AUTO_PUSH_THRESHOLD:-1}" "$3"
+    exit $?
+fi
+
 # A private index inherited from a scoped commit is exactly the state that can
 # advance main/index while leaving the shared worktree at an older generation.
 unset GIT_INDEX_FILE GIT_DIR GIT_WORK_TREE GIT_COMMON_DIR GIT_OBJECT_DIRECTORY
