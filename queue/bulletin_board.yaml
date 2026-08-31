@@ -1,4 +1,35 @@
 entries:
+- id: 'blt_20260831_133639_5ae5af'
+  content: |-
+    GATE CLEAR cmd_4431: LP Current signals 体裁 — 招待制注記の重複削除・JA を up to 表記へ・主要指標の太字統一・TQQQ MDD 赤字・閲覧列をメンバーシップ表記へ
+  posted_by: 'karo'
+  posted_at: '2026-08-31T13:36:39'
+  requires_confirmation: false
+  action_type: 'info'
+  actioned_by: ''
+  notify_targets: []
+  confirmed_by: []
+  status: 'open'
+- id: 'blt_20260831_131614_cb65e8'
+  content: |-
+    GATE CLEAR cmd_karo_hotfix_report_review_generation_dedupe_20260831: 完了
+  posted_by: 'karo'
+  posted_at: '2026-08-31T13:16:14'
+  requires_confirmation: false
+  action_type: 'info'
+  actioned_by: ''
+  confirmed_by: []
+  status: 'open'
+- id: 'blt_20260831_131058_21097a'
+  content: |-
+    GATE CLEAR cmd_karo_hotfix_throughput_dedupe_segment_20260831: 完了
+  posted_by: 'karo'
+  posted_at: '2026-08-31T13:10:58'
+  requires_confirmation: false
+  action_type: 'info'
+  actioned_by: ''
+  confirmed_by: []
+  status: 'open'
 - id: 'blt_20260831_124611_7b4cbb'
   content: |-
     GATE CLEAR cmd_reflux_insight_202608311157_tobisaru: 完了
@@ -7,7 +38,6 @@ entries:
   requires_confirmation: false
   action_type: 'info'
   actioned_by: ''
-  notify_targets: []
   confirmed_by: []
   status: 'open'
 - id: 'blt_20260831_124456_8db90c'
@@ -18,7 +48,6 @@ entries:
   requires_confirmation: false
   action_type: 'info'
   actioned_by: ''
-  notify_targets: []
   confirmed_by: []
   status: 'open'
 - id: 'blt_20260831_122736_f39ae3'
@@ -29,10 +58,6 @@ entries:
   requires_confirmation: false
   action_type: 'info'
   actioned_by: ''
-  notify_targets:
-    - 'shogun'
-    - 'karo'
-    - 'gunshi'
   confirmed_by: []
   status: 'open'
 - id: 'blt_20260831_122241_b2b6cf'
@@ -43,25 +68,8 @@ entries:
   requires_confirmation: false
   action_type: 'info'
   actioned_by: ''
-  notify_targets:
-    - 'shogun'
-    - 'karo'
-    - 'gunshi'
   confirmed_by: []
   status: 'open'
-- id: 'blt_20260831_121952_084dd7'
-  content: |-
-    [URGENT-HARM] 下知 msg_20260831_121138_3513206_5cfc51ad 実行中。集計コマンド: 2 cmdのreview_approvalsとlogs/gate_metrics最新terminalを照合。出力行: 新throughput=precheck ERRORS 1→0・軍師再レビュー起床済み・terminal0、旧generation_dedupe=gunshi LGTM1+karo ACCEPT1・GATE再実行済み・terminal WAIT1(throughput_segment_invalid)。1件の定義: 対象cmdごとに最新gate_metricsがCLEARまたはBLOCKの終端結果を1件とする。旧WAIT原因を現在追跡し、両cmd terminal 2/2まで継続する。
-  posted_by: 'karo'
-  posted_at: '2026-08-31T12:19:52'
-  requires_confirmation: false
-  action_type: 'info'
-  actioned_by: ''
-  notify_targets:
-    - 'shogun'
-  confirmed_by:
-    - 'shogun'
-  status: 'closed'
 - id: 'blt_20260831_120207_612bcb'
   content: |-
     GATE CLEAR cmd_karo_hotfix_safe_shared_main_ff_isolated_publish_fallback_20260831: 完了
@@ -70,7 +78,6 @@ entries:
   requires_confirmation: false
   action_type: 'info'
   actioned_by: ''
-  notify_targets: []
   confirmed_by: []
   status: 'open'
 - id: 'blt_20260831_120122_8eebed'
@@ -81,7 +88,6 @@ entries:
   requires_confirmation: false
   action_type: 'info'
   actioned_by: ''
-  notify_targets: []
   confirmed_by: []
   status: 'open'
 - id: 'blt_20260831_115755_ef7766'
@@ -92,7 +98,6 @@ entries:
   requires_confirmation: false
   action_type: 'info'
   actioned_by: ''
-  notify_targets: []
   confirmed_by: []
   status: 'open'
 - id: 'blt_20260831_115116_ab5e9c'
@@ -103,7 +108,6 @@ entries:
   requires_confirmation: false
   action_type: 'info'
   actioned_by: ''
-  notify_targets: []
   confirmed_by: []
   status: 'open'
 - id: 'blt_20260831_114339_5cdb62'
@@ -114,7 +118,6 @@ entries:
   requires_confirmation: false
   action_type: 'info'
   actioned_by: ''
-  notify_targets: []
   confirmed_by: []
   status: 'open'
 - id: 'blt_20260831_111637_2c435a'
@@ -125,7 +128,6 @@ entries:
   requires_confirmation: false
   action_type: 'info'
   actioned_by: ''
-  notify_targets: []
   confirmed_by:
     - 'karo'
   status: 'open'
@@ -137,7 +139,6 @@ entries:
   requires_confirmation: false
   action_type: 'info'
   actioned_by: ''
-  notify_targets: []
   confirmed_by: []
   status: 'open'
 - id: 'blt_20260831_110040_0fa679'
@@ -148,7 +149,6 @@ entries:
   requires_confirmation: false
   action_type: 'info'
   actioned_by: ''
-  notify_targets: []
   confirmed_by: []
   status: 'open'
 - id: 'blt_20260831_082042_3c2c42'
@@ -159,7 +159,6 @@ entries:
   requires_confirmation: false
   action_type: 'info'
   actioned_by: ''
-  notify_targets: []
   confirmed_by: []
   status: 'open'
 - id: 'blt_20260831_081829_99256d'
@@ -170,7 +169,6 @@ entries:
   requires_confirmation: false
   action_type: 'info'
   actioned_by: ''
-  notify_targets: []
   confirmed_by: []
   status: 'open'
 - id: 'blt_20260831_081435_65f228'
@@ -181,7 +179,6 @@ entries:
   requires_confirmation: false
   action_type: 'info'
   actioned_by: ''
-  notify_targets: []
   confirmed_by:
     - 'shogun'
   status: 'open'
@@ -193,7 +190,6 @@ entries:
   requires_confirmation: false
   action_type: 'info'
   actioned_by: ''
-  notify_targets: []
   confirmed_by: []
   status: 'open'
 - id: 'blt_20260831_062246_755df5'
@@ -204,7 +200,6 @@ entries:
   requires_confirmation: false
   action_type: 'info'
   actioned_by: ''
-  notify_targets: []
   confirmed_by: []
   status: 'open'
 - id: 'blt_20260831_050141_665640'
@@ -215,7 +210,6 @@ entries:
   requires_confirmation: false
   action_type: 'info'
   actioned_by: ''
-  notify_targets: []
   confirmed_by: []
   status: 'open'
 - id: 'blt_20260831_044821_66110a'
@@ -226,7 +220,6 @@ entries:
   requires_confirmation: false
   action_type: 'info'
   actioned_by: ''
-  notify_targets: []
   confirmed_by: []
   status: 'open'
 - id: 'blt_20260831_044105_c89847'
@@ -237,7 +230,6 @@ entries:
   requires_confirmation: false
   action_type: 'info'
   actioned_by: ''
-  notify_targets: []
   confirmed_by: []
   status: 'open'
 - id: 'blt_20260831_043412_afad1b'
@@ -248,7 +240,6 @@ entries:
   requires_confirmation: false
   action_type: 'info'
   actioned_by: ''
-  notify_targets: []
   confirmed_by: []
   status: 'open'
 - id: 'blt_20260831_042059_f473ee'
@@ -259,7 +250,6 @@ entries:
   requires_confirmation: false
   action_type: 'info'
   actioned_by: ''
-  notify_targets: []
   confirmed_by: []
   status: 'open'
 - id: 'blt_20260831_040538_2db1dd'
@@ -270,7 +260,6 @@ entries:
   requires_confirmation: false
   action_type: 'info'
   actioned_by: ''
-  notify_targets: []
   confirmed_by: []
   status: 'open'
 - id: 'blt_20260831_040352_a8bedd'
@@ -281,7 +270,6 @@ entries:
   requires_confirmation: false
   action_type: 'info'
   actioned_by: ''
-  notify_targets: []
   confirmed_by: []
   status: 'open'
 - id: 'blt_20260831_034643_badae0'
@@ -292,7 +280,6 @@ entries:
   requires_confirmation: false
   action_type: 'info'
   actioned_by: ''
-  notify_targets: []
   confirmed_by: []
   status: 'open'
 - id: 'blt_20260831_032025_5c6164'
@@ -303,7 +290,6 @@ entries:
   requires_confirmation: false
   action_type: 'info'
   actioned_by: ''
-  notify_targets: []
   confirmed_by:
     - 'shogun'
   status: 'open'
@@ -315,7 +301,6 @@ entries:
   requires_confirmation: false
   action_type: 'info'
   actioned_by: ''
-  notify_targets: []
   confirmed_by: []
   status: 'open'
 - id: 'blt_20260831_031835_e8229e'
@@ -326,100 +311,5 @@ entries:
   requires_confirmation: false
   action_type: 'info'
   actioned_by: ''
-  notify_targets: []
-  confirmed_by: []
-  status: 'open'
-- id: 'blt_20260831_031139_22c2ef'
-  content: |-
-    GATE CLEAR cmd_reflux_insight_202608310257_tobisaru: 完了
-  posted_by: 'karo'
-  posted_at: '2026-08-31T03:11:39'
-  requires_confirmation: false
-  action_type: 'info'
-  actioned_by: ''
-  notify_targets: []
-  confirmed_by: []
-  status: 'open'
-- id: 'blt_20260831_022309_fae8ac'
-  content: |-
-    [家老指示応答] D0根治完了+commit: report_review重複送信+SG-PRE35偽陽性。commit dbcd4c67。家老msg_20260831_020406指示の先送り監査に応答。
-    集計コマンド: BATS_FILTER='report_review to gunshi dedup' bash scripts/run_tests.sh file tests/unit/test_inbox_write.bats | grep 'ok 130'
-    出力行: ok 130 report_review to gunshi dedup: first send writes, second exits 20 in 424ms
-    1件の定義: 同一cmd×ninja×type=report_reviewの軍師宛通知。dedupeフラグ存在後は1件目以降全て重複。
-    検証: test 130 PASS(初回フラグ作成+通知1件、2回目DEDUP+通知0件)。SG-PRE35 precheck ERRORS=1→0。
-  posted_by: 'gunshi'
-  posted_at: '2026-08-31T02:23:09'
-  requires_confirmation: false
-  action_type: 'info'
-  actioned_by: ''
-  notify_targets: []
-  confirmed_by: []
-  status: 'open'
-- id: 'blt_20260831_010733_48fb9d'
-  content: |-
-    D0根治: report_review重複送信バグ修正(殿指示)。
-    根因: inbox_write.sh L3590のdedupeフラグチェックがフラグを書くだけで送信をスキップしなかった。
-    修正: フラグ存在時にexit 0で即停止(scripts/inbox_write.sh)。
-    集計コマンド: grep -c reflux_insight queue/inbox/gunshi.yaml
-    出力行: 36(うちreview通知7通、6通が重複)
-    1件の定義: 同一cmd×ninja×type=report_reviewの軍師宛inbox通知。dedupeフラグ存在後は1件目以降全て重複。
-    検証: bash scripts/inbox_write.sh gunshi ... report_review karo → DUPLICATE_MSG_ID+pending duplicate suppressed(exit 0)。
-    網羅外: karo以外のfrom(ninja_monitor)はninja_monitorのledger dedupeで別途防止済み。
-  posted_by: 'gunshi'
-  posted_at: '2026-08-31T01:07:33'
-  requires_confirmation: false
-  action_type: 'info'
-  actioned_by: ''
-  notify_targets: []
-  confirmed_by: []
-  status: 'open'
-- id: 'blt_20260831_003150_dffe42'
-  content: |-
-    Q6回答(将軍 00:35 /clear 復帰・追体験検証 6問+殿生発言Q)
-    Q1: 止まっていない。一次(全8pane capture・gate_metrics・git merge-base)で ga494 hotfix の report commit 8ffd8804b が main/origin 双方に無い dangling(1h WAIT ancestry・壁の名前が task/掲示板に無し)を検出→家老へ順序付き1通 msg_002923+検知器 D0。残る確認=10分後に家老の受理(task/掲示板)を突合。
-    Q2: 本番=DM origin/main ce3f7f09。4425(96c2728ec)・4424(f90117874)は祖先=yes、public_showcase.py に mdd/blackout 7件、lp に free?from=lp 1 file(型十七弾-6 契約キー grep)。前セッション以降の変更=4425 CLEAR 00:15・4424 CLEAR 00:26・kotaro hotfix CLEAR 00:28。Render LP deploy と post_deploy_check 4点は未実測(家老が GATE 後に API 実測と掲示板 00:15)。
-    Q3: 学び「report 済み∧commit 未合流の便停止は Gate 10.1/10.1b が見ない」→Gate 10.1c(8652081df)へ埋め、本番実行で 2件 WARN(ga494/converge_deploy_task_conflict 41b011c25)。未埋込=型十七弾-5 入力欄滞留 60s 検知(monitor)。
-    Q4: (1)Phase 1「nudge 再送で解決」— 前セッション将軍は 23:17-23:30 軍師へ review nudge を再送すれば処理されると信じた (2)Phase 3「行動→観察」で崩れ — capture すると入力欄に /clear と inbox 文字列が未 submit で滞留、Enter 2回(23:29/23:30)で復帰 (3)連鎖: nudge 再送→既読化のみ 0件処理→capture→滞留発見→Enter→review 3本到達→型十七弾-5。
-    Q5: 事実: 22:45 と 23:12 に cmd_4425 起票を「次の loop で」と二度書き、殿 22:53『覚醒して行動せよ。止まっているぞ』まで起票しなかった。
-    Q6: 今 ga494 の dangling を見て「家老が converge 処理中(blt_001552)だから待つ」と一瞬判断した=#3 他者依存+#5 先送り。切替: 壁の名前が task/掲示板に無いことを grep で確認してから名指し1通を送り、同じ穴を検知器へ。殿のための判断=便を今動かす。
-    殿生発言Q1(負の複利即時): 崩れた前提=insight 登録で対応済みと見なす。ターゲット=insight でなく D0。
-    殿生発言Q2(強くてニューゲーム): 崩れた前提=記憶DB保存で十分。ターゲット=型を gate に埋める。
-    殿生発言Q3(30分loop): 崩れた前提=陣形図(SRC 00:15)で状況が分かる。ターゲット=loop(2)便停止名指しの機械化。
-    自動化ターゲット: scripts/gates/gate_shogun_startup.sh Gate 10.1c(WAIT:report_commit_main_ancestry 30分超∧report commit_hash が main の祖先でない→WARN で cmd+hash 名指し)実装済み commit 8652081df、bash -n OK、本番実行で WARN 2件を実測。
-  posted_by: 'shogun'
-  posted_at: '2026-08-31T00:31:50'
-  requires_confirmation: false
-  action_type: 'info'
-  actioned_by: ''
-  notify_targets: []
-  confirmed_by: []
-  status: 'open'
-- id: 'blt_20260831_001552_96d1e7'
-  content: |-
-    [URGENT-HARM] source_msg=msg_20260831_001204_941698_3b7540b0 処理中。集計コマンド: safe_shared_main_ff・review_bundle修復・gate再実行を計測。出力行の生貼付: behind=0 cmd4425_precheck_ERRORS=0 valid_sg7_bundle=1 karo_ACCEPT=1 gate_process=running。1件の定義: valid_sg7_bundleはreview rootを持ちreview_bundle.py single検証PASSしたbundleを1件と数える。GATE terminal後にRender 3 serviceのlive shaをAPI実測しdeploy順序へ進む。
-  posted_by: 'karo'
-  posted_at: '2026-08-31T00:15:52'
-  requires_confirmation: false
-  action_type: 'info'
-  actioned_by: ''
-  notify_targets: []
-  confirmed_by:
-    - 'shogun'
-  status: 'open'
-- id: 'blt_20260831_001225_c216c6'
-  content: |-
-    D0根治完了: SG-PRE35偽陽性修正。
-    根因: deploy_task_test_necessity_precheckが外部PJのproject HEADにmerge前の先行cmdテストを新規テスト誤認。
-    修正: deploy_task.sh + modifiers.shにcross_repo_commits worktree HEAD~1フォールバック追加。
-    集計コマンド: bash scripts/gates/gate_gunshi_report_precheck.sh queue/reports/kagemaru_report_cmd_4425.yaml 2>&1 | tail -1
-    出力行: === 総合: ERRORS=0 === (修正前: === 総合: ERRORS=1 ===)
-    1件の定義: ERRORS=precheck構造的不備検出数。1件=SG-PRE35 transient deletion evidence偽陽性。
-    網羅外: 他PJのworktreeが存在しないケースは未検証(当該ケースは先行cmdなし=正当なnew test)。
-  posted_by: 'gunshi'
-  posted_at: '2026-08-31T00:12:25'
-  requires_confirmation: false
-  action_type: 'info'
-  actioned_by: ''
-  notify_targets: []
   confirmed_by: []
   status: 'open'
