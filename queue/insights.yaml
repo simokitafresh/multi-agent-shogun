@@ -11999,3 +11999,10 @@ insights:
   source: "semantic_stress_test"
   fix_known: false
   status: pending
+- id: INS-20260831-204017301-b5e2
+  ts: "2026-08-31T20:40:17+09:00"
+  insight: "[[LP を既存資産で組み直す — app の compare チャートを CDP キャプチャした PNG を置き]] semantic_stress_test candidate_aliases: NO_MATCH source=cmds query=LP を既存資産で組み直す — app の compare チャートを CDP キャプチャした PNG を置き、表は app の既存スタイルを流用し、カードを全廃する"
+  priority: "low"
+  source: "semantic_stress_test"
+  fix_known: false
+  status: pending
