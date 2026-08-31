@@ -115,9 +115,120 @@ while IFS= read -r path; do
 done < "$changed_file" | sort -u >> "$dirty_file"
 sort -u -o "$dirty_file" "$dirty_file"
 comm -12 "$changed_file" "$dirty_file" > "$overlap_file"
+
+shared_state_fingerprint() {
+    local path
+    {
+        git -C "$ROOT" diff --no-ext-diff --binary
+        git -C "$ROOT" diff --cached --no-ext-diff --binary
+        while IFS= read -r -d '' path; do
+            printf 'STATUS:%s\n' "$path"
+            if [[ "$path" == '?? '* ]]; then
+                path="${path#?? }"
+                if [[ -f "$ROOT/$path" ]]; then
+                    sha256sum "$ROOT/$path"
+                fi
+            fi
+        done < <(git -C "$ROOT" status --porcelain=v1 -z --untracked-files=all)
+    } | sha256sum | awk '{print $1}'
+}
+
+isolated_publish_fallback() {
+    local target_head="$1" remote=origin push_ref=refs/heads/main
+    local max_retries attempt remote_tip clean_repo temp_parent push_output
+    local published_remote_sha cleanup_rc push_rc
+
+    max_retries="${SAFE_SHARED_MAIN_FF_MAX_RETRIES:-2}"
+    [[ "$max_retries" =~ ^[0-9]+$ ]] || max_retries=2
+    temp_parent="$(mktemp -d "${TMPDIR:-/tmp}/safe-shared-main-ff.XXXXXX")" || return 1
+    cleanup_isolated() {
+        cleanup_rc=0
+        if [[ -n "${clean_repo:-}" && -e "$clean_repo" ]]; then
+            git -C "$ROOT" worktree remove --force "$clean_repo" >/dev/null 2>&1 || cleanup_rc=1
+            [[ ! -e "$clean_repo" ]] || cleanup_rc=1
+        fi
+        rm -f -- "$temp_parent"/*
+        [[ ! -d "$temp_parent" ]] || rmdir "$temp_parent" 2>/dev/null || cleanup_rc=1
+        return "$cleanup_rc"
+    }
+
+    for ((attempt=0; attempt<=max_retries; attempt++)); do
+        remote_tip="$(git -C "$ROOT" ls-remote "$remote" "$push_ref" 2>/dev/null | awk 'NR==1 {print $1}')"
+        [[ "$remote_tip" =~ ^[0-9a-f]{40}$ ]] || {
+            echo "BLOCK: isolated fallback remote tip unavailable" >&2
+            cleanup_isolated || true
+            return 1
+        }
+        git -C "$ROOT" fetch -q "$remote" "$push_ref" >/dev/null 2>&1 || {
+            echo "BLOCK: isolated fallback remote tip fetch failed" >&2
+            cleanup_isolated || true
+            return 1
+        }
+
+        clean_repo="$temp_parent/repo-$attempt"
+        git -C "$ROOT" worktree add --detach "$clean_repo" "$remote_tip" >/dev/null 2>&1 || {
+            echo "BLOCK: isolated fallback worktree creation failed" >&2
+            cleanup_isolated || true
+            return 1
+        }
+        if ! git -C "$clean_repo" merge --no-edit --no-autostash "$target_head" >/dev/null 2>"$temp_parent/merge-$attempt.err"; then
+            echo "BLOCK: isolated fallback merge conflict" >&2
+            sed -n '1,40p' "$temp_parent/merge-$attempt.err" >&2
+            git -C "$clean_repo" merge --abort >/dev/null 2>&1 || true
+            cleanup_isolated || true
+            return 1
+        fi
+
+        push_output="$temp_parent/push-$attempt.out"
+        if git -C "$clean_repo" push "$remote" "HEAD:$push_ref" >"$push_output" 2>&1; then
+            published_remote_sha="$(git -C "$ROOT" ls-remote "$remote" "$push_ref" 2>/dev/null | awk 'NR==1 {print $1}')"
+            if [[ "$published_remote_sha" =~ ^[0-9a-f]{40}$ ]] \
+                && git -C "$ROOT" merge-base --is-ancestor "$target_head" "$published_remote_sha"; then
+                cleanup_isolated || {
+                    echo "BLOCK: isolated fallback cleanup failed" >&2
+                    return 1
+                }
+                printf 'SAFE_SHARED_MAIN_FF_FALLBACK target=%s remote_tip=%s published=%s attempt=%s remote_contains_target=yes shared_head_unchanged=yes shared_index_unchanged=yes shared_dirty_unchanged=yes result=PASS\n' \
+                    "$target_head" "$remote_tip" "$published_remote_sha" "$attempt"
+                return 0
+            fi
+            echo "BLOCK: isolated fallback remote verification failed" >&2
+            cat "$push_output" >&2
+            cleanup_isolated || true
+            return 1
+        fi
+
+        cat "$push_output" >&2
+        push_rc=1
+        if grep -Eqi 'cannot lock ref|non-fast-forward|fetch first|tip of your current branch is behind|remote contains work' "$push_output"; then
+            push_rc=2
+        fi
+        cleanup_isolated || {
+            echo "BLOCK: isolated fallback cleanup failed" >&2
+            return 1
+        }
+        clean_repo=""
+        if [[ "$push_rc" -ne 2 || "$attempt" -ge "$max_retries" ]]; then
+            echo "BLOCK: isolated fallback push failed" >&2
+            return 1
+        fi
+        echo "SAFE_SHARED_MAIN_FF_FALLBACK retry=$((attempt + 1))/$max_retries remote_tip_race=yes" >&2
+    done
+    return 1
+}
+
 if [[ -s "$overlap_file" ]]; then
     echo "BLOCK: fast-forward would overlap shared worktree changes:" >&2
     sed -n '1,40p' "$overlap_file" >&2
+    shared_before="$(shared_state_fingerprint)"
+    if isolated_publish_fallback "$target_head"; then
+        shared_after="$(shared_state_fingerprint)"
+        [[ "$shared_before" == "$shared_after" ]] || {
+            echo "BLOCK: isolated fallback changed shared worktree state" >&2
+            exit 1
+        }
+        exit 0
+    fi
     exit 2
 fi
 
