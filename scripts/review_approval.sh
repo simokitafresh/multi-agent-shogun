@@ -939,7 +939,12 @@ if [ "$role" = gunshi ] && [ "$result" = LGTM ] \
   && [ "${REVIEW_APPROVAL_CANONICAL_ENTRY:-}" != review_bundle ] \
   && [ "${REVIEW_APPROVAL_NO_NOTIFY:-0}" != 1 ]; then
   notice_marker="$dir/gunshi_notice.sent"
-  if [ ! -f "$notice_marker" ]; then
+  notice_stale=0
+  if [ -f "$notice_marker" ]; then
+    prev_fp=$(head -n 1 "$notice_marker" 2>/dev/null || true)
+    [ "$prev_fp" != "$fingerprint" ] && notice_stale=1
+  fi
+  if [ ! -f "$notice_marker" ] || [ "$notice_stale" = 1 ]; then
     review_notice="$cmd_id 完了レビュー LGTM — report=$report_rel。家老ACCEPT/GATE判定待ち。"
     # BULLETIN_AUTOGEN=1: 本文はスクリプトが自動生成する定型文であり人が3点セットを
     # 書き込めない。指揮官発信本文検査を免除しないと構造的に必ずBLOCKする(家老D0止血 2026-07-27)。
