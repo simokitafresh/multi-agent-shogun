@@ -8363,7 +8363,10 @@ insights:
   priority: "medium"
   source: "skill_script_refs:40d0bfa49fef218b"
   fix_known: false
-  status: pending
+  status: resolved
+  resolved_reason: "一次情報で対象31対のdigest=40d0bfa49fef218bを再計算し現行gateを実走。参照先実在、SKILL鮮度、例示静的パス、日時付き副作用実走マーカーの4検査は全てOK。rc=2はFOLLOWUP_ACTIVE=32かつFOLLOWUP_COVERS_REVIEW_REQUIRED=yesの集約REVIEW_REQUIREDで対象対を被覆するため、追加修正とdecision_candidateは不要。"
+  action_artifact: "target=queue/insights.yaml:INS-20260829-223039596-e0f0;gate=bash scripts/gates/gate_skill_script_refs.sh;rc=2;result=REVIEW_REQUIRED;scanned=41_SKILL.md;script_refs=82;referenced=30;deduped=32;followup_active=32;followup_covers_review_required=yes;checks=missing_refs0/stale_refs0/example_paths_missing0/side_effect_marker_missing0;target_pairs=31;target_digest=40d0bfa49fef218b;memory=exact_target_NO_MATCH;semantic=exact_target_NO_MATCH;causal_backlinks=0;inventory_before_task_snapshot=52/14/0/66;inventory_before_fresh=52/14/597/663"
+  resolved_at: "2026-08-31T09:25:30+09:00"
 - id: INS-20260829-230126951-9d8a
   ts: "2026-08-29T23:01:26+09:00"
   insight: "semantic_index_update新概念候補: discussion:確か前にDM signalのログインページをどう作るか相談しなかったっけ？そのアーティファクトある？ は 既存aliasesに一致なし。概念定義とaliases追加を検討せよ"
