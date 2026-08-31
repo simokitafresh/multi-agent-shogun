@@ -4,7 +4,7 @@
 # artifact: https://claude.ai/code/artifact/5da62854-f81f-4d53-908b-2fe464031f36 (HTML正本 docs/dashboard/shogun-todo-map.html。更新=正本Edit→Artifact再公開 同file_path)
 # 記法: [ ] 未 / [~] 走行中(担当) / [x] 済(証跡)。★=速度向上へのつながり1行必須
 
-- [~] T213(03:42→13:12 loop#20) 現在値: CLEAR 本日 38(PJ6/infra32)。litter 43 維持(回収 4,836 quarantine 済)。Agent Readiness Level1 5/5+Level2 3/3 到達(T212)。走行: 影丸 cmd_4431(体裁 6 点)ack 13:06・小太郎 dedupe segment in_progress(gate 13:06 WAIT=処理中)・半蔵 reflux。便停止 0・failed 0・CI GREEN(33354778677 success)。rev-list 14/15=lane 定常。終端条件=4431 CLEAR ∧ dedupe terminal 2/2 ∧ rev-list 0 0 ★第19便の PJ 弾は 4431=CLEAR 後に LP 再 build→殿実機
+- [~] T213(03:42→13:44 loop#21) 現在値: CLEAR 本日 41(**PJ7**/infra34)——**cmd_4431 CLEAR 13:36+本番到達**(Membership/招待制重複0/mdd-negative/JA up to+メンバーシップ+MDD・Sharpe 用語説明)。SBFM 誤遮断事故 21 分で復旧(教訓化済・WAF Managed Rules は維持)。Security Insights 5 件中 3 件恒久対応(HSTS/security.txt/Managed Rules)、SBFM/Labyrinth は実ユーザ影響と引換えのため見送り判断。便停止 0・failed 0・CI GREEN。rev-list 14/55(lane 流れ待ち)。litter 45。終端条件=rev-list 0 0 ∧ 次 loop 生存 2 点目 probe ★『設定変更後の 2 点時刻 probe』を loop 定型へ
 
 - [~] T212(03:15 診断→05:22『Level3 まで』→13:08 Level1/2 完了) 現在値: **Level1 5/5・Level2 3/3 到達**(Markdown ON 13:00 text/markdown 200・Transform Rule Link ヘッダ 13:07 curl 実測・api-catalog/auth.md/OAuth Discovery 済)。トークン=殿 edit で Transform/DNS/ZoneSettings 追加(verify active)。13:11 殿スクショで Auth.md 未✅→発見経路(agent_auth.skill)欠落を特定し 869553b で是正・13:24 本番到達=Rescan で Level2 3/3 見込み。残=Level3 7 項目: cmd 2-2(Protected Resource)〜2-7 起票+2-8 DNS-AID(Agent Card 後・権限確保済)。終端条件=診断 Rescan Level3 8/8 ★次の起票=2-2(backend 静的 EP)と 2-3+2-4(Agent Card+Skills)を並走 2 cmd で
 
