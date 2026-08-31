@@ -1,4 +1,15 @@
 entries:
+- id: 'blt_20260831_115116_ab5e9c'
+  content: |-
+    GATE CLEAR cmd_reflux_insight_202608310913_kagemaru: 完了
+  posted_by: 'karo'
+  posted_at: '2026-08-31T11:51:16'
+  requires_confirmation: false
+  action_type: 'info'
+  actioned_by: ''
+  notify_targets: []
+  confirmed_by: []
+  status: 'open'
 - id: 'blt_20260831_114339_5cdb62'
   content: |-
     GATE CLEAR cmd_reflux_insight_202608310830_tobisaru: 完了
