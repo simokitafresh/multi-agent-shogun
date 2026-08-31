@@ -1,5 +1,5 @@
 <!-- gist-master: 901c36a5b617082128ffdce43ad25c10 dm-login-showcase-asis-tobe_v3_20260830.md -->
-# DM-Signal 入口 3 面（LP / app 入口 / 公開 API）— AsIs / ToBe 設計書 v3（2026-08-30 22:45）
+# DM-Signal 入口 3 面（LP / app 入口 / 公開 API）— AsIs / ToBe 設計書 v3.1（2026-08-30 22:45 起草 / 2026-08-31 13:56 状態更新）
 
 - 版: **AsIs v3.0（本番リアルタイム 2026-08-30 22:02-22:40 JST 実測）/ ToBe v3.0**
 - 前版: `docs/research/dm-login-showcase-asis-tobe_v2_20260830.md`（gist 3236e0df、`/login` 単一ページのショーウィンドウ設計）。v2 の ToBe は 13:10-21:10 に cmd_4413/4415/4416/4420 で実装されたが、殿裁定 16:42『別サイト』・17:53『LP と /login がほぼ同じ』・20:21『Free tier 着手』で **設計の単位が「/login 1 ページ」から「入口 3 面」へ変わった**。v2 は経緯の正本として残し、本版が現行の正本。
@@ -121,27 +121,27 @@
 
 ---
 
-## §5 工程（状態 22:45。1 unit=1 cmd・可逆・儀式なし）
+## §5 工程（状態 2026-08-31 13:56。v3 起票分は全て終端）
 
 | 手 | 内容 | 状態 |
 |---|---|---|
-| 済 | v2 P1（4413 EP）/ P2（4416 /login）/ 4420 最小化 / 4417 LP / 4418 docs・faq / 4419 CORS+event / 4421 SEO P0 | CLEAR・live |
-| 走行 | F1 4422（RC）/ F2 4423（CLEAR、未 deploy）/ F3 4424（RC） | 家老 lane（22:12 順序 1 通） |
-| deploy 前提 | Render env 3 種・Supabase Redirect URL・`VIEWER_PASSWORD_FREE` | 未着手（F1 CLEAR を待たず並走可=可逆） |
-| post_deploy_check | §3 の deploy 後 2 経路+既存 EP smoke。殿実機（シークレット×スマホ） | 3 cmd deploy 後、家老 30 分以内に掲示板へ生貼付 |
-| **P-C 契約 v3** | `public_showcase.py` を §2.4 へ（best_name/sharpe_avg/until_hint 除去、mdd_best・benchmarks mdd・blackout month_closed/n_signals・meta.skipped）+ contract test。LP 表に MDD 列 | **未起票**（4415 未到達の再起票。二値=未認証 curl に `best_name` 0 件 ∧ `mdd_best` 4 件（3 plan+secret）∧ benchmarks mdd 2 件） |
-| P-E event 3 語 | `signup_google/coupon_view/coupon_copy`+`source` | 未起票（F2 deploy 後） |
-| P-F FAQ EN | `/faq` EN 版（JA 459 行の翻訳）+hreflang | 未起票 |
-| P-G og:image | SEO 案 §6 hotfix | 未起票（4424 と同 target） |
-| P-H product_logins | Free tier v3.1 §4-5 | 未起票（Supabase 側、RLS） |
-| 後日 | `app.dm-signal.com` 移行、P1-1 月次シグナル頁 | 殿裁定待ち / 9 月 |
+| 済(v2 期) | 4413 EP / 4416 /login / 4420 最小化 / 4417 LP / 4418 docs・faq / 4419 CORS+event / 4421 SEO P0 | CLEAR・live |
+| 済(Free tier) | F1 4422+4428（backend・Supabase Auth API 方式）/ F2 4423（frontend）/ F3 4424（LP 導線） | CLEAR・live。**殿実機 e2e PASS 08-31 01:38**（是正 4 段は Free tier v3.3 §5） |
+| 済(P-C) | 4425=契約 v3 再実装（mdd_best・blackout・best_name 除去）+hotfix 10d59c8d（hero sharpe） | CLEAR 00:15・origin 到達検分済み |
+| 済(P-F/P-G) | 4427 FAQ EN / 4426 og:image 静的 PNG | CLEAR・live（og-en/og-ja 200 image/png） |
+| 済(LP 表示) | 4430=up to 表記・コントラスト・note CTA / 4431=招待制重複削除・JA up to・太字統一・TQQQ MDD 赤字・メンバーシップ表記・用語説明 | CLEAR 11:00 / 13:36・本番 curl 到達 |
+| 済(周辺) | Cloudflare 地域言語 JP→/ja/ 302 / Agent Readiness L1 5/5・L2 充足・L3 2/8 / HSTS・security.txt・WAF Managed Rules | 別紙 roadmap v1.1（gist da1b7617） |
+| 未起票 | P-E event 3 語（signup_google/coupon_view/coupon_copy+source） | Free 導線の計測。次弾候補 |
+| 未着手 | P-H product_logins（Free tier v3.3 §4-5、Supabase RLS） | 次弾候補 |
+| 後日 | app.dm-signal.com 移行 / P1-1 月次シグナル頁 / メンバーシップ列のリンク先（殿 12:32『この後で考える』） | 殿裁定待ち / 9 月 |
 
-## §6 未決（殿裁定待ち。既定案付き、返答なければ既定案）
+## §6 未決（13:56 更新: 3=起票済で解消(4425)。残 4 件+新規 1）
 1. `app.dm-signal.com` へ app を移すか（既定=当面 onrender のまま。移す時は LP の `NEXT_PUBLIC_APP_HOST` 1 手+Supabase Redirect URL 追加）。
 2. docs/faq を LP 配下へ移すか（既定=app 側 canonical、LP から内部リンク。SEO 案 §5-4）。
-3. **cmd_4415 の未到達（§1.2）を P-C で再起票してよいか**（既定=起票。GATE CLEAR は ToBe の証明ではない）。
+3. ~~cmd_4415 の未到達を P-C で再起票~~ → **解消**（4425 で再実装・CLEAR・origin 到達検分済み）。
 4. Free tier の可視範囲（既定=パフォーマンス+シグナル両方。Free tier v3.1 §4-3）。
 5. ブラックアウト中の Free 導線を帯に出すか（既定=出す。Free tier が同時失効なら出さない）。
+6. （新規 08-31）FoF 訴求 1 行を LP に足すか（実態: active 101 本中 77 本が FoF、LP に Fund of Funds の語 0 回。殿 12:39『FoF がウリ』）。
 
 ## §7 因果リンク
 - [[dm-login-showcase-asis-tobe_v2_20260830]] -> [[殿裁定_LP別サイト_20260830_1642]] -> [[殿実機_LPと/login同構造_20260830_1753]] -> [[殿裁定_FreeTier着手_20260830_2021]] -> **[[dm-login-showcase-asis-tobe_v3_20260830]]** <- [[dm-signal-lp-seo-plan_20260830]] / [[dm-free-tier-google-auth_v3]]
