@@ -11313,3 +11313,10 @@ insights:
   source: "semantic_stress_test"
   fix_known: false
   status: pending
+- id: INS-20260831-145749572-86d7
+  ts: "2026-08-31T14:57:49+09:00"
+  insight: "[[LP Current signals 体裁 — Total return 列削除・CAGR を up to 形式へ・指標]] semantic_stress_test candidate_aliases: NO_MATCH source=cmds query=LP Current signals 体裁 — Total return 列削除・CAGR を up to 形式へ・指標順 CAGR→Sharpe→MDD→×N"
+  priority: "low"
+  source: "semantic_stress_test"
+  fix_known: false
+  status: pending
