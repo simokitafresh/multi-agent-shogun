@@ -11611,7 +11611,10 @@ insights:
   priority: "low"
   source: "semantic_index_update"
   fix_known: false
-  status: pending
+  status: resolved
+  resolved_reason: "semantic index candidate was absorbed into a registered concept"
+  action_artifact: "semantic_index=/home/simokitafresh/multi-agent-shogun/docs/semantic-index/index.md"
+  resolved_at: "2026-08-31T17:56:14+09:00"
 - id: INS-20260831-175545626-2726
   ts: "2026-08-31T17:55:45+09:00"
   insight: "[[アカウントを変えてもアーティファクトを同様に続けられるようにせよ]] semantic_stress_test candidate_aliases: NO_MATCH source=lord query=アカウントを変えてもアーティファクトを同様に続けられるようにせよ"
@@ -11625,7 +11628,10 @@ insights:
   priority: "low"
   source: "semantic_index_update"
   fix_known: false
-  status: pending
+  status: resolved
+  resolved_reason: "semantic index candidate was absorbed into a registered concept"
+  action_artifact: "semantic_index=/home/simokitafresh/multi-agent-shogun/docs/semantic-index/index.md"
+  resolved_at: "2026-08-31T17:56:15+09:00"
 - id: INS-20260831-175557754-1f21
   ts: "2026-08-31T17:55:57+09:00"
   insight: "[[run tests sh の external scope 契約根治 — frontend 限定の npm 経路を任意 ]] semantic_stress_test candidate_aliases: NO_MATCH source=cmds query=run_tests.sh の external scope 契約根治 — frontend 限定の npm 経路を任意 package root(lp 等)へ一般化し typecheck/build receipt を正規記録する"
@@ -11638,5 +11644,15 @@ insights:
   insight: "semantic_index_update未登録[[リンク]]ターゲット: [[review世代連携根治]] は既存aliasesに一致なし。類似概念TOP3: tier_plan_mapping(Tier-プラン対応; alias=viewer_tiers; score=3.6) / codd_methodology(CoDD整合性駆動開発; alias=codd review; score=3.6) / gunshi_review_lifecycle(軍師レビューライフサイクル; alias=review_log; score=3.3)。概念定義とaliases追加を検討せよ"
   priority: "low"
   source: "semantic_index_update"
+  fix_known: false
+  status: resolved
+  resolved_reason: "semantic index candidate was absorbed into a registered concept"
+  action_artifact: "semantic_index=/home/simokitafresh/multi-agent-shogun/docs/semantic-index/index.md"
+  resolved_at: "2026-08-31T17:56:15+09:00"
+- id: INS-20260831-175617195-69ba
+  ts: "2026-08-31T17:56:17+09:00"
+  insight: "[[C \\Users\\simok\\Downloads\\Cloudflare Simokitafresh@gmail com ]] semantic_stress_test candidate_aliases: NO_MATCH source=lord query=\"C:\\Users\\simok\\Downloads\\Cloudflare_Simokitafresh@gmail.com's Account_SecurityInsights_20260831_1325.csv\""
+  priority: "low"
+  source: "semantic_stress_test"
   fix_known: false
   status: pending
