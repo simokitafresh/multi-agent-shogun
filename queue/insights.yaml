@@ -11098,3 +11098,10 @@ insights:
   source: "semantic_stress_test"
   fix_known: false
   status: pending
+- id: INS-20260831-133502377-e6b4
+  ts: "2026-08-31T13:35:02+09:00"
+  insight: "[[トークンにZone WAF EditとBot Management Editを追加した]] semantic_stress_test candidate_aliases: NO_MATCH source=lord query=トークンにZone WAF:EditとBot Management:Editを追加した。確認して3件投入せよ"
+  priority: "low"
+  source: "semantic_stress_test"
+  fix_known: false
+  status: pending
