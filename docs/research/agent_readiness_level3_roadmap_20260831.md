@@ -1,9 +1,12 @@
 <!-- gist-master: da1b7617d777b62864953792b77d5a78 agent_readiness_level3_roadmap_20260831.md -->
-# dm-signal.com Agent Readiness — Level 3 全完了ロードマップ v1.0
+# dm-signal.com Agent Readiness — Level 3 全完了ロードマップ v1.1
 
 - 作成: 2026-08-31 05:25 JST（殿指示 05:22『level3まで全て完了させるためのロードマップをステップバイステップで』）
 - 対象: Cloudflare AI Crawl Control › Agent Readiness 診断（殿提示 HTML 2026-08-31 03:15 準拠）
-- 現状(09:24 更新): Level1 4/5(残=Markdown トグル)・Level2 2/3+1-2(b)済(残=1-2(a) Link ヘッダ実体)・Level3 1/8(2-1 済)（Commerce は optional=本書対象外）
+- 現状(13:52 更新 v1.1): **Level1 5/5 実測**(Markdown ON=text/markdown 200)・**Level2**: API Catalog ✅・Link Headers ✅(診断実測)・Auth.md=スキャナ FAIL 2 回を経て要件を全充足(下記の検出仕様)→**Rescan 待ち**・**Level3**: OAuth Discovery ✅(診断実測)+2-2 PRM 公開済(Rescan 待ち)。残 cmd=2-3〜2-7、2-8 は権限確保済み
+- **スキャナの Auth.md 検出仕様(本日実証、v1.0 の想定より厳しい)**: ①FETCH: GET /auth.md が 200 text/markdown ②PARSE: 本文に **agent registration markers**(`## auth.md Registration` セクション+register_uri/identity type の記述)が必要。ファイル配置+H1 だけでは FAIL ③発見経路: oauth-authorization-server の `agent_auth`(skill/register_uri/identity_types/claim_uri)。全て 01eeceb/1330692 で充足済み
+- **殿操作の実績**: Markdown トグル ON(13:00)・トークン edit×2(Transform/DNS/ZoneSettings 13:06、WAF/BotMgmt 13:33)=ロードマップ想定 3 回のうちトグル+トークンは完了。DNS-AID 用の追加操作は不要になった
+- **併走成果(Security Insights 5 件)**: HSTS 有効化・security.txt 公開・WAF Managed Free Ruleset deploy=恒久。SBFM/AI Labyrinth は投入後に全クライアント 403(browser UA 含む)を実測し 21 分で rollback=**実ユーザ遮断リスクのため見送り**(Agent の門戸開放方針とも整合)（Commerce は optional=本書対象外）
 - 前提事実（本番一次確認済み）: LP=Render static (`lp/`, autoDeploy)・BE=FastAPI (`dm-signal-backend.onrender.com`)・Auth=Supabase・zone proxied=ON・保管トークンは Single Redirect+zone read のみ
 
 ## 実装原則
@@ -65,7 +68,10 @@
 ## 進捗台帳
 | Step | 起票/実施 | 状態 |
 |---|---|---|
-| 0-1 | 殿待ち | open |
+| 0-1 | 殿 ON 13:00→curl text/markdown 200 | done |
 | 1-1/1-3/1-2(b)/2-1 | 将軍 D0 予定 | open |
-| 2-2〜2-7 | cmd 未起票 | open |
-| 2-8 | 殿トークン待ち | open |
+| 2-2 | PRM 静的公開で充足(1330692 live 13:28、殿提供スキル仕様準拠。backend 側複製は任意) | done |
+| 2-3〜2-7 | cmd 未起票 | open |
+| 1-2(a) | Transform Rule 作成 13:07(Link ヘッダ本番実測) | done |
+| 1-3 是正 | 13:11 殿スクショで Auth.md 未✅→発見経路の欠落を特定(スキャナは oauth-authorization-server の agent_auth.skill から auth.md を辿る)。869553b で agent_auth.skill 追加+auth.md タイトルを # auth.md 実例準拠へ、13:24 本番 curl 両方到達 | done |
+| 2-8 | トークン権限確保済(DNS:Edit 実測)。Agent Card(2-3)後に投入 | ready |
