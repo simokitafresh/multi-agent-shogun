@@ -4,7 +4,7 @@
 # artifact: https://claude.ai/code/artifact/5da62854-f81f-4d53-908b-2fe464031f36 (HTML正本 docs/dashboard/shogun-todo-map.html。更新=正本Edit→Artifact再公開 同file_path)
 # 記法: [ ] 未 / [~] 走行中(担当) / [x] 済(証跡)。★=速度向上へのつながり1行必須
 
-- [~] T213(03:42→11:12 loop#16) 現在値: CLEAR 本日 31(PJ6/infra25、30 分+2=4430/xtrace_utf8)。done 在庫 4(影丸 0913/才蔵 0931/小太郎 dedupe segment/半蔵)=review 待ち(軍師 UNREAD 11 処理中)、疾風=LG043 続弾 hotfix ack。lane fallback hotfix は未配備(4430 CLEAR 済で配備条件成立)→家老の次アクション。rev-list 2/21・CI GREEN・failed 0・litter 4,872。終端条件=lane fallback CLEAR ∧ 適用後 1h push 起因 WAIT 0 ∧ rev-list 0 0 ★根治が入るまで在庫は再び ancestry に並ぶ=fallback 配備が最優先
+- [~] T213(03:42→11:42 loop#17) 現在値: CLEAR 本日 31(PJ6/infra25)。escalation 5 件を将軍 D0 で解体(隔離 clone push×2+dangling 5ffd03f2 の sha 直接 merge→全 report IN_ORIGIN、rev-list 5/0)。在庫 6 done は gate 再走待ち(CI run 33351291415/33351377748 走行中=ci_readiness 通過後に CLEAR 連鎖見込み)。lane fallback hotfix はまだ配備証跡なし(msg_113813 で最優先指定済み)。litter 4,875。終端条件=在庫 6 CLEAR ∧ lane fallback CLEAR ∧ 適用後 1h push 起因 WAIT 0 ★fallback には dangling(report commit が ref 外)の自動合流も contract に含めること=追補 AC 済み扱いで家老報告を検分
 
 - [~] T212(03:15 診断→05:22『Level3 まで』→09:24 Phase1 D0 済) 現在値: Level1 4/5+static 系 D0 完了(b2d3e7a live: api-catalog/auth.md×2/oauth-authorization-server 全 200・rel=api-catalog 1 件・issuer=Supabase 現物一致)=1-1/1-3/1-2b/2-1 done。残=Phase0 Markdown トグル(殿 1click)・1-2(a) Link ヘッダ(Transform 用トークン=殿)・2-8 DNS-AID(トークン=殿)・cmd 2-2〜2-7(次: 2-2 Protected Resource 起票)。終端条件=診断 Rescan Level1 5/5 ∧ Level2 3/3 ∧ Level3 8/8 ★agent 経由の新流入面を read-only で開く
 
