@@ -11559,3 +11559,10 @@ insights:
   source: "semantic_stress_test"
   fix_known: false
   status: pending
+- id: INS-20260831-174342579-9c2c
+  ts: "2026-08-31T17:43:42+09:00"
+  insight: "[[Image 13 currentsignalの体裁について決めよう]] semantic_stress_test candidate_aliases: NO_MATCH source=lord query=[Image #13] currentsignalの体裁について決めよう。basic plan,standard,premium,Secretの数値inbox1"
+  priority: "low"
+  source: "semantic_stress_test"
+  fix_known: false
+  status: pending
