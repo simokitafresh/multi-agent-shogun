@@ -138,6 +138,110 @@ deploy_task_rollback_remote_tip_worktree() {
     [ -n "$marker" ] && rm -f -- "$marker" "${marker}.tmp.${BASHPID}" 2>/dev/null || true
 }
 
+deploy_task_resolve_source_repo() {
+    local task_file="$1" project target project_root probe candidate_repo
+    project=$(FIELD_GET_NO_LOG=1 field_get "$task_file" "project" "" 2>/dev/null || true)
+    target=$(python3 - "$task_file" <<'PY'
+import sys
+import yaml
+
+task = (yaml.safe_load(open(sys.argv[1], encoding="utf-8")) or {}).get("task", {})
+value = task.get("target_path")
+if isinstance(value, list):
+    print(str(value[0]).strip() if value else "")
+else:
+    print(str(value or "").strip())
+PY
+)
+    project_root=$(get_project_path "$project" 2>/dev/null || true)
+    if [[ "$target" == /* ]]; then
+        probe="$target"
+    elif [ "$project" != "infra" ] && [ -n "$project_root" ]; then
+        probe="$project_root/$target"
+    else
+        probe="$SCRIPT_DIR/$target"
+    fi
+    while [ ! -d "$probe" ] && [ "$probe" != "/" ] && [ -n "$probe" ]; do
+        probe="${probe%/*}"
+        [ -n "$probe" ] || probe="/"
+    done
+    candidate_repo=$(git -C "$probe" rev-parse --show-toplevel 2>/dev/null || true)
+    if [ -z "$candidate_repo" ] && [ -n "$project_root" ]; then
+        candidate_repo=$(git -C "$project_root" rev-parse --show-toplevel 2>/dev/null || true)
+    fi
+    [ -n "$candidate_repo" ] || candidate_repo="$SCRIPT_DIR"
+    git -C "$candidate_repo" rev-parse --show-toplevel 2>/dev/null
+}
+
+deploy_task_fetch_stable_remote_tip() {
+    local repo="$1" remote="$2" push_ref="$3" first_tip second_tip
+    first_tip=$(git -C "$repo" ls-remote "$remote" "$push_ref" 2>/dev/null | awk 'NR==1 {print $1}')
+    [[ "$first_tip" =~ ^[0-9a-f]{40}$ ]] || { log "BLOCK: remote-tip worktree remote tip unavailable"; return 1; }
+    git -C "$repo" fetch -q --no-write-fetch-head "$remote" "$push_ref" \
+        || { log "BLOCK: remote-tip fetch failed"; return 1; }
+    second_tip=$(git -C "$repo" ls-remote "$remote" "$push_ref" 2>/dev/null | awk 'NR==1 {print $1}')
+    [[ "$second_tip" =~ ^[0-9a-f]{40}$ ]] || { log "BLOCK: remote-tip ref disappeared during fetch"; return 1; }
+    [ "$first_tip" = "$second_tip" ] \
+        || { log "BLOCK: remote-tip ref race detected before worktree creation (before=$first_tip after=$second_tip)"; return 1; }
+    git -C "$repo" cat-file -e "${first_tip}^{commit}" 2>/dev/null \
+        || { log "BLOCK: remote-tip object unavailable"; return 1; }
+    printf '%s\n' "$first_tip"
+}
+
+deploy_task_validate_remote_tip_paths() {
+    local task_file="$1" repo="$2" worktree="$3"
+    python3 - "$task_file" "$repo" "$worktree" <<'PY'
+import os
+import sys
+import yaml
+
+task = (yaml.safe_load(open(sys.argv[1], encoding="utf-8")) or {}).get("task", {})
+repo = os.path.realpath(sys.argv[2])
+worktree = os.path.realpath(sys.argv[3])
+values = []
+for key in ("target_path", "planned_paths"):
+    value = task.get(key) or []
+    if isinstance(value, str):
+        try:
+            decoded = yaml.safe_load(value)
+        except yaml.YAMLError:
+            decoded = None
+        value = decoded if isinstance(decoded, list) else [value]
+    if isinstance(value, list):
+        values.extend(str(item).strip() for item in value if str(item).strip())
+runtime_prefixes = ("queue/", "logs/", "context/", "projects/", "archive/", ".cache/")
+missing = []
+invalid = []
+for raw in dict.fromkeys(values):
+    if raw == "dashboard.md":
+        continue
+    if raw.startswith("/"):
+        try:
+            relative = os.path.relpath(raw, repo)
+        except ValueError:
+            relative = ""
+        if not relative or relative == ".." or relative.startswith("../"):
+            invalid.append(raw)
+            continue
+    else:
+        relative = raw[2:] if raw.startswith("./") else raw
+    relative = os.path.normpath(relative)
+    if relative.startswith(runtime_prefixes):
+        continue
+    candidate = os.path.realpath(os.path.join(worktree, relative))
+    if candidate != worktree and not candidate.startswith(worktree + os.sep):
+        invalid.append(raw)
+    elif not os.path.exists(candidate):
+        missing.append(raw)
+if invalid or missing:
+    if invalid:
+        print("BLOCK: remote-tip target path escapes source repo: " + ", ".join(invalid), file=sys.stderr)
+    if missing:
+        print("BLOCK: remote-tip target path absent at fetched tip: " + ", ".join(missing), file=sys.stderr)
+    raise SystemExit(1)
+PY
+}
+
 deploy_task_prepare_remote_tip_worktree() {
     local task_file="$1" ninja_name="$2"
     local task_worktree_required source_path_count task_id parent_cmd project target repo upstream_ref remote push_ref remote_tip
@@ -156,22 +260,13 @@ deploy_task_prepare_remote_tip_worktree() {
     parent_cmd=$(FIELD_GET_NO_LOG=1 field_get "$task_file" "parent_cmd" "" 2>/dev/null || true)
     [ -n "$task_id" ] && [ -n "$parent_cmd" ] || { log "BLOCK: remote-tip worktree requires task_id and parent_cmd"; return 1; }
 
-    repo="$SCRIPT_DIR"
-    if [ -n "$target" ] && git -C "$target" rev-parse --show-toplevel >/dev/null 2>&1; then
-        repo=$(git -C "$target" rev-parse --show-toplevel)
-    elif [ "$project" != "infra" ] && [ -n "$project" ]; then
-        repo=$(get_project_path "$project" 2>/dev/null || true)
-    fi
-    repo=$(git -C "$repo" rev-parse --show-toplevel 2>/dev/null || true)
+    repo=$(deploy_task_resolve_source_repo "$task_file")
     [ -n "$repo" ] || { log "BLOCK: remote-tip worktree repo unavailable"; return 1; }
 
     upstream_ref=$(git -C "$repo" rev-parse --abbrev-ref --symbolic-full-name '@{upstream}' 2>/dev/null || true)
     [ -n "$upstream_ref" ] || upstream_ref="origin/main"
     remote="${upstream_ref%%/*}"; push_ref="refs/heads/${upstream_ref#*/}"
-    remote_tip=$(git -C "$repo" ls-remote "$remote" "$push_ref" 2>/dev/null | awk 'NR==1 {print $1}')
-    [[ "$remote_tip" =~ ^[0-9a-f]{40}$ ]] || { log "BLOCK: remote-tip worktree remote tip unavailable"; return 1; }
-    git -C "$repo" fetch -q --no-write-fetch-head "$remote" "$push_ref" || { log "BLOCK: remote-tip fetch failed"; return 1; }
-    git -C "$repo" cat-file -e "${remote_tip}^{commit}" 2>/dev/null || { log "BLOCK: remote-tip object unavailable"; return 1; }
+    remote_tip=$(deploy_task_fetch_stable_remote_tip "$repo" "$remote" "$push_ref") || return 1
 
     worktree_root="${DEPLOY_TASK_WORKTREE_ROOT:-$HOME/shogun-task-worktrees}"
     mkdir -p "$worktree_root"
@@ -184,6 +279,11 @@ deploy_task_prepare_remote_tip_worktree() {
         || ! git -C "$worktree_path" config maintenance.auto false; then
         git -C "$repo" worktree remove --force "$worktree_path" >/dev/null 2>&1 || true
         log "BLOCK: task worktree checkout/config failed"
+        return 1
+    fi
+    if ! deploy_task_validate_remote_tip_paths "$task_file" "$repo" "$worktree_path"; then
+        git -C "$repo" worktree remove --force "$worktree_path" >/dev/null 2>&1 || true
+        log "BLOCK: remote-tip target path validation failed"
         return 1
     fi
 
