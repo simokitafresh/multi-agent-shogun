@@ -12039,3 +12039,10 @@ insights:
   source: "semantic_stress_test"
   fix_known: false
   status: pending
+- id: INS-20260831-204217179-7600
+  ts: "2026-08-31T20:42:17+09:00"
+  insight: "[[すでにあるものを使え]] semantic_stress_test candidate_aliases: NO_MATCH source=lord query=すでにあるものを使え。チャートならDM-signalのchartをキャプチャーして使えばいい。それだけだろ"
+  priority: "low"
+  source: "semantic_stress_test"
+  fix_known: false
+  status: pending
