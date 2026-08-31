@@ -104,7 +104,7 @@
 | FAQ EN | FAQ の EN 版 | **完了**: cmd_4427 CLEAR・live |
 | LP 表示(殿裁定 14:00-14:36) | cmd_4432(Total return 削除+CAGR up to+列順)→cmd_4433(hero static chart)→cmd_4434(FoF 訴求 1 行) | **走行中**(kagemaru 実装中→直列 2 弾配備待ち)。SEO 面でも本文の検索語密度と視覚要素が向上 |
 | **未達(v3 発見)** | app 側 `/free` が 200 だが **noindex 0 件**(§3 禁則の未実装)。`/login` は noindex 済 | **未起票**。次の軽量 cmd(meta robots 1 行+curl 検証)候補 |
-| 将軍/殿 | Search Console sitemap 送信・索引 2/2(§2.1 Step 6・8)、P0-6 Bing、Rich Results Test | 未(いずれも画面 1 分級。sitemap は 2 URL 実在を 14:50 確認) |
+| 将軍/殿 | Search Console sitemap 送信・索引 2/2(§2.1 Step 6・8)、P0-6 Bing、Rich Results Test | **殿確認済 08-31 16:11: Bing・Search Console 完了**(runbook gist e96628e3)。残=索引 2/2 の翌日確認・Rich Results Test |
 | cmd B | P1-1 月次シグナル頁(EN/JA)+sitemap lastmod | 未起票(9 月)。P1-2 は殿裁定 14:36 で裁定済(app 側 canonical) |
 | 週報 | §4 の 3 指標固定 | Console 初回データ後 |
 
