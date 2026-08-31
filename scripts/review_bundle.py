@@ -11,6 +11,30 @@ import yaml
 def load(path):
     with Path(path).open(encoding="utf-8") as handle: return yaml.safe_load(handle) or {}
 
+
+def _report_generation(path):
+    """Return the immutable byte generation used by every SG7 boundary."""
+    return hashlib.sha256(Path(path).read_bytes()).hexdigest()
+
+
+def _review_priority(root, item):
+    """Rank review work so critical/LP items are selected before low work."""
+    value = str(item.get("priority") or "").strip().lower()
+    report = Path(str(item.get("report") or ""))
+    if not report.is_absolute():
+        report = root / report
+    if not value and report.is_file():
+        data = load(report)
+        value = str(data.get("priority") or "").strip().lower()
+        worker = str(data.get("worker_id") or "").strip()
+        if not value and worker:
+            task_path = root / "queue" / "tasks" / f"{worker}.yaml"
+            if task_path.is_file():
+                task = load(task_path)
+                task = task.get("task", task) if isinstance(task, dict) else {}
+                value = str(task.get("priority") or "").strip().lower()
+    return {"critical": 3, "high": 3, "normal": 2, "medium": 2, "low": 1}.get(value, 2)
+
 def command_from(data, cmd_id):
     commands = data.get("commands", data)
     if isinstance(commands, dict):
@@ -403,6 +427,11 @@ def validate(bundle, expected_cmd=None, expected_verdict=None):
     if not str(spec.get("project") or "").strip(): raise ValueError("cmd_spec_summary.project is missing")
     if verdict == "APPROVE" and "karo_attention" in review: raise ValueError("APPROVE bundle must omit karo_attention")
     if verdict == "FAIL" and not str(review.get("karo_attention") or "").strip(): raise ValueError("FAIL bundle requires karo_attention")
+    generation = str(review.get("report_generation") or "").strip()
+    if generation and not re.fullmatch(r"[0-9a-f]{64}", generation):
+        raise ValueError("report_generation must be a lowercase SHA-256 generation")
+    if generation and generation != str(review.get("report_fingerprint") or ""):
+        raise ValueError("report_generation must match report_fingerprint")
     line = str(review.get("dashboard_line") or "").strip()
     if not line: raise ValueError("dashboard_line is missing")
     if not line.startswith(f"- **{cmd_id}**:"): raise ValueError("dashboard_line contradicts cmd_id")
@@ -485,7 +514,8 @@ def generate(args):
             results = [("yes" if item.get("result") is True else "no" if item.get("result") is False else str(item.get("result") or "").lower()) for group in (checks or {}).values() if isinstance(group, list) for item in group if isinstance(item, dict)] if isinstance(checks, dict) else []
             if not results or any(result != "yes" for result in results):
                 raise ValueError("APPROVE requires all binary checks resolved yes")
-    review = {"cmd_id": args.cmd, "verdict": verdict, "report_verdict": report_state[1], "reviewer": "gunshi", "reviewed_at": datetime.now().astimezone().isoformat(timespec="seconds"), "report": str(report_ref.relative_to(root)), "report_fingerprint": hashlib.sha256(report.read_bytes()).hexdigest(), "cmd_spec_source": str(source.relative_to(root)), "cmd_spec_summary": summary(command), "dashboard_line": dashboard_line(report_data, args.cmd)}
+    generation = _report_generation(report)
+    review = {"cmd_id": args.cmd, "verdict": verdict, "report_verdict": report_state[1], "reviewer": "gunshi", "reviewed_at": datetime.now().astimezone().isoformat(timespec="seconds"), "report": str(report_ref.relative_to(root)), "report_fingerprint": generation, "report_generation": generation, "cmd_spec_source": str(source.relative_to(root)), "cmd_spec_summary": summary(command), "dashboard_line": dashboard_line(report_data, args.cmd)}
     if verdict == "FAIL":
         if not args.fail_reason: raise ValueError("FAIL requires --fail-reason")
         review["karo_attention"] = args.fail_reason
@@ -518,7 +548,11 @@ def notify(args):
     report_ref = str(review["report"])
     allow_archived = Path(report_ref).parent == Path("queue/archive/reports")
     _, report = _resolve_report(root, report_ref, args.cmd, allow_archived=allow_archived)
-    if hashlib.sha256(report.read_bytes()).hexdigest() != review.get("report_fingerprint"): raise ValueError("bundle report fingerprint is stale")
+    current_generation = _report_generation(report)
+    if current_generation != review.get("report_fingerprint") or (
+        review.get("report_generation") and current_generation != review.get("report_generation")
+    ):
+        raise ValueError("bundle report generation is stale")
     # The canonical approval entry publishes immediately, while the legacy
     # batch caller may still invoke notify after approval returns.  Serialize
     # both callers and bind the durable marker to the report generation so a
@@ -636,6 +670,11 @@ def batch(args):
         item["correction_scope"] = _correction_scope(item.get("correction_scope"))
         _normalize_review_item(root, item)
         if str(item["verdict"]).upper() not in {"APPROVE", "FAIL"}: raise ValueError("batch verdict must be APPROVE or FAIL")
+    # Stable priority ordering is the selector boundary. Keep original order
+    # among equal priorities so retries remain deterministic.
+    items = [item for _, item in sorted(
+        enumerate(items), key=lambda pair: (-_review_priority(root, pair[1]), pair[0])
+    )]
     cmds = [str(x["cmd"]) for x in items]; reports = [str(x["report"]) for x in items]
     if len(set(cmds)) != len(cmds) or len(set(reports)) != len(reports): raise ValueError("batch cmd/report values must be unique")
 
@@ -711,7 +750,8 @@ def _singleflight_token(root, args, entry):
         "report": str(report_path),
         "verdict": _entry_review_verdict(entry) or str(getattr(args, "verdict", "")).upper(),
         "correction_scope": _correction_scope(getattr(args, "correction_scope", None)),
-        "report_sha256": hashlib.sha256(report_path.read_bytes()).hexdigest() if report_path.is_file() else "missing",
+        "report_sha256": _report_generation(report_path) if report_path.is_file() else "missing",
+        "report_generation": _report_generation(report_path) if report_path.is_file() else "missing",
         "contract": contract,
         # Only an exact durable terminal report receipt is a new generation.
         # PASS reports arrive as report_received; honest FAIL reports arrive as

@@ -1059,7 +1059,7 @@ inbox_type_is_ninja_report_notification() {
 inbox_type_is_report_lifecycle() {
     inbox_type_triggers_report_completion "$1" && return 0
     case "$1" in
-        report_review|report_review_result|report_revision) return 0 ;;
+        review_draft|report_review|report_review_result|report_revision) return 0 ;;
     esac
     return 1
 }
@@ -1121,7 +1121,7 @@ inbox_karo_message_is_information_type() {
 
 inbox_karo_message_has_dedicated_identity() {
     case "$1" in
-        task_assigned|report_received|report_submitted|task_done|report_completed|report_done|report_ready|task_failed|review_report|accept_report|run_cmd_complete|report_review|report_review_result|report_revision)
+        task_assigned|report_received|report_submitted|task_done|report_completed|report_done|report_ready|task_failed|review_report|accept_report|run_cmd_complete|review_draft|report_review|report_review_result|report_revision)
             return 0
             ;;
         *)
@@ -1814,7 +1814,11 @@ for message in data.get("messages") or []:
     # reviewer again; suppress only while the matching request is still unread.
     # Terminal report events keep their existing read-state-spanning exactly-once
     # contract below.
-    if wanted[0] in {"report_review", "report_revision"} and message.get("read") is True:
+    # Review requests are actionable work. A consumed request is not terminal
+    # evidence: the reviewer may acknowledge it and crash before recording
+    # LGTM. Suppress only while the matching request is still unread; the
+    # monitor's generation-bound approval check is the terminal guard.
+    if wanted[0] in {"review_draft", "report_review", "report_revision"} and message.get("read") is True:
         continue
     actual = (
         str(message.get("type", "")), str(message.get("from", "")),
@@ -3200,7 +3204,7 @@ case "$TYPE" in
             _identity_fields=(task_id "${_supplement_values[0]:-}" parent_cmd "${_supplement_values[1]:-}")
         fi
         ;;
-    report_review|report_review_result|report_revision)
+    review_draft|report_review|report_review_result|report_revision)
         _structured_candidate=$(inbox_extract_report_path_from_content "$CONTENT")
         if [ -z "$_structured_candidate" ] && [ "$TYPE" = "report_revision" ] && [ -f "$SCRIPT_DIR/queue/tasks/${TARGET}.yaml" ]; then
             _revision_rel=$(inbox_yaml_field_get "$SCRIPT_DIR/queue/tasks/${TARGET}.yaml" "report_path" "")
