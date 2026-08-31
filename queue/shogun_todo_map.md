@@ -1,10 +1,10 @@
-# 将軍 全体状況マップ(やることリスト) — 2026-08-26 13:55 作成 / 08-31 08:13 更新(loop#11)(T212 Agent Readiness)(loop#1 T211)(殿指示 02:59『強くてニューゲーム』保存 T210)(殿指示 20:43『強くてニューゲーム』保存 T156+T157 bats 本番汚染)(殿指示14:34: 進捗確認・つまり解消)
+# 将軍 全体状況マップ(やることリスト) — 2026-08-26 13:55 作成 / 08-31 09:12 更新(loop#12)(T212 Agent Readiness)(loop#1 T211)(殿指示 02:59『強くてニューゲーム』保存 T210)(殿指示 20:43『強くてニューゲーム』保存 T156+T157 bats 本番汚染)(殿指示14:34: 進捗確認・つまり解消)
 # ★殿裁定 2026-08-29 10:26『バグの修正は必須だが、一回終わりを作ろう。速度向上は今取り掛かっているタスクたちを全て完了させたら一旦俺の指示を待て。バグの根治は俺の指示を待たずに継続せよ』→ 速度 lane は走行分の終端で凍結(新規配備 0、家老 blt_102819 で適用確認)。バグ根治 lane(T180/CI RED/便停止/Guard14)は継続。
 # 原則(殿13:52-13:54): シングルタスクを高速に切替える。優先順位なし=全部やる。依存は構造としてだけ記す。一定時間ごと(各inbox処理後・30分毎)に更新。 ★らせんの原理: ①計測器を律速の名指しから仕込み本番に常設→②1 unit だけ切る(1 unit/commit)→③計測を一段深く→④計測器は残す。切るのは機械的待ちのみ。逸脱チェック3問(名指しから始めたか/一段深くしたか/本番に残るか)。対象=速度/デッドコード/リファクタ/知識。成果指標=PJ 成果の e2e と件数
 # artifact: https://claude.ai/code/artifact/5da62854-f81f-4d53-908b-2fe464031f36 (HTML正本 docs/dashboard/shogun-todo-map.html。更新=正本Edit→Artifact再公開 同file_path)
 # 記法: [ ] 未 / [~] 走行中(担当) / [x] 済(証跡)。★=速度向上へのつながり1行必須
 
-- [~] T213(03:42→08:13 loop#11) 現在値: CLEAR 本日 27(PJ5/infra22)。前進: e52b849ac IN_ORIGIN・CI GREEN(33340182499 success)=隔離 worktree 先行 push が効いた。残る壁 1 枚=孤児 WIP 1 hunk(旧才蔵 task 遺留)が ff を塞ぎ lane 空回り(unpushed 30・ancestry WAIT 3 cmd)→家老へ順序付き 1 通(msg 08:13: 孤児 commit→ff→push→CLEAR3)。疾風 4430=5h10m(pane 稼働中)。才蔵 failed 残置継続。litter 4,867。終端条件=rev-list 0 0 ∧ CLEAR 3 行 ∧ saizo idle ∧ 4430 CLEAR ★孤児 WIP の自動検知(dirty file∧該当 path を触る in_progress task 0 件が N 分)を monitor へ
+- [~] T213(03:42→09:12 loop#12) 現在値: CLEAR 本日 29(PJ5/infra24)。push デッドロック完全解体済(CI GREEN 3 連続・rev-list 2/4=定常 churn)。0523/0454 CLEAR 08:18/08:20。残: dedupe done 09:08(GATE 待ち)・才蔵 failed 残置 2h45m・疾風 4430 再停滞疑い(progress 4h09m 無更新・pane 3 回不変)→家老へ順序付き 1 通(msg 09:12: probe2 回目/才蔵 idle/dedupe GATE)。litter 4,868。終端条件=4430 CLEAR ∧ saizo idle ∧ dedupe CLEAR ∧ rev-list 0 0 ★4430 は本日唯一の PJ 弾=最優先で解く
 
 - [~] T212(03:15 殿提示 Agent Readiness 診断→05:22 殿指示『Level3 まで全て完了』) 現在値: Level1 4/5(Content-Signal live 03:23)。ロードマップ v1.0=gist da1b7617(f3fb04633、殿操作 3 回に限定・依存順 2-1→2-2→2-3 のみ直列)。次=将軍 D0 静的系(1-1 api-catalog/1-3 auth.md/1-2b link rel/2-1 OAuth Discovery)→cmd 2-2〜2-7 起票。終端条件=診断 Rescan Level1 5/5 ∧ Level2 3/3 ∧ Level3 8/8 ★agent 経由の新流入面を read-only で開く(書き込みは別裁定)
 
