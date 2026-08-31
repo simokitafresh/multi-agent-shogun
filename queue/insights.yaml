@@ -10894,3 +10894,10 @@ insights:
   source: "semantic_stress_test"
   fix_known: false
   status: pending
+- id: INS-20260831-131030887-3971
+  ts: "2026-08-31T13:10:30+09:00"
+  insight: "[[Edit zone DNS API token summary This API token will affect t]] semantic_stress_test candidate_aliases: NO_MATCH source=lord query=Edit zone DNS API token summary This API token will affect the below accounts and zones, along with their respective permissions Simokitafr…"
+  priority: "low"
+  source: "semantic_stress_test"
+  fix_known: false
+  status: pending
