@@ -11151,3 +11151,10 @@ insights:
   source: "semantic_index_update"
   fix_known: false
   status: pending
+- id: INS-20260831-135303436-b597
+  ts: "2026-08-31T13:53:03+09:00"
+  insight: "semantic_index_update新概念候補: discussion:dm login showcase asis tobe v3 mdをアップデートせよ は 既存aliasesに一致なし。概念定義とaliases追加を検討せよ"
+  priority: "low"
+  source: "semantic_index_update"
+  fix_known: false
+  status: pending
