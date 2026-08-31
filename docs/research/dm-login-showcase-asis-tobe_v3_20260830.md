@@ -1,9 +1,10 @@
 <!-- gist-master: 901c36a5b617082128ffdce43ad25c10 dm-login-showcase-asis-tobe_v3_20260830.md -->
-# DM-Signal 入口 3 面（LP / app 入口 / 公開 API）— AsIs / ToBe 設計書 v3.1（2026-08-30 22:45 起草 / 2026-08-31 13:56 状態更新）
+# DM-Signal 入口 3 面（LP / app 入口 / 公開 API）— AsIs / ToBe 設計書 v3.2（2026-08-30 22:45 起草 / 2026-08-31 19:20 全文再突合）
 
-- 版: **AsIs v3.0（本番リアルタイム 2026-08-30 22:02-22:40 JST 実測）/ ToBe v3.0**
+- 版: **AsIs v3.2（本番リアルタイム 2026-08-31 19:15-19:20 JST 実測: LP EN/JA HTML・showcase EP・app /free /faq・gate_metrics）/ ToBe v3.1（殿裁定 08-31 14:00-17:58 の LP 表示 5 点+チャート比較形式を追加）**
+- v3.2 の変更点: §1 を 08-31 19:20 の現物へ全面更新（v2 差分は全て到達、契約 v3 実在を EP 応答で確認）、§2.4 に `hero.series`・SPY 系列（4439）を追記、§5 に LP 表示弾 4432〜4439 と infra 根治 4438 を反映、§6 全件解消済み、§7 因果に本日裁定を接続。SEO 案は同時に v4 へ更新（gist 5edb5f6d）。
 - 前版: `docs/research/dm-login-showcase-asis-tobe_v2_20260830.md`（gist 3236e0df、`/login` 単一ページのショーウィンドウ設計）。v2 の ToBe は 13:10-21:10 に cmd_4413/4415/4416/4420 で実装されたが、殿裁定 16:42『別サイト』・17:53『LP と /login がほぼ同じ』・20:21『Free tier 着手』で **設計の単位が「/login 1 ページ」から「入口 3 面」へ変わった**。v2 は経緯の正本として残し、本版が現行の正本。
-- 併読: SEO 案 v2 `docs/research/dm-signal-lp-seo-plan_20260830.md`（gist 5edb5f6d）/ Free tier v3.1 `docs/research/dm-free-tier-google-auth-asis-tobe_v3_20260830.md`（gist 897501e0）/ 第 0 段 `dm-login-boundary-asis-tobe_20260817.md`。**3 文書は本版 §2 の分担表に従属する**（重複する仕様は本版が正）。
+- 併読: SEO 案 v4 `docs/research/dm-signal-lp-seo-plan_20260830.md`（gist 5edb5f6d）/ Free tier v3.1 `docs/research/dm-free-tier-google-auth-asis-tobe_v3_20260830.md`（gist 897501e0）/ 第 0 段 `dm-login-boundary-asis-tobe_20260817.md`。**3 文書は本版 §2 の分担表に従属する**（重複する仕様は本版が正）。
 - 原則（継承）: ToBe は理想（現実のコード名で縛らない）。AsIs は現物。殿裁定は「事実→制約→判断→効果」。AC は 2 層（忍者=隔離 clone、家老=post_deploy_check）。CI green を待たない（殿裁定 19:29）。
 
 ---
@@ -21,42 +22,54 @@
 | 19:51 / 20:04 | SEO 案をまとめて gist / やったぞ。進めてくれ | 判断=SEO 案 v1→P0 を cmd_4421 で実装（title・JSON-LD・OG）。Search Console は殿が Cloudflare 自動確認で登録（20:01） |
 | 20:15-20:21 | Google 登録→クーポン表示→ワンクリックコピー、既存メンバーが誤解しないように、Supabase は rebalancer と共用、着手せよ | 判断=**Free tier=既存 tier 機構の 1 行+`/free`+`/api/public/free-coupon`+入口二分（Members / Free）**。効果=cmd_4422/4423/4424 並走 |
 | 21:30 | なぜ 30 分放置で何でも許可するのか | 判断=時間経過の承認代行は撤去。停滞は名指し nudge（インフラ側。本設計の deploy は家老の明示 ACCEPT で進む） |
+| **08-31** | | |
+| 12:24-12:34 | Current signals 表の体裁（スクショ）: 招待制注記重複削除・JA up to・太字統一・TQQQ MDD 赤字・メンバーシップ表記・MDD/Sharpe 用語説明 | 効果=cmd_4431 CLEAR 13:36・live |
+| 14:00-14:01 | Total return は冗長。CAGR を up to 形式に、列順 CAGR→Sharpe→MDD→×N | 効果=cmd_4432 CLEAR 15:03・live（19:20 実測 Total return 0 件） |
+| 14:06 | 絵柄が地味。Basic-DM のチャートを compare chart と同じスタイルの static で | 効果=cmd_4433 CLEAR 16:40・live（`hero.series` 276 点、LP svg 1 件。custom-domain cache 5 分遅延で一時 0 に見えた=真因 cache、build/API 正常） |
+| 14:32 | LP に集中しよう | 判断=LP lane 最優先、infra 新規・Agent Readiness L3 は保留 |
+| 14:36 | 未決 4 本一括裁定（§6） | 効果=§6 全件解消、FoF 訴求=cmd_4434 |
+| 14:56 | P1-1 月次シグナル頁は 9 月を待たず 8 月分から | 効果=cmd_4436 起票（月ハードコード禁止） |
+| 16:45 | 数値は全て太字。Basic-DM の閲覧は Free。閲覧列も太字 | 効果=cmd_4437 起票（4434 直後直列） |
+| 17:43 | つまりはバグだ。切り分けでなく根治せよ | 事実=BLOCK 3 連の真因が run_tests.sh の external scope 除外（frontend 限定）。効果=cmd_4438 根治 CLEAR 18:45 |
+| 17:58 | チャートは comparison 形式（SPY 破線・x 表記対数目盛・年月軸・累積%凡例、スクショ） | 効果=cmd_4439 起票 |
+| 18:48 | artifact はアカウント切替時 A 案（再公開+索引差替）で良い | 効果=runbook gist 2caac114 で運用、B 案（固定 URL）不採用 |
 
 ---
 
-## §1 AsIs（本番リアルタイム 2026-08-30 22:02-22:40 一次: 本番 curl・DM origin/main・gate_metrics・報告 YAML）
+## §1 AsIs（本番リアルタイム 2026-08-31 19:15-19:20 一次: LP EN/JA HTML・showcase EP JSON・app /free /faq curl・gate_metrics。v3.0 の 08-30 22:02 実測は git 履歴に保存）
 
 ### 1.1 面の現物
 
-| 面 | URL | 状態 | 現物 |
+| 面 | URL | 状態 | 現物（19:20） |
 |---|---|---|---|
-| **LP EN** | `https://dm-signal.com/` | live 200（Cloudflare proxy、Render static site `lp/`） | H1 "Know what to hold next."、showcase 表（+3,139% / +5,290%〜+11,321% / … / Secret / SPY / TQQQ）、プラン 3 枚（金額なし）、FAQ 抜粋、CTA=Sign in ×12・Read the docs ×6、note membership 6 本。title/description に検索語、JSON-LD 3 型、og/twitter meta 完備、hreflang 3 本。**`og:image` 404**（SEO 案 v2 §0） |
-| **LP JA** | `https://dm-signal.com/ja/` | live 200 | 同構造、JA 文言 |
-| **app `/login`** | `dm-signal-frontend.onrender.com/login` | live 200（cmd_4420 c14edb99） | metadata `DM-Signal — Sign in`、**noindex,follow**、静的 HTML 本文は "Checking access..."（boundary の client 判定後に SignInCard）。表・プランは無し（入口のみ）。cmd_4423 の Members/Free 二分文言と `?coupon=` プリフィルは **未 deploy** |
-| **app `/free` `/auth/callback`** | 同 | 200 だが static fallback（cmd_4423 未 deploy） | origin/main には `app/free/page.tsx`・`app/auth/callback/page.tsx`・boundary public に `/free` `/auth/callback` `/docs` `/faq` |
-| **app `/docs` `/faq`** | 同 | live 200（cmd_4418） | 公開済。FAQ は **JA のみ**（`lang="ja"`、EN 版なし） |
-| **app データページ** | `/` 他 | 従来どおり認証 | 変更なし（§3 影響境界） |
-| **backend `/api/public/showcase`** | `dm-signal-backend.onrender.com` | live 200 | `success/data`。`as_of{series_end 2026-07-31, next_close 2026-08-31}`、`blackout{active:false, until_hint:null}`、`hero`（Basic-DM: holding XLU、components、+3,139%、CAGR 16.4%）、`plans[]`（basic n=2 / standard n=16 / premium n=24、**`best_name`・`sharpe_avg`・`sharpe_best_name` が残存**）、`benchmarks[]`（SPY・TQQQ、sharpe あり）、`secret`（n=73、best_name null） |
-| **backend `/api/public/showcase/event`** | 同 | live | step enum に `login_view/input_focus/submit/ok/expired/wrong/note_click/lp_view/lp_cta_click`（4419）。rate 30/min |
-| **backend `/api/public/free-coupon`** | 同 | **404**（cmd_4422 未 deploy） | origin/main 未着（GATE BLOCK、RC 中） |
-| **`app.dm-signal.com`** | — | 000（未設定） | 殿裁定待ち（第 15 便から継続） |
+| **LP EN** | `https://dm-signal.com/` | live 200（Cloudflare proxy、Render static site `lp/`、`s-maxage=300`） | Current signals 表=列順 **CAGR→Sharpe→MDD→×N**（Total return 0 件、up to 10 箇所）、hero 行/プラン 3 行/Secret/SPY/TQQQ、閲覧列=Membership ×2・Invite-only・Hidden、hero 行の閲覧は **未 Free**（4437 待ち）、**static chart svg 1 件**（hero 単独線、4433）、**Fund of Funds 1 件**（4434 の commit は live、GATE は RC 中）、CTA=Sign in / Start free with Google（`/free?from=lp`）、note membership、Read the docs、`/faq` リンク（JA 既定）。title/description・JSON-LD 3 型（validator.schema.org エラー 0）・og-en.png 200・hreflang 3 本 |
+| **LP JA** | `https://dm-signal.com/ja/` | live 200（JP からの `/` は Cloudflare 302 → `/ja/`） | 同構造。閲覧列=メンバーシップ/招待制/非表示、hero 行は **「表示」のまま**（4437 待ち）、svg 1・FoF 1・トータルリターン 0 |
+| **app `/login`** | `dm-signal-frontend.onrender.com/login` | live 200（4420・4423） | noindex、SignInCard、Members/Free 二分、`?coupon=` プリフィル |
+| **app `/free` `/auth/callback`** | 同 | live 200（4423・4428） | Google サインイン→クーポン。**noindex,nofollow 1 件（4435 CLEAR 18:47、19:20 実測）**。殿実機 e2e PASS 08-31 01:38 |
+| **app `/docs` `/faq`** | 同 | live 200 | `/faq` = JA（`lang="ja"`）、**EN 版は `/faq/en/` 200**（4427。`/en/faq/` は 404）。LP からのリンクは `/faq`（JA 既定）=EN LP から EN FAQ への直リンクは未（§5 後日） |
+| **app データページ** | `/` 他 | 従来どおり認証 | 変更なし |
+| **backend `/api/public/showcase`** | `dm-signal-backend.onrender.com` | live 200 | keys=`as_of/benchmarks/blackout/hero/meta/plans/secret`。**契約 v3 到達**: `blackout{active:false, month_closed:true, n_signals:42}`（`until_hint` 廃止）、`plans[]{plan,n,avg_*,best_*,cagr_min,cagr_max,sharpe_best,mdd_best}`（`best_name`・`sharpe_avg` 0 件）、`hero{…, sharpe, mdd, series[276]}`（`series`=4433、`year_month/multiple`）、`benchmarks[]` SPY/TQQQ（**series なし=4439 で追加**） |
+| **backend `/api/public/showcase/event`** | 同 | live | step 9 語（Free 系 3 語は未=P-E） |
+| **backend `/api/public/free-coupon`** | 同 | live（4422+4428、Supabase Auth API 方式） | env `VIEWER_PASS_FREE`（Free tier v3.3） |
+| **`app.dm-signal.com`** | — | 未設定 | **裁定 08-31 14:36: 当面 onrender のまま** |
 
-### 1.2 v2 ToBe との差分（GATE CLEAR ≠ ToBe 到達。型六弾-3 で grep 突合）
+### 1.2 v2/v3 ToBe との差分（GATE CLEAR ≠ ToBe 到達。19:20 の grep 突合）
 
-| v2 の約束 | 現物（origin/main / 本番） | 判定 |
+| 約束 | 現物 | 判定 |
 |---|---|---|
-| §2.3 契約 v1.0: `best_name` 除去（12:48）、Sharpe/MDD はベスト単値（12:49）、`mdd_best`・benchmarks `mdd`（12:46）、`blackout{active, month_closed, n_signals}`（12:58、`until_hint` 廃止） | `public_showcase.py`: `best_name`・`sharpe_avg`・`until_hint` 残存、`mdd`/`drawdown` **0 件**、`month_closed`/`n_signals` 0 件。cmd_4415 の最終 commit f8a33e00（CLEAR 16:30）は 3 行差分「reintegrate latest main showcase metrics」で契約変更を含まない | **未到達**（§5 で再起票。4415 は GATE CLEAR だが ToBe に届いていない） |
-| §3.1 表 v3（MDD 列、レンジ表記、PF 名なし） | LP の表は EP の現物に従う（MDD 列なし、best_name は LP 側で非表示の可能性=要 grep） | 部分到達 |
-| §2.4 ブラックアウト帯（日時ゼロ、note 誘導、`n_signals`） | EP に `n_signals` なし、`until_hint` 残存。帯の文言は 4416/4420 の実装に依存（未検分） | 未検分 |
-| §2.5 区間計測 7 step | event EP に 9 step（LP 2 語追加） | 到達 |
-| §2.6 ISR | 16:37 訂正で撤回→LP はビルド時 fetch で焼込み（LP HTML に数値あり=到達）、app は client fetch | 到達（形を変えて） |
-| §2.7 影響境界 | boundary の public 判定に `/docs` `/faq` `/free` `/auth/callback` を追加（認証分岐は不変） | 到達 |
-| §8.2 LP EN/JA・docs/faq 公開 | 4417/4418 live | 到達（FAQ EN は未） |
-| §9 LP 別サイト | `dm-signal.com` live、Cloudflare、Search Console 登録 | 到達 |
+| §2.4 契約 v3（best_name 除去・mdd_best・blackout month_closed/n_signals） | EP 応答で全キー実在、禁止キー 0 | **到達**（4425+hotfix 10d59c8d） |
+| §2.2 表（列順・up to・太字・赤字・用語説明） | 4430/4431/4432 live | **到達**（残=4437 の全太字+Free） |
+| §2.2 チャート | hero 単独線 svg live | 到達（形式は 4439 で比較形式へ） |
+| §2.2 FoF 訴求 | LP に Fund of Funds 1 件 | live（4434 GATE は RC 中） |
+| §2.5 ブラックアウト帯 | EP に n_signals=42・month_closed=true。帯文言は /login 実装（未検分のまま） | EP 到達・UI 未検分 |
+| §2.6 計測 | 9 step、Free 3 語未 | 部分（P-E） |
+| §2.7 SEO | LP index・app noindex（/login・/free）・sitemap 2 URL・og 200・JSON-LD valid | 到達（面積は 4436 で拡張） |
+| §2.2 docs/faq | /docs・/faq(JA)・/faq/en/ live | 到達（LP→EN FAQ 直リンクは未） |
 
-### 1.3 走行中（22:40）
-- cmd_4422（F1 backend, 影丸 631bbc9c）=GATE BLOCK `command_files_modified_mismatch` RC 中 / cmd_4423（F2 frontend, 才蔵 b853b762）=**CLEAR 22:17** / cmd_4424（F3 LP, 半蔵 f9011787）=BLOCK（receipt invalid+files_modified 21 件）RC 中。deploy 前提 4 点（Render env `SUPABASE_JWT_SECRET`・`NEXT_PUBLIC_SUPABASE_URL/ANON_KEY`・Supabase Redirect URL・`VIEWER_PASSWORD_FREE`）未着手。
-- インフラ: push lane が CI RED 33312677956 で `ci_fix_active=0` 停止→才蔵 ci_fix 配備（22:26）。DM 側 deploy は家老 lane。
+### 1.3 走行中（19:20）
+- LP lane 直列: **cmd_4434**（FoF、影丸 RC=receipt 再取得、19:10 再発行）→ **cmd_4437**（全太字+Free、4434 CLEAR 直後配備）→ **cmd_4439**（比較チャート。backend AC1/AC2 は先行分解可）→ **cmd_4436**（月次頁 `/signals/2026-08`）。
+- infra 根治 3 本は CLEAR 済（review 世代 dedupe 18:13 / auto-push helper 18:43 / runner external scope **cmd_4438** 18:45）=BLOCK 3 連の類型は構造的に解消。auto-push は「remote CI GREEN 後に発火」契約。
+- その他: hayate ci_fix（receipt_count_mismatch）、reflux 2 件。DM-Signal CI は GitHub billing 上限で job 未開始（コード正常、GATE は ci_readiness を記録のみ）。
 
 ---
 
@@ -80,10 +93,11 @@
 - Free クーポンは既存 5 tier のパスワードと **同じ入力欄・同じ照合**（`verify_viewer`）。UI で区別するのは入口の 2 枠だけ、認証機構は 1 本。
 - 経路は URL に残す（`/free?from=lp` / `from=login`）。集計は event の `source` で数え、行で持つ（Free tier v3.1 §4-5 `product_logins` は後段）。
 
-### 2.4 公開データ契約 `GET /api/public/showcase` v3（v2 §2.3 を殿裁定 12:46/12:48/12:49/12:58 の最終形で固定。**現物は v1 形のまま=§1.2**）
+### 2.4 公開データ契約 `GET /api/public/showcase` v3.1（v2 §2.3 を殿裁定 12:46/12:48/12:49/12:58 の最終形で固定。**現物は v3 到達済み=§1.1、19:20 実測**。v3.1 で `hero.series` と benchmarks `series` を追加）
 - `as_of{series_end, next_close, calculated_at}`
 - `blackout{active, month_closed, n_signals}`（`until_hint` 廃止。active=`is_password_expired` と同じ JST 判定、month_closed=v2 §6.5 H4）
-- `hero{name, holding, momentum, components, total_return, multiple, cagr, inception, benchmark_total_return, mdd}`（Basic-DM 完全公開）
+- `hero{name, holding, momentum, components, total_return, multiple, cagr, sharpe, inception, benchmark_total_return, mdd, series[]{year_month, multiple}}`（Basic-DM 完全公開。`series`=月次累積倍率、起点 1.0x、最終値=`multiple`。4433 で実装済み）
+- `benchmarks[].series[]`（**4439 で追加**: SPY を hero と同一起点に正規化した月次累積。LP 比較チャートの破線系列）
 - `plans[]{plan, n, avg_total_return, best_total_return, avg_multiple, best_multiple, cagr_min, cagr_max, sharpe_best, mdd_best}`（**best_name・sharpe_avg・*_best_name を返さない**。集合=hide_portfolio=false ∧ hide_signal=false を `visibility_helpers` 経由で）
 - `benchmarks[]{symbol, since, total_return, multiple, cagr, sharpe, mdd}`（SPY 2003-10〜、TQQQ 2010-03〜）
 - `secret{count, n, avg_total_return, best_total_return, avg_multiple, best_multiple, cagr_min, cagr_max, sharpe_best, mdd_best}`（名前なし）
@@ -99,8 +113,15 @@
 - step enum（現物 9）+ Free 系 3 語 **`signup_google` / `coupon_view` / `coupon_copy`** を追加（後段 cmd）。`source` ∈ {lp, login, direct, rebalancer}。
 - 週報の区間表: `lp_view → lp_cta_click → (login_view → submit → ok | signup_google → coupon_view → coupon_copy → ok)`。落ち幅が最大の 1 区間だけを次弾にする（五十嵐記事の教え、v2 §2.5）。
 
-### 2.7 SEO（SEO 案 v2 に従属。ここでは面ごとの規則だけ）
-- index=LP 2 URL+docs/faq。noindex=/login・/free・/auth/callback・データページ。sitemap は LP 側（P1-1 月次シグナル頁で増える）。`og:image` は静的 PNG（SEO 案 §6 hotfix）。
+### 2.7 SEO（SEO 案 v4 に従属。ここでは面ごとの規則だけ）
+- index=LP 2 URL（+4436 で月次頁 EN/JA）+docs/faq（app 側 canonical、裁定 14:36）。noindex=/login・/free（**4435 live**）・/auth/callback・データページ。sitemap は LP 側（4436 で lastmod 付き自動追加、月ハードコード禁止）。`og:image` は静的 PNG（4426 live）。
+
+### 2.8 LP 表とチャートの表示規則（08-31 裁定の確定形。cmd_4430〜4439 の契約）
+- 列=`PF数 / CAGR / Sharpe / MDD / ×N / 閲覧`。Total return 列は置かない（14:00）。
+- プラン行: CAGR・×N は `up to` 最良値（EN/JA とも up to）、Sharpe・MDD は最良 PF の値。**数値は全て太字**（16:45、4437）。SPY/TQQQ 行はイタリック細字のまま、TQQQ MDD は赤字。
+- 閲覧列: hero=**Free**、プラン=Membership/メンバーシップ、Premium=Invite-only/招待制、Secret=Hidden/非表示。**閲覧列も太字**（16:45、4437）。リンク先は未裁定（12:32『この後で考える』）。
+- Premium 行の左列に招待制注記を重ねない（12:24）。表下 tableNote に MDD/Sharpe の用語説明を 1 回。FoF 訴求 1 行を表近傍に（14:36、4434）。
+- チャート: static（interactivity なし）。**比較形式**=Basic-DM 青実線+SPY グレー破線、対数 y 軸を x 表記（1-2-5 系列）、x 軸に年月、凡例に系列名+開始以来累積%（17:58、4439）。
 
 ---
 
@@ -121,19 +142,23 @@
 
 ---
 
-## §5 工程（状態 2026-08-31 13:56。v3 起票分は全て終端）
+## §5 工程（状態 2026-08-31 19:20。gate_metrics CLEAR 時刻で突合）
 
 | 手 | 内容 | 状態 |
 |---|---|---|
-| 済(v2 期) | 4413 EP / 4416 /login / 4420 最小化 / 4417 LP / 4418 docs・faq / 4419 CORS+event / 4421 SEO P0 | CLEAR・live |
-| 済(Free tier) | F1 4422+4428（backend・Supabase Auth API 方式）/ F2 4423（frontend）/ F3 4424（LP 導線） | CLEAR・live。**殿実機 e2e PASS 08-31 01:38**（是正 4 段は Free tier v3.3 §5） |
-| 済(P-C) | 4425=契約 v3 再実装（mdd_best・blackout・best_name 除去）+hotfix 10d59c8d（hero sharpe） | CLEAR 00:15・origin 到達検分済み |
-| 済(P-F/P-G) | 4427 FAQ EN / 4426 og:image 静的 PNG | CLEAR・live（og-en/og-ja 200 image/png） |
-| 済(LP 表示) | 4430=up to 表記・コントラスト・note CTA / 4431=招待制重複削除・JA up to・太字統一・TQQQ MDD 赤字・メンバーシップ表記・用語説明 | CLEAR 11:00 / 13:36・本番 curl 到達 |
-| 済(周辺) | Cloudflare 地域言語 JP→/ja/ 302 / Agent Readiness L1 5/5・L2 充足・L3 2/8 / HSTS・security.txt・WAF Managed Rules | 別紙 roadmap v1.1（gist da1b7617） |
-| 未起票 | P-E event 3 語（signup_google/coupon_view/coupon_copy+source） | Free 導線の計測。次弾候補 |
-| 未着手 | P-H product_logins（Free tier v3.3 §4-5、Supabase RLS） | 次弾候補 |
-| 後日 | app.dm-signal.com 移行 / P1-1 月次シグナル頁 / メンバーシップ列のリンク先（殿 12:32『この後で考える』） | 殿裁定待ち / 9 月 |
+| 済(v2 期) | 4413 EP / 4416 /login / 4420 最小化(21:10) / 4417 LP / 4418 docs・faq / 4419 CORS+event / 4421 SEO P0(21:35) | CLEAR・live |
+| 済(Free tier) | F1 4422(22:59)+4428(00:06)（backend・Supabase Auth API 方式）/ F2 4423(22:17) / F3 4424(00:26) | CLEAR・live。**殿実機 e2e PASS 08-31 01:38** |
+| 済(P-C) | 4425(00:15)=契約 v3 再実装+hotfix 10d59c8d（hero sharpe） | **EP 応答で契約 v3 実在を 19:20 確認**（§1.1） |
+| 済(P-F/P-G) | 4427 FAQ EN(01:52、`/faq/en/`) / 4426 og:image 静的 PNG(02:24) | CLEAR・live |
+| 済(LP 表示) | 4430(11:00) up to・コントラスト・note CTA / 4431(13:36) 招待制重複削除・JA up to・太字・TQQQ 赤字・メンバーシップ・用語説明 / **4432(15:03) Total return 削除・CAGR up to・列順** / **4433(16:40) hero.series EP+static chart** | CLEAR・本番 curl 到達（§1.1） |
+| 済(SEO 禁則) | **4435(18:47) app `/free` noindex** | CLEAR・本番 noindex 1 件実測 |
+| 済(infra 根治) | **4438(18:45) run_tests.sh external scope 一般化**（frontend 限定→任意 package root、receipt 正規記録）+ review 世代 dedupe hotfix(18:13) + auto-push helper mode hotfix(18:43) | CLEAR。LP lane の BLOCK 3 連の根を除去 |
+| 走行(LP 表示) | **4434** FoF 訴求 1 行（commit は live、GATE=receipt 再取得 RC 中） | 19:10 RC 再発行、影丸 |
+| 待機(直列) | **4437** プラン数値全太字+閲覧列太字+hero 閲覧 Free → **4439** 比較チャート（SPY 系列 EP+描画）→ **4436** 月次シグナル頁 `/signals/2026-08` EN/JA+sitemap lastmod | 4434 CLEAR 起点で順次配備（4439 backend 部は先行分解可） |
+| 済(周辺) | Cloudflare JP→/ja/ 302 / Agent Readiness L1 5/5・L2 3/3 / HSTS・security.txt・WAF / Search Console・Bing・schema.org 3 型 valid | roadmap v1.1（gist da1b7617）、SEO 案 v4 |
+| 未起票 | P-E event 3 語（signup_google/coupon_view/coupon_copy+source） / LP → `/faq/en/` の言語別直リンク | 次弾候補（LP 集中裁定 14:32 の範囲内） |
+| 未着手 | P-H product_logins（Free tier v3.3 §4-5、Supabase RLS） / SEO P1-4 用語頁 3 本 / P2 技術系 | 殿裁定待ち（LP 集中外は保留） |
+| 後日 | メンバーシップ列のリンク先（殿 12:32『この後で考える』） / app.dm-signal.com は当面 onrender（裁定 14:36） | 殿裁定待ち |
 
 ## §6 未決（14:36 更新: **全件解消** — 殿裁定 2026-08-31 14:36 一括、knowledge:d1fb0c5aaf6d922c）
 1. ~~app.dm-signal.com 移行~~ → **裁定: 当面 onrender のまま**（移す時は `NEXT_PUBLIC_APP_HOST` 1 手+Supabase Redirect URL 追加）。
@@ -146,4 +171,6 @@
 ## §7 因果リンク
 - [[dm-login-showcase-asis-tobe_v2_20260830]] -> [[殿裁定_LP別サイト_20260830_1642]] -> [[殿実機_LPと/login同構造_20260830_1753]] -> [[殿裁定_FreeTier着手_20260830_2021]] -> **[[dm-login-showcase-asis-tobe_v3_20260830]]** <- [[dm-signal-lp-seo-plan_20260830]] / [[dm-free-tier-google-auth_v3]]
 - ← [[dm-login-boundary-asis-tobe_20260817]]（第 0 段） / [[visibility_philosophy]]（projects/dm-signal.yaml）
-- 一次証拠: 本番 curl（22:02-22:40: dm-signal.com / onrender login・docs・faq・free / showcase EP）、`git show origin/main:backend/app/api/public_showcase.py`（mdd 0 件、best_name 残存）、`git merge-base --is-ancestor f8a33e00 origin/main`=yes、gate_metrics（4413〜4423）、報告 YAML（4415/4422/4423/4424）
+- 08-31 裁定系譜: [[殿裁定_Current_signals体裁_20260831_1224]] -> [[殿裁定_Current_signals列整理_20260831_1401]] -> [[殿裁定_LP_hero_chart_20260831_1406]] -> [[殿裁定_LP集中_20260831_1432]] -> [[殿裁定_未決4本一括_20260831_1436]] -> [[殿裁定_Current_signals全太字Free_20260831_1645]] -> [[殿厳命_バグは根治_20260831_1743]] -> [[殿裁定_チャート比較形式_20260831_1758]]
+- 関連: [[dm-signal-lp-seo-plan_20260830]]（v4） / [[bing_richresults_runbook]] / [[artifact_account_switch_runbook]] / [[cmd_4438_external_scope一般化]]
+- 一次証拠（v3.2）: 本番 curl 19:15-19:20（dm-signal.com EN/JA HTML の grep: svg/FoF/Total return/up to/閲覧列文言、showcase EP JSON keys、onrender /free noindex・/faq lang・/faq/en/ 200）、gate_metrics CLEAR 行（4420〜4438）、karo_snapshot 19:13。v3.0 の 08-30 22:02 実測と v3.1 13:56 状態は git 履歴（c9597b01 以前）に保存
