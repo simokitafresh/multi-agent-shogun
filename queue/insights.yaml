@@ -8443,7 +8443,10 @@ insights:
   priority: "medium"
   source: "manual"
   fix_known: false
-  status: pending
+  status: resolved
+  resolved_reason: "一次情報で既存防御を確認。報告origin自動継承とcommit subject task_id/parent_cmd検証は既実装済みで、新規修正不要。"
+  action_artifact: "target=queue/insights.yaml:8440-8446;memory=scripts/memory_db_query.sh --search INS-20260830-044348483-5368;semantic=scripts/semantic_search.sh;implementation=scripts/report_field_set.sh:863-1007,scripts/gates/gate_report_format_main.py:486-492;history=de49d1fed;tests=tests/unit/test_ninja_scope_commit.bats:79-108;prior=queue/insights.yaml:4828-4835;decision_candidate=none"
+  resolved_at: "2026-08-31T12:02:17+09:00"
 - id: INS-20260830-060552754-46f4
   ts: "2026-08-30T06:05:52+09:00"
   insight: "hayateのreflux報告でstatus=revision_requestedのままverdict=PASSとなるパターンが2回再発(0340,0550)。疾風のreport-write経路またはRC修正時にstatus=completedへの更新が漏れている。家老側でhayateのreport-writeフローを確認し、status自動更新をgateに追加する候補。"
