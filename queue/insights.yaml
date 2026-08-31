@@ -8404,7 +8404,7 @@ insights:
   source: "manual"
   fix_known: false
   status: resolved
-  resolved_reason: 現行inbox_write.shのreport identity/fingerprint dedupeとstable-generation経路を一次コード確認し、Karo受領1件・Gunshi同一fingerprint再送抑止契約を既存unit 130/130 PASS・SKIP0で検証済み
+  resolved_reason: 現行inbox_write.shのreport identity/fingerprint dedupeとstable-generation経路を一次コード確認し、Karo受領1件・Gunshi同一fingerprint再送抑止契約を既存unit 130/130 PASS・SKIP0で検証済み。inventoryは作業前53/14/597/664、並行還流を含む再計測50/14/597/661
   action_artifact: scripts/inbox_write.sh;tests/unit/test_inbox_write.bats;logs/test_receipts/run_tests_20260831T003627_1897228.json;Karo inbox msg_20260831_081416_699368_48673a52
   resolved_at: "2026-08-31T09:39:23+09:00"
 - id: INS-20260830-031740271-5003
