@@ -11924,11 +11924,24 @@ insights:
   priority: "low"
   source: "semantic_stress_test"
   fix_known: false
-  status: pending
+  status: resolved
+  resolved_reason: "semantic index candidate was absorbed into a registered concept"
+  action_artifact: "semantic_index=/home/simokitafresh/multi-agent-shogun/docs/semantic-index/index.md"
+  resolved_at: "2026-08-31T20:34:45+09:00"
 - id: INS-20260831-203345941-adcf
   ts: "2026-08-31T20:33:45+09:00"
   insight: "[[殿裁定 19 27『直そう』 設計書 v3 2 §5 SEO 案 v4 §0 で発見した小穴]] semantic_stress_test candidate_aliases: NO_MATCH source=cmds query=殿裁定 2026-08-31 19:27『直そう』(設計書 v3.2 §5 / SEO 案 v4 §0 で発見した小穴)。現物 19:28 curl: EN LP・JA LP とも FAQ リンクは (JA 既定)1 件ずつで、EN 読者が EN FAQ( 、cmd_4427 で live 200)へ直に到達できない。EN LP の href を へ、JA"
   priority: "low"
   source: "semantic_stress_test"
+  fix_known: false
+  status: resolved
+  resolved_reason: "semantic index candidate was absorbed into a registered concept"
+  action_artifact: "semantic_index=/home/simokitafresh/multi-agent-shogun/docs/semantic-index/index.md"
+  resolved_at: "2026-08-31T20:34:45+09:00"
+- id: INS-20260831-203445280-45c9
+  ts: "2026-08-31T20:34:45+09:00"
+  insight: "semantic_index_update新概念候補: discussion:DM signalのデザインブックは参考にしてるのか？gistにも上げたはずだ。統一感がなくLPの信頼感が極端に低い。俺はカードを使わないよな は 既存aliasesに一致なし。概念定義とaliases追加を検討せよ"
+  priority: "low"
+  source: "semantic_index_update"
   fix_known: false
   status: pending
