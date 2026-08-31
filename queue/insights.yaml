@@ -11327,3 +11327,10 @@ insights:
   source: "semantic_stress_test"
   fix_known: false
   status: pending
+- id: INS-20260831-145809507-8218
+  ts: "2026-08-31T14:58:09+09:00"
+  insight: "[[殿裁定 14 36『FoF 訴求 1 行を足す 採用』 発端 殿 12 39『FoF がウリ』]] semantic_stress_test candidate_aliases: NO_MATCH source=cmds query=殿裁定 2026-08-31 14:36『FoF 訴求 1 行を足す=採用』(発端=殿 12:39『FoF がウリ』)。現物確認: active 101 本中 77 本が FoF だが、本番 LP curl(14:02 保存 HTML)に Fund of Funds/FoF の語 0 件(grep 0)。入口 3 面 v3.1 §6-6 の裁定を実装する"
+  priority: "low"
+  source: "semantic_stress_test"
+  fix_known: false
+  status: pending
