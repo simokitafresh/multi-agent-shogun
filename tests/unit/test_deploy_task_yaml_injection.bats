@@ -2098,6 +2098,13 @@ YAML
 @test "cmd_karo_impl_related_lessons_snapshot: same-cmd redeploy preserves existing related_lessons (no re-injection)" {
     tmpdir="$(mktemp -d)"; task_file="$tmpdir/task.yaml"
     marker="$tmpdir/inject_called.marker"
+    mkdir -p "$tmpdir/queue/reports"
+    shared_lock_count() {
+        find "$PROJECT_ROOT/queue/reports" -maxdepth 1 -type f \
+            -name 'hayate_report_cmd_fixture_related_lessons*.yaml.report-unit.lock' \
+            -print | awk 'END { print NR + 0 }'
+    }
+    shared_before="$(shared_lock_count)"
     cat >"$task_file" <<'YAML'
 task:
   status: assigned
@@ -2113,6 +2120,7 @@ YAML
         set -euo pipefail
         export DEPLOY_TASK_LIB_ONLY=1
         source '$PROJECT_ROOT/scripts/deploy_task.sh'
+        SCRIPT_DIR='$tmpdir'
         log() { :; }
         for _f in inject_task_modifiers inject_session_state_hints inject_codd_failure_history \
             inject_engineering_preferences inject_skill_hint inject_workaround_pattern_lessons \
@@ -2139,6 +2147,11 @@ YAML
     "
     [ "$status" -eq 0 ]
     [ ! -e "$marker" ]
+    [ "$(shared_lock_count)" -eq "$shared_before" ]
+    run find "$tmpdir/queue/reports" -maxdepth 1 -type f \
+        -name '*.report-unit.lock' -print
+    [ "$status" -eq 0 ]
+    [ "$(printf '%s\n' "$output" | awk 'END { print NR + 0 }')" -eq 1 ]
     run python3 -c "
 import yaml
 d = yaml.safe_load(open('$task_file'))['task']
@@ -2153,6 +2166,13 @@ assert ids == ['L001'], ids
 @test "cmd_karo_impl_related_lessons_snapshot: different cmd (fresh deploy) still re-injects related_lessons" {
     tmpdir="$(mktemp -d)"; task_file="$tmpdir/task.yaml"
     marker="$tmpdir/inject_called.marker"
+    mkdir -p "$tmpdir/queue/reports"
+    shared_lock_count() {
+        find "$PROJECT_ROOT/queue/reports" -maxdepth 1 -type f \
+            -name 'hayate_report_cmd_fixture_related_lessons*.yaml.report-unit.lock' \
+            -print | awk 'END { print NR + 0 }'
+    }
+    shared_before="$(shared_lock_count)"
     cat >"$task_file" <<'YAML'
 task:
   status: assigned
@@ -2168,6 +2188,7 @@ YAML
         set -euo pipefail
         export DEPLOY_TASK_LIB_ONLY=1
         source '$PROJECT_ROOT/scripts/deploy_task.sh'
+        SCRIPT_DIR='$tmpdir'
         log() { :; }
         for _f in inject_task_modifiers inject_session_state_hints inject_codd_failure_history \
             inject_engineering_preferences inject_skill_hint inject_workaround_pattern_lessons \
@@ -2194,6 +2215,11 @@ YAML
     "
     [ "$status" -eq 0 ]
     [ -e "$marker" ]
+    [ "$(shared_lock_count)" -eq "$shared_before" ]
+    run find "$tmpdir/queue/reports" -maxdepth 1 -type f \
+        -name '*.report-unit.lock' -print
+    [ "$status" -eq 0 ]
+    [ "$(printf '%s\n' "$output" | awk 'END { print NR + 0 }')" -eq 1 ]
 }
 
 # test_necessity: mutation途中の後段FAILでは作業copyだけを破棄し、公開済taskのSHA/bytesを不変に保つ不変量を守る。
