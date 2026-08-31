@@ -10017,7 +10017,10 @@ insights:
   priority: "medium"
   source: "manual"
   fix_known: false
-  status: pending
+  status: resolved
+  resolved_reason: "現行はT184 review-pending nudgeで家老を起こすが、時間経過ACCEPT代行は殿裁定で撤去済み。候補(a)/(b)は設計判断として報告へ整理"
+  action_artifact: "scripts/ninja_monitor.sh:10758; queue/gates/review_pending_nudge.tsv"
+  resolved_at: "2026-08-31T20:26:36+09:00"
 - id: INS-20260830-210829054-cc61
   ts: "2026-08-30T21:08:29+09:00"
   insight: "semantic_index_update新概念候補: discussion:将軍も止まっていればなどの先送りバグが残っている は 既存aliasesに一致なし。概念定義とaliases追加を検討せよ"
@@ -11881,7 +11884,10 @@ insights:
   priority: "low"
   source: "semantic_index_update"
   fix_known: false
-  status: pending
+  status: resolved
+  resolved_reason: "semantic map generation verified the candidate is represented or intentionally ignored"
+  action_artifact: "semantic_map=/home/simokitafresh/multi-agent-shogun/context/semantic-map.md;semantic_index=/home/simokitafresh/multi-agent-shogun/docs/semantic-index/index.md"
+  resolved_at: "2026-08-31T20:25:13+09:00"
 - id: INS-20260831-202249369-e55c
   ts: "2026-08-31T20:22:49+09:00"
   insight: "semantic_index_update未登録cmd originノード: [[cmd_4432_列整理]] は既存aliasesに一致なし。類似概念TOP3: gate_bypass_prevention(ゲート迂回防止; alias=cmd_3132_L4化; score=22.9) / strong_new_game_completion_contract(強くてニューゲーム完遂契約; alias=cmd_4200復帰点; score=21.8) / unread_cmd_new_deployment_guard(未読cmd_new配備漏れ防止; alias=cmd_3457配備漏れ; score=21.2)。概念定義とaliases追加を検討せよ"
@@ -11898,11 +11904,17 @@ insights:
   priority: "low"
   source: "semantic_index_update"
   fix_known: false
-  status: pending
+  status: resolved
+  resolved_reason: "semantic index candidate was absorbed into a registered concept"
+  action_artifact: "semantic_index=/home/simokitafresh/multi-agent-shogun/docs/semantic-index/index.md"
+  resolved_at: "2026-08-31T20:25:05+09:00"
 - id: INS-20260831-202438714-ae38
   ts: "2026-08-31T20:24:38+09:00"
   insight: "[[再度artifactを作り直してくれ]] semantic_stress_test candidate_aliases: NO_MATCH source=lord query=再度artifactを作り直してくれ"
   priority: "low"
   source: "semantic_stress_test"
   fix_known: false
-  status: pending
+  status: resolved
+  resolved_reason: "semantic index candidate was absorbed into a registered concept"
+  action_artifact: "semantic_index=/home/simokitafresh/multi-agent-shogun/docs/semantic-index/index.md"
+  resolved_at: "2026-08-31T20:25:05+09:00"
