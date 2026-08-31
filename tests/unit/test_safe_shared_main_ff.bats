@@ -309,3 +309,70 @@ exit 0"
   [ "$(find "$FIX/unrelated" -type f | wc -l)" -eq 200 ]
   [[ "$output" == *"dirty_paths=0"* ]]
 }
+
+# test_necessity: the ancestry-WAIT recovery lane may publish only an
+# exact-descendant local main with an exact GREEN remote-tip proof, while the
+# shared worktree remains byte-for-byte unchanged.
+@test "auto-push publishes GREEN ahead main from an isolated worktree" {
+  fallback_origin_init
+  fallback_install_hook 'exit 0'
+  printf 'ahead\n' >> "$FIX/b.txt"
+  git -C "$FIX" add b.txt
+  git -C "$FIX" commit -qm "cmd_auto_push fixture"
+  before_head="$(git -C "$FIX" rev-parse HEAD)"
+  before_dirty="$(shared_dirty_fingerprint)"
+
+  run env SAFE_SHARED_MAIN_FF_AUTO_PUSH_THRESHOLD=1 \
+    bash "$FIX/scripts/safe_shared_main_ff.sh" --auto-push-if-ready "$FIX" GREEN
+  [ "$status" -eq 0 ]
+  [[ "$output" == *"push=1"* ]]
+  [[ "$output" == *"shared_head_unchanged=yes"* ]]
+  [[ "$output" == *"shared_index_unchanged=yes"* ]]
+  [[ "$output" == *"shared_dirty_unchanged=yes"* ]]
+  [ "$(git -C "$FIX" rev-parse HEAD)" = "$before_head" ]
+  [ "$(shared_dirty_fingerprint)" = "$before_dirty" ]
+  [ "$(git --git-dir "$BATS_TEST_TMPDIR/origin.git" rev-parse refs/heads/main)" = "$before_head" ]
+  [ "$(grep -c . "$BATS_TEST_TMPDIR/hook.log")" -eq 1 ]
+}
+
+# test_necessity: CI RED/unknown is a fail-closed no-op and must not publish
+# an otherwise eligible ahead branch.
+@test "auto-push skips when exact remote-tip CI is not GREEN" {
+  fallback_origin_init
+  fallback_install_hook 'exit 0'
+  printf 'ahead\n' >> "$FIX/b.txt"
+  git -C "$FIX" add b.txt
+  git -C "$FIX" commit -qm "cmd_auto_push fixture"
+  before_remote="$(git --git-dir "$BATS_TEST_TMPDIR/origin.git" rev-parse refs/heads/main)"
+
+  run bash "$FIX/scripts/safe_shared_main_ff.sh" --auto-push-if-ready "$FIX" UNKNOWN
+  [ "$status" -eq 0 ]
+  [[ "$output" == *"ci=UNKNOWN"*"push=0"*"reason=ci_not_green"* ]]
+  [ "$(git --git-dir "$BATS_TEST_TMPDIR/origin.git" rev-parse refs/heads/main)" = "$before_remote" ]
+  [ ! -f "$BATS_TEST_TMPDIR/hook.log" ]
+}
+
+# test_necessity: a remote move must be classified as behind/diverged and
+# never be force-repaired by the auto-push path.
+@test "auto-push skips behind or diverged local main" {
+  fallback_origin_init
+  fallback_install_hook 'exit 0'
+  git clone -q -b main "$BATS_TEST_TMPDIR/origin.git" "$BATS_TEST_TMPDIR/remote"
+  git -C "$BATS_TEST_TMPDIR/remote" config user.email test@example.com
+  git -C "$BATS_TEST_TMPDIR/remote" config user.name test
+  printf 'remote\n' > "$BATS_TEST_TMPDIR/remote/remote.txt"
+  git -C "$BATS_TEST_TMPDIR/remote" add remote.txt
+  git -C "$BATS_TEST_TMPDIR/remote" commit -qm remote
+  git -C "$BATS_TEST_TMPDIR/remote" push -q origin main
+  printf 'local\n' >> "$FIX/b.txt"
+  git -C "$FIX" add b.txt
+  git -C "$FIX" commit -qm local
+  before_remote="$(git --git-dir "$BATS_TEST_TMPDIR/origin.git" rev-parse refs/heads/main)"
+
+  run bash "$FIX/scripts/safe_shared_main_ff.sh" --auto-push-if-ready "$FIX" GREEN
+  [ "$status" -eq 0 ]
+  [[ "$output" == *"reason=behind_or_diverged"* ]]
+  [[ "$output" == *"push=0"* ]]
+  [ "$(git --git-dir "$BATS_TEST_TMPDIR/origin.git" rev-parse refs/heads/main)" = "$before_remote" ]
+  [ ! -f "$BATS_TEST_TMPDIR/hook.log" ]
+}

@@ -3143,6 +3143,66 @@ push_from_clean_worktree() {
     return "$rc"
 }
 
+# A terminal ancestry WAIT means the completion artifact is valid but the
+# shared main branch has not reached the remote yet.  Give the narrow,
+# reversible auto-push lane one chance only when the exact remote tip has a
+# completed GREEN CI run.  All other states remain WAIT with zero push calls.
+cmd_complete_gate_auto_push_ci_state() {
+    local repo="$1" remote_tip="$2" slug run_json
+    if [ -n "${CMD_COMPLETE_GATE_AUTO_PUSH_CI_STATE:-}" ]; then
+        printf '%s\n' "$CMD_COMPLETE_GATE_AUTO_PUSH_CI_STATE"
+        return 0
+    fi
+    command -v gh >/dev/null 2>&1 || { printf 'UNKNOWN\n'; return 0; }
+    slug=$(git -C "$repo" remote get-url origin 2>/dev/null \
+        | sed -n 's|.*github\.com[:/]\([^/]*/[^/]*\)\.git$|\1|p; s|.*github\.com[:/]\([^/]*/[^/]*\)$|\1|p' \
+        | head -1)
+    [ -n "$slug" ] || { printf 'UNKNOWN\n'; return 0; }
+    run_json=$(timeout 15 gh run list --repo "$slug" --branch main --limit 10 \
+        --json status,conclusion,headSha 2>/dev/null || true)
+    AUTO_PUSH_RUN_JSON="$run_json" python3 - "$remote_tip" <<'PY'
+import json
+import os
+import sys
+try:
+    rows = json.loads(os.environ.get("AUTO_PUSH_RUN_JSON", ""))
+except (json.JSONDecodeError, OSError):
+    print("UNKNOWN")
+    raise SystemExit(0)
+tip = sys.argv[1]
+for row in rows if isinstance(rows, list) else []:
+    if not isinstance(row, dict) or str(row.get("headSha") or "") != tip:
+        continue
+    if str(row.get("status") or "").lower() == "completed" and str(row.get("conclusion") or "").lower() == "success":
+        print("GREEN")
+        break
+else:
+    print("UNKNOWN")
+PY
+}
+
+cmd_complete_gate_auto_push_ancestry_wait() {
+    local repo="${CMD_COMPLETE_GATE_AUTO_PUSH_REPO:-$SCRIPT_DIR}" remote_tip ci_state push_output
+    local threshold="${CMD_COMPLETE_GATE_AUTO_PUSH_THRESHOLD:-1}"
+    [ -x "$repo/scripts/safe_shared_main_ff.sh" ] || {
+        printf 'AUTO_PUSH_WAIT push=0 result=SKIP reason=helper_missing\n'
+        return 0
+    }
+    remote_tip=$(git -C "$repo" ls-remote origin refs/heads/main 2>/dev/null | awk 'NR==1 {print $1}')
+    [[ "$remote_tip" =~ ^[0-9a-f]{40}$ ]] || {
+        printf 'AUTO_PUSH_WAIT push=0 result=SKIP reason=remote_tip_unresolved\n'
+        return 0
+    }
+    ci_state=$(cmd_complete_gate_auto_push_ci_state "$repo" "$remote_tip")
+    push_output=$(SAFE_SHARED_MAIN_FF_AUTO_PUSH_THRESHOLD="$threshold" \
+        bash "$repo/scripts/safe_shared_main_ff.sh" --auto-push-if-ready "$repo" "$ci_state" 2>&1) || {
+        printf '%s\n' "$push_output"
+        return 1
+    }
+    printf '%s\n' "$push_output"
+    [[ "$push_output" == *"result=PASS"* ]]
+}
+
 push_task_repositories() {
     local task_file repo upstream_ref upstream_sha remote push_ref remote_tip source_sha
     local overlap_blocking all_sources_ok push_rc attempt max_retries refreshed_tip
@@ -14502,8 +14562,23 @@ if [ "$ALL_CLEAR" = true ]; then
         ALL_CLEAR=false
     elif [ "${REPORT_COMMIT_MAIN_ANCESTRY_WAIT:-false}" = true ]; then
         gate_detail_finish
-        echo "GATE WAIT: report_commit_main_ancestry (report commit is not yet contained by canonical main)"
-        record_wait_reason "WAIT:report_commit_main_ancestry"
+        if cmd_complete_gate_auto_push_ancestry_wait; then
+            # The helper refreshes origin/main after publication. Re-run the
+            # same ancestry SSOT so a successful push clears this WAIT in the
+            # current gate invocation and leaves no stale terminal row.
+            if check_report_commit_main_ancestry \
+                && [ "${REPORT_COMMIT_MAIN_ANCESTRY_WAIT:-false}" != true ]; then
+                echo "GATE PASS: report_commit_main_ancestry auto-push verified"
+            else
+                echo "GATE WAIT: report_commit_main_ancestry (auto-push did not clear the boundary)"
+                record_wait_reason "WAIT:report_commit_main_ancestry"
+                ALL_CLEAR=false
+            fi
+        else
+            echo "GATE WAIT: report_commit_main_ancestry (auto-push failed closed)"
+            record_wait_reason "WAIT:report_commit_main_ancestry"
+            ALL_CLEAR=false
+        fi
         ALL_CLEAR=false
     else
         gate_detail_finish
