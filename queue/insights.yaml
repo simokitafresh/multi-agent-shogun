@@ -11292,3 +11292,10 @@ insights:
   source: "semantic_stress_test"
   fix_known: false
   status: pending
+- id: INS-20260831-145715036-67bc
+  ts: "2026-08-31T14:57:15+09:00"
+  insight: "[[3inbox1]] semantic_stress_test candidate_aliases: NO_MATCH source=lord query=3inbox1"
+  priority: "low"
+  source: "semantic_stress_test"
+  fix_known: false
+  status: pending
