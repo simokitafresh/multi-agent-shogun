@@ -11278,3 +11278,10 @@ insights:
   source: "semantic_stress_test"
   fix_known: false
   status: pending
+- id: INS-20260831-145650787-a391
+  ts: "2026-08-31T14:56:50+09:00"
+  insight: "[[T213 T212 T201 T188について詳しく教えて]] semantic_stress_test candidate_aliases: NO_MATCH source=lord query=T213 / T212 / T201 / T188について詳しく教えて"
+  priority: "low"
+  source: "semantic_stress_test"
+  fix_known: false
+  status: pending
