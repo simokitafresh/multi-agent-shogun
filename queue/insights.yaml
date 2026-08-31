@@ -11749,3 +11749,10 @@ insights:
   resolved_reason: "semantic map generation verified the candidate is represented or intentionally ignored"
   action_artifact: "semantic_map=/home/simokitafresh/multi-agent-shogun/context/semantic-map.md;semantic_index=/home/simokitafresh/multi-agent-shogun/docs/semantic-index/index.md"
   resolved_at: "2026-08-31T18:21:35+09:00"
+- id: INS-20260831-184536451-24f1
+  ts: "2026-08-31T18:45:36+09:00"
+  insight: "[[C \\Users\\simok\\Downloads\\Cloudflare Simokitafresh@gmail com ]] semantic_stress_test candidate_aliases: NO_MATCH source=lord query=\"C:\\Users\\simok\\Downloads\\Cloudflare_Simokitafresh@gmail.com's Account_SecurityInsights_20260831_1325.csv\""
+  priority: "low"
+  source: "semantic_stress_test"
+  fix_known: false
+  status: pending
