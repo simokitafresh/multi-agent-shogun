@@ -11341,3 +11341,10 @@ insights:
   source: "semantic_stress_test"
   fix_known: false
   status: pending
+- id: INS-20260831-145828849-5658
+  ts: "2026-08-31T14:58:28+09:00"
+  insight: "[[LP に Basic DualMomentum の static チャートを表示 — showcase EP に her]] semantic_stress_test candidate_aliases: NO_MATCH source=cmds query=LP に Basic-DualMomentum の static チャートを表示 — showcase EP に hero 月次累積系列を追加し compare chart スタイルの静的 SVG を描画する"
+  priority: "low"
+  source: "semantic_stress_test"
+  fix_known: false
+  status: pending
