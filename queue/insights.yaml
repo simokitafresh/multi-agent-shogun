@@ -9620,7 +9620,10 @@ insights:
   priority: "medium"
   source: "manual"
   fix_known: false
-  status: pending
+  status: resolved
+  resolved_reason: "既存根治を一次確認: cmd_complete_gate.shでtask.ac_versionをdeploy_task.shと同一canonical AC fingerprintへ再計算し、保存値不一致をac_version_staleとして検出。report.ac_version_readが再計算値と一致する場合はyaml_field_set.shでtask.ac_versionを自己修復するため、追加実装修正不要。"
+  action_artifact: "scripts/cmd_complete_gate.sh:12610-12666; scripts/lib/report_gate_contract.py:38-72; docs/semantic-index/index.md:3254,8798; source_cmd=cmd_4428"
+  resolved_at: "2026-08-31T19:13:00+09:00"
 - id: INS-20260830-183858765-893d
   ts: "2026-08-30T18:38:58+09:00"
   insight: "semantic_index_update新概念候補: discussion:LPとログイン画面はどこまで進んで、何が残っているんだ？表形式で明確にしてくれ は 既存aliasesに一致なし。概念定義とaliases追加を検討せよ"
