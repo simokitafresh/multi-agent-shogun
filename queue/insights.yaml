@@ -8794,7 +8794,10 @@ insights:
   priority: "medium"
   source: "lord_conversation:lesson_candidate"
   fix_known: false
-  status: pending
+  status: resolved
+  resolved_reason: "一次情報照合で既存のsemantic_dictionary_design・report_quality_protocol・lesson_lifecycleへ吸収済みの一般原則と確認。具体的なコード不具合・新規裁定・decision_candidateは存在しないため対象IDのみresolve。"
+  action_artifact: "semantic_search:既存概念MATCH; memory_db:同一insightとsemantic_stress_test NO_MATCH履歴を確認; context/semantic-map.md:111; docs/semantic-index/index.md:5103-5107; queue/pending_decisions.yaml:一致する未解決裁定なし"
+  resolved_at: "2026-08-31T13:46:15+09:00"
 - id: INS-20260830-133933392-57b1
   ts: "2026-08-30T13:39:33+09:00"
   insight: "[[未決や未裁定があれば今のうちに相談しよう]] semantic_stress_test candidate_aliases: NO_MATCH source=lord query=未決や未裁定があれば今のうちに相談しよう"
