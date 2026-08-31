@@ -9333,6 +9333,7 @@ insights:
   resolved_reason: 一次情報でSKILL_REF_DIRS=skills SKILL_REF_DISABLE_CACHE=1 bash scripts/gates/gate_skill_script_refs.sh .を実走し、rc=2はFOLLOWUP_ACTIVE=32の集約REVIEW_REQUIREDで対象codd-fixペアは警告一覧に不在、参照先実在とSKILL鮮度もPASSを確認。追加修正・decision_candidate不要。
   action_artifact: "gate=scripts/gates/gate_skill_script_refs.sh;command=SKILL_REF_DIRS=skills SKILL_REF_DISABLE_CACHE=1 bash scripts/gates/gate_skill_script_refs.sh .;result=rc2 REVIEW_REQUIRED FOLLOWUP_ACTIVE=32 FOLLOWUP_COVERS_REVIEW_REQUIRED=yes;checks=target_pair_absent,all_refs_exist,skill_freshness_pass;source_head=ba05d67fa5b577044adc4b76ea982f9d632e8f6b;target=queue/insights.yaml:INS-20260830-170106930-4907"
   resolved_at: "2026-08-31T18:46:30+09:00"
+  last_seen: "2026-08-31T18:50:04+09:00"
 - id: INS-20260830-171632544-93a9
   ts: "2026-08-30T17:16:32+09:00"
   insight: "semantic_index_update未登録[[リンク]]ターゲット: [[dm-signal.jp_ドメインrunbook_20260830]] は既存aliasesに一致なし。類似概念TOP3: dmsignal_operations(DM-Signal運用; alias=dm-signal ops; score=21.6) / dm_signal_pf_restore_guardrails(DM-Signal PF復元運用ガードレール; alias=dm signal jp を Cloudflare で取ろう; score=21.2) / dm_fusion_app(DM-Fusionアプリ; alias=SPYとTQQQはDM-Signal monthly_returns; score=12.9)。概念定義とaliases追加を検討せよ"
