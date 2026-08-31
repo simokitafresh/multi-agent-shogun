@@ -8824,7 +8824,10 @@ insights:
   priority: "medium"
   source: "manual"
   fix_known: false
-  status: pending
+  status: resolved
+  resolved_reason: "一次情報で対象を再確認。現行HEADは根治commit 25096df74を祖先化し、ninja_monitor.shの_report_generation_has_terminal_reviewとauto_request_report_review/repair_terminal_report_outboxesがreport SHA-256世代markerでLGTM済みreport_review・report_received再送を抑止する。対応contract test report review and report outbox dedupe use stable generationを実走中で追加実装修正・decision_candidateは不要。"
+  action_artifact: "target=queue/insights.yaml:INS-20260830-140615091-49e4;primary=scripts/ninja_monitor.sh:10478-10596,10668-10728;commit=25096df74;tests=tests/unit/test_ninja_monitor_stall.bats:490-605 stable-generation contract;inventory_before=dispatchable insights_pending:48 zero_backlinks:14 promotions:0 total:62 (raw promotions:598 suppressed by queue/gates/reflux_promotion.paused);decision_candidate=none"
+  resolved_at: "2026-08-31T14:47:20+09:00"
 - id: INS-20260830-140938685-bc6d
   ts: "2026-08-30T14:09:38+09:00"
   insight: "semantic_index_update新概念候補: discussion:task notification task id ba61ef214 task id tool use id toolu 01SQMNqwdMHPuV9RAQ は 既存aliasesに一致なし。概念定義とaliases追加を検討せよ"
