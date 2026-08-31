@@ -10886,53 +10886,84 @@ insights:
   priority: "low"
   source: "semantic_stress_test"
   fix_known: false
-  status: pending
+  status: resolved
+  resolved_reason: "semantic index candidate was absorbed into a registered concept"
+  action_artifact: "semantic_index=/home/simokitafresh/multi-agent-shogun/docs/semantic-index/index.md"
+  resolved_at: "2026-08-31T13:12:42+09:00"
 - id: INS-20260831-130756317-4786
   ts: "2026-08-31T13:07:56+09:00"
   insight: "[[T213 T212 T201 T188の進捗を表形式で教えて]] semantic_stress_test candidate_aliases: NO_MATCH source=lord query=T213 / T212 / T201 / T188の進捗を表形式で教えて"
   priority: "low"
   source: "semantic_stress_test"
   fix_known: false
-  status: pending
+  status: resolved
+  resolved_reason: "semantic index candidate was absorbed into a registered concept"
+  action_artifact: "semantic_index=/home/simokitafresh/multi-agent-shogun/docs/semantic-index/index.md"
+  resolved_at: "2026-08-31T13:12:42+09:00"
 - id: INS-20260831-131030887-3971
   ts: "2026-08-31T13:10:30+09:00"
   insight: "[[Edit zone DNS API token summary This API token will affect t]] semantic_stress_test candidate_aliases: NO_MATCH source=lord query=Edit zone DNS API token summary This API token will affect the below accounts and zones, along with their respective permissions Simokitafr…"
   priority: "low"
   source: "semantic_stress_test"
   fix_known: false
-  status: pending
+  status: resolved
+  resolved_reason: "semantic index candidate was absorbed into a registered concept"
+  action_artifact: "semantic_index=/home/simokitafresh/multi-agent-shogun/docs/semantic-index/index.md"
+  resolved_at: "2026-08-31T13:12:42+09:00"
 - id: INS-20260831-131042058-0255
   ts: "2026-08-31T13:10:42+09:00"
   insight: "[[俺待ちの件を詳しく教えてくれ]] semantic_stress_test candidate_aliases: NO_MATCH source=lord query=俺待ちの件を詳しく教えてくれ"
   priority: "low"
   source: "semantic_stress_test"
   fix_known: false
-  status: pending
+  status: resolved
+  resolved_reason: "semantic index candidate was absorbed into a registered concept"
+  action_artifact: "semantic_index=/home/simokitafresh/multi-agent-shogun/docs/semantic-index/index.md"
+  resolved_at: "2026-08-31T13:12:42+09:00"
 - id: INS-20260831-131053266-3d85
   ts: "2026-08-31T13:10:53+09:00"
   insight: "[[Markdown for Agentsはonにした]] semantic_stress_test candidate_aliases: NO_MATCH source=lord query=Markdown for Agentsはonにした。#3は回収せよ"
   priority: "low"
   source: "semantic_stress_test"
   fix_known: false
-  status: pending
+  status: resolved
+  resolved_reason: "semantic index candidate was absorbed into a registered concept"
+  action_artifact: "semantic_index=/home/simokitafresh/multi-agent-shogun/docs/semantic-index/index.md"
+  resolved_at: "2026-08-31T13:12:42+09:00"
 - id: INS-20260831-131107886-10d1
   ts: "2026-08-31T13:11:07+09:00"
   insight: "[[Image 7 LPのデザインの話をしよう]] semantic_stress_test candidate_aliases: NO_MATCH source=lord query=[Image #7] LPのデザインの話をしよう。左列のpremium planの横の・招待制は冗長で不要。最大は日本語ページもup to表記に。CAGRの最大のほうはBasic dualmomentumと同じ太字に。ｘNも同様に太字に。閲覧のサインインはメンバーシップとしたほ…"
   priority: "low"
   source: "semantic_stress_test"
   fix_known: false
-  status: pending
+  status: resolved
+  resolved_reason: "semantic index candidate was absorbed into a registered concept"
+  action_artifact: "semantic_index=/home/simokitafresh/multi-agent-shogun/docs/semantic-index/index.md"
+  resolved_at: "2026-08-31T13:12:43+09:00"
 - id: INS-20260831-131119113-4aea
   ts: "2026-08-31T13:11:19+09:00"
   insight: "[[殿裁定 12 24 12 32 スクショ付き Current signals テーブルの体裁のみを直す]] semantic_stress_test candidate_aliases: NO_MATCH source=cmds query=殿裁定 2026-08-31 12:24-12:32(スクショ付き): Current signals テーブルの体裁のみを直す。(1)Premium 行左列の招待制注記は閲覧列と重複で不要 (2)日本語ページの最大表記も up to へ (3)プラン行の Total return・×N・CAGR 最大側を Basic-DualMomentum 行と同じ太字"
   priority: "low"
   source: "semantic_stress_test"
   fix_known: false
-  status: pending
+  status: resolved
+  resolved_reason: "semantic index candidate was absorbed into a registered concept"
+  action_artifact: "semantic_index=/home/simokitafresh/multi-agent-shogun/docs/semantic-index/index.md"
+  resolved_at: "2026-08-31T13:12:43+09:00"
 - id: INS-20260831-131130557-8f89
   ts: "2026-08-31T13:11:30+09:00"
   insight: "[[LP Current signals 体裁 — 招待制注記の重複削除・JA を up to 表記へ・主要指標の太字統一・]] semantic_stress_test candidate_aliases: NO_MATCH source=cmds query=LP Current signals 体裁 — 招待制注記の重複削除・JA を up to 表記へ・主要指標の太字統一・TQQQ MDD 赤字・閲覧列をメンバーシップ表記へ"
   priority: "low"
   source: "semantic_stress_test"
+  fix_known: false
+  status: resolved
+  resolved_reason: "semantic index candidate was absorbed into a registered concept"
+  action_artifact: "semantic_index=/home/simokitafresh/multi-agent-shogun/docs/semantic-index/index.md"
+  resolved_at: "2026-08-31T13:12:43+09:00"
+- id: INS-20260831-131244108-9c19
+  ts: "2026-08-31T13:12:44+09:00"
+  insight: "semantic_index_update新概念候補: discussion:Image は 既存aliasesに一致なし。概念定義とaliases追加を検討せよ"
+  priority: "low"
+  source: "semantic_index_update"
   fix_known: false
   status: pending
