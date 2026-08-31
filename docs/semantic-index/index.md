@@ -6200,6 +6200,7 @@ codd:
 | discussion | `queue/lord_conversation.jsonl` 2026-08-31T13:32:50+09:00 トークンにZone WAF:EditとBot Management:Editを追加した。確認して3件投入せよ |
 | discussion | `queue/lord_conversation.jsonl` 2026-08-31T16:11:12+09:00 bingとsearch consoleは確認した。inbox1 |
 | discussion | `queue/lord_conversation.jsonl` 2026-08-31T17:43:05+09:00 つまりはバグだ。バグは根治しよう。目先の切り分けにこだわると複雑化して他の場所で詰まる。真因に辿りついて覚醒してバグを再発しないように根治せよ |
+| lesson | `L1690` fixture実行後に共有queue/reportsのlock残存を検査する |
 | causal_chain | `[[cmd_3633]]` (L916) |
 | causal_chain | `[[cmd_3646]]` (L929) |
 | causal_chain | `[[cmd_3649]]` (L932) |
@@ -6250,6 +6251,7 @@ codd:
 | causal_chain | `[[cmd_karo_hotfix_t102_t91_ext4_cutover_complete_20260828]]` (L1657) |
 | causal_chain | `[[cmd_karo_ci_fix_33122914110_shard_inventory_ledger_r2_20260828]]` (L1660) |
 | causal_chain | `[[cmd_karo_hotfix_review_bundle_single_precheck_na_20260828]]` (L1663) |
+| causal_chain | `[[cmd_karo_hotfix_report_unit_lock_residue_20260831135838]]` (L1690) |
 
 ## no_auto_extinguish — 自動消火禁止
 
@@ -8796,6 +8798,7 @@ codd:
 | discussion | `queue/lord_conversation.jsonl` 2026-08-31T02:30:22+09:00 LP 殿指摘 4 点(2026-08-31 01:41-01:43)の処置: ①MDD 全行『—』=LP build 23:27 が backend 4425 live 00:13 より古い→LP 再 build 01:50 live で  |
 | discussion | `queue/lord_conversation.jsonl` 2026-08-31T03:00:47+09:00 session_save_20260831_0300_gunshi: 軍師セッション(23:28-03:00)。Report review 10件(LGTM 8件: ga531/cmd_4428/cmd_4425/three_layer/r |
 | discussion | `queue/lord_conversation.jsonl` 2026-08-31T13:03:32+09:00 殿裁定 2026-08-31 13:00 実行完了: ①Cloudflare Markdown for agents ON=curl -H 'Accept: text/markdown' https://dm-signal.com/inde |
+| cmd | `cmd_karo_hotfix_report_unit_lock_residue_20260831135838` (`tests/unit/test_deploy_task_yaml_injection.bats`) |
 | causal_chain | `[[cmd_karo_hotfix_deploy_task_latency_yaml_bug_20260702010845]]` (L918) |
 | causal_chain | `[[cmd_karo_hotfix_deploy_task_yaml_speed_recon_guard_202607020133]]` (L919) |
 | causal_chain | `[[cmd_karo_hotfix_ga162_hook_failure_pre_push_202607021402]]` (L930) |

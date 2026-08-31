@@ -16428,3 +16428,16 @@ sqlite3.Connection.backup()を使うとページ(4096byte)単位のread syscall�
 - **when**: 未設定
 - **how**: 未設定
 - 旧SG7 fingerprintとread済みrequestをterminalと誤認すると現世代LGTMが失われるため、未読中のみdedupeしcurrent raw generationのterminal approvalまで再提示する。
+
+### L1690: fixture実行後に共有queue/reportsのlock残存を検査する
+- **日付**: 2026-08-31
+- **出典**: cmd_karo_hotfix_report_unit_lock_residue_20260831135838
+- **記録者**: tobisaru
+- **tags**: [infra,testing]
+- **subdomain**: infra
+- **target_files**: [tests/unit/test_deploy_task_yaml_injection.bats]
+- **origin**: [[cmd_karo_hotfix_report_unit_lock_residue_20260831135838]]
+- **enforcement**: 未自動化
+- **when**: 未設定
+- **how**: 未設定
+- 一時task_fileを使うfixtureでもSCRIPT_DIR未隔離ならreport publicationが共有queue/reportsへunit lockを生成する。次回はfixture開始時に専用queue/reports rootを作りSCRIPT_DIRを束縛し、実行後に共有target glob件数不変とfixture側lock生成を二値確認する。

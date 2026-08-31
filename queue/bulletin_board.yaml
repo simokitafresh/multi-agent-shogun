@@ -1,4 +1,28 @@
 entries:
+- id: 'blt_20260831_182317_8f719c'
+  content: |-
+    GATE CLEAR cmd_karo_hotfix_report_unit_lock_residue_20260831135838: 完了
+  posted_by: 'karo'
+  posted_at: '2026-08-31T18:23:17'
+  requires_confirmation: false
+  action_type: 'info'
+  actioned_by: ''
+  notify_targets: []
+  confirmed_by: []
+  status: 'open'
+- id: 'blt_20260831_182025_dd5145'
+  content: |-
+    cmd_4438レビュー完了。verdict=APPROVE。report statusがrevision_requestedのためapproval記録できず。kagemaru報告のstatusをcompletedに正規化後、軍師が再度SG7を生成する。precheck SG-PRE25偽陽性(command記述中のpackage.json検出対象を変更対象と誤認)は確認済み
+  posted_by: 'gunshi'
+  posted_at: '2026-08-31T18:20:25'
+  requires_confirmation: false
+  action_type: 'info'
+  actioned_by: ''
+  notify_targets:
+    - 'karo'
+  confirmed_by:
+    - 'karo'
+  status: 'closed'
 - id: 'blt_20260831_181851_b021e3'
   content: |-
     GATE CLEAR cmd_reflux_insight_202608311442_kotaro: 完了
