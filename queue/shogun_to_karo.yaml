@@ -1,7 +1,7 @@
 commands:
   cmd_4440:
     title: "LP の FAQ リンクを言語別化 — EN ページは /faq/en/ へ、JA ページは /faq へ直リンクする"
-    status: draft
+    status: delegated
     project: dm-signal
     purpose: "殿裁定 2026-08-31 19:27『直そう』(設計書 v3.2 §5 / SEO 案 v4 §0 で発見した小穴)。現物 19:28 curl: EN LP・JA LP とも FAQ リンクは `https://dm-signal-frontend.onrender.com/faq`(JA 既定)1 件ずつで、EN 読者が EN FAQ(`/faq/en/`、cmd_4427 で live 200)へ直に到達できない。EN LP の href を `/faq/en/` へ、JA LP は `/faq` のまま維持する"
     scope_mode: FULL
@@ -47,6 +47,7 @@ commands:
       q12_lord_30min_cost: "no。本番 1 クリック確認で足りる"
       diagnosis: "BLOCK理由: 初回起票のため既往BLOCKなし。想定リスク=JA 側や docs リンクまで巻き込む / 対策: AC1 で他 href diff 0 を二値化"
     seam_contract: null
+    delegated_at: "\"2026-08-31T19:30:23\""
     reflux_commit_contract: null
   cmd_4439:
     title: "LP static チャートを比較形式へ — SPY 破線系列を追加し対数 x 表記目盛・年月 x 軸・凡例に累積%を表示する"
@@ -228,60 +229,6 @@ commands:
       diagnosis: "BLOCK理由: 初回起票のため既往BLOCKなし。想定リスク=月次頁に秘匿情報が漏れる/月ハードコードで 9 月に手作業が要る / 対策: AC1 の秘匿 0 件検証と AC2 のハードコード 0 件検証で二値化"
     seam_contract: null
     delegated_at: "\"2026-08-31T15:01:18\""
-    reflux_commit_contract: null
-  cmd_4434:
-    title: "LP に FoF 訴求 1 行を追加 — Fund of Funds が主力(active の 7 割超)である旨を Current signals 近傍に EN/JA で明記する"
-    status: delegated
-    project: dm-signal
-    purpose: "殿裁定 2026-08-31 14:36『FoF 訴求 1 行を足す=採用』(発端=殿 12:39『FoF がウリ』)。現物確認: active 101 本中 77 本が FoF だが、本番 LP curl(14:02 保存 HTML)に Fund of Funds/FoF の語 0 件(grep 0)。入口 3 面 v3.1 §6-6 の裁定を実装する"
-    scope_mode: FULL
-    target_path: /mnt/c/Python_app/DM-signal/lp
-    acceptance_criteria:
-      AC1:
-        description: "LP の EN/JA 文言辞書(copy)に FoF 訴求 1 行(EN は Fund of Funds の語を含み、JA は FoF(ファンド・オブ・ファンズ) 表記を含む。数値を使う場合は active 中 FoF 比率の実測値のみ)を追加し、Current signals テーブル近傍(tableNote または表直上)に EN/JA 両ページで表示する"
-        binary_check: "隔離 build の EN index に Fund of Funds が 1 回以上 ∧ JA index に FoF が 1 回以上 ∧ 表示位置が Current signals セクション内 か?"
-      AC2:
-        description: "追加は訴求 1 行のみで、既存のテーブル・文言・リンク・挙動に変更がないことを diff で確認する(cmd_4432/4433 の変更と衝突しない)"
-        binary_check: "diff が copy 2 ファイル+表示コンポーネント 1 ファイルの追加行のみ ∧ 既存行の削除・変更 0 か?"
-      AC3:
-        description: "隔離 build(npm typecheck + build)を exit 0 で通し、EN・JA 出力 index への grep 結果を報告 YAML に生貼付する"
-        binary_check: "typecheck exit 0 ∧ build exit 0 ∧ AC1 の grep 生貼付あり か?"
-    command: |
-      1. lp/copy/en.ts・ja.ts に FoF 訴求 1 行を追加し、landing-page.tsx で Current signals 近傍に表示する
-      2. diff で追加行のみであることを確認する
-      3. 隔離 build と grep で AC1-AC2 を検証し報告 YAML に生貼付する
-    assumptions:
-      claim: "本番 LP HTML(14:02 curl 保存)に Fund of Funds/FoF の語 0 件を grep 実測。active 101 本中 77 本が FoF は殿 12:39 発言と設計書 v3.1 §6-6 の記載。LP 実体は external repo worktree で解決(cmd_4431 実績)"
-      source: "本番 https://dm-signal.com/ curl 14:02 grep 0 件 + docs/research/dm-login-showcase-asis-tobe_v3_20260830.md §6-6 + 殿裁定 14:36(knowledge:d1fb0c5aaf6d922c)"
-      trust: verified
-    depends_on: cmd_4433
-    serial_dependency_evidence: "cmd_4432(列整理)→cmd_4433(チャート)→本 cmd(訴求行)は同一 Current signals セクションの直列変更。並走すると copy/landing-page.tsx で衝突するため depends_on cmd_4433"
-    measurement_source: "本番 LP curl 実測(2026-08-31 14:02 JST、FoF 語 0 件)。ローカル計測は含まない"
-    environment_change: "type=lesson; file=projects/infra/lessons_shogun.yaml; pattern=cmd_4154初回preflightで数値絶対値WARN"
-    timeout_minutes: 20
-    estimated_minutes: 10
-    split_decision:
-      boundary_ac_ids: [AC1, AC2, AC3]
-      integration_tasks: 1
-      review_round_trips: 0
-    origin: "[[殿裁定_FoF訴求採用_20260831_1436]] -> [[入口3面v3.1_§6-6]] -> [[cmd_4434_FoF訴求行]]"
-    quality_gate:
-      q1_firefighting: "品質向上。理由: 主力商品(FoF)の訴求欠落を埋めるマーケティング改善であり障害対応ではない"
-      q2_learning: "奪わない。理由: 表示位置(tableNote か表直上か)と文言の最終形は忍者判断に残る"
-      q3_next_quality: "上がる。理由: 商品構成の訴求が LP に載り、以後の訴求文言変更の位置基準になる"
-      q4_depth: "shallow。1 行追加の軽量 cmd。裁定と現物 grep 0 件の裏取りのみで十分"
-      q5_verified_source: "production_verified: 本番 LP curl 14:02 保存 HTML に grep -c -i 'fund of funds|FoF' → 0 件。code_reading: 設計書 v3.1 §6-6 に active 101 本中 77 本が FoF の記載"
-      q6_not_hiding: "隠さない。理由: 追加は公開情報(商品構成の比率)のみで PF 名・数値の秘匿情報を出さない"
-      q7_definition_verified: "FoF 訴求 1 行=EN に Fund of Funds、JA に FoF(ファンド・オブ・ファンズ) を含む 1 文。位置=Current signals セクション内(§6-6 裁定)"
-      q8_why_what: "WHY: 主力 77/101 本が FoF なのに LP に語 0 回(殿 12:39) / WHAT: 訴求 1 行を EN/JA へ / WHEN: cmd_4433 CLEAR 後 / WHERE: lp copy+landing-page.tsx / WHO: 忍者 1 名 / HOW: copy 追加→隔離 build grep / 複利: 訴求文言の位置基準が固定される"
-      q9_firefighting_root_cause: "消火ではない。訴求追加であり根本原因対応は不要"
-      q10_knowledge_boundary: "境界内。lp は cmd_4430-4433 の直近系譜で知識鮮度が最高"
-      q11_not_already_done: "未実施を確認: grep -c -i 'fund of funds|FoF' 本番 LP HTML(14:02) → 0 件"
-      q_ambiguity: "低。文言の最終形は忍者裁量、必須語(Fund of Funds/FoF)と位置(Current signals 内)は AC で固定"
-      q12_lord_30min_cost: "no。1 行追加で殿の確認は本番 1 目視で足りる"
-      diagnosis: "BLOCK理由: 初回起票のため既往BLOCKなし。想定リスク=4432/4433 と同一ファイル衝突 / 対策: depends_on cmd_4433 の直列化と AC2 の追加行のみ diff 検証で衝突を構造的に排除"
-    seam_contract: null
-    delegated_at: "\"2026-08-31T14:46:11\""
     reflux_commit_contract: null
   cmd_4414:
     title: "/login ショーウィンドウ P1b — 公開集計 EP に Sharpe(プラン平均/ベスト)・SPY/TQQQ 比較行・Secret 集計値を追補する"
