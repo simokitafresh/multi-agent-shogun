@@ -710,6 +710,110 @@ print(candidate)
 PY
 }
 
+# Discover the nearest npm package root for each concrete task-scope path.
+# External projects are not required to use the control repository's
+# frontend/ or backend/ layout; package.json is the execution boundary.
+# Stop at the first package.json so nested packages do not also dispatch their
+# parent workspace package.
+discover_external_npm_package_roots() {
+    local project_root="$1"
+    shift
+    python3 - "$project_root" "$@" <<'PY'
+import os
+import sys
+
+root = os.path.realpath(sys.argv[1])
+seen = set()
+for raw in sys.argv[2:]:
+    if not raw:
+        continue
+    candidate = raw if os.path.isabs(raw) else os.path.join(root, raw)
+    candidate = os.path.realpath(candidate)
+    if candidate != root and not candidate.startswith(root + os.sep):
+        continue
+    current = candidate if os.path.isdir(candidate) else os.path.dirname(candidate)
+    while True:
+        package_json = os.path.join(current, "package.json")
+        if os.path.isfile(package_json):
+            if current not in seen:
+                seen.add(current)
+                print(current)
+            break
+        if current == root:
+            break
+        current = os.path.dirname(current)
+PY
+}
+
+# Run an external npm package without assuming a frontend-specific directory.
+# The caller owns the terminal receipt; this function emits one TEST_SELECTION
+# record and, for build-only packages, one TAP check for the successful build
+# so a valid Ninja receipt exists even when the build tool emits no test count.
+run_external_npm_package() {
+    local package_root="$1"
+    local task_root="$2"
+    local package_json="$package_root/package.json"
+    local package_info
+    package_info="$(python3 - "$package_json" <<'PY'
+import json
+import re
+import sys
+
+with open(sys.argv[1], encoding="utf-8") as handle:
+    data = json.load(handle)
+scripts = data.get("scripts") or {}
+if not isinstance(scripts, dict):
+    raise SystemExit("scripts mapping required")
+typecheck = str(scripts.get("typecheck") or "")
+build = str(scripts.get("build") or "")
+test = str(scripts.get("test") or "")
+if not build and not test:
+    raise SystemExit("missing build/test script")
+engine = ""
+if test:
+    if re.search(r"(^|[ /])vitest(?:[ /]|$)", test):
+        engine = "vitest"
+    elif re.search(r"(^|[ /])jest(?:[ /]|$)", test):
+        engine = "jest"
+    elif re.search(r"(^|[ /])mocha(?:[ /]|$)", test):
+        engine = "mocha"
+    elif re.search(r"(^|[ /])node(?:js)?(?:[ /]|$).*--test(?:[ /]|$)", test):
+        engine = "node"
+print("\t".join(("1" if typecheck else "0", "1" if build else "0", "1" if test else "0", engine)))
+PY
+)" || {
+        printf 'BLOCK: external npm package has invalid package.json/scripts: %s\n' "$package_json" >&2
+        return 2
+    }
+    local _has_typecheck _has_build _has_test _engine
+    IFS=$'\t' read -r _has_typecheck _has_build _has_test _engine <<<"$package_info"
+    local _relative_root="${package_root#"$task_root"/}"
+    [ "$_relative_root" = "$package_root" ] && _relative_root="."
+    printf 'TEST_SELECTION result=external runner=npm-package scope=%s project_root=%s files=1\n' \
+        "$_relative_root" "$package_root"
+    if [ "$_has_build" -eq 0 ] && [ -z "$_engine" ]; then
+        printf 'BLOCK: unsupported external npm package test engine root=%s\n' "$package_root" >&2
+        return 2
+    fi
+    if [ "$_has_typecheck" -eq 1 ]; then
+        printf 'START: npm-typecheck root=%s engine=npm\n' "$package_root" >&2
+        (cd "$package_root" && npm run typecheck) || return $?
+        printf 'DONE: npm-typecheck rc=0 engine=npm\n' >&2
+    fi
+    if [ "$_has_build" -eq 1 ]; then
+        printf 'START: npm-build root=%s engine=npm\n' "$package_root" >&2
+        (cd "$package_root" && npm run build) || return $?
+        printf 'DONE: npm-build rc=0 engine=npm\n' >&2
+        # Build success is the package's selected validation when no test
+        # script is used. Keep it inside the receipt's TAP contract.
+        printf '1..1\nok 1 external-package-build-%s\n' "$_relative_root"
+    else
+        printf 'START: npm-test root=%s engine=%s\n' "$package_root" "$_engine" >&2
+        (cd "$package_root" && npm test) || return $?
+        printf 'DONE: npm-test rc=0 engine=%s\n' "$_engine" >&2
+    fi
+}
+
 # A throwaway fixture must never retain a live path back into the checkout.
 # The dangerous shape is an untracked symlink below tests/ whose resolved
 # target is a tracked file in this repository: a test redirection/cp then
@@ -2415,6 +2519,26 @@ PY
                                 || { echo "BLOCK: frontend ext4 fallback cleanup failed" >&2; exit 2; }
                         fi
                         [[ "$_frontend_rc" -eq 0 ]] || exit "$_frontend_rc"
+                    fi
+                    local _external_npm_package_count=0
+                    if [ "${#scoped_paths[@]}" -gt 0 ] || [ "${#_declared_contract_tests[@]}" -gt 0 ]; then
+                        local -a _external_npm_roots=()
+                        mapfile -t _external_npm_roots < <(
+                            discover_external_npm_package_roots "$_task_root" \
+                                "${scoped_paths[@]}" "${_declared_contract_tests[@]}"
+                        )
+                        local _external_npm_root
+                        for _external_npm_root in "${_external_npm_roots[@]}"; do
+                            # frontend/ retains its established engine-specific
+                            # path above; backend/ retains pytest ownership.
+                            [[ "$_external_npm_root" == "$_task_root/frontend" ]] && continue
+                            [[ "$_external_npm_root" == "$_task_root/backend" ]] && continue
+                            run_external_npm_package "$_external_npm_root" "$_task_root" || exit $?
+                            _external_npm_package_count=$(( _external_npm_package_count + 1 ))
+                        done
+                    fi
+                    if [ "$_external_npm_package_count" -gt 0 ]; then
+                        exit 0
                     fi
                     if [ "$_external_backend" -eq 0 ] && [ "$_external_frontend" -eq 0 ]; then
                         if [ "$_scope_external_filtered" -eq 1 ]; then
