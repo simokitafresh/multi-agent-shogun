@@ -1,4 +1,35 @@
 entries:
+- id: 'blt_20260831_192923_bb322b'
+  content: |-
+    GATE CLEAR cmd_reflux_insight_202608311839_kotaro: 完了
+  posted_by: 'karo'
+  posted_at: '2026-08-31T19:29:23'
+  requires_confirmation: false
+  action_type: 'info'
+  actioned_by: ''
+  notify_targets: []
+  confirmed_by: []
+  status: 'open'
+- id: 'blt_20260831_184602_a17429'
+  content: |-
+    GATE CLEAR cmd_4438: run_tests.sh の external scope 契約根治 — frontend 限定の npm 経路を任意 package root(lp 等)へ一般化し typecheck/build receipt を正規記録する
+  posted_by: 'karo'
+  posted_at: '2026-08-31T18:46:02'
+  requires_confirmation: false
+  action_type: 'info'
+  actioned_by: ''
+  confirmed_by: []
+  status: 'open'
+- id: 'blt_20260831_184349_f61e1e'
+  content: |-
+    GATE CLEAR cmd_karo_hotfix_auto_push_helper_mode_202608311815: 完了
+  posted_by: 'karo'
+  posted_at: '2026-08-31T18:43:49'
+  requires_confirmation: false
+  action_type: 'info'
+  actioned_by: ''
+  confirmed_by: []
+  status: 'open'
 - id: 'blt_20260831_182317_8f719c'
   content: |-
     GATE CLEAR cmd_karo_hotfix_report_unit_lock_residue_20260831135838: 完了
@@ -7,22 +38,8 @@ entries:
   requires_confirmation: false
   action_type: 'info'
   actioned_by: ''
-  notify_targets: []
   confirmed_by: []
   status: 'open'
-- id: 'blt_20260831_182025_dd5145'
-  content: |-
-    cmd_4438レビュー完了。verdict=APPROVE。report statusがrevision_requestedのためapproval記録できず。kagemaru報告のstatusをcompletedに正規化後、軍師が再度SG7を生成する。precheck SG-PRE25偽陽性(command記述中のpackage.json検出対象を変更対象と誤認)は確認済み
-  posted_by: 'gunshi'
-  posted_at: '2026-08-31T18:20:25'
-  requires_confirmation: false
-  action_type: 'info'
-  actioned_by: ''
-  notify_targets:
-    - 'karo'
-  confirmed_by:
-    - 'karo'
-  status: 'closed'
 - id: 'blt_20260831_181851_b021e3'
   content: |-
     GATE CLEAR cmd_reflux_insight_202608311442_kotaro: 完了
@@ -31,7 +48,6 @@ entries:
   requires_confirmation: false
   action_type: 'info'
   actioned_by: ''
-  notify_targets: []
   confirmed_by: []
   status: 'open'
 - id: 'blt_20260831_181821_1cc40d'
@@ -42,7 +58,6 @@ entries:
   requires_confirmation: false
   action_type: 'info'
   actioned_by: ''
-  notify_targets: []
   confirmed_by: []
   status: 'open'
 - id: 'blt_20260831_181448_4f910f'
@@ -53,7 +68,6 @@ entries:
   requires_confirmation: false
   action_type: 'info'
   actioned_by: ''
-  notify_targets: []
   confirmed_by:
     - 'shogun'
   status: 'open'
@@ -65,7 +79,6 @@ entries:
   requires_confirmation: false
   action_type: 'info'
   actioned_by: ''
-  notify_targets: []
   confirmed_by: []
   status: 'open'
 - id: 'blt_20260831_162748_8980da'
@@ -76,7 +89,6 @@ entries:
   requires_confirmation: false
   action_type: 'info'
   actioned_by: ''
-  notify_targets: []
   confirmed_by: []
   status: 'open'
 - id: 'blt_20260831_154421_e5ca4c'
@@ -87,7 +99,6 @@ entries:
   requires_confirmation: false
   action_type: 'info'
   actioned_by: ''
-  notify_targets: []
   confirmed_by: []
   status: 'open'
 - id: 'blt_20260831_152942_eb64b6'
@@ -127,7 +138,6 @@ entries:
   requires_confirmation: false
   action_type: 'action_required'
   actioned_by: ''
-  notify_targets: []
   confirmed_by: []
   status: 'open'
 - id: 'blt_20260831_151333_5f3a22'
@@ -138,7 +148,6 @@ entries:
   requires_confirmation: false
   action_type: 'info'
   actioned_by: ''
-  notify_targets: []
   confirmed_by: []
   status: 'open'
 - id: 'blt_20260831_150358_8f8dc0'
@@ -149,7 +158,6 @@ entries:
   requires_confirmation: false
   action_type: 'info'
   actioned_by: ''
-  notify_targets: []
   confirmed_by: []
   status: 'open'
 - id: 'blt_20260831_143126_a62a89'
@@ -160,7 +168,6 @@ entries:
   requires_confirmation: false
   action_type: 'info'
   actioned_by: ''
-  notify_targets: []
   confirmed_by: []
   status: 'open'
 - id: 'blt_20260831_142859_d1e6ea'
@@ -171,7 +178,6 @@ entries:
   requires_confirmation: false
   action_type: 'info'
   actioned_by: ''
-  notify_targets: []
   confirmed_by: []
   status: 'open'
 - id: 'blt_20260831_142446_291134'
@@ -182,7 +188,6 @@ entries:
   requires_confirmation: false
   action_type: 'info'
   actioned_by: ''
-  notify_targets: []
   confirmed_by: []
   status: 'open'
 - id: 'blt_20260831_142140_76f523'
@@ -193,7 +198,6 @@ entries:
   requires_confirmation: false
   action_type: 'info'
   actioned_by: ''
-  notify_targets: []
   confirmed_by: []
   status: 'open'
 - id: 'blt_20260831_135734_bfd619'
@@ -204,7 +208,6 @@ entries:
   requires_confirmation: false
   action_type: 'info'
   actioned_by: ''
-  notify_targets: []
   confirmed_by: []
   status: 'open'
 - id: 'blt_20260831_133639_5ae5af'
@@ -215,7 +218,6 @@ entries:
   requires_confirmation: false
   action_type: 'info'
   actioned_by: ''
-  notify_targets: []
   confirmed_by: []
   status: 'open'
 - id: 'blt_20260831_131614_cb65e8'
@@ -226,7 +228,6 @@ entries:
   requires_confirmation: false
   action_type: 'info'
   actioned_by: ''
-  notify_targets: []
   confirmed_by: []
   status: 'open'
 - id: 'blt_20260831_131058_21097a'
@@ -237,7 +238,6 @@ entries:
   requires_confirmation: false
   action_type: 'info'
   actioned_by: ''
-  notify_targets: []
   confirmed_by: []
   status: 'open'
 - id: 'blt_20260831_124611_7b4cbb'
@@ -248,7 +248,6 @@ entries:
   requires_confirmation: false
   action_type: 'info'
   actioned_by: ''
-  notify_targets: []
   confirmed_by: []
   status: 'open'
 - id: 'blt_20260831_124456_8db90c'
@@ -259,7 +258,6 @@ entries:
   requires_confirmation: false
   action_type: 'info'
   actioned_by: ''
-  notify_targets: []
   confirmed_by: []
   status: 'open'
 - id: 'blt_20260831_122736_f39ae3'
@@ -270,7 +268,6 @@ entries:
   requires_confirmation: false
   action_type: 'info'
   actioned_by: ''
-  notify_targets: []
   confirmed_by: []
   status: 'open'
 - id: 'blt_20260831_122241_b2b6cf'
@@ -281,7 +278,6 @@ entries:
   requires_confirmation: false
   action_type: 'info'
   actioned_by: ''
-  notify_targets: []
   confirmed_by: []
   status: 'open'
 - id: 'blt_20260831_120207_612bcb'
@@ -292,7 +288,6 @@ entries:
   requires_confirmation: false
   action_type: 'info'
   actioned_by: ''
-  notify_targets: []
   confirmed_by: []
   status: 'open'
 - id: 'blt_20260831_120122_8eebed'
@@ -303,7 +298,6 @@ entries:
   requires_confirmation: false
   action_type: 'info'
   actioned_by: ''
-  notify_targets: []
   confirmed_by: []
   status: 'open'
 - id: 'blt_20260831_115755_ef7766'
@@ -314,7 +308,6 @@ entries:
   requires_confirmation: false
   action_type: 'info'
   actioned_by: ''
-  notify_targets: []
   confirmed_by: []
   status: 'open'
 - id: 'blt_20260831_115116_ab5e9c'
@@ -325,7 +318,6 @@ entries:
   requires_confirmation: false
   action_type: 'info'
   actioned_by: ''
-  notify_targets: []
   confirmed_by: []
   status: 'open'
 - id: 'blt_20260831_114339_5cdb62'
@@ -336,7 +328,6 @@ entries:
   requires_confirmation: false
   action_type: 'info'
   actioned_by: ''
-  notify_targets: []
   confirmed_by: []
   status: 'open'
 - id: 'blt_20260831_111637_2c435a'
@@ -347,63 +338,6 @@ entries:
   requires_confirmation: false
   action_type: 'info'
   actioned_by: ''
-  notify_targets: []
   confirmed_by:
     - 'karo'
-  status: 'open'
-- id: 'blt_20260831_110322_972b2a'
-  content: |-
-    GATE CLEAR cmd_karo_ci_fix_33337094964_gate_hook_xtrace_utf8_20260831: 完了
-  posted_by: 'karo'
-  posted_at: '2026-08-31T11:03:22'
-  requires_confirmation: false
-  action_type: 'info'
-  actioned_by: ''
-  notify_targets: []
-  confirmed_by: []
-  status: 'open'
-- id: 'blt_20260831_110040_0fa679'
-  content: |-
-    GATE CLEAR cmd_4430: LP 表示品質 — プラン行の Total return と ×N を up to 表記へ、コントラストをデザインガイドの比率へ、note 誘導をボタン化して CTA 列に並べる
-  posted_by: 'karo'
-  posted_at: '2026-08-31T11:00:40'
-  requires_confirmation: false
-  action_type: 'info'
-  actioned_by: ''
-  notify_targets: []
-  confirmed_by: []
-  status: 'open'
-- id: 'blt_20260831_082042_3c2c42'
-  content: |-
-    GATE CLEAR cmd_reflux_insight_202608310454_kagemaru: 完了
-  posted_by: 'karo'
-  posted_at: '2026-08-31T08:20:42'
-  requires_confirmation: false
-  action_type: 'info'
-  actioned_by: ''
-  notify_targets: []
-  confirmed_by: []
-  status: 'open'
-- id: 'blt_20260831_081829_99256d'
-  content: |-
-    GATE CLEAR cmd_reflux_insight_202608310523_tobisaru: 完了
-  posted_by: 'karo'
-  posted_at: '2026-08-31T08:18:29'
-  requires_confirmation: false
-  action_type: 'info'
-  actioned_by: ''
-  notify_targets: []
-  confirmed_by: []
-  status: 'open'
-- id: 'blt_20260831_081435_65f228'
-  content: |-
-    [URGENT-HARM] 下知 msg_20260831_081128_630569_43dc534c 対応中。集計コマンド: scoped commit orphan test→safe_shared_main_ff origin/main→push hook。出力行: orphan commit=1268c612、safe convergence=b98bc03d、e52b849ac IN_ORIGIN、GREEN run=33340182499 success、次pushはcontext/rebalancer.md将軍doc lane進行中1 hunkを理由付きGA-PUSH1 bypassしてpre-push中。1件の定義: ancestry WAIT対象=影丸0454/dedupe/飛猿0523の各cmdを1件。push完了後rev-list 0 0とCLEAR3行を検証する。
-  posted_by: 'karo'
-  posted_at: '2026-08-31T08:14:35'
-  requires_confirmation: false
-  action_type: 'info'
-  actioned_by: ''
-  notify_targets: []
-  confirmed_by:
-    - 'shogun'
   status: 'open'

@@ -1,4 +1,172 @@
 commands:
+  cmd_4440:
+    title: "LP の FAQ リンクを言語別化 — EN ページは /faq/en/ へ、JA ページは /faq へ直リンクする"
+    status: draft
+    project: dm-signal
+    purpose: "殿裁定 2026-08-31 19:27『直そう』(設計書 v3.2 §5 / SEO 案 v4 §0 で発見した小穴)。現物 19:28 curl: EN LP・JA LP とも FAQ リンクは `https://dm-signal-frontend.onrender.com/faq`(JA 既定)1 件ずつで、EN 読者が EN FAQ(`/faq/en/`、cmd_4427 で live 200)へ直に到達できない。EN LP の href を `/faq/en/` へ、JA LP は `/faq` のまま維持する"
+    scope_mode: FULL
+    target_path: /mnt/c/Python_app/DM-signal/lp
+    acceptance_criteria:
+      AC1:
+        description: "LP の EN 文言辞書(copy)またはリンク定義で FAQ の href を `https://dm-signal-frontend.onrender.com/faq/en/` にし、JA は `.../faq` のまま変えない。docs リンク(3 件)・note・/login・/free の href は変更しない"
+        binary_check: "隔離 build の EN index に faq/en/ の href 1 件 ∧ JA index の faq href が /faq のまま 1 件 ∧ 他 href の diff 0 か?"
+      AC2:
+        description: "隔離 build(npm typecheck + build)を exit 0 で通し、AC1 の grep 結果を報告 YAML に生貼付する"
+        binary_check: "typecheck exit 0 ∧ build exit 0 ∧ grep 生貼付あり か?"
+    command: |
+      1. LP の EN 側 FAQ href を /faq/en/ へ変更する(JA は不変)
+      2. 隔離 build と EN/JA index の href grep で AC1 を検証し生貼付する
+    assumptions:
+      claim: "本番 curl 19:28: EN LP の faq href=onrender /faq(1 件)、JA も同。app 側 /faq/en/ は 200(4427、19:20 実測)、/en/faq/ は 404。LP 実体は external repo worktree(cmd_4431-4434 実績)、runner は 4438 で lp scope 対応済み"
+      source: "本番 https://dm-signal.com/ と /ja/ の href grep 19:28 + onrender /faq/en/ curl 19:20 + 設計書 v3.2 §1.1"
+      trust: verified
+    depends_on: cmd_4437
+    serial_dependency_evidence: "copy 辞書は 4434(FoF)→4437(全太字+Free)が同ファイルを走行中のため直列。4439(チャート)・4436(月次頁)とは衝突が薄く、家老判断で 4437 直後に挿入可(1 行変更・5 分級)"
+    measurement_source: "本番 LP curl 実測(2026-08-31 19:28 JST、faq href 現物)。ローカル計測は含まない"
+    environment_change: "type=lesson; file=projects/infra/lessons_shogun.yaml; pattern=cmd_4154初回preflightで数値絶対値WARN"
+    timeout_minutes: 15
+    estimated_minutes: 5
+    split_decision:
+      boundary_ac_ids: [AC1, AC2]
+      integration_tasks: 1
+      review_round_trips: 0
+    origin: "[[SEO案v4_20260831_1920]] -> [[殿裁定_faq言語別リンク_20260831_1927]] -> [[cmd_4440_faq_en_link]]"
+    quality_gate:
+      q1_firefighting: "品質向上。理由: EN 読者の導線欠落(JA FAQ へ飛ぶ)を正す UX/SEO 改善であり障害対応ではない"
+      q2_learning: "奪わない。理由: href の持ち方(copy か定数か)は忍者判断、対象 1 件と不変範囲は AC で固定"
+      q3_next_quality: "上がる。理由: 言語別リンクの規則(EN→/xxx/en/、JA→/xxx)が docs 等の今後の言語別頁に流用できる"
+      q4_depth: "shallow。1 行変更。本番 href と app 側 200 の裏取りのみ"
+      q5_verified_source: "production_verified: curl 19:28 で EN/JA とも faq href=onrender /faq 各 1 件、docs 3 件。curl 19:20 で /faq/en/ 200・/en/faq/ 404"
+      q6_not_hiding: "隠さない。理由: リンク先の変更のみで文言・データ不変、grep 生貼付で可視化"
+      q7_definition_verified: "EN FAQ の正 URL=/faq/en/(git ls-tree origin/main frontend/app/faq/en/page.tsx 実在、200 実測)"
+      q8_why_what: "WHY: EN LP から JA FAQ へ飛ぶ導線欠落(設計書 v3.2 再突合で発見、殿 19:27『直そう』) / WHAT: EN href 1 件を /faq/en/ へ / WHEN: 4437 CLEAR 後(5 分級) / WHERE: lp copy / WHO: 忍者 1 名 / HOW: href 変更→隔離 build grep / 複利: 言語別リンク規則の確立"
+      q9_firefighting_root_cause: "消火ではない。導線の欠落を埋める改善"
+      q10_knowledge_boundary: "境界内。lp copy は 4430-4437 の直近系譜、FAQ EN は 4427 の直近実装"
+      q11_not_already_done: "未実施を確認: 本番 EN LP の href grep で faq/en/ 0 件、/faq 1 件(19:28)"
+      q_ambiguity: "低。対象 1 件・不変範囲を AC で固定"
+      q12_lord_30min_cost: "no。本番 1 クリック確認で足りる"
+      diagnosis: "BLOCK理由: 初回起票のため既往BLOCKなし。想定リスク=JA 側や docs リンクまで巻き込む / 対策: AC1 で他 href diff 0 を二値化"
+    seam_contract: null
+    reflux_commit_contract: null
+  cmd_4439:
+    title: "LP static チャートを比較形式へ — SPY 破線系列を追加し対数 x 表記目盛・年月 x 軸・凡例に累積%を表示する"
+    status: delegated
+    project: dm-signal
+    purpose: "殿裁定 2026-08-31 17:58(スクショ Image #14=frontend comparison chart)『チャートはこの形式にしよう』。現行(cmd_4433 live)は hero 単独線のみ。目標形式=Basic-DualMomentum(青実線)+SPY(グレー破線)の 2 系列、対数目盛ラベル x 表記(20x/10x/5.0x/2.0x/1.0x)、x 軸に年月(2003-09 等)、凡例に系列名+累積リターン%(例 Basic-DualMomentum: +3058.0% / SPY: +1023.2%)。static(interactivity なし)は維持し、トグル・tooltip 等は対象外"
+    scope_mode: FULL
+    target_path: /mnt/c/Python_app/DM-signal/backend
+    acceptance_criteria:
+      AC1:
+        description: "GET /api/public/showcase に SPY の月次累積系列(hero.series と同形式 year_month+multiple、hero と同一起点に正規化=共通期間開始を 1.0x)を追加し、未認証 curl で hero.series と同月数・最終値が benchmarks 系集計(cmd_4425 系譜の SPY 値)と整合することを確認する。Secret・個別 PF 情報は増やさない"
+        binary_check: "未認証 curl に SPY 系列あり ∧ hero.series と同月数 ∧ 最終 multiple が独立再計算と一致 ∧ Secret 情報 0 件 か?"
+      AC2:
+        description: "showcase contract test に SPY 系列の不変量(同形式・同起点・昇順)を test_necessity 付きで追加し、選択実行コマンド=bash scripts/run_tests.sh file backend/tests/test_public_showcase_contract.py で FAIL 0・SKIP 0 を確認する"
+        binary_check: "選択実行 FAIL 0 ∧ SKIP 0 ∧ 新規 test に非空 test_necessity ∧ 削除 test 0 か?"
+      AC3:
+        description: "LP の static チャートをスクショ Image #14 の形式へ変更する: (a)SPY をグレー破線・hero を現行青実線の 2 系列 (b)y 軸目盛ラベルを x 表記(1-2-5 系列、例 20x/10x/5.0x/2.0x/1.0x) (c)x 軸に年月ラベル(始点・終点含む 5-6 点) (d)チャート下に凡例=系列名+開始以来累積リターン%(hero と SPY、色マーカー付き)。EN/JA 両ページ、interactivity なし維持"
+        binary_check: "隔離 build の EN・JA index でチャート SVG 内に path 2 本(破線属性 1 本) ∧ x 表記目盛ラベルあり ∧ 年月 x 軸ラベルあり ∧ 凡例に 2 系列名+% あり か?"
+      AC4:
+        description: "隔離 build(npm typecheck + build)を exit 0 で通し、AC1-AC3 の curl/grep 結果を報告 YAML に生貼付する"
+        binary_check: "typecheck exit 0 ∧ build exit 0 ∧ AC1-AC3 の生貼付あり か?"
+    command: |
+      1. backend showcase に SPY 月次累積系列(hero 同形式・同起点正規化)を追加し curl と独立再計算で確認する
+      2. contract test に SPY 系列不変量を追加し選択実行で FAIL 0 SKIP 0 を確認する
+      3. LP static チャートを 2 系列+x 表記目盛+年月軸+累積%凡例の比較形式へ変更し、隔離 build と grep で確認する
+      4. 報告 YAML に curl/grep 結果を生貼付する(反映順=backend 先・LP build 後、反映作業は家老レーン)
+    assumptions:
+      claim: "現行チャートは hero 単独線(cmd_4433 live、本番 svg 1 件を 17:55 実測)。SPY 月次は ticker_monthly_returns に実在(cmd_4414 設計時の本番実測: SPY 1993-01〜2026-08)。目標形式はスクショ Image #14(frontend comparison-chart の見た目: 2 系列・対数 x 表記・年月軸・凡例%)。LP 実体は external repo worktree(cmd_4431-4434 実績)。cmd_4438(runner 根治)CLEAR 後なら lp scope の receipt も正規生成される"
+      source: "殿スクショ Image #14(17:58) + 本番 curl 17:55(svg 1 件) + cmd_4414 本番実測(ticker_monthly_returns SPY 範囲) + frontend/components/comparison-chart.tsx 現物"
+      trust: verified
+    depends_on: cmd_4437
+    serial_dependency_evidence: "LP チャート(landing-page.tsx)は 4434(FoF)→4437(全太字)と同ファイルのため直列最後尾へ接続。backend 部分(AC1/AC2)は独立して先行着手可(家老の分解判断に委ねる)。4436(月次頁=新規 route)とは衝突が薄い"
+    measurement_source: "本番 LP curl 実測(2026-08-31 17:55 JST、svg 1 件=hero 単独線)+殿スクショ。ローカル計測は含まない"
+    environment_change: "type=lesson; file=projects/infra/lessons_shogun.yaml; pattern=cmd_4154初回preflightで数値絶対値WARN"
+    timeout_minutes: 45
+    estimated_minutes: 30
+    execution_env:
+      runtime_constraints: "backend は venv pytest 選択実行+本番 DB 無接触(ticker_monthly_returns 読取のみの EP 拡張)。LP は external repo worktree で npm typecheck/build"
+      long_runtime_reason: "SPY 系列 EP(AC1-2)とチャート描画(AC3)は系列契約(同起点正規化)を共有する単一変更系で、分割すると正規化起点が別実装になる"
+      measured_runtime_sec: 1800
+    split_decision:
+      boundary_ac_ids: [AC1, AC2, AC3, AC4]
+      integration_tasks: 1
+      review_round_trips: 0
+    origin: "[[殿裁定_チャート比較形式_20260831_1758]] -> [[cmd_4433_static_chart]] -> [[cmd_4439_comparison形式]]"
+    quality_gate:
+      q1_firefighting: "品質向上。理由: 殿の実機レビューによるチャート形式の指定であり障害対応ではない"
+      q2_learning: "奪わない。理由: SVG 実装(目盛計算・破線様式・downsample)は忍者判断、形式要件(2 系列・x 表記・年月軸・凡例%)は AC で固定"
+      q3_next_quality: "上がる。理由: SPY 系列が公開契約になり月次シグナル頁(4436)や以後の視覚要素へ流用できる。比較形式は LP の訴求力を直接上げる"
+      q4_depth: "medium。殿スクショの形式要素 4 点(2 系列/目盛/軸/凡例)を分解して AC 化し、SPY データ実在と現行チャート状態を実測で裏取りした"
+      q5_verified_source: "production_verified: 本番 curl 17:55 → svg 1 件(hero 単独線)。code_reading: comparison-chart.tsx の buildLogTicks/formatMultiplierLabel 現物(14:07 確認)。cmd_4414 設計時の本番実測に ticker_monthly_returns SPY 1993-01〜2026-08"
+      q6_not_hiding: "隠さない。理由: 追加は SPY(公開ベンチマーク)系列のみで Secret・個別 PF は増やさず AC1 で 0 件検証"
+      q7_definition_verified: "比較形式=スクショ Image #14 の 4 要素(hero 青実線+SPY グレー破線/x 表記対数目盛/年月 x 軸/凡例に系列名+累積%)。static=interactivity なし(トグル・tooltip は対象外)"
+      q8_why_what: "WHY: 単独線では優位性が伝わらない(殿 17:58 形式指定) / WHAT: SPY 系列 EP+比較チャート描画 / WHEN: cmd_4437 CLEAR 後(backend 部は先行可) / WHERE: backend showcase+lp / WHO: 忍者(家老分解) / HOW: EP 拡張→contract test→SVG 変更→隔離 build / 複利: SPY 公開系列が以後の視覚要素の基盤"
+      q9_firefighting_root_cause: "消火ではない。形式改善であり根本原因対応は不要"
+      q10_knowledge_boundary: "境界内。showcase EP は 4413/4425/4433 の直近系譜、LP チャートは 4433 で当日実装したばかり"
+      q11_not_already_done: "未実施を確認: 本番 curl 17:55 の svg は 1 系列のみ(破線 path 0 件)、showcase 応答に SPY 系列なし(4433 は hero.series のみ実装)"
+      q_ambiguity: "低。目盛・凡例の細部は comparison-chart.tsx 現物準拠、期間トグル等の interactive 要素は明示的に対象外"
+      q12_lord_30min_cost: "no。表示のみで殿の確認は本番 1 目視で足りる"
+      diagnosis: "BLOCK理由: 初回起票のため既往BLOCKなし。想定リスク=2 repo 跨ぎで系列の正規化起点が食い違う / 対策: AC1 で hero と同一起点(共通期間開始 1.0x)を契約化し contract test で固定"
+    seam_contract: null
+    delegated_at: "\"2026-08-31T18:00:51\""
+    reflux_commit_contract: null
+  cmd_4437:
+    title: "LP Current signals 体裁 — プラン 4 行の数値全太字・Basic-DM 閲覧列を Free 表記・閲覧列の太字化"
+    status: delegated
+    project: dm-signal
+    purpose: "殿裁定 2026-08-31 16:45(スクショ Image #13 付き)『数値は全て太文字に。閲覧もbasic dual momentumはfreeとしよう、閲覧の列も太文字に』。現状(本番スクショ 16:42 実測): プラン行は CAGR/×N の up to 側のみ太字で Sharpe/MDD は細字、Basic-DM の閲覧列は『表示』、閲覧列は細字"
+    scope_mode: FULL
+    target_path: /mnt/c/Python_app/DM-signal/lp
+    acceptance_criteria:
+      AC1:
+        description: "プラン 4 行(Basic plan/Standard plan/Premium plan/Secret)の全指標セル(CAGR・Sharpe・MDD・×N の数値)を hero(Basic-DualMomentum)行と同一の太字クラスにする(EN・JA 両方)。up to 接頭辞の扱いは数値部を太字とし、SPY・TQQQ 行は現状(イタリック・細字)を変えない"
+        binary_check: "隔離 build の EN・JA index でプラン 4 行の指標セル 16 個全てに hero 同一太字クラス ∧ SPY・TQQQ 行の指標セルに太字クラス追加 0 か?"
+      AC2:
+        description: "Basic-DualMomentum 行の閲覧列の表記を『表示』(EN=View 相当)から Free(EN/JA とも Free)へ変え、リンク先・挙動は変えない"
+        binary_check: "EN・JA index の hero 行閲覧列が Free ∧ 旧表記(表示/View)残存 0 ∧ 当該セルの href/挙動 diff が表記以外 0 か?"
+      AC3:
+        description: "閲覧列の全表記(Free・メンバーシップ/Membership・招待制/Invite-only・非表示/Hidden)を太字にする(EN・JA 両方)。SPY・TQQQ 行の『—』は対象外"
+        binary_check: "EN・JA index の閲覧列テキスト(プラン行+hero 行)全てに太字クラス ∧ SPY・TQQQ 行の『—』に太字クラス追加 0 か?"
+      AC4:
+        description: "隔離 build(npm typecheck + build)を exit 0 で通し、AC1-AC3 の grep 結果を報告 YAML に生貼付する"
+        binary_check: "typecheck exit 0 ∧ build exit 0 ∧ AC1-AC3 の grep 生貼付あり か?"
+    command: |
+      1. LP の copy(EN/JA)と表レンダラで、プラン 4 行の全指標セルと閲覧列に hero 同一の太字クラスを適用する
+      2. hero 行の閲覧列表記を Free へ変更する(リンク・挙動不変)
+      3. 隔離 build と grep で AC1-AC3 を検証し報告 YAML に生貼付する
+    assumptions:
+      claim: "本番スクショ(殿提供 2026-08-31 16:42)で現状を確認: プラン行 Sharpe/MDD 細字・Basic-DM 閲覧列『表示』・閲覧列細字。列順 CAGR→Sharpe→MDD→×N は cmd_4432 で反映済み。LP 実体は external repo worktree で解決(cmd_4431-4433 実績)。cmd_4434(FoF 訴求)が同ファイル走行中のため直列接続"
+      source: "殿スクショ Image #13(2026-08-31 16:42) + 殿裁定 16:45 + cmd_4432/4433 CLEAR 実績"
+      trust: verified
+    depends_on: cmd_4434
+    serial_dependency_evidence: "cmd_4434(FoF 訴求)が copy/landing-page.tsx を走行中のため衝突回避で直列。cmd_4436(月次頁=新規 route 中心)とはファイル重複が薄いが、LP lane の直列規約(4432→4433→4434→4436)に 4437 を 4434 直後で挿入するかは家老の配備判断に委ねる"
+    measurement_source: "本番 LP 表示の殿スクショ実測(2026-08-31 16:42 JST)。ローカル計測は含まない"
+    environment_change: "type=lesson; file=projects/infra/lessons_shogun.yaml; pattern=cmd_4154初回preflightで数値絶対値WARN"
+    timeout_minutes: 20
+    estimated_minutes: 10
+    split_decision:
+      boundary_ac_ids: [AC1, AC2, AC3, AC4]
+      integration_tasks: 1
+      review_round_trips: 0
+    origin: "[[殿裁定_Current_signals全太字Free_20260831_1645]] -> [[cmd_4432_列整理]] -> [[cmd_4437_全太字Free表記]]"
+    quality_gate:
+      q1_firefighting: "品質向上。理由: 殿の実機レビュー指摘(視覚階層の統一と Free 訴求)であり障害対応ではない"
+      q2_learning: "奪わない。理由: 太字クラスの適用実装は忍者判断、対象セルと表記は AC で固定"
+      q3_next_quality: "上がる。理由: 『データ数値=太字』の統一基準が確定し以後の表変更で迷いが消える。Free 表記は Free tier 導線とも整合"
+      q4_depth: "shallow。殿スクショと裁定の直写しで、対象・除外(SPY/TQQQ)を明示しただけの軽量 cmd"
+      q5_verified_source: "production_verified: 殿スクショ Image #13(16:42)で現状のプラン行 Sharpe/MDD 細字・閲覧列細字・hero 閲覧『表示』を確認"
+      q6_not_hiding: "隠さない。理由: 表示スタイルと表記のみでデータ・挙動を変えず、grep 生貼付で可視化"
+      q7_definition_verified: "太字基準=hero 行の現行太字クラス(cmd_4431 で確定)。Free 表記=EN/JA とも Free(殿発言ママ)"
+      q8_why_what: "WHY: 数値の視覚強度が不揃い+Basic-DM の無料閲覧が伝わらない(殿 16:45) / WHAT: プラン数値全太字+閲覧列太字+hero 閲覧 Free / WHEN: cmd_4434 CLEAR 後 / WHERE: lp のみ / WHO: 忍者 1 名 / HOW: クラス+文言変更→隔離 build grep / 複利: 数値=太字の統一基準"
+      q9_firefighting_root_cause: "消火ではない。デザイン改善であり根本原因対応は不要"
+      q10_knowledge_boundary: "境界内。lp は cmd_4430-4434 の直近系譜で知識鮮度が最高"
+      q11_not_already_done: "未実施を確認: 殿スクショ 16:42 でプラン行 Sharpe 1.11/1.28/1.40/2.48・MDD 各値が細字、閲覧列全て細字、hero 閲覧が『表示』であることを視認"
+      q_ambiguity: "低。SPY/TQQQ 行は指示外のため現状維持と明記(殿の追指示があれば別 cmd)"
+      q12_lord_30min_cost: "no。表示のみで殿の確認は本番 1 目視で足りる"
+      diagnosis: "BLOCK理由: 初回起票のため既往BLOCKなし。想定リスク=4434/4436 と同一ファイル衝突 / 対策: depends_on cmd_4434 の直列と AC の対象セル数(16 個)明示で衝突・漏れを二値化"
+    seam_contract: null
+    delegated_at: "\"2026-08-31T16:49:11\""
+    reflux_commit_contract: null
   cmd_4436:
     title: "LP に月次シグナル頁を追加 — /signals/2026-08 (EN/JA) を公開集計 EP から build 時に静的生成し sitemap へ lastmod 付きで載せる"
     status: delegated
@@ -60,55 +228,6 @@ commands:
       diagnosis: "BLOCK理由: 初回起票のため既往BLOCKなし。想定リスク=月次頁に秘匿情報が漏れる/月ハードコードで 9 月に手作業が要る / 対策: AC1 の秘匿 0 件検証と AC2 のハードコード 0 件検証で二値化"
     seam_contract: null
     delegated_at: "\"2026-08-31T15:01:18\""
-    reflux_commit_contract: null
-  cmd_4435:
-    title: "app 側 /free に noindex を付与 — 検索入口を LP に集約する SEO 禁則の未実装 1 行を埋める"
-    status: delegated
-    project: dm-signal
-    purpose: "SEO 案 v3(2026-08-31 14:52 本番 curl 再計測)で発見した未達: app 側 /free が 200 で返るが meta robots noindex が 0 件。SEO 案 §3 禁則『/free は /login と同じく noindex(入口は LP に集約)』の未実装。/login は robots metadata 実装済み(origin/main frontend/app/login/page.tsx:7)で同方式を適用する"
-    scope_mode: FULL
-    target_path: /mnt/c/Python_app/DM-signal/frontend
-    acceptance_criteria:
-      AC1:
-        description: "app の free ページ(origin/main に実在、git ls-tree で確認済み。ローカル checkout は旧 branch のため worktree で origin/main から解決する)に、login ページと同方式(origin/main の login ページに robots metadata 実装済み)の noindex,nofollow を追加し、既存機能(クーポン取得フロー・data 封筒処理)に変更がないことを diff で確認する"
-        binary_check: "robots metadata 追加行のみの diff ∧ 既存ロジックの削除・変更 0 か?"
-      AC2:
-        description: "隔離 build(npm run build)を exit 0 で通し、出力の free ページ HTML に noindex が 1 件以上、login ページの noindex が従来どおり残ることを grep で確認する"
-        binary_check: "build exit 0 ∧ free 出力 HTML に noindex>=1 ∧ login 出力 HTML の noindex 残存 か?"
-    command: |
-      1. origin/main 起点の worktree で free ページに login 同方式の robots metadata(noindex,nofollow)を追加する
-      2. 隔離 build と grep で AC1-AC2 を検証し報告 YAML に生貼付する
-    assumptions:
-      claim: "本番 /free は 200 だが robots grep 0 件(2026-08-31 14:50 curl 実測)。/login は robots metadata 実装済み(git grep origin/main → frontend/app/login/page.tsx:7 robots)。/free の実体=origin/main frontend/app/free/page.tsx(git ls-tree で実在確認)"
-      source: "本番 curl 14:50 + git grep/ls-tree origin/main 実測 14:56 + docs/research/dm-signal-lp-seo-plan_20260830.md §3/§6"
-      trust: verified
-    depends_on: none
-    measurement_source: "本番 /free curl 実測(2026-08-31 14:50 JST、noindex 0 件)。ローカル計測は含まない"
-    environment_change: "type=lesson; file=projects/infra/lessons_shogun.yaml; pattern=cmd_4154初回preflightで数値絶対値WARN"
-    timeout_minutes: 15
-    estimated_minutes: 8
-    split_decision:
-      boundary_ac_ids: [AC1, AC2]
-      integration_tasks: 1
-      review_round_trips: 0
-    origin: "[[SEO案v3_20260831_1452]] -> [[§3禁則_free_noindex未実装]] -> [[cmd_4435_free_noindex]]"
-    quality_gate:
-      q1_firefighting: "品質向上。理由: SEO 禁則の未実装 1 行を埋める予防的対応であり障害対応ではない"
-      q2_learning: "奪わない。理由: 実装方式は /login の現物参照で忍者が確認し適用する"
-      q3_next_quality: "上がる。理由: 入口集約(noindex)の適用基準が /login・/free の 2 例に揃い、以後の app 側新ページで流用できる"
-      q4_depth: "shallow。1 行追加の軽量 cmd。本番 curl と origin/main 現物の裏取りのみで十分"
-      q5_verified_source: "production_verified: 本番 /free curl 14:50 → 200 かつ robots grep 0 件。code_reading: git grep origin/main → frontend/app/login/page.tsx:7 に robots 実装、git ls-tree で frontend/app/free/page.tsx 実在"
-      q6_not_hiding: "隠さない。理由: 表示・機能を変えず索引制御 meta のみ追加、検証は grep 生貼付で可視化"
-      q7_definition_verified: "noindex 方式=/login の robots metadata(origin/main frontend/app/login/page.tsx:7)と同形。対象=/free の出力 HTML"
-      q8_why_what: "WHY: 検索入口を LP に集約する禁則(SEO 案 §3)が /free で未実装 / WHAT: robots noindex 1 行 / WHEN: 即時(LP lane と独立、frontend 側のため 4432-4434 と衝突しない) / WHERE: frontend app free ページ / WHO: 忍者 1 名 / HOW: metadata 追加→隔離 build grep / 複利: 入口集約基準の統一"
-      q9_firefighting_root_cause: "消火ではない。禁則の未実装を埋める実装であり根本原因対応は不要"
-      q10_knowledge_boundary: "境界内。/free は 4423/4424 の直近系譜、noindex は 4420(/login)の直近実装"
-      q11_not_already_done: "未実施を確認: curl 本番 /free 14:50 → robots grep 0 件(/login は noindex 済との差分)"
-      q_ambiguity: "低。方式・対象・検証とも現物参照で固定済み"
-      q12_lord_30min_cost: "no。1 行追加で殿の確認は不要(curl 検証で完結)"
-      diagnosis: "BLOCK理由: 初回起票のため既往BLOCKなし。想定リスク=free ページの既存クーポンフロー破壊 / 対策: AC1 で追加行のみ diff・既存ロジック変更 0 を二値化"
-    seam_contract: null
-    delegated_at: "\"2026-08-31T14:59:31\""
     reflux_commit_contract: null
   cmd_4434:
     title: "LP に FoF 訴求 1 行を追加 — Fund of Funds が主力(active の 7 割超)である旨を Current signals 近傍に EN/JA で明記する"
