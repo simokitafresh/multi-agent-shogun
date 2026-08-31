@@ -11686,3 +11686,10 @@ insights:
   source: "semantic_index_update"
   fix_known: false
   status: pending
+- id: INS-20260831-180650524-a9aa
+  ts: "2026-08-31T18:06:50+09:00"
+  insight: "[[Image 14 チャートはこの形式にしよう]] semantic_stress_test candidate_aliases: NO_MATCH source=lord query=[Image #14] チャートはこの形式にしよう"
+  priority: "low"
+  source: "semantic_stress_test"
+  fix_known: false
+  status: pending
