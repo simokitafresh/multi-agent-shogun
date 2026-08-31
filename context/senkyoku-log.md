@@ -1597,3 +1597,4 @@
 - 2026-08-31 09:24 Agent Readiness Phase1 D0 完了(殿指示 09:17): api-catalog(RFC9727)+auth.md(両所)+link rel+oauth-authorization-server(RFC8414、Supabase openid-configuration 現物 200 から生成) b2d3e7a→Render live、本番 curl 4/4 200+rel 1 件+issuer 一致。残=1-2(a) Link ヘッダ(Transform=殿トークン)、Phase2 cmd 2-2〜2-7。
 - 2026-08-31 09:45 cmd_4430 LP表示品質完了: plan Total return/×NをEN up to・JA最大へ変更、WCAG配色を全基準以上へ調整、note導線を3つ目のoutline CTA化。EN/JA隔離build・出力確認PASS、最終commit `0934f942`、report gate PASS。
 - 2026-08-31 10:06 cmd_4430 RC是正完了: 旧branchをpublication対象外とし、origin/main `b2d3e7aa`からclean worktreeを再作成。4 source pathのみ再適用、clean build 7/7・AC1-3 PASS、source-only commit `5d02bae3`、report gate PASS。
+- 2026-08-31 11:02 cmd_4430 GATE CLEAR(11:00:23)=本日 PJ 6 件目: LP up to 表記/コントラスト/note CTA(5d02bae3 DM origin 到達・LP deploy live 10:44 JST)。本番 curl で up to/最大 到達を突合。
