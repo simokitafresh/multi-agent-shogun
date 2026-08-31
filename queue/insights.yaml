@@ -9847,7 +9847,10 @@ insights:
   priority: "medium"
   source: "manual"
   fix_known: false
-  status: pending
+  status: resolved
+  resolved_reason: "既存修正b48513739でcmd_saveの前cmd教訓未記録meta-BLOCKをBLOCK件数から除外し、cmd_4419→4422連鎖を止める実装を確認。"
+  action_artifact: "commit=b48513739ef5580be8117696e778ae72a46bf1ff; scripts/cmd_save.sh:3322-3324; git show --check b48513739"
+  resolved_at: "2026-08-31T20:11:40+09:00"
 - id: INS-20260830-201552529-c771
   ts: "2026-08-30T20:15:52+09:00"
   insight: "semantic_index_update新概念候補: discussion:これは別のアイデアだ。google authで登録するとfreeのクーポン は 既存aliasesに一致なし。概念定義とaliases追加を検討せよ"
