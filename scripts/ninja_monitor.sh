@@ -5070,8 +5070,11 @@ _review_pending_report_identity() {
     [[ "$raw_fp" =~ ^[0-9a-f]{64}$ ]] || return 1
 
     normalized_fp=$(PROJECT_ROOT="$SCRIPT_DIR" review_report_fingerprint "$report_file" 2>/dev/null || true)
+    local report_identity_version
+    report_identity_version=$(yaml_field_get "$report_file" report_identity_version "" 2>/dev/null || true)
+    [[ "$report_identity_version" =~ ^[0-9]+$ ]] || report_identity_version=1
     local gunshi_lgtm=0 karo_accept=0 approval_dir key
-    local stored_fp stored_report stored_result
+    local stored_fp stored_generation stored_report stored_result generation_matches fingerprint_matches
     if [ -z "$normalized_fp" ]; then
         normalized_fp="$raw_fp"
     fi
@@ -5083,18 +5086,37 @@ _review_pending_report_identity() {
         # fingerprint cannot prove formal LGTM for this report generation.
         # Lifecycle state must come from the exact report-keyed approval.
         stored_fp=$(review_approval_value "$approval_dir/gunshi.yaml" fingerprint 2>/dev/null || true)
+        stored_generation=$(review_approval_value "$approval_dir/gunshi.yaml" generation 2>/dev/null || true)
+        generation_matches=0
+        if [ -n "$stored_generation" ]; then
+            [ "$stored_generation" = "$raw_fp" ] && generation_matches=1
+        elif [ "$report_identity_version" -lt 2 ]; then
+            generation_matches=1
+        fi
+        fingerprint_matches=0
+        { [ "$stored_fp" = "$normalized_fp" ] || [ "$stored_fp" = "$raw_fp" ]; } && fingerprint_matches=1
         stored_report=$(review_approval_value "$approval_dir/gunshi.yaml" report 2>/dev/null || true)
         stored_result=$(review_approval_value "$approval_dir/gunshi.yaml" result 2>/dev/null || true)
         if [ "$stored_result" = "LGTM" ] \
-           && { [ "$stored_fp" = "$normalized_fp" ] || [ "$stored_fp" = "$raw_fp" ]; } \
+           && [ "$generation_matches" -eq 1 ] && [ "$fingerprint_matches" -eq 1 ] \
            && { [ "$stored_report" = "$report_rel" ] || [ "$stored_report" = "${report_rel##*/}" ]; }; then
             gunshi_lgtm=1
         fi
 
         stored_fp=$(review_approval_value "$approval_dir/karo.yaml" fingerprint 2>/dev/null || true)
+        stored_generation=$(review_approval_value "$approval_dir/karo.yaml" generation 2>/dev/null || true)
+        generation_matches=0
+        if [ -n "$stored_generation" ]; then
+            [ "$stored_generation" = "$raw_fp" ] && generation_matches=1
+        elif [ "$report_identity_version" -lt 2 ]; then
+            generation_matches=1
+        fi
+        fingerprint_matches=0
+        { [ "$stored_fp" = "$normalized_fp" ] || [ "$stored_fp" = "$raw_fp" ]; } && fingerprint_matches=1
         stored_report=$(review_approval_value "$approval_dir/karo.yaml" report 2>/dev/null || true)
         stored_result=$(review_approval_value "$approval_dir/karo.yaml" result 2>/dev/null || true)
-        if [ "$stored_result" = "ACCEPT" ] && { [ "$stored_fp" = "$normalized_fp" ] || [ "$stored_fp" = "$raw_fp" ]; } \
+        if [ "$stored_result" = "ACCEPT" ] \
+           && [ "$generation_matches" -eq 1 ] && [ "$fingerprint_matches" -eq 1 ] \
            && { [ "$stored_report" = "$report_rel" ] || [ "$stored_report" = "${report_rel##*/}" ]; }; then
             karo_accept=1
         fi
@@ -10491,10 +10513,12 @@ _stable_report_generation() {
 # while a formally approved report is still the same generation.
 _report_generation_has_terminal_review() {
     local report_full="$1" parent_cmd="$2" generation="$3"
-    local report_rel key approval_dir role_file result stored_generation marker
+    local report_rel key approval_dir role_file result stored_generation stored_fingerprint review_fingerprint marker
     [ -f "$report_full" ] && [ -n "$parent_cmd" ] && [ -n "$generation" ] || return 1
 
     report_rel="queue/reports/${report_full##*/}"
+    review_fingerprint=$(review_report_fingerprint "$report_full" 2>/dev/null || true)
+    [ -n "$review_fingerprint" ] || review_fingerprint="$generation"
     key=$(review_report_key "$report_rel" 2>/dev/null || true)
     [ -n "$key" ] || return 1
     approval_dir="$SCRIPT_DIR/queue/gates/$parent_cmd/review_approvals/reports/$key"
@@ -10504,23 +10528,19 @@ _report_generation_has_terminal_review() {
             case "$role_file:$result" in
             gunshi.yaml:LGTM|karo.yaml:ACCEPT)
                 stored_generation=$(review_approval_value "$approval_dir/$role_file" generation 2>/dev/null || true)
+                stored_fingerprint=$(review_approval_value "$approval_dir/$role_file" fingerprint 2>/dev/null || true)
                 # Pre-generation approval receipts used the raw report hash in
                 # `fingerprint`.  Accept that value only when it is exactly
                 # the stable generation; normalized fingerprints never pass
                 # this compatibility branch.
                 [ -n "$stored_generation" ] || \
-                    stored_generation=$(review_approval_value "$approval_dir/$role_file" fingerprint 2>/dev/null || true)
-                [ "$stored_generation" = "$generation" ] && return 0
+                    stored_generation="$stored_fingerprint"
+                [ "$stored_generation" = "$generation" ] \
+                    && { [ "$stored_fingerprint" = "$review_fingerprint" ] || [ "$stored_fingerprint" = "$generation" ]; } \
+                    && return 0
                 ;;
         esac
     done
-
-    # Keep the existing report-keyed normalized approval check as a migration
-    # fallback for receipts created before `generation` was persisted.  The
-    # stable-generation marker remains the identity used for every new write.
-    if _pending_task_canonical_review_state "$parent_cmd" "$report_full" >/dev/null 2>&1; then
-        return 0
-    fi
 
     # review_gate.done is only terminal evidence when its generation-bound
     # receipt agrees with the current report.  Do not treat an unbound legacy
@@ -10552,13 +10572,70 @@ PY
 _write_report_generation_marker() {
     local marker="$1" generation="$2" marker_tmp
     marker_tmp="${marker}.tmp.$$"
-    printf 'timestamp: %s\ngeneration: %s\n' "$(date -Iseconds)" "$generation" > "$marker_tmp" || return 1
+    printf 'timestamp: %s\ngeneration: %s\n' \
+        "$(date -Iseconds)" "$generation" > "$marker_tmp" || return 1
     mv -f -- "$marker_tmp" "$marker"
+}
+
+# A review-request marker is only a delivery receipt, not terminal evidence:
+# the reviewer can consume the request and die before recording LGTM. Return
+# the state for this exact report byte generation so retries distinguish an
+# unread request from a consumed request or a lost outbox.
+_report_generation_review_request_state() {
+    local report_full="$1" generation="$2" parent_cmd="$3" inbox="$SCRIPT_DIR/queue/inbox/gunshi.yaml"
+    [ -f "$inbox" ] || { printf 'missing\n'; return 0; }
+    python3 - "$inbox" "queue/reports/${report_full##*/}" "$generation" "$parent_cmd" <<'PY'
+import sys
+import yaml
+
+path, report_rel, generation, parent_cmd = sys.argv[1:]
+try:
+    doc = yaml.safe_load(open(path, encoding="utf-8")) or {}
+except (OSError, yaml.YAMLError):
+    print("missing")
+    raise SystemExit(0)
+matches = []
+for message in doc.get("messages") or []:
+    if not isinstance(message, dict):
+        continue
+    if str(message.get("type") or "") not in {"review_draft", "report_review", "report_revision"}:
+        continue
+    message_report = str(message.get("report_path") or message.get("report") or "")
+    if message_report not in {report_rel, report_rel.removeprefix("queue/"), report_rel.rsplit("/", 1)[-1]}:
+        continue
+    if str(message.get("parent_cmd") or "") != parent_cmd:
+        continue
+    if str(message.get("report_fingerprint") or "") != generation:
+        continue
+    matches.append(message)
+if any(message.get("read") is not True for message in matches):
+    print("unread")
+elif matches:
+    print("read")
+else:
+    print("missing")
+PY
+}
+
+_report_review_priority() {
+    local report_full="$1" priority worker task_file
+    priority=$(yaml_field_get "$report_full" priority "" 2>/dev/null || true)
+    worker=$(yaml_field_get "$report_full" worker_id "" 2>/dev/null || true)
+    if [ -z "$priority" ] && [ -n "$worker" ]; then
+        task_file="$SCRIPT_DIR/queue/tasks/${worker}.yaml"
+        priority=$(yaml_field_get "$task_file" priority "" 2>/dev/null || true)
+    fi
+    case "${priority,,}" in
+        critical|high) printf 'high\n' ;;
+        low) printf 'low\n' ;;
+        *) printf 'normal\n' ;;
+    esac
 }
 
 auto_request_report_review() {
     local report_full="$1" parent_cmd="$2" strict_failed_pass="${3:-0}"
     local report_base gate_dir marker lock_fd fingerprint marker_fp generation marker_generation=""
+    local request_state="" priority="normal"
     report_base=${report_full##*/}
     [ -n "$parent_cmd" ] || return 1
     generation=$(_stable_report_generation "$report_full" 2>/dev/null || true)
@@ -10566,6 +10643,7 @@ auto_request_report_review() {
         log "REPORT-REVIEW-AUTO-SKIP: report=$report_base parent_cmd=$parent_cmd reason=generation_unavailable"
         return 1
     }
+    priority=$(_report_review_priority "$report_full")
     if [ "$strict_failed_pass" = "1" ]; then
         if ! _report_is_pass_review_candidate "$report_full"; then
             log "REPORT-REVIEW-AUTO-SKIP: report=$report_base parent_cmd=$parent_cmd reason=not_completed_pass_all_binary_yes"
@@ -10594,9 +10672,23 @@ auto_request_report_review() {
         # not a stable-generation receipt and are intentionally replayed once
         # during migration unless formal terminal evidence above already won.
     fi
-    if [ "$marker_generation" != "$generation" ]; then
+    if [ "$marker_generation" = "$generation" ]; then
+        request_state=$(_report_generation_review_request_state "$report_full" "$generation" "$parent_cmd")
+        if [ "$request_state" = "unread" ]; then
+            log "REPORT-REVIEW-AUTO-SKIP: report=$report_base parent_cmd=$parent_cmd reason=unread_request generation=$generation"
+            flock -u "$lock_fd" || true
+            eval "exec ${lock_fd}>&-"
+            return 0
+        fi
+        # The request was consumed or lost without a generation-bound LGTM.
+        # Re-publish on every monitor cycle until the current generation has a
+        # terminal LGTM. The inbox transaction suppresses concurrent unread
+        # duplicates; a fixed retry cap would silently lose a live review when
+        # the consumer repeatedly acknowledges before completing it.
+    fi
+    if [ "$marker_generation" != "$generation" ] || [ "$request_state" = "read" ] || [ "$request_state" = "missing" ]; then
         if INBOX_WRITE_ROOT_OVERRIDE="$SCRIPT_DIR" bash "$SCRIPT_DIR/scripts/inbox_write.sh" gunshi \
-            "忍者報告の自動レビュー依頼。report=${report_base} parent_cmd=${parent_cmd}" \
+            "忍者報告の自動レビュー依頼。report=${report_base} parent_cmd=${parent_cmd} report_fingerprint=${generation} priority=${priority}" \
             review_draft ninja_monitor review_request >/dev/null 2>>"$SCRIPT_DIR/logs/report_review_auto_request.err"; then
             _write_report_generation_marker "$marker" "$generation" || {
                 log "REPORT-REVIEW-AUTO-REQUEST-BLOCK: report=$report_base parent_cmd=$parent_cmd reason=marker_write_failed"

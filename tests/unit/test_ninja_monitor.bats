@@ -5,6 +5,59 @@ setup() {
     PROJECT_ROOT="$(cd "$BATS_TEST_DIRNAME/../.." && pwd)"
 }
 
+# test_necessity: consumed current-generation review requests remain visible
+# through repeated consumer acknowledgements until terminal review exists.
+@test "read current-generation review requests survive repeated consumers" {
+    run bash -lc '
+set -euo pipefail
+PROJECT_ROOT="'"$PROJECT_ROOT"'"
+export NINJA_MONITOR_LIB_ONLY=1
+source "$PROJECT_ROOT/scripts/ninja_monitor.sh"
+unset NINJA_MONITOR_LIB_ONLY
+ROOT="'"$BATS_TEST_TMPDIR"'/read-review-repair"
+mkdir -p "$ROOT/queue/reports" "$ROOT/queue/inbox" "$ROOT/queue/gates" "$ROOT/scripts/gates" "$ROOT/state" "$ROOT/logs"
+printf "#!/usr/bin/env bash\necho PASS\n" > "$ROOT/scripts/gates/gate_report_format.sh"
+chmod +x "$ROOT/scripts/gates/gate_report_format.sh"
+REQUESTS="$ROOT/requests.log"; : > "$REQUESTS"; export REQUESTS_LOG="$REQUESTS"
+cat > "$ROOT/scripts/inbox_write.sh" <<'SH'
+#!/usr/bin/env bash
+printf "review_request|priority=high\n" >> "$REQUESTS_LOG"
+SH
+chmod +x "$ROOT/scripts/inbox_write.sh"
+printf "messages:\n" > "$ROOT/queue/inbox/gunshi.yaml"
+for name in hayate saizo tobisaru; do
+    report="$ROOT/queue/reports/${name}_report_cmd_review_${name}.yaml"
+    parent="cmd_review_${name}"
+    printf "worker_id: %s\ntask_id: %s_normal\nparent_cmd: %s\nreport_id: rpt-%s\nreport_identity_version: 2\npriority: high\nstatus: completed\nverdict: PASS\nbinary_checks:\n  AC1:\n    - check: fixture\n      result: yes\n" "$name" "$parent" "$parent" "$name" > "$report"
+    generation=$(sha256sum "$report" | awk "{print \$1}")
+    printf -- "- type: review_draft\n  report_path: queue/reports/%s_report_cmd_review_%s.yaml\n  parent_cmd: %s\n  report_fingerprint: %s\n  read: true\n" "$name" "$name" "$parent" "$generation" >> "$ROOT/queue/inbox/gunshi.yaml"
+done
+SCRIPT_DIR="$ROOT" STATE_DIR="$ROOT/state" LOG="$ROOT/monitor.log"; mkdir -p "$STATE_DIR"
+log() { printf "%s\n" "$1" >> "$LOG"; }
+review_report_fingerprint() { printf "%s\n" normalized-review-payload; }
+for cycle in 1 2 3; do
+    for name in hayate saizo tobisaru; do
+        report="$ROOT/queue/reports/${name}_report_cmd_review_${name}.yaml"
+        parent="cmd_review_${name}"
+        auto_request_report_review "$report" "$parent" 1
+    done
+done
+grep -c "^review_request|" "$REQUESTS" > "$ROOT/count_requests"
+read -r count_requests < "$ROOT/count_requests"
+test "$count_requests" -eq 9
+grep -c "priority=high" "$REQUESTS" > "$ROOT/count_priority"
+read -r count_priority < "$ROOT/count_priority"
+test "$count_priority" -eq 9
+find "$ROOT/queue/gates" -name "review_request.*.done" -print > "$ROOT/count_markers"
+wc -l < "$ROOT/count_markers" > "$ROOT/count_marker_total"
+read -r count_marker_total < "$ROOT/count_marker_total"
+test "$count_marker_total" -eq 3
+printf "read_no_terminal=3 repeated_cycles=3 resends=9 priority_high=9 duplicate_terminal=0 notification_loss=0\n"
+    '
+    [ "$status" -eq 0 ]
+    [ "$output" = "read_no_terminal=3 repeated_cycles=3 resends=9 priority_high=9 duplicate_terminal=0 notification_loss=0" ]
+}
+
 # test_necessity: the recovery budget must survive a monitor process restart,
 # while a changed progress fingerprint opens exactly one new generation.
 @test "in_progress idle recovery persists bounded state across restart" {
@@ -299,9 +352,13 @@ EOF
         NINJA_NAMES=(saizo)
         printf "task:\n  status: in_progress\n  report_path: queue/reports/saizo_report_cmd_review.yaml\n" > "$SCRIPT_DIR/queue/tasks/saizo.yaml"
         printf "status: completed\nparent_cmd: cmd_review\n" > "$SCRIPT_DIR/queue/reports/saizo_report_cmd_review.yaml"
-        cat > "$SCRIPT_DIR/scripts/inbox_write.sh" <<EOF
+cat > "$SCRIPT_DIR/scripts/inbox_write.sh" <<EOF
 #!/usr/bin/env bash
 printf "%s|%s|%s|%s|%s\n" "\$1" "\$2" "\$3" "\$4" "\$5" >> "$STATE_DIR/messages"
+root="\$(cd "\$(dirname "\$0")/.." && pwd)"
+generation="\$(sha256sum "\$root/queue/reports/saizo_report_cmd_review.yaml" | awk "{print \\\$1}")"
+mkdir -p "\$root/queue/inbox"
+printf "messages:\\n- type: review_draft\\n  report_path: queue/reports/saizo_report_cmd_review.yaml\\n  parent_cmd: cmd_review\\n  report_fingerprint: %s\\n  read: false\\n" "\$generation" > "\$root/queue/inbox/gunshi.yaml"
 EOF
         chmod +x "$SCRIPT_DIR/scripts/inbox_write.sh"
         repair_terminal_report_outboxes

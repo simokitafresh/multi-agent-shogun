@@ -3489,6 +3489,51 @@ YAML
     [ "$count" -eq 1 ]
 }
 
+# test_necessity: review_draft requests are actionable generation-bound work;
+# an unread matching request dedupes, while a consumed request must be
+# re-published so a reviewer crash cannot lose the review.
+@test "review_draft dedupe is unread-only and generation-bound" {
+    setup_git_test_env
+    cat >> "$TEST_TMPDIR/queue/tasks/testninja.yaml" <<'YAML'
+  report_id: rpt-review-draft
+  report_identity_version: 2
+YAML
+    cat >> "$TEST_TMPDIR/queue/reports/testninja_report_cmd_test_001.yaml" <<'YAML'
+status: completed
+report_id: rpt-review-draft
+report_identity_version: 2
+task_id: cmd_test_001_normal
+parent_cmd: cmd_test_001
+YAML
+    git -C "$TEST_TMPDIR" add queue/tasks/testninja.yaml queue/reports/testninja_report_cmd_test_001.yaml
+    git -C "$TEST_TMPDIR" commit -q -m review-draft-generation
+
+    run _run_inbox_write gunshi "review report=queue/reports/testninja_report_cmd_test_001.yaml parent_cmd=cmd_test_001" review_draft ninja_monitor review_request
+    [ "$status" -eq 0 ]
+    run _run_inbox_write gunshi "review retry=ignored report=queue/reports/testninja_report_cmd_test_001.yaml parent_cmd=cmd_test_001" review_draft ninja_monitor review_request
+    [ "$status" -eq 0 ]
+    python3 - "$TEST_TMPDIR/queue/inbox/gunshi.yaml" <<'PY'
+import sys, yaml
+messages = (yaml.safe_load(open(sys.argv[1])) or {}).get("messages", [])
+assert len(messages) == 1
+assert messages[0]["read"] is False
+old = messages[0]["report_fingerprint"]
+assert len(old) == 64
+PY
+    sed -i 's/read: false/read: true/' "$TEST_TMPDIR/queue/inbox/gunshi.yaml"
+    run _run_inbox_write gunshi "review consumed report=queue/reports/testninja_report_cmd_test_001.yaml parent_cmd=cmd_test_001" review_draft ninja_monitor review_request
+    [ "$status" -eq 0 ]
+    run python3 - "$TEST_TMPDIR/queue/inbox/gunshi.yaml" <<'PY'
+import sys, yaml
+messages = (yaml.safe_load(open(sys.argv[1])) or {}).get("messages", [])
+assert len(messages) == 2
+assert sum(message["read"] is False for message in messages) == 1
+assert len({message["report_fingerprint"] for message in messages}) == 1
+print("unread_duplicate=0 read_retry=1 generation_bound=1 notification_loss=0")
+PY
+    [ "$status" -eq 0 ]
+}
+
 @test "report_review DEDUPE: different full64 fp done flags are distinct" {
     setup_basic_test_env
     local root="$TEST_TMPDIR"
