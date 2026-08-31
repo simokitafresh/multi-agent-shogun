@@ -10768,3 +10768,10 @@ insights:
   resolved_reason: "semantic map generation verified the candidate is represented or intentionally ignored"
   action_artifact: "semantic_map=/home/simokitafresh/multi-agent-shogun/context/semantic-map.md;semantic_index=/home/simokitafresh/multi-agent-shogun/docs/semantic-index/index.md"
   resolved_at: "2026-08-31T09:10:11+09:00"
+- id: INS-20260831-091754786-a465
+  ts: "2026-08-31T09:17:54+09:00"
+  insight: "[[T213 T212 T209 T208 T204 T206 T201 T198 T196 T195 T193 T188の]] semantic_stress_test candidate_aliases: NO_MATCH source=lord query=T213 / T212 / T209 / T208 / T204 / T206 / T201 / T198 / T196 / T195 / T193 / T188の進捗を確認せよ"
+  priority: "low"
+  source: "semantic_stress_test"
+  fix_known: false
+  status: pending
