@@ -11477,3 +11477,10 @@ insights:
   source: "semantic_stress_test"
   fix_known: false
   status: pending
+- id: INS-20260831-163845052-3865
+  ts: "2026-08-31T16:38:45+09:00"
+  insight: "[[app 側 free に noindex を付与 — 検索入口を LP に集約する SEO 禁則の未実装 1 行を埋める]] semantic_stress_test candidate_aliases: NO_MATCH source=cmds query=app 側 /free に noindex を付与 — 検索入口を LP に集約する SEO 禁則の未実装 1 行を埋める"
+  priority: "low"
+  source: "semantic_stress_test"
+  fix_known: false
+  status: pending
