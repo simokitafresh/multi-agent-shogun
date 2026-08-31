@@ -11334,3 +11334,10 @@ insights:
   source: "semantic_stress_test"
   fix_known: false
   status: pending
+- id: INS-20260831-145819726-1f88
+  ts: "2026-08-31T14:58:19+09:00"
+  insight: "[[LP に FoF 訴求 1 行を追加 — Fund of Funds が主力 active の 7 割超 である旨を C]] semantic_stress_test candidate_aliases: NO_MATCH source=cmds query=LP に FoF 訴求 1 行を追加 — Fund of Funds が主力(active の 7 割超)である旨を Current signals 近傍に EN/JA で明記する"
+  priority: "low"
+  source: "semantic_stress_test"
+  fix_known: false
+  status: pending
