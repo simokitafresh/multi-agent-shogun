@@ -1,9 +1,9 @@
 <!-- gist-master: 5edb5f6d5fab4e9578bc35fbfacf95b7 dm-signal-lp-seo-plan_20260830.md -->
-# DM-Signal LP(dm-signal.com) SEO 案 v2 — 2026-08-30 22:05(v1 19:55)
+# DM-Signal LP(dm-signal.com) SEO 案 v3 — 2026-08-31 14:52(v2 08-30 22:05 / v1 19:55)
 
 > 作成: 将軍。殿指示 19:51『seo 案をまとめて gist に共有して』。前提=殿裁定 16:42『別サイト』、17:14 `.com`、17:59 SEO 案(JSON-LD/noindex/Search Console/月次シグナル頁)。
 > 本文は結論+根拠。殿の裁定が要る箇所は **【裁定】** で明示。裁定後に cmd 化する(起票は裁定後、LS115)。
-> **v2(22:05)**: 殿裁定 20:04『やったぞ。進めてくれ』→cmd_4421(P0-3〜P0-5)GATE CLEAR 21:35(DM main 71e0b94d)・本番 live を 22:02 curl で再計測。**残バグ 1 件=`og:image` が 404**(§0/§6)。
+> **v3(08-31 14:52 本番 curl 再計測)**: v2 残バグ `og:image` 404 は **解消**(cmd_4426=静的 PNG `og-en.png`/`og-ja.png` 各 200 image/png)。FAQ EN=4427 済。docs/faq canonical=**殿裁定 14:36 で app 側維持に確定**(P1-2 裁定済)。殿裁定 14:32『LP に集中』体制下で走行=cmd_4432(列整理)→4433(hero static chart)→4434(FoF 訴求)。**新規未達の発見=app 側 `/free` が 200 だが noindex 0 件**(§3 の禁則が未実装)。残 P0=sitemap 送信・索引確認・Bing・Rich Results Test(いずれも画面 1 分級)。
 
 ## §0 AsIs(2026-08-30 22:02 本番 curl 一次で再計測。v1=19:52)
 
@@ -13,7 +13,7 @@
 | meta description | `Explore Dual Momentum signals and a transparent track record since inception…` | あり | ○(検索語含有、4421) |
 | canonical | `https://dm-signal.com/` | あり | ○(`.jp` 0 件、19:34 修正済) |
 | hreflang | 3 件(en/ja/x-default) | 3 件 | ○(20:06 再確認: `hrefLang` camelCase で grep 漏れ。P0-2 は不要) |
-| OG / Twitter card | og 10 件+twitter 7 件(`og:locale=en_US`、`twitter:card=summary_large_image`) | 同 | △ **meta は完備、`og:image`=`/opengraph-image.png` が 404**(EN/JA 両方。`lp/app/opengraph-image.tsx` は `next/og` ImageResponse で `output: "export"`+`trailingSlash: true` 構成=静的出力に画像が含まれていない疑い。P0-4 未達) |
+| OG / Twitter card | og 10 件+twitter 7 件(`og:locale=en_US`、`twitter:card=summary_large_image`) | 同 | ○ **P0-4 live**(v3 14:50 再計測: cmd_4426 静的 PNG 化で `og-en.png`/`og-ja.png` 各 200 `image/png`。旧 `/opengraph-image.png` は 404 のままだが参照は新パスへ切替済み) |
 | JSON-LD | `Organization`・`WebSite`・`FAQPage`(Q&A 3 組) | 同 3 型 | ○ **P0-3 live**(4421、`lp/components/structured-data.tsx`)。Rich Results Test は未実行 |
 | sitemap.xml / robots.txt | 200(`/`, `/ja/` の 2 URL) | — | ○(lastmod 無し) |
 | Search Console | **登録済**(20:01 殿が Cloudflare 自動確認で所有権確認) | — | ○ 残=sitemap 送信・索引 2/2 の確認(§2.1 Step 6・8) |
@@ -93,16 +93,19 @@
 ## §5 殿の裁定 4 点(v2: 状態)
 1. Search Console の所有者=殿の Google アカウント → **決(20:01 殿が自動確認で登録)**。
 2. title/description の文言 → 殿 20:04『進めてくれ』=既定案採用、**live**。
-3. OG 画像に数値を載せるか → 既定案(載せない)で実装済。画像 404 の hotfix 後に殿実機で表現を確認。
-4. docs/faq を LP 配下へ移すか → 未決。既定案(移さず app 側 canonical、LP から内部リンク `/faq` 1 件済)で進行中。
+3. OG 画像に数値を載せるか → 既定案(載せない)で実装済。**画像 404 は 4426 で解消(v3 14:50 実測 200)**。殿実機の表現確認のみ残。
+4. docs/faq を LP 配下へ移すか → **決(殿裁定 2026-08-31 14:36)**: 移さず app 側 canonical 維持、LP から内部リンク(knowledge:d1fb0c5aaf6d922c)。P1-2 の裁定は完了。
 
 ## §6 工程(v2: 状態)
-| 手 | 内容 | 状態(22:05) |
+| 手 | 内容 | 状態(v3 08-31 14:52) |
 |---|---|---|
 | cmd A | P0-3〜P0-5(cmd_4421、忍者 1 名) | **完了**: GATE CLEAR 21:35、DM main 71e0b94d、本番 live(§0) |
-| hotfix | `og:image` 404: `output: "export"`+`trailingSlash` で `opengraph-image.tsx` の PNG が out に出ない疑い。対処案=`lp/public/opengraph-image.png` を静的 PNG(1200×630、EN/JA 各 1)として置き `metadata.openGraph.images` で明示参照(ImageResponse 依存を外す)。二値 AC=EN/JA の `og:image` URL が 200 ∧ `content-type: image/png` | **未起票**(次 cmd。post_deploy_check に curl 2 本) |
-| 将軍 | Search Console sitemap 送信・索引 2/2(§2.1 Step 6・8)、P0-6 Bing、Rich Results Test | sitemap 送信=殿の画面(1 分)。索引は 24-48h 後 |
-| cmd B | P1-1 月次シグナル頁(EN/JA)+sitemap lastmod | 未起票(9 月) |
+| hotfix | `og:image` 404 → 静的 PNG 化 | **完了**: cmd_4426 CLEAR。`og-en.png`/`og-ja.png` 200 `image/png`(14:50 実測) |
+| FAQ EN | FAQ の EN 版 | **完了**: cmd_4427 CLEAR・live |
+| LP 表示(殿裁定 14:00-14:36) | cmd_4432(Total return 削除+CAGR up to+列順)→cmd_4433(hero static chart)→cmd_4434(FoF 訴求 1 行) | **走行中**(kagemaru 実装中→直列 2 弾配備待ち)。SEO 面でも本文の検索語密度と視覚要素が向上 |
+| **未達(v3 発見)** | app 側 `/free` が 200 だが **noindex 0 件**(§3 禁則の未実装)。`/login` は noindex 済 | **未起票**。次の軽量 cmd(meta robots 1 行+curl 検証)候補 |
+| 将軍/殿 | Search Console sitemap 送信・索引 2/2(§2.1 Step 6・8)、P0-6 Bing、Rich Results Test | 未(いずれも画面 1 分級。sitemap は 2 URL 実在を 14:50 確認) |
+| cmd B | P1-1 月次シグナル頁(EN/JA)+sitemap lastmod | 未起票(9 月)。P1-2 は殿裁定 14:36 で裁定済(app 側 canonical) |
 | 週報 | §4 の 3 指標固定 | Console 初回データ後 |
 
 
