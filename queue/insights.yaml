@@ -9649,8 +9649,11 @@ insights:
   insight: "LGTM済みcmdの再通知ループ: cmd_karo_hotfix_inbox_terminal_drain_20260830とcmd_4419のreport_review通知が家老inbox処理中に軍師inboxへ繰り返し到着(各6-9回)。原因=cmd_complete処理中にinbox_write→watcher→nudgeが連鎖発火。hanzoが修正中のinbox_terminal_drain hotfixが根治する対象だが、nudge多重送信(inbox_nudge_outstanding_lease)も併発。2件のhotfixマージ後に再発確認すべき"
   priority: "medium"
   source: "manual"
-  fix_known: false
-  status: pending
+  fix_known: true
+  status: resolved
+  resolved_reason: 一次情報でarchive/inbox/gunshi_20260830.yamlを確認し、cmd_4419 10件とinbox_terminal_drain hotfix 17件の既読通知(計27件)を特定。31afad555の対象親cmd限定terminal drainと31f1ae54eのcurrent-task assignment集合scoped outstanding leaseを現行コード・テストで照合し、再通知ループの根因は既存hotfixで解消済み。
+  action_artifact: "target=queue/insights.yaml:INS-20260830-184757130-18fd;primary=archive/inbox/gunshi_20260830.yaml(27 historical notifications, unread=0),scripts/cmd_complete.sh:351-423,scripts/inbox_watcher.sh:495-563/1143-1340;commits=31afad555,31f1ae54e;tests=run_tests.sh file tests/unit/test_cmd_complete.bats(1/1 PASS SKIP0),run_tests.sh file tests/unit/test_inbox_watcher.bats(5/5 PASS SKIP0)"
+  resolved_at: "2026-08-31T20:02:00+09:00"
 - id: INS-20260830-190120538-e122
   ts: "2026-08-30T19:01:20+09:00"
   insight: "semantic_map_generate新規ファイル候補: `tests/unit/test_inbox_watcher.bats` は semantic index未登録。既存概念へのfile追加または新概念定義を検討せよ"
