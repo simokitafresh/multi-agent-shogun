@@ -10987,3 +10987,10 @@ insights:
   source: "manual"
   fix_known: false
   status: pending
+- id: INS-20260831-131907279-ec0a
+  ts: "2026-08-31T13:19:07+09:00"
+  insight: "[[karoにつまりがあるようだ]] semantic_stress_test candidate_aliases: NO_MATCH source=lord query=karoにつまりがあるようだ。なにかインフラバグが隠れているのでは？覚醒して調査してくれ"
+  priority: "low"
+  source: "semantic_stress_test"
+  fix_known: false
+  status: pending
