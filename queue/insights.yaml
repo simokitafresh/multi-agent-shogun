@@ -11435,3 +11435,10 @@ insights:
   source: "semantic_index_update"
   fix_known: false
   status: pending
+- id: INS-20260831-163739883-531b
+  ts: "2026-08-31T16:37:39+09:00"
+  insight: "[[noindexのcmdも起票して]] semantic_stress_test candidate_aliases: NO_MATCH source=lord query=noindexのcmdも起票して"
+  priority: "low"
+  source: "semantic_stress_test"
+  fix_known: false
+  status: pending
