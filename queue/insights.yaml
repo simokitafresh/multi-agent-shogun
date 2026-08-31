@@ -11786,3 +11786,10 @@ insights:
   source: "semantic_index_update"
   fix_known: false
   status: pending
+- id: INS-20260831-184900724-08dc
+  ts: "2026-08-31T18:49:00+09:00"
+  insight: "[[複雑にしないでA案でいいな]] semantic_stress_test candidate_aliases: NO_MATCH source=lord query=複雑にしないでA案でいいな。別にURLが変わるのは気にならない。 A. 再公開+索引差替でいこうinbox1"
+  priority: "low"
+  source: "semantic_stress_test"
+  fix_known: false
+  status: pending
