@@ -1,5 +1,10 @@
 # 戦局日誌 (Campaign Log)
 <!-- last_updated: 2026-08-03 karo_strong_new_game_dm_monthly_boundary -->
+## 2026-08-31 cmd_karo_hotfix_external_repo_worktree_remote_tip_20260831
+| cmd/action | 意図 | 結果 | 因果 |
+|-----|------|------|------|
+| cmd_karo_hotfix_external_repo_worktree_remote_tip_20260831 | 外部repoのremote-only target配備でstale tracking refをbaseにしない | absolute targetからrepo親を解決し、fetch前後のremote tip一致・target path存在をfail-closed化。lifecycle 8/8、deploy_task 69/69、SKIP0、commit `6e85da9158286f8b9b1a31fe06d80a870e5cc29f`、report gate PASS | [[external_remote_only_target]] -> [[source_repo_parent_resolution]] -> [[stable_remote_tip_worktree]] |
+
 ## 2026-08-23
 | cmd/action | 意図 | 結果 | 因果 |
 |-----|------|------|------|
