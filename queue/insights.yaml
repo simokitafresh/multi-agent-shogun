@@ -11072,3 +11072,10 @@ insights:
   source: "semantic_stress_test"
   fix_known: false
   status: pending
+- id: INS-20260831-132809640-dc7f
+  ts: "2026-08-31T13:28:09+09:00"
+  insight: "[[負の複利を生むモノが放置されていないか]] semantic_stress_test candidate_aliases: NO_MATCH source=lord query=負の複利を生むモノが放置されていないか、利他の精神で調査してバグを根治せよ"
+  priority: "low"
+  source: "semantic_stress_test"
+  fix_known: false
+  status: pending
