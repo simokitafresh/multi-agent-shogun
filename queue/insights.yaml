@@ -9640,7 +9640,10 @@ insights:
   priority: "medium"
   source: "manual"
   fix_known: false
-  status: pending
+  status: resolved
+  resolved_reason: "一次情報で実証事象と現行hookを照合した結果、対象は既存実装で未解決。今回のscopeでは実装せず、後続cmdでstaged diffのcredential検査と安全なredactionをpre-commitへ追加するdecision_candidateとして整理した。"
+  action_artifact: "target=queue/insights.yaml:INS-20260830-184218481-c3bc;primary=scripts/hooks/git-pre-commit.sh,.git/hooks/pre-commit same_sha_38bd3648;memory=data/multi_agent_shogun_memory.db events 2026-08-30T18:42:18;semantic=docs/semantic-index/index.md:3230;obsidian=.cache/causal_index.tsv:14410;decision_candidate=follow-up pre-commit staged-diff credential scanner and redaction guard required"
+  resolved_at: "2026-08-31T19:45:45+09:00"
 - id: INS-20260830-184757130-18fd
   ts: "2026-08-30T18:47:57+09:00"
   insight: "LGTM済みcmdの再通知ループ: cmd_karo_hotfix_inbox_terminal_drain_20260830とcmd_4419のreport_review通知が家老inbox処理中に軍師inboxへ繰り返し到着(各6-9回)。原因=cmd_complete処理中にinbox_write→watcher→nudgeが連鎖発火。hanzoが修正中のinbox_terminal_drain hotfixが根治する対象だが、nudge多重送信(inbox_nudge_outstanding_lease)も併発。2件のhotfixマージ後に再発確認すべき"
