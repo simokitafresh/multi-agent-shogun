@@ -11573,3 +11573,10 @@ insights:
   source: "semantic_stress_test"
   fix_known: false
   status: pending
+- id: INS-20260831-174406275-f6cb
+  ts: "2026-08-31T17:44:06+09:00"
+  insight: "[[LP Current signals 体裁 — プラン 4 行の数値全太字・Basic DM 閲覧列を Free 表記・]] semantic_stress_test candidate_aliases: NO_MATCH source=cmds query=LP Current signals 体裁 — プラン 4 行の数値全太字・Basic-DM 閲覧列を Free 表記・閲覧列の太字化"
+  priority: "low"
+  source: "semantic_stress_test"
+  fix_known: false
+  status: pending
