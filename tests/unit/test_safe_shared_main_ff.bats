@@ -335,21 +335,25 @@ exit 0"
   [ "$(grep -c . "$BATS_TEST_TMPDIR/hook.log")" -eq 1 ]
 }
 
-# test_necessity: CI RED/unknown is a fail-closed no-op and must not publish
-# an otherwise eligible ahead branch.
-@test "auto-push skips when exact remote-tip CI is not GREEN" {
+# test_necessity: CI is post-publication telemetry, not a circular admission
+# condition; each supported state must publish one eligible descendant.
+@test "auto-push publishes once for GREEN UNKNOWN and RED telemetry" {
   fallback_origin_init
   fallback_install_hook 'exit 0'
-  printf 'ahead\n' >> "$FIX/b.txt"
-  git -C "$FIX" add b.txt
-  git -C "$FIX" commit -qm "cmd_auto_push fixture"
-  before_remote="$(git --git-dir "$BATS_TEST_TMPDIR/origin.git" rev-parse refs/heads/main)"
+  for ci_state in GREEN UNKNOWN RED; do
+    printf '%s\n' "$ci_state" >> "$FIX/b.txt"
+    git -C "$FIX" add b.txt
+    git -C "$FIX" commit -qm "cmd_auto_push $ci_state fixture"
+    before_head="$(git -C "$FIX" rev-parse HEAD)"
+    before_dirty="$(shared_dirty_fingerprint)"
 
-  run bash "$FIX/scripts/safe_shared_main_ff.sh" --auto-push-if-ready "$FIX" UNKNOWN
-  [ "$status" -eq 0 ]
-  [[ "$output" == *"ci=UNKNOWN"*"push=0"*"reason=ci_not_green"* ]]
-  [ "$(git --git-dir "$BATS_TEST_TMPDIR/origin.git" rev-parse refs/heads/main)" = "$before_remote" ]
-  [ ! -f "$BATS_TEST_TMPDIR/hook.log" ]
+    run bash "$FIX/scripts/safe_shared_main_ff.sh" --auto-push-if-ready "$FIX" "$ci_state"
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"ci=$ci_state"*"push=1"*"result=PASS"* ]]
+    [ "$(git -C "$FIX" rev-parse HEAD)" = "$before_head" ]
+    [ "$(shared_dirty_fingerprint)" = "$before_dirty" ]
+  done
+  [ "$(grep -c . "$BATS_TEST_TMPDIR/hook.log")" -eq 3 ]
 }
 
 # test_necessity: a remote move must be classified as behind/diverged and
