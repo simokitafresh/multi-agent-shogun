@@ -4,7 +4,7 @@
 # artifact: https://claude.ai/code/artifact/5da62854-f81f-4d53-908b-2fe464031f36 (HTML正本 docs/dashboard/shogun-todo-map.html。更新=正本Edit→Artifact再公開 同file_path)
 # 記法: [ ] 未 / [~] 走行中(担当) / [x] 済(証跡)。★=速度向上へのつながり1行必須
 
-- [~] T213(03:42→12:52 loop#19) 現在値: CLEAR 本日 38(PJ6/infra32)。proof: 12:02 以降の push 起因 ancestry WAIT=1 件のみ(単発・lane 通過待ちの過渡)=fallback 根治は有効。殿裁定便: cmd_4431(Current signals 体裁 6 点)delegated 12:47(起票 gate 6 往復=全て将軍記入不備、LS126 ack 済)・basic n=2 は正値(hero 除外定義)と DB 一次で回答・FoF 77/101 本の訴求 1 行は次弾候補。残: dedupe 2 cmd terminal(家老追跡中)・4431 配備待ち。rev-list 12/7。CI GREEN。litter **4,878→43 済**(殿裁定 13:00『回収せよ』→sweep apply、4,836 件 quarantine 可逆)。Markdown for agents **ON 到達**(text/markdown 200)。終端条件=4431 CLEAR ∧ dedupe terminal 2/2 ∧ 13:02 proof 窓通過 ★体裁 cmd の AC 定型(太字基準=hero 行・赤字=ui-design-guide 比)を焼き増し可能にした
+- [~] T213(03:42→13:12 loop#20) 現在値: CLEAR 本日 38(PJ6/infra32)。litter 43 維持(回収 4,836 quarantine 済)。Agent Readiness Level1 5/5+Level2 3/3 到達(T212)。走行: 影丸 cmd_4431(体裁 6 点)ack 13:06・小太郎 dedupe segment in_progress(gate 13:06 WAIT=処理中)・半蔵 reflux。便停止 0・failed 0・CI GREEN(33354778677 success)。rev-list 14/15=lane 定常。終端条件=4431 CLEAR ∧ dedupe terminal 2/2 ∧ rev-list 0 0 ★第19便の PJ 弾は 4431=CLEAR 後に LP 再 build→殿実機
 
 - [~] T212(03:15 診断→05:22『Level3 まで』→13:08 Level1/2 完了) 現在値: **Level1 5/5・Level2 3/3 到達**(Markdown ON 13:00 text/markdown 200・Transform Rule Link ヘッダ 13:07 curl 実測・api-catalog/auth.md/OAuth Discovery 済)。トークン=殿 edit で Transform/DNS/ZoneSettings 追加(verify active)。残=Level3 7 項目: cmd 2-2(Protected Resource)〜2-7 起票+2-8 DNS-AID(Agent Card 後・権限確保済)。終端条件=診断 Rescan Level3 8/8 ★次の起票=2-2(backend 静的 EP)と 2-3+2-4(Agent Card+Skills)を並走 2 cmd で
 
