@@ -3778,6 +3778,7 @@ codd:
 | discussion | `queue/lord_conversation.jsonl` 2026-08-31T18:09:51+09:00 30分loop(殿指示08-27 14:34「進捗を確認し、利他の精神でつまりを解消し、artifactを更新せよ」恒久): (1)capture-pane全pane/陣形図/gate_metrics/rev-list origin/CI  |
 | discussion | `queue/lord_conversation.jsonl` 2026-08-31T18:39:51+09:00 30分loop(殿指示08-27 14:34「進捗を確認し、利他の精神でつまりを解消し、artifactを更新せよ」恒久): (1)capture-pane全pane/陣形図/gate_metrics/rev-list origin/CI  |
 | discussion | `queue/lord_conversation.jsonl` 2026-08-31T19:09:51+09:00 30分loop(殿指示08-27 14:34「進捗を確認し、利他の精神でつまりを解消し、artifactを更新せよ」恒久): (1)capture-pane全pane/陣形図/gate_metrics/rev-list origin/CI  |
+| discussion | `queue/lord_conversation.jsonl` 2026-08-31T19:39:51+09:00 30分loop(殿指示08-27 14:34「進捗を確認し、利他の精神でつまりを解消し、artifactを更新せよ」恒久): (1)capture-pane全pane/陣形図/gate_metrics/rev-list origin/CI  |
 | causal_chain | `[[cmd_karo_hotfix_deploy_report_template_quote_escape_202607020530]]` (L924) |
 | causal_chain | `[[cmd_reflux_insight_202607071717_tobisaru]]` (L961) |
 | causal_chain | `[[cmd_karo_hotfix_report_notify_inprogress_guard_202607101913]]` (L1026) |
@@ -7525,6 +7526,7 @@ codd:
 | discussion | `queue/lord_conversation.jsonl` 2026-08-31T14:33:22+09:00 殿裁定 2026-08-31 14:32『LPに集中しよう』: 以後の主軸=LP lane(cmd_4432列整理→cmd_4433 static chart直列)。infra新規・Agent Readiness Level3起票等は保留し |
 | discussion | `queue/lord_conversation.jsonl` 2026-08-31T14:36:42+09:00 殿裁定 2026-08-31 14:36(未決4本一括): (6)FoF訴求1行をLPに足す=採用 (1)appは当面onrenderのまま (2)docs/faqはapp側canonical維持 (4+5)Free可視範囲=パフォーマンス |
 | discussion | `queue/lord_conversation.jsonl` 2026-08-31T17:47:09+09:00 session_save_20260831_1746(先に session_save_20260831_0300 を読め): 第19便(13:55 y復帰〜17:46)。①復帰: deepdive16/16・Q6軍師検証妥当・push保留7 |
+| cmd | `cmd_4434` LP に FoF 訴求 1 行を追加 — Fund of Funds が主力(active の 7 割超)である旨を Current signals 近傍に EN/JA で明記する |
 | causal_chain | `[[cmd_4330]]` (L1598) |
 
 ## partial_turnover_execution_method — Partial Turnover実験実行・完了証跡方法論
@@ -10170,6 +10172,7 @@ codd:
 | discussion | `queue/lord_conversation.jsonl` 2026-08-31T07:41:32.258838+00:00 git pre-commit semantic propagation for context/projects changes |
 | discussion | `queue/lord_conversation.jsonl` 2026-08-31T18:06:24+09:00 なるほど。いつデプロイされるんだ？ |
 | discussion | `queue/lord_conversation.jsonl` 2026-08-31T18:45:10+09:00 進捗はどうだ？つまりは解消されているか？ |
+| discussion | `queue/lord_conversation.jsonl` 2026-08-31T10:38:01.744731+00:00 git pre-commit semantic propagation for context/projects changes |
 
 ## simple_ocr — Simple OCR（画像OCR Webアプリ）
 
@@ -16080,6 +16083,7 @@ codd:
 | discussion | `queue/lord_conversation.jsonl` 2026-08-31T07:28:09.667098+00:00 git pre-commit semantic propagation for context/projects changes |
 | discussion | `queue/lord_conversation.jsonl` 2026-08-31T09:19:17.383376+00:00 git pre-commit semantic propagation for context/projects changes |
 | discussion | `queue/lord_conversation.jsonl` 2026-08-31T09:26:28.619620+00:00 git pre-commit semantic propagation for context/projects changes |
+| discussion | `queue/lord_conversation.jsonl` 2026-08-31T10:29:37.203244+00:00 git pre-commit semantic propagation for context/projects changes |
 | causal_chain | `[[cmd_karo_hotfix_lessons_yaml_format_restore_20260727]]` (L1389) |
 
 ## infra_design_intent — インフラ設計意図カタログ
