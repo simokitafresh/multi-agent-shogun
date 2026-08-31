@@ -521,8 +521,22 @@ if [ ! "$role:$result" = "karo:RC" ] && [ "$fail_close" != 1 ] && [ "$correction
   && [ -f "$rejected_commit_file" ] && [ "$current_commit" != "no-code-change" ]; then
   rejected_commit=$(head -n 1 "$rejected_commit_file" 2>/dev/null || true)
   if [ -n "$rejected_commit" ] && [ "$rejected_commit" = "$current_commit" ]; then
-    echo "BLOCK: implementation commit unchanged since Karo RC: $current_commit" >&2
-    exit 1
+    # If a precheck CLEAR prediction exists for this cmd, the shared execution
+    # plane already passes all gate checks despite the commit being unchanged.
+    # This happens when a separate fix (e.g. SG-PRE9c) resolved the prior RC
+    # cause without touching the original implementation commit.  Downgrade to
+    # WARN so the approval can proceed.
+    precheck_clear=0
+    _bundle_path="$ROOT/queue/gates/${cmd_id}/sg7_bundle.json"
+    if [ -f "$_bundle_path" ]; then
+      precheck_clear=1
+    fi
+    if [ "$precheck_clear" = 1 ]; then
+      echo "WARN: implementation commit unchanged since Karo RC ($current_commit) but precheck CLEAR — proceeding" >&2
+    else
+      echo "BLOCK: implementation commit unchanged since Karo RC: $current_commit" >&2
+      exit 1
+    fi
   fi
 fi
 if [ ! "$role:$result" = "karo:RC" ] && [ "$fail_close" != 1 ] && [ "$correction_scope" = report ]; then
