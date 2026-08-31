@@ -3184,7 +3184,7 @@ PY
 cmd_complete_gate_auto_push_ancestry_wait() {
     local repo="${CMD_COMPLETE_GATE_AUTO_PUSH_REPO:-$SCRIPT_DIR}" remote_tip ci_state push_output
     local threshold="${CMD_COMPLETE_GATE_AUTO_PUSH_THRESHOLD:-1}"
-    [ -x "$repo/scripts/safe_shared_main_ff.sh" ] || {
+    [ -f "$repo/scripts/safe_shared_main_ff.sh" ] || {
         printf 'AUTO_PUSH_WAIT push=0 result=SKIP reason=helper_missing\n'
         return 0
     }
