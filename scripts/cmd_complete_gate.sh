@@ -5358,11 +5358,14 @@ for pattern in (
         if not isinstance(messages, list):
             continue
         for message in messages:
-            if not isinstance(message, dict) or str(message.get("type") or "") not in {"report_review", "report_received"}:
+            if not isinstance(message, dict) or str(message.get("type") or "") not in {"report_review", "review_report", "report_received"}:
                 continue
             parent = str(message.get("parent_cmd") or "").strip()
             task_id = str(message.get("task_id") or "").strip()
-            report_path = str(message.get("report_path") or "").strip()
+            # review_report is the canonical pending-review notification
+            # shape; its stable report identity is stored under ``report``.
+            # Keep the legacy report_path spelling for older inbox records.
+            report_path = str(message.get("report_path") or message.get("report") or "").strip()
             identity_match = (
                 parent == cmd_id
                 or task_id in {cmd_id, f"{cmd_id}_full"}
