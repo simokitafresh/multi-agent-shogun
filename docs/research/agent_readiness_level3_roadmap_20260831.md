@@ -67,7 +67,8 @@
 |---|---|---|
 | 0-1 | 殿 ON 13:00→curl text/markdown 200 | done |
 | 1-1/1-3/1-2(b)/2-1 | 将軍 D0 予定 | open |
-| 2-2〜2-7 | cmd 未起票 | open |
+| 2-2 | PRM 静的公開で充足(1330692 live 13:28、殿提供スキル仕様準拠。backend 側複製は任意) | done |
+| 2-3〜2-7 | cmd 未起票 | open |
 | 1-2(a) | Transform Rule 作成 13:07(Link ヘッダ本番実測) | done |
 | 1-3 是正 | 13:11 殿スクショで Auth.md 未✅→発見経路の欠落を特定(スキャナは oauth-authorization-server の agent_auth.skill から auth.md を辿る)。869553b で agent_auth.skill 追加+auth.md タイトルを # auth.md 実例準拠へ、13:24 本番 curl 両方到達 | done |
 | 2-8 | トークン権限確保済(DNS:Edit 実測)。Agent Card(2-3)後に投入 | ready |
