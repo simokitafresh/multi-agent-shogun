@@ -1,10 +1,10 @@
-# 将軍 全体状況マップ(やることリスト) — 2026-08-26 13:55 作成 / 08-31 09:42 更新(loop#13)(T212 Agent Readiness)(loop#1 T211)(殿指示 02:59『強くてニューゲーム』保存 T210)(殿指示 20:43『強くてニューゲーム』保存 T156+T157 bats 本番汚染)(殿指示14:34: 進捗確認・つまり解消)
+# 将軍 全体状況マップ(やることリスト) — 2026-08-26 13:55 作成 / 08-31 10:12 更新(loop#14)(T212 Agent Readiness)(loop#1 T211)(殿指示 02:59『強くてニューゲーム』保存 T210)(殿指示 20:43『強くてニューゲーム』保存 T156+T157 bats 本番汚染)(殿指示14:34: 進捗確認・つまり解消)
 # ★殿裁定 2026-08-29 10:26『バグの修正は必須だが、一回終わりを作ろう。速度向上は今取り掛かっているタスクたちを全て完了させたら一旦俺の指示を待て。バグの根治は俺の指示を待たずに継続せよ』→ 速度 lane は走行分の終端で凍結(新規配備 0、家老 blt_102819 で適用確認)。バグ根治 lane(T180/CI RED/便停止/Guard14)は継続。
 # 原則(殿13:52-13:54): シングルタスクを高速に切替える。優先順位なし=全部やる。依存は構造としてだけ記す。一定時間ごと(各inbox処理後・30分毎)に更新。 ★らせんの原理: ①計測器を律速の名指しから仕込み本番に常設→②1 unit だけ切る(1 unit/commit)→③計測を一段深く→④計測器は残す。切るのは機械的待ちのみ。逸脱チェック3問(名指しから始めたか/一段深くしたか/本番に残るか)。対象=速度/デッドコード/リファクタ/知識。成果指標=PJ 成果の e2e と件数
 # artifact: https://claude.ai/code/artifact/5da62854-f81f-4d53-908b-2fe464031f36 (HTML正本 docs/dashboard/shogun-todo-map.html。更新=正本Edit→Artifact再公開 同file_path)
 # 記法: [ ] 未 / [~] 走行中(担当) / [x] 済(証跡)。★=速度向上へのつながり1行必須
 
-- [~] T213(03:42→09:42 loop#13) 現在値: CLEAR 本日 29(PJ5/infra24)。疾風 4430=probe2 で復活し progress 09:20 更新・in_progress(9:36)=生存確認済。dedupe gate が ci_readiness READY の INFO を 9 回/26 分繰返し CLEAR 未到達=非 INFO 行なし(壁の検査名を家老 pane と gates dir で特定中)。才蔵 fail-close 済→reflux 0931 走行。rev-list 2/12(lane 稼働)。CI GREEN 維持。litter 4,870。Agent Readiness Phase1 D0 済(T212)。終端条件=4430 CLEAR ∧ dedupe CLEAR ∧ rev-list 0 0 ★dedupe の INFO ループは gate 側の終端判定欠落の疑い=解ければ完了処理の恒常 3-4 分短縮
+- [~] T213(03:42→10:12 loop#14) 現在値: CLEAR 本日 29(PJ5/infra24)、30 分 CLEAR 0=在庫 4(疾風 4430 report completed 09:58=PJ 弾!/影丸 0913/飛猿 0830/dedupe INFO 55 分ループ)→家老へ順序付き 1 通(msg 10:12: 4430 最優先→dedupe clear_required 消化確認→0913/0830)。rev-list 2/15。CI GREEN。litter 4,870。failed 0。終端条件=CLEAR 4 行 ∧ rev-list 0 0 ★4430 CLEAR→LP 再 build で殿実機確認に乗る=PJ e2e の次の 1 点
 
 - [~] T212(03:15 診断→05:22『Level3 まで』→09:24 Phase1 D0 済) 現在値: Level1 4/5+static 系 D0 完了(b2d3e7a live: api-catalog/auth.md×2/oauth-authorization-server 全 200・rel=api-catalog 1 件・issuer=Supabase 現物一致)=1-1/1-3/1-2b/2-1 done。残=Phase0 Markdown トグル(殿 1click)・1-2(a) Link ヘッダ(Transform 用トークン=殿)・2-8 DNS-AID(トークン=殿)・cmd 2-2〜2-7(次: 2-2 Protected Resource 起票)。終端条件=診断 Rescan Level1 5/5 ∧ Level2 3/3 ∧ Level3 8/8 ★agent 経由の新流入面を read-only で開く
 
