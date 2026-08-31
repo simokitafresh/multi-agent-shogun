@@ -5461,15 +5461,51 @@ selected_report_done_values = select_identity_events(report_done_values, selecte
 selected_review_request_values = select_identity_events(review_request_values, selected_identity)
 all_report_done_values = [ts for _, ts in report_done_values]
 
-report_done_event = max(selected_report_done_values, default=None)
 if lgtm_event is not None:
     eligible_requests = [ts for ts in selected_review_request_values if ts <= lgtm_event]
 else:
     eligible_requests = selected_review_request_values
 review_request_event = max(eligible_requests, default=None)
 
+# A report file (and its delivery record) can be written again after LGTM.
+# Keep every parsed value in ``report_done_values`` for delivery audit, but do
+# not let a post-approval duplicate become the throughput terminal event.  A
+# selected generation is valid only through the corresponding review request
+# and approval boundary; this preserves the real report->review interval while
+# excluding later same-generation retransmits from the segment.
+if selected_pair is not None:
+    report_done_boundaries = [
+        boundary for boundary in (review_request_event, lgtm_event)
+        if boundary is not None
+    ]
+    if report_done_boundaries:
+        eligible_report_done = [
+            ts for ts in selected_report_done_values
+            if all(ts <= boundary for boundary in report_done_boundaries)
+        ]
+        report_done_event = max(eligible_report_done, default=None)
+        # Preserve an actual reversed interval for fail-closed diagnosis, but
+        # keep it separate from the valid terminal event used by work/finalize
+        # duration.  This lets a true reversal remain BLOCK while a later
+        # duplicate cannot extend throughput.
+        report_done_segment_event = report_done_event
+        if report_done_event is None and selected_report_done_values:
+            invalid_report_done = [
+                ts for ts in selected_report_done_values
+                if not all(ts <= boundary for boundary in report_done_boundaries)
+            ]
+            report_done_segment_event = max(invalid_report_done, default=None)
+        else:
+            report_done_segment_event = report_done_event
+    else:
+        report_done_event = None
+        report_done_segment_event = None
+else:
+    report_done_event = max(selected_report_done_values, default=None)
+    report_done_segment_event = report_done_event
+
 event_values = {
-    "report_done": report_done_event,
+    "report_done": report_done_segment_event,
     "review_request": review_request_event,
     "lgtm": lgtm_event,
     "karo_accept": accept_event,
@@ -5497,7 +5533,7 @@ def segment_value(name, left_name, left, right_name, right):
     return str(delta), delta, None, None
 
 fin_a_text, fin_a, fin_a_missing, fin_a_invalid = segment_value(
-    "report_done_to_review_request", "report_done", report_done_event,
+    "report_done_to_review_request", "report_done", report_done_segment_event,
     "review_request", review_request_event
 )
 fin_b_text, fin_b, fin_b_missing, fin_b_invalid = segment_value(
@@ -5547,7 +5583,7 @@ deploy_ts = max((v for v in deploy_values if v is not None), default=None)
 ack_ts = min((v for v in ack_values if v is not None), default=None)
 done_ts = (
     report_done_event
-    if selected_pair is not None and report_done_event is not None
+    if selected_pair is not None
     else max(all_report_done_values + [v for v in done_values if v is not None], default=None)
 )
 clear_ts = parse_iso(clear_ts_raw)
