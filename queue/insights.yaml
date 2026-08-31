@@ -11299,3 +11299,10 @@ insights:
   source: "semantic_stress_test"
   fix_known: false
   status: pending
+- id: INS-20260831-145729367-ddba
+  ts: "2026-08-31T14:57:29+09:00"
+  insight: "[[dm login showcase asis tobe v3 20260830 mdをアップデートせよ]] semantic_stress_test candidate_aliases: NO_MATCH source=lord query=dm-login-showcase-asis-tobe_v3_20260830.mdをアップデートせよ"
+  priority: "low"
+  source: "semantic_stress_test"
+  fix_known: false
+  status: pending
