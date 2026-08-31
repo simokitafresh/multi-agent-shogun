@@ -10908,3 +10908,10 @@ insights:
   source: "semantic_stress_test"
   fix_known: false
   status: pending
+- id: INS-20260831-131053266-3d85
+  ts: "2026-08-31T13:10:53+09:00"
+  insight: "[[Markdown for Agentsはonにした]] semantic_stress_test candidate_aliases: NO_MATCH source=lord query=Markdown for Agentsはonにした。#3は回収せよ"
+  priority: "low"
+  source: "semantic_stress_test"
+  fix_known: false
+  status: pending
