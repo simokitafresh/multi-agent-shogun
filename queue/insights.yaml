@@ -11029,3 +11029,10 @@ insights:
   source: "semantic_index_update"
   fix_known: false
   status: pending
+- id: INS-20260831-132605544-30e2
+  ts: "2026-08-31T13:26:05+09:00"
+  insight: "semantic_index_update未登録[[リンク]]ターゲット: [[外部repo_worktree_stale_base根治着手]] は既存aliasesに一致なし。類似概念TOP3: infrastructure_ops(インフラ運用基盤; alias=karo_snapshot stale; score=13.8) / scope_integrity_lifecycle(スコープ鮮度ライフサイクル; alias=scope_context_stale; score=12.6) / local_memory_db(ローカル記憶DB; alias=stale cache rowid delta; score=12.4)。概念定義とaliases追加を検討せよ"
+  priority: "low"
+  source: "semantic_index_update"
+  fix_known: false
+  status: pending
