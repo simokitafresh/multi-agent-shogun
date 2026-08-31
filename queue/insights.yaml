@@ -11470,3 +11470,10 @@ insights:
   source: "semantic_stress_test"
   fix_known: false
   status: pending
+- id: INS-20260831-163835219-859d
+  ts: "2026-08-31T16:38:35+09:00"
+  insight: "[[SEO 案 v3 14 52 本番 curl 再計測 で発見した未達 app 側 free が 200 で返るが met]] semantic_stress_test candidate_aliases: NO_MATCH source=cmds query=SEO 案 v3(2026-08-31 14:52 本番 curl 再計測)で発見した未達: app 側 /free が 200 で返るが meta robots noindex が 0 件。SEO 案 §3 禁則『/free は /login と同じく noindex(入口は LP に集約)』の未実装。/login は robots metadata 実装"
+  priority: "low"
+  source: "semantic_stress_test"
+  fix_known: false
+  status: pending
