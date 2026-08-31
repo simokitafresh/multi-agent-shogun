@@ -11700,3 +11700,10 @@ insights:
   source: "semantic_stress_test"
   fix_known: false
   status: pending
+- id: INS-20260831-180717356-1149
+  ts: "2026-08-31T18:07:17+09:00"
+  insight: "[[LP static チャートを比較形式へ — SPY 破線系列を追加し対数 x 表記目盛・年月 x 軸・凡例に累積%を表]] semantic_stress_test candidate_aliases: NO_MATCH source=cmds query=LP static チャートを比較形式へ — SPY 破線系列を追加し対数 x 表記目盛・年月 x 軸・凡例に累積%を表示する"
+  priority: "low"
+  source: "semantic_stress_test"
+  fix_known: false
+  status: pending
