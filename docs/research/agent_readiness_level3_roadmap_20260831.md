@@ -3,7 +3,7 @@
 
 - 作成: 2026-08-31 05:25 JST（殿指示 05:22『level3まで全て完了させるためのロードマップをステップバイステップで』）
 - 対象: Cloudflare AI Crawl Control › Agent Readiness 診断（殿提示 HTML 2026-08-31 03:15 準拠）
-- 現状(09:24 更新): Level1 4/5(残=Markdown トグル)・Level2 2/3+1-2(b)済(残=1-2(a) Link ヘッダ実体)・Level3 1/8(2-1 済)（Commerce は optional=本書対象外）
+- 現状(13:08 更新): **Level1 5/5**(Markdown for agents ON 13:00、text/markdown 200 実測)・**Level2 3/3**(1-2(a) Link ヘッダ=Transform Rule 13:07 作成、curl -sI で Link 1 件実測)・Level3 1/8(2-1 済。次=cmd 2-2〜2-7、2-8 は Agent Card 後に DNS:Edit 済トークンで即時)（Commerce は optional=本書対象外）
 - 前提事実（本番一次確認済み）: LP=Render static (`lp/`, autoDeploy)・BE=FastAPI (`dm-signal-backend.onrender.com`)・Auth=Supabase・zone proxied=ON・保管トークンは Single Redirect+zone read のみ
 
 ## 実装原則
@@ -65,7 +65,8 @@
 ## 進捗台帳
 | Step | 起票/実施 | 状態 |
 |---|---|---|
-| 0-1 | 殿待ち | open |
+| 0-1 | 殿 ON 13:00→curl text/markdown 200 | done |
 | 1-1/1-3/1-2(b)/2-1 | 将軍 D0 予定 | open |
 | 2-2〜2-7 | cmd 未起票 | open |
-| 2-8 | 殿トークン待ち | open |
+| 1-2(a) | Transform Rule 作成 13:07(Link ヘッダ本番実測) | done |
+| 2-8 | トークン権限確保済(DNS:Edit 実測)。Agent Card(2-3)後に投入 | ready |
