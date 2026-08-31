@@ -135,13 +135,13 @@
 | 未着手 | P-H product_logins（Free tier v3.3 §4-5、Supabase RLS） | 次弾候補 |
 | 後日 | app.dm-signal.com 移行 / P1-1 月次シグナル頁 / メンバーシップ列のリンク先（殿 12:32『この後で考える』） | 殿裁定待ち / 9 月 |
 
-## §6 未決（13:56 更新: 3=起票済で解消(4425)。残 4 件+新規 1）
-1. `app.dm-signal.com` へ app を移すか（既定=当面 onrender のまま。移す時は LP の `NEXT_PUBLIC_APP_HOST` 1 手+Supabase Redirect URL 追加）。
-2. docs/faq を LP 配下へ移すか（既定=app 側 canonical、LP から内部リンク。SEO 案 §5-4）。
+## §6 未決（14:36 更新: **全件解消** — 殿裁定 2026-08-31 14:36 一括、knowledge:d1fb0c5aaf6d922c）
+1. ~~app.dm-signal.com 移行~~ → **裁定: 当面 onrender のまま**（移す時は `NEXT_PUBLIC_APP_HOST` 1 手+Supabase Redirect URL 追加）。
+2. ~~docs/faq を LP 配下へ~~ → **裁定: app 側 canonical 維持**、LP から内部リンク（SEO 案 §5-4）。
 3. ~~cmd_4415 の未到達を P-C で再起票~~ → **解消**（4425 で再実装・CLEAR・origin 到達検分済み）。
-4. Free tier の可視範囲（既定=パフォーマンス+シグナル両方。Free tier v3.1 §4-3）。
-5. ブラックアウト中の Free 導線を帯に出すか（既定=出す。Free tier が同時失効なら出さない）。
-6. （新規 08-31）FoF 訴求 1 行を LP に足すか（実態: active 101 本中 77 本が FoF、LP に Fund of Funds の語 0 回。殿 12:39『FoF がウリ』）。
+4. ~~Free tier の可視範囲~~ → **裁定: パフォーマンス+シグナル両方**（Free tier v3.1 §4-3）。
+5. ~~ブラックアウト中の Free 導線~~ → **裁定: 帯に出す**（Free tier が同時失効なら出さない）。
+6. ~~FoF 訴求 1 行~~ → **裁定: 足す**（active 101 本中 77 本が FoF、殿 12:39『FoF がウリ』→ cmd_4434 で起票）。
 
 ## §7 因果リンク
 - [[dm-login-showcase-asis-tobe_v2_20260830]] -> [[殿裁定_LP別サイト_20260830_1642]] -> [[殿実機_LPと/login同構造_20260830_1753]] -> [[殿裁定_FreeTier着手_20260830_2021]] -> **[[dm-login-showcase-asis-tobe_v3_20260830]]** <- [[dm-signal-lp-seo-plan_20260830]] / [[dm-free-tier-google-auth_v3]]
