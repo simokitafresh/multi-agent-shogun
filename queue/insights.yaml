@@ -10966,11 +10966,24 @@ insights:
   priority: "low"
   source: "semantic_index_update"
   fix_known: false
-  status: pending
+  status: resolved
+  resolved_reason: "semantic map generation verified the candidate is represented or intentionally ignored"
+  action_artifact: "semantic_map=/home/simokitafresh/multi-agent-shogun/context/semantic-map.md;semantic_index=/home/simokitafresh/multi-agent-shogun/docs/semantic-index/index.md"
+  resolved_at: "2026-08-31T13:16:19+09:00"
 - id: INS-20260831-131513597-07f4
   ts: "2026-08-31T13:15:13+09:00"
   insight: "semantic_index_update新概念候補: discussion:karoにつまりがあるようだ。なにかインフラバグが隠れているのでは？覚醒して調査してくれ は 既存aliasesに一致なし。概念定義とaliases追加を検討せよ"
   priority: "low"
   source: "semantic_index_update"
+  fix_known: false
+  status: resolved
+  resolved_reason: "semantic map generation verified the candidate is represented or intentionally ignored"
+  action_artifact: "semantic_map=/home/simokitafresh/multi-agent-shogun/context/semantic-map.md;semantic_index=/home/simokitafresh/multi-agent-shogun/docs/semantic-index/index.md"
+  resolved_at: "2026-08-31T13:16:19+09:00"
+- id: INS-20260831-131721312-50d3
+  ts: "2026-08-31T13:17:21+09:00"
+  insight: "review_approval.shのcommit unchanged since RCチェックがworktree合流前の再レビュー世代を想定していない。LGTM正規経路がBLOCKされfallback送信→ninja_monitorの繰り返し通知→codex_inbox_priority_guard発火→家老一時停止の連鎖。review_approval.shにprecheck CLEAR時のcommit同一性スキップオプション追加が対策案。"
+  priority: "medium"
+  source: "manual"
   fix_known: false
   status: pending
