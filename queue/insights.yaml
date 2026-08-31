@@ -8403,7 +8403,10 @@ insights:
   priority: "medium"
   source: "manual"
   fix_known: false
-  status: pending
+  status: resolved
+  resolved_reason: 現行inbox_write.shのreport identity/fingerprint dedupeとstable-generation経路を一次コード確認し、Karo受領1件・Gunshi同一fingerprint再送抑止契約を既存unit 130/130 PASS・SKIP0で検証済み
+  action_artifact: scripts/inbox_write.sh;tests/unit/test_inbox_write.bats;logs/test_receipts/run_tests_20260831T003627_1897228.json;Karo inbox msg_20260831_081416_699368_48673a52
+  resolved_at: "2026-08-31T09:39:23+09:00"
 - id: INS-20260830-031740271-5003
   ts: "2026-08-30T03:17:40+09:00"
   insight: "semantic_index_update新概念候補: discussion:task notification task id b5kqwxtny task id tool use id toolu 019yCanYTaEZNQNiRN は 既存aliasesに一致なし。概念定義とaliases追加を検討せよ"
@@ -10777,11 +10780,17 @@ insights:
   priority: "low"
   source: "semantic_stress_test"
   fix_known: false
-  status: pending
+  status: resolved
+  resolved_reason: "semantic index candidate was absorbed into a registered concept"
+  action_artifact: "semantic_index=/home/simokitafresh/multi-agent-shogun/docs/semantic-index/index.md"
+  resolved_at: "2026-08-31T09:40:18+09:00"
 - id: INS-20260831-091805351-0716
   ts: "2026-08-31T09:18:05+09:00"
   insight: "[[artifact watch lifecycle Stopped watching Artifact login Sho]] semantic_stress_test candidate_aliases: NO_MATCH source=lord query=artifact-watch-lifecycle Stopped watching Artifact: \"/login Showcase v2\" (connection lo…"
   priority: "low"
   source: "semantic_stress_test"
   fix_known: false
-  status: pending
+  status: resolved
+  resolved_reason: "semantic index candidate was absorbed into a registered concept"
+  action_artifact: "semantic_index=/home/simokitafresh/multi-agent-shogun/docs/semantic-index/index.md"
+  resolved_at: "2026-08-31T09:40:18+09:00"
