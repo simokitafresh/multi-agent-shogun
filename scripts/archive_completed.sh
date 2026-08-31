@@ -250,8 +250,12 @@ PY
     git -C "$repo" cat-file -e "${tip}^{commit}" 2>/dev/null || return 1
     [ "$(git -C "$worktree" rev-parse HEAD 2>/dev/null)" = "$tip" ] || return 1
     git -C "$repo" merge-base --is-ancestor "$marker_base" "$tip" 2>/dev/null || return 1
-    upstream=$(git -C "$repo" rev-parse --abbrev-ref --symbolic-full-name '@{upstream}' 2>/dev/null) || return 1
-    current_tip=$(git -C "$repo" rev-parse "$upstream" 2>/dev/null) || return 1
+    # The task repo may be checked out on a maintenance branch whose tracking
+    # ref is intentionally behind canonical publication.  Cleanup must prove
+    # ancestry against the shared origin/main boundary, not that incidental
+    # branch's @{upstream}; otherwise a valid published report stays blocked
+    # until the worker happens to use main as its local upstream.
+    current_tip=$(git -C "$repo" rev-parse --verify 'refs/remotes/origin/main^{commit}' 2>/dev/null) || return 1
     [[ "$current_tip" =~ ^[0-9a-f]{40}$ ]] || return 1
     git -C "$repo" merge-base --is-ancestor "$tip" "$current_tip" 2>/dev/null || return 1
     python3 - "$marker" "$tip" "$recovery_source" <<'PY'
