@@ -9294,10 +9294,10 @@ EOF
     [[ "$output" == *"wait=true"* ]]
 }
 
-# test_necessity: the completion gate must pass only the exact remote-tip CI
-# state to the isolated publisher; unknown/RED states must remain a no-push
-# WAIT and GREEN must be the sole admission token. A mode-100644 regular helper
-# is valid because the production caller invokes it through bash; missing and
+# test_necessity: the completion gate must pass the exact remote-tip CI state
+# to the isolated publisher as telemetry; GREEN, UNKNOWN, and RED all use the
+# normal ancestry-safe publication lane. A mode-100644 regular helper is valid
+# because the production caller invokes it through bash; missing and
 # non-regular helpers must remain fail-closed with zero publisher calls.
 @test "ancestry WAIT auto-push accepts mode-100644 helper and rejects missing or non-regular helper" {
     local repo="$BATS_TEST_TMPDIR/auto-push-wiring"
@@ -9317,21 +9317,17 @@ EOF
 #!/usr/bin/env bash
 printf 'publisher_ci=%s threshold=%s\n' "$3" "${SAFE_SHARED_MAIN_FF_AUTO_PUSH_THRESHOLD:-}"
 printf 'push=1\n' >> "$2/push_calls"
-if [ "$3" = GREEN ]; then echo 'result=PASS'; else echo 'result=SKIP'; fi
+case "$3" in GREEN|UNKNOWN|RED) echo 'result=PASS';; *) echo 'result=SKIP';; esac
 EOF
     [ "$(stat -c '%a' "$repo/scripts/safe_shared_main_ff.sh")" = 644 ]
 
-    run bash -c 'source "$1"; SCRIPT_DIR="$2"; CMD_COMPLETE_GATE_AUTO_PUSH_REPO="$2"; CMD_COMPLETE_GATE_AUTO_PUSH_THRESHOLD=7; CMD_COMPLETE_GATE_AUTO_PUSH_CI_STATE=UNKNOWN; cmd_complete_gate_auto_push_ancestry_wait' \
-        _ "$GATE_HELPERS_FILE" "$repo"
-    [ "$status" -eq 1 ]
-    [[ "$output" == *"publisher_ci=UNKNOWN threshold=7"*"result=SKIP"* ]]
-    [ "$(grep -c '^push=1$' "$repo/push_calls")" -eq 1 ]
-
-    run bash -c 'source "$1"; SCRIPT_DIR="$2"; CMD_COMPLETE_GATE_AUTO_PUSH_REPO="$2"; CMD_COMPLETE_GATE_AUTO_PUSH_THRESHOLD=7; CMD_COMPLETE_GATE_AUTO_PUSH_CI_STATE=GREEN; cmd_complete_gate_auto_push_ancestry_wait' \
-        _ "$GATE_HELPERS_FILE" "$repo"
-    [ "$status" -eq 0 ]
-    [[ "$output" == *"publisher_ci=GREEN threshold=7"*"result=PASS"* ]]
-    [ "$(grep -c '^push=1$' "$repo/push_calls")" -eq 2 ]
+    for ci_state in GREEN UNKNOWN RED; do
+        run bash -c 'source "$1"; SCRIPT_DIR="$2"; CMD_COMPLETE_GATE_AUTO_PUSH_REPO="$2"; CMD_COMPLETE_GATE_AUTO_PUSH_THRESHOLD=7; CMD_COMPLETE_GATE_AUTO_PUSH_CI_STATE="$3"; cmd_complete_gate_auto_push_ancestry_wait' \
+            _ "$GATE_HELPERS_FILE" "$repo" "$ci_state"
+        [ "$status" -eq 0 ]
+        [[ "$output" == *"publisher_ci=$ci_state threshold=7"*"result=PASS"* ]]
+    done
+    [ "$(grep -c '^push=1$' "$repo/push_calls")" -eq 3 ]
 
     local missing_repo="$BATS_TEST_TMPDIR/auto-push-missing"
     mkdir -p "$missing_repo/scripts"
