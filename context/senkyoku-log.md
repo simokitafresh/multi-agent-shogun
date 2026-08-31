@@ -1599,3 +1599,4 @@
 - 2026-08-31 10:06 cmd_4430 RC是正完了: 旧branchをpublication対象外とし、origin/main `b2d3e7aa`からclean worktreeを再作成。4 source pathのみ再適用、clean build 7/7・AC1-3 PASS、source-only commit `5d02bae3`、report gate PASS。
 - 2026-08-31 11:02 cmd_4430 GATE CLEAR(11:00:23)=本日 PJ 6 件目: LP up to 表記/コントラスト/note CTA(5d02bae3 DM origin 到達・LP deploy live 10:44 JST)。本番 curl で up to/最大 到達を突合。
 - 2026-08-31 11:22 `cmd_karo_hotfix_lg043_temporal_postposition_fp_20260831_normal`完了: SG-PRE9cの`後で`判定を事象語/直＋後でと状態記述の局所境界へ拡張。時間境界4/4 CLEAR、先送り3/3 BLOCK、既存契約35/35 PASS・SKIP0、commit `7f6c3545c92844d9a6b70d297ef694a38a28e436`、report gate PASS。因果: [[配備直後で存在しないの後でFP]] -> [[時間境界局所判定]] -> [[FP0/先送りBLOCK維持]]
+- 2026-08-31 13:02 殿裁定 2 件実行: ①Markdown for agents ON→curl 一次で text/markdown 200 到達(Agent Readiness Level1 5/5 見込み、Rescan 待ち) ②queue/tasks mutation 残骸を正規 sweep apply=1 で回収 4,878→43 件(4,836 件は quarantine 移動=可逆、live task YAML 6 本 parse OK)。
