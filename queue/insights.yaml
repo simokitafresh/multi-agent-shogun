@@ -8959,7 +8959,10 @@ insights:
   priority: "medium"
   source: "manual"
   fix_known: false
-  status: pending
+  status: resolved
+  resolved_reason: "一次情報確認: canonical-main (HEAD 4acb995a8c14f1d05f3134885d961888bebb0e75) は修正commit 2743e698a4a73b160bcede217cef5eeb206a9890 を祖先に含み、backend/app/api/public_showcase.py で ShowcaseEventPayload を実クラス参照として解決済み。修正後の import rc=0、router path確認、backend/tests/test_public_showcase_contract.py は 5 passed / SKIP 0。追加修正・decision_candidateは不要。"
+  action_artifact: "target=queue/insights.yaml:8956-8962;memory=memory_db exact INS-20260830-150735133-50f7;semantic=docs/semantic-index/index.md and semantic_search exact ID;obsidian=context/senkyoku-log.md:1580 causal chain;primary_repo=/mnt/c/Python_app/DM-signal/.karo_tasktrees/canonical-main HEAD=4acb995a8c14f1d05f3134885d961888bebb0e75;fix_commit=2743e698a4a73b160bcede217cef5eeb206a9890;import_rc=0;route=/api/public/showcase/event;contract=5/5 PASS SKIP0;inventory_before=insights_pending:47/zero_backlinks:15/promotions:0/total:62;inventory_after=insights_pending:46/zero_backlinks:15/promotions:0/total:61;decision_candidate=none"
+  resolved_at: "2026-08-31T16:04:10+09:00"
 - id: INS-20260830-151433041-9132
   ts: "2026-08-30T15:14:33+09:00"
   insight: "semantic_index_update未登録[[リンク]]ターゲット: [[LS-A24]] は既存aliasesに一致なし。類似概念TOP3: semantic_dictionary_design(セマンティック辞書構想; alias=LS A24 post deploy check; score=17.3) / infra_design_intent(インフラ設計意図カタログ; alias=STALL-GHOST; score=4.0) / inbox_processing_discipline(inbox処理規律; alias=LS048; score=3.8)。概念定義とaliases追加を検討せよ"
