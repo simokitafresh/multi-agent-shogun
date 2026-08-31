@@ -1,42 +1,3 @@
-- cmd_id: cmd_karo_hotfix_finalize_timezone_20260828
-  timestamp: '2026-08-28T06:01:24Z'
-  ninja: system
-  workaround: false
-  event_kind: hotfix
-  auto_captured: true
-  category: rework_auto_capture
-  detail: 'cmd_complete_gate completed rework event'
-  root_cause: 'automatic completion observation'
-  lesson_required: false
-  lesson_disposition: not_applicable
-  lesson_reference: 'not_applicable'
-  resolved_by_cmd: 'cmd_karo_hotfix_finalize_timezone_20260828'
-- cmd_id: cmd_karo_hotfix_source_equivalent_dedupe_20260828
-  timestamp: '2026-08-28T06:09:37Z'
-  ninja: system
-  workaround: false
-  event_kind: hotfix
-  auto_captured: true
-  category: rework_auto_capture
-  detail: 'cmd_complete_gate completed rework event'
-  root_cause: 'automatic completion observation'
-  lesson_required: false
-  lesson_disposition: not_applicable
-  lesson_reference: 'not_applicable'
-  resolved_by_cmd: 'cmd_karo_hotfix_source_equivalent_dedupe_20260828'
-- cmd_id: cmd_karo_hotfix_ga505_source_equivalent_publication_lag
-  timestamp: '2026-08-28T06:37:25Z'
-  ninja: system
-  workaround: false
-  event_kind: hotfix
-  auto_captured: true
-  category: rework_auto_capture
-  detail: 'cmd_complete_gate completed rework event'
-  root_cause: 'automatic completion observation'
-  lesson_required: false
-  lesson_disposition: not_applicable
-  lesson_reference: 'not_applicable'
-  resolved_by_cmd: 'cmd_karo_hotfix_ga505_source_equivalent_publication_lag'
 - cmd_id: cmd_karo_hotfix_deploy_ctx_guard_20260828
   timestamp: '2026-08-28T06:44:51Z'
   ninja: system
@@ -1298,3 +1259,42 @@
   lesson_disposition: not_applicable
   lesson_reference: 'not_applicable'
   resolved_by_cmd: 'cmd_karo_hotfix_archive_publication_receipt_reconcile_202608311401'
+- cmd_id: cmd_karo_hotfix_external_repo_worktree_remote_tip_20260831
+  timestamp: '2026-08-31T05:31:10Z'
+  ninja: system
+  workaround: false
+  event_kind: hotfix
+  auto_captured: true
+  category: rework_auto_capture
+  detail: 'cmd_complete_gate completed rework event'
+  root_cause: 'automatic completion observation'
+  lesson_required: false
+  lesson_disposition: not_applicable
+  lesson_reference: 'not_applicable'
+  resolved_by_cmd: 'cmd_karo_hotfix_external_repo_worktree_remote_tip_20260831'
+- cmd_id: cmd_karo_hotfix_auto_push_ancestry_wait_202608311433
+  timestamp: '2026-08-31T06:13:24Z'
+  ninja: system
+  workaround: false
+  event_kind: hotfix
+  auto_captured: true
+  category: rework_auto_capture
+  detail: 'cmd_complete_gate completed rework event'
+  root_cause: 'automatic completion observation'
+  lesson_required: false
+  lesson_disposition: not_applicable
+  lesson_reference: 'not_applicable'
+  resolved_by_cmd: 'cmd_karo_hotfix_auto_push_ancestry_wait_202608311433'
+- cmd_id: cmd_karo_hotfix_run_tests_python_file_dispatch_202608311523
+  timestamp: '2026-08-31T06:44:06Z'
+  ninja: system
+  workaround: false
+  event_kind: hotfix
+  auto_captured: true
+  category: rework_auto_capture
+  detail: 'cmd_complete_gate completed rework event'
+  root_cause: 'automatic completion observation'
+  lesson_required: false
+  lesson_disposition: not_applicable
+  lesson_reference: 'not_applicable'
+  resolved_by_cmd: 'cmd_karo_hotfix_run_tests_python_file_dispatch_202608311523'

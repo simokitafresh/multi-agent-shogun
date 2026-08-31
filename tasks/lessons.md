@@ -16363,3 +16363,42 @@ sqlite3.Connection.backup()を使うとページ(4096byte)単位のread syscall�
 - **when**: 未設定
 - **how**: 未設定
 - 未作成の絶対target fileへgit -Cを直接適用するとrepo解決に失敗し、誤ったcontrol checkoutのstale refをbaseに選ぶ。targetが未存在でも既存parentへ昇格してrepoを確定し、fetch前後ref一致とworktree内path存在を検証する。
+
+### L1685: ancestry WAITのauto-pushはremote tip GREENと共有不変を同時強制する
+- **日付**: 2026-08-31
+- **出典**: cmd_karo_hotfix_auto_push_ancestry_wait_202608311433
+- **記録者**: hanzo
+- **tags**: [infra,cmd-quality]
+- **subdomain**: infra
+- **target_files**: [scripts/cmd_complete_gate.sh,scripts/safe_shared_main_ff.sh,tests/unit/test_cmd_complete_gate.bats,tests/unit/test_safe_shared_main_ff.bats]
+- **origin**: [[cmd_karo_hotfix_auto_push_ancestry_wait_202608311433]]
+- **enforcement**: 未自動化
+- **when**: 未設定
+- **how**: 未設定
+- aheadだけで公開せず、対象remote tipのcompleted success、隔離worktreeの通常hook、flock、共有状態fingerprint、remote ancestorを一連の二値契約で確認する。
+
+### L1686: run_testsのPython契約テスト選択経路不整合
+- **日付**: 2026-08-31
+- **出典**: cmd_4433
+- **記録者**: kagemaru
+- **tags**: [dm-signal,testing,testing]
+- **subdomain**: infra
+- **target_files**: [backend/app/api/public_showcase.py,backend/tests/test_public_showcase_contract.py,lp/lib/showcase.ts,lp/components/landing-page.tsx,lp/app/globals.css]
+- **origin**: [[cmd_4433]]
+- **enforcement**: 未自動化
+- **when**: 未設定
+- **how**: 未設定
+- file modeが.pyをBatsとして扱い、task modeは絶対target pathをexternal scope excludedにして0件化した。次回はPython契約テストを明示選択できる隔離runner経路を確立する
+
+### L1687: 公開file modeもsuffix-owned test dispatcherへ接続する
+- **日付**: 2026-08-31
+- **出典**: cmd_karo_hotfix_run_tests_python_file_dispatch_202608311523
+- **記録者**: hanzo
+- **tags**: [infra,testing,frontend,testing,gate]
+- **subdomain**: infra
+- **target_files**: [scripts/run_tests.sh,tests/unit/test_run_tests.bats]
+- **origin**: [[cmd_karo_hotfix_run_tests_python_file_dispatch_202608311523]]
+- **enforcement**: 未自動化
+- **when**: 未設定
+- **how**: 未設定
+- task/affected modeだけに存在する拡張子dispatchをfile modeが迂回し、絶対Python contract testをBatsとして実行してrc=1にした。公開入口ごとに同じsuffix engine契約と未知suffix BLOCKを通し、外部絶対pathはowner repo cwdで実行する契約testを維持する。
