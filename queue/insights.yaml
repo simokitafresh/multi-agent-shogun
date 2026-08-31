@@ -11551,32 +11551,47 @@ insights:
   priority: "low"
   source: "semantic_stress_test"
   fix_known: false
-  status: pending
+  status: resolved
+  resolved_reason: "semantic index candidate was absorbed into a registered concept"
+  action_artifact: "semantic_index=/home/simokitafresh/multi-agent-shogun/docs/semantic-index/index.md"
+  resolved_at: "2026-08-31T17:46:42+09:00"
 - id: INS-20260831-174328253-26d6
   ts: "2026-08-31T17:43:28+09:00"
   insight: "[[スループットは改善しているか？つまりの真因を放置していないか？覚醒して対処せよ]] semantic_stress_test candidate_aliases: NO_MATCH source=lord query=スループットは改善しているか？つまりの真因を放置していないか？覚醒して対処せよ"
   priority: "low"
   source: "semantic_stress_test"
   fix_known: false
-  status: pending
+  status: resolved
+  resolved_reason: "semantic index candidate was absorbed into a registered concept"
+  action_artifact: "semantic_index=/home/simokitafresh/multi-agent-shogun/docs/semantic-index/index.md"
+  resolved_at: "2026-08-31T17:46:42+09:00"
 - id: INS-20260831-174342579-9c2c
   ts: "2026-08-31T17:43:42+09:00"
   insight: "[[Image 13 currentsignalの体裁について決めよう]] semantic_stress_test candidate_aliases: NO_MATCH source=lord query=[Image #13] currentsignalの体裁について決めよう。basic plan,standard,premium,Secretの数値inbox1"
   priority: "low"
   source: "semantic_stress_test"
   fix_known: false
-  status: pending
+  status: resolved
+  resolved_reason: "semantic index candidate was absorbed into a registered concept"
+  action_artifact: "semantic_index=/home/simokitafresh/multi-agent-shogun/docs/semantic-index/index.md"
+  resolved_at: "2026-08-31T17:46:42+09:00"
 - id: INS-20260831-174355891-b870
   ts: "2026-08-31T17:43:55+09:00"
   insight: "[[C \\Users\\simok\\Downloads\\Cloudflare Simokitafresh@gmail com ]] semantic_stress_test candidate_aliases: NO_MATCH source=lord query=\"C:\\Users\\simok\\Downloads\\Cloudflare_Simokitafresh@gmail.com's Account_SecurityInsights_20260831_1325.csv\""
   priority: "low"
   source: "semantic_stress_test"
   fix_known: false
-  status: pending
+  status: resolved
+  resolved_reason: "semantic index candidate was absorbed into a registered concept"
+  action_artifact: "semantic_index=/home/simokitafresh/multi-agent-shogun/docs/semantic-index/index.md"
+  resolved_at: "2026-08-31T17:46:42+09:00"
 - id: INS-20260831-174406275-f6cb
   ts: "2026-08-31T17:44:06+09:00"
   insight: "[[LP Current signals 体裁 — プラン 4 行の数値全太字・Basic DM 閲覧列を Free 表記・]] semantic_stress_test candidate_aliases: NO_MATCH source=cmds query=LP Current signals 体裁 — プラン 4 行の数値全太字・Basic-DM 閲覧列を Free 表記・閲覧列の太字化"
   priority: "low"
   source: "semantic_stress_test"
   fix_known: false
-  status: pending
+  status: resolved
+  resolved_reason: "semantic index candidate was absorbed into a registered concept"
+  action_artifact: "semantic_index=/home/simokitafresh/multi-agent-shogun/docs/semantic-index/index.md"
+  resolved_at: "2026-08-31T17:46:42+09:00"
