@@ -11306,3 +11306,10 @@ insights:
   source: "semantic_stress_test"
   fix_known: false
   status: pending
+- id: INS-20260831-145739434-a51a
+  ts: "2026-08-31T14:57:39+09:00"
+  insight: "[[karoをrespwanして]] semantic_stress_test candidate_aliases: NO_MATCH source=lord query=karoをrespwanして"
+  priority: "low"
+  source: "semantic_stress_test"
+  fix_known: false
+  status: pending
