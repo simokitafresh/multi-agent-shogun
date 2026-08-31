@@ -10794,3 +10794,10 @@ insights:
   resolved_reason: "semantic index candidate was absorbed into a registered concept"
   action_artifact: "semantic_index=/home/simokitafresh/multi-agent-shogun/docs/semantic-index/index.md"
   resolved_at: "2026-08-31T09:40:18+09:00"
+- id: INS-20260831-110056196-211a
+  ts: "2026-08-31T11:00:56+09:00"
+  insight: "semantic_index_update未登録cmd originノード: [[殿指摘_LP問題点_20260831_0141]] は既存aliasesに一致なし。類似概念TOP3: semantic_dictionary_design(セマンティック辞書構想; alias=殿裁定_LP別サイト_20260830_1642; score=5.0) / known_unknowns_principle(無知の知; alias=殿指示_T178_T177_T176_T163_終端まで_20260829_1241; score=4.2) / strong_new_game_completion_contract(強くてニューゲーム完遂契約; alias=RB6_BLOCK_20260813_1704; score=4.1)。概念定義とaliases追加を検討せよ"
+  priority: "low"
+  source: "semantic_index_update"
+  fix_known: false
+  status: pending

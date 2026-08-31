@@ -1595,3 +1595,5 @@
 - 2026-08-31 03:23 Cloudflare Agent Readiness 診断(殿提示 03:15): Level1 3/5→robots.txt 静的化+Content-Signal(search=yes, ai-input=yes, ai-train=no) 97345183 を LP main へ push、Render 自動 build live 03:23、curl で行到達。残 1=Markdown for agents(Cloudflare dashboard トグル、殿権限)。Level2/3 は PJ e2e に効かず着手せず。
 - 2026-08-31 05:27 Agent Readiness Level3 全完了ロードマップ v1.0 起こし(殿指示 05:22)→gist da1b7617(sha 一致 verify)。殿操作 3 回(Markdown トグル/Transform 用トークン/DNS Edit トークン)に限定、静的系は将軍 D0・backend 系は cmd 2-2〜2-7。
 - 2026-08-31 09:24 Agent Readiness Phase1 D0 完了(殿指示 09:17): api-catalog(RFC9727)+auth.md(両所)+link rel+oauth-authorization-server(RFC8414、Supabase openid-configuration 現物 200 から生成) b2d3e7a→Render live、本番 curl 4/4 200+rel 1 件+issuer 一致。残=1-2(a) Link ヘッダ(Transform=殿トークン)、Phase2 cmd 2-2〜2-7。
+- 2026-08-31 09:45 cmd_4430 LP表示品質完了: plan Total return/×NをEN up to・JA最大へ変更、WCAG配色を全基準以上へ調整、note導線を3つ目のoutline CTA化。EN/JA隔離build・出力確認PASS、最終commit `0934f942`、report gate PASS。
+- 2026-08-31 10:06 cmd_4430 RC是正完了: 旧branchをpublication対象外とし、origin/main `b2d3e7aa`からclean worktreeを再作成。4 source pathのみ再適用、clean build 7/7・AC1-3 PASS、source-only commit `5d02bae3`、report gate PASS。
