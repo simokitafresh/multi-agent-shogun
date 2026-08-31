@@ -10747,7 +10747,10 @@ insights:
   priority: "high"
   source: "gate_loop_health"
   fix_known: false
-  status: pending
+  status: resolved
+  resolved_reason: "GP-107判定済み: 2026-08-31T06:20:19〜08:11:50のcmd_3264-AC2 FAILは117件で、kotaro reportの実変更対象WIPを正しく検出し、08:14:19にPASSへ復帰した。現行gateは対象scopeの実未commitをBLOCKし、共有ledgerはID・commit効果・非重複差分で判定するため、auto-fixで隠す追加修正は不要。"
+  action_artifact: "scripts/gates/gate_report_format.sh:304-868,1080-1110;logs/gate_fire_log.yaml:52279-52377;git:564afc90f/ed2631268;inventory:task_snapshot=53/14/0/67,live_before=54/15/0/69,after=53/15/0/68"
+  resolved_at: "2026-08-31T09:06:02+09:00"
 - id: INS-20260831-075313459-2ec4
   ts: "2026-08-31T07:53:13+09:00"
   insight: "report_review再送ループが軍師CTXを1.5h以上消費。dedupe hotfix(cmd_karo_hotfix_report_review_generation_dedupe)LGTM済みだがmainマージ前のため継続。軍師側の防御=approval marker存在時にmonitorのreport_review再送をsuppress(受信側)するか、inboxファイル肥大化をarchiveで抑止する仕組みが不在"
