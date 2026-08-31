@@ -295,6 +295,104 @@ PY
     [[ "$output" == *"publish_failure=1 rollback_orphan=0 marker_removed=1"* ]]
 }
 
+# test_necessity: external repositories must resolve from an absolute remote-only
+# target path, select the live remote tip despite a stale tracking ref, reject a
+# remote ref race, and fail closed when the declared target is absent at that tip.
+@test "external remote-only target uses live tip and fails closed on races or missing paths" {
+    setup_fixture_repo
+    git clone -q -b main "$FIXTURE/shared" "$FIXTURE/writer"
+    git -C "$FIXTURE/writer" remote set-url origin "$FIXTURE/remote.git"
+    git -C "$FIXTURE/writer" config user.email test@example.invalid
+    git -C "$FIXTURE/writer" config user.name fixture
+    mkdir -p "$FIXTURE/writer/lp"
+    printf 'REMOTE_ONLY=1\n' > "$FIXTURE/writer/lp/remote.py"
+    git -C "$FIXTURE/writer" add lp/remote.py
+    git -C "$FIXTURE/writer" commit -q -m remote-only
+    git -C "$FIXTURE/writer" push -q origin HEAD:main
+    shared_head=$(git -C "$FIXTURE/shared" rev-parse HEAD)
+    remote_tip=$(git -C "$FIXTURE/writer" rev-parse HEAD)
+    task="$BATS_TEST_TMPDIR/external-remote-only.yaml"
+    printf 'task:\n  task_id: external_remote_only\n  parent_cmd: cmd_external_remote_only\n  project: dm-signal\n  target_path: %s\n  status: assigned\n' "$FIXTURE/shared/lp/remote.py" > "$task"
+
+    run env PROJECT_ROOT="$BATS_TEST_DIRNAME/../.." FIXTURE="$FIXTURE/shared" TASK="$task" EXPECTED_REMOTE="$remote_tip" EXPECTED_SHARED="$shared_head" bash -c '
+        set -euo pipefail
+        export DEPLOY_TASK_LIB_ONLY=1 DEPLOY_TASK_WORKTREE_ROOT="$FIXTURE/worktrees"
+        source "$PROJECT_ROOT/scripts/deploy_task.sh"
+        SCRIPT_DIR="$FIXTURE"
+        LOG=/dev/null
+        STATE_DIR="$FIXTURE/state"
+        mkdir -p "$STATE_DIR"
+        deploy_task_prepare_remote_tip_worktree "$TASK" saizo
+        wt=$(FIELD_GET_NO_LOG=1 field_get "$TASK" task_worktree_path)
+        [ "$(git -C "$wt" rev-parse HEAD)" = "$EXPECTED_REMOTE" ]
+        [ -f "$wt/lp/remote.py" ]
+        [ "$(git -C "$FIXTURE" rev-parse HEAD)" = "$EXPECTED_SHARED" ]
+        printf "base=%s shared_head_unchanged=1 remote_only_target=1\n" "$(git -C "$wt" rev-parse --short HEAD)"
+        deploy_task_rollback_remote_tip_worktree "$FIXTURE" "$wt" "$(FIELD_GET_NO_LOG=1 field_get "$TASK" task_worktree_marker)"
+    '
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"shared_head_unchanged=1 remote_only_target=1"* ]]
+
+    failure_task="$BATS_TEST_TMPDIR/external-remote-failure.yaml"
+    printf 'task:\n  task_id: external_remote_failure\n  parent_cmd: cmd_external_remote_failure\n  project: dm-signal\n  target_path: %s\n  status: assigned\n' "$FIXTURE/shared/lp/remote.py" > "$failure_task"
+    git -C "$FIXTURE/shared" remote set-url origin "$FIXTURE/missing-remote.git"
+    run env PROJECT_ROOT="$BATS_TEST_DIRNAME/../.." FIXTURE="$FIXTURE/shared" TASK="$failure_task" bash -c '
+        set -euo pipefail
+        export DEPLOY_TASK_LIB_ONLY=1 DEPLOY_TASK_WORKTREE_ROOT="$FIXTURE/worktrees-failure"
+        source "$PROJECT_ROOT/scripts/deploy_task.sh"
+        SCRIPT_DIR="$FIXTURE"; LOG=/dev/null; STATE_DIR="$FIXTURE/state-failure"; mkdir -p "$STATE_DIR"
+        if deploy_task_prepare_remote_tip_worktree "$TASK" saizo; then exit 9; fi
+        [ "$(git -C "$FIXTURE" worktree list --porcelain | grep -c "$FIXTURE/worktrees-failure" || true)" -eq 0 ]
+        echo "remote_failure=1 rollback_orphan=0"
+    '
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"remote_failure=1 rollback_orphan=0"* ]]
+    git -C "$FIXTURE/shared" remote set-url origin "$FIXTURE/remote.git"
+
+    missing_task="$BATS_TEST_TMPDIR/external-missing.yaml"
+    printf 'task:\n  task_id: external_missing\n  parent_cmd: cmd_external_missing\n  project: dm-signal\n  target_path: %s\n  status: assigned\n' "$FIXTURE/shared/lp/missing.py" > "$missing_task"
+    run env PROJECT_ROOT="$BATS_TEST_DIRNAME/../.." FIXTURE="$FIXTURE/shared" TASK="$missing_task" bash -c '
+        set -euo pipefail
+        export DEPLOY_TASK_LIB_ONLY=1 DEPLOY_TASK_WORKTREE_ROOT="$FIXTURE/worktrees-missing"
+        source "$PROJECT_ROOT/scripts/deploy_task.sh"
+        SCRIPT_DIR="$FIXTURE"; LOG=/dev/null; STATE_DIR="$FIXTURE/state-missing"; mkdir -p "$STATE_DIR"
+        if deploy_task_prepare_remote_tip_worktree "$TASK" saizo; then exit 9; fi
+        [ "$(git -C "$FIXTURE" worktree list --porcelain | grep -c "$FIXTURE/worktrees-missing" || true)" -eq 0 ]
+        echo "missing_target=1 rollback_orphan=0"
+    '
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"missing_target=1 rollback_orphan=0"* ]]
+
+    race_task="$BATS_TEST_TMPDIR/external-race.yaml"
+    printf 'task:\n  task_id: external_race\n  parent_cmd: cmd_external_race\n  project: dm-signal\n  target_path: %s\n  status: assigned\n' "$FIXTURE/shared/lp/remote.py" > "$race_task"
+    run env PROJECT_ROOT="$BATS_TEST_DIRNAME/../.." FIXTURE="$FIXTURE/shared" TASK="$race_task" WRITER="$FIXTURE/writer" bash -c '
+        set -euo pipefail
+        export DEPLOY_TASK_LIB_ONLY=1 DEPLOY_TASK_WORKTREE_ROOT="$FIXTURE/worktrees-race"
+        source "$PROJECT_ROOT/scripts/deploy_task.sh"
+        SCRIPT_DIR="$FIXTURE"; LOG=/dev/null; STATE_DIR="$FIXTURE/state-race"; mkdir -p "$STATE_DIR"
+        ls_remote_count=0
+        git() {
+            if [[ " $* " == *" ls-remote "* ]]; then
+                ls_remote_count=$((ls_remote_count + 1))
+                command git "$@"
+                if [ "$ls_remote_count" -eq 1 ]; then
+                    printf 'RACE=1\n' > "$WRITER/lp/race.py"
+                    command git -C "$WRITER" add lp/race.py
+                    command git -C "$WRITER" commit -q -m race
+                    command git -C "$WRITER" push -q origin HEAD:main
+                fi
+                return 0
+            fi
+            command git "$@"
+        }
+        if deploy_task_prepare_remote_tip_worktree "$TASK" saizo; then exit 9; fi
+        [ "$(git -C "$FIXTURE" worktree list --porcelain | grep -c "$FIXTURE/worktrees-race" || true)" -eq 0 ]
+        echo "remote_tip_race=1 rollback_orphan=0"
+    '
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"remote_tip_race=1 rollback_orphan=0"* ]]
+}
+
 @test "archive recovers exact source publication receipt and rejects three mismatches" {
     setup_receipt_recovery_fixture success success
     run_receipt_recovery_archive
