@@ -10237,7 +10237,10 @@ insights:
   priority: "medium"
   source: "skill_script_refs:1b0340d94cca3408"
   fix_known: false
-  status: pending
+  status: resolved
+  resolved_reason: "一次情報確認: gate_skill_script_refs.sh実走RC=2(REVIEW_REQUIRED)だが、41 SKILL.md/82 script参照/30参照あり/32 dedupedを確認。欠落参照0・SKILL鮮度0・例示静的パス欠落0・副作用実走marker欠落0で、FOLLOWUP_ACTIVE=32かつFOLLOWUP_COVERS_REVIEW_REQUIRED=yesがレビュー要求を被覆。追加実装修正とdecision_candidateは不要。三層照合はmemory_db exact match、semantic_search semantic_dictionary_design、Obsidian因果索引の対象ID exact matchなし、context/cmd_4202_skill_script_followup_inspection.mdの既存判定を確認。"
+  action_artifact: "target=queue/insights.yaml:INS-20260830-215454871-a7ef;gate=SKILL_REF_DISABLE_CACHE=1 bash scripts/gates/gate_skill_script_refs.sh .;gate_rc=2;result=REVIEW_REQUIRED;scanned=41_SKILL.md;script_refs=82;referenced=30;deduped=32;followup_active=32;followup_covers_review_required=yes;checks=missing_refs0/stale_refs0/example_paths_missing0/side_effect_marker_missing0;memory_db=exact_match;semantic=semantic_dictionary_design;obsidian=exact_target_not_found;context=docs/research/cmd_4202_skill_script_followup_inspection.md;inventory_before=insights_pending:45/zero_backlinks:16/promotions:604/total:665;decision_candidate=none"
+  resolved_at: "2026-08-31T21:01:11+0900"
 - id: INS-20260830-221414229-72f9
   ts: "2026-08-30T22:14:14+09:00"
   insight: "[[npm install g @openai codex]] semantic_stress_test candidate_aliases: NO_MATCH source=lord query=npm install -g @openai/codex"
