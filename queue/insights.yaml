@@ -10804,3 +10804,10 @@ insights:
   resolved_reason: "semantic map generation verified the candidate is represented or intentionally ignored"
   action_artifact: "semantic_map=/home/simokitafresh/multi-agent-shogun/context/semantic-map.md;semantic_index=/home/simokitafresh/multi-agent-shogun/docs/semantic-index/index.md"
   resolved_at: "2026-08-31T11:02:29+09:00"
+- id: INS-20260831-111012397-79ce
+  ts: "2026-08-31T11:10:12+09:00"
+  insight: "semantic_map_generate新規ファイル候補: `docs/research/gunshi_idle_lgtm_block_root_cause_analysis_20260831.md` は semantic index未登録。既存概念へのfile追加または新概念定義を検討せよ"
+  priority: "low"
+  source: "semantic_map_generate:new_file"
+  fix_known: false
+  status: pending
