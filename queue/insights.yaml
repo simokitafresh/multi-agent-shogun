@@ -11985,3 +11985,10 @@ insights:
   source: "semantic_stress_test"
   fix_known: false
   status: pending
+- id: INS-20260831-203945707-7b92
+  ts: "2026-08-31T20:39:45+09:00"
+  insight: "[[なぜCIGREENを待つんだ？プッシュできるものやデプロイできるものを待つメリットは？]] semantic_stress_test candidate_aliases: NO_MATCH source=lord query=なぜCIGREENを待つんだ？プッシュできるものやデプロイできるものを待つメリットは？"
+  priority: "low"
+  source: "semantic_stress_test"
+  fix_known: false
+  status: pending
