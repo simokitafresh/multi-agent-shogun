@@ -16441,3 +16441,16 @@ sqlite3.Connection.backup()を使うとページ(4096byte)単位のread syscall�
 - **when**: 未設定
 - **how**: 未設定
 - 一時task_fileを使うfixtureでもSCRIPT_DIR未隔離ならreport publicationが共有queue/reportsへunit lockを生成する。次回はfixture開始時に専用queue/reports rootを作りSCRIPT_DIRを束縛し、実行後に共有target glob件数不変とfixture側lock生成を二値確認する。
+
+### L1691: 外部LP task runnerはreport-relative ownershipが必要
+- **日付**: 2026-08-31
+- **出典**: cmd_4437
+- **記録者**: hanzo
+- **tags**: [dm-signal,bash]
+- **subdomain**: infra
+- **target_files**: [lp/copy/en.ts,lp/copy/ja.ts,lp/components/landing-page.tsx]
+- **origin**: [[cmd_4437]]
+- **enforcement**: 未自動化
+- **when**: 未設定
+- **how**: 未設定
+- 初回canonical run_tests.sh taskはtask絶対source pathをworktree外として除外し、空reportのため選択0でterminal contract FAILとなった。対象worktree-relative pathをreport_field_set.shで登録すると外部LP npm runnerがtypecheck/buildを実行し、tests 1/1・SKIP 0のPASS receiptを生成した。

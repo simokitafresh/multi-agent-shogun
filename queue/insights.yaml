@@ -11899,3 +11899,10 @@ insights:
   source: "semantic_index_update"
   fix_known: false
   status: pending
+- id: INS-20260831-202438714-ae38
+  ts: "2026-08-31T20:24:38+09:00"
+  insight: "[[再度artifactを作り直してくれ]] semantic_stress_test candidate_aliases: NO_MATCH source=lord query=再度artifactを作り直してくれ"
+  priority: "low"
+  source: "semantic_stress_test"
+  fix_known: false
+  status: pending

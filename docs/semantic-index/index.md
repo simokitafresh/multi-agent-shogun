@@ -528,7 +528,7 @@ codd:
 |------|---|
 | id | unread_cmd_new_deployment_guard |
 | label | 未読cmd_new配備漏れ防止 |
-| aliases | 未読cmd_new, cmd_new未処理, inbox未読処理, 未読を処理しない, 配備漏れ真因, nudge依存, Stop hook依存, tmux通知依存, 家老inbox未読, 通常作業前に未読処理, cmd_3457配備漏れ, cmd 3475で実証されたバグの構造的防止, 影響を受けてinbox1, cmd_4376層別確定 |
+| aliases | 未読cmd_new, cmd_new未処理, inbox未読処理, 未読を処理しない, 配備漏れ真因, nudge依存, Stop hook依存, tmux通知依存, 家老inbox未読, 通常作業前に未読処理, cmd_3457配備漏れ, cmd 3475で実証されたバグの構造的防止, 影響を受けてinbox1, cmd_4376層別確定, cmd_4437_全太字Free表記 |
 | related_concepts | delegation_flow, growth_loop, three_layer_memory_system, semantic_dictionary_design |
 
 | 種別 | パス/参照 |
@@ -3274,6 +3274,7 @@ codd:
 | discussion | `queue/lord_conversation.jsonl` 2026-08-31T13:45:05+09:00 SBFM 誤遮断事故 2026-08-31(13:33 投入→13:39 rollback、21 分で完結): Free plan SBFM definitely_automated=block は curl を browser UA でも |
 | discussion | `queue/lord_conversation.jsonl` 2026-08-31T18:48:25+09:00 殿裁定 2026-08-31 18:48『複雑にしないでA案でいいな。URLが変わるのは気にならない。A.再公開+索引差替でいこう』: artifactアカウント切替はA案(新アカウントで正本を再公開→新URL→索引3箇所差替、runboo |
 | discussion | `queue/lord_conversation.jsonl` 2026-08-31T18:57:57+09:00 artifact URL更新 2026-08-31 18:57(アカウント切替・A案runbook実行): todo map 🗺️=https://claude.ai/code/artifact/a88c6c42-a725-4201-af4 |
+| lesson | `L1691` 外部LP task runnerはreport-relative ownershipが必要 |
 | causal_chain | `[[cmd_3749]]` (L974) |
 | causal_chain | `[[cmd_training_L1_report-write_20260708020332]]` (L977) |
 | causal_chain | `[[cmd_reflux_insight_202607071717_tobisaru]]` (L961) |
@@ -3329,6 +3330,7 @@ codd:
 | causal_chain | `[[cmd_karo_ci_fix_33156085995_ga505_source_equivalent_20260828]]` (L1666) |
 | causal_chain | `[[cmd_karo_hotfix_ga527_doc_no_changelog_20260830]]` (L1673) |
 | causal_chain | `[[cmd_karo_hotfix_observation_window_ci_terms_20260830]]` (L1676) |
+| causal_chain | `[[cmd_4437]]` (L1691) |
 
 ## investment_knowledge_base — 投資知識辞書
 
@@ -3779,6 +3781,7 @@ codd:
 | discussion | `queue/lord_conversation.jsonl` 2026-08-31T18:39:51+09:00 30分loop(殿指示08-27 14:34「進捗を確認し、利他の精神でつまりを解消し、artifactを更新せよ」恒久): (1)capture-pane全pane/陣形図/gate_metrics/rev-list origin/CI  |
 | discussion | `queue/lord_conversation.jsonl` 2026-08-31T19:09:51+09:00 30分loop(殿指示08-27 14:34「進捗を確認し、利他の精神でつまりを解消し、artifactを更新せよ」恒久): (1)capture-pane全pane/陣形図/gate_metrics/rev-list origin/CI  |
 | discussion | `queue/lord_conversation.jsonl` 2026-08-31T19:39:51+09:00 30分loop(殿指示08-27 14:34「進捗を確認し、利他の精神でつまりを解消し、artifactを更新せよ」恒久): (1)capture-pane全pane/陣形図/gate_metrics/rev-list origin/CI  |
+| discussion | `queue/lord_conversation.jsonl` 2026-08-31T20:09:50+09:00 30分loop(殿指示08-27 14:34「進捗を確認し、利他の精神でつまりを解消し、artifactを更新せよ」恒久): (1)capture-pane全pane/陣形図/gate_metrics/rev-list origin/CI  |
 | causal_chain | `[[cmd_karo_hotfix_deploy_report_template_quote_escape_202607020530]]` (L924) |
 | causal_chain | `[[cmd_reflux_insight_202607071717_tobisaru]]` (L961) |
 | causal_chain | `[[cmd_karo_hotfix_report_notify_inprogress_guard_202607101913]]` (L1026) |
@@ -4189,7 +4192,7 @@ codd:
 |------|---|
 | id | gate_bypass_prevention |
 | label | ゲート迂回防止 |
-| aliases | ゲート迂回, 滑り坂, 正規フロー, cmd_delegate, cmd委任境界, 将軍委任フロー, pending委任ゲート, 委任重複検出, cmd_new重複, 後続cmd検出, cmd委任スクリプト, shogun委任実行, delegation_flow, atomic_delegate, shogun_dispatch, karo_notify, delegate_cmd, dashboard cmd照合, 二次証跡cmd検出, cmd 3004完了処理完了, cmd 3029完了処理全ステップ完了, cmd_3132_L4化, L7貫通設計書v6 cmd, cmd 3244起票で7回BLOCK, cmd_3315整形同居検分, DM Signal機能コミットへの整形のみ変更行混入をcommit時に機械検出して停止する, cmd_3691_精度検証, cmd_3702_最新月のみ設計, cmd_3711_全履歴バックフィル, shogun departueのスクリプトを参照せよ, shogun_Q6_20260716, cmd_4237_3回BLOCK実証, cmd_4323偵察後実装, cmd_4331乾式スクリプト未保存, cmd_4342期待差分ファイル固定, cmd_4383_サブ計装常時化と次位短縮, cmd_4385_全体隙間計装, cmd 4393統合正本のP1第一弾, Q6_便停止先送り_20260828_0405, cmd_4431_表体裁統一 |
+| aliases | ゲート迂回, 滑り坂, 正規フロー, cmd_delegate, cmd委任境界, 将軍委任フロー, pending委任ゲート, 委任重複検出, cmd_new重複, 後続cmd検出, cmd委任スクリプト, shogun委任実行, delegation_flow, atomic_delegate, shogun_dispatch, karo_notify, delegate_cmd, dashboard cmd照合, 二次証跡cmd検出, cmd 3004完了処理完了, cmd 3029完了処理全ステップ完了, cmd_3132_L4化, L7貫通設計書v6 cmd, cmd 3244起票で7回BLOCK, cmd_3315整形同居検分, DM Signal機能コミットへの整形のみ変更行混入をcommit時に機械検出して停止する, cmd_3691_精度検証, cmd_3702_最新月のみ設計, cmd_3711_全履歴バックフィル, shogun departueのスクリプトを参照せよ, shogun_Q6_20260716, cmd_4237_3回BLOCK実証, cmd_4323偵察後実装, cmd_4331乾式スクリプト未保存, cmd_4342期待差分ファイル固定, cmd_4383_サブ計装常時化と次位短縮, cmd_4385_全体隙間計装, cmd 4393統合正本のP1第一弾, Q6_便停止先送り_20260828_0405, cmd_4431_表体裁統一, cmd_4432_列整理 |
 | skills | report-write, verdict-check |
 | related_concepts | hook_automation_framework, growth_loop, defense_hierarchy, dm_signal_refactor_mission |
 
@@ -9489,6 +9492,7 @@ codd:
 | causal | `cmd_karo_hotfix_command_file_token_parser_20260831` files_modified: [[cdp_browser_capability]] |
 | discussion | `queue/lord_conversation.jsonl` 2026-08-31T13:44:19+09:00 続けて |
 | causal | `cmd_karo_hotfix_auto_push_helper_mode_202608311815` files_modified: [[cdp_browser_capability]] |
+| causal | `cmd_karo_hotfix_auto_push_async_ci_202608311917` files_modified: [[cdp_browser_capability]] |
 | causal_chain | `[[cmd_karo_cdp_t5_endpoint_qualification_20260802]]` (L1529) |
 | causal_chain | `[[cmd_karo_cdp_t5_auth_dom_probe_20260802]]` (L1530) |
 
@@ -13515,6 +13519,7 @@ codd:
 | cmd | `cmd_karo_hotfix_run_tests_python_file_dispatch_202608311523` |
 | lesson | `L1688` run_tests.sh taskのLP外部scope未対応 |
 | cmd | `cmd_karo_hotfix_auto_push_helper_mode_202608311815` (`scripts/cmd_complete_gate.sh`, `tests/unit/test_cmd_complete_gate.bats`) |
+| cmd | `cmd_karo_hotfix_auto_push_async_ci_202608311917` (`scripts/safe_shared_main_ff.sh`, `tests/unit/test_cmd_complete_gate.bats`, `tests/unit/test_safe_shared_main_ff.bats`) |
 | causal_chain | `[[cmd_karo_hotfix_hook_failure_utf8_boundary_20260829]]` (L1669) |
 | causal_chain | `[[cmd_karo_hotfix_tmux_live_sendkeys_guard_20260830]]` (L1672) |
 | causal_chain | `[[cmd_4434]]` (L1688) |
@@ -14453,6 +14458,8 @@ codd:
 | causal | `cmd_reflux_insight_202608311929_saizo` files_modified: [[provisional_insights]] |
 | cmd | `cmd_reflux_insight_202608311929_saizo` (`queue/insights.yaml`) |
 | causal_chain | `[[cmd_reflux_insight_202608040505_kagemaru]]` (L1545) |
+| causal | `cmd_reflux_insight_202608312007_kagemaru` files_modified: [[provisional_insights]] |
+| cmd | `cmd_reflux_insight_202608312007_kagemaru` (`queue/insights.yaml`) |
 
 ## provisional_heavy_job_admission — 仮: Heavy Job Admission
 
