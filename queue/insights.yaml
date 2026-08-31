@@ -11178,3 +11178,10 @@ insights:
   source: "semantic_stress_test"
   fix_known: false
   status: pending
+- id: INS-20260831-140130960-5902
+  ts: "2026-08-31T14:01:30+09:00"
+  insight: "[[agent readiness level3 roadmap 20260831 mdをアップデートせよ]] semantic_stress_test candidate_aliases: NO_MATCH source=lord query=agent_readiness_level3_roadmap_20260831.mdをアップデートせよ"
+  priority: "low"
+  source: "semantic_stress_test"
+  fix_known: false
+  status: pending
