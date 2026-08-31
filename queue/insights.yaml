@@ -11067,18 +11067,27 @@ insights:
   priority: "low"
   source: "semantic_stress_test"
   fix_known: false
-  status: pending
+  status: resolved
+  resolved_reason: "semantic index candidate was absorbed into a registered concept"
+  action_artifact: "semantic_index=/home/simokitafresh/multi-agent-shogun/docs/semantic-index/index.md"
+  resolved_at: "2026-08-31T13:33:17+09:00"
 - id: INS-20260831-132743953-9b7e
   ts: "2026-08-31T13:27:43+09:00"
   insight: "[[C \\Users\\simok\\Downloads\\Cloudflare Simokitafresh@gmail com ]] semantic_stress_test candidate_aliases: NO_MATCH source=lord query=\"C:\\Users\\simok\\Downloads\\Cloudflare_Simokitafresh@gmail.com's Account_SecurityInsights_20260831_1325.csv\""
   priority: "low"
   source: "semantic_stress_test"
   fix_known: false
-  status: pending
+  status: resolved
+  resolved_reason: "semantic index candidate was absorbed into a registered concept"
+  action_artifact: "semantic_index=/home/simokitafresh/multi-agent-shogun/docs/semantic-index/index.md"
+  resolved_at: "2026-08-31T13:33:17+09:00"
 - id: INS-20260831-132809640-dc7f
   ts: "2026-08-31T13:28:09+09:00"
   insight: "[[負の複利を生むモノが放置されていないか]] semantic_stress_test candidate_aliases: NO_MATCH source=lord query=負の複利を生むモノが放置されていないか、利他の精神で調査してバグを根治せよ"
   priority: "low"
   source: "semantic_stress_test"
   fix_known: false
-  status: pending
+  status: resolved
+  resolved_reason: "semantic index candidate was absorbed into a registered concept"
+  action_artifact: "semantic_index=/home/simokitafresh/multi-agent-shogun/docs/semantic-index/index.md"
+  resolved_at: "2026-08-31T13:33:17+09:00"
