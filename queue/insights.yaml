@@ -12025,3 +12025,10 @@ insights:
   source: "semantic_index_update"
   fix_known: false
   status: pending
+- id: INS-20260831-204144647-35df
+  ts: "2026-08-31T20:41:44+09:00"
+  insight: "[[表に太字はいらない]] semantic_stress_test candidate_aliases: NO_MATCH source=lord query=表に太字はいらない。配色やフォント、フォントサイズはDM-signalに完全準拠せよ"
+  priority: "low"
+  source: "semantic_stress_test"
+  fix_known: false
+  status: pending
