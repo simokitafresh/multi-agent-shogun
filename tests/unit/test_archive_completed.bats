@@ -136,3 +136,61 @@ PY
     [ "$(cat "$FIX/queue/archive/task-worktree-artifacts/$CMD/tracked/logs/defense_overhead.jsonl")" = 'event=runtime' ]
     echo "full_completion=1 archive_done=1 marker_cleaned=1 runtime_bytes=preserved"
 }
+
+# test_necessity: source publication recovery must use the canonical
+# origin/main boundary even when the source repo tracks a maintenance branch.
+# regression_justification: @{upstream} can point at a branch that is behind
+# canonical publication and would keep a valid terminal cleanup permanently
+# blocked.
+# origin: [[cmd_karo_hotfix_archive_publication_receipt_reconcile_202608311401]] -> [[canonical-origin-main-boundary]] -> [[archive-recovery-progress]]
+@test "source report recovery ignores a behind maintenance upstream" {
+    FIX="$BATS_TEST_TMPDIR/source-recovery-project"
+    CMD="cmd_archive_source_recovery_canonical"
+    GEN="$(printf 'a%.0s' {1..64})"
+    mkdir -p "$FIX/queue/gates/$CMD" "$FIX/queue/reports" "$FIX/queue/archive/reports"
+    git init -q --bare "$FIX/remote.git"
+    git init -q -b main "$FIX/repo"
+    git -C "$FIX/repo" config user.email fixture@example.invalid
+    git -C "$FIX/repo" config user.name fixture
+    printf 'base\n' > "$FIX/repo/source.txt"
+    git -C "$FIX/repo" add source.txt
+    git -C "$FIX/repo" commit -q -m base
+    BASE="$(git -C "$FIX/repo" rev-parse HEAD)"
+    git -C "$FIX/repo" remote add origin "$FIX/remote.git"
+    git -C "$FIX/repo" push -q -u origin main
+    git -C "$FIX/repo" worktree add -q --detach "$FIX/task-wt" "$BASE"
+    printf 'source\n' >> "$FIX/task-wt/source.txt"
+    git -C "$FIX/task-wt" add source.txt
+    git -C "$FIX/task-wt" commit -q -m source-change
+    SOURCE="$(git -C "$FIX/task-wt" rev-parse HEAD)"
+    git -C "$FIX/task-wt" push -q origin HEAD:main
+    git -C "$FIX/repo" fetch -q origin main
+    git -C "$FIX/repo" switch -q -c maintenance "$BASE"
+    git -C "$FIX/repo" push -q -u origin maintenance
+    printf '{"version":1,"state":"active","task_id":"%s_normal","parent_cmd":"%s","repo":"%s","worktree":"%s","remote_tip":"%s","published_commit":"","generation":"%s","created_at_ns":1}\n' \
+        "$CMD" "$CMD" "$FIX/repo" "$FIX/task-wt" "$BASE" "$GEN" \
+        > "$FIX/queue/gates/$CMD/task_worktree.json"
+    printf '{"version":1,"state":"clear","cmd_id":"%s","completion_generation":"%s","persisted_at_ns":1}\n' \
+        "$CMD" "$GEN" > "$FIX/queue/gates/$CMD/gate_worker.clear.json"
+    printf 'worker_id: kagemaru\ntask_id: %s_normal\nparent_cmd: %s\ntask_type: hotfix\nstatus: completed\nverdict: PASS\ncommit_hash: %s\ncommit_contract:\n  required: true\n' \
+        "$CMD" "$CMD" "$SOURCE" > "$FIX/queue/reports/worker_report_${CMD}.yaml"
+    printf '{"reviews":[{"cmd":"%s","report":"queue/reports/worker_report_%s.yaml"}]}\n' \
+        "$CMD" "$CMD" > "$FIX/queue/gates/$CMD/single_review_manifest.json"
+
+    run env ARCHIVE_COMPLETED_PROJECT_DIR="$FIX" \
+        ARCHIVE_TASK_WORKTREE_CLEANUP_ONLY=1 ARCHIVE_REQUIRE_CLEAR_RECEIPT=1 \
+        SHOGUN_COMPLETION_GENERATION="$GEN" \
+        timeout 30 bash "$BATS_TEST_DIRNAME/../../scripts/archive_completed.sh" 3 "$CMD"
+    echo "$output"
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"publication recovered from verified_report_commit"* ]]
+    [ ! -d "$FIX/task-wt" ]
+    python3 - "$FIX/queue/gates/$CMD/task_worktree.json" "$SOURCE" <<'PY'
+import json
+import sys
+data = json.load(open(sys.argv[1], encoding="utf-8"))
+assert data["state"] == "cleaned"
+assert data["published_commit"] == sys.argv[2]
+assert data["published_recovery_source"] == "verified_report_commit"
+PY
+}
