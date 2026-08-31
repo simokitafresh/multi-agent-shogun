@@ -10901,3 +10901,10 @@ insights:
   source: "semantic_stress_test"
   fix_known: false
   status: pending
+- id: INS-20260831-131042058-0255
+  ts: "2026-08-31T13:10:42+09:00"
+  insight: "[[俺待ちの件を詳しく教えてくれ]] semantic_stress_test candidate_aliases: NO_MATCH source=lord query=俺待ちの件を詳しく教えてくれ"
+  priority: "low"
+  source: "semantic_stress_test"
+  fix_known: false
+  status: pending
