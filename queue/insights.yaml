@@ -6083,7 +6083,10 @@ insights:
   priority: "low"
   source: "semantic_map_generate:new_file"
   fix_known: false
-  status: pending
+  status: resolved
+  resolved_reason: 一次確認で対象hookはtracked現存し、git logで導入履歴を確認。.claude/settings.jsonでPreToolUse登録済み。semantic-map.mdのHook自動化フレームワーク(PreToolUse/dispatcher)とhook JSONコマンド境界が機能分類を被覆し、既存概念への統合で新概念定義・実コード修正は不要。
+  action_artifact: "target=queue/insights.yaml:INS-20260828-013206080-be65;primary=.claude/hooks/pretool-dispatch.sh:tracked現存+git log=eaff28ad2;registration=.claude/settings.json:L16-L21;semantic=context/semantic-map.md:L160+docs/semantic-index/index.md:L12715-L12731,L18065-L18087;memory=bash scripts/memory_db_query.sh --search pretool-dispatch;decision_candidate=none"
+  resolved_at: "2026-09-01T23:01:28+09:00"
 - id: INS-20260828-013206181-8aef
   ts: "2026-08-28T01:32:06+09:00"
   insight: "semantic_map_generate新規ファイル候補: `.claude/skills/codd-refactor/SKILL.md` は semantic index未登録。既存概念へのfile追加または新概念定義を検討せよ"
