@@ -16454,3 +16454,16 @@ sqlite3.Connection.backup()を使うとページ(4096byte)単位のread syscall�
 - **when**: 未設定
 - **how**: 未設定
 - 初回canonical run_tests.sh taskはtask絶対source pathをworktree外として除外し、空reportのため選択0でterminal contract FAILとなった。対象worktree-relative pathをreport_field_set.shで登録すると外部LP npm runnerがtypecheck/buildを実行し、tests 1/1・SKIP 0のPASS receiptを生成した。
+
+### L1692: append-only台帳の不正rowはskipせずdurable anomalyへ記録する
+- **日付**: 2026-09-01
+- **出典**: cmd_karo_hotfix_defense_overhead_nul_index_20260901
+- **記録者**: kotaro
+- **tags**: [infra]
+- **subdomain**: infra
+- **target_files**: [scripts/lib/defense_overhead_event_index.py]
+- **origin**: [[cmd_karo_hotfix_defense_overhead_nul_index_20260901]]
+- **enforcement**: 未自動化
+- **when**: 未設定
+- **how**: 未設定
+- 単一NUL汚染でsidecar parseが全停止しても一次台帳を改変せずoffset/length/hash/reasonを記録しvalid event index追随とpartial fail-closedを両立する。

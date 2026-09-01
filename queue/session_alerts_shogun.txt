@@ -1,4 +1,4 @@
-# session_alerts — generated: 2026-08-31T13:55:46+0900
-[DONE] 走行中cmd実測突合: busy 2名。capture-pane未確認で状況報告するな
-[DONE] 本番 queue 汚染: fixture 2件/task missing 0行
-[DONE] deepdive追体験未完了: 全Phase実行まで作業禁止(stop hookがBLOCKする)。bash scripts/deepdive_replay.sh shogun <md> <Phase> "<自問>"
+# session_alerts — generated: 2026-09-01T12:01:56+0900
+[TODO] 走行中cmd実測突合: busy 2名。capture-pane未確認で状況報告するな
+[TODO] monitor lifecycle 失敗行 18行/60分 — 壁の所有者を一次で確認
+[TODO] deepdive追体験未完了: 全Phase実行まで作業禁止(stop hookがBLOCKする)。bash scripts/deepdive_replay.sh shogun <md> <Phase> "<自問>"

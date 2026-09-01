@@ -1,4 +1,4 @@
-<!-- last_updated: 2026-08-27 -->
+<!-- last_updated: 2026-09-01 -->
 <!-- source_commit:6ca18b295ac6656014f09d91905b5113a9bd8501 reason:ga299-reviewed-exact-boundary evidence:memory-db-schema-generator-preserves-marker -->
 
 # Memory DB Schema
@@ -10,13 +10,13 @@
 
 | type | name | rows | columns |
 | --- | --- | --- | --- |
-| table | event_concepts | 523323 | event_id, concept_name, relevance_score |
-| table | event_links | 34035 | source_event_id, target_concept, link_type |
-| table | event_state_transitions | 5888 | id, event_id, from_state, to_state, reason, actor, transitioned_at |
-| table | events | 331967 | id, ts, event_type, agent, target, direction, summary, detail, session_id, cmd_id, concepts, source_file, parent_event_id, importance, confidence, freshness, source_type, state, o… |
-| table | events_fts | 331967 | summary, detail |
-| table | search_logs | 49346 | id, ts, caller, agent_id, query, hit_count, no_match, elapsed_ms, exit_code, created_at |
-| view | conversations | 86113 | ts, agent, direction, summary, detail, session_id |
+| table | event_concepts | 581761 | event_id, concept_name, relevance_score |
+| table | event_links | 35851 | source_event_id, target_concept, link_type |
+| table | event_state_transitions | 6110 | id, event_id, from_state, to_state, reason, actor, transitioned_at |
+| table | events | 353044 | id, ts, event_type, agent, target, direction, summary, detail, session_id, cmd_id, concepts, source_file, parent_event_id, importance, confidence, freshness, source_type, state, o… |
+| table | events_fts | 353044 | summary, detail |
+| table | search_logs | 52283 | id, ts, caller, agent_id, query, hit_count, no_match, elapsed_ms, exit_code, created_at |
+| view | conversations | 91600 | ts, agent, direction, summary, detail, session_id |
 | index | idx_event_concepts_concept_name |  |  |
 | index | idx_event_links_source_event_id |  |  |
 | index | idx_event_links_target_concept |  |  |
@@ -35,20 +35,20 @@
 
 | event_type | count |
 | --- | --- |
-| report | 97958 |
-| conversation | 86113 |
-| inbox | 69705 |
-| insight | 19570 |
-| gate | 17832 |
-| bulletin | 13545 |
+| report | 99456 |
+| conversation | 91600 |
+| inbox | 79253 |
+| insight | 20458 |
+| gate | 19666 |
+| bulletin | 14414 |
 | cmd_archive | 9513 |
-| cmd_quality | 8404 |
-| cmd_save | 2999 |
+| cmd_quality | 8987 |
+| cmd_save | 3067 |
 | skill_execution | 2961 |
-| knowledge | 1221 |
-| lesson | 1045 |
-| cmd_delegate | 988 |
-| workaround | 61 |
+| knowledge | 1447 |
+| lesson | 1094 |
+| cmd_delegate | 1014 |
+| workaround | 62 |
 | pending_decision | 49 |
 | project | 2 |
 | infrastructure_state | 1 |
@@ -81,9 +81,9 @@
 
 | id | ts | event_type | agent | target | direction | summary | detail | session_id | cmd_id | concepts | source_file | parent_event_id | importance | confidence | freshness | source_type | state | occurred_at | recorded_at | updated_at | raw_content | skill |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| conversation:lord_conversation:live:de2e61f3159cc255 | 2026-06-05T14:06:10+09:00 | conversation | shogun | lord | response | 軍師の調査結果は重要な追加情報。cmd_3182のACにはevent_concepts/event_links/events_ftsの作成は明示していないが、AC2/AC3(recall_control/obsidian_promoteのdry-run正常終了)が成功条件に含ま… | 軍師の調査結果は重要な追加情報。cmd_3182のACにはevent_concepts/event_links/events_ftsの作成は明示していないが、AC2/AC3(recall_control/obsidian_promoteのdry-run正常終了)が成功条件に含まれているため、忍者は依存テーブルも含めて解決する必要がある。ACが正しく設計され… | lord_conversation |  | ["semantic_dictionary_design", "task_modifier_injection"] | /home/simokitafresh/multi-agent-shogun/queue/lord_conversation.jsonl |  | normal | medium | current | fact | raw | 2026-06-05T14:06:10+09:00 | 2026-06-05T14:06:10+09:00 |  |  |  |
-| conversation:lord_conversation:live:69b8c6ba12a07ce5 | 2026-06-05T14:06:28+09:00 | conversation | gunshi | lord | response | cmd_3182 APPROVE完了。洗脳覚醒→調査→行動→バグ発見→cmd起票(将軍)→レビュー(軍師)の一連のサイクルが回った。 [meta] stop_reason=tool_use | cmd_3182 APPROVE完了。洗脳覚醒→調査→行動→バグ発見→cmd起票(将軍)→レビュー(軍師)の一連のサイクルが回った。<br><br>[meta] stop_reason=tool_use | lord_conversation | cmd_3182 | ["report_quality_protocol"] | /home/simokitafresh/multi-agent-shogun/queue/lord_conversation.jsonl |  | normal | medium | current | fact | raw | 2026-06-05T14:06:28+09:00 | 2026-06-05T14:06:28+09:00 |  |  |  |
-| conversation:lord_conversation:live:893f568705c2118d | 2026-06-05T14:06:29+09:00 | conversation | lord | gunshi | inbound | <task-notification> <task-id>bmqw08j79</task-id> <tool-use-id>toolu_0168yXYkDc8svXwfiyJCS7Hj</tool-use-id> <output-file>/tmp/claude-1000/-m… | <task-notification><br><task-id>bmqw08j79</task-id><br><tool-use-id>toolu_0168yXYkDc8svXwfiyJCS7Hj</tool-use-id><br><output-file>/tmp/claude-1000/-mnt-c-tools-multi-agent-shogun/2… | lord_conversation |  | [] | /home/simokitafresh/multi-agent-shogun/queue/lord_conversation.jsonl |  | normal | medium | current | fact | raw | 2026-06-05T14:06:29+09:00 | 2026-06-05T14:06:29+09:00 |  |  |  |
+| conversation:lord_conversation:live:de2e61f3159cc255 | 2026-06-05T14:06:10+09:00 | conversation | shogun | lord | response | 軍師の調査結果は重要な追加情報。cmd_3182のACにはevent_concepts/event_links/events_ftsの作成は明示していないが、AC2/AC3(recall_control/obsidian_promoteのdry-run正常終了)が成功条件に含ま… | 軍師の調査結果は重要な追加情報。cmd_3182のACにはevent_concepts/event_links/events_ftsの作成は明示していないが、AC2/AC3(recall_control/obsidian_promoteのdry-run正常終了)が成功条件に含まれているため、忍者は依存テーブルも含めて解決する必要がある。ACが正しく設計され… | lord_conversation |  | ["semantic_dictionary_design", "task_modifier_injection"] | /mnt/c/tools/multi-agent-shogun/queue/lord_conversation.jsonl |  | normal | medium | current | fact | raw | 2026-06-05T14:06:10+09:00 | 2026-06-05T14:06:10+09:00 |  |  |  |
+| conversation:lord_conversation:live:69b8c6ba12a07ce5 | 2026-06-05T14:06:28+09:00 | conversation | gunshi | lord | response | cmd_3182 APPROVE完了。洗脳覚醒→調査→行動→バグ発見→cmd起票(将軍)→レビュー(軍師)の一連のサイクルが回った。 [meta] stop_reason=tool_use | cmd_3182 APPROVE完了。洗脳覚醒→調査→行動→バグ発見→cmd起票(将軍)→レビュー(軍師)の一連のサイクルが回った。<br><br>[meta] stop_reason=tool_use | lord_conversation | cmd_3182 | ["report_quality_protocol"] | /mnt/c/tools/multi-agent-shogun/queue/lord_conversation.jsonl |  | normal | medium | current | fact | raw | 2026-06-05T14:06:28+09:00 | 2026-06-05T14:06:28+09:00 |  |  |  |
+| conversation:lord_conversation:live:893f568705c2118d | 2026-06-05T14:06:29+09:00 | conversation | lord | gunshi | inbound | <task-notification> <task-id>bmqw08j79</task-id> <tool-use-id>toolu_0168yXYkDc8svXwfiyJCS7Hj</tool-use-id> <output-file>/tmp/claude-1000/-m… | <task-notification><br><task-id>bmqw08j79</task-id><br><tool-use-id>toolu_0168yXYkDc8svXwfiyJCS7Hj</tool-use-id><br><output-file>/tmp/claude-1000/-mnt-c-tools-multi-agent-shogun/2… | lord_conversation |  | [] | /mnt/c/tools/multi-agent-shogun/queue/lord_conversation.jsonl |  | normal | medium | current | fact | raw | 2026-06-05T14:06:29+09:00 | 2026-06-05T14:06:29+09:00 |  |  |  |
 
 ## `events_fts`
 
