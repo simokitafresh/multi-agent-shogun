@@ -1819,6 +1819,7 @@ codd:
 | discussion | `queue/lord_conversation.jsonl` 2026-09-01T15:56:39+09:00 数値突合までやろう。正しく計算してほしい。 |
 | discussion | `queue/lord_conversation.jsonl` 2026-09-01T16:06:47+09:00 2026-09-01 15:56-16:07 リバランス日の数値突合(殿指示『数値突合までやろう』): (1)DB signals(date=2026-09-01, 101 PF)と本番 /api/signals: standard 24/ |
 | discussion | `queue/lord_conversation.jsonl` 2026-09-01T20:46:30+09:00 問題を解決するときにサンクコストにとらわれて過剰に複雑にしてしまったり、影響範囲や依存関係を明らかにしないで浅い対応によってバグがバグを生んだりする。 |
+| discussion | `queue/lord_conversation.jsonl` 2026-09-01T22:15:45+09:00 session_save_20260901_2217(先に session_save_20260901_2059 を読め) 第22便 20:59-22:17: ①cmd_4442(殿指示 つまり原因の全員探索)完了=正本 docs/rese |
 | causal_chain | `[[cmd_karo_hotfix_ga221_context_freshness_202607110323]]` (L1032) |
 | causal_chain | `[[cmd_karo_recon2_r5_three_layer_acceptance_20260727]]` (L1397) |
 | causal_chain | `[[cmd_karo_hotfix_ga414_context_freshness_20260729]]` (L1454) |
@@ -14598,6 +14599,8 @@ codd:
 | cmd | `cmd_reflux_insight_202609012138_hanzo` (`queue/insights.yaml`) |
 | causal | `cmd_reflux_insight_202609012152_hayate` files_modified: [[provisional_insights]] |
 | cmd | `cmd_reflux_insight_202609012152_hayate` (`queue/insights.yaml`) |
+| causal | `cmd_reflux_insight_202609012208_tobisaru` files_modified: [[provisional_insights]] |
+| cmd | `cmd_reflux_insight_202609012208_tobisaru` (`queue/insights.yaml`) |
 | causal_chain | `[[cmd_reflux_insight_202608040505_kagemaru]]` (L1545) |
 
 ## provisional_heavy_job_admission — 仮: Heavy Job Admission

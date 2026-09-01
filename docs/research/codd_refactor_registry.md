@@ -4,6 +4,7 @@ CoDDリファクタリングの実績台帳。車輪の再発明を防ぐため�
 
 | 日付 | 実施者 | 対象スクリプト/領域 | Phase到達 | Before→After | spec/after設計書パス |
 |------|--------|---------------------|-----------|--------------|----------------------|
+| 2026-09-01 | tobisaru | `scripts/run_tests.sh`, `scripts/ninja_scope_commit.sh`, `scripts/gates/gate_report_format.sh` (+201) | Phase 5(auto registry via cmd_complete_gate, cmd_reflux_insight_202609012208_tobisaru) | `4.0s → 1.06s` | `docs/research/codd_infra_script_profiling.md` |
 | 2026-08-14 | tobisaru | `scripts/run_tests.sh`, `scripts/semantic_map_generate.sh`, `scripts/causal_backlinks.sh` (+196) | Phase 5(auto registry via cmd_complete_gate, cmd_karo_hotfix_stable_docs_checkpoint_20260814) | `4ms → 4ms` | `docs/research/codd_refactor_registry.md` |
 | 2026-08-05 | hanzo | `scripts/run_tests.sh`, `scripts/semantic_map_generate.sh`, `scripts/causal_backlinks.sh` (+13) | Phase 5(auto registry via cmd_complete_gate, cmd_reflux_backlink_202608050843_hanzo) | `80秒 → 1000ms` | `docs/research/report-write-batch-adoption-codd-spec_20260718.md` |
 | 2026-07-29 | hanzo | `scripts/run_tests.sh`, `scripts/semantic_map_generate.sh`, `scripts/causal_backlinks.sh` (+12) | Phase 5(auto registry via cmd_complete_gate, cmd_reflux_backlink_202607290813_hanzo) | `161.014秒 → 60秒` | `docs/research/codd_refactor_deploy_control_plane_20260723.md` |
