@@ -8228,7 +8228,10 @@ insights:
   priority: "low"
   source: "semantic_map_generate:new_file"
   fix_known: false
-  status: pending
+  status: resolved
+  resolved_reason: "一次確認で scripts/shogun_backup.py は現存するcmd_4411実装(680行)であり、context/infrastructure.mdのオフサイト退避・隔離復元記録と既存semantic concept infrastructure_ops/cmd_4411記録に対応するため、対象insightを分類済みとしてresolve。個別file行のsemantic index登録欠落は別スコープのdecision_candidateとして報告する。"
+  action_artifact: "target=queue/insights.yaml:INS-20260829-165247558-30f5;file=scripts/shogun_backup.py;context=context/infrastructure.md:L154;semantic=docs/semantic-index/index.md:infrastructure_ops(cmd_4411 entry exists, individual file resource absent);memory=semantic_search(scripts/shogun_backup.py);followup=separate scoped task to add file resource row under infrastructure_ops"
+  resolved_at: "2026-09-02T00:32:01+09:00"
 - id: INS-20260829-165307325-e85a
   ts: "2026-08-29T16:53:07+09:00"
   insight: "semantic_index_update新概念候補: discussion:作成するために使ったものは残しておく必要がある は 既存aliasesに一致なし。概念定義とaliases追加を検討せよ"
