@@ -352,6 +352,42 @@ show_promotion_reflux_state() {
 # retain the old /mnt/c root. Historical logs, archived docs, memory dumps,
 # backup files, and migration helpers are evidence, not live consumers, so
 # they are deliberately excluded from this warning.
+# Gate 10.1d: 放置検知。cmd status=delegated ∧ delegated_at から threshold 分超 ∧ 配備痕跡 0。
+# 配備痕跡 = queue/tasks/*.yaml の parent_cmd 一致 or logs/gate_metrics.log に cmd 行。
+# 報告 YAML は deploy rollback 後も残るため痕跡に使わない(cmd_4441 で 6 本残存を実測 2026-09-01)。
+# 戻り値: 0=放置なし / 1=放置あり(WARN 行を stdout)。契約 bats: tests/unit/test_gate_shogun_startup.bats
+check_undeployed_delegated_cmds() {
+    local root="${1:-.}" threshold_min="${2:-30}"
+    local s2k="$root/queue/shogun_to_karo.yaml" gm="$root/logs/gate_metrics.log"
+    local now_epoch cmd stat del del_clean del_epoch age count=0
+    local -a lines=()
+    [ -f "$s2k" ] || { echo "  OK: delegated∧配備痕跡なし(${threshold_min}分超) 0件"; return 0; }
+    now_epoch=$(date +%s)
+    while IFS=$'\t' read -r cmd stat del; do
+        [ -n "$cmd" ] || continue
+        [ "$stat" = "delegated" ] || continue
+        del_clean=$(printf '%s' "$del" | grep -oE '[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}' | head -1)
+        [ -n "$del_clean" ] || continue
+        del_epoch=$(date -d "$del_clean" +%s 2>/dev/null) || continue
+        age=$(( (now_epoch - del_epoch) / 60 ))
+        [ "$age" -ge "$threshold_min" ] || continue
+        if grep -lqE "^\s*parent_cmd:\s*\"?${cmd}(_[a-z]+)?\"?\s*$" "$root"/queue/tasks/*.yaml 2>/dev/null; then continue; fi
+        if [ -f "$gm" ] && grep -qE "\b${cmd}(_[a-z]+)?\b" "$gm" 2>/dev/null; then continue; fi
+        count=$((count+1)); lines+=("${cmd}(${age}分)")
+    done < <(awk '
+        /^  cmd_[A-Za-z0-9_]+:[[:space:]]*$/ { if (c!="") print c "\t" s "\t" d; c=$1; sub(/:$/,"",c); s=""; d=""; next }
+        c!="" && /^    status:/ { s=$2 }
+        c!="" && /^    delegated_at:/ { d=$0 }
+        END { if (c!="") print c "\t" s "\t" d }
+    ' "$s2k")
+    if [ "$count" -gt 0 ]; then
+        echo "  WARN: delegated∧配備痕跡なし ${count}件(${threshold_min}分超): ${lines[*]} — 放置。deploy_task.log の BLOCK 行で壁を名指しし家老へ順序付き1通(型十九弾-1)"
+        return 1
+    fi
+    echo "  OK: delegated∧配備痕跡なし(${threshold_min}分超) 0件"
+    return 0
+}
+
 check_legacy_ext4_path_residuals() {
     local root="${1:-.}"
     local old_root="${2:-/mnt/c/tools/multi-agent-shogun}"
@@ -2177,35 +2213,8 @@ fi
 # queue/tasks の parent_cmd + gate_metrics の cmd 行。配備痕跡=task parent_cmd 一致 or gate_metrics に cmd 行。
 # 報告 YAML は deploy rollback 後も残るため痕跡に使わない(cmd_4441 で 6 本残存を実測)。
 echo "■ 放置検知(delegated∧配備痕跡なし)"
-_undeployed_threshold_min="${SHOGUN_UNDEPLOYED_WARN_MIN:-30}"
-_undeployed=0
-_undeployed_lines=()
-_s2k="$SCRIPT_DIR/queue/shogun_to_karo.yaml"
-if [ -f "$_s2k" ]; then
-    _now_epoch=$(date +%s)
-    while IFS=$'\t' read -r _ucmd _ustat _udel; do
-        [ -n "$_ucmd" ] || continue
-        [ "$_ustat" = "delegated" ] || continue
-        _udel_clean=$(printf '%s' "$_udel" | grep -oE '[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}' | head -1)
-        [ -n "$_udel_clean" ] || continue
-        _udel_epoch=$(date -d "$_udel_clean" +%s 2>/dev/null) || continue
-        _uage=$(( (_now_epoch - _udel_epoch) / 60 ))
-        [ "$_uage" -ge "$_undeployed_threshold_min" ] || continue
-        if grep -lqE "^\s*parent_cmd:\s*\"?${_ucmd}(_[a-z]+)?\"?\s*$" "$SCRIPT_DIR"/queue/tasks/*.yaml 2>/dev/null; then continue; fi
-        if [ -f "$_gm_log" ] && grep -qE "\b${_ucmd}(_[a-z]+)?\b" "$_gm_log" 2>/dev/null; then continue; fi
-        _undeployed=$((_undeployed+1)); _undeployed_lines+=("${_ucmd}(${_uage}分)")
-    done < <(awk '
-        /^  cmd_[A-Za-z0-9_]+:[[:space:]]*$/ { if (c!="") print c "\t" s "\t" d; c=$1; sub(/:$/,"",c); s=""; d=""; next }
-        c!="" && /^    status:/ { s=$2 }
-        c!="" && /^    delegated_at:/ { d=$0 }
-        END { if (c!="") print c "\t" s "\t" d }
-    ' "$_s2k")
-fi
-if [ "$_undeployed" -gt 0 ]; then
-    echo "  WARN: delegated∧配備痕跡なし ${_undeployed}件(${_undeployed_threshold_min}分超): ${_undeployed_lines[*]} — 放置。deploy_task.log の BLOCK 行で壁を名指しし家老へ順序付き1通(型十九弾-1)"
+if ! check_undeployed_delegated_cmds "$SCRIPT_DIR" "${SHOGUN_UNDEPLOYED_WARN_MIN:-30}"; then
     if [ "$overall" != "ALERT" ] && [ "$overall" != "BLOCK" ]; then overall="WARN"; fi
-else
-    echo "  OK: delegated∧配備痕跡なし(${_undeployed_threshold_min}分超) 0件"
 fi
 
 # --- Gate 10.1c: 便回転チェック(WAIT:report_commit_main_ancestry 30分超 ∧ report commit が main に無い=dangling) ---

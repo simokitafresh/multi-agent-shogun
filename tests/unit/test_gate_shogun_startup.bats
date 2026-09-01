@@ -434,3 +434,50 @@ EOF
     [ "$status" -eq 0 ]
     [[ "$output" == *"OK: legacy ext4 old-root references clean"* ]]
 }
+
+@test "Gate 10.1d undeployed delegated cmd warns only when no task parent_cmd and no gate_metrics row" {
+    root="$TEST_ROOT/undeployed"
+    tasks_dir="$root/queue/tasks"
+    mkdir -p "$tasks_dir" "$root/logs"
+    old_ts="$(date -d '-120 minutes' +%Y-%m-%dT%H:%M:%S)"
+    new_ts="$(date -d '-5 minutes' +%Y-%m-%dT%H:%M:%S)"
+    cat > "$root/queue/shogun_to_karo.yaml" <<YAML
+commands:
+  cmd_9001:
+    title: "stale and undeployed"
+    status: delegated
+    delegated_at: "\"${old_ts}\""
+  cmd_9002:
+    title: "stale but task exists"
+    status: delegated
+    delegated_at: "\"${old_ts}\""
+  cmd_9003:
+    title: "stale but gate_metrics row exists"
+    status: delegated
+    delegated_at: "${old_ts}"
+  cmd_9004:
+    title: "fresh"
+    status: delegated
+    delegated_at: "${new_ts}"
+  cmd_9005:
+    title: "completed"
+    status: completed
+    delegated_at: "${old_ts}"
+YAML
+    printf 'task:\n  task_id: cmd_9002_normal\n  parent_cmd: cmd_9002\n  status: assigned\n' > "$tasks_dir/hanzo.yaml"
+    printf '2026-09-01T10:00:00\tcmd_9003_normal\tCLEAR\tall\n' > "$root/logs/gate_metrics.log"
+
+    run bash -c 'SHOGUN_STARTUP_LIB_ONLY=1 source "$1/scripts/gates/gate_shogun_startup.sh"; check_undeployed_delegated_cmds "$2" 30' _ "$PROJECT_ROOT" "$root"
+    [ "$status" -eq 1 ]
+    [[ "$output" == *"WARN: delegated∧配備痕跡なし 1件(30分超)"* ]]
+    [[ "$output" == *"cmd_9001("* ]]
+    [[ "$output" != *"cmd_9002"* ]]
+    [[ "$output" != *"cmd_9003"* ]]
+    [[ "$output" != *"cmd_9004"* ]]
+    [[ "$output" != *"cmd_9005"* ]]
+
+    printf 'task:\n  task_id: cmd_9001_normal\n  parent_cmd: "cmd_9001_normal"\n  status: assigned\n' > "$tasks_dir/saizo.yaml"
+    run bash -c 'SHOGUN_STARTUP_LIB_ONLY=1 source "$1/scripts/gates/gate_shogun_startup.sh"; check_undeployed_delegated_cmds "$2" 30' _ "$PROJECT_ROOT" "$root"
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"OK: delegated∧配備痕跡なし(30分超) 0件"* ]]
+}
