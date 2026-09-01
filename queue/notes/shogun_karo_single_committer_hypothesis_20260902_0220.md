@@ -37,3 +37,14 @@ push lane log 累計: `push_failed` **59**、`auto_merge=failed|INTEGRATE-MERGE-
 2. §3 で壊れる既存契約を列挙せよ(commit_hash 報告契約、gate の ancestry/receipt 検査、reflux、ci_fix の source_commit、ninja_scope_commit 系の bats)。移行 unit の分解案(順序・件数)。
 3. 速度: 家老直列 publish の 1 task あたり所要(見積)と、6 忍者並走時の待ち行列。許容か。
 4. 代替案があれば(例: 忍者 commit は許すが公開者は家老のみ=autopush 停止だけで足りるか)。その場合 criss-cross は消えるか。
+
+## 5. 追補(02:22) — 殿『コミットのやり方・コミットスキルの品質や構造に問題がないかも検証しよう』への一次計測
+| 観点 | 一次 | 判定 |
+|---|---|---|
+| 公開者の分散 | `git commit/push` を実行する script **11 本**、`git push` を持つ script **4 本**(deploy_task.sh / cmd_complete_gate.sh / ninja_monitor.sh / safe_shared_main_ff.sh) | **構造問題**: gate(cmd_complete_gate.sh、15,920 行、git 呼出 341 箇所)が clone→commit→push の publisher を兼ねる(`autopush: source-only …` 4 経路 L2145/2302/2627/2896)。gate=判定器が公開者になっている |
+| autopush の base | 関数群(L2047/2172/2328/2685/2975)は `source_sha`/`source_base`/`common_base` を**忍者 worktree と remote_tip の関係**から取り、root HEAD を見ない | **バグ**: root で復元・追記した commit を含まない base から公開 → criss-cross(本日 5d9c35731/7108f114d) |
+| 忍者 commit helper | `ninja_scope_commit.sh` **1,870 行・関数 27・CLI option 43・bats 85** | **過剰**: 1 動作(scope 限定 commit)に 43 option。patch/base-blob/reflux-mode/receipt/single-flight/pre-commit identity sidecar が同居 |
+| /ninja-commit skill | SKILL.md 216 行、うち『Script refs verified』注記 15+、gate FAIL 履歴 20 行(2026-08-15〜27 は **commit_contract / cross_repo_commits / commit_hash 書式** の FAIL が連続) | **品質問題**: FAIL は code ではなく**契約メタデータ**(planned path 不一致・40 桁 hash・cross_repo entries)で起きている=契約が忍者(GPT)の遂行能力を超えて複雑。skill 本文が検分メモで膨張し手順が埋もれる |
+| root 統合 | ninja_monitor.sh(15,683 行)の U6 isolated 統合は ref を進めるが root worktree/index を同期しない | **バグ**: 旧版 staged 4 回/日、GA-PUSH1 3 回/日 |
+結論: 『やり方(多重公開者)』『スキル(契約メタデータ過多)』『構造(gate が publisher・15k 行 monolith×3)』の 3 層すべてに問題がある。単一 publisher 化はこの 3 層を同時に縮退させる(autopush 4 経路・safe_ff・GA-PUSH1・merge driver・commit 契約メタデータの大半が不要になる)。
+§4 への追加問い 5: 単一 publisher 化を前提に、`ninja_scope_commit.sh` と /ninja-commit を『patch 生成+報告記録』の最小手順へ縮退する設計を軍師と作れ(監査 unit=軍師+忍者 1 名、対象= cmd_complete_gate.sh autopush 4 経路 / ninja_scope_commit.sh option 43 / SKILL.md)。
