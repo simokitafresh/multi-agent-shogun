@@ -1,5 +1,6 @@
 # インフラコンテキスト
-<!-- last_updated: 2026-09-01 2026-09-01 将軍 doc lane: receipt hotfix 本番稼働(c2111a36a/63949bbc9/d2b15989e)+4441 LP live を 2026-09-01 節へ -->
+<!-- last_updated: 2026-09-01 2026-09-01 将軍 doc lane: quality_monitor dedupe/watcher receipt/gist_sync 制限/push lane 統合根治/CI RED 33486782574/fixture 残置を 2026-09-01 節へ -->
+<!-- source_commit:1d97d8acd24446bc0d1f5d9668ba09f7d5f2467e reason:2026-09-01 将軍 doc lane: quality_monitor dedupe/watcher receipt/gist_sync 制限/push lane 統合根治/CI RED 33486782574/fixture 残置を 2026-09-01 節へ evidence:commits 702ca5090,79dfd86e9,bbaa38f4d,9c19734af,fa82d08c1,33595add4,fe58f1f9b; push lane proof 19:25:22 INTEGRATE→19:25:37 PUSH -->
 <!-- source_commit:f770dd158691741e98706e0c3c5f4f59a33a9a0f reason:2026-09-01 将軍 doc lane: receipt hotfix 本番稼働(c2111a36a/63949bbc9/d2b15989e)+4441 LP live を 2026-09-01 節へ evidence:git log --oneline 0f8b8be61..origin/main → 11 commit(hotfix 3+reflux 2+map/doc)を節に反映 -->
 <!-- source_commit:0f8b8be610b930fdfba84ffb06ed8385fa3149a7 reason:2026-09-01 将軍 doc lane: 367c0dae3 は instructions/shogun.md 型 第二十一弾のみ(infra 本文変更なし)、境界のみ前進 evidence:git show --stat 367c0dae3 → instructions/shogun.md 1 file -->
 <!-- source_commit:e61b9f150d6ef94bad7c944b863a053a240e4192 reason:2026-09-01 将軍 doc lane: daemon TMUX_PANE scrub(c7dada38c)+bulk guard v1/v2(c6b8e1aa3/bf13c13bd)を 2026-09-01 節へ、境界を origin tip へ evidence:git log --oneline 2d50e2723..origin/main → 3 commit を節に反映 -->
