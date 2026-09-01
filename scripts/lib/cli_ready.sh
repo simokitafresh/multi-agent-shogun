@@ -12,10 +12,19 @@
 # scrollback は見ない(-S なし): crash 後に残る起動バナーで偽 ready になるため。
 
 CLI_READY_PROMPT_REGEX='^[[:space:]]*❯[[:space:]]*$|^[[:space:]]*›[[:space:]]*$|›[[:space:]]+Ask Codex to do anything'
+# busy marker: Codex/Claude はプロンプト行を常設したまま作業中表示を出す(家老再レビュー 13:11:
+# 起動 hook 実行中の pane が『Running 5 PreToolUse hooks / Working 25s』と『› Ask Codex』を同時に持つ)。
+# ready=プロンプト一致 ∧ busy marker 不在。
+CLI_BUSY_MARKER_REGEX='esc to interrupt|Working \(|Running [0-9]+ [A-Za-z]* ?hooks?|SessionStart hook'
 
 # $1 = 可視画面テキスト。ready なら 0。
 cli_visible_is_ready() {
-    printf '%s\n' "${1:-}" | grep -Eq "$CLI_READY_PROMPT_REGEX"
+    local _screen="${1:-}"
+    printf '%s\n' "$_screen" | grep -Eq "$CLI_READY_PROMPT_REGEX" || return 1
+    if printf '%s\n' "$_screen" | grep -Eq "$CLI_BUSY_MARKER_REGEX"; then
+        return 1
+    fi
+    return 0
 }
 
 # $1 = tmux pane target。ready なら 0。

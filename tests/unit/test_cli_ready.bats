@@ -46,6 +46,24 @@ setup() {
   [ "$status" -ne 0 ]
 }
 
+# regression_justification: karo re-review 2026-09-01 13:11 — a Codex pane still
+# running its startup hooks shows "Running 5 PreToolUse hooks / Working 25s" together
+# with the permanent "› Ask Codex to do anything" line; prompt-only matching called it ready.
+@test "codex pane running startup hooks with the permanent prompt line is not ready" {
+  run cli_visible_is_ready $'• Running 5 PreToolUse hooks\n◦ Working (25s • esc to interrupt)\n› Ask Codex to do anything\n  gpt-5.6-luna high · Context 0% used'
+  [ "$status" -ne 0 ]
+}
+
+@test "claude pane working with the permanent prompt line is not ready" {
+  run cli_visible_is_ready $'✻ Thinking… (12s · esc to interrupt)\n❯ \n  ⏵⏵ bypass permissions on'
+  [ "$status" -ne 0 ]
+}
+
+@test "codex pane after startup hooks finished is ready" {
+  run cli_visible_is_ready $'• Ran 3 commands · ctrl + t to view transcript\n─ Worked for 1m 14s ──────\n› Ask Codex to do anything\n  gpt-5.6-luna high · Context 11% used'
+  [ "$status" -eq 0 ]
+}
+
 @test "codex process count is a single integer even when zero" {
   pgrep() { printf '0\n'; return 1; }
   export -f pgrep
