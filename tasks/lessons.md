@@ -16493,3 +16493,16 @@ sqlite3.Connection.backup()を使うとページ(4096byte)単位のread syscall�
 - **when**: 未設定
 - **how**: 未設定
 - Bare tests/unit in target_path is treated as a concrete selected test and causes task-mode rc=2; concrete test paths must be declared in commit_contract.planned_paths.
+
+### L1695: モノリス末尾overrideだけでは分割モジュールのremote-tip境界を守れない
+- **日付**: 2026-09-01
+- **出典**: cmd_karo_hotfix_deploy_remote_tip_directory_v3_20260901
+- **記録者**: kagemaru
+- **tags**: [infra,deploy-task,testing,bash]
+- **subdomain**: infra
+- **target_files**: [scripts/deploy_task.sh,scripts/deploy_task/preflight.sh,tests/unit/test_task_worktree_lifecycle.bats]
+- **origin**: [[cmd_karo_hotfix_deploy_remote_tip_directory_v3_20260901]]
+- **enforcement**: 未自動化
+- **when**: 未設定
+- **how**: 未設定
+- v2はモノリス末尾のfetch関数overrideとruntime testを追加したが、main.shが再読込するpreflight本体は旧@{upstream}のままだった。分割モジュールを直接再読込するfixtureを必須化し、正本モジュールと互換モノリスの境界を同時に更新する。

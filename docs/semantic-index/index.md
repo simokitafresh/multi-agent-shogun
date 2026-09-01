@@ -383,6 +383,7 @@ codd:
 | causal | `cmd_karo_hotfix_deploy_ctx_guard_20260828` files_modified: [[dm_signal_pf_restore_guardrails]] |
 | causal | `cmd_karo_hotfix_pending_decision_infra_bundle_20260828` files_modified: [[dm_signal_pf_restore_guardrails]] |
 | cmd | `cmd_karo_hotfix_dm_signal_backup_push_20260829` (`queue/reports/hayate_report_cmd_karo_hotfix_dm_signal_backup_push_20260829.yaml`) |
+| causal | `cmd_karo_hotfix_deploy_remote_tip_directory_v3_20260901` files_modified: [[dm_signal_pf_restore_guardrails]] |
 | causal_chain | `[[cmd_karo_hotfix_ga161_obsidian_link_context_freshness_202607021348]]` (L926) |
 
 ## gs_recalibration_plan — GS再キャリブレーション計画
@@ -580,6 +581,7 @@ codd:
 | causal | `cmd_karo_hotfix_review_quality_warn_20260814` files_modified: [[unread_cmd_new_deployment_guard]] |
 | causal | `cmd_karo_hotfix_review_quality_verification_classification_20260814` files_modified: [[unread_cmd_new_deployment_guard]] |
 | causal | `cmd_karo_hotfix_startup_archive_requires_clear_20260818` files_modified: [[unread_cmd_new_deployment_guard]] |
+| causal | `cmd_karo_hotfix_gunshi_idle_flag_lifecycle_20260901` files_modified: [[unread_cmd_new_deployment_guard]] |
 
 ## local_memory_db — ローカル記憶DB
 
@@ -3302,6 +3304,7 @@ codd:
 | discussion | `queue/lord_conversation.jsonl` 2026-09-01T15:26:46+09:00 You are UPDATING an existing design document to reflect source code changes. The code diff below shows what changed in t |
 | discussion | `queue/lord_conversation.jsonl` 2026-09-01T15:43:56+09:00 2026-09-01 15:39-15:45 agent 解決 3 層根治の完結: 15:39 に再発(marker 15:39:07 書換、inbound 15:39:12 は非空 TMUX_PANE で log_terminal_inp |
 | discussion | `queue/lord_conversation.jsonl` 2026-09-01T17:12:01+09:00 session_save_20260901_1712(先に session_save_20260901_1627 を読め) 第21便 17:12: ①cmd_4441 本番反映完了(家老 blt_164857: DM origin e35d |
+| cmd | `cmd_karo_hotfix_gunshi_idle_flag_lifecycle_20260901` (`scripts/hooks/stop_check_inbox.sh`, `scripts/inbox_watcher.sh`, `tests/unit/test_inbox_watcher_busy_queue_singleflight.bats`) |
 | causal_chain | `[[cmd_3749]]` (L974) |
 | causal_chain | `[[cmd_training_L1_report-write_20260708020332]]` (L977) |
 | causal_chain | `[[cmd_reflux_insight_202607071717_tobisaru]]` (L961) |
@@ -8861,6 +8864,10 @@ codd:
 | cmd | `cmd_karo_hotfix_deploy_remote_tip_directory_v2_20260901` |
 | discussion | `queue/lord_conversation.jsonl` 2026-09-01T16:26:53+09:00 session_save_20260901_1627(先に session_save_20260901_1502 を読め) 第21便後半(15:02〜16:27、Fable low): ①殿『数値突合までやろう』=本番 101 PF の今月 |
 | discussion | `queue/lord_conversation.jsonl` 2026-09-01T17:35:34+09:00 session_save_20260901_1736(先に session_save_20260901_1712 を読め) 第22便 17:17 y 復帰〜17:36(Fable low): ①つまりの真因=影丸 v3 commit 4d3 |
+| lesson | `L1695` モノリス末尾overrideだけでは分割モジュールのremote-tip境界を守れない |
+| causal | `cmd_karo_hotfix_deploy_remote_tip_directory_v3_20260901` files_modified: [[agent_formation_management]] |
+| cmd | `cmd_karo_hotfix_deploy_remote_tip_directory_v3_20260901` (`scripts/deploy_task.sh`, `scripts/deploy_task/preflight.sh`, `tests/unit/test_task_worktree_lifecycle.bats`) |
+| causal | `cmd_karo_hotfix_gunshi_idle_flag_lifecycle_20260901` files_modified: [[agent_formation_management]] |
 | causal_chain | `[[cmd_karo_hotfix_deploy_task_latency_yaml_bug_20260702010845]]` (L918) |
 | causal_chain | `[[cmd_karo_hotfix_deploy_task_yaml_speed_recon_guard_202607020133]]` (L919) |
 | causal_chain | `[[cmd_karo_hotfix_ga162_hook_failure_pre_push_202607021402]]` (L930) |
@@ -8908,6 +8915,7 @@ codd:
 | causal_chain | `[[cmd_reflux_backlink_202608201818_kagemaru]]` (L1626) |
 | causal_chain | `[[cmd_reflux_backlink_202608201856_saizo]]` (L1627) |
 | causal_chain | `[[cmd_karo_ci_fix_33176429634_startup_owner_20260828]]` (L1668) |
+| causal_chain | `[[cmd_karo_hotfix_deploy_remote_tip_directory_v3_20260901]]` (L1695) |
 
 ## visibility_tier_masking — Visibility Tier制マスク
 
@@ -10691,6 +10699,7 @@ codd:
 | causal | `cmd_4371` files_modified: [[task_modifier_injection]] |
 | causal | `cmd_karo_hotfix_deploy_ctx_guard_20260828` files_modified: [[task_modifier_injection]] |
 | causal | `cmd_karo_hotfix_pending_decision_infra_bundle_20260828` files_modified: [[task_modifier_injection]] |
+| causal | `cmd_karo_hotfix_deploy_remote_tip_directory_v3_20260901` files_modified: [[task_modifier_injection]] |
 
 ## training_cycle_quality — 忍者修行サイクル品質
 
@@ -11645,6 +11654,7 @@ codd:
 | lesson | `L1677` hot-reload owner record transient readはbounded retryでsuccessor admissionへ接続する |
 | causal | `cmd_karo_hotfix_outstanding_lease_expiry_20260831` files_modified: [[daemon_supervision]] |
 | causal | `cmd_karo_hotfix_inbox_lease_contracts_20260901` files_modified: [[daemon_supervision]] |
+| causal | `cmd_karo_hotfix_gunshi_idle_flag_lifecycle_20260901` files_modified: [[daemon_supervision]] |
 | causal_chain | `[[cmd_karo_ci_fix_33301147088_test117_20260830]]` (L1677) |
 
 ## openpbx_reference — OpenPBX(コリ先生PBX MVP)
@@ -11963,6 +11973,7 @@ codd:
 | discussion | `queue/lord_conversation.jsonl` 2026-09-01T13:14:16+09:00 将軍が起きないな。デーモンの問題では？再起動はスクリプトがあるはずだ |
 | causal | `cmd_karo_hotfix_inbox_lease_contracts_20260901` files_modified: [[infrastructure_ops]] |
 | cmd | `cmd_karo_hotfix_inbox_lease_contracts_20260901` (`scripts/inbox_watcher.sh`) |
+| causal | `cmd_karo_hotfix_gunshi_idle_flag_lifecycle_20260901` files_modified: [[infrastructure_ops]] |
 | causal_chain | `[[cmd_3632]]` (L917) |
 | causal_chain | `[[cmd_karo_hotfix_auto_update_pane_spawn_202607031806]]` (L949) |
 | causal_chain | `[[cmd_3969]]` (L1043) |
@@ -12809,6 +12820,7 @@ codd:
 | causal | `cmd_karo_hotfix_pending_decision_infra_bundle_20260828` files_modified: [[hook_automation_framework]] |
 | causal | `cmd_karo_hotfix_inbox_priority_evidence_deadlock_20260828` files_modified: [[hook_automation_framework]] |
 | discussion | `queue/lord_conversation.jsonl` 2026-08-29T10:36:29+09:00 bfoohc0w3 toolu_01Xr8ZAbBJU59eTyn6BxBHVv /tmp/claude-1000/-home-simokitafresh-multi-agent-shogun/b40b7045-ff88-4a88-b288 |
+| causal | `cmd_karo_hotfix_gunshi_idle_flag_lifecycle_20260901` files_modified: [[hook_automation_framework]] |
 | causal_chain | `[[cmd_3728]]` (L965) |
 | causal_chain | `[[cmd_karo_ci_fix_ga218_hook_suite_202607101912]]` (L1029) |
 
@@ -12925,6 +12937,7 @@ codd:
 | causal | `cmd_4411` files_modified: [[multi_cli_event_commonization]] |
 | causal | `cmd_karo_hotfix_outstanding_lease_expiry_20260831` files_modified: [[multi_cli_event_commonization]] |
 | causal | `cmd_karo_hotfix_inbox_lease_contracts_20260901` files_modified: [[multi_cli_event_commonization]] |
+| causal | `cmd_karo_hotfix_gunshi_idle_flag_lifecycle_20260901` files_modified: [[multi_cli_event_commonization]] |
 
 ## codex_goal_mode — Codex /goal 自律目標モード
 
@@ -13139,6 +13152,7 @@ codd:
 | causal | `cmd_karo_hotfix_deploy_ctx_guard_20260828` files_modified: [[causal_verification_l0_l7]] |
 | causal | `cmd_karo_hotfix_pending_decision_infra_bundle_20260828` files_modified: [[causal_verification_l0_l7]] |
 | causal | `cmd_4411` files_modified: [[causal_verification_l0_l7]] |
+| causal | `cmd_karo_hotfix_deploy_remote_tip_directory_v3_20260901` files_modified: [[causal_verification_l0_l7]] |
 
 ## test_quality_framework — テスト品質統合フレームワーク
 
@@ -13588,6 +13602,7 @@ codd:
 | cmd | `cmd_karo_hotfix_auto_push_async_ci_202608311917` (`scripts/safe_shared_main_ff.sh`, `tests/unit/test_cmd_complete_gate.bats`, `tests/unit/test_safe_shared_main_ff.bats`) |
 | cmd | `cmd_karo_hotfix_run_tests_external_scope_mapping_20260901` |
 | cmd | `cmd_karo_ci_fix_33486782574_receipt_fixtures` (`tests/unit/test_codex_inbox_priority_guard.bats`, `tests/unit/test_inbox_drain.bats`, `tests/unit/test_lock_path.bats`) |
+| cmd | `cmd_karo_hotfix_inbox_processing_receipt_20260901` (`scripts/inbox_mark_read.sh`, `scripts/inbox_read.sh`, `tests/unit/test_inbox_mark_read.bats`) |
 | causal_chain | `[[cmd_karo_hotfix_hook_failure_utf8_boundary_20260829]]` (L1669) |
 | causal_chain | `[[cmd_karo_hotfix_tmux_live_sendkeys_guard_20260830]]` (L1672) |
 | causal_chain | `[[cmd_4434]]` (L1688) |
@@ -16189,6 +16204,7 @@ codd:
 | discussion | `queue/lord_conversation.jsonl` 2026-09-01T06:19:36.578928+00:00 git pre-commit semantic propagation for context/projects changes |
 | discussion | `queue/lord_conversation.jsonl` 2026-09-01T06:39:42.300005+00:00 git pre-commit semantic propagation for context/projects changes |
 | discussion | `queue/lord_conversation.jsonl` 2026-09-01T09:28:59.270112+00:00 git pre-commit semantic propagation for context/projects changes |
+| discussion | `queue/lord_conversation.jsonl` 2026-09-01T09:41:29.099885+00:00 git pre-commit semantic propagation for context/projects changes |
 | causal_chain | `[[cmd_karo_hotfix_lessons_yaml_format_restore_20260727]]` (L1389) |
 
 ## infra_design_intent — インフラ設計意図カタログ
@@ -16412,6 +16428,7 @@ codd:
 | causal | `cmd_4371` files_modified: [[scope_integrity_lifecycle]] |
 | causal | `cmd_karo_hotfix_deploy_ctx_guard_20260828` files_modified: [[scope_integrity_lifecycle]] |
 | causal | `cmd_karo_hotfix_pending_decision_infra_bundle_20260828` files_modified: [[scope_integrity_lifecycle]] |
+| causal | `cmd_karo_hotfix_deploy_remote_tip_directory_v3_20260901` files_modified: [[scope_integrity_lifecycle]] |
 
 ## yaml_safe_write — YAML安全書込み
 
@@ -16532,6 +16549,7 @@ codd:
 | causal | `cmd_karo_hotfix_task_supplement_identity_20260830` files_modified: [[yaml_safe_write]] |
 | causal | `cmd_karo_ci_fix_33326464870_shard_count_receipt_20260831` files_modified: [[yaml_safe_write]] |
 | discussion | `queue/lord_conversation.jsonl` 2026-09-01T18:16:12+09:00 session_save_20260901_1816(先に session_save_20260901_1736 を読め) 第22便 17:42-18:16: ①T221 CI RED 33486782574(shard 4: test_l |
+| causal | `cmd_karo_hotfix_inbox_processing_receipt_20260901` files_modified: [[yaml_safe_write]] |
 | causal_chain | `[[cmd_karo_ci_red_remaining_unit_202607151950]]` (L1041) |
 | causal_chain | `[[cmd_karo_hotfix_report_hook_result_canonicalization_20260729]]` (L1448) |
 | causal_chain | `[[cmd_4192]]` (L1450) |
@@ -16571,6 +16589,8 @@ codd:
 | causal | `cmd_karo_impl_b38_ci_cache_staleness_20260726` files_modified: [[inbox_processing_discipline]] |
 | causal | `cmd_karo_hotfix_acknowledged_at_null_20260804` files_modified: [[inbox_processing_discipline]] |
 | causal | `cmd_karo_hotfix_gate_clear_wakeup_contract_20260809` files_modified: [[inbox_processing_discipline]] |
+| causal | `cmd_karo_hotfix_inbox_processing_receipt_20260901` files_modified: [[inbox_processing_discipline]] |
+| causal | `cmd_karo_hotfix_gunshi_idle_flag_lifecycle_20260901` files_modified: [[inbox_processing_discipline]] |
 
 ## inbox_watcher_process_model — inbox_watcherプロセスモデル
 
@@ -16603,6 +16623,7 @@ codd:
 | causal | `cmd_karo_hotfix_t114_reflux_task_id_nudge_20260828` files_modified: [[inbox_watcher_process_model]] |
 | causal | `cmd_karo_hotfix_outstanding_lease_expiry_20260831` files_modified: [[inbox_watcher_process_model]] |
 | causal | `cmd_karo_hotfix_inbox_lease_contracts_20260901` files_modified: [[inbox_watcher_process_model]] |
+| causal | `cmd_karo_hotfix_gunshi_idle_flag_lifecycle_20260901` files_modified: [[inbox_watcher_process_model]] |
 
 ## saxo_openapi_excel — Saxo Bank OpenAPI for Excel
 
