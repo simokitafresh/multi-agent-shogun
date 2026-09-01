@@ -368,12 +368,15 @@ Special cases (CLI commands sent directly via send-keys):
 ## Inbox Processing Protocol (karo/ninja)
 
 When you receive `inboxN` (e.g. `inbox3`):
-1. `Read queue/inbox/{your_id}.yaml`
-2. Find all entries with `read: false`
-3. Process each message according to its `type`
+1. `bash scripts/inbox_read.sh {your_id}` を実行する（flock下で未読本文を読み、`msg_id + content hash + agent + generation` のreceiptを発行）
+2. 出力から `read: false` の全エントリを特定する
+3. 各メッセージを `type` に従って本文処理する
 4. Mark each processed message by ID: `bash scripts/inbox_mark_read.sh {your_id} {msg_id}`. ID省略・全未読一括既読は禁止（Read後に到着した未処理メッセージを巻き込むため）
    **Edit toolでのinbox既読化は禁止** — flock未使用のためLost Update(メッセージ消失)が発生する
 5. Resume normal workflow
+
+- **positive_rule**: inbox本文は必ず `inbox_read.sh` 経由で読め。Python / `cat` / Read toolの直読みは調査にのみ使え。直読み後の `inbox_mark_read.sh` は一致receipt不在でBLOCKされるため、BLOCK時は迂回せず `inbox_read.sh` から読み直せ。
+- **reason**: 2026-09-01、軍師が未読IDをfor-loopで本文処理前に一括既読化し、正式review approval 0/4のまま消失させた。receipt契約は「読んだ」と「既読化した」を同一message世代で結び、本文未処理の既読化を構造的に不可能にする。
 
 - **positive_rule(家老・軍師)**: **「未読かつ現task_id一致の補足だけを命令として扱う」フィルタは忍者専用(reflux 開始 nudge、T114)。家老・軍師は自分宛の未読を type に従い全て処理せよ**(`task_assigned`/`report_review_result`/`clear_loop_block`/`review_draft`/`report_received` 等)。task_id の有無で「適用せず既読化」するな。
 - **reason**: 2026-08-28 に家老が /clear 直後の recovery で忍者規則を自分の inbox へ誤適用し、03:44/07:41/08:17/10:31 の 4 回、将軍 ci_fix 下知・軍師 LGTM・CLEAR-LOOP-BLOCK 通知を「task_id 欠落ゆえ適用せず既読化」=便停止(T122)。記憶DB の自己記録を [MEM:] 引用して自己強化した。inbox_watcher の nudge 文は 9763378fa で修正済だが、家老自身の判断規則にも埋め込む。
