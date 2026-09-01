@@ -291,7 +291,7 @@ def entry_matches_report(entry, report_name):
 
 review_messages = [
     message for msg_id, message in ((msg_id, current[msg_id]) for msg_id in wanted)
-    if str(message.get("type") or "") in {"review_draft", "report_review"}
+    if str(message.get("type") or "") in {"report_review"}
 ]
 if review_messages:
     try:
