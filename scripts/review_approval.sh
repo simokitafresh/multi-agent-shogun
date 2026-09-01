@@ -618,6 +618,129 @@ review_approval_cleanup_on_exit() {
   return "$rc"
 }
 trap review_approval_cleanup_on_exit EXIT
+# A same-fingerprint retry is normally idempotent, but a later review request
+# is a new handoff for the same report generation.  Read the durable Gunshi
+# inbox history so a consumed/retried request is not confused with a genuinely
+# new request.  The inbox fingerprint is the raw report-generation hash while
+# the approval fingerprint is normalized, so identity/path fields are matched
+# alongside the raw generation.
+review_request_after_approval() {
+  local old_timestamp="$1" request_cmd="$2" request_report="$3" raw_generation="$4"
+  local inbox="$ROOT/queue/inbox/gunshi.yaml"
+  local inbox_archive="$ROOT/queue/archive/inbox"
+  local root_archive="$ROOT/archive/inbox"
+  [ -f "$inbox" ] || [ -d "$inbox_archive" ] || [ -d "$root_archive" ] || return 1
+  REVIEW_REQUEST_INBOX="$inbox" \
+  REVIEW_REQUEST_INBOX_ARCHIVE="$inbox_archive" \
+  REVIEW_REQUEST_ROOT_ARCHIVE="$root_archive" \
+  REVIEW_REQUEST_ROOT="$ROOT" \
+  REVIEW_REQUEST_CMD="$request_cmd" \
+  REVIEW_REQUEST_REPORT="$request_report" \
+  REVIEW_REQUEST_RAW_GENERATION="$raw_generation" \
+  REVIEW_REQUEST_OLD_TIMESTAMP="$old_timestamp" \
+    python3 - <<'PY'
+import datetime
+import glob
+import os
+from pathlib import Path
+
+import yaml
+
+
+def parse(value):
+    text = str(value or '').strip()
+    if not text:
+        return None
+    if text.endswith('Z'):
+        text = text[:-1] + '+00:00'
+    try:
+        parsed = datetime.datetime.fromisoformat(text)
+    except ValueError:
+        return None
+    if parsed.tzinfo is None:
+        # Operational inbox timestamps without an offset are JST by contract;
+        # treating them as UTC shifts the review epoch by nine hours.
+        jst = datetime.timezone(datetime.timedelta(hours=9))
+        parsed = parsed.replace(tzinfo=jst)
+    return parsed.astimezone(datetime.timezone.utc)
+
+
+try:
+    report = yaml.safe_load(Path(os.environ['REVIEW_REQUEST_REPORT']).read_text(encoding='utf-8')) or {}
+except (OSError, yaml.YAMLError):
+    raise SystemExit(1)
+root = Path(os.environ['REVIEW_REQUEST_ROOT']).resolve()
+report_path = Path(os.environ['REVIEW_REQUEST_REPORT']).resolve()
+try:
+    report_rel = str(report_path.relative_to(root))
+except ValueError:
+    raise SystemExit(1)
+wanted_cmd = os.environ['REVIEW_REQUEST_CMD']
+wanted_raw_generation = os.environ['REVIEW_REQUEST_RAW_GENERATION']
+wanted_report_id = str(report.get('report_id') or '').strip()
+wanted_version = str(report.get('report_identity_version') or report.get('identity_version') or '').strip()
+wanted_task_id = str(report.get('task_id') or '').strip()
+old = parse(os.environ['REVIEW_REQUEST_OLD_TIMESTAMP'])
+if old is None:
+    raise SystemExit(1)
+
+def normalized_path(value):
+    text = str(value or '').strip()
+    if not text:
+        return ''
+    candidate = Path(text)
+    if candidate.is_absolute():
+        try:
+            return str(candidate.resolve().relative_to(root))
+        except ValueError:
+            return text
+    return text[2:] if text.startswith('./') else text
+
+request_types = {'review_draft', 'report_review', 'review_report', 'verify_request'}
+inbox_paths = [Path(os.environ['REVIEW_REQUEST_INBOX'])]
+for archive_root in (
+    Path(os.environ['REVIEW_REQUEST_INBOX_ARCHIVE']),
+    Path(os.environ['REVIEW_REQUEST_ROOT_ARCHIVE']),
+):
+    if archive_root.is_dir():
+        inbox_paths.extend(Path(item) for item in glob.glob(str(archive_root / '*.yaml')))
+
+for inbox_path in dict.fromkeys(inbox_paths):
+    if not inbox_path.is_file():
+        continue
+    try:
+        payload = yaml.safe_load(inbox_path.read_text(encoding='utf-8')) or {}
+    except (OSError, yaml.YAMLError):
+        continue
+    messages = payload.get('messages', payload) if isinstance(payload, dict) else payload
+    if not isinstance(messages, list):
+        continue
+    for message in messages:
+        if not isinstance(message, dict) or str(message.get('type') or '').strip() not in request_types:
+            continue
+        if str(message.get('parent_cmd') or '').strip() != wanted_cmd:
+            continue
+        message_path = normalized_path(message.get('report_path') or message.get('report'))
+        if message_path and message_path != report_rel:
+            continue
+        message_id = str(message.get('report_id') or '').strip()
+        if message_id and wanted_report_id and message_id != wanted_report_id:
+            continue
+        message_version = str(message.get('report_identity_version') or '').strip()
+        if message_version and wanted_version and message_version != wanted_version:
+            continue
+        message_task_id = str(message.get('task_id') or '').strip()
+        if message_task_id and wanted_task_id and message_task_id != wanted_task_id:
+            continue
+        message_raw_generation = str(message.get('report_fingerprint') or '').strip()
+        if message_raw_generation and message_raw_generation != wanted_raw_generation:
+            continue
+        timestamp = parse(message.get('timestamp'))
+        if timestamp is not None and timestamp > old:
+            raise SystemExit(0)
+raise SystemExit(1)
+PY
+}
 # Gunshi approval writes are idempotent per report/fingerprint.  A retry of the
 # same LGTM must retain the first durable boundary timestamp; otherwise a
 # delayed Gunshi retry moves the measured LGTM edge and can recreate the
@@ -633,7 +756,9 @@ existing_timestamp=$(review_approval_value "$dir/$role.yaml" timestamp 2>/dev/nu
 if [ "$role" = gunshi ] && [ "$existing_result" = "$result" ] && [ "$existing_fp" = "$fingerprint" ] \
   && [ -n "$existing_timestamp" ] \
   && { [ -z "$existing_report" ] || [ "$existing_report" = "$report_rel" ]; }; then
-  approval_timestamp="$existing_timestamp"
+  if ! review_request_after_approval "$existing_timestamp" "$cmd_id" "$report" "$canonical_generation"; then
+    approval_timestamp="$existing_timestamp"
+  fi
 fi
 printf 'timestamp: %s\nrole: %s\nresult: %s\nfingerprint: %s\ngeneration: %s\nreport: %s\ncorrection_scope: %s\n' "$approval_timestamp" "$role" "$result" "$fingerprint" "$canonical_generation" "$report_rel" "$correction_scope" > "$tmp"
 mv -f "$tmp" "$dir/$role.yaml"

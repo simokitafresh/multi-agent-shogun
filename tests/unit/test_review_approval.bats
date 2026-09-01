@@ -240,7 +240,8 @@ seed_fail_close_gunshi_lgtm() {
 setup_pair_fixture() {
     export PAIR_ROOT="$BATS_TEST_TMPDIR/pair-root"
     mkdir -p "$PAIR_ROOT/queue/reports" "$PAIR_ROOT/queue/archive/reports" \
-        "$PAIR_ROOT/queue/tasks" "$PAIR_ROOT/queue/gates" "$PAIR_ROOT/logs" "$PAIR_ROOT/scripts"
+        "$PAIR_ROOT/queue/tasks" "$PAIR_ROOT/queue/inbox" "$PAIR_ROOT/archive/inbox" \
+        "$PAIR_ROOT/queue/gates" "$PAIR_ROOT/logs" "$PAIR_ROOT/scripts"
     ln -s "$BATS_TEST_DIRNAME/../../scripts/review_approval.sh" "$PAIR_ROOT/scripts/review_approval.sh"
     ln -s "$BATS_TEST_DIRNAME/../../scripts/lib" "$PAIR_ROOT/scripts/lib"
     for script in report_field_set.sh report_unique_identity.py inbox_write.sh; do
@@ -389,6 +390,123 @@ pair_review() {
     run pair_review "$cmd_id" gunshi LGTM "$report"
     [ "$status" -eq 0 ]
     [ "$(sed -n 's/^timestamp: //p' "$approval_dir/gunshi.yaml")" != "$third" ]
+}
+
+# test_necessity: a same-fingerprint Gunshi retry after a newly delivered
+# same-generation review request must publish a new approval epoch, while a
+# retry without a new request retains the original epoch.
+# regression_justification: the old idempotency rule only compared result and
+# fingerprint, so a 04:46 review request after the 04:15 LGTM still reused the
+# old epoch and produced reversed_report_done_to_review_request telemetry.
+@test "same fingerprint gets a new epoch only after a new review request" {
+    setup_pair_fixture
+    local cmd_id=cmd_karo_review_request_epoch worker=epochworker
+    make_pair_task "$worker" "$cmd_id"
+    local report
+    report="$(make_pair_report "$worker" "$cmd_id")"
+    local report_base raw_generation
+    report_base="${report#"$PAIR_ROOT"/}"
+    raw_generation="$(sha256sum "$report" | awk '{print $1}')"
+    cat > "$PAIR_ROOT/queue/inbox/gunshi.yaml" <<YAML
+messages:
+  - type: report_review
+    report_id: rpt-22222222-2222-4222-8222-222222222222
+    report_identity_version: 2
+    report_fingerprint: $raw_generation
+    report_path: $report_base
+    task_id: ${cmd_id}_normal
+    parent_cmd: $cmd_id
+    timestamp: '2026-08-28T09:10:10+09:00'
+YAML
+
+    local key approval_dir first duplicate second retry
+    run pair_review "$cmd_id" gunshi LGTM "$report"
+    [ "$status" -eq 0 ]
+    key="$(PROJECT_ROOT="$PAIR_ROOT" bash -c 'source "$1/scripts/lib/review_approval.sh"; review_report_key "${2#"$1"/}"' _ "$PAIR_ROOT" "$report")"
+    approval_dir="$PAIR_ROOT/queue/gates/$cmd_id/review_approvals/reports/$key"
+    first="$(sed -n 's/^timestamp: //p' "$approval_dir/gunshi.yaml")"
+
+    sleep 1
+    run pair_review "$cmd_id" gunshi LGTM "$report"
+    [ "$status" -eq 0 ]
+    duplicate="$(sed -n 's/^timestamp: //p' "$approval_dir/gunshi.yaml")"
+    [ "$duplicate" = "$first" ]
+
+    sleep 1
+    cat > "$PAIR_ROOT/queue/inbox/gunshi.yaml" <<YAML
+messages:
+  - type: report_review
+    report_id: rpt-22222222-2222-4222-8222-222222222222
+    report_identity_version: 2
+    report_fingerprint: $raw_generation
+    report_path: $report_base
+    task_id: ${cmd_id}_normal
+    parent_cmd: $cmd_id
+    timestamp: '$(date -Iseconds)'
+YAML
+    sleep 1
+    run pair_review "$cmd_id" gunshi LGTM "$report"
+    [ "$status" -eq 0 ]
+    second="$(sed -n 's/^timestamp: //p' "$approval_dir/gunshi.yaml")"
+    [ "$second" != "$first" ]
+
+    sleep 1
+    run pair_review "$cmd_id" gunshi LGTM "$report"
+    [ "$status" -eq 0 ]
+    retry="$(sed -n 's/^timestamp: //p' "$approval_dir/gunshi.yaml")"
+    [ "$retry" = "$second" ]
+}
+
+# test_necessity: archived review requests and offset-less JST timestamps are
+# part of the durable review history; omitting either source can resurrect an
+# old LGTM epoch or shift the epoch comparison by nine hours.
+# regression_justification: the first implementation only read active
+# queue/inbox/gunshi.yaml and interpreted naive timestamps as UTC.
+@test "archived review request uses JST and refreshes the same fingerprint epoch" {
+    setup_pair_fixture
+    local cmd_id=cmd_karo_review_archive_epoch worker=archiveepochworker
+    make_pair_task "$worker" "$cmd_id"
+    local report
+    report="$(make_pair_report "$worker" "$cmd_id")"
+    local report_base raw_generation key approval_dir normalized
+    report_base="${report#"$PAIR_ROOT"/}"
+    raw_generation="$(sha256sum "$report" | awk '{print $1}')"
+    key="$(PROJECT_ROOT="$PAIR_ROOT" bash -c 'source "$1/scripts/lib/review_approval.sh"; review_report_key "${2#"$1"/}"' _ "$PAIR_ROOT" "$report")"
+    approval_dir="$PAIR_ROOT/queue/gates/$cmd_id/review_approvals/reports/$key"
+    mkdir -p "$approval_dir"
+    normalized="$(PROJECT_ROOT="$PAIR_ROOT" bash -c 'source "$1/scripts/lib/review_approval.sh"; review_report_fingerprint "$2"' _ "$PAIR_ROOT" "$report")"
+    printf 'timestamp: 2026-09-02T00:30:00+00:00\nrole: gunshi\nresult: LGTM\nfingerprint: %s\nreport: %s\n' \
+        "$normalized" "$report_base" > "$approval_dir/gunshi.yaml"
+
+    cat > "$PAIR_ROOT/archive/inbox/gunshi_20260902.yaml" <<YAML
+messages:
+  - type: report_review
+    report_id: rpt-22222222-2222-4222-8222-222222222222
+    report_identity_version: 2
+    report_fingerprint: $raw_generation
+    report_path: $report_base
+    task_id: ${cmd_id}_normal
+    parent_cmd: $cmd_id
+    timestamp: '2026-09-02T05:00:00'
+YAML
+    run pair_review "$cmd_id" gunshi LGTM "$report"
+    [ "$status" -eq 0 ]
+    [ "$(sed -n 's/^timestamp: //p' "$approval_dir/gunshi.yaml")" = '2026-09-02T00:30:00+00:00' ]
+
+    cat > "$PAIR_ROOT/archive/inbox/gunshi_20260902.yaml" <<YAML
+messages:
+  - type: report_review
+    report_id: rpt-22222222-2222-4222-8222-222222222222
+    report_identity_version: 2
+    report_fingerprint: $raw_generation
+    report_path: $report_base
+    task_id: ${cmd_id}_normal
+    parent_cmd: $cmd_id
+    timestamp: '2026-09-02T10:00:00+09:00'
+YAML
+    run pair_review "$cmd_id" gunshi LGTM "$report"
+    [ "$status" -eq 0 ]
+    [ "$(sed -n 's/^timestamp: //p' "$approval_dir/gunshi.yaml")" != '2026-09-02T00:30:00+00:00' ]
 }
 
 setup_rc_revoke_generation_fixture() {
