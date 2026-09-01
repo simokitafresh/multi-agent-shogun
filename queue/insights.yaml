@@ -5751,7 +5751,10 @@ insights:
   priority: "low"
   source: "semantic_map_generate:new_file"
   fix_known: false
-  status: pending
+  status: resolved
+  resolved_reason: "一次確認で対象ファイルの存在と既存context記録を確認。semantic index未登録は実在するため、既存概念へのfile行追加または新概念化を別スコープのdecision candidateとして整理し、本taskでは対象insightを解消"
+  action_artifact: "decision_candidate=cmd_4402のsemantic概念配置;target=docs/research/cmd_4402_konti_effect_measurement_20260825.md;existing_context=context/cmd-chronicle.md:211,context/senkyoku-log.md:1496;zero_backlink_inventory=tracked"
+  resolved_at: "2026-09-01T21:34:31+09:00"
 - id: INS-20260827-220622476-45b8
   ts: "2026-08-27T22:06:22+09:00"
   insight: "semantic_map_generate新規ファイル候補: `scripts/cdp/cmd_4401_publish_timing.md` は semantic index未登録。既存概念へのfile追加または新概念定義を検討せよ"
