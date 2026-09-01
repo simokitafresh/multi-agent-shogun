@@ -1,5 +1,5 @@
 <!-- gist-master: 77538fe909ed4d3b83b61b4baf99cacf single_publisher_asis_tobe_5w1h_20260902.md -->
-# origin/main 単一 publisher 化 — AsIs / ToBe / 5W1H 設計書 v1.1(家老 REJECT blt_20260902_023241 の 5 修正を反映、02:36)
+# origin/main 単一 publisher 化 — AsIs / ToBe / 5W1H 設計書 v1.2(家老 REJECT blt_20260902_023509 の 6 修正を反映、02:45)
 
 - 作成: 2026-09-02 02:30 将軍(殿指示 02:16『忍者はコミットしない。コミットは家老/将軍のみ』→02:18『コミットのやり方・スキル・構造の検証』→02:24『AsIs/ToBe 5W1H 設計書。不要になる複雑さを先に検証』)
 - 協議: 家老回答 blt_20260902_021944(single publisher + local commit artifact)。協議記録=`queue/notes/shogun_karo_single_committer_hypothesis_20260902_0220.md` §1-6
@@ -51,18 +51,18 @@ origin/main へ書く主体を**家老の publisher 1 本(直列 queue)**に限�
 ## §2 ToBe
 ### 2.1 原則
 1. origin/main へ commit を到達させる主体は **publisher 1 プロセス**(家老 lane、直列 lock+FIFO queue)のみ。将軍・家老の doc/hotfix も同 queue。
-2. 忍者は自分の worktree で **local commit(immutable 成果物)** まで。origin DAG に忍者の ancestry は入らない。成果物の定義(家老レビュー 4)=**`source_tree`(local commit の tree id)+`patch_sha`(base..source の scope 限定 patch の sha256)+`published_sha`(publisher が生成した直線 commit)**の 3 つ組。旧契約 field の写像: `commit_hash`→`source_sha`(local commit id、参照のみ)/ test receipt の `source_head`→`source_tree` / task fingerprint→`patch_sha` / `cross_repo_commits`→`published_sha` の path 一覧 / ci_fix の `source_commit`→`published_sha` / worktree cleanup→artifact 複製(C6)後に許可。
+2. 忍者は自分の worktree で **local commit(immutable 成果物)** まで。origin DAG に忍者の ancestry は入らない。成果物の定義(家老レビュー 4)=**`source_tree`(local commit の tree id)+`patch_sha`(base..source の scope 限定 patch の sha256)+`published_sha`(publisher が生成した直線 commit)**の 3 つ組。旧契約 field の写像: `commit_hash`→`source_sha`(local commit id、参照のみ)/ test receipt の `source_head`→`source_tree` / **task・AC fingerprint は指示契約の同一性、`patch_sha` は成果物の同一性=別物として両方保持** / `cross_repo_commits`→ `{repo, ref, source_sha, published_sha, path receipt}` の組(path 一覧だけに縮退しない)/ ci_fix の `source_commit`→`published_sha` / worktree cleanup→artifact 複製(C6)後に許可。
 3. publisher は source commit を merge/cherry-pick せず、`base..source` の **scope 限定内容(path/blob)を最新 remote tip へ適用し新しい直線 commit** を作る(家老案)。conflict=忍者へ rebase 差し戻し(可視)。
 4. 台帳(insights/bulletin/workarounds/lessons/semantic-map)は publisher 内の **独立 batch commit**(code commit と混ぜない、因果時刻を保つ)。writer は root worktree へ書かず **root 外の queue(`$STATE_DIR/ledger_inbox/`)へ追記**し、publisher が batch 時に取り込む(家老レビュー 2: root porcelain を常時 0 にするため)。
-6. remote ref ごとに writer は 1 つ(lease)。将軍 doc・家老 hotfix も同じ lease を取る。
 5. 1 task = 1 published commit = 1 push。CI は published_sha に紐付く。
+6. remote ref ごとに writer は 1 つ(lease)。lease は **remote-ref+candidate SHA+expiry** に結び付け、環境変数だけでは偽装できない。将軍 doc・家老 hotfix も同じ lease を取る。
 
 ### 2.2 フロー
 ```
 忍者 worktree: 作業 → ninja_scope_commit(最小形) → local commit S → 報告 YAML(source_sha=S, base=B, paths)
                                                      ↓ LGTM(軍師)+ACCEPT(家老)
 publisher(家老 lane, 直列):  fetch tip T → isolated tree@T → apply diff(B..S | paths) → commit P → push → 報告に published_sha=P
-台帳 writer: 書込みは従来どおり file へ → publisher が N 分毎/ task 完了毎に batch commit "ledger: …" → push
+台帳 writer: root 外 `$STATE_DIR/ledger_inbox/<ledger>/<ts>.yaml` へ追記のみ → publisher が N 分毎/ task 完了毎に取り込み batch commit "ledger: …" → push(root worktree へは書かない)
 将軍 doc: root で編集 → `publish_request docs` → 同 queue → publisher が commit+push
 ```
 
@@ -89,15 +89,15 @@ publisher(家老 lane, 直列):  fetch tip T → isolated tree@T → apply diff(
 ## §3 移行(家老レビュー 3 の順序: U1→U2→U4→U5→U3(dry-run→active)→U6→U7→U8、各 unit 二値 AC、canary=infra hotfix lane)
 | U | 内容 | AC(二値) | 不要化される複雑さ |
 |---|---|---|---|
-| U1 | non-publish queue: `queue/publish/` に request(FIFO、flock、lease 発行)。この段階では公開せず並び順と lease のみ | 並行 request 6 件で queue 順序=投入順 ∧ lease 同時保持 0 | — |
+| U1 | non-publish queue: `queue/publish/` に request(FIFO、flock、lease 発行)。この段階では公開せず並び順と lease のみ | 並行 request 6 件で queue 順序=投入順(FIFO 逆転 0)∧ lease の max concurrent holders = 1 ∧ overlap interval pairs = 0 ∧ lease が remote-ref+candidate SHA+expiry に結び付く | — |
 | U2 | 忍者成果物=source_tree+patch_sha(報告に source_sha/base/paths)+LGTM 時に artifacts/ へ複製(C6) | 報告 gate が manifest を検証 PASS ∧ 複製後に worktree 削除しても publisher が復元可 | ninja_scope_commit option ≥ 20 |
 | U4 | gate を dual-read(旧 source_sha 契約と新 published_sha+path/blob receipt の両方を受理) | 旧・新 fixture 両方 PASS | — |
-| U5 | LGTM+ACCEPT を queue の admission 条件にする(未承認 request は投入不可) | 未承認 request の publish 0 | — |
-| U3 | publisher を dry-run(publish せず C2a/C2 判定 log のみ)→ 24h 判定差 0 で active 化。remote tip へ scope 限定適用→published_sha 生成(merge/cherry-pick 不使用) | criss-cross fixture で published tree の regression 0 ∧ dry-run 24h の判定差 0 | safe_ff/ancestry guard |
+| U5 | LGTM+ACCEPT を queue の admission 条件にする(未承認 request は投入不可) | 未承認 request N 件で queue admitted = 0 ∧ 承認済 N 件で admitted = N(publisher 未稼働でも計測可能な admission 判定) | — |
+| U3 | publisher を dry-run(publish せず C2a/C2 判定 log のみ)→ 24h 判定差 0 で active 化。remote tip へ scope 限定適用→published_sha 生成(merge/cherry-pick 不使用) | criss-cross fixture で published tree の regression 0 ∧ C2a fixture: tip==base → publish 1 ∧ blob 一致、tip!=base → publish 0 ∧ RC 1 ∧ dry-run 24h の比較母数 N と mismatch=0 を生貼付 | safe_ff/ancestry guard |
 | U6 | reflux/台帳 writer を同 queue の batch へ | 台帳 commit が code commit と分離 ∧ merge driver 未使用 | .gitattributes 6 rule・driver 5・insights auto-commit |
 | U7 | autopush 4 経路/ancestry/push_lane/postclear auto-commit を flag 停止(`PUBLISHER_SINGLE=1`) | 停止後 24h で origin merge 0 ∧ push_failed 0 | push_lane 596 行・autopush 1,182 行(停止) |
 | U8 | canary 7 日後に旧 gate/tests/hook を削除(旧 test の不変量は新 contract test へ移植済みであること+`deletion_justification`) | bats 全 GREEN ∧ 削除 script 参照 0(rg) ∧ 移植不変量 100% | 上記の物理削除・GA-PUSH1 overlap 部・SKILL 縮退(pre-push の lease 強制・品質検査は残す) |
-canary 判定: U7 後 24h で C1-C5 全 PASS → dm-signal PJ へ拡大。
+canary 判定: U7 後 24h で **C1-C7 全 PASS** → dm-signal PJ へ拡大。U8 は 10 file 超の削除が見込まれるため、**削除 manifest(path・不変量の移植先・deletion_justification)を作り殿確認の上、1 batch 最大 10 file** で実施(Tier 2 STOP-AND-REPORT 準拠)。
 
 ## §4 リスク・未決
 - publisher が単一障害点: daemon_watchdog で監視、queue はファイルなので publisher 停止中も request は残る(復帰後に順次)。
@@ -107,6 +107,7 @@ canary 判定: U7 後 24h で C1-C5 全 PASS → dm-signal PJ へ拡大。
 
 ## §5 レビュー履歴
 - v1.0 → 家老 REJECT(blt_20260902_023241、方向 APPROVE・修正 5): ①inventory の残すもの明示 ②C2a/C3 porcelain 0/C5 lease BLOCK ③順序 U1→U2→U4→U5→U3→U6→U7→U8 ④成果物 3 つ組と旧 field 写像 ⑤C6/C7。→ v1.1 に全反映。
+- v1.1 → 家老 REJECT(blt_20260902_023509、前回 5/5 反映確認・新規 6): ①台帳 writer は root 外 queue に統一 ②fingerprint と patch_sha は別物で両方保持、cross_repo は組で保持 ③U1 AC=max holders 1/overlap 0/FIFO 逆転 0、lease=ref+SHA+expiry ④U5 AC=未承認 N→admitted 0、承認 N→N ⑤U3 AC に C2a fixture+dry-run 母数 N/mismatch 0 ⑥canary C1-C7、U8 削除 manifest+殿確認+1 batch ≤10、原則番号修正。→ v1.2 に全反映。
 
-## §5.1 レビュー依頼(家老、v1.1)
+## §5.1 レビュー依頼(家老、v1.2)
 観点: (1)§1.3 不要化 inventory の過不足(削ってはいけないものが混ざっていないか、殿 07-21『削るな速くしろ』との整合) (2)§2.3/2.4 の契約が二値か (3)§3 の順序・AC・canary 範囲 (4)壊れる契約の列挙漏れ(blt_021944 の 13 項目と突合)。
