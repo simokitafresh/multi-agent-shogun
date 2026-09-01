@@ -447,6 +447,44 @@ PY
     [[ "$output" == *"maintenance_upstream=1 canonical_tip=1 target_directory=1 shared_unchanged=1"* ]]
 }
 
+# The modular preflight is sourced by main.sh after the legacy body has been
+# loaded. Keep its standalone function contract canonical too, so a later
+# module reload cannot regress to a stale maintenance upstream.
+@test "modular preflight remote-tip deploy normalizes maintenance upstream" {
+    setup_fixture_repo
+    base=$(git -C "$FIXTURE/shared" rev-parse HEAD)
+    git -C "$FIXTURE/shared" switch -q -c maintenance "$base"
+    git -C "$FIXTURE/shared" push -q -u origin maintenance
+    git -C "$FIXTURE/shared" switch -q main
+    mkdir -p "$FIXTURE/shared/lp"
+    printf 'CANONICAL_MAIN=1\n' > "$FIXTURE/shared/lp/index.ts"
+    git -C "$FIXTURE/shared" add lp/index.ts
+    git -C "$FIXTURE/shared" commit -q -m canonical-main-target
+    git -C "$FIXTURE/shared" push -q origin main
+    canonical_tip=$(git -C "$FIXTURE/shared" rev-parse origin/main)
+    maintenance_tip=$(git -C "$FIXTURE/shared" switch -q maintenance && git -C "$FIXTURE/shared" rev-parse HEAD)
+    task="$BATS_TEST_TMPDIR/modular-canonical-main.yaml"
+    printf 'task:\n  task_id: modular_canonical_main\n  parent_cmd: cmd_modular_canonical_main\n  project: dm-signal\n  target_path: %s\n  status: assigned\n' "$FIXTURE/shared/lp" > "$task"
+
+    run env PROJECT_ROOT="$BATS_TEST_DIRNAME/../.." FIXTURE="$FIXTURE/shared" TASK="$task" EXPECTED_REMOTE="$canonical_tip" EXPECTED_SHARED="$maintenance_tip" bash -c '
+        set -euo pipefail
+        export DEPLOY_TASK_LIB_ONLY=1 DEPLOY_TASK_WORKTREE_ROOT="$FIXTURE/worktrees-modular-canonical"
+        source "$PROJECT_ROOT/scripts/deploy_task.sh"
+        SCRIPT_DIR="$FIXTURE"; LOG=/dev/null; STATE_DIR="$FIXTURE/state-modular-canonical"; mkdir -p "$STATE_DIR"
+        source "$PROJECT_ROOT/scripts/deploy_task/preflight.sh"
+        deploy_task_prepare_remote_tip_worktree "$TASK" kagemaru
+        wt=$(FIELD_GET_NO_LOG=1 field_get "$TASK" task_worktree_path)
+        [ "$(git -C "$wt" rev-parse HEAD)" = "$EXPECTED_REMOTE" ]
+        [ -d "$wt/lp" ]
+        [ -f "$wt/lp/index.ts" ]
+        [ "$(git -C "$FIXTURE" rev-parse HEAD)" = "$EXPECTED_SHARED" ]
+        printf "modular_preflight=1 canonical_tip=1 target_directory=1 shared_unchanged=1\\n"
+        deploy_task_rollback_remote_tip_worktree "$FIXTURE" "$wt" "$(FIELD_GET_NO_LOG=1 field_get "$TASK" task_worktree_marker)"
+    '
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"modular_preflight=1 canonical_tip=1 target_directory=1 shared_unchanged=1"* ]]
+}
+
 @test "archive recovers exact source publication receipt and rejects three mismatches" {
     setup_receipt_recovery_fixture success success
     run_receipt_recovery_archive
