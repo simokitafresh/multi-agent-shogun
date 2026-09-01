@@ -18,6 +18,8 @@ setup() {
     ln -s "$PROJECT_ROOT/scripts/memory_db_live_insert.py" "${TEST_TMP}/scripts/memory_db_live_insert.py"
     ln -s "$PROJECT_ROOT/scripts/insight_resolve.sh" "${TEST_TMP}/scripts/insight_resolve.sh"
     ln -s "$PROJECT_ROOT/scripts/lib/yaml_field_set.sh" "${TEST_TMP}/scripts/lib/yaml_field_set.sh"
+    ln -s "$PROJECT_ROOT/scripts/lib/defense_overhead_writer.sh" "${TEST_TMP}/scripts/lib/defense_overhead_writer.sh"
+    ln -s "$PROJECT_ROOT/scripts/semantic_index_update.sh" "${TEST_TMP}/scripts/semantic_index_update.sh"
     chmod +x "${TEST_TMP}/scripts/insight_write.sh"
 
     # Every fixture must stay off the production memory DB.  The symlinked
@@ -963,6 +965,94 @@ print('CONCURRENT_OK entries=' + str(len(entries)) + ' resolved=' + str(len(reso
     run git -C "$repo" config --get merge.insights-id.driver
     [ "$status" -eq 0 ]
     [ "$output" = "bash ${repo}/scripts/insight_write.sh --merge-driver %O %A %B" ]
+}
+
+# test_necessity: Every runtime ledger path must resolve to a configured
+# contract driver; otherwise a fresh clone silently falls back to line merges.
+@test "runtime merge driver設定: stable ledgers, ours maps, and semantic regeneration are registered" {
+    local repo="$TEST_TMP/merge-runtime-repo"
+    mkdir -p "$repo/scripts"
+    cp "$TEST_TMP/scripts/insight_write.sh" "$repo/scripts/insight_write.sh"
+    cp "$TEST_TMP/scripts/semantic_index_update.sh" "$repo/scripts/semantic_index_update.sh"
+    mkdir -p "$repo/scripts/lib"
+    ln -s "$TEST_TMP/scripts/lib/yaml_field_set.sh" "$repo/scripts/lib/yaml_field_set.sh"
+    ln -s "$TEST_TMP/scripts/lib/defense_overhead_writer.sh" "$repo/scripts/lib/defense_overhead_writer.sh"
+    git init -q "$repo"
+
+    run bash "$repo/scripts/insight_write.sh" --configure-merge-driver "$repo"
+    [ "$status" -eq 0 ]
+    run git -C "$repo" config --get-regexp '^merge\.(ours|bulletin-id|karo-workarounds-id|semantic-index-regenerate)\.'
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"merge.ours.driver true"* ]]
+    [[ "$output" == *"merge.bulletin-id.driver bash ${repo}/scripts/insight_write.sh --stable-merge-driver bulletin %O %A %B"* ]]
+    [[ "$output" == *"merge.karo-workarounds-id.driver bash ${repo}/scripts/insight_write.sh --stable-merge-driver workarounds %O %A %B"* ]]
+    [[ "$output" == *"merge.semantic-index-regenerate.driver bash ${repo}/scripts/semantic_index_update.sh --merge-driver %O %A %B"* ]]
+}
+
+# test_necessity: Bulletin and workaround append ledgers must union disjoint
+# stable IDs exactly once and reject divergent same-ID edits.
+@test "stable runtime ledgers: bulletin and workaround IDs compose and conflict closed" {
+    local base="$TEST_TMP/base-runtime.yaml" ours="$TEST_TMP/ours-runtime.yaml" theirs="$TEST_TMP/theirs-runtime.yaml"
+    printf '%s\n' 'entries:' '- id: BLT-BASE' '  content: base' >"$base"
+    printf '%s\n' 'entries:' '- id: BLT-BASE' '  content: base' '- id: BLT-OURS' '  content: ours' >"$ours"
+    printf '%s\n' 'entries:' '- id: BLT-BASE' '  content: base' '- id: BLT-THEIRS' '  content: theirs' >"$theirs"
+    run bash "${TEST_TMP}/scripts/insight_write.sh" --stable-merge-driver bulletin "$base" "$ours" "$theirs"
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"STABLE_MERGE_OK kind=bulletin entries=3 duplicate_ids=0"* ]]
+    run python3 - "$ours" <<'PY'
+import sys, yaml
+rows = yaml.safe_load(open(sys.argv[1], encoding="utf-8"))["entries"]
+ids = [row["id"] for row in rows]
+assert ids == ["BLT-BASE", "BLT-OURS", "BLT-THEIRS"], ids
+assert len(ids) == len(set(ids))
+PY
+    [ "$status" -eq 0 ]
+
+    printf '%s\n' '- cmd_id: WA-BASE' '  detail: base' >"$base"
+    printf '%s\n' '- cmd_id: WA-BASE' '  detail: ours' >"$ours"
+    printf '%s\n' '- cmd_id: WA-BASE' '  detail: theirs' >"$theirs"
+    run bash "${TEST_TMP}/scripts/insight_write.sh" --stable-merge-driver workarounds "$base" "$ours" "$theirs"
+    [ "$status" -eq 1 ]
+    [[ "$output" == *"same workaround command ID changed on both parents: WA-BASE"* ]]
+}
+
+# test_necessity: Semantic concept blocks must merge by canonical concept ID,
+# producing a parseable regenerated index without duplicate concepts.
+@test "semantic index merge driver: disjoint concepts regenerate and same concept blocks" {
+    local base="$TEST_TMP/semantic-base.md" ours="$TEST_TMP/semantic-ours.md" theirs="$TEST_TMP/semantic-theirs.md"
+    cat >"$base" <<'EOF'
+---
+codd:
+  type: semantic-index
+---
+
+## concept_base — Base
+
+| id | concept_base |
+| label | Base |
+EOF
+    cp "$base" "$ours"
+    cp "$base" "$theirs"
+    cat >>"$ours" <<'EOF'
+
+## concept_ours — Ours
+
+| id | concept_ours |
+| label | Ours |
+EOF
+    cat >>"$theirs" <<'EOF'
+
+## concept_theirs — Theirs
+
+| id | concept_theirs |
+| label | Theirs |
+EOF
+    run bash "${TEST_TMP}/scripts/semantic_index_update.sh" --merge-driver "$base" "$ours" "$theirs"
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"SEMANTIC_INDEX_MERGE_OK concepts=3 duplicate_ids=0 regenerated=yes"* ]]
+    run grep -c '^| id |' "$ours"
+    [ "$status" -eq 0 ]
+    [ "$output" -eq 3 ]
 }
 
 # test_necessity: Disjoint ID additions must produce one parseable ledger with
