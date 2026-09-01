@@ -12558,3 +12558,10 @@ insights:
   source: "semantic_index_update"
   fix_known: false
   status: pending
+- id: INS-20260901-193343859-cb0a
+  ts: "2026-09-01T19:33:43+09:00"
+  insight: "semantic_index_update未登録[[リンク]]ターゲット: [[receipt範囲不足]] は既存aliasesに一致なし。類似概念TOP3: dm_fusion_app(DM-Fusionアプリ; alias=static export不可; score=4.7) / skill_design_rules(Skill設計ルール; alias=script_refs; score=4.6) / semantic_causal_automation(セマンティック因果自動化; alias=semantic persistence; score=4.3)。概念定義とaliases追加を検討せよ"
+  priority: "low"
+  source: "semantic_index_update"
+  fix_known: false
+  status: pending
