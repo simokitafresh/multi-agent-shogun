@@ -337,16 +337,28 @@ precommit_shell_syntax_cache_publish() {
 # tests/ and scripts/ (staged index view, so references removed in the same
 # commit do not count). One line per deletion: "<deleted> <- <ref> <ref>".
 # Empty output = no dangling references.
+# Output (one line per finding, tab separated):
+#   EXACT\t<deleted>\t<ref> <ref>...     repo-relative path literally referenced -> BLOCK
+#   BASENAME\t<deleted>\t<ref> <ref>...  only the basename matches -> candidate WARN
+# Karo review 2026-09-01 14:54 (fef153371 REJECT): WARN alone does not stop the
+# next deletion and a basename-only census mis-hits same-named files elsewhere.
 check_staged_deleted_refs() {
-    local del_path del_base del_refs
+    local del_path del_base exact_refs base_refs
     load_staged_file_cache
     for del_path in "${!_STAGED_FILE_STATUS[@]}"; do
         [[ "${_STAGED_FILE_STATUS[$del_path]}" == D* ]] || continue
+        exact_refs="$(git grep -l --cached -F -e "$del_path" -- tests scripts 2>/dev/null | grep -vxF "$del_path" || true)"
+        if [[ -n "$exact_refs" ]]; then
+            printf 'EXACT\t%s\t%s\n' "$del_path" "$(printf '%s' "$exact_refs" | tr '\n' ' ')"
+        fi
         del_base="$(basename "$del_path")"
-        [[ -n "$del_base" ]] || continue
-        del_refs="$(git grep -l --cached -F -e "$del_base" -- tests scripts 2>/dev/null | grep -vxF "$del_path" || true)"
-        [[ -n "$del_refs" ]] || continue
-        printf '    %s <- %s\n' "$del_path" "$(printf '%s' "$del_refs" | tr '\n' ' ')"
+        [[ -n "$del_base" && "$del_base" != "$del_path" ]] || continue
+        base_refs="$(git grep -l --cached -F -e "$del_base" -- tests scripts 2>/dev/null | grep -vxF "$del_path" || true)"
+        if [[ -n "$exact_refs" && -n "$base_refs" ]]; then
+            base_refs="$(printf '%s\n' "$base_refs" | grep -vxF -f <(printf '%s\n' "$exact_refs") || true)"
+        fi
+        [[ -n "$base_refs" ]] || continue
+        printf 'BASENAME\t%s\t%s\n' "$del_path" "$(printf '%s' "$base_refs" | tr '\n' ' ')"
     done
 }
 
@@ -1431,10 +1443,36 @@ main() {
     # WARN only (never BLOCK): the committer sees the remaining references and
     # decides; a deletion is reversible, a stalled lane is not free.
     precommit_step_begin deleted_ref
-    _deleted_ref_warn="$(check_staged_deleted_refs)"
-    if [[ -n "$_deleted_ref_warn" ]]; then
-        echo "[pre-commit] WARN(deleted_ref): staged deletion still referenced (tests/ or scripts/). Update or drop the references in the same commit:" >&2
-        printf '%s\n' "$_deleted_ref_warn" >&2
+    _deleted_ref_exact=""
+    _deleted_ref_base=""
+    while IFS=$'\t' read -r _dr_kind _dr_path _dr_refs; do
+        [[ -n "$_dr_kind" ]] || continue
+        case "$_dr_kind" in
+            EXACT) _deleted_ref_exact+="    $_dr_path <- $_dr_refs"$'\n' ;;
+            BASENAME) _deleted_ref_base+="    $_dr_path (basename) <- $_dr_refs"$'\n' ;;
+        esac
+    done < <(check_staged_deleted_refs)
+    unset _dr_kind _dr_path _dr_refs
+    if [[ -n "$_deleted_ref_base" ]]; then
+        echo "[pre-commit] WARN(deleted_ref): basename of a staged deletion still appears in tests/ or scripts/ (candidates, may be a same-named file):" >&2
+        printf '%s' "$_deleted_ref_base" >&2
+    fi
+    if [[ -n "$_deleted_ref_exact" ]]; then
+        if [[ -n "${PRECOMMIT_DELETED_REF_JUSTIFICATION:-}" ]]; then
+            echo "[pre-commit] WARN(deleted_ref): exact references remain but PRECOMMIT_DELETED_REF_JUSTIFICATION is set; logged to logs/precommit_deleted_ref_bypass.jsonl" >&2
+            printf '%s' "$_deleted_ref_exact" >&2
+            mkdir -p "$REPO_ROOT/logs" 2>/dev/null || true
+            printf '{"ts":"%s","justification":%s,"deletions":%s}\n' \
+                "$(date -Iseconds)" \
+                "$(printf '%s' "$PRECOMMIT_DELETED_REF_JUSTIFICATION" | python3 -c 'import json,sys; print(json.dumps(sys.stdin.read()))' 2>/dev/null || printf '"%s"' "unserializable")" \
+                "$(printf '%s' "$_deleted_ref_exact" | python3 -c 'import json,sys; print(json.dumps(sys.stdin.read()))' 2>/dev/null || printf '"%s"' "unserializable")" \
+                >> "$REPO_ROOT/logs/precommit_deleted_ref_bypass.jsonl" 2>/dev/null || true
+        else
+            precommit_step_end 1
+            echo "BLOCKED(deleted_ref): staged deletion is still referenced by its exact repo path in tests/ or scripts/. Remove/update the references in the same commit, or set PRECOMMIT_DELETED_REF_JUSTIFICATION='<why>' to record a deliberate bypass:" >&2
+            printf '%s' "$_deleted_ref_exact" >&2
+            exit 1
+        fi
     fi
     precommit_step_end 0
 
