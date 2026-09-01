@@ -9367,6 +9367,34 @@ EOF
     [ ! -e "$nonregular_repo/push_calls" ]
 }
 
+# test_necessity: an ancestry WAIT must publish the immutable report source
+# commit set, not the shared checkout HEAD.  This preserves source ancestry or
+# the durable source-only receipt when unrelated local work is present.
+# regression_justification: the old WAIT branch called safe_shared_main_ff
+# directly, publishing shared HEAD and leaving the report source dangling.
+@test "ancestry WAIT auto-push routes source commits to the source publisher" {
+    local route_log="$BATS_TEST_TMPDIR/source-auto-push-route.log"
+
+    run bash -c '
+        source "$1"
+        export ROUTE_LOG="$2"
+        push_task_repositories() {
+            printf "%s\n" "$@" > "$ROUTE_LOG"
+        }
+        SCRIPT_DIR="$BATS_TEST_TMPDIR"
+        cmd_complete_gate_auto_push_ancestry_wait task-source-a.yaml task-source-b.yaml
+    ' _ "$GATE_HELPERS_FILE" "$route_log"
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"AUTO_PUSH_WAIT push=1 result=PASS method=source_commits"* ]]
+    [ "$(sed -n '1p' "$route_log")" = "task-source-a.yaml" ]
+    [ "$(sed -n '2p' "$route_log")" = "task-source-b.yaml" ]
+
+    run grep -Fc 'if cmd_complete_gate_auto_push_ancestry_wait "${MATCHING_TASK_FILES[@]}"; then' \
+        "$SRC_GATE_SCRIPT"
+    [ "$status" -eq 0 ]
+    [ "$output" -eq 1 ]
+}
+
 # test_necessity: CI status and terminal ancestry share an immutable report and
 # repository boundary within one gate process; duplicate publication probes
 # must not reintroduce the item-timeout latency that this cache removes.
