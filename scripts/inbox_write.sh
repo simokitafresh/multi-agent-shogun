@@ -3005,7 +3005,20 @@ if inbox_type_triggers_report_completion "$TYPE"; then
                         GUNSHI_INBOX="$(get_commander_inbox_path gunshi)"
                         ROUTE_TS=$(date -Is)
                         ROUTE_ID="msg_$(date +%s%N | head -c 16)"
-                        (
+                        # DEDUPE (2026-09-01 将軍 D0): 同一 report × 同一 gate_errors は 1 回だけ通知する。
+                        # ninja_monitor の REPORT-OUTBOX-REPAIR が completed 報告を毎サイクル replay し、
+                        # 同じ BLOCK(cmd_3264-AC2)で軍師へ quality_monitor が毎分積まれ stop hook を塞いだ
+                        # (17:1x-17:2x UNREAD 19→30、21 件が同一本文)。判定は内容同一性(marker)、件数ではない。
+                        _qm_marker_dir="$SCRIPT_DIR/queue/gates/quality_monitor"
+                        _qm_key=$(printf '%s\n%s\n' "$FULL_REPORT" "$GATE_RESULT" | sha256sum | cut -c1-16)
+                        _qm_marker="$_qm_marker_dir/${FROM}.${_qm_key}.sent"
+                        if [ -f "$_qm_marker" ]; then
+                            echo "[report_quality_route] DEDUPE: 同一 report+gate_errors は通知済み(marker=${_qm_marker##*/})。軍師へは送らない" >&2
+                            _qm_dedupe=1
+                        else
+                            _qm_dedupe=0
+                        fi
+                        [ "$_qm_dedupe" = 1 ] || (
                             flock -w 5 200 || { echo "[report_quality_route] WARN: flock timeout for gunshi inbox, skipping quality notification" >&2; exit 1; }
                             if [ ! -f "$GUNSHI_INBOX" ]; then
                                 mkdir -p "$(dirname "$GUNSHI_INBOX")"
@@ -3023,7 +3036,7 @@ if inbox_type_triggers_report_completion "$TYPE"; then
                                 report_path "$FULL_REPORT")"$'\n'
                             inbox_append_message_locked "$GUNSHI_INBOX" "$_gunshi_msg"
                         ) 200>"$(lock_path "$GUNSHI_INBOX")" \
-                            && echo "[report_quality_route] 品質問題を軍師に監視通知済み(修正は忍者が行う)" >&2 \
+                            && { mkdir -p "$_qm_marker_dir" && printf 'ts: %s\nreport: %s\nninja: %s\n' "$ROUTE_TS" "$FULL_REPORT" "$FROM" > "$_qm_marker"; echo "[report_quality_route] 品質問題を軍師に監視通知済み(修正は忍者が行う)" >&2; } \
                             || echo "[report_quality_route] WARN: gunshi notification skipped (flock timeout)" >&2
                         # BLOCK: verdict記入済み+gate FAIL → 忍者が修正して再送信するまでkaroに届けない
                         echo "" >&2
