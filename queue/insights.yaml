@@ -11249,7 +11249,10 @@ insights:
   priority: "medium"
   source: "lord_conversation:lesson_candidate"
   fix_known: false
-  status: pending
+  status: resolved
+  resolved_reason: "一次情報で既存のスループット原則・計測・還流を照合し、問いは既存概念へ吸収済みと確認。throughput_scan最新値はbaseline_e2e_sec=3213.5、median_e2e_sec=2200.0、improvement_ratio=1.4606818181818182で改善を実測し、新規修正・decision_candidateは不要。"
+  action_artifact: "memory_db:insight:INS-20260831-142020111-7787;semantic:docs/semantic-index/index.md:L5153-L5171,L5329-L5341;context:docs/research/throughput-first-asis-tobe-5w1h_20260708.md:§0-§5,§8;measurement:logs/throughput_scan.log latest THROUGHPUT_2X_RATCHET"
+  resolved_at: "2026-09-01T14:45:24+09:00"
 - id: INS-20260831-142136716-19e9
   ts: "2026-08-31T14:21:36+09:00"
   insight: "[[source commitがcanonical remote ancestorと再確認できたCLEAR済みcmdで公開r]] NO_MATCH purpose pending alias: cmd_complete時にdeploy_task.logでNO_MATCHだったpurpose。類似概念TOP3: semantic_dictionary_design(セマンティック辞書構想; alias=source; score=16.6) / creator_brainwashing_defense(創造主の洗脳防御; alias=source lord terminal; score=13.9) / google_classroom(Google Classroom Dashboard; alias=source commits N件だけのALERTでは; score=13.1)。既存概念aliasesへの自動昇格候補"
