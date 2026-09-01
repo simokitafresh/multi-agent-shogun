@@ -139,9 +139,9 @@ safe_shared_main_auto_push() {
 verify_ours_equivalent_merge_trees() {
     local repo="$1" old_base="$2" target_head="$3" prospective_tree="${4:-}"
     local merge first_parent second_parent merge_tree first_tree changed_paths path
-    local published_head published_merges=0 ours_equivalent=0 nonempty_parent_diffs=0
-    local first_blob parent_blob prospective_blob old_tree
-    local -a new_merges=() merge_paths=() regression_paths=()
+    local merge_base merge_base_tree published_head published_merges=0 ours_equivalent=0 nonempty_parent_diffs=0
+    local first_blob parent_blob prospective_blob second_blob old_tree
+    local -a new_merges=() merge_paths=() merge_regression_paths=() regression_paths=()
     local -A regression_seen=()
 
     mapfile -t new_merges < <(
@@ -189,9 +189,33 @@ verify_ours_equivalent_merge_trees() {
             continue
         fi
 
+        # An unpublished ours-equivalent merge is unsafe only when it loses a
+        # change introduced by its second parent. A merge whose second parent
+        # is still at the merge base is normal local-first integration and
+        # must not be mistaken for content loss from an ancestry merge.
+        merge_regression_paths=()
+        merge_base="$(git -C "$repo" merge-base "$first_parent" "$second_parent" 2>/dev/null || true)"
+        merge_base_tree=""
+        if [[ -n "$merge_base" ]]; then
+            merge_base_tree="$(git -C "$repo" rev-parse "$merge_base^{tree}" 2>/dev/null || true)"
+        fi
+        if [[ -n "$prospective_tree" && -n "$merge_base_tree" ]]; then
+            for path in "${merge_paths[@]}"; do
+                [[ -n "$path" ]] || continue
+                parent_blob="$(git -C "$repo" rev-parse "$merge_base_tree:$path" 2>/dev/null || printf '__ABSENT__')"
+                second_blob="$(git -C "$repo" rev-parse "$second_parent:$path" 2>/dev/null || printf '__ABSENT__')"
+                prospective_blob="$(git -C "$repo" rev-parse "$prospective_tree:$path" 2>/dev/null || printf '__ABSENT__')"
+                if [[ "$second_blob" != "$parent_blob" \
+                   && "$prospective_blob" != "$second_blob" ]]; then
+                    merge_regression_paths+=("$path")
+                fi
+            done
+        fi
+        [[ "${#merge_regression_paths[@]}" -gt 0 ]] || continue
+
         ours_equivalent=$((ours_equivalent + 1))
         nonempty_parent_diffs=$((nonempty_parent_diffs + changed_paths))
-        for path in "${merge_paths[@]}"; do
+        for path in "${merge_regression_paths[@]}"; do
             [[ -n "$path" ]] || continue
             if [[ -z "${regression_seen[$path]+yes}" ]]; then
                 regression_seen["$path"]=1

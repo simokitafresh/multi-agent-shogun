@@ -286,6 +286,26 @@ exit 0"
   [ "$(git -C "$FIX" rev-parse HEAD)" = "$before" ]
 }
 
+# test_necessity: the live push-lane candidate had first-parent-only changes;
+# its tree already preserves every second-parent change relative to the merge
+# base and must not be classified as an ancestry content-loss regression.
+@test "live candidate with first-parent-only changes passes merge guard" {
+  local project_root live_repo candidate_tree
+  project_root="$(cd "$BATS_TEST_DIRNAME/../.." && pwd)"
+  live_repo="$BATS_TEST_TMPDIR/live-candidate"
+  git clone -q --shared "$project_root" "$live_repo"
+  git -C "$live_repo" update-ref refs/remotes/origin/main 84e18b7d105a2eb4d0449991b0c6cc1bc43ec8cf
+  candidate_tree="$(git -C "$live_repo" rev-parse '8e707ce4b1ad40d1419da0b49451e03d8d7a8b6c^{tree}')"
+
+  run bash "$project_root/scripts/safe_shared_main_ff.sh" --verify-merge-tree \
+    "$live_repo" 32851d859f1813b8d020598e882e9337b1ed6bc4 \
+    8e707ce4b1ad40d1419da0b49451e03d8d7a8b6c "$candidate_tree"
+  [ "$status" -eq 0 ]
+  [[ "$output" == *"target_new_merges=1"* ]]
+  [[ "$output" == *"ours_equivalent=0"* ]]
+  [[ "$output" == *"result=PASS"* ]]
+}
+
 # test_necessity: the real eaabc7d93 content-loss merge must be diagnosed at
 # the incident remote boundary (392fbbf59), even when the tracking ref has not
 # crossed the publication boundary; a normal linear update remains allowed.
