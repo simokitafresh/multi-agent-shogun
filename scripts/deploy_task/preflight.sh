@@ -263,7 +263,17 @@ deploy_task_prepare_remote_tip_worktree() {
     repo=$(deploy_task_resolve_source_repo "$task_file")
     [ -n "$repo" ] || { log "BLOCK: remote-tip worktree repo unavailable"; return 1; }
 
+    # A source checkout may track a maintenance branch while deployment
+    # publication is bounded by the canonical origin/main tip.  Selecting
+    # @{upstream} here can create a worktree that predates an absolute target
+    # which is already present on origin/main.  Keep the normal origin/main
+    # path to one live-tip probe so the existing race detector retains its
+    # first/second observation boundary.
     upstream_ref=$(git -C "$repo" rev-parse --abbrev-ref --symbolic-full-name '@{upstream}' 2>/dev/null || true)
+    if { [ "$upstream_ref" != "origin/main" ] || [ -z "$upstream_ref" ]; } \
+        && git -C "$repo" ls-remote --exit-code origin refs/heads/main >/dev/null 2>&1; then
+        upstream_ref="origin/main"
+    fi
     [ -n "$upstream_ref" ] || upstream_ref="origin/main"
     remote="${upstream_ref%%/*}"; push_ref="refs/heads/${upstream_ref#*/}"
     remote_tip=$(deploy_task_fetch_stable_remote_tip "$repo" "$remote" "$push_ref") || return 1
