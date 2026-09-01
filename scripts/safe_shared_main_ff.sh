@@ -195,10 +195,17 @@ fi
 # with this exact tree-level invariant.
 verify_target_merge_trees() {
     local merge first_parent second_parent merge_tree first_tree changed_paths
+    local published_head published_merges=0
     local -a new_merges=()
     mapfile -t new_merges < <(
         git -C "$ROOT" rev-list --merges "$old_head..$target_head"
     )
+    # A merge already reachable from the canonical remote main has already
+    # crossed the publication boundary. Re-checking it here would turn a
+    # later convergence of the same published history into a false BLOCK.
+    # If the tracking ref is unavailable, retain the fail-closed behavior and
+    # treat every detected ours-equivalent merge as unpublished.
+    published_head="$(git -C "$ROOT" rev-parse --verify refs/remotes/origin/main^{commit} 2>/dev/null || true)"
     local ours_equivalent=0 nonempty_parent_diffs=0
     for merge in "${new_merges[@]}"; do
         [[ -n "$merge" ]] || continue
@@ -206,6 +213,11 @@ verify_target_merge_trees() {
             git -C "$ROOT" show -s --format='%P' "$merge"
         )
         [[ -n "$first_parent" && -n "$second_parent" ]] || continue
+        if [[ -n "$published_head" ]] \
+            && git -C "$ROOT" merge-base --is-ancestor "$merge" "$published_head"; then
+            published_merges=$((published_merges + 1))
+            continue
+        fi
         merge_tree="$(git -C "$ROOT" rev-parse "$merge^{tree}")"
         first_tree="$(git -C "$ROOT" rev-parse "$first_parent^{tree}")"
         [[ "$merge_tree" == "$first_tree" ]] || continue
@@ -216,8 +228,8 @@ verify_target_merge_trees() {
         echo "BLOCK: target introduces ours-equivalent merge with non-empty second-parent tree diff" >&2
         echo "  merge=$merge first_parent=$first_parent second_parent=$second_parent changed_paths=$changed_paths" >&2
     done
-    printf 'SAFE_SHARED_MAIN_FF_MERGE_CHECK target_new_merges=%s ours_equivalent=%s parent_diff_paths=%s result=%s\n' \
-        "${#new_merges[@]}" "$ours_equivalent" "$nonempty_parent_diffs" \
+    printf 'SAFE_SHARED_MAIN_FF_MERGE_CHECK target_new_merges=%s published_merges=%s ours_equivalent=%s parent_diff_paths=%s result=%s\n' \
+        "${#new_merges[@]}" "$published_merges" "$ours_equivalent" "$nonempty_parent_diffs" \
         "$([[ "$ours_equivalent" -eq 0 ]] && echo PASS || echo BLOCK)"
     if [[ "$ours_equivalent" -ne 0 ]]; then
         return 2

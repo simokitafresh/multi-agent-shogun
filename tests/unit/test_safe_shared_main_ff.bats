@@ -270,6 +270,7 @@ exit 0"
 # first-parent/second-parent tree diff but an identical merge/first-parent tree;
 # safe convergence must block it before ref movement.
 @test "target-side ours-equivalent tree regression blocks before ref update" {
+  fallback_origin_init
   git -C "$FIX" worktree add -q -b side "$BATS_TEST_TMPDIR/side"
   printf 'side-b\n' > "$BATS_TEST_TMPDIR/side/b.txt"
   git -C "$BATS_TEST_TMPDIR/side" add b.txt
@@ -283,6 +284,41 @@ exit 0"
   [[ "$output" == *"ours-equivalent merge"* ]]
   [[ "$output" == *"target_new_merges=1"* ]]
   [ "$(git -C "$FIX" rev-parse HEAD)" = "$before" ]
+}
+
+# test_necessity: an ours-equivalent merge already published in origin/main is
+# historical state, not a new unsafe merge introduced by this convergence.
+@test "published ours-equivalent merge is exempt from the guard" {
+  fallback_origin_init
+  git -C "$FIX" worktree add -q -b side "$BATS_TEST_TMPDIR/published-side"
+  printf 'published-side-b\n' > "$BATS_TEST_TMPDIR/published-side/b.txt"
+  git -C "$BATS_TEST_TMPDIR/published-side" add b.txt
+  git -C "$BATS_TEST_TMPDIR/published-side" commit -qm published-side-b
+  published_side="$(git -C "$BATS_TEST_TMPDIR/published-side" rev-parse HEAD)"
+  git -C "$BATS_TEST_TMPDIR/next" merge -s ours --no-ff "$published_side" -m "published ours fixture" >/dev/null
+  target="$(git -C "$BATS_TEST_TMPDIR/next" rev-parse HEAD)"
+  git -C "$FIX" push -q origin "$target:refs/heads/main"
+  git -C "$FIX" fetch -q origin main
+
+  run bash "$FIX/scripts/safe_shared_main_ff.sh" "$target"
+  [ "$status" -eq 0 ]
+  [[ "$output" == *"target_new_merges=1"* ]]
+  [[ "$output" == *"published_merges=1"* ]]
+  [[ "$output" == *"ours_equivalent=0"* ]]
+  [[ "$output" == *"result=PASS"* ]]
+  [ "$(git -C "$FIX" rev-parse HEAD)" = "$target" ]
+}
+
+# test_necessity: a normal fast-forward without merge commits remains a PASS
+# while the published-history exemption is active.
+@test "normal fast-forward remains allowed after merge guard" {
+  target="$(git -C "$BATS_TEST_TMPDIR/next" rev-parse HEAD)"
+  run bash "$FIX/scripts/safe_shared_main_ff.sh" "$target"
+  [ "$status" -eq 0 ]
+  [[ "$output" == *"target_new_merges=0"* ]]
+  [[ "$output" == *"ours_equivalent=0"* ]]
+  [[ "$output" == *"result=PASS"* ]]
+  [ "$(git -C "$FIX" rev-parse HEAD)" = "$target" ]
 }
 
 @test "concurrent convergence is serialized and both callers succeed" {
