@@ -12463,7 +12463,10 @@ insights:
   priority: "low"
   source: "semantic_map_generate:new_file"
   fix_known: false
-  status: pending
+  status: resolved
+  resolved_reason: "一次情報で対象テストがtracked実在し、commit 37f7d2732b543605b18d071044a24857fc97dc94 に本体修正と3件の回帰テストが既に実装済みで、run_tests.sh file は3/3 PASS・SKIP0。context/semantic-map.md:104 と docs/semantic-index/index.md:13598 の既存概念 provisional_log_terminal_input は確認できたが、対象テストパスの直接登録は両層0件。実装修正は不要だが、既存概念へのテストファイル登録を decision_candidate として次cmdへ保持する。"
+  action_artifact: "target=queue/insights.yaml:INS-20260901-152650922-0e5f;primary=tests/unit/test_log_terminal_input_pane_guard.bats;commit=37f7d2732b543605b18d071044a24857fc97dc94;tests=run_tests.sh file tests/unit/test_log_terminal_input_pane_guard.bats (3/3 PASS, SKIP0);semantic_map=context/semantic-map.md:104 existing provisional_log_terminal_input, exact_path_refs=0;semantic_index=docs/semantic-index/index.md:13598 existing provisional_log_terminal_input, exact_path_refs=0;decision_candidate=register test path under provisional_log_terminal_input;inventory_before=33/17/0/50"
+  resolved_at: "2026-09-02T04:53:58+09:00"
 - id: INS-20260901-152703823-7656
   ts: "2026-09-01T15:27:03+09:00"
   insight: "semantic_map_generate新規ファイル候補: `tests/unit/test_prompt_state_inject_agent_resolution.bats` は semantic index未登録。既存概念へのfile追加または新概念定義を検討せよ"
