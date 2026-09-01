@@ -151,7 +151,7 @@ import json
 import os
 import re
 import sys
-from datetime import datetime, timezone
+from datetime import datetime, timezone, timedelta
 
 import yaml
 
@@ -241,7 +241,7 @@ def parse_timestamp(value):
     except ValueError:
         return None
     if parsed.tzinfo is None:
-        parsed = parsed.replace(tzinfo=timezone.utc)
+        parsed = parsed.replace(tzinfo=timezone(timedelta(hours=9)))
     return parsed.astimezone(timezone.utc)
 
 
