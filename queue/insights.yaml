@@ -10644,7 +10644,7 @@ insights:
   fix_known: false
   status: resolved
   resolved_reason: "対象の一時テストファイルは現物・git追跡とも不在で、semantic_map_generate.shの存在条件を満たさず、semantic index/contextへの登録対象ではないことを一次確認した"
-  action_artifact: "queue/insights.yaml:INS-20260831-021333019-ce24; scripts/semantic_map_generate.sh:421-424; docs/semantic-index/index.md/context/semantic-map.md:対象path未登録; git ls-files:対象pathなし"
+  action_artifact: "queue/insights.yaml:INS-20260831-021333019-ce24; scripts/semantic_map_generate.sh:421-424; docs/semantic-index/index.md/context/semantic-map.md:対象path未登録; git ls-files:対象pathなし; worker_task=cmd_reflux_insight_202609020211_saizo_exact"
   resolved_at: "2026-09-02T02:15:19+09:00"
 - id: INS-20260831-021511357-b642
   ts: "2026-08-31T02:15:11+09:00"
