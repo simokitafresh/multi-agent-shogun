@@ -259,3 +259,4 @@
 | cmd | title | project | date | key_result |
 |-----|-------|---------|------|------------|
 | cmd_4440 | 殿裁定 2026-08-31 19:27『直そう』(設計書 v3.2 §5 / SEO 案 v4 §0 で発見した小穴)。現物 19:28 curl: EN LP・JA LP とも FAQ リンクは `https://dm-signal-frontend.onrender.com/faq`(JA 既定)1 件ずつで、EN 読者が EN FAQ(`/faq/en/`、cmd_4427 で live 200)へ直に到達できない。EN LP の href を `/faq/en/` へ、JA LP は `/faq` のまま維持する | dm-signal | 09-01 | LPのEN footer FAQ hrefをhttps:// |
+| cmd_4441 | 殿裁定 2026-08-31 20:32-20:36: 『デザインしてるから嘘くさい。python で作ったチャートや表のほうがリアル感が強い。デザインでサギっぽくなっている』『DM-signal のデザインブック(page style MECE gist c50699ea)を参考にしろ。統一感がなく LP の信頼感が極端に低い。俺はカードを使わない』『すでにあるものを使え。チャートなら DM-signal の chart をキャプチャーして使えばいい』。現物 20:35: LP HTML に lp-card ×5・lp-sign-card ×2・lp-chart-card ×1、独自 globals.css、自作 SVG チャート(4433)。LP 系 cmd 7 本は MECE 正本を参照していなかった(将軍の起票の穴)。cmd_4439(自作 SVG 比較チャート)は void | dm-signal | 09-01 | AC1-AC4完了。殿提供PNGをそのままLP public |

@@ -3296,6 +3296,8 @@ codd:
 | discussion | `queue/lord_conversation.jsonl` 2026-09-01T14:18:14+09:00 2026-09-01 14:17 家老レビュー最終: 殿 13:22『家老セッションの試行錯誤根治』の 3 commit 全 APPROVE(6becee0f9→f8f5215dc --help stdout/rc0、54ccc3b27 p |
 | discussion | `queue/lord_conversation.jsonl` 2026-09-01T14:53:04+09:00 第21便(将軍 14:38 y 復帰〜14:53)の一次所見: (1)CI RED 33473649055 shard1 の真因=前将軍 559c02538 が scripts/shutsujin_departure.sh を『呼出し元 0 |
 | discussion | `queue/lord_conversation.jsonl` 2026-09-01T15:07:14+09:00 You are UPDATING an existing design document to reflect source code changes. The code diff below shows what changed in t |
+| discussion | `queue/lord_conversation.jsonl` 2026-09-01T15:23:30+09:00 2026-09-01 15:19-15:24 偽 BLOCK 根治: stop hook『deepdive 追体験未完了』は偽陽性。logs/deepdive_replay/shogun.session が 15:19:00 に sessi |
+| discussion | `queue/lord_conversation.jsonl` 2026-09-01T15:26:46+09:00 You are UPDATING an existing design document to reflect source code changes. The code diff below shows what changed in t |
 | causal_chain | `[[cmd_3749]]` (L974) |
 | causal_chain | `[[cmd_training_L1_report-write_20260708020332]]` (L977) |
 | causal_chain | `[[cmd_reflux_insight_202607071717_tobisaru]]` (L961) |
@@ -14526,6 +14528,8 @@ codd:
 | cmd | `cmd_reflux_insight_202609011438_saizo` (`queue/insights.yaml`) |
 | causal | `cmd_reflux_insight_202609011503_hayate` files_modified: [[provisional_insights]] |
 | cmd | `cmd_reflux_insight_202609011503_hayate` (`queue/insights.yaml`) |
+| causal | `cmd_reflux_insight_202609011520_hanzo` files_modified: [[provisional_insights]] |
+| cmd | `cmd_reflux_insight_202609011520_hanzo` (`queue/insights.yaml`) |
 | causal_chain | `[[cmd_reflux_insight_202608040505_kagemaru]]` (L1545) |
 
 ## provisional_heavy_job_admission — 仮: Heavy Job Admission
@@ -16165,6 +16169,7 @@ codd:
 | discussion | `queue/lord_conversation.jsonl` 2026-09-01T03:14:11.403622+00:00 git pre-commit semantic propagation for context/projects changes |
 | discussion | `queue/lord_conversation.jsonl` 2026-09-01T05:11:38.135896+00:00 git pre-commit semantic propagation for context/projects changes |
 | discussion | `queue/lord_conversation.jsonl` 2026-09-01T05:53:29.558064+00:00 git pre-commit semantic propagation for context/projects changes |
+| discussion | `queue/lord_conversation.jsonl` 2026-09-01T06:19:36.578928+00:00 git pre-commit semantic propagation for context/projects changes |
 | causal_chain | `[[cmd_karo_hotfix_lessons_yaml_format_restore_20260727]]` (L1389) |
 
 ## infra_design_intent — インフラ設計意図カタログ
