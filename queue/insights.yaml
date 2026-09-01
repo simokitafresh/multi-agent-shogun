@@ -12411,4 +12411,21 @@ insights:
   priority: "low"
   source: "semantic_stress_test"
   fix_known: false
+  status: resolved
+  resolved_reason: "semantic index candidate was absorbed into a registered concept"
+  action_artifact: "semantic_index=/home/simokitafresh/multi-agent-shogun/docs/semantic-index/index.md"
+  resolved_at: "2026-09-01T16:10:27+09:00"
+- id: INS-20260901-161331183-4318
+  ts: "2026-09-01T16:13:31+09:00"
+  insight: "[[inbox処理receipt根治 — content hashをcanonical read時に発行し]] NO_MATCH purpose pending alias: cmd_complete時にdeploy_task.logでNO_MATCHだったpurpose。類似概念TOP3: content_artifacts(記事・成果物索引; alias=marketing content; score=9.8) / partial_turnover_execution_method(Partial Turnover実験実行・完了証跡方法論; alias=ログイン導線AsIs棚卸し read only — 認証切替・データ層・HTTPキャッシュの現物契約; score=9.6) / agent_formation_management(編成管理; alias=既存の広いdirty差分inbox1 — CMD受領済み; score=9.5)。既存概念aliasesへの自動昇格候補"
+  priority: "low"
+  source: "semantic_index_update"
+  fix_known: false
+  status: pending
+- id: INS-20260901-161614405-eca0
+  ts: "2026-09-01T16:16:14+09:00"
+  insight: "軍師(Claude)の inbox 配達が毎回 60-98 秒遅延: inbox_watcher_gunshi.log で『[BUSY] no idle flag』→『[RECOVERY] forcing idle flag』が本日 74 回(11:10〜16:14 全時間帯、遅延 66/67/79/81/98s が上位)、家老(Codex)は 0 回。pane は ❯ idle でも /tmp/shogun_idle_gunshi が無い時間帯がある(16:11:36 実測)。stop_check_inbox.sh は stop_hook_active/unread>0/fast_cache 経路で flag を書くが、軍師の直近 turn 終了で flag が残らない経路 or watcher 側の削除タイミングの競合が疑い。1 件=RECOVERY 行 1 行。根治=Stop hook と watcher の flag ライフサイクル契約(誰が消し誰が書くか)を 1 箇所に"
+  priority: "medium"
+  source: "manual"
+  fix_known: false
   status: pending
