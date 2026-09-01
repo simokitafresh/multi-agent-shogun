@@ -12480,3 +12480,10 @@ insights:
   source: "skill_script_refs:9abfd94ce2d8bec9"
   fix_known: false
   status: pending
+- id: INS-20260901-190432447-be27
+  ts: "2026-09-01T19:04:32+09:00"
+  insight: "semantic_index_update新概念候補: discussion:T212は副作用があったんじゃなかったか？別設計書があるはずだから整合させて は 既存aliasesに一致なし。概念定義とaliases追加を検討せよ"
+  priority: "low"
+  source: "semantic_index_update"
+  fix_known: false
+  status: pending
