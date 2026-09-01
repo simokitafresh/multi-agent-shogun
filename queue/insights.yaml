@@ -1733,7 +1733,10 @@ insights:
   priority: "low"
   source: "cmd_complete_gate:memory_phase"
   fix_known: false
-  status: pending
+  status: resolved
+  resolved_reason: "一次情報で現行 gate_report_format_main.py:121-151 の明示 planned_paths commit scope と、cmd_4359成果物 docs/research/script_refactor_priority_20260821.md・docs/research/deploy_task_split_design_20260821.md の現物および履歴(0fbb8df18, 721f835f7)を確認した。旧planned_paths不一致は既存修正済みで追加実装修正・decision_candidateは不要。"
+  action_artifact: "primary=scripts/gates/gate_report_format_main.py:121-151;artifacts=docs/research/script_refactor_priority_20260821.md,docs/research/deploy_task_split_design_20260821.md;commits=0fbb8df18,721f835f7;memory=memory_db_query:INS-20260822-042730567-35c5;semantic=semantic_search:planned_paths_AC成果物;decision_candidate=none"
+  resolved_at: "2026-09-01T20:33:46+09:00"
 - id: INS-20260822-042731301-d75b
   ts: "2026-08-22T04:27:31+09:00"
   insight: "同パターンLevel5未満候補: source_cmd=cmd_4359; matched=最大; current_pattern=script_size_alert対応 — 閾値超過スクリプトのリファクタ優先度台帳化と最大複雑度1本の分割設計; candidate_level=2; candidate=dashboard-updateスキルのSSoT二重管理(archive+gp_tracker)を一本化済み。根因解消により再発リスク消失。defense_level: 2文書追加は不要; source=gunshi_gp_tracker.yaml"
