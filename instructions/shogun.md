@@ -168,6 +168,14 @@ test_execution:
 - **enforcement**: agent_respawn.sh 作業中ガード(e3712b4a9)/codex_inbox_priority_guard.sh(42f09d54b)/cli_lookup 接尾辞自己修復+BASH_REMATCH 排除(bc9f4a8c6)/script_update.sh bash フォールバック(2df2ecdee)/inbox_write gunshi 宛 review_draft 許可+stderr 記録(c17a92d8e)。未自動化: push 単位 1 commit の強制(pre-push hook で origin..pushed が first-parent 1 段を超えたら WARN)。
 - origin: `[[殿裁定_1commitずつpush_20260826]] -> [[家老の行動型_1通1単位]] -> [[つまり3本根治_20260827]]`
 
+## 復帰後の型・第二十二弾 4則（2026-09-01 17:17-17:36 第22便: 軍師つまりの正帰還/dangling×契約矛盾/fixture の本番 session 残置/裁可待ちの洗脳から・将軍自身に適用）
+
+1. **『軍師が止まっている』は現象。増殖している inbox を type×from×report で数えてから止血点を決めよ。** UNREAD 19→30 の 21 件は `quality_monitor`(system)の同一本文=inbox_write.sh:3000 が影丸 report の同一 BLOCK を毎分通知。判定は件数ではなく内容同一性(report 内容 hash marker、D0 702ca5090/79dfd86e9)。GATE_RESULT を key にすると `prior_attempts[N]` の N が揺れて marker が増殖する(17:28/17:29)。
+2. **103 回同じ BLOCK を踏む忍者は忍者の問題ではなく契約矛盾。task の scope(review_correction_scope=report)と gate の要求(target_path clean)を並べて読め。** 影丸 v3 commit 4d369d017 は dangling(`merge-base --is-ancestor` rc=1)で root に同一内容の差分だけが載っていた(LS123 型)。合流 1 手(家老 92d1853bb)で BLOCK 0。replay 元(monitor REPORT-OUTBOX-REPAIR)は症状であり切るな。
+3. **殿が見て気づく異物(見慣れない window)は fixture の本番 session 残置。生成元を `@agent_id`/proc の cwd で特定し、live consumer 0 を数えてから閉じる。** 小太郎 idle_lifecycle の gunshi_sim watcher が `shogun` session に window 3/4 を作り 17:10 から残置。cmd_4407(型3弾-3)の再発=検証 AC に『本番 session 名なら exit 2』が無い。次の構造型=run_tests/fixture helper で `tmux new-window -t shogun` を BLOCK。
+4. **『稼働中 CLI 操作禁止』は CLI 終了・設定変更・切替のこと。idle の agent への /clear(clear_command 経由)は monitor が日常的に行う定型運用=可逆。前将軍は『殿裁可事項』と書いて 2 ターン閉じた=洗脳#3。害あるターンの中断(Escape/Enter 送出)も型十七弾-5 と同級。ただし送出前に capture で確認プロンプト 0 を数える。**
+- origin: `[[殿y復帰_20260901_1717]] -> [[quality_monitor正帰還_21件同一本文]] -> [[4d369d017_dangling×RC_SCOPE契約矛盾]] -> [[fixture_window_本番session残置_型3弾-3再発]] -> [[裁可待ち=洗脳3_clear_command定型]] -> [[復帰後の型_第二十二弾]]`
+
 ## 復帰後の型・第二十一弾 4則（2026-09-01 15:02-16:27 第21便後半: 偽 BLOCK の 3 層根治/件数 heuristic の本番 FP/数値突合 3 層/自分の dirty 差分から・将軍自身に適用）
 
 1. **pane 識別子は『誰が見ているか』ではなく『誰が走っているか』。pane の CLI でないプロセス(daemon・`claude -p` 子)に TMUX_PANE を渡すな、hook は active pane へ fallback するな。** 15:19/15:39 の 2 回、将軍の deepdive marker が別プロセスで書換えられ stop hook が偽 BLOCK、CoDD prompt が殿 inbound として誤記録。層 1=hook fallback(d5b9d8d95)、層 2=`-t ""`(37f7d2732)、層 3=monitor 世代が将軍 pane から継承した TMUX_PANE=%0 → codd propagate → `claude --print`(c7dada38c)。1 層直して再発したら「同じ現象を出す別の入口」を `/proc/<pid>/environ` で探せ。偽 BLOCK は迂回(marker 手書換)で終わらせず、marker は真の /clear 時刻へ戻し根治を 3 層まで追う。
