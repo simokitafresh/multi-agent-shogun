@@ -14578,6 +14578,8 @@ codd:
 | cmd | `cmd_reflux_insight_202609011840_saizo` (`queue/insights.yaml`) |
 | causal | `cmd_reflux_insight_202609011903_tobisaru` files_modified: [[provisional_insights]] |
 | cmd | `cmd_reflux_insight_202609011903_tobisaru` (`queue/insights.yaml`) |
+| causal | `cmd_reflux_insight_202609011938_kotaro` files_modified: [[provisional_insights]] |
+| cmd | `cmd_reflux_insight_202609011938_kotaro` (`queue/insights.yaml`) |
 | causal_chain | `[[cmd_reflux_insight_202608040505_kagemaru]]` (L1545) |
 
 ## provisional_heavy_job_admission — 仮: Heavy Job Admission
