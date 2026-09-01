@@ -12105,3 +12105,10 @@ insights:
   source: "semantic_map_generate:new_file"
   fix_known: false
   status: pending
+- id: INS-20260901-113912458-d957
+  ts: "2026-09-01T11:39:12+09:00"
+  insight: "shutsujin_departure.sh/reset_layout.shがCodex CLI 7paneを同時spawnし ~/.codex/logs_2.sqlite(4.8GB) の初期化ロックで忍者6名が全滅(2026-09-01 11:23)。Codex起動にstagger(数秒間隔+前paneの起動完了待ち)を埋め込め。加えてlogs_2.sqlite肥大の剪定"
+  priority: "medium"
+  source: "manual"
+  fix_known: false
+  status: pending
