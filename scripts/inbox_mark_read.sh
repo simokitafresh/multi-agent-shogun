@@ -309,6 +309,8 @@ if review_messages:
         review_entries = []
     for message in review_messages:
         report_name = report_name_from_content(message.get("content"))
+        if not report_name and message.get("report_path"):
+            report_name = os.path.basename(str(message["report_path"]))
         message_at = parse_timestamp(message.get("timestamp"))
         matched = False
         if report_name and message_at is not None:
