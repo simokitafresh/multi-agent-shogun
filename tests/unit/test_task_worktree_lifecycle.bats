@@ -333,6 +333,23 @@ PY
     [ "$status" -eq 0 ]
     [[ "$output" == *"shared_head_unchanged=1 remote_only_target=1"* ]]
 
+    directory_task="$BATS_TEST_TMPDIR/external-directory-target.yaml"
+    printf 'task:\n  task_id: external_directory_target\n  parent_cmd: cmd_external_directory_target\n  project: dm-signal\n  target_path: %s\n  status: assigned\n' "$FIXTURE/shared/lp" > "$directory_task"
+    run env PROJECT_ROOT="$BATS_TEST_DIRNAME/../.." FIXTURE="$FIXTURE/shared" TASK="$directory_task" EXPECTED_REMOTE="$remote_tip" bash -c '
+        set -euo pipefail
+        export DEPLOY_TASK_LIB_ONLY=1 DEPLOY_TASK_WORKTREE_ROOT="$FIXTURE/worktrees-directory"
+        source "$PROJECT_ROOT/scripts/deploy_task.sh"
+        SCRIPT_DIR="$FIXTURE"; LOG=/dev/null; STATE_DIR="$FIXTURE/state-directory"; mkdir -p "$STATE_DIR"
+        deploy_task_prepare_remote_tip_worktree "$TASK" saizo
+        wt=$(FIELD_GET_NO_LOG=1 field_get "$TASK" task_worktree_path)
+        [ "$(git -C "$wt" rev-parse HEAD)" = "$EXPECTED_REMOTE" ]
+        [ -d "$wt/lp" ]
+        printf "remote_tip_directory=1 shared_head_unchanged=1\n"
+        deploy_task_rollback_remote_tip_worktree "$FIXTURE" "$wt" "$(FIELD_GET_NO_LOG=1 field_get "$TASK" task_worktree_marker)"
+    '
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"remote_tip_directory=1 shared_head_unchanged=1"* ]]
+
     failure_task="$BATS_TEST_TMPDIR/external-remote-failure.yaml"
     printf 'task:\n  task_id: external_remote_failure\n  parent_cmd: cmd_external_remote_failure\n  project: dm-signal\n  target_path: %s\n  status: assigned\n' "$FIXTURE/shared/lp/remote.py" > "$failure_task"
     git -C "$FIXTURE/shared" remote set-url origin "$FIXTURE/missing-remote.git"
