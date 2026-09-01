@@ -12402,3 +12402,10 @@ insights:
   source: "manual"
   fix_known: false
   status: pending
+- id: INS-20260901-155649720-8888
+  ts: "2026-09-01T15:56:49+09:00"
+  insight: "[[マップを正本とartifactを更新して]] semantic_stress_test candidate_aliases: NO_MATCH source=lord query=マップを正本とartifactを更新して、つまりがあれば覚醒して解消して"
+  priority: "low"
+  source: "semantic_stress_test"
+  fix_known: false
+  status: pending
