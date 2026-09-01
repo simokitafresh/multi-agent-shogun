@@ -3013,32 +3013,58 @@ if inbox_type_triggers_report_completion "$TYPE"; then
                         # key=report path+report 内容 hash(GATE_RESULT は prior_attempts[N] の N が揺れて不安定=17:28/17:29 で marker 2 個)
                         _qm_key=$({ printf '%s\n' "$FULL_REPORT"; sha256sum "$FULL_REPORT" 2>/dev/null; } | sha256sum | cut -c1-16)
                         _qm_marker="$_qm_marker_dir/${FROM}.${_qm_key}.sent"
-                        if [ -f "$_qm_marker" ]; then
-                            echo "[report_quality_route] DEDUPE: 同一 report+gate_errors は通知済み(marker=${_qm_marker##*/})。軍師へは送らない" >&2
-                            _qm_dedupe=1
-                        else
-                            _qm_dedupe=0
-                        fi
-                        [ "$_qm_dedupe" = 1 ] || (
-                            flock -w 5 200 || { echo "[report_quality_route] WARN: flock timeout for gunshi inbox, skipping quality notification" >&2; exit 1; }
-                            if [ ! -f "$GUNSHI_INBOX" ]; then
-                                mkdir -p "$(dirname "$GUNSHI_INBOX")"
-                                printf 'messages: []\n' > "$GUNSHI_INBOX"
+                        _qm_lock="$_qm_marker_dir/${FROM}.${_qm_key}.lock"
+                        _qm_claim="$_qm_marker.claim"
+                        # The claim, durable send, and marker commit must share
+                        # one key-scoped lock.  Checking the marker before the
+                        # inbox lock allowed two concurrent report replays to
+                        # both observe a missing marker and send duplicates.
+                        mkdir -p "$_qm_marker_dir"
+                        (
+                            flock -w 5 201 || { echo "[report_quality_route] WARN: quality key lock timeout; skipping quality notification" >&2; exit 1; }
+                            if [ -f "$_qm_marker" ]; then
+                                echo "[report_quality_route] DEDUPE: 同一 report+gate_errors は通知済み(marker=${_qm_marker##*/})。軍師へは送らない" >&2
+                                exit 0
                             fi
-                            _gunshi_msg="$(inbox_build_message_block \
-                                content "【監視通知】忍者${FROM}の報告YAMLにgate FAIL。忍者にBLOCK済み。忍者が自分で修正して再送信する。軍師は直接修正するな(消火行為)。パターン分析用の記録。" \
-                                from "system" \
-                                id "$ROUTE_ID" \
-                                read "false" \
-                                timestamp "$ROUTE_TS" \
-                                type "quality_monitor" \
-                                gate_errors "$GATE_RESULT" \
-                                original_ninja "$FROM" \
-                                report_path "$FULL_REPORT")"$'\n'
-                            inbox_append_message_locked "$GUNSHI_INBOX" "$_gunshi_msg"
-                        ) 200>"$(lock_path "$GUNSHI_INBOX")" \
-                            && { mkdir -p "$_qm_marker_dir" && printf 'ts: %s\nreport: %s\nninja: %s\n' "$ROUTE_TS" "$FULL_REPORT" "$FROM" > "$_qm_marker"; echo "[report_quality_route] 品質問題を軍師に監視通知済み(修正は忍者が行う)" >&2; } \
-                            || echo "[report_quality_route] WARN: gunshi notification skipped (flock timeout)" >&2
+
+                            # A prior process may have exited after claiming;
+                            # the key lock proves no sender is active now, so
+                            # clear that stale claim before reserving this try.
+                            rm -f -- "$_qm_claim"
+                            : > "$_qm_claim" || { echo "[report_quality_route] WARN: quality key claim failed" >&2; exit 1; }
+                            if ! (
+                                flock -w 5 200 || { echo "[report_quality_route] WARN: flock timeout for gunshi inbox, skipping quality notification" >&2; exit 1; }
+                                if [ ! -f "$GUNSHI_INBOX" ]; then
+                                    mkdir -p "$(dirname "$GUNSHI_INBOX")"
+                                    printf 'messages: []\n' > "$GUNSHI_INBOX"
+                                fi
+                                _gunshi_msg="$(inbox_build_message_block \
+                                    content "【監視通知】忍者${FROM}の報告YAMLにgate FAIL。忍者にBLOCK済み。忍者が自分で修正して再送信する。軍師は直接修正するな(消火行為)。パターン分析用の記録。" \
+                                    from "system" \
+                                    id "$ROUTE_ID" \
+                                    read "false" \
+                                    timestamp "$ROUTE_TS" \
+                                    type "quality_monitor" \
+                                    gate_errors "$GATE_RESULT" \
+                                    original_ninja "$FROM" \
+                                    report_path "$FULL_REPORT")"$'\n'
+                                inbox_append_message_locked "$GUNSHI_INBOX" "$_gunshi_msg"
+                            ) 200>"$(lock_path "$GUNSHI_INBOX")"; then
+                                rm -f -- "$_qm_claim"
+                                exit 1
+                            fi
+
+                            _qm_marker_tmp="$_qm_marker.tmp.${BASHPID:-$$}"
+                            if ! printf 'ts: %s\nreport: %s\nninja: %s\n' "$ROUTE_TS" "$FULL_REPORT" "$FROM" > "$_qm_marker_tmp" \
+                                || ! mv -f -- "$_qm_marker_tmp" "$_qm_marker"; then
+                                rm -f -- "$_qm_marker_tmp" "$_qm_claim"
+                                echo "[report_quality_route] WARN: quality marker commit failed after notification" >&2
+                                exit 1
+                            fi
+                            rm -f -- "$_qm_claim"
+                            echo "[report_quality_route] 品質問題を軍師に監視通知済み(修正は忍者が行う)" >&2
+                        ) 201>"$_qm_lock" \
+                            || echo "[report_quality_route] WARN: gunshi notification skipped (quality key lock/claim failure)" >&2
                         # BLOCK: verdict記入済み+gate FAIL → 忍者が修正して再送信するまでkaroに届けない
                         echo "" >&2
                         echo "==============================" >&2

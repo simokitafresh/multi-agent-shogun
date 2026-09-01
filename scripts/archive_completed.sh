@@ -519,6 +519,51 @@ archive_report_symlink_is_terminal() {
     [[ "$link_hash" == "$target_hash" && "$target_hash" == "${SHOGUN_COMPLETION_GENERATION:-}" ]]
 }
 
+# quality_monitor markers are keyed by report content and therefore cannot be
+# inferred from the archived filename.  Remove only markers that name this
+# exact live report, under the same key lock used by inbox_write.sh so an
+# in-flight notification cannot commit a marker after cleanup.
+cleanup_quality_monitor_markers_for_report() {
+    local report_file="$1" marker marker_report marker_lock marker_fd
+    local marker_dir="$PROJECT_DIR/queue/gates/quality_monitor"
+    [ -d "$marker_dir" ] || return 0
+
+    shopt -s nullglob
+    local markers=("$marker_dir"/*.sent)
+    shopt -u nullglob
+    for marker in "${markers[@]}"; do
+        [ -f "$marker" ] || continue
+        marker_report="$(sed -n 's/^report: //p' "$marker" | head -1)"
+        [ -n "$marker_report" ] || continue
+        case "$marker_report" in
+            /*) ;;
+            *) marker_report="$PROJECT_DIR/${marker_report#./}" ;;
+        esac
+        [ "$marker_report" = "$report_file" ] || continue
+
+        marker_lock="${marker%.sent}.lock"
+        exec {marker_fd}>"$marker_lock"
+        if ! flock -w 5 "$marker_fd"; then
+            echo "[archive] WARN: quality_monitor marker lock timeout: $marker" >&2
+            eval "exec ${marker_fd}>&-"
+            continue
+        fi
+        # Re-read under the lock: a sender may have replaced the marker while
+        # the directory was being scanned.
+        marker_report="$(sed -n 's/^report: //p' "$marker" | head -1)"
+        case "$marker_report" in
+            /*) ;;
+            *) marker_report="$PROJECT_DIR/${marker_report#./}" ;;
+        esac
+        if [ "$marker_report" = "$report_file" ]; then
+            rm -f -- "$marker" "${marker%.sent}.claim"
+            echo "[archive] quality_monitor marker cleanup: ${marker##*/}"
+        fi
+        flock -u "$marker_fd" || true
+        eval "exec ${marker_fd}>&-"
+    done
+}
+
 mkdir -p "$ARCHIVE_DIR" "$ARCHIVE_CMD_DIR" "$ARCHIVE_REPORT_DIR"
 
 # postcondition用グローバル変数（archive_cmdsが設定）
@@ -1574,6 +1619,7 @@ PY
                 overflow_dest="$ARCHIVE_REPORT_DIR/${overflow_base%.yaml}_$(date '+%H%M%S').yaml"
             fi
             mv "$overflow_path" "$overflow_dest" || { echo "[archive] WARN: overflow mv failed: $overflow_path → $overflow_dest" >&2; continue; }
+            cleanup_quality_monitor_markers_for_report "$overflow_path"
             overflow_archived=$((overflow_archived + 1))
             archived=$((archived + 1))
             remaining=$((remaining - 1))
@@ -1974,6 +2020,7 @@ PY
                     fi
                     mv "$report_file" "$dest_path" || report_move_rc=1
                     if [ "$report_move_rc" -eq 0 ]; then
+                        cleanup_quality_monitor_markers_for_report "$report_file"
                         ln -sf "$dest_path" "$report_file" 2>/dev/null || true  # GP-230: compatibility path
                     fi
                     ;;
