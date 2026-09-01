@@ -12141,6 +12141,8 @@ insights:
   resolved_reason: "一次情報で対象を再確認した。script_size_alertは新規未整理ではなく、cmd_4359の分割設計書と既存cmd_4360〜cmd_4375のdeploy_task分割系列へ既に接続済みである。cmd_4403は速度計測系列として完了し、現行行数はcmd_complete_gate.sh 15887行、ninja_monitor.sh 15516行、deploy_task.sh 12030行、cmd_save.sh 7989行と確認した。新規実装および新規decision_candidateは本cmd範囲外で、既存分割系列の次弾起票判断へ集約済みとして解決する。"
   action_artifact: "target=queue/insights.yaml:INS-20260901-114159128-4eea;source=docs/research/deploy_task_split_design_20260821.md+context/cmd-chronicle.md:176-186,192-214;existing_series=cmd_4359,cmd_4360-cmd_4375,cmd_4403;current_wc=scripts/cmd_complete_gate.sh:15887,scripts/ninja_monitor.sh:15516,scripts/deploy_task.sh:12030,scripts/cmd_save.sh:7989;decision_candidate=none;commit_task=cmd_reflux_insight_202609011535_tobisaru_exact"
   resolved_at: "2026-09-01T15:39:13+09:00"
+  occurrence_count: 1
+  last_seen: "2026-09-01T15:43:12+09:00"
 - id: INS-20260901-120015133-d74d
   ts: "2026-09-01T12:00:15+09:00"
   insight: "semantic_index_update新概念候補: discussion:shougunをスキルで最新版のclaude Fable lowにrespawanせよ は 既存aliasesに一致なし。概念定義とaliases追加を検討せよ"
