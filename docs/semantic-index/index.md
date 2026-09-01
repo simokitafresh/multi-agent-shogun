@@ -1818,6 +1818,7 @@ codd:
 | discussion | `queue/lord_conversation.jsonl` 2026-09-01T14:10:21+09:00 負の複利を生む問題をinshightに登録して解決したと思っていないか？覚醒して即行動せよ |
 | discussion | `queue/lord_conversation.jsonl` 2026-09-01T15:56:39+09:00 数値突合までやろう。正しく計算してほしい。 |
 | discussion | `queue/lord_conversation.jsonl` 2026-09-01T16:06:47+09:00 2026-09-01 15:56-16:07 リバランス日の数値突合(殿指示『数値突合までやろう』): (1)DB signals(date=2026-09-01, 101 PF)と本番 /api/signals: standard 24/ |
+| discussion | `queue/lord_conversation.jsonl` 2026-09-01T20:46:30+09:00 問題を解決するときにサンクコストにとらわれて過剰に複雑にしてしまったり、影響範囲や依存関係を明らかにしないで浅い対応によってバグがバグを生んだりする。 |
 | causal_chain | `[[cmd_karo_hotfix_ga221_context_freshness_202607110323]]` (L1032) |
 | causal_chain | `[[cmd_karo_recon2_r5_three_layer_acceptance_20260727]]` (L1397) |
 | causal_chain | `[[cmd_karo_hotfix_ga414_context_freshness_20260729]]` (L1454) |
