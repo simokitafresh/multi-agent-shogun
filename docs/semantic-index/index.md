@@ -13672,6 +13672,7 @@ codd:
 | cmd | `cmd_karo_ci_fix_33486782574_receipt_fixtures` (`tests/unit/test_codex_inbox_priority_guard.bats`, `tests/unit/test_inbox_drain.bats`, `tests/unit/test_lock_path.bats`) |
 | cmd | `cmd_karo_hotfix_inbox_processing_receipt_20260901` (`scripts/inbox_mark_read.sh`, `scripts/inbox_read.sh`, `tests/unit/test_inbox_mark_read.bats`) |
 | cmd | `cmd_karo_hotfix_review_processing_receipt_20260901` (`scripts/inbox_mark_read.sh`, `tests/unit/test_inbox_processing_receipt.bats`) |
+| cmd | `cmd_karo_hotfix_backup_cron_node_path_20260902` (`tests/unit/test_shogun_backup_cron.bats`, `scripts/shogun_backup.py`) |
 | causal_chain | `[[cmd_karo_hotfix_hook_failure_utf8_boundary_20260829]]` (L1669) |
 | causal_chain | `[[cmd_karo_hotfix_tmux_live_sendkeys_guard_20260830]]` (L1672) |
 | causal_chain | `[[cmd_4434]]` (L1688) |
