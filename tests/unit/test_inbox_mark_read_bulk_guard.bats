@@ -1,8 +1,9 @@
 #!/usr/bin/env bats
-# test_necessity: inbox_mark_read.sh must BLOCK (exit 2, message stays unread)
-# when an agent marks a third DISTINCT message read within the bulk window,
-# must still allow retries of the same id and marks spaced beyond the window,
-# and must leave --auto-info untouched. Invariant guards 2026-09-01 15:44
+# Receipt contract provenance: cmd_karo_hotfix_inbox_processing_receipt_20260901.
+# test_necessity: the legacy bulk heuristic is observe-only by default, while
+# an explicit enforcement mode remains available; every normal mark requires
+# a read receipt and --auto-info remains exempt. Invariant guards 2026-09-01
+# 15:44/15:49.
 # (gunshi `grep read:false | while read id; do inbox_mark_read.sh gunshi $id`
 # consumed the cmd_4436 review request and the kagemaru v3 formal review, 8 resends).
 
@@ -16,6 +17,7 @@ setup() {
     TEST_ROOT="$(mktemp -d "$BATS_TMPDIR/imr_bulk.XXXXXX")"
     mkdir -p "$TEST_ROOT/scripts/lib" "$TEST_ROOT/queue/inbox" "$TEST_ROOT/logs"
     cp "$PROJECT_ROOT/scripts/inbox_mark_read.sh" "$TEST_ROOT/scripts/"
+    cp "$PROJECT_ROOT/scripts/inbox_read.sh" "$TEST_ROOT/scripts/"
     cp "$PROJECT_ROOT/scripts/bulletin_confirm.sh" "$TEST_ROOT/scripts/"
     cp "$PROJECT_ROOT/scripts/lib/yaml_field_set.sh" "$TEST_ROOT/scripts/lib/"
     printf 'get_all_agents() { echo "karo gunshi hayate"; }\n' > "$TEST_ROOT/scripts/lib/agent_config.sh"
@@ -47,6 +49,9 @@ messages:
   read: false
 YAML
     export TEST_SCRIPT="$TEST_ROOT/scripts/inbox_mark_read.sh"
+    export TEST_READ_SCRIPT="$TEST_ROOT/scripts/inbox_read.sh"
+    export INBOX_MARK_READ_ROOT_OVERRIDE="$TEST_ROOT"
+    export INBOX_MARK_READ_RECEIPT_DIR="$TEST_ROOT/receipts"
 }
 
 teardown() { [ -n "${TEST_ROOT:-}" ] && rm -rf "$TEST_ROOT"; }
@@ -59,7 +64,14 @@ for m in yaml.safe_load(open(os.environ["INBOX"]))["messages"]:
         print("true" if m.get("read") else "false")'
 }
 
-@test "default: third distinct message inside the window is marked (legit fast processing) with an observe-only WARN" {
+_read_inbox() {
+    run env SHOGUN_ROOT="$TEST_ROOT" INBOX_READ_RECEIPT_DIR="$TEST_ROOT/receipts" \
+        bash "$TEST_READ_SCRIPT" gunshi
+    [ "$status" -eq 0 ]
+}
+
+@test "default: third distinct message inside the window is marked with observe-only WARN" {
+    _read_inbox
     # karo REJECT 2026-09-01 15:49: gate notice -> LGTM ACCEPT -> accept_report check is a
     # legitimate 3-in-10s sequence; a count heuristic must never block it.
     run bash "$TEST_SCRIPT" gunshi msg_a; [ "$status" -eq 0 ]
@@ -72,7 +84,8 @@ for m in yaml.safe_load(open(os.environ["INBOX"]))["messages"]:
     [ -s "$TEST_ROOT/logs/inbox_mark_read_ledger/gunshi.warn.tsv" ]
 }
 
-@test "INBOX_MARK_READ_BULK_ENFORCE=1: third distinct message inside the window is BLOCKed and stays unread" {
+@test "enforcement mode blocks the heuristic and preserves the unread message" {
+    _read_inbox
     run bash "$TEST_SCRIPT" gunshi msg_a; [ "$status" -eq 0 ]
     run bash "$TEST_SCRIPT" gunshi msg_b; [ "$status" -eq 0 ]
     run env INBOX_MARK_READ_BULK_ENFORCE=1 bash "$TEST_SCRIPT" gunshi msg_c
@@ -83,19 +96,17 @@ for m in yaml.safe_load(open(os.environ["INBOX"]))["messages"]:
     [ "$(_read_status msg_c)" = "false" ]
 }
 
-@test "retrying the same id does not count as bulk" {
-    run bash "$TEST_SCRIPT" gunshi msg_a; [ "$status" -eq 0 ]
+@test "same-id retry remains a non-bulk failure after receipt consumption" {
+    _read_inbox
     run bash "$TEST_SCRIPT" gunshi msg_a
-    # already read -> not-found path, but not the bulk BLOCK
-    [[ "$output" != *"bulk mark-read pattern"* ]]
-    run bash "$TEST_SCRIPT" gunshi msg_a
-    [[ "$output" != *"bulk mark-read pattern"* ]]
-    run bash "$TEST_SCRIPT" gunshi msg_b
     [ "$status" -eq 0 ]
-    [ "$(_read_status msg_b)" = "true" ]
+    run bash "$TEST_SCRIPT" gunshi msg_a
+    [ "$status" -eq 2 ]
+    [[ "$output" != *"bulk mark-read pattern"* ]]
 }
 
 @test "marks spaced beyond the window pass" {
+    _read_inbox
     run env INBOX_MARK_READ_BULK_WINDOW_SEC=1 bash "$TEST_SCRIPT" gunshi msg_a; [ "$status" -eq 0 ]
     run env INBOX_MARK_READ_BULK_WINDOW_SEC=1 bash "$TEST_SCRIPT" gunshi msg_b; [ "$status" -eq 0 ]
     sleep 2
@@ -105,12 +116,14 @@ for m in yaml.safe_load(open(os.environ["INBOX"]))["messages"]:
 }
 
 @test "one call with several explicit ids is not the loop pattern" {
+    _read_inbox
     run bash "$TEST_SCRIPT" gunshi msg_a msg_b msg_c msg_d
     [ "$status" -eq 0 ]
     [ "$(_read_status msg_d)" = "true" ]
 }
 
 @test "--auto-info is exempt from the bulk guard" {
+    _read_inbox
     run bash "$TEST_SCRIPT" gunshi msg_a; [ "$status" -eq 0 ]
     run bash "$TEST_SCRIPT" gunshi msg_b; [ "$status" -eq 0 ]
     run bash "$TEST_SCRIPT" gunshi --auto-info

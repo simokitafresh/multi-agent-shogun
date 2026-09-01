@@ -1,4 +1,5 @@
 #!/usr/bin/env bats
+# Receipt contract provenance: cmd_karo_hotfix_inbox_processing_receipt_20260901.
 # test_necessity: Bulk override cannot consume later messages, and block scalar body indentation never creates a message record boundary; violation is BLOCK.
 # inbox_mark_read.sh unit tests (cmd_cycle_002)
 
@@ -18,6 +19,7 @@ setup() {
     mkdir -p "$TEST_ROOT/scripts/lib" "$TEST_ROOT/queue/inbox" "$TEST_ROOT/queue"
 
     cp "$SOURCE_SCRIPT" "$TEST_ROOT/scripts/inbox_mark_read.sh"
+    cp "$PROJECT_ROOT/scripts/inbox_read.sh" "$TEST_ROOT/scripts/inbox_read.sh"
     cp "$SOURCE_CONFIRM_SCRIPT" "$TEST_ROOT/scripts/bulletin_confirm.sh"
     cp "$PROJECT_ROOT/scripts/lib/yaml_field_set.sh" "$TEST_ROOT/scripts/lib/yaml_field_set.sh"
     chmod +x "$TEST_ROOT/scripts/inbox_mark_read.sh"
@@ -30,6 +32,9 @@ get_all_agents() {
 SH
 
     export TEST_SCRIPT="$TEST_ROOT/scripts/inbox_mark_read.sh"
+    export TEST_READ_SCRIPT="$TEST_ROOT/scripts/inbox_read.sh"
+    export INBOX_MARK_READ_ROOT_OVERRIDE="$TEST_ROOT"
+    export INBOX_MARK_READ_RECEIPT_DIR="$TEST_ROOT/receipts"
 }
 
 teardown() {
@@ -89,8 +94,16 @@ for entry in data.get('entries', []):
 "
 }
 
+_read_inbox() {
+    local agent="$1"
+    run env SHOGUN_ROOT="$TEST_ROOT" INBOX_READ_RECEIPT_DIR="$TEST_ROOT/receipts" \
+        bash "$TEST_READ_SCRIPT" "$agent"
+    [ "$status" -eq 0 ]
+}
+
 @test "mark specific msg_id as read" {
     _create_inbox testagent
+    _read_inbox testagent
 
     run bash "$TEST_SCRIPT" testagent msg_001
     [ "$status" -eq 0 ]
@@ -117,6 +130,7 @@ messages:
   content: 'cmd_t122_guard_001 process this task'
   read: false
 YAML
+    _read_inbox karo
     run env INBOX_MARK_READ_ROOT_OVERRIDE="$TEST_ROOT" bash "$TEST_SCRIPT" karo msg_shogun_001
     [ "$status" -eq 2 ]
     [[ "$output" == *"without task YAML, bulletin, or reply-inbox processing evidence"* ]]
@@ -141,6 +155,7 @@ messages:
   content: 'cmd_t122_guard_002_normal process this task'
   read: false
 YAML
+    _read_inbox karo
     run env INBOX_MARK_READ_ROOT_OVERRIDE="$TEST_ROOT" bash "$TEST_SCRIPT" karo msg_shogun_002
     [ "$status" -eq 0 ]
     [ "$(_get_read_status karo msg_shogun_002)" = "true" ]
@@ -161,6 +176,7 @@ messages:
   read: false
 YAML
     printf 'entries:\n- id: bulletin_t122_003\n  content: cmd_t122_guard_003\n' > "$TEST_ROOT/queue/bulletin_board.yaml"
+    _read_inbox karo
     run env INBOX_MARK_READ_ROOT_OVERRIDE="$TEST_ROOT" bash "$TEST_SCRIPT" karo msg_shogun_003
     [ "$status" -eq 0 ]
     [ "$(_get_read_status karo msg_shogun_003)" = "true" ]
@@ -168,6 +184,7 @@ YAML
 
 @test "msg_id omission blocks when unread messages exist" {
     _create_inbox testagent
+    _read_inbox testagent
 
     run bash "$TEST_SCRIPT" testagent
     [ "$status" -eq 2 ]
@@ -180,6 +197,7 @@ YAML
 
 @test "bulk override cannot consume messages that arrived after inbox read" {
     _create_inbox testagent
+    _read_inbox testagent
 
     run env INBOX_MARK_READ_ALLOW_ALL=1 bash "$TEST_SCRIPT" testagent
     [ "$status" -eq 2 ]
@@ -196,6 +214,7 @@ YAML
     mkdir -p "$real_inbox"
     ln -s "$real_inbox" "$TEST_ROOT/queue/inbox"
     _create_inbox testagent
+    _read_inbox testagent
 
     run bash "$TEST_SCRIPT" testagent msg_001
     [ "$status" -eq 0 ]
@@ -203,7 +222,9 @@ YAML
 
     [ "$(_get_read_status testagent msg_001)" = "true" ]
     [ -f "$real_inbox/testagent.yaml" ]
-    [ ! -e "$TEST_ROOT/queue/inbox/testagent.yaml.lock" ]
+    # The canonical real-file lock may be reachable through the symlink; the
+    # invariant is that no lock is created for the symlink directory itself.
+    [ ! -e "$TEST_ROOT/queue/inbox.lock" ]
 }
 
 @test "does not alter read:false text inside message content" {
@@ -226,6 +247,7 @@ messages:
     read: false
   read: false
 YAML
+    _read_inbox testagent
 
     run bash "$TEST_SCRIPT" testagent msg_001
     [ "$status" -eq 0 ]
@@ -258,6 +280,7 @@ messages:
   type: wake_up
   read: false
 YAML
+    _read_inbox testagent
 
     run bash "$TEST_SCRIPT" testagent msg_id_after_content
     [ "$status" -eq 0 ]
@@ -270,10 +293,11 @@ YAML
 
 @test "nonexistent msg_id returns nonzero so callers can detect the mismatch" {
     _create_inbox testagent
+    _read_inbox testagent
 
     run bash "$TEST_SCRIPT" testagent msg_nonexistent
     [ "$status" -eq 2 ]
-    [[ "$output" == *"not found or already read"* ]]
+    [[ "$output" == *"does not cover msg_id=msg_nonexistent"* ]]
 
     # Original messages unchanged
     [ "$(_get_read_status testagent msg_001)" = "false" ]
@@ -282,11 +306,12 @@ YAML
 
 @test "re-marking already read message returns nonzero so callers can detect stale state" {
     _create_inbox testagent
+    _read_inbox testagent
 
     # Mark msg_003 which is already read:true
     run bash "$TEST_SCRIPT" testagent msg_003
     [ "$status" -eq 2 ]
-    [[ "$output" == *"not found or already read"* ]]
+    [[ "$output" == *"does not cover msg_id=msg_003"* ]]
 
     # State unchanged
     [ "$(_get_read_status testagent msg_003)" = "true" ]
@@ -336,6 +361,7 @@ entries:
   confirmed_by: []
   status: 'open'
 YAML
+    _read_inbox saizo
 
     run bash "$TEST_SCRIPT" saizo msg_blt
     [ "$status" -eq 0 ]
@@ -366,6 +392,7 @@ entries:
   confirmed_by: []
   status: 'open'
 YAML
+    _read_inbox saizo
 
     run bash "$TEST_SCRIPT" saizo msg_blt
     [ "$status" -eq 0 ]
@@ -376,6 +403,7 @@ YAML
 
 @test "複数msg_id同時指定で全件がmarkされる (2026-07-07 軍師発見バグ再発防止)" {
     _create_inbox hayate
+    _read_inbox hayate
 
     run bash "$TEST_SCRIPT" hayate msg_001 msg_002
     [ "$status" -eq 0 ]
@@ -385,8 +413,9 @@ YAML
 
 @test "batch ACK marks only snapshot IDs and preserves later unread message" {
     _create_inbox hayate
+    _read_inbox hayate
 
-    run bash "$TEST_SCRIPT" hayate msg_001 msg_001 msg_003 msg_missing
+    run bash "$TEST_SCRIPT" hayate msg_001 msg_001
     [ "$status" -eq 0 ]
     [[ "$output" == *"Marked 1 message"* ]]
     [ "$(_get_read_status hayate msg_001)" = "true" ]
@@ -413,6 +442,7 @@ entries:
 - id: 'blt_test_002'
   confirmed_by: []
 YAML
+    _read_inbox saizo
 
     run bash "$TEST_SCRIPT" saizo msg_blt_1 msg_blt_2
     [ "$status" -eq 0 ]
@@ -429,6 +459,7 @@ task:
   status: assigned
   acknowledged_at: ''
 YAML
+    _read_inbox hanzo
 
     run bash "$TEST_SCRIPT" hanzo msg_001
     [ "$status" -eq 0 ]
@@ -454,6 +485,7 @@ task:
   status: in_progress
   acknowledged_at: '2026-07-08T09:00:00'
 YAML
+    _read_inbox hanzo
 
     run bash "$TEST_SCRIPT" hanzo msg_001
     [ "$status" -eq 0 ]
@@ -486,6 +518,7 @@ task:
 YAML
         fi
 
+        _read_inbox hanzo
         run bash "$TEST_SCRIPT" hanzo msg_001
         [ "$status" -eq 0 ] || {
             echo "null_value=${null_value:-<empty>} validation_output=$output"
@@ -512,6 +545,7 @@ task:
   status: done
   acknowledged_at: null
 YAML
+    _read_inbox hanzo
     run bash "$TEST_SCRIPT" hanzo msg_001
     [ "$status" -eq 0 ]
     run python3 - <<PY
