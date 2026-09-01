@@ -48,3 +48,11 @@ push lane log 累計: `push_failed` **59**、`auto_merge=failed|INTEGRATE-MERGE-
 | root 統合 | ninja_monitor.sh(15,683 行)の U6 isolated 統合は ref を進めるが root worktree/index を同期しない | **バグ**: 旧版 staged 4 回/日、GA-PUSH1 3 回/日 |
 結論: 『やり方(多重公開者)』『スキル(契約メタデータ過多)』『構造(gate が publisher・15k 行 monolith×3)』の 3 層すべてに問題がある。単一 publisher 化はこの 3 層を同時に縮退させる(autopush 4 経路・safe_ff・GA-PUSH1・merge driver・commit 契約メタデータの大半が不要になる)。
 §4 への追加問い 5: 単一 publisher 化を前提に、`ninja_scope_commit.sh` と /ninja-commit を『patch 生成+報告記録』の最小手順へ縮退する設計を軍師と作れ(監査 unit=軍師+忍者 1 名、対象= cmd_complete_gate.sh autopush 4 経路 / ninja_scope_commit.sh option 43 / SKILL.md)。
+
+## 6. 家老回答(blt_20260902_021944)と合意(02:24)
+- 家老: 殿仮説を『origin/main の publisher を 1 本にする』と解釈して賛成。忍者の local commit は immutable 成果物・review fingerprint・再計測境界として残し、origin DAG へは入れない(=『single publisher + local commit artifact』)。
+- 反証 2 点(採用): (a)将軍 doc lane を別 publisher で残すと 2 本=同じ直列 lock/queue を通さなければ一本化でない → 将軍 doc も同 queue へ。(b)台帳を任意 code commit へ同梱すると因果時刻が混ざる → 同 publisher 内の独立 batch commit。
+- 家老の推奨実装: publisher は忍者 source commit を merge/cherry-pick せず、`base..source` の scope 限定内容を最新 remote tip へ適用して**新しい直線 commit**を作る(local ancestry が origin へ入らない→criss-cross 0)。autopush 停止+古い忍者 commit の merge だけでは 3-way 後退余地が残るため不十分。
+- 速度(家老一次計測): PUSH p50 7.7s / p90 29.9s、apply+scope commit 9.9s → 1 task ≈18s(p90 40s)、6 忍者同着で最後尾 ≈108s(p90 240s)。現行 600s push age・統合失敗 95 より速い。
+- 移行 8 unit(家老案): U1 publisher 単一 lock+queue → U2 忍者 local commit→patch/tree manifest → U3 remote-tip へ scope 限定適用し published_sha 生成 → U4 gate を source_sha→published_sha+path/blob receipt へ → U5 LGTM+ACCEPT 後のみ publish → U6 reflux/台帳 writer を同 queue の batch へ → U7 autopush/ancestry/push_lane/postclear auto-commit を flag 停止 → U8 canary 後に旧 gate/tests を縮退。
+- 将軍: 合意。殿裁定を仰ぐ事項=(1)採用可否 (2)将軍 doc lane も同 queue に入れる(将軍の直接 commit 廃止) (3)移行中の canary 範囲(まず infra PJ の hotfix lane から)。
