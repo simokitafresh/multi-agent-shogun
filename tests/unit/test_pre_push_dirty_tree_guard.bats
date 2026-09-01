@@ -33,7 +33,7 @@ setup() {
     printf '#!/usr/bin/env bash\nexit 0\n' > "$FAKE_REPO/scripts/test_select.sh"
     chmod +x "$FAKE_REPO/scripts/test_select.sh"
     cp "$PROJECT_ROOT/scripts/safe_shared_main_ff.sh" "$FAKE_REPO/scripts/safe_shared_main_ff.sh"
-    chmod +x "$FAKE_REPO/scripts/safe_shared_main_ff.sh"
+    [ "$(stat -c '%a' "$FAKE_REPO/scripts/safe_shared_main_ff.sh")" = "644" ]
 
     printf 'base\n' > "$FAKE_REPO/shared.txt"
     git -C "$FAKE_REPO" add -A
@@ -520,6 +520,16 @@ PY
     grep -q 'ANCESTRY-MERGE-REGRESSION paths=' "$artifact"
     grep -q 'context/infrastructure.md' "$artifact"
     [ "$(git ls-remote "$remote_repo" refs/heads/main | awk '{print $1}')" = "$second_parent" ]
+}
+
+# test_necessity: a missing ancestry verifier must stop the push instead of
+# silently converting the ancestry check into an allowed no-op.
+@test "pre-push fails closed when ancestry verifier file is missing" {
+    rm "$FAKE_REPO/scripts/safe_shared_main_ff.sh"
+
+    run run_prepush
+    [ "$status" -eq 1 ]
+    [[ "$(latest_artifact_text)" == *"BLOCK: ancestry merge verifier is unavailable"* ]]
 }
 
 # test_necessity: new-branch and delete ref updates are explicit no-range

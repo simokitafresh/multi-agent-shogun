@@ -439,11 +439,12 @@ pre_push_runtime_only_commit() {
 pre_push_verify_merge_tree() {
     local base_sha="$1" local_sha="$2" prospective_tree verifier
     verifier="$REPO_ROOT/scripts/safe_shared_main_ff.sh"
-    if [ ! -x "$verifier" ]; then
-        # Lightweight isolated hook fixtures may intentionally omit the
-        # platform helper; production repositories deploy both files.
-        echo "[pre-push] WARN: ancestry merge verifier is unavailable; no merge-tree check performed." >&2
-        return 0
+    if [ ! -f "$verifier" ]; then
+        # The verifier is invoked explicitly through bash below, so its
+        # executable bit is irrelevant.  Only a missing regular file is
+        # unavailable, and that state must fail closed before any push.
+        echo "[pre-push] BLOCK: ancestry merge verifier is unavailable: $verifier." >&2
+        return 1
     fi
     prospective_tree="$(git -C "$REPO_ROOT" rev-parse "${local_sha}^{tree}" 2>/dev/null)" || {
         echo "[pre-push] BLOCK: cannot resolve prospective merge tree for $local_sha." >&2
