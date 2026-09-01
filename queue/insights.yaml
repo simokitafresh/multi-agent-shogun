@@ -12350,7 +12350,10 @@ insights:
   priority: "medium"
   source: "manual"
   fix_known: false
-  status: pending
+  status: resolved
+  resolved_reason: "一次情報で再分類した。cmd_4440は初回BLOCK(command_files_modified_mismatch)後に最終CLEAR、cfc_origin_basisも初回BLOCK(AC evidence mapping欠落)後に修正再提出して最終CLEARであり、両件を恒久的な保守的予測の偽陽性とは断定しない。既存のgate_prediction偽陽性分析・gate品質概念で知見は吸収済み。なお現行gate_gunshi_accuracy.shはlogs/gunshi_review_log.yaml:1369の不正インデントで再計測不能。"
+  action_artifact: "decision_candidate: logs/gunshi_review_log.yaml:1369のYAML破損を別cmdで正規修復し、gate_gunshi_accuracy.shを再実行して欠測55件を再評価する。action_evidence: logs/gunshi_review_log.yaml:435-465,611-831; logs/gate_metrics.log:828,844,849,858; context/growth-loop.md:301-302"
+  resolved_at: "2026-09-01T16:04:46+09:00"
 - id: INS-20260901-144341173-63a7
   ts: "2026-09-01T14:43:41+09:00"
   insight: "semantic_index_update新概念候補: discussion:インフラバグは根治したか？循環エラーは起きないか？ は 既存aliasesに一致なし。概念定義とaliases追加を検討せよ"
