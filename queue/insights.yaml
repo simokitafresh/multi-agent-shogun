@@ -8921,7 +8921,10 @@ insights:
   priority: "low"
   source: "cmd_complete_gate:memory_phase"
   fix_known: false
-  status: pending
+  status: resolved
+  resolved_reason: "一次確認で既存のdecision_candidateへ整理済み。CLEAR通知refs同梱の観測強化はcmd_complete_gateの既存レビューでscope外の裁定候補として記録されており、現taskでは新規実装不要のため対象insightをresolveした。"
+  action_artifact: "target=queue/insights.yaml:8918;primary=queue/archive/reports/hanzo_report_cmd_reflux_insight_202608301413_hanzo_20260830.yaml;review=logs/archive/gunshi_review_log_cmd_4199_to_cmd_4419.yaml;implementation=scripts/cmd_complete_gate.sh:4850-4915;semantic_index=docs/semantic-index/index.md:14520-14521;decision_candidate=existing_scope_outcome"
+  resolved_at: "2026-09-02T01:29:07+09:00"
 - id: INS-20260830-144058662-925a
   ts: "2026-08-30T14:40:58+09:00"
   insight: "semantic_index_update未登録[[リンク]]ターゲット: [[本番停止_cmd_4413_deploy_20260830_1438]] は既存aliasesに一致なし。類似概念TOP3: agent_formation_management(編成管理; alias=deploy; score=24.4) / gate_bypass_prevention(ゲート迂回防止; alias=cmd_3132_L4化; score=16.0) / strong_new_game_completion_contract(強くてニューゲーム完遂契約; alias=T-e4本番検証_cmd_4284; score=15.8)。概念定義とaliases追加を検討せよ"
