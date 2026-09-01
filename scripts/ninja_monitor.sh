@@ -380,6 +380,32 @@ push_lane_log() {
     } 9>"${log_file}.lock" >>"$log_file" 2>/dev/null || true
 }
 
+# 2026-09-01 13:22 殿『家老のセッションの試行錯誤』監査: origin/main は auto-push helper
+# (report source parent の integrate commit)で局所 HEAD に無い commit を得るため、
+# push lane は remote_tip_not_ancestor で BLOCK し続け、家老が手で
+# `runtime: integrate …` merge を作るまで push が止まった(12:10-12:33 の 23 分、
+# 12:44 以降も 40 分超)。merge は D012(cherry-pick/rebase/revert 禁止)の対象外で、
+# 家老が手で行っている操作そのもの。dirty file と衝突すれば git が拒否する=fail-closed。
+# 成功で 0(HEAD が remote を含む)、失敗は merge --abort して 1。
+push_lane_integrate_remote() {
+    local repo="$1" remote_ref="$2" remote_tip="$3"
+    [ "${PUSH_LANE_AUTO_INTEGRATE:-1}" = "1" ] || return 1
+    # 逆方向(HEAD が remote の祖先=単に遅れている)は ff で追随する
+    if git -C "$repo" merge-base --is-ancestor HEAD "$remote_ref" 2>/dev/null; then
+        git -C "$repo" merge --ff-only "$remote_ref" >/dev/null 2>&1 || return 1
+        # 事後検証: ff 後は remote が HEAD の祖先になっているはず(fail-closed)
+        git -C "$repo" merge-base --is-ancestor "$remote_ref" HEAD 2>/dev/null && return 0
+        return 1
+    fi
+    if git -C "$repo" -c maintenance.auto=false merge --no-ff --no-edit \
+        -m "runtime: integrate ${remote_ref} ${remote_tip:0:9} (push_lane auto)" "$remote_ref" >/dev/null 2>&1; then
+        git -C "$repo" merge-base --is-ancestor "$remote_ref" HEAD 2>/dev/null && return 0
+        return 1
+    fi
+    git -C "$repo" merge --abort >/dev/null 2>&1 || true
+    return 1
+}
+
 # The push lane shares the pre-push hook's measured wall time instead of
 # inheriting the generic 120-second lifecycle ceiling.  A missing or malformed
 # telemetry row is intentionally bounded by a small fallback; it must never
@@ -654,7 +680,12 @@ for path in glob.glob(os.path.join(sys.argv[1], "*.yaml")):
     task = document.get("task") if isinstance(document, dict) else None
     if not isinstance(task, dict):
         continue
-    if task.get("task_type") == "ci_fix" and task.get("status") in active_statuses:
+    # 2026-09-01: karo-direct の ci_fix が task_type=hotfix で配備されると RED 中に
+    # ci_fix_active=0 と数えられ push lane が WAIT した(12:24-12:32)。名前の契約
+    # (cmd_karo_ci_fix_*)でも活性を認める。
+    ids = " ".join(str(task.get(k) or "") for k in ("task_id", "parent_cmd"))
+    is_ci_fix = task.get("task_type") == "ci_fix" or "cmd_karo_ci_fix_" in ids
+    if is_ci_fix and task.get("status") in active_statuses:
         count += 1
 print(count)
 PY
@@ -746,8 +777,13 @@ check_push_lane() {
     # the fail-closed boundary; within that boundary, select the first
     # first-parent commit that is actually FF-pushable.
     if ! git -C "$repo" merge-base --is-ancestor "$remote_ref" HEAD 2>/dev/null; then
-        push_lane_log "BLOCK reason=remote_tip_not_ancestor remote=$remote_tip_before push=0"
-        return 0
+        if push_lane_integrate_remote "$repo" "$remote_ref" "$remote_tip_before"; then
+            push_lane_log "INTEGRATE remote=$remote_tip_before head=$(git -C "$repo" rev-parse HEAD 2>/dev/null) reason=remote_tip_not_ancestor auto_merge=1"
+            commit_list=$(git -C "$repo" rev-list --first-parent --reverse "$remote_ref..HEAD" 2>/dev/null || true)
+        else
+            push_lane_log "BLOCK reason=remote_tip_not_ancestor remote=$remote_tip_before auto_merge=failed push=0"
+            return 0
+        fi
     fi
     while IFS= read -r candidate; do
         [[ "$candidate" =~ ^[0-9a-fA-F]{40}$ ]] || continue
