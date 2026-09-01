@@ -12302,7 +12302,10 @@ insights:
   priority: "low"
   source: "semantic_index_update"
   fix_known: false
-  status: pending
+  status: resolved
+  resolved_reason: "semantic map generation verified the candidate is represented or intentionally ignored"
+  action_artifact: "semantic_map=/home/simokitafresh/multi-agent-shogun/context/semantic-map.md;semantic_index=/home/simokitafresh/multi-agent-shogun/docs/semantic-index/index.md"
+  resolved_at: "2026-09-01T13:44:22+09:00"
 - id: INS-20260901-133427692-4e52
   ts: "2026-09-01T13:34:27+09:00"
   insight: "semantic_map_generate新規ファイル候補: `docs/research/karo-review-trial-fixes-20260901.md` は semantic index未登録。既存概念へのfile追加または新概念定義を検討せよ"
@@ -12315,5 +12318,12 @@ insights:
   insight: "semantic_map_generate新規ファイル候補: `tests/unit/test_push_lane_integrate.bats` は semantic index未登録。既存概念へのfile追加または新概念定義を検討せよ"
   priority: "low"
   source: "semantic_map_generate:new_file"
+  fix_known: false
+  status: pending
+- id: INS-20260901-134435627-b885
+  ts: "2026-09-01T13:44:35+09:00"
+  insight: "[[Codexモード のためnudge配送が止まっていたらそれはバグだな]] semantic_stress_test candidate_aliases: NO_MATCH source=lord query=Codexモード のためnudge配送が止まっていたらそれはバグだな。バグは根治せよ。根治したら検証して家老にレビューしてもらえ"
+  priority: "low"
+  source: "semantic_stress_test"
   fix_known: false
   status: pending
