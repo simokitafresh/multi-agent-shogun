@@ -627,8 +627,12 @@ trap review_approval_cleanup_on_exit EXIT
 review_request_after_approval() {
   local old_timestamp="$1" request_cmd="$2" request_report="$3" raw_generation="$4"
   local inbox="$ROOT/queue/inbox/gunshi.yaml"
-  [ -f "$inbox" ] || return 1
+  local inbox_archive="$ROOT/queue/archive/inbox"
+  local root_archive="$ROOT/archive/inbox"
+  [ -f "$inbox" ] || [ -d "$inbox_archive" ] || [ -d "$root_archive" ] || return 1
   REVIEW_REQUEST_INBOX="$inbox" \
+  REVIEW_REQUEST_INBOX_ARCHIVE="$inbox_archive" \
+  REVIEW_REQUEST_ROOT_ARCHIVE="$root_archive" \
   REVIEW_REQUEST_ROOT="$ROOT" \
   REVIEW_REQUEST_CMD="$request_cmd" \
   REVIEW_REQUEST_REPORT="$request_report" \
@@ -636,6 +640,7 @@ review_request_after_approval() {
   REVIEW_REQUEST_OLD_TIMESTAMP="$old_timestamp" \
     python3 - <<'PY'
 import datetime
+import glob
 import os
 from pathlib import Path
 
@@ -653,17 +658,12 @@ def parse(value):
     except ValueError:
         return None
     if parsed.tzinfo is None:
-        parsed = parsed.replace(tzinfo=datetime.timezone.utc)
+        # Operational inbox timestamps without an offset are JST by contract;
+        # treating them as UTC shifts the review epoch by nine hours.
+        jst = datetime.timezone(datetime.timedelta(hours=9))
+        parsed = parsed.replace(tzinfo=jst)
     return parsed.astimezone(datetime.timezone.utc)
 
-
-try:
-    payload = yaml.safe_load(Path(os.environ['REVIEW_REQUEST_INBOX']).read_text(encoding='utf-8')) or {}
-except (OSError, yaml.YAMLError):
-    raise SystemExit(1)
-messages = payload.get('messages', payload) if isinstance(payload, dict) else payload
-if not isinstance(messages, list):
-    raise SystemExit(1)
 
 try:
     report = yaml.safe_load(Path(os.environ['REVIEW_REQUEST_REPORT']).read_text(encoding='utf-8')) or {}
@@ -697,29 +697,47 @@ def normalized_path(value):
     return text[2:] if text.startswith('./') else text
 
 request_types = {'review_draft', 'report_review', 'review_report', 'verify_request'}
-for message in messages:
-    if not isinstance(message, dict) or str(message.get('type') or '').strip() not in request_types:
+inbox_paths = [Path(os.environ['REVIEW_REQUEST_INBOX'])]
+for archive_root in (
+    Path(os.environ['REVIEW_REQUEST_INBOX_ARCHIVE']),
+    Path(os.environ['REVIEW_REQUEST_ROOT_ARCHIVE']),
+):
+    if archive_root.is_dir():
+        inbox_paths.extend(Path(item) for item in glob.glob(str(archive_root / '*.yaml')))
+
+for inbox_path in dict.fromkeys(inbox_paths):
+    if not inbox_path.is_file():
         continue
-    if str(message.get('parent_cmd') or '').strip() != wanted_cmd:
+    try:
+        payload = yaml.safe_load(inbox_path.read_text(encoding='utf-8')) or {}
+    except (OSError, yaml.YAMLError):
         continue
-    message_path = normalized_path(message.get('report_path') or message.get('report'))
-    if message_path and message_path != report_rel:
+    messages = payload.get('messages', payload) if isinstance(payload, dict) else payload
+    if not isinstance(messages, list):
         continue
-    message_id = str(message.get('report_id') or '').strip()
-    if message_id and wanted_report_id and message_id != wanted_report_id:
-        continue
-    message_version = str(message.get('report_identity_version') or '').strip()
-    if message_version and wanted_version and message_version != wanted_version:
-        continue
-    message_task_id = str(message.get('task_id') or '').strip()
-    if message_task_id and wanted_task_id and message_task_id != wanted_task_id:
-        continue
-    message_raw_generation = str(message.get('report_fingerprint') or '').strip()
-    if message_raw_generation and message_raw_generation != wanted_raw_generation:
-        continue
-    timestamp = parse(message.get('timestamp'))
-    if timestamp is not None and timestamp > old:
-        raise SystemExit(0)
+    for message in messages:
+        if not isinstance(message, dict) or str(message.get('type') or '').strip() not in request_types:
+            continue
+        if str(message.get('parent_cmd') or '').strip() != wanted_cmd:
+            continue
+        message_path = normalized_path(message.get('report_path') or message.get('report'))
+        if message_path and message_path != report_rel:
+            continue
+        message_id = str(message.get('report_id') or '').strip()
+        if message_id and wanted_report_id and message_id != wanted_report_id:
+            continue
+        message_version = str(message.get('report_identity_version') or '').strip()
+        if message_version and wanted_version and message_version != wanted_version:
+            continue
+        message_task_id = str(message.get('task_id') or '').strip()
+        if message_task_id and wanted_task_id and message_task_id != wanted_task_id:
+            continue
+        message_raw_generation = str(message.get('report_fingerprint') or '').strip()
+        if message_raw_generation and message_raw_generation != wanted_raw_generation:
+            continue
+        timestamp = parse(message.get('timestamp'))
+        if timestamp is not None and timestamp > old:
+            raise SystemExit(0)
 raise SystemExit(1)
 PY
 }
