@@ -9232,7 +9232,18 @@ deploy_task_prepare_remote_tip_worktree() {
     repo=$(deploy_task_resolve_source_repo "$task_file")
     [ -n "$repo" ] || { log "BLOCK: remote-tip worktree repo unavailable"; return 1; }
 
-    upstream_ref=$(git -C "$repo" rev-parse --abbrev-ref --symbolic-full-name '@{upstream}' 2>/dev/null || true)
+    # The source checkout can intentionally track a maintenance branch while
+    # deployment publication is still bounded by the canonical origin/main
+    # tip.  Using @{upstream} here made an absolute target that only existed
+    # on origin/main look absent from the fetched worktree.  Prefer the
+    # canonical branch when the remote exposes it, and retain the checkout's
+    # upstream only for repositories without origin/main.
+    upstream_ref=""
+    if git -C "$repo" ls-remote --exit-code origin refs/heads/main >/dev/null 2>&1; then
+        upstream_ref="origin/main"
+    else
+        upstream_ref=$(git -C "$repo" rev-parse --abbrev-ref --symbolic-full-name '@{upstream}' 2>/dev/null || true)
+    fi
     [ -n "$upstream_ref" ] || upstream_ref="origin/main"
     remote="${upstream_ref%%/*}"; push_ref="refs/heads/${upstream_ref#*/}"
     remote_tip=$(deploy_task_fetch_stable_remote_tip "$repo" "$remote" "$push_ref") || return 1
