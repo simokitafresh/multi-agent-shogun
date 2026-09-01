@@ -80,6 +80,59 @@ operational_simulation:
 EOF
 }
 
+# Build a detached primary checkout whose worktree bytes match a declared task
+# commit while git status still reports the path dirty relative to HEAD.  This
+# is the exact report-only RC shape that cmd_3264 must distinguish from a real
+# implementation diff.
+_create_report_correction_blob_fixture() {
+    local workdir="$1"
+    local review_scope="$2"
+    local current_content="$3"
+    local task_path="$workdir/queue/tasks/reportscope.yaml"
+    local report_path="$workdir/queue/reports/reportscope_report_cmd_report_scope.yaml"
+    mkdir -p "$workdir/scripts/gates" "$workdir/scripts/lib" \
+        "$workdir/queue/reports" "$workdir/queue/tasks" "$workdir/logs"
+    cp -al "$MASTER_GATE_FIXTURE/." "$workdir/"
+    chmod +x "$workdir/scripts/gates/gate_report_format.sh"
+    git -C "$workdir" init -q
+    printf '%s\n' 'base' > "$workdir/target.txt"
+    git -C "$workdir" add target.txt
+    git -C "$workdir" -c user.email=test@example.com -c user.name=test \
+        commit -q -m 'fixture: report correction base'
+    local base_hash commit_hash
+    base_hash="$(git -C "$workdir" rev-parse HEAD)"
+    printf '%s\n' 'declared' > "$workdir/target.txt"
+    git -C "$workdir" add target.txt
+    git -C "$workdir" -c user.email=test@example.com -c user.name=test \
+        commit -q -m 'cmd_report_scope: declared correction commit'
+    commit_hash="$(git -C "$workdir" rev-parse HEAD)"
+    git -C "$workdir" switch --detach -q "$base_hash"
+    printf '%s\n' "$current_content" > "$workdir/target.txt"
+    cat > "$task_path" <<EOF
+task:
+  review_correction_scope: ${review_scope}
+  target_path: target.txt
+EOF
+    cat > "$report_path" <<EOF
+worker_id: reportscope
+parent_cmd: cmd_report_scope
+task_id: cmd_report_scope_normal
+commit_hash: ${commit_hash}
+EOF
+    printf '%s\n' "$commit_hash"
+}
+
+# Exercise the production cmd_3264 filter entry point with an isolated report
+# correction task and one porcelain dirty-path observation.
+_run_report_correction_filter() {
+    local workdir="$1"
+    local report_path="$workdir/queue/reports/reportscope_report_cmd_report_scope.yaml"
+    run env GATE_REPORT_FORMAT_REFLUX_CONTRACT_TEST=1 \
+        GATE_REPO_ROOT_OVERRIDE="$workdir" \
+        GATE_REFLUX_UNCOMMITTED_PATHS=' M target.txt' \
+        bash "$workdir/scripts/gates/gate_report_format.sh" "$report_path"
+}
+
 # === Test 1: 全AC revert → PASS_NO_IMPROVEMENT ===
 @test "全ACがrevertを含む場合はPASS_NO_IMPROVEMENTを出力する" {
     local rpath="$TEST_TMPDIR/queue/reports/tobisaru_report_cmd_2072.yaml"
@@ -773,6 +826,55 @@ EOF
     [ "$status" -eq 0 ]
     [[ "$output" != *' M context/generated.md'* ]]
     rm -rf "$workdir"
+}
+
+# test_necessity: report-only RC must accept a dirty primary checkout when its
+# worktree bytes are exactly the already-declared task commit.
+# regression_justification: reproduces the v3 false BLOCK caused by an
+# unmerged declared commit whose target blobs were already present at root.
+@test "cmd_3264 report-only RC suppresses exact declared-commit blob dirtiness" {
+    local workdir="$BATS_TEST_TMPDIR/gate_report_format_report_only_same_blob"
+    _create_report_correction_blob_fixture "$workdir" report declared >/dev/null
+
+    _run_report_correction_filter "$workdir"
+    [ "$status" -eq 0 ] || {
+        echo "$output"
+        return 1
+    }
+    [[ "$output" != *"target.txt"* ]]
+    [[ "$output" != *"BLOCK(cmd_3264-AC2)"* ]]
+}
+
+# test_necessity: a report-only exception must not turn a changed target blob
+# into an accepted dirty path.
+# regression_justification: protects the fail-closed different-blob branch of
+# the same contract introduced for the false-positive fix.
+@test "cmd_3264 report-only RC retains different blob for BLOCK" {
+    local workdir="$BATS_TEST_TMPDIR/gate_report_format_report_only_different_blob"
+    _create_report_correction_blob_fixture "$workdir" report foreign >/dev/null
+
+    _run_report_correction_filter "$workdir"
+    [ "$status" -eq 0 ] || {
+        echo "$output"
+        return 1
+    }
+    [[ "$output" == *" M target.txt"* ]]
+}
+
+# test_necessity: implementation RCs must retain strict dirty-target behavior
+# even when their current bytes happen to match a previously declared commit.
+# regression_justification: prevents the report-only exception from weakening
+# the ordinary implementation contamination gate.
+@test "cmd_3264 implementation RC does not use report-only blob exception" {
+    local workdir="$BATS_TEST_TMPDIR/gate_report_format_implementation_scope"
+    _create_report_correction_blob_fixture "$workdir" implementation declared >/dev/null
+
+    _run_report_correction_filter "$workdir"
+    [ "$status" -eq 0 ] || {
+        echo "$output"
+        return 1
+    }
+    [[ "$output" == *" M target.txt"* ]]
 }
 
 # test_necessity: removing the committed generated fragment must remain a
