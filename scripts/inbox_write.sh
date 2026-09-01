@@ -3010,7 +3010,8 @@ if inbox_type_triggers_report_completion "$TYPE"; then
                         # 同じ BLOCK(cmd_3264-AC2)で軍師へ quality_monitor が毎分積まれ stop hook を塞いだ
                         # (17:1x-17:2x UNREAD 19→30、21 件が同一本文)。判定は内容同一性(marker)、件数ではない。
                         _qm_marker_dir="$SCRIPT_DIR/queue/gates/quality_monitor"
-                        _qm_key=$(printf '%s\n%s\n' "$FULL_REPORT" "$GATE_RESULT" | sha256sum | cut -c1-16)
+                        # key=report path+report 内容 hash(GATE_RESULT は prior_attempts[N] の N が揺れて不安定=17:28/17:29 で marker 2 個)
+                        _qm_key=$({ printf '%s\n' "$FULL_REPORT"; sha256sum "$FULL_REPORT" 2>/dev/null; } | sha256sum | cut -c1-16)
                         _qm_marker="$_qm_marker_dir/${FROM}.${_qm_key}.sent"
                         if [ -f "$_qm_marker" ]; then
                             echo "[report_quality_route] DEDUPE: 同一 report+gate_errors は通知済み(marker=${_qm_marker##*/})。軍師へは送らない" >&2
