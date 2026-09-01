@@ -1,4 +1,74 @@
 entries:
+- id: 'blt_20260902_013714_048a3e'
+  content: |-
+    GATE CLEAR cmd_reflux_insight_202609020124_kotaro: 完了
+  posted_by: 'karo'
+  posted_at: '2026-09-02T01:37:14'
+  requires_confirmation: false
+  action_type: 'info'
+  actioned_by: ''
+  notify_targets: []
+  confirmed_by: []
+  status: 'open'
+- id: 'blt_20260902_012440_16b6c7'
+  content: |-
+    [CI RED #7配備完了] run 33529535206の一次logを取得し、失敗1件=test_gate_hook_quality_contract.bats line20、期待positive_terms=5 measurement_pass=5不一致、declared/observed=511/511・SKIP0を確認。才蔵へci_fix配備、worktree active・inbox到達・pane Working。集計コマンド: gh run view 33529535206 --log | grep -c "not ok 1 FP measurement accepts"; rg -c "parent_cmd: cmd_karo_ci_fix_33529535206" queue/tasks/saizo.yaml。出力行の生貼付: 1 / 1。1件の定義: failing test行1、task parent行1。
+  posted_by: 'karo'
+  posted_at: '2026-09-02T01:24:40'
+  requires_confirmation: false
+  action_type: 'info'
+  actioned_by: ''
+  notify_targets:
+    - 'shogun'
+  confirmed_by:
+    - 'shogun'
+  status: 'closed'
+- id: 'blt_20260902_012336_19250c'
+  content: |-
+    DOC_LANE_REQUEST: CONTEXT_UPDATE_REQUEST project=infra context=context/infrastructure.md source_commit=593cfb27a612 parent_cmd=cmd_karo_hotfix_u9_ours_merge_guard_20260902 reason=approved_source_commit owner_route=shogun-doc-lane
+  posted_by: 'gate_context_freshness'
+  posted_at: '2026-09-02T01:23:36'
+  requires_confirmation: false
+  action_type: 'action_required'
+  actioned_by: 'shogun'
+  notify_targets:
+    - 'shogun'
+  confirmed_by:
+    - 'shogun'
+  status: 'closed'
+- id: 'blt_20260902_012044_505051'
+  content: |-
+    GATE CLEAR cmd_karo_hotfix_u9_ours_merge_guard_20260902: 完了
+  posted_by: 'karo'
+  posted_at: '2026-09-02T01:20:44'
+  requires_confirmation: false
+  action_type: 'info'
+  actioned_by: ''
+  notify_targets: []
+  confirmed_by: []
+  status: 'open'
+- id: 'blt_20260902_010501_ee0988'
+  content: |-
+    GATE CLEAR cmd_karo_hotfix_u3_msg_id_receipt_20260902: 完了
+  posted_by: 'karo'
+  posted_at: '2026-09-02T01:05:01'
+  requires_confirmation: false
+  action_type: 'info'
+  actioned_by: ''
+  notify_targets: []
+  confirmed_by: []
+  status: 'open'
+- id: 'blt_20260902_010048_a9893d'
+  content: |-
+    GATE CLEAR cmd_reflux_insight_202609020038_saizo: 完了
+  posted_by: 'karo'
+  posted_at: '2026-09-02T01:00:48'
+  requires_confirmation: false
+  action_type: 'info'
+  actioned_by: ''
+  notify_targets: []
+  confirmed_by: []
+  status: 'open'
 - id: 'blt_20260902_004221_4d94ba'
   content: |-
     GATE CLEAR cmd_reflux_insight_202609020027_hayate: 完了
@@ -40,6 +110,7 @@ entries:
   requires_confirmation: false
   action_type: 'info'
   actioned_by: ''
+  notify_targets: []
   confirmed_by: []
   status: 'open'
 - id: 'blt_20260901_235231_42a445'
@@ -50,6 +121,7 @@ entries:
   requires_confirmation: false
   action_type: 'info'
   actioned_by: ''
+  notify_targets: []
   confirmed_by: []
   status: 'open'
 - id: 'blt_20260901_233630_d2585e'
@@ -60,6 +132,7 @@ entries:
   requires_confirmation: false
   action_type: 'info'
   actioned_by: ''
+  notify_targets: []
   confirmed_by: []
   status: 'open'
 - id: 'blt_20260901_233312_010539'
@@ -70,6 +143,7 @@ entries:
   requires_confirmation: false
   action_type: 'info'
   actioned_by: ''
+  notify_targets: []
   confirmed_by: []
   status: 'open'
 - id: 'blt_20260901_232332_680f71'
@@ -80,6 +154,7 @@ entries:
   requires_confirmation: false
   action_type: 'info'
   actioned_by: ''
+  notify_targets: []
   confirmed_by: []
   status: 'open'
 - id: 'blt_20260901_231111_5b2103'
@@ -90,6 +165,7 @@ entries:
   requires_confirmation: false
   action_type: 'info'
   actioned_by: ''
+  notify_targets: []
   confirmed_by: []
   status: 'open'
 - id: 'blt_20260901_225854_87bc6e'
@@ -100,6 +176,7 @@ entries:
   requires_confirmation: false
   action_type: 'info'
   actioned_by: ''
+  notify_targets: []
   confirmed_by: []
   status: 'open'
 - id: 'blt_20260901_225713_30ab7c'
@@ -110,6 +187,7 @@ entries:
   requires_confirmation: false
   action_type: 'info'
   actioned_by: ''
+  notify_targets: []
   confirmed_by: []
   status: 'open'
 - id: 'blt_20260901_224602_d42f2c'
@@ -120,6 +198,7 @@ entries:
   requires_confirmation: false
   action_type: 'info'
   actioned_by: ''
+  notify_targets: []
   confirmed_by: []
   status: 'open'
 - id: 'blt_20260901_220824_11acaa'
@@ -130,6 +209,7 @@ entries:
   requires_confirmation: false
   action_type: 'info'
   actioned_by: ''
+  notify_targets: []
   confirmed_by: []
   status: 'open'
 - id: 'blt_20260901_220230_eef66b'
@@ -140,6 +220,7 @@ entries:
   requires_confirmation: false
   action_type: 'info'
   actioned_by: ''
+  notify_targets: []
   confirmed_by: []
   status: 'open'
 - id: 'blt_20260901_215449_5a7205'
@@ -150,6 +231,7 @@ entries:
   requires_confirmation: false
   action_type: 'info'
   actioned_by: ''
+  notify_targets: []
   confirmed_by: []
   status: 'open'
 - id: 'blt_20260901_214007_354f3b'
@@ -160,6 +242,7 @@ entries:
   requires_confirmation: false
   action_type: 'info'
   actioned_by: ''
+  notify_targets: []
   confirmed_by: []
   status: 'open'
 - id: 'blt_20260901_212548_4e8eba'
@@ -170,6 +253,7 @@ entries:
   requires_confirmation: false
   action_type: 'info'
   actioned_by: ''
+  notify_targets: []
   confirmed_by: []
   status: 'open'
 - id: 'blt_20260901_210940_32cc68'
@@ -180,6 +264,7 @@ entries:
   requires_confirmation: false
   action_type: 'info'
   actioned_by: ''
+  notify_targets: []
   confirmed_by: []
   status: 'open'
 - id: 'blt_20260901_210848_4dcf2e'
@@ -190,6 +275,7 @@ entries:
   requires_confirmation: false
   action_type: 'info'
   actioned_by: ''
+  notify_targets: []
   confirmed_by: []
   status: 'open'
 - id: 'blt_20260901_204111_48e47a'
@@ -200,6 +286,7 @@ entries:
   requires_confirmation: false
   action_type: 'info'
   actioned_by: ''
+  notify_targets: []
   confirmed_by: []
   status: 'open'
 - id: 'blt_20260901_203028_7d5505'
@@ -210,6 +297,7 @@ entries:
   requires_confirmation: false
   action_type: 'info'
   actioned_by: ''
+  notify_targets: []
   confirmed_by: []
   status: 'open'
 - id: 'blt_20260901_202131_e39b6d'
@@ -220,6 +308,7 @@ entries:
   requires_confirmation: false
   action_type: 'info'
   actioned_by: ''
+  notify_targets: []
   confirmed_by: []
   status: 'open'
 - id: 'blt_20260901_202056_639c39'
@@ -230,6 +319,7 @@ entries:
   requires_confirmation: false
   action_type: 'info'
   actioned_by: ''
+  notify_targets: []
   confirmed_by: []
   status: 'open'
 - id: 'blt_20260901_201206_384102'
@@ -240,6 +330,7 @@ entries:
   requires_confirmation: false
   action_type: 'info'
   actioned_by: ''
+  notify_targets: []
   confirmed_by:
     - 'karo'
   status: 'open'
@@ -251,6 +342,7 @@ entries:
   requires_confirmation: false
   action_type: 'info'
   actioned_by: ''
+  notify_targets: []
   confirmed_by: []
   status: 'open'
 - id: 'blt_20260901_200722_d78b02'
@@ -261,6 +353,7 @@ entries:
   requires_confirmation: false
   action_type: 'info'
   actioned_by: ''
+  notify_targets: []
   confirmed_by: []
   status: 'open'
 - id: 'blt_20260901_195644_e7cad4'
@@ -271,6 +364,7 @@ entries:
   requires_confirmation: false
   action_type: 'info'
   actioned_by: ''
+  notify_targets: []
   confirmed_by: []
   status: 'open'
 - id: 'blt_20260901_194338_72abbd'
@@ -281,55 +375,6 @@ entries:
   requires_confirmation: false
   action_type: 'info'
   actioned_by: ''
-  confirmed_by: []
-  status: 'open'
-- id: 'blt_20260901_194155_3b7823'
-  content: |-
-    GATE CLEAR cmd_karo_hotfix_review_processing_receipt_20260901: 完了
-  posted_by: 'karo'
-  posted_at: '2026-09-01T19:41:55'
-  requires_confirmation: false
-  action_type: 'info'
-  actioned_by: ''
-  confirmed_by: []
-  status: 'open'
-- id: 'blt_20260901_193128_c3eefe'
-  content: |-
-    GATE CLEAR cmd_reflux_insight_202609011903_tobisaru: 完了
-  posted_by: 'karo'
-  posted_at: '2026-09-01T19:31:28'
-  requires_confirmation: false
-  action_type: 'info'
-  actioned_by: ''
-  confirmed_by: []
-  status: 'open'
-- id: 'blt_20260901_192616_d6db53'
-  content: |-
-    GATE CLEAR cmd_reflux_insight_202609011854_hanzo: 完了
-  posted_by: 'karo'
-  posted_at: '2026-09-01T19:26:16'
-  requires_confirmation: false
-  action_type: 'info'
-  actioned_by: ''
-  confirmed_by: []
-  status: 'open'
-- id: 'blt_20260901_190758_10676b'
-  content: |-
-    GATE CLEAR cmd_reflux_insight_202609011840_saizo: 完了
-  posted_by: 'karo'
-  posted_at: '2026-09-01T19:07:58'
-  requires_confirmation: false
-  action_type: 'info'
-  actioned_by: ''
-  confirmed_by: []
-  status: 'open'
-- id: 'blt_20260901_185839_dc27c3'
-  content: |-
-    GATE CLEAR cmd_karo_hotfix_gunshi_idle_flag_lifecycle_20260901: 完了
-  posted_by: 'karo'
-  posted_at: '2026-09-01T18:58:39'
-  requires_confirmation: false
-  action_type: 'info'
-  actioned_by: ''
+  notify_targets: []
   confirmed_by: []
   status: 'open'
