@@ -1,5 +1,5 @@
 <!-- gist-master: 77538fe909ed4d3b83b61b4baf99cacf single_publisher_asis_tobe_5w1h_20260902.md -->
-# origin/main 単一 publisher 化 — AsIs / ToBe / 5W1H 設計書 v1.6(家老 REJECT blt_20260902_034931 の 2 修正を反映、04:15)
+# origin/main 単一 publisher 化 — AsIs / ToBe / 5W1H 設計書 v1.7(家老 REJECT blt_20260902_041733 の 2 修正を反映、04:19)
 
 - 作成: 2026-09-02 02:30 将軍(殿指示 02:16『忍者はコミットしない。コミットは家老/将軍のみ』→02:18『コミットのやり方・スキル・構造の検証』→02:24『AsIs/ToBe 5W1H 設計書。不要になる複雑さを先に検証』)
 - 協議: 家老回答 blt_20260902_021944(single publisher + local commit artifact)。協議記録=`queue/notes/shogun_karo_single_committer_hypothesis_20260902_0220.md` §1-6
@@ -96,7 +96,7 @@ publisher(家老 lane, 直列):  fetch tip T → isolated tree@T → apply diff(
 | U5 | LGTM+ACCEPT を queue の admission 条件にする(未承認 request は投入不可) | 未承認 request N 件で queue admitted = 0 ∧ 承認済 N 件で admitted = N(publisher 未稼働でも計測可能な admission 判定) | — |
 | U3 | publisher を dry-run(publish せず C2a/C2 判定 log のみ)→ 24h 判定差 0 で active 化。remote tip へ scope 限定適用→published_sha 生成(merge/cherry-pick 不使用) | criss-cross fixture で published tree の regression 0 ∧ C2a fixture: tip==base → publish 1 ∧ blob 一致、tip!=base → publish 0 ∧ RC 1 ∧ dry-run 24h の比較母数 N と mismatch=0 を生貼付 | safe_ff/ancestry guard |
 | U6 | reflux/台帳 writer を同 queue の batch へ | 台帳 commit が code commit と分離 ∧ merge driver 未使用 | .gitattributes 6 rule・driver 5・insights auto-commit |
-| U7 | autopush 4 経路/ancestry/push_lane/postclear auto-commit を flag 停止(`PUBLISHER_SINGLE=1`) | 停止後 24h で origin merge 0 ∧ push_failed 0 ∧ publisher 状態由来の tracked root porcelain 行 0(C8) | push_lane 596 行・autopush 1,182 行(停止) |
+| U7 | autopush 4 経路/ancestry/push_lane/postclear auto-commit を flag 停止(`PUBLISHER_SINGLE=1`) | 停止後 24h で **C1-C8 全 PASS(各 C の実測 receipt を報告に生貼付)** | push_lane 596 行・autopush 1,182 行(停止) |
 | U8 | canary 7 日後に旧 gate/tests/hook を削除(旧 test の不変量は新 contract test へ移植済みであること+`deletion_justification`) | bats 全 GREEN ∧ 削除 script 参照 0(rg) ∧ 移植不変量 100% | 上記の物理削除・GA-PUSH1 overlap 部・SKILL 縮退(pre-push の lease 強制・品質検査は残す) |
 canary 判定: U7 後 24h で **C1-C8 全 PASS** → dm-signal PJ へ拡大。U8 は 10 file 超の削除が見込まれるため、**削除 manifest(path・不変量の移植先・deletion_justification)を作り殿確認の上、1 batch 最大 10 file** で実施(Tier 2 STOP-AND-REPORT 準拠)。
 
@@ -163,9 +163,10 @@ canary 判定: U7 後 24h で **C1-C8 全 PASS** → dm-signal PJ へ拡大。U8
 - v1.1 → 家老 REJECT(blt_20260902_023509、前回 5/5 反映確認・新規 6): ①台帳 writer は root 外 queue に統一 ②fingerprint と patch_sha は別物で両方保持、cross_repo は組で保持 ③U1 AC=max holders 1/overlap 0/FIFO 逆転 0、lease=ref+SHA+expiry ④U5 AC=未承認 N→admitted 0、承認 N→N ⑤U3 AC に C2a fixture+dry-run 母数 N/mismatch 0 ⑥canary C1-C7、U8 削除 manifest+殿確認+1 batch ≤10、原則番号修正。→ v1.2 に全反映。
 - v1.2 → 家老 **APPROVE**(blt_20260902_024632、6/6 反映を現物差分で確認)。
 - v1.3(殿指示 03:36 で R/D/P/A 4 節追加)→ 家老 覚醒 REJECT(blt_20260902_034259、新規 8): R2×C2a 矛盾/R7 bypass 廃止/R8・D8 dirty 退避+forward restore/R10 forward restore/D2 STATE_DIR・D5 allowlist/A1×A3 統合/A8 言い換え禁止→構造 field/A9 rollback_plan field+P4 原因訂正。→ v1.4 に全反映。
-- v1.5 → 家老 REJECT(blt_20260902_034931、前回 4/4 反映確認・新規 2): ①canary/U7 を C1-C8 へ ②WIP 復元先を所有者専用の非 root worktree に限定(復旧完了の二値化)。→ v1.6 に全反映。
 - v1.4 → 家老 REJECT(blt_20260902_034658、前回 8/8 反映確認・新規 4): ①publisher 状態 path を STATE_DIR へ統一(C8 追加) ②unexpected dirty=他者 WIP は publish へ投入せず所有者の未 commit WIP として再適用 ③ledger_inbox の絶対境界明記 ④履歴の時系列整列。→ v1.5 に全反映。
+- v1.5 → 家老 REJECT(blt_20260902_034931、前回 4/4 反映確認・新規 2): ①canary/U7 を C1-C8 へ ②WIP 復元先を所有者専用の非 root worktree に限定(復旧完了の二値化)。→ v1.6 に全反映。
+- v1.6 → 家老 REJECT(blt_20260902_041733、新規 2): ①U7 AC を C1-C8 全 PASS(実測 receipt)へ ②履歴の時系列再整列。→ v1.7 に全反映。
 
-## §5.1 レビュー依頼(家老、v1.6)
+## §5.1 レビュー依頼(家老、v1.7)
 観点: (5) §4 R1-R10 の検知・復旧が二値か (6) §6 D1-D12 のうち将軍が決めてよい範囲を越えていないか(殿裁定は D9/D10 のみ) (7) §7 P1-P10 に本日事象の漏れ (8) §8 A1-A10 が deploy_task/karo-direct の現行 gate と矛盾しないか。
 観点: (1)§1.3 不要化 inventory の過不足(削ってはいけないものが混ざっていないか、殿 07-21『削るな速くしろ』との整合) (2)§2.3/2.4 の契約が二値か (3)§3 の順序・AC・canary 範囲 (4)壊れる契約の列挙漏れ(blt_021944 の 13 項目と突合)。
