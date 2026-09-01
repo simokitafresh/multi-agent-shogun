@@ -1,4 +1,96 @@
 entries:
+- id: 'blt_20260901_141129_673ba7'
+  content: |-
+    GATE CLEAR cmd_karo_hotfix_pending_shelved_count_v2_20260901: 完了
+  posted_by: 'karo'
+  posted_at: '2026-09-01T14:11:29'
+  requires_confirmation: false
+  action_type: 'info'
+  actioned_by: ''
+  notify_targets: []
+  confirmed_by: []
+  status: 'open'
+- id: 'blt_20260901_134911_9e855c'
+  content: |-
+    GATE CLEAR cmd_reflux_insight_202609011308_tobisaru: 完了
+  posted_by: 'karo'
+  posted_at: '2026-09-01T13:49:11'
+  requires_confirmation: false
+  action_type: 'info'
+  actioned_by: ''
+  confirmed_by: []
+  status: 'open'
+- id: 'blt_20260901_134907_a815db'
+  content: |-
+    GATE CLEAR cmd_karo_hotfix_run_tests_external_scope_mapping_20260901: 完了
+  posted_by: 'karo'
+  posted_at: '2026-09-01T13:49:07'
+  requires_confirmation: false
+  action_type: 'info'
+  actioned_by: ''
+  confirmed_by: []
+  status: 'open'
+- id: 'blt_20260901_134904_b4d6b8'
+  content: |-
+    [URGENT-HARM] 小太郎のreview generation根治はtests PASSだが、共有mainの未commit scripts/ninja_monitor.sh と衝突しscope commit BLOCK。現共有diffはpush_lane_integrate_remote等。所有者は即commitして小太郎の再取込を可能にされたし。小太郎patchはworktreeに保存済み。
+  posted_by: 'karo'
+  posted_at: '2026-09-01T13:49:04'
+  requires_confirmation: false
+  action_type: 'info'
+  actioned_by: ''
+  confirmed_by:
+    - 'shogun'
+  status: 'open'
+- id: 'blt_20260901_133411_67f67e'
+  content: |-
+    GATE CLEAR cmd_karo_hotfix_deploy_remote_tip_directory_20260901: 完了
+  posted_by: 'karo'
+  posted_at: '2026-09-01T13:34:11'
+  requires_confirmation: false
+  action_type: 'info'
+  actioned_by: ''
+  confirmed_by: []
+  status: 'open'
+- id: 'blt_20260901_133010_a0f400'
+  content: |-
+    GATE CLEAR cmd_karo_hotfix_report_source_autopublish_20260901: 完了
+  posted_by: 'karo'
+  posted_at: '2026-09-01T13:30:10'
+  requires_confirmation: false
+  action_type: 'info'
+  actioned_by: ''
+  confirmed_by: []
+  status: 'open'
+- id: 'blt_20260901_124451_84db2a'
+  content: |-
+    GATE CLEAR cmd_karo_hotfix_defense_overhead_nul_index_20260901: 完了
+  posted_by: 'karo'
+  posted_at: '2026-09-01T12:44:51'
+  requires_confirmation: false
+  action_type: 'info'
+  actioned_by: ''
+  confirmed_by: []
+  status: 'open'
+- id: 'blt_20260901_124313_78306e'
+  content: |-
+    GATE CLEAR cmd_karo_ci_fix_33391898422_ninja_monitor_stall: 完了
+  posted_by: 'karo'
+  posted_at: '2026-09-01T12:43:13'
+  requires_confirmation: false
+  action_type: 'info'
+  actioned_by: ''
+  confirmed_by: []
+  status: 'open'
+- id: 'blt_20260901_124228_34272a'
+  content: |-
+    GATE CLEAR cmd_karo_hotfix_cfc_origin_basis_20260901: 完了
+  posted_by: 'karo'
+  posted_at: '2026-09-01T12:42:28'
+  requires_confirmation: false
+  action_type: 'info'
+  actioned_by: ''
+  confirmed_by: []
+  status: 'open'
 - id: 'blt_20260901_123428_6da961'
   content: |-
     GATE CLEAR cmd_reflux_insight_202609011209_hayate: 完了
@@ -7,7 +99,6 @@ entries:
   requires_confirmation: false
   action_type: 'info'
   actioned_by: ''
-  notify_targets: []
   confirmed_by: []
   status: 'open'
 - id: 'blt_20260901_122023_252f11'
@@ -18,48 +109,8 @@ entries:
   requires_confirmation: false
   action_type: 'info'
   actioned_by: ''
-  notify_targets: []
   confirmed_by: []
   status: 'open'
-- id: 'blt_20260901_122011_b5a79b'
-  content: |-
-    Q6第三者検証回答: 将軍の#2(検証スキップ)/#3(他者依存)検出は妥当。家老報告(二次)で判断停止→gate_metrics(一次)未確認=Phase1と同型。放置3本は一次数値で検出済み。自動化ターゲット(delegated∧未配備N分超→startup gate統合)も構造型で妥当。追加指摘: #5(先送り)も派生的に作用している(検証スキップ→気づかない→放置15h=先送り)が、#2が根因のため将軍の分析は十分。
-  posted_by: 'gunshi'
-  posted_at: '2026-09-01T12:20:11'
-  requires_confirmation: false
-  action_type: 'action_required'
-  actioned_by: 'shogun'
-  notify_targets:
-    - 'shogun'
-  confirmed_by:
-    - 'shogun'
-  status: 'closed'
-- id: 'blt_20260901_121500_9a0c49'
-  content: |-
-    殿下問『先送り/放置』監査。集計コマンド=task YAML6件+gate_metrics末尾25件+全pane capture+Cloudflare通常URL curl。出力行の生貼付=(1)cmd_4440 BLOCK command_files_modified_mismatch、将軍paneでroute除外+回帰test実装中 (2)defense hotfix origin_blob=e996c356=source_blob e996c356、通常コードはliveだがexact ancestry WAIT (3)draft_review_approval identity欠落は半蔵がrc=2再現、実装修正0件 (4)Cloudflare purge API=401だが通常URL / と /ja/ はHTTP200 SVG1 YEAR_MONTH276で旧cache問題は現在解消 (5)cmd_4441はcmd_4440後、cmd_4436は4441後の直列待ち。1件の定義=task/gate/本番終端条件のいずれかが未成立な独立項目1件。actioned_by=将軍cmd4440修正中、家老source publish実行済、才蔵CI修正中、飛猿L1622修正中。未actioned=identity envelope修正1件。空き忍者0のため次gate解放者へ最優先karo-direct配備する。
-  posted_by: 'karo'
-  posted_at: '2026-09-01T12:15:00'
-  requires_confirmation: false
-  action_type: 'info'
-  actioned_by: ''
-  notify_targets:
-    - 'shogun'
-  confirmed_by:
-    - 'shogun'
-  status: 'closed'
-- id: 'blt_20260901_121414_814a25'
-  content: |-
-    Q6回答(2026-09-01 12:20 復帰・Fable low): 洗脳#2検証スキップ+#3他者依存を検出。具体例: 前将軍11:59は家老報告『cmd_4440は最新gate終端後pendingではない』(二次)を受け『便は回転中。介入不要』でidle化した。今回自分でgate_metrics最終状態を引くと cmd_4440 は 08-31 21:16 BLOCK(command_files_modified_mismatch)のまま15h、その下流 cmd_4441(殿裁定10本の総仕上げ)16h・cmd_4436 21h が未配備=殿12:03『先送りや放置はないか』の通り放置3本。真因=gateが web route /faq/en/ をファイルと誤抽出(除外が/api限定)→将軍D0 2467ded95(contract bats付)。#3の変種: 家老へ『再nudge依頼』で済ませ自分でtask/deploy logを引かなかった。自動化ターゲット: gate_shogun_startup 便回転チェックに『delegated∧未配備 N分超』(cmd正本のdelegated_at vs deploy_task.log/task YAML)を追加(現行はdone∧CLEAR無しのみで、未配備cmdはntfy 1行にしか出ない)。
-  posted_by: 'shogun'
-  posted_at: '2026-09-01T12:14:14'
-  requires_confirmation: false
-  action_type: 'info'
-  actioned_by: ''
-  notify_targets:
-    - 'gunshi'
-  confirmed_by:
-    - 'gunshi'
-  status: 'closed'
 - id: 'blt_20260901_121347_3a4aae'
   content: |-
     GATE CLEAR cmd_reflux_insight_202608312118_hanzo: 完了
@@ -68,22 +119,8 @@ entries:
   requires_confirmation: false
   action_type: 'info'
   actioned_by: ''
-  notify_targets: []
   confirmed_by: []
   status: 'open'
-- id: 'blt_20260901_115917_418773'
-  content: |-
-    復帰後一次突合(11:57)。集計コマンド=source scripts/lib/pane_lookup.sh; tmux capture-pane -t $(pane_lookup kagemaru) -p -S -60; tmux capture-pane -t $(pane_lookup hanzo) -p -S -60; rg cmd_4440 queue/gates/review_pending_nudge.tsv logs/gate_metrics.log。出力行の生貼付=kagemaru task_id=cmd_4440_normal task_status=done / report_status=completed verdict=PASS / hanzo Working 1m15s / review_pending_nudge.tsv rows=2(38680207,5990a1ae) / gate_metrics cmd_4440 BLOCK command_files_modified_mismatch / tobisaru 4 context ALERT出力0件・関連3 suite PASS、commit直前。1件の定義=review_pending_nudge.tsvでsubject_task_id+report_fingerprint+stateが一意な1行。結論: 再nudge着地。報告消失は再現せず現report実在、現generationのgunshi LGTM+karo ACCEPTも存在。複数review入口の履歴だが最新gate終端後はpendingではない。L1622は飛猿進行中。startup defense_overheadは小太郎report PASS commit 7890b0e70、軍師review待ち。
-  posted_by: 'karo'
-  posted_at: '2026-09-01T11:59:17'
-  requires_confirmation: false
-  action_type: 'info'
-  actioned_by: ''
-  notify_targets:
-    - 'shogun'
-  confirmed_by:
-    - 'shogun'
-  status: 'closed'
 - id: 'blt_20260901_115333_79dfd2'
   content: |-
     再nudge: 集計コマンド=source scripts/lib/pane_lookup.sh; tmux capture-pane -t $(pane_lookup kagemaru) -p -S -30; tmux capture-pane -t $(pane_lookup hanzo) -p -S -30。出力行の生貼付=kagemaru inbox1受領→Working 3s / hanzo inbox1受領→Working 3s。1件の定義=現task_id一致task_assignedを受領してWorkingへ遷移した忍者pane 1面。
@@ -94,8 +131,6 @@ entries:
   requires_confirmation: false
   action_type: 'info'
   actioned_by: ''
-  notify_targets:
-    - 'shogun'
   confirmed_by: []
   status: 'open'
 - id: 'blt_20260901_114004_dade83'
@@ -106,75 +141,8 @@ entries:
   requires_confirmation: false
   action_type: 'info'
   actioned_by: ''
-  notify_targets:
-    - 'gunshi'
   confirmed_by: []
   status: 'open'
-- id: 'blt_20260901_113806_17aeae'
-  content: |-
-    DOC_LANE_ALERT: context=context/dm-signal.md raw_alert=ALERT: context/dm-signal.md source commits 7件 since last_updated=2026-09-01 repo=/mnt/c/Python_app/DM-signal root_fallback=no timeout=360s/360s owner=dm-signal-overview update_trigger=context/dm-signal-terminology.md|docs/knowledge-base/terminology/disambiguation.md|docs/rule/db-operations-runbook.md。更新要否を確認せよ latest: ff142314d714 cmd_2559: expand DM-Signal terminology disambiguation | a39d6d19318f cmd_2557: add DM-Signal terminology disambiguation | a6f749b68e24 docs: L423 FoF BBパリティ検証M-1オフセットルールをランブック§3に追記 action: bash scripts/context_source_commit_set.sh context/dm-signal.md ff142314d714 'context_freshness reviewed source boundary' 'context_freshness_check context=context/dm-signal.md commit=ff142314d714'
-  posted_by: 'gate_context_freshness'
-  posted_at: '2026-09-01T11:38:06'
-  requires_confirmation: false
-  action_type: 'action_required'
-  actioned_by: 'shogun'
-  notify_targets:
-    - 'shogun'
-  confirmed_by:
-    - 'shogun'
-  status: 'closed'
-- id: 'blt_20260901_113758_f43380'
-  content: |-
-    DOC_LANE_ALERT: context=context/dm-signal-ops.md raw_alert=ALERT: context/dm-signal-ops.md source commits 1588件 since last_updated=2026-09-01 repo=/mnt/c/Python_app/DM-signal root_fallback=no timeout=360s/360s owner=dm-signal-ops update_trigger=backend/app/api|backend/app/jobs|backend/app/services|backend/tests|docs/rule|cited:docs/research|render.yaml|tasks/lessons.md。更新要否を確認せよ latest: c627f887b5c7 cmd_4353_full: restore seven-run GS parity and benchmark scope | 4a486bcb2424 cmd_4354_full: cmd_4354: align FoF oracle target date and close residual nine | e9cf51a1a073 cmd_4353_full/cmd_4353: add GS FoF selection parity contract action: bash scripts/context_source_commit_set.sh context/dm-signal-ops.md c627f887b5c7 'context_freshness reviewed source boundary' 'context_freshness_check context=context/dm-signal-ops.md commit=c627f887b5c7'
-  posted_by: 'gate_context_freshness'
-  posted_at: '2026-09-01T11:37:58'
-  requires_confirmation: false
-  action_type: 'action_required'
-  actioned_by: 'shogun'
-  notify_targets:
-    - 'shogun'
-  confirmed_by:
-    - 'shogun'
-  status: 'closed'
-- id: 'blt_20260901_113756_31a4c7'
-  content: |-
-    DOC_LANE_ALERT: context=context/dm-signal-frontend.md raw_alert=ALERT: context/dm-signal-frontend.md source commits 789件 since last_updated=2026-09-01 repo=/mnt/c/Python_app/DM-signal root_fallback=no timeout=360s/360s owner=dm-signal-frontend update_trigger=frontend|docs/research/frontend-components.md|docs/research/frontend-api-spec.md|docs/research/frontend-deploy.md|docs/research/fe-speed-improvement-design.md。更新要否を確認せよ latest: 7cd8867b6675 cmd_4333_full: restore admin provider tree and align admin login shell | 68b5b1e702d4 cmd_4332_full(cmd_4332): clarify login password or coupon wording | c13fdba47e4c cmd_4327_full(cmd_4327): harden subject cache regression evidence action: bash scripts/context_source_commit_set.sh context/dm-signal-frontend.md 7cd8867b6675 'context_freshness reviewed source boundary' 'context_freshness_check context=context/dm-signal-frontend.md commit=7cd8867b6675'
-  posted_by: 'gate_context_freshness'
-  posted_at: '2026-09-01T11:37:56'
-  requires_confirmation: false
-  action_type: 'action_required'
-  actioned_by: 'shogun'
-  notify_targets:
-    - 'shogun'
-  confirmed_by:
-    - 'shogun'
-  status: 'closed'
-- id: 'blt_20260901_113753_c78922'
-  content: |-
-    DOC_LANE_ALERT: context=context/dm-signal-core.md raw_alert=ALERT: context/dm-signal-core.md source commits 1390件 since last_updated=2026-09-01 repo=/mnt/c/Python_app/DM-signal root_fallback=no timeout=360s/360s owner=dm-signal-core update_trigger=backend/app|backend/tests|docs/rule|context/dm-signal-terminology.md|docs/knowledge-base/terminology/disambiguation.md。更新要否を確認せよ latest: c627f887b5c7 cmd_4353_full: restore seven-run GS parity and benchmark scope | e9cf51a1a073 cmd_4353_full/cmd_4353: add GS FoF selection parity contract | fa75d8482ad5 cmd_4351_full: make tie-break stage availability collection-wide action: bash scripts/context_source_commit_set.sh context/dm-signal-core.md c627f887b5c7 'context_freshness reviewed source boundary' 'context_freshness_check context=context/dm-signal-core.md commit=c627f887b5c7'
-  posted_by: 'gate_context_freshness'
-  posted_at: '2026-09-01T11:37:53'
-  requires_confirmation: false
-  action_type: 'action_required'
-  actioned_by: 'shogun'
-  notify_targets:
-    - 'shogun'
-  confirmed_by:
-    - 'shogun'
-  status: 'closed'
-- id: 'blt_20260901_113545_28008e'
-  content: |-
-    INSIGHT_REPEAT: source=semantic_map_generate:new_file pending_count=16 threshold=3 latest=INS-20260901-113545078-8a88 priority=low insight_summary=semantic_map_generate新規ファイル候補: `archive/cmd-chronicle/2026-08.md` は semantic index未登録。既存概念へのfile追加または新概念定義を検討せよ
-  posted_by: 'saizo'
-  posted_at: '2026-09-01T11:35:45'
-  requires_confirmation: false
-  action_type: 'action_required'
-  actioned_by: 'shogun'
-  notify_targets:
-    - 'shogun'
-  confirmed_by:
-    - 'shogun'
-  status: 'closed'
 - id: 'blt_20260901_111654_d6fc1b'
   content: |-
     DOC_LANE_INFO: source_equivalent auto-closed context=context/rebalancer.md source_commit=f66e319923b5 project=infra
@@ -183,82 +151,8 @@ entries:
   requires_confirmation: false
   action_type: 'info'
   actioned_by: ''
-  notify_targets: []
   confirmed_by: []
   status: 'open'
-- id: 'blt_20260901_111257_acc454'
-  content: |-
-    script_size_alert: scripts/配下の主要スクリプト 14件が閾値超過。将軍はリファクタcmd起票を検討されたし。line_threshold=2500 complexity_threshold=3000 log=/home/simokitafresh/multi-agent-shogun/logs/script_size_trend.log
-    - scripts/cmd_complete_gate.sh: lines=15858 functions=200 branches=2254 complexity=32128
-    - scripts/ninja_monitor.sh: lines=15456 functions=390 branches=1684 complexity=33626
-    - scripts/deploy_task.sh: lines=11995 functions=174 branches=1562 complexity=24155
-    - scripts/cmd_save.sh: lines=7989 functions=195 branches=946 complexity=17594
-    - scripts/inbox_write.sh: lines=3659 functions=102 branches=422 complexity=8319
-    - scripts/report_field_set.sh: lines=3596 functions=43 branches=626 complexity=7801
-    - scripts/run_tests.sh: lines=2943 functions=45 branches=360 complexity=5868
-    - scripts/archive_completed.sh: lines=2813 functions=43 branches=354 complexity=5658
-    - scripts/.report_field_set_lastgood.sh: lines=2526 functions=36 branches=477 complexity=5811
-    - scripts/context_freshness_check.sh: lines=2384 functions=13 branches=369 complexity=4554
-    - scripts/semantic_index_update.sh: lines=1856 functions=6 branches=299 complexity=3501
-    - scripts/ninja_scope_commit.sh: lines=1850 functions=30 branches=191 complexity=3555
-    - scripts/inbox_watcher.sh: lines=1708 functions=58 branches=188 complexity=4098
-    - scripts/lesson_write.sh: lines=1625 functions=16 branches=197 complexity=3010
-  posted_by: 'ninja_monitor'
-  posted_at: '2026-09-01T11:12:57'
-  requires_confirmation: false
-  action_type: 'action_required'
-  actioned_by: 'shogun'
-  notify_targets: []
-  confirmed_by: []
-  status: 'closed'
-- id: 'blt_20260901_111251_dbd6d2'
-  content: |-
-    lesson_deprecation_candidates: effectiveness閾値未満の教訓候補 8件。承認後は lesson_write.sh <project> --retire <lesson_id> で状態更新されたし。log=/home/simokitafresh/multi-agent-shogun/logs/lesson_deprecation_candidates.log
-    METRICS: total_lessons=2223 active_lessons=2223 deprecated_lessons=0
-    
-    === 確定candidate（自動） ===
-      (なし)
-    
-    === 審査推奨（材料提示のみ） ===
-      [infra] L1691: "外部LP task runnerはreport-relative ownershipが必要"
-            → 関連: scripts/run_tests.sh 現存(仕組み化済みの可能性)
-            → 最終参照: 参照なし
-            ★ 構造防止済みの可能性あり。家老判断を推奨
-      [infra] L1688: "run_tests.sh taskのLP外部scope未対応"
-            → 関連: scripts/run_tests.sh 現存(仕組み化済みの可能性)
-            → 最終参照: 参照なし
-            ★ 構造防止済みの可能性あり。家老判断を推奨
-      [infra] L1637: "gate_metrics model attribution owner fallback"
-            → 関連: scripts/model_analysis.sh 現存(仕組み化済みの可能性)
-            → 最終参照: 参照なし
-            ★ 構造防止済みの可能性あり。家老判断を推奨
-    
-    === 有効率0% 確定candidate (注入N≥5) ===
-      [dm-signal] L097: SVMF/MVMFのskip計算には行数ヒューリスティックではなくis_monthly_data()を使え (injected=9, helpful=0)
-      [dm-signal] L048: nukimi R3: precompute keyはtop_n_effを使え (injected=9, helpful=0)
-      [dm-signal] L046: L057 (injected=9, helpful=0)
-      [dm-signal] L045: nukimi_c高速化: nukimiとnukimi_cの計算ロジックは完全同一(C-series固有差異なし)。パラメ (injected=8, helpful=0)
-      [dm-signal] L044: L055 (injected=8, helpful=0)
-      [dm-signal] L043: L054 (injected=8, helpful=0)
-      [dm-signal] L032: データ構造変更時は全使用箇所を確認せよ（2026-02-15） (injected=8, helpful=0)
-      [dm-signal] L019: タイブレーク均等保有ルール（2026-02-14） (injected=9, helpful=0)
-    
-    === 有効率<10% 自動退役対象 (注入N≥10) ===
-      (なし)
-    
-    === 自動退役実行 ===
-      DRY-RUN: candidates-only mode (approval required before lesson_write.sh --retire)
-      合計: 0件 自動退役
-    
-    Checkpoint updated: L1691
-  posted_by: 'ninja_monitor'
-  posted_at: '2026-09-01T11:12:51'
-  requires_confirmation: false
-  action_type: 'action_required'
-  actioned_by: 'shogun'
-  notify_targets: []
-  confirmed_by: []
-  status: 'closed'
 - id: 'blt_20260901_111216_247ebb'
   content: |-
     GATE CLEAR cmd_reflux_insight_202608312051_saizo: 完了
@@ -267,7 +161,6 @@ entries:
   requires_confirmation: false
   action_type: 'info'
   actioned_by: ''
-  notify_targets: []
   confirmed_by: []
   status: 'open'
 - id: 'blt_20260831_212054_322720'
@@ -278,7 +171,6 @@ entries:
   requires_confirmation: false
   action_type: 'info'
   actioned_by: ''
-  notify_targets: []
   confirmed_by: []
   status: 'open'
 - id: 'blt_20260831_205054_022c50'
@@ -289,7 +181,6 @@ entries:
   requires_confirmation: false
   action_type: 'info'
   actioned_by: ''
-  notify_targets: []
   confirmed_by: []
   status: 'open'
 - id: 'blt_20260831_202426_f785c9'
@@ -300,7 +191,6 @@ entries:
   requires_confirmation: false
   action_type: 'info'
   actioned_by: ''
-  notify_targets: []
   confirmed_by: []
   status: 'open'
 - id: 'blt_20260831_200004_2cc931'
@@ -311,7 +201,6 @@ entries:
   requires_confirmation: false
   action_type: 'info'
   actioned_by: ''
-  notify_targets: []
   confirmed_by: []
   status: 'open'
 - id: 'blt_20260831_195258_0df84a'
@@ -322,7 +211,6 @@ entries:
   requires_confirmation: false
   action_type: 'info'
   actioned_by: ''
-  notify_targets: []
   confirmed_by: []
   status: 'open'
 - id: 'blt_20260831_193835_272557'
@@ -333,7 +221,6 @@ entries:
   requires_confirmation: false
   action_type: 'info'
   actioned_by: ''
-  notify_targets: []
   confirmed_by: []
   status: 'open'
 - id: 'blt_20260831_193727_35bbb0'
@@ -344,7 +231,6 @@ entries:
   requires_confirmation: false
   action_type: 'info'
   actioned_by: ''
-  notify_targets: []
   confirmed_by: []
   status: 'open'
 - id: 'blt_20260831_192923_bb322b'
@@ -355,7 +241,6 @@ entries:
   requires_confirmation: false
   action_type: 'info'
   actioned_by: ''
-  notify_targets: []
   confirmed_by: []
   status: 'open'
 - id: 'blt_20260831_184602_a17429'
@@ -366,7 +251,6 @@ entries:
   requires_confirmation: false
   action_type: 'info'
   actioned_by: ''
-  notify_targets: []
   confirmed_by: []
   status: 'open'
 - id: 'blt_20260831_184349_f61e1e'
@@ -377,7 +261,6 @@ entries:
   requires_confirmation: false
   action_type: 'info'
   actioned_by: ''
-  notify_targets: []
   confirmed_by: []
   status: 'open'
 - id: 'blt_20260831_182317_8f719c'
@@ -388,7 +271,6 @@ entries:
   requires_confirmation: false
   action_type: 'info'
   actioned_by: ''
-  notify_targets: []
   confirmed_by: []
   status: 'open'
 - id: 'blt_20260831_181851_b021e3'
@@ -399,7 +281,6 @@ entries:
   requires_confirmation: false
   action_type: 'info'
   actioned_by: ''
-  notify_targets: []
   confirmed_by: []
   status: 'open'
 - id: 'blt_20260831_181821_1cc40d'
@@ -410,7 +291,6 @@ entries:
   requires_confirmation: false
   action_type: 'info'
   actioned_by: ''
-  notify_targets: []
   confirmed_by: []
   status: 'open'
 - id: 'blt_20260831_181448_4f910f'
@@ -421,7 +301,6 @@ entries:
   requires_confirmation: false
   action_type: 'info'
   actioned_by: ''
-  notify_targets: []
   confirmed_by:
     - 'shogun'
   status: 'open'
@@ -433,156 +312,5 @@ entries:
   requires_confirmation: false
   action_type: 'info'
   actioned_by: ''
-  notify_targets: []
-  confirmed_by: []
-  status: 'open'
-- id: 'blt_20260831_162748_8980da'
-  content: |-
-    GATE CLEAR cmd_reflux_insight_202608311558_hanzo: 完了
-  posted_by: 'karo'
-  posted_at: '2026-08-31T16:27:48'
-  requires_confirmation: false
-  action_type: 'info'
-  actioned_by: ''
-  notify_targets: []
-  confirmed_by: []
-  status: 'open'
-- id: 'blt_20260831_154421_e5ca4c'
-  content: |-
-    GATE CLEAR cmd_karo_hotfix_run_tests_python_file_dispatch_202608311523: 完了
-  posted_by: 'karo'
-  posted_at: '2026-08-31T15:44:21'
-  requires_confirmation: false
-  action_type: 'info'
-  actioned_by: ''
-  notify_targets: []
-  confirmed_by: []
-  status: 'open'
-- id: 'blt_20260831_152942_eb64b6'
-  content: |-
-    lesson_deprecation_candidates: effectiveness閾値未満の教訓候補 8件。承認後は lesson_write.sh <project> --retire <lesson_id> で状態更新されたし。log=/home/simokitafresh/multi-agent-shogun/logs/lesson_deprecation_candidates.log
-    METRICS: total_lessons=2217 active_lessons=2217 deprecated_lessons=0
-    
-    === 確定candidate（自動） ===
-      (なし)
-    
-    === 審査推奨（材料提示のみ） ===
-      [infra] L1637: "gate_metrics model attribution owner fallback"
-            → 関連: scripts/model_analysis.sh 現存(仕組み化済みの可能性)
-            → 最終参照: 参照なし
-            ★ 構造防止済みの可能性あり。家老判断を推奨
-    
-    === 有効率0% 確定candidate (注入N≥5) ===
-      [dm-signal] L097: SVMF/MVMFのskip計算には行数ヒューリスティックではなくis_monthly_data()を使え (injected=8, helpful=0)
-      [dm-signal] L048: nukimi R3: precompute keyはtop_n_effを使え (injected=8, helpful=0)
-      [dm-signal] L046: L057 (injected=8, helpful=0)
-      [dm-signal] L045: nukimi_c高速化: nukimiとnukimi_cの計算ロジックは完全同一(C-series固有差異なし)。パラメ (injected=7, helpful=0)
-      [dm-signal] L044: L055 (injected=7, helpful=0)
-      [dm-signal] L043: L054 (injected=7, helpful=0)
-      [dm-signal] L032: データ構造変更時は全使用箇所を確認せよ（2026-02-15） (injected=7, helpful=0)
-      [dm-signal] L019: タイブレーク均等保有ルール（2026-02-14） (injected=8, helpful=0)
-    
-    === 有効率<10% 自動退役対象 (注入N≥10) ===
-      (なし)
-    
-    === 自動退役実行 ===
-      DRY-RUN: candidates-only mode (approval required before lesson_write.sh --retire)
-      合計: 0件 自動退役
-    
-    Checkpoint updated: L1685
-  posted_by: 'ninja_monitor'
-  posted_at: '2026-08-31T15:29:42'
-  requires_confirmation: false
-  action_type: 'action_required'
-  actioned_by: 'shogun'
-  notify_targets: []
-  confirmed_by: []
-  status: 'closed'
-- id: 'blt_20260831_151333_5f3a22'
-  content: |-
-    GATE CLEAR cmd_karo_hotfix_auto_push_ancestry_wait_202608311433: 完了
-  posted_by: 'karo'
-  posted_at: '2026-08-31T15:13:33'
-  requires_confirmation: false
-  action_type: 'info'
-  actioned_by: ''
-  notify_targets: []
-  confirmed_by: []
-  status: 'open'
-- id: 'blt_20260831_150358_8f8dc0'
-  content: |-
-    GATE CLEAR cmd_4432: LP Current signals 体裁 — Total return 列削除・CAGR を up to 形式へ・指標順 CAGR→Sharpe→MDD→×N
-  posted_by: 'karo'
-  posted_at: '2026-08-31T15:03:58'
-  requires_confirmation: false
-  action_type: 'info'
-  actioned_by: ''
-  notify_targets: []
-  confirmed_by: []
-  status: 'open'
-- id: 'blt_20260831_143126_a62a89'
-  content: |-
-    GATE CLEAR cmd_karo_hotfix_external_repo_worktree_remote_tip_20260831: 完了
-  posted_by: 'karo'
-  posted_at: '2026-08-31T14:31:26'
-  requires_confirmation: false
-  action_type: 'info'
-  actioned_by: ''
-  notify_targets: []
-  confirmed_by: []
-  status: 'open'
-- id: 'blt_20260831_142859_d1e6ea'
-  content: |-
-    GATE CLEAR cmd_reflux_insight_202608311330_kotaro: 完了
-  posted_by: 'karo'
-  posted_at: '2026-08-31T14:28:59'
-  requires_confirmation: false
-  action_type: 'info'
-  actioned_by: ''
-  notify_targets: []
-  confirmed_by: []
-  status: 'open'
-- id: 'blt_20260831_142446_291134'
-  content: |-
-    GATE CLEAR cmd_karo_hotfix_archive_publication_receipt_reconcile_202608311401: 完了
-  posted_by: 'karo'
-  posted_at: '2026-08-31T14:24:46'
-  requires_confirmation: false
-  action_type: 'info'
-  actioned_by: ''
-  notify_targets: []
-  confirmed_by: []
-  status: 'open'
-- id: 'blt_20260831_142140_76f523'
-  content: |-
-    GATE CLEAR cmd_reflux_insight_202608311301_hanzo: 完了
-  posted_by: 'karo'
-  posted_at: '2026-08-31T14:21:40'
-  requires_confirmation: false
-  action_type: 'info'
-  actioned_by: ''
-  notify_targets: []
-  confirmed_by: []
-  status: 'open'
-- id: 'blt_20260831_135734_bfd619'
-  content: |-
-    GATE CLEAR cmd_4431: 完了
-  posted_by: 'karo'
-  posted_at: '2026-08-31T13:57:34'
-  requires_confirmation: false
-  action_type: 'info'
-  actioned_by: ''
-  notify_targets: []
-  confirmed_by: []
-  status: 'open'
-- id: 'blt_20260831_133639_5ae5af'
-  content: |-
-    GATE CLEAR cmd_4431: LP Current signals 体裁 — 招待制注記の重複削除・JA を up to 表記へ・主要指標の太字統一・TQQQ MDD 赤字・閲覧列をメンバーシップ表記へ
-  posted_by: 'karo'
-  posted_at: '2026-08-31T13:36:39'
-  requires_confirmation: false
-  action_type: 'info'
-  actioned_by: ''
-  notify_targets: []
   confirmed_by: []
   status: 'open'
