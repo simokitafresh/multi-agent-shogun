@@ -1,6 +1,7 @@
 # インフラコンテキスト
-<!-- last_updated: 2026-09-01 2026-09-01 将軍 doc lane: CI RED #4 ci_fix 8d892a0f8 -->
-<!-- source_commit:f6a4080780a5086dfc1dc6e8cc29f31fea050d67 reason:2026-09-01 将軍 doc lane: CI RED #4 ci_fix 8d892a0f8 evidence:commit 8d892a0f8; CLEAR 21:25 -->
+<!-- last_updated: 2026-09-01 2026-09-01 将軍 doc lane: U8 runtime 台帳 merge 戦略 -->
+<!-- source_commit:f6a4080780a5086dfc1dc6e8cc29f31fea050d67 reason:2026-09-01 将軍 doc lane: U8 runtime 台帳 merge 戦略 evidence:commit 7268c41b2; CLEAR 21:40 -->
+
 <!-- source_commit:e8c9d40aea58c3d16f4fc2685f00402427db50c5 reason:2026-09-01 将軍 doc lane: U6 isolated 統合+insights driver region 修正 evidence:commits e773dfe51,4c295c112; CLEAR 21:09 -->
 <!-- source_commit:3faadd39c98e8bcd411dcdb96b2f1f45e8fda43f reason:2026-09-01 将軍 doc lane: fail-close pending ACCEPT 終端+scope_commit same-blob evidence:commits c8ac48529,762dc9a19; CLEAR 20:30/20:21 -->
 <!-- source_commit:a11e1d1c2549a028034b4440927de5fa9999f7a4 reason:2026-09-01 将軍 doc lane: report-only dirty 契約/review_draft receipt 例外/insights ID-keyed merge/build_instructions 契約(doc lane 3 request 一括) evidence:commits 21b9048c,b7cd2adcc,95edc9e1,eefcd0ff5; CLEAR 19:43/20:07/20:10 -->
