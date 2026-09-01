@@ -13,6 +13,16 @@ set -e
 # スクリプトのディレクトリを取得
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 cd "$SCRIPT_DIR"
+# cutover guard (2026-09-01): 旧treeのコピーから出陣すると全paneのcwdが旧rootになり
+# .gitと一部queue/が別実体のまま稼働する(実証: 09-01 11:23 出陣→家老/軍師/将軍pane=/mnt/c)。
+# 印ファイルがあれば新rootの同名スクリプトへ引き継ぐ(構造型: 手を動かすと自然に守られる)。
+if [ -f "$SCRIPT_DIR/MIGRATED_TO_EXT4.txt" ]; then
+    _new_root="$(sed -n 's/^new_root=//p' "$SCRIPT_DIR/MIGRATED_TO_EXT4.txt" | head -1)"
+    if [ -n "$_new_root" ] && [ "$_new_root" != "$SCRIPT_DIR" ] && [ -x "$_new_root/shutsujin_departure.sh" ]; then
+        echo "[cutover] MIGRATED_TO_EXT4 detected: re-exec from $_new_root"
+        cd "$_new_root" && exec "$_new_root/shutsujin_departure.sh" "$@"
+    fi
+fi
 
 # 対話端末から起動された場合、stdin を /dev/null に切り離す。
 # スクリプト内の一部 python3 呼び出しが端末 stdin を継承すると Python 対話モード

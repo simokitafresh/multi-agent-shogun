@@ -48,11 +48,11 @@ launch_cmd=$(cli_launch_cmd "$agent_name" 2>/dev/null || echo "")
 
 if [[ "$cli" == "codex" ]] && [[ -n "$launch_cmd" ]]; then
     echo "[agent_respawn] ${agent_name} → codex: ${launch_cmd}"
-    tmux respawn-pane -k -t "$pane" "$launch_cmd"
+    tmux respawn-pane -k -c "$REPO_ROOT" -t "$pane" "$launch_cmd"
 elif [[ "$cli" == "claude" ]]; then
     launch_cmd="${launch_cmd:-$HOME/bin/claude --effort high}"
     echo "[agent_respawn] ${agent_name} → claude: ${launch_cmd}"
-    tmux respawn-pane -k -t "$pane" "$launch_cmd"
+    tmux respawn-pane -k -c "$REPO_ROOT" -t "$pane" "$launch_cmd"
 else
     echo "ERROR: unknown cli type '$cli' for '$agent_name'" >&2
     exit 1
