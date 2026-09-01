@@ -3569,6 +3569,24 @@ push_task_repositories() {
     return 0
 }
 
+# Reuse safe_shared_main_ff's ancestry guard before a shared convergence merge
+# can mutate the checkout. Conflict trees are left to the existing typed
+# fallback below; only a clean prospective tree is eligible for this check.
+verify_shared_convergence_merge_tree() {
+    local repo="$1" parent="$2" target="$3" helper tree_file prospective_tree
+    helper="$repo/scripts/safe_shared_main_ff.sh"
+    [ -f "$helper" ] || return 0
+    tree_file="$(mktemp "${TMPDIR:-/tmp}/cmd-gate-ancestry-merge-tree.XXXXXX")" || return 1
+    if ! git -C "$repo" merge-tree --write-tree "$parent" "$target" >"$tree_file" 2>/dev/null; then
+        rm -f -- "$tree_file"
+        return 0
+    fi
+    prospective_tree="$(sed -n '1p' "$tree_file")"
+    rm -f -- "$tree_file"
+    git -C "$repo" cat-file -e "${prospective_tree}^{tree}" 2>/dev/null || return 1
+    bash "$helper" --verify-merge-tree "$repo" "$parent" "$target" "$prospective_tree"
+}
+
 # Reconcile the live shared checkout with the just-published remote without
 # discarding its local-only history.  The execution-source paths are the
 # caller's local result (ours), not a remote snapshot to be overwritten.  The
@@ -3588,6 +3606,12 @@ converge_shared_execution_sources() {
     if ! declare -F gate_detail_begin >/dev/null 2>&1; then
         gate_detail_begin() { :; }
         gate_detail_finish() { :; }
+    fi
+    # Unit probes source this function in isolation. The full gate defines
+    # the shared ancestry helper above; isolated probes retain their prior
+    # behavior when that optional repository helper is absent.
+    if ! declare -F verify_shared_convergence_merge_tree >/dev/null 2>&1; then
+        verify_shared_convergence_merge_tree() { :; }
     fi
     shift
     [ "$#" -gt 0 ] || return 0
@@ -3645,6 +3669,11 @@ converge_shared_execution_sources() {
     done < <(git -C "$repo" ls-tree -r --name-only -z "$remote_tip")
 
     gate_detail_begin "runtime_source_convergence.local_reconcile" pure_processing
+    if ! verify_shared_convergence_merge_tree "$repo" "$before_head" "$remote_tip"; then
+        gate_detail_finish
+        echo "  shared convergence: BLOCK (ancestry merge regression)" >&2
+        return 1
+    fi
     merge_rc=0
     git -C "$repo" merge --no-edit --no-ff "$remote_tip" >/dev/null 2>&1 || merge_rc=$?
     if [ "$merge_rc" -ne 0 ]; then

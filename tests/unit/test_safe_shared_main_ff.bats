@@ -309,6 +309,29 @@ exit 0"
   [ "$(git -C "$FIX" rev-parse HEAD)" = "$target" ]
 }
 
+# test_necessity: a published ours-equivalent merge can still regress a
+# newer second-parent worktree when a later ancestry merge adopts its first
+# parent tree; the pre-push check must report the exact affected paths.
+@test "published ancestry merge regression blocks with path evidence" {
+  fallback_origin_init
+  git -C "$FIX" worktree add -q -b side "$BATS_TEST_TMPDIR/ancestry-side"
+  printf 'side-b\n' > "$BATS_TEST_TMPDIR/ancestry-side/b.txt"
+  git -C "$BATS_TEST_TMPDIR/ancestry-side" add b.txt
+  git -C "$BATS_TEST_TMPDIR/ancestry-side" commit -qm ancestry-side
+  second_parent="$(git -C "$BATS_TEST_TMPDIR/ancestry-side" rev-parse HEAD)"
+  git -C "$BATS_TEST_TMPDIR/next" merge -s ours --no-ff "$second_parent" -m "published ancestry fixture" >/dev/null
+  target="$(git -C "$BATS_TEST_TMPDIR/next" rev-parse HEAD)"
+  first_parent="$(git -C "$BATS_TEST_TMPDIR/next" show -s --format='%P' "$target" | awk '{print $1}')"
+  git -C "$FIX" push -q origin "$target:refs/heads/main"
+  git -C "$FIX" fetch -q origin main
+  prospective_tree="$(git -C "$FIX" rev-parse "$first_parent^{tree}")"
+
+  run bash "$FIX/scripts/safe_shared_main_ff.sh" --verify-merge-tree \
+    "$FIX" "$second_parent" "$target" "$prospective_tree"
+  [ "$status" -eq 2 ]
+  [[ "$output" == *"ANCESTRY-MERGE-REGRESSION paths=a.txt"* ]]
+}
+
 # test_necessity: a normal fast-forward without merge commits remains a PASS
 # while the published-history exemption is active.
 @test "normal fast-forward remains allowed after merge guard" {

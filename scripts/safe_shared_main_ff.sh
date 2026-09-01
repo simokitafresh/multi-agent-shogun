@@ -136,6 +136,88 @@ safe_shared_main_auto_push() {
     return 0
 }
 
+verify_ours_equivalent_merge_trees() {
+    local repo="$1" old_base="$2" target_head="$3" prospective_tree="${4:-}"
+    local merge first_parent second_parent merge_tree first_tree changed_paths path
+    local published_head published_merges=0 ours_equivalent=0 nonempty_parent_diffs=0
+    local first_blob parent_blob prospective_blob old_tree
+    local -a new_merges=() merge_paths=() regression_paths=()
+    local -A regression_seen=()
+
+    mapfile -t new_merges < <(
+        git -C "$repo" rev-list --merges "$old_base..$target_head"
+    )
+    # Published ours-equivalent merges remain allowed as history, but their
+    # first-parent paths are still evidence for a prospective merge-tree
+    # regression. This keeps the published-history exemption narrow.
+    published_head="$(git -C "$repo" rev-parse --verify refs/remotes/origin/main^{commit} 2>/dev/null || true)"
+    old_tree="$(git -C "$repo" rev-parse "$old_base^{tree}")"
+    for merge in "${new_merges[@]}"; do
+        [[ -n "$merge" ]] || continue
+        read -r first_parent second_parent < <(
+            git -C "$repo" show -s --format='%P' "$merge"
+        )
+        [[ -n "$first_parent" && -n "$second_parent" ]] || continue
+        merge_tree="$(git -C "$repo" rev-parse "$merge^{tree}")"
+        first_tree="$(git -C "$repo" rev-parse "$first_parent^{tree}")"
+        [[ "$merge_tree" == "$first_tree" ]] || continue
+        mapfile -t merge_paths < <(git -C "$repo" diff --name-only "$first_parent" "$second_parent")
+        changed_paths="${#merge_paths[@]}"
+        [[ "$changed_paths" -gt 0 ]] || continue
+
+        if [[ -n "$published_head" ]] \
+            && git -C "$repo" merge-base --is-ancestor "$merge" "$published_head"; then
+            published_merges=$((published_merges + 1))
+            # Only a local parent that contains the merge's second-parent
+            # history can be regressed by replaying the published ours tree.
+            # An unrelated ancestor (for example a normal fast-forward from
+            # the fixture base) must retain the published-history exemption.
+            if [[ -n "$prospective_tree" ]] \
+                && git -C "$repo" merge-base --is-ancestor "$second_parent" "$old_base"; then
+                for path in "${merge_paths[@]}"; do
+                    first_blob="$(git -C "$repo" rev-parse "$first_tree:$path" 2>/dev/null || printf '__ABSENT__')"
+                    parent_blob="$(git -C "$repo" rev-parse "$old_tree:$path" 2>/dev/null || printf '__ABSENT__')"
+                    prospective_blob="$(git -C "$repo" rev-parse "$prospective_tree:$path" 2>/dev/null || printf '__ABSENT__')"
+                    if [[ "$first_blob" != "$parent_blob" \
+                       && "$prospective_blob" != "$parent_blob" \
+                       && -z "${regression_seen[$path]+yes}" ]]; then
+                        regression_seen["$path"]=1
+                        regression_paths+=("$path")
+                    fi
+                done
+            fi
+            continue
+        fi
+
+        ours_equivalent=$((ours_equivalent + 1))
+        nonempty_parent_diffs=$((nonempty_parent_diffs + changed_paths))
+        echo "BLOCK: target introduces ours-equivalent merge with non-empty second-parent tree diff" >&2
+        echo "  merge=$merge first_parent=$first_parent second_parent=$second_parent changed_paths=$changed_paths" >&2
+    done
+
+    if [[ "${#regression_paths[@]}" -gt 0 ]]; then
+        mapfile -t regression_paths < <(printf '%s\n' "${regression_paths[@]}" | sort -u)
+        printf 'ANCESTRY-MERGE-REGRESSION paths=%s\n' "$(IFS=,; printf '%s' "${regression_paths[*]}")" >&2
+        return 2
+    fi
+    printf 'SAFE_SHARED_MAIN_FF_MERGE_CHECK target_new_merges=%s published_merges=%s ours_equivalent=%s parent_diff_paths=%s result=%s\n' \
+        "${#new_merges[@]}" "$published_merges" "$ours_equivalent" "$nonempty_parent_diffs" \
+        "$([[ "$ours_equivalent" -eq 0 ]] && echo PASS || echo BLOCK)"
+    if [[ "$ours_equivalent" -ne 0 ]]; then
+        return 2
+    fi
+    return 0
+}
+
+if [[ "${1:-}" == "--verify-merge-tree" ]]; then
+    [[ -n "${2:-}" && -n "${3:-}" && -n "${4:-}" && -n "${5:-}" && -z "${6:-}" ]] || {
+        echo "usage: bash scripts/safe_shared_main_ff.sh --verify-merge-tree <repo> <parent> <target> <tree>" >&2
+        exit 2
+    }
+    verify_ours_equivalent_merge_trees "$2" "$3" "$4" "$5"
+    exit $?
+fi
+
 if [[ "${1:-}" == "--auto-push-if-ready" ]]; then
     [[ -n "${2:-}" && -n "${3:-}" && -z "${4:-}" ]] || {
         echo "usage: bash scripts/safe_shared_main_ff.sh --auto-push-if-ready <repo> <ci-state>" >&2
@@ -188,56 +270,7 @@ elif ! git -C "$ROOT" merge-base --is-ancestor "$old_head" "$target_head"; then
     }
 fi
 
-# An ours merge (or an equivalent hand-built tree) can make target commits
-# ancestors while retaining only the first-parent tree. Enumerate only merge
-# commits newly reachable from target (old_head..target_head); comparing every
-# historical hunk made the hot path slow and confused intentional later edits
-# with this exact tree-level invariant.
-verify_target_merge_trees() {
-    local merge first_parent second_parent merge_tree first_tree changed_paths
-    local published_head published_merges=0
-    local -a new_merges=()
-    mapfile -t new_merges < <(
-        git -C "$ROOT" rev-list --merges "$old_head..$target_head"
-    )
-    # A merge already reachable from the canonical remote main has already
-    # crossed the publication boundary. Re-checking it here would turn a
-    # later convergence of the same published history into a false BLOCK.
-    # If the tracking ref is unavailable, retain the fail-closed behavior and
-    # treat every detected ours-equivalent merge as unpublished.
-    published_head="$(git -C "$ROOT" rev-parse --verify refs/remotes/origin/main^{commit} 2>/dev/null || true)"
-    local ours_equivalent=0 nonempty_parent_diffs=0
-    for merge in "${new_merges[@]}"; do
-        [[ -n "$merge" ]] || continue
-        read -r first_parent second_parent < <(
-            git -C "$ROOT" show -s --format='%P' "$merge"
-        )
-        [[ -n "$first_parent" && -n "$second_parent" ]] || continue
-        if [[ -n "$published_head" ]] \
-            && git -C "$ROOT" merge-base --is-ancestor "$merge" "$published_head"; then
-            published_merges=$((published_merges + 1))
-            continue
-        fi
-        merge_tree="$(git -C "$ROOT" rev-parse "$merge^{tree}")"
-        first_tree="$(git -C "$ROOT" rev-parse "$first_parent^{tree}")"
-        [[ "$merge_tree" == "$first_tree" ]] || continue
-        changed_paths="$(git -C "$ROOT" diff --name-only "$first_parent" "$second_parent" | awk 'NF{n++} END{print n+0}')"
-        [[ "$changed_paths" -gt 0 ]] || continue
-        ours_equivalent=$((ours_equivalent + 1))
-        nonempty_parent_diffs=$((nonempty_parent_diffs + changed_paths))
-        echo "BLOCK: target introduces ours-equivalent merge with non-empty second-parent tree diff" >&2
-        echo "  merge=$merge first_parent=$first_parent second_parent=$second_parent changed_paths=$changed_paths" >&2
-    done
-    printf 'SAFE_SHARED_MAIN_FF_MERGE_CHECK target_new_merges=%s published_merges=%s ours_equivalent=%s parent_diff_paths=%s result=%s\n' \
-        "${#new_merges[@]}" "$published_merges" "$ours_equivalent" "$nonempty_parent_diffs" \
-        "$([[ "$ours_equivalent" -eq 0 ]] && echo PASS || echo BLOCK)"
-    if [[ "$ours_equivalent" -ne 0 ]]; then
-        return 2
-    fi
-    return 0
-}
-
-verify_target_merge_trees
+verify_ours_equivalent_merge_trees "$ROOT" "$old_head" "$target_head" "$prospective_tree"
 
 git -C "$ROOT" diff-tree --no-commit-id --name-only -r "$old_head" "$prospective_tree" | sort -u > "$changed_file"
 {
