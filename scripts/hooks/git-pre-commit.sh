@@ -22,7 +22,7 @@ source "$REPO_ROOT/scripts/lib/defense_overhead_writer.sh"
 # One monotonic-in-process clock and one terminal receipt make every commit
 # diagnosable without adding external telemetry I/O to this hot path.
 declare -A _PRECOMMIT_STEP_MS=() _PRECOMMIT_STEP_RC=()
-_PRECOMMIT_STEP_ORDER=(self_sync staged_snapshot test_granularity task_scope yaml_ast shell_syntax sourced_dep instruction_sync context_metadata codd_context_freshness tobe_no_line_numbers doc_no_changelog semantic)
+_PRECOMMIT_STEP_ORDER=(self_sync staged_snapshot test_granularity task_scope yaml_ast shell_syntax deleted_ref sourced_dep instruction_sync context_metadata codd_context_freshness tobe_no_line_numbers doc_no_changelog semantic)
 _PRECOMMIT_COMMAND_ID="${NINJA_COMMIT_COMMAND_ID:-${COMMAND_ID:-precommit-$$}}"
 _PRECOMMIT_STARTED_US="${EPOCHREALTIME/./}"
 _PRECOMMIT_TERMINAL_EMITTED=false
@@ -331,6 +331,23 @@ precommit_shell_syntax_cache_publish() {
     else
         rm -f "$cache_tmp"
     fi
+}
+
+# deleted_ref: for every staged deletion, list the still-referencing files under
+# tests/ and scripts/ (staged index view, so references removed in the same
+# commit do not count). One line per deletion: "<deleted> <- <ref> <ref>".
+# Empty output = no dangling references.
+check_staged_deleted_refs() {
+    local del_path del_base del_refs
+    load_staged_file_cache
+    for del_path in "${!_STAGED_FILE_STATUS[@]}"; do
+        [[ "${_STAGED_FILE_STATUS[$del_path]}" == D* ]] || continue
+        del_base="$(basename "$del_path")"
+        [[ -n "$del_base" ]] || continue
+        del_refs="$(git grep -l --cached -F -e "$del_base" -- tests scripts 2>/dev/null | grep -vxF "$del_path" || true)"
+        [[ -n "$del_refs" ]] || continue
+        printf '    %s <- %s\n' "$del_path" "$(printf '%s' "$del_refs" | tr '\n' ' ')"
+    done
 }
 
 check_staged_shell_syntax() {
@@ -1402,6 +1419,22 @@ main() {
         echo "BLOCKED: bash -n failed on staged shell script(s):" >&2
         printf '%s' "$_shell_syntax_fail" >&2
         exit 1
+    fi
+    precommit_step_end 0
+
+    # deleted_ref: a staged deletion whose basename is still referenced from
+    # tests/ or scripts/ breaks a contract somewhere else in the tree.
+    # 2026-09-01: 559c02538 dropped scripts/shutsujin_departure.sh as "no callers"
+    # after grepping scripts/ only; tests/unit/test_reset_layout.bats:60 still
+    # grep'd that path, CI shard 1 went RED and the push lane stalled
+    # (WAIT ci=RED ci_fix_active=0). The caller census must include tests/.
+    # WARN only (never BLOCK): the committer sees the remaining references and
+    # decides; a deletion is reversible, a stalled lane is not free.
+    precommit_step_begin deleted_ref
+    _deleted_ref_warn="$(check_staged_deleted_refs)"
+    if [[ -n "$_deleted_ref_warn" ]]; then
+        echo "[pre-commit] WARN(deleted_ref): staged deletion still referenced (tests/ or scripts/). Update or drop the references in the same commit:" >&2
+        printf '%s\n' "$_deleted_ref_warn" >&2
     fi
     precommit_step_end 0
 
