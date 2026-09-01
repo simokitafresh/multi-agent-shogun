@@ -12460,3 +12460,10 @@ insights:
   resolved_reason: "semantic map generation verified the candidate is represented or intentionally ignored"
   action_artifact: "semantic_map=/home/simokitafresh/multi-agent-shogun/context/semantic-map.md;semantic_index=/home/simokitafresh/multi-agent-shogun/docs/semantic-index/index.md"
   resolved_at: "2026-09-01T17:31:04+09:00"
+- id: INS-20260901-183616507-f46b
+  ts: "2026-09-01T18:36:16+09:00"
+  insight: "reissue: cmd_reflux_insight_202609011635_hanzo / INS-20260901-155126305-4f55。旧reportはlesson_feedback_set_mismatch extra=L1545,L1586,L351でformal bundle生成不能、かつB26 CI上書き後revision routing 0/3。次refluxは注入lesson集合のみをlessons_usefulへ記録し、旧report revision routing保存契約を別hotfix候補にする。origin: [[cmd_reflux_insight_202609011635_hanzo]] -> [[B26_escape_old_report_revision_unreachable]] -> [[reflux_reissue]]"
+  priority: "medium"
+  source: "manual"
+  fix_known: false
+  status: pending
