@@ -3184,6 +3184,19 @@ PY
 cmd_complete_gate_auto_push_ancestry_wait() {
     local repo="${CMD_COMPLETE_GATE_AUTO_PUSH_REPO:-$SCRIPT_DIR}" remote_tip ci_state push_output
     local threshold="${CMD_COMPLETE_GATE_AUTO_PUSH_THRESHOLD:-1}"
+    # The completion report's source commit set is the only publication
+    # identity that can clear this WAIT.  The legacy helper publishes the
+    # shared checkout HEAD, which may contain unrelated local work and can
+    # leave the report source parent dangling.  Use the same source-aware
+    # publisher as the post-CLEAR lane whenever the full gate has loaded it.
+    if declare -F push_task_repositories >/dev/null 2>&1; then
+        if push_task_repositories "$@"; then
+            printf 'AUTO_PUSH_WAIT push=1 result=PASS method=source_commits\n'
+            return 0
+        fi
+        printf 'AUTO_PUSH_WAIT push=0 result=SKIP reason=source_publication_failed\n'
+        return 1
+    fi
     [ -f "$repo/scripts/safe_shared_main_ff.sh" ] || {
         printf 'AUTO_PUSH_WAIT push=0 result=SKIP reason=helper_missing\n'
         return 0
@@ -14572,7 +14585,7 @@ if [ "$ALL_CLEAR" = true ]; then
         ALL_CLEAR=false
     elif [ "${REPORT_COMMIT_MAIN_ANCESTRY_WAIT:-false}" = true ]; then
         gate_detail_finish
-        if cmd_complete_gate_auto_push_ancestry_wait; then
+        if cmd_complete_gate_auto_push_ancestry_wait "${MATCHING_TASK_FILES[@]}"; then
             # The helper refreshes origin/main after publication. Re-run the
             # same ancestry SSOT so a successful push clears this WAIT in the
             # current gate invocation and leaves no stale terminal row.

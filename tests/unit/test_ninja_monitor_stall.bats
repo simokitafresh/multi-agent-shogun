@@ -123,6 +123,7 @@ key=$(review_report_key queue/reports/hayate_report_cmd_state.yaml)
 mkdir -p "$ROOT/queue/gates/cmd_state/review_approvals/reports/$key"
 cat > "$ROOT/queue/gates/cmd_state/review_approvals/reports/$key/gunshi.yaml" <<EOF
 result: LGTM
+generation: $raw_fp
 fingerprint: $norm_fp
 report: queue/reports/hayate_report_cmd_state.yaml
 EOF
@@ -130,6 +131,7 @@ EOF
 test "$(count_calls)" -eq 3
 cat > "$ROOT/queue/gates/cmd_state/review_approvals/reports/$key/karo.yaml" <<EOF
 result: ACCEPT
+generation: $raw_fp
 fingerprint: $norm_fp
 report: queue/reports/hayate_report_cmd_state.yaml
 EOF
@@ -408,13 +410,24 @@ source "$PROJECT_ROOT/scripts/ninja_monitor.sh"
 unset NINJA_MONITOR_LIB_ONLY
 
 ROOT="'"$BATS_TEST_TMPDIR"'/failed-pass-review"
-mkdir -p "$ROOT/queue/tasks" "$ROOT/queue/reports" "$ROOT/queue/gates" "$ROOT/scripts/gates" "$ROOT/logs"
+mkdir -p "$ROOT/queue/tasks" "$ROOT/queue/reports" "$ROOT/queue/gates" "$ROOT/queue/inbox" "$ROOT/scripts/gates" "$ROOT/logs"
 cat > "$ROOT/scripts/gates/gate_report_format.sh" <<'SH'
 #!/usr/bin/env bash
 echo "PASS: fixture report format"
 SH
 cat > "$ROOT/scripts/inbox_write.sh" <<SH
 #!/usr/bin/env bash
+message="\$2"
+report_rel="\${message#*report=}"
+report_rel="\${report_rel%% *}"
+parent_cmd="\${message#*parent_cmd=}"
+parent_cmd="\${parent_cmd%% *}"
+generation="\${message#*report_fingerprint=}"
+generation="\${generation%% *}"
+if [ ! -f "$ROOT/queue/inbox/gunshi.yaml" ]; then
+    printf "%s\\n" messages: > "$ROOT/queue/inbox/gunshi.yaml"
+fi
+printf "%s\\n" "- type: review_draft" "  report_path: \$report_rel" "  parent_cmd: \$parent_cmd" "  report_fingerprint: \$generation" "  read: false" >> "$ROOT/queue/inbox/gunshi.yaml"
 printf "%s|%s|%s|%s\\n" "\$1" "\$3" "\$4" "\$2" >> "$ROOT/review_requests.log"
 SH
 chmod +x "$ROOT/scripts/gates/gate_report_format.sh" "$ROOT/scripts/inbox_write.sh"
@@ -496,7 +509,7 @@ source "$PROJECT_ROOT/scripts/ninja_monitor.sh"
 unset NINJA_MONITOR_LIB_ONLY
 
 ROOT="'"$BATS_TEST_TMPDIR"'/stable-report-generation"
-mkdir -p "$ROOT/queue/tasks" "$ROOT/queue/reports" "$ROOT/queue/gates" "$ROOT/scripts/gates" "$ROOT/logs"
+mkdir -p "$ROOT/queue/tasks" "$ROOT/queue/reports" "$ROOT/queue/gates" "$ROOT/queue/inbox" "$ROOT/scripts/gates" "$ROOT/logs"
 cat > "$ROOT/scripts/gates/gate_report_format.sh" <<SH
 #!/usr/bin/env bash
 echo "PASS: fixture report format"
@@ -507,6 +520,17 @@ if [ -f "$ROOT/fail_once" ]; then
     rm -f "$ROOT/fail_once"
     exit 1
 fi
+message="\$2"
+report_rel="\${message#*report=}"
+report_rel="\${report_rel%% *}"
+parent_cmd="\${message#*parent_cmd=}"
+parent_cmd="\${parent_cmd%% *}"
+generation="\${message#*report_fingerprint=}"
+generation="\${generation%% *}"
+if [ ! -f "$ROOT/queue/inbox/gunshi.yaml" ]; then
+    printf "%s\\n" messages: > "$ROOT/queue/inbox/gunshi.yaml"
+fi
+printf "%s\\n" "- type: review_draft" "  report_path: \$report_rel" "  parent_cmd: \$parent_cmd" "  report_fingerprint: \$generation" "  read: false" >> "$ROOT/queue/inbox/gunshi.yaml"
 printf "%s|%s|%s|%s\\n" "\$1" "\$3" "\$4" "\$2" >> "$ROOT/review_requests.log"
 SH
 chmod +x "$ROOT/scripts/gates/gate_report_format.sh" "$ROOT/scripts/inbox_write.sh"
@@ -602,6 +626,54 @@ printf "%s\\n" "same_generation=0 new_generation=1 failed_retry=1 parent_report_
 '
     [ "$status" -eq 0 ]
     [ "$output" = "same_generation=0 new_generation=1 failed_retry=1 parent_report_received=1 review_draft=4" ]
+}
+
+# test_necessity: monitor retries must recognize an unread alternate review
+# handoff as the same generation before publishing another review_draft.
+@test "auto review request honors unread review_report generation" {
+    run bash -lc '
+set -euo pipefail
+PROJECT_ROOT="'"$PROJECT_ROOT"'"
+export NINJA_MONITOR_LIB_ONLY=1 NINJA_MONITOR_FUNCTION_TIMING_LOG=disabled
+source "$PROJECT_ROOT/scripts/ninja_monitor.sh"
+unset NINJA_MONITOR_LIB_ONLY
+
+ROOT="'"$BATS_TEST_TMPDIR"'/review-route-generation"
+mkdir -p "$ROOT/queue/reports" "$ROOT/queue/gates/cmd_route" "$ROOT/queue/inbox" "$ROOT/scripts" "$ROOT/logs" "$ROOT/state"
+cat > "$ROOT/queue/reports/hanzo_report_cmd_route.yaml" <<EOF
+worker_id: hanzo
+task_id: cmd_route_normal
+parent_cmd: cmd_route
+status: completed
+verdict: PASS
+EOF
+report="$ROOT/queue/reports/hanzo_report_cmd_route.yaml"
+generation=$(sha256sum "$report" | awk "{print \$1}")
+cat > "$ROOT/queue/inbox/gunshi.yaml" <<EOF
+messages:
+- type: review_report
+  report: queue/reports/hanzo_report_cmd_route.yaml
+  parent_cmd: cmd_route
+  report_fingerprint: $generation
+  read: false
+EOF
+cat > "$ROOT/scripts/inbox_write.sh" <<SH
+#!/usr/bin/env bash
+printf "%s|%s\\n" "\$3" "\$2" >> "$ROOT/review_requests.log"
+SH
+chmod +x "$ROOT/scripts/inbox_write.sh"
+SCRIPT_DIR="$ROOT"; PROJECT_ROOT="$ROOT"; STATE_DIR="$ROOT/state"
+log() { printf "%s\\n" "\$1" >> "$ROOT/monitor.log"; }
+_write_report_generation_marker "$ROOT/queue/gates/cmd_route/review_request.hanzo_report_cmd_route.yaml.done" "$generation"
+auto_request_report_review "$report" cmd_route
+test ! -e "$ROOT/review_requests.log"
+sed -i "s/read: false/read: true/" "$ROOT/queue/inbox/gunshi.yaml"
+auto_request_report_review "$report" cmd_route
+test "$(grep -c "^review_draft|" "$ROOT/review_requests.log")" -eq 1
+printf "unread_alternate=1 consumed_retry=1 duplicate=0\\n"
+    '
+    [ "$status" -eq 0 ]
+    [ "$output" = "unread_alternate=1 consumed_retry=1 duplicate=0" ]
 }
 
 # test_necessity: a completed report with durable Gunshi LGTM is terminal

@@ -983,6 +983,70 @@ END {
     rm -f "$report_task_type_file" "$report_cmd_ids_file"
 }
 
+# pending_decisions の summary は履歴世代で stale になり得るため、
+# startup の未解決件数は entry status を正本として再計数する。summary は
+# 全5項目が entry 集計と一致した場合だけ整合性証跡として受け入れ、
+# 不一致・未知status・不正YAMLは BLOCK として可視化する。
+karo_startup_pending_decisions_summary() {
+    local pd_file="${1:?pending_decisions file required}"
+    python3 - "$pd_file" <<'PY'
+import sys
+
+try:
+    import yaml
+except Exception as exc:
+    print(f"PD|0|0|0|BLOCK|yaml_parser_unavailable:{exc}")
+    raise SystemExit(0)
+
+path = sys.argv[1]
+try:
+    with open(path, encoding="utf-8") as handle:
+        data = yaml.safe_load(handle)
+except Exception as exc:
+    print(f"PD|0|0|0|BLOCK|malformed_yaml:{exc}")
+    raise SystemExit(0)
+
+reasons = []
+summary = data.get("summary") if isinstance(data, dict) else None
+decisions = data.get("decisions") if isinstance(data, dict) else None
+if not isinstance(summary, dict):
+    reasons.append("summary_not_mapping")
+if not isinstance(decisions, list):
+    reasons.append("decisions_not_list")
+    decisions = []
+
+counts = {"resolved": 0, "pending": 0, "shelved": 0, "unknown": 0}
+for index, entry in enumerate(decisions):
+    status = entry.get("status") if isinstance(entry, dict) else None
+    if status in counts:
+        counts[status] += 1
+    else:
+        counts["unknown"] += 1
+        reasons.append(f"unknown_status_at_{index + 1}")
+
+expected = {
+    "total": len(decisions),
+    "resolved": counts["resolved"],
+    "pending": counts["pending"],
+    "shelved": counts["shelved"],
+    "unknown": counts["unknown"],
+}
+if isinstance(summary, dict):
+    for key, actual in expected.items():
+        value = summary.get(key)
+        if isinstance(value, bool) or not isinstance(value, int) or value < 0:
+            reasons.append(f"summary_{key}_malformed")
+        elif value != actual:
+            reasons.append(f"summary_{key}_mismatch:{value}!={actual}")
+
+state = "PASS" if not reasons else "BLOCK"
+reason = ";".join(reasons) if reasons else "consistent"
+print(
+    f"PD|{counts['pending']}|{counts['shelved']}|{counts['unknown']}|{state}|{reason}"
+)
+PY
+}
+
 if [[ "${GATE_KARO_STARTUP_LIB_ONLY:-0}" == "1" ]]; then
     return 0 2>/dev/null || exit 0
 fi
@@ -2244,11 +2308,19 @@ fi
 echo "■ pending_decisions"
 pd_file="$SCRIPT_DIR/queue/pending_decisions.yaml"
 if [ -f "$pd_file" ]; then
-    total_d=${total_d:-0}
-    resolved_d=${resolved_d:-0}
-    pending_count=$((total_d - resolved_d))
+    _pd_summary="$(karo_startup_pending_decisions_summary "$pd_file")"
+    IFS='|' read -r _pd_tag pending_count _pd_shelved_count _pd_unknown_count _pd_state _pd_reason <<< "$_pd_summary"
+    pending_count="${pending_count:-0}"
+    _pd_shelved_count="${_pd_shelved_count:-0}"
+    _pd_unknown_count="${_pd_unknown_count:-0}"
     echo "  未解決: ${pending_count}件"
-    if [ "$pending_count" -gt 0 ]; then
+    echo "  shelved: ${_pd_shelved_count}件 (未解決件数には算入しない)"
+    echo "  unknown: ${_pd_unknown_count}件"
+    if [ "${_pd_state:-BLOCK}" != "PASS" ]; then
+        echo "  BLOCK: pending_decisions整合性検証失敗 (${_pd_reason:-unknown})"
+        overall="BLOCK"
+        alerts+=("pending_decisions整合性不良: ${_pd_reason:-unknown}")
+    elif [ "$pending_count" -gt 0 ]; then
         echo "  → 未解決裁定あり。作業開始前に確認せよ"
     fi
 else

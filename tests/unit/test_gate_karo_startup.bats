@@ -11,6 +11,123 @@ setup() {
     "$ROOT/scripts/gates/gate_karo_startup.sh" > "$PY"
 }
 
+pending_summary() {
+  run bash -c \
+    'GATE_KARO_STARTUP_LIB_ONLY=1 source "$1/scripts/gates/gate_karo_startup.sh" >/dev/null; karo_startup_pending_decisions_summary "$2"' \
+    _ "$ROOT" "$1"
+}
+
+# test_necessity: pending_decisions の entry分類・summary整合性・fail-closed
+# 表示をstartup gateの永続contractとして固定する。
+@test "pending decision summary separates shelved from true pending" {
+  fixture="$TMPDIR_CASE/pending.yaml"
+  cat > "$fixture" <<'YAML'
+summary:
+  total: 2
+  resolved: 1
+  pending: 0
+  shelved: 1
+  unknown: 0
+decisions:
+- id: PD-A
+  status: resolved
+- id: PD-B
+  status: shelved
+YAML
+  pending_summary "$fixture"
+  [ "$status" -eq 0 ]
+  [ "$output" = "PD|0|1|0|PASS|consistent" ]
+
+  cat > "$fixture" <<'YAML'
+summary:
+  total: 2
+  resolved: 0
+  pending: 1
+  shelved: 1
+  unknown: 0
+decisions:
+- id: PD-A
+  status: pending
+- id: PD-B
+  status: shelved
+YAML
+  pending_summary "$fixture"
+  [ "$status" -eq 0 ]
+  [ "$output" = "PD|1|1|0|PASS|consistent" ]
+}
+
+@test "pending decision summary blocks summary mismatch and unknown status" {
+  fixture="$TMPDIR_CASE/pending.yaml"
+  cat > "$fixture" <<'YAML'
+summary:
+  total: 2
+  resolved: 1
+  pending: 1
+  shelved: 0
+  unknown: 0
+decisions:
+- id: PD-A
+  status: resolved
+- id: PD-B
+  status: shelved
+YAML
+  pending_summary "$fixture"
+  [ "$status" -eq 0 ]
+  [[ "$output" == 'PD|0|1|0|BLOCK|'*'summary_pending_mismatch:1!=0'* ]]
+
+  cat > "$fixture" <<'YAML'
+summary:
+  total: 1
+  resolved: 0
+  pending: 0
+  shelved: 0
+  unknown: 1
+decisions:
+- id: PD-A
+  status: future_status
+YAML
+  pending_summary "$fixture"
+  [ "$status" -eq 0 ]
+  [[ "$output" == 'PD|0|0|1|BLOCK|'*'unknown_status_at_1'* ]]
+}
+
+@test "pending decision summary blocks malformed YAML" {
+  fixture="$TMPDIR_CASE/pending.yaml"
+  printf 'summary: [\n' > "$fixture"
+  pending_summary "$fixture"
+  [ "$status" -eq 0 ]
+  [[ "$output" == 'PD|0|0|0|BLOCK|malformed_yaml:'* ]]
+}
+
+@test "startup pending check displays shelved and blocks inconsistent summary" {
+  fixture="$TMPDIR_CASE/pending-fixture"
+  mkdir -p "$fixture/queue"
+  cat > "$fixture/queue/pending_decisions.yaml" <<'YAML'
+summary:
+  total: 2
+  resolved: 1
+  pending: 1
+  shelved: 0
+  unknown: 0
+decisions:
+- id: PD-A
+  status: resolved
+- id: PD-B
+  status: shelved
+YAML
+  check="$TMPDIR_CASE/check4.sh"
+  awk '/^# --- Check 4:/{copy=1} /^# --- Check 4.5:/{copy=0} copy' \
+    "$ROOT/scripts/gates/gate_karo_startup.sh" > "$check"
+  run bash -c \
+    'GATE_KARO_STARTUP_LIB_ONLY=1 source "$1/scripts/gates/gate_karo_startup.sh" >/dev/null; SCRIPT_DIR="$2"; overall=OK; alerts=(); source "$3"; printf "OVERALL=%s\\n" "$overall"' \
+    _ "$ROOT" "$fixture" "$check"
+  [ "$status" -eq 0 ]
+  [[ "$output" == *"未解決: 0件"* ]]
+  [[ "$output" == *"shelved: 1件 (未解決件数には算入しない)"* ]]
+  [[ "$output" == *"BLOCK: pending_decisions整合性検証失敗"* ]]
+  [[ "$output" == *"OVERALL=BLOCK"* ]]
+}
+
 teardown() { rm -rf "$TMPDIR_CASE"; }
 
 transition() { python3 "$PY" "$STATE" "$ALERTS" "${1:-}" "${2:-3600}"; }
