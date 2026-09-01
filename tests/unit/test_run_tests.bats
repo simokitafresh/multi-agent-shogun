@@ -2026,6 +2026,54 @@ YAML
   echo "BOUNDARY_METRICS external_warn_exclude=1 traversal_block=1 pass=2 skip=0"
 }
 
+# test_necessity: An infra task may point at an isolated worktree with
+# absolute target paths while its copied runner is mode 0644.  The owned test
+# must be normalized to the worktree-relative path and executed directly;
+# falling into the external-project no-mapping branch is a false BLOCK.
+# regression_justification: overlaps_existing=true; existing external task
+# coverage exercised backend/frontend engines but not infra worktree Bats.
+@test "external infra worktree executes owned Bats target despite non-executable runner" {
+  external="$TMPROOT/external-infra"
+  mkdir -p "$external/scripts" "$external/tests/unit" "$TMPROOT/queue/tasks"
+  cp "$ROOT/scripts/run_tests.sh" "$ROOT/scripts/run_with_receipt.sh" \
+    "$ROOT/scripts/heavy_job_admission.sh" "$external/scripts/"
+  chmod 0644 "$external/scripts/run_tests.sh"
+  printf '#!/usr/bin/env bash\n' >"$external/scripts/source.sh"
+  printf '@test "owned" { true; }\n' >"$external/tests/unit/owned.bats"
+  git -C "$external" init -q
+  git -C "$external" config user.email test@example.invalid
+  git -C "$external" config user.name test
+  git -C "$external" add scripts tests
+  git -C "$external" commit -qm init
+  cat >"$TMPROOT/queue/tasks/external-infra.yaml" <<YAML
+task:
+  task_id: external-infra-owned
+  project: infra
+  task_worktree_path: $external
+  target_path:
+    - $external/scripts/source.sh
+    - $external/tests/unit/owned.bats
+YAML
+  export BATS_ARGS_LOG="$TMPROOT/external-infra-bats.args"
+  cat >"$TMPROOT/bin/bats" <<'SH'
+#!/usr/bin/env bash
+printf '%s\n' "$*" >>"$BATS_ARGS_LOG"
+printf '1..1\nok 1 owned\n'
+SH
+  chmod +x "$TMPROOT/bin/bats"
+
+  run env PATH="$TMPROOT/bin:$PATH" REPO_ROOT="$TMPROOT" BATS_ARGS_LOG="$BATS_ARGS_LOG" \
+    SHOGUN_HEAVY_JOB_LOCK_HELD=1 BATS_CACHE=0 BATS_INNER_JOBS=1 \
+    bash "$TMPROOT/scripts/run_tests.sh" --receipt-inner task \
+      "$TMPROOT/queue/tasks/external-infra.yaml"
+  [ "$status" -eq 0 ]
+  [[ "$output" == *"TEST_SELECTION_REASON direct=1 transitive=0 source=task_scope"* ]]
+  [[ "$output" == *"TEST_SELECTION result=external runner=task-file scope=direct"* ]]
+  [ "$(wc -l <"$BATS_ARGS_LOG")" -eq 1 ]
+  grep -Fq 'tests/unit/owned.bats' "$BATS_ARGS_LOG"
+  [[ "$output" != *"external_scope_no_mapped_tests"* ]]
+}
+
 # test_necessity: directory ownership must select only concrete changed files;
 # a literal directory would fan out through the dependency map to the whole repo.
 @test "directory task scope expands concrete diffs and blocks empty directories" {
