@@ -12746,4 +12746,35 @@ insights:
   priority: "low"
   source: "semantic_index_update"
   fix_known: false
+  status: resolved
+  resolved_reason: "semantic index candidate was absorbed into a registered concept"
+  action_artifact: "semantic_index=/home/simokitafresh/multi-agent-shogun/docs/semantic-index/index.md"
+  resolved_at: "2026-09-02T01:05:25+09:00"
+- id: INS-20260902-010834607-e06b
+  ts: "2026-09-02T01:08:34+09:00"
+  insight: "semantic_map_generate新規ファイル候補: `.gitattributes` は semantic index未登録。既存概念へのfile追加または新概念定義を検討せよ"
+  priority: "low"
+  source: "semantic_map_generate:new_file"
+  fix_known: false
+  status: pending
+- id: INS-20260902-010837785-7a98
+  ts: "2026-09-02T01:08:37+09:00"
+  insight: "semantic_map_generate新規ファイル候補: `.githooks/post-commit` は semantic index未登録。既存概念へのfile追加または新概念定義を検討せよ"
+  priority: "low"
+  source: "semantic_map_generate:new_file"
+  fix_known: false
+  status: pending
+- id: INS-20260902-010838061-70ec
+  ts: "2026-09-02T01:08:38+09:00"
+  insight: "semantic_map_generate新規ファイル候補: `.githooks/pre-commit` は semantic index未登録。既存概念へのfile追加または新概念定義を検討せよ"
+  priority: "low"
+  source: "semantic_map_generate:new_file"
+  fix_known: false
+  status: pending
+- id: INS-20260902-010913292-1500
+  ts: "2026-09-02T01:09:13+09:00"
+  insight: "[[T221 T217 T213 T212 T201 T188の進捗は？いつ終了するんだ？]] semantic_stress_test candidate_aliases: NO_MATCH source=lord query=T221 / T217 / T213 / T212 / T201 / T188の進捗は？いつ終了するんだ？"
+  priority: "low"
+  source: "semantic_stress_test"
+  fix_known: false
   status: pending
