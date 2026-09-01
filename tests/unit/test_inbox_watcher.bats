@@ -7,6 +7,130 @@ setup() {
     PROJECT_ROOT="$(cd "$BATS_TEST_DIRNAME/../.." && pwd)"
 }
 
+# test_necessity: f80869aの4列lease境界を、同task同fp・同task新fp・3列upgrade・
+# legacy fingerprint migration・家老非task経路の5独立fixtureで固定する。
+@test "four-column lease contract covers five delivery boundaries" {
+    run bash -c '
+set -euo pipefail
+root="'"$PROJECT_ROOT"'"
+base="$(mktemp -d)"
+trap "rm -rf \"$base\"" EXIT
+
+run_fixture() (
+  local mode="$1" agent=fixture tmp="$base/$1"
+  mkdir -p "$tmp/root/scripts/lib" "$tmp/root/lib" "$tmp/root/queue/inbox" "$tmp/root/queue/tasks" "$tmp/state"
+  for f in lock_path.sh cli_lookup.sh tmux_utils.sh script_update.sh inbox_nudge_policy.sh respawn_recovery.sh pane_confirmation_guard.sh; do
+    ln -s "$root/scripts/lib/$f" "$tmp/root/scripts/lib/$f"
+  done
+  ln -s "$root/lib/agent_state.sh" "$tmp/root/lib/agent_state.sh"
+  ln -s "$root/scripts/inbox_watcher.sh" "$tmp/root/scripts/inbox_watcher.sh"
+  if [ "$mode" != "migration" ] && [ "$mode" != "karo" ]; then
+    printf "%s\n" "task_id: current-task" "parent_cmd: cmd_current" > "$tmp/root/queue/tasks/fixture.yaml"
+    cat > "$tmp/root/queue/inbox/fixture.yaml" <<YAML
+messages:
+- id: msg-current-1
+  type: task_assigned
+  read: false
+  task_id: current-task
+  parent_cmd: cmd_current
+YAML
+  fi
+  export SHOGUN_STATE_DIR="$tmp/state" INBOX_WATCHER_LIB_ONLY=1
+  source "$tmp/root/scripts/inbox_watcher.sh" "$agent" dummy-pane
+  unset INBOX_WATCHER_LIB_ONLY
+  get_effective_cli_type() { echo codex; }
+  agent_has_self_watch() { return 1; }
+  check_agent_busy() { return 0; }
+  respawn_recovery_generation() { echo generation-1; }
+  pane_input_line_has_text() { return 1; }
+  sleep() { :; }
+  timeout() { shift; "$@"; }
+  _pane_has_confirmation_prompt() { return 1; }
+  tmux() {
+    case "$1" in
+      display-message)
+        case "${*: -1}" in *agent_id*) echo "$agent" ;; *pane_in_mode*) echo 0 ;; *) echo active ;; esac ;;
+      show-options) echo codex ;;
+      set-buffer)
+        if [ "$mode" = "karo" ]; then printf "%s\n" "$4" >> "$tmp/nudges"; fi ;;
+      set-option) : ;;
+      paste-buffer) printf "paste\n" >> "$tmp/events" ;;
+      send-keys) printf "enter\n" >> "$tmp/events" ;;
+    esac
+  }
+  paste_count() { [ -f "$tmp/events" ] && grep -c "^paste$" "$tmp/events" || echo 0; }
+  CURRENT_CLI_GENERATION=generation-1
+  local lease
+  case "$mode" in
+    same_task)
+      send_wakeup 1 true inbox-a normal false false msg-current-1
+      send_wakeup 1 true inbox-a normal false false msg-current-1
+      lease="$tmp/state/inbox_watcher_sent_fixture_outstanding_lease_generation-1"
+      printf "fixture_same_pastes=%s\n" "$(paste_count)"
+      printf "fixture_same_columns=%s\n" "$(awk -F "\t" "NF==4 {n++} END {print n+0}" "$lease")"
+      ;;
+    new_fp)
+      send_wakeup 1 true inbox-a normal false false msg-current-1
+      send_wakeup 2 true inbox-b normal false false msg-current-1
+      send_wakeup 2 true inbox-b normal false false msg-current-1
+      lease="$tmp/state/inbox_watcher_sent_fixture_outstanding_lease_generation-1"
+      printf "fixture_new_pastes=%s\n" "$(paste_count)"
+      printf "fixture_new_fp=%s\n" "$(awk -F "\t" "{print \$4}" "$lease")"
+      ;;
+    upgrade)
+      local task_fp
+      task_fp="$(current_task_assignment_fingerprint)"
+      lease="$tmp/state/inbox_watcher_sent_fixture_outstanding_lease_generation-1"
+      printf "%s\t%s\t%s\n" generation-1 1 "$task_fp" > "$lease"
+      send_wakeup 1 true inbox-a normal false false msg-current-1
+      send_wakeup 1 true inbox-a normal false false msg-current-1
+      printf "fixture_upgrade_pastes=%s\n" "$(paste_count)"
+      printf "fixture_upgrade_columns=%s\n" "$(awk -F "\t" "NF==4 {n++} END {print n+0}" "$lease")"
+      printf "fixture_upgrade_fp=%s\n" "$(awk -F "\t" "{print \$4}" "$lease")"
+      ;;
+    migration)
+      local fingerprint=legacy-fp
+      local legacy="$tmp/state/inbox_watcher_sent_fixture_${fingerprint}"
+      : > "$legacy"
+      printf "%s\n" "$fingerprint" > "$tmp/state/inbox_watcher_fingerprint_fixture"
+      send_wakeup 1 false "$fingerprint" normal false false
+      lease="$tmp/state/inbox_watcher_sent_fixture_outstanding_lease_generation-1"
+      printf "fixture_migration_pastes=%s\n" "$(paste_count)"
+      printf "fixture_migration_columns=%s\n" "$(awk -F "\t" "NF==4 {n++} END {print n+0}" "$lease")"
+      printf "fixture_migration_fp=%s\n" "$(awk -F "\t" "{print \$4}" "$lease")"
+      printf "fixture_migration_legacy=%s\n" "$(test -e "$legacy" && echo 1 || echo 0)"
+      ;;
+    karo)
+      send_wakeup 1 true karo-fp normal false false
+      send_wakeup 1 true karo-fp normal false false
+      printf "fixture_karo_pastes=%s\n" "$(paste_count)"
+      printf "fixture_karo_task_id=%s\n" "$(grep -c "task_id=" "$tmp/nudges" || true)"
+      ;;
+  esac
+)
+
+run_fixture same_task
+run_fixture new_fp
+run_fixture upgrade
+run_fixture migration
+run_fixture karo
+'
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"fixture_same_pastes=1"* ]]
+    [[ "$output" == *"fixture_same_columns=1"* ]]
+    [[ "$output" == *"fixture_new_pastes=2"* ]]
+    [[ "$output" == *"fixture_new_fp=inbox-b"* ]]
+    [[ "$output" == *"fixture_upgrade_pastes=1"* ]]
+    [[ "$output" == *"fixture_upgrade_columns=1"* ]]
+    [[ "$output" == *"fixture_upgrade_fp=inbox-a"* ]]
+    [[ "$output" == *"fixture_migration_pastes=0"* ]]
+    [[ "$output" == *"fixture_migration_columns=1"* ]]
+    [[ "$output" == *"fixture_migration_fp=legacy-fp"* ]]
+    [[ "$output" == *"fixture_migration_legacy=0"* ]]
+    [[ "$output" == *"fixture_karo_pastes=1"* ]]
+    [[ "$output" == *"fixture_karo_task_id=0"* ]]
+}
+
 run_normal_fixture() {
     bash -c '
 set -euo pipefail
@@ -96,19 +220,21 @@ printf "high_after_empty_send=%s\n" "$(grep -c "^paste$" "$tmp/events")"
 '
 }
 
-@test "normal lease survives unread decrease and clears only at empty or generation change" {
+# test_necessity: 4列lease導入後、同generationでもinbox fingerprint変更は新規未読集合として
+# 一度だけ再送し、空inboxまたはgeneration変更でleaseを解放する契約を守る。
+@test "normal lease renews on inbox fingerprint change and clears at empty or generation change" {
     export GENERATION=generation-1
     run run_normal_fixture
     [ "$status" -eq 0 ]
-    [[ "$output" == *"baseline_send=5 actual_send=1"* ]]
+    [[ "$output" == *"baseline_send=5 actual_send=3"* ]]
     [[ "$output" == *"lease_files=1"* ]]
-    [[ "$output" == *"after_decrease_send=1"* ]]
+    [[ "$output" == *"after_decrease_send=4"* ]]
     [[ "$output" == *"after_empty_lease_files=0"* ]]
-    [[ "$output" == *"after_empty_send=2"* ]]
-    [[ "$output" == *"after_generation_send=3"* ]]
-    [[ "$output" == *"high_after_decrease_send=4"* ]]
+    [[ "$output" == *"after_empty_send=5"* ]]
+    [[ "$output" == *"after_generation_send=6"* ]]
+    [[ "$output" == *"high_after_decrease_send=8"* ]]
     [[ "$output" == *"high_lease_files=1"* ]]
-    [[ "$output" == *"high_after_empty_send=5"* ]]
+    [[ "$output" == *"high_after_empty_send=9"* ]]
 }
 
 @test "normal lease is generation keyed rather than fingerprint keyed" {
@@ -279,7 +405,7 @@ printf "legacy_exists=%s\n" "$(test -e "$legacy" && echo 1 || echo 0)"
 lease="$tmp/state/inbox_watcher_sent_fixture_outstanding_lease_${GENERATION}"
 printf "generation_lease=%s\n" "$(test -e "$lease" && echo 1 || echo 0)"
 
-# A different unread set remains suppressed by the migrated generation lease.
+# A different unread set renews the migrated generation lease exactly once.
 send_wakeup 1 false new-fingerprint normal false false
 printf "different_fp_paste=%s\n" "$(paste_count)"
 
@@ -294,8 +420,8 @@ printf "new_generation_paste=%s\n" "$(paste_count)"
     [[ "$output" == *"restart_paste=0"* ]]
     [[ "$output" == *"legacy_exists=0"* ]]
     [[ "$output" == *"generation_lease=1"* ]]
-    [[ "$output" == *"different_fp_paste=0"* ]]
-    [[ "$output" == *"new_generation_paste=1"* ]]
+    [[ "$output" == *"different_fp_paste=1"* ]]
+    [[ "$output" == *"new_generation_paste=2"* ]]
 }
 
 # test_necessity: 旧tokenが現fingerprintと一致しない場合、同一世代でも
