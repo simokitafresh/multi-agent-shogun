@@ -10998,6 +10998,7 @@ if [ ! -f "$_dt_preflight_path" ] && [ -n "${PROJECT_ROOT:-}" ]; then
 fi
 source "$_dt_preflight_path"
 unset _dt_preflight_path
+
 _dt_gates_path="$SCRIPT_DIR/scripts/deploy_task/gates.sh"
 if [ ! -f "$_dt_gates_path" ] && [ -n "${SRC_DEPLOY_SCRIPT:-}" ]; then
     _dt_gates_path="${SRC_DEPLOY_SCRIPT%/deploy_task.sh}/deploy_task/gates.sh"
@@ -11542,6 +11543,30 @@ if [ ! -f "$_dt_main_path" ] && [ -n "${PROJECT_ROOT:-}" ]; then
 fi
 source "$_dt_main_path"
 unset _dt_main_path
+
+# Cluster I is sourced again by main.sh and can replace the legacy helper at
+# runtime. Keep the canonical publication boundary effective for that live
+# function as well: a checkout may track a maintenance branch while
+# origin/main contains the source target required by the task.
+deploy_task_fetch_stable_remote_tip() {
+    local repo="$1" remote="$2" push_ref="$3" first_tip second_tip
+    if { [ "$remote" != "origin" ] || [ "$push_ref" != "refs/heads/main" ]; } \
+        && git -C "$repo" ls-remote --exit-code origin refs/heads/main >/dev/null 2>&1; then
+        remote="origin"
+        push_ref="refs/heads/main"
+    fi
+    first_tip=$(git -C "$repo" ls-remote "$remote" "$push_ref" 2>/dev/null | awk 'NR==1 {print $1}')
+    [[ "$first_tip" =~ ^[0-9a-f]{40}$ ]] || { log "BLOCK: remote-tip worktree remote tip unavailable"; return 1; }
+    git -C "$repo" fetch -q --no-write-fetch-head "$remote" "$push_ref" \
+        || { log "BLOCK: remote-tip fetch failed"; return 1; }
+    second_tip=$(git -C "$repo" ls-remote "$remote" "$push_ref" 2>/dev/null | awk 'NR==1 {print $1}')
+    [[ "$second_tip" =~ ^[0-9a-f]{40}$ ]] || { log "BLOCK: remote-tip ref disappeared during fetch"; return 1; }
+    [ "$first_tip" = "$second_tip" ] \
+        || { log "BLOCK: remote-tip ref race detected before worktree creation (before=$first_tip after=$second_tip)"; return 1; }
+    git -C "$repo" cat-file -e "${first_tip}^{commit}" 2>/dev/null \
+        || { log "BLOCK: remote-tip object unavailable"; return 1; }
+    printf '%s\n' "$first_tip"
+}
 
 # T171: task_mutations used to expose only the seven explicitly wrapped
 # injectors.  The remaining injector/publication calls still contributed to
