@@ -362,6 +362,49 @@ check_staged_deleted_refs() {
     done
 }
 
+# Entry-point enforcement for deleted_ref (karo re-review 2026-09-01 14:59):
+#   EXACT + no justification            -> rc 1 (BLOCK)
+#   EXACT + whitespace-only justification -> rc 1 (an empty reason is no reason)
+#   EXACT + non-empty justification     -> rc 0, WARN, JSONL row appended
+#   BASENAME only                       -> rc 0, WARN
+# Justification is PRECOMMIT_DELETED_REF_JUSTIFICATION trimmed of whitespace.
+precommit_enforce_deleted_refs() {
+    local kind path refs exact="" base="" justification bypass_log
+    while IFS=$'\t' read -r kind path refs; do
+        [[ -n "$kind" ]] || continue
+        case "$kind" in
+            EXACT) exact+="    $path <- $refs"$'\n' ;;
+            BASENAME) base+="    $path (basename) <- $refs"$'\n' ;;
+        esac
+    done < <(check_staged_deleted_refs)
+    if [[ -n "$base" ]]; then
+        echo "[pre-commit] WARN(deleted_ref): basename of a staged deletion still appears in tests/ or scripts/ (candidates, may be a same-named file):" >&2
+        printf '%s' "$base" >&2
+    fi
+    [[ -n "$exact" ]] || return 0
+    justification="${PRECOMMIT_DELETED_REF_JUSTIFICATION:-}"
+    justification="${justification#"${justification%%[![:space:]]*}"}"
+    justification="${justification%"${justification##*[![:space:]]}"}"
+    if [[ -z "$justification" ]]; then
+        echo "BLOCKED(deleted_ref): staged deletion is still referenced by its exact repo path in tests/ or scripts/. Remove/update the references in the same commit, or set PRECOMMIT_DELETED_REF_JUSTIFICATION='<why>' (non-blank) to record a deliberate bypass:" >&2
+        printf '%s' "$exact" >&2
+        return 1
+    fi
+    bypass_log="$REPO_ROOT/logs/precommit_deleted_ref_bypass.jsonl"
+    echo "[pre-commit] WARN(deleted_ref): exact references remain but PRECOMMIT_DELETED_REF_JUSTIFICATION is set; logged to logs/precommit_deleted_ref_bypass.jsonl" >&2
+    printf '%s' "$exact" >&2
+    mkdir -p "$(dirname "$bypass_log")" 2>/dev/null || true
+    JUST="$justification" DELS="$exact" python3 - "$bypass_log" <<'PY' 2>/dev/null || echo "[pre-commit] WARN(deleted_ref): bypass log write failed" >&2
+import json, os, sys, datetime
+row = {"ts": datetime.datetime.now().astimezone().isoformat(timespec="seconds"),
+       "justification": os.environ.get("JUST", ""),
+       "deletions": os.environ.get("DELS", "")}
+with open(sys.argv[1], "a", encoding="utf-8") as fh:
+    fh.write(json.dumps(row, ensure_ascii=False) + "\n")
+PY
+    return 0
+}
+
 check_staged_shell_syntax() {
     local staged_sh blob_oid content_sha bash_key cache_root cache_file syntax_input tmp_input
     local -a staged_shells=()
@@ -1443,36 +1486,9 @@ main() {
     # WARN only (never BLOCK): the committer sees the remaining references and
     # decides; a deletion is reversible, a stalled lane is not free.
     precommit_step_begin deleted_ref
-    _deleted_ref_exact=""
-    _deleted_ref_base=""
-    while IFS=$'\t' read -r _dr_kind _dr_path _dr_refs; do
-        [[ -n "$_dr_kind" ]] || continue
-        case "$_dr_kind" in
-            EXACT) _deleted_ref_exact+="    $_dr_path <- $_dr_refs"$'\n' ;;
-            BASENAME) _deleted_ref_base+="    $_dr_path (basename) <- $_dr_refs"$'\n' ;;
-        esac
-    done < <(check_staged_deleted_refs)
-    unset _dr_kind _dr_path _dr_refs
-    if [[ -n "$_deleted_ref_base" ]]; then
-        echo "[pre-commit] WARN(deleted_ref): basename of a staged deletion still appears in tests/ or scripts/ (candidates, may be a same-named file):" >&2
-        printf '%s' "$_deleted_ref_base" >&2
-    fi
-    if [[ -n "$_deleted_ref_exact" ]]; then
-        if [[ -n "${PRECOMMIT_DELETED_REF_JUSTIFICATION:-}" ]]; then
-            echo "[pre-commit] WARN(deleted_ref): exact references remain but PRECOMMIT_DELETED_REF_JUSTIFICATION is set; logged to logs/precommit_deleted_ref_bypass.jsonl" >&2
-            printf '%s' "$_deleted_ref_exact" >&2
-            mkdir -p "$REPO_ROOT/logs" 2>/dev/null || true
-            printf '{"ts":"%s","justification":%s,"deletions":%s}\n' \
-                "$(date -Iseconds)" \
-                "$(printf '%s' "$PRECOMMIT_DELETED_REF_JUSTIFICATION" | python3 -c 'import json,sys; print(json.dumps(sys.stdin.read()))' 2>/dev/null || printf '"%s"' "unserializable")" \
-                "$(printf '%s' "$_deleted_ref_exact" | python3 -c 'import json,sys; print(json.dumps(sys.stdin.read()))' 2>/dev/null || printf '"%s"' "unserializable")" \
-                >> "$REPO_ROOT/logs/precommit_deleted_ref_bypass.jsonl" 2>/dev/null || true
-        else
-            precommit_step_end 1
-            echo "BLOCKED(deleted_ref): staged deletion is still referenced by its exact repo path in tests/ or scripts/. Remove/update the references in the same commit, or set PRECOMMIT_DELETED_REF_JUSTIFICATION='<why>' to record a deliberate bypass:" >&2
-            printf '%s' "$_deleted_ref_exact" >&2
-            exit 1
-        fi
+    if ! precommit_enforce_deleted_refs; then
+        precommit_step_end 1
+        exit 1
     fi
     precommit_step_end 0
 

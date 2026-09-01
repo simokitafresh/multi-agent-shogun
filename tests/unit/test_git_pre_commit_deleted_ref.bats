@@ -97,3 +97,78 @@ run_deleted_ref_check() {
   [ "$status" -eq 0 ]
   [ -z "$output" ]
 }
+
+# --- entry-point enforcement (main step behaviour) ---
+
+run_enforce() {
+  local funcs
+  funcs="$(extract_funcs check_staged_deleted_refs precommit_enforce_deleted_refs)"
+  REPO="$REPO" FUNCS="$funcs" bash -c '
+    REPO_ROOT="$REPO"
+    eval "$FUNCS"
+    declare -A _STAGED_FILE_STATUS=()
+    load_staged_file_cache() {
+      local status path
+      while IFS=$'"'"'\t'"'"' read -r status path; do
+        [[ -n "$path" ]] && _STAGED_FILE_STATUS["$path"]="$status"
+      done < <(command git -C "$REPO" diff --cached --name-status)
+    }
+    git() { command git -C "$REPO" "$@"; }
+    precommit_enforce_deleted_refs
+  '
+}
+
+@test "entrypoint: EXACT reference without justification exits 1 (BLOCK)" {
+  git -C "$REPO" rm -q scripts/legacy_departure.sh
+  unset PRECOMMIT_DELETED_REF_JUSTIFICATION
+  run run_enforce
+  [ "$status" -eq 1 ]
+  [[ "$output" == *"BLOCKED(deleted_ref)"* ]]
+  [[ "$output" == *"scripts/legacy_departure.sh <- "*"tests/unit/test_legacy.bats"* ]]
+  [ ! -f "$REPO/logs/precommit_deleted_ref_bypass.jsonl" ]
+}
+
+@test "entrypoint: whitespace-only justification still exits 1" {
+  git -C "$REPO" rm -q scripts/legacy_departure.sh
+  export PRECOMMIT_DELETED_REF_JUSTIFICATION='   '
+  run run_enforce
+  unset PRECOMMIT_DELETED_REF_JUSTIFICATION
+  [ "$status" -eq 1 ]
+  [[ "$output" == *"BLOCKED(deleted_ref)"* ]]
+  [ ! -f "$REPO/logs/precommit_deleted_ref_bypass.jsonl" ]
+}
+
+@test "entrypoint: non-blank justification exits 0 with WARN and a parseable JSONL row" {
+  git -C "$REPO" rm -q scripts/legacy_departure.sh
+  export PRECOMMIT_DELETED_REF_JUSTIFICATION='  contract moved to tests/unit/test_new.bats in next commit  '
+  run run_enforce
+  unset PRECOMMIT_DELETED_REF_JUSTIFICATION
+  [ "$status" -eq 0 ]
+  [[ "$output" == *"WARN(deleted_ref): exact references remain"* ]]
+  [[ "$output" != *"BLOCKED"* ]]
+  [ -f "$REPO/logs/precommit_deleted_ref_bypass.jsonl" ]
+  run python3 -c '
+import json, sys
+rows = [json.loads(l) for l in open(sys.argv[1], encoding="utf-8") if l.strip()]
+assert len(rows) == 1, rows
+assert rows[0]["justification"] == "contract moved to tests/unit/test_new.bats in next commit", rows[0]
+assert "scripts/legacy_departure.sh" in rows[0]["deletions"], rows[0]
+assert rows[0]["ts"]
+print("PARSE_OK")
+' "$REPO/logs/precommit_deleted_ref_bypass.jsonl"
+  [ "$status" -eq 0 ]
+  [[ "$output" == *"PARSE_OK"* ]]
+}
+
+@test "entrypoint: BASENAME-only finding exits 0 with WARN and no bypass log" {
+  git -C "$REPO" rm -q scripts/legacy_departure.sh
+  printf '@test "x" {\n  true\n}\n' > "$REPO/tests/unit/test_legacy.bats"
+  git -C "$REPO" add tests/unit/test_legacy.bats
+  unset PRECOMMIT_DELETED_REF_JUSTIFICATION
+  run run_enforce
+  [ "$status" -eq 0 ]
+  [[ "$output" == *"WARN(deleted_ref): basename"* ]]
+  [[ "$output" == *"tests/unit/test_lib.bats"* ]]
+  [[ "$output" != *"BLOCKED"* ]]
+  [ ! -f "$REPO/logs/precommit_deleted_ref_bypass.jsonl" ]
+}
