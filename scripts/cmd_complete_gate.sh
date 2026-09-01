@@ -15564,8 +15564,14 @@ else
         block_reason=$(IFS='|'; echo "${WAIT_REASONS[*]}")
     else
         # ALL_CLEAR=false だがBLOCK_REASONS/MISSING_GATES両方空: 各gate個別結果を収集
+        # cmd_1314追補: DEFERRED_GATESはcheck loopと同様にスキップ(循環依存防止)
         _gate_details=()
         for _g in "${ALL_GATES[@]}"; do
+            _g_deferred=false
+            for _dg in "${DEFERRED_GATES[@]}"; do
+                if [ "$_g" = "$_dg" ]; then _g_deferred=true; break; fi
+            done
+            if [ "$_g_deferred" = true ]; then continue; fi
             if [ -f "$GATES_DIR/${_g}.done" ]; then
                 _gate_details+=("${_g}:PASS")
             else
