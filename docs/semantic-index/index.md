@@ -8912,6 +8912,8 @@ codd:
 | discussion | `queue/lord_conversation.jsonl` 2026-09-02T02:18:41+09:00 コミットのやり方やコミットスキルの品質や構造に問題がないかも検証しよう |
 | discussion | `queue/lord_conversation.jsonl` 2026-09-02T02:20:17+09:00 殿指示 02:18『コミットのやり方やコミットスキルの品質や構造に問題がないかも検証しよう』将軍一次計測: git commit/push を実行する script 11 本・push 4 本(deploy_task/cmd_complet |
 | lesson | `L1698` legacy notification identity must be generation-bound |
+| causal | `cmd_karo_hotfix_push_lane_ancestry_guard_20260902` files_modified: [[agent_formation_management]] |
+| cmd | `cmd_karo_hotfix_push_lane_ancestry_guard_20260902` (`scripts/ninja_monitor.sh`, `tests/unit/test_ninja_monitor.bats`) |
 | causal_chain | `[[cmd_karo_hotfix_deploy_task_latency_yaml_bug_20260702010845]]` (L918) |
 | causal_chain | `[[cmd_karo_hotfix_deploy_task_yaml_speed_recon_guard_202607020133]]` (L919) |
 | causal_chain | `[[cmd_karo_hotfix_ga162_hook_failure_pre_push_202607021402]]` (L930) |
@@ -10870,6 +10872,7 @@ codd:
 | causal | `cmd_karo_hotfix_t190_gate_stall_p95_unit5_20260830` files_modified: [[training_cycle_quality]] |
 | causal | `cmd_karo_hotfix_t190_push_merge_recovery_unit6_20260830` files_modified: [[training_cycle_quality]] |
 | causal | `cmd_karo_hotfix_push_red_nonblocking_20260830` files_modified: [[training_cycle_quality]] |
+| causal | `cmd_karo_hotfix_push_lane_ancestry_guard_20260902` files_modified: [[training_cycle_quality]] |
 
 ## report_quality_protocol — 忍者報告品質プロトコル
 
@@ -11706,6 +11709,7 @@ codd:
 | causal | `cmd_karo_hotfix_outstanding_lease_expiry_20260831` files_modified: [[daemon_supervision]] |
 | causal | `cmd_karo_hotfix_inbox_lease_contracts_20260901` files_modified: [[daemon_supervision]] |
 | causal | `cmd_karo_hotfix_gunshi_idle_flag_lifecycle_20260901` files_modified: [[daemon_supervision]] |
+| causal | `cmd_karo_hotfix_push_lane_ancestry_guard_20260902` files_modified: [[daemon_supervision]] |
 | causal_chain | `[[cmd_karo_ci_fix_33301147088_test117_20260830]]` (L1677) |
 
 ## openpbx_reference — OpenPBX(コリ先生PBX MVP)
@@ -12025,6 +12029,7 @@ codd:
 | causal | `cmd_karo_hotfix_inbox_lease_contracts_20260901` files_modified: [[infrastructure_ops]] |
 | cmd | `cmd_karo_hotfix_inbox_lease_contracts_20260901` (`scripts/inbox_watcher.sh`) |
 | causal | `cmd_karo_hotfix_gunshi_idle_flag_lifecycle_20260901` files_modified: [[infrastructure_ops]] |
+| causal | `cmd_karo_hotfix_push_lane_ancestry_guard_20260902` files_modified: [[infrastructure_ops]] |
 | causal_chain | `[[cmd_3632]]` (L917) |
 | causal_chain | `[[cmd_karo_hotfix_auto_update_pane_spawn_202607031806]]` (L949) |
 | causal_chain | `[[cmd_3969]]` (L1043) |
@@ -16453,6 +16458,7 @@ codd:
 | causal | `cmd_karo_hotfix_push_red_nonblocking_20260830` files_modified: [[infra_design_intent]] |
 | causal | `cmd_karo_ci_fix_33326464870_shard_count_receipt_20260831` files_modified: [[infra_design_intent]] |
 | causal | `cmd_karo_hotfix_u1_quality_monitor_claim_20260902` files_modified: [[infra_design_intent]] |
+| causal | `cmd_karo_hotfix_push_lane_ancestry_guard_20260902` files_modified: [[infra_design_intent]] |
 | causal_chain | `[[cmd_karo_fix_same_cmd_pending_symlink_20260804]]` (L1556) |
 
 ## scope_integrity_lifecycle — スコープ鮮度ライフサイクル
@@ -17857,6 +17863,7 @@ codd:
 | discussion | `queue/lord_conversation.jsonl` 2026-09-02T02:18:03+09:00 もしくは忍者のコミットのやり方にバがあるかだ。 |
 | discussion | `queue/lord_conversation.jsonl` 2026-09-01T17:28:00.798559+00:00 git pre-commit semantic propagation for context/projects changes |
 | discussion | `queue/lord_conversation.jsonl` 2026-09-01T18:13:41.911851+00:00 git pre-commit semantic propagation for context/projects changes |
+| discussion | `queue/lord_conversation.jsonl` 2026-09-01T18:24:39.879473+00:00 git pre-commit semantic propagation for context/projects changes |
 | causal_chain | `[[cmd_karo_hotfix_ga161_obsidian_link_context_freshness_202607021348]]` (L926) |
 | causal_chain | `[[cmd_3648]]` (L933) |
 | causal_chain | `[[cmd_karo_ci_fix_ga191_followup_202607071752]]` (L963) |
@@ -18136,6 +18143,7 @@ codd:
 | causal | `cmd_karo_hotfix_t190_gate_stall_p95_unit5_20260830` files_modified: [[inbox_evidence_durability]] |
 | causal | `cmd_karo_hotfix_t190_push_merge_recovery_unit6_20260830` files_modified: [[inbox_evidence_durability]] |
 | causal | `cmd_karo_hotfix_push_red_nonblocking_20260830` files_modified: [[inbox_evidence_durability]] |
+| causal | `cmd_karo_hotfix_push_lane_ancestry_guard_20260902` files_modified: [[inbox_evidence_durability]] |
 
 ## hook_json_command_boundary — hook JSONコマンド境界
 
@@ -18359,6 +18367,7 @@ codd:
 | causal | `cmd_karo_hotfix_t190_gate_stall_p95_unit5_20260830` files_modified: [[active_task_clear_fail_closed]] |
 | causal | `cmd_karo_hotfix_t190_push_merge_recovery_unit6_20260830` files_modified: [[active_task_clear_fail_closed]] |
 | causal | `cmd_karo_hotfix_push_red_nonblocking_20260830` files_modified: [[active_task_clear_fail_closed]] |
+| causal | `cmd_karo_hotfix_push_lane_ancestry_guard_20260902` files_modified: [[active_task_clear_fail_closed]] |
 
 ## karo_strong_new_game_20260818_0650 — 家老復帰点（fixture→republish→cron）
 
