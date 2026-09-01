@@ -400,9 +400,33 @@ push_lane_log() {
 # 12:44 以降も 40 分超)。merge は D012(cherry-pick/rebase/revert 禁止)の対象外で、
 # 家老が手で行っている操作そのもの。dirty file と衝突すれば git が拒否する=fail-closed。
 # 成功で 0(HEAD が remote を含む)、失敗は merge --abort して 1。
+# 2026-09-01 19:2x 将軍 D0: 共有 root は daemon が毎分書く runtime 台帳(insights/bulletin/semantic-index/
+# todo_map_timestamps/lessons)が常時 dirty で、origin の autopush(source-only insights ID merge)と同 path を
+# 触るため `git merge` が "local changes would be overwritten" で拒否→auto_merge=failed が毎分(19:14-19:23、
+# unpushed 12→20)。merge-tree では競合 0(union 済み)なのに lane だけ失敗した真因。統合前に台帳だけを
+# 自動 commit し、merge の stderr は捨てずに log へ残す(型5弾-2)。
+push_lane_autocommit_runtime_ledgers() {
+    local repo="$1"
+    local -a ledgers=(queue/insights.yaml queue/bulletin_board.yaml docs/semantic-index/index.md queue/shogun_todo_map_timestamps.tsv projects/infra/lessons.yaml)
+    local -a dirty=() p
+    for p in "${ledgers[@]}"; do
+        [ -f "$repo/$p" ] || continue
+        git -C "$repo" diff --quiet -- "$p" 2>/dev/null || dirty+=("$p")
+    done
+    [ ${#dirty[@]} -gt 0 ] || return 0
+    local err
+    if err=$(git -C "$repo" -c maintenance.auto=false commit -q -m "runtime: auto-commit ledgers before integrate (push_lane)" -- "${dirty[@]}" 2>&1); then
+        push_lane_log "AUTOCOMMIT-LEDGERS paths=$(IFS=,; echo "${dirty[*]}") head=$(git -C "$repo" rev-parse --short HEAD 2>/dev/null)"
+        return 0
+    fi
+    push_lane_log "AUTOCOMMIT-LEDGERS-FAIL paths=$(IFS=,; echo "${dirty[*]}") err=$(printf '%s' "$err" | tr '\n' ' ' | cut -c1-200)"
+    return 1
+}
+
 push_lane_integrate_remote() {
     local repo="$1" remote_ref="$2" remote_tip="$3"
     [ "${PUSH_LANE_AUTO_INTEGRATE:-1}" = "1" ] || return 1
+    push_lane_autocommit_runtime_ledgers "$repo" || true
     # 逆方向(HEAD が remote の祖先=単に遅れている)は ff で追随する
     if git -C "$repo" merge-base --is-ancestor HEAD "$remote_ref" 2>/dev/null; then
         git -C "$repo" merge --ff-only "$remote_ref" >/dev/null 2>&1 || return 1
@@ -410,11 +434,13 @@ push_lane_integrate_remote() {
         git -C "$repo" merge-base --is-ancestor "$remote_ref" HEAD 2>/dev/null && return 0
         return 1
     fi
-    if git -C "$repo" -c maintenance.auto=false merge --no-ff --no-edit \
-        -m "runtime: integrate ${remote_ref} ${remote_tip:0:9} (push_lane auto)" "$remote_ref" >/dev/null 2>&1; then
+    local merge_err
+    if merge_err=$(git -C "$repo" -c maintenance.auto=false merge --no-ff --no-edit \
+        -m "runtime: integrate ${remote_ref} ${remote_tip:0:9} (push_lane auto)" "$remote_ref" 2>&1 >/dev/null); then
         git -C "$repo" merge-base --is-ancestor "$remote_ref" HEAD 2>/dev/null && return 0
         return 1
     fi
+    push_lane_log "INTEGRATE-MERGE-FAIL remote=${remote_tip:0:9} err=$(printf '%s' "$merge_err" | tr '\n' ' ' | cut -c1-240)"
     git -C "$repo" merge --abort >/dev/null 2>&1 || true
     return 1
 }
