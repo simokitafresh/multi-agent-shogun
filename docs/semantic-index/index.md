@@ -11464,6 +11464,7 @@ codd:
 | discussion | `queue/lord_conversation.jsonl` 2026-09-01T13:18:27+09:00 では利他の精神で忍者のセッションで試行錯誤はあったか？ 試行錯誤の裏にはバグ が潜んでいることが多い。覚醒して検証してバグがあれば根 治せよ。根治したら軍師にレビューしてもらえ |
 | discussion | `queue/lord_conversation.jsonl` 2026-09-01T13:19:33+09:00 Codexモード のためnudge配送が止まっていたらそれはバグだな。バグは根治せよ。根治したら検証して家老にレビューしてもらえ |
 | discussion | `queue/lord_conversation.jsonl` 2026-09-01T15:01:56+09:00 session_save_20260901_1502(先に session_save_20260901_1435 を読め) 第21便(14:38 y 復帰〜15:02、Fable low): ①復帰=deepdive 16/16、Q6 掲示 |
+| discussion | `queue/lord_conversation.jsonl` 2026-09-01T19:31:46+09:00 家老にレビューしてもらえ |
 | causal_chain | `[[cmd_karo_hotfix_bc_result_empty_high_freq_insight_202607020526]]` (L923) |
 | causal_chain | `[[cmd_3683]]` (L947) |
 | causal_chain | `[[cmd_karo_ci_fix_ga191_bats_count_202607071728]]` (L962) |
@@ -12577,6 +12578,7 @@ codd:
 | causal | `cmd_4309` files_modified: [[lesson_lifecycle]] |
 | cmd | `cmd_karo_recon_ghost_tmux_ac3_origin_20260826` |
 | lesson | `L1667` producer接続とFP観測は同一contractで検証する |
+| lesson | `L1696` inbox read receiptは本文処理receiptと分離して型別に強制する |
 | causal_chain | `[[cmd_karo_hotfix_shogun_startup_defer_skill_refs_202607020421]]` (L921) |
 | causal_chain | `[[cmd_3657]]` (L935) |
 | causal_chain | `[[cmd_3724]]` (L959) |
@@ -12589,6 +12591,7 @@ codd:
 | causal_chain | `[[cmd_karo_impl_a6_preflight_timeout_20260727]]` (L1387) |
 | causal_chain | `[[cmd_karo_persist_strong_new_game_checkpoint_20260730]]` (L1483) |
 | causal_chain | `[[cmd_karo_hotfix_pending_decision_infra_bundle_20260828]]` (L1667) |
+| causal_chain | `[[cmd_karo_hotfix_review_processing_receipt_20260901]]` (L1696) |
 
 ## gunshi_review_lifecycle — 軍師レビューライフサイクル
 
