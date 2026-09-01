@@ -150,6 +150,8 @@ YAML
 }
 
 @test "review messages require a post-message review log entry while normal messages stay unchanged" {
+    mkdir -p "$TEST_ROOT/queue/reports"
+    touch "$TEST_ROOT/queue/reports/good_report.yaml" "$TEST_ROOT/queue/reports/stale_report.yaml"
     cat > "$TEST_ROOT/queue/inbox/hayate.yaml" <<'YAML'
 messages:
 - id: review_good
@@ -191,6 +193,103 @@ YAML
     [ "$status" -eq 2 ]
     [[ "$output" == *"BLOCK: review not recorded"* ]]
     [ "$(_status review_stale)" = false ]
+}
+
+@test "report-less review_draft uses the canonical inbox receipt only" {
+    cat > "$TEST_ROOT/queue/inbox/hayate.yaml" <<'YAML'
+messages:
+- id: draft_without_report
+  from: karo
+  timestamp: '2026-09-01T19:41:22+00:00'
+  type: review_draft
+  content: "draft review request with no report"
+  read: false
+YAML
+    _read_inbox
+    _mark draft_without_report
+    [ "$status" -eq 0 ]
+    [ "$(_status draft_without_report)" = true ]
+}
+
+@test "structured report_path is used when an existing report requires review log" {
+    mkdir -p "$TEST_ROOT/queue/reports"
+    touch "$TEST_ROOT/queue/reports/structured_report.yaml"
+    cat > "$TEST_ROOT/queue/inbox/hayate.yaml" <<'YAML'
+messages:
+- id: structured_review
+  from: karo
+  timestamp: '2026-09-01T19:00:00+00:00'
+  type: report_review
+  report_path: queue/reports/structured_report.yaml
+  read: false
+YAML
+    cat > "$TEST_ROOT/logs/gunshi_review_log.yaml" <<'YAML'
+- report: structured_report.yaml
+  reviewed_at: '2026-09-01T19:01:00+00:00'
+YAML
+    _read_inbox
+    _mark structured_review
+    [ "$status" -eq 0 ]
+    [ "$(_status structured_review)" = true ]
+}
+
+@test "review_draft with an existing report still uses only the canonical receipt" {
+    mkdir -p "$TEST_ROOT/queue/reports"
+    touch "$TEST_ROOT/queue/reports/draft_report.yaml"
+    cat > "$TEST_ROOT/queue/inbox/hayate.yaml" <<'YAML'
+messages:
+- id: draft_with_report
+  from: karo
+  timestamp: '2026-09-01T19:00:00+00:00'
+  type: review_draft
+  report_path: queue/reports/draft_report.yaml
+  read: false
+YAML
+    _read_inbox
+    _mark draft_with_report
+    [ "$status" -eq 0 ]
+    [ "$(_status draft_with_report)" = true ]
+}
+
+@test "report_review treats a timezone-naive message timestamp as JST" {
+    mkdir -p "$TEST_ROOT/queue/reports"
+    touch "$TEST_ROOT/queue/reports/jst_report.yaml"
+    cat > "$TEST_ROOT/queue/inbox/hayate.yaml" <<'YAML'
+messages:
+- id: jst_review
+  from: karo
+  timestamp: '2026-09-01T19:00:00'
+  type: report_review
+  report_path: queue/reports/jst_report.yaml
+  read: false
+YAML
+    cat > "$TEST_ROOT/logs/gunshi_review_log.yaml" <<'YAML'
+- report: jst_report.yaml
+  reviewed_at: '2026-09-01T10:00:00+00:00'
+YAML
+    _read_inbox
+    _mark jst_review
+    [ "$status" -eq 0 ]
+    [ "$(_status jst_review)" = true ]
+}
+
+@test "report_review with an existing report and no review log is blocked" {
+    mkdir -p "$TEST_ROOT/queue/reports"
+    touch "$TEST_ROOT/queue/reports/unreviewed_report.yaml"
+    cat > "$TEST_ROOT/queue/inbox/hayate.yaml" <<'YAML'
+messages:
+- id: unreviewed_report
+  from: karo
+  timestamp: '2026-09-01T19:00:00+00:00'
+  type: report_review
+  report_path: queue/reports/unreviewed_report.yaml
+  read: false
+YAML
+    _read_inbox
+    _mark unreviewed_report
+    [ "$status" -eq 2 ]
+    [[ "$output" == *"BLOCK: review not recorded"* ]]
+    [ "$(_status unreviewed_report)" = false ]
 }
 
 @test "review log entry may match standard report filename through cmd_id" {

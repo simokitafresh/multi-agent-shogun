@@ -950,3 +950,56 @@ print('CONCURRENT_OK entries=' + str(len(entries)) + ' resolved=' + str(len(reso
     [ "$status" -eq 0 ]
     [[ "$output" == *"CONCURRENT_OK entries=15 resolved=5"* ]]
 }
+
+# test_necessity: The repository contract must install the named Git driver so
+# future clones do not silently fall back to Git's line-based union behavior.
+@test "merge driver設定: insights-id driver command is registered" {
+    local repo="$TEST_TMP/merge-repo"
+    mkdir -p "$repo"
+    git init -q "$repo"
+
+    run bash "${TEST_TMP}/scripts/insight_write.sh" --configure-merge-driver "$repo"
+    [ "$status" -eq 0 ]
+    run git -C "$repo" config --get merge.insights-id.driver
+    [ "$status" -eq 0 ]
+    [ "$output" = "bash ${repo}/scripts/insight_write.sh --merge-driver %O %A %B" ]
+}
+
+# test_necessity: Disjoint ID additions must produce one parseable ledger with
+# each ID exactly once; this is the invariant the old union driver lacked.
+@test "merge driver: disjoint ID additions are unioned without duplicates" {
+    local base="$TEST_TMP/base.yaml" ours="$TEST_TMP/ours.yaml" theirs="$TEST_TMP/theirs.yaml"
+    printf '%s\n' 'insights:' '  - id: INS-BASE' '    insight: base' '    status: pending' >"$base"
+    printf '%s\n' 'insights:' '  - id: INS-BASE' '    insight: base' '    status: pending' '  - id: INS-OURS' '    insight: ours' '    status: pending' >"$ours"
+    printf '%s\n' 'insights:' '  - id: INS-BASE' '    insight: base' '    status: pending' '  - id: INS-THEIRS' '    insight: theirs' '    status: pending' >"$theirs"
+
+    run bash "${TEST_TMP}/scripts/insight_write.sh" --merge-driver "$base" "$ours" "$theirs"
+    [ "$status" -eq 0 ]
+    run python3 - "$ours" <<'PY'
+import sys
+import yaml
+
+rows = yaml.safe_load(open(sys.argv[1], encoding="utf-8"))["insights"]
+ids = [row["id"] for row in rows]
+assert ids == ["INS-BASE", "INS-OURS", "INS-THEIRS"], ids
+assert len(ids) == len(set(ids))
+print(f"MERGE_UNION_OK entries={len(rows)} duplicate_ids=0")
+PY
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"MERGE_UNION_OK entries=3 duplicate_ids=0"* ]]
+}
+
+# test_necessity: Two independent edits to one durable insight ID must stop
+# for manual resolution instead of selecting a lossy parent silently.
+@test "merge driver: same ID changed on both parents blocks manual resolution" {
+    local base="$TEST_TMP/base-conflict.yaml" ours="$TEST_TMP/ours-conflict.yaml" theirs="$TEST_TMP/theirs-conflict.yaml" before="$TEST_TMP/before-conflict.yaml"
+    printf '%s\n' 'insights:' '  - id: INS-SAME' '    insight: base' '    status: pending' >"$base"
+    printf '%s\n' 'insights:' '  - id: INS-SAME' '    insight: ours change' '    status: pending' >"$ours"
+    printf '%s\n' 'insights:' '  - id: INS-SAME' '    insight: theirs change' '    status: pending' >"$theirs"
+    cp "$ours" "$before"
+
+    run bash "${TEST_TMP}/scripts/insight_write.sh" --merge-driver "$base" "$ours" "$theirs"
+    [ "$status" -eq 1 ]
+    [[ "$output" == *"same insight ID changed on both parents: INS-SAME"* ]]
+    cmp "$ours" "$before"
+}
