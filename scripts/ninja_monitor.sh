@@ -4388,8 +4388,38 @@ can_send_clear_with_report_gate() {
 
 # A failed task is not disposable merely because the worker marked it failed.
 # Preserve its pane/worktree until that exact generation has terminal primary
-# evidence: archive.done, or its own completed FAIL report. Requiring a later
-# Karo ACCEPT here creates a completion cycle.
+# evidence: archive.done, or its own fingerprint-bound Karo ACCEPT FAIL_CLOSE
+# report. The latter is the only active-report terminal boundary for a failed
+# generation; a bare FAIL report must remain visible to Karo.
+_failed_task_has_matching_karo_fail_close() {
+    local parent_cmd="$1" report="$2"
+    local report_status report_verdict logical key fingerprint approval_dir
+    local stored_report stored_fp stored_result
+
+    [ -n "$parent_cmd" ] && [ -f "$report" ] || return 1
+    report_status=$(yaml_field_get "$report" status "" 2>/dev/null || true)
+    report_verdict=$(yaml_field_get "$report" verdict "" 2>/dev/null || true)
+    [ "$report_status" = "failed" ] && [ "$report_verdict" = "FAIL" ] || return 1
+    command -v review_report_key >/dev/null 2>&1 || return 1
+    command -v review_report_fingerprint >/dev/null 2>&1 || return 1
+
+    # FAIL_CLOSE is the one report identity lane allowed to omit a commit.
+    # Keep the exemption scoped to this exact failed report and bind the
+    # resulting fingerprint to Karo's canonical approval directory.
+    logical="queue/reports/$(basename "$report")"
+    key=$(review_report_key "$logical" 2>/dev/null) || return 1
+    fingerprint=$(REVIEW_FAIL_CLOSE_IDENTITY_EXEMPT=1 \
+        review_report_fingerprint "$report" 2>/dev/null) || return 1
+    [ -n "$fingerprint" ] || return 1
+    approval_dir="$SCRIPT_DIR/queue/gates/${parent_cmd}/review_approvals/reports/${key}"
+    stored_report=$(review_approval_value "$approval_dir/karo.yaml" report 2>/dev/null || true)
+    stored_fp=$(review_approval_value "$approval_dir/karo.yaml" fingerprint 2>/dev/null || true)
+    stored_result=$(review_approval_value "$approval_dir/karo.yaml" result 2>/dev/null || true)
+    [ "$stored_result" = "ACCEPT" ] || return 1
+    [ "$stored_fp" = "$fingerprint" ] || return 1
+    [ "$stored_report" = "$logical" ] || [ "$stored_report" = "$(basename "$report")" ] || return 1
+}
+
 _failed_task_is_formally_closed() {
     local name="$1"
     local task_file="$SCRIPT_DIR/queue/tasks/${name}.yaml"
@@ -4414,7 +4444,7 @@ _failed_task_is_formally_closed() {
     task_id=$(yaml_field_get "$task_file" "task_id" "" 2>/dev/null || true)
     report_task_id=$(yaml_field_get "$report_file" "task_id" "" 2>/dev/null || true)
     [ -n "$task_id" ] && [ "$report_task_id" = "$task_id" ] || return 1
-    return 0
+    _failed_task_has_matching_karo_fail_close "$parent_cmd" "$report_file"
 }
 
 _failed_task_preserve_marker_file() {
@@ -4942,6 +4972,14 @@ _pending_task_canonical_review_state() {
     [ -n "$parent_cmd" ] && [ -f "$report" ] || return 1
     command -v review_report_key >/dev/null 2>&1 || return 1
     command -v review_report_fingerprint >/dev/null 2>&1 || return 1
+
+    # A failed report cannot receive Gunshi LGTM. Its terminal review is the
+    # exact Karo ACCEPT FAIL_CLOSE approval, whose fingerprint must be
+    # calculated through the explicit fail-close identity exemption.
+    if _failed_task_has_matching_karo_fail_close "$parent_cmd" "$report"; then
+        printf 'karo_fail_close_terminal\n'
+        return 0
+    fi
 
     logical="queue/reports/$(basename "$report")"
     key=$(review_report_key "$logical" 2>/dev/null) || return 1
@@ -6369,9 +6407,15 @@ check_and_update_done_task() (
     # Generation-bound report identities opt into the durable CLEAR boundary.
     # Legacy reports without report_id retain their pre-generation behavior;
     # current deployed tasks always carry report_id/report_identity_version.
-    local clear_receipt_required
+    local clear_receipt_required fail_close_terminal=0
+    if [ "$task_status" = "failed" ] && [ "$report_status" = "failed" ] && \
+       _failed_task_has_matching_karo_fail_close "$task_parent_cmd" "$report_file"; then
+        fail_close_terminal=1
+        log "AUTO-DONE-FAIL-CLOSE-TERMINAL: $name parent_cmd=$task_parent_cmd report=$(basename "$report_file") clear_receipt_bypassed=1"
+    fi
     clear_receipt_required=$(yaml_field_get "$task_file" "report_id" "" 2>/dev/null || true)
-    if [ -n "$clear_receipt_required" ] && ! _check_done_clear_receipt "$name" "$task_parent_cmd" "$task_status"; then
+    if [ -n "$clear_receipt_required" ] && [ "$fail_close_terminal" -eq 0 ] && \
+       ! _check_done_clear_receipt "$name" "$task_parent_cmd" "$task_status"; then
         return 1
     fi
 
