@@ -480,3 +480,58 @@ printf "generation_lease=%s\n" "$(find "$tmp/state" -maxdepth 1 -name "*outstand
     [[ "$output" == *"stale_token_remains=1"* ]]
     [[ "$output" == *"generation_lease=1"* ]]
 }
+
+# test_necessity: special-type delivery must consume only its own read receipt;
+# a second unread message must remain unauthorized for mark-read after the
+# watcher acknowledges the clear command.
+@test "special mark-read receipt is limited to the delivered message id" {
+    run bash -c '
+set -euo pipefail
+root="'"$PROJECT_ROOT"'"
+tmp="$(mktemp -d)"
+mkdir -p "$tmp/queue/inbox" "$tmp/logs/inbox_read_receipts"
+cat > "$tmp/queue/inbox/fixture.yaml" <<YAML
+messages:
+- id: clear-1
+  from: karo
+  timestamp: '2026-09-02T00:00:00'
+  type: clear_command
+  content: /new
+  read: false
+- id: other-1
+  from: karo
+  timestamp: '2026-09-02T00:00:01'
+  type: task_supplement
+  content: other one
+  read: false
+- id: other-2
+  from: karo
+  timestamp: '2026-09-02T00:00:02'
+  type: report_received
+  content: other two
+  read: false
+YAML
+export SHOGUN_ROOT="$tmp"
+export INBOX_READ_RECEIPT_DIR="$tmp/logs/inbox_read_receipts"
+export INBOX_MARK_READ_ROOT_OVERRIDE="$tmp"
+export INBOX_MARK_READ_RECEIPT_DIR="$tmp/logs/inbox_read_receipts"
+export INBOX_WATCHER_LIB_ONLY=1
+source "$root/scripts/inbox_watcher.sh" fixture dummy-pane
+unset INBOX_WATCHER_LIB_ONLY
+mark_special_read clear-1
+if bash "$root/scripts/inbox_mark_read.sh" fixture other-1 >"$tmp/special-receipt-mark.out" 2>&1; then
+  echo "other_mark=unexpected_success"
+  exit 1
+fi
+grep -q "no inbox read receipt" "$tmp/special-receipt-mark.out"
+python3 - "$tmp/queue/inbox/fixture.yaml" <<'PY'
+import sys, yaml
+messages = yaml.safe_load(open(sys.argv[1], encoding="utf-8"))["messages"]
+state = {m["id"]: m["read"] for m in messages}
+assert state == {"clear-1": True, "other-1": False, "other-2": False}, state
+print("clear_read=1 other_read=0")
+PY
+'
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"clear_read=1 other_read=0"* ]]
+}
