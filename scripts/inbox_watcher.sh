@@ -591,7 +591,15 @@ priority_deadline_reached() {
 mark_special_read() {
     local message_id="$1"
     [ -n "$message_id" ] || return 1
-    bash "$SCRIPT_DIR/scripts/inbox_mark_read.sh" "$AGENT_ID" "$message_id" 2>/dev/null || true
+    # 2026-09-01 将軍 D0: receipt contract(cmd_karo_hotfix_inbox_processing_receipt)後、watcher の
+    # 特殊 type(clear_command/model_switch)既読化が『no inbox read receipt』で BLOCK され、stderr を
+    # 捨てていたため clear_command が未読のまま残り generation 変化ごとに /clear を再送した
+    # (軍師 17:35/17:43/18:13 の 3 回、recovery が毎回消えた)。mark 前に watcher 自身が receipt を発行し、
+    # BLOCK は log に残す(型5弾-2: 検証コマンドの stderr を捨てるな)。
+    bash "$SCRIPT_DIR/scripts/inbox_read.sh" "$AGENT_ID" >/dev/null 2>&1 || true
+    if ! bash "$SCRIPT_DIR/scripts/inbox_mark_read.sh" "$AGENT_ID" "$message_id" 2>&1 | grep -E "BLOCK|ERROR" >&2; then :; else
+        echo "[$(date)] [WARN] special-type mark_read failed for $AGENT_ID msg=$message_id (see BLOCK above)" >&2
+    fi
 }
 
 write_state_file() {
