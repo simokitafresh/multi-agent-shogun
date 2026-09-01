@@ -6063,7 +6063,10 @@ insights:
   priority: "low"
   source: "semantic_map_generate:new_file"
   fix_known: false
-  status: pending
+  status: resolved
+  resolved_reason: "一次確認で対象hookはtracked現存し、既存概念のsemantic辞書・インフラ設計意図で機能分類は充足。context/semantic-map.mdに対象pathの主要ファイル登録は未掲載だが、docs/semantic-index/index.mdには対象pathを含む既存cmd履歴4件があり、新概念追加は不要。主要ファイル欄へのpath昇格要否は別decision_candidateとして報告へ整理した。"
+  action_artifact: "target=queue/insights.yaml:INS-20260828-013204350-9aa7;primary=.claude/hooks/post-bash-commit-reminder.sh:tracked現存/git履歴確認;semantic=context/semantic-map.md:33,130;semantic_index=docs/semantic-index/index.md:2148,16252,15012,17435,17478,17505;memory=memory_db_query.sh --search INS-20260828-013204350-9aa7;decision_candidate=対象hookをsemantic_dictionary_designまたはinfra_design_intentの主要ファイル欄へ登録する要否を次回index生成cmdで判断"
+  resolved_at: "2026-09-01T21:58:39+09:00"
 - id: INS-20260828-013205457-d478
   ts: "2026-08-28T01:32:05+09:00"
   insight: "semantic_map_generate新規ファイル候補: `.claude/hooks/pre-bash-no-verify-guard.sh` は semantic index未登録。既存概念へのfile追加または新概念定義を検討せよ"
