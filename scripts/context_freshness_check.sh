@@ -1584,7 +1584,7 @@ def batch_source_commit_summaries(
         return {}
     summaries: dict[tuple[str, str], tuple[int, list[str]]] = {}
 
-    def global_history_ledger(repo_path: str, boundary_markers: set[str]) -> tuple[list[tuple[str, int, str, list[str]]], dict[str, tuple[int, bool]]] | None:
+    def global_history_ledger(repo_path: str, boundary_markers: set[str]) -> tuple[list[tuple[str, int, str, list[str], list[str]]], dict[str, tuple[int, bool]], dict[str, list[str]]] | None:
         """Build/read one generation-bound all-path history ledger per repo."""
         cache_dir = os.environ.get("CFC_GLOBAL_HISTORY_CACHE_DIR", "/tmp/cfc-global-history-v1")
         build_timeout = float(os.environ.get("CFC_GLOBAL_HISTORY_BUILD_TIMEOUT", "120"))
@@ -1599,8 +1599,9 @@ def batch_source_commit_summaries(
             head_file = os.path.join(git_dir, "HEAD")
             if os.path.isfile(head_file):
                 head_marker = open(head_file, encoding="utf-8").read().strip()
+            tip_ref = source_tip_ref(repo_path)
             tip_result = subprocess.run(
-                ["git", "-C", repo_path, "rev-parse", "HEAD"],
+                ["git", "-C", repo_path, "rev-parse", tip_ref],
                 check=False, capture_output=True, text=True, timeout=build_timeout,
             )
             if tip_result.returncode != 0 or not re.fullmatch(r"[0-9a-f]{40}", tip_result.stdout.strip()):
@@ -1619,7 +1620,7 @@ def batch_source_commit_summaries(
                         check=False, capture_output=True, text=True, timeout=build_timeout,
                     )
                     ancestor = subprocess.run(
-                        ["git", "-C", repo_path, "merge-base", "--is-ancestor", sha, "HEAD"],
+                        ["git", "-C", repo_path, "merge-base", "--is-ancestor", sha, tip_ref],
                         check=False, capture_output=True, text=True, timeout=build_timeout,
                     )
                     # returncode 1 is the normal, resolved-but-not-an-ancestor
@@ -1641,9 +1642,24 @@ def batch_source_commit_summaries(
                     if inspected is None:
                         return None
                     boundary_meta[inspected[0]] = inspected[1]
-            generation = hashlib.sha256((os.path.realpath(repo_path) + "\0" + head_marker + "\0" + tip_result.stdout.strip()).encode()).hexdigest()
+            generation = hashlib.sha256(
+                (
+                    os.path.realpath(repo_path)
+                    + "\0"
+                    + head_marker
+                    + "\0"
+                    + tip_ref
+                    + "\0"
+                    + tip_result.stdout.strip()
+                ).encode()
+            ).hexdigest()
             contract = json.dumps(
-                {"repo": os.path.realpath(repo_path), "generation": generation, "boundaries": boundary_meta},
+                {
+                    "repo": os.path.realpath(repo_path),
+                    "tip_ref": tip_ref,
+                    "generation": generation,
+                    "boundaries": boundary_meta,
+                },
                 sort_keys=True,
                 separators=(",", ":"),
             )
@@ -1653,22 +1669,54 @@ def batch_source_commit_summaries(
         except (OSError, subprocess.TimeoutExpired):
             return None
 
-        def read_ledger() -> tuple[list[tuple[str, int, str, list[str]]], dict[str, tuple[int, bool]]] | None:
+        def read_ledger() -> tuple[list[tuple[str, int, str, list[str], list[str]]], dict[str, tuple[int, bool]], dict[str, list[str]]] | None:
             try:
                 payload = json.load(open(cache_path, encoding="utf-8"))
-                if payload.get("schema") != "cfc-global-history-v1" or payload.get("contract") != contract:
+                if payload.get("schema") != "cfc-global-history-v2" or payload.get("contract") != contract:
                     return None
                 rows = payload.get("rows")
                 canonical = json.dumps(rows, sort_keys=True, separators=(",", ":"))
                 if payload.get("sha256") != hashlib.sha256(canonical.encode()).hexdigest():
                     return None
-                parsed = [(str(row[0]), int(row[1]), str(row[2]), [str(p) for p in row[3]])
-                          for row in rows if isinstance(row, list) and len(row) == 4 and isinstance(row[3], list)]
+                parsed = [
+                    (
+                        str(row[0]),
+                        int(row[1]),
+                        str(row[2]),
+                        [str(p) for p in row[3]],
+                        [str(p) for p in row[4]],
+                    )
+                    for row in rows
+                    if (
+                        isinstance(row, list)
+                        and len(row) == 5
+                        and isinstance(row[3], list)
+                        and isinstance(row[4], list)
+                    )
+                ]
                 if len(parsed) != len(rows):
                     return None
+                raw_parents = payload.get("parents")
+                if not isinstance(raw_parents, dict):
+                    return None
+                parents = {
+                    str(commit_hash): [str(parent) for parent in parent_hashes]
+                    for commit_hash, parent_hashes in raw_parents.items()
+                    if (
+                        re.fullmatch(r"[0-9a-f]{40}", str(commit_hash))
+                        and isinstance(parent_hashes, list)
+                        and all(re.fullmatch(r"[0-9a-f]{40}", str(parent)) for parent in parent_hashes)
+                    )
+                }
+                if len(parents) != len(raw_parents):
+                    return None
                 contract_boundaries = json.loads(contract).get("boundaries", {})
-                return parsed, {str(k): (int(v["epoch"]), bool(v["ancestor"]))
-                                for k, v in contract_boundaries.items()}
+                return (
+                    parsed,
+                    {str(k): (int(v["epoch"]), bool(v["ancestor"]))
+                     for k, v in contract_boundaries.items()},
+                    parents,
+                )
             except (OSError, ValueError, TypeError, KeyError):
                 return None
 
@@ -1686,14 +1734,25 @@ def batch_source_commit_summaries(
                 return cached
             try:
                 rev_result = subprocess.run(
-                    ["git", "-C", repo_path, "rev-list", "HEAD"],
+                    ["git", "-C", repo_path, "rev-list", "--parents", tip_ref],
                     check=False, capture_output=True, text=True, timeout=build_timeout,
                 )
             except (OSError, subprocess.TimeoutExpired):
                 return None
             if rev_result.returncode != 0:
                 return None
-            hashes = [line.strip() for line in rev_result.stdout.splitlines() if line.strip()]
+            history = [
+                line.split()
+                for line in rev_result.stdout.splitlines()
+                if line.strip()
+            ]
+            if any(
+                not row or not re.fullmatch(r"[0-9a-f]{40}", row[0])
+                for row in history
+            ):
+                return None
+            parents_by_hash = {row[0]: row[1:] for row in history}
+            hashes = [row[0] for row in history]
             # The producer has already resolved and ancestry-validated every
             # recorded boundary. Keep the exact boundary commits in the
             # ledger even when a merge commit has no printable diff row.
@@ -1727,7 +1786,13 @@ def batch_source_commit_summaries(
 
                     def flush() -> None:
                         if current_hash and current_subject:
-                            parsed.append([current_hash, current_epoch, current_subject, list(paths)])
+                            parsed.append([
+                                current_hash,
+                                current_epoch,
+                                current_subject,
+                                list(paths),
+                                list(parents_by_hash.get(current_hash, [])),
+                            ])
 
                     for line in result.stdout.splitlines():
                         if line.startswith("__CFC_G__\x00"):
@@ -1756,13 +1821,19 @@ def batch_source_commit_summaries(
                 # exactly such a merge commit.  Boundary presence is a graph
                 # fact, independent of whether that commit has a printable
                 # single-parent diff, so retain a metadata-only row after the
-                # producer has verified both resolution and HEAD ancestry.
+                # producer has verified both resolution and canonical-tip ancestry.
                 for meta in boundary_meta.values():
                     boundary_sha = str(meta["sha"])
                     if bool(meta["ancestor"]):
                         rows_by_hash.setdefault(
                             boundary_sha,
-                            [boundary_sha, int(meta["epoch"]), "[reviewed boundary]", []],
+                            [
+                                boundary_sha,
+                                int(meta["epoch"]),
+                                "[reviewed boundary]",
+                                [],
+                                list(parents_by_hash.get(boundary_sha, [])),
+                            ],
                         )
                 rows = list(rows_by_hash.values())
                 rows.sort(key=lambda row: int(row[1]), reverse=True)
@@ -1770,16 +1841,34 @@ def batch_source_commit_summaries(
             temp_fd, temp_path = tempfile.mkstemp(prefix=os.path.basename(cache_path) + ".", suffix=".tmp", dir=cache_dir)
             try:
                 with os.fdopen(temp_fd, "w", encoding="utf-8") as stream:
-                    json.dump({"schema": "cfc-global-history-v1", "contract": contract,
-                               "sha256": hashlib.sha256(canonical.encode()).hexdigest(), "rows": rows}, stream, sort_keys=True)
+                    json.dump(
+                        {
+                            "schema": "cfc-global-history-v2",
+                            "contract": contract,
+                            "sha256": hashlib.sha256(canonical.encode()).hexdigest(),
+                            "parents": parents_by_hash,
+                            "rows": rows,
+                        },
+                        stream,
+                        sort_keys=True,
+                    )
                     stream.flush(); os.fsync(stream.fileno())
                 os.replace(temp_path, cache_path)
             finally:
                 try: os.unlink(temp_path)
                 except FileNotFoundError: pass
-            return [(str(row[0]), int(row[1]), str(row[2]), [str(p) for p in row[3]]) for row in rows], {
+            return [
+                (
+                    str(row[0]),
+                    int(row[1]),
+                    str(row[2]),
+                    [str(p) for p in row[3]],
+                    [str(p) for p in row[4]],
+                )
+                for row in rows
+            ], {
                 str(k): (int(v["epoch"]), bool(v["ancestor"])) for k, v in boundary_meta.items()
-            }
+            }, parents_by_hash
         finally:
             fcntl.flock(fd, fcntl.LOCK_UN)
             os.close(fd)
@@ -1795,10 +1884,36 @@ def batch_source_commit_summaries(
             ledger_result = global_history_ledger(repo_path, boundary_markers)
             ledger = ledger_result[0] if ledger_result is not None else None
             boundary_metadata = ledger_result[1] if ledger_result is not None else {}
+            parents_by_hash = ledger_result[2] if ledger_result is not None else {}
             if ledger is None:
                 for project_id, rel_path, _abs_path, _updated_at, _markers in repo_members:
                     summaries[(project_id, rel_path)] = (-1, [])
                 continue
+            boundary_ancestors: dict[str, set[str]] = {}
+            for marker, (_epoch, is_ancestor) in boundary_metadata.items():
+                normalized_marker = marker[-40:]
+                if not is_ancestor:
+                    # A resolved boundary outside the canonical tip has no
+                    # exclusion effect, but remains a valid marker.
+                    boundary_ancestors[normalized_marker] = set()
+                    continue
+                resolved = next(
+                    (
+                        commit_hash
+                        for commit_hash in parents_by_hash
+                        if commit_hash.startswith(normalized_marker)
+                    ),
+                    normalized_marker,
+                )
+                ancestors: set[str] = set()
+                pending = [resolved]
+                while pending:
+                    current = pending.pop()
+                    if current in ancestors:
+                        continue
+                    ancestors.add(current)
+                    pending.extend(parents_by_hash.get(current, []))
+                boundary_ancestors[normalized_marker] = ancestors
             for project_id, rel_path, abs_path, updated_at, source_commits in repo_members:
                 pathspecs = SOURCE_CONTEXT_METADATA.get(rel_path, ("", "", ""))[2].split("|") if rel_path in SOURCE_CONTEXT_METADATA else []
                 cited_dirs = [p[len(CITED_PATHSPEC_PREFIX):] for p in pathspecs if p.startswith(CITED_PATHSPEC_PREFIX)]
@@ -1813,11 +1928,16 @@ def batch_source_commit_summaries(
                         if not is_ancestor:
                             found_boundaries.add(boundary)
                 count = 0; details: list[str] = []
-                for commit_hash, commit_epoch, subject, changed_paths in ledger:
+                for commit_hash, commit_epoch, subject, changed_paths, _parents in ledger:
                     short_hash = commit_hash[:12]
                     matching_boundary = next((boundary for boundary in boundaries if commit_hash.startswith(boundary)), None)
                     if matching_boundary:
-                        found_boundaries.add(matching_boundary); continue
+                        found_boundaries.add(matching_boundary)
+                    if any(
+                        commit_hash in boundary_ancestors.get(boundary, set())
+                        for boundary in boundaries
+                    ):
+                        continue
                     if plain_pathspecs or cited_dirs:
                         if not _commit_touches_relevant_path(changed_paths, plain_pathspecs, cited_dirs, cited_files):
                             continue
