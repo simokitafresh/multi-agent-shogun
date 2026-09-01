@@ -10644,7 +10644,10 @@ insights:
   priority: "medium"
   source: "manual"
   fix_known: false
-  status: pending
+  status: resolved
+  resolved_reason: "一次情報で現行不具合を再現。scripts/draft_review_approval.sh:111-112はreview_result通知にtask_id=commander_directive subject_task_id parent_cmdのidentity envelopeを付与せず、同通知を現行scripts/inbox_write.shへ渡すとrc=2でidentity envelope要求BLOCKとなる。今回のscopeはqueue/insights.yamlのみのためコードは未修正。別実装cmdで通知本文への自動envelope付与と回帰テスト追加をdecision_candidateとして整理した。"
+  action_artifact: "target=queue/insights.yaml:INS-20260831-030020711-83ee;primary=scripts/draft_review_approval.sh:L111-L112;primary=scripts/inbox_write.sh:L1122-L1152,L2407-L2412;reproducer=missing-envelope review_result to karo rc=2 BLOCK;decision_candidate=別実装cmdでdraft_review_approvalの通知にcommander envelopeを自動付与し回帰test追加"
+  resolved_at: "2026-09-01T11:56:36+09:00"
 - id: INS-20260831-031611827-4618
   ts: "2026-08-31T03:16:11+09:00"
   insight: "semantic_index_update新概念候補: discussion:C \\Users\\simok\\Downloads\\Agent Readiness Diagnostics dm signal com Simokitafresh は 既存aliasesに一致なし。概念定義とaliases追加を検討せよ"
