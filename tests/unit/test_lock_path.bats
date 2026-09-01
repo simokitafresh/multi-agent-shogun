@@ -9,6 +9,7 @@ setup() {
 
     mkdir -p "$FIXTURE_ROOT/scripts/lib" "$FIXTURE_ROOT/queue/inbox"
     cp "$PROJECT_ROOT/scripts/inbox_write.sh" "$FIXTURE_ROOT/scripts/inbox_write.sh"
+    cp "$PROJECT_ROOT/scripts/inbox_read.sh" "$FIXTURE_ROOT/scripts/inbox_read.sh"
     cp "$PROJECT_ROOT/scripts/inbox_mark_read.sh" "$FIXTURE_ROOT/scripts/inbox_mark_read.sh"
     cp "$PROJECT_ROOT/scripts/lib/lock_path.sh" "$FIXTURE_ROOT/scripts/lib/lock_path.sh"
     cp "$PROJECT_ROOT/scripts/lib/report_completion_events.sh" "$FIXTURE_ROOT/scripts/lib/report_completion_events.sh"
@@ -17,6 +18,23 @@ setup() {
 
 teardown() {
     find "$FIXTURE_ROOT" -depth -delete
+}
+
+mark_read_with_receipt() {
+    local agent="$1"
+    shift
+    local attempt
+    for attempt in {1..20}; do
+        SHOGUN_ROOT="$FIXTURE_ROOT" \
+            INBOX_READ_RECEIPT_DIR="$FIXTURE_ROOT/logs/inbox_read_receipts" \
+            bash "$FIXTURE_ROOT/scripts/inbox_read.sh" "$agent" >/dev/null
+        if INBOX_MARK_READ_ROOT_OVERRIDE="$FIXTURE_ROOT" \
+            INBOX_MARK_READ_RECEIPT_DIR="$FIXTURE_ROOT/logs/inbox_read_receipts" \
+            bash "$FIXTURE_ROOT/scripts/inbox_mark_read.sh" "$agent" "$@" >/dev/null; then
+            return 0
+        fi
+    done
+    return 1
 }
 
 @test "parallel append and mark-read preserve every message across repeated adversarial rounds" {
@@ -35,7 +53,7 @@ teardown() {
                 "old-${round}-${i}" wake_up fixture >/dev/null
         done
 
-        bash "$FIXTURE_ROOT/scripts/inbox_mark_read.sh" tobisaru "${old_ids[@]}" >/dev/null &
+        mark_read_with_receipt tobisaru "${old_ids[@]}" &
         local mark_pid=$!
         local writer_pids=()
         for ((i=1; i<=per_round; i++)); do
