@@ -488,7 +488,7 @@ PY
 @test "B32 negative control: unrelated tests and non-test ACs keep the original ceiling" {
   stage_real_test_fixtures \
     tests/unit/test_archive_completed_queue_flag_retention.bats \
-    tests/unit/test_inbox_write.bats
+    tests/unit/test_cli_ready.bats
 
   build_test_requiring_task cmd_b32_neg_related scripts/archive_completed.sh \
     "既存テストを拡張して両方向fixtureを固定する"
@@ -496,7 +496,7 @@ PY
 import sys, yaml
 paths = yaml.safe_load(open(sys.argv[1], encoding="utf-8"))["task"]["commit_contract"]["planned_paths"]
 assert "tests/unit/test_archive_completed_queue_flag_retention.bats" in paths, paths
-assert "tests/unit/test_inbox_write.bats" not in paths, paths
+assert "tests/unit/test_cli_ready.bats" not in paths, paths
 assert not any(p.startswith("scripts/") and p != "scripts/archive_completed.sh" for p in paths), paths
 PY
   if [ "$status" -ne 0 ]; then printf '%s\n' "$output" >&3; fi

@@ -12,6 +12,11 @@ setup() {
   ROOT="$(cd "$BATS_TEST_DIRNAME/../.." && pwd)"
   MON="$ROOT/scripts/ninja_monitor.sh"
   eval "$(sed -n '/^push_lane_integrate_remote()/,/^}/p' "$MON")"
+  # The production function is extracted in isolation, so provide the two
+  # helpers it normally receives from the full monitor process.
+  push_lane_log() { :; }
+  export -f push_lane_log
+  export PUSH_LANE_SAFE_FF_SCRIPT="$ROOT/scripts/safe_shared_main_ff.sh"
   ORIGIN="$BATS_TEST_TMPDIR/origin.git"
   LOCAL="$BATS_TEST_TMPDIR/local"
   OTHER="$BATS_TEST_TMPDIR/other"
