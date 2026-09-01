@@ -1190,7 +1190,7 @@ send_wakeup() {
             _lease_expired=0
             if [ -n "$_lease_file" ] && [ -e "$_lease_file" ] && [ "$current_task_fp" != "-" ]; then
                 _lease_scope_fp=""
-                IFS=$'\t' read -r _lease_generation _lease_count _lease_scope_fp < "$_lease_file" 2>/dev/null || true
+                IFS=$'\t' read -r _lease_generation _lease_count _lease_scope_fp _lease_inbox_fp < "$_lease_file" 2>/dev/null || true
                 if [ "$_lease_scope_fp" != "$current_task_fp" ]; then
                     rm -f -- "$_lease_file"
                     _lease_expired=1
