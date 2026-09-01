@@ -12408,7 +12408,10 @@ insights:
   priority: "medium"
   source: "manual"
   fix_known: false
-  status: pending
+  status: resolved
+  resolved_reason: 一次情報で実装現物と契約テストを確認。c2111a36a0a6ee333cba59974f635052b50ce677 が inbox_read の msg_id+content_hash+generation receipt 発行と inbox_mark_read の一致検証・消費を実装済みで、正規 runner の契約テスト29/29 PASS・SKIP0。追加実装・decision_candidate不要
+  action_artifact: commit=c2111a36a0a6ee333cba59974f635052b50ce677;files=scripts/inbox_read.sh,scripts/inbox_mark_read.sh;tests=23/23+6/6;receipt=msg_id+content_hash+generation;skip=0;decision_candidate=none
+  resolved_at: "2026-09-01T16:40:00+09:00"
 - id: INS-20260901-155649720-8888
   ts: "2026-09-01T15:56:49+09:00"
   insight: "[[マップを正本とartifactを更新して]] semantic_stress_test candidate_aliases: NO_MATCH source=lord query=マップを正本とartifactを更新して、つまりがあれば覚醒して解消して"
