@@ -11,7 +11,7 @@ setup() {
   STATE_DIR="$TEST_ROOT/state"
   LOG="$TEST_ROOT/monitor.log"
   EPOCHSECONDS=100
-  source <(sed -n '/^_failed_task_is_formally_closed()/,/^report_notification_completed()/p' \
+  source <(sed -n '/^_failed_task_has_matching_karo_fail_close()/,/^report_notification_completed()/p' \
     "$ROOT/scripts/ninja_monitor.sh" | sed '$d')
   yaml_field_get() {
     python3 - "$1" "$2" <<'PY'
@@ -33,6 +33,11 @@ PY
   }
   review_report_key() { printf 'report-key\n'; }
   review_report_fingerprint() { sha256sum "$1" | awk '{print $1}'; }
+  review_approval_value() {
+    local file="$1" key="$2"
+    [ -f "$file" ] || return 1
+    awk -F': ' -v key="$key" '$1 == key {sub(/^[^:]*: /, ""); print; exit}' "$file"
+  }
 }
 
 write_task() {
@@ -78,17 +83,17 @@ write_karo_approval() {
   [ "$status" -eq 1 ]
 }
 
-@test "terminal FAIL report formally closes failed generation without later notification" {
+@test "bare terminal FAIL report remains pending without Karo fail-close" {
   write_task
   write_fail_report
   REPORT_ACCEPTED_RC=0
   run _failed_task_preserve_before_respawn saizo
-  [ "$status" -eq 1 ]
+  [ "$status" -eq 0 ]
 }
 
 @test "matching Karo ACCEPT formally closes failed generation" {
   write_task
-  write_fail_report
+  write_fail_report failed
   write_karo_approval
   run _failed_task_preserve_before_respawn saizo
   [ "$status" -eq 1 ]
