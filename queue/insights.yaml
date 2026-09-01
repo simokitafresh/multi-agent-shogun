@@ -12126,8 +12126,11 @@ insights:
   insight: "shutsujin_departure.sh/reset_layout.shがCodex CLI 7paneを同時spawnし ~/.codex/logs_2.sqlite(4.8GB) の初期化ロックで忍者6名が全滅(2026-09-01 11:23)。Codex起動にstagger(数秒間隔+前paneの起動完了待ち)を埋め込め。加えてlogs_2.sqlite肥大の剪定"
   priority: "medium"
   source: "manual"
-  fix_known: false
-  status: pending
+  fix_known: true
+  status: resolved
+  resolved_reason: 一次情報で対象事象と現行実装を照合し、559c02538でCodex spawnの直列化・各pane CLI ready待ち・1GiB超logs_2.sqlite退避を実装、現HEADではscripts/lib/cli_ready.sh共通化とCLI-READY-ALERT失敗集約まで確認済み。関連unit 15/15 PASS、追加修正およびdecision_candidateは不要。
+  action_artifact: "target=queue/insights.yaml:INS-20260901-113912458-d957;source=git:559c02538a6068f803cbeb972d5d98121bc25b78;current=shutsujin_departure.sh+scripts/reset_layout.sh+scripts/lib/cli_ready.sh;tests=tests/unit/test_cli_ready.bats+tests/unit/test_reset_layout.bats 15/15 PASS;semantic=docs/semantic-index/index.md:L3287,L3290,L3293;context=context/infrastructure.md:L425-L426;decision_candidate=none"
+  resolved_at: "2026-09-01T15:25:11+09:00"
 - id: INS-20260901-114159128-4eea
   ts: "2026-09-01T11:41:59+09:00"
   insight: "script_size_alert 14件(cmd_complete_gate 15858行/ninja_monitor 15456行/deploy_task 11995行/cmd_save 7989行…)。分割は cmd_4403 系の成果と合流させて起票(将軍)。前提=分割後の速度計測before/after"
