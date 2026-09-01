@@ -286,7 +286,7 @@ PY
 fi
 
 assert_task_shared_source_clean() {
-    local task_file="$1" task_worktree="$2" shared_git_dir shared_repo dirty path
+    local task_file="$1" task_worktree="$2" shared_git_dir shared_repo dirty path shared_path task_path
     [ -n "$task_worktree" ] || return 0
     shared_git_dir="$(git -C "$task_worktree" rev-parse --path-format=absolute --git-common-dir 2>/dev/null || true)"
     [ -n "$shared_git_dir" ] || { echo "BLOCK: cannot resolve task worktree common Git dir" >&2; return 2; }
@@ -295,8 +295,22 @@ assert_task_shared_source_clean() {
     while IFS= read -r path; do
         [ -n "$path" ] || continue
         dirty="$(git -C "$shared_repo" status --porcelain --untracked-files=all -- "$path" 2>/dev/null || true)"
-        if [ -n "$dirty" ]; then
-            echo "BLOCK: shared source path was edited outside task worktree: $path" >&2
+        [ -n "$dirty" ] || continue
+        shared_path="$shared_repo/$path"
+        task_path="$task_worktree/$path"
+        # A linked task worktree and the shared checkout may both carry the
+        # same source edit.  Dirty status alone cannot distinguish that safe
+        # case from an actual conflict, so compare the bytes before blocking.
+        # Symlinks and non-regular files are intentionally fail-closed: cmp
+        # would otherwise follow an unexpected target or reject directories
+        # with an opaque diagnostic.
+        if [ ! -f "$shared_path" ] || [ -L "$shared_path" ] || \
+           [ ! -f "$task_path" ] || [ -L "$task_path" ]; then
+            echo "BLOCK: shared source path dirty but regular-file parity unavailable: $path" >&2
+            return 2
+        fi
+        if ! cmp -s -- "$shared_path" "$task_path"; then
+            echo "BLOCK: shared source path content differs from task worktree: $path" >&2
             return 2
         fi
     done < <(python3 - "$task_file" <<'PY'
