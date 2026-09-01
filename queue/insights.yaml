@@ -12551,3 +12551,10 @@ insights:
   source: "skill_script_refs:9abfd94ce2d8bec9"
   fix_known: false
   status: pending
+- id: INS-20260901-193327010-4bb5
+  ts: "2026-09-01T19:33:27+09:00"
+  insight: "semantic_index_update未登録[[リンク]]ターゲット: [[review未処理既読化]] は既存aliasesに一致なし。類似概念TOP3: file_rename(ファイルリネーム; alias=Drive整理; score=3.8) / tier_plan_mapping(Tier-プラン対応; alias=viewer_tiers; score=3.6) / codd_methodology(CoDD整合性駆動開発; alias=codd review; score=3.6)。概念定義とaliases追加を検討せよ"
+  priority: "low"
+  source: "semantic_index_update"
+  fix_known: false
+  status: pending
