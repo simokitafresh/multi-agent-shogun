@@ -145,17 +145,17 @@ verify_read_receipt() {
     [ "$AUTO_INFO_MODE" = true ] && return 0
     [ -n "$MSG_ID" ] || return 0
     local verified_file="/tmp/.imr_receipt_verified_$$"
-    python3 - "$INBOX" "$AGENT_ID" "$RECEIPT_FILE" "$ID_LIST_FILE" "$verified_file" "$REVIEW_LOG" <<'PY'
+    python3 - "$INBOX" "$AGENT_ID" "$RECEIPT_FILE" "$ID_LIST_FILE" "$verified_file" "$REVIEW_LOG" "$SCRIPT_DIR" <<'PY'
 import hashlib
 import json
 import os
 import re
 import sys
-from datetime import datetime, timezone
+from datetime import datetime, timezone, timedelta
 
 import yaml
 
-inbox, agent, receipt_path, ids_path, verified_path, review_log_path = sys.argv[1:]
+inbox, agent, receipt_path, ids_path, verified_path, review_log_path, script_root = sys.argv[1:]
 try:
     with open(receipt_path, encoding="utf-8") as fh:
         receipt = json.load(fh)
@@ -241,7 +241,8 @@ def parse_timestamp(value):
     except ValueError:
         return None
     if parsed.tzinfo is None:
-        parsed = parsed.replace(tzinfo=timezone.utc)
+        # Operational timestamps without an offset are local Japan time.
+        parsed = parsed.replace(tzinfo=timezone(timedelta(hours=9)))
     return parsed.astimezone(timezone.utc)
 
 
@@ -272,6 +273,28 @@ def report_name_from_content(content):
     return os.path.basename(match.group(1)) if match else ""
 
 
+def report_reference_from_message(message):
+    for key in ("report_path", "report_filename", "report_file", "report"):
+        value = message.get(key)
+        if isinstance(value, str) and value.strip():
+            return value.strip().strip("'\"")
+    return report_name_from_content(message.get("content"))
+
+
+def report_exists(report_reference):
+    reference = str(report_reference or "").strip().strip("'\"")
+    if not reference:
+        return False
+    candidates = []
+    if os.path.isabs(reference):
+        candidates.append(reference)
+    else:
+        candidates.append(os.path.join(script_root, reference))
+        if os.path.basename(reference) == reference:
+            candidates.append(os.path.join(script_root, "queue", "reports", reference))
+    return any(os.path.isfile(os.path.abspath(candidate)) for candidate in candidates)
+
+
 def entry_has_cmd_id(entry, cmd_id):
     if isinstance(entry, dict):
         if str(entry.get("cmd_id") or "") == cmd_id:
@@ -289,11 +312,20 @@ def entry_matches_report(entry, report_name):
     return bool(match and entry_has_cmd_id(entry, match.group(1)))
 
 
-review_messages = [
-    message for msg_id, message in ((msg_id, current[msg_id]) for msg_id in wanted)
-    if str(message.get("type") or "") in {"review_draft", "report_review"}
-]
-if review_messages:
+review_requirements = []
+for msg_id, message in ((msg_id, current[msg_id]) for msg_id in wanted):
+    # review_draft is a draft handoff, not proof that a report was reviewed.
+    # Its canonical inbox receipt is the complete mark-read contract.
+    if str(message.get("type") or "") != "report_review":
+        continue
+    report_reference = report_reference_from_message(message)
+    # review_draft may be a report-less draft handoff.  The canonical inbox
+    # receipt proves that message delivery was consumed; review_log matching
+    # is only meaningful once the referenced report exists.
+    if report_exists(report_reference):
+        review_requirements.append((message, os.path.basename(report_reference)))
+
+if review_requirements:
     try:
         with open(review_log_path, encoding="utf-8") as fh:
             review_data = yaml.safe_load(fh) or []
@@ -307,8 +339,7 @@ if review_messages:
         review_entries = [item for item in review_entries if isinstance(item, dict)]
     else:
         review_entries = []
-    for message in review_messages:
-        report_name = report_name_from_content(message.get("content"))
+    for message, report_name in review_requirements:
         message_at = parse_timestamp(message.get("timestamp"))
         matched = False
         if report_name and message_at is not None:
