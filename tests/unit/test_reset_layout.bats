@@ -46,7 +46,7 @@ SH
     grep -q -- 'send-keys -t shogun:agents.1 echo Enter' "$FAKE_TMUX_SEND_LOG"
 }
 
-@test "all reset send-keys calls have an immediately preceding shared guard and departure routes through reset" {
+@test "all reset send-keys calls have an immediately preceding shared guard and canonical departure owns layout" {
     reset="$PROJECT_ROOT/scripts/reset_layout.sh"
     sends="$(grep -cE '^[[:space:]]*tmux send-keys ' "$reset")"
     guards="$(grep -cE '^[[:space:]]*tmux_live_send_guard ' "$reset")"
@@ -57,5 +57,5 @@ SH
         { previous = $0 }
     ' "$reset"
     grep -q 'tmux_live_send_guard.sh' "$reset"
-    grep -q 'bash "\$SCRIPT_DIR/scripts/reset_layout.sh"' "$PROJECT_ROOT/scripts/shutsujin_departure.sh"
+    grep -q 'select-layout -t "\$AGENTS_WINDOW_TARGET"' "$PROJECT_ROOT/shutsujin_departure.sh"
 }
