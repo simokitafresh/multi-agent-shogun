@@ -16480,3 +16480,16 @@ sqlite3.Connection.backup()を使うとページ(4096byte)単位のread syscall�
 - **when**: 未設定
 - **how**: 未設定
 - origin/mainを選択するselectorとledgerがHEAD固定で分離すると、分岐cloneで全履歴を偽ALERT化する。marker行だけの除外も不十分で、merge/non-diff親を含む境界祖先集合をcacheへ保持する契約テストが必要。
+
+### L1694: run_tests task scope must use concrete test paths
+- **日付**: 2026-09-01
+- **出典**: cmd_karo_hotfix_inbox_processing_receipt_20260901
+- **記録者**: hayate
+- **tags**: [infra,inbox,testing,git]
+- **subdomain**: infra
+- **target_files**: [scripts/inbox_read.sh,scripts/inbox_mark_read.sh,tests/unit/test_inbox_mark_read.bats,tests/unit/test_inbox_mark_read_bulk_guard.bats,tests/unit/test_inbox_processing_receipt.bats]
+- **origin**: [[cmd_karo_hotfix_inbox_processing_receipt_20260901]]
+- **enforcement**: 未自動化
+- **when**: 未設定
+- **how**: 未設定
+- Bare tests/unit in target_path is treated as a concrete selected test and causes task-mode rc=2; concrete test paths must be declared in commit_contract.planned_paths.
