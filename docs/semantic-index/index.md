@@ -6311,7 +6311,6 @@ codd:
 | causal_chain | `[[cmd_karo_ci_fix_33122914110_shard_inventory_ledger_r2_20260828]]` (L1660) |
 | causal_chain | `[[cmd_karo_hotfix_review_bundle_single_precheck_na_20260828]]` (L1663) |
 | causal_chain | `[[cmd_karo_hotfix_report_unit_lock_residue_20260831135838]]` (L1690) |
-| causal_chain | `[[cmd_karo_hotfix_report_only_dirty_contract_20260901]]` (L1697) |
 
 ## no_auto_extinguish — 自動消火禁止
 
@@ -9941,6 +9940,7 @@ codd:
 | discussion | `queue/lord_conversation.jsonl` 2026-08-31T19:14:13+09:00 dm-signal-lp-seo-plan_20260830.mdとdm-login-showcase-asis-tobe_v3_20260830.mdinbox1 |
 | discussion | `queue/lord_conversation.jsonl` 2026-09-01T19:53:28+09:00 パスワードローテーションをしたらfreeのパスワードも変わってfreeのパスワードだけ無効みたいだ。他のtierは問題なく正しくログインできる。調査して対策を報告してくれ |
 | discussion | `queue/lord_conversation.jsonl` 2026-09-01T20:01:20+09:00 なぜ他のtierは問題なくローテーション後のパスワードでログインできて、freeだけだめだったんだ？ |
+| discussion | `queue/lord_conversation.jsonl` 2026-09-01T20:26:14+09:00 session_save_20260901_2026(先に session_save_20260901_1928 を読め) 第22便 19:28-20:26: ①殿下問『T212 副作用』→roadmap v1.2 整合(SBFM 誤遮断) |
 | causal_chain | `[[cmd_reflux_backlink_202607281529_hanzo]]` (L1433) |
 | causal_chain | `[[cmd_4202]]` (L1500) |
 | causal_chain | `[[cmd_karo_hotfix_report_shared_provenance_fp_20260802]]` (L1521) |
@@ -12597,7 +12597,6 @@ codd:
 | causal_chain | `[[cmd_karo_impl_a6_preflight_timeout_20260727]]` (L1387) |
 | causal_chain | `[[cmd_karo_persist_strong_new_game_checkpoint_20260730]]` (L1483) |
 | causal_chain | `[[cmd_karo_hotfix_pending_decision_infra_bundle_20260828]]` (L1667) |
-| causal_chain | `[[cmd_karo_hotfix_review_processing_receipt_20260901]]` (L1696) |
 
 ## gunshi_review_lifecycle — 軍師レビューライフサイクル
 
