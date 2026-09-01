@@ -562,12 +562,18 @@ def install_cron(args: argparse.Namespace) -> dict[str, Any]:
     # ~/.nvm/.../bin/gws); cron needs that absolute launcher path, not the
     # implementation target behind it.
     gws_bin = str(configured_gws.absolute())
+    # ``gws`` is a Node launcher whose shebang is ``/usr/bin/env node``.
+    # Keep its parent first so cron can resolve node in the same isolated
+    # environment, while retaining the system directories needed by python3.
+    cron_path = f"{configured_gws.parent}:/usr/bin:/bin"
     command = " ".join(
         [
             "cd",
             shlex_quote(str(root)),
             "&&",
             "/usr/bin/flock -n /tmp/shogun-drive-backup.lock",
+            "/usr/bin/env",
+            f"PATH={shlex_quote(cron_path)}",
             f"SHOGUN_GWS_BIN={shlex_quote(gws_bin)}",
             "python3",
             shlex_quote(str(script)),
