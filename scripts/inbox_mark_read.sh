@@ -1,4 +1,5 @@
 #!/bin/bash
+# Receipt contract provenance: cmd_karo_hotfix_inbox_processing_receipt_20260901.
 # semantic-links: [[YAML安全書込み]], [[inbox処理規律]]
 # inbox_mark_read.sh — inboxメッセージの既読化（排他ロック＋アトミック書込み）
 # Usage: bash scripts/inbox_mark_read.sh <agent_id> <msg_id...>

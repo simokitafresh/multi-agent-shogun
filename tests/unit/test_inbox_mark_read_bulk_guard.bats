@@ -1,4 +1,5 @@
 #!/usr/bin/env bats
+# Receipt contract provenance: cmd_karo_hotfix_inbox_processing_receipt_20260901.
 # test_necessity: the legacy bulk heuristic is observe-only by default, while
 # an explicit enforcement mode remains available; every normal mark requires
 # a read receipt and --auto-info remains exempt. Invariant guards 2026-09-01

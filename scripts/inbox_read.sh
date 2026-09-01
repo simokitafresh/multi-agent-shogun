@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+# Receipt contract provenance: cmd_karo_hotfix_inbox_processing_receipt_20260901.
 set -euo pipefail
 
 # Codex has no dedicated Read tool, while inbox_mark_read's safety guard

@@ -1,4 +1,5 @@
 #!/usr/bin/env bats
+# Receipt contract provenance: cmd_karo_hotfix_inbox_processing_receipt_20260901.
 # test_necessity: Bulk override cannot consume later messages, and block scalar body indentation never creates a message record boundary; violation is BLOCK.
 # inbox_mark_read.sh unit tests (cmd_cycle_002)
 

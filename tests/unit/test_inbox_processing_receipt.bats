@@ -1,4 +1,5 @@
 #!/usr/bin/env bats
+# Receipt contract provenance: cmd_karo_hotfix_inbox_processing_receipt_20260901.
 # test_necessity: exact read receipt identity is required before read-state
 # mutation; no-receipt, tamper, stale-generation, retry, and fast-path cases
 # are permanent inbox safety invariants.
