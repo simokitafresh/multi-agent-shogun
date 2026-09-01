@@ -10815,6 +10815,7 @@ insights:
   resolved_reason: "一次情報で現HEADがdedupe実装群を祖先に含むことと、現行monitor/inboxの安定generation・approval marker・unread request再送制御を確認。3e5b409f7でmain合流済みのため新規コード修正・decision_candidateは不要。"
   action_artifact: "target=queue/insights.yaml:INS-20260831-075313459-2ec4;git=25096df744fda777ef1cfe3aa17626737f908bf3,3e5b409f79d2ad5d0c4bb3ea93e9851dcf564758;implementation=scripts/ninja_monitor.sh:5020-5150,10513-10695;scripts/inbox_write.sh:935-990;context=context/infrastructure.md:420;tests=tests/unit/test_ninja_monitor_stall.bats:test stable generation"
   resolved_at: "2026-09-01T12:20:47+09:00"
+  occurrence_count: 1
 - id: INS-20260831-084829980-14ad
   ts: "2026-08-31T08:48:29+09:00"
   insight: "semantic_index_update新概念候補: discussion:task notification task type artifact watch lifecycle task type summary Stopped w は 既存aliasesに一致なし。概念定義とaliases追加を検討せよ"
@@ -12161,4 +12162,7 @@ insights:
   priority: "low"
   source: "semantic_index_update"
   fix_known: false
-  status: pending
+  status: resolved
+  resolved_reason: "semantic map generation verified the candidate is represented or intentionally ignored"
+  action_artifact: "semantic_map=/home/simokitafresh/multi-agent-shogun/context/semantic-map.md;semantic_index=/home/simokitafresh/multi-agent-shogun/docs/semantic-index/index.md"
+  resolved_at: "2026-09-01T12:28:23+09:00"
