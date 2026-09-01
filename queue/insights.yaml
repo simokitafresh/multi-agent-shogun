@@ -12112,3 +12112,10 @@ insights:
   source: "manual"
   fix_known: false
   status: pending
+- id: INS-20260901-114159128-4eea
+  ts: "2026-09-01T11:41:59+09:00"
+  insight: "script_size_alert 14件(cmd_complete_gate 15858行/ninja_monitor 15456行/deploy_task 11995行/cmd_save 7989行…)。分割は cmd_4403 系の成果と合流させて起票(将軍)。前提=分割後の速度計測before/after"
+  priority: "medium"
+  source: "manual"
+  fix_known: false
+  status: pending
