@@ -11770,7 +11770,10 @@ insights:
   priority: "low"
   source: "semantic_map_generate:new_file"
   fix_known: false
-  status: pending
+  status: resolved
+  resolved_reason: "一次情報で対象fixtureの存在とcmd_4438実装済みを確認。既存概念provisional_run_testsは存在するがsemantic indexへの当該ファイル登録は未解決のため、既存概念へのfile追加をdecision_candidateとして報告する。"
+  action_artifact: "target=queue/insights.yaml:INS-20260831-175631007-6b07;primary=tests/unit/test_run_tests_external_package.bats,git:68fa15f87,docs/semantic-index/index.md:provisional_run_tests;decision_candidate=add_file_to_existing_concept;code_fix=none"
+  resolved_at: "2026-09-02T03:09:11+09:00"
 - id: INS-20260831-175836057-09d2
   ts: "2026-08-31T17:58:36+09:00"
   insight: "semantic_index_update新概念候補: discussion:Image チャートはこの形式にしよう は 既存aliasesに一致なし。概念定義とaliases追加を検討せよ"
