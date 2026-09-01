@@ -1,4 +1,107 @@
 entries:
+- id: 'blt_20260901_151901_01e0da'
+  content: |-
+    GATE CLEAR cmd_reflux_insight_202609011503_hayate: 完了
+  posted_by: 'karo'
+  posted_at: '2026-09-01T15:19:01'
+  requires_confirmation: false
+  action_type: 'info'
+  actioned_by: ''
+  notify_targets: []
+  confirmed_by: []
+  status: 'open'
+- id: 'blt_20260901_151846_e49629'
+  content: |-
+    [URGENT-HARM] GA-540 doc lane routing。infrastructure.mdはGA-539で15:00更新済みだが、その後のsource commitsを再検知。前回の忍者配備はDOC_LANE_ROUTINGでBLOCK済みのため再試行せず、将軍doc laneで新規commitの索引要否・同日last_updated粒度・更新trigger再発を確認し、cache bypassでALERT0まで処理されたし。集計コマンド=CONTEXT_FRESHNESS_GATE_DISABLE_CACHE=1 bash scripts/gates/gate_context_freshness.sh。出力行の生貼付=ALERT: infrastructure.md source commits since last_updated=2026-09-01。1件の定義=context 1 fileのfreshness ALERT行1行。
+  posted_by: 'karo'
+  posted_at: '2026-09-01T15:18:46'
+  requires_confirmation: false
+  action_type: 'info'
+  actioned_by: ''
+  notify_targets:
+    - 'shogun'
+  confirmed_by: []
+  status: 'open'
+- id: 'blt_20260901_151820_835d0f'
+  content: |-
+    DOC_LANE_ALERT: context=context/infrastructure.md raw_alert=ALERT: context/infrastructure.md source commits 15件 since last_updated=2026-09-01 repo=/home/simokitafresh/multi-agent-shogun root_fallback=no timeout=360s/360s owner=infra-platform update_trigger=.github|.githooks|config|docs/rule|docs/knowledge-base|instructions|scripts|skills|tests|AGENTS.md|CLAUDE.md|CONTRIBUTING.md|LICENSE|Makefile|SECURITY.md|first_setup.sh|install.bat|lefthook-local.yml|lefthook.yml|project_lexicon.yaml|setup.sh|shutsujin_departure.sh。更新要否を確認せよ latest: e375da1f2c1c pre-commit deleted_ref v4 (karo REJECT 15:02 反映): bypass は JSONL append→read-back→json 一致の postcondition が成立した時のみ rc0、writer/parse 失敗は BLOCK rc1(『記録なし bypass』を構造的に不可能に)。unwritable fixture(logs が通常 file)で rc1+BLOCKED+bypass 不成立、bats 9/9 | a805a74d68c0 instructions/shogun.md: 復帰後の型 第二十弾 4則 (2026-09-01 第21便: 前便 commit が CI を壊す/呼出し元 census に tests/、仮説の手元否定を利他で渡す、backlog worktree 回収、家老レビュー 3 往復で entrypoint 契約) | 9de79b9a1a98 pre-commit deleted_ref v3 (karo REJECT 14:59 反映): enforcement を precommit_enforce_deleted_refs() に関数化、justification は空白除去後 nonempty で判定(空白のみ=BLOCK)、JSONL は python json.dumps で確実に parse 可能。entrypoint 契約 4 件追加(EXACT+env なし rc1/空白 env rc1/非空 env rc0+JSONL parse PASS/BASENAME のみ rc0+WARN)、bats 8/8 action: bash scripts/context_source_commit_set.sh context/infrastructure.md e375da1f2c1c 'context_freshness reviewed source boundary' 'context_freshness_check context=context/infrastructure.md commit=e375da1f2c1c'
+  posted_by: 'gate_context_freshness'
+  posted_at: '2026-09-01T15:18:20'
+  requires_confirmation: false
+  action_type: 'action_required'
+  actioned_by: ''
+  notify_targets:
+    - 'shogun'
+  confirmed_by:
+    - 'shogun'
+  status: 'closed'
+- id: 'blt_20260901_151137_5a1bc4'
+  content: |-
+    [cmd_karo_hotfix_deploy_remote_tip_directory_v3_20260901] 再提出版LGTM。家老実配備success(DEPLOY_RECEIPT rc=0)でAC2成立。全bc=yes。precheck ERRORS=1はD0 commit(f6e851ec)の共有dirty(影丸scope外)。集計コマンド: grep result queue/reports/kagemaru_report_cmd_karo_hotfix_deploy_remote_tip_directory_v3_20260901.yaml | grep yes | wc -l。出力行の生貼付: 5。1件の定義: binary_checksのresult=yesの件数
+  posted_by: 'gunshi'
+  posted_at: '2026-09-01T15:11:37'
+  requires_confirmation: false
+  action_type: 'info'
+  actioned_by: ''
+  notify_targets: []
+  confirmed_by:
+    - 'karo'
+  status: 'open'
+- id: 'blt_20260901_150650_090843'
+  content: |-
+    GATE CLEAR cmd_reflux_insight_202609011438_saizo: 完了
+  posted_by: 'karo'
+  posted_at: '2026-09-01T15:06:50'
+  requires_confirmation: false
+  action_type: 'info'
+  actioned_by: ''
+  notify_targets: []
+  confirmed_by: []
+  status: 'open'
+- id: 'blt_20260901_143905_64f2a3'
+  content: |-
+    GATE CLEAR cmd_karo_ci_fix_33471638966_reset_layout_20260901: 完了
+  posted_by: 'karo'
+  posted_at: '2026-09-01T14:39:05'
+  requires_confirmation: false
+  action_type: 'info'
+  actioned_by: ''
+  notify_targets: []
+  confirmed_by: []
+  status: 'open'
+- id: 'blt_20260901_142915_563860'
+  content: |-
+    GATE CLEAR cmd_karo_hotfix_deploy_remote_tip_directory_v2_20260901: 完了
+  posted_by: 'karo'
+  posted_at: '2026-09-01T14:29:15'
+  requires_confirmation: false
+  action_type: 'info'
+  actioned_by: ''
+  notify_targets: []
+  confirmed_by: []
+  status: 'open'
+- id: 'blt_20260901_142833_88fbd5'
+  content: |-
+    GATE CLEAR cmd_karo_hotfix_inbox_lease_contracts_20260901: 完了
+  posted_by: 'karo'
+  posted_at: '2026-09-01T14:28:33'
+  requires_confirmation: false
+  action_type: 'info'
+  actioned_by: ''
+  notify_targets: []
+  confirmed_by: []
+  status: 'open'
+- id: 'blt_20260901_141659_a24573'
+  content: |-
+    GATE CLEAR cmd_karo_hotfix_review_generation_multientry_20260901: 完了
+  posted_by: 'karo'
+  posted_at: '2026-09-01T14:16:59'
+  requires_confirmation: false
+  action_type: 'info'
+  actioned_by: ''
+  notify_targets: []
+  confirmed_by: []
+  status: 'open'
 - id: 'blt_20260901_141129_673ba7'
   content: |-
     GATE CLEAR cmd_karo_hotfix_pending_shelved_count_v2_20260901: 完了
@@ -18,6 +121,7 @@ entries:
   requires_confirmation: false
   action_type: 'info'
   actioned_by: ''
+  notify_targets: []
   confirmed_by: []
   status: 'open'
 - id: 'blt_20260901_134907_a815db'
@@ -28,6 +132,7 @@ entries:
   requires_confirmation: false
   action_type: 'info'
   actioned_by: ''
+  notify_targets: []
   confirmed_by: []
   status: 'open'
 - id: 'blt_20260901_134904_b4d6b8'
@@ -38,6 +143,7 @@ entries:
   requires_confirmation: false
   action_type: 'info'
   actioned_by: ''
+  notify_targets: []
   confirmed_by:
     - 'shogun'
   status: 'open'
@@ -49,6 +155,7 @@ entries:
   requires_confirmation: false
   action_type: 'info'
   actioned_by: ''
+  notify_targets: []
   confirmed_by: []
   status: 'open'
 - id: 'blt_20260901_133010_a0f400'
@@ -59,6 +166,7 @@ entries:
   requires_confirmation: false
   action_type: 'info'
   actioned_by: ''
+  notify_targets: []
   confirmed_by: []
   status: 'open'
 - id: 'blt_20260901_124451_84db2a'
@@ -69,6 +177,7 @@ entries:
   requires_confirmation: false
   action_type: 'info'
   actioned_by: ''
+  notify_targets: []
   confirmed_by: []
   status: 'open'
 - id: 'blt_20260901_124313_78306e'
@@ -79,6 +188,7 @@ entries:
   requires_confirmation: false
   action_type: 'info'
   actioned_by: ''
+  notify_targets: []
   confirmed_by: []
   status: 'open'
 - id: 'blt_20260901_124228_34272a'
@@ -89,6 +199,7 @@ entries:
   requires_confirmation: false
   action_type: 'info'
   actioned_by: ''
+  notify_targets: []
   confirmed_by: []
   status: 'open'
 - id: 'blt_20260901_123428_6da961'
@@ -99,6 +210,7 @@ entries:
   requires_confirmation: false
   action_type: 'info'
   actioned_by: ''
+  notify_targets: []
   confirmed_by: []
   status: 'open'
 - id: 'blt_20260901_122023_252f11'
@@ -109,6 +221,7 @@ entries:
   requires_confirmation: false
   action_type: 'info'
   actioned_by: ''
+  notify_targets: []
   confirmed_by: []
   status: 'open'
 - id: 'blt_20260901_121347_3a4aae'
@@ -119,6 +232,7 @@ entries:
   requires_confirmation: false
   action_type: 'info'
   actioned_by: ''
+  notify_targets: []
   confirmed_by: []
   status: 'open'
 - id: 'blt_20260901_115333_79dfd2'
@@ -131,6 +245,7 @@ entries:
   requires_confirmation: false
   action_type: 'info'
   actioned_by: ''
+  notify_targets: []
   confirmed_by: []
   status: 'open'
 - id: 'blt_20260901_114004_dade83'
@@ -141,6 +256,7 @@ entries:
   requires_confirmation: false
   action_type: 'info'
   actioned_by: ''
+  notify_targets: []
   confirmed_by: []
   status: 'open'
 - id: 'blt_20260901_111654_d6fc1b'
@@ -151,6 +267,7 @@ entries:
   requires_confirmation: false
   action_type: 'info'
   actioned_by: ''
+  notify_targets: []
   confirmed_by: []
   status: 'open'
 - id: 'blt_20260901_111216_247ebb'
@@ -161,6 +278,7 @@ entries:
   requires_confirmation: false
   action_type: 'info'
   actioned_by: ''
+  notify_targets: []
   confirmed_by: []
   status: 'open'
 - id: 'blt_20260831_212054_322720'
@@ -171,6 +289,7 @@ entries:
   requires_confirmation: false
   action_type: 'info'
   actioned_by: ''
+  notify_targets: []
   confirmed_by: []
   status: 'open'
 - id: 'blt_20260831_205054_022c50'
@@ -181,6 +300,7 @@ entries:
   requires_confirmation: false
   action_type: 'info'
   actioned_by: ''
+  notify_targets: []
   confirmed_by: []
   status: 'open'
 - id: 'blt_20260831_202426_f785c9'
@@ -191,6 +311,7 @@ entries:
   requires_confirmation: false
   action_type: 'info'
   actioned_by: ''
+  notify_targets: []
   confirmed_by: []
   status: 'open'
 - id: 'blt_20260831_200004_2cc931'
@@ -201,6 +322,7 @@ entries:
   requires_confirmation: false
   action_type: 'info'
   actioned_by: ''
+  notify_targets: []
   confirmed_by: []
   status: 'open'
 - id: 'blt_20260831_195258_0df84a'
@@ -211,6 +333,7 @@ entries:
   requires_confirmation: false
   action_type: 'info'
   actioned_by: ''
+  notify_targets: []
   confirmed_by: []
   status: 'open'
 - id: 'blt_20260831_193835_272557'
@@ -221,6 +344,7 @@ entries:
   requires_confirmation: false
   action_type: 'info'
   actioned_by: ''
+  notify_targets: []
   confirmed_by: []
   status: 'open'
 - id: 'blt_20260831_193727_35bbb0'
@@ -231,6 +355,7 @@ entries:
   requires_confirmation: false
   action_type: 'info'
   actioned_by: ''
+  notify_targets: []
   confirmed_by: []
   status: 'open'
 - id: 'blt_20260831_192923_bb322b'
@@ -241,76 +366,6 @@ entries:
   requires_confirmation: false
   action_type: 'info'
   actioned_by: ''
-  confirmed_by: []
-  status: 'open'
-- id: 'blt_20260831_184602_a17429'
-  content: |-
-    GATE CLEAR cmd_4438: run_tests.sh の external scope 契約根治 — frontend 限定の npm 経路を任意 package root(lp 等)へ一般化し typecheck/build receipt を正規記録する
-  posted_by: 'karo'
-  posted_at: '2026-08-31T18:46:02'
-  requires_confirmation: false
-  action_type: 'info'
-  actioned_by: ''
-  confirmed_by: []
-  status: 'open'
-- id: 'blt_20260831_184349_f61e1e'
-  content: |-
-    GATE CLEAR cmd_karo_hotfix_auto_push_helper_mode_202608311815: 完了
-  posted_by: 'karo'
-  posted_at: '2026-08-31T18:43:49'
-  requires_confirmation: false
-  action_type: 'info'
-  actioned_by: ''
-  confirmed_by: []
-  status: 'open'
-- id: 'blt_20260831_182317_8f719c'
-  content: |-
-    GATE CLEAR cmd_karo_hotfix_report_unit_lock_residue_20260831135838: 完了
-  posted_by: 'karo'
-  posted_at: '2026-08-31T18:23:17'
-  requires_confirmation: false
-  action_type: 'info'
-  actioned_by: ''
-  confirmed_by: []
-  status: 'open'
-- id: 'blt_20260831_181851_b021e3'
-  content: |-
-    GATE CLEAR cmd_reflux_insight_202608311442_kotaro: 完了
-  posted_by: 'karo'
-  posted_at: '2026-08-31T18:18:51'
-  requires_confirmation: false
-  action_type: 'info'
-  actioned_by: ''
-  confirmed_by: []
-  status: 'open'
-- id: 'blt_20260831_181821_1cc40d'
-  content: |-
-    GATE CLEAR cmd_reflux_insight_202608311234_hayate: 完了
-  posted_by: 'karo'
-  posted_at: '2026-08-31T18:18:21'
-  requires_confirmation: false
-  action_type: 'info'
-  actioned_by: ''
-  confirmed_by: []
-  status: 'open'
-- id: 'blt_20260831_181448_4f910f'
-  content: |-
-    18:11下知処理。(1)auto-push真因=cmd_complete_gate.shがhelperをbashで呼ぶのに事前判定だけ-xを要求、tracked mode100644ゆえhelper_missing固定。mode判定hotfixを半蔵へkaro-direct配備準備中。(2)review世代根治はsource 3e5b409f remote包含、GATE CLEAR、cmd-complete archive完了。(3)影丸4438はrunner+fixtureの2commit後、最終HEAD receipt再取得中。軍師はhayateとsaizoをprecheck0でLGTM処理中、tobisaruは次便。集計コマンド=stat/git ls-files/cmd_complete_gate該当関数+pane+gate log。出力行の生貼付=helper mode100644/-x false; review根治172/172・loss0・GATE CLEAR; 4438 commits 738be2d7+68fa15f8; hayate/saizo precheck ERRORS0。1件の定義=helper判定1件、unit test1件、commit1件、report review1件。
-  posted_by: 'karo'
-  posted_at: '2026-08-31T18:14:48'
-  requires_confirmation: false
-  action_type: 'info'
-  actioned_by: ''
-  confirmed_by:
-    - 'shogun'
-  status: 'open'
-- id: 'blt_20260831_164057_7d57af'
-  content: |-
-    GATE CLEAR cmd_4433: LP に Basic-DualMomentum の static チャートを表示 — showcase EP に hero 月次累積系列を追加し compare chart スタイルの静的 SVG を描画する
-  posted_by: 'karo'
-  posted_at: '2026-08-31T16:40:57'
-  requires_confirmation: false
-  action_type: 'info'
-  actioned_by: ''
+  notify_targets: []
   confirmed_by: []
   status: 'open'
