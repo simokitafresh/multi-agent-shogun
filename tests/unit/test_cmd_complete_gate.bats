@@ -2445,6 +2445,27 @@ EOF
     [[ "$output" == *"BLOCK_REASONS="* ]]
 }
 
+# test_necessity: Non-/api web routes (/faq/en/, /signals/2026-08) are HTTP
+# destinations, not repository files; an extension-less absolute ref that does
+# not exist on disk must never be counted as a missing files_modified entry.
+# regression_justification: cmd_4440 was BLOCKed 15h (2026-08-31 21:16) because
+# "/faq/en/" in the command was extracted as a missing file while the real
+# change lp/components/landing-page.tsx was recorded.
+@test "command/files_modified coverage ignores non-api web routes" {
+    _write_command_coverage_fixture \
+        "LP の EN 側 FAQ href を /faq/en/ へ変更する。/signals/2026-08 も同様に更新し lp/components/landing-page.tsx を修正" \
+        "  - path: lp/components/landing-page.tsx
+    change: modified" \
+        "lp"
+
+    run _run_command_files_modified_coverage_with_state
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"OK (command欄ファイル参照 全1件がfiles_modifiedに記載済み)"* ]]
+    [[ "$output" != *"missing: /faq/en"* ]]
+    [[ "$output" != *"missing: /signals/2026-08"* ]]
+    [[ "$output" == *"ALL_CLEAR=true"* ]]
+}
+
 # test_necessity: An API route must be ignored while a real repository file in
 # the same command remains covered by files_modified.
 # regression_justification: A broad route exemption could hide a genuine

@@ -10888,9 +10888,19 @@ def is_probable_api_route_or_url(ref):
     clean_ref = ref.strip().strip("`'\".,:;()[]{}")
     if re.match(r"^(?:https?|ftp)://", clean_ref, re.IGNORECASE):
         return True
-    if clean_ref != "/api" and not clean_ref.startswith("/api/"):
+    if not clean_ref.startswith("/"):
+        return False
+    # cmd_4440 (2026-08-31): a web route such as /faq/en/ or /signals/2026-08
+    # was extracted as a missing file. Any absolute ref whose basename has no
+    # extension and which does not exist on disk (absolute or repo-relative)
+    # is an HTTP route, not a repository path. Extension-bearing refs and
+    # existing files keep the true-positive scope check unchanged.
+    route_like = "." not in os.path.basename(clean_ref.rstrip("/"))
+    if not (clean_ref == "/api" or clean_ref.startswith("/api/") or route_like):
         return False
     if any(ref_matches_target(clean_ref, target) for target in target_paths):
+        return False
+    if route_like and os.path.exists(clean_ref):
         return False
     if script_dir:
         candidate = os.path.join(script_dir, clean_ref.lstrip("/"))
