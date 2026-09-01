@@ -407,7 +407,7 @@ push_lane_log() {
 # 自動 commit し、merge の stderr は捨てずに log へ残す(型5弾-2)。
 push_lane_autocommit_runtime_ledgers() {
     local repo="$1"
-    local -a ledgers=(queue/insights.yaml queue/bulletin_board.yaml docs/semantic-index/index.md queue/shogun_todo_map_timestamps.tsv projects/infra/lessons.yaml)
+    local -a ledgers=(queue/insights.yaml queue/bulletin_board.yaml docs/semantic-index/index.md queue/shogun_todo_map_timestamps.tsv projects/infra/lessons.yaml logs/karo_workarounds.yaml projects/infra/lessons_karo.yaml projects/infra/lessons_gunshi.yaml)
     local -a dirty=() p
     for p in "${ledgers[@]}"; do
         [ -f "$repo/$p" ] || continue
