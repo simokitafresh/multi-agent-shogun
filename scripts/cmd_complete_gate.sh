@@ -6464,7 +6464,11 @@ run_codd_propagate_update() {
         return 0
     fi
 
-    output=$(PATH="${HOME}/.codd-venv/bin:$PATH" timeout "$timeout_sec" "$codd_bin" propagate --path "$codd_path" --update 2>&1)
+    # 2026-09-01 15:19/15:39 実測: codd propagate は headless `claude --print` を起動し、
+    # その SessionStart/UserPromptSubmit hook が継承 TMUX_PANE(%0=将軍 pane)で
+    # agent=shogun と解決→将軍の deepdive marker 書換+CoDD prompt を殿の inbound として記録。
+    # 子プロセスは pane の CLI ではない。pane 識別子を渡さない。
+    output=$(env -u TMUX_PANE -u TMUX PATH="${HOME}/.codd-venv/bin:$PATH" timeout "$timeout_sec" "$codd_bin" propagate --path "$codd_path" --update 2>&1)
     rc=$?
     if [ "$rc" -eq 0 ]; then
         echo "  OK: codd propagate --path ${codd_path} --update"

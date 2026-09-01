@@ -1214,7 +1214,9 @@ echo ""
 # ═══════════════════════════════════════════════════════════════════════════════
 if [ -f "$SCRIPT_DIR/scripts/ninja_monitor.sh" ]; then
     pkill -f "ninja_monitor.sh" 2>/dev/null || true
-    nohup bash "$SCRIPT_DIR/scripts/ninja_monitor.sh" >> "$SCRIPT_DIR/logs/ninja_monitor.log" 2>&1 &
+    # daemon は pane の CLI ではない: 起動元 pane の TMUX_PANE を継承させない
+    # (2026-09-01: 継承 %0 が cmd_complete_gate→codd→claude --print の hook で将軍と誤解決)
+    env -u TMUX_PANE nohup bash "$SCRIPT_DIR/scripts/ninja_monitor.sh" >> "$SCRIPT_DIR/logs/ninja_monitor.log" 2>&1 &
     disown
     log_info "👁️ 忍者監視デーモン起動 (context%更新)"
 else

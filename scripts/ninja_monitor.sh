@@ -60,6 +60,19 @@ _ninja_monitor_usage() {
         '       NINJA_MONITOR_LIB_ONLY=1 source scripts/ninja_monitor.sh' >&2
 }
 
+# The daemon (and every worker/HOT-RELOAD successor it forks) is not a pane's
+# CLI. A TMUX_PANE inherited from the launching pane (2026-09-01: %0 = shogun)
+# leaks into children such as cmd_complete_gate -> codd propagate ->
+# `claude --print`, whose hooks then resolve agent=shogun, rewrite the shogun
+# deepdive session marker and record the CoDD prompt as a lord inbound.
+# Scrub it on the daemon path only; library sourcing leaves the caller's env alone.
+ninja_monitor_scrub_pane_env() {
+    unset TMUX_PANE
+}
+if [[ "${BASH_SOURCE[0]}" == "$0" ]]; then
+    ninja_monitor_scrub_pane_env
+fi
+
 # Sourcing without the explicit library contract used to continue into the
 # daemon loop. Fail closed before loading dependencies or acquiring ownership.
 if [[ "${BASH_SOURCE[0]}" != "$0" ]]; then
