@@ -1,5 +1,6 @@
 # インフラコンテキスト
-<!-- last_updated: 2026-09-01 2026-09-01 将軍 doc lane: CI RED #6 Integration ci_fix 59fa70e0b -->
+<!-- last_updated: 2026-09-02 2026-09-02 将軍 doc lane: U3 msg_id 限定 receipt 458fc4caa -->
+<!-- source_commit:458fc4caa91a reason:2026-09-02 将軍 doc lane: U3 msg_id 限定 receipt 458fc4caa evidence:commit 458fc4caa; CLEAR 01:05; staged 11→0; watcher 9/9 restart 01:06 -->
 <!-- source_commit:4dd6898466a27f10ef7d08ed27549b3c095378de reason:2026-09-01 将軍 doc lane: CI RED #6 Integration ci_fix 59fa70e0b evidence:commit 59fa70e0b; CLEAR 22:57 -->
 <!-- source_commit:de07b5794070e0624c286f5090c7e170896ee720 reason:2026-09-01 将軍 doc lane: CI RED #5 ci_fix 3ad818c36 evidence:commit 3ad818c36; CLEAR 21:54 -->
 <!-- source_commit:f6a4080780a5086dfc1dc6e8cc29f31fea050d67 reason:2026-09-01 将軍 doc lane: U8 runtime 台帳 merge 戦略 evidence:commit 7268c41b2; CLEAR 21:40 -->
@@ -468,3 +469,4 @@ source boundary一致taskはregistryのowner/update_triggerからcontext_update_
 - **runtime 台帳の merge 戦略(疾風 U8 `cmd_karo_hotfix_u8_runtime_merge_strategy_20260901` 7268c41b2、CLEAR 21:40)**: `.gitattributes` で `queue/shogun_todo_map.md`・`docs/dashboard/shogun-todo-map.html`=merge=ours(将軍所有)、`queue/bulletin_board.yaml`=bulletin-id、`logs/karo_workarounds.yaml`=karo-workarounds-id(ID-keyed driver)、`docs/semantic-index/index.md`=semantic-index-regenerate。20:14-20:25 の CONFLICT 6(runtime 5 file)の構造根治。将軍 D0 union(fa82d08c1)は U5 で撤回済み。
 - **CI RED #5 33507554669 の ci_fix(3ad818c36、CLEAR 21:54)**: `test_push_lane_integrate.bats`『dirty overlapping → git refuses』が U6(isolated 統合)の新契約に未追従。本日 CI RED 5 回=全て契約変更 hotfix の fixture/caller census 漏れ→次の構造型=hotfix task の入口で『変更 script を参照する tests/ の grep 一覧+全 PASS』を必須化(U9 と併せ家老 lane)。
 - **CI RED #6 33513013694 Integration『inbox write then mark-read』の ci_fix(疾風 59fa70e0b、CLEAR 22:57)**: CI RED #2 と同一箇所が才蔵 ci_fix failed 残置で未修正のまま 3 時間残っていた=『failed 残置 task は再配備されない』穴(型二弾-3 の再発)。fixture は inbox_read.sh の receipt を発行してから mark_read する形へ。
+- **U3 msg_id 限定 receipt(小太郎 `cmd_karo_hotfix_u3_msg_id_receipt_20260902` 458fc4caa、CLEAR 01:05)**: `inbox_read.sh <agent> --msg-id <id>` で特殊 type 1 件だけの receipt を発行し、watcher `mark_special_read` はそれを使う(将軍 D0 bbaa38f4d の『全未読へ receipt 付与』を撤回)。contract bats=他 ID receipt 0 / clear 既読化 1。**副作用の一次所見(01:05)**: HEAD 合流後も共有 root の作業ツリー(mtime 09-01 18:34)は旧版で、01:04:46 に index が更新され 11 file が合流打消しの staged 差分として載った(全 blob は過去 commit の旧版)。将軍が file 単位で HEAD へ戻し `restart_watchers.sh` で watcher 18 本を再起動するまで U3 は未 live。root ref 前進(U6 isolated 統合)と root worktree/index 同期・script 更新後の watcher 再起動は未契約=家老へ unit 化を依頼(blt_010750)。
