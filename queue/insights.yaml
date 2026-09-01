@@ -12479,7 +12479,10 @@ insights:
   priority: "medium"
   source: "skill_script_refs:9abfd94ce2d8bec9"
   fix_known: false
-  status: pending
+  status: resolved
+  resolved_reason: "一次情報で gate_skill_script_refs.sh を再実行し、rc=2 はREVIEW_REQUIREDのみで、参照先実在・SKILL更新鮮度・例示パス・実走markerが全てOK、FOLLOWUP_ACTIVE=34かつFOLLOWUP_COVERS_REVIEW_REQUIRED=yesを確認した。既存follow-upで被覆済みのため追加実装・decision_candidateは不要。"
+  action_artifact: "primary=queue/insights.yaml:12476-12482;gate=SKILL_REF_DISABLE_CACHE=1 bash scripts/gates/gate_skill_script_refs.sh . rc=2 REVIEW_REQUIRED;observed=41-SKILL/82-refs/30-with-refs,missing=0,stale=0,example_paths_missing=0,run_markers_missing=0,FOLLOWUP_ACTIVE=34,FOLLOWUP_COVERS_REVIEW_REQUIRED=yes;memory=memory_db_query exact insight;semantic=context/semantic-map.md provisional_insights + semantic_search provisional_insights;causal=.cache/causal_index.tsv reflux chain;decision_candidate=none"
+  resolved_at: "2026-09-01T19:08:40+09:00"
 - id: INS-20260901-190432447-be27
   ts: "2026-09-01T19:04:32+09:00"
   insight: "semantic_index_update新概念候補: discussion:T212は副作用があったんじゃなかったか？別設計書があるはずだから整合させて は 既存aliasesに一致なし。概念定義とaliases追加を検討せよ"
@@ -12490,3 +12493,10 @@ insights:
   resolved_reason: "semantic map generation verified the candidate is represented or intentionally ignored"
   action_artifact: "semantic_map=/home/simokitafresh/multi-agent-shogun/context/semantic-map.md;semantic_index=/home/simokitafresh/multi-agent-shogun/docs/semantic-index/index.md"
   resolved_at: "2026-09-01T19:05:26+09:00"
+- id: INS-20260901-191144039-edd2
+  ts: "2026-09-01T19:11:44+09:00"
+  insight: "semantic_index_update新概念候補: discussion:draft review 3件を処理せよ。効率という名で先送りはメリットがない は 既存aliasesに一致なし。概念定義とaliases追加を検討せよ"
+  priority: "low"
+  source: "semantic_index_update"
+  fix_known: false
+  status: pending
