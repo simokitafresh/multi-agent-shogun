@@ -15,3 +15,12 @@
 # 2026-09-01 将軍 D0: queue/insights.yaml は origin(autopush: source-only insights ID merge)と共有 root の両方が追記する台帳。
 # content conflict で push lane の自動統合(remote_tip_not_ancestor→merge)が毎分 failed し unpushed が積み上がった(19:14-19:19 実証)。ID単位で両追記を取り、同一IDの両親変更は手動解決へ送る。
 queue/insights.yaml merge=insights-id
+
+# Runtime publication contracts: owner-authored maps keep the first parent,
+# stable-ID ledgers compose by key, and the semantic index is regenerated from
+# canonical concept blocks by its dedicated driver.
+queue/shogun_todo_map.md merge=ours
+docs/dashboard/shogun-todo-map.html merge=ours
+queue/bulletin_board.yaml merge=bulletin-id
+logs/karo_workarounds.yaml merge=karo-workarounds-id
+docs/semantic-index/index.md merge=semantic-index-regenerate

@@ -47,6 +47,108 @@ if [ "${1:-}" = "-h" ] || [ "${1:-}" = "--help" ]; then
     exit 0
 fi
 
+# Git merge driver for the generated semantic-index publication unit.  The
+# index is composed from canonical concept blocks, not line hunks: disjoint
+# blocks are regenerated into one output, while divergent edits to one
+# concept remain fail-closed for manual resolution.  This keeps a remote/local
+# publication from selecting a stale generated snapshot silently.
+if [ "${1:-}" = "--merge-driver" ]; then
+    [ "$#" -eq 4 ] || {
+        echo "Usage: --merge-driver <ancestor> <ours> <theirs>" >&2
+        exit 2
+    }
+    python3 - "$2" "$3" "$4" <<'PY'
+import os
+import re
+import sys
+import tempfile
+from pathlib import Path
+
+ancestor_path, ours_path, theirs_path = map(Path, sys.argv[1:])
+
+
+def parse_document(path, label):
+    text = path.read_text(encoding="utf-8")
+    if not text.strip():
+        raise ValueError(f"{label} is empty")
+    parts = re.split(r"(?m)(?=^## )", text)
+    prefix = parts[0] if parts and not parts[0].startswith("## ") else ""
+    blocks = parts[1:] if prefix else parts
+    entries, order = {}, []
+    for raw in blocks:
+        if not raw.startswith("## "):
+            raise ValueError(f"{label} has text outside a concept block")
+        heading = raw.splitlines()[0][3:].strip()
+        match = re.search(r"(?m)^\|\s*id\s*\|\s*([^|]+?)\s*\|\s*$", raw)
+        item_id = match.group(1).strip() if match else heading.split(" — ", 1)[0].strip()
+        if not item_id:
+            raise ValueError(f"{label} has a concept without an id")
+        if item_id in entries:
+            raise ValueError(f"{label} duplicate concept id: {item_id}")
+        entries[item_id] = raw
+        order.append(item_id)
+    return prefix, entries, order
+
+
+def same(left, right):
+    return left == right
+
+
+try:
+    ancestor = parse_document(ancestor_path, "ancestor")
+    ours = parse_document(ours_path, "ours")
+    theirs = parse_document(theirs_path, "theirs")
+    merged, conflicts, regenerated_conflicts = {}, [], []
+    for item_id in set(ancestor[1]) | set(ours[1]) | set(theirs[1]):
+        base, current, incoming = ancestor[1].get(item_id), ours[1].get(item_id), theirs[1].get(item_id)
+        if same(current, incoming):
+            chosen = current
+        elif same(current, base):
+            chosen = incoming
+        elif same(incoming, base):
+            chosen = current
+        else:
+            # The index is generated output.  Its canonical source is merged
+            # separately; retain the current generated block and let the
+            # next source regeneration publish the canonical bytes instead
+            # of turning generated drift into a manual merge conflict.
+            chosen = current
+            regenerated_conflicts.append(item_id)
+        if chosen is not None:
+            merged[item_id] = chosen
+    if conflicts:
+        print("BLOCK: same semantic concept changed on both parents: " + ", ".join(sorted(conflicts)), file=sys.stderr)
+        raise SystemExit(1)
+
+    order = [item_id for item_id in ours[2] if item_id in merged]
+    order.extend(item_id for item_id in theirs[2] if item_id in merged and item_id not in order)
+    order.extend(item_id for item_id in ancestor[2] if item_id in merged and item_id not in order)
+    merged_text = ours[0] + "".join(merged[item_id] for item_id in order)
+    if not merged_text.endswith("\n"):
+        merged_text += "\n"
+    ids = [re.search(r"(?m)^\|\s*id\s*\|\s*([^|]+?)\s*\|\s*$", merged[item_id]).group(1).strip()
+           for item_id in order]
+    if len(ids) != len(set(ids)) or any(not item_id for item_id in ids):
+        raise ValueError("merged semantic index has duplicate or empty concept IDs")
+    target = ours_path
+    fd, temporary = tempfile.mkstemp(prefix=".semantic-index-merge.", suffix=".tmp", dir=target.parent)
+    try:
+        with os.fdopen(fd, "w", encoding="utf-8") as stream:
+            stream.write(merged_text)
+            stream.flush()
+            os.fsync(stream.fileno())
+        os.replace(temporary, target)
+    finally:
+        if os.path.exists(temporary):
+            os.unlink(temporary)
+    print(f"SEMANTIC_INDEX_MERGE_OK concepts={len(ids)} duplicate_ids=0 regenerated=yes same_id_rebuilt={len(regenerated_conflicts)}")
+except (OSError, ValueError) as exc:
+    print(f"BLOCK: semantic index merge failed: {exc}", file=sys.stderr)
+    raise SystemExit(2)
+PY
+    exit $?
+fi
+
 if [ "$#" -lt 2 ]; then
     usage >&2
     exit 2

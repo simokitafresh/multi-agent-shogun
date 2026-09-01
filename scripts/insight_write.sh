@@ -51,11 +51,165 @@ if [ "${1:-}" = "--configure-merge-driver" ]; then
   [[ "$#" -le 2 ]] || { echo "ERROR: --configure-merge-driver accepts at most one repo path" >&2; exit 2; }
   merge_repo="${2:-$SCRIPT_DIR}"
   merge_repo="$(cd "$merge_repo" && pwd)"
+  # Runtime ledgers are different contracts: append-only ID ledgers compose
+  # by stable key, while generated/stable documents use their own driver.
+  # Keep all registrations in this one setup entrypoint so a fresh clone does
+  # not silently fall back to Git's line-based merge behavior.
+  git -C "$merge_repo" config merge.ours.driver true
   git -C "$merge_repo" config merge.insights-id.name "ID-keyed insights merge"
   git -C "$merge_repo" config merge.insights-id.driver \
     "bash $merge_repo/scripts/insight_write.sh --merge-driver %O %A %B"
-  echo "configured merge.insights-id.driver for $merge_repo"
+  git -C "$merge_repo" config merge.bulletin-id.name "ID-keyed bulletin merge"
+  git -C "$merge_repo" config merge.bulletin-id.driver \
+    "bash $merge_repo/scripts/insight_write.sh --stable-merge-driver bulletin %O %A %B"
+  git -C "$merge_repo" config merge.karo-workarounds-id.name "ID-keyed karo workarounds merge"
+  git -C "$merge_repo" config merge.karo-workarounds-id.driver \
+    "bash $merge_repo/scripts/insight_write.sh --stable-merge-driver workarounds %O %A %B"
+  git -C "$merge_repo" config merge.semantic-index-regenerate.name "Regenerate semantic index from merged source"
+  git -C "$merge_repo" config merge.semantic-index-regenerate.driver \
+    "bash $merge_repo/scripts/semantic_index_update.sh --merge-driver %O %A %B"
+  echo "configured runtime merge drivers for $merge_repo"
   exit 0
+fi
+
+# Shared ID-keyed merge implementation for runtime ledgers whose stable key is
+# not the insights schema.  The driver is deliberately fail-closed when both
+# parents changed the same key, and validates YAML plus uniqueness before the
+# atomic replacement of %A.
+if [ "${1:-}" = "--stable-merge-driver" ]; then
+  [[ "$#" -eq 5 ]] || { echo "Usage: --stable-merge-driver <bulletin|workarounds> <ancestor> <ours> <theirs>" >&2; exit 2; }
+  python3 - "$2" "$3" "$4" "$5" <<'PY'
+import os
+import re
+import sys
+import tempfile
+from pathlib import Path
+
+import yaml
+
+kind, ancestor_path, ours_path, theirs_path = sys.argv[1:]
+spec = {
+    "bulletin": ("entries", "id", "bulletin entry ID"),
+    "workarounds": (None, "cmd_id", "workaround command ID"),
+}
+if kind not in spec:
+    raise SystemExit(f"BLOCK: unsupported stable merge kind: {kind}")
+container_key, id_key, label = spec[kind]
+
+
+def parse_document(path, name):
+    text = Path(path).read_text(encoding="utf-8")
+    if not text.strip():
+        raise ValueError(f"{name} is empty")
+    document = yaml.safe_load(text)
+    lines = text.splitlines(keepends=True)
+    if container_key is None:
+        if not isinstance(document, list):
+            raise ValueError(f"{name} must be a top-level list")
+        starts = [i for i, line in enumerate(lines) if re.match(rf"^-\s+{id_key}\s*:", line)]
+        prefix, suffix, expected, root = "", "", document, "list"
+        region_end = len(lines)
+    else:
+        if not isinstance(document, dict) or not isinstance(document.get(container_key), list):
+            raise ValueError(f"{name} must contain a {container_key} list")
+        key_matches = [i for i, line in enumerate(lines) if re.match(rf"^{re.escape(container_key)}\s*:", line)]
+        if len(key_matches) != 1:
+            raise ValueError(f"{name} must have one top-level {container_key} key")
+        key_line = key_matches[0]
+        prefix = "".join(lines[: key_line + 1])
+        region_end = len(lines)
+        for i in range(key_line + 1, len(lines)):
+            stripped = lines[i].strip()
+            indent = len(lines[i]) - len(lines[i].lstrip())
+            if (stripped and not stripped.startswith("#") and not stripped.startswith("-")
+                    and indent == 0):
+                region_end = i
+                break
+        starts = [i for i in range(key_line + 1, region_end)
+                  if re.match(rf"^\s*-\s+{id_key}\s*:", lines[i])]
+        suffix = "".join(lines[region_end:])
+        expected, root = document[container_key], "mapping"
+
+    entries, order = {}, []
+    for index, start in enumerate(starts):
+        end = starts[index + 1] if index + 1 < len(starts) else region_end
+        raw = "".join(lines[start:end])
+        item = yaml.safe_load(raw)
+        if isinstance(item, list) and len(item) == 1:
+            item = item[0]
+        if not isinstance(item, dict) or not str(item.get(id_key, "")).strip():
+            raise ValueError(f"{name} has an invalid {label}")
+        item_id = str(item[id_key])
+        if item_id in entries:
+            raise ValueError(f"{name} duplicate {id_key}: {item_id}")
+        entries[item_id] = (item, raw)
+        order.append(item_id)
+    if len(order) != len(expected):
+        raise ValueError(f"{name} block count does not match YAML entries")
+    return root, prefix, suffix, entries, order
+
+
+def same(left, right):
+    if left is None or right is None:
+        return left is right
+    return left[0] == right[0]
+
+
+try:
+    ancestor = parse_document(ancestor_path, "ancestor")
+    ours = parse_document(ours_path, "ours")
+    theirs = parse_document(theirs_path, "theirs")
+    if not (ancestor[0] == ours[0] == theirs[0]):
+        raise ValueError("ancestor/ours/theirs root structures differ")
+    base_entries, ours_entries, theirs_entries = ancestor[3], ours[3], theirs[3]
+    merged_entries, conflicts = {}, []
+    for item_id in set(base_entries) | set(ours_entries) | set(theirs_entries):
+        base, current, incoming = base_entries.get(item_id), ours_entries.get(item_id), theirs_entries.get(item_id)
+        if same(current, incoming):
+            chosen = current
+        elif same(current, base):
+            chosen = incoming
+        elif same(incoming, base):
+            chosen = current
+        else:
+            conflicts.append(item_id)
+            continue
+        if chosen is not None:
+            merged_entries[item_id] = chosen
+    if conflicts:
+        print(f"BLOCK: same {label} changed on both parents: " + ", ".join(sorted(conflicts)), file=sys.stderr)
+        raise SystemExit(1)
+    order = [item_id for item_id in ours[4] if item_id in merged_entries]
+    order.extend(item_id for item_id in theirs[4] if item_id in merged_entries and item_id not in order)
+    order.extend(item_id for item_id in ancestor[4] if item_id in merged_entries and item_id not in order)
+    if ours[0] == "mapping":
+        merged_text = ours[1] + "".join(merged_entries[item_id][1] for item_id in order) + ours[2]
+    else:
+        merged_text = "".join(merged_entries[item_id][1] for item_id in order)
+    if not merged_text.endswith("\n"):
+        merged_text += "\n"
+    parsed = yaml.safe_load(merged_text)
+    rows = parsed.get(container_key) if isinstance(parsed, dict) else parsed
+    ids = [str(row.get(id_key, "")) for row in (rows or [])]
+    if len(ids) != len(set(ids)) or any(not item_id.strip() for item_id in ids):
+        raise ValueError(f"merged {kind} has duplicate or empty {id_key}s")
+    target = Path(ours_path)
+    fd, temporary = tempfile.mkstemp(prefix=f".{kind}-merge.", suffix=".tmp", dir=target.parent)
+    try:
+        with os.fdopen(fd, "w", encoding="utf-8") as stream:
+            stream.write(merged_text)
+            stream.flush()
+            os.fsync(stream.fileno())
+        os.replace(temporary, target)
+    finally:
+        if os.path.exists(temporary):
+            os.unlink(temporary)
+    print(f"STABLE_MERGE_OK kind={kind} entries={len(ids)} duplicate_ids=0")
+except (OSError, ValueError, yaml.YAMLError) as exc:
+    print(f"BLOCK: {kind} merge failed: {exc}", file=sys.stderr)
+    raise SystemExit(2)
+PY
+  exit $?
 fi
 
 if [ "${1:-}" = "--merge-driver" ]; then
