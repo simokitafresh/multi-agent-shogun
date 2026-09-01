@@ -1,5 +1,6 @@
 # インフラコンテキスト
-<!-- last_updated: 2026-09-01 2026-09-01 将軍 doc lane: U8 runtime 台帳 merge 戦略 -->
+<!-- last_updated: 2026-09-01 2026-09-01 将軍 doc lane: CI RED #5 ci_fix 3ad818c36 -->
+<!-- source_commit:de07b5794070e0624c286f5090c7e170896ee720 reason:2026-09-01 将軍 doc lane: CI RED #5 ci_fix 3ad818c36 evidence:commit 3ad818c36; CLEAR 21:54 -->
 <!-- source_commit:f6a4080780a5086dfc1dc6e8cc29f31fea050d67 reason:2026-09-01 将軍 doc lane: U8 runtime 台帳 merge 戦略 evidence:commit 7268c41b2; CLEAR 21:40 -->
 
 <!-- source_commit:e8c9d40aea58c3d16f4fc2685f00402427db50c5 reason:2026-09-01 将軍 doc lane: U6 isolated 統合+insights driver region 修正 evidence:commits e773dfe51,4c295c112; CLEAR 21:09 -->
