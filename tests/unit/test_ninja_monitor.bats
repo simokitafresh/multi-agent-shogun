@@ -679,6 +679,104 @@ EOF
     [[ "$output" == *"before=1 same_generation=0 new_generation=1"* ]]
 }
 
+# test_necessity: a fingerprint-bound Karo ACCEPT FAIL_CLOSE must close the
+# failed generation consistently across pending_work, gate_clear_required, and
+# failed-respawn preservation; missing or mismatched approval remains visible.
+@test "failed Karo FAIL_CLOSE closes all monitor paths and rejects stale approval" {
+    run env PROJECT_ROOT="$PROJECT_ROOT" bash -c '
+        set -euo pipefail
+        export NINJA_MONITOR_LIB_ONLY=1
+        source "$PROJECT_ROOT/scripts/ninja_monitor.sh"
+        unset NINJA_MONITOR_LIB_ONLY
+        ROOT="$BATS_TEST_TMPDIR/fail-close-monitor"
+        SCRIPT_DIR="$ROOT"; STATE_DIR="$ROOT/state"; LOG="$ROOT/monitor.log"
+        mkdir -p "$ROOT/queue/tasks" "$ROOT/queue/reports" "$ROOT/queue/gates" "$ROOT/queue/inbox" "$ROOT/logs" "$STATE_DIR"
+        : > "$LOG"; : > "$ROOT/messages"
+        log() { printf "%s\n" "$1" >> "$LOG"; }
+        send_inbox_message() { printf "%s|%s\n" "$3" "$2" >> "$ROOT/messages"; }
+        refresh_karo_snapshot_task_assignment() { :; }
+        _reflux_promotion_record_completion_detached() { :; }
+        report_monitor_state() { printf "awaiting_evidence\n"; }
+        find_matching_report_file() { printf "%s\n" "$ROOT/queue/reports/alpha_report_cmd_fail_close.yaml"; }
+        write_fixture() {
+            local approval_mode="$1" report="$ROOT/queue/reports/alpha_report_cmd_fail_close.yaml"
+            cat > "$ROOT/queue/tasks/alpha.yaml" <<EOF
+task:
+  status: failed
+  task_id: task_fail_close
+  parent_cmd: cmd_fail_close
+  report_id: rpt_fail_close
+  report_identity_version: 2
+  report_path: queue/reports/alpha_report_cmd_fail_close.yaml
+EOF
+            cat > "$report" <<EOF
+worker_id: alpha
+task_id: task_fail_close
+parent_cmd: cmd_fail_close
+report_id: rpt_fail_close
+report_identity_version: 2
+status: failed
+verdict: FAIL
+binary_checks:
+  AC1:
+    - check: fixture
+      result: no
+EOF
+            local fp key approval_dir
+            fp=$(REVIEW_FAIL_CLOSE_IDENTITY_EXEMPT=1 review_report_fingerprint "$report")
+            key=$(review_report_key "queue/reports/$(basename "$report")")
+            approval_dir="$ROOT/queue/gates/cmd_fail_close/review_approvals/reports/$key"
+            mkdir -p "$approval_dir"
+            case "$approval_mode" in
+                matching)
+                    printf "role: karo\nresult: ACCEPT\nfingerprint: %s\nreport: queue/reports/alpha_report_cmd_fail_close.yaml\n" "$fp" > "$approval_dir/karo.yaml"
+                    ;;
+                mismatched)
+                    printf "role: karo\nresult: ACCEPT\nfingerprint: %064d\nreport: queue/reports/alpha_report_cmd_fail_close.yaml\n" 0 > "$approval_dir/karo.yaml"
+                    ;;
+                missing) : ;;
+            esac
+        }
+        run_case() {
+            local mode="$1" canonical="none" gate_msgs_before gate_msgs_after clear_rc=0 formal_closed=0 preserve_rc=0
+            ROOT="$BATS_TEST_TMPDIR/fail-close-monitor-$mode"
+            SCRIPT_DIR="$ROOT"; STATE_DIR="$ROOT/state"; LOG="$ROOT/monitor.log"
+            mkdir -p "$ROOT/queue/tasks" "$ROOT/queue/reports" "$ROOT/queue/gates" "$ROOT/queue/inbox" "$ROOT/logs" "$STATE_DIR"
+            : > "$ROOT/messages"; : > "$LOG"
+            write_fixture "$mode"
+            canonical=$(_pending_task_canonical_review_state cmd_fail_close "$ROOT/queue/reports/alpha_report_cmd_fail_close.yaml" 2>/dev/null || printf "none")
+            check_and_update_done_task alpha || clear_rc=$?
+            _failed_task_is_formally_closed alpha && formal_closed=1 || true
+            _failed_task_preserve_before_respawn alpha && preserve_rc=1 || true
+            gate_msgs_before=$(awk "/^gate_clear_required[|]/ {n++} END {print n+0}" "$ROOT/messages")
+            gate_msgs_after="$gate_msgs_before"
+            printf "%s canonical=%s clear_rc=%s formal_closed=%s preserve_notice=%s gate_clear_required=%s pending_work=0\n" \
+                "$mode" "$canonical" "$clear_rc" "$formal_closed" "$preserve_rc" "$gate_msgs_after"
+            if [ "$mode" = matching ]; then
+                test "$canonical" = karo_fail_close_terminal
+                test "$formal_closed" -eq 1
+                test "$preserve_rc" -eq 0
+                test "$gate_msgs_after" -eq 0
+                grep -q AUTO-DONE-FAIL-CLOSE-TERMINAL "$LOG"
+            else
+                test "$canonical" = none
+                test "$formal_closed" -eq 0
+                test "$preserve_rc" -eq 1
+                test "$gate_msgs_after" -eq 1
+            fi
+        }
+        run_case matching
+        run_case missing
+        run_case mismatched
+        final_gate_count=$(awk "/^gate_clear_required[|]/ {n++} END {print n+0}" "$ROOT/messages")
+        test "$final_gate_count" -eq 1
+    '
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"matching canonical=karo_fail_close_terminal clear_rc=1 formal_closed=1 preserve_notice=0 gate_clear_required=0 pending_work=0"* ]]
+    [[ "$output" == *"missing canonical=none clear_rc=1 formal_closed=0 preserve_notice=1 gate_clear_required=1 pending_work=0"* ]]
+    [[ "$output" == *"mismatched canonical=none clear_rc=1 formal_closed=0 preserve_notice=1 gate_clear_required=1 pending_work=0"* ]]
+}
+
 run_check_stall_order_case() {
     local fixture_dead="$1"
     run env PROJECT_ROOT="$PROJECT_ROOT" FIXTURE_DEAD="$fixture_dead" bash -c '
