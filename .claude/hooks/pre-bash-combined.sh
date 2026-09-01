@@ -797,13 +797,12 @@ if [[ -n "${command:-}" ]]; then
         _g4_write=false
         _g4_re_sed='sed[[:space:]]+(-[A-Za-z]*i|--in-place)'
         _g4_re_redir='(>|tee[[:space:]])[^|]*shogun_to_karo'
-        _g4_re_pywrite='(\.write\(|open\([^)]*["'"'"'][wa]["'"'"'])'
+        # python 書込みは単独で BLOCK(家老レビュー 13:05: re.sub/.replace/awk の有無に依存させない)。
+        # open(path, "w"/"a"/"x"/"r+"), Path.write_text/write_bytes, .write( を書込み形とみなす。
+        _g4_re_pywrite='(\.write\(|write_text\(|write_bytes\(|open\([^)]*["'"'"'][wax]|open\([^)]*["'"'"']r\+)'
         if [[ "$command" =~ $_g4_re_sed ]]; then _g4_write=true; fi
         if [[ "$command" =~ $_g4_re_redir ]]; then _g4_write=true; fi
-        if [[ "$command" == *"re.sub"* || "$command" == *".replace("* || "$command" == *'awk '* ]] \
-            && [[ "$command" =~ $_g4_re_pywrite ]]; then
-            _g4_write=true
-        fi
+        if [[ "$command" =~ $_g4_re_pywrite ]]; then _g4_write=true; fi
         if [[ "$_g4_write" == true ]]; then
             emit_deny "BLOCK: shogun_to_karo.yamlへのsed/regex操作は禁止。変更はEdit tool、読み取りはRead tool(offset/limit指定)を使え。status遷移gateの迂回を防ぐため。"
         fi

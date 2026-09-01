@@ -298,6 +298,21 @@ YAML
     [[ "$output" == *"status遷移gateの迂回"* ]]
 }
 
+@test "Guard 4: pure python の open(...,'w').write は re.sub/awk 無しでも BLOCK される" {
+    run_hook "python3 -c \"open('queue/shogun_to_karo.yaml','w').write(data)\""
+    [[ "$output" == *"status遷移gateの迂回"* ]]
+}
+
+@test "Guard 4: pathlib write_text も BLOCK される" {
+    run_hook "python3 -c \"from pathlib import Path; Path('queue/shogun_to_karo.yaml').write_text(s)\""
+    [[ "$output" == *"status遷移gateの迂回"* ]]
+}
+
+@test "Guard 4: python の読み取り専用 open(...,'r')/yaml.safe_load は通る" {
+    run_hook "python3 -c \"import yaml; d=yaml.safe_load(open('queue/shogun_to_karo.yaml','r')); print(len(d['commands']))\""
+    [[ "$output" != *"status遷移gateの迂回"* ]]
+}
+
 @test "Guard 4: shogun_to_karo の読み取り pipeline(grep | sed -E / awk 整形)は通る" {
     run_hook "grep -nE '^  cmd_[0-9]+:' queue/shogun_to_karo.yaml | sed -E 's/^([0-9]+):.*/\\1/' | awk '{print \$1}'"
     [[ "$output" != *"status遷移gateの迂回"* ]]

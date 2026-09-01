@@ -106,19 +106,18 @@ log_warn() {
 # 可視画面(scrollback なし)のプロンプト記号で判定する。ninja_monitor の _pane_cli_is_ready は
 # scrollback 100 行+バナー語を見るが、起動直後は crash 後の scrollback にバナーが残り偽 ready になる。
 # 記号は config/cli_profiles.yaml idle_pattern(claude=❯ / codex=›)と同値。09-01 実測 9/9 pane 一致。
-CLI_READY_REGEX='^[[:space:]]*(❯|›)([[:space:]]|$)|bypass permissions on'
+# 判定の正本は scripts/lib/cli_ready.sh(プロンプト行のみ。footer/ダイアログ/crash shell は不一致=家老レビュー 13:05)
+# shellcheck source=scripts/lib/cli_ready.sh
+source "$SCRIPT_DIR/scripts/lib/cli_ready.sh"
 CLI_READY_TIMEOUT="${CLI_READY_TIMEOUT:-60}"
 CLI_NOT_READY=()
 wait_cli_ready() {
     # $1=pane target, $2=label, $3=timeout(sec)
-    local target="$1" label="$2" limit="${3:-$CLI_READY_TIMEOUT}" i
-    for ((i=1; i<=limit; i++)); do
-        if tmux capture-pane -t "$target" -p 2>/dev/null | grep -Eq "$CLI_READY_REGEX"; then
-            echo "  └─ ${label} CLI ready (${i}s)"
-            return 0
-        fi
-        sleep 1
-    done
+    local target="$1" label="$2" limit="${3:-$CLI_READY_TIMEOUT}"
+    if cli_wait_pane_ready "$target" "$limit"; then
+        echo "  └─ ${label} CLI ready (${CLI_READY_ELAPSED}s)"
+        return 0
+    fi
     log_warn "${label} CLI not ready after ${limit}s (pane=${target})"
     tmux capture-pane -t "$target" -p 2>/dev/null | grep -v '^\s*$' | tail -3 | sed 's/^/      | /'
     CLI_NOT_READY+=("$label")
@@ -408,7 +407,9 @@ else
     # 閾値超のファイルを rename で退避する(可逆。Codex は空 DB を再生成する)。
     _codex_log_db="$HOME/.codex/logs_2.sqlite"
     _codex_log_rotate_bytes="${CODEX_LOG_ROTATE_BYTES:-1073741824}"
-    if [ -f "$_codex_log_db" ] && [ "$(pgrep -c -x codex 2>/dev/null || echo 0)" -eq 0 ]; then
+    # cli_ready.sh は上で source 済み(STEP 1 より前の関数定義群)。pgrep -c の "0\n0" を単一整数へ正規化
+    _codex_procs="$(cli_codex_process_count)"
+    if [ -f "$_codex_log_db" ] && [ "$_codex_procs" -eq 0 ]; then
         _codex_log_size=$(stat -c %s "$_codex_log_db" 2>/dev/null || echo 0)
         if [ "$_codex_log_size" -gt "$_codex_log_rotate_bytes" ]; then
             _codex_log_ts=$(date '+%Y%m%dT%H%M%S')
@@ -418,7 +419,7 @@ else
             log_info "  └─ Codex log DB 退避: $((_codex_log_size / 1048576))MB > 閾値 → logs_2.sqlite.rotated_${_codex_log_ts}(復元は mv で戻す)"
         fi
     elif [ -f "$_codex_log_db" ]; then
-        log_info "  └─ Codex 稼働中($(pgrep -c -x codex) proc)のため logs_2.sqlite 剪定はスキップ"
+        log_info "  └─ Codex 稼働中(${_codex_procs} proc)のため logs_2.sqlite 剪定はスキップ"
     fi
 fi
 
