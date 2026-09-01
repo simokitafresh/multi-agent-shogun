@@ -12519,14 +12519,20 @@ insights:
   priority: "low"
   source: "semantic_stress_test"
   fix_known: false
-  status: pending
+  status: resolved
+  resolved_reason: "semantic index candidate was absorbed into a registered concept"
+  action_artifact: "semantic_index=/home/simokitafresh/multi-agent-shogun/docs/semantic-index/index.md"
+  resolved_at: "2026-09-01T19:27:00+09:00"
 - id: INS-20260901-191954180-34bd
   ts: "2026-09-01T19:19:54+09:00"
   insight: "[[draft review 3件を処理せよ]] semantic_stress_test candidate_aliases: NO_MATCH source=lord query=draft review 3件を処理せよ。効率という名で先送りはメリットがない"
   priority: "low"
   source: "semantic_stress_test"
   fix_known: false
-  status: pending
+  status: resolved
+  resolved_reason: "semantic index candidate was absorbed into a registered concept"
+  action_artifact: "semantic_index=/home/simokitafresh/multi-agent-shogun/docs/semantic-index/index.md"
+  resolved_at: "2026-09-01T19:30:00+09:00"
 - id: INS-20260901-192007507-2519
   ts: "2026-09-01T19:20:07+09:00"
   insight: "[[T212は副作用があったんじゃなかったか？別設計書があるはずだから整合させて]] semantic_stress_test candidate_aliases: NO_MATCH source=lord query=T212は副作用があったんじゃなかったか？別設計書があるはずだから整合させて"
