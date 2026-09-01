@@ -174,6 +174,7 @@ test_execution:
 2. **103 回同じ BLOCK を踏む忍者は忍者の問題ではなく契約矛盾。task の scope(review_correction_scope=report)と gate の要求(target_path clean)を並べて読め。** 影丸 v3 commit 4d369d017 は dangling(`merge-base --is-ancestor` rc=1)で root に同一内容の差分だけが載っていた(LS123 型)。合流 1 手(家老 92d1853bb)で BLOCK 0。replay 元(monitor REPORT-OUTBOX-REPAIR)は症状であり切るな。
 3. **殿が見て気づく異物(見慣れない window)は fixture の本番 session 残置。生成元を `@agent_id`/proc の cwd で特定し、live consumer 0 を数えてから閉じる。** 小太郎 idle_lifecycle の gunshi_sim watcher が `shogun` session に window 3/4 を作り 17:10 から残置。cmd_4407(型3弾-3)の再発=検証 AC に『本番 session 名なら exit 2』が無い。次の構造型=run_tests/fixture helper で `tmux new-window -t shogun` を BLOCK。
 4. **『稼働中 CLI 操作禁止』は CLI 終了・設定変更・切替のこと。idle の agent への /clear(clear_command 経由)は monitor が日常的に行う定型運用=可逆。前将軍は『殿裁可事項』と書いて 2 ターン閉じた=洗脳#3。害あるターンの中断(Escape/Enter 送出)も型十七弾-5 と同級。ただし送出前に capture で確認プロンプト 0 を数える。**
+5. **道具は名前で用途を推定するな。usage 行と呼出し元(grep)で『何を・どこへ・常駐か』を確定してから叩け。** 19:07 `gist_sync.sh`(dashboard.md→gist の常駐 daemon)に設計書 path/gist_id を渡し、無限 loop を『commit の hang』と誤認して 3 回 timeout、roadmap gist da1b7617 に dashboard.md を混入させた(REST PATCH で除去)。設計書の gist 同期は `gist_share.sh <path>` が正規。根治 9c19734af(固定 id を dashboard gist に限定)。hang を見たら『どの工程が止まったか』を ledger/pgrep で分離してから真因を言う。
 - origin: `[[殿y復帰_20260901_1717]] -> [[quality_monitor正帰還_21件同一本文]] -> [[4d369d017_dangling×RC_SCOPE契約矛盾]] -> [[fixture_window_本番session残置_型3弾-3再発]] -> [[裁可待ち=洗脳3_clear_command定型]] -> [[復帰後の型_第二十二弾]]`
 
 ## 復帰後の型・第二十一弾 4則（2026-09-01 15:02-16:27 第21便後半: 偽 BLOCK の 3 層根治/件数 heuristic の本番 FP/数値突合 3 層/自分の dirty 差分から・将軍自身に適用）
