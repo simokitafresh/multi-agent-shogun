@@ -1054,6 +1054,77 @@ make_own_patch() {
     git -C "$REPO" worktree remove -f "$linked"
 }
 
+make_task_worktree_shared_source_fixture() {
+    mkdir -p "$REPO/scripts" "$REPO/queue/tasks"
+    for path in scripts/cache-one.sh scripts/cache-two.sh scripts/cache-three.sh; do
+        printf 'base source\n' > "$REPO/$path"
+    done
+    git -C "$REPO" add scripts/cache-one.sh scripts/cache-two.sh scripts/cache-three.sh
+    git -C "$REPO" commit -qm shared-source-base
+    linked="$(mktemp -d "${TMPDIR:-/tmp}/ninja-shared-source-${BATS_TEST_NUMBER}.XXXXXX")"
+    rmdir "$linked"
+    git -C "$REPO" worktree add -q -b "shared-source-${BATS_TEST_NUMBER}" "$linked"
+    cat > "$REPO/queue/tasks/hayate.yaml" <<YAML
+task:
+  task_id: shared-source-contract
+  parent_cmd: cmd_shared-source-contract
+  task_worktree_path: $linked
+  task_worktree_source_paths: [scripts/cache-one.sh, scripts/cache-two.sh, scripts/cache-three.sh]
+YAML
+    printf 'owned task change\n' >> "$linked/own.txt"
+}
+
+@test "共有rootの3 dirty sourceがtask worktreeと同一contentならcommitを許可する" {
+    make_task_worktree_shared_source_fixture
+    paths=(scripts/cache-one.sh scripts/cache-two.sh scripts/cache-three.sh)
+    for path in "${paths[@]}"; do
+        printf 'same source edit\n' > "$REPO/$path"
+        printf 'same source edit\n' > "$linked/$path"
+    done
+
+    root_matches=0
+    head_differences=0
+    for path in "${paths[@]}"; do
+        cmp -s "$REPO/$path" "$linked/$path"
+        root_matches=$((root_matches + 1))
+        if ! git -C "$REPO" diff --quiet HEAD -- "$path"; then
+            head_differences=$((head_differences + 1))
+        fi
+    done
+    [ "$root_matches" -eq 3 ]
+    [ "$head_differences" -eq 3 ]
+
+    run bash -c 'cd "$1" && NINJA_SCOPE_TASK_FILE="$3" bash "$2" -m shared-content -- own.txt' _ "$linked" "$HELPER" "$REPO/queue/tasks/hayate.yaml"
+    [ "$status" -eq 0 ]
+    [ "$(git -C "$linked" show --format= --name-only HEAD)" = own.txt ]
+    [ -n "$(git -C "$REPO" status --porcelain -- scripts/cache-one.sh scripts/cache-two.sh scripts/cache-three.sh)" ]
+    git -C "$REPO" worktree remove -f "$linked"
+}
+
+@test "共有rootとtask worktreeのdirty source content相違はBLOCKする" {
+    make_task_worktree_shared_source_fixture
+    printf 'root source edit\n' > "$REPO/scripts/cache-one.sh"
+    printf 'task source edit\n' > "$linked/scripts/cache-one.sh"
+
+    run bash -c 'cd "$1" && NINJA_SCOPE_TASK_FILE="$3" bash "$2" -m different-content -- own.txt' _ "$linked" "$HELPER" "$REPO/queue/tasks/hayate.yaml"
+    [ "$status" -eq 2 ]
+    [[ "$output" == *"content differs from task worktree: scripts/cache-one.sh"* ]]
+    [ -n "$(git -C "$linked" status --porcelain -- own.txt)" ]
+    git -C "$REPO" worktree remove -f "$linked"
+}
+
+@test "共有root dirty sourceのtask worktree片側欠落はBLOCKする" {
+    make_task_worktree_shared_source_fixture
+    printf 'root source edit\n' > "$REPO/scripts/cache-two.sh"
+    rm "$linked/scripts/cache-two.sh"
+
+    run bash -c 'cd "$1" && NINJA_SCOPE_TASK_FILE="$3" bash "$2" -m missing-content -- own.txt' _ "$linked" "$HELPER" "$REPO/queue/tasks/hayate.yaml"
+    [ "$status" -eq 2 ]
+    [[ "$output" == *"regular-file parity unavailable: scripts/cache-two.sh"* ]]
+    [ -n "$(git -C "$linked" status --porcelain -- own.txt)" ]
+    git -C "$REPO" worktree remove -f "$linked"
+}
+
 @test "patch modeはpostverify異常時にcommitせずforeign stageを保全する" {
     make_shared_fixture; make_own_patch
     printf 'foreign staged\n' >> "$REPO/other.txt"
