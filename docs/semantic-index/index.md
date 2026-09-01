@@ -6262,6 +6262,7 @@ codd:
 | discussion | `queue/lord_conversation.jsonl` 2026-09-01T18:38:52+09:00 T222 / T221 / T220 / T219 / T217 / T216 / T213 / T212 / T201 / T188の進捗を確認し、つまりを解消せよ |
 | lesson | `L1697` report-only RCのdirty判定はtask scopeと宣告commit blobの二重照合で限定する |
 | discussion | `queue/lord_conversation.jsonl` 2026-09-01T20:40:54+09:00 つまりは根治しているか？再発はないか？確認せよ |
+| discussion | `queue/lord_conversation.jsonl` 2026-09-01T20:44:53+09:00 大抵のつまりの原因は偽陽性や過剰ブロック、構造バグ、循環エラーによる拘束、実行速度の遅いスクリプトやテスト、claudeとcodexのコミュニケーションがhookなどの仕組みの違いで摩擦を起こすことなどだよね。丁寧に確認してリストアップして |
 | causal_chain | `[[cmd_3633]]` (L916) |
 | causal_chain | `[[cmd_3646]]` (L929) |
 | causal_chain | `[[cmd_3649]]` (L932) |
