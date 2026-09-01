@@ -6125,7 +6125,10 @@ insights:
   priority: "low"
   source: "semantic_map_generate:new_file"
   fix_known: false
-  status: pending
+  status: resolved
+  resolved_reason: "一次情報で確認: .githooks/pre-commit はtracked現存の4行実行ラッパーで、git rev-parse --show-toplevel から scripts/run_precommit_checks.sh を呼ぶ。現行のgit core.hooksPathは .git/hooks で、実hook .git/hooks/pre-commit は scripts/hooks/git-pre-commit.sh とSHA一致。semantic-map.md は hook_automation_framework と Cmd Gate Scaffold を既存索引化し、docs/semantic-index/index.md もpre-commit実装・履歴を既存参照している。対象wrapperの直接file entryはないが新概念・実修正・decision_candidateは不要。"
+  action_artifact: "target=queue/insights.yaml:INS-20260828-013206485-520f;primary=.githooks/pre-commit:1-4;wrapper_target=scripts/run_precommit_checks.sh:1-180;active_hook=scripts/hooks/git-pre-commit.sh;active_hook_sha256=ed721580acea7d5205775f9ca41630a49dd0983ac1fba52711e9d7b54fbaaacf;semantic_existing=context/semantic-map.md:hook_automation_framework,provisional_cmd_gate_scaffold;index_existing=docs/semantic-index/index.md:pre-commit refs;syntax=bash-n PASS;decision_candidate=none"
+  resolved_at: "2026-09-01T23:54:35+09:00"
 - id: INS-20260828-031423834-a6d4
   ts: "2026-08-28T03:14:23+09:00"
   insight: "semantic_index_update未登録[[リンク]]ターゲット: [[殿指摘_忍者auto_clear未動作_20260828_0010]] は既存aliasesに一致なし。類似概念TOP3: provisional_dm-login-boundary-asis-tobe_20260817(仮: Dm Login Boundary Asis Tobe 20260817; alias=dm-login-boundary-asis-tobe_20260817; score=4.1) / sg_pre31_semantic_validation(SG-PRE31意味検算; alias=gunshi_idle_lg048_automate_sg_pre31_20260706; score=3.9) / active_task_clear_fail_closed(作業中忍者clearの最下層防止; alias=作業中忍者をauto clearするな; score=3.9)。概念定義とaliases追加を検討せよ"
