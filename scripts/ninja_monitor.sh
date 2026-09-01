@@ -4900,6 +4900,45 @@ notify_karo_durable() {
     return 1
 }
 
+# Legacy outbox rows were written before Karo notification identity became a
+# storage contract.  Upgrade only rows that lack the complete commander
+# envelope; an already-enveloped message must be delivered byte-for-byte.
+_karo_notify_outbox_has_commander_envelope() {
+    local message="$1"
+    [[ "$message" =~ (^|[[:space:]])task_id=commander_directive[[:space:]]+subject_task_id=[^[:space:]]+[[:space:]]+parent_cmd=cmd_[^[:space:]]*([[:space:]]|$) ]]
+}
+
+_karo_notify_outbox_upgrade_legacy_message() {
+    local notify_type="$1"
+    local name="$2"
+    local message="$3"
+    local task_file="$SCRIPT_DIR/queue/tasks/${name}.yaml"
+    local subject_task_id parent_cmd
+
+    if _karo_notify_outbox_has_commander_envelope "$message"; then
+        printf '%s\n' "$message"
+        return 0
+    fi
+
+    # The task file is the source of truth for a legacy row.  If it is absent
+    # or incomplete, retain the original message and let inbox_write decide
+    # whether that notification type can still be delivered safely.
+    if [ ! -f "$task_file" ]; then
+        printf '%s\n' "$message"
+        return 0
+    fi
+    subject_task_id=$(yaml_field_get "$task_file" "task_id" "" 2>/dev/null || true)
+    parent_cmd=$(yaml_field_get "$task_file" "parent_cmd" "" 2>/dev/null || true)
+    if [ -z "$subject_task_id" ] || [ -z "$parent_cmd" ]; then
+        log "NOTIFY-OUTBOX-LEGACY-IDENTITY-MISSING: $notify_type for $name (task_id/parent_cmd unavailable)"
+        printf '%s\n' "$message"
+        return 0
+    fi
+
+    log "NOTIFY-OUTBOX-LEGACY-ENVELOPE: $notify_type for $name subject_task_id=$subject_task_id parent_cmd=$parent_cmd"
+    printf '%s %s\n' "$message" "$(karo_commander_envelope "$subject_task_id" "$parent_cmd" "")"
+}
+
 # outbox flushをmain loop各サイクルで呼ぶ。送達成功分は除去し、失敗分だけ次サイクルへ持ち越す。
 flush_karo_notify_outbox() {
     local outbox_file
@@ -4912,9 +4951,10 @@ flush_karo_notify_outbox() {
     local pending=0
     while IFS=$'\t' read -r ts notify_type name encoded; do
         [ -n "$notify_type" ] || continue
-        local message
+        local message upgraded_message
         message=$(printf '%s' "$encoded" | base64 -d 2>/dev/null)
-        if bash "$SCRIPT_DIR/scripts/inbox_write.sh" karo "$message" "$notify_type" ninja_monitor >> "$LOG" 2>&1; then
+        upgraded_message=$(_karo_notify_outbox_upgrade_legacy_message "$notify_type" "$name" "$message")
+        if bash "$SCRIPT_DIR/scripts/inbox_write.sh" karo "$upgraded_message" "$notify_type" ninja_monitor >> "$LOG" 2>&1; then
             log "NOTIFY-OUTBOX-FLUSHED: $notify_type for $name (queued at ${ts})"
         else
             printf '%s\t%s\t%s\t%s\n' "$ts" "$notify_type" "$name" "$encoded" >> "$tmp_remaining"
