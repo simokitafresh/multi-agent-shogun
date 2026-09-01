@@ -10920,7 +10920,10 @@ insights:
   priority: "low"
   source: "semantic_map_generate:new_file"
   fix_known: false
-  status: pending
+  status: resolved
+  resolved_reason: "semantic map generation primary check: source research file exists but is untracked; exact target path is absent from context/semantic-map.md, docs/semantic-index/index.md, and .cache/causal_index.tsv, so it is intentionally ignored at this tracked-index boundary; no in-scope implementation or decision candidate is required"
+  action_artifact: source=docs/research/gunshi_idle_lgtm_block_root_cause_analysis_20260831.md;semantic_map=/home/simokitafresh/multi-agent-shogun/context/semantic-map.md;semantic_index=/home/simokitafresh/multi-agent-shogun/docs/semantic-index/index.md;causal_index=/home/simokitafresh/multi-agent-shogun/.cache/causal_index.tsv
+  resolved_at: "2026-09-02T02:31:17+09:00"
 - id: INS-20260831-111739420-187d
   ts: "2026-08-31T11:17:39+09:00"
   insight: "semantic_index_update新概念候補: discussion:task notification task id bfso9o7n3 task id tool use id toolu 018xb6B9XtfvZQQ4zb は 既存aliasesに一致なし。概念定義とaliases追加を検討せよ"
