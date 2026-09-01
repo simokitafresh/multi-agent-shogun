@@ -12392,3 +12392,10 @@ insights:
   source: "semantic_index_update"
   fix_known: false
   status: pending
+- id: INS-20260901-155126305-4f55
+  ts: "2026-09-01T15:51:26+09:00"
+  insight: "inbox_mark_read の一括既読(読む前に消す loop)の真の判定は窓内件数でなく処理 receipt: inbox 読取経路(Read tool/python/cat の PostToolUse)で msg_id+content hash の receipt を発行し、mark_read はその一致時のみ通す(家老 blt_154942 の修正案)。現状は WARN+ledger(logs/inbox_mark_read_ledger/<agent>.warn.tsv)で観測のみ。設計・実装は家老 lane hotfix へ"
+  priority: "medium"
+  source: "manual"
+  fix_known: false
+  status: pending
