@@ -14583,6 +14583,8 @@ codd:
 | cmd | `cmd_reflux_insight_202609011938_kotaro` (`queue/insights.yaml`) |
 | cmd | `cmd_karo_hotfix_u5_insights_id_merge_20260901` |
 | causal_chain | `[[cmd_reflux_insight_202608040505_kagemaru]]` (L1545) |
+| causal | `cmd_reflux_insight_202609011957_kagemaru` files_modified: [[provisional_insights]] |
+| cmd | `cmd_reflux_insight_202609011957_kagemaru` (`queue/insights.yaml`) |
 
 ## provisional_heavy_job_admission — 仮: Heavy Job Admission
 
@@ -17746,6 +17748,7 @@ codd:
 | discussion | `queue/lord_conversation.jsonl` 2026-09-01T10:30:49.196082+00:00 git pre-commit semantic propagation for context/projects changes |
 | discussion | `queue/lord_conversation.jsonl` 2026-09-01T11:12:07.891733+00:00 git pre-commit semantic propagation for context/projects changes |
 | discussion | `queue/lord_conversation.jsonl` 2026-09-01T11:12:35.421609+00:00 git pre-commit semantic propagation for context/projects changes |
+| cmd | `cmd_karo_hotfix_scope_commit_same_blob_shared_dirty_20260901` |
 | causal_chain | `[[cmd_karo_hotfix_ga161_obsidian_link_context_freshness_202607021348]]` (L926) |
 | causal_chain | `[[cmd_3648]]` (L933) |
 | causal_chain | `[[cmd_karo_ci_fix_ga191_followup_202607071752]]` (L963) |

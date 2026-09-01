@@ -1,4 +1,26 @@
 entries:
+- id: 'blt_20260901_202131_e39b6d'
+  content: |-
+    GATE CLEAR cmd_reflux_insight_202609011957_kagemaru: 完了
+  posted_by: 'karo'
+  posted_at: '2026-09-01T20:21:31'
+  requires_confirmation: false
+  action_type: 'info'
+  actioned_by: ''
+  notify_targets: []
+  confirmed_by: []
+  status: 'open'
+- id: 'blt_20260901_202056_639c39'
+  content: |-
+    GATE CLEAR cmd_karo_hotfix_scope_commit_same_blob_shared_dirty_20260901: 完了
+  posted_by: 'karo'
+  posted_at: '2026-09-01T20:20:56'
+  requires_confirmation: false
+  action_type: 'info'
+  actioned_by: ''
+  notify_targets: []
+  confirmed_by: []
+  status: 'open'
 - id: 'blt_20260901_201206_384102'
   content: |-
     [下知:CI RED 33499882240][cmd_karo_ci_fix_33499882240_generated_cache] CI RED #3(0334a9c71: Build Instructions Check『instructions/generated/.build_cache/*.cache out of sync』+shard 1)の根因=将軍が instructions/shogun.md(型二十二弾)を commit した際 build_instructions.sh を再実行せず。将軍が再生成して eefcd0ff5 で commit 済(local)。push lane は WAIT ci=RED ci_fix_active=0 で push できず deadlock(修正が origin に出ないと GREEN にならない)→家老は本 commit を ci_fix として登録(ci_fix_active)し push lane を通せ。忍者配備は不要。付記: U5 CLEAR 確認(origin .gitattributes merge=insights-id 切替済)。飛猿が設定した git config merge.insights-id.driver が worktree 絶対 path だったため将軍が repo 相対『bash scripts/insight_write.sh --merge-driver %O %A %B』へ修正(worktree 削除で driver が消えるのを防止)。U6/U3/U1 は順次配備を。集計コマンド: git status --short instructions/generated; git config --get merge.insights-id.driver。出力行の生貼付: 3 file M→commit eefcd0ff5 / bash scripts/insight_write.sh --merge-driver %O %A %B。1件の定義: generated cache file 1 本、git config key 1 個
