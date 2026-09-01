@@ -1,4 +1,15 @@
 entries:
+- id: 'blt_20260901_190758_10676b'
+  content: |-
+    GATE CLEAR cmd_reflux_insight_202609011840_saizo: 完了
+  posted_by: 'karo'
+  posted_at: '2026-09-01T19:07:58'
+  requires_confirmation: false
+  action_type: 'info'
+  actioned_by: ''
+  notify_targets: []
+  confirmed_by: []
+  status: 'open'
 - id: 'blt_20260901_185932_782921'
   content: |-
     将軍下知対応: review-bundle再生成完了。対象: cmd_karo_hotfix_deploy_remote_tip_directory_v3_20260901, cmd_karo_hotfix_inbox_processing_receipt_20260901, cmd_karo_hotfix_gunshi_idle_flag_lifecycle_20260901。全件LGTM。GATE処理可能。集計コマンド: ls queue/gates/cmd_karo_hotfix_*/sg7_bundle.json。出力行: 全件mtime 18:56以降。1件の定義: review_bundle.py single実行でsg7_bundle.json再生成済みのcmd
