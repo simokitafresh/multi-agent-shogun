@@ -168,6 +168,14 @@ test_execution:
 - **enforcement**: agent_respawn.sh 作業中ガード(e3712b4a9)/codex_inbox_priority_guard.sh(42f09d54b)/cli_lookup 接尾辞自己修復+BASH_REMATCH 排除(bc9f4a8c6)/script_update.sh bash フォールバック(2df2ecdee)/inbox_write gunshi 宛 review_draft 許可+stderr 記録(c17a92d8e)。未自動化: push 単位 1 commit の強制(pre-push hook で origin..pushed が first-parent 1 段を超えたら WARN)。
 - origin: `[[殿裁定_1commitずつpush_20260826]] -> [[家老の行動型_1通1単位]] -> [[つまり3本根治_20260827]]`
 
+## 復帰後の型・第二十弾 4則（2026-09-01 14:38-15:02 第21便: 自分の前便が壊した CI/仮説 3 本の手元否定/backlog worktree 回収/家老レビュー 3 往復から・将軍自身に適用）
+
+1. **file を drop する前の呼出し元 census は scripts/ だけでなく tests/(契約)を母集団にせよ。自分の前便の commit が今の RED の犯人であり得る。** 559c02538『死骸 drop』が `tests/unit/test_reset_layout.bats:60` の grep 契約を破り shard1 RED→push lane `WAIT ci=RED ci_fix_active=0`。家老 a58ab1d66→ecfcdfcb9 で GREEN。構造型=pre-commit `deleted_ref`(9de79b9a1: EXACT path 参照残存=BLOCK、空白 justification=BLOCK、非空 justification=WARN+JSONL、basename=候補 WARN、bats 8/8)。
+2. **『忍者が追跡中』の壁でも、手元 10-15 分で否定できる仮説は自分で潰して探索空間を渡せ(利他=Phase 8)。否定も一次成果である。** cmd_4441 の 3 仮説(源 repo `core.sparseCheckout=true`/`worktree add --no-checkout`→同 commit checkout の空 index/planned_paths 未作成 path)を実験で全否定、log に `[INJECT_TARGET_PATH] WARN: target_path does not exist`(源 checkout 208 commit 遅れ)を発見→`queue/notes/shogun_4441_remote_tip_findings_20260901_1447.md`、家老経由で影丸 v3 へ到達(daemon の Git env/cwd/git 版差を trace 中)。手元で出るなら daemon 経路差(型八弾-2)。
+3. **『参照リンク欠落』は git 履歴に無くても worktree に現物が眠っている。`git worktree list` の全 root を `ls` してから書き起こすな。** GA-539 の doc 2 本は `~/doc-backlog.rLF3G6` に 08-27 23:13 から staged 未合流(report は `commit_hash: no-code-change`)。回収 b9906efad→節追記+境界 ecfcdfcb9(bd378b1f8)→gate OK。
+4. **家老レビューは 3 往復で entrypoint 契約まで到達する(型十九弾-7 の実証 2 回目)。REJECT の修正案は『helper の分類』→『enforcement の rc』→『bypass の空洞化』と段が上がる。1 往復ごとに test の層も上げよ。** fef153371(WARN のみ)→6a57f05e9(EXACT BLOCK)→9de79b9a1(空白 justification BLOCK+entrypoint 4 契約)。Gate 10.1d は 1 往復 APPROVE(本番 WARN 2 件の数値を添えた)。
+- origin: `[[殿指示_強くてニューゲーム_20260901_1433]] -> [[559c02538_test契約破壊_CI_RED]] -> [[4441_仮説3本否定_INJECT_WARN]] -> [[doc_backlog_worktree_回収_GA539]] -> [[家老レビュー3往復_deleted_ref]] -> [[復帰後の型_第二十弾]]`
+
 ## 復帰後の型・第十九弾 7則（2026-09-01 12:02-14:35 第20便: 放置監査/launcher 点検/試行錯誤=バグ×2(将軍・家老)/将軍が起きない/家老レビュー往復から・将軍自身に適用）
 
 1. **家老の『介入不要』(二次)で idle 化するな。gate_metrics の cmd 別最終状態と『delegated∧task 無し』を自分で引け。** 11:59 前将軍は家老報告で『便は回転中』と閉じ、殿 12:03『先送りや放置はないか』で 4440(15h BLOCK)/4441(16h)/4436(21h)が露出。真因は gate が web route `/faq/en/` を絶対パス抽出する FP(2467ded95)。次の自動化=startup gate に『delegated_at から N 分超∧配備 0』検知(未着手)。
