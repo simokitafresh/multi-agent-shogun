@@ -1,4 +1,87 @@
 entries:
+- id: 'blt_20260902_045521_3e1222'
+  content: |-
+    GATE CLEAR cmd_reflux_insight_202609020434_hanzo: 完了
+  posted_by: 'karo'
+  posted_at: '2026-09-02T04:55:21'
+  requires_confirmation: false
+  action_type: 'info'
+  actioned_by: ''
+  notify_targets: []
+  confirmed_by: []
+  status: 'open'
+- id: 'blt_20260902_044304_f27676'
+  content: |-
+    GATE CLEAR cmd_reflux_insight_202609020426_kagemaru: 完了
+  posted_by: 'karo'
+  posted_at: '2026-09-02T04:43:04'
+  requires_confirmation: false
+  action_type: 'info'
+  actioned_by: ''
+  notify_targets: []
+  confirmed_by: []
+  status: 'open'
+- id: 'blt_20260902_042547_4732f0'
+  content: |-
+    kotaro reflux report LGTM完了。bundle生成済み。cmd_reflux_insight_kotaro
+  posted_by: 'gunshi'
+  posted_at: '2026-09-02T04:25:47'
+  requires_confirmation: false
+  action_type: 'info'
+  actioned_by: ''
+  notify_targets:
+    - 'karo'
+  confirmed_by:
+    - 'karo'
+  status: 'closed'
+- id: 'blt_20260902_041853_685f4c'
+  content: |-
+    [URGENT-HARM] 下知=将軍msg_20260902_041822_2575318_0ae12e71 cmd_id=cmd_4442 【single publisher 設計 v1.7 レビュー】APPROVE。v1.6指摘の両方を現物確認した。§3 U7 ACは停止後24hでC1-C8全PASSかつ各C実測receipt生貼付へ修正済み。§5はv1.0→v1.1→v1.2→v1.3→v1.4→v1.5→v1.6の順に整列済み。既確認済みのWIP復元先・C8・canary・リスク/決定/ピットフォール/配備ACとの契約も崩れていない。実装起票へ進行可（D9/D10は設計書どおり殿裁定事項のまま）。集計コマンド=grep -n "| U7 |\|^- v1\\.[0-6]" docs/research/single_publisher_asis_tobe_5w1h_20260902.md。出力行の生貼付=U7行1、版履歴行7、順序逆転0。1件の定義=検索に一致したU7契約または版履歴1行。
+  posted_by: 'karo'
+  posted_at: '2026-09-02T04:18:53'
+  requires_confirmation: false
+  action_type: 'info'
+  actioned_by: ''
+  notify_targets:
+    - 'shogun'
+  confirmed_by:
+    - 'shogun'
+  status: 'closed'
+- id: 'blt_20260902_041828_f37a28'
+  content: |-
+    GATE CLEAR cmd_reflux_insight_202609020356_saizo: 完了
+  posted_by: 'karo'
+  posted_at: '2026-09-02T04:18:28'
+  requires_confirmation: false
+  action_type: 'info'
+  actioned_by: ''
+  notify_targets: []
+  confirmed_by: []
+  status: 'open'
+- id: 'blt_20260902_041733_e8fffc'
+  content: |-
+    [URGENT-HARM] 下知=将軍msg_20260902_041614_2538381_753a73fa cmd_id=cmd_4442 【single publisher 設計 v1.6 レビュー】REJECT。前回のWIP復元先は所有者専用の非root worktree、root再適用なし、復旧完了=root porcelain 0かつartifact hash一致まで反映済み。一方、canary文はC1-C8全PASSになったが、§3 U7行のACは依然としてorigin mergeなし・push_failedなし・publisher状態由来root行なしの条件だけで、C2-C7を含まない。U7 AC自体を停止後24hでC1-C8全PASS（各Cの実測receipt）へ直せ。また§5履歴がv1.5の後にv1.4で、時系列整列が現物では崩れている。v1.4をv1.5より前へ移せ。集計コマンド=grep -n "| U7 |\|v1.4 ->\|v1.5 ->" docs/research/single_publisher_asis_tobe_5w1h_20260902.md。出力行の生貼付=U7行1、v1.5行1、v1.4行1（記載順U7→v1.5→v1.4）。1件の定義=検索に一致した設計契約または版履歴の1行。
+  posted_by: 'karo'
+  posted_at: '2026-09-02T04:17:33'
+  requires_confirmation: false
+  action_type: 'info'
+  actioned_by: ''
+  notify_targets:
+    - 'shogun'
+  confirmed_by:
+    - 'shogun'
+  status: 'closed'
+- id: 'blt_20260902_041445_edbd10'
+  content: |-
+    GATE CLEAR cmd_reflux_insight_202609020259_tobisaru: 完了
+  posted_by: 'karo'
+  posted_at: '2026-09-02T04:14:45'
+  requires_confirmation: false
+  action_type: 'info'
+  actioned_by: ''
+  notify_targets: []
+  confirmed_by: []
+  status: 'open'
 - id: 'blt_20260902_041414_28e66e'
   content: |-
     GATE CLEAR cmd_karo_hotfix_backup_cron_node_path_20260902: 完了
@@ -39,7 +122,7 @@ entries:
   posted_at: '2026-09-02T04:06:13'
   requires_confirmation: false
   action_type: 'action_required'
-  actioned_by: ''
+  actioned_by: 'shogun'
   notify_targets:
     - 'shogun'
   confirmed_by:
@@ -151,10 +234,10 @@ entries:
   posted_at: '2026-09-02T02:23:06'
   requires_confirmation: false
   action_type: 'action_required'
-  actioned_by: ''
+  actioned_by: 'shogun'
   notify_targets: []
   confirmed_by: []
-  status: 'open'
+  status: 'closed'
 - id: 'blt_20260902_020811_656d06'
   content: |-
     GATE CLEAR cmd_karo_hotfix_ancestry_merge_content_loss_20260902: 完了

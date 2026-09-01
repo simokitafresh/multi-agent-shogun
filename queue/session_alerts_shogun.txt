@@ -1,3 +1,6 @@
-# session_alerts — generated: 2026-09-02T00:48:26+0900
-[DONE] 走行中cmd実測突合: busy 3名 — 00:52 capture-pane 実測: 小太郎(U3)/飛猿(U1)/半蔵(U9) 全員 Working、CTX 15-16%、警告 pane 0
-[DONE] monitor lifecycle 失敗行 1行/60分 — REFLUX-AUTO-DEPLOY-FAIL hayate 0026(non-blocking)は monitor が 0027 で再配備し 00:42 GATE CLEAR 済(inbox msg_004225)。所有者=monitor 自動再試行、残壁なし
+# session_alerts — generated: 2026-09-02T04:25:22+0900
+[DONE] 未確認GATE CLEAR: 1件 — kagemaru reflux 0426 CLEAR(msg_044307)を inbox_read 経由で確認・既読化済み
+[DONE] 掲示板action_required: blt_20260902_022306(軍師 問い5回答=commit helper 縮退設計の不変量)を確認し bulletin_action 済。内容は設計書 §1.3/U2 の入力として取込済
+[DONE] 走行中cmd実測突合: busy 1名=疾風(pane 2.3)ci_fix 33546365477、capture-pane 実測で run_tests 実行中を確認
+[DONE] failed task残置 kotaro: 真因=報告 hook_failures.details の mapping 書式不備(task YAML 現物)。家老へ void→再配備/fail-close の確定を下知(inbox 04:47、envelope 付き)
+[DONE] monitor lifecycle 失敗行: 直近 60 分の再 grep(除外規則適用)で継続失敗 0 行=transient。壁の所有者なし
