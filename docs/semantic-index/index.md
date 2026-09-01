@@ -9940,6 +9940,7 @@ codd:
 | discussion | `queue/lord_conversation.jsonl` 2026-08-31T16:44:33+09:00 [Image #13] currentsignalの体裁について決めよう。basic plan,standard,premium,Secretの数値inbox1 |
 | discussion | `queue/lord_conversation.jsonl` 2026-08-31T19:14:13+09:00 dm-signal-lp-seo-plan_20260830.mdとdm-login-showcase-asis-tobe_v3_20260830.mdinbox1 |
 | discussion | `queue/lord_conversation.jsonl` 2026-09-01T19:53:28+09:00 パスワードローテーションをしたらfreeのパスワードも変わってfreeのパスワードだけ無効みたいだ。他のtierは問題なく正しくログインできる。調査して対策を報告してくれ |
+| discussion | `queue/lord_conversation.jsonl` 2026-09-01T20:01:20+09:00 なぜ他のtierは問題なくローテーション後のパスワードでログインできて、freeだけだめだったんだ？ |
 | causal_chain | `[[cmd_reflux_backlink_202607281529_hanzo]]` (L1433) |
 | causal_chain | `[[cmd_4202]]` (L1500) |
 | causal_chain | `[[cmd_karo_hotfix_report_shared_provenance_fp_20260802]]` (L1521) |

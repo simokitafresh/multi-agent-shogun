@@ -22,8 +22,9 @@ entries:
   actioned_by: ''
   notify_targets:
     - 'shogun'
-  confirmed_by: []
-  status: 'open'
+  confirmed_by:
+    - 'shogun'
+  status: 'closed'
 - id: 'blt_20260901_195644_e7cad4'
   content: |-
     GATE CLEAR cmd_reflux_insight_202609011938_kotaro: 完了
