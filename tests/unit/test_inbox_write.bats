@@ -1491,6 +1491,110 @@ EOF
     grep -q "quality_monitor" "$TEST_TMPDIR/queue/inbox/gunshi.yaml"
 }
 
+# test_necessity: quality_monitor claim/send/commit must be one key-scoped
+# single-flight operation; concurrent retries for one report generation emit
+# one notification and one durable marker.
+@test "quality_monitor concurrent same-key sends are exactly once" {
+    setup_git_test_env
+    cat > "$TEST_TMPDIR/scripts/gates/gate_report_format.sh" <<'EOF'
+#!/bin/bash
+echo "FAIL: quality fixture: $1" >&2
+exit 1
+EOF
+    chmod +x "$TEST_TMPDIR/scripts/gates/gate_report_format.sh"
+
+    local first_log="$TEST_TMPDIR/quality-first.log"
+    local second_log="$TEST_TMPDIR/quality-second.log"
+    ( _run_inbox_write karo "parallel quality report" report_received testninja >"$first_log" 2>&1; echo "$?" >"$first_log.rc" ) &
+    local first_pid=$!
+    ( _run_inbox_write karo "parallel quality report" report_received testninja >"$second_log" 2>&1; echo "$?" >"$second_log.rc" ) &
+    local second_pid=$!
+    wait "$first_pid" || true
+    wait "$second_pid" || true
+
+    local notifications markers
+    notifications="$(grep -c "^  type: 'quality_monitor'" "$TEST_TMPDIR/queue/inbox/gunshi.yaml" 2>/dev/null || true)"
+    markers="$(find "$TEST_TMPDIR/queue/gates/quality_monitor" -maxdepth 1 -type f -name '*.sent' -print 2>/dev/null | wc -l)"
+    [ "$notifications" -eq 1 ]
+    [ "$markers" -eq 1 ]
+    echo "notifications=$notifications markers=$markers"
+
+    # The report content hash is the generation key: a changed report must
+    # create one new notification while retaining the prior generation.
+    sed -i 's/implementation complete/implementation changed/' \
+        "$TEST_TMPDIR/queue/reports/testninja_report_cmd_test_001.yaml"
+    ( _run_inbox_write karo "changed quality report" report_received testninja >"$first_log" 2>&1; echo "$?" >"$first_log.rc" ) &
+    first_pid=$!
+    ( _run_inbox_write karo "changed quality report" report_received testninja >"$second_log" 2>&1; echo "$?" >"$second_log.rc" ) &
+    second_pid=$!
+    wait "$first_pid" || true
+    wait "$second_pid" || true
+    notifications="$(grep -c "^  type: 'quality_monitor'" "$TEST_TMPDIR/queue/inbox/gunshi.yaml" 2>/dev/null || true)"
+    markers="$(find "$TEST_TMPDIR/queue/gates/quality_monitor" -maxdepth 1 -type f -name '*.sent' -print 2>/dev/null | wc -l)"
+    [ "$notifications" -eq 2 ]
+    [ "$markers" -eq 2 ]
+    echo "changed_notifications=$notifications changed_markers=$markers"
+}
+
+# test_necessity: a failed durable inbox send must release the quality claim
+# and leave no sent marker, allowing a later retry to send normally.
+@test "quality_monitor failed send releases claim" {
+    setup_git_test_env
+    cat > "$TEST_TMPDIR/scripts/gates/gate_report_format.sh" <<'EOF'
+#!/bin/bash
+echo "FAIL: quality fixture: $1" >&2
+exit 1
+EOF
+    chmod +x "$TEST_TMPDIR/scripts/gates/gate_report_format.sh"
+    mkdir -p "$TEST_TMPDIR/queue/inbox"
+    printf 'messages: []\n' > "$TEST_TMPDIR/queue/inbox/gunshi.yaml"
+    source "$PROJECT_ROOT/scripts/lib/lock_path.sh"
+    local gunshi_lock
+    gunshi_lock="$(lock_path "$TEST_TMPDIR/queue/inbox/gunshi.yaml")"
+    exec 9>"$gunshi_lock"
+    flock -n 9
+
+    run _run_inbox_write karo "blocked quality report" report_received testninja
+    flock -u 9
+    eval 'exec 9>&-'
+    [ "$status" -eq 1 ]
+    [ "$(find "$TEST_TMPDIR/queue/gates/quality_monitor" -maxdepth 1 -type f -name '*.claim' | wc -l)" -eq 0 ]
+    [ "$(find "$TEST_TMPDIR/queue/gates/quality_monitor" -maxdepth 1 -type f -name '*.sent' | wc -l)" -eq 0 ]
+    echo "send=failed claims=0 markers=0"
+}
+
+# test_necessity: archiving a report must remove its quality_monitor marker,
+# otherwise a future report generation can inherit stale monitoring state.
+@test "archive cleanup removes quality_monitor marker for archived report" {
+    setup_git_test_env
+    local report="$TEST_TMPDIR/queue/reports/testninja_report_cmd_test_001.yaml"
+    local marker_dir="$TEST_TMPDIR/queue/gates/quality_monitor"
+    mkdir -p "$marker_dir"
+    mkdir -p "$TEST_TMPDIR/queue/archive/reports" "$TEST_TMPDIR/config" "$TEST_TMPDIR/context" "$TEST_TMPDIR/logs"
+    printf 'commands:\n  cmd_test_001:\n    status: done\n' > "$TEST_TMPDIR/queue/shogun_to_karo.yaml"
+    printf 'commands: []\n' > "$TEST_TMPDIR/queue/completed_changelog.yaml"
+    printf '# Dashboard\n' > "$TEST_TMPDIR/dashboard.md"
+    printf '# Dashboard\n' > "$TEST_TMPDIR/config/dashboard_template.md"
+    printf '# Chronicle\n' > "$TEST_TMPDIR/context/cmd-chronicle.md"
+    printf 'decisions: []\n' > "$TEST_TMPDIR/queue/pending_decisions.yaml"
+    # Keep this focused on report archival and marker cleanup; a named parent
+    # command is archived earlier in sweep mode and intentionally protects its
+    # report from a later active-parent check.
+    sed -i '/^parent_cmd:/d' "$report"
+    sed -i '1i status: completed' "$report"
+    printf 'ts: 2026-09-01T00:00:00+09:00\nreport: %s\nninja: testninja\n' "$report" \
+        > "$marker_dir/testninja.archive-key.sent"
+    touch -d '20 days ago' "$report"
+
+    run env ARCHIVE_COMPLETED_PROJECT_DIR="$TEST_TMPDIR" \
+        bash "$PROJECT_ROOT/scripts/archive_completed.sh" 3
+    echo "archive_status=$status archive_output=$output"
+    [ "$status" -eq 0 ]
+    [ "$(find "$TEST_TMPDIR/queue/archive/reports" -maxdepth 1 -type f -name '*.yaml' | wc -l)" -ge 1 ]
+    [ ! -e "$marker_dir/testninja.archive-key.sent" ]
+    echo "archived_reports=1 quality_markers=0"
+}
+
 @test "task_failed: FAIL report and failed task deliver exactly once without retry" {
     setup_git_test_env
 
