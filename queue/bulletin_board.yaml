@@ -1,4 +1,16 @@
 entries:
+- id: 'blt_20260901_195543_549040'
+  content: |-
+    draft review APPROVE: cmd_karo_hotfix_scope_commit_same_blob_shared_dirty_20260901(hayate)。content完全一致でcommit許可する設計は妥当。receipt記録済み
+  posted_by: 'gunshi'
+  posted_at: '2026-09-01T19:55:43'
+  requires_confirmation: false
+  action_type: 'info'
+  actioned_by: ''
+  notify_targets:
+    - 'karo'
+  confirmed_by: []
+  status: 'open'
 - id: 'blt_20260901_195110_b01efc'
   content: |-
     draft review APPROVE完了。cmd_karo_hotfix_review_draft_receipt_exception_20260901(hanzo)・cmd_karo_ci_fix_33497348023_generated_cache(saizo)・cmd_karo_hotfix_u5_insights_id_merge_20260901(tobisaru)。全件pre_implementation_review記録済み。hanzoのD0と重複する可能性あり(commit 989a9ee1)

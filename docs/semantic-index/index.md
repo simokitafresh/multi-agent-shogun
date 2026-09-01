@@ -3308,6 +3308,7 @@ codd:
 | cmd | `cmd_karo_hotfix_gunshi_idle_flag_lifecycle_20260901` (`scripts/hooks/stop_check_inbox.sh`, `scripts/inbox_watcher.sh`, `tests/unit/test_inbox_watcher_busy_queue_singleflight.bats`) |
 | discussion | `queue/lord_conversation.jsonl` 2026-09-01T19:19:00+09:00 2026-09-01 19:04-19:18 T212 整合+gist_sync 誤用事故: ①殿下問『T212 は副作用があったのでは・別設計書と整合』→正本=docs/research/agent_readiness_level3_ro |
 | discussion | `queue/lord_conversation.jsonl` 2026-09-01T19:29:13+09:00 session_save_20260901_1928(先に session_save_20260901_1816 を読め) 第22便 18:16-19:28: ①5 件 CLEAR 完了(才蔵/飛猿 18:28、半蔵 ci_fix 18:3 |
+| discussion | `queue/lord_conversation.jsonl` 2026-09-01T19:54:19+09:00 サインインに失敗しました: PKCE code verifier not found in storage. This can happen if the auth flow was initiated in a different bro |
 | causal_chain | `[[cmd_3749]]` (L974) |
 | causal_chain | `[[cmd_training_L1_report-write_20260708020332]]` (L977) |
 | causal_chain | `[[cmd_reflux_insight_202607071717_tobisaru]]` (L961) |
@@ -3365,7 +3366,6 @@ codd:
 | causal_chain | `[[cmd_karo_hotfix_observation_window_ci_terms_20260830]]` (L1676) |
 | causal_chain | `[[cmd_4437]]` (L1691) |
 | causal_chain | `[[cmd_karo_hotfix_cfc_origin_basis_20260901]]` (L1693) |
-| discussion | `queue/lord_conversation.jsonl` 2026-09-01T19:54:19+09:00 サインインに失敗しました: PKCE code verifier not found in storage. This can happen if the auth flow was initiated in a different bro |
 
 ## investment_knowledge_base — 投資知識辞書
 
