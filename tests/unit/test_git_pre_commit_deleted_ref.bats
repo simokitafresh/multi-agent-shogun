@@ -160,6 +160,20 @@ print("PARSE_OK")
   [[ "$output" == *"PARSE_OK"* ]]
 }
 
+@test "entrypoint: justification set but bypass log unwritable exits 1 (no record = no bypass)" {
+  git -C "$REPO" rm -q scripts/legacy_departure.sh
+  # logs/ is a regular file: mkdir -p and open(..., "a") on logs/<file> both fail
+  printf 'not a directory\n' > "$REPO/logs"
+  export PRECOMMIT_DELETED_REF_JUSTIFICATION='deliberate'
+  run run_enforce
+  unset PRECOMMIT_DELETED_REF_JUSTIFICATION
+  [ "$status" -eq 1 ]
+  [[ "$output" == *"BLOCKED(deleted_ref)"* ]]
+  [[ "$output" == *"could not be recorded"* ]]
+  [ -f "$REPO/logs" ]
+  [ "$(cat "$REPO/logs")" = "not a directory" ]
+}
+
 @test "entrypoint: BASENAME-only finding exits 0 with WARN and no bypass log" {
   git -C "$REPO" rm -q scripts/legacy_departure.sh
   printf '@test "x" {\n  true\n}\n' > "$REPO/tests/unit/test_legacy.bats"

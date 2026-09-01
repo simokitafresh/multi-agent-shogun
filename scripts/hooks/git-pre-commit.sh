@@ -390,18 +390,34 @@ precommit_enforce_deleted_refs() {
         printf '%s' "$exact" >&2
         return 1
     fi
+    # Bypass is granted only when the justification is durably recorded:
+    # append the JSONL row, then read it back and parse it (postcondition).
+    # Any writer/parse failure is BLOCK (karo re-review 15:02: "記録時のみ通過").
     bypass_log="$REPO_ROOT/logs/precommit_deleted_ref_bypass.jsonl"
-    echo "[pre-commit] WARN(deleted_ref): exact references remain but PRECOMMIT_DELETED_REF_JUSTIFICATION is set; logged to logs/precommit_deleted_ref_bypass.jsonl" >&2
-    printf '%s' "$exact" >&2
     mkdir -p "$(dirname "$bypass_log")" 2>/dev/null || true
-    JUST="$justification" DELS="$exact" python3 - "$bypass_log" <<'PY' 2>/dev/null || echo "[pre-commit] WARN(deleted_ref): bypass log write failed" >&2
+    if ! JUST="$justification" DELS="$exact" python3 - "$bypass_log" <<'PY' 2>/dev/null
 import json, os, sys, datetime
+path = sys.argv[1]
 row = {"ts": datetime.datetime.now().astimezone().isoformat(timespec="seconds"),
        "justification": os.environ.get("JUST", ""),
        "deletions": os.environ.get("DELS", "")}
-with open(sys.argv[1], "a", encoding="utf-8") as fh:
-    fh.write(json.dumps(row, ensure_ascii=False) + "\n")
+line = json.dumps(row, ensure_ascii=False)
+with open(path, "a", encoding="utf-8") as fh:
+    fh.write(line + "\n")
+    fh.flush()
+    os.fsync(fh.fileno())
+with open(path, "r", encoding="utf-8") as fh:
+    tail = [l for l in fh.read().splitlines() if l.strip()]
+if not tail or json.loads(tail[-1]) != row:
+    raise SystemExit(1)
 PY
+    then
+        echo "BLOCKED(deleted_ref): PRECOMMIT_DELETED_REF_JUSTIFICATION is set but the bypass could not be recorded in logs/precommit_deleted_ref_bypass.jsonl (write or read-back failed). A bypass without a record is not a bypass:" >&2
+        printf '%s' "$exact" >&2
+        return 1
+    fi
+    echo "[pre-commit] WARN(deleted_ref): exact references remain but PRECOMMIT_DELETED_REF_JUSTIFICATION is set; recorded in logs/precommit_deleted_ref_bypass.jsonl" >&2
+    printf '%s' "$exact" >&2
     return 0
 }
 
