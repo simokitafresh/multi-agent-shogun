@@ -174,15 +174,41 @@ fi
 
 [[ -d "$STATE_DIR" ]] || mkdir -p "$STATE_DIR"
 idle_flag="${STATE_DIR}/shogun_idle_${agent_id}"
+# The stop hook and inbox watcher are separate processes.  Serialize the
+# lifecycle transition so a stale stop callback cannot recreate a flag after
+# the watcher has consumed it for delivery.
+idle_flag_lock="${idle_flag}.lock"
+set_idle_flag() {
+  (
+    flock -w 5 9 || exit 1
+    : > "$idle_flag"
+  ) 9>"$idle_flag_lock"
+}
+clear_idle_flag() {
+  (
+    flock -w 5 9 || exit 1
+    rm -f "$idle_flag"
+  ) 9>"$idle_flag_lock"
+}
+set_agent_state() {
+  local state="$1"
+  [[ -n "${TMUX_PANE:-}" ]] || return 0
+  tmux set-option -p -t "$TMUX_PANE" @agent_state "$state" 2>/dev/null || true
+}
 # cmd_2076: jq -r '.stop_hook_active...' → bash文字列マッチに変更 (~5ms削減)
 stop_hook_active=false
 if [[ "$payload" == *'"stop_hook_active":true'* || "$payload" == *'"stop_hook_active": true'* ]]; then
   stop_hook_active=true
 fi
 if [[ "$stop_hook_active" == "true" ]]; then
-  : > "$idle_flag"
+  clear_idle_flag || true
   exit 0
 fi
+
+# A normal Stop callback starts from the busy side of the contract.  Only the
+# final no-unread path below may publish idle.
+set_agent_state active
+clear_idle_flag || true
 
 detect_shogun_brainwash_pattern() {
   local message="$1"
@@ -578,6 +604,8 @@ fi
 
 inbox_file="$SCRIPT_DIR/queue/inbox/${agent_id}.yaml"
 if [[ ! -f "$inbox_file" ]]; then
+  set_idle_flag || true
+  set_agent_state idle
   exit 0
 fi
 
@@ -586,7 +614,8 @@ if [[ "$payload" != *'"last_assistant_message"'* && "$agent_id" != "karo" && "$a
   _ninja_task_for_cache="$SCRIPT_DIR/queue/tasks/${agent_id}.yaml"
   fast_cache="$STATE_DIR/shogun_stop_check_inbox_fast_${agent_id}"
   if [[ -f "$_ninja_task_for_cache" && -f "$fast_cache" && ! "$inbox_file" -nt "$fast_cache" && ! "$_ninja_task_for_cache" -nt "$fast_cache" ]]; then
-    : > "$idle_flag"
+    set_idle_flag || true
+    set_agent_state idle
     exit 0
   fi
 fi
@@ -600,7 +629,7 @@ if (( unread_count > 0 )); then
 fi
 
 if [[ "$has_unread" == "true" ]]; then
-  : > "$idle_flag"
+  clear_idle_flag || true
   _summary_cache="$STATE_DIR/shogun_stop_check_inbox_summary_${agent_id}"
   if [[ -s "$_summary_cache" && ! "$inbox_file" -nt "$_summary_cache" ]]; then
     IFS= read -r _cached_summary < "$_summary_cache" || _cached_summary=""
@@ -806,7 +835,6 @@ else
         _ninja_task_done=true
       fi
       if [[ "$_ninja_task_done" == "true" ]]; then
-        : > "$idle_flag"
         _reason="Task completed. Wait for next task assignment from karo. Do NOT start new work."
         jq -n --arg reason "$_reason" '{"decision":"block","reason":$reason}'
         exit 0
@@ -825,7 +853,8 @@ else
     fi
   fi
 
-  : > "$idle_flag"
+  set_agent_state idle
+  set_idle_flag || true
   if [[ -n "$fast_cache" ]]; then
     : > "$fast_cache"
   fi

@@ -79,7 +79,7 @@ printf "%s" "$PAYLOAD" | "$TEST_PROJECT_PATH/scripts/hooks/stop_check_inbox.sh"
 '
 }
 
-@test "T-SCI-001: unread inbox keeps idle flag while blocking" {
+@test "T-SCI-001: unread inbox clears idle flag while blocking" {
     cat > "$TEST_PROJECT/queue/inbox/hayate.yaml" <<'EOF'
 messages:
   - id: msg1
@@ -92,7 +92,7 @@ EOF
 
     run_hook '{"stop_hook_active":false}'
     [ "$status" -eq 0 ]
-    [ -f "$TEST_IDLE_FLAG" ]
+    [ ! -f "$TEST_IDLE_FLAG" ]
     echo "$output" | jq -e '.decision == "block"' >/dev/null
 }
 
