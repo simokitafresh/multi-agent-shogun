@@ -12473,7 +12473,10 @@ insights:
   priority: "low"
   source: "semantic_map_generate:new_file"
   fix_known: false
-  status: pending
+  status: resolved
+  resolved_reason: "一次情報で対象テストがtracked実在し、commit 37f7d2732b543605b18d071044a24857fc97dc94 に実装済み。run_tests.sh file は2/2 PASS・SKIP0で、今回の実装修正は不要。対象pathのsemantic-map/index登録は未確認のためdecision_candidateとして保持する。"
+  action_artifact: "target=queue/insights.yaml:INS-20260901-152703823-7656;primary=tests/unit/test_prompt_state_inject_agent_resolution.bats;commit=37f7d2732b543605b18d071044a24857fc97dc94;tests=run_tests.sh file tests/unit/test_prompt_state_inject_agent_resolution.bats (2/2 PASS, SKIP0);semantic_map=context/semantic-map.md:42 existing growth_loop/prompt_state_inject;semantic_index=docs/semantic-index/index.md:5508 existing prompt_state_inject test references;exact_path_refs=0;decision_candidate=existing prompt_state_inject/growth_loop conceptへ対象テストpathを登録"
+  resolved_at: "2026-09-02T05:07:54+09:00"
 - id: INS-20260901-154835759-1734
   ts: "2026-09-01T15:48:35+09:00"
   insight: "semantic_index_update新概念候補: discussion:マップを正本とartifactを更新して、つまりがあれば覚醒して解消して は 既存aliasesに一致なし。概念定義とaliases追加を検討せよ"
