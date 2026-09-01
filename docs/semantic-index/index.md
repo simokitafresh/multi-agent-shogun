@@ -3309,6 +3309,7 @@ codd:
 | discussion | `queue/lord_conversation.jsonl` 2026-09-01T19:19:00+09:00 2026-09-01 19:04-19:18 T212 整合+gist_sync 誤用事故: ①殿下問『T212 は副作用があったのでは・別設計書と整合』→正本=docs/research/agent_readiness_level3_ro |
 | discussion | `queue/lord_conversation.jsonl` 2026-09-01T19:29:13+09:00 session_save_20260901_1928(先に session_save_20260901_1816 を読め) 第22便 18:16-19:28: ①5 件 CLEAR 完了(才蔵/飛猿 18:28、半蔵 ci_fix 18:3 |
 | discussion | `queue/lord_conversation.jsonl` 2026-09-01T19:54:19+09:00 サインインに失敗しました: PKCE code verifier not found in storage. This can happen if the auth flow was initiated in a different bro |
+| discussion | `queue/lord_conversation.jsonl` 2026-09-01T20:31:12+09:00 2026-09-01 20:30 殿『free は問題なく動いてる』=Free tier 実機 PASS(rotate-all 後の backend 再 deploy dep-dabavvf1 20:02 live で解消)。PKCE エラ |
 | causal_chain | `[[cmd_3749]]` (L974) |
 | causal_chain | `[[cmd_training_L1_report-write_20260708020332]]` (L977) |
 | causal_chain | `[[cmd_reflux_insight_202607071717_tobisaru]]` (L961) |
@@ -8874,6 +8875,7 @@ codd:
 | cmd | `cmd_karo_hotfix_deploy_remote_tip_directory_v3_20260901` (`scripts/deploy_task.sh`, `scripts/deploy_task/preflight.sh`, `tests/unit/test_task_worktree_lifecycle.bats`) |
 | causal | `cmd_karo_hotfix_gunshi_idle_flag_lifecycle_20260901` files_modified: [[agent_formation_management]] |
 | discussion | `queue/lord_conversation.jsonl` 2026-09-01T19:37:34+09:00 2026-09-01 19:31-19:38 殿『家老にレビューしてもらえ』: 将軍 D0 6 commit を家老レビュー(blt_193552)=APPROVE 1(9c19734af gist_sync 固定 id 制限)/REJEC |
+| cmd | `cmd_karo_hotfix_failclose_pending_monitor_20260901` |
 | causal_chain | `[[cmd_karo_hotfix_deploy_task_latency_yaml_bug_20260702010845]]` (L918) |
 | causal_chain | `[[cmd_karo_hotfix_deploy_task_yaml_speed_recon_guard_202607020133]]` (L919) |
 | causal_chain | `[[cmd_karo_hotfix_ga162_hook_failure_pre_push_202607021402]]` (L930) |
@@ -17749,6 +17751,8 @@ codd:
 | discussion | `queue/lord_conversation.jsonl` 2026-09-01T11:12:07.891733+00:00 git pre-commit semantic propagation for context/projects changes |
 | discussion | `queue/lord_conversation.jsonl` 2026-09-01T11:12:35.421609+00:00 git pre-commit semantic propagation for context/projects changes |
 | cmd | `cmd_karo_hotfix_scope_commit_same_blob_shared_dirty_20260901` |
+| discussion | `queue/lord_conversation.jsonl` 2026-09-01T11:36:09.304839+00:00 git pre-commit semantic propagation for context/projects changes |
+| discussion | `queue/lord_conversation.jsonl` 2026-09-01T11:36:31.100341+00:00 git pre-commit semantic propagation for context/projects changes |
 | causal_chain | `[[cmd_karo_hotfix_ga161_obsidian_link_context_freshness_202607021348]]` (L926) |
 | causal_chain | `[[cmd_3648]]` (L933) |
 | causal_chain | `[[cmd_karo_ci_fix_ga191_followup_202607071752]]` (L963) |
