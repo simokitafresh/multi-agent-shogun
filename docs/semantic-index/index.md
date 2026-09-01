@@ -8871,6 +8871,7 @@ codd:
 | causal | `cmd_karo_hotfix_deploy_remote_tip_directory_v3_20260901` files_modified: [[agent_formation_management]] |
 | cmd | `cmd_karo_hotfix_deploy_remote_tip_directory_v3_20260901` (`scripts/deploy_task.sh`, `scripts/deploy_task/preflight.sh`, `tests/unit/test_task_worktree_lifecycle.bats`) |
 | causal | `cmd_karo_hotfix_gunshi_idle_flag_lifecycle_20260901` files_modified: [[agent_formation_management]] |
+| discussion | `queue/lord_conversation.jsonl` 2026-09-01T19:37:34+09:00 2026-09-01 19:31-19:38 殿『家老にレビューしてもらえ』: 将軍 D0 6 commit を家老レビュー(blt_193552)=APPROVE 1(9c19734af gist_sync 固定 id 制限)/REJEC |
 | causal_chain | `[[cmd_karo_hotfix_deploy_task_latency_yaml_bug_20260702010845]]` (L918) |
 | causal_chain | `[[cmd_karo_hotfix_deploy_task_yaml_speed_recon_guard_202607020133]]` (L919) |
 | causal_chain | `[[cmd_karo_hotfix_ga162_hook_failure_pre_push_202607021402]]` (L930) |
@@ -16216,6 +16217,7 @@ codd:
 | discussion | `queue/lord_conversation.jsonl` 2026-09-01T09:28:59.270112+00:00 git pre-commit semantic propagation for context/projects changes |
 | discussion | `queue/lord_conversation.jsonl` 2026-09-01T09:41:29.099885+00:00 git pre-commit semantic propagation for context/projects changes |
 | discussion | `queue/lord_conversation.jsonl` 2026-09-01T10:05:18.535176+00:00 git pre-commit semantic propagation for context/projects changes |
+| discussion | `queue/lord_conversation.jsonl` 2026-09-01T10:36:04.694632+00:00 git pre-commit semantic propagation for context/projects changes |
 | causal_chain | `[[cmd_karo_hotfix_lessons_yaml_format_restore_20260727]]` (L1389) |
 
 ## infra_design_intent — インフラ設計意図カタログ
