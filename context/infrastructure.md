@@ -124,7 +124,7 @@
 <!-- source_commit:f8c49cbd7 reason:cmd_shogun_commit_reservation_ledger_phase1_20260805 evidence:reviewed -->
 <!-- source_commit:515f0214e reason:cmd_karo_hotfix_ga432_context_freshness reviewed source boundary evidence:cmd_complete_gate project=infra context=context/infrastructure.md commit=515f0214e -->
 <!-- source_commit:23a1ce61205ce4496ab11570583e8e8adcaeac4e reason:reflux backlink SSOT update reviewed evidence:incoming 0 to 1; runner69/69; target doc diff0 -->
-<!-- last_synced_lesson: L1695 -->
+<!-- last_synced_lesson: L1696 -->
 
 結論: 本ファイルは検索起点となる索引層。運用詳細・経緯・教訓本文は7つの詳細正本へ移設した。
 source boundary一致taskはregistryのowner/update_triggerからcontext_update_candidatesを自動注入し、未処理候補はcmd_complete_gateがBLOCK、明示処理済み/無関係はCLEAR。
@@ -175,7 +175,7 @@ source boundary一致taskはregistryのowner/update_triggerからcontext_update_
 結論: 詳細は `docs/research/infrastructure-lessons-reviews-operations.md` に保存。原文を省略せず移設済み。
 見出し: 前節「Infra教訓索引」の連続本文（source lines 1701-2123）。
 - L1503: 既存legacy欠損は不変multisetで隔離せよ（cmd_karo_hotfix_shared_operational_log_ownership_20260801）
-<!-- last_synced_lesson: L1695 -->
+<!-- last_synced_lesson: L1696 -->
 - L1504: appendとarchiveはreaderを含むgeneration transactionにせよ（cmd_karo_hotfix_gunshi_cs_remediation_generation_20260801）
 - L1505: 永続test宣言はtask正本に置く（cmd_4206）
 - L1506: active context DEFERはowner存在だけでなくdirty・baseline変化・fresh leaseの全ANDにせよ（cmd_karo_hotfix_active_context_gate_transient_20260801）
@@ -366,6 +366,7 @@ source boundary一致taskはregistryのowner/update_triggerからcontext_update_
 - L1693: global freshness ledgerはcanonical tipと境界祖先graphを同一判定へ使う（cmd_karo_hotfix_cfc_origin_basis_20260901）
 - L1694: run_tests task scope must use concrete test paths（cmd_karo_hotfix_inbox_processing_receipt_20260901）
 - L1695: モノリス末尾overrideだけでは分割モジュールのremote-tip境界を守れない（cmd_karo_hotfix_deploy_remote_tip_directory_v3_20260901）
+- L1696: inbox read receiptは本文処理receiptと分離して型別に強制する（cmd_karo_hotfix_review_processing_receipt_20260901）
 
 ## 設計標準・テスト・因果
 
