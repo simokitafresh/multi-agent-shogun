@@ -8138,10 +8138,9 @@ YAML
     [ "$output" = "unmerged_branch=1 block=1 push=0 false_positive=0 skip=0" ]
 }
 
-# test_necessity: when origin/main is not an ancestor of HEAD but the automatic
-# integrate merge succeeds, the lane must log INTEGRATE and continue to the
-# first-parent candidate scan instead of blocking (2026-09-01 push stalls of
-# 23 min and 40 min while Karo made "runtime: integrate …" merges by hand).
+# test_necessity: when origin/main is not an ancestor of HEAD, integration is
+# performed in a detached worktree and only the resulting root ref changes;
+# shared-root dirty bytes remain untouched.
 @test "push lane auto-integrates origin/main when the merge succeeds" {
     run env PROJECT_ROOT="$PROJECT_ROOT" bash -c '
         set -euo pipefail
@@ -8150,35 +8149,138 @@ YAML
         unset NINJA_MONITOR_LIB_ONLY
         root="$BATS_TEST_TMPDIR/push-lane-auto-integrate"
         mkdir -p "$root/logs" "$root/state"
+        git init -q "$root"
+        git -C "$root" config user.email test@example.invalid
+        git -C "$root" config user.name push-lane-test
+        printf "base\n" > "$root/base.txt"
+        git -C "$root" add base.txt
+        git -C "$root" commit -q -m base
+        git -C "$root" branch -M main
+        base_sha=$(git -C "$root" rev-parse HEAD)
+        printf "local\n" > "$root/local.txt"
+        git -C "$root" add local.txt
+        git -C "$root" commit -q -m local
+        local_sha=$(git -C "$root" rev-parse HEAD)
+        git -C "$root" checkout -q --detach "$base_sha"
+        printf "remote\n" > "$root/remote.txt"
+        git -C "$root" add remote.txt
+        git -C "$root" commit -q -m remote
+        remote_sha=$(git -C "$root" rev-parse HEAD)
+        git -C "$root" update-ref refs/remotes/origin/main "$remote_sha"
+        git -C "$root" checkout -q main
+        printf "live\n" > "$root/live-runtime.txt"
+        before_ref=$(git -C "$root" rev-parse refs/heads/main)
         SCRIPT_DIR="$root" STATE_DIR="$root/state" LOG="$root/logs/monitor.log"
         PUSH_LANE_LOG="$root/logs/push.log" PUSH_LANE_LOCK_FILE="$root/state/push.lock"
-        PUSH_LANE_MIN_AGE_SEC=600
-        remote_sha=1111111111111111111111111111111111111111
-        candidate_sha=2222222222222222222222222222222222222222
-        merged=0
-        git() {
-            case "$*" in
-                *"rev-list --count"*) printf "1\n" ;;
-                *"rev-list --first-parent --reverse"*) printf "%s\n" "$candidate_sha" ;;
-                *"symbolic-ref --quiet --short HEAD"*) printf "main\n" ;;
-                *"rev-parse origin/main"*) printf "%s\n" "$remote_sha" ;;
-                *"rev-parse HEAD"*) printf "%s\n" "$candidate_sha" ;;
-                *"merge-base --is-ancestor HEAD origin/main"*) return 1 ;;
-                *"merge-base --is-ancestor origin/main HEAD"*) [ -e "$root/merged" ] && return 0 || return 1 ;;
-                *"merge --no-ff"*) : > "$root/merged"; return 0 ;;
-                *"show -s --format=%ct"*) printf "1\n" ;;
-                *) return 0 ;;
-            esac
-        }
-        push_lane_pre_push_hook_ready() { return 0; }
-        push_lane_publish_one() { printf "push\n" > "$root/publish.log"; return 0; }
-        check_push_lane GREEN || true
-        test "$(grep -c "INTEGRATE remote=$remote_sha" "$PUSH_LANE_LOG")" -eq 1
-        test "$(grep -c "BLOCK reason=remote_tip_not_ancestor" "$PUSH_LANE_LOG")" -eq 0
-        printf "auto_integrate=1 block=0\n"
+        if push_lane_integrate_remote "$root" refs/remotes/origin/main "$remote_sha"; then :; else exit 1; fi
+        integrated=$(git -C "$root" rev-parse refs/heads/main)
+        test "$before_ref" = "$local_sha"
+        test "$integrated" != "$before_ref"
+        git -C "$root" merge-base --is-ancestor "$remote_sha" "$integrated"
+        test "$(cat "$root/live-runtime.txt")" = live
+        test "$(grep -c "INTEGRATE-DIRTY-WARN paths=live-runtime.txt" "$PUSH_LANE_LOG")" -eq 1
+        test "$(grep -c "AUTOCOMMIT-LEDGERS" "$PUSH_LANE_LOG" || true)" -eq 0
+        test "$(git -C "$root" worktree list --porcelain | grep -c "^worktree ")" -eq 1
+        printf "auto_integrate=1 isolated=detached root_ref_advanced=1 dirty_preserved=1 autocommit=0\n"
     '
     [ "$status" -eq 0 ]
-    [ "$output" = "auto_integrate=1 block=0" ]
+    [ "$output" = "auto_integrate=1 isolated=detached root_ref_advanced=1 dirty_preserved=1 autocommit=0" ]
+}
+
+# test_necessity: a merge conflict in the isolated integration worktree must
+# leave the root ref and shared-root dirty bytes unchanged while emitting one
+# single-line INTEGRATE-MERGE-FAIL record.
+# regression_justification: protects the fail-closed branch after replacing
+# direct shared-root merges with detached worktree integration.
+@test "push lane isolated integration fails closed without moving root ref" {
+    run env PROJECT_ROOT="$PROJECT_ROOT" bash -c '
+        set -euo pipefail
+        export NINJA_MONITOR_LIB_ONLY=1
+        source "$PROJECT_ROOT/scripts/ninja_monitor.sh"
+        unset NINJA_MONITOR_LIB_ONLY
+        root="$BATS_TEST_TMPDIR/push-lane-isolated-failure"
+        mkdir -p "$root/logs" "$root/state"
+        git init -q "$root"
+        git -C "$root" config user.email test@example.invalid
+        git -C "$root" config user.name push-lane-test
+        printf "base\n" > "$root/shared.txt"
+        git -C "$root" add shared.txt
+        git -C "$root" commit -q -m base
+        git -C "$root" branch -M main
+        base_sha=$(git -C "$root" rev-parse HEAD)
+        printf "local\n" > "$root/shared.txt"
+        git -C "$root" commit -q -am local
+        local_sha=$(git -C "$root" rev-parse HEAD)
+        git -C "$root" checkout -q --detach "$base_sha"
+        printf "remote\n" > "$root/shared.txt"
+        git -C "$root" commit -q -am remote
+        remote_sha=$(git -C "$root" rev-parse HEAD)
+        git -C "$root" update-ref refs/remotes/origin/main "$remote_sha"
+        git -C "$root" checkout -q main
+        printf "keep\n" > "$root/live-runtime.txt"
+        SCRIPT_DIR="$root" STATE_DIR="$root/state" LOG="$root/logs/monitor.log"
+        PUSH_LANE_LOG="$root/logs/push.log" PUSH_LANE_LOCK_FILE="$root/state/push.lock"
+        if push_lane_integrate_remote "$root" refs/remotes/origin/main "$remote_sha"; then exit 1; fi
+        test "$(git -C "$root" rev-parse refs/heads/main)" = "$local_sha"
+        test "$(cat "$root/shared.txt")" = local
+        test "$(cat "$root/live-runtime.txt")" = keep
+        test "$(grep -c "INTEGRATE-MERGE-FAIL" "$PUSH_LANE_LOG")" -eq 1
+        test "$(grep "INTEGRATE-MERGE-FAIL" "$PUSH_LANE_LOG" | wc -l)" -eq 1
+        test "$(git -C "$root" worktree list --porcelain | grep -c "^worktree ")" -eq 1
+        printf "merge_conflict=1 fail=1 root_ref_unchanged=1 dirty_preserved=1 fail_rows=1\n"
+    '
+    [ "$status" -eq 0 ]
+    [ "$output" = "merge_conflict=1 fail=1 root_ref_unchanged=1 dirty_preserved=1 fail_rows=1" ]
+}
+
+# test_necessity: every shared-root dirty path, including the former fixed
+# ledger paths and an unknown runtime path, is observable as a warning and is
+# never auto-committed by the push lane.
+# regression_justification: prevents reintroduction of the 33595add4 fixed
+# five-path auto-commit that caused repeated auto_merge=failed rows.
+@test "push lane warns on all unknown dirty paths without fixed-list commit" {
+    run env PROJECT_ROOT="$PROJECT_ROOT" bash -c '
+        set -euo pipefail
+        export NINJA_MONITOR_LIB_ONLY=1
+        source "$PROJECT_ROOT/scripts/ninja_monitor.sh"
+        unset NINJA_MONITOR_LIB_ONLY
+        root="$BATS_TEST_TMPDIR/push-lane-dirty-warning"
+        mkdir -p "$root/logs" "$root/state" "$root/queue" "$root/docs/semantic-index" "$root/projects/infra"
+        git init -q "$root"
+        git -C "$root" config user.email test@example.invalid
+        git -C "$root" config user.name push-lane-test
+        printf "base\n" > "$root/base.txt"
+        git -C "$root" add base.txt
+        git -C "$root" commit -q -m base
+        git -C "$root" branch -M main
+        base_sha=$(git -C "$root" rev-parse HEAD)
+        printf "local\n" > "$root/local.txt"
+        git -C "$root" add local.txt
+        git -C "$root" commit -q -m local
+        git -C "$root" checkout -q --detach "$base_sha"
+        printf "remote\n" > "$root/remote.txt"
+        git -C "$root" add remote.txt
+        git -C "$root" commit -q -m remote
+        remote_sha=$(git -C "$root" rev-parse HEAD)
+        git -C "$root" update-ref refs/remotes/origin/main "$remote_sha"
+        git -C "$root" checkout -q main
+        for path in queue/insights.yaml queue/bulletin_board.yaml docs/semantic-index/index.md queue/shogun_todo_map_timestamps.tsv projects/infra/lessons.yaml runtime-extra.txt; do
+            printf "dirty:%s\n" "$path" > "$root/$path"
+        done
+        SCRIPT_DIR="$root" STATE_DIR="$root/state" LOG="$root/logs/monitor.log"
+        PUSH_LANE_LOG="$root/logs/push.log" PUSH_LANE_LOCK_FILE="$root/state/push.lock"
+        push_lane_integrate_remote "$root" refs/remotes/origin/main "$remote_sha"
+        warning=$(grep "INTEGRATE-DIRTY-WARN" "$PUSH_LANE_LOG")
+        for path in queue/insights.yaml queue/bulletin_board.yaml docs/semantic-index/index.md queue/shogun_todo_map_timestamps.tsv projects/infra/lessons.yaml runtime-extra.txt; do
+            case "$warning" in *"$path"*) ;; *) exit 2 ;; esac
+            test "$(cat "$root/$path")" = "dirty:$path"
+        done
+        test "$(grep -c "INTEGRATE-DIRTY-WARN" "$PUSH_LANE_LOG")" -eq 1
+        test "$(grep -c "AUTOCOMMIT-LEDGERS" "$PUSH_LANE_LOG" || true)" -eq 0
+        printf "dirty_paths_warned=6 autocommit=0 root_files_preserved=6\n"
+    '
+    [ "$status" -eq 0 ]
+    [ "$output" = "dirty_paths_warned=6 autocommit=0 root_files_preserved=6" ]
 }
 
 # test_necessity: GA-PUSH1 is a candidate-local failure. It is recorded once,
