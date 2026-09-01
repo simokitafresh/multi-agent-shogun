@@ -1,5 +1,6 @@
 # DM-signal 運用コンテキスト
-<!-- last_updated: 2026-08-31 2026-08-31 06:45 将軍doc lane GA-535: 境界を origin/main tip へ是正(8-hex 旧hotfix markerだと分岐外祖先が非除外で1390/789/1588件の偽ALERT) -->
+<!-- last_updated: 2026-09-01 2026-09-01 将軍doc lane: DOC_LANE_ALERT 4件(偽陽性=marker d87339a4 not ancestor of local clone)。実欠落(showcase API/showcase_events/LP cmd_4431-4437/login minimal/noindex)を追記し境界をorigin/main tipへ -->
+<!-- source_commit:172b6d35e7f2 reason:2026-09-01 将軍doc lane: DOC_LANE_ALERT 4件(偽陽性=marker d87339a4 not ancestor of local clone)。実欠落(showcase API/showcase_events/LP cmd_4431-4437/login minimal/noindex)を追記し境界をorigin/main tipへ evidence:git -C /mnt/c/Python_app/DM-signal log d87339a4..origin/main = 88 commits; diff --stat backend/app = 4 files +621; grep反映 showcase_events/api\/public/cmd_4433 各>=1 -->
 <!-- source_commit:9734518397066f644bd7c7180bccc276d2bf5947 reason:2026-08-31 06:45 将軍doc lane GA-535: 境界を origin/main tip へ是正(8-hex 旧hotfix markerだと分岐外祖先が非除外で1390/789/1588件の偽ALERT) evidence:git -C /mnt/c/Python_app/DM-signal rev-list --count <tip>..origin/main=0 -->
 <!-- source_commit:10d59c8d reason:2026-08-31 将軍doc lane GA-535: §101 deploy契約+Agent Readiness反映 evidence:grep -c '§101' context/dm-signal-ops.md=1(4e705dd2d) -->
 <!-- source_commit:d87339a4 reason:T05 shogun doc lane reviewed source boundary (2026-08-26) evidence:git -C /mnt/c/Python_app/DM-signal log <marker>..origin/main: core/ops=研究系(cmd_4372-4376)+記事のみ・core/ops知識変更なし; research=cmd_4372/4374/4376は末尾§へ反映済; frontend=frontend/配下変更は08-17 cmd_4324-4333のみで§28反映済、残りはbackend(ops§100反映済)/記事/研究。ローカルcloneはoriginと履歴分岐(同subject別hash)のためorigin/main tipを境界にする -->
@@ -1216,3 +1217,9 @@ GA-144原因: `dm-signal-ops.md`のlast_updatedは2026-06-26で、2026-06-26以�
 - deploy 前提は『env 投入時刻 < live build createdAt ∧ chunk に key ≥1』(static export は env→build 順序が契約、型十八弾-1)。
 - LP は build-time fetch=backend 契約変更後に LP 再 build 必須(『LP build 時刻 > backend live 時刻』を post_deploy_check の対に)。
 - robots.txt は静的正本 `lp/public/robots.txt`(Content-Signal: search=yes, ai-input=yes, ai-train=no、97345183)。Level3 ロードマップ → `docs/research/agent_readiness_level3_roadmap_20260831.md`(gist da1b7617)。
+
+## §102 showcase_events 運用 + LP 反映系列の境界 (2026-08-31)
+
+- `showcase_events` は追記専用(UPDATE/DELETE は ORM 層で遮断 §core 97)。集計は step×occurred_at index 前提。DB 変更は migrations.py の CREATE TABLE/INDEX IF NOT EXISTS で冪等。
+- LP 表示変更(cmd_4431-4437)は backend 契約変更を伴う場合 `LP build 時刻 > backend live 時刻` を post_deploy_check で確認(§101)。cmd_4437 太字は将軍裁定(08-31 20:41)で撤回対象、後続 cmd_4441 が正。
+- 境界=origin/main 172b6d35e7f2(ローカル clone は origin と履歴分岐=同 subject 別 hash。DOC_LANE 判定は origin/main tip を基準にせよ。分岐 clone で祖先判定に失敗すると全履歴が「未反映」に見える偽陽性=本日 1390/789/1588 件アラートの正体)。

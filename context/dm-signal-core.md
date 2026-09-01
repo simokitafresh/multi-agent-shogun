@@ -1,5 +1,6 @@
 # DM-signal コアコンテキスト
-<!-- last_updated: 2026-08-31 2026-08-31 06:45 将軍doc lane GA-535: 境界を origin/main tip へ是正(8-hex 旧hotfix markerだと分岐外祖先が非除外で1390/789/1588件の偽ALERT) -->
+<!-- last_updated: 2026-09-01 2026-09-01 将軍doc lane: DOC_LANE_ALERT 4件(偽陽性=marker d87339a4 not ancestor of local clone)。実欠落(showcase API/showcase_events/LP cmd_4431-4437/login minimal/noindex)を追記し境界をorigin/main tipへ -->
+<!-- source_commit:172b6d35e7f2 reason:2026-09-01 将軍doc lane: DOC_LANE_ALERT 4件(偽陽性=marker d87339a4 not ancestor of local clone)。実欠落(showcase API/showcase_events/LP cmd_4431-4437/login minimal/noindex)を追記し境界をorigin/main tipへ evidence:git -C /mnt/c/Python_app/DM-signal log d87339a4..origin/main = 88 commits; diff --stat backend/app = 4 files +621; grep反映 showcase_events/api\/public/cmd_4433 各>=1 -->
 <!-- source_commit:9734518397066f644bd7c7180bccc276d2bf5947 reason:2026-08-31 06:45 将軍doc lane GA-535: 境界を origin/main tip へ是正(8-hex 旧hotfix markerだと分岐外祖先が非除外で1390/789/1588件の偽ALERT) evidence:git -C /mnt/c/Python_app/DM-signal rev-list --count <tip>..origin/main=0 -->
 <!-- source_commit:10d59c8d reason:2026-08-31 将軍doc lane GA-535: §96 contract v3+auth API反映 evidence:grep -c '§96' context/dm-signal-core.md=1(4e705dd2d) -->
 <!-- source_commit:d87339a4 reason:T05 shogun doc lane reviewed source boundary (2026-08-26) evidence:git -C /mnt/c/Python_app/DM-signal log <marker>..origin/main: core/ops=研究系(cmd_4372-4376)+記事のみ・core/ops知識変更なし; research=cmd_4372/4374/4376は末尾§へ反映済; frontend=frontend/配下変更は08-17 cmd_4324-4333のみで§28反映済、残りはbackend(ops§100反映済)/記事/研究。ローカルcloneはoriginと履歴分岐(同subject別hash)のためorigin/main tipを境界にする -->
@@ -563,3 +564,10 @@ null/NaN → INSUFFICIENT_DATA(灰)。Label→色変換は `labelToColorDot()` �
 - 790c7036(cmd_4425): showcase 契約 v3=mdd 追加・best_name 除去・blackout。GATE CLEAR≠到達の再実装版(4415 偽 CLEAR の是正)。
 - 10d59c8d: `_build_hero` に sharpe(close.portfolio)追加+contract test で hero キー集合を固定(キー漏れ再発防止)。
 - c72f95e3(cmd_4428): free-coupon 検証を Supabase Auth API(anon key+Bearer)へ=JWT secret 不要。
+
+## §97 public showcase API `/api/public` + showcase_events テーブル (2026-08-30〜31)
+
+- `backend/app/api/public_showcase.py`(+486行, router prefix `/api/public`): 公開 PF 判定 `is_public_signal_portfolio`/hide_signal、metrics 集約(`_aggregate_metrics`、CAGR は total_return+period_months から導出)、tier 設定 `_tier_settings_for_public`、Supabase user 取得 `_fetch_supabase_user`(Bearer)、hero に sharpe(10d59c8d)。LP 側 origin を CORS 許可(2bef946a)。
+- `ShowcaseEvent`(models.py)+`showcase_events` テーブル(migrations.py: step/ua_class/lang/occurred_at、index step・occurred_at・複合)。mutation は `_block_showcase_event_mutation` で遮断=追記専用テレメトリ(cmd_4422 5b50424e)。
+- 制約: `from __future__ import annotations` を public_showcase.py に置くな(e94cda07: slowapi wrapper 経由で PydanticUndefinedAnnotation→Render deploy 失敗、cmd_4419 5ddd1e96 で文書化)。
+- 境界=origin/main 172b6d35e7f2。

@@ -1,5 +1,6 @@
 # DM-signal フロントエンド コンテキスト（索引）
-<!-- last_updated: 2026-08-31 2026-08-31 06:45 将軍doc lane GA-535: 境界を origin/main tip へ是正(8-hex 旧hotfix markerだと分岐外祖先が非除外で1390/789/1588件の偽ALERT) -->
+<!-- last_updated: 2026-09-01 2026-09-01 将軍doc lane: DOC_LANE_ALERT 4件(偽陽性=marker d87339a4 not ancestor of local clone)。実欠落(showcase API/showcase_events/LP cmd_4431-4437/login minimal/noindex)を追記し境界をorigin/main tipへ -->
+<!-- source_commit:172b6d35e7f2 reason:2026-09-01 将軍doc lane: DOC_LANE_ALERT 4件(偽陽性=marker d87339a4 not ancestor of local clone)。実欠落(showcase API/showcase_events/LP cmd_4431-4437/login minimal/noindex)を追記し境界をorigin/main tipへ evidence:git -C /mnt/c/Python_app/DM-signal log d87339a4..origin/main = 88 commits; diff --stat backend/app = 4 files +621; grep反映 showcase_events/api\/public/cmd_4433 各>=1 -->
 <!-- source_commit:9734518397066f644bd7c7180bccc276d2bf5947 reason:2026-08-31 06:45 将軍doc lane GA-535: 境界を origin/main tip へ是正(8-hex 旧hotfix markerだと分岐外祖先が非除外で1390/789/1588件の偽ALERT) evidence:git -C /mnt/c/Python_app/DM-signal rev-list --count <tip>..origin/main=0 -->
 <!-- source_commit:9d71556d reason:2026-08-31 将軍doc lane GA-535: §29 Free tier 3是正を反映 evidence:grep -c '## 29\.' context/dm-signal-frontend.md=1(4e705dd2d) -->
 <!-- source_commit:d87339a4 reason:2026-08-27 将軍doc lane: DOC_LANE_REQUEST 5b4e27eb(cmd_4333 LoginModal再利用)を反映し境界をDM-signal origin/main tipへ evidence:context/dm-signal-frontend.md §2026-08-27 追加; git -C /mnt/c/Python_app/DM-signal show --stat 5b4e27eb6330 -->
@@ -464,3 +465,8 @@ L122(キャッシュ無効化), L121(API実コード確認) → `context/dm-sign
 ## 29. Free tier 入口 live の 3 是正 (2026-08-31)
 
 結論: `/free` は backend の `{success,data:{coupon}}` 封筒を受ける(9d71556d、トップレベル `coupon` 前提は 4422/4423 契約不一致)。auth callback は `error_description`/`exchangeCodeForSession error.message` を画面に出す(6e033013、診断可視化で殿往復 1 回を消す)。FAQ は EN/JA 二言語 route+metadata で公開(5001d88e、cmd_4427)。
+
+## 30. LP(`lp/`)新設 + Current signals 表の是正系列 + login minimal (cmd_4420-4437, 2026-08-30〜31)
+
+結論: SEO LP は `frontend/` とは別の Next.js app `lp/`(app/page.tsx=EN, app/ja/page.tsx=JA, components/ copy/ lib/ public/、static export・build-time fetch)。Current signals 表は cmd_4431(表現整列 22d60c15)→4432(total return 列除去+指標並び替え dfc87ceb)→4433(hero return series 公開+静的 LP chart cab3d5b8)→4434(FoF 価値提案 1589085a)→4437(太字 172b6d35、**08-31 20:41 将軍裁定で全太字撤回=cmd_4441 で表太字0へ**)。`/free` は noindex metadata(855f77e0 cmd_4435)。login は cmd_4420 で最小 sign-in 入口へ縮小+期限切れ password feedback 維持(d16a3d17/48565471)、bilingual FAQ ルートは cmd_4427(5001d88e)。
+→ 正本 `context/dm-signal-ops.md §101`(deploy 契約)/`context/dm-signal-core.md §97`(showcase API)。境界=DM-signal origin/main 172b6d35e7f2(2026-08-31 20:02)。

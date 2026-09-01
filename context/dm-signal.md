@@ -1,5 +1,6 @@
 # DM-signal コンテキスト（索引）
-<!-- last_updated: 2026-08-28 DOC_LANE_ALERT blt_055235: 8 commits(cmd_2557-3700、06-12〜07-06)は terminology/disambiguation/runbook 参照として dm-signal.md に反映済(grep 4 件)、境界を DM-signal origin/main tip へ -->
+<!-- last_updated: 2026-09-01 2026-09-01 将軍doc lane: terminology/disambiguation/runbook は反映済(grep 4件)、境界のみorigin/main tipへ -->
+<!-- source_commit:172b6d35e7f2 reason:2026-09-01 将軍doc lane: terminology/disambiguation/runbook は反映済(grep 4件)、境界のみorigin/main tipへ evidence:grep -c 'disambiguation\|terminology' context/dm-signal.md = 4; alert 7 commits は cmd_2557-2559 既反映 -->
 <!-- source_commit:40a22dc6608e reason:DOC_LANE_ALERT blt_055235: 8 commits(cmd_2557-3700、06-12〜07-06)は terminology/disambiguation/runbook 参照として dm-signal.md に反映済(grep 4 件)、境界を DM-signal origin/main tip へ evidence:git -C /mnt/c/Python_app/DM-signal log 1a5f5149..origin/main -- context/dm-signal-terminology.md docs/knowledge-base/terminology/disambiguation.md docs/rule/db-operations-runbook.md = 3 commits(5e9ea355/e805b0d9/40a1d740); grep -c disambiguation|terminology context/dm-signal.md = 4 -->
 <!-- source_commit:1a5f51493b69 reason:DOC_LANE_REQUEST blt_054521 source_equivalent 内容変更なし境界のみ evidence:git -C /mnt/c/Python_app/DM-signal log --oneline -1 1a5f51493b69; reason=source_equivalent -->
 <!-- source_commit:40a1d740afed reason:DOC_LANE_REQUEST blt_050658 source_equivalent 内容変更なし境界のみ evidence:git -C /mnt/c/Python_app/DM-signal log --oneline -1 40a1d740afed; reason=source_equivalent -->
