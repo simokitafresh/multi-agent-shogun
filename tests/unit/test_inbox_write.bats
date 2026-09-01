@@ -1911,6 +1911,51 @@ YAML
     [ "$(grep -c "report_id: 'rpt-review-rewake'" "$TEST_TMPDIR/queue/inbox/gunshi.yaml")" -eq 2 ]
 }
 
+# test_necessity: report_review, review_draft, and review_report are alternate
+# handoff routes for one report generation. Only an unread handoff suppresses
+# a retry; a consumed handoff must remain recoverable.
+# regression_justification: the production cmd_4440 incident persisted three
+# Gunshi entries for one report fingerprint across two delivery generations.
+@test "alternate review handoff routes converge on one unread generation" {
+    setup_git_test_env
+    local report="queue/reports/testninja_report_cmd_test_001.yaml"
+    cat >> "$TEST_TMPDIR/$report" <<'YAML'
+report_id: rpt-cross-route
+report_identity_version: 2
+task_id: cmd_cross_route_normal
+parent_cmd: cmd_cross_route
+YAML
+
+    INBOX_WRITE_TEST=1 run _run_inbox_write gunshi "draft report=$report" review_draft ninja_monitor review_request
+    [ "$status" -eq 0 ]
+    [ "$(grep -c "report_id: 'rpt-cross-route'" "$TEST_TMPDIR/queue/inbox/gunshi.yaml")" -eq 1 ]
+
+    INBOX_WRITE_TEST=1 run _run_inbox_write gunshi "legacy report=$report" report_review karo notify_gunshi
+    [ "$status" -eq 0 ]
+    [[ "$output" == *DUPLICATE_MSG_ID=* ]]
+    [ "$(grep -c "report_id: 'rpt-cross-route'" "$TEST_TMPDIR/queue/inbox/gunshi.yaml")" -eq 1 ]
+
+    local generation
+    generation="$(sha256sum "$TEST_TMPDIR/$report" | awk '{print $1}')"
+    INBOX_WRITE_TEST=1 run _run_inbox_write gunshi \
+        "review_pending_state=A task_id=commander_directive subject_task_id=cmd_cross_route_normal parent_cmd=cmd_cross_route report_fingerprint=$generation report=$report" \
+        review_report ninja_monitor review_report
+    [ "$status" -eq 0 ]
+    [[ "$output" == *DUPLICATE_MSG_ID=* ]]
+    [ "$(grep -c "report_id: 'rpt-cross-route'" "$TEST_TMPDIR/queue/inbox/gunshi.yaml")" -eq 1 ]
+
+    sed -i '0,/read: false/s//read: true/' "$TEST_TMPDIR/queue/inbox/gunshi.yaml"
+    INBOX_WRITE_TEST=1 run _run_inbox_write gunshi "retry report=$report" report_review karo notify_gunshi
+    [ "$status" -eq 0 ]
+    [[ "$output" != *DUPLICATE_MSG_ID=* ]]
+    [ "$(grep -c "report_id: 'rpt-cross-route'" "$TEST_TMPDIR/queue/inbox/gunshi.yaml")" -eq 2 ]
+
+    INBOX_WRITE_TEST=1 run _run_inbox_write gunshi "draft retry report=$report" review_draft ninja_monitor review_request
+    [ "$status" -eq 0 ]
+    [[ "$output" == *DUPLICATE_MSG_ID=* ]]
+    [ "$(grep -c "report_id: 'rpt-cross-route'" "$TEST_TMPDIR/queue/inbox/gunshi.yaml")" -eq 2 ]
+}
+
 @test "report_revision resolves target task identity and suppresses only exact retries" {
     setup_git_test_env
     cat >> "$TEST_TMPDIR/queue/tasks/testninja.yaml" <<'YAML'

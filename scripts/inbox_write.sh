@@ -1784,6 +1784,74 @@ sys.exit(1)
 PY
 }
 
+# Review handoffs are one actionable work item per report publication
+# generation. The same generation may arrive through the legacy
+# `report_review`, monitor `review_draft`, or review-pending `review_report`
+# entry point, but those are alternate delivery routes rather than distinct
+# work. Suppress only an unread matching route: once the reviewer consumed it
+# without recording formal approval, the next route is a legitimate retry.
+inbox_review_handoff_duplicate_locked() {
+    local inbox_file="$1" event_type="$2" report_id="$3" report_version="$4" report_fingerprint="$5" parent_cmd="$6" report_path="$7"
+    [ -s "$inbox_file" ] || return 1
+    INBOX_REVIEW_HANDOFF_FILE="$inbox_file" \
+    INBOX_REVIEW_HANDOFF_TYPE="$event_type" \
+    INBOX_REVIEW_HANDOFF_REPORT_ID="$report_id" \
+    INBOX_REVIEW_HANDOFF_VERSION="$report_version" \
+    INBOX_REVIEW_HANDOFF_FINGERPRINT="$report_fingerprint" \
+    INBOX_REVIEW_HANDOFF_PARENT_CMD="$parent_cmd" \
+    INBOX_REVIEW_HANDOFF_REPORT_PATH="$report_path" python3 - <<'PY'
+import os
+import sys
+import yaml
+
+try:
+    data = yaml.safe_load(open(os.environ["INBOX_REVIEW_HANDOFF_FILE"], encoding="utf-8")) or {}
+except (OSError, yaml.YAMLError):
+    sys.exit(1)
+
+def norm_ref(value):
+    value = str(value or "").strip().strip("'\"")
+    while value.startswith("./"):
+        value = value[2:]
+    return value
+
+wanted_id = str(os.environ.get("INBOX_REVIEW_HANDOFF_REPORT_ID") or "")
+wanted_version = str(os.environ.get("INBOX_REVIEW_HANDOFF_VERSION") or "")
+wanted_fp = str(os.environ.get("INBOX_REVIEW_HANDOFF_FINGERPRINT") or "")
+wanted_parent = str(os.environ.get("INBOX_REVIEW_HANDOFF_PARENT_CMD") or "")
+wanted_report = norm_ref(os.environ.get("INBOX_REVIEW_HANDOFF_REPORT_PATH"))
+
+for message in data.get("messages") or []:
+    if not isinstance(message, dict):
+        continue
+    actual_type = str(message.get("type") or "")
+    if actual_type not in {"review_draft", "report_review", "review_report"}:
+        continue
+    # Preserve the existing same-type identity contract (including sender);
+    # this helper only joins alternate delivery routes.
+    if actual_type == str(os.environ.get("INBOX_REVIEW_HANDOFF_TYPE") or ""):
+        continue
+    if message.get("read") is True:
+        continue
+    if str(message.get("report_fingerprint") or "") != wanted_fp:
+        continue
+    if str(message.get("parent_cmd") or "") != wanted_parent:
+        continue
+    actual_id = str(message.get("report_id") or "")
+    if wanted_id and actual_id and actual_id != wanted_id:
+        continue
+    actual_version = str(message.get("report_identity_version") or "")
+    if wanted_version and actual_version and actual_version != wanted_version:
+        continue
+    actual_report = norm_ref(message.get("report_path") or message.get("report"))
+    if wanted_report and actual_report and actual_report != wanted_report:
+        continue
+    print(str(message.get("id") or ""))
+    sys.exit(0)
+sys.exit(1)
+PY
+}
+
 # Print the existing message id when a canonical report lifecycle event was
 # already persisted. Unlike the legacy pending content dedupe this spans read
 # state and ignores retry text/timestamps. Caller holds the inbox flock, making
@@ -3419,6 +3487,13 @@ while [ $attempt -lt $max_attempts ]; do
         fi
 
         if inbox_type_is_review_pending_nudge "$TYPE"; then
+            _existing_review_handoff_id=$(inbox_review_handoff_duplicate_locked "$INBOX" "$TYPE" "" "" \
+                "$REVIEW_PENDING_NUDGE_FINGERPRINT" "$REVIEW_PENDING_NUDGE_PARENT_CMD" \
+                "$REVIEW_PENDING_NUDGE_REPORT" || true)
+            if [ -n "$_existing_review_handoff_id" ]; then
+                printf 'DUPLICATE_MSG_ID=%s\n' "$_existing_review_handoff_id"
+                exit 20
+            fi
             if inbox_review_pending_duplicate_locked "$INBOX" "$FROM" \
                 "$REVIEW_PENDING_NUDGE_TASK_ID" "$REVIEW_PENDING_NUDGE_SUBJECT_TASK_ID" \
                 "$REVIEW_PENDING_NUDGE_PARENT_CMD" "$REVIEW_PENDING_NUDGE_FINGERPRINT" \
@@ -3426,6 +3501,19 @@ while [ $attempt -lt $max_attempts ]; do
                 exit 20
             fi
         elif inbox_type_is_report_lifecycle "$TYPE" && [ -n "${STRUCTURED_REPORT_ID:-}" ]; then
+            _existing_review_handoff_id=""
+            case "$TYPE" in
+                review_draft|report_review)
+                    _existing_review_handoff_id=$(inbox_review_handoff_duplicate_locked "$INBOX" "$TYPE" \
+                        "$STRUCTURED_REPORT_ID" "$STRUCTURED_REPORT_VERSION" \
+                        "$STRUCTURED_REPORT_FINGERPRINT" "$STRUCTURED_PARENT_CMD" \
+                        "$STRUCTURED_REPORT_PATH" || true)
+                    ;;
+            esac
+            if [ -n "$_existing_review_handoff_id" ]; then
+                printf 'DUPLICATE_MSG_ID=%s\n' "$_existing_review_handoff_id"
+                exit 20
+            fi
             _existing_event_id=$(inbox_report_event_duplicate_locked "$INBOX" "$TARGET" "$TYPE" "$FROM" "$STRUCTURED_REPORT_ID" "$STRUCTURED_REPORT_VERSION" "$STRUCTURED_REPORT_FINGERPRINT" "$STRUCTURED_REVISION_FINGERPRINT") || _existing_event_id=""
             if [ -n "$_existing_event_id" ]; then
                 printf 'DUPLICATE_MSG_ID=%s\n' "$_existing_event_id"
