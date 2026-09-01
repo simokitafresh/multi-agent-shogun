@@ -522,6 +522,7 @@ codd:
 | discussion | `queue/lord_conversation.jsonl` 2026-08-31T04:34:27.955247+00:00 git pre-commit semantic propagation for context/projects changes |
 | discussion | `queue/lord_conversation.jsonl` 2026-08-31T04:45:17.042815+00:00 git pre-commit semantic propagation for context/projects changes |
 | causal | `cmd_4431` files_modified: [[cmd_chronicle]] |
+| discussion | `queue/lord_conversation.jsonl` 2026-09-01T10:26:42.918136+00:00 git pre-commit semantic propagation for context/projects changes |
 
 ## unread_cmd_new_deployment_guard — 未読cmd_new配備漏れ防止
 
@@ -3306,6 +3307,7 @@ codd:
 | discussion | `queue/lord_conversation.jsonl` 2026-09-01T17:12:01+09:00 session_save_20260901_1712(先に session_save_20260901_1627 を読め) 第21便 17:12: ①cmd_4441 本番反映完了(家老 blt_164857: DM origin e35d |
 | cmd | `cmd_karo_hotfix_gunshi_idle_flag_lifecycle_20260901` (`scripts/hooks/stop_check_inbox.sh`, `scripts/inbox_watcher.sh`, `tests/unit/test_inbox_watcher_busy_queue_singleflight.bats`) |
 | discussion | `queue/lord_conversation.jsonl` 2026-09-01T19:19:00+09:00 2026-09-01 19:04-19:18 T212 整合+gist_sync 誤用事故: ①殿下問『T212 は副作用があったのでは・別設計書と整合』→正本=docs/research/agent_readiness_level3_ro |
+| discussion | `queue/lord_conversation.jsonl` 2026-09-01T19:29:13+09:00 session_save_20260901_1928(先に session_save_20260901_1816 を読め) 第22便 18:16-19:28: ①5 件 CLEAR 完了(才蔵/飛猿 18:28、半蔵 ci_fix 18:3 |
 | causal_chain | `[[cmd_3749]]` (L974) |
 | causal_chain | `[[cmd_training_L1_report-write_20260708020332]]` (L977) |
 | causal_chain | `[[cmd_reflux_insight_202607071717_tobisaru]]` (L961) |
@@ -14565,6 +14567,8 @@ codd:
 | cmd | `cmd_reflux_insight_202609011647_tobisaru` (`queue/insights.yaml`) |
 | causal | `cmd_reflux_insight_202609011840_saizo` files_modified: [[provisional_insights]] |
 | cmd | `cmd_reflux_insight_202609011840_saizo` (`queue/insights.yaml`) |
+| causal | `cmd_reflux_insight_202609011903_tobisaru` files_modified: [[provisional_insights]] |
+| cmd | `cmd_reflux_insight_202609011903_tobisaru` (`queue/insights.yaml`) |
 | causal_chain | `[[cmd_reflux_insight_202608040505_kagemaru]]` (L1545) |
 
 ## provisional_heavy_job_admission — 仮: Heavy Job Admission
@@ -17718,6 +17722,8 @@ codd:
 | discussion | `queue/lord_conversation.jsonl` 2026-09-01T07:10:23.742138+00:00 git pre-commit semantic propagation for context/projects changes |
 | discussion | `queue/lord_conversation.jsonl` 2026-09-01T07:44:50.262584+00:00 git pre-commit semantic propagation for context/projects changes |
 | discussion | `queue/lord_conversation.jsonl` 2026-09-01T08:12:35.403082+00:00 git pre-commit semantic propagation for context/projects changes |
+| discussion | `queue/lord_conversation.jsonl` 2026-09-01T10:29:55.081787+00:00 git pre-commit semantic propagation for context/projects changes |
+| discussion | `queue/lord_conversation.jsonl` 2026-09-01T10:30:49.196082+00:00 git pre-commit semantic propagation for context/projects changes |
 | causal_chain | `[[cmd_karo_hotfix_ga161_obsidian_link_context_freshness_202607021348]]` (L926) |
 | causal_chain | `[[cmd_3648]]` (L933) |
 | causal_chain | `[[cmd_karo_ci_fix_ga191_followup_202607071752]]` (L963) |
