@@ -12403,7 +12403,10 @@ insights:
   priority: "low"
   source: "semantic_map_generate:new_file"
   fix_known: false
-  status: pending
+  status: resolved
+  resolved_reason: "一次情報で対象ファイルの実在と内容（試行錯誤根治5 commit、APPROVE 3/REJECT 2）を確認した。exact pathはdocs/semantic-index/index.mdとcontext/semantic-map.mdの双方に未登録で、既存概念semantic_causal_automationは存在するが対象ファイル吸収は未実施。planned scopeはqueue/insights.yamlのみのため、semantic index/mapへの追加はdecision_candidateとして保持し、対象insightを確認済みとしてresolveする。"
+  action_artifact: "target=queue/insights.yaml:INS-20260901-133427692-4e52;source=docs/research/karo-review-trial-fixes-20260901.md:L1-L23(worktree-untracked);memory=semantic_search exact hit=>semantic_dictionary_design;semantic_map=context/semantic-map.md:semantic_causal_automation;index_exact_refs=0;decision_candidate=tracked publication plus semantic index/map file registration review;inventory=34/0/0/51->33/0/0/50"
+  resolved_at: "2026-09-02T04:30:42+09:00"
 - id: INS-20260901-133440560-f8b6
   ts: "2026-09-01T13:34:40+09:00"
   insight: "semantic_map_generate新規ファイル候補: `tests/unit/test_push_lane_integrate.bats` は semantic index未登録。既存概念へのfile追加または新概念定義を検討せよ"
