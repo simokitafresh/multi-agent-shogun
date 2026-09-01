@@ -3362,7 +3362,10 @@ insights:
   priority: "low"
   source: "cmd_complete_gate:memory_phase"
   fix_known: false
-  status: pending
+  status: resolved
+  resolved_reason: "一次情報確認: queue/insights.yaml:3359-3365の対象はpending。三層照合でcontext/infrastructure.md:L1636とdocs/semantic-index/index.md:L3083,L3359にcmd_4377/L1636が既登録。旧モノリスc4c94b9b2^の関数129件と現行scripts/deploy_task.sh+scripts/deploy_task/*.shの関数228件を比較し欠落0、source scripts/deploy_task.sh後に主要runtime関数4/4解決、bash -n PASS、run_tests.sh file tests/unit/test_deploy_task_lifecycle.bats PASS、task mode mapped tests 0/SKIP0。追加修正/decision_candidate不要。"
+  action_artifact: "target=queue/insights.yaml:3359-3365;primary=git:c4c94b9b2;code=scripts/deploy_task/main.sh:20-32 source order;context=context/infrastructure.md:L1636;semantic=docs/semantic-index/index.md:L3083,L3359;memory=bash scripts/memory_db_query.sh --search INS-20260824-141757581-921c;function_compare=old129/current228/missing0;source_runtime=4/4;syntax=bash -n PASS;tests=run_tests.sh file tests/unit/test_deploy_task_lifecycle.bats PASS;task_tests=0 selected/SKIP0;inventory_before=44/16/0/60 effective (raw monitor=44/16/610/670; promotion paused)"
+  resolved_at: "2026-09-01T20:54:57+09:00"
 - id: INS-20260824-141800812-24e5
   ts: "2026-08-24T14:18:00+09:00"
   insight: "同パターンLevel5未満候補: source_cmd=cmd_4377; matched=deploy_task,分割; current_pattern=deploy_task.sh分割最終弾J — orchestrationをmain moduleへ抽出し本体を薄wrapper化; candidate_level=4; candidate=CDP/OOM等3文字アクロニムがmin_len>3フィルタで除外され教訓スコア0。CDP計測タスクにCDP教訓が注入されない根因; source=gunshi_gp_tracker.yaml"
