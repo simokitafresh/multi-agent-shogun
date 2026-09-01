@@ -134,6 +134,7 @@ INBOX="$(resolve_inbox_file_path "$INBOX")"
 LOCKFILE="$(lock_path "$INBOX")"
 RECEIPT_DIR="${INBOX_MARK_READ_RECEIPT_DIR:-$SCRIPT_DIR/logs/inbox_read_receipts}"
 RECEIPT_FILE="$RECEIPT_DIR/${AGENT_ID}.json"
+REVIEW_LOG="$SCRIPT_DIR/logs/gunshi_review_log.yaml"
 CONFIRM_LIST_FILE=""
 
 # inbox_read.sh publishes one generation-bound receipt for every unread
@@ -144,14 +145,17 @@ verify_read_receipt() {
     [ "$AUTO_INFO_MODE" = true ] && return 0
     [ -n "$MSG_ID" ] || return 0
     local verified_file="/tmp/.imr_receipt_verified_$$"
-    python3 - "$INBOX" "$AGENT_ID" "$RECEIPT_FILE" "$ID_LIST_FILE" "$verified_file" <<'PY'
+    python3 - "$INBOX" "$AGENT_ID" "$RECEIPT_FILE" "$ID_LIST_FILE" "$verified_file" "$REVIEW_LOG" <<'PY'
 import hashlib
 import json
+import os
+import re
 import sys
+from datetime import datetime, timezone
 
 import yaml
 
-inbox, agent, receipt_path, ids_path, verified_path = sys.argv[1:]
+inbox, agent, receipt_path, ids_path, verified_path, review_log_path = sys.argv[1:]
 try:
     with open(receipt_path, encoding="utf-8") as fh:
         receipt = json.load(fh)
@@ -226,6 +230,101 @@ for msg_id in wanted:
     if entry.get("content_hash") != content_hash:
         print(f"BLOCK: inbox read receipt content hash mismatch msg_id={msg_id}", file=sys.stderr)
         raise SystemExit(2)
+
+
+def parse_timestamp(value):
+    text = str(value or "").strip().strip("'\"")
+    if not text:
+        return None
+    try:
+        parsed = datetime.fromisoformat(text.replace("Z", "+00:00"))
+    except ValueError:
+        return None
+    if parsed.tzinfo is None:
+        parsed = parsed.replace(tzinfo=timezone.utc)
+    return parsed.astimezone(timezone.utc)
+
+
+def nested_values(node, key=None):
+    if isinstance(node, dict):
+        for child_key, child in node.items():
+            if key is None or str(child_key) == key:
+                yield child
+            yield from nested_values(child, key)
+    elif isinstance(node, list):
+        for child in node:
+            yield from nested_values(child, key)
+
+
+def nested_strings(node):
+    if isinstance(node, dict):
+        for child in node.values():
+            yield from nested_strings(child)
+    elif isinstance(node, list):
+        for child in node:
+            yield from nested_strings(child)
+    elif isinstance(node, str):
+        yield node
+
+
+def report_name_from_content(content):
+    match = re.search(r"report\s*[=:]\s*['\"]?([A-Za-z0-9_.-]+\.ya?ml)\b", str(content or ""), re.IGNORECASE)
+    return os.path.basename(match.group(1)) if match else ""
+
+
+def entry_has_cmd_id(entry, cmd_id):
+    if isinstance(entry, dict):
+        if str(entry.get("cmd_id") or "") == cmd_id:
+            return True
+        return any(entry_has_cmd_id(child, cmd_id) for child in entry.values())
+    if isinstance(entry, list):
+        return any(entry_has_cmd_id(child, cmd_id) for child in entry)
+    return False
+
+
+def entry_matches_report(entry, report_name):
+    if any(os.path.basename(value.strip().strip("'\"")) == report_name for value in nested_strings(entry)):
+        return True
+    match = re.match(r"^[^/]+_report_(cmd_.+)\.ya?ml$", report_name)
+    return bool(match and entry_has_cmd_id(entry, match.group(1)))
+
+
+review_messages = [
+    message for msg_id, message in ((msg_id, current[msg_id]) for msg_id in wanted)
+    if str(message.get("type") or "") in {"review_draft", "report_review"}
+]
+if review_messages:
+    try:
+        with open(review_log_path, encoding="utf-8") as fh:
+            review_data = yaml.safe_load(fh) or []
+    except Exception:
+        review_data = None
+    if isinstance(review_data, list):
+        review_entries = [item for item in review_data if isinstance(item, dict)]
+    elif isinstance(review_data, dict):
+        candidate = review_data.get("reviews")
+        review_entries = candidate if isinstance(candidate, list) else [review_data]
+        review_entries = [item for item in review_entries if isinstance(item, dict)]
+    else:
+        review_entries = []
+    for message in review_messages:
+        report_name = report_name_from_content(message.get("content"))
+        message_at = parse_timestamp(message.get("timestamp"))
+        matched = False
+        if report_name and message_at is not None:
+            for review_entry in review_entries:
+                if not entry_matches_report(review_entry, report_name):
+                    continue
+                review_times = [parse_timestamp(value) for value in nested_values(review_entry, "reviewed_at")]
+                if any(review_at is not None and review_at >= message_at for review_at in review_times):
+                    matched = True
+                    break
+        if not matched:
+            print(
+                f"BLOCK: review not recorded msg_id={message.get('id', '')} report={report_name or '<missing>'}",
+                file=sys.stderr,
+            )
+            raise SystemExit(2)
 
 with open(verified_path, "w", encoding="utf-8") as fh:
     fh.write("\n".join(wanted) + "\n")
