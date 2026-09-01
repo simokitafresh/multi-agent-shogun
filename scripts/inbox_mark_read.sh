@@ -424,6 +424,42 @@ if [ -z "$MSG_ID" ] \
     exit 2
 fi
 
+# --- bulk mark-read guard (2026-09-01 15:44 家老報告 blt_154408) ---
+# 軍師が `grep read:false | while read id; do inbox_mark_read.sh gunshi $id; done`
+# で未読を本文処理前に一括既読化し、cmd_4436 review 依頼と影丸 v3 formal review が
+# 消化された(重送 8 回)。1 呼出し 1 ID は正しく通るが、短い窓に連続する呼出しは
+# 「読む前に消す」ループでしか起きない。窓内の呼出し回数で機械判定し BLOCK する。
+# 正規の複数件処理は 1 呼出しに複数 ID を渡すか、1 件ずつ本文を処理してから呼ぶ。
+INBOX_MARK_READ_BULK_WINDOW_SEC="${INBOX_MARK_READ_BULK_WINDOW_SEC:-10}"
+INBOX_MARK_READ_BULK_MAX_CALLS="${INBOX_MARK_READ_BULK_MAX_CALLS:-2}"
+INBOX_MARK_READ_LEDGER_DIR="${INBOX_MARK_READ_LEDGER_DIR:-$SCRIPT_DIR/logs/inbox_mark_read_ledger}"
+bulk_mark_read_guard() {
+    [ "$AUTO_INFO_MODE" = false ] || return 0
+    [ -n "$MSG_ID" ] || return 0
+    [[ "$INBOX_MARK_READ_BULK_WINDOW_SEC" =~ ^[0-9]+$ && "$INBOX_MARK_READ_BULK_MAX_CALLS" =~ ^[0-9]+$ ]] || return 0
+    [ "$INBOX_MARK_READ_BULK_WINDOW_SEC" -gt 0 ] || return 0
+    local ledger="$INBOX_MARK_READ_LEDGER_DIR/${AGENT_ID}.tsv" now recent
+    mkdir -p "$INBOX_MARK_READ_LEDGER_DIR" 2>/dev/null || return 0
+    now="${EPOCHSECONDS:-$(date +%s)}"
+    # Count DISTINCT other message ids marked inside the window: a retry of the
+    # same id (lock busy, test loops) is not a bulk pattern; N different ids
+    # within seconds is.
+    recent=0
+    if [ -f "$ledger" ]; then
+        recent="$(awk -v n="$now" -v w="$INBOX_MARK_READ_BULK_WINDOW_SEC" -v me="$MSG_ID" '($1+0) >= (n-w) && $2 != me && !seen[$2]++ {c++} END{print c+0}' "$ledger" 2>/dev/null || echo 0)"
+    fi
+    if [ "$recent" -ge "$INBOX_MARK_READ_BULK_MAX_CALLS" ]; then
+        echo "BLOCK: bulk mark-read pattern — ${recent} other message(s) marked read for ${AGENT_ID} in the last ${INBOX_MARK_READ_BULK_WINDOW_SEC}s (limit ${INBOX_MARK_READ_BULK_MAX_CALLS}). Read and process each message before marking it; do not loop over read:false ids. msg_id=${MSG_ID} stays unread." >&2
+        return 1
+    fi
+    printf '%s\t%s\n' "$now" "$MSG_ID" >> "$ledger" 2>/dev/null || true
+    # keep the ledger small: drop rows older than 10 windows
+    if [ -f "$ledger" ] && [ "$(wc -l < "$ledger")" -gt 200 ]; then
+        awk -v n="$now" -v w="$INBOX_MARK_READ_BULK_WINDOW_SEC" '($1+0) >= (n-10*w)' "$ledger" > "$ledger.tmp" 2>/dev/null && mv "$ledger.tmp" "$ledger" 2>/dev/null || rm -f "$ledger.tmp"
+    fi
+    return 0
+}
+
 # Atomic mark-read with flock (3 retries, same pattern as inbox_write.sh)
 attempt=0
 max_attempts=3
@@ -436,6 +472,7 @@ while [ $attempt -lt $max_attempts ]; do
         flock -w 5 200 || exit 1
 
         karo_guard_unprocessed_shogun_assignments || exit 2
+        bulk_mark_read_guard || exit 2
 
         # Fast early exit: no unread messages in file
         if ! grep -q "^  read:[[:space:]]*false[[:space:]]*$" "$INBOX" 2>/dev/null; then
