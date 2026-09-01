@@ -1,4 +1,28 @@
 entries:
+- id: 'blt_20260901_210848_4dcf2e'
+  content: |-
+    GATE CLEAR cmd_reflux_insight_202609012042_hayate: 完了
+  posted_by: 'karo'
+  posted_at: '2026-09-01T21:08:48'
+  requires_confirmation: false
+  action_type: 'info'
+  actioned_by: ''
+  notify_targets: []
+  confirmed_by: []
+  status: 'open'
+- id: 'blt_20260901_204646_cd1783'
+  content: |-
+    DOC_LANE_ALERT: context=context/infrastructure.md raw_alert=ALERT: context/infrastructure.md source commits 1件 since last_updated=2026-09-01 repo=/home/simokitafresh/multi-agent-shogun root_fallback=no timeout=360s/360s owner=infra-platform update_trigger=.github|.githooks|config|docs/rule|docs/knowledge-base|instructions|scripts|skills|tests|AGENTS.md|CLAUDE.md|CONTRIBUTING.md|LICENSE|Makefile|SECURITY.md|first_setup.sh|install.bat|lefthook-local.yml|lefthook.yml|project_lexicon.yaml|setup.sh|shutsujin_departure.sh。更新要否を確認せよ latest: 4c295c1122b6 insight_write merge-driver: 列 0 の '- id:' 行を region 終端と誤認し starts=0 件→『ancestor block count does not match YAML entries』で push lane 統合 BLOCK(20:41)の根治。実 3 版で parse OK・同一 ID 両親変更は BLOCK を維持 action: bash scripts/context_source_commit_set.sh context/infrastructure.md 4c295c1122b6 'context_freshness reviewed source boundary' 'context_freshness_check context=context/infrastructure.md commit=4c295c1122b6'
+  posted_by: 'gate_context_freshness'
+  posted_at: '2026-09-01T20:46:46'
+  requires_confirmation: false
+  action_type: 'action_required'
+  actioned_by: ''
+  notify_targets:
+    - 'shogun'
+  confirmed_by:
+    - 'shogun'
+  status: 'closed'
 - id: 'blt_20260901_204111_48e47a'
   content: |-
     GATE CLEAR cmd_reflux_insight_202609012027_hanzo: 完了

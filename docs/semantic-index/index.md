@@ -3311,6 +3311,7 @@ codd:
 | discussion | `queue/lord_conversation.jsonl` 2026-09-01T19:29:13+09:00 session_save_20260901_1928(先に session_save_20260901_1816 を読め) 第22便 18:16-19:28: ①5 件 CLEAR 完了(才蔵/飛猿 18:28、半蔵 ci_fix 18:3 |
 | discussion | `queue/lord_conversation.jsonl` 2026-09-01T19:54:19+09:00 サインインに失敗しました: PKCE code verifier not found in storage. This can happen if the auth flow was initiated in a different bro |
 | discussion | `queue/lord_conversation.jsonl` 2026-09-01T20:31:12+09:00 2026-09-01 20:30 殿『free は問題なく動いてる』=Free tier 実機 PASS(rotate-all 後の backend 再 deploy dep-dabavvf1 20:02 live で解消)。PKCE エラ |
+| discussion | `queue/lord_conversation.jsonl` 2026-09-01T20:58:38+09:00 session_save_20260901_2059(先に session_save_20260901_2026 を読め) 第22便 20:26-20:59: ①殿 20:30『free は問題なく動いてる』=Free tier 実機 PA |
 | causal_chain | `[[cmd_3749]]` (L974) |
 | causal_chain | `[[cmd_training_L1_report-write_20260708020332]]` (L977) |
 | causal_chain | `[[cmd_reflux_insight_202607071717_tobisaru]]` (L961) |
@@ -14590,6 +14591,8 @@ codd:
 | cmd | `cmd_reflux_insight_202609011957_kagemaru` (`queue/insights.yaml`) |
 | causal | `cmd_reflux_insight_202609012027_hanzo` files_modified: [[provisional_insights]] |
 | cmd | `cmd_reflux_insight_202609012027_hanzo` (`queue/insights.yaml`) |
+| causal | `cmd_reflux_insight_202609012042_hayate` files_modified: [[provisional_insights]] |
+| cmd | `cmd_reflux_insight_202609012042_hayate` (`queue/insights.yaml`) |
 | causal_chain | `[[cmd_reflux_insight_202608040505_kagemaru]]` (L1545) |
 
 ## provisional_heavy_job_admission — 仮: Heavy Job Admission
