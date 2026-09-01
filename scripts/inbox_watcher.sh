@@ -633,7 +633,7 @@ mark_special_read() {
     # 捨てていたため clear_command が未読のまま残り generation 変化ごとに /clear を再送した
     # (軍師 17:35/17:43/18:13 の 3 回、recovery が毎回消えた)。mark 前に watcher 自身が receipt を発行し、
     # BLOCK は log に残す(型5弾-2: 検証コマンドの stderr を捨てるな)。
-    bash "$SCRIPT_DIR/scripts/inbox_read.sh" "$AGENT_ID" >/dev/null 2>&1 || true
+    bash "$SCRIPT_DIR/scripts/inbox_read.sh" "$AGENT_ID" --msg-id "$message_id" >/dev/null 2>&1 || true
     if ! bash "$SCRIPT_DIR/scripts/inbox_mark_read.sh" "$AGENT_ID" "$message_id" 2>&1 | grep -E "BLOCK|ERROR" >&2; then :; else
         echo "[$(date)] [WARN] special-type mark_read failed for $AGENT_ID msg=$message_id (see BLOCK above)" >&2
     fi

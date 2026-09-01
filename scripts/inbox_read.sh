@@ -6,14 +6,19 @@ set -euo pipefail
 # requires a read receipt.  This helper makes the read observable and records
 # the receipt only after the inbox contents were emitted successfully.
 
-if (( $# != 1 )); then
-  echo "Usage: $0 <agent_id>" >&2
+if (( $# != 1 && $# != 3 )) || { (( $# == 3 )) && [[ "$2" != "--msg-id" ]]; }; then
+  echo "Usage: $0 <agent_id> [--msg-id <id>]" >&2
   exit 2
 fi
 
 agent_id="$1"
+target_msg_id="${3:-}"
 if [[ ! "$agent_id" =~ ^[a-z_]+$ ]]; then
   echo "ERROR: invalid agent_id: $agent_id" >&2
+  exit 2
+fi
+if (( $# == 3 )) && [[ -z "$target_msg_id" ]]; then
+  echo "ERROR: --msg-id requires a non-empty message id" >&2
   exit 2
 fi
 
@@ -66,14 +71,14 @@ trap cleanup EXIT
 
 # Validate and snapshot unread message identities before emitting the source.
 # The receipt is published only after cat succeeds.
-python3 - "$inbox_file" "$agent_id" "$metadata_file" <<'PY'
+python3 - "$inbox_file" "$agent_id" "$metadata_file" "$target_msg_id" <<'PY'
 import hashlib
 import json
 import sys
 from datetime import datetime, timezone
 import yaml
 
-inbox, agent, output = sys.argv[1:]
+inbox, agent, output, target_msg_id = sys.argv[1:]
 with open(inbox, encoding="utf-8") as fh:
     data = yaml.safe_load(fh) or {}
 messages = data.get("messages", [])
@@ -84,6 +89,7 @@ def identity(message):
     return {key: str(message.get(key, "")) for key in ("id", "from", "timestamp", "type", "content")}
 
 identities, entries, seen = [], [], set()
+target_found = False
 for message in messages:
     if not isinstance(message, dict):
         raise SystemExit("ERROR: inbox message must be a mapping")
@@ -95,10 +101,16 @@ for message in messages:
     seen.add(item["id"])
     identities.append(item)
     if message.get("read") is False:
-        entries.append({
-            "msg_id": item["id"],
-            "content_hash": hashlib.sha256(item["content"].encode("utf-8")).hexdigest(),
-        })
+        if not target_msg_id or item["id"] == target_msg_id:
+            entries.append({
+                "msg_id": item["id"],
+                "content_hash": hashlib.sha256(item["content"].encode("utf-8")).hexdigest(),
+            })
+        if item["id"] == target_msg_id:
+            target_found = True
+
+if target_msg_id and not target_found:
+    raise SystemExit(f"ERROR: unread message id not found: {target_msg_id}")
 
 generation = hashlib.sha256(json.dumps(
     identities, ensure_ascii=False, sort_keys=True, separators=(",", ":")
