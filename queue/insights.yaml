@@ -6073,7 +6073,10 @@ insights:
   priority: "low"
   source: "semantic_map_generate:new_file"
   fix_known: false
-  status: pending
+  status: resolved
+  resolved_reason: "一次確認で対象hookはtracked現存し、git logで導入履歴を確認。既存のゲート品質統合フレームワーク・hook JSONコマンド境界・セマンティック因果自動化で機能分類が充足し、新概念定義や実コード修正は不要。"
+  action_artifact: "target=queue/insights.yaml:INS-20260828-013205457-d478;primary=.claude/hooks/pre-bash-no-verify-guard.sh:tracked現存/git log導入履歴/e5e4f9bb8;semantic=context/semantic-map.md:90,160;semantic_index=docs/research/codd_infra_script_profiling.md:165,docs/research/gate_hook_inventory_20260718.md:87;memory=memory_db_query.sh --search pre-bash-no-verify-guard;obsidian=.cache/causal_index.tsv exact ID/path未検出;decision_candidate=none"
+  resolved_at: "2026-09-01T22:13:08+09:00"
 - id: INS-20260828-013206080-be65
   ts: "2026-08-28T01:32:06+09:00"
   insight: "semantic_map_generate新規ファイル候補: `.claude/hooks/pretool-dispatch.sh` は semantic index未登録。既存概念へのfile追加または新概念定義を検討せよ"
