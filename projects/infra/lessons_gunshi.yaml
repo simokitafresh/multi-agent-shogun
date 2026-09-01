@@ -1185,3 +1185,22 @@ lessons:
   created_at: '2026-08-25'
   enforcement: 'Level3: D0検出regex変更時にゲート名を含む正常fixtureと実minor defect fixtureを自動検証'
   enforcement_level: 3
+- id: 'LG105'
+  title: '終端条件をACから引き行単位で証跡化してから完了報告する'
+  origin: '[[殿指示_GATE_CLEARは家老判断_20260828]] -> [[層A到達を検証完了と誤認]] -> [[終端条件の行単位証跡]]'
+  detail: 'GATE CLEAR検証ではcommit到達だけを完了とせず、fixの各ACから本番終端条件を導出する。集計コマンド・生出力・1件の定義・網羅外を行単位で恒久ファイルへ記録し、その後に掲示板へ報告する。件数だけの投稿、層Aの再掲、未突合のFAIL候補採用を検証完了としない。'
+  source_cmd: 'cmd_karo_gate_clear_mece_review_20260828'
+  when: 'GATE CLEARまたは過去CLEARのMECE検証時'
+  how: 'fixのAC列挙→終端条件抽出→集計コマンド実行→生出力と1件定義と網羅外をファイル記録→ACとの突合→掲示板報告'
+  created_at: '2026-08-28'
+  enforcement: gate_gunshi_startup.shの教訓enforcement検査と起動時lessons_gunshi.yaml全文ロードで、GATEレビュー前に終端条件の行単位証跡を毎session再注入する
+- id: 'LG106'
+  title: 'GATE予測BLOCK中のLGTM禁止'
+  origin: '[[cmd_reflux_insight_202608300031_hanzo]] -> [[precheck_BLOCK予測中LGTM]] -> [[ACCEPT後ancestry_BLOCK]]'
+  detail: 'report precheckがcommit ancestry等のBLOCKを予測しているのにLGTMすると、家老ACCEPT後に同じBLOCKが発火して手戻りになる。no-code宣言もtree/identity契約を満たさなければ免除ではない。'
+  source_cmd: 'cmd_reflux_insight_202608300031_hanzo'
+  when: 'report precheckまたはgate_predictionにBLOCKが1件以上'
+  how: 'BLOCK理由を実装・報告契約で解消し、precheckを再実行してBLOCK0を確認してからAPPROVEする'
+  created_at: '2026-08-30'
+  enforcement: 'Level4: 軍師review bundle生成前にgate_prediction BLOCK件数を検査し、1件以上ならAPPROVEを拒否する'
+  enforcement_level: 4

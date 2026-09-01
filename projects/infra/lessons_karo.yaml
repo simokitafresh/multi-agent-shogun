@@ -81,6 +81,9 @@ lessons:
     吸収(2026-07-27, cmd_karo_reload_ninja_monitor_20260727, origin: [[cmd_karo_reload_ninja_monitor_20260727]] -> [[HOT_RELOAD_bootstrap_gap]] -> [[owner_generation_handoff]]): daemon起動後にhot-reload実装を追加しても、旧bashプロセスは導入前のwhile構文を保持するためmtime差を検知できない。script mtime>daemon startかつHOT-RELOAD=0を一次確認したら、停止シグナルを使わずNINJA_MONITOR_HEARTBEAT_STALE_SECONDS=-1の独立新プロセスでownerを原子的取得し、旧世代のSINGLETON-FENCEと単一新PIDを確認する。2026-07-27実測: PID469247→2939962、old_self_fence 0→1、反映後AUTO-COMMIT-FAIL=0、CLEAR-BLOCKED=0。
     吸収(2026-07-28, cmd_karo_hotfix_throughput_t3b_fingerprint_hit_20260728, origin: [[cmd_karo_hotfix_throughput_t3b_fingerprint_hit_20260728]] -> [[task_design_precondition]] -> [[LK-A01]]): T3bでfingerprint cache実体はgate_report_format.shだったがmain.pyをtarget指定し1配備を無駄にした。起票前に識別子を候補全ファイルへrgし、実在件数N/Nとtarget_path一致を数値確認してから配備する。今回0/1→1/1、誤taskはFAIL-close。
     吸収(2026-08-14, cmd_4308, origin: [[殿裁定_pf_assets拒否は異常_20260814]] -> [[凍結scope過剰拡張]] -> [[偽陽性差止め根治]]): matched-weight修正の実装凍結をreadonly調査toolへ勝手に拡張し、既存fof_tree.pyが同じcreate_db_engine方式でmain稼働している事実との整合を確認せずpf_assets.pyを拒否した。差止め前に対象scopeを殿の原文どおり限定し、同型既存資産を検索して理由が前例と両立するか二値確認する。両立しなければ止めず、真の差分だけを検証する。
+    吸収(2026-08-28, cmd_4409_ac3, origin: [[ci_readiness_Traceback]] -> [[GATE_BLOCK]] -> [[通常再GATE_CLEAR]]): ci_readiness Traceback等は迂回せずstderr全文を残し、入力/外部状態正常化後に同じcmd_complete_gateを再実行する。
+    吸収(2026-08-28, cmd_karo_hotfix_t122_memory_self_reinforce_20260828, origin: [[shared_hot_script_WIP]] -> [[syntax_error]] -> [[atomic_publish]]): shared main上のhot scriptは一時fileでbash -n PASS後に原子置換し、不正syntax世代をreaderへ露出させない。marker=checkpoint1420_hot_atomic
+    吸収(2026-08-28, cmd_karo_hotfix_finalize_segments_20260828, origin: [[finalize84percent]] -> [[think_wait_split]] -> [[wait_only_optimization]]): LLM思考時間は削らず、finalize各区間をthink_sec/wait_secへ分解して機械的waitだけを切除する。marker=checkpoint1420_think_wait
   source_ids: [LK005, LK006, LK009, LK010, LK012, LK018, LK030, LK037, LK040, LK041, LK043, LK044, LK047, LK048, LK052, LK054, LK065, LK069, LK085, LK002, LK003, LK004, LK006b, LK013, LK011, LK014, LK015, LK004i, LK006i, LK013i]
   created_at: '2026-04-24'
   automated: true
@@ -106,6 +109,8 @@ lessons:
     - deploy_task.sh exit 1でもnudge送信済みの場合あり(LK010: deploy出力に'codex nudge retry'/'delivery verified'があれば手動nudge不要。殿に指摘されるまで毎回重複送信)
     吸収(2026-07-27, cmd_reflux_promotion_202607272304_kotaro, origin: [[LK-A02]] -> [[旧taskフィールド残存]] -> [[deploy_taskフロー内BLOCKと再注入]]): 一次情報再検証: reset_stale_fields()のSTALE_FIELDSがscope/context/acceptance_criteria等を構造的に除去し、deploy_task_main()は同一task_idかつactive statusの二重配備をtask idleへロールバックしてreturn 1でBLOCKする。related_lessons/ninja_weak_points/role_reminderも毎配備で再注入されるため、LK-A02の主要不変量は人手依存でなくフロー内強制(Level4)へ到達済み。
     吸収(2026-08-14, cmd_4301, origin: [[cmd_4301]] -> [[context_freshness直列BLOCK]] -> [[doc更新将軍lane分離]]): positive_rule: 本体結果が確定した後のcontext境界・Gist同期・計画書更新は将軍doc laneへ分離し、忍者ACへ盛り込まず、本体cmdのCLEARを待たせない。reason: cmd_4301では本体AC完了後、context freshnessを忍者へ配備して実質クリア13:48から正式クリア14:29まで41分遅延した。殿裁定2026-08-14 14:24/14:27により、結果後doc更新は将軍の仕事であり無関係な作業を本体完了条件にしない。
+    吸収(2026-08-28, cmd_4409_ac3, origin: [[家老task_idフィルタ誤適用]] -> [[便停止]] -> [[全type処理]]): task_id一致フィルタは忍者補足専用。家老・軍師は未読typeを全件処理する。
+    吸収(2026-08-28, cmd_4409_ac3, origin: [[cmd_4409_ac3]] -> [[DOC_LANE_ROUTING_BLOCK]] -> [[T88_report_only]]): 将軍doc lane ACは忍者へ配備せず、既存将軍commitを一次検証して家老自身のno-code report-only artifactで閉じる。
   source_ids: [LK002, LK008, LK011, LK021, LK023, LK028, LK029, LK045, LK053, LK060, LK061, LK063, LK092, LK005b, LK008b, LK010i]
   created_at: '2026-04-24'
   automated: true
@@ -275,6 +280,7 @@ lessons:
     v7吸収(2026-06-02):
     - 本セッションで9回連続発生(cmd_3114-3122全cmd)。v6(4回)→v7(9回)で100%再現。軍師がprecheck実行→分析完了→❯停止→inbox_write未到達の完全なパターン。家老の定常対処(stop hook→pane確認→手動GATE)は機能するが対症療法。★CMD起票必須: review-bundleスキルにinbox_write送信保証(送信完了までretry)を追加する修正cmd。掲示板投稿で止まるな(洗脳#6)
     吸収(2026-08-04, cmd_karo_hotfix_draft_review_receipt_atomic_20260804, origin: [[軍師draft_APPROVE]] -> [[pre_implementation_review_receipt欠落]] -> [[配備BLOCK再発]]): v8吸収(2026-08-04): gist backfillとcmd_4228で軍師APPROVEのinbox通知は到着したがtask.pre_implementation_review mappingが欠落/旧taskのままでdeploy_taskがBLOCK。人間向けAPPROVEと機械receiptは別状態。軍師がtask_id+AC fingerprintを検証しtask YAMLへreceiptを原子的記録した後だけ通知する専用入口へ統合せよ。家老手動転記は禁止。
+    吸収(2026-08-28, cmd_karo_hotfix_done_report_review_20260828, origin: [[done_report_no_review]] -> [[便停止]] -> [[fingerprint_bound_repair]]): task status=doneでもcompleted PASS reportかつfingerprint-bound review marker無しなら自動review依頼する。marker=checkpoint1420_done_review_marker
   source_ids: [LK056, LK081, LK088, LK089, LK091, LK010b, LK012]
   created_at: '2026-04-24'
   automated: true
