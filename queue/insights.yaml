@@ -6093,7 +6093,10 @@ insights:
   priority: "low"
   source: "semantic_map_generate:new_file"
   fix_known: false
-  status: pending
+  status: resolved
+  resolved_reason: "一次確認で対象SKILL.mdはtracked現存。CoDD/codd-refactor概念は既存semantic-map・semantic-index・Obsidian因果索引で被覆され、新規概念・実コード修正・decision_candidateは不要。"
+  action_artifact: "target=queue/insights.yaml:INS-20260828-013206181-8aef;primary=.claude/skills/codd-refactor/SKILL.md:tracked/git log;semantic=context/semantic-map.md:L36;semantic_index=docs/semantic-index/index.md:L4054,L6942;context=context/codd.md:L154;obsidian=.cache/causal_index.tsv:L7791;memory=semantic_search:codd-refactor;decision_candidate=none"
+  resolved_at: "2026-09-01T23:11:46+09:00"
 - id: INS-20260828-013206284-8928
   ts: "2026-08-28T01:32:06+09:00"
   insight: "semantic_map_generate新規ファイル候補: `.gitattributes` は semantic index未登録。既存概念へのfile追加または新概念定義を検討せよ"
