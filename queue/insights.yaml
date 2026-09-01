@@ -12413,7 +12413,10 @@ insights:
   priority: "low"
   source: "semantic_map_generate:new_file"
   fix_known: false
-  status: pending
+  status: resolved
+  resolved_reason: "一次情報で対象ファイルの実在と内容を確認した。tests/unit/test_push_lane_integrate.batsはtracked実在し、commit 3ad818c3682a70da7eb0c07046fe19a3c8a3d7aeでU6 isolated統合契約へ追従済み。context/infrastructure.md:L479にCI RED #5と根治が記録され、semantic検索はsemantic_dictionary_design/provisional_testへ到達したが、context/semantic-map.mdとdocs/semantic-index/index.mdのprovisional_testファイル欄には対象ファイル未登録。実装修正は不要、semantic index/mapへのファイル登録要否をdecision_candidateとして保持する。"
+  action_artifact: "target=queue/insights.yaml:INS-20260901-133440560-f8b6;primary=tests/unit/test_push_lane_integrate.bats tracked 90 lines;commit=3ad818c3682a70da7eb0c07046fe19a3c8a3d7ae;context=context/infrastructure.md:L479;semantic_search=semantic_dictionary_design,provisional_test;semantic_map=context/semantic-map.md:provisional_test;semantic_index=docs/semantic-index/index.md:13617-13658;decision_candidate=semantic index/mapへ対象test fileをprovisional_testへ登録するか家老判断"
+  resolved_at: "2026-09-02T04:40:50+09:00"
 - id: INS-20260901-134435627-b885
   ts: "2026-09-01T13:44:35+09:00"
   insight: "[[Codexモード のためnudge配送が止まっていたらそれはバグだな]] semantic_stress_test candidate_aliases: NO_MATCH source=lord query=Codexモード のためnudge配送が止まっていたらそれはバグだな。バグは根治せよ。根治したら検証して家老にレビューしてもらえ"
