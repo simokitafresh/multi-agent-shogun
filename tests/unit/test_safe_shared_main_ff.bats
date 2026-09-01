@@ -286,6 +286,46 @@ exit 0"
   [ "$(git -C "$FIX" rev-parse HEAD)" = "$before" ]
 }
 
+# test_necessity: the real eaabc7d93 content-loss merge must be diagnosed at
+# the incident remote boundary (392fbbf59), even when the tracking ref has not
+# crossed the publication boundary; a normal linear update remains allowed.
+@test "AC2: real eaabc ancestry boundary reports unique paths and normal merge passes" {
+  local project_root source_git_common_dir incident_sha remote_sha incident_tree path_line path_count unique_count
+  local normal_parent normal_target normal_tree
+  project_root="$(cd "$BATS_TEST_DIRNAME/../.." && pwd)"
+  incident_sha="eaabc7d9323bba3de2cb23635cf2d444cc91cc6c"
+  remote_sha="392fbbf5957e65c300caf48eaf5bed4298c9599c"
+  source_git_common_dir="$(git -C "$project_root" rev-parse --git-common-dir)"
+  printf '%s/objects\n' "$source_git_common_dir" > "$FIX/.git/objects/info/alternates"
+  git -C "$FIX" update-ref refs/remotes/origin/main "$remote_sha"
+  incident_tree="$(git -C "$FIX" rev-parse "$incident_sha^{tree}")"
+
+  run bash "$FIX/scripts/safe_shared_main_ff.sh" --verify-merge-tree \
+    "$FIX" "$remote_sha" "$incident_sha" "$incident_tree"
+  [ "$status" -eq 2 ]
+  [[ "$output" == *"ours-equivalent merge"* ]]
+  [[ "$output" == *"changed_paths=7"* ]]
+  path_count="$(printf '%s\n' "$output" | awk '/^ANCESTRY-MERGE-REGRESSION paths=/{n++; split($0, parts, "paths="); count=split(parts[2], paths, ",")} END {print count + 0}')"
+  unique_count="$(printf '%s\n' "$output" | awk '/^ANCESTRY-MERGE-REGRESSION paths=/{split($0, parts, "paths="); split(parts[2], paths, ","); for (i in paths) seen[paths[i]]=1} END {for (path in seen) n++; print n + 0}')"
+  [ "$path_count" -ge 1 ]
+  [ "$path_count" -eq "$unique_count" ]
+  [ "$(printf '%s\n' "$output" | awk '/^ANCESTRY-MERGE-REGRESSION paths=/{n++} END {print n + 0}')" -eq 1 ]
+  path_line="$(printf '%s\n' "$output" | awk '/^ANCESTRY-MERGE-REGRESSION paths=/{print}')"
+  [ -n "$path_line" ]
+
+  normal_parent="$(git -C "$FIX" rev-parse HEAD)"
+  printf 'normal\n' > "$FIX/normal.txt"
+  git -C "$FIX" add normal.txt
+  git -C "$FIX" commit -qm "normal linear fixture"
+  normal_target="$(git -C "$FIX" rev-parse HEAD)"
+  normal_tree="$(git -C "$FIX" rev-parse "$normal_target^{tree}")"
+  run bash "$FIX/scripts/safe_shared_main_ff.sh" --verify-merge-tree \
+    "$FIX" "$normal_parent" "$normal_target" "$normal_tree"
+  [ "$status" -eq 0 ]
+  [[ "$output" == *"target_new_merges=0"* ]]
+  [[ "$output" == *"result=PASS"* ]]
+}
+
 # test_necessity: an ours-equivalent merge already published in origin/main is
 # historical state, not a new unsafe merge introduced by this convergence.
 @test "published ours-equivalent merge is exempt from the guard" {

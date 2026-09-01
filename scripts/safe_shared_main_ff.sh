@@ -191,6 +191,13 @@ verify_ours_equivalent_merge_trees() {
 
         ours_equivalent=$((ours_equivalent + 1))
         nonempty_parent_diffs=$((nonempty_parent_diffs + changed_paths))
+        for path in "${merge_paths[@]}"; do
+            [[ -n "$path" ]] || continue
+            if [[ -z "${regression_seen[$path]+yes}" ]]; then
+                regression_seen["$path"]=1
+                regression_paths+=("$path")
+            fi
+        done
         echo "BLOCK: target introduces ours-equivalent merge with non-empty second-parent tree diff" >&2
         echo "  merge=$merge first_parent=$first_parent second_parent=$second_parent changed_paths=$changed_paths" >&2
     done
@@ -198,12 +205,15 @@ verify_ours_equivalent_merge_trees() {
     if [[ "${#regression_paths[@]}" -gt 0 ]]; then
         mapfile -t regression_paths < <(printf '%s\n' "${regression_paths[@]}" | sort -u)
         printf 'ANCESTRY-MERGE-REGRESSION paths=%s\n' "$(IFS=,; printf '%s' "${regression_paths[*]}")" >&2
-        return 2
+    fi
+    local merge_check_result=PASS
+    if [[ "$ours_equivalent" -ne 0 || "${#regression_paths[@]}" -gt 0 ]]; then
+        merge_check_result=BLOCK
     fi
     printf 'SAFE_SHARED_MAIN_FF_MERGE_CHECK target_new_merges=%s published_merges=%s ours_equivalent=%s parent_diff_paths=%s result=%s\n' \
         "${#new_merges[@]}" "$published_merges" "$ours_equivalent" "$nonempty_parent_diffs" \
-        "$([[ "$ours_equivalent" -eq 0 ]] && echo PASS || echo BLOCK)"
-    if [[ "$ours_equivalent" -ne 0 ]]; then
+        "$merge_check_result"
+    if [[ "$merge_check_result" == BLOCK ]]; then
         return 2
     fi
     return 0
