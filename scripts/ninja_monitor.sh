@@ -400,50 +400,107 @@ push_lane_log() {
 # 12:44 以降も 40 分超)。merge は D012(cherry-pick/rebase/revert 禁止)の対象外で、
 # 家老が手で行っている操作そのもの。dirty file と衝突すれば git が拒否する=fail-closed。
 # 成功で 0(HEAD が remote を含む)、失敗は merge --abort して 1。
-# 2026-09-01 19:2x 将軍 D0: 共有 root は daemon が毎分書く runtime 台帳(insights/bulletin/semantic-index/
-# todo_map_timestamps/lessons)が常時 dirty で、origin の autopush(source-only insights ID merge)と同 path を
-# 触るため `git merge` が "local changes would be overwritten" で拒否→auto_merge=failed が毎分(19:14-19:23、
-# unpushed 12→20)。merge-tree では競合 0(union 済み)なのに lane だけ失敗した真因。統合前に台帳だけを
-# 自動 commit し、merge の stderr は捨てずに log へ残す(型5弾-2)。
-push_lane_autocommit_runtime_ledgers() {
-    local repo="$1"
-    local -a ledgers=(queue/insights.yaml queue/bulletin_board.yaml docs/semantic-index/index.md queue/shogun_todo_map_timestamps.tsv projects/infra/lessons.yaml logs/karo_workarounds.yaml projects/infra/lessons_karo.yaml projects/infra/lessons_gunshi.yaml)
-    local -a dirty=() p
-    for p in "${ledgers[@]}"; do
-        [ -f "$repo/$p" ] || continue
-        git -C "$repo" diff --quiet -- "$p" 2>/dev/null || dirty+=("$p")
-    done
-    [ ${#dirty[@]} -gt 0 ] || return 0
-    local err
-    if err=$(git -C "$repo" -c maintenance.auto=false commit -q -m "runtime: auto-commit ledgers before integrate (push_lane)" -- "${dirty[@]}" 2>&1); then
-        push_lane_log "AUTOCOMMIT-LEDGERS paths=$(IFS=,; echo "${dirty[*]}") head=$(git -C "$repo" rev-parse --short HEAD 2>/dev/null)"
-        return 0
-    fi
-    push_lane_log "AUTOCOMMIT-LEDGERS-FAIL paths=$(IFS=,; echo "${dirty[*]}") err=$(printf '%s' "$err" | tr '\n' ' ' | cut -c1-200)"
-    return 1
-}
-
-push_lane_integrate_remote() {
+# 2026-09-01 U6: a shared root may contain live runtime files from several
+# agents.  Never commit a fixed ledger list to make that root mergeable.  The
+# integration is performed in a detached, clean worktree and its resulting
+# commit is published to the root ref only after all checks pass.  The root's
+# worktree bytes (including unknown dirty paths) are therefore never touched.
+push_lane_integrate_remote() (
     local repo="$1" remote_ref="$2" remote_tip="$3"
+    local current_head root_ref remote_now integrated_head merge_err dirty_paths
+    local temp_parent isolated cleanup_rc
+
     [ "${PUSH_LANE_AUTO_INTEGRATE:-1}" = "1" ] || return 1
-    push_lane_autocommit_runtime_ledgers "$repo" || true
-    # 逆方向(HEAD が remote の祖先=単に遅れている)は ff で追随する
-    if git -C "$repo" merge-base --is-ancestor HEAD "$remote_ref" 2>/dev/null; then
-        git -C "$repo" merge --ff-only "$remote_ref" >/dev/null 2>&1 || return 1
-        # 事後検証: ff 後は remote が HEAD の祖先になっているはず(fail-closed)
-        git -C "$repo" merge-base --is-ancestor "$remote_ref" HEAD 2>/dev/null && return 0
+    current_head=$(git -C "$repo" rev-parse HEAD 2>/dev/null || true)
+    root_ref=$(git -C "$repo" symbolic-ref --quiet HEAD 2>/dev/null || true)
+    [[ "$current_head" =~ ^[0-9a-fA-F]{40}$ && "$root_ref" =~ ^refs/heads/ ]] || {
+        push_lane_log "INTEGRATE-MERGE-FAIL remote=${remote_tip:0:9} err=root_ref_unresolved"
+        return 1
+    }
+
+    # This is observability, not permission to alter any path.  With the old
+    # fixed-list commit removed, every root-dirty path is unknown to this lane
+    # and must be visible in the one-line integration log.
+    dirty_paths=$(git -C "$repo" status --porcelain=v1 --untracked-files=all 2>/dev/null \
+        | sed 's/^.. //' | sort -u | paste -sd, -)
+    [ -z "$dirty_paths" ] || push_lane_log "INTEGRATE-DIRTY-WARN paths=$dirty_paths"
+
+    temp_parent=$(mktemp -d "${TMPDIR:-/tmp}/ninja-monitor-integrate.XXXXXX" 2>/dev/null || true)
+    isolated="${temp_parent:-}/repo"
+    cleanup_isolated() {
+        cleanup_rc=0
+        if [ -n "$temp_parent" ] && [ -e "$isolated" ]; then
+            git -C "$repo" worktree remove --force "$isolated" >/dev/null 2>&1 || cleanup_rc=1
+        fi
+        if [ -n "$temp_parent" ]; then
+            rmdir "$temp_parent" 2>/dev/null || cleanup_rc=1
+        fi
+        return "$cleanup_rc"
+    }
+    fail_integrate() {
+        local reason="$1"
+        push_lane_log "INTEGRATE-MERGE-FAIL remote=${remote_tip:0:9} err=$(printf '%s' "$reason" | tr '\n' ' ' | cut -c1-240)"
+        cleanup_isolated || true
+        return 1
+    }
+
+    if [ -z "$temp_parent" ]; then
+        fail_integrate "isolated_worktree_parent_failed"
         return 1
     fi
-    local merge_err
-    if merge_err=$(git -C "$repo" -c maintenance.auto=false merge --no-ff --no-edit \
-        -m "runtime: integrate ${remote_ref} ${remote_tip:0:9} (push_lane auto)" "$remote_ref" 2>&1 >/dev/null); then
-        git -C "$repo" merge-base --is-ancestor "$remote_ref" HEAD 2>/dev/null && return 0
+    git -C "$repo" -c maintenance.auto=false worktree add --detach "$isolated" "$current_head" \
+        >/dev/null 2>&1 || {
+            fail_integrate "isolated_worktree_add_failed"
+            return 1
+        }
+    # The detached-head check is a safety boundary: an accidental branch
+    # checkout here must never be allowed to move a shared branch ref.
+    if git -C "$isolated" symbolic-ref --quiet HEAD >/dev/null 2>&1; then
+        fail_integrate "isolated_worktree_not_detached"
         return 1
     fi
-    push_lane_log "INTEGRATE-MERGE-FAIL remote=${remote_tip:0:9} err=$(printf '%s' "$merge_err" | tr '\n' ' ' | cut -c1-240)"
-    git -C "$repo" merge --abort >/dev/null 2>&1 || true
-    return 1
-}
+
+    if git -C "$isolated" merge-base --is-ancestor "$current_head" "$remote_ref" 2>/dev/null; then
+        merge_err=$(git -C "$isolated" -c maintenance.auto=false merge --ff-only --no-autostash \
+            "$remote_ref" 2>&1) || {
+                fail_integrate "$merge_err"
+                return 1
+            }
+    elif ! merge_err=$(git -C "$isolated" -c maintenance.auto=false merge --no-ff --no-edit --no-autostash \
+        -m "runtime: integrate ${remote_ref} ${remote_tip:0:9} (push_lane auto)" "$remote_ref" 2>&1); then
+        fail_integrate "$merge_err"
+        return 1
+    fi
+
+    integrated_head=$(git -C "$isolated" rev-parse HEAD 2>/dev/null || true)
+    if ! [[ "$integrated_head" =~ ^[0-9a-fA-F]{40}$ ]]; then
+        fail_integrate "isolated_head_unresolved"
+        return 1
+    fi
+    git -C "$isolated" merge-base --is-ancestor "$remote_ref" HEAD 2>/dev/null \
+        || {
+            fail_integrate "isolated_remote_not_ancestor"
+            return 1
+        }
+    remote_now=$(git -C "$repo" rev-parse "$remote_ref" 2>/dev/null || true)
+    if [ "$remote_now" != "$remote_tip" ]; then
+        fail_integrate "remote_tip_moved"
+        return 1
+    fi
+    # Compare-and-swap makes a concurrent root update a clean failure instead
+    # of overwriting it.  update-ref changes only the ref; no root checkout or
+    # index operation is permitted on this path.
+    git -C "$repo" update-ref "$root_ref" "$integrated_head" "$current_head" \
+        || {
+            fail_integrate "root_ref_race_or_update_failed"
+            return 1
+        }
+    if ! cleanup_isolated; then
+        push_lane_log "INTEGRATE-MERGE-FAIL remote=${remote_tip:0:9} err=isolated_worktree_cleanup_failed"
+        return 1
+    fi
+    return 0
+)
 
 # The push lane shares the pre-push hook's measured wall time instead of
 # inheriting the generic 120-second lifecycle ceiling.  A missing or malformed
