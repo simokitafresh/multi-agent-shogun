@@ -12296,3 +12296,10 @@ insights:
   source: "skill_script_refs:9abfd94ce2d8bec9"
   fix_known: false
   status: pending
+- id: INS-20260901-133405145-42af
+  ts: "2026-09-01T13:34:05+09:00"
+  insight: "[[startup pending decisions計数のshelved混入根治 — 運用YAMLの変動世代に依存せず]] NO_MATCH purpose pending alias: cmd_complete時にdeploy_task.logでNO_MATCHだったpurpose。類似概念TOP3: strong_new_game_completion_contract(強くてニューゲーム完遂契約; alias=tobisaru_review_pending; score=10.2) / gate_quality_framework(ゲート品質統合フレームワーク; alias=startup gateのSKILL md script参照WARNが3セッション連続BLOCK; score=10.1) / production_parity(本番パリティ; alias=pending_confirmed_lifecycle; score=10.1)。既存概念aliasesへの自動昇格候補"
+  priority: "low"
+  source: "semantic_index_update"
+  fix_known: false
+  status: pending
