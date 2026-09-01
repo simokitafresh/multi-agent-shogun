@@ -11612,7 +11612,7 @@ insights:
   fix_known: false
   status: resolved
   resolved_reason: 一次情報でcmd_4433の不達根因と現行修正を確認。cmd_4438のrunner一般化でexternal package.jsonルートを検出・実行し、cmd_4433型のreceipt欠落を解消済み。追加コード修正・decision_candidateは不要。
-  action_artifact: "target=queue/insights.yaml:INS-20260831-164040002-ba94;primary=context/cmd-chronicle.md:L247-L248;scripts= scripts/run_tests.sh:L715-L823,L2571-L2590;fix_commit=738be2d793b943731c160661f99944d1ad97557a;followup=9e0f6b2cae3e0b34a522c6dc5e2791d2a1c2a544;decision_candidate=none;inventory_before=insights_pending:36,zero_backlinks:18,promotions:609,total:663"
+  action_artifact: "target=queue/insights.yaml:INS-20260831-164040002-ba94;primary=context/cmd-chronicle.md:L247-L248;scripts= scripts/run_tests.sh:L715-L823,L2571-L2590;fix_commit=738be2d793b943731c160661f99944d1ad97557a;followup=9e0f6b2cae3e0b34a522c6dc5e2791d2a1c2a544;decision_candidate=none;inventory_before=insights_pending:36,zero_backlinks:18,promotions:609,total:663;published_commit=a3d522f5ceaf25ef796f16b31c916f5ad6ff1dc1"
   resolved_at: "2026-09-02T02:45:00+09:00"
 - id: INS-20260831-164056038-10d2
   ts: "2026-08-31T16:40:56+09:00"
