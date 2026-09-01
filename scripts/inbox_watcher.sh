@@ -789,7 +789,7 @@ migrate_legacy_fingerprint_lease() {
         if [ "$task_assignment_fp" != "-" ]; then
             lease_scope_fp="$task_assignment_fp"
         fi
-        printf '%s\t%s\t%s\n' "$generation" "$unread_count" "$lease_scope_fp" > "$lease_file"
+        printf '%s\t%s\t%s\t%s\n' "$generation" "$unread_count" "$lease_scope_fp" "$fingerprint" > "$lease_file"
     fi
     rm -f -- "$legacy_file"
     echo "[$(date)] [LEGACY-LEASE-MIGRATED] $AGENT_ID fingerprint=$fingerprint generation=$generation" >&2
@@ -1198,13 +1198,23 @@ send_wakeup() {
                 fi
             fi
             if [ "$_lease_expired" -eq 0 ] && [ -n "$_lease_file" ] && [ -e "$_lease_file" ]; then
-                # A smaller unread count is not an acknowledgement of the
-                # already delivered nudge: auto-read and unrelated reads can
-                # change the count while the same generation is still active.
-                # The lease is released by the no-unread branch below, CLI
-                # generation invalidation, or a new current-task assignment-ID
-                # set (handled above).
-                printf 'skip\t[OUTSTANDING-LEASE] Suppressing normal nudge for %s generation=%s until unread=0, generation-change, or current-task-set-change\n' "$AGENT_ID" "${CURRENT_CLI_GENERATION:-unknown}" > "$atomic_result_file"
+                # 2026-09-01 根治(v2 家老RC対応): 4列目inbox_fpで比較。
+                # 3列目=lease_scope_fp(task-bound時はtask_fp)、4列目=inbox_fp。
+                # task_scope変更はL1191-1198で処理済み。ここではinbox fp変更のみ判定。
+                local _lease_stored_inbox_fp=""
+                IFS=$'\t' read -r _ _ _ _lease_stored_inbox_fp < "$_lease_file" 2>/dev/null || true
+                # 3列leaseの4列目は空。expire+再送で4列へupgrade(家老RC2 2026-09-01)
+                if [ -z "$_lease_stored_inbox_fp" ] || [ "$_lease_stored_inbox_fp" = "-" ]; then
+                    rm -f -- "$_lease_file"
+                    _lease_expired=1
+                    printf 'send\t[LEASE-UPGRADE] 3-col lease upgraded to 4-col for %s; resending\n' "$AGENT_ID" > "$atomic_result_file"
+                elif [ "$_lease_stored_inbox_fp" != "$current_fp" ]; then
+                    rm -f -- "$_lease_file"
+                    _lease_expired=1
+                    printf 'send\t[LEASE-RENEWED] Fingerprint changed for %s: %s→%s; renewing lease\n' "$AGENT_ID" "${_lease_stored_inbox_fp:0:16}" "${current_fp:0:16}" > "$atomic_result_file"
+                else
+                    printf 'skip\t[OUTSTANDING-LEASE] Suppressing normal nudge for %s generation=%s until unread=0, generation-change, or current-task-set-change\n' "$AGENT_ID" "${CURRENT_CLI_GENERATION:-unknown}" > "$atomic_result_file"
+                fi
             elif [ "$_lease_expired" -eq 0 ]; then
                 printf 'send\t[LEASE-AVAILABLE] Claiming normal nudge for %s generation=%s\n' "$AGENT_ID" "${CURRENT_CLI_GENERATION:-unknown}" > "$atomic_result_file"
             fi
@@ -1321,13 +1331,31 @@ send_wakeup() {
                 sent_token="${STATE_DIR}/inbox_watcher_sent_${AGENT_ID}_${safe_fp}"
             fi
             if ! ( set -C; : > "$sent_token" ) 2>/dev/null; then
-                if [ -n "$lease_generation" ]; then
-                    echo "[$(date)] [OUTSTANDING-LEASE] Skipping ${priority} nudge for $AGENT_ID until unread=0, generation-change, or current-task-set-change: generation=$lease_generation fingerprint=$current_fp" >&2
-                else
-                    echo "[$(date)] [SEND-LEASE] Skipping delivered fingerprint for $AGENT_ID until ACK/set change: $current_fp kind=$fp_kind" >&2
+                # 2026-09-01 根治: leaseファイル内のfingerprintと現在のfingerprintを比較。
+                # fingerprintが変わった=新しい未読が追加された→leaseを解放して再送する。
+                # 同一fingerprintならdedup(既に送信済み)。
+                local _lease_stored_inbox_fp2=""
+                if [ -n "$lease_generation" ] && [ -f "$sent_token" ]; then
+                    IFS=$'\t' read -r _ _ _ _lease_stored_inbox_fp2 < "$sent_token" 2>/dev/null || true
                 fi
-                printf 'dedup\t%s\t%s\t%s\n' "$unread_count" "$current_fp" "$fp_kind" > "$send_result_file"
-                exit 0
+                if [ -n "$_lease_stored_inbox_fp2" ] && [ "$_lease_stored_inbox_fp2" != "$current_fp" ] && [ "$_lease_stored_inbox_fp2" != "-" ]; then
+                    rm -f "$sent_token" 2>/dev/null || true
+                    if ( set -C; : > "$sent_token" ) 2>/dev/null; then
+                        echo "[$(date)] [LEASE-RENEWED] Fingerprint changed for $AGENT_ID: ${_lease_stored_inbox_fp2:0:16}→${current_fp:0:16}; renewing lease and resending" >&2
+                    else
+                        echo "[$(date)] [LEASE-RENEW-RACE] $AGENT_ID concurrent renewal; deferring" >&2
+                        printf 'dedup\t%s\t%s\t%s\n' "$unread_count" "$current_fp" "$fp_kind" > "$send_result_file"
+                        exit 0
+                    fi
+                else
+                    if [ -n "$lease_generation" ]; then
+                        echo "[$(date)] [OUTSTANDING-LEASE] Skipping ${priority} nudge for $AGENT_ID until unread=0, generation-change, or current-task-set-change: generation=$lease_generation fingerprint=$current_fp" >&2
+                    else
+                        echo "[$(date)] [SEND-LEASE] Skipping delivered fingerprint for $AGENT_ID until ACK/set change: $current_fp kind=$fp_kind" >&2
+                    fi
+                    printf 'dedup\t%s\t%s\t%s\n' "$unread_count" "$current_fp" "$fp_kind" > "$send_result_file"
+                    exit 0
+                fi
             fi
             if [ -n "$lease_generation" ]; then
                 # Persist the observed unread count with the lease so a later
@@ -1337,7 +1365,7 @@ send_wakeup() {
                 if [ "$current_task_fp" != "-" ]; then
                     lease_scope_fp="$current_task_fp"
                 fi
-                printf '%s\t%s\t%s\n' "$lease_generation" "$unread_count" "$lease_scope_fp" > "$sent_token"
+                printf '%s\t%s\t%s\t%s\n' "$lease_generation" "$unread_count" "$lease_scope_fp" "$current_fp" > "$sent_token"
             fi
         fi
         # Force-exit copy-mode if active (mouse scroll → copy-mode → nudge配信失敗を防止)
