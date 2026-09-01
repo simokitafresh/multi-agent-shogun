@@ -1835,6 +1835,30 @@ PY
             local _sf_task_root
             _sf_task_root="$(task_scope_root "$1")" || return 2
             if [ "$_sf_task_root" != "$REPO_ROOT" ]; then
+                # Isolated infra worktrees may contain a mode-0644 runner that
+                # is intentionally invoked through bash.  Publish directly
+                # owned test targets so single-flight cannot freeze an empty
+                # external-project selection before the task executes them.
+                if [ -f "$_sf_task_root/scripts/run_tests.sh" ]; then
+                    local _sf_external_scope
+                    _sf_external_scope="$(mktemp)"
+                    task_scope_paths "$1" >"$_sf_external_scope" || {
+                        rm -f "$_sf_external_scope"
+                        return 2
+                    }
+                    local -a _sf_external_tests=()
+                    local _sf_external_path
+                    while IFS= read -r -d '' _sf_external_path; do
+                        if is_test_contract_path "$_sf_external_path"; then
+                            _sf_external_tests+=("$_sf_task_root/$_sf_external_path")
+                        fi
+                    done <"$_sf_external_scope"
+                    rm -f "$_sf_external_scope"
+                    if [ "${#_sf_external_tests[@]}" -gt 0 ]; then
+                        printf '%s\n' "${_sf_external_tests[@]}" | sort -u
+                        return 0
+                    fi
+                fi
                 printf 'external-project:%s\n' "$_sf_task_root"
                 return 0
             fi
@@ -2381,7 +2405,24 @@ _run_tests_main() {
                 exit 0
             fi
             if [ "$_task_root" != "$REPO_ROOT" ]; then
-                if [ -x "$_task_root/scripts/run_tests.sh" ]; then
+                local -a _external_direct_tests=()
+                local _external_scope_path
+                for _external_scope_path in "${scoped_paths[@]}"; do
+                    if is_test_contract_path "$_external_scope_path"; then
+                        _external_direct_tests+=("$_external_scope_path")
+                    fi
+                done
+                if [ "${#_external_direct_tests[@]}" -gt 0 ] \
+                    && [ -f "$_task_root/scripts/run_tests.sh" ]; then
+                    printf 'TEST_SELECTION_REASON direct=%s transitive=0 source=task_scope\n' \
+                        "${#_external_direct_tests[@]}"
+                    printf 'TEST_SELECTION result=external runner=task-file scope=direct project_root=%s files=%s\n' \
+                        "$_task_root" "${#_external_direct_tests[@]}"
+                    (cd "$_task_root" \
+                        && bash scripts/run_tests.sh file "${_external_direct_tests[@]}")
+                    exit $?
+                fi
+                if [ -f "$_task_root/scripts/run_tests.sh" ]; then
                     (cd "$_task_root" && bash scripts/run_tests.sh affected "${scoped_paths[@]}")
                 else
                     local _external_backend=0 _external_frontend=0 _external_path
