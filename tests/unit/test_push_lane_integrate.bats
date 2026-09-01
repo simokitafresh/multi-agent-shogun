@@ -1,9 +1,9 @@
 #!/usr/bin/env bats
 # test_necessity: when origin/main holds commits that local HEAD lacks (auto-push
 # helper publishes integrate commits), the push lane must integrate origin/main
-# by a merge (allowed operation) instead of blocking forever; a conflicting or
-# dirty-overlap merge must abort and leave the worktree untouched; a plain
-# "behind" HEAD must fast-forward.
+# by a merge (allowed operation) instead of blocking forever; a conflicting
+# merge must abort, while a dirty-overlap merge must succeed in isolation and
+# preserve the root worktree; a plain "behind" HEAD must fast-forward.
 # regression_justification: 2026-09-01 12:10-12:33 and 12:44-13:19 the lane
 # logged BLOCK reason=remote_tip_not_ancestor on every cycle until Karo made
 # "runtime: integrate …" merges by hand (23 min + 40 min of no push).
@@ -56,13 +56,21 @@ setup() {
   [ ! -f "$LOCAL/.git/MERGE_HEAD" ]
 }
 
-@test "dirty overlapping worktree file → git refuses, uncommitted edit preserved" {
+@test "dirty overlapping worktree file → isolated merge succeeds, root dirt preserved" {
   printf 'remote\n' > "$OTHER/a.txt"; git -C "$OTHER" commit -qam remote; git -C "$OTHER" push -q origin main
   printf 'local\n' > "$LOCAL/c.txt"; git -C "$LOCAL" add c.txt; git -C "$LOCAL" commit -qm local
   printf 'uncommitted\n' > "$LOCAL/a.txt"
   git -C "$LOCAL" fetch -q origin
+  before_head="$(git -C "$LOCAL" rev-parse HEAD)"
+  before_index="$(git -C "$LOCAL" ls-files --stage | sha256sum | awk '{print $1}')"
+  before_worktree="$(sha256sum "$LOCAL/a.txt" | awk '{print $1}')"
   run bash -c "$(declare -f push_lane_integrate_remote); push_lane_integrate_remote '$LOCAL' origin/main \$(git -C '$LOCAL' rev-parse origin/main)"
-  [ "$status" -ne 0 ]
+  [ "$status" -eq 0 ]
+  [ "$(git -C "$LOCAL" rev-parse HEAD)" != "$before_head" ]
+  git -C "$LOCAL" merge-base --is-ancestor origin/main HEAD
+  [[ "$(git -C "$LOCAL" log -1 --format=%s)" == *"integrate origin/main"* ]]
+  [ "$(git -C "$LOCAL" ls-files --stage | sha256sum | awk '{print $1}')" = "$before_index" ]
+  [ "$(sha256sum "$LOCAL/a.txt" | awk '{print $1}')" = "$before_worktree" ]
   [ "$(cat "$LOCAL/a.txt")" = "uncommitted" ]
   [ ! -f "$LOCAL/.git/MERGE_HEAD" ]
 }
