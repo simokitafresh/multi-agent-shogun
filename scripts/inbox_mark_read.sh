@@ -131,7 +131,142 @@ resolve_inbox_file_path() {
 
 INBOX="$(resolve_inbox_file_path "$INBOX")"
 LOCKFILE="$(lock_path "$INBOX")"
+RECEIPT_DIR="${INBOX_MARK_READ_RECEIPT_DIR:-$SCRIPT_DIR/logs/inbox_read_receipts}"
+RECEIPT_FILE="$RECEIPT_DIR/${AGENT_ID}.json"
 CONFIRM_LIST_FILE=""
+
+# inbox_read.sh publishes one generation-bound receipt for every unread
+# message.  Validate all requested IDs before changing the inbox.  The
+# generation excludes read flags, so receipts from one read remain usable for
+# several sequential marks, while content/new-message changes fail closed.
+verify_read_receipt() {
+    [ "$AUTO_INFO_MODE" = true ] && return 0
+    [ -n "$MSG_ID" ] || return 0
+    local verified_file="/tmp/.imr_receipt_verified_$$"
+    python3 - "$INBOX" "$AGENT_ID" "$RECEIPT_FILE" "$ID_LIST_FILE" "$verified_file" <<'PY'
+import hashlib
+import json
+import sys
+
+import yaml
+
+inbox, agent, receipt_path, ids_path, verified_path = sys.argv[1:]
+try:
+    with open(receipt_path, encoding="utf-8") as fh:
+        receipt = json.load(fh)
+except FileNotFoundError:
+    print(f"BLOCK: no inbox read receipt for agent={agent}; read inbox before mark_read", file=sys.stderr)
+    raise SystemExit(2)
+except Exception as exc:
+    print(f"BLOCK: invalid inbox read receipt for agent={agent}: {exc}", file=sys.stderr)
+    raise SystemExit(2)
+
+if receipt.get("version") != 1 or receipt.get("agent") != agent:
+    print("BLOCK: inbox read receipt identity mismatch", file=sys.stderr)
+    raise SystemExit(2)
+entries = receipt.get("entries")
+if not isinstance(entries, list) or not entries:
+    print("BLOCK: inbox read receipt has no consumable entries", file=sys.stderr)
+    raise SystemExit(2)
+entry_by_id = {}
+for entry in entries:
+    if not isinstance(entry, dict) or not entry.get("msg_id") or not entry.get("content_hash"):
+        print("BLOCK: malformed inbox read receipt entry", file=sys.stderr)
+        raise SystemExit(2)
+    msg_id = str(entry["msg_id"])
+    if msg_id in entry_by_id:
+        print(f"BLOCK: duplicate inbox read receipt entry msg_id={msg_id}", file=sys.stderr)
+        raise SystemExit(2)
+    entry_by_id[msg_id] = entry
+
+with open(ids_path, encoding="utf-8") as fh:
+    wanted = [line.strip() for line in fh if line.strip()]
+if not wanted:
+    raise SystemExit(0)
+
+with open(inbox, encoding="utf-8") as fh:
+    data = yaml.safe_load(fh) or {}
+messages = data.get("messages", [])
+if not isinstance(messages, list):
+    print("BLOCK: inbox messages must be a list", file=sys.stderr)
+    raise SystemExit(2)
+
+def identity(message):
+    return {key: str(message.get(key, "")) for key in ("id", "from", "timestamp", "type", "content")}
+
+identities, current = [], {}
+for message in messages:
+    if not isinstance(message, dict):
+        print("BLOCK: inbox message must be a mapping", file=sys.stderr)
+        raise SystemExit(2)
+    item = identity(message)
+    if not item["id"] or item["id"] in current:
+        print("BLOCK: missing or duplicate inbox message id", file=sys.stderr)
+        raise SystemExit(2)
+    identities.append(item)
+    current[item["id"]] = message
+generation = hashlib.sha256(json.dumps(
+    identities, ensure_ascii=False, sort_keys=True, separators=(",", ":")
+).encode("utf-8")).hexdigest()
+if receipt.get("generation") != generation:
+    print("BLOCK: stale inbox read receipt generation; reread inbox", file=sys.stderr)
+    raise SystemExit(2)
+
+for msg_id in wanted:
+    message = current.get(msg_id)
+    entry = entry_by_id.get(msg_id)
+    if message is None or entry is None:
+        print(f"BLOCK: inbox read receipt does not cover msg_id={msg_id}", file=sys.stderr)
+        raise SystemExit(2)
+    if message.get("read") is not False:
+        print(f"BLOCK: msg_id={msg_id} was not unread when read receipt was issued", file=sys.stderr)
+        raise SystemExit(2)
+    content_hash = hashlib.sha256(str(message.get("content", "")).encode("utf-8")).hexdigest()
+    if entry.get("content_hash") != content_hash:
+        print(f"BLOCK: inbox read receipt content hash mismatch msg_id={msg_id}", file=sys.stderr)
+        raise SystemExit(2)
+
+with open(verified_path, "w", encoding="utf-8") as fh:
+    fh.write("\n".join(wanted) + "\n")
+PY
+}
+
+consume_read_receipt() {
+    [ "$AUTO_INFO_MODE" = true ] && return 0
+    [ -n "$MSG_ID" ] || return 0
+    local consumed_file="/tmp/.imr_receipt_consumed_$$"
+    python3 - "$RECEIPT_FILE" "$ID_LIST_FILE" "$consumed_file" <<'PY'
+import json
+import os
+import sys
+import tempfile
+
+receipt_path, ids_path, output_path = sys.argv[1:]
+with open(receipt_path, encoding="utf-8") as fh:
+    payload = json.load(fh)
+with open(ids_path, encoding="utf-8") as fh:
+    consumed = {line.strip() for line in fh if line.strip()}
+remaining = [entry for entry in payload.get("entries", []) if str(entry.get("msg_id", "")) not in consumed]
+if not remaining:
+    os.unlink(receipt_path)
+else:
+    payload["entries"] = remaining
+    directory = os.path.dirname(receipt_path)
+    fd, temporary = tempfile.mkstemp(prefix=f".{os.path.basename(receipt_path)}.", dir=directory)
+    try:
+        with os.fdopen(fd, "w", encoding="utf-8") as fh:
+            json.dump(payload, fh, ensure_ascii=False, sort_keys=True)
+            fh.flush()
+            os.fsync(fh.fileno())
+        os.replace(temporary, receipt_path)
+    except Exception:
+        try:
+            os.unlink(temporary)
+        except FileNotFoundError:
+            pass
+        raise
+PY
+}
 
 auto_digest_info_messages() {
     local digest="${INBOX_INFO_DIGEST_FILE:-$SCRIPT_DIR/logs/inbox_info_digest.jsonl}"
@@ -449,8 +584,15 @@ bulk_mark_read_guard() {
         recent="$(awk -v n="$now" -v w="$INBOX_MARK_READ_BULK_WINDOW_SEC" -v me="$MSG_ID" '($1+0) >= (n-w) && $2 != me && !seen[$2]++ {c++} END{print c+0}' "$ledger" 2>/dev/null || echo 0)"
     fi
     if [ "$recent" -ge "$INBOX_MARK_READ_BULK_MAX_CALLS" ]; then
-        echo "BLOCK: bulk mark-read pattern — ${recent} other message(s) marked read for ${AGENT_ID} in the last ${INBOX_MARK_READ_BULK_WINDOW_SEC}s (limit ${INBOX_MARK_READ_BULK_MAX_CALLS}). Read and process each message before marking it; do not loop over read:false ids. msg_id=${MSG_ID} stays unread." >&2
-        return 1
+        # The count heuristic cannot distinguish an unread loop from a
+        # legitimate fast three-message sequence.  Keep it as telemetry by
+        # default; explicit enforcement is available for incident probes.
+        if [ "${INBOX_MARK_READ_BULK_ENFORCE:-0}" = "1" ]; then
+            echo "BLOCK: bulk mark-read pattern — ${recent} other message(s) marked read for ${AGENT_ID} in the last ${INBOX_MARK_READ_BULK_WINDOW_SEC}s (limit ${INBOX_MARK_READ_BULK_MAX_CALLS}). Read and process each message before marking it; do not loop over read:false ids. msg_id=${MSG_ID} stays unread." >&2
+            return 1
+        fi
+        echo "[inbox_mark_read] WARN(bulk-pattern): ${recent} other message(s) marked read for ${AGENT_ID} in the last ${INBOX_MARK_READ_BULK_WINDOW_SEC}s — observe-only; processing receipt is authoritative" >&2
+        printf '%s\t%s\tWARN\n' "$now" "$MSG_ID" >> "$INBOX_MARK_READ_LEDGER_DIR/${AGENT_ID}.warn.tsv" 2>/dev/null || true
     fi
     printf '%s\t%s\n' "$now" "$MSG_ID" >> "$ledger" 2>/dev/null || true
     # keep the ledger small: drop rows older than 10 windows
@@ -471,6 +613,7 @@ while [ $attempt -lt $max_attempts ]; do
     if (
         flock -w 5 200 || exit 1
 
+        verify_read_receipt || exit 2
         karo_guard_unprocessed_shogun_assignments || exit 2
         bulk_mark_read_guard || exit 2
 
@@ -484,6 +627,11 @@ while [ $attempt -lt $max_attempts ]; do
             fi
             exit 0
         fi
+
+        # Consume the receipt before the inbox rewrite.  If the rewrite then
+        # fails, the message remains unread and the caller must reread; a
+        # consumed receipt can never authorize a second mark.
+        consume_read_receipt || exit 2
 
         # Atomic write: mktemp in same dir + mv (same as original python3 os.replace)
         _inbox_dir="${INBOX%/*}"
