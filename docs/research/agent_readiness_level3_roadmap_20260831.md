@@ -1,5 +1,5 @@
 <!-- gist-master: da1b7617d777b62864953792b77d5a78 agent_readiness_level3_roadmap_20260831.md -->
-# dm-signal.com Agent Readiness — Level 3 全完了ロードマップ v1.3
+# dm-signal.com Agent Readiness — Level 3 全完了ロードマップ v1.2
 
 - 作成: 2026-08-31 05:25 JST（殿指示 05:22『level3まで全て完了させるためのロードマップをステップバイステップで』）
 - 対象: Cloudflare AI Crawl Control › Agent Readiness 診断（殿提示 HTML 2026-08-31 03:15 準拠）
@@ -72,9 +72,8 @@
 | 0-1 | 殿 ON 13:00→curl text/markdown 200 | done |
 | 1-1/1-3/1-2(b)/2-1 | 将軍 D0 実施(08-31 13:0x-13:2x)。09-01 19:05 curl: api-catalog 200 / auth.md 200 text/markdown / oauth-authorization-server 200 | done(Rescan 未) |
 | 2-2 | PRM 静的公開で充足(1330692 live 13:28、殿提供スキル仕様準拠。backend 側複製は任意) | done |
-| 2-3+2-4 | cmd_4444(疾風、DM-signal 4ad5ddf9 origin/main、GATE CLEAR 09-02 01:13)。本番 curl 01:15: agent-card.json 200(skills 3=get_showcase/get_free_coupon/record_showcase_event、examples 3/3、authentication=2-1 issuer+2-2 resource)、skills.json 200 id 集合一致 | done(Rescan 未) |
-| 2-5〜2-7 | cmd 未起票(2-5=backend /mcp 2 cmd、2-6=鍵生成+配置、2-7=LP WebMCP)。次=2-7(LP のみ・可逆)と 2-6 を並走、2-5 は直列 | open |
+| 2-3〜2-7 | cmd 未起票(09-01 19:05 再確認: agent-card.json/agent.json 404、mcp.json 未配置)。次=2-3+2-4 を 1 cmd、2-2 backend 複製は任意 | open |
 | 1-2(a) | Transform Rule 作成 13:07(Link ヘッダ本番実測) | done |
 | 1-3 是正 | 13:11 殿スクショで Auth.md 未✅→発見経路の欠落を特定(スキャナは oauth-authorization-server の agent_auth.skill から auth.md を辿る)。869553b で agent_auth.skill 追加+auth.md タイトルを # auth.md 実例準拠へ、13:24 本番 curl 両方到達 | done |
-| 2-8 | 将軍 API で投入 09-02 01:17: TXT `_aid.dm-signal.com` = `v=aid1;uri=https://dm-signal.com/.well-known/agent-card.json;proto=a2a`(record e1fa9b06、DoH 1 件確認)。値の書式は診断 Rescan で照合し不一致なら update | done(Rescan 未) |
+| 2-8 | トークン権限確保済(DNS:Edit 実測)。Agent Card(2-3)後に投入 | ready |
 

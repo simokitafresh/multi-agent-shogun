@@ -1,3 +1,29 @@
+- cmd_id: cmd_karo_hotfix_deploy_task_worktree_phase_accounting_20260829
+  timestamp: '2026-08-28T19:02:36Z'
+  ninja: system
+  workaround: false
+  event_kind: hotfix
+  auto_captured: true
+  category: rework_auto_capture
+  detail: 'cmd_complete_gate completed rework event'
+  root_cause: 'automatic completion observation'
+  lesson_required: false
+  lesson_disposition: not_applicable
+  lesson_reference: 'not_applicable'
+  resolved_by_cmd: 'cmd_karo_hotfix_deploy_task_worktree_phase_accounting_20260829'
+- cmd_id: cmd_karo_hotfix_production_proof_match_count_20260829
+  timestamp: '2026-08-28T19:09:13Z'
+  ninja: system
+  workaround: false
+  event_kind: hotfix
+  auto_captured: true
+  category: rework_auto_capture
+  detail: 'cmd_complete_gate completed rework event'
+  root_cause: 'automatic completion observation'
+  lesson_required: false
+  lesson_disposition: not_applicable
+  lesson_reference: 'not_applicable'
+  resolved_by_cmd: 'cmd_karo_hotfix_production_proof_match_count_20260829'
 - cmd_id: cmd_karo_hotfix_database_cron_verification_ntfy_20260829
   timestamp: '2026-08-28T22:15:39Z'
   ninja: system
@@ -1272,29 +1298,3 @@
   lesson_disposition: not_applicable
   lesson_reference: 'not_applicable'
   resolved_by_cmd: 'cmd_karo_hotfix_u8_runtime_merge_strategy_20260901'
-- cmd_id: cmd_karo_hotfix_u3_msg_id_receipt_20260902
-  timestamp: '2026-09-01T16:04:52Z'
-  ninja: system
-  workaround: false
-  event_kind: hotfix
-  auto_captured: true
-  category: rework_auto_capture
-  detail: 'cmd_complete_gate completed rework event'
-  root_cause: 'automatic completion observation'
-  lesson_required: false
-  lesson_disposition: not_applicable
-  lesson_reference: 'not_applicable'
-  resolved_by_cmd: 'cmd_karo_hotfix_u3_msg_id_receipt_20260902'
-- cmd_id: cmd_karo_hotfix_u9_ours_merge_guard_20260902
-  timestamp: '2026-09-01T16:20:35Z'
-  ninja: system
-  workaround: false
-  event_kind: hotfix
-  auto_captured: true
-  category: rework_auto_capture
-  detail: 'cmd_complete_gate completed rework event'
-  root_cause: 'automatic completion observation'
-  lesson_required: false
-  lesson_disposition: not_applicable
-  lesson_reference: 'not_applicable'
-  resolved_by_cmd: 'cmd_karo_hotfix_u9_ours_merge_guard_20260902'
