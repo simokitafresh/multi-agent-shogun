@@ -12507,3 +12507,10 @@ insights:
   source: "semantic_index_update"
   fix_known: false
   status: pending
+- id: INS-20260901-191928623-0d1a
+  ts: "2026-09-01T19:19:28+09:00"
+  insight: "[[T222 T221 T220 T219 T217 T216 T213 T212 T201 T188の進捗を確認し]] semantic_stress_test candidate_aliases: NO_MATCH source=lord query=T222 / T221 / T220 / T219 / T217 / T216 / T213 / T212 / T201 / T188の進捗を確認し、つまりを解消せよ"
+  priority: "low"
+  source: "semantic_stress_test"
+  fix_known: false
+  status: pending
