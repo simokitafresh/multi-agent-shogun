@@ -3,6 +3,7 @@
 
 from __future__ import annotations
 
+import hashlib
 import json
 import os
 import sqlite3
@@ -10,7 +11,7 @@ import sys
 from pathlib import Path
 
 
-SCHEMA_VERSION = "1"
+SCHEMA_VERSION = "2"
 
 
 def connect(path: Path, building: bool = False) -> sqlite3.Connection:
@@ -28,6 +29,15 @@ def create_schema(connection: sqlite3.Connection) -> None:
     connection.executescript(
         """
         CREATE TABLE events(event_id TEXT PRIMARY KEY) WITHOUT ROWID;
+        CREATE TABLE anomalies(
+            ledger_device INTEGER NOT NULL,
+            ledger_inode INTEGER NOT NULL,
+            ledger_offset INTEGER NOT NULL,
+            row_length INTEGER NOT NULL,
+            sha256 TEXT NOT NULL,
+            reason TEXT NOT NULL,
+            PRIMARY KEY(ledger_device, ledger_inode, ledger_offset, row_length, sha256)
+        ) WITHOUT ROWID;
         CREATE TABLE state(key TEXT PRIMARY KEY, value TEXT NOT NULL) WITHOUT ROWID;
         """
     )
@@ -72,21 +82,50 @@ def state_matches_ledger(state: dict[str, str], ledger: Path) -> bool:
         return False
 
 
-def event_id_from_line(raw: bytes) -> str | None:
+def parse_event_id(raw: bytes) -> tuple[str | None, str | None]:
     try:
         row = json.loads(raw)
     except (UnicodeDecodeError, json.JSONDecodeError) as exc:
-        raise ValueError("invalid JSONL row") from exc
-    event_id = row.get("event_id") if isinstance(row, dict) else None
+        return None, f"invalid_json:{type(exc).__name__}"
+    if not isinstance(row, dict):
+        return None, "row_not_object"
+    event_id = row.get("event_id")
     if not isinstance(event_id, str) or not event_id:
-        return None
+        return None, "missing_event_id"
+    return event_id, None
+
+
+def event_id_from_line(raw: bytes) -> str | None:
+    """Return an indexable event id without making one bad row stop a scan."""
+    event_id, _ = parse_event_id(raw)
     return event_id
 
 
-def iter_prefix_rows(ledger: Path, snapshot_size: int):
+def record_anomaly(
+    connection: sqlite3.Connection,
+    *,
+    device: int,
+    inode: int,
+    offset: int,
+    raw: bytes,
+    reason: str,
+) -> None:
+    connection.execute(
+        """
+        INSERT OR IGNORE INTO anomalies(
+            ledger_device, ledger_inode, ledger_offset, row_length, sha256, reason
+        ) VALUES (?, ?, ?, ?, ?, ?)
+        """,
+        (device, inode, offset, len(raw), hashlib.sha256(raw).hexdigest(), reason),
+    )
+
+
+def iter_prefix_records(ledger: Path, snapshot_size: int):
+    """Yield complete snapshot rows with byte offsets and anomaly classification."""
     with ledger.open("rb") as stream:
         remaining = snapshot_size
         carry = b""
+        offset = 0
         while remaining:
             chunk = stream.read(min(8 * 1024 * 1024, remaining))
             if not chunk:
@@ -95,11 +134,17 @@ def iter_prefix_rows(ledger: Path, snapshot_size: int):
             rows = (carry + chunk).split(b"\n")
             carry = rows.pop()
             for raw in rows:
-                event_id = event_id_from_line(raw)
-                if event_id is not None:
-                    yield event_id
+                event_id, reason = parse_event_id(raw)
+                yield offset, raw, event_id, reason
+                offset += len(raw) + 1
         if carry:
             raise ValueError("ledger snapshot ended in a partial row")
+
+
+def iter_prefix_rows(ledger: Path, snapshot_size: int):
+    for _, _, event_id, _ in iter_prefix_records(ledger, snapshot_size):
+        if event_id is not None:
+            yield event_id
 
 
 def prepare(ledger: Path, index: Path) -> int:
@@ -123,8 +168,20 @@ def prepare(ledger: Path, index: Path) -> int:
             stat = ledger.stat()
             snapshot_size = stat.st_size
             batch: list[tuple[str]] = []
-            for event_id in iter_prefix_rows(ledger, snapshot_size):
-                batch.append((event_id,))
+            for offset, raw, event_id, reason in iter_prefix_records(
+                ledger, snapshot_size
+            ):
+                if event_id is None:
+                    record_anomaly(
+                        connection,
+                        device=stat.st_dev,
+                        inode=stat.st_ino,
+                        offset=offset,
+                        raw=raw,
+                        reason=reason or "unindexable_row",
+                    )
+                else:
+                    batch.append((event_id,))
                 if len(batch) >= 4096:
                     connection.executemany(
                         "INSERT OR IGNORE INTO events(event_id) VALUES (?)", batch
@@ -172,14 +229,28 @@ def reconcile_tail(
         else:
             offset = int(state["ledger_offset"])
         with ledger.open("rb") as stream:
+            if offset:
+                stream.seek(offset - 1)
+                if stream.read(1) != b"\n":
+                    raise ValueError("sidecar offset is not at a row boundary")
             stream.seek(offset)
             rows = []
             for raw in stream:
                 if not raw.endswith(b"\n"):
                     raise ValueError("ledger tail contains a partial row")
-                event_id = event_id_from_line(raw)
+                row_offset = stream.tell() - len(raw)
+                event_id, reason = parse_event_id(raw[:-1])
                 if event_id is not None:
                     rows.append((event_id,))
+                else:
+                    record_anomaly(
+                        connection,
+                        device=stat.st_dev,
+                        inode=stat.st_ino,
+                        offset=row_offset,
+                        raw=raw[:-1],
+                        reason=reason or "unindexable_row",
+                    )
             if rows:
                 connection.executemany(
                     "INSERT OR IGNORE INTO events(event_id) VALUES (?)", rows
@@ -200,7 +271,8 @@ def append(ledger: Path, index: Path, line: str, event_id: str) -> int:
         if connection.execute(
             "SELECT 1 FROM events WHERE event_id = ?", (event_id,)
         ).fetchone():
-            connection.rollback()
+            write_state(connection, device=device, inode=inode, offset=offset)
+            connection.commit()
             connection.close()
             return 4
 
