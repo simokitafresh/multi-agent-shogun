@@ -436,6 +436,23 @@ pre_push_runtime_only_commit() {
     return 0
 }
 
+pre_push_verify_merge_tree() {
+    local base_sha="$1" local_sha="$2" prospective_tree verifier
+    verifier="$REPO_ROOT/scripts/safe_shared_main_ff.sh"
+    if [ ! -x "$verifier" ]; then
+        # Lightweight isolated hook fixtures may intentionally omit the
+        # platform helper; production repositories deploy both files.
+        echo "[pre-push] WARN: ancestry merge verifier is unavailable; no merge-tree check performed." >&2
+        return 0
+    fi
+    prospective_tree="$(git -C "$REPO_ROOT" rev-parse "${local_sha}^{tree}" 2>/dev/null)" || {
+        echo "[pre-push] BLOCK: cannot resolve prospective merge tree for $local_sha." >&2
+        return 1
+    }
+    bash "$verifier" --verify-merge-tree \
+        "$REPO_ROOT" "$base_sha" "$local_sha" "$prospective_tree"
+}
+
 _PUSH_REFS=()
 while IFS= read -r _ref_line; do
     _PUSH_REFS+=("$_ref_line")
@@ -443,8 +460,29 @@ done
 
 for _ref_line in "${_PUSH_REFS[@]}"; do
     read -r _local_ref _local_sha _remote_ref _remote_sha <<< "$_ref_line"
-    # 削除push (local sha = 0) はスキップ
-    [ "$_local_sha" = "0000000000000000000000000000000000000000" ] && continue
+    # 削除push (local sha = 0) は送出commit rangeがないため明示的に
+    # ancestry/test判定を行わず次のrefへ進む。
+    if [ "$_local_sha" = "0000000000000000000000000000000000000000" ]; then
+        echo "[pre-push] INFO: delete ref update has no local commit range; ancestry check skipped." >&2
+        continue
+    fi
+    if [ "$_remote_sha" = "0000000000000000000000000000000000000000" ]; then
+        # 新規branch: 既存 origin/main と共有する境界、なければlocal rootを使用。
+        _base_sha=$(git merge-base "$_local_sha" origin/main 2>/dev/null \
+                    || git rev-list --max-parents=0 "$_local_sha" 2>/dev/null \
+                    || echo "")
+    else
+        # 通常更新: Gitが渡した remote_sha..local_sha をそのまま検証境界にする。
+        _base_sha="$_remote_sha"
+    fi
+    if [ -z "$_base_sha" ] || ! git cat-file -e "${_base_sha}^{commit}" 2>/dev/null; then
+        echo "[pre-push] BLOCK: cannot resolve ancestry range ${_remote_sha}..${_local_sha}." >&2
+        exit 1
+    fi
+    if ! pre_push_verify_merge_tree "$_base_sha" "$_local_sha"; then
+        echo "[pre-push] BLOCK: ancestry merge-tree verification failed for ${_base_sha}..${_local_sha}." >&2
+        exit 1
+    fi
     _PREPUSH_CACHE_HIT=0
     _PREPUSH_TEST_FINGERPRINT="$(pre_push_test_tree_fingerprint "$_local_sha")"
     if ! [[ "$_PREPUSH_TEST_FINGERPRINT" =~ ^[0-9a-f]{64}$ ]]; then
@@ -455,15 +493,6 @@ for _ref_line in "${_PUSH_REFS[@]}"; do
         _PREPUSH_CACHE_HIT=1
         echo "[pre-push] Reusing terminal Ninja PASS receipt: $_PREPUSH_REUSABLE_RECEIPT (tree=$_PREPUSH_TEST_FINGERPRINT)." >&2
     fi
-    if [ "$_remote_sha" = "0000000000000000000000000000000000000000" ]; then
-        # 新規ブランチ: main との merge-base を使用
-        _base_sha=$(git merge-base "$_local_sha" origin/main 2>/dev/null \
-                    || git rev-list --max-parents=0 "$_local_sha" 2>/dev/null \
-                    || echo "")
-    else
-        _base_sha="$_remote_sha"
-    fi
-    [ -z "$_base_sha" ] && continue
     # Disable rename detection so a source-to-runtime rename exposes both
     # endpoints and cannot be misclassified as runtime-only.
     mapfile -t _changed_files < <(git diff --no-renames --name-only "$_base_sha" "$_local_sha" 2>/dev/null | sort -u)

@@ -32,6 +32,8 @@ setup() {
     mkdir -p "$FAKE_REPO/scripts/gates"
     printf '#!/usr/bin/env bash\nexit 0\n' > "$FAKE_REPO/scripts/test_select.sh"
     chmod +x "$FAKE_REPO/scripts/test_select.sh"
+    cp "$PROJECT_ROOT/scripts/safe_shared_main_ff.sh" "$FAKE_REPO/scripts/safe_shared_main_ff.sh"
+    chmod +x "$FAKE_REPO/scripts/safe_shared_main_ff.sh"
 
     printf 'base\n' > "$FAKE_REPO/shared.txt"
     git -C "$FAKE_REPO" add -A
@@ -46,6 +48,11 @@ setup() {
 
 run_prepush() {
     (cd "$FAKE_REPO" && printf 'refs/heads/main %s refs/heads/main %s\n' "$LOCAL_SHA" "$BASE_SHA" | bash "$PREPUSH_HOOK" origin "$FAKE_REPO")
+}
+
+run_prepush_ref() {
+    local local_sha="$1" remote_sha="$2"
+    (cd "$FAKE_REPO" && printf 'refs/heads/main %s refs/heads/main %s\n' "$local_sha" "$remote_sha" | bash "$PREPUSH_HOOK" origin "$FAKE_REPO")
 }
 
 install_selected_test_fixture() {
@@ -486,4 +493,59 @@ PY
 )"
     [[ "$second_fingerprint" =~ ^[0-9a-f]{64}$ ]]
     [ "$second_fingerprint" != "$first_fingerprint" ]
+}
+
+# cmd_karo_hotfix_prepush_ancestry_guard_20260902
+# test_necessity: the final pre-push boundary must reject the real
+# eaabc7d9323bba3de2cb23635cf2d444cc91cc6c content-loss merge before any
+# remote ref can move, and retain the exact regression paths in the hook
+# artifact. This proves the stdin remote_sha..local_sha path is protected too.
+@test "pre-push blocks eaabc ancestry merge and records paths before remote movement" {
+    local remote_repo second_parent artifact
+    local incident_sha="eaabc7d9323bba3de2cb23635cf2d444cc91cc6c"
+    remote_repo="$BATS_TEST_TMPDIR/ancestry-remote.git"
+    git init --bare -q "$remote_repo"
+    git -C "$FAKE_REPO" remote add origin "$remote_repo"
+    git -C "$FAKE_REPO" fetch -q "$PROJECT_ROOT" "$incident_sha"
+    second_parent="$(git -C "$FAKE_REPO" rev-parse "${incident_sha}^2")"
+    git -C "$FAKE_REPO" push -q origin "$second_parent:refs/heads/main"
+    # The tracking ref is the already-published unsafe merge while the actual
+    # remote ref remains at the second parent, matching the observed incident.
+    git -C "$FAKE_REPO" update-ref refs/remotes/origin/main "$incident_sha"
+
+    run run_prepush_ref "$incident_sha" "$second_parent"
+    [ "$status" -ne 0 ]
+    artifact="$(find "$FAKE_REPO/logs/hook_artifacts" -type f -name '*.log' -print -quit)"
+    [ -n "$artifact" ]
+    grep -q 'ANCESTRY-MERGE-REGRESSION paths=' "$artifact"
+    grep -q 'context/infrastructure.md' "$artifact"
+    [ "$(git ls-remote "$remote_repo" refs/heads/main | awk '{print $1}')" = "$second_parent" ]
+}
+
+# test_necessity: new-branch and delete ref updates are explicit no-range
+# cases, while a normal linear update and a content-preserving merge still
+# pass through the shared verifier and return rc=0.
+@test "pre-push handles zero SHA ref cases and allows linear/content-preserving updates" {
+    local side_dir previous_sha merge_sha
+
+    run run_prepush_ref "$LOCAL_SHA" "0000000000000000000000000000000000000000"
+    [ "$status" -eq 0 ]
+    run run_prepush_ref "0000000000000000000000000000000000000000" "$LOCAL_SHA"
+    [ "$status" -eq 0 ]
+
+    run run_prepush
+    [ "$status" -eq 0 ]
+    previous_sha="$LOCAL_SHA"
+
+    side_dir="$BATS_TEST_TMPDIR/content-preserving-side"
+    git -C "$FAKE_REPO" worktree add -q -b content-preserving-side "$side_dir" "$BASE_SHA"
+    printf 'preserved side content\n' > "$side_dir/preserved.txt"
+    git -C "$side_dir" add preserved.txt
+    git -C "$side_dir" commit -qm "content-preserving side"
+    git -C "$FAKE_REPO" merge --no-ff --no-edit content-preserving-side >/dev/null
+    merge_sha="$(git -C "$FAKE_REPO" rev-parse HEAD)"
+
+    run run_prepush_ref "$merge_sha" "$previous_sha"
+    [ "$status" -eq 0 ]
+    [ "$(git -C "$FAKE_REPO" rev-parse HEAD)" = "$merge_sha" ]
 }
