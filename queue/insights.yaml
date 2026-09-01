@@ -12313,6 +12313,7 @@ insights:
   resolved_reason: "一次情報でgate_skill_script_refs.shを再実走し、参照先・静的例示・副作用markerは全てOK、rc=2は既存FOLLOWUP_ACTIVE=34に被覆された集約REVIEW_REQUIREDで追加修正不要と確認"
   action_artifact: "gate=scripts/gates/gate_skill_script_refs.sh;target=queue/insights.yaml:INS-20260901-133005973-b068;rc=2;FOLLOWUP_ACTIVE=34;FOLLOWUP_COVERS_REVIEW_REQUIRED=yes;checks=missing_refs0/stale_refs0/example_paths_missing0/side_effect_markers_missing0;decision_candidate=none"
   resolved_at: "2026-09-01T16:23:11+09:00"
+  last_seen: "2026-09-01T16:38:00+09:00"
 - id: INS-20260901-133405145-42af
   ts: "2026-09-01T13:34:05+09:00"
   insight: "[[startup pending decisions計数のshelved混入根治 — 運用YAMLの変動世代に依存せず]] NO_MATCH purpose pending alias: cmd_complete時にdeploy_task.logでNO_MATCHだったpurpose。類似概念TOP3: strong_new_game_completion_contract(強くてニューゲーム完遂契約; alias=tobisaru_review_pending; score=10.2) / gate_quality_framework(ゲート品質統合フレームワーク; alias=startup gateのSKILL md script参照WARNが3セッション連続BLOCK; score=10.1) / production_parity(本番パリティ; alias=pending_confirmed_lifecycle; score=10.1)。既存概念aliasesへの自動昇格候補"
