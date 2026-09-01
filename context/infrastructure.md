@@ -1,5 +1,9 @@
 # インフラコンテキスト
-<!-- last_updated: 2026-09-01 2026-09-01 将軍 doc lane: CI RED #6 Integration ci_fix 59fa70e0b -->
+<!-- last_updated: 2026-09-02 2026-09-02 将軍 doc lane: U1 f92d1e376 + ancestry 後退 BLOCK 64f01517a -->
+<!-- source_commit:64f01517a70b reason:2026-09-02 将軍 doc lane: U1 f92d1e376 + ancestry 後退 BLOCK 64f01517a evidence:commits f92d1e376/64f01517a; CLEAR 01:54/02:08; 消失 2 回目 16d831ed9 を復元 -->
+<!-- last_synced_lesson: L1696 -->
+<!-- source_commit:593cfb27a612 reason:2026-09-02 将軍 doc lane: U9 safe_ff 既公開 ours merge 除外 593cfb27a evidence:commit 593cfb27a; CLEAR 01:20; integrate c7710efaf on origin/main -->
+<!-- source_commit:458fc4caa91a reason:2026-09-02 将軍 doc lane: U3 msg_id 限定 receipt 458fc4caa evidence:commit 458fc4caa; CLEAR 01:05; staged 11→0; watcher 9/9 restart 01:06 -->
 <!-- source_commit:4dd6898466a27f10ef7d08ed27549b3c095378de reason:2026-09-01 将軍 doc lane: CI RED #6 Integration ci_fix 59fa70e0b evidence:commit 59fa70e0b; CLEAR 22:57 -->
 <!-- source_commit:de07b5794070e0624c286f5090c7e170896ee720 reason:2026-09-01 将軍 doc lane: CI RED #5 ci_fix 3ad818c36 evidence:commit 3ad818c36; CLEAR 21:54 -->
 <!-- source_commit:f6a4080780a5086dfc1dc6e8cc29f31fea050d67 reason:2026-09-01 将軍 doc lane: U8 runtime 台帳 merge 戦略 evidence:commit 7268c41b2; CLEAR 21:40 -->
@@ -131,7 +135,7 @@
 <!-- source_commit:f8c49cbd7 reason:cmd_shogun_commit_reservation_ledger_phase1_20260805 evidence:reviewed -->
 <!-- source_commit:515f0214e reason:cmd_karo_hotfix_ga432_context_freshness reviewed source boundary evidence:cmd_complete_gate project=infra context=context/infrastructure.md commit=515f0214e -->
 <!-- source_commit:23a1ce61205ce4496ab11570583e8e8adcaeac4e reason:reflux backlink SSOT update reviewed evidence:incoming 0 to 1; runner69/69; target doc diff0 -->
-<!-- last_synced_lesson: L1696 -->
+<!-- last_synced_lesson: L1697 -->
 
 結論: 本ファイルは検索起点となる索引層。運用詳細・経緯・教訓本文は7つの詳細正本へ移設した。
 source boundary一致taskはregistryのowner/update_triggerからcontext_update_candidatesを自動注入し、未処理候補はcmd_complete_gateがBLOCK、明示処理済み/無関係はCLEAR。
@@ -182,7 +186,7 @@ source boundary一致taskはregistryのowner/update_triggerからcontext_update_
 結論: 詳細は `docs/research/infrastructure-lessons-reviews-operations.md` に保存。原文を省略せず移設済み。
 見出し: 前節「Infra教訓索引」の連続本文（source lines 1701-2123）。
 - L1503: 既存legacy欠損は不変multisetで隔離せよ（cmd_karo_hotfix_shared_operational_log_ownership_20260801）
-<!-- last_synced_lesson: L1696 -->
+<!-- last_synced_lesson: L1697 -->
 - L1504: appendとarchiveはreaderを含むgeneration transactionにせよ（cmd_karo_hotfix_gunshi_cs_remediation_generation_20260801）
 - L1505: 永続test宣言はtask正本に置く（cmd_4206）
 - L1506: active context DEFERはowner存在だけでなくdirty・baseline変化・fresh leaseの全ANDにせよ（cmd_karo_hotfix_active_context_gate_transient_20260801）
@@ -374,6 +378,7 @@ source boundary一致taskはregistryのowner/update_triggerからcontext_update_
 - L1694: run_tests task scope must use concrete test paths（cmd_karo_hotfix_inbox_processing_receipt_20260901）
 - L1695: モノリス末尾overrideだけでは分割モジュールのremote-tip境界を守れない（cmd_karo_hotfix_deploy_remote_tip_directory_v3_20260901）
 - L1696: inbox read receiptは本文処理receiptと分離して型別に強制する（cmd_karo_hotfix_review_processing_receipt_20260901）
+- L1697: 公開済みours-equivalent mergeも後続ancestry mergeで親内容を後退させ得る（cmd_karo_hotfix_ancestry_merge_content_loss_20260902）
 
 ## 設計標準・テスト・因果
 
@@ -468,3 +473,7 @@ source boundary一致taskはregistryのowner/update_triggerからcontext_update_
 - **runtime 台帳の merge 戦略(疾風 U8 `cmd_karo_hotfix_u8_runtime_merge_strategy_20260901` 7268c41b2、CLEAR 21:40)**: `.gitattributes` で `queue/shogun_todo_map.md`・`docs/dashboard/shogun-todo-map.html`=merge=ours(将軍所有)、`queue/bulletin_board.yaml`=bulletin-id、`logs/karo_workarounds.yaml`=karo-workarounds-id(ID-keyed driver)、`docs/semantic-index/index.md`=semantic-index-regenerate。20:14-20:25 の CONFLICT 6(runtime 5 file)の構造根治。将軍 D0 union(fa82d08c1)は U5 で撤回済み。
 - **CI RED #5 33507554669 の ci_fix(3ad818c36、CLEAR 21:54)**: `test_push_lane_integrate.bats`『dirty overlapping → git refuses』が U6(isolated 統合)の新契約に未追従。本日 CI RED 5 回=全て契約変更 hotfix の fixture/caller census 漏れ→次の構造型=hotfix task の入口で『変更 script を参照する tests/ の grep 一覧+全 PASS』を必須化(U9 と併せ家老 lane)。
 - **CI RED #6 33513013694 Integration『inbox write then mark-read』の ci_fix(疾風 59fa70e0b、CLEAR 22:57)**: CI RED #2 と同一箇所が才蔵 ci_fix failed 残置で未修正のまま 3 時間残っていた=『failed 残置 task は再配備されない』穴(型二弾-3 の再発)。fixture は inbox_read.sh の receipt を発行してから mark_read する形へ。
+- **U3 msg_id 限定 receipt(小太郎 `cmd_karo_hotfix_u3_msg_id_receipt_20260902` 458fc4caa、CLEAR 01:05)**: `inbox_read.sh <agent> --msg-id <id>` で特殊 type 1 件だけの receipt を発行し、watcher `mark_special_read` はそれを使う(将軍 D0 bbaa38f4d の『全未読へ receipt 付与』を撤回)。contract bats=他 ID receipt 0 / clear 既読化 1。**副作用の一次所見(01:05)**: HEAD 合流後も共有 root の作業ツリー(mtime 09-01 18:34)は旧版で、01:04:46 に index が更新され 11 file が合流打消しの staged 差分として載った(全 blob は過去 commit の旧版)。将軍が file 単位で HEAD へ戻し `restart_watchers.sh` で watcher 18 本を再起動するまで U3 は未 live。root ref 前進(U6 isolated 統合)と root worktree/index 同期・script 更新後の watcher 再起動は未契約=家老へ unit 化を依頼(blt_010750)。
+- **U9 safe_shared_main_ff の既公開 ours 相当 merge 除外(半蔵 `cmd_karo_hotfix_u9_ours_merge_guard_20260902` 593cfb27a、CLEAR 01:20、統合 c7710efaf)**: ours-equivalent merge 検出時、その merge が `refs/remotes/origin/main` から到達可能(=既に公開境界を越えた履歴)なら BLOCK 対象から除外(published_merges として計数)し、tracking ref 不在時は従来どおり fail-closed。09-01 20:14-20:46 の『0334a9c71 恒久 BLOCK』(S-05 残)の根治。contract bats 追加(test_safe_shared_main_ff.bats)。
+- **U1 quality_monitor 通知の exactly-once(飛猿 `cmd_karo_hotfix_u1_quality_monitor_claim_20260902` f92d1e376、CLEAR 01:54)**: `inbox_write.sh` の report gate FAIL→軍師通知を key 単位 flock 内で claim→送信→marker commit に直列化(送信失敗で claim 解除、`flock -w 5` timeout は WARN で skip)、`archive_completed.sh` が report archive 時に marker を掃除。将軍 D0 79dfd86e9(内容 hash marker のみ)の race/掃除なしを置換。bats test_inbox_write 追加。
+- **ancestry merge の tree 後退 BLOCK(半蔵 `cmd_karo_hotfix_ancestry_merge_content_loss_20260902` 64f01517a、CLEAR 02:08)**: `safe_shared_main_ff.sh` に `verify_ours_equivalent_merge_trees` を追加し、新規 merge が親のどちらかの変更を無かったことにする path(regression_paths)を検出したら `shared convergence: BLOCK (ancestry merge regression)`、`cmd_complete_gate.sh` からも呼ぶ。**経緯**: origin 20594ec4e(01:35)と root 統合 16d831ed9(01:54、criss-cross base 5d9c35731/582a5a128)の 2 回、将軍 doc 内容(infrastructure.md U3/U9 節・roadmap v1.3・map 追補)が無競合 merge で消失→将軍が 03f154709 と本 commit で復元。hotfix は 02:05 以降の merge に効く。root worktree 旧版(4 回)と同根=stale base の lane 統合。
