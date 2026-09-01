@@ -1,5 +1,6 @@
 # インフラコンテキスト
-<!-- last_updated: 2026-09-01 2026-09-01 将軍 doc lane: CI RED #5 ci_fix 3ad818c36 -->
+<!-- last_updated: 2026-09-01 2026-09-01 将軍 doc lane: CI RED #6 Integration ci_fix 59fa70e0b -->
+<!-- source_commit:4dd6898466a27f10ef7d08ed27549b3c095378de reason:2026-09-01 将軍 doc lane: CI RED #6 Integration ci_fix 59fa70e0b evidence:commit 59fa70e0b; CLEAR 22:57 -->
 <!-- source_commit:de07b5794070e0624c286f5090c7e170896ee720 reason:2026-09-01 将軍 doc lane: CI RED #5 ci_fix 3ad818c36 evidence:commit 3ad818c36; CLEAR 21:54 -->
 <!-- source_commit:f6a4080780a5086dfc1dc6e8cc29f31fea050d67 reason:2026-09-01 将軍 doc lane: U8 runtime 台帳 merge 戦略 evidence:commit 7268c41b2; CLEAR 21:40 -->
 
