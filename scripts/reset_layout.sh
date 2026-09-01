@@ -271,6 +271,25 @@ log_dry()  { echo "[DRY-RUN] $1"; }
 
 # WSL boot直後の /tmp 掃除完了前にtmuxへ接続するとsocketが消えてghost serverになる。
 # active/inactive は完了済み、unknown/空はsystemd非導入またはservice不在として無音通過。
+# ─── CLI ready 待ち(stagger) (2026-09-01) ───
+# Codex は起動時に ~/.codex/logs_2.sqlite を排他初期化する。複数 pane を sleep 0 で
+# 連続起動すると 'database is locked' で全滅(09-01 11:23 実証)。respawn 後は当該 pane の
+# CLI ready(可視画面のプロンプト記号=cli_profiles idle_pattern: claude=❯ / codex=›)を待ってから
+# 次へ進む。timeout でも処理は止めず WARN のみ。shutsujin_departure.sh CLI_READY_REGEX と同値。
+_RL_CLI_READY_REGEX='^[[:space:]]*(❯|›)([[:space:]]|$)|bypass permissions on'
+_rl_wait_cli_ready() {
+    local target="$1" label="$2" limit="${RESET_LAYOUT_CLI_READY_TIMEOUT:-60}" i
+    for ((i=1; i<=limit; i++)); do
+        if tmux capture-pane -t "$target" -p 2>/dev/null | grep -Eq "$_RL_CLI_READY_REGEX"; then
+            log "  ${label}: CLI ready (${i}s)"
+            return 0
+        fi
+        sleep 1
+    done
+    log "  WARN ${label}: CLI not ready after ${limit}s (pane=${target})"
+    return 1
+}
+
 wait_for_tmpfiles_setup() {
     local service="systemd-tmpfiles-setup.service"
     local timeout="${TMPFILES_SETUP_TIMEOUT_SEC:-300}"
@@ -474,6 +493,7 @@ if [[ -n "$TARGET_AGENT" ]]; then
     cli_cmd="${_MB_CLI_CMD[$TARGET_AGENT]}"
     tmux_live_send_guard "${AGENTS_WINDOW_TARGET}.${target_pane}"
     tmux send-keys -t "${AGENTS_WINDOW_TARGET}.${target_pane}" "$cli_cmd" Enter
+    _rl_wait_cli_ready "${AGENTS_WINDOW_TARGET}.${target_pane}" "${TARGET_AGENT}" || true
 
     log_ok "${TARGET_AGENT} respawn完了 (pane=${target_pane}, cli=${cli_t}, model=${model_display})"
     exit 0
@@ -685,6 +705,7 @@ for ((i=0; i<=LAST_IDX; i++)); do
             cli_cmd="${_MB_CLI_CMD[$agent_id]}"
             tmux_live_send_guard "${AGENTS_WINDOW_TARGET}.${p}"
             tmux send-keys -t "${AGENTS_WINDOW_TARGET}.${p}" "$cli_cmd" Enter
+            _rl_wait_cli_ready "${AGENTS_WINDOW_TARGET}.${p}" "${agent_id}" || true
 
             log "  respawn: agents.${p} (${agent_id})"
         fi
@@ -733,6 +754,7 @@ for ((i=0; i<=LAST_IDX; i++)); do
             # CLI起動
             tmux_live_send_guard "${AGENTS_WINDOW_TARGET}.${p}"
             tmux send-keys -t "${AGENTS_WINDOW_TARGET}.${p}" "$cli_cmd" Enter
+            _rl_wait_cli_ready "${AGENTS_WINDOW_TARGET}.${p}" "${agent_id}" || true
 
             log "  CLI起動: agents.${p} (${agent_id})"
         fi
