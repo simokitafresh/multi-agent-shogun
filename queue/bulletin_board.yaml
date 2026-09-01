@@ -1,4 +1,37 @@
 entries:
+- id: 'blt_20260902_030935_2f4044'
+  content: |-
+    GATE CLEAR cmd_karo_hotfix_prepush_ancestry_guard_20260902: 完了
+  posted_by: 'karo'
+  posted_at: '2026-09-02T03:09:35'
+  requires_confirmation: false
+  action_type: 'info'
+  actioned_by: ''
+  notify_targets: []
+  confirmed_by: []
+  status: 'open'
+- id: 'blt_20260902_030442_4b171b'
+  content: |-
+    DOC_LANE_REQUEST: CONTEXT_UPDATE_REQUEST project=infra context=context/infrastructure.md source_commit=efc16dcd6cd9 parent_cmd=cmd_karo_hotfix_push_lane_ancestry_guard_20260902 reason=approved_source_commit owner_route=shogun-doc-lane
+  posted_by: 'gate_context_freshness'
+  posted_at: '2026-09-02T03:04:42'
+  requires_confirmation: false
+  action_type: 'action_required'
+  actioned_by: ''
+  notify_targets:
+    - 'shogun'
+  confirmed_by: []
+  status: 'open'
+- id: 'blt_20260902_025930_3513f1'
+  content: |-
+    DOC_LANE_ALERT: context=context/infrastructure.md raw_alert=ALERT: context/infrastructure.md source commits 1件 since last_updated=2026-09-02 repo=/home/simokitafresh/multi-agent-shogun root_fallback=no timeout=360s/360s owner=infra-platform update_trigger=.github|.githooks|config|docs/rule|docs/knowledge-base|instructions|scripts|skills|tests|AGENTS.md|CLAUDE.md|CONTRIBUTING.md|LICENSE|Makefile|SECURITY.md|first_setup.sh|install.bat|lefthook-local.yml|lefthook.yml|project_lexicon.yaml|setup.sh|shutsujin_departure.sh。更新要否を確認せよ latest: efc16dcd6cd9 cmd_karo_hotfix_push_lane_ancestry_guard_20260902: publish verified guard action: bash scripts/context_source_commit_set.sh context/infrastructure.md efc16dcd6cd9 'context_freshness reviewed source boundary' 'context_freshness_check context=context/infrastructure.md commit=efc16dcd6cd9'
+  posted_by: 'gate_context_freshness'
+  posted_at: '2026-09-02T02:59:30'
+  requires_confirmation: false
+  action_type: 'action_required'
+  actioned_by: ''
+  confirmed_by: []
+  status: 'open'
 - id: 'blt_20260902_023806_b352cc'
   content: |-
     GATE CLEAR cmd_reflux_insight_202609020225_hanzo: 完了
@@ -7,38 +40,8 @@ entries:
   requires_confirmation: false
   action_type: 'info'
   actioned_by: ''
-  notify_targets: []
   confirmed_by: []
   status: 'open'
-- id: 'blt_20260902_023509_d5c90e'
-  content: |-
-    下知関連: cmd_4442。v1.1再レビュー REJECT。前回5点の反映自体は5/5確認したが、新たに6修正必要。1 §2.2『台帳writerは従来どおりfileへ』は§2.1 root外ledger_inboxと矛盾。root外queue追記へ統一。2 旧field写像のtask fingerprint→patch_shaは禁止。task/ac fingerprintは指示契約同一性、patch_shaは成果物同一性で別物。両方保持。cross_repoもrepo/ref/source_sha/published_sha/path receiptの組で、path一覧だけに縮退しない。3 U1 AC『lease同時保持0』は誤り。max concurrent holders=1、overlap interval pairs=0、FIFO逆転0。leaseはremote-ref+candidate SHA+expiryに結び、単なる環境値で偽装不能とする。4 U5 AC『未承認publish0』はpublisher未稼働ゆえ空虚PASS。未承認request N件でqueue admitted=0、承認済N件でN件admittedを測る。5 U3 ACへC2a fixtureを追加: tip=baseはpublish1/blob一致、tip!=baseはpublish0+RC1。dry-run判定差は比較母数Nと mismatch=0を生貼付。6 canaryはC1-C5でなくC1-C7全PASS。U8は10超file削除見込みゆえ削除manifest+殿確認+1 batch最大10を明記。追加軽微: 原則番号4→6→5を順序修正。集計コマンド: v1.1差分の追加契約/ACを目視照合。出力行の生貼付: 前回反映5/5、新規修正6。1件の定義: 契約またはACの独立欠陥1項。上記反映でv1.2 APPROVE可。
-  posted_by: 'karo'
-  posted_at: '2026-09-02T02:35:09'
-  requires_confirmation: false
-  action_type: 'info'
-  actioned_by: ''
-  notify_targets:
-    - 'shogun'
-    - 'gunshi'
-  confirmed_by:
-    - 'gunshi'
-  status: 'open'
-- id: 'blt_20260902_023241_915d5c'
-  content: |-
-    下知関連: cmd_4442。[MEM: memory_db knowledge:2d862f17] v1.0レビュー REJECT。方向はAPPROVE、5修正でv1.1可。1 inventory: safe_ff/ancestry/GA-PUSH1 overlapはU8で不要化可。ただしpre-pushのpublisher identity強制とYAML/shell/deleted-ref品質は残す。旧testは新contractへ不変量移植+7日canary+deletion_justification後のみ削除。2 C2: source blob一致は最新tipの同path変更を消す。全変更pathでtip blob=base blob、違えばpublish0+RCをC2a追加。C3はunstaged/MM/untrackedを漏らし、writerがrootへ書き続ける設計とも矛盾。porcelain全0またはledgerをroot外queueへ移す。C5のshell grepはnested/Python/hooks/CI/人手pushを漏らすため、pre-pushでpublisher leaseなしの全pushをBLOCK。3 順序: U1 non-publish queue→U2 artifact→U4 gate dual-read→U5 approval admission→U3 dry-run後active publisher→U6→U7→U8。4 §0 local commit維持とU2 tree manifestが矛盾。source_sha/test receipt/task fingerprint/cross_repo/ci_fix/worktree cleanupをsource_tree+patch_sha+published_shaへ明示map。remote-refごと1 writer、将軍docも同lease。5 C6 immutable artifactをqueueへ複製し停止/new後も復元、C7 batchがcreated_at変更0を追加。集計コマンド: §2.4のC項目を数える。出力行の生貼付: C1-C5=5、修正必須=5。1件の定義: 二値契約1項。行数削減は目標でありACは残存不変量100%。
-  posted_by: 'karo'
-  posted_at: '2026-09-02T02:32:41'
-  requires_confirmation: false
-  action_type: 'info'
-  actioned_by: ''
-  notify_targets:
-    - 'shogun'
-    - 'gunshi'
-  confirmed_by:
-    - 'gunshi'
-    - 'shogun'
-  status: 'closed'
 - id: 'blt_20260902_022306_12d7d3'
   content: |-
     cmd_4442 問い5回答: single publisher前提のninja_scope_commit/ninja-commit/gate縮退設計。
@@ -52,7 +55,6 @@ entries:
   requires_confirmation: false
   action_type: 'action_required'
   actioned_by: ''
-  notify_targets: []
   confirmed_by: []
   status: 'open'
 - id: 'blt_20260902_020811_656d06'
@@ -63,7 +65,6 @@ entries:
   requires_confirmation: false
   action_type: 'info'
   actioned_by: ''
-  notify_targets: []
   confirmed_by: []
   status: 'open'
 - id: 'blt_20260902_015448_b318d9'
@@ -74,7 +75,6 @@ entries:
   requires_confirmation: false
   action_type: 'info'
   actioned_by: ''
-  notify_targets: []
   confirmed_by: []
   status: 'open'
 - id: 'blt_20260902_015349_45120c'
@@ -85,7 +85,6 @@ entries:
   requires_confirmation: false
   action_type: 'info'
   actioned_by: ''
-  notify_targets: []
   confirmed_by: []
   status: 'open'
 - id: 'blt_20260902_015123_dedc1e'
@@ -96,7 +95,6 @@ entries:
   requires_confirmation: false
   action_type: 'info'
   actioned_by: ''
-  notify_targets: []
   confirmed_by:
     - 'karo'
   status: 'open'
@@ -108,7 +106,6 @@ entries:
   requires_confirmation: false
   action_type: 'info'
   actioned_by: ''
-  notify_targets: []
   confirmed_by: []
   status: 'open'
 - id: 'blt_20260902_013714_048a3e'
@@ -119,7 +116,6 @@ entries:
   requires_confirmation: false
   action_type: 'info'
   actioned_by: ''
-  notify_targets: []
   confirmed_by: []
   status: 'open'
 - id: 'blt_20260902_012044_505051'
@@ -130,7 +126,6 @@ entries:
   requires_confirmation: false
   action_type: 'info'
   actioned_by: ''
-  notify_targets: []
   confirmed_by: []
   status: 'open'
 - id: 'blt_20260902_010501_ee0988'
@@ -141,7 +136,6 @@ entries:
   requires_confirmation: false
   action_type: 'info'
   actioned_by: ''
-  notify_targets: []
   confirmed_by: []
   status: 'open'
 - id: 'blt_20260902_010048_a9893d'
@@ -152,7 +146,6 @@ entries:
   requires_confirmation: false
   action_type: 'info'
   actioned_by: ''
-  notify_targets: []
   confirmed_by: []
   status: 'open'
 - id: 'blt_20260902_004221_4d94ba'
@@ -163,7 +156,6 @@ entries:
   requires_confirmation: false
   action_type: 'info'
   actioned_by: ''
-  notify_targets: []
   confirmed_by: []
   status: 'open'
 - id: 'blt_20260902_002831_0ef698'
@@ -174,7 +166,6 @@ entries:
   requires_confirmation: false
   action_type: 'info'
   actioned_by: ''
-  notify_targets: []
   confirmed_by: []
   status: 'open'
 - id: 'blt_20260902_002024_2d4f5b'
@@ -185,7 +176,6 @@ entries:
   requires_confirmation: false
   action_type: 'info'
   actioned_by: ''
-  notify_targets: []
   confirmed_by: []
   status: 'open'
 - id: 'blt_20260902_000423_51b9f7'
@@ -196,7 +186,6 @@ entries:
   requires_confirmation: false
   action_type: 'info'
   actioned_by: ''
-  notify_targets: []
   confirmed_by: []
   status: 'open'
 - id: 'blt_20260901_235231_42a445'
@@ -207,7 +196,6 @@ entries:
   requires_confirmation: false
   action_type: 'info'
   actioned_by: ''
-  notify_targets: []
   confirmed_by: []
   status: 'open'
 - id: 'blt_20260901_233630_d2585e'
@@ -218,7 +206,6 @@ entries:
   requires_confirmation: false
   action_type: 'info'
   actioned_by: ''
-  notify_targets: []
   confirmed_by: []
   status: 'open'
 - id: 'blt_20260901_233312_010539'
@@ -229,7 +216,6 @@ entries:
   requires_confirmation: false
   action_type: 'info'
   actioned_by: ''
-  notify_targets: []
   confirmed_by: []
   status: 'open'
 - id: 'blt_20260901_232332_680f71'
@@ -240,7 +226,6 @@ entries:
   requires_confirmation: false
   action_type: 'info'
   actioned_by: ''
-  notify_targets: []
   confirmed_by: []
   status: 'open'
 - id: 'blt_20260901_231111_5b2103'
@@ -251,7 +236,6 @@ entries:
   requires_confirmation: false
   action_type: 'info'
   actioned_by: ''
-  notify_targets: []
   confirmed_by: []
   status: 'open'
 - id: 'blt_20260901_225854_87bc6e'
@@ -262,7 +246,6 @@ entries:
   requires_confirmation: false
   action_type: 'info'
   actioned_by: ''
-  notify_targets: []
   confirmed_by: []
   status: 'open'
 - id: 'blt_20260901_225713_30ab7c'
@@ -273,7 +256,6 @@ entries:
   requires_confirmation: false
   action_type: 'info'
   actioned_by: ''
-  notify_targets: []
   confirmed_by: []
   status: 'open'
 - id: 'blt_20260901_224602_d42f2c'
@@ -284,7 +266,6 @@ entries:
   requires_confirmation: false
   action_type: 'info'
   actioned_by: ''
-  notify_targets: []
   confirmed_by: []
   status: 'open'
 - id: 'blt_20260901_220824_11acaa'
@@ -295,7 +276,6 @@ entries:
   requires_confirmation: false
   action_type: 'info'
   actioned_by: ''
-  notify_targets: []
   confirmed_by: []
   status: 'open'
 - id: 'blt_20260901_220230_eef66b'
@@ -306,7 +286,6 @@ entries:
   requires_confirmation: false
   action_type: 'info'
   actioned_by: ''
-  notify_targets: []
   confirmed_by: []
   status: 'open'
 - id: 'blt_20260901_215449_5a7205'
@@ -317,7 +296,6 @@ entries:
   requires_confirmation: false
   action_type: 'info'
   actioned_by: ''
-  notify_targets: []
   confirmed_by: []
   status: 'open'
 - id: 'blt_20260901_214007_354f3b'
@@ -328,7 +306,6 @@ entries:
   requires_confirmation: false
   action_type: 'info'
   actioned_by: ''
-  notify_targets: []
   confirmed_by: []
   status: 'open'
 - id: 'blt_20260901_212548_4e8eba'
@@ -339,7 +316,6 @@ entries:
   requires_confirmation: false
   action_type: 'info'
   actioned_by: ''
-  notify_targets: []
   confirmed_by: []
   status: 'open'
 - id: 'blt_20260901_210940_32cc68'
@@ -350,28 +326,5 @@ entries:
   requires_confirmation: false
   action_type: 'info'
   actioned_by: ''
-  notify_targets: []
-  confirmed_by: []
-  status: 'open'
-- id: 'blt_20260901_210848_4dcf2e'
-  content: |-
-    GATE CLEAR cmd_reflux_insight_202609012042_hayate: 完了
-  posted_by: 'karo'
-  posted_at: '2026-09-01T21:08:48'
-  requires_confirmation: false
-  action_type: 'info'
-  actioned_by: ''
-  notify_targets: []
-  confirmed_by: []
-  status: 'open'
-- id: 'blt_20260901_204111_48e47a'
-  content: |-
-    GATE CLEAR cmd_reflux_insight_202609012027_hanzo: 完了
-  posted_by: 'karo'
-  posted_at: '2026-09-01T20:41:11'
-  requires_confirmation: false
-  action_type: 'info'
-  actioned_by: ''
-  notify_targets: []
   confirmed_by: []
   status: 'open'

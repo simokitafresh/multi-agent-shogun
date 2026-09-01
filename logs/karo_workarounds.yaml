@@ -1,16 +1,3 @@
-- cmd_id: cmd_karo_hotfix_report_receipt_lookup_bounded_20260829
-  timestamp: '2026-08-28T23:17:57Z'
-  ninja: system
-  workaround: false
-  event_kind: hotfix
-  auto_captured: true
-  category: rework_auto_capture
-  detail: 'cmd_complete_gate completed rework event'
-  root_cause: 'automatic completion observation'
-  lesson_required: false
-  lesson_disposition: not_applicable
-  lesson_reference: 'not_applicable'
-  resolved_by_cmd: 'cmd_karo_hotfix_report_receipt_lookup_bounded_20260829'
 - cmd_id: cmd_karo_hotfix_prepush_receipt_reuse_v2_20260829
   timestamp: '2026-08-28T23:38:13Z'
   ninja: system
@@ -1298,3 +1285,16 @@
   lesson_disposition: not_applicable
   lesson_reference: 'not_applicable'
   resolved_by_cmd: 'cmd_karo_hotfix_ancestry_merge_content_loss_20260902'
+- cmd_id: cmd_karo_hotfix_prepush_ancestry_guard_20260902
+  timestamp: '2026-09-01T18:09:29Z'
+  ninja: system
+  workaround: false
+  event_kind: hotfix
+  auto_captured: true
+  category: rework_auto_capture
+  detail: 'cmd_complete_gate completed rework event'
+  root_cause: 'automatic completion observation'
+  lesson_required: false
+  lesson_disposition: not_applicable
+  lesson_reference: 'not_applicable'
+  resolved_by_cmd: 'cmd_karo_hotfix_prepush_ancestry_guard_20260902'

@@ -16519,3 +16519,16 @@ sqlite3.Connection.backup()を使うとページ(4096byte)単位のread syscall�
 - **when**: 未設定
 - **how**: 未設定
 - 公開済み履歴のours-equivalent exemptionだけでは不十分。local parentがsecond-parent ancestryを含む場合、prospective merge treeを親blobと比較し回帰pathをpush前BLOCKする必要がある。
+
+### L1698: legacy notification identity must be generation-bound
+- **日付**: 2026-09-02
+- **出典**: cmd_karo_hotfix_push_lane_ancestry_guard_20260902
+- **記録者**: hayate
+- **tags**: [infra,ninja-monitor,deploy,communication]
+- **subdomain**: infra
+- **target_files**: [scripts/ninja_monitor.sh,tests/unit/test_ninja_monitor.bats]
+- **origin**: [[cmd_karo_hotfix_push_lane_ancestry_guard_20260902]]
+- **enforcement**: 未自動化
+- **when**: 未設定
+- **how**: 未設定
+- 現task identityだけで旧outbox行を昇格すると、同値IDでも旧世代通知を現taskへ誤配送する。queued_atとissued_at/deployed_atを比較し、証明不能/旧世代は原文archiveへ退避する。
