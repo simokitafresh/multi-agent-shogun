@@ -1,5 +1,5 @@
 <!-- gist-master: 77538fe909ed4d3b83b61b4baf99cacf single_publisher_asis_tobe_5w1h_20260902.md -->
-# origin/main 単一 publisher 化 — AsIs / ToBe / 5W1H 設計書 v1.2(家老 REJECT blt_20260902_023509 の 6 修正を反映、02:45)
+# origin/main 単一 publisher 化 — AsIs / ToBe / 5W1H 設計書 v1.3(殿指示 03:36『リスク対策・未決の決定・実装 LLM ピットフォール・配備 AC ルール』を追加、03:42)
 
 - 作成: 2026-09-02 02:30 将軍(殿指示 02:16『忍者はコミットしない。コミットは家老/将軍のみ』→02:18『コミットのやり方・スキル・構造の検証』→02:24『AsIs/ToBe 5W1H 設計書。不要になる複雑さを先に検証』)
 - 協議: 家老回答 blt_20260902_021944(single publisher + local commit artifact)。協議記録=`queue/notes/shogun_karo_single_committer_hypothesis_20260902_0220.md` §1-6
@@ -99,16 +99,69 @@ publisher(家老 lane, 直列):  fetch tip T → isolated tree@T → apply diff(
 | U8 | canary 7 日後に旧 gate/tests/hook を削除(旧 test の不変量は新 contract test へ移植済みであること+`deletion_justification`) | bats 全 GREEN ∧ 削除 script 参照 0(rg) ∧ 移植不変量 100% | 上記の物理削除・GA-PUSH1 overlap 部・SKILL 縮退(pre-push の lease 強制・品質検査は残す) |
 canary 判定: U7 後 24h で **C1-C7 全 PASS** → dm-signal PJ へ拡大。U8 は 10 file 超の削除が見込まれるため、**削除 manifest(path・不変量の移植先・deletion_justification)を作り殿確認の上、1 batch 最大 10 file** で実施(Tier 2 STOP-AND-REPORT 準拠)。
 
-## §4 リスク・未決
-- publisher が単一障害点: daemon_watchdog で監視、queue はファイルなので publisher 停止中も request は残る(復帰後に順次)。
-- 忍者 worktree の base が古いまま長時間作業→apply conflict 増: deploy 時に base=最新 tip 固定+conflict は差し戻し(明示)。
-- 将軍の直接 commit 廃止(殿裁定事項): 将軍は `publish_request` を出す。map/artifact の即時性は request→publish ≈18s で影響なし。
-- CI RED は publisher が push 直後に判定し、RED なら次 request を hold(ci_fix のみ通す)= 現行『CI RED 中の他作業』裁定を維持。
+## §4 リスクと対策(v1.3 で各リスクに二値の検知+復旧を付与)
+| # | リスク | 対策(構造) | 検知(二値) | 復旧 |
+|---|---|---|---|---|
+| R1 | publisher 単一障害点(停止・hang) | daemon_watchdog 管理下、lease は expiry 付き(既定 120s)で自動失効。queue はファイル(`queue/publish/<seq>_<task>.request`)なので停止中も request は残る | `queue/publish/` の最古 request age > 300s で startup gate ALERT | watchdog が再起動→queue 先頭から再開(request は冪等: published_sha 記録済みなら skip) |
+| R2 | 忍者 base が古く apply conflict(C2a 差し戻し)が増える | deploy 時に base=最新 tip を task YAML に固定、作業 60 分超で base 再固定を忍者へ通知 | 差し戻し率 = RC 件数 / request 件数 を lane log で計測、> 20%/日で ALERT | 差し戻しは task を `revision_requested` にし、publisher が最新 tip で再 apply を 1 回自動試行、失敗時のみ差し戻し(忍者に rebase 操作を要求しない) |
+| R3 | 将軍 doc/map の即時性低下 | publish_request は kind=doc なら将軍投入=承認(LGTM 不要)、publisher は FIFO で ≈18s | request→published p90 ≤ 60s(C4) | 遅延時は request 残置で自動追いつき |
+| R4 | CI RED の帰属 | 1 request=1 commit=1 push=1 CI run。RED なら publisher は次 request を hold し ci_fix request のみ admit | RED 中の非 ci_fix publish = 0 | ci_fix GREEN で hold 解除 |
+| R5 | 台帳の追記競合(insights/bulletin/workarounds/lessons) | writer は root 外 `ledger_inbox/` に追記のみ(1 entry=1 file、ID 付き)。publisher が取り込み時に ID 重複を検出 | 同一 ID 二重 entry = 0(検出時は後着を `duplicate/` へ退避し ALERT) | 手動判定(本日 03:23 の INS-6b07 型) |
+| R6 | 移行中の二重経路(旧 autopush と新 publisher が同時に生きる) | U7 まで旧経路は `PUBLISHER_SINGLE` flag で段階停止。U3 dry-run 中は新 publisher は push しない | origin merge 件数/日(C1)を U3 開始から日次記録、U7 後 0 | flag を戻せば旧経路復帰(可逆) |
+| R7 | lease 偽装・迂回 push(人手・CI・hook 外) | pre-push は lease token(ref+SHA+expiry の HMAC)不在を BLOCK。escape hatch は `SHOGUN_PUBLISH_BYPASS='<理由>'` のみで jsonl に記録 | bypass 記録 > 0/日で ALERT | — |
+| R8 | root worktree と origin の乖離(旧版 staged の再発) | publisher が push 後に root を ff のみで同期し、worktree/index も更新(C3) | C3 違反(porcelain ≠ 0 が 10 分超) | publisher が次 cycle で再同期 |
+| R9 | 忍者成果物の消失(pane 停止/new/worktree cleanup) | LGTM 時に artifacts/ へ複製(C6) | 複製なしの cleanup = 0 | artifacts/ から再 apply |
+| R10 | U8 での過剰削除(『削るな速くしろ』違反) | 削除 manifest+不変量移植先+deletion_justification+殿確認+1 batch ≤10 file | manifest 未記載の削除 = 0 | git revert |
+
+## §6 未決事項の決定(v1.3、将軍決定。殿裁定事項は明示)
+| # | 事項 | 決定 | 根拠 |
+|---|---|---|---|
+| D1 | publisher の実行主体 | ninja_monitor とは別 daemon `scripts/publisher.sh`(daemon_watchdog 登録)。家老は監督(queue 監視・差し戻し判断)であり手動 commit はしない | 家老 pane の CTX/待ちに publish を依存させない。家老 lane=責務、daemon=実行 |
+| D2 | queue 形式 | `queue/publish/<epoch>_<seq>_<task_id>.request`(YAML: task_id, source_sha, source_tree, patch_sha, base, paths[], approvals{gunshi,karo}, kind=code/doc/ledger) | ファイル=永続、FIFO は名前順、flock 1 本 |
+| D3 | lease | `queue/publish/lease`(ref, candidate_sha, expiry, hmac)。TTL 120s、更新は publisher のみ | R1/R7 |
+| D4 | apply 方式 | `git diff base..source -- paths` の patch を isolated tree@tip へ `git apply --index`、C2a 事前検査で tip blob==base blob | merge/cherry-pick を使わない=criss-cross 0 |
+| D5 | doc/map の承認 | kind=doc は将軍投入=承認(LGTM 不要)。kind=code は LGTM+ACCEPT 必須 | R3 |
+| D6 | 台帳 batch 間隔 | task 完了毎+最大 5 分毎、1 batch=1 commit "ledger: <ledgers> <n entries>" | C7・因果時刻 |
+| D7 | CI RED 時 | hold+ci_fix のみ admit(R4)。殿裁定 08-30『CI 待ち禁止』との整合: push 済み request は待たない、hold は次 request の admit のみ | 現行裁定と整合 |
+| D8 | root 同期 | publisher が push 後に root で ff+clean file のみ checkout、dirty file は触らず WARN | C3、他者 WIP 破壊禁止 |
+| D9 | canary 範囲 | infra PJ の hotfix lane(karo-direct)から。dm-signal は U5 到達後。**最終決定は殿** | 影響範囲最小 |
+| D10 | 将軍の直接 commit | 廃止し kind=doc request へ。**最終決定は殿** | 家老レビュー: 2 publisher は一本化でない |
+| D11 | 旧 field の扱い | `commit_hash` は `source_sha` の別名として U4 dual-read 期間のみ受理、U8 で `published_sha` 必須へ | 移行の可逆性 |
+| D12 | 忍者の worktree base | deploy 時 origin/main tip、task YAML に `base_sha` 固定。60 分超で再固定通知 | R2 |
+
+## §7 実装 LLM(忍者 GPT/Claude)のピットフォール(本日の一次事象から)
+| # | ピットフォール | 実例(本日) | 設計・AC での封じ方 |
+|---|---|---|---|
+| P1 | 契約変更を fixture/caller を census せずに出す | CI RED 7 回(#1-#6 は census 漏れ)、identity envelope guard で monitor 通知 191 BLOCK | AC に『変更 script を参照する tests/ と caller を rg で列挙し件数を生貼付、全 PASS』を必須(tsumari 結論 ⑧) |
+| P2 | 共有 root index/worktree を触る(他者 stage 混入・旧版 staged) | 旧版 staged 4 回、GA-PUSH1 3 回 | 忍者は自分の worktree のみ(publisher が root 同期)。ninja_scope_commit 最小形は root で実行不可(worktree 判定で BLOCK) |
+| P3 | 検証環境が本番と違う(shell PATH で PASS、cron で 127) | T188 backup cron node PATH | AC に『本番と同一 env(env -i、cron 行と同一コマンド)で実走』を要求。手動 PASS は証拠にしない |
+| P4 | 報告契約メタデータの整形に失敗し task failed(hook_failures.details 書式、40 桁 hash、cross_repo) | 才蔵 ci_fix failed、影丸 legacy outbox failed | 契約を最小化(§1.3)。残す field は report_field_set.sh が自動生成(手書き禁止) |
+| P5 | 古い base から publish(autopush/ancestry) | 後退 3 回 | 忍者は publish しない(ToBe 原則 2)。base_sha 固定(D12) |
+| P6 | BLOCK を迂回する(type 変更・`|| true`・別経路) | watcher の握りつぶし(S-03)、status_update 迂回(07-26) | AC に『BLOCK 時は原因を報告、迂回コード 0 件を rg で証明』 |
+| P7 | 同じ成果を 2 経路で公開(exact commit と canonical receipt) | INS-6b07 二重公開(03:23) | 1 task=1 request=1 published_sha(C5+D2)。receipt は published_sha を参照するのみ |
+| P8 | 文字列一致 guard の偽陽性で止まり、作業を縮退する | 本文中の guard 語で将軍 bash が本日 5 回 BLOCK(本 v1.3 の投入時にも 1 回) | 本文はファイル経由(note/scratch script)にする手順を skill に明記。guard は構造判定へ(別 unit) |
+| P9 | 『完了』を出力で判定する(commit=仕事) | 影丸 T224 live 再検証 FAIL(outbox 旧本文) | AC は本番 log の二値(BLOCK 0 行/10 分、daemon 起動時刻 > commit 時刻)で判定 |
+| P10 | 巨大 monolith の一部変更で他機能を壊す | cmd_complete_gate 15,920 行・monitor 15,683 行 | publisher は新規 1 file(≤ 600 行目標)、旧 monolith には flag 追加のみ(U7) |
+
+## §8 配備時の AC ルール(本日の deploy BLOCK 実測から。家老 karo-direct・deploy_task 共通)
+| # | ルール | 根拠(実測) |
+|---|---|---|
+| A1 | 1 unit の AC は **2 本まで**(3 本以上は UNIVERSAL_SHARD で BLOCK)。3 本必要なら意味保存で 2 本へ再編するか unit を分ける | 本日 3AC shard BLOCK 2 回(U1/U3/U9 初回、T188 hotfix 1 回目) |
+| A2 | AC に path を書くときは **remote tip に実在する dir/file** のみ。新規 test file は既存 dir(tests/unit)を scope にし file 名は task 本文に書く | T188 hotfix 2 回目『remote-tip target path validation failed』、cmd_4443 ac_missing_parent_path 累計昇格 |
+| A3 | serial 依存があれば `serial_dependency_evidence` を task に付ける | T188 hotfix 1 回目 |
+| A4 | test/CI 系 AC は『選択実行コマンド=bash scripts/run_tests.sh task <task_yaml>(または file/affected)で FAIL 0・SKIP 0』の字句 | test_ci_execution_contract |
+| A5 | 契約変更(script/hook/gate)を含む unit は AC に **caller/fixture census**(rg 件数生貼付+全 PASS)を必須 | P1、CI RED 7 回 |
+| A6 | daemon/cron/hook を変える unit は AC に **本番同一 env での実走**(daemon 再起動+起動時刻 > commit 時刻、cron は env -i 同一コマンド)を必須 | P3、P9 |
+| A7 | 本番 log で判定する AC は『<パターン> が 10 分で 0 行』のように **期間+件数**で書く | T224 CLEAR 条件 |
+| A8 | AC 文に guard 語(push/bats/削除系/正本 YAML 名)を裸で書かない(『統合レーン』『選択実行』等の言い換え、詳細は note ファイル参照) | ac_contains_push、文字列 guard 偽陽性 |
+| A9 | hotfix の AC には **rollback 手順**(flag off/revert sha)を 1 行含める | 可逆性(殿 07-10) |
+| A10 | 新規 test を残すなら `test_necessity` 必須、残さないなら同 task 内で削除(default-delete) | CLAUDE.md Test Rules |
 
 ## §5 レビュー履歴
 - v1.0 → 家老 REJECT(blt_20260902_023241、方向 APPROVE・修正 5): ①inventory の残すもの明示 ②C2a/C3 porcelain 0/C5 lease BLOCK ③順序 U1→U2→U4→U5→U3→U6→U7→U8 ④成果物 3 つ組と旧 field 写像 ⑤C6/C7。→ v1.1 に全反映。
 - v1.1 → 家老 REJECT(blt_20260902_023509、前回 5/5 反映確認・新規 6): ①台帳 writer は root 外 queue に統一 ②fingerprint と patch_sha は別物で両方保持、cross_repo は組で保持 ③U1 AC=max holders 1/overlap 0/FIFO 逆転 0、lease=ref+SHA+expiry ④U5 AC=未承認 N→admitted 0、承認 N→N ⑤U3 AC に C2a fixture+dry-run 母数 N/mismatch 0 ⑥canary C1-C7、U8 削除 manifest+殿確認+1 batch ≤10、原則番号修正。→ v1.2 に全反映。
 - v1.2 → 家老 **APPROVE**(blt_20260902_024632、6/6 反映を現物差分で確認)。殿裁定待ち 3 点: (1)採用可否 (2)将軍の直接 commit 廃止(doc/map を同 lease・queue へ) (3)canary 範囲(推奨: infra hotfix lane→dm-signal は U5 到達後)。裁定後に U1 から cmd 起票。
 
-## §5.1 レビュー依頼(家老、v1.2)
+## §5.1 レビュー依頼(家老、v1.3)
+観点: (5) §4 R1-R10 の検知・復旧が二値か (6) §6 D1-D12 のうち将軍が決めてよい範囲を越えていないか(殿裁定は D9/D10 のみ) (7) §7 P1-P10 に本日事象の漏れ (8) §8 A1-A10 が deploy_task/karo-direct の現行 gate と矛盾しないか。
 観点: (1)§1.3 不要化 inventory の過不足(削ってはいけないものが混ざっていないか、殿 07-21『削るな速くしろ』との整合) (2)§2.3/2.4 の契約が二値か (3)§3 の順序・AC・canary 範囲 (4)壊れる契約の列挙漏れ(blt_021944 の 13 項目と突合)。
