@@ -289,9 +289,10 @@ agent_id="${PROMPT_STATE_AGENT_ID:-}"
 if [[ -z "$agent_id" ]] && command -v tmux >/dev/null 2>&1; then
   if [[ -n "${TMUX_PANE:-}" ]]; then
     agent_id="$(tmux display-message -t "$TMUX_PANE" -p '#{@agent_id}' 2>/dev/null || echo "unknown")"
-  elif [[ -n "${TMUX:-}" ]]; then
-    agent_id="$(tmux display-message -p '#{@agent_id}' 2>/dev/null || echo "unknown")"
   fi
+  # 2026-09-01 15:19: TMUX_PANE 無しの子プロセスが active pane(殿が見ている pane)を
+  # 引いて shogun と誤解決し、CoDD 系の自動 prompt を lord_conversation へ「殿の
+  # inbound」として記録した。active pane fallback は使わない(unknown のまま)。
 fi
 if [[ -z "$agent_id" ]]; then
   agent_id="unknown"

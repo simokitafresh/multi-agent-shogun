@@ -204,9 +204,12 @@ agent_id="${AGENT_ID:-}"
 if [[ -z "$agent_id" ]] && command -v tmux >/dev/null 2>&1; then
   if [[ -n "${TMUX_PANE:-}" ]]; then
     agent_id="$(tmux display-message -t "$TMUX_PANE" -p '#{@agent_id}' 2>/dev/null || echo "unknown")"
-  elif [[ -n "${TMUX:-}" ]]; then
-    agent_id="$(tmux display-message -p '#{@agent_id}' 2>/dev/null || echo "unknown")"
   fi
+  # 2026-09-01 15:19 実測: TMUX_PANE 無しの子プロセス(claude -p 等)がここで
+  # `tmux display-message -p`(= 殿が見ている active pane)を引き、shogun と誤解決して
+  # logs/deepdive_replay/shogun.session を書き換えた→将軍の追体験 receipt 16/16 が
+  # 失効し stop hook が偽 BLOCK。active pane は「誰が見ているか」であり「誰が
+  # 走っているか」ではない。TMUX_PANE が無ければ unknown のまま(marker は触らない)。
 fi
 if [[ -z "$agent_id" ]]; then
   agent_id="unknown"
