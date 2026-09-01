@@ -3290,7 +3290,19 @@ karo_startup_correction_command() {
             if [[ "$report_name" =~ ^[A-Za-z0-9_.-]+\.yaml$ ]]; then
                 report_file="$(find "$SCRIPT_DIR/queue/reports" -maxdepth 1 -type f -name "$report_name" -print -quit 2>/dev/null || true)"
             fi
+            # 2026-09-01: completed_unarchived の alert 文には " report=" が無く(L2673)、
+            # report_name が alert 全文になって上の regex を外れ、常に `false` プレースホルダ
+            # →『是正コマンドが非0終了したが出力なし』の CRITICAL escalation を将軍へ毎起動送っていた
+            # (本日 4 通、殿指示 13:22 監査で検出)。cmd_id から報告を引き、CLEAR receipt が
+            # 要るなら GATE 実行そのものを是正コマンドにする。
+            if [ -z "$report_file" ] && [[ "$cmd_id" == cmd_* ]]; then
+                report_file="$(find "$SCRIPT_DIR/queue/reports" -maxdepth 1 -type f -name "*_report_${cmd_id}.yaml" -print -quit 2>/dev/null || true)"
+            fi
             [ -n "$report_file" ] && generation="$(sha256sum "$report_file" | awk '{print $1}')"
+            if [[ "$cmd_id" == cmd_* ]] && [[ "$alert" == *clear_receipt_required* ]] && [ -n "$report_file" ]; then
+                printf 'bash scripts/cmd_complete_gate.sh %q\n' "$cmd_id"
+                return 0
+            fi
             if [[ "$cmd_id" == cmd_* ]]; then
                 if [[ "$generation" =~ ^[0-9a-f]{64}$ ]]; then
                     printf 'ARCHIVE_COMPLETED_PROJECT_DIR=%q SHOGUN_COMPLETION_GENERATION=%q bash scripts/archive_completed.sh %q\n' \
