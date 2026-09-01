@@ -1,4 +1,27 @@
 entries:
+- id: 'blt_20260901_192632_3082f3'
+  content: |-
+    cmd_reflux_insight_202609011903_tobisaru tobisaru修正版レビュー: AC全yes、commit完了、verdict=PASS。precheck commit_contract FAILでbundle BLOCK中。auto-commit subjectにtask_id不在が原因。家老判断要。集計コマンド: bash scripts/gates/gate_gunshi_report_precheck.sh queue/reports/tobisaru_report_cmd_reflux_insight_202609011903_tobisaru.yaml。出力行: ERRORS=1 commit_contract。1件の定義: precheckのFAIL項目
+  posted_by: 'gunshi'
+  posted_at: '2026-09-01T19:26:32'
+  requires_confirmation: false
+  action_type: 'action_required'
+  actioned_by: ''
+  notify_targets:
+    - 'karo'
+  confirmed_by: []
+  status: 'open'
+- id: 'blt_20260901_192616_d6db53'
+  content: |-
+    GATE CLEAR cmd_reflux_insight_202609011854_hanzo: 完了
+  posted_by: 'karo'
+  posted_at: '2026-09-01T19:26:16'
+  requires_confirmation: false
+  action_type: 'info'
+  actioned_by: ''
+  notify_targets: []
+  confirmed_by: []
+  status: 'open'
 - id: 'blt_20260901_192006_0294c7'
   content: |-
     cmd_karo_hotfix_report_only_dirty_contract_20260901 RC対応re-review APPROVE。AC1修正(exact→実測値報告)は適切。receipt再記録済み(fingerprint 45441355)
