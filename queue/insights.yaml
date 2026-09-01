@@ -12481,7 +12481,7 @@ insights:
   fix_known: false
   status: resolved
   resolved_reason: "一次情報で gate_skill_script_refs.sh を再実行し、rc=2 はREVIEW_REQUIREDのみで、参照先実在・SKILL更新鮮度・例示パス・実走markerが全てOK、FOLLOWUP_ACTIVE=34かつFOLLOWUP_COVERS_REVIEW_REQUIRED=yesを確認した。既存follow-upで被覆済みのため追加実装・decision_candidateは不要。"
-  action_artifact: "primary=queue/insights.yaml:12476-12482;gate=SKILL_REF_DISABLE_CACHE=1 bash scripts/gates/gate_skill_script_refs.sh . rc=2 REVIEW_REQUIRED;observed=41-SKILL/82-refs/30-with-refs,missing=0,stale=0,example_paths_missing=0,run_markers_missing=0,FOLLOWUP_ACTIVE=34,FOLLOWUP_COVERS_REVIEW_REQUIRED=yes;memory=memory_db_query exact insight;semantic=context/semantic-map.md provisional_insights + semantic_search provisional_insights;causal=.cache/causal_index.tsv reflux chain;decision_candidate=none"
+  action_artifact: "primary=queue/insights.yaml:12476-12482;gate=SKILL_REF_DISABLE_CACHE=1 bash scripts/gates/gate_skill_script_refs.sh . rc=2 REVIEW_REQUIRED;observed=41-SKILL/82-refs/30-with-refs,missing=0,stale=0,example_paths_missing=0,run_markers_missing=0,FOLLOWUP_ACTIVE=34,FOLLOWUP_COVERS_REVIEW_REQUIRED=yes;memory=memory_db_query exact insight;semantic=context/semantic-map.md provisional_insights + semantic_search provisional_insights;causal=.cache/causal_index.tsv reflux chain;decision_candidate=none;terminal_receipt=/tmp/shogun-tobisaru-file-receipt.n9ev23/logs/test_receipts/run_tests_20260901T101901_1799196.json;worker_scope_commit=d485f913bdf10576da690190711c1ef1072f1446"
   resolved_at: "2026-09-01T19:08:40+09:00"
 - id: INS-20260901-190432447-be27
   ts: "2026-09-01T19:04:32+09:00"
