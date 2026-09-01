@@ -290,16 +290,34 @@ exit 0"
 # its tree already preserves every second-parent change relative to the merge
 # base and must not be classified as an ancestry content-loss regression.
 @test "live candidate with first-parent-only changes passes merge guard" {
-  local project_root live_repo candidate_tree
+  local project_root repo base_sha side_sha main_sha merge_sha main_tree candidate_tree
   project_root="$(cd "$BATS_TEST_DIRNAME/../.." && pwd)"
-  live_repo="$BATS_TEST_TMPDIR/live-candidate"
-  git clone -q --shared "$project_root" "$live_repo"
-  git -C "$live_repo" update-ref refs/remotes/origin/main 84e18b7d105a2eb4d0449991b0c6cc1bc43ec8cf
-  candidate_tree="$(git -C "$live_repo" rev-parse '8e707ce4b1ad40d1419da0b49451e03d8d7a8b6c^{tree}')"
+  # Self-contained reconstruction of the live push-lane scenario: the target
+  # contains an ours-equivalent merge (tree == first parent) whose candidate
+  # tree still preserves every second-parent change relative to the merge
+  # base. No live-repository SHAs: a fresh CI clone must reproduce this.
+  repo="$BATS_TEST_TMPDIR/fp-candidate"
+  git init -q -b main "$repo"
+  git -C "$repo" config user.email t@t; git -C "$repo" config user.name t
+  printf 'a0\n' > "$repo/a.txt"; printf 'b0\n' > "$repo/b.txt"
+  git -C "$repo" add a.txt b.txt
+  git -C "$repo" commit -qm base
+  base_sha="$(git -C "$repo" rev-parse HEAD)"
+  git -C "$repo" checkout -qb side
+  printf 'b1\n' > "$repo/b.txt"
+  git -C "$repo" commit -aqm side-change
+  side_sha="$(git -C "$repo" rev-parse HEAD)"
+  git -C "$repo" checkout -q main
+  printf 'a1\n' > "$repo/a.txt"
+  git -C "$repo" commit -aqm first-parent-change
+  main_sha="$(git -C "$repo" rev-parse HEAD)"
+  main_tree="$(git -C "$repo" rev-parse 'HEAD^{tree}')"
+  merge_sha="$(git -C "$repo" commit-tree "$main_tree" -p "$main_sha" -p "$side_sha" -m ours-equivalent)"
+  git -C "$repo" update-ref refs/heads/main "$merge_sha"
+  candidate_tree="$(git -C "$repo" merge-tree --write-tree "$main_sha" "$side_sha")"
 
   run bash "$project_root/scripts/safe_shared_main_ff.sh" --verify-merge-tree \
-    "$live_repo" 32851d859f1813b8d020598e882e9337b1ed6bc4 \
-    8e707ce4b1ad40d1419da0b49451e03d8d7a8b6c "$candidate_tree"
+    "$repo" "$base_sha" "$merge_sha" "$candidate_tree"
   [ "$status" -eq 0 ]
   [[ "$output" == *"target_new_merges=1"* ]]
   [[ "$output" == *"ours_equivalent=0"* ]]
