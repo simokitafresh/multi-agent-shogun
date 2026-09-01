@@ -12860,3 +12860,13 @@ insights:
   source: "semantic_map_generate:new_file"
   fix_known: false
   status: pending
+- id: INS-20260902-024822578-836c
+  ts: "2026-09-02T02:48:22+09:00"
+  insight: "[[この案についてasis Tobe 5w1hで実装の設計書を作ろう]] semantic_stress_test candidate_aliases: NO_MATCH source=lord query=この案についてasis/Tobe 5w1hで実装の設計書を作ろう。この案が完成したら不要になる複雑さも確認して、最終的にはシンプルに速く確実に動く仕組みが必要だな。複雑さの除去まで先に検証しよう。将軍が設計書を書いたら家老にレビューしてもらえ"
+  priority: "low"
+  source: "semantic_stress_test"
+  fix_known: false
+  status: resolved
+  resolved_reason: "semantic index candidate was absorbed into a registered concept"
+  action_artifact: "semantic_index=/home/simokitafresh/multi-agent-shogun/docs/semantic-index/index.md"
+  resolved_at: "2026-09-02T02:48:44+09:00"
