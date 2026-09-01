@@ -2163,7 +2163,11 @@ for _repo in "$_pj_path" "$SCRIPT_DIR"; do
         _first_ts=$(git -C "$_repo" log --reverse --format=%ct '@{u}..HEAD' 2>/dev/null | head -1)
         [ -n "$_first_ts" ] && _age_min=$(( ( $(date +%s) - _first_ts ) / 60 ))
     fi
-    if [ "${_ahead:-0}" -gt 0 ] && [ "$_age_min" -ge 15 ]; then
+    if [ "${_ahead:-0}" -gt 0 ] && [ "$_age_min" -ge 30 ]; then
+        echo "  ALERT: $(basename "$_repo") ローカル先行${_ahead}commit・最古${_age_min}分未push — 即時pushせよ (集計: git rev-list --count @{u}..HEAD)"
+        overall="ALERT"
+        alerts+=("未push乖離ALERT: $(basename "$_repo") ${_ahead}commit/${_age_min}分 — 即時pushせよ")
+    elif [ "${_ahead:-0}" -gt 0 ] && [ "$_age_min" -ge 15 ]; then
         echo "  WARN: $(basename "$_repo") ローカル先行${_ahead}commit・最古${_age_min}分未push (集計: git rev-list --count @{u}..HEAD)"
         if [ "$overall" != "ALERT" ]; then
             overall="WARN"
