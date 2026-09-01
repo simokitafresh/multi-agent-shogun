@@ -7888,7 +7888,10 @@ insights:
   priority: "low"
   source: "cmd_complete_gate:memory_phase"
   fix_known: false
-  status: pending
+  status: resolved
+  resolved_reason: "一次情報で対象insightの候補実装を確認した。scripts/gates/gate_context_freshness.sh:L125-L165はsubjectとchanged pathsを単一のbounded git showへ統合済みで、旧来の別git履歴走査は廃止されている。commit 02d870fe2の専用contract testはPASSし、GATE CLEAR記録も確認できるため、新規実修正・decision_candidateは不要。"
+  action_artifact: "target=queue/insights.yaml:INS-20260829-102550931-f1a6;implementation=scripts/gates/gate_context_freshness.sh:L125-L165;test=tests/unit/test_gate_context_freshness.bats:L37-L79;commit=02d870fe29784a3c3693ac0b996e74220bf18d9e;runtime=ebaf69fe954480ef391017617490fe7be8f617f7;context=context/infrastructure.md:L350;lesson=projects/infra/lessons.yaml:L35;memory=bash scripts/memory_db_query.sh --search INS-20260829-102550931-f1a6;decision_candidate=none"
+  resolved_at: "2026-09-02T00:22:17+09:00"
 - id: INS-20260829-102734408-c988
   ts: "2026-08-29T10:27:34+09:00"
   insight: "semantic_index_update未登録[[リンク]]ターゲット: [[殿裁定_一回終わり_速度は待て_バグは継続_20260829_1026]] は既存aliasesに一致なし。類似概念TOP3: semantic_dictionary_design(セマンティック辞書構想; alias=殿裁定_ext4移設やれ_20260827_1422; score=11.5) / db_price_data_range(DB価格データ範囲; alias=殿裁定 GSはネイティブ暦 本番と同一のDTB3暦 に統一; score=9.9) / known_unknowns_principle(無知の知; alias=殿裁定 17 04 『 admin fofが縦に長くスクロールが大変だ; score=9.8)。概念定義とaliases追加を検討せよ"
