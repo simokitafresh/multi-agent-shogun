@@ -12565,3 +12565,10 @@ insights:
   source: "semantic_index_update"
   fix_known: false
   status: pending
+- id: INS-20260901-193357489-892d
+  ts: "2026-09-01T19:33:57+09:00"
+  insight: "semantic_index_update未登録[[リンク]]ターゲット: [[型別review_processing_receipt]] は既存aliasesに一致なし。類似概念TOP3: skill_design_rules(Skill設計ルール; alias=test_production_divergence; score=7.1) / provisional_script_speed_training_ledger(仮: Script Speed Training Ledger; alias=provisional_script_speed_training_ledger; score=6.7) / agent_formation_management(編成管理; alias=active_dead_pane_auto_respawn; score=6.7)。概念定義とaliases追加を検討せよ"
+  priority: "low"
+  source: "semantic_index_update"
+  fix_known: false
+  status: pending
