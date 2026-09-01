@@ -8880,6 +8880,7 @@ codd:
 | causal | `cmd_karo_hotfix_gunshi_idle_flag_lifecycle_20260901` files_modified: [[agent_formation_management]] |
 | discussion | `queue/lord_conversation.jsonl` 2026-09-01T19:37:34+09:00 2026-09-01 19:31-19:38 殿『家老にレビューしてもらえ』: 将軍 D0 6 commit を家老レビュー(blt_193552)=APPROVE 1(9c19734af gist_sync 固定 id 制限)/REJEC |
 | cmd | `cmd_karo_hotfix_failclose_pending_monitor_20260901` |
+| cmd | `cmd_karo_ci_fix_33505016080` (`tests/unit/test_defense_overhead_writer.bats`, `tests/unit/test_ninja_monitor_failed_respawn.bats`) |
 | causal_chain | `[[cmd_karo_hotfix_deploy_task_latency_yaml_bug_20260702010845]]` (L918) |
 | causal_chain | `[[cmd_karo_hotfix_deploy_task_yaml_speed_recon_guard_202607020133]]` (L919) |
 | causal_chain | `[[cmd_karo_hotfix_ga162_hook_failure_pre_push_202607021402]]` (L930) |
@@ -14593,6 +14594,8 @@ codd:
 | cmd | `cmd_reflux_insight_202609012027_hanzo` (`queue/insights.yaml`) |
 | causal | `cmd_reflux_insight_202609012042_hayate` files_modified: [[provisional_insights]] |
 | cmd | `cmd_reflux_insight_202609012042_hayate` (`queue/insights.yaml`) |
+| causal | `cmd_reflux_insight_202609012138_hanzo` files_modified: [[provisional_insights]] |
+| cmd | `cmd_reflux_insight_202609012138_hanzo` (`queue/insights.yaml`) |
 | causal_chain | `[[cmd_reflux_insight_202608040505_kagemaru]]` (L1545) |
 
 ## provisional_heavy_job_admission — 仮: Heavy Job Admission
@@ -16245,6 +16248,7 @@ codd:
 | discussion | `queue/lord_conversation.jsonl` 2026-09-01T11:21:33.071534+00:00 git pre-commit semantic propagation for context/projects changes |
 | discussion | `queue/lord_conversation.jsonl` 2026-09-01T11:40:55.804140+00:00 git pre-commit semantic propagation for context/projects changes |
 | discussion | `queue/lord_conversation.jsonl` 2026-09-01T12:09:05.293306+00:00 git pre-commit semantic propagation for context/projects changes |
+| discussion | `queue/lord_conversation.jsonl` 2026-09-01T12:40:49.494111+00:00 git pre-commit semantic propagation for context/projects changes |
 | causal_chain | `[[cmd_karo_hotfix_lessons_yaml_format_restore_20260727]]` (L1389) |
 
 ## infra_design_intent — インフラ設計意図カタログ
@@ -17763,6 +17767,14 @@ codd:
 | cmd | `cmd_karo_hotfix_scope_commit_same_blob_shared_dirty_20260901` |
 | discussion | `queue/lord_conversation.jsonl` 2026-09-01T11:36:09.304839+00:00 git pre-commit semantic propagation for context/projects changes |
 | discussion | `queue/lord_conversation.jsonl` 2026-09-01T11:36:31.100341+00:00 git pre-commit semantic propagation for context/projects changes |
+| discussion | `queue/lord_conversation.jsonl` 2026-09-01T12:12:34.841221+00:00 git pre-commit semantic propagation for context/projects changes |
+| discussion | `queue/lord_conversation.jsonl` 2026-09-01T12:12:44.840181+00:00 git pre-commit semantic propagation for context/projects changes |
+| discussion | `queue/lord_conversation.jsonl` 2026-09-01T12:30:26.559124+00:00 git pre-commit semantic propagation for context/projects changes |
+| discussion | `queue/lord_conversation.jsonl` 2026-09-01T12:30:49.092560+00:00 git pre-commit semantic propagation for context/projects changes |
+| discussion | `queue/lord_conversation.jsonl` 2026-09-01T12:41:51.609920+00:00 git pre-commit semantic propagation for context/projects changes |
+| discussion | `queue/lord_conversation.jsonl` 2026-09-01T12:42:08.541572+00:00 git pre-commit semantic propagation for context/projects changes |
+| discussion | `queue/lord_conversation.jsonl` 2026-09-01T12:56:49.722898+00:00 git pre-commit semantic propagation for context/projects changes |
+| discussion | `queue/lord_conversation.jsonl` 2026-09-01T12:57:08.286063+00:00 git pre-commit semantic propagation for context/projects changes |
 | causal_chain | `[[cmd_karo_hotfix_ga161_obsidian_link_context_freshness_202607021348]]` (L926) |
 | causal_chain | `[[cmd_3648]]` (L933) |
 | causal_chain | `[[cmd_karo_ci_fix_ga191_followup_202607071752]]` (L963) |
