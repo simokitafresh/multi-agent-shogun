@@ -10598,7 +10598,7 @@ matches = []
 for message in doc.get("messages") or []:
     if not isinstance(message, dict):
         continue
-    if str(message.get("type") or "") not in {"review_draft", "report_review", "report_revision"}:
+    if str(message.get("type") or "") not in {"review_draft", "report_review", "review_report"}:
         continue
     message_report = str(message.get("report_path") or message.get("report") or "")
     if message_report not in {report_rel, report_rel.removeprefix("queue/"), report_rel.rsplit("/", 1)[-1]}:
@@ -10654,10 +10654,13 @@ auto_request_report_review() {
             log "REPORT-REVIEW-AUTO-SKIP: report=$report_base parent_cmd=$parent_cmd reason=fingerprint_unavailable"
             return 1
         }
-        if _report_generation_has_terminal_review "$report_full" "$parent_cmd" "$generation"; then
-            log "REPORT-REVIEW-AUTO-SKIP: report=$report_base parent_cmd=$parent_cmd reason=reviewed_generation generation=$generation"
-            return 0
-        fi
+    fi
+    # An unread handoff is the first durable source of truth. Formal approval
+    # and a generation-bound terminal gate are the next sources; neither may
+    # be replayed as another actionable review request.
+    if _report_generation_has_terminal_review "$report_full" "$parent_cmd" "$generation"; then
+        log "REPORT-REVIEW-AUTO-SKIP: report=$report_base parent_cmd=$parent_cmd reason=reviewed_generation generation=$generation"
+        return 0
     fi
     gate_dir="$SCRIPT_DIR/queue/gates/$parent_cmd"
     marker="$gate_dir/review_request.${report_base}.done"
