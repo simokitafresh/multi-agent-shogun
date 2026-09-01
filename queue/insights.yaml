@@ -9712,7 +9712,10 @@ insights:
   priority: "low"
   source: "semantic_map_generate:new_file"
   fix_known: false
-  status: pending
+  status: resolved
+  resolved_reason: 一次情報でdocs/semantic-index/index.mdのinfrastructure_ops資源行にtests/unit/test_inbox_watcher.batsの登録を確認し、候補は既存概念で解消済み。新規概念・実装修正・decision_candidateは不要
+  action_artifact: "target=queue/insights.yaml:INS-20260830-190120538-e122;primary=docs/semantic-index/index.md:11998;concept=context/semantic-map.md:134 infrastructure_ops;verification=semantic_search tests/unit/test_inbox_watcher.bats"
+  resolved_at: "2026-09-02T01:40:00+09:00"
 - id: INS-20260830-191406610-4f46
   ts: "2026-08-30T19:14:06+09:00"
   insight: "semantic_index_update新概念候補: discussion:T198 T199 T200 T196 T195 T193 T192 T190 T188の進捗を覚醒して更新せよ。つまりや停滞があれば解消せよ は 既存aliasesに一致なし。概念定義とaliases追加を検討せよ"
