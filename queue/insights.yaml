@@ -6114,7 +6114,10 @@ insights:
   priority: "low"
   source: "semantic_map_generate:new_file"
   fix_known: false
-  status: pending
+  status: resolved
+  resolved_reason: 一次確認で .githooks/post-commit はtracked現存し、HEAD履歴に専用導入cmdがあり、context/infrastructure.md L1550 と既存のインフラ運用基盤・Hook自動化フレームワークで設計意図が被覆済み。semantic索引への直接path登録は未確認だが新概念・実修正・decision_candidateは不要。
+  action_artifact: "target=queue/insights.yaml:INS-20260828-013206390-80e5;primary=.githooks/post-commit:1-40 tracked=1 blob=4ca6788df07b486df990ae88796e725505698d4b;history=650f72b31f,9ec61cb06a;context=context/infrastructure.md:1550;semantic_existing=context/semantic-map.md:88,94;direct_path_match=0;decision_candidate=none"
+  resolved_at: "2026-09-01T23:41:44+09:00"
 - id: INS-20260828-013206485-520f
   ts: "2026-08-28T01:32:06+09:00"
   insight: "semantic_map_generate新規ファイル候補: `.githooks/pre-commit` は semantic index未登録。既存概念へのfile追加または新概念定義を検討せよ"
