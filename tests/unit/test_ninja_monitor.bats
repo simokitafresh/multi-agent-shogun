@@ -1582,12 +1582,14 @@ task:
   task_id: cmd_failed_kagemaru_normal
   parent_cmd: cmd_failed_kagemaru
   status: failed
+  deployed_at: 0
 YAML
 cat > "$ROOT/queue/tasks/kotaro.yaml" <<YAML
 task:
   task_id: cmd_failed_kotaro_normal
   parent_cmd: cmd_failed_kotaro
   status: failed
+  deployed_at: 0
 YAML
 
 cat > "$ROOT/scripts/inbox_write.sh" <<STUB
@@ -1621,4 +1623,214 @@ printf "legacy=2 upgraded=2 canonical=1 double_envelope=0 flushed=3 remaining=0\
     echo "$output"
     [ "$status" -eq 0 ]
     [[ "$output" == *"legacy=2 upgraded=2 canonical=1 double_envelope=0 flushed=3 remaining=0"* ]]
+}
+
+# test_necessity: an unaddressable legacy row is durably archived with its
+# original payload and removed exactly once, while valid and canonical rows
+# retain their existing delivery behavior.
+@test "flush_karo_notify_outbox archives legacy rows with missing task identity exactly once" {
+    run bash -lc '
+set -euo pipefail
+PROJECT_ROOT="'"$PROJECT_ROOT"'"
+export NINJA_MONITOR_LIB_ONLY=1
+source "$PROJECT_ROOT/scripts/ninja_monitor.sh"
+unset NINJA_MONITOR_LIB_ONLY
+
+ROOT="'"$BATS_TEST_TMPDIR"'/legacy-outbox-archive"
+SCRIPT_DIR="$ROOT"
+STATE_DIR="$ROOT/state"
+LOG="$ROOT/monitor.log"
+mkdir -p "$ROOT/queue/tasks" "$ROOT/scripts" "$STATE_DIR"
+: > "$LOG"
+cat > "$ROOT/queue/tasks/kotaro.yaml" <<YAML
+task:
+  status: failed
+YAML
+cat > "$ROOT/queue/tasks/kagemaru.yaml" <<YAML
+task:
+  task_id: cmd_failed_kagemaru_normal
+  parent_cmd: cmd_failed_kagemaru
+  status: failed
+  deployed_at: 1700000000
+YAML
+cat > "$ROOT/queue/tasks/saizo.yaml" <<YAML
+task:
+  task_id: cmd_failed_saizo_normal
+  parent_cmd: cmd_failed_saizo
+  status: failed
+  deployed_at: 1700000000
+YAML
+cat > "$ROOT/scripts/inbox_write.sh" <<STUB
+#!/bin/bash
+printf "to=%s message=%s type=%s from=%s\n" "\$1" "\$2" "\$3" "\$4" >> "$ROOT/inbox_calls.log"
+STUB
+chmod +x "$ROOT/scripts/inbox_write.sh"
+encode() { printf "%s" "$1" | base64 | tr -d "\\n"; }
+legacy="legacy kotaro body"
+valid="legacy kagemaru body"
+canonical="canonical task_id=commander_directive subject_task_id=cmd_failed_kagemaru_normal parent_cmd=cmd_failed_kagemaru"
+{
+    printf "1700000000\tfailed_task_preserve_block\tkotaro\t%s\n" "$(encode "$legacy")"
+    printf "1700000001\tfailed_task_preserve_block\tkagemaru\t%s\n" "$(encode "$valid")"
+    printf "1700000002\tfailed_task_preserve_block\tkagemaru\t%s\n" "$(encode "$canonical")"
+    printf "1699999999\tfailed_task_preserve_block\tsaizo\t%s\n" "$(encode "stale saizo body")"
+} > "$STATE_DIR/karo_notify_outbox.tsv"
+
+flush_karo_notify_outbox
+flush_karo_notify_outbox
+archive="$STATE_DIR/karo_notify_outbox_archive.tsv"
+test -f "$archive"
+test "$(wc -l < "$archive")" -eq 2
+grep -Fqx "queued_at=1700000000$(printf "\\t")type=failed_task_preserve_block$(printf "\\t")name=kotaro$(printf "\\t")message_b64=$(encode "$legacy")" "$archive"
+grep -Fqx "queued_at=1699999999$(printf "\\t")type=failed_task_preserve_block$(printf "\\t")name=saizo$(printf "\\t")message_b64=$(encode "stale saizo body")" "$archive"
+test ! -s "$STATE_DIR/karo_notify_outbox.tsv"
+test "$(grep -c "^to=karo " "$ROOT/inbox_calls.log")" -eq 2
+grep -Fqx "to=karo message=${valid} task_id=commander_directive subject_task_id=cmd_failed_kagemaru_normal parent_cmd=cmd_failed_kagemaru  type=failed_task_preserve_block from=ninja_monitor" "$ROOT/inbox_calls.log"
+grep -Fqx "to=karo message=${canonical} type=failed_task_preserve_block from=ninja_monitor" "$ROOT/inbox_calls.log"
+test "$(grep -c "NOTIFY-OUTBOX-LEGACY-ARCHIVED" "$LOG")" -eq 2
+test "$(grep -c "reason=stale_generation" "$LOG")" -eq 1
+test "$(grep -c "NOTIFY-OUTBOX-LEGACY-ARCHIVE-FAILED" "$LOG" || true)" -eq 0
+printf "missing_identity=1 stale_generation=1 archive=2 active_remaining=0 repeat_archive=0 valid_delivery=1 canonical_delivery=1\n"
+    '
+    echo "$output"
+    [ "$status" -eq 0 ]
+    [ "$output" = "missing_identity=1 stale_generation=1 archive=2 active_remaining=0 repeat_archive=0 valid_delivery=1 canonical_delivery=1" ]
+}
+
+# test_necessity: every successful isolated push-lane merge must pass the
+# shared ancestry verifier exactly once before the root ref moves, for both
+# fast-forward and ordinary merge results.
+@test "push lane verifies isolated fast-forward and normal merge before ref update" {
+    run env PROJECT_ROOT="$PROJECT_ROOT" bash -c '
+        set -euo pipefail
+        export NINJA_MONITOR_LIB_ONLY=1
+        source "$PROJECT_ROOT/scripts/ninja_monitor.sh"
+        unset NINJA_MONITOR_LIB_ONLY
+        make_wrapper() {
+            local root="$1"
+            cat > "$root/verify-wrapper.sh" <<EOF
+#!/bin/bash
+printf "%s\\n" "\$*" >> "$root/verify_calls"
+exec bash "$PROJECT_ROOT/scripts/safe_shared_main_ff.sh" "\$@"
+EOF
+            chmod +x "$root/verify-wrapper.sh"
+        }
+        make_ff_fixture() {
+            local root="$1"
+            mkdir -p "$root/logs" "$root/state"
+            git init -q -b main "$root"
+            git -C "$root" config user.email test@example.invalid
+            git -C "$root" config user.name push-lane-test
+            printf "base\\n" > "$root/base.txt"
+            git -C "$root" add base.txt
+            git -C "$root" commit -q -m base
+            git -C "$root" checkout -q --detach HEAD
+            printf "remote\\n" > "$root/remote.txt"
+            git -C "$root" add remote.txt
+            git -C "$root" commit -q -m remote
+            local remote_sha=$(git -C "$root" rev-parse HEAD)
+            git -C "$root" update-ref refs/remotes/origin/main "$remote_sha"
+            git -C "$root" checkout -q main
+            make_wrapper "$root"
+            SCRIPT_DIR="$root" STATE_DIR="$root/state" LOG="$root/logs/monitor.log" \
+                PUSH_LANE_LOG="$root/logs/push.log" \
+                PUSH_LANE_SAFE_FF_SCRIPT="$root/verify-wrapper.sh" \
+                push_lane_integrate_remote "$root" refs/remotes/origin/main "$remote_sha"
+            test "$(grep -c -- "--verify-merge-tree" "$root/verify_calls")" -eq 1
+            test "$(git -C "$root" rev-parse refs/heads/main)" = "$remote_sha"
+        }
+        make_merge_fixture() {
+            local root="$1"
+            mkdir -p "$root/logs" "$root/state"
+            git init -q -b main "$root"
+            git -C "$root" config user.email test@example.invalid
+            git -C "$root" config user.name push-lane-test
+            printf "base\\n" > "$root/base.txt"
+            git -C "$root" add base.txt
+            git -C "$root" commit -q -m base
+            git -C "$root" branch side
+            printf "local\\n" > "$root/local.txt"
+            git -C "$root" add local.txt
+            git -C "$root" commit -q -m local
+            local local_sha=$(git -C "$root" rev-parse HEAD)
+            git -C "$root" checkout -q side
+            printf "remote\\n" > "$root/remote.txt"
+            git -C "$root" add remote.txt
+            git -C "$root" commit -q -m remote
+            local remote_sha=$(git -C "$root" rev-parse HEAD)
+            git -C "$root" update-ref refs/remotes/origin/main "$remote_sha"
+            git -C "$root" checkout -q main
+            make_wrapper "$root"
+            SCRIPT_DIR="$root" STATE_DIR="$root/state" LOG="$root/logs/monitor.log" \
+                PUSH_LANE_LOG="$root/logs/push.log" \
+                PUSH_LANE_SAFE_FF_SCRIPT="$root/verify-wrapper.sh" \
+                push_lane_integrate_remote "$root" refs/remotes/origin/main "$remote_sha"
+            test "$(grep -c -- "--verify-merge-tree" "$root/verify_calls")" -eq 1
+            integrated=$(git -C "$root" rev-parse refs/heads/main)
+            test "$integrated" != "$local_sha"
+            git -C "$root" merge-base --is-ancestor "$remote_sha" "$integrated"
+        }
+        make_ff_fixture "$BATS_TEST_TMPDIR/push-lane-ff"
+        make_merge_fixture "$BATS_TEST_TMPDIR/push-lane-merge"
+        printf "fast_forward_rc0=1 normal_merge_rc0=1 verifier_calls=2 ref_updated_after_verify=1\n"
+    '
+    echo "$output"
+    [ "$status" -eq 0 ]
+    [ "$output" = "fast_forward_rc0=1 normal_merge_rc0=1 verifier_calls=2 ref_updated_after_verify=1" ]
+}
+
+# test_necessity: the 16d831ed9/eaabc7d93-style published ours-equivalent merge must be
+# rejected after isolated merge and before root ref update, preserving the
+# root ref while recording the regression path.
+@test "push lane blocks eaabc7d93 published ancestry merge content regression" {
+    run env PROJECT_ROOT="$PROJECT_ROOT" bash -c '
+        set -euo pipefail
+        export NINJA_MONITOR_LIB_ONLY=1
+        source "$PROJECT_ROOT/scripts/ninja_monitor.sh"
+        unset NINJA_MONITOR_LIB_ONLY
+        root="$BATS_TEST_TMPDIR/push-lane-regression"
+        mkdir -p "$root/logs" "$root/state"
+        git init -q -b main "$root"
+        git -C "$root" config user.email test@example.invalid
+        git -C "$root" config user.name push-lane-test
+        printf "old-a\\nold-b\\n" > "$root/content.txt"
+        git -C "$root" add content.txt
+        git -C "$root" commit -q -m base
+        base_sha=$(git -C "$root" rev-parse HEAD)
+        git -C "$root" branch side
+        git -C "$root" checkout -q side
+        printf "old-a\\nside-b\\n" > "$root/content.txt"
+        git -C "$root" commit -q -am side
+        second_parent=$(git -C "$root" rev-parse HEAD)
+        git -C "$root" checkout -q main
+        printf "new-a\\nold-b\\n" > "$root/content.txt"
+        git -C "$root" commit -q -am first-parent
+        git -C "$root" merge -q -s ours --no-ff side -m "eaabc7d93 fixture"
+        target=$(git -C "$root" rev-parse HEAD)
+        git -C "$root" update-ref refs/remotes/origin/main "$target"
+        git -C "$root" update-ref refs/heads/main "$second_parent"
+        git -C "$root" checkout -q main
+        before=$(git -C "$root" rev-parse refs/heads/main)
+        before_origin=$(git -C "$root" rev-parse refs/remotes/origin/main)
+        cat > "$root/verify-wrapper.sh" <<EOF
+#!/bin/bash
+printf "%s\\n" "\$*" >> "$root/verify_calls"
+exec bash "$PROJECT_ROOT/scripts/safe_shared_main_ff.sh" "\$@"
+EOF
+        chmod +x "$root/verify-wrapper.sh"
+        SCRIPT_DIR="$root" STATE_DIR="$root/state" LOG="$root/logs/monitor.log" \
+            PUSH_LANE_LOG="$root/logs/push.log" \
+            PUSH_LANE_SAFE_FF_SCRIPT="$root/verify-wrapper.sh"
+        if push_lane_integrate_remote "$root" refs/remotes/origin/main "$target"; then
+            exit 1
+        fi
+        test "$(git -C "$root" rev-parse refs/heads/main)" = "$before"
+        test "$(git -C "$root" rev-parse refs/remotes/origin/main)" = "$before_origin"
+        test "$(grep -c -- "--verify-merge-tree" "$root/verify_calls")" -eq 1
+        grep -q "ANCESTRY-MERGE-REGRESSION paths=content.txt" "$root/logs/push.log"
+        printf "eaabc7d93_regression=1 verifier_calls=1 root_ref_unchanged=1 origin_ref_unchanged=1 paths_recorded=1\n"
+    '
+    echo "$output"
+    [ "$status" -eq 0 ]
+    [ "$output" = "eaabc7d93_regression=1 verifier_calls=1 root_ref_unchanged=1 origin_ref_unchanged=1 paths_recorded=1" ]
 }
