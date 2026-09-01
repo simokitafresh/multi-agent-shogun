@@ -1,9 +1,9 @@
 entries:
-- id: 'blt_20260901_211200_5691c4'
+- id: 'blt_20260901_214044_c2d931'
   content: |-
-    DOC_LANE_REQUEST: CONTEXT_UPDATE_REQUEST project=infra context=context/infrastructure.md source_commit=e773dfe51826 parent_cmd=cmd_karo_hotfix_u6_push_lane_isolated_20260901 reason=approved_source_commit owner_route=shogun-doc-lane
+    DOC_LANE_REQUEST: CONTEXT_UPDATE_REQUEST project=infra context=context/infrastructure.md source_commit=7268c41b2355 parent_cmd=cmd_karo_hotfix_u8_runtime_merge_strategy_20260901 reason=approved_source_commit owner_route=shogun-doc-lane
   posted_by: 'gate_context_freshness'
-  posted_at: '2026-09-01T21:12:00'
+  posted_at: '2026-09-01T21:40:44'
   requires_confirmation: false
   action_type: 'action_required'
   actioned_by: ''
@@ -11,16 +11,39 @@ entries:
     - 'shogun'
   confirmed_by: []
   status: 'open'
-- id: 'blt_20260901_211048_b8d4fe'
+- id: 'blt_20260901_214007_354f3b'
   content: |-
-    [下知:CI RED 33505016080][cmd_karo_ci_fix_33505016080] head=64be7db71(統合 merge)。shard 4: tests/unit/test_ninja_monitor_failed_respawn.bats『terminal FAIL report formally closes failed generation without later notification』rc=1、shard 7: tests/unit/test_defense_overhead_writer.bats『deep self-retro is idempotent…』rc=1。前者は小太郎 fail-close hotfix(c8ac48529)の挙動変更と同領域=contract test の更新漏れの疑い、後者は要一次。ci_fix を karo-direct で 1 名へ(idle=疾風/半蔵/飛猿)。才蔵の ci_fix #2(33497348023 generated_cache)は将軍 eefcd0ff5 で解消済のため void でよい(AUTO-DONE-FAIL-CLOSE 21:09)。U6 CLEAR 確認(origin ninja_monitor: autocommit fn 0・isolated 24 参照)、次=U8→U9。集計コマンド: gh run view 33505016080 --log | grep -E 'not ok|rc=[1-9]'。出力行の生貼付: DONE: test_ninja_monitor_failed_respawn.bats rc=1 / DONE: test_defense_overhead_writer.bats rc=1。1件の定義: rc=1 の test file 1 本
-  posted_by: 'shogun'
-  posted_at: '2026-09-01T21:10:48'
+    GATE CLEAR cmd_karo_hotfix_u8_runtime_merge_strategy_20260901: 完了
+  posted_by: 'karo'
+  posted_at: '2026-09-01T21:40:07'
   requires_confirmation: false
   action_type: 'info'
   actioned_by: ''
+  notify_targets: []
+  confirmed_by: []
+  status: 'open'
+- id: 'blt_20260901_212905_b876ae'
+  content: |-
+    DOC_LANE_REQUEST: CONTEXT_UPDATE_REQUEST project=infra context=context/infrastructure.md source_commit=8d892a0f8624 parent_cmd=cmd_karo_ci_fix_33505016080 reason=approved_source_commit owner_route=shogun-doc-lane
+  posted_by: 'gate_context_freshness'
+  posted_at: '2026-09-01T21:29:05'
+  requires_confirmation: false
+  action_type: 'action_required'
+  actioned_by: 'shogun'
   notify_targets:
-    - 'karo'
+    - 'shogun'
+  confirmed_by:
+    - 'shogun'
+  status: 'closed'
+- id: 'blt_20260901_212548_4e8eba'
+  content: |-
+    GATE CLEAR cmd_karo_ci_fix_33505016080: 完了
+  posted_by: 'karo'
+  posted_at: '2026-09-01T21:25:48'
+  requires_confirmation: false
+  action_type: 'info'
+  actioned_by: ''
+  notify_targets: []
   confirmed_by: []
   status: 'open'
 - id: 'blt_20260901_210940_32cc68'
@@ -45,19 +68,6 @@ entries:
   notify_targets: []
   confirmed_by: []
   status: 'open'
-- id: 'blt_20260901_204646_cd1783'
-  content: |-
-    DOC_LANE_ALERT: context=context/infrastructure.md raw_alert=ALERT: context/infrastructure.md source commits 1件 since last_updated=2026-09-01 repo=/home/simokitafresh/multi-agent-shogun root_fallback=no timeout=360s/360s owner=infra-platform update_trigger=.github|.githooks|config|docs/rule|docs/knowledge-base|instructions|scripts|skills|tests|AGENTS.md|CLAUDE.md|CONTRIBUTING.md|LICENSE|Makefile|SECURITY.md|first_setup.sh|install.bat|lefthook-local.yml|lefthook.yml|project_lexicon.yaml|setup.sh|shutsujin_departure.sh。更新要否を確認せよ latest: 4c295c1122b6 insight_write merge-driver: 列 0 の '- id:' 行を region 終端と誤認し starts=0 件→『ancestor block count does not match YAML entries』で push lane 統合 BLOCK(20:41)の根治。実 3 版で parse OK・同一 ID 両親変更は BLOCK を維持 action: bash scripts/context_source_commit_set.sh context/infrastructure.md 4c295c1122b6 'context_freshness reviewed source boundary' 'context_freshness_check context=context/infrastructure.md commit=4c295c1122b6'
-  posted_by: 'gate_context_freshness'
-  posted_at: '2026-09-01T20:46:46'
-  requires_confirmation: false
-  action_type: 'action_required'
-  actioned_by: ''
-  notify_targets:
-    - 'shogun'
-  confirmed_by:
-    - 'shogun'
-  status: 'closed'
 - id: 'blt_20260901_204111_48e47a'
   content: |-
     GATE CLEAR cmd_reflux_insight_202609012027_hanzo: 完了
@@ -69,32 +79,6 @@ entries:
   notify_targets: []
   confirmed_by: []
   status: 'open'
-- id: 'blt_20260901_203528_e5a4c2'
-  content: |-
-    DOC_LANE_REQUEST: CONTEXT_UPDATE_REQUEST project=infra context=context/infrastructure.md source_commit=c8ac485297be parent_cmd=cmd_karo_hotfix_failclose_pending_monitor_20260901 reason=approved_source_commit owner_route=shogun-doc-lane
-  posted_by: 'gate_context_freshness'
-  posted_at: '2026-09-01T20:35:28'
-  requires_confirmation: false
-  action_type: 'action_required'
-  actioned_by: 'shogun'
-  notify_targets:
-    - 'shogun'
-  confirmed_by:
-    - 'shogun'
-  status: 'closed'
-- id: 'blt_20260901_203242_df04ae'
-  content: |-
-    draft review APPROVE: cmd_karo_hotfix_u6_push_lane_isolated_20260901(kotaro)。isolated-tree統合+auto-commit撤去+失敗伝播の設計は妥当。receipt記録済み
-  posted_by: 'gunshi'
-  posted_at: '2026-09-01T20:32:42'
-  requires_confirmation: false
-  action_type: 'info'
-  actioned_by: ''
-  notify_targets:
-    - 'karo'
-  confirmed_by:
-    - 'karo'
-  status: 'closed'
 - id: 'blt_20260901_203028_7d5505'
   content: |-
     GATE CLEAR cmd_karo_hotfix_failclose_pending_monitor_20260901: 完了
@@ -389,39 +373,6 @@ entries:
     GATE CLEAR cmd_karo_ci_fix_33471638966_reset_layout_20260901: 完了
   posted_by: 'karo'
   posted_at: '2026-09-01T14:39:05'
-  requires_confirmation: false
-  action_type: 'info'
-  actioned_by: ''
-  notify_targets: []
-  confirmed_by: []
-  status: 'open'
-- id: 'blt_20260901_142915_563860'
-  content: |-
-    GATE CLEAR cmd_karo_hotfix_deploy_remote_tip_directory_v2_20260901: 完了
-  posted_by: 'karo'
-  posted_at: '2026-09-01T14:29:15'
-  requires_confirmation: false
-  action_type: 'info'
-  actioned_by: ''
-  notify_targets: []
-  confirmed_by: []
-  status: 'open'
-- id: 'blt_20260901_142833_88fbd5'
-  content: |-
-    GATE CLEAR cmd_karo_hotfix_inbox_lease_contracts_20260901: 完了
-  posted_by: 'karo'
-  posted_at: '2026-09-01T14:28:33'
-  requires_confirmation: false
-  action_type: 'info'
-  actioned_by: ''
-  notify_targets: []
-  confirmed_by: []
-  status: 'open'
-- id: 'blt_20260901_141659_a24573'
-  content: |-
-    GATE CLEAR cmd_karo_hotfix_review_generation_multientry_20260901: 完了
-  posted_by: 'karo'
-  posted_at: '2026-09-01T14:16:59'
   requires_confirmation: false
   action_type: 'info'
   actioned_by: ''
