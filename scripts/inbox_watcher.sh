@@ -116,6 +116,43 @@ SINGLETON_LOCK_FILE="${STATE_DIR}/inbox_watcher_singleton_${AGENT_ID}.lock"
 DEFERRED_NUDGE_FILE="${STATE_DIR}/inbox_watcher_deferred_nudge_${AGENT_ID}"
 BUSY_QUEUE_CLAIM_FILE="${STATE_DIR}/inbox_watcher_busy_queue_claim_${AGENT_ID}"
 FIRST_UNREAD_SEEN="${FIRST_UNREAD_SEEN:-${STATE_DIR}/first_unread_seen_${AGENT_ID}}"
+idle_flag="${IDLE_FLAG_DIR}/shogun_idle_${AGENT_ID}"
+idle_flag_lock="${idle_flag}.lock"
+# Shared with stop_check_inbox.sh.  The flag is a lifecycle token, not a
+# timeout marker: only an observed idle pane may publish it, and delivery
+# consumes it before entering the active turn.
+set_idle_flag() {
+    (
+        flock -w 5 9 || exit 1
+        : > "$idle_flag"
+    ) 9>"$idle_flag_lock"
+}
+clear_idle_flag() {
+    (
+        flock -w 5 9 || exit 1
+        rm -f "$idle_flag"
+    ) 9>"$idle_flag_lock"
+}
+claim_idle_delivery() {
+    (
+        flock -w 5 9 || exit 1
+        local state
+        state=$(tmux display-message -t "$PANE_TARGET" -p '#{@agent_state}' 2>/dev/null || true)
+        if [ "$state" != "idle" ]; then
+            rm -f "$idle_flag"
+            exit 2
+        fi
+        tmux set-option -p -t "$PANE_TARGET" @agent_state active 2>/dev/null || true
+        rm -f "$idle_flag"
+    ) 9>"$idle_flag_lock"
+}
+restore_idle_delivery() {
+    (
+        flock -w 5 9 || exit 1
+        tmux set-option -p -t "$PANE_TARGET" @agent_state idle 2>/dev/null || true
+        : > "$idle_flag"
+    ) 9>"$idle_flag_lock"
+}
 FORCE_IDLE_AFTER_SEC="${FORCE_IDLE_AFTER_SEC:-60}"
 BUSY_TIMEOUT_SEC="${BUSY_TIMEOUT_SEC:-30}"  # @last_active based timeout (AC1: idle_flag force-creation)
 HANG_DETECT_SEC="${HANG_DETECT_SEC:-300}"  # seconds before daemon_watchdog.sh considers this watcher hung
@@ -678,38 +715,25 @@ maybe_force_idle_flag() {
     [ "$effective_cli" = "claude" ] || return 1
     ensure_current_pane_target || return 1
 
-    local idle_flag="${IDLE_FLAG_DIR}/shogun_idle_${AGENT_ID}"
     [ -f "$idle_flag" ] && return 1
 
-    # AC2: bash subprocess running → genuinely busy, skip timeout
+    # A background shell is genuinely busy even when the pane footer looks
+    # idle.  Never turn a stale clock into permission to deliver.
     if _agent_state_has_busy_subprocess "$PANE_TARGET"; then
         return 1
     fi
 
-    # AC1: @last_active based timeout — idle_flagなし+30秒以上前→強制生成
-    local last_active
-    last_active=$(tmux display-message -t "$PANE_TARGET" -p '#{@last_active}' 2>/dev/null || echo "")
-    if [[ "$last_active" =~ ^[0-9]+$ ]] && [ "$last_active" -gt 0 ]; then
-        local now elapsed
-        now=$EPOCHSECONDS
-        elapsed=$((now - last_active))
-        if [ "$elapsed" -ge "$BUSY_TIMEOUT_SEC" ]; then
-            echo "[$(date)] [RECOVERY] forcing idle flag for $AGENT_ID: @last_active ${elapsed}s ago (>= ${BUSY_TIMEOUT_SEC}s)" >&2
-            touch "$idle_flag"
-            return 0
-        fi
-    fi
+    local agent_state
+    agent_state=$(tmux display-message -t "$PANE_TARGET" -p '#{@agent_state}' 2>/dev/null || true)
+    [ "$agent_state" = "idle" ] || return 1
 
-    # Fallback: first_unread_seen based timeout (defense in depth)
-    local unread_age
-    unread_age=$(get_first_unread_age)
-    if [ "$unread_age" -lt "$FORCE_IDLE_AFTER_SEC" ]; then
-        return 1
+    # Reconcile a missing flag from the live pane state.  This is a normal
+    # lifecycle repair, not a timeout-based recovery/force path.
+    if set_idle_flag; then
+        echo "[$(date)] [IDLE-RECONCILED] restored idle flag for $AGENT_ID from @agent_state=idle" >&2
+        return 0
     fi
-
-    echo "[$(date)] [RECOVERY] forcing idle flag for $AGENT_ID after ${unread_age}s unread" >&2
-    touch "$idle_flag"
-    return 0
+    return 1
 }
 
 # ─── Fingerprint age helper ───
@@ -1061,17 +1085,8 @@ send_wakeup() {
     # Codex/other: fallback to @agent_state for compatibility
     local idle_flag="${IDLE_FLAG_DIR}/shogun_idle_${AGENT_ID}"
     if [[ "$effective_cli" == "claude" ]] && [ ! -f "$idle_flag" ] && ! maybe_force_idle_flag "$effective_cli"; then
-        # GP-139: FP-CHANGE連続時にBACKOFF到達不能 → first_unread_ageで独立安全弁
-        # 根因: 複数agent同時送信→FP毎回変化→FP-SAME/BACKOFF不到達→RECOVERY不能
-        local _unread_age_override
-        _unread_age_override=$(get_first_unread_age)
-        if [ "$_unread_age_override" -ge "$FORCE_IDLE_AFTER_SEC" ] 2>/dev/null; then
-            echo "[$(date)] [BUSY-OVERRIDE] Agent $AGENT_ID busy but unread for ${_unread_age_override}s >= ${FORCE_IDLE_AFTER_SEC}s, forcing nudge (GP-139)" >&2
-            touch "$idle_flag"
-        else
-            echo "[$(date)] [BUSY] Agent $AGENT_ID is busy (no idle flag), Stop hook will deliver" >&2
-            return 2
-        fi
+        echo "[$(date)] [BUSY] Agent $AGENT_ID is busy or pane state is unknown (no idle flag), Stop hook will deliver" >&2
+        return 2
     fi
 
     if [[ "$effective_cli" != "claude" ]]; then
@@ -1148,7 +1163,7 @@ send_wakeup() {
             fi
         fi
         # @agent_state=idle時にflag補完（flag方式との整合性）
-        [ ! -f "$idle_flag" ] && touch "$idle_flag"
+        [ ! -f "$idle_flag" ] && set_idle_flag
     fi
 
     # Tier 1.5: Debounce repeated nudge storms is enforced by one outstanding
@@ -1404,14 +1419,22 @@ send_wakeup() {
         elif [ "$allow_nonempty_input_line" = "1" ]; then
             echo "[$(date)] [INPUT-GUARD-BYPASS] $AGENT_ID is Codex active+busy; queueing nudge despite non-empty generated UI line" >&2
         fi
+        if [ "$effective_cli" = "claude" ]; then
+            if ! claim_idle_delivery; then
+                echo "[$(date)] [LIFECYCLE-GUARD] Deferring nudge for $AGENT_ID: idle claim was not valid" >&2
+                exit 2
+            fi
+        fi
         tmux set-buffer -b "nudge_${AGENT_ID}" "$nudge"
         if ! timeout "$SEND_KEYS_TIMEOUT" tmux paste-buffer -t "$PANE_TARGET" -b "nudge_${AGENT_ID}" -d 2>/dev/null; then
+            [ "$effective_cli" = "claude" ] && restore_idle_delivery || true
             [ -n "$sent_token" ] && rm -f "$sent_token" 2>/dev/null || true
             echo "[$(date)] WARNING: paste-buffer timed out ($SEND_KEYS_TIMEOUT s)" >&2
             exit 1
         fi
         sleep 0.5
         if ! timeout "$SEND_KEYS_TIMEOUT" tmux send-keys -t "$PANE_TARGET" Enter 2>/dev/null; then
+            [ "$effective_cli" = "claude" ] && restore_idle_delivery || true
             [ -n "$sent_token" ] && rm -f "$sent_token" 2>/dev/null || true
             echo "[$(date)] WARNING: send-keys Enter timed out ($SEND_KEYS_TIMEOUT s)" >&2
             exit 1
@@ -1463,14 +1486,6 @@ send_wakeup() {
     if [ "$_delivery_latency_sec" -ge "$DELIVERY_LATENCY_WARN_SEC" ]; then
         echo "[$(date)] [DELIVERY-LATENCY-WARN] $AGENT_ID: held ${_delivery_latency_sec}s >= ${DELIVERY_LATENCY_WARN_SEC}s threshold (busy gating tail latency)" >&2
     fi
-
-    # After successful nudge: consume idle flag (Stop hook recreates on idle)
-    rm -f "${IDLE_FLAG_DIR}/shogun_idle_${AGENT_ID}"
-
-    # After successful nudge: mark agent as active to prevent duplicate nudges
-    # before the agent's own PreToolUse/UserPromptSubmit hook fires.
-    tmux set-option -p -t "$PANE_TARGET" @agent_state active 2>/dev/null || true
-    echo "[$(date)] Set $AGENT_ID @agent_state to active after nudge" >&2
 
     echo "[$(date)] Wake-up sent to $AGENT_ID (${unread_count} unread via paste-buffer)" >&2
     return 0

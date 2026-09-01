@@ -5,6 +5,7 @@
 setup() {
     REPO_ROOT="$(cd "$BATS_TEST_DIRNAME/../.." && pwd)"
     GUARD="$REPO_ROOT/scripts/hooks/codex_inbox_priority_guard.sh"
+    READ_SCRIPT="$REPO_ROOT/scripts/inbox_read.sh"
     TMPD="$(mktemp -d)"
     INBOX="$TMPD/karo.yaml"
     old_ts="$(date -d '-10 minutes' '+%Y-%m-%dT%H:%M:%S')"
@@ -33,6 +34,13 @@ EOF
 }
 
 teardown() { rm -rf "$TMPD"; }
+
+read_inbox() {
+    local root="$1"
+    SHOGUN_ROOT="$root" \
+        INBOX_READ_RECEIPT_DIR="$root/logs/inbox_read_receipts" \
+        bash "$READ_SCRIPT" karo >/dev/null
+}
 
 run_guard() {
     local command="$1"
@@ -74,6 +82,7 @@ run_guard() {
     cp "$INBOX" "$evidence_root/queue/inbox/karo.yaml"
     printf 'task:\n  status: idle\n' > "$evidence_root/queue/tasks/karo.yaml"
     printf 'entries:\n- id: bulletin_msg_old_shogun\n  content: msg_old_shogun\n' > "$evidence_root/queue/bulletin_board.yaml"
+    read_inbox "$evidence_root"
     run env INBOX_MARK_READ_ROOT_OVERRIDE="$evidence_root" bash "$REPO_ROOT/scripts/inbox_mark_read.sh" karo msg_old_shogun
     [ "$status" -eq 0 ]
     grep -q 'read: true' "$evidence_root/queue/inbox/karo.yaml"
@@ -126,6 +135,7 @@ run_guard() {
     cp "$INBOX" "$fixture_root/queue/inbox/karo.yaml"
     printf 'task:\n  status: idle\n' > "$fixture_root/queue/tasks/karo.yaml"
 
+    read_inbox "$fixture_root"
     run env INBOX_MARK_READ_ROOT_OVERRIDE="$fixture_root" bash "$REPO_ROOT/scripts/inbox_mark_read.sh" karo msg_old_shogun
     [ "$status" -eq 2 ]
     [[ "$output" == *"without task YAML, bulletin, or reply-inbox processing evidence"* ]]

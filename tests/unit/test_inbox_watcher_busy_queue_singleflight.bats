@@ -168,3 +168,92 @@ get_unread_info
     [ "$status" -eq 0 ]
     [[ "$output" == *$'\thigh\t'* ]]
 }
+
+@test "Claudeの欠落flagはlive idle stateから再調整しRECOVERYを発火しない" {
+    run bash -c '
+set -euo pipefail
+root="'"$PROJECT_ROOT"'"
+tmp="$(mktemp -d)"
+trap "rm -rf \"$tmp\"" EXIT
+mkdir -p "$tmp/root/scripts/lib" "$tmp/root/lib" "$tmp/root/queue/inbox" "$tmp/state"
+for f in lock_path.sh cli_lookup.sh tmux_utils.sh script_update.sh inbox_nudge_policy.sh respawn_recovery.sh; do
+  ln -s "$root/scripts/lib/$f" "$tmp/root/scripts/lib/$f"
+done
+ln -s "$root/lib/agent_state.sh" "$tmp/root/lib/agent_state.sh"
+ln -s "$root/scripts/inbox_watcher.sh" "$tmp/root/scripts/inbox_watcher.sh"
+cat > "$tmp/root/queue/inbox/fixture.yaml" <<YAML
+messages:
+- {id: msg_idle_reconcile, type: report_received, read: false, content: report}
+YAML
+export SHOGUN_STATE_DIR="$tmp/state" INBOX_WATCHER_LIB_ONLY=1
+source "$tmp/root/scripts/inbox_watcher.sh" fixture dummy-pane
+unset INBOX_WATCHER_LIB_ONLY
+ensure_current_pane_target() { return 0; }
+_agent_state_has_busy_subprocess() { return 1; }
+tmux() {
+  case "$1" in
+    display-message)
+      case "${*: -1}" in
+        *agent_id*) echo fixture ;;
+        *agent_state*) echo idle ;;
+        *) echo active ;;
+      esac ;;
+    *) : ;;
+  esac
+}
+rm -f "$idle_flag"
+FORCE_IDLE_AFTER_SEC=0 BUSY_TIMEOUT_SEC=0
+if ! maybe_force_idle_flag claude 2>"$tmp/stderr"; then
+  echo "reconcile_failed"
+  exit 1
+fi
+test -f "$idle_flag"
+! grep -q "RECOVERY" "$tmp/stderr"
+grep -q "IDLE-RECONCILED" "$tmp/stderr"
+printf "reconciled=1 recovery=0\n"
+' 2>&1
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"reconciled=1 recovery=0"* ]]
+}
+
+@test "Claudeのactive stateは欠落flagを再調整せずfail-closedする" {
+    run bash -c '
+set -euo pipefail
+root="'"$PROJECT_ROOT"'"
+tmp="$(mktemp -d)"
+trap "rm -rf \"$tmp\"" EXIT
+mkdir -p "$tmp/root/scripts/lib" "$tmp/root/lib" "$tmp/root/queue/inbox" "$tmp/state"
+for f in lock_path.sh cli_lookup.sh tmux_utils.sh script_update.sh inbox_nudge_policy.sh respawn_recovery.sh; do
+  ln -s "$root/scripts/lib/$f" "$tmp/root/scripts/lib/$f"
+done
+ln -s "$root/lib/agent_state.sh" "$tmp/root/lib/agent_state.sh"
+ln -s "$root/scripts/inbox_watcher.sh" "$tmp/root/scripts/inbox_watcher.sh"
+printf "messages:\n" > "$tmp/root/queue/inbox/fixture.yaml"
+export SHOGUN_STATE_DIR="$tmp/state" INBOX_WATCHER_LIB_ONLY=1
+source "$tmp/root/scripts/inbox_watcher.sh" fixture dummy-pane
+unset INBOX_WATCHER_LIB_ONLY
+ensure_current_pane_target() { return 0; }
+_agent_state_has_busy_subprocess() { return 1; }
+tmux() {
+  case "$1" in
+    display-message)
+      case "${*: -1}" in
+        *agent_id*) echo fixture ;;
+        *agent_state*) echo active ;;
+        *) echo active ;;
+      esac ;;
+    *) : ;;
+  esac
+}
+rm -f "$idle_flag"
+if maybe_force_idle_flag claude 2>"$tmp/stderr"; then
+  echo "unexpected_reconcile"
+  exit 1
+fi
+test ! -e "$idle_flag"
+! grep -q "RECOVERY" "$tmp/stderr"
+printf "active_deferred=1 recovery=0\n"
+' 2>&1
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"active_deferred=1 recovery=0"* ]]
+}

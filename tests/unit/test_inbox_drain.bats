@@ -4,10 +4,17 @@ setup() {
     ROOT="$BATS_TEST_TMPDIR/root"
     mkdir -p "$ROOT/scripts/lib" "$ROOT/queue/inbox"
     cp "$BATS_TEST_DIRNAME/../../scripts/inbox_drain.sh" "$ROOT/scripts/inbox_drain.sh"
+    cp "$BATS_TEST_DIRNAME/../../scripts/inbox_read.sh" "$ROOT/scripts/inbox_read.sh"
     cp "$BATS_TEST_DIRNAME/../../scripts/inbox_mark_read.sh" "$ROOT/scripts/inbox_mark_read.sh"
     cp "$BATS_TEST_DIRNAME/../../scripts/lib/lock_path.sh" "$ROOT/scripts/lib/lock_path.sh"
     cp "$BATS_TEST_DIRNAME/../../scripts/lib/yaml_field_set.sh" "$ROOT/scripts/lib/yaml_field_set.sh"
     INBOX="$ROOT/queue/inbox/alpha.yaml"
+}
+
+read_inbox() {
+    SHOGUN_ROOT="$ROOT" \
+        INBOX_READ_RECEIPT_DIR="$ROOT/logs/inbox_read_receipts" \
+        bash "$ROOT/scripts/inbox_read.sh" alpha >/dev/null
 }
 
 write_inbox() {
@@ -19,6 +26,7 @@ write_inbox() {
 
 @test "drain outputs every unread record and marks each id once" {
     write_inbox
+    read_inbox
     run env INBOX_DRAIN_ROOT_OVERRIDE="$ROOT" bash "$ROOT/scripts/inbox_drain.sh" alpha
     [ "$status" -eq 0 ]
     [ "$(printf '%s\n' "$output" | grep -c '"id":')" -eq 2 ]
@@ -32,6 +40,7 @@ write_inbox() {
 
 @test "concurrent drains and arrival have no lost update duplicate or missed unread" {
     write_inbox
+    read_inbox
     env INBOX_DRAIN_ROOT_OVERRIDE="$ROOT" bash "$ROOT/scripts/inbox_drain.sh" alpha >"$ROOT/a.out" &
     p1=$!
     env INBOX_DRAIN_ROOT_OVERRIDE="$ROOT" bash "$ROOT/scripts/inbox_drain.sh" alpha >"$ROOT/b.out" &
@@ -49,6 +58,7 @@ with open(path + '.lock', 'a+') as lock:
     with os.fdopen(fd, 'w') as out: yaml.safe_dump(data, out, sort_keys=False)
     os.replace(tmp, path)
 PY
+    read_inbox
     cat "$ROOT/a.out" "$ROOT/b.out" >"$ROOT/all.out"
     [ "$(grep -c '"id": "m1"' "$ROOT/all.out")" -eq 1 ]
     [ "$(grep -c '"id": "m2"' "$ROOT/all.out")" -eq 1 ]
