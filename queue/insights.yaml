@@ -12581,3 +12581,10 @@ insights:
   resolved_reason: "semantic map generation verified the candidate is represented or intentionally ignored"
   action_artifact: "semantic_map=/home/simokitafresh/multi-agent-shogun/context/semantic-map.md;semantic_index=/home/simokitafresh/multi-agent-shogun/docs/semantic-index/index.md"
   resolved_at: "2026-09-01T19:34:17+09:00"
+- id: INS-20260901-194125324-edd7
+  ts: "2026-09-01T19:41:25+09:00"
+  insight: "cmd_complete NO_MATCH aliases候補: cmd_karo_hotfix_review_processing_receipt_20260901 hayate lesson_candidate: inbox read receiptは本文処理receiptと分離して型別に強制する inbox読取receiptだけではreview本文処理を証明できず、review_draft/report_reviewはreport identityとreviewed_atの後続性をmark-read直前に検証する必要がある。origin: [[review未処理既読化]] -> [[receipt範囲不足]] -> [[型別review_processing_receipt]]"
+  priority: "low"
+  source: "cmd_complete_gate:memory_phase"
+  fix_known: false
+  status: pending
