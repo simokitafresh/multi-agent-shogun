@@ -12329,4 +12329,21 @@ insights:
   priority: "low"
   source: "semantic_stress_test"
   fix_known: false
+  status: resolved
+  resolved_reason: "semantic index candidate was absorbed into a registered concept"
+  action_artifact: "semantic_index=/home/simokitafresh/multi-agent-shogun/docs/semantic-index/index.md"
+  resolved_at: "2026-09-01T13:57:54+09:00"
+- id: INS-20260901-140252403-336d
+  ts: "2026-09-01T14:02:52+09:00"
+  insight: "gate予測精度50%(2/4)。偽陽性2件: cmd_4440(BLOCK→CLEAR)、cmd_karo_hotfix_cfc_origin_basis_20260901(BLOCK→CLEAR)。sample=4件のみで統計的信頼度低い。BLOCK予測が保守的すぎる可能性。全体accuracy計算でskipped=55件=gate_prediction未記入"
+  priority: "medium"
+  source: "manual"
+  fix_known: false
+  status: pending
+- id: INS-20260901-144341173-63a7
+  ts: "2026-09-01T14:43:41+09:00"
+  insight: "semantic_index_update新概念候補: discussion:インフラバグは根治したか？循環エラーは起きないか？ は 既存aliasesに一致なし。概念定義とaliases追加を検討せよ"
+  priority: "low"
+  source: "semantic_index_update"
+  fix_known: false
   status: pending

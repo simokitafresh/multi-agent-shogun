@@ -1722,6 +1722,35 @@ HOOK
 # test_necessity: a foreign blob present in the final private candidate tree
 # must be rejected before commit-tree/update-ref; this is the 980b4110 safety
 # invariant and cannot be proved by the existing post-publication assertion.
+# test_necessity: -h/--help must print usage on stdout with rc=0; misuse (unknown
+# option / no message) must keep BLOCK on stderr with rc=2. Help is not a BLOCK.
+# regression_justification: 2026-09-01 Karo ran `--help` three times and got
+# "BLOCK: unknown argument" rc=2 each time (lord audit 13:22; karo review 14:12
+# REJECT because usage went to stderr).
+@test "help flags print usage on stdout and exit 0" {
+    run bash -c 'bash "$1" --help 2>/dev/null' _ "$HELPER"
+    [ "$status" -eq 0 ]
+    [[ "$output" == Usage:* ]]
+    run bash -c 'bash "$1" -h 2>&1 >/dev/null' _ "$HELPER"
+    [ "$status" -eq 0 ]
+    [ -z "$output" ]
+}
+
+@test "unknown option is a BLOCK on stderr with rc=2 and nothing on stdout" {
+    run bash -c 'bash "$1" --bogus 2>/dev/null' _ "$HELPER"
+    [ "$status" -eq 2 ]
+    [ -z "$output" ]
+    run bash -c 'bash "$1" --bogus 2>&1 >/dev/null' _ "$HELPER"
+    [ "$status" -eq 2 ]
+    [[ "$output" == *"BLOCK: unknown argument: --bogus"* ]]
+}
+
+@test "no arguments is a BLOCK with rc=2" {
+    run bash -c 'cd "$2" && bash "$1"' _ "$HELPER" "$REPO"
+    [ "$status" -eq 2 ]
+    [[ "$output" == *"BLOCK:"* ]]
+}
+
 @test "final private tree scope detector blocks foreign blob before HEAD publication" {
     repo="$BATS_TEST_TMPDIR/prepublish-scope-detector"
     git init -q "$repo"

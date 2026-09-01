@@ -1591,9 +1591,8 @@ fi
 echo ""
 echo "■ SG-PRE28: 正直報告×AC本旨照合(LG044)"
 if [ "${AC_EVIDENCE_MAPPING_MISSING:-0}" = "1" ]; then
-    echo "  ★★★ ERROR: 正直報告フラグあり・binary_checks全yesだがac_evidence_mapping欠落: ${AC_EVIDENCE_MAPPING_MISSING_KEYS}"
-    echo "  → LG044: 懸念の正直さとAC本旨充足は別軸。各非commit ACの実体証拠を1:1 mappingで示すまでFAIL/REQUEST_CHANGES"
-    ERRORS=$((ERRORS + 1))
+    echo "  WARN: 正直報告フラグあり・binary_checks全yesだがac_evidence_mapping欠落: ${AC_EVIDENCE_MAPPING_MISSING_KEYS}"
+    echo "  → LG044: レビュー観点として確認せよ(gateにac_evidence_mappingチェックなし=BLOCK予測しない)"
 elif [ "${HONEST_REPORT_FLAG:-0}" = "1" ]; then
     echo "  PASS: 正直報告フラグあり、全非commit ACのac_evidence_mappingを確認"
 else

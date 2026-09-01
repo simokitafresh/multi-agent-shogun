@@ -180,6 +180,12 @@ while (($#)); do
             shift
             break
             ;;
+        -h|--help)
+            # 2026-09-01: 家老が --help を 3 回連続で BLOCK(rc=2)され使用法確認に往復した。
+            # help は usage を stdout に出して rc=0(BLOCK ではない)。誤用時の usage は stderr のまま。
+            usage 2>&1
+            exit 0
+            ;;
         *)
             echo "BLOCK: unknown argument: $1" >&2
             usage

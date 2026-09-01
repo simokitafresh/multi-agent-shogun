@@ -168,6 +168,17 @@ test_execution:
 - **enforcement**: agent_respawn.sh 作業中ガード(e3712b4a9)/codex_inbox_priority_guard.sh(42f09d54b)/cli_lookup 接尾辞自己修復+BASH_REMATCH 排除(bc9f4a8c6)/script_update.sh bash フォールバック(2df2ecdee)/inbox_write gunshi 宛 review_draft 許可+stderr 記録(c17a92d8e)。未自動化: push 単位 1 commit の強制(pre-push hook で origin..pushed が first-parent 1 段を超えたら WARN)。
 - origin: `[[殿裁定_1commitずつpush_20260826]] -> [[家老の行動型_1通1単位]] -> [[つまり3本根治_20260827]]`
 
+## 復帰後の型・第十九弾 7則（2026-09-01 12:02-14:35 第20便: 放置監査/launcher 点検/試行錯誤=バグ×2(将軍・家老)/将軍が起きない/家老レビュー往復から・将軍自身に適用）
+
+1. **家老の『介入不要』(二次)で idle 化するな。gate_metrics の cmd 別最終状態と『delegated∧task 無し』を自分で引け。** 11:59 前将軍は家老報告で『便は回転中』と閉じ、殿 12:03『先送りや放置はないか』で 4440(15h BLOCK)/4441(16h)/4436(21h)が露出。真因は gate が web route `/faq/en/` を絶対パス抽出する FP(2467ded95)。次の自動化=startup gate に『delegated_at から N 分超∧配備 0』検知(未着手)。
+2. **根治は『誰がどの file を叩くか』の実入口に置け。新 root の guard は旧 root の launcher を守らない。** 1dec8243c の MIGRATED_TO_EXT4 guard は `/mnt/c/tools` の launcher(08-27 版)に無く一度も発火せず(bash_history に `cd /mnt/c/tools`)。旧 file を exec stub 化(原本 .pre_cutover_orig)。同名 file(scripts/shutsujin_departure.sh=呼出し元 0 の死骸)を実体と誤読した=呼出し元 grep で実体を先に確定する(LS-A09(50))。
+3. **ready/idle の regex は live pane 全数で実測し、busy marker 不在まで条件に含めよ。** 旧『bypass approvals and sandbox』は現行 Codex に 0 一致。Codex は作業中も `› Ask Codex` を常設する=prompt 一致だけでは偽 ready(家老 REJECT 2 回で到達: 045bb223e)。正本は scripts/lib/cli_ready.sh 1 箇所。
+4. **試行錯誤の裏のバグは自分の分も家老の分も一次で列挙し、その場で D0。** 将軍 4 件(memory_db_query 位置引数/Guard4 の読み取り誤 BLOCK/非 tty stdin hang rc124/Edit で +x 喪失)、家老 4 件(--help rc2/push lane remote_tip_not_ancestor 23-40 分停止→merge 自動統合 54ccc3b27(本番 proof 14:22 INTEGRATE)/ci_fix 名前契約/gate_karo_startup の `false` 是正コマンド 272d5123d)。殿の『試行錯誤はあったか』は監査の型として毎便で自問する。
+5. **文字列一致の guard/hook は散文中の引用・本文中の語に反応する=陰性 fixture を必ず持て。** 同日 5 例: Guard4(読み取り pipeline の sed/awk)、stress noise(`…ようにinbox1` の \b)、confirmation guard(将軍の回答文『❯ 1. Yes』→殿 13:14『将軍が起きない』)、bats 語(commit message)、`sed -i` 語(掲示板本文)。本文はファイル経由で渡し、hook 側は構造(行頭・書込み形・ASCII 境界)で判定する。自分の Guard4 Edit で hook を構文エラー化し全 Bash が 1 回止まった=regex は変数へ逃がし bash -n を先に。
+6. **既存 FAIL の切り分けは『HEAD worktree+同 harness』の baseline で行い、自分の未 commit 差分は他忍者の scope commit を止めると知れ。** stall #1/#5/#6 は HEAD でも FAIL(小太郎 hotfix 対象)。将軍の未 commit `ninja_monitor.sh` 差分で小太郎・疾風が BLOCK→patch 退避で先に解放(利他)。HOT-RELOAD 直後は旧世代 worker が FENCE(設計、push_lane START 9/FENCE 5)=monitor の編集回数がそのまま便の機会損失。
+7. **家老レビューは REJECT 前提で回す(3 往復で到達)。REJECT は修正案付きで返るので 1 往復ごとに契約 test を増やす。** 559c02538→596cd1bb5→045bb223e、6becee0f9→f8f5215dc。APPROVE 3+修正後 3=6/6。
+- origin: `[[殿指示_強くてニューゲーム_20260901_1433]] -> [[放置3本_gate_route_FP]] -> [[旧root_stub_1dec8243c空振り]] -> [[cli_ready_busy_marker]] -> [[試行錯誤=バグ_将軍4家老4]] -> [[文字列一致guard_5例]] -> [[push_lane_auto_integrate_54ccc3b27]] -> [[復帰後の型_第十九弾]]`
+
 ## 復帰後の型・第十八弾 7則（2026-08-31 00:23-03:00 第18便: Free tier 殿実機 4 段/LP 4 点/Cloudflare 地域言語/dangling 便停止から・将軍自身に適用）
 
 1. **『前提 N/N 到達』は env の存在(二次)でなく build/live の時刻(一次)で言え。static export(NEXT_PUBLIC_*)は env 投入→build の順序が契約、Render は API 経由の env 変更で自動 redeploy しない。** 00:45 に 5/5 と書いた直後、殿実機 00:49『Google サインインは現在設定されていません』=FE build 22:09 < env 22:52 で chunk に supabase.co 0 件。以後 deploy 前提は『env 投入時刻 < live build createdAt ∧ chunk に key ≥1』で判定(家老 runbook 870fb92ee)。

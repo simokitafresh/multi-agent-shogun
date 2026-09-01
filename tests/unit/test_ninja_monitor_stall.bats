@@ -8120,6 +8120,9 @@ YAML
                 *"symbolic-ref --quiet --short HEAD"*) printf "main\n" ;;
                 *"rev-parse origin/main"*) printf "%s\n" "$remote_sha" ;;
                 *"merge-base --is-ancestor origin/main HEAD"*) return 1 ;;
+                *"merge-base --is-ancestor HEAD origin/main"*) return 1 ;;
+                *"merge --no-ff"*|*"merge --ff-only"*) return 1 ;;
+                *"merge --abort"*) return 0 ;;
                 *) return 0 ;;
             esac
         }
@@ -8128,10 +8131,54 @@ YAML
         check_push_lane GREEN
         test ! -e "$root/publish.log"
         test "$(grep -c "BLOCK reason=remote_tip_not_ancestor" "$PUSH_LANE_LOG")" -eq 1
+        test "$(grep -c "auto_merge=failed" "$PUSH_LANE_LOG")" -eq 1
         printf "unmerged_branch=1 block=1 push=0 false_positive=0 skip=0\n"
     '
     [ "$status" -eq 0 ]
     [ "$output" = "unmerged_branch=1 block=1 push=0 false_positive=0 skip=0" ]
+}
+
+# test_necessity: when origin/main is not an ancestor of HEAD but the automatic
+# integrate merge succeeds, the lane must log INTEGRATE and continue to the
+# first-parent candidate scan instead of blocking (2026-09-01 push stalls of
+# 23 min and 40 min while Karo made "runtime: integrate …" merges by hand).
+@test "push lane auto-integrates origin/main when the merge succeeds" {
+    run env PROJECT_ROOT="$PROJECT_ROOT" bash -c '
+        set -euo pipefail
+        export NINJA_MONITOR_LIB_ONLY=1
+        source "$PROJECT_ROOT/scripts/ninja_monitor.sh"
+        unset NINJA_MONITOR_LIB_ONLY
+        root="$BATS_TEST_TMPDIR/push-lane-auto-integrate"
+        mkdir -p "$root/logs" "$root/state"
+        SCRIPT_DIR="$root" STATE_DIR="$root/state" LOG="$root/logs/monitor.log"
+        PUSH_LANE_LOG="$root/logs/push.log" PUSH_LANE_LOCK_FILE="$root/state/push.lock"
+        PUSH_LANE_MIN_AGE_SEC=600
+        remote_sha=1111111111111111111111111111111111111111
+        candidate_sha=2222222222222222222222222222222222222222
+        merged=0
+        git() {
+            case "$*" in
+                *"rev-list --count"*) printf "1\n" ;;
+                *"rev-list --first-parent --reverse"*) printf "%s\n" "$candidate_sha" ;;
+                *"symbolic-ref --quiet --short HEAD"*) printf "main\n" ;;
+                *"rev-parse origin/main"*) printf "%s\n" "$remote_sha" ;;
+                *"rev-parse HEAD"*) printf "%s\n" "$candidate_sha" ;;
+                *"merge-base --is-ancestor HEAD origin/main"*) return 1 ;;
+                *"merge-base --is-ancestor origin/main HEAD"*) [ -e "$root/merged" ] && return 0 || return 1 ;;
+                *"merge --no-ff"*) : > "$root/merged"; return 0 ;;
+                *"show -s --format=%ct"*) printf "1\n" ;;
+                *) return 0 ;;
+            esac
+        }
+        push_lane_pre_push_hook_ready() { return 0; }
+        push_lane_publish_one() { printf "push\n" > "$root/publish.log"; return 0; }
+        check_push_lane GREEN || true
+        test "$(grep -c "INTEGRATE remote=$remote_sha" "$PUSH_LANE_LOG")" -eq 1
+        test "$(grep -c "BLOCK reason=remote_tip_not_ancestor" "$PUSH_LANE_LOG")" -eq 0
+        printf "auto_integrate=1 block=0\n"
+    '
+    [ "$status" -eq 0 ]
+    [ "$output" = "auto_integrate=1 block=0" ]
 }
 
 # test_necessity: GA-PUSH1 is a candidate-local failure. It is recorded once,
