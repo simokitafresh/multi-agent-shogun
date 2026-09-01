@@ -584,14 +584,16 @@ bulk_mark_read_guard() {
         recent="$(awk -v n="$now" -v w="$INBOX_MARK_READ_BULK_WINDOW_SEC" -v me="$MSG_ID" '($1+0) >= (n-w) && $2 != me && !seen[$2]++ {c++} END{print c+0}' "$ledger" 2>/dev/null || echo 0)"
     fi
     if [ "$recent" -ge "$INBOX_MARK_READ_BULK_MAX_CALLS" ]; then
-        # The count heuristic cannot distinguish an unread loop from a
-        # legitimate fast three-message sequence.  Keep it as telemetry by
-        # default; explicit enforcement is available for incident probes.
+        # 2026-09-01 15:49 家老 REJECT(blt_154942): 本番で家老が gate 通知→LGTM ACCEPT→
+        # accept_report 照合の正規 3 件を順次処理して 3 件目が BLOCK=偽陽性。窓内件数は
+        # 未処理 loop と高速な正規処理を区別できない。既定は WARN+ledger(観測)に留め、
+        # BLOCK は INBOX_MARK_READ_BULK_ENFORCE=1 の明示時のみ。真の判定は inbox 読取経路の
+        # 処理 receipt(msg_id+content hash)一致=次弾(INS 登録)。
         if [ "${INBOX_MARK_READ_BULK_ENFORCE:-0}" = "1" ]; then
             echo "BLOCK: bulk mark-read pattern — ${recent} other message(s) marked read for ${AGENT_ID} in the last ${INBOX_MARK_READ_BULK_WINDOW_SEC}s (limit ${INBOX_MARK_READ_BULK_MAX_CALLS}). Read and process each message before marking it; do not loop over read:false ids. msg_id=${MSG_ID} stays unread." >&2
             return 1
         fi
-        echo "[inbox_mark_read] WARN(bulk-pattern): ${recent} other message(s) marked read for ${AGENT_ID} in the last ${INBOX_MARK_READ_BULK_WINDOW_SEC}s — observe-only; processing receipt is authoritative" >&2
+        echo "[inbox_mark_read] WARN(bulk-pattern): ${recent} other message(s) marked read for ${AGENT_ID} in the last ${INBOX_MARK_READ_BULK_WINDOW_SEC}s — read each message before marking (observe-only; INBOX_MARK_READ_BULK_ENFORCE=1 to block)" >&2
         printf '%s\t%s\tWARN\n' "$now" "$MSG_ID" >> "$INBOX_MARK_READ_LEDGER_DIR/${AGENT_ID}.warn.tsv" 2>/dev/null || true
     fi
     printf '%s\t%s\n' "$now" "$MSG_ID" >> "$ledger" 2>/dev/null || true

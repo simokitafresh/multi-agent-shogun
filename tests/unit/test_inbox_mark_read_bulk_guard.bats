@@ -69,26 +69,29 @@ _read_inbox() {
     [ "$status" -eq 0 ]
 }
 
-@test "third distinct message inside the window is marked with observe-only WARN" {
+@test "default: third distinct message inside the window is marked with observe-only WARN" {
     _read_inbox
+    # karo REJECT 2026-09-01 15:49: gate notice -> LGTM ACCEPT -> accept_report check is a
+    # legitimate 3-in-10s sequence; a count heuristic must never block it.
     run bash "$TEST_SCRIPT" gunshi msg_a; [ "$status" -eq 0 ]
     run bash "$TEST_SCRIPT" gunshi msg_b; [ "$status" -eq 0 ]
     run bash "$TEST_SCRIPT" gunshi msg_c
     [ "$status" -eq 0 ]
     [[ "$output" == *"WARN(bulk-pattern)"* ]]
-    [ "$(_read_status msg_a)" = "true" ]
-    [ "$(_read_status msg_b)" = "true" ]
+    [[ "$output" != *"BLOCK"* ]]
     [ "$(_read_status msg_c)" = "true" ]
+    [ -s "$TEST_ROOT/logs/inbox_mark_read_ledger/gunshi.warn.tsv" ]
 }
 
-@test "enforcement mode blocks the heuristic but preserves the unread message" {
+@test "enforcement mode blocks the heuristic and preserves the unread message" {
     _read_inbox
     run bash "$TEST_SCRIPT" gunshi msg_a; [ "$status" -eq 0 ]
-    run bash "$TEST_SCRIPT" gunshi msg_b
-    [ "$status" -eq 0 ]
+    run bash "$TEST_SCRIPT" gunshi msg_b; [ "$status" -eq 0 ]
     run env INBOX_MARK_READ_BULK_ENFORCE=1 bash "$TEST_SCRIPT" gunshi msg_c
     [ "$status" -eq 2 ]
     [[ "$output" == *"BLOCK: bulk mark-read pattern"* ]]
+    [ "$(_read_status msg_a)" = "true" ]
+    [ "$(_read_status msg_b)" = "true" ]
     [ "$(_read_status msg_c)" = "false" ]
 }
 

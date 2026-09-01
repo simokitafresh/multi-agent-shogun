@@ -168,6 +168,14 @@ test_execution:
 - **enforcement**: agent_respawn.sh 作業中ガード(e3712b4a9)/codex_inbox_priority_guard.sh(42f09d54b)/cli_lookup 接尾辞自己修復+BASH_REMATCH 排除(bc9f4a8c6)/script_update.sh bash フォールバック(2df2ecdee)/inbox_write gunshi 宛 review_draft 許可+stderr 記録(c17a92d8e)。未自動化: push 単位 1 commit の強制(pre-push hook で origin..pushed が first-parent 1 段を超えたら WARN)。
 - origin: `[[殿裁定_1commitずつpush_20260826]] -> [[家老の行動型_1通1単位]] -> [[つまり3本根治_20260827]]`
 
+## 復帰後の型・第二十一弾 4則（2026-09-01 15:02-16:27 第21便後半: 偽 BLOCK の 3 層根治/件数 heuristic の本番 FP/数値突合 3 層/自分の dirty 差分から・将軍自身に適用）
+
+1. **pane 識別子は『誰が見ているか』ではなく『誰が走っているか』。pane の CLI でないプロセス(daemon・`claude -p` 子)に TMUX_PANE を渡すな、hook は active pane へ fallback するな。** 15:19/15:39 の 2 回、将軍の deepdive marker が別プロセスで書換えられ stop hook が偽 BLOCK、CoDD prompt が殿 inbound として誤記録。層 1=hook fallback(d5b9d8d95)、層 2=`-t ""`(37f7d2732)、層 3=monitor 世代が将軍 pane から継承した TMUX_PANE=%0 → codd propagate → `claude --print`(c7dada38c)。1 層直して再発したら「同じ現象を出す別の入口」を `/proc/<pid>/environ` で探せ。偽 BLOCK は迂回(marker 手書換)で終わらせず、marker は真の /clear 時刻へ戻し根治を 3 層まで追う。
+2. **件数・頻度の heuristic を BLOCK に使うな(WARN+ledger まで)。未処理 loop と高速な正規処理は件数では区別できない。** bulk guard v1(10 秒 3 件 BLOCK)は本番で家老の正規 3 件連続処理を止めた(REJECT 15:49)。真の判定は「読んだ証拠」(処理 receipt)。家老の REJECT が本番 FP を持って来たら、まず既定を観測へ戻し(bf13c13bd)、正しい判定器は別 lane で作る。
+3. **殿の『正しく計算されているか』は 3 層の機械突合で答える: (a)DB⇔API 一致 (b)入力(prices/DTB3/config)からの独立再計算 (c)状態遷移規則(rebalance_trigger)の検算。母集団 N/N を必ず添え、『一見おかしい』(シン朱雀 raw≠保有)は規則(偶数月のみ)で説明できるまで疑う。** 101 PF 全一致、変更は DM3 のみ、を 10 分で出せた=手順は `rebalance_day_numeric_reconciliation_20260901`。
+4. **自分の insight_write/教訓追記は即 commit。未 commit の queue/insights.yaml は忍者 reflux の dirty-guard を踏み、lifecycle 失敗行として自分に返ってくる(16:14 saizo ×2)。** LS-A14(2)の insight 版。
+- origin: `[[殿指示_強くてニューゲーム_20260901_1626]] -> [[偽BLOCK_3層_TMUX_PANE継承]] -> [[bulk_guard_本番FP→WARN既定]] -> [[数値突合3層_101PF全一致]] -> [[insights_dirty_reflux]] -> [[復帰後の型_第二十一弾]]`
+
 ## 復帰後の型・第二十弾 4則（2026-09-01 14:38-15:02 第21便: 自分の前便が壊した CI/仮説 3 本の手元否定/backlog worktree 回収/家老レビュー 3 往復から・将軍自身に適用）
 
 1. **file を drop する前の呼出し元 census は scripts/ だけでなく tests/(契約)を母集団にせよ。自分の前便の commit が今の RED の犯人であり得る。** 559c02538『死骸 drop』が `tests/unit/test_reset_layout.bats:60` の grep 契約を破り shard1 RED→push lane `WAIT ci=RED ci_fix_active=0`。家老 a58ab1d66→ecfcdfcb9 で GREEN。構造型=pre-commit `deleted_ref`(9de79b9a1: EXACT path 参照残存=BLOCK、空白 justification=BLOCK、非空 justification=WARN+JSONL、basename=候補 WARN、bats 8/8)。
