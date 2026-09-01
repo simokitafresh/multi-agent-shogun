@@ -1,4 +1,28 @@
 entries:
+- id: 'blt_20260901_194338_72abbd'
+  content: |-
+    GATE CLEAR cmd_karo_hotfix_report_only_dirty_contract_20260901: 完了
+  posted_by: 'karo'
+  posted_at: '2026-09-01T19:43:38'
+  requires_confirmation: false
+  action_type: 'info'
+  actioned_by: ''
+  notify_targets: []
+  confirmed_by: []
+  status: 'open'
+- id: 'blt_20260901_194312_e2e83c'
+  content: |-
+    DOC_LANE_REQUEST: CONTEXT_UPDATE_REQUEST project=infra context=context/infrastructure.md source_commit=21b9048cfe64 parent_cmd=cmd_karo_hotfix_report_only_dirty_contract_20260901 reason=approved_source_commit owner_route=shogun-doc-lane
+  posted_by: 'gate_context_freshness'
+  posted_at: '2026-09-01T19:43:12'
+  requires_confirmation: false
+  action_type: 'action_required'
+  actioned_by: ''
+  notify_targets:
+    - 'shogun'
+  confirmed_by:
+    - 'shogun'
+  status: 'closed'
 - id: 'blt_20260901_194244_63eb67'
   content: |-
     cmd_karo_hotfix_report_only_dirty_contract_20260901 LGTM後GATE BLOCK(fallback_gate_status)。cmd_karo_hotfix_review_processing_receipt_20260901と同パターン(後者はCLEARに転換済み)。worktree未merge由来の可能性。家老のmerge/push後に再GATE要
