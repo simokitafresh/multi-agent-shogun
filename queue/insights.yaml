@@ -12424,7 +12424,10 @@ insights:
   priority: "low"
   source: "semantic_index_update"
   fix_known: false
-  status: pending
+  status: resolved
+  resolved_reason: "semantic map generation verified the candidate is represented or intentionally ignored"
+  action_artifact: "semantic_map=/home/simokitafresh/multi-agent-shogun/context/semantic-map.md;semantic_index=/home/simokitafresh/multi-agent-shogun/docs/semantic-index/index.md"
+  resolved_at: "2026-09-01T16:26:30+09:00"
 - id: INS-20260901-161614405-eca0
   ts: "2026-09-01T16:16:14+09:00"
   insight: "軍師(Claude)の inbox 配達が毎回 60-98 秒遅延: inbox_watcher_gunshi.log で『[BUSY] no idle flag』→『[RECOVERY] forcing idle flag』が本日 74 回(11:10〜16:14 全時間帯、遅延 66/67/79/81/98s が上位)、家老(Codex)は 0 回。pane は ❯ idle でも /tmp/shogun_idle_gunshi が無い時間帯がある(16:11:36 実測)。stop_check_inbox.sh は stop_hook_active/unread>0/fast_cache 経路で flag を書くが、軍師の直近 turn 終了で flag が残らない経路 or watcher 側の削除タイミングの競合が疑い。1 件=RECOVERY 行 1 行。根治=Stop hook と watcher の flag ライフサイクル契約(誰が消し誰が書くか)を 1 箇所に"
