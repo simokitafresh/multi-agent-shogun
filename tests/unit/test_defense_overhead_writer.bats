@@ -191,8 +191,9 @@ assert all(r[0][k] for k in ('cause_structure','improvement_candidate','binary_c
 PY
   [ ! -e "$DEFENSE_OVERHEAD_LEDGER" ]
   SELF_RETRO_LEDGER=/proc/forbidden/events.jsonl
-  run self_retro_write_async ninja_report cmd_fallback 9 '{"write":9}' delivery_missing cause candidate criterion '[[a]] -> [[b]] -> [[c]]'
-  [ "$status" -eq 0 ]
+  self_retro_write_async ninja_report cmd_fallback 9 '{"write":9}' delivery_missing cause candidate criterion '[[a]] -> [[b]] -> [[c]]'
+  [ "$?" -eq 0 ]
+  self_retro_drain
 }
 
 @test "deep self-retro owner drains delayed async writers before teardown" {
