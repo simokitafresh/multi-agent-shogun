@@ -12778,3 +12778,10 @@ insights:
   source: "semantic_stress_test"
   fix_known: false
   status: pending
+- id: INS-20260902-010931481-ffef
+  ts: "2026-09-02T01:09:31+09:00"
+  insight: "[[Agent Readiness Level3 2 3 2 4 — A2A Agent Card と Skills Ind]] semantic_stress_test candidate_aliases: NO_MATCH source=cmds query=Agent Readiness Level3 2-3+2-4 — A2A Agent Card と Skills Index を LP の well-known に配置し、公開 API 3 本の読み取り専用 skill を宣言する"
+  priority: "low"
+  source: "semantic_stress_test"
+  fix_known: false
+  status: pending
