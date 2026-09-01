@@ -67,6 +67,17 @@ while [ "$#" -gt 0 ]; do
     esac
 done
 
+# 2026-09-01: 位置引数が SQL(SELECT/WITH)でなければ --search と同義に扱う。
+# MEMORY.md/復帰点は『記憶DB「session_save_…」を検索して読め』と書くため、
+# 将軍が `memory_db_query.sh "session_save_…"` と打って "only SELECT statements" で
+# 2 回 BLOCK→sqlite3 不在→schema 誤読と 3 段の試行錯誤になった(殿指摘 12:54)。
+if [ -z "$search_query" ] && [ "$#" -gt 0 ]; then
+    case "$1" in
+        [Ss][Ee][Ll][Ee][Cc][Tt]*|[Ww][Ii][Tt][Hh]*|[Pp][Rr][Aa][Gg][Mm][Aa]*|[Ee][Xx][Pp][Ll][Aa][Ii][Nn]*) ;;
+        *) search_query="$*"; set -- ;;
+    esac
+fi
+
 if [ -z "$target" ] && [ -n "${TMUX_PANE:-}" ]; then
     target="$(tmux display-message -t "$TMUX_PANE" -p '#{@agent_id}' 2>/dev/null || true)"
 fi

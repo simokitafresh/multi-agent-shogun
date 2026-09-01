@@ -29,7 +29,9 @@ fi
 # （プロンプト >>>）に落ちて入力待ちでハングする事象への恒久対策。非対話実行
 # （CI・パイプ・< /dev/null）では即EOFで無害だが、対話端末では固まるため明示的に切る。
 # 本スクリプトは端末からの対話入力(read)を行わない（read は全て <<< ヒアストリング）ので安全。
-[ -t 0 ] && exec </dev/null
+# 2026-09-01: 非 tty の開いたパイプ(Bash tool・tmux run-shell・cron)でも同じ hang が起きる
+# (旧 tree stub 経由の -h が 2 分 timeout、rc=124 で再現)。本 script は stdin を読まないので無条件で切る。
+exec </dev/null
 
 # セッション名は検証用cloneごとに分離できる。通常運用の既定値は従来どおり。
 SHOGUN_SESSION="${SHOGUN_SESSION:-shogun}"

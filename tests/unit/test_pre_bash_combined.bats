@@ -282,3 +282,23 @@ YAML
     run env BATS_TEST_FILENAME="$BATS_TEST_FILENAME" TMUX_AGENT_ID=hanzo bash -c 'printf "%s" "$1" | bash "$2"' _ "$payload" "$HOOK"
     [[ "$output" != *"karo-retest"* ]]
 }
+
+# test_necessity: Guard 4 must stop only commands that can WRITE shogun_to_karo.yaml
+# (sed -i / in-place, redirection or tee into it, python write). A read-only
+# pipeline that merely formats grep output with sed/awk must pass.
+# regression_justification: 2026-09-01 the substring match on 'sed '/'awk '
+# blocked three read-only audits in one session (grep … | sed -E, awk '{print}').
+@test "Guard 4: shogun_to_karo への sed -i は BLOCK される" {
+    run_hook "sed -i 's/status: draft/status: pending/' queue/shogun_to_karo.yaml"
+    [[ "$output" == *"status遷移gateの迂回"* ]]
+}
+
+@test "Guard 4: shogun_to_karo への出力リダイレクトは BLOCK される" {
+    run_hook "awk '{print}' queue/shogun_to_karo.yaml > queue/shogun_to_karo.yaml"
+    [[ "$output" == *"status遷移gateの迂回"* ]]
+}
+
+@test "Guard 4: shogun_to_karo の読み取り pipeline(grep | sed -E / awk 整形)は通る" {
+    run_hook "grep -nE '^  cmd_[0-9]+:' queue/shogun_to_karo.yaml | sed -E 's/^([0-9]+):.*/\\1/' | awk '{print \$1}'"
+    [[ "$output" != *"status遷移gateの迂回"* ]]
+}
