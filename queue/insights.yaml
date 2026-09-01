@@ -12785,3 +12785,10 @@ insights:
   source: "semantic_stress_test"
   fix_known: false
   status: pending
+- id: INS-20260902-010947679-9517
+  ts: "2026-09-02T01:09:47+09:00"
+  insight: "[[殿指示 05 22『level3 まで全て完了させるためのロードマップをステップバイステップで』の Phase 2B]] semantic_stress_test candidate_aliases: NO_MATCH source=cmds query=殿指示 2026-08-31 05:22『level3 まで全て完了させるためのロードマップをステップバイステップで』の Phase 2B。正本 docs/research/agent_readiness_level3_roadmap_20260831.md v1.2 の 2-3(A2A Agent Card)と 2-4(Skills Index)は同一 u"
+  priority: "low"
+  source: "semantic_stress_test"
+  fix_known: false
+  status: pending
