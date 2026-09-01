@@ -12110,7 +12110,10 @@ insights:
   priority: "medium"
   source: "skill_script_refs:1b0340d94cca3408"
   fix_known: false
-  status: pending
+  status: resolved
+  resolved_reason: "一次情報でgate_skill_script_refs.shをSKILL_REF_DIRS=skills SKILL_REF_DISABLE_CACHE=1で実走。rc=2(REVIEW_REQUIRED)だが参照先欠落0・例示静的パス欠落0・副作用実走marker欠落0、FOLLOWUP_ACTIVE=34かつFOLLOWUP_COVERS_REVIEW_REQUIRED=yes。WARN 2件(karo-direct/recon-dualのdeploy_task.sh)は直近remote-tip内部強化で、両SKILLの--direct/--yaml呼出し・引数・通知/失敗境界は不変。既存follow-upへ被覆済みのため追加実装修正とdecision_candidateは不要。"
+  action_artifact: "target=queue/insights.yaml:INS-20260901-111213402-419c;gate=/tmp/hayate-skill-gate.N3ijgT;gate_rc=2;result=REVIEW_REQUIRED;scanned=40_SKILL.md;script_refs=82;referenced=30;followup_active=34;followup_covers_review_required=yes;checks=missing_refs0;stale_target_pairs=2;example_paths_missing0;side_effect_markers_missing0;target_pairs=karo-direct,recon-dual;semantic=context/semantic-map.md:skill_script_refs;context=docs/research/cmd_4202_skill_script_followup_inspection.md;memory=exact_target_not_found;decision_candidate=none"
+  resolved_at: "2026-09-01T15:10:22+09:00"
 - id: INS-20260901-113545078-8a88
   ts: "2026-09-01T11:35:45+09:00"
   insight: "semantic_map_generate新規ファイル候補: `archive/cmd-chronicle/2026-08.md` は semantic index未登録。既存概念へのfile追加または新概念定義を検討せよ"
