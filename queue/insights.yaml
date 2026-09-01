@@ -12534,3 +12534,7 @@ insights:
   source: "semantic_stress_test"
   fix_known: false
   status: pending
+  status: resolved
+  resolved_reason: "一次確認: 旧report履歴は手編集せず保持され、前回refluxの注入lesson集合不一致は正式に再処理済み。CI fix commit fe58f1f9bはGATE CLEAR・11/11 PASSで、追加実装とdecision_candidateは不要。"
+  action_artifact: "primary=queue/insights.yaml:12466-12472;memory=bulletin:blt_20260901_183645_2a86b4;prior_report=cmd_reflux_insight_202609011635_hanzo;ci_fix=fe58f1f9b268f2c9f3e69da2ff6d07faad31b8c4"
+  resolved_at: "2026-09-01T19:00:24+09:00"
