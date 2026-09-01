@@ -148,3 +148,68 @@ YAML
     [ "$receipt_success" -eq 3 ]
     printf 'loop_success=3->0 legitimate_success=2->3 heuristic_fp=1->0\n'
 }
+
+@test "review messages require a post-message review log entry while normal messages stay unchanged" {
+    cat > "$TEST_ROOT/queue/inbox/hayate.yaml" <<'YAML'
+messages:
+- id: review_good
+  from: karo
+  timestamp: '2026-09-01T16:00:00+00:00'
+  type: review_draft
+  content: "review request report=good_report.yaml"
+  read: false
+- id: review_stale
+  from: karo
+  timestamp: '2026-09-01T16:05:00+00:00'
+  type: report_review
+  content: "review request report=stale_report.yaml"
+  read: false
+- id: normal
+  from: karo
+  timestamp: '2026-09-01T16:06:00+00:00'
+  type: task_supplement
+  content: ordinary message
+  read: false
+YAML
+    mkdir -p "$TEST_ROOT/logs"
+    cat > "$TEST_ROOT/logs/gunshi_review_log.yaml" <<'YAML'
+- report: good_report.yaml
+  review_type: report
+  reviewed_at: '2026-09-01T16:01:00+00:00'
+- report: stale_report.yaml
+  review_type: report
+  reviewed_at: '2026-09-01T16:04:00+00:00'
+YAML
+    _read_inbox
+    _mark review_good
+    [ "$status" -eq 0 ]
+    [ "$(_status review_good)" = true ]
+    _mark normal
+    [ "$status" -eq 0 ]
+    [ "$(_status normal)" = true ]
+    _mark review_stale
+    [ "$status" -eq 2 ]
+    [[ "$output" == *"BLOCK: review not recorded"* ]]
+    [ "$(_status review_stale)" = false ]
+}
+
+@test "review log entry may match standard report filename through cmd_id" {
+    cat > "$TEST_ROOT/queue/inbox/hayate.yaml" <<'YAML'
+messages:
+- id: review_cmd
+  from: karo
+  timestamp: '2026-09-01T16:00:00+00:00'
+  type: report_review
+  content: "review request report=hayate_report_cmd_fixture.yaml"
+  read: false
+YAML
+    cat > "$TEST_ROOT/logs/gunshi_review_log.yaml" <<'YAML'
+- cmd_id: cmd_fixture
+  review:
+    reviewed_at: '2026-09-01T16:01:00+00:00'
+YAML
+    _read_inbox
+    _mark review_cmd
+    [ "$status" -eq 0 ]
+    [ "$(_status review_cmd)" = true ]
+}
