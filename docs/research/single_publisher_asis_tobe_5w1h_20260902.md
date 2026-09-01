@@ -90,7 +90,7 @@ publisher(家老 lane, 直列):  fetch tip T → isolated tree@T → apply diff(
 ## §3 移行(家老レビュー 3 の順序: U1→U2→U4→U5→U3(dry-run→active)→U6→U7→U8、各 unit 二値 AC、canary=infra hotfix lane)
 | U | 内容 | AC(二値) | 不要化される複雑さ |
 |---|---|---|---|
-| U1 | non-publish queue: `queue/publish/` に request(FIFO、flock、lease 発行)。この段階では公開せず並び順と lease のみ | 並行 request 6 件で queue 順序=投入順(FIFO 逆転 0)∧ lease の max concurrent holders = 1 ∧ overlap interval pairs = 0 ∧ lease が remote-ref+candidate SHA+expiry に結び付く | — |
+| U1 | non-publish queue: `$STATE_DIR/publish_queue/` に request(FIFO、flock、lease 発行)。この段階では公開せず並び順と lease のみ | 並行 request 6 件で queue 順序=投入順(FIFO 逆転 0)∧ lease の max concurrent holders = 1 ∧ overlap interval pairs = 0 ∧ lease が remote-ref+candidate SHA+expiry に結び付く | — |
 | U2 | 忍者成果物=source_tree+patch_sha(報告に source_sha/base/paths)+LGTM 時に artifacts/ へ複製(C6) | 報告 gate が manifest を検証 PASS ∧ 複製後に worktree 削除しても publisher が復元可 | ninja_scope_commit option ≥ 20 |
 | U4 | gate を dual-read(旧 source_sha 契約と新 published_sha+path/blob receipt の両方を受理) | 旧・新 fixture 両方 PASS | — |
 | U5 | LGTM+ACCEPT を queue の admission 条件にする(未承認 request は投入不可) | 未承認 request N 件で queue admitted = 0 ∧ 承認済 N 件で admitted = N(publisher 未稼働でも計測可能な admission 判定) | — |
