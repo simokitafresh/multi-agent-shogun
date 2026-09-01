@@ -12662,3 +12662,10 @@ insights:
   source: "semantic_map_generate:new_file"
   fix_known: false
   status: pending
+- id: INS-20260901-222601588-3f6d
+  ts: "2026-09-01T22:26:01+09:00"
+  insight: "reissue: cmd_reflux_insight_202609012124_kotaro / INS-20260827-220603892-c8d8。旧SG7 bundleは旧report fingerprint=4f47cb88...を参照しreview verdict=FAILのためformal完了不能。現report fingerprint=69544a93...は旧bundleと世代不一致。旧report/bundleは履歴として保持し、次refluxで現契約から再採取する。旧report revision routing保存契約は別hotfix候補。origin: [[cmd_reflux_insight_202609012124_kotaro]] -> [[stale_sg7_bundle_report_generation]] -> [[reflux_reissue]]"
+  priority: "medium"
+  source: "manual"
+  fix_known: false
+  status: pending
