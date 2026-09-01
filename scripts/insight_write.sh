@@ -31,6 +31,8 @@ usage() {
   cat <<'EOF'
 Usage: bash scripts/insight_write.sh "気づきの内容" [priority] [source]
        bash scripts/insight_write.sh --resolve <id> <reason> <action_artifact>
+       bash scripts/insight_write.sh --configure-merge-driver [repo]
+       bash scripts/insight_write.sh --merge-driver <ancestor> <ours> <theirs>
 
 priority: high/medium/low (default: medium)
 source: 気づきの出所 (default: manual)
@@ -40,6 +42,162 @@ EOF
 if [ "${1:-}" = "--help" ] || [ "${1:-}" = "-h" ]; then
   usage
   exit 0
+fi
+
+# Git's built-in union driver cannot understand insight IDs: it may duplicate
+# an entry and it cannot reject two independent edits to the same ID.  Keep
+# the driver beside the writer so the merge contract has one implementation.
+if [ "${1:-}" = "--configure-merge-driver" ]; then
+  [[ "$#" -le 2 ]] || { echo "ERROR: --configure-merge-driver accepts at most one repo path" >&2; exit 2; }
+  merge_repo="${2:-$SCRIPT_DIR}"
+  merge_repo="$(cd "$merge_repo" && pwd)"
+  git -C "$merge_repo" config merge.insights-id.name "ID-keyed insights merge"
+  git -C "$merge_repo" config merge.insights-id.driver \
+    "bash $merge_repo/scripts/insight_write.sh --merge-driver %O %A %B"
+  echo "configured merge.insights-id.driver for $merge_repo"
+  exit 0
+fi
+
+if [ "${1:-}" = "--merge-driver" ]; then
+  [[ "$#" -eq 4 ]] || { echo "Usage: --merge-driver <ancestor> <ours> <theirs>" >&2; exit 2; }
+  python3 - "$2" "$3" "$4" <<'PY'
+import os
+import re
+import sys
+import tempfile
+from pathlib import Path
+
+import yaml
+
+ancestor_path, ours_path, theirs_path = map(Path, sys.argv[1:])
+
+
+def parse_document(path, label):
+    text = path.read_text(encoding="utf-8")
+    if not text.strip():
+        raise ValueError(f"{label} is empty")
+    document = yaml.safe_load(text)
+    lines = text.splitlines(keepends=True)
+    if isinstance(document, dict) and isinstance(document.get("insights"), list):
+        key_matches = [i for i, line in enumerate(lines)
+                       if re.match(r"^insights\s*:", line)]
+        if len(key_matches) != 1:
+            raise ValueError(f"{label} must have one top-level insights key")
+        key_line = key_matches[0]
+        prefix = "".join(lines[:key_line + 1])
+        region_end = len(lines)
+        for i in range(key_line + 1, len(lines)):
+            stripped = lines[i].strip()
+            indent = len(lines[i]) - len(lines[i].lstrip())
+            if (stripped and not stripped.startswith("#") and indent == 0
+                    and not re.match(r"^insights\s*:", stripped)):
+                region_end = i
+                break
+        starts = [i for i in range(key_line + 1, region_end)
+                  if re.match(r"^\s*-\s+id\s*:", lines[i])]
+        if not starts and re.match(r"^insights\s*:\s*\[\s*\]\s*$", lines[key_line].strip()):
+            prefix = "".join(lines[:key_line]) + "insights:\n"
+        suffix = "".join(lines[region_end:])
+        expected = document["insights"]
+    elif isinstance(document, list):
+        starts = [i for i, line in enumerate(lines)
+                  if re.match(r"^-\s+id\s*:", line)]
+        prefix = ""
+        suffix = ""
+        region_end = len(lines)
+        expected = document
+    else:
+        raise ValueError(f"{label} must be a mapping with insights list or a list")
+
+    entries = {}
+    order = []
+    for index, start in enumerate(starts):
+        end = starts[index + 1] if index + 1 < len(starts) else region_end
+        raw = "".join(lines[start:end])
+        item = yaml.safe_load(raw)
+        if isinstance(item, list) and len(item) == 1:
+            item = item[0]
+        if not isinstance(item, dict) or not str(item.get("id", "")).strip():
+            raise ValueError(f"{label} has an invalid insight block")
+        item_id = str(item["id"])
+        if item_id in entries:
+            raise ValueError(f"{label} duplicate id: {item_id}")
+        entries[item_id] = (item, raw)
+        order.append(item_id)
+    if len(order) != len(expected):
+        raise ValueError(f"{label} block count does not match YAML entries")
+    root = "mapping" if isinstance(document, dict) else "list"
+    return root, prefix, suffix, entries, order
+
+
+def same(left, right):
+    if left is None or right is None:
+        return left is right
+    return left[0] == right[0]
+
+
+try:
+    ancestor = parse_document(ancestor_path, "ancestor")
+    ours = parse_document(ours_path, "ours")
+    theirs = parse_document(theirs_path, "theirs")
+    if not (ancestor[0] == ours[0] == theirs[0]):
+        raise ValueError("ancestor/ours/theirs root structures differ")
+
+    base_entries, ours_entries, theirs_entries = ancestor[3], ours[3], theirs[3]
+    merged_entries = {}
+    conflicts = []
+    for item_id in set(base_entries) | set(ours_entries) | set(theirs_entries):
+        base = base_entries.get(item_id)
+        current = ours_entries.get(item_id)
+        incoming = theirs_entries.get(item_id)
+        if same(current, incoming):
+            chosen = current
+        elif same(current, base):
+            chosen = incoming
+        elif same(incoming, base):
+            chosen = current
+        else:
+            conflicts.append(item_id)
+            continue
+        if chosen is not None:
+            merged_entries[item_id] = chosen
+
+    if conflicts:
+        print("BLOCK: same insight ID changed on both parents: " + ", ".join(sorted(conflicts)), file=sys.stderr)
+        sys.exit(1)
+
+    order = [item_id for item_id in ours[4] if item_id in merged_entries]
+    order.extend(item_id for item_id in theirs[4]
+                 if item_id in merged_entries and item_id not in order)
+    order.extend(item_id for item_id in ancestor[4]
+                 if item_id in merged_entries and item_id not in order)
+    if ours[0] == "mapping":
+        merged_text = ours[1] + "".join(merged_entries[item_id][1] for item_id in order) + ours[2]
+    else:
+        merged_text = "".join(merged_entries[item_id][1] for item_id in order)
+    if not merged_text.endswith("\n"):
+        merged_text += "\n"
+    parsed = yaml.safe_load(merged_text)
+    rows = parsed.get("insights") if isinstance(parsed, dict) else parsed
+    ids = [str(row.get("id", "")) for row in (rows or [])]
+    if len(ids) != len(set(ids)) or any(not item_id.strip() for item_id in ids):
+        raise ValueError("merged insights has duplicate or empty IDs")
+    target_dir = ours_path.parent
+    fd, temporary = tempfile.mkstemp(prefix=".insights-merge.", suffix=".tmp", dir=target_dir)
+    try:
+        with os.fdopen(fd, "w", encoding="utf-8") as stream:
+            stream.write(merged_text)
+            stream.flush()
+            os.fsync(stream.fileno())
+        os.replace(temporary, ours_path)
+    finally:
+        if os.path.exists(temporary):
+            os.unlink(temporary)
+except (OSError, ValueError, yaml.YAMLError) as exc:
+    print(f"BLOCK: insights merge failed: {exc}", file=sys.stderr)
+    sys.exit(2)
+PY
+  exit $?
 fi
 
 # Compatibility entry point. Resolution itself has exactly one writer/contract.
