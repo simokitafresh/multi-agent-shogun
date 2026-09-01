@@ -801,6 +801,22 @@ check_push_lane() {
         push_lane_log "BLOCK reason=oldest_commit_timestamp_unresolved sha=$first_ancestor push=0"
         return 0
     }
+    # 2026-09-01 15:07 将軍 D0: after an auto INTEGRATE the only FF-pushable
+    # first-parent commit is the merge itself (seconds old), so the min_age
+    # timer restarted on every remote move and the lane logged WAIT age=2-7s
+    # for 45 minutes while unpushed grew 8→25 (14:22/14:29/14:53/15:06).
+    # The settle window protects the *author's* last local commit, not the
+    # integration merge: measure age from the oldest first-parent local
+    # commit (head of commit_list) and let the merge carry the batch.
+    oldest_local_commit=$(printf '%s\n' "$commit_list" | head -1)
+    oldest_local_epoch=""
+    if [[ "$oldest_local_commit" =~ ^[0-9a-fA-F]{40}$ ]]; then
+        oldest_local_epoch=$(git -C "$repo" show -s --format=%ct "$oldest_local_commit" 2>/dev/null || true)
+    fi
+    [[ "$oldest_local_epoch" =~ ^[0-9]+$ ]] || oldest_local_epoch="$candidate_epoch"
+    if [ "$oldest_local_epoch" -lt "$candidate_epoch" ]; then
+        candidate_epoch="$oldest_local_epoch"
+    fi
     min_age="${PUSH_LANE_MIN_AGE_SEC:-600}"
     [[ "$min_age" =~ ^[0-9]+$ ]] || min_age=600
     now="${EPOCHSECONDS:-$(date +%s)}"
@@ -846,6 +862,11 @@ check_push_lane() {
             exec {lock_fd}>&-
             return 0
         }
+        # Same settle rule as above: an integration merge inherits the age of
+        # the oldest local first-parent commit it carries.
+        if [[ "$oldest_local_epoch" =~ ^[0-9]+$ ]] && [ "$oldest_local_epoch" -lt "$candidate_epoch" ]; then
+            candidate_epoch="$oldest_local_epoch"
+        fi
         candidate_age=$((now - candidate_epoch))
         if [ "$candidate_age" -lt "$min_age" ]; then
             push_lane_log "WAIT ci=$push_ci unpushed=$count oldest=$candidate age=${candidate_age}s threshold=${min_age}s push=0"
