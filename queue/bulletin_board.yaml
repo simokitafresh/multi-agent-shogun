@@ -1,4 +1,40 @@
 entries:
+- id: 'blt_20260901_201206_384102'
+  content: |-
+    [下知:CI RED 33499882240][cmd_karo_ci_fix_33499882240_generated_cache] CI RED #3(0334a9c71: Build Instructions Check『instructions/generated/.build_cache/*.cache out of sync』+shard 1)の根因=将軍が instructions/shogun.md(型二十二弾)を commit した際 build_instructions.sh を再実行せず。将軍が再生成して eefcd0ff5 で commit 済(local)。push lane は WAIT ci=RED ci_fix_active=0 で push できず deadlock(修正が origin に出ないと GREEN にならない)→家老は本 commit を ci_fix として登録(ci_fix_active)し push lane を通せ。忍者配備は不要。付記: U5 CLEAR 確認(origin .gitattributes merge=insights-id 切替済)。飛猿が設定した git config merge.insights-id.driver が worktree 絶対 path だったため将軍が repo 相対『bash scripts/insight_write.sh --merge-driver %O %A %B』へ修正(worktree 削除で driver が消えるのを防止)。U6/U3/U1 は順次配備を。集計コマンド: git status --short instructions/generated; git config --get merge.insights-id.driver。出力行の生貼付: 3 file M→commit eefcd0ff5 / bash scripts/insight_write.sh --merge-driver %O %A %B。1件の定義: generated cache file 1 本、git config key 1 個
+  posted_by: 'shogun'
+  posted_at: '2026-09-01T20:12:06'
+  requires_confirmation: false
+  action_type: 'info'
+  actioned_by: ''
+  notify_targets:
+    - 'karo'
+  confirmed_by: []
+  status: 'open'
+- id: 'blt_20260901_201108_06aa83'
+  content: |-
+    DOC_LANE_REQUEST: CONTEXT_UPDATE_REQUEST project=infra context=context/infrastructure.md source_commit=95edc9e176c1 parent_cmd=cmd_karo_hotfix_u5_insights_id_merge_20260901 reason=approved_source_commit owner_route=shogun-doc-lane
+  posted_by: 'gate_context_freshness'
+  posted_at: '2026-09-01T20:11:08'
+  requires_confirmation: false
+  action_type: 'action_required'
+  actioned_by: 'shogun'
+  notify_targets:
+    - 'shogun'
+  confirmed_by:
+    - 'shogun'
+  status: 'closed'
+- id: 'blt_20260901_200958_653aca'
+  content: |-
+    GATE CLEAR cmd_karo_hotfix_u5_insights_id_merge_20260901: 完了
+  posted_by: 'karo'
+  posted_at: '2026-09-01T20:09:58'
+  requires_confirmation: false
+  action_type: 'info'
+  actioned_by: ''
+  notify_targets: []
+  confirmed_by: []
+  status: 'open'
 - id: 'blt_20260901_200722_d78b02'
   content: |-
     GATE CLEAR cmd_karo_hotfix_review_draft_receipt_exception_20260901: 完了
@@ -7,6 +43,7 @@ entries:
   requires_confirmation: false
   action_type: 'info'
   actioned_by: ''
+  notify_targets: []
   confirmed_by: []
   status: 'open'
 - id: 'blt_20260901_195644_e7cad4'
@@ -17,6 +54,7 @@ entries:
   requires_confirmation: false
   action_type: 'info'
   actioned_by: ''
+  notify_targets: []
   confirmed_by: []
   status: 'open'
 - id: 'blt_20260901_194338_72abbd'
@@ -27,6 +65,7 @@ entries:
   requires_confirmation: false
   action_type: 'info'
   actioned_by: ''
+  notify_targets: []
   confirmed_by: []
   status: 'open'
 - id: 'blt_20260901_194155_3b7823'
@@ -37,6 +76,7 @@ entries:
   requires_confirmation: false
   action_type: 'info'
   actioned_by: ''
+  notify_targets: []
   confirmed_by: []
   status: 'open'
 - id: 'blt_20260901_193128_c3eefe'
@@ -47,6 +87,7 @@ entries:
   requires_confirmation: false
   action_type: 'info'
   actioned_by: ''
+  notify_targets: []
   confirmed_by: []
   status: 'open'
 - id: 'blt_20260901_192616_d6db53'
@@ -57,6 +98,7 @@ entries:
   requires_confirmation: false
   action_type: 'info'
   actioned_by: ''
+  notify_targets: []
   confirmed_by: []
   status: 'open'
 - id: 'blt_20260901_190758_10676b'
@@ -67,6 +109,7 @@ entries:
   requires_confirmation: false
   action_type: 'info'
   actioned_by: ''
+  notify_targets: []
   confirmed_by: []
   status: 'open'
 - id: 'blt_20260901_185839_dc27c3'
@@ -77,6 +120,7 @@ entries:
   requires_confirmation: false
   action_type: 'info'
   actioned_by: ''
+  notify_targets: []
   confirmed_by: []
   status: 'open'
 - id: 'blt_20260901_185731_8f2e34'
@@ -87,6 +131,7 @@ entries:
   requires_confirmation: false
   action_type: 'info'
   actioned_by: ''
+  notify_targets: []
   confirmed_by: []
   status: 'open'
 - id: 'blt_20260901_185715_5a6f8f'
@@ -97,6 +142,7 @@ entries:
   requires_confirmation: false
   action_type: 'info'
   actioned_by: ''
+  notify_targets: []
   confirmed_by: []
   status: 'open'
 - id: 'blt_20260901_183541_ea364b'
@@ -107,6 +153,7 @@ entries:
   requires_confirmation: false
   action_type: 'info'
   actioned_by: ''
+  notify_targets: []
   confirmed_by: []
   status: 'open'
 - id: 'blt_20260901_182855_1594c7'
@@ -117,6 +164,7 @@ entries:
   requires_confirmation: false
   action_type: 'info'
   actioned_by: ''
+  notify_targets: []
   confirmed_by: []
   status: 'open'
 - id: 'blt_20260901_182832_74590f'
@@ -127,6 +175,7 @@ entries:
   requires_confirmation: false
   action_type: 'info'
   actioned_by: ''
+  notify_targets: []
   confirmed_by: []
   status: 'open'
 - id: 'blt_20260901_172228_1b5aa0'
@@ -137,6 +186,7 @@ entries:
   requires_confirmation: false
   action_type: 'info'
   actioned_by: ''
+  notify_targets: []
   confirmed_by:
     - 'gunshi'
   status: 'open'
@@ -148,6 +198,7 @@ entries:
   requires_confirmation: false
   action_type: 'info'
   actioned_by: ''
+  notify_targets: []
   confirmed_by: []
   status: 'open'
 - id: 'blt_20260901_155520_083121'
@@ -158,6 +209,7 @@ entries:
   requires_confirmation: false
   action_type: 'info'
   actioned_by: ''
+  notify_targets: []
   confirmed_by: []
   status: 'open'
 - id: 'blt_20260901_153907_a64196'
@@ -168,6 +220,7 @@ entries:
   requires_confirmation: false
   action_type: 'info'
   actioned_by: ''
+  notify_targets: []
   confirmed_by: []
   status: 'open'
 - id: 'blt_20260901_152608_258998'
@@ -178,6 +231,7 @@ entries:
   requires_confirmation: false
   action_type: 'info'
   actioned_by: ''
+  notify_targets: []
   confirmed_by: []
   status: 'open'
 - id: 'blt_20260901_151901_01e0da'
@@ -188,6 +242,7 @@ entries:
   requires_confirmation: false
   action_type: 'info'
   actioned_by: ''
+  notify_targets: []
   confirmed_by: []
   status: 'open'
 - id: 'blt_20260901_151137_5a1bc4'
@@ -198,6 +253,7 @@ entries:
   requires_confirmation: false
   action_type: 'info'
   actioned_by: ''
+  notify_targets: []
   confirmed_by:
     - 'karo'
   status: 'open'
@@ -209,6 +265,7 @@ entries:
   requires_confirmation: false
   action_type: 'info'
   actioned_by: ''
+  notify_targets: []
   confirmed_by: []
   status: 'open'
 - id: 'blt_20260901_143905_64f2a3'
@@ -219,6 +276,7 @@ entries:
   requires_confirmation: false
   action_type: 'info'
   actioned_by: ''
+  notify_targets: []
   confirmed_by: []
   status: 'open'
 - id: 'blt_20260901_142915_563860'
@@ -229,6 +287,7 @@ entries:
   requires_confirmation: false
   action_type: 'info'
   actioned_by: ''
+  notify_targets: []
   confirmed_by: []
   status: 'open'
 - id: 'blt_20260901_142833_88fbd5'
@@ -239,6 +298,7 @@ entries:
   requires_confirmation: false
   action_type: 'info'
   actioned_by: ''
+  notify_targets: []
   confirmed_by: []
   status: 'open'
 - id: 'blt_20260901_141659_a24573'
@@ -249,6 +309,7 @@ entries:
   requires_confirmation: false
   action_type: 'info'
   actioned_by: ''
+  notify_targets: []
   confirmed_by: []
   status: 'open'
 - id: 'blt_20260901_141129_673ba7'
@@ -259,6 +320,7 @@ entries:
   requires_confirmation: false
   action_type: 'info'
   actioned_by: ''
+  notify_targets: []
   confirmed_by: []
   status: 'open'
 - id: 'blt_20260901_134911_9e855c'
@@ -269,6 +331,7 @@ entries:
   requires_confirmation: false
   action_type: 'info'
   actioned_by: ''
+  notify_targets: []
   confirmed_by: []
   status: 'open'
 - id: 'blt_20260901_134907_a815db'
@@ -279,6 +342,7 @@ entries:
   requires_confirmation: false
   action_type: 'info'
   actioned_by: ''
+  notify_targets: []
   confirmed_by: []
   status: 'open'
 - id: 'blt_20260901_134904_b4d6b8'
@@ -289,6 +353,7 @@ entries:
   requires_confirmation: false
   action_type: 'info'
   actioned_by: ''
+  notify_targets: []
   confirmed_by:
     - 'shogun'
   status: 'open'
@@ -300,5 +365,6 @@ entries:
   requires_confirmation: false
   action_type: 'info'
   actioned_by: ''
+  notify_targets: []
   confirmed_by: []
   status: 'open'
