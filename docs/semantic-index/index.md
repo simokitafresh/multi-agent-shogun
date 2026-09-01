@@ -8938,6 +8938,7 @@ codd:
 | lesson | `L1698` legacy notification identity must be generation-bound |
 | causal | `cmd_karo_hotfix_push_lane_ancestry_guard_20260902` files_modified: [[agent_formation_management]] |
 | cmd | `cmd_karo_hotfix_push_lane_ancestry_guard_20260902` (`scripts/ninja_monitor.sh`, `tests/unit/test_ninja_monitor.bats`) |
+| cmd | `cmd_karo_ci_fix_33546365477` (`tests/unit/test_deploy_task_nocode_commit_contract.bats`, `tests/unit/test_ninja_monitor_failed_respawn.bats`, `tests/unit/test_push_lane_integrate.bats`) |
 | causal_chain | `[[cmd_karo_hotfix_deploy_task_latency_yaml_bug_20260702010845]]` (L918) |
 | causal_chain | `[[cmd_karo_hotfix_deploy_task_yaml_speed_recon_guard_202607020133]]` (L919) |
 | causal_chain | `[[cmd_karo_hotfix_ga162_hook_failure_pre_push_202607021402]]` (L930) |
@@ -8987,7 +8988,6 @@ codd:
 | causal_chain | `[[cmd_karo_ci_fix_33176429634_startup_owner_20260828]]` (L1668) |
 | causal_chain | `[[cmd_karo_hotfix_deploy_remote_tip_directory_v3_20260901]]` (L1695) |
 | causal_chain | `[[cmd_karo_hotfix_push_lane_ancestry_guard_20260902]]` (L1698) |
-| cmd | `cmd_karo_ci_fix_33546365477` (`tests/unit/test_deploy_task_nocode_commit_contract.bats`, `tests/unit/test_ninja_monitor_failed_respawn.bats`, `tests/unit/test_push_lane_integrate.bats`) |
 
 ## visibility_tier_masking — Visibility Tier制マスク
 
@@ -14702,6 +14702,8 @@ codd:
 | cmd | `cmd_reflux_insight_202609020434_hanzo` (`queue/insights.yaml`) |
 | causal | `cmd_reflux_insight_202609020449_tobisaru` files_modified: [[provisional_insights]] |
 | cmd | `cmd_reflux_insight_202609020449_tobisaru` (`queue/insights.yaml`) |
+| causal | `cmd_reflux_insight_202609020502_saizo` files_modified: [[provisional_insights]] |
+| cmd | `cmd_reflux_insight_202609020502_saizo` (`queue/insights.yaml`) |
 | causal_chain | `[[cmd_reflux_insight_202608040505_kagemaru]]` (L1545) |
 
 ## provisional_heavy_job_admission — 仮: Heavy Job Admission
@@ -16365,6 +16367,7 @@ codd:
 | discussion | `queue/lord_conversation.jsonl` 2026-09-01T18:26:14.980355+00:00 git pre-commit semantic propagation for context/projects changes |
 | discussion | `queue/lord_conversation.jsonl` 2026-09-01T18:44:07.243098+00:00 git pre-commit semantic propagation for context/projects changes |
 | discussion | `queue/lord_conversation.jsonl` 2026-09-01T19:14:37.084591+00:00 git pre-commit semantic propagation for context/projects changes |
+| discussion | `queue/lord_conversation.jsonl` 2026-09-01T22:15:22.094883+00:00 git pre-commit semantic propagation for context/projects changes |
 | causal_chain | `[[cmd_karo_hotfix_lessons_yaml_format_restore_20260727]]` (L1389) |
 
 ## infra_design_intent — インフラ設計意図カタログ

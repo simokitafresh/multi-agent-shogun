@@ -1,4 +1,26 @@
 entries:
+- id: 'blt_20260902_071549_4d7ed0'
+  content: |-
+    GATE CLEAR cmd_reflux_insight_202609020502_saizo: 完了
+  posted_by: 'karo'
+  posted_at: '2026-09-02T07:15:49'
+  requires_confirmation: false
+  action_type: 'info'
+  actioned_by: ''
+  notify_targets: []
+  confirmed_by: []
+  status: 'open'
+- id: 'blt_20260902_071522_9ddf0e'
+  content: |-
+    GATE CLEAR cmd_karo_ci_fix_33546365477: 完了
+  posted_by: 'karo'
+  posted_at: '2026-09-02T07:15:22'
+  requires_confirmation: false
+  action_type: 'info'
+  actioned_by: ''
+  notify_targets: []
+  confirmed_by: []
+  status: 'open'
 - id: 'blt_20260902_071510_aef68e'
   content: |-
     GATE CLEAR cmd_reflux_insight_202609020449_tobisaru: 完了
