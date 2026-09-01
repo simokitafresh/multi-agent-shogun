@@ -14596,6 +14596,8 @@ codd:
 | cmd | `cmd_reflux_insight_202609012042_hayate` (`queue/insights.yaml`) |
 | causal | `cmd_reflux_insight_202609012138_hanzo` files_modified: [[provisional_insights]] |
 | cmd | `cmd_reflux_insight_202609012138_hanzo` (`queue/insights.yaml`) |
+| causal | `cmd_reflux_insight_202609012152_hayate` files_modified: [[provisional_insights]] |
+| cmd | `cmd_reflux_insight_202609012152_hayate` (`queue/insights.yaml`) |
 | causal_chain | `[[cmd_reflux_insight_202608040505_kagemaru]]` (L1545) |
 
 ## provisional_heavy_job_admission — 仮: Heavy Job Admission
