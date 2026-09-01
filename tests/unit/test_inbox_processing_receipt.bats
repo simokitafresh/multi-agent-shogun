@@ -273,6 +273,25 @@ YAML
     [ "$(_status jst_review)" = true ]
 }
 
+@test "report_review with an existing report and no review log is blocked" {
+    mkdir -p "$TEST_ROOT/queue/reports"
+    touch "$TEST_ROOT/queue/reports/unreviewed_report.yaml"
+    cat > "$TEST_ROOT/queue/inbox/hayate.yaml" <<'YAML'
+messages:
+- id: unreviewed_report
+  from: karo
+  timestamp: '2026-09-01T19:00:00+00:00'
+  type: report_review
+  report_path: queue/reports/unreviewed_report.yaml
+  read: false
+YAML
+    _read_inbox
+    _mark unreviewed_report
+    [ "$status" -eq 2 ]
+    [[ "$output" == *"BLOCK: review not recorded"* ]]
+    [ "$(_status unreviewed_report)" = false ]
+}
+
 @test "review log entry may match standard report filename through cmd_id" {
     cat > "$TEST_ROOT/queue/inbox/hayate.yaml" <<'YAML'
 messages:
