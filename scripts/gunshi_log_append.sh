@@ -66,50 +66,49 @@ fi
 # contains target_review_type and must not trigger draft/report guards.
 ENTRY_REVIEW_TYPE=$(printf '%s\n' "$ENTRY" | awk '/^  review_type:[[:space:]]*/ {v=$0; sub(/^  review_type:[[:space:]]*/, "", v); gsub(/["'\'' ]/, "", v); print v; exit}')
 
+# --- 全チェック一括実行(2026-09-01 根治: 順次exit 2→全エラー蓄積後に一括exit) ---
+# 試行錯誤の根因=最初のBLOCKで止まり後続チェック要件が見えない→1回で全要件を表示する
+_BLOCK_ERRORS=()
+
 # --- observations必須チェック(draft/report/self_study) ---
 if [[ "$ENTRY_REVIEW_TYPE" =~ ^(draft|report|self_study)$ ]]; then
     if [[ "$ENTRY" != *"observations:"* ]]; then
-        echo "BLOCK: observationsが未記入(review_type=draft/report/self_study)。事実3点以上を記入してから再実行せよ" >&2
-        exit 2
-    fi
-    HAS_ITEM=$(echo "$ENTRY" | awk '/observations:/{found=1;next} found{if(/^\s*-\s+.+/){print "yes";exit} if(!/^\s*$/){exit}}')
-    if [ "$HAS_ITEM" != "yes" ]; then
-        echo "BLOCK: observations[]が空。1件以上の事実を記入してから再実行せよ" >&2
-        exit 2
+        _BLOCK_ERRORS+=("BLOCK: observationsが未記入(review_type=draft/report/self_study)。事実3点以上を記入してから再実行せよ")
+    else
+        HAS_ITEM=$(echo "$ENTRY" | awk '/observations:/{found=1;next} found{if(/^\s*-\s+.+/){print "yes";exit} if(!/^\s*$/){exit}}')
+        if [ "$HAS_ITEM" != "yes" ]; then
+            _BLOCK_ERRORS+=("BLOCK: observations[]が空。1件以上の事実を記入してから再実行せよ")
+        fi
     fi
 fi
 
 # --- finding_categories必須チェック(draft/report) --- 冷え観点L4化 2026-06-24: 3セッション連続再発の根治
 if [[ "$ENTRY_REVIEW_TYPE" =~ ^(draft|report)$ ]]; then
     if [[ "$ENTRY" != *"finding_categories:"* ]]; then
-        echo "BLOCK: finding_categoriesが未記入(review_type=draft/report)。6観点カタログ全てを記載せよ(冷え観点防止)" >&2
-        exit 2
-    fi
-    # インラインリスト [a, b, adversarial] と複数行リスト (- adversarial) の両方に対応
-    FC_BLOCK=$(echo "$ENTRY" | awk '/finding_categories:/{found=1; print; next} found{if(/^\s*-\s/){print;next} exit}')
-    if ! echo "$FC_BLOCK" | grep -qi 'adversarial'; then
-        echo "BLOCK: finding_categoriesにadversarialが未記載。全レビューでadversarial必須(3セッション連続再発の根治)" >&2
-        exit 2
-    fi
-    if ! echo "$FC_BLOCK" | grep -qi 'ambiguity'; then
-        echo "BLOCK: finding_categoriesにambiguityが未記載。全レビューでambiguity必須(冷え観点遡及 2026-06-25)" >&2
-        exit 2
+        _BLOCK_ERRORS+=("BLOCK: finding_categoriesが未記入(review_type=draft/report)。6観点カタログ全てを記載せよ(冷え観点防止)")
+    else
+        # インラインリスト [a, b, adversarial] と複数行リスト (- adversarial) の両方に対応
+        FC_BLOCK=$(echo "$ENTRY" | awk '/finding_categories:/{found=1; print; next} found{if(/^\s*-\s/){print;next} exit}')
+        if ! echo "$FC_BLOCK" | grep -qi 'adversarial'; then
+            _BLOCK_ERRORS+=("BLOCK: finding_categoriesにadversarialが未記載。全レビューでadversarial必須(3セッション連続再発の根治)")
+        fi
+        if ! echo "$FC_BLOCK" | grep -qi 'ambiguity'; then
+            _BLOCK_ERRORS+=("BLOCK: finding_categoriesにambiguityが未記載。全レビューでambiguity必須(冷え観点遡及 2026-06-25)")
+        fi
     fi
 fi
 
 # --- step3_5_verified必須チェック(report) --- LG036 L4化 2026-08-25: 3セッション連続未記入根治
 if [ "$ENTRY_REVIEW_TYPE" = "report" ]; then
     if [[ "$ENTRY" != *"step3_5_verified:"* ]]; then
-        echo "BLOCK: step3_5_verifiedが未記入(review_type=report)。command欄×files_modified名前照合の実施結果(true/false)を記入してから再実行せよ(LG036)" >&2
-        exit 2
+        _BLOCK_ERRORS+=("BLOCK: step3_5_verifiedが未記入(review_type=report)。command欄×files_modified名前照合の実施結果(true/false)を記入してから再実行せよ(LG036)")
     fi
 fi
 
 # --- ambiguity_points必須チェック(draft) --- 冷え観点遡及 2026-06-26: ambiguity記録漏れ根治
 if [ "$ENTRY_REVIEW_TYPE" = "draft" ]; then
     if [[ "$ENTRY" != *"ambiguity_points:"* ]]; then
-        echo "BLOCK: ambiguity_pointsが未記入(review_type=draft)。none または曖昧箇所を記載せよ(冷え観点防止)" >&2
-        exit 2
+        _BLOCK_ERRORS+=("BLOCK: ambiguity_pointsが未記入(review_type=draft)。none または曖昧箇所を記載せよ(冷え観点防止)")
     fi
 fi
 
@@ -117,27 +116,26 @@ fi
 # brainwash_checkに数値(0-9)が含まれない場合BLOCK。「OK」「確認済み」は形骸化(LG027横展開)
 if [[ "$ENTRY_REVIEW_TYPE" =~ ^(draft|report|self_study|consultation)$ ]]; then
     if [[ "$ENTRY" != *"brainwash_check:"* ]]; then
-        echo "BLOCK: brainwash_checkが未記入。8パターン自問+数値証拠を記入してから再実行せよ" >&2
-        exit 2
-    fi
-    BC_LINE=$(echo "$ENTRY" | grep 'brainwash_check:' | head -1)
-    if ! echo "$BC_LINE" | grep -qP '[0-9]'; then
-        echo "BLOCK: brainwash_checkに数値がない。修正前→修正後の数値、またはN件中N件確認の形式で記載せよ(LG027横展開)" >&2
-        exit 2
-    fi
-    # --- 8パターン番号強制(2026-07-20 D0): #Nno/#Nyes形式が最低1つ必要 ---
-    if ! echo "$BC_LINE" | grep -qP '#[1-8](no|yes)'; then
-        echo "BLOCK: brainwash_checkに8パターン番号(#1no/#1yes形式、スペースなし連結)がない。例: #1no #2no #3no ... 具体的にどのパターンを検査したか明記せよ" >&2
-        exit 2
+        _BLOCK_ERRORS+=("BLOCK: brainwash_checkが未記入。8パターン自問+数値証拠を記入してから再実行せよ")
+    else
+        BC_LINE=$(echo "$ENTRY" | grep 'brainwash_check:' | head -1)
+        if ! echo "$BC_LINE" | grep -qP '[0-9]'; then
+            _BLOCK_ERRORS+=("BLOCK: brainwash_checkに数値がない。修正前→修正後の数値、またはN件中N件確認の形式で記載せよ(LG027横展開)")
+        fi
+        # --- 8パターン番号強制(2026-07-20 D0): #Nno/#Nyes形式が最低1つ必要 ---
+        if ! echo "$BC_LINE" | grep -qP '#[1-8](no|yes)'; then
+            _BLOCK_ERRORS+=("BLOCK: brainwash_checkに8パターン番号(#1no/#1yes形式、スペースなし連結)がない。例: #1no #2no #3no ... 具体的にどのパターンを検査したか明記せよ")
+        fi
     fi
 fi
+
+# --- (蓄積は後段の一括出力へ統合) ---
 
 # --- LGTM+BLOCK矛盾チェック(report) --- 今セッション3件連続事故の根治(L4貫通)
 # report_verdict=FAILの正当なFAIL報告ではgate_prediction=BLOCKでも矛盾ではない(GATE適用外)
 if [ "$ENTRY_REVIEW_TYPE" = "report" ] && [[ "$ENTRY" =~ verdict:[[:space:]]*LGTM ]] && echo "$ENTRY" | grep -Pq 'gate_prediction:\s*BLOCK(\s|$|\(|\[|/)'; then
     if ! echo "$ENTRY" | grep -Pq 'report_verdict:\s*FAIL'; then
-        echo "BLOCK: verdict=LGTMとgate_prediction=BLOCKの矛盾。BLOCKが予測される報告にLGTMを出すな。FAILに変更するか、BLOCK理由を解消してからLGTMせよ" >&2
-        exit 2
+        _BLOCK_ERRORS+=("BLOCK: verdict=LGTMとgate_prediction=BLOCKの矛盾。BLOCKが予測される報告にLGTMを出すな。FAILに変更するか、BLOCK理由を解消してからLGTMせよ")
     fi
 fi
 
@@ -161,8 +159,7 @@ print(str(item.get('cmd_id') or ''))
                 flock -w 5 9 || true
                 echo "- ts: \"$_lbg_ts\", file: \"$_lbg_cmd_id\", gate: \"lgtm_bundle_guard\", result: BLOCK, reasons: \"LGTM for $_lbg_cmd_id but queue/gates/$_lbg_cmd_id/sg7_bundle.json is missing\"" >> "$_lbg_log"
             ) 9>>"$_lbg_log.lock"
-            echo "BLOCK: lgtm_bundle_guard: $_lbg_cmd_id のsg7_bundle.jsonが未生成。先に bash scripts/review_approval.sh $_lbg_cmd_id gunshi LGTM <report_path> を実行してからreview_log記録せよ" >&2
-            exit 2
+            _BLOCK_ERRORS+=("BLOCK: lgtm_bundle_guard: $_lbg_cmd_id のsg7_bundle.jsonが未生成。先に bash scripts/review_approval.sh $_lbg_cmd_id gunshi LGTM <report_path> を実行してからreview_log記録せよ")
         fi
     fi
 fi
@@ -170,14 +167,22 @@ fi
 # --- gate_prediction_reason必須チェック(report) --- GP-259: prediction偽陽性分析の材料を残す
 if [ "$ENTRY_REVIEW_TYPE" = "report" ] && [[ "$ENTRY" =~ gate_prediction:[[:space:]]*(CLEAR|WARN|BLOCK) ]]; then
     if [[ "$ENTRY" != *"gate_prediction_reason:"* ]]; then
-        echo "BLOCK: gate_prediction_reasonが未記入。precheckのreasonをreview_logへ転記せよ(GP-259)" >&2
-        exit 2
+        _BLOCK_ERRORS+=("BLOCK: gate_prediction_reasonが未記入。precheckのreasonをreview_logへ転記せよ(GP-259)")
+    else
+        GPR_LINE=$(echo "$ENTRY" | grep 'gate_prediction_reason:' | head -1)
+        if echo "$GPR_LINE" | grep -Eq 'gate_prediction_reason:[[:space:]]*($|null|N/A|none|engine未実行)'; then
+            _BLOCK_ERRORS+=("BLOCK: gate_prediction_reasonが実質空。precheckの具体reasonを記入せよ(GP-259)")
+        fi
     fi
-    GPR_LINE=$(echo "$ENTRY" | grep 'gate_prediction_reason:' | head -1)
-    if echo "$GPR_LINE" | grep -Eq 'gate_prediction_reason:[[:space:]]*($|null|N/A|none|engine未実行)'; then
-        echo "BLOCK: gate_prediction_reasonが実質空。precheckの具体reasonを記入せよ(GP-259)" >&2
-        exit 2
-    fi
+fi
+
+# --- 蓄積エラーの二次一括出力(後段チェック分) ---
+if [ "${#_BLOCK_ERRORS[@]}" -gt 0 ]; then
+    echo "=== gunshi_log_append: ${#_BLOCK_ERRORS[@]}件のBLOCK ===" >&2
+    for _err in "${_BLOCK_ERRORS[@]}"; do
+        echo "$_err" >&2
+    done
+    exit 2
 fi
 
 # --- review evidence contract ---
