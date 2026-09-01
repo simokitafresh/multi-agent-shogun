@@ -11610,7 +11610,10 @@ insights:
   priority: "low"
   source: "cmd_complete_gate:memory_phase"
   fix_known: false
-  status: pending
+  status: resolved
+  resolved_reason: 一次情報でcmd_4433の不達根因と現行修正を確認。cmd_4438のrunner一般化でexternal package.jsonルートを検出・実行し、cmd_4433型のreceipt欠落を解消済み。追加コード修正・decision_candidateは不要。
+  action_artifact: "target=queue/insights.yaml:INS-20260831-164040002-ba94;primary=context/cmd-chronicle.md:L247-L248;scripts= scripts/run_tests.sh:L715-L823,L2571-L2590;fix_commit=738be2d793b943731c160661f99944d1ad97557a;followup=9e0f6b2cae3e0b34a522c6dc5e2791d2a1c2a544;decision_candidate=none;inventory_before=insights_pending:36,zero_backlinks:18,promotions:609,total:663"
+  resolved_at: "2026-09-02T02:45:00+09:00"
 - id: INS-20260831-164056038-10d2
   ts: "2026-08-31T16:40:56+09:00"
   insight: "semantic_index_update未登録cmd originノード: [[殿裁定_LP_hero_chart_20260831_1406]] は既存aliasesに一致なし。類似概念TOP3: creator_brainwashing_defense(創造主の洗脳防御; alias=source shogun 殿裁定 LP 別サイト; score=17.6) / semantic_dictionary_design(セマンティック辞書構想; alias=殿裁定_LP別サイト_20260830_1642; score=14.2) / known_unknowns_principle(無知の知; alias=殿裁定 17 04 『 admin fofが縦に長くスクロールが大変だ; score=10.8)。概念定義とaliases追加を検討せよ"
