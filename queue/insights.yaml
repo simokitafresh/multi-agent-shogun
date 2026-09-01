@@ -12514,3 +12514,10 @@ insights:
   source: "semantic_stress_test"
   fix_known: false
   status: pending
+- id: INS-20260901-191954180-34bd
+  ts: "2026-09-01T19:19:54+09:00"
+  insight: "[[draft review 3件を処理せよ]] semantic_stress_test candidate_aliases: NO_MATCH source=lord query=draft review 3件を処理せよ。効率という名で先送りはメリットがない"
+  priority: "low"
+  source: "semantic_stress_test"
+  fix_known: false
+  status: pending
