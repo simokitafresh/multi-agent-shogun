@@ -2,6 +2,11 @@
 # log_terminal_input.sh — UserPromptSubmitフックで殿のターミナル入力を記録
 set -eu
 
+# 2026-09-01 15:19: TMUX_PANE が空/未設定の子プロセス(claude -p 等)では
+# `tmux display-message -t ""` が active pane(=殿が見ている pane)を返し、
+# 他プロセスの prompt が「殿→shogun の inbound」として記録された。
+# pane 不明の入力は殿の入力ではない=記録しない。
+[ -n "${TMUX_PANE:-}" ] || exit 0
 AGENT_ID="$(tmux display-message -t "$TMUX_PANE" -p '#{@agent_id}' 2>/dev/null || true)"
 [ -n "$AGENT_ID" ] && [ "$AGENT_ID" != "unknown" ] || exit 0
 
