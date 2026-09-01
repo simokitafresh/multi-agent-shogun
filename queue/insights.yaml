@@ -12213,3 +12213,10 @@ insights:
   source: "semantic_stress_test"
   fix_known: false
   status: pending
+- id: INS-20260901-124558782-26b4
+  ts: "2026-09-01T12:45:58+09:00"
+  insight: "[[では覚醒して全てを修正せよ]] semantic_stress_test candidate_aliases: NO_MATCH source=lord query=では覚醒して全てを修正せよ"
+  priority: "low"
+  source: "semantic_stress_test"
+  fix_known: false
+  status: pending
