@@ -1,5 +1,6 @@
 # インフラコンテキスト
-<!-- last_updated: 2026-09-01 2026-09-01 将軍 doc lane: daemon TMUX_PANE scrub(c7dada38c)+bulk guard v1/v2(c6b8e1aa3/bf13c13bd)を 2026-09-01 節へ、境界を origin tip へ -->
+<!-- last_updated: 2026-09-01 2026-09-01 将軍 doc lane: 367c0dae3 は instructions/shogun.md 型 第二十一弾のみ(infra 本文変更なし)、境界のみ前進 -->
+<!-- source_commit:0f8b8be610b930fdfba84ffb06ed8385fa3149a7 reason:2026-09-01 将軍 doc lane: 367c0dae3 は instructions/shogun.md 型 第二十一弾のみ(infra 本文変更なし)、境界のみ前進 evidence:git show --stat 367c0dae3 → instructions/shogun.md 1 file -->
 <!-- source_commit:e61b9f150d6ef94bad7c944b863a053a240e4192 reason:2026-09-01 将軍 doc lane: daemon TMUX_PANE scrub(c7dada38c)+bulk guard v1/v2(c6b8e1aa3/bf13c13bd)を 2026-09-01 節へ、境界を origin tip へ evidence:git log --oneline 2d50e2723..origin/main → 3 commit を節に反映 -->
 <!-- source_commit:2d50e272343c1a823da39b975d742f14552bed66 reason:2026-09-01 将軍 doc lane: agent 解決 3 層根治(d5b9d8d95/37f7d2732)を 2026-09-01 節へ追記、境界を origin tip へ evidence:git log --oneline 8bd8e5dbf..origin/main → hooks 2 commit を節に反映 -->
 <!-- source_commit:8bd8e5dbfcd62519df3e9059fc024d7682e34783 reason:2026-09-01 将軍 doc lane: 将軍 D0 3 本(Gate 10.1d/deleted_ref v4/push lane settle age)と GA-539 回収を 2026-09-01 節に反映済み、境界を origin tip へ evidence:git log --oneline ecfcdfcb9..origin/main=将軍 D0+map+lessons; 節に反映 -->
@@ -121,7 +122,7 @@
 <!-- source_commit:f8c49cbd7 reason:cmd_shogun_commit_reservation_ledger_phase1_20260805 evidence:reviewed -->
 <!-- source_commit:515f0214e reason:cmd_karo_hotfix_ga432_context_freshness reviewed source boundary evidence:cmd_complete_gate project=infra context=context/infrastructure.md commit=515f0214e -->
 <!-- source_commit:23a1ce61205ce4496ab11570583e8e8adcaeac4e reason:reflux backlink SSOT update reviewed evidence:incoming 0 to 1; runner69/69; target doc diff0 -->
-<!-- last_synced_lesson: L1693 -->
+<!-- last_synced_lesson: L1694 -->
 
 結論: 本ファイルは検索起点となる索引層。運用詳細・経緯・教訓本文は7つの詳細正本へ移設した。
 source boundary一致taskはregistryのowner/update_triggerからcontext_update_candidatesを自動注入し、未処理候補はcmd_complete_gateがBLOCK、明示処理済み/無関係はCLEAR。
@@ -172,7 +173,7 @@ source boundary一致taskはregistryのowner/update_triggerからcontext_update_
 結論: 詳細は `docs/research/infrastructure-lessons-reviews-operations.md` に保存。原文を省略せず移設済み。
 見出し: 前節「Infra教訓索引」の連続本文（source lines 1701-2123）。
 - L1503: 既存legacy欠損は不変multisetで隔離せよ（cmd_karo_hotfix_shared_operational_log_ownership_20260801）
-<!-- last_synced_lesson: L1693 -->
+<!-- last_synced_lesson: L1694 -->
 - L1504: appendとarchiveはreaderを含むgeneration transactionにせよ（cmd_karo_hotfix_gunshi_cs_remediation_generation_20260801）
 - L1505: 永続test宣言はtask正本に置く（cmd_4206）
 - L1506: active context DEFERはowner存在だけでなくdirty・baseline変化・fresh leaseの全ANDにせよ（cmd_karo_hotfix_active_context_gate_transient_20260801）
@@ -361,6 +362,7 @@ source boundary一致taskはregistryのowner/update_triggerからcontext_update_
 - L1691: 外部LP task runnerはreport-relative ownershipが必要（cmd_4437）
 - L1692: append-only台帳の不正rowはskipせずdurable anomalyへ記録する（cmd_karo_hotfix_defense_overhead_nul_index_20260901）
 - L1693: global freshness ledgerはcanonical tipと境界祖先graphを同一判定へ使う（cmd_karo_hotfix_cfc_origin_basis_20260901）
+- L1694: run_tests task scope must use concrete test paths（cmd_karo_hotfix_inbox_processing_receipt_20260901）
 
 ## 設計標準・テスト・因果
 
