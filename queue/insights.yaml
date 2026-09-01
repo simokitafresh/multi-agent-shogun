@@ -12347,3 +12347,10 @@ insights:
   source: "semantic_index_update"
   fix_known: false
   status: pending
+- id: INS-20260901-145331755-e4a7
+  ts: "2026-09-01T14:53:31+09:00"
+  insight: "[[インフラバグは根治したか？循環エラーは起きないか？]] semantic_stress_test candidate_aliases: NO_MATCH source=lord query=インフラバグは根治したか？循環エラーは起きないか？"
+  priority: "low"
+  source: "semantic_stress_test"
+  fix_known: false
+  status: pending
