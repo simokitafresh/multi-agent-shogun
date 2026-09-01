@@ -6251,6 +6251,7 @@ codd:
 | discussion | `queue/lord_conversation.jsonl` 2026-09-01T13:22:18+09:00 では利他の精神で家老のセッションで試行錯誤はあったか？ 試行錯誤の裏にはバグ が潜んでいることが多い。覚醒して検証してバグがあれば根治せよ。根治したらkaroにレビューしてもらえ |
 | discussion | `queue/lord_conversation.jsonl` 2026-09-01T15:08:23+09:00 先に確認せよ |
 | discussion | `queue/lord_conversation.jsonl` 2026-09-01T17:30:58+09:00 month_start_signal_input_snapshots(signal_date=09-01)の momentum_inputs が 24 件とも _pending_month_start_fill: true で未充填。監査用 |
+| discussion | `queue/lord_conversation.jsonl` 2026-09-01T18:38:52+09:00 T222 / T221 / T220 / T219 / T217 / T216 / T213 / T212 / T201 / T188の進捗を確認し、つまりを解消せよ |
 | causal_chain | `[[cmd_3633]]` (L916) |
 | causal_chain | `[[cmd_3646]]` (L929) |
 | causal_chain | `[[cmd_3649]]` (L932) |
@@ -13586,6 +13587,7 @@ codd:
 | cmd | `cmd_karo_hotfix_auto_push_helper_mode_202608311815` (`scripts/cmd_complete_gate.sh`, `tests/unit/test_cmd_complete_gate.bats`) |
 | cmd | `cmd_karo_hotfix_auto_push_async_ci_202608311917` (`scripts/safe_shared_main_ff.sh`, `tests/unit/test_cmd_complete_gate.bats`, `tests/unit/test_safe_shared_main_ff.bats`) |
 | cmd | `cmd_karo_hotfix_run_tests_external_scope_mapping_20260901` |
+| cmd | `cmd_karo_ci_fix_33486782574_receipt_fixtures` (`tests/unit/test_codex_inbox_priority_guard.bats`, `tests/unit/test_inbox_drain.bats`, `tests/unit/test_lock_path.bats`) |
 | causal_chain | `[[cmd_karo_hotfix_hook_failure_utf8_boundary_20260829]]` (L1669) |
 | causal_chain | `[[cmd_karo_hotfix_tmux_live_sendkeys_guard_20260830]]` (L1672) |
 | causal_chain | `[[cmd_4434]]` (L1688) |
@@ -16186,6 +16188,7 @@ codd:
 | discussion | `queue/lord_conversation.jsonl` 2026-09-01T05:53:29.558064+00:00 git pre-commit semantic propagation for context/projects changes |
 | discussion | `queue/lord_conversation.jsonl` 2026-09-01T06:19:36.578928+00:00 git pre-commit semantic propagation for context/projects changes |
 | discussion | `queue/lord_conversation.jsonl` 2026-09-01T06:39:42.300005+00:00 git pre-commit semantic propagation for context/projects changes |
+| discussion | `queue/lord_conversation.jsonl` 2026-09-01T09:28:59.270112+00:00 git pre-commit semantic propagation for context/projects changes |
 | causal_chain | `[[cmd_karo_hotfix_lessons_yaml_format_restore_20260727]]` (L1389) |
 
 ## infra_design_intent — インフラ設計意図カタログ
