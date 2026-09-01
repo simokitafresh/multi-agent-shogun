@@ -12449,7 +12449,10 @@ insights:
   priority: "medium"
   source: "skill_script_refs:9abfd94ce2d8bec9"
   fix_known: false
-  status: pending
+  status: resolved
+  resolved_reason: "一次検証: SKILL_REF_DISABLE_CACHE=1 bash scripts/gates/gate_skill_script_refs.sh . を実走し、41 SKILL.md・82 script参照・参照あり30件・FOLLOWUP_ACTIVE=34・FOLLOWUP_COVERS_REVIEW_REQUIRED=yes・欠落参照0・鮮度差0・例示パス欠落0・実走marker欠落0を確認。総合REVIEW_REQUIREDは既存follow-upで被覆済みのため追加修正とdecision_candidateは不要。"
+  action_artifact: "target=queue/insights.yaml:INS-20260901-162414139-e710;primary=scripts/gates/gate_skill_script_refs.sh:実走結果;three_layer=memory_db_query exact検索/semantic_search exact検索/ .cache/causal_index.tsv照合;inventory_before=insights_pending:45,zero_backlinks:16,promotions:0,effective_total:61;promotion_pause=queue/gates/reflux_promotion.paused;decision_candidate=none"
+  resolved_at: "2026-09-01T18:44:02+09:00"
 - id: INS-20260901-172730076-116e
   ts: "2026-09-01T17:27:30+09:00"
   insight: "semantic_index_update新概念候補: discussion:みなれないwindow3とwindou4がtmuxにできている。これはなんだ？もう不要なら閉じてくれ は 既存aliasesに一致なし。概念定義とaliases追加を検討せよ"
