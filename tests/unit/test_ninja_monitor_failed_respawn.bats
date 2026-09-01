@@ -13,6 +13,11 @@ setup() {
   EPOCHSECONDS=100
   source <(sed -n '/^_failed_task_has_matching_karo_fail_close()/,/^report_notification_completed()/p' \
     "$ROOT/scripts/ninja_monitor.sh" | sed '$d')
+  # The unit extracts the target function rather than sourcing the full
+  # monitor; this helper is defined earlier in the production script.
+  karo_commander_envelope() {
+    printf 'task_id=commander_directive subject_task_id=%s parent_cmd=%s %s' "$1" "$2" "${3:-}"
+  }
   yaml_field_get() {
     python3 - "$1" "$2" <<'PY'
 import sys,yaml
