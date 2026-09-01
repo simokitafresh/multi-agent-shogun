@@ -1887,6 +1887,18 @@ send_inbox_message() {
     fi
 }
 
+# Karo control-plane notifications must carry an explicit commander identity.
+# Keep this envelope construction in the monitor (the producer owns the event
+# identity) so inbox_write remains a durable boundary rather than a guessing
+# layer.  Every caller supplies the subject task and parent command explicitly.
+karo_commander_envelope() {
+    local subject_task_id="$1"
+    local parent_cmd="$2"
+    local message="$3"
+    printf 'task_id=commander_directive subject_task_id=%s parent_cmd=%s %s' \
+        "$subject_task_id" "$parent_cmd" "$message"
+}
+
 # Convert a DM-Signal origin/main == Render Live transition into one durable
 # wake-up event for Karo.  All negative cases fail closed: an unavailable repo,
 # empty origin SHA, Render CLI failure/empty response, non-live deploy, or
@@ -1981,7 +1993,7 @@ PY
     fi
 
     local message
-    message="【Render Live遷移】DM-Signal origin/main=${origin_sha} と Render Live commit=${live_sha} が一致。Live時刻=${live_at}; action=resume_post_deploy"
+    message="【Render Live遷移】DM-Signal origin/main=${origin_sha} と Render Live commit=${live_sha} が一致。Live時刻=${live_at}; action=resume_post_deploy $(karo_commander_envelope "render_live_transition_${origin_sha}" "cmd_render_live_transition_${origin_sha}" "")"
     if ! bash "$DM_SIGNAL_RENDER_INBOX_WRITE" karo "$message" render_live_transition ninja_monitor resume_post_deploy >> "$LOG" 2>&1; then
         log "RENDER-LIVE-WATCH: inbox delivery failed for ${origin_sha}; state not advanced"
         flock -u "$lock_fd"
@@ -2312,7 +2324,14 @@ record_clear_attempt_or_force_idle() {
         if [ -f "$task_file" ]; then
             task_lifecycle_set_idle "$task_file" "clear_loop_block" 2>/dev/null || true
         fi
-        send_inbox_message karo "【CLEAR-LOOP-BLOCK】${agent_name} が同一cmd=${cmd_id}で /clear ${count}回。上限=${max_clear}超過、CTX=${ctx_now}%<=${ctx_threshold}%のためtaskをidle化。reason=${reason}" clear_loop_block
+        local subject_task_id="${cmd_id}"
+        if [ -f "$task_file" ]; then
+            subject_task_id=$(yaml_field_get "$task_file" "task_id" "" 2>/dev/null || true)
+        fi
+        [ -n "$subject_task_id" ] || subject_task_id="$cmd_id"
+        send_inbox_message karo \
+            "【CLEAR-LOOP-BLOCK】${agent_name} が同一cmd=${cmd_id}で /clear ${count}回。上限=${max_clear}超過、CTX=${ctx_now}%<=${ctx_threshold}%のためtaskをidle化。reason=${reason} $(karo_commander_envelope "$subject_task_id" "$cmd_id" "")" \
+            clear_loop_block
         log "CLEAR-LOOP-BLOCK: $agent_name cmd=$cmd_id count=${count}/${max_clear} forced_idle reason=$reason ctx=${ctx_now}% threshold=${ctx_threshold}%"
     else
         log "CLEAR-LOOP-BLOCK-DEFERRED: $agent_name cmd=$cmd_id count=${count}/${max_clear} forced_idle skipped ctx=${ctx_now:-unknown}% threshold=${ctx_threshold}% reason=$reason"
@@ -4513,6 +4532,7 @@ _failed_task_preserve_marker_file() {
 # only after direct delivery or durable outbox persistence succeeds.
 _failed_task_preserve_before_respawn() {
     local name="$1" fingerprint marker_file stored_fp message
+    local task_file="$SCRIPT_DIR/queue/tasks/${name}.yaml"
     _failed_task_is_formally_closed "$name" && return 1
 
     fingerprint=$(_failed_respawn_generation_fingerprint "$name")
@@ -4520,7 +4540,12 @@ _failed_task_preserve_before_respawn() {
     stored_fp=""
     [ -f "$marker_file" ] && read -r stored_fp < "$marker_file" || true
     if [ "$stored_fp" != "$fingerprint" ]; then
-        message="【作業保全BLOCK】${name}のfailed task世代は未close。pane/worktreeを維持中。queue/tasks/${name}.yamlと対応reportをレビューし、archive.doneまたは正式fail-closeを確定せよ。"
+        local subject_task_id parent_cmd
+        subject_task_id=$(yaml_field_get "$task_file" "task_id" "" 2>/dev/null || true)
+        parent_cmd=$(yaml_field_get "$task_file" "parent_cmd" "" 2>/dev/null || true)
+        parent_cmd="${parent_cmd:-cmd_failed_task_preserve_${name}}"
+        subject_task_id="${subject_task_id:-$parent_cmd}"
+        message="【作業保全BLOCK】${name}のfailed task世代は未close。pane/worktreeを維持中。queue/tasks/${name}.yamlと対応reportをレビューし、archive.doneまたは正式fail-closeを確定せよ。 $(karo_commander_envelope "$subject_task_id" "$parent_cmd" "")"
         if notify_karo_durable failed_task_preserve_block "$name" "$message"; then
             mkdir -p "$STATE_DIR" 2>/dev/null || true
             printf '%s\n' "$fingerprint" > "$marker_file"
@@ -7941,7 +7966,7 @@ _reflux_notify_dirty_target_once() {
         return 0
     fi
 
-    notice="reflux dirty dispatch blocked: cmd=${cmd_id} target=${target} dirty_status=${status} fingerprint=${fingerprint} action=clean_target_then_retry"
+    notice="reflux dirty dispatch blocked: cmd=${cmd_id} target=${target} dirty_status=${status} fingerprint=${fingerprint} action=clean_target_then_retry $(karo_commander_envelope "$cmd_id" "$cmd_id" "")"
     if ! bash "$SCRIPT_DIR/scripts/inbox_write.sh" karo "$notice" task_supplement ninja_monitor hold_next_task; then
         log "REFLUX-AUTO-DIRTY-NOTIFY-FAIL: $name target=$target fingerprint=$fingerprint"
         flock -u "$notice_lock_fd"
@@ -11627,7 +11652,9 @@ check_karo_pending_cmd() {
 
         # 新規pending cmd → 1回通知
         log "PENDING-CMD-NEW: ${cmd_id} -> karo (new pending detected)"
-        bash "$SCRIPT_DIR/scripts/inbox_write.sh" karo "cmd_pending ${cmd_id} 新規pending検知。shogun_to_karo.yamlを確認し着手せよ。" cmd_pending ninja_monitor >> "$LOG" 2>&1
+        bash "$SCRIPT_DIR/scripts/inbox_write.sh" karo \
+            "cmd_pending ${cmd_id} 新規pending検知。shogun_to_karo.yamlを確認し着手せよ。 $(karo_commander_envelope "$cmd_id" "$cmd_id" "")" \
+            cmd_pending ninja_monitor >> "$LOG" 2>&1
     done < <(list_pending_cmds_cached)
 
     # PREV_PENDING_SETを現在の集合に同期

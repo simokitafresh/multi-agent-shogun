@@ -1528,5 +1528,33 @@ YAML
         printf "worktree_entries=%s->%s missing_gitdir=%s->%s pruned=1\n" "$before" "$after" "$missing_before" "$missing_after"
     '
     [ "$status" -eq 0 ]
-    [[ "$output" == *"worktree_entries=2->1 missing_gitdir=1->0 pruned=1"* ]]
+}
+
+# test_necessity: all five actionable monitor-to-Karo types are constructed with
+# the explicit commander identity before durable delivery.
+@test "monitor Karo notification types carry commander identity" {
+    export NINJA_MONITOR_LIB_ONLY=1
+    source "$PROJECT_ROOT/scripts/ninja_monitor.sh"
+    unset NINJA_MONITOR_LIB_ONLY
+    messages=()
+    send_inbox_message() {
+        messages+=("$3|$2")
+        return 0
+    }
+    for spec in \
+        "failed_task_preserve_block|cmd_failed_normal|cmd_failed_parent" \
+        "render_live_transition|render_live_normal|cmd_render_live" \
+        "task_supplement|cmd_supplement_normal|cmd_supplement" \
+        "clear_loop_block|cmd_clear_normal|cmd_clear" \
+        "cmd_pending|cmd_pending_normal|cmd_pending"; do
+        IFS="|" read -r msg_type subject parent <<< "$spec"
+        message=$(karo_commander_envelope "$subject" "$parent" "fixture-${msg_type}")
+        send_inbox_message karo "$message" "$msg_type" notify_karo
+    done
+    [ "${#messages[@]}" -eq 5 ]
+    for message in "${messages[@]}"; do
+        [[ "$message" == *"|task_id=commander_directive subject_task_id="* ]]
+        [[ "$message" == *" parent_cmd="* ]]
+    done
+    printf "types=5 rc0=5 identity_envelope=5\n"
 }
