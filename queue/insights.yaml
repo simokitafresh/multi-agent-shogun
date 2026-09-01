@@ -6107,6 +6107,7 @@ insights:
   resolved_reason: "一次確認で対象 .gitattributes はtracked現存し、merge属性とsemantic-index再生成境界がファイル内に定義済み、運用上の意味はcontext/infrastructure.mdの現行merge戦略記録で被覆済み。semantic-map.mdとdocs/semantic-index/index.mdの直接file resource未登録は確認したが、新概念化は不要なため追加実修正・decision_candidateなし。"
   action_artifact: "target=queue/insights.yaml:INS-20260828-013206284-8928;primary=.gitattributes:1-18;context=context/infrastructure.md:456-468;semantic_map=context/semantic-map.md:direct_match0;semantic_index=docs/semantic-index/index.md:direct_match0;decision_candidate=none"
   resolved_at: "2026-09-01T23:23:15+09:00"
+  last_seen: "2026-09-01T23:31:00+09:00"
 - id: INS-20260828-013206390-80e5
   ts: "2026-08-28T01:32:06+09:00"
   insight: "semantic_map_generate新規ファイル候補: `.githooks/post-commit` は semantic index未登録。既存概念へのfile追加または新概念定義を検討せよ"
