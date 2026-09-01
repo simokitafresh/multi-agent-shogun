@@ -174,6 +174,7 @@ test_execution:
 2. **件数・頻度の heuristic を BLOCK に使うな(WARN+ledger まで)。未処理 loop と高速な正規処理は件数では区別できない。** bulk guard v1(10 秒 3 件 BLOCK)は本番で家老の正規 3 件連続処理を止めた(REJECT 15:49)。真の判定は「読んだ証拠」(処理 receipt)。家老の REJECT が本番 FP を持って来たら、まず既定を観測へ戻し(bf13c13bd)、正しい判定器は別 lane で作る。
 3. **殿の『正しく計算されているか』は 3 層の機械突合で答える: (a)DB⇔API 一致 (b)入力(prices/DTB3/config)からの独立再計算 (c)状態遷移規則(rebalance_trigger)の検算。母集団 N/N を必ず添え、『一見おかしい』(シン朱雀 raw≠保有)は規則(偶数月のみ)で説明できるまで疑う。** 101 PF 全一致、変更は DM3 のみ、を 10 分で出せた=手順は `rebalance_day_numeric_reconciliation_20260901`。
 4. **自分の insight_write/教訓追記は即 commit。未 commit の queue/insights.yaml は忍者 reflux の dirty-guard を踏み、lifecycle 失敗行として自分に返ってくる(16:14 saizo ×2)。** LS-A14(2)の insight 版。
+5. **inbox は `bash scripts/inbox_read.sh shogun` で読んでから `inbox_mark_read.sh` せよ(17:0x receipt hotfix 本番稼働)。** python/cat 直読みからの mark は `BLOCK: no inbox read receipt` で止まる(17:11 に将軍自身が 3 回踏んだ)。receipt=msg_id+content hash の generation 束縛=「読んだ証拠」が判定器、件数 heuristic は観測のみ(則 2 の帰結)。
 - origin: `[[殿指示_強くてニューゲーム_20260901_1626]] -> [[偽BLOCK_3層_TMUX_PANE継承]] -> [[bulk_guard_本番FP→WARN既定]] -> [[数値突合3層_101PF全一致]] -> [[insights_dirty_reflux]] -> [[復帰後の型_第二十一弾]]`
 
 ## 復帰後の型・第二十弾 4則（2026-09-01 14:38-15:02 第21便: 自分の前便が壊した CI/仮説 3 本の手元否定/backlog worktree 回収/家老レビュー 3 往復から・将軍自身に適用）
