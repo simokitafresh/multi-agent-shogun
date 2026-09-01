@@ -12275,4 +12275,14 @@ insights:
   priority: "low"
   source: "semantic_index_update"
   fix_known: false
+  status: resolved
+  resolved_reason: "semantic map generation verified the candidate is represented or intentionally ignored"
+  action_artifact: "semantic_map=/home/simokitafresh/multi-agent-shogun/context/semantic-map.md;semantic_index=/home/simokitafresh/multi-agent-shogun/docs/semantic-index/index.md"
+  resolved_at: "2026-09-01T13:18:35+09:00"
+- id: INS-20260901-132007708-6f77
+  ts: "2026-09-01T13:20:07+09:00"
+  insight: "[[shutsujin departure shに問題がないか覚醒して点検してくれ]] semantic_stress_test candidate_aliases: NO_MATCH source=lord query=shutsujin_departure.shに問題がないか覚醒して点検してくれ"
+  priority: "low"
+  source: "semantic_stress_test"
+  fix_known: false
   status: pending
