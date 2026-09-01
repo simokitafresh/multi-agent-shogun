@@ -8894,6 +8894,7 @@ insights:
   resolved_reason: "一次情報で確認: .tmp-receipt-worktree/ は現存せず、git check-ignoreで.gitignore:8の*に該当しtrackedでもない。context/semantic-map.md/docs/semantic-index/index.md/.cache/causal_index.tsvで対象path/IDを各0件確認。生成時の一時worktree候補であり、semantic knowledgeとして追加する実修正は不要、decision_candidate=none。"
   action_artifact: "target=queue/insights.yaml:8887-8893;primary=filesystem:absent;ignore=.gitignore:8:pattern=*;tracked=0;semantic_map=0;semantic_index=0;obsidian=0;decision_candidate=none;inventory_before=insights_pending:37,zero_backlinks:17,promotions:610,total:664"
   resolved_at: "2026-09-02T00:42:06+09:00"
+  last_seen: "2026-09-02T00:53:42+09:00"
 - id: INS-20260830-142701690-cf79
   ts: "2026-08-30T14:27:01+09:00"
   insight: "[[GATE STALL item固定30秒timeoutをcmd complete gate直近実測wall p95× 5]] NO_MATCH purpose pending alias: cmd_complete時にdeploy_task.logでNO_MATCHだったpurpose。類似概念TOP3: yaml_safe_write(YAML安全書込み; alias=gate_no_direct_yaml_dump; score=9.7) / multi_cli_event_commonization(multi-CLI hook/event共通化; alias=gate_multi_cli_switch; score=9.6) / provisional_hidden-infrastructure-gate-hook-canonical-manifest-20260731(仮: Hidden Infrastructure Gate Hook Canonical Manifest 20260731; alias=hidden-infrastructure-gate-hook-canonical-manifest-20260731; score=9.6)。既存概念aliasesへの自動昇格候補"
