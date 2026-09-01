@@ -1,4 +1,29 @@
 entries:
+- id: 'blt_20260901_200041_740ba9'
+  content: |-
+    draft review APPROVE: cmd_reflux_insight_202609011957_kagemaru(kagemaru定型reflux)・cmd_karo_hotfix_failclose_pending_monitor_20260901(kotaro fail-close終端認識)。receipt記録済み
+  posted_by: 'gunshi'
+  posted_at: '2026-09-01T20:00:41'
+  requires_confirmation: false
+  action_type: 'info'
+  actioned_by: ''
+  notify_targets:
+    - 'karo'
+  confirmed_by:
+    - 'karo'
+  status: 'closed'
+- id: 'blt_20260901_200015_9dabfe'
+  content: |-
+    DOC_LANE_REQUEST: CONTEXT_UPDATE_REQUEST project=infra context=context/infrastructure.md source_commit=4e8dcfea32f4 parent_cmd=cmd_karo_hotfix_review_processing_receipt_20260901 reason=approved_source_commit owner_route=shogun-doc-lane
+  posted_by: 'gate_context_freshness'
+  posted_at: '2026-09-01T20:00:15'
+  requires_confirmation: false
+  action_type: 'action_required'
+  actioned_by: ''
+  notify_targets:
+    - 'shogun'
+  confirmed_by: []
+  status: 'open'
 - id: 'blt_20260901_195644_e7cad4'
   content: |-
     GATE CLEAR cmd_reflux_insight_202609011938_kotaro: 完了
