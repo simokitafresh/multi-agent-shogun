@@ -11029,7 +11029,10 @@ insights:
   priority: "medium"
   source: "manual"
   fix_known: false
-  status: pending
+  status: resolved
+  resolved_reason: "一次確認済み: 候補の対策は既に f4b20df2e0eff8fcbd837c2c1a6ea78af8971cc2 (2026-08-31T13:26:05+09:00) で実装済み。scripts/review_approval.sh:520-539 は同一実装commitでも queue/gates/<cmd>/sg7_bundle.json が存在する precheck CLEAR 証跡時だけ WARN 継続し、証跡なしは従来どおり BLOCK。既存の tests/unit/test_review_approval.bats は関連する正常/拒否境界を検証済み。"
+  action_artifact: "commit=f4b20df2e0eff8fcbd837c2c1a6ea78af8971cc2;source=scripts/review_approval.sh:520-539;tests=tests/unit/test_review_approval.bats;semantic=context/semantic-map.md:120;context=docs/research/infrastructure-context-memory.md:55,79"
+  resolved_at: "2026-09-01T13:15:53+09:00"
 - id: INS-20260831-131907279-ec0a
   ts: "2026-08-31T13:19:07+09:00"
   insight: "[[karoにつまりがあるようだ]] semantic_stress_test candidate_aliases: NO_MATCH source=lord query=karoにつまりがあるようだ。なにかインフラバグが隠れているのでは？覚醒して調査してくれ"
@@ -12252,11 +12255,24 @@ insights:
   priority: "low"
   source: "semantic_index_update"
   fix_known: false
-  status: pending
+  status: resolved
+  resolved_reason: "semantic map generation verified the candidate is represented or intentionally ignored"
+  action_artifact: "semantic_map=/home/simokitafresh/multi-agent-shogun/context/semantic-map.md;semantic_index=/home/simokitafresh/multi-agent-shogun/docs/semantic-index/index.md"
+  resolved_at: "2026-09-01T13:16:32+09:00"
 - id: INS-20260901-131437765-2a3b
   ts: "2026-09-01T13:14:37+09:00"
   insight: "[[アーティファクトを更新してくれ]] semantic_stress_test candidate_aliases: NO_MATCH source=lord query=アーティファクトを更新してくれ"
   priority: "low"
   source: "semantic_stress_test"
+  fix_known: false
+  status: resolved
+  resolved_reason: "semantic index candidate was absorbed into a registered concept"
+  action_artifact: "semantic_index=/home/simokitafresh/multi-agent-shogun/docs/semantic-index/index.md"
+  resolved_at: "2026-09-01T13:17:48+09:00"
+- id: INS-20260901-131748648-7d28
+  ts: "2026-09-01T13:17:48+09:00"
+  insight: "semantic_index_update新概念候補: discussion:家老は反応したか？ は 既存aliasesに一致なし。概念定義とaliases追加を検討せよ"
+  priority: "low"
+  source: "semantic_index_update"
   fix_known: false
   status: pending
