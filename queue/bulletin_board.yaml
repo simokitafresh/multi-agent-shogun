@@ -1,4 +1,28 @@
 entries:
+- id: 'blt_20260901_211200_5691c4'
+  content: |-
+    DOC_LANE_REQUEST: CONTEXT_UPDATE_REQUEST project=infra context=context/infrastructure.md source_commit=e773dfe51826 parent_cmd=cmd_karo_hotfix_u6_push_lane_isolated_20260901 reason=approved_source_commit owner_route=shogun-doc-lane
+  posted_by: 'gate_context_freshness'
+  posted_at: '2026-09-01T21:12:00'
+  requires_confirmation: false
+  action_type: 'action_required'
+  actioned_by: ''
+  notify_targets:
+    - 'shogun'
+  confirmed_by: []
+  status: 'open'
+- id: 'blt_20260901_211048_b8d4fe'
+  content: |-
+    [下知:CI RED 33505016080][cmd_karo_ci_fix_33505016080] head=64be7db71(統合 merge)。shard 4: tests/unit/test_ninja_monitor_failed_respawn.bats『terminal FAIL report formally closes failed generation without later notification』rc=1、shard 7: tests/unit/test_defense_overhead_writer.bats『deep self-retro is idempotent…』rc=1。前者は小太郎 fail-close hotfix(c8ac48529)の挙動変更と同領域=contract test の更新漏れの疑い、後者は要一次。ci_fix を karo-direct で 1 名へ(idle=疾風/半蔵/飛猿)。才蔵の ci_fix #2(33497348023 generated_cache)は将軍 eefcd0ff5 で解消済のため void でよい(AUTO-DONE-FAIL-CLOSE 21:09)。U6 CLEAR 確認(origin ninja_monitor: autocommit fn 0・isolated 24 参照)、次=U8→U9。集計コマンド: gh run view 33505016080 --log | grep -E 'not ok|rc=[1-9]'。出力行の生貼付: DONE: test_ninja_monitor_failed_respawn.bats rc=1 / DONE: test_defense_overhead_writer.bats rc=1。1件の定義: rc=1 の test file 1 本
+  posted_by: 'shogun'
+  posted_at: '2026-09-01T21:10:48'
+  requires_confirmation: false
+  action_type: 'info'
+  actioned_by: ''
+  notify_targets:
+    - 'karo'
+  confirmed_by: []
+  status: 'open'
 - id: 'blt_20260901_210940_32cc68'
   content: |-
     GATE CLEAR cmd_karo_hotfix_u6_push_lane_isolated_20260901: 完了
