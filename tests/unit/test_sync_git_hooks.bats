@@ -50,7 +50,10 @@ teardown() {
 @test "GA-309 pre-push runs selector and runner from local_sha clean snapshot" {
     mkdir -p "$TEST_ROOT/.githooks" "$TEST_ROOT/scripts" "$TEST_ROOT/logs/test_receipts"
     cp "$BATS_TEST_DIRNAME/../../.githooks/pre-push" "$TEST_ROOT/.githooks/pre-push"
-    chmod +x "$TEST_ROOT/.githooks/pre-push"
+    # The tracked production hook is mode100644 and is invoked through bash.
+    [ "$(stat -c '%a' "$TEST_ROOT/.githooks/pre-push")" = "644" ]
+    cp "$BATS_TEST_DIRNAME/../../scripts/safe_shared_main_ff.sh" "$TEST_ROOT/scripts/safe_shared_main_ff.sh"
+    [ "$(stat -c '%a' "$TEST_ROOT/scripts/safe_shared_main_ff.sh")" = "644" ]
     cat > "$TEST_ROOT/scripts/test_select.sh" <<'EOF'
 #!/usr/bin/env bash
 echo tests/unit/clean.bats
@@ -78,7 +81,7 @@ EOF
     chmod +x "$TEST_ROOT/scripts/test_select.sh" "$TEST_ROOT/scripts/run_tests.sh"
 
     run env GA309_TRACE="$trace" PREPUSH_LOCK_WAIT_SECONDS=2 \
-        bash -c "cd '$TEST_ROOT' && printf 'refs/heads/main $local_sha refs/heads/main $base_sha\\n' | .githooks/pre-push origin example.invalid"
+        bash -c "cd '$TEST_ROOT' && printf 'refs/heads/main $local_sha refs/heads/main $base_sha\\n' | bash .githooks/pre-push origin example.invalid"
 
     [ "$status" -eq 0 ]
     [ "$(cat "$trace")" = "clean-run" ]
@@ -321,6 +324,8 @@ OLDSCRIPT
     mkdir -p "$TEST_ROOT/.githooks" "$TEST_ROOT/scripts" \
         "$TEST_ROOT/context" "$TEST_ROOT/projects/infra" "$TEST_ROOT/tasks"
     cp "$BATS_TEST_DIRNAME/../../.githooks/pre-push" "$TEST_ROOT/.githooks/pre-push"
+    cp "$BATS_TEST_DIRNAME/../../scripts/safe_shared_main_ff.sh" "$TEST_ROOT/scripts/safe_shared_main_ff.sh"
+    [ "$(stat -c '%a' "$TEST_ROOT/scripts/safe_shared_main_ff.sh")" = "644" ]
     cat > "$TEST_ROOT/scripts/test_select.sh" <<'EOF'
 #!/usr/bin/env bash
 printf 'tests/unit/runtime-marker.bats\n'
@@ -329,7 +334,7 @@ EOF
 #!/usr/bin/env bash
 printf '%s\n' "$*" >> "$PRE_PUSH_RUNTIME_TRACE"
 EOF
-    chmod +x "$TEST_ROOT/.githooks/pre-push" "$TEST_ROOT/scripts/test_select.sh" "$TEST_ROOT/scripts/run_tests.sh"
+    chmod +x "$TEST_ROOT/scripts/test_select.sh" "$TEST_ROOT/scripts/run_tests.sh"
     (
         cd "$TEST_ROOT"
         git add .githooks/pre-push scripts/test_select.sh scripts/run_tests.sh
