@@ -16506,3 +16506,16 @@ sqlite3.Connection.backup()を使うとページ(4096byte)単位のread syscall�
 - **when**: 未設定
 - **how**: 未設定
 - v2はモノリス末尾のfetch関数overrideとruntime testを追加したが、main.shが再読込するpreflight本体は旧@{upstream}のままだった。分割モジュールを直接再読込するfixtureを必須化し、正本モジュールと互換モノリスの境界を同時に更新する。
+
+### L1697: 公開済みours-equivalent mergeも後続ancestry mergeで親内容を後退させ得る
+- **日付**: 2026-09-02
+- **出典**: cmd_karo_hotfix_ancestry_merge_content_loss_20260902
+- **記録者**: hanzo
+- **tags**: [infra,cmd-quality,gate,git]
+- **subdomain**: infra
+- **target_files**: [scripts/cmd_complete_gate.sh,scripts/safe_shared_main_ff.sh,tests/unit/test_safe_shared_main_ff.bats]
+- **origin**: [[cmd_karo_hotfix_ancestry_merge_content_loss_20260902]]
+- **enforcement**: 未自動化
+- **when**: 未設定
+- **how**: 未設定
+- 公開済み履歴のours-equivalent exemptionだけでは不十分。local parentがsecond-parent ancestryを含む場合、prospective merge treeを親blobと比較し回帰pathをpush前BLOCKする必要がある。

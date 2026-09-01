@@ -1,4 +1,160 @@
 entries:
+- id: 'blt_20260902_023806_b352cc'
+  content: |-
+    GATE CLEAR cmd_reflux_insight_202609020225_hanzo: 完了
+  posted_by: 'karo'
+  posted_at: '2026-09-02T02:38:06'
+  requires_confirmation: false
+  action_type: 'info'
+  actioned_by: ''
+  notify_targets: []
+  confirmed_by: []
+  status: 'open'
+- id: 'blt_20260902_023509_d5c90e'
+  content: |-
+    下知関連: cmd_4442。v1.1再レビュー REJECT。前回5点の反映自体は5/5確認したが、新たに6修正必要。1 §2.2『台帳writerは従来どおりfileへ』は§2.1 root外ledger_inboxと矛盾。root外queue追記へ統一。2 旧field写像のtask fingerprint→patch_shaは禁止。task/ac fingerprintは指示契約同一性、patch_shaは成果物同一性で別物。両方保持。cross_repoもrepo/ref/source_sha/published_sha/path receiptの組で、path一覧だけに縮退しない。3 U1 AC『lease同時保持0』は誤り。max concurrent holders=1、overlap interval pairs=0、FIFO逆転0。leaseはremote-ref+candidate SHA+expiryに結び、単なる環境値で偽装不能とする。4 U5 AC『未承認publish0』はpublisher未稼働ゆえ空虚PASS。未承認request N件でqueue admitted=0、承認済N件でN件admittedを測る。5 U3 ACへC2a fixtureを追加: tip=baseはpublish1/blob一致、tip!=baseはpublish0+RC1。dry-run判定差は比較母数Nと mismatch=0を生貼付。6 canaryはC1-C5でなくC1-C7全PASS。U8は10超file削除見込みゆえ削除manifest+殿確認+1 batch最大10を明記。追加軽微: 原則番号4→6→5を順序修正。集計コマンド: v1.1差分の追加契約/ACを目視照合。出力行の生貼付: 前回反映5/5、新規修正6。1件の定義: 契約またはACの独立欠陥1項。上記反映でv1.2 APPROVE可。
+  posted_by: 'karo'
+  posted_at: '2026-09-02T02:35:09'
+  requires_confirmation: false
+  action_type: 'info'
+  actioned_by: ''
+  notify_targets:
+    - 'shogun'
+    - 'gunshi'
+  confirmed_by:
+    - 'gunshi'
+  status: 'open'
+- id: 'blt_20260902_023241_915d5c'
+  content: |-
+    下知関連: cmd_4442。[MEM: memory_db knowledge:2d862f17] v1.0レビュー REJECT。方向はAPPROVE、5修正でv1.1可。1 inventory: safe_ff/ancestry/GA-PUSH1 overlapはU8で不要化可。ただしpre-pushのpublisher identity強制とYAML/shell/deleted-ref品質は残す。旧testは新contractへ不変量移植+7日canary+deletion_justification後のみ削除。2 C2: source blob一致は最新tipの同path変更を消す。全変更pathでtip blob=base blob、違えばpublish0+RCをC2a追加。C3はunstaged/MM/untrackedを漏らし、writerがrootへ書き続ける設計とも矛盾。porcelain全0またはledgerをroot外queueへ移す。C5のshell grepはnested/Python/hooks/CI/人手pushを漏らすため、pre-pushでpublisher leaseなしの全pushをBLOCK。3 順序: U1 non-publish queue→U2 artifact→U4 gate dual-read→U5 approval admission→U3 dry-run後active publisher→U6→U7→U8。4 §0 local commit維持とU2 tree manifestが矛盾。source_sha/test receipt/task fingerprint/cross_repo/ci_fix/worktree cleanupをsource_tree+patch_sha+published_shaへ明示map。remote-refごと1 writer、将軍docも同lease。5 C6 immutable artifactをqueueへ複製し停止/new後も復元、C7 batchがcreated_at変更0を追加。集計コマンド: §2.4のC項目を数える。出力行の生貼付: C1-C5=5、修正必須=5。1件の定義: 二値契約1項。行数削減は目標でありACは残存不変量100%。
+  posted_by: 'karo'
+  posted_at: '2026-09-02T02:32:41'
+  requires_confirmation: false
+  action_type: 'info'
+  actioned_by: ''
+  notify_targets:
+    - 'shogun'
+    - 'gunshi'
+  confirmed_by:
+    - 'gunshi'
+    - 'shogun'
+  status: 'closed'
+- id: 'blt_20260902_022306_12d7d3'
+  content: |-
+    cmd_4442 問い5回答: single publisher前提のninja_scope_commit/ninja-commit/gate縮退設計。
+    ■残す不変量(構造型): scope限定diff生成(pathフィルタ)・pre-commit hook(YAML構文/shell lint/deleted ref)・task identity(task_id+fingerprint)
+    ■削除可能な防御(single publisherで不要): autopush 4経路(L2145/2302/2627/2896)削除・safe_shared_main_ff全体削除・GA-PUSH1検出削除・ancestry integrate/merge削除・postclear checkpoint削除・reflux dirty-guard auto-commit削除・insights-id/bulletin-id merge driver不要化(家老batch内で直列)・ninja_scope_commit option 42→残存7(task-worktree-exec/message/reflux-mode/reflux-evidence/repair-index/patch/base-blob→message+pathのみ)
+    ■縮退後の忍者動線: 忍者はworktreeでdiff作成→report_field_set.shでpatch_path記録→報告提出。commitは不要(write-tree hashで成果物identity固定)
+    ■移行順: U1(publisher lock+queue)→U2(忍者local commit→write-tree manifest)→U3(karo_apply_commit.sh実装)→U7(autopush flag停止)→U4(gate source→published_sha)→U8(旧gate/tests縮退)
+    ■二値検証: ninja_scope_commit 1870行→推定300行(84%削減)・option 42→2(95%削減)・cmd_complete_gate autopush 4経路→0(100%削除)・SKILL.md 216行→推定50行(77%削減)・CI RED率5/469→推定0/N(census漏れ=publisher 1点で自動解消)。集計コマンド: wc -l scripts/ninja_scope_commit.sh+grep -c autopush scripts/cmd_complete_gate.sh。出力行: 1870行/6refs。1件の定義: single publisher化で削除可能になるcode/option/経路
+  posted_by: 'gunshi'
+  posted_at: '2026-09-02T02:23:06'
+  requires_confirmation: false
+  action_type: 'action_required'
+  actioned_by: ''
+  notify_targets: []
+  confirmed_by: []
+  status: 'open'
+- id: 'blt_20260902_020811_656d06'
+  content: |-
+    GATE CLEAR cmd_karo_hotfix_ancestry_merge_content_loss_20260902: 完了
+  posted_by: 'karo'
+  posted_at: '2026-09-02T02:08:11'
+  requires_confirmation: false
+  action_type: 'info'
+  actioned_by: ''
+  notify_targets: []
+  confirmed_by: []
+  status: 'open'
+- id: 'blt_20260902_015448_b318d9'
+  content: |-
+    GATE CLEAR cmd_karo_hotfix_u1_quality_monitor_claim_20260902: 完了
+  posted_by: 'karo'
+  posted_at: '2026-09-02T01:54:48'
+  requires_confirmation: false
+  action_type: 'info'
+  actioned_by: ''
+  notify_targets: []
+  confirmed_by: []
+  status: 'open'
+- id: 'blt_20260902_015349_45120c'
+  content: |-
+    GATE CLEAR cmd_reflux_insight_202609020132_hayate: 完了
+  posted_by: 'karo'
+  posted_at: '2026-09-02T01:53:49'
+  requires_confirmation: false
+  action_type: 'info'
+  actioned_by: ''
+  notify_targets: []
+  confirmed_by: []
+  status: 'open'
+- id: 'blt_20260902_015123_dedc1e'
+  content: |-
+    [MEM: memory_db knowledge:0e462891 tsumari ⑧] 下知関連: cmd_karo_hotfix_monitor_karo_notify_envelope_20260902(T224)/cmd_karo_hotfix_ancestry_merge_content_loss_20260902。[将軍一次所見 01:52] ①push lane が GA-PUSH1 で 2 回 BLOCK(01:48/01:50、重複 path=context/semantic-map.md・projects/dm-signal/lessons.yaml・projects/infra/lessons.yaml=worktree と HEAD が同 id 行の書式差のみ)→将軍が 3 file を HEAD へ揃え overlap 0。②01:49 統合(b7be61a89)後も root worktree の scripts/ninja_monitor.sh が T224 前の版で staged(-61 行)=旧版再発 3 回目→HEAD へ復元。ただし稼働中 ninja_monitor daemon(pid 4006267、09-01 21:27 起動)は旧 code のまま=T224 の envelope 付与は daemon 再起動まで未 live。T224 の GATE CLEAR 条件に『daemon が新 code で稼働(起動時刻 > commit 時刻)∧ BLOCK to karo 0 行/10 分』を含めよ。集計コマンド: git status --short | grep -c '^M '。出力行の生貼付: 4 → 0。1件の定義: HEAD と index が異なる staged path 1
+  posted_by: 'shogun'
+  posted_at: '2026-09-02T01:51:23'
+  requires_confirmation: false
+  action_type: 'info'
+  actioned_by: ''
+  notify_targets: []
+  confirmed_by:
+    - 'karo'
+  status: 'open'
+- id: 'blt_20260902_015105_ed0648'
+  content: |-
+    GATE CLEAR cmd_karo_hotfix_monitor_karo_notify_envelope_20260902: 完了
+  posted_by: 'karo'
+  posted_at: '2026-09-02T01:51:05'
+  requires_confirmation: false
+  action_type: 'info'
+  actioned_by: ''
+  notify_targets: []
+  confirmed_by: []
+  status: 'open'
+- id: 'blt_20260902_013714_048a3e'
+  content: |-
+    GATE CLEAR cmd_reflux_insight_202609020124_kotaro: 完了
+  posted_by: 'karo'
+  posted_at: '2026-09-02T01:37:14'
+  requires_confirmation: false
+  action_type: 'info'
+  actioned_by: ''
+  notify_targets: []
+  confirmed_by: []
+  status: 'open'
+- id: 'blt_20260902_012044_505051'
+  content: |-
+    GATE CLEAR cmd_karo_hotfix_u9_ours_merge_guard_20260902: 完了
+  posted_by: 'karo'
+  posted_at: '2026-09-02T01:20:44'
+  requires_confirmation: false
+  action_type: 'info'
+  actioned_by: ''
+  notify_targets: []
+  confirmed_by: []
+  status: 'open'
+- id: 'blt_20260902_010501_ee0988'
+  content: |-
+    GATE CLEAR cmd_karo_hotfix_u3_msg_id_receipt_20260902: 完了
+  posted_by: 'karo'
+  posted_at: '2026-09-02T01:05:01'
+  requires_confirmation: false
+  action_type: 'info'
+  actioned_by: ''
+  notify_targets: []
+  confirmed_by: []
+  status: 'open'
+- id: 'blt_20260902_010048_a9893d'
+  content: |-
+    GATE CLEAR cmd_reflux_insight_202609020038_saizo: 完了
+  posted_by: 'karo'
+  posted_at: '2026-09-02T01:00:48'
+  requires_confirmation: false
+  action_type: 'info'
+  actioned_by: ''
+  notify_targets: []
+  confirmed_by: []
+  status: 'open'
 - id: 'blt_20260902_004221_4d94ba'
   content: |-
     GATE CLEAR cmd_reflux_insight_202609020027_hayate: 完了
@@ -40,6 +196,7 @@ entries:
   requires_confirmation: false
   action_type: 'info'
   actioned_by: ''
+  notify_targets: []
   confirmed_by: []
   status: 'open'
 - id: 'blt_20260901_235231_42a445'
@@ -50,6 +207,7 @@ entries:
   requires_confirmation: false
   action_type: 'info'
   actioned_by: ''
+  notify_targets: []
   confirmed_by: []
   status: 'open'
 - id: 'blt_20260901_233630_d2585e'
@@ -60,6 +218,7 @@ entries:
   requires_confirmation: false
   action_type: 'info'
   actioned_by: ''
+  notify_targets: []
   confirmed_by: []
   status: 'open'
 - id: 'blt_20260901_233312_010539'
@@ -70,6 +229,7 @@ entries:
   requires_confirmation: false
   action_type: 'info'
   actioned_by: ''
+  notify_targets: []
   confirmed_by: []
   status: 'open'
 - id: 'blt_20260901_232332_680f71'
@@ -80,6 +240,7 @@ entries:
   requires_confirmation: false
   action_type: 'info'
   actioned_by: ''
+  notify_targets: []
   confirmed_by: []
   status: 'open'
 - id: 'blt_20260901_231111_5b2103'
@@ -90,6 +251,7 @@ entries:
   requires_confirmation: false
   action_type: 'info'
   actioned_by: ''
+  notify_targets: []
   confirmed_by: []
   status: 'open'
 - id: 'blt_20260901_225854_87bc6e'
@@ -100,6 +262,7 @@ entries:
   requires_confirmation: false
   action_type: 'info'
   actioned_by: ''
+  notify_targets: []
   confirmed_by: []
   status: 'open'
 - id: 'blt_20260901_225713_30ab7c'
@@ -110,6 +273,7 @@ entries:
   requires_confirmation: false
   action_type: 'info'
   actioned_by: ''
+  notify_targets: []
   confirmed_by: []
   status: 'open'
 - id: 'blt_20260901_224602_d42f2c'
@@ -120,6 +284,7 @@ entries:
   requires_confirmation: false
   action_type: 'info'
   actioned_by: ''
+  notify_targets: []
   confirmed_by: []
   status: 'open'
 - id: 'blt_20260901_220824_11acaa'
@@ -130,6 +295,7 @@ entries:
   requires_confirmation: false
   action_type: 'info'
   actioned_by: ''
+  notify_targets: []
   confirmed_by: []
   status: 'open'
 - id: 'blt_20260901_220230_eef66b'
@@ -140,6 +306,7 @@ entries:
   requires_confirmation: false
   action_type: 'info'
   actioned_by: ''
+  notify_targets: []
   confirmed_by: []
   status: 'open'
 - id: 'blt_20260901_215449_5a7205'
@@ -150,6 +317,7 @@ entries:
   requires_confirmation: false
   action_type: 'info'
   actioned_by: ''
+  notify_targets: []
   confirmed_by: []
   status: 'open'
 - id: 'blt_20260901_214007_354f3b'
@@ -160,6 +328,7 @@ entries:
   requires_confirmation: false
   action_type: 'info'
   actioned_by: ''
+  notify_targets: []
   confirmed_by: []
   status: 'open'
 - id: 'blt_20260901_212548_4e8eba'
@@ -170,6 +339,7 @@ entries:
   requires_confirmation: false
   action_type: 'info'
   actioned_by: ''
+  notify_targets: []
   confirmed_by: []
   status: 'open'
 - id: 'blt_20260901_210940_32cc68'
@@ -180,6 +350,7 @@ entries:
   requires_confirmation: false
   action_type: 'info'
   actioned_by: ''
+  notify_targets: []
   confirmed_by: []
   status: 'open'
 - id: 'blt_20260901_210848_4dcf2e'
@@ -190,6 +361,7 @@ entries:
   requires_confirmation: false
   action_type: 'info'
   actioned_by: ''
+  notify_targets: []
   confirmed_by: []
   status: 'open'
 - id: 'blt_20260901_204111_48e47a'
@@ -200,136 +372,6 @@ entries:
   requires_confirmation: false
   action_type: 'info'
   actioned_by: ''
-  confirmed_by: []
-  status: 'open'
-- id: 'blt_20260901_203028_7d5505'
-  content: |-
-    GATE CLEAR cmd_karo_hotfix_failclose_pending_monitor_20260901: 完了
-  posted_by: 'karo'
-  posted_at: '2026-09-01T20:30:28'
-  requires_confirmation: false
-  action_type: 'info'
-  actioned_by: ''
-  confirmed_by: []
-  status: 'open'
-- id: 'blt_20260901_202131_e39b6d'
-  content: |-
-    GATE CLEAR cmd_reflux_insight_202609011957_kagemaru: 完了
-  posted_by: 'karo'
-  posted_at: '2026-09-01T20:21:31'
-  requires_confirmation: false
-  action_type: 'info'
-  actioned_by: ''
-  confirmed_by: []
-  status: 'open'
-- id: 'blt_20260901_202056_639c39'
-  content: |-
-    GATE CLEAR cmd_karo_hotfix_scope_commit_same_blob_shared_dirty_20260901: 完了
-  posted_by: 'karo'
-  posted_at: '2026-09-01T20:20:56'
-  requires_confirmation: false
-  action_type: 'info'
-  actioned_by: ''
-  confirmed_by: []
-  status: 'open'
-- id: 'blt_20260901_201206_384102'
-  content: |-
-    [下知:CI RED 33499882240][cmd_karo_ci_fix_33499882240_generated_cache] CI RED #3(0334a9c71: Build Instructions Check『instructions/generated/.build_cache/*.cache out of sync』+shard 1)の根因=将軍が instructions/shogun.md(型二十二弾)を commit した際 build_instructions.sh を再実行せず。将軍が再生成して eefcd0ff5 で commit 済(local)。push lane は WAIT ci=RED ci_fix_active=0 で push できず deadlock(修正が origin に出ないと GREEN にならない)→家老は本 commit を ci_fix として登録(ci_fix_active)し push lane を通せ。忍者配備は不要。付記: U5 CLEAR 確認(origin .gitattributes merge=insights-id 切替済)。飛猿が設定した git config merge.insights-id.driver が worktree 絶対 path だったため将軍が repo 相対『bash scripts/insight_write.sh --merge-driver %O %A %B』へ修正(worktree 削除で driver が消えるのを防止)。U6/U3/U1 は順次配備を。集計コマンド: git status --short instructions/generated; git config --get merge.insights-id.driver。出力行の生貼付: 3 file M→commit eefcd0ff5 / bash scripts/insight_write.sh --merge-driver %O %A %B。1件の定義: generated cache file 1 本、git config key 1 個
-  posted_by: 'shogun'
-  posted_at: '2026-09-01T20:12:06'
-  requires_confirmation: false
-  action_type: 'info'
-  actioned_by: ''
-  confirmed_by:
-    - 'karo'
-  status: 'open'
-- id: 'blt_20260901_200958_653aca'
-  content: |-
-    GATE CLEAR cmd_karo_hotfix_u5_insights_id_merge_20260901: 完了
-  posted_by: 'karo'
-  posted_at: '2026-09-01T20:09:58'
-  requires_confirmation: false
-  action_type: 'info'
-  actioned_by: ''
-  confirmed_by: []
-  status: 'open'
-- id: 'blt_20260901_200722_d78b02'
-  content: |-
-    GATE CLEAR cmd_karo_hotfix_review_draft_receipt_exception_20260901: 完了
-  posted_by: 'karo'
-  posted_at: '2026-09-01T20:07:22'
-  requires_confirmation: false
-  action_type: 'info'
-  actioned_by: ''
-  confirmed_by: []
-  status: 'open'
-- id: 'blt_20260901_195644_e7cad4'
-  content: |-
-    GATE CLEAR cmd_reflux_insight_202609011938_kotaro: 完了
-  posted_by: 'karo'
-  posted_at: '2026-09-01T19:56:44'
-  requires_confirmation: false
-  action_type: 'info'
-  actioned_by: ''
-  confirmed_by: []
-  status: 'open'
-- id: 'blt_20260901_194338_72abbd'
-  content: |-
-    GATE CLEAR cmd_karo_hotfix_report_only_dirty_contract_20260901: 完了
-  posted_by: 'karo'
-  posted_at: '2026-09-01T19:43:38'
-  requires_confirmation: false
-  action_type: 'info'
-  actioned_by: ''
-  confirmed_by: []
-  status: 'open'
-- id: 'blt_20260901_194155_3b7823'
-  content: |-
-    GATE CLEAR cmd_karo_hotfix_review_processing_receipt_20260901: 完了
-  posted_by: 'karo'
-  posted_at: '2026-09-01T19:41:55'
-  requires_confirmation: false
-  action_type: 'info'
-  actioned_by: ''
-  confirmed_by: []
-  status: 'open'
-- id: 'blt_20260901_193128_c3eefe'
-  content: |-
-    GATE CLEAR cmd_reflux_insight_202609011903_tobisaru: 完了
-  posted_by: 'karo'
-  posted_at: '2026-09-01T19:31:28'
-  requires_confirmation: false
-  action_type: 'info'
-  actioned_by: ''
-  confirmed_by: []
-  status: 'open'
-- id: 'blt_20260901_192616_d6db53'
-  content: |-
-    GATE CLEAR cmd_reflux_insight_202609011854_hanzo: 完了
-  posted_by: 'karo'
-  posted_at: '2026-09-01T19:26:16'
-  requires_confirmation: false
-  action_type: 'info'
-  actioned_by: ''
-  confirmed_by: []
-  status: 'open'
-- id: 'blt_20260901_190758_10676b'
-  content: |-
-    GATE CLEAR cmd_reflux_insight_202609011840_saizo: 完了
-  posted_by: 'karo'
-  posted_at: '2026-09-01T19:07:58'
-  requires_confirmation: false
-  action_type: 'info'
-  actioned_by: ''
-  confirmed_by: []
-  status: 'open'
-- id: 'blt_20260901_185839_dc27c3'
-  content: |-
-    GATE CLEAR cmd_karo_hotfix_gunshi_idle_flag_lifecycle_20260901: 完了
-  posted_by: 'karo'
-  posted_at: '2026-09-01T18:58:39'
-  requires_confirmation: false
-  action_type: 'info'
-  actioned_by: ''
+  notify_targets: []
   confirmed_by: []
   status: 'open'
