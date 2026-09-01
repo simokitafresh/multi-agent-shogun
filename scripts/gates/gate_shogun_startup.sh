@@ -2170,6 +2170,44 @@ else
     echo "  OK: task done∧CLEAR無し(20分超) 0件"
 fi
 
+# --- Gate 10.1d: 放置検知(cmd status=delegated ∧ delegated_at から N 分超 ∧ 配備痕跡 0) ---
+# 2026-09-01 12:03 殿『先送りや放置はないか』: cmd_4440(15h BLOCK)/4441(16h)/4436(21h) が delegated のまま task 0 で
+# 露出した。家老の『介入不要』(二次)で将軍が idle 化し、Gate 10.1/10.1b/10.1c は task/report/WAIT 在庫しか見ないため
+# 「配備そのものが起きていない cmd」を見落とす(型十九弾-1)。一次=shogun_to_karo.yaml の status/delegated_at +
+# queue/tasks の parent_cmd + gate_metrics の cmd 行。配備痕跡=task parent_cmd 一致 or gate_metrics に cmd 行。
+# 報告 YAML は deploy rollback 後も残るため痕跡に使わない(cmd_4441 で 6 本残存を実測)。
+echo "■ 放置検知(delegated∧配備痕跡なし)"
+_undeployed_threshold_min="${SHOGUN_UNDEPLOYED_WARN_MIN:-30}"
+_undeployed=0
+_undeployed_lines=()
+_s2k="$SCRIPT_DIR/queue/shogun_to_karo.yaml"
+if [ -f "$_s2k" ]; then
+    _now_epoch=$(date +%s)
+    while IFS=$'\t' read -r _ucmd _ustat _udel; do
+        [ -n "$_ucmd" ] || continue
+        [ "$_ustat" = "delegated" ] || continue
+        _udel_clean=$(printf '%s' "$_udel" | grep -oE '[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}' | head -1)
+        [ -n "$_udel_clean" ] || continue
+        _udel_epoch=$(date -d "$_udel_clean" +%s 2>/dev/null) || continue
+        _uage=$(( (_now_epoch - _udel_epoch) / 60 ))
+        [ "$_uage" -ge "$_undeployed_threshold_min" ] || continue
+        if grep -lqE "^\s*parent_cmd:\s*\"?${_ucmd}(_[a-z]+)?\"?\s*$" "$SCRIPT_DIR"/queue/tasks/*.yaml 2>/dev/null; then continue; fi
+        if [ -f "$_gm_log" ] && grep -qE "\b${_ucmd}(_[a-z]+)?\b" "$_gm_log" 2>/dev/null; then continue; fi
+        _undeployed=$((_undeployed+1)); _undeployed_lines+=("${_ucmd}(${_uage}分)")
+    done < <(awk '
+        /^  cmd_[A-Za-z0-9_]+:[[:space:]]*$/ { if (c!="") print c "\t" s "\t" d; c=$1; sub(/:$/,"",c); s=""; d=""; next }
+        c!="" && /^    status:/ { s=$2 }
+        c!="" && /^    delegated_at:/ { d=$0 }
+        END { if (c!="") print c "\t" s "\t" d }
+    ' "$_s2k")
+fi
+if [ "$_undeployed" -gt 0 ]; then
+    echo "  WARN: delegated∧配備痕跡なし ${_undeployed}件(${_undeployed_threshold_min}分超): ${_undeployed_lines[*]} — 放置。deploy_task.log の BLOCK 行で壁を名指しし家老へ順序付き1通(型十九弾-1)"
+    if [ "$overall" != "ALERT" ] && [ "$overall" != "BLOCK" ]; then overall="WARN"; fi
+else
+    echo "  OK: delegated∧配備痕跡なし(${_undeployed_threshold_min}分超) 0件"
+fi
+
 # --- Gate 10.1c: 便回転チェック(WAIT:report_commit_main_ancestry 30分超 ∧ report commit が main に無い=dangling) ---
 # 2026-08-31 00:30: ga494 hotfix が 23:31→00:22 の 1h WAIT ancestry。report commit 8ffd8804b は
 # git cat-file では実在するが main/origin/main のどちらの祖先でもなく(dangling)、掲示板・task に壁の名前が無かった。
