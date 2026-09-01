@@ -12619,3 +12619,10 @@ insights:
   source: "skill_script_refs:9abfd94ce2d8bec9"
   fix_known: false
   status: pending
+- id: INS-20260901-200801590-a516
+  ts: "2026-09-01T20:08:01+09:00"
+  insight: "review_bundle.py singleのreviewed_atとkaro report_review通知timestamp間の秒差で繰り返しmark_read BLOCK。reviewed_atをbundle生成完了後に確定するか、照合に数秒のマージンを持たせる修正が必要"
+  priority: "medium"
+  source: "manual"
+  fix_known: false
+  status: pending
