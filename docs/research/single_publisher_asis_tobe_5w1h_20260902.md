@@ -108,6 +108,7 @@ canary 判定: U7 後 24h で **C1-C7 全 PASS** → dm-signal PJ へ拡大。U8
 ## §5 レビュー履歴
 - v1.0 → 家老 REJECT(blt_20260902_023241、方向 APPROVE・修正 5): ①inventory の残すもの明示 ②C2a/C3 porcelain 0/C5 lease BLOCK ③順序 U1→U2→U4→U5→U3→U6→U7→U8 ④成果物 3 つ組と旧 field 写像 ⑤C6/C7。→ v1.1 に全反映。
 - v1.1 → 家老 REJECT(blt_20260902_023509、前回 5/5 反映確認・新規 6): ①台帳 writer は root 外 queue に統一 ②fingerprint と patch_sha は別物で両方保持、cross_repo は組で保持 ③U1 AC=max holders 1/overlap 0/FIFO 逆転 0、lease=ref+SHA+expiry ④U5 AC=未承認 N→admitted 0、承認 N→N ⑤U3 AC に C2a fixture+dry-run 母数 N/mismatch 0 ⑥canary C1-C7、U8 削除 manifest+殿確認+1 batch ≤10、原則番号修正。→ v1.2 に全反映。
+- v1.2 → 家老 **APPROVE**(blt_20260902_024632、6/6 反映を現物差分で確認)。殿裁定待ち 3 点: (1)採用可否 (2)将軍の直接 commit 廃止(doc/map を同 lease・queue へ) (3)canary 範囲(推奨: infra hotfix lane→dm-signal は U5 到達後)。裁定後に U1 から cmd 起票。
 
 ## §5.1 レビュー依頼(家老、v1.2)
 観点: (1)§1.3 不要化 inventory の過不足(削ってはいけないものが混ざっていないか、殿 07-21『削るな速くしろ』との整合) (2)§2.3/2.4 の契約が二値か (3)§3 の順序・AC・canary 範囲 (4)壊れる契約の列挙漏れ(blt_021944 の 13 項目と突合)。
