@@ -1,5 +1,5 @@
 # CMD年代記
-<!-- last_updated: 2026-08-31 -->
+<!-- last_updated: 2026-09-01 -->
 
 > 完了cmdの1行索引。詳細は queue/archive/cmds/{cmd_id}.yaml 参照。
 
@@ -58,12 +58,6 @@
 
 | cmd | title | project | date | key_result |
 |-----|-------|---------|------|------------|
-| cmd_4203_withdrawn | 殿下知2026-08-01 09:09『設計書実装は順調か、利他の精神で家老と協調せよ』を受けた次弾解禁。設計書v3.9はWave 1Aまで全ACCEPTEDだが後続の親cmdが不在で境界停滞(LS086型)。設計書§5.4のWave 1B(ownership)を実装し、deploy経路の二重owner・ghost配備の族を構造根治する | infra | 08-01 | — |
-| cmd_4204 | gate_karo_startup Check3.8の実装品質WARN率が50%(閾値30%)で1セッション連続しescalation到達。本日の実測でFAIL群の主因は実装欠陥ではなく、(1)review_approval.shのimplementation-commit-unchanged guardが、FAIL verdictのterminal受理とRC後のreport-only再提出より先に発火して正式closeを塞ぐ構造(小太郎blt_20260801_111006・飛猿blt_20260801_111714の2実証) (2)report statusのnonterminal×verdict=PASS矛盾でquality monitorが反復BLOCKする状態遷移欠陥(cmd_4202 blt_20260801_112717)。guard評価順序と再提出契約を是正し、WARN率を同一計測器で再計測して数値差分を確定する | infra | 08-01 | post-RC review matrixを正規化。是正前の |
-| cmd_4206 | 殿下知2026-08-01 13:02『ドキュメントも覚醒して再構築せよ』。一次計測でcontext/の500行規約違反7ファイル(最大=infrastructure.md 2453行=規約5倍)を確認。因果=『リンク先なき圧縮禁止』原則はあるが500行制限に強制機構がなく追記のみ累積(rg -c '500行' 両startup gate→0件)。cmd_saveと同型の追記型九龍城をVercel正規手順(リンク先作成→存在確認→索引層化)で解体する第一弾 | infra | 08-01 | infrastructure.mdを2453→42行へ索引化 |
-| cmd_round7_checkpoint_final_gen3_20260730 | 第二世代checkpointまでtest_deploy_task.bats合成raceで2連続FAIL→偵察2系統でdeploy_task.sh両writerの固定.tmp共有mv競合を真因確定→BASHPID一意化是正がGATE CLEAR(blt_20260730_075933、旧test7 exact 50反復FAIL0生貼付)。起票条件達成につき新固定SHAで第三世代success checkpointを実行し第七弾の総短縮効果を確定する | infra | 08-01 | — |
-| cmd_round7_checkpoint_final_gen2_20260730 | 第一世代checkpoint(飛猿)はtest_deploy_task.bats合成回帰1件で正直FAIL終端。根因修正がGATE CLEAR(blt_20260730_065017、当該test focused PASS生貼付済み)し起票条件が達成されたため、新固定SHAで別世代のsuccess checkpointを実行し第七弾の総短縮効果を確定する | infra | 08-01 | — |
-| cmd_round7_checkpoint_final_20260730 | 殿裁可2026-07-30 03:09の第七弾本体は全10レーンGATE CLEAR済み(最終=#9/#10 blt_20260730_061225)。正本v1.6の完了条件に従い、現固定SHAをisolated環境で全量unit checkpointとして一度だけ実行し、wave-final基準との同一4識別子比較で第七弾の総短縮効果を確定する | infra | 08-01 | — |
 | cmd_4209 | 殿指摘2026-08-01 21:09『PCだとテーブル全体が横にスクロールするのでPFがサイドメニューの裏に隠れてしまう』。PC幅ではコンテナ内スクロールが無効化されページ全体が横スクロールし、sticky left-0のPF列が固定サイドメニューの裏へ潜る。表コンテナ内横スクロールへ是正しPF列stickyを機能させる | dm-signal | 08-02 | PC表を内側横スクロールへ変更し、独立page-sticky |
 | cmd_4214 | 家老escalation(msg_20260802_021252)対応。家老startupの先送り台帳がkeyスキル静的品質WARNを世代累積しCRITICAL発火するが、将軍のgate直接実行はPASS・WARN0件(2026-08-02 02:13実測)。台帳と実態の乖離(真実の在処不一致クラス)またはFOLLOWUP_SUPPRESSED pending_pairs(契約hash followup未処理)が家老startup時のみWARN化する構造を突合し、真因側を根治する | infra | 08-02 | pending_pairs=13をPASSへ落とす偽陰性とf |
 | cmd_4213 | 殿裁定2026-08-02 01:10『今後起きないようにしよう。これはバグだ』。実測事象: 才蔵がcmd_4211作業中に続行宣言のままturn終了しidle promptで長時間停止(将軍pane capture 01:08)したが、STALL検知はassigned+idle状態のみを対象とするため(scripts/ninja_monitor.sh冒頭のSTALL_THRESHOLD_MIN定義コメント現物)、in_progress+RUNTIME idleの停止が検知されず放置された。in_progress停止も検知して自動nudge再起動する構造へ拡張する | infra | 08-02 | in_progress+RUNTIME idle見逃しの二重 |

@@ -1,14 +1,103 @@
 entries:
-- id: 'blt_20260831_202450_cf2157'
+- id: 'blt_20260901_111257_acc454'
   content: |-
-    処理証跡 msg_id=msg_20260831_202325_3260117_7a1a32f8。相互検証一致: 本番Secret行はCAGR/×Nのup to値もmetric-max無し、Sharpe2.48/MDD-9.8%も素のtdで4指標全欠落。cmd_4437 worktreeはCLEAR archiveで削除済みのため、同一LP境界のsupplemental hotfixをidle影丸へ即配備し、4指標太字・他行不変・receipt・liveを閉じる。4440はその後。集計コマンド=curl-L本番HTML Secret行+worktree/task存在確認。出力行の生貼付=Secret bold 0/4; worktree_exists=no。1件の定義=Secret指標セル1件、worktree1件。
+    script_size_alert: scripts/配下の主要スクリプト 14件が閾値超過。将軍はリファクタcmd起票を検討されたし。line_threshold=2500 complexity_threshold=3000 log=/home/simokitafresh/multi-agent-shogun/logs/script_size_trend.log
+    - scripts/cmd_complete_gate.sh: lines=15858 functions=200 branches=2254 complexity=32128
+    - scripts/ninja_monitor.sh: lines=15456 functions=390 branches=1684 complexity=33626
+    - scripts/deploy_task.sh: lines=11995 functions=174 branches=1562 complexity=24155
+    - scripts/cmd_save.sh: lines=7989 functions=195 branches=946 complexity=17594
+    - scripts/inbox_write.sh: lines=3659 functions=102 branches=422 complexity=8319
+    - scripts/report_field_set.sh: lines=3596 functions=43 branches=626 complexity=7801
+    - scripts/run_tests.sh: lines=2943 functions=45 branches=360 complexity=5868
+    - scripts/archive_completed.sh: lines=2813 functions=43 branches=354 complexity=5658
+    - scripts/.report_field_set_lastgood.sh: lines=2526 functions=36 branches=477 complexity=5811
+    - scripts/context_freshness_check.sh: lines=2384 functions=13 branches=369 complexity=4554
+    - scripts/semantic_index_update.sh: lines=1856 functions=6 branches=299 complexity=3501
+    - scripts/ninja_scope_commit.sh: lines=1850 functions=30 branches=191 complexity=3555
+    - scripts/inbox_watcher.sh: lines=1708 functions=58 branches=188 complexity=4098
+    - scripts/lesson_write.sh: lines=1625 functions=16 branches=197 complexity=3010
+  posted_by: 'ninja_monitor'
+  posted_at: '2026-09-01T11:12:57'
+  requires_confirmation: false
+  action_type: 'action_required'
+  actioned_by: ''
+  confirmed_by: []
+  status: 'open'
+- id: 'blt_20260901_111251_dbd6d2'
+  content: |-
+    lesson_deprecation_candidates: effectiveness閾値未満の教訓候補 8件。承認後は lesson_write.sh <project> --retire <lesson_id> で状態更新されたし。log=/home/simokitafresh/multi-agent-shogun/logs/lesson_deprecation_candidates.log
+    METRICS: total_lessons=2223 active_lessons=2223 deprecated_lessons=0
+    
+    === 確定candidate（自動） ===
+      (なし)
+    
+    === 審査推奨（材料提示のみ） ===
+      [infra] L1691: "外部LP task runnerはreport-relative ownershipが必要"
+            → 関連: scripts/run_tests.sh 現存(仕組み化済みの可能性)
+            → 最終参照: 参照なし
+            ★ 構造防止済みの可能性あり。家老判断を推奨
+      [infra] L1688: "run_tests.sh taskのLP外部scope未対応"
+            → 関連: scripts/run_tests.sh 現存(仕組み化済みの可能性)
+            → 最終参照: 参照なし
+            ★ 構造防止済みの可能性あり。家老判断を推奨
+      [infra] L1637: "gate_metrics model attribution owner fallback"
+            → 関連: scripts/model_analysis.sh 現存(仕組み化済みの可能性)
+            → 最終参照: 参照なし
+            ★ 構造防止済みの可能性あり。家老判断を推奨
+    
+    === 有効率0% 確定candidate (注入N≥5) ===
+      [dm-signal] L097: SVMF/MVMFのskip計算には行数ヒューリスティックではなくis_monthly_data()を使え (injected=9, helpful=0)
+      [dm-signal] L048: nukimi R3: precompute keyはtop_n_effを使え (injected=9, helpful=0)
+      [dm-signal] L046: L057 (injected=9, helpful=0)
+      [dm-signal] L045: nukimi_c高速化: nukimiとnukimi_cの計算ロジックは完全同一(C-series固有差異なし)。パラメ (injected=8, helpful=0)
+      [dm-signal] L044: L055 (injected=8, helpful=0)
+      [dm-signal] L043: L054 (injected=8, helpful=0)
+      [dm-signal] L032: データ構造変更時は全使用箇所を確認せよ（2026-02-15） (injected=8, helpful=0)
+      [dm-signal] L019: タイブレーク均等保有ルール（2026-02-14） (injected=9, helpful=0)
+    
+    === 有効率<10% 自動退役対象 (注入N≥10) ===
+      (なし)
+    
+    === 自動退役実行 ===
+      DRY-RUN: candidates-only mode (approval required before lesson_write.sh --retire)
+      合計: 0件 自動退役
+    
+    Checkpoint updated: L1691
+  posted_by: 'ninja_monitor'
+  posted_at: '2026-09-01T11:12:51'
+  requires_confirmation: false
+  action_type: 'action_required'
+  actioned_by: ''
+  confirmed_by: []
+  status: 'open'
+- id: 'blt_20260901_111216_247ebb'
+  content: |-
+    GATE CLEAR cmd_reflux_insight_202608312051_saizo: 完了
   posted_by: 'karo'
-  posted_at: '2026-08-31T20:24:50'
+  posted_at: '2026-09-01T11:12:16'
   requires_confirmation: false
   action_type: 'info'
   actioned_by: ''
-  notify_targets:
-    - 'shogun'
+  confirmed_by: []
+  status: 'open'
+- id: 'blt_20260831_212054_322720'
+  content: |-
+    DOC_LANE_INFO: source_equivalent auto-closed context=context/rebalancer.md source_commit=ea45534ba9c6 project=infra
+  posted_by: 'gate_context_freshness'
+  posted_at: '2026-08-31T21:20:54'
+  requires_confirmation: false
+  action_type: 'info'
+  actioned_by: ''
+  confirmed_by: []
+  status: 'open'
+- id: 'blt_20260831_205054_022c50'
+  content: |-
+    GATE CLEAR cmd_reflux_insight_202608312020_tobisaru: 完了
+  posted_by: 'karo'
+  posted_at: '2026-08-31T20:50:54'
+  requires_confirmation: false
+  action_type: 'info'
+  actioned_by: ''
   confirmed_by: []
   status: 'open'
 - id: 'blt_20260831_202426_f785c9'
@@ -19,22 +108,8 @@ entries:
   requires_confirmation: false
   action_type: 'info'
   actioned_by: ''
-  notify_targets: []
   confirmed_by: []
   status: 'open'
-- id: 'blt_20260831_202014_431a42'
-  content: |-
-    処理証跡 msg_id=msg_20260831_201033_3052155_1f216194。(1)cmd_4437 report commit172b6d35、receipt1/1 SKIP0、precheck0、軍師LGTM受領。ACCEPT→DM push→LP live→JA表示0/Free1を最優先実行する。(2)CLEAR直後4440、次に4439 backend。(3)hayate CI fixは本体74fa965fをfail-close ACCEPT後MAS mainへpush済み、task status残置のみidle正規化する。kotaroもLGTM受領済み。集計コマンド=report/bundle/remote/task status突合。出力行の生貼付=4437 precheck0; receipt1/1; SKIP0; hayate source pushed。1件の定義=report1件、receipt test1件、task1件。
-  posted_by: 'karo'
-  posted_at: '2026-08-31T20:20:14'
-  requires_confirmation: false
-  action_type: 'info'
-  actioned_by: ''
-  notify_targets:
-    - 'shogun'
-  confirmed_by:
-    - 'shogun'
-  status: 'closed'
 - id: 'blt_20260831_200004_2cc931'
   content: |-
     GATE CLEAR cmd_karo_hotfix_auto_push_async_ci_202608311917: 完了
@@ -43,7 +118,6 @@ entries:
   requires_confirmation: false
   action_type: 'info'
   actioned_by: ''
-  notify_targets: []
   confirmed_by: []
   status: 'open'
 - id: 'blt_20260831_195258_0df84a'
@@ -54,7 +128,6 @@ entries:
   requires_confirmation: false
   action_type: 'info'
   actioned_by: ''
-  notify_targets: []
   confirmed_by: []
   status: 'open'
 - id: 'blt_20260831_193835_272557'
@@ -65,7 +138,6 @@ entries:
   requires_confirmation: false
   action_type: 'info'
   actioned_by: ''
-  notify_targets: []
   confirmed_by: []
   status: 'open'
 - id: 'blt_20260831_193727_35bbb0'
@@ -76,7 +148,6 @@ entries:
   requires_confirmation: false
   action_type: 'info'
   actioned_by: ''
-  notify_targets: []
   confirmed_by: []
   status: 'open'
 - id: 'blt_20260831_192923_bb322b'
@@ -87,7 +158,6 @@ entries:
   requires_confirmation: false
   action_type: 'info'
   actioned_by: ''
-  notify_targets: []
   confirmed_by: []
   status: 'open'
 - id: 'blt_20260831_184602_a17429'
@@ -98,7 +168,6 @@ entries:
   requires_confirmation: false
   action_type: 'info'
   actioned_by: ''
-  notify_targets: []
   confirmed_by: []
   status: 'open'
 - id: 'blt_20260831_184349_f61e1e'
@@ -109,7 +178,6 @@ entries:
   requires_confirmation: false
   action_type: 'info'
   actioned_by: ''
-  notify_targets: []
   confirmed_by: []
   status: 'open'
 - id: 'blt_20260831_182317_8f719c'
@@ -120,7 +188,6 @@ entries:
   requires_confirmation: false
   action_type: 'info'
   actioned_by: ''
-  notify_targets: []
   confirmed_by: []
   status: 'open'
 - id: 'blt_20260831_181851_b021e3'
@@ -131,7 +198,6 @@ entries:
   requires_confirmation: false
   action_type: 'info'
   actioned_by: ''
-  notify_targets: []
   confirmed_by: []
   status: 'open'
 - id: 'blt_20260831_181821_1cc40d'
@@ -142,7 +208,6 @@ entries:
   requires_confirmation: false
   action_type: 'info'
   actioned_by: ''
-  notify_targets: []
   confirmed_by: []
   status: 'open'
 - id: 'blt_20260831_181448_4f910f'
@@ -153,7 +218,6 @@ entries:
   requires_confirmation: false
   action_type: 'info'
   actioned_by: ''
-  notify_targets: []
   confirmed_by:
     - 'shogun'
   status: 'open'
@@ -165,7 +229,6 @@ entries:
   requires_confirmation: false
   action_type: 'info'
   actioned_by: ''
-  notify_targets: []
   confirmed_by: []
   status: 'open'
 - id: 'blt_20260831_162748_8980da'
@@ -176,7 +239,6 @@ entries:
   requires_confirmation: false
   action_type: 'info'
   actioned_by: ''
-  notify_targets: []
   confirmed_by: []
   status: 'open'
 - id: 'blt_20260831_154421_e5ca4c'
@@ -187,7 +249,6 @@ entries:
   requires_confirmation: false
   action_type: 'info'
   actioned_by: ''
-  notify_targets: []
   confirmed_by: []
   status: 'open'
 - id: 'blt_20260831_152942_eb64b6'
@@ -227,7 +288,6 @@ entries:
   requires_confirmation: false
   action_type: 'action_required'
   actioned_by: ''
-  notify_targets: []
   confirmed_by: []
   status: 'open'
 - id: 'blt_20260831_151333_5f3a22'
@@ -238,7 +298,6 @@ entries:
   requires_confirmation: false
   action_type: 'info'
   actioned_by: ''
-  notify_targets: []
   confirmed_by: []
   status: 'open'
 - id: 'blt_20260831_150358_8f8dc0'
@@ -249,7 +308,6 @@ entries:
   requires_confirmation: false
   action_type: 'info'
   actioned_by: ''
-  notify_targets: []
   confirmed_by: []
   status: 'open'
 - id: 'blt_20260831_143126_a62a89'
@@ -260,7 +318,6 @@ entries:
   requires_confirmation: false
   action_type: 'info'
   actioned_by: ''
-  notify_targets: []
   confirmed_by: []
   status: 'open'
 - id: 'blt_20260831_142859_d1e6ea'
@@ -271,7 +328,6 @@ entries:
   requires_confirmation: false
   action_type: 'info'
   actioned_by: ''
-  notify_targets: []
   confirmed_by: []
   status: 'open'
 - id: 'blt_20260831_142446_291134'
@@ -282,7 +338,6 @@ entries:
   requires_confirmation: false
   action_type: 'info'
   actioned_by: ''
-  notify_targets: []
   confirmed_by: []
   status: 'open'
 - id: 'blt_20260831_142140_76f523'
@@ -293,7 +348,6 @@ entries:
   requires_confirmation: false
   action_type: 'info'
   actioned_by: ''
-  notify_targets: []
   confirmed_by: []
   status: 'open'
 - id: 'blt_20260831_135734_bfd619'
@@ -304,7 +358,6 @@ entries:
   requires_confirmation: false
   action_type: 'info'
   actioned_by: ''
-  notify_targets: []
   confirmed_by: []
   status: 'open'
 - id: 'blt_20260831_133639_5ae5af'
@@ -315,7 +368,6 @@ entries:
   requires_confirmation: false
   action_type: 'info'
   actioned_by: ''
-  notify_targets: []
   confirmed_by: []
   status: 'open'
 - id: 'blt_20260831_131614_cb65e8'
@@ -326,72 +378,5 @@ entries:
   requires_confirmation: false
   action_type: 'info'
   actioned_by: ''
-  notify_targets: []
-  confirmed_by: []
-  status: 'open'
-- id: 'blt_20260831_131058_21097a'
-  content: |-
-    GATE CLEAR cmd_karo_hotfix_throughput_dedupe_segment_20260831: 完了
-  posted_by: 'karo'
-  posted_at: '2026-08-31T13:10:58'
-  requires_confirmation: false
-  action_type: 'info'
-  actioned_by: ''
-  notify_targets: []
-  confirmed_by: []
-  status: 'open'
-- id: 'blt_20260831_124611_7b4cbb'
-  content: |-
-    GATE CLEAR cmd_reflux_insight_202608311157_tobisaru: 完了
-  posted_by: 'karo'
-  posted_at: '2026-08-31T12:46:11'
-  requires_confirmation: false
-  action_type: 'info'
-  actioned_by: ''
-  notify_targets: []
-  confirmed_by: []
-  status: 'open'
-- id: 'blt_20260831_124456_8db90c'
-  content: |-
-    GATE CLEAR cmd_reflux_insight_202608311206_kagemaru: 完了
-  posted_by: 'karo'
-  posted_at: '2026-08-31T12:44:56'
-  requires_confirmation: false
-  action_type: 'info'
-  actioned_by: ''
-  notify_targets: []
-  confirmed_by: []
-  status: 'open'
-- id: 'blt_20260831_122736_f39ae3'
-  content: |-
-    DOC_LANE_INFO: source_equivalent auto-closed context=context/rebalancer.md source_commit=f66e319923b5 project=infra
-  posted_by: 'gate_context_freshness'
-  posted_at: '2026-08-31T12:27:36'
-  requires_confirmation: false
-  action_type: 'info'
-  actioned_by: ''
-  notify_targets: []
-  confirmed_by: []
-  status: 'open'
-- id: 'blt_20260831_122241_b2b6cf'
-  content: |-
-    DOC_LANE_INFO: source_equivalent auto-closed context=context/rebalancer.md source_commit=ea45534ba9c6 project=infra
-  posted_by: 'gate_context_freshness'
-  posted_at: '2026-08-31T12:22:41'
-  requires_confirmation: false
-  action_type: 'info'
-  actioned_by: ''
-  notify_targets: []
-  confirmed_by: []
-  status: 'open'
-- id: 'blt_20260831_120207_612bcb'
-  content: |-
-    GATE CLEAR cmd_karo_hotfix_safe_shared_main_ff_isolated_publish_fallback_20260831: 完了
-  posted_by: 'karo'
-  posted_at: '2026-08-31T12:02:07'
-  requires_confirmation: false
-  action_type: 'info'
-  actioned_by: ''
-  notify_targets: []
   confirmed_by: []
   status: 'open'
