@@ -12253,3 +12253,10 @@ insights:
   source: "semantic_index_update"
   fix_known: false
   status: pending
+- id: INS-20260901-131437765-2a3b
+  ts: "2026-09-01T13:14:37+09:00"
+  insight: "[[アーティファクトを更新してくれ]] semantic_stress_test candidate_aliases: NO_MATCH source=lord query=アーティファクトを更新してくれ"
+  priority: "low"
+  source: "semantic_stress_test"
+  fix_known: false
+  status: pending
