@@ -5765,6 +5765,7 @@ insights:
   resolved_reason: "一次確認で対象ファイル実在(scripts/cdp/cmd_4401_publish_timing.md)、context/infrastructure.md:148にcmd_4401計装と正本参照あり、context/semantic-map.mdとdocs/semantic-index/index.mdに対象ファイルの直接登録なしを確認。実装修正は不要だが、既存概念へのfile行追加または新概念定義を別decision candidateとして整理し、本taskでは対象IDのみresolve。"
   action_artifact: "target=queue/insights.yaml:INS-20260827-220622476-45b8;primary=scripts/cdp/cmd_4401_publish_timing.md;context=context/infrastructure.md:148;semantic=context/semantic-map.md,docs/semantic-index/index.md;decision_candidate=既存概念へのfile行追加または新概念定義を別cmdで検討;inventory_before=insights_pending:41,zero_backlinks:16,promotions:0,total:57"
   resolved_at: "2026-09-01T21:42:32+09:00"
+  last_seen: "2026-09-01T21:51:18+09:00"
 - id: INS-20260827-225711820-0cd9
   ts: "2026-08-27T22:57:11+09:00"
   insight: "[[CI run shard 7で失敗したquality log canonical lock identity契約を根治し]] NO_MATCH purpose pending alias: cmd_complete時にdeploy_task.logでNO_MATCHだったpurpose。類似概念TOP3: inbox_evidence_durability(inbox証跡耐久性; alias=canonical inbox lock; score=11.1) / infrastructure_ops(インフラ運用基盤; alias=CI RED残存修正 — test daemon maintenance lock bats の restart def; score=9.6) / provisional_gunshi_log_append(仮: Gunshi Log Append; alias=scripts gunshi log append.sh; score=9.0)。既存概念aliasesへの自動昇格候補"
