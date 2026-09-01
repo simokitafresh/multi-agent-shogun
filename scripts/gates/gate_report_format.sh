@@ -779,6 +779,50 @@ if not re.fullmatch(r"[0-9a-f]{40}", commit_hash):
     print("\n".join(raw_lines))
     raise SystemExit(0)
 
+# A review-correction task may edit only the report artifact after an
+# implementation commit has already published the target bytes.  In that
+# lane, the primary checkout can be dirty relative to its current HEAD simply
+# because the declared task commit is not an ancestor yet.  Treat that state
+# as clean only when the task explicitly declares report-only correction and
+# every reported dirty path has the exact blob from the declared commit.
+# Never infer this exception from the report text: an implementation task, a
+# missing commit, or a different blob must remain a contamination BLOCK.
+worker = str(report.get("worker_id") or "").strip()
+task_dir = os.environ.get("GATE_SESSION_STATE_TASK_DIR", "")
+if not task_dir:
+    task_dir = os.path.join(os.path.dirname(os.path.dirname(report_path)), "tasks")
+task_path = os.path.join(task_dir, f"{worker}.yaml")
+try:
+    with open(task_path, encoding="utf-8") as f:
+        task_data = yaml.safe_load(f) or {}
+    task_data = task_data.get("task", task_data)
+except Exception:
+    task_data = {}
+review_scope = str(task_data.get("review_correction_scope") or "").strip().lower() \
+    if isinstance(task_data, dict) else ""
+
+def declared_blob_matches_worktree(path):
+    """Return true only for a readable, exact declared-commit blob match."""
+    if not re.fullmatch(r"[0-9a-f]{40}", commit_hash):
+        return False
+    try:
+        committed_blob = subprocess.check_output(
+            ["git", "-C", repo, "rev-parse", f"{commit_hash}:{path}"],
+            text=True,
+            stderr=subprocess.DEVNULL,
+        ).strip()
+        current_blob = subprocess.check_output(
+            ["git", "-C", repo, "hash-object", "--", os.path.join(repo, path)],
+            text=True,
+            stderr=subprocess.DEVNULL,
+        ).strip()
+    except (OSError, subprocess.CalledProcessError):
+        return False
+    return bool(
+        re.fullmatch(r"[0-9a-f]{40}", committed_blob)
+        and committed_blob == current_blob
+    )
+
 # A report may legitimately span several scope-limited commits.  The old code
 # compared dirty hunks only with the final commit_hash, so files committed by
 # an earlier commit of the same task were reported as dirty/foreign.  Accept
@@ -822,6 +866,20 @@ unrelated = []
 for line in raw_lines:
     path = parse_path(line)
     if not path:
+        kept.append(line)
+        continue
+    if review_scope == "report":
+        if declared_blob_matches_worktree(path):
+            continue
+        # Report-only correction is deliberately stricter than the ordinary
+        # hunk/non-overlap heuristic: a different or unreadable blob is a
+        # real dirty implementation and must reach BLOCK(cmd_3264-AC2).
+        kept.append(line)
+        continue
+    if review_scope == "implementation":
+        # An explicit implementation correction never receives the report-only
+        # blob exception, including when its current bytes happen to match the
+        # declared commit.
         kept.append(line)
         continue
     # 2026-08-26: 他エージェントのhook/daemonが毎ターン書き換える自動台帳と、doc laneのheader marker
