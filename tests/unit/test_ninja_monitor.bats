@@ -1558,3 +1558,67 @@ YAML
     done
     printf "types=5 rc0=5 identity_envelope=5\n"
 }
+
+# test_necessity: legacy failed-task outbox rows must be upgraded from the
+# current task YAML exactly once, while an already-enveloped row is immutable.
+@test "flush_karo_notify_outbox upgrades legacy rows from current task identity and preserves canonical rows" {
+    run bash -lc '
+set -euo pipefail
+PROJECT_ROOT="'"$PROJECT_ROOT"'"
+export NINJA_MONITOR_LIB_ONLY=1
+source "$PROJECT_ROOT/scripts/ninja_monitor.sh"
+unset NINJA_MONITOR_LIB_ONLY
+
+ROOT="$BATS_TEST_TMPDIR/legacy-outbox"
+SCRIPT_DIR="$ROOT"
+STATE_DIR="$ROOT/state"
+LOG="$ROOT/monitor.log"
+export ROOT
+mkdir -p "$ROOT/queue/tasks" "$ROOT/scripts" "$STATE_DIR"
+touch "$LOG"
+
+cat > "$ROOT/queue/tasks/kagemaru.yaml" <<YAML
+task:
+  task_id: cmd_failed_kagemaru_normal
+  parent_cmd: cmd_failed_kagemaru
+  status: failed
+YAML
+cat > "$ROOT/queue/tasks/kotaro.yaml" <<YAML
+task:
+  task_id: cmd_failed_kotaro_normal
+  parent_cmd: cmd_failed_kotaro
+  status: failed
+YAML
+
+cat > "$ROOT/scripts/inbox_write.sh" <<STUB
+#!/bin/bash
+printf "to=%s message=%s type=%s from=%s\n" "\$1" "\$2" "\$3" "\$4" >> "\$ROOT/inbox_calls.log"
+exit 0
+STUB
+chmod +x "$ROOT/scripts/inbox_write.sh"
+
+legacy_one="legacy kagemaru body"
+legacy_two="legacy kotaro body"
+canonical="already canonical task_id=commander_directive subject_task_id=cmd_failed_kagemaru_normal parent_cmd=cmd_failed_kagemaru"
+encode() { printf "%s" "$1" | base64 | tr -d "\\n"; }
+{
+    printf "1\\tfailed_task_preserve_block\\tkagemaru\\t%s\\n" "$(encode "$legacy_one")"
+    printf "2\\tfailed_task_preserve_block\\tkotaro\\t%s\\n" "$(encode "$legacy_two")"
+    printf "3\\tfailed_task_preserve_block\\tkagemaru\\t%s\\n" "$(encode "$canonical")"
+} > "$STATE_DIR/karo_notify_outbox.tsv"
+
+flush_karo_notify_outbox
+
+test ! -s "$STATE_DIR/karo_notify_outbox.tsv"
+test "$(grep -c "^to=karo " "$ROOT/inbox_calls.log")" -eq 3
+grep -Fqx "to=karo message=${legacy_one} task_id=commander_directive subject_task_id=cmd_failed_kagemaru_normal parent_cmd=cmd_failed_kagemaru  type=failed_task_preserve_block from=ninja_monitor" "$ROOT/inbox_calls.log"
+grep -Fqx "to=karo message=${legacy_two} task_id=commander_directive subject_task_id=cmd_failed_kotaro_normal parent_cmd=cmd_failed_kotaro  type=failed_task_preserve_block from=ninja_monitor" "$ROOT/inbox_calls.log"
+grep -Fqx "to=karo message=${canonical} type=failed_task_preserve_block from=ninja_monitor" "$ROOT/inbox_calls.log"
+test "$(grep -o "task_id=commander_directive" "$ROOT/inbox_calls.log" | wc -l)" -eq 3
+test "$(grep -c "NOTIFY-OUTBOX-LEGACY-ENVELOPE" "$LOG")" -eq 2
+printf "legacy=2 upgraded=2 canonical=1 double_envelope=0 flushed=3 remaining=0\\n"
+    '
+    echo "$output"
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"legacy=2 upgraded=2 canonical=1 double_envelope=0 flushed=3 remaining=0"* ]]
+}
