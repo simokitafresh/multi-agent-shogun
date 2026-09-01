@@ -123,6 +123,7 @@ key=$(review_report_key queue/reports/hayate_report_cmd_state.yaml)
 mkdir -p "$ROOT/queue/gates/cmd_state/review_approvals/reports/$key"
 cat > "$ROOT/queue/gates/cmd_state/review_approvals/reports/$key/gunshi.yaml" <<EOF
 result: LGTM
+generation: $raw_fp
 fingerprint: $norm_fp
 report: queue/reports/hayate_report_cmd_state.yaml
 EOF
@@ -130,6 +131,7 @@ EOF
 test "$(count_calls)" -eq 3
 cat > "$ROOT/queue/gates/cmd_state/review_approvals/reports/$key/karo.yaml" <<EOF
 result: ACCEPT
+generation: $raw_fp
 fingerprint: $norm_fp
 report: queue/reports/hayate_report_cmd_state.yaml
 EOF
@@ -408,13 +410,24 @@ source "$PROJECT_ROOT/scripts/ninja_monitor.sh"
 unset NINJA_MONITOR_LIB_ONLY
 
 ROOT="'"$BATS_TEST_TMPDIR"'/failed-pass-review"
-mkdir -p "$ROOT/queue/tasks" "$ROOT/queue/reports" "$ROOT/queue/gates" "$ROOT/scripts/gates" "$ROOT/logs"
+mkdir -p "$ROOT/queue/tasks" "$ROOT/queue/reports" "$ROOT/queue/gates" "$ROOT/queue/inbox" "$ROOT/scripts/gates" "$ROOT/logs"
 cat > "$ROOT/scripts/gates/gate_report_format.sh" <<'SH'
 #!/usr/bin/env bash
 echo "PASS: fixture report format"
 SH
 cat > "$ROOT/scripts/inbox_write.sh" <<SH
 #!/usr/bin/env bash
+message="\$2"
+report_rel="\${message#*report=}"
+report_rel="\${report_rel%% *}"
+parent_cmd="\${message#*parent_cmd=}"
+parent_cmd="\${parent_cmd%% *}"
+generation="\${message#*report_fingerprint=}"
+generation="\${generation%% *}"
+if [ ! -f "$ROOT/queue/inbox/gunshi.yaml" ]; then
+    printf "%s\\n" messages: > "$ROOT/queue/inbox/gunshi.yaml"
+fi
+printf "%s\\n" "- type: review_draft" "  report_path: \$report_rel" "  parent_cmd: \$parent_cmd" "  report_fingerprint: \$generation" "  read: false" >> "$ROOT/queue/inbox/gunshi.yaml"
 printf "%s|%s|%s|%s\\n" "\$1" "\$3" "\$4" "\$2" >> "$ROOT/review_requests.log"
 SH
 chmod +x "$ROOT/scripts/gates/gate_report_format.sh" "$ROOT/scripts/inbox_write.sh"
@@ -496,7 +509,7 @@ source "$PROJECT_ROOT/scripts/ninja_monitor.sh"
 unset NINJA_MONITOR_LIB_ONLY
 
 ROOT="'"$BATS_TEST_TMPDIR"'/stable-report-generation"
-mkdir -p "$ROOT/queue/tasks" "$ROOT/queue/reports" "$ROOT/queue/gates" "$ROOT/scripts/gates" "$ROOT/logs"
+mkdir -p "$ROOT/queue/tasks" "$ROOT/queue/reports" "$ROOT/queue/gates" "$ROOT/queue/inbox" "$ROOT/scripts/gates" "$ROOT/logs"
 cat > "$ROOT/scripts/gates/gate_report_format.sh" <<SH
 #!/usr/bin/env bash
 echo "PASS: fixture report format"
@@ -507,6 +520,17 @@ if [ -f "$ROOT/fail_once" ]; then
     rm -f "$ROOT/fail_once"
     exit 1
 fi
+message="\$2"
+report_rel="\${message#*report=}"
+report_rel="\${report_rel%% *}"
+parent_cmd="\${message#*parent_cmd=}"
+parent_cmd="\${parent_cmd%% *}"
+generation="\${message#*report_fingerprint=}"
+generation="\${generation%% *}"
+if [ ! -f "$ROOT/queue/inbox/gunshi.yaml" ]; then
+    printf "%s\\n" messages: > "$ROOT/queue/inbox/gunshi.yaml"
+fi
+printf "%s\\n" "- type: review_draft" "  report_path: \$report_rel" "  parent_cmd: \$parent_cmd" "  report_fingerprint: \$generation" "  read: false" >> "$ROOT/queue/inbox/gunshi.yaml"
 printf "%s|%s|%s|%s\\n" "\$1" "\$3" "\$4" "\$2" >> "$ROOT/review_requests.log"
 SH
 chmod +x "$ROOT/scripts/gates/gate_report_format.sh" "$ROOT/scripts/inbox_write.sh"
