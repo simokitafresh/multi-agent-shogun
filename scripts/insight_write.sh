@@ -89,8 +89,11 @@ def parse_document(path, label):
         for i in range(key_line + 1, len(lines)):
             stripped = lines[i].strip()
             indent = len(lines[i]) - len(lines[i].lstrip())
-            if (stripped and not stripped.startswith("#") and indent == 0
-                    and not re.match(r"^insights\s*:", stripped)):
+            # 2026-09-01 将軍 D0: 本番 insights.yaml は列 0 の "- id:" で list を書く。indent==0 の
+            # 項目行を region 終端と誤認し starts=0 件→『ancestor block count does not match』で
+            # push lane の統合が 20:41 に BLOCK。list 項目行("-" 始まり)は終端にしない。
+            if (stripped and not stripped.startswith("#") and not stripped.startswith("-")
+                    and indent == 0 and not re.match(r"^insights\s*:", stripped)):
                 region_end = i
                 break
         starts = [i for i in range(key_line + 1, region_end)
