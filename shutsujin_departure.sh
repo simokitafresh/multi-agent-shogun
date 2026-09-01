@@ -29,7 +29,9 @@ fi
 # （プロンプト >>>）に落ちて入力待ちでハングする事象への恒久対策。非対話実行
 # （CI・パイプ・< /dev/null）では即EOFで無害だが、対話端末では固まるため明示的に切る。
 # 本スクリプトは端末からの対話入力(read)を行わない（read は全て <<< ヒアストリング）ので安全。
-[ -t 0 ] && exec </dev/null
+# 2026-09-01: 非 tty の開いたパイプ(Bash tool・tmux run-shell・cron)でも同じ hang が起きる
+# (旧 tree stub 経由の -h が 2 分 timeout、rc=124 で再現)。本 script は stdin を読まないので無条件で切る。
+exec </dev/null
 
 # セッション名は検証用cloneごとに分離できる。通常運用の既定値は従来どおり。
 SHOGUN_SESSION="${SHOGUN_SESSION:-shogun}"
@@ -93,6 +95,33 @@ log_war() {
 # L1006/L1076の呼出しが "command not found" になっていた(殿検出)。
 log_warn() {
     echo -e "\033[1;35m【警】\033[0m $1"
+}
+
+# ─── CLI 起動完了待ち(stagger) + 起動検分 (2026-09-01) ───
+# 09-01 11:23: 家老Codexが ~/.codex/logs_2.sqlite(4.8GB+WAL) を初期化中に排他保持し、
+# sleep 0 で連投した忍者6名が 'database is locked' で全滅(シェルへ落ちるため pane_dead=0
+# のまま=respawn_dead_agent.sh も拒否)。しかも本script は将軍pane しか起動確認せず
+# 「召喚完了」を出して成功終了した。∴ (1)各 pane の CLI ready(bypass 表示)を待ってから
+# 次を spawn する (2)末尾で全 pane の ready を数え、不足なら ALERT + exit 1。
+# 可視画面(scrollback なし)のプロンプト記号で判定する。ninja_monitor の _pane_cli_is_ready は
+# scrollback 100 行+バナー語を見るが、起動直後は crash 後の scrollback にバナーが残り偽 ready になる。
+# 記号は config/cli_profiles.yaml idle_pattern(claude=❯ / codex=›)と同値。09-01 実測 9/9 pane 一致。
+# 判定の正本は scripts/lib/cli_ready.sh(プロンプト行のみ。footer/ダイアログ/crash shell は不一致=家老レビュー 13:05)
+# shellcheck source=scripts/lib/cli_ready.sh
+source "$SCRIPT_DIR/scripts/lib/cli_ready.sh"
+CLI_READY_TIMEOUT="${CLI_READY_TIMEOUT:-60}"
+CLI_NOT_READY=()
+wait_cli_ready() {
+    # $1=pane target, $2=label, $3=timeout(sec)
+    local target="$1" label="$2" limit="${3:-$CLI_READY_TIMEOUT}"
+    if cli_wait_pane_ready "$target" "$limit"; then
+        echo "  └─ ${label} CLI ready (${CLI_READY_ELAPSED}s)"
+        return 0
+    fi
+    log_warn "${label} CLI not ready after ${limit}s (pane=${target})"
+    tmux capture-pane -t "$target" -p 2>/dev/null | grep -v '^\s*$' | tail -3 | sed 's/^/      | /'
+    CLI_NOT_READY+=("$label")
+    return 1
 }
 
 EXPECTED_WATCHER_COUNT="${EXPECTED_WATCHER_COUNT:-9}"
@@ -371,6 +400,27 @@ if [ "$SETUP_ONLY" = true ]; then
     log_info "  └─ セットアップ検証のため既存セッション撤収をスキップ"
 else
     tmux kill-session -t "$SHOGUN_SESSION" 2>/dev/null && log_info "  └─ ${SHOGUN_SESSION}陣、撤収完了" || log_info "  └─ ${SHOGUN_SESSION}陣は存在せず"
+
+    # ─── Codex log DB の剪定 (2026-09-01) ───
+    # ~/.codex/logs_2.sqlite が肥大(09-01 実測 4.8GB+WAL 348MB)すると起動時の排他初期化が
+    # 長引き、後続 pane が 'database is locked' で落ちる。Codex 未稼働(撤収直後)のときだけ
+    # 閾値超のファイルを rename で退避する(可逆。Codex は空 DB を再生成する)。
+    _codex_log_db="$HOME/.codex/logs_2.sqlite"
+    _codex_log_rotate_bytes="${CODEX_LOG_ROTATE_BYTES:-1073741824}"
+    # cli_ready.sh は上で source 済み(STEP 1 より前の関数定義群)。pgrep -c の "0\n0" を単一整数へ正規化
+    _codex_procs="$(cli_codex_process_count)"
+    if [ -f "$_codex_log_db" ] && [ "$_codex_procs" -eq 0 ]; then
+        _codex_log_size=$(stat -c %s "$_codex_log_db" 2>/dev/null || echo 0)
+        if [ "$_codex_log_size" -gt "$_codex_log_rotate_bytes" ]; then
+            _codex_log_ts=$(date '+%Y%m%dT%H%M%S')
+            for _f in "$_codex_log_db" "$_codex_log_db-wal" "$_codex_log_db-shm"; do
+                [ -f "$_f" ] && mv "$_f" "${_f}.rotated_${_codex_log_ts}"
+            done
+            log_info "  └─ Codex log DB 退避: $((_codex_log_size / 1048576))MB > 閾値 → logs_2.sqlite.rotated_${_codex_log_ts}(復元は mv で戻す)"
+        fi
+    elif [ -f "$_codex_log_db" ]; then
+        log_info "  └─ Codex 稼働中(${_codex_procs} proc)のため logs_2.sqlite 剪定はスキップ"
+    fi
 fi
 
 # ═══════════════════════════════════════════════════════════════════════════════
@@ -794,7 +844,12 @@ tmux set-option -w -t "${SHOGUN_SESSION}:main" pane-border-format \
 # ─── 将軍ペイン変数 ───
 _shogun_pane_idx=$(tmux list-panes -t "${SHOGUN_SESSION}:main" -F '#{pane_index}' 2>/dev/null | head -1)
 tmux set-option -p -t "${SHOGUN_SESSION}:main.${_shogun_pane_idx:-0}" @agent_id shogun 2>/dev/null
-tmux set-option -p -t "${SHOGUN_SESSION}:main.${_shogun_pane_idx:-0}" @model_name "Opus" 2>/dev/null
+# 直書き禁止: SSOT(config/settings.yaml + live banner)を model_resolve.sh で解決。
+# CLI 起動前ゆえ settings 由来の表示名になり、起動後は sync_pane_vars.sh が実モデルで上書きする。
+[ -f "$SCRIPT_DIR/scripts/lib/model_resolve.sh" ] && source "$SCRIPT_DIR/scripts/lib/model_resolve.sh"
+_shogun_model_display=""
+declare -F resolve_model_display >/dev/null 2>&1 && _shogun_model_display=$(resolve_model_display shogun "${SHOGUN_SESSION}:main" 2>/dev/null || true)
+tmux set-option -p -t "${SHOGUN_SESSION}:main.${_shogun_pane_idx:-0}" @model_name "${_shogun_model_display:-Unknown}" 2>/dev/null
 
 # ─── status bar style: Catppuccin Mocha base ───
 tmux set-option -g status-style "bg=#1e1e2e,fg=#cdd6f4" 2>/dev/null
@@ -895,7 +950,9 @@ if [ "$SETUP_ONLY" = false ]; then
     tmux set-option -p -t "${AGENTS_WINDOW_TARGET}.${p}" @agent_cli "$_karo_cli_type"
     tmux send-keys -t "${AGENTS_WINDOW_TARGET}.${p}" "$_karo_cmd"
     tmux send-keys -t "${AGENTS_WINDOW_TARGET}.${p}" Enter
-    log_info "  └─ 家老（${_karo_cli_type}）、召喚完了"
+    log_info "  └─ 家老（${_karo_cli_type}）、召喚中..."
+    # 家老が logs_2.sqlite 初期化を終える(ready)まで忍者を spawn しない(stagger)
+    wait_cli_ready "${AGENTS_WINDOW_TARGET}.${p}" "家老" || true
 
     NINJA_PANE_COUNT=$((AGENT_COUNT - 1))
     if [ "$KESSEN_MODE" = true ]; then
@@ -917,6 +974,7 @@ if [ "$SETUP_ONLY" = false ]; then
             tmux set-option -p -t "${AGENTS_WINDOW_TARGET}.${p}" @agent_cli "$_ashi_cli_type"
             tmux send-keys -t "${AGENTS_WINDOW_TARGET}.${p}" "$_ashi_cmd"
             tmux send-keys -t "${AGENTS_WINDOW_TARGET}.${p}" Enter
+            wait_cli_ready "${AGENTS_WINDOW_TARGET}.${p}" "${ninja_name}" || true
         done
         log_info "  └─ 忍者・軍師1-${NINJA_PANE_COUNT}（決戦の陣）、召喚完了"
     else
@@ -933,6 +991,7 @@ if [ "$SETUP_ONLY" = false ]; then
             tmux set-option -p -t "${AGENTS_WINDOW_TARGET}.${p}" @agent_cli "$_ashi_cli_type"
             tmux send-keys -t "${AGENTS_WINDOW_TARGET}.${p}" "$_ashi_cmd"
             tmux send-keys -t "${AGENTS_WINDOW_TARGET}.${p}" Enter
+            wait_cli_ready "${AGENTS_WINDOW_TARGET}.${p}" "${ninja_name}" || true
         done
         log_info "  └─ 忍者・軍師1-${NINJA_PANE_COUNT}（平時の陣）、召喚完了"
     fi
@@ -1015,16 +1074,19 @@ NINJA_EOF
     echo -e "                               \033[0;36m[ASCII Art: syntax-samurai/ryu - CC0 1.0 Public Domain]\033[0m"
     echo ""
 
-    echo "  CLI起動を待機中（最大30秒）..."
+    echo "  CLI起動を検分中（将軍 + 全${AGENT_COUNT}pane）..."
 
-    # 将軍の起動を確認（最大30秒待機）
-    for i in {1..30}; do
-        if tmux capture-pane -t "${SHOGUN_SESSION}:main" -p | grep -Eq "bypass permissions|bypass approvals and sandbox"; then
-            echo "  └─ 将軍CLIの起動確認完了（${i}秒）"
-            break
-        fi
-        sleep 1
-    done
+    # 将軍の起動を確認(忍者は spawn 時に個別待機済み。ここは全 pane の最終検分)
+    wait_cli_ready "${SHOGUN_SESSION}:main" "将軍" 30 || true
+    _ready_total=$((AGENT_COUNT + 1))
+    _ready_ok=$((_ready_total - ${#CLI_NOT_READY[@]}))
+    if [ "${#CLI_NOT_READY[@]}" -gt 0 ]; then
+        log_war "CLI-READY-ALERT: ${_ready_ok}/${_ready_total} ready。未起動=${CLI_NOT_READY[*]}"
+        log_war "  復旧: bash scripts/agent_respawn.sh <agent> を1名ずつ(同時起動は logs_2.sqlite lock で再発する)"
+        CLI_LAUNCH_ALERT=1
+    else
+        log_success "  └─ CLI起動検分: ${_ready_ok}/${_ready_total} ready"
+    fi
 
     # 実行中モデル名をtmuxペイン変数へ同期（将軍含む）
     if bash "$SCRIPT_DIR/scripts/sync_pane_vars.sh" > /dev/null 2>&1; then
@@ -1255,4 +1317,10 @@ if [ "$OPEN_TERMINAL" = true ]; then
         log_info "  └─ wt.exe が見つかりません。手動でアタッチしてください。"
     fi
     echo ""
+fi
+
+# CLI 起動検分で未起動があれば非0終了(daemon は起動済み。殿の目視に頼らず script が名指しする)
+if [ "${CLI_LAUNCH_ALERT:-0}" = "1" ]; then
+    log_war "CLI-READY-ALERT: 未起動 pane あり(${CLI_NOT_READY[*]})。exit 1"
+    exit 1
 fi

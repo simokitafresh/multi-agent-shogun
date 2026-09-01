@@ -110,6 +110,21 @@ run_syntax_check() {
   [ ! -d "$BATS_TEST_TMPDIR/cache" ]
 }
 
+# test_necessity: a staged deletion of a .sh file has no index blob and must be
+# skipped, not reported as a syntax failure (fail-closed only applies to blobs
+# that exist in the index).
+# regression_justification: 2026-09-01 `git rm scripts/shutsujin_departure.sh`
+# was BLOCKed by pre-commit as "bash -n failed on staged shell script(s)".
+@test "staged shell deletion is not a syntax failure" {
+  printf '#!/usr/bin/env bash\n:\n' > "$REPO/scripts/old.sh"
+  git -C "$REPO" add scripts/old.sh
+  git -C "$REPO" commit -qm "add old.sh"
+  git -C "$REPO" rm -q scripts/old.sh
+  run run_syntax_check "$BATS_TEST_TMPDIR/cache-del"
+  [ "$status" -eq 0 ]
+  [ -z "$output" ]
+}
+
 @test "syntax cache hit does not bypass sourced dependency validation" {
   printf '#!/usr/bin/env bash\nsource scripts/untracked_dep.sh\n' > "$REPO/scripts/huge.sh"
   printf ':\n' > "$REPO/scripts/untracked_dep.sh"

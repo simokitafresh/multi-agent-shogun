@@ -277,7 +277,11 @@ codex login status            # "Logged in using ChatGPT" を確認
 ./shutsujin_departure.sh
 ```
 
-tmux セッション `shogun` に window **`main`**（将軍）と **`agents`**（家老・軍師・忍者 6 = 8 pane）を作り、inbox watcher・ninja_monitor・ntfy などのデーモンを起動する。window 番号は tmux の `base-index` 設定で 0/1 または 1/2 になるため、切替は **名前** で行う。CLI の起動確認は最大 30 秒。
+tmux セッション `shogun` に window **`main`**（将軍）と **`agents`**（家老・軍師・忍者 6 = 8 pane）を作り、inbox watcher・ninja_monitor・ntfy などのデーモンを起動する。window 番号は tmux の `base-index` 設定で 0/1 または 1/2 になるため、切替は **名前** で行う。
+
+CLI 起動は **直列(stagger)+検分**（2026-09-01）: 家老を先に起動し、その CLI ready（プロンプト記号）を待ってから忍者を 1 名ずつ起動する（Codex は起動時に `~/.codex/logs_2.sqlite` を排他初期化するため、同時起動は `database is locked` で全滅する）。末尾で ready な pane（将軍+8）を数え、不足があれば `CLI-READY-ALERT` を出して exit 1 する（pane ごとの待ち時間は `CLI_READY_TIMEOUT`、既定 60 秒）。`scripts/reset_layout.sh` も respawn ごとに同じ待ちを行う。
+
+ext4 へ移設済み（`scripts/migrate_to_ext4_cutover.sh`）の場合、旧 tree には `MIGRATED_TO_EXT4.txt` が残り、旧 tree の `shutsujin_departure.sh` は新 root へ `exec` する stub に置換されているため、旧ディレクトリから出陣しても旧 `cwd`/`.git` でエージェントが動くことはない。
 
 ```bash
 tmux attach -t shogun
@@ -1081,6 +1085,7 @@ tmux respawn-pane -t shogun:2.1 -k 'claude --model opus --dangerously-skip-permi
 
 ## 現在のハイライト
 
+- **2026-09-01 — 忍者 6 名の起動失敗を受けた出陣の堅牢化**: Codex の同時起動が `~/.codex/logs_2.sqlite` で衝突（`database is locked`）し、しかも launcher は将軍 pane しか起動確認していなかった。`shutsujin_departure.sh` は家老を先に起動し、各 pane の CLI ready プロンプトを待ってから次を起動、末尾で ready pane を数えて不足なら `CLI-READY-ALERT` + exit 1。`scripts/reset_layout.sh` も respawn ごとに同じ待ちを行う。旧 9p tree の launcher は ext4 root へ `exec` する stub に置換（従来の guard は新 tree にしか無く一度も発火しなかった）。未使用の `scripts/shutsujin_departure.sh` 複製を削除。出陣時に Codex 未稼働なら肥大した `logs_2.sqlite`（既定 1GiB 超）を退避（rename、可逆）して lock 競合の根を剪定する。
 - **2026-08-27 — リポジトリを Windows ドライブ（9p）から ext4 へ移設**: `git status` 60〜120 秒 → 84ms、配備 1 件 199〜397 秒 → 23 秒、cmd publish 3.8 秒 → 0.23 秒、hook 1 回の中央値 183 → 90ms。runbook: `docs/research/9p_root_fix_runbook_20260827.md`。
 - **2 つの CLI の混成編成**: 将軍（Claude Fable 5）・軍師（Claude Opus 4.6, 1M）と、家老・忍者 6 の Codex gpt-5.6。`config/settings.yaml` が唯一の正本で、`/shogun-cli-switch` は作業中の pane に触れず切り替える。
 - **全てを計測**: `defense_overhead.jsonl`（全 hook）、`gate_metrics.log`（cmd ごとの e2e/deploy/work/finalize）、deploy receipt、pre_push ledger。移設後に残る律速はファイルシステムではなく人手のレビュー往復（finalize 250〜960 秒）。

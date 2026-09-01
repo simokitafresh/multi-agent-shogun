@@ -271,6 +271,25 @@ log_dry()  { echo "[DRY-RUN] $1"; }
 
 # WSL boot直後の /tmp 掃除完了前にtmuxへ接続するとsocketが消えてghost serverになる。
 # active/inactive は完了済み、unknown/空はsystemd非導入またはservice不在として無音通過。
+# ─── CLI ready 待ち(stagger) (2026-09-01) ───
+# Codex は起動時に ~/.codex/logs_2.sqlite を排他初期化する。複数 pane を sleep 0 で
+# 連続起動すると 'database is locked' で全滅(09-01 11:23 実証)。respawn 後は当該 pane の
+# CLI ready(プロンプト行のみ。正本=scripts/lib/cli_ready.sh、shutsujin_departure.sh と共通)を待ってから
+# 次へ進む。timeout は _RL_NOT_READY に累積し、末尾サマリで名指し+exit 1(家老レビュー 13:05: 捨てるな)。
+# shellcheck source=/dev/null
+source "$SCRIPT_DIR/scripts/lib/cli_ready.sh"
+_RL_NOT_READY=()
+_rl_wait_cli_ready() {
+    local target="$1" label="$2" limit="${RESET_LAYOUT_CLI_READY_TIMEOUT:-60}"
+    if cli_wait_pane_ready "$target" "$limit"; then
+        log "  ${label}: CLI ready (${CLI_READY_ELAPSED}s)"
+        return 0
+    fi
+    log "  WARN ${label}: CLI not ready after ${limit}s (pane=${target})"
+    _RL_NOT_READY+=("$label")
+    return 1
+}
+
 wait_for_tmpfiles_setup() {
     local service="systemd-tmpfiles-setup.service"
     local timeout="${TMPFILES_SETUP_TIMEOUT_SEC:-300}"
@@ -474,9 +493,12 @@ if [[ -n "$TARGET_AGENT" ]]; then
     cli_cmd="${_MB_CLI_CMD[$TARGET_AGENT]}"
     tmux_live_send_guard "${AGENTS_WINDOW_TARGET}.${target_pane}"
     tmux send-keys -t "${AGENTS_WINDOW_TARGET}.${target_pane}" "$cli_cmd" Enter
-
-    log_ok "${TARGET_AGENT} respawn完了 (pane=${target_pane}, cli=${cli_t}, model=${model_display})"
-    exit 0
+    if _rl_wait_cli_ready "${AGENTS_WINDOW_TARGET}.${target_pane}" "${TARGET_AGENT}"; then
+        log_ok "${TARGET_AGENT} respawn完了 (pane=${target_pane}, cli=${cli_t}, model=${model_display})"
+        exit 0
+    fi
+    log "CLI-READY-ALERT: ${TARGET_AGENT} respawn したが CLI ready 未到達 (pane=${target_pane}, cli=${cli_t})。capture-pane で画面を確認せよ"
+    exit 1
 fi
 
 # カウンタ
@@ -685,6 +707,7 @@ for ((i=0; i<=LAST_IDX; i++)); do
             cli_cmd="${_MB_CLI_CMD[$agent_id]}"
             tmux_live_send_guard "${AGENTS_WINDOW_TARGET}.${p}"
             tmux send-keys -t "${AGENTS_WINDOW_TARGET}.${p}" "$cli_cmd" Enter
+            _rl_wait_cli_ready "${AGENTS_WINDOW_TARGET}.${p}" "${agent_id}" || true
 
             log "  respawn: agents.${p} (${agent_id})"
         fi
@@ -733,6 +756,7 @@ for ((i=0; i<=LAST_IDX; i++)); do
             # CLI起動
             tmux_live_send_guard "${AGENTS_WINDOW_TARGET}.${p}"
             tmux send-keys -t "${AGENTS_WINDOW_TARGET}.${p}" "$cli_cmd" Enter
+            _rl_wait_cli_ready "${AGENTS_WINDOW_TARGET}.${p}" "${agent_id}" || true
 
             log "  CLI起動: agents.${p} (${agent_id})"
         fi
@@ -884,3 +908,8 @@ while IFS=$'\t' read -r _p _id _dead _group _cli _model; do
     printf "  %-4s %-10s %-5s %-8s %-8s %-10s %s\n" "$_p" "$_id" "$_dead" "$_group" "$_cli" "$_model" "$_bg"
 done <<< "$_summary"
 echo "=========================================="
+# CLI ready timeout を捨てない: 未到達 pane を名指しして非0終了(家老レビュー 2026-09-01 13:05)
+if [[ "${#_RL_NOT_READY[@]}" -gt 0 ]]; then
+    echo "[reset_layout] CLI-READY-ALERT: ${#_RL_NOT_READY[@]} pane が CLI ready 未到達: ${_RL_NOT_READY[*]}"
+    exit 1
+fi

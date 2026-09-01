@@ -790,7 +790,20 @@ fi
 # sed/awk/python regexによるshogun_to_karo.yamlのstatus操作はBLOCK。
 if [[ -n "${command:-}" ]]; then
     if [[ "$command" == *'shogun_to_karo'* ]]; then
-        if [[ "$command" == *'sed '* || "$command" == *'sed -'* || "$command" == *"re.sub"* || "$command" == *".replace("* || "$command" == *'awk '* ]]; then
+        # 2026-09-01: 読み取り専用の pipeline(grep … | sed -E / awk '{print}' / python で
+        # 読むだけ)まで 'sed '/'awk ' の部分文字列で BLOCK していた(将軍が同セッションで 3 回)。
+        # 迂回事故(cmd_2134)の実体は「書き戻し」なので、書ける形だけを止める:
+        # sed -i / --in-place、> >> tee で当該 yaml へ出力、python の write/'w' open。
+        _g4_write=false
+        _g4_re_sed='sed[[:space:]]+(-[A-Za-z]*i|--in-place)'
+        _g4_re_redir='(>|tee[[:space:]])[^|]*shogun_to_karo'
+        # python 書込みは単独で BLOCK(家老レビュー 13:05: re.sub/.replace/awk の有無に依存させない)。
+        # open(path, "w"/"a"/"x"/"r+"), Path.write_text/write_bytes, .write( を書込み形とみなす。
+        _g4_re_pywrite='(\.write\(|write_text\(|write_bytes\(|open\([^)]*["'"'"'][wax]|open\([^)]*["'"'"']r\+)'
+        if [[ "$command" =~ $_g4_re_sed ]]; then _g4_write=true; fi
+        if [[ "$command" =~ $_g4_re_redir ]]; then _g4_write=true; fi
+        if [[ "$command" =~ $_g4_re_pywrite ]]; then _g4_write=true; fi
+        if [[ "$_g4_write" == true ]]; then
             emit_deny "BLOCK: shogun_to_karo.yamlへのsed/regex操作は禁止。変更はEdit tool、読み取りはRead tool(offset/limit指定)を使え。status遷移gateの迂回を防ぐため。"
         fi
     fi

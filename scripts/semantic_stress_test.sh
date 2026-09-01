@@ -405,7 +405,9 @@ OPERATIONAL_NOISE_RE = re.compile(
     r"|\bgate\s*(?:clear|pass|warn|block)?\b"
     r"|\brun\s+\d+\b"
     r"|\bpane_cmd\b"
-    r"|\binbox\d*\b"
+    # ASCII boundary: Python \b treats Japanese letters as \w, so "…ようにinbox1"
+    # never matched \binbox and leaked as a NO_MATCH insight (2026-09-01 12:46).
+    r"|(?<![A-Za-z0-9_])inbox\d*(?![A-Za-z0-9_])"
     r"|復帰"
     r"|ダミー"
     r"|起動alert"

@@ -279,7 +279,11 @@ Each user (family members included) logs in with their own Anthropic / ChatGPT a
 ./shutsujin_departure.sh
 ```
 
-Creates tmux session `shogun` with windows **`main`** (Shogun) and **`agents`** (Karo, Gunshi, 6 Ninja = 8 panes) and starts the daemons (inbox watcher, ninja_monitor, ntfy). Window numbers are 0/1 or 1/2 depending on tmux `base-index`, so switch **by name**. CLI startup is verified for up to 30 s.
+Creates tmux session `shogun` with windows **`main`** (Shogun) and **`agents`** (Karo, Gunshi, 6 Ninja = 8 panes) and starts the daemons (inbox watcher, ninja_monitor, ntfy). Window numbers are 0/1 or 1/2 depending on tmux `base-index`, so switch **by name**.
+
+CLI launch is **staggered and verified** (2026-09-01): Karo is started first and the script waits for its CLI-ready banner before spawning each Ninja one at a time (Codex initialises `~/.codex/logs_2.sqlite` exclusively at startup — parallel launches fail with `database is locked`). At the end it counts ready panes (Shogun + 8) and prints `CLI-READY-ALERT` + exits 1 if any pane did not come up (`CLI_READY_TIMEOUT`, default 60 s per pane). `scripts/reset_layout.sh` applies the same wait after every respawn.
+
+If the repository was migrated to ext4 (`scripts/migrate_to_ext4_cutover.sh`), the old tree keeps a `MIGRATED_TO_EXT4.txt` marker and its `shutsujin_departure.sh` is replaced by a stub that `exec`s the new root, so launching from the old directory can no longer start agents with a stale `cwd`/`.git`.
 
 ```bash
 tmux attach -t shogun
@@ -1077,6 +1081,7 @@ Even if you're not comfortable with keyboard shortcuts, you can switch, scroll, 
 
 ## Current Highlights
 
+- **2026-09-01 — launch hardening after a 6-Ninja start failure**: parallel Codex launches collided on `~/.codex/logs_2.sqlite` (`database is locked`) and the launcher only verified the Shogun pane. `shutsujin_departure.sh` now starts Karo first, waits for each pane's CLI-ready prompt before the next spawn, counts ready panes at the end (`CLI-READY-ALERT` + exit 1 on shortfall); `scripts/reset_layout.sh` waits the same way after every respawn. The old 9p tree's launcher is a stub that `exec`s the ext4 root (the earlier guard lived only in the new tree and never fired). Removed the unused `scripts/shutsujin_departure.sh` duplicate. At launch, when no Codex process is running, an oversized `logs_2.sqlite` (default > 1 GiB) is rotated by rename (reversible) to prune the root of the lock contention.
 - **2026-08-27 — moved the repository from a Windows drive (9p) to ext4**: `git status` 60–120 s → 84 ms, one deployment 199–397 s → 23 s, cmd publish 3.8 s → 0.23 s, median hook wall 183 → 90 ms. Runbook: `docs/research/9p_root_fix_runbook_20260827.md`.
 - **Mixed formation on two CLIs**: Shogun (Claude Fable 5) and Gunshi (Claude Opus 4.6, 1M) with Karo and 6 Ninja on Codex gpt-5.6; `config/settings.yaml` is the only source of truth and `/shogun-cli-switch` changes it without touching working panes.
 - **Everything measured**: `defense_overhead.jsonl` (every hook), `gate_metrics.log` (e2e/deploy/work/finalize per cmd), deploy receipts, pre-push ledger. Today's remaining bottleneck after the move is human-side review round trips (finalize 250–960 s), not the filesystem.

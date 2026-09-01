@@ -341,6 +341,10 @@ check_staged_shell_syntax() {
     while IFS= read -r staged_sh; do
         [[ "$staged_sh" == *.sh ]] || continue
         staged_file_exists "$staged_sh" || continue
+        # A staged deletion has no index blob; parsing it is impossible and must
+        # not fail closed (2026-09-01: `git rm scripts/shutsujin_departure.sh`
+        # was BLOCKed as "bash -n failed"). Only blobs present in the index parse.
+        git cat-file -e ":$staged_sh" 2>/dev/null || continue
         staged_shells+=("$staged_sh")
     done < <(list_staged_files)
 
