@@ -253,3 +253,9 @@
 | cmd_4435 | SEO 案 v3(2026-08-31 14:52 本番 curl 再計測)で発見した未達: app 側 /free が 200 で返るが meta robots noindex が 0 件。SEO 案 §3 禁則『/free は /login と同じく noindex(入口は LP に集約)』の未実装。/login は robots metadata 実装済み(origin/main frontend/app/login/page.tsx:7)で同方式を適用する | dm-signal | 08-31 | Added server-side robots metad |
 | cmd_4434 | 殿裁定 2026-08-31 14:36『FoF 訴求 1 行を足す=採用』(発端=殿 12:39『FoF がウリ』)。現物確認: active 101 本中 77 本が FoF だが、本番 LP curl(14:02 保存 HTML)に Fund of Funds/FoF の語 0 件(grep 0)。入口 3 面 v3.1 §6-6 の裁定を実装する | dm-signal | 08-31 | AC3 canonical task-runner rece |
 | cmd_4437 | 殿裁定 2026-08-31 16:45(スクショ Image #13 付き)『数値は全て太文字に。閲覧もbasic dual momentumはfreeとしよう、閲覧の列も太文字に』。現状(本番スクショ 16:42 実測): プラン行は CAGR/×N の up to 側のみ太字で Sharpe/MDD は細字、Basic-DM の閲覧列は『表示』、閲覧列は細字 | dm-signal | 08-31 | LP Current signalsのhero+3 plan |
+
+## 2026-09
+
+| cmd | title | project | date | key_result |
+|-----|-------|---------|------|------------|
+| cmd_4440 | 殿裁定 2026-08-31 19:27『直そう』(設計書 v3.2 §5 / SEO 案 v4 §0 で発見した小穴)。現物 19:28 curl: EN LP・JA LP とも FAQ リンクは `https://dm-signal-frontend.onrender.com/faq`(JA 既定)1 件ずつで、EN 読者が EN FAQ(`/faq/en/`、cmd_4427 で live 200)へ直に到達できない。EN LP の href を `/faq/en/` へ、JA LP は `/faq` のまま維持する | dm-signal | 09-01 | LPのEN footer FAQ hrefをhttps:// |

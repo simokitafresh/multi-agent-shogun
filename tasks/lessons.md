@@ -16467,3 +16467,16 @@ sqlite3.Connection.backup()を使うとページ(4096byte)単位のread syscall�
 - **when**: 未設定
 - **how**: 未設定
 - 単一NUL汚染でsidecar parseが全停止しても一次台帳を改変せずoffset/length/hash/reasonを記録しvalid event index追随とpartial fail-closedを両立する。
+
+### L1693: global freshness ledgerはcanonical tipと境界祖先graphを同一判定へ使う
+- **日付**: 2026-09-01
+- **出典**: cmd_karo_hotfix_cfc_origin_basis_20260901
+- **記録者**: tobisaru
+- **tags**: [infra,git,cache]
+- **subdomain**: infra
+- **target_files**: [scripts/context_freshness_check.sh]
+- **origin**: [[cmd_karo_hotfix_cfc_origin_basis_20260901]]
+- **enforcement**: 未自動化
+- **when**: 未設定
+- **how**: 未設定
+- origin/mainを選択するselectorとledgerがHEAD固定で分離すると、分岐cloneで全履歴を偽ALERT化する。marker行だけの除外も不十分で、merge/non-diff親を含む境界祖先集合をcacheへ保持する契約テストが必要。
