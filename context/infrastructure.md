@@ -1,5 +1,6 @@
 # インフラコンテキスト
-<!-- last_updated: 2026-09-01 2026-09-01 将軍 doc lane: fail-close pending ACCEPT 終端+scope_commit same-blob -->
+<!-- last_updated: 2026-09-01 2026-09-01 将軍 doc lane: U6 isolated 統合+insights driver region 修正 -->
+<!-- source_commit:e8c9d40aea58c3d16f4fc2685f00402427db50c5 reason:2026-09-01 将軍 doc lane: U6 isolated 統合+insights driver region 修正 evidence:commits e773dfe51,4c295c112; CLEAR 21:09 -->
 <!-- source_commit:3faadd39c98e8bcd411dcdb96b2f1f45e8fda43f reason:2026-09-01 将軍 doc lane: fail-close pending ACCEPT 終端+scope_commit same-blob evidence:commits c8ac48529,762dc9a19; CLEAR 20:30/20:21 -->
 <!-- source_commit:a11e1d1c2549a028034b4440927de5fa9999f7a4 reason:2026-09-01 将軍 doc lane: report-only dirty 契約/review_draft receipt 例外/insights ID-keyed merge/build_instructions 契約(doc lane 3 request 一括) evidence:commits 21b9048c,b7cd2adcc,95edc9e1,eefcd0ff5; CLEAR 19:43/20:07/20:10 -->
 <!-- source_commit:1d97d8acd24446bc0d1f5d9668ba09f7d5f2467e reason:2026-09-01 将軍 doc lane: quality_monitor dedupe/watcher receipt/gist_sync 制限/push lane 統合根治/CI RED 33486782574/fixture 残置を 2026-09-01 節へ evidence:commits 702ca5090,79dfd86e9,bbaa38f4d,9c19734af,fa82d08c1,33595add4,fe58f1f9b; push lane proof 19:25:22 INTEGRATE→19:25:37 PUSH -->
