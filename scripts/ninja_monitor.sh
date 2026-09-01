@@ -99,6 +99,9 @@ _NINJA_MONITOR_LIB_MODE="${NINJA_MONITOR_LIB_ONLY:-0}"
 _NM_SELF="${BASH_SOURCE[0]}"
 [[ "$_NM_SELF" != /* ]] && _NM_SELF="$PWD/$_NM_SELF"
 SCRIPT_DIR="${_NM_SELF%/scripts/ninja_monitor.sh}"
+# Keep the immutable source root separate from SCRIPT_DIR, which unit fixtures
+# override to point at a temporary runtime state directory.
+NINJA_MONITOR_SOURCE_DIR="$SCRIPT_DIR"
 LOG="$SCRIPT_DIR/logs/ninja_monitor.log"
 TRAINING_EFFECT_LOG="$SCRIPT_DIR/logs/training_effect.log"  # 修行before/after FAIL率比較ログ (cmd_2767)
 STATE_DIR="${SHOGUN_STATE_DIR:-/tmp}"
@@ -407,7 +410,8 @@ push_lane_log() {
 # worktree bytes (including unknown dirty paths) are therefore never touched.
 push_lane_integrate_remote() (
     local repo="$1" remote_ref="$2" remote_tip="$3"
-    local current_head root_ref remote_now integrated_head merge_err dirty_paths
+    local current_head root_ref remote_now integrated_head prospective_tree merge_err dirty_paths
+    local safe_ff_script
     local temp_parent isolated cleanup_rc
 
     [ "${PUSH_LANE_AUTO_INTEGRATE:-1}" = "1" ] || return 1
@@ -475,6 +479,17 @@ push_lane_integrate_remote() (
     integrated_head=$(git -C "$isolated" rev-parse HEAD 2>/dev/null || true)
     if ! [[ "$integrated_head" =~ ^[0-9a-fA-F]{40}$ ]]; then
         fail_integrate "isolated_head_unresolved"
+        return 1
+    fi
+    prospective_tree=$(git -C "$isolated" rev-parse HEAD^{tree} 2>/dev/null || true)
+    if ! [[ "$prospective_tree" =~ ^[0-9a-fA-F]{40}$ ]]; then
+        fail_integrate "isolated_tree_unresolved"
+        return 1
+    fi
+    safe_ff_script="${PUSH_LANE_SAFE_FF_SCRIPT:-$NINJA_MONITOR_SOURCE_DIR/scripts/safe_shared_main_ff.sh}"
+    if ! merge_err=$(bash "$safe_ff_script" --verify-merge-tree \
+        "$isolated" "$current_head" "$integrated_head" "$prospective_tree" 2>&1); then
+        fail_integrate "$merge_err"
         return 1
     fi
     git -C "$isolated" merge-base --is-ancestor "$remote_ref" HEAD 2>/dev/null \
@@ -4875,6 +4890,11 @@ _karo_notify_outbox_file() {
     printf '%s/karo_notify_outbox.tsv\n' "$STATE_DIR"
 }
 
+_karo_notify_outbox_archive_file() {
+    mkdir -p "$STATE_DIR" 2>/dev/null || true
+    printf '%s/karo_notify_outbox_archive.tsv\n' "$STATE_DIR"
+}
+
 # karoへdurable通知を試行する。inbox_write成功なら即完了、失敗ならoutboxへ永続化して次サイクルで再送する。
 # 呼び出し元(safe_send_clear等)はこの関数の戻り値でrespawn等の処理を止めてはならない。
 # 契約(cmd_karo_hotfix_pending_work_generation_dedupe_202607121023で明確化): direct送達成功
@@ -4906,6 +4926,89 @@ notify_karo_durable() {
 _karo_notify_outbox_has_commander_envelope() {
     local message="$1"
     [[ "$message" =~ (^|[[:space:]])task_id=commander_directive[[:space:]]+subject_task_id=[^[:space:]]+[[:space:]]+parent_cmd=cmd_[^[:space:]]*([[:space:]]|$) ]]
+}
+
+# A non-enveloped row cannot be safely delivered without the current task's
+# identity.  Treat it as an audit-only legacy row instead of retrying the same
+# unaddressable notification forever.
+_karo_notify_outbox_legacy_identity_missing() {
+    local name="$1"
+    local message="$2"
+    local task_file="$SCRIPT_DIR/queue/tasks/${name}.yaml"
+    local subject_task_id parent_cmd
+
+    _karo_notify_outbox_has_commander_envelope "$message" && return 1
+    # A row without a current task file may be a newly queued notification
+    # (notify_karo_durable has no task lookup), not an auditably old row.
+    [ -f "$task_file" ] || return 1
+    subject_task_id=$(yaml_field_get "$task_file" "task_id" "" 2>/dev/null || true)
+    parent_cmd=$(yaml_field_get "$task_file" "parent_cmd" "" 2>/dev/null || true)
+    [ -n "$subject_task_id" ] && [ -n "$parent_cmd" ] && return 1
+    return 0
+}
+
+_karo_notify_outbox_timestamp_epoch() {
+    local value="$1"
+    if [[ "$value" =~ ^[0-9]+$ ]]; then
+        printf '%s\n' "$value"
+        return 0
+    fi
+    date -d "$value" +%s 2>/dev/null
+}
+
+# A legacy row with a valid task identity is safe to upgrade only when its
+# queued_at proves it belongs to the current task generation.  Missing or
+# malformed timing is fail-closed to audit archive; it must not inherit a
+# newer task identity by guesswork.
+_karo_notify_outbox_legacy_generation_mismatch() {
+    local name="$1"
+    local queued_at="$2"
+    local task_file="$SCRIPT_DIR/queue/tasks/${name}.yaml"
+    local task_timestamp task_epoch issued_at deployed_at floor_epoch
+
+    [ -f "$task_file" ] || return 1
+    issued_at=$(yaml_field_get "$task_file" "issued_at" "" 2>/dev/null || true)
+    deployed_at=$(yaml_field_get "$task_file" "deployed_at" "" 2>/dev/null || true)
+    floor_epoch=-1
+    for task_timestamp in "$issued_at" "$deployed_at"; do
+        [ -n "$task_timestamp" ] || continue
+        task_epoch=$(_karo_notify_outbox_timestamp_epoch "$task_timestamp" 2>/dev/null || true)
+        [[ "$task_epoch" =~ ^[0-9]+$ ]] || return 0
+        [ "$task_epoch" -gt "$floor_epoch" ] && floor_epoch="$task_epoch"
+    done
+    # Without an issued/deployed boundary the same-generation claim cannot be
+    # proven, so retain the row in the audit archive instead of upgrading it.
+    [ "$floor_epoch" -ge 0 ] || return 0
+    task_epoch=$(_karo_notify_outbox_timestamp_epoch "$queued_at" 2>/dev/null || true)
+    [[ "$task_epoch" =~ ^[0-9]+$ ]] || return 0
+    [ "$task_epoch" -lt "$floor_epoch" ]
+}
+
+# Archive the original encoded row exactly once.  The archive keeps the
+# queued_at/type/name fields explicit while base64 preserves the original
+# message bytes and makes the row safely recoverable from a TSV ledger.
+_karo_notify_outbox_archive_legacy_row() {
+    local queued_at="$1"
+    local notify_type="$2"
+    local name="$3"
+    local encoded="$4"
+    local archive_file archive_lock archive_line fd rc=0
+
+    archive_file=$(_karo_notify_outbox_archive_file)
+    archive_lock="${archive_file}.lock"
+    printf -v archive_line 'queued_at=%s\ttype=%s\tname=%s\tmessage_b64=%s' \
+        "$queued_at" "$notify_type" "$name" "$encoded"
+    exec {fd}>"$archive_lock" || return 1
+    if ! flock -x "$fd"; then
+        exec {fd}>&-
+        return 1
+    fi
+    if ! grep -Fqx -- "$archive_line" "$archive_file" 2>/dev/null; then
+        printf '%s\n' "$archive_line" >> "$archive_file" || rc=1
+    fi
+    flock -u "$fd" 2>/dev/null || rc=1
+    exec {fd}>&- || rc=1
+    return "$rc"
 }
 
 _karo_notify_outbox_upgrade_legacy_message() {
@@ -4953,6 +5056,22 @@ flush_karo_notify_outbox() {
         [ -n "$notify_type" ] || continue
         local message upgraded_message
         message=$(printf '%s' "$encoded" | base64 -d 2>/dev/null)
+        local archive_reason=""
+        if _karo_notify_outbox_legacy_identity_missing "$name" "$message"; then
+            archive_reason="missing_identity"
+        elif _karo_notify_outbox_legacy_generation_mismatch "$name" "$ts"; then
+            archive_reason="stale_generation"
+        fi
+        if [ -n "$archive_reason" ]; then
+            if _karo_notify_outbox_archive_legacy_row "$ts" "$notify_type" "$name" "$encoded"; then
+                log "NOTIFY-OUTBOX-LEGACY-ARCHIVED: $notify_type for $name queued_at=$ts reason=$archive_reason"
+                continue
+            fi
+            log "NOTIFY-OUTBOX-LEGACY-ARCHIVE-FAILED: $notify_type for $name queued_at=$ts (retained for retry)"
+            printf '%s\t%s\t%s\t%s\n' "$ts" "$notify_type" "$name" "$encoded" >> "$tmp_remaining"
+            pending=$((pending + 1))
+            continue
+        fi
         upgraded_message=$(_karo_notify_outbox_upgrade_legacy_message "$notify_type" "$name" "$message")
         if bash "$SCRIPT_DIR/scripts/inbox_write.sh" karo "$upgraded_message" "$notify_type" ninja_monitor >> "$LOG" 2>&1; then
             log "NOTIFY-OUTBOX-FLUSHED: $notify_type for $name (queued at ${ts})"
