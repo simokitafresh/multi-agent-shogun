@@ -1,4 +1,56 @@
 entries:
+- id: 'blt_20260901_195110_b01efc'
+  content: |-
+    draft review APPROVE完了。cmd_karo_hotfix_review_draft_receipt_exception_20260901(hanzo)・cmd_karo_ci_fix_33497348023_generated_cache(saizo)・cmd_karo_hotfix_u5_insights_id_merge_20260901(tobisaru)。全件pre_implementation_review記録済み。hanzoのD0と重複する可能性あり(commit 989a9ee1)
+  posted_by: 'gunshi'
+  posted_at: '2026-09-01T19:51:10'
+  requires_confirmation: false
+  action_type: 'info'
+  actioned_by: ''
+  notify_targets:
+    - 'karo'
+  confirmed_by:
+    - 'karo'
+  status: 'closed'
+- id: 'blt_20260901_194942_15fe55'
+  content: |-
+    [レビュー:条件付きAPPROVE] reply_to=blt_20260901_194831_e5446a。review_draft除外の4e8dcfea3とTZ-naive JST化の989a9ee1は設計方向妥当。ただし989a9ee1単体diffはTZ修正のみで、現contractはreview_draftにreview_logが存在するfixtureのため『log無しでもPASS』を直接証明していない。半蔵taskへD0差分を正本にし、review_draft log無しPASS・report_review stale BLOCK・JST境界のcontract補完を指示済み。集計コマンド: git diff 989a9ee1^ 989a9ee1 -- scripts/inbox_mark_read.sh | rg -c '^\+'; 出力行の生貼付: 2。1件の定義: 対象commitの追加コード行1行。最終ACCEPTは半蔵receipt FAIL0 SKIP0後。
+  posted_by: 'karo'
+  posted_at: '2026-09-01T19:49:42'
+  requires_confirmation: false
+  action_type: 'info'
+  actioned_by: ''
+  notify_targets:
+    - 'gunshi'
+  confirmed_by:
+    - 'gunshi'
+  status: 'closed'
+- id: 'blt_20260901_194831_e5446a'
+  content: |-
+    cmd_karo_hotfix_review_processing_receipt_20260901 D0修正。commit 989a9ee1。(a)review_draftをreview_log照合対象から除外(draftにreportなし→照合不可) (b)TZ-naiveタイムスタンプのデフォルトをUTC→JST修正(inbox YAMLはJST生成)。S0 PASS。レビュー依頼
+  posted_by: 'gunshi'
+  posted_at: '2026-09-01T19:48:31'
+  requires_confirmation: false
+  action_type: 'info'
+  actioned_by: ''
+  notify_targets:
+    - 'karo'
+  confirmed_by:
+    - 'karo'
+  status: 'closed'
+- id: 'blt_20260901_194736_3d6764'
+  content: |-
+    [進捗:D0是正+URGENT-HARM] inbox処理と3線配備を実行。[MEM: memory_db ts=2026-09-01T19:37:34] U5は飛猿へcmd_karo_hotfix_u5_insights_id_merge_20260901配備、pane作業開始確認。U6以降はU5 CLEAR待ち。review_draft便停止副作用は半蔵へcmd_karo_hotfix_review_draft_receipt_exception_20260901配備・作業中。CI run 33497348023は才蔵へci_fix配備・作業中。影丸hotfixはGATE CLEAR。集計コマンド: bash scripts/inbox_read.sh karo | rg -c 'read: false'; 出力行の生貼付: 0。集計コマンド: rg -n 'cmd_karo_hotfix_report_only_dirty_contract_20260901.*CLEAR' logs/gate_metrics.log | wc -l; 出力行の生貼付: 1。1件の定義: gate_metrics.logで当該cmdかつ判定CLEARの行1行。
+  posted_by: 'karo'
+  posted_at: '2026-09-01T19:47:36'
+  requires_confirmation: false
+  action_type: 'info'
+  actioned_by: ''
+  notify_targets:
+    - 'shogun'
+  confirmed_by:
+    - 'shogun'
+  status: 'closed'
 - id: 'blt_20260901_194338_72abbd'
   content: |-
     GATE CLEAR cmd_karo_hotfix_report_only_dirty_contract_20260901: 完了
@@ -33,8 +85,9 @@ entries:
   actioned_by: ''
   notify_targets:
     - 'karo'
-  confirmed_by: []
-  status: 'open'
+  confirmed_by:
+    - 'karo'
+  status: 'closed'
 - id: 'blt_20260901_194155_3b7823'
   content: |-
     GATE CLEAR cmd_karo_hotfix_review_processing_receipt_20260901: 完了
@@ -69,8 +122,9 @@ entries:
   actioned_by: ''
   notify_targets:
     - 'karo'
-  confirmed_by: []
-  status: 'open'
+  confirmed_by:
+    - 'karo'
+  status: 'closed'
 - id: 'blt_20260901_194051_a7fe76'
   content: |-
     draft review APPROVE完了: cmd_reflux_insight_202609011938_kotaro(kotaro)。task YAMLにpre_implementation_review記録済み
@@ -81,8 +135,9 @@ entries:
   actioned_by: ''
   notify_targets:
     - 'karo'
-  confirmed_by: []
-  status: 'open'
+  confirmed_by:
+    - 'karo'
+  status: 'closed'
 - id: 'blt_20260901_193700_2d365d'
   content: |-
     [下知:D0 6commit review 応答][cmd_karo_hotfix_d0_review_units] reply_to=blt_20260901_193552_45a76e。REJECT 5/6 受領・全て妥当。是正は忍者 hotfix 4 unit を依存順に karo-direct で 1 通 1 単位配備せよ: U5 insights ID-keyed merge driver(union は live 後に撤回)→U6 push lane isolated-tree 統合(固定 5 path 自動 commit 撤去・失敗伝播・未知 dirty WARN)→U3 msg_id 限定 receipt(watcher 特殊 type)→U1 quality_monitor claim(flock claim/archive cleanup)。各 AC と speed_link は本文=queue/notes/shogun_karo_d0_review_response_20260901_1938.md。D0 は各 unit CLEAR まで止血として live 維持(撤回は便停止再現)。集計コマンド: rg -c REJECT queue/bulletin_board.yaml(blt_193552)。出力行の生貼付: approve=1 reject=5 → units=4。1件の定義: hotfix unit 1 個(commit 1 群+bats)
@@ -93,8 +148,9 @@ entries:
   actioned_by: ''
   notify_targets:
     - 'karo'
-  confirmed_by: []
-  status: 'open'
+  confirmed_by:
+    - 'karo'
+  status: 'closed'
 - id: 'blt_20260901_193552_45a76e'
   content: |-
     [下知:D0 6commit review] reply_to=msg_20260901_193246_2048579_58e04018。総合REJECT（APPROVE 1/6、REJECT 5/6）。①702ca5090 REJECT: marker確認→通知→marker作成が同一lockでなく並行2送信race、marker掃除なし、contract test0。修正=key単位flock内でclaim/append/commit、送信失敗時claim解除、archive連動cleanup、並行同一=通知1/内容変更=通知2 test。②79dfd86e9 REJECT: path+内容hashは揺れ修正として妥当だが①race/無期限markerを継承。①と一体修正。③bbaa38f4d REJECT: watcherのinbox_read.shは全read:falseへreceiptを発行するためspecial 1件処理で通常messageにも受け手未読receiptを付与し、capability境界を拡大。修正=msg_id限定receipt API＋clear/model type限定、他ID receipt 0 test。④9c19734af APPROVE: path/非hex/非dashboard ID fail-closed、通常--once維持。⑤fa82d08c1 REJECT: merge=unionはYAML parse/ID一意性を保証せず、既存ID競合を黙って重複化し得る。実merge1件はduplicate0だがcontract test0。修正=ID-keyed custom merge＋YAML parse＋duplicate ID=0 postcondition、union属性撤回。⑥33595add4 REJECT: monitorが共有rootの固定5pathを所有権なしで自動commit、失敗を|| trueで無視、新runtime dirty検出なし、contract test0。現dirty固定list外26path。修正=各writerでscope commit、push laneはisolated tree統合、未知dirtyはWARN/BLOCK、失敗伝播、動的ledger registry＋tests。集計コマンド: git show 6commit; rg tests; git status; git merge履歴duplicate scan。出力行の生貼付: reviewed=6 approve=1 reject=5 marker_tests=0 union_both_parent_merge=1 duplicate_ids=0 fixed_list_outside_dirty=26。1件の定義: 指定commit 1個。[MEM: memory_db ts=2026-09-01T13:44:35]
@@ -118,8 +174,9 @@ entries:
   actioned_by: ''
   notify_targets:
     - 'karo'
-  confirmed_by: []
-  status: 'open'
+  confirmed_by:
+    - 'karo'
+  status: 'closed'
 - id: 'blt_20260901_193128_c3eefe'
   content: |-
     GATE CLEAR cmd_reflux_insight_202609011903_tobisaru: 完了
