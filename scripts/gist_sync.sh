@@ -37,6 +37,21 @@ if [ "${1:-}" = "--once" ]; then
     FIXED_GIST_ID=""
 else
     FIXED_GIST_ID="${1:-}"  # 引数あれば固定
+    # 2026-09-01 将軍 D0(殿『commit の hang はバグ。真因を掘り根治せよ』): 本 script は dashboard.md を
+    # 指定 gist へ同期する常駐 loop。将軍が設計書の gist_id/path を渡して起動し、roadmap gist
+    # da1b7617 に dashboard.md が混入した(19:07-19:13、REST PATCH で除去)。呼出し元は --once と
+    # 無引数 daemon のみ(cmd_complete_gate/daemon_watchdog)。固定 id は dashboard 系 gist に限定し、
+    # それ以外は usage で止める(設計書の gist 同期は scripts/gist_share.sh <path>)。
+    if [ -n "$FIXED_GIST_ID" ]; then
+        if [ -e "$FIXED_GIST_ID" ] || ! [[ "$FIXED_GIST_ID" =~ ^[0-9a-f]{32}$ ]]; then
+            echo "gist_sync: BLOCK: 引数 '$FIXED_GIST_ID' は gist_id(32 hex)ではない。本 script は dashboard.md の常駐同期 daemon。設計書の gist 同期は bash scripts/gist_share.sh <repo-relative-path>" >&2
+            exit 2
+        fi
+        if [ "$FIXED_GIST_ID" != "$DEFAULT_GIST_ID" ] && ! grep -qE "gist_url:.*$FIXED_GIST_ID" "$SCRIPT_DIR/config/projects.yaml" 2>/dev/null && [ "${GIST_SYNC_ALLOW_FIXED_ID:-0}" != "1" ]; then
+            echo "gist_sync: BLOCK: $FIXED_GIST_ID は dashboard gist(DEFAULT/config/projects.yaml gist_url)ではない。dashboard.md をこの gist へ書くと設計書 gist を汚染する(2026-09-01 da1b7617 実証)。意図的なら GIST_SYNC_ALLOW_FIXED_ID=1" >&2
+            exit 2
+        fi
+    fi
 fi
 
 resolve_gist_id() {
