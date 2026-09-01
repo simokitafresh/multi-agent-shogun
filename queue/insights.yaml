@@ -12602,3 +12602,10 @@ insights:
   resolved_reason: "今回の対象insight検証後にgateが同一generationの追従候補を再生成したが、一次情報の4検査は全てOKで実修正・decision_candidate不要という同一結論のため、派生重複としてresolveした。"
   action_artifact: "gate_skill_script_refs.sh rc=2;FOLLOWUP_ACTIVE=34;FOLLOWUP_COVERS_REVIEW_REQUIRED=yes;refs=82;referenced=30;missing_refs=0;stale_refs=0;missing_example_paths=0;missing_side_effect_markers=0;derived_duplicate_of=INS-20260901-194335270-c9e8"
   resolved_at: "2026-09-01T20:04:44+09:00"
+- id: INS-20260901-203035376-5d2f
+  ts: "2026-09-01T20:30:35+09:00"
+  insight: "semantic_index_update新概念候補: discussion:freeは問題なく動いてる は 既存aliasesに一致なし。概念定義とaliases追加を検討せよ"
+  priority: "low"
+  source: "semantic_index_update"
+  fix_known: false
+  status: pending
