@@ -13468,3 +13468,10 @@ insights:
   source: "semantic_stress_test"
   fix_known: false
   status: pending
+- id: INS-20260902-162504292-41c9
+  ts: "2026-09-02T16:25:04+09:00"
+  insight: "[[殿指示 13 25『どのロールがどの CLI モデルでも必要十分に同じレベルで作業を続けられるのが我らの仕組み』・15 ]] semantic_stress_test candidate_aliases: NO_MATCH source=cmds query=殿指示 2026-09-02 13:25『どのロールがどの CLI/モデルでも必要十分に同じレベルで作業を続けられるのが我らの仕組み』・15:30『二巡目配備問題にてこずっていそうだ』→設計書 v3.6 §9.1 共通 AC(2 巡目=別 cmd 番号の検証 task。同 cmd 再配備は deploy_task completed-peer guard の"
+  priority: "low"
+  source: "semantic_stress_test"
+  fix_known: false
+  status: pending
