@@ -170,8 +170,9 @@
 | T2-22 | 01:59 | 将軍が才蔵 4461 failed を『template 未記入』と誤診し家老へ下知 | ⑧ | report 本文と pane を一次確認する前に task YAML の block_reason 履歴だけで結論 | 家老が訂正(正当 fail-close)。根治=一次確認順序(本表で記録) |
 | T2-23 | 01:30 | U3 active 24h canary・U3b・検証 cmd 4 本を積んで便が遅延 | ⑦ | 設計書の canary/検証を殿の速度要求より優先 | 殿 01:30/01:31 で撤回。根治(殿裁定) |
 | T2-26 | 02:41 | cmd_save --preflight が 120 秒超で background 化 | ⑤ | S-10 cmd_skeleton 2 分 hang と同根(semantic_search+FTS5 を直列実行) | **未根治** |
+| T2-27 | 04:58 | U6 ledger route(cmd_4454)が本番で一度も動かず、4 caller が legacy 直書きへ沈黙フォールバック | ③ | (a)`[[ -x ledger_writer.sh ]]` 検査で file が 644 のため常に偽 (b)ledger_inbox を apply する消費者が publisher に未実装。同型の -x 沈黙スキップが gate_skill_script_refs(9fd435f1e)・auto_failure_lesson(d90f86e71)でも実在 | 家老 deepdive 追体験で発見→将軍裁定 04:56: 消費者を publisher に実装(cmd_4465)、-x は着地まで維持。**未根治(4465 着地待ち)**。flag ON 後は legacy no-op のため root dirty が溜まる(14) |
 
-集計コマンド: `grep -oE '^\| T2-[0-9]+[ab]? \|' docs/research/tsumari_root_causes_20260901.md | wc -l` → 24。根治 17 / 未根治 7(T2-09/10/14/18/20/21/26)。
+集計コマンド: `grep -oE '^\| T2-[0-9]+[ab]? \|' docs/research/tsumari_root_causes_20260901.md | wc -l` → 25(04:58 T2-27 追記)。根治 17 / 未根治 8(T2-09/10/14/18/20/21/26/27)。
 
 ## 未根治 7 件の次の一手(将軍)
 
@@ -184,3 +185,4 @@
 | T2-20 | cmd 起票規則: 成果物が docs/ の cmd は `deliverable_route: shogun-doc-lane` を明示し、家老が report の path を将軍へ渡す | 将軍(cmd_skeleton に 1 field) |
 | T2-21 | stop hook で『将軍かつ loop 中かつ ScheduleWakeup 未呼出』を WARN | 家老 hotfix |
 | T2-26 | preflight の semantic_search を並列化 or キャッシュ | 家老 hotfix(S-10 と同時) |
+| T2-27 | publisher に ledger 消費者(kind=ledger)を実装+ledger_writer.sh を 755 で追跡+実行 bit の契約 test。-x 沈黙スキップは『存在するのに実行不可』を WARN 出力する 1 行を 3 caller に | 将軍 cmd_4465 |
