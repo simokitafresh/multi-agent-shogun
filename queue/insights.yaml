@@ -14517,3 +14517,10 @@ insights:
   source: "semantic_stress_test"
   fix_known: false
   status: pending
+- id: INS-20260903-005616203-8311
+  ts: "2026-09-03T00:56:16+09:00"
+  insight: "[[単一 publisher U1 再検証 の後継 Codex 忍者が隔離 clone で修正後の publisher qu]] semantic_stress_test candidate_aliases: NO_MATCH source=cmds query=単一 publisher U1 再検証(cmd_4448 の後継): Codex 忍者が隔離 clone で修正後の publisher_queue(enqueue の sequence lock eb136fdbc)に対し bats 9 本を選択実行し、並行 enqueue の FIFO 敵対 fixture をもう 1 本追加して順序契約を証明する"
+  priority: "low"
+  source: "semantic_stress_test"
+  fix_known: false
+  status: pending
