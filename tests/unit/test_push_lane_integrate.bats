@@ -88,3 +88,48 @@ setup() {
   [ "$status" -ne 0 ]
   [ "$(git -C "$LOCAL" log -1 --format=%s)" = "local" ]
 }
+
+# test_necessity: integrate must synchronize the shared root index/worktree
+# with the integrated tree so an upstream-added file is not exposed as a
+# staged deletion, while a dirty overlapping root path remains untouched and
+# produces one explicit checkout warning.
+# regression_justification: reproduces the repeated update-ref-only regression
+# that left the shared root on the pre-integration tree and could delete newly
+# integrated implementation files on the next root commit.
+@test "integrate synchronizes upstream additions and warns while preserving dirty overlap" {
+  printf 'remote-addition\n' > "$OTHER/b.txt"
+  git -C "$OTHER" add b.txt
+  git -C "$OTHER" commit -qm remote-addition
+  git -C "$OTHER" push -q origin main
+  git -C "$LOCAL" fetch -q origin
+
+  PUSH_LANE_LOG="$BATS_TEST_TMPDIR/push.log"
+  export PUSH_LANE_LOG
+  push_lane_log() { printf '%s\n' "$1" >> "$PUSH_LANE_LOG"; }
+  export -f push_lane_log
+  run bash -c "$(declare -f push_lane_integrate_remote); push_lane_integrate_remote '$LOCAL' origin/main \$(git -C '$LOCAL' rev-parse origin/main)"
+  [ "$status" -eq 0 ]
+  [ -f "$LOCAL/b.txt" ]
+  [ "$(git -C "$LOCAL" status --porcelain=v1 | grep -c '^D ' || true)" -eq 0 ]
+  if [ -f "$PUSH_LANE_LOG" ]; then
+    [ "$(grep -c 'INTEGRATE-CHECKOUT-WARN' "$PUSH_LANE_LOG")" -eq 0 ]
+  fi
+
+  printf 'remote-overlap\n' > "$OTHER/a.txt"
+  git -C "$OTHER" add a.txt
+  git -C "$OTHER" commit -qm remote-overlap
+  git -C "$OTHER" push -q origin main
+  printf 'local-dirty\n' > "$LOCAL/a.txt"
+  before_dirty="$(sha256sum "$LOCAL/a.txt" | awk '{print $1}')"
+  git -C "$LOCAL" fetch -q origin
+  run bash -c "$(declare -f push_lane_integrate_remote); push_lane_integrate_remote '$LOCAL' origin/main \$(git -C '$LOCAL' rev-parse origin/main)"
+  [ "$status" -eq 0 ]
+  [ "$(git -C "$LOCAL" rev-parse HEAD)" = "$(git -C "$LOCAL" rev-parse origin/main)" ]
+  [ "$(sha256sum "$LOCAL/a.txt" | awk '{print $1}')" = "$before_dirty" ]
+  [ "$(cat "$LOCAL/a.txt")" = "local-dirty" ]
+  [ -f "$PUSH_LANE_LOG" ]
+  [ "$(grep -c 'INTEGRATE-CHECKOUT-WARN' "$PUSH_LANE_LOG")" -eq 1 ]
+  [ -f "$LOCAL/b.txt" ]
+  [ "$(git -C "$LOCAL" status --porcelain=v1 | grep -c '^D ' || true)" -eq 0 ]
+  printf 'upstream_addition=1 staged_deletions=0 dirty_preserved=1 checkout_warn=1\n'
+}
