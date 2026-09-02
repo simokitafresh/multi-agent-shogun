@@ -517,3 +517,65 @@ exit 0"
   [ "$(git --git-dir "$BATS_TEST_TMPDIR/origin.git" rev-parse refs/heads/main)" = "$before_remote" ]
   [ ! -f "$BATS_TEST_TMPDIR/hook.log" ]
 }
+
+# test_necessity: an ours-equivalent merge whose first-parent tree already
+# contains every line the second parent added (ID-merge superset, e.g. the
+# insights ledger) loses nothing and must pass; blob inequality alone is not
+# content loss (2026-09-02 pre-push false BLOCK on merge 60d87b68d).
+@test "ours-equivalent merge with second-parent lines preserved as superset passes" {
+  local project_root repo base_sha side_sha main_sha merge_sha main_tree
+  project_root="$(cd "$BATS_TEST_DIRNAME/../.." && pwd)"
+  repo="$BATS_TEST_TMPDIR/superset"
+  git init -q -b main "$repo"
+  git -C "$repo" config user.email t@t; git -C "$repo" config user.name t
+  printf -- '- id: A\n' > "$repo/ledger.yaml"
+  git -C "$repo" add ledger.yaml; git -C "$repo" commit -qm base
+  base_sha="$(git -C "$repo" rev-parse HEAD)"
+  git -C "$repo" checkout -qb side
+  printf -- '- id: A\n- id: B\n' > "$repo/ledger.yaml"
+  git -C "$repo" commit -aqm side-adds-B
+  side_sha="$(git -C "$repo" rev-parse HEAD)"
+  git -C "$repo" checkout -q main
+  printf -- '- id: A\n- id: B\n- id: C\n' > "$repo/ledger.yaml"
+  git -C "$repo" commit -aqm main-adds-B-and-C
+  main_sha="$(git -C "$repo" rev-parse HEAD)"
+  main_tree="$(git -C "$repo" rev-parse 'HEAD^{tree}')"
+  merge_sha="$(git -C "$repo" commit-tree "$main_tree" -p "$main_sha" -p "$side_sha" -m superset-merge)"
+  git -C "$repo" update-ref refs/heads/main "$merge_sha"
+
+  run bash "$project_root/scripts/safe_shared_main_ff.sh" --verify-merge-tree \
+    "$repo" "$base_sha" "$merge_sha" "$main_tree"
+  [ "$status" -eq 0 ]
+  [[ "$output" == *"ours_equivalent=0"* ]]
+  [[ "$output" == *"result=PASS"* ]]
+}
+
+# test_necessity: the superset relaxation must not hide real loss; when the
+# first-parent tree lacks a line the second parent added, the merge still blocks.
+@test "ours-equivalent merge that drops a second-parent line still blocks" {
+  local project_root repo base_sha side_sha main_sha merge_sha main_tree
+  project_root="$(cd "$BATS_TEST_DIRNAME/../.." && pwd)"
+  repo="$BATS_TEST_TMPDIR/dropped"
+  git init -q -b main "$repo"
+  git -C "$repo" config user.email t@t; git -C "$repo" config user.name t
+  printf -- '- id: A\n' > "$repo/ledger.yaml"
+  git -C "$repo" add ledger.yaml; git -C "$repo" commit -qm base
+  base_sha="$(git -C "$repo" rev-parse HEAD)"
+  git -C "$repo" checkout -qb side
+  printf -- '- id: A\n- id: B\n' > "$repo/ledger.yaml"
+  git -C "$repo" commit -aqm side-adds-B
+  side_sha="$(git -C "$repo" rev-parse HEAD)"
+  git -C "$repo" checkout -q main
+  printf -- '- id: A\n- id: C\n' > "$repo/ledger.yaml"
+  git -C "$repo" commit -aqm main-adds-C-only
+  main_sha="$(git -C "$repo" rev-parse HEAD)"
+  main_tree="$(git -C "$repo" rev-parse 'HEAD^{tree}')"
+  merge_sha="$(git -C "$repo" commit-tree "$main_tree" -p "$main_sha" -p "$side_sha" -m dropped-merge)"
+  git -C "$repo" update-ref refs/heads/main "$merge_sha"
+
+  run bash "$project_root/scripts/safe_shared_main_ff.sh" --verify-merge-tree \
+    "$repo" "$base_sha" "$merge_sha" "$main_tree"
+  [ "$status" -eq 2 ]
+  [[ "$output" == *"ours-equivalent merge"* ]]
+  [[ "$output" == *"ANCESTRY-MERGE-REGRESSION paths=ledger.yaml"* ]]
+}

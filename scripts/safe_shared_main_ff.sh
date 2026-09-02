@@ -136,6 +136,20 @@ safe_shared_main_auto_push() {
     return 0
 }
 
+# second-parent が merge base に対して追加した行の集合が prospective tree の同 path に
+# 全て含まれていれば 0(保存されている)。追加行が無い(削除のみ/取得失敗)場合は 1 を返し、
+# 呼出し元の従来判定(blob 不一致=regression)に委ねる。
+safe_ff_second_parent_lines_preserved() {
+    local repo="$1" base="$2" second="$3" prospective="$4" path="$5"
+    local added prospective_file missing
+    [[ -n "$base" && -n "$second" && -n "$prospective" && -n "$path" ]] || return 1
+    added="$(git -C "$repo" diff "$base" "$second" -- "$path" 2>/dev/null | grep -E '^\+' | grep -Ev '^\+{3} ' | cut -c2- | sort -u)" || return 1
+    [[ -n "$added" ]] || return 1
+    prospective_file="$(git -C "$repo" show "$prospective:$path" 2>/dev/null)" || return 1
+    missing="$(comm -23 <(printf '%s\n' "$added") <(printf '%s\n' "$prospective_file" | sort -u) | wc -l | tr -d ' ')"
+    [[ "$missing" -eq 0 ]]
+}
+
 verify_ours_equivalent_merge_trees() {
     local repo="$1" old_base="$2" target_head="$3" prospective_tree="${4:-}"
     local merge first_parent second_parent merge_tree first_tree changed_paths path
@@ -207,6 +221,14 @@ verify_ours_equivalent_merge_trees() {
                 prospective_blob="$(git -C "$repo" rev-parse "$prospective_tree:$path" 2>/dev/null || printf '__ABSENT__')"
                 if [[ "$second_blob" != "$parent_blob" \
                    && "$prospective_blob" != "$second_blob" ]]; then
+                    # 2026-09-02 将軍 D0: blob 不一致は損失の証明ではない。ID merge driver
+                    # (queue/insights.yaml 等)が second-parent の追加行を含む superset を
+                    # 作った merge(60d87b68d)を pre-push が regression と誤判定し便が 1h 停止した。
+                    # second が merge base に対して足した行が prospective に全て残っていれば
+                    # 内容は失われていない=regression ではない。
+                    if safe_ff_second_parent_lines_preserved "$repo" "$merge_base" "$second_parent" "$prospective_tree" "$path"; then
+                        continue
+                    fi
                     merge_regression_paths+=("$path")
                 fi
             done
