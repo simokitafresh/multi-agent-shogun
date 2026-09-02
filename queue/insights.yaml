@@ -14283,3 +14283,10 @@ insights:
   source: "semantic_stress_test"
   fix_known: false
   status: pending
+- id: INS-20260902-232045000-ba40
+  ts: "2026-09-02T23:20:45+09:00"
+  insight: "小太郎 cmd_4453 の test 実行が本番 SHOGUN_STATE_DIR(~/.local/share/multi-agent-shogun/publish_queue)へ fixture request 4 件(commit aaaa…)を残した。test は SHOGUN_STATE_DIR を一時 dir に固定すべき(run_tests.sh で強制 export)。"
+  priority: "medium"
+  source: "manual"
+  fix_known: false
+  status: pending
