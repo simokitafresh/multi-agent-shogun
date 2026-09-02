@@ -6,7 +6,7 @@
 # 契約(設計書 §6 D14):
 #   唯一のwriter。$STATE_DIR/publish_queue/events.lock 下でseqをcounter fileから+1し、
 #   1行(<=4KB)をO_APPENDで1write。fields=seq/ts/kind/request/rc/reason/pid。
-#   kind ∈ {rc210, rc211, c2a_rc, r11_hold, r13_reject, cas_rejected, deploy_check_started,
+#   kind ∈ {rc210, rc211, c2a_rc, already_published, r11_hold, r13_reject, cas_rejected, deploy_check_started,
 #           deploy_check_terminal, deploy_check_stale, retry_exhausted, deploy_check_exhausted, git_fail}
 #   直接 echo >> による追記は禁止(このscript経由のみ)。
 set -e
@@ -49,7 +49,7 @@ SEQ_COUNTER="$QUEUE_DIR/events.seq"
 
 mkdir -p "$QUEUE_DIR"
 
-VALID_KINDS="rc210 rc211 c2a_rc dry_run_publish r11_hold r13_reject cas_rejected deploy_check_started deploy_check_terminal deploy_check_stale retry_exhausted deploy_check_exhausted git_fail"
+VALID_KINDS="rc210 rc211 c2a_rc already_published dry_run_publish r11_hold r13_reject cas_rejected deploy_check_started deploy_check_terminal deploy_check_stale retry_exhausted deploy_check_exhausted git_fail"
 
 cmd_append() {
     local kind="$1" request="$2" rc="$3" reason="$4"

@@ -56,8 +56,14 @@ PY
 
 request_id() { request_field "$1" task_id | head -n1; }
 
+tree_blob() {
+    local tree="$1" path="$2" blob
+    blob="$(git -C "$REPO_ROOT" ls-tree -r "$tree" -- "$path" | awk 'NR == 1 { print $3; exit }')"
+    printf '%s\n' "${blob:-ABSENT}"
+}
+
 notify_karo() {
-    local message="$1" action="${2:-investigation_result}"
+    local message="$1" action="${2:-task_assigned}"
     if ! bash "$INBOX_WRITER" karo "$message" "$action" publisher notify_karo; then
         echo "publisher: failed to notify karo: $message" >&2
         return 1
@@ -124,7 +130,7 @@ sync_root() {
 }
 
 process_request() {
-    local request="$1" mode="$2" task artifact manifest base tip origin_url isolated
+    local request="$1" mode="$2" task artifact manifest base source_tree tip origin_url isolated
     task="$(request_id "$request")"
     artifact="$STATE_DIR/publish_queue/artifacts/$task"
     manifest="$artifact/manifest.yaml"
@@ -133,8 +139,10 @@ process_request() {
     tip="$(git -C "$REPO_ROOT" rev-parse origin/main)"
     base="$(manifest_field "$manifest" base | head -n1)"
     [ -n "$base" ] || { echo "publisher: manifest base missing task=$task" >&2; return 31; }
+    source_tree="$(manifest_field "$manifest" source_tree | head -n1)"
+    [ -n "$source_tree" ] || { echo "publisher: manifest source_tree missing task=$task" >&2; return 31; }
 
-    local path tip_blob base_blob
+    local path tip_blob base_blob expected_blob tip_differs=0 already_published=1
     while IFS= read -r path; do
         [ -n "$path" ] || continue
         if git -C "$REPO_ROOT" cat-file -e "$tip:$path"; then
@@ -148,9 +156,24 @@ process_request() {
             base_blob=ABSENT
         fi
         if [ "$tip_blob" != "$base_blob" ]; then
-            event c2a_rc "$task" 1 "base_blob_mismatch path=$path"; notify_karo "publisher C2a RC task=$task path=$path tip=$tip base=$base"; move_to_rc "$request"; return 30
+            tip_differs=1
+            expected_blob="$(tree_blob "$source_tree" "$path")"
+            if [ "$tip_blob" = "$expected_blob" ]; then
+                tip_differs=1
+            else
+                event c2a_rc "$task" 1 "base_blob_mismatch path=$path"
+                notify_karo "publisher C2a RC task=$task path=$path tip=$tip base=$base"
+                move_to_rc "$request"
+                return 30
+            fi
         fi
     done < <(manifest_field "$manifest" paths)
+
+    if [ "$tip_differs" -eq 1 ] && [ "$already_published" -eq 1 ]; then
+        event already_published "$task" 0 "published_sha=$tip"
+        move_to_done "$request"
+        return 0
+    fi
 
     origin_url="$(git -C "$REPO_ROOT" remote get-url origin)"
     isolated="$(mktemp -d "$REPO_ROOT/.git/publisher-isolated.XXXXXX")"
@@ -158,7 +181,16 @@ process_request() {
     git clone --no-checkout "$origin_url" "$isolated"
     git -C "$isolated" remote set-url origin "$origin_url"
     git -C "$isolated" checkout --detach "$tip"
-    bash "$SCRIPT_DIR/publish_artifact.sh" restore "$task" "$isolated"
+    if ! git -C "$isolated" apply --3way --binary --whitespace=nowarn "$artifact/patch.diff"; then
+        event git_fail "$task" 30 "restore_threeway_conflict=1"
+        notify_karo "publisher restore RC task=$task conflict=1"
+        move_to_rc "$request"
+        return 30
+    fi
+    while IFS= read -r path; do
+        [ -n "$path" ] || continue
+        git -C "$isolated" add -- "$path"
+    done < <(manifest_field "$manifest" paths)
     local tree published_sha
     tree="$(git -C "$isolated" write-tree)"
     published_sha="$(printf 'publisher: task=%s\n\nPublished-By: publisher\n' "$task" | git -C "$isolated" -c user.name=single-publisher -c user.email=publisher@localhost commit-tree "$tree" -p "$tip")"
