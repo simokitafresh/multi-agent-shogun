@@ -3838,6 +3838,7 @@ push_task_repositories() {
 
             overlap_blocking="$(push_overlap_blocking_paths "$repo" "" "$(git -C "$repo" rev-parse HEAD 2>/dev/null || true)" "$upstream_sha")"
             if [ "$publisher_proof_only" -eq 1 ]; then
+                echo "PUBLISHER_SINGLE cmd_complete_gate push=0 result=SKIP reason=publisher_request"
                 echo "  git push: PUBLISHER_SINGLE awaiting publisher publication ($repo; no gate push)"
                 return 1
             fi
@@ -14986,9 +14987,11 @@ if [ "$ALL_CLEAR" != true ] && [ ${#BLOCK_REASONS[@]} -eq 0 ] \
     _reconcile_all_done=true
     for _g in "${ALL_GATES[@]}"; do
         _g_deferred=false
-        for _dg in "${DEFERRED_GATES[@]}"; do [ "$_g" = "$_dg" ] && { _g_deferred=true; break; }; done
-        [ "$_g_deferred" = true ] && continue
-        [ -f "$GATES_DIR/${_g}.done" ] || { _reconcile_all_done=false; break; }
+        for _dg in "${DEFERRED_GATES[@]}"; do
+            if [ "$_g" = "$_dg" ]; then _g_deferred=true; break; fi
+        done
+        if [ "$_g_deferred" = true ]; then continue; fi
+        if [ ! -f "$GATES_DIR/${_g}.done" ]; then _reconcile_all_done=false; break; fi
     done
     if [ "$_reconcile_all_done" = true ]; then
         echo "  gate status reconciled: no block/missing/wait reasons and every gate .done -> CLEAR"
