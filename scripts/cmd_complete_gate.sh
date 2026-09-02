@@ -3491,7 +3491,10 @@ cmd_complete_gate_auto_push_ancestry_wait() {
 }
 
 push_task_repositories() {
-    publisher_single_enabled && { echo "PUBLISHER_SINGLE cmd_complete_gate push=0 result=SKIP reason=publisher_request"; return 0; }
+    # PUBLISHER_SINGLE: never push from the gate, but still run the publication-proof lanes below
+    # (publisher-commit equivalence writes the receipt). The real push is guarded at the push site.
+    local publisher_proof_only=0
+    publisher_single_enabled && publisher_proof_only=1
     local task_file repo upstream_ref upstream_sha remote push_ref remote_tip source_sha
     local overlap_blocking all_sources_ok push_rc attempt max_retries refreshed_tip
     local source_equivalent_used source_base_tree_noop source_noop_all
@@ -3817,6 +3820,10 @@ push_task_repositories() {
             fi
 
             overlap_blocking="$(push_overlap_blocking_paths "$repo" "" "$(git -C "$repo" rev-parse HEAD 2>/dev/null || true)" "$upstream_sha")"
+            if [ "$publisher_proof_only" -eq 1 ]; then
+                echo "  git push: PUBLISHER_SINGLE awaiting publisher publication ($repo; no gate push)"
+                return 1
+            fi
             echo "  git push: isolated clean snapshot ($repo remote-tip source-only push)"
             [ -n "$overlap_blocking" ] && printf '%s\n' "$overlap_blocking" | sed 's/^/    /'
             if push_from_clean_worktree "$repo" "$upstream_ref" "$remote" "$push_ref" "$remote_tip" "${source_commits[@]}"; then
