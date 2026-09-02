@@ -3422,6 +3422,7 @@ codd:
 | causal | `cmd_4454` files_modified: [[semantic_dictionary_design]] |
 | lesson | `L1710` locale非依存化fixは対象クラス全体を横断確認せよ。1関数だけ直すと同型バグが別関数に残り再発する |
 | lesson | `L1711` publisherの既公開判定はsource_treeのpath blobを正規解決する |
+| discussion | `queue/lord_conversation.jsonl` 2026-09-03T00:04:34+09:00 session_save_20260903_0005(復帰点、先に session_save_20260902_2230 を読め): 22:30-00:05: cmd_4451 U3 CLEAR 22:10/4452 U1b 21:58/4 |
 | causal_chain | `[[cmd_3749]]` (L974) |
 | causal_chain | `[[cmd_training_L1_report-write_20260708020332]]` (L977) |
 | causal_chain | `[[cmd_reflux_insight_202607071717_tobisaru]]` (L961) |
@@ -9738,6 +9739,7 @@ codd:
 | discussion | `queue/lord_conversation.jsonl` 2026-09-02T20:17:25+09:00 続けて |
 | discussion | `queue/lord_conversation.jsonl` 2026-09-02T20:17:31+09:00 続けて |
 | discussion | `queue/lord_conversation.jsonl` 2026-09-02T21:12:55+09:00 続けて。つまりがあれば先に解消せよ |
+| causal | `cmd_karo_hotfix_gate_publisher_pending_toplevel_only_202609022336` files_modified: [[cdp_browser_capability]] |
 | causal_chain | `[[cmd_karo_cdp_t5_endpoint_qualification_20260802]]` (L1529) |
 | causal_chain | `[[cmd_karo_cdp_t5_auth_dom_probe_20260802]]` (L1530) |
 
@@ -10801,6 +10803,7 @@ codd:
 | causal | `cmd_karo_hotfix_u1_quality_monitor_claim_20260902` files_modified: [[cmd_quality_logging]] |
 | causal | `cmd_karo_hotfix_gunshi_pre25_pre35_fp_202609021539` files_modified: [[cmd_quality_logging]] |
 | causal | `cmd_karo_hotfix_extract_target_path_exec_order_202609021726` files_modified: [[cmd_quality_logging]] |
+| causal | `cmd_karo_hotfix_gate_publisher_pending_toplevel_only_202609022336` files_modified: [[cmd_quality_logging]] |
 | causal_chain | `[[cmd_3622_kotaro_r3]]` (infra:L893) |
 
 ## task_modifier_injection — タスク修飾子注入
@@ -13849,6 +13852,8 @@ codd:
 | cmd | `cmd_karo_hotfix_review_processing_receipt_20260901` (`scripts/inbox_mark_read.sh`, `tests/unit/test_inbox_processing_receipt.bats`) |
 | cmd | `cmd_karo_hotfix_backup_cron_node_path_20260902` (`tests/unit/test_shogun_backup_cron.bats`, `scripts/shogun_backup.py`) |
 | lesson | `L1708` FIFO契約fixtureはsubmission順を明示する |
+| cmd | `cmd_karo_hotfix_gate_publisher_pending_toplevel_only_202609022336` (`scripts/cmd_complete_gate.sh`, `tests/unit/test_gate_dual_read.bats`) |
+| cmd | `cmd_karo_ci_fix_33641462767_ledger_writer_tmpdir_202609022352` (`tests/unit/test_ledger_writer.bats`) |
 | causal_chain | `[[cmd_karo_hotfix_hook_failure_utf8_boundary_20260829]]` (L1669) |
 | causal_chain | `[[cmd_karo_hotfix_tmux_live_sendkeys_guard_20260830]]` (L1672) |
 | causal_chain | `[[cmd_4434]]` (L1688) |
@@ -16567,6 +16572,7 @@ codd:
 | discussion | `queue/lord_conversation.jsonl` 2026-09-02T14:25:52.565694+00:00 git pre-commit semantic propagation for context/projects changes |
 | discussion | `queue/lord_conversation.jsonl` 2026-09-02T14:47:14.258465+00:00 git pre-commit semantic propagation for context/projects changes |
 | discussion | `queue/lord_conversation.jsonl` 2026-09-02T14:57:52.278132+00:00 git pre-commit semantic propagation for context/projects changes |
+| discussion | `queue/lord_conversation.jsonl` 2026-09-02T15:03:23.797610+00:00 git pre-commit semantic propagation for context/projects changes |
 | causal_chain | `[[cmd_karo_hotfix_lessons_yaml_format_restore_20260727]]` (L1389) |
 
 ## infra_design_intent — インフラ設計意図カタログ
@@ -18138,6 +18144,8 @@ codd:
 | discussion | `queue/lord_conversation.jsonl` 2026-09-02T11:27:55.340086+00:00 git pre-commit semantic propagation for context/projects changes |
 | discussion | `queue/lord_conversation.jsonl` 2026-09-02T14:10:21.180744+00:00 git pre-commit semantic propagation for context/projects changes |
 | discussion | `queue/lord_conversation.jsonl` 2026-09-02T14:44:50.716697+00:00 git pre-commit semantic propagation for context/projects changes |
+| discussion | `queue/lord_conversation.jsonl` 2026-09-02T15:10:57.734714+00:00 git pre-commit semantic propagation for context/projects changes |
+| discussion | `queue/lord_conversation.jsonl` 2026-09-02T15:16:28.070830+00:00 git pre-commit semantic propagation for context/projects changes |
 | causal_chain | `[[cmd_karo_hotfix_ga161_obsidian_link_context_freshness_202607021348]]` (L926) |
 | causal_chain | `[[cmd_3648]]` (L933) |
 | causal_chain | `[[cmd_karo_ci_fix_ga191_followup_202607071752]]` (L963) |

@@ -1636,3 +1636,5 @@
 - 2026-09-02 23:10 半蔵 integrate read-tree hotfix GATE CLEAR(偽 BLOCK→直接再実行、bbfcca679)。cmd_4455(月次頁孤立解消)を才蔵へ配備。飛猿 ci_fix は gate_report_format 内で path 形式('/'必須)と manifest 厳密一致('./'無し)が矛盾し top-level file 報告が通らない(PD-141/INS-7c46)。
 - 2026-09-02 23:22 U5 統合により karo ACCEPT→publisher_queue enqueue が有効化、gate は publisher_pending で WAIT。U3 daemon 未起動(dry-run 既定)のため全 CLEAR 閉塞→将軍へ裁定要請(推奨=daemon active 起動)。
 - 2026-09-02 23:42 cmd_4455 本番反映確認(Render dep-dac3301t live 8422d8c34、/signals/ EN/JA 200、sitemap 558、導線 EN1/JA1)。gate rglob 1 行 hotfix→小太郎、U3 欠陥 3 点→才蔵、dotslash hotfix は LG051 caller 証跡 RC。
+- 2026-09-03 00:10 U3 欠陥 3 点修正(才蔵)CLEAR。cmd_4456→才蔵配備。publisher queue は U3 active 化まで家老が request を退避し legacy 経路で gate(4453/影丸 root fix/半蔵 reflux は等価検証 WAIT で monitor 再 gate 待ち)。飛猿 ci_fix は cross_repo_commits 追記 RC、疾風 ledger_writer ci_fix 報告済、小太郎 rglob hotfix 報告済(軍師 review)。影丸への誤 RC は撤回。
+- 2026-09-03 00:16 gate rglob hotfix(小太郎)・ledger_writer ci_fix(疾風)CLEAR。lstrip('./') 報告 tool バグ→半蔵 hotfix。
