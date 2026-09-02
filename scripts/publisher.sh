@@ -421,8 +421,14 @@ daemon_main() {
     local once="${PUBLISHER_ONCE:-0}" sleep_seconds="${PUBLISHER_SLEEP_SECONDS:-2}"
     printf '%s\n' "$$" > "$PID_FILE"; trap 'rm -f "$PID_FILE"' EXIT
     # A rejected request (RC) is terminal evidence for that request only; the daemon must keep serving the queue.
-    local rc ledger_rc
+    local rc ledger_rc stop_flag="$QUEUE_ROOT/publisher.stop"
     while :; do
+        # Operator reload without kill (shogun 05:55 (a)): exit cleanly at a request boundary.
+        if [ -f "$stop_flag" ]; then
+            rm -f "$stop_flag"
+            echo "publisher: stop flag honored; exiting at request boundary pid=$$" >&2
+            return 0
+        fi
         rc=0; run_one || rc=$?
         ledger_rc=0; run_ledger_once || ledger_rc=$?
         [ "$rc" -eq 0 ] && rc="$ledger_rc"

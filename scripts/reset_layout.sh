@@ -12,6 +12,11 @@
 set -e
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+# Startup invariant (shogun 2026-09-03 05:55 (2)): core.fileMode=false must survive .git/config rewrites,
+# otherwise the NTFS-copied tree reports ~2000 mode-only dirty files and blocks root sync.
+if [ "$(git config --bool core.fileMode 2>/dev/null || echo true)" != false ]; then
+    git config core.fileMode false && echo "[reset_layout] core.fileMode restored to false" >&2
+fi
 cd "$SCRIPT_DIR"
 
 # すべてのCLI入力送出は、実tmuxのsocket/session/targetを解決する共通guardを

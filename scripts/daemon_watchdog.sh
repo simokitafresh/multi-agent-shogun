@@ -690,9 +690,21 @@ check_daemon_inventory
 check_tmux_health || true
 check_tmux_duplicate_servers
 if ! watchdog_publisher_healthy; then
-    log "ALERT: publisher.sh unhealthy; restart suppressed"
-    if ! bash "$SCRIPT_DIR/scripts/inbox_write.sh" karo "publisher.sh unhealthy; watchdog will not restart it" investigation_result daemon_watchdog notify_karo; then
-        log "ALERT: failed to notify karo about publisher.sh health"
+    # 2026-09-03 shogun 05:55 (b): a dead daemon must come back on the current code, not wait for
+    # a human. A live pid with only stale events is idle, not unhealthy (events are activity-only).
+    _pub_state_dir="${SHOGUN_STATE_DIR:-$HOME/.local/share/multi-agent-shogun}"
+    _pub_pid=""; [ -s "$_pub_state_dir/publish_queue/publisher.pid" ] && read -r _pub_pid < "$_pub_state_dir/publish_queue/publisher.pid"
+    if [[ "$_pub_pid" =~ ^[0-9]+$ ]] && pid_is_live "$_pub_pid" && pid_cmdline_matches "$_pub_pid" "publisher.sh"; then
+        log "INFO: publisher.sh pid=$_pub_pid live; events stale only (idle), no restart"
+    elif is_maintenance_active; then
+        log "SKIP: daemon maintenance active; publisher restart deferred"
+    else
+        ( cd "$SCRIPT_DIR" && PUBLISHER_MODE=active setsid nohup bash scripts/publisher.sh >> "$SCRIPT_DIR/logs/publisher_daemon.log" 2>&1 < /dev/null & )
+        sleep 2
+        _new_pid=""; [ -s "$_pub_state_dir/publish_queue/publisher.pid" ] && read -r _new_pid < "$_pub_state_dir/publish_queue/publisher.pid"
+        log "RESTART: publisher.sh restarted on current code pid=${_new_pid:-unknown}"
+        bash "$SCRIPT_DIR/scripts/ntfy.sh" "【watchdog】publisher.sh を自動再起動 pid=${_new_pid:-unknown}" >/dev/null 2>&1 || true
+        bash "$SCRIPT_DIR/scripts/inbox_write.sh" karo "publisher.sh was dead; watchdog restarted it on current code pid=${_new_pid:-unknown}" task_supplement daemon_watchdog notify_karo >/dev/null 2>&1 || true
     fi
 fi
 

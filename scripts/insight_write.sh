@@ -63,6 +63,9 @@ if [ "${1:-}" = "--configure-merge-driver" ]; then
   # Keep all registrations in this one setup entrypoint so a fresh clone does
   # not silently fall back to Git's line-based merge behavior.
   git -C "$merge_repo" config merge.ours.driver true
+  # The tree was copied over NTFS (all files 777); without core.fileMode=false every file shows
+  # as a mode change (2026-09-03 tracked_dirty=2029 after .git/config was rewritten). Keep it pinned.
+  git -C "$merge_repo" config core.fileMode false
   git -C "$merge_repo" config merge.insights-id.name "ID-keyed insights merge"
   git -C "$merge_repo" config merge.insights-id.driver \
     "bash $driver_root/scripts/insight_write.sh --merge-driver %O %A %B"
