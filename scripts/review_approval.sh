@@ -1189,6 +1189,14 @@ if [ "$fail_close" = 1 ]; then
       else
         echo "WARN: fail-close auto-clear failed; ninja_monitor will retry: agent=$fail_close_agent" >&2
       fi
+      if [ -x "$ROOT/scripts/task_worktree_reclaim.sh" ]; then
+        if bash "$ROOT/scripts/task_worktree_reclaim.sh" --terminal \
+          --cmd "$cmd_id" --report "$report" --reason fail-close; then
+          echo "fail-close task worktree cleanup completed: cmd=$cmd_id"
+        else
+          echo "WARN: fail-close task worktree cleanup deferred; ninja_monitor will retry: cmd=$cmd_id" >&2
+        fi
+      fi
     fi
   fi
 elif review_all_reports_ready "$cmd_id" "${reports[@]}"; then

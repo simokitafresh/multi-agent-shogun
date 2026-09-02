@@ -6317,6 +6317,17 @@ auto_void_if_parent_cmd_completed() {
         trap - EXIT HUP INT TERM
         _ninja_monitor_observe_call "auto_void:voided_at:$name" yaml_field_set "$task_file" "task" "voided_at" "$voided_at" 2>/dev/null || true
         _ninja_monitor_observe_call "auto_void:void_reason:$name" yaml_field_set "$task_file" "task" "void_reason" "parent_cmd_completed_by_$(basename "$still_completed_report")" 2>/dev/null || true
+        _ninja_monitor_observe_call "auto_void:task_worktree_workdir_clear:$name" \
+            yaml_field_set "$task_file" "task" "task_worktree_workdir" "" 2>/dev/null || true
+        _ninja_monitor_observe_call "auto_void:task_worktree_path_clear:$name" \
+            yaml_field_set "$task_file" "task" "task_worktree_path" "" 2>/dev/null || true
+        if [ -x "$SCRIPT_DIR/scripts/task_worktree_reclaim.sh" ]; then
+            if ! _ninja_monitor_observe_call "auto_void:task_worktree_sweep:$name" \
+                env TASK_WORKTREE_RECLAIM_REPO="$SCRIPT_DIR" \
+                    bash "$SCRIPT_DIR/scripts/task_worktree_reclaim.sh" --sweep; then
+                log "AUTO-VOID-WORKTREE-SWEEP-FAILED: $name parent_cmd=$parent_cmd"
+            fi
+        fi
     ) 200>"$lock_file" || return 1
 
     if [ -n "$target" ]; then
