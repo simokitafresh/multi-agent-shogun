@@ -14372,17 +14372,30 @@ insights:
   priority: "low"
   source: "semantic_index_update"
   fix_known: false
-  status: pending
+  status: "resolved"
+  resolved_reason: "semantic index candidate was absorbed into a registered concept"
+  action_artifact: "semantic_index=/home/simokitafresh/multi-agent-shogun/docs/semantic-index/index.md"
+  resolved_at: "2026-09-02T23:55:36.820671"
 - id: INS-20260902-235449244-3cfa
   ts: "2026-09-02T23:54:49+09:00"
   insight: "semantic_index_update未登録[[リンク]]ターゲット: [[action_conversion側未修正で再発]] は既存aliasesに一致なし。類似概念TOP3: production_parity(本番パリティ; alias=NO ACTION; score=20.8) / cdp_browser_capability(CDP(ブラウザ操作能力); alias=touch-action none; score=15.0) / growth_loop(学習ループ; alias=docs research three layer per action lookup asis tobe 5w1h 2; score=6.5)。概念定義とaliases追加を検討せよ"
   priority: "low"
   source: "semantic_index_update"
   fix_known: false
-  status: pending
+  status: "resolved"
+  resolved_reason: "semantic index candidate was absorbed into a registered concept"
+  action_artifact: "semantic_index=/home/simokitafresh/multi-agent-shogun/docs/semantic-index/index.md"
+  resolved_at: "2026-09-02T23:55:37.168054"
 - id: INS-20260902-235510785-3a40
   ts: "2026-09-02T23:55:10+09:00"
   insight: "[[殿 23 35『google で検索したときにチャート画像が横に出るといいよな]] semantic_stress_test candidate_aliases: NO_MATCH source=cmds query=殿 2026-09-02 23:35『google で検索したときにチャート画像が横に出るといいよな。ALT も登録しているのか？』→23:41『起票せよ』。本番 curl 23:37 一次: LP は img 1 枚(basic-dm-vs-spy PNG 1566×921、alt あり)だが robots に max-image-preview 0、JS"
+  priority: "low"
+  source: "semantic_stress_test"
+  fix_known: false
+  status: pending
+- id: INS-20260902-235540919-2f38
+  ts: "2026-09-02T23:55:40+09:00"
+  insight: "[[single publisher asis tobe 5w1h 20260902 mdを更新してくれ]] semantic_stress_test candidate_aliases: NO_MATCH source=lord query=single_publisher_asis_tobe_5w1h_20260902.mdを更新してくれ。つまりがあれば利他の精神で解決しよう"
   priority: "low"
   source: "semantic_stress_test"
   fix_known: false
