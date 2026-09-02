@@ -13332,3 +13332,10 @@ insights:
   source: "semantic_stress_test"
   fix_known: false
   status: pending
+- id: INS-20260902-151155793-8228
+  ts: "2026-09-02T15:11:55+09:00"
+  insight: "[[単一 publisher U2 忍者成果物の複製 scripts publish artifact sh capture]] semantic_stress_test candidate_aliases: NO_MATCH source=cmds query=単一 publisher U2: 忍者成果物の複製(scripts/publish_artifact.sh capture・restore)を report 受領時点で行い、worktree 消失後も tree id 一致で復元できることを bats で証明する"
+  priority: "low"
+  source: "semantic_stress_test"
+  fix_known: false
+  status: pending
