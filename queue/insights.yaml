@@ -13443,7 +13443,7 @@ insights:
   resolved_reason: "一次情報で gate_skill_script_refs.sh を実走し、rc=2 は REVIEW_REQUIRED のみで、参照先欠落0・鮮度差0・例示パス欠落0・副作用実走marker欠落0、FOLLOWUP_ACTIVE=34かつFOLLOWUP_COVERS_REVIEW_REQUIRED=yesを確認した。既存follow-upで被覆済みのため追加実修正とdecision_candidateは不要。"
   action_artifact: "target=queue/insights.yaml:INS-20260902-161550789-0778;gate=scripts/gates/gate_skill_script_refs.sh;observed=41_SKILL.md/82_refs/30_referenced/required0/deduped34/missing_refs0/stale_refs0/example_paths_missing0/side_effect_markers_missing0;FOLLOWUP_ACTIVE=34;FOLLOWUP_COVERS_REVIEW_REQUIRED=yes;three_layer=memory_db_query+semantic_search+.cache/causal_index.tsv;decision_candidate=none"
   resolved_at: "2026-09-02T16:57:13+09:00"
-  last_seen: "2026-09-02T17:03:09+09:00"
+  last_seen: "2026-09-02T17:04:27+09:00"
 - id: INS-20260902-161733384-78de
   ts: "2026-09-02T16:17:33+09:00"
   insight: "semantic_map_generate新規ファイル候補: `docs/research/gunshi_idle_lgtm_block_root_cause_analysis_20260831.md` は semantic index未登録。既存概念へのfile追加または新概念定義を検討せよ"
