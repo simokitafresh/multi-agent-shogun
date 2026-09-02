@@ -13035,7 +13035,10 @@ insights:
   priority: "low"
   source: "semantic_map_generate:new_file"
   fix_known: false
-  status: pending
+  status: resolved
+  resolved_reason: "一次情報で既存概念CMD年代記への意味付けは確認済みだが、SSOT semantic indexへの当該archive参照は未登録。planned_paths外の文書変更は行わず、既存cmd_chronicle概念へSSOT登録するdecision_candidateとして整理し、同一候補の二重計上を解消する。"
+  action_artifact: "semantic_map=context/semantic-map.md:103;semantic_index=docs/semantic-index/index.md:cmd_chronicle block lacks archive/cmd-chronicle/2026-08.md;decision_candidate=register archive reference in separate scoped doc task"
+  resolved_at: "2026-09-02T15:16:14+09:00"
 - id: INS-20260902-130821350-45a2
   ts: "2026-09-02T13:08:21+09:00"
   insight: "semantic_map_generate新規ファイル候補: `docs/research/cmd_4416_post_deploy_check.md` は semantic index未登録。既存概念へのfile追加または新概念定義を検討せよ"
