@@ -1096,10 +1096,10 @@ YAML
   cat > "$fixture/context/infrastructure.md" <<'MD'
 <!-- last_updated: 2026-08-10 source_commit:aaaaaaaa source_commit:bbbbbbbb -->
 MD
-  cat > "$fixture/queue/archive/cmds/20260825_cmd_fixture.yaml" <<'YAML'
+  cat > "$fixture/queue/archive/cmds/$(date +%Y%m%d)_cmd_fixture.yaml" <<YAML
 project: infra
 status: completed
-completed_at: 2026-08-25
+completed_at: $(date +%F)
 YAML
   printf 'ref: refs/heads/main\n' > "$fixture/.git/HEAD"
   printf '1111111111111111111111111111111111111111\n' > "$fixture/.git/refs/heads/main"
@@ -1117,7 +1117,8 @@ SH
   chmod +x "$fake_bin/git"
 
   run env PATH="$fake_bin:$PATH" FAKE_GIT_LOG="$fake_log" \
-    CFC_HISTORY_CACHE_DIR="$cache_dir" CFC_OUTPUT_CACHE_TTL=0 \
+    CFC_HISTORY_CACHE_DIR="$cache_dir" CFC_ARCHIVE_CACHE="/dev/null/nonexistent" \
+    CFC_OUTPUT_CACHE_TTL=0 \
     CFC_GIT_TIMEOUT=1 CFC_GIT_RETRY_TIMEOUT=1 \
     bash "$fixture/scripts/context_freshness_check.sh" --dashboard-warnings
   [ "$status" -eq 0 ]
@@ -1125,7 +1126,8 @@ SH
   [ "$(find "$cache_dir" -name 'multi-*.json' -type f | wc -l)" -eq 1 ]
 
   run env PATH="$fake_bin:$PATH" FAKE_GIT_LOG="$fake_log" \
-    CFC_HISTORY_CACHE_DIR="$cache_dir" CFC_OUTPUT_CACHE_TTL=0 \
+    CFC_HISTORY_CACHE_DIR="$cache_dir" CFC_ARCHIVE_CACHE="/dev/null/nonexistent" \
+    CFC_OUTPUT_CACHE_TTL=0 \
     CFC_GIT_TIMEOUT=1 CFC_GIT_RETRY_TIMEOUT=1 \
     bash "$fixture/scripts/context_freshness_check.sh" --dashboard-warnings
   [ "$status" -eq 0 ]
@@ -1133,7 +1135,8 @@ SH
 
   printf '2222222222222222222222222222222222222222\n' > "$fixture/.git/refs/heads/main"
   run env PATH="$fake_bin:$PATH" FAKE_GIT_LOG="$fake_log" \
-    CFC_HISTORY_CACHE_DIR="$cache_dir" CFC_OUTPUT_CACHE_TTL=0 \
+    CFC_HISTORY_CACHE_DIR="$cache_dir" CFC_ARCHIVE_CACHE="/dev/null/nonexistent" \
+    CFC_OUTPUT_CACHE_TTL=0 \
     CFC_GIT_TIMEOUT=1 CFC_GIT_RETRY_TIMEOUT=1 \
     bash "$fixture/scripts/context_freshness_check.sh" --dashboard-warnings
   [ "$status" -eq 0 ]
@@ -1163,10 +1166,10 @@ projects:
     context_file: context/infrastructure.md
     status: active
 YAML
-  cat > "$global_fixture/queue/archive/cmds/20260825_cmd_fixture.yaml" <<'YAML'
+  cat > "$global_fixture/queue/archive/cmds/$(date +%Y%m%d)_cmd_fixture.yaml" <<YAML
 project: infra
 status: completed
-completed_at: 2026-08-25
+completed_at: $(date +%F)
 YAML
   printf '<!-- last_updated: 2026-08-10 -->\n' > "$global_fixture/context/infrastructure.md"
   printf 'baseline\n' > "$global_fixture/scripts/source.py"
@@ -1182,6 +1185,7 @@ run_global_history_fixture() {
     CONTEXT_FRESHNESS_ROOT="$global_fixture" \
     CFC_GLOBAL_HISTORY_ENABLED=1 \
     CFC_GLOBAL_HISTORY_CACHE_DIR="$global_cache" \
+    CFC_ARCHIVE_CACHE="/dev/null/nonexistent" \
     CFC_OUTPUT_CACHE_TTL=0 \
     CFC_GLOBAL_HISTORY_BUILD_TIMEOUT=5 \
     CFC_GIT_TIMEOUT=5 \
@@ -1209,6 +1213,7 @@ run_global_history_fixture() {
     CONTEXT_FRESHNESS_ROOT="$global_fixture" \
     CFC_GLOBAL_HISTORY_ENABLED=1 \
     CFC_GLOBAL_HISTORY_CACHE_DIR="$global_cache" \
+    CFC_ARCHIVE_CACHE="/dev/null/nonexistent" \
     CFC_OUTPUT_CACHE_TTL=0 \
     CFC_GLOBAL_HISTORY_BUILD_TIMEOUT=5 \
     CFC_GIT_TIMEOUT=5 \
@@ -1225,11 +1230,13 @@ run_global_history_fixture() {
     CONTEXT_FRESHNESS_ROOT="$global_fixture" \
     CFC_GLOBAL_HISTORY_ENABLED=1 \
     CFC_GLOBAL_HISTORY_CACHE_DIR="$global_cache" \
+    CFC_ARCHIVE_CACHE="/dev/null/nonexistent" \
     CFC_OUTPUT_CACHE_TTL=0 \
     CFC_GLOBAL_HISTORY_BUILD_TIMEOUT=5 \
     CFC_GIT_TIMEOUT=5 \
     CFC_GIT_RETRY_TIMEOUT=5 \
     bash "$global_fixture/scripts/context_freshness_check.sh" --dashboard-warnings
+  echo "T27D: status=$status outlen=${#output} out=${output:0:300}" >&3
   [ "$status" -eq 0 ]
   [[ "$output" == *"ALERT: context/infrastructure.md source commits 1件"* ]]
 }
