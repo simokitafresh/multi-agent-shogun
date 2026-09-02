@@ -1,16 +1,3 @@
-- cmd_id: cmd_karo_hotfix_gate_alert_identity_envelope_20260830
-  timestamp: '2026-08-30T00:36:20Z'
-  ninja: system
-  workaround: false
-  event_kind: hotfix
-  auto_captured: true
-  category: rework_auto_capture
-  detail: 'cmd_complete_gate completed rework event'
-  root_cause: 'automatic completion observation'
-  lesson_required: false
-  lesson_disposition: not_applicable
-  lesson_reference: 'not_applicable'
-  resolved_by_cmd: 'cmd_karo_hotfix_gate_alert_identity_envelope_20260830'
 - cmd_id: cmd_karo_hotfix_source_publish_ancestry_equivalence_20260830
   timestamp: '2026-08-30T02:54:19Z'
   ninja: system
@@ -1307,3 +1294,19 @@
   lesson_disposition: not_applicable
   lesson_reference: 'not_applicable'
   resolved_by_cmd: 'cmd_karo_hotfix_lp_showcase_fetch_cache_bust_202609030314'
+- cmd_id: cmd_4463
+  timestamp: '2026-09-02T18:48:16Z'
+  ninja: tobisaru
+  workaround: true
+  event_kind: manual_wa
+  auto_captured: false
+  category: infra
+  root_signature: 'infra::general'
+  detail: 'docs-only 偵察 task(owned test 無し)で report_field_set の autolink が receipt 必須+owned path 必須のため status completed に到達不能(nested guard バグで task mode も不可)'
+  root_cause: '家老が yaml_field_set で report の status/verdict を直接設定(commit 55908a88a・成果物 docs/research/x_account_asis_measurement_20260903.md は実在)。構造=run_tests nested guard hotfix(影丸)+docs-only 免除は INS-2dc0'
+  lesson_required: true
+  lesson_disposition: 'new_lesson_required'
+  lesson_reference: ''
+  environment_change: 'type=script; file=scripts/run_tests.sh; pattern=RUN_TESTS_ACTIVE'
+  brainwash_check: '洗脳#5先送り防止: docs-only task の receipt 要件矛盾を WA で即解消 1→0、構造は影丸 hotfix+INS-2dc0'
+  resolved_by_cmd: ''

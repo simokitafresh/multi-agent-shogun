@@ -222,6 +222,7 @@ codd:
 | discussion | `queue/lord_conversation.jsonl` 2026-08-31T13:25:25+09:00 家老強くてニューゲーム復帰点20260831-1323。pointer=docs/research/karo-strong-new-game-checkpoint-20260831-1322.md sha256=aa829bb914d3e2 |
 | discussion | `queue/lord_conversation.jsonl` 2026-08-31T13:27:49+09:00 家老強くてニューゲーム復帰点20260831-1323最終化。pointer=docs/research/karo-strong-new-game-checkpoint-20260831-1322.md final_sha256=8f77c |
 | discussion | `queue/lord_conversation.jsonl` 2026-08-31T17:55:06+09:00 家老強くてニューゲーム復帰点2026-08-31 17:52を最終化。checkpoint=docs/research/karo-strong-new-game-checkpoint-20260831-1752.md commit=0d9b |
+| causal | `cmd_reflux_insight_202609030347_kotaro` files_modified: [[strong_new_game_completion_contract]] |
 
 ## sg_pre31_semantic_validation — SG-PRE31意味検算
 
@@ -529,6 +530,10 @@ codd:
 | discussion | `queue/lord_conversation.jsonl` 2026-09-02T16:57:54.126384+00:00 git pre-commit semantic propagation for context/projects changes |
 | discussion | `queue/lord_conversation.jsonl` 2026-09-02T17:53:13.992670+00:00 git pre-commit semantic propagation for context/projects changes |
 | discussion | `queue/lord_conversation.jsonl` 2026-09-02T18:11:23.102757+00:00 git pre-commit semantic propagation for context/projects changes |
+| discussion | `queue/lord_conversation.jsonl` 2026-09-02T18:28:28.073517+00:00 git pre-commit semantic propagation for context/projects changes |
+| discussion | `queue/lord_conversation.jsonl` 2026-09-02T18:55:42.258485+00:00 git pre-commit semantic propagation for context/projects changes |
+| causal | `cmd_reflux_insight_202609030347_kotaro` files_modified: [[cmd_chronicle]] |
+| cmd | `cmd_reflux_insight_202609030347_kotaro` (`context/senkyoku-log.md`) |
 
 ## unread_cmd_new_deployment_guard — 未読cmd_new配備漏れ防止
 
@@ -3440,6 +3445,8 @@ codd:
 | discussion | `queue/lord_conversation.jsonl` 2026-09-03T02:47:47+09:00 session_save_20260903_0248(復帰点、先に session_save_20260903_0215 を読め): 02:15-02:48: 設計書 v3.12 §14.1 状況盤(9c28419e6、gist 同期)。c |
 | discussion | `queue/lord_conversation.jsonl` 2026-09-03T03:15:45+09:00 X アカウント運用自動化 設計書 v0.1(2026-09-03 03:20、殿発案 03:13『grok によるアカウント運用は今後 API などで自動化まで』): docs/research/x_account_ops_automati |
 | discussion | `queue/lord_conversation.jsonl` 2026-09-03T03:20:13+09:00 session_save_20260903_0320(家老復帰点、先に session_save_20260902_1314 を読め): 9/2 20:52 復帰〜9/3 03:20 の便。到達: 単一 publisher 第 1-3 波( |
+| discussion | `queue/lord_conversation.jsonl` 2026-09-03T03:32:48+09:00 殿回答 2026-09-03 03:31(X 運用設計書 B 質問): 可用時間は自動化で無関係、読者は医師 40% 推定・DM 経験者少、数字ホワイトリスト=metrics は全 PF 公開可・保有シグナル/構成 ticker/FoF 重 |
+| discussion | `queue/lord_conversation.jsonl` 2026-09-03T03:57:27+09:00 cmd_4463 GATE CLEAR 03:55(X 運用 公開情報実測、飛猿 795dbd37a): X フォロワー 4,434、note How to 49 本、完全ガイド スキ 53、メンバーシップ ¥1,000/¥8,000(dm |
 | causal_chain | `[[cmd_3749]]` (L974) |
 | causal_chain | `[[cmd_training_L1_report-write_20260708020332]]` (L977) |
 | causal_chain | `[[cmd_reflux_insight_202607071717_tobisaru]]` (L961) |
@@ -7334,6 +7341,7 @@ codd:
 | discussion | `queue/lord_conversation.jsonl` 2026-08-25T19:49:47+09:00 裁可 |
 | causal | `cmd_4403` files_modified: [[dm_signal_refactor_mission]] |
 | causal | `cmd_reflux_insight_202608290048_saizo` files_modified: [[dm_signal_refactor_mission]] |
+| causal | `cmd_reflux_insight_202609030347_kotaro` files_modified: [[dm_signal_refactor_mission]] |
 
 ## file_rename — ファイルリネーム
 
@@ -10148,6 +10156,7 @@ codd:
 | discussion | `queue/lord_conversation.jsonl` 2026-09-01T20:01:20+09:00 なぜ他のtierは問題なくローテーション後のパスワードでログインできて、freeだけだめだったんだ？ |
 | discussion | `queue/lord_conversation.jsonl` 2026-09-01T20:26:14+09:00 session_save_20260901_2026(先に session_save_20260901_1928 を読め) 第22便 19:28-20:26: ①殿下問『T212 副作用』→roadmap v1.2 整合(SBFM 誤遮断) |
 | discussion | `queue/lord_conversation.jsonl` 2026-09-02T23:30:13+09:00 dm-signal-lp-seo-plan_20260830.mdを更新してくれ。他にやることはあるか？ |
+| discussion | `queue/lord_conversation.jsonl` 2026-09-03T03:31:40+09:00 1.可用時間は自動化するから関係ないな。2.読者構成はわからない。たぶん医師が40％くらいだろう。デュアルモメンタム経験者は少ないんじゃないかな。3.noteの記事だよな。4.わからないな。5.それを今後調べたい。6.保有シグナルや構成ti |
 | causal_chain | `[[cmd_reflux_backlink_202607281529_hanzo]]` (L1433) |
 | causal_chain | `[[cmd_4202]]` (L1500) |
 | causal_chain | `[[cmd_karo_hotfix_report_shared_provenance_fp_20260802]]` (L1521) |
@@ -15385,7 +15394,9 @@ codd:
 | discussion | `queue/lord_conversation.jsonl` 2026-09-02T22:09:39+09:00 b4se36ctj toolu_01W8jT22Mxz2SzQz1EAGbmCd /tmp/claude-1000/-home-simokitafresh-multi-agent-shogun/ec066643-699d-4781-9dab |
 | discussion | `queue/lord_conversation.jsonl` 2026-09-03T02:03:49+09:00 bul2u8mlz toolu_01NZopNZooms3MwHyi8cW6E2 /tmp/claude-1000/-home-simokitafresh-multi-agent-shogun/096a7687-1a27-4f68-b89e |
 | discussion | `queue/lord_conversation.jsonl` 2026-09-03T02:17:15+09:00 bkge8pa67 toolu_017LQpXyFfUNDEfJrR7YKhAS /tmp/claude-1000/-home-simokitafresh-multi-agent-shogun/096a7687-1a27-4f68-b89e |
+| lesson | `L1713` task_worktree_required docs-onlyタスクはrun_tests.sh task modeが構造的に自己再帰BLOCKし報告completedへ到達できない |
 | causal_chain | `[[cmd_karo_hotfix_git_index_singleflight_202608191445]]` (L1618) |
+| causal_chain | `[[cmd_4463]]` (L1713) |
 
 ## provisional_.gitignore — 仮: .Gitignore
 
@@ -17418,6 +17429,7 @@ codd:
 | causal | `cmd_4383` files_modified: [[content_artifacts]] |
 | causal | `cmd_4403` files_modified: [[content_artifacts]] |
 | causal | `cmd_reflux_insight_202608290048_saizo` files_modified: [[content_artifacts]] |
+| causal | `cmd_reflux_insight_202609030347_kotaro` files_modified: [[content_artifacts]] |
 | causal_chain | `[[cmd_karo_hotfix_training_generation_dedup_202607102016]]` (L1027) |
 | causal_chain | `[[cmd_karo_hotfix_gate_commit_repo_root_20260727]]` (L1412) |
 

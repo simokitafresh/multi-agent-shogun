@@ -1465,3 +1465,824 @@
   verdict: LGTM
   verified_files:
   - queue/reports/tobisaru_report_cmd_reflux_insight_202609030230_tobisaru.yaml:1
+- brainwash_check: '#1yes(D0正常発動) #2no #3no #4no #5no #6no #7no #8no'
+  causal_chain: RC→新fp→D0 BLOCK→bundle再発行
+  cmd_id: cmd_4460
+  escalation_needed: false
+  finding_categories:
+  - assumptions
+  - numbers
+  - premortem
+  - adversarial
+  - ambiguity
+  findings_summary: RC版。LGTM再発行
+  gate_prediction: CLEAR
+  gate_prediction_reason: all checks passed
+  lesson_quality: OK
+  observations:
+  - RC版新fp(c88a0499)。D0 BLOCK正常発動→bundle再発行
+  operational_simulation:
+    actual: CLEAR
+    command: precheck
+    expected: CLEAR
+    result: PASS
+  origin: '[[cmd_4460_RC]] -> [[LGTM再発行]]'
+  report_ninja: hayate
+  report_task_id: cmd_4460_full
+  report_verdict: LGTM
+  review_type: report
+  reviewed_at: '2026-09-03T02:42:00+09:00'
+  step3_5_verified: true
+  timestamp: '2026-09-03T02:42:00+09:00'
+  verdict: LGTM
+  verified_files:
+  - queue/reports/hayate_report_cmd_4460.yaml:1
+- brainwash_check: '#1yes(D0発動) #2no #3no #4no #5no #6no #7no #8no'
+  causal_chain: RC2→新fp→bundle再発行
+  cmd_id: cmd_4460
+  escalation_needed: false
+  finding_categories:
+  - assumptions
+  - numbers
+  - premortem
+  - adversarial
+  - ambiguity
+  findings_summary: RC2。LGTM再発行
+  gate_prediction: CLEAR
+  gate_prediction_reason: all checks passed
+  lesson_quality: OK
+  observations:
+  - RC2新fp(a20b9843)
+  operational_simulation:
+    actual: CLEAR
+    command: precheck
+    expected: CLEAR
+    result: PASS
+  origin: '[[cmd_4460_RC2]] -> [[LGTM]]'
+  report_ninja: hayate
+  report_task_id: cmd_4460_full
+  report_verdict: LGTM
+  review_type: report
+  reviewed_at: '2026-09-03T02:52:00+09:00'
+  step3_5_verified: true
+  timestamp: '2026-09-03T02:48:00+09:00'
+  verdict: LGTM
+  verified_files:
+  - queue/reports/hayate_report_cmd_4460.yaml:1
+- cmd_id: cmd_4462
+  review_type: draft
+  verdict: APPROVE
+  verified_files:
+    - "queue/tasks/kotaro.yaml:1"
+  findings_summary: "LP build showcase fetch cache無し(static export build時fetch)。配備可"
+  confidence: HIGH
+  finding_categories:
+    - assumptions
+    - numbers
+    - simulation
+    - premortem
+    - north_star
+    - ambiguity
+    - adversarial
+  observations:
+    - "Next.js static exportのbuild時fetchがcacheされる問題→cache無し化"
+  operational_simulation:
+    command: "task確認"
+    expected: "cache無し化"
+    actual: "cache無し化"
+    result: "MATCH"
+  causal_chain: "build時fetch cache→古いshowcaseデータ→cache無し化で最新取得"
+  brainwash_check: "#1no #2no #3no #4no #5no #6no #7no #8no task確認"
+  origin: "[[LP_build_cache]] -> [[cache無し]] -> [[APPROVE]]"
+  ambiguity_points: none
+  discretion_fills: none
+  timestamp: "2026-09-03T02:50:00+09:00"
+- brainwash_check: '#1no #2no #3no #4no #5no #6no #7no #8no ERRORS=0'
+  causal_chain: dm-signal enqueue事故→repo guard→異repoのenqueue防止
+  cmd_id: cmd_karo_hotfix_publisher_enqueue_repo_guard_202609030218
+  escalation_needed: false
+  finding_categories:
+  - assumptions
+  - numbers
+  - premortem
+  - adversarial
+  - ambiguity
+  findings_summary: repo guard実装。dm-signal→infra enqueue防止。ERRORS=0
+  gate_prediction: CLEAR
+  gate_prediction_reason: all checks passed
+  lesson_quality: OK
+  observations:
+  - enqueue時にrequest repoとpublisher repo rootの一致を検証
+  operational_simulation:
+    actual: CLEAR ERRORS=0
+    command: precheck
+    expected: CLEAR ERRORS=0
+    result: PASS
+  origin: '[[enqueue事故]] -> [[repo_guard]] -> [[LGTM]]'
+  report_ninja: kagemaru
+  report_task_id: cmd_karo_hotfix_publisher_enqueue_repo_guard_202609030218_normal
+  report_verdict: LGTM
+  review_type: report
+  reviewed_at: '2026-09-03T02:58:00+09:00'
+  step3_5_verified: true
+  timestamp: '2026-09-03T02:54:00+09:00'
+  verdict: LGTM
+  verified_files:
+  - queue/reports/kagemaru_report_cmd_karo_hotfix_publisher_enqueue_repo_guard_202609030218.yaml:1
+- cmd_id: cmd_karo_hotfix_publisher_single_flag_file_202609030257
+  review_type: draft
+  verdict: APPROVE
+  verified_files:
+    - "queue/tasks/hayate.yaml:1"
+  findings_summary: "publisher single flag file。配備可"
+  confidence: HIGH
+  finding_categories:
+    - assumptions
+    - numbers
+    - simulation
+    - premortem
+    - north_star
+    - ambiguity
+    - adversarial
+  observations:
+    - "PUBLISHER_SINGLE=1 flag file作成hotfix"
+  operational_simulation:
+    command: "task確認"
+    expected: "flag file"
+    actual: "flag file"
+    result: "MATCH"
+  causal_chain: "U3 active化→flag file→U8 cleanup AC2の前提"
+  brainwash_check: "#1no #2no #3no #4no #5no #6no #7no #8no task確認"
+  origin: "[[publisher_single_flag]] -> [[APPROVE]]"
+  ambiguity_points: none
+  discretion_fills: none
+  timestamp: "2026-09-03T02:56:00+09:00"
+- cmd_id: cmd_reflux_insight_202609030257_hanzo
+  review_type: draft
+  gate_result: BLOCK
+  gate_synced_at: 2026-09-03T03:09:25+09:00
+  verdict: APPROVE
+  verified_files:
+    - "queue/tasks/hanzo.yaml:1"
+  findings_summary: "reflux定型。配備可"
+  confidence: HIGH
+  finding_categories:
+    - assumptions
+    - numbers
+    - simulation
+    - premortem
+    - north_star
+    - ambiguity
+    - adversarial
+  observations:
+    - "定型reflux"
+  operational_simulation:
+    command: "task確認"
+    expected: "reflux"
+    actual: "reflux"
+    result: "MATCH"
+  causal_chain: "insight→消化"
+  brainwash_check: "#1no #2no #3no #4no #5no #6no #7no #8no 定型"
+  origin: "[[reflux]] -> [[APPROVE]]"
+  ambiguity_points: none
+  discretion_fills: none
+  timestamp: "2026-09-03T02:58:00+09:00"
+- cmd_id: cmd_4462
+  review_type: report
+  report_ninja: kotaro
+  report_task_id: cmd_4462_full
+  report_verdict: FAIL
+  verdict: FAIL
+  verified_files:
+    - "queue/reports/kotaro_report_cmd_4462.yaml:1"
+  fail_reasons:
+    - "AC1 cache:no-storeが静的export破壊(560→2件)。AC2のみPASS"
+  lesson_quality: OK
+  escalation_needed: false
+  finding_categories:
+    - assumptions
+    - numbers
+    - premortem
+    - adversarial
+    - ambiguity
+  observations:
+    - "cache:no-store+output:export=致命的非互換(next build 560→2件)"
+    - "AC2 assert-holding PASS(277/560ページ検出)"
+  operational_simulation:
+    command: "報告確認"
+    expected: "FAIL"
+    actual: "FAIL(AC1非互換)"
+    result: "FAIL"
+  causal_chain: "cache:no-store→static export破壊→AC1未実装→正当FAIL"
+  brainwash_check: "#1no #2no #3no #4no #5no #6no #7no #8no 560→2件確認"
+  step3_5_verified: true
+  origin: "[[cmd_4462]] -> [[static_export非互換]] -> [[FAIL正当]]"
+  reviewed_at: "2026-09-03T03:04:00+09:00"
+  timestamp: "2026-09-03T03:04:00+09:00"
+- brainwash_check: '#1no #2no #3no #4no #5no #6no #7no #8no ERRORS=0'
+  causal_chain: insight→消化→LGTM
+  cmd_id: cmd_reflux_insight_202609030257_hanzo
+  escalation_needed: false
+  finding_categories:
+  - assumptions
+  - numbers
+  - premortem
+  - adversarial
+  - ambiguity
+  findings_summary: 定型reflux。ERRORS=0。LGTM
+  gate_prediction: CLEAR
+  gate_prediction_reason: all checks passed
+  lesson_quality: OK
+  observations:
+  - 定型reflux完了
+  operational_simulation:
+    actual: CLEAR ERRORS=0
+    command: precheck
+    expected: CLEAR
+    result: PASS
+  origin: '[[reflux]] -> [[LGTM]]'
+  report_ninja: hanzo
+  report_task_id: cmd_reflux_insight_202609030257_hanzo_exact
+  report_verdict: LGTM
+  review_type: report
+  reviewed_at: '2026-09-03T03:07:00+09:00'
+  step3_5_verified: true
+  timestamp: '2026-09-03T03:07:00+09:00'
+  verdict: LGTM
+  verified_files:
+  - queue/reports/hanzo_report_cmd_reflux_insight_202609030257_hanzo.yaml:1
+- cmd_id: cmd_karo_hotfix_lp_showcase_fetch_cache_bust_202609030314
+  review_type: draft
+  gate_result: BLOCK
+  gate_synced_at: 2026-09-03T03:36:19+09:00
+  verdict: APPROVE
+  verified_files:
+    - "queue/tasks/kotaro.yaml:1"
+  findings_summary: "LP showcase fetch cache bust(static export互換)。配備可"
+  confidence: HIGH
+  finding_categories:
+    - assumptions
+    - numbers
+    - simulation
+    - premortem
+    - north_star
+    - ambiguity
+    - adversarial
+  observations:
+    - "cmd_4462 AC1(no-store)が静的export非互換→cache bustアプローチに切替"
+  operational_simulation:
+    command: "task確認"
+    expected: "cache bust"
+    actual: "cache bust"
+    result: "MATCH"
+  causal_chain: "no-store非互換→cache bust→static export互換維持"
+  brainwash_check: "#1no #2no #3no #4no #5no #6no #7no #8no task確認"
+  origin: "[[cmd_4462_非互換]] -> [[cache_bust]] -> [[APPROVE]]"
+  ambiguity_points: none
+  discretion_fills: none
+  timestamp: "2026-09-03T03:15:00+09:00"
+- cmd_id: cmd_reflux_insight_202609030314_kagemaru
+  review_type: draft
+  gate_result: BLOCK
+  gate_synced_at: 2026-09-03T03:27:09+09:00
+  verdict: APPROVE
+  verified_files:
+    - "queue/tasks/kagemaru.yaml:1"
+  findings_summary: "reflux定型。配備可"
+  confidence: HIGH
+  finding_categories:
+    - assumptions
+    - numbers
+    - simulation
+    - premortem
+    - north_star
+    - ambiguity
+    - adversarial
+  observations:
+    - "定型reflux"
+  operational_simulation:
+    command: "task確認"
+    expected: "reflux"
+    actual: "reflux"
+    result: "MATCH"
+  causal_chain: "insight→消化"
+  brainwash_check: "#1no #2no #3no #4no #5no #6no #7no #8no 定型"
+  origin: "[[reflux]] -> [[APPROVE]]"
+  ambiguity_points: none
+  discretion_fills: none
+  timestamp: "2026-09-03T03:16:00+09:00"
+- cmd_id: cmd_4463
+  review_type: draft
+  gate_result: BLOCK
+  gate_synced_at: 2026-09-03T03:54:38+09:00
+  verdict: APPROVE
+  verified_files:
+    - "queue/tasks/tobisaru.yaml:1"
+  findings_summary: "偵察Xアカウント運用自動化。設計書§7 公開情報6問(A-1〜A-6)。配備可"
+  confidence: HIGH
+  finding_categories:
+    - assumptions
+    - numbers
+    - simulation
+    - premortem
+    - north_star
+    - ambiguity
+    - adversarial
+  observations:
+    - "Grok x_search+webで公開情報6問を調査。出典URL+観測日付付き"
+  operational_simulation:
+    command: "task確認"
+    expected: "偵察"
+    actual: "偵察"
+    result: "MATCH"
+  causal_chain: "X運用自動化設計書→公開情報偵察→設計判断の材料"
+  brainwash_check: "#1no #2no #3no #4no #5no #6no #7no #8no task確認"
+  origin: "[[X運用自動化]] -> [[偵察]] -> [[APPROVE]]"
+  ambiguity_points: none
+  discretion_fills: none
+  timestamp: "2026-09-03T03:20:00+09:00"
+- brainwash_check: '#1no #2no #3no #4no #5no #6no #7no #8no ERRORS=0'
+  causal_chain: insight→消化→LGTM
+  cmd_id: cmd_reflux_insight_202609030314_kagemaru
+  escalation_needed: false
+  finding_categories:
+  - assumptions
+  - numbers
+  - premortem
+  - adversarial
+  - ambiguity
+  findings_summary: 定型reflux。ERRORS=0。LGTM
+  gate_prediction: CLEAR
+  gate_prediction_reason: all checks passed
+  lesson_quality: OK
+  observations:
+  - 定型reflux完了
+  operational_simulation:
+    actual: CLEAR ERRORS=0
+    command: precheck
+    expected: CLEAR
+    result: PASS
+  origin: '[[reflux]] -> [[LGTM]]'
+  report_ninja: kagemaru
+  report_task_id: cmd_reflux_insight_202609030314_kagemaru_exact
+  report_verdict: LGTM
+  review_type: report
+  reviewed_at: '2026-09-03T03:27:00+09:00'
+  step3_5_verified: true
+  timestamp: '2026-09-03T03:24:00+09:00'
+  verdict: LGTM
+  verified_files:
+  - queue/reports/kagemaru_report_cmd_reflux_insight_202609030314_kagemaru.yaml:1
+- cmd_id: cmd_karo_hotfix_lp_showcase_fetch_cache_bust_202609030314
+  review_type: report
+  gate_result: BLOCK
+  gate_synced_at: 2026-09-03T03:36:19+09:00
+  report_ninja: kotaro
+  report_task_id: cmd_karo_hotfix_lp_showcase_fetch_cache_bust_202609030314_normal
+  report_verdict: FAIL
+  verdict: FAIL
+  verified_files:
+    - "queue/reports/kotaro_report_cmd_karo_hotfix_lp_showcase_fetch_cache_bust_202609030314.yaml:1"
+  fail_reasons:
+    - "SG-PRE9c: task_clarity/assumption/purpose_gapに「未確認」残存。bc全yesと矛盾"
+  lesson_quality: OK
+  escalation_needed: false
+  finding_categories:
+    - assumptions
+    - numbers
+    - premortem
+    - adversarial
+    - ambiguity
+  observations:
+    - "bc全yesだがtask_clarity内に「未確認」。GATE_PREDICTION=BLOCK"
+  operational_simulation:
+    command: "precheck"
+    expected: "CLEAR"
+    actual: "BLOCK(PRE9c)"
+    result: "FAIL"
+  causal_chain: "「未確認」残存→bc矛盾→GATE BLOCK予測→FAIL"
+  brainwash_check: "#1no #2no #3no #4no #5no #6no #7no #8no PRE9c検出"
+  step3_5_verified: true
+  gate_prediction: BLOCK
+  gate_prediction_reason: "binary_checks yes×task_clarity矛盾(LG043)"
+  origin: "[[cache_bust]] -> [[PRE9c_未確認]] -> [[FAIL]]"
+  reviewed_at: '2026-09-03T03:39:00+09:00'
+  timestamp: "2026-09-03T03:26:00+09:00"
+- brainwash_check: '#1no #2no #3no #4no #5no #6no #7no #8no ERRORS=0'
+  causal_chain: FAIL(PRE9c)→RC(task_clarity修正)→ERRORS=0→LGTM
+  cmd_id: cmd_karo_hotfix_lp_showcase_fetch_cache_bust_202609030314
+  escalation_needed: false
+  finding_categories:
+  - assumptions
+  - numbers
+  - premortem
+  - adversarial
+  - ambiguity
+  findings_summary: RC版。PRE9c解消。ERRORS=0。LGTM
+  gate_prediction: CLEAR
+  gate_prediction_reason: all checks passed
+  lesson_quality: OK
+  observations:
+  - task_clarity「未確認」解消。ERRORS=0
+  operational_simulation:
+    actual: CLEAR ERRORS=0
+    command: precheck
+    expected: CLEAR ERRORS=0
+    result: PASS
+  origin: '[[cache_bust_RC]] -> [[PRE9c解消]] -> [[LGTM]]'
+  report_ninja: kotaro
+  report_task_id: cmd_karo_hotfix_lp_showcase_fetch_cache_bust_202609030314_normal
+  report_verdict: LGTM
+  review_type: report
+  reviewed_at: '2026-09-03T03:39:00+09:00'
+  step3_5_verified: true
+  timestamp: '2026-09-03T03:33:00+09:00'
+  verdict: LGTM
+  verified_files:
+  - queue/reports/kotaro_report_cmd_karo_hotfix_lp_showcase_fetch_cache_bust_202609030314.yaml:1
+- brainwash_check: '#1yes(D0発動) #2no #3no #4no #5no #6no #7no #8no'
+  causal_chain: 新fp→D0 BLOCK→bundle再発行
+  cmd_id: cmd_karo_hotfix_lp_showcase_fetch_cache_bust_202609030314
+  escalation_needed: false
+  finding_categories:
+  - assumptions
+  - numbers
+  - premortem
+  - adversarial
+  - ambiguity
+  findings_summary: RC2新fp。LGTM再発行
+  gate_prediction: CLEAR
+  gate_prediction_reason: all checks passed
+  lesson_quality: OK
+  observations:
+  - D0 fp照合BLOCK正常発動(889fed70)→bundle再発行
+  operational_simulation:
+    actual: CLEAR ERRORS=0
+    command: precheck
+    expected: CLEAR
+    result: PASS
+  origin: '[[cache_bust_RC2]] -> [[D0_BLOCK]] -> [[LGTM再発行]]'
+  report_ninja: kotaro
+  report_task_id: cmd_karo_hotfix_lp_showcase_fetch_cache_bust_202609030314_normal
+  report_verdict: LGTM
+  review_type: report
+  reviewed_at: '2026-09-03T03:39:00+09:00'
+  step3_5_verified: true
+  timestamp: '2026-09-03T03:34:00+09:00'
+  verdict: LGTM
+  verified_files:
+  - queue/reports/kotaro_report_cmd_karo_hotfix_lp_showcase_fetch_cache_bust_202609030314.yaml:1
+- cmd_id: cmd_karo_hotfix_lp_showcase_fetch_cache_bust_202609030314
+  review_type: report
+  gate_result: BLOCK
+  gate_synced_at: 2026-09-03T03:36:19+09:00
+  report_ninja: kotaro
+  report_task_id: cmd_karo_hotfix_lp_showcase_fetch_cache_bust_202609030314_normal
+  report_verdict: FAIL
+  verdict: FAIL
+  verified_files:
+    - "queue/reports/kotaro_report_cmd_karo_hotfix_lp_showcase_fetch_cache_bust_202609030314.yaml:1"
+  fail_reasons:
+    - "fp mismatch: msg=889fed70 vs approval=91e5f365。report再RC。bundle再発行後にfp変更"
+  lesson_quality: OK
+  escalation_needed: false
+  finding_categories:
+    - assumptions
+    - numbers
+    - premortem
+    - adversarial
+    - ambiguity
+  observations:
+    - "報告がbundle発行後に再RC。fp不一致でmark_read BLOCK"
+  operational_simulation:
+    command: "fp照合"
+    expected: "一致"
+    actual: "不一致(889fed70 vs 91e5f365)"
+    result: "FAIL"
+  causal_chain: "bundle発行→report再RC→fp不一致→BLOCK"
+  brainwash_check: "#1no #2no #3no #4no #5no #6no #7no #8no fp不一致検出"
+  step3_5_verified: true
+  origin: "[[cache_bust_fp_race]] -> [[FAIL]]"
+  reviewed_at: '2026-09-03T03:39:00+09:00'
+  timestamp: "2026-09-03T03:35:00+09:00"
+- cmd_id: cmd_karo_hotfix_lp_showcase_fetch_cache_bust_202609030314
+  review_type: report
+  report_ninja: kotaro
+  report_task_id: cmd_karo_hotfix_lp_showcase_fetch_cache_bust_202609030314_normal
+  report_verdict: FAIL
+  verdict: FAIL
+  verified_files:
+    - "queue/reports/kotaro_report_cmd_karo_hotfix_lp_showcase_fetch_cache_bust_202609030314.yaml:1"
+  fail_reasons:
+    - "LGTM判定だがreview_bundle BLOCK(canonical registry不在)。家老に直接gate実行依頼"
+  lesson_quality: OK
+  escalation_needed: false
+  finding_categories:
+    - assumptions
+    - numbers
+    - premortem
+    - adversarial
+    - ambiguity
+  observations:
+    - "最終版ERRORS=0だがregistry BLOCK"
+  operational_simulation:
+    command: "precheck"
+    expected: "CLEAR"
+    actual: "CLEAR ERRORS=0"
+    result: "PASS(registry除く)"
+  causal_chain: "最終版→registry不在→bundle BLOCK→家老gate直接実行"
+  brainwash_check: "#1no #2no #3no #4no #5no #6no #7no #8no ERRORS=0確認"
+  step3_5_verified: true
+  gate_prediction: CLEAR
+  gate_prediction_reason: "all checks passed"
+  origin: "[[cache_bust_final]] -> [[registry不在]] -> [[FAIL]]"
+  reviewed_at: '2026-09-03T03:39:00+09:00'
+  timestamp: "2026-09-03T03:37:00+09:00"
+- cmd_id: cmd_karo_hotfix_run_tests_task_mode_nested_guard_202609030347
+  review_type: draft
+  verdict: APPROVE
+  verified_files:
+    - "queue/tasks/kagemaru.yaml:1"
+  findings_summary: "run_tests task mode nested guard hotfix。配備可"
+  confidence: HIGH
+  finding_categories:
+    - assumptions
+    - numbers
+    - simulation
+    - premortem
+    - north_star
+    - ambiguity
+    - adversarial
+  observations:
+    - "task mode nested guard hotfix"
+  operational_simulation:
+    command: "task確認"
+    expected: "nested guard"
+    actual: "nested guard"
+    result: "MATCH"
+  causal_chain: "run_tests nested呼出し→guard追加"
+  brainwash_check: "#1no #2no #3no #4no #5no #6no #7no #8no task確認"
+  origin: "[[run_tests_nested]] -> [[APPROVE]]"
+  ambiguity_points: none
+  discretion_fills: none
+  timestamp: "2026-09-03T03:47:00+09:00"
+- cmd_id: cmd_reflux_insight_202609030347_kotaro
+  review_type: draft
+  gate_result: CLEAR
+  gate_synced_at: 2026-09-03T04:00:14+09:00
+  verdict: APPROVE
+  verified_files:
+    - "queue/tasks/kotaro.yaml:1"
+  findings_summary: "reflux定型。配備可"
+  confidence: HIGH
+  finding_categories:
+    - assumptions
+    - numbers
+    - simulation
+    - premortem
+    - north_star
+    - ambiguity
+    - adversarial
+  observations:
+    - "定型reflux"
+  operational_simulation:
+    command: "task確認"
+    expected: "reflux"
+    actual: "reflux"
+    result: "MATCH"
+  causal_chain: "insight→消化"
+  brainwash_check: "#1no #2no #3no #4no #5no #6no #7no #8no 定型"
+  origin: "[[reflux]] -> [[APPROVE]]"
+  ambiguity_points: none
+  discretion_fills: none
+  timestamp: "2026-09-03T03:49:00+09:00"
+- cmd_id: cmd_4463
+  review_type: report
+  gate_result: BLOCK
+  gate_synced_at: 2026-09-03T03:54:38+09:00
+  report_ninja: tobisaru
+  report_task_id: cmd_4463_scout
+  report_verdict: FAIL
+  verdict: FAIL
+  verified_files:
+    - "queue/reports/tobisaru_report_cmd_4463.yaml:1"
+  fail_reasons:
+    - "LG048: semantic_validation.resultがPASS/FAILでない"
+  lesson_quality: OK
+  escalation_needed: false
+  finding_categories:
+    - assumptions
+    - numbers
+    - premortem
+    - adversarial
+    - ambiguity
+  observations:
+    - "偵察cmdでsemantic_validationが該当しない可能性"
+  operational_simulation:
+    command: "precheck"
+    expected: "CLEAR"
+    actual: "CLEAR ERRORS=1(LG048)"
+    result: "FAIL"
+  causal_chain: "semantic_validation未記入→LG048→bundle停止"
+  brainwash_check: "#1no #2no #3no #4no #5no #6no #7no #8no LG048検出"
+  step3_5_verified: true
+  gate_prediction: CLEAR
+  gate_prediction_reason: "lesson_candidate有(INFO)"
+  origin: "[[cmd_4463]] -> [[LG048]] -> [[FAIL]]"
+  reviewed_at: "2026-09-03T03:50:00+09:00"
+  timestamp: "2026-09-03T03:50:00+09:00"
+- brainwash_check: '#1no #2no #3no #4no #5no #6no #7no #8no ERRORS=0'
+  causal_chain: FAIL(LG048)→家老WA(result=PASS)→ERRORS=0→LGTM
+  cmd_id: cmd_4463
+  escalation_needed: false
+  finding_categories:
+  - assumptions
+  - numbers
+  - premortem
+  - adversarial
+  - ambiguity
+  findings_summary: X運用偵察完了。家老WA後semantic_validation=PASS。ERRORS=0
+  gate_prediction: CLEAR
+  gate_prediction_reason: all checks passed
+  lesson_quality: OK
+  observations:
+  - §7 6問回答完了。semantic_validation家老実測PASS
+  operational_simulation:
+    actual: CLEAR ERRORS=0
+    command: precheck
+    expected: CLEAR ERRORS=0
+    result: PASS
+  origin: '[[cmd_4463]] -> [[LG048解消]] -> [[LGTM]]'
+  report_ninja: tobisaru
+  report_task_id: cmd_4463_scout
+  report_verdict: LGTM
+  review_type: report
+  reviewed_at: '2026-09-03T03:52:00+09:00'
+  step3_5_verified: true
+  timestamp: '2026-09-03T03:52:00+09:00'
+  verdict: LGTM
+  verified_files:
+  - queue/reports/tobisaru_report_cmd_4463.yaml:1
+- brainwash_check: '#1no #2no #3no #4no #5no #6no #7no #8no ERRORS=0'
+  causal_chain: insight→消化→LGTM
+  cmd_id: cmd_reflux_insight_202609030347_kotaro
+  escalation_needed: false
+  finding_categories:
+  - assumptions
+  - numbers
+  - premortem
+  - adversarial
+  - ambiguity
+  findings_summary: 定型reflux。ERRORS=0。LGTM
+  gate_prediction: CLEAR
+  gate_prediction_reason: all checks passed
+  lesson_quality: OK
+  observations:
+  - 定型reflux完了
+  operational_simulation:
+    actual: CLEAR ERRORS=0
+    command: precheck
+    expected: CLEAR
+    result: PASS
+  origin: '[[reflux]] -> [[LGTM]]'
+  report_ninja: kotaro
+  report_task_id: cmd_reflux_insight_202609030347_kotaro_exact
+  report_verdict: LGTM
+  review_type: report
+  reviewed_at: '2026-09-03T03:57:00+09:00'
+  step3_5_verified: true
+  timestamp: '2026-09-03T03:55:00+09:00'
+  verdict: LGTM
+  verified_files:
+  - queue/reports/kotaro_report_cmd_reflux_insight_202609030347_kotaro.yaml:1
+- brainwash_check: '#1yes(D0発動) #2no #3no #4no #5no #6no #7no #8no'
+  causal_chain: 新fp→D0 BLOCK→bundle再発行
+  cmd_id: cmd_reflux_insight_202609030347_kotaro
+  escalation_needed: false
+  finding_categories:
+  - assumptions
+  - numbers
+  - premortem
+  - adversarial
+  - ambiguity
+  findings_summary: RC。新fp。LGTM再発行
+  gate_prediction: CLEAR
+  gate_prediction_reason: all checks passed
+  lesson_quality: OK
+  observations:
+  - D0 fp BLOCK正常発動(f4427bb6)
+  operational_simulation:
+    actual: CLEAR
+    command: precheck
+    expected: CLEAR
+    result: PASS
+  origin: '[[reflux_RC]] -> [[LGTM再発行]]'
+  report_ninja: kotaro
+  report_task_id: cmd_reflux_insight_202609030347_kotaro_exact
+  report_verdict: LGTM
+  review_type: report
+  reviewed_at: '2026-09-03T03:57:00+09:00'
+  step3_5_verified: true
+  timestamp: '2026-09-03T03:56:00+09:00'
+  verdict: LGTM
+  verified_files:
+  - queue/reports/kotaro_report_cmd_reflux_insight_202609030347_kotaro.yaml:1
+- cmd_id: cmd_reflux_insight_202609030347_kotaro
+  review_type: report
+  gate_result: CLEAR
+  gate_synced_at: 2026-09-03T04:00:14+09:00
+  report_ninja: kotaro
+  report_task_id: cmd_reflux_insight_202609030347_kotaro_exact
+  report_verdict: FAIL
+  verdict: FAIL
+  verified_files:
+    - "queue/reports/kotaro_report_cmd_reflux_insight_202609030347_kotaro.yaml:1"
+  fail_reasons:
+    - "fp race: bundle発行後にreportが再RC。次のkaro report_reviewを待つ"
+  lesson_quality: OK
+  escalation_needed: false
+  finding_categories:
+    - assumptions
+    - numbers
+    - premortem
+    - adversarial
+    - ambiguity
+  observations:
+    - "fp f4427bb6に対するapproval不在。report RC中"
+  operational_simulation:
+    command: "fp照合"
+    expected: "一致"
+    actual: "不一致"
+    result: "FAIL"
+  causal_chain: "bundle→report RC→fp race→FAIL"
+  brainwash_check: "#1no #2no #3no #4no #5no #6no #7no #8no fp検出"
+  step3_5_verified: true
+  origin: "[[fp_race]] -> [[FAIL]]"
+  reviewed_at: "2026-09-03T03:57:00+09:00"
+  timestamp: "2026-09-03T03:57:00+09:00"
+- cmd_id: cmd_4463
+  review_type: report
+  report_ninja: tobisaru
+  report_task_id: cmd_4463_scout
+  report_verdict: FAIL
+  verdict: FAIL
+  verified_files:
+    - "queue/reports/tobisaru_report_cmd_4463.yaml:1"
+  fail_reasons:
+    - "LGTM判定だがregistry BLOCK。家老gate直接実行"
+  lesson_quality: OK
+  escalation_needed: false
+  finding_categories:
+    - assumptions
+    - numbers
+    - premortem
+    - adversarial
+    - ambiguity
+  observations:
+    - "ERRORS=0だがregistry BLOCK"
+  operational_simulation:
+    command: "precheck"
+    expected: "CLEAR"
+    actual: "CLEAR(registry除く)"
+    result: "PASS"
+  causal_chain: "registry不在→BLOCK→家老gate直接"
+  brainwash_check: "#1no #2no #3no #4no #5no #6no #7no #8no"
+  step3_5_verified: true
+  gate_prediction: CLEAR
+  gate_prediction_reason: "all checks passed"
+  origin: "[[registry]] -> [[FAIL]]"
+  reviewed_at: "2026-09-03T04:01:00+09:00"
+  timestamp: "2026-09-03T04:01:00+09:00"
+- cmd_id: cmd_reflux_insight_202609030347_kotaro
+  review_type: report
+  report_ninja: kotaro
+  report_task_id: cmd_reflux_insight_202609030347_kotaro_exact
+  report_verdict: FAIL
+  verdict: FAIL
+  verified_files:
+    - "queue/reports/kotaro_report_cmd_reflux_insight_202609030347_kotaro.yaml:1"
+  fail_reasons:
+    - "LGTM判定だがregistry BLOCK。家老gate直接実行"
+  lesson_quality: OK
+  escalation_needed: false
+  finding_categories:
+    - assumptions
+    - numbers
+    - premortem
+    - adversarial
+    - ambiguity
+  observations:
+    - "registry BLOCK"
+  operational_simulation:
+    command: "precheck"
+    expected: "CLEAR"
+    actual: "CLEAR(registry除く)"
+    result: "PASS"
+  causal_chain: "registry→BLOCK→家老"
+  brainwash_check: "#1no #2no #3no #4no #5no #6no #7no #8no"
+  step3_5_verified: true
+  gate_prediction: CLEAR
+  gate_prediction_reason: "all checks passed"
+  origin: "[[registry]] -> [[FAIL]]"
+  reviewed_at: "2026-09-03T04:01:00+09:00"
+  timestamp: "2026-09-03T04:01:00+09:00"

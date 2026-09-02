@@ -1664,3 +1664,5 @@
 - 2026-09-03 03:48 run_tests.sh task mode の自己再帰(worktree 子 affected が RUN_TESTS_ACTIVE 継承)を飛猿が特定→影丸 hotfix。4463 は affected 直接実行の暫定経路。
 - 2026-09-03 03:52 cmd_4463(飛猿 docs-only 偵察)は autolink receipt 要件を構造的に満たせず家老 WA で status completed(WA 記録)。
 - 2026-09-03 03:55 小太郎 reflux(INS-2dc0)が真因2点(report_field_set.sh docs-only免除欠如+deploy_task.sh test_receipt_path stale未消去)を一次確認、kagemaru hotfix範囲外と確認しdecision_candidateへ委譲・resolve。
+- 2026-09-03 03:55 cmd_4463(X 運用偵察、飛猿)CLEAR(docs-only の receipt 要件は家老 WA、semantic_validation は家老補填)。
+- 2026-09-03 03:58 小太郎 reflux(INS-2dc0 resolve)CLEAR。
