@@ -49,7 +49,7 @@ SEQ_COUNTER="$QUEUE_DIR/events.seq"
 
 mkdir -p "$QUEUE_DIR"
 
-VALID_KINDS="rc210 rc211 c2a_rc r11_hold r13_reject cas_rejected deploy_check_started deploy_check_terminal deploy_check_stale retry_exhausted deploy_check_exhausted git_fail"
+VALID_KINDS="rc210 rc211 c2a_rc dry_run_publish r11_hold r13_reject cas_rejected deploy_check_started deploy_check_terminal deploy_check_stale retry_exhausted deploy_check_exhausted git_fail"
 
 cmd_append() {
     local kind="$1" request="$2" rc="$3" reason="$4"
