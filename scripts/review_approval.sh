@@ -33,8 +33,9 @@ review_approval_record_total() {
 }
 review_approval_total_on_exit() { local rc=$?; review_approval_record_total "$rc"; return "$rc"; }
 trap review_approval_total_on_exit EXIT
-if [ "$#" -lt 4 ] || [ "$#" -gt 5 ]; then
+if [ "$#" -lt 4 ] || [ "$#" -gt 6 ]; then
   echo "Usage: $0 <cmd_id> <gunshi|karo> <LGTM|ACCEPT|RC> <report_path> [auto|implementation|report]" >&2
+  echo "   or: $0 <cmd_id> karo ACCEPT <report_path> --migration-ack <reverse-migration-path|irreversible_accepted>" >&2
   echo "   or: $0 <cmd_id> karo RC_REVOKE <report_path> <reason>" >&2
   exit 2
 fi
@@ -42,6 +43,14 @@ cmd_id=$1; role=$2; result=$3; report=$4
 # "-" (not ":-") so an explicitly empty 5th arg is distinguishable from an
 # omitted one; RC_REVOKE's reason validation depends on seeing the real "".
 requested_scope=${5-auto}
+migration_ack=""
+if [ "$#" -eq 6 ] && [ "${5-}" != "--migration-ack" ]; then
+  echo "BLOCK: 6 arguments are only valid as <report_path> --migration-ack <value>" >&2
+  exit 2
+fi
+if [ "${5-}" = "--migration-ack" ]; then
+  requested_scope=auto
+fi
 case "$role:$result" in gunshi:LGTM|karo:ACCEPT|karo:RC|karo:RC_REVOKE) ;; *) echo "BLOCK: invalid role/result" >&2; exit 2;; esac
 if [ "$role:$result" = "gunshi:LGTM" ] \
   && [ "${REVIEW_APPROVAL_CANONICAL_ENTRY:-}" != review_bundle ] \
@@ -60,6 +69,15 @@ if [ "$role:$result" = "karo:RC_REVOKE" ]; then
     exit 2
   }
   requested_scope=auto
+elif [ "${5-}" = "--migration-ack" ]; then
+  # U5(単一 publisher 化 R13): migration_ack は karo:ACCEPT の任意 option でのみ
+  # 受け付ける。値は逆 migration の path、または文字列 irreversible_accepted。
+  [ "$role:$result" = "karo:ACCEPT" ] || { echo "BLOCK: --migration-ack is only valid for karo ACCEPT" >&2; exit 2; }
+  migration_ack=$6
+  [ -n "$(printf '%s' "$migration_ack" | tr -d '[:space:]')" ] || {
+    echo "BLOCK: --migration-ack requires a non-empty value" >&2
+    exit 2
+  }
 else
   case "$requested_scope" in auto|implementation|report) ;; *) echo "BLOCK: invalid correction scope: $requested_scope" >&2; exit 2;; esac
 fi
@@ -760,7 +778,11 @@ if [ "$role" = gunshi ] && [ "$existing_result" = "$result" ] && [ "$existing_fp
     approval_timestamp="$existing_timestamp"
   fi
 fi
-printf 'timestamp: %s\nrole: %s\nresult: %s\nfingerprint: %s\ngeneration: %s\nreport: %s\ncorrection_scope: %s\n' "$approval_timestamp" "$role" "$result" "$fingerprint" "$canonical_generation" "$report_rel" "$correction_scope" > "$tmp"
+# U5(単一 publisher 化 R13): migration_ack は review_approval.sh だけが書く。
+# --migration-ack option 無しの ACCEPT(および gunshi/RC/RC_REVOKE)は書かない。
+migration_ack_line=""
+[ -z "$migration_ack" ] || migration_ack_line="migration_ack: $migration_ack"$'\n'
+printf 'timestamp: %s\nrole: %s\nresult: %s\nfingerprint: %s\ngeneration: %s\nreport: %s\ncorrection_scope: %s\n%s' "$approval_timestamp" "$role" "$result" "$fingerprint" "$canonical_generation" "$report_rel" "$correction_scope" "$migration_ack_line" > "$tmp"
 mv -f "$tmp" "$dir/$role.yaml"
 # The durable approval record is complete.  Do not keep the report approval
 # lock across SG7 publication or any completion work: canonical LGTM used to
@@ -783,6 +805,10 @@ case "$role:$result" in
     defense_overhead_write review_approval karo_accept 0 PASS \
       "review-approval-karo-accept-${cmd_id}-${report_key}-${fingerprint}" \
       "{\"cmd_id\":\"${cmd_id}\",\"generation\":\"${canonical_generation}\"}" || true
+    # U5(単一 publisher 化、観点 22): karo:ACCEPT が publisher_queue.sh enqueue の
+    # 唯一の caller。admit の admission 判定(rc≠0 なら enqueue しない)は
+    # publisher_queue.sh 側の enqueue 前 1 行が担う。
+    bash "$ROOT/scripts/publisher_queue.sh" enqueue "$report" >/dev/null || true
     ;;
 esac
 # The canonical APPROVE entry owns SG7 publication.  Publish immediately after
