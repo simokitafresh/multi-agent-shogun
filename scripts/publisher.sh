@@ -242,7 +242,12 @@ daemon_main() {
     local once="${PUBLISHER_ONCE:-0}" sleep_seconds="${PUBLISHER_SLEEP_SECONDS:-2}"
     printf '%s\n' "$$" > "$PID_FILE"; trap 'rm -f "$PID_FILE"' EXIT
     # A rejected request (RC) is terminal evidence for that request only; the daemon must keep serving the queue.
-    while :; do run_one || true; [ "$once" = 1 ] && break; sleep "$sleep_seconds"; done
+    local rc
+    while :; do
+        rc=0; run_one || rc=$?
+        [ "$once" = 1 ] && return "$rc"
+        sleep "$sleep_seconds"
+    done
 }
 
 if [ "${1:-}" = --process-request ]; then process_request "$2" "$3"
