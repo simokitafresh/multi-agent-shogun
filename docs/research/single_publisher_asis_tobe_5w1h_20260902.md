@@ -1,5 +1,5 @@
 <!-- gist-master: 77538fe909ed4d3b83b61b4baf99cacf single_publisher_asis_tobe_5w1h_20260902.md -->
-# origin/main 単一 publisher 化 — AsIs / ToBe / 5W1H 設計書 v1.9(v1.8=殿裁定 3 点反映 13:25 → 殿指示 13:23『実装は忍者。性能の劣る LLM が混乱しない設計書。クリーンアップと速度検証まで完了して最終ゴール』を §9-§11 で反映、13:30)
+# origin/main 単一 publisher 化 — AsIs / ToBe / 5W1H 設計書 v1.9(v1.8=殿裁定 3 点反映 13:25 → 殿指示 13:23『実装は忍者。性能の劣る LLM が混乱しない設計書。クリーンアップと速度検証まで完了して最終ゴール』を §9-§11 で反映、13:30。殿指示 13:25 multi-CLI 境界を §12 で反映、13:33)
 
 - 作成: 2026-09-02 02:30 将軍(殿指示 02:16『忍者はコミットしない。コミットは家老/将軍のみ』→02:18『コミットのやり方・スキル・構造の検証』→02:24『AsIs/ToBe 5W1H 設計書。不要になる複雑さを先に検証』)
 - 協議: 家老回答 blt_20260902_021944(single publisher + local commit artifact)。協議記録=`queue/notes/shogun_karo_single_committer_hypothesis_20260902_0220.md` §1-6
@@ -219,6 +219,17 @@ canary 判定: **(v1.8 殿裁定 D9)** infra と dm-signal の両 repo を U1 �
 | 内容消失 | §1.2 と同手順(公開済み commit の blob が後続 merge で消える) | 2 件/日 | 0 |
 最終ゴール(二値): U8 manifest 全行 done ∧ §11 の after が全指標で目標到達 ∧ C1-C8 全 PASS(両 repo)∧ bats 全 GREEN。ここまでで 1 工程。途中の CLEAR は途中成果(型九弾-1)。
 
+## §12 multi-CLI 境界
+前提(殿厳命 2026-08-01『共通化するのは成果の評価基準のみ、実行機構は CLI 固有』、殿指示 2026-09-02 13:25『どのロールがどの CLI/モデルでも必要十分に同じレベルで作業を続けられる』): 本設計の成果基準(C1-C8・§11)は CLI 共通、実行機構は下表の通り層ごとに CLI 依存の有無を固定する。
+| 層 | 置き場所 | CLI 依存 | 規則 |
+|---|---|---|---|
+| publisher / queue / lease / artifact / ledger_writer | bash script(`scripts/`)+`$STATE_DIR` file | **無**(どの CLI の pane からも同じ CLI 契約で呼ぶ) | CLI 名・pane・tmux 変数を読まない。identity は lease file と git config user のみ |
+| C5 lease なし push の BLOCK | **git の pre-push hook**(`.githooks/pre-push`) | **無**(Claude/Codex/人手/CI すべて同一経路) | Claude hook(`.claude/hooks`)や Codex hook(`.codex/hooks.json`)には置かない。CLI hook は案内(WARN)のみ |
+| 忍者への案内(誤操作の早期通知) | Claude=`.claude/hooks`、Codex=`.codex/hooks.json`(BLOCK は exit 2) | **有**(CLI 固有に別実装) | 同じ判定 script(`scripts/lib/publisher_guard.sh`)を両 hook から呼び、判定ロジックは 1 本、出口(exit code・文言)だけ CLI 別 |
+| §9 忍者仕様の語彙 | 設計書・task YAML | — | CLI 固有語(Edit/Read tool、bypass permissions、/clear、slash command 名)を書かない。file path・シェルコマンド・bats 名のみで書く。違反は家老レビューで REJECT |
+| 検証 | canary(U1-U8) | — | **各 unit を Claude 忍者と Codex 忍者の双方で最低 1 回ずつ通し、両方 PASS を AC に含める**(片方だけの PASS は unit 完了としない)。差が出たら差自体を §7 ピットフォールへ追記 |
+既知の CLI 差(一次): Codex は hook BLOCK=exit 2(exit 1 は CLI クラッシュ)、Codex は作業中も `› Ask Codex` を常設(ready 判定は busy marker 不在まで、scripts/lib/cli_ready.sh)、Claude は Stop hook で idle flag、Codex は respawn-pane -k が唯一の確実 reset(殿裁定 05-20)。publisher 側はこれらに依存しない設計とし、依存が必要な箇所(idle 判定等)は本設計の対象外に置く。
+
 ## §5 レビュー履歴
 - v1.0 → 家老 REJECT(blt_20260902_023241、方向 APPROVE・修正 5): ①inventory の残すもの明示 ②C2a/C3 porcelain 0/C5 lease BLOCK ③順序 U1→U2→U4→U5→U3→U6→U7→U8 ④成果物 3 つ組と旧 field 写像 ⑤C6/C7。→ v1.1 に全反映。
 - v1.1 → 家老 REJECT(blt_20260902_023509、前回 5/5 反映確認・新規 6): ①台帳 writer は root 外 queue に統一 ②fingerprint と patch_sha は別物で両方保持、cross_repo は組で保持 ③U1 AC=max holders 1/overlap 0/FIFO 逆転 0、lease=ref+SHA+expiry ④U5 AC=未承認 N→admitted 0、承認 N→N ⑤U3 AC に C2a fixture+dry-run 母数 N/mismatch 0 ⑥canary C1-C7、U8 削除 manifest+殿確認+1 batch ≤10、原則番号修正。→ v1.2 に全反映。
@@ -231,7 +242,7 @@ canary 判定: **(v1.8 殿裁定 D9)** infra と dm-signal の両 repo を U1 �
 - v1.8(13:25 家老レビュー依頼 msg_132320)→ 殿指示 13:23『実装は忍者。性能の劣る LLM が混乱・誤解しない設計書。クリーンアップと速度検証まで最終ゴール』→ v1.9 で §9-§11 追加(v1.8 レビューは v1.9 に差替え)。
 
 ## §5.1 レビュー依頼(家老、v1.9)
-観点(v1.9 新規): (12) §9 の unit 仕様は忍者が推測なしに着手・完了・停止できるか(触る file/作る file/入出力/禁止/二値/停止条件の 6 欄に空・曖昧語が無いか、家老が task YAML へそのまま写せるか) (13) §10 manifest の移植先 test が各行に実在し、残すもの(C5 lease/品質検査/CI census/report gate/receipt/D001-009)が manifest に混入していないか (14) §11 の before 値と計測コマンドが再現可能か、after 目標が二値か
+観点(v1.9 新規): (12) §9 の unit 仕様は忍者が推測なしに着手・完了・停止できるか(触る file/作る file/入出力/禁止/二値/停止条件の 6 欄に空・曖昧語が無いか、家老が task YAML へそのまま写せるか) (13) §10 manifest の移植先 test が各行に実在し、残すもの(C5 lease/品質検査/CI census/report gate/receipt/D001-009)が manifest に混入していないか (14) §11 の before 値と計測コマンドが再現可能か、after 目標が二値か (15) §12 multi-CLI 境界: C5 が git pre-push(CLI 非依存)に置かれているか、§9 に CLI 固有語が 0 か、両 CLI 忍者での PASS が各 unit の AC に入っているか
 観点(v1.8 新規): (9) D10 lease 付き直接 commit(将軍・家老)が C1/C3/C5 と矛盾しないか、R12 の同期 script は D8 と同一実装で足りるか (10) D9 両 repo 同時 canary で R11(Render deploy/smoke hold)の検知が二値か、dm-signal 側に publisher 非接触でない経路(migration/recalc)が混入しないか (11) §0.1 裁定記録が事実→制約→判断→効果で欠落なく、v1.7 案の撤回が本文全体で整合しているか(残存する『廃止』『U5 後』表現 0)
 (以下 v1.7 観点、参考)
 観点: (5) §4 R1-R10 の検知・復旧が二値か (6) §6 D1-D12 のうち将軍が決めてよい範囲を越えていないか(殿裁定は D9/D10 のみ) (7) §7 P1-P10 に本日事象の漏れ (8) §8 A1-A10 が deploy_task/karo-direct の現行 gate と矛盾しないか。
