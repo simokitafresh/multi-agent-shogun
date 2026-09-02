@@ -14714,7 +14714,10 @@ insights:
   priority: "medium"
   source: "manual"
   fix_known: false
-  status: pending
+  status: "resolved"
+  resolved_reason: "実害(reflux/exact commit未反映)は将軍05:22-27修正(commit 9dae7921f/28cc8e5d6, publish_direct_commit.sh U1b経路導入)で解消済みとorigin/main HEADログで確認。根本設計判断(reflux/exact型のpublisher enqueue可否)は未決定のためdecision_candidateへ委譲(reflux_commit_contract.scope外につき忍者実装不可、tobisaru report cmd_reflux_insight_202609030545)"
+  action_artifact: "report=queue/reports/tobisaru_report_cmd_reflux_insight_202609030545_tobisaru.yaml;fix_commit=9dae7921f,28cc8e5d6;evidence=logs/publisher_daemon.log"
+  resolved_at: "2026-09-03T05:54:52.778449"
 - id: INS-20260903-021225725-6d2f
   ts: "2026-09-03T02:12:25+09:00"
   insight: "semantic_index_update未登録cmd originノード: [[殿指摘_月次頁が全期間同じsignal_20260903_0052]] は既存aliasesに一致なし。類似概念TOP3: semantic_dictionary_design(セマンティック辞書構想; alias=lord_ruling_20260810_2259; score=3.2) / creator_brainwashing_defense(創造主の洗脳防御; alias=殿指示_工程Start_Goal明確化_20260803; score=3.1) / provisional_dm-login-boundary-asis-tobe_20260817(仮: Dm Login Boundary Asis Tobe 20260817; alias=dm-login-showcase-asis-tobe_v2_20260830; score=3.0)。概念定義とaliases追加を検討せよ"
