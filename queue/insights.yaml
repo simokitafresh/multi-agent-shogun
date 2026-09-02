@@ -14902,7 +14902,10 @@ insights:
   priority: "high"
   source: "karo_workaround_log"
   fix_known: false
-  status: pending
+  status: "resolved"
+  resolved_reason: "一次確認: logs/karo_workarounds.yaml の root_signature=infra::general は4件(L1126,L1142,L1158,L1304)で、いずれも未解消(resolved_by_cmd空)。context/infrastructure.md L1701の既存正規パターンに従い、本タスクのscope(queue/insights.yaml)内で実装修正せず、構造対策cmd起票候補として整理した。"
+  action_artifact: "decision_candidate: infra::general の4件(cmd_karo_hotfix_staged_preserve_index_regression_202609021832,cmd_karo_hotfix_ga556_doc_no_changelog_202609021730,cmd_karo_ci_fix_33630722226_instructions_sync_fp_vocab_202609022153,cmd_4463)を対象に、共通根因の恒久対策cmdを起票; primary=logs/karo_workarounds.yaml:L1126,L1142,L1158,L1304; scope=queue/insights.yamlのみのため実装修正は別cmd"
+  resolved_at: "2026-09-03T04:04:56.884501"
 - id: INS-20260903-035520343-8ddf
   ts: "2026-09-03T03:55:20+09:00"
   insight: "semantic_index_update未登録cmd originノード: [[殿発案_X運用API自動化_20260903_0313]] は既存aliasesに一致なし。類似概念TOP3: strong_new_game_completion_contract(強くてニューゲーム完遂契約; alias=karo_checkpoint_20260831_0309; score=3.6) / semantic_dictionary_design(セマンティック辞書構想; alias=殿裁定_単一publisher採用_20260902_1307; score=3.4) / creator_brainwashing_defense(創造主の洗脳防御; alias=session_save_20260811_0316; score=3.2)。概念定義とaliases追加を検討せよ"
