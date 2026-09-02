@@ -207,8 +207,14 @@ process_request() {
         event dry_run_publish "$task" 0 "published_sha=$published_sha origin_update=0"
     else
         timeout 120 git -C "$isolated" push origin "$published_sha:refs/heads/main"
-        timeout 120 git -C "$REPO_ROOT" fetch origin
-        sync_root "$REPO_ROOT" origin/main
+        event published "$task" 0 "published_sha=$published_sha"
+        timeout 120 git -C "$REPO_ROOT" fetch origin || true
+        # Root sync is a convenience for the shared checkout, not part of the publication. A dirty
+        # root (rc=32) must not abort after the push already landed, or the request stays in
+        # dequeued/ with no done receipt and no event (cmd_4465 06:47, root tracked_dirty>0).
+        if ! sync_root "$REPO_ROOT" origin/main; then
+            event root_sync_skipped "$task" 0 "published_sha=$published_sha root_dirty=$(tracked_dirty_count "$REPO_ROOT")"
+        fi
     fi
     cleanup_isolated "$isolated"; trap - RETURN
     move_to_done "$request"
