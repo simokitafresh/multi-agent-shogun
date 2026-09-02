@@ -2423,7 +2423,12 @@ _run_tests_main() {
                     exit $?
                 fi
                 if [ -f "$_task_root/scripts/run_tests.sh" ]; then
-                    (cd "$_task_root" && bash scripts/run_tests.sh affected "${scoped_paths[@]}")
+                    # The task runner is already an aggregate root and exports
+                    # RUN_TESTS_ACTIVE before dispatch.  Its external affected
+                    # child is a separate repository boundary, so do not let
+                    # the parent's recursion marker turn this valid no-source
+                    # dispatch into a false nested aggregate BLOCK.
+                    (cd "$_task_root" && env -u RUN_TESTS_ACTIVE bash scripts/run_tests.sh affected "${scoped_paths[@]}")
                 else
                     local _external_backend=0 _external_frontend=0 _external_path
                     local -a _external_backend_tests=() _external_frontend_sources=()
