@@ -13145,3 +13145,10 @@ insights:
   source: "lord_conversation:lesson_candidate"
   fix_known: false
   status: pending
+- id: INS-20260902-140258205-2567
+  ts: "2026-09-02T14:02:58+09:00"
+  insight: "[[裁定待ちの推奨とトレードオフは？]] semantic_stress_test candidate_aliases: NO_MATCH source=lord query=裁定待ちの推奨とトレードオフは？"
+  priority: "low"
+  source: "semantic_stress_test"
+  fix_known: false
+  status: pending
