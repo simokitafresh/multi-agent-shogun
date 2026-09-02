@@ -682,7 +682,8 @@ if followup_candidates:
     followup_writer = Path(os.environ.get(
         "SKILL_REF_FOLLOWUP_WRITER", repo_root / "scripts" / "insight_write.sh"
     ))
-    if followup_writer.is_file() and os.access(followup_writer, os.X_OK):
+    # repo scripts are 644 and always invoked via `bash <path>`; do not require X_OK
+    if followup_writer.is_file():
         pairs = [f"{skill} <- {resolved}" for skill, _ref, resolved, *_ in followup_candidates]
         digest = hashlib.sha256("\n".join(sorted(pairs)).encode("utf-8")).hexdigest()[:16]
         message = (
@@ -691,7 +692,7 @@ if followup_candidates:
             + "; ".join(pairs)
         )
         result = subprocess.run(
-            [str(followup_writer), message, "medium", f"skill_script_refs:{digest}"],
+            ["bash", str(followup_writer), message, "medium", f"skill_script_refs:{digest}"],
             cwd=repo_root,
             text=True,
             capture_output=True,
