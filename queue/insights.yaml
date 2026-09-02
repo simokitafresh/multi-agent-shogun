@@ -13013,7 +13013,7 @@ insights:
   priority: "medium"
   source: "skill_script_refs:9abfd94ce2d8bec9"
   fix_known: false
-  status: pending
+  status: resolved
 - id: INS-20260902-130735902-ef5a
   ts: "2026-09-02T13:07:35+09:00"
   insight: "lord_conversation教訓候補: target=shogun trigger=inbound_lord detail=裁定待ちの3点について詳しく教えてくれ"
