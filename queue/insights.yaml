@@ -13076,10 +13076,7 @@ insights:
   priority: "low"
   source: "semantic_map_generate:new_file"
   fix_known: false
-  status: resolved
-  resolved_reason: "docs/semantic-index/index.mdへの直接編集はreflux_commit_contract.scope(queue/insights.yamlのみ)外のためdecision_candidateへ委譲。既存概念cmd_quality_logging(logs/cmd_publish_timing.log, scripts/cmd_publish.shを含む、cmd_karo_hotfix_t101_publish_outer_instrument_20260828で確認済み)と内容一致を確認した。同種insight(source:semantic_map_generate:new_file)の直近解決8件・0/8がindex.md直接編集、全件decision_candidate委譲パターンに合わせた"
-  action_artifact: "decision_candidate=scripts/cdp/cmd_4401_publish_timing.mdをdocs/semantic-index/index.mdのcmd_quality_logging概念へfile追加しsemantic_map_generate.shで再生成する"
-  resolved_at: "2026-09-02T17:18:34+09:00"
+  status: pending
 - id: INS-20260902-131436830-e142
   ts: "2026-09-02T13:14:36+09:00"
   insight: "semantic_index_update新概念候補: discussion:DM signal側のリスクは？リスクが小さく普及可能であれば一気にやるべきではないか？ は 既存aliasesに一致なし。概念定義とaliases追加を検討せよ"
@@ -13533,15 +13530,5 @@ insights:
   insight: "[[忍者が放置されていないか？]] semantic_stress_test candidate_aliases: NO_MATCH source=lord query=忍者が放置されていないか？"
   priority: "low"
   source: "semantic_stress_test"
-  fix_known: false
-  status: resolved
-  resolved_reason: "semantic index candidate was absorbed into a registered concept"
-  action_artifact: "semantic_index=/home/simokitafresh/multi-agent-shogun/docs/semantic-index/index.md"
-  resolved_at: "2026-09-02T17:17:10+09:00"
-- id: INS-20260902-171906733-17cd
-  ts: "2026-09-02T17:19:06+09:00"
-  insight: "semantic_index_update新概念候補: discussion:single publisher asis tobe 5w1h mdも随時更新しないと後で混乱する は 既存aliasesに一致なし。概念定義とaliases追加を検討せよ"
-  priority: "low"
-  source: "semantic_index_update"
   fix_known: false
   status: pending
