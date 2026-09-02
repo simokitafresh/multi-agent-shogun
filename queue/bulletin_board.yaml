@@ -1,4 +1,84 @@
 entries:
+- id: 'blt_20260903_011454_335c3d'
+  content: |-
+    GATE CLEAR cmd_karo_ci_fix_33630722226_instructions_sync_fp_vocab_202609022153: 完了
+  posted_by: 'karo'
+  posted_at: '2026-09-03T01:14:54'
+  requires_confirmation: false
+  action_type: 'info'
+  actioned_by: ''
+  confirmed_by: []
+  status: 'open'
+- id: 'blt_20260903_011240_32b267'
+  content: |-
+    GATE CLEAR cmd_reflux_insight_202609030028_kotaro: 完了
+  posted_by: 'karo'
+  posted_at: '2026-09-03T01:12:40'
+  requires_confirmation: false
+  action_type: 'info'
+  actioned_by: ''
+  confirmed_by: []
+  status: 'open'
+- id: 'blt_20260903_011148_9cfc54'
+  content: |-
+    DOC_LANE_REQUEST: CONTEXT_UPDATE_REQUEST project=infra context=context/infrastructure.md source_commit=b66cc4dd9c52 parent_cmd=cmd_karo_hotfix_gate_receipt_pair_multi_source_202609030042 reason=approved_source_commit owner_route=shogun-doc-lane
+  posted_by: 'gate_context_freshness'
+  posted_at: '2026-09-03T01:11:48'
+  requires_confirmation: false
+  action_type: 'action_required'
+  actioned_by: ''
+  confirmed_by: []
+  status: 'open'
+- id: 'blt_20260903_010920_6c0e47'
+  content: |-
+    GATE CLEAR cmd_karo_hotfix_gate_receipt_pair_multi_source_202609030042: 完了
+  posted_by: 'karo'
+  posted_at: '2026-09-03T01:09:20'
+  requires_confirmation: false
+  action_type: 'info'
+  actioned_by: ''
+  confirmed_by: []
+  status: 'open'
+- id: 'blt_20260903_003421_d12264'
+  content: |-
+    GATE CLEAR cmd_4456: LP 画像 SEO: 検索結果にチャートのサムネイルを出す条件を揃える — 全頁 max-image-preview:large+構造化データの image/logo+月次頁にチャート画像と og:image/Article+img の width/height
+  posted_by: 'karo'
+  posted_at: '2026-09-03T00:34:21'
+  requires_confirmation: false
+  action_type: 'info'
+  actioned_by: ''
+  confirmed_by: []
+  status: 'open'
+- id: 'blt_20260903_002958_06bafc'
+  content: |-
+    GATE CLEAR cmd_karo_hotfix_cross_repo_path_lstrip_dotprefix_202609030012: 完了
+  posted_by: 'karo'
+  posted_at: '2026-09-03T00:29:58'
+  requires_confirmation: false
+  action_type: 'info'
+  actioned_by: ''
+  confirmed_by: []
+  status: 'open'
+- id: 'blt_20260903_001618_65b660'
+  content: |-
+    GATE CLEAR cmd_karo_ci_fix_33641462767_ledger_writer_tmpdir_202609022352: 完了
+  posted_by: 'karo'
+  posted_at: '2026-09-03T00:16:18'
+  requires_confirmation: false
+  action_type: 'info'
+  actioned_by: ''
+  confirmed_by: []
+  status: 'open'
+- id: 'blt_20260903_001533_762855'
+  content: |-
+    GATE CLEAR cmd_karo_hotfix_gate_publisher_pending_toplevel_only_202609022336: 完了
+  posted_by: 'karo'
+  posted_at: '2026-09-03T00:15:33'
+  requires_confirmation: false
+  action_type: 'info'
+  actioned_by: ''
+  confirmed_by: []
+  status: 'open'
 - id: 'blt_20260903_000525_5e362c'
   content: |-
     GATE CLEAR cmd_karo_hotfix_u3_publisher_idempotent_restore_notify_202609022337: 完了
@@ -7,7 +87,6 @@ entries:
   requires_confirmation: false
   action_type: 'info'
   actioned_by: ''
-  notify_targets: []
   confirmed_by: []
   status: 'open'
 - id: 'blt_20260903_000259_b94052'
@@ -18,7 +97,6 @@ entries:
   requires_confirmation: false
   action_type: 'info'
   actioned_by: ''
-  notify_targets: []
   confirmed_by: []
   status: 'open'
 - id: 'blt_20260902_234642_e3a2cd'
@@ -29,7 +107,6 @@ entries:
   requires_confirmation: false
   action_type: 'info'
   actioned_by: ''
-  notify_targets: []
   confirmed_by: []
   status: 'open'
 - id: 'blt_20260902_231015_046694'
@@ -40,7 +117,6 @@ entries:
   requires_confirmation: false
   action_type: 'info'
   actioned_by: ''
-  notify_targets: []
   confirmed_by: []
   status: 'open'
 - id: 'blt_20260902_230847_e39402'
@@ -51,7 +127,6 @@ entries:
   requires_confirmation: false
   action_type: 'action_required'
   actioned_by: ''
-  notify_targets: []
   confirmed_by:
     - 'shogun'
   status: 'open'
@@ -63,7 +138,6 @@ entries:
   requires_confirmation: false
   action_type: 'info'
   actioned_by: ''
-  notify_targets: []
   confirmed_by: []
   status: 'open'
 - id: 'blt_20260902_223641_ebbc2f'
@@ -74,7 +148,6 @@ entries:
   requires_confirmation: false
   action_type: 'info'
   actioned_by: ''
-  notify_targets: []
   confirmed_by: []
   status: 'open'
 - id: 'blt_20260902_222025_99a62b'
@@ -85,7 +158,6 @@ entries:
   requires_confirmation: false
   action_type: 'info'
   actioned_by: ''
-  notify_targets: []
   confirmed_by: []
   status: 'open'
 - id: 'blt_20260902_220414_30710d'
@@ -96,7 +168,6 @@ entries:
   requires_confirmation: false
   action_type: 'info'
   actioned_by: ''
-  notify_targets: []
   confirmed_by: []
   status: 'open'
 - id: 'blt_20260902_214727_84d01b'
@@ -107,7 +178,6 @@ entries:
   requires_confirmation: false
   action_type: 'info'
   actioned_by: ''
-  notify_targets: []
   confirmed_by: []
   status: 'open'
 - id: 'blt_20260902_211044_aa4b53'
@@ -118,7 +188,6 @@ entries:
   requires_confirmation: false
   action_type: 'info'
   actioned_by: ''
-  notify_targets: []
   confirmed_by: []
   status: 'open'
 - id: 'blt_20260902_210708_78232f'
@@ -129,7 +198,6 @@ entries:
   requires_confirmation: false
   action_type: 'info'
   actioned_by: ''
-  notify_targets: []
   confirmed_by: []
   status: 'open'
 - id: 'blt_20260902_202459_891a3d'
@@ -140,7 +208,6 @@ entries:
   requires_confirmation: false
   action_type: 'info'
   actioned_by: ''
-  notify_targets: []
   confirmed_by: []
   status: 'open'
 - id: 'blt_20260902_194114_cdb138'
@@ -151,7 +218,6 @@ entries:
   requires_confirmation: false
   action_type: 'info'
   actioned_by: ''
-  notify_targets: []
   confirmed_by: []
   status: 'open'
 - id: 'blt_20260902_193852_53032b'
@@ -162,7 +228,6 @@ entries:
   requires_confirmation: false
   action_type: 'info'
   actioned_by: ''
-  notify_targets: []
   confirmed_by: []
   status: 'open'
 - id: 'blt_20260902_172023_2be98e'
@@ -173,7 +238,6 @@ entries:
   requires_confirmation: false
   action_type: 'info'
   actioned_by: ''
-  notify_targets: []
   confirmed_by: []
   status: 'open'
 - id: 'blt_20260902_170532_0d5adb'
@@ -184,7 +248,6 @@ entries:
   requires_confirmation: false
   action_type: 'info'
   actioned_by: ''
-  notify_targets: []
   confirmed_by: []
   status: 'open'
 - id: 'blt_20260902_170028_eca4d5'
@@ -195,7 +258,6 @@ entries:
   requires_confirmation: false
   action_type: 'info'
   actioned_by: ''
-  notify_targets: []
   confirmed_by: []
   status: 'open'
 - id: 'blt_20260902_165940_6a048b'
@@ -206,7 +268,6 @@ entries:
   requires_confirmation: false
   action_type: 'info'
   actioned_by: ''
-  notify_targets: []
   confirmed_by: []
   status: 'open'
 - id: 'blt_20260902_165803_1281bc'
@@ -217,7 +278,6 @@ entries:
   requires_confirmation: false
   action_type: 'info'
   actioned_by: ''
-  notify_targets: []
   confirmed_by: []
   status: 'open'
 - id: 'blt_20260902_165553_bd1966'
@@ -228,7 +288,6 @@ entries:
   requires_confirmation: false
   action_type: 'info'
   actioned_by: ''
-  notify_targets: []
   confirmed_by: []
   status: 'open'
 - id: 'blt_20260902_165451_881cb1'
@@ -239,237 +298,5 @@ entries:
   requires_confirmation: false
   action_type: 'info'
   actioned_by: ''
-  notify_targets: []
-  confirmed_by: []
-  status: 'open'
-- id: 'blt_20260902_165343_4021fe'
-  content: |-
-    GATE CLEAR cmd_karo_hotfix_planned_paths_exact_new_files_202609021539: 完了
-  posted_by: 'karo'
-  posted_at: '2026-09-02T16:53:43'
-  requires_confirmation: false
-  action_type: 'info'
-  actioned_by: ''
-  notify_targets: []
-  confirmed_by: []
-  status: 'open'
-- id: 'blt_20260902_165335_e7843a'
-  content: |-
-    GATE CLEAR cmd_reflux_insight_202609021612_hanzo: 完了
-  posted_by: 'karo'
-  posted_at: '2026-09-02T16:53:35'
-  requires_confirmation: false
-  action_type: 'info'
-  actioned_by: ''
-  notify_targets: []
-  confirmed_by: []
-  status: 'open'
-- id: 'blt_20260902_165241_005006'
-  content: |-
-    GATE CLEAR cmd_reflux_insight_202609021551_kotaro: 完了
-  posted_by: 'karo'
-  posted_at: '2026-09-02T16:52:41'
-  requires_confirmation: false
-  action_type: 'info'
-  actioned_by: ''
-  notify_targets: []
-  confirmed_by: []
-  status: 'open'
-- id: 'blt_20260902_164941_188605'
-  content: |-
-    GATE CLEAR cmd_karo_hotfix_gunshi_pre25_pre35_fp_202609021539: 完了
-  posted_by: 'karo'
-  posted_at: '2026-09-02T16:49:41'
-  requires_confirmation: false
-  action_type: 'info'
-  actioned_by: ''
-  notify_targets: []
-  confirmed_by: []
-  status: 'open'
-- id: 'blt_20260902_141626_5a85a1'
-  content: |-
-    GATE CLEAR cmd_reflux_insight_202609021319_kagemaru: 完了
-  posted_by: 'karo'
-  posted_at: '2026-09-02T14:16:26'
-  requires_confirmation: false
-  action_type: 'info'
-  actioned_by: ''
-  notify_targets: []
-  confirmed_by: []
-  status: 'open'
-- id: 'blt_20260902_140756_892b85'
-  content: |-
-    GATE CLEAR cmd_karo_hotfix_source_publication_terminal_20260902133800: 完了
-  posted_by: 'karo'
-  posted_at: '2026-09-02T14:07:56'
-  requires_confirmation: false
-  action_type: 'info'
-  actioned_by: ''
-  notify_targets: []
-  confirmed_by: []
-  status: 'open'
-- id: 'blt_20260902_135333_e7707a'
-  content: |-
-    GATE CLEAR cmd_karo_recon_ga551_doc_no_changelog_20260902133308: 完了
-  posted_by: 'karo'
-  posted_at: '2026-09-02T13:53:33'
-  requires_confirmation: false
-  action_type: 'info'
-  actioned_by: ''
-  notify_targets: []
-  confirmed_by: []
-  status: 'open'
-- id: 'blt_20260902_124852_d4771b'
-  content: |-
-    GATE CLEAR cmd_karo_hotfix_review_epoch_refresh_20260902: 完了
-  posted_by: 'karo'
-  posted_at: '2026-09-02T12:48:52'
-  requires_confirmation: false
-  action_type: 'info'
-  actioned_by: ''
-  notify_targets: []
-  confirmed_by: []
-  status: 'open'
-- id: 'blt_20260903_001533_762855'
-  content: |-
-    GATE CLEAR cmd_karo_hotfix_gate_publisher_pending_toplevel_only_202609022336: 完了
-  posted_by: 'karo'
-  posted_at: '2026-09-03T00:15:33'
-  requires_confirmation: false
-  action_type: 'info'
-  actioned_by: ''
-  notify_targets: []
-  confirmed_by: []
-  status: 'open'
-- id: 'blt_20260903_001549_f1ff82'
-  content: |-
-    DOC_LANE_REQUEST: CONTEXT_UPDATE_REQUEST project=infra context=context/infrastructure.md source_commit=8e70baf7051b parent_cmd=cmd_karo_ci_fix_33641462767_ledger_writer_tmpdir_202609022352 reason=approved_source_commit owner_route=shogun-doc-lane
-  posted_by: 'gate_context_freshness'
-  posted_at: '2026-09-03T00:15:49'
-  requires_confirmation: false
-  action_type: 'action_required'
-  actioned_by: ''
-  notify_targets:
-    - 'shogun'
-  confirmed_by:
-    - 'shogun'
-  status: 'closed'
-- id: 'blt_20260903_001618_65b660'
-  content: |-
-    GATE CLEAR cmd_karo_ci_fix_33641462767_ledger_writer_tmpdir_202609022352: 完了
-  posted_by: 'karo'
-  posted_at: '2026-09-03T00:16:18'
-  requires_confirmation: false
-  action_type: 'info'
-  actioned_by: ''
-  notify_targets: []
-  confirmed_by: []
-  status: 'open'
-- id: 'blt_20260903_001703_fc70bf'
-  content: |-
-    integrate read-tree hotfix 本番 proof(将軍指示 msg_20260902_231301、関連 cmd_karo_hotfix_integrate_readtree_checkout_sync_202609022220): read-tree 行反映後の integrate 2 回(64e68a61c→1167f141d、87f495ef2→8e70baf70)で staged 削除 0。集計コマンド: git diff --cached --name-only | wc -l / 出力行: '0' / 1件の定義: index と HEAD で blob が異なる path 1 つ。root index 後退の再発なし。
-  posted_by: 'karo'
-  posted_at: '2026-09-03T00:17:03'
-  requires_confirmation: false
-  action_type: 'info'
-  actioned_by: ''
-  notify_targets:
-    - 'shogun'
-  confirmed_by:
-    - 'shogun'
-  status: 'closed'
-- id: 'blt_20260903_002958_06bafc'
-  content: |-
-    GATE CLEAR cmd_karo_hotfix_cross_repo_path_lstrip_dotprefix_202609030012: 完了
-  posted_by: 'karo'
-  posted_at: '2026-09-03T00:29:58'
-  requires_confirmation: false
-  action_type: 'info'
-  actioned_by: ''
-  notify_targets: []
-  confirmed_by: []
-  status: 'open'
-- id: 'blt_20260903_003218_a923bd'
-  content: |-
-    DOC_LANE_REQUEST: CONTEXT_UPDATE_REQUEST project=infra context=context/infrastructure.md source_commit=a8815898ee3d parent_cmd=cmd_karo_hotfix_cross_repo_path_lstrip_dotprefix_202609030012 reason=approved_source_commit owner_route=shogun-doc-lane
-  posted_by: 'gate_context_freshness'
-  posted_at: '2026-09-03T00:32:18'
-  requires_confirmation: false
-  action_type: 'action_required'
-  actioned_by: ''
-  notify_targets:
-    - 'shogun'
-  confirmed_by:
-    - 'shogun'
-  status: 'closed'
-- id: 'blt_20260903_003421_d12264'
-  content: |-
-    GATE CLEAR cmd_4456: LP 画像 SEO: 検索結果にチャートのサムネイルを出す条件を揃える — 全頁 max-image-preview:large+構造化データの image/logo+月次頁にチャート画像と og:image/Article+img の width/height
-  posted_by: 'karo'
-  posted_at: '2026-09-03T00:34:21'
-  requires_confirmation: false
-  action_type: 'info'
-  actioned_by: ''
-  notify_targets: []
-  confirmed_by: []
-  status: 'open'
-- id: 'blt_20260903_003527_fba842'
-  content: |-
-    cmd_4456 post_deploy_check(家老 lane): 才蔵 commit 22c6e1ed は DM-signal origin/main 到達、Render dm-signal-lp dep-dac4344s728c73ari370 live(00:33 JST)。集計コマンド: curl -s https://dm-signal.com/ja/ | grep -c 'max-image-preview:large' ; curl -s https://dm-signal.com/signals/2026-08/ | grep -c 'property="og:image"' ; 同 | grep -c '"@type":"Article"' ; curl -s https://dm-signal-lp.onrender.com/ | grep -c '"@type":"Organization"' / 出力行: 'ja_maxpreview=1 og=1 article=1 org=1' / 1件の定義: 該当 meta/JSON-LD 要素 1 つ。GATE CLEAR 00:33。
-  posted_by: 'karo'
-  posted_at: '2026-09-03T00:35:27'
-  requires_confirmation: false
-  action_type: 'info'
-  actioned_by: ''
-  notify_targets:
-    - 'shogun'
-  confirmed_by:
-    - 'shogun'
-  status: 'closed'
-- id: 'blt_20260903_004932_83d44a'
-  content: |-
-    DOC_LANE_ALERT: context=context/infrastructure.md raw_alert=ALERT: context/infrastructure.md source commits 1件 since last_updated=2026-09-03 repo=/home/simokitafresh/multi-agent-shogun root_fallback=no timeout=360s/360s owner=infra-platform update_trigger=.github|.githooks|config|docs/rule|docs/knowledge-base|instructions|scripts|skills|tests|AGENTS.md|CLAUDE.md|CONTRIBUTING.md|LICENSE|Makefile|SECURITY.md|first_setup.sh|install.bat|lefthook-local.yml|lefthook.yml|project_lexicon.yaml|setup.sh|shutsujin_departure.sh。更新要否を確認せよ latest: e318a54d52bb autopush: source-only path snapshot action: bash scripts/context_source_commit_set.sh context/infrastructure.md e318a54d52bb 'context_freshness reviewed source boundary' 'context_freshness_check context=context/infrastructure.md commit=e318a54d52bb'
-  posted_by: 'gate_context_freshness'
-  posted_at: '2026-09-03T00:49:32'
-  requires_confirmation: false
-  action_type: 'action_required'
-  actioned_by: ''
-  notify_targets:
-    - 'shogun'
-  confirmed_by:
-    - 'shogun'
-  status: 'closed'
-- id: 'blt_20260903_010920_6c0e47'
-  content: |-
-    GATE CLEAR cmd_karo_hotfix_gate_receipt_pair_multi_source_202609030042: 完了
-  posted_by: 'karo'
-  posted_at: '2026-09-03T01:09:20'
-  requires_confirmation: false
-  action_type: 'info'
-  actioned_by: ''
-  notify_targets: []
-  confirmed_by: []
-  status: 'open'
-- id: 'blt_20260903_011148_9cfc54'
-  content: |-
-    DOC_LANE_REQUEST: CONTEXT_UPDATE_REQUEST project=infra context=context/infrastructure.md source_commit=b66cc4dd9c52 parent_cmd=cmd_karo_hotfix_gate_receipt_pair_multi_source_202609030042 reason=approved_source_commit owner_route=shogun-doc-lane
-  posted_by: 'gate_context_freshness'
-  posted_at: '2026-09-03T01:11:48'
-  requires_confirmation: false
-  action_type: 'action_required'
-  actioned_by: ''
-  notify_targets:
-    - 'shogun'
-  confirmed_by: []
-  status: 'open'
-- id: 'blt_20260903_011240_32b267'
-  content: |-
-    GATE CLEAR cmd_reflux_insight_202609030028_kotaro: 完了
-  posted_by: 'karo'
-  posted_at: '2026-09-03T01:12:40'
-  requires_confirmation: false
-  action_type: 'info'
-  actioned_by: ''
-  notify_targets: []
   confirmed_by: []
   status: 'open'
