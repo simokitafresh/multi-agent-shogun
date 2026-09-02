@@ -257,7 +257,7 @@ canary 判定: **(v1.8 殿裁定 D9)** infra と dm-signal の両 repo を U1 �
 
 - 根拠: 殿 2026-09-02 17:18『single_publisher_asis_tobe_5w1h_20260902.md も随時更新しないと後で混乱する』。設計本文(§0-§13)と実装の現在値を同じ file に置き、読者が別 file を探さずに済むようにする
 
-最終更新: 2026-09-02 17:52(将軍 loop 17:48 の一次確認)
+最終更新: 2026-09-02 18:32(将軍 loop 18:25 の一次確認)
 
 ### 14.1 unit × cmd 対応表(実装 cmd=片 CLI、検証 cmd=他 CLI・別番号。§9.1 共通 AC)
 | U | 内容 | 実装 cmd | 実装忍者(CLI) | 実装 commit | 実装 GATE | 検証 cmd | 検証忍者(CLI) | 検証 GATE |
@@ -285,7 +285,8 @@ canary 判定: **(v1.8 殿裁定 D9)** infra と dm-signal の両 repo を U1 �
 | 16:46-17:05 | H-b 再 GATE WAIT ancestry | 報告 exact commit 13af4660b が origin 未統合 168 分(家老の 16:46 統合は 4445/4446/4447 の 3 件のみ) | 将軍下知 msg_170148→家老 通常 merge(changed 2/overlap 0)→push | CLEAR 17:05 |
 | 16:56-継続 | cmd_4445/4447/4446 再 GATE が sg7_bundle_missing BLOCK→17:43 軍師 SG7 bundle 生成も verdict FAIL | report_verdict は PASS。precheck SG-PRE25 が `ninja_scope_commit.sh`/`run_tests.sh`(command 欄の exec prefix)を files_modified 不在と誤判定(将軍が cache 無効で再実行し ERRORS=2 再現)。3acaae149 は本 report 形式を覆わない。17:16 の『軍師 idle flag 停止』は将軍の誤診(軍師は起きて保留中)→17:35 訂正 | 疾風 hotfix(extract_target_path exec order、precheck と cmd_complete_gate の同期)→統合→precheck 再実行(cache key は script hash を含むため自動無効)→bundle 再生成→GATE | 疾風 report pending 17:4x |
 | 16:31 | push lane rc=1(LIFECYCLE-BACKGROUND-FAIL) | 上記 ancestry 偽陽性と同根 | 同上で根治 | 解消 |
-| 継続 | CI RED(shard-1 receipt missing、run 33499882240) | bats shard receipt 欠落 | 家老 ci_fix task 保持 | 未解消 |
+| 17:52-18:29 | **共有 root の index が旧 tree へ後退**(単一 publisher file 7 本 staged 削除+worktree 消失、exec_prefix 判定除去、18 path/1974 行) | 痕跡=17:52:40 才蔵 auto-commit-before-clear の scope-out staged preserve。疾風 hotfix commit の parity BLOCK の真因。§13 H3(台帳ノイズ)とは別型=**多重 worktree の index 混入**、U1b/U3 が root を触らない設計(§9.0『root は読み取りのみ』)の必要性を裏付ける | 将軍 `git restore --source=HEAD --staged --worktree -- <18 paths>`→staged 0。家老へ preserve 経路 hotfix 1 名 | 復元済、根治未 |
+| 17:40-継続 | push lane WAIT ci=RED、unpushed 34 | run 33611379072 shard-1 `shard failed rc=1`、ci_fix_active=0(家老 ci_fix task は旧 run) | 家老へ ci_fix 配備(殿裁定 07-16) | 未配備 |
 
 ### 14.3 §11 速度検証の現在値
 - before: snapshot 固定済み(merge 141/push 失敗 100/INTEGRATE 382/pre-push n=45 median 366 p90 1300/bats 270)。after は U8 完了後に同コマンドで計測(未着手)。
