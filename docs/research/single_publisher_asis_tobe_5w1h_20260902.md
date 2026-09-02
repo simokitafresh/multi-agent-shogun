@@ -1,5 +1,5 @@
 <!-- gist-master: 77538fe909ed4d3b83b61b4baf99cacf single_publisher_asis_tobe_5w1h_20260902.md -->
-# origin/main 単一 publisher 化 — AsIs / ToBe / 5W1H 設計書 v3.12(§14.1 に状況盤 14.1.0 を追加=1 画面で進捗、殿指示 02:32。v3.11=§14 02:15、殿指示 02:13: U3 active 初 publish 05fe87b68、U1/U2 再検証 CLEAR、第 3 波 U7 走行・U8 AC1 完了。殿裁定 01:30『先に進んでから戻れ』でcanary 待ち撤回。v3.10=§14.1 00:50。v3.9=§14 00:05: 実装 CLEAR 6 unit、U5 着地で ACCEPT→enqueue が生き publisher 未起動で全 CLEAR 閉塞→家老 dry-run で U3 欠陥 3 点検出→修正 lane、active 化は保留。v3.8=22:25。v3.7=§14 追加、殿指示 17:18。v3.6=§9.1 共通 AC の 2 巡目を『別 cmd の検証 task』へ。同 cmd 再配備は deploy_task completed-peer guard の正規 BLOCK 対象、15:35)
+# origin/main 単一 publisher 化 — AsIs / ToBe / 5W1H 設計書 v3.13(09-03 04:55: U7 完了・PUBLISHER_SINGLE ON 04:37・U8 AC2=cmd_4464 起票。v3.12=状況盤 02:32。v3.11=§14 02:15、殿指示 02:13: U3 active 初 publish 05fe87b68、U1/U2 再検証 CLEAR、第 3 波 U7 走行・U8 AC1 完了。殿裁定 01:30『先に進んでから戻れ』でcanary 待ち撤回。v3.10=§14.1 00:50。v3.9=§14 00:05: 実装 CLEAR 6 unit、U5 着地で ACCEPT→enqueue が生き publisher 未起動で全 CLEAR 閉塞→家老 dry-run で U3 欠陥 3 点検出→修正 lane、active 化は保留。v3.8=22:25。v3.7=§14 追加、殿指示 17:18。v3.6=§9.1 共通 AC の 2 巡目を『別 cmd の検証 task』へ。同 cmd 再配備は deploy_task completed-peer guard の正規 BLOCK 対象、15:35)
 
 - 作成: 2026-09-02 02:30 将軍(殿指示 02:16『忍者はコミットしない。コミットは家老/将軍のみ』→02:18『コミットのやり方・スキル・構造の検証』→02:24『AsIs/ToBe 5W1H 設計書。不要になる複雑さを先に検証』)
 - 協議: 家老回答 blt_20260902_021944(single publisher + local commit artifact)。協議記録=`queue/notes/shogun_karo_single_committer_hypothesis_20260902_0220.md` §1-6
@@ -273,10 +273,10 @@ canary 判定: **(v1.8 殿裁定 D9)** infra と dm-signal の両 repo を U1 �
 | U6 | ledger writer | ✅ 4454 | ✅ ci_fix | — | 完了 |
 | U3 | publisher daemon | ✅ 4451 | ✅ 欠陥 3 点 | ✅ 初 publish 突合 | 🟢 **active 01:30**(pid 2103173) |
 | U3b | deploy check 三段 receipt | ⛔ | — | — | 撤回(殿 01:30) |
-| U7 | PUBLISHER_SINGLE 下流化 | 🔵 4460 疾風 | 🔵 enqueue repo guard(影丸) | — | report 生成済・gate 待ち → flag ON |
-| U8 | cleanup M1-M11 | ✅ AC1 台帳 4461 | — | — | ⏳ AC2(batch 削除)= flag ON 後に別 cmd |
+| U7 | PUBLISHER_SINGLE 下流化 | ✅ 4460(67ced64ee) | ✅ repo guard d61ef6907 / ✅ flag file helper d42b62a90 | — | **ON 04:37**(queue/flags/publisher_single、可逆=rm) |
+| U8 | cleanup M1-M11 | ✅ AC1 台帳 4461(void 済、成果 a7b41bc64) | — | — | 🔵 **AC2=cmd_4464**(batch 4 回、census=同 batch 削除対象を除外。04:55 起票) |
 
-**進捗 8/10 完了、1 走行(U7)、1 待ち(U8 AC2)。U3b 撤回。** 残り工程: U7 CLEAR → repo guard landing → 家老 flag ON → U8 AC2 起票(4 batch)→ §11 after 計測。
+**進捗 9/10 完了、1 走行(U8 AC2=cmd_4464)。U3b 撤回。** 残り工程: cmd_4464 batch 1→4(各 1 commit)→ §11 after 計測(台帳集計行)→ 完了。旧 push 経路は 04:37 以降 no-op、origin 到達は publisher 由来のみ。
 
 #### 14.1.1 詳細(cmd・commit・GATE 時刻)
 
@@ -289,8 +289,8 @@ canary 判定: **(v1.8 殿裁定 D9)** infra と dm-signal の両 repo を U1 �
 | U5 | cmd_4453 / 小太郎(Claude) | 93162eca0(3 同一+2 は U1 修正で上書き) | **手動 CLEAR 01:23**(証拠 `queue/gates/cmd_4453/manual_clear_evidence_20260903.md`) | gate publisher_pending rglob(小太郎)CLEAR 00:15 / receipt pair b66cc4dd9(疾風)CLEAR 01:1x | 不起票 | archive は receipt 無しで fail-closed→U8 で手動 CLEAR receipt を定義 |
 | U6 | cmd_4454 / 疾風(Codex) | 1a5c2d829 | CLEAR 22:57 | $HOME mktemp CI 3 FAIL→ci_fix 8e70baf70 CLEAR 00:16 | 不起票 | active 後に本番効果 |
 | U3 | cmd_4451 / 半蔵(Codex) | 5422d7907 | CLEAR 22:10 | dry-run 欠陥 3 点→才蔵 f5b195fea CLEAR 00:05 | 実運用突合 | 初 request PASS 01:46(patch 同一・trailer 1・root ff は tracked_dirty=19 で fail-closed) |
-| U7 | cmd_4460 / 疾風(Codex) | 走行(report 生成済 02:2x、gate 未) | — | enqueue repo guard `cmd_karo_hotfix_publisher_enqueue_repo_guard_202609030218` 影丸 走行(INS: dm-signal request が infra publisher へ enqueue、02:14) | 不起票 | 着地→家老 PUBLISHER_SINGLE=1 ON |
-| U8 | AC1: cmd_4461 / 才蔵(Codex) 完了 02:00(56/56 PASS、AC2 は正当 FAIL=fail-close) | a7b41bc64(manifest、将軍 doc lane) | — | — | — | AC2 は flag ON 後に別 cmd(batch 4、各 1 commit、canary 待ち無し=殿 01:30) |
+| U7 | cmd_4460 / 疾風(Codex) | 67ced64ee(publisher 発行) | **CLEAR 02:52** | enqueue repo guard 影丸 d61ef6907 CLEAR 03:0x / flag file helper 疾風 d42b62a90 CLEAR 04:37(gate『task 正本 planned scope 不足』BLOCK→task YAML 補填) | 不起票 | **ON 04:37**(家老、helper ENABLED、publisher pid 3399892) |
+| U8 | AC1: cmd_4461 / 才蔵(Codex) 完了 02:00 → cmd_4461 void(将軍裁定 04:40 (b))。**AC2: cmd_4464(04:55 起票)** | a7b41bc64(manifest) | — | census 規則を『同 batch で消える file を除外』に修正(4461 の M2-M8 blocked は旧 test との相互参照=見かけ) | — | — | batch 1(M3/M5/M10)→2(M2/M8)→3(M1/M4/M7)→4(M6/M9/M11)、各 1 commit、§11 after 計測 |
 
 集計(02:40): 実装 GATE CLEAR 7/7(U5 手動含む)。検証 CLEAR 3(U4/U2=4457/U1=4458)、不起票 4(殿 01:31『不要な検証に時間をかけるな』)。第 3 波: U7 走行、U8 AC1 完了、U3b 撤回。§14.4 例外 9 本(実装 file 欠陥 3、全 CLEAR を塞ぐ 1 行 5、成果物を壊す壁 1=enqueue repo guard)。
 
@@ -336,6 +336,7 @@ canary 判定: **(v1.8 殿裁定 D9)** infra と dm-signal の両 repo を U1 �
 - 例外適用の記録(22:18): push_lane integrate(§10 M2)は捨てる file だが、その欠陥が第 2 波の成果物(U3/U1b)を root から staged 削除し続ける(5 回)。『捨てる壁』と『成果物を壊す壁』は別物で、後者は 1 行で塞ぐ。判定基準=その壁を放置すると実装 file(§9 の成果物)が失われるか。
 
 ## §5 レビュー履歴
+- v3.13(09-03 04:55) U7 完了・flag ON 04:37・U8 AC2 cmd_4464。家老 CTX 100% 停止→将軍 clear_command で復帰(04:26)
 - v3.12(09-03 02:40)→ §14.1 を状況盤(14.1.0、10 行・記号)+詳細(14.1.1)の 2 層に分離。殿指示 02:32『スクロールしないでも進捗が見えるように』
 - v3.11(09-03 02:15)→ §14 を現在値へ(U3 active 初 publish、再検証 2 本 CLEAR、第 3 波、U3b/検証 4 本の不起票=殿 01:30/01:31)。殿指示 02:13
 - v3.10(09-03 00:50)→ §14.1 unit×cmd 対応表を列構成ごと更新(修正 lane 列・現在の状態列を追加、集計行)。殿指示 00:45
