@@ -7821,8 +7821,11 @@ if [[ ${#WARN_REASONS[@]} -gt 0 ]]; then
     # 殿裁定(2026-07-09 22:50): 過去の別cmdのWARNが新cmdをBLOCKするのはインフラバグ。
     # 同一cmd_id内の繰り返しのみ累計昇格対象とする。
     for _warn_r in "${WARN_REASONS[@]}"; do
+        # ac_contains_push は情報通知(deploy_task.sh の inject_push_allowed が自動処理、Check 22)。
+        # 累計昇格の対象にすると publisher 系 cmd(push が本質)が同 cmd の再 save で BLOCK に転じる
+        # (2026-09-02 21:2x cmd_4451 実測: delegate の再 gate ごとに WARN 行が積まれ 5 回で BLOCK)。
         case "$_warn_r" in
-            *"check=cmd_text_deferral_language"*|*"check=quality_gate_q8_scope_expression"*|*"check=check_ac_param_sufficiency"*|*"check=check_causal_verification_requirement"*)
+            *"check=check_ac_contains_push"*|*"check=cmd_text_deferral_language"*|*"check=quality_gate_q8_scope_expression"*|*"check=check_ac_param_sufficiency"*|*"check=check_causal_verification_requirement"*)
                 continue
                 ;;
         esac
