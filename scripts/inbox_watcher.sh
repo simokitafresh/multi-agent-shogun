@@ -751,6 +751,9 @@ maybe_force_idle_flag() {
     # Reconcile a missing flag from the live pane state.  For stale
     # bash_running, this is deliberately allowed even if the subprocess marker
     # remains: the prompt and timeout establish that delivery is safe.
+    if [ "$agent_state" = "bash_running" ]; then
+        tmux set-option -p -t "$PANE_TARGET" @agent_state idle 2>/dev/null || return 1
+    fi
     if set_idle_flag; then
         echo "[$(date)] [IDLE-RECONCILED] restored idle flag for $AGENT_ID from @agent_state=$agent_state" >&2
         return 0
