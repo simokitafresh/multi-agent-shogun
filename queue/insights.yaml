@@ -13187,9 +13187,9 @@ insights:
   source: "semantic_map_generate:new_file"
   fix_known: false
   status: resolved
-  resolved_reason: "CONTRIBUTING.mdの内容(Fork/Branch/PRワークフロー・プロジェクト構造・.gitignoreホワイトリスト・コーディング規約・テスト・PRガイドライン・コミュニケーション)をindex.md/semantic-map.mdでgrep確認したところ一致する既存概念は0件(新規概念が必要)。reflux_commit_contract.scope=[queue/insights.yaml]のためindex.md編集は本task scope外(L1701既知パターン)。decision_candidateへ委譲(cmd_reflux_insight_202609022037_kotaro)"
+  resolved_reason: "CONTRIBUTING.mdの内容(Fork/Branch/PRワークフロー・プロジェクト構造・.gitignoreホワイトリスト・コーディング規約・テスト・PRガイドライン・コミュニケーション)をindex.md/semantic-map.mdでgrep確認したところ一致する既存概念は0件(新規概念が必要)。reflux_commit_contract.scope=[queue/insights.yaml]のためindex.md編集は本task scope外(L1701既知パターン)。decision_candidateへ委譲"
   action_artifact: "decision_candidate=CONTRIBUTING.mdをdocs/semantic-index/index.mdへ新規概念(例: contributing-guide)として登録しsemantic_map_generate.shで再生成する。次回index全体更新cmdで一括処理を推奨"
-  resolved_at: "2026-09-02T20:47:47+09:00"
+  resolved_at: "2026-09-02T20:40:58+09:00"
 - id: INS-20260902-141250140-9ae6
   ts: "2026-09-02T14:12:50+09:00"
   insight: "semantic_map_generate新規ファイル候補: `LICENSE` は semantic index未登録。既存概念へのfile追加または新概念定義を検討せよ"
