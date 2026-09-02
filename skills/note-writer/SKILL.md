@@ -8,7 +8,7 @@ description: |
   将軍専用。テーマを受け取りnote.com向けMarkdown記事を生成・保存する。
   バムスタイル（ですます調）でDM-signal機能解説・投資分析手法・アプリ紹介を読者目線で執筆。
   TRIGGER: /note-article、ユーザー向け記事、note記事、機能紹介記事、投資分析記事
-  DO NOT TRIGGER: 開発裏話・将軍書簡形式の記事（→[[sengoku-writer]]）、
+  DO NOT TRIGGER: 開発裏話・将軍書簡形式の記事（→[[sengoku-writer]]）、殿が書いた既存文章の推敲・ブラッシュアップ（→[[prose-polish]]。lint は検出器、判定は詩の原理）、
   週報生成（→weekly-report）、月報生成（→[[monthly-report-writer]]）、X検索調査（→x-research）
 quality_metric: "当該スキル起点cmdのcmd_save.shチェック通過率（q1-q3 BLOCKなし、q4_depth WARNINGなしの割合）"
 allowed-tools:

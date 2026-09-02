@@ -614,6 +614,7 @@ reason: 将軍が4回連続でパラメータ空間を根拠なく縮小(top_n=5
 - reset_layout|agentsウィンドウ一発復元(ペイン配置+変数+レイアウト+watcher)|`bash scripts/reset_layout.sh`(旧/reset-layoutスキルはefc8e016eで削除・shogun-cli-switchへ吸収)
 - /pf-registration|本番PF登録(即パリティ強制)|`skills/pf-registration/SKILL.md`
 - /three-layer-penetrate|三層記憶貫通の標準手順(state=PASS≠貫通の構造防止)|`skills/three-layer-penetrate/SKILL.md`
+- /prose-polish|殿の文章(note 記事・詩的散文)の推敲。natural-japanese は検出器、判定は詩の原理(反復=韻律/連打=打撃音/呼吸=段落と空白/場面転換=横線/見出し無し)。`NOTE_DRAFT_PARAGRAPHS=1` で別下書きへ版ごとアップ|`skills/prose-polish/SKILL.md` → `context/prose-polish.md`
 
 ## Knowledge Maintenance
 
