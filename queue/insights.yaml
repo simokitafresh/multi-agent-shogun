@@ -14083,3 +14083,10 @@ insights:
   source: "semantic_map_generate:new_file"
   fix_known: false
   status: pending
+- id: INS-20260902-211740713-6aae
+  ts: "2026-09-02T21:17:40+09:00"
+  insight: "semantic_index_update新概念候補: discussion:CMDを書く時のつまりも解消しよう は 既存aliasesに一致なし。概念定義とaliases追加を検討せよ"
+  priority: "low"
+  source: "semantic_index_update"
+  fix_known: false
+  status: pending
