@@ -14337,3 +14337,10 @@ insights:
   source: "semantic_index_update"
   fix_known: false
   status: pending
+- id: INS-20260902-234149680-92fc
+  ts: "2026-09-02T23:41:49+09:00"
+  insight: "[[googleで検索したときにチャート画像が横に出るといいよな]] semantic_stress_test candidate_aliases: NO_MATCH source=lord query=googleで検索したときにチャート画像が横に出るといいよな。ALTも登録しているのか？"
+  priority: "low"
+  source: "semantic_stress_test"
+  fix_known: false
+  status: pending
