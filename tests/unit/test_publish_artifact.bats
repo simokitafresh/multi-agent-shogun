@@ -339,3 +339,75 @@ teardown() {
     run grep -n 'publish_artifact.sh" capture .*|| true' "$iw"
     [ "$status" -eq 0 ]
 }
+
+# --- base refresh (2026-09-03 karo hotfix dded45428) ---------------------
+# test_necessity: capture の manifest.base は deploy 時の base ではなく、source が
+# origin/main を merge 済みなら merge-base(origin/main, source_sha) に置換される。
+# 置換されないと publisher C2a が base 以降に origin で動いた path を全て RC し、
+# merge 済み task が永久に publish できない(cmd_4465 で 3 回実証)。未 merge の source は
+# deploy base のままでなければならない(base を進めると差分が欠落する)。
+
+setup_origin_pair() {
+    local origin="$1" work="$2"
+    git init -q --bare "$origin"
+    git init -q "$work"
+    git -C "$work" config user.email test@example.invalid
+    git -C "$work" config user.name fixture
+    printf 'A\n' > "$work/a.txt"; printf 'S\n' > "$work/shared.txt"
+    git -C "$work" add a.txt shared.txt
+    git -C "$work" commit -q -m base
+    git -C "$work" branch -M main
+    git -C "$work" remote add origin "$origin"
+    git -C "$work" push -q origin main
+}
+
+@test "capture replaces manifest.base with merge-base when source merged origin/main" {
+    local origin="$BATS_TEST_TMPDIR/origin.git" work="$BATS_TEST_TMPDIR/work" other="$BATS_TEST_TMPDIR/other"
+    setup_origin_pair "$origin" "$work"
+    local deploy_base; deploy_base="$(git -C "$work" rev-parse HEAD)"
+    # origin advances on shared.txt after deploy
+    git clone -q "$origin" "$other"; git -C "$other" config user.email o@example.invalid; git -C "$other" config user.name other
+    printf 'S2\n' > "$other/shared.txt"; git -C "$other" commit -q -am remote-change; git -C "$other" push -q origin main
+    local remote_tip; remote_tip="$(git -C "$other" rev-parse HEAD)"
+    # ninja edits a.txt, then merges origin/main
+    printf 'A2\n' > "$work/a.txt"; git -C "$work" commit -q -am ninja-change
+    git -C "$work" fetch -q origin; git -C "$work" merge -q --no-edit origin/main
+    local sha; sha="$(git -C "$work" rev-parse HEAD)"
+
+    run bash "$PUBLISH_ARTIFACT" capture task_merged "$work" "$deploy_base" "$sha"
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"base refreshed"* ]]
+    run python3 -c "
+import yaml, sys
+d = yaml.safe_load(open(sys.argv[1])) or {}
+assert d.get('base') == sys.argv[2], d
+assert sorted(d.get('paths') or []) == ['a.txt'], d
+print('OK')
+" "$SHOGUN_STATE_DIR/publish_queue/artifacts/task_merged/manifest.yaml" "$remote_tip"
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"OK"* ]]
+}
+
+@test "capture keeps deploy base when source did not merge origin/main" {
+    local origin="$BATS_TEST_TMPDIR/origin.git" work="$BATS_TEST_TMPDIR/work" other="$BATS_TEST_TMPDIR/other"
+    setup_origin_pair "$origin" "$work"
+    local deploy_base; deploy_base="$(git -C "$work" rev-parse HEAD)"
+    git clone -q "$origin" "$other"; git -C "$other" config user.email o@example.invalid; git -C "$other" config user.name other
+    printf 'S2\n' > "$other/shared.txt"; git -C "$other" commit -q -am remote-change; git -C "$other" push -q origin main
+    printf 'A2\n' > "$work/a.txt"; git -C "$work" commit -q -am ninja-change
+    git -C "$work" fetch -q origin
+    local sha; sha="$(git -C "$work" rev-parse HEAD)"
+
+    run bash "$PUBLISH_ARTIFACT" capture task_unmerged "$work" "$deploy_base" "$sha"
+    [ "$status" -eq 0 ]
+    [[ "$output" != *"base refreshed"* ]]
+    run python3 -c "
+import yaml, sys
+d = yaml.safe_load(open(sys.argv[1])) or {}
+assert d.get('base') == sys.argv[2], d
+assert sorted(d.get('paths') or []) == ['a.txt'], d
+print('OK')
+" "$SHOGUN_STATE_DIR/publish_queue/artifacts/task_unmerged/manifest.yaml" "$deploy_base"
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"OK"* ]]
+}
