@@ -13223,7 +13223,10 @@ insights:
   priority: "low"
   source: "semantic_map_generate:new_file"
   fix_known: false
-  status: pending
+  status: "resolved"
+  resolved_reason: "一次情報でgit ls-files --stage README_ja.mdが追跡済み(100644)かつREADME_ja.md実体は69284 bytes/1123行でプロジェクト概要・編成・運用を記載する実質文書(README.mdの日本語版)と確認した。docs/semantic-index/index.mdへのgrepはdiscussion欄の言及2件のみでfile resource登録は0件、context/semantic-map.mdも完全一致0件、semantic_search.shは概念ランキングのみでfile直接一致なし。定型boilerplateではないため索引追加は妥当だが、今回のscopeはqueue/insights.yamlのみなので実装修正は行わずdecision_candidateへ整理する。直前に解決した英語版sibling insight INS-20260902-141250373-beef(README.md)と同一パターンで対応。"
+  action_artifact: "decision_candidate: README_ja.mdをsemantic indexの既存concept=infrastructure_opsへfile resourceとして追加し(precedent=INS-20260902-141250373-beef, README.md同様)、semantic_map_generate.sh再生成後にcontext/semantic-map.mdへの反映可否を確認する別cmdを起票。README.mdとREADME_ja.mdは同一内容の言語違いのため同一cmdで一括登録を推奨。primary=README_ja.md:1-30(1123行,69284bytes,git ls-files tracked); docs/semantic-index/index.md:README_ja.md file行完全一致0件(discussion言及2件のみ); context/semantic-map.md:README_ja.md完全一致0件; semantic_search.sh README_ja.md=概念ランキングのみ直接file一致なし; scope=queue/insights.yamlのみのため実装修正は別cmd"
+  resolved_at: "2026-09-03T08:16:26.847254"
 - id: INS-20260902-141250592-15a2
   ts: "2026-09-02T14:12:50+09:00"
   insight: "semantic_map_generate新規ファイル候補: `SECURITY.md` は semantic index未登録。既存概念へのfile追加または新概念定義を検討せよ"
