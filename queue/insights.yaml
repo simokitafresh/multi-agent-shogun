@@ -14096,3 +14096,10 @@ insights:
   resolved_reason: "semantic map generation verified the candidate is represented or intentionally ignored"
   action_artifact: "semantic_map=/home/simokitafresh/multi-agent-shogun/context/semantic-map.md;semantic_index=/home/simokitafresh/multi-agent-shogun/docs/semantic-index/index.md"
   resolved_at: "2026-09-02T21:23:31+09:00"
+- id: INS-20260902-214612008-7693
+  ts: "2026-09-02T21:46:12+09:00"
+  insight: "fallback_gate_status BLOCKが本セッション2件(lesson_feedback_task_identity + u2_restore)。両者ともlesson:PASS|review_gate:PASSなのにBLOCK。fallback_gate_statusの判定ロジックにインフラバグの疑い。3件目で家老にLG014 ALERT"
+  priority: "medium"
+  source: "manual"
+  fix_known: false
+  status: pending
