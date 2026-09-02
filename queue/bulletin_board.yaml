@@ -353,3 +353,39 @@ entries:
   notify_targets: []
   confirmed_by: []
   status: 'open'
+- id: 'blt_20260903_025016_8cd268'
+  content: |-
+    DOC_LANE_ALERT: context=context/infrastructure.md raw_alert=ALERT: context/infrastructure.md source commits 4件 since last_updated=2026-09-03 repo=/home/simokitafresh/multi-agent-shogun root_fallback=no timeout=360s/360s owner=infra-platform update_trigger=.github|.githooks|config|docs/rule|docs/knowledge-base|instructions|scripts|skills|tests|AGENTS.md|CLAUDE.md|CONTRIBUTING.md|LICENSE|Makefile|SECURITY.md|first_setup.sh|install.bat|lefthook-local.yml|lefthook.yml|project_lexicon.yaml|setup.sh|shutsujin_departure.sh。更新要否を確認せよ latest: 67ced64ee5db publisher: task=cmd_4460_full | db64d58c9be9 D0(gunshi): inbox_mark_read fingerprint照合をFAIL verdictでスキップ | 0a3eb0ea61e0 D0(gunshi): inject_task_modifiers.py lstrip('./')→removeprefix('./') action: bash scripts/context_source_commit_set.sh context/infrastructure.md 67ced64ee5db 'context_freshness reviewed source boundary' 'context_freshness_check context=context/infrastructure.md commit=67ced64ee5db'
+  posted_by: 'gate_context_freshness'
+  posted_at: '2026-09-03T02:50:16'
+  requires_confirmation: false
+  action_type: 'action_required'
+  actioned_by: 'shogun'
+  notify_targets:
+    - 'shogun'
+  confirmed_by:
+    - 'shogun'
+  status: 'closed'
+- id: 'blt_20260903_030108_6bb6bc'
+  content: |-
+    DOC_LANE_ALERT: context=context/infrastructure.md raw_alert=ALERT: context/infrastructure.md source commits 4件 since last_updated=2026-09-03 repo=/home/simokitafresh/multi-agent-shogun root_fallback=no timeout=360s/360s owner=infra-platform update_trigger=.github|.githooks|config|docs/rule|docs/knowledge-base|instructions|scripts|skills|tests|AGENTS.md|CLAUDE.md|CONTRIBUTING.md|LICENSE|Makefile|SECURITY.md|first_setup.sh|install.bat|lefthook-local.yml|lefthook.yml|project_lexicon.yaml|setup.sh|shutsujin_departure.sh。更新要否を確認せよ latest: d61ef69079e5 publisher: task=cmd_karo_hotfix_publisher_enqueue_repo_guard_202609030218_normal | db64d58c9be9 D0(gunshi): inbox_mark_read fingerprint照合をFAIL verdictでスキップ | 0a3eb0ea61e0 D0(gunshi): inject_task_modifiers.py lstrip('./')→removeprefix('./') action: bash scripts/context_source_commit_set.sh context/infrastructure.md d61ef69079e5 'context_freshness reviewed source boundary' 'context_freshness_check context=context/infrastructure.md commit=d61ef69079e5'
+  posted_by: 'gate_context_freshness'
+  posted_at: '2026-09-03T03:01:08'
+  requires_confirmation: false
+  action_type: 'action_required'
+  actioned_by: ''
+  notify_targets:
+    - 'shogun'
+  confirmed_by: []
+  status: 'open'
+- id: 'blt_20260903_030116_3781c2'
+  content: |-
+    GATE CLEAR cmd_karo_hotfix_publisher_enqueue_repo_guard_202609030218: 完了
+  posted_by: 'karo'
+  posted_at: '2026-09-03T03:01:16'
+  requires_confirmation: false
+  action_type: 'info'
+  actioned_by: ''
+  notify_targets: []
+  confirmed_by: []
+  status: 'open'
