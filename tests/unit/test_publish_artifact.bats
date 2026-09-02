@@ -190,6 +190,37 @@ print('OK')
     [[ "$stderr" == *"tree mismatch"* ]]
 }
 
+# test_necessity: C6 artifact integrity must reject a manifest that declares a
+# path absent from the patch, before restore can mutate the destination tree.
+@test "publish_artifact restore FAILs when manifest declares a path absent from patch" {
+    local repo="$BATS_TEST_TMPDIR/repo7"
+    setup_fixture_repo "$repo"
+    local base
+    base="$(git -C "$repo" rev-parse HEAD)"
+    printf 'A\nB\n' > "$repo/a.txt"
+    git -C "$repo" add a.txt
+    git -C "$repo" commit -q -m change
+    local sha
+    sha="$(git -C "$repo" rev-parse HEAD)"
+
+    run bash "$PUBLISH_ARTIFACT" capture task_manifest_overreport "$repo" "$base" "$sha"
+    [ "$status" -eq 0 ]
+
+    # Add a declared path that is not present in patch.diff.
+    local manifest="$SHOGUN_STATE_DIR/publish_queue/artifacts/task_manifest_overreport/manifest.yaml"
+    printf '%s\n' '- ghost.txt' >> "$manifest"
+
+    local dest="$BATS_TEST_TMPDIR/dest7"
+    git clone -q "$repo" "$dest"
+    git -C "$dest" checkout -q "$base"
+
+    run --separate-stderr bash "$PUBLISH_ARTIFACT" restore task_manifest_overreport "$dest"
+    [ "$status" -eq 1 ]
+    [[ "$stderr" == *"tree mismatch"* ]]
+    [ "$(cat "$dest/a.txt")" = "A" ]
+    [ ! -e "$dest/ghost.txt" ]
+}
+
 # --- AC2: gate_report_format.sh manifest consistency check ---------------
 
 mk_manifest() {
