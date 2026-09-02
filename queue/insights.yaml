@@ -14567,3 +14567,10 @@ insights:
   source: "semantic_stress_test"
   fix_known: false
   status: pending
+- id: INS-20260903-012440578-eba0
+  ts: "2026-09-03T01:24:40+09:00"
+  insight: "[[負の複利を生むものをinsisghtに追加するのは禁止]] semantic_stress_test candidate_aliases: NO_MATCH source=lord query=負の複利を生むものをinsisghtに追加するのは禁止。即時D０修正で根治せよ"
+  priority: "low"
+  source: "semantic_stress_test"
+  fix_known: false
+  status: pending
