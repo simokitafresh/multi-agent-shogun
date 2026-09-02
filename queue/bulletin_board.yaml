@@ -389,3 +389,26 @@ entries:
   notify_targets: []
   confirmed_by: []
   status: 'open'
+- id: 'blt_20260903_003218_a923bd'
+  content: |-
+    DOC_LANE_REQUEST: CONTEXT_UPDATE_REQUEST project=infra context=context/infrastructure.md source_commit=a8815898ee3d parent_cmd=cmd_karo_hotfix_cross_repo_path_lstrip_dotprefix_202609030012 reason=approved_source_commit owner_route=shogun-doc-lane
+  posted_by: 'gate_context_freshness'
+  posted_at: '2026-09-03T00:32:18'
+  requires_confirmation: false
+  action_type: 'action_required'
+  actioned_by: ''
+  notify_targets:
+    - 'shogun'
+  confirmed_by: []
+  status: 'open'
+- id: 'blt_20260903_003421_d12264'
+  content: |-
+    GATE CLEAR cmd_4456: LP 画像 SEO: 検索結果にチャートのサムネイルを出す条件を揃える — 全頁 max-image-preview:large+構造化データの image/logo+月次頁にチャート画像と og:image/Article+img の width/height
+  posted_by: 'karo'
+  posted_at: '2026-09-03T00:34:21'
+  requires_confirmation: false
+  action_type: 'info'
+  actioned_by: ''
+  notify_targets: []
+  confirmed_by: []
+  status: 'open'
