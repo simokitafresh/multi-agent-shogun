@@ -14419,3 +14419,10 @@ insights:
   source: "gate_loop_health"
   fix_known: false
   status: pending
+- id: INS-20260903-002130110-d8fb
+  ts: "2026-09-03T00:21:30+09:00"
+  insight: "publisher.sh を PUBLISHER_ONCE=1 で連続実行すると 2 回目に dequeued/ への move で FileNotFoundError traceback(既に移動済の request を再参照)。once 実行の request 選択と move の順序に競合/二重処理がある。"
+  priority: "low"
+  source: "manual"
+  fix_known: false
+  status: pending
