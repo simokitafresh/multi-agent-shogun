@@ -189,9 +189,9 @@ verify_ours_equivalent_merge_trees() {
             if [[ -n "$prospective_tree" ]] \
                 && git -C "$repo" merge-base --is-ancestor "$second_parent" "$old_base"; then
                 for path in "${merge_paths[@]}"; do
-                    first_blob="$(git -C "$repo" rev-parse "$first_tree:$path" 2>/dev/null || printf '__ABSENT__')"
-                    parent_blob="$(git -C "$repo" rev-parse "$old_tree:$path" 2>/dev/null || printf '__ABSENT__')"
-                    prospective_blob="$(git -C "$repo" rev-parse "$prospective_tree:$path" 2>/dev/null || printf '__ABSENT__')"
+                    first_blob="$(git -C "$repo" rev-parse --verify -q "$first_tree:$path" 2>/dev/null || printf \'__ABSENT__\')"
+                    parent_blob="$(git -C "$repo" rev-parse --verify -q "$old_tree:$path" 2>/dev/null || printf \'__ABSENT__\')"
+                    prospective_blob="$(git -C "$repo" rev-parse --verify -q "$prospective_tree:$path" 2>/dev/null || printf \'__ABSENT__\')"
                     if [[ "$first_blob" != "$parent_blob" \
                        && "$prospective_blob" != "$parent_blob" \
                        && -z "${regression_seen[$path]+yes}" ]]; then
@@ -216,9 +216,9 @@ verify_ours_equivalent_merge_trees() {
         if [[ -n "$prospective_tree" && -n "$merge_base_tree" ]]; then
             for path in "${merge_paths[@]}"; do
                 [[ -n "$path" ]] || continue
-                parent_blob="$(git -C "$repo" rev-parse "$merge_base_tree:$path" 2>/dev/null || printf '__ABSENT__')"
-                second_blob="$(git -C "$repo" rev-parse "$second_parent:$path" 2>/dev/null || printf '__ABSENT__')"
-                prospective_blob="$(git -C "$repo" rev-parse "$prospective_tree:$path" 2>/dev/null || printf '__ABSENT__')"
+                parent_blob="$(git -C "$repo" rev-parse --verify -q "$merge_base_tree:$path" 2>/dev/null || printf \'__ABSENT__\')"
+                second_blob="$(git -C "$repo" rev-parse --verify -q "$second_parent:$path" 2>/dev/null || printf \'__ABSENT__\')"
+                prospective_blob="$(git -C "$repo" rev-parse --verify -q "$prospective_tree:$path" 2>/dev/null || printf \'__ABSENT__\')"
                 if [[ "$second_blob" != "$parent_blob" \
                    && "$prospective_blob" != "$second_blob" ]]; then
                     # 2026-09-02 将軍 D0: blob 不一致は損失の証明ではない。ID merge driver

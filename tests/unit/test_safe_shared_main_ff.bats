@@ -579,3 +579,38 @@ exit 0"
   [[ "$output" == *"ours-equivalent merge"* ]]
   [[ "$output" == *"ANCESTRY-MERGE-REGRESSION paths=ledger.yaml"* ]]
 }
+
+# test_necessity: a path that exists only on the first-parent side (absent in
+# both the merge base and the second parent) is local-only content, not a
+# second-parent regression; `git rev-parse <tree>:<path>` echoes the argument
+# for a missing path, so absence must be resolved with --verify -q or two
+# distinct echo strings compare unequal and fabricate a regression
+# (2026-09-02 16:38 push-lane false BLOCK on SHA256SUMS / gunshi_review_log).
+@test "ours-equivalent merge with first-parent-only new file passes merge guard" {
+  local project_root repo base_sha side_sha main_sha merge_sha main_tree
+  project_root="$(cd "$BATS_TEST_DIRNAME/../.." && pwd)"
+  repo="$BATS_TEST_TMPDIR/localonly"
+  git init -q -b main "$repo"
+  git -C "$repo" config user.email t@t; git -C "$repo" config user.name t
+  printf -- '- id: A\n' > "$repo/ledger.yaml"
+  git -C "$repo" add ledger.yaml; git -C "$repo" commit -qm base
+  base_sha="$(git -C "$repo" rev-parse HEAD)"
+  git -C "$repo" checkout -qb side
+  printf -- '- id: A\n- id: B\n' > "$repo/ledger.yaml"
+  git -C "$repo" commit -aqm side-adds-B
+  side_sha="$(git -C "$repo" rev-parse HEAD)"
+  git -C "$repo" checkout -q main
+  printf -- '- id: A\n- id: B\n' > "$repo/ledger.yaml"
+  printf 'local only\n' > "$repo/newfile.txt"
+  git -C "$repo" add newfile.txt
+  git -C "$repo" commit -aqm main-adds-B-and-newfile
+  main_sha="$(git -C "$repo" rev-parse HEAD)"
+  main_tree="$(git -C "$repo" rev-parse 'HEAD^{tree}')"
+  merge_sha="$(git -C "$repo" commit-tree "$main_tree" -p "$main_sha" -p "$side_sha" -m local-only-merge)"
+  git -C "$repo" update-ref refs/heads/main "$merge_sha"
+
+  run bash "$project_root/scripts/safe_shared_main_ff.sh" --verify-merge-tree \
+    "$repo" "$base_sha" "$merge_sha" "$main_tree"
+  [ "$status" -eq 0 ]
+  [[ "$output" == *"result=PASS"* ]]
+}
