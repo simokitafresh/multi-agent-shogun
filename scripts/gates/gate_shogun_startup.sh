@@ -1785,8 +1785,12 @@ _uq_lord_log="${SHOGUN_STARTUP_LORD_CONVERSATION:-$SCRIPT_DIR/queue/lord_convers
 if [ -f "$_uq_lord_log" ]; then
     _uq_result=$(tail -300 "$_uq_lord_log" | python3 -c "
 import sys, json
+# 2026-09-02 D0: 最後の inbound だけでなく『次の inbound までに将軍 response が無い』inbound を全件列挙する。
+# 理由: 12:39-12:42 の 4 連指示(respawn/npm/将軍 respawn/忍者全員 respawn)のうち将軍 respawn の隙間に落ちた 1 件が
+# 最終 inbound 判定では見えなかった(次の inbound『y』が上書きし OK 表示)。burst 指示は 1 件ずつ処理証跡を要する。
 last_in = None
-answered = True
+pending = []      # 未回答 inbound(次の inbound までに response 無し)
+unanswered = []
 for line in sys.stdin:
     line = line.strip()
     if not line:
@@ -1798,22 +1802,23 @@ for line in sys.stdin:
     # 将軍宛inboundのみ対象(lord_conversationは全エージェント共有。他宛を混ぜると誤判定)
     if e.get('agent') == 'lord' and e.get('direction') == 'inbound' and e.get('target') in ('shogun', '', None):
         last_in = e
-        answered = False
-    elif not answered and e.get('direction') == 'response' and e.get('agent') == 'shogun' and e.get('target') == 'lord':
-        answered = True
+        pending.append(e)
+    elif pending and e.get('direction') == 'response' and e.get('agent') == 'shogun' and e.get('target') == 'lord':
+        # response は直前の burst 全件をまとめて回答したとみなす(1 response で複数指示を報告する運用)
+        pending = []
 if last_in is None:
     print('NONE')
-elif answered:
+elif not pending:
     print('OK')
 else:
-    print('ALERT|' + last_in.get('ts', '?') + '|' + last_in.get('summary', '')[:100])
+    print('ALERT|' + str(len(pending)) + '|' + '||'.join(x.get('ts', '?') + ' ' + x.get('summary', '')[:80].replace('|', '/') for x in pending))
 " 2>/dev/null) || _uq_result="NONE"
     case "$_uq_result" in
         ALERT*)
-            _uq_ts=$(echo "$_uq_result" | cut -d'|' -f2)
-            _uq_sum=$(echo "$_uq_result" | cut -d'|' -f3-)
-            echo "  ALERT: 未回答の殿inboundあり ($_uq_ts): $_uq_sum"
-            echo "  ★ 定型復帰より先にこの質問へ回答せよ(instructions/shogun.md Rule 9: 殿の指示優先)"
+            _uq_n=$(echo "$_uq_result" | cut -d'|' -f2)
+            echo "  ALERT: 未回答の殿inbound ${_uq_n}件(最後の response 以降の全件。burst 指示は 1 件ずつ処理証跡を示せ)"
+            echo "$_uq_result" | cut -d'|' -f3- | tr -s '|' '\n' | sed 's/^/    - /'
+            echo "  ★ 定型復帰より先にこれらへ回答せよ(instructions/shogun.md Rule 9: 殿の指示優先)"
             ;;
         OK) echo "  OK: 最終殿inboundに回答済み" ;;
         *)  echo "  対象なし(lord inboundなし)" ;;
