@@ -180,6 +180,7 @@ FAIL → FAIL理由を修正してからStep 3を再実行。
 | result.summary | string | 空文字禁止 |
 
 ## 注意ポイント
+- 2026-09-03: gate=gate_report_format result=FAIL executor=kotaro reason=commit_contract: files_modified path is outside planned scope: docs/research/single_publisher_cleanup_manifest_20260902.md; variation_checks: required cells unfilled: normal_pas...
 - 2026-09-03: gate=gate_report_format result=FAIL executor=hayate reason=commit_contract: files_modified path is outside planned scope: scripts/cmd_complete_gate.sh; commit_contract: files_modified path is outside planned scope: scripts/ninja_monitor...
 - 2026-09-03: gate=gate_report_format result=FAIL executor=hayate reason=commit_contract: files_modified path is outside planned scope: scripts/cmd_complete_gate.sh; commit_contract: files_modified path is outside planned scope: scripts/ninja_monitor.sh
 - 2026-09-03: gate=gate_report_format result=FAIL executor=kotaro reason=operational_simulation.result: must be PASS or FAIL; knowledge_candidate: found=true but items is empty
@@ -199,7 +200,6 @@ FAIL → FAIL理由を修正してからStep 3を再実行。
 - 2026-09-02: gate=gate_report_format result=FAIL executor=kotaro reason=commit_contract: files_modified path is outside planned scope: tests/unit/test_publisher_queue.bats (file does not exist — possible path typo in files_modified); operational_sim...
 - 2026-09-02: gate=gate_report_format result=FAIL executor=tobisaru reason=finding: finding is required (observation_target, result, evidence_path)
 - 2026-09-02: gate=gate_report_format result=FAIL executor=hanzo reason=finding: finding[0] must be a mapping
-- 2026-09-02: gate=gate_report_format result=FAIL executor=hanzo reason=cross_repo_commits: cross_repo_commits[0] commit does not change path: scripts/shogun_backup.py; cross_repo_commits: files_modified path lacks cross-repo ownership: scripts/shog...
 
 過去のgate FAIL頻出パターン要約(生ログはlogs/gate_fire_log.yaml等の台帳が正本。ここには要約のみ保持):
 

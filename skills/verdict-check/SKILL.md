@@ -134,6 +134,8 @@ bash scripts/gates/gate_report_format.sh "$REPORT"
 - **verdict を Edit toolで直接書くな** — 独立フィールドとして扱うほど矛盾の温床になる
 
 ## 注意ポイント
+- 2026-09-03: gate=gate_report_format result=FAIL executor=kotaro reason=commit_contract: required commit_hash is missing or invalid; timestamp: completed/revision_requested report requires a parseable ISO timestamp; operational_simulation: MISSING (...
+- 2026-09-03: gate=gate_report_format result=FAIL executor=saizo reason=binary_checks.AC1[1].check: \"前提妥当\" が短すぎる(確認内容を具体的に書け)
 - 2026-09-03: gate=gate_report_format result=FAIL executor=tobisaru reason=finding: finding is required (observation_target, result, evidence_path); status: \"in_progress\" cannot carry terminal verdict PASS (set status to completed after revisions)
 - 2026-09-03: gate=gate_report_format result=FAIL executor=saizo reason=commit_contract: required commit_hash is missing or invalid; binary_checks.AC1[0].result: 空文字。\"yes\" または \"no\" を記入せよ; binary_checks.AC2[0].result: 空文字。\"yes\" または \"no\" を記入せよ...
 - 2026-09-02: gate=gate_report_format result=FAIL executor=kagemaru reason=LG051: gate/hook/dispatcher変更には非test caller数の一次証跡が必須; status: \"revision_requested\" cannot carry terminal verdict PASS (set status to completed after revisions)
@@ -152,8 +154,6 @@ bash scripts/gates/gate_report_format.sh "$REPORT"
 - 2026-08-29: gate=gate_report_format result=FAIL executor=hayate reason=status: \"in_progress\" cannot carry terminal verdict PASS (set status to completed after revisions)
 - 2026-08-29: gate=gate_report_format result=FAIL executor=saizo reason=status: \"revision_requested\" cannot carry terminal verdict PASS (set status to completed after revisions)
 - 2026-08-29: gate=gate_report_format result=FAIL executor=hayate reason=commit_contract: task/report commit_contract required mismatch; binary_checks.AC1[0].result: 空文字。\"yes\" または \"no\" を記入せよ; binary_checks.AC2[0].result: 空文字。\"yes\" または \"no\" を記...
-- 2026-08-28: gate=gate_report_format result=FAIL executor=kagemaru reason=status: \"failed\" cannot carry terminal verdict PASS (set status to completed after revisions)
-- 2026-08-28: gate=gate_report_format result=FAIL executor=kagemaru reason=commit_contract: required commit_hash is missing or invalid; timestamp: completed/revision_requested report requires a parseable ISO timestamp; operational_simulation: MISSING (...
 
 Script refs verified: 2026-06-02T20:31:22+09:00 user infra-bug audit. `gate_report_format.sh` の現行契約を再確認。binary_checks未記入または欠落時はverdict自動導出できずBLOCKするため、verdict編集ではなくbinary_checksを修正する。
 Script refs verified: 2026-06-10 6bf403d2c. `gate_report_format.sh` はauto-commit contamination check(cmd_3264)を追加。bc:commit=yes時にtarget_path配下の未commit変更・auto-commit巻込みをWARN検出する。verdict自動導出(binary_checks→PASS/FAIL上書き)の契約は変更なし。verdict-checkの手順変更は不要。
