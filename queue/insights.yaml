@@ -13603,3 +13603,10 @@ insights:
   source: "semantic_stress_test"
   fix_known: false
   status: pending
+- id: INS-20260902-180016375-2182
+  ts: "2026-09-02T18:00:16+09:00"
+  insight: "[[noteはnatural japaneseだった]] semantic_stress_test candidate_aliases: NO_MATCH source=lord query=noteはnatural japaneseだった。何度もやったはずだ"
+  priority: "low"
+  source: "semantic_stress_test"
+  fix_known: false
+  status: pending
