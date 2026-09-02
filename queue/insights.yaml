@@ -13147,7 +13147,10 @@ insights:
   priority: "medium"
   source: "lord_conversation:lesson_candidate"
   fix_known: false
-  status: pending
+  status: resolved
+  resolved_reason: "一次情報で殿発言(queue/lord_conversation.jsonl:443)を確認。memory_db FTS5とsemantic_searchの実測で既存概念 semantic_dictionary_design に一致し、docs/semantic-index/index.md と context/semantic-map.md の既存概念・alias群で扱い済み。直後の同一質問由来 INS-20260902-140258205-2567 も NO_MATCH候補としてsemantic index吸収済み・resolvedであり、新規実装修正や未決裁定は不要。"
+  action_artifact: "target=queue/insights.yaml:INS-20260902-135851000-bec3;source=queue/lord_conversation.jsonl:443;memory=semantic_search実測(MEMORY_DB_MATCH, semantic_dictionary_design);semantic=docs/semantic-index/index.md:2156-2160;context=context/semantic-map.md:semantic_dictionary_design既存alias;related=queue/insights.yaml:INS-20260902-140258205-2567(resolved);decision_candidate=none"
+  resolved_at: "2026-09-02T15:02:52+09:00"
 - id: INS-20260902-140258205-2567
   ts: "2026-09-02T14:02:58+09:00"
   insight: "[[裁定待ちの推奨とトレードオフは？]] semantic_stress_test candidate_aliases: NO_MATCH source=lord query=裁定待ちの推奨とトレードオフは？"
