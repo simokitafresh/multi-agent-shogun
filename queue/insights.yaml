@@ -14634,3 +14634,10 @@ insights:
   source: "semantic_stress_test"
   fix_known: false
   status: pending
+- id: INS-20260903-014604152-81b3
+  ts: "2026-09-03T01:46:04+09:00"
+  insight: "[[殿 00 52『 ja signals が全期間で同じ signal になっているぞ]] semantic_stress_test candidate_aliases: NO_MATCH source=cmds query=殿 2026-09-03 00:52『/ja/signals/ が全期間で同じ signal になっているぞ、これはバグだな』。本番 curl 00:53 一次: /ja/signals/2008-10/ と /2020-03/ と /2026-08/ の保有欄が全て同じ(現在の XLU)。真因=lp の monthly-signal-page compon"
+  priority: "low"
+  source: "semantic_stress_test"
+  fix_known: false
+  status: pending
