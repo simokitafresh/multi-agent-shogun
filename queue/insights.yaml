@@ -14955,7 +14955,10 @@ insights:
   priority: "low"
   source: "semantic_stress_test"
   fix_known: false
-  status: pending
+  status: "resolved"
+  resolved_reason: "semantic index candidate was absorbed into a registered concept"
+  action_artifact: "semantic_index=/home/simokitafresh/multi-agent-shogun/docs/semantic-index/index.md"
+  resolved_at: "2026-09-03T04:59:45.136053"
 - id: INS-20260903-045419797-9e86
   ts: "2026-09-03T04:54:19+09:00"
   insight: "cmd_complete_gate 偽BLOCK『fallback_gate_status:lesson:PASS|review_gate:PASS 不足フラグ=[]』: 全gate .done 済でALL_CLEAR=falseのまま到達(scripts/cmd_complete_gate.sh L15863 else分岐)。09-03 疾風 hotfix で1回発生、直接再実行でCLEAR。真因候補=L4 WAIT→auto-push PASS後にALL_CLEAR/WAIT_REASONSがリセットされない順序バグ。origin: [[cmd_karo_hotfix_publisher_single_flag_file_202609030257]] -> [[fallback_gate_status偽BLOCK]] -> [[gate直接再実行workaround]]"
