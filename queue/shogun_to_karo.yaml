@@ -1,57 +1,114 @@
 commands:
-  cmd_4462:
-    title: "LP build の showcase fetch を cache 無しにする(static export の build 時 fetch が Next data cache+Render build cache で旧 API 形を焼く再発防止)+build 後の holding 存在 assert"
+  cmd_4465:
+    title: "単一 publisher U6b: publisher daemon に ledger 消費者(ledger_inbox の op を seq 順に isolated clone へ apply→1 commit→publish→applied へ移動)を実装し、ledger_writer.sh を実行 bit 付きで追跡して writer route を本番で生かす"
     status: delegated
-    project: dm-signal
-    purpose: "殿 2026-09-03 02:40『起票してしまおう』。cmd_4459 で backend(59b7b679)は 17:20Z に live し API series に holding が入ったが、17:24Z に再 build した LP(dm-signal-lp、static export)は /ja/signals/2008-10/ と /2026-08/ の保有欄が『—』のまま。真因: lp/lib/showcase.ts getShowcase の fetch が next.revalidate=3600 で Next の data cache に入り、Render static site の build cache(.next/cache)が次 build へ持ち越すため、backend が更新されても build は前回の API 応答を再利用する。将軍が 02:38 に clearCache 再 deploy(dep-dac5spnavr4c738mbo60)で止血した。恒久策=build 時 fetch を cache: no-store にし、build 直後に生成 HTML の保有欄が『—』だけでないことを assert して build を fail させる"
+    project: infra
+    purpose: "家老が 04:58 deepdive 追体験で発見(blt_045610): cmd_4454(U6)の ledger route は本番で一度も動いていない。理由 2 層=(a) 4 caller(insight/lesson/bulletin/workaround)の `[[ -x ledger_writer.sh ]]` 検査が file mode 644 のため常に偽で legacy 直書きへ沈黙フォールバック (b) `$STATE_DIR/ledger_inbox` の op を origin へ apply する消費者が publisher.sh に未実装(grep -c apply → 0)。PUBLISHER_SINGLE ON(04:37)以後は legacy auto-commit が no-op のため、ledger 4 種の origin 到達経路は本 route しか無く、root の tracked dirty が 14 に溜まり publisher の root sync が fail-closed(tracked_dirty)し続ける。将軍裁定 04:56: route 撤去ではなく消費者を実装。cmd_4464(削除)と触る file が重ならず並走可"
     scope_mode: FULL
-    target_path: lp
+    target_path: scripts
     acceptance_criteria:
       AC1:
-        description: "lp ディレクトリ配下の lib/showcase.ts で getShowcase の fetch option を next.revalidate から cache: 'no-store' に変える(static export では revalidate は無意味で data cache 汚染だけ残る)。getShowcase の呼び出し 12 箇所(rg -c 'getShowcase(' lp → 12)は変更しない。lp で npm run build がローカルで成功し、out 配下の ja/signals/2026-08/index.html に monthly-holding の値が『—』以外で 1 件以上ある(本番 API を fetch)"
-        binary_check: "rg -c 'no-store' lp/lib/showcase.ts == 1 ∧ rg -c 'revalidate' lp/lib/showcase.ts == 0 ∧ npm run build rc 0 ∧ rg -c 'monthly-holding\">[A-Z]' out/ja/signals/2026-08/index.html >= 1 か?"
+        description: "scripts/publisher.sh に ledger 消費(kind=ledger)を追加: daemon の各周期で `$STATE_DIR/ledger_inbox/<ledger>/*.yaml`(applied/ を除く)を name(UTC 時刻+seq)昇順に読み、既存 flock 1 本の下で isolated clone(origin/main tip)に対し `bash scripts/ledger_writer.sh apply <op file>` を op ごとに実行し、全 op 成功なら 1 commit(message『publisher: ledger batch n=<件数> ledgers=<種別>』+Published-By trailer)→既存 publish 経路(push→sync_root)→op file を ledger_inbox/<ledger>/applied/ へ移動。1 op でも apply 失敗なら commit せず isolated を捨て、失敗 op だけ ledger_inbox/<ledger>/rc/ へ移し残りは次周期へ(fail-close、他 op を巻き込まない)。code request(既存 kind)と ledger の順序は queue の到着順、同一周期では code→ledger。events.jsonl に kind=ledger の event 1 行。既存 bats tests/unit/test_publisher.bats は選択実行コマンド=bash scripts/run_tests.sh file tests/unit/test_publisher.bats tests/unit/test_ledger_writer.bats で FAIL 0・SKIP 0。中断再開時の成果物引継ぎ: 未 commit の worktree 差分と最終 bats 出力 log を報告 YAML の progress に path で残し、再開者はそこから継続する"
+        binary_check: "publisher.sh に ledger 消費関数 1 つ以上(rg -c 'ledger_inbox' scripts/publisher.sh ≥ 1)∧ fixture で op 3 件→isolated commit 1 つ・origin fixture に 3 entry・applied/ に 3 file ∧ 失敗 op 1 件混在で commit 0・rc/ に 1 file・残 2 は次周期で applied ∧ 既存 2 bats 選択実行 FAIL 0 ∧ SKIP 0 か?"
       AC2:
-        description: "lp の package.json の build script を『next build && node scripts/assert-holding.mjs』にし、scripts/assert-holding.mjs を新規作成: out/ja/signals/*/index.html のうち monthly-holding が『—』でない file 数を数え、0 件なら exit 1(message に件数)、1 件以上なら exit 0 で件数を stdout。API に holding が無い月(signal 無し月)は『—』で正当なので全 file 一致は要求しない。Render の build command は package.json 経由なので render.yaml は変更しない"
-        binary_check: "scripts/assert-holding.mjs 存在 ∧ package.json build に assert-holding 含む ∧ out を holding 全『—』に書換えた fixture で exit 1 ∧ 正常 out で exit 0 ∧ 変更 file が lib/showcase.ts・package.json・scripts/assert-holding.mjs の 3 つのみ か?"
+        description: "scripts/ledger_writer.sh を git mode 100755 で追跡する(git update-index --chmod=+x、bash scripts/ninja_scope_commit.sh で commit)。4 caller(scripts/insight_write.sh L463/L473/L493 の -x 判定と lesson/bulletin/workaround の同型箇所)は判定を変えず、-x が偽かつ file が存在する場合に stderr へ『LEDGER-ROUTE-SKIP: ledger_writer.sh exists but not executable』を 1 行出す(沈黙フォールバックの可視化のみ、分岐は不変)。tests/unit/test_publisher_ledger_consumer.bats を新規作成(test_necessity 非空): (1) ledger_writer.sh の実行 bit が git tree で 100755 (2) insight_write を fixture で実行→legacy file 不変・ledger_inbox に op 1 件→publisher 1 周期→origin fixture に entry・root porcelain 0。選択実行=bash scripts/run_tests.sh file tests/unit/test_publisher_ledger_consumer.bats で FAIL 0・SKIP 0。変更 file は publisher.sh・ledger_writer.sh(mode)・4 caller・新規 bats 1 の 7 つ以内"
+        binary_check: "git ls-tree HEAD scripts/ledger_writer.sh の mode が 100755 ∧ 4 caller に LEDGER-ROUTE-SKIP 出力 1 行ずつ(rg -c 'LEDGER-ROUTE-SKIP' scripts → 4)∧ 新規 bats @test 2 本以上・test_necessity 非空 ∧ 選択実行 FAIL 0 ∧ SKIP 0 ∧ 変更 file ≤7 か?"
     command: |
-      1. lp/lib/showcase.ts の getShowcase fetch option を cache: "no-store" に変え、lp で npm ci && npm run build を実行し、out/ja/signals/2026-08/index.html の monthly-holding 値を rg で報告 YAML に生貼付する。
-      2. lp/scripts/assert-holding.mjs を作り package.json の build に連結、正常 out と全『—』fixture の 2 回実行結果(exit code)を報告 YAML に書き、bash scripts/ninja_scope_commit.sh -m "<msg>" -- lp/lib/showcase.ts lp/package.json lp/scripts/assert-holding.mjs で commit。push 後 Render dm-signal-lp の自動 deploy が live になったら /ja/signals/2008-10/ と /2026-08/ の保有欄が異なることを curl で確認して報告(家老 post_deploy_check と同値)。
+      1. scripts/publisher.sh(process_request/run_one/daemon_main と sync_root)と scripts/ledger_writer.sh(write_op/apply_op、L185)を読み、ledger 消費関数を publisher.sh に足し、fixture(正常 3 op/失敗混在)で確認して既存 2 bats を選択実行し、報告 YAML に fixture の origin 側 entry 数と applied/rc の file 数を生貼付する。
+      2. ledger_writer.sh を 100755 で追跡し 4 caller に LEDGER-ROUTE-SKIP 1 行を足し、新規 bats を書いて選択実行し、bash scripts/ninja_scope_commit.sh -m "<msg>" -- scripts/publisher.sh scripts/ledger_writer.sh scripts/insight_write.sh <他 3 caller> tests/unit/test_publisher_ledger_consumer.bats で commit、報告 YAML に本番 STATE_DIR の ledger_inbox 件数(着地前後)を書く。
     assumptions:
-      claim: "lp/next.config.mjs は output: export(2026-09-03 02:41 origin/main で確認)。lp/lib/showcase.ts L46-59 getShowcase は fetch(apiUrl('/api/public/showcase'), { next: { revalidate: 3600 } })。getShowcase( の呼出は lp 配下 12 箇所。本番 API https://dm-signal-backend.onrender.com/api/public/showcase の data.hero.series 277 要素は全て holding キーを持つ(02:35 curl: 2003-09 QQQ / 2026-09 XLU)。Render dm-signal-lp=srv-da9uon8n74is739a1uhg static_site、17:24Z build(59b7b679)後も本番頁は『—』、02:38 clearCache 再 deploy で止血中。lp に test file 無し"
-      source: "git show origin/main:lp/next.config.mjs、git show origin/main:lp/lib/showcase.ts、git grep 'getShowcase(' origin/main -- lp | wc -l → 12、curl 本番 API/LP 2 頁、Render API deploys 一覧"
+      claim: "scripts/ledger_writer.sh は mode 644(ls -la → -rw-r--r--、04:56)で apply サブコマンド(L185 apply_op、L263 dispatch)を既に持つ。scripts/publisher.sh に ledger_inbox の参照 0(rg)。本番 ledger_inbox は insights/ のみ(.seq=1、applied/ 空、滞留 1 op は家老が手動 apply 済)。insight_write.sh の -x 判定は L463/L473/L493。root tracked dirty 14(git status --porcelain -uno、04:56)。cmd_4464(削除 lane)の対象は cmd_complete_gate/ninja_monitor/safe_shared_main_ff/pre-push/gate_report_format/ninja_scope_commit で publisher.sh・ledger_writer.sh・insight_write.sh と重ならない"
+      source: "ls -la scripts/ledger_writer.sh、grep -n apply_op scripts/ledger_writer.sh、rg -c ledger_inbox scripts/publisher.sh → 0、ls ~/.local/share/multi-agent-shogun/ledger_inbox/、grep -n -e '-x ' scripts/insight_write.sh、git status --porcelain -uno | wc -l、家老掲示板 blt_20260903_045610"
       trust: verified
     depends_on: none
-    timeout_minutes: 40
-    estimated_minutes: 25
+    timeout_minutes: 60
+    estimated_minutes: 40
     execution_env:
-      runtime_constraints: "lp 配下のみ。backend・LP コンポーネントは触らない。npm run build は本番 API を読むだけ(書込み無し)。push は 1 commit"
-      long_runtime_reason: "npm ci+next build 2 回(修正後+fixture 検証)で各 2-3 分、assert script 1 本"
-      measured_runtime_sec: 1500
+      runtime_constraints: "本番 publisher daemon(pid 3399892)と本番 STATE_DIR は触らない(fixture は一時 STATE_DIR)。着地後の daemon 再読込は家老 lane。既存 4 caller の分岐ロジックは変えない(出力 1 行のみ)。bats は選択実行のみ"
+      long_runtime_reason: "publisher.sh の flock/isolated/sync_root 経路への統合と fixture 2 種(正常・失敗混在)、新規 bats 1 本。code と ledger の順序制御を同一 daemon 内で保つため 1 忍者"
+      measured_runtime_sec: 2400
     split_decision:
       boundary_ac_ids: [AC1, AC2]
       integration_tasks: 1
-    serial_dependency_evidence: "AC2 の assert は AC1 の build 出力(out/)に対して動くため同一忍者・同一 worktree で連続実行する"
+    serial_dependency_evidence: "AC2 の e2e bats(writer→inbox→publisher→origin)は AC1 の消費者が無いと PASS しないため同一忍者で AC1→AC2 の順に実装する"
     quality_gate:
-      q1_firefighting: "品質向上。理由: 止血(clearCache 再 deploy)は将軍が済ませた。本 cmd は build の cache 依存を断ち、旧形を焼いた build を fail させる構造"
-      q2_learning: "奪わない。理由: 判断点は fetch option 1 箇所と assert 閾値(1 件以上)で AC に固定"
-      q3_next_quality: "上がる。理由: 以後 backend の contract 変更が LP build に確実に反映され、反映漏れは build 失敗で見える"
-      q4_depth: "medium — 理由: 1 option 変更+assert script 1 本。真因(Next data cache×Render build cache)は将軍が本番 3 点(API に holding あり/LP 頁『—』/build 時刻が backend live 後)で確定済"
-      q5_verified_source: "structure_verified — 対象を実行して確認(2026-09-03 02:41): git show origin/main:lp/next.config.mjs → output: export、git show origin/main:lp/lib/showcase.ts | grep -n revalidate → L48、git grep -c getShowcase( → 12、curl 本番 API series[0]/[-1] に holding、curl LP 2 頁 monthly-holding → 『—』"
-      q6_not_hiding: "隠していない。理由: signal 無し月の『—』は正当として全一致を要求せず、0 件のみ fail。cache 無効化で build 時間が伸びるなら報告させる"
-      q7_definition_verified: "Next.js 14 の fetch cache: 'no-store' と output: export の組合せは公式 docs(Data Fetching/caching)で build 時 fetch の cache 回避手段として確認(確認日: 2026-09-03)"
-      q8_why_what: "WHY: cmd_4459 の修正が LP build で消えた(殿 00:52 のバグが本番で直っていない) / WHAT: fetch no-store+build 後 assert / WHEN: 即(4459 の本番反映の一部) / WHERE: lp/lib/showcase.ts, lp/package.json, lp/scripts / WHO: 家老配備(Claude/Codex どちらでも) / HOW: option 変更→build→assert→commit→Render 自動 deploy→2 頁 curl / 複利: contract 変更のたびの clearCache 手動対応が消える"
-      q9_firefighting_root_cause: "根本対応。理由: cache 経路そのものを断つ。clearCache は今回限りの止血"
-      q10_knowledge_boundary: "検証済み: config・fetch option・呼出数・本番 API/LP 状態・deploy 時刻。スコープ外: backend、Render build cache 設定(render.yaml は変更しない)"
-      q11_not_already_done: "rg -c 'no-store' lp/lib/showcase.ts → 0(origin/main 02:41)。lp/scripts/assert-holding.mjs → 無し。rg -c cmd_4462 queue/shogun_to_karo.yaml → 0(起票前)"
-      q_ambiguity: "曖昧さ: assert の閾値。解消: 『—』でない月次頁が 1 件以上=PASS、0 件=FAIL。signal 無し月は『—』で正当"
-      q12_lord_30min_cost: "no — 殿 02:40 で確定、判定は rg 件数と exit code と curl"
-      diagnosis: "BLOCK理由: 該当なし(新規起票) / 対策: 変更 3 file・AC 二値"
+      q1_firefighting: "品質向上。理由: U6 の設計意図(§13 H3 台帳ノイズの分離)を本番で初めて成立させる。flag ON 後に ledger が origin へ届かない構造欠陥の根治"
+      q2_learning: "奪わない。理由: 判断点は『失敗 op は隔離し他を巻き込まない』の 1 つで AC に固定。4 caller の分岐は不変"
+      q3_next_quality: "上がる。理由: root tracked dirty が 0 に収束し publisher の root sync が通る。台帳ノイズ commit(『insights: auto-commit』等)が publisher の ledger batch 1 本に置き換わる"
+      q4_depth: "deep — 理由: daemon への新 kind 追加+fail-close 隔離+実行 bit の契約化。可逆=消費関数を呼ばなければ現状(legacy)へ戻る"
+      q5_verified_source: "structure_verified — 対象を実行して確認(2026-09-03 04:56): ls -la scripts/ledger_writer.sh → -rw-r--r--、grep -n apply_op scripts/ledger_writer.sh → L185、rg -c ledger_inbox scripts/publisher.sh → 0、ls ledger_inbox → insights/(applied 空)、git status --porcelain -uno | wc -l → 14"
+      q6_not_hiding: "隠していない。理由: 失敗 op は rc/ に残し件数を報告させる。沈黙フォールバックは LEDGER-ROUTE-SKIP で可視化"
+      q7_definition_verified: "U6 の入出力(ledger_inbox/op/append-update-resolve)は設計書 §9.1 U6 行と ledger_writer.sh 現物、publisher の request 契約は publisher.sh 現物で確認(確認日: 2026-09-03)"
+      q8_why_what: "WHY: 家老発見=U6 route が本番で未稼働、flag ON 後は ledger の到達経路が無い / WHAT: publisher に ledger 消費者+実行 bit 追跡+可視化 1 行 / WHEN: 即(4464 と並走) / WHERE: scripts/publisher.sh, scripts/ledger_writer.sh, 4 caller, tests/unit / WHO: 家老配備(Codex/Claude どちらでも、publisher.sh は半蔵 Codex が実装) / HOW: 消費関数→fixture→bats→commit→家老が daemon 再読込 / 複利: 台帳 commit が 1 経路に収束し root dirty 0"
+      q9_firefighting_root_cause: "根本対応。理由: -x を -f に変える消火(家老が試して死路に落ちた)ではなく、消費者の欠落という真因を埋める"
+      q10_knowledge_boundary: "検証済み: writer の apply API・publisher の構造・本番 inbox 状態・root dirty 数。スコープ外: 4464 の削除対象、gate_skill_script_refs/auto_failure_lesson の -x 修正(家老が済)、daemon 再読込手順"
+      q11_not_already_done: "rg -c ledger_inbox scripts/publisher.sh → 0(04:56)。rg -c 'LEDGER-ROUTE-SKIP' scripts → 0。git ls-tree HEAD scripts/ledger_writer.sh → 100644。rg -c cmd_4465 queue/shogun_to_karo.yaml → 0(起票前)"
+      q_ambiguity: "曖昧さ: code request と ledger op の同一周期での順序。解消: code→ledger の固定順(code の commit に ledger が乗ることを防ぐ)。ledger 種別間は name 昇順"
+      q12_lord_30min_cost: "no — 家老発見+将軍裁定 04:56、判定は fixture 件数・mode・bats"
+      diagnosis: "BLOCK理由: 該当なし(新規起票) / 対策: 2 AC・7 file 以内・fail-close 隔離"
     environment_change: "type=lesson; file=projects/infra/lessons_shogun.yaml; pattern=cmdテンプレートルール"
-    delegated_at: "\"2026-09-03T02:45:38\""
-    origin: "[[cmd_4459_月次頁holding]] -> [[LP_build_fetch_cache_持越し_20260903]] -> [[cmd_4462_LP_build_no_store]]"
+    delegated_at: "\"2026-09-03T05:03:03\""
+    origin: "[[cmd_4454_U6_ledger_writer]] -> [[家老発見_ledger_route未稼働_20260903_0458]] -> [[cmd_4465_publisher_ledger消費者]]"
+  cmd_4464:
+    title: "単一 publisher U8 AC2: PUBLISHER_SINGLE ON(04:37)の下で cleanup manifest の M1-M11 を batch 4 回(各 1 commit・10 file 以内)で物理削除し、census は同 batch で消える file を除いて数える"
+    status: delegated
+    project: infra
+    purpose: "cmd_4461 AC1 の台帳(docs/research/single_publisher_cleanup_manifest_20260902.md、a7b41bc64)は M2-M8 を『surviving references が非 0』で blocked にしたが、その参照元の大半は同時に消す旧 test(M10/M11)と旧経路どうしの相互参照であり、cmd_4461 の census 定義(『削除対象 path を除く全 file』)が同 batch の削除対象を除外していなかったための見かけの blocked。flag ON は 04:37 に家老が確認(queue/flags/publisher_single、helper ENABLED、publisher pid 3399892 active、初 publish d42b62a90)。殿 09-03 01:30『先に進んでから戻ればいい』=canary 待ち無しで削除に入る。可逆=各 batch 1 commit、forward restore(git revert)で戻る。cmd_4461 は将軍裁定 04:40 (b) で void 済"
+    scope_mode: FULL
+    target_path: scripts
+    acceptance_criteria:
+      AC1:
+        description: "batch 1: 台帳の M3(scripts/safe_shared_main_ff.sh 本体)+M5(.githooks/pre-push の GA-PUSH1 dirty-tree guard 区間)+M10(旧 test 5 file: test_push_lane_integrate/test_push_lane_settle_age/test_safe_shared_main_ff/test_cmd_complete_gate_source_publish と台帳 M10 行の 5 つ目)を git rm/区間削除する。census 規則(以後の batch 共通): rg -n -F '<関数名 or option 名 or file 名>' scripts .githooks skills tests/unit から (a) 同 batch で削除する file (b) コメント行(先頭が # または //) (c) docs/ を除いた残存参照数。0 でない対象はその file だけ残し台帳を blocked(参照元 path 付き)にして次へ進む(止まらない)。残る bats を選択実行コマンド=bash scripts/run_tests.sh file <M3/M5 を参照していた残存 bats と tests/unit/test_publisher_single_flag.bats> で FAIL 0・SKIP 0。bash scripts/ninja_scope_commit.sh -m \"<msg。deletion_justification: を含む>\" -- <削除 path> で 1 commit。中断再開時の成果物引継ぎ: 未 commit の worktree 差分と最終 bats 出力 log を報告 YAML の progress に path で残し、再開者はそこから継続する"
+        binary_check: "batch 1 の削除対象の残存参照(census 規則)が 0 または blocked 理由付き ∧ 選択実行 FAIL 0 ∧ SKIP 0 ∧ commit 1 ∧ commit message に deletion_justification ∧ 削除 file 数 ≤10 ∧ 台帳 M3/M5/M10 の状態列が done または blocked に更新 か?"
+      AC2:
+        description: "batch 2: M2(scripts/ninja_monitor.sh の push_lane_* 群+check_push_lane、17 関数)+M8(ninja_monitor.sh の auto_commit_* 群と postclear checkpoint、cmd_complete_gate.sh の insights/lessons auto-commit 呼出)を関数単位で削除する。呼出し元の分岐は『PUBLISHER_SINGLE 判定→return 0』の 1 行だけ残すか、呼出し行ごと削除(どちらかを台帳に記す)。census 規則は AC1 と同じ。選択実行=bash scripts/run_tests.sh file tests/unit/test_ninja_monitor_stall.bats tests/unit/test_publisher_single_flag.bats と M2/M8 を参照していた残存 bats で FAIL 0・SKIP 0。1 commit"
+        binary_check: "M2 の 17 関数と M8 群の定義行が 0(rg -c '^push_lane_' scripts/ninja_monitor.sh → 0 および rg -c '^check_push_lane' → 0 および rg -c '^auto_commit_' → 0)∧ 残存参照 0 または blocked ∧ 選択実行 FAIL 0 ∧ SKIP 0 ∧ commit 1 ∧ 台帳更新 か?"
+      AC3:
+        description: "batch 3: M1(scripts/cmd_complete_gate.sh の source_only_* autopush 関数群)+M4(.gitattributes の merge rule 5 本と scripts/insight_write.sh の driver 登録関数、.git/config の merge.*.driver は git config --unset で消し復元コマンドを報告 YAML に書く)+M7(scripts/gates/gate_report_format.sh の cross_repo_commits 生成・planned-path/commit-contract 照合・source-sha ancestry・source-only receipt 検査の縮退=publisher receipt 経路のみ残す)。census 規則同じ。選択実行=bash scripts/run_tests.sh file tests/unit/test_cmd_complete_gate.bats tests/unit/test_gate_report_format.bats tests/unit/test_insight_write.bats tests/unit/test_publisher_single_flag.bats で FAIL 0・SKIP 0。1 commit。cmd_complete_gate.sh の行数が batch 前より減っていること"
+        binary_check: "M1 関数定義 0(rg -c '^source_only_' scripts/cmd_complete_gate.sh → 0)∧ .gitattributes の merge rule 5 本 0 ∧ M7 の 4 検査が publisher receipt 経路のみ ∧ 残存参照 0 または blocked ∧ 選択実行 FAIL 0 ∧ SKIP 0 ∧ commit 1 ∧ wc -l scripts/cmd_complete_gate.sh が減少 か?"
+      AC4:
+        description: "batch 4: M6(scripts/ninja_scope_commit.sh の --patch/--base-blob/--reflux-mode/--reflux-evidence/--repair-index と single-flight/identity-sidecar 区間の縮退)+M9(skills/ninja-commit/SKILL.md の旧 push 手順の記述削除。家老が台帳で承認済みの範囲のみ)+M11(tests/unit の 11 file のうち M1/M6/M7 を参照する @test だけを削除、file 全体は消さない)。census 規則同じ。選択実行=bash scripts/run_tests.sh file <M11 で編集した bats 全て> tests/unit/test_ninja_scope_commit.bats で FAIL 0・SKIP 0。1 commit。最後に §11 after 計測: 台帳の集計行に『4 file 合計行数 変更前 33,238→後 N』『削除 file 数』『blocked 残 件数と参照元』を書き、報告 YAML に同値を書く"
+        binary_check: "M6 の 5 option が ninja_scope_commit.sh の usage から消えている ∧ M11 は file 削除 0・@test 削除のみ ∧ 残存参照 0 または blocked ∧ 選択実行 FAIL 0 ∧ SKIP 0 ∧ commit 1 ∧ 台帳 done+blocked の合計 == 11 ∧ 4 file 合計行数が 33,238 未満 ∧ 報告 YAML に行数差分 か?"
+    command: |
+      1. ls queue/flags/publisher_single と pgrep -f publisher.sh で ON と daemon 稼働を確認して報告 YAML に生貼付し、台帳を読み、batch 1 を census 規則→削除→選択実行→1 commit→台帳更新の順で実行し、progress に batch 1 の commit と census 結果を書く。
+      2. batch 2→3→4 を同じ手順で連続実行し、各 batch の commit・census・blocked(参照元 path)を progress に追記し、最後に §11 after 計測(行数差分・削除 file 数・blocked 残)を台帳集計行と報告 YAML に書く。
+    assumptions:
+      claim: "flag file queue/flags/publisher_single は 04:37 作成(ls -la)、publisher pid 3399892 稼働(pgrep)、origin tip d42b62a90 は publisher 発行。台帳 a7b41bc64 は 11 行、M2-M8 が blocked(参照元は主に M10/M11 の旧 test と旧経路の相互参照)、M9 pending review、M11 pending classification。4 file 合計行数 33,238(wc -l、04:40)。cmd_4460 で 3 script の push 入口は flag 判定の下流(67ced64ee)、flag file helper d42b62a90。cmd_4461 は status void(04:53 家老)"
+      source: "ls -la queue/flags/publisher_single、pgrep -af publisher.sh、git log -1 origin/main、grep -E '^[|] M[0-9]+ ' docs/research/single_publisher_cleanup_manifest_20260902.md、wc -l scripts/cmd_complete_gate.sh scripts/ninja_monitor.sh scripts/safe_shared_main_ff.sh .githooks/pre-push、grep -m1 'status: void' queue/shogun_to_karo.yaml"
+      trust: verified
+    depends_on: none
+    timeout_minutes: 90
+    estimated_minutes: 60
+    execution_env:
+      runtime_constraints: "削除は git rm と関数単位の区間削除のみ(rm -rf 禁止)。本番 publisher daemon と queue/flags/publisher_single は触らない。bats は選択実行のみ。各 batch 1 commit で git revert 可逆。.git/config の driver unset は復元コマンドを報告 YAML に残す"
+      long_runtime_reason: "batch 4 回×(census rg+関数区間削除+選択実行 bats+commit)。cmd_complete_gate.sh は 12,000 行超で M1/M7 の区間特定に時間。参照の消え方を追うため 1 忍者で直列"
+      measured_runtime_sec: 3600
+    split_decision:
+      boundary_ac_ids: [AC1, AC2, AC3, AC4]
+      integration_tasks: 1
+    serial_dependency_evidence: "batch 2 以降の census は前 batch の削除で参照が 0 になることを前提にする(M2 の参照元は M10 の旧 test、M1 の参照元は M2/M8)。別忍者に分けると参照の消え方が追えず blocked が増える。cmd_4461 の serial_dependency_evidence と同じ根拠"
+    quality_gate:
+      q1_firefighting: "品質向上。理由: 09-02 の壁(root index 後退 6 回・push lane 停止・偽 BLOCK)の発生源である旧 push 4 経路を物理的に消す。flag ON で no-op になっている今が削除の窓"
+      q2_learning: "奪わない。理由: 判断点は census 規則(同 batch 削除対象を除く)と『参照が残る file は blocked にして進む』の 2 つで AC に固定。移植先 test は足さない"
+      q3_next_quality: "上がる。理由: gate/monitor の行数が減り、以後の hotfix 対象が publisher 系 6 file に収束。§11 after 計測が意味を持つ"
+      q4_depth: "deep — 理由: 33k 行から 11 行分の関数群を batch 4 回で消す。可逆(1 batch 1 commit)。census 規則の修正で cmd_4461 の見かけの blocked を解く"
+      q5_verified_source: "structure_verified — 対象を実行して確認(2026-09-03 04:40): ls -la queue/flags/publisher_single → 04:37、pgrep -af publisher.sh → pid 3399892、git log -1 origin/main → d42b62a90、grep -cE '^[|] M[0-9]+ ' 台帳 → 11、wc -l 4 file → 33,238"
+      q6_not_hiding: "隠していない。理由: 参照が残る file は消さず blocked と参照元 path を台帳に残す。行数差分と削除 file 数を報告させる。.git/config の driver は復元コマンド付き"
+      q7_definition_verified: "M1-M11・batch 順序・deletion_justification の定義は設計書 §10・cmd_4461 AC2・CLAUDE.md Test Rules で確認(確認日: 2026-09-03)"
+      q8_why_what: "WHY: cmd_4461 AC2 は flag ON 待ちで正当 FAIL(家老 fail-close 02:00)、04:37 に ON→削除の前提が揃った / WHAT: batch 4 回の物理削除+census 規則修正+§11 after 計測 / WHEN: 即 / WHERE: scripts, .githooks, .gitattributes, skills, tests/unit, docs/research 台帳 / WHO: 家老配備(Claude 推奨、cmd_complete_gate の読解) / HOW: census→削除→選択実行→1 commit→台帳更新 ×4 / 複利: 以後の壁の発生源が消え、hotfix 対象が 6 file に収束"
+      q9_firefighting_root_cause: "根本対応。理由: 壁を塞ぐのではなく壁の発生源を消す(§14.4 の『捨てる壁』を捨てる)"
+      q10_knowledge_boundary: "検証済み: flag ON・daemon 稼働・台帳 11 行・行数・4461 void。スコープ外: dm-signal 側、手動 CLEAR receipt の正規手段(別 cmd、tsumari T2-14)、M9 の承認範囲は家老が台帳で決める"
+      q11_not_already_done: "grep -c 'done' 台帳の状態列 → 0(全行 blocked/pending、04:40)。rg -c 'cmd_4464' queue/shogun_to_karo.yaml → 0(起票前)。旧経路の関数は全て現存(rg -c '^push_lane_' scripts/ninja_monitor.sh → 1 以上、rg -c '^source_only_' scripts/cmd_complete_gate.sh → 1 以上)"
+      q_ambiguity: "曖昧さ: census で『同 batch で削除する file』の範囲。解消: その batch の git rm 対象 file と関数区間削除する file の両方を除外。前 batch で消えた file は既に無いので自然に除外される"
+      q12_lord_30min_cost: "no — 殿 01:30 で確定、判定は rg 件数・bats・commit 数・行数"
+      diagnosis: "BLOCK理由: 該当なし(新規起票。cmd_4461 AC2 の再定義=census 規則修正) / 対策: batch 4 回・各 1 commit・AC 4 本二値"
+    environment_change: "type=lesson; file=projects/infra/lessons_shogun.yaml; pattern=cmdテンプレートルール"
+    delegated_at: "\"2026-09-03T04:47:24\""
+    origin: "[[cmd_4461_U8_cleanup_manifest]] -> [[PUBLISHER_SINGLE_ON_20260903_0437]] -> [[cmd_4464_U8_AC2_batch削除]]"
   cmd_4461:
     title: "単一 publisher U8: cleanup manifest(§10 M1-M11)を実行結果台帳として起こし、flag ON 後に旧 push 経路(autopush/push_lane/safe_shared_main_ff/GA-PUSH1/merge driver/旧 test)を 1 batch 10 file 以内で物理削除する"
-    status: delegated
+    status: void
+    void_reason: "将軍裁定 2026-09-03 04:40(msg_20260903_044051_1488852_407c38d7): AC1 成果は a7b41bc64 取込済、AC2 は census 定義欠陥で全行 blocked→cmd_4464 で再起票"
     project: infra
     purpose: "殿 2026-09-03 01:30『あまりに遅すぎる。先に進んでから戻ればいい』01:31『無駄な複雑化や不要な検証に時間をかけるな』。設計の最終ゴールは §11『commit→push→deploy が詰まらない』であり、旧経路(cmd_complete_gate 12k 行の autopush 区間、ninja_monitor push_lane、safe_shared_main_ff、GA-PUSH1、merge driver 6 rule、旧 test 群)が残る限り 09-02 の壁(root index 後退 6 回・push lane 停止・偽 BLOCK 6 例)は再発する。U7(cmd_4460)の flag ON で旧経路が no-op になった直後に、§10 manifest の順で削る。canary 7 日は撤回(殿 01:30)。可逆=各 batch は 1 commit、forward restore で戻す"
     scope_mode: FULL
@@ -98,6 +155,7 @@ commands:
       diagnosis: "BLOCK理由: 該当なし(新規起票) / 対策: 台帳 1 file+batch 4 回、depends_on=cmd_4460 は実依存(flag ON が削除の前提)"
     environment_change: "type=lesson; file=projects/infra/lessons_shogun.yaml; pattern=cmdテンプレートルール"
     delegated_at: "\"2026-09-03T01:37:00\""
+    void_reason: "将軍裁定 2026-09-03 04:40 msg_044051: AC1 成果は a7b41bc64 取込済、AC2 は census 定義欠陥で全行 blocked→cmd_4464 で再起票"
     origin: "[[殿指示_先に進んでから戻れ_20260903_0130]] -> [[cmd_4460_U7_flag下流化]] -> [[cmd_4461_U8_cleanup_manifest]]"
   cmd_4449:
     title: "単一 publisher U2 検証: Codex 忍者が隔離 clone で publish_artifact(capture/restore)と gate_report_format の manifest 検証の bats を選択実行し、設計書契約から敵対 fixture を 1 本追加して multi-CLI 同品質を証明する(実装は飛猿=Claude Sonnet)"
