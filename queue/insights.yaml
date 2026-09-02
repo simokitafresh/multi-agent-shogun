@@ -13365,7 +13365,10 @@ insights:
   priority: "low"
   source: "semantic_stress_test"
   fix_known: false
-  status: pending
+  status: resolved
+  resolved_reason: "semantic index candidate was absorbed into a registered concept"
+  action_artifact: "semantic_index=/home/simokitafresh/multi-agent-shogun/docs/semantic-index/index.md"
+  resolved_at: "2026-09-02T15:34:55+09:00"
 - id: INS-20260902-151208425-2f18
   ts: "2026-09-02T15:12:08+09:00"
   insight: "[[殿裁定 13 07『採用』・14 02『本質はスムースな commit push deploy』・13 23『実装は忍者]] semantic_stress_test candidate_aliases: NO_MATCH source=cmds query=殿裁定 2026-09-02 13:07『採用』・14:02『本質はスムースな commit/push/deploy』・13:23『実装は忍者。性能の劣る LLM が混乱しない設計書』。設計書 docs/research/single_publisher_asis_tobe_5w1h_20260902.md v3.5(家老 APPROVE blt_20260"
@@ -13402,7 +13405,10 @@ insights:
   priority: "low"
   source: "semantic_index_update"
   fix_known: false
-  status: pending
+  status: resolved
+  resolved_reason: "semantic map generation verified the candidate is represented or intentionally ignored"
+  action_artifact: "semantic_map=/home/simokitafresh/multi-agent-shogun/context/semantic-map.md;semantic_index=/home/simokitafresh/multi-agent-shogun/docs/semantic-index/index.md"
+  resolved_at: "2026-09-02T15:31:05+09:00"
 - id: INS-20260902-153049574-7e46
   ts: "2026-09-02T15:30:49+09:00"
   insight: "semantic_map_generate新規ファイル候補: `archive/cmd-chronicle/2026-08.md` は semantic index未登録。既存概念へのfile追加または新概念定義を検討せよ"
