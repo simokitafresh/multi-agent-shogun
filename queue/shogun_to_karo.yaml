@@ -1,4 +1,54 @@
 commands:
+  cmd_4462:
+    title: "LP build の showcase fetch を cache 無しにする(static export の build 時 fetch が Next data cache+Render build cache で旧 API 形を焼く再発防止)+build 後の holding 存在 assert"
+    status: delegated
+    project: dm-signal
+    purpose: "殿 2026-09-03 02:40『起票してしまおう』。cmd_4459 で backend(59b7b679)は 17:20Z に live し API series に holding が入ったが、17:24Z に再 build した LP(dm-signal-lp、static export)は /ja/signals/2008-10/ と /2026-08/ の保有欄が『—』のまま。真因: lp/lib/showcase.ts getShowcase の fetch が next.revalidate=3600 で Next の data cache に入り、Render static site の build cache(.next/cache)が次 build へ持ち越すため、backend が更新されても build は前回の API 応答を再利用する。将軍が 02:38 に clearCache 再 deploy(dep-dac5spnavr4c738mbo60)で止血した。恒久策=build 時 fetch を cache: no-store にし、build 直後に生成 HTML の保有欄が『—』だけでないことを assert して build を fail させる"
+    scope_mode: FULL
+    target_path: lp
+    acceptance_criteria:
+      AC1:
+        description: "lp ディレクトリ配下の lib/showcase.ts で getShowcase の fetch option を next.revalidate から cache: 'no-store' に変える(static export では revalidate は無意味で data cache 汚染だけ残る)。getShowcase の呼び出し 12 箇所(rg -c 'getShowcase(' lp → 12)は変更しない。lp で npm run build がローカルで成功し、out 配下の ja/signals/2026-08/index.html に monthly-holding の値が『—』以外で 1 件以上ある(本番 API を fetch)"
+        binary_check: "rg -c 'no-store' lp/lib/showcase.ts == 1 ∧ rg -c 'revalidate' lp/lib/showcase.ts == 0 ∧ npm run build rc 0 ∧ rg -c 'monthly-holding\">[A-Z]' out/ja/signals/2026-08/index.html >= 1 か?"
+      AC2:
+        description: "lp の package.json の build script を『next build && node scripts/assert-holding.mjs』にし、scripts/assert-holding.mjs を新規作成: out/ja/signals/*/index.html のうち monthly-holding が『—』でない file 数を数え、0 件なら exit 1(message に件数)、1 件以上なら exit 0 で件数を stdout。API に holding が無い月(signal 無し月)は『—』で正当なので全 file 一致は要求しない。Render の build command は package.json 経由なので render.yaml は変更しない"
+        binary_check: "scripts/assert-holding.mjs 存在 ∧ package.json build に assert-holding 含む ∧ out を holding 全『—』に書換えた fixture で exit 1 ∧ 正常 out で exit 0 ∧ 変更 file が lib/showcase.ts・package.json・scripts/assert-holding.mjs の 3 つのみ か?"
+    command: |
+      1. lp/lib/showcase.ts の getShowcase fetch option を cache: "no-store" に変え、lp で npm ci && npm run build を実行し、out/ja/signals/2026-08/index.html の monthly-holding 値を rg で報告 YAML に生貼付する。
+      2. lp/scripts/assert-holding.mjs を作り package.json の build に連結、正常 out と全『—』fixture の 2 回実行結果(exit code)を報告 YAML に書き、bash scripts/ninja_scope_commit.sh -m "<msg>" -- lp/lib/showcase.ts lp/package.json lp/scripts/assert-holding.mjs で commit。push 後 Render dm-signal-lp の自動 deploy が live になったら /ja/signals/2008-10/ と /2026-08/ の保有欄が異なることを curl で確認して報告(家老 post_deploy_check と同値)。
+    assumptions:
+      claim: "lp/next.config.mjs は output: export(2026-09-03 02:41 origin/main で確認)。lp/lib/showcase.ts L46-59 getShowcase は fetch(apiUrl('/api/public/showcase'), { next: { revalidate: 3600 } })。getShowcase( の呼出は lp 配下 12 箇所。本番 API https://dm-signal-backend.onrender.com/api/public/showcase の data.hero.series 277 要素は全て holding キーを持つ(02:35 curl: 2003-09 QQQ / 2026-09 XLU)。Render dm-signal-lp=srv-da9uon8n74is739a1uhg static_site、17:24Z build(59b7b679)後も本番頁は『—』、02:38 clearCache 再 deploy で止血中。lp に test file 無し"
+      source: "git show origin/main:lp/next.config.mjs、git show origin/main:lp/lib/showcase.ts、git grep 'getShowcase(' origin/main -- lp | wc -l → 12、curl 本番 API/LP 2 頁、Render API deploys 一覧"
+      trust: verified
+    depends_on: none
+    timeout_minutes: 40
+    estimated_minutes: 25
+    execution_env:
+      runtime_constraints: "lp 配下のみ。backend・LP コンポーネントは触らない。npm run build は本番 API を読むだけ(書込み無し)。push は 1 commit"
+      long_runtime_reason: "npm ci+next build 2 回(修正後+fixture 検証)で各 2-3 分、assert script 1 本"
+      measured_runtime_sec: 1500
+    split_decision:
+      boundary_ac_ids: [AC1, AC2]
+      integration_tasks: 1
+    serial_dependency_evidence: "AC2 の assert は AC1 の build 出力(out/)に対して動くため同一忍者・同一 worktree で連続実行する"
+    quality_gate:
+      q1_firefighting: "品質向上。理由: 止血(clearCache 再 deploy)は将軍が済ませた。本 cmd は build の cache 依存を断ち、旧形を焼いた build を fail させる構造"
+      q2_learning: "奪わない。理由: 判断点は fetch option 1 箇所と assert 閾値(1 件以上)で AC に固定"
+      q3_next_quality: "上がる。理由: 以後 backend の contract 変更が LP build に確実に反映され、反映漏れは build 失敗で見える"
+      q4_depth: "medium — 理由: 1 option 変更+assert script 1 本。真因(Next data cache×Render build cache)は将軍が本番 3 点(API に holding あり/LP 頁『—』/build 時刻が backend live 後)で確定済"
+      q5_verified_source: "structure_verified — 対象を実行して確認(2026-09-03 02:41): git show origin/main:lp/next.config.mjs → output: export、git show origin/main:lp/lib/showcase.ts | grep -n revalidate → L48、git grep -c getShowcase( → 12、curl 本番 API series[0]/[-1] に holding、curl LP 2 頁 monthly-holding → 『—』"
+      q6_not_hiding: "隠していない。理由: signal 無し月の『—』は正当として全一致を要求せず、0 件のみ fail。cache 無効化で build 時間が伸びるなら報告させる"
+      q7_definition_verified: "Next.js 14 の fetch cache: 'no-store' と output: export の組合せは公式 docs(Data Fetching/caching)で build 時 fetch の cache 回避手段として確認(確認日: 2026-09-03)"
+      q8_why_what: "WHY: cmd_4459 の修正が LP build で消えた(殿 00:52 のバグが本番で直っていない) / WHAT: fetch no-store+build 後 assert / WHEN: 即(4459 の本番反映の一部) / WHERE: lp/lib/showcase.ts, lp/package.json, lp/scripts / WHO: 家老配備(Claude/Codex どちらでも) / HOW: option 変更→build→assert→commit→Render 自動 deploy→2 頁 curl / 複利: contract 変更のたびの clearCache 手動対応が消える"
+      q9_firefighting_root_cause: "根本対応。理由: cache 経路そのものを断つ。clearCache は今回限りの止血"
+      q10_knowledge_boundary: "検証済み: config・fetch option・呼出数・本番 API/LP 状態・deploy 時刻。スコープ外: backend、Render build cache 設定(render.yaml は変更しない)"
+      q11_not_already_done: "rg -c 'no-store' lp/lib/showcase.ts → 0(origin/main 02:41)。lp/scripts/assert-holding.mjs → 無し。rg -c cmd_4462 queue/shogun_to_karo.yaml → 0(起票前)"
+      q_ambiguity: "曖昧さ: assert の閾値。解消: 『—』でない月次頁が 1 件以上=PASS、0 件=FAIL。signal 無し月は『—』で正当"
+      q12_lord_30min_cost: "no — 殿 02:40 で確定、判定は rg 件数と exit code と curl"
+      diagnosis: "BLOCK理由: 該当なし(新規起票) / 対策: 変更 3 file・AC 二値"
+    environment_change: "type=lesson; file=projects/infra/lessons_shogun.yaml; pattern=cmdテンプレートルール"
+    delegated_at: "\"2026-09-03T02:45:38\""
+    origin: "[[cmd_4459_月次頁holding]] -> [[LP_build_fetch_cache_持越し_20260903]] -> [[cmd_4462_LP_build_no_store]]"
   cmd_4461:
     title: "単一 publisher U8: cleanup manifest(§10 M1-M11)を実行結果台帳として起こし、flag ON 後に旧 push 経路(autopush/push_lane/safe_shared_main_ff/GA-PUSH1/merge driver/旧 test)を 1 batch 10 file 以内で物理削除する"
     status: delegated
@@ -49,56 +99,6 @@ commands:
     environment_change: "type=lesson; file=projects/infra/lessons_shogun.yaml; pattern=cmdテンプレートルール"
     delegated_at: "\"2026-09-03T01:37:00\""
     origin: "[[殿指示_先に進んでから戻れ_20260903_0130]] -> [[cmd_4460_U7_flag下流化]] -> [[cmd_4461_U8_cleanup_manifest]]"
-  cmd_4460:
-    title: "単一 publisher U7: runtime push 3 script(cmd_complete_gate autopush / ninja_monitor push_lane / safe_shared_main_ff)の全 push 実行箇所を PUBLISHER_SINGLE=1 flag の下流に置く(関数本体は消さない)"
-    status: delegated
-    project: infra
-    purpose: "殿 2026-09-03 01:30『あまりに遅すぎる。先に進んでから戻ればいい』。U3 publisher daemon は 01:30 に active 起動済(pid 2103173)。設計書 §9.1 U7: 旧 3 経路の push を flag 1 本で no-op にし、origin 到達 commit を publisher/wrapper 由来 100% にする。flag は既定 OFF(現行維持)で着地させ、ON 切替は家老が U3 の最初の 2 request 突合後に行う(可逆=flag OFF で即戻る)"
-    scope_mode: FULL
-    target_path: scripts
-    acceptance_criteria:
-      AC1:
-        description: "scripts/cmd_complete_gate.sh・scripts/ninja_monitor.sh・scripts/safe_shared_main_ff.sh の 3 script で、実際に git push を実行する全箇所(census コマンド: rg -n 'git( -C [^ ]+)? push' <3 script> の出力から echo/コメント/log 文字列の行を除いた実行行)の各入口に、`[ \"${PUBLISHER_SINGLE:-0}\" = 1 ] && { <log 1 行>; return 0; }`(関数外なら exit 0 相当の分岐)を 1 行ずつ追加する。写像は設計書 §9.1 U7 行(autopush→publisher request kind=code、push_lane→publisher の root 同期、safe_shared_main_ff→不要)。関数本体は削除しない。既存 bats(tests/unit/test_cmd_complete_gate.bats・test_push_lane_integrate.bats・test_safe_shared_main_ff.bats)は選択実行 bash scripts/run_tests.sh file <各 bats> で FAIL 0・SKIP 0。中断再開時の成果物引継ぎ: 未 commit の worktree 差分と最終 bats 出力 log を報告 YAML の progress に path で残し、再開者はそこから継続する"
-        binary_check: "census の実行行 N 件の全てが flag 分岐の下流(各実行行の直前 10 行以内に PUBLISHER_SINGLE 判定がある)∧ 関数定義の削除 0(rg -c '^[a-z_]+\\(\\)' の件数が変更前後で同数)∧ 既存 3 bats 選択実行 FAIL 0 ∧ SKIP 0 か?"
-      AC2:
-        description: "tests/unit/test_publisher_single_flag.bats を新規作成: PUBLISHER_SINGLE=1 で (a) cmd_complete_gate の autopush 経路が push せず log 1 行で return 0 (b) ninja_monitor の push_lane が push せず log 1 行 (c) safe_shared_main_ff の push が no-op、PUBLISHER_SINGLE 未設定で従来どおり(fixture repo で origin に到達)。選択実行 bash scripts/run_tests.sh file tests/unit/test_publisher_single_flag.bats で FAIL 0・SKIP 0。flag の ON 切替手順(export PUBLISHER_SINGLE=1 を daemon 起動 env と gate 実行 env の両方に入れる箇所)を報告 YAML に 3 行で書く。変更 file は上記 3 script+新規 bats 1 の 4 つのみ"
-        binary_check: "新規 bats @test 4 本以上 ∧ flag ON で 3 経路の push 0(fixture origin の ref 不変)∧ flag OFF で従来どおり ∧ 選択実行 FAIL 0 ∧ SKIP 0 ∧ 新規 test に非空 test_necessity ∧ 変更 file が 4 つのみ か?"
-    command: |
-      1. 設計書 §9.1 U7 行と §10 M1/M2/M3 を読み、census コマンドで 3 script の push 実行行を列挙して報告 YAML に生貼付し、各入口へ flag 分岐 1 行を入れ、既存 3 bats を選択実行して FAIL 0・SKIP 0 を確認する。
-      2. tests/unit/test_publisher_single_flag.bats を作り選択実行で FAIL 0・SKIP 0 を確認し、bash scripts/ninja_scope_commit.sh -m "<msg>" -- scripts/cmd_complete_gate.sh scripts/ninja_monitor.sh scripts/safe_shared_main_ff.sh tests/unit/test_publisher_single_flag.bats で commit し、報告 YAML に source_sha・census 結果・ON 切替手順 3 行・実行 log path を書く。
-    assumptions:
-      claim: "3 script に PUBLISHER_SINGLE の出現 0(rg -c、2026-09-03 01:32)。push 実行行は cmd_complete_gate.sh の autopush 区間(L3583-3815 付近)、ninja_monitor.sh の push_lane_publish_one、safe_shared_main_ff.sh の 2 箇所(設計書 観点 27)。U3 daemon は active 稼働中(pid 2103173、01:30)。tests/unit に test_cmd_complete_gate.bats/test_push_lane_integrate.bats/test_safe_shared_main_ff.bats が実在"
-      source: "docs/research/single_publisher_asis_tobe_5w1h_20260902.md §9.1 U7 §10 M1-M3 §5 観点 27、rg -c PUBLISHER_SINGLE scripts/{cmd_complete_gate,ninja_monitor,safe_shared_main_ff}.sh → 0/0/0、ls tests/unit/test_*ff*.bats"
-      trust: verified
-    depends_on: none
-    timeout_minutes: 45
-    estimated_minutes: 30
-    execution_env:
-      runtime_constraints: "bats は fixture repo で完結(本番 origin へ push しない)。flag は既定 OFF で着地し本番挙動は不変。ON 切替は家老 lane"
-      long_runtime_reason: "3 script の push 実行行 census(cmd_complete_gate は 12,000 行超)と分岐挿入、既存 3 bats の選択実行(test_cmd_complete_gate は数分)、新規 bats 1 本。写像の一貫性(3 経路が同じ flag 名・同じ log 形式)を保つため 1 忍者"
-      measured_runtime_sec: 1800
-    split_decision:
-      boundary_ac_ids: [AC1, AC2]
-      integration_tasks: 1
-    serial_dependency_evidence: "AC2 の bats は AC1 で入れた 3 経路の分岐を同一 flag 名・同一 log 形式で叩く。別忍者に分けると flag 名/log 形式の契約が二重になる"
-    quality_gate:
-      q1_firefighting: "品質向上。理由: 旧経路の停止を『削除』ではなく『flag 1 本の下流化』で可逆に行い、U3 active との切替を 1 変数にする"
-      q2_learning: "奪わない。理由: 判断点は census の実行行の同定のみで、方法(rg+echo 除外)を AC に固定"
-      q3_next_quality: "上がる。理由: flag ON で origin 到達 commit が publisher 由来 100% になり、U8 の削除前提(旧経路 no-op)が揃う"
-      q4_depth: "medium — 理由: 3 script の分岐挿入+bats 1 本、本番挙動は既定 OFF で不変"
-      q5_verified_source: "structure_verified — 対象を実行して確認(2026-09-03 01:32): rg -c PUBLISHER_SINGLE scripts/cmd_complete_gate.sh scripts/ninja_monitor.sh scripts/safe_shared_main_ff.sh → 0/0/0、pgrep -af publisher.sh → pid 2103173(active)、rg -n 'git push' scripts/cmd_complete_gate.sh → autopush 区間 L3583-3815"
-      q6_not_hiding: "隠していない。理由: 関数本体を消さず flag で止めるので、異常時は flag OFF で即戻せる。census の実行行を報告に生貼付させる"
-      q7_definition_verified: "U7・PUBLISHER_SINGLE・写像の定義は設計書 §9.1 U7 行と観点 27 で確認(確認日: 2026-09-03)"
-      q8_why_what: "WHY: 殿 01:30『先に進んでから戻ればいい』=第 3 波を今夜起票 / WHAT: 3 script の push 実行行を flag 下流化+bats / WHEN: 今夜 / WHERE: scripts, tests/unit / WHO: 家老配備(idle 忍者、疾風/影丸) / HOW: census→分岐 1 行→bats / 複利: 切替が env 1 変数になり canary と rollback が秒で回る"
-      q9_firefighting_root_cause: "根本対応。理由: 二重経路(publisher+旧 autopush)の共存を flag で一本化し、分岐や後退の発生源を止める"
-      q10_knowledge_boundary: "検証済み: 3 script の flag 不在、U3 稼働。スコープ外: 関数削除(U8)、flag ON の本番切替(家老 lane)、dm-signal repo"
-      q11_not_already_done: "rg -c 'PUBLISHER_SINGLE' scripts/ → 0(2026-09-03 01:32)。ls tests/unit/test_publisher_single_flag.bats → 無し。rg -c 'cmd_4460' queue/shogun_to_karo.yaml → 0(起票前)"
-      q_ambiguity: "曖昧さ: 『push 実行行』の同定。解消: rg 'git( -C [^ ]+)? push' から echo/コメント/log 文字列行を除いた行を実行行とし、census 結果を報告に生貼付して家老が数える"
-      q12_lord_30min_cost: "no — 殿 01:30 で確定、判定は bats と census 件数"
-      diagnosis: "BLOCK理由: 該当なし(新規起票) / 対策: 3 script へ分岐 1 行ずつ+bats 1 本"
-    environment_change: "type=lesson; file=projects/infra/lessons_shogun.yaml; pattern=cmdテンプレートルール"
-    delegated_at: "\"2026-09-03T01:33:50\""
-    origin: "[[殿指示_先に進んでから戻れ_20260903_0130]] -> [[U3_active起動_0130]] -> [[cmd_4460_U7_flag下流化]]"
   cmd_4449:
     title: "単一 publisher U2 検証: Codex 忍者が隔離 clone で publish_artifact(capture/restore)と gate_report_format の manifest 検証の bats を選択実行し、設計書契約から敵対 fixture を 1 本追加して multi-CLI 同品質を証明する(実装は飛猿=Claude Sonnet)"
     status: blocked

@@ -3435,6 +3435,7 @@ codd:
 | lesson | `L1712` ID-keyed merge driverのidentity keyは実データの一意性不変量に合わせよ。生成するdriverコマンドpathは呼び出し元pathでなくgit-common-dirの親(正本root)で固定せよ |
 | causal | `cmd_karo_hotfix_workarounds_merge_driver_dup_cmd_id_202609030148` files_modified: [[semantic_dictionary_design]] |
 | cmd | `cmd_karo_hotfix_workarounds_merge_driver_dup_cmd_id_202609030148` (`scripts/insight_write.sh`) |
+| discussion | `queue/lord_conversation.jsonl` 2026-09-03T02:47:47+09:00 session_save_20260903_0248(復帰点、先に session_save_20260903_0215 を読め): 02:15-02:48: 設計書 v3.12 §14.1 状況盤(9c28419e6、gist 同期)。c |
 | causal_chain | `[[cmd_3749]]` (L974) |
 | causal_chain | `[[cmd_training_L1_report-write_20260708020332]]` (L977) |
 | causal_chain | `[[cmd_reflux_insight_202607071717_tobisaru]]` (L961) |
@@ -9113,6 +9114,7 @@ codd:
 | causal_chain | `[[cmd_karo_hotfix_push_lane_ancestry_guard_20260902]]` (L1698) |
 | causal_chain | `[[cmd_karo_hotfix_staged_preserve_index_regression_202609021832]]` (L1704) |
 | causal_chain | `[[cmd_karo_hotfix_lesson_feedback_task_identity_202609021922]]` (L1706) |
+| causal | `cmd_4460` files_modified: [[agent_formation_management]] |
 
 ## visibility_tier_masking — Visibility Tier制マスク
 
@@ -9760,6 +9762,7 @@ codd:
 | causal | `cmd_karo_hotfix_gate_publisher_pending_toplevel_only_202609022336` files_modified: [[cdp_browser_capability]] |
 | causal_chain | `[[cmd_karo_cdp_t5_endpoint_qualification_20260802]]` (L1529) |
 | causal_chain | `[[cmd_karo_cdp_t5_auth_dom_probe_20260802]]` (L1530) |
+| causal | `cmd_4460` files_modified: [[cdp_browser_capability]] |
 
 ## defense_hierarchy — 防御階層原則
 
@@ -10823,6 +10826,7 @@ codd:
 | causal | `cmd_karo_hotfix_extract_target_path_exec_order_202609021726` files_modified: [[cmd_quality_logging]] |
 | causal | `cmd_karo_hotfix_gate_publisher_pending_toplevel_only_202609022336` files_modified: [[cmd_quality_logging]] |
 | causal_chain | `[[cmd_3622_kotaro_r3]]` (infra:L893) |
+| causal | `cmd_4460` files_modified: [[cmd_quality_logging]] |
 
 ## task_modifier_injection — タスク修飾子注入
 
@@ -11041,6 +11045,7 @@ codd:
 | causal | `cmd_karo_hotfix_push_red_nonblocking_20260830` files_modified: [[training_cycle_quality]] |
 | causal | `cmd_karo_hotfix_push_lane_ancestry_guard_20260902` files_modified: [[training_cycle_quality]] |
 | causal | `cmd_karo_hotfix_integrate_readtree_checkout_sync_202609022220` files_modified: [[training_cycle_quality]] |
+| causal | `cmd_4460` files_modified: [[training_cycle_quality]] |
 
 ## report_quality_protocol — 忍者報告品質プロトコル
 
@@ -11885,6 +11890,7 @@ codd:
 | causal | `cmd_karo_hotfix_integrate_readtree_checkout_sync_202609022220` files_modified: [[daemon_supervision]] |
 | causal | `cmd_karo_hotfix_idle_flag_bash_running_stop_reentry_202609022232` files_modified: [[daemon_supervision]] |
 | causal_chain | `[[cmd_karo_ci_fix_33301147088_test117_20260830]]` (L1677) |
+| causal | `cmd_4460` files_modified: [[daemon_supervision]] |
 
 ## openpbx_reference — OpenPBX(コリ先生PBX MVP)
 
@@ -12216,6 +12222,7 @@ codd:
 | causal_chain | `[[cmd_karo_hotfix_gunshi_cs_remediation_generation_20260801]]` (L1504) |
 | causal_chain | `[[cmd_karo_hotfix_safe_shared_convergence_202608191137]]` (L1615) |
 | causal_chain | `[[cmd_karo_hotfix_function_coverage_20260828]]` (L1664) |
+| causal | `cmd_4460` files_modified: [[infrastructure_ops]] |
 
 ## context_freshness_retry_budget — context鮮度git再試行予算
 
@@ -16750,6 +16757,7 @@ codd:
 | discussion | `queue/lord_conversation.jsonl` 2026-09-02T22:27:50+09:00 それはインフラバグでは？真因を根治せよ。因果をたどれ |
 | causal | `cmd_karo_hotfix_integrate_readtree_checkout_sync_202609022220` files_modified: [[infra_design_intent]] |
 | causal_chain | `[[cmd_karo_fix_same_cmd_pending_symlink_20260804]]` (L1556) |
+| causal | `cmd_4460` files_modified: [[infra_design_intent]] |
 
 ## scope_integrity_lifecycle — スコープ鮮度ライフサイクル
 
@@ -18194,6 +18202,7 @@ codd:
 | discussion | `queue/lord_conversation.jsonl` 2026-09-02T17:14:22.041195+00:00 git pre-commit semantic propagation for context/projects changes |
 | discussion | `queue/lord_conversation.jsonl` 2026-09-02T17:14:45.779048+00:00 git pre-commit semantic propagation for context/projects changes |
 | discussion | `queue/lord_conversation.jsonl` 2026-09-02T17:30:57.801194+00:00 git pre-commit semantic propagation for context/projects changes |
+| discussion | `queue/lord_conversation.jsonl` 2026-09-02T17:50:48.293451+00:00 git pre-commit semantic propagation for context/projects changes |
 | causal_chain | `[[cmd_karo_hotfix_ga161_obsidian_link_context_freshness_202607021348]]` (L926) |
 | causal_chain | `[[cmd_3648]]` (L933) |
 | causal_chain | `[[cmd_karo_ci_fix_ga191_followup_202607071752]]` (L963) |
@@ -18475,6 +18484,7 @@ codd:
 | causal | `cmd_karo_hotfix_push_red_nonblocking_20260830` files_modified: [[inbox_evidence_durability]] |
 | causal | `cmd_karo_hotfix_push_lane_ancestry_guard_20260902` files_modified: [[inbox_evidence_durability]] |
 | causal | `cmd_karo_hotfix_integrate_readtree_checkout_sync_202609022220` files_modified: [[inbox_evidence_durability]] |
+| causal | `cmd_4460` files_modified: [[inbox_evidence_durability]] |
 
 ## hook_json_command_boundary — hook JSONコマンド境界
 
@@ -18724,6 +18734,7 @@ codd:
 | causal | `cmd_karo_hotfix_push_red_nonblocking_20260830` files_modified: [[active_task_clear_fail_closed]] |
 | causal | `cmd_karo_hotfix_push_lane_ancestry_guard_20260902` files_modified: [[active_task_clear_fail_closed]] |
 | causal | `cmd_karo_hotfix_integrate_readtree_checkout_sync_202609022220` files_modified: [[active_task_clear_fail_closed]] |
+| causal | `cmd_4460` files_modified: [[active_task_clear_fail_closed]] |
 
 ## karo_strong_new_game_20260818_0650 — 家老復帰点（fixture→republish→cron）
 
