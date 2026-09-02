@@ -13905,3 +13905,10 @@ insights:
   source: "self_retro"
   fix_known: false
   status: pending
+- id: INS-20260902-204812779-def0
+  ts: "2026-09-02T20:48:12+09:00"
+  insight: "[[捨てる壁に時間をかけるのは原理原則に反していないか？]] semantic_stress_test candidate_aliases: NO_MATCH source=lord query=捨てる壁に時間をかけるのは原理原則に反していないか？"
+  priority: "low"
+  source: "semantic_stress_test"
+  fix_known: false
+  status: pending
