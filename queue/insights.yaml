@@ -14641,3 +14641,10 @@ insights:
   source: "semantic_stress_test"
   fix_known: false
   status: pending
+- id: INS-20260903-014617106-95d1
+  ts: "2026-09-03T01:46:17+09:00"
+  insight: "[[殿 01 30『あまりに遅すぎる]] semantic_stress_test candidate_aliases: NO_MATCH source=cmds query=殿 2026-09-03 01:30『あまりに遅すぎる。先に進んでから戻ればいい』。U3 publisher daemon は 01:30 に active 起動済(pid 2103173)。設計書 §9.1 U7: 旧 3 経路の push を flag 1 本で no-op にし、origin 到達 commit を publisher/wrapper"
+  priority: "low"
+  source: "semantic_stress_test"
+  fix_known: false
+  status: pending
