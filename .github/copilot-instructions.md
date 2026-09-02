@@ -368,13 +368,18 @@ Special cases (CLI commands sent directly via send-keys):
 ## Inbox Processing Protocol (karo/ninja)
 
 When you receive `inboxN` (e.g. `inbox3`):
-1. `Read queue/inbox/{your_id}.yaml`
-2. Find all entries with `read: false`
-3. Process each message according to its `type`
+1. `bash scripts/inbox_read.sh {your_id}` を実行する（flock下で未読本文を読み、`msg_id + content hash + agent + generation` のreceiptを発行）
+2. 出力から `read: false` の全エントリを特定する
+3. 各メッセージを `type` に従って本文処理する
 4. Mark each processed message by ID: `bash scripts/inbox_mark_read.sh {your_id} {msg_id}`. ID省略・全未読一括既読は禁止（Read後に到着した未処理メッセージを巻き込むため）
    **Edit toolでのinbox既読化は禁止** — flock未使用のためLost Update(メッセージ消失)が発生する
 5. Resume normal workflow
 
+- **positive_rule**: inbox本文は必ず `inbox_read.sh` 経由で読め。Python / `cat` / Read toolの直読みは調査にのみ使え。直読み後の `inbox_mark_read.sh` は一致receipt不在でBLOCKされるため、BLOCK時は迂回せず `inbox_read.sh` から読み直せ。
+- **reason**: 2026-09-01、軍師が未読IDをfor-loopで本文処理前に一括既読化し、正式review approval 0/4のまま消失させた。receipt契約は「読んだ」と「既読化した」を同一message世代で結び、本文未処理の既読化を構造的に不可能にする。
+
+- **positive_rule(家老・軍師)**: **「未読かつ現task_id一致の補足だけを命令として扱う」フィルタは忍者専用(reflux 開始 nudge、T114)。家老・軍師は自分宛の未読を type に従い全て処理せよ**(`task_assigned`/`report_review_result`/`clear_loop_block`/`review_draft`/`report_received` 等)。task_id の有無で「適用せず既読化」するな。
+- **reason**: 2026-08-28 に家老が /clear 直後の recovery で忍者規則を自分の inbox へ誤適用し、03:44/07:41/08:17/10:31 の 4 回、将軍 ci_fix 下知・軍師 LGTM・CLEAR-LOOP-BLOCK 通知を「task_id 欠落ゆえ適用せず既読化」=便停止(T122)。記憶DB の自己記録を [MEM:] 引用して自己強化した。inbox_watcher の nudge 文は 9763378fa で修正済だが、家老自身の判断規則にも埋め込む。
 - **positive_rule**: **指示・命令を `low` / `info` / `gate_clear` / `heartbeat` / `status_update` / `retro_answer` のtypeで送るな。** watcherはこの6typeを「判断不要の情報通知」とみなし**自動既読化して `logs/inbox_info_digest.jsonl` へ退避する。受け手のターンを起こさない**(`scripts/inbox_mark_read.sh:112` の `allowed` 集合)。指示は `task_assigned` 等の起床するtypeで送れ。
 - **reason**: 2026-07-26、家老が `report_received` のBLOCKを回避して `status_update` へ切り替え、以後の忍者宛指示(才蔵5通・影丸2通・飛猿1通・半蔵1通)が全てdigestへ退避され**1件も届かなかった**。家老は40分を「指示の書き方が悪い」と誤診し3度書き直した。∴**一度のBLOCK回避が、以後の全指示を無効化した。** これは「正規フローが通らない=調査対象、迂回するな」(deepdive causal_tracing Phase 6)の実例であり、**BLOCKされた時に別typeへ逃げるのはgate迂回の変形**である。
 
@@ -537,7 +542,7 @@ Reason: 80行で日本語YAML ≈ 2,400トークン、英語YAML ≈ 960トー�
 - CI緑維持|pre-pushフック+CI赤検知(cmd_complete_gate.sh)+GATE WARN|push済みcmd対象|BLOCKではなくWARN
 - **CI RED忍者修正(殿裁定2026-07-16)**|家老がCI RED検知→idle忍者に即修正配備。**家老D0修正禁止・将軍cmd不要**|`gh run view <run_id> --log-failed`→`/karo-direct`で`task_type: ci_fix`+`ci_run_id`付きタスクを忍者へ配備→家老がレビュー/push/GREEN確認。`gate_karo_startup.sh`が配備証跡なしをALERT強制|理由: 実装を忍者へ一元化し、家老は診断・分解・検証に専念する
 - **CI RED中の他作業(殿裁定2026-05-03)**|GATE処理(commit/レビュー/CLEAR)は続行。pushのみ保留(GREEN復帰後一括push)。新cmd配備も続行|CI REDで全停止するな。修正は1名担当、残りは通常作業継続|→ `instructions/generated/copilot-karo.md` §CI RED中の他作業
-- CLI起動|**手動起動は`/home/simokitafresh/bin/claude --effort high`**(絶対パス必須。`claude`だけだとauto-update版が起動する)。`--model opus`=200K厳禁|自動起動(reset_layout/ninja_monitor)はcli_profiles.yamlが`~/bin/claude`を参照→2.1.87保証|codex: config.toml 1M設定必要|→ `context/infrastructure.md` §CLIモデル指定
+- CLI起動|**手動起動は`~/bin/claude --effort high`**(pinned 版の固定パス必須。`claude`だけだとauto-update版が起動する)。`--model opus`=200K厳禁|自動起動(reset_layout/ninja_monitor)はcli_profiles.yamlが`~/bin/claude`を参照→2.1.87保証|codex: config.toml 1M設定必要|→ `context/infrastructure.md` §CLIモデル指定
 - **Codex multi-CLI統合**|hooks=`.codex/hooks.json`(GitHub Copilot CLI hookスクリプト共有)。skills=プロジェクト正本symlink。hook BLOCK=**exit 2**(exit 1はCLIクラッシュ)。doc制限=`project_doc_max_bytes=131072`|→ `context/infrastructure.md` §Codex multi-CLI統合
 - ローカル記憶DB|SQLite検索層=`data/multi_agent_shogun_memory.db`、schema=`context/memory-db-schema.md`、query集=`context/memory-db-queries.md`、runner=`scripts/memory_db_query.sh`|→ `context/infrastructure.md` §lord_conversation / 記憶DBデータフロー
 - 三層記憶|state管理/raw_content/矛盾候補/Obsidian昇格/想起制御|→ `context/memory-db-schema.md` + `context/infrastructure.md` §lord_conversation / 記憶DBデータフロー
@@ -609,6 +614,7 @@ reason: 将軍が4回連続でパラメータ空間を根拠なく縮小(top_n=5
 - reset_layout|agentsウィンドウ一発復元(ペイン配置+変数+レイアウト+watcher)|`bash scripts/reset_layout.sh`(旧/reset-layoutスキルはefc8e016eで削除・shogun-cli-switchへ吸収)
 - /pf-registration|本番PF登録(即パリティ強制)|`skills/pf-registration/SKILL.md`
 - /three-layer-penetrate|三層記憶貫通の標準手順(state=PASS≠貫通の構造防止)|`skills/three-layer-penetrate/SKILL.md`
+- /prose-polish|殿の文章(note 記事・詩的散文)の推敲。natural-japanese は検出器、判定は詩の原理(反復=韻律/連打=打撃音/呼吸=段落と空白/場面転換=横線/見出し無し)。`NOTE_DRAFT_PARAGRAPHS=1` で別下書きへ版ごとアップ|`skills/prose-polish/SKILL.md` → `context/prose-polish.md`
 
 ## Knowledge Maintenance
 
