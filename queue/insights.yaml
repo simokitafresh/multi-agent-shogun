@@ -13297,3 +13297,10 @@ insights:
   source: "semantic_index_update"
   fix_known: false
   status: pending
+- id: INS-20260902-151017087-ba27
+  ts: "2026-09-02T15:10:17+09:00"
+  insight: "[[殿裁定 13 07『採用』・14 50『並列で実装可能か』→第 1 波 U1・U2・U4 は file が重ならず依存な]] semantic_stress_test candidate_aliases: NO_MATCH source=cmds query=殿裁定 2026-09-02 13:07『採用』・14:50『並列で実装可能か』→第 1 波(U1・U2・U4 は file が重ならず依存なし)として cmd_4445(U1)・cmd_4446(U2)と並走起票。設計書 docs/research/single_publisher_asis_tobe_5w1h_20260902.md v3.5(家老 AP"
+  priority: "low"
+  source: "semantic_stress_test"
+  fix_known: false
+  status: pending
