@@ -1,5 +1,5 @@
 <!-- gist-master: 77538fe909ed4d3b83b61b4baf99cacf single_publisher_asis_tobe_5w1h_20260902.md -->
-# origin/main 単一 publisher 化 — AsIs / ToBe / 5W1H 設計書 v3.14(09-03 05:50: U8 cmd_4464 正当 FAIL→cmd_4466(chain+test 単位、M7 除外)、U6b cmd_4465(ledger 消費者)、root drain/worktree 回収 hotfix、daemon 死亡→根治。v3.13=04:55: U7 完了・PUBLISHER_SINGLE ON 04:37・U8 AC2=cmd_4464 起票。v3.12=状況盤 02:32。v3.11=§14 02:15、殿指示 02:13: U3 active 初 publish 05fe87b68、U1/U2 再検証 CLEAR、第 3 波 U7 走行・U8 AC1 完了。殿裁定 01:30『先に進んでから戻れ』でcanary 待ち撤回。v3.10=§14.1 00:50。v3.9=§14 00:05: 実装 CLEAR 6 unit、U5 着地で ACCEPT→enqueue が生き publisher 未起動で全 CLEAR 閉塞→家老 dry-run で U3 欠陥 3 点検出→修正 lane、active 化は保留。v3.8=22:25。v3.7=§14 追加、殿指示 17:18。v3.6=§9.1 共通 AC の 2 巡目を『別 cmd の検証 task』へ。同 cmd 再配備は deploy_task completed-peer guard の正規 BLOCK 対象、15:35)
+# origin/main 単一 publisher 化 — AsIs / ToBe / 5W1H 設計書 v3.15(09-03 06:15: **U8 凍結**(cmd_4466 も正当 FAIL=現役 test の推移的被覆と別機能再利用に結合、将軍裁定 (b))。v3.14=05:50: U8 cmd_4464 正当 FAIL→cmd_4466(chain+test 単位、M7 除外)、U6b cmd_4465(ledger 消費者)、root drain/worktree 回収 hotfix、daemon 死亡→根治。v3.13=04:55: U7 完了・PUBLISHER_SINGLE ON 04:37・U8 AC2=cmd_4464 起票。v3.12=状況盤 02:32。v3.11=§14 02:15、殿指示 02:13: U3 active 初 publish 05fe87b68、U1/U2 再検証 CLEAR、第 3 波 U7 走行・U8 AC1 完了。殿裁定 01:30『先に進んでから戻れ』でcanary 待ち撤回。v3.10=§14.1 00:50。v3.9=§14 00:05: 実装 CLEAR 6 unit、U5 着地で ACCEPT→enqueue が生き publisher 未起動で全 CLEAR 閉塞→家老 dry-run で U3 欠陥 3 点検出→修正 lane、active 化は保留。v3.8=22:25。v3.7=§14 追加、殿指示 17:18。v3.6=§9.1 共通 AC の 2 巡目を『別 cmd の検証 task』へ。同 cmd 再配備は deploy_task completed-peer guard の正規 BLOCK 対象、15:35)
 
 - 作成: 2026-09-02 02:30 将軍(殿指示 02:16『忍者はコミットしない。コミットは家老/将軍のみ』→02:18『コミットのやり方・スキル・構造の検証』→02:24『AsIs/ToBe 5W1H 設計書。不要になる複雑さを先に検証』)
 - 協議: 家老回答 blt_20260902_021944(single publisher + local commit artifact)。協議記録=`queue/notes/shogun_karo_single_committer_hypothesis_20260902_0220.md` §1-6
@@ -274,11 +274,11 @@ canary 判定: **(v1.8 殿裁定 D9)** infra と dm-signal の両 repo を U1 �
 | U3 | publisher daemon | ✅ 4451 | ✅ 欠陥 3 点 | ✅ 初 publish 突合 | 🟢 **active 01:30**(pid 2103173) |
 | U3b | deploy check 三段 receipt | ⛔ | — | — | 撤回(殿 01:30) |
 | U7 | PUBLISHER_SINGLE 下流化 | ✅ 4460(67ced64ee) | ✅ repo guard d61ef6907 / ✅ flag file helper d42b62a90 | — | **ON 04:37**(queue/flags/publisher_single、可逆=rm) |
-| U8 | cleanup M1-M11 | ✅ AC1 台帳 4461 | ❌ cmd_4464 正当 FAIL(M10 のみ削除、行数差分 0=現役 test が旧 chain を縛る) | — | 🔵 **cmd_4466**(chain+縛る test 単位で batch 4 回、M7 除外、行数減少 AC。05:29 小太郎) |
+| U8 | cleanup M1-M11 | ✅ AC1 台帳 4461 | ❌ 4464/4466 とも正当 FAIL(rg literal census は推移的 test 被覆を見落とす。M1/M8 削除で完了 gate suite 数十本+別機能が壊れる) | — | ⏸ **凍結(将軍裁定 06:13)**。flag ON で旧経路は no-op=目的達成。再開条件=運用 7 日後に chain ごとの契約 test 移植設計書 |
 | U6b | ledger 消費者(publisher が ledger_inbox を apply) | 🔵 cmd_4465 半蔵(05:05) | 🔵 publisher base fetch hotfix(4465 着地後に直列) | — | 家老発見 04:58: U6 route は本番未稼働(-x 644+消費者なし)=T2-27 |
 | U3c | root drain(root ahead を lock-run 下で ff push)+worktree 回収 | 🔵 影丸/才蔵 hotfix(05:35) | — | — | flag ON 後の root 直 commit は U1b のみ(将軍 doc lane 実証 db11e00b8/11974b8a5) |
 
-**進捗 8/12 完了(U8 の 4464 は FAIL→4466 走行、U6b/U3c を追加)。U3b 撤回。** 残り工程: cmd_4464 batch 1→4(各 1 commit)→ §11 after 計測(台帳集計行)→ 完了。旧 push 経路は 04:37 以降 no-op、origin 到達は publisher 由来のみ。
+**進捗 8/12 完了、U8 凍結(旧経路は no-op で壁の発生源は停止済)。U3b 撤回。残=U6b(4465)・U3c hotfix・publisher base fetch/stop flag/watchdog 自動再起動 hotfix。** 残り工程: cmd_4464 batch 1→4(各 1 commit)→ §11 after 計測(台帳集計行)→ 完了。旧 push 経路は 04:37 以降 no-op、origin 到達は publisher 由来のみ。
 
 #### 14.1.1 詳細(cmd・commit・GATE 時刻)
 
@@ -338,6 +338,7 @@ canary 判定: **(v1.8 殿裁定 D9)** infra と dm-signal の両 repo を U1 �
 - 例外適用の記録(22:18): push_lane integrate(§10 M2)は捨てる file だが、その欠陥が第 2 波の成果物(U3/U1b)を root から staged 削除し続ける(5 回)。『捨てる壁』と『成果物を壊す壁』は別物で、後者は 1 行で塞ぐ。判定基準=その壁を放置すると実装 file(§9 の成果物)が失われるか。
 
 ## §5 レビュー履歴
+- v3.15(09-03 06:15) U8 凍結(4466 正当 FAIL、decision_candidate『削除には chain ごとの契約 test 移植設計が要る』)。殿 01:31『無駄な複雑化に時間をかけるな』に従う
 - v3.14(09-03 05:50) 4464 正当 FAIL→4466、U6b(4465)・U3c(root drain)追加、publisher daemon 死亡→a5781a4bc 根治、root 直 commit は U1b のみ
 - v3.13(09-03 04:55) U7 完了・flag ON 04:37・U8 AC2 cmd_4464。家老 CTX 100% 停止→将軍 clear_command で復帰(04:26)
 - v3.12(09-03 02:40)→ §14.1 を状況盤(14.1.0、10 行・記号)+詳細(14.1.1)の 2 層に分離。殿指示 02:32『スクロールしないでも進捗が見えるように』
