@@ -13454,3 +13454,10 @@ insights:
   source: "semantic_map_generate:new_file"
   fix_known: false
   status: pending
+- id: INS-20260902-162440506-12ab
+  ts: "2026-09-02T16:24:40+09:00"
+  insight: "[[つまりはないか？家老と協議したほうがいいのでは？]] semantic_stress_test candidate_aliases: NO_MATCH source=lord query=つまりはないか？家老と協議したほうがいいのでは？"
+  priority: "low"
+  source: "semantic_stress_test"
+  fix_known: false
+  status: pending
