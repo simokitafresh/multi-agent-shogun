@@ -8273,6 +8273,136 @@ YAML
     printf 'pass=1 fail_closed=5 false_positive=0\n'
 }
 
+# Build a source-only insights publication whose receipt is the only durable
+# publication identity.  This mirrors reflux tasks that predate task-worktree
+# markers and the remote tip that retains independent insight IDs.
+_make_receipt_only_insights_fixture() {
+    local base="$1" mismatch="${2:-0}"
+    local repo="$base/repo" cmd_id="cmd_receipt_only_insights_probe"
+    local generation="dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd"
+    mkdir -p "$repo/queue"
+    git init -q -b main "$repo"
+    git -C "$repo" config user.email test@example.com
+    git -C "$repo" config user.name test
+    cat > "$repo/queue/insights.yaml" <<'EOF'
+insights:
+- id: lifecycle
+  ts: 2026-09-02T13:07:35+09:00
+  insight: same
+  priority: medium
+  source: lord_conversation:lesson_candidate
+  fix_known: false
+  status: pending
+EOF
+    git -C "$repo" add queue/insights.yaml
+    git -C "$repo" commit -qm base
+    local base_sha
+    base_sha="$(git -C "$repo" rev-parse HEAD)"
+    cat > "$repo/queue/insights.yaml" <<'EOF'
+insights:
+- id: lifecycle
+  ts: 2026-09-02T13:07:35+09:00
+  insight: same
+  priority: medium
+  source: lord_conversation:lesson_candidate
+  fix_known: false
+  status: resolved
+  resolved_reason: verified
+  action_artifact: primary=conversation
+  resolved_at: 2026-09-02T13:23:38+09:00
+EOF
+    git -C "$repo" add queue/insights.yaml
+    git -C "$repo" commit -qm source
+    local source_sha
+    source_sha="$(git -C "$repo" rev-parse HEAD)"
+    if [ "$mismatch" -eq 1 ]; then
+        sed -i 's/resolved_reason: verified/resolved_reason: tampered/' "$repo/queue/insights.yaml"
+    else
+        cat >> "$repo/queue/insights.yaml" <<'EOF'
+- id: remote-only
+  ts: 2026-09-02T13:08:00+09:00
+  insight: independent
+  priority: low
+  source: semantic_index_update
+  fix_known: false
+  status: pending
+EOF
+    fi
+    git -C "$repo" add queue/insights.yaml
+    local published_tree published_sha canonical_sha
+    published_tree="$(git -C "$repo" write-tree)"
+    published_sha="$(printf 'published\n' | git -C "$repo" commit-tree "$published_tree" -p "$base_sha")"
+    canonical_sha="$(printf 'canonical\n' | git -C "$repo" commit-tree "$published_tree" -p "$published_sha")"
+    git -C "$repo" update-ref refs/remotes/origin/main "$canonical_sha"
+
+    local report="$base/report.yaml" task="$base/task.yaml" receipt="$base/receipt.json"
+    cat > "$report" <<YAML
+verdict: PASS
+commit_hash: $source_sha
+report_id: rpt-receipt-only-insights
+files_modified:
+- path: queue/insights.yaml
+YAML
+    cat > "$task" <<YAML
+task:
+  task_id: $cmd_id-normal
+  parent_cmd: $cmd_id
+  report_path: $report
+YAML
+    cat > "$receipt" <<JSON
+{"version":1,"state":"published","cmd_id":"$cmd_id","completion_generation":"$generation","entries":[{"cmd_id":"$cmd_id","completion_generation":"$generation","report_generation":"rpt-receipt-only-insights","repo":"$repo","source_sha":"$source_sha","remote_tip":"$published_sha","remote_contains_source_rc":0}]}
+JSON
+    RECEIPT_ONLY_REPO="$repo"
+    RECEIPT_ONLY_REPORT="$report"
+    RECEIPT_ONLY_TASK="$task"
+    RECEIPT_ONLY_RECEIPT="$receipt"
+    RECEIPT_ONLY_CMD_ID="$cmd_id"
+    RECEIPT_ONLY_GENERATION="$generation"
+}
+
+# test_necessity: a canonical receipt plus stable-ID/path proof is sufficient
+# when an older task has no task-worktree marker; remote-only IDs must remain
+# part of the published insights document.
+# regression_justification: kagemaru's source-only publication had
+# remote_contains_source_rc=0 but terminal ancestry returned WAIT because the
+# legacy task had no marker and the merged insights blob was not source-identical.
+@test "terminal report ancestry accepts receipt-only insights publication" {
+    local base="$BATS_TEST_TMPDIR/receipt-only-insights"
+    _make_receipt_only_insights_fixture "$base"
+
+    run env CMD_COMPLETE_GATE_REPORT_MAIN_ANCESTRY_ONLY=1 \
+        CMD_COMPLETE_GATE_CI_REPO_DIR="$RECEIPT_ONLY_REPO" \
+        CMD_COMPLETE_GATE_CI_REPORT="$RECEIPT_ONLY_REPORT" \
+        CMD_COMPLETE_GATE_TASK_FILE="$RECEIPT_ONLY_TASK" CMD_ID="$RECEIPT_ONLY_CMD_ID" \
+        SHOGUN_COMPLETION_GENERATION="$RECEIPT_ONLY_GENERATION" \
+        CMD_COMPLETE_GATE_SOURCE_PUBLISH_RECEIPT="$RECEIPT_ONLY_RECEIPT" \
+        bash "$SRC_GATE_SCRIPT" "$RECEIPT_ONLY_CMD_ID"
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"source-only-equivalent to canonical publication"* ]]
+    [[ "$output" == *"paths=1 matched=1"* ]]
+}
+
+# test_necessity: a receipt cannot authorize a published same-ID semantic
+# mutation; the terminal stage must remain WAIT and never promote it to PASS.
+# regression_justification: allowing whole-document equality to be relaxed
+# without per-ID validation would turn an independently changed insight into a
+# false-negative publication success.
+@test "terminal report ancestry blocks semantic mismatch in receipt-only insights" {
+    local base="$BATS_TEST_TMPDIR/receipt-only-insights-mismatch"
+    _make_receipt_only_insights_fixture "$base" 1
+
+    run env CMD_COMPLETE_GATE_REPORT_MAIN_ANCESTRY_ONLY=1 \
+        CMD_COMPLETE_GATE_CI_REPO_DIR="$RECEIPT_ONLY_REPO" \
+        CMD_COMPLETE_GATE_CI_REPORT="$RECEIPT_ONLY_REPORT" \
+        CMD_COMPLETE_GATE_TASK_FILE="$RECEIPT_ONLY_TASK" CMD_ID="$RECEIPT_ONLY_CMD_ID" \
+        SHOGUN_COMPLETION_GENERATION="$RECEIPT_ONLY_GENERATION" \
+        CMD_COMPLETE_GATE_SOURCE_PUBLISH_RECEIPT="$RECEIPT_ONLY_RECEIPT" \
+        bash "$SRC_GATE_SCRIPT" "$RECEIPT_ONLY_CMD_ID"
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"WAIT: UNPUSHED:"* ]]
+    [[ "$output" != *"source-only-equivalent to canonical publication"* ]]
+}
+
 # test_necessity: a report whose commit belongs to an explicitly declared
 # cross-repository source remains valid when that canonical repo's main is the
 # shared boundary.
