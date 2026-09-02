@@ -14976,3 +14976,10 @@ insights:
   source: "semantic_index_update"
   fix_known: false
   status: pending
+- id: INS-20260903-052310744-ed41
+  ts: "2026-09-03T05:23:10+09:00"
+  insight: "[[家老が 04 58 deepdive 追体験で発見 blt 045610 U6 の ledger route は本番で一]] semantic_stress_test candidate_aliases: NO_MATCH source=cmds query=家老が 04:58 deepdive 追体験で発見(blt_045610): cmd_4454(U6)の ledger route は本番で一度も動いていない。理由 2 層=(a) 4 caller(insight/lesson/bulletin/workaround)の 検査が file mode 644 のため常に偽で legacy 直書きへ沈黙フォール"
+  priority: "low"
+  source: "semantic_stress_test"
+  fix_known: false
+  status: pending
