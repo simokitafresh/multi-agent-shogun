@@ -14035,7 +14035,10 @@ insights:
   priority: "medium"
   source: "manual"
   fix_known: false
-  status: pending
+  status: resolved
+  resolved_reason: "一次情報で現行 scripts/review_bundle.py:769-800 のTOP-level review_entry選択・cmd_id補完/mismatch拒否・precheck_na伝播を確認し、tests/unit/test_review_bundle.bats 9/9 PASS・SKIP0。新規コード修正不要。"
+  action_artifact: "target=queue/insights.yaml:INS-20260902-210657141-b1ac;primary=scripts/review_bundle.py:L769-L800;history=git:05798e80ea,f3bf5c0bd;regression=bash scripts/run_tests.sh file tests/unit/test_review_bundle.bats:9/9 PASS SKIP0;semantic=context/semantic-map.md:114;decision_candidate=none"
+  resolved_at: "2026-09-02T22:33:00+09:00"
 - id: INS-20260902-210837416-4f35
   ts: "2026-09-02T21:08:37+09:00"
   insight: "[[家老がidleになったら最新版のclaude fable 5 1 lowにせよ]] semantic_stress_test candidate_aliases: NO_MATCH source=lord query=家老がidleになったら最新版のclaude fable 5.1 lowにせよ"
