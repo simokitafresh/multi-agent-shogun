@@ -9958,7 +9958,7 @@ PY
             gate_detail_finish
         fi
 
-        missing=$(comm -23 <(printf '%s\n' "$report_files") <(printf '%s\n' "$commit_files"))
+        missing=$(comm -23 <(printf '%s\n' "$report_files" | sort -u) <(printf '%s\n' "$commit_files" | sort -u))
         if [ -n "$missing" ]; then
             if declare -F gate_detail_begin >/dev/null 2>&1; then
                 gate_detail_begin "self_grade.phase_union_fallback" pure_processing
@@ -9974,7 +9974,7 @@ PY
             if declare -F gate_detail_finish >/dev/null 2>&1; then
                 gate_detail_finish
             fi
-            missing=$(comm -23 <(printf '%s\n' "$report_files") <(printf '%s\n' "$commit_files"))
+            missing=$(comm -23 <(printf '%s\n' "$report_files" | sort -u) <(printf '%s\n' "$commit_files" | sort -u))
         fi
         if [ -n "$missing" ]; then
             echo "  [WARN] ${ninja_name}: SELF_GRADE_COMMIT_FILES files_modified not in report commit phase union (${commit_hash}):"
