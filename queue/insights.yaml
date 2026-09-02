@@ -14586,4 +14586,14 @@ insights:
   priority: "low"
   source: "semantic_index_update"
   fix_known: false
+  status: "resolved"
+  resolved_reason: "semantic map generation verified the candidate is represented or intentionally ignored"
+  action_artifact: "semantic_map=/home/simokitafresh/multi-agent-shogun/context/semantic-map.md;semantic_index=/home/simokitafresh/multi-agent-shogun/docs/semantic-index/index.md"
+  resolved_at: "2026-09-03T01:28:01.731655"
+- id: INS-20260903-012906038-b245
+  ts: "2026-09-03T01:29:06+09:00"
+  insight: "scripts/insight_write.sh の merge driver 登録(L61-64)が $merge_repo の絶対 path を共有 .git/config に書くため、linked worktree(疾風 hayate_2c3a…、9/1 の u8 merge strategy hotfix)から実行されると worktree path が正本 config に残り、worktree 回収後に全 merge が『No such file』で失敗→push lane integrate 全停止(9/3 01:26 実測、未 push 31)。登録 path は正本 root(git rev-parse --git-common-dir の親)に固定すべき。"
+  priority: "high"
+  source: "manual"
+  fix_known: false
   status: pending
