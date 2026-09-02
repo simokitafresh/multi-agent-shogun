@@ -14269,3 +14269,10 @@ insights:
   source: "semantic_stress_test"
   fix_known: false
   status: pending
+- id: INS-20260902-231736313-4c2d
+  ts: "2026-09-02T23:17:36+09:00"
+  insight: "[[LP SEO 月次シグナル頁 554 本の孤立解消 — signals 年別一覧頁 EN JA LP からの導線 1 本]] semantic_stress_test candidate_aliases: NO_MATCH source=cmds query=LP SEO: 月次シグナル頁 554 本の孤立解消 — /signals/ 年別一覧頁(EN/JA)+LP からの導線 1 本+月次頁の前月/翌月/一覧リンク+最新月の lastmod を data-through 日付に"
+  priority: "low"
+  source: "semantic_stress_test"
+  fix_known: false
+  status: pending
