@@ -14749,7 +14749,10 @@ insights:
   priority: "high"
   source: "manual"
   fix_known: false
-  status: pending
+  status: "resolved"
+  resolved_reason: "一次情報で現行cmd_complete_gate.sh L84-252とtests/unit/test_gate_dual_read.bats L46-115を確認。gateはreportのpublished_sha+path/blob receiptを受理しtop-level queued requestだけをWAITするが、STATE_DIR/publish_queue/events.jsonlのalready_publishedイベントからrequest→published_shaを等価証拠として読む分岐と契約testは存在しない。events.jsonl seq=5は対象publisher requestのalready_published/published_sha=29168ab9cd637463c34ebb39637b3f9ed53745a5を実記録しており、insightの現象は未根治。凍結中かつ本task scope外のcmd_complete_gate.sh実装は行わず、別実装修正cmdのdecision_candidateへ委譲する。"
+  action_artifact: "target=queue/insights.yaml:INS-20260903-023000293-7f6e;primary=scripts/cmd_complete_gate.sh:L84-252;contract_test=tests/unit/test_gate_dual_read.bats:L46-115;publisher_event=STATE_DIR/publish_queue/events.jsonl:seq5;published_sha=29168ab9cd637463c34ebb39637b3f9ed53745a5;decision_candidate=cmd_complete_gate.shへevents.jsonlのalready_published/published request→published_sha等価証拠分岐を追加し、イベント受理・不一致fail-closed・path/blob/ancestry境界の契約testを別scopeで実装"
+  resolved_at: "2026-09-03T03:02:43.754920"
 - id: INS-20260903-023221842-6c05
   ts: "2026-09-03T02:32:21+09:00"
   insight: "semantic_index_update新概念候補: discussion:unit × cmdを覚醒してアップデートしてくれ。スクロールしないでも進捗が見えるようにして は 既存aliasesに一致なし。概念定義とaliases追加を検討せよ"
