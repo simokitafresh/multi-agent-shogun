@@ -14247,11 +14247,7 @@ insights:
   priority: "high"
   source: "karo_workaround_log"
   fix_known: false
-  status: resolved
-  resolved_reason: "一次情報で infra::general の現物3件と PD-141 を確認し、重複起票せず既存構造対策 task へ整理済み"
-  action_artifact: PD-141;queue/tasks/hayate.yaml;cmd_karo_hotfix_report_format_manifest_dotslash_202609022312
-  resolved_at: "2026-09-02T23:28:15+09:00"
-  last_seen: "2026-09-02T23:33:46+09:00"
+  status: pending
 - id: INS-20260902-230836832-7c46
   ts: "2026-09-02T23:08:36+09:00"
   insight: "report_field_set.sh は files_modified path に '/' を必須(L1386/L1930)として top-level file(AGENTS.md 等)を BLOCK するが、gate_report_format の manifest_consistency は './' 無しの厳密一致を要求する。top-level file を変更する task(build_instructions 同期等)は忍者が報告を書けない矛盾。report_field_set の判定を『repo 内 tracked path なら可』へ改める"
@@ -14355,5 +14351,15 @@ insights:
   insight: "[[将軍裁定 a]] NO_MATCH purpose pending alias: cmd_complete時にdeploy_task.logでNO_MATCHだったpurpose。類似概念TOP3: dmsignal_operations(DM-Signal運用; alias=A/A+B/B; score=18.8) / agent_formation_management(編成管理; alias=A/B evaluation; score=12.3) / semantic_dictionary_design(セマンティック辞書構想; alias=fixture body without a link; score=7.5)。既存概念aliasesへの自動昇格候補"
   priority: "low"
   source: "semantic_index_update"
+  fix_known: false
+  status: "resolved"
+  resolved_reason: "semantic index candidate was absorbed into a registered concept"
+  action_artifact: "semantic_index=/home/simokitafresh/multi-agent-shogun/docs/semantic-index/index.md"
+  resolved_at: "2026-09-02T23:47:16.863648"
+- id: INS-20260902-234732719-da13
+  ts: "2026-09-02T23:47:32+09:00"
+  insight: "[[LP 画像 SEO 検索結果にチャートのサムネイルを出す条件を揃える — 全頁 max image preview la]] semantic_stress_test candidate_aliases: NO_MATCH source=cmds query=LP 画像 SEO: 検索結果にチャートのサムネイルを出す条件を揃える — 全頁 max-image-preview:large+構造化データの image/logo+月次頁にチャート画像と og:image/Article+img の width/height"
+  priority: "low"
+  source: "semantic_stress_test"
   fix_known: false
   status: pending
