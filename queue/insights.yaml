@@ -13318,3 +13318,10 @@ insights:
   source: "semantic_stress_test"
   fix_known: false
   status: pending
+- id: INS-20260902-151120485-1ac4
+  ts: "2026-09-02T15:11:20+09:00"
+  insight: "[[single publisher asis tobe 5w1h 20260902 mdは並列で実装可能か？]] semantic_stress_test candidate_aliases: NO_MATCH source=lord query=single_publisher_asis_tobe_5w1h_20260902.mdは並列で実装可能か？"
+  priority: "low"
+  source: "semantic_stress_test"
+  fix_known: false
+  status: pending
