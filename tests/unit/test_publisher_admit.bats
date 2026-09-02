@@ -191,7 +191,7 @@ REQ
 # fixtureと同型(scripts/lib一式をsymlinkし、review_approval.sh自体を隔離rootで動かす)。
 
 setup_trigger_fixture() {
-    TRIGGER_ROOT="$BATS_TEST_TMPDIR/publisher-admit-trigger-root"
+    TRIGGER_ROOT="$(mktemp -d "$BATS_TEST_TMPDIR/publisher-admit-trigger-root.XXXXXX")"
     mkdir -p "$TRIGGER_ROOT/queue/reports" "$TRIGGER_ROOT/queue/archive/reports" \
         "$TRIGGER_ROOT/queue/tasks" "$TRIGGER_ROOT/queue/gates" "$TRIGGER_ROOT/scripts" \
         "$TRIGGER_ROOT/logs"
@@ -232,6 +232,37 @@ REPORT
 
 trigger_queue_count() {
     find "$TRIGGER_STATE_DIR/publish_queue" -maxdepth 1 -type f -name '*.request' 2>/dev/null | wc -l | tr -d ' '
+}
+
+# test_necessity: Karo ACCEPT must not enqueue a report owned by an external
+# repository into the infra publisher, while an infra-owned report still takes
+# the existing enqueue path. This fixes the observed dm-signal enqueue=1
+# boundary without weakening the infra admission path.
+@test "Karo ACCEPT enqueues only a report owned by the publisher repository" {
+    setup_trigger_fixture
+    external_report="$TRIGGER_ROOT/queue/reports/worker_report_cmd_trigger.yaml"
+    cat >> "$external_report" <<'YAML'
+cross_repo_commits:
+  - repo: /mnt/c/Python_app/DM-Signal
+    commit_hash: aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa
+    paths:
+      - backend/app/example.py
+YAML
+    REVIEW_APPROVAL_SKIP_LEDGER_CHECK=1 \
+      bash "$TRIGGER_ROOT/scripts/review_approval.sh" cmd_trigger gunshi LGTM "$external_report"
+    run bash "$TRIGGER_ROOT/scripts/review_approval.sh" cmd_trigger karo ACCEPT "$external_report"
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"skip_enqueue repo=/mnt/c/Python_app/DM-Signal"* ]]
+    [ "$(trigger_queue_count)" -eq 0 ]
+
+    setup_trigger_fixture
+    local_report="$TRIGGER_ROOT/queue/reports/worker_report_cmd_trigger.yaml"
+    sed -i '/  task_type: full/a\  project: infra' "$TRIGGER_ROOT/queue/tasks/worker.yaml"
+    REVIEW_APPROVAL_SKIP_LEDGER_CHECK=1 \
+      bash "$TRIGGER_ROOT/scripts/review_approval.sh" cmd_trigger gunshi LGTM "$local_report"
+    run bash "$TRIGGER_ROOT/scripts/review_approval.sh" cmd_trigger karo ACCEPT "$local_report"
+    [ "$status" -eq 0 ]
+    [ "$(trigger_queue_count)" -eq 1 ]
 }
 
 # test_necessity: review_approval.sh の karo ACCEPT <report> --migration-ack <value> は
