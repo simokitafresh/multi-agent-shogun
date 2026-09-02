@@ -50,6 +50,20 @@ _pa_capture() {
         return 2
     }
 
+    # Base refresh (2026-09-03 karo hotfix, shogun 05:24 (1)): the deploy-time base goes stale as
+    # origin/main advances, and the publisher's C2a then rejects every path that moved on origin
+    # even after the ninja merged origin/main. Prefer merge-base(origin/main, source_sha) when it
+    # is a descendant of the deploy-time base, so a merged task publishes cleanly.
+    local refreshed_base=""
+    if git -C "$worktree" rev-parse --verify -q origin/main >/dev/null 2>&1; then
+        refreshed_base="$(git -C "$worktree" merge-base origin/main "$source_sha" 2>/dev/null || true)"
+        if [ -n "$refreshed_base" ] && [ "$refreshed_base" != "$base" ] \
+            && git -C "$worktree" merge-base --is-ancestor "$base" "$refreshed_base" 2>/dev/null; then
+            _pa_err "capture: base refreshed task_id=$task_id deploy_base=$base merge_base=$refreshed_base"
+            base="$refreshed_base"
+        fi
+    fi
+
     local paths
     paths="$(git -C "$worktree" diff --no-renames --name-only "$base" "$source_sha" -- 2>/dev/null || true)"
     if [ -z "$paths" ]; then
