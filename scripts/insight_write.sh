@@ -462,8 +462,14 @@ if [[ -f "$LEDGER_WRITER" && ! -x "$LEDGER_WRITER" ]]; then
 fi
 LEDGER_ENTRY_FILE="$(mktemp)"
 trap 'rm -f -- "$LEDGER_ENTRY_FILE"' EXIT
+# The publisher ledger route applies to the repository's canonical insights ledger only.
+# Isolated fixtures point INSIGHTS_FILE elsewhere and must keep the direct append
+# (2026-09-03: ledger_writer became 755 and fixtures silently lost their entries).
+ledger_route_enabled() {
+  [[ -x "$LEDGER_WRITER" && "$INSIGHTS_FILE" == "$SCRIPT_DIR/queue/insights.yaml" ]]
+}
 ledger_append() {
-  if [[ -x "$LEDGER_WRITER" ]]; then
+  if ledger_route_enabled; then
     LEDGER_SOURCE_FILE="$INSIGHTS_FILE" bash "$LEDGER_WRITER" append insights "$LEDGER_ENTRY_FILE" >/dev/null
   else
     # Legacy isolated fixtures do not copy the publisher binary.
@@ -473,7 +479,7 @@ ledger_append() {
   fi
 }
 
-if [[ ! -x "$LEDGER_WRITER" ]]; then
+if ! ledger_route_enabled; then
   mkdir -p "${INSIGHTS_FILE%/*}"
   [[ -s "$INSIGHTS_FILE" ]] || printf 'insights:\n' > "$INSIGHTS_FILE"
 fi
@@ -493,7 +499,7 @@ fi
                VERIFICATION_EXIT_CODE_ENV="$verification_exit_code" \
                VERIFICATION_OUTPUT_ENV="$verification_output" \
                ENTRY_FILE_ENV="$LEDGER_ENTRY_FILE" \
-               LEDGER_LEGACY_FIXTURE="$([[ -x "$LEDGER_WRITER" ]] && echo 0 || echo 1)" \
+               LEDGER_LEGACY_FIXTURE="$(ledger_route_enabled && echo 0 || echo 1)" \
                python3 - <<'PYEOF'
 import json
 import os
