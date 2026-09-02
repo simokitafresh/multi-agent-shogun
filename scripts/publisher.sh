@@ -234,8 +234,11 @@ run_one() {
     if ! request="$(bash "$QUEUE_LIB" dequeue)"; then
         rc=$?; [ "$rc" -eq 3 ] && return 0; return "$rc"
     fi
-    if bash "$QUEUE_LIB" lock-run --bound 600 -- bash "$SCRIPT_DIR/publisher.sh" --process-request "$request" "$mode"; then return 0; fi
-    rc=$?; handle_lock_failure "$request" "$rc"
+    # NOTE: `$?` after an `if` compound is 0; capture the child's rc explicitly or RC handling never runs.
+    rc=0
+    bash "$QUEUE_LIB" lock-run --bound 600 -- bash "$SCRIPT_DIR/publisher.sh" --process-request "$request" "$mode" || rc=$?
+    [ "$rc" -eq 0 ] && return 0
+    handle_lock_failure "$request" "$rc"
 }
 
 daemon_main() {
