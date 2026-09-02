@@ -1,5 +1,5 @@
 <!-- gist-master: 77538fe909ed4d3b83b61b4baf99cacf single_publisher_asis_tobe_5w1h_20260902.md -->
-# origin/main 単一 publisher 化 — AsIs / ToBe / 5W1H 設計書 v1.9(v1.8=殿裁定 3 点反映 13:25 → 殿指示 13:23『実装は忍者。性能の劣る LLM が混乱しない設計書。クリーンアップと速度検証まで完了して最終ゴール』を §9-§11 で反映、13:30。殿指示 13:25 multi-CLI 境界を §12 で反映、13:33)
+# origin/main 単一 publisher 化 — AsIs / ToBe / 5W1H 設計書 v2.0(家老 REJECT blt_20260902_133722 の観点 9-15 全 7 点を反映、13:45)
 
 - 作成: 2026-09-02 02:30 将軍(殿指示 02:16『忍者はコミットしない。コミットは家老/将軍のみ』→02:18『コミットのやり方・スキル・構造の検証』→02:24『AsIs/ToBe 5W1H 設計書。不要になる複雑さを先に検証』)
 - 協議: 家老回答 blt_20260902_021944(single publisher + local commit artifact)。協議記録=`queue/notes/shogun_karo_single_committer_hypothesis_20260902_0220.md` §1-6
@@ -7,7 +7,7 @@
 - 一次データ取得日時: 2026-09-02 02:16-02:28(origin/main 24h log、push lane log、scripts 行数/関数数)
 
 ## §0 結論(1 行)
-origin/main へ書く主体を**家老の publisher 1 本(直列 queue)**に限定し、忍者は worktree 内 local commit(成果物)まで、将軍の doc も同 queue を通す。これで merge 93/日→0、criss-cross 0、内容消失 0、root worktree 旧版 0 となり、多重 publisher の副作用に対して積まれた **約 4,900 行・bats 221 本・merge driver 5 本・pre-push guard** が不要になる。
+origin/main へ書く主体を **lease 1 本で直列化された writer**(publisher daemon=家老 lane、および lease 取得+root 同期を条件とする将軍・家老の直接 commit)に限定し、忍者は worktree 内 local commit(成果物)まで、daemon・台帳は publisher 経由とする。これで merge 93/日→0、criss-cross 0、内容消失 0、root worktree 旧版 0 となり、多重 publisher の副作用に対して積まれた **約 4,900 行・bats 221 本・merge driver 5 本・pre-push guard** が不要になる。
 
 ### §0.1 殿裁定の記録(2026-09-02 13:07-13:20、事実→制約→判断→効果)
 | 時刻 | 事実 | 制約 | 判断(殿) | 効果 |
@@ -57,7 +57,7 @@ origin/main へ書く主体を**家老の publisher 1 本(直列 queue)**に限�
 
 ## §2 ToBe
 ### 2.1 原則
-1. origin/main へ commit を到達させる主体は **publisher 1 プロセス**(家老 lane、直列 lock+FIFO queue)のみ。将軍・家老の doc/hotfix も同 queue。
+1. origin/main へ commit を到達させる経路は **lease 1 本**で直列化する。lease を取れる主体は publisher daemon(家老 lane、FIFO queue)と、将軍・家老の直接 commit wrapper(U1b)の 2 種のみ。忍者・daemon 群・台帳 writer は lease を取れない(publisher 経由)。
 2. 忍者は自分の worktree で **local commit(immutable 成果物)** まで。origin DAG に忍者の ancestry は入らない。成果物の定義(家老レビュー 4)=**`source_tree`(local commit の tree id)+`patch_sha`(base..source の scope 限定 patch の sha256)+`published_sha`(publisher が生成した直線 commit)**の 3 つ組。旧契約 field の写像: `commit_hash`→`source_sha`(local commit id、参照のみ)/ test receipt の `source_head`→`source_tree` / **task・AC fingerprint は指示契約の同一性、`patch_sha` は成果物の同一性=別物として両方保持** / `cross_repo_commits`→ `{repo, ref, source_sha, published_sha, path receipt}` の組(path 一覧だけに縮退しない)/ ci_fix の `source_commit`→`published_sha` / worktree cleanup→artifact 複製(C6)後に許可。
 3. publisher は source commit を merge/cherry-pick せず、`base..source` の **scope 限定内容(path/blob)を最新 remote tip へ適用し新しい直線 commit** を作る(家老案)。conflict=忍者へ rebase 差し戻し(可視)。
 4. 台帳(insights/bulletin/workarounds/lessons/semantic-map)は publisher 内の **独立 batch commit**(code commit と混ぜない、因果時刻を保つ)。writer は root worktree へ書かず **`$STATE_DIR/ledger_inbox/`(絶対境界)へ追記**し、publisher が batch 時に取り込む(家老レビュー 2: root porcelain を常時 0 にするため)。
@@ -70,13 +70,13 @@ origin/main へ書く主体を**家老の publisher 1 本(直列 queue)**に限�
                                                      ↓ LGTM(軍師)+ACCEPT(家老)
 publisher(家老 lane, 直列):  fetch tip T → isolated tree@T → apply diff(B..S | paths) → commit P → push → 報告に published_sha=P
 台帳 writer: root 外 `$STATE_DIR/ledger_inbox/<ledger>/<ts>.yaml` へ追記のみ → publisher が N 分毎/ task 完了毎に取り込み batch commit "ledger: …" → push(root worktree へは書かない)
-将軍 doc: root で編集 → `publish_request docs` → 同 queue → publisher が commit+push
+将軍/家老 直接 commit: root で編集 → `scripts/publish_direct_commit.sh -m <msg> -- <paths>`(lease 取得→root ff 同期→scope commit→push→lease 解放、U1b)。将軍が queue に載せたい時は kind=doc request も可(任意)
 ```
 
 ### 2.3 5W1H
 | | AsIs | ToBe |
 |---|---|---|
-| **Who** | 公開者 11 script・実質 5 主体(忍者 autopush/gate/monitor/将軍/家老) | publisher 1(家老 lane、daemon)+lease 付き直接 commit(将軍・家老、v1.8 D10)。忍者=local commit、daemon/台帳=publisher 経由 |
+| **Who** | 公開者 11 script・実質 5 主体(忍者 autopush/gate/monitor/将軍/家老) | lease 1 本: publisher daemon(家老 lane)+直接 commit wrapper(将軍・家老)。忍者=local commit、daemon/台帳=publisher 経由 |
 | **What** | merge 93/日、統合失敗 95、消失 2、旧版 4、GA-PUSH1 3 | 直線履歴(merge 0)、消失 0、旧版 0、GA-PUSH1 0 |
 | **When** | 各 lane が非同期に push(CI 待ち・age 600s・ADMIT) | LGTM+ACCEPT 直後に queue 投入、直列で ≈18s/task(p90 40s)、6 同着でも最後尾 ≈108s |
 | **Where** | root 共有 worktree+clean clone+isolated worktree+6 忍者 worktree の 9 箇所から origin へ | publisher の isolated tree 1 箇所のみが origin へ。root は publisher の後追い checkout(worktree 同期を publisher が行う) |
@@ -98,6 +98,8 @@ publisher(家老 lane, 直列):  fetch tip T → isolated tree@T → apply diff(
 | U | 内容 | AC(二値) | 不要化される複雑さ |
 |---|---|---|---|
 | U1 | non-publish queue: `$STATE_DIR/publish_queue/` に request(FIFO、flock、lease 発行)。この段階では公開せず並び順と lease のみ | 並行 request 6 件で queue 順序=投入順(FIFO 逆転 0)∧ lease の max concurrent holders = 1 ∧ overlap interval pairs = 0 ∧ lease が remote-ref+candidate SHA+expiry に結び付く | — |
+| U1b | 将軍・家老の直接 commit wrapper `scripts/publish_direct_commit.sh`(lease 取得→root ff 同期(D8)→`ninja_scope_commit.sh`→push→lease 解放) | 6 並行 wrapper で lease 同時保持 1 ∧ 同期失敗時 commit 0(fail-closed)∧ commit 後 60s 以内 root HEAD==origin ∧ porcelain 0 | 将軍・家老の手動 push、pre-push 手動対処 |
+| U1c | C5 実装: `.githooks/pre-push` に lease 検査(lease file の ref+sha+expiry+hmac が push 対象と一致しなければ exit 1)。CLI 非依存 | lease なし push 0/N BLOCK ∧ lease あり push N/N PASS ∧ Claude pane・Codex pane・素の bash の 3 経路で同結果 | GA-PUSH1 dirty-tree guard(M5) |
 | U2 | 忍者成果物=source_tree+patch_sha(報告に source_sha/base/paths)+LGTM 時に artifacts/ へ複製(C6) | 報告 gate が manifest を検証 PASS ∧ 複製後に worktree 削除しても publisher が復元可 | ninja_scope_commit option ≥ 20 |
 | U4 | gate を dual-read(旧 source_sha 契約と新 published_sha+path/blob receipt の両方を受理) | 旧・新 fixture 両方 PASS | — |
 | U5 | LGTM+ACCEPT を queue の admission 条件にする(未承認 request は投入不可) | 未承認 request N 件で queue admitted = 0 ∧ 承認済 N 件で admitted = N(publisher 未稼働でも計測可能な admission 判定) | — |
@@ -105,7 +107,7 @@ publisher(家老 lane, 直列):  fetch tip T → isolated tree@T → apply diff(
 | U6 | reflux/台帳 writer を同 queue の batch へ | 台帳 commit が code commit と分離 ∧ merge driver 未使用 | .gitattributes 6 rule・driver 5・insights auto-commit |
 | U7 | autopush 4 経路/ancestry/push_lane/postclear auto-commit を flag 停止(`PUBLISHER_SINGLE=1`) | 停止後 24h で **C1-C8 全 PASS(各 C の実測 receipt を報告に生貼付)** | push_lane 596 行・autopush 1,182 行(停止) |
 | U8 | canary 7 日後に旧 gate/tests/hook を削除(旧 test の不変量は新 contract test へ移植済みであること+`deletion_justification`) | bats 全 GREEN ∧ 削除 script 参照 0(rg) ∧ 移植不変量 100% | 上記の物理削除・GA-PUSH1 overlap 部・SKILL 縮退(pre-push の lease 強制・品質検査は残す) |
-canary 判定: **(v1.8 殿裁定 D9)** infra と dm-signal の両 repo を U1 から同時に対象とし、U3 dry-run 24h は両 repo で並行して取り判定差 0 で同時 active 化。U7 後 24h で **C1-C8 全 PASS(両 repo それぞれの receipt)** で canary 成立。dm-signal 固有の追加検知: publish 後の Render deploy が失敗または主要 EP smoke(200)が落ちたら publisher は次 request を hold し revert request のみ admit(R4 と同型、R11)。U8 は 10 file 超の削除が見込まれるため、**削除 manifest(path・不変量の移植先・deletion_justification)を作り殿確認の上、1 batch 最大 10 file** で実施(Tier 2 STOP-AND-REPORT 準拠)。
+canary 判定: **(v1.8 殿裁定 D9)** infra と dm-signal の両 repo を U1 から同時に対象とし、U3 dry-run 24h は両 repo で並行して取り判定差 0 で同時 active 化。U7 後 24h で **C1-C8 全 PASS(両 repo それぞれの receipt)** で canary 成立。dm-signal 固有の追加検知(U3b、R11): publish 後に Render deploy(backend=dm-signal-backend / frontend=dm-signal-frontend、render.yaml の name で service id を解決)の状態を API で poll(timeout 15 分)し、live 後に smoke `GET /healthz`=200(render.yaml healthCheckPath と同一)∧`GET /api/public/showcase`=200 を確認。失敗で次 request を hold し kind=revert(対象 published_sha を `git revert` した request)のみ admit。U8 は 10 file 超の削除が見込まれるため、**削除 manifest(path・不変量の移植先・deletion_justification)を作り殿確認の上、1 batch 最大 10 file** で実施(Tier 2 STOP-AND-REPORT 準拠)。
 
 ## §4 リスクと対策(v1.3 で各リスクに二値の検知+復旧を付与)
 | # | リスク | 対策(構造) | 検知(二値) | 復旧 |
@@ -120,7 +122,8 @@ canary 判定: **(v1.8 殿裁定 D9)** infra と dm-signal の両 repo を U1 �
 | R8 | root worktree と origin の乖離(旧版 staged の再発) | publisher が push 後に root を ff のみで同期し、worktree/index も更新(C3)。**unexpected dirty は他者 WIP**: 同期 BLOCK→所有者特定→artifact 退避→root 同期→**所有者専用の非 root worktree へ再適用**(root には再適用 0。所有者が root しか持たない場合は新しい隔離 worktree を作って適用し、root は clean mirror を維持)。publisher の commit へは投入しない。公開が必要なら別 request+承認 | C3 違反(porcelain ≠ 0 が 10 分超)、SYNC-BLOCK 記録に paths/所有者あり、WIP の publish 混入 = 0。**復旧完了 = root porcelain 0 ∧ artifact hash == owner worktree 適用後 hash** | 退避 artifact から owner worktree へ再適用(公開は承認済 request のみ) |
 | R9 | 忍者成果物の消失(pane 停止/new/worktree cleanup) | LGTM 時に artifacts/ へ複製(C6) | 複製なしの cleanup = 0 | artifacts/ から再 apply |
 | R10 | U8 での過剰削除(『削るな速くしろ』違反) | 削除 manifest+不変量移植先+deletion_justification+殿確認+1 batch ≤10 file | manifest 未記載の削除 = 0 | 削除 manifest から **forward restore commit を publisher 経由で作成**(D012 整合、revert 直接実行はしない) |
-| R11 | (v1.8) dm-signal で publish 後の Render deploy 失敗・smoke 落ち | publisher は published_sha ごとに Render deploy 状態と主要 EP smoke を記録 | deploy failed または smoke≠200 が 1 件 | 次 request hold、revert request のみ admit(D7 同型)。revert push で数分復旧 |
+| R11 | (v1.8→v2.0) dm-signal で publish 後の Render deploy 失敗・smoke 落ち | U3b `scripts/publisher_deploy_check.sh`: published_sha ごとに Render API(service=render.yaml name→id)で deploy 状態 poll(timeout 15 分)→live 後 smoke(`/healthz` 200 ∧ `/api/public/showcase` 200)。結果を request に `deploy_status`/`smoke_status` として記録 | deploy≠live(timeout 含む)または smoke≠200 が 1 件 | 次 request hold、kind=revert のみ admit(D7 同型)。revert push→再 deploy で復旧、`deploy_status=live ∧ smoke=200` で hold 解除 |
+| R13 | (v2.0) published commit に DB migration が含まれ revert で DB が戻らない | request 生成時に paths に `backend/app/db/migrations/` 配下があれば `db_migration=true` を付け、admit 条件に家老 ACCEPT の `migration_ack: true`(逆 migration の path または『不可逆・受容』の明記)を追加 | db_migration=true ∧ migration_ack 無しの admitted = 0 | migration_ack の逆 migration を kind=revert request と同時に投入。無い場合は殿へ報告(不可逆) |
 | R12 | (v1.8) 将軍・家老の直接 commit が root 旧版を再生産 | lease 取得 script が commit 前に root を tip へ ff 同期し dirty は所有者退避(D8) | 直接 commit 後 60s 以内に root HEAD==origin ∧ porcelain 0(C3 と同基準) | 同期失敗は commit BLOCK(fail-closed)、退避 artifact から再適用 |
 
 ## §6 未決事項の決定(v1.5、将軍決定。殿裁定事項は明示)
@@ -128,13 +131,13 @@ canary 判定: **(v1.8 殿裁定 D9)** infra と dm-signal の両 repo を U1 �
 |---|---|---|---|
 | D1 | publisher の実行主体 | ninja_monitor とは別 daemon `scripts/publisher.sh`(daemon_watchdog 登録)。家老は監督(queue 監視・差し戻し判断)であり手動 commit はしない | 家老 pane の CTX/待ちに publish を依存させない。家老 lane=責務、daemon=実行 |
 | D2 | queue 形式 | `$STATE_DIR/publish_queue/<epoch>_<seq>_<task_id>.request`(**tracked root の外**。root 配下に置く場合は .gitignore 登録を AC 化)(YAML: task_id, source_sha, source_tree, patch_sha, base, paths[], approvals{gunshi,karo}, kind=code/doc/ledger) | ファイル=永続、FIFO は名前順、flock 1 本。queue が root を dirty 化しない(C3 整合) |
-| D3 | lease | `$STATE_DIR/publish_queue/lease`(ref, candidate_sha, expiry, hmac)。TTL 120s、更新は publisher のみ | R1/R7 |
+| D3 | lease | `$STATE_DIR/publish_queue/lease`(ref, candidate_sha, expiry, hmac)。TTL 120s、取得・更新できるのは publisher daemon と直接 commit wrapper(U1b)のみ。忍者 worktree からの取得は wrapper が拒否 | R1/R7 |
 | D4 | apply 方式 | `git diff base..source -- paths` の patch を isolated tree@tip へ `git apply --index`、C2a 事前検査で tip blob==base blob | merge/cherry-pick を使わない=criss-cross 0 |
 | D5 | doc/map の承認 | kind=doc は将軍投入=承認(LGTM 不要)だが **path allowlist**(docs/、context/、queue/shogun_todo_map.md 等)を強制し、allowlist 外 path を含む doc request の admit = 0(code 偽装 0 を AC 化)。kind=code は LGTM+ACCEPT 必須 | R3、偽装防止 |
 | D6 | 台帳 batch 間隔 | task 完了毎+最大 5 分毎、1 batch=1 commit "ledger: <ledgers> <n entries>" | C7・因果時刻 |
 | D7 | CI RED 時 | hold+ci_fix のみ admit(R4)。殿裁定 08-30『CI 待ち禁止』との整合: push 済み request は待たない、hold は次 request の admit のみ | 現行裁定と整合 |
 | D8 | root 同期 | publisher が push 後に root で ff+worktree/index 同期。unexpected dirty は同期 BLOCK+所有者/paths 記録+artifact 退避→root 同期→**所有者専用の非 root worktree へ再適用**(root へは 0、必要なら隔離 worktree 新設。復旧完了 = root porcelain 0 ∧ artifact hash == owner worktree 適用後 hash) | C3、他者 WIP は退避+再適用で保全・未レビュー公開 0 |
-| D9 | canary 範囲 | **殿裁定 13:14: infra と dm-signal の両 repo を同時**(unit 順序は不変)。v1.7 案『infra→U5 後に dm-signal』は撤回 | dm-signal 側の誤りは fail-closed か revert 数分で可逆、DB 非接触。段階化は判定期間を倍にし消失リスクを残すだけ |
+| D9 | canary 範囲 | **殿裁定 13:14: infra と dm-signal の両 repo を同時**(unit 順序は不変)。v1.7 案『infra→U5 後に dm-signal』は撤回 | dm-signal 側の誤りは fail-closed か revert 数分で可逆。**DB は『非接触』ではない**(家老レビュー観点 10): backend 起動時に `app/main.py`→`db/init_db.py`→`run_migrations()` が走るため、published commit が migration file(`backend/app/db/migrations/`)を含めば deploy で DB が変わり revert では戻らない。対策=R13(migration 含有 request の分離)。段階化は判定期間を倍にし消失リスクを残すだけ |
 | D10 | 将軍・家老の直接 commit | **殿裁定 13:12: 存続**。条件=lease 取得+commit 前 root ff 同期(D8 同処理)+lease 保持中 push(C5)。忍者・daemon・台帳は publisher 経由。v1.7 案『廃止し kind=doc request』は撤回。gist(Gist API)は本設計の対象外 | 一本化の定義は『直列 writer(lease)=1』であり主体数ではない。家老レビュー『2 publisher は一本化でない』は lease 無しの直接 commit への指摘で、lease 付きなら充足 |
 | D11 | 旧 field の扱い | `commit_hash` は `source_sha` の別名として U4 dual-read 期間のみ受理、U8 で `published_sha` 必須へ | 移行の可逆性 |
 | D12 | 忍者の worktree base | deploy 時 origin/main tip、task YAML に `base_sha` 固定。60 分超で再固定通知 | R2 |
@@ -173,7 +176,7 @@ canary 判定: **(v1.8 殿裁定 D9)** infra と dm-signal の両 repo を U1 �
 - **3 つの tree を混同するな**: (1) `root`=`/home/simokitafresh/multi-agent-shogun`(共有。忍者は**読み取りのみ**、書込み・commit・stash・checkout 禁止) (2) `自分の worktree`=deploy_task が作る `/tmp/...`(ここでだけ編集・commit) (3) `isolated tree`=publisher が作る一時 clone(忍者は触らない)。
 - **旧経路を触るな**: `scripts/cmd_complete_gate.sh` の autopush 関数群、`scripts/ninja_monitor.sh` の push_lane、`scripts/safe_shared_main_ff.sh`、`.gitattributes` の merge driver は **U7 まで 1 行も変更禁止**(並走期間の二重経路を壊す)。変更が必要に見えたら止まって報告。
 - **lease は環境変数ではない**: `$STATE_DIR/publish_queue/lease` file の中身(ref, candidate_sha, expiry, hmac)。環境変数で lease を名乗る実装は禁止。
-- **STATE_DIR は tracked root の外**: `$STATE_DIR` 未設定なら `scripts/lib/state_dir.sh` から取る。root 配下に queue/lease/artifacts を作った時点で FAIL。
+- **STATE_DIR は tracked root の外**: `STATE_DIR` は `SHOGUN_STATE_DIR` 環境変数(`scripts/inbox_watcher.sh` と同じ解決順: `SHOGUN_STATE_DIR`→`IDLE_FLAG_DIR`→`/tmp`)。root 配下に queue/lease/artifacts を作った時点で FAIL。
 - **成果物の定義**: 自分の worktree の local commit(`ninja_scope_commit.sh -- <paths>`)まで。push 禁止(pre-push が BLOCK する。BLOCK されたら正常=報告に書く)。
 - **停止条件(共通)**: (a) 触ってよい file 以外に差分が出た (b) bats が 1 本でも FAIL/SKIP (c) 仕様に無い判断が必要になった。いずれも**止めて報告**、推測で進めない。
 - **報告 YAML**: `source_sha`(local commit 40 桁)、`base_sha`(task YAML の値をそのまま)、`paths[]`(変更 path 全列挙)。commit_hash 欄は source_sha と同値を書く(U4 dual-read 期間)。
@@ -181,43 +184,46 @@ canary 判定: **(v1.8 殿裁定 D9)** infra と dm-signal の両 repo を U1 �
 ### 9.1 unit 別仕様
 | U | 作る file(新規) | 触ってよい既存 file | 入出力(関数/CLI 契約) | 禁止 | 二値完了(bats 名) | 停止条件 |
 |---|---|---|---|---|---|---|
+(全 unit 共通 AC、§12): **同一 unit を Claude 忍者 1 名と Codex 忍者 1 名の双方で実行し、両者の bats が PASS**(家老は 2 名へ同 task を配備し、報告 2 本の bats 結果を突合。片方 FAIL は unit 未完了)。
 | U1 | `scripts/publisher_queue.sh`(enqueue/dequeue/peek/lease-acquire/lease-release/lease-status)、`tests/unit/test_publisher_queue.bats` | なし | `enqueue <request.yaml>`→`$STATE_DIR/publish_queue/<epoch>_<seq>_<task_id>.request` を作り stdout に path。`dequeue`→FIFO 先頭 path(空なら rc=3)。`lease-acquire <ref> <sha>`→lease file 作成(既存有効 lease あれば rc=4)。`lease-release`。全操作 `flock` 下 | publish(push)しない。root へ書かない。既存 script を import しない | 並行 6 request で順序=投入順(逆転 0)∧ lease 同時保持 1 ∧ TTL 120s 経過で失効 ∧ root porcelain 差分 0。bats 6 本 | STATE_DIR が root 配下を指す |
 | U2 | `scripts/publish_artifact.sh`(capture/restore)、`tests/unit/test_publish_artifact.bats` | `scripts/gates/gate_report_format.sh`(manifest 検証 1 関数追加のみ) | `capture <task_id> <worktree> <base> <source_sha>`→`$STATE_DIR/publish_queue/artifacts/<task_id>/{patch.diff,manifest.yaml}`(manifest: source_sha, source_tree, patch_sha, base, paths[])。`restore <task_id> <dest_tree>`→patch 適用。gate は報告の source_sha/base/paths と manifest 一致を検証 | worktree を削除しない。root へ適用しない | capture 後に worktree を rm しても restore で tree id 一致 ∧ manifest 不一致は gate FAIL。bats 5 本 | patch が空(paths 0) |
-| U4 | `tests/unit/test_gate_dual_read.bats` | `scripts/cmd_complete_gate.sh`(report 読取り 1 関数: `commit_hash` 無く `published_sha`+receipt があれば受理。**autopush 関数は不変更**) | 旧報告(commit_hash)と新報告(published_sha+path/blob receipt)の両 fixture で CLEAR | autopush/ancestry 関数へ差分 0(`git diff -- scripts/cmd_complete_gate.sh` の hunk が読取り関数のみ) | 旧 fixture PASS ∧ 新 fixture PASS ∧ autopush 関数 hunk 0。bats 4 本 | 差分が読取り関数外に及ぶ |
+| U4 | `tests/unit/test_gate_dual_read.bats` | `scripts/cmd_complete_gate.sh`(report 読取り 1 関数: `commit_hash` 無く `published_sha`+receipt があれば受理。**autopush 4 関数 `source_only_path_snapshot_generic` / `source_only_cumulative_equivalence` / `source_only_insights_id_merge` / `source_only_lessons_id_merge` は不変更**) | 旧報告(commit_hash)と新報告(published_sha+path/blob receipt)の両 fixture で CLEAR | 上記 4 関数へ差分 0(`git diff -U0 -- scripts/cmd_complete_gate.sh` の hunk header に 4 関数名が 0 件) | 旧 fixture PASS ∧ 新 fixture PASS ∧ autopush 関数 hunk 0。bats 4 本 | 差分が読取り関数外に及ぶ |
 | U5 | `scripts/publisher_admit.sh`、`tests/unit/test_publisher_admit.bats` | `scripts/publisher_queue.sh`(enqueue 前に admit を呼ぶ 1 行) | `admit <request.yaml>`→`review_approvals/reports/<key>/{gunshi,karo}.yaml` の両方存在で rc=0、不足なら rc=5+不足名。kind=doc(将軍投入)は将軍 identity+path allowlist(`docs/ context/ queue/shogun_todo_map.md`)で rc=0、allowlist 外 path 混入は rc=6 | 承認 file を自分で作らない | 未承認 N 件 admitted 0 ∧ 承認 N 件 admitted N ∧ doc allowlist 外 admitted 0。bats 5 本 | 承認 file の path 規約が現物と違う |
-| U3 | `scripts/publisher.sh`(daemon: loop{dequeue→lease→isolated tree@tip→C2a 検査→apply→commit→(dry-run なら log のみ/active なら push)→root ff 同期→lease-release})、`tests/unit/test_publisher.bats`、`config/daemon_watchdog` 登録 1 行 | `scripts/daemon_watchdog.sh`(登録 1 行) | `PUBLISHER_MODE=dry-run|active`(既定 dry-run)。C2a: 全 paths で `git rev-parse tip:<path>` == manifest の base blob、不一致は request を `rc/` へ移動+家老 inbox 1 通。commit は `git commit-tree`(親 1)。root 同期は `git -C root merge --ff-only`、dirty なら同期 BLOCK+所有者 paths を log(D8) | merge/cherry-pick/rebase を使わない。active で push する前に dry-run 24h の receipt(判定差 0)を家老が確認 | criss-cross fixture で親 1 の commit ∧ C2a 不一致で publish 0+RC ∧ dry-run で push 0 ∧ root 同期後 porcelain 0。bats 8 本 | `git merge`/`cherry-pick` を書きたくなった |
-| U6 | `scripts/ledger_writer.sh`(append)、`tests/unit/test_ledger_writer.bats` | `scripts/insight_write.sh`・`scripts/bulletin_write.sh`・`scripts/lesson_write.sh`・`scripts/karo_workaround_write.sh`(各 1 行: root file 追記→`ledger_writer append <ledger> <entry.yaml>` へ) | append→`$STATE_DIR/ledger_inbox/<ledger>/<ts>_<id>.yaml`。publisher が 5 分毎/ task 完了毎に取込み `ledger: <names> <n>` commit | 既存 entry の ts/created_at を変更しない(C7) | 各 writer で root porcelain 差分 0 ∧ 取込み後 ID 重複 0 ∧ 既存 ts 変更 0。bats 6 本 | 4 writer 以外の root 書込み元が見つかった(止めて列挙報告) |
+| U3 | `scripts/publisher.sh`(daemon: loop{dequeue→lease→isolated tree@tip→C2a 検査→apply→commit→(dry-run なら log のみ/active なら push)→root ff 同期→lease-release})、`tests/unit/test_publisher.bats`、`scripts/daemon_watchdog.sh` への監視対象追加(既存の ninja_monitor 監視関数と同型の `watchdog_publisher_healthy` 1 関数) | `scripts/daemon_watchdog.sh`(1 関数追加) | `PUBLISHER_MODE=dry-run|active`(既定 dry-run)。C2a: 全 paths で `git rev-parse tip:<path>` == manifest の base blob、不一致は request を `rc/` へ移動+家老 inbox 1 通。commit は `git commit-tree`(親 1)。root 同期は `git -C root merge --ff-only`。dirty なら (1) `git status --porcelain` の path を `queue/tasks/*.yaml` の `paths`/`target_path` と突合して所有者を決める(一致 0 なら所有者=unknown で同期 BLOCK のみ) (2) `git diff -- <paths>` を `$STATE_DIR/publish_queue/wip/<owner>_<ts>.patch` に保存 (3) 所有者の worktree(`queue/tasks/<owner>.yaml` の worktree path)で `git apply --check` PASS→`git apply` (4) 適用成功を確認してから root の該当 path を `git checkout -- <paths>` で戻す (5) 家老 inbox 1 通(owner・paths・patch path)。(3) が FAIL なら (4) を行わず同期 BLOCK のまま(D8) | merge/cherry-pick/rebase を使わない。active で push する前に dry-run 24h の receipt(判定差 0)を家老が確認 | criss-cross fixture で親 1 の commit ∧ C2a 不一致で publish 0+RC ∧ dry-run で push 0 ∧ root 同期後 porcelain 0。bats 8 本 | `git merge`/`cherry-pick` を書きたくなった |
+| U6 | `scripts/ledger_writer.sh`(append)、`tests/unit/test_ledger_writer.bats` | `scripts/insight_write.sh`・`scripts/bulletin_write.sh`・`scripts/lesson_write.sh`・`scripts/karo_workaround_log.sh`(各 1 行: root file 追記→`ledger_writer append <ledger> <entry.yaml>` へ) | append→`$STATE_DIR/ledger_inbox/<ledger>/<ts>_<id>.yaml`。publisher が 5 分毎/ task 完了毎に取込み `ledger: <names> <n>` commit | 既存 entry の ts/created_at を変更しない(C7) | 各 writer で root porcelain 差分 0 ∧ 取込み後 ID 重複 0 ∧ 既存 ts 変更 0。bats 6 本 | 4 writer 以外の root 書込み元が見つかった(止めて列挙報告) |
 | U7 | なし | `scripts/cmd_complete_gate.sh`・`scripts/ninja_monitor.sh`(各 autopush/push_lane 入口に `[ "${PUBLISHER_SINGLE:-0}" = 1 ] && return 0` の 1 行ずつ) | flag ON で旧経路が no-op | 関数本体を消さない(削除は U8) | flag ON 24h で C1-C8 全 PASS(receipt 生貼付) | flag ON 中に merge が 1 件でも出た |
 | U8 | `docs/research/single_publisher_cleanup_manifest_20260902.md`(§10 を実行結果で更新) | §10 manifest に列挙した file のみ | manifest 1 行=1 削除単位。各行の移植先 contract test が GREEN であることを削除前に確認 | manifest に無い file を触らない。1 batch 10 file 超 | bats 全 GREEN ∧ 削除 script 参照 0(rg) ∧ manifest 全行 done。1 batch ごとに報告 | 参照 0 でない file が 1 つでもある |
 
-## §10 クリーンアップ manifest(U8 で実行。忍者は判断せず本表を上から実行する。殿確認後に着手、1 batch ≤10 file)
-| # | 対象 | 削除/縮退 | 不変量の移植先(先に GREEN 必須) | deletion_justification |
-|---|---|---|---|---|
-| M1 | `scripts/cmd_complete_gate.sh` autopush 関数群(source-only snapshot / cumulative equivalence / insights ID merge / lessons ID merge、約 1,182 行) | 削除 | `tests/unit/test_publisher.bats`(C2 blob 一致・親 1) | publisher が唯一の公開経路。U7 で 24h no-op 済み |
-| M2 | `scripts/ninja_monitor.sh` push_lane(CI-CHECK/WAIT/INTEGRATE/AUTOCOMMIT-LEDGERS/DIRTY-WARN/CI-UNKNOWN-ADMIT、約 596 行) | 削除 | `test_publisher.bats`(R4 hold)・`test_ledger_writer.bats` | 同上 |
-| M3 | `scripts/safe_shared_main_ff.sh`(437 行) | 削除 | `test_publisher.bats`(merge 0 なら後退検出の対象が無い) | merge が発生しない |
-| M4 | `.gitattributes` merge rule 6+driver 5 本 | 削除 | `test_ledger_writer.bats`(ID 重複 0) | 台帳は直線 batch commit |
-| M5 | pre-push GA-PUSH1 dirty-tree guard(166 行) | 削除 | pre-push lease 検査(C5)は**残す** | publisher は clean isolated tree から push |
-| M6 | `scripts/ninja_scope_commit.sh` の共有 index 対策 option(--patch/--base-blob/--reflux-mode/--reflux-evidence/--repair-index/single-flight/identity sidecar、≥20 option) | 縮退 | `test_publish_artifact.bats`(manifest 検証) | 忍者は自分の worktree のみ |
-| M7 | 報告契約 metadata(cross_repo_commits 自動生成、commit_contract planned path 突合、source_sha ancestry 検査、source-only receipt) | 縮退(published_sha+receipt のみ) | `test_gate_dual_read.bats` 新 fixture | 多経路同定が不要 |
-| M8 | postclear checkpoint / ledger auto-commit / insights auto-commit / batch context auto-commit | 削除 | `test_ledger_writer.bats` | publisher batch に統合 |
-| M9 | `skills/ninja-commit/SKILL.md`(216 行→手順 5 行) | 縮退 | — | 契約 metadata 縮退に追従 |
-| M10 | 関連 bats(10 file・221 test のうち M1-M8 の契約固定分 ≈190) | 削除 | 各行の移植先(≈30 本) | 不変量は移植済み。移植の対応表を manifest 実行結果に残す |
-残すもの(削除禁止): pre-push の lease 強制(C5)、YAML/shell/deleted-ref 品質検査、CI RED census、report gate、receipt 契約、D001-009。
+## §10 クリーンアップ manifest(U8 で実行。1 行=1 file または 1 関数群、忍者は判断せず上から実行。殿確認後に着手、1 batch ≤10 行)
+移植先 test は U1-U6 で**新規作成する file 名**(現時点で不在。U8 着手条件=全て実在かつ GREEN。`test -e` で 0 件でも欠ければ U8 着手不可)。
+| # | 対象(path / 関数) | 削除/縮退 | 不変量 | 移植先 test(U で作成) | deletion_justification |
+|---|---|---|---|---|---|
+| M1 | `scripts/cmd_complete_gate.sh` 関数 `source_only_path_snapshot_generic` `source_only_cumulative_equivalence` `source_only_insights_id_merge` `source_only_lessons_id_merge` `report_source_only_equivalence_state` | 削除 | 公開 tree の scope path blob==source(C2) | `tests/unit/test_publisher.bats`(U3) | publisher が唯一の公開経路(U7 で 24h no-op) |
+| M2 | `scripts/ninja_monitor.sh` 関数 `check_push_lane` `push_lane_publish_one` `push_lane_integrate_remote` `push_lane_ci_unknown_fallback` `push_lane_ci_cached_fallback` `push_lane_waiting_ancestry_cmds` `push_lane_regate_waiting_cmds` ほか `push_lane_*` 全 17 | 削除 | CI RED 時の hold(R4) | `tests/unit/test_publisher.bats`(U3) | 同上 |
+| M3 | `scripts/safe_shared_main_ff.sh` | 削除 | merge 後退検出→merge 0 なら対象なし(C1) | `tests/unit/test_publisher.bats` C1 case | merge が発生しない |
+| M4 | `.gitattributes` の `merge=` 6 rule と `.git/config` の driver(bulletin-id / insights-id / karo-workarounds-id / ours / semantic-index-regenerate) | 削除 | 台帳 ID 重複 0・ts 不変(C7) | `tests/unit/test_ledger_writer.bats`(U6) | 台帳は直線 batch commit |
+| M5 | `.githooks/pre-push` の GA-PUSH1 dirty-tree guard 区間 | 削除(lease 検査 U1c は残す) | lease なし push BLOCK(C5) | `tests/unit/test_prepush_lease.bats`(U1c) | publisher は clean isolated tree から push |
+| M6 | `scripts/ninja_scope_commit.sh` option `--patch` `--base-blob` `--reflux-mode` `--reflux-evidence` `--repair-index` と single-flight / identity sidecar 区間 | 縮退 | 成果物 manifest の一致 | `tests/unit/test_publish_artifact.bats`(U2) | 忍者は自分の worktree のみ |
+| M7 | `scripts/gates/gate_report_format.sh` の cross_repo_commits 自動生成・commit_contract planned path 突合・source_sha ancestry 検査・source-only receipt 検査 | 縮退(published_sha+receipt のみ) | 報告↔公開の同定 | `tests/unit/test_gate_dual_read.bats`(U4) | 多経路同定が不要 |
+| M8 | `scripts/ninja_monitor.sh` 関数 `auto_commit_*`(8 関数)と postclear checkpoint、`scripts/cmd_complete_gate.sh` の insights/lessons auto-commit 呼出し | 削除 | 台帳 batch(C7) | `tests/unit/test_ledger_writer.bats`(U6) | publisher batch に統合 |
+| M9 | `skills/ninja-commit/SKILL.md` | 縮退(手順 5 行) | — (手順書。契約 test なし) | なし(縮退後の手順 5 行を家老が目視) | 契約 metadata 縮退に追従。test 移植対象外 |
+| M10 | `tests/unit/test_push_lane_integrate.bats` `test_push_lane_settle_age.bats` `test_safe_shared_main_ff.bats` `test_cmd_complete_gate_source_publish.bats` `test_cmd_complete_gate_convergence.bats` | 削除 | 各 file の @test を 1 本ずつ『移植済み/不要(機構削除)』に分類した表を manifest 実行結果に残す | M1-M3 の移植先 | 機構削除に伴う契約 test |
+| M11 | `tests/unit/test_cmd_complete_gate.bats` `test_cmd_complete_gate_subsystems.bats` `test_cmd_complete_gate_small_consolidated.bats` `test_ninja_scope_commit.bats` ほか cmd_complete_gate 系 12 file のうち M1/M6/M7 に依存する @test | 部分削除 | 同上 | M1/M6/M7 の移植先 | 依存 test のみ。file は残す |
+残すもの(削除禁止): `.githooks/pre-push` の lease 検査、YAML/shell/deleted-ref 品質検査(pre-commit)、CI RED census、report gate 本体、receipt 契約、D001-009 guard。
 
-## §11 速度・件数の検証(before は 2026-09-02 13:25 実測。after は U7 flag ON 24h 後と U8 完了後の 2 回、同一コマンドで採る)
-| 指標 | 計測コマンド | before(09-02 13:25) | after 目標 |
+## §11 速度・件数の検証(before は固定窓 2026-09-01T13:25:00+09:00〜2026-09-02T13:25:00+09:00、下記コマンドを窓固定で再実行すると同じ値。after は同じ長さの窓を U7 flag ON 直後から 24h、U8 完了直後から 24h の 2 回)
+| 指標 | 計測コマンド(窓 S/E を環境変数で与える) | before | after 合格(二値) |
 |---|---|---|---|
-| merge 件数/24h | `git log --merges origin/main --since='24 hours ago' --oneline \| wc -l` | **141**(commit 643 中) | 0 |
-| push 失敗/24h | `grep -hE 'push_failed\|PUSH-FAIL' logs/ninja_monitor_push_lane.log \| grep -c <日付>` | **100** | 0 |
-| INTEGRATE(遠隔統合)/24h | `grep -h INTEGRATE logs/ninja_monitor_push_lane.log \| grep -c <日付>` | **382** | 0(機構削除) |
-| GA-PUSH1 BLOCK/24h | `grep -rh GA-PUSH1 logs/*.log \| grep -c BLOCK` | **29** | 0(機構削除) |
-| pre-push wall ms | `grep -oE 'pre_push_wall_ms=[0-9]+' logs/ninja_monitor.log`→median/p90 | **median 370 / p90 8,873**(n=19) | p90 ≤ 1,000 |
-| LGTM+ACCEPT→published p90 | publisher log の request ts→published ts | (旧経路は同定不能=計測不能、これ自体が AsIs の欠陥) | ≤ 60s(C4) |
-| root porcelain 0 到達 | 公開後 `git status --porcelain \| wc -l` を 60s 間隔 | 旧版 4 件/日(§1.2) | 公開後 10 分以内 0(C3) |
-| bats file 数 / 関連 test 数 | `ls tests/unit/*.bats \| wc -l` / `grep -c ^@test` 対象 file | **270 file / 対象 513 test** | 対象 ≈30 |
-| 内容消失 | §1.2 と同手順(公開済み commit の blob が後続 merge で消える) | 2 件/日 | 0 |
-最終ゴール(二値): U8 manifest 全行 done ∧ §11 の after が全指標で目標到達 ∧ C1-C8 全 PASS(両 repo)∧ bats 全 GREEN。ここまでで 1 工程。途中の CLEAR は途中成果(型九弾-1)。
+| merge 件数 | `git log --merges origin/main --since="$S" --until="$E" --oneline \| wc -l` | **141**(同窓 commit 644) | = 0 |
+| push 失敗 | `awk -v s="${S:0:16}" -v e="${E:0:16}" '{t=substr($0,2,16)} t>=s && t<=e' logs/ninja_monitor_push_lane.log \| grep -cE 'push_failed\|PUSH-FAIL'` | **100** | = 0 |
+| 遠隔統合 INTEGRATE | 同 awk \| `grep -c INTEGRATE` | **382** | = 0 |
+| GA-PUSH1 BLOCK | `grep -rh GA-PUSH1 logs/*.log \| 同 awk \| grep -c BLOCK` | **0**(窓内。累計 29 は窓外) | = 0(機構は M5 で削除) |
+| pre-push wall ms | `同 awk logs/ninja_monitor.log \| grep -oE 'pre_push_wall_ms=[0-9]+' \| cut -d= -f2 \| sort -n` → 中央値/p90 | **n=27 中央値 366 / p90 1,300** | p90 ≤ 600 |
+| LGTM+ACCEPT→published | publisher log の `admitted_ts`→`published_ts`(U3 で出力)p90 | 旧経路は同定不能(=AsIs の欠陥) | p90 ≤ 60s(C4) |
+| root porcelain 0 到達 | 各 published_sha について 60s 間隔で `git -C root status --porcelain \| wc -l` | 旧版 4 件/日(§1.2 と同手順) | 全 published_sha で 10 分以内に 0(C3) |
+| 対象 bats | `ls tests/unit/*.bats \| wc -l` / `grep -c '^@test' <§10 の 16 file>` | **270 file / 対象 16 file 598 test** | §10 で削除指定の file は rg 参照 0 ∧ 残 file の test 全 GREEN ∧ 移植先 test(§10 列)全 GREEN |
+| 内容消失 | §1.2 と同手順: 窓内の各 merge について `git show <merge>:<path>` と親の blob を突合し消失 path を数える | 2 件/日 | = 0 |
+最終ゴール(二値): §10 manifest 全行 done ∧ 本表 after が全行合格 ∧ C1-C8 全 PASS(両 repo)∧ bats 全 GREEN。ここまでで 1 工程。途中の CLEAR は途中成果。
 
 ## §12 multi-CLI 境界
 前提(殿厳命 2026-08-01『共通化するのは成果の評価基準のみ、実行機構は CLI 固有』、殿指示 2026-09-02 13:25『どのロールがどの CLI/モデルでも必要十分に同じレベルで作業を続けられる』): 本設計の成果基準(C1-C8・§11)は CLI 共通、実行機構は下表の通り層ごとに CLI 依存の有無を固定する。
@@ -225,9 +231,9 @@ canary 判定: **(v1.8 殿裁定 D9)** infra と dm-signal の両 repo を U1 �
 |---|---|---|---|
 | publisher / queue / lease / artifact / ledger_writer | bash script(`scripts/`)+`$STATE_DIR` file | **無**(どの CLI の pane からも同じ CLI 契約で呼ぶ) | CLI 名・pane・tmux 変数を読まない。identity は lease file と git config user のみ |
 | C5 lease なし push の BLOCK | **git の pre-push hook**(`.githooks/pre-push`) | **無**(Claude/Codex/人手/CI すべて同一経路) | Claude hook(`.claude/hooks`)や Codex hook(`.codex/hooks.json`)には置かない。CLI hook は案内(WARN)のみ |
-| 忍者への案内(誤操作の早期通知) | Claude=`.claude/hooks`、Codex=`.codex/hooks.json`(BLOCK は exit 2) | **有**(CLI 固有に別実装) | 同じ判定 script(`scripts/lib/publisher_guard.sh`)を両 hook から呼び、判定ロジックは 1 本、出口(exit code・文言)だけ CLI 別 |
-| §9 忍者仕様の語彙 | 設計書・task YAML | — | CLI 固有語(Edit/Read tool、bypass permissions、/clear、slash command 名)を書かない。file path・シェルコマンド・bats 名のみで書く。違反は家老レビューで REJECT |
-| 検証 | canary(U1-U8) | — | **各 unit を Claude 忍者と Codex 忍者の双方で最低 1 回ずつ通し、両方 PASS を AC に含める**(片方だけの PASS は unit 完了としない)。差が出たら差自体を §7 ピットフォールへ追記 |
+| 忍者への案内(誤操作の早期通知) | Claude=`.claude/hooks`、Codex=`.codex/hooks.json`(BLOCK は exit 2) | **有**(CLI 固有に別実装、script も共用しない) | 共通なのは成果基準だけ: 『lease なしの commit/push 操作を pane 上で検知したら案内文を出す』。実装は Claude 用・Codex 用を各 CLI の担当が別 file で書く(殿厳命 08-01)。判定の正しさは両 CLI で同じ fixture(lease あり/なし×commit/push)を通す bats で比較する |
+| §9 忍者仕様の語彙 | 設計書・task YAML | — | CLI 固有語(各 CLI の tool 名・permission mode 名・session reset コマンド名・slash command 名)を書かない。file path・シェルコマンド・bats 名のみで書く。違反は家老レビューで REJECT |
+| 検証 | canary(U1-U8) | — | §9.1 の共通 AC の通り、**各 unit を Claude 忍者 1 名+Codex 忍者 1 名で実行し双方 PASS**。差が出たら差自体を §7 ピットフォールへ追記 |
 既知の CLI 差(一次): Codex は hook BLOCK=exit 2(exit 1 は CLI クラッシュ)、Codex は作業中も `› Ask Codex` を常設(ready 判定は busy marker 不在まで、scripts/lib/cli_ready.sh)、Claude は Stop hook で idle flag、Codex は respawn-pane -k が唯一の確実 reset(殿裁定 05-20)。publisher 側はこれらに依存しない設計とし、依存が必要な箇所(idle 判定等)は本設計の対象外に置く。
 
 ## §5 レビュー履歴
@@ -239,9 +245,11 @@ canary 判定: **(v1.8 殿裁定 D9)** infra と dm-signal の両 repo を U1 �
 - v1.5 → 家老 REJECT(blt_20260902_034931、前回 4/4 反映確認・新規 2): ①canary/U7 を C1-C8 へ ②WIP 復元先を所有者専用の非 root worktree に限定(復旧完了の二値化)。→ v1.6 に全反映。
 - v1.6 → 家老 REJECT(blt_20260902_041733、新規 2): ①U7 AC を C1-C8 全 PASS(実測 receipt)へ ②履歴の時系列再整列。→ v1.7 に全反映。
 - v1.7 → 家老 **APPROVE**(blt_20260902_041853、計 7 往復)。→ 殿裁定 3 点(13:07-13:20)を v1.8 に反映(§0.1)。
+- v1.9 → 家老 **REJECT**(blt_20260902_133722、観点 9-15 全 7 点: 直接 commit/C5 unit 不在・DB 非接触は偽(init_db→run_migrations)・撤回残存 8 行・path 不在 3・manifest が機能群で移植先 0/4・§11 窓非固定・両 CLI AC 0+guard script 共用)。→ v2.0 で全反映(U1b/U1c/U3b 追加、R13、§10 path 単位 11 行、§11 固定窓、共通 AC)。
 - v1.8(13:25 家老レビュー依頼 msg_132320)→ 殿指示 13:23『実装は忍者。性能の劣る LLM が混乱・誤解しない設計書。クリーンアップと速度検証まで最終ゴール』→ v1.9 で §9-§11 追加(v1.8 レビューは v1.9 に差替え)。
 
-## §5.1 レビュー依頼(家老、v1.9)
+## §5.1 レビュー依頼(家老、v2.0)
+観点(v2.0): (16) v1.9 REJECT 7 点の反映を現物差分で確認(撤回残存 rg 0、path `test -e` 全 OK、§11 コマンドを窓固定で再実行して値一致、§10 各行の対象 path/関数名が現物に実在) (17) R13(migration)の admit 条件が二値で、dm-signal の init_db→run_migrations 経路を正しく前提にしているか (18) U1b wrapper と D8 同期が『忍者作業中の root path を壊さない』か(WIP 退避手順 (1)-(5) の停止点)
 観点(v1.9 新規): (12) §9 の unit 仕様は忍者が推測なしに着手・完了・停止できるか(触る file/作る file/入出力/禁止/二値/停止条件の 6 欄に空・曖昧語が無いか、家老が task YAML へそのまま写せるか) (13) §10 manifest の移植先 test が各行に実在し、残すもの(C5 lease/品質検査/CI census/report gate/receipt/D001-009)が manifest に混入していないか (14) §11 の before 値と計測コマンドが再現可能か、after 目標が二値か (15) §12 multi-CLI 境界: C5 が git pre-push(CLI 非依存)に置かれているか、§9 に CLI 固有語が 0 か、両 CLI 忍者での PASS が各 unit の AC に入っているか
 観点(v1.8 新規): (9) D10 lease 付き直接 commit(将軍・家老)が C1/C3/C5 と矛盾しないか、R12 の同期 script は D8 と同一実装で足りるか (10) D9 両 repo 同時 canary で R11(Render deploy/smoke hold)の検知が二値か、dm-signal 側に publisher 非接触でない経路(migration/recalc)が混入しないか (11) §0.1 裁定記録が事実→制約→判断→効果で欠落なく、v1.7 案の撤回が本文全体で整合しているか(残存する『廃止』『U5 後』表現 0)
 (以下 v1.7 観点、参考)
