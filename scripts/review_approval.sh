@@ -806,9 +806,56 @@ case "$role:$result" in
       "review-approval-karo-accept-${cmd_id}-${report_key}-${fingerprint}" \
       "{\"cmd_id\":\"${cmd_id}\",\"generation\":\"${canonical_generation}\"}" || true
     # U5(単一 publisher 化、観点 22): karo:ACCEPT が publisher_queue.sh enqueue の
-    # 唯一の caller。admit の admission 判定(rc≠0 なら enqueue しない)は
-    # publisher_queue.sh 側の enqueue 前 1 行が担う。
-    bash "$ROOT/scripts/publisher_queue.sh" enqueue "$report" >/dev/null || true
+    # 唯一の caller。外部PJの報告をinfra publisherへ渡すとrestore conflictを
+    # 起こすため、requestのrepoがpublisherのrepo rootと一致する場合だけenqueueする。
+    publisher_request_repo=$(python3 - "$report" "$ROOT" <<'PY'
+import pathlib
+import sys
+import yaml
+
+report_path = pathlib.Path(sys.argv[1])
+root = pathlib.Path(sys.argv[2]).resolve()
+report = yaml.safe_load(report_path.read_text(encoding="utf-8")) or {}
+
+def resolved(value):
+    path = pathlib.Path(str(value).strip())
+    return path.resolve() if path.is_absolute() else (root / path).resolve()
+
+repos = []
+for entry in report.get("cross_repo_commits") or []:
+    if isinstance(entry, dict) and str(entry.get("repo") or "").strip():
+        repos.append(resolved(entry["repo"]))
+
+if repos:
+    for repo in repos:
+        if repo != root:
+            print(repo)
+            break
+else:
+    worker = str(report.get("worker_id") or "").strip()
+    task_path = root / "queue" / "tasks" / f"{worker}.yaml"
+    task_doc = yaml.safe_load(task_path.read_text(encoding="utf-8")) if task_path.is_file() else {}
+    task = (task_doc or {}).get("task") or {}
+    project = str(task.get("project") or "").strip()
+    if project and project != "infra":
+        config_path = root / "config" / "projects.yaml"
+        config = yaml.safe_load(config_path.read_text(encoding="utf-8")) if config_path.is_file() else {}
+        for item in (config or {}).get("projects") or []:
+            if isinstance(item, dict) and str(item.get("id") or "").strip() == project:
+                path = str(item.get("path") or "").strip()
+                if path:
+                    repo = resolved(path)
+                    if repo != root:
+                        print(repo)
+                    break
+PY
+    ) || publisher_request_repo=""
+    publisher_repo_root=$(cd "$ROOT" && pwd -P)
+    if [ -n "$publisher_request_repo" ] && [ "$publisher_request_repo" != "$publisher_repo_root" ]; then
+      echo "skip_enqueue repo=$publisher_request_repo" >&2
+    else
+      bash "$ROOT/scripts/publisher_queue.sh" enqueue "$report" >/dev/null || true
+    fi
     ;;
 esac
 # The canonical APPROVE entry owns SG7 publication.  Publish immediately after
