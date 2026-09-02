@@ -2,8 +2,10 @@
 # test_necessity: ledger operations preserve root ownership, allowlist, and CAS invariants.
 
 setup() {
-  TEST_ROOT="$(mktemp -d)"
-  STATE_DIR="$(mktemp -d /home/simokitafresh/ledger-test.XXXXXX)"
+  STATE_TMP_ROOT="${BATS_TEST_TMPDIR:-${TMPDIR:-/tmp}}"
+  TEST_ROOT_PARENT="$(mktemp -d "$STATE_TMP_ROOT/ledger-test-parent.XXXXXX")"
+  TEST_ROOT="$(mktemp -d "$TEST_ROOT_PARENT/repo.XXXXXX")"
+  STATE_DIR="$(mktemp -d "$STATE_TMP_ROOT/ledger-test.XXXXXX")"
   mkdir -p "$TEST_ROOT/queue" "$TEST_ROOT/logs"
   cp "$BATS_TEST_DIRNAME/../../scripts/ledger_writer.sh" "$TEST_ROOT/ledger_writer.sh"
   chmod +x "$TEST_ROOT/ledger_writer.sh"
@@ -12,7 +14,7 @@ setup() {
   export PATH="$TEST_ROOT:$PATH"
   export SHOGUN_STATE_DIR="$STATE_DIR" LEDGER_WRITER_NOTIFY=0
 }
-teardown() { rm -r -- "$TEST_ROOT" "$STATE_DIR"; }
+teardown() { rm -r -- "$TEST_ROOT_PARENT" "$STATE_DIR"; }
 make_entry() { printf '%s\n' "- id: $1" "  status: pending" "  insight: $2" > "$TEST_ROOT/entry.yaml"; }
 writer() { bash "$TEST_ROOT/ledger_writer.sh" "$@"; }
 
