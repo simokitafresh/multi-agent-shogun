@@ -1,4 +1,901 @@
 - cmd_id: cmd_4199
+- cmd_id: cmd_4465
+  review_type: draft
+  gate_result: BLOCK
+  gate_synced_at: 2026-09-03 05:54:53+09:00
+  verdict: APPROVE
+  verified_files:
+  - queue/tasks/hanzo.yaml:1
+  findings_summary: U6b publisher daemon ledger消費者(ledger_inboxのop seq順処理)。配備可
+  confidence: HIGH
+  finding_categories:
+  - assumptions
+  - numbers
+  - simulation
+  - premortem
+  - north_star
+  - ambiguity
+  - adversarial
+  observations: '[''publisher daemonにledger消費者追加'', ''半蔵worktreeでの並行作業。影丸root_drainとpublisher.sh衝突リスクをAC3で管理'']'
+  operational_simulation:
+    command: task確認
+    expected: U6b ledger消費者
+    actual: U6b ledger消費者
+    result: MATCH
+  causal_chain: U6(ledger_writer)→U6b(daemon消費者)→台帳自動更新
+  brainwash_check: '#1no #2no #3no #4no #5no #6no #7no #8no task確認'
+  origin: '[[U6b_ledger_consumer]] -> [[APPROVE]]'
+  ambiguity_points: none
+  discretion_fills: none
+  timestamp: '2026-09-03T05:05:00+09:00'
+- cmd_id: cmd_reflux_insight_202609030513_hayate
+  review_type: draft
+  gate_result: CLEAR
+  gate_synced_at: 2026-09-03 05:30:17+09:00
+  verdict: APPROVE
+  verified_files:
+  - queue/tasks/hayate.yaml:1
+  findings_summary: reflux定型。配備可
+  confidence: HIGH
+  finding_categories:
+  - assumptions
+  - numbers
+  - simulation
+  - premortem
+  - north_star
+  - ambiguity
+  - adversarial
+  observations: '[''定型reflux'', ''insight_resolve.sh正規ヘルパー経由。scope=queue/insights.yamlのみ'']'
+  operational_simulation:
+    command: task確認
+    expected: reflux
+    actual: reflux
+    result: MATCH
+  causal_chain: insight→消化
+  brainwash_check: '#1no #2no #3no #4no #5no #6no #7no #8no 定型'
+  origin: '[[reflux]] -> [[APPROVE]]'
+  ambiguity_points: none
+  discretion_fills: none
+  timestamp: '2026-09-03T05:15:00+09:00'
+- cmd_id: cmd_4464
+  review_type: report
+  report_ninja: kotaro
+  report_task_id: cmd_4464_full
+  report_verdict: FAIL
+  verdict: FAIL
+  verified_files:
+  - queue/reports/kotaro_report_cmd_4464.yaml:1
+  fail_reasons:
+  - M1-M9/M11は別生存参照でblocked。M10のみ削除成功。仮説スコープ広すぎ
+  lesson_quality: OK
+  escalation_needed: false
+  finding_categories:
+  - assumptions
+  - numbers
+  - premortem
+  - adversarial
+  - ambiguity
+  observations:
+  - census規則でM10(旧test 5file)のみ削除可。M1-M9/M11は現役参照
+  operational_simulation:
+    command: 報告確認
+    expected: FAIL
+    actual: FAIL(M10のみ成功)
+    result: FAIL
+  causal_chain: M1-M11削除→census→M10のみ削除可→正当FAIL
+  brainwash_check: '#1no #2no #3no #4no #5no #6no #7no #8no M10確認'
+  step3_5_verified: true
+  origin: '[[U8_cleanup]] -> [[M10のみ]] -> [[FAIL正当]]'
+  reviewed_at: '2026-09-03T05:22:00+09:00'
+  timestamp: '2026-09-03T05:22:00+09:00'
+- brainwash_check: '#1no #2no #3no #4no #5no #6no #7no #8no ERRORS=0'
+  causal_chain: insight→消化→LGTM
+  cmd_id: cmd_reflux_insight_202609030513_hayate
+  escalation_needed: false
+  finding_categories:
+  - assumptions
+  - numbers
+  - premortem
+  - adversarial
+  - ambiguity
+  findings_summary: 定型reflux。ERRORS=0。LGTM
+  gate_prediction: CLEAR
+  gate_prediction_reason: all checks passed
+  lesson_quality: OK
+  observations:
+  - 定型reflux完了
+  operational_simulation:
+    actual: CLEAR ERRORS=0
+    command: precheck
+    expected: CLEAR
+    result: PASS
+  origin: '[[reflux]] -> [[LGTM]]'
+  report_ninja: hayate
+  report_task_id: cmd_reflux_insight_202609030513_hayate_exact
+  report_verdict: LGTM
+  review_type: report
+  reviewed_at: '2026-09-03T05:24:00+09:00'
+  step3_5_verified: true
+  timestamp: '2026-09-03T05:24:00+09:00'
+  verdict: LGTM
+  verified_files:
+  - queue/reports/hayate_report_cmd_reflux_insight_202609030513_hayate.yaml:1
+- brainwash_check: '#1yes(D0発動) #2no #3no #4no #5no #6no #7no #8no'
+  causal_chain: RC→新fp→bundle再発行
+  cmd_id: cmd_reflux_insight_202609030513_hayate
+  escalation_needed: false
+  finding_categories:
+  - assumptions
+  - numbers
+  - premortem
+  - adversarial
+  - ambiguity
+  findings_summary: RC。LGTM再発行
+  gate_prediction: CLEAR
+  gate_prediction_reason: all checks passed
+  lesson_quality: OK
+  observations:
+  - RC新fp→bundle再発行
+  operational_simulation:
+    actual: CLEAR
+    command: precheck
+    expected: CLEAR
+    result: PASS
+  origin: '[[reflux_RC]] -> [[LGTM再発行]]'
+  report_ninja: hayate
+  report_task_id: cmd_reflux_insight_202609030513_hayate_exact
+  report_verdict: LGTM
+  review_type: report
+  reviewed_at: '2026-09-03T05:25:00+09:00'
+  step3_5_verified: true
+  timestamp: '2026-09-03T05:25:00+09:00'
+  verdict: LGTM
+  verified_files:
+  - queue/reports/hayate_report_cmd_reflux_insight_202609030513_hayate.yaml:1
+- brainwash_check: '#1no #2no #3no #4no #5no #6no #7no #8no ERRORS=0'
+  causal_chain: U6(writer)→U6b(daemon消費者)→台帳自動更新
+  cmd_id: cmd_4465
+  escalation_needed: false
+  finding_categories:
+  - assumptions
+  - numbers
+  - premortem
+  - adversarial
+  - ambiguity
+  findings_summary: U6b ledger消費者。publisher daemonにledger_inbox op消費追加。ERRORS=0
+  gate_prediction: CLEAR
+  gate_prediction_reason: all checks passed
+  lesson_quality: OK
+  observations:
+  - ledger_inbox op seq順処理をpublisher daemonに統合
+  operational_simulation:
+    actual: CLEAR ERRORS=0
+    command: precheck
+    expected: CLEAR ERRORS=0
+    result: PASS
+  origin: '[[U6b_ledger_consumer]] -> [[LGTM]]'
+  report_ninja: hanzo
+  report_task_id: cmd_4465_full
+  report_verdict: LGTM
+  review_type: report
+  reviewed_at: '2026-09-03T05:37:00+09:00'
+  step3_5_verified: true
+  timestamp: '2026-09-03T05:32:00+09:00'
+  verdict: LGTM
+  verified_files:
+  - queue/reports/hanzo_report_cmd_4465.yaml:1
+- cmd_id: cmd_karo_hotfix_publisher_root_drain_202609030535
+  review_type: draft
+  verdict: APPROVE
+  verified_files:
+  - queue/tasks/kagemaru.yaml:1
+  findings_summary: publisher root drain。配備可
+  confidence: HIGH
+  finding_categories:
+  - assumptions
+  - numbers
+  - simulation
+  - premortem
+  - north_star
+  - ambiguity
+  - adversarial
+  observations: '[''publisher root drain hotfix'', ''publisher_queue.sh lock-run下でのff-only制約。force
+    push系禁止がAC2で明示'']'
+  operational_simulation:
+    command: task確認
+    expected: root drain
+    actual: root drain
+    result: MATCH
+  causal_chain: root drain→publisher整理
+  brainwash_check: '#1no #2no #3no #4no #5no #6no #7no #8no task確認'
+  origin: '[[root_drain]] -> [[APPROVE]]'
+  ambiguity_points: none
+  discretion_fills: none
+  timestamp: '2026-09-03T05:34:00+09:00'
+- cmd_id: cmd_karo_hotfix_task_worktree_reclaim_202609030535
+  review_type: draft
+  verdict: APPROVE
+  verified_files:
+  - queue/tasks/saizo.yaml:1
+  findings_summary: task worktree reclaim。配備可
+  confidence: HIGH
+  finding_categories:
+  - assumptions
+  - numbers
+  - simulation
+  - premortem
+  - north_star
+  - ambiguity
+  - adversarial
+  observations: '[''task worktree reclaim hotfix'', ''active worktree誤回収防止=marker
+    state+task pointer二重保護。dry-run先行で家老承認後に実sweep'']'
+  operational_simulation:
+    command: task確認
+    expected: worktree reclaim
+    actual: worktree reclaim
+    result: MATCH
+  causal_chain: worktree reclaim→リソース回収
+  brainwash_check: '#1no #2no #3no #4no #5no #6no #7no #8no task確認'
+  origin: '[[worktree_reclaim]] -> [[APPROVE]]'
+  ambiguity_points: none
+  discretion_fills: none
+  timestamp: '2026-09-03T05:34:00+09:00'
+- cmd_id: cmd_reflux_insight_202609030545_tobisaru
+  review_type: draft
+  gate_result: CLEAR
+  gate_synced_at: 2026-09-03 06:14:54+09:00
+  verdict: APPROVE
+  verified_files:
+  - queue/tasks/tobisaru.yaml:1
+  findings_summary: reflux定型。配備可
+  confidence: HIGH
+  finding_categories:
+  - assumptions
+  - numbers
+  - simulation
+  - premortem
+  - north_star
+  - ambiguity
+  - adversarial
+  observations: '[''定型reflux'', ''insight_resolve.sh正規ヘルパー経由。scope=queue/insights.yamlのみ'']'
+  operational_simulation:
+    command: task確認
+    expected: reflux
+    actual: reflux
+    result: MATCH
+  causal_chain: insight→消化
+  brainwash_check: '#1no #2no #3no #4no #5no #6no #7no #8no 定型'
+  origin: '[[reflux]] -> [[APPROVE]]'
+  ambiguity_points: none
+  discretion_fills: none
+  timestamp: '2026-09-03T05:46:00+09:00'
+- cmd_id: cmd_4465
+  review_type: report
+  gate_result: BLOCK
+  gate_synced_at: 2026-09-03 05:54:53+09:00
+  report_ninja: hanzo
+  report_task_id: cmd_4465_full
+  report_verdict: FAIL
+  verdict: FAIL
+  verified_files:
+  - queue/reports/hanzo_report_cmd_4465.yaml:1
+  fail_reasons:
+  - LGTM判定だがprecheck ERRORS=1でbundle停止
+  lesson_quality: OK
+  escalation_needed: false
+  finding_categories:
+  - assumptions
+  - numbers
+  - premortem
+  - adversarial
+  - ambiguity
+  observations:
+  - RC版ERRORS=1
+  operational_simulation:
+    command: precheck
+    expected: CLEAR
+    actual: ERRORS=1
+    result: FAIL
+  causal_chain: RC→ERRORS=1→bundle停止
+  brainwash_check: '#1no #2no #3no #4no #5no #6no #7no #8no'
+  step3_5_verified: true
+  origin: '[[cmd_4465_RC]] -> [[ERRORS=1]] -> [[FAIL]]'
+  reviewed_at: '2026-09-03T05:53:00+09:00'
+  timestamp: '2026-09-03T05:53:00+09:00'
+- cmd_id: cmd_karo_hotfix_task_worktree_reclaim_202609030535
+  review_type: report
+  report_ninja: saizo
+  report_task_id: cmd_karo_hotfix_task_worktree_reclaim_202609030535_normal
+  report_verdict: FAIL
+  verdict: FAIL
+  verified_files:
+  - queue/reports/saizo_report_cmd_karo_hotfix_task_worktree_reclaim_202609030535.yaml:1
+  fail_reasons:
+  - AC2 1 commit制約未達(2 commit)。test_necessity未登録で別commit
+  lesson_quality: OK
+  escalation_needed: false
+  finding_categories:
+  - assumptions
+  - numbers
+  - premortem
+  - adversarial
+  - ambiguity
+  observations:
+  - 実装+テスト3/3 PASS。dry-run 99候補95回収。active誤回収0
+  operational_simulation:
+    command: 報告確認
+    expected: PASS
+    actual: FAIL(2 commit)
+    result: FAIL
+  causal_chain: test_necessity未登録→wrapper削除→別commit再追加→2 commit
+  brainwash_check: '#1no #2no #3no #4no #5no #6no #7no #8no BC NO検出'
+  step3_5_verified: true
+  origin: '[[worktree_reclaim]] -> [[2commit]] -> [[FAIL]]'
+  reviewed_at: '2026-09-03T05:58:00+09:00'
+  timestamp: '2026-09-03T05:55:00+09:00'
+- brainwash_check: '#1yes(D0発動) #2no #3no #4no #5no #6no #7no #8no'
+  causal_chain: RC2→ERRORS=0→LGTM
+  cmd_id: cmd_4465
+  escalation_needed: false
+  finding_categories:
+  - assumptions
+  - numbers
+  - premortem
+  - adversarial
+  - ambiguity
+  findings_summary: RC2。ERRORS=0。LGTM再発行
+  gate_prediction: CLEAR
+  gate_prediction_reason: all checks passed
+  lesson_quality: OK
+  observations:
+  - RC2新fp(1c1a23a9)。ERRORS=0
+  operational_simulation:
+    actual: CLEAR ERRORS=0
+    command: precheck
+    expected: CLEAR ERRORS=0
+    result: PASS
+  origin: '[[cmd_4465_RC2]] -> [[LGTM]]'
+  report_ninja: hanzo
+  report_task_id: cmd_4465_full
+  report_verdict: LGTM
+  review_type: report
+  reviewed_at: '2026-09-03T06:05:00+09:00'
+  step3_5_verified: true
+  timestamp: '2026-09-03T06:05:00+09:00'
+  verdict: LGTM
+  verified_files:
+  - queue/reports/hanzo_report_cmd_4465.yaml:1
+- cmd_id: cmd_4465
+  review_type: report
+  report_ninja: hanzo
+  report_task_id: cmd_4465_full
+  report_verdict: FAIL
+  verdict: FAIL
+  verified_files:
+  - queue/reports/hanzo_report_cmd_4465.yaml:1
+  fail_reasons:
+  - 'fp race: bundle発行後にreport再RC'
+  lesson_quality: OK
+  escalation_needed: false
+  finding_categories:
+  - assumptions
+  - numbers
+  - premortem
+  - adversarial
+  - ambiguity
+  observations:
+  - fp 1c1a23a9に対するapproval不在
+  operational_simulation:
+    command: fp照合
+    expected: 一致
+    actual: 不一致
+    result: FAIL
+  causal_chain: bundle→report RC→fp race
+  brainwash_check: '#1no #2no #3no #4no #5no #6no #7no #8no'
+  step3_5_verified: true
+  origin: '[[fp_race]] -> [[FAIL]]'
+  reviewed_at: '2026-09-03T06:06:00+09:00'
+  timestamp: '2026-09-03T06:06:00+09:00'
+- cmd_id: cmd_reflux_insight_202609030545_tobisaru
+  review_type: report
+  gate_result: CLEAR
+  gate_synced_at: 2026-09-03 06:14:54+09:00
+  report_ninja: tobisaru
+  report_task_id: cmd_reflux_insight_202609030545_tobisaru_exact
+  report_verdict: FAIL
+  verdict: FAIL
+  verified_files:
+  - queue/reports/tobisaru_report_cmd_reflux_insight_202609030545_tobisaru.yaml:1
+  fail_reasons:
+  - LG048 semantic_validation.result空
+  lesson_quality: OK
+  escalation_needed: false
+  finding_categories:
+  - assumptions
+  - numbers
+  - premortem
+  - adversarial
+  - ambiguity
+  observations:
+  - GATE_PREDICTION=CLEARだがLG048でbundle停止
+  operational_simulation:
+    command: precheck
+    expected: CLEAR
+    actual: ERRORS=1(LG048)
+    result: FAIL
+  causal_chain: semantic_validation空→LG048→bundle停止
+  brainwash_check: '#1no #2no #3no #4no #5no #6no #7no #8no LG048検出'
+  step3_5_verified: true
+  gate_prediction: CLEAR
+  gate_prediction_reason: lesson_candidate有
+  origin: '[[LG048]] -> [[FAIL]]'
+  reviewed_at: '2026-09-03T06:09:00+09:00'
+  timestamp: '2026-09-03T06:09:00+09:00'
+- cmd_id: cmd_4466
+  review_type: report
+  report_ninja: kotaro
+  report_task_id: cmd_4466_full
+  report_verdict: FAIL
+  verdict: FAIL
+  verified_files:
+  - queue/reports/kotaro_report_cmd_4466.yaml:1
+  fail_reasons:
+  - dispatcher chain削除+テスト書き換えでFAIL
+  lesson_quality: OK
+  escalation_needed: false
+  finding_categories:
+  - assumptions
+  - numbers
+  - premortem
+  - adversarial
+  - ambiguity
+  observations:
+  - cmd_4464のinterlocked-dispatcher blocker回避のためbatch unit改訂
+  operational_simulation:
+    command: 報告確認
+    expected: FAIL
+    actual: FAIL
+    result: FAIL
+  causal_chain: dispatcher chain→削除+テスト書き換え→FAIL
+  brainwash_check: '#1no #2no #3no #4no #5no #6no #7no #8no FAIL確認'
+  step3_5_verified: true
+  origin: '[[cmd_4466]] -> [[dispatcher_chain]] -> [[FAIL]]'
+  reviewed_at: '2026-09-03T06:11:00+09:00'
+  timestamp: '2026-09-03T06:11:00+09:00'
+- brainwash_check: '#1no #2no #3no #4no #5no #6no #7no #8no ERRORS=0'
+  causal_chain: FAIL(LG048)→家老WA→ERRORS=0→LGTM
+  cmd_id: cmd_reflux_insight_202609030545_tobisaru
+  escalation_needed: false
+  finding_categories:
+  - assumptions
+  - numbers
+  - premortem
+  - adversarial
+  - ambiguity
+  findings_summary: RC版。LG048解消。ERRORS=0。LGTM
+  gate_prediction: CLEAR
+  gate_prediction_reason: all checks passed
+  lesson_quality: OK
+  observations:
+  - 家老WA後semantic_validation=PASS。ERRORS=0
+  operational_simulation:
+    actual: CLEAR ERRORS=0
+    command: precheck
+    expected: CLEAR ERRORS=0
+    result: PASS
+  origin: '[[reflux_RC]] -> [[LG048解消]] -> [[LGTM]]'
+  report_ninja: tobisaru
+  report_task_id: cmd_reflux_insight_202609030545_tobisaru_exact
+  report_verdict: LGTM
+  review_type: report
+  reviewed_at: '2026-09-03T06:12:00+09:00'
+  step3_5_verified: true
+  timestamp: '2026-09-03T06:12:00+09:00'
+  verdict: LGTM
+  verified_files:
+  - queue/reports/tobisaru_report_cmd_reflux_insight_202609030545_tobisaru.yaml:1
+- cmd_id: cmd_reflux_insight_202609030614_hayate
+  review_type: draft
+  gate_result: CLEAR
+  gate_synced_at: 2026-09-03 06:31:03+09:00
+  verdict: APPROVE
+  verified_files:
+  - queue/tasks/hayate.yaml:1
+  findings_summary: reflux定型。配備可
+  confidence: HIGH
+  finding_categories:
+  - assumptions
+  - numbers
+  - simulation
+  - premortem
+  - north_star
+  - ambiguity
+  - adversarial
+  observations: '[''定型reflux'', ''insight_resolve.sh正規ヘルパー経由。scope=queue/insights.yamlのみ'']'
+  operational_simulation:
+    command: task確認
+    expected: reflux
+    actual: reflux
+    result: MATCH
+  causal_chain: insight→消化
+  brainwash_check: '#1no #2no #3no #4no #5no #6no #7no #8no 定型'
+  origin: '[[reflux]] -> [[APPROVE]]'
+  ambiguity_points: none
+  discretion_fills: none
+  timestamp: '2026-09-03T06:15:00+09:00'
+- cmd_id: cmd_4465
+  review_type: report
+  report_ninja: hanzo
+  report_task_id: cmd_4465_full
+  report_verdict: FAIL
+  verdict: FAIL
+  verified_files:
+  - queue/reports/hanzo_report_cmd_4465.yaml:1
+  fail_reasons:
+  - ERRORS=2。precheck未通過
+  lesson_quality: OK
+  escalation_needed: false
+  finding_categories:
+  - assumptions
+  - numbers
+  - premortem
+  - adversarial
+  - ambiguity
+  observations:
+  - RC3 fp(14212f8e)。ERRORS=2
+  operational_simulation:
+    command: precheck
+    expected: CLEAR
+    actual: ERRORS=2
+    result: FAIL
+  causal_chain: RC3→ERRORS=2→FAIL
+  brainwash_check: '#1no #2no #3no #4no #5no #6no #7no #8no'
+  step3_5_verified: true
+  origin: '[[cmd_4465_RC3]] -> [[ERRORS=2]] -> [[FAIL]]'
+  reviewed_at: '2026-09-03T06:24:00+09:00'
+  timestamp: '2026-09-03T06:23:00+09:00'
+- brainwash_check: '#1no #2no #3no #4no #5no #6no #7no #8no ERRORS=0'
+  causal_chain: insight→消化→LGTM
+  cmd_id: cmd_reflux_insight_202609030614_hayate
+  escalation_needed: false
+  finding_categories:
+  - assumptions
+  - numbers
+  - premortem
+  - adversarial
+  - ambiguity
+  findings_summary: 定型reflux。ERRORS=0。LGTM
+  gate_prediction: CLEAR
+  gate_prediction_reason: all checks passed
+  lesson_quality: OK
+  observations:
+  - 定型reflux完了
+  operational_simulation:
+    actual: CLEAR ERRORS=0
+    command: precheck
+    expected: CLEAR
+    result: PASS
+  origin: '[[reflux]] -> [[LGTM]]'
+  report_ninja: hayate
+  report_task_id: cmd_reflux_insight_202609030614_hayate_exact
+  report_verdict: LGTM
+  review_type: report
+  reviewed_at: '2026-09-03T06:26:00+09:00'
+  step3_5_verified: true
+  timestamp: '2026-09-03T06:26:00+09:00'
+  verdict: LGTM
+  verified_files:
+  - queue/reports/hayate_report_cmd_reflux_insight_202609030614_hayate.yaml:1
+- cmd_id: cmd_4465
+  review_type: report
+  report_ninja: hanzo
+  report_task_id: cmd_4465_full
+  report_verdict: FAIL
+  verdict: FAIL
+  verified_files:
+  - queue/reports/hanzo_report_cmd_4465.yaml:1
+  fail_reasons:
+  - RC4 ERRORS=1
+  lesson_quality: OK
+  escalation_needed: false
+  finding_categories:
+  - assumptions
+  - numbers
+  - premortem
+  - adversarial
+  - ambiguity
+  observations:
+  - RC4 fp(f083644b)。ERRORS=1継続
+  operational_simulation:
+    command: precheck
+    expected: CLEAR
+    actual: ERRORS=1
+    result: FAIL
+  causal_chain: RC4→ERRORS=1→FAIL
+  brainwash_check: '#1no #2no #3no #4no #5no #6no #7no #8no'
+  step3_5_verified: true
+  origin: '[[cmd_4465_RC4]] -> [[FAIL]]'
+  reviewed_at: '2026-09-03T06:27:00+09:00'
+  timestamp: '2026-09-03T06:27:00+09:00'
+- cmd_id: cmd_reflux_insight_202609030627_kotaro
+  review_type: draft
+  gate_result: CLEAR
+  gate_synced_at: 2026-09-03 06:50:44+09:00
+  verdict: APPROVE
+  verified_files:
+  - queue/tasks/kotaro.yaml:1
+  findings_summary: reflux定型。配備可
+  confidence: HIGH
+  finding_categories:
+  - assumptions
+  - numbers
+  - simulation
+  - premortem
+  - north_star
+  - ambiguity
+  - adversarial
+  observations: '[''定型reflux'', ''insight_resolve.sh正規ヘルパー経由。scope=queue/insights.yamlのみ'']'
+  operational_simulation:
+    command: task確認
+    expected: reflux
+    actual: reflux
+    result: MATCH
+  causal_chain: insight→消化
+  brainwash_check: '#1no #2no #3no #4no #5no #6no #7no #8no 定型'
+  origin: '[[reflux]] -> [[APPROVE]]'
+  ambiguity_points: none
+  discretion_fills: none
+  timestamp: '2026-09-03T06:28:00+09:00'
+- cmd_id: cmd_4465
+  review_type: report
+  report_ninja: hanzo
+  report_task_id: cmd_4465_full
+  report_verdict: FAIL
+  verdict: FAIL
+  verified_files:
+  - queue/reports/hanzo_report_cmd_4465.yaml:1
+  fail_reasons:
+  - RC5 ERRORS=1継続。家老gate直接実行依頼
+  lesson_quality: OK
+  escalation_needed: false
+  finding_categories:
+  - assumptions
+  - numbers
+  - premortem
+  - adversarial
+  - ambiguity
+  observations:
+  - RC5 fp(e7799ae3)。ERRORS=1
+  operational_simulation:
+    command: precheck
+    expected: CLEAR
+    actual: ERRORS=1
+    result: FAIL
+  causal_chain: RC5→ERRORS=1→FAIL→家老gate直接
+  brainwash_check: '#1no #2no #3no #4no #5no #6no #7no #8no'
+  step3_5_verified: true
+  origin: '[[cmd_4465_RC5]] -> [[FAIL]]'
+  reviewed_at: '2026-09-03T06:31:00+09:00'
+  timestamp: '2026-09-03T06:31:00+09:00'
+- brainwash_check: '#1no #2no #3no #4no #5no #6no #7no #8no ERRORS=0'
+  causal_chain: insight→消化→LGTM
+  cmd_id: cmd_reflux_insight_202609030627_kotaro
+  escalation_needed: false
+  finding_categories:
+  - assumptions
+  - numbers
+  - premortem
+  - adversarial
+  - ambiguity
+  findings_summary: 定型reflux。ERRORS=0。LGTM
+  gate_prediction: CLEAR
+  gate_prediction_reason: all checks passed
+  lesson_quality: OK
+  observations:
+  - 定型reflux完了
+  operational_simulation:
+    actual: CLEAR ERRORS=0
+    command: precheck
+    expected: CLEAR
+    result: PASS
+  origin: '[[reflux]] -> [[LGTM]]'
+  report_ninja: kotaro
+  report_task_id: cmd_reflux_insight_202609030627_kotaro_exact
+  report_verdict: LGTM
+  review_type: report
+  reviewed_at: '2026-09-03T06:39:00+09:00'
+  step3_5_verified: true
+  timestamp: '2026-09-03T06:39:00+09:00'
+  verdict: LGTM
+  verified_files:
+  - queue/reports/kotaro_report_cmd_reflux_insight_202609030627_kotaro.yaml:1
+- cmd_id: cmd_reflux_insight_202609030627_kotaro
+  review_type: report
+  gate_result: CLEAR
+  gate_synced_at: 2026-09-03 06:50:44+09:00
+  report_ninja: kotaro
+  report_task_id: cmd_reflux_insight_202609030627_kotaro_exact
+  report_verdict: FAIL
+  verdict: FAIL
+  verified_files:
+  - queue/reports/kotaro_report_cmd_reflux_insight_202609030627_kotaro.yaml:1
+  fail_reasons:
+  - 'fp race: bundle発行後にreport RC'
+  lesson_quality: OK
+  escalation_needed: false
+  finding_categories:
+  - assumptions
+  - numbers
+  - premortem
+  - adversarial
+  - ambiguity
+  observations:
+  - fp race
+  operational_simulation:
+    command: fp照合
+    expected: 一致
+    actual: 不一致
+    result: FAIL
+  causal_chain: bundle→RC→fp race
+  brainwash_check: '#1no #2no #3no #4no #5no #6no #7no #8no'
+  step3_5_verified: true
+  origin: '[[fp_race]] -> [[FAIL]]'
+  reviewed_at: '2026-09-03T06:41:00+09:00'
+  timestamp: '2026-09-03T06:41:00+09:00'
+- adversarial_review: 'PASS: publisher lockの下で実行されflock排他。fail-closeで失敗opのみrcへ移動しbatch全体を汚染しない'
+  brainwash_check: '#1no #2no #3no #4no #5no #6no #7no #8no 21/21test+commit現物8file+merge検証'
+  causal_chain: 家老deepdive発見→ledger route未稼働(mode644+消費者欠)→消費者実装+mode755→origin到達
+  cmd_id: cmd_4465
+  escalation_needed: false
+  finding_categories:
+  - assumptions
+  - numbers
+  - premortem
+  - adversarial
+  - ambiguity
+  findings_summary: 4観点全OK。ledger消費者(publisher)実装+mode755追跡+4 caller可視化。21/21 test
+    PASS。merge commit=origin/main統合済み
+  gate_prediction: CLEAR
+  gate_prediction_reason: all checks passed
+  lesson_quality: OK
+  observations:
+  - 290c3e1adで8ファイル228行追加。ledger_inbox配下のopをflock下でisolated cloneにapplyするbatch消費者
+  - 4 callerのLEDGER-ROUTE-SKIP可視化。沈黙フォールバックの検出性確保
+  - merge commit 34bbac704でorigin/mainと統合済み。ledger消費者コード46箇所grep一致
+  operational_simulation:
+    actual: CLEAR (ERRORS=0)
+    command: precheck GATE_PREDICTION
+    expected: CLEAR
+    result: PASS
+  origin: '[[cmd_4465]] -> [[ledger_route未稼働]] -> [[LGTM]]'
+  report_ninja: hanzo
+  report_task_id: cmd_4465_full
+  report_verdict: LGTM
+  review_type: report
+  reviewed_at: '2026-09-03T06:56:00+09:00'
+  step3_5_verified: true
+  timestamp: '2026-09-03T06:56:00+09:00'
+  verdict: LGTM
+  verified_files:
+  - scripts/publisher.sh:ledger_operations
+  - scripts/ledger_writer.sh:mode755
+  - tests/unit/test_publisher_ledger_consumer.bats:1
+- adversarial_review: 'PASS: force push系literal 0件確認。divergence時はpushせずfail-closeとinbox通知'
+  brainwash_check: '#1no #2no #3no #4no #5no #6no #7no #8no 3/3test+commit現物3file+force
+    literal 0'
+  causal_chain: PUBLISHER_SINGLE ON→root直commit滞留20→root drain新設→ff-only origin到達
+  cmd_id: cmd_karo_hotfix_publisher_root_drain_202609030535
+  escalation_needed: false
+  finding_categories:
+  - assumptions
+  - numbers
+  - premortem
+  - adversarial
+  - ambiguity
+  findings_summary: 4観点全OK。ff-only drain+divergence fail-close+dirty除外。3/3 contract
+    test PASS。commit 73e794b09
+  gate_prediction: CLEAR
+  gate_prediction_reason: all checks passed
+  lesson_quality: OK
+  observations:
+  - publisher_root_drain.sh 54行新設。fetch→merge-base祖先判定→lock-run ff push→divergence通知
+  - baseline ahead=0確認後、commit 1で self ahead=1。pre-commit rc=0
+  - AC3衝突なし確認(半蔵cmd_4465並走)。3 files changed 159 insertions
+  operational_simulation:
+    actual: CLEAR (ERRORS=0)
+    command: precheck GATE_PREDICTION
+    expected: CLEAR
+    result: PASS
+  origin: '[[publisher_root_drain]] -> [[root_origin_gap]] -> [[LGTM]]'
+  report_ninja: kagemaru
+  report_task_id: cmd_karo_hotfix_publisher_root_drain_202609030535_normal
+  report_verdict: LGTM
+  review_type: report
+  reviewed_at: '2026-09-03T06:57:00+09:00'
+  step3_5_verified: true
+  timestamp: '2026-09-03T06:57:00+09:00'
+  verdict: LGTM
+  verified_files:
+  - scripts/lib/publisher_root_drain.sh:1
+  - scripts/publisher.sh:root_drain
+  - tests/unit/test_publisher_root_drain.bats:1
+- adversarial_review: 'PASS: rm -rf未使用(git worktree removeのみ)。active marker+pointer保護。dirty
+    worktreeは回収せず報告に列挙'
+  brainwash_check: '#1no #2no #3no #4no #5no #6no #7no #8no 3/3test+4file commit現物+dry-run数値'
+  causal_chain: fail-close/void経路→worktree残存122dir→回収helper+配線→dry-run候補95(sweep家老待ち)
+  cmd_id: cmd_karo_hotfix_task_worktree_reclaim_202609030535
+  conflict_of_interest: review_approval.shにfail-close終端からの既存cleanup呼出し1行追加。軍師のレビュー判定ロジックには変更なし。回収はarchive_completed.shのcleanup_task_worktree_marker(既存正規関数)を再利用。利害衝突なし
+  escalation_needed: false
+  finding_categories:
+  - assumptions
+  - numbers
+  - premortem
+  - adversarial
+  - ambiguity
+  findings_summary: '4観点全OK。回収helper新設+fail-close/void配線。3/3 test PASS。dry-run: linked=99候補=95
+    dirty保持=21 active誤回収=0'
+  gate_prediction: CLEAR
+  gate_prediction_reason: all checks passed
+  lesson_quality: OK
+  observations:
+  - task_worktree_reclaim.sh 267行新設。marker state+task pointer+dirty保持の3軸判定
+  - 'dry-run実測: linked=99 candidates=95 dirty_retained=21 active交差=0。本番sweep未実行(家老承認待ち)'
+  - 2 commit (scope commit+test契約補填)。WITH_CONCERNSだがtest_necessity非空で契約は充足
+  operational_simulation:
+    actual: CLEAR (ERRORS=0)
+    command: precheck GATE_PREDICTION
+    expected: CLEAR
+    result: PASS
+  origin: '[[task_worktree_reclaim]] -> [[orphan_reclaim]] -> [[LGTM]]'
+  report_ninja: saizo
+  report_task_id: cmd_karo_hotfix_task_worktree_reclaim_202609030535_normal
+  report_verdict: LGTM
+  review_type: report
+  reviewed_at: '2026-09-03T06:59:00+09:00'
+  step3_5_verified: true
+  timestamp: '2026-09-03T06:59:00+09:00'
+  verdict: LGTM
+  verified_files:
+  - scripts/task_worktree_reclaim.sh:1
+  - scripts/review_approval.sh:fail-close
+  - scripts/ninja_monitor.sh:auto_void
+  - tests/unit/test_task_worktree_reclaim.bats:1
+- adversarial_review: 'N/A: queue/insights.yamlのみ変更でスクリプト変更なし'
+  brainwash_check: '#1no #2no #3no #4no #5no #6no #7no #8no insights_pending 40→39実測+commit
+    aaea7851e'
+  causal_chain: INS-9ae6(LICENSE new_file)→MIT boilerplate確認→定型resolve→在庫1減
+  cmd_id: cmd_reflux_insight_202609030646_tobisaru
+  escalation_needed: false
+  finding_categories:
+  - assumptions
+  - numbers
+  - premortem
+  - adversarial
+  - ambiguity
+  findings_summary: 4観点全OK。LICENSE(MIT定型boilerplate)のinsight resolve。先例8件と同型。在庫40→39
+  gate_prediction: CLEAR
+  gate_prediction_reason: all checks passed
+  lesson_quality: OK
+  observations:
+  - LICENSEはMIT標準文。ドメイン固有知識なし。semantic-map/index.mdにlicense言及0件
+  - 先例INS-8928(.gitattributes)と同型resolve(source=semantic_map_generate:new_file)
+  - '在庫: insights_pending 40→39。resolve 1件で正確に1減'
+  operational_simulation:
+    actual: CLEAR (ERRORS=0)
+    command: precheck GATE_PREDICTION
+    expected: CLEAR
+    result: PASS
+  origin: '[[INS-9ae6]] -> [[定型boilerplate]] -> [[LGTM]]'
+  report_ninja: tobisaru
+  report_task_id: cmd_reflux_insight_202609030646_tobisaru_exact
+  report_verdict: LGTM
+  review_type: report
+  reviewed_at: '2026-09-03T07:06:00+09:00'
+  step3_5_verified: true
+  timestamp: '2026-09-03T07:06:00+09:00'
+  verdict: LGTM
+  verified_files:
+  - queue/insights.yaml:INS-20260902-141250140-9ae6
 - cmd_id: cmd_4464
   review_type: draft
   verdict: APPROVE
