@@ -14247,7 +14247,10 @@ insights:
   priority: "high"
   source: "karo_workaround_log"
   fix_known: false
-  status: pending
+  status: resolved
+  resolved_reason: "一次情報で infra::general の現物3件と PD-141 を確認し、重複起票せず既存構造対策 task へ整理済み"
+  action_artifact: PD-141;queue/tasks/hayate.yaml;cmd_karo_hotfix_report_format_manifest_dotslash_202609022312
+  resolved_at: "2026-09-02T23:28:15+09:00"
 - id: INS-20260902-230836832-7c46
   ts: "2026-09-02T23:08:36+09:00"
   insight: "report_field_set.sh は files_modified path に '/' を必須(L1386/L1930)として top-level file(AGENTS.md 等)を BLOCK するが、gate_report_format の manifest_consistency は './' 無しの厳密一致を要求する。top-level file を変更する task(build_instructions 同期等)は忍者が報告を書けない矛盾。report_field_set の判定を『repo 内 tracked path なら可』へ改める"
