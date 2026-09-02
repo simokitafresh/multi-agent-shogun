@@ -938,7 +938,10 @@ if [[ "${INSIGHT_AUTO_COMMIT:-1}" == "1" && "$INSIGHTS_FILE" == "$SCRIPT_DIR/que
     # index.lock競合(他忍者のcommit中)はfail-fast BLOCKされるため短いリトライで吸収
     _iac_ok=0
     for _iac_try in 1 2 3; do
-      if bash "$SCRIPT_DIR/scripts/ninja_scope_commit.sh" -m "insights: auto-commit (reflux dirty-guard防止)" -- queue/insights.yaml >/dev/null 2>&1; then
+      # PUBLISHER_SINGLE ON: root 直 commit は U1b publish_direct_commit.sh のみ(将軍裁定 2026-09-03 05:22)
+      _iac_commit="$SCRIPT_DIR/scripts/ninja_scope_commit.sh"
+      if ( source "$SCRIPT_DIR/scripts/lib/publisher_single_flag.sh" && publisher_single_enabled "$SCRIPT_DIR" ); then _iac_commit="$SCRIPT_DIR/scripts/publish_direct_commit.sh"; fi
+      if bash "$_iac_commit" -m "insights: auto-commit (reflux dirty-guard防止)" -- queue/insights.yaml >/dev/null 2>&1; then
         _iac_ok=1
         break
       fi
