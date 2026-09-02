@@ -329,3 +329,31 @@ PY
     run grep -l 'Traceback\|YAML parse\|partial' "$TEST_TMPDIR"/gate.*
     [ "$status" -eq 1 ]
 }
+
+# test_necessity: The review-log append entrypoint must be discoverable without
+# stdin input, must never block on a human terminal, and must preserve the
+# existing piped-entry append path.
+@test "gunshi_log_append help and tty stdin fail closed while pipe remains supported" {
+    local script_under_test="$TEST_TMPDIR/scripts/gunshi_log_append.sh"
+
+    run bash "$script_under_test" --help
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"Usage:"* ]]
+
+    run timeout 5 script -qec "bash '$script_under_test'" /dev/null
+    [ "$status" -eq 2 ]
+    [[ "$output" == *"Usage:"* ]]
+
+    run bash "$script_under_test" <<'EOF'
+- cmd_id: cmd_pipe_contract
+  review_type: self_study
+  observations:
+    - "piped input reaches the existing validator"
+  cs_checklist: {CS1: one, CS2: two, CS3: three, CS4: four, CS5: five, CS6: six}
+  causal_chain: "a -> b -> c"
+  operational_simulation: {command: probe, expected: pass, actual: pass, result: PASS}
+  brainwash_check: "#1no #2no #3no #4no #5no #6no #7no #8no; 1/1"
+EOF
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"Appended"* || "$output" == *"appended"* ]]
+}

@@ -717,20 +717,45 @@ maybe_force_idle_flag() {
 
     [ -f "$idle_flag" ] && return 1
 
-    # A background shell is genuinely busy even when the pane footer looks
-    # idle.  Never turn a stale clock into permission to deliver.
-    if _agent_state_has_busy_subprocess "$PANE_TARGET"; then
+    local agent_state bash_running_since now elapsed
+    agent_state=$(tmux display-message -t "$PANE_TARGET" -p '#{@agent_state}' 2>/dev/null || true)
+
+    if [ "$agent_state" = "idle" ]; then
+        # A background shell is genuinely busy even when the pane footer looks
+        # idle.  Never turn a stale clock into permission to deliver.
+        _agent_state_has_busy_subprocess "$PANE_TARGET" && return 1
+    elif [ "$agent_state" = "bash_running" ]; then
+        # A crashed/missed PostToolUse hook can leave the bash-running marker
+        # behind after the CLI has returned to its prompt.  The timestamp is
+        # the bounded recovery proof; pane state is the delivery boundary.
+        bash_running_since=$(tmux display-message -t "$PANE_TARGET" -p '#{@bash_running_since}' 2>/dev/null || true)
+        [[ "$bash_running_since" =~ ^[0-9]+$ ]] || return 1
+        [[ "$BUSY_TIMEOUT_SEC" =~ ^[0-9]+$ ]] || return 1
+        now="$EPOCHSECONDS"
+        elapsed=$((now - bash_running_since))
+        [ "$elapsed" -ge "$BUSY_TIMEOUT_SEC" ] || return 1
+
+        # Never treat a confirmation dialog as a normal prompt: a nudge could
+        # be consumed as its choice.  Existing guard remains the authority for
+        # recognizing the dialog shape.
+        _pane_has_confirmation_prompt "$PANE_TARGET" && return 1
+
+        local pane_tail last_line
+        pane_tail=$(tmux capture-pane -t "$PANE_TARGET" -p -J -S -3 2>/dev/null || true)
+        last_line=$(printf '%s\n' "$pane_tail" | sed '/^[[:space:]]*$/d' | tail -1)
+        [[ "$last_line" =~ ^[[:space:]]*[❯›][[:space:]]* ]] || return 1
+    else
         return 1
     fi
 
-    local agent_state
-    agent_state=$(tmux display-message -t "$PANE_TARGET" -p '#{@agent_state}' 2>/dev/null || true)
-    [ "$agent_state" = "idle" ] || return 1
-
-    # Reconcile a missing flag from the live pane state.  This is a normal
-    # lifecycle repair, not a timeout-based recovery/force path.
+    # Reconcile a missing flag from the live pane state.  For stale
+    # bash_running, this is deliberately allowed even if the subprocess marker
+    # remains: the prompt and timeout establish that delivery is safe.
+    if [ "$agent_state" = "bash_running" ]; then
+        tmux set-option -p -t "$PANE_TARGET" @agent_state idle 2>/dev/null || return 1
+    fi
     if set_idle_flag; then
-        echo "[$(date)] [IDLE-RECONCILED] restored idle flag for $AGENT_ID from @agent_state=idle" >&2
+        echo "[$(date)] [IDLE-RECONCILED] restored idle flag for $AGENT_ID from @agent_state=$agent_state" >&2
         return 0
     fi
     return 1

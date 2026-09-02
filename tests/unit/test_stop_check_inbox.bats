@@ -96,6 +96,18 @@ EOF
     echo "$output" | jq -e '.decision == "block"' >/dev/null
 }
 
+# test_necessity: A re-entrant Stop callback must leave both lifecycle
+# authorities synchronized; clearing the flag alone strands an otherwise idle
+# agent and prevents the next inbox delivery.
+@test "stop_hook_active re-entry restores idle state and flag" {
+    printf 'messages:\n' > "$TEST_PROJECT/queue/inbox/hayate.yaml"
+
+    run_hook '{"stop_hook_active":true}'
+    [ "$status" -eq 0 ]
+    [ -f "$TEST_IDLE_FLAG" ]
+    grep -q '@agent_state idle' "$TMUX_LOG"
+}
+
 @test "T-SCI-002: completion message triggers async report_completed notification" {
     printf 'messages:\n' > "$TEST_PROJECT/queue/inbox/hayate.yaml"
 

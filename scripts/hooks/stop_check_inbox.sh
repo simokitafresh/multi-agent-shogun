@@ -202,6 +202,8 @@ if [[ "$payload" == *'"stop_hook_active":true'* || "$payload" == *'"stop_hook_ac
 fi
 if [[ "$stop_hook_active" == "true" ]]; then
   clear_idle_flag || true
+  set_agent_state idle
+  set_idle_flag || true
   exit 0
 fi
 
