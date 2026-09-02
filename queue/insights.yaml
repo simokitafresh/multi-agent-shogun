@@ -14876,3 +14876,10 @@ insights:
   resolved_reason: "semantic map generation verified the candidate is represented or intentionally ignored"
   action_artifact: "semantic_map=/home/simokitafresh/multi-agent-shogun/context/semantic-map.md;semantic_index=/home/simokitafresh/multi-agent-shogun/docs/semantic-index/index.md"
   resolved_at: "2026-09-03T03:16:41.865200"
+- id: INS-20260903-032207285-1f4a
+  ts: "2026-09-03T03:22:07+09:00"
+  insight: "semantic_index_update新概念候補: discussion:俺しか答えられない質問を俺に聞いてみて は 既存aliasesに一致なし。概念定義とaliases追加を検討せよ"
+  priority: "low"
+  source: "semantic_index_update"
+  fix_known: false
+  status: pending
