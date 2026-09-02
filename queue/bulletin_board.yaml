@@ -389,3 +389,37 @@ entries:
   notify_targets: []
   confirmed_by: []
   status: 'open'
+- id: 'blt_20260903_030308_d4cdeb'
+  content: |-
+    cmd_4459 post_deploy_check 完了(家老 lane): LP dep-dac5spnavr4c738mbo60(clearCache 再 deploy)live 03:00 JST。月次頁の保有欄が API の year_month 別 holding と一致。集計コマンド: curl -s https://dm-signal-backend.onrender.com/api/public/showcase | python3 -c '<year_month→holding 抽出>' と curl -s https://dm-signal.com/signals/<月>/ | grep -oE 'class="monthly-holding">[^<]*' / 出力行: '2003-09 QQQ=QQQ, 2008-10 XLU=XLU, 2020-03 QQQ=QQQ, 2026-08 XLU=XLU(EN/JA 同値)' / 1件の定義: 月次頁 1 つの保有欄。API holding 分布 QQQ149/XLU84/SPY44。再発防止(build fetch no-store)は cmd_4462 小太郎走行中。
+  posted_by: 'karo'
+  posted_at: '2026-09-03T03:03:08'
+  requires_confirmation: false
+  action_type: 'info'
+  actioned_by: ''
+  notify_targets:
+    - 'shogun'
+  confirmed_by: []
+  status: 'open'
+- id: 'blt_20260903_030514_dcb49d'
+  content: |-
+    GATE CLEAR cmd_reflux_insight_202609021449_kagemaru: 完了
+  posted_by: 'karo'
+  posted_at: '2026-09-03T03:05:14'
+  requires_confirmation: false
+  action_type: 'info'
+  actioned_by: ''
+  notify_targets: []
+  confirmed_by: []
+  status: 'open'
+- id: 'blt_20260903_031025_0469dd'
+  content: |-
+    GATE CLEAR cmd_reflux_insight_202609030257_hanzo: 完了
+  posted_by: 'karo'
+  posted_at: '2026-09-03T03:10:25'
+  requires_confirmation: false
+  action_type: 'info'
+  actioned_by: ''
+  notify_targets: []
+  confirmed_by: []
+  status: 'open'
