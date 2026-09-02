@@ -1,5 +1,6 @@
 # インフラコンテキスト
-<!-- last_updated: 2026-09-02 2026-09-02 将軍 doc lane: cfc fixture 根治 afde1f8c8・CI GREEN -->
+<!-- last_updated: 2026-09-02 2026-09-02 将軍 doc lane: review_approval JST epoch+archive 履歴 066bbede7 -->
+<!-- source_commit:066bbede7c2e reason:2026-09-02 将軍 doc lane: review_approval JST epoch+archive 履歴 066bbede7 evidence:GATE CLEAR 12:49 cmd_karo_hotfix_review_epoch_refresh_20260902; 066bbede7 origin 祖先 yes -->
 <!-- source_commit:afde1f8c8 reason:2026-09-02 将軍 doc lane: cfc fixture 根治 afde1f8c8・CI GREEN evidence:run afde1f8c8/f589070ec success; 軍師実装+将軍独立検証 31/31 -->
 <!-- source_commit:92f4cc1b7 reason:2026-09-02 将軍 doc lane: live SHA 依存 test self-contained 化 92f4cc1b7 evidence:軍師 LGTM blt_081613; push 4f4a6a1cc; CI 再走 queued -->
 <!-- source_commit:2250e9326 reason:2026-09-02 将軍 doc lane: guard FP fix 公開(78e409d8a/32851d859)+fixture 補修再公開 evidence:root bats 23/23 PASS; push lane 07:14 復旧; task close は家老復帰後 -->
@@ -404,6 +405,7 @@ source boundary一致taskはregistryのowner/update_triggerからcontext_update_
 - バッチらせん#2〜#8実績(一次実測・`docs/research/cmd_4403_slowest_tests_speedup_20260825.md`): #2 79.9→67.6s / #3 87.5→72.6s(AC2 timeout BLOCK) / #4 20.1→9.2s / #5r 87.6→48.8s / #6r 630→586s+phase receipt常設(支配=checks_main.quality_gate) / #7r 142.7→61.3s / #8r 169.2→76.9s。初回#5/#7/#8は**timing正本≠live実測(−44〜−50%)でAC1どおり実装せず停止**→次セット選別は各弾後に正本を再計測してから行う。
 - 報告scopeの正本=source-generation SSOT(飛猿 `7d9532b12`, `scripts/lib/review_source_context.py`+`gate_report_format.sh`): 報告の変更scopeはisolated worktreeの生成源で検証し、primary(共有main)のdirty混入を排除する。**merge commit注意(将軍 `64025b9d4`)**: 所有パス検査の `git diff-tree` に `-m --first-parent` が無いとmerge commit(親2+)は変更0件扱いになり、履歴分岐統合taskが構造的にFAILする(実証0→15 files)。全repo target(`target_path: <repo root>`)のtaskは知識/台帳の恒常dirty(lessons/insights/semantic-index等)が『未commit変更あり』BLOCKになるため、統合前にscope commitで退避する。
 - 報告timestampはJST(`+09:00`)で書け(UTC `Z` は上記の日付ずれの発生源)。恒久解はreport-writeテンプレのtimestamp生成側で統一する(未実装=次ターゲット)。
+- `scripts/review_approval.sh`(`066bbede7`、cmd_karo_hotfix_review_epoch_refresh_20260902、影丸): offset 無しの運用 inbox timestamp は契約上 JST として epoch 化する(UTC 扱いだと review epoch が 9 時間ずれ、LGTM/ACCEPT の鮮度判定が偽 stale)。加えて review 依頼の探索を `queue/archive/inbox` と `archive/inbox` の両 archive へ拡張(archive 済み依頼の履歴が消えない)。bats `tests/unit/test_review_approval.bats` に JST epoch+archive 履歴の契約を追加。
 
 ## 2026-08-15 追加ガード(source=253afbb2c以降)
 
