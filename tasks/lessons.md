@@ -16629,3 +16629,16 @@ sqlite3.Connection.backup()を使うとページ(4096byte)単位のread syscall�
 - **when**: 未設定
 - **how**: 未設定
 - manifest.yamlへgit tree/commit shaを書く際、値が偶然全digit(例: 40桁全て0-9)だとPyYAMLのimplicit resolverがintとして 読み込み、str(v) or ""パターンの読取り側コードがゼロ値を偽と誤判定して空文字列に潰す。対策は(1)書込み側でカスタム representer(style="'")により該当scalarを強制的にstring型でdumpする(2)読取り側は`v is not None`でNoneのみを空扱いし、 値そのものの真偽では判定しない。テストで実際にこの不具合を踏み(全0のtree shaを使ったfixtureでrestoreがmanifest missing source_treeと誤検出)、両対策を実装して再現しなくなったことを確認済み。
+
+### L1706: worker lease交代時はreportのlesson allowlistをcurrent taskから分離する
+- **日付**: 2026-09-02
+- **出典**: cmd_karo_hotfix_lesson_feedback_task_identity_202609021922
+- **記録者**: hanzo
+- **tags**: [infra,deploy-task,db,deploy,gate]
+- **subdomain**: infra
+- **target_files**: [scripts/deploy_task.sh,scripts/gates/gate_gunshi_report_precheck.sh,scripts/gates/gate_gunshi_report_precheck_engine.py,scripts/lib/report_gate_contract.py,scripts/report_field_set.sh]
+- **origin**: [[cmd_karo_hotfix_lesson_feedback_task_identity_202609021922]]
+- **enforcement**: 未自動化
+- **when**: 未設定
+- **how**: 未設定
+- completed reportのlesson feedbackはworker current taskではなくdeploy世代のimmutable lesson_set snapshotを正本にする。legacy reportはidentity不一致時に空allowlistと明示compatibilityで扱い、過去lessonの自己許可を防ぎつつ真正extraをBLOCKする。

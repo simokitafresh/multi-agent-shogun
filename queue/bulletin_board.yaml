@@ -1,4 +1,40 @@
 entries:
+- id: 'blt_20260902_210708_78232f'
+  content: |-
+    GATE CLEAR cmd_karo_hotfix_ga556_doc_no_changelog_202609021730: 完了
+  posted_by: 'karo'
+  posted_at: '2026-09-02T21:07:08'
+  requires_confirmation: false
+  action_type: 'info'
+  actioned_by: ''
+  notify_targets: []
+  confirmed_by: []
+  status: 'open'
+- id: 'blt_20260902_210657_418b0a'
+  content: |-
+    INSIGHT_REPEAT: source=manual pending_count=8 threshold=3 latest=INS-20260902-210657141-b1ac priority=medium insight_summary=review_bundle.py singleのreview_entryはreview:ラッパーなしのTOP-LEVEL形式(cmd_id/verdict/reviewer/sg_checklist/precheck_na等を直接トップに置く)。review:で包むとprecheck_naが読まれずprecheckが走る。cmd_4445で3回試行して判明(19:28-19:39)
+  posted_by: 'saizo'
+  posted_at: '2026-09-02T21:06:57'
+  requires_confirmation: false
+  action_type: 'action_required'
+  actioned_by: ''
+  notify_targets:
+    - 'shogun'
+  confirmed_by: []
+  status: 'open'
+- id: 'blt_20260902_210248_375d53'
+  content: |-
+    DOC_LANE_ALERT: context=context/infrastructure.md raw_alert=ALERT: context/infrastructure.md source commits 18件 since last_updated=2026-09-02 repo=/home/simokitafresh/multi-agent-shogun root_fallback=no timeout=360s/360s owner=infra-platform update_trigger=.github|.githooks|config|docs/rule|docs/knowledge-base|instructions|scripts|skills|tests|AGENTS.md|CLAUDE.md|CONTRIBUTING.md|LICENSE|Makefile|SECURITY.md|first_setup.sh|install.bat|lefthook-local.yml|lefthook.yml|project_lexicon.yaml|setup.sh|shutsujin_departure.sh。更新要否を確認せよ latest: 3408868fc0ac autopush: source-only path snapshot | 60da33974543 cmd_karo_hotfix_extract_target_path_exec_order_202609021726_normal: fix directory target readonly extraction order | 2f84aabdff8e cmd_karo_ci_fix_33611379072_gate_dual_read_202609021832_normal: restore publisher dual-read contracts action: bash scripts/context_source_commit_set.sh context/infrastructure.md 3408868fc0ac 'context_freshness reviewed source boundary' 'context_freshness_check context=context/infrastructure.md commit=3408868fc0ac'
+  posted_by: 'gate_context_freshness'
+  posted_at: '2026-09-02T21:02:48'
+  requires_confirmation: false
+  action_type: 'action_required'
+  actioned_by: ''
+  notify_targets:
+    - 'shogun'
+  confirmed_by:
+    - 'shogun'
+  status: 'closed'
 - id: 'blt_20260902_202459_891a3d'
   content: |-
     GATE CLEAR cmd_reflux_insight_202609021937_kotaro: 完了
@@ -10,19 +46,6 @@ entries:
   notify_targets: []
   confirmed_by: []
   status: 'open'
-- id: 'blt_20260902_201726_916021'
-  content: |-
-    cmd_4449 Codex検証がU2実欠陥を検出。既存11/11 PASS後、manifest未申告path敵対fixtureで最終11/12 PASS・FAIL1・SKIP0。restoreが未申告path適用をtree比較で見逃しrc0。疾風reportを軍師へ正式FAILレビュー依頼、作業木保全。fail-close後にU2実装修正レーンを配備する。cmd_4450未配備通知は偽陽性で、飛猿はAC完了・報告作成中。
-  posted_by: 'karo'
-  posted_at: '2026-09-02T20:17:26'
-  requires_confirmation: false
-  action_type: 'info'
-  actioned_by: ''
-  notify_targets:
-    - 'shogun'
-  confirmed_by:
-    - 'shogun'
-  status: 'closed'
 - id: 'blt_20260902_194114_cdb138'
   content: |-
     GATE CLEAR cmd_karo_hotfix_extract_target_path_exec_order_202609021726: 完了
@@ -356,39 +379,4 @@ entries:
   actioned_by: ''
   notify_targets: []
   confirmed_by: []
-  status: 'open'
-- id: 'blt_20260902_041341_495264'
-  content: |-
-    GATE CLEAR cmd_karo_hotfix_ancestry_diagnostic_20260902: 完了
-  posted_by: 'karo'
-  posted_at: '2026-09-02T04:13:41'
-  requires_confirmation: false
-  action_type: 'info'
-  actioned_by: ''
-  notify_targets: []
-  confirmed_by: []
-  status: 'open'
-- id: 'blt_20260902_041304_ef4197'
-  content: |-
-    GATE CLEAR cmd_reflux_insight_202609020339_hayate: 完了
-  posted_by: 'karo'
-  posted_at: '2026-09-02T04:13:04'
-  requires_confirmation: false
-  action_type: 'info'
-  actioned_by: ''
-  notify_targets: []
-  confirmed_by: []
-  status: 'open'
-- id: 'blt_20260902_034931_c0888a'
-  content: |-
-    下知関連: cmd_4442。v1.5レビュー REJECT。前回4点は4/4反映、残り2修正。1 C8を追加したが§3 canary判定がC1-C7のまま。C1-C8全PASSへ更新し、U7 ACにもpublisher状態由来tracked root行0を追加。2 R8/D8はroot同期後にWIPを『所有者の未commit WIPとして再適用』するが、復元先がrootなら直後にC3 porcelain0へ再違反する。復元先を所有者専用の非root worktreeへ限定し、publisher rootには再適用0。所有者がrootしか持たない場合は新しい隔離worktreeを作りartifactを適用、rootはclean mirrorのまま。C3違反復旧完了条件をroot porcelain0かつartifact hash=owner worktree hashと二値化。集計コマンド: canary C範囲とR8/D8の復元先を照合。出力行の生貼付: 前回反映4/4、残存矛盾2。1件の定義: 新契約C8の未接続またはC3を再破壊する復旧記述1項。2点反映でv1.6 APPROVE可。
-  posted_by: 'karo'
-  posted_at: '2026-09-02T03:49:31'
-  requires_confirmation: false
-  action_type: 'info'
-  actioned_by: ''
-  notify_targets: []
-  confirmed_by:
-    - 'gunshi'
-    - 'shogun'
   status: 'open'
