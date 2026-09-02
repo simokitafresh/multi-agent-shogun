@@ -86,8 +86,7 @@ report_commit_main_ancestry_state() {
     local repo_dir="${2:-$SCRIPT_DIR}"
     local task_file="${3:-}"
     local ancestry_snapshot_file="${4:-}"
-    local state resolved_repo report_commit report_published_sha report_identity
-    local pending_request published_state expected_head
+    local state resolved_repo report_commit
 
     report_commit="$(REPORT_FILE="$report_file" python3 - <<'PY'
 import os
@@ -100,28 +99,12 @@ print(str(report.get("commit_hash") or "").strip())
 PY
 )"
 
-    # U4 migration contract: while publisher rollout is in progress a terminal
-    # report may carry only the canonical publication identity. Keep this read
-    # in the same report-reading function as the legacy commit_hash path.
-    report_published_sha="$(REPORT_FILE="$report_file" python3 - <<'PY'
-import os
-import yaml
-try:
-    report = yaml.safe_load(open(os.environ["REPORT_FILE"], encoding="utf-8")) or {}
-except (OSError, yaml.YAMLError):
-    report = {}
-print(str(report.get("published_sha") or "").strip())
-PY
-)"
-    report_identity="$report_commit"
-    [ -n "$report_identity" ] || report_identity="$report_published_sha"
-
     # The commit contract is the source of truth for the repository that owns
     # this report. Resolve it before consuming either the remote boundary or a
     # reachable-commit snapshot so a stale task.project path cannot create a
     # false ancestry result.
     if [ -n "$task_file" ] && [ -f "$task_file" ] \
-        && [ -n "$report_identity" ] && [ "$report_identity" != "no-code-change" ]; then
+        && [ -n "$report_commit" ] && [ "$report_commit" != "no-code-change" ]; then
         resolved_repo="$(resolve_report_commit_repo "$report_file" "$task_file" "$repo_dir")" || {
             printf 'BLOCK: report commit main ancestry: repository resolution failed\n'
             return 1
@@ -131,137 +114,6 @@ PY
             return 1
         }
         repo_dir="$resolved_repo"
-    fi
-
-    # A queued request is an external, retryable state. Match task identity
-    # from both report and task YAML; filename matching is retained for the
-    # publisher's documented FIFO request names.
-    pending_request="$(REPORT_FILE="$report_file" TASK_FILE="$task_file" STATE_DIR="${SHOGUN_STATE_DIR:-${STATE_DIR:-$HOME/.local/share/multi-agent-shogun}}" CMD_ID="${CMD_ID:-}" python3 - "$repo_dir" <<'PY'
-import os
-import pathlib
-import sys
-import yaml
-
-queue = pathlib.Path(os.environ["STATE_DIR"]) / "publish_queue"
-if not queue.is_dir():
-    raise SystemExit(0)
-ids = {value for value in (os.environ.get("CMD_ID", "").strip(),) if value}
-try:
-    report = yaml.safe_load(pathlib.Path(os.environ["REPORT_FILE"]).read_text(encoding="utf-8")) or {}
-except (OSError, yaml.YAMLError):
-    report = {}
-if isinstance(report, dict):
-    ids.update(str(report.get(key) or "").strip() for key in ("task_id", "parent_cmd", "cmd_id"))
-try:
-    task_raw = yaml.safe_load(pathlib.Path(os.environ["TASK_FILE"]).read_text(encoding="utf-8")) or {}
-except (OSError, yaml.YAMLError):
-    task_raw = {}
-task = task_raw.get("task", task_raw) if isinstance(task_raw, dict) else {}
-if isinstance(task, dict):
-    ids.update(str(task.get(key) or "").strip() for key in ("task_id", "parent_cmd", "cmd_id", "issued_cmd_id"))
-ids.discard("")
-for request in sorted(queue.rglob("*.request")):
-    matched = any(value in request.name for value in ids)
-    if not matched:
-        try:
-            payload = yaml.safe_load(request.read_text(encoding="utf-8")) or {}
-        except (OSError, yaml.YAMLError):
-            continue
-        if isinstance(payload, dict):
-            matched = any(str(payload.get(key) or "").strip() in ids
-                          for key in ("task_id", "parent_cmd", "cmd_id", "issued_cmd_id"))
-    if matched:
-        print(request)
-        raise SystemExit(0)
-PY
-)"
-    if [ -n "$pending_request" ]; then
-        printf 'WAIT:publisher_pending(request=%s)\n' "$pending_request"
-        return 0
-    fi
-
-    if [ -n "$report_published_sha" ] && [ -z "$report_commit" ]; then
-        expected_head="$(resolve_ci_expected_head "$repo_dir")"
-        if [ -z "$expected_head" ]; then
-            printf 'BLOCK: published report receipt: remote main/master boundary missing\n'
-            return 1
-        fi
-        published_state="$(REPORT_FILE="$report_file" REPO_DIR="$repo_dir" EXPECTED_HEAD="$expected_head" python3 - <<'PY'
-import os
-import pathlib
-import re
-import subprocess
-import yaml
-
-def fail(message):
-    print("BLOCK: " + message)
-    raise SystemExit(0)
-
-try:
-    report = yaml.safe_load(pathlib.Path(os.environ["REPORT_FILE"]).read_text(encoding="utf-8")) or {}
-except (OSError, yaml.YAMLError):
-    fail("report unreadable")
-published = str(report.get("published_sha") or "").strip().lower()
-if not re.fullmatch(r"[0-9a-f]{40}", published):
-    fail("published_sha invalid")
-repo = pathlib.Path(os.environ["REPO_DIR"]).resolve()
-head = os.environ["EXPECTED_HEAD"].strip().lower()
-for revision, label in ((published, "published_sha"), (head, "canonical head")):
-    if subprocess.run(["git", "-C", str(repo), "cat-file", "-e", revision + "^{commit}"],
-                      stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL).returncode:
-        fail(label + " unavailable")
-if subprocess.run(["git", "-C", str(repo), "merge-base", "--is-ancestor", published, head],
-                  stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL).returncode:
-    fail("published_sha not contained by canonical head")
-
-receipt = None
-for key in ("path_blob_receipt", "path_blob_receipts", "path_receipt", "published_path_receipt"):
-    if key in report:
-        receipt = report.get(key)
-        break
-if isinstance(receipt, dict):
-    for wrapper in ("paths", "entries", "receipts"):
-        if wrapper in receipt:
-            receipt = receipt[wrapper]
-            break
-if isinstance(receipt, dict):
-    receipt = [{"path": path, "blob": blob} for path, blob in receipt.items()]
-if not isinstance(receipt, list) or not receipt:
-    fail("path/blob receipt missing")
-
-matched = 0
-for entry in receipt:
-    if not isinstance(entry, dict):
-        fail("path/blob receipt entry invalid")
-    path = str(entry.get("path") or "").strip()
-    expected = str(entry.get("blob") or entry.get("blob_sha") or entry.get("sha") or "").strip().lower()
-    if not path or path.startswith("/") or ".." in pathlib.PurePosixPath(path).parts:
-        fail("path/blob receipt path invalid")
-    if not re.fullmatch(r"[0-9a-f]{40}", expected):
-        fail("path/blob receipt blob invalid")
-    result = subprocess.run(["git", "-C", str(repo), "rev-parse", published + ":" + path],
-                            stdout=subprocess.PIPE, stderr=subprocess.DEVNULL, text=True)
-    actual = result.stdout.strip() if result.returncode == 0 else "__ABSENT__"
-    if actual != expected:
-        fail("path/blob receipt mismatch:" + path)
-    matched += 1
-print("PASS: published_sha=" + published + " paths=" + str(matched) + " contained_by=" + head)
-PY
-)"
-        case "$published_state" in
-            PASS:*)
-                printf '%s\n' "$published_state"
-                return 0
-                ;;
-            BLOCK:*)
-                printf '%s\n' "$published_state"
-                return 1
-                ;;
-            *)
-                printf 'BLOCK: published report receipt: invalid verifier result\n'
-                return 1
-                ;;
-        esac
     fi
 
     if declare -F gate_detail_begin >/dev/null 2>&1; then

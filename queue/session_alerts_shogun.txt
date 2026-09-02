@@ -1,5 +1,4 @@
-# session_alerts — generated: 2026-09-02T12:43:20+0900
-[DONE] 掲示板action_required未対応: 1件 (blt_111409 actioned_by=shogun 12:52、家老lane blt_125059)
-[DONE] 走行中cmd実測突合: 8 pane capture 12:47 実施(影丸 review→CLEAR 12:49、疾風/才蔵/飛猿 reflux 走行)
-[DONE] monitor lifecycle 失敗行: REFLUX-AUTO-DEPLOY-FAIL saizo 12:35=insights.yaml dirty guard→12:45 再配備 DONE、insights auto-commit 済で dirty 0
-[DONE] deepdive追体験未完了: 全Phase実行まで作業禁止(stop hookがBLOCKする)。bash scripts/deepdive_replay.sh shogun <md> <Phase> "<自問>"
+# session_alerts — generated: 2026-09-02T16:49:24+0900
+[DONE] 追体験自動化ターゲット: WARN (自動化ターゲット未記入)
+[DONE] monitor lifecycle 失敗行 1行/60分 — 壁の所有者を一次で確認
+[DONE] Codex 上限警告 2 pane(hayate saizo) — 先送りせず殿へ前もって報告
