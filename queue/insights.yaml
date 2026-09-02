@@ -14170,25 +14170,37 @@ insights:
   priority: "low"
   source: "semantic_index_update"
   fix_known: false
-  status: pending
+  status: resolved
+  resolved_reason: "semantic map generation verified the candidate is represented or intentionally ignored"
+  action_artifact: "semantic_map=/home/simokitafresh/multi-agent-shogun/context/semantic-map.md;semantic_index=/home/simokitafresh/multi-agent-shogun/docs/semantic-index/index.md"
+  resolved_at: "2026-09-02T22:45:19+09:00"
 - id: INS-20260902-224411892-70c7
   ts: "2026-09-02T22:44:11+09:00"
   insight: "[[リバランサーの 500 は将軍が責任をもって自分で直し]] semantic_stress_test candidate_aliases: NO_MATCH source=lord query=リバランサーの 500 は将軍が責任をもって自分で直し、コミットデプロイ、本番確認までせよ"
   priority: "low"
   source: "semantic_stress_test"
   fix_known: false
-  status: pending
+  status: resolved
+  resolved_reason: "semantic index candidate was absorbed into a registered concept"
+  action_artifact: "semantic_index=/home/simokitafresh/multi-agent-shogun/docs/semantic-index/index.md"
+  resolved_at: "2026-09-02T22:45:08+09:00"
 - id: INS-20260902-224425699-3cd0
   ts: "2026-09-02T22:44:25+09:00"
   insight: "[[single publisher asis tobe 5w1h 20260902 mdを更新せよ]] semantic_stress_test candidate_aliases: NO_MATCH source=lord query=single_publisher_asis_tobe_5w1h_20260902.mdを更新せよ"
   priority: "low"
   source: "semantic_stress_test"
   fix_known: false
-  status: pending
+  status: resolved
+  resolved_reason: "semantic index candidate was absorbed into a registered concept"
+  action_artifact: "semantic_index=/home/simokitafresh/multi-agent-shogun/docs/semantic-index/index.md"
+  resolved_at: "2026-09-02T22:45:09+09:00"
 - id: INS-20260902-224445860-3c69
   ts: "2026-09-02T22:44:45+09:00"
   insight: "[[T201 SEOについて教えてくれ]] semantic_stress_test candidate_aliases: NO_MATCH source=lord query=T201 SEOについて教えてくれ。俺がやることはあるか？"
   priority: "low"
   source: "semantic_stress_test"
   fix_known: false
-  status: pending
+  status: resolved
+  resolved_reason: "semantic index candidate was absorbed into a registered concept"
+  action_artifact: "semantic_index=/home/simokitafresh/multi-agent-shogun/docs/semantic-index/index.md"
+  resolved_at: "2026-09-02T22:45:14+09:00"
