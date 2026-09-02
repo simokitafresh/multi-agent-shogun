@@ -14648,3 +14648,10 @@ insights:
   source: "semantic_stress_test"
   fix_known: false
   status: pending
+- id: INS-20260903-014632256-4afe
+  ts: "2026-09-03T01:46:32+09:00"
+  insight: "[[単一 publisher U8 cleanup manifest §10 M1 M11 を実行結果台帳として起こし]] semantic_stress_test candidate_aliases: NO_MATCH source=cmds query=単一 publisher U8: cleanup manifest(§10 M1-M11)を実行結果台帳として起こし、flag ON 後に旧 push 経路(autopush/push_lane/safe_shared_main_ff/GA-PUSH1/merge driver/旧 test)を 1 batch 10 file 以内で物理削除する"
+  priority: "low"
+  source: "semantic_stress_test"
+  fix_known: false
+  status: pending
