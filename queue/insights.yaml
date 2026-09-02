@@ -14312,3 +14312,10 @@ insights:
   source: "semantic_index_update"
   fix_known: false
   status: pending
+- id: INS-20260902-233053659-5bdb
+  ts: "2026-09-02T23:30:53+09:00"
+  insight: "cmd_complete_gate.sh の publisher_pending 判定は publish_queue を rglob('*.request') で走査するため、publisher が処理済みとして dequeued/ や rc/ へ移した request も pending 扱いになり永久 WAIT する。top-level(未処理)だけを見るべき(1 行)。"
+  priority: "high"
+  source: "manual"
+  fix_known: false
+  status: pending
