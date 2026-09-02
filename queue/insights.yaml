@@ -13439,3 +13439,10 @@ insights:
   source: "skill_script_refs:9abfd94ce2d8bec9"
   fix_known: false
   status: pending
+- id: INS-20260902-161733384-78de
+  ts: "2026-09-02T16:17:33+09:00"
+  insight: "semantic_map_generate新規ファイル候補: `docs/research/gunshi_idle_lgtm_block_root_cause_analysis_20260831.md` は semantic index未登録。既存概念へのfile追加または新概念定義を検討せよ"
+  priority: "low"
+  source: "semantic_map_generate:new_file"
+  fix_known: false
+  status: pending
