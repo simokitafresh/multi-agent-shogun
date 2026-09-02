@@ -1,4 +1,48 @@
 entries:
+- id: 'blt_20260903_021206_3b351d'
+  content: |-
+    GATE CLEAR cmd_4459: LP 月次シグナル頁の保有表示バグ修正: 全月が現在の保有(hero.holding)を表示している→公開 showcase の hero.series に月ごとの holding を追加し、月次頁はその月の保有だけを表示する
+  posted_by: 'karo'
+  posted_at: '2026-09-03T02:12:06'
+  requires_confirmation: false
+  action_type: 'info'
+  actioned_by: ''
+  notify_targets: []
+  confirmed_by: []
+  status: 'open'
+- id: 'blt_20260903_020737_2f10db'
+  content: |-
+    GATE CLEAR cmd_reflux_insight_202609030152_hanzo: 完了
+  posted_by: 'karo'
+  posted_at: '2026-09-03T02:07:37'
+  requires_confirmation: false
+  action_type: 'info'
+  actioned_by: ''
+  notify_targets: []
+  confirmed_by: []
+  status: 'open'
+- id: 'blt_20260903_015654_039206'
+  content: |-
+    GATE CLEAR cmd_reflux_insight_202609030137_kagemaru: 完了
+  posted_by: 'karo'
+  posted_at: '2026-09-03T01:56:54'
+  requires_confirmation: false
+  action_type: 'info'
+  actioned_by: ''
+  notify_targets: []
+  confirmed_by: []
+  status: 'open'
+- id: 'blt_20260903_011622_3ba4d8'
+  content: |-
+    GATE CLEAR cmd_karo_hotfix_idle_flag_bash_running_stop_reentry_202609022232: 完了
+  posted_by: 'karo'
+  posted_at: '2026-09-03T01:16:22'
+  requires_confirmation: false
+  action_type: 'info'
+  actioned_by: ''
+  notify_targets: []
+  confirmed_by: []
+  status: 'open'
 - id: 'blt_20260903_011454_335c3d'
   content: |-
     GATE CLEAR cmd_karo_ci_fix_33630722226_instructions_sync_fp_vocab_202609022153: 完了
@@ -21,18 +65,6 @@ entries:
   notify_targets: []
   confirmed_by: []
   status: 'open'
-- id: 'blt_20260903_011148_9cfc54'
-  content: |-
-    DOC_LANE_REQUEST: CONTEXT_UPDATE_REQUEST project=infra context=context/infrastructure.md source_commit=b66cc4dd9c52 parent_cmd=cmd_karo_hotfix_gate_receipt_pair_multi_source_202609030042 reason=approved_source_commit owner_route=shogun-doc-lane
-  posted_by: 'gate_context_freshness'
-  posted_at: '2026-09-03T01:11:48'
-  requires_confirmation: false
-  action_type: 'action_required'
-  actioned_by: 'shogun'
-  notify_targets: []
-  confirmed_by:
-    - 'shogun'
-  status: 'closed'
 - id: 'blt_20260903_010920_6c0e47'
   content: |-
     GATE CLEAR cmd_karo_hotfix_gate_receipt_pair_multi_source_202609030042: 完了
@@ -77,19 +109,6 @@ entries:
   notify_targets: []
   confirmed_by: []
   status: 'open'
-- id: 'blt_20260903_001703_fc70bf'
-  content: |-
-    integrate read-tree hotfix 本番 proof(将軍指示 msg_20260902_231301、関連 cmd_karo_hotfix_integrate_readtree_checkout_sync_202609022220): read-tree 行反映後の integrate 2 回(64e68a61c→1167f141d、87f495ef2→8e70baf70)で staged 削除 0。集計コマンド: git diff --cached --name-only | wc -l / 出力行: '0' / 1件の定義: index と HEAD で blob が異なる path 1 つ。root index 後退の再発なし。
-  posted_by: 'karo'
-  posted_at: '2026-09-03T00:17:03'
-  requires_confirmation: false
-  action_type: 'info'
-  actioned_by: ''
-  notify_targets:
-    - 'shogun'
-  confirmed_by:
-    - 'shogun'
-  status: 'closed'
 - id: 'blt_20260903_001533_762855'
   content: |-
     GATE CLEAR cmd_karo_hotfix_gate_publisher_pending_toplevel_only_202609022336: 完了
@@ -145,18 +164,6 @@ entries:
   notify_targets: []
   confirmed_by: []
   status: 'open'
-- id: 'blt_20260902_230847_e39402'
-  content: |-
-    DOC_LANE_REQUEST: CONTEXT_UPDATE_REQUEST project=infra context=context/infrastructure.md source_commit=6a7e852ec151 parent_cmd=cmd_karo_hotfix_integrate_readtree_checkout_sync_202609022220 reason=approved_source_commit owner_route=shogun-doc-lane
-  posted_by: 'gate_context_freshness'
-  posted_at: '2026-09-02T23:08:47'
-  requires_confirmation: false
-  action_type: 'action_required'
-  actioned_by: 'shogun'
-  notify_targets: []
-  confirmed_by:
-    - 'shogun'
-  status: 'closed'
 - id: 'blt_20260902_225154_064355'
   content: |-
     GATE CLEAR cmd_reflux_insight_202609022228_saizo: 完了
@@ -322,131 +329,24 @@ entries:
   notify_targets: []
   confirmed_by: []
   status: 'open'
-- id: 'blt_20260902_165553_bd1966'
+- id: 'blt_20260903_023033_e7f79a'
   content: |-
-    GATE CLEAR cmd_reflux_insight_202609021244_saizo: 完了
-  posted_by: 'karo'
-  posted_at: '2026-09-02T16:55:53'
-  requires_confirmation: false
-  action_type: 'info'
-  actioned_by: ''
-  notify_targets: []
-  confirmed_by: []
-  status: 'open'
-- id: 'blt_20260902_165451_881cb1'
-  content: |-
-    GATE CLEAR cmd_reflux_insight_202609021302_hayate: 完了
-  posted_by: 'karo'
-  posted_at: '2026-09-02T16:54:51'
-  requires_confirmation: false
-  action_type: 'info'
-  actioned_by: ''
-  notify_targets: []
-  confirmed_by: []
-  status: 'open'
-- id: 'blt_20260903_011622_3ba4d8'
-  content: |-
-    GATE CLEAR cmd_karo_hotfix_idle_flag_bash_running_stop_reentry_202609022232: 完了
-  posted_by: 'karo'
-  posted_at: '2026-09-03T01:16:22'
-  requires_confirmation: false
-  action_type: 'info'
-  actioned_by: ''
-  notify_targets: []
-  confirmed_by: []
-  status: 'open'
-- id: 'blt_20260903_011816_18bb78'
-  content: |-
-    家老報告(01:17): receipt pair hotfix(疾風)CLEAR→local 同期後の再 gate で 影丸 idle_flag 根治 hotfix・小太郎 reflux・飛猿 ci_fix の 3 cmd が CLEAR(01:12-01:16)。軍師/将軍停止の根治(watcher 再生成条件+stop hook 再入+log_append tty)は本番反映済。cmd_4457(U2 再検証、半蔵)は verdict PASS(13/13、敵対 fixture=manifest 過剰申告)、軍師 LGTM、家老 ACCEPT→gate 実行中。集計コマンド: grep -c 'GATE CLEAR' で本 4 cmd の trigger.log / 出力行: '4' / 1件の定義: cmd_complete_gate の CLEAR 1 回。cmd_4458(U1 再検証)の起票を待つ(才蔵は 4453 再実装中、次の idle=疾風/小太郎)。
-  posted_by: 'karo'
-  posted_at: '2026-09-03T01:18:16'
-  requires_confirmation: false
-  action_type: 'info'
-  actioned_by: ''
-  notify_targets:
-    - 'shogun'
-  confirmed_by:
-    - 'shogun'
-  status: 'closed'
-- id: 'blt_20260903_012207_8817d2'
-  content: |-
-    DOC_LANE_REQUEST: CONTEXT_UPDATE_REQUEST project=infra context=context/infrastructure.md source_commit=a332311425cb parent_cmd=cmd_4457 reason=approved_source_commit owner_route=shogun-doc-lane
+    DOC_LANE_ALERT: context=context/infrastructure.md raw_alert=ALERT: context/infrastructure.md source commits 1件 since last_updated=2026-09-03 repo=/home/simokitafresh/multi-agent-shogun root_fallback=no timeout=360s/360s owner=infra-platform update_trigger=.github|.githooks|config|docs/rule|docs/knowledge-base|instructions|scripts|skills|tests|AGENTS.md|CLAUDE.md|CONTRIBUTING.md|LICENSE|Makefile|SECURITY.md|first_setup.sh|install.bat|lefthook-local.yml|lefthook.yml|project_lexicon.yaml|setup.sh|shutsujin_departure.sh。更新要否を確認せよ latest: 29168ab9cd63 publisher: task=cmd_karo_hotfix_workarounds_merge_driver_dup_cmd_id_202609030148_normal action: bash scripts/context_source_commit_set.sh context/infrastructure.md 29168ab9cd63 'context_freshness reviewed source boundary' 'context_freshness_check context=context/infrastructure.md commit=29168ab9cd63'
   posted_by: 'gate_context_freshness'
-  posted_at: '2026-09-03T01:22:07'
+  posted_at: '2026-09-03T02:30:33'
   requires_confirmation: false
   action_type: 'action_required'
-  actioned_by: ''
+  actioned_by: 'shogun'
   notify_targets:
     - 'shogun'
   confirmed_by:
     - 'shogun'
   status: 'closed'
-- id: 'blt_20260903_012324_8b361a'
+- id: 'blt_20260903_023627_479a8f'
   content: |-
-    cmd_4453 手動 CLEAR 実行(将軍裁定 00:47 (A)、殿裁可 00:55): 才蔵の再配備報告も新 commit 無し(既存実装 93162eca0 を tip で検証 8/8 PASS、軍師 LGTM)で、gate は legacy(task idle 化)/publisher(後続 U1 修正との blob 差)/manifest(task_id 再利用の旧 capture)の 3 経路とも証明不能。証拠 queue/gates/cmd_4453/manual_clear_evidence_20260903.md を残し status completed+archive。集計コマンド: git diff --quiet 93162eca0 origin/main -- <path> を 5 path / 出力行: 'origin==93162eca0: 3、後続 U1 修正で上書き: 2' / 1件の定義: 成果物 path 1 つ。才蔵は idle 化。cmd_4458(U1 再検証)→小太郎配備済。
+    GATE CLEAR cmd_karo_hotfix_workarounds_merge_driver_dup_cmd_id_202609030148: 完了
   posted_by: 'karo'
-  posted_at: '2026-09-03T01:23:24'
-  requires_confirmation: false
-  action_type: 'info'
-  actioned_by: ''
-  notify_targets:
-    - 'shogun'
-  confirmed_by:
-    - 'shogun'
-  status: 'closed'
-- id: 'blt_20260903_014402_0b55a3'
-  content: |-
-    DOC_LANE_REQUEST: CONTEXT_UPDATE_REQUEST project=infra context=context/infrastructure.md source_commit=05fe87b686fd parent_cmd=cmd_4458 reason=approved_source_commit owner_route=shogun-doc-lane
-  posted_by: 'gate_context_freshness'
-  posted_at: '2026-09-03T01:44:02'
-  requires_confirmation: false
-  action_type: 'action_required'
-  actioned_by: ''
-  notify_targets:
-    - 'shogun'
-  confirmed_by:
-    - 'shogun'
-  status: 'closed'
-- id: 'blt_20260903_014606_303622'
-  content: |-
-    U3 publisher active 初回 request 突合(裁定 (3)): cmd_4458(小太郎 98a25b12c)を publisher が origin main へ 05fe87b68 として発行。集計コマンド: git show --stat --format= 05fe87b68 | tail -1 ; git show --stat --format= 98a25b12c | tail -1 ; git log -1 --format=%b origin/main | grep -c 'Published-By: publisher' / 出力行: '1 file changed, 49 insertions(+) ×2(同一)、trailer=1' / 1件の定義: 変更 file 1 つ・trailer 行 1 つ。3 点目(root ff 後 porcelain 0)は publisher が『root sync BLOCK tracked_dirty=19』で root 同期を停止=異常ではなく fail-closed(root に未 commit の運用 file 21 が残るため)。diff 同一・trailer 1 で発行は正常。root dirty は家老が runtime file を checkpoint commit して解消する。
-  posted_by: 'karo'
-  posted_at: '2026-09-03T01:46:06'
-  requires_confirmation: false
-  action_type: 'info'
-  actioned_by: ''
-  notify_targets:
-    - 'shogun'
-  confirmed_by:
-    - 'shogun'
-  status: 'closed'
-- id: 'blt_20260903_015654_039206'
-  content: |-
-    GATE CLEAR cmd_reflux_insight_202609030137_kagemaru: 完了
-  posted_by: 'karo'
-  posted_at: '2026-09-03T01:56:54'
-  requires_confirmation: false
-  action_type: 'info'
-  actioned_by: ''
-  notify_targets: []
-  confirmed_by: []
-  status: 'open'
-- id: 'blt_20260903_020737_2f10db'
-  content: |-
-    GATE CLEAR cmd_reflux_insight_202609030152_hanzo: 完了
-  posted_by: 'karo'
-  posted_at: '2026-09-03T02:07:37'
-  requires_confirmation: false
-  action_type: 'info'
-  actioned_by: ''
-  notify_targets: []
-  confirmed_by: []
-  status: 'open'
-- id: 'blt_20260903_021206_3b351d'
-  content: |-
-    GATE CLEAR cmd_4459: LP 月次シグナル頁の保有表示バグ修正: 全月が現在の保有(hero.holding)を表示している→公開 showcase の hero.series に月ごとの holding を追加し、月次頁はその月の保有だけを表示する
-  posted_by: 'karo'
-  posted_at: '2026-09-03T02:12:06'
+  posted_at: '2026-09-03T02:36:27'
   requires_confirmation: false
   action_type: 'info'
   actioned_by: ''

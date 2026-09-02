@@ -16707,3 +16707,16 @@ sqlite3.Connection.backup()を使うとページ(4096byte)単位のread syscall�
 - **when**: 未設定
 - **how**: 未設定
 - manifest source_treeはtree objectでありtree:pathのrev-parseではpath blobを解決できない。既公開判定はgit ls-treeでsource_tree/pathのblobを取得し、tip blobと完全一致した時だけalready_publishedへ進む。
+
+### L1712: ID-keyed merge driverのidentity keyは実データの一意性不変量に合わせよ。生成するdriverコマンドpathは呼び出し元pathでなくgit-common-dirの親(正本root)で固定せよ
+- **日付**: 2026-09-03
+- **出典**: cmd_karo_hotfix_workarounds_merge_driver_dup_cmd_id_202609030148
+- **記録者**: kotaro
+- **tags**: [infra,testing,bash,yaml,git]
+- **subdomain**: infra
+- **target_files**: [scripts/insight_write.sh,tests/unit/test_insight_write.bats]
+- **origin**: [[cmd_karo_hotfix_workarounds_merge_driver_dup_cmd_id_202609030148]]
+- **enforcement**: 未自動化
+- **when**: 未設定
+- **how**: 未設定
+- scripts/insight_write.shのworkarounds stable-merge-driverは、logs/karo_workarounds.yamlの同一cmd_idに複数WAイベント(手動記録+自動rework観測)が正当に記録される実データ形状を見落とし、cmd_id単独をidentity keyにしていたためancestor重複としてValueError(rc=2)になりpush laneが停止した(INS-20260903-012906038-b245)。同時に--configure-merge-driverはSCRIPT_DIR/呼び出し時の$merge_repoをdriverコマンド文字列へ直接埋め込んでおり、linked worktreeから登録するとそのworktree(削除可能)の絶対pathが共有.git/configへ焼き込まれ、worktree回収後に全merge実行が失敗していた。ID-keyed merge driverを実装・設定する際は、(1) identity keyは実データの一意性不変量(この場合cmd_id+timestamp)に合わせる (2) driverコマンドへ埋め込むscript pathはgit rev-parse --path-format=absolute --git-common-dirの親(正本root)で固定し、呼び出し元のworktree pathをそのまま使わない、の2点を設計時に確認する
