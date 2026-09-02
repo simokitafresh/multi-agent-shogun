@@ -1,7 +1,7 @@
 commands:
   cmd_4456:
     title: "LP 画像 SEO: 検索結果にチャートのサムネイルを出す条件を揃える — 全頁 max-image-preview:large+構造化データの image/logo+月次頁にチャート画像と og:image/Article+img の width/height"
-    status: draft
+    status: delegated
     project: dm-signal
     purpose: "殿 2026-09-02 23:35『google で検索したときにチャート画像が横に出るといいよな。ALT も登録しているのか？』→23:41『起票せよ』。本番 curl 23:37 一次: LP は img 1 枚(basic-dm-vs-spy PNG 1566×921、alt あり)だが robots に max-image-preview 0、JSON-LD の Organization に logo 0・WebSite に image 0、img に width/height 0。月次頁 558 本は img 0・og:image 0・JSON-LD 0・twitter:card=summary。Google が結果横にサムネイルを出す条件(大きい関連画像+max-image-preview:large+構造化データでの画像宣言)を LP と月次頁の両方で満たす(SEO 案 v5 docs/research/dm-signal-lp-seo-plan_20260830.md の次弾)"
     scope_mode: FULL
@@ -47,6 +47,7 @@ commands:
       diagnosis: "BLOCK理由: 該当なし(新規起票) / 対策: 既存 7 file+copy 2 の小変更、build 2 回"
     environment_change: "type=lesson; file=projects/infra/lessons_shogun.yaml; pattern=cmdテンプレートルール"
     depends_on: none
+    delegated_at: "\"2026-09-02T23:50:21\""
     origin: "[[殿指摘_検索結果にチャート_20260902_2335]] -> [[サムネイル条件4点欠落_max-image-preview0]] -> [[cmd_4456_image_seo]]"
   cmd_4453:
     title: "単一 publisher U5: scripts/publisher_admit.sh(承認 2 file の存在で admit、doc kind は将軍 identity+path allowlist、R13 db_migration は migration_ack 必須)と review_approval.sh karo ACCEPT --migration-ack(唯一の enqueue caller・唯一の ack writer)"

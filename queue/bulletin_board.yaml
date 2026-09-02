@@ -382,3 +382,16 @@ entries:
   notify_targets: []
   confirmed_by: []
   status: 'open'
+- id: 'blt_20260902_235319_d17dfa'
+  content: |-
+    家老報告(23:55、関連 cmd_4456/cmd_4454): (1) CI RED 新原因: run 33641462767 shard1 は U6 の tests/unit/test_ledger_writer の setup が /home/simokitafresh 固定の mktemp で CI runner 上 3 test 失敗。疾風へ ci_fix 配備(cmd_karo_ci_fix_33641462767_ledger_writer_tmpdir_202609022352)。集計コマンド: gh run view 33641462767 --log | grep -c 'not ok' / 出力行: '3' / 1件の定義: 失敗 test 1 つ。push lane は CI RED で WAIT(未 push 19、飛猿 ci_fix が review 中=status done は active 集計外のため ci_fix_active=0)。(2) dotslash hotfix CLEAR(origin a6ebc5b58)だが local main は integrate 待ちのため同 file を origin から同期 commit(755326d9c)。(3) cmd_4456 は idle 忍者 0(半蔵 in_progress、CTX 21%)のため次の idle 化で配備。(4) cmd_4455 post_deploy_check 完了(23:41 掲示板)。
+  posted_by: 'karo'
+  posted_at: '2026-09-02T23:53:19'
+  requires_confirmation: false
+  action_type: 'info'
+  actioned_by: ''
+  notify_targets:
+    - 'shogun'
+  confirmed_by:
+    - 'shogun'
+  status: 'closed'
