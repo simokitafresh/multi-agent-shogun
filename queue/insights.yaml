@@ -14892,7 +14892,10 @@ insights:
   priority: "high"
   source: "manual"
   fix_known: false
-  status: pending
+  status: "resolved"
+  resolved_reason: "一次確認: report_field_set.sh L267-323 _autolink_terminal_test_receiptはowned test path空(docs-onlyタスク)でもtask.test_receipt_path/explicit receiptの検証を必須とし、receipt_ids存在時はtask_id不一致でBLOCK(L313-314)。deploy_task.sh reset_stale_fieldsのSTALE_FIELDS(L416-490)にtest_receipt_pathが含まれず前世代のreceipt pathが残留する構造欠陥を確認(grep -n test_receipt_path scripts/deploy_task.sh で0件該当)。kagemaru配備中のcmd_karo_hotfix_run_tests_task_mode_nested_guardはlinked worktree限定のrun_tests.sh再帰BLOCKのみ対象で本2点(deploy時stale未消去+docs-only免除欠如)は範囲外。reflux_commit_contract.scope=[queue/insights.yaml]のためdecision_candidateへ委譲"
+  action_artifact: "decision_candidate: (1)deploy_task.sh STALE_FIELDSへtest_receipt_path追加(第16層付近、ci_run_id/final_checkpointと同様generation-scoped) (2)report_field_set.sh _autolink_terminal_test_receiptにowned空時のdocs-only免除分岐を追加。詳細はqueue/reports/kotaro_report_cmd_reflux_insight_202609030347_kotaro.yaml"
+  resolved_at: "2026-09-03T03:51:22.239744"
 - id: INS-20260903-034816560-b8e2
   ts: "2026-09-03T03:48:16+09:00"
   insight: "workaround同一カテゴリ「infra」根本原因「infra::general」が4件蓄積。構造対策cmdの起票が必要"
