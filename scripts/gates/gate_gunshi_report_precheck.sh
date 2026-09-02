@@ -788,6 +788,10 @@ echo "■ SG-PRE3: commit検証"
 if [ -n "${PROJECT_DIR:-}" ] && [ -d "$PROJECT_DIR" ]; then
     if [ -n "${FILES_MODIFIED:-}" ]; then
         COMMIT_FOUND=0
+        # Report commit for worktree-only (unpublished) file verification. _primary_hash is only set on
+        # the no-cross-repo path, so read commit_hash from the report directly here.
+        _pre3_hash=$(grep -m1 -E '^[[:space:]]*commit_hash:' "$REPORT_PATH" 2>/dev/null |
+            sed -E 's/^[[:space:]]*commit_hash:[[:space:]]*["'"'"']?([0-9a-f]{40}).*/\1/' || true)
         while IFS= read -r fpath; do
             # Report-format rules represent repository-root files as
             # ./name, while Git/cross_repo_commits use name.  Compare the
@@ -797,6 +801,12 @@ if [ -n "${PROJECT_DIR:-}" ] && [ -d "$PROJECT_DIR" ]; then
             # batch dataから判定 (per-file git log不要)
             if echo "$_PRE_CMD_FILES" | grep -qFx "$_pre3_fpath" 2>/dev/null; then
                 echo "  PASS: $fpath → cmd commit found"
+                COMMIT_FOUND=1
+            elif [ -n "${_pre3_hash:-}" ] && git -C "$REPO_ROOT" cat-file -e "${_pre3_hash}:${_pre3_fpath}" 2>/dev/null; then
+                # Single-publisher era (2026-09-03): ninja commits live in the task worktree until the
+                # publisher lands them, so a new file is absent from the root checkout while present in
+                # the report commit (root shares the object DB). Verify against the commit, not the checkout.
+                echo "  PASS: $fpath → present in report commit ${_pre3_hash:0:9} (task worktree, unpublished)"
                 COMMIT_FOUND=1
             elif [ -f "$PROJECT_DIR/$_pre3_fpath" ] 2>/dev/null || [ -f "$fpath" ] 2>/dev/null; then
                 echo "  WARN: $fpath → commit not found"
