@@ -13987,3 +13987,10 @@ insights:
   source: "semantic_stress_test"
   fix_known: false
   status: pending
+- id: INS-20260902-210514055-0950
+  ts: "2026-09-02T21:05:14+09:00"
+  insight: "[[殿裁定 20 44『捨てる壁に時間をかけるのは原理原則に反していないか』→設計書 §14 4 第 2 波は U3 を d]] semantic_stress_test candidate_aliases: NO_MATCH source=cmds query=殿裁定 2026-09-02 20:44『捨てる壁に時間をかけるのは原理原則に反していないか』→設計書 §14.4: 第 2 波は U3 を dry-run で先頭に前倒す。U3 が origin へ publish し始めた時点で ancestry WAIT・push lane・GA-PUSH1 の壁(今日の hotfix 15 本の主対象=§10 で捨て"
+  priority: "low"
+  source: "semantic_stress_test"
+  fix_known: false
+  status: pending
