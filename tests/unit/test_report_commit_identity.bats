@@ -364,6 +364,28 @@ PY
   [ "$status" -eq 0 ]
 }
 
+# test_necessity: cross-repo and gate-alert path normalization must remove only
+# explicit relative prefixes; stripping the leading dot from .github paths
+# causes valid changed-file ownership and alert closure to disagree.
+@test "dot-prefixed paths preserve leading dots while removing explicit relative prefixes" {
+  run python3 - "$ROOT" <<'PY'
+import pathlib
+import sys
+
+root = pathlib.Path(sys.argv[1])
+sys.path.insert(0, str(root / "scripts" / "lib"))
+from close_gate_alerts import _normalize as normalize_alert_path
+from cross_repo_commit_contract import _normalize_path
+
+for normalize in (_normalize_path, normalize_alert_path):
+    assert normalize(".github/x") == ".github/x"
+    assert normalize("./.github/x") == ".github/x"
+    assert normalize("././.github/x") == ".github/x"
+    assert normalize(".../x") == ".../x"
+PY
+  [ "$status" -eq 0 ]
+}
+
 # test_necessity: explicit cross-repo ownership must accept a different-task
 # subject only when all three declared B2e paths are in that commit's diff.
 @test "B2e cross-repo diff ownership accepts 3/3 paths without subject matching" {

@@ -12,6 +12,14 @@ from typing import Any
 _git_repo_cache: dict[str, bool] = {}
 
 
+def _normalize_path(path: str) -> str:
+    """Remove explicit ``./`` prefixes without stripping leading-dot names."""
+    normalized = path.replace("\\", "/").strip()
+    while normalized.startswith("./"):
+        normalized = normalized[2:]
+    return normalized
+
+
 def _git(repo: pathlib.Path, *args: str) -> bool:
     return (
         subprocess.run(
@@ -86,7 +94,7 @@ def validate_cross_repo_commit_ownership(
             continue
         entry_declared: set[str] = set()
         for raw_path in paths:
-            path = str(raw_path or "").replace("\\", "/").strip().lstrip("./")
+            path = _normalize_path(str(raw_path or ""))
             if not path or path.startswith("/") or ".." in pathlib.PurePosixPath(path).parts:
                 errors.append(f"{label}.paths contains unsafe path: {raw_path!r}")
                 continue
@@ -103,7 +111,7 @@ def validate_cross_repo_commit_ownership(
         errors.append("primary commit_hash is absent from cross_repo_commits")
     for item in report.get("files_modified") or []:
         if isinstance(item, Mapping):
-            path = str(item.get("path") or "").replace("\\", "/").strip().lstrip("./")
+            path = _normalize_path(str(item.get("path") or ""))
             if path and path not in owned:
                 errors.append(f"files_modified path lacks cross-repo ownership: {path}")
     return errors, owned

@@ -14,7 +14,10 @@ import yaml
 
 
 def _normalize(path: str) -> str:
-    return path.strip().replace("\\", "/").lstrip("./")
+    normalized = path.strip().replace("\\", "/")
+    while normalized.startswith("./"):
+        normalized = normalized[2:]
+    return normalized
 
 
 def _matches(alert: dict, changed_files: list[str]) -> bool:
