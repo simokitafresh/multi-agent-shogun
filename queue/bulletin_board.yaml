@@ -442,3 +442,14 @@ entries:
   notify_targets: []
   confirmed_by: []
   status: 'open'
+- id: 'blt_20260903_021206_3b351d'
+  content: |-
+    GATE CLEAR cmd_4459: LP 月次シグナル頁の保有表示バグ修正: 全月が現在の保有(hero.holding)を表示している→公開 showcase の hero.series に月ごとの holding を追加し、月次頁はその月の保有だけを表示する
+  posted_by: 'karo'
+  posted_at: '2026-09-03T02:12:06'
+  requires_confirmation: false
+  action_type: 'info'
+  actioned_by: ''
+  notify_targets: []
+  confirmed_by: []
+  status: 'open'

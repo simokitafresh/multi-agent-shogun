@@ -99,56 +99,6 @@ commands:
     environment_change: "type=lesson; file=projects/infra/lessons_shogun.yaml; pattern=cmdテンプレートルール"
     delegated_at: "\"2026-09-03T01:33:50\""
     origin: "[[殿指示_先に進んでから戻れ_20260903_0130]] -> [[U3_active起動_0130]] -> [[cmd_4460_U7_flag下流化]]"
-  cmd_4459:
-    title: "LP 月次シグナル頁の保有表示バグ修正: 全月が現在の保有(hero.holding)を表示している→公開 showcase の hero.series に月ごとの holding を追加し、月次頁はその月の保有だけを表示する"
-    status: delegated
-    project: dm-signal
-    purpose: "殿 2026-09-03 00:52『/ja/signals/ が全期間で同じ signal になっているぞ、これはバグだな』。本番 curl 00:53 一次: /ja/signals/2008-10/ と /2020-03/ と /2026-08/ の保有欄が全て同じ(現在の XLU)。真因=lp の monthly-signal-page component L114 が data.hero.holding(最新 Signal の holding_signal)を全月に描画し、公開 showcase の hero.series は {year_month, multiple} だけで月ごとの holding を持たない(curl showcase で確認)。backend の signals 表には portfolio_id×date の holding_signal が全期間ある(db models の Signal L117-125)ので契約に足す"
-    scope_mode: FULL
-    target_path: backend
-    acceptance_criteria:
-      AC1:
-        description: "backend の public showcase route module の _hero_series で、MonthlyReturn の year_month ごとに signals 表(Signal.portfolio_id==hero.id)から『その月内で date が最大の行』の holding_signal を引き、series 要素へ holding(無ければ null)を追加する(既存 year_month/multiple は不変、追加 query は 1 回で全期間を取って月へ写像し N+1 にしない)。公開する holding は SHOWCASE_HERO_NAME(Basic-DualMomentum)のみで、他 PF の signal は出さない。backend の showcase 契約 test(既存 10 本)に『series の各要素に holding key がある』『2 つの月で holding が異なる fixture』『signal 無し月は null』を追加し、選択実行(cd backend && python -m pytest -q tests/test_public_showcase_contract.py)を FAIL 0・SKIP 0 で通す。中断再開時の成果物引継ぎ: 未 commit の worktree 差分と最終 pytest 出力 log を報告 YAML の progress に path で残し、再開者はそこから継続する"
-        binary_check: "series[i] に holding key が全要素にある ∧ fixture で 2 月の holding が異なる ∧ signal 無し月が null ∧ series の year_month/multiple が変更前と同値 ∧ hero 以外の PF の holding が payload に 0 ∧ 選択実行 FAIL 0 ∧ SKIP 0 ∧ 新規 test に非空 test_necessity か?"
-      AC2:
-        description: "lp の showcase lib の型に series[].holding?: string|null を追加し、monthly-signal-page component の保有欄を monthlySignalPoint(data, month).holding に置換する(null は『—』を表示。hero.holding へ fallback しない)。EN/JA の copy に『この月の保有』のラベル key を足し、現在の保有の文言は月次頁から外す。一覧 page(EN/JA)の各月行にも holding を併記する。cd lp && npm ci && npm run typecheck && npm run build が exit 0。build は backend 反映後の本番 showcase を fetch するため、backend の Render deploy 完了(post_deploy_check で showcase の series[0] に holding key)を確認してから行う。変更 file は command 2 の commit 対象 6 file 以内"
-        binary_check: "out の signals/2008-10 index と signals/2026-08 index の保有欄の文字列が異なる ∧ 保有欄に hero.holding 由来の値が旧月に 0 ∧ 一覧 index の月行に holding が 277 ∧ typecheck/build exit 0 ∧ rg -i 'free trial|first month free|初月無料' lp → 0 か?"
-    command: |
-      1. origin/main の backend/app/api/public_showcase.py(_hero_series L211-229、_build_hero L236-262、build_showcase_payload L297-)と backend/app/db/models.py(Signal L117-125)、backend/tests/test_public_showcase_contract.py を読み、AC1 を実装して選択実行 cd backend && python -m pytest -q tests/test_public_showcase_contract.py で FAIL 0・SKIP 0 を確認し、bash scripts/ninja_scope_commit.sh -m "<msg>" -- backend/app/api/public_showcase.py backend/tests/test_public_showcase_contract.py で commit する(backend の Render 自動 deploy と post_deploy_check は家老 lane)。
-      2. backend が本番反映された後、lp/lib/showcase.ts・lp/components/monthly-signal-page.tsx・lp/app/signals/page.tsx・lp/app/ja/signals/page.tsx・lp/copy/en.ts・lp/copy/ja.ts で AC2 を実装し、cd lp && npm ci && npm run typecheck && npm run build を通し out/ を grep で数え、bash scripts/ninja_scope_commit.sh -m "<msg>" -- lp/lib/showcase.ts lp/components/monthly-signal-page.tsx lp/app/signals/page.tsx lp/app/ja/signals/page.tsx lp/copy/en.ts lp/copy/ja.ts で commit し、報告 YAML に 2 commit の source_sha・test/build log path・out/ の件数を書く。本番 curl(/ja/signals/2008-10/ と /2026-08/ の保有欄が異なる)は家老 lane の post_deploy_check。
-    assumptions:
-      claim: "origin/main(DM-signal 8422d8c3 以降)の backend/app/api/public_showcase.py: _hero_series は MonthlyReturn(year_month, monthly_return)のみ、_build_hero の holding は latest_signal.holding_signal(L244)、latest_signal は Signal.date desc の先頭(L309)。Signal 表は portfolio_id×date 主キーで holding_signal 列あり(backend/app/db/models.py L117-125)。本番 showcase(dm-signal-backend.onrender.com /api/public/showcase、01:00)の hero.series は 277 要素 {year_month, multiple} のみ、hero.holding=XLU、as_of.series_end=2026-08-31。lp の monthly-signal-page.tsx L114 が data.hero.holding を描画(git show origin/main で 00:53 確認)。契約 test は 10 本"
-      source: "git show origin/main:backend/app/api/public_showcase.py, backend/app/db/models.py, lp/components/monthly-signal-page.tsx、curl https://dm-signal-backend.onrender.com/api/public/showcase(2026-09-03 01:00)、本番 curl /ja/signals/2008-10/ /2020-03/ /2026-08/(00:53)"
-      trust: verified
-    timeout_minutes: 60
-    estimated_minutes: 40
-    execution_env:
-      runtime_constraints: "backend の pytest は tests の fixture DB(SQLite)で完結し本番 DB へ書かない。lp の build は本番 showcase を read するだけ。backend deploy(Render 自動)と LP build の間に本番反映待ちがあるため、AC2 は AC1 の deploy 後に開始する"
-      long_runtime_reason: "backend 実装+contract test(15 分)→Render backend deploy(5-8 分)→LP build 2 回(各 3-5 分)。series の holding を backend と lp の両側で同じ契約(key 名・null 規則)に揃えるため 1 忍者で通す"
-      measured_runtime_sec: 2400
-    split_decision:
-      boundary_ac_ids: [AC1, AC2]
-      integration_tasks: 1
-    serial_dependency_evidence: "AC2 の LP build は AC1 の backend 変更が本番 showcase に反映されてから(build 時 fetch)でないと holding key が無く『—』だけの頁を生成する。別忍者に分けると契約(key 名・null 規則)の定義が二重になり、deploy 順序の待ち合わせが inbox 往復になる"
-    quality_gate:
-      q1_firefighting: "品質向上。理由: 月次頁の表示を『現在の保有』から『その月の保有』へ、データ契約(series[].holding)ごと直す。表示だけ隠す消火ではない"
-      q2_learning: "奪わない。理由: 忍者の判断点は『月内 date 最大の signal 行』の 1 つで AC に固定。null 規則も固定"
-      q3_next_quality: "上がる。理由: 月次頁が本当に月次の情報を持ち、SEO(cmd_4455/4456)で載せた 554 頁が誤情報でなくなる。次弾の月次チャートも同じ契約に乗る"
-      q4_depth: "medium — 理由: backend 1 関数+契約 test 3 本、lp 6 file の小変更、deploy 待ち合わせあり"
-      q5_verified_source: "structure_verified — 対象を実行して確認(2026-09-03 00:53-01:00): curl /ja/signals/{2008-10,2020-03,2026-08}/ の保有欄 → 3 頁同一、curl showcase | python → series keys ['year_month','multiple']、hero.holding XLU、git show origin/main:lp/components/monthly-signal-page.tsx | grep -n hero.holding → L114、git show origin/main:backend/app/api/public_showcase.py | sed -n 211,229p → MonthlyReturn のみ"
-      q6_not_hiding: "隠していない。理由: 表示欄を消して逃げず、契約に月次 holding を足して本当の値を出す。hero.holding への fallback 禁止を AC に明記し、旧月に現在値が混入しないことを binary で数える"
-      q7_definition_verified: "holding_signal(保有シグナル、リバランス設定考慮)と signal(生シグナル)の定義は backend/app/db/models.py L121-122 のコメントで確認。月次頁に出すのは holding_signal(確認日: 2026-09-03)"
-      q8_why_what: "WHY: 殿 00:52 全月同じ signal=バグ / WHAT: showcase series に月次 holding、LP は月の値だけ表示、一覧にも併記 / WHEN: 今夜(backend deploy→LP build の直列) / WHERE: DM-signal backend+lp / WHO: 家老配備(Claude 推奨、backend Python) / HOW: signals 表を 1 query で月へ写像 / 複利: 月次頁 554 本が正しい情報になり、以後の月も自動"
-      q9_firefighting_root_cause: "根本対応。理由: 契約に無い情報を表示側で埋めていた構造(hero.holding の流用)を、契約の拡張で解く"
-      q10_knowledge_boundary: "検証済み: showcase 契約の現物、Signal 表の列、LP の描画箇所。スコープ外: 月ごとのチャート画像、他 PF の signal 公開(禁則)、Free tier の gating"
-      q11_not_already_done: "既存代替の現物確認(2026-09-03 01:00): curl showcase | python -c 'series keys' → holding 無し、git grep -n 'holding' origin/main -- lp/components/monthly-signal-page.tsx → L13 型と L114 の hero.holding のみ、rg -c 'cmd_4459' queue/shogun_to_karo.yaml → 0(起票前)"
-      q_ambiguity: "曖昧さ: 月の holding をどの signal 行から取るか。解消: その月内で date が最大の Signal 行の holding_signal(無ければ null)。signal 列(生)ではなく holding_signal 列。報告 YAML に採用した規則を書く"
-      q12_lord_30min_cost: "no — 殿 00:52『バグだな』で確定、判定は test/build の件数"
-      diagnosis: "BLOCK理由: 該当なし(新規起票) / 対策: backend 1 関数+test、lp 6 file、deploy 待ち合わせ 1 回"
-    environment_change: "type=lesson; file=projects/infra/lessons_shogun.yaml; pattern=cmdテンプレートルール"
-    depends_on: none
-    delegated_at: "\"2026-09-03T01:27:07\""
-    origin: "[[殿指摘_月次頁が全期間同じsignal_20260903_0052]] -> [[showcase契約に月次holding無し_hero.holding流用]] -> [[cmd_4459_monthly_holding_contract]]"
   cmd_4449:
     title: "単一 publisher U2 検証: Codex 忍者が隔離 clone で publish_artifact(capture/restore)と gate_report_format の manifest 検証の bats を選択実行し、設計書契約から敵対 fixture を 1 本追加して multi-CLI 同品質を証明する(実装は飛猿=Claude Sonnet)"
     status: blocked
