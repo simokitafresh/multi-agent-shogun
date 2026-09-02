@@ -54,6 +54,9 @@ BRAINWASH_CHECK="${KARO_WA_BRAINWASH_CHECK:-}"
 # cannot be the first place where the missing reflux is noticed.
 LESSON_REQUIRED="${KARO_WA_LESSON_REQUIRED:-true}"
 LESSON_REFERENCE="${KARO_WA_LESSON_REFERENCE:-}"
+LEDGER_WRITER="$REPO_ROOT/scripts/ledger_writer.sh"
+LEDGER_ENTRY_FILE="$(mktemp)"
+trap 'rm -f -- "$LEDGER_ENTRY_FILE"' EXIT
 
 # shellcheck source=scripts/lib/known_ninjas.sh
 source "$REPO_ROOT/scripts/lib/known_ninjas.sh"
@@ -782,14 +785,9 @@ count_root_signature_entries() {
 (
     flock -w 10 200 || { echo "[karo_workaround_log] Error: Failed to acquire lock" >&2; exit 1; }
 
-    # Initialize file if it doesn't exist
-    if [[ ! -f "$LOG_FILE" ]]; then
-        touch "$LOG_FILE"
-    fi
-
     if [[ "$CLEAN_MODE" = true ]]; then
         # --clean mode: workaround: false, category: clean を記録
-        cat >> "$LOG_FILE" <<EOF
+        cat > "$LEDGER_ENTRY_FILE" <<EOF
 - cmd_id: $CMD_ID
   timestamp: '$TIMESTAMP'
   ninja: $NINJA_NAME
@@ -805,6 +803,11 @@ count_root_signature_entries() {
   resolved_by_cmd: ''
 EOF
         echo "[karo_workaround_log] Clean: $CMD_ID/$NINJA_NAME [clean]"
+        if [[ -x "$LEDGER_WRITER" ]]; then
+            LEDGER_SOURCE_FILE="$LOG_FILE" bash "$LEDGER_WRITER" append workarounds "$LEDGER_ENTRY_FILE" >/dev/null
+        else
+            cat "$LEDGER_ENTRY_FILE" >> "$LOG_FILE"
+        fi
     else
         ROOT_SIGNATURE=$(classify_root_signature "$CATEGORY" "$ISSUE")
         SIG_COUNT=$(count_root_signature_entries "$CATEGORY" "$ROOT_SIGNATURE")
@@ -844,7 +847,13 @@ EOF
             cat <<EOF
   resolved_by_cmd: ''
 EOF
-        } >> "$LOG_FILE"
+        } > "$LEDGER_ENTRY_FILE"
+
+        if [[ -x "$LEDGER_WRITER" ]]; then
+            LEDGER_SOURCE_FILE="$LOG_FILE" bash "$LEDGER_WRITER" append workarounds "$LEDGER_ENTRY_FILE" >/dev/null
+        else
+            cat "$LEDGER_ENTRY_FILE" >> "$LOG_FILE"
+        fi
 
         memory_db_live_insert="$SCRIPT_DIR/memory_db_live_insert_async.py"
         if [[ ! -f "$memory_db_live_insert" ]]; then
@@ -895,7 +904,7 @@ EOF
 # karo_workarounds.yaml 専用軽量 archive:
 # yaml_auto_archive.sh の Python起動コスト(~45ms)をawk実装で削減。
 # keep=100件を超えた場合のみ、古いエントリをarchiveに移動する。
-_wa_total=$(awk '/^- cmd_id:/{c++}END{print c+0}' "$LOG_FILE" 2>/dev/null)
+_wa_total=$(awk '/^- cmd_id:/{c++}END{print c+0}' "$LOG_FILE" 2>/dev/null) || _wa_total=0
 if [[ "${_wa_total:-0}" -gt 100 ]]; then
     _to_archive=$(( _wa_total - 100 ))
     _archive_dir="$REPO_ROOT/logs/archive"

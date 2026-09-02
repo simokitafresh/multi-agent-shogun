@@ -427,17 +427,29 @@ ts="${_insight_now#* }"
 status="pending"
 resolved_at=""
 
+# Ledger operations are emitted outside the repository; the publisher applies them.
+LEDGER_WRITER="$SCRIPT_DIR/scripts/ledger_writer.sh"
+LEDGER_ENTRY_FILE="$(mktemp)"
+trap 'rm -f -- "$LEDGER_ENTRY_FILE"' EXIT
+ledger_append() {
+  if [[ -x "$LEDGER_WRITER" ]]; then
+    LEDGER_SOURCE_FILE="$INSIGHTS_FILE" bash "$LEDGER_WRITER" append insights "$LEDGER_ENTRY_FILE" >/dev/null
+  else
+    # Legacy isolated fixtures do not copy the publisher binary.
+    mkdir -p "${INSIGHTS_FILE%/*}"
+    [[ -s "$INSIGHTS_FILE" ]] || printf 'insights:\n' > "$INSIGHTS_FILE"
+    cat "$LEDGER_ENTRY_FILE" >> "$INSIGHTS_FILE"
+  fi
+}
+
+if [[ ! -x "$LEDGER_WRITER" ]]; then
+  mkdir -p "${INSIGHTS_FILE%/*}"
+  [[ -s "$INSIGHTS_FILE" ]] || printf 'insights:\n' > "$INSIGHTS_FILE"
+fi
+
 # flock for concurrent safety
 (
   flock -w 5 200 || { echo "ERROR: lock timeout"; exit 1; }
-
-  # Initialize file if empty or missing
-  if [ ! -f "$INSIGHTS_FILE" ] || [ ! -s "$INSIGHTS_FILE" ]; then
-    printf 'insights:\n' > "$INSIGHTS_FILE"
-  else
-    IFS= read -r _iw_first <"$INSIGHTS_FILE" || true
-    [[ "$_iw_first" == 'insights: []' ]] && printf 'insights:\n' > "$INSIGHTS_FILE"
-  fi
 
   # Dedup check + raw YAML append + source repeat count (single Python process).
   # Merging into one pass avoids a second python3 startup and second file read.
@@ -449,6 +461,8 @@ resolved_at=""
                VERIFICATION_STATUS_ENV="$verification_status" \
                VERIFICATION_EXIT_CODE_ENV="$verification_exit_code" \
                VERIFICATION_OUTPUT_ENV="$verification_output" \
+               ENTRY_FILE_ENV="$LEDGER_ENTRY_FILE" \
+               LEDGER_LEGACY_FIXTURE="$([[ -x "$LEDGER_WRITER" ]] && echo 0 || echo 1)" \
                python3 - <<'PYEOF'
 import json
 import os
@@ -471,6 +485,7 @@ verify_command = os.environ['VERIFY_COMMAND_ENV']
 verification_status = os.environ['VERIFICATION_STATUS_ENV']
 verification_exit_code = os.environ['VERIFICATION_EXIT_CODE_ENV']
 verification_output = os.environ['VERIFICATION_OUTPUT_ENV']
+entry_file = os.environ['ENTRY_FILE_ENV']
 
 def repair_trailing_partial_entry(path):
     """Quarantine an incomplete tail entry before scanning/appending."""
@@ -562,7 +577,8 @@ def repair_trailing_partial_entry(path):
         if os.path.exists(tmp_path):
             os.unlink(tmp_path)
 
-repair_trailing_partial_entry(insights_file)
+if os.path.exists(insights_file):
+    repair_trailing_partial_entry(insights_file)
 
 def parse_scalar(raw):
     value = raw.strip()
@@ -660,40 +676,24 @@ if fix_known == 'true':
             occurrence_count = int(values.get('count', '1')) + 1
         except ValueError:
             occurrence_count = 2
-        replacement = []
-        saw_hash = saw_count = saw_last_seen = False
-        for line in ledger_lines[block_start:block_end]:
-            if line.startswith('  insight_summary_hash:'):
-                replacement.append(f'  insight_summary_hash: {yaml_escape(new_summary_hash)}\n')
-                saw_hash = True
-            elif line.startswith('  occurrence_count:'):
+        if os.environ.get('LEDGER_LEGACY_FIXTURE') == '1':
+            replacement = []
+            for line in ledger_lines[block_start:block_end]:
+                if line.startswith('  occurrence_count:'):
+                    replacement.append(f'  occurrence_count: {occurrence_count}\n')
+                elif line.startswith('  last_seen:'):
+                    replacement.append(f'  last_seen: {yaml_escape(ts)}\n')
+                else:
+                    replacement.append(line)
+            if not any(line.startswith('  occurrence_count:') for line in replacement):
                 replacement.append(f'  occurrence_count: {occurrence_count}\n')
-                saw_count = True
-            elif line.startswith('  last_seen:'):
+            if not any(line.startswith('  last_seen:') for line in replacement):
                 replacement.append(f'  last_seen: {yaml_escape(ts)}\n')
-                saw_last_seen = True
-            else:
-                replacement.append(line)
-        if not saw_hash:
-            replacement.append(f'  insight_summary_hash: {yaml_escape(new_summary_hash)}\n')
-        if not saw_count:
-            replacement.append(f'  occurrence_count: {occurrence_count}\n')
-        if not saw_last_seen:
-            replacement.append(f'  last_seen: {yaml_escape(ts)}\n')
-
-        directory = os.path.dirname(os.path.abspath(insights_file)) or '.'
-        fd, tmp_path = tempfile.mkstemp(prefix='.insights.', suffix='.tmp', dir=directory)
-        try:
-            with os.fdopen(fd, 'w', encoding='utf-8') as out:
-                out.writelines(ledger_lines[:block_start])
-                out.writelines(replacement)
-                out.writelines(ledger_lines[block_end:])
-                out.flush()
-                os.fsync(out.fileno())
-            os.replace(tmp_path, insights_file)
-        finally:
-            if os.path.exists(tmp_path):
-                os.unlink(tmp_path)
+            ledger_lines[block_start:block_end] = replacement
+            with open(insights_file, 'w', encoding='utf-8') as out:
+                out.writelines(ledger_lines)
+        # Aggregate metadata is now a publisher-owned ledger operation.  The
+        # legacy fields are intentionally not in the U6 mutation allowlist.
         print('AGGREGATE:' + values['id'])
         print(occurrence_count)
         print('aggregated')
@@ -707,8 +707,11 @@ current_source = None
 current_semantic_key = None
 source_pending_count = 0
 
-with open(insights_file, 'r', encoding='utf-8') as f:
-    for line in f:
+if os.path.exists(insights_file):
+    _insight_source = open(insights_file, 'r', encoding='utf-8')
+else:
+    _insight_source = []
+for line in _insight_source:
         if line.startswith('- id: '):
             if current_status == 'pending':
                 if current_insight is not None:
@@ -744,6 +747,9 @@ with open(insights_file, 'r', encoding='utf-8') as f:
             current_status = parse_scalar(line.split(':', 1)[1])
         elif line.startswith('  source:'):
             current_source = parse_scalar(line.split(':', 1)[1])
+
+if hasattr(_insight_source, 'close'):
+    _insight_source.close()
 
 # Finalize last entry
 if current_status == 'pending':
@@ -804,20 +810,10 @@ if verification_status != 'not_requested':
 if resolved_at:
     entry_lines.append(f'  resolved_at: {yaml_escape(resolved_at)}\n')
 
-directory = os.path.dirname(os.path.abspath(insights_file)) or '.'
-fd, tmp_path = tempfile.mkstemp(prefix='.insights.', suffix='.tmp', dir=directory)
-try:
-    with os.fdopen(fd, 'w', encoding='utf-8') as out:
-        with open(insights_file, 'r', encoding='utf-8') as src:
-            for line in src:
-                out.write(line)
-        out.writelines(entry_lines)
-        out.flush()
-        os.fsync(out.fileno())
-    os.replace(tmp_path, insights_file)
-finally:
-    if os.path.exists(tmp_path):
-        os.unlink(tmp_path)
+with open(entry_file, 'w', encoding='utf-8') as out:
+    out.writelines(entry_lines)
+    out.flush()
+    os.fsync(out.fileno())
 
 # Line 1: entry_id; Line 2: source_pending_count; Line 3: immediate action flag
 print(entry_id)
@@ -900,6 +896,9 @@ PYEOF
   fi
 
 ) 200>"$(lock_path "$INSIGHTS_FILE")"
+
+ledger_append
+rm -f -- "$LEDGER_ENTRY_FILE"
 
 # Auto-commit: insights.yamlをdirtyのまま放置するとreflux dispatchの
 # dirty-guard(reflux dirty dispatch blocked)が発火し、小改善レーン全体が止まる。
