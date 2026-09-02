@@ -14380,3 +14380,10 @@ insights:
   source: "semantic_index_update"
   fix_known: false
   status: pending
+- id: INS-20260902-235510785-3a40
+  ts: "2026-09-02T23:55:10+09:00"
+  insight: "[[殿 23 35『google で検索したときにチャート画像が横に出るといいよな]] semantic_stress_test candidate_aliases: NO_MATCH source=cmds query=殿 2026-09-02 23:35『google で検索したときにチャート画像が横に出るといいよな。ALT も登録しているのか？』→23:41『起票せよ』。本番 curl 23:37 一次: LP は img 1 枚(basic-dm-vs-spy PNG 1566×921、alt あり)だが robots に max-image-preview 0、JS"
+  priority: "low"
+  source: "semantic_stress_test"
+  fix_known: false
+  status: pending
