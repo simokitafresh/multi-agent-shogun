@@ -156,6 +156,40 @@ print('OK')
     [[ "$stderr" == *"tree mismatch"* ]]
 }
 
+# test_necessity: C6 artifact integrity must reject a patch whose content adds
+# a path that is absent from the captured manifest/source tree.
+@test "publish_artifact restore FAILs when captured patch is tampered with an undeclared path" {
+    local repo="$BATS_TEST_TMPDIR/repo6"
+    setup_fixture_repo "$repo"
+    local base
+    base="$(git -C "$repo" rev-parse HEAD)"
+    printf 'A\nB\n' > "$repo/a.txt"
+    git -C "$repo" add a.txt
+    git -C "$repo" commit -q -m change
+    local sha
+    sha="$(git -C "$repo" rev-parse HEAD)"
+
+    run bash "$PUBLISH_ARTIFACT" capture task_patch_tampered "$repo" "$base" "$sha"
+    [ "$status" -eq 0 ]
+
+    # Replace the captured patch with a valid patch that adds an unlisted path.
+    printf 'INJECTED\n' > "$repo/extra.txt"
+    git -C "$repo" add extra.txt
+    git -C "$repo" commit -q -m attacker
+    local attacker_sha
+    attacker_sha="$(git -C "$repo" rev-parse HEAD)"
+    local patch="$SHOGUN_STATE_DIR/publish_queue/artifacts/task_patch_tampered/patch.diff"
+    git -C "$repo" diff "$base" "$attacker_sha" -- a.txt extra.txt > "$patch"
+
+    local dest="$BATS_TEST_TMPDIR/dest6"
+    git clone -q "$repo" "$dest"
+    git -C "$dest" checkout -q "$base"
+
+    run --separate-stderr bash "$PUBLISH_ARTIFACT" restore task_patch_tampered "$dest"
+    [ "$status" -eq 1 ]
+    [[ "$stderr" == *"tree mismatch"* ]]
+}
+
 # --- AC2: gate_report_format.sh manifest consistency check ---------------
 
 mk_manifest() {

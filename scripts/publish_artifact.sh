@@ -145,6 +145,22 @@ for p in (d.get('paths') or []):
     print(p)
 " "$manifest_path")"
 
+    # 未申告 path 検出(fail-closed): patch.diff は manifest.yaml とは別ファイルであり、
+    # 両者を跨いで改ざんされうる(例: patch.diff だけ差し替えて未申告 path を混入)。
+    # restore は manifest.paths[] にある path しか `git add` しないため、未申告 path は
+    # untracked のまま write-tree に反映されず、write-tree 一致比較だけでは検出できない
+    # (untracked content は書き換えに寄与しない = silent pass)。よって適用前に、patch が
+    # 実際に触れる path 集合を dry-run(--numstat, working tree 非変更)で取得し、
+    # manifest.paths[] と完全一致しなければ適用せず rc=1 で停止する。
+    local patch_paths
+    patch_paths="$(git -C "$dest_tree" apply --numstat "$patch_path" 2>/dev/null | cut -f3- | sort -u)"
+    local declared_paths
+    declared_paths="$(printf '%s\n' "$paths" | sed '/^$/d' | sort -u)"
+    if [ "$patch_paths" != "$declared_paths" ]; then
+        _pa_err "restore: FAIL tree mismatch undeclared path in patch task_id=$task_id patch_paths=[$(printf '%s' "$patch_paths" | tr '\n' ',')] declared_paths=[$(printf '%s' "$declared_paths" | tr '\n' ',')]"
+        return 1
+    fi
+
     if ! git -C "$dest_tree" apply --binary --whitespace=nowarn "$patch_path"; then
         _pa_err "restore: git apply failed task_id=$task_id patch=$patch_path"
         return 5
