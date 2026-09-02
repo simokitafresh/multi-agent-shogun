@@ -13065,7 +13065,10 @@ insights:
   priority: "low"
   source: "semantic_map_generate:new_file"
   fix_known: false
-  status: pending
+  status: resolved
+  resolved_reason: "対象文書を一次確認し、既存概念 report_quality_protocol と内容が一致するため対象IDを解決。索引へのファイル追加は本task scope外のdecision_candidateとして記録した"
+  action_artifact: "target=queue/insights.yaml:INS-20260902-131247453-a612;primary=docs/research/karo-review-trial-fixes-20260901.md;semantic_existing=docs/semantic-index/index.md:10944(report_quality_protocol;レビュー品質関連);decision_candidate=report_quality_protocolのfile欄へ本doc追加を別scopeで実施;inventory_before=insights_pending:37,zero_backlinks:17,promotions:609,total:663"
+  resolved_at: "2026-09-02T16:16:14+09:00"
 - id: INS-20260902-131259720-53b1
   ts: "2026-09-02T13:12:59+09:00"
   insight: "semantic_map_generate新規ファイル候補: `scripts/cdp/cmd_4401_publish_timing.md` は semantic index未登録。既存概念へのfile追加または新概念定義を検討せよ"
