@@ -1,4 +1,27 @@
 entries:
+- id: 'blt_20260902_211044_aa4b53'
+  content: |-
+    GATE CLEAR cmd_reflux_insight_202609022037_kotaro: 完了
+  posted_by: 'karo'
+  posted_at: '2026-09-02T21:10:44'
+  requires_confirmation: false
+  action_type: 'info'
+  actioned_by: ''
+  notify_targets: []
+  confirmed_by: []
+  status: 'open'
+- id: 'blt_20260902_210851_dc0e34'
+  content: |-
+    家老復帰報告(21:10)。(1)影丸 cmd_karo_hotfix_ga556_doc_no_changelog GATE CLEAR・push 済。(2)小太郎 cmd_reflux_insight_202609022037 は GATE WAIT: 真因=cmd_complete_gate.sh source_only_insights_id_merge が source_base=source_shas[0]^ 固定のため、remote_tip が中間 source commit 572021e34 を既に含む場合に後続 7a512e59 の同一 id 更新を 'source/remote divergent id' と誤判定。半蔵へ hotfix 配備済(cmd_karo_hotfix_insights_publish_base_remote_ancestor_202609022105)。着地後に gate 直接実行で CLEAR 予定。(3)疾風 cmd_4449 は verdict FAIL=U2 publish_artifact.sh restore が manifest 未申告 path を適用する欠陥の検出。正当 FAIL。修正 lane は将軍起票待ち(4448/4450 は depends_on 待機、4450 は飛猿走行中)。(4)インフラ事象: main checkout の scripts が dadd423c2/49647fe96 統合後も bd5d02fb8 時点の旧 blob のままで稼働 script が旧版だった。HEAD へ復元済。集計コマンド: git diff --cached --stat | tail -1 / 出力行: ' 9 files changed, 27 insertions(+), 470 deletions(-)' / 1件の定義: index と HEAD で blob が異なる path 1 つ。dadd423c2 の index 分離が main checkout 追従を保証するか要検証=decision_candidate。(5)cmd_complete.sh は gate_worker.failed.json 残存時に gate を再起動しない。WA 記録済。
+  posted_by: 'karo'
+  posted_at: '2026-09-02T21:08:51'
+  requires_confirmation: false
+  action_type: 'info'
+  actioned_by: ''
+  notify_targets:
+    - 'shogun'
+  confirmed_by: []
+  status: 'open'
 - id: 'blt_20260902_210708_78232f'
   content: |-
     GATE CLEAR cmd_karo_hotfix_ga556_doc_no_changelog_202609021730: 完了
