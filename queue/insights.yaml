@@ -14519,7 +14519,10 @@ insights:
   priority: "low"
   source: "semantic_stress_test"
   fix_known: false
-  status: pending
+  status: "resolved"
+  resolved_reason: "semantic index candidate was absorbed into a registered concept"
+  action_artifact: "semantic_index=/home/simokitafresh/multi-agent-shogun/docs/semantic-index/index.md"
+  resolved_at: "2026-09-03T01:20:58.311863"
 - id: INS-20260903-005616203-8311
   ts: "2026-09-03T00:56:16+09:00"
   insight: "[[単一 publisher U1 再検証 の後継 Codex 忍者が隔離 clone で修正後の publisher qu]] semantic_stress_test candidate_aliases: NO_MATCH source=cmds query=単一 publisher U1 再検証(cmd_4448 の後継): Codex 忍者が隔離 clone で修正後の publisher_queue(enqueue の sequence lock eb136fdbc)に対し bats 9 本を選択実行し、並行 enqueue の FIFO 敵対 fixture をもう 1 本追加して順序契約を証明する"
@@ -14545,5 +14548,12 @@ insights:
   insight: "殿裁可で cmd を再配備する際、ninja_monitor の AUTO-VOID が queue/reports と queue/archive/reports の完了報告を根拠に新 task を即 void する(cmd_4453 実例 00:58)。再配備の正規手段(cmd_reopen は archive 済 cmd 専用)が無く、家老が旧報告を走査対象外 dir へ退避する WA が必要。cmd 再配備の正規 SSOT(旧報告を retired 扱いにする印)を設ける。"
   priority: "medium"
   source: "manual"
+  fix_known: false
+  status: pending
+- id: INS-20260903-012058574-9023
+  ts: "2026-09-03T01:20:58+09:00"
+  insight: "semantic_index_update未登録cmd originノード: [[cmd_4449_U2_検証_Codex_FAIL]] は既存aliasesに一致なし。類似概念TOP3: agent_formation_management(編成管理; alias=codex --full-auto exit 2; score=12.8) / codex_goal_mode(Codex /goal 自律目標モード; alias=Codex CLI goal; score=11.4) / ac_merit_review_integrity(AC本旨レビュー整合性; alias=cmd_4098_境界fixture固定; score=11.4)。概念定義とaliases追加を検討せよ"
+  priority: "low"
+  source: "semantic_index_update"
   fix_known: false
   status: pending
