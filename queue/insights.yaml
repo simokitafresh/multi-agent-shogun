@@ -14893,3 +14893,10 @@ insights:
   source: "manual"
   fix_known: false
   status: pending
+- id: INS-20260903-034816560-b8e2
+  ts: "2026-09-03T03:48:16+09:00"
+  insight: "workaround同一カテゴリ「infra」根本原因「infra::general」が4件蓄積。構造対策cmdの起票が必要"
+  priority: "high"
+  source: "karo_workaround_log"
+  fix_known: false
+  status: pending
