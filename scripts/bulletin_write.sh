@@ -469,6 +469,9 @@ HASH_RESULT="$(printf '%s' "${DATE_NANOS}${POSTED_BY}${CONTENT}" | sha1sum)"
 RAND_SUFFIX="${HASH_RESULT:0:6}"
 ENTRY_ID="blt_${ENTRY_STAMP}_${RAND_SUFFIX}"
 LEDGER_WRITER="$SCRIPT_DIR/scripts/ledger_writer.sh"
+if [[ -f "$LEDGER_WRITER" && ! -x "$LEDGER_WRITER" ]]; then
+    printf '%s\n' 'LEDGER-ROUTE-SKIP: ledger_writer.sh exists but not executable' >&2
+fi
 LEDGER_ENTRY_FILE="$(mktemp)"
 trap 'rm -f -- "$LEDGER_ENTRY_FILE"' EXIT
 ledger_append() {

@@ -100,6 +100,15 @@ cleanup_isolated() {
     esac
 }
 
+cleanup_ledger_stage() {
+    local stage="${1:-}"
+    [ -n "$stage" ] && [ -d "$stage" ] || return 0
+    case "$stage" in
+        "$REPO_ROOT/.git/publisher-ledger-stage."*) find "$stage" -depth -delete ;;
+        *) echo "publisher: refusing to clean unexpected ledger stage: $stage" >&2; return 1 ;;
+    esac
+}
+
 root_has_untracked_collision() {
     local root="$1" tip="$2" status_file diff_file
     status_file="$(mktemp)"; diff_file="$(mktemp)"
@@ -205,6 +214,118 @@ process_request() {
     move_to_done "$request"
 }
 
+ledger_source_in_isolated() {
+    local operation="$1" isolated="$2"
+    PUBLISHER_REPO_ROOT="$REPO_ROOT" PUBLISHER_ISOLATED="$isolated" \
+        PUBLISHER_OPERATION="$operation" python3 - <<'PY'
+import json, os
+from pathlib import Path
+
+data = json.load(open(os.environ["PUBLISHER_OPERATION"], encoding="utf-8"))
+source = str(data.get("source_file", ""))
+if not source:
+    raise SystemExit("publisher: ledger operation source_file missing")
+repo = Path(os.environ["PUBLISHER_REPO_ROOT"]).resolve()
+source_path = Path(source)
+if not source_path.is_absolute():
+    source_path = repo / source_path
+try:
+    relative = source_path.resolve(strict=False).relative_to(repo)
+except ValueError:
+    raise SystemExit(f"publisher: ledger source outside publisher root: {source}")
+print(Path(os.environ["PUBLISHER_ISOLATED"]) / relative)
+PY
+}
+
+ledger_directory() {
+    case "$1" in
+        insights|lessons|bulletin|workarounds) printf '%s/ledger_inbox/%s\n' "$STATE_DIR" "$1" ;;
+        *) return 1 ;;
+    esac
+}
+
+ledger_operations() {
+    local dir
+    for dir in insights lessons bulletin workarounds; do
+        [ -d "$STATE_DIR/ledger_inbox/$dir" ] || continue
+        find "$STATE_DIR/ledger_inbox/$dir" -mindepth 1 -maxdepth 1 -type f -name '*.yaml' \
+            -printf '%f\t%p\n'
+    done | LC_ALL=C sort -k1,1 -k2,2 | cut -f2-
+}
+
+move_ledger_to() {
+    local operation="$1" destination_dir="$2" destination
+    mkdir -p "$destination_dir"
+    destination="$destination_dir/$(basename "$operation")"
+    [ ! -e "$destination" ] || destination="$destination.$$"
+    mv -- "$operation" "$destination"
+}
+
+process_ledger_batch() {
+    local -a operations=() ledgers=()
+    local operation ledger isolated="" stage_root="" tip origin_url tree published_sha
+    while IFS= read -r operation; do
+        [ -n "$operation" ] || continue
+        operations+=("$operation")
+        ledger="$(basename "$(dirname "$operation")")"
+        case " ${ledgers[*]} " in *" $ledger "*) ;; *) ledgers+=("$ledger") ;; esac
+    done < <(ledger_operations)
+    [ "${#operations[@]}" -gt 0 ] || return 0
+
+    timeout 120 git -C "$REPO_ROOT" fetch origin
+    tip="$(git -C "$REPO_ROOT" rev-parse origin/main)"
+    origin_url="$(git -C "$REPO_ROOT" remote get-url origin)"
+    isolated="$(mktemp -d "$REPO_ROOT/.git/publisher-isolated.XXXXXX")"
+    stage_root="$(mktemp -d "$REPO_ROOT/.git/publisher-ledger-stage.XXXXXX")"
+    trap 'cleanup_isolated "${isolated:-}"; cleanup_ledger_stage "${stage_root:-}"' RETURN
+    git clone --no-checkout "$origin_url" "$isolated"
+    git -C "$isolated" remote set-url origin "$origin_url"
+    git -C "$isolated" checkout --detach "$tip"
+
+    local index=0 source_file staged_operation
+    for operation in "${operations[@]}"; do
+        index=$((index + 1))
+        ledger="$(basename "$(dirname "$operation")")"
+        staged_operation="$stage_root/${index}_${ledger}_$(basename "$operation")"
+        cp -- "$operation" "$staged_operation"
+        if ! source_file="$(ledger_source_in_isolated "$staged_operation" "$isolated")"; then
+            move_ledger_to "$operation" "$(ledger_directory "$ledger")/rc"
+            event ledger ledger_batch 1 "failed_op=$(basename "$operation") reason=source_outside_root"
+            return 31
+        fi
+        if ! LEDGER_SOURCE_FILE="$source_file" LEDGER_WRITER_NOTIFY=0 \
+            bash "$SCRIPT_DIR/ledger_writer.sh" apply "$staged_operation"; then
+            move_ledger_to "$operation" "$(ledger_directory "$ledger")/rc"
+            event ledger ledger_batch 1 "failed_op=$(basename "$operation") reason=apply_failed"
+            return 31
+        fi
+    done
+
+    git -C "$isolated" add --all -- .
+    tree="$(git -C "$isolated" write-tree)"
+    published_sha="$(printf 'publisher: ledger batch n=%s ledgers=%s\n\nPublished-By: publisher\n' \
+        "${#operations[@]}" "$(IFS=,; echo "${ledgers[*]}")" |
+        git -C "$isolated" -c user.name=single-publisher -c user.email=publisher@localhost \
+        commit-tree "$tree" -p "$tip")"
+    if [ "${PUBLISHER_MODE:-dry-run}" = active ]; then
+        timeout 120 git -C "$isolated" push origin "$published_sha:refs/heads/main"
+        timeout 120 git -C "$REPO_ROOT" fetch origin
+        sync_root "$REPO_ROOT" origin/main
+    else
+        event ledger ledger_batch 0 "n=${#operations[@]} origin_update=0 published_sha=$published_sha"
+        cleanup_isolated "$isolated"; isolated=""
+        cleanup_ledger_stage "$stage_root"; stage_root=""
+        return 0
+    fi
+    for operation in "${operations[@]}"; do
+        ledger="$(basename "$(dirname "$operation")")"
+        move_ledger_to "$operation" "$(ledger_directory "$ledger")/applied"
+    done
+    event ledger ledger_batch 0 "n=${#operations[@]} ledgers=$(IFS=,; echo "${ledgers[*]}") published_sha=$published_sha"
+    cleanup_isolated "$isolated"; isolated=""
+    cleanup_ledger_stage "$stage_root"; stage_root=""
+}
+
 handle_lock_failure() {
     local request="$1" rc="$2" task next
     # C2a/restore RC already rotated the request out of dequeued; reading it again
@@ -241,18 +362,35 @@ run_one() {
     handle_lock_failure "$request" "$rc"
 }
 
+run_ledger_once() {
+    local rc mode="${PUBLISHER_MODE:-dry-run}" before_events after_events
+    [ -n "$(ledger_operations)" ] || return 0
+    before_events=0
+    [ -f "$QUEUE_ROOT/events.jsonl" ] && before_events="$(awk -F'"kind":"' 'NF > 1 {split($2, v, "\""); if (v[1] == "ledger") n++} END {print n + 0}' "$QUEUE_ROOT/events.jsonl")"
+    bash "$QUEUE_LIB" lock-run --bound 600 -- bash "$SCRIPT_DIR/publisher.sh" --process-ledger "$mode" || {
+        rc=$?
+        after_events=0
+        [ -f "$QUEUE_ROOT/events.jsonl" ] && after_events="$(awk -F'"kind":"' 'NF > 1 {split($2, v, "\""); if (v[1] == "ledger") n++} END {print n + 0}' "$QUEUE_ROOT/events.jsonl")"
+        [ "$after_events" -gt "$before_events" ] || event ledger ledger_batch "$rc" "lock_run_failed=1"
+        return "$rc"
+    }
+}
+
 daemon_main() {
     local once="${PUBLISHER_ONCE:-0}" sleep_seconds="${PUBLISHER_SLEEP_SECONDS:-2}"
     printf '%s\n' "$$" > "$PID_FILE"; trap 'rm -f "$PID_FILE"' EXIT
     # A rejected request (RC) is terminal evidence for that request only; the daemon must keep serving the queue.
-    local rc
+    local rc ledger_rc
     while :; do
         rc=0; run_one || rc=$?
+        ledger_rc=0; run_ledger_once || ledger_rc=$?
+        [ "$rc" -eq 0 ] && rc="$ledger_rc"
         [ "$once" = 1 ] && return "$rc"
         sleep "$sleep_seconds"
     done
 }
 
 if [ "${1:-}" = --process-request ]; then process_request "$2" "$3"
+elif [ "${1:-}" = --process-ledger ]; then process_ledger_batch
 elif [ "${PUBLISHER_LIB_ONLY:-0}" != 1 ]; then daemon_main
 fi

@@ -870,6 +870,9 @@ if [ -n "$RETAG_ID" ]; then
     LESSONS_FILE="$PROJECT_PATH/tasks/lessons.md"
     LOCKFILE="$(lock_path "$LESSONS_FILE")"
     LEDGER_WRITER="$SCRIPT_DIR/scripts/ledger_writer.sh"
+    if [[ -f "$LEDGER_WRITER" && ! -x "$LEDGER_WRITER" ]]; then
+        printf '%s\n' 'LEDGER-ROUTE-SKIP: ledger_writer.sh exists but not executable' >&2
+    fi
 
     if [ ! -f "$LESSONS_FILE" ]; then
         echo "ERROR: $LESSONS_FILE not found." >&2
@@ -1043,6 +1046,9 @@ fi
 LESSONS_FILE="$PROJECT_PATH/tasks/lessons.md"
 LOCKFILE="$(lock_path "$LESSONS_FILE")"
 LEDGER_WRITER="$SCRIPT_DIR/scripts/ledger_writer.sh"
+if [[ -f "$LEDGER_WRITER" && ! -x "$LEDGER_WRITER" ]]; then
+    printf '%s\n' 'LEDGER-ROUTE-SKIP: ledger_writer.sh exists but not executable' >&2
+fi
 LEDGER_ENTRY_FILE="$(mktemp)"
 
 # Verify lessons file exists

@@ -1,6 +1,8 @@
 #!/usr/bin/env bash
 # ledger_writer.sh — immutable ledger operations for the U6 single-publisher boundary.
 # Operation files are JSON, which is valid YAML and avoids yaml.dump data loss.
+# This entrypoint is tracked executable so writers never silently fall back to root edits;
+# publisher execution depends on this mode bit to activate the ledger route.
 set -euo pipefail
 
 SELF="${BASH_SOURCE[0]}"

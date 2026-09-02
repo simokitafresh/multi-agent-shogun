@@ -457,6 +457,9 @@ resolved_at=""
 
 # Ledger operations are emitted outside the repository; the publisher applies them.
 LEDGER_WRITER="$SCRIPT_DIR/scripts/ledger_writer.sh"
+if [[ -f "$LEDGER_WRITER" && ! -x "$LEDGER_WRITER" ]]; then
+  printf '%s\n' 'LEDGER-ROUTE-SKIP: ledger_writer.sh exists but not executable' >&2
+fi
 LEDGER_ENTRY_FILE="$(mktemp)"
 trap 'rm -f -- "$LEDGER_ENTRY_FILE"' EXIT
 ledger_append() {

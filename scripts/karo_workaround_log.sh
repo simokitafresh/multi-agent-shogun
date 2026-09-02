@@ -55,6 +55,9 @@ BRAINWASH_CHECK="${KARO_WA_BRAINWASH_CHECK:-}"
 LESSON_REQUIRED="${KARO_WA_LESSON_REQUIRED:-true}"
 LESSON_REFERENCE="${KARO_WA_LESSON_REFERENCE:-}"
 LEDGER_WRITER="$REPO_ROOT/scripts/ledger_writer.sh"
+if [[ -f "$LEDGER_WRITER" && ! -x "$LEDGER_WRITER" ]]; then
+    printf '%s\n' 'LEDGER-ROUTE-SKIP: ledger_writer.sh exists but not executable' >&2
+fi
 LEDGER_ENTRY_FILE="$(mktemp)"
 trap 'rm -f -- "$LEDGER_ENTRY_FILE"' EXIT
 
