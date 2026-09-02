@@ -16733,3 +16733,16 @@ sqlite3.Connection.backup()を使うとページ(4096byte)単位のread syscall�
 - **when**: 未設定
 - **how**: 未設定
 - 根本原因(scripts/run_tests.sh 2416行付近): task modeで_task_root(=task_worktree)がREPO_ROOTと異なる時、 scoped_pathsに直接テストfileが無いdocs-onlyタスクは`(cd "$_task_root" && bash scripts/run_tests.sh affected "${scoped_paths[@]}")` へフォールバックする。呼び出し元は既に`export RUN_TESTS_ACTIVE=1`済みで、この子bashプロセスはmode=affected(≠file)のままそれを継承するため、 自身の再帰ガード(2229行付近)に即座に引っかかり`BLOCK: nested aggregate run_tests invocation (affected)`でrc=2になる(2回再現、両方同一BLOCK)。 さらにscripts/report_field_set.sh:314の_autolink_terminal_test_receiptは、status=completed時にtask.test_receipt_pathの受信レシートの task_id一致(またはtarget_path/planned_pathsに.bats/.pyが1つもownedとして無ければ即BLOCK)を要求するため、 docs-onlyタスクは(a)task modeが上記で必ずrc=2になりPASSレシートを作れず、(b)ownedテストpathも存在しない、の二重に詰み、 正規経路でstatus:completedへ到達する術が無い(cmd_4463で実証。既存のtask.test_receipt_pathは前task(cmd_reflux_insight_...)のPASSレシートが 残存しておりtask_id不一致で即BLOCK)。回避策として`bash scripts/test_select.sh <変更file>`で対象test個別特定→ `bash scripts/run_tests.sh file <test.bats>`を1件ずつ実行すればテスト自体はFAIL0/SKIP0で完走できる(本cmdではtest_gate_vercel_phase.bats 8/8・test_semantic_index_update.bats 44/44)が、それでも_autolink_terminal_test_receiptのowned/task_id要件は満たせない。 根本修正は未実施(target_path=docs/research限定のtask_worktreeでは編集不可・スコープ外)。修正候補: (1)2416行付近の子呼び出し前に `env -u RUN_TESTS_ACTIVE`するかmode=fileへ切替 (2)report_field_set.sh側でdocs-only(files_modified全pathがdocs/等prefix)terminal報告を _autolink_terminal_test_receiptの対象から除外する、のいずれかが必要。
+
+### L1714: 外部task childへaggregate実行状態を継承しない
+- **日付**: 2026-09-03
+- **出典**: cmd_karo_hotfix_run_tests_task_mode_nested_guard_202609030347
+- **記録者**: kagemaru
+- **tags**: [infra,testing,testing,gate,fof]
+- **subdomain**: infra
+- **target_files**: [scripts/run_tests.sh,tests/unit/test_run_tests.bats]
+- **origin**: [[cmd_karo_hotfix_run_tests_task_mode_nested_guard_202609030347]]
+- **enforcement**: 未自動化
+- **when**: 未設定
+- **how**: 未設定
+- 親task runnerのRUN_TESTS_ACTIVEは同一repository内の再帰防御に限定し、別linked worktreeのaffected childへ継承させない。継承するとdocs-onlyでもnested aggregate false-positive BLOCKとなりreceiptが失われるため、外部child境界でenv -uし、zero-test receiptをfixtureで固定する。

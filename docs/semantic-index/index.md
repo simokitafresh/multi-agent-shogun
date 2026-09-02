@@ -534,6 +534,7 @@ codd:
 | discussion | `queue/lord_conversation.jsonl` 2026-09-02T18:55:42.258485+00:00 git pre-commit semantic propagation for context/projects changes |
 | causal | `cmd_reflux_insight_202609030347_kotaro` files_modified: [[cmd_chronicle]] |
 | cmd | `cmd_reflux_insight_202609030347_kotaro` (`context/senkyoku-log.md`) |
+| discussion | `queue/lord_conversation.jsonl` 2026-09-02T19:15:41.169442+00:00 git pre-commit semantic propagation for context/projects changes |
 
 ## unread_cmd_new_deployment_guard — 未読cmd_new配備漏れ防止
 
@@ -3447,6 +3448,7 @@ codd:
 | discussion | `queue/lord_conversation.jsonl` 2026-09-03T03:20:13+09:00 session_save_20260903_0320(家老復帰点、先に session_save_20260902_1314 を読め): 9/2 20:52 復帰〜9/3 03:20 の便。到達: 単一 publisher 第 1-3 波( |
 | discussion | `queue/lord_conversation.jsonl` 2026-09-03T03:32:48+09:00 殿回答 2026-09-03 03:31(X 運用設計書 B 質問): 可用時間は自動化で無関係、読者は医師 40% 推定・DM 経験者少、数字ホワイトリスト=metrics は全 PF 公開可・保有シグナル/構成 ticker/FoF 重 |
 | discussion | `queue/lord_conversation.jsonl` 2026-09-03T03:57:27+09:00 cmd_4463 GATE CLEAR 03:55(X 運用 公開情報実測、飛猿 795dbd37a): X フォロワー 4,434、note How to 49 本、完全ガイド スキ 53、メンバーシップ ¥1,000/¥8,000(dm |
+| discussion | `queue/lord_conversation.jsonl` 2026-09-03T04:25:39+09:00 session_save_20260903_0430(復帰点、先に session_save_20260903_0248 を読め): 02:48-04:30: cmd_4460 U7 CLEAR 02:52(67ced64ee)、repo  |
 | causal_chain | `[[cmd_3749]]` (L974) |
 | causal_chain | `[[cmd_training_L1_report-write_20260708020332]]` (L977) |
 | causal_chain | `[[cmd_reflux_insight_202607071717_tobisaru]]` (L961) |
@@ -13838,7 +13840,7 @@ codd:
 |------|---|
 | id | provisional_test |
 | label | 仮: Test |
-| aliases | test, .github/workflows/test.yml, .github workflows test.yml, provisional_test, 投入順の契約testは同期投入で明示し |
+| aliases | test, .github/workflows/test.yml, .github workflows test.yml, provisional_test, 投入順の契約testは同期投入で明示し, zero test receiptをfixtureで固定する |
 | status | provisional |
 | auto_generated | true |
 | source_cmd | cmd_karo_ci_fix_33147256383_compat_receipt |
@@ -13897,10 +13899,12 @@ codd:
 | cmd | `cmd_karo_hotfix_gate_publisher_pending_toplevel_only_202609022336` (`scripts/cmd_complete_gate.sh`, `tests/unit/test_gate_dual_read.bats`) |
 | cmd | `cmd_karo_ci_fix_33641462767_ledger_writer_tmpdir_202609022352` (`tests/unit/test_ledger_writer.bats`) |
 | cmd | `cmd_karo_hotfix_cross_repo_path_lstrip_dotprefix_202609030012` (`scripts/lib/close_gate_alerts.py`, `scripts/lib/cross_repo_commit_contract.py`, `tests/unit/test_report_commit_identity.bats`) |
+| lesson | `L1714` 外部task childへaggregate実行状態を継承しない |
 | causal_chain | `[[cmd_karo_hotfix_hook_failure_utf8_boundary_20260829]]` (L1669) |
 | causal_chain | `[[cmd_karo_hotfix_tmux_live_sendkeys_guard_20260830]]` (L1672) |
 | causal_chain | `[[cmd_4434]]` (L1688) |
 | causal_chain | `[[cmd_karo_hotfix_u1_publisher_queue_fifo_order_202609022136]]` (L1708) |
+| causal_chain | `[[cmd_karo_hotfix_run_tests_task_mode_nested_guard_202609030347]]` (L1714) |
 
 ## provisional_gate_hook_quality_contract — 仮: Gate Hook Quality Contract
 
@@ -15397,6 +15401,8 @@ codd:
 | discussion | `queue/lord_conversation.jsonl` 2026-09-03T02:03:49+09:00 bul2u8mlz toolu_01NZopNZooms3MwHyi8cW6E2 /tmp/claude-1000/-home-simokitafresh-multi-agent-shogun/096a7687-1a27-4f68-b89e |
 | discussion | `queue/lord_conversation.jsonl` 2026-09-03T02:17:15+09:00 bkge8pa67 toolu_017LQpXyFfUNDEfJrR7YKhAS /tmp/claude-1000/-home-simokitafresh-multi-agent-shogun/096a7687-1a27-4f68-b89e |
 | lesson | `L1713` task_worktree_required docs-onlyタスクはrun_tests.sh task modeが構造的に自己再帰BLOCKし報告completedへ到達できない |
+| causal | `cmd_karo_hotfix_run_tests_task_mode_nested_guard_202609030347` files_modified: [[provisional_run_tests]] |
+| cmd | `cmd_karo_hotfix_run_tests_task_mode_nested_guard_202609030347` (`scripts/run_tests.sh`, `tests/unit/test_run_tests.bats`) |
 | causal_chain | `[[cmd_karo_hotfix_git_index_singleflight_202608191445]]` (L1618) |
 | causal_chain | `[[cmd_4463]]` (L1713) |
 
