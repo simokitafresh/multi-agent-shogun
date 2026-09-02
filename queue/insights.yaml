@@ -13958,7 +13958,10 @@ insights:
   priority: "low"
   source: "semantic_stress_test"
   fix_known: false
-  status: pending
+  status: resolved
+  resolved_reason: "semantic index candidate was absorbed into a registered concept"
+  action_artifact: "semantic_index=/home/simokitafresh/multi-agent-shogun/docs/semantic-index/index.md"
+  resolved_at: "2026-09-02T21:08:22+09:00"
 - id: INS-20260902-210359683-e883
   ts: "2026-09-02T21:03:59+09:00"
   insight: "[[殿裁定 20 44 §14 4 U6 は U3 dry run と並走]] semantic_stress_test candidate_aliases: NO_MATCH source=cmds query=殿裁定 2026-09-02 20:44(§14.4: U6 は U3 dry-run と並走)。設計書 §13 H3『台帳ノイズ同士の分岐』は本日 15:2x-16:44 の便停止 1h20m(分岐 63/95 が全て insights autopush)で実証済み。台帳 4 本の root 直接追記を op file 化し、publisher が bat"
@@ -13982,21 +13985,30 @@ insights:
   priority: "low"
   source: "semantic_stress_test"
   fix_known: false
-  status: pending
+  status: resolved
+  resolved_reason: "semantic index candidate was absorbed into a registered concept"
+  action_artifact: "semantic_index=/home/simokitafresh/multi-agent-shogun/docs/semantic-index/index.md"
+  resolved_at: "2026-09-02T21:08:22+09:00"
 - id: INS-20260902-210458298-af64
   ts: "2026-09-02T21:04:58+09:00"
   insight: "[[単一 publisher U1b 将軍・家老の直接 commit wrapper scripts publish dir]] semantic_stress_test candidate_aliases: NO_MATCH source=cmds query=単一 publisher U1b: 将軍・家老の直接 commit wrapper scripts/publish_direct_commit.sh(cwd=root 検査 rc=7→lock-run --bound 300 内で fetch→ff-only→ninja_scope_commit(trailer Published-By: wrapper)→"
   priority: "low"
   source: "semantic_stress_test"
   fix_known: false
-  status: pending
+  status: resolved
+  resolved_reason: "semantic index candidate was absorbed into a registered concept"
+  action_artifact: "semantic_index=/home/simokitafresh/multi-agent-shogun/docs/semantic-index/index.md"
+  resolved_at: "2026-09-02T21:08:22+09:00"
 - id: INS-20260902-210514055-0950
   ts: "2026-09-02T21:05:14+09:00"
   insight: "[[殿裁定 20 44『捨てる壁に時間をかけるのは原理原則に反していないか』→設計書 §14 4 第 2 波は U3 を d]] semantic_stress_test candidate_aliases: NO_MATCH source=cmds query=殿裁定 2026-09-02 20:44『捨てる壁に時間をかけるのは原理原則に反していないか』→設計書 §14.4: 第 2 波は U3 を dry-run で先頭に前倒す。U3 が origin へ publish し始めた時点で ancestry WAIT・push lane・GA-PUSH1 の壁(今日の hotfix 15 本の主対象=§10 で捨て"
   priority: "low"
   source: "semantic_stress_test"
   fix_known: false
-  status: pending
+  status: resolved
+  resolved_reason: "semantic index candidate was absorbed into a registered concept"
+  action_artifact: "semantic_index=/home/simokitafresh/multi-agent-shogun/docs/semantic-index/index.md"
+  resolved_at: "2026-09-02T21:08:22+09:00"
 - id: INS-20260902-210527846-64dd
   ts: "2026-09-02T21:05:27+09:00"
   insight: "[[殿指示 13 25『どのロールがどの CLI モデルでも必要十分に同じレベルで作業を続けられるのが我らの仕組み』 殿下問]] semantic_stress_test test_set_candidate: high_frequency_NO_MATCH count=2 source=cmds query=殿指示 2026-09-02 13:25『どのロールがどの CLI/モデルでも必要十分に同じレベルで作業を続けられるのが我らの仕組み』+殿下問 19:02『順調に進んでいるか？進展が遅すぎないか？』→第 1 波 3 unit の検証 cmd を CLEAR 待ちにせず今起票して直列を 1 段減らす(depends_on で配備は自動待機)。U2(cmd_44 quality_gate=blind_hit_rate_non_regression fixed_50_role=regression_detection_only"
@@ -14009,5 +14021,42 @@ insights:
   insight: "review_bundle.py singleのreview_entryはreview:ラッパーなしのTOP-LEVEL形式(cmd_id/verdict/reviewer/sg_checklist/precheck_na等を直接トップに置く)。review:で包むとprecheck_naが読まれずprecheckが走る。cmd_4445で3回試行して判明(19:28-19:39)"
   priority: "medium"
   source: "manual"
+  fix_known: false
+  status: pending
+- id: INS-20260902-210837416-4f35
+  ts: "2026-09-02T21:08:37+09:00"
+  insight: "[[家老がidleになったら最新版のclaude fable 5 1 lowにせよ]] semantic_stress_test candidate_aliases: NO_MATCH source=lord query=家老がidleになったら最新版のclaude fable 5.1 lowにせよ"
+  priority: "low"
+  source: "semantic_stress_test"
+  fix_known: false
+  status: resolved
+  resolved_reason: "semantic index candidate was absorbed into a registered concept"
+  action_artifact: "semantic_index=/home/simokitafresh/multi-agent-shogun/docs/semantic-index/index.md"
+  resolved_at: "2026-09-02T21:08:43+09:00"
+- id: INS-20260902-210837751-1b05
+  ts: "2026-09-02T21:08:37+09:00"
+  insight: "[[は一体いつ完了するんだ？]] semantic_stress_test candidate_aliases: NO_MATCH source=lord query=は一体いつ完了するんだ？"
+  priority: "low"
+  source: "semantic_stress_test"
+  fix_known: false
+  status: resolved
+  resolved_reason: "semantic index candidate was absorbed into a registered concept"
+  action_artifact: "semantic_index=/home/simokitafresh/multi-agent-shogun/docs/semantic-index/index.md"
+  resolved_at: "2026-09-02T21:09:15+09:00"
+- id: INS-20260902-210838013-9e67
+  ts: "2026-09-02T21:08:38+09:00"
+  insight: "[[設計書の更新は忘れていないか？]] semantic_stress_test candidate_aliases: NO_MATCH source=lord query=設計書の更新は忘れていないか？"
+  priority: "low"
+  source: "semantic_stress_test"
+  fix_known: false
+  status: resolved
+  resolved_reason: "semantic index candidate was absorbed into a registered concept"
+  action_artifact: "semantic_index=/home/simokitafresh/multi-agent-shogun/docs/semantic-index/index.md"
+  resolved_at: "2026-09-02T21:09:15+09:00"
+- id: INS-20260902-210915295-d61b
+  ts: "2026-09-02T21:09:15+09:00"
+  insight: "semantic_index_update新概念候補: discussion:task notification task id b2ypzv9ms task id tool use id toolu 01JNshxjuVmc1tYDMG は 既存aliasesに一致なし。概念定義とaliases追加を検討せよ"
+  priority: "low"
+  source: "semantic_index_update"
   fix_known: false
   status: pending
