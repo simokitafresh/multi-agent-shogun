@@ -1645,3 +1645,5 @@
 - 2026-09-03 01:03 cmd_4453 再配備は monitor AUTO-VOID(旧報告参照)で 1 度 void→旧報告を reports_retired へ退避し再配備成功(才蔵 acknowledged)。
 - 2026-09-03 01:05 疾風 receipt pair hotfix 報告 PASS(3/3→rc0)。cmd_4457(U2 再検証)→半蔵配備。軍師 D0 93f0efee(fingerprint 照合 BLOCK)家老 APPROVE。
 - 2026-09-03 01:20 receipt pair hotfix 着地で影丸 root fix・小太郎 reflux・飛猿 ci_fix CLEAR。cmd_4457(U2 再検証)CLEAR(13/13)。cmd_4453 は才蔵が再実装中。
+- 2026-09-03 01:25 cmd_4453 を証拠付き手動 CLEAR(将軍裁定 A)。cmd_4458→小太郎。
+- 2026-09-03 01:30 U3 publisher daemon active 起動(pid 2103173)。

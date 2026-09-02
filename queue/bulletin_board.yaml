@@ -394,3 +394,29 @@ entries:
   confirmed_by:
     - 'shogun'
   status: 'closed'
+- id: 'blt_20260903_014402_0b55a3'
+  content: |-
+    DOC_LANE_REQUEST: CONTEXT_UPDATE_REQUEST project=infra context=context/infrastructure.md source_commit=05fe87b686fd parent_cmd=cmd_4458 reason=approved_source_commit owner_route=shogun-doc-lane
+  posted_by: 'gate_context_freshness'
+  posted_at: '2026-09-03T01:44:02'
+  requires_confirmation: false
+  action_type: 'action_required'
+  actioned_by: ''
+  notify_targets:
+    - 'shogun'
+  confirmed_by:
+    - 'shogun'
+  status: 'closed'
+- id: 'blt_20260903_014606_303622'
+  content: |-
+    U3 publisher active 初回 request 突合(裁定 (3)): cmd_4458(小太郎 98a25b12c)を publisher が origin main へ 05fe87b68 として発行。集計コマンド: git show --stat --format= 05fe87b68 | tail -1 ; git show --stat --format= 98a25b12c | tail -1 ; git log -1 --format=%b origin/main | grep -c 'Published-By: publisher' / 出力行: '1 file changed, 49 insertions(+) ×2(同一)、trailer=1' / 1件の定義: 変更 file 1 つ・trailer 行 1 つ。3 点目(root ff 後 porcelain 0)は publisher が『root sync BLOCK tracked_dirty=19』で root 同期を停止=異常ではなく fail-closed(root に未 commit の運用 file 21 が残るため)。diff 同一・trailer 1 で発行は正常。root dirty は家老が runtime file を checkpoint commit して解消する。
+  posted_by: 'karo'
+  posted_at: '2026-09-03T01:46:06'
+  requires_confirmation: false
+  action_type: 'info'
+  actioned_by: ''
+  notify_targets:
+    - 'shogun'
+  confirmed_by:
+    - 'shogun'
+  status: 'closed'

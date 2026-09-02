@@ -129,11 +129,11 @@ tier_plan_mapping:  # note.comメンバーシッププランとDB viewer_tiers�
   note_url: "https://note.com/membership/settings/manage"
   membership_name: "人生を変えるデュアルモメンタム投資"
   plans:
-    - {note_plan: "ベーシックプラン", price: "¥1,000/月 初月無料", public: true, db_tier: "Basic"}
+    - {note_plan: "ベーシックプラン", price: "¥1,000/月", public: true, db_tier: "Basic"}
     - {note_plan: "アドオン 裏・Ave7", price: "¥2,000/月", public: false, db_tier: "AddOn"}
     - {note_plan: "スタンダードプラン（古参スペシャル）", price: "¥4,000/月", public: false, db_tier: "Standard"}
     - {note_plan: "スタンダードプラン", price: "¥8,000/月", public: true, db_tier: "NewStandard"}
-    - {note_plan: "ドクタープレミアムプラン 完全招待制", price: "¥20,000/月 初月無料", public: false, db_tier: "premium"}
+    - {note_plan: "ドクタープレミアムプラン 完全招待制", price: "¥20,000/月", public: false, db_tier: "premium"}
     - {note_plan: "プレミアムプラン 劇薬DMシリーズ", price: "¥30,000/月", public: false, db_tier: null}
   note: "StandardとNewStandardの名前が直感と逆。Standard(旧)=古参¥4,000、NewStandard(新)=¥8,000"
 

@@ -1,7 +1,7 @@
 summary:
-  total: 94
-  resolved: 87
-  pending: 6
+  total: 96
+  resolved: 94
+  pending: 1
   shelved: 1
   unknown: 0
 decisions:
@@ -579,7 +579,7 @@ decisions:
   summary: 'LS-A10残課題(enforcement_level:5だが本番特定実測強制は未自動化): 性能計測系cmd(GS共通コード変更等)にmeasurement_source(local/Render実行証跡)フィールドを追加し/gs-bench-gateスキルへ統合すべきか。現状check_measurement_env_info()(cmd_save.sh
     L1158、bats Check20.11-20.13で3/3 PASS確認2026-07-08)はローカル/本番差異キーワード検出時にmeasurement_env記入をINFO提案するのみで、本番ボトルネック特定時にRender上実測を強制する仕組みはない'
   source_cmd: cmd_reflux_promotion_202607080617_tobisaru
-  status: pending
+  status: resolved
   created_at: '2026-07-08T10:18:42+09:00'
   created_by: tobisaru
   origin: '[[LS-A10]] -> [[本番特定実測強制が未自動化のまま還流在庫に滞留]] -> [[PD登録で家老/将軍判断待ちへ整理]]'
@@ -589,6 +589,11 @@ decisions:
   wait_reason: dependency
   next_cmd_id: cmd_karo_hotfix_gs_bench_production_source_contract_20260801
   next_action: gs-benchへ本番measurement_source強制を接続
+  resolved_at: '2026-08-28T20:42:49+09:00'
+  resolved_content: '実装unit化: cmd_karo_hotfix_pending_decision_infra_bundle_20260828
+    AC2へ統合。measurement_sourceをproduction主張時のLevel5入力+Level4 BLOCKへ接続し、完了は同task GATEで判定する'
+  resolved_by: cmd_karo_hotfix_pending_decision_infra_bundle_20260828
+  context_synced: true
 - id: PD-105
   type: escalation
   summary: 'loop_ledgerのmemory在庫ALERTは実データで構造的FP傾向を確認: stock=produced(検索ログ累積window14日,約7700-7900)-consumed(shogun
@@ -629,7 +634,7 @@ decisions:
   type: escalation
   summary: log_terminal_input.shはUserPromptSubmit経由の全input(Agent tool task-notification含む)をagent=lordとして記録し続けている。cmd_3267(gate_shogun_startup.sh)+cmd_reflux_insight_202607081406_saizo(lib/lord_conversation.sh)の2箇所で同じtask-notification除外フィルタを個別のconsumer側に重複実装した。ソース(log_terminal_input.sh)でtask-notification自体をagent=lordとして記録しない/別ラベルにする根本修正に切替えるべきか、それとも消費者ごとの個別フィルタ継続で許容範囲か、家老/将軍判断を要する
   source_cmd: cmd_reflux_insight_202607081406_saizo
-  status: pending
+  status: resolved
   created_at: '2026-07-08T14:22:07+09:00'
   created_by: saizo
   origin: '[[INS-20260708-103654328-332d]] -> [[log_terminal_input.sh agent=lord固定]]
@@ -638,6 +643,11 @@ decisions:
   wait_reason: dependency
   next_cmd_id: cmd_karo_hotfix_lord_input_source_ssot_20260801
   next_action: task通知をlord入力と誤記録するsource側SSOT修正
+  resolved_at: '2026-08-28T20:42:49+09:00'
+  resolved_content: '実装unit化: cmd_karo_hotfix_pending_decision_infra_bundle_20260828
+    AC3へ統合。task通知をsourceでlord入力から分離しconsumer重複filterを解消する'
+  resolved_by: cmd_karo_hotfix_pending_decision_infra_bundle_20260828
+  context_synced: true
 - id: PD-108
   type: escalation
   summary: 'LK-A14(LG027横展開確認: コード修正後grep残存0件確認)はLevel4未実装のまま一次検証確定。scripts/hooks|scripts/gates|skills|tests全域grep(横展開確認/残存確認/残存0件/grep.*横展開)で該当ゼロ、PJ版L627(dm-signal,
@@ -681,7 +691,7 @@ decisions:
     or PreToolUse Bashフックでのgit revert検知)(b)変更元エージェント特定方法(commit co-author/task_id逆引きの自動identify)(c)再計測強制の実装対象(revert後の再計測task自動生成
     or cmd_complete_gateでのbefore/after記録必須化)の3点設計が必要なため単独実装を見送り家老/将軍判断を要請
   source_cmd: cmd_reflux_promotion_202607090818_tobisaru
-  status: pending
+  status: resolved
   created_at: '2026-07-09T08:24:34+09:00'
   created_by: tobisaru
   origin: '[[LK-A18]] -> [[revert前後の通知/再計測強制なし]] -> [[PD登録で家老/将軍判断待ちへ整理]]'
@@ -689,6 +699,11 @@ decisions:
   wait_reason: dependency
   next_cmd_id: cmd_karo_hotfix_revert_wrapper_contract_20260801
   next_action: revert通知と再計測をwrapperで強制
+  resolved_at: '2026-08-28T20:42:50+09:00'
+  resolved_content: '実装unit化: cmd_karo_hotfix_pending_decision_infra_bundle_20260828
+    AC4へ統合。変更元通知証跡と事後再計測をwrapper/guardで強制する'
+  resolved_by: cmd_karo_hotfix_pending_decision_infra_bundle_20260828
+  context_synced: true
 - id: PD-111
   type: action_required
   summary: '追加委任待機: SKILL.md checked_at更新4件(codd-fix/karo-direct/recon-dual/shogun-cli-switch)、学習ループ台帳ALERT(lesson在庫7・memory在庫8498/useful_rate_pct
@@ -761,7 +776,7 @@ decisions:
     §5には教訓draft査読(confirm/edit/delete)の手順のみ存在し、『自動化コード変更時に既存ルール文書更新を確認する』手順自体が存在しない(記載は誤り)。cmd_save.sh・deploy_task.sh・gate系全域grep(既存ルール|rule_update|ルール更新)でも該当する自動チェックは0件。Level4化には(a)対象範囲の定義(scripts/hooks|gates|deploy_task.sh等どこまでを『自動化実装』とみなすか)(b)対応する『既存ルール』ファイルの自動特定方法(コード変更とinstructions/karo.md・context/karo-operations.md等の対応関係は静的マッピング不可、意味判断が必要)(c)false
     positive対策(全ての自動化変更がルール更新を要するわけではない)の3点設計が必要なため単独実装を見送り家老/将軍判断を要請
   source_cmd: cmd_reflux_promotion_202607092101_kotaro
-  status: pending
+  status: resolved
   created_at: '2026-07-09T21:14:06+09:00'
   created_by: kotaro
   origin: '[[LK-A21]] -> [[既存ルール更新チェックの実体不在(enforcement記載は誤り)]] -> [[PD登録で家老/将軍判断待ちへ整理]]'
@@ -769,6 +784,11 @@ decisions:
   wait_reason: dependency
   next_cmd_id: cmd_karo_hotfix_rule_doc_semantic_sync_20260801
   next_action: 自動化コードと恒久ルールの意味整合gate
+  resolved_at: '2026-08-28T20:42:51+09:00'
+  resolved_content: '実装unit化: cmd_karo_hotfix_pending_decision_infra_bundle_20260828
+    AC5へ統合。自動化コードと恒久rule-docの意味整合を既存semantic/context registryへ接続する'
+  resolved_by: cmd_karo_hotfix_pending_decision_infra_bundle_20260828
+  context_synced: true
 - id: PD-115
   type: escalation
   summary: workaround同一カテゴリ「trigger_silent_loss」が3件蓄積。構造対策cmdの起票・裁定が必要
@@ -1020,7 +1040,7 @@ decisions:
     0件。∴detector_fp_rate は loop_ledger/memory チャネルの偽陽性率を計測できない。これは本夜の支配的欠陥形『実装したが接続していない』の一例(同型:
     IB-V/IB-S/IB-X)。PD-105の第1要件(memory在庫ALERT)は条件消滅につきクローズ済み。'
   source_cmd: cmd_karo_recon_pending_decisions_triage_20260726
-  status: pending
+  status: resolved
   created_at: '2026-07-27T07:23:06+09:00'
   created_by: karo
   origin: '[[PD-105]] -> [[第1要件条件消滅]] -> [[第2要件を独立存続]]'
@@ -1028,6 +1048,11 @@ decisions:
   wait_reason: dependency
   next_cmd_id: cmd_karo_hotfix_detector_fp_channel_connection_20260801
   next_action: detector_fp_rateをloop_ledgerとmemoryへ接続
+  resolved_at: '2026-08-28T20:42:51+09:00'
+  resolved_content: '実装unit化: cmd_karo_hotfix_pending_decision_infra_bundle_20260828
+    AC6へ統合。detector_fp_rateをloop_ledger/memoryチャネルへ接続する'
+  resolved_by: cmd_karo_hotfix_pending_decision_infra_bundle_20260828
+  context_synced: true
 - id: PD-136
   type: escalation
   summary: workaround同一カテゴリ「report_yaml_format」根本原因「report_yaml_format::general」が3件蓄積。構造対策cmdの起票・裁定が必要
@@ -1050,10 +1075,15 @@ decisions:
   summary: RB6 CLEAR後、signals.momentum_dataへstandard・leaf FoF・nested FoFのmomentum
     scalarを保存する観測性契約を実装するか殿裁定が必要。現況は独立再計算からDB最終選抜結果まで一致するがscalar自体は未保存。RB6収束を優先し今は実装しない
   source_cmd: cmd_4296
-  status: pending
+  status: resolved
   created_at: '2026-08-13T15:49:50+09:00'
   created_by: karo
   origin: '[[cmd_4296]] -> [[momentum_scalar未保存]] -> [[RB6_CLEAR後の観測性裁定]]'
+  resolved_at: '2026-08-28T20:42:51+09:00'
+  resolved_content: 'shelved: RB6収束優先の元裁定を維持し、momentum scalar未保存は現行選抜パリティを壊していない。再開条件=殿がscalar永続化を明示裁定、またはsignals.momentum_data
+    schema変更cmd起票時'
+  resolved_by: karo_triage_20260828
+  context_synced: true
 - id: PD-138
   type: lord_decision
   summary: 'FoF子PF選択のtie-break規則: 6段キー(①config依存選択スコア合成ε1e-9→②12Mトータルリターン(両者13観測以上時のみ)→③設定来CAGR→④MaxDD小→⑤現保有維持→⑥設定来早い方、同率全採用廃止)。全6選択フィルタ共通層select_top_n_deterministicで解決。導入時1回の履歴組み替え(期待差分=cmd_4342
@@ -1082,3 +1112,29 @@ decisions:
     0)。GitHub復旧(gist同期成功 06:55)後は通常運用へ'
   resolved_by: cmd_4344
   context_synced: true
+- id: PD-140
+  type: action_required
+  summary: 'Free tier F1 deploy 前提: SUPABASE_JWT_SECRET を殿が Supabase ダッシュボード(Settings→API→JWT
+    Secret)から Render dm-signal backend service env へ直接投入(値は会話に貼らない)。rebalancer backend
+    env に該当 key 0(家老 22:50 一次)。併せて VIEWER_PASSWORD_FREE(9 月分 Free クーポン)も同 env へ。既定案=殿投入後に家老が
+    Render deploy を発火'
+  source_cmd: cmd_4422
+  status: resolved
+  created_at: '2026-08-30T22:51:26+09:00'
+  created_by: shogun
+  origin: '[[Free tier v3.1 §5 deploy前提]] -> [[JWT secret 正本=Supabase]] -> [[殿投入]]'
+  resolved_at: '2026-08-30T23:01:06+09:00'
+  resolved_content: '撤回: rebalancer backend は JWT secret を持たず(git grep 0 件)、DM も Supabase
+    Auth API(anon key+Bearer)方式へ差し替える cmd_4428 で解決。殿の投入不要'
+  resolved_by: direct
+  context_synced: false
+- id: PD-141
+  type: escalation
+  summary: workaround同一カテゴリ「infra」根本原因「infra::general」が3件蓄積。構造対策cmdの起票・裁定が必要
+  source_cmd: cmd_karo_ci_fix_33630722226_instructions_sync_fp_vocab_202609022153
+  status: pending
+  created_at: '2026-09-02T23:08:36+09:00'
+  created_by: karo
+  dedup_key: wa_escalation:infra::infra::general
+  occurrence: 1
+  last_seen_at: '2026-09-02T23:08:36+09:00'

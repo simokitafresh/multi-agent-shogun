@@ -1,96 +1,154 @@
 commands:
-  cmd_4458:
-    title: "単一 publisher U1 再検証(cmd_4448 の後継): Codex 忍者が隔離 clone で修正後の publisher_queue(enqueue の sequence lock eb136fdbc)に対し bats 9 本を選択実行し、並行 enqueue の FIFO 敵対 fixture をもう 1 本追加して順序契約を証明する"
+  cmd_4461:
+    title: "単一 publisher U8: cleanup manifest(§10 M1-M11)を実行結果台帳として起こし、flag ON 後に旧 push 経路(autopush/push_lane/safe_shared_main_ff/GA-PUSH1/merge driver/旧 test)を 1 batch 10 file 以内で物理削除する"
     status: delegated
     project: infra
-    purpose: "殿 2026-09-03 00:49『再検証 cmd を起票せよ』。cmd_4448(影丸 Codex)は隔離 clone で FIFO fixture が 8/9 FAIL=dequeue が epoch_seq の辞書順で秒境界をまたぐ並行 enqueue の順序を崩す欠陥を検出し fail-close(家老 ACCEPT)、才蔵の修正 lane(採番→原子的公開まで sequence lock)が origin eb136fdbc で着地(CLEAR 22:05、8 並行×20 回逆転 0)。§9.1 共通 AC に従い新番号で再検証(§14.1 U1 行の残件)"
-    scope_mode: FULL
-    target_path: tests/unit
-    acceptance_criteria:
-      AC1:
-        description: "origin/main(eb136fdbc 以降)を隔離 clone し、scripts/publisher_queue.sh の enqueue に sequence lock が到達していることを grep で確認した上で、選択実行 bash scripts/run_tests.sh file tests/unit/test_publisher_queue.bats を FAIL 0・SKIP 0 で通し(既存 9 test、cmd_4448 で FAIL した FIFO fixture を含む)、実行 log を報告 YAML に path で残す"
-        binary_check: "隔離 clone の enqueue に lock 取得の行が 1 以上 ∧ @test 9 本 ∧ 選択実行 FAIL 0 ∧ SKIP 0 ∧ 実行 log の path が報告にある か?"
-      AC2:
-        description: "設計書 §9.1 U1 行・§6 D2/D3/D14 から、既存 9 本に無い敵対 fixture を 1 本(候補: 秒境界をまたぐ 2 秒間の並行 enqueue 16 件で dequeue 順==投入順 / enqueue 途中で process を異常終了させても seq に欠番・重複が出ない / STATE_DIR が root 配下を指す時に rc≠0)選んで tests/unit/test_publisher_queue.bats に追加し、選択実行 bash scripts/run_tests.sh file tests/unit/test_publisher_queue.bats を FAIL 0・SKIP 0 で通して commit する。fixture が FAIL する場合は実装を直さず FAIL 内容を報告して停止する(修正は U1 実装 lane へ差し戻し)。中断再開時の成果物引継ぎ: 未 commit の worktree 差分と最終 bats 出力 log を報告 YAML の progress に path で残し、再開者はそこから継続する"
-        binary_check: "追加 fixture が 1 本 ∧ fixture 名と契約の出典(設計書の行)が報告にある ∧ 選択実行 FAIL 0 ∧ SKIP 0(FAIL 時は停止して FAIL 内容が報告にある)∧ 新規 test に非空 test_necessity ∧ 変更 file が tests/unit/test_publisher_queue.bats のみ か?"
-    command: |
-      1. 設計書 §9.0 共通則と §9.1 U1 行・§6 D2/D3/D14・§14.1 U1 行を読み、隔離 clone で origin/main を checkout して enqueue の sequence lock を grep で確認し、選択実行 bash scripts/run_tests.sh file tests/unit/test_publisher_queue.bats で FAIL 0・SKIP 0 を確認する。
-      2. 敵対 fixture を 1 本追加して同コマンドを再実行し、bash scripts/ninja_scope_commit.sh -m "<msg>" -- tests/unit/test_publisher_queue.bats で commit し、報告 YAML に source_sha と fixture 名・出典・実行 log path を書く。
-    assumptions:
-      claim: "U1 修正 eb136fdbc は origin/main 祖先(git merge-base --is-ancestor → yes、2026-09-03 00:52)。origin/main の tests/unit/test_publisher_queue.bats は @test 9 本。cmd_4448 は家老 ACCEPT で fail-close 済み(kagemaru_report_cmd_4448.yaml)。同 cmd 再配備は completed-peer guard の正規 BLOCK 対象のため新番号"
-      source: "docs/research/single_publisher_asis_tobe_5w1h_20260902.md §9.1 U1 §6 D2/D3/D14 §14.1、git merge-base --is-ancestor eb136fdbc origin/main、git show origin/main:tests/unit/test_publisher_queue.bats、queue/reports/kagemaru_report_cmd_4448.yaml"
-      trust: verified
-    depends_on: none
-    timeout_minutes: 30
-    estimated_minutes: 10
-    quality_gate:
-      q1_firefighting: "品質向上。理由: 修正版 U1 の FIFO 契約を修正者と別 CLI が並行 fixture で再検証する(§12)"
-      q2_learning: "奪わない。理由: fixture 選択は Codex 忍者の判断で、隔離 clone で完結する"
-      q3_next_quality: "上がる。理由: U1 は publisher の入口 queue であり、順序契約の証明が U3 active の前提"
-      q4_depth: "shallow — 理由: 実装は完了済み、bats 選択実行と fixture 1 本"
-      q5_verified_source: "structure_verified — 対象を実行して確認(2026-09-03 00:52): git merge-base --is-ancestor eb136fdbc origin/main → yes、git show origin/main:tests/unit/test_publisher_queue.bats | grep -c '^@test' → 9、gate_metrics 22:03 cmd_karo_hotfix_u1_publisher_queue_fifo_order CLEAR"
-      q6_not_hiding: "隠していない。理由: fixture FAIL 時は実装を直さず停止・報告する契約(AC2)。変更 file を bats 1 本に縛る"
-      q7_definition_verified: "FIFO・seq・STATE_DIR の定義は設計書 §6 D2/D3/D14 と §9.1 U1 行で確認(確認日: 2026-09-03)"
-      q8_why_what: "WHY: cmd_4448 が検出した欠陥の修正版を同じ型で再検証する / WHAT: Codex 忍者が隔離 clone で bats 9 本 FAIL 0+並行 fixture 1 本 commit / WHEN: 今夜(cmd_4457 と並走可) / WHERE: tests/unit / WHO: 家老配備(Codex 忍者) / HOW: §9.1 U1 行・D2/D3/D14 を fixture 出典に限定 / 複利: 第 1 波 3 unit の検証が全 CLEAR になる"
-      q9_firefighting_root_cause: "根本対応。理由: 修正の正しさを修正者以外の CLI が fixture で証明する構造を維持する"
-      q10_knowledge_boundary: "検証済み: 修正 commit の origin 到達、bats 9 本。スコープ外: 実装の修正、U2 再検証(cmd_4457)"
-      q11_not_already_done: "ls queue/reports/*cmd_4448* → kagemaru 1 本(FAIL 版)のみ、修正版に対する Codex 検証報告 0(2026-09-03 00:52)。rg -c 'cmd_4458' queue/shogun_to_karo.yaml → 0(起票前)"
-      q_ambiguity: "曖昧さ: 敵対 fixture の選択。解消: §9.1 U1 行・D2/D3/D14 を出典に限定し、出典の行を報告に書かせる"
-      q12_lord_30min_cost: "no — 殿 00:49『起票せよ』で確定、判定は bats"
-      diagnosis: "BLOCK理由: 該当なし(新規起票) / 対策: 新規 file 0(既存 bats へ fixture 追加のみ)"
-    environment_change: "type=lesson; file=projects/infra/lessons_shogun.yaml; pattern=cmdテンプレートルール"
-    delegated_at: "\"2026-09-03T01:18:29\""
-    origin: "[[cmd_4448_U1_検証_Codex_FAIL]] -> [[U1_FIFO_修正_eb136fdbc]] -> [[cmd_4458_U1_再検証]]"
-  cmd_4453:
-    title: "単一 publisher U5: scripts/publisher_admit.sh(承認 2 file の存在で admit、doc kind は将軍 identity+path allowlist、R13 db_migration は migration_ack 必須)と review_approval.sh karo ACCEPT --migration-ack(唯一の enqueue caller・唯一の ack writer)"
-    status: delegated
-    project: infra
-    purpose: "殿裁定 2026-09-02 20:44(§14.4: U5 は U3 dry-run と並走)。設計書 §9.1 U5・§4 R13(backend/app/db/ 配下の変更は逆 migration の path か irreversible_accepted の ack が無ければ admit しない)・観点 22/26(ACCEPT が enqueue の唯一の caller、karo.yaml の migration_ack は review_approval.sh だけが書く)。U3 dry-run は admit 無しで動くため、U5 完了時に enqueue 前へ admit を 1 行挿す"
+    purpose: "殿 2026-09-03 01:30『あまりに遅すぎる。先に進んでから戻ればいい』01:31『無駄な複雑化や不要な検証に時間をかけるな』。設計の最終ゴールは §11『commit→push→deploy が詰まらない』であり、旧経路(cmd_complete_gate 12k 行の autopush 区間、ninja_monitor push_lane、safe_shared_main_ff、GA-PUSH1、merge driver 6 rule、旧 test 群)が残る限り 09-02 の壁(root index 後退 6 回・push lane 停止・偽 BLOCK 6 例)は再発する。U7(cmd_4460)の flag ON で旧経路が no-op になった直後に、§10 manifest の順で削る。canary 7 日は撤回(殿 01:30)。可逆=各 batch は 1 commit、forward restore で戻す"
     scope_mode: FULL
     target_path: scripts
     acceptance_criteria:
       AC1:
-        description: "scripts/publisher_admit.sh admit <request.yaml> を新規作成: review_approvals/reports/<key>/{gunshi,karo}.yaml の両方存在で rc=0、不足なら rc=5+不足名を stderr。kind=doc(将軍投入)は将軍 identity+path allowlist(docs/ context/ queue/shogun_todo_map.md)で rc=0、allowlist 外 path 混入は rc=6。R13: request の paths に backend/app/db/ 配下が 1 つでもあれば request に db_migration: true を yaml_field_set で書き、karo.yaml に migration_ack: が無ければ rc=11+scripts/lib/publisher_event.sh append r13_reject+家老 inbox 1 通。承認 file を自分で作らない。scripts/publisher_queue.sh の enqueue 前に admit 呼出しを 1 行挿す(rc≠0 なら enqueue しない)。選択実行 bash scripts/run_tests.sh file tests/unit/test_publisher_admit.bats で FAIL 0・SKIP 0。中断再開時の成果物引継ぎ: 未 commit の worktree 差分と最終 bats 出力 log を報告 YAML の progress に path で残し、再開者はそこから継続する"
-        binary_check: "未承認 N 件で admitted 0 ∧ 承認 N 件で admitted N ∧ doc allowlist 外 admitted 0(rc=6) ∧ db_migration=true∧ack 無しで admitted 0 かつ events に r13_reject 1 行+家老 inbox 1 通 ∧ publisher_queue.sh の diff が enqueue 前 1 行の追加のみ ∧ 選択実行 FAIL 0 ∧ SKIP 0 ∧ 新規 test に非空 test_necessity か?"
+        description: "docs/research/single_publisher_cleanup_manifest_20260902.md を新規作成: 設計書 §10 M1-M11 の各行を『対象 file/関数・削除/縮退・移植先 contract test・移植先 test の現在の PASS 証跡(選択実行 log path)・削除後の参照数(rg)・batch 番号・状態』の列で台帳化する。移植先 contract test が未 GREEN の行は削除せず『blocked』と理由を書く(自分で test を足さない)。各行の rg census(削除対象の関数名/option 名/file 名を参照する他 file の件数)を取り、参照 0 でない行は blocked。台帳は忍者が書き、家老が承認してから AC2 へ進む。中断再開時の成果物引継ぎ: 未 commit の worktree 差分と最終 bats 出力 log を報告 YAML の progress に path で残し、再開者はそこから継続する"
+        binary_check: "台帳の行数 == §10 の M 行数(11)∧ 全行に移植先 test の log path または blocked 理由 ∧ 全行に rg 参照数 ∧ 家老承認の記録 1 か?"
       AC2:
-        description: "scripts/review_approval.sh の karo:ACCEPT 分岐の末尾で scripts/publisher_queue.sh enqueue <request> を呼ぶ 1 行を追加(=ACCEPT が enqueue の唯一の caller)、および karo ACCEPT <report> --migration-ack <逆 migration path|irreversible_accepted> option を追加して review_approvals/reports/<key>/karo.yaml に migration_ack: を書く(唯一の writer)。option 無し ACCEPT は migration_ack を書かない。tests/unit/test_publisher_admit.bats に『ack 有りで admitted 1』『option 無し ACCEPT は ack を書かない』を含め @test 8 本。変更 file は scripts/publisher_admit.sh(新規)・tests/unit/test_publisher_admit.bats(新規)・scripts/publisher_queue.sh(1 行)・scripts/review_approval.sh(ACCEPT 分岐+option)の 4 つのみ"
-        binary_check: "--migration-ack で書いた ack 有りで admitted 1 ∧ option 無し ACCEPT で karo.yaml に migration_ack 0 ∧ rg -c 'publisher_queue.sh enqueue' scripts/ の caller が review_approval.sh の 1 箇所のみ ∧ @test 8 本以上 ∧ 変更 file が上記 4 つのみ か?"
+        description: "PUBLISHER_SINGLE=1 が本番で ON(家老が cmd_4460 着地後に切替、掲示板に記録)であることを確認した上で、台帳の非 blocked 行を batch 1(M3 safe_shared_main_ff+M5 GA-PUSH1 区間+M10 の旧 test 5 file=10 file 以内)→batch 2(M2 push_lane 関数群+M8 auto_commit 群)→batch 3(M1 cmd_complete_gate autopush 関数群+M4 merge driver+M7 縮退)→batch 4(M6 ninja_scope_commit option 縮退+M9 SKILL 縮退+M11 旧 test)の順に削除する。各 batch ごとに: 削除→rg で削除対象の参照 0 を確認→影響 bats を選択実行(bash scripts/run_tests.sh file <残る bats>)で FAIL 0・SKIP 0→bash scripts/ninja_scope_commit.sh で 1 commit→台帳の状態を done に更新→報告 YAML progress に batch 番号と commit を追記。batch 途中で参照 0 にならない file が出たら、その file だけ残して blocked にし次へ進む(止まらない)。削除は git rm のみ(rm -rf 禁止)。1 batch 10 file 以内"
+        binary_check: "各 batch で削除対象の rg 参照 0 ∧ 残る bats 選択実行 FAIL 0 ∧ SKIP 0 ∧ 1 batch 1 commit ∧ 台帳の done+blocked == 11 ∧ deletion_justification が各 batch の commit message にある ∧ scripts の総行数が変更前(33,221)より減っている か?"
     command: |
-      1. 設計書 §9.0 共通則と §9.1 U5 行・§4 R13・§5 観点 22/26 を読み、origin/main を base に scripts/publisher_admit.sh と tests/unit/test_publisher_admit.bats を作り、publisher_queue.sh の enqueue 前に admit を 1 行挿して、選択実行 bash scripts/run_tests.sh file tests/unit/test_publisher_admit.bats で FAIL 0・SKIP 0 を確認する。
-      2. scripts/review_approval.sh の karo:ACCEPT 分岐に enqueue 呼出し 1 行と --migration-ack option を追加し、同 bats に ack 2 fixture を足して再実行し、bash scripts/ninja_scope_commit.sh -m "<msg>" -- scripts/publisher_admit.sh tests/unit/test_publisher_admit.bats scripts/publisher_queue.sh scripts/review_approval.sh で commit し、報告 YAML に source_sha と実行 log path を書く。
+      1. 設計書 §10 M1-M11・§9.1 U8 行・§13 H3 を読み、各行の移植先 test を選択実行して log path を取り、rg で参照 census を取り、docs/research/single_publisher_cleanup_manifest_20260902.md を起こして bash scripts/ninja_scope_commit.sh -m "<msg>" -- docs/research/single_publisher_cleanup_manifest_20260902.md で commit し、家老へ承認依頼(報告 YAML progress)。
+      2. 家老承認+flag ON 確認後、batch 1→4 の順に削除・rg 0・選択実行・commit・台帳更新を繰り返し、報告 YAML に batch ごとの commit と行数差分(wc -l 変更前→後)を書く。
     assumptions:
-      claim: "scripts/review_approval.sh に karo ACCEPT 分岐が存在(rg -c 'ACCEPT' → 18、2026-09-02 20:50)。scripts/publisher_queue.sh の enqueue は case 分岐 L161(git show 0e8d1b6d9)。scripts/publisher_admit.sh は未存在(ls → no)。review_approvals/reports/<key>/{gunshi,karo}.yaml の配置は本日の cmd_4445/4447 の gate で実在(queue/gates/cmd_4445/review_approvals/reports/)"
-      source: "docs/research/single_publisher_asis_tobe_5w1h_20260902.md §9.0 §9.1 U5 §4 R13 §5 観点 22/26 §14.4、scripts/review_approval.sh、git show 0e8d1b6d9:scripts/publisher_queue.sh、queue/gates/cmd_4445/review_approvals/"
+      claim: "§10 manifest は M1-M11 の 11 行(設計書 v3.10、2026-09-03 01:35 grep で確認)。scripts/cmd_complete_gate.sh+ninja_monitor.sh+safe_shared_main_ff.sh+.githooks/pre-push の総行数 33,221(wc -l)。tests/unit に test_cmd_complete_gate* が 12 file。移植先 contract test は U1-U6 の bats(test_publisher_queue 9/test_publish_artifact 13/test_gate_dual_read/test_publisher 4+7/test_publisher_admit 8/test_ledger_writer)が origin/main に実在。cleanup manifest file は未存在(ls 01:32)。U7=cmd_4460 は 01:33 委任"
+      source: "docs/research/single_publisher_asis_tobe_5w1h_20260902.md §10 §9.1 U8 §13 H3、wc -l scripts/cmd_complete_gate.sh scripts/ninja_monitor.sh scripts/safe_shared_main_ff.sh .githooks/pre-push、ls tests/unit/、ls docs/research/single_publisher_cleanup_manifest_20260902.md → 無し"
       trust: verified
-    depends_on: cmd_4445
-    timeout_minutes: 45
-    estimated_minutes: 35
+    depends_on: cmd_4460
+    timeout_minutes: 90
+    estimated_minutes: 60
     execution_env:
-      runtime_constraints: "bats は一時 SHOGUN_STATE_DIR と一時 review_approvals dir で完結(本番 queue/gates を触らない)。review_approval.sh の fixture は --dry-run 相当の一時 report path を使い本番 report を書かない"
-      long_runtime_reason: "AC1(admit の rc 表 0/5/6/11+enqueue 前 1 行)と AC2(review_approval の ACCEPT 分岐+--migration-ack writer)は『ACCEPT が enqueue の唯一の caller』『karo.yaml の ack は review_approval だけが書く』という 2 つの唯一性を同時に満たす必要があり、片方だけ先に入れると唯一性の bats が書けない。同型の U1 実測 2880s の約 7 割"
-      measured_runtime_sec: 2100
+      runtime_constraints: "削除は flag ON(旧経路 no-op)後にのみ行う。各 batch は 1 commit で forward restore 可能。bats は選択実行のみ(フルスイート禁止)。本番 daemon(publisher)は触らない"
+      long_runtime_reason: "11 行の census+移植先 test 選択実行(AC1 20 分)、batch 4 回の削除・rg・選択実行・commit(AC2 40 分)。batch 間で参照が消える順序(M3/M5→M2/M8→M1/M4/M7→M6/M9/M11)を 1 忍者で追う"
+      measured_runtime_sec: 3600
     split_decision:
       boundary_ac_ids: [AC1, AC2]
       integration_tasks: 1
-    serial_dependency_evidence: "AC2 の『ack 有りで admitted 1』fixture は AC1 の admit と AC2 の writer の両方を呼ぶ(観点 22/26 の唯一性は 2 file を同時に見ないと検証できない)。別忍者に分けると caller/writer の唯一性が commit 境界で一時的に破れる"
+    serial_dependency_evidence: "AC2 の batch 順序は AC1 の参照 census(どの file が他から参照されているか)で決まり、batch 2 以降は前 batch の削除で参照が 0 になることを前提にする。別忍者に分けると参照の消え方が追えず blocked が増える"
     quality_gate:
-      q1_firefighting: "品質向上。理由: 承認無し publish を構造で不可能にし、DB migration(R13)の逆 migration を ack で強制する。時間依存・意志依存のどちらも作らない(§13 H9)"
-      q2_learning: "奪わない。理由: 忍者は §9.1 U5 行の rc 表(0/5/6/11)を fixture にする。判断点は allowlist の 3 path のみで設計書に固定"
-      q3_next_quality: "上がる。理由: U5 が入ると U3 を active に切り替える前提(承認→enqueue→publish の一本道)が揃う"
-      q4_depth: "medium — 理由: rc 4 種と ack writer の 2 契約。fixture 8 本"
-      q5_verified_source: "structure_verified — 対象を実行して確認(2026-09-02 20:50): rg -c 'ACCEPT' scripts/review_approval.sh → 18、git show 0e8d1b6d9:scripts/publisher_queue.sh | grep -n 'enqueue)' → L161、ls scripts/publisher_admit.sh → no、ls queue/gates/cmd_4445/review_approvals/ → reports/"
-      q6_not_hiding: "隠していない。理由: 承認 file を admit が自分で作らない禁止を AC に明記。ack の writer を review_approval.sh の 1 箇所に限定し rg で証明"
-      q7_definition_verified: "admit・R13・migration_ack・唯一の caller の定義は設計書 v3.7 §9.1 U5 行・§4 R13・§5 観点 22/26 で確認(確認日: 2026-09-02)"
-      q8_why_what: "WHY: 殿 20:44→U3 と並走で第 2 波を今夜起票 / WHAT: publisher_admit.sh+bats 8 本+publisher_queue 1 行+review_approval ACCEPT 分岐 / WHEN: cmd_4445 CLEAR 後 / WHERE: scripts, tests/unit / WHO: 家老配備(U3/U1b と別の忍者) / HOW: §9.1 U5 行の 6 欄 / 複利: U3 active 切替(canary)の前提が揃う"
-      q9_firefighting_root_cause: "根本対応。理由: 承認と publish の結合を構造(唯一の caller)で作り、意志依存を排除する"
-      q10_knowledge_boundary: "検証済み: review_approval の ACCEPT 分岐、publisher_queue の enqueue 分岐、approvals 配置。スコープ外: U3 active 切替、doc kind の将軍側投入 script(U1b/U7)"
-      q11_not_already_done: "既存代替の現物確認(2026-09-02 20:50): ls scripts/publisher_admit.sh → 存在しない。rg -c 'publisher_admit' scripts/ docs/research/single_publisher_asis_tobe_5w1h_20260902.md → 1(設計書内参照のみ)。rg -c 'migration_ack' scripts/ → 0(writer 未実装)。rg -c 'cmd_4453' queue/shogun_to_karo.yaml → 0(起票前)"
-      q_ambiguity: "曖昧さ: doc kind の将軍 identity の判定方法。解消: request の from フィールド== shogun ∧ paths が allowlist 内、で判定(§9.1 U5 行)。他の identity 機構は作らない"
-      q12_lord_30min_cost: "no — 殿裁定で確定、判定は bats"
-      diagnosis: "BLOCK理由: 該当なし(新規起票) / 対策: 新規 file 2+既存 2 file へ各 1 箇所。depends_on=cmd_4445 は実依存(enqueue API の origin 到達)であり起票ゲート回避の流用ではない(LS-A04(47))"
+      q1_firefighting: "品質向上。理由: 壁の発生源(旧 push 経路 4 本)を物理的に消す。09-02 の hotfix 15 本が当たっていた file がなくなる"
+      q2_learning: "奪わない。理由: 判断点は『参照 0 でない file を blocked にして進む』の 1 つで AC に固定。移植先 test を自分で足さない"
+      q3_next_quality: "上がる。理由: gate/monitor の行数が減り、§11 after 計測(cmd 別)が意味を持つ"
+      q4_depth: "deep — 理由: 33k 行の中から 11 行分の関数群を batch 4 回で消す。可逆(1 batch 1 commit)"
+      q5_verified_source: "structure_verified — 対象を実行して確認(2026-09-03 01:35): sed -n '/^## §10/,/^## §11/p' 設計書 | grep -c '^| M' → 11、wc -l 4 file → 33,221、ls tests/unit | grep -c test_cmd_complete_gate → 12、ls docs/research/single_publisher_cleanup_manifest_20260902.md → 無し"
+      q6_not_hiding: "隠していない。理由: 参照 0 にならない file は消さず blocked として台帳に残す。削除は git rm のみで rm -rf を禁止。行数差分を報告させる"
+      q7_definition_verified: "M1-M11・移植先 contract test・deletion_justification の定義は設計書 §10 と CLAUDE.md Test Rules(既存 test 削除には deletion_justification)で確認(確認日: 2026-09-03)"
+      q8_why_what: "WHY: 殿 01:30 遅すぎる→旧経路を残したまま壁を直し続けるのをやめる / WHAT: manifest 台帳+batch 4 回の物理削除 / WHEN: cmd_4460 flag ON 直後 / WHERE: scripts, .githooks, tests/unit, docs/research / WHO: 家老配備(Claude 推奨、cmd_complete_gate の読解) / HOW: census→batch→rg 0→選択実行→1 commit / 複利: 以後の hotfix 対象が publisher 系 6 file に収束"
+      q9_firefighting_root_cause: "根本対応。理由: 壁を塞ぐのではなく壁の発生源を消す(§14.4 の『捨てる壁』を捨てる)"
+      q10_knowledge_boundary: "検証済み: manifest 行数、対象行数、移植先 test の実在。スコープ外: dm-signal 側の deploy check(U3b)、§11 after 計測(別 cmd)"
+      q11_not_already_done: "ls docs/research/single_publisher_cleanup_manifest_20260902.md → 無し(2026-09-03 01:35)。rg -c 'cmd_4461' queue/shogun_to_karo.yaml → 0(起票前)。旧経路の関数は全て現存(rg -c 'push_lane_publish_one' scripts/ninja_monitor.sh → 1 以上)"
+      q_ambiguity: "曖昧さ: 参照 census の範囲。解消: scripts/ tests/ .githooks/ skills/ docs/ の全体を rg し、コメント行は除外、関数名・option 名・file 名の完全一致で数える"
+      q12_lord_30min_cost: "no — 殿 01:30/01:31 で確定、判定は rg 件数と bats"
+      diagnosis: "BLOCK理由: 該当なし(新規起票) / 対策: 台帳 1 file+batch 4 回、depends_on=cmd_4460 は実依存(flag ON が削除の前提)"
     environment_change: "type=lesson; file=projects/infra/lessons_shogun.yaml; pattern=cmdテンプレートルール"
-    delegated_at: "\"2026-09-02T21:33:02\""
-    origin: "[[殿裁定_捨てる壁凍結_20260902_2044]] -> [[設計書§14.4_第2波並走]] -> [[cmd_4453_U5_admit]]"
+    delegated_at: "\"2026-09-03T01:37:00\""
+    origin: "[[殿指示_先に進んでから戻れ_20260903_0130]] -> [[cmd_4460_U7_flag下流化]] -> [[cmd_4461_U8_cleanup_manifest]]"
+  cmd_4460:
+    title: "単一 publisher U7: runtime push 3 script(cmd_complete_gate autopush / ninja_monitor push_lane / safe_shared_main_ff)の全 push 実行箇所を PUBLISHER_SINGLE=1 flag の下流に置く(関数本体は消さない)"
+    status: delegated
+    project: infra
+    purpose: "殿 2026-09-03 01:30『あまりに遅すぎる。先に進んでから戻ればいい』。U3 publisher daemon は 01:30 に active 起動済(pid 2103173)。設計書 §9.1 U7: 旧 3 経路の push を flag 1 本で no-op にし、origin 到達 commit を publisher/wrapper 由来 100% にする。flag は既定 OFF(現行維持)で着地させ、ON 切替は家老が U3 の最初の 2 request 突合後に行う(可逆=flag OFF で即戻る)"
+    scope_mode: FULL
+    target_path: scripts
+    acceptance_criteria:
+      AC1:
+        description: "scripts/cmd_complete_gate.sh・scripts/ninja_monitor.sh・scripts/safe_shared_main_ff.sh の 3 script で、実際に git push を実行する全箇所(census コマンド: rg -n 'git( -C [^ ]+)? push' <3 script> の出力から echo/コメント/log 文字列の行を除いた実行行)の各入口に、`[ \"${PUBLISHER_SINGLE:-0}\" = 1 ] && { <log 1 行>; return 0; }`(関数外なら exit 0 相当の分岐)を 1 行ずつ追加する。写像は設計書 §9.1 U7 行(autopush→publisher request kind=code、push_lane→publisher の root 同期、safe_shared_main_ff→不要)。関数本体は削除しない。既存 bats(tests/unit/test_cmd_complete_gate.bats・test_push_lane_integrate.bats・test_safe_shared_main_ff.bats)は選択実行 bash scripts/run_tests.sh file <各 bats> で FAIL 0・SKIP 0。中断再開時の成果物引継ぎ: 未 commit の worktree 差分と最終 bats 出力 log を報告 YAML の progress に path で残し、再開者はそこから継続する"
+        binary_check: "census の実行行 N 件の全てが flag 分岐の下流(各実行行の直前 10 行以内に PUBLISHER_SINGLE 判定がある)∧ 関数定義の削除 0(rg -c '^[a-z_]+\\(\\)' の件数が変更前後で同数)∧ 既存 3 bats 選択実行 FAIL 0 ∧ SKIP 0 か?"
+      AC2:
+        description: "tests/unit/test_publisher_single_flag.bats を新規作成: PUBLISHER_SINGLE=1 で (a) cmd_complete_gate の autopush 経路が push せず log 1 行で return 0 (b) ninja_monitor の push_lane が push せず log 1 行 (c) safe_shared_main_ff の push が no-op、PUBLISHER_SINGLE 未設定で従来どおり(fixture repo で origin に到達)。選択実行 bash scripts/run_tests.sh file tests/unit/test_publisher_single_flag.bats で FAIL 0・SKIP 0。flag の ON 切替手順(export PUBLISHER_SINGLE=1 を daemon 起動 env と gate 実行 env の両方に入れる箇所)を報告 YAML に 3 行で書く。変更 file は上記 3 script+新規 bats 1 の 4 つのみ"
+        binary_check: "新規 bats @test 4 本以上 ∧ flag ON で 3 経路の push 0(fixture origin の ref 不変)∧ flag OFF で従来どおり ∧ 選択実行 FAIL 0 ∧ SKIP 0 ∧ 新規 test に非空 test_necessity ∧ 変更 file が 4 つのみ か?"
+    command: |
+      1. 設計書 §9.1 U7 行と §10 M1/M2/M3 を読み、census コマンドで 3 script の push 実行行を列挙して報告 YAML に生貼付し、各入口へ flag 分岐 1 行を入れ、既存 3 bats を選択実行して FAIL 0・SKIP 0 を確認する。
+      2. tests/unit/test_publisher_single_flag.bats を作り選択実行で FAIL 0・SKIP 0 を確認し、bash scripts/ninja_scope_commit.sh -m "<msg>" -- scripts/cmd_complete_gate.sh scripts/ninja_monitor.sh scripts/safe_shared_main_ff.sh tests/unit/test_publisher_single_flag.bats で commit し、報告 YAML に source_sha・census 結果・ON 切替手順 3 行・実行 log path を書く。
+    assumptions:
+      claim: "3 script に PUBLISHER_SINGLE の出現 0(rg -c、2026-09-03 01:32)。push 実行行は cmd_complete_gate.sh の autopush 区間(L3583-3815 付近)、ninja_monitor.sh の push_lane_publish_one、safe_shared_main_ff.sh の 2 箇所(設計書 観点 27)。U3 daemon は active 稼働中(pid 2103173、01:30)。tests/unit に test_cmd_complete_gate.bats/test_push_lane_integrate.bats/test_safe_shared_main_ff.bats が実在"
+      source: "docs/research/single_publisher_asis_tobe_5w1h_20260902.md §9.1 U7 §10 M1-M3 §5 観点 27、rg -c PUBLISHER_SINGLE scripts/{cmd_complete_gate,ninja_monitor,safe_shared_main_ff}.sh → 0/0/0、ls tests/unit/test_*ff*.bats"
+      trust: verified
+    depends_on: none
+    timeout_minutes: 45
+    estimated_minutes: 30
+    execution_env:
+      runtime_constraints: "bats は fixture repo で完結(本番 origin へ push しない)。flag は既定 OFF で着地し本番挙動は不変。ON 切替は家老 lane"
+      long_runtime_reason: "3 script の push 実行行 census(cmd_complete_gate は 12,000 行超)と分岐挿入、既存 3 bats の選択実行(test_cmd_complete_gate は数分)、新規 bats 1 本。写像の一貫性(3 経路が同じ flag 名・同じ log 形式)を保つため 1 忍者"
+      measured_runtime_sec: 1800
+    split_decision:
+      boundary_ac_ids: [AC1, AC2]
+      integration_tasks: 1
+    serial_dependency_evidence: "AC2 の bats は AC1 で入れた 3 経路の分岐を同一 flag 名・同一 log 形式で叩く。別忍者に分けると flag 名/log 形式の契約が二重になる"
+    quality_gate:
+      q1_firefighting: "品質向上。理由: 旧経路の停止を『削除』ではなく『flag 1 本の下流化』で可逆に行い、U3 active との切替を 1 変数にする"
+      q2_learning: "奪わない。理由: 判断点は census の実行行の同定のみで、方法(rg+echo 除外)を AC に固定"
+      q3_next_quality: "上がる。理由: flag ON で origin 到達 commit が publisher 由来 100% になり、U8 の削除前提(旧経路 no-op)が揃う"
+      q4_depth: "medium — 理由: 3 script の分岐挿入+bats 1 本、本番挙動は既定 OFF で不変"
+      q5_verified_source: "structure_verified — 対象を実行して確認(2026-09-03 01:32): rg -c PUBLISHER_SINGLE scripts/cmd_complete_gate.sh scripts/ninja_monitor.sh scripts/safe_shared_main_ff.sh → 0/0/0、pgrep -af publisher.sh → pid 2103173(active)、rg -n 'git push' scripts/cmd_complete_gate.sh → autopush 区間 L3583-3815"
+      q6_not_hiding: "隠していない。理由: 関数本体を消さず flag で止めるので、異常時は flag OFF で即戻せる。census の実行行を報告に生貼付させる"
+      q7_definition_verified: "U7・PUBLISHER_SINGLE・写像の定義は設計書 §9.1 U7 行と観点 27 で確認(確認日: 2026-09-03)"
+      q8_why_what: "WHY: 殿 01:30『先に進んでから戻ればいい』=第 3 波を今夜起票 / WHAT: 3 script の push 実行行を flag 下流化+bats / WHEN: 今夜 / WHERE: scripts, tests/unit / WHO: 家老配備(idle 忍者、疾風/影丸) / HOW: census→分岐 1 行→bats / 複利: 切替が env 1 変数になり canary と rollback が秒で回る"
+      q9_firefighting_root_cause: "根本対応。理由: 二重経路(publisher+旧 autopush)の共存を flag で一本化し、分岐や後退の発生源を止める"
+      q10_knowledge_boundary: "検証済み: 3 script の flag 不在、U3 稼働。スコープ外: 関数削除(U8)、flag ON の本番切替(家老 lane)、dm-signal repo"
+      q11_not_already_done: "rg -c 'PUBLISHER_SINGLE' scripts/ → 0(2026-09-03 01:32)。ls tests/unit/test_publisher_single_flag.bats → 無し。rg -c 'cmd_4460' queue/shogun_to_karo.yaml → 0(起票前)"
+      q_ambiguity: "曖昧さ: 『push 実行行』の同定。解消: rg 'git( -C [^ ]+)? push' から echo/コメント/log 文字列行を除いた行を実行行とし、census 結果を報告に生貼付して家老が数える"
+      q12_lord_30min_cost: "no — 殿 01:30 で確定、判定は bats と census 件数"
+      diagnosis: "BLOCK理由: 該当なし(新規起票) / 対策: 3 script へ分岐 1 行ずつ+bats 1 本"
+    environment_change: "type=lesson; file=projects/infra/lessons_shogun.yaml; pattern=cmdテンプレートルール"
+    delegated_at: "\"2026-09-03T01:33:50\""
+    origin: "[[殿指示_先に進んでから戻れ_20260903_0130]] -> [[U3_active起動_0130]] -> [[cmd_4460_U7_flag下流化]]"
+  cmd_4459:
+    title: "LP 月次シグナル頁の保有表示バグ修正: 全月が現在の保有(hero.holding)を表示している→公開 showcase の hero.series に月ごとの holding を追加し、月次頁はその月の保有だけを表示する"
+    status: delegated
+    project: dm-signal
+    purpose: "殿 2026-09-03 00:52『/ja/signals/ が全期間で同じ signal になっているぞ、これはバグだな』。本番 curl 00:53 一次: /ja/signals/2008-10/ と /2020-03/ と /2026-08/ の保有欄が全て同じ(現在の XLU)。真因=lp の monthly-signal-page component L114 が data.hero.holding(最新 Signal の holding_signal)を全月に描画し、公開 showcase の hero.series は {year_month, multiple} だけで月ごとの holding を持たない(curl showcase で確認)。backend の signals 表には portfolio_id×date の holding_signal が全期間ある(db models の Signal L117-125)ので契約に足す"
+    scope_mode: FULL
+    target_path: backend
+    acceptance_criteria:
+      AC1:
+        description: "backend の public showcase route module の _hero_series で、MonthlyReturn の year_month ごとに signals 表(Signal.portfolio_id==hero.id)から『その月内で date が最大の行』の holding_signal を引き、series 要素へ holding(無ければ null)を追加する(既存 year_month/multiple は不変、追加 query は 1 回で全期間を取って月へ写像し N+1 にしない)。公開する holding は SHOWCASE_HERO_NAME(Basic-DualMomentum)のみで、他 PF の signal は出さない。backend の showcase 契約 test(既存 10 本)に『series の各要素に holding key がある』『2 つの月で holding が異なる fixture』『signal 無し月は null』を追加し、選択実行(cd backend && python -m pytest -q tests/test_public_showcase_contract.py)を FAIL 0・SKIP 0 で通す。中断再開時の成果物引継ぎ: 未 commit の worktree 差分と最終 pytest 出力 log を報告 YAML の progress に path で残し、再開者はそこから継続する"
+        binary_check: "series[i] に holding key が全要素にある ∧ fixture で 2 月の holding が異なる ∧ signal 無し月が null ∧ series の year_month/multiple が変更前と同値 ∧ hero 以外の PF の holding が payload に 0 ∧ 選択実行 FAIL 0 ∧ SKIP 0 ∧ 新規 test に非空 test_necessity か?"
+      AC2:
+        description: "lp の showcase lib の型に series[].holding?: string|null を追加し、monthly-signal-page component の保有欄を monthlySignalPoint(data, month).holding に置換する(null は『—』を表示。hero.holding へ fallback しない)。EN/JA の copy に『この月の保有』のラベル key を足し、現在の保有の文言は月次頁から外す。一覧 page(EN/JA)の各月行にも holding を併記する。cd lp && npm ci && npm run typecheck && npm run build が exit 0。build は backend 反映後の本番 showcase を fetch するため、backend の Render deploy 完了(post_deploy_check で showcase の series[0] に holding key)を確認してから行う。変更 file は command 2 の commit 対象 6 file 以内"
+        binary_check: "out の signals/2008-10 index と signals/2026-08 index の保有欄の文字列が異なる ∧ 保有欄に hero.holding 由来の値が旧月に 0 ∧ 一覧 index の月行に holding が 277 ∧ typecheck/build exit 0 ∧ rg -i 'free trial|first month free|初月無料' lp → 0 か?"
+    command: |
+      1. origin/main の backend/app/api/public_showcase.py(_hero_series L211-229、_build_hero L236-262、build_showcase_payload L297-)と backend/app/db/models.py(Signal L117-125)、backend/tests/test_public_showcase_contract.py を読み、AC1 を実装して選択実行 cd backend && python -m pytest -q tests/test_public_showcase_contract.py で FAIL 0・SKIP 0 を確認し、bash scripts/ninja_scope_commit.sh -m "<msg>" -- backend/app/api/public_showcase.py backend/tests/test_public_showcase_contract.py で commit する(backend の Render 自動 deploy と post_deploy_check は家老 lane)。
+      2. backend が本番反映された後、lp/lib/showcase.ts・lp/components/monthly-signal-page.tsx・lp/app/signals/page.tsx・lp/app/ja/signals/page.tsx・lp/copy/en.ts・lp/copy/ja.ts で AC2 を実装し、cd lp && npm ci && npm run typecheck && npm run build を通し out/ を grep で数え、bash scripts/ninja_scope_commit.sh -m "<msg>" -- lp/lib/showcase.ts lp/components/monthly-signal-page.tsx lp/app/signals/page.tsx lp/app/ja/signals/page.tsx lp/copy/en.ts lp/copy/ja.ts で commit し、報告 YAML に 2 commit の source_sha・test/build log path・out/ の件数を書く。本番 curl(/ja/signals/2008-10/ と /2026-08/ の保有欄が異なる)は家老 lane の post_deploy_check。
+    assumptions:
+      claim: "origin/main(DM-signal 8422d8c3 以降)の backend/app/api/public_showcase.py: _hero_series は MonthlyReturn(year_month, monthly_return)のみ、_build_hero の holding は latest_signal.holding_signal(L244)、latest_signal は Signal.date desc の先頭(L309)。Signal 表は portfolio_id×date 主キーで holding_signal 列あり(backend/app/db/models.py L117-125)。本番 showcase(dm-signal-backend.onrender.com /api/public/showcase、01:00)の hero.series は 277 要素 {year_month, multiple} のみ、hero.holding=XLU、as_of.series_end=2026-08-31。lp の monthly-signal-page.tsx L114 が data.hero.holding を描画(git show origin/main で 00:53 確認)。契約 test は 10 本"
+      source: "git show origin/main:backend/app/api/public_showcase.py, backend/app/db/models.py, lp/components/monthly-signal-page.tsx、curl https://dm-signal-backend.onrender.com/api/public/showcase(2026-09-03 01:00)、本番 curl /ja/signals/2008-10/ /2020-03/ /2026-08/(00:53)"
+      trust: verified
+    timeout_minutes: 60
+    estimated_minutes: 40
+    execution_env:
+      runtime_constraints: "backend の pytest は tests の fixture DB(SQLite)で完結し本番 DB へ書かない。lp の build は本番 showcase を read するだけ。backend deploy(Render 自動)と LP build の間に本番反映待ちがあるため、AC2 は AC1 の deploy 後に開始する"
+      long_runtime_reason: "backend 実装+contract test(15 分)→Render backend deploy(5-8 分)→LP build 2 回(各 3-5 分)。series の holding を backend と lp の両側で同じ契約(key 名・null 規則)に揃えるため 1 忍者で通す"
+      measured_runtime_sec: 2400
+    split_decision:
+      boundary_ac_ids: [AC1, AC2]
+      integration_tasks: 1
+    serial_dependency_evidence: "AC2 の LP build は AC1 の backend 変更が本番 showcase に反映されてから(build 時 fetch)でないと holding key が無く『—』だけの頁を生成する。別忍者に分けると契約(key 名・null 規則)の定義が二重になり、deploy 順序の待ち合わせが inbox 往復になる"
+    quality_gate:
+      q1_firefighting: "品質向上。理由: 月次頁の表示を『現在の保有』から『その月の保有』へ、データ契約(series[].holding)ごと直す。表示だけ隠す消火ではない"
+      q2_learning: "奪わない。理由: 忍者の判断点は『月内 date 最大の signal 行』の 1 つで AC に固定。null 規則も固定"
+      q3_next_quality: "上がる。理由: 月次頁が本当に月次の情報を持ち、SEO(cmd_4455/4456)で載せた 554 頁が誤情報でなくなる。次弾の月次チャートも同じ契約に乗る"
+      q4_depth: "medium — 理由: backend 1 関数+契約 test 3 本、lp 6 file の小変更、deploy 待ち合わせあり"
+      q5_verified_source: "structure_verified — 対象を実行して確認(2026-09-03 00:53-01:00): curl /ja/signals/{2008-10,2020-03,2026-08}/ の保有欄 → 3 頁同一、curl showcase | python → series keys ['year_month','multiple']、hero.holding XLU、git show origin/main:lp/components/monthly-signal-page.tsx | grep -n hero.holding → L114、git show origin/main:backend/app/api/public_showcase.py | sed -n 211,229p → MonthlyReturn のみ"
+      q6_not_hiding: "隠していない。理由: 表示欄を消して逃げず、契約に月次 holding を足して本当の値を出す。hero.holding への fallback 禁止を AC に明記し、旧月に現在値が混入しないことを binary で数える"
+      q7_definition_verified: "holding_signal(保有シグナル、リバランス設定考慮)と signal(生シグナル)の定義は backend/app/db/models.py L121-122 のコメントで確認。月次頁に出すのは holding_signal(確認日: 2026-09-03)"
+      q8_why_what: "WHY: 殿 00:52 全月同じ signal=バグ / WHAT: showcase series に月次 holding、LP は月の値だけ表示、一覧にも併記 / WHEN: 今夜(backend deploy→LP build の直列) / WHERE: DM-signal backend+lp / WHO: 家老配備(Claude 推奨、backend Python) / HOW: signals 表を 1 query で月へ写像 / 複利: 月次頁 554 本が正しい情報になり、以後の月も自動"
+      q9_firefighting_root_cause: "根本対応。理由: 契約に無い情報を表示側で埋めていた構造(hero.holding の流用)を、契約の拡張で解く"
+      q10_knowledge_boundary: "検証済み: showcase 契約の現物、Signal 表の列、LP の描画箇所。スコープ外: 月ごとのチャート画像、他 PF の signal 公開(禁則)、Free tier の gating"
+      q11_not_already_done: "既存代替の現物確認(2026-09-03 01:00): curl showcase | python -c 'series keys' → holding 無し、git grep -n 'holding' origin/main -- lp/components/monthly-signal-page.tsx → L13 型と L114 の hero.holding のみ、rg -c 'cmd_4459' queue/shogun_to_karo.yaml → 0(起票前)"
+      q_ambiguity: "曖昧さ: 月の holding をどの signal 行から取るか。解消: その月内で date が最大の Signal 行の holding_signal(無ければ null)。signal 列(生)ではなく holding_signal 列。報告 YAML に採用した規則を書く"
+      q12_lord_30min_cost: "no — 殿 00:52『バグだな』で確定、判定は test/build の件数"
+      diagnosis: "BLOCK理由: 該当なし(新規起票) / 対策: backend 1 関数+test、lp 6 file、deploy 待ち合わせ 1 回"
+    environment_change: "type=lesson; file=projects/infra/lessons_shogun.yaml; pattern=cmdテンプレートルール"
+    depends_on: none
+    delegated_at: "\"2026-09-03T01:27:07\""
+    origin: "[[殿指摘_月次頁が全期間同じsignal_20260903_0052]] -> [[showcase契約に月次holding無し_hero.holding流用]] -> [[cmd_4459_monthly_holding_contract]]"
   cmd_4449:
     title: "単一 publisher U2 検証: Codex 忍者が隔離 clone で publish_artifact(capture/restore)と gate_report_format の manifest 検証の bats を選択実行し、設計書契約から敵対 fixture を 1 本追加して multi-CLI 同品質を証明する(実装は飛猿=Claude Sonnet)"
     status: blocked
