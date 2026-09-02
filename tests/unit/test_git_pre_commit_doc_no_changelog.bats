@@ -48,6 +48,27 @@ run_check() {
   [ -z "$output" ]
 }
 
+@test "instruction provenance in a progress heading is not a changelog" {
+  run run_check "## §14 実装進捗台帳(殿指示 2026-09-02 17:18『随時更新』)"
+
+  [ "$status" -eq 0 ]
+  [ -z "$output" ]
+}
+
+@test "version comparison in a case-study heading is not a changelog" {
+  run run_check "## §5 v0→v5 の差分(要点)"
+
+  [ "$status" -eq 0 ]
+  [ -z "$output" ]
+}
+
+@test "ordinary change explanation in the body remains allowed" {
+  run run_check $'# Design\n\nこの変更では通常の設計説明を記載する。'
+
+  [ "$status" -eq 0 ]
+  [ -z "$output" ]
+}
+
 @test "line-form history marker remains blocked" {
   run run_check $'# Design\n\n変更: 実装を更新'
 
