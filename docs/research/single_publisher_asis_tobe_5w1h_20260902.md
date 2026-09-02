@@ -257,7 +257,7 @@ canary 判定: **(v1.8 殿裁定 D9)** infra と dm-signal の両 repo を U1 �
 
 - 根拠: 殿 2026-09-02 17:18『single_publisher_asis_tobe_5w1h_20260902.md も随時更新しないと後で混乱する』。設計本文(§0-§13)と実装の現在値を同じ file に置き、読者が別 file を探さずに済むようにする
 
-最終更新: 2026-09-02 20:32(push lane 1h 停止を解消、cmd_4450 report PASS・gate BLOCK 調査中)
+最終更新: 2026-09-02 20:48(殿裁定 20:44『捨てる壁に時間をかけるな』→§10 対象 file への hotfix 凍結、第 2 波は U3 dry-run 先頭)
 
 ### 14.1 unit × cmd 対応表(実装 cmd=片 CLI、検証 cmd=他 CLI・別番号。§9.1 共通 AC)
 | U | 内容 | 実装 cmd | 実装忍者(CLI) | 実装 commit | 実装 GATE | 検証 cmd | 検証忍者(CLI) | 検証 GATE |
@@ -296,6 +296,11 @@ canary 判定: **(v1.8 殿裁定 D9)** infra と dm-signal の両 repo を U1 �
 ### 14.3 §11 速度検証の現在値
 - before: snapshot 固定済み(merge 141/push 失敗 100/INTEGRATE 382/pre-push n=45 median 366 p90 1300/bats 270)。after は U8 完了後に同コマンドで計測(未着手)。
 - 中間観測(参考、after ではない): 2026-09-02 15:2x-16:44 の便停止 1h20m は旧経路(pre-push ancestry guard+多重 autopush)の欠陥で発生。§13 H3『台帳ノイズ同士の分岐』の実証=U6 の必要性を裏付ける。
+
+### 14.4 殿裁定 2026-09-02 20:44『捨てる壁に時間をかけるのは原理原則に反していないか』→ 凍結規則
+- 事実: 13:00 以降の hotfix/ci_fix 15 本の主対象は `scripts/cmd_complete_gate.sh`(6)・`extract_command_files.sh`(4)・`gate_gunshi_report_precheck.sh`(3)・`safe_shared_main_ff.sh`(2)・`gate_report_format.sh`(2)。§10 照合: M1/M8/M11(cmd_complete_gate autopush 群)、M3(safe_shared_main_ff)、M7(gate_report_format の ancestry/receipt 検査)、M2(push_lane)=**U7/U8 で捨てる file に今日の壁の大半が発生し、そこへ hotfix を当てていた**(殿 14:02『本質に戻ろう』の再発)。
+- 規則: (1) §10 M1-M11 対象 file と precheck 検出器への hotfix を凍結。偽陽性は 4 観点 LGTM を正本に karo_attention へ根拠を書いて APPROVE で越える (2) 例外は §9.1 の実装 file 自体の欠陥(U2 restore=cmd_4449 検出)と『実装の CLEAR を塞ぐ 1 行 bug』(ancestry WAIT 分岐末尾の無条件 ALL_CLEAR=false)のみ (3) 走行中 hotfix のうち規則対象は報告を待たず idle 化 (4) データで越えられる壁(cmd_4445 の duplicate deploy 混在→永久 WAIT)は code でなくデータ是正 (5) **第 2 波は U3(publisher daemon)の dry-run を先頭に前倒し**。U3 が origin へ publish し始めた時点で ancestry WAIT・push lane・GA-PUSH1 の壁は主線から消える。U1b/U5/U6 は U3 dry-run と並走。§3 の順序(U5→U3)は『U5 admit が無い間は enqueue 側で migration_ack を要求しない dry-run』で代替する。
+- 家老へ下知: msg_20260902_204528(規則)+追補(cmd_4445 データ是正・ALL_CLEAR 1 行のみ許可)。二値AC: 20:45 以降 §10 対象 file への新規 hotfix 配備 0(1 行を除く)、22:00 までに cmd_4445/4450 CLEAR。
 
 ## §5 レビュー履歴
 - v3.7(17:22)→ §14 実装進捗台帳(unit×cmd 対応表・第 1 波の壁と処置・§11 現在値)を追加。殿指示 17:18『随時更新しないと後で混乱する』。設計本文(§0-§13)は不変、家老 APPROVE 骨格(v3.5 blt_143800)に影響なし。以後 将軍 loop ごとに §14 を現在値で更新
