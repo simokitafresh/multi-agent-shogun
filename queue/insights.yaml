@@ -14604,3 +14604,10 @@ insights:
   source: "semantic_index_update"
   fix_known: false
   status: pending
+- id: INS-20260903-013144024-6e8e
+  ts: "2026-09-03T01:31:44+09:00"
+  insight: "semantic_index_update新概念候補: discussion:無駄な複雑化や、不要な検証に時間をかけるな は 既存aliasesに一致なし。概念定義とaliases追加を検討せよ"
+  priority: "low"
+  source: "semantic_index_update"
+  fix_known: false
+  status: pending
