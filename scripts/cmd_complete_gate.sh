@@ -14977,6 +14977,24 @@ fi
 
 # ─── 判定結果 ───
 echo ""
+# Reconcile the terminal verdict with the recorded reasons. A lane may flip ALL_CLEAR to
+# false on a transient WAIT (e.g. L4 ancestry before the publisher lands) and then clear the
+# WAIT without restoring the flag, which used to surface as the false
+# "fallback_gate_status:...:PASS" BLOCK that needed a manual re-run (2026-09-03, 6 cases).
+if [ "$ALL_CLEAR" != true ] && [ ${#BLOCK_REASONS[@]} -eq 0 ] \
+    && [ ${#MISSING_GATES[@]} -eq 0 ] && [ ${#WAIT_REASONS[@]} -eq 0 ]; then
+    _reconcile_all_done=true
+    for _g in "${ALL_GATES[@]}"; do
+        _g_deferred=false
+        for _dg in "${DEFERRED_GATES[@]}"; do [ "$_g" = "$_dg" ] && { _g_deferred=true; break; }; done
+        [ "$_g_deferred" = true ] && continue
+        [ -f "$GATES_DIR/${_g}.done" ] || { _reconcile_all_done=false; break; }
+    done
+    if [ "$_reconcile_all_done" = true ]; then
+        echo "  gate status reconciled: no block/missing/wait reasons and every gate .done -> CLEAR"
+        ALL_CLEAR=true
+    fi
+fi
 if [ "$ALL_CLEAR" = true ]; then
     if [[ ! "${SHOGUN_COMPLETION_GENERATION:-}" =~ ^[0-9a-f]{64}$ ]]; then
         echo "GATE BLOCK: ${CMD_ID}:completion_generation_missing_or_invalid"
