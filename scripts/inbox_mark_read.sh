@@ -341,6 +341,7 @@ if review_requirements:
         review_entries = []
     for message, report_name in review_requirements:
         message_at = parse_timestamp(message.get("timestamp"))
+        msg_fingerprint = str(message.get("report_fingerprint") or "")
         matched = False
         if report_name and message_at is not None:
             for review_entry in review_entries:
@@ -348,6 +349,43 @@ if review_requirements:
                     continue
                 review_times = [parse_timestamp(value) for value in nested_values(review_entry, "reviewed_at")]
                 if any(review_at is not None and review_at >= message_at for review_at in review_times):
+                    # fingerprint照合: メッセージにfingerprintがある場合、
+                    # review_approvals/reports/<key>/gunshi.yaml のfingerprintと
+                    # 一致するか確認する。不一致=旧LGTMは新fp報告に無効→BLOCK。
+                    # fingerprintがないメッセージは従来通り許可。
+                    if msg_fingerprint:
+                        cmd_id = ""
+                        for key in ("cmd_id", "parent_cmd"):
+                            v = entry.get(key) if isinstance(entry, dict) else None
+                            if not v:
+                                v = message.get(key)
+                            if v:
+                                cmd_id = str(v)
+                                break
+                        if cmd_id:
+                            gates_dir = os.path.join(os.path.dirname(review_log_path), "..", "queue", "gates", cmd_id, "review_approvals", "reports")
+                            fp_matched = False
+                            if os.path.isdir(gates_dir):
+                                for key_dir in os.listdir(gates_dir):
+                                    gunshi_path = os.path.join(gates_dir, key_dir, "gunshi.yaml")
+                                    if os.path.isfile(gunshi_path):
+                                        try:
+                                            with open(gunshi_path, encoding="utf-8") as gf:
+                                                gdata = yaml.safe_load(gf) or {}
+                                            if str(gdata.get("fingerprint") or "") == msg_fingerprint:
+                                                fp_matched = True
+                                                break
+                                            if str(gdata.get("generation") or "") == msg_fingerprint:
+                                                fp_matched = True
+                                                break
+                                        except Exception:
+                                            pass
+                            if not fp_matched:
+                                print(
+                                    f"BLOCK: fingerprint mismatch msg_id={message.get('id', '')} msg_fp={msg_fingerprint[:16]}... no matching gunshi.yaml approval",
+                                    file=sys.stderr,
+                                )
+                                raise SystemExit(2)
                     matched = True
                     break
         if not matched:

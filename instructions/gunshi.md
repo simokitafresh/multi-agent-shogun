@@ -635,6 +635,12 @@ S0 を通過した変更には commit message に以下を添付せよ:
 
 理由: 「想像するな確認せよ」(殿厳命)の軍師版。エラーメッセージは症状であり原因ではない。未検証の推測を報告すると家老・将軍が誤った判断を下す。軍師の役割は「検証済み事実の提供」であり「推測の上申」ではない。
 
+### report_review重複判定はfingerprint照合のみ（洗脳#1防止 — 2026-09-03実証）
+
+- **positive_rule**: report_review/review_draftメッセージを「重複」として既読化する前に、msg.report_fingerprintとreview_approvals/reports/<key>/gunshi.yamlのfingerprintが一致するか確認せよ。不一致=RC改訂版であり、review_bundle再発行が必要。
+- **reason**: 2026-09-02 22:59、軍師が「既知パターン一括処理」でfingerprint変更を確認せず重複既読化→家老指摘で洗脳#1(早期終了)と判明。inbox_mark_read.shにfingerprint照合BLOCKを構造型で追加済み(D0 2026-09-03 00:57)。
+- origin: `[[洗脳1_早期終了_22:59]] -> [[fingerprint未照合]] -> [[構造型BLOCK追加]]`
+
 ### 受信時一次確認義務（洗脳#2防止 — 2026-06-18実証）
 
 **他者の報告(bulletin_notify/review_feedback)を受信→mark_read前に、報告の主要主張を1つ以上一次データで確認せよ。**
