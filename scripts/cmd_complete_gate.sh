@@ -3257,6 +3257,7 @@ PY
 }
 
 push_from_clean_worktree() {
+    [ "${PUBLISHER_SINGLE:-0}" = 1 ] && { echo "PUBLISHER_SINGLE cmd_complete_gate push=0 result=SKIP reason=publisher_request"; return 0; }
     local repo="$1" upstream_ref="$2" remote="$3" push_ref="$4" remote_tip="$5"
     shift 5
     local source_sha temp_parent clean_repo rc cleanup_rc published_sha remote_sha push_output fallback_used
@@ -3468,6 +3469,7 @@ cmd_complete_gate_auto_push_ancestry_wait() {
 }
 
 push_task_repositories() {
+    [ "${PUBLISHER_SINGLE:-0}" = 1 ] && { echo "PUBLISHER_SINGLE cmd_complete_gate push=0 result=SKIP reason=publisher_request"; return 0; }
     local task_file repo upstream_ref upstream_sha remote push_ref remote_tip source_sha
     local overlap_blocking all_sources_ok push_rc attempt max_retries refreshed_tip
     local source_equivalent_used source_base_tree_noop source_noop_all
