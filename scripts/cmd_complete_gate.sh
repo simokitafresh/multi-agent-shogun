@@ -160,7 +160,7 @@ task = task_raw.get("task", task_raw) if isinstance(task_raw, dict) else {}
 if isinstance(task, dict):
     ids.update(str(task.get(key) or "").strip() for key in ("task_id", "parent_cmd", "cmd_id", "issued_cmd_id"))
 ids.discard("")
-for request in sorted(queue.rglob("*.request")):
+for request in sorted(queue.glob("*.request")):
     matched = any(value in request.name for value in ids)
     if not matched:
         try:

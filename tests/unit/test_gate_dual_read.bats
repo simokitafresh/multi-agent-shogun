@@ -65,6 +65,23 @@ run_gate() {
     [[ "$output" != *"BLOCK"* ]]
 }
 
+# test_necessity: 処理済み request(publisher が dequeued/ や rc/ へ移した後の
+# request)は publisher_pending にならないこと。queue.rglob 実装は publish_queue
+# 配下を再帰走査するため、この request を未処理と誤認して永久 WAIT していた
+# (実例: cmd_4453・影丸 idle_flag hotfix)。glob(top-level only)化後も
+# report が持つ commit_hash の CLEAR 経路が塞がれないことを固定する。
+@test "a processed request left in publish_queue/dequeued/ does not block as pending" {
+    report="$TEST_ROOT/dequeued.yaml"
+    printf 'verdict: PASS\ntask_id: task_dual_read\ncommit_hash: %s\n' "$(<"$TEST_ROOT/commit")" > "$report"
+    mkdir -p "$STATE_DIR/publish_queue/dequeued"
+    stale_request="$STATE_DIR/publish_queue/dequeued/001_task_dual_read.request"
+    printf 'task_id: task_dual_read\n' > "$stale_request"
+    run_gate "$report"
+    [ "$status" -eq 0 ]
+    [[ "$output" == "PASS: PUSHED: report commit "* ]]
+    [[ "$output" != *"publisher_pending"* ]]
+}
+
 @test "published path/blob mismatch fails closed" {
     report="$TEST_ROOT/mismatch.yaml"
     printf 'verdict: PASS\npublished_sha: %s\npath_blob_receipt:\n  - path: state\n    blob: "%040d"\n' \
