@@ -13589,3 +13589,10 @@ insights:
   source: "semantic_index_update"
   fix_known: false
   status: pending
+- id: INS-20260902-175946184-01dc
+  ts: "2026-09-02T17:59:46+09:00"
+  insight: "lord_conversation教訓候補: target=shogun trigger=inbound_lord detail=どう思う？最初よりAI臭は減ったがインパクトが少ないよな。これは詩でもあるべきだ。中原中也と一緒だ。繰り返しのリズム感を削除しすぎて感情移入のポイントや読む人の呼吸が苦しくなるのでは？特に現代はスマホなどで縦画面で読んでいく。行間がなさすぎるのもつらいと感じる人間が多い気がするな"
+  priority: "medium"
+  source: "lord_conversation:lesson_candidate"
+  fix_known: false
+  status: pending
