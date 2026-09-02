@@ -49,7 +49,10 @@ teardown() {
     [ "$(stat -c '%a' "$ROOT/scripts/ledger_writer.sh")" = 755 ]
 }
 
-@test "mixed batch moves only the failed op to rc and leaves origin unchanged" {
+# test_necessity (2026-09-03 shogun 07:14 (a)(b)): one bad op must not hold the other ledgers
+# hostage. The failed op parks in rc/, the valid op is applied+published, applied/ and the
+# event are confirmed before root sync, and the daemon loop stays healthy (rc 0).
+@test "mixed batch parks only the failed op in rc and publishes the valid op" {
     mkdir -p "$STATE/ledger_inbox/insights"
     entry='- id: INS-VALID\n  status: pending\n  insight: valid'
     hash="$(printf '%b\n' "$entry" | sha256sum | awk '{print $1}')"
@@ -58,10 +61,11 @@ teardown() {
     before="$(git --git-dir="$REMOTE" rev-parse refs/heads/main)"
     run env SHOGUN_STATE_DIR="$STATE" PUBLISHER_REPO_ROOT="$PUBROOT" \
         PUBLISHER_MODE=active PUBLISHER_ONCE=1 bash "$ROOT/scripts/publisher.sh" 2>&1
-    [ "$status" -ne 0 ]
-    [ "$(git --git-dir="$REMOTE" rev-parse refs/heads/main)" = "$before" ]
+    [ "$status" -eq 0 ]
+    [ "$(git --git-dir="$REMOTE" rev-parse refs/heads/main)" != "$before" ]
     [ "$(find "$STATE/ledger_inbox/insights/rc" -maxdepth 1 -type f -name '*000000000002.yaml' | wc -l)" -eq 1 ]
-    [ "$(find "$STATE/ledger_inbox/insights/applied" -maxdepth 1 -type f -name '*000000000001.yaml' 2>/dev/null | wc -l)" -eq 0 ]
-    [ "$(find "$STATE/ledger_inbox/insights" -maxdepth 1 -type f -name '*.yaml' | wc -l)" -ge 1 ]
-    [ "$(jq -r 'select(.kind=="ledger") | .kind' "$STATE/publish_queue/events.jsonl" | wc -l)" -eq 1 ]
+    [ "$(find "$STATE/ledger_inbox/insights/applied" -maxdepth 1 -type f -name '*000000000001.yaml' 2>/dev/null | wc -l)" -eq 1 ]
+    [ "$(find "$STATE/ledger_inbox/insights" -maxdepth 1 -type f -name '*.yaml' | wc -l)" -eq 0 ]
+    [ "$(jq -r 'select(.kind=="ledger") | .kind' "$STATE/publish_queue/events.jsonl" | wc -l)" -eq 2 ]
+    git -C "$PUBROOT" log -1 --format='%B' | grep -q 'publisher: ledger batch n=1 ledgers=insights'
 }
