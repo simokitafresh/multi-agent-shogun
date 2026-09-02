@@ -14472,11 +14472,24 @@ insights:
   priority: "low"
   source: "semantic_index_update"
   fix_known: false
-  status: pending
+  status: "resolved"
+  resolved_reason: "semantic map generation verified the candidate is represented or intentionally ignored"
+  action_artifact: "semantic_map=/home/simokitafresh/multi-agent-shogun/context/semantic-map.md;semantic_index=/home/simokitafresh/multi-agent-shogun/docs/semantic-index/index.md"
+  resolved_at: "2026-09-03T00:47:05.920757"
 - id: INS-20260903-004640431-0765
   ts: "2026-09-03T00:46:40+09:00"
   insight: "semantic_index_update新概念候補: discussion:家老との連携は順調か？家老と協議して検証をお互いにせよ は 既存aliasesに一致なし。概念定義とaliases追加を検討せよ"
   priority: "low"
   source: "semantic_index_update"
+  fix_known: false
+  status: "resolved"
+  resolved_reason: "semantic map generation verified the candidate is represented or intentionally ignored"
+  action_artifact: "semantic_map=/home/simokitafresh/multi-agent-shogun/context/semantic-map.md;semantic_index=/home/simokitafresh/multi-agent-shogun/docs/semantic-index/index.md"
+  resolved_at: "2026-09-03T00:47:06.031387"
+- id: INS-20260903-005003655-6aa9
+  ts: "2026-09-03T00:50:03+09:00"
+  insight: "[[家老との連携は順調か？家老と協議して検証をお互いにせよ]] semantic_stress_test candidate_aliases: NO_MATCH source=lord query=家老との連携は順調か？家老と協議して検証をお互いにせよ"
+  priority: "low"
+  source: "semantic_stress_test"
   fix_known: false
   status: pending
