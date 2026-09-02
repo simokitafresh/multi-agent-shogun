@@ -15026,3 +15026,444 @@ insights:
   source: "semantic_map_generate:new_file"
   fix_known: false
   status: pending
+- id: INS-20260903-065807070-84cd
+  ts: "2026-09-03T06:58:07+09:00"
+  insight: "[[小太郎]] semantic_stress_test candidate_aliases: NO_MATCH source=cmds query=cmd_4464(小太郎、正当 FAIL・家老 fail-close 05:25)の実測: 削除できたのは M10(旧 test 5 file)のみ、M1-M9/M11 は census 修正後も非ゼロ参照。真因は census ではなく構造=(a) M1 は source_only_path_snapshot() が 5 関数を fallback chai"
+  priority: "low"
+  source: "semantic_stress_test"
+  fix_known: false
+  status: pending
+- id: INS-20260903-065842746-0f0f
+  ts: "2026-09-03T06:58:42+09:00"
+  insight: "[[家老が 04 58 deepdive 追体験で発見 blt 045610 U6 の ledger route は本番で一]] semantic_stress_test candidate_aliases: NO_MATCH source=cmds query=家老が 04:58 deepdive 追体験で発見(blt_045610): cmd_4454(U6)の ledger route は本番で一度も動いていない。理由 2 層=(a) 4 caller(insight/lesson/bulletin/workaround)の 検査が file mode 644 のため常に偽で legacy 直書きへ沈黙フォール"
+  priority: "low"
+  source: "semantic_stress_test"
+  fix_known: false
+  status: pending
+- id: INS-20260903-065928273-0c97
+  ts: "2026-09-03T06:59:28+09:00"
+  insight: "[[単一 publisher U8 AC2 PUBLISHER SINGLE ON 04 37 の下で cleanup ma]] semantic_stress_test candidate_aliases: NO_MATCH source=cmds query=単一 publisher U8 AC2: PUBLISHER_SINGLE ON(04:37)の下で cleanup manifest の M1-M11 を batch 4 回(各 1 commit・10 file 以内)で物理削除し、census は同 batch で消える file を除いて数える"
+  priority: "low"
+  source: "semantic_stress_test"
+  fix_known: false
+  status: pending
+- id: INS-20260903-070120825-ecc4
+  ts: "2026-09-03T07:01:20+09:00"
+  insight: "[[殿指示 13 25『どのロールがどの CLI モデルでも必要十分に同じレベルで作業を続けられるのが我らの仕組み』 殿下問]] semantic_stress_test candidate_aliases: NO_MATCH source=cmds query=殿指示 2026-09-02 13:25『どのロールがどの CLI/モデルでも必要十分に同じレベルで作業を続けられるのが我らの仕組み』+殿下問 19:02『順調に進んでいるか？進展が遅すぎないか？』→第 1 波 3 unit の検証 cmd を CLEAR 待ちにせず今起票して直列を 1 段減らす(depends_on で配備は自動待機)。U2(cmd_44"
+  priority: "low"
+  source: "semantic_stress_test"
+  fix_known: false
+  status: pending
+- id: INS-20260903-070156422-430a
+  ts: "2026-09-03T07:01:56+09:00"
+  insight: "[[単一 publisher U8 第 2 弾 旧 push 経路を『関数 chain それを縛る test』の単位で ba]] semantic_stress_test candidate_aliases: NO_MATCH source=cmds query=単一 publisher U8 第 2 弾: 旧 push 経路を『関数 chain+それを縛る test』の単位で batch 削除し(M10 と同型)、M7 は blocked 確定で除外、4 file 合計行数を 33,238 から減らす"
+  priority: "low"
+  source: "semantic_stress_test"
+  fix_known: false
+  status: pending
+- id: INS-20260903-070251107-3330
+  ts: "2026-09-03T07:02:51+09:00"
+  insight: "[[AC1 の台帳 docs research single publisher cleanup manifest 2026]] semantic_stress_test candidate_aliases: NO_MATCH source=cmds query=cmd_4461 AC1 の台帳(docs/research/single_publisher_cleanup_manifest_20260902.md、a7b41bc64)は M2-M8 を『surviving references が非 0』で blocked にしたが、その参照元の大半は同時に消す旧 test(M10/M11)と旧経路どうしの相互参照で"
+  priority: "low"
+  source: "semantic_stress_test"
+  fix_known: false
+  status: pending
+- id: INS-20260903-070326449-c42d
+  ts: "2026-09-03T07:03:26+09:00"
+  insight: "[[殿指示 13 25『どのロールがどの CLI モデルでも必要十分に同じレベルで作業を続けられるのが我らの仕組み』・15 ]] semantic_stress_test candidate_aliases: NO_MATCH source=cmds query=殿指示 2026-09-02 13:25『どのロールがどの CLI/モデルでも必要十分に同じレベルで作業を続けられるのが我らの仕組み』・15:30『二巡目配備問題にてこずっていそうだ』→設計書 v3.6 §9.1 共通 AC(2 巡目=別 cmd 番号の検証 task。同 cmd 再配備は deploy_task completed-peer guard の"
+  priority: "low"
+  source: "semantic_stress_test"
+  fix_known: false
+  status: pending
+- id: INS-20260903-070517840-9af2
+  ts: "2026-09-03T07:05:17+09:00"
+  insight: "semantic_map_generate新規ファイル候補: `archive/cmd-chronicle/2026-08.md` は semantic index未登録。既存概念へのfile追加または新概念定義を検討せよ"
+  priority: "low"
+  source: "semantic_map_generate:new_file"
+  fix_known: false
+  status: pending
+- id: INS-20260903-070553340-0cf7
+  ts: "2026-09-03T07:05:53+09:00"
+  insight: "semantic_map_generate新規ファイル候補: `docs/research/cmd_4416_post_deploy_check.md` は semantic index未登録。既存概念へのfile追加または新概念定義を検討せよ"
+  priority: "low"
+  source: "semantic_map_generate:new_file"
+  fix_known: false
+  status: pending
+- id: INS-20260903-070744845-2428
+  ts: "2026-09-03T07:07:44+09:00"
+  insight: "semantic_map_generate新規ファイル候補: `docs/research/gunshi_idle_lgtm_block_root_cause_analysis_20260831.md` は semantic index未登録。既存概念へのfile追加または新概念定義を検討せよ"
+  priority: "low"
+  source: "semantic_map_generate:new_file"
+  fix_known: false
+  status: pending
+- id: INS-20260903-070820386-e9a9
+  ts: "2026-09-03T07:08:20+09:00"
+  insight: "semantic_map_generate新規ファイル候補: `docs/research/karo-review-trial-fixes-20260901.md` は semantic index未登録。既存概念へのfile追加または新概念定義を検討せよ"
+  priority: "low"
+  source: "semantic_map_generate:new_file"
+  fix_known: false
+  status: pending
+- id: INS-20260903-071932329-ab8e
+  ts: "2026-09-03T07:19:32+09:00"
+  insight: "SKILL.md追従task[9abfd94ce2d8bec9]: gate_skill_script_refs.sh rc=2。以下のSKILL.md×変更script対を検分し、必要な追従更新と実測を行え: skills/cmd-complete/SKILL.md <- scripts/review_approval.sh; skills/codd-fix/SKILL.md <- scripts/cmd_complete_gate.sh; skills/cdp-browse/SKILL.md <- scripts/cdp/cdp_measure.sh; skills/cdp-browse/SKILL.md <- scripts/note_draft.sh; skills/cmd-complete/SKILL.md <- scripts/archive_completed.sh; skills/cmd-complete/SKILL.md <- scripts/gates/gate_context_freshness.sh; skills/cmd-complete/SKILL.md <- scripts/review_bundle.py; skills/codd-refactor/SKILL.md <- scripts/run_tests.sh; skills/dashboard-update/SKILL.md <- scripts/gates/gate_report_format.sh; skills/dream/SKILL.md <- scripts/gates/gate_lesson_health.sh; skills/dream/SKILL.md <- scripts/insight_write.sh; skills/dream/SKILL.md <- scripts/memory_db_query.sh; skills/gate-sync/SKILL.md <- scripts/bulletin_write.sh; skills/gate-sync/SKILL.md <- scripts/gates/gate_gunshi_accuracy.sh; skills/hot-script-design/SKILL.md <- scripts/ninja_scope_commit.sh; skills/idle-persist/SKILL.md <- scripts/bulletin_write.sh; skills/idle-persist/SKILL.md <- scripts/inbox_write.sh; skills/karo-direct/SKILL.md <- scripts/deploy_task.sh; skills/ninja-commit/SKILL.md <- scripts/ninja_scope_commit.sh; skills/ninja-commit/SKILL.md <- scripts/report_field_set.sh; skills/note-writer/SKILL.md <- scripts/note_draft.sh; skills/recon-dual/SKILL.md <- scripts/deploy_task.sh; skills/report-write/SKILL.md <- scripts/report_field_set.sh; skills/review-bundle/SKILL.md <- scripts/bulletin_write.sh; skills/review-bundle/SKILL.md <- scripts/inbox_write.sh; skills/review-bundle/SKILL.md <- scripts/review_bundle.py; skills/sengoku-writer/SKILL.md <- scripts/note_draft.sh; skills/shogun-cli-switch/SKILL.md <- scripts/agent_respawn.sh; skills/shogun-cli-switch/SKILL.md <- scripts/lib/cli_lookup.sh; skills/shogun-cli-switch/SKILL.md <- scripts/ninja_monitor.sh; skills/shogun-teire/SKILL.md <- scripts/gates/gate_lesson_health.sh; skills/three-layer-penetrate/SKILL.md <- scripts/memory_db_query.sh; skills/verdict-check/SKILL.md <- scripts/gates/gate_report_format.sh; skills/weekly-report-writer/SKILL.md <- scripts/note_draft.sh"
+  priority: "medium"
+  source: "skill_script_refs:9abfd94ce2d8bec9"
+  fix_known: false
+  status: pending
+- id: INS-20260903-071951713-5411
+  ts: "2026-09-03T07:19:51+09:00"
+  insight: "semantic_index_update未登録cmd originノード: [[家老発見_ledger_route未稼働_20260903_0458]] は既存aliasesに一致なし。類似概念TOP3: growth_loop(学習ループ; alias=loop_ledger; score=14.5) / skill_design_rules(Skill設計ルール; alias=skill outcome ledger; score=14.4) / commit_reservation_ledger_asis_tobe_20260805(commit予約台帳設計; alias=commit reservation ledger; score=13.9)。概念定義とaliases追加を検討せよ"
+  priority: "low"
+  source: "semantic_index_update"
+  fix_known: false
+  status: pending
+- id: INS-20260903-073155361-fb77
+  ts: "2026-09-03T07:31:55+09:00"
+  insight: "semantic_map_generate新規ファイル候補: `CONTRIBUTING.md` は semantic index未登録。既存概念へのfile追加または新概念定義を検討せよ"
+  priority: "low"
+  source: "semantic_map_generate:new_file"
+  fix_known: false
+  status: pending
+- id: INS-20260903-073155563-45df
+  ts: "2026-09-03T07:31:55+09:00"
+  insight: "semantic_map_generate新規ファイル候補: `LICENSE` は semantic index未登録。既存概念へのfile追加または新概念定義を検討せよ"
+  priority: "low"
+  source: "semantic_map_generate:new_file"
+  fix_known: false
+  status: pending
+- id: INS-20260903-073155773-f7a4
+  ts: "2026-09-03T07:31:55+09:00"
+  insight: "semantic_map_generate新規ファイル候補: `Makefile` は semantic index未登録。既存概念へのfile追加または新概念定義を検討せよ"
+  priority: "low"
+  source: "semantic_map_generate:new_file"
+  fix_known: false
+  status: pending
+- id: INS-20260903-073155978-f9d5
+  ts: "2026-09-03T07:31:55+09:00"
+  insight: "semantic_map_generate新規ファイル候補: `README.md` は semantic index未登録。既存概念へのfile追加または新概念定義を検討せよ"
+  priority: "low"
+  source: "semantic_map_generate:new_file"
+  fix_known: false
+  status: pending
+- id: INS-20260903-073156198-d034
+  ts: "2026-09-03T07:31:56+09:00"
+  insight: "semantic_map_generate新規ファイル候補: `README_ja.md` は semantic index未登録。既存概念へのfile追加または新概念定義を検討せよ"
+  priority: "low"
+  source: "semantic_map_generate:new_file"
+  fix_known: false
+  status: pending
+- id: INS-20260903-073156381-e36c
+  ts: "2026-09-03T07:31:56+09:00"
+  insight: "semantic_map_generate新規ファイル候補: `SECURITY.md` は semantic index未登録。既存概念へのfile追加または新概念定義を検討せよ"
+  priority: "low"
+  source: "semantic_map_generate:new_file"
+  fix_known: false
+  status: pending
+- id: INS-20260903-073156569-c22c
+  ts: "2026-09-03T07:31:56+09:00"
+  insight: "semantic_map_generate新規ファイル候補: `android/.gitignore` は semantic index未登録。既存概念へのfile追加または新概念定義を検討せよ"
+  priority: "low"
+  source: "semantic_map_generate:new_file"
+  fix_known: false
+  status: pending
+- id: INS-20260903-073156768-8bc0
+  ts: "2026-09-03T07:31:56+09:00"
+  insight: "semantic_map_generate新規ファイル候補: `android/README.md` は semantic index未登録。既存概念へのfile追加または新概念定義を検討せよ"
+  priority: "low"
+  source: "semantic_map_generate:new_file"
+  fix_known: false
+  status: pending
+- id: INS-20260903-073156980-01d9
+  ts: "2026-09-03T07:31:56+09:00"
+  insight: "semantic_map_generate新規ファイル候補: `android/README_ja.md` は semantic index未登録。既存概念へのfile追加または新概念定義を検討せよ"
+  priority: "low"
+  source: "semantic_map_generate:new_file"
+  fix_known: false
+  status: pending
+- id: INS-20260903-073157161-df3f
+  ts: "2026-09-03T07:31:57+09:00"
+  insight: "semantic_map_generate新規ファイル候補: `android/app/src/main/java/com/shogun/android/MainActivity.kt` は semantic index未登録。既存概念へのfile追加または新概念定義を検討せよ"
+  priority: "low"
+  source: "semantic_map_generate:new_file"
+  fix_known: false
+  status: pending
+- id: INS-20260903-073157353-4e98
+  ts: "2026-09-03T07:31:57+09:00"
+  insight: "semantic_map_generate新規ファイル候補: `android/app/src/main/java/com/shogun/android/data/GistFile.kt` は semantic index未登録。既存概念へのfile追加または新概念定義を検討せよ"
+  priority: "low"
+  source: "semantic_map_generate:new_file"
+  fix_known: false
+  status: pending
+- id: INS-20260903-073157558-1d8a
+  ts: "2026-09-03T07:31:57+09:00"
+  insight: "semantic_map_generate新規ファイル候補: `android/app/src/main/java/com/shogun/android/data/GistRepository.kt` は semantic index未登録。既存概念へのfile追加または新概念定義を検討せよ"
+  priority: "low"
+  source: "semantic_map_generate:new_file"
+  fix_known: false
+  status: pending
+- id: INS-20260903-073157773-7004
+  ts: "2026-09-03T07:31:57+09:00"
+  insight: "semantic_map_generate新規ファイル候補: `android/app/src/main/java/com/shogun/android/ui/ShogunScreen.kt` は semantic index未登録。既存概念へのfile追加または新概念定義を検討せよ"
+  priority: "low"
+  source: "semantic_map_generate:new_file"
+  fix_known: false
+  status: pending
+- id: INS-20260903-073158008-7176
+  ts: "2026-09-03T07:31:58+09:00"
+  insight: "semantic_map_generate新規ファイル候補: `android/app/src/main/java/com/shogun/android/util/VoiceDictionary.kt` は semantic index未登録。既存概念へのfile追加または新概念定義を検討せよ"
+  priority: "low"
+  source: "semantic_map_generate:new_file"
+  fix_known: false
+  status: pending
+- id: INS-20260903-073158218-80eb
+  ts: "2026-09-03T07:31:58+09:00"
+  insight: "semantic_map_generate新規ファイル候補: `android/app/src/test/java/com/shogun/android/util/VoiceDictionaryTest.kt` は semantic index未登録。既存概念へのfile追加または新概念定義を検討せよ"
+  priority: "low"
+  source: "semantic_map_generate:new_file"
+  fix_known: false
+  status: pending
+- id: INS-20260903-073158438-f555
+  ts: "2026-09-03T07:31:58+09:00"
+  insight: "semantic_map_generate新規ファイル候補: `archive/cmd-chronicle/2026-03-02_to_03-08.md` は semantic index未登録。既存概念へのfile追加または新概念定義を検討せよ"
+  priority: "low"
+  source: "semantic_map_generate:new_file"
+  fix_known: false
+  status: pending
+- id: INS-20260903-073158644-1b3b
+  ts: "2026-09-03T07:31:58+09:00"
+  insight: "semantic_map_generate新規ファイル候補: `archive/cmd-chronicle/2026-03.md` は semantic index未登録。既存概念へのfile追加または新概念定義を検討せよ"
+  priority: "low"
+  source: "semantic_map_generate:new_file"
+  fix_known: false
+  status: pending
+- id: INS-20260903-073158838-1734
+  ts: "2026-09-03T07:31:58+09:00"
+  insight: "semantic_map_generate新規ファイル候補: `archive/cmd-chronicle/2026-05.md` は semantic index未登録。既存概念へのfile追加または新概念定義を検討せよ"
+  priority: "low"
+  source: "semantic_map_generate:new_file"
+  fix_known: false
+  status: pending
+- id: INS-20260903-073159027-d832
+  ts: "2026-09-03T07:31:59+09:00"
+  insight: "semantic_map_generate新規ファイル候補: `archive/cmd-chronicle/2026-08.md` は semantic index未登録。既存概念へのfile追加または新概念定義を検討せよ"
+  priority: "low"
+  source: "semantic_map_generate:new_file"
+  fix_known: false
+  status: pending
+- id: INS-20260903-073159221-a92b
+  ts: "2026-09-03T07:31:59+09:00"
+  insight: "semantic_map_generate新規ファイル候補: `archive/frozen/gunshi.md` は semantic index未登録。既存概念へのfile追加または新概念定義を検討せよ"
+  priority: "low"
+  source: "semantic_map_generate:new_file"
+  fix_known: false
+  status: pending
+- id: INS-20260903-073159431-3d7a
+  ts: "2026-09-03T07:31:59+09:00"
+  insight: "semantic_map_generate新規ファイル候補: `archive/frozen/gunshi_inbox.yaml` は semantic index未登録。既存概念へのfile追加または新概念定義を検討せよ"
+  priority: "low"
+  source: "semantic_map_generate:new_file"
+  fix_known: false
+  status: pending
+- id: INS-20260903-073159646-f868
+  ts: "2026-09-03T07:31:59+09:00"
+  insight: "semantic_map_generate新規ファイル候補: `archive/frozen/gunshi_to_karo.yaml` は semantic index未登録。既存概念へのfile追加または新概念定義を検討せよ"
+  priority: "low"
+  source: "semantic_map_generate:new_file"
+  fix_known: false
+  status: pending
+- id: INS-20260903-073159893-c65b
+  ts: "2026-09-03T07:31:59+09:00"
+  insight: "semantic_map_generate新規ファイル候補: `codd.bak.1776241363/.gitignore` は semantic index未登録。既存概念へのfile追加または新概念定義を検討せよ"
+  priority: "low"
+  source: "semantic_map_generate:new_file"
+  fix_known: false
+  status: pending
+- id: INS-20260903-073200115-6f8b
+  ts: "2026-09-03T07:32:00+09:00"
+  insight: "semantic_map_generate新規ファイル候補: `codd/.codd/dag.json` は semantic index未登録。既存概念へのfile追加または新概念定義を検討せよ"
+  priority: "low"
+  source: "semantic_map_generate:new_file"
+  fix_known: false
+  status: pending
+- id: INS-20260903-073200302-4c99
+  ts: "2026-09-03T07:32:00+09:00"
+  insight: "semantic_map_generate新規ファイル候補: `codd/brownfield/agent_status_brownfield.md` は semantic index未登録。既存概念へのfile追加または新概念定義を検討せよ"
+  priority: "low"
+  source: "semantic_map_generate:new_file"
+  fix_known: false
+  status: pending
+- id: INS-20260903-073201954-99e5
+  ts: "2026-09-03T07:32:01+09:00"
+  insight: "semantic_map_generate新規ファイル候補: `CONTRIBUTING.md` は semantic index未登録。既存概念へのfile追加または新概念定義を検討せよ"
+  priority: "low"
+  source: "semantic_map_generate:new_file"
+  fix_known: false
+  status: pending
+- id: INS-20260903-073202185-53b4
+  ts: "2026-09-03T07:32:02+09:00"
+  insight: "semantic_map_generate新規ファイル候補: `LICENSE` は semantic index未登録。既存概念へのfile追加または新概念定義を検討せよ"
+  priority: "low"
+  source: "semantic_map_generate:new_file"
+  fix_known: false
+  status: pending
+- id: INS-20260903-073202391-341f
+  ts: "2026-09-03T07:32:02+09:00"
+  insight: "semantic_map_generate新規ファイル候補: `Makefile` は semantic index未登録。既存概念へのfile追加または新概念定義を検討せよ"
+  priority: "low"
+  source: "semantic_map_generate:new_file"
+  fix_known: false
+  status: pending
+- id: INS-20260903-073202585-8b6a
+  ts: "2026-09-03T07:32:02+09:00"
+  insight: "semantic_map_generate新規ファイル候補: `README.md` は semantic index未登録。既存概念へのfile追加または新概念定義を検討せよ"
+  priority: "low"
+  source: "semantic_map_generate:new_file"
+  fix_known: false
+  status: pending
+- id: INS-20260903-073202788-2845
+  ts: "2026-09-03T07:32:02+09:00"
+  insight: "semantic_map_generate新規ファイル候補: `README_ja.md` は semantic index未登録。既存概念へのfile追加または新概念定義を検討せよ"
+  priority: "low"
+  source: "semantic_map_generate:new_file"
+  fix_known: false
+  status: pending
+- id: INS-20260903-073202985-8560
+  ts: "2026-09-03T07:32:02+09:00"
+  insight: "semantic_map_generate新規ファイル候補: `SECURITY.md` は semantic index未登録。既存概念へのfile追加または新概念定義を検討せよ"
+  priority: "low"
+  source: "semantic_map_generate:new_file"
+  fix_known: false
+  status: pending
+- id: INS-20260903-073203224-cfca
+  ts: "2026-09-03T07:32:03+09:00"
+  insight: "semantic_map_generate新規ファイル候補: `android/.gitignore` は semantic index未登録。既存概念へのfile追加または新概念定義を検討せよ"
+  priority: "low"
+  source: "semantic_map_generate:new_file"
+  fix_known: false
+  status: pending
+- id: INS-20260903-073203475-17ae
+  ts: "2026-09-03T07:32:03+09:00"
+  insight: "semantic_map_generate新規ファイル候補: `android/README.md` は semantic index未登録。既存概念へのfile追加または新概念定義を検討せよ"
+  priority: "low"
+  source: "semantic_map_generate:new_file"
+  fix_known: false
+  status: pending
+- id: INS-20260903-073203696-8c7d
+  ts: "2026-09-03T07:32:03+09:00"
+  insight: "semantic_map_generate新規ファイル候補: `android/README_ja.md` は semantic index未登録。既存概念へのfile追加または新概念定義を検討せよ"
+  priority: "low"
+  source: "semantic_map_generate:new_file"
+  fix_known: false
+  status: pending
+- id: INS-20260903-073203900-2ab1
+  ts: "2026-09-03T07:32:03+09:00"
+  insight: "semantic_map_generate新規ファイル候補: `android/app/src/main/java/com/shogun/android/MainActivity.kt` は semantic index未登録。既存概念へのfile追加または新概念定義を検討せよ"
+  priority: "low"
+  source: "semantic_map_generate:new_file"
+  fix_known: false
+  status: pending
+- id: INS-20260903-073204102-6c48
+  ts: "2026-09-03T07:32:04+09:00"
+  insight: "semantic_map_generate新規ファイル候補: `android/app/src/main/java/com/shogun/android/data/GistFile.kt` は semantic index未登録。既存概念へのfile追加または新概念定義を検討せよ"
+  priority: "low"
+  source: "semantic_map_generate:new_file"
+  fix_known: false
+  status: pending
+- id: INS-20260903-073204349-0580
+  ts: "2026-09-03T07:32:04+09:00"
+  insight: "semantic_map_generate新規ファイル候補: `android/app/src/main/java/com/shogun/android/data/GistRepository.kt` は semantic index未登録。既存概念へのfile追加または新概念定義を検討せよ"
+  priority: "low"
+  source: "semantic_map_generate:new_file"
+  fix_known: false
+  status: pending
+- id: INS-20260903-073204572-6e0e
+  ts: "2026-09-03T07:32:04+09:00"
+  insight: "semantic_map_generate新規ファイル候補: `android/app/src/main/java/com/shogun/android/ui/ShogunScreen.kt` は semantic index未登録。既存概念へのfile追加または新概念定義を検討せよ"
+  priority: "low"
+  source: "semantic_map_generate:new_file"
+  fix_known: false
+  status: pending
+- id: INS-20260903-073204788-a656
+  ts: "2026-09-03T07:32:04+09:00"
+  insight: "semantic_map_generate新規ファイル候補: `android/app/src/main/java/com/shogun/android/util/VoiceDictionary.kt` は semantic index未登録。既存概念へのfile追加または新概念定義を検討せよ"
+  priority: "low"
+  source: "semantic_map_generate:new_file"
+  fix_known: false
+  status: pending
+- id: INS-20260903-073205019-b5e7
+  ts: "2026-09-03T07:32:05+09:00"
+  insight: "semantic_map_generate新規ファイル候補: `android/app/src/test/java/com/shogun/android/util/VoiceDictionaryTest.kt` は semantic index未登録。既存概念へのfile追加または新概念定義を検討せよ"
+  priority: "low"
+  source: "semantic_map_generate:new_file"
+  fix_known: false
+  status: pending
+- id: INS-20260903-073205269-5a26
+  ts: "2026-09-03T07:32:05+09:00"
+  insight: "semantic_map_generate新規ファイル候補: `archive/cmd-chronicle/2026-03-02_to_03-08.md` は semantic index未登録。既存概念へのfile追加または新概念定義を検討せよ"
+  priority: "low"
+  source: "semantic_map_generate:new_file"
+  fix_known: false
+  status: pending
+- id: INS-20260903-073205486-e9ea
+  ts: "2026-09-03T07:32:05+09:00"
+  insight: "semantic_map_generate新規ファイル候補: `archive/cmd-chronicle/2026-03.md` は semantic index未登録。既存概念へのfile追加または新概念定義を検討せよ"
+  priority: "low"
+  source: "semantic_map_generate:new_file"
+  fix_known: false
+  status: pending
+- id: INS-20260903-073205844-0ee7
+  ts: "2026-09-03T07:32:05+09:00"
+  insight: "semantic_map_generate新規ファイル候補: `archive/cmd-chronicle/2026-05.md` は semantic index未登録。既存概念へのfile追加または新概念定義を検討せよ"
+  priority: "low"
+  source: "semantic_map_generate:new_file"
+  fix_known: false
+  status: pending
+- id: INS-20260903-073206129-818b
+  ts: "2026-09-03T07:32:06+09:00"
+  insight: "semantic_map_generate新規ファイル候補: `archive/cmd-chronicle/2026-08.md` は semantic index未登録。既存概念へのfile追加または新概念定義を検討せよ"
+  priority: "low"
+  source: "semantic_map_generate:new_file"
+  fix_known: false
+  status: pending
+- id: INS-20260903-073206364-f454
+  ts: "2026-09-03T07:32:06+09:00"
+  insight: "semantic_map_generate新規ファイル候補: `archive/frozen/gunshi.md` は semantic index未登録。既存概念へのfile追加または新概念定義を検討せよ"
+  priority: "low"
+  source: "semantic_map_generate:new_file"
+  fix_known: false
+  status: pending
+- id: INS-20260903-073206658-1193
+  ts: "2026-09-03T07:32:06+09:00"
+  insight: "semantic_map_generate新規ファイル候補: `archive/frozen/gunshi_inbox.yaml` は semantic index未登録。既存概念へのfile追加または新概念定義を検討せよ"
+  priority: "low"
+  source: "semantic_map_generate:new_file"
+  fix_known: false
+  status: pending
+- id: INS-20260903-073206942-e5d6
+  ts: "2026-09-03T07:32:06+09:00"
+  insight: "semantic_map_generate新規ファイル候補: `archive/frozen/gunshi_to_karo.yaml` は semantic index未登録。既存概念へのfile追加または新概念定義を検討せよ"
+  priority: "low"
+  source: "semantic_map_generate:new_file"
+  fix_known: false
+  status: pending
+- id: INS-20260903-073207257-8d70
+  ts: "2026-09-03T07:32:07+09:00"
+  insight: "semantic_map_generate新規ファイル候補: `codd.bak.1776241363/.gitignore` は semantic index未登録。既存概念へのfile追加または新概念定義を検討せよ"
+  priority: "low"
+  source: "semantic_map_generate:new_file"
+  fix_known: false
+  status: pending
+- id: INS-20260903-073207537-f2e9
+  ts: "2026-09-03T07:32:07+09:00"
+  insight: "semantic_map_generate新規ファイル候補: `codd/.codd/dag.json` は semantic index未登録。既存概念へのfile追加または新概念定義を検討せよ"
+  priority: "low"
+  source: "semantic_map_generate:new_file"
+  fix_known: false
+  status: pending
+- id: INS-20260903-073207813-3f81
+  ts: "2026-09-03T07:32:07+09:00"
+  insight: "semantic_map_generate新規ファイル候補: `codd/brownfield/agent_status_brownfield.md` は semantic index未登録。既存概念へのfile追加または新概念定義を検討せよ"
+  priority: "low"
+  source: "semantic_map_generate:new_file"
+  fix_known: false
+  status: pending
