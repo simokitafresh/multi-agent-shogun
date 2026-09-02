@@ -276,3 +276,52 @@ FIX
     run bash -c "diff <(seq 1 600) <(jq -r '.seq' '$ev' | sort -n)"
     [ "$status" -eq 0 ]
 }
+
+# test_necessity: next_seq()はflock保持下でSEQ_FILEへ書いた直後、request公開(mv)前に
+# processが異常終了しうる(§9.1 U1敵対fixture候補2)。そのseqが後続enqueueへ重複払出し
+# されないこと、公開されなかった残骸(*.request.tmp.*)がdequeueへ混入しないこと、
+# FIFO順序が生き残ったrequest間で崩れないことを固定する。crashは実プロセスkillの
+# タイミング依存を避け、next_seq()と同じ操作(SEQ_FILEへseqを書き、対応するrequestを
+# 公開しない)をflock外から直接再現して決定的に検証する。
+@test "enqueue crash between seq allocation and publish leaves no seq duplicate and no orphan admitted" {
+    printf 'task_id: req1\n' > "$FIXTURE_ROOT/req1.yaml"
+    run bash "$PQ" enqueue "$FIXTURE_ROOT/req1.yaml"
+    [ "$status" -eq 0 ]
+
+    run cat "$STATE_DIR/publish_queue/.seq"
+    [ "$status" -eq 0 ]
+    [ "$output" -eq 1 ]
+
+    # next_seq()がseq=2を払い出した直後にprocessがcp/mvへ到達せず異常終了した状態を再現する:
+    # SEQ_FILEはseq=2まで進むが、対応する*.requestは存在せず、cpが作った0byte残骸だけが残る。
+    printf '2' > "$STATE_DIR/publish_queue/.seq"
+    touch "$STATE_DIR/publish_queue/9999999999_000000000002_crashed.request.tmp.99999"
+
+    printf 'task_id: req3\n' > "$FIXTURE_ROOT/req3.yaml"
+    run bash "$PQ" enqueue "$FIXTURE_ROOT/req3.yaml"
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"_000000000003_"* ]]
+
+    # 欠番(seq=2)は生じるが重複はしない: 生きているrequestは1と3のみ
+    run bash -c "find '$STATE_DIR/publish_queue' -maxdepth 1 -name '*.request' | wc -l"
+    [ "$status" -eq 0 ]
+    [ "$output" -eq 2 ]
+
+    run bash "$PQ" dequeue
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"req1.request" ]]
+
+    run bash "$PQ" dequeue
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"req3.request" ]]
+
+    # 孤児tmpはdequeueの対象に混入しない(空queueへ到達しrc=3)
+    run bash "$PQ" dequeue
+    [ "$status" -eq 3 ]
+    [ -z "$output" ]
+
+    # 孤児tmpは*.request命名規約に一致しないため放置されたまま残る(クリーンアップは本unit対象外)
+    run bash -c "find '$STATE_DIR/publish_queue' -maxdepth 1 -name '*.tmp.*' | wc -l"
+    [ "$status" -eq 0 ]
+    [ "$output" -eq 1 ]
+}
