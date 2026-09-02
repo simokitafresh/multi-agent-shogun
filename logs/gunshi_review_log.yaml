@@ -1,5 +1,105 @@
 - cmd_id: cmd_4199
 - cmd_id: cmd_reflux_insight_202609030728_hayate
+  review_type: report
+  report_ninja: hayate
+  report_task_id: cmd_reflux_insight_202609030728_hayate_exact
+  report_verdict: FAIL
+  verdict: FAIL
+  verified_files:
+  - queue/insights.yaml:INS-20260902-141250259-bc78
+  findings_summary: FAIL報告適切。共有queue世代競合で対象ID消失→L1586に従い正しく停止。再配備待ち
+  karo_attention: FAIL正当。共有queue/insights.yaml世代競合(publisher ledger active)で対象消失。対象insight
+    INS-20260902-141250259-bc78の再配備が必要
+  lesson_quality: OK
+  escalation_needed: false
+  finding_categories:
+  - assumptions
+  - numbers
+  - premortem
+  - adversarial
+  - ambiguity
+  observations:
+  - HEAD:queue/insights.yamlに対象ID存在→現worktreeで1829行消失→対象ID不在
+  - uncommitted_worker_policy=blockに該当し正しく停止。変更なし
+  - diagnose_reason明確。L1586教訓の再適用。publisher ledger active確認済み
+  adversarial_review: 'N/A: 変更なしFAIL報告'
+  step3_5_verified: true
+  operational_simulation:
+    command: precheck GATE_PREDICTION
+    expected: BLOCK (bc:no)
+    actual: BLOCK (bc:no検出)
+    result: PASS
+  causal_chain: reflux配備→共有queue世代競合(publisher ledger)→対象消失→policy block→FAIL報告
+  brainwash_check: '#1no #2no #3no #4no #5no #6no #7no #8no HEAD/worktree diff+publisher
+    ps確認'
+  gate_prediction: BLOCK
+  gate_prediction_reason: bc:no検出
+  origin: '[[reflux_hayate_0728]] -> [[shared_queue_drift]] -> [[FAIL(正当停止)]]'
+  reviewed_at: '2026-09-03T07:43:00+09:00'
+  timestamp: '2026-09-03T07:43:00+09:00'
+- cmd_id: cmd_reflux_insight_202609030740_hanzo
+  review_type: draft
+  verdict: APPROVE
+  verified_files:
+  - queue/insights.yaml:pending
+  findings_summary: 定型reflux insight resolve。scope=queue/insights.yamlのみ
+  finding_categories:
+  - assumptions
+  - numbers
+  - premortem
+  - adversarial
+  - ambiguity
+  observations:
+  - '定型reflux: pending insightを確認しresolveまたはdecision_candidate整理'
+  - insight_resolve.sh正規ヘルパー経由。reflux_commit_contract scope限定
+  adversarial_review: 'N/A: queue/insights.yamlのみ'
+  ambiguity_points: none
+  operational_simulation:
+    command: grep pending queue/insights.yaml | wc -l
+    expected: pending件数確認
+    actual: 確認済み
+    result: PASS
+  brainwash_check: '#1no #2no #3no #4no #5no #6no #7no #8no 定型AC2件'
+  reviewed_at: '2026-09-03T07:45:00+09:00'
+  timestamp: '2026-09-03T07:45:00+09:00'
+- adversarial_review: 'PASS: force push系0件。divergence fail-close'
+  brainwash_check: '#1no #2no #3no #4no #5no #6no #7no #8no precheck ERRORS=0+3/3test+commit現物'
+  causal_chain: root drain→BLOCK(report_format)→RC2→BLOCK→RC3→LGTM
+  cmd_id: cmd_karo_hotfix_publisher_root_drain_202609030535
+  escalation_needed: false
+  finding_categories:
+  - assumptions
+  - numbers
+  - premortem
+  - adversarial
+  - ambiguity
+  findings_summary: 4観点OK。RC3版(report_format再修正)。実装変更なし。ff-only drain 3/3 PASS
+  gate_prediction: CLEAR
+  gate_prediction_reason: all checks passed
+  lesson_quality: OK
+  observations:
+  - 'RC3版: report_format再修正。実装コード変更なし。commit 73e794b09'
+  - publisher_root_drain.sh 54行。fetch→merge-base→lock-run ff push→divergence fail-close
+  - force push literal 0件。3 files 159 insertions
+  operational_simulation:
+    actual: CLEAR (ERRORS=0)
+    command: precheck GATE_PREDICTION
+    expected: CLEAR
+    result: PASS
+  origin: '[[publisher_root_drain]] -> [[RC3_report_format]] -> [[LGTM]]'
+  report_ninja: kagemaru
+  report_task_id: cmd_karo_hotfix_publisher_root_drain_202609030535_normal
+  report_verdict: LGTM
+  review_type: report
+  reviewed_at: '2026-09-03T07:46:00+09:00'
+  step3_5_verified: true
+  timestamp: '2026-09-03T07:46:00+09:00'
+  verdict: LGTM
+  verified_files:
+  - scripts/lib/publisher_root_drain.sh:1
+  - scripts/publisher.sh:root_drain
+  - tests/unit/test_publisher_root_drain.bats:1
+- cmd_id: cmd_reflux_insight_202609030728_hayate
   review_type: draft
   verdict: APPROVE
   verified_files:
