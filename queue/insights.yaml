@@ -12995,3 +12995,13 @@ insights:
   resolved_reason: "一次情報で殿発言(queue/lord_conversation.jsonl:443)を確認。memory_db FTS5とsemantic_searchの実測で既存概念 semantic_dictionary_design に一致し、docs/semantic-index/index.md と context/semantic-map.md の既存概念・alias群で扱い済み。直後の同一質問由来 INS-20260902-140258205-2567 も NO_MATCH候補としてsemantic index吸収済み・resolvedであり、新規実装修正や未決裁定は不要。"
   action_artifact: "target=queue/insights.yaml:INS-20260902-135851000-bec3;source=queue/lord_conversation.jsonl:443;memory=semantic_search実測(MEMORY_DB_MATCH, semantic_dictionary_design);semantic=docs/semantic-index/index.md:2156-2160;context=context/semantic-map.md:semantic_dictionary_design既存alias;related=queue/insights.yaml:INS-20260902-140258205-2567(resolved);decision_candidate=none"
   resolved_at: "2026-09-02T15:02:52+09:00"
+- id: INS-20260902-130807187-46c9
+  ts: "2026-09-02T13:08:07+09:00"
+  insight: "semantic_map_generate新規ファイル候補: `archive/cmd-chronicle/2026-08.md` は semantic index未登録。既存概念へのfile追加または新概念定義を検討せよ"
+  priority: "low"
+  source: "semantic_map_generate:new_file"
+  fix_known: false
+  status: resolved
+  resolved_reason: "一次情報で既存概念CMD年代記への意味付けは確認済みだが、SSOT semantic indexへの当該archive参照は未登録。planned_paths外の文書変更は行わず、既存cmd_chronicle概念へSSOT登録するdecision_candidateとして整理し、同一候補の二重計上を解消する。"
+  action_artifact: "semantic_map=context/semantic-map.md:103;semantic_index=docs/semantic-index/index.md:cmd_chronicle block lacks archive/cmd-chronicle/2026-08.md;decision_candidate=register archive reference in separate scoped doc task"
+  resolved_at: "2026-09-02T15:16:14+09:00"
