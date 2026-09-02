@@ -2197,6 +2197,33 @@ EOF
     [[ "$output" == *"BLOCK_REASONS=command_files_modified_mismatch"* ]]
 }
 
+# test_necessity: completion coverage must preserve the extractor distinction
+# between directory targets and explicit file targets.
+# regression_justification: cmd_4445/cmd_4447 produced two PRE25 false
+# positives when execution-prefix references under target_path=scripts were
+# treated as modified files.
+@test "command/files_modified coverage respects directory readonly refs and exact file targets" {
+    _write_command_coverage_fixture \
+        "bash scripts/run_tests.sh を実行し、scripts/owned.sh を修正" \
+        "  - path: scripts/owned.sh
+    change: modified" \
+        "scripts"
+
+    run collect_cmd_command_file_refs "$TEST_CMD_ID" ""
+    [ "$status" -eq 0 ]
+    [ "$output" = "scripts/owned.sh" ]
+
+    _write_command_coverage_fixture \
+        "scripts/build_instructions.sh を読む" \
+        "  - path: scripts/build_instructions.sh
+    change: modified" \
+        "scripts/build_instructions.sh"
+
+    run collect_cmd_command_file_refs "$TEST_CMD_ID" ""
+    [ "$status" -eq 0 ]
+    [ "$output" = "scripts/build_instructions.sh" ]
+}
+
 @test "command/files_modified coverage skips for recon sentinel (no code change)" {
     _write_command_coverage_fixture \
         "memory_db_import.pyのsummary/detail書込み処理を特定する" \

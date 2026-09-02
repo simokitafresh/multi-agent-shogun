@@ -553,6 +553,26 @@ YAML
     [[ "$output" != *"WARN: run_tests.sh"* ]]
 }
 
+# test_necessity: SG-PRE25 must distinguish an explicit file target from a
+# directory target so read-only command references cannot become deliverables.
+# regression_justification: directory target_path= scripts previously allowed
+# non-execution read references to bypass the shared readonly heuristics.
+@test "AC3c: directory target keeps read-only refs out while exact file target wins" {
+    run bash "$PROJECT_ROOT/scripts/lib/extract_command_files.sh" --repo "$PROJECT_ROOT" \
+        --target-path scripts \
+        --files-modified scripts/owned.sh \
+        --command-text "scripts/build_instructions.sh を読む、scripts/owned.sh を修正"
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"PASS"* ]]
+    [[ "$output" != *"WARN: build_instructions.sh"* ]]
+
+    run bash "$PROJECT_ROOT/scripts/lib/extract_command_files.sh" --repo "$PROJECT_ROOT" \
+        --target-path scripts/build_instructions.sh \
+        --command-text "scripts/build_instructions.sh を読む"
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"build_instructions.sh"* ]]
+}
+
 @test "AC2b: 殿発言検索はtarget=karoのinboundを除外する" {
     create_memory_db_fixture
     cat > "$TEST_LORD_CONVERSATION" <<'JSONL'
