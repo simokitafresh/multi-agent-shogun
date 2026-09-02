@@ -1,5 +1,10 @@
 #!/usr/bin/env bats
 # test_necessity: failure detail must not break UTF-8 character boundaries.
+# test_necessity: a pre-commit failure must persist the full stderr as a
+# logs/hook_artifacts/*.log artifact (atomically) with an artifact_sha256
+# plus a staged_diff_sha256, so a historical failure generation can be
+# reconstructed after the 200-byte bounded summary and the temp stderr file
+# are both gone (GA-551/GA-552, cmd_karo_hotfix_ga552_hook_artifact_20260902135701).
 
 setup() {
   ROOT="$(cd "$BATS_TEST_DIRNAME/../.." && pwd)"
@@ -10,6 +15,15 @@ setup() {
 
 load_bounded_helper() {
   eval "$(sed -n '/^_bounded_utf8_summary()/,/^}/p' "$HOOK")"
+}
+
+record_function_file() {
+  local out="$1"
+  sed -n '/^_bounded_utf8_summary()/,/^}/p; /^_record_hook_failure()/,/^}/p' "$HOOK" > "$out"
+}
+
+empty_sha256() {
+  printf '' | sha256sum | awk '{print $1}'
 }
 
 @test "bounded summary drops only an incomplete multibyte tail" {
@@ -63,7 +77,7 @@ PY
 
 @test "failure record remains UTF-8 and YAML after multilingual boundary inputs" {
   record_function="$REPO/record_function"
-  sed -n '/^_bounded_utf8_summary()/,/^}/p; /^_record_hook_failure()/,/^}/p' "$HOOK" > "$record_function"
+  record_function_file "$record_function"
   stderr_file="$REPO/stderr"
   log_file="$REPO/logs/hook_failures.yaml"
   mkdir -p "$REPO/logs"
@@ -92,4 +106,137 @@ assert "日本語" not in detail
 assert "é" not in detail
 assert "🚀" not in detail
 PY
+}
+
+@test "failure artifact persists full stderr past the 200-byte summary with a matching sha256" {
+  record_function="$REPO/record_function"
+  record_function_file "$record_function"
+  stderr_file="$REPO/stderr"
+  log_file="$REPO/logs/hook_failures.yaml"
+  mkdir -p "$REPO/logs"
+  python3 - "$stderr_file" <<'PY'
+from pathlib import Path
+import sys
+
+content = ("L" * 200) + "MARKER_BEYOND_200_BYTES" + ("x" * 130)
+Path(sys.argv[1]).write_text(content, encoding="utf-8")
+PY
+  # _record_hook_failure removes $_STDERR_FILE unconditionally at the end, so
+  # keep an independent copy to compare the persisted artifact against.
+  stderr_copy="$REPO/stderr.orig"
+  cp "$stderr_file" "$stderr_copy"
+  expected_sha256="$(sha256sum "$stderr_file" | awk '{print $1}')"
+
+  run env REPO_ROOT="$REPO" _STDERR_FILE="$stderr_file" TMUX_PANE="" bash -c "$(cat "$record_function"); _record_hook_failure 1"
+  [ "$status" -eq 0 ]
+  [ -f "$log_file" ]
+
+  # no leftover temp artifact from a partial/non-atomic write
+  run bash -c "find '$REPO/logs/hook_artifacts' -name '*.tmp' 2>/dev/null"
+  [ -z "$output" ]
+
+  ARTIFACT_ABS="$(python3 - "$log_file" "$REPO" <<'PY'
+from pathlib import Path
+import sys
+import yaml
+
+log_file, repo = sys.argv[1:]
+rows = yaml.safe_load(Path(log_file).read_bytes().decode("utf-8"))
+row = rows[-1]
+assert "artifact" in row, row
+assert "artifact_sha256" in row, row
+assert "staged_diff_sha256" in row, row
+assert "MARKER_BEYOND_200_BYTES" not in row["detail"], "detail must stay bounded"
+print(str(Path(repo) / row["artifact"]))
+print(row["artifact_sha256"])
+PY
+)"
+  artifact_abs="$(echo "$ARTIFACT_ABS" | sed -n 1p)"
+  logged_sha256="$(echo "$ARTIFACT_ABS" | sed -n 2p)"
+
+  [ -f "$artifact_abs" ]
+  cmp -s "$artifact_abs" "$stderr_copy"
+  [ "$logged_sha256" = "$expected_sha256" ]
+  actual_artifact_sha256="$(sha256sum "$artifact_abs" | awk '{print $1}')"
+  [ "$logged_sha256" = "$actual_artifact_sha256" ]
+  grep -q "MARKER_BEYOND_200_BYTES" "$artifact_abs"
+}
+
+@test "failure record with empty stderr omits artifact fields but still hashes the staged diff" {
+  record_function="$REPO/record_function"
+  record_function_file "$record_function"
+  stderr_file="$REPO/stderr"
+  log_file="$REPO/logs/hook_failures.yaml"
+  mkdir -p "$REPO/logs"
+  : > "$stderr_file"
+  empty_hash="$(empty_sha256)"
+
+  run env REPO_ROOT="$REPO" _STDERR_FILE="$stderr_file" TMUX_PANE="" bash -c "$(cat "$record_function"); _record_hook_failure 1"
+  [ "$status" -eq 0 ]
+  [ -f "$log_file" ]
+
+  run bash -c "test -d '$REPO/logs/hook_artifacts'"
+  [ "$status" -ne 0 ]
+
+  python3 - "$log_file" "$empty_hash" <<'PY'
+from pathlib import Path
+import sys
+import yaml
+
+log_file, empty_hash = sys.argv[1:]
+rows = yaml.safe_load(Path(log_file).read_bytes().decode("utf-8"))
+row = rows[-1]
+assert "artifact" not in row, row
+assert "artifact_sha256" not in row, row
+assert row["staged_diff_sha256"] == empty_hash, row
+assert row["detail"] == "", row
+PY
+}
+
+@test "staged_diff_sha256 distinguishes an empty stage from a staged change in a real repo" {
+  record_function="$REPO/record_function"
+  record_function_file "$record_function"
+  stderr_file="$REPO/stderr"
+  log_file="$REPO/logs/hook_failures.yaml"
+  mkdir -p "$REPO/logs"
+  echo "boom" > "$stderr_file"
+  empty_hash="$(empty_sha256)"
+
+  git -C "$REPO" init -q
+  git -C "$REPO" config user.email "test@example.com"
+  git -C "$REPO" config user.name "test"
+  echo "one" > "$REPO/tracked.txt"
+  git -C "$REPO" add tracked.txt
+  git -C "$REPO" commit -q -m init
+
+  # Case 1: nothing staged -> hash equals the empty-diff hash.
+  run env REPO_ROOT="$REPO" _STDERR_FILE="$stderr_file" TMUX_PANE="" bash -c "$(cat "$record_function"); _record_hook_failure 1"
+  [ "$status" -eq 0 ]
+  unstaged_hash="$(python3 - "$log_file" <<'PY'
+from pathlib import Path
+import sys
+import yaml
+
+rows = yaml.safe_load(Path(sys.argv[1]).read_bytes().decode("utf-8"))
+print(rows[-1]["staged_diff_sha256"])
+PY
+)"
+  [ "$unstaged_hash" = "$empty_hash" ]
+
+  # Case 2: a staged change -> hash differs from the empty-diff hash.
+  echo "two" > "$REPO/tracked.txt"
+  git -C "$REPO" add tracked.txt
+  run env REPO_ROOT="$REPO" _STDERR_FILE="$stderr_file" TMUX_PANE="" bash -c "$(cat "$record_function"); _record_hook_failure 1"
+  [ "$status" -eq 0 ]
+  staged_hash="$(python3 - "$log_file" <<'PY'
+from pathlib import Path
+import sys
+import yaml
+
+rows = yaml.safe_load(Path(sys.argv[1]).read_bytes().decode("utf-8"))
+print(rows[-1]["staged_diff_sha256"])
+PY
+)"
+  [ "$staged_hash" != "$empty_hash" ]
+  [ "$staged_hash" != "$unstaged_hash" ]
 }
