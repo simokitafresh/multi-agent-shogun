@@ -98,6 +98,33 @@ YAML
     [[ "$output" == *"PASS"* ]]
 }
 
+# test_necessity: files_modified の './X' と manifest の 'X' は同一 path として扱われ、
+# top-level file を含む報告が manifest 検査と path 形式検査の双方を PASS できる不変量を守る。
+# regression_justification: manifest 比較が './' 接頭辞だけで正当な報告を FAIL させていた。
+@test "T-MANIFEST-1: top-level report path with dot slash matches manifest" {
+    local report="$TMPDIR_BATS/report.yaml"
+    local task_id="cmd_manifest_dotslash_contract"
+    local state_dir="$TMPDIR_BATS/publish-state"
+    local manifest_dir="$state_dir/publish_queue/artifacts/$task_id"
+    create_valid_report "$report" >/dev/null
+    mkdir -p "$manifest_dir"
+    sed -i \
+        -e 's/^files_modified: \[\]$/files_modified:\n  - path: .\/AGENTS.md/' \
+        -e "/^parent_cmd:/a task_id: $task_id" \
+        "$report"
+    cat > "$manifest_dir/manifest.yaml" <<'YAML'
+source_sha: ""
+base: fixture-base
+paths:
+  - AGENTS.md
+YAML
+
+    run env SHOGUN_STATE_DIR="$state_dir" bash "$GATE" "$report"
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"PASS(manifest_consistency)"* ]]
+    [[ "$output" != *"paths mismatch"* ]]
+}
+
 @test "T-001b: missing origin emits WARN without failing" {
     local report=$(create_valid_report)
     run bash "$GATE" "$report"
