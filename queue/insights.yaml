@@ -14178,3 +14178,10 @@ insights:
   source: "semantic_stress_test"
   fix_known: false
   status: pending
+- id: INS-20260902-224425699-3cd0
+  ts: "2026-09-02T22:44:25+09:00"
+  insight: "[[single publisher asis tobe 5w1h 20260902 mdを更新せよ]] semantic_stress_test candidate_aliases: NO_MATCH source=lord query=single_publisher_asis_tobe_5w1h_20260902.mdを更新せよ"
+  priority: "low"
+  source: "semantic_stress_test"
+  fix_known: false
+  status: pending
