@@ -1,3 +1,4 @@
+<!-- gist-master: 8e1336f8b297ccd9bd5f407444844434 x_account_ops_automation_asis_tobe_5w1h_20260903.md -->
 # X アカウント運用(バム @TokyoJibika)の Grok 包装→API 自動化 — AsIs / ToBe / 5W1H 設計書 v0.1(2026-09-03 03:20、殿発案 03:13『grok によるアカウント運用は今後 API などで自動化まで持って行きたい。新しい設計書にしないか』)
 
 ## §0 一文定義
