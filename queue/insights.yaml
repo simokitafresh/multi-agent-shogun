@@ -13200,6 +13200,7 @@ insights:
   resolved_reason: "一次確認: 対象LICENSEはtracked現存するMIT定型文(著作権表示+標準許諾文)であり、既存概念とのマッピング対象となるドメイン知識を含まない。context/semantic-map.mdとdocs/semantic-index/index.mdに直接file resource未登録を確認したが、同種insight(.gitattributes等INS-20260828-013206284-8928)の先例と同じく定型boilerplateのため新概念化・新規file登録は不要と判定。追加実修正・decision_candidateなし。"
   action_artifact: "target=queue/insights.yaml:INS-20260902-141250140-9ae6;primary=LICENSE:1-5(MIT boilerplate, git ls-files tracked);semantic_map=context/semantic-map.md:direct_match0;semantic_index=docs/semantic-index/index.md:direct_match0;precedent=INS-20260828-013206284-8928;decision_candidate=none"
   resolved_at: "2026-09-03T06:48:25.306298"
+  verified_by: tobisaru(cmd_reflux_insight_202609030646_tobisaru_exact)
 - id: INS-20260902-141250259-bc78
   ts: "2026-09-02T14:12:50+09:00"
   insight: "semantic_map_generate新規ファイル候補: `Makefile` は semantic index未登録。既存概念へのfile追加または新概念定義を検討せよ"
