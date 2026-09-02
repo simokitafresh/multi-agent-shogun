@@ -25,7 +25,9 @@ DONE_DIR="$QUEUE_ROOT/done"
 PID_FILE="$QUEUE_ROOT/publisher.pid"
 EVENT_LIB="$SCRIPT_DIR/lib/publisher_event.sh"
 QUEUE_LIB="$SCRIPT_DIR/publisher_queue.sh"
+ROOT_DRAIN_LIB="$SCRIPT_DIR/lib/publisher_root_drain.sh"
 INBOX_WRITER="${PUBLISHER_INBOX_WRITER:-$SCRIPT_DIR/inbox_write.sh}"
+source "$ROOT_DRAIN_LIB"
 mkdir -p "$QUEUE_ROOT" "$RC_DIR" "$DONE_DIR"
 
 request_field() {
@@ -424,6 +426,7 @@ daemon_main() {
         rc=0; run_one || rc=$?
         ledger_rc=0; run_ledger_once || ledger_rc=$?
         [ "$rc" -eq 0 ] && rc="$ledger_rc"
+        [[ "${PUBLISHER_MODE:-dry-run}" = active ]] && publisher_root_drain "$REPO_ROOT" || true
         [ "$once" = 1 ] && return "$rc"
         sleep "$sleep_seconds"
     done
