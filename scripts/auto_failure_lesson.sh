@@ -250,7 +250,7 @@ fi
 echo "[auto_failure] Registering confirmed lesson: project=$PROJECT title=$TITLE source=$SOURCE_CMD"
 bash "$SCRIPT_DIR/scripts/lesson_write.sh" "$PROJECT" "$TITLE" "$DETAIL" "$SOURCE_CMD" "$AUTHOR" "" --status confirmed
 
-if [ "$GATE_FAIL_CLASSIFICATION" = "script_bug" ] && [ -x "$BULLETIN_SCRIPT" ]; then
+if [ "$GATE_FAIL_CLASSIFICATION" = "script_bug" ] && [ -f "$BULLETIN_SCRIPT" ]; then
     bulletin_content="auto_failure_lesson: ${SOURCE_CMD}/${AUTHOR} の失敗はスクリプトバグ疑い。将軍はコード修正cmdを起票されたし。gate_reason=${GATE_FAIL_REASON:-unknown}"
     if BULLETIN_NOTIFY=shogun bash "$BULLETIN_SCRIPT" karo "$bulletin_content" false action_required >/dev/null 2>&1; then
         echo "[auto_failure] Script-bug bulletin requested: source=$SOURCE_CMD"

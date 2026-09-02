@@ -460,7 +460,7 @@ LEDGER_WRITER="$SCRIPT_DIR/scripts/ledger_writer.sh"
 LEDGER_ENTRY_FILE="$(mktemp)"
 trap 'rm -f -- "$LEDGER_ENTRY_FILE"' EXIT
 ledger_append() {
-  if [[ -x "$LEDGER_WRITER" ]]; then
+  if [[ -f "$LEDGER_WRITER" ]]; then
     LEDGER_SOURCE_FILE="$INSIGHTS_FILE" bash "$LEDGER_WRITER" append insights "$LEDGER_ENTRY_FILE" >/dev/null
   else
     # Legacy isolated fixtures do not copy the publisher binary.
