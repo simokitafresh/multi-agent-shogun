@@ -89,10 +89,10 @@ teardown() {
     local i
     for i in 1 2 3 4 5 6; do
         printf 'task_id: task_%s\n' "$i" > "$FIXTURE_ROOT/req_$i.yaml"
-        # 投入順を実測で保証するため僅かにずらして起動する(真の並行実行を維持しつつ順序を決定的にする)
-        ( sleep "0.0$i"; bash "$PQ" enqueue "$FIXTURE_ROOT/req_$i.yaml" >/dev/null ) &
+        # submission順を親の同期呼出しで明示する。真の並行enqueueの
+        # seq重複・欠落は前testとAC1の8並行×20反復で別途検証する。
+        bash "$PQ" enqueue "$FIXTURE_ROOT/req_$i.yaml" >/dev/null
     done
-    wait
 
     run bash "$PQ" peek
     [ "$status" -eq 0 ]

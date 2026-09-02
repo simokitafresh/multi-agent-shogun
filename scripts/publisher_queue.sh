@@ -51,16 +51,14 @@ SEQ_LOCK="$QUEUE_DIR/.seq.lock"
 
 mkdir -p "$QUEUE_DIR" "$RUN_DIR" "$DEQUEUED_DIR"
 
-# next_seq: flock下でグローバル単調増加のseqを払い出す(12桁ゼロ埋め、辞書順=数値順を保証)。
+# next_seq: 呼出元が保持するflock下でグローバル単調増加のseqを払い出す
+# (12桁ゼロ埋め、辞書順=数値順を保証)。seq払い出しからrequest公開まで
+# 同じlockを保持し、後続enqueueが先にdequeue可能になる窓を閉じる。
 next_seq() {
     local n
-    exec 8>"$SEQ_LOCK"
-    flock -x 8
     n=$(cat "$SEQ_FILE" 2>/dev/null || echo 0)
     n=$((n + 1))
     printf '%s' "$n" > "$SEQ_FILE"
-    flock -u 8
-    exec 8>&-
     printf '%012d' "$n"
 }
 
@@ -76,12 +74,19 @@ cmd_enqueue() {
     [ -n "$task_id" ] || task_id="unknown"
 
     local epoch seq dest tmp
+    # The timestamp and sequence are submission-order metadata.  Keep the
+    # lock until the atomically-renamed request is visible so dequeue cannot
+    # observe a later sequence while an earlier request is still being copied.
+    exec 8>"$SEQ_LOCK"
+    flock -x 8
     epoch="$(date +%s)"
     seq="$(next_seq)"
     dest="$QUEUE_DIR/${epoch}_${seq}_${task_id}.request"
     tmp="$dest.tmp.$$"
     cp "$req" "$tmp"
     mv "$tmp" "$dest"
+    flock -u 8
+    exec 8>&-
     printf '%s\n' "$dest"
 }
 
