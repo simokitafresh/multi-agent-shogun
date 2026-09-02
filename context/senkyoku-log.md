@@ -1638,3 +1638,9 @@
 - 2026-09-02 23:42 cmd_4455 本番反映確認(Render dep-dac3301t live 8422d8c34、/signals/ EN/JA 200、sitemap 558、導線 EN1/JA1)。gate rglob 1 行 hotfix→小太郎、U3 欠陥 3 点→才蔵、dotslash hotfix は LG051 caller 証跡 RC。
 - 2026-09-03 00:10 U3 欠陥 3 点修正(才蔵)CLEAR。cmd_4456→才蔵配備。publisher queue は U3 active 化まで家老が request を退避し legacy 経路で gate(4453/影丸 root fix/半蔵 reflux は等価検証 WAIT で monitor 再 gate 待ち)。飛猿 ci_fix は cross_repo_commits 追記 RC、疾風 ledger_writer ci_fix 報告済、小太郎 rglob hotfix 報告済(軍師 review)。影丸への誤 RC は撤回。
 - 2026-09-03 00:16 gate rglob hotfix(小太郎)・ledger_writer ci_fix(疾風)CLEAR。lstrip('./') 報告 tool バグ→半蔵 hotfix。
+- 2026-09-03 00:36 cmd_4456(画像 SEO)CLEAR+本番反映確認(max-image-preview/og:image/Article/Organization 各 1)。lstrip('./') hotfix(半蔵)CLEAR。4453 は将軍裁定待ち(証拠付き手動 CLEAR 推奨)。
+- 2026-09-03 00:44 等価検証の receipt pair 走査欠陥(複数 source entry で即 fail)を関数単体実行で特定→疾風 hotfix(§14.4 例外 2 件目)。着地で 4453/影丸 root fix/小太郎 reflux が CLEAR 可能。
+- 2026-09-03 00:48 将軍裁定: receipt pair hotfix 承認、4453 は着地後再 gate→残れば証拠付き手動 CLEAR 可(裁可済)。飛猿 ci_fix は ACCEPT 済で同欠陥 WAIT。
+- 2026-09-03 00:58 殿裁可により cmd_4453 を才蔵へ再配備(旧小太郎報告は archive 退避)。
+- 2026-09-03 01:03 cmd_4453 再配備は monitor AUTO-VOID(旧報告参照)で 1 度 void→旧報告を reports_retired へ退避し再配備成功(才蔵 acknowledged)。
+- 2026-09-03 01:05 疾風 receipt pair hotfix 報告 PASS(3/3→rc0)。cmd_4457(U2 再検証)→半蔵配備。軍師 D0 93f0efee(fingerprint 照合 BLOCK)家老 APPROVE。

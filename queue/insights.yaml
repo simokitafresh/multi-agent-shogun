@@ -14435,7 +14435,7 @@ insights:
   priority: "medium"
   source: "manual"
   fix_known: false
-  status: pending
+  status: resolved
 - id: INS-20260903-003420541-48c4
   ts: "2026-09-03T00:34:20+09:00"
   insight: "semantic_index_update未登録cmd originノード: [[殿指摘_検索結果にチャート_20260902_2335]] は既存aliasesに一致なし。類似概念TOP3: creator_brainwashing_defense(創造主の洗脳防御; alias=殿指示_家老サポート_20260827_0253; score=3.8) / strong_new_game_completion_contract(強くてニューゲーム完遂契約; alias=殿指示_強くてニューゲーム_20260829_1250; score=3.1) / known_unknowns_principle(無知の知; alias=殿指示_T178_T177_T176_T163_終端まで_20260829_1241; score=2.8)。概念定義とaliases追加を検討せよ"
@@ -14502,7 +14502,7 @@ insights:
   priority: "medium"
   source: "manual"
   fix_known: false
-  status: pending
+  status: resolved
 - id: INS-20260903-005537106-ed1d
   ts: "2026-09-03T00:55:37+09:00"
   insight: "[[14 1 unit × cmd 対応表を更新してくれ]] semantic_stress_test candidate_aliases: NO_MATCH source=lord query=14.1 unit × cmd 対応表を更新してくれ"
@@ -14536,7 +14536,10 @@ insights:
   priority: "low"
   source: "semantic_index_update"
   fix_known: false
-  status: pending
+  status: "resolved"
+  resolved_reason: "semantic map generation verified the candidate is represented or intentionally ignored"
+  action_artifact: "semantic_map=/home/simokitafresh/multi-agent-shogun/context/semantic-map.md;semantic_index=/home/simokitafresh/multi-agent-shogun/docs/semantic-index/index.md"
+  resolved_at: "2026-09-03T01:09:50.858775"
 - id: INS-20260903-010137149-8952
   ts: "2026-09-03T01:01:37+09:00"
   insight: "殿裁可で cmd を再配備する際、ninja_monitor の AUTO-VOID が queue/reports と queue/archive/reports の完了報告を根拠に新 task を即 void する(cmd_4453 実例 00:58)。再配備の正規手段(cmd_reopen は archive 済 cmd 専用)が無く、家老が旧報告を走査対象外 dir へ退避する WA が必要。cmd 再配備の正規 SSOT(旧報告を retired 扱いにする印)を設ける。"
