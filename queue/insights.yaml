@@ -13901,7 +13901,7 @@ insights:
   resolved_reason: "既存の殿裁定と設計書single_publisher_asis_tobe_5w1h_20260902.md §14.4に同一の判断・行動が記録済み。新規コード修正やdecision_candidateは不要で、対象IDのみ既知設計へ集約する"
   action_artifact: "source=queue/lord_conversation.jsonl:389;design=docs/research/single_publisher_asis_tobe_5w1h_20260902.md#§14.4;semantic=context/semantic-map.md#仮:Insights"
   resolved_at: "2026-09-02T22:16:28+09:00"
-  last_seen: "2026-09-02T22:21:14+09:00"
+  last_seen: "2026-09-02T22:27:22+09:00"
 - id: INS-20260902-204634511-5447
   ts: "2026-09-02T20:46:34+09:00"
   insight: "reflux insight resolve時、insight_write.sh --resolve/git commitのcommit subjectは必ず{parent_cmd}または{task_id}を含めよ。含めないとgate_report_format.shのcommit_contract検証がFAIL(commit subject does not identify task_id/parent_cmd)する。ninjaはgit commit --amend禁止(GA-231)のため、書き間違えたら新規commitで訂正するしかない"
