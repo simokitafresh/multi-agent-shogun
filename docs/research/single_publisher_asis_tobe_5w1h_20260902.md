@@ -1,5 +1,5 @@
 <!-- gist-master: 77538fe909ed4d3b83b61b4baf99cacf single_publisher_asis_tobe_5w1h_20260902.md -->
-# origin/main 単一 publisher 化 — AsIs / ToBe / 5W1H 設計書 v3.9(§14 を 09-03 00:05 現在値へ更新: 実装 CLEAR 6 unit、U5 着地で ACCEPT→enqueue が生き publisher 未起動で全 CLEAR 閉塞→家老 dry-run で U3 欠陥 3 点検出→修正 lane、active 化は保留。v3.8=22:25。v3.7=§14 追加、殿指示 17:18。v3.6=§9.1 共通 AC の 2 巡目を『別 cmd の検証 task』へ。同 cmd 再配備は deploy_task completed-peer guard の正規 BLOCK 対象、15:35)
+# origin/main 単一 publisher 化 — AsIs / ToBe / 5W1H 設計書 v3.10(§14.1 対応表を 09-03 00:50 に全面更新、殿指示 00:45。v3.9=§14 00:05: 実装 CLEAR 6 unit、U5 着地で ACCEPT→enqueue が生き publisher 未起動で全 CLEAR 閉塞→家老 dry-run で U3 欠陥 3 点検出→修正 lane、active 化は保留。v3.8=22:25。v3.7=§14 追加、殿指示 17:18。v3.6=§9.1 共通 AC の 2 巡目を『別 cmd の検証 task』へ。同 cmd 再配備は deploy_task completed-peer guard の正規 BLOCK 対象、15:35)
 
 - 作成: 2026-09-02 02:30 将軍(殿指示 02:16『忍者はコミットしない。コミットは家老/将軍のみ』→02:18『コミットのやり方・スキル・構造の検証』→02:24『AsIs/ToBe 5W1H 設計書。不要になる複雑さを先に検証』)
 - 協議: 家老回答 blt_20260902_021944(single publisher + local commit artifact)。協議記録=`queue/notes/shogun_karo_single_committer_hypothesis_20260902_0220.md` §1-6
@@ -259,19 +259,22 @@ canary 判定: **(v1.8 殿裁定 D9)** infra と dm-signal の両 repo を U1 �
 
 最終更新: 2026-09-03 00:05(実装 GATE CLEAR=U1/U2/U4/U1b/U3/U6 の 6 unit、U5 は origin 統合済だが gate WAIT(publisher_pending)。検証 CLEAR=U4、U1/U2 再検証 cmd 起票待ち。**U3 active 化は保留**: 家老 dry-run(PUBLISHER_ONCE=1)で欠陥 3 点(冪等性・tip 前進時 restore・通知 type)→才蔵 修正 lane 走行。root index 後退は 6 回目まで(read-tree hotfix 6a7e852ec 着地後の integrate は未観測)。push lane は GA-PUSH1(常時 dirty の台帳 9 path)で 23:20-23:58 停止→将軍が台帳 dirt を 1 commit に吸収し 23:58 PUSH 26 本=§13 H3/U6 の必要性の再実証)
 
-### 14.1 unit × cmd 対応表(実装 cmd=片 CLI、検証 cmd=他 CLI・別番号。§9.1 共通 AC)
-| U | 内容 | 実装 cmd | 実装忍者(CLI) | 実装 commit | 実装 GATE | 検証 cmd | 検証忍者(CLI) | 検証 GATE |
+### 14.1 unit × cmd 対応表(実装 cmd=片 CLI、検証 cmd=他 CLI・別番号。§9.1 共通 AC。09-03 00:50 全面更新、時刻 JST、状態は gate_metrics/task YAML/掲示板の一次値)
+
+| U | 内容 | 実装 cmd / 忍者(CLI) | 実装 commit(origin) | 実装 GATE | 修正 lane(§14.4 例外=実装 file 欠陥) | 検証 cmd / 忍者(CLI) | 検証 GATE | 現在の状態 |
 |---|---|---|---|---|---|---|---|---|
-| U1 | publish queue+lock-run shim+events writer | cmd_4445(delegated 14:41) | 小太郎(Claude Sonnet) | 0e8d1b6d9(origin 統合済 16:5x) | **GATE CLEAR 20:58**(将軍相互検証 bats 9/9 ローカル) | cmd_4448(影丸 Codex、21:15 配備) | 影丸(Codex) | **FAIL(fail-close、家老 ACCEPT)**: 隔離 clone で FIFO fixture FAIL=8/9。欠陥=dequeue が `<epoch>_<seq>` 辞書順で秒境界をまたぐ並行 enqueue の seq 順と食い違う→§14.4 例外で才蔵 修正 lane `cmd_karo_hotfix_u1_publisher_queue_fifo_order_202609022136`: sequence lock(採番→原子的公開まで保持)で根治、9/9、8 並行×20 回 逆転 0/20、軍師 LGTM、commit 6fc7e7b81、**CLEAR 22:05**(origin eb136fdbc)。**再検証 cmd(新番号、Codex)起票待ち=将軍** |
-| U2 | publish_artifact capture/restore | cmd_4446(delegated 14:54) | 飛猿(Claude Sonnet) | 58446a4dc(origin 統合済) | **GATE CLEAR 19:26**(4 観点 LGTM を正本に APPROVE) | cmd_4449(delegated 19:10) | 疾風(Codex) | **FAIL(fail-close、家老 ACCEPT)20:17**: 敵対 fixture『manifest 未申告 path』で restore が適用して rc 0(§9.1 違反)=検証 cmd 型の初実証→飛猿 修正 lane `cmd_karo_hotfix_u2_publish_artifact_restore_undeclared_path_202609022132`: restore が `git apply --numstat` dry-run の実タッチ path 集合と manifest paths[] を完全一致検証、不一致 rc=1、12/12、軍師 LGTM、commit ea8bdd794、**CLEAR 21:47**。**再検証 cmd(新番号、Codex)起票待ち=将軍** |
-| U4 | gate dual-read+census | cmd_4447(delegated 14:57) | 疾風(Codex) | 39b2d18b2(origin 統合済) | **GATE CLEAR 19:30** | cmd_4450(delegated 19:11) | 飛猿(Claude) | **CLEAR 21:11**(fixture 618e95669、偽 BLOCK『ancestry WAIT→auto-push OK→全 PASS で BLOCK』を gate 直接再実行で通過)=U4 完了 |
-| U1b | 直接 commit wrapper(将軍・家老) | cmd_4452(delegated 21:34) | 影丸(Codex) | 33194c4b5(`scripts/publish_direct_commit.sh`+契約 test 5/5) | **GATE CLEAR 21:58**(軍師 LGTM+家老 ACCEPT、偽 BLOCK 5 例目を gate 直接再実行) | 未起票(Claude) | Claude | — |
-| U5 | publisher_admit(migration_ack) | cmd_4453(delegated 21:33) | 小太郎(Claude) | origin 統合済(22:52 旧 auto-push 経由。`scripts/publisher_admit.sh` rc 0/5/6/11+`review_approval.sh` ACCEPT→enqueue 1 行) | **gate WAIT(publisher_pending)23:16〜**: ACCEPT が publish_queue へ enqueue するが publisher daemon 未起動+gate が dequeued/ も pending 扱い(rglob)→小太郎 1 行 hotfix `cmd_karo_hotfix_gate_publisher_pending_toplevel_only_202609022336`(§14.4 例外)で解除予定 | 未起票(Codex) | Codex | — |
-| U6 | ledger writer(insights/bulletin/lesson) | cmd_4454(delegated 21:35) | 疾風(Codex) | 1a5c2d829(`scripts/ledger_writer.sh` append/update/resolve→`$STATE_DIR/ledger_inbox`、allowlist+CAS、4 writer 付替え) | **GATE CLEAR 22:57**。副作用: test setup が $HOME 固定の mktemp で CI runner 3 FAIL(run 33641462767)→疾風 ci_fix 23:52 | 未起票(Claude) | Claude | — |
-| U3 | publisher daemon(dry-run→active) | cmd_4451(delegated 21:29、dry-run 既定・§14.4 で前倒し) | 半蔵(Codex) | 5422d7907(origin 統合済 22:0x。`scripts/publisher.sh` 213 行+`daemon_watchdog.sh` watchdog_publisher_healthy+`tests/unit/test_publisher.bats` 4/4 dry-run/active/C2a) | **GATE CLEAR 22:10**(将軍相互検証: origin 到達・stat 一致。root checkout 後退で実装 file が staged 削除→復元、§14.2 22:07 行) | 未起票(Claude) | Claude | **active 化保留(23:32)**: 家老 dry-run で欠陥 3 点=(1) C2a が『tip に同変更が既に載っている』を base_blob_mismatch で RC(冪等性なし) (2) restore が tip 前進時 tree mismatch で FAIL(3-way 手段なし) (3) notify_karo の type が inbox_write で BLOCK→才蔵 `cmd_karo_hotfix_u3_publisher_idempotent_restore_notify_202609022337`(§14.4 例外=実装 file 欠陥。仕様: 期待 blob 一致は already_published no-op、`git apply --3way --index`、起床 type)。着地後 PUBLISHER_ONCE=1 で同 2 request 相当 fixture PASS→active(infra repo のみ、最初の 2 request を家老突合) |
-| U3b | deploy check 三段 receipt | 未起票(第 3 波) | — | — | — | — | — | — |
-| U7 | runtime push 3 script の flag 下流化 | 未起票(第 3 波) | — | — | — | — | — | — |
-| U8 | cleanup manifest 実行+§11 after 計測 | 未起票(最終) | — | — | — | — | — | — |
+| U1 | publish queue+lock-run shim+events writer | cmd_4445 / 小太郎(Claude) | 0e8d1b6d9 | **CLEAR 09-02 20:58** | FIFO 辞書順欠陥→才蔵 `..._u1_publisher_queue_fifo_order_202609022136` 6fc7e7b81(sequence lock、8 並行×20 回逆転 0)**CLEAR 22:05** | cmd_4448 / 影丸(Codex) | **FAIL(fail-close、家老 ACCEPT)**: 隔離 clone で FIFO fixture 8/9 | 修正済。**再検証 cmd(新番号、Codex)起票待ち=将軍** |
+| U2 | publish_artifact capture/restore | cmd_4446 / 飛猿(Claude) | 58446a4dc | **CLEAR 19:26** | manifest 未申告 path を restore が適用→飛猿 `..._u2_publish_artifact_restore_undeclared_path_202609022132` ea8bdd794(実タッチ path と manifest 完全一致、不一致 rc=1)**CLEAR 21:47** | cmd_4449 / 疾風(Codex) | **FAIL(fail-close、家老 ACCEPT)20:17**=検証 cmd 型の初実証 | 修正済。**再検証 cmd(新番号、Codex)起票待ち=将軍** |
+| U4 | gate dual-read+census | cmd_4447 / 疾風(Codex) | 39b2d18b2 | **CLEAR 19:30** | — | cmd_4450 / 飛猿(Claude) | **CLEAR 21:11**(fixture 618e95669) | **完了** |
+| U1b | 直接 commit wrapper(将軍・家老) | cmd_4452 / 影丸(Codex) | 33194c4b5(=c594029f1) | **CLEAR 21:58** | — | 未起票 / Claude | — | 実装完了。検証 cmd 起票待ち(U3 active 後に将軍・家老が実運用で使い始める) |
+| U5 | publisher_admit(migration_ack)+ACCEPT→enqueue | cmd_4453 / 小太郎(Claude) | 93162eca0(5 path 中 3 は origin 同一、2 は後続 U1 修正で上書き=内容は全て origin 到達) | **WAIT→BLOCK(23:16〜)**: ACCEPT が enqueue するが publisher 未起動(publisher_pending)+gate の receipt pair 走査が cross_repo 2 entry で即 fail | gate 側 2 本(§14.4『全 CLEAR を塞ぐ 1 行』): 小太郎 `..._gate_publisher_pending_toplevel_only_202609022336` **CLEAR 00:15** / 疾風 `..._gate_receipt_pair_multi_source_202609030042` 走行中 | 未起票 / Codex | — | receipt hotfix 着地後に gate 再実行。なお WAIT なら家老が到達証拠付きで手動 CLEAR(将軍裁可 00:47) |
+| U6 | ledger writer(insights/bulletin/lesson/workaround) | cmd_4454 / 疾風(Codex) | 1a5c2d829 | **CLEAR 22:57** | test の $HOME 固定 mktemp で CI 3 FAIL→疾風 ci_fix 8e70baf70 **CLEAR 00:16**(CI run 33647160956) | 未起票 / Claude | — | 実装完了。writer 付替えの本番効果は U3 active 後 |
+| U3 | publisher daemon(dry-run→active) | cmd_4451 / 半蔵(Codex) | 5422d7907 | **CLEAR 22:10** | 家老 dry-run(PUBLISHER_ONCE=1)で欠陥 3 点→才蔵 `..._u3_publisher_idempotent_restore_notify_202609022337` f5b195fea(期待 blob 一致=already_published no-op、tip 前進時 3-way apply、起床 type 通知、bats +51)**CLEAR 00:05**。残: once 2 回目の dequeued move FileNotFoundError(insight 化) | 未起票 / Claude | — | **active 化直前**: PUBLISHER_ONCE=1 で『同変更が既に載っている request』(影丸 idle_flag=already_published PASS 済 published_sha=8e70baf7)『tip 前進後の request』の 2 fixture PASS→infra repo のみ watchdog 管理で active→最初の 2 request を家老突合(将軍裁定 23:34/00:17) |
+| U3b | deploy check 三段 receipt(dm-signal Render) | 未起票(第 3 波) | — | — | — | — | — | U3 active canary(D9)の後 |
+| U7 | runtime push 3 script の flag 下流化 | 未起票(第 3 波) | — | — | — | — | — | U3 active 24h 後 |
+| U8 | cleanup manifest 実行(§10 M1-M11)+§11 after 計測 | 未起票(最終) | — | — | — | — | — | U7 後 |
+
+集計(00:50): 実装 GATE CLEAR 6/7(U1/U2/U4/U1b/U6/U3)、U5 は gate 側欠陥で WAIT(成果物は origin 到達済)。検証 CLEAR 1(U4)、検証 FAIL→修正済 2(U1/U2、再検証 cmd 起票待ち)、検証未起票 4(U1b/U5/U6/U3)。§14.4 例外適用 7 本(実装 file 欠陥 3=U1 FIFO/U2 restore/U3 3 点、全 CLEAR を塞ぐ 1 行 4=ALL_CLEAR/integrate read-tree/report_format dotslash/publisher_pending rglob、+receipt pair 走行中)。
 
 波の順序(§3): 第 1 波 U1/U2/U4 並走(殿 14:50『並列で実装可能か』→可)→ 第 2 波 U1b/U5/U6 → 第 3 波 U3(dry-run→active)/U3b/U7 → U8。各 unit は実装 GATE CLEAR→検証 cmd 起票→検証 CLEAR で完了。
 
@@ -312,6 +315,7 @@ canary 判定: **(v1.8 殿裁定 D9)** infra と dm-signal の両 repo を U1 �
 - 例外適用の記録(22:18): push_lane integrate(§10 M2)は捨てる file だが、その欠陥が第 2 波の成果物(U3/U1b)を root から staged 削除し続ける(5 回)。『捨てる壁』と『成果物を壊す壁』は別物で、後者は 1 行で塞ぐ。判定基準=その壁を放置すると実装 file(§9 の成果物)が失われるか。
 
 ## §5 レビュー履歴
+- v3.10(09-03 00:50)→ §14.1 unit×cmd 対応表を列構成ごと更新(修正 lane 列・現在の状態列を追加、集計行)。殿指示 00:45
 - v3.9(09-03 00:05)→ §14 を現在値へ更新(殿指示 23:55)。設計本文(§0-§13)は不変
 - v3.8(22:25)→ §14 を現在値へ更新(殿指示 22:24)。設計本文(§0-§13)は不変
 - v3.7(17:22)→ §14 実装進捗台帳(unit×cmd 対応表・第 1 波の壁と処置・§11 現在値)を追加。殿指示 17:18『随時更新しないと後で混乱する』。設計本文(§0-§13)は不変、家老 APPROVE 骨格(v3.5 blt_143800)に影響なし。以後 将軍 loop ごとに §14 を現在値で更新
