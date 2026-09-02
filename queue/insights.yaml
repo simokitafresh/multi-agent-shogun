@@ -13994,3 +13994,10 @@ insights:
   source: "semantic_stress_test"
   fix_known: false
   status: pending
+- id: INS-20260902-210527846-64dd
+  ts: "2026-09-02T21:05:27+09:00"
+  insight: "[[殿指示 13 25『どのロールがどの CLI モデルでも必要十分に同じレベルで作業を続けられるのが我らの仕組み』 殿下問]] semantic_stress_test test_set_candidate: high_frequency_NO_MATCH count=2 source=cmds query=殿指示 2026-09-02 13:25『どのロールがどの CLI/モデルでも必要十分に同じレベルで作業を続けられるのが我らの仕組み』+殿下問 19:02『順調に進んでいるか？進展が遅すぎないか？』→第 1 波 3 unit の検証 cmd を CLEAR 待ちにせず今起票して直列を 1 段減らす(depends_on で配備は自動待機)。U2(cmd_44 quality_gate=blind_hit_rate_non_regression fixed_50_role=regression_detection_only"
+  priority: "medium"
+  source: "semantic_stress_test"
+  fix_known: false
+  status: pending
