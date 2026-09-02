@@ -13515,3 +13515,10 @@ insights:
   source: "skill_script_refs:9abfd94ce2d8bec9"
   fix_known: false
   status: pending
+- id: INS-20260902-171234556-9649
+  ts: "2026-09-02T17:12:34+09:00"
+  insight: "semantic_index_update新概念候補: discussion:忍者が放置されていないか？ は 既存aliasesに一致なし。概念定義とaliases追加を検討せよ"
+  priority: "low"
+  source: "semantic_index_update"
+  fix_known: false
+  status: pending
