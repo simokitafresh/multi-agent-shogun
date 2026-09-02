@@ -1647,3 +1647,5 @@
 - 2026-09-03 01:20 receipt pair hotfix 着地で影丸 root fix・小太郎 reflux・飛猿 ci_fix CLEAR。cmd_4457(U2 再検証)CLEAR(13/13)。cmd_4453 は才蔵が再実装中。
 - 2026-09-03 01:25 cmd_4453 を証拠付き手動 CLEAR(将軍裁定 A)。cmd_4458→小太郎。
 - 2026-09-03 01:30 U3 publisher daemon active 起動(pid 2103173)。
+- 2026-09-03 01:50 殿『遅すぎる、先に進め』→第 3 波 4459/4460/4461 並列配備。U3 publisher active 初発行 05fe87b68(4458)突合 OK。push 閉塞の真因 3 段(merge driver の stale worktree path/bulletin 衝突/workarounds 重複 cmd_id)を順に解消、最後は小太郎 hotfix。root dirty 15 file を checkpoint commit。
+- 2026-09-03 01:57 影丸 reflux CLEAR(publisher は artifact 無しで rc、legacy 経路で CLEAR=INS 化)。
