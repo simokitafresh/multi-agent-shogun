@@ -1,5 +1,5 @@
 <!-- gist-master: 77538fe909ed4d3b83b61b4baf99cacf single_publisher_asis_tobe_5w1h_20260902.md -->
-# origin/main 単一 publisher 化 — AsIs / ToBe / 5W1H 設計書 v1.7(家老 REJECT blt_20260902_041733 の 2 修正を反映、04:19)
+# origin/main 単一 publisher 化 — AsIs / ToBe / 5W1H 設計書 v1.8(殿裁定 2026-09-02 13:07-13:20 の 3 点=採用・D9 両 repo 同時 canary・D10 将軍/家老直接 commit は lease 付き存続 を反映、13:25)
 
 - 作成: 2026-09-02 02:30 将軍(殿指示 02:16『忍者はコミットしない。コミットは家老/将軍のみ』→02:18『コミットのやり方・スキル・構造の検証』→02:24『AsIs/ToBe 5W1H 設計書。不要になる複雑さを先に検証』)
 - 協議: 家老回答 blt_20260902_021944(single publisher + local commit artifact)。協議記録=`queue/notes/shogun_karo_single_committer_hypothesis_20260902_0220.md` §1-6
@@ -8,6 +8,13 @@
 
 ## §0 結論(1 行)
 origin/main へ書く主体を**家老の publisher 1 本(直列 queue)**に限定し、忍者は worktree 内 local commit(成果物)まで、将軍の doc も同 queue を通す。これで merge 93/日→0、criss-cross 0、内容消失 0、root worktree 旧版 0 となり、多重 publisher の副作用に対して積まれた **約 4,900 行・bats 221 本・merge driver 5 本・pre-push guard** が不要になる。
+
+### §0.1 殿裁定の記録(2026-09-02 13:07-13:20、事実→制約→判断→効果)
+| 時刻 | 事実 | 制約 | 判断(殿) | 効果 |
+|---|---|---|---|---|
+| 13:07-13:10 | v1.7 家老 APPROVE 済み、root に 13:08 起動の MERGE_HEAD が残置し将軍 doc commit が BLOCK(§1.2 root 旧版の実例) | 07-21『削るな速くしろ』(削除は U8 のみ) | **採用** | U1 起票へ |
+| 13:12 | 将軍の直接 commit 廃止案に対し殿『gist や小修正も禁止か。将軍と家老のみではだめか』 | gist は Gist API で git commit ではない。§2.1 原則 6 は既に『将軍 doc・家老 hotfix も同じ lease を取る』と規定 | **D10: 将軍・家老の直接 commit は lease 取得+commit 前 root 同期を条件に存続。忍者・daemon・台帳は publisher 経由** | 一本化の定義=直列 writer(lease)1。主体 3(daemon/将軍/家老)でも lease が 1 なら成立。将軍 code D0 の速度を落とさない |
+| 13:14 | canary を infra→dm-signal の 2 段にする案に対し殿『DM-signal 側のリスクは。小さく可逆なら一気にやるべきでは』 | dm-signal は push→Render 自動 deploy。誤りは (a)push しない=fail-closed (b)内容差=C2a+paths 限定で publisher バグに限定、復旧=revert push 数分、DB は publisher 非接触 | **D9: canary は infra と dm-signal の両 repo を同時。unit 順序(U1→U2→U4→U5→U3 dry-run 24h→active→U6→U7→U8)は崩さない** | 一気にやるのは対象 repo、unit の飛ばしではない。dm-signal 側の消失リスク残存期間 0 |
 
 ## §1 AsIs(実測)
 ### 1.1 公開者(origin/main へ commit/push する主体)
@@ -55,7 +62,7 @@ origin/main へ書く主体を**家老の publisher 1 本(直列 queue)**に限�
 3. publisher は source commit を merge/cherry-pick せず、`base..source` の **scope 限定内容(path/blob)を最新 remote tip へ適用し新しい直線 commit** を作る(家老案)。conflict=忍者へ rebase 差し戻し(可視)。
 4. 台帳(insights/bulletin/workarounds/lessons/semantic-map)は publisher 内の **独立 batch commit**(code commit と混ぜない、因果時刻を保つ)。writer は root worktree へ書かず **`$STATE_DIR/ledger_inbox/`(絶対境界)へ追記**し、publisher が batch 時に取り込む(家老レビュー 2: root porcelain を常時 0 にするため)。
 5. 1 task = 1 published commit = 1 push。CI は published_sha に紐付く。
-6. remote ref ごとに writer は 1 つ(lease)。lease は **remote-ref+candidate SHA+expiry** に結び付け、環境変数だけでは偽装できない。将軍 doc・家老 hotfix も同じ lease を取る。
+6. remote ref ごとに writer は 1 つ(lease)。lease は **remote-ref+candidate SHA+expiry** に結び付け、環境変数だけでは偽装できない。将軍 doc・家老 hotfix も同じ lease を取る。 **(v1.8 殿裁定 D10)** 将軍・家老は publisher queue を経由せず root で直接 commit してよいが、必ず (a) lease を取得し (b) commit 直前に root を origin tip へ ff 同期(D8 と同じ処理、dirty があれば所有者退避)し (c) push は lease 保持中に自分で行う(または publisher に委ねる)。lease を持たない直接 commit の push は C5 で BLOCK。
 
 ### 2.2 フロー
 ```
@@ -69,7 +76,7 @@ publisher(家老 lane, 直列):  fetch tip T → isolated tree@T → apply diff(
 ### 2.3 5W1H
 | | AsIs | ToBe |
 |---|---|---|
-| **Who** | 公開者 11 script・実質 5 主体(忍者 autopush/gate/monitor/将軍/家老) | publisher 1(家老 lane)。忍者=local commit、将軍=publish_request |
+| **Who** | 公開者 11 script・実質 5 主体(忍者 autopush/gate/monitor/将軍/家老) | publisher 1(家老 lane、daemon)+lease 付き直接 commit(将軍・家老、v1.8 D10)。忍者=local commit、daemon/台帳=publisher 経由 |
 | **What** | merge 93/日、統合失敗 95、消失 2、旧版 4、GA-PUSH1 3 | 直線履歴(merge 0)、消失 0、旧版 0、GA-PUSH1 0 |
 | **When** | 各 lane が非同期に push(CI 待ち・age 600s・ADMIT) | LGTM+ACCEPT 直後に queue 投入、直列で ≈18s/task(p90 40s)、6 同着でも最後尾 ≈108s |
 | **Where** | root 共有 worktree+clean clone+isolated worktree+6 忍者 worktree の 9 箇所から origin へ | publisher の isolated tree 1 箇所のみが origin へ。root は publisher の後追い checkout(worktree 同期を publisher が行う) |
@@ -98,7 +105,7 @@ publisher(家老 lane, 直列):  fetch tip T → isolated tree@T → apply diff(
 | U6 | reflux/台帳 writer を同 queue の batch へ | 台帳 commit が code commit と分離 ∧ merge driver 未使用 | .gitattributes 6 rule・driver 5・insights auto-commit |
 | U7 | autopush 4 経路/ancestry/push_lane/postclear auto-commit を flag 停止(`PUBLISHER_SINGLE=1`) | 停止後 24h で **C1-C8 全 PASS(各 C の実測 receipt を報告に生貼付)** | push_lane 596 行・autopush 1,182 行(停止) |
 | U8 | canary 7 日後に旧 gate/tests/hook を削除(旧 test の不変量は新 contract test へ移植済みであること+`deletion_justification`) | bats 全 GREEN ∧ 削除 script 参照 0(rg) ∧ 移植不変量 100% | 上記の物理削除・GA-PUSH1 overlap 部・SKILL 縮退(pre-push の lease 強制・品質検査は残す) |
-canary 判定: U7 後 24h で **C1-C8 全 PASS** → dm-signal PJ へ拡大。U8 は 10 file 超の削除が見込まれるため、**削除 manifest(path・不変量の移植先・deletion_justification)を作り殿確認の上、1 batch 最大 10 file** で実施(Tier 2 STOP-AND-REPORT 準拠)。
+canary 判定: **(v1.8 殿裁定 D9)** infra と dm-signal の両 repo を U1 から同時に対象とし、U3 dry-run 24h は両 repo で並行して取り判定差 0 で同時 active 化。U7 後 24h で **C1-C8 全 PASS(両 repo それぞれの receipt)** で canary 成立。dm-signal 固有の追加検知: publish 後の Render deploy が失敗または主要 EP smoke(200)が落ちたら publisher は次 request を hold し revert request のみ admit(R4 と同型、R11)。U8 は 10 file 超の削除が見込まれるため、**削除 manifest(path・不変量の移植先・deletion_justification)を作り殿確認の上、1 batch 最大 10 file** で実施(Tier 2 STOP-AND-REPORT 準拠)。
 
 ## §4 リスクと対策(v1.3 で各リスクに二値の検知+復旧を付与)
 | # | リスク | 対策(構造) | 検知(二値) | 復旧 |
@@ -113,6 +120,8 @@ canary 判定: U7 後 24h で **C1-C8 全 PASS** → dm-signal PJ へ拡大。U8
 | R8 | root worktree と origin の乖離(旧版 staged の再発) | publisher が push 後に root を ff のみで同期し、worktree/index も更新(C3)。**unexpected dirty は他者 WIP**: 同期 BLOCK→所有者特定→artifact 退避→root 同期→**所有者専用の非 root worktree へ再適用**(root には再適用 0。所有者が root しか持たない場合は新しい隔離 worktree を作って適用し、root は clean mirror を維持)。publisher の commit へは投入しない。公開が必要なら別 request+承認 | C3 違反(porcelain ≠ 0 が 10 分超)、SYNC-BLOCK 記録に paths/所有者あり、WIP の publish 混入 = 0。**復旧完了 = root porcelain 0 ∧ artifact hash == owner worktree 適用後 hash** | 退避 artifact から owner worktree へ再適用(公開は承認済 request のみ) |
 | R9 | 忍者成果物の消失(pane 停止/new/worktree cleanup) | LGTM 時に artifacts/ へ複製(C6) | 複製なしの cleanup = 0 | artifacts/ から再 apply |
 | R10 | U8 での過剰削除(『削るな速くしろ』違反) | 削除 manifest+不変量移植先+deletion_justification+殿確認+1 batch ≤10 file | manifest 未記載の削除 = 0 | 削除 manifest から **forward restore commit を publisher 経由で作成**(D012 整合、revert 直接実行はしない) |
+| R11 | (v1.8) dm-signal で publish 後の Render deploy 失敗・smoke 落ち | publisher は published_sha ごとに Render deploy 状態と主要 EP smoke を記録 | deploy failed または smoke≠200 が 1 件 | 次 request hold、revert request のみ admit(D7 同型)。revert push で数分復旧 |
+| R12 | (v1.8) 将軍・家老の直接 commit が root 旧版を再生産 | lease 取得 script が commit 前に root を tip へ ff 同期し dirty は所有者退避(D8) | 直接 commit 後 60s 以内に root HEAD==origin ∧ porcelain 0(C3 と同基準) | 同期失敗は commit BLOCK(fail-closed)、退避 artifact から再適用 |
 
 ## §6 未決事項の決定(v1.5、将軍決定。殿裁定事項は明示)
 | # | 事項 | 決定 | 根拠 |
@@ -125,8 +134,8 @@ canary 判定: U7 後 24h で **C1-C8 全 PASS** → dm-signal PJ へ拡大。U8
 | D6 | 台帳 batch 間隔 | task 完了毎+最大 5 分毎、1 batch=1 commit "ledger: <ledgers> <n entries>" | C7・因果時刻 |
 | D7 | CI RED 時 | hold+ci_fix のみ admit(R4)。殿裁定 08-30『CI 待ち禁止』との整合: push 済み request は待たない、hold は次 request の admit のみ | 現行裁定と整合 |
 | D8 | root 同期 | publisher が push 後に root で ff+worktree/index 同期。unexpected dirty は同期 BLOCK+所有者/paths 記録+artifact 退避→root 同期→**所有者専用の非 root worktree へ再適用**(root へは 0、必要なら隔離 worktree 新設。復旧完了 = root porcelain 0 ∧ artifact hash == owner worktree 適用後 hash) | C3、他者 WIP は退避+再適用で保全・未レビュー公開 0 |
-| D9 | canary 範囲 | infra PJ の hotfix lane(karo-direct)から。dm-signal は U5 到達後。**最終決定は殿** | 影響範囲最小 |
-| D10 | 将軍の直接 commit | 廃止し kind=doc request へ。**最終決定は殿** | 家老レビュー: 2 publisher は一本化でない |
+| D9 | canary 範囲 | **殿裁定 13:14: infra と dm-signal の両 repo を同時**(unit 順序は不変)。v1.7 案『infra→U5 後に dm-signal』は撤回 | dm-signal 側の誤りは fail-closed か revert 数分で可逆、DB 非接触。段階化は判定期間を倍にし消失リスクを残すだけ |
+| D10 | 将軍・家老の直接 commit | **殿裁定 13:12: 存続**。条件=lease 取得+commit 前 root ff 同期(D8 同処理)+lease 保持中 push(C5)。忍者・daemon・台帳は publisher 経由。v1.7 案『廃止し kind=doc request』は撤回。gist(Gist API)は本設計の対象外 | 一本化の定義は『直列 writer(lease)=1』であり主体数ではない。家老レビュー『2 publisher は一本化でない』は lease 無しの直接 commit への指摘で、lease 付きなら充足 |
 | D11 | 旧 field の扱い | `commit_hash` は `source_sha` の別名として U4 dual-read 期間のみ受理、U8 で `published_sha` 必須へ | 移行の可逆性 |
 | D12 | 忍者の worktree base | deploy 時 origin/main tip、task YAML に `base_sha` 固定。60 分超で再固定通知 | R2 |
 
@@ -166,7 +175,10 @@ canary 判定: U7 後 24h で **C1-C8 全 PASS** → dm-signal PJ へ拡大。U8
 - v1.4 → 家老 REJECT(blt_20260902_034658、前回 8/8 反映確認・新規 4): ①publisher 状態 path を STATE_DIR へ統一(C8 追加) ②unexpected dirty=他者 WIP は publish へ投入せず所有者の未 commit WIP として再適用 ③ledger_inbox の絶対境界明記 ④履歴の時系列整列。→ v1.5 に全反映。
 - v1.5 → 家老 REJECT(blt_20260902_034931、前回 4/4 反映確認・新規 2): ①canary/U7 を C1-C8 へ ②WIP 復元先を所有者専用の非 root worktree に限定(復旧完了の二値化)。→ v1.6 に全反映。
 - v1.6 → 家老 REJECT(blt_20260902_041733、新規 2): ①U7 AC を C1-C8 全 PASS(実測 receipt)へ ②履歴の時系列再整列。→ v1.7 に全反映。
+- v1.7 → 家老 **APPROVE**(blt_20260902_041853、計 7 往復)。→ 殿裁定 3 点(13:07-13:20)を v1.8 に反映(§0.1)。
 
-## §5.1 レビュー依頼(家老、v1.7)
+## §5.1 レビュー依頼(家老、v1.8)
+観点(v1.8 新規): (9) D10 lease 付き直接 commit(将軍・家老)が C1/C3/C5 と矛盾しないか、R12 の同期 script は D8 と同一実装で足りるか (10) D9 両 repo 同時 canary で R11(Render deploy/smoke hold)の検知が二値か、dm-signal 側に publisher 非接触でない経路(migration/recalc)が混入しないか (11) §0.1 裁定記録が事実→制約→判断→効果で欠落なく、v1.7 案の撤回が本文全体で整合しているか(残存する『廃止』『U5 後』表現 0)
+(以下 v1.7 観点、参考)
 観点: (5) §4 R1-R10 の検知・復旧が二値か (6) §6 D1-D12 のうち将軍が決めてよい範囲を越えていないか(殿裁定は D9/D10 のみ) (7) §7 P1-P10 に本日事象の漏れ (8) §8 A1-A10 が deploy_task/karo-direct の現行 gate と矛盾しないか。
 観点: (1)§1.3 不要化 inventory の過不足(削ってはいけないものが混ざっていないか、殿 07-21『削るな速くしろ』との整合) (2)§2.3/2.4 の契約が二値か (3)§3 の順序・AC・canary 範囲 (4)壊れる契約の列挙漏れ(blt_021944 の 13 項目と突合)。
