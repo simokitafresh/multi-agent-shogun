@@ -14211,3 +14211,10 @@ insights:
   source: "manual"
   fix_known: false
   status: pending
+- id: INS-20260902-225235773-02a8
+  ts: "2026-09-02T22:52:35+09:00"
+  insight: "[[T226 T224 T212 T201 T188の進捗は？]] semantic_stress_test candidate_aliases: NO_MATCH source=lord query=T226 / T224 / T212 / T201 / T188の進捗は？"
+  priority: "low"
+  source: "semantic_stress_test"
+  fix_known: false
+  status: pending
