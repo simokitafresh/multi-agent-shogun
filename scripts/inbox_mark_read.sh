@@ -344,18 +344,25 @@ if review_requirements:
         msg_fingerprint = str(message.get("report_fingerprint") or "")
         matched = False
         if report_name and message_at is not None:
+            # 全matchingエントリから最新reviewed_atのverdictを取得(first matchの罠回避)
+            latest_verdict_for_fp = ""
+            latest_reviewed_at_for_fp = None
+            for re_scan in review_entries:
+                if not entry_matches_report(re_scan, report_name):
+                    continue
+                for rat in [parse_timestamp(v) for v in nested_values(re_scan, "reviewed_at")]:
+                    if rat is not None and (latest_reviewed_at_for_fp is None or rat >= latest_reviewed_at_for_fp):
+                        latest_reviewed_at_for_fp = rat
+                        latest_verdict_for_fp = str(re_scan.get("verdict") or re_scan.get("report_verdict") or "")
             for review_entry in review_entries:
                 if not entry_matches_report(review_entry, report_name):
                     continue
                 review_times = [parse_timestamp(value) for value in nested_values(review_entry, "reviewed_at")]
                 if any(review_at is not None and review_at >= message_at for review_at in review_times):
-                    # fingerprint照合: LGTM verdictの場合のみ適用。
-                    # FAIL verdictはapproval不要のためスキップ。
-                    # メッセージにfingerprintがある場合、
-                    # review_approvals/reports/<key>/gunshi.yaml のfingerprintと
-                    # 一致するか確認する。不一致=旧LGTMは新fp報告に無効→BLOCK。
-                    entry_verdict = str(review_entry.get("verdict") or review_entry.get("report_verdict") or "")
-                    if msg_fingerprint and entry_verdict.upper() not in ("FAIL",):
+                    # fingerprint照合: 最新エントリのverdictがFAILならスキップ。
+                    # FAIL verdictはapproval不要。
+                    effective_verdict = latest_verdict_for_fp or str(review_entry.get("verdict") or "")
+                    if msg_fingerprint and effective_verdict.upper() not in ("FAIL",):
                         cmd_id = ""
                         for key in ("cmd_id", "parent_cmd"):
                             v = entry.get(key) if isinstance(entry, dict) else None
