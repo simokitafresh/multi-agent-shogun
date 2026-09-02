@@ -13082,3 +13082,10 @@ insights:
   source: "skill_script_refs:9abfd94ce2d8bec9"
   fix_known: false
   status: pending
+- id: INS-20260902-131646701-b4a9
+  ts: "2026-09-02T13:16:46+09:00"
+  insight: "[[DM signal側のリスクは？リスクが小さく普及可能であれば一気にやるべきではないか？]] semantic_stress_test candidate_aliases: NO_MATCH source=lord query=DM-signal側のリスクは？リスクが小さく普及可能であれば一気にやるべきではないか？"
+  priority: "low"
+  source: "semantic_stress_test"
+  fix_known: false
+  status: pending
