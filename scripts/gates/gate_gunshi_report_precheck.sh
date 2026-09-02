@@ -1481,8 +1481,50 @@ fi
 echo ""
 echo "■ SG-PRE25: command×files_modified名前照合(LG036)"
 if [ -n "${PARENT_CMD:-}" ] && [ -n "${FILES_MODIFIED:-}" ]; then
-    _cmd_spec="$REPO_ROOT/queue/shogun_to_karo.yaml"
+    # Keep the command specification injectable for isolated contract tests;
+    # production continues to use the queue SSOT.
+    _cmd_spec="${GUNSHI_PRECHECK_CMD_SPEC:-$REPO_ROOT/queue/shogun_to_karo.yaml}"
     if [ -f "$_cmd_spec" ]; then
+        # Defense-in-depth for the shared extractor contract: a script named
+        # immediately after bash/python/etc. is an execution tool, never a
+        # deliverable.  This keeps PRE25 fail-closed if a stale extractor
+        # orders broad target-path matching before exec-prefix classification.
+        _pre25_exec_prefixes=$(python3 - "$_cmd_spec" "$PARENT_CMD" <<'PY'
+import os
+import re
+import sys
+import yaml
+
+spec_path, cmd_id = sys.argv[1:3]
+try:
+    payload = yaml.safe_load(open(spec_path, encoding="utf-8")) or {}
+except (OSError, yaml.YAMLError):
+    payload = {}
+commands = payload.get("commands", {}) if isinstance(payload, dict) else {}
+if isinstance(commands, dict):
+    row = commands.get(cmd_id, {})
+elif isinstance(commands, list):
+    row = next((item for item in commands if isinstance(item, dict) and str(item.get("id", "")) == cmd_id), {})
+else:
+    row = {}
+command = str(row.get("command", "") or "") if isinstance(row, dict) else ""
+pattern = re.compile(
+    r"(?<![A-Za-z0-9_./-])"
+    r"((?:[A-Za-z0-9_.-]+/)*[A-Za-z0-9_.-]+"
+    r"\.(?:sh|py|md|yaml|yml|json|toml|js|ts|tsx|jsx|css|html|sql|csv))"
+    r"(?![A-Za-z0-9_.-])"
+)
+verbs = {"bash", "python3", "python", "sh", "bats", "node"}
+seen = set()
+for match in pattern.finditer(command):
+    prefix = command[max(0, match.start() - 60):match.start()].split()
+    if prefix and prefix[-1].lower() in verbs:
+        name = os.path.basename(match.group(1))
+        if name not in seen:
+            print(name)
+            seen.add(name)
+PY
+)
         _pre25_assigned_acs=$(python3 - "$REPORT_PATH" "${TASK_FILE:-}" <<'PY'
 import sys, yaml
 def load(path):
@@ -1515,10 +1557,20 @@ PY
                     echo "  PASS: command欄ファイルとfiles_modified名前照合OK(readonly_ref除外済み)"
                     ;;
                 WARN:*)
-                    echo "  ★★★ ERROR: command欄ファイルがfiles_modifiedに不在(readonly_ref除外後): ${_line#WARN: }"
-                    echo "  → verdict: FAILにせよ。gateのcommand_files_modified_mismatchはLG037の3分類を区別できない(殿厳命Step3.5。5件連続LGTM→BLOCK)"
-                    _has_warn=1
-                    ERRORS=$((ERRORS + 1))
+                    _pre25_non_exec_warn=0
+                    for _warn_ref in ${_line#WARN: }; do
+                        if printf '%s\n' "$_pre25_exec_prefixes" | grep -Fxq -- "$_warn_ref"; then
+                            echo "  INFO: exec_prefix参照を成果物照合から除外: $_warn_ref"
+                        else
+                            echo "  ★★★ ERROR: command欄ファイルがfiles_modifiedに不在(readonly_ref除外後): $_warn_ref"
+                            _pre25_non_exec_warn=1
+                        fi
+                    done
+                    if [ "$_pre25_non_exec_warn" -eq 1 ]; then
+                        echo "  → verdict: FAILにせよ。gateのcommand_files_modified_mismatchはLG037の3分類を区別できない(殿厳命Step3.5。5件連続LGTM→BLOCK)"
+                        _has_warn=1
+                        ERRORS=$((ERRORS + 1))
+                    fi
                     ;;
                 READONLY_EXCLUDED:*)
                     echo "  INFO: readonly_ref除外済み: ${_line#READONLY_EXCLUDED: }"

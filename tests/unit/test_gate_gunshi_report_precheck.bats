@@ -4,6 +4,7 @@
 # test_necessity: SG-PRE3Xは共有cross-repo契約で所有repoを解決し、有効な外部repo成果の偽BLOCKを防ぎつつ不正repo/commit/path/primary矛盾をfail-closedに保つ。
 # test_necessity: precheckがCLEARと予測した報告はcmd_complete_gateのparent_cmd_contract/ac_version_stale/lesson_feedback_set_mismatchのいずれでもBLOCKされない（判定関数が同一）。
 # test_necessity: SG-PRE20はshared lesson-feedback-setのOK接頭辞付き成功結果をPASSとして扱い、MISMATCHのERROR/WARN契約を維持する。
+# test_necessity: SG-PRE25はbash/python等の実行prefixを成果物から除外しつつ、同一command内の真正な未計画pathを検出する。
 
 setup() {
   REPO_ROOT="$(cd "$BATS_TEST_DIRNAME/../.." && pwd)"
@@ -134,6 +135,45 @@ YAML
   [[ "$output" == *"■ SG-PRE20: related_lessons+lessons_useful整合"* ]]
   [[ "$output" == *"PASS: related_lessons="*" lessons_useful=1 set=OK mode=subset allowed=1 reported=1"* ]]
   [[ "$output" != *"ERROR: lessons_useful集合がtask契約と不一致 → GATE BLOCK確実: OK mode=subset"* ]]
+}
+
+@test "SG-PRE25 excludes exec-prefix tools and keeps true unplanned paths" {
+  local spec="$TMP_DIR/cmd-spec.yaml"
+  cat > "$spec" <<'YAML'
+commands:
+  cmd_fixture:
+    target_path: [scripts]
+    command: bash scripts/ninja_scope_commit.sh -- task
+YAML
+  cat > "$TMP_DIR/report.yaml" <<'YAML'
+worker_id: kagemaru
+parent_cmd: cmd_fixture
+files_modified:
+  - {path: scripts/planned.sh, change: planned fixture}
+YAML
+
+  run env GUNSHI_PRECHECK_ONLY=SG-PRE25 \
+    GUNSHI_PRECHECK_CMD_SPEC="$spec" \
+    GUNSHI_PRECHECK_TASKS_DIR="$TMP_DIR/tasks" \
+    bash "$REPO_ROOT/scripts/gates/gate_gunshi_report_precheck.sh" "$TMP_DIR/report.yaml"
+  # SG-PRE25 is focused here; the intentionally minimal fixture may fail
+  # unrelated report-format checks before reaching this section.
+  [ "$status" -ne 0 ]
+  [[ "$output" != *"ERROR: command欄ファイルがfiles_modifiedに不在(readonly_ref除外後): ninja_scope_commit.sh"* ]]
+
+  cat > "$spec" <<'YAML'
+commands:
+  cmd_fixture:
+    target_path: [scripts]
+    command: bash scripts/ninja_scope_commit.sh -- task; modify scripts/unplanned.sh
+YAML
+  run env GUNSHI_PRECHECK_ONLY=SG-PRE25 \
+    GUNSHI_PRECHECK_CMD_SPEC="$spec" \
+    GUNSHI_PRECHECK_TASKS_DIR="$TMP_DIR/tasks" \
+    bash "$REPO_ROOT/scripts/gates/gate_gunshi_report_precheck.sh" "$TMP_DIR/report.yaml"
+  [ "$status" -ne 0 ]
+  [[ "$output" == *"ERROR: command欄ファイルがfiles_modifiedに不在(readonly_ref除外後): unplanned.sh"* ]]
+  [[ "$output" != *"ERROR: command欄ファイルがfiles_modifiedに不在(readonly_ref除外後): ninja_scope_commit.sh"* ]]
 }
 
 make_source_context_fixture() {
