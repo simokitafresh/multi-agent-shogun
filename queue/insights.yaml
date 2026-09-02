@@ -14633,21 +14633,30 @@ insights:
   priority: "low"
   source: "semantic_stress_test"
   fix_known: false
-  status: pending
+  status: "resolved"
+  resolved_reason: "semantic index candidate was absorbed into a registered concept"
+  action_artifact: "semantic_index=/home/simokitafresh/multi-agent-shogun/docs/semantic-index/index.md"
+  resolved_at: "2026-09-03T01:47:25.238495"
 - id: INS-20260903-014604152-81b3
   ts: "2026-09-03T01:46:04+09:00"
   insight: "[[殿 00 52『 ja signals が全期間で同じ signal になっているぞ]] semantic_stress_test candidate_aliases: NO_MATCH source=cmds query=殿 2026-09-03 00:52『/ja/signals/ が全期間で同じ signal になっているぞ、これはバグだな』。本番 curl 00:53 一次: /ja/signals/2008-10/ と /2020-03/ と /2026-08/ の保有欄が全て同じ(現在の XLU)。真因=lp の monthly-signal-page compon"
   priority: "low"
   source: "semantic_stress_test"
   fix_known: false
-  status: pending
+  status: "resolved"
+  resolved_reason: "semantic index candidate was absorbed into a registered concept"
+  action_artifact: "semantic_index=/home/simokitafresh/multi-agent-shogun/docs/semantic-index/index.md"
+  resolved_at: "2026-09-03T01:47:25.357510"
 - id: INS-20260903-014617106-95d1
   ts: "2026-09-03T01:46:17+09:00"
   insight: "[[殿 01 30『あまりに遅すぎる]] semantic_stress_test candidate_aliases: NO_MATCH source=cmds query=殿 2026-09-03 01:30『あまりに遅すぎる。先に進んでから戻ればいい』。U3 publisher daemon は 01:30 に active 起動済(pid 2103173)。設計書 §9.1 U7: 旧 3 経路の push を flag 1 本で no-op にし、origin 到達 commit を publisher/wrapper"
   priority: "low"
   source: "semantic_stress_test"
   fix_known: false
-  status: pending
+  status: "resolved"
+  resolved_reason: "semantic index candidate was absorbed into a registered concept"
+  action_artifact: "semantic_index=/home/simokitafresh/multi-agent-shogun/docs/semantic-index/index.md"
+  resolved_at: "2026-09-03T01:47:25.503860"
 - id: INS-20260903-014632256-4afe
   ts: "2026-09-03T01:46:32+09:00"
   insight: "[[単一 publisher U8 cleanup manifest §10 M1 M11 を実行結果台帳として起こし]] semantic_stress_test candidate_aliases: NO_MATCH source=cmds query=単一 publisher U8: cleanup manifest(§10 M1-M11)を実行結果台帳として起こし、flag ON 後に旧 push 経路(autopush/push_lane/safe_shared_main_ff/GA-PUSH1/merge driver/旧 test)を 1 batch 10 file 以内で物理削除する"
