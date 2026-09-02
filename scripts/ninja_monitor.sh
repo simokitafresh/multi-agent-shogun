@@ -2737,6 +2737,8 @@ auto_commit_with_dedicated_index() {
 }
 
 auto_commit_before_clear() {
+    # 殿裁定 2026-09-02 20:44 §10 M8: publisher 完成まで auto_commit 経路を構造で無効化(flag file)。
+    [ -f "$SCRIPT_DIR/queue/flags/auto_commit_before_clear.disabled" ] && return 0
     local agent_name="$1"
     local uncommitted="$2"
     local regular_paths context_paths last_file context_last_file
