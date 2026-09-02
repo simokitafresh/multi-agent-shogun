@@ -14754,7 +14754,10 @@ insights:
   priority: "medium"
   source: "manual"
   fix_known: false
-  status: pending
+  status: "resolved"
+  resolved_reason: "一次確認で未解決の実装欠陥を確認。scripts/inbox_mark_read.sh:344-365はmsg.report_fingerprint空値を照合せず、93f0efeeのガードを欠落fingerprint messageへ適用できない。コード修正は本reflux scope外のため、別cmdでreport path由来fingerprint計算と照合を実装するdecision_candidateとして整理。"
+  action_artifact: "decision_candidate=別cmd起票;primary=scripts/inbox_mark_read.sh:L344-L365;origin_commit=93f0efee0;scope=queue/insights.yamlのみ;required_change=report pathからfingerprint計算し欠落messageもgunshi approvalと照合;test=新規regression契約"
+  resolved_at: "2026-09-03T06:20:42.532075"
 - id: INS-20260903-022443422-0032
   ts: "2026-09-03T02:24:43+09:00"
   insight: "[[loopは生きているか？single publisher asis tobe 5w1h 20260902 mdもアップデ]] semantic_stress_test candidate_aliases: NO_MATCH source=lord query=loopは生きているか？single_publisher_asis_tobe_5w1h_20260902.mdもアップデートしてくれ"
