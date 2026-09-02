@@ -9478,6 +9478,7 @@ task:
 ${planned_paths_line}
 ${inspection_path_line}
   scout_exempt: true
+  task_worktree_required: true
   estimated_minutes: 5
   status: assigned
 ${purpose_yaml}
