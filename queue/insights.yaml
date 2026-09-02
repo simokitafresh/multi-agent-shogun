@@ -14185,3 +14185,10 @@ insights:
   source: "semantic_stress_test"
   fix_known: false
   status: pending
+- id: INS-20260902-224445860-3c69
+  ts: "2026-09-02T22:44:45+09:00"
+  insight: "[[T201 SEOについて教えてくれ]] semantic_stress_test candidate_aliases: NO_MATCH source=lord query=T201 SEOについて教えてくれ。俺がやることはあるか？"
+  priority: "low"
+  source: "semantic_stress_test"
+  fix_known: false
+  status: pending
