@@ -1660,6 +1660,9 @@ source_snapshot_matches_tip() {
 
 # Accept a non-ancestor report commit only after the source-only publication
 # identity and every report-owned path are independently proven equivalent.
+# A durable receipt is sufficient for task generations created before the
+# task-worktree marker contract.  When a marker exists it remains an additional
+# identity proof, never a replacement for the receipt/path proof.
 report_source_only_equivalence_state() {
     local report_file="$1" repo_dir="$2" task_file="$3" expected_head="$4"
     local cmd_id="${5:-${CMD_ID:-}}" completion_generation="${6:-${SHOGUN_COMPLETION_GENERATION:-}}"
@@ -1697,29 +1700,87 @@ if not re.fullmatch(r"[0-9a-f]{64}", generation):
 
 task_id = str(task.get("task_id") or "").strip()
 parent_cmd = str(task.get("parent_cmd") or "").strip()
-marker_path = pathlib.Path(str(task.get("task_worktree_marker") or "").strip())
-worktree = pathlib.Path(str(task.get("task_worktree_workdir") or task.get("task_worktree_path") or "").strip())
-task_generation = str(task.get("task_worktree_generation") or "").strip().lower()
-if not task_id or not parent_cmd or not marker_path.is_file() or not worktree.is_dir():
-    fail("task_worktree_identity_missing")
-if not re.fullmatch(r"[0-9a-f]{64}", task_generation):
-    fail("task_worktree_generation_invalid")
-try:
-    marker = json.loads(marker_path.read_text(encoding="utf-8"))
-except (OSError, ValueError, TypeError):
-    fail("task_worktree_marker_invalid")
-if not isinstance(marker, dict) or (
-    marker.get("version") != 1 or marker.get("state") not in {"active", "published"}
-    or marker.get("task_id") != task_id or marker.get("parent_cmd") != parent_cmd
-    or str(marker.get("generation") or "").strip().lower() != task_generation
-    or pathlib.Path(str(marker.get("repo") or "")).resolve() != repo
-    or pathlib.Path(str(marker.get("worktree") or "")).resolve() != worktree.resolve()
-):
-    fail("task_worktree_marker_identity_mismatch")
+if not task_id or not parent_cmd:
+    fail("task_identity_missing")
 
-published = str(marker.get("published_commit") or "").strip().lower()
+# New task worktrees have a marker, but archived/legacy tasks can legitimately
+# retain only the durable receipt.  Do not reject the latter before the receipt
+# has had a chance to prove the same publication identity.
+marker_ref = str(task.get("task_worktree_marker") or "").strip()
+worktree_ref = str(task.get("task_worktree_workdir") or task.get("task_worktree_path") or "").strip()
+task_generation = str(task.get("task_worktree_generation") or "").strip().lower()
+marker = None
+if marker_ref or worktree_ref or task_generation:
+    marker_path = pathlib.Path(marker_ref)
+    worktree = pathlib.Path(worktree_ref)
+    if not marker_path.is_file() or not worktree.is_dir():
+        fail("task_worktree_identity_missing")
+    if not re.fullmatch(r"[0-9a-f]{64}", task_generation):
+        fail("task_worktree_generation_invalid")
+    try:
+        marker = json.loads(marker_path.read_text(encoding="utf-8"))
+    except (OSError, ValueError, TypeError):
+        fail("task_worktree_marker_invalid")
+    if not isinstance(marker, dict) or (
+        marker.get("version") != 1 or marker.get("state") not in {"active", "published"}
+        or marker.get("task_id") != task_id or marker.get("parent_cmd") != parent_cmd
+        or str(marker.get("generation") or "").strip().lower() != task_generation
+        or pathlib.Path(str(marker.get("repo") or "")).resolve() != repo
+        or pathlib.Path(str(marker.get("worktree") or "")).resolve() != worktree.resolve()
+    ):
+        fail("task_worktree_marker_identity_mismatch")
+
+published = str(marker.get("published_commit") or "").strip().lower() if marker else ""
+if marker and not re.fullmatch(r"[0-9a-f]{40}", published):
+    fail("published_commit_missing")
+
+cmd_id = os.environ["CMD_ID_VALUE"].strip() or parent_cmd
+report_generation = next((str(report.get(key) or "").strip() for key in
+                          ("report_generation", "report_generation_fingerprint", "report_fingerprint", "report_id")
+                          if str(report.get(key) or "").strip()), "")
+if not cmd_id or not report_generation:
+    fail("report_generation_missing")
+receipt_value = os.environ["RECEIPT_OVERRIDE"].strip()
+receipt = pathlib.Path(receipt_value) if receipt_value else pathlib.Path(os.environ["SCRIPT_DIR_VALUE"]) / "queue/gates" / cmd_id / "source_only_publish.receipt.json"
+try:
+    receipt_data = json.loads(receipt.read_text(encoding="utf-8"))
+except (OSError, ValueError, TypeError):
+    fail("source_only_receipt_invalid")
+if not isinstance(receipt_data, dict) or receipt_data.get("version") != 1 \
+        or receipt_data.get("state") != "published" \
+        or receipt_data.get("cmd_id") != cmd_id \
+        or receipt_data.get("completion_generation") != generation:
+    fail("source_only_receipt_identity_mismatch")
+actual = set()
+for entry in receipt_data.get("entries") or []:
+    if not isinstance(entry, dict):
+        fail("source_only_receipt_entry_invalid")
+    if entry.get("repo") != str(repo):
+        continue
+    entry_tip = str(entry.get("remote_tip") or "").strip().lower()
+    if (entry.get("cmd_id") != cmd_id or entry.get("completion_generation") != generation
+            or type(entry.get("remote_contains_source_rc")) is not int
+            or isinstance(entry.get("remote_contains_source_rc"), bool)
+            or entry.get("remote_contains_source_rc") != 0
+            or not re.fullmatch(r"[0-9a-f]{40}", entry_tip)):
+        fail("source_only_receipt_entry_identity_mismatch")
+    entry_source = str(entry.get("source_sha") or "").strip().lower()
+    entry_report = str(entry.get("report_generation") or "").strip()
+    if not re.fullmatch(r"[0-9a-f]{40}", entry_source) or not entry_report:
+        fail("source_only_receipt_entry_invalid")
+    if entry_source != source or entry_report != report_generation:
+        fail("source_only_receipt_pair_mismatch")
+    if published and published != entry_tip:
+        fail("published_commit_receipt_mismatch")
+    published = entry_tip
+    actual.add((entry_source, entry_report))
+if actual != {(source, report_generation)}:
+    fail("source_only_receipt_pair_mismatch")
 if not re.fullmatch(r"[0-9a-f]{40}", published):
     fail("published_commit_missing")
+if marker and str(marker.get("published_commit") or "").strip().lower() != published:
+    fail("published_commit_receipt_mismatch")
+
 def git(*args):
     result = subprocess.run(["git", "-C", str(repo), *args], stdout=subprocess.PIPE,
                             stderr=subprocess.DEVNULL, text=True, check=False)
@@ -1747,46 +1808,88 @@ def blob(commit, path):
     result = subprocess.run(["git", "-C", str(repo), "rev-parse", "%s:%s" % (commit, path)],
                             stdout=subprocess.PIPE, stderr=subprocess.DEVNULL, text=True, check=False)
     return result.stdout.strip() if result.returncode == 0 else "__ABSENT__"
-for path in paths:
-    if blob(source, path) != blob(published, path):
-        fail("report_path_snapshot_mismatch:%s" % path)
+def commit_text(commit, path):
+    result = subprocess.run(["git", "-C", str(repo), "show", "%s:%s" % (commit, path)],
+                            stdout=subprocess.PIPE, stderr=subprocess.DEVNULL,
+                            text=True, check=False)
+    return result.stdout if result.returncode == 0 else ""
 
-cmd_id = os.environ["CMD_ID_VALUE"].strip() or parent_cmd
-report_generation = next((str(report.get(key) or "").strip() for key in
-                          ("report_generation", "report_generation_fingerprint", "report_fingerprint", "report_id")
-                          if str(report.get(key) or "").strip()), "")
-if not cmd_id or not report_generation:
-    fail("report_generation_missing")
-receipt_value = os.environ["RECEIPT_OVERRIDE"].strip()
-receipt = pathlib.Path(receipt_value) if receipt_value else pathlib.Path(os.environ["SCRIPT_DIR_VALUE"]) / "queue/gates" / cmd_id / "source_only_publish.receipt.json"
-try:
-    receipt_data = json.loads(receipt.read_text(encoding="utf-8"))
-except (OSError, ValueError, TypeError):
-    fail("source_only_receipt_invalid")
-if not isinstance(receipt_data, dict) or receipt_data.get("version") != 1 \
-        or receipt_data.get("state") != "published" \
-        or receipt_data.get("cmd_id") != cmd_id \
-        or receipt_data.get("completion_generation") != generation:
-    fail("source_only_receipt_identity_mismatch")
-actual = set()
-for entry in receipt_data.get("entries") or []:
-    if not isinstance(entry, dict):
-        fail("source_only_receipt_entry_invalid")
-    if entry.get("repo") != str(repo):
+def insight_index(text, label):
+    if not text.strip():
+        return "empty", {}
+    try:
+        document = yaml.safe_load(text)
+    except yaml.YAMLError:
+        fail("%s_insights_yaml_invalid" % label)
+    if isinstance(document, list):
+        values = document
+        root = "list"
+    elif isinstance(document, dict) and isinstance(document.get("insights"), list):
+        values = document["insights"]
+        root = "mapping"
+    else:
+        fail("%s_insights_root_invalid" % label)
+    indexed = {}
+    for value in values:
+        if not isinstance(value, dict) or not str(value.get("id") or "").strip():
+            fail("%s_insights_entry_invalid" % label)
+        identity = str(value["id"])
+        if identity in indexed:
+            fail("%s_insights_duplicate_id" % label)
+        indexed[identity] = value
+    return root, indexed
+
+def insight_entry_equivalent(source_entry, published_entry):
+    if source_entry == published_entry:
+        return True
+    changed = {key for key in set(source_entry) | set(published_entry)
+               if source_entry.get(key) != published_entry.get(key)}
+    # These producer-owned counters can be refreshed after publication without
+    # changing the insight's meaning.
+    if (source_entry.get("source") == "self_retro"
+            and published_entry.get("source") == "self_retro"
+            and changed and changed <= {"occurrence_count", "last_seen"}):
+        return True
+    # Reflux may resolve the same producer/ID between source publication and
+    # the terminal check; only its four typed resolution fields are mutable.
+    resolution_fields = {"status", "resolved_reason", "action_artifact", "resolved_at"}
+    if (source_entry.get("source") == published_entry.get("source")
+            and source_entry.get("status") == "pending"
+            and published_entry.get("status") == "resolved"
+            and changed and changed <= resolution_fields
+            and all(str(published_entry.get(key) or "").strip()
+                    for key in ("resolved_reason", "action_artifact", "resolved_at"))):
+        return True
+    return False
+
+for path in paths:
+    if path != "queue/insights.yaml":
+        if blob(source, path) != blob(published, path):
+            fail("report_path_snapshot_mismatch:%s" % path)
         continue
-    if (entry.get("cmd_id") != cmd_id or entry.get("completion_generation") != generation
-            or type(entry.get("remote_contains_source_rc")) is not int
-            or isinstance(entry.get("remote_contains_source_rc"), bool)
-            or entry.get("remote_contains_source_rc") != 0
-            or str(entry.get("remote_tip") or "").strip().lower() != published):
-        fail("source_only_receipt_entry_identity_mismatch")
-    entry_source = str(entry.get("source_sha") or "").strip().lower()
-    entry_report = str(entry.get("report_generation") or "").strip()
-    if not re.fullmatch(r"[0-9a-f]{40}", entry_source) or not entry_report:
-        fail("source_only_receipt_entry_invalid")
-    actual.add((entry_source, entry_report))
-if actual != {(source, report_generation)}:
-    fail("source_only_receipt_pair_mismatch")
+    source_root, source_index = insight_index(commit_text(source, path), "source")
+    published_root, published_index = insight_index(commit_text(published, path), "published")
+    base_sha_result = subprocess.run(["git", "-C", str(repo), "rev-parse", "%s^" % source],
+                                     stdout=subprocess.PIPE, stderr=subprocess.DEVNULL,
+                                     text=True, check=False)
+    base_sha = base_sha_result.stdout.strip() if base_sha_result.returncode == 0 else ""
+    base_root, base_index = insight_index(commit_text(base_sha, path), "base") if base_sha else (source_root, {})
+    if source_root != published_root or source_root != base_root:
+        fail("report_path_snapshot_mismatch:%s" % path)
+    for identity in set(source_index) | set(base_index):
+        source_entry = source_index.get(identity)
+        base_entry = base_index.get(identity)
+        if source_entry == base_entry:
+            continue
+        if source_entry is None:
+            # Only the established resolved-compaction lifecycle may remove an
+            # ID from a source generation; arbitrary deletions remain blocked.
+            if base_entry is None or base_entry.get("status") != "resolved" or identity in published_index:
+                fail("report_path_snapshot_mismatch:%s" % path)
+            continue
+        published_entry = published_index.get(identity)
+        if published_entry is None or not insight_entry_equivalent(source_entry, published_entry):
+            fail("report_path_snapshot_mismatch:%s" % path)
 print("published=%s paths=%d matched=%d" % (published, len(paths), len(paths)))
 PY
 }
