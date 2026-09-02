@@ -14510,3 +14510,10 @@ insights:
   source: "semantic_stress_test"
   fix_known: false
   status: pending
+- id: INS-20260903-005558502-7786
+  ts: "2026-09-03T00:55:58+09:00"
+  insight: "[[単一 publisher U2 再検証 の後継 Codex 忍者が隔離 clone で修正後の publish arti]] semantic_stress_test candidate_aliases: NO_MATCH source=cmds query=単一 publisher U2 再検証(cmd_4449 の後継): Codex 忍者が隔離 clone で修正後の publish_artifact(restore の manifest 完全一致検証 71162b246)に対し bats 12 本を選択実行し、設計書契約から敵対 fixture をもう 1 本追加して fail-close 契約を証明する"
+  priority: "low"
+  source: "semantic_stress_test"
+  fix_known: false
+  status: pending
