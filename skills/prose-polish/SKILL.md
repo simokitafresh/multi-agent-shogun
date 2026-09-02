@@ -1,7 +1,7 @@
 ---
 name: prose-polish
 description: |
-  将軍専用。殿が書いた日本語の文章(note 記事・随筆・一人称の物語・詩的な散文)を、殿との対話で 1 手ずつ推敲し note 下書きへ上げる。
+  What: 将軍専用の推敲スキル。殿が書いた日本語の文章(note 記事・随筆・一人称の物語・詩的な散文)を、殿との対話で 1 手ずつ推敲し note 下書きへ上げる。
   natural-japanese(coji)の lint は「検出器」として先に回すが、判定は詩の原理(反復=韻律、句点連打=打撃音、空白=呼吸、横線=場面転換、見出し=散文の札)で行う。lint の数値を目標にしない。
   TRIGGER: /prose-polish、文章を整えたい、推敲、ブラッシュアップ、natural language で整える、note の下書きを直す、AI 臭は減ったがインパクトが無い、余韻、呼吸、行間、詩でもあるべき
   DO NOT TRIGGER: DM-signal 機能解説記事の新規執筆(→note-writer)、将軍書簡形式(→sengoku-writer)、週報/月報、設計書レビュー、コードのリファクタ
