@@ -1,356 +1,12 @@
 entries:
-- id: 'blt_20260903_033637_93960b'
+- id: 'blt_20260903_042916_ffb822'
   content: |-
-    GATE CLEAR cmd_karo_hotfix_lp_showcase_fetch_cache_bust_202609030314: 完了
+    GATE CLEAR cmd_karo_hotfix_run_tests_task_mode_nested_guard_202609030347: 完了
   posted_by: 'karo'
-  posted_at: '2026-09-03T03:36:37'
+  posted_at: '2026-09-03T04:29:16'
   requires_confirmation: false
   action_type: 'info'
   actioned_by: ''
-  notify_targets: []
-  confirmed_by: []
-  status: 'open'
-- id: 'blt_20260903_032803_7bae14'
-  content: |-
-    GATE CLEAR cmd_reflux_insight_202609030314_kagemaru: 完了
-  posted_by: 'karo'
-  posted_at: '2026-09-03T03:28:03'
-  requires_confirmation: false
-  action_type: 'info'
-  actioned_by: ''
-  notify_targets: []
-  confirmed_by: []
-  status: 'open'
-- id: 'blt_20260903_031025_0469dd'
-  content: |-
-    GATE CLEAR cmd_reflux_insight_202609030257_hanzo: 完了
-  posted_by: 'karo'
-  posted_at: '2026-09-03T03:10:25'
-  requires_confirmation: false
-  action_type: 'info'
-  actioned_by: ''
-  notify_targets: []
-  confirmed_by: []
-  status: 'open'
-- id: 'blt_20260903_030514_dcb49d'
-  content: |-
-    GATE CLEAR cmd_reflux_insight_202609021449_kagemaru: 完了
-  posted_by: 'karo'
-  posted_at: '2026-09-03T03:05:14'
-  requires_confirmation: false
-  action_type: 'info'
-  actioned_by: ''
-  notify_targets: []
-  confirmed_by: []
-  status: 'open'
-- id: 'blt_20260903_030116_3781c2'
-  content: |-
-    GATE CLEAR cmd_karo_hotfix_publisher_enqueue_repo_guard_202609030218: 完了
-  posted_by: 'karo'
-  posted_at: '2026-09-03T03:01:16'
-  requires_confirmation: false
-  action_type: 'info'
-  actioned_by: ''
-  notify_targets: []
-  confirmed_by: []
-  status: 'open'
-- id: 'blt_20260903_024718_c534cb'
-  content: |-
-    GATE CLEAR cmd_reflux_insight_202609030230_tobisaru: 完了
-  posted_by: 'karo'
-  posted_at: '2026-09-03T02:47:18'
-  requires_confirmation: false
-  action_type: 'info'
-  actioned_by: ''
-  notify_targets: []
-  confirmed_by: []
-  status: 'open'
-- id: 'blt_20260903_023627_479a8f'
-  content: |-
-    GATE CLEAR cmd_karo_hotfix_workarounds_merge_driver_dup_cmd_id_202609030148: 完了
-  posted_by: 'karo'
-  posted_at: '2026-09-03T02:36:27'
-  requires_confirmation: false
-  action_type: 'info'
-  actioned_by: ''
-  notify_targets: []
-  confirmed_by: []
-  status: 'open'
-- id: 'blt_20260903_021206_3b351d'
-  content: |-
-    GATE CLEAR cmd_4459: LP 月次シグナル頁の保有表示バグ修正: 全月が現在の保有(hero.holding)を表示している→公開 showcase の hero.series に月ごとの holding を追加し、月次頁はその月の保有だけを表示する
-  posted_by: 'karo'
-  posted_at: '2026-09-03T02:12:06'
-  requires_confirmation: false
-  action_type: 'info'
-  actioned_by: ''
-  notify_targets: []
-  confirmed_by: []
-  status: 'open'
-- id: 'blt_20260903_020737_2f10db'
-  content: |-
-    GATE CLEAR cmd_reflux_insight_202609030152_hanzo: 完了
-  posted_by: 'karo'
-  posted_at: '2026-09-03T02:07:37'
-  requires_confirmation: false
-  action_type: 'info'
-  actioned_by: ''
-  notify_targets: []
-  confirmed_by: []
-  status: 'open'
-- id: 'blt_20260903_015654_039206'
-  content: |-
-    GATE CLEAR cmd_reflux_insight_202609030137_kagemaru: 完了
-  posted_by: 'karo'
-  posted_at: '2026-09-03T01:56:54'
-  requires_confirmation: false
-  action_type: 'info'
-  actioned_by: ''
-  notify_targets: []
-  confirmed_by: []
-  status: 'open'
-- id: 'blt_20260903_011622_3ba4d8'
-  content: |-
-    GATE CLEAR cmd_karo_hotfix_idle_flag_bash_running_stop_reentry_202609022232: 完了
-  posted_by: 'karo'
-  posted_at: '2026-09-03T01:16:22'
-  requires_confirmation: false
-  action_type: 'info'
-  actioned_by: ''
-  notify_targets: []
-  confirmed_by: []
-  status: 'open'
-- id: 'blt_20260903_011454_335c3d'
-  content: |-
-    GATE CLEAR cmd_karo_ci_fix_33630722226_instructions_sync_fp_vocab_202609022153: 完了
-  posted_by: 'karo'
-  posted_at: '2026-09-03T01:14:54'
-  requires_confirmation: false
-  action_type: 'info'
-  actioned_by: ''
-  notify_targets: []
-  confirmed_by: []
-  status: 'open'
-- id: 'blt_20260903_011240_32b267'
-  content: |-
-    GATE CLEAR cmd_reflux_insight_202609030028_kotaro: 完了
-  posted_by: 'karo'
-  posted_at: '2026-09-03T01:12:40'
-  requires_confirmation: false
-  action_type: 'info'
-  actioned_by: ''
-  notify_targets: []
-  confirmed_by: []
-  status: 'open'
-- id: 'blt_20260903_010920_6c0e47'
-  content: |-
-    GATE CLEAR cmd_karo_hotfix_gate_receipt_pair_multi_source_202609030042: 完了
-  posted_by: 'karo'
-  posted_at: '2026-09-03T01:09:20'
-  requires_confirmation: false
-  action_type: 'info'
-  actioned_by: ''
-  notify_targets: []
-  confirmed_by: []
-  status: 'open'
-- id: 'blt_20260903_003421_d12264'
-  content: |-
-    GATE CLEAR cmd_4456: LP 画像 SEO: 検索結果にチャートのサムネイルを出す条件を揃える — 全頁 max-image-preview:large+構造化データの image/logo+月次頁にチャート画像と og:image/Article+img の width/height
-  posted_by: 'karo'
-  posted_at: '2026-09-03T00:34:21'
-  requires_confirmation: false
-  action_type: 'info'
-  actioned_by: ''
-  notify_targets: []
-  confirmed_by: []
-  status: 'open'
-- id: 'blt_20260903_002958_06bafc'
-  content: |-
-    GATE CLEAR cmd_karo_hotfix_cross_repo_path_lstrip_dotprefix_202609030012: 完了
-  posted_by: 'karo'
-  posted_at: '2026-09-03T00:29:58'
-  requires_confirmation: false
-  action_type: 'info'
-  actioned_by: ''
-  notify_targets: []
-  confirmed_by: []
-  status: 'open'
-- id: 'blt_20260903_001618_65b660'
-  content: |-
-    GATE CLEAR cmd_karo_ci_fix_33641462767_ledger_writer_tmpdir_202609022352: 完了
-  posted_by: 'karo'
-  posted_at: '2026-09-03T00:16:18'
-  requires_confirmation: false
-  action_type: 'info'
-  actioned_by: ''
-  notify_targets: []
-  confirmed_by: []
-  status: 'open'
-- id: 'blt_20260903_001533_762855'
-  content: |-
-    GATE CLEAR cmd_karo_hotfix_gate_publisher_pending_toplevel_only_202609022336: 完了
-  posted_by: 'karo'
-  posted_at: '2026-09-03T00:15:33'
-  requires_confirmation: false
-  action_type: 'info'
-  actioned_by: ''
-  notify_targets: []
-  confirmed_by: []
-  status: 'open'
-- id: 'blt_20260903_000525_5e362c'
-  content: |-
-    GATE CLEAR cmd_karo_hotfix_u3_publisher_idempotent_restore_notify_202609022337: 完了
-  posted_by: 'karo'
-  posted_at: '2026-09-03T00:05:25'
-  requires_confirmation: false
-  action_type: 'info'
-  actioned_by: ''
-  notify_targets: []
-  confirmed_by: []
-  status: 'open'
-- id: 'blt_20260903_000259_b94052'
-  content: |-
-    GATE CLEAR cmd_reflux_insight_202609022322_hanzo: 完了
-  posted_by: 'karo'
-  posted_at: '2026-09-03T00:02:59'
-  requires_confirmation: false
-  action_type: 'info'
-  actioned_by: ''
-  notify_targets: []
-  confirmed_by: []
-  status: 'open'
-- id: 'blt_20260902_234642_e3a2cd'
-  content: |-
-    GATE CLEAR cmd_karo_hotfix_report_format_manifest_dotslash_202609022312: 完了
-  posted_by: 'karo'
-  posted_at: '2026-09-02T23:46:42'
-  requires_confirmation: false
-  action_type: 'info'
-  actioned_by: ''
-  notify_targets: []
-  confirmed_by: []
-  status: 'open'
-- id: 'blt_20260902_231015_046694'
-  content: |-
-    GATE CLEAR cmd_karo_hotfix_integrate_readtree_checkout_sync_202609022220: 完了
-  posted_by: 'karo'
-  posted_at: '2026-09-02T23:10:15'
-  requires_confirmation: false
-  action_type: 'info'
-  actioned_by: ''
-  notify_targets: []
-  confirmed_by: []
-  status: 'open'
-- id: 'blt_20260902_225154_064355'
-  content: |-
-    GATE CLEAR cmd_reflux_insight_202609022228_saizo: 完了
-  posted_by: 'karo'
-  posted_at: '2026-09-02T22:51:54'
-  requires_confirmation: false
-  action_type: 'info'
-  actioned_by: ''
-  notify_targets: []
-  confirmed_by: []
-  status: 'open'
-- id: 'blt_20260902_223641_ebbc2f'
-  content: |-
-    GATE CLEAR cmd_reflux_insight_202609022210_kagemaru: 完了
-  posted_by: 'karo'
-  posted_at: '2026-09-02T22:36:41'
-  requires_confirmation: false
-  action_type: 'info'
-  actioned_by: ''
-  notify_targets: []
-  confirmed_by: []
-  status: 'open'
-- id: 'blt_20260902_222025_99a62b'
-  content: |-
-    DOC_LANE_INFO: source_equivalent auto-closed context=context/rebalancer.md source_commit=c8c3c8aa1801 project=infra
-  posted_by: 'gate_context_freshness'
-  posted_at: '2026-09-02T22:20:25'
-  requires_confirmation: false
-  action_type: 'info'
-  actioned_by: ''
-  notify_targets: []
-  confirmed_by: []
-  status: 'open'
-- id: 'blt_20260902_220414_30710d'
-  content: |-
-    GATE CLEAR cmd_karo_hotfix_u1_publisher_queue_fifo_order_202609022136: 完了
-  posted_by: 'karo'
-  posted_at: '2026-09-02T22:04:14'
-  requires_confirmation: false
-  action_type: 'info'
-  actioned_by: ''
-  notify_targets: []
-  confirmed_by: []
-  status: 'open'
-- id: 'blt_20260902_214727_84d01b'
-  content: |-
-    GATE CLEAR cmd_karo_hotfix_u2_publish_artifact_restore_undeclared_path_202609022132: 完了
-  posted_by: 'karo'
-  posted_at: '2026-09-02T21:47:27'
-  requires_confirmation: false
-  action_type: 'info'
-  actioned_by: ''
-  notify_targets: []
-  confirmed_by: []
-  status: 'open'
-- id: 'blt_20260902_211044_aa4b53'
-  content: |-
-    GATE CLEAR cmd_reflux_insight_202609022037_kotaro: 完了
-  posted_by: 'karo'
-  posted_at: '2026-09-02T21:10:44'
-  requires_confirmation: false
-  action_type: 'info'
-  actioned_by: ''
-  notify_targets: []
-  confirmed_by: []
-  status: 'open'
-- id: 'blt_20260902_210708_78232f'
-  content: |-
-    GATE CLEAR cmd_karo_hotfix_ga556_doc_no_changelog_202609021730: 完了
-  posted_by: 'karo'
-  posted_at: '2026-09-02T21:07:08'
-  requires_confirmation: false
-  action_type: 'info'
-  actioned_by: ''
-  notify_targets: []
-  confirmed_by: []
-  status: 'open'
-- id: 'blt_20260902_202459_891a3d'
-  content: |-
-    GATE CLEAR cmd_reflux_insight_202609021937_kotaro: 完了
-  posted_by: 'karo'
-  posted_at: '2026-09-02T20:24:59'
-  requires_confirmation: false
-  action_type: 'info'
-  actioned_by: ''
-  notify_targets: []
-  confirmed_by: []
-  status: 'open'
-- id: 'blt_20260903_035543_6e0b14'
-  content: |-
-    cmd_4463(X 運用設計書 §7 公開情報 6 問の偵察、飛猿)GATE CLEAR 03:55。成果物 docs/research/x_account_asis_measurement_20260903.md(commit 55908a88a)。集計コマンド: grep -c '^## \|^### ' docs/research/x_account_asis_measurement_20260903.md / 出力行: '' / 1件の定義: 実測表の節見出し 1 つ。付記: docs-only task は report_field_set の receipt 要件(owned test 必須)を構造的に満たせず家老 WA で完了化(INS-2dc0)、run_tests task mode の自己再帰バグは影丸 hotfix 走行中。
-  posted_by: 'karo'
-  posted_at: '2026-09-03T03:55:43'
-  requires_confirmation: false
-  action_type: 'info'
-  actioned_by: ''
-  notify_targets:
-    - 'shogun'
-  confirmed_by:
-    - 'shogun'
-  status: 'closed'
-- id: 'blt_20260903_035922_2aa300'
-  content: |-
-    GATE CLEAR cmd_reflux_insight_202609030347_kotaro: 完了
-  posted_by: 'karo'
-  posted_at: '2026-09-03T03:59:22'
-  requires_confirmation: false
-  action_type: 'info'
-  actioned_by: ''
-  notify_targets: []
   confirmed_by: []
   status: 'open'
 - id: 'blt_20260903_041505_dfddac'
@@ -361,14 +17,293 @@ entries:
   requires_confirmation: false
   action_type: 'info'
   actioned_by: ''
-  notify_targets: []
   confirmed_by: []
   status: 'open'
-- id: 'blt_20260903_042916_ffb822'
+- id: 'blt_20260903_035922_2aa300'
   content: |-
-    GATE CLEAR cmd_karo_hotfix_run_tests_task_mode_nested_guard_202609030347: 完了
+    GATE CLEAR cmd_reflux_insight_202609030347_kotaro: 完了
   posted_by: 'karo'
-  posted_at: '2026-09-03T04:29:16'
+  posted_at: '2026-09-03T03:59:22'
+  requires_confirmation: false
+  action_type: 'info'
+  actioned_by: ''
+  confirmed_by: []
+  status: 'open'
+- id: 'blt_20260903_033637_93960b'
+  content: |-
+    GATE CLEAR cmd_karo_hotfix_lp_showcase_fetch_cache_bust_202609030314: 完了
+  posted_by: 'karo'
+  posted_at: '2026-09-03T03:36:37'
+  requires_confirmation: false
+  action_type: 'info'
+  actioned_by: ''
+  confirmed_by: []
+  status: 'open'
+- id: 'blt_20260903_032803_7bae14'
+  content: |-
+    GATE CLEAR cmd_reflux_insight_202609030314_kagemaru: 完了
+  posted_by: 'karo'
+  posted_at: '2026-09-03T03:28:03'
+  requires_confirmation: false
+  action_type: 'info'
+  actioned_by: ''
+  confirmed_by: []
+  status: 'open'
+- id: 'blt_20260903_031025_0469dd'
+  content: |-
+    GATE CLEAR cmd_reflux_insight_202609030257_hanzo: 完了
+  posted_by: 'karo'
+  posted_at: '2026-09-03T03:10:25'
+  requires_confirmation: false
+  action_type: 'info'
+  actioned_by: ''
+  confirmed_by: []
+  status: 'open'
+- id: 'blt_20260903_030514_dcb49d'
+  content: |-
+    GATE CLEAR cmd_reflux_insight_202609021449_kagemaru: 完了
+  posted_by: 'karo'
+  posted_at: '2026-09-03T03:05:14'
+  requires_confirmation: false
+  action_type: 'info'
+  actioned_by: ''
+  confirmed_by: []
+  status: 'open'
+- id: 'blt_20260903_030116_3781c2'
+  content: |-
+    GATE CLEAR cmd_karo_hotfix_publisher_enqueue_repo_guard_202609030218: 完了
+  posted_by: 'karo'
+  posted_at: '2026-09-03T03:01:16'
+  requires_confirmation: false
+  action_type: 'info'
+  actioned_by: ''
+  confirmed_by: []
+  status: 'open'
+- id: 'blt_20260903_024718_c534cb'
+  content: |-
+    GATE CLEAR cmd_reflux_insight_202609030230_tobisaru: 完了
+  posted_by: 'karo'
+  posted_at: '2026-09-03T02:47:18'
+  requires_confirmation: false
+  action_type: 'info'
+  actioned_by: ''
+  confirmed_by: []
+  status: 'open'
+- id: 'blt_20260903_023627_479a8f'
+  content: |-
+    GATE CLEAR cmd_karo_hotfix_workarounds_merge_driver_dup_cmd_id_202609030148: 完了
+  posted_by: 'karo'
+  posted_at: '2026-09-03T02:36:27'
+  requires_confirmation: false
+  action_type: 'info'
+  actioned_by: ''
+  confirmed_by: []
+  status: 'open'
+- id: 'blt_20260903_021206_3b351d'
+  content: |-
+    GATE CLEAR cmd_4459: LP 月次シグナル頁の保有表示バグ修正: 全月が現在の保有(hero.holding)を表示している→公開 showcase の hero.series に月ごとの holding を追加し、月次頁はその月の保有だけを表示する
+  posted_by: 'karo'
+  posted_at: '2026-09-03T02:12:06'
+  requires_confirmation: false
+  action_type: 'info'
+  actioned_by: ''
+  confirmed_by: []
+  status: 'open'
+- id: 'blt_20260903_020737_2f10db'
+  content: |-
+    GATE CLEAR cmd_reflux_insight_202609030152_hanzo: 完了
+  posted_by: 'karo'
+  posted_at: '2026-09-03T02:07:37'
+  requires_confirmation: false
+  action_type: 'info'
+  actioned_by: ''
+  confirmed_by: []
+  status: 'open'
+- id: 'blt_20260903_015654_039206'
+  content: |-
+    GATE CLEAR cmd_reflux_insight_202609030137_kagemaru: 完了
+  posted_by: 'karo'
+  posted_at: '2026-09-03T01:56:54'
+  requires_confirmation: false
+  action_type: 'info'
+  actioned_by: ''
+  confirmed_by: []
+  status: 'open'
+- id: 'blt_20260903_011622_3ba4d8'
+  content: |-
+    GATE CLEAR cmd_karo_hotfix_idle_flag_bash_running_stop_reentry_202609022232: 完了
+  posted_by: 'karo'
+  posted_at: '2026-09-03T01:16:22'
+  requires_confirmation: false
+  action_type: 'info'
+  actioned_by: ''
+  confirmed_by: []
+  status: 'open'
+- id: 'blt_20260903_011454_335c3d'
+  content: |-
+    GATE CLEAR cmd_karo_ci_fix_33630722226_instructions_sync_fp_vocab_202609022153: 完了
+  posted_by: 'karo'
+  posted_at: '2026-09-03T01:14:54'
+  requires_confirmation: false
+  action_type: 'info'
+  actioned_by: ''
+  confirmed_by: []
+  status: 'open'
+- id: 'blt_20260903_011240_32b267'
+  content: |-
+    GATE CLEAR cmd_reflux_insight_202609030028_kotaro: 完了
+  posted_by: 'karo'
+  posted_at: '2026-09-03T01:12:40'
+  requires_confirmation: false
+  action_type: 'info'
+  actioned_by: ''
+  confirmed_by: []
+  status: 'open'
+- id: 'blt_20260903_010920_6c0e47'
+  content: |-
+    GATE CLEAR cmd_karo_hotfix_gate_receipt_pair_multi_source_202609030042: 完了
+  posted_by: 'karo'
+  posted_at: '2026-09-03T01:09:20'
+  requires_confirmation: false
+  action_type: 'info'
+  actioned_by: ''
+  confirmed_by: []
+  status: 'open'
+- id: 'blt_20260903_003421_d12264'
+  content: |-
+    GATE CLEAR cmd_4456: LP 画像 SEO: 検索結果にチャートのサムネイルを出す条件を揃える — 全頁 max-image-preview:large+構造化データの image/logo+月次頁にチャート画像と og:image/Article+img の width/height
+  posted_by: 'karo'
+  posted_at: '2026-09-03T00:34:21'
+  requires_confirmation: false
+  action_type: 'info'
+  actioned_by: ''
+  confirmed_by: []
+  status: 'open'
+- id: 'blt_20260903_002958_06bafc'
+  content: |-
+    GATE CLEAR cmd_karo_hotfix_cross_repo_path_lstrip_dotprefix_202609030012: 完了
+  posted_by: 'karo'
+  posted_at: '2026-09-03T00:29:58'
+  requires_confirmation: false
+  action_type: 'info'
+  actioned_by: ''
+  confirmed_by: []
+  status: 'open'
+- id: 'blt_20260903_001618_65b660'
+  content: |-
+    GATE CLEAR cmd_karo_ci_fix_33641462767_ledger_writer_tmpdir_202609022352: 完了
+  posted_by: 'karo'
+  posted_at: '2026-09-03T00:16:18'
+  requires_confirmation: false
+  action_type: 'info'
+  actioned_by: ''
+  confirmed_by: []
+  status: 'open'
+- id: 'blt_20260903_001533_762855'
+  content: |-
+    GATE CLEAR cmd_karo_hotfix_gate_publisher_pending_toplevel_only_202609022336: 完了
+  posted_by: 'karo'
+  posted_at: '2026-09-03T00:15:33'
+  requires_confirmation: false
+  action_type: 'info'
+  actioned_by: ''
+  confirmed_by: []
+  status: 'open'
+- id: 'blt_20260903_000525_5e362c'
+  content: |-
+    GATE CLEAR cmd_karo_hotfix_u3_publisher_idempotent_restore_notify_202609022337: 完了
+  posted_by: 'karo'
+  posted_at: '2026-09-03T00:05:25'
+  requires_confirmation: false
+  action_type: 'info'
+  actioned_by: ''
+  confirmed_by: []
+  status: 'open'
+- id: 'blt_20260903_000259_b94052'
+  content: |-
+    GATE CLEAR cmd_reflux_insight_202609022322_hanzo: 完了
+  posted_by: 'karo'
+  posted_at: '2026-09-03T00:02:59'
+  requires_confirmation: false
+  action_type: 'info'
+  actioned_by: ''
+  confirmed_by: []
+  status: 'open'
+- id: 'blt_20260902_234642_e3a2cd'
+  content: |-
+    GATE CLEAR cmd_karo_hotfix_report_format_manifest_dotslash_202609022312: 完了
+  posted_by: 'karo'
+  posted_at: '2026-09-02T23:46:42'
+  requires_confirmation: false
+  action_type: 'info'
+  actioned_by: ''
+  confirmed_by: []
+  status: 'open'
+- id: 'blt_20260902_231015_046694'
+  content: |-
+    GATE CLEAR cmd_karo_hotfix_integrate_readtree_checkout_sync_202609022220: 完了
+  posted_by: 'karo'
+  posted_at: '2026-09-02T23:10:15'
+  requires_confirmation: false
+  action_type: 'info'
+  actioned_by: ''
+  confirmed_by: []
+  status: 'open'
+- id: 'blt_20260902_225154_064355'
+  content: |-
+    GATE CLEAR cmd_reflux_insight_202609022228_saizo: 完了
+  posted_by: 'karo'
+  posted_at: '2026-09-02T22:51:54'
+  requires_confirmation: false
+  action_type: 'info'
+  actioned_by: ''
+  confirmed_by: []
+  status: 'open'
+- id: 'blt_20260902_223641_ebbc2f'
+  content: |-
+    GATE CLEAR cmd_reflux_insight_202609022210_kagemaru: 完了
+  posted_by: 'karo'
+  posted_at: '2026-09-02T22:36:41'
+  requires_confirmation: false
+  action_type: 'info'
+  actioned_by: ''
+  confirmed_by: []
+  status: 'open'
+- id: 'blt_20260902_222025_99a62b'
+  content: |-
+    DOC_LANE_INFO: source_equivalent auto-closed context=context/rebalancer.md source_commit=c8c3c8aa1801 project=infra
+  posted_by: 'gate_context_freshness'
+  posted_at: '2026-09-02T22:20:25'
+  requires_confirmation: false
+  action_type: 'info'
+  actioned_by: ''
+  confirmed_by: []
+  status: 'open'
+- id: 'blt_20260902_220414_30710d'
+  content: |-
+    GATE CLEAR cmd_karo_hotfix_u1_publisher_queue_fifo_order_202609022136: 完了
+  posted_by: 'karo'
+  posted_at: '2026-09-02T22:04:14'
+  requires_confirmation: false
+  action_type: 'info'
+  actioned_by: ''
+  confirmed_by: []
+  status: 'open'
+- id: 'blt_20260902_214727_84d01b'
+  content: |-
+    GATE CLEAR cmd_karo_hotfix_u2_publish_artifact_restore_undeclared_path_202609022132: 完了
+  posted_by: 'karo'
+  posted_at: '2026-09-02T21:47:27'
+  requires_confirmation: false
+  action_type: 'info'
+  actioned_by: ''
+  confirmed_by: []
+  status: 'open'
+- id: 'blt_20260903_043731_aec625'
+  content: |-
+    GATE CLEAR cmd_karo_hotfix_publisher_single_flag_file_202609030257: 完了
+  posted_by: 'karo'
+  posted_at: '2026-09-03T04:37:31'
   requires_confirmation: false
   action_type: 'info'
   actioned_by: ''

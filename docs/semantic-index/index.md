@@ -3449,6 +3449,7 @@ codd:
 | discussion | `queue/lord_conversation.jsonl` 2026-09-03T03:32:48+09:00 殿回答 2026-09-03 03:31(X 運用設計書 B 質問): 可用時間は自動化で無関係、読者は医師 40% 推定・DM 経験者少、数字ホワイトリスト=metrics は全 PF 公開可・保有シグナル/構成 ticker/FoF 重 |
 | discussion | `queue/lord_conversation.jsonl` 2026-09-03T03:57:27+09:00 cmd_4463 GATE CLEAR 03:55(X 運用 公開情報実測、飛猿 795dbd37a): X フォロワー 4,434、note How to 49 本、完全ガイド スキ 53、メンバーシップ ¥1,000/¥8,000(dm |
 | discussion | `queue/lord_conversation.jsonl` 2026-09-03T04:25:39+09:00 session_save_20260903_0430(復帰点、先に session_save_20260903_0248 を読め): 02:48-04:30: cmd_4460 U7 CLEAR 02:52(67ced64ee)、repo  |
+| discussion | `queue/lord_conversation.jsonl` 2026-09-03T04:38:16+09:00 2026-09-03 04:38 家老: queue/flags/publisher_single を作成し PUBLISHER_SINGLE flag file ON(疾風 hotfix d42b62a90 CLEAR)。cmd_comp |
 | causal_chain | `[[cmd_3749]]` (L974) |
 | causal_chain | `[[cmd_training_L1_report-write_20260708020332]]` (L977) |
 | causal_chain | `[[cmd_reflux_insight_202607071717_tobisaru]]` (L961) |
@@ -9078,6 +9079,7 @@ codd:
 | causal | `cmd_karo_hotfix_idle_flag_bash_running_stop_reentry_202609022232` files_modified: [[agent_formation_management]] |
 | discussion | `queue/lord_conversation.jsonl` 2026-09-03T02:16:59+09:00 session_save_20260903_0215(復帰点、先に session_save_20260903_0130 を読め): 01:30-02:15: U3 active 初 publish 05fe87b68(cmd_4458 U |
 | causal | `cmd_4460` files_modified: [[agent_formation_management]] |
+| causal | `cmd_karo_hotfix_publisher_single_flag_file_202609030257` files_modified: [[agent_formation_management]] |
 | causal_chain | `[[cmd_karo_hotfix_deploy_task_latency_yaml_bug_20260702010845]]` (L918) |
 | causal_chain | `[[cmd_karo_hotfix_deploy_task_yaml_speed_recon_guard_202607020133]]` (L919) |
 | causal_chain | `[[cmd_karo_hotfix_ga162_hook_failure_pre_push_202607021402]]` (L930) |
@@ -9775,6 +9777,7 @@ codd:
 | discussion | `queue/lord_conversation.jsonl` 2026-09-02T21:12:55+09:00 続けて。つまりがあれば先に解消せよ |
 | causal | `cmd_karo_hotfix_gate_publisher_pending_toplevel_only_202609022336` files_modified: [[cdp_browser_capability]] |
 | causal | `cmd_4460` files_modified: [[cdp_browser_capability]] |
+| causal | `cmd_karo_hotfix_publisher_single_flag_file_202609030257` files_modified: [[cdp_browser_capability]] |
 | causal_chain | `[[cmd_karo_cdp_t5_endpoint_qualification_20260802]]` (L1529) |
 | causal_chain | `[[cmd_karo_cdp_t5_auth_dom_probe_20260802]]` (L1530) |
 
@@ -10841,6 +10844,7 @@ codd:
 | causal | `cmd_karo_hotfix_extract_target_path_exec_order_202609021726` files_modified: [[cmd_quality_logging]] |
 | causal | `cmd_karo_hotfix_gate_publisher_pending_toplevel_only_202609022336` files_modified: [[cmd_quality_logging]] |
 | causal | `cmd_4460` files_modified: [[cmd_quality_logging]] |
+| causal | `cmd_karo_hotfix_publisher_single_flag_file_202609030257` files_modified: [[cmd_quality_logging]] |
 | causal_chain | `[[cmd_3622_kotaro_r3]]` (infra:L893) |
 
 ## task_modifier_injection — タスク修飾子注入
@@ -11061,6 +11065,7 @@ codd:
 | causal | `cmd_karo_hotfix_push_lane_ancestry_guard_20260902` files_modified: [[training_cycle_quality]] |
 | causal | `cmd_karo_hotfix_integrate_readtree_checkout_sync_202609022220` files_modified: [[training_cycle_quality]] |
 | causal | `cmd_4460` files_modified: [[training_cycle_quality]] |
+| causal | `cmd_karo_hotfix_publisher_single_flag_file_202609030257` files_modified: [[training_cycle_quality]] |
 
 ## report_quality_protocol — 忍者報告品質プロトコル
 
@@ -11905,6 +11910,7 @@ codd:
 | causal | `cmd_karo_hotfix_integrate_readtree_checkout_sync_202609022220` files_modified: [[daemon_supervision]] |
 | causal | `cmd_karo_hotfix_idle_flag_bash_running_stop_reentry_202609022232` files_modified: [[daemon_supervision]] |
 | causal | `cmd_4460` files_modified: [[daemon_supervision]] |
+| causal | `cmd_karo_hotfix_publisher_single_flag_file_202609030257` files_modified: [[daemon_supervision]] |
 | causal_chain | `[[cmd_karo_ci_fix_33301147088_test117_20260830]]` (L1677) |
 
 ## openpbx_reference — OpenPBX(コリ先生PBX MVP)
@@ -12231,6 +12237,7 @@ codd:
 | causal | `cmd_karo_hotfix_integrate_readtree_checkout_sync_202609022220` files_modified: [[infrastructure_ops]] |
 | causal | `cmd_karo_hotfix_idle_flag_bash_running_stop_reentry_202609022232` files_modified: [[infrastructure_ops]] |
 | causal | `cmd_4460` files_modified: [[infrastructure_ops]] |
+| causal | `cmd_karo_hotfix_publisher_single_flag_file_202609030257` files_modified: [[infrastructure_ops]] |
 | causal_chain | `[[cmd_3632]]` (L917) |
 | causal_chain | `[[cmd_karo_hotfix_auto_update_pane_spawn_202607031806]]` (L949) |
 | causal_chain | `[[cmd_3969]]` (L1043) |
@@ -13720,6 +13727,28 @@ codd:
 | causal | `cmd_karo_hotfix_ninja_monitor_cycle_median_residual_20260828` files_modified: [[semantic_causal_automation]] |
 | causal | `cmd_4431` files_modified: [[semantic_causal_automation]] |
 | causal_chain | `[[cmd_karo_hotfix_hot_script_q11_semantic_search_retry_20260728]]` (L1418) |
+
+## provisional_safe_shared_main_ff — 仮: Safe Shared Main Ff
+
+| 属性 | 値 |
+|------|---|
+| id | provisional_safe_shared_main_ff |
+| label | 仮: Safe Shared Main Ff |
+| aliases | safe_shared_main_ff, scripts/safe_shared_main_ff.sh, scripts safe shared main ff.sh, provisional_safe_shared_main_ff |
+| status | provisional |
+| auto_generated | true |
+| source_cmd | cmd_karo_hotfix_publisher_single_flag_file_202609030257 |
+| source_files | scripts/safe_shared_main_ff.sh |
+| no_match_count | 3 |
+| created_at | 2026-09-02T19:37:45Z |
+| promotion_threshold | 5 |
+| related_concepts | |
+
+| 種別 | パス/参照 |
+|------|----------|
+| file | `scripts/safe_shared_main_ff.sh` |
+| causal | `cmd_karo_hotfix_publisher_single_flag_file_202609030257` -> [[provisional_safe_shared_main_ff]] (auto_generated) |
+| cmd | `cmd_karo_hotfix_publisher_single_flag_file_202609030257` (`scripts/cmd_complete_gate.sh`, `scripts/lib/publisher_single_flag.sh`, `scripts/ninja_monitor.sh`) |
 
 ## provisional_extract_command_files — 仮: Extract Command Files
 
@@ -16650,6 +16679,7 @@ codd:
 | discussion | `queue/lord_conversation.jsonl` 2026-09-02T17:12:57.594130+00:00 git pre-commit semantic propagation for context/projects changes |
 | discussion | `queue/lord_conversation.jsonl` 2026-09-02T18:02:00.725669+00:00 git pre-commit semantic propagation for context/projects changes |
 | discussion | `queue/lord_conversation.jsonl` 2026-09-02T19:03:25.193070+00:00 git pre-commit semantic propagation for context/projects changes |
+| discussion | `queue/lord_conversation.jsonl` 2026-09-02T19:29:37.279661+00:00 git pre-commit semantic propagation for context/projects changes |
 | causal_chain | `[[cmd_karo_hotfix_lessons_yaml_format_restore_20260727]]` (L1389) |
 
 ## infra_design_intent — インフラ設計意図カタログ
@@ -16789,6 +16819,7 @@ codd:
 | discussion | `queue/lord_conversation.jsonl` 2026-09-02T22:27:50+09:00 それはインフラバグでは？真因を根治せよ。因果をたどれ |
 | causal | `cmd_karo_hotfix_integrate_readtree_checkout_sync_202609022220` files_modified: [[infra_design_intent]] |
 | causal | `cmd_4460` files_modified: [[infra_design_intent]] |
+| causal | `cmd_karo_hotfix_publisher_single_flag_file_202609030257` files_modified: [[infra_design_intent]] |
 | causal_chain | `[[cmd_karo_fix_same_cmd_pending_symlink_20260804]]` (L1556) |
 
 ## scope_integrity_lifecycle — スコープ鮮度ライフサイクル
@@ -18519,6 +18550,7 @@ codd:
 | causal | `cmd_karo_hotfix_push_lane_ancestry_guard_20260902` files_modified: [[inbox_evidence_durability]] |
 | causal | `cmd_karo_hotfix_integrate_readtree_checkout_sync_202609022220` files_modified: [[inbox_evidence_durability]] |
 | causal | `cmd_4460` files_modified: [[inbox_evidence_durability]] |
+| causal | `cmd_karo_hotfix_publisher_single_flag_file_202609030257` files_modified: [[inbox_evidence_durability]] |
 
 ## hook_json_command_boundary — hook JSONコマンド境界
 
@@ -18769,6 +18801,7 @@ codd:
 | causal | `cmd_karo_hotfix_push_lane_ancestry_guard_20260902` files_modified: [[active_task_clear_fail_closed]] |
 | causal | `cmd_karo_hotfix_integrate_readtree_checkout_sync_202609022220` files_modified: [[active_task_clear_fail_closed]] |
 | causal | `cmd_4460` files_modified: [[active_task_clear_fail_closed]] |
+| causal | `cmd_karo_hotfix_publisher_single_flag_file_202609030257` files_modified: [[active_task_clear_fail_closed]] |
 
 ## karo_strong_new_game_20260818_0650 — 家老復帰点（fixture→republish→cron）
 

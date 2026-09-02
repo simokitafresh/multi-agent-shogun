@@ -1591,6 +1591,8 @@
   - queue/reports/kagemaru_report_cmd_karo_hotfix_publisher_enqueue_repo_guard_202609030218.yaml:1
 - cmd_id: cmd_karo_hotfix_publisher_single_flag_file_202609030257
   review_type: draft
+  gate_result: CLEAR
+  gate_synced_at: 2026-09-03T04:37:54+09:00
   verdict: APPROVE
   verified_files:
     - "queue/tasks/hayate.yaml:1"
@@ -2000,6 +2002,8 @@
   timestamp: "2026-09-03T03:37:00+09:00"
 - cmd_id: cmd_karo_hotfix_run_tests_task_mode_nested_guard_202609030347
   review_type: draft
+  gate_result: BLOCK
+  gate_synced_at: 2026-09-03T04:28:30+09:00
   verdict: APPROVE
   verified_files:
     - "queue/tasks/kagemaru.yaml:1"
@@ -2286,3 +2290,190 @@
   origin: "[[registry]] -> [[FAIL]]"
   reviewed_at: "2026-09-03T04:01:00+09:00"
   timestamp: "2026-09-03T04:01:00+09:00"
+- brainwash_check: '#1no #2no #3no #4no #5no #6no #7no #8no ERRORS=0'
+  causal_chain: insight→消化→LGTM
+  cmd_id: cmd_reflux_insight_202609030400_hanzo
+  escalation_needed: false
+  finding_categories:
+  - assumptions
+  - numbers
+  - premortem
+  - adversarial
+  - ambiguity
+  findings_summary: 定型reflux。ERRORS=0。LGTM
+  gate_prediction: CLEAR
+  gate_prediction_reason: all checks passed
+  lesson_quality: OK
+  observations:
+  - 定型reflux完了
+  operational_simulation:
+    actual: CLEAR ERRORS=0
+    command: precheck
+    expected: CLEAR
+    result: PASS
+  origin: '[[reflux]] -> [[LGTM]]'
+  report_ninja: hanzo
+  report_task_id: cmd_reflux_insight_202609030400_hanzo_exact
+  report_verdict: LGTM
+  review_type: report
+  reviewed_at: '2026-09-03T04:14:00+09:00'
+  step3_5_verified: true
+  timestamp: '2026-09-03T04:10:00+09:00'
+  verdict: LGTM
+  verified_files:
+  - queue/reports/hanzo_report_cmd_reflux_insight_202609030400_hanzo.yaml:1
+- cmd_id: cmd_reflux_insight_202609030410_tobisaru
+  review_type: draft
+  verdict: APPROVE
+  verified_files:
+    - "queue/tasks/tobisaru.yaml:1"
+  findings_summary: "reflux定型。配備可"
+  confidence: HIGH
+  finding_categories:
+    - assumptions
+    - numbers
+    - simulation
+    - premortem
+    - north_star
+    - ambiguity
+    - adversarial
+  observations:
+    - "定型reflux"
+  operational_simulation:
+    command: "task確認"
+    expected: "reflux"
+    actual: "reflux"
+    result: "MATCH"
+  causal_chain: "insight→消化"
+  brainwash_check: "#1no #2no #3no #4no #5no #6no #7no #8no 定型"
+  origin: "[[reflux]] -> [[APPROVE]]"
+  ambiguity_points: none
+  discretion_fills: none
+  timestamp: "2026-09-03T04:12:00+09:00"
+- brainwash_check: '#1no #2no #3no #4no #5no #6no #7no #8no ERRORS=0'
+  causal_chain: run_tests nested呼出し→guard追加→LGTM
+  cmd_id: cmd_karo_hotfix_run_tests_task_mode_nested_guard_202609030347
+  escalation_needed: false
+  finding_categories:
+  - assumptions
+  - numbers
+  - premortem
+  - adversarial
+  - ambiguity
+  findings_summary: run_tests nested guard。ERRORS=0。LGTM
+  gate_prediction: CLEAR
+  gate_prediction_reason: all checks passed
+  lesson_quality: OK
+  observations:
+  - nested guard実装完了。ERRORS=0 BC全yes
+  operational_simulation:
+    actual: CLEAR ERRORS=0
+    command: precheck
+    expected: CLEAR ERRORS=0
+    result: PASS
+  origin: '[[nested_guard]] -> [[LGTM]]'
+  report_ninja: kagemaru
+  report_task_id: cmd_karo_hotfix_run_tests_task_mode_nested_guard_202609030347_normal
+  report_verdict: LGTM
+  review_type: report
+  reviewed_at: '2026-09-03T04:28:00+09:00'
+  step3_5_verified: true
+  timestamp: '2026-09-03T04:25:00+09:00'
+  verdict: LGTM
+  verified_files:
+  - queue/reports/kagemaru_report_cmd_karo_hotfix_run_tests_task_mode_nested_guard_202609030347.yaml:1
+- brainwash_check: '#1no #2no #3no #4no #5no #6no #7no #8no ERRORS=0'
+  causal_chain: insight→消化→LGTM
+  cmd_id: cmd_reflux_insight_202609030410_tobisaru
+  escalation_needed: false
+  finding_categories:
+  - assumptions
+  - numbers
+  - premortem
+  - adversarial
+  - ambiguity
+  findings_summary: 定型reflux。ERRORS=0。LGTM
+  gate_prediction: CLEAR
+  gate_prediction_reason: all checks passed
+  lesson_quality: OK
+  observations:
+  - 定型reflux完了
+  operational_simulation:
+    actual: CLEAR ERRORS=0
+    command: precheck
+    expected: CLEAR
+    result: PASS
+  origin: '[[reflux]] -> [[LGTM]]'
+  report_ninja: tobisaru
+  report_task_id: cmd_reflux_insight_202609030410_tobisaru_exact
+  report_verdict: LGTM
+  review_type: report
+  reviewed_at: '2026-09-03T04:28:00+09:00'
+  step3_5_verified: true
+  timestamp: '2026-09-03T04:28:00+09:00'
+  verdict: LGTM
+  verified_files:
+  - queue/reports/tobisaru_report_cmd_reflux_insight_202609030410_tobisaru.yaml:1
+- cmd_id: cmd_karo_hotfix_run_tests_task_mode_nested_guard_202609030347
+  review_type: report
+  report_ninja: kagemaru
+  report_task_id: cmd_karo_hotfix_run_tests_task_mode_nested_guard_202609030347_normal
+  report_verdict: FAIL
+  verdict: FAIL
+  verified_files:
+    - "queue/reports/kagemaru_report_cmd_karo_hotfix_run_tests_task_mode_nested_guard_202609030347.yaml:1"
+  fail_reasons:
+    - "registry BLOCK。家老gate直接実行"
+  lesson_quality: OK
+  escalation_needed: false
+  finding_categories:
+    - assumptions
+    - numbers
+    - premortem
+    - adversarial
+    - ambiguity
+  observations:
+    - "LGTM判定だがregistry BLOCK"
+  operational_simulation:
+    command: "bundle"
+    expected: "success"
+    actual: "registry BLOCK"
+    result: "FAIL"
+  causal_chain: "registry不在→BLOCK→家老gate直接"
+  brainwash_check: "#1no #2no #3no #4no #5no #6no #7no #8no"
+  step3_5_verified: true
+  origin: "[[registry]] -> [[FAIL]]"
+  reviewed_at: "2026-09-03T04:30:00+09:00"
+  timestamp: "2026-09-03T04:30:00+09:00"
+- brainwash_check: '#1no #2no #3no #4no #5no #6no #7no #8no ERRORS=0'
+  causal_chain: flag file→U8 AC2の前提条件充足
+  cmd_id: cmd_karo_hotfix_publisher_single_flag_file_202609030257
+  escalation_needed: false
+  finding_categories:
+  - assumptions
+  - numbers
+  - premortem
+  - adversarial
+  - ambiguity
+  findings_summary: publisher single flag file。ERRORS=0。LGTM
+  gate_prediction: CLEAR
+  gate_prediction_reason: all checks passed
+  lesson_quality: OK
+  observations:
+  - PUBLISHER_SINGLE=1 flag file作成完了
+  operational_simulation:
+    actual: CLEAR ERRORS=0
+    command: precheck
+    expected: CLEAR ERRORS=0
+    result: PASS
+  origin: '[[single_flag]] -> [[LGTM]]'
+  report_ninja: hayate
+  report_task_id: cmd_karo_hotfix_publisher_single_flag_file_202609030257_normal
+  report_verdict: LGTM
+  review_type: report
+  reviewed_at: '2026-09-03T04:31:00+09:00'
+  step3_5_verified: true
+  timestamp: '2026-09-03T04:31:00+09:00'
+  verdict: LGTM
+  verified_files:
+  - queue/reports/hayate_report_cmd_karo_hotfix_publisher_single_flag_file_202609030257.yaml:1

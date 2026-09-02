@@ -1667,3 +1667,4 @@
 - 2026-09-03 03:55 cmd_4463(X 運用偵察、飛猿)CLEAR(docs-only の receipt 要件は家老 WA、semantic_validation は家老補填)。
 - 2026-09-03 03:58 小太郎 reflux(INS-2dc0 resolve)CLEAR。
 - 2026-09-03 04:14 半蔵 reflux(INS-b8e2、infra::general WA 4 件→構造対策 cmd 候補)CLEAR。
+- 2026-09-03 04:38 [karo] publisher single 第3波 U7 flag file hotfix(疾風)CLEAR→queue/flags/publisher_single ON。真因=task正本 planned scope 不足(AC1が5入口要求、契約3path)。影丸 nested guard hotfix CLEAR(worktree task mode の再帰ガード誤発火解消)。
