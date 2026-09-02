@@ -1,5 +1,6 @@
 #!/usr/bin/env bats
 # test_necessity: 軍師precheckは報告のbinary contract欠落と不正な完了判定をレビュー前にBLOCKする。
+# test_necessity: SG-PRE35はworker leaseがidleへ戻った後もreportのtest_necessity宣言を検証へ渡す。
 # test_necessity: SG-PRE3Xは共有cross-repo契約で所有repoを解決し、有効な外部repo成果の偽BLOCKを防ぎつつ不正repo/commit/path/primary矛盾をfail-closedに保つ。
 # test_necessity: precheckがCLEARと予測した報告はcmd_complete_gateのparent_cmd_contract/ac_version_stale/lesson_feedback_set_mismatchのいずれでもBLOCKされない（判定関数が同一）。
 # test_necessity: SG-PRE20はshared lesson-feedback-setのOK接頭辞付き成功結果をPASSとして扱い、MISMATCHのERROR/WARN契約を維持する。
@@ -690,6 +691,35 @@ YAML
   run env GUNSHI_PRECHECK_ONLY=SG-PRE35 GUNSHI_PRECHECK_TASKS_DIR="$TMP_DIR/tasks" bash "$gate" "$TMP_DIR/report.yaml"
   [ "$status" -ne 0 ]
   [[ "$output" == *"omits transient deletion evidence"* ]]
+}
+
+@test "SG-PRE35 accepts a non-empty report test_necessity declaration" {
+  gate="$REPO_ROOT/scripts/gates/gate_gunshi_report_precheck.sh"
+  task="$TMP_DIR/tasks/kagemaru.yaml"
+  cat > "$task" <<'YAML'
+task:
+  project: infra
+  planned_paths: [scripts/only_planned.sh]
+YAML
+  cat > "$TMP_DIR/report.yaml" <<'YAML'
+worker_id: kagemaru
+parent_cmd: cmd_fixture
+files_modified:
+  - {path: tests/unit/test_report_declared.bats, change: persistent contract}
+test_necessity:
+  - path: tests/unit/test_report_declared.bats
+    defense_target: report-owned declaration remains enforceable after lease rotation
+    overlap_evidence: no equivalent assertion exists in the current suite
+    overlaps_existing: false
+    fixture_self_reference: false
+    deprecated_mechanism: false
+YAML
+
+  run env GUNSHI_PRECHECK_ONLY=SG-PRE35 GUNSHI_PRECHECK_TASKS_DIR="$TMP_DIR/tasks" bash "$gate" "$TMP_DIR/report.yaml"
+  echo "$output" >&2
+  [ "$status" -eq 0 ]
+  [[ "$output" == *"persistent=tests/unit/test_report_declared.bats"* ]]
+  [[ "$output" != *"omits transient deletion evidence"* ]]
 }
 
 @test "SG-PRE35 resolves existing and new tests against the task project working tree" {
