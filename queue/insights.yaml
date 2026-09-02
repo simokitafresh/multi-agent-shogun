@@ -14362,4 +14362,14 @@ insights:
   priority: "low"
   source: "semantic_stress_test"
   fix_known: false
+  status: "resolved"
+  resolved_reason: "semantic index candidate was absorbed into a registered concept"
+  action_artifact: "semantic_index=/home/simokitafresh/multi-agent-shogun/docs/semantic-index/index.md"
+  resolved_at: "2026-09-02T23:54:31.366748"
+- id: INS-20260902-235431595-e824
+  ts: "2026-09-02T23:54:31+09:00"
+  insight: "semantic_index_update未登録[[リンク]]ターゲット: [[fp_measurement側のみ3回修正]] は既存aliasesに一致なし。類似概念TOP3: growth_loop(学習ループ; alias=detector_fp_rate; score=15.0) / yaml_safe_write(YAML安全書込み; alias=inbox_mark_read hook FP; score=10.2) / semantic_dictionary_design(セマンティック辞書構想; alias=guard FP fix origin 到達済; score=9.3)。概念定義とaliases追加を検討せよ"
+  priority: "low"
+  source: "semantic_index_update"
+  fix_known: false
   status: pending
