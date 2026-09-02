@@ -295,9 +295,11 @@ process_ledger_batch() {
         staged_operation="$stage_root/${index}_${ledger}_$(basename "$operation")"
         cp -- "$operation" "$staged_operation"
         if ! source_file="$(ledger_source_in_isolated "$staged_operation" "$isolated")"; then
+            # e.g. an op captured from a fixture path under /tmp: park it, keep the batch moving.
             move_ledger_to "$operation" "$(ledger_directory "$ledger")/rc"
             event ledger ledger_batch 1 "failed_op=$(basename "$operation") reason=source_outside_root"
-            return 31
+            skipped_operations+=("$operation")
+            continue
         fi
         local apply_rc=0
         LEDGER_SOURCE_FILE="$source_file" LEDGER_WRITER_NOTIFY=0 \

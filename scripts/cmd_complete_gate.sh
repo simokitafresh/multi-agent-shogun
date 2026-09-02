@@ -2304,13 +2304,18 @@ report_source_paths_match_commit() {
     while IFS= read -r -d '' path; do
         actual["$path"]=1
     done < <(git -C "$repo" diff-tree --root --no-commit-id --name-only -r -z "$source_sha" 2>/dev/null)
-    # A merge commit (ninja merged origin/main to refresh its base, D012-compliant) lists no
-    # paths under diff-tree --root. Its task paths are the diff from merge-base(origin/main).
-    if [ "${#actual[@]}" -eq 0 ] \
-        && [ "$(git -C "$repo" rev-list --parents -n 1 "$source_sha" 2>/dev/null | wc -w)" -gt 2 ]; then
+    # The report's files_modified describes the whole task range, not only the tip commit:
+    # a task may carry several commits (impl + test contract) or a merge of origin/main
+    # (which lists nothing under diff-tree --root). When the single-commit path set does not
+    # match, compare against the range merge-base(origin/main, source)..source instead.
+    local range_match=1
+    if [ "${#actual[@]}" -ne "${#declared[@]}" ]; then range_match=0; fi
+    for path in "${!actual[@]}"; do [ "${declared[$path]+yes}" = yes ] || { range_match=0; break; }; done
+    if [ "$range_match" -eq 0 ]; then
         local merge_base
         merge_base="$(git -C "$repo" merge-base origin/main "$source_sha" 2>/dev/null || true)"
-        if [ -n "$merge_base" ]; then
+        if [ -n "$merge_base" ] && [ "$merge_base" != "$source_sha" ]; then
+            actual=()
             while IFS= read -r -d '' path; do
                 actual["$path"]=1
             done < <(git -C "$repo" diff --name-only -z "$merge_base" "$source_sha" 2>/dev/null)
