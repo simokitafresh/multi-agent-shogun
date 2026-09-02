@@ -503,13 +503,14 @@ push_lane_integrate_remote() (
         return 1
     fi
     # Compare-and-swap makes a concurrent root update a clean failure instead
-    # of overwriting it.  update-ref changes only the ref; no root checkout or
-    # index operation is permitted on this path.
+    # of overwriting it.  Synchronize the root tree with two-tree read-tree;
+    # dirty paths remain protected and emit a warning on synchronization failure.
     git -C "$repo" update-ref "$root_ref" "$integrated_head" "$current_head" \
         || {
             fail_integrate "root_ref_race_or_update_failed"
             return 1
         }
+    git -C "$repo" read-tree -m -u "$current_head" "$integrated_head" || push_lane_log "INTEGRATE-CHECKOUT-WARN old=${current_head:0:9} new=${integrated_head:0:9}"
     if ! cleanup_isolated; then
         push_lane_log "INTEGRATE-MERGE-FAIL remote=${remote_tip:0:9} err=isolated_worktree_cleanup_failed"
         return 1
