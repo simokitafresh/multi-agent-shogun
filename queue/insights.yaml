@@ -13653,3 +13653,10 @@ insights:
   source: "semantic_index_update"
   fix_known: false
   status: pending
+- id: INS-20260902-181121458-ce43
+  ts: "2026-09-02T18:11:21+09:00"
+  insight: "semantic_index_update新概念候補: discussion:詩の世界ではスペースや行下げで時間や場面の切り替えをする。noteなら横線だろうな は 既存aliasesに一致なし。概念定義とaliases追加を検討せよ"
+  priority: "low"
+  source: "semantic_index_update"
+  fix_known: false
+  status: pending
