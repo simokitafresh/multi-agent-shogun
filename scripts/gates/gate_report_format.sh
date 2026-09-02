@@ -48,7 +48,7 @@ r_sha = s(report.get("commit_hash"))
 m_sha = s(manifest.get("source_sha"))
 m_base = s(manifest.get("base"))
 r_paths = sorted(
-    s(fm.get("path"))
+    s(fm.get("path")).removeprefix("./")
     for fm in (report.get("files_modified") or [])
     if isinstance(fm, dict) and fm.get("path") is not None
 )
