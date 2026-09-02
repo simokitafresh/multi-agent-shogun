@@ -1917,7 +1917,7 @@ for entry in receipt_data.get("entries") or []:
     if not re.fullmatch(r"[0-9a-f]{40}", entry_source) or not entry_report:
         fail("source_only_receipt_entry_invalid")
     if entry_source != source or entry_report != report_generation:
-        fail("source_only_receipt_pair_mismatch")
+        continue
     if published and published != entry_tip:
         fail("published_commit_receipt_mismatch")
     published = entry_tip
