@@ -257,14 +257,14 @@ canary 判定: **(v1.8 殿裁定 D9)** infra と dm-signal の両 repo を U1 �
 
 - 根拠: 殿 2026-09-02 17:18『single_publisher_asis_tobe_5w1h_20260902.md も随時更新しないと後で混乱する』。設計本文(§0-§13)と実装の現在値を同じ file に置き、読者が別 file を探さずに済むようにする
 
-最終更新: 2026-09-02 17:22(将軍 loop 17:14 の一次確認)
+最終更新: 2026-09-02 17:52(将軍 loop 17:48 の一次確認)
 
 ### 14.1 unit × cmd 対応表(実装 cmd=片 CLI、検証 cmd=他 CLI・別番号。§9.1 共通 AC)
 | U | 内容 | 実装 cmd | 実装忍者(CLI) | 実装 commit | 実装 GATE | 検証 cmd | 検証忍者(CLI) | 検証 GATE |
 |---|---|---|---|---|---|---|---|---|
-| U1 | publish queue+lock-run shim+events writer | cmd_4445(delegated 14:41) | 小太郎(Claude Sonnet) | 0e8d1b6d9(origin 統合済 16:5x) | **BLOCK sg7_bundle_missing 16:56**=軍師 SG7 再レビュー待ち | cmd_4448(delegated 15:34、depends_on 4445 CLEAR) | 影丸(Codex)予定 | 未配備 |
+| U1 | publish queue+lock-run shim+events writer | cmd_4445(delegated 14:41) | 小太郎(Claude Sonnet) | 0e8d1b6d9(origin 統合済 16:5x) | **SG7 bundle FAIL 17:43**(report_verdict PASS、precheck PRE25 FP 残存=疾風 hotfix 待ち) | cmd_4448(delegated 15:34、depends_on 4445 CLEAR) | 影丸(Codex)予定 | 未配備 |
 | U2 | publish_artifact capture/restore | cmd_4446(delegated 14:54) | 飛猿(Claude Sonnet) | 58446a4dc(origin 統合済) | **BLOCK sg7_bundle_missing 16:57**+才蔵 PRE25 追加根治中 | 未起票(4446 CLEAR 後) | Codex 予定 | — |
-| U4 | gate dual-read+census | cmd_4447(delegated 14:57) | 疾風(Codex) | 39b2d18b2(origin 統合済) | **BLOCK sg7_bundle_missing 16:57**=軍師 SG7 再レビュー待ち | 未起票(4447 CLEAR 後) | Claude 予定 | — |
+| U4 | gate dual-read+census | cmd_4447(delegated 14:57) | 疾風(Codex) | 39b2d18b2(origin 統合済) | **SG7 bundle FAIL 17:43**(report_verdict PASS、precheck PRE25 FP 残存=疾風 hotfix 待ち) | 未起票(4447 CLEAR 後) | Claude 予定 | — |
 | U1b | 直接 commit wrapper(将軍・家老) | 未起票(第 2 波) | — | — | — | — | — | — |
 | U5 | publisher_admit(migration_ack) | 未起票(第 2 波) | — | — | — | — | — | — |
 | U6 | ledger writer(insights/bulletin/lesson) | 未起票(第 2 波) | — | — | — | — | — | — |
@@ -283,7 +283,7 @@ canary 判定: **(v1.8 殿裁定 D9)** infra と dm-signal の両 repo を U1 �
 | 15:53 | 影丸 ghost 実装(取消済 4445 を継続) | kagemaru_report_cmd_4445 が二重報告 | void、小太郎報告を正本 | 解消 |
 | 15:2x-16:44 | 便停止 1h20m(push lane 統合未完、分岐 63/95) | pre-push ancestry guard が ID merge driver の superset を regression と誤判定+path 不在で rev-parse echo 比較 | 将軍 D0: 1215b57bb(second-parent 追加行 ⊆ prospective なら regression でない)+964602ee9(`rev-parse --verify -q`)、bats 3 本追加 26/26、ledger auto-commit 2577ce579 | push 到達 16:44 |
 | 16:46-17:05 | H-b 再 GATE WAIT ancestry | 報告 exact commit 13af4660b が origin 未統合 168 分(家老の 16:46 統合は 4445/4446/4447 の 3 件のみ) | 将軍下知 msg_170148→家老 通常 merge(changed 2/overlap 0)→push | CLEAR 17:05 |
-| 16:56-継続 | cmd_4445/4447/4446 再 GATE が sg7_bundle_missing BLOCK | 軍師 SG7 bundle 未生成。軍師 inbox の report_review 2 通(16:56/16:57)が未読 21 分、軍師 pane 入力待ちなのに `/tmp/shogun_idle_gunshi` 不在→watcher WAKE-DEFER 3 回(09-01 idle flag lifecycle hotfix の再発) | 将軍下知 msg_171629(軍師起床→真因 hotfix 1 名→4445 CLEAR→4448 配備) | 家老処理中 |
+| 16:56-継続 | cmd_4445/4447/4446 再 GATE が sg7_bundle_missing BLOCK→17:43 軍師 SG7 bundle 生成も verdict FAIL | report_verdict は PASS。precheck SG-PRE25 が `ninja_scope_commit.sh`/`run_tests.sh`(command 欄の exec prefix)を files_modified 不在と誤判定(将軍が cache 無効で再実行し ERRORS=2 再現)。3acaae149 は本 report 形式を覆わない。17:16 の『軍師 idle flag 停止』は将軍の誤診(軍師は起きて保留中)→17:35 訂正 | 疾風 hotfix(extract_target_path exec order、precheck と cmd_complete_gate の同期)→統合→precheck 再実行(cache key は script hash を含むため自動無効)→bundle 再生成→GATE | 疾風 report pending 17:4x |
 | 16:31 | push lane rc=1(LIFECYCLE-BACKGROUND-FAIL) | 上記 ancestry 偽陽性と同根 | 同上で根治 | 解消 |
 | 継続 | CI RED(shard-1 receipt missing、run 33499882240) | bats shard receipt 欠落 | 家老 ci_fix task 保持 | 未解消 |
 
