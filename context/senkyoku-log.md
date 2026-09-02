@@ -1660,3 +1660,7 @@
 - 2026-09-03 03:05 cmd_4459 本番確認 PASS(LP 保有欄=API year_month 別 holding、4 月一致)。
 - 2026-09-03 03:16 cmd_4462 AC1 改訂(cache-busting param)を hotfix として小太郎へ再配備(将軍裁定 A)。半蔵 reflux CLEAR。
 - 2026-09-03 03:22 cmd_4463(X 運用偵察)→飛猿。復帰点 session_save_20260903_0320 保存、compact_state 更新(将軍 CTX90% 指示)。
+- 2026-09-03 03:38 cmd_4462 改訂 hotfix(小太郎)CLEAR→DM-signal origin 877e667e、Render LP 自動 deploy 待ち→2 頁 curl。
+- 2026-09-03 03:48 run_tests.sh task mode の自己再帰(worktree 子 affected が RUN_TESTS_ACTIVE 継承)を飛猿が特定→影丸 hotfix。4463 は affected 直接実行の暫定経路。
+- 2026-09-03 03:52 cmd_4463(飛猿 docs-only 偵察)は autolink receipt 要件を構造的に満たせず家老 WA で status completed(WA 記録)。
+- 2026-09-03 03:55 小太郎 reflux(INS-2dc0)が真因2点(report_field_set.sh docs-only免除欠如+deploy_task.sh test_receipt_path stale未消去)を一次確認、kagemaru hotfix範囲外と確認しdecision_candidateへ委譲・resolve。
