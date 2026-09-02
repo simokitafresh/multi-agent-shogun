@@ -14171,3 +14171,10 @@ insights:
   source: "semantic_index_update"
   fix_known: false
   status: pending
+- id: INS-20260902-224411892-70c7
+  ts: "2026-09-02T22:44:11+09:00"
+  insight: "[[リバランサーの 500 は将軍が責任をもって自分で直し]] semantic_stress_test candidate_aliases: NO_MATCH source=lord query=リバランサーの 500 は将軍が責任をもって自分で直し、コミットデプロイ、本番確認までせよ"
+  priority: "low"
+  source: "semantic_stress_test"
+  fix_known: false
+  status: pending
