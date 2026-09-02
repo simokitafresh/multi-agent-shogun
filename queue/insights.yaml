@@ -12985,3 +12985,13 @@ insights:
   resolved_reason: 一次情報で gate_skill_script_refs.sh を再実走し、rc=2 REVIEW_REQUIRED だが参照先欠落0・鮮度差0・例示パス欠落0・副作用実走marker欠落0、FOLLOWUP_ACTIVE=34かつFOLLOWUP_COVERS_REVIEW_REQUIRED=yesを確認した。既存follow-upで被覆済みのため追加実修正とdecision_candidateは不要。
   action_artifact: "target=queue/insights.yaml:INS-20260902-131626077-2cd0;gate=SKILL_REF_DISABLE_CACHE=1 bash scripts/gates/gate_skill_script_refs.sh .;gate_rc=2;result=REVIEW_REQUIRED;observed=41_SKILL.md/82_refs/30_referenced/required0/deduped34/missing_refs0/stale_refs0/example_paths_missing0/side_effect_markers_missing0;FOLLOWUP_ACTIVE=34;FOLLOWUP_COVERS_REVIEW_REQUIRED=yes;memory=memory_db_query exact target;semantic=semantic_search exact target no direct ID match, concept=semantic_dictionary_design;causal=.cache/causal_index.tsv exact target no direct ID match, related skill_script_refs chain;test=logs/test_receipts/run_tests_20260902T055253_1955529.json 7/7 PASS SKIP0;inventory_before=insights_pending43/zero_backlinks17/promotions609/total669;decision_candidate=none"
   resolved_at: "2026-09-02T14:53:19+09:00"
+- id: INS-20260902-135851000-bec3
+  ts: "2026-09-02T13:58:51+09:00"
+  insight: "lord_conversation教訓候補: target=shogun trigger=inbound_lord detail=裁定待ちの推奨とトレードオフは？"
+  priority: "medium"
+  source: "lord_conversation:lesson_candidate"
+  fix_known: false
+  status: resolved
+  resolved_reason: "一次情報で殿発言(queue/lord_conversation.jsonl:443)を確認。memory_db FTS5とsemantic_searchの実測で既存概念 semantic_dictionary_design に一致し、docs/semantic-index/index.md と context/semantic-map.md の既存概念・alias群で扱い済み。直後の同一質問由来 INS-20260902-140258205-2567 も NO_MATCH候補としてsemantic index吸収済み・resolvedであり、新規実装修正や未決裁定は不要。"
+  action_artifact: "target=queue/insights.yaml:INS-20260902-135851000-bec3;source=queue/lord_conversation.jsonl:443;memory=semantic_search実測(MEMORY_DB_MATCH, semantic_dictionary_design);semantic=docs/semantic-index/index.md:2156-2160;context=context/semantic-map.md:semantic_dictionary_design既存alias;related=queue/insights.yaml:INS-20260902-140258205-2567(resolved);decision_candidate=none"
+  resolved_at: "2026-09-02T15:02:52+09:00"
