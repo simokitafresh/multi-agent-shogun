@@ -1941,18 +1941,14 @@ def batch_source_commit_summaries(
                     if plain_pathspecs or cited_dirs:
                         if not _commit_touches_relevant_path(changed_paths, plain_pathspecs, cited_dirs, cited_files):
                             continue
-                    # Global-ledger hot path must not re-enter per-commit
-                    # external-repo probes (notably research reflux). Use the
-                    # local reflection evidence only; an unproven item stays
-                    # counted and therefore fail-closed/actionable.
-                    reflected = rel_path in changed_paths
-                    if not reflected:
-                        try:
-                            context_text = open(os.path.join(root, rel_path), encoding="utf-8", errors="ignore").read()
-                            reflected = short_hash in context_text or commit_hash in context_text
-                        except OSError:
-                            reflected = False
-                    if reflected:
+                    # Keep the global-ledger path on the same reflection
+                    # contract as the direct path.  Checking only the hash
+                    # here re-alerts commits whose cmd id is already recorded
+                    # in the context body (and bypasses lesson-only/reflux
+                    # exclusions), making global and direct modes disagree.
+                    if commit_is_reflected_or_lesson_only(
+                        rel_path, commit_hash, subject, changed_paths, repo_path
+                    ):
                         continue
                     count += 1
                     if len(details) < 3: details.append(f"{short_hash} {subject}".strip())

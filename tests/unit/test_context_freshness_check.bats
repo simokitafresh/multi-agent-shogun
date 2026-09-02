@@ -1320,6 +1320,35 @@ PY
     [[ "$output" == *"MISSING_SOURCE_COMMIT"* ]]
 }
 
+# test_necessity: global history and direct history must apply the same
+# reflection contract, so an already recorded cmd id cannot become a second
+# freshness alert while a later same-day source commit remains detectable.
+@test "global history excludes cmd-id reflected commits and keeps same-day stale commits" {
+    _create_context "context/infrastructure.md" "$TODAY"
+    _create_source_commit "scripts/reflected.sh" "cmd_995_reflected: implementation"
+    local boundary
+    boundary="$(git -C "$TEST_TMPDIR" rev-parse --short HEAD)"
+    sed -i "1s/ -->/ source_commit:${boundary} -->/" "$TEST_TMPDIR/context/infrastructure.md"
+
+    _create_source_commit "scripts/already_indexed.sh" "cmd_995_indexed: implementation"
+    printf '\n- reflected proof: cmd_995_indexed\n' >> "$TEST_TMPDIR/context/infrastructure.md"
+    _create_source_commit "scripts/stale.sh" "cmd_995_stale: implementation"
+    _create_shogun_to_karo "cmd_995_global" "infra"
+
+    local global_cache
+    global_cache="$TEST_TMPDIR/global-history-cache"
+    CFC_GLOBAL_HISTORY_ENABLED=1 \
+    CFC_GLOBAL_HISTORY_CACHE_DIR="$global_cache" \
+    CFC_GLOBAL_HISTORY_BUILD_TIMEOUT=30 \
+    CFC_HISTORY_REFRESH_SYNC=1 \
+    CFC_OUTPUT_CACHE_TTL=0 \
+      run bash "$TEST_SCRIPT" --cmd-warnings cmd_995_global
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"ALERT: context/infrastructure.md source commits 1件"* ]]
+    [[ "$output" == *"cmd_995_stale: implementation"* ]]
+    [[ "$output" != *"cmd_995_indexed"* ]]
+}
+
 @test "infra scoped contexts do not share root fallback counts" {
     _create_context_with_source_boundary "context/codd.md" "$STALE_DATE" "$TEST_TMPDIR"
     _create_context "context/obsidian-link-principles.md" "$STALE_DATE"
