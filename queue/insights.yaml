@@ -13775,3 +13775,10 @@ insights:
   resolved_reason: "semantic map generation verified the candidate is represented or intentionally ignored"
   action_artifact: "semantic_map=/home/simokitafresh/multi-agent-shogun/context/semantic-map.md;semantic_index=/home/simokitafresh/multi-agent-shogun/docs/semantic-index/index.md"
   resolved_at: "2026-09-02T19:24:17+09:00"
+- id: INS-20260902-192555253-e7ba
+  ts: "2026-09-02T19:25:55+09:00"
+  insight: "[[殿指示 13 25『どのロールがどの CLI モデルでも必要十分に同じレベルで作業を続けられるのが我らの仕組み』 殿下問]] semantic_stress_test candidate_aliases: NO_MATCH source=cmds query=殿指示 2026-09-02 13:25『どのロールがどの CLI/モデルでも必要十分に同じレベルで作業を続けられるのが我らの仕組み』+殿下問 19:02『順調に進んでいるか？進展が遅すぎないか？』→第 1 波 3 unit の検証 cmd を CLEAR 待ちにせず今起票して直列を 1 段減らす(depends_on で配備は自動待機)。U4(cmd_44"
+  priority: "low"
+  source: "semantic_stress_test"
+  fix_known: false
+  status: pending
