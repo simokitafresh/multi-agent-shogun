@@ -341,6 +341,24 @@ watchdog_ninja_monitor_owner_generation() {
     awk 'NR==1 {print $2; exit}' "$owner_file" 2>/dev/null || true
 }
 
+watchdog_publisher_healthy() {
+    local state_dir="${SHOGUN_STATE_DIR:-${IDLE_FLAG_DIR:-/tmp}}"
+    local pid_file="$state_dir/publish_queue/publisher.pid" events_file="$state_dir/publish_queue/events.jsonl"
+    local pid last_ts last_epoch now max_age
+    [ -s "$pid_file" ] || return 1
+    read -r pid < "$pid_file" || return 1
+    [[ "$pid" =~ ^[0-9]+$ ]] || return 1
+    pid_is_live "$pid" || return 1
+    pid_cmdline_matches "$pid" "publisher.sh" || return 1
+    [ -s "$events_file" ] || return 1
+    last_ts="$(tail -n 1 "$events_file" | jq -r '.ts // empty')" || return 1
+    [ -n "$last_ts" ] || return 1
+    last_epoch="$(date -d "$last_ts" +%s 2>/dev/null)" || return 1
+    now="$(date +%s)"; max_age="${PUBLISHER_HEALTH_MAX_AGE_SEC:-300}"
+    [[ "$max_age" =~ ^[0-9]+$ ]] || return 1
+    (( now >= last_epoch && now - last_epoch <= max_age ))
+}
+
 check_ninja_monitor() {
     local pid_file="${STATE_DIR:-/tmp}/ninja_monitor.pid"
     local owner_file="${NINJA_MONITOR_OWNER_FILE:-${STATE_DIR:-/tmp}/ninja_monitor.owner}"
@@ -671,6 +689,12 @@ check_inbox_watchers
 check_daemon_inventory
 check_tmux_health || true
 check_tmux_duplicate_servers
+if ! watchdog_publisher_healthy; then
+    log "ALERT: publisher.sh unhealthy; restart suppressed"
+    if ! bash "$SCRIPT_DIR/scripts/inbox_write.sh" karo "publisher.sh unhealthy; watchdog will not restart it" investigation_result daemon_watchdog notify_karo; then
+        log "ALERT: failed to notify karo about publisher.sh health"
+    fi
+fi
 
 # heartbeat更新: 外部から「watchdog自体が動いているか」を検証可能にする
 date +%s > "$HEARTBEAT_FILE"
