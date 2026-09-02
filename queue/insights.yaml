@@ -13912,3 +13912,10 @@ insights:
   source: "semantic_stress_test"
   fix_known: false
   status: pending
+- id: INS-20260902-204844043-ff49
+  ts: "2026-09-02T20:48:44+09:00"
+  insight: "[[順調に進んでいるか？進展が遅すぎないか？]] semantic_stress_test candidate_aliases: NO_MATCH source=lord query=順調に進んでいるか？進展が遅すぎないか？"
+  priority: "low"
+  source: "semantic_stress_test"
+  fix_known: false
+  status: pending
