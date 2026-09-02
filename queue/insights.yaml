@@ -13045,7 +13045,10 @@ insights:
   priority: "low"
   source: "semantic_map_generate:new_file"
   fix_known: false
-  status: pending
+  status: resolved
+  resolved_reason: "一次情報で既存概念CMD年代記への意味付けと同一cmdの実績記録を確認済みだが、SSOT semantic indexへの当該docs/research文書パス登録は未完了。planned_paths外の文書変更は行わず、既存CMD年代記概念への文書参照登録を別スコープのdecision candidateとして整理し、同一候補の二重計上を解消する。"
+  action_artifact: "semantic_map=context/semantic-map.md:26 CMD年代記;semantic_index=docs/semantic-index/index.md:3230 cmd_4416_post_deploy_check実績行は登録済みだがdocs/research/cmd_4416_post_deploy_check.mdパスは未登録;decision_candidate=CMD年代記概念へ当該文書パスを登録する別スコープtask"
+  resolved_at: "2026-09-02T15:44:13+09:00"
 - id: INS-20260902-131233970-a46c
   ts: "2026-09-02T13:12:33+09:00"
   insight: "semantic_map_generate新規ファイル候補: `docs/research/gunshi_idle_lgtm_block_root_cause_analysis_20260831.md` は semantic index未登録。既存概念へのfile追加または新概念定義を検討せよ"
