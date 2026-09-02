@@ -869,6 +869,7 @@ if [ -n "$RETAG_ID" ]; then
 
     LESSONS_FILE="$PROJECT_PATH/tasks/lessons.md"
     LOCKFILE="$(lock_path "$LESSONS_FILE")"
+    LEDGER_WRITER="$SCRIPT_DIR/scripts/ledger_writer.sh"
 
     if [ ! -f "$LESSONS_FILE" ]; then
         echo "ERROR: $LESSONS_FILE not found." >&2
@@ -971,67 +972,35 @@ if [ -n "$RETIRE_ID" ]; then
 
     TIMESTAMP=$(date "+%Y-%m-%d")
 
-    # Atomic modify with flock
+    # Emit an update operation; the publisher performs the atomic ledger write.
     (
         flock -w 10 200 || { echo "ERROR: Could not acquire lock" >&2; exit 1; }
-
-        export LESSONS_FILE RETIRE_ID TIMESTAMP
-        python3 << 'RETIREPY'
-import re, os, sys
-
-lessons_file = os.environ["LESSONS_FILE"]
-retire_id = os.environ["RETIRE_ID"]
-timestamp = os.environ["TIMESTAMP"]
-
-with open(lessons_file, encoding='utf-8') as f:
-    content = f.read()
-
-# Normalize lesson ID to LXXX format
-m_id = re.match(r'^L?(\d+)$', retire_id)
-if m_id:
-    num = int(m_id.group(1))
-    retire_id = f'L{num:03d}'
-
-lines = content.split('\n')
-
-# Find the lesson heading: ### LXXX: title
-heading_idx = None
-for i, line in enumerate(lines):
-    if re.match(rf'^### {re.escape(retire_id)}\s*[:：]', line):
-        heading_idx = i
-        break
-
-if heading_idx is None:
-    print(f'ERROR: {retire_id} not found in {lessons_file}', file=sys.stderr)
-    sys.exit(1)
-
-# Find the last metadata line after the heading (lines starting with - **)
-insert_idx = heading_idx + 1
-already_retired = False
-for j in range(heading_idx + 1, len(lines)):
-    stripped = lines[j].strip()
-    if stripped.startswith('- **'):
-        insert_idx = j + 1
-        if '**retired**' in stripped:
-            already_retired = True
-    elif stripped == '':
-        continue
-    else:
-        break
-
-if already_retired:
-    print(f'{retire_id} is already retired')
-    sys.exit(0)
-
-# Insert retired fields after last metadata line
-retired_lines = [f'- **retired**: true', f'- **retired_at**: {timestamp}']
-new_lines = lines[:insert_idx] + retired_lines + lines[insert_idx:]
-
-with open(lessons_file, 'w', encoding='utf-8') as f:
-    f.write('\n'.join(new_lines))
-
-print(f'{retire_id} retired in {lessons_file}')
-RETIREPY
+        if grep -A40 -m1 "^### L\?$(printf '%s' "$RETIRE_ID" | sed 's/^L//'):" "$LESSONS_FILE" | grep -q '\*\*retired\*\*'; then
+            echo "$RETIRE_ID is already retired"
+            exit 0
+        fi
+        normalized_id="$(printf '%s' "$RETIRE_ID" | sed 's/^L//' | awk '{printf "L%03d", $1}')"
+        if [[ -x "$LEDGER_WRITER" ]]; then
+            LEDGER_SOURCE_FILE="$LESSONS_FILE" LEDGER_LESSONS_FILE="$LESSONS_FILE" \
+                bash "$LEDGER_WRITER" update lessons "$normalized_id" status=retired retired_at="$TIMESTAMP" --expect status=
+        else
+            LESSONS_FILE_ENV="$LESSONS_FILE" RETIRE_ID_ENV="$normalized_id" TIMESTAMP_ENV="$TIMESTAMP" python3 - <<'PY'
+import os, re
+path=os.environ['LESSONS_FILE_ENV']; ident=os.environ['RETIRE_ID_ENV']
+lines=open(path,encoding='utf-8').read().splitlines()
+start=next((i for i,line in enumerate(lines) if re.match(r'^### '+re.escape(ident)+r'\s*[:：]',line)),None)
+if start is None:
+    print(f'ERROR: {ident} not found in {path}', file=__import__('sys').stderr)
+    raise SystemExit(1)
+end=next((i for i in range(start+1,len(lines)) if lines[i].startswith('### L')),len(lines))
+if any('**retired**' in line for line in lines[start:end]): raise SystemExit(0)
+insert=start+1
+while insert<end and (lines[insert].strip()=='' or lines[insert].lstrip().startswith('- **')): insert+=1
+lines[insert:insert]=['- **retired**: true','- **retired_at**: '+os.environ['TIMESTAMP_ENV']]
+open(path,'w',encoding='utf-8').write('\n'.join(lines)+'\n')
+PY
+        fi
+        echo "$normalized_id retired in $LESSONS_FILE"
 
     ) 200>"$LOCKFILE"
 
@@ -1073,6 +1042,8 @@ fi
 
 LESSONS_FILE="$PROJECT_PATH/tasks/lessons.md"
 LOCKFILE="$(lock_path "$LESSONS_FILE")"
+LEDGER_WRITER="$SCRIPT_DIR/scripts/ledger_writer.sh"
+LEDGER_ENTRY_FILE="$(mktemp)"
 
 # Verify lessons file exists
 if [ ! -f "$LESSONS_FILE" ]; then
@@ -1366,7 +1337,14 @@ PYCOMBINED
             [ -n "${THEN_ACTION:-}" ] && printf -- '- **then**: %s\n' "$THEN_ACTION"
             [ -n "${BECAUSE_REASON:-}" ] && printf -- '- **because**: %s\n' "$BECAUSE_REASON"
             printf -- '- %s\n' "$DETAIL"
-        } >> "$LESSONS_FILE"
+        } > "$LEDGER_ENTRY_FILE"
+
+        if [[ -x "$LEDGER_WRITER" ]]; then
+            LEDGER_SOURCE_FILE="$LESSONS_FILE" LEDGER_LESSONS_FILE="$LESSONS_FILE" \
+                bash "$LEDGER_WRITER" append lessons "$LEDGER_ENTRY_FILE" >/dev/null
+        else
+            cat "$LEDGER_ENTRY_FILE" >> "$LESSONS_FILE"
+        fi
 
         printf '%s' "$_lw_new_id_str" > "${LESSON_ID_FILE:-/dev/null}"
         echo "$_lw_new_id_str added to $LESSONS_FILE"

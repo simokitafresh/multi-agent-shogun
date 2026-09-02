@@ -468,6 +468,17 @@ read -r POSTED_AT DATE_NANOS ENTRY_STAMP <<< "$DATE_FIELDS"
 HASH_RESULT="$(printf '%s' "${DATE_NANOS}${POSTED_BY}${CONTENT}" | sha1sum)"
 RAND_SUFFIX="${HASH_RESULT:0:6}"
 ENTRY_ID="blt_${ENTRY_STAMP}_${RAND_SUFFIX}"
+LEDGER_WRITER="$SCRIPT_DIR/scripts/ledger_writer.sh"
+LEDGER_ENTRY_FILE="$(mktemp)"
+trap 'rm -f -- "$LEDGER_ENTRY_FILE"' EXIT
+ledger_append() {
+    if [[ -x "$LEDGER_WRITER" ]]; then
+        LEDGER_SOURCE_FILE="$BULLETIN_FILE" bash "$LEDGER_WRITER" append bulletin "$LEDGER_ENTRY_FILE" >/dev/null
+    else
+        [[ -s "$BULLETIN_FILE" ]] || printf 'entries:\n' > "$BULLETIN_FILE"
+        cat "$LEDGER_ENTRY_FILE" >> "$BULLETIN_FILE"
+    fi
+}
 
 mkdir -p "${BULLETIN_FILE%/*}"
 
@@ -562,15 +573,7 @@ PY
         fi
         printf "  confirmed_by: []\n"
         printf "  status: 'open'\n"
-    } > "${BULLETIN_FILE}.new_entry"
-
-    {
-        printf "entries:\n"
-        cat "${BULLETIN_FILE}.new_entry"
-        [[ -f "$BULLETIN_FILE" ]] && tail -n +2 "$BULLETIN_FILE"
-    } > "${BULLETIN_FILE}.tmp"
-    rm -f "${BULLETIN_FILE}.new_entry"
-    mv "${BULLETIN_FILE}.tmp" "$BULLETIN_FILE"
+    } > "$LEDGER_ENTRY_FILE"
 
     printf '%s\n' "$ENTRY_ID"
 
@@ -582,6 +585,8 @@ if [[ "$WRITE_RESULT" == DEDUP:* ]]; then
 fi
 
 printf '%s\n' "$WRITE_RESULT"
+
+ledger_append
 
 MEMORY_DB_LIVE_INSERT="$SCRIPT_DIR/scripts/memory_db_live_insert_async.py"
 if [[ ! -f "$MEMORY_DB_LIVE_INSERT" ]]; then

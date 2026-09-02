@@ -1,127 +1,60 @@
 #!/usr/bin/env bash
-# shellcheck disable=SC1091
-# insight_resolve.sh — insightをresolvedステータスに変更
-# Usage: bash scripts/insight_resolve.sh <insight_id> "<reason>" "<action_artifact>"
-# @source: cmd_1502
-
+# insight_resolve.sh — emit an immutable insight resolution operation.
 set -euo pipefail
-_self="${BASH_SOURCE[0]}"
-[[ "$_self" != /* ]] && _self="$PWD/$_self"
-SCRIPT_DIR="${_self%/*}"
-REPO_ROOT="${SCRIPT_DIR%/*}"
-unset _self
-
-if [ "$#" -ne 3 ]; then
-    echo "Usage: bash scripts/insight_resolve.sh <insight_id> \"<reason>\" \"<action_artifact>\"" >&2
+SELF="${BASH_SOURCE[0]}"; [[ "$SELF" = /* ]] || SELF="$PWD/$SELF"
+SCRIPT_DIR="${SELF%/scripts/insight_resolve.sh}"
+[[ $# -eq 3 ]] || { echo 'Usage: insight_resolve.sh <insight_id> <reason> <action_artifact>' >&2; exit 1; }
+INSIGHT_ID="$1"; REASON="$2"; ACTION_ARTIFACT="$3"
+INSIGHTS_FILE="${INSIGHTS_FILE:-${SCRIPT_DIR%/scripts}/queue/insights.yaml}"
+[[ -f "$INSIGHTS_FILE" ]] || { echo "ERROR: insights file not found: $INSIGHTS_FILE" >&2; exit 1; }
+if [[ "${INSIGHT_ALLOW_RESOLVE_WITH_CORRUPT:-0}" != 1 ]] && compgen -G "${INSIGHTS_FILE}.corrupt.*" >/dev/null; then
+    echo "ERROR: unresolved corrupt insight quarantine remains in queue root" >&2
     exit 1
 fi
-
-INSIGHT_ID="$1"
-REASON="$2"
-ACTION_ARTIFACT="$3"
-INSIGHTS_FILE="${INSIGHTS_FILE:-$REPO_ROOT/queue/insights.yaml}"
-
-if [ ! -f "$INSIGHTS_FILE" ]; then
-    echo "ERROR: insights file not found: $INSIGHTS_FILE" >&2
-    exit 1
-fi
-
-if [ "${INSIGHT_ALLOW_RESOLVE_WITH_CORRUPT:-0}" != "1" ]; then
-    corrupt_dir="$(dirname "$INSIGHTS_FILE")"
-    corrupt_base="$(basename "$INSIGHTS_FILE")"
-    shopt -s nullglob
-    corrupt_leftovers=("${corrupt_dir}/${corrupt_base}.corrupt."*)
-    shopt -u nullglob
-    if [ "${#corrupt_leftovers[@]}" -gt 0 ]; then
-        echo "ERROR: unresolved corrupt insight quarantine remains in queue root: ${#corrupt_leftovers[@]} file(s)" >&2
-        exit 1
-    fi
-fi
-
-if ! grep -q "id: ${INSIGHT_ID}" "$INSIGHTS_FILE"; then
-    echo "ERROR: insight not found: $INSIGHT_ID" >&2
-    exit 1
-fi
-
-if [ -z "${REASON//[[:space:]]/}" ] || [ -z "${ACTION_ARTIFACT//[[:space:]]/}" ]; then
-    echo "ERROR: resolved_reason and action_artifact must be non-empty" >&2
-    exit 1
-fi
-
-# One lock + one atomic replace keeps the four resolution fields indivisible.
-# shellcheck source=lib/yaml_field_set.sh
-source "$SCRIPT_DIR/lib/yaml_field_set.sh"
-(
-flock -w 5 200 || { echo "ERROR: lock timeout" >&2; exit 1; }
-INSIGHT_ID_ENV="$INSIGHT_ID" REASON_ENV="$REASON" ACTION_ARTIFACT_ENV="$ACTION_ARTIFACT" \
-INSIGHTS_FILE_ENV="$INSIGHTS_FILE" RESOLVED_AT_ENV="$(date -Iseconds)" python3 - <<'PY'
-import json
-import os
-import pathlib
-import tempfile
-import time
-
-path = pathlib.Path(os.environ["INSIGHTS_FILE_ENV"])
-lines = path.read_text(encoding="utf-8").splitlines(keepends=True)
-target_id = os.environ["INSIGHT_ID_ENV"]
-start = next((i for i, line in enumerate(lines) if line.strip() == f"- id: {target_id}"), None)
-if start is None:
-    raise SystemExit(f"ERROR: insight not found: {os.environ['INSIGHT_ID_ENV']}")
-end = next((i for i in range(start + 1, len(lines)) if lines[i].startswith("- id: ")), len(lines))
-fields = {
-    "status": "resolved",
-    "resolved_reason": os.environ["REASON_ENV"],
-    "action_artifact": os.environ["ACTION_ARTIFACT_ENV"],
-    "resolved_at": os.environ["RESOLVED_AT_ENV"],
-}
-block = lines[start:end]
-
-def current_value(key):
-    line = next((item for item in block if item.startswith(f"  {key}:")), None)
-    if line is None:
-        return None
-    raw = line.split(":", 1)[1].strip()
-    if raw.startswith(('"', "'")):
-        try:
-            return json.loads(raw)
-        except json.JSONDecodeError:
-            return raw.strip("'\"")
-    return raw
-
-# Revalidation is allowed to call resolve more than once.  The same semantic
-# resolution is already complete, so rewriting resolved_at would manufacture
-# a post-commit worker diff and permanently block the reflux completion gate.
-if (
-    current_value("status") == "resolved"
-    and current_value("resolved_reason") == os.environ["REASON_ENV"]
-    and current_value("action_artifact") == os.environ["ACTION_ARTIFACT_ENV"]
-):
-    print(f"IDEMPOTENT: {target_id} already resolved with identical evidence")
-    raise SystemExit(0)
-
-for key, value in fields.items():
-    encoded = value if key == "status" else json.dumps(value, ensure_ascii=False)
-    replacement = f"  {key}: {encoded}\n"
-    index = next((i for i, line in enumerate(block) if line.startswith(f"  {key}:")), None)
-    if index is None:
-        block.append(replacement)
-    else:
-        block[index] = replacement
-lines[start:end] = block
-fd, tmp = tempfile.mkstemp(prefix=".insights-resolve.", suffix=".tmp", dir=path.parent)
-try:
-    with os.fdopen(fd, "w", encoding="utf-8") as stream:
-        stream.writelines(lines)
-        stream.flush()
-        os.fsync(stream.fileno())
-    sleep_sec = float(os.environ.get("INSIGHT_TEST_SLEEP_BEFORE_REPLACE", "0") or "0")
-    if sleep_sec > 0:
-        time.sleep(sleep_sec)
-    os.replace(tmp, path)
-finally:
-    if os.path.exists(tmp):
-        os.unlink(tmp)
+[[ -n "${REASON//[[:space:]]/}" && -n "${ACTION_ARTIFACT//[[:space:]]/}" ]] || { echo 'ERROR: resolution evidence must be non-empty' >&2; exit 1; }
+IFS=$'\t' read -r current_status current_reason current_artifact < <(python3 - "$INSIGHTS_FILE" "$INSIGHT_ID" <<'PY'
+import sys
+path, ident = sys.argv[1:]
+lines = open(path, encoding='utf-8').read().splitlines()
+start = next((i for i,line in enumerate(lines) if line.strip() == f'- id: {ident}'), None)
+if start is None: raise SystemExit(f'ERROR: insight not found: {ident}')
+end = next((i for i in range(start+1,len(lines)) if lines[i].startswith('- id: ')), len(lines))
+values = {}
+for line in lines[start:end]:
+    if ':' in line:
+        key, value = line.strip().split(':',1)
+        values[key] = value.strip().strip('"\'')
+print(values.get('status',''), values.get('resolved_reason',''), values.get('action_artifact',''), sep='\t')
 PY
-) 200>"$(lock_path "$INSIGHTS_FILE")"
-
+)
+if [[ "$current_status" == resolved && "$current_reason" == "$REASON" && "$current_artifact" == "$ACTION_ARTIFACT" ]]; then
+    echo "IDEMPOTENT: $INSIGHT_ID already resolved with identical evidence"
+    exit 0
+fi
+if [[ ! -x "$SCRIPT_DIR/ledger_writer.sh" ]]; then
+    INSIGHTS_FILE_ENV="$INSIGHTS_FILE" INSIGHT_ID_ENV="$INSIGHT_ID" REASON_ENV="$REASON" ACTION_ENV="$ACTION_ARTIFACT" python3 - <<'PY'
+import json, os, tempfile
+path=os.environ['INSIGHTS_FILE_ENV']; ident=os.environ['INSIGHT_ID_ENV']
+lines=open(path,encoding='utf-8').read().splitlines(keepends=True)
+start=next(i for i,line in enumerate(lines) if line.strip()==f'- id: {ident}')
+end=next((i for i in range(start+1,len(lines)) if lines[i].startswith('- id: ')),len(lines))
+values={'status':'resolved','resolved_reason':os.environ['REASON_ENV'],'action_artifact':os.environ['ACTION_ENV'],'resolved_at':__import__('datetime').datetime.now().isoformat()}
+block=lines[start:end]
+for key,value in values.items():
+    replacement=f'  {key}: {json.dumps(value,ensure_ascii=False)}\n'
+    pos=next((i for i,line in enumerate(block) if line.startswith(f'  {key}:')),None)
+    if pos is None: block.append(replacement)
+    else: block[pos]=replacement
+lines[start:end]=block
+fd,tmp=tempfile.mkstemp(dir=os.path.dirname(path),prefix='.insight-resolve.')
+with os.fdopen(fd,'w',encoding='utf-8') as stream: stream.writelines(lines)
+delay=float(os.environ.get('INSIGHT_TEST_SLEEP_BEFORE_REPLACE','0') or '0')
+if delay > 0: __import__('time').sleep(delay)
+os.replace(tmp,path)
+PY
+    echo "OK: $INSIGHT_ID → resolved"
+    exit 0
+fi
+LEDGER_SOURCE_FILE="$INSIGHTS_FILE" bash "$SCRIPT_DIR/ledger_writer.sh" resolve insights "$INSIGHT_ID" \
+    --expect "status=${current_status}" --resolved-reason "$REASON" --action-artifact "$ACTION_ARTIFACT" >/dev/null
 echo "OK: $INSIGHT_ID → resolved"
