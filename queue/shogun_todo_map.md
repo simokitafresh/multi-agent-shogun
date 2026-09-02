@@ -1,9 +1,11 @@
-# 将軍 全体状況マップ(やることリスト) — 2026-08-26 13:55 作成 / 09-03 06:20 更新(単一 publisher: flag ON 04:37・U8 凍結 06:13・daemon 根治・root 直 commit は U1b、X 運用設計書 v0.3)
+# 将軍 全体状況マップ(やることリスト) — 2026-08-26 13:55 作成 / 09-03 07:50 更新(単一 publisher 10/12・ledger route 本番稼働・worktree sweep 82 回収)
 # ★殿裁定 2026-08-29 10:26『バグの修正は必須だが、一回終わりを作ろう。速度向上は今取り掛かっているタスクたちを全て完了させたら一旦俺の指示を待て。バグの根治は俺の指示を待たずに継続せよ』→ 速度 lane は走行分の終端で凍結(新規配備 0、家老 blt_102819 で適用確認)。バグ根治 lane(T180/CI RED/便停止/Guard14)は継続。
 # 原則(殿13:52-13:54): シングルタスクを高速に切替える。優先順位なし=全部やる。依存は構造としてだけ記す。一定時間ごと(各inbox処理後・30分毎)に更新。 ★らせんの原理: ①計測器を律速の名指しから仕込み本番に常設→②1 unit だけ切る(1 unit/commit)→③計測を一段深く→④計測器は残す。切るのは機械的待ちのみ。逸脱チェック3問(名指しから始めたか/一段深くしたか/本番に残るか)。対象=速度/デッドコード/リファクタ/知識。成果指標=PJ 成果の e2e と件数
 # artifact: https://claude.ai/code/artifact/a88c6c42-a725-4201-af4e-008697d70b28 (HTML正本 docs/dashboard/shogun-todo-map.html。更新=正本Edit→Artifact再公開 同file_path)
 # 記法: [ ] 未 / [~] 走行中(担当) / [x] 済(証跡)。★=速度向上へのつながり1行必須
 
+- [x] T232 追補(09-03 07:50) cmd_4465 CLEAR 07:19→ledger route 初稼働(将軍手動 1 周 a6f54a6a9)→batch 欠陥 3 根治(家老 195a924a7/4d0897c46/5895fc921)→滞留 15→0(n=70 a8b7c3895)。副産物: fileMode=false 消失で mode 差分 2020 件露出(将軍再設定)、root 台帳 4 file 取残し(家老復元 53408f376)、semantic test 29 の真因=fixture が ledger route へ逸れる(f4e6ab789) ★台帳 commit が publisher 1 経路に収束
+- [x] T235(09-03 07:13/07:45) worktree 回収 hotfix CLEAR→sweep 本実行(dir 125→43、git worktree 225→143、removed 82、dirty 保持 15、active 誤回収 0)。root drain hotfix(影丸 a1a0640eb)CLEAR ★root 乖離と worktree 残骸の自動回収=publisher 停止要因 2 つを構造で塞いだ
 - [x] T231(09-03 04:37〜06:13 単一 publisher 第 3 波終端) PUBLISHER_SINGLE ON 04:37(d42b62a90 flag file helper、queue/flags/publisher_single)。U8 は cmd_4464(M10 のみ・行数 0)/cmd_4466(M1/M8 削除で gate suite 数十本+別機能が壊れ revert)とも正当 FAIL→将軍裁定 06:13 凍結(再開条件=運用 7 日後に chain ごとの契約 test 移植設計書)。旧経路は no-op で壁の発生源は停止=目的達成。設計書 v3.15(8/12 完了) ★物理削除より運用実績。hotfix 対象は publisher 系 6 file に収束
 - [~] T232(09-03 04:58 家老 deepdive 発見) U6 ledger route が本番未稼働(-x 644+publisher に消費者なし)=T2-27→cmd_4465(半蔵、ledger 消費者+755 追跡+沈黙フォールバック可視化)。半蔵の再提出が base 古く RC→merge で再々提出中。着地後=家老 hotfix 列: publisher base fetch→stop flag→watchdog 自動再起動+ntfy ★台帳 commit が publisher 1 経路に収束し root dirty 0
 - [x] T233(09-03 05:21 loop 一次で発見) flag ON 後に root 直 commit(doc lane/checkpoint/insights auto-commit)が origin へ届かず ahead 20→家老 ff push(05:24)+insights auto-commit/postclear を U1b 化(9dae7921f/28cc8e5d6)+root drain hotfix(影丸 PASS、LGTM 待ち)+worktree 回収 hotfix(才蔵 PASS、LGTM 待ち)。将軍 doc lane は publish_direct_commit.sh へ切替(db11e00b8 で実証) ★root 乖離=publisher 停止の根を塞いだ
