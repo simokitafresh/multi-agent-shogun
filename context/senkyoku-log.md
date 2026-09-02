@@ -1666,3 +1666,4 @@
 - 2026-09-03 03:55 小太郎 reflux(INS-2dc0)が真因2点(report_field_set.sh docs-only免除欠如+deploy_task.sh test_receipt_path stale未消去)を一次確認、kagemaru hotfix範囲外と確認しdecision_candidateへ委譲・resolve。
 - 2026-09-03 03:55 cmd_4463(X 運用偵察、飛猿)CLEAR(docs-only の receipt 要件は家老 WA、semantic_validation は家老補填)。
 - 2026-09-03 03:58 小太郎 reflux(INS-2dc0 resolve)CLEAR。
+- 2026-09-03 04:14 半蔵 reflux(INS-b8e2、infra::general WA 4 件→構造対策 cmd 候補)CLEAR。
