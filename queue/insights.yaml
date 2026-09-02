@@ -14276,3 +14276,10 @@ insights:
   source: "semantic_stress_test"
   fix_known: false
   status: pending
+- id: INS-20260902-231748839-8cad
+  ts: "2026-09-02T23:17:48+09:00"
+  insight: "[[殿 22 44『sitemap 554 に増えている]] semantic_stress_test candidate_aliases: NO_MATCH source=cmds query=殿 2026-09-02 22:44『sitemap 554 に増えている。ページのインデックス登録にはまだ進んでいない』→22:53『起票せよ』。本番 curl 22:45 一次: LP(/)から /signals/ への href 0、/signals/ は 404、月次頁に前月/翌月リンク 0、lastmod は全月『月初 00:00Z』(2003 年"
+  priority: "low"
+  source: "semantic_stress_test"
+  fix_known: false
+  status: pending
