@@ -13155,3 +13155,108 @@ insights:
   resolved_reason: "semantic index candidate was absorbed into a registered concept"
   action_artifact: "semantic_index=/home/simokitafresh/multi-agent-shogun/docs/semantic-index/index.md"
   resolved_at: "2026-09-02T14:06:56+09:00"
+- id: INS-20260902-141250036-6b56
+  ts: "2026-09-02T14:12:50+09:00"
+  insight: "semantic_map_generate新規ファイル候補: `CONTRIBUTING.md` は semantic index未登録。既存概念へのfile追加または新概念定義を検討せよ"
+  priority: "low"
+  source: "semantic_map_generate:new_file"
+  fix_known: false
+  status: pending
+- id: INS-20260902-141250140-9ae6
+  ts: "2026-09-02T14:12:50+09:00"
+  insight: "semantic_map_generate新規ファイル候補: `LICENSE` は semantic index未登録。既存概念へのfile追加または新概念定義を検討せよ"
+  priority: "low"
+  source: "semantic_map_generate:new_file"
+  fix_known: false
+  status: pending
+- id: INS-20260902-141250259-bc78
+  ts: "2026-09-02T14:12:50+09:00"
+  insight: "semantic_map_generate新規ファイル候補: `Makefile` は semantic index未登録。既存概念へのfile追加または新概念定義を検討せよ"
+  priority: "low"
+  source: "semantic_map_generate:new_file"
+  fix_known: false
+  status: pending
+- id: INS-20260902-141250373-beef
+  ts: "2026-09-02T14:12:50+09:00"
+  insight: "semantic_map_generate新規ファイル候補: `README.md` は semantic index未登録。既存概念へのfile追加または新概念定義を検討せよ"
+  priority: "low"
+  source: "semantic_map_generate:new_file"
+  fix_known: false
+  status: pending
+- id: INS-20260902-141250479-8da8
+  ts: "2026-09-02T14:12:50+09:00"
+  insight: "semantic_map_generate新規ファイル候補: `README_ja.md` は semantic index未登録。既存概念へのfile追加または新概念定義を検討せよ"
+  priority: "low"
+  source: "semantic_map_generate:new_file"
+  fix_known: false
+  status: pending
+- id: INS-20260902-141250592-15a2
+  ts: "2026-09-02T14:12:50+09:00"
+  insight: "semantic_map_generate新規ファイル候補: `SECURITY.md` は semantic index未登録。既存概念へのfile追加または新概念定義を検討せよ"
+  priority: "low"
+  source: "semantic_map_generate:new_file"
+  fix_known: false
+  status: pending
+- id: INS-20260902-141250704-658d
+  ts: "2026-09-02T14:12:50+09:00"
+  insight: "semantic_map_generate新規ファイル候補: `android/.gitignore` は semantic index未登録。既存概念へのfile追加または新概念定義を検討せよ"
+  priority: "low"
+  source: "semantic_map_generate:new_file"
+  fix_known: false
+  status: pending
+- id: INS-20260902-141250820-8c9e
+  ts: "2026-09-02T14:12:50+09:00"
+  insight: "semantic_map_generate新規ファイル候補: `android/README.md` は semantic index未登録。既存概念へのfile追加または新概念定義を検討せよ"
+  priority: "low"
+  source: "semantic_map_generate:new_file"
+  fix_known: false
+  status: pending
+- id: INS-20260902-141250936-56f2
+  ts: "2026-09-02T14:12:50+09:00"
+  insight: "semantic_map_generate新規ファイル候補: `android/README_ja.md` は semantic index未登録。既存概念へのfile追加または新概念定義を検討せよ"
+  priority: "low"
+  source: "semantic_map_generate:new_file"
+  fix_known: false
+  status: pending
+- id: INS-20260902-141251046-2ad1
+  ts: "2026-09-02T14:12:51+09:00"
+  insight: "semantic_map_generate新規ファイル候補: `android/app/src/main/java/com/shogun/android/MainActivity.kt` は semantic index未登録。既存概念へのfile追加または新概念定義を検討せよ"
+  priority: "low"
+  source: "semantic_map_generate:new_file"
+  fix_known: false
+  status: pending
+- id: INS-20260902-141251524-78a7
+  ts: "2026-09-02T14:12:51+09:00"
+  insight: "semantic_map_generate新規ファイル候補: `android/app/src/test/java/com/shogun/android/util/VoiceDictionaryTest.kt` は semantic index未登録。既存概念へのfile追加または新概念定義を検討せよ"
+  priority: "low"
+  source: "semantic_map_generate:new_file"
+  fix_known: false
+  status: pending
+- id: INS-20260902-141252010-7f87
+  ts: "2026-09-02T14:12:52+09:00"
+  insight: "semantic_map_generate新規ファイル候補: `archive/frozen/gunshi.md` は semantic index未登録。既存概念へのfile追加または新概念定義を検討せよ"
+  priority: "low"
+  source: "semantic_map_generate:new_file"
+  fix_known: false
+  status: pending
+- id: INS-20260902-141252307-7d91
+  ts: "2026-09-02T14:12:52+09:00"
+  insight: "semantic_map_generate新規ファイル候補: `codd.bak.1776241363/.gitignore` は semantic index未登録。既存概念へのfile追加または新概念定義を検討せよ"
+  priority: "low"
+  source: "semantic_map_generate:new_file"
+  fix_known: false
+  status: pending
+- id: INS-20260902-141252415-4670
+  ts: "2026-09-02T14:12:52+09:00"
+  insight: "semantic_map_generate新規ファイル候補: `codd/.codd/dag.json` は semantic index未登録。既存概念へのfile追加または新概念定義を検討せよ"
+  priority: "low"
+  source: "semantic_map_generate:new_file"
+  fix_known: false
+  status: pending
+- id: INS-20260902-141252523-9b09
+  ts: "2026-09-02T14:12:52+09:00"
+  insight: "semantic_map_generate新規ファイル候補: `codd/brownfield/agent_status_brownfield.md` は semantic index未登録。既存概念へのfile追加または新概念定義を検討せよ"
+  priority: "low"
+  source: "semantic_map_generate:new_file"
+  fix_known: false
+  status: pending
