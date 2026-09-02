@@ -13815,3 +13815,10 @@ insights:
   resolved_reason: "semantic index candidate was absorbed into a registered concept"
   action_artifact: "semantic_index=/home/simokitafresh/multi-agent-shogun/docs/semantic-index/index.md"
   resolved_at: "2026-09-02T19:28:20+09:00"
+- id: INS-20260902-193032141-16dd
+  ts: "2026-09-02T19:30:32+09:00"
+  insight: "semantic_index_update未登録cmd originノード: [[single_publisher_asis_tobe_5w1h_20260902_v35_APPROVE]] は既存aliasesに一致なし。類似概念TOP3: growth_loop(学習ループ; alias=single publisher asis tobe 5w1h 20260902 mdも随時更新しないと後で混乱する; score=30.1) / admin_ui_redesign_asis_tobe(DM-Signal Admin画面一覧性改修設計書; alias=admin ui redesign asis tobe 5w1h 20260724 mdを確認せよ; score=20.5) / provisional_dm-login-boundary-asis-tobe_20260817(仮: Dm Login Boundary Asis Tobe 20260817; alias=provisional_dm-login-boundary-asis-tobe_20260817; score=16.3)。概念定義とaliases追加を検討せよ"
+  priority: "low"
+  source: "semantic_index_update"
+  fix_known: false
+  status: pending
