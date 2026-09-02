@@ -16655,3 +16655,16 @@ sqlite3.Connection.backup()を使うとページ(4096byte)単位のread syscall�
 - **when**: 未設定
 - **how**: 未設定
 - IF patch/manifestのような複数ファイルにまたがるintegrity検証を設計する THEN 最終状態(write-tree等)の一致比較だけでなく、各入力ファイルが実際に touch するpath集合そのものを他の宣言と事前突合せよ。理由: manifest.paths[]に列挙されたpathだけをgit addしてwrite-treeを比較する設計は、patch.diffだけが別途改ざんされ未申告pathの変更を含んでいても、そのpathはuntrackedのままstageされずwrite-tree比較に反映されないため静かに一致してしまう(cmd_4449疾風の敵対fixtureで実証: 攻撃者patchにextra.txtを混入してもrestoreはrc=0で成功していた)。対策はgit apply --numstatのようなdry-run手段で適用前にpatchの実タッチpath集合を取得し、宣言済み集合との完全一致を適用前に検証すること。
+
+### L1708: FIFO契約fixtureはsubmission順を明示する
+- **日付**: 2026-09-02
+- **出典**: cmd_karo_hotfix_u1_publisher_queue_fifo_order_202609022136
+- **記録者**: saizo
+- **tags**: [infra,testing,testing]
+- **subdomain**: infra
+- **target_files**: [scripts/publisher_queue.sh,tests/unit/test_publisher_queue.bats]
+- **origin**: [[cmd_karo_hotfix_u1_publisher_queue_fifo_order_202609022136]]
+- **enforcement**: 未自動化
+- **when**: 未設定
+- **how**: 未設定
+- sleepで起動時刻をずらした並行fixtureはprocess schedulingによりtask順を保証しない。投入順の契約testは同期投入で明示し、真の並行性はseq重複欠落・反復probeで独立計測する。

@@ -1628,3 +1628,7 @@
 - 2026-09-02 21:40 家老: 将軍凍結規則(20:45、§10 対象 file への hotfix 禁止)を復帰時に見落とし hotfix 3 本を配備→是正(3 task idle 化・停止通知)。§14.4 例外の実装 file 欠陥 2 件を修正 lane 化: U2 restore 未申告 path(飛猿)・U1 FIFO 非決定(才蔵)。第 2 波 4451→半蔵/4452→影丸/4453→小太郎/4454→疾風 配備。auto_commit_before_clear を flag file で無効化(2816c38d7、monitor hot-reload 21:35 確認)。
 - 2026-09-02 21:47 U2 修正 lane(飛猿 cmd_karo_hotfix_u2_publish_artifact_restore_undeclared_path_202609022132)GATE CLEAR。publish_artifact.sh restore が patch 実タッチ path と manifest paths[] を完全一致検証(ea8bdd794)。同じ偽 BLOCK(ancestry WAIT→push OK→fallback 全 PASS BLOCK)4 例目=gate 直接再実行で CLEAR(§10 file につき hotfix せず)。
 - 2026-09-02 21:58 cmd_4452(影丸 U1b direct commit wrapper)GATE CLEAR(偽 BLOCK 5 例目→gate 直接再実行)。CI RED(run 33630722226: instructions 不同期+shard1 FP 語彙 test)は飛猿 ci_fix 配備。
+- 2026-09-02 22:05 U1 修正 lane(才蔵 cmd_karo_hotfix_u1_publisher_queue_fifo_order_202609022136)GATE CLEAR。publisher_queue.sh の sequence lock を採番から原子的公開まで保持(6fc7e7b81)。偽 BLOCK 6 例目→gate 直接再実行。
+- 2026-09-02 22:20 cmd_4451_full(U3 半蔵)完了: publisher daemon(dry-run/active、C2a、isolated restore、parent-1 commit、retry導線)とwatchdog_publisher_healthyを実装。own unit 4/4 PASS・SKIP0、commit 79bfa51b、report gate PASS。task selectorは既存U1 FIFO fixtureのFAIL 1件を分離記録。
+- 2026-09-02 22:12 cmd_4451(半蔵 U3 publisher daemon dry-run)GATE CLEAR(偽 BLOCK 7 例目→gate 直接再実行)。共有 main checkout 後退 4 回目(U1 path)を復元。
+- 2026-09-02 22:38 軍師停止(idle flag 不在×bash_running 残留×stop hook 再入経路)の真因 3 段を一次確認、根治 hotfix 仕様作成(将軍 22:29『U3 後』方針へ即配備を具申)。将軍 nudge で軍師復帰。影丸 reflux CLEAR(偽 BLOCK 8 例目)。4453 は test_necessity 未宣言で 2 回目 RC。

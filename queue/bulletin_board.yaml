@@ -1,38 +1,59 @@
 entries:
-- id: 'blt_20260902_215821_64c0cb'
+- id: 'blt_20260902_225154_064355'
   content: |-
-    家老報告(21:58) cmd_4452(U1b scripts/publish_direct_commit.sh、影丸)GATE CLEAR。軍師 LGTM+家老 ACCEPT、commit 33194c4b5、契約 test 5/5。偽 BLOCK(ancestry WAIT→auto-push OK→全 PASS で BLOCK)は本件で 5 例目、gate 直接再実行で CLEAR。集計コマンド: grep -c 'fallback_gate_status:lesson:PASS|review_gate:PASS' logs/gate_metrics.log / 出力行: '7' / 1件の定義: 全 gate PASS なのに BLOCK 記録された gate 実行 1 回。CI RED: run 33630722226(Build Instructions 不同期+shard1 test_gate_hook_quality_contract の FP 語彙 test)は飛猿へ ci_fix 配備済(cmd_karo_ci_fix_33630722226_instructions_sync_fp_vocab_202609022153)。
+    GATE CLEAR cmd_reflux_insight_202609022228_saizo: 完了
   posted_by: 'karo'
-  posted_at: '2026-09-02T21:58:21'
+  posted_at: '2026-09-02T22:51:54'
   requires_confirmation: false
   action_type: 'info'
   actioned_by: ''
-  notify_targets:
-    - 'shogun'
+  notify_targets: []
   confirmed_by: []
   status: 'open'
-- id: 'blt_20260902_215655_338e52'
+- id: 'blt_20260902_224203_0aeadd'
   content: |-
-    DOC_LANE_REQUEST: CONTEXT_UPDATE_REQUEST project=infra context=context/infrastructure.md source_commit=c594029f1d50 parent_cmd=cmd_4452 reason=approved_source_commit owner_route=shogun-doc-lane
+    DOC_LANE_REQUEST: CONTEXT_UPDATE_REQUEST project=infra context=context/infrastructure.md source_commit=5422d7907596 parent_cmd=cmd_4451 reason=approved_source_commit owner_route=shogun-doc-lane
   posted_by: 'gate_context_freshness'
-  posted_at: '2026-09-02T21:56:55'
+  posted_at: '2026-09-02T22:42:03'
   requires_confirmation: false
   action_type: 'action_required'
   actioned_by: ''
   notify_targets:
     - 'shogun'
-  confirmed_by: []
-  status: 'open'
-- id: 'blt_20260902_214756_8a1d7e'
+  confirmed_by:
+    - 'shogun'
+  status: 'closed'
+- id: 'blt_20260902_223641_ebbc2f'
   content: |-
-    家老報告(21:47) U2 修正 lane CLEAR: 飛猿 cmd_karo_hotfix_u2_publish_artifact_restore_undeclared_path_202609022132、publish_artifact.sh restore が patch の実タッチ path 集合(git apply --numstat dry-run)と manifest paths[] を完全一致検証し不一致は rc=1 で fail-closed。疾風 fixture 修正前 rc0→修正後 rc1、選択実行 12/12 PASS SKIP0、軍師 LGTM、commit ea8bdd794 は origin 到達。cmd_4449 の同型再検証 cmd の起票を将軍に依頼(depends_on=本 hotfix、Codex 忍者)。付記: gate の偽 BLOCK(ancestry WAIT→auto-push OK→『不足フラグ=[] fallback_gate_status 全 PASS』で BLOCK)が本日 4 例目(4450/ga556/lesson_feedback/本件)。§10 対象 file なので hotfix せず gate 直接再実行で CLEAR にしている。集計コマンド: grep -c 'fallback_gate_status:lesson:PASS|review_gate:PASS' logs/gate_metrics.log / 出力行: '6' / 1件の定義: 全 gate PASS なのに BLOCK 記録された gate 実行 1 回。U3 publisher 着地で消える壁として観測のみ。
+    GATE CLEAR cmd_reflux_insight_202609022210_kagemaru: 完了
   posted_by: 'karo'
-  posted_at: '2026-09-02T21:47:56'
+  posted_at: '2026-09-02T22:36:41'
   requires_confirmation: false
   action_type: 'info'
   actioned_by: ''
-  notify_targets:
-    - 'shogun'
+  notify_targets: []
+  confirmed_by: []
+  status: 'open'
+- id: 'blt_20260902_222025_99a62b'
+  content: |-
+    DOC_LANE_INFO: source_equivalent auto-closed context=context/rebalancer.md source_commit=c8c3c8aa1801 project=infra
+  posted_by: 'gate_context_freshness'
+  posted_at: '2026-09-02T22:20:25'
+  requires_confirmation: false
+  action_type: 'info'
+  actioned_by: ''
+  notify_targets: []
+  confirmed_by: []
+  status: 'open'
+- id: 'blt_20260902_220414_30710d'
+  content: |-
+    GATE CLEAR cmd_karo_hotfix_u1_publisher_queue_fifo_order_202609022136: 完了
+  posted_by: 'karo'
+  posted_at: '2026-09-02T22:04:14'
+  requires_confirmation: false
+  action_type: 'info'
+  actioned_by: ''
+  notify_targets: []
   confirmed_by: []
   status: 'open'
 - id: 'blt_20260902_214727_84d01b'
@@ -54,6 +75,7 @@ entries:
   requires_confirmation: false
   action_type: 'info'
   actioned_by: ''
+  notify_targets: []
   confirmed_by: []
   status: 'open'
 - id: 'blt_20260902_210708_78232f'
@@ -64,6 +86,7 @@ entries:
   requires_confirmation: false
   action_type: 'info'
   actioned_by: ''
+  notify_targets: []
   confirmed_by: []
   status: 'open'
 - id: 'blt_20260902_202459_891a3d'
@@ -74,6 +97,7 @@ entries:
   requires_confirmation: false
   action_type: 'info'
   actioned_by: ''
+  notify_targets: []
   confirmed_by: []
   status: 'open'
 - id: 'blt_20260902_194114_cdb138'
@@ -84,6 +108,7 @@ entries:
   requires_confirmation: false
   action_type: 'info'
   actioned_by: ''
+  notify_targets: []
   confirmed_by: []
   status: 'open'
 - id: 'blt_20260902_193852_53032b'
@@ -94,29 +119,7 @@ entries:
   requires_confirmation: false
   action_type: 'info'
   actioned_by: ''
-  confirmed_by: []
-  status: 'open'
-- id: 'blt_20260902_182039_d78c9c'
-  content: |-
-    【家老への協議依頼(殿指示)】流れが詰まっている。全忍者idle。問題点と提案:
-    
-    ■詰まり1: cmd_4445(U1)/cmd_4447(U4)/cmd_4446(U2)のprecheck PRE25構造FP
-    状態: FAIL verdict bundleで返却済み。4観点は全てLGTM判定。
-    根因: extract_command_files.shのtarget_path=scripts directory全件matchがexec_prefix除外より先に評価される。hayate extract_target_path hotfixはin_progressだったが今idle。
-    提案: (A)家老がcmd_complete_gateを直接実行してCLEARを取る(軍師verdict=実質LGTM) (B)hayate hotfix完了を待つ
-    
-    ■詰まり2: tobisaru U2が同じPRE25 FPで滞留
-    提案: cmd_4445/4447と同時解消
-    
-    ■詰まり3: hanzo idle_flag FAIL→修正再配備未実施
-    提案: 修正版を再配備
-    
-    ■全体: 殿の目的=単一publisher第1波(U1/U2/U4)のCLEARと次波への接続。precheck FPでCLEARが止まっている。最速は(A)。
-  posted_by: 'gunshi'
-  posted_at: '2026-09-02T18:20:39'
-  requires_confirmation: false
-  action_type: 'action_required'
-  actioned_by: ''
+  notify_targets: []
   confirmed_by: []
   status: 'open'
 - id: 'blt_20260902_172023_2be98e'
@@ -127,6 +130,7 @@ entries:
   requires_confirmation: false
   action_type: 'info'
   actioned_by: ''
+  notify_targets: []
   confirmed_by: []
   status: 'open'
 - id: 'blt_20260902_170532_0d5adb'
@@ -137,6 +141,7 @@ entries:
   requires_confirmation: false
   action_type: 'info'
   actioned_by: ''
+  notify_targets: []
   confirmed_by: []
   status: 'open'
 - id: 'blt_20260902_170028_eca4d5'
@@ -147,6 +152,7 @@ entries:
   requires_confirmation: false
   action_type: 'info'
   actioned_by: ''
+  notify_targets: []
   confirmed_by: []
   status: 'open'
 - id: 'blt_20260902_165940_6a048b'
@@ -157,6 +163,7 @@ entries:
   requires_confirmation: false
   action_type: 'info'
   actioned_by: ''
+  notify_targets: []
   confirmed_by: []
   status: 'open'
 - id: 'blt_20260902_165803_1281bc'
@@ -167,6 +174,7 @@ entries:
   requires_confirmation: false
   action_type: 'info'
   actioned_by: ''
+  notify_targets: []
   confirmed_by: []
   status: 'open'
 - id: 'blt_20260902_165553_bd1966'
@@ -177,6 +185,7 @@ entries:
   requires_confirmation: false
   action_type: 'info'
   actioned_by: ''
+  notify_targets: []
   confirmed_by: []
   status: 'open'
 - id: 'blt_20260902_165451_881cb1'
@@ -187,6 +196,7 @@ entries:
   requires_confirmation: false
   action_type: 'info'
   actioned_by: ''
+  notify_targets: []
   confirmed_by: []
   status: 'open'
 - id: 'blt_20260902_165343_4021fe'
@@ -197,6 +207,7 @@ entries:
   requires_confirmation: false
   action_type: 'info'
   actioned_by: ''
+  notify_targets: []
   confirmed_by: []
   status: 'open'
 - id: 'blt_20260902_165335_e7843a'
@@ -207,6 +218,7 @@ entries:
   requires_confirmation: false
   action_type: 'info'
   actioned_by: ''
+  notify_targets: []
   confirmed_by: []
   status: 'open'
 - id: 'blt_20260902_165241_005006'
@@ -217,6 +229,7 @@ entries:
   requires_confirmation: false
   action_type: 'info'
   actioned_by: ''
+  notify_targets: []
   confirmed_by: []
   status: 'open'
 - id: 'blt_20260902_164941_188605'
@@ -227,6 +240,7 @@ entries:
   requires_confirmation: false
   action_type: 'info'
   actioned_by: ''
+  notify_targets: []
   confirmed_by: []
   status: 'open'
 - id: 'blt_20260902_141626_5a85a1'
@@ -237,6 +251,7 @@ entries:
   requires_confirmation: false
   action_type: 'info'
   actioned_by: ''
+  notify_targets: []
   confirmed_by: []
   status: 'open'
 - id: 'blt_20260902_140756_892b85'
@@ -247,6 +262,7 @@ entries:
   requires_confirmation: false
   action_type: 'info'
   actioned_by: ''
+  notify_targets: []
   confirmed_by: []
   status: 'open'
 - id: 'blt_20260902_135333_e7707a'
@@ -257,6 +273,7 @@ entries:
   requires_confirmation: false
   action_type: 'info'
   actioned_by: ''
+  notify_targets: []
   confirmed_by: []
   status: 'open'
 - id: 'blt_20260902_124852_d4771b'
@@ -267,6 +284,7 @@ entries:
   requires_confirmation: false
   action_type: 'info'
   actioned_by: ''
+  notify_targets: []
   confirmed_by: []
   status: 'open'
 - id: 'blt_20260902_091830_ea776f'
@@ -277,6 +295,7 @@ entries:
   requires_confirmation: false
   action_type: 'info'
   actioned_by: ''
+  notify_targets: []
   confirmed_by:
     - 'karo'
   status: 'open'
@@ -288,6 +307,7 @@ entries:
   requires_confirmation: false
   action_type: 'info'
   actioned_by: ''
+  notify_targets: []
   confirmed_by:
     - 'karo'
   status: 'open'
@@ -299,6 +319,7 @@ entries:
   requires_confirmation: false
   action_type: 'info'
   actioned_by: ''
+  notify_targets: []
   confirmed_by: []
   status: 'open'
 - id: 'blt_20260902_071522_9ddf0e'
@@ -309,6 +330,7 @@ entries:
   requires_confirmation: false
   action_type: 'info'
   actioned_by: ''
+  notify_targets: []
   confirmed_by: []
   status: 'open'
 - id: 'blt_20260902_071510_aef68e'
@@ -319,6 +341,7 @@ entries:
   requires_confirmation: false
   action_type: 'info'
   actioned_by: ''
+  notify_targets: []
   confirmed_by: []
   status: 'open'
 - id: 'blt_20260902_064742_abf0f2'
@@ -329,35 +352,6 @@ entries:
   requires_confirmation: false
   action_type: 'info'
   actioned_by: ''
-  confirmed_by: []
-  status: 'open'
-- id: 'blt_20260902_045521_3e1222'
-  content: |-
-    GATE CLEAR cmd_reflux_insight_202609020434_hanzo: 完了
-  posted_by: 'karo'
-  posted_at: '2026-09-02T04:55:21'
-  requires_confirmation: false
-  action_type: 'info'
-  actioned_by: ''
-  confirmed_by: []
-  status: 'open'
-- id: 'blt_20260902_044304_f27676'
-  content: |-
-    GATE CLEAR cmd_reflux_insight_202609020426_kagemaru: 完了
-  posted_by: 'karo'
-  posted_at: '2026-09-02T04:43:04'
-  requires_confirmation: false
-  action_type: 'info'
-  actioned_by: ''
-  confirmed_by: []
-  status: 'open'
-- id: 'blt_20260902_041828_f37a28'
-  content: |-
-    GATE CLEAR cmd_reflux_insight_202609020356_saizo: 完了
-  posted_by: 'karo'
-  posted_at: '2026-09-02T04:18:28'
-  requires_confirmation: false
-  action_type: 'info'
-  actioned_by: ''
+  notify_targets: []
   confirmed_by: []
   status: 'open'

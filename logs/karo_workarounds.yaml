@@ -1,42 +1,3 @@
-- cmd_id: cmd_karo_hotfix_review_pending_state_unit2_20260829
-  timestamp: '2026-08-29T07:58:56Z'
-  ninja: system
-  workaround: false
-  event_kind: hotfix
-  auto_captured: true
-  category: rework_auto_capture
-  detail: 'cmd_complete_gate completed rework event'
-  root_cause: 'automatic completion observation'
-  lesson_required: false
-  lesson_disposition: not_applicable
-  lesson_reference: 'not_applicable'
-  resolved_by_cmd: 'cmd_karo_hotfix_review_pending_state_unit2_20260829'
-- cmd_id: cmd_karo_hotfix_queue_yaml_parse_race_20260829
-  timestamp: '2026-08-29T09:08:45Z'
-  ninja: system
-  workaround: false
-  event_kind: hotfix
-  auto_captured: true
-  category: rework_auto_capture
-  detail: 'cmd_complete_gate completed rework event'
-  root_cause: 'automatic completion observation'
-  lesson_required: false
-  lesson_disposition: not_applicable
-  lesson_reference: 'not_applicable'
-  resolved_by_cmd: 'cmd_karo_hotfix_queue_yaml_parse_race_20260829'
-- cmd_id: cmd_karo_hotfix_review_pending_formal_lgtm_unit3_20260829
-  timestamp: '2026-08-29T09:13:58Z'
-  ninja: system
-  workaround: false
-  event_kind: hotfix
-  auto_captured: true
-  category: rework_auto_capture
-  detail: 'cmd_complete_gate completed rework event'
-  root_cause: 'automatic completion observation'
-  lesson_required: false
-  lesson_disposition: not_applicable
-  lesson_reference: 'not_applicable'
-  resolved_by_cmd: 'cmd_karo_hotfix_review_pending_formal_lgtm_unit3_20260829'
 - cmd_id: cmd_karo_hotfix_dm_signal_backup_push_20260829
   timestamp: '2026-08-29T09:51:45Z'
   ninja: system
@@ -1298,3 +1259,48 @@
   lesson_disposition: not_applicable
   lesson_reference: 'not_applicable'
   resolved_by_cmd: 'cmd_karo_hotfix_u2_publish_artifact_restore_undeclared_path_202609022132'
+- cmd_id: cmd_karo_hotfix_u1_publisher_queue_fifo_order_202609022136
+  timestamp: '2026-09-02T13:03:58Z'
+  ninja: system
+  workaround: false
+  event_kind: hotfix
+  auto_captured: true
+  category: rework_auto_capture
+  detail: 'cmd_complete_gate completed rework event'
+  root_cause: 'automatic completion observation'
+  lesson_required: false
+  lesson_disposition: not_applicable
+  lesson_reference: 'not_applicable'
+  resolved_by_cmd: 'cmd_karo_hotfix_u1_publisher_queue_fifo_order_202609022136'
+- cmd_id: cmd_karo_hotfix_staged_preserve_index_regression_202609021832
+  timestamp: '2026-09-02T13:22:25Z'
+  ninja: unknown
+  workaround: true
+  event_kind: manual_wa
+  auto_captured: false
+  category: infra
+  root_signature: 'infra::general'
+  detail: 'main checkout が integrate 後も旧 blob のままで index も同 blob=staged 残渣 9 path。稼働 script が旧版だった'
+  root_cause: 'worktree!=HEAD を確認し 9 path を git checkout HEAD -- で復元。真因=push_lane integrate の update-ref のみ経路→read-tree hotfix(半蔵)配備'
+  lesson_required: true
+  lesson_disposition: 'new_lesson_required'
+  lesson_reference: ''
+  environment_change: 'type=script; file=scripts/ninja_monitor.sh; pattern=auto_commit_before_clear.disabled'
+  brainwash_check: '洗脳#5先送り防止: 環境変更=flag 実装済(2816c38d7)。index残渣 復元 9→0 path'
+  resolved_by_cmd: ''
+- cmd_id: cmd_karo_hotfix_ga556_doc_no_changelog_202609021730
+  timestamp: '2026-09-02T13:22:39Z'
+  ninja: kagemaru
+  workaround: true
+  event_kind: manual_wa
+  auto_captured: false
+  category: infra
+  root_signature: 'infra::general'
+  detail: 'cmd_complete.sh が gate_worker.failed.json 残存時に gate を再起動せず FAILED marker を即返す(2回)。gate 本体も ancestry WAIT→auto-push OK 後に理由なし fallback BLOCK(本日 7 例)'
+  root_cause: 'bash scripts/cmd_complete_gate.sh <cmd> 直接実行で CLEAR。§10 凍結対象のため hotfix せず U3 publisher で壁ごと消す'
+  lesson_required: true
+  lesson_disposition: 'new_lesson_required'
+  lesson_reference: ''
+  environment_change: 'type=script; file=scripts/ninja_monitor.sh; pattern=auto_commit_before_clear.disabled'
+  brainwash_check: '洗脳#5先送り防止: 偽BLOCK 7例を gate 直接再実行で CLEAR 7/7'
+  resolved_by_cmd: ''
