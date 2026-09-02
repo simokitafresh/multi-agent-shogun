@@ -13601,7 +13601,10 @@ insights:
   priority: "medium"
   source: "lord_conversation:lesson_candidate"
   fix_known: false
-  status: pending
+  status: resolved
+  resolved_reason: "殿の原文(繰り返しのリズム感を削除しすぎ/縦画面で行間がなさすぎる/詩でもあるべき・中原中也)がskills/prose-polish/SKILL.md v2行に一言一句同一で記録済み。同スキルが呼吸=段落+空白/場面転換=横線/見出しなし/lintは検出器のみを恒久化しており、教訓は既に環境へ実装反映済み"
+  action_artifact: "skills/prose-polish/SKILL.md"
+  resolved_at: "2026-09-02T18:34:01+09:00"
 - id: INS-20260902-180002439-71da
   ts: "2026-09-02T18:00:02+09:00"
   insight: "[[別の下書きとしてアップしてくれ]] semantic_stress_test candidate_aliases: NO_MATCH source=lord query=別の下書きとしてアップしてくれ"
@@ -13702,3 +13705,10 @@ insights:
   resolved_reason: "semantic index candidate was absorbed into a registered concept"
   action_artifact: "semantic_index=/home/simokitafresh/multi-agent-shogun/docs/semantic-index/index.md"
   resolved_at: "2026-09-02T18:23:30+09:00"
+- id: INS-20260902-183630905-215c
+  ts: "2026-09-02T18:36:30+09:00"
+  insight: "semantic_index_update新概念候補: discussion:これが前回の完成版だ は 既存aliasesに一致なし。概念定義とaliases追加を検討せよ"
+  priority: "low"
+  source: "semantic_index_update"
+  fix_known: false
+  status: pending
