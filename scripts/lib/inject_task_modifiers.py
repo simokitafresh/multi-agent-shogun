@@ -618,7 +618,7 @@ def _task_source_paths(task, script_dir):
         marker = '/DM-signal/'
         if marker in path:
             path = path.split(marker, 1)[1]
-        path = path.lstrip('./')
+        path = path.removeprefix('./')
         if path not in seen:
             seen.add(path)
             result.append(path)
@@ -746,7 +746,7 @@ def normalize_context_paths(value):
     for item in values:
         if isinstance(item, dict):
             item = item.get('path', item.get('context_path', ''))
-        path = str(item or '').strip().lstrip('./')
+        path = str(item or '').strip().removeprefix('./')
         if path:
             result.append(path)
     return result
