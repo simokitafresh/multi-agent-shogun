@@ -84,6 +84,7 @@ lessons:
     吸収(2026-08-28, cmd_4409_ac3, origin: [[ci_readiness_Traceback]] -> [[GATE_BLOCK]] -> [[通常再GATE_CLEAR]]): ci_readiness Traceback等は迂回せずstderr全文を残し、入力/外部状態正常化後に同じcmd_complete_gateを再実行する。
     吸収(2026-08-28, cmd_karo_hotfix_t122_memory_self_reinforce_20260828, origin: [[shared_hot_script_WIP]] -> [[syntax_error]] -> [[atomic_publish]]): shared main上のhot scriptは一時fileでbash -n PASS後に原子置換し、不正syntax世代をreaderへ露出させない。marker=checkpoint1420_hot_atomic
     吸収(2026-08-28, cmd_karo_hotfix_finalize_segments_20260828, origin: [[finalize84percent]] -> [[think_wait_split]] -> [[wait_only_optimization]]): LLM思考時間は削らず、finalize各区間をthink_sec/wait_secへ分解して機械的waitだけを切除する。marker=checkpoint1420_think_wait
+    吸収(2026-09-03, cmd_4465, origin: [[cmd_4465]] -> [[軍師停止誤報_20260903]] -> [[karo_verification_Phase2]]): 2026-09-03 06:18 家老が軍師 pane 末尾の入力枠と CTX 行だけを見て停止と誤読し将軍へ send-keys を要請(誤報、実態は思考中 spinner あり)。判定は spinner 行・tmux @agent_state と last_active・inbox unread 減少の 3 点。
   source_ids: [LK005, LK006, LK009, LK010, LK012, LK018, LK030, LK037, LK040, LK041, LK043, LK044, LK047, LK048, LK052, LK054, LK065, LK069, LK085, LK002, LK003, LK004, LK006b, LK013, LK011, LK014, LK015, LK004i, LK006i, LK013i]
   created_at: '2026-04-24'
   automated: true
