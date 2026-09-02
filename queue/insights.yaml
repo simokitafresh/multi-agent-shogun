@@ -13898,3 +13898,10 @@ insights:
   source: "lord_conversation:lesson_candidate"
   fix_known: false
   status: pending
+- id: INS-20260902-204634511-5447
+  ts: "2026-09-02T20:46:34+09:00"
+  insight: "reflux insight resolve時、insight_write.sh --resolve/git commitのcommit subjectは必ず{parent_cmd}または{task_id}を含めよ。含めないとgate_report_format.shのcommit_contract検証がFAIL(commit subject does not identify task_id/parent_cmd)する。ninjaはgit commit --amend禁止(GA-231)のため、書き間違えたら新規commitで訂正するしかない"
+  priority: "low"
+  source: "self_retro"
+  fix_known: false
+  status: pending
