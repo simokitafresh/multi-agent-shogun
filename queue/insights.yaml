@@ -13042,3 +13042,10 @@ insights:
   source: "semantic_map_generate:new_file"
   fix_known: false
   status: pending
+- id: INS-20260902-131247453-a612
+  ts: "2026-09-02T13:12:47+09:00"
+  insight: "semantic_map_generate新規ファイル候補: `docs/research/karo-review-trial-fixes-20260901.md` は semantic index未登録。既存概念へのfile追加または新概念定義を検討せよ"
+  priority: "low"
+  source: "semantic_map_generate:new_file"
+  fix_known: false
+  status: pending
