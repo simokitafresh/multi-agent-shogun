@@ -329,10 +329,19 @@ print("[note_draft] Title set")
 html_parts = []
 text_acc = []
 
+# NOTE_DRAFT_PARAGRAPHS=1: 空行区切りをそのまま<p>境界にする(段落間マージンを残す。
+# 縦画面で「間」を作る詩的な文章向け。殿指示2026-09-02 17:59『行間がなさすぎるのもつらい』)。
+# 既定(未設定)は従来どおり連続text/bulletを1つの<p>に<br>結合する。
+PARAGRAPH_MODE = os.environ.get("NOTE_DRAFT_PARAGRAPHS", "") == "1"
+
 def flush_acc():
     global text_acc
     if text_acc:
-        html_parts.append("<p>" + "<br>".join(text_acc) + "</p>")
+        if PARAGRAPH_MODE:
+            for t in text_acc:
+                html_parts.append("<p>" + t + "</p>")
+        else:
+            html_parts.append("<p>" + "<br>".join(text_acc) + "</p>")
         text_acc = []
 
 for s in sections:
