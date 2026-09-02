@@ -13628,4 +13628,14 @@ insights:
   priority: "low"
   source: "semantic_index_update"
   fix_known: false
+  status: resolved
+  resolved_reason: "semantic map generation verified the candidate is represented or intentionally ignored"
+  action_artifact: "semantic_map=/home/simokitafresh/multi-agent-shogun/context/semantic-map.md;semantic_index=/home/simokitafresh/multi-agent-shogun/docs/semantic-index/index.md"
+  resolved_at: "2026-09-02T18:03:58+09:00"
+- id: INS-20260902-180803911-93a9
+  ts: "2026-09-02T18:08:03+09:00"
+  insight: "semantic_index_update新概念候補: discussion:売却決定やエンディングといった項目が余韻をぶち壊す は 既存aliasesに一致なし。概念定義とaliases追加を検討せよ"
+  priority: "low"
+  source: "semantic_index_update"
+  fix_known: false
   status: pending
