@@ -14426,3 +14426,10 @@ insights:
   source: "manual"
   fix_known: false
   status: pending
+- id: INS-20260903-002549566-2174
+  ts: "2026-09-03T00:25:49+09:00"
+  insight: "半蔵 hotfix で cross_repo_commit_contract.py/close_gate_alerts.py の lstrip('./') 3 箇所は根治したが、scripts 全体に同じ lstrip('./')(文字集合除去)が 14 箇所残存(先頭ドット path を誤正規化しうる)。横展開の一括修正 lane が必要。"
+  priority: "medium"
+  source: "manual"
+  fix_known: false
+  status: pending
