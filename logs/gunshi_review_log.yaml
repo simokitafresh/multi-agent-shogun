@@ -790,6 +790,8 @@
   brainwash_check: "#1no #2no #3no #4no #5no #6no #7no #8no 秒差re-record north_star: N/A(infra reflux)"
 - cmd_id: cmd_reflux_insight_202609021244_saizo
   review_type: report
+  gate_result: CLEAR
+  gate_synced_at: 2026-09-02T17:05:24+09:00
   worker_id: saizo
   reviewed_at: "2026-09-02T13:04:45+09:00"
   verdict: LGTM
@@ -846,6 +848,8 @@
   worker_id: hayate
 - cmd_id: cmd_reflux_insight_202609021302_hayate
   review_type: report
+  gate_result: CLEAR
+  gate_synced_at: 2026-09-02T17:05:24+09:00
   worker_id: hayate
   reviewed_at: "2026-09-02T13:27:00+09:00"
   verdict: LGTM
@@ -1036,6 +1040,8 @@
   brainwash_check: "#1no#2no#3no#4no#5no#6no#7no#8no 重複配信確認"
   timestamp: "2026-09-02T14:06:30+09:00"
 - cmd_id: cmd_karo_hotfix_ga552_hook_artifact_20260902135701
+  gate_result: CLEAR
+  gate_synced_at: 2026-09-02T17:08:03+09:00
   review:
     cmd_id: cmd_karo_hotfix_ga552_hook_artifact_20260902135701
     cmd_spec_summary:
@@ -1057,6 +1063,8 @@
     verdict: APPROVE
 - cmd_id: cmd_karo_hotfix_ga552_hook_artifact_20260902135701
   review_type: report
+  gate_result: CLEAR
+  gate_synced_at: 2026-09-02T17:08:03+09:00
   worker_id: kotaro
   reviewed_at: "2026-09-02T14:14:00+09:00"
   verdict: LGTM
@@ -1182,6 +1190,8 @@
       SG7_gate_prediction: PASS
     verdict: APPROVE
 - cmd_id: cmd_reflux_insight_202609021458_saizo
+  gate_result: CLEAR
+  gate_synced_at: 2026-09-02T17:05:24+09:00
   review:
     cmd_id: cmd_reflux_insight_202609021458_saizo
     cmd_spec_summary:
@@ -1235,6 +1245,8 @@
     - "precheck ERRORS=2(偽陽性)でreview_bundle BLOCKのためLGTM記録不可。実質LGTM判定。家老がprecheck FP対処後に再GATE"
   timestamp: "2026-09-02T15:26:00+09:00"
 - cmd_id: cmd_reflux_insight_202609021509_hanzo
+  gate_result: CLEAR
+  gate_synced_at: 2026-09-02T17:05:24+09:00
   review:
     cmd_id: cmd_reflux_insight_202609021509_hanzo
     cmd_spec_summary:
@@ -1256,6 +1268,8 @@
     verdict: APPROVE
 - cmd_id: cmd_4446
   review_type: report
+  gate_result: CLEAR
+  gate_synced_at: 2026-09-02T19:26:52+09:00
   worker_id: tobisaru
   reviewed_at: "2026-09-02T15:31:00+09:00"
   verdict: FAIL
@@ -1318,6 +1332,8 @@
     - "precheck ERRORS=2(FP)でbundle BLOCK。実質LGTM。家老がFP対処後に再GATE"
   timestamp: "2026-09-02T15:39:00+09:00"
 - cmd_id: cmd_reflux_insight_202609021541_hayate
+  gate_result: CLEAR
+  gate_synced_at: 2026-09-02T17:05:24+09:00
   review:
     cmd_id: cmd_reflux_insight_202609021541_hayate
     cmd_spec_summary:
@@ -1383,7 +1399,7 @@
     verdict: APPROVE
 - cmd_id: cmd_karo_hotfix_planned_paths_exact_new_files_202609021539
   gate_result: CLEAR
-  gate_synced_at: 2026-09-02T16:53:42+09:00
+  gate_synced_at: 2026-09-02T17:05:24+09:00
   review:
     cmd_id: cmd_karo_hotfix_planned_paths_exact_new_files_202609021539
     cmd_spec_summary:
@@ -1405,7 +1421,7 @@
     verdict: APPROVE
 - cmd_id: cmd_reflux_insight_202609021612_hanzo
   gate_result: CLEAR
-  gate_synced_at: 2026-09-02T16:53:51+09:00
+  gate_synced_at: 2026-09-02T17:05:24+09:00
   review:
     cmd_id: cmd_reflux_insight_202609021612_hanzo
     cmd_spec_summary:
@@ -1427,6 +1443,8 @@
     verdict: APPROVE
 - cmd_id: cmd_4446
   review_type: report
+  gate_result: CLEAR
+  gate_synced_at: 2026-09-02T19:26:52+09:00
   worker_id: tobisaru
   reviewed_at: "2026-09-02T16:53:00+09:00"
   verdict: FAIL
@@ -1456,3 +1474,302 @@
   fail_reasons:
     - "PRE25 FP 1件残存(ninja_scope_commit.sh)でbundle BLOCK"
   timestamp: "2026-09-02T16:53:00+09:00"
+- cmd_id: cmd_reflux_insight_202609021651_kagemaru
+  gate_result: CLEAR
+  gate_synced_at: 2026-09-02T17:23:10+09:00
+  review:
+    cmd_id: cmd_reflux_insight_202609021651_kagemaru
+    cmd_spec_summary:
+      acceptance_criteria_count: 2
+      project: infra
+      scope: queue/insights.yaml reflux insight消化
+    gate_prediction: CLEAR
+    gate_prediction_reason: all checks passed
+    reviewed_at: '2026-09-02T17:06:00+09:00'
+    reviewer: gunshi
+    sg_checklist:
+      SG1_ac_coverage: PASS
+      SG2_test_pass: PASS
+      SG3_parity: N/A
+      SG4_no_regression: PASS
+      SG5_lesson_candidate: PASS
+      SG6_code_quality: PASS
+      SG7_gate_prediction: PASS
+    verdict: APPROVE
+- cmd_id: cmd_karo_hotfix_ga554_push_overlap_pattern_202609021650
+  review:
+    cmd_id: cmd_karo_hotfix_ga554_push_overlap_pattern_202609021650
+    cmd_spec_summary:
+      acceptance_criteria_count: 2
+      project: infra
+      scope: push overlap pattern hotfix GA-554
+    gate_prediction: CLEAR
+    gate_prediction_reason: all checks passed
+    reviewed_at: '2026-09-02T17:14:00+09:00'
+    reviewer: gunshi
+    sg_checklist:
+      SG1_ac_coverage: PASS
+      SG2_test_pass: PASS
+      SG3_parity: N/A
+      SG4_no_regression: PASS
+      SG5_lesson_candidate: PASS
+      SG6_code_quality: PASS
+      SG7_gate_prediction: PASS
+    verdict: APPROVE
+- cmd_id: cmd_reflux_insight_202609021716_kotaro
+  review:
+    cmd_id: cmd_reflux_insight_202609021716_kotaro
+    cmd_spec_summary:
+      acceptance_criteria_count: 2
+      project: infra
+      scope: reflux insight消化
+    gate_prediction: CLEAR
+    gate_prediction_reason: all checks passed
+    reviewed_at: '2026-09-02T17:30:00+09:00'
+    reviewer: gunshi
+    sg_checklist:
+      SG1_ac_coverage: PASS
+      SG2_test_pass: PASS
+      SG3_parity: N/A
+      SG4_no_regression: PASS
+      SG5_lesson_candidate: PASS
+      SG6_code_quality: PASS
+      SG7_gate_prediction: PASS
+    verdict: APPROVE
+- cmd_id: cmd_4445
+  review:
+    cmd_id: cmd_4445
+    cmd_spec_summary:
+      acceptance_criteria_count: 3
+      project: infra
+      scope: 単一publisher U1
+    fail_reason: 4観点LGTM判定。precheckのPRE25 target_path directory match FP(ERRORS=2)でbundle生成不可。extract_target_path
+      hotfix完了待ち
+    gate_prediction: BLOCK
+    gate_prediction_reason: 'PRE25 FP: target_path=scripts directory全件matchがexec_prefix除外をバイパス'
+    karo_attention: 4観点OK・9/9 PASS。precheck構造FPのためformal LGTM不可。家老がcmd_complete_gateを直接実行するか、extract_target_path
+      hotfix(hayate)完了後に再試行
+    reviewed_at: '2026-09-02T17:43:00+09:00'
+    reviewer: gunshi
+    sg_checklist:
+      SG1_ac_coverage: PASS
+      SG2_test_pass: PASS
+      SG3_parity: N/A
+      SG4_no_regression: PASS
+      SG5_lesson_candidate: PASS
+      SG6_code_quality: PASS
+      SG7_gate_prediction: FAIL
+    verdict: FAIL
+- cmd_id: cmd_4447
+  review:
+    cmd_id: cmd_4447
+    cmd_spec_summary:
+      acceptance_criteria_count: 2
+      project: infra
+      scope: 単一publisher U4 gate dual-read
+    fail_reason: 4観点LGTM判定。precheckのPRE25 target_path directory match FP(ERRORS=2)でbundle生成不可
+    gate_prediction: BLOCK
+    gate_prediction_reason: 'PRE25 FP: target_path=scripts directory全件matchがexec_prefix除外をバイパス'
+    karo_attention: 4観点OK。precheck構造FPのためformal LGTM不可。家老がcmd_complete_gateを直接実行するか、extract_target_path
+      hotfix完了後に再試行
+    reviewed_at: '2026-09-02T17:43:30+09:00'
+    reviewer: gunshi
+    sg_checklist:
+      SG1_ac_coverage: PASS
+      SG2_test_pass: PASS
+      SG3_parity: N/A
+      SG4_no_regression: PASS
+      SG5_lesson_candidate: PASS
+      SG6_code_quality: PASS
+      SG7_gate_prediction: FAIL
+    verdict: FAIL
+- cmd_id: cmd_karo_hotfix_gunshi_idle_flag_recurrence_202609021722
+  review:
+    cmd_id: cmd_karo_hotfix_gunshi_idle_flag_recurrence_202609021722
+    cmd_spec_summary:
+      acceptance_criteria_count: 2
+      project: infra
+      scope: gunshi idle_flag再発修正
+    fail_reason: 報告verdict=FAIL。AC1 bc:no(一次証拠不足)。正当なFAIL報告
+    gate_prediction: BLOCK
+    gate_prediction_reason: bc:no検出
+    karo_attention: hanzo報告がFAIL(AC1 bc:no)。修正再配備が必要
+    reviewed_at: '2026-09-02T17:48:00+09:00'
+    reviewer: gunshi
+    sg_checklist:
+      SG1_ac_coverage: PASS
+      SG2_test_pass: PASS
+      SG3_parity: N/A
+      SG4_no_regression: PASS
+      SG5_lesson_candidate: PASS
+      SG6_code_quality: PASS
+      SG7_gate_prediction: FAIL
+    verdict: FAIL
+- cmd_id: cmd_karo_hotfix_ga555_context_freshness_trigger_202609021730
+  review:
+    cmd_id: cmd_karo_hotfix_ga555_context_freshness_trigger_202609021730
+    cmd_spec_summary:
+      acceptance_criteria_count: 2
+      project: infra
+      scope: context freshness trigger hotfix GA-555
+    gate_prediction: CLEAR
+    gate_prediction_reason: all checks passed
+    reviewed_at: '2026-09-02T17:51:00+09:00'
+    reviewer: gunshi
+    sg_checklist:
+      SG1_ac_coverage: PASS
+      SG2_test_pass: PASS
+      SG3_parity: N/A
+      SG4_no_regression: PASS
+      SG5_lesson_candidate: PASS
+      SG6_code_quality: PASS
+      SG7_gate_prediction: PASS
+    verdict: APPROVE
+- cmd_id: cmd_karo_ci_fix_33611379072_gate_dual_read_202609021832
+  review:
+    cmd_id: cmd_karo_ci_fix_33611379072_gate_dual_read_202609021832
+    cmd_spec_summary:
+      acceptance_criteria_count: 2
+      project: infra
+      scope: CI RED gate_dual_read修正
+    gate_prediction: CLEAR
+    gate_prediction_reason: all checks passed
+    reviewed_at: '2026-09-02T18:54:00+09:00'
+    reviewer: gunshi
+    sg_checklist:
+      SG1_ac_coverage: PASS
+      SG2_test_pass: PASS
+      SG3_parity: N/A
+      SG4_no_regression: PASS
+      SG5_lesson_candidate: PASS
+      SG6_code_quality: PASS
+      SG7_gate_prediction: PASS
+    verdict: APPROVE
+- cmd_id: cmd_karo_hotfix_extract_target_path_exec_order_202609021726
+  review:
+    cmd_id: cmd_karo_hotfix_extract_target_path_exec_order_202609021726
+    cmd_spec_summary:
+      acceptance_criteria_count: 2
+      project: infra
+      scope: extract_command_files target_path exec order修正
+    fail_reason: 4観点LGTM。precheck ERRORS=1(非表示ERROR)でbundle BLOCK。330/330 PASS。家老ACCEPT済み
+    gate_prediction: CLEAR
+    gate_prediction_reason: prediction CLEAR. ERRORS=1は非表示
+    karo_attention: 4観点OK。330/330 PASS。precheck ERRORS=1(非表示ERROR)でformal LGTM不可。家老がcmd_complete_gateを直接実行してCLEAR可
+    reviewed_at: '2026-09-02T19:07:00+09:00'
+    reviewer: gunshi
+    sg_checklist:
+      SG1_ac_coverage: PASS
+      SG2_test_pass: PASS
+      SG3_parity: N/A
+      SG4_no_regression: PASS
+      SG5_lesson_candidate: PASS
+      SG6_code_quality: PASS
+      SG7_gate_prediction: PASS
+    verdict: FAIL
+- cmd_id: cmd_karo_hotfix_extract_target_path_exec_order_202609021726
+  review:
+    cmd_id: cmd_karo_hotfix_extract_target_path_exec_order_202609021726
+    cmd_spec_summary:
+      acceptance_criteria_count: 2
+      project: infra
+      scope: extract_command_files target_path exec order修正
+    gate_prediction: CLEAR
+    gate_prediction_reason: all checks passed
+    reviewed_at: '2026-09-02T19:12:00+09:00'
+    reviewer: gunshi
+    sg_checklist:
+      SG1_ac_coverage: PASS
+      SG2_test_pass: PASS
+      SG3_parity: N/A
+      SG4_no_regression: PASS
+      SG5_lesson_candidate: PASS
+      SG6_code_quality: PASS
+      SG7_gate_prediction: PASS
+    verdict: APPROVE
+- cmd_id: cmd_karo_hotfix_staged_preserve_index_regression_202609021832
+  review:
+    cmd_id: cmd_karo_hotfix_staged_preserve_index_regression_202609021832
+    cmd_spec_summary:
+      acceptance_criteria_count: 2
+      project: infra
+      scope: staged preserve index regression修正
+    gate_prediction: CLEAR
+    gate_prediction_reason: all checks passed
+    reviewed_at: '2026-09-02T19:23:00+09:00'
+    reviewer: gunshi
+    sg_checklist:
+      SG1_ac_coverage: PASS
+      SG2_test_pass: PASS
+      SG3_parity: N/A
+      SG4_no_regression: PASS
+      SG5_lesson_candidate: PASS
+      SG6_code_quality: PASS
+      SG7_gate_prediction: PASS
+    verdict: APPROVE
+- cmd_id: cmd_4446
+  gate_result: CLEAR
+  gate_synced_at: 2026-09-02T19:26:52+09:00
+  review:
+    cmd_id: cmd_4446
+    cmd_spec_summary:
+      acceptance_criteria_count: 2
+      project: infra
+      scope: 単一publisher U2 publish_artifact capture/restore
+    gate_prediction: CLEAR
+    gate_prediction_reason: all checks passed
+    reviewed_at: '2026-09-02T19:25:00+09:00'
+    reviewer: gunshi
+    sg_checklist:
+      SG1_ac_coverage: PASS
+      SG2_test_pass: PASS
+      SG3_parity: N/A
+      SG4_no_regression: PASS
+      SG5_lesson_candidate: PASS
+      SG6_code_quality: PASS
+      SG7_gate_prediction: PASS
+    verdict: APPROVE
+- cmd_id: cmd_4445
+  review:
+    cmd_id: cmd_4445
+    cmd_spec_summary:
+      acceptance_criteria_count: 3
+      project: infra
+      scope: 単一publisher U1
+    fail_reason: PRE11 lesson_feedback extra(L091,L164)。忍者がtask契約外教訓を自発参照。PRE25解消済み
+    gate_prediction: BLOCK
+    gate_prediction_reason: lesson_feedback_set_mismatch extra=L091,L164
+    karo_attention: PRE11 extra L091/L164を報告から除外すればCLEAR
+    reviewed_at: '2026-09-02T19:25:30+09:00'
+    reviewer: gunshi
+    sg_checklist:
+      SG1_ac_coverage: PASS
+      SG2_test_pass: PASS
+      SG3_parity: N/A
+      SG4_no_regression: PASS
+      SG5_lesson_candidate: PASS
+      SG6_code_quality: PASS
+      SG7_gate_prediction: FAIL
+    verdict: FAIL
+- cmd_id: cmd_4447
+  review:
+    cmd_id: cmd_4447
+    cmd_spec_summary:
+      acceptance_criteria_count: 2
+      project: infra
+      scope: 単一publisher U4 gate dual-read
+    fail_reason: PRE11 lesson_feedback extra(L120,L223)。忍者がtask契約外教訓を自発参照。PRE25解消済み
+    gate_prediction: BLOCK
+    gate_prediction_reason: lesson_feedback_set_mismatch extra=L120,L223
+    karo_attention: PRE11 extra L120/L223を報告から除外すればCLEAR
+    reviewed_at: '2026-09-02T19:26:00+09:00'
+    reviewer: gunshi
+    sg_checklist:
+      SG1_ac_coverage: PASS
+      SG2_test_pass: PASS
+      SG3_parity: N/A
+      SG4_no_regression: PASS
+      SG5_lesson_candidate: PASS
+      SG6_code_quality: PASS
+      SG7_gate_prediction: FAIL
+    verdict: FAIL

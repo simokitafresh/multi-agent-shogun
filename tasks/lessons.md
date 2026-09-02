@@ -16577,3 +16577,55 @@ sqlite3.Connection.backup()を使うとページ(4096byte)単位のread syscall�
 - **when**: 未設定
 - **how**: 未設定
 - insight文面は『既存概念へのfile追加または新概念定義を検討せよ』と実修正を示唆するが、reflux_insightタスクのreflux_commit_contract.scopeはqueue/insights.yamlのみでdocs/semantic-index/index.mdは対象外。実際にindex.md/semantic-map.mdを編集しsemantic_map_generate.shまで再生成したが、grep -B1 -A5 'source: "semantic_map_generate:new_file"' queue/insights.yaml | grep -B6 'status: resolved' で直近8件の解決実例を確認したところ全件がdecision_candidate委譲でindex.md編集は0件だった。git checkoutでrevertし正規パターンに合わせ再解決した。次回このsource typeのinsightを扱う際は、insight文面を字義通り実行する前にqueue/insights.yaml内の同sourceの直近解決履歴をgrepし、実際のscope慣行を確認すべき
+
+### L1702: lesson writerのSSOT/cache pathはpre-push除外契約へ同期する
+- **日付**: 2026-09-02
+- **出典**: cmd_karo_hotfix_ga554_push_overlap_pattern_202609021650
+- **記録者**: hayate
+- **tags**: [infra,testing,testing,gate,yaml]
+- **subdomain**: infra
+- **target_files**: [scripts/lib/autogen_paths.sh,tests/unit/test_pre_push_dirty_tree_guard.bats]
+- **origin**: [[cmd_karo_hotfix_ga554_push_overlap_pattern_202609021650]]
+- **enforcement**: 未自動化
+- **when**: 未設定
+- **how**: 未設定
+- runtime-only publication契約にはprojects/*/lessons.yamlとtasks/lessons.mdが含まれる一方、共有AUTOGEN_PATH_EXCLUDE_REGEXから漏れていた。lesson writer/syncの同値・解消済み再生成をexact pathで抑止し、通常source混在はBLOCKするcontract testを保持せよ。
+
+### L1703: Global freshness ledger must share source reflection identity
+- **日付**: 2026-09-02
+- **出典**: cmd_karo_hotfix_ga555_context_freshness_trigger_202609021730
+- **記録者**: saizo
+- **tags**: [infra,testing,git,lesson]
+- **subdomain**: infra
+- **target_files**: [scripts/context_freshness_check.sh,tests/unit/test_context_freshness_check.bats]
+- **origin**: [[cmd_karo_hotfix_ga555_context_freshness_trigger_202609021730]]
+- **enforcement**: 未自動化
+- **when**: 未設定
+- **how**: 未設定
+- GA-555 global ledger checked only commit hashes, so context bodies recording a cmd ID were re-alerted; reuse commit_is_reflected_or_lesson_only and retain a same-day global regression fixture.
+
+### L1704: auto-commitは継承GIT_INDEX_FILEを専用indexへ隔離する
+- **日付**: 2026-09-02
+- **出典**: cmd_karo_hotfix_staged_preserve_index_regression_202609021832
+- **記録者**: saizo
+- **tags**: [infra,ninja-monitor,git]
+- **subdomain**: infra
+- **target_files**: [scripts/ninja_monitor.sh,tests/unit/test_ninja_monitor_clear_guard.bats]
+- **origin**: [[cmd_karo_hotfix_staged_preserve_index_regression_202609021832]]
+- **enforcement**: 未自動化
+- **when**: 未設定
+- **how**: 未設定
+- 別worktree由来の旧indexを継承したgit commit --onlyは旧blobを共有root worktreeへ再展開し得る。auto-commitはHEAD seeded専用indexでcommitし、caller indexのscope-out stageだけを保持する。
+
+### L1705: PyYAMLは全桁数字のスカラを暗黙にintへ解決する(SHA1が偶然全digitだとfalsy比較で消える)
+- **日付**: 2026-09-02
+- **出典**: cmd_4446
+- **記録者**: tobisaru
+- **tags**: [infra,inbox,api,yaml,git]
+- **subdomain**: infra
+- **target_files**: [scripts/publish_artifact.sh,scripts/inbox_write.sh,scripts/gates/gate_report_format.sh,tests/unit/test_publish_artifact.bats]
+- **origin**: [[cmd_4446]]
+- **enforcement**: 未自動化
+- **when**: 未設定
+- **how**: 未設定
+- manifest.yamlへgit tree/commit shaを書く際、値が偶然全digit(例: 40桁全て0-9)だとPyYAMLのimplicit resolverがintとして 読み込み、str(v) or ""パターンの読取り側コードがゼロ値を偽と誤判定して空文字列に潰す。対策は(1)書込み側でカスタム representer(style="'")により該当scalarを強制的にstring型でdumpする(2)読取り側は`v is not None`でNoneのみを空扱いし、 値そのものの真偽では判定しない。テストで実際にこの不具合を踏み(全0のtree shaを使ったfixtureでrestoreがmanifest missing source_treeと誤検出)、両対策を実装して再現しなくなったことを確認済み。

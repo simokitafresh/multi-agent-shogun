@@ -1,57 +1,220 @@
 commands:
-  cmd_4440:
-    title: "LP の FAQ リンクを言語別化 — EN ページは /faq/en/ へ、JA ページは /faq へ直リンクする"
+  cmd_4449:
+    title: "単一 publisher U2 検証: Codex 忍者が隔離 clone で publish_artifact(capture/restore)と gate_report_format の manifest 検証の bats を選択実行し、設計書契約から敵対 fixture を 1 本追加して multi-CLI 同品質を証明する(実装は飛猿=Claude Sonnet)"
     status: delegated
-    project: dm-signal
-    purpose: "殿裁定 2026-08-31 19:27『直そう』(設計書 v3.2 §5 / SEO 案 v4 §0 で発見した小穴)。現物 19:28 curl: EN LP・JA LP とも FAQ リンクは `https://dm-signal-frontend.onrender.com/faq`(JA 既定)1 件ずつで、EN 読者が EN FAQ(`/faq/en/`、cmd_4427 で live 200)へ直に到達できない。EN LP の href を `/faq/en/` へ、JA LP は `/faq` のまま維持する"
+    project: infra
+    purpose: "殿指示 2026-09-02 13:25『どのロールがどの CLI/モデルでも必要十分に同じレベルで作業を続けられるのが我らの仕組み』+殿下問 19:02『順調に進んでいるか？進展が遅すぎないか？』→第 1 波 3 unit の検証 cmd を CLEAR 待ちにせず今起票して直列を 1 段減らす(depends_on で配備は自動待機)。U2(cmd_4446)は飛猿(Claude Sonnet)が実装し report PASS のため、検証は Codex 忍者(設計書 v3.6 §9.1 共通 AC・§12)。cmd_4448(U1 検証)と同型で unit と CLI を入れ替えた別 cmd"
     scope_mode: FULL
-    target_path: /mnt/c/Python_app/DM-signal/lp
+    target_path: tests/unit
     acceptance_criteria:
       AC1:
-        description: "LP の EN 文言辞書(copy)またはリンク定義で FAQ の href を `https://dm-signal-frontend.onrender.com/faq/en/` にし、JA は `.../faq` のまま変えない。docs リンク(3 件)・note・/login・/free の href は変更しない"
-        binary_check: "隔離 build の EN index に faq/en/ の href 1 件 ∧ JA index の faq href が /faq のまま 1 件 ∧ 他 href の diff 0 か?"
+        description: "cmd_4446 の GATE CLEAR 後に origin/main を隔離 clone し、scripts/publish_artifact.sh と scripts/gates/gate_report_format.sh の manifest 検証関数が到達していることを ls と grep で確認した上で、選択実行 bash scripts/run_tests.sh file tests/unit/test_publish_artifact.bats を FAIL 0・SKIP 0 で通し、実行 log を報告 YAML に path で残す(既存 11 test)"
+        binary_check: "隔離 clone に 2 script が存在 ∧ 選択実行 FAIL 0 ∧ SKIP 0 ∧ 実行 log の path が報告にある か?"
       AC2:
-        description: "隔離 build(npm typecheck + build)を exit 0 で通し、AC1 の grep 結果を報告 YAML に生貼付する"
-        binary_check: "typecheck exit 0 ∧ build exit 0 ∧ grep 生貼付あり か?"
+        description: "設計書 §9.1 U2 行の二値完了欄と §2.3 C6・§13 H7 から、既存 bats に無い敵対 fixture を 1 本(例: capture 後に worktree を rm しても restore で tree id が一致する、manifest の paths[] を 1 件改竄すると gate が FAIL する、patch が空(paths 0)の時の停止条件)選んで tests/unit/test_publish_artifact.bats に追加し、選択実行 bash scripts/run_tests.sh file tests/unit/test_publish_artifact.bats を FAIL 0・SKIP 0 で通して commit する。fixture が FAIL する場合は実装を直さず FAIL 内容を報告して停止する(実装の修正は U2 実装者へ差し戻し)。中断再開時の成果物引継ぎ: 未 commit の worktree 差分と最終 bats 出力 log を報告 YAML の progress に path で残し、再開者はそこから継続する"
+        binary_check: "追加 fixture が 1 本 ∧ 追加 fixture の名前と契約の出典(設計書の行)が報告にある ∧ 選択実行 FAIL 0 ∧ SKIP 0(FAIL 時は停止して FAIL 内容が報告にある)∧ 新規 test に非空 test_necessity ∧ 変更 file が tests/unit/test_publish_artifact.bats のみ か?"
     command: |
-      1. LP の EN 側 FAQ href を /faq/en/ へ変更する(JA は不変)
-      2. 隔離 build と EN/JA index の href grep で AC1 を検証し生貼付する
+      1. 設計書 §9.0 共通則と §9.1 U2 行・§2.3 C6・§13 H7 を読み、隔離 clone で origin/main を checkout して 2 script の到達を ls で確認し、選択実行 bash scripts/run_tests.sh file tests/unit/test_publish_artifact.bats で FAIL 0・SKIP 0 を確認する。
+      2. 敵対 fixture を 1 本追加して同コマンドを再実行し、bash scripts/ninja_scope_commit.sh -m "<msg>" -- tests/unit/test_publish_artifact.bats で commit し、報告 YAML に source_sha と fixture 名・出典・実行 log path を書く。
     assumptions:
-      claim: "本番 curl 19:28: EN LP の faq href=onrender /faq(1 件)、JA も同。app 側 /faq/en/ は 200(4427、19:20 実測)、/en/faq/ は 404。LP 実体は external repo worktree(cmd_4431-4434 実績)、runner は 4438 で lp scope 対応済み"
-      source: "本番 https://dm-signal.com/ と /ja/ の href grep 19:28 + onrender /faq/en/ curl 19:20 + 設計書 v3.2 §1.1"
+      claim: "cmd_4446(U2)の実装は飛猿(Claude Sonnet)の報告 tobisaru_report_cmd_4446.yaml が verdict PASS(確認 2026-09-02 19:05)、commit 79277e22b+58446a4dc は origin/main 統合済み(git merge-base --is-ancestor 58446a4dc origin/main = yes、19:05)、test_publish_artifact.bats は @test 11 本(git show 58446a4dc で確認)。GATE は軍師 precheck PRE25 偽陽性で BLOCK 中(疾風 hotfix e5e8532b7 待ち)であり実装内容の問題ではないため本 cmd は depends_on=cmd_4446 とし CLEAR を AC1 の前提にする"
+      source: "docs/research/single_publisher_asis_tobe_5w1h_20260902.md §9.0 §9.1 U2 §2.3 C6 §13 H7、queue/reports/tobisaru_report_cmd_4446.yaml、git show 58446a4dc:tests/unit/test_publish_artifact.bats"
       trust: verified
-    depends_on: cmd_4437
-    serial_dependency_evidence: "copy 辞書は 4434(FoF)→4437(全太字+Free)が同ファイルを走行中のため直列。4439(チャート)・4436(月次頁)とは衝突が薄く、家老判断で 4437 直後に挿入可(1 行変更・5 分級)"
-    measurement_source: "本番 LP curl 実測(2026-08-31 19:28 JST、faq href 現物)。ローカル計測は含まない"
-    environment_change: "type=lesson; file=projects/infra/lessons_shogun.yaml; pattern=cmd_4154初回preflightで数値絶対値WARN"
-    timeout_minutes: 15
-    estimated_minutes: 5
-    split_decision:
-      boundary_ac_ids: [AC1, AC2]
-      integration_tasks: 1
-      review_round_trips: 0
-    origin: "[[SEO案v4_20260831_1920]] -> [[殿裁定_faq言語別リンク_20260831_1927]] -> [[cmd_4440_faq_en_link]]"
+    depends_on: cmd_4446
+    timeout_minutes: 30
+    estimated_minutes: 10
     quality_gate:
-      q1_firefighting: "品質向上。理由: EN 読者の導線欠落(JA FAQ へ飛ぶ)を正す UX/SEO 改善であり障害対応ではない"
-      q2_learning: "奪わない。理由: href の持ち方(copy か定数か)は忍者判断、対象 1 件と不変範囲は AC で固定"
-      q3_next_quality: "上がる。理由: 言語別リンクの規則(EN→/xxx/en/、JA→/xxx)が docs 等の今後の言語別頁に流用できる"
-      q4_depth: "shallow。1 行変更。本番 href と app 側 200 の裏取りのみ"
-      q5_verified_source: "production_verified: curl 19:28 で EN/JA とも faq href=onrender /faq 各 1 件、docs 3 件。curl 19:20 で /faq/en/ 200・/en/faq/ 404"
-      q6_not_hiding: "隠さない。理由: リンク先の変更のみで文言・データ不変、grep 生貼付で可視化"
-      q7_definition_verified: "EN FAQ の正 URL=/faq/en/(git ls-tree origin/main frontend/app/faq/en/page.tsx 実在、200 実測)"
-      q8_why_what: "WHY: EN LP から JA FAQ へ飛ぶ導線欠落(設計書 v3.2 再突合で発見、殿 19:27『直そう』) / WHAT: EN href 1 件を /faq/en/ へ / WHEN: 4437 CLEAR 後(5 分級) / WHERE: lp copy / WHO: 忍者 1 名 / HOW: href 変更→隔離 build grep / 複利: 言語別リンク規則の確立"
-      q9_firefighting_root_cause: "消火ではない。導線の欠落を埋める改善"
-      q10_knowledge_boundary: "境界内。lp copy は 4430-4437 の直近系譜、FAQ EN は 4427 の直近実装"
-      q11_not_already_done: "未実施を確認: 本番 EN LP の href grep で faq/en/ 0 件、/faq 1 件(19:28)"
-      q_ambiguity: "低。対象 1 件・不変範囲を AC で固定"
-      q12_lord_30min_cost: "no。本番 1 クリック確認で足りる"
-      diagnosis: "BLOCK理由: 初回起票のため既往BLOCKなし。想定リスク=JA 側や docs リンクまで巻き込む / 対策: AC1 で他 href diff 0 を二値化"
-    seam_contract: null
-    delegated_at: "\"2026-08-31T19:30:23\""
-    reflux_commit_contract: null
+      q1_firefighting: "品質向上。理由: Claude 実装を Codex が同じ道具で検証し敵対 fixture を足す=multi-CLI 同品質の証明(§12)と U2 契約(C6/H7)の穴探し"
+      q2_learning: "奪わない。理由: Codex 忍者が設計書の契約から fixture を選ぶ判断は学習機会であり、隔離 clone で完結できる"
+      q3_next_quality: "上がる。理由: cmd_4448 の検証 cmd の型を U2 に適用し、第 1 波 3 unit 全てが両 CLI で PASS した状態で第 2 波(U1b/U5/U6)へ進める"
+      q4_depth: "shallow — 理由: 実装は完了済み、検証は bats 選択実行と fixture 1 本"
+      q5_verified_source: "structure_verified — 対象を実行して確認(2026-09-02 19:05): git show 58446a4dc:tests/unit/test_publish_artifact.bats | grep -c '^@test' → 11、git merge-base --is-ancestor 58446a4dc origin/main → yes、grep verdict queue/reports/tobisaru_report_cmd_4446.yaml → PASS、gate_metrics 16:57:36 cmd_4446 BLOCK sg7_bundle_missing_or_invalid(precheck FP)"
+      q6_not_hiding: "隠していない。理由: fixture が FAIL した時は実装を直さず停止・報告する契約(AC2)で、検証者が実装を上書きする経路を塞ぐ。変更 file を bats 1 本に縛る"
+      q7_definition_verified: "検証 cmd・敵対 fixture・multi-CLI 同品質の定義は設計書 v3.6 §9.1 共通 AC と §12 で確認(確認日: 2026-09-02)"
+      q8_why_what: "WHY: 殿 19:02『進展が遅すぎないか』→CLEAR を待って起票する理由がない(depends_on で配備は自動待機)ので今起票し直列を 1 段減らす / WHAT: Codex 忍者が隔離 clone で test_publish_artifact.bats を FAIL 0・SKIP 0 で通し敵対 fixture 1 本を追加 commit / WHEN: cmd_4446 CLEAR 後 / WHERE: tests/unit / WHO: 家老配備(Codex 忍者) / HOW: 設計書 §9.1 U2 行の二値完了欄と C6/H7 を fixture 候補の出典にする / 複利: 第 2 波へ進む前提条件が 3 unit 揃う"
+      q9_firefighting_root_cause: "根本対応。理由: 検証を別 cmd に置く構造(v3.6)を U2 にも適用し、CLEAR 待ちの直列を起票時点で外す"
+      q10_knowledge_boundary: "検証済み: 飛猿報告 PASS、bats 11 本、source 到達済み、GATE BLOCK の理由は precheck FP。スコープ外: 実装の修正(U2 実装者)、U1/U4 の検証(cmd_4448/cmd_4450)"
+      q11_not_already_done: "ls queue/reports/*cmd_4446* → tobisaru 1 本のみ(Codex 報告 0、2026-09-02 19:05)。rg -c 'cmd_4449' queue/shogun_to_karo.yaml → 0 件(起票前)。cmd_4448 は U1 のみを対象"
+      q_ambiguity: "曖昧さ: 敵対 fixture の選択。解消: 設計書 §9.1 U2 行の二値完了欄と C6/H7 を出典に限定し、出典の行を報告に書かせる"
+      q12_lord_30min_cost: "no — 殿指示は 13:25 で確定、判定は bats"
+      diagnosis: "BLOCK理由: 該当なし(新規起票) / 対策: 新規 file 0(既存 bats へ fixture 追加のみ)。depends_on=cmd_4446 は実依存(CLEAR=source 到達と精査完了)であり起票ゲート回避の流用ではない(LS-A04(47))"
+    environment_change: "type=lesson; file=projects/infra/lessons_shogun.yaml; pattern=cmdテンプレートルール"
+    delegated_at: "\"2026-09-02T19:10:39\""
+    origin: "[[殿指示_multi_cli_同レベル_20260902_1325]] -> [[殿下問_進展が遅すぎないか_20260902_1902]] -> [[cmd_4448_検証cmd型]] -> [[cmd_4449_U2_検証_Codex]]"
+  cmd_4450:
+    title: "単一 publisher U4 検証: Claude 忍者が隔離 clone で gate dual-read(commit_hash 契約と published_sha+receipt 契約)の bats を選択実行し、設計書契約から敵対 fixture を 1 本追加して multi-CLI 同品質を証明する(実装は疾風=Codex)"
+    status: delegated
+    project: infra
+    purpose: "殿指示 2026-09-02 13:25『どのロールがどの CLI/モデルでも必要十分に同じレベルで作業を続けられるのが我らの仕組み』+殿下問 19:02『順調に進んでいるか？進展が遅すぎないか？』→第 1 波 3 unit の検証 cmd を CLEAR 待ちにせず今起票して直列を 1 段減らす(depends_on で配備は自動待機)。U4(cmd_4447)は疾風(Codex)が実装し report PASS のため、検証は Claude 忍者(設計書 v3.6 §9.1 共通 AC・§12)。cmd_4448(U1 検証)と同型で unit と CLI を入れ替えた別 cmd"
+    scope_mode: FULL
+    target_path: tests/unit
+    acceptance_criteria:
+      AC1:
+        description: "cmd_4447 の GATE CLEAR 後に origin/main を隔離 clone し、scripts/cmd_complete_gate.sh の dual-read 読取り関数(published_sha+receipt 受理)が到達していることを grep で確認した上で、選択実行 bash scripts/run_tests.sh file tests/unit/test_gate_dual_read.bats を FAIL 0・SKIP 0 で通し、実行 log を報告 YAML に path で残す(既存 6 test)"
+        binary_check: "隔離 clone に dual-read 関数が存在 ∧ 選択実行 FAIL 0 ∧ SKIP 0 ∧ 実行 log の path が報告にある か?"
+      AC2:
+        description: "設計書 §9.1 U4 行の二値完了欄と §6 D11・§13 H4 H8 から、既存 bats に無い敵対 fixture を 1 本(例: commit_hash と published_sha の両方を持つ報告で旧契約が優先されること、receipt の blob が 1 件不一致なら CLEAR しないこと、STATE_DIR の publish_queue に request が残る間は WAIT:publisher_pending で BLOCK にならないこと)選んで tests/unit/test_gate_dual_read.bats に追加し、選択実行 bash scripts/run_tests.sh file tests/unit/test_gate_dual_read.bats を FAIL 0・SKIP 0 で通して commit する。fixture が FAIL する場合は実装を直さず FAIL 内容を報告して停止する(実装の修正は U4 実装者へ差し戻し)。中断再開時の成果物引継ぎ: 未 commit の worktree 差分と最終 bats 出力 log を報告 YAML の progress に path で残し、再開者はそこから継続する"
+        binary_check: "追加 fixture が 1 本 ∧ 追加 fixture の名前と契約の出典(設計書の行)が報告にある ∧ 選択実行 FAIL 0 ∧ SKIP 0(FAIL 時は停止して FAIL 内容が報告にある)∧ 新規 test に非空 test_necessity ∧ 変更 file が tests/unit/test_gate_dual_read.bats のみ か?"
+    command: |
+      1. 設計書 §9.0 共通則と §9.1 U4 行・§6 D11・§13 H4 H8 を読み、隔離 clone で origin/main を checkout して dual-read 関数の到達を grep で確認し、選択実行 bash scripts/run_tests.sh file tests/unit/test_gate_dual_read.bats で FAIL 0・SKIP 0 を確認する。
+      2. 敵対 fixture を 1 本追加して同コマンドを再実行し、bash scripts/ninja_scope_commit.sh -m "<msg>" -- tests/unit/test_gate_dual_read.bats で commit し、報告 YAML に source_sha と fixture 名・出典・実行 log path を書く。
+    assumptions:
+      claim: "cmd_4447(U4)の実装は疾風(Codex)の報告 hayate_report_cmd_4447.yaml が verdict PASS(確認 2026-09-02 19:05)、commit 39b2d18b2 は origin/main 統合済み(git merge-base --is-ancestor 39b2d18b2 origin/main = yes、19:05)、test_gate_dual_read.bats は @test 6 本(git show 39b2d18b2 で確認)。CI run 33611379072 で同 bats 4/6 FAIL→半蔵 ci_fix 2f84aabdf(gate 側補正)が 18:42 に push 済み・CI 走行中。GATE は軍師 precheck PRE25 偽陽性で BLOCK 中(疾風 hotfix e5e8532b7 待ち)であり本 cmd は depends_on=cmd_4447 とし CLEAR を AC1 の前提にする"
+      source: "docs/research/single_publisher_asis_tobe_5w1h_20260902.md §9.0 §9.1 U4 §6 D11 §13 H4 H8、queue/reports/hayate_report_cmd_4447.yaml、git show 39b2d18b2:tests/unit/test_gate_dual_read.bats、git show 2f84aabdf --stat"
+      trust: verified
+    depends_on: cmd_4447
+    timeout_minutes: 30
+    estimated_minutes: 10
+    quality_gate:
+      q1_firefighting: "品質向上。理由: Codex 実装を Claude が同じ道具で検証し敵対 fixture を足す=multi-CLI 同品質の証明(§12)と U4 契約(D11/H4/H8)の穴探し"
+      q2_learning: "奪わない。理由: Claude 忍者が設計書の契約から fixture を選ぶ判断は学習機会であり、隔離 clone で完結できる"
+      q3_next_quality: "上がる。理由: cmd_4448 の検証 cmd の型を U4 に適用し、第 1 波 3 unit 全てが両 CLI で PASS した状態で第 2 波(U1b/U5/U6)へ進める"
+      q4_depth: "shallow — 理由: 実装は完了済み、検証は bats 選択実行と fixture 1 本"
+      q5_verified_source: "structure_verified — 対象を実行して確認(2026-09-02 19:05): git show 39b2d18b2:tests/unit/test_gate_dual_read.bats | grep -c '^@test' → 6、git merge-base --is-ancestor 39b2d18b2 origin/main → yes、grep verdict queue/reports/hayate_report_cmd_4447.yaml → PASS、git show 2f84aabdf --stat → scripts/cmd_complete_gate.sh +150/-2、gate_metrics 16:57:14 cmd_4447 BLOCK sg7_bundle_missing_or_invalid(precheck FP)"
+      q6_not_hiding: "隠していない。理由: fixture が FAIL した時は実装を直さず停止・報告する契約(AC2)で、検証者が実装を上書きする経路を塞ぐ。変更 file を bats 1 本に縛る"
+      q7_definition_verified: "検証 cmd・敵対 fixture・multi-CLI 同品質の定義は設計書 v3.6 §9.1 共通 AC と §12 で確認(確認日: 2026-09-02)"
+      q8_why_what: "WHY: 殿 19:02『進展が遅すぎないか』→CLEAR を待って起票する理由がない(depends_on で配備は自動待機)ので今起票し直列を 1 段減らす / WHAT: Claude 忍者が隔離 clone で test_gate_dual_read.bats を FAIL 0・SKIP 0 で通し敵対 fixture 1 本を追加 commit / WHEN: cmd_4447 CLEAR 後 / WHERE: tests/unit / WHO: 家老配備(Claude 忍者) / HOW: 設計書 §9.1 U4 行の二値完了欄と D11/H4/H8 を fixture 候補の出典にする / 複利: 第 2 波へ進む前提条件が 3 unit 揃う"
+      q9_firefighting_root_cause: "根本対応。理由: 検証を別 cmd に置く構造(v3.6)を U4 にも適用し、CLEAR 待ちの直列を起票時点で外す"
+      q10_knowledge_boundary: "検証済み: 疾風報告 PASS、bats 6 本、source 到達済み、CI 側は半蔵 ci_fix 済み、GATE BLOCK の理由は precheck FP。スコープ外: 実装の修正(U4 実装者)、U1/U2 の検証(cmd_4448/cmd_4449)"
+      q11_not_already_done: "既存代替の現物確認(2026-09-02 19:10): rg -c 'published_sha' scripts/cmd_complete_gate.sh → 39(dual-read は実装済み=本 cmd は gate を追加・変更しない)、rg -c 'publisher_pending' scripts/cmd_complete_gate.sh → 1(WAIT 経路実装済み)、rg -nF 'tests/unit/test_gate_dual_read.bats' . --glob '!queue/**' --glob '!logs/**' --glob '!tests/test_helper/**' | wc -l → 5(既存 bats 6 test に fixture を足すだけで新 gate/hook 0)。ls queue/reports/*cmd_4447* → hayate 1 本のみ(Claude 報告 0)。rg -c 'cmd_4450' queue/shogun_to_karo.yaml → 0 件(起票前)。cmd_4448 は U1 のみを対象"
+      q_ambiguity: "曖昧さ: 敵対 fixture の選択。解消: 設計書 §9.1 U4 行の二値完了欄と D11/H4/H8 を出典に限定し、出典の行を報告に書かせる"
+      q12_lord_30min_cost: "no — 殿指示は 13:25 で確定、判定は bats"
+      diagnosis: "BLOCK理由: 該当なし(新規起票) / 対策: 新規 file 0(既存 bats へ fixture 追加のみ)。depends_on=cmd_4447 は実依存(CLEAR=source 到達と精査完了)であり起票ゲート回避の流用ではない(LS-A04(47))"
+    environment_change: "type=lesson; file=projects/infra/lessons_shogun.yaml; pattern=cmdテンプレートルール"
+    delegated_at: "\"2026-09-02T19:11:10\""
+    origin: "[[殿指示_multi_cli_同レベル_20260902_1325]] -> [[殿下問_進展が遅すぎないか_20260902_1902]] -> [[cmd_4448_検証cmd型]] -> [[cmd_4450_U4_検証_Claude]]"
+  cmd_4448:
+    title: "単一 publisher U1 検証: Codex 忍者が隔離 clone で publisher_queue と lock_run_shim の bats を選択実行し、設計書契約から敵対 fixture を 1 本追加して multi-CLI 同品質を証明する"
+    status: delegated
+    project: infra
+    purpose: "殿指示 2026-09-02 13:25『どのロールがどの CLI/モデルでも必要十分に同じレベルで作業を続けられるのが我らの仕組み』・15:30『二巡目配備問題にてこずっていそうだ』→設計書 v3.6 §9.1 共通 AC(2 巡目=別 cmd 番号の検証 task。同 cmd 再配備は deploy_task completed-peer guard の正規 BLOCK 対象、15:26-15:30 実測 3 回)。U1 実装(cmd_4445、小太郎=Claude Sonnet、report PASS)を Codex 忍者が隔離 clone で検証し、設計書 §9.1 U1 行の契約から未実装の敵対 fixture を 1 本足して commit する。これが『Claude で作った道具が Codex でも同じ品質で回る』証明であり、U1 の unit 完了条件"
+    scope_mode: FULL
+    target_path: tests/unit
+    acceptance_criteria:
+      AC1:
+        description: "cmd_4445 の GATE CLEAR 後に origin/main を隔離 clone し、scripts/publisher_queue.sh と scripts/lib/lock_run_shim.sh と scripts/lib/publisher_event.sh が到達していることを ls で確認した上で、選択実行 bash scripts/run_tests.sh file tests/unit/test_publisher_queue.bats を FAIL 0・SKIP 0 で通し、実行 log を報告 YAML に path で残す"
+        binary_check: "隔離 clone に 3 script が存在 ∧ 選択実行 FAIL 0 ∧ SKIP 0 ∧ 実行 log の path が報告にある か?"
+      AC2:
+        description: "設計書 §9.1 U1 行の二値完了欄と §6 D14 D15 から、既存 bats に無い敵対 fixture を 1 本(例: lock-run の孫 process が自分で新 session を作った時の survivor 記録、events.jsonl の同時 writer 数を増やした時の seq 連続性、publish.lock を先に別 process が保持している時の rc=4 経路)選んで tests/unit/test_publisher_queue.bats に追加し、選択実行 bash scripts/run_tests.sh file tests/unit/test_publisher_queue.bats を FAIL 0・SKIP 0 で通して commit する。fixture が FAIL する場合は実装を直さず FAIL 内容を報告して停止する(実装の修正は U1 実装者へ差し戻し)。中断再開時の成果物引継ぎ: 未 commit の worktree 差分と最終 bats 出力 log を報告 YAML の progress に path で残し、再開者はそこから継続する"
+        binary_check: "追加 fixture が 1 本 ∧ 追加 fixture の名前と契約の出典(設計書の行)が報告にある ∧ 選択実行 FAIL 0 ∧ SKIP 0(FAIL 時は停止して FAIL 内容が報告にある)∧ 新規 test に非空 test_necessity ∧ 変更 file が tests/unit/test_publisher_queue.bats のみ か?"
+    command: |
+      1. 設計書 §9.0 共通則と §9.1 U1 行・§6 D14 D15 を読み、隔離 clone で origin/main を checkout して 3 script の到達を ls で確認し、選択実行 bash scripts/run_tests.sh file tests/unit/test_publisher_queue.bats で FAIL 0・SKIP 0 を確認する。
+      2. 敵対 fixture を 1 本追加して同コマンドを再実行し、bash scripts/ninja_scope_commit.sh -m "<msg>" -- tests/unit/test_publisher_queue.bats で commit し、報告 YAML に source_sha と fixture 名・出典・実行 log path を書く。
+    assumptions:
+      claim: "cmd_4445(U1)の実装は小太郎(Claude Sonnet)の報告 kotaro_report_cmd_4445.yaml が status completed・verdict PASS(確認 2026-09-02 15:33)、files_modified に scripts/publisher_queue.sh ほか、test_publisher_queue.bats は @test 9 本(git show 0e8d1b6d9 で確認)。source commit 0e8d1b6d9 は 15:33 時点で root/origin に未到達(GATE CLEAR 後の autopush で到達)のため本 cmd は depends_on=cmd_4445 とし origin/main の到達を AC1 の前提にする。設計書 v3.6 §9.1 共通 AC(2 巡目=別 cmd の検証 task)は家老レビュー v3.5 APPROVE の骨格を変えない文言変更(15:35)"
+      source: "docs/research/single_publisher_asis_tobe_5w1h_20260902.md §9.0 §9.1 U1 §6 D14 D15、queue/reports/kotaro_report_cmd_4445.yaml、git show 0e8d1b6d9:tests/unit/test_publisher_queue.bats"
+      trust: verified
+    depends_on: cmd_4445
+    timeout_minutes: 30
+    estimated_minutes: 10
+    quality_gate:
+      q1_firefighting: "品質向上。理由: Claude 実装を Codex が同じ道具で検証し敵対 fixture を足す=multi-CLI 同品質の証明(§12)と U1 契約の穴探し"
+      q2_learning: "奪わない。理由: Codex 忍者が設計書の契約から fixture を選ぶ判断は学習機会であり、隔離 clone で完結できる"
+      q3_next_quality: "上がる。理由: 検証 cmd の型(隔離 clone→選択実行→敵対 fixture 1 本→FAIL 時は差し戻し)が U2/U4 以降の検証 cmd の雛形になる"
+      q4_depth: "shallow — 理由: 実装は完了済み、検証は bats 選択実行と fixture 1 本"
+      q5_verified_source: "structure_verified — 対象を実行して確認(2026-09-02 15:33): git show 0e8d1b6d9:tests/unit/test_publisher_queue.bats | grep -c '^@test' → 9、git cat-file -t 0e8d1b6d9 → commit、git merge-base --is-ancestor 0e8d1b6d9 HEAD → NOT_IN_ROOT(未到達)。grep -E 'status|verdict' kotaro_report_cmd_4445.yaml → completed/PASS。deploy log 15:26-15:30 で completed-peer guard BLOCK 3 回(同 cmd 再配備は不可)"
+      q6_not_hiding: "隠していない。理由: fixture が FAIL した時は実装を直さず停止・報告する契約(AC2)で、検証者が実装を上書きする経路を塞ぐ。変更 file を bats 1 本に縛る"
+      q7_definition_verified: "検証 cmd・敵対 fixture・multi-CLI 同品質の定義は設計書 v3.6 §9.1 共通 AC と §12 で確認(確認日: 2026-09-02)"
+      q8_why_what: "WHY: 殿 13:25『どの CLI でも同じレベル』の証明を同 cmd 再配備でなく別 cmd の検証で行う / WHAT: Codex 忍者が隔離 clone で test_publisher_queue.bats を FAIL 0・SKIP 0 で通し敵対 fixture 1 本を追加 commit / WHEN: cmd_4445 CLEAR 後 / WHERE: tests/unit / WHO: 家老配備(Codex 忍者) / HOW: 設計書 §9.1 U1 行の二値完了欄を fixture 候補の出典にする / 複利: U2/U4 の検証 cmd の雛形。multi-CLI の摩擦が出れば §7 ピットフォールへ追記"
+      q9_firefighting_root_cause: "根本対応。理由: completed-peer guard との格闘(迂回)をやめ、検証を別 cmd に置く構造で 2 巡目を成立させる"
+      q10_knowledge_boundary: "検証済み: kotaro 報告 PASS、bats 9 本、source 未到達、guard BLOCK 実測。スコープ外: 実装の修正(U1 実装者)、U2/U4 の検証(別 cmd)"
+      q11_not_already_done: "ls queue/reports/*cmd_4445* → kotaro 1 本のみ(Codex 報告 0、2026-09-02 15:33)。rg -c 'cmd_4448' queue/shogun_to_karo.yaml → 0 件(起票前)。bash scripts/semantic_search.sh 'publish queue lock-run flock publisher' → 概念ヒット 0。同 cmd 再配備は deploy log で BLOCK 3 回=別経路が必要"
+      q_ambiguity: "曖昧さ: 敵対 fixture の選択。解消: 設計書 §9.1 U1 行の二値完了欄と D14/D15 を出典に限定し、出典の行を報告に書かせる"
+      q12_lord_30min_cost: "no — 殿指示は 13:25 で確定、判定は bats"
+      diagnosis: "BLOCK理由: 該当なし(新規起票) / 対策: 新規 file 0(既存 bats へ fixture 追加のみ)。depends_on=cmd_4445 は実依存(source 到達)であり起票ゲート回避の流用ではない(LS-A04(47))"
+    environment_change: "type=lesson; file=projects/infra/lessons_shogun.yaml; pattern=cmdテンプレートルール"
+    delegated_at: "\"2026-09-02T15:34:07\""
+    origin: "[[殿指示_multi_cli_同レベル_20260902_1325]] -> [[殿指摘_二巡目配備てこずり_20260902_1530]] -> [[completed_peer_guard_正規BLOCK]] -> [[cmd_4448_U1_検証_Codex]]"
+  cmd_4447:
+    title: "単一 publisher U4: 報告 gate の dual-read(commit_hash 契約と published_sha+receipt 契約の両受理)と publisher_pending WAIT を scripts/cmd_complete_gate.sh の読取り関数に限定して実装し、commit_hash 読み手の census を添えて bats で証明する"
+    status: delegated
+    project: infra
+    purpose: "殿裁定 2026-09-02 13:07『採用』・14:50『並列で実装可能か』→第 1 波(U1・U2・U4 は file が重ならず依存なし)として cmd_4445(U1)・cmd_4446(U2)と並走起票。設計書 docs/research/single_publisher_asis_tobe_5w1h_20260902.md v3.5(家老 APPROVE blt_20260902_143800)の U4=報告 gate が旧報告(commit_hash)と新報告(published_sha+path/blob receipt)の両方を受理する期間を作り(D11 の移行可逆性)、request が publisher queue にある間は BLOCK ではなく WAIT:publisher_pending を返す(§13 H8)。autopush 系の関数は一切変更しない(U7 で flag 停止・U8 で削除)。家老 lane: §9.1 共通 AC により Claude 忍者と Codex 忍者の双方で PASS が unit 完了条件"
+    scope_mode: FULL
+    target_path: scripts
+    acceptance_criteria:
+      AC1:
+        description: "scripts/cmd_complete_gate.sh の報告読取り関数 1 つを、commit_hash が無く published_sha と path/blob receipt があれば受理し、STATE_DIR 配下 publish_queue に当該 task の request file があれば WAIT:publisher_pending(request path 付き)を返すよう変更し、tests/unit/test_gate_dual_read.bats の fixture(旧報告 CLEAR・新報告 CLEAR・request 残置で WAIT)で確認する。autopush 系 4 関数(source_only_path_snapshot_generic・source_only_cumulative_equivalence・source_only_insights_id_merge・source_only_lessons_id_merge)は不変更"
+        binary_check: "旧 fixture CLEAR ∧ 新 fixture CLEAR ∧ request 残置 fixture で WAIT:publisher_pending(BLOCK ではない)∧ git diff -U0 の hunk header に上記 4 関数名が 0 件 ∧ 差分が読取り関数と WAIT 分岐の 2 箇所のみ ∧ WAIT:publisher_pending が既存の WAIT 行と同形式で logs/gate_metrics.log に記録される(既存 gate_metrics の WAIT 集計へ接続)か?"
+      AC2:
+        description: "commit_hash の読み手を母集団=grep -rl commit_hash scripts/ .claude/hooks の出力として全件列挙し、各 file を『判定に使う(祖先化・blob・同定)/表示のみ』に分類した表を報告 YAML に添付し、判定に使う file の読取り箇所を列挙して本 cmd の対象外(次 unit へ引継ぎ)を明示する。選択実行 bash scripts/run_tests.sh file tests/unit/test_gate_dual_read.bats で FAIL 0・SKIP 0 を確認する。中断再開時の成果物引継ぎ: 未 commit の worktree 差分と分類表の途中版と最終 bats 出力 log を報告 YAML の progress に path で残し、再開者はそこから継続する"
+        binary_check: "分類表の行数がコマンド出力数と一致 ∧ 各行に判定/表示の分類と根拠(読取り箇所)がある ∧ 判定側で本 cmd 対象外の file が引継ぎ欄に列挙されている ∧ 選択実行 FAIL 0 ∧ SKIP 0 ∧ 新規 test に非空 test_necessity か?"
+    command: |
+      1. 設計書 §9.0 共通則(3 つの tree を混同しない・旧経路 U7 まで不変更・STATE_DIR は SHOGUN_STATE_DIR 環境変数で永続 dir・push 禁止)と §9.1 U4 行・§13 H4 H8・§6 D11 を読み、scripts/cmd_complete_gate.sh の報告読取り関数と WAIT 分岐だけを変更し、tests/unit/test_gate_dual_read.bats を新規作成して選択実行 bash scripts/run_tests.sh file tests/unit/test_gate_dual_read.bats で FAIL 0・SKIP 0 を確認する(fixture は mktemp の STATE_DIR と一時 report、本番 queue/ への書込み 0)。
+      2. grep -rl commit_hash scripts/ .claude/hooks の出力を母集団に分類表を作り報告 YAML に添付し、bash scripts/ninja_scope_commit.sh -m "<msg>" -- scripts/cmd_complete_gate.sh tests/unit/test_gate_dual_read.bats で commit して source_sha を報告に書く。
+    assumptions:
+      claim: "設計書 v3.5 の U4 行(§9.1)・D11・H4・H8 が家老 APPROVE 済みで実装契約として確定(確認日 2026-09-02 14:38、blt_20260902_143800)。commit_hash の読み手は grep -rl commit_hash scripts/ .claude/hooks で 31 file(2026-09-02 14:55 実測、数値は報告時に再計測)。autopush 系 4 関数は scripts/cmd_complete_gate.sh に実在(grep -nE '^source_only_(path_snapshot_generic|cumulative_equivalence|insights_id_merge|lessons_id_merge)\\(\\)' で 4 件)。報告 commit の祖先化判定は check_report_commit_main_ancestry 関数が担い WAIT:report_commit_main_ancestry を返す経路が実在。tests/unit/test_gate_dual_read.bats は存在しない。U1(cmd_4445)・U2(cmd_4446)とは file が重ならず並走可能(U4=cmd_complete_gate.sh のみ)"
+      source: "docs/research/single_publisher_asis_tobe_5w1h_20260902.md §9.0 §9.1 U4 §6 D11 §13 H4 H8、scripts/cmd_complete_gate.sh(check_report_commit_main_ancestry・source_only_* 4 関数)、queue/bulletin_board.yaml blt_20260902_143800"
+      trust: verified
+    depends_on: none
+    timeout_minutes: 30
+    estimated_minutes: 10
+    quality_gate:
+      q1_firefighting: "品質向上。理由: 旧契約と新契約を同時に受理する移行期間を構造で作り、publisher 化を可逆に進める(D11)。BLOCK ではなく WAIT を返すことで publisher 遅延が偽 BLOCK に化けない(H8)"
+      q2_learning: "奪わない。理由: 読取り関数の最小差分と census 表の作成は忍者が自分の worktree で完結でき、gate の契約構造を学ぶ機会になる"
+      q3_next_quality: "上がる。理由: U3 publisher の CLEAR 経路が本 unit の dual-read に載るため、ここで受理契約が固まれば U3 の AC が短くなる。census 表は U8 の削除 manifest M7 の入力になる"
+      q4_depth: "medium — 理由: 既存 gate への最小差分 2 箇所+bats 1 本+census 表。契約は設計書 U4 行で確定済み"
+      q5_verified_source: "structure_verified — 対象 gate を実行して確認(2026-09-02 14:55): bash scripts/cmd_complete_gate.sh cmd_reflux_insight_202609021319_kagemaru → CLEAR 経路を通過(exit 0、CLEAR 行 1)。grep -nE '^source_only_(path_snapshot_generic|cumulative_equivalence|insights_id_merge|lessons_id_merge)\\(\\)' scripts/cmd_complete_gate.sh → 4 件。grep -n check_report_commit_main_ancestry scripts/cmd_complete_gate.sh → 定義 1+呼出し 2。grep -rl commit_hash scripts/ .claude/hooks | wc -l → 31。ls tests/unit/test_gate_dual_read.bats → No such file。家老 APPROVE blt_20260902_143800"
+      q6_not_hiding: "隠していない。理由: autopush 4 関数の不変更を hunk header の関数名 0 件で二値化し、差分箇所数を 2 に縛る(AC1)。census の母集団をコマンド出力に固定し数値を固定しない(AC2)"
+      q7_definition_verified: "published_sha・path/blob receipt・WAIT:publisher_pending・dual-read の定義は設計書 §2.4 C2・§6 D11・§13 H8・§9.1 U4 行で確認(確認日: 2026-09-02)"
+      q8_why_what: "WHY: 移行期間の可逆性(D11)と publisher 遅延の偽 BLOCK 防止(H8) / WHAT: cmd_complete_gate.sh の読取り関数を dual-read+WAIT:publisher_pending にし test_gate_dual_read.bats を FAIL 0・SKIP 0、commit_hash 読み手の census 表 / WHEN: 今セッション(U1・U2 と並走) / WHERE: scripts と tests/unit / WHO: 家老配備(Claude 忍者と Codex 忍者の双方) / HOW: 設計書 §9.1 U4 行の 6 欄を task へそのまま写す / 複利: U3 の CLEAR 経路と U8 の M7 削除の前提"
+      q9_firefighting_root_cause: "根本対応。理由: 契約の二重受理は移行の構造(D11)であり、個別 report の偽 BLOCK への各論パッチではない"
+      q10_knowledge_boundary: "検証済み: 設計書 v3.5、cmd_complete_gate.sh の関数実在と CLEAR 経路、読み手 31 file。スコープ外: autopush 4 関数(U7/U8)、他 30 file の読み手の dual-read(census で引継ぎ先を明示)、publisher(U3)"
+      q11_not_already_done: "ls tests/unit/test_gate_dual_read.bats → No such file(2026-09-02 14:55)。rg -c 'published_sha|publisher_pending' scripts/cmd_complete_gate.sh → 0 件。bash scripts/semantic_search.sh 'publish queue lock-run flock publisher' → 概念ヒット 0。既存の受理契約は commit_hash+祖先化(check_report_commit_main_ancestry)と receipt-backed source-only(257c0c6de)の 2 種で、published_sha 契約は無い"
+      q_ambiguity: "曖昧さ: 『読取り関数 1 つ』の特定。解消: 報告 YAML の commit_hash を読む関数を忍者が grep で特定し、変更箇所を AC1 の hunk 数で二値化"
+      q12_lord_30min_cost: "no — 設計は殿裁定済み、実装は忍者、判定は bats"
+      diagnosis: "BLOCK理由: 該当なし(新規起票。cmd_4445/4446 の教訓=AC に選択実行・FAIL0/SKIP0・中断再開引継ぎの 3 要素と q5 の実行証拠を最初から記載) / 対策: 新規 file 1 本(bats)は設計書 §9.1 U4 行で意図的に新設する成果物(new_file WARN は意図的新設)。U1・U2 と file が重ならないため並走配備可"
+    environment_change: "type=lesson; file=projects/infra/lessons_shogun.yaml; pattern=cmdテンプレートルール"
+    delegated_at: "\"2026-09-02T14:57:04\""
+    origin: "[[殿裁定_単一publisher採用_20260902_1307]] -> [[殿下問_並列実装可能か_20260902_1450]] -> [[single_publisher_asis_tobe_5w1h_20260902_v35_APPROVE]] -> [[cmd_4447_U4_gate_dual_read]]"
+  cmd_4445:
+    title: "単一 publisher U1: publish queue と lock-run shim(scripts/publisher_queue.sh)を実装し FIFO・直列・自己有界を bats で証明する"
+    status: delegated
+    project: infra
+    purpose: "殿裁定 2026-09-02 13:07『採用』・14:02『本質はスムースな commit/push/deploy』・13:23『実装は忍者。性能の劣る LLM が混乱しない設計書』。設計書 docs/research/single_publisher_asis_tobe_5w1h_20260902.md v3.5(家老 APPROVE blt_20260902_143800)の U1 を実装する。origin への公開経路を flock 1 本で直列化する土台=request の FIFO queue、lock-run shim(GNU timeout の group 信号で自己有界、信号送出コマンドを書かない)、events.jsonl の単一 writer。この段階では公開(push)せず、並び順・直列・有界・可視化だけを bats で証明する。家老 lane: 設計書 §9.1 共通 AC により同 task を Claude 忍者と Codex 忍者の双方で PASS させてから unit 完了とする"
+    scope_mode: FULL
+    target_path: scripts
+    acceptance_criteria:
+      AC1:
+        description: "scripts/publisher_queue.sh の enqueue・dequeue・peek を設計書 §9.1 U1 行の CLI 契約通りに実装し(request は STATE_DIR 配下・repo 別 lock file・root 配下を指す STATE_DIR は起動拒否)、tests/unit/test_publisher_queue.bats の FIFO(並行投入で順序=投入順)・再起動相当(dir を退避して戻す)後の可読・root porcelain 差分なしの fixture で確認する"
+        binary_check: "並行投入の順序逆転 0 ∧ 退避復帰後に全 request が dequeue できる ∧ fixture 実行前後の root porcelain 差分 0 ∧ root 配下 STATE_DIR で rc=2 か?"
+      AC2:
+        description: "scripts/lib/lock_run_shim.sh(lock-run --bound)を設計書 §9.1 U1 行の通りに実装し(command を GNU timeout -k 直下で起動・setsid 不使用・shim は信号送出コマンドを書かない・rc file 有無で rc を写像・同 PGID 全走査の survivor と親子孫の PID/PGID/SID を含む done receipt を shim だけが書く)、同 bats の直列・TERM 無視親+短命孫・child 自 exit 124・child 異常終了の fixture で確認する"
+        binary_check: "並行 lock-run の同時実行 1 ∧ TERM 無視親+短命孫の fixture で復帰後 survivor 0 かつ rc=210 かつ lock 解放 ∧ child 自 exit 124 で rc=124 ∧ child 異常終了で rc=211 ∧ done receipt の writer が shim で親子孫 PID/PGID/SID を含む ∧ scripts/lib/lock_run_shim.sh に信号送出コマンドの literal 0 か?"
+      AC3:
+        description: "scripts/lib/publisher_event.sh append を設計書 §6 D14 の通りに実装し(flock 下で seq を採番し 1 行を追記、直接追記の呼出しは無し)、lock-run の rc=211 で kind=rc211 の event 行と家老 inbox 通知が出ることを同 bats の並行 writer fixture と rc211 fixture で確認し、選択実行 bash scripts/run_tests.sh file tests/unit/test_publisher_queue.bats を FAIL 0・SKIP 0 で通す。中断再開時の成果物引継ぎ: 未 commit の worktree 差分と最終 bats 出力 log を報告 YAML の progress に path で残し、再開者はそこから継続する"
+        binary_check: "並行 writer fixture で seq 重複 0 かつ欠番 0 かつ行途中の交錯 0 ∧ rc211 fixture で kind=rc211 の行が 1 と家老 inbox 1 通 ∧ 選択実行 FAIL 0 ∧ SKIP 0 ∧ 新規 test に非空 test_necessity か?"
+    command: |
+      1. 設計書 §9.0 共通則(3 つの tree を混同しない・旧経路 U7 まで不変更・STATE_DIR は SHOGUN_STATE_DIR 環境変数で永続 dir・push 禁止)と §9.1 U1 行・§6 D14 を読み、scripts/publisher_queue.sh と scripts/lib/lock_run_shim.sh と scripts/lib/publisher_event.sh を新規作成する。
+      2. tests/unit/test_publisher_queue.bats を作成し(fixture は mktemp の STATE_DIR、本番 queue/ への書込み 0)、選択実行 bash scripts/run_tests.sh file tests/unit/test_publisher_queue.bats で FAIL 0・SKIP 0 を確認する。
+      3. bash scripts/ninja_scope_commit.sh -m "<msg>" -- scripts/publisher_queue.sh scripts/lib/lock_run_shim.sh scripts/lib/publisher_event.sh tests/unit/test_publisher_queue.bats で commit し、報告 YAML に source_sha と各 fixture の実測(順序逆転・survivor・rc・seq 重複)を書く。
+    assumptions:
+      claim: "設計書 v3.5 の U1 行(§9.1)と D14/D15(§6)が家老 APPROVE 済みで実装契約として確定している(確認日 2026-09-02 14:38、blt_20260902_143800)。GNU timeout は自分で process group を作り group 全体へ信号を送るため setsid 不要(家老実測 2026-09-02 14:34: TERM 無視親+短命孫で survivor 0)。STATE_DIR の現行解決順は SHOGUN_STATE_DIR→IDLE_FLAG_DIR→/tmp(scripts/inbox_watcher.sh)で本 unit は永続 dir $HOME/.local/share/multi-agent-shogun を既定にする。既存に publisher_queue.sh・lock_run_shim.sh・publisher_event.sh は存在しない(rg -l 0 件、2026-09-02 14:45)。fixture の並行数は設計書 §9.1 U1 行の値(request 6・writer 6×100 行)に従う"
+      source: "docs/research/single_publisher_asis_tobe_5w1h_20260902.md §9.0 §9.1 U1 §6 D14 D15 §13 H2 H9、scripts/inbox_watcher.sh STATE_DIR 解決行、queue/bulletin_board.yaml blt_20260902_143800"
+      trust: verified
+    depends_on: none
+    timeout_minutes: 30
+    estimated_minutes: 10
+    quality_gate:
+      q1_firefighting: "品質向上。理由: 多重 publisher の副作用(merge 141/日・push 失敗 100/日・内容消失 2 件、設計書 §1.2 §11)を機構で抑え続ける現状に対し、直列化の土台を構造で置く"
+      q2_learning: "奪わない。理由: 忍者は設計書の契約を bats で証明する実装を自分の worktree で完結でき、fixture(TERM 無視親・孫 process・rc 写像)の設計自体が学習になる"
+      q3_next_quality: "上がる。理由: U1b(wrapper)・U3(publisher)・U6(台帳)は全て本 unit の lock-run と event 関数の上に載るため、ここで契約が固まれば後続 unit の AC が短くなる"
+      q4_depth: "medium — 理由: 3 script+1 bats、契約は設計書に 6 欄で確定済み。深い調査は不要、実装と fixture の忠実さが本体"
+      q5_verified_source: "code_reading+production_verified — 設計書 v3.5 §9.1 U1 行を全文確認(2026-09-02 14:40)。家老が同日 14:34 に GNU timeout 直下の survivor 0 と C1a fixture を実測し APPROVE(blt_143800)。STATE_DIR 解決は scripts/inbox_watcher.sh を grep -n STATE_DIR で確認(行 68-69)。rg -l 'publisher_queue\\.sh' scripts/ → 0 件"
+      q6_not_hiding: "隠していない。理由: 本 unit は push しない(公開しない)ことを AC1 の禁止事項として明記し、旧経路の変更 0 を §9.0 共通則で縛る。timeout の信号は GNU timeout 自身が送り、shim に信号送出コマンドの literal 0 を AC2 で二値化(D006)"
+      q7_definition_verified: "lock-run・done receipt・rc=210/211・survivor・seq の定義は設計書 §9.1 U1 行と §6 D14 で確認(確認日: 2026-09-02)。STATE_DIR は scripts/inbox_watcher.sh の解決順で確認"
+      q8_why_what: "WHY: 殿裁定 14:02『本質はスムースな commit/push/deploy』の土台=公開経路の直列化を flock 1 本で置く / WHAT: publisher_queue.sh(enqueue・dequeue・peek)と lock_run_shim.sh(bound・rc 写像・survivor・done receipt)と publisher_event.sh(単一 writer)を実装し test_publisher_queue.bats を FAIL 0・SKIP 0 / WHEN: 今セッション / WHERE: scripts と scripts/lib と tests/unit / WHO: 家老配備(Claude 忍者と Codex 忍者の双方) / HOW: 設計書 §9.1 U1 行の 6 欄を task へそのまま写す / 複利: 後続 U1b・U3・U6 が同じ lock-run と event 関数を使い、merge 141/日→0 へ向かう最初の 1 歩"
+      q9_firefighting_root_cause: "根本対応。理由: 多重 publisher という根を直列化点 1 に置き換える設計の第 1 unit。症状(merge・消失)への各論パッチではない"
+      q10_knowledge_boundary: "検証済み: 設計書 v3.5(家老 17 往復 APPROVE)、STATE_DIR 解決順、GNU timeout の group 挙動(家老実測)。スコープ外: push・publisher daemon(U3)・wrapper(U1b)・台帳 writer(U6)・旧経路の flag 停止(U7)・削除(U8)"
+      q11_not_already_done: "rg -l 'publisher_queue\\.sh' scripts/ → 0 件、rg -c 'publisher_queue|lock_run_shim|publisher_event' scripts/ context/cmd-chronicle.md → 0 件(2026-09-02 14:45)。bash scripts/semantic_search.sh 'publish queue lock-run flock publisher' → 概念ヒット 0(MEMORY_DB_MATCH のみ)。既存の直列化は push lane の isolated worktree 統合(ninja_monitor.sh)で、queue・shim・event 関数は存在しない"
+      q_ambiguity: "曖昧さ: STATE_DIR 未設定時の既定 dir。解消: assumptions に永続 dir を明記し、root 配下は rc=2 で拒否(AC1)"
+      q12_lord_30min_cost: "no — 設計は殿裁定済み、実装は忍者、判定は bats"
+      diagnosis: "BLOCK理由: test_ci_execution_contract_missing=AC3 に選択実行と FAIL0/SKIP0 はあったが中断再開時の成果物引継ぎ契約を書いていなかった(根本原因: 雛形の定型 3 要素のうち 1 要素を落とした) / 対策: AC3 末尾に引継ぎ契約(未 commit 差分と bats log を progress に path で残す)を追記。数値 WARN(rc=210/211/124 と 0 件判定)は設計書の rc 契約そのもので陳腐化しない。新規 file 3 本+bats 1 本は設計書 §9.1 U1 行で意図的に新設する成果物(new_file WARN は意図的新設)"
+    delegated_at: "\"2026-09-02T14:41:57\""
+    origin: "[[殿裁定_単一publisher採用_20260902_1307]] -> [[殿裁定_本質に戻ろう_20260902_1402]] -> [[single_publisher_asis_tobe_5w1h_20260902_v35_APPROVE]] -> [[cmd_4445_U1_publish_queue]]"
   cmd_4439:
     title: "LP static チャートを比較形式へ — SPY 破線系列を追加し対数 x 表記目盛・年月 x 軸・凡例に累積%を表示する"
-    status: delegated
+    status: void
     project: dm-signal
     purpose: "殿裁定 2026-08-31 17:58(スクショ Image #14=frontend comparison chart)『チャートはこの形式にしよう』。現行(cmd_4433 live)は hero 単独線のみ。目標形式=Basic-DualMomentum(青実線)+SPY(グレー破線)の 2 系列、対数目盛ラベル x 表記(20x/10x/5.0x/2.0x/1.0x)、x 軸に年月(2003-09 等)、凡例に系列名+累積リターン%(例 Basic-DualMomentum: +3058.0% / SPY: +1023.2%)。static(interactivity なし)は維持し、トグル・tooltip 等は対象外"
     scope_mode: FULL
@@ -110,125 +273,6 @@ commands:
       diagnosis: "BLOCK理由: 初回起票のため既往BLOCKなし。想定リスク=2 repo 跨ぎで系列の正規化起点が食い違う / 対策: AC1 で hero と同一起点(共通期間開始 1.0x)を契約化し contract test で固定"
     seam_contract: null
     delegated_at: "\"2026-08-31T18:00:51\""
-    reflux_commit_contract: null
-  cmd_4437:
-    title: "LP Current signals 体裁 — プラン 4 行の数値全太字・Basic-DM 閲覧列を Free 表記・閲覧列の太字化"
-    status: delegated
-    project: dm-signal
-    purpose: "殿裁定 2026-08-31 16:45(スクショ Image #13 付き)『数値は全て太文字に。閲覧もbasic dual momentumはfreeとしよう、閲覧の列も太文字に』。現状(本番スクショ 16:42 実測): プラン行は CAGR/×N の up to 側のみ太字で Sharpe/MDD は細字、Basic-DM の閲覧列は『表示』、閲覧列は細字"
-    scope_mode: FULL
-    target_path: /mnt/c/Python_app/DM-signal/lp
-    acceptance_criteria:
-      AC1:
-        description: "プラン 4 行(Basic plan/Standard plan/Premium plan/Secret)の全指標セル(CAGR・Sharpe・MDD・×N の数値)を hero(Basic-DualMomentum)行と同一の太字クラスにする(EN・JA 両方)。up to 接頭辞の扱いは数値部を太字とし、SPY・TQQQ 行は現状(イタリック・細字)を変えない"
-        binary_check: "隔離 build の EN・JA index でプラン 4 行の指標セル 16 個全てに hero 同一太字クラス ∧ SPY・TQQQ 行の指標セルに太字クラス追加 0 か?"
-      AC2:
-        description: "Basic-DualMomentum 行の閲覧列の表記を『表示』(EN=View 相当)から Free(EN/JA とも Free)へ変え、リンク先・挙動は変えない"
-        binary_check: "EN・JA index の hero 行閲覧列が Free ∧ 旧表記(表示/View)残存 0 ∧ 当該セルの href/挙動 diff が表記以外 0 か?"
-      AC3:
-        description: "閲覧列の全表記(Free・メンバーシップ/Membership・招待制/Invite-only・非表示/Hidden)を太字にする(EN・JA 両方)。SPY・TQQQ 行の『—』は対象外"
-        binary_check: "EN・JA index の閲覧列テキスト(プラン行+hero 行)全てに太字クラス ∧ SPY・TQQQ 行の『—』に太字クラス追加 0 か?"
-      AC4:
-        description: "隔離 build(npm typecheck + build)を exit 0 で通し、AC1-AC3 の grep 結果を報告 YAML に生貼付する"
-        binary_check: "typecheck exit 0 ∧ build exit 0 ∧ AC1-AC3 の grep 生貼付あり か?"
-    command: |
-      1. LP の copy(EN/JA)と表レンダラで、プラン 4 行の全指標セルと閲覧列に hero 同一の太字クラスを適用する
-      2. hero 行の閲覧列表記を Free へ変更する(リンク・挙動不変)
-      3. 隔離 build と grep で AC1-AC3 を検証し報告 YAML に生貼付する
-    assumptions:
-      claim: "本番スクショ(殿提供 2026-08-31 16:42)で現状を確認: プラン行 Sharpe/MDD 細字・Basic-DM 閲覧列『表示』・閲覧列細字。列順 CAGR→Sharpe→MDD→×N は cmd_4432 で反映済み。LP 実体は external repo worktree で解決(cmd_4431-4433 実績)。cmd_4434(FoF 訴求)が同ファイル走行中のため直列接続"
-      source: "殿スクショ Image #13(2026-08-31 16:42) + 殿裁定 16:45 + cmd_4432/4433 CLEAR 実績"
-      trust: verified
-    depends_on: cmd_4434
-    serial_dependency_evidence: "cmd_4434(FoF 訴求)が copy/landing-page.tsx を走行中のため衝突回避で直列。cmd_4436(月次頁=新規 route 中心)とはファイル重複が薄いが、LP lane の直列規約(4432→4433→4434→4436)に 4437 を 4434 直後で挿入するかは家老の配備判断に委ねる"
-    measurement_source: "本番 LP 表示の殿スクショ実測(2026-08-31 16:42 JST)。ローカル計測は含まない"
-    environment_change: "type=lesson; file=projects/infra/lessons_shogun.yaml; pattern=cmd_4154初回preflightで数値絶対値WARN"
-    timeout_minutes: 20
-    estimated_minutes: 10
-    split_decision:
-      boundary_ac_ids: [AC1, AC2, AC3, AC4]
-      integration_tasks: 1
-      review_round_trips: 0
-    origin: "[[殿裁定_Current_signals全太字Free_20260831_1645]] -> [[cmd_4432_列整理]] -> [[cmd_4437_全太字Free表記]]"
-    quality_gate:
-      q1_firefighting: "品質向上。理由: 殿の実機レビュー指摘(視覚階層の統一と Free 訴求)であり障害対応ではない"
-      q2_learning: "奪わない。理由: 太字クラスの適用実装は忍者判断、対象セルと表記は AC で固定"
-      q3_next_quality: "上がる。理由: 『データ数値=太字』の統一基準が確定し以後の表変更で迷いが消える。Free 表記は Free tier 導線とも整合"
-      q4_depth: "shallow。殿スクショと裁定の直写しで、対象・除外(SPY/TQQQ)を明示しただけの軽量 cmd"
-      q5_verified_source: "production_verified: 殿スクショ Image #13(16:42)で現状のプラン行 Sharpe/MDD 細字・閲覧列細字・hero 閲覧『表示』を確認"
-      q6_not_hiding: "隠さない。理由: 表示スタイルと表記のみでデータ・挙動を変えず、grep 生貼付で可視化"
-      q7_definition_verified: "太字基準=hero 行の現行太字クラス(cmd_4431 で確定)。Free 表記=EN/JA とも Free(殿発言ママ)"
-      q8_why_what: "WHY: 数値の視覚強度が不揃い+Basic-DM の無料閲覧が伝わらない(殿 16:45) / WHAT: プラン数値全太字+閲覧列太字+hero 閲覧 Free / WHEN: cmd_4434 CLEAR 後 / WHERE: lp のみ / WHO: 忍者 1 名 / HOW: クラス+文言変更→隔離 build grep / 複利: 数値=太字の統一基準"
-      q9_firefighting_root_cause: "消火ではない。デザイン改善であり根本原因対応は不要"
-      q10_knowledge_boundary: "境界内。lp は cmd_4430-4434 の直近系譜で知識鮮度が最高"
-      q11_not_already_done: "未実施を確認: 殿スクショ 16:42 でプラン行 Sharpe 1.11/1.28/1.40/2.48・MDD 各値が細字、閲覧列全て細字、hero 閲覧が『表示』であることを視認"
-      q_ambiguity: "低。SPY/TQQQ 行は指示外のため現状維持と明記(殿の追指示があれば別 cmd)"
-      q12_lord_30min_cost: "no。表示のみで殿の確認は本番 1 目視で足りる"
-      diagnosis: "BLOCK理由: 初回起票のため既往BLOCKなし。想定リスク=4434/4436 と同一ファイル衝突 / 対策: depends_on cmd_4434 の直列と AC の対象セル数(16 個)明示で衝突・漏れを二値化"
-    seam_contract: null
-    delegated_at: "\"2026-08-31T16:49:11\""
-    reflux_commit_contract: null
-  cmd_4436:
-    title: "LP に月次シグナル頁を追加 — /signals/2026-08 (EN/JA) を公開集計 EP から build 時に静的生成し sitemap へ lastmod 付きで載せる"
-    status: delegated
-    project: dm-signal
-    purpose: "SEO 案 §2 P1-1(月次シグナル頁=毎月 2 URL 増で索引面積と鮮度)。殿指示 2026-08-31 14:56『P1-1 も起票しよう。8 月も作成したほうがいいのでは』=9 月を待たず当月(2026-08)分から生成する。データは公開集計 EP(showcase)の既存契約のみを使い、個別 PF 名・Secret 数値は出さない(§2.3 契約)"
-    scope_mode: FULL
-    target_path: /mnt/c/Python_app/DM-signal/lp
-    acceptance_criteria:
-      AC1:
-        description: "LP に月次シグナル頁ルート(EN=/signals/<year-month>、JA=/ja/signals/<year-month>)を追加し、build 時に公開 showcase EP から当月分(初回=2026-08)を静的生成する。内容=当月の Basic-DualMomentum 保有シグナル・プラン集計(平均/ベスト、既存 up to 表記)・SPY/TQQQ 比較で、全て showcase EP 応答の既存フィールドのみから構成する"
-        binary_check: "隔離 build の出力に EN/JA の 2026-08 頁が各 1 ∧ 頁内の数値・保有が showcase EP 応答の独立 curl と一致 ∧ 個別 PF 名(hero 以外)・Secret 数値 0 件 か?"
-      AC2:
-        description: "sitemap に月次頁 URL(EN/JA)を lastmod 付きで自動追加し、既存 2 URL(/、/ja/)が維持されることを確認する。月が替われば build だけで新月分が増える生成構造にする(月をハードコードしない)"
-        binary_check: "sitemap の loc が 4 件以上(既存 2+月次 2) ∧ 月次 URL に lastmod あり ∧ 生成コードに 2026-08 のハードコード 0 件 か?"
-      AC3:
-        description: "月次頁の title/description に検索語(EN=dual momentum signals+年月、JA=デュアルモメンタム シグナル+年月)と canonical・hreflang を含め、既存トップ頁の meta と重複しないことを grep で確認する"
-        binary_check: "EN/JA 月次頁に検索語入り title ∧ canonical/hreflang あり ∧ トップ頁 title との完全一致 0 か?"
-      AC4:
-        description: "隔離 build(npm typecheck + build)を exit 0 で通し、AC1-AC3 の grep/curl 結果を報告 YAML に生貼付する"
-        binary_check: "typecheck exit 0 ∧ build exit 0 ∧ AC1-AC3 の生貼付あり か?"
-    command: |
-      1. LP に月次シグナル頁の動的ルート(build 時静的生成、月ハードコードなし)を実装し、公開 showcase EP から当月データを取得して EN/JA を生成する
-      2. sitemap 生成へ月次 URL+lastmod を追加する
-      3. 月次頁の meta(検索語 title/description・canonical・hreflang)を実装する
-      4. 隔離 build と grep/curl で AC1-AC3 を検証し報告 YAML に生貼付する
-    assumptions:
-      claim: "公開 showcase EP は未認証で hero(Basic-DM)集計・プラン集計(sharpe/cagr/up to 系)・benchmarks(SPY/TQQQ)を返す契約(cmd_4413/4414/4425 系譜、v3.1 §5 起票分全終端)。本番 sitemap は現在 2 URL(2026-08-31 14:50 curl 実測)。LP 実体は external repo worktree で解決(cmd_4431 実績)。latest signal の公開可否は showcase EP 既存応答に含まれる範囲のみ使用"
-      source: "本番 sitemap curl 14:50(loc 2 件) + docs/research/dm-signal-lp-seo-plan_20260830.md §2 P1-1 + docs/research/dm-login-showcase-asis-tobe_v3_20260830.md §5 + 殿指示 14:56"
-      trust: verified
-    depends_on: cmd_4434
-    serial_dependency_evidence: "LP repo の build 系(sitemap 生成・ルーティング)を触るため、同 repo を直列変更中の cmd_4432→4433→4434 の最後尾に接続。showcase EP のデータ契約は既存(4413/4425)のみ使用で backend 依存なし"
-    measurement_source: "本番 sitemap/showcase EP curl 実測(2026-08-31 14:50 JST)。ローカル計測は含まない"
-    environment_change: "type=lesson; file=projects/infra/lessons_shogun.yaml; pattern=cmd_4154初回preflightで数値絶対値WARN"
-    timeout_minutes: 40
-    estimated_minutes: 25
-    execution_env:
-      runtime_constraints: "external repo worktree で npm typecheck/build。backend 変更なし(公開 EP の読取のみ)"
-      long_runtime_reason: "頁生成・sitemap・meta の 3 要素が同一ルーティング実装を共有する単一変更系で、分割すると月次 URL の形が別実装になる"
-      measured_runtime_sec: 1500
-    split_decision:
-      boundary_ac_ids: [AC1, AC2, AC3, AC4]
-      integration_tasks: 1
-      review_round_trips: 0
-    origin: "[[殿指示_月次シグナル頁_8月から_20260831_1456]] -> [[SEO案v3_P1-1]] -> [[cmd_4436_monthly_signals_page]]"
-    quality_gate:
-      q1_firefighting: "品質向上。理由: SEO の索引面積・鮮度を増やす新規頁でありin障害対応ではない"
-      q2_learning: "奪わない。理由: ルーティング設計と頁レイアウトは忍者判断に残る(データ契約と meta 要件のみ AC で固定)"
-      q3_next_quality: "上がる。理由: 月が替われば build だけで新月分が増える構造=以後の月次 SEO 運用が 0 手になる"
-      q4_depth: "medium。P1-1 の設計を SEO 案の契約(§2.3 秘匿・§4 計測)と本番 sitemap 実測で裏取りし、月ハードコード禁止を AC 化した"
-      q5_verified_source: "production_verified: 本番 sitemap curl 14:50 → loc 2 件(月次頁なし)。code_reading: SEO 案 §2 P1-1 の契約と v3.1 §5(showcase EP 起票分全終端)"
-      q6_not_hiding: "隠さない。理由: 公開 EP の既存フィールドのみ使用し、個別 PF 名・Secret 数値 0 件を AC1 で検証する"
-      q7_definition_verified: "月次頁=EN/JA の /signals/<year-month>。内容=hero シグナル+プラン集計+SPY/TQQQ(showcase EP 既存契約)。8 月分=初回生成対象"
-      q8_why_what: "WHY: 索引 2 URL のみで面積・鮮度が不足(SEO 案 §2) / WHAT: 月次頁 EN/JA+sitemap lastmod / WHEN: cmd_4434 CLEAR 後 / WHERE: lp のみ / WHO: 忍者 1 名 / HOW: build 時静的生成→隔離 build 検証 / 複利: 毎月 2 URL が 0 手で増える"
-      q9_firefighting_root_cause: "消火ではない。新規 SEO 面の追加であり根本原因対応は不要"
-      q10_knowledge_boundary: "境界内。lp build/copy は 4430-4434、showcase EP 契約は 4413/4425 の直近系譜"
-      q11_not_already_done: "未実施を確認: 本番 sitemap curl 14:50 → loc 2 件のみ(signals 頁 0 件)、本番 /signals/2026-08 は未存在"
-      q_ambiguity: "低。頁内容は showcase EP 既存フィールドに限定、レイアウトは忍者裁量"
-      q12_lord_30min_cost: "no。build 生成頁で殿の確認は本番 1 目視で足りる"
-      diagnosis: "BLOCK理由: 初回起票のため既往BLOCKなし。想定リスク=月次頁に秘匿情報が漏れる/月ハードコードで 9 月に手作業が要る / 対策: AC1 の秘匿 0 件検証と AC2 のハードコード 0 件検証で二値化"
-    seam_contract: null
-    delegated_at: "\"2026-08-31T15:01:18\""
     reflux_commit_contract: null
   cmd_4414:
     title: "/login ショーウィンドウ P1b — 公開集計 EP に Sharpe(プラン平均/ベスト)・SPY/TQQQ 比較行・Secret 集計値を追補する"

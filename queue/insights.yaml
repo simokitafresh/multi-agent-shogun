@@ -13789,3 +13789,10 @@ insights:
   source: "semantic_index_update"
   fix_known: false
   status: pending
+- id: INS-20260902-192652734-de9a
+  ts: "2026-09-02T19:26:52+09:00"
+  insight: "semantic_index_update未登録cmd originノード: [[殿下問_並列実装可能か_20260902_1450]] は既存aliasesに一致なし。類似概念TOP3: creator_brainwashing_defense(創造主の洗脳防御; alias=殿下問_経路記録_20260830_2019; score=21.2) / infrastructure_ops(インフラ運用基盤; alias=殿指示20260715_1724_gist実装開始; score=3.7) / gs_ninpo_research(GS忍法研究; alias=run_29612495809; score=3.6)。概念定義とaliases追加を検討せよ"
+  priority: "low"
+  source: "semantic_index_update"
+  fix_known: false
+  status: pending
