@@ -3423,6 +3423,7 @@ codd:
 | lesson | `L1710` locale非依存化fixは対象クラス全体を横断確認せよ。1関数だけ直すと同型バグが別関数に残り再発する |
 | lesson | `L1711` publisherの既公開判定はsource_treeのpath blobを正規解決する |
 | discussion | `queue/lord_conversation.jsonl` 2026-09-03T00:04:34+09:00 session_save_20260903_0005(復帰点、先に session_save_20260902_2230 を読め): 22:30-00:05: cmd_4451 U3 CLEAR 22:10/4452 U1b 21:58/4 |
+| discussion | `queue/lord_conversation.jsonl` 2026-09-03T00:17:28+09:00 integrate read-tree hotfix 本番 proof(2026-09-03 00:17): ninja_monitor.sh integrate に read-tree -m -u を入れた後の integrate 2 回 |
 | causal_chain | `[[cmd_3749]]` (L974) |
 | causal_chain | `[[cmd_training_L1_report-write_20260708020332]]` (L977) |
 | causal_chain | `[[cmd_reflux_insight_202607071717_tobisaru]]` (L961) |
@@ -13854,6 +13855,7 @@ codd:
 | lesson | `L1708` FIFO契約fixtureはsubmission順を明示する |
 | cmd | `cmd_karo_hotfix_gate_publisher_pending_toplevel_only_202609022336` (`scripts/cmd_complete_gate.sh`, `tests/unit/test_gate_dual_read.bats`) |
 | cmd | `cmd_karo_ci_fix_33641462767_ledger_writer_tmpdir_202609022352` (`tests/unit/test_ledger_writer.bats`) |
+| cmd | `cmd_karo_hotfix_cross_repo_path_lstrip_dotprefix_202609030012` (`scripts/lib/close_gate_alerts.py`, `scripts/lib/cross_repo_commit_contract.py`, `tests/unit/test_report_commit_identity.bats`) |
 | causal_chain | `[[cmd_karo_hotfix_hook_failure_utf8_boundary_20260829]]` (L1669) |
 | causal_chain | `[[cmd_karo_hotfix_tmux_live_sendkeys_guard_20260830]]` (L1672) |
 | causal_chain | `[[cmd_4434]]` (L1688) |
@@ -18147,6 +18149,7 @@ codd:
 | discussion | `queue/lord_conversation.jsonl` 2026-09-02T14:44:50.716697+00:00 git pre-commit semantic propagation for context/projects changes |
 | discussion | `queue/lord_conversation.jsonl` 2026-09-02T15:10:57.734714+00:00 git pre-commit semantic propagation for context/projects changes |
 | discussion | `queue/lord_conversation.jsonl` 2026-09-02T15:16:28.070830+00:00 git pre-commit semantic propagation for context/projects changes |
+| discussion | `queue/lord_conversation.jsonl` 2026-09-02T15:17:18.624403+00:00 git pre-commit semantic propagation for context/projects changes |
 | causal_chain | `[[cmd_karo_hotfix_ga161_obsidian_link_context_freshness_202607021348]]` (L926) |
 | causal_chain | `[[cmd_3648]]` (L933) |
 | causal_chain | `[[cmd_karo_ci_fix_ga191_followup_202607071752]]` (L963) |
