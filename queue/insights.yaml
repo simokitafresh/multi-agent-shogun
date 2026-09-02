@@ -14473,3 +14473,10 @@ insights:
   source: "semantic_index_update"
   fix_known: false
   status: pending
+- id: INS-20260903-004640431-0765
+  ts: "2026-09-03T00:46:40+09:00"
+  insight: "semantic_index_update新概念候補: discussion:家老との連携は順調か？家老と協議して検証をお互いにせよ は 既存aliasesに一致なし。概念定義とaliases追加を検討せよ"
+  priority: "low"
+  source: "semantic_index_update"
+  fix_known: false
+  status: pending
