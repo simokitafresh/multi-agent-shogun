@@ -1,5 +1,6 @@
 # インフラコンテキスト
-<!-- last_updated: 2026-09-02 2026-09-02 将軍 doc lane: review_approval JST epoch+archive 履歴 066bbede7 -->
+<!-- last_updated: 2026-09-02 2026-09-02 将軍 doc lane: source publication terminal 257c0c6de -->
+<!-- source_commit:257c0c6de90f reason:2026-09-02 将軍 doc lane: source publication terminal 257c0c6de evidence:GATE CLEAR cmd_karo_hotfix_source_publication_terminal_20260902133800; 314/314 PASS -->
 <!-- source_commit:066bbede7c2e reason:2026-09-02 将軍 doc lane: review_approval JST epoch+archive 履歴 066bbede7 evidence:GATE CLEAR 12:49 cmd_karo_hotfix_review_epoch_refresh_20260902; 066bbede7 origin 祖先 yes -->
 <!-- source_commit:afde1f8c8 reason:2026-09-02 将軍 doc lane: cfc fixture 根治 afde1f8c8・CI GREEN evidence:run afde1f8c8/f589070ec success; 軍師実装+将軍独立検証 31/31 -->
 <!-- source_commit:92f4cc1b7 reason:2026-09-02 将軍 doc lane: live SHA 依存 test self-contained 化 92f4cc1b7 evidence:軍師 LGTM blt_081613; push 4f4a6a1cc; CI 再走 queued -->
@@ -10,7 +11,7 @@
 <!-- source_commit:e7c3beb64085 reason:2026-09-02 将軍 doc lane: ancestry 後退検出を push_lane/pre-push へ接続(efc16dcd6/e7c3beb64) evidence:CLEAR 03:02/03:09; safe_ff BLOCK 実証 02:50 -->
 <!-- source_commit:a7cb1ca59831 reason:2026-09-02 将軍 doc lane: legacy outbox envelope 移行 a7cb1ca59(T224 追補) evidence:commit a7cb1ca59; DOC_LANE_ALERT blt_022445 -->
 <!-- source_commit:64f01517a70b reason:2026-09-02 将軍 doc lane: U1 f92d1e376 + ancestry 後退 BLOCK 64f01517a evidence:commits f92d1e376/64f01517a; CLEAR 01:54/02:08; 消失 2 回目 16d831ed9 を復元 -->
-<!-- last_synced_lesson: L1699 -->
+<!-- last_synced_lesson: L1700 -->
 <!-- source_commit:593cfb27a612 reason:2026-09-02 将軍 doc lane: U9 safe_ff 既公開 ours merge 除外 593cfb27a evidence:commit 593cfb27a; CLEAR 01:20; integrate c7710efaf on origin/main -->
 <!-- source_commit:458fc4caa91a reason:2026-09-02 将軍 doc lane: U3 msg_id 限定 receipt 458fc4caa evidence:commit 458fc4caa; CLEAR 01:05; staged 11→0; watcher 9/9 restart 01:06 -->
 <!-- source_commit:4dd6898466a27f10ef7d08ed27549b3c095378de reason:2026-09-01 将軍 doc lane: CI RED #6 Integration ci_fix 59fa70e0b evidence:commit 59fa70e0b; CLEAR 22:57 -->
@@ -144,7 +145,7 @@
 <!-- source_commit:f8c49cbd7 reason:cmd_shogun_commit_reservation_ledger_phase1_20260805 evidence:reviewed -->
 <!-- source_commit:515f0214e reason:cmd_karo_hotfix_ga432_context_freshness reviewed source boundary evidence:cmd_complete_gate project=infra context=context/infrastructure.md commit=515f0214e -->
 <!-- source_commit:23a1ce61205ce4496ab11570583e8e8adcaeac4e reason:reflux backlink SSOT update reviewed evidence:incoming 0 to 1; runner69/69; target doc diff0 -->
-<!-- last_synced_lesson: L1699 -->
+<!-- last_synced_lesson: L1700 -->
 
 結論: 本ファイルは検索起点となる索引層。運用詳細・経緯・教訓本文は7つの詳細正本へ移設した。
 source boundary一致taskはregistryのowner/update_triggerからcontext_update_candidatesを自動注入し、未処理候補はcmd_complete_gateがBLOCK、明示処理済み/無関係はCLEAR。
@@ -195,7 +196,7 @@ source boundary一致taskはregistryのowner/update_triggerからcontext_update_
 結論: 詳細は `docs/research/infrastructure-lessons-reviews-operations.md` に保存。原文を省略せず移設済み。
 見出し: 前節「Infra教訓索引」の連続本文（source lines 1701-2123）。
 - L1503: 既存legacy欠損は不変multisetで隔離せよ（cmd_karo_hotfix_shared_operational_log_ownership_20260801）
-<!-- last_synced_lesson: L1699 -->
+<!-- last_synced_lesson: L1700 -->
 - L1504: appendとarchiveはreaderを含むgeneration transactionにせよ（cmd_karo_hotfix_gunshi_cs_remediation_generation_20260801）
 - L1505: 永続test宣言はtask正本に置く（cmd_4206）
 - L1506: active context DEFERはowner存在だけでなくdirty・baseline変化・fresh leaseの全ANDにせよ（cmd_karo_hotfix_active_context_gate_transient_20260801）
@@ -390,6 +391,7 @@ source boundary一致taskはregistryのowner/update_triggerからcontext_update_
 - L1697: 公開済みours-equivalent mergeも後続ancestry mergeで親内容を後退させ得る（cmd_karo_hotfix_ancestry_merge_content_loss_20260902）
 - L1698: legacy notification identity must be generation-bound（cmd_karo_hotfix_push_lane_ancestry_guard_20260902）
 - L1699: doc_no_changelog失敗記録はhit行を再現可能な一次証跡として保持する（cmd_karo_recon_ga551_doc_no_changelog_20260902133308）
+- L1700: hook失敗recordのbatsテストは呼出し後に_STDERR_FILEが無条件削除される前提でfixtureを書け（cmd_karo_hotfix_ga552_hook_artifact_20260902135701）
 
 ## 設計標準・テスト・因果
 
@@ -407,6 +409,7 @@ source boundary一致taskはregistryのowner/update_triggerからcontext_update_
 - 報告scopeの正本=source-generation SSOT(飛猿 `7d9532b12`, `scripts/lib/review_source_context.py`+`gate_report_format.sh`): 報告の変更scopeはisolated worktreeの生成源で検証し、primary(共有main)のdirty混入を排除する。**merge commit注意(将軍 `64025b9d4`)**: 所有パス検査の `git diff-tree` に `-m --first-parent` が無いとmerge commit(親2+)は変更0件扱いになり、履歴分岐統合taskが構造的にFAILする(実証0→15 files)。全repo target(`target_path: <repo root>`)のtaskは知識/台帳の恒常dirty(lessons/insights/semantic-index等)が『未commit変更あり』BLOCKになるため、統合前にscope commitで退避する。
 - 報告timestampはJST(`+09:00`)で書け(UTC `Z` は上記の日付ずれの発生源)。恒久解はreport-writeテンプレのtimestamp生成側で統一する(未実装=次ターゲット)。
 - `scripts/review_approval.sh`(`066bbede7`、cmd_karo_hotfix_review_epoch_refresh_20260902、影丸): offset 無しの運用 inbox timestamp は契約上 JST として epoch 化する(UTC 扱いだと review epoch が 9 時間ずれ、LGTM/ACCEPT の鮮度判定が偽 stale)。加えて review 依頼の探索を `queue/archive/inbox` と `archive/inbox` の両 archive へ拡張(archive 済み依頼の履歴が消えない)。bats `tests/unit/test_review_approval.bats` に JST epoch+archive 履歴の契約を追加。
+- `scripts/cmd_complete_gate.sh`(`257c0c6de`、cmd_karo_hotfix_source_publication_terminal_20260902133800、影丸): source-only 公開の終端判定を receipt-backed(canonical remote_tip の終端祖先)で受理し、marker を持たない task の insights stable-ID merge を『source SHA の再祖先化』無しで検証する。fixture 2 本追加、task scope runner 314/314 PASS。**注**: この経路(autopush/ancestry)は単一 publisher 設計 §10 M1 の削除対象。U7 の flag 停止までは現行契約として有効。
 
 ## 2026-08-15 追加ガード(source=253afbb2c以降)
 
