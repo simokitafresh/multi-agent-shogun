@@ -1,5 +1,5 @@
 <!-- gist-master: 77538fe909ed4d3b83b61b4baf99cacf single_publisher_asis_tobe_5w1h_20260902.md -->
-# origin/main 単一 publisher 化 — AsIs / ToBe / 5W1H 設計書 v3.6(§9.1 共通 AC の 2 巡目を『別 cmd の検証 task』へ。同 cmd 再配備は deploy_task completed-peer guard の正規 BLOCK 対象、15:35)
+# origin/main 単一 publisher 化 — AsIs / ToBe / 5W1H 設計書 v3.7(§14 実装進捗台帳を追加、殿指示 17:18。v3.6=§9.1 共通 AC の 2 巡目を『別 cmd の検証 task』へ。同 cmd 再配備は deploy_task completed-peer guard の正規 BLOCK 対象、15:35)
 
 - 作成: 2026-09-02 02:30 将軍(殿指示 02:16『忍者はコミットしない。コミットは家老/将軍のみ』→02:18『コミットのやり方・スキル・構造の検証』→02:24『AsIs/ToBe 5W1H 設計書。不要になる複雑さを先に検証』)
 - 協議: 家老回答 blt_20260902_021944(single publisher + local commit artifact)。協議記録=`queue/notes/shogun_karo_single_committer_hypothesis_20260902_0220.md` §1-6
@@ -253,7 +253,46 @@ canary 判定: **(v1.8 殿裁定 D9)** infra と dm-signal の両 repo を U1 �
 | H8 | 報告 gate(`cmd_complete_gate`)は report の commit の origin/main 祖先化を要求(check_report_commit_main_ancestry、Gate 10.1c)。publisher 化後、祖先化は publisher が push して初めて成立 | gate CLEAR が publisher の遅延に直列依存する新しい WAIT が生まれる(publisher 停止=全 cmd CLEAR 停止)。R1 の検知(最古 request age>300s)で見えるが gate 側に『publisher 待ち』の状態名が無いと『GATE が壊れた』と誤診される | U4 に WAIT 種別 `WAIT:publisher_pending(request=<path>)` を追加し、gate は request が queue に存在すれば BLOCK ではなく WAIT を返す。startup gate の便回転チェックに publisher queue 長を表示 |
 | H9 | 殿の基本思想(07-27『サイレントフォールバック禁止』、08-30 21:29『時間経過での承認代行はフォールバックと同じ』、09-01『時間依存はサイレントなエラー・意志依存はバグ』、14:21 三層突合で semantic/obsidian に『時間依存』概念が欠落→追加済) | 本設計の timeout(lock-run --bound、fetch/push 120、deploy poll 15 分)は**時間依存**であり、黙って rc=210 で queue 先頭へ戻すと『沈黙した再試行 loop』=サイレントフォールバックになる。R11 の hold も『時間が経てば解ける』設計にすると時間依存 | (1) timeout は主経路ではなく**最後の安全底線**(主経路は request/done receipt/trailer の event 駆動) (2) rc=210/211・C2a RC・R11 hold・R13 reject・CAS rejected は**全て**家老 inbox 1 通+`$STATE_DIR/publish_queue/events.jsonl` へ記録(沈黙 0) (3) 同一 request の queue 先頭戻しは**最大 3 回**(publish_attempts 1/2/3)、4 回目の失敗(counter 4)で RC(差し戻し)。deploy check の再 spawn も独立 counter で同じ table(D15) (4) 時間経過で admit/approve/hold 解除を代行しない(hold 解除は deploy live+smoke 200 の event、admit は ACCEPT の event のみ) (5) `|| true`/`2>/dev/null` で失敗を 0 に偽装しない(publisher の全 git 呼出しは rc を events.jsonl に残す)。U1(rc211)/U3(c2a_rc・retry_exhausted・git_fail)/U3b(r11_hold・deploy_check_started/terminal/stale)/U5(r13_reject)/U6(cas_rejected)の各 AC に events 件数の fixture=6 系統 6/6、events.jsonl の単一 writer 契約=D14、attempts 永続=D15 |
 
+## §14 実装進捗台帳(将軍が loop ごとに現在値で更新。時刻は JST、状態は gate_metrics/task YAML/掲示板の一次値)
+
+- 根拠: 殿 2026-09-02 17:18『single_publisher_asis_tobe_5w1h_20260902.md も随時更新しないと後で混乱する』。設計本文(§0-§13)と実装の現在値を同じ file に置き、読者が別 file を探さずに済むようにする
+
+最終更新: 2026-09-02 17:22(将軍 loop 17:14 の一次確認)
+
+### 14.1 unit × cmd 対応表(実装 cmd=片 CLI、検証 cmd=他 CLI・別番号。§9.1 共通 AC)
+| U | 内容 | 実装 cmd | 実装忍者(CLI) | 実装 commit | 実装 GATE | 検証 cmd | 検証忍者(CLI) | 検証 GATE |
+|---|---|---|---|---|---|---|---|---|
+| U1 | publish queue+lock-run shim+events writer | cmd_4445(delegated 14:41) | 小太郎(Claude Sonnet) | 0e8d1b6d9(origin 統合済 16:5x) | **BLOCK sg7_bundle_missing 16:56**=軍師 SG7 再レビュー待ち | cmd_4448(delegated 15:34、depends_on 4445 CLEAR) | 影丸(Codex)予定 | 未配備 |
+| U2 | publish_artifact capture/restore | cmd_4446(delegated 14:54) | 飛猿(Claude Sonnet) | 58446a4dc(origin 統合済) | **BLOCK sg7_bundle_missing 16:57**+才蔵 PRE25 追加根治中 | 未起票(4446 CLEAR 後) | Codex 予定 | — |
+| U4 | gate dual-read+census | cmd_4447(delegated 14:57) | 疾風(Codex) | 39b2d18b2(origin 統合済) | **BLOCK sg7_bundle_missing 16:57**=軍師 SG7 再レビュー待ち | 未起票(4447 CLEAR 後) | Claude 予定 | — |
+| U1b | 直接 commit wrapper(将軍・家老) | 未起票(第 2 波) | — | — | — | — | — | — |
+| U5 | publisher_admit(migration_ack) | 未起票(第 2 波) | — | — | — | — | — | — |
+| U6 | ledger writer(insights/bulletin/lesson) | 未起票(第 2 波) | — | — | — | — | — | — |
+| U3 | publisher daemon(dry-run→active) | 未起票(第 3 波) | — | — | — | — | — | — |
+| U3b | deploy check 三段 receipt | 未起票(第 3 波) | — | — | — | — | — | — |
+| U7 | runtime push 3 script の flag 下流化 | 未起票(第 3 波) | — | — | — | — | — | — |
+| U8 | cleanup manifest 実行+§11 after 計測 | 未起票(最終) | — | — | — | — | — | — |
+
+波の順序(§3): 第 1 波 U1/U2/U4 並走(殿 14:50『並列で実装可能か』→可)→ 第 2 波 U1b/U5/U6 → 第 3 波 U3(dry-run→active)/U3b/U7 → U8。各 unit は実装 GATE CLEAR→検証 cmd 起票→検証 CLEAR で完了。
+
+### 14.2 第 1 波で露出した壁と処置(設計に影響したものは §5/§13 へも反映済み)
+| 時刻 | 壁 | 一次事実 | 処置 | 状態 |
+|---|---|---|---|---|
+| 15:1x-15:5x | 軍師 precheck PRE25/PRE35 偽陽性で GATE 停止 | ninja_scope_commit の exec prefix を planned_paths 不一致と誤判定 | hotfix H-a(影丸: deploy planned_paths exact 化)/H-b(才蔵: PRE25/35 修正) | H-a CLEAR、H-b CLEAR 17:05 |
+| 15:2x-15:34 | 同 cmd 2 巡目配備が deploy_task completed-peer guard で BLOCK ×3 | 正規 BLOCK(同 cmd の再配備は禁止契約) | v3.6: 検証は別 cmd 番号(cmd_4448 起票) | 設計反映済み |
+| 15:53 | 影丸 ghost 実装(取消済 4445 を継続) | kagemaru_report_cmd_4445 が二重報告 | void、小太郎報告を正本 | 解消 |
+| 15:2x-16:44 | 便停止 1h20m(push lane 統合未完、分岐 63/95) | pre-push ancestry guard が ID merge driver の superset を regression と誤判定+path 不在で rev-parse echo 比較 | 将軍 D0: 1215b57bb(second-parent 追加行 ⊆ prospective なら regression でない)+964602ee9(`rev-parse --verify -q`)、bats 3 本追加 26/26、ledger auto-commit 2577ce579 | push 到達 16:44 |
+| 16:46-17:05 | H-b 再 GATE WAIT ancestry | 報告 exact commit 13af4660b が origin 未統合 168 分(家老の 16:46 統合は 4445/4446/4447 の 3 件のみ) | 将軍下知 msg_170148→家老 通常 merge(changed 2/overlap 0)→push | CLEAR 17:05 |
+| 16:56-継続 | cmd_4445/4447/4446 再 GATE が sg7_bundle_missing BLOCK | 軍師 SG7 bundle 未生成。軍師 inbox の report_review 2 通(16:56/16:57)が未読 21 分、軍師 pane 入力待ちなのに `/tmp/shogun_idle_gunshi` 不在→watcher WAKE-DEFER 3 回(09-01 idle flag lifecycle hotfix の再発) | 将軍下知 msg_171629(軍師起床→真因 hotfix 1 名→4445 CLEAR→4448 配備) | 家老処理中 |
+| 16:31 | push lane rc=1(LIFECYCLE-BACKGROUND-FAIL) | 上記 ancestry 偽陽性と同根 | 同上で根治 | 解消 |
+| 継続 | CI RED(shard-1 receipt missing、run 33499882240) | bats shard receipt 欠落 | 家老 ci_fix task 保持 | 未解消 |
+
+### 14.3 §11 速度検証の現在値
+- before: snapshot 固定済み(merge 141/push 失敗 100/INTEGRATE 382/pre-push n=45 median 366 p90 1300/bats 270)。after は U8 完了後に同コマンドで計測(未着手)。
+- 中間観測(参考、after ではない): 2026-09-02 15:2x-16:44 の便停止 1h20m は旧経路(pre-push ancestry guard+多重 autopush)の欠陥で発生。§13 H3『台帳ノイズ同士の分岐』の実証=U6 の必要性を裏付ける。
+
 ## §5 レビュー履歴
+- v3.7(17:22)→ §14 実装進捗台帳(unit×cmd 対応表・第 1 波の壁と処置・§11 現在値)を追加。殿指示 17:18『随時更新しないと後で混乱する』。設計本文(§0-§13)は不変、家老 APPROVE 骨格(v3.5 blt_143800)に影響なし。以後 将軍 loop ごとに §14 を現在値で更新
 - v1.0 → 家老 REJECT(blt_20260902_023241、方向 APPROVE・修正 5): ①inventory の残すもの明示 ②C2a/C3 porcelain 0/C5 lease BLOCK ③順序 U1→U2→U4→U5→U3→U6→U7→U8 ④成果物 3 つ組と旧 field 写像 ⑤C6/C7。→ v1.1 に全反映。
 - v1.1 → 家老 REJECT(blt_20260902_023509、前回 5/5 反映確認・新規 6): ①台帳 writer は root 外 queue に統一 ②fingerprint と patch_sha は別物で両方保持、cross_repo は組で保持 ③U1 AC=max holders 1/overlap 0/FIFO 逆転 0、lease=ref+SHA+expiry ④U5 AC=未承認 N→admitted 0、承認 N→N ⑤U3 AC に C2a fixture+dry-run 母数 N/mismatch 0 ⑥canary C1-C7、U8 削除 manifest+殿確認+1 batch ≤10、原則番号修正。→ v1.2 に全反映。
 - v1.2 → 家老 **APPROVE**(blt_20260902_024632、6/6 反映を現物差分で確認)。
