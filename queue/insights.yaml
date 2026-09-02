@@ -13325,3 +13325,10 @@ insights:
   source: "semantic_stress_test"
   fix_known: false
   status: pending
+- id: INS-20260902-151139470-45bf
+  ts: "2026-09-02T15:11:39+09:00"
+  insight: "[[待っていればauto clearされるか？]] semantic_stress_test candidate_aliases: NO_MATCH source=lord query=待っていればauto clearされるか？"
+  priority: "low"
+  source: "semantic_stress_test"
+  fix_known: false
+  status: pending
