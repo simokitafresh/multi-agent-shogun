@@ -14245,3 +14245,10 @@ insights:
   source: "karo_workaround_log"
   fix_known: false
   status: pending
+- id: INS-20260902-230836832-7c46
+  ts: "2026-09-02T23:08:36+09:00"
+  insight: "report_field_set.sh は files_modified path に '/' を必須(L1386/L1930)として top-level file(AGENTS.md 等)を BLOCK するが、gate_report_format の manifest_consistency は './' 無しの厳密一致を要求する。top-level file を変更する task(build_instructions 同期等)は忍者が報告を書けない矛盾。report_field_set の判定を『repo 内 tracked path なら可』へ改める"
+  priority: "medium"
+  source: "manual"
+  fix_known: false
+  status: pending
