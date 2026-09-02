@@ -82,6 +82,16 @@ run_gate() {
     [ "$output" = "BLOCK: path/blob receipt missing" ]
 }
 
+@test "legacy commit_hash takes priority over published_sha when both are present" {
+    report="$TEST_ROOT/both.yaml"
+    printf 'verdict: PASS\ncommit_hash: %s\npublished_sha: %s\n' \
+        "$(<"$TEST_ROOT/commit")" "$(<"$TEST_ROOT/commit")" > "$report"
+    run_gate "$report"
+    [ "$status" -eq 0 ]
+    [[ "$output" == "PASS: PUSHED: report commit "* ]]
+    [[ "$output" != *"published_sha"* ]]
+}
+
 @test "autopush helper functions are outside the U4 diff" {
     run bash -c 'git diff -U0 -- scripts/cmd_complete_gate.sh | grep -E "^@@.*source_only_(path_snapshot_generic|cumulative_equivalence|insights_id_merge|lessons_id_merge)"'
     [ "$status" -eq 1 ]
