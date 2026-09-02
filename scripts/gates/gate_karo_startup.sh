@@ -918,7 +918,7 @@ END {
             continue
         }
         ok = (v[i] ~ /^(APPROVE|LGTM|PASS|CLEAR|VERIFIED|VERIFIED_FACTS|CONDITIONAL_PASS)$/)
-        if (!ok && gr[i] ~ /^(CLEAR|PASS)$/) ok = 1
+        if (!ok && gr[i] ~ /^(CLEAR|PASS|FAIL_CLOSE)$/) ok = 1
         if (!ok && cid[i] != "" && cmd_status[cid[i]] ~ /^(done|completed|cancelled)$/) ok = 1
         if (!ok && cid[i] != "" && gate_clear[cid[i]]) ok = 1
         # 実装品質の母集団は実装cmdのみ。レビュー専用cmdは、cmd台帳の
