@@ -366,7 +366,7 @@ setup_origin_pair() {
     setup_origin_pair "$origin" "$work"
     local deploy_base; deploy_base="$(git -C "$work" rev-parse HEAD)"
     # origin advances on shared.txt after deploy
-    git clone -q "$origin" "$other"; git -C "$other" config user.email o@example.invalid; git -C "$other" config user.name other
+    git clone -q -b main "$origin" "$other"; git -C "$other" config user.email o@example.invalid; git -C "$other" config user.name other
     printf 'S2\n' > "$other/shared.txt"; git -C "$other" commit -q -am remote-change; git -C "$other" push -q origin main
     local remote_tip; remote_tip="$(git -C "$other" rev-parse HEAD)"
     # ninja edits a.txt, then merges origin/main
@@ -392,7 +392,7 @@ print('OK')
     local origin="$BATS_TEST_TMPDIR/origin.git" work="$BATS_TEST_TMPDIR/work" other="$BATS_TEST_TMPDIR/other"
     setup_origin_pair "$origin" "$work"
     local deploy_base; deploy_base="$(git -C "$work" rev-parse HEAD)"
-    git clone -q "$origin" "$other"; git -C "$other" config user.email o@example.invalid; git -C "$other" config user.name other
+    git clone -q -b main "$origin" "$other"; git -C "$other" config user.email o@example.invalid; git -C "$other" config user.name other
     printf 'S2\n' > "$other/shared.txt"; git -C "$other" commit -q -am remote-change; git -C "$other" push -q origin main
     printf 'A2\n' > "$work/a.txt"; git -C "$work" commit -q -am ninja-change
     git -C "$work" fetch -q origin
