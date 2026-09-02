@@ -13055,7 +13055,10 @@ insights:
   priority: "low"
   source: "semantic_map_generate:new_file"
   fix_known: false
-  status: pending
+  status: resolved
+  resolved_reason: "対象file(docs/research/gunshi_idle_lgtm_block_root_cause_analysis_20260831.md)を確認。内容はgunshi idle分析(gate_prediction CLEAR→gate_result BLOCK 5事例の根因分析)。既存概念gate_quality_framework(docs/semantic-index/index.md L12147)のaliases/filesと直接一致するが、本task scope(reflux_commit_contract.scope=queue/insights.yamlのみ)ではindex.md編集は対象外のためdecision_candidateへ委譲"
+  action_artifact: "target=queue/insights.yaml:INS-20260902-131233970-a46c;primary=docs/research/gunshi_idle_lgtm_block_root_cause_analysis_20260831.md;semantic_existing=docs/semantic-index/index.md:L12147(gate_quality_framework, aliases含むgate_prediction/gate_prediction偽陽性分析);semantic_map=context/semantic-map.md:90;decision_candidate=gate_quality_frameworkのfile欄に本docを追加+LGTM関連alias追加を別cmdで実施;inventory_before=insights_pending:37,zero_backlinks:17,promotions:0,total:54"
+  resolved_at: "2026-09-02T15:57:27+09:00"
 - id: INS-20260902-131247453-a612
   ts: "2026-09-02T13:12:47+09:00"
   insight: "semantic_map_generate新規ファイル候補: `docs/research/karo-review-trial-fixes-20260901.md` は semantic index未登録。既存概念へのfile追加または新概念定義を検討せよ"
