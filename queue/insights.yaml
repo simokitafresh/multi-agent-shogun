@@ -14945,7 +14945,10 @@ insights:
   priority: "low"
   source: "semantic_stress_test"
   fix_known: false
-  status: pending
+  status: "resolved"
+  resolved_reason: "semantic index candidate was absorbed into a registered concept"
+  action_artifact: "semantic_index=/home/simokitafresh/multi-agent-shogun/docs/semantic-index/index.md"
+  resolved_at: "2026-09-03T04:46:43.878584"
 - id: INS-20260903-044630028-4f07
   ts: "2026-09-03T04:46:30+09:00"
   insight: "[[単一 publisher U8 AC2 PUBLISHER SINGLE ON 04 37 の下で cleanup ma]] semantic_stress_test candidate_aliases: NO_MATCH source=cmds query=単一 publisher U8 AC2: PUBLISHER_SINGLE ON(04:37)の下で cleanup manifest の M1-M11 を batch 4 回(各 1 commit・10 file 以内)で物理削除し、census は同 batch で消える file を除いて数える"
