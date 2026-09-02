@@ -279,3 +279,38 @@ for row in rows:
     assert on_disk_sha256 == row["artifact_sha256"], (row["artifact"], on_disk_sha256, row["artifact_sha256"])
 PY
 }
+
+@test "artifact write failure degrades to summary-only recording instead of aborting" {
+  record_function="$REPO/record_function"
+  record_function_file "$record_function"
+  stderr_file="$REPO/stderr"
+  log_file="$REPO/logs/hook_failures.yaml"
+  mkdir -p "$REPO/logs"
+  echo "boom, cannot persist this one" > "$stderr_file"
+
+  # Force the artifact mkdir/cp/mv path to fail by pre-occupying the target
+  # directory name with a plain file, so _record_hook_failure must degrade
+  # gracefully (fail-closed: no crash, no partial artifact, log still written).
+  : > "$REPO/logs/hook_artifacts"
+
+  run env REPO_ROOT="$REPO" _STDERR_FILE="$stderr_file" TMUX_PANE="" bash -c "$(cat "$record_function"); _record_hook_failure 1"
+  [ "$status" -eq 0 ]
+  [ -f "$log_file" ]
+
+  python3 - "$log_file" <<'PY'
+from pathlib import Path
+import sys
+import yaml
+
+rows = yaml.safe_load(Path(sys.argv[1]).read_bytes().decode("utf-8"))
+row = rows[-1]
+assert "artifact" not in row, row
+assert "artifact_sha256" not in row, row
+assert "staged_diff_sha256" in row, row
+assert row["detail"].startswith("boom, cannot persist this one"), row
+PY
+
+  # the pre-existing plain file must remain untouched, not silently replaced
+  [ -f "$REPO/logs/hook_artifacts" ]
+  [ ! -d "$REPO/logs/hook_artifacts" ]
+}
