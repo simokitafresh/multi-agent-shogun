@@ -60,6 +60,32 @@ gate_hook_quality_contract_has_measurement_vocabulary() {
     return 1
 }
 
+# The action-conversion side used `grep -qiE` with a mixed ASCII/Japanese
+# alternation (case-insensitive, plus a `[[:space:]]+` quantifier for
+# "exit 1"). L1660 already replaced the equivalent measurement-vocabulary
+# grep with literal substring matching because grep's multibyte case-folding
+# is locale/engine dependent; this action check was left on the old grep
+# path and kept reintroducing the same class of failure. Mirror the fixed
+# pattern here: fold only the ASCII case (`${var,,}` is safe for plain
+# ASCII regardless of locale) and collapse literal whitespace bytes instead
+# of relying on a regex quantifier, so no code path needs grep -i.
+gate_hook_quality_contract_has_action_vocabulary() {
+    local text="${1:-}"
+    local lower="${text,,}"
+    local collapsed
+    collapsed="$(printf '%s' "$lower" | tr -s ' \t\n\r\f\v' ' ')"
+    case "$collapsed" in
+        *block*|*'exit 1'*) return 0 ;;
+    esac
+    local term
+    for term in "強制" "自動実行" "自動化" "遮断" "停止" "失敗させ" "必須化" "止める"; do
+        if [[ "$text" == *"$term"* ]]; then
+            return 0
+        fi
+    done
+    return 1
+}
+
 # Prints TSV: applicable\taction_conversion\tfp_measurement.
 # Optional second argument is a candidate-detector function receiving block_text.
 gate_hook_quality_contract_evaluate() {
@@ -71,7 +97,7 @@ gate_hook_quality_contract_evaluate() {
     "$detector" "$block_text" || { printf 'no\tpass\tpass\n'; return 0; }
 
     action_text="$(gate_hook_quality_contract_action_text "$block_text")"
-    if ! printf '%s\n' "$action_text" | grep -qiE 'BLOCK|exit[[:space:]]+1|強制|自動実行|自動化|遮断|停止|失敗させ|必須化|止める'; then
+    if ! gate_hook_quality_contract_has_action_vocabulary "$action_text"; then
         action=missing
     fi
 
