@@ -14255,3 +14255,10 @@ insights:
   source: "manual"
   fix_known: false
   status: pending
+- id: INS-20260902-231705670-7185
+  ts: "2026-09-02T23:17:05+09:00"
+  insight: "[[Console「URL 検査→インデックス登録をリクエストするページを明確にしてくれ]] semantic_stress_test candidate_aliases: NO_MATCH source=lord query=Console「URL 検査→インデックス登録をリクエストするページを明確にしてくれ"
+  priority: "low"
+  source: "semantic_stress_test"
+  fix_known: false
+  status: pending
