@@ -727,6 +727,61 @@ teardown() {
     true
 }
 
+# test_necessity: target_path directory must not widen ownership to the
+# existing test corpus when AC/command names exact files; absent new tests are
+# retained so their later files_modified entries remain in scope.
+@test "planned_paths preserves exact new U1 and U4 files without directory widening" {
+    mkdir -p "$TEST_PROJECT/tests/unit"
+    export DEPLOY_TASK_LIB_ONLY=1 DEPLOY_TASK_SKIP_REPORT_NORMALIZE=1
+    export DEPLOY_TASK_SKIP_BINARY_CHECK_WAIVERS=1
+    source "$SRC_DEPLOY_SCRIPT"
+    local make_task
+    make_task() {
+        local ninja="$1" name="$2" refs="$3"
+        local task="$TEST_PROJECT/queue/tasks/${name}.yaml"
+        cat >"$task" <<EOF
+task:
+  parent_cmd: ${name}
+  task_id: ${name}_hotfix
+  task_type: hotfix
+  project: infra
+  report_filename: ${ninja}_report_${name}.yaml
+  target_path: scripts
+  acceptance_criteria:
+    - id: AC1
+      description: "実装とfixtureは ${refs} を使用する"
+EOF
+        SCRIPT_DIR="$TEST_PROJECT" generate_report_template "$ninja" "${name}_hotfix" "$name" infra "$task" >/dev/null
+        printf '%s\n' "$TEST_PROJECT/queue/reports/${ninja}_report_${name}.yaml"
+    }
+
+    local u1_report u4_report
+    u1_report="$(make_task sasuke cmd_u1_exact 'scripts/publisher_queue.sh scripts/lib/lock_run_shim.sh scripts/lib/publisher_event.sh tests/unit/test_publisher_queue.bats')"
+    u4_report="$(make_task hayate cmd_u4_exact 'scripts/cmd_complete_gate.sh tests/unit/test_gate_dual_read.bats')"
+
+    run python3 - "$u1_report" "$u4_report" <<'PY'
+import sys, yaml
+
+u1 = yaml.safe_load(open(sys.argv[1], encoding="utf-8"))["commit_contract"]["planned_paths"]
+u4 = yaml.safe_load(open(sys.argv[2], encoding="utf-8"))["commit_contract"]["planned_paths"]
+assert u1 == [
+    "scripts/publisher_queue.sh",
+    "scripts/lib/lock_run_shim.sh",
+    "scripts/lib/publisher_event.sh",
+    "tests/unit/test_publisher_queue.bats",
+], f"u1={u1}"
+assert u4 == [
+    "scripts/cmd_complete_gate.sh",
+    "tests/unit/test_gate_dual_read.bats",
+], f"u4={u4}"
+assert "scripts" not in u1 and "scripts" not in u4
+print("exact_refs U1=4 U4=2 missing_new_tests_retained=2 directory_widening=0")
+PY
+    if [ "$status" -ne 0 ]; then printf '%s\n' "$output" >&3; fi
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"exact_refs U1=4 U4=2 missing_new_tests_retained=2 directory_widening=0"* ]]
+}
+
 # ═══════════════════════════════════════════════════════════
 # double_deploy_guard テスト (11)
 # ═══════════════════════════════════════════════════════════

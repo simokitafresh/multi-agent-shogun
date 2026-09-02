@@ -3739,6 +3739,68 @@ if [ ! -f "$_dt_report_path" ] && [ -n "${PROJECT_ROOT:-}" ]; then
 fi
 source "$_dt_report_path"
 unset _dt_report_path
+
+# Cluster F compatibility seam: report.sh is loaded after the static bundle,
+# so keep the active scope seed here. Exact repo-relative file references in
+# AC/command must survive deployment even when the files are new; a directory
+# target remains an inspection hint and is not expanded to the existing corpus.
+deploy_task_exact_scope_seed() {
+    local task_file="$1" import_root="$2"
+    python3 - "$task_file" "$import_root" <<'PY'
+import os, re, shlex, sys, yaml
+sys.path.insert(0, sys.argv[2])
+from scripts.gates.gate_report_format_main import commit_owned_paths
+
+task = (yaml.safe_load(open(sys.argv[1], encoding="utf-8")) or {}).get("task", {}) or {}
+planned = list(commit_owned_paths(task))
+
+def text(value):
+    if isinstance(value, dict):
+        return " ".join(text(item) for item in value.values())
+    if isinstance(value, (list, tuple)):
+        return " ".join(text(item) for item in value)
+    return str(value or "")
+
+scope_text = " ".join(filter(None, (text(task.get("acceptance_criteria")), text(task.get("command")))))
+exact_refs = list(dict.fromkeys(re.findall(
+    r"(?<![A-Za-z0-9_./-])((?:scripts|tests)/[A-Za-z0-9_.-]+(?:/[A-Za-z0-9_.-]+)*\.(?:bats|bash|sh|py|js|jsx|ts|tsx|go|rs|java|kt|rb|php|c|cc|cpp|h|hpp))(?![A-Za-z0-9_./-])",
+    scope_text,
+)))
+raw_explicit = task.get("planned_paths")
+if isinstance(raw_explicit, list):
+    explicit = [str(item) for item in raw_explicit if str(item).strip()]
+elif isinstance(raw_explicit, str) and raw_explicit.strip():
+    explicit = [raw_explicit.strip()]
+else:
+    explicit = []
+raw_targets = task.get("target_path")
+if isinstance(raw_targets, list):
+    targets = [str(item) for item in raw_targets if str(item).strip()]
+elif isinstance(raw_targets, str) and raw_targets.strip():
+    targets = [raw_targets.strip()]
+else:
+    targets = []
+if exact_refs:
+    if not explicit:
+        planned = [
+            path for path in planned
+            if path not in targets or not os.path.isdir(os.path.join(sys.argv[2], path))
+        ]
+    planned = list(dict.fromkeys(planned + exact_refs))
+
+contract = task.get("commit_contract")
+required = ""
+if isinstance(contract, dict) and "required" in contract:
+    value = contract["required"]
+    if isinstance(value, bool):
+        required = str(value).lower()
+    elif str(value).strip().lower() in {"true", "false"}:
+        required = str(value).strip().lower()
+print("_commit_explicit_required=" + shlex.quote(required))
+print("_commit_planned_paths=" + shlex.quote(" ".join(planned)))
+PY
+}
+
 # The report publication lock is acquired before report generation.  Fresh
 # checkouts and isolated task worktrees intentionally omit ignored queue
 # subdirectories, so create the lock parent before the first publication.
@@ -11987,6 +12049,13 @@ deploy_task_function_timing_finish() {
         eval "${_DT_FUNCTION_TIMING_PREV_DEBUG_TRAP}" 2>/dev/null || true
     fi
     return 0
+}
+
+# The later modular loader may redefine the scope seed; this final binding is
+# intentionally placed after all module sources so library-only tests and the
+# production entrypoint share the exact-file ownership contract.
+deploy_task_report_scope_seed() {
+    deploy_task_exact_scope_seed "$@"
 }
 
 deploy_task_function_timing_enable

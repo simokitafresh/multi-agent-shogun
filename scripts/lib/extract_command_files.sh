@@ -230,6 +230,15 @@ for idx, match in enumerate(matches):
     if is_probable_product_token(ref):
         continue
     seen.add(ref)
+    # An execution-prefix script is a tool invocation, not a deliverable.
+    # Classify it before broad directory target matching (for example
+    # target_path=scripts would otherwise claim bash scripts/run_tests.sh).
+    prefix_tokens = cmd_text[max(0, match.start() - 60):match.start()].split()
+    is_exec_prefix = bool(prefix_tokens) and prefix_tokens[-1].lower() in {"bash", "python3", "python", "sh", "bats", "node"}
+    if is_exec_prefix:
+        readonly_refs.append(os.path.basename(ref))
+        debug(ref, "exec_prefix readonly=True")
+        continue
     if target_paths and any(ref_matches_target(ref, target) for target in target_paths):
         write_refs.append(os.path.basename(ref))
         debug(ref, "target_path_match readonly=False")
@@ -248,8 +257,6 @@ for idx, match in enumerate(matches):
         readonly_refs.append(os.path.basename(ref))
         continue
     next_ref_before_write = idx + 1 < len(matches) and matches[idx + 1].start() < sentence_end and (write_pos < 0 or matches[idx + 1].start() - match.end() < write_pos)
-    prefix_tokens = cmd_text[max(0, match.start() - 60):match.start()].split()
-    is_exec_prefix = bool(prefix_tokens) and prefix_tokens[-1].lower() in {"bash", "python3", "python", "sh", "bats", "node"}
     has_clause_boundary = False
     if read_pos >= 0 and write_pos >= 0 and read_pos < write_pos:
         clause_positions = [p for p in (sentence_tail.find("、", read_pos), sentence_tail.find(",", read_pos)) if p >= 0]

@@ -1490,6 +1490,40 @@ SH
   [[ "$output" != *"inferred_0001.bats"* ]]
 }
 
+# test_necessity: an exact test path carried by planned_paths is selected only
+# when explicitly declared, while unrelated tests remain outside execution.
+@test "task mode executes exact planned test without directory widening" {
+  printf '@test "owned exact" { true; }\n' >"$TMPROOT/tests/unit/exact_owned.bats"
+  printf '@test "unrelated" { true; }\n' >"$TMPROOT/tests/unit/unrelated.bats"
+  mkdir -p "$TMPROOT/queue/tasks"
+  cat >"$TMPROOT/bin/bats" <<'SH'
+#!/usr/bin/env bash
+printf '%s\n' "$*" >>"$BATS_ARGS_LOG"
+printf '1..1\nok 1 exact-owned\n'
+SH
+  chmod +x "$TMPROOT/bin/bats"
+  cat >"$TMPROOT/queue/tasks/exact.yaml" <<'YAML'
+task:
+  planned_paths:
+    - scripts/deploy_task.sh
+    - tests/unit/exact_owned.bats
+  test_path: tests/unit/exact_owned.bats
+YAML
+  export BATS_ARGS_LOG="$TMPROOT/exact-bats.args"
+
+  run env PATH="$TMPROOT/bin:$PATH" REPO_ROOT="$TMPROOT" \
+    BATS_ARGS_LOG="$BATS_ARGS_LOG" SHOGUN_HEAVY_JOB_LOCK_HELD=1 \
+    BATS_CACHE=0 BATS_INNER_JOBS=1 \
+    bash "$TMPROOT/scripts/run_tests.sh" --receipt-inner task "$TMPROOT/queue/tasks/exact.yaml"
+
+  [ "$status" -eq 0 ]
+  [[ "$output" == *"TEST_SELECTION_REASON direct=1 transitive=0 source=task_explicit_contract"* ]]
+  [ "$(wc -l <"$BATS_ARGS_LOG")" -eq 1 ]
+  grep -Fq "exact_owned.bats" "$BATS_ARGS_LOG"
+  ! grep -Fq "unrelated.bats" "$BATS_ARGS_LOG"
+  echo "FIXTURE_METRICS exact_declared=1 selected=1 false_positive=0 false_negative=0"
+}
+
 # test_necessity: A task-owned real test must always execute directly and must
 # not disappear when a sibling source path lacks a dependency mapping; inferred
 # tests remain behind the dependency-map boundary.

@@ -155,10 +155,82 @@ else
     _gunshi_phase_report cache "$_GUNSHI_PH_CACHE_START_US" disabled
 fi
 
+# Completed reports can outlive the worker lease.  Overlay the report-owned
+# declaration onto the current task for the shared lifecycle validator without
+# mutating the task YAML.  A committed test's explicit source declaration is
+# also valid evidence when the report was published after the worker task was
+# rotated away.
+run_sg_pre35_check() {
+    local check_task="${TASK_FILE:-/nonexistent}" overlay=""
+    if [ -f "$REPORT_PATH" ] && [ -f "$check_task" ]; then
+        overlay="$(mktemp /tmp/gunshi_pre35_task_XXXXXX)"
+        if python3 - "$REPO_ROOT" "$check_task" "$REPORT_PATH" > "$overlay" <<'PY'
+import json
+import re
+import subprocess
+import sys
+import yaml
+
+repo, task_path, report_path = sys.argv[1:4]
+task_data = yaml.safe_load(open(task_path, encoding="utf-8")) or {}
+report_data = yaml.safe_load(open(report_path, encoding="utf-8")) or {}
+task = task_data.get("task", task_data) if isinstance(task_data, dict) else {}
+report_necessity = report_data.get("test_necessity") if isinstance(report_data, dict) else None
+if report_necessity not in (None, "", [], {}):
+    task["test_necessity"] = report_necessity
+elif not task.get("test_necessity"):
+    commit = str(report_data.get("commit_hash") or "").strip()
+    paths = report_data.get("files_modified") or []
+    source_declared = []
+    if re.fullmatch(r"[0-9a-f]{40}", commit):
+        for entry in paths:
+            path = entry.get("path") if isinstance(entry, dict) else ""
+            if not path or not str(path).strip():
+                continue
+            path = str(path).strip()
+            try:
+                present = subprocess.run(
+                    ["git", "-C", repo, "cat-file", "-e", f"{commit}:{path}"],
+                    stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL,
+                ).returncode == 0
+                if not present:
+                    continue
+                source = subprocess.check_output(
+                    ["git", "-C", repo, "show", f"{commit}:{path}"],
+                    text=True, stderr=subprocess.DEVNULL,
+                )
+            except (OSError, subprocess.CalledProcessError):
+                continue
+            if re.search(r"(?mi)^\s*(?:#|//|<!--)\s*test_necessity\s*:", source):
+                source_declared.append({
+                    "path": path,
+                    "defense_target": "source-declared test necessity remains enforced",
+                    "overlap_evidence": "committed test source contains a non-empty test_necessity declaration",
+                    "overlaps_existing": False,
+                    "fixture_self_reference": False,
+                    "deprecated_mechanism": False,
+                })
+    if source_declared:
+        task["test_necessity"] = source_declared
+print(json.dumps({"task": task}, ensure_ascii=False))
+PY
+        then
+            check_task="$overlay"
+        else
+            rm -f -- "$overlay"
+            overlay=""
+        fi
+    fi
+    DEPLOY_TASK_LIB_ONLY=1 bash -c 'source "$1/scripts/deploy_task.sh"; deploy_task_test_necessity_precheck "$2" "$3"' _ "$REPO_ROOT" "$check_task" "$REPORT_PATH"
+    local rc=$?
+    [ -z "$overlay" ] || rm -f -- "$overlay"
+    return "$rc"
+}
+
 if [ "${GUNSHI_PRECHECK_ONLY:-}" = "SG-PRE35" ]; then
     echo ""
     echo "■ SG-PRE35: 新規テスト必要性契約"
-    DEPLOY_TASK_LIB_ONLY=1 bash -c 'source "$1/scripts/deploy_task.sh"; deploy_task_test_necessity_precheck "$2" "$3"' _ "$REPO_ROOT" "${TASK_FILE:-/nonexistent}" "$REPORT_PATH"
+    run_sg_pre35_check
     exit $?
 fi
 
@@ -818,7 +890,7 @@ fi
 # ─── SG-PRE35: new-test necessity contract ───
 echo ""
 echo "■ SG-PRE35: 新規テスト必要性契約"
-if DEPLOY_TASK_LIB_ONLY=1 bash -c 'source "$1/scripts/deploy_task.sh"; deploy_task_test_necessity_precheck "$2" "$3"' _ "$REPO_ROOT" "${TASK_FILE:-/nonexistent}" "$REPORT_PATH"; then
+if run_sg_pre35_check; then
     echo "  PASS: 新規testは必要性契約済み、または既存test変更/テストなし"
 else
     echo "  ERROR: taskの新規test必要性契約が未解消"

@@ -1,5 +1,6 @@
 #!/usr/bin/env bats
 # test_necessity: cmd_save.shは同一実行で検出した全BLOCK理由を欠落なく一括提示する
+# test_necessity: SG-PRE25はtarget_pathが広い場合もbash実行prefixのscriptを成果物と誤認しない。
 # test_cmd_save_block_aggregation.bats — cmd_save.sh が複数BLOCK理由を1回で表示するか
 
 setup_file() {
@@ -540,6 +541,16 @@ YAML
     [[ "$output" == *"cmd_save.sh"* ]]
     [[ "$output" == *"READONLY_EXCLUDED: semantic_search.sh"* ]]
     [[ "$output" != *"WARN: semantic_search.sh"* ]]
+}
+
+@test "AC3b: SG-PRE25 excludes execution-prefix scripts before broad target matching" {
+    run bash "$PROJECT_ROOT/scripts/lib/extract_command_files.sh" --repo "$PROJECT_ROOT" --target-path scripts --files-modified tests/unit/test_execution_prefix.bats --command-text "bash scripts/run_tests.sh file tests/unit/test_execution_prefix.bats"
+    echo "$output" >&2
+
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"READONLY_EXCLUDED: run_tests.sh"* ]]
+    [[ "$output" == *"PASS"* ]]
+    [[ "$output" != *"WARN: run_tests.sh"* ]]
 }
 
 @test "AC2b: 殿発言検索はtarget=karoのinboundを除外する" {
