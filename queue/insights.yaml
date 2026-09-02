@@ -14574,7 +14574,10 @@ insights:
   priority: "medium"
   source: "manual"
   fix_known: false
-  status: pending
+  status: "resolved"
+  resolved_reason: "現行の明示再開SSOT(cmd_reopen.sh→queue/reopened_cmds/<cmd>.yaml)を一次確認し、旧reportのretired印だけが未実装の設計残課題としてdecision_candidateへ整理した"
+  action_artifact: "scripts/cmd_reopen.sh;queue/reopened_cmds/<cmd>.yaml;decision_candidate(report)"
+  resolved_at: "2026-09-03T05:19:52.125619"
 - id: INS-20260903-012058574-9023
   ts: "2026-09-03T01:20:58+09:00"
   insight: "semantic_index_update未登録cmd originノード: [[cmd_4449_U2_検証_Codex_FAIL]] は既存aliasesに一致なし。類似概念TOP3: agent_formation_management(編成管理; alias=codex --full-auto exit 2; score=12.8) / codex_goal_mode(Codex /goal 自律目標モード; alias=Codex CLI goal; score=11.4) / ac_merit_review_integrity(AC本旨レビュー整合性; alias=cmd_4098_境界fixture固定; score=11.4)。概念定義とaliases追加を検討せよ"
