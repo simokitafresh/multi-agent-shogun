@@ -3298,6 +3298,8 @@ case "$TYPE" in
         fi
         STRUCTURED_REPORT_FINGERPRINT=$(inbox_report_fingerprint "$_structured_candidate" "$STRUCTURED_REPORT_ID:$STRUCTURED_REPORT_VERSION") || exit 1
         _identity_fields=(report_id "$STRUCTURED_REPORT_ID" report_identity_version "$STRUCTURED_REPORT_VERSION" report_fingerprint "$STRUCTURED_REPORT_FINGERPRINT" report_path "$STRUCTURED_REPORT_PATH" task_id "$STRUCTURED_TASK_ID" parent_cmd "$STRUCTURED_PARENT_CMD")
+        # cmd_4446 単一publisher化 U2(H7): report_received 時点で忍者 worktree の成果物を STATE_DIR へ複製する(ベストエフォート、報告フローをBLOCKしない)。
+        [ "$TYPE" = "report_received" ] && [ -n "${TASK_YAML:-}" ] && [ -f "$TASK_YAML" ] && bash "$SCRIPT_DIR/scripts/publish_artifact.sh" capture "$STRUCTURED_TASK_ID" "$(inbox_yaml_field_get "$TASK_YAML" "task_worktree_path" "")" "$(inbox_yaml_field_get "$TASK_YAML" "task_worktree_base" "")" "$(inbox_yaml_field_get "$_structured_candidate" "commit_hash" "")" >/dev/null 2>&1 || true
         ;;
     review_report|accept_report|run_cmd_complete)
         _identity_fields=(task_id "$REVIEW_PENDING_NUDGE_TASK_ID" subject_task_id "$REVIEW_PENDING_NUDGE_SUBJECT_TASK_ID" parent_cmd "$REVIEW_PENDING_NUDGE_PARENT_CMD" report_fingerprint "$REVIEW_PENDING_NUDGE_FINGERPRINT" report "$REVIEW_PENDING_NUDGE_REPORT" review_pending_state "$REVIEW_PENDING_NUDGE_STATE")

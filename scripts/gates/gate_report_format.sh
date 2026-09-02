@@ -4,14 +4,87 @@
 # 目的: 家老の手動フォーマット修正作業を根絶（karo_workarounds 5件連続同一問題）
 # 知性の外部化原則: 正しいフォーマットを忍者の記憶に依存させず、自動検証で強制
 # Usage: bash scripts/gates/gate_report_format.sh <report_yaml_path>
+#        bash scripts/gates/gate_report_format.sh --manifest-check <report_yaml_path>
 # Exit: 0=PASS, 1=FAIL(修正必要)
 
 set -e
+
+# --manifest-check: cmd_4446 単一publisher化 U2(docs/research/single_publisher_asis_tobe_5w1h_20260902.md
+# §9.1)。報告の commit_hash/files_modified と scripts/publish_artifact.sh capture が書いた
+# manifest.yaml の source_sha/paths が一致するか検証する。manifest が存在しない task_id
+# (=capture未実行、または対象外の報告)はこの検査の対象外として PASS 扱いにする
+# (既存呼出元・既存報告フォーマット検証への副作用 0)。
+_gate_manifest_consistency_check() {
+    local report_path="$1"
+    local state_dir="${SHOGUN_STATE_DIR:-$HOME/.local/share/multi-agent-shogun}"
+    local task_id manifest_path
+    [ -n "$report_path" ] && [ -f "$report_path" ] || {
+        echo "FAIL(manifest_consistency): report file not found: ${report_path:-<empty>}" >&2
+        return 1
+    }
+    task_id=$(python3 -c "
+import yaml, sys
+d = yaml.safe_load(open(sys.argv[1])) or {}
+print(str(d.get('task_id') or ''))
+" "$report_path" 2>/dev/null) || return 0
+    [ -n "$task_id" ] || return 0
+    manifest_path="$state_dir/publish_queue/artifacts/$task_id/manifest.yaml"
+    [ -f "$manifest_path" ] || return 0
+    python3 - "$report_path" "$manifest_path" <<'MANIFEST_CHECK_PY'
+import sys
+import yaml
+
+def s(v):
+    # PyYAML's implicit resolver can coerce an all-digit scalar (e.g. an
+    # all-digit SHA1) to int; guard against the falsy-zero/str(None) footgun
+    # by checking identity against None rather than truthiness.
+    return str(v) if v is not None else ""
+
+report_path, manifest_path = sys.argv[1], sys.argv[2]
+report = yaml.safe_load(open(report_path)) or {}
+manifest = yaml.safe_load(open(manifest_path)) or {}
+
+r_sha = s(report.get("commit_hash"))
+m_sha = s(manifest.get("source_sha"))
+m_base = s(manifest.get("base"))
+r_paths = sorted(
+    s(fm.get("path"))
+    for fm in (report.get("files_modified") or [])
+    if isinstance(fm, dict) and fm.get("path") is not None
+)
+m_paths = sorted(s(p) for p in (manifest.get("paths") or []))
+
+errors = []
+if r_sha and m_sha and r_sha != m_sha:
+    errors.append(f"source_sha mismatch: report={r_sha} manifest={m_sha}")
+if r_paths and m_paths and r_paths != m_paths:
+    errors.append(f"paths mismatch: report={r_paths} manifest={m_paths}")
+
+if errors:
+    for e in errors:
+        print(f"FAIL(manifest_consistency): {e}", file=sys.stderr)
+    sys.exit(1)
+print(f"PASS(manifest_consistency): source_sha={m_sha} base={m_base} paths={len(m_paths)}", file=sys.stderr)
+sys.exit(0)
+MANIFEST_CHECK_PY
+}
+
+if [ "${1:-}" = "--manifest-check" ]; then
+    _gate_manifest_consistency_check "${2:-}"
+    exit $?
+fi
 
 REPORT_PATH="$1"
 
 if [ -z "$REPORT_PATH" ] || [ ! -f "$REPORT_PATH" ]; then
     echo "FAIL: report file not found: ${REPORT_PATH:-<empty>}" >&2
+    exit 1
+fi
+
+# 単一publisher化 U2: manifest が存在する task_id の報告は、通常の format 検証に加えて
+# manifest との一致も検査する(不一致は BLOCK。沈黙のフォールバック禁止=H9)。manifest 不在なら
+# no-op(0)を返すため、capture 未接続の既存呼出し・既存 bats への副作用は 0。
+if ! _gate_manifest_consistency_check "$REPORT_PATH"; then
     exit 1
 fi
 
