@@ -1,5 +1,6 @@
 # インフラコンテキスト
 <!-- last_updated: 2026-09-03 context_freshness reviewed source boundary -->
+<!-- source_commit:a332311425cb reason:context_freshness reviewed source boundary evidence:context_freshness_check context=context/infrastructure.md commit=a332311425cb -->
 <!-- source_commit:b66cc4dd9c52 reason:context_freshness reviewed source boundary evidence:context_freshness_check context=context/infrastructure.md commit=b66cc4dd9c52 -->
 <!-- source_commit:a8815898ee3d reason:context_freshness reviewed source boundary evidence:context_freshness_check context=context/infrastructure.md commit=a8815898ee3d -->
 <!-- source_commit:8e70baf7051b reason:context_freshness reviewed source boundary evidence:context_freshness_check context=context/infrastructure.md commit=8e70baf7051b -->
@@ -532,3 +533,4 @@ source boundary一致taskはregistryのowner/update_triggerからcontext_update_
 - **cross_repo path の先頭 dot 保持(家老 lane `cmd_karo_hotfix_cross_repo_path_lstrip_dotprefix_202609030012` a8815898e、CLEAR 09-03 00:29)**: `scripts/lib/cross_repo_commit_contract.py`/`close_gate_alerts.py` が path の lstrip で `.github/…` 等の先頭 dot を落とし identity 不一致になっていた。contract test 追加(`tests/unit/test_report_commit_identity.bats`)。
 - **cmd_complete_gate の receipt pair 走査を『一致 0 件のみ fail』へ(疾風 `cmd_karo_hotfix_gate_receipt_pair_multi_source_202609030042` b66cc4dd9、CLEAR 09-03 01:1x、§14.4 例外『全 CLEAR を塞ぐ 1 行』2 件目)**: `report_source_only_equivalence_state` が cross_repo_commits 2 件以上の報告(receipt 2 entry)で 1 件目の不一致 entry に当たると即 fail(source_only_receipt_pair_mismatch)→『auto-push did not clear the boundary』永久 WAIT。不一致は continue、一致 0 件のみ fail に変更、契約 test 付き。着地後に影丸 idle_flag 根治・小太郎 reflux・飛猿 ci_fix の 3 cmd が CLEAR(01:12-01:16)。
 - **単一 publisher U2 再検証 CLEAR(半蔵=Codex `cmd_4457` a33231142、CLEAR 09-03 01:20)**: 修正版 publish_artifact(71162b246)に対し隔離 clone で bats 13/13(敵対 fixture『manifest の paths[] 過剰申告=patch に無い path を申告』を追加、rc=1 で fail-closed)。検証 cmd 型(検出 cmd_4449→修正 lane→再検証 cmd_4457)の初完走。U1 再検証は cmd_4458(小太郎)走行中。
+- **単一 publisher U1 再検証 CLEAR(小太郎 `cmd_4458` 05fe87b68、09-03 01:4x)**: 修正版 publisher_queue(eb136fdbc)に対し隔離 clone で bats 9/9+並行 FIFO 敵対 fixture 1 本追加。第 1 波 3 unit(U1/U2/U4)の検証が全 CLEAR。以後の第 3 波(U7 cmd_4460 flag 下流化/U8 cmd_4461 cleanup manifest)は殿 01:30『先に進んでから戻ればいい』で canary 待ちなしに並列。
