@@ -121,3 +121,66 @@
 ### 除外した情報
 
 `logs/deploy_task.log` は本 task の配備成功（21:04:54 worktree ready）を示すだけで、自身の BLOCK/RC/RETRY ではない。`logs/hook_failures.yaml` と `logs/inbox_watcher_kagemaru.log` にも本日該当行はなかったため、事例表へ水増ししていない。将軍・軍師・家老の事例、掲示板の他ロール記述、既読または別 task の inbox 指示は AC2 の境界により本節へ取り込まない。
+
+---
+
+# 第 2 回(09-02 17:17〜09-03 02:53、単一 publisher 実装便。将軍一次+家老掲示板+gate/task YAML から再集計、殿指示 09-03 02:52『改めて』)
+
+## 将軍統合(分類別件数・第 2 回)
+
+| 分類 | 第 1 回 計 | 第 2 回 | 根治済 | 未根治 |
+|---|---|---|---|---|
+| ①偽陽性 | 5 | 4 | 4 | — |
+| ②過剰 BLOCK | 1 | 3 | 0 | cmd_save の AC path 存在検査が別 checkout(/mnt/c 保守 branch)を見る(T2-09)、Write hook の literal 禁止(T2-10)、doc 成果物を忍者が commit 不可(T2-20) |
+| ③構造バグ | 7 | 6 | 5 | 手動 CLEAR receipt の正規手段なし(T2-14→U8 で定義) |
+| ④循環拘束 | 6 | 3 | 2 | 将軍 loop の再武装忘れ(T2-21、手順化のみ) |
+| ⑤遅い script・test | 1 | 1 | 0 | cmd_save preflight が 120 秒超(T2-26、S-10 と同根) |
+| ⑥Claude↔Codex 仕組み差 | 0 | 0 | — | — |
+| ⑦サンクコスト過剰複雑化 | 1 | 1 | 1(殿裁定) | — |
+| ⑧影響範囲・依存未解明の浅い対応 | 6 | 6 | 5 | enqueue の repo guard(T2-18、影丸 走行中) |
+| 計 | 27 | 24 | 17 | 7 |
+
+**構造の結論(第 2 回)**: 第 1 回の 2 型(⑧契約変更が census なしで本番へ、③BLOCK 理由の握りつぶし)は減った(⑧は検証 cmd 型で 3 件を fail-close で捕捉=設計どおり)。第 2 回の主型は **「生産者を消費者より先に出す順序バグ(③)」**=U5 の ACCEPT→enqueue が daemon 未起動のまま着地し全 CLEAR を閉塞、LP build が backend より先の API 応答を焼く、merge driver が消えた worktree を指す。いずれも「依存の向きを逆に着地させた」構造で、対策は cmd の depends_on と post_deploy_check を『消費者が生きているか』で書くこと。もう 1 型は **「殿が撤回するまで将軍が canary/検証を積む(⑦)」**で、殿 01:30/01:31 の 2 発言で U3b・24h canary・検証 4 本を撤回して便速度が戻った。
+
+## 将軍節(第 2 回。番号 T2-xx、時刻 JST)
+
+| ID | 時刻 | 事象 | 主分類 | 真因 | 処置 / 状態 |
+|---|---|---|---|---|---|
+| T2-01 | 09-02 17:52〜23:09(6 回) | root index 後退: 上流追加 file が root で staged 削除に見える | ③ | ninja_monitor integrate が update-ref のみで index/worktree を更新しない | 半蔵 read-tree hotfix 6a7e852ec(§14.4 例外)、proof 00:17 2 回 staged 0。根治 |
+| T2-02 | 23:20-23:58 | push lane 38 分停止(未 push 25) | ④ | GA-PUSH1 が『push 対象と作業木の未 commit が同一 path』を BLOCK、常時 dirty の台帳 9 path が必ず重なる | 将軍が台帳 dirt を 1 commit(bf64941c1)に吸収→PUSH 26。根治=U6 ledger writer+U3 publisher(旧 lane は U8 で削除) |
+| T2-03 | 23:16 | gate WAIT publisher_pending が dequeued も pending 扱い | ① | rglob が処理済 dir を走査 | 小太郎 1 行 hotfix CLEAR 00:15。根治 |
+| T2-04 | 00:4x | gate の receipt pair 走査が cross_repo 2 entry で即 fail | ① | 複数 source の receipt を単一前提で照合 | 疾風 b66cc4dd9 CLEAR。根治 |
+| T2-05 | 23:16〜01:30 | U5 着地で ACCEPT→enqueue が生き、全 CLEAR が publisher_pending で閉塞 | ③ | 消費者(daemon)より先に生産者(enqueue)を本番へ出した。U5 の depends_on に U3 active が無い | 将軍裁定 23:27/23:34→U3 修正後 01:30 active。根治(順序の教訓は本表の結論) |
+| T2-06 | 23:32 | U3 dry-run で欠陥 3 点(冪等性なし・tip 前進時 restore FAIL・通知 type BLOCK) | ⑧ | 実装 cmd が『同変更が既に載っている』『tip が進んだ』の 2 状態を fixture にしていない | 才蔵 f5b195fea CLEAR 00:05。根治 |
+| T2-07a | 20:17 | U2 検証 FAIL: manifest 未申告 path を restore が適用 | ⑧ | 実装 file 欠陥。検証 cmd 型(別 CLI・別番号)で fail-close 捕捉=設計どおり | 飛猿 ea8bdd794→再検証 cmd_4457 CLEAR 01:20。根治 |
+| T2-07b | 21:1x | U1 検証 FAIL: FIFO が辞書順 | ⑧ | 同上 | 才蔵 6fc7e7b81(sequence lock)→再検証 cmd_4458 CLEAR 01:46。根治 |
+| T2-08 | 09-02 夜〜01:1x(3 回) | 軍師 idle flag stall(bash_running のまま起きない) | ③ | gunshi_log_append の --help が stdin を待って hang | 影丸 根治 hotfix 着地。将軍は capture-pane で dialog 無しを確認後に nudge。根治 |
+| T2-09 | 01:3x/02:4x | cmd_save が lp/ 配下 AC path を『親 dir 不在』で WARN/BLOCK | ② | 存在検査が /mnt/c の保守 branch(rb6-cleanup、origin 215 手前)を見る | AC を文章表現に書換えて回避。**未根治**(検査 root を origin/main tree に) |
+| T2-10 | 22:2x〜 | Write hook が literal $HOME path・model 名を含む file 書込みを BLOCK | ② | 文字列一致 guard(S-12 と同根) | scratch python 経由で回避。**未根治** |
+| T2-11 | 01:2x | .git/config の merge driver が回収済 worktree path を指し全 merge 失敗→push 閉塞 | ③ | insight_write.sh の driver 登録が $merge_repo 絶対 path を焼く | 小太郎 29168ab9c(primary root 固定)。根治 |
+| T2-12 | 01:2x | workarounds driver が同一 cmd_id の 2 件目を重複拒否 | ① | 正当な複数 WA(手動+rework 自動)を identity=cmd_id で衝突判定 | 同 29168ab9c(cmd_id+timestamp 複合 key)。根治 |
+| T2-13 | 01:2x | bulletin 同一 entry 衝突 | ④ | 台帳 file の並行追記 | 家老が origin 版復元。根治は U6 writer |
+| T2-14 | 01:23 | U5 cmd_4453 が gate 3 経路(legacy/publisher/manifest)とも到達を証明不能→手動 CLEAR。archive は receipt 無しで fail-closed | ③ | task idle 化で source 紐付け切れ+後続修正で blob 差+task_id 再利用。手動 CLEAR の receipt 発行手段がない | 証拠 file を残し completed。**未根治**(U8 で手動 CLEAR receipt を定義、decision_candidate) |
+| T2-15 | 23:5x | U6 test が $HOME 固定 mktemp で CI runner 3 FAIL | ⑧ | fixture が runner の $HOME 差を想定せず | 疾風 ci_fix 8e70baf70 CLEAR 00:16。根治 |
+| T2-16 | 23:12 | gate_report_format が `./` 付き path を不一致判定、最上位 file の task が CLEAR 不能 | ① | path 正規化漏れ | 疾風 a6ebc5b58 1 行。根治 |
+| T2-18 | 02:14 | dm-signal の request が infra publisher へ enqueue(restore conflict=1、実害なし) | ⑧ | 裁定『dm-signal は対象外』の enqueue 側分岐が未実装 | 影丸 hotfix `..._publisher_enqueue_repo_guard_202609030218` 走行中。**未根治(着地待ち)** |
+| T2-19 | 02:3x | cmd_4459 backend live 後も LP 月次頁の保有欄が『—』 | ③ | LP build の fetch(next.revalidate 3600)が Next data cache に入り Render build cache で次 build へ持越し=backend より前の API 応答を焼く | 将軍 clearCache 再 deploy(止血)+cmd_4462(fetch no-store+build 後 assert)起票 02:45。根治は 4462 着地 |
+| T2-20 | 02:00 | cmd_4461 の成果物 manifest(doc)を忍者が commit できず root に untracked | ② | docs/ は将軍 doc lane 管轄で忍者 commit が BLOCK | 将軍 doc lane 取込 a7b41bc64。**未根治**(doc 成果物 cmd は起票時に route を明示する規則が無い) |
+| T2-21 | 01:30-02:16 | 将軍 loop 停止 46 分(殿 02:13『loop は生きているか』で発覚) | ④ | inbox 駆動で応答するたび ScheduleWakeup 再武装を省いた | 02:16 再武装、応答末尾の再武装を手順化。**未根治(手順のみ、構造化なし)** |
+| T2-22 | 01:59 | 将軍が才蔵 4461 failed を『template 未記入』と誤診し家老へ下知 | ⑧ | report 本文と pane を一次確認する前に task YAML の block_reason 履歴だけで結論 | 家老が訂正(正当 fail-close)。根治=一次確認順序(本表で記録) |
+| T2-23 | 01:30 | U3 active 24h canary・U3b・検証 cmd 4 本を積んで便が遅延 | ⑦ | 設計書の canary/検証を殿の速度要求より優先 | 殿 01:30/01:31 で撤回。根治(殿裁定) |
+| T2-26 | 02:41 | cmd_save --preflight が 120 秒超で background 化 | ⑤ | S-10 cmd_skeleton 2 分 hang と同根(semantic_search+FTS5 を直列実行) | **未根治** |
+
+集計コマンド: `grep -oE '^\| T2-[0-9]+[ab]? \|' docs/research/tsumari_root_causes_20260901.md | wc -l` → 24。根治 17 / 未根治 7(T2-09/10/14/18/20/21/26)。
+
+## 未根治 7 件の次の一手(将軍)
+
+| ID | 一手 | 担当 |
+|---|---|---|
+| T2-09 | cmd_save の AC path 検査を `git -C <repo> ls-tree origin/main` 基準にする 1 行 | 家老 hotfix |
+| T2-10 | Write hook の literal 禁止を『file 種別=運用 YAML/context』に限定 | 家老 hotfix(S-12 と同時) |
+| T2-14 | 手動 CLEAR receipt(`gate_manual_clear.sh <cmd> <evidence>`)を U8 AC0 として cmd_4461 AC2 の起票に含める | 将軍 |
+| T2-18 | 影丸 hotfix 着地→flag ON 前に landing | 家老 |
+| T2-20 | cmd 起票規則: 成果物が docs/ の cmd は `deliverable_route: shogun-doc-lane` を明示し、家老が report の path を将軍へ渡す | 将軍(cmd_skeleton に 1 field) |
+| T2-21 | stop hook で『将軍かつ loop 中かつ ScheduleWakeup 未呼出』を WARN | 家老 hotfix |
+| T2-26 | preflight の semantic_search を並列化 or キャッシュ | 家老 hotfix(S-10 と同時) |
