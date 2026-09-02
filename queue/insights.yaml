@@ -12713,7 +12713,10 @@ insights:
   priority: "low"
   source: "semantic_map_generate:new_file"
   fix_known: false
-  status: pending
+  status: resolved
+  resolved_reason: 一次情報で docs/research/cmd_4416_post_deploy_check.md の存在と内容を確認した。semantic index には cmd_4416 の設計・因果・post-deploy実行記録があり、既存概念 cdp_browser_capability と dmsignal_fe_experience_deploy の aliases/関連概念が本候補の意味を既に包含しているため、新概念追加や別実修正は不要と判定した。
+  action_artifact: "primary=docs/research/cmd_4416_post_deploy_check.md;semantic_index=docs/semantic-index/index.md:L3228,L7382-L7425,L9168-L9230,L13769-L13771;semantic_map=context/semantic-map.md:L62,L70;memory=memory_db_query+semantic_search;decision_candidate=none"
+  resolved_at: "2026-09-02T12:51:32+09:00"
 - id: INS-20260901-215508465-30bf
   ts: "2026-09-01T21:55:08+09:00"
   insight: "semantic_map_generate新規ファイル候補: `docs/research/tsumari_root_causes_20260901.md` は semantic index未登録。既存概念へのfile追加または新概念定義を検討せよ"
