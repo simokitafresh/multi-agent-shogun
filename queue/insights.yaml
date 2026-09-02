@@ -13522,3 +13522,10 @@ insights:
   source: "semantic_index_update"
   fix_known: false
   status: pending
+- id: INS-20260902-171256725-3a26
+  ts: "2026-09-02T17:12:56+09:00"
+  insight: "[[忍者が放置されていないか？]] semantic_stress_test candidate_aliases: NO_MATCH source=lord query=忍者が放置されていないか？"
+  priority: "low"
+  source: "semantic_stress_test"
+  fix_known: false
+  status: pending
