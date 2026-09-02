@@ -8300,6 +8300,59 @@ YAML
     printf 'pass=1 fail_closed=5 false_positive=0\n'
 }
 
+# test_necessity: a multi-source receipt may contain unrelated source pairs;
+# one matching pair is sufficient, while zero matching pairs remains fail-closed.
+@test "source-only receipt ignores unrelated entries when one pair matches" {
+    source "$GATE_HELPERS_FILE"
+    local base="$BATS_TEST_TMPDIR/source-only-receipt-multi-source"
+    local repo="$base/repo" report="$base/report.yaml" task="$base/task.yaml"
+    local marker="$base/task-worktree.json" receipt="$base/source-only.receipt.json"
+    local cmd_id="cmd_source_receipt_multi_probe"
+    local generation="aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+    local task_generation="bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+    mkdir -p "$repo/scripts" "$base/worktree"
+    git init -q "$repo"
+    git -C "$repo" config user.email test@example.com
+    git -C "$repo" config user.name test
+    printf 'base\n' > "$repo/scripts/gate.sh"
+    git -C "$repo" add scripts/gate.sh
+    git -C "$repo" commit -qm base
+    printf 'source\n' > "$repo/scripts/gate.sh"
+    git -C "$repo" commit -qam source
+    local source_sha
+    source_sha="$(git -C "$repo" rev-parse HEAD)"
+    cat > "$marker" <<JSON
+{"version":1,"state":"active","task_id":"$cmd_id-normal","parent_cmd":"$cmd_id","generation":"$task_generation","repo":"$repo","worktree":"$base/worktree","published_commit":"$source_sha"}
+JSON
+    cat > "$task" <<YAML
+task:
+  task_id: $cmd_id-normal
+  parent_cmd: $cmd_id
+  task_worktree_generation: $task_generation
+  task_worktree_marker: $marker
+  task_worktree_workdir: $base/worktree
+YAML
+    cat > "$report" <<YAML
+commit_hash: $source_sha
+report_id: rpt-source-receipt-multi
+files_modified:
+  - path: scripts/gate.sh
+YAML
+    cat > "$receipt" <<JSON
+{"version":1,"state":"published","cmd_id":"$cmd_id","completion_generation":"$generation","entries":[{"cmd_id":"$cmd_id","completion_generation":"$generation","report_generation":"unrelated-report","repo":"$repo","source_sha":"1111111111111111111111111111111111111111","remote_tip":"$source_sha","remote_contains_source_rc":0},{"cmd_id":"$cmd_id","completion_generation":"$generation","report_generation":"rpt-source-receipt-multi","repo":"$repo","source_sha":"$source_sha","remote_tip":"$source_sha","remote_contains_source_rc":0}]}
+JSON
+
+    run report_source_only_equivalence_state "$report" "$repo" "$task" "$source_sha" "$cmd_id" "$generation" "$receipt" "$repo"
+    [ "$status" -eq 0 ]
+
+    cat > "$receipt" <<JSON
+{"version":1,"state":"published","cmd_id":"$cmd_id","completion_generation":"$generation","entries":[{"cmd_id":"$cmd_id","completion_generation":"$generation","report_generation":"unrelated-report","repo":"$repo","source_sha":"1111111111111111111111111111111111111111","remote_tip":"$source_sha","remote_contains_source_rc":0}]}
+JSON
+    run report_source_only_equivalence_state "$report" "$repo" "$task" "$source_sha" "$cmd_id" "$generation" "$receipt" "$repo"
+    [ "$status" -ne 0 ]
+    [[ "$output" == *"source_only_receipt_pair_mismatch"* ]]
+}
+
 # Build a source-only insights publication whose receipt is the only durable
 # publication identity.  This mirrors reflux tasks that predate task-worktree
 # markers and the remote tip that retains independent insight IDs.
