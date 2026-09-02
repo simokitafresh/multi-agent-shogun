@@ -13304,3 +13304,10 @@ insights:
   source: "semantic_stress_test"
   fix_known: false
   status: pending
+- id: INS-20260902-151036106-f0c1
+  ts: "2026-09-02T15:10:36+09:00"
+  insight: "[[忍者が解放されていないようだ]] semantic_stress_test candidate_aliases: NO_MATCH source=lord query=忍者が解放されていないようだ"
+  priority: "low"
+  source: "semantic_stress_test"
+  fix_known: false
+  status: pending
