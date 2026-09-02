@@ -13581,14 +13581,20 @@ insights:
   priority: "low"
   source: "semantic_index_update"
   fix_known: false
-  status: pending
+  status: resolved
+  resolved_reason: "semantic map generation verified the candidate is represented or intentionally ignored"
+  action_artifact: "semantic_map=/home/simokitafresh/multi-agent-shogun/context/semantic-map.md;semantic_index=/home/simokitafresh/multi-agent-shogun/docs/semantic-index/index.md"
+  resolved_at: "2026-09-02T18:00:59+09:00"
 - id: INS-20260902-175518296-426b
   ts: "2026-09-02T17:55:18+09:00"
   insight: "semantic_index_update新概念候補: discussion:別の下書きとしてアップしてくれ は 既存aliasesに一致なし。概念定義とaliases追加を検討せよ"
   priority: "low"
   source: "semantic_index_update"
   fix_known: false
-  status: pending
+  status: resolved
+  resolved_reason: "semantic map generation verified the candidate is represented or intentionally ignored"
+  action_artifact: "semantic_map=/home/simokitafresh/multi-agent-shogun/context/semantic-map.md;semantic_index=/home/simokitafresh/multi-agent-shogun/docs/semantic-index/index.md"
+  resolved_at: "2026-09-02T18:00:59+09:00"
 - id: INS-20260902-175946184-01dc
   ts: "2026-09-02T17:59:46+09:00"
   insight: "lord_conversation教訓候補: target=shogun trigger=inbound_lord detail=どう思う？最初よりAI臭は減ったがインパクトが少ないよな。これは詩でもあるべきだ。中原中也と一緒だ。繰り返しのリズム感を削除しすぎて感情移入のポイントや読む人の呼吸が苦しくなるのでは？特に現代はスマホなどで縦画面で読んでいく。行間がなさすぎるのもつらいと感じる人間が多い気がするな"
@@ -13602,11 +13608,24 @@ insights:
   priority: "low"
   source: "semantic_stress_test"
   fix_known: false
-  status: pending
+  status: resolved
+  resolved_reason: "semantic index candidate was absorbed into a registered concept"
+  action_artifact: "semantic_index=/home/simokitafresh/multi-agent-shogun/docs/semantic-index/index.md"
+  resolved_at: "2026-09-02T18:02:36+09:00"
 - id: INS-20260902-180016375-2182
   ts: "2026-09-02T18:00:16+09:00"
   insight: "[[noteはnatural japaneseだった]] semantic_stress_test candidate_aliases: NO_MATCH source=lord query=noteはnatural japaneseだった。何度もやったはずだ"
   priority: "low"
   source: "semantic_stress_test"
+  fix_known: false
+  status: resolved
+  resolved_reason: "semantic index candidate was absorbed into a registered concept"
+  action_artifact: "semantic_index=/home/simokitafresh/multi-agent-shogun/docs/semantic-index/index.md"
+  resolved_at: "2026-09-02T18:02:36+09:00"
+- id: INS-20260902-180236774-30fa
+  ts: "2026-09-02T18:02:36+09:00"
+  insight: "semantic_index_update新概念候補: discussion:上げろ は 既存aliasesに一致なし。概念定義とaliases追加を検討せよ"
+  priority: "low"
+  source: "semantic_index_update"
   fix_known: false
   status: pending
