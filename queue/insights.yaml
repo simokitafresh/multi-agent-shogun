@@ -13972,7 +13972,10 @@ insights:
   priority: "low"
   source: "semantic_stress_test"
   fix_known: false
-  status: pending
+  status: resolved
+  resolved_reason: "semantic index candidate was absorbed into a registered concept"
+  action_artifact: "semantic_index=/home/simokitafresh/multi-agent-shogun/docs/semantic-index/index.md"
+  resolved_at: "2026-09-02T21:06:15+09:00"
 - id: INS-20260902-210436403-8ebb
   ts: "2026-09-02T21:04:36+09:00"
   insight: "[[単一 publisher U3 publisher daemon scripts publisher sh を dry ]] semantic_stress_test candidate_aliases: NO_MATCH source=cmds query=単一 publisher U3: publisher daemon(scripts/publisher.sh)を dry-run 既定で実装。dequeue→lock-run --bound 600→fetch→isolated tree@tip→C2a 検査→apply→commit-tree(trailer Published-By: publisher"
@@ -13999,5 +14002,12 @@ insights:
   insight: "[[殿指示 13 25『どのロールがどの CLI モデルでも必要十分に同じレベルで作業を続けられるのが我らの仕組み』 殿下問]] semantic_stress_test test_set_candidate: high_frequency_NO_MATCH count=2 source=cmds query=殿指示 2026-09-02 13:25『どのロールがどの CLI/モデルでも必要十分に同じレベルで作業を続けられるのが我らの仕組み』+殿下問 19:02『順調に進んでいるか？進展が遅すぎないか？』→第 1 波 3 unit の検証 cmd を CLEAR 待ちにせず今起票して直列を 1 段減らす(depends_on で配備は自動待機)。U2(cmd_44 quality_gate=blind_hit_rate_non_regression fixed_50_role=regression_detection_only"
   priority: "medium"
   source: "semantic_stress_test"
+  fix_known: false
+  status: pending
+- id: INS-20260902-210657141-b1ac
+  ts: "2026-09-02T21:06:57+09:00"
+  insight: "review_bundle.py singleのreview_entryはreview:ラッパーなしのTOP-LEVEL形式(cmd_id/verdict/reviewer/sg_checklist/precheck_na等を直接トップに置く)。review:で包むとprecheck_naが読まれずprecheckが走る。cmd_4445で3回試行して判明(19:28-19:39)"
+  priority: "medium"
+  source: "manual"
   fix_known: false
   status: pending
