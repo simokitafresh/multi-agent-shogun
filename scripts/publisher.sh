@@ -207,6 +207,9 @@ process_request() {
 
 handle_lock_failure() {
     local request="$1" rc="$2" task next
+    # C2a/restore RC already rotated the request out of dequeued; reading it again
+    # raised FileNotFoundError under set -e and killed the daemon (2026-09-03 05:35).
+    [ -f "$request" ] || return 0
     task="$(request_id "$request")"
     if [ "$rc" -eq 210 ]; then
         notify_karo "publisher lock-run timeout rc=210 task=$task"
