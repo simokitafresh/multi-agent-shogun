@@ -150,15 +150,112 @@ def _lesson_ids(raw: Any) -> list[str]:
     return values
 
 
+def _lesson_contract(task: dict[str, Any]) -> tuple[str, list[str]]:
+    """Return the task-generation lesson mode and its canonical IDs."""
+    assigned = task.get("assigned_lesson_ids")
+    if isinstance(assigned, list) and assigned:
+        return "strict", _lesson_ids(assigned)
+    return "subset", _lesson_ids(task.get("related_lessons") or [])
+
+
+def _report_identity_matches_task(
+    report: dict[str, Any], task: dict[str, Any]
+) -> bool:
+    """Check the report against the live worker lease when it is available.
+
+    Deployed reports carry both fields.  The parent-only fallback keeps old
+    hand-written fixtures working, while any explicit task-id disagreement is
+    treated as a different lease rather than silently borrowing its lessons.
+    """
+    report_parent = str(report.get("parent_cmd") or "").strip()
+    task_parent = str(task.get("parent_cmd") or "").strip()
+    report_task_id = str(report.get("task_id") or "").strip()
+    task_task_id = str(task.get("task_id") or "").strip()
+
+    if report_parent and task_parent and report_parent != task_parent:
+        return False
+    if bool(report_task_id) != bool(task_task_id):
+        return False
+    if report_task_id and report_task_id != task_task_id:
+        return False
+    if report_parent and not task_parent:
+        return False
+    return True
+
+
+def _snapshot_lesson_contract(
+    report: dict[str, Any],
+) -> tuple[str, list[str], str] | None:
+    """Read the immutable lesson-set snapshot embedded at report creation.
+
+    ``None`` means this is a legacy report with no lesson snapshot.  A
+    malformed explicit snapshot is represented by ``snapshot-invalid`` so it
+    cannot accidentally become an empty allowlist.
+    """
+    snapshot = report.get("task_contract_snapshot")
+    if not isinstance(snapshot, dict):
+        return None
+
+    snapshot_parent = str(snapshot.get("parent_cmd") or "").strip()
+    report_parent = str(report.get("parent_cmd") or "").strip()
+    snapshot_task_id = str(snapshot.get("task_id") or "").strip()
+    report_task_id = str(report.get("task_id") or "").strip()
+    if ((snapshot_parent and report_parent and snapshot_parent != report_parent)
+            or (snapshot_task_id and report_task_id and snapshot_task_id != report_task_id)
+            or bool(snapshot_task_id) != bool(report_task_id)):
+        return (
+            "snapshot-invalid",
+            [],
+            "snapshot identity does not match report identity",
+        )
+
+    raw = snapshot.get("lesson_set")
+    if raw is None:
+        # Accept the descriptive alias used by early fixtures during the
+        # migration, but do not infer a lesson set from the live task.
+        raw = snapshot.get("lesson_set_snapshot")
+    if raw is None:
+        return None
+
+    if isinstance(raw, dict):
+        mode = str(raw.get("mode") or "subset").strip().lower()
+        ids = raw.get("ids")
+    else:
+        mode = "subset"
+        ids = raw
+    if mode not in {"strict", "subset"} or not isinstance(ids, list):
+        return "snapshot-invalid", [], "snapshot lesson_set must contain mode and ids"
+    return mode, _lesson_ids(ids), "report.task_contract_snapshot.lesson_set"
+
+
 def lesson_feedback_set_status(
     task_path: str | pathlib.Path, report_path: str | pathlib.Path
 ) -> tuple[bool, str]:
-    """Apply cmd_complete_gate's strict/subset lesson feedback contract."""
+    """Apply cmd_complete_gate's strict/subset lesson feedback contract.
+
+    The worker task file is a mutable lease.  A completed report must use its
+    immutable deploy-time lesson snapshot after a lease handoff; otherwise a
+    later task's lessons become false ``extra`` feedback.  Legacy reports are
+    allowed to use the current task only while their explicit identity still
+    matches.  A legacy identity mismatch gets an empty allowlist, preserving
+    detection of genuine historical extras without self-authorizing them.
+    """
     task = _task_node(_load_yaml(task_path))
     report = _load_yaml(report_path)
-    assigned = task.get("assigned_lesson_ids")
-    strict = isinstance(assigned, list) and bool(assigned)
-    allowed = _lesson_ids(assigned if strict else task.get("related_lessons") or [])
+    snapshot_contract = _snapshot_lesson_contract(report)
+    compatibility = ""
+    if snapshot_contract is not None:
+        mode, allowed, source = snapshot_contract
+        if mode == "snapshot-invalid":
+            return False, f"MISMATCH mode=snapshot-invalid detail={source}"
+    elif _report_identity_matches_task(report, task):
+        mode, allowed = _lesson_contract(task)
+        source = "current task identity"
+    else:
+        mode, allowed = "legacy-incompatible", []
+        source = "legacy compatibility"
+        compatibility = " compatibility=identity-mismatch"
+    strict = mode == "strict"
     raw_reported = report.get("lessons_useful")
     if raw_reported is None:
         raw_reported = report.get("lesson_referenced")
@@ -182,15 +279,16 @@ def lesson_feedback_set_status(
         return (
             False,
             "MISMATCH "
-            f"mode={'strict' if strict else 'subset'} "
+            f"mode={mode} "
             f"missing={','.join(missing) or 'none'} "
             f"extra={','.join(extra) or 'none'} "
-            f"duplicates={','.join(duplicates) or 'none'}",
+            f"duplicates={','.join(duplicates) or 'none'}"
+            f"{compatibility} source={source}",
         )
     return (
         True,
-        f"OK mode={'strict' if strict else 'subset'} "
-        f"allowed={len(allowed)} reported={len(reported)}",
+        f"OK mode={mode} allowed={len(allowed)} reported={len(reported)}"
+        f"{compatibility} source={source}",
     )
 
 
