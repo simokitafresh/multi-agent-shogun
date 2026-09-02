@@ -31,8 +31,15 @@ paths:
 EOF
     cat > "$FIXTURE/request.yaml" <<EOF
 task_id: task_u3
+cmd_id: cmd_test_publisher
+parent_cmd: cmd_test_publisher
 publish_attempts: 0
 EOF
+    key="$(printf '%s' "queue/reports/$(basename "$FIXTURE/request.yaml")" | sha256sum | cut -d' ' -f1)"
+    approval_dir="$ROOT/queue/gates/cmd_test_publisher/review_approvals/reports/$key"
+    mkdir -p "$approval_dir"
+    : > "$approval_dir/gunshi.yaml"
+    : > "$approval_dir/karo.yaml"
     export SHOGUN_STATE_DIR="$STATE" PUBLISHER_REPO_ROOT="$WORK" PUBLISHER_MODE=dry-run
     cat > "$FIXTURE/inbox_write.sh" <<'EOF'
 #!/bin/bash
@@ -42,7 +49,10 @@ EOF
     export PUBLISHER_INBOX_WRITER="$FIXTURE/inbox_write.sh" INBOX_WRITE_STUB_LOG="$FIXTURE/inbox.log"
 }
 
-teardown() { find "$FIXTURE" -depth -delete 2>/dev/null || true; }
+teardown() {
+    find "$FIXTURE" -depth -delete 2>/dev/null || true
+    find "$ROOT/queue/gates/cmd_test_publisher" -depth -delete 2>/dev/null || true
+}
 
 @test "dry-run validates C2a, creates no origin update, and records event" {
     bash "$ROOT/scripts/publisher_queue.sh" enqueue "$FIXTURE/request.yaml" >/dev/null
@@ -72,6 +82,45 @@ teardown() { find "$FIXTURE" -depth -delete 2>/dev/null || true; }
     [ "$(find "$STATE/publish_queue/rc" -name '*.request' | wc -l)" -eq 1 ]
     grep -q 'C2a RC' "$FIXTURE/inbox.log"
     [ "$(jq -r 'select(.kind=="c2a_rc") | .kind' "$STATE/publish_queue/events.jsonl")" = c2a_rc ]
+}
+
+# test_necessity: a tip whose changed blob already equals the manifest's
+# expected blob is an idempotent publication and must not create a second
+# publisher commit or an RC.
+@test "already published tip is an idempotent no-op" {
+    git -C "$WORK" push -q origin main
+    bash "$ROOT/scripts/publisher_queue.sh" enqueue "$FIXTURE/request.yaml" >/dev/null
+    run env SHOGUN_STATE_DIR="$STATE" PUBLISHER_REPO_ROOT="$PUBROOT" PUBLISHER_INBOX_WRITER="$FIXTURE/inbox_write.sh" PUBLISHER_ONCE=1 bash "$ROOT/scripts/publisher.sh"
+    [ "$status" -eq 0 ]
+    [ "$(find "$STATE/publish_queue/done" -name '*.request' | wc -l)" -eq 1 ]
+    [ "$(find "$STATE/publish_queue/rc" -name '*.request' | wc -l)" -eq 0 ]
+    [ "$(jq -r 'select(.kind=="already_published") | .reason' "$STATE/publish_queue/events.jsonl")" = "published_sha=$(git --git-dir="$REMOTE" rev-parse refs/heads/main)" ]
+    [ ! -f "$FIXTURE/inbox.log" ] || [ "$(wc -l < "$FIXTURE/inbox.log")" -eq 0 ]
+}
+
+# test_necessity: a non-conflicting patch must apply against the isolated tip
+# even when an unrelated file advanced after the request was captured.
+@test "restore applies patch to an advanced tip without a conflict" {
+    printf 'unrelated\n' > "$PUBROOT/remote.txt"
+    git -C "$PUBROOT" add remote.txt; git -C "$PUBROOT" commit -q -m unrelated
+    git -C "$PUBROOT" push -q origin main
+    bash "$ROOT/scripts/publisher_queue.sh" enqueue "$FIXTURE/request.yaml" >/dev/null
+    run env SHOGUN_STATE_DIR="$STATE" PUBLISHER_REPO_ROOT="$PUBROOT" PUBLISHER_INBOX_WRITER="$FIXTURE/inbox_write.sh" PUBLISHER_ONCE=1 bash "$ROOT/scripts/publisher.sh"
+    [ "$status" -eq 0 ]
+    [ "$(jq -r 'select(.kind=="dry_run_publish") | .kind' "$STATE/publish_queue/events.jsonl")" = dry_run_publish ]
+    [ "$(jq -r 'select(.kind=="restore_rc") | .kind' "$STATE/publish_queue/events.jsonl" | wc -l)" -eq 0 ]
+}
+
+# test_necessity: publisher failure notifications must use a wake-up type
+# accepted by the karo inbox allowlist rather than the blocked investigation lane.
+@test "publisher notifications use an allowed wake type" {
+    bash "$ROOT/scripts/publisher_queue.sh" enqueue "$FIXTURE/request.yaml" >/dev/null
+    printf 'remote-change\n' > "$PUBROOT/payload.txt"
+    git -C "$PUBROOT" add payload.txt; git -C "$PUBROOT" commit -q -m remote-change
+    git -C "$PUBROOT" push -q origin main
+    run env SHOGUN_STATE_DIR="$STATE" PUBLISHER_REPO_ROOT="$PUBROOT" PUBLISHER_INBOX_WRITER="$FIXTURE/inbox_write.sh" PUBLISHER_ONCE=1 bash "$ROOT/scripts/publisher.sh"
+    [ "$status" -ne 0 ]
+    grep -Eq ' (task_assigned|report_received|task_done|report_completed|report_done|report_ready|task_failed) publisher notify_karo$' "$FIXTURE/inbox.log"
 }
 
 @test "active publishes parent-one commit and synchronizes clean root" {
