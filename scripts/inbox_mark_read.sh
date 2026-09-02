@@ -349,11 +349,13 @@ if review_requirements:
                     continue
                 review_times = [parse_timestamp(value) for value in nested_values(review_entry, "reviewed_at")]
                 if any(review_at is not None and review_at >= message_at for review_at in review_times):
-                    # fingerprint照合: メッセージにfingerprintがある場合、
+                    # fingerprint照合: LGTM verdictの場合のみ適用。
+                    # FAIL verdictはapproval不要のためスキップ。
+                    # メッセージにfingerprintがある場合、
                     # review_approvals/reports/<key>/gunshi.yaml のfingerprintと
                     # 一致するか確認する。不一致=旧LGTMは新fp報告に無効→BLOCK。
-                    # fingerprintがないメッセージは従来通り許可。
-                    if msg_fingerprint:
+                    entry_verdict = str(review_entry.get("verdict") or review_entry.get("report_verdict") or "")
+                    if msg_fingerprint and entry_verdict.upper() not in ("FAIL",):
                         cmd_id = ""
                         for key in ("cmd_id", "parent_cmd"):
                             v = entry.get(key) if isinstance(entry, dict) else None
