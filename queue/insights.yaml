@@ -14213,7 +14213,10 @@ insights:
   priority: "medium"
   source: "manual"
   fix_known: false
-  status: pending
+  status: "resolved"
+  resolved_reason: "一次確認: scripts/cmd_complete_gate.sh:3542-3579(discover_cmd_report_cross_repo_sources fallback)がreport.cross_repo_commits[].repoの生値をrealpathのみでreport_sources_by_repoのキーに使い、linked worktree pathを正本repo rootへ正規化しない(L1109-1135のresolve_task_publish_repo_dirはtask file現存時のみ有効)。2忍者が各自のworktree pwdをrepoに書くと別キーとなり、L3622のBLOCK『report source commit unavailable』に一致する再現経路を確認した。正規化手法は同型バグINS-20260903-012906038-b245の修正(scripts/insight_write.sh:54-60、git-common-dirの親を正本rootとする)が既に実証済み。対象ファイルscripts/cmd_complete_gate.shは現在凍結中(cmd_karo_hotfix_publisher_enqueue_repo_guard_202609030218)かつ本taskのscope(queue/insights.yamlのみ)外のため実修正は行わず、decision_candidateとして別実装cmdへ整理した。"
+  action_artifact: "target=queue/insights.yaml:INS-20260902-224824056-6f47;primary=scripts/cmd_complete_gate.sh:3542-3579,3599-3624,1109-1135;precedent_fix=scripts/insight_write.sh:54-60(INS-20260903-012906038-b245);frozen_by=cmd_karo_hotfix_publisher_enqueue_repo_guard_202609030218;decision_candidate=cross_repo_commits.repoのlinked worktree path正規化(git-common-dir親をrepo rootとする)をcmd_complete_gate.sh discover_cmd_report_cross_repo_sourcesとreport-write commit_contract.repo_root双方に適用する別実装cmdを起票"
+  resolved_at: "2026-09-03T02:35:12.619843"
 - id: INS-20260902-225235773-02a8
   ts: "2026-09-02T22:52:35+09:00"
   insight: "[[T226 T224 T212 T201 T188の進捗は？]] semantic_stress_test candidate_aliases: NO_MATCH source=lord query=T226 / T224 / T212 / T201 / T188の進捗は？"
@@ -14602,7 +14605,10 @@ insights:
   priority: "high"
   source: "manual"
   fix_known: false
-  status: pending
+  status: "resolved"
+  resolved_reason: "GATE CLEAR: cmd_karo_hotfix_workarounds_merge_driver_dup_cmd_id_202609030148 completed declared remediation"
+  action_artifact: "cmd=cmd_karo_hotfix_workarounds_merge_driver_dup_cmd_id_202609030148;gate=cmd_complete_gate;result=CLEAR"
+  resolved_at: "2026-09-03T02:36:27.208982"
 - id: INS-20260903-013056256-4ae9
   ts: "2026-09-03T01:30:56+09:00"
   insight: "semantic_index_update新概念候補: discussion:あまりに遅すぎる。先に進んでから戻ればいい は 既存aliasesに一致なし。概念定義とaliases追加を検討せよ"
