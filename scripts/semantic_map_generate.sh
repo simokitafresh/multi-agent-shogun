@@ -406,6 +406,9 @@ def is_ignored_new_file_candidate(path):
     name = Path(path).name
     return (
         re.match(r"^\.[^/]+_worktrees/", path) is not None
+        # 2026-09-02 D0: dotfile/dot dir(.claude/.githooks/.gitattributes/.tmp-*receipt)は semantic index 対象外。
+        # 14 件の INSIGHT_REPEAT 中 8 件がこれらの偽陽性で毎 run 再通知されていた(負の複利)
+        or path.startswith(".")
         or path.startswith("tests/unit/_tmp_")
         or "/_tmp_" in path
         or name.startswith("_tmp_")
@@ -874,6 +877,9 @@ def is_ignored_new_file_candidate(path):
     name = Path(path).name
     return (
         re.match(r"^\.[^/]+_worktrees/", path) is not None
+        # 2026-09-02 D0: dotfile/dot dir(.claude/.githooks/.gitattributes/.tmp-*receipt)は semantic index 対象外。
+        # 14 件の INSIGHT_REPEAT 中 8 件がこれらの偽陽性で毎 run 再通知されていた(負の複利)
+        or path.startswith(".")
         or path.startswith("tests/unit/_tmp_")
         or "/_tmp_" in path
         or name.startswith("_tmp_")

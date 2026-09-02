@@ -12723,14 +12723,20 @@ insights:
   priority: "low"
   source: "semantic_map_generate:new_file"
   fix_known: false
-  status: pending
+  status: resolved
+  resolved_reason: "semantic-map.md へ概念行を追記(将軍 doc lane D0 2026-09-02)"
+  action_artifact: "context/semantic-map.md"
+  resolved_at: "2026-09-02T12:53:37+09:00"
 - id: INS-20260901-215529227-bfb1
   ts: "2026-09-01T21:55:29+09:00"
   insight: "semantic_map_generate新規ファイル候補: `scripts/cdp/cmd_4401_publish_timing.md` は semantic index未登録。既存概念へのfile追加または新概念定義を検討せよ"
   priority: "low"
   source: "semantic_map_generate:new_file"
   fix_known: false
-  status: pending
+  status: resolved
+  resolved_reason: "semantic-map.md へ概念行を追記(将軍 doc lane D0 2026-09-02)"
+  action_artifact: "context/semantic-map.md"
+  resolved_at: "2026-09-02T12:53:37+09:00"
 - id: INS-20260901-222601588-3f6d
   ts: "2026-09-01T22:26:01+09:00"
   insight: "reissue: cmd_reflux_insight_202609012124_kotaro / INS-20260827-220603892-c8d8。旧SG7 bundleは旧report fingerprint=4f47cb88...を参照しreview verdict=FAILのためformal完了不能。現report fingerprint=69544a93...は旧bundleと世代不一致。旧report/bundleは履歴として保持し、次refluxで現契約から再採取する。旧report revision routing保存契約は別hotfix候補。origin: [[cmd_reflux_insight_202609012124_kotaro]] -> [[stale_sg7_bundle_report_generation]] -> [[reflux_reissue]]"
@@ -12747,28 +12753,40 @@ insights:
   priority: "low"
   source: "semantic_map_generate:new_file"
   fix_known: false
-  status: pending
+  status: resolved
+  resolved_reason: "生成器の偽陽性(dotfile/dot dir は index 対象外)。semantic_map_generate.sh の ignore に path.startswith('.') を追加"
+  action_artifact: "scripts/semantic_map_generate.sh"
+  resolved_at: "2026-09-02T12:53:37+09:00"
 - id: INS-20260901-231347692-332c
   ts: "2026-09-01T23:13:47+09:00"
   insight: "semantic_map_generate新規ファイル候補: `.claude/hooks/pre-bash-no-verify-guard.sh` は semantic index未登録。既存概念へのfile追加または新概念定義を検討せよ"
   priority: "low"
   source: "semantic_map_generate:new_file"
   fix_known: false
-  status: pending
+  status: resolved
+  resolved_reason: "生成器の偽陽性(dotfile/dot dir は index 対象外)。semantic_map_generate.sh の ignore に path.startswith('.') を追加"
+  action_artifact: "scripts/semantic_map_generate.sh"
+  resolved_at: "2026-09-02T12:53:37+09:00"
 - id: INS-20260901-231348103-979e
   ts: "2026-09-01T23:13:48+09:00"
   insight: "semantic_map_generate新規ファイル候補: `.claude/hooks/pretool-dispatch.sh` は semantic index未登録。既存概念へのfile追加または新概念定義を検討せよ"
   priority: "low"
   source: "semantic_map_generate:new_file"
   fix_known: false
-  status: pending
+  status: resolved
+  resolved_reason: "生成器の偽陽性(dotfile/dot dir は index 対象外)。semantic_map_generate.sh の ignore に path.startswith('.') を追加"
+  action_artifact: "scripts/semantic_map_generate.sh"
+  resolved_at: "2026-09-02T12:53:38+09:00"
 - id: INS-20260901-231348189-424c
   ts: "2026-09-01T23:13:48+09:00"
   insight: "semantic_map_generate新規ファイル候補: `.claude/skills/codd-refactor/SKILL.md` は semantic index未登録。既存概念へのfile追加または新概念定義を検討せよ"
   priority: "low"
   source: "semantic_map_generate:new_file"
   fix_known: false
-  status: pending
+  status: resolved
+  resolved_reason: "生成器の偽陽性(dotfile/dot dir は index 対象外)。semantic_map_generate.sh の ignore に path.startswith('.') を追加"
+  action_artifact: "scripts/semantic_map_generate.sh"
+  resolved_at: "2026-09-02T12:53:38+09:00"
 - id: INS-20260901-233326233-3b10
   ts: "2026-09-01T23:33:26+09:00"
   insight: "semantic_index_update未登録cmd originノード: [[殿指示_つまり原因全員探索_20260901_2044]] は既存aliasesに一致なし。類似概念TOP3: creator_brainwashing_defense(創造主の洗脳防御; alias=殿指示; score=25.2) / strong_new_game_completion_contract(強くてニューゲーム完遂契約; alias=殿指示_強くてニューゲーム_20260813_1648; score=20.6) / known_unknowns_principle(無知の知; alias=殿指示 「2層SSOTにするべき仕組みが他にないか確認しよう」; score=18.4)。概念定義とaliases追加を検討せよ"
@@ -12825,21 +12843,30 @@ insights:
   priority: "low"
   source: "semantic_map_generate:new_file"
   fix_known: false
-  status: pending
+  status: resolved
+  resolved_reason: "生成器の偽陽性(dotfile/dot dir は index 対象外)。semantic_map_generate.sh の ignore に path.startswith('.') を追加"
+  action_artifact: "scripts/semantic_map_generate.sh"
+  resolved_at: "2026-09-02T12:53:38+09:00"
 - id: INS-20260902-010837785-7a98
   ts: "2026-09-02T01:08:37+09:00"
   insight: "semantic_map_generate新規ファイル候補: `.githooks/post-commit` は semantic index未登録。既存概念へのfile追加または新概念定義を検討せよ"
   priority: "low"
   source: "semantic_map_generate:new_file"
   fix_known: false
-  status: pending
+  status: resolved
+  resolved_reason: "生成器の偽陽性(dotfile/dot dir は index 対象外)。semantic_map_generate.sh の ignore に path.startswith('.') を追加"
+  action_artifact: "scripts/semantic_map_generate.sh"
+  resolved_at: "2026-09-02T12:53:38+09:00"
 - id: INS-20260902-010838061-70ec
   ts: "2026-09-02T01:08:38+09:00"
   insight: "semantic_map_generate新規ファイル候補: `.githooks/pre-commit` は semantic index未登録。既存概念へのfile追加または新概念定義を検討せよ"
   priority: "low"
   source: "semantic_map_generate:new_file"
   fix_known: false
-  status: pending
+  status: resolved
+  resolved_reason: "生成器の偽陽性(dotfile/dot dir は index 対象外)。semantic_map_generate.sh の ignore に path.startswith('.') を追加"
+  action_artifact: "scripts/semantic_map_generate.sh"
+  resolved_at: "2026-09-02T12:53:38+09:00"
 - id: INS-20260902-010913292-1500
   ts: "2026-09-02T01:09:13+09:00"
   insight: "[[T221 T217 T213 T212 T201 T188の進捗は？いつ終了するんだ？]] semantic_stress_test candidate_aliases: NO_MATCH source=lord query=T221 / T217 / T213 / T212 / T201 / T188の進捗は？いつ終了するんだ？"
@@ -12886,7 +12913,10 @@ insights:
   priority: "low"
   source: "semantic_map_generate:new_file"
   fix_known: false
-  status: pending
+  status: resolved
+  resolved_reason: "semantic-map.md へ概念行を追記(将軍 doc lane D0 2026-09-02)"
+  action_artifact: "context/semantic-map.md"
+  resolved_at: "2026-09-02T12:53:37+09:00"
 - id: INS-20260902-024822578-836c
   ts: "2026-09-02T02:48:22+09:00"
   insight: "[[この案についてasis Tobe 5w1hで実装の設計書を作ろう]] semantic_stress_test candidate_aliases: NO_MATCH source=lord query=この案についてasis/Tobe 5w1hで実装の設計書を作ろう。この案が完成したら不要になる複雑さも確認して、最終的にはシンプルに速く確実に動く仕組みが必要だな。複雑さの除去まで先に検証しよう。将軍が設計書を書いたら家老にレビューしてもらえ"
@@ -12903,21 +12933,30 @@ insights:
   priority: "low"
   source: "semantic_map_generate:new_file"
   fix_known: false
-  status: pending
+  status: resolved
+  resolved_reason: "生成器の偽陽性(dotfile/dot dir は index 対象外)。semantic_map_generate.sh の ignore に path.startswith('.') を追加"
+  action_artifact: "scripts/semantic_map_generate.sh"
+  resolved_at: "2026-09-02T12:53:38+09:00"
 - id: INS-20260902-041326460-107a
   ts: "2026-09-02T04:13:26+09:00"
   insight: "semantic_map_generate新規ファイル候補: `archive/cmd-chronicle/2026-08.md` は semantic index未登録。既存概念へのfile追加または新概念定義を検討せよ"
   priority: "low"
   source: "semantic_map_generate:new_file"
   fix_known: false
-  status: pending
+  status: resolved
+  resolved_reason: "semantic-map.md へ概念行を追記(将軍 doc lane D0 2026-09-02)"
+  action_artifact: "context/semantic-map.md"
+  resolved_at: "2026-09-02T12:53:37+09:00"
 - id: INS-20260902-044309852-ec6d
   ts: "2026-09-02T04:43:09+09:00"
   insight: "semantic_map_generate新規ファイル候補: `docs/research/karo-review-trial-fixes-20260901.md` は semantic index未登録。既存概念へのfile追加または新概念定義を検討せよ"
   priority: "low"
   source: "semantic_map_generate:new_file"
   fix_known: false
-  status: pending
+  status: resolved
+  resolved_reason: "semantic-map.md へ概念行を追記(将軍 doc lane D0 2026-09-02)"
+  action_artifact: "context/semantic-map.md"
+  resolved_at: "2026-09-02T12:53:37+09:00"
 - id: INS-20260902-123253298-130c
   ts: "2026-09-02T12:32:53+09:00"
   insight: "semantic_index_update新概念候補: discussion:一回仕切り直して再起動したいな。家老が止めている仕事を一気に将軍が代行して、一回停止しないか？ は 既存aliasesに一致なし。概念定義とaliases追加を検討せよ"
@@ -12961,4 +13000,7 @@ insights:
   priority: "low"
   source: "semantic_map_generate:new_file"
   fix_known: false
-  status: pending
+  status: resolved
+  resolved_reason: "semantic-map.md へ概念行を追記(将軍 doc lane D0 2026-09-02)"
+  action_artifact: "context/semantic-map.md"
+  resolved_at: "2026-09-02T12:53:37+09:00"
