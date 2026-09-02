@@ -20,5 +20,9 @@
 # 生成する。これがpush対象commitの変更pathと重なると、他の自動生成pathと同じ理由
 # (再生成のたびに差分が出る)でGA-PUSH1が反復BLOCKする。exact pathのみ除外し、
 # 通常source pathとの混在は従来どおりBLOCKを維持する。
+# projects/*/lessons.yaml と tasks/lessons.md は lesson writer/sync のSSOT・cache
+# 出力であり、同一lessonの公開と再同期が重なると同じ再生成差分になる。runtime-only
+# publication の正規path契約と同じ exact pattern で除外し、通常sourceとの混在は
+# 引き続きBLOCKする。
 
-export AUTOGEN_PATH_EXCLUDE_REGEX='^queue/|^logs/|^dashboard\.md$|^context/lord-conversation-index\.md$|^context/senkyoku-log\.md$|^context/cmd-chronicle\.md$|^context/dm-signal-research\.md$|^docs/semantic-index/index\.md$|\.log$'
+export AUTOGEN_PATH_EXCLUDE_REGEX='^queue/|^logs/|^dashboard\.md$|^context/lord-conversation-index\.md$|^context/senkyoku-log\.md$|^context/cmd-chronicle\.md$|^context/dm-signal-research\.md$|^docs/semantic-index/index\.md$|^projects/[^/]+/lessons\.ya?ml$|^tasks/lessons\.md$|\.log$'

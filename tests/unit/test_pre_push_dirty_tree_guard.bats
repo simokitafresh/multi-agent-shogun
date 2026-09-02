@@ -374,6 +374,31 @@ EOF
     [ -z "$(latest_artifact_text)" ]
 }
 
+# test_necessity: GA-554 showed that the lesson writer's SSOT/cache pair was
+# classified as a normal dirty overlap even though both paths are already
+# runtime-only publication outputs. A lesson publication followed by the
+# writer's equivalent regeneration must not create a GA-PUSH1 artifact.
+@test "AUTOGEN-EXCLUDE: lesson SSOT and generated cache overlap is not blocked" {
+    mkdir -p "$FAKE_REPO/scripts/lib" "$FAKE_REPO/projects/infra" "$FAKE_REPO/tasks"
+    cp "$PROJECT_ROOT/scripts/lib/autogen_paths.sh" "$FAKE_REPO/scripts/lib/autogen_paths.sh"
+    printf 'lessons v1\n' > "$FAKE_REPO/tasks/lessons.md"
+    printf 'cache v1\n' > "$FAKE_REPO/projects/infra/lessons.yaml"
+    git -C "$FAKE_REPO" add -A
+    git -C "$FAKE_REPO" commit -q -m "add lesson publication pair"
+    printf 'lessons v2 (writer publication)\n' > "$FAKE_REPO/tasks/lessons.md"
+    printf 'cache v2 (writer publication)\n' > "$FAKE_REPO/projects/infra/lessons.yaml"
+    git -C "$FAKE_REPO" add -A
+    git -C "$FAKE_REPO" commit -q -m "publish lesson pair"
+    LOCAL_SHA="$(git -C "$FAKE_REPO" rev-parse HEAD)"
+
+    printf 'lessons v3 (equivalent regeneration)\n' > "$FAKE_REPO/tasks/lessons.md"
+    printf 'cache v3 (equivalent regeneration)\n' > "$FAKE_REPO/projects/infra/lessons.yaml"
+
+    run run_prepush
+    [ "$status" -eq 0 ]
+    [ -z "$(latest_artifact_text)" ]
+}
+
 # test_necessity: the semantic-index exclusion must be an exact-path match,
 # not a prefix/directory match — a sibling file under the same directory
 # (e.g. a source file someone happens to add next to the SSOT) must still
