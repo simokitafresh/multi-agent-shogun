@@ -60,7 +60,9 @@ setup() {
 }
 
 @test "SG-PRE21 causal_backlinks tmpdir leaves no residue after a normal run" {
-  before_count=$(find /tmp -maxdepth 1 -name 'gunshi_pre21_*' 2>/dev/null | wc -l)
+  # Isolate residue counting from concurrent prechecks that share /tmp (flaky 2026-09-03 GA-561).
+  export TMPDIR="$BATS_TEST_TMPDIR"
+  before_count=$(find "$TMPDIR" -maxdepth 1 -name 'gunshi_pre21_*' 2>/dev/null | wc -l)
   fixture_report="$BATS_TEST_TMPDIR/fixture_report.yaml"
   cat > "$fixture_report" <<EOF
 worker_id: test
@@ -78,6 +80,6 @@ files_modified:
     change: "fixture only, not a real change"
 EOF
   run bash "$TARGET" "$fixture_report"
-  after_count=$(find /tmp -maxdepth 1 -name 'gunshi_pre21_*' 2>/dev/null | wc -l)
+  after_count=$(find "$TMPDIR" -maxdepth 1 -name 'gunshi_pre21_*' 2>/dev/null | wc -l)
   [ "$after_count" -eq "$before_count" ]
 }

@@ -1363,7 +1363,7 @@ if [ -n "${FILES_MODIFIED:-}" ]; then
         # 「判定結果を一切変えない」制約に抵触しない。元の逐次ループと出力順序を一致させる
         # ため、SKIP行と結果行を元のfpath順のまま構築する二段構え(1: 各stem結果を並列取得
         # →一時ファイル 2: 元の順序でSKIP/結果を組み立て)にする。
-        _causal_tmpdir=$(mktemp -d /tmp/gunshi_pre21_XXXXXX)
+        _causal_tmpdir=$(mktemp -d "${TMPDIR:-/tmp}/gunshi_pre21_XXXXXX")
         _causal_order=()
         _causal_pids=()
         _causal_i=0
