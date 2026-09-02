@@ -1080,6 +1080,8 @@
   timestamp: "2026-09-02T21:35:00+09:00"
 - cmd_id: cmd_4453
   review_type: draft
+  gate_result: BLOCK
+  gate_synced_at: 2026-09-02T23:05:48+09:00
   verdict: APPROVE
   verified_files:
     - "scripts/review_approval.sh:1"
@@ -1114,7 +1116,7 @@
   origin: "[[cmd_4453]] -> [[single_publisher_U5_admit]] -> [[APPROVE_fail_closed_gate]]"
   ambiguity_points: none
   discretion_fills: none
-  reviewed_at: "2026-09-02T22:54:00+09:00"
+  reviewed_at: "2026-09-02T23:16:00+09:00"
   timestamp: "2026-09-02T21:36:00+09:00"
 - cmd_id: cmd_karo_hotfix_u1_publisher_queue_fifo_order_202609022136
   review_type: draft
@@ -1186,7 +1188,7 @@
 - cmd_id: cmd_4454
   review_type: draft
   gate_result: CLEAR
-  gate_synced_at: 2026-09-02T22:58:01+09:00
+  gate_synced_at: 2026-09-02T22:59:38+09:00
   verdict: APPROVE
   verified_files:
     - "queue/tasks/hayate.yaml:1"
@@ -1424,6 +1426,8 @@
   timestamp: "2026-09-02T22:12:00+09:00"
 - cmd_id: cmd_karo_hotfix_integrate_readtree_checkout_sync_202609022220
   review_type: draft
+  gate_result: BLOCK
+  gate_synced_at: 2026-09-02T23:06:51+09:00
   verdict: APPROVE
   verified_files:
     - "queue/tasks/hanzo.yaml:1"
@@ -1455,6 +1459,8 @@
   timestamp: "2026-09-02T22:16:00+09:00"
 - cmd_id: cmd_4453
   review_type: report
+  gate_result: BLOCK
+  gate_synced_at: 2026-09-02T23:05:48+09:00
   report_ninja: kotaro
   report_task_id: cmd_4453_full
   report_verdict: FAIL
@@ -1648,7 +1654,7 @@
   report_task_id: cmd_reflux_insight_202609022228_saizo_exact
   report_verdict: LGTM
   review_type: report
-  reviewed_at: '2026-09-02T22:47:00+09:00'
+  reviewed_at: '2026-09-02T23:15:00+09:00'
   step3_5_verified: true
   timestamp: '2026-09-02T22:47:00+09:00'
   verdict: LGTM
@@ -1796,3 +1802,239 @@
   origin: "[[CI_fix_再送]] -> [[SG-PRE1_format]] -> [[FAIL]]"
   reviewed_at: "2026-09-02T22:55:00+09:00"
   timestamp: "2026-09-02T22:55:00+09:00"
+- brainwash_check: '#1yes(旧版を重複扱いした早期終了を修正) #2no #3no #4no #5no #6no #7no #8no'
+  causal_chain: 旧fingerprint LGTM→RC修正→新fingerprint→bundle再発行
+  cmd_id: cmd_karo_hotfix_integrate_readtree_checkout_sync_202609022220
+  escalation_needed: false
+  finding_categories:
+  - assumptions
+  - numbers
+  - premortem
+  - adversarial
+  - ambiguity
+  findings_summary: 改訂版再LGTM。cross_repo_commits.repo正本修正のみ。実装不変。ERRORS=0
+  gate_prediction: CLEAR
+  gate_prediction_reason: all checks passed
+  lesson_quality: OK
+  observations:
+  - '改訂: cross_repo_commits.repoを正本repoへ修正(RC)。実装変更なし'
+  - 旧LGTM(22:47)は旧fingerprintに紐付くためbundle再発行が必要
+  operational_simulation:
+    actual: CLEAR ERRORS=0
+    command: precheck
+    expected: CLEAR ERRORS=0
+    result: PASS
+  origin: '[[integrate_readtree]] -> [[RC_repo修正]] -> [[LGTM再発行]]'
+  report_ninja: hanzo
+  report_task_id: cmd_karo_hotfix_integrate_readtree_checkout_sync_202609022220_normal
+  report_verdict: LGTM
+  review_type: report
+  reviewed_at: '2026-09-02T23:01:00+09:00'
+  step3_5_verified: true
+  timestamp: '2026-09-02T23:01:00+09:00'
+  verdict: LGTM
+  verified_files:
+  - scripts/ninja_monitor.sh:505
+  - tests/unit/test_push_lane_integrate.bats:1
+- cmd_id: cmd_4455
+  review_type: draft
+  gate_result: CLEAR
+  gate_synced_at: 2026-09-02T23:25:13+09:00
+  verdict: APPROVE
+  verified_files:
+    - "queue/tasks/saizo.yaml:1"
+  findings_summary: "LP SEO signals孤立554頁解消。一覧EN/JA新規+月次ナビ3リンク+sitemap 2 entry。配備可"
+  confidence: HIGH
+  finding_categories:
+    - assumptions
+    - numbers
+    - simulation
+    - premortem
+    - north_star
+    - ambiguity
+    - adversarial
+  observations:
+    - "本番curl確認: /signals/ 404、LP→signals href 0。554頁が孤立"
+    - "monthlySignalMonthsで自動group(月ハードコード禁止)。hreflang en/ja/x-default"
+  operational_simulation:
+    command: "task確認"
+    expected: "SEO P1孤立解消"
+    actual: "一覧+ナビ+sitemap"
+    result: "MATCH"
+  causal_chain: "554頁孤立→crawl優先度最下位→一覧+ナビで内部リンク到達可能化→SEO改善"
+  brainwash_check: "#1no #2no #3no #4no #5no #6no #7no #8no 554頁+本番curl確認"
+  origin: "[[殿指示_sitemap554_22:44]] -> [[signals孤立解消]] -> [[APPROVE]]"
+  ambiguity_points: none
+  discretion_fills: none
+  reviewed_at: "2026-09-02T23:24:00+09:00"
+  timestamp: "2026-09-02T23:08:00+09:00"
+- cmd_id: cmd_karo_hotfix_report_format_manifest_dotslash_202609022312
+  review_type: draft
+  verdict: APPROVE
+  verified_files:
+    - "queue/tasks/hayate.yaml:1"
+  findings_summary: "manifest dotslash正規化hotfix。CI fix阻害FPの根治。配備可"
+  confidence: HIGH
+  finding_categories:
+    - assumptions
+    - numbers
+    - simulation
+    - premortem
+    - north_star
+    - ambiguity
+    - adversarial
+  observations:
+    - "gate_report_format.shのpath形式チェックがroot直下file(AGENTS.md)を/不含でFAIL=FP"
+    - "§14.4例外(全CLEARを塞ぐ1行)適用"
+  operational_simulation:
+    command: "task確認"
+    expected: "manifest path正規化"
+    actual: "gate_report_format.sh修正"
+    result: "MATCH"
+  causal_chain: "AGENTS.md(root直下)→/不含→path形式FAIL→CI fix bundle停止→dotslash正規化で根治"
+  brainwash_check: "#1no #2no #3no #4no #5no #6no #7no #8no FP原因特定+§14.4適用確認"
+  origin: "[[CI_fix_bundle停止]] -> [[root直下path_FP]] -> [[APPROVE_dotslash正規化]]"
+  ambiguity_points: none
+  discretion_fills: none
+  timestamp: "2026-09-02T23:13:00+09:00"
+- brainwash_check: '#1no #2no #3no #4no #5no #6no #7no #8no ERRORS=0確認'
+  causal_chain: RC3(commit列挙)→RC4(files_modified追加)→ERRORS=0→LGTM
+  cmd_id: cmd_4453
+  conflict_of_interest:
+    detected: true
+    mitigation: 家老二重チェック
+    scope: review_approval.sh変更
+  escalation_needed: false
+  finding_categories:
+  - assumptions
+  - numbers
+  - premortem
+  - adversarial
+  - ambiguity
+  findings_summary: RC4。files_modified/cross_repo_commits更新。ERRORS=0。LGTM再発行
+  gate_prediction: CLEAR
+  gate_prediction_reason: all checks passed
+  lesson_quality: OK
+  observations:
+  - 'RC4: test_publisher_queue.bats追加をfiles_modified/cross_repo_commitsに反映'
+  - precheck ERRORS=0(前回ERRORS=1→解消)
+  operational_simulation:
+    actual: CLEAR ERRORS=0
+    command: precheck
+    expected: CLEAR ERRORS=0
+    result: PASS
+  origin: '[[cmd_4453]] -> [[RC4]] -> [[LGTM]]'
+  report_ninja: kotaro
+  report_task_id: cmd_4453_full
+  report_verdict: LGTM
+  review_type: report
+  reviewed_at: '2026-09-02T23:15:00+09:00'
+  step3_5_verified: true
+  timestamp: '2026-09-02T23:15:00+09:00'
+  verdict: LGTM
+  verified_files:
+  - queue/reports/kotaro_report_cmd_4453.yaml:103
+- cmd_id: cmd_karo_ci_fix_33630722226_instructions_sync_fp_vocab_202609022153
+  review_type: report
+  report_ninja: tobisaru
+  report_task_id: cmd_karo_ci_fix_33630722226_instructions_sync_fp_vocab_202609022153_normal
+  report_verdict: FAIL
+  verdict: FAIL
+  verified_files:
+    - "queue/reports/tobisaru_report_cmd_karo_ci_fix_33630722226_instructions_sync_fp_vocab_202609022153.yaml:1"
+  fail_reasons:
+    - "LGTM判定だがreview_bundle停止(SG-PRE1 path形式FP)。dotslash hotfix(疾風)配備済み。hotfix完了後にbundle再発行予定"
+  lesson_quality: OK
+  escalation_needed: false
+  finding_categories:
+    - assumptions
+    - numbers
+    - premortem
+    - adversarial
+    - ambiguity
+  observations:
+    - "status=completed/verdict=PASS。manifest PASS。path形式FPのみ残存"
+    - "dotslash hotfix(疾風cmd_karo_hotfix_report_format_manifest_dotslash)で根治予定"
+  operational_simulation:
+    command: "precheck"
+    expected: "CLEAR"
+    actual: "CLEAR ERRORS=1(path形式FP)"
+    result: "PASS(FP除く)"
+  causal_chain: "path形式FP→dotslash hotfix→解消後にbundle再発行"
+  brainwash_check: "#1no #2no #3no #4no #5no #6no #7no #8no manifest PASS確認"
+  step3_5_verified: true
+  gate_prediction: CLEAR
+  gate_prediction_reason: "lesson_candidate有(INFO)"
+  origin: "[[CI_fix]] -> [[path形式FP]] -> [[FAIL_hotfix待ち]]"
+  reviewed_at: "2026-09-02T23:16:00+09:00"
+  timestamp: "2026-09-02T23:16:00+09:00"
+- brainwash_check: '#1no #2no #3no #4no #5no #6no #7no #8no 8/8+302/302+nudge 1 vs
+    DEFER 10'
+  causal_chain: log_append tty hang→bash_running残存→idle flag不可→nudge保留→3段根治→nudge復旧
+  cmd_id: cmd_karo_hotfix_idle_flag_bash_running_stop_reentry_202609022232
+  escalation_needed: false
+  finding_categories:
+  - assumptions
+  - numbers
+  - premortem
+  - adversarial
+  - ambiguity
+  findings_summary: 3段根治完了。stop再入idle同期+watcher BUSY_TIMEOUT reconcile+log_append
+    tty防御。8/8契約test+302/302 task test全PASS
+  gate_prediction: CLEAR
+  gate_prediction_reason: all checks passed
+  lesson_quality: OK
+  observations:
+  - '3段因果の根治: tty hang防御(--help/tty→exit0/2)+stop再入idle同期+BUSY_TIMEOUT reconcile'
+  - 修正後nudge_count=1 vs 修正前WAKE-DEFER=10件。6ファイル変更
+  - 302/302 task test全PASS。契約test8/8 PASS
+  operational_simulation:
+    actual: CLEAR ERRORS=0
+    command: precheck
+    expected: CLEAR ERRORS=0
+    result: PASS
+  origin: '[[gunshi_停止22:19]] -> [[3段根治]] -> [[LGTM]]'
+  report_ninja: kagemaru
+  report_task_id: cmd_karo_hotfix_idle_flag_bash_running_stop_reentry_202609022232_normal
+  report_verdict: LGTM
+  review_type: report
+  reviewed_at: '2026-09-02T23:22:00+09:00'
+  step3_5_verified: true
+  timestamp: '2026-09-02T23:17:00+09:00'
+  verdict: LGTM
+  verified_files:
+  - scripts/inbox_watcher.sh:1
+  - scripts/gunshi_log_append.sh:1
+- brainwash_check: '#1no #2no #3no #4no #5no #6no #7no #8no ERRORS=0+BC全yes'
+  causal_chain: 554頁孤立→一覧+ナビ+sitemap lastmod→crawl到達可能化→SEO改善
+  cmd_id: cmd_4455
+  escalation_needed: false
+  finding_categories:
+  - assumptions
+  - numbers
+  - premortem
+  - adversarial
+  - ambiguity
+  findings_summary: LP SEO signals孤立解消。EN/JA一覧+月次ナビ3リンク+sitemap lastmod。ERRORS=0
+  gate_prediction: CLEAR
+  gate_prediction_reason: all checks passed
+  lesson_quality: OK
+  observations:
+  - signals一覧EN/JA新規+monthly-signal-pageにナビ3リンク+sitemap 2 entry
+  - typecheck+build exit 0。BC全yes
+  operational_simulation:
+    actual: CLEAR ERRORS=0
+    command: precheck
+    expected: CLEAR ERRORS=0
+    result: PASS
+  origin: '[[殿指示_sitemap554]] -> [[signals孤立解消]] -> [[LGTM]]'
+  report_ninja: saizo
+  report_task_id: cmd_4455_full
+  report_verdict: LGTM
+  review_type: report
+  reviewed_at: '2026-09-02T23:21:00+09:00'
+  step3_5_verified: true
+  timestamp: '2026-09-02T23:21:00+09:00'
+  verdict: LGTM
+  verified_files:
+  - queue/reports/saizo_report_cmd_4455.yaml:1

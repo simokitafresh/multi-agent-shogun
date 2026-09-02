@@ -1834,6 +1834,7 @@ codd:
 | discussion | `queue/lord_conversation.jsonl` 2026-09-02T20:47:34+09:00 ではすぐに覚醒して行動してくれ |
 | discussion | `queue/lord_conversation.jsonl` 2026-09-02T21:37:14+09:00 session_save_20260902_2140(復帰点、先に session_save_20260902_2020 を読め): 殿 20:44『捨てる壁に時間をかけるのは原理原則に反していないか』→将軍『反している』(13:00 以降 |
 | discussion | `queue/lord_conversation.jsonl` 2026-09-02T22:20:19+09:00 つまりや先送りはないか？覚醒して行動 |
+| discussion | `queue/lord_conversation.jsonl` 2026-09-02T23:24:57+09:00 AとBの違いは？8月のリンクだけ貼るのでいいのか？完全ガイドなどの不変的なものにメインリンクのほうが強そうだ。メンバー限定に月次シグナルページのほうがいいのでは？ |
 | causal_chain | `[[cmd_karo_hotfix_ga221_context_freshness_202607110323]]` (L1032) |
 | causal_chain | `[[cmd_karo_recon2_r5_three_layer_acceptance_20260727]]` (L1397) |
 | causal_chain | `[[cmd_karo_hotfix_ga414_context_freshness_20260729]]` (L1454) |
@@ -5646,7 +5647,7 @@ codd:
 |------|---|
 | id | chain_principle |
 | label | 鎖の原理 |
-| aliases | 鎖, 鎖の原理, chain principle, weakest link, 最弱リンク, 全体クオリティ, ボトルネック原理, スクリプトなどの実行速度にボトルネックはないか, 実行回数が多いものや頻度の多いものにフォーカス, リンク, 元論文へのリンクを埋め込もう, 論文のリンクが消えているところがあるからチェックしてくれ, 元ネタの設計書や結果ファイルのリンクも忘れるな, まだLPのリンクが直っていないのでは？ |
+| aliases | 鎖, 鎖の原理, chain principle, weakest link, 最弱リンク, 全体クオリティ, ボトルネック原理, スクリプトなどの実行速度にボトルネックはないか, 実行回数が多いものや頻度の多いものにフォーカス, リンク, 元論文へのリンクを埋め込もう, 論文のリンクが消えているところがあるからチェックしてくれ, 元ネタの設計書や結果ファイルのリンクも忘れるな, まだLPのリンクが直っていないのでは？, note記事へのリンクは俺がやることもできるぞ |
 | skills | なし |
 | related_concepts | growth_loop, defense_hierarchy, gate_quality_framework |
 
@@ -5688,6 +5689,7 @@ codd:
 | discussion | `queue/lord_conversation.jsonl` 2026-08-31T12:32:45+09:00 TQQQのMDDは赤字にしよう。Total return も太字にする。今回はCurrent signalsの体裁だけのはなしだ。リンク先にはこの後で考える |
 | discussion | `queue/lord_conversation.jsonl` 2026-09-02T22:45:01+09:00 LP へのリンクはどのページのものを置き換えるべきか調査してくれ |
 | discussion | `queue/lord_conversation.jsonl` 2026-09-02T22:50:31+09:00 デュアルモメンタムと関係のない記事にリンクを貼ることはSEOやAEOとして有効か？ |
+| discussion | `queue/lord_conversation.jsonl` 2026-09-02T23:16:40+09:00 note記事へのリンクは俺がやることもできるぞ |
 | causal_chain | `[[cmd_karo_ci_fix_deploy_task_ci_red_202607072231]]` (L970) |
 | causal_chain | `[[cmd_karo_hotfix_ga220_dm_signal_research_freshness_202607110139]]` (L1031) |
 | causal_chain | `[[cmd_karo_impl_atomic_yaml_write_caller_log_20260727]]` (L1391) |
@@ -16553,6 +16555,7 @@ codd:
 | discussion | `queue/lord_conversation.jsonl` 2026-09-02T12:51:43.620570+00:00 git pre-commit semantic propagation for context/projects changes |
 | discussion | `queue/lord_conversation.jsonl` 2026-09-02T13:52:09.232606+00:00 git pre-commit semantic propagation for context/projects changes |
 | discussion | `queue/lord_conversation.jsonl` 2026-09-02T13:58:34.603792+00:00 git pre-commit semantic propagation for context/projects changes |
+| discussion | `queue/lord_conversation.jsonl` 2026-09-02T14:11:13.159609+00:00 git pre-commit semantic propagation for context/projects changes |
 | causal_chain | `[[cmd_karo_hotfix_lessons_yaml_format_restore_20260727]]` (L1389) |
 
 ## infra_design_intent — インフラ設計意図カタログ
