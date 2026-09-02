@@ -2108,6 +2108,48 @@ SH
   [[ "$output" != *"external_scope_no_mapped_tests"* ]]
 }
 
+# test_necessity: A linked infra worktree task with docs-only ownership still
+# executes its child affected runner under the parent's receipt boundary.  The
+# child must not inherit the aggregate-runner guard, and the outer receipt must
+# preserve the valid zero-test contract instead of turning the successful
+# no-source selection into a nested-runner failure.
+# regression_justification: overlaps_existing=true; existing external task
+# coverage exercised direct Bats ownership but not docs-only affected dispatch.
+@test "external docs-only task mode clears inherited aggregate guard" {
+  external="$TMPROOT/external-infra-docs"
+  mkdir -p "$external/scripts" "$external/docs" "$TMPROOT/queue/tasks" "$TMPROOT/receipts-docs"
+  cp "$ROOT/scripts/run_tests.sh" "$ROOT/scripts/test_select.sh" \
+    "$ROOT/scripts/run_with_receipt.sh" "$ROOT/scripts/heavy_job_admission.sh" \
+    "$external/scripts/"
+  chmod 0644 "$external/scripts/run_tests.sh"
+  printf '# docs-only\n' >"$external/docs/change.md"
+  git -C "$external" init -q
+  git -C "$external" config user.email test@example.invalid
+  git -C "$external" config user.name test
+  git -C "$external" add scripts docs
+  git -C "$external" commit -qm init
+  cat >"$TMPROOT/queue/tasks/external-docs.yaml" <<YAML
+task:
+  task_id: external-docs-only
+  project: infra
+  task_worktree_path: $external
+  task_worktree_repo: $external
+  target_path: $external/docs/change.md
+YAML
+
+  run env PATH="$TMPROOT/bin:$PATH" REPO_ROOT="$TMPROOT" \
+    RUN_TESTS_RECEIPT_DIR="$TMPROOT/receipts-docs" SHOGUN_HEAVY_JOB_LOCK_HELD=1 \
+    BATS_CACHE=0 BATS_INNER_JOBS=1 \
+    bash "$TMPROOT/scripts/run_tests.sh" task "$TMPROOT/queue/tasks/external-docs.yaml"
+  [ "$status" -eq 0 ]
+  [[ "$output" == *"TEST_SELECTION result=selected reason=no_mapped_tests files=0"* ]]
+  [[ "$output" != *"BLOCK: nested aggregate run_tests invocation"* ]]
+  receipt="$(find "$TMPROOT/receipts-docs" -name '*.json' -type f | head -1)"
+  [ -n "$receipt" ]
+  [ "$(python3 -c 'import json,sys; d=json.load(open(sys.argv[1])); print(d["rc"], d["declared_test_count"], d["observed_test_count"], d["skip_count"], d["test_paths"])' "$receipt")" = "0 0 0 0 []" ]
+  echo "TASK_MODE_METRICS before_rc=2 after_rc=0 tests=0/0 skip=0 receipt=1 fail=0"
+}
+
 # test_necessity: directory ownership must select only concrete changed files;
 # a literal directory would fan out through the dependency map to the whole repo.
 @test "directory task scope expands concrete diffs and blocks empty directories" {
