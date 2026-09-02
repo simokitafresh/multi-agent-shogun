@@ -19,7 +19,10 @@ import yaml
 LIB_DIR = pathlib.Path(__file__).resolve().parents[1] / 'lib'
 if str(LIB_DIR) not in sys.path:
     sys.path.insert(0, str(LIB_DIR))
-from report_gate_contract import parent_contract_ac_version  # noqa: E402
+from report_gate_contract import (  # noqa: E402
+    lesson_feedback_set_status,
+    parent_contract_ac_version,
+)
 
 def main():
     parser = argparse.ArgumentParser(
@@ -50,6 +53,8 @@ def main():
         'NO_CODE_COMMIT_EXEMPT': '0',
         'VARIATION_CHECKS_REQUIRED': '0',
         'VARIATION_CHECKS_MSG': '  SKIP: 変形検査契約の対象外',
+        'LESSON_FEEDBACK_MSG': '  SKIP: task/report unavailable',
+        'LESSON_FEEDBACK_MISMATCH': '0',
     }
 
     # ── 1. REPORT_PATH を1回読込 ──────────────────────────────────────────
@@ -93,6 +98,7 @@ def main():
         task_file = os.path.join(args.tasks_dir, f'{worker_id}.yaml')
     result['TASK_FILE'] = task_file
 
+    task = {}
     if task_file and os.path.exists(task_file):
         try:
             with open(task_file) as f:
@@ -101,6 +107,14 @@ def main():
                 task_data.get('task', task_data)
                 if isinstance(task_data, dict) else {}
             )
+            lesson_ok, lesson_message = lesson_feedback_set_status(
+                task_file, args.report
+            )
+            result['LESSON_FEEDBACK_MSG'] = (
+                ('  PASS: ' if lesson_ok else '  ERROR: ')
+                + lesson_message
+            )
+            result['LESSON_FEEDBACK_MISMATCH'] = '0' if lesson_ok else '1'
             # no-code免除はcommit_hash不在だけでは成立しない。task/report双方が
             # 構造化commit_contractでrequired:falseを宣言し、許可task_typeも
             # 一致する場合だけSG-PRE3の成果物不在ERRORを免除する。
@@ -782,6 +796,12 @@ def main():
         gate_pred_reasons.append(
             '正直報告あり×AC evidence mapping欠落(LG044):'
             + result.get('AC_EVIDENCE_MAPPING_MISSING_KEYS', '')
+        )
+    if result.get('LESSON_FEEDBACK_MISMATCH') == '1':
+        gate_pred = 'BLOCK'
+        gate_pred_reasons.append(
+            'lesson_feedback_set_mismatch:'
+            + result.get('LESSON_FEEDBACK_MSG', '').removeprefix('  ERROR: ')
         )
     if has_lc:
         # lesson_candidate有のみではWARNにしない(直近5/5件CLEAR=FP率高)

@@ -1321,7 +1321,7 @@ if [ -f "${TASK_FILE:-}" ]; then
             # → record_block_reason lesson_feedback_set_mismatch)はBLOCKする(report_gate_contract.py:
             # extra があれば mode に関係なく MISMATCH)。旧文言『WARN止まり』は誤り(kagemaru ghost AC1
             # 報告 extra=L241 で軍師が偽陽性と誤読)。ERRORはSG-PRE11で計上済みのため二重加算しない。
-            if echo "$_set_status" | grep -qP 'mode=subset.*missing=none.*extra=[^n]'; then
+            if echo "$_set_status" | grep -qP '(mode=subset.*missing=none.*extra=[^n]|compatibility=identity-mismatch)'; then
                 echo "  ERROR(SG-PRE11で計上済): lessons_useful集合にtask契約外あり(自発使用) → 正本gateもBLOCK。extraを lessons_useful から外し lesson_candidate/自由記述へ移せ: ${_set_status}"
             else
                 echo "  ERROR: lessons_useful集合がtask契約と不一致 → GATE BLOCK確実: ${_set_status}"

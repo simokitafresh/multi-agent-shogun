@@ -1776,6 +1776,27 @@ snapshot = {
     "purpose": str(task.get("purpose") or task.get("title") or task.get("command") or resolved_task).strip(),
     "project": str(task.get("project") or project or "unknown").strip(),
     "acceptance_criteria": criteria,
+    # Lesson feedback is part of the deploy-generation contract.  The worker
+    # lease is mutable and may point at a later task by review time, so the
+    # report must retain the exact allowlist that was shown to the worker.
+    "lesson_set": {
+        "mode": (
+            "strict"
+            if isinstance(task.get("assigned_lesson_ids"), list)
+            and bool(task.get("assigned_lesson_ids"))
+            else "subset"
+        ),
+        "ids": [
+            str(item.get("id") if isinstance(item, dict) else item).strip()
+            for item in (
+                task.get("assigned_lesson_ids")
+                if isinstance(task.get("assigned_lesson_ids"), list)
+                and bool(task.get("assigned_lesson_ids"))
+                else task.get("related_lessons") or []
+            )
+            if str(item.get("id") if isinstance(item, dict) else item).strip()
+        ],
+    },
     "final_checkpoint": task.get("final_checkpoint"),
     "investigation_contract": task.get("investigation_contract"),
     "seam_contract": (
@@ -11604,6 +11625,52 @@ if [ ! -f "$_dt_main_path" ] && [ -n "${PROJECT_ROOT:-}" ]; then
 fi
 source "$_dt_main_path"
 unset _dt_main_path
+
+# main.sh sources report.sh as part of its module chain.  Bind the final
+# monolith compatibility seam after that load so report generation captures
+# the deploy-time lesson set before any worker lease handoff.
+if declare -F deploy_task_report_cold_plan >/dev/null 2>&1; then
+    eval "$(declare -f deploy_task_report_cold_plan | sed '1s/^deploy_task_report_cold_plan ()/deploy_task_report_cold_plan_base ()/')"
+    deploy_task_report_cold_plan() {
+        local _plan_output _plan_line _plan_snapshot
+        _plan_output="$(deploy_task_report_cold_plan_base "$@")" || return $?
+        while IFS= read -r _plan_line; do
+            case "$_plan_line" in
+                _plan_task_contract_snapshot=*)
+                    eval "_plan_snapshot=${_plan_line#*=}"
+                    _plan_snapshot="$(_DEPLOY_TASK_LESSON_SNAPSHOT_BASE="$_plan_snapshot" \
+                        python3 - "$1" <<'PY'
+import json
+import os
+import sys
+import yaml
+
+base = json.loads(os.environ["_DEPLOY_TASK_LESSON_SNAPSHOT_BASE"])
+task = (yaml.safe_load(open(sys.argv[1], encoding="utf-8")) or {}).get("task", {})
+assigned = task.get("assigned_lesson_ids")
+if isinstance(assigned, list) and assigned:
+    mode, raw = "strict", assigned
+else:
+    mode, raw = "subset", task.get("related_lessons") or []
+ids = []
+for item in raw if isinstance(raw, list) else []:
+    value = item.get("id") if isinstance(item, dict) else item
+    value = str(value or "").strip()
+    if value and value not in ids:
+        ids.append(value)
+base["lesson_set"] = {"mode": mode, "ids": ids}
+print(json.dumps(base, ensure_ascii=False, sort_keys=True, separators=(",", ":")))
+PY
+                    )" || return $?
+                    printf '_plan_task_contract_snapshot=%q\n' "$_plan_snapshot"
+                    ;;
+                *)
+                    printf '%s\n' "$_plan_line"
+                    ;;
+            esac
+        done <<< "$_plan_output"
+    }
+fi
 
 # Cluster I is sourced again by main.sh and can replace the legacy helper at
 # runtime. Keep the canonical publication boundary effective for that live

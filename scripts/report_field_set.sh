@@ -391,12 +391,17 @@ def validate_lesson_feedback_set(report: dict[str, Any]) -> None:
     except (OSError, yaml.YAMLError) as exc:
         raise SystemExit(f"BLOCK: lesson_feedback_set task read failed: {exc}")
     task = task_doc.get("task", task_doc) if isinstance(task_doc, dict) else {}
-    # Older reports without an explicit lesson-set declaration retain their
-    # compatibility path.  An explicit empty list remains a contract and is
-    # checked by the shared SSOT (including the empty/empty PASS boundary).
-    if not isinstance(task, dict) or not (
+    # A task with no lesson contract is a legacy/no-lesson fixture and has no
+    # set to validate.  Reports with a deploy snapshot still opt in even when
+    # the replacement task no longer exposes lesson fields.
+    snapshot = report.get("task_contract_snapshot")
+    has_snapshot_set = isinstance(snapshot, dict) and (
+        "lesson_set" in snapshot or "lesson_set_snapshot" in snapshot
+    )
+    has_task_set = isinstance(task, dict) and (
         "assigned_lesson_ids" in task or "related_lessons" in task
-    ):
+    )
+    if not isinstance(task, dict) or not (has_task_set or has_snapshot_set):
         return
     with tempfile.NamedTemporaryFile(
         mode="w", encoding="utf-8", dir=path.parent,
