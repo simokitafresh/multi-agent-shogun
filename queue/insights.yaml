@@ -13068,3 +13068,10 @@ insights:
   source: "semantic_index_update"
   fix_known: false
   status: pending
+- id: INS-20260902-131544115-cd3c
+  ts: "2026-09-02T13:15:44+09:00"
+  insight: "GA-550 hook_failure: pre-push ancestry-merge-regressionはinsights.yaml auto-commit競合時に正当発火。家老手動pushではなくauto-push経路に委ねるのが正しい対処。hookは正常。忍者配備不要"
+  priority: "low"
+  source: "ga550_hook_failure_insights_conflict"
+  fix_known: false
+  status: pending
