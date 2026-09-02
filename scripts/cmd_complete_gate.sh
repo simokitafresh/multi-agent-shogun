@@ -2304,6 +2304,18 @@ report_source_paths_match_commit() {
     while IFS= read -r -d '' path; do
         actual["$path"]=1
     done < <(git -C "$repo" diff-tree --root --no-commit-id --name-only -r -z "$source_sha" 2>/dev/null)
+    # A merge commit (ninja merged origin/main to refresh its base, D012-compliant) lists no
+    # paths under diff-tree --root. Its task paths are the diff from merge-base(origin/main).
+    if [ "${#actual[@]}" -eq 0 ] \
+        && [ "$(git -C "$repo" rev-list --parents -n 1 "$source_sha" 2>/dev/null | wc -w)" -gt 2 ]; then
+        local merge_base
+        merge_base="$(git -C "$repo" merge-base origin/main "$source_sha" 2>/dev/null || true)"
+        if [ -n "$merge_base" ]; then
+            while IFS= read -r -d '' path; do
+                actual["$path"]=1
+            done < <(git -C "$repo" diff --name-only -z "$merge_base" "$source_sha" 2>/dev/null)
+        fi
+    fi
     [ "${#actual[@]}" -eq "${#declared[@]}" ] || return 1
     for path in "${!actual[@]}"; do
         [ "${declared[$path]+yes}" = yes ] || return 1
