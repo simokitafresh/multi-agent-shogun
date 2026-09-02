@@ -13966,3 +13966,10 @@ insights:
   source: "semantic_stress_test"
   fix_known: false
   status: pending
+- id: INS-20260902-210416364-3474
+  ts: "2026-09-02T21:04:16+09:00"
+  insight: "[[単一 publisher U6 台帳 writer scripts ledger writer sh append up]] semantic_stress_test candidate_aliases: NO_MATCH source=cmds query=単一 publisher U6: 台帳 writer scripts/ledger_writer.sh(append/update/resolve op を $STATE_DIR/ledger_inbox へ、可変 field allowlist と CAS)と insight/bulletin/lesson/workaround 4 writer の op"
+  priority: "low"
+  source: "semantic_stress_test"
+  fix_known: false
+  status: pending
