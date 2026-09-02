@@ -1,4 +1,61 @@
 commands:
+  cmd_4466:
+    title: "単一 publisher U8 第 2 弾: 旧 push 経路を『関数 chain+それを縛る test』の単位で batch 削除し(M10 と同型)、M7 は blocked 確定で除外、4 file 合計行数を 33,238 から減らす"
+    status: void
+    void_reason: "将軍裁定 2026-09-03 06:13 (b): 小太郎 report(321/321 PASS、削除 0、家老 fail-close 06:14)で M1/M8 の census clean 削除が完了 gate suite 数十本(regression_justification 付き)と別機能(converge_shared_execution_sources の source_only_insights_id_merge 再利用)を壊すと実証。rg literal census は推移的 test 被覆を見落とす。U8 は凍結、再開条件=PUBLISHER_SINGLE 運用 7 日後に chain ごとの契約 test 移植設計書。flag ON で旧経路は no-op のため目的(壁の発生源停止)は達成済"
+    project: infra
+    purpose: "cmd_4464(小太郎、正当 FAIL・家老 fail-close 05:25)の実測: 削除できたのは M10(旧 test 5 file)のみ、M1-M9/M11 は census 修正後も非ゼロ参照。真因は census ではなく構造=(a) M1 は source_only_path_snapshot() が 5 関数を fallback chain として呼び 2/5 が現役 test に縛られ部分削除不可 (b) M2 は 17 関数中 11 が外部参照・6 は内部 callee、M8 も auto_commit_with_dedicated_index/auto_commit_before_clear の 2 つが外部参照で他 7 は内部 callee (c) M4 は test_insight_write.bats が driver 登録関数を直接 assert (d) M6 は test_ninja_scope_commit.bats/test_dm_signal_research_reflux_guard.bats が option を現役利用 (e) M7 は cross_repo_commits 8 file/source_sha 9 file を report-gate と campaign-lane が fleet-wide 消費。将軍裁定 05:24: batch 単位を『削除対象 chain+それを縛る test(同 batch で contract test へ書換え or 削除)』に変え、M7 は blocked 確定で対象外。flag ON(04:37)で旧経路は no-op、root 直 commit は U1b 経路のみ(05:2x 確立)。可逆=各 batch 1 commit(git revert)"
+    scope_mode: FULL
+    target_path: scripts
+    acceptance_criteria:
+      AC1:
+        description: "batch 1(M1+M8+縛る test): scripts/cmd_complete_gate.sh の source_only_path_snapshot() dispatcher と fallback chain 5 関数(source_only_path_snapshot_generic/source_only_cumulative_equivalence/source_only_insights_id_merge/source_only_lessons_id_merge と 5 つ目)を chain ごと削除し、呼出し元は『PUBLISHER_SINGLE 判定で return 0』の既存 1 行の下流に残さない(呼出し行ごと削除)。scripts/ninja_monitor.sh の auto_commit_* 9 関数(外部参照 2=auto_commit_with_dedicated_index/auto_commit_before_clear の呼出し行も削除)と postclear checkpoint を削除。M1 を縛る現役 test 2 本は『publisher receipt(queue/gates/<cmd>/ の publish receipt)が存在すれば CLEAR』を assert する contract test へ書換え(test_necessity 非空)か、旧 chain のみを assert する @test は削除(deletion_justification 非空)。census 規則: rg -n -F '<関数名>' scripts .githooks skills tests/unit から同 batch 削除 file・コメント行・docs/ を除いた残存参照 0。選択実行コマンド=bash scripts/run_tests.sh file <書換え/編集した bats 全て> tests/unit/test_publisher_single_flag.bats tests/unit/test_cmd_complete_gate.bats で FAIL 0・SKIP 0。bash scripts/ninja_scope_commit.sh -m \"<msg。deletion_justification: を含む>\" -- <paths> で 1 commit。中断再開時の成果物引継ぎ: 未 commit の worktree 差分と最終 bats 出力 log を報告 YAML の progress に path で残し、再開者はそこから継続する"
+        binary_check: "rg -c '^source_only_' scripts/cmd_complete_gate.sh → 0 ∧ rg -c '^auto_commit_' scripts/ninja_monitor.sh → 0 ∧ 残存参照 0 ∧ 書換え test に test_necessity・削除 @test に deletion_justification ∧ 選択実行 FAIL 0 ∧ SKIP 0 ∧ commit 1 ∧ wc -l scripts/cmd_complete_gate.sh と scripts/ninja_monitor.sh が batch 前より減少 か?"
+      AC2:
+        description: "batch 2(M2+M3+M5+縛る test): scripts/ninja_monitor.sh の push_lane_* 17 関数と check_push_lane(lifecycle worker の dispatch 行を含む)を削除。scripts/safe_shared_main_ff.sh を git rm し、tests/unit/test_publisher_single_flag.bats の safe_shared_main_ff ケースは削除(deletion_justification: 対象 script 自体を削除)。.githooks/pre-push の GA-PUSH1 dirty-tree guard 区間を削除。これらを縛る test(test_ninja_monitor_stall.bats の push_lane ケース等)は同 batch で削除か書換え。census 規則同じ。選択実行=bash scripts/run_tests.sh file tests/unit/test_ninja_monitor_stall.bats tests/unit/test_publisher_single_flag.bats <他に編集した bats> で FAIL 0・SKIP 0。1 commit"
+        binary_check: "rg -c '^push_lane_' scripts/ninja_monitor.sh → 0 ∧ rg -c '^check_push_lane' scripts/ninja_monitor.sh → 0 ∧ test -e scripts/safe_shared_main_ff.sh が偽 ∧ rg -c 'GA-PUSH1' .githooks/pre-push → 0 ∧ 残存参照 0 ∧ 選択実行 FAIL 0 ∧ SKIP 0 ∧ commit 1 か?"
+      AC3:
+        description: "batch 3(M4+M6+縛る test): .gitattributes の merge rule 5 本(insights-id/ours/bulletin-id/karo-workarounds-id/semantic-index-regenerate)と scripts/insight_write.sh の driver 登録関数を削除し、.git/config の merge.*.driver は git config --unset で消して復元コマンドを報告 YAML に書く。tests/unit/test_insight_write.bats の driver 名 assert は削除(deletion_justification)。scripts/ninja_scope_commit.sh の --patch/--base-blob/--reflux-mode/--reflux-evidence/--repair-index と single-flight/identity-sidecar 区間を縮退し、tests/unit/test_ninja_scope_commit.bats と tests/unit/test_dm_signal_research_reflux_guard.bats の当該 option ケースは削除か『option 無しで同じ不変量』へ書換え。census 規則同じ。選択実行=bash scripts/run_tests.sh file tests/unit/test_insight_write.bats tests/unit/test_ninja_scope_commit.bats tests/unit/test_dm_signal_research_reflux_guard.bats で FAIL 0・SKIP 0。1 commit"
+        binary_check: ".gitattributes の 5 rule 0 ∧ git config --get-regexp 'merge\\..*\\.driver' → 0 行(復元コマンド記載)∧ ninja_scope_commit.sh の usage から 5 option 消滅 ∧ 残存参照 0 ∧ 選択実行 FAIL 0 ∧ SKIP 0 ∧ commit 1 か?"
+      AC4:
+        description: "batch 4(M9+M11+§11 after): skills/ninja-commit/SKILL.md の旧 push 手順の記述削除(家老が台帳で承認済みの範囲のみ)。tests/unit の 11 file のうち batch 1-3 で消えた対象を参照する @test を削除(file 全体は消さない、deletion_justification)。M7 は台帳で『blocked 確定(fleet-wide 消費、publisher receipt 経路が report-gate/campaign-lane を置換した後の別 cmd)』と記す。§11 after 計測: 台帳の集計行に『4 file 合計行数 変更前 33,238→後 N』『削除 file 数』『削除関数数』『blocked 残=M7 のみ』を書き、報告 YAML に同値。選択実行=bash scripts/run_tests.sh file <M11 で編集した bats 全て> で FAIL 0・SKIP 0。1 commit"
+        binary_check: "台帳 done+blocked の合計 == 11 ∧ blocked == M7 のみ ∧ 4 file 合計行数 < 33,238(報告 YAML に数値)∧ M11 は file 削除 0 ∧ 選択実行 FAIL 0 ∧ SKIP 0 ∧ commit 1 か?"
+    command: |
+      1. cmd_4464 report(queue/reports/kotaro_report_cmd_4464.yaml の details に参照 path)と台帳を読み、batch 1 を『chain 削除+縛る test の書換え/削除→census 0→選択実行→1 commit→台帳更新』で実行し、progress に commit と削除関数数を書く。
+      2. batch 2→3→4 を同じ手順で連続実行し、最後に §11 after 計測(行数差分・削除 file 数・削除関数数・blocked=M7)を台帳集計行と報告 YAML に書く。
+    assumptions:
+      claim: "cmd_4464 report(b78319e10)の details: M1 dispatcher chain 5 関数・2/5 が現役 test、M2 17 関数中 11 外部参照、M8 外部参照 2、M4 test_insight_write.bats が driver 名 assert、M6 test_ninja_scope_commit.bats/test_dm_signal_research_reflux_guard.bats、M7 cross_repo_commits 8 file/source_sha 9 file fleet-wide、4 file 合計 33,238 不変。M10 は 4464 で削除済(ce3bc1158、origin 未 publication=fail-close のため worktree 内。本 cmd で再度 git rm 対象に含めてよい)。flag ON 04:37、root 直 commit は publish_direct_commit.sh(05:2x db11e00b8 で実証)。M7 は対象外"
+      source: "queue/reports/kotaro_report_cmd_4464.yaml details/summary、docs/research/single_publisher_cleanup_manifest_20260902.md、家老掲示板 blt_20260903_052335、git log origin/main -1 → db11e00b8"
+      trust: verified
+    depends_on: none
+    timeout_minutes: 120
+    estimated_minutes: 90
+    execution_env:
+      runtime_constraints: "削除は git rm と関数単位の区間削除のみ(rm -rf 禁止)。本番 publisher daemon・queue/flags/publisher_single・M7 の関数群は触らない。bats は選択実行のみ。各 batch 1 commit で git revert 可逆。.git/config の driver unset は復元コマンド付き"
+      long_runtime_reason: "batch 4 回×(chain 削除+test 書換え/削除+census+選択実行+commit)。M1 の contract test 書換えと M6 の option 縮退が重い。参照の消え方を追うため 1 忍者で直列"
+      measured_runtime_sec: 5400
+    split_decision:
+      boundary_ac_ids: [AC1, AC2, AC3, AC4]
+      integration_tasks: 1
+    serial_dependency_evidence: "batch 2 の census は batch 1 で auto_commit_* が消えることを前提(push_lane_* の callee)、batch 4 の M11 は batch 1-3 の削除結果に依存。別忍者に分けると参照の消え方が追えず 4464 と同じ blocked が再発する"
+    quality_gate:
+      q1_firefighting: "品質向上。理由: 4464 の実測で『test が旧 chain を縛る』構造が判明。test を同 batch で扱う型(M10 で実証済)へ変え、旧 push 4 経路を実際に消す"
+      q2_learning: "奪わない。理由: 判断点は『縛る test は contract 化か削除か』の 1 つで、基準(旧 chain のみを assert する @test は削除)を AC に固定"
+      q3_next_quality: "上がる。理由: cmd_complete_gate/ninja_monitor の行数が実際に減り(4464 では差分 0)、hotfix 対象が publisher 系 6 file に収束"
+      q4_depth: "deep — 理由: 4464 の census 結果(参照 path 付き)を入力に chain 単位で消す。M7 を除外して確実に減らす"
+      q5_verified_source: "structure_verified — 対象を実行して確認(2026-09-03 05:27): sed -n 105,126p queue/reports/kotaro_report_cmd_4464.yaml → M1-M9/M11 の blocked 理由と参照 test 名、grep -cE '^[|] M[0-9]+ ' 台帳 → 11、git log origin/main -1 → db11e00b8(U1b 経路実証)"
+      q6_not_hiding: "隠していない。理由: M7 は削除せず blocked 確定と理由を台帳に残す。削除関数数・行数差分・削除 file 数を報告させる"
+      q7_definition_verified: "M1-M11・deletion_justification・test_necessity の定義は設計書 §10・CLAUDE.md Test Rules(default-delete)・4464 report で確認(確認日: 2026-09-03)"
+      q8_why_what: "WHY: 4464 は行数差分 0(test が旧 chain を縛る)、殿 01:30『先に進め』 / WHAT: chain+test 単位の batch 削除 4 回、M7 除外 / WHEN: 即(4465 と並走可、file 重複なし) / WHERE: scripts, .githooks, .gitattributes, skills, tests/unit, 台帳 / WHO: 家老配備(Claude 推奨、cmd_complete_gate の読解) / HOW: chain 削除→test 書換え/削除→census 0→選択実行→1 commit ×4 / 複利: 壁の発生源が消え、以後の hotfix 対象が 6 file に収束"
+      q9_firefighting_root_cause: "根本対応。理由: 4464 の FAIL を『census の書き方』で消火せず、『test が旧 chain を縛る』構造を batch 単位の定義で解く"
+      q10_knowledge_boundary: "検証済み: 4464 の参照 path・台帳・U1b 経路。スコープ外: M7(別 cmd)、cmd_4465(ledger 消費者)、publisher root drain(家老 hotfix)"
+      q11_not_already_done: "wc -l 4 file → 33,238(4464 後も不変、05:27)。rg -c '^source_only_' scripts/cmd_complete_gate.sh → 1 以上。rg -c cmd_4466 queue/shogun_to_karo.yaml → 0(起票前)。M10 の 5 test file は origin に現存(4464 の削除は未 publication)"
+      q_ambiguity: "曖昧さ: 『縛る test』の contract 化と削除の境界。解消: 旧 chain の関数名や旧 option を直接 assert する @test は削除、CLEAR 到達などの不変量を assert する @test は publisher receipt を根拠にする形へ書換え"
+      q12_lord_30min_cost: "no — 殿 01:30 で確定、判定は rg 件数・bats・commit 数・行数"
+      diagnosis: "BLOCK理由: 該当なし(新規起票。4464 の正当 FAIL からの再定義) / 対策: batch 単位を chain+test に変更、M7 除外、AC 4 本二値"
+    environment_change: "type=lesson; file=projects/infra/lessons_shogun.yaml; pattern=cmdテンプレートルール"
+    delegated_at: "\"2026-09-03T05:29:15\""
+    origin: "[[cmd_4464_U8_AC2_batch削除]] -> [[test が旧 chain を縛る構造_20260903_0525]] -> [[cmd_4466_U8_第2弾_chain+test単位]]"
   cmd_4465:
     title: "単一 publisher U6b: publisher daemon に ledger 消費者(ledger_inbox の op を seq 順に isolated clone へ apply→1 commit→publish→applied へ移動)を実装し、ledger_writer.sh を実行 bit 付きで追跡して writer route を本番で生かす"
     status: delegated
@@ -51,7 +108,8 @@ commands:
     origin: "[[cmd_4454_U6_ledger_writer]] -> [[家老発見_ledger_route未稼働_20260903_0458]] -> [[cmd_4465_publisher_ledger消費者]]"
   cmd_4464:
     title: "単一 publisher U8 AC2: PUBLISHER_SINGLE ON(04:37)の下で cleanup manifest の M1-M11 を batch 4 回(各 1 commit・10 file 以内)で物理削除し、census は同 batch で消える file を除いて数える"
-    status: delegated
+    status: void
+    void_reason: "小太郎 report b78319e10 verdict FAIL(M10 のみ削除、AC3 行数減未達)→家老 fail-close ACCEPT 05:22。将軍 05:29 に cmd_4466(chain+縛る test 単位)へ再起票、成果は worktree kotaro_ab388e9353e4e082 を 4466 が継承"
     project: infra
     purpose: "cmd_4461 AC1 の台帳(docs/research/single_publisher_cleanup_manifest_20260902.md、a7b41bc64)は M2-M8 を『surviving references が非 0』で blocked にしたが、その参照元の大半は同時に消す旧 test(M10/M11)と旧経路どうしの相互参照であり、cmd_4461 の census 定義(『削除対象 path を除く全 file』)が同 batch の削除対象を除外していなかったための見かけの blocked。flag ON は 04:37 に家老が確認(queue/flags/publisher_single、helper ENABLED、publisher pid 3399892 active、初 publish d42b62a90)。殿 09-03 01:30『先に進んでから戻ればいい』=canary 待ち無しで削除に入る。可逆=各 batch 1 commit、forward restore(git revert)で戻る。cmd_4461 は将軍裁定 04:40 (b) で void 済"
     scope_mode: FULL
