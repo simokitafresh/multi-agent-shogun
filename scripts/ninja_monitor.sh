@@ -2645,7 +2645,7 @@ auto_commit_with_dedicated_index() {
     local branch="$2"
     local commit_message="$3"
     local paths="$4"
-    local error_file rc reason
+    local index_dir index_file error_file rc reason cleanup_failed artifact
     local -a commit_paths=()
 
     mapfile -t commit_paths < <(printf '%s\n' "$paths" | sed '/^[[:space:]]*$/d')
@@ -2654,27 +2654,83 @@ auto_commit_with_dedicated_index() {
         return 1
     fi
 
-    error_file=$(mktemp "${TMPDIR:-/tmp}/ninja-auto-commit-error.XXXXXX") || {
-        log "AUTO-COMMIT-FAIL: agent=$agent_name branch=$branch rc=1 reason=error-file-create-failed"
+    # A linked worktree (or another lifecycle worker) may leave GIT_INDEX_FILE
+    # pointing at an index whose entries belong to a different HEAD.  Running
+    # path-limited commit against that inherited index lets Git materialize its
+    # old blobs into this worktree while updating the shared ref.  Keep both
+    # the caller's index and its staged entries untouched: the auto-commit
+    # transaction owns a short-lived index seeded from the current HEAD.
+    index_dir=$(mktemp -d "${TMPDIR:-/tmp}/ninja-auto-commit-index.XXXXXX") || {
+        log "AUTO-COMMIT-FAIL: agent=$agent_name branch=$branch rc=1 reason=dedicated-index-create-failed"
         return 1
     }
+    index_file="$index_dir/index"
+    error_file="$index_dir/error"
 
-    # `git commit --only -- <paths>` is Git's atomic path-limited transaction:
-    # it commits the worktree blobs for only these paths, keeps unrelated
-    # intentional stages intact, and advances the shared index entries for the
-    # committed paths with HEAD. A detached index advanced HEAD while leaving
-    # those shared entries at the old HEAD, manufacturing staged residue.
-    git commit --only --no-verify -m "$commit_message" -- "${commit_paths[@]}" 2>"$error_file"
+    GIT_INDEX_FILE="$index_file" git read-tree HEAD 2>"$error_file"
     rc=$?
     if [ "$rc" -ne 0 ]; then
         reason=$(head -1 "$error_file" | tr '\r\n' '  ')
-        log "AUTO-COMMIT-FAIL: agent=$agent_name branch=$branch rc=${rc:-1} reason=${reason:-path-limited-commit-failed}"
+        log "AUTO-COMMIT-FAIL: agent=$agent_name branch=$branch rc=${rc:-1} reason=${reason:-dedicated-index-init-failed}"
+        unlink "$index_file" 2>/dev/null || true
+        unlink "$index_file.lock" 2>/dev/null || true
         unlink "$error_file" 2>/dev/null || true
+        rmdir "$index_dir" 2>/dev/null || true
         return 1
     fi
 
-    if ! unlink "$error_file" 2>/dev/null; then
-        log "AUTO-COMMIT-FAIL: agent=$agent_name branch=$branch rc=1 reason=error-file-cleanup-failed"
+    GIT_INDEX_FILE="$index_file" git add -- "${commit_paths[@]}" 2>"$error_file"
+    rc=$?
+    if [ "$rc" -ne 0 ]; then
+        reason=$(head -1 "$error_file" | tr '\r\n' '  ')
+        log "AUTO-COMMIT-FAIL: agent=$agent_name branch=$branch rc=${rc:-1} reason=${reason:-dedicated-index-add-failed}"
+        unlink "$index_file" 2>/dev/null || true
+        unlink "$index_file.lock" 2>/dev/null || true
+        unlink "$error_file" 2>/dev/null || true
+        rmdir "$index_dir" 2>/dev/null || true
+        return 1
+    fi
+
+    GIT_INDEX_FILE="$index_file" git commit --no-verify -m "$commit_message" 2>"$error_file"
+    rc=$?
+    if [ "$rc" -ne 0 ]; then
+        reason=$(head -1 "$error_file" | tr '\r\n' '  ')
+        log "AUTO-COMMIT-FAIL: agent=$agent_name branch=$branch rc=${rc:-1} reason=${reason:-dedicated-index-commit-failed}"
+        unlink "$index_file" 2>/dev/null || true
+        unlink "$index_file.lock" 2>/dev/null || true
+        unlink "$error_file" 2>/dev/null || true
+        rmdir "$index_dir" 2>/dev/null || true
+        return 1
+    fi
+
+    # The commit advances HEAD, while the caller's index must retain any
+    # scope-out stages.  Refresh only the committed paths from the unchanged
+    # worktree so those target entries become clean against the new HEAD;
+    # unlike `git commit --only`, this never asks Git to restore the caller's
+    # stale index blobs into the worktree.
+    git add -- "${commit_paths[@]}" 2>"$error_file"
+    rc=$?
+    if [ "$rc" -ne 0 ]; then
+        reason=$(head -1 "$error_file" | tr '\r\n' '  ')
+        log "AUTO-COMMIT-FAIL: agent=$agent_name branch=$branch rc=${rc:-1} reason=${reason:-caller-index-sync-failed}"
+        unlink "$index_file" 2>/dev/null || true
+        unlink "$index_file.lock" 2>/dev/null || true
+        unlink "$error_file" 2>/dev/null || true
+        rmdir "$index_dir" 2>/dev/null || true
+        return 1
+    fi
+
+    cleanup_failed=0
+    for artifact in "$index_file" "$index_file.lock" "$error_file"; do
+        if [ -e "$artifact" ] && ! unlink "$artifact" 2>/dev/null; then
+            cleanup_failed=1
+        fi
+    done
+    if ! rmdir "$index_dir" 2>/dev/null; then
+        cleanup_failed=1
+    fi
+    if [ "$cleanup_failed" -ne 0 ]; then
+        log "AUTO-COMMIT-FAIL: agent=$agent_name branch=$branch rc=1 reason=dedicated-index-cleanup-failed"
         return 1
     fi
     return 0

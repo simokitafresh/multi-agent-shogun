@@ -515,6 +515,121 @@ grep -q "AUTO-COMMIT-WARN-SKIP: hayate pre-existing staged file overlaps auto-co
     [[ "$output" == *"overlaps auto-commit scope"* ]]
 }
 
+@test "auto_commit: stale other-worktree index never rehydrates old blobs into root" {
+    run bash -lc '
+set -eo pipefail
+PROJECT_ROOT="'"$PROJECT_ROOT"'"
+export NINJA_MONITOR_LIB_ONLY=1
+source "$PROJECT_ROOT/scripts/ninja_monitor.sh"
+unset NINJA_MONITOR_LIB_ONLY
+
+TMP_ROOT="$BATS_TEST_TMPDIR"
+SCRIPT_DIR="$TMP_ROOT/repo"
+STATE_DIR="$TMP_ROOT/state"
+LOG="$TMP_ROOT/monitor.log"
+mkdir -p "$SCRIPT_DIR/scripts/lib" "$SCRIPT_DIR/scripts/gates" "$SCRIPT_DIR/scripts/hooks" "$SCRIPT_DIR/tests/unit" "$SCRIPT_DIR/queue/tasks" "$STATE_DIR"
+cd "$SCRIPT_DIR"
+git init -q
+git config user.email test@example.com
+git config user.name test
+
+deleted_paths=(
+  scripts/publisher_queue.sh scripts/publish_artifact.sh scripts/lib/lock_run_shim.sh
+  scripts/lib/publisher_event.sh tests/unit/test_publisher_queue.bats
+  tests/unit/test_publish_artifact.bats tests/unit/test_gate_dual_read.bats
+)
+modified_paths=(
+  scripts/deploy_task.sh scripts/gates/gate_gunshi_report_precheck.sh
+  scripts/gates/gate_report_format.sh scripts/hooks/git-pre-commit.sh
+  scripts/inbox_write.sh scripts/lib/extract_command_files.sh
+  tests/unit/test_cmd_save_block_aggregation.bats
+  tests/unit/test_deploy_task_lifecycle.bats
+  tests/unit/test_gate_gunshi_report_precheck.bats
+  tests/unit/test_git_pre_commit_hook_failure_utf8.bats
+  tests/unit/test_run_tests.bats
+)
+second_paths=(
+  scripts/context_freshness_check.sh scripts/lib/autogen_paths.sh
+  tests/unit/test_context_freshness_check.bats tests/unit/test_autogen_paths.bats
+)
+for path in "${deleted_paths[@]}" "${modified_paths[@]}" "${second_paths[@]}"; do
+  mkdir -p "$(dirname "$path")"
+  printf 'v0:%s\n' "$path" > "$path"
+done
+printf 'owner-v0\n' > scripts/owner.sh
+git add .
+git commit -qm 'fixture base'
+base=$(git rev-parse HEAD)
+
+for path in "${deleted_paths[@]}"; do
+  rm "$path"
+done
+for path in "${modified_paths[@]}"; do
+  printf 'v1:%s\n' "$path" > "$path"
+done
+git add -A
+git commit -qm 'fixture first publisher update'
+
+cat > "$SCRIPT_DIR/queue/tasks/hayate.yaml" <<INNEREOF
+task:
+  status: in_progress
+  target_path: scripts/owner.sh
+INNEREOF
+
+# Another worktree owns a stale index containing the first 18 old entries.
+index_one="$TMP_ROOT/index-one"
+GIT_INDEX_FILE="$index_one" git read-tree "$base"
+printf 'owner-v1\n' >> scripts/owner.sh
+NINJA_NAMES=(hayate)
+export SCRIPT_DIR STATE_DIR LOG NINJA_NAMES GIT_INDEX_FILE="$index_one"
+before_index_one=$(GIT_INDEX_FILE="$index_one" git write-tree)
+before_index_one_paths=$(GIT_INDEX_FILE="$index_one" git diff --cached --name-only | awk 'NF {count++} END {print count+0}')
+test "$before_index_one_paths" = "18"
+uncommitted=$(git status --porcelain -uno -- scripts/owner.sh)
+auto_commit_before_clear hayate "$uncommitted"
+test "$(GIT_INDEX_FILE="$index_one" git write-tree)" = "$before_index_one"
+test "$(GIT_INDEX_FILE="$index_one" git diff --cached --name-only | awk 'NF {count++} END {print count+0}')" = "$before_index_one_paths"
+env -u GIT_INDEX_FILE git diff --quiet HEAD -- .
+for path in "${deleted_paths[@]}"; do test ! -e "$path"; done
+for path in "${modified_paths[@]}"; do grep -Fqx "v1:$path" "$path"; done
+test "$(env -u GIT_INDEX_FILE git show --format= --name-only HEAD | sed "/^$/d")" = "scripts/owner.sh"
+
+# Restore the root index only (never the worktree), then introduce the second
+# observed rollback: four GA-554/555 paths point at the previous old index.
+env -u GIT_INDEX_FILE git read-tree HEAD
+second_base=$(env -u GIT_INDEX_FILE git rev-parse HEAD)
+for path in "${second_paths[@]}"; do
+  printf 'v2:%s\n' "$path" > "$path"
+done
+env -u GIT_INDEX_FILE git add "${second_paths[@]}"
+env -u GIT_INDEX_FILE git commit -qm 'fixture second publisher update'
+index_two="$TMP_ROOT/index-two"
+GIT_INDEX_FILE="$index_two" git read-tree "$second_base"
+printf 'owner-v2\n' >> scripts/owner.sh
+export GIT_INDEX_FILE="$index_two"
+before_index_two=$(GIT_INDEX_FILE="$index_two" git write-tree)
+before_index_two_paths=$(GIT_INDEX_FILE="$index_two" git diff --cached --name-only | awk 'NF {count++} END {print count+0}')
+test "$before_index_two_paths" = "4"
+uncommitted=$(git status --porcelain -uno -- scripts/owner.sh)
+auto_commit_before_clear hayate "$uncommitted"
+test "$(GIT_INDEX_FILE="$index_two" git write-tree)" = "$before_index_two"
+test "$(GIT_INDEX_FILE="$index_two" git diff --cached --name-only | awk 'NF {count++} END {print count+0}')" = "$before_index_two_paths"
+env -u GIT_INDEX_FILE git diff --quiet HEAD -- .
+for path in "${second_paths[@]}"; do grep -Fqx "v2:$path" "$path"; done
+test "$(env -u GIT_INDEX_FILE git show --format= --name-only HEAD | sed "/^$/d")" = "scripts/owner.sh"
+
+# The root index was clean before each owner commit; it remains clean after
+# synchronizing only its HEAD entries, while both stale peer indexes remain
+# byte-for-byte preserved by the auto-commit transaction.
+env -u GIT_INDEX_FILE git read-tree HEAD
+test "$(env -u GIT_INDEX_FILE git diff --cached --name-only | awk 'NF {count++} END {print count+0}')" = "0"
+test "$(awk '/AUTO-COMMIT-STAGED-PRESERVE: hayate preserving scope-out staged file:/ {count++} END {print count+0}' "$LOG")" = "22"
+echo "first_staged=18 second_staged=4 root_staged=0 root_worktree_head=equal owner_commits=2 preserve_logs=22"
+'
+    echo "$output"
+    [ "$status" -eq 0 ]
+}
+
 @test "auto_commit: context batch skips within one hour" {
     run bash -lc '
 set -eo pipefail
