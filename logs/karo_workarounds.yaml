@@ -1,3 +1,18 @@
+- cmd_id: cmd_4464
+  timestamp: '2026-09-02T20:24:01Z'
+  ninja: kotaro
+  workaround: true
+  event_kind: manual_wa
+  auto_captured: false
+  category: infra_gap
+  root_signature: 'infra_gap::general'
+  detail: 'root main 20 commit ahead(origin 04:37 停止)。PUBLISHER_SINGLE flag ON で legacy push lane が no-op になり root main commit に origin 到達経路が無い。fail-close 終端の task 成果も未 publication。'
+  root_cause: '家老が可逆 ff push(d42b62a90..2ba9896dd)。恒久策=publisher に root main ff-push 経路を実装する将軍 cmd(裁定要請 blt_052337)'
+  lesson_required: true
+  lesson_disposition: 'new_lesson_required'
+  lesson_reference: ''
+  brainwash_check: '洗脳#5先送り防止: 手動push前後で origin ahead 20→0 を git rev-list で実測。#3他者依存防止: 可逆pushは家老D0で実施し将軍cmdは恒久策のみ'
+  resolved_by_cmd: ''
 - cmd_id: cmd_karo_hotfix_ga527_doc_no_changelog_20260830
   timestamp: '2026-08-30T04:47:19Z'
   ninja: system
