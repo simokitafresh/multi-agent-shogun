@@ -14331,7 +14331,10 @@ insights:
   priority: "high"
   source: "manual"
   fix_known: false
-  status: pending
+  status: "resolved"
+  resolved_reason: "publisher.shのcommit f5b195fea(cmd_karo_hotfix_u3_publisher_idempotent_restore_notify_202609022337)で3点全て修正済み: (1)C2a idempotency=source_tree由来expected_blobとtip_blob一致時をalready_publishedとしてRC回避、(2)restore=git apply --3way でtip分岐時もrebase相当の適用、(3)notify_karo=default actionをinvestigation_resultからtask_assignedへ変更しBLOCK解消。tests/unit/test_publisher.bats 7/7 PASS(新規3 test含む)で一次検証済み"
+  action_artifact: "commit=f5b195fea;tests=tests/unit/test_publisher.bats(7/7 PASS);receipt=logs/test_receipts/run_tests_20260902T153005_1106806.json"
+  resolved_at: "2026-09-03T00:30:40.257871"
 - id: INS-20260902-233616383-26db
   ts: "2026-09-02T23:36:16+09:00"
   insight: "semantic_index_update新概念候補: discussion:googleで検索したときにチャート画像が横に出るといいよな。ALTも登録しているのか？ は 既存aliasesに一致なし。概念定義とaliases追加を検討せよ"
