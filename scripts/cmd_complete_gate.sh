@@ -11176,6 +11176,17 @@ def ref_matches_target(ref, target):
         return True
     return os.path.basename(ref) == os.path.basename(target)
 
+def is_exact_target_path(target):
+    clean_target = target.strip().strip("./")
+    if not clean_target:
+        return False
+    candidate = clean_target if os.path.isabs(clean_target) else os.path.join(script_dir, clean_target)
+    if os.path.isfile(candidate):
+        return True
+    # A new file may not exist yet.  Treat a known extension as the explicit
+    # file-target signal while extensionless targets remain directories.
+    return bool(os.path.splitext(os.path.basename(clean_target))[1])
+
 def is_probable_api_route_or_url(ref):
     # API routes (for example /api/public/showcase/event) and absolute web
     # URLs describe HTTP endpoints, not files that can appear in
@@ -11331,6 +11342,25 @@ for idx, match in enumerate(matches):
     seen.add(ref)
     if ref_matches_verified_dependency(ref):
         continue
+    # Execution-prefix references are tools, not deliverables.  This check is
+    # intentionally before target matching so a directory target such as
+    # `scripts` cannot claim `bash scripts/run_tests.sh`.
+    exec_verbs = {"bash", "python3", "python", "sh", "bats", "node"}
+    prefix_text = command[max(0, match.start() - 60):match.start()]
+    prefix_tokens = prefix_text.split()
+    is_exec_prefix = bool(prefix_tokens) and prefix_tokens[-1].lower() in exec_verbs
+    if is_exec_prefix:
+        refs.append((ref, True))
+        continue
+    # Exact file targets are explicit deliverables and take precedence over
+    # prose read markers.  Directory targets continue through readonly
+    # heuristics so cited tools and documents are not false deliverables.
+    if target_paths and any(
+        is_exact_target_path(target) and ref_matches_target(ref, target)
+        for target in target_paths
+    ):
+        refs.append((ref, False))
+        continue
     sentence_end_candidates = [
         pos for pos in (
             command.find("\n", match.end()),
@@ -11351,11 +11381,6 @@ for idx, match in enumerate(matches):
     next_ref_before_write = idx + 1 < len(matches) and matches[idx + 1].start() < sentence_end and (
         write_pos < 0 or matches[idx + 1].start() - match.end() < write_pos
     )
-    # 実行前置き動詞検出: bash/python3等がパス直前 → 実行のみ参照として除外
-    exec_verbs = {"bash", "python3", "python", "sh", "bats", "node"}
-    prefix_text = command[max(0, match.start() - 60):match.start()]
-    prefix_tokens = prefix_text.split()
-    is_exec_prefix = bool(prefix_tokens) and prefix_tokens[-1].lower() in exec_verbs
     # ロジックパラメータ検出: "{file}上書きロジック" 等、ファイル参照直後に名詞→実際の変更対象はロジックを持つ親ファイル
     logic_nouns = ("ロジック", "処理", "関数", "コード", "スクリプト", "機能", "仕組み")
     post_ref_text = command[match.end():match.end()+20]
@@ -11382,25 +11407,10 @@ for idx, match in enumerate(matches):
     )
     refs.append((ref, readonly_ref))
 
-target_refs = []
-if target_paths:
-    for ref, _readonly_ref in refs:
-        if any(ref_matches_target(ref, target) for target in target_paths):
-            target_refs.append(ref)
-
-if target_refs:
-    for ref in target_refs:
-        print(ref)
-elif not target_paths:
-    for ref, readonly_ref in refs:
-        if readonly_ref:
-            continue
-        print(ref)
-else:
-    for ref, readonly_ref in refs:
-        if readonly_ref:
-            continue
-        print(ref)
+for ref, readonly_ref in refs:
+    if readonly_ref:
+        continue
+    print(ref)
 PY
 }
 

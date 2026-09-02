@@ -202,6 +202,17 @@ def ref_matches_target(ref, target):
         return False
     return ref == target or ref.endswith("/" + target) or target.endswith("/" + ref) or ref.startswith(target.rstrip("/") + "/") or os.path.basename(ref) == os.path.basename(target)
 
+def is_exact_target_path(target):
+    clean_target = target.strip().strip("./")
+    if not clean_target:
+        return False
+    candidate = clean_target if os.path.isabs(clean_target) else os.path.join(repo, clean_target)
+    if os.path.isfile(candidate):
+        return True
+    # New files may not exist yet.  A known file extension is the explicit
+    # file-target signal; extensionless paths remain directory targets.
+    return bool(os.path.splitext(os.path.basename(clean_target))[1])
+
 def is_design_spec_instruction_ref(ref, local_text, sentence_tail, match_start):
     clean_ref = ref.strip().strip("./")
     if not ((clean_ref.startswith("docs/spec/") or clean_ref.startswith("docs/research/")) and clean_ref.endswith(".md")):
@@ -239,9 +250,16 @@ for idx, match in enumerate(matches):
         readonly_refs.append(os.path.basename(ref))
         debug(ref, "exec_prefix readonly=True")
         continue
-    if target_paths and any(ref_matches_target(ref, target) for target in target_paths):
+    # An explicit file target is a deliverable even when surrounding prose
+    # contains a read marker.  Directory targets must still reach the normal
+    # readonly heuristics below; otherwise every cited tool under `scripts`
+    # becomes a false deliverable.
+    if target_paths and any(
+        is_exact_target_path(target) and ref_matches_target(ref, target)
+        for target in target_paths
+    ):
         write_refs.append(os.path.basename(ref))
-        debug(ref, "target_path_match readonly=False")
+        debug(ref, "exact_target_path readonly=False")
         continue
     sentence_end_candidates = [pos for pos in (cmd_text.find("\n", match.end()), cmd_text.find("。", match.end()), cmd_text.find("；", match.end()), cmd_text.find(";", match.end())) if pos >= 0]
     sentence_end = min(sentence_end_candidates) if sentence_end_candidates else len(cmd_text)
