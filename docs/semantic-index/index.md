@@ -586,6 +586,7 @@ codd:
 | causal | `cmd_karo_hotfix_review_quality_verification_classification_20260814` files_modified: [[unread_cmd_new_deployment_guard]] |
 | causal | `cmd_karo_hotfix_startup_archive_requires_clear_20260818` files_modified: [[unread_cmd_new_deployment_guard]] |
 | causal | `cmd_karo_hotfix_gunshi_idle_flag_lifecycle_20260901` files_modified: [[unread_cmd_new_deployment_guard]] |
+| causal | `cmd_karo_hotfix_idle_flag_bash_running_stop_reentry_202609022232` files_modified: [[unread_cmd_new_deployment_guard]] |
 
 ## local_memory_db — ローカル記憶DB
 
@@ -9049,6 +9050,7 @@ codd:
 | cmd | `cmd_karo_hotfix_integrate_readtree_checkout_sync_202609022220` (`scripts/ninja_monitor.sh`, `tests/unit/test_push_lane_integrate.bats`) |
 | discussion | `queue/lord_conversation.jsonl` 2026-09-03T00:49:58+09:00 再検証 cmd を起票せよ |
 | discussion | `queue/lord_conversation.jsonl` 2026-09-03T00:55:17+09:00 再配備していいぞ |
+| causal | `cmd_karo_hotfix_idle_flag_bash_running_stop_reentry_202609022232` files_modified: [[agent_formation_management]] |
 | causal_chain | `[[cmd_karo_hotfix_deploy_task_latency_yaml_bug_20260702010845]]` (L918) |
 | causal_chain | `[[cmd_karo_hotfix_deploy_task_yaml_speed_recon_guard_202607020133]]` (L919) |
 | causal_chain | `[[cmd_karo_hotfix_ga162_hook_failure_pre_push_202607021402]]` (L930) |
@@ -11870,6 +11872,7 @@ codd:
 | causal | `cmd_karo_hotfix_push_lane_ancestry_guard_20260902` files_modified: [[daemon_supervision]] |
 | causal | `cmd_4451` files_modified: [[daemon_supervision]] |
 | causal | `cmd_karo_hotfix_integrate_readtree_checkout_sync_202609022220` files_modified: [[daemon_supervision]] |
+| causal | `cmd_karo_hotfix_idle_flag_bash_running_stop_reentry_202609022232` files_modified: [[daemon_supervision]] |
 | causal_chain | `[[cmd_karo_ci_fix_33301147088_test117_20260830]]` (L1677) |
 
 ## openpbx_reference — OpenPBX(コリ先生PBX MVP)
@@ -12194,6 +12197,7 @@ codd:
 | discussion | `queue/lord_conversation.jsonl` 2026-09-02T17:30:25+09:00 実装は順調か？前提条件に変化はないか？予期せぬつまりで止まっていないか？ |
 | discussion | `queue/lord_conversation.jsonl` 2026-09-02T18:03:53+09:00 止まっていないか？ |
 | causal | `cmd_karo_hotfix_integrate_readtree_checkout_sync_202609022220` files_modified: [[infrastructure_ops]] |
+| causal | `cmd_karo_hotfix_idle_flag_bash_running_stop_reentry_202609022232` files_modified: [[infrastructure_ops]] |
 | causal_chain | `[[cmd_3632]]` (L917) |
 | causal_chain | `[[cmd_karo_hotfix_auto_update_pane_spawn_202607031806]]` (L949) |
 | causal_chain | `[[cmd_3969]]` (L1043) |
@@ -13045,6 +13049,7 @@ codd:
 | causal | `cmd_karo_hotfix_inbox_priority_evidence_deadlock_20260828` files_modified: [[hook_automation_framework]] |
 | discussion | `queue/lord_conversation.jsonl` 2026-08-29T10:36:29+09:00 bfoohc0w3 toolu_01Xr8ZAbBJU59eTyn6BxBHVv /tmp/claude-1000/-home-simokitafresh-multi-agent-shogun/b40b7045-ff88-4a88-b288 |
 | causal | `cmd_karo_hotfix_gunshi_idle_flag_lifecycle_20260901` files_modified: [[hook_automation_framework]] |
+| causal | `cmd_karo_hotfix_idle_flag_bash_running_stop_reentry_202609022232` files_modified: [[hook_automation_framework]] |
 | causal_chain | `[[cmd_3728]]` (L965) |
 | causal_chain | `[[cmd_karo_ci_fix_ga218_hook_suite_202607101912]]` (L1029) |
 
@@ -13163,6 +13168,7 @@ codd:
 | causal | `cmd_karo_hotfix_inbox_lease_contracts_20260901` files_modified: [[multi_cli_event_commonization]] |
 | causal | `cmd_karo_hotfix_gunshi_idle_flag_lifecycle_20260901` files_modified: [[multi_cli_event_commonization]] |
 | discussion | `queue/lord_conversation.jsonl` 2026-09-02T13:41:44+09:00 単一 publisher 設計書 v2.0(2026-09-02 13:47): 家老 v1.9 REJECT 7 点を全採用。事実=dm-signal backend は起動時 app/main.py→db/init_db.py→run_ |
+| causal | `cmd_karo_hotfix_idle_flag_bash_running_stop_reentry_202609022232` files_modified: [[multi_cli_event_commonization]] |
 
 ## codex_goal_mode — Codex /goal 自律目標モード
 
@@ -13962,6 +13968,8 @@ codd:
 | cmd | `cmd_karo_hotfix_shared_dirty_code_cleanup_20260814` (`.claude/hooks/pre-bash-combined.sh`, `scripts/deploy_task.sh`, `scripts/gunshi_log_append.sh`) |
 | causal | `cmd_karo_hotfix_sg7_honest_fail_verdict_20260831` files_modified: [[provisional_gunshi_log_append]] |
 | cmd | `cmd_karo_hotfix_sg7_honest_fail_verdict_20260831` (`scripts/gunshi_log_append.sh`, `scripts/review_approval.sh`, `scripts/review_bundle.py`) |
+| causal | `cmd_karo_hotfix_idle_flag_bash_running_stop_reentry_202609022232` files_modified: [[provisional_gunshi_log_append]] |
+| cmd | `cmd_karo_hotfix_idle_flag_bash_running_stop_reentry_202609022232` (`scripts/inbox_watcher.sh`, `scripts/gunshi_log_append.sh`, `scripts/hooks/stop_check_inbox.sh`) |
 
 ## provisional_hidden-infrastructure-gate-hook-canonical-manifest-20260731 — 仮: Hidden Infrastructure Gate Hook Canonical Manifest 20260731
 
@@ -16585,6 +16593,7 @@ codd:
 | discussion | `queue/lord_conversation.jsonl` 2026-09-02T15:30:20.537026+00:00 git pre-commit semantic propagation for context/projects changes |
 | discussion | `queue/lord_conversation.jsonl` 2026-09-02T15:34:54.961066+00:00 git pre-commit semantic propagation for context/projects changes |
 | discussion | `queue/lord_conversation.jsonl` 2026-09-02T16:13:33.000258+00:00 git pre-commit semantic propagation for context/projects changes |
+| discussion | `queue/lord_conversation.jsonl` 2026-09-02T16:15:22.914012+00:00 git pre-commit semantic propagation for context/projects changes |
 | causal_chain | `[[cmd_karo_hotfix_lessons_yaml_format_restore_20260727]]` (L1389) |
 
 ## infra_design_intent — インフラ設計意図カタログ
@@ -16979,6 +16988,7 @@ codd:
 | causal | `cmd_karo_hotfix_inbox_processing_receipt_20260901` files_modified: [[inbox_processing_discipline]] |
 | causal | `cmd_karo_hotfix_gunshi_idle_flag_lifecycle_20260901` files_modified: [[inbox_processing_discipline]] |
 | causal | `cmd_karo_hotfix_review_processing_receipt_20260901` files_modified: [[inbox_processing_discipline]] |
+| causal | `cmd_karo_hotfix_idle_flag_bash_running_stop_reentry_202609022232` files_modified: [[inbox_processing_discipline]] |
 
 ## inbox_watcher_process_model — inbox_watcherプロセスモデル
 
@@ -17012,6 +17022,7 @@ codd:
 | causal | `cmd_karo_hotfix_outstanding_lease_expiry_20260831` files_modified: [[inbox_watcher_process_model]] |
 | causal | `cmd_karo_hotfix_inbox_lease_contracts_20260901` files_modified: [[inbox_watcher_process_model]] |
 | causal | `cmd_karo_hotfix_gunshi_idle_flag_lifecycle_20260901` files_modified: [[inbox_watcher_process_model]] |
+| causal | `cmd_karo_hotfix_idle_flag_bash_running_stop_reentry_202609022232` files_modified: [[inbox_watcher_process_model]] |
 
 ## saxo_openapi_excel — Saxo Bank OpenAPI for Excel
 
