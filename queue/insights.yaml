@@ -13067,7 +13067,10 @@ insights:
   priority: "low"
   source: "semantic_index_update"
   fix_known: false
-  status: pending
+  status: resolved
+  resolved_reason: "semantic map generation verified the candidate is represented or intentionally ignored"
+  action_artifact: "semantic_map=/home/simokitafresh/multi-agent-shogun/context/semantic-map.md;semantic_index=/home/simokitafresh/multi-agent-shogun/docs/semantic-index/index.md"
+  resolved_at: "2026-09-02T13:17:28+09:00"
 - id: INS-20260902-131544115-cd3c
   ts: "2026-09-02T13:15:44+09:00"
   insight: "GA-550 hook_failure: pre-push ancestry-merge-regressionはinsights.yaml auto-commit競合時に正当発火。家老手動pushではなくauto-push経路に委ねるのが正しい対処。hookは正常。忍者配備不要"
