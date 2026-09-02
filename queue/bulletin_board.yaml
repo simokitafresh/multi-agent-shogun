@@ -373,11 +373,12 @@ entries:
   posted_at: '2026-09-03T03:01:08'
   requires_confirmation: false
   action_type: 'action_required'
-  actioned_by: ''
+  actioned_by: 'shogun'
   notify_targets:
     - 'shogun'
-  confirmed_by: []
-  status: 'open'
+  confirmed_by:
+    - 'shogun'
+  status: 'closed'
 - id: 'blt_20260903_030116_3781c2'
   content: |-
     GATE CLEAR cmd_karo_hotfix_publisher_enqueue_repo_guard_202609030218: 完了
@@ -399,8 +400,9 @@ entries:
   actioned_by: ''
   notify_targets:
     - 'shogun'
-  confirmed_by: []
-  status: 'open'
+  confirmed_by:
+    - 'shogun'
+  status: 'closed'
 - id: 'blt_20260903_030514_dcb49d'
   content: |-
     GATE CLEAR cmd_reflux_insight_202609021449_kagemaru: 完了
@@ -417,6 +419,17 @@ entries:
     GATE CLEAR cmd_reflux_insight_202609030257_hanzo: 完了
   posted_by: 'karo'
   posted_at: '2026-09-03T03:10:25'
+  requires_confirmation: false
+  action_type: 'info'
+  actioned_by: ''
+  notify_targets: []
+  confirmed_by: []
+  status: 'open'
+- id: 'blt_20260903_032803_7bae14'
+  content: |-
+    GATE CLEAR cmd_reflux_insight_202609030314_kagemaru: 完了
+  posted_by: 'karo'
+  posted_at: '2026-09-03T03:28:03'
   requires_confirmation: false
   action_type: 'info'
   actioned_by: ''

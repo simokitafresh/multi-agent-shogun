@@ -1,5 +1,10 @@
 # 戦局日誌 (Campaign Log)
-<!-- last_updated: 2026-09-02 kotaro_hook_artifact_ga552 -->
+<!-- last_updated: 2026-09-03 kotaro_lp_showcase_fetch_cache_bust -->
+## 2026-09-03 cmd_karo_hotfix_lp_showcase_fetch_cache_bust_202609030314 (kotaro)
+| cmd/action | 意図 | 結果 | 因果 |
+|-----|------|------|------|
+| cmd_karo_hotfix_lp_showcase_fetch_cache_bust_202609030314 (kotaro) | LP static exportのRender build cache持越しでshowcase APIの旧レスポンス形が焼き込まれる問題を、cmd_4462で非採用と判明したcache:'no-store'ではなくbuild時cache-busting query paramで恒久修正 | AC1: getShowcase fetch URLへ?b=BUILD_ID付与+next.revalidateオプション廃止、npm run build 2回(初回rm -rf .next/2回目.next保持)とも exit0/html560件/holding277。AC2: cmd_4462のassert-holding.mjs+package.json build scriptを同worktreeへ再実装(元commit efed1c9fbとdiff一致)、意図的失敗(閾値変更)でexit1確認後復元。commit `f59cd6e6f20a58463746c18afec8bd53d7790330`、gate_report_format PASS | [[cmd_4462]] -> [[Next14_export_cache_no_store非互換]] -> [[cache_busting_query_param採用]] |
+
 ## 2026-09-02 cmd_karo_hotfix_ga552_hook_artifact_20260902135701 (kotaro)
 | cmd/action | 意図 | 結果 | 因果 |
 |-----|------|------|------|
@@ -1653,3 +1658,5 @@
 - 2026-09-03 02:48 push 同期完了(ahead0/behind0、因果 5 段解消)。4460(U7 flag)は軍師 LGTM→repo path RC。4462(LP no-store)→小太郎。
 - 2026-09-03 03:02 enqueue repo guard(影丸)CLEAR(publisher 発行 d61ef6907)。flag file hotfix→疾風。4460 CLEAR。tobisaru reflux CLEAR。
 - 2026-09-03 03:05 cmd_4459 本番確認 PASS(LP 保有欄=API year_month 別 holding、4 月一致)。
+- 2026-09-03 03:16 cmd_4462 AC1 改訂(cache-busting param)を hotfix として小太郎へ再配備(将軍裁定 A)。半蔵 reflux CLEAR。
+- 2026-09-03 03:22 cmd_4463(X 運用偵察)→飛猿。復帰点 session_save_20260903_0320 保存、compact_state 更新(将軍 CTX90% 指示)。
