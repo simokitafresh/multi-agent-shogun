@@ -13049,3 +13049,10 @@ insights:
   source: "semantic_map_generate:new_file"
   fix_known: false
   status: pending
+- id: INS-20260902-131259720-53b1
+  ts: "2026-09-02T13:12:59+09:00"
+  insight: "semantic_map_generate新規ファイル候補: `scripts/cdp/cmd_4401_publish_timing.md` は semantic index未登録。既存概念へのfile追加または新概念定義を検討せよ"
+  priority: "low"
+  source: "semantic_map_generate:new_file"
+  fix_known: false
+  status: pending
