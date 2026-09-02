@@ -257,12 +257,12 @@ canary 判定: **(v1.8 殿裁定 D9)** infra と dm-signal の両 repo を U1 �
 
 - 根拠: 殿 2026-09-02 17:18『single_publisher_asis_tobe_5w1h_20260902.md も随時更新しないと後で混乱する』。設計本文(§0-§13)と実装の現在値を同じ file に置き、読者が別 file を探さずに済むようにする
 
-最終更新: 2026-09-02 19:12(殿下問 19:02『進展が遅すぎないか』→検証 cmd 2 本を CLEAR 待ちにせず起票)
+最終更新: 2026-09-02 19:30(cmd_4446 U2 が第 1 波の初 GATE CLEAR)
 
 ### 14.1 unit × cmd 対応表(実装 cmd=片 CLI、検証 cmd=他 CLI・別番号。§9.1 共通 AC)
 | U | 内容 | 実装 cmd | 実装忍者(CLI) | 実装 commit | 実装 GATE | 検証 cmd | 検証忍者(CLI) | 検証 GATE |
 |---|---|---|---|---|---|---|---|---|
-| U1 | publish queue+lock-run shim+events writer | cmd_4445(delegated 14:41) | 小太郎(Claude Sonnet) | 0e8d1b6d9(origin 統合済 16:5x) | **SG7 bundle FAIL 17:43**(report_verdict PASS、precheck PRE25 FP 残存=疾風 hotfix 待ち) | cmd_4448(delegated 15:34、depends_on 4445 CLEAR) | 影丸(Codex)予定 | 未配備 |
+| U1 | publish queue+lock-run shim+events writer | cmd_4445(delegated 14:41) | 小太郎(Claude Sonnet) | 0e8d1b6d9(origin 統合済 16:5x) | SG7 再 bundle 19:25 も FAIL(PRE11 lesson extra=別 detector)→家老指示で 4 観点 LGTM を正本に APPROVE 再生成中 | cmd_4448(delegated 15:34、depends_on 4445 CLEAR) | 影丸(Codex)予定 | 未配備 |
 | U2 | publish_artifact capture/restore | cmd_4446(delegated 14:54) | 飛猿(Claude Sonnet) | 58446a4dc(origin 統合済) | **BLOCK sg7_bundle_missing 16:57**+才蔵 PRE25 追加根治中 | cmd_4449(delegated 19:10、depends_on 4446 CLEAR) | Codex(家老配備) | 未配備 |
 | U4 | gate dual-read+census | cmd_4447(delegated 14:57) | 疾風(Codex) | 39b2d18b2(origin 統合済) | **SG7 bundle FAIL 17:43**(report_verdict PASS、precheck PRE25 FP 残存=疾風 hotfix 待ち) | cmd_4450(delegated 19:11、depends_on 4447 CLEAR) | Claude(家老配備) | 未配備 |
 | U1b | 直接 commit wrapper(将軍・家老) | 未起票(第 2 波) | — | — | — | — | — | — |
@@ -286,7 +286,8 @@ canary 判定: **(v1.8 殿裁定 D9)** infra と dm-signal の両 repo を U1 �
 | 16:56-継続 | cmd_4445/4447/4446 再 GATE が sg7_bundle_missing BLOCK→17:43 軍師 SG7 bundle 生成も verdict FAIL | report_verdict は PASS。precheck SG-PRE25 が `ninja_scope_commit.sh`/`run_tests.sh`(command 欄の exec prefix)を files_modified 不在と誤判定(将軍が cache 無効で再実行し ERRORS=2 再現)。3acaae149 は本 report 形式を覆わない。17:16 の『軍師 idle flag 停止』は将軍の誤診(軍師は起きて保留中)→17:35 訂正 | 疾風 hotfix(extract_target_path exec order、precheck と cmd_complete_gate の同期)→統合→precheck 再実行(cache key は script hash を含むため自動無効)→bundle 再生成→GATE | 疾風 report PASS 18:3x(commit e5e8532b7)、軍師 review_draft 18:54 到着→review→統合→precheck 再実行→再 bundle |
 | 16:31 | push lane rc=1(LIFECYCLE-BACKGROUND-FAIL) | 上記 ancestry 偽陽性と同根 | 同上で根治 | 解消 |
 | 17:52-18:29 | **共有 root の index が旧 tree へ後退**(単一 publisher file 7 本 staged 削除+worktree 消失、exec_prefix 判定除去、18 path/1974 行) | 痕跡=17:52:40 才蔵 auto-commit-before-clear の scope-out staged preserve。疾風 hotfix commit の parity BLOCK の真因。§13 H3(台帳ノイズ)とは別型=**多重 worktree の index 混入**、U1b/U3 が root を触らない設計(§9.0『root は読み取りのみ』)の必要性を裏付ける | 将軍 `git restore --source=HEAD --staged --worktree -- <18 paths>`→staged 0。家老へ preserve 経路 hotfix 1 名(才蔵 `cmd_karo_hotfix_staged_preserve_index_regression_202609021832` acknowledged)。**18:5x に 2 回目**(GA-554/555 の 4 path が旧版で staged、13+/67-)→再 restore | 復元済 2 回、根治=才蔵走行中 |
-| 17:40-継続 | push lane WAIT ci=RED、unpushed 34 | run 33611379072 shard-1 `shard failed rc=1`、ci_fix_active=0(家老 ci_fix task は旧 run) | 半蔵 `cmd_karo_ci_fix_33611379072_gate_dual_read` 完了(test_gate_dual_read 4/6 FAIL 修正)、18:42 CI-RED-PUSH-ADMITTED→新 run 9261176a2 | 走行中(unpushed 46) |
+| 17:40-19:03 | push lane WAIT ci=RED、unpushed 34→46 | run 33611379072 shard-1 FAIL、ci_fix_active=0 | 半蔵 ci_fix 2f84aabdf(gate 側 +150)→19:03 INTEGRATE→push 再開、CI 60da33974 success | 解消(unpushed 5) |
+| 16:56-19:25 | **判断を検出器に従わせた**(殿 19:21『自分で制限をかけて複雑化していないか』) | 4445/4447/4446 は 4 観点 LGTM・report_verdict PASS なのに bundle は precheck 出力の『FAIL にせよ』に従い FAIL。偽陽性を消す hotfix を 4 本直列で待ち、軍師案 A(gate 直接実行)を家老が迂回と却下 | 将軍 19:23 下知: 4 観点 LGTM を正本に karo_attention へ FP 根拠を書いて APPROVE。FAIL 再発行と 5 本目 hotfix 待ちを禁止。主線を hotfix の CLEAR に従属させない | 4446 CLEAR 19:26、4445/4447 再生成中 |
 
 ### 14.3 §11 速度検証の現在値
 - before: snapshot 固定済み(merge 141/push 失敗 100/INTEGRATE 382/pre-push n=45 median 366 p90 1300/bats 270)。after は U8 完了後に同コマンドで計測(未着手)。
