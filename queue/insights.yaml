@@ -13959,3 +13959,10 @@ insights:
   source: "semantic_stress_test"
   fix_known: false
   status: pending
+- id: INS-20260902-210359683-e883
+  ts: "2026-09-02T21:03:59+09:00"
+  insight: "[[殿裁定 20 44 §14 4 U6 は U3 dry run と並走]] semantic_stress_test candidate_aliases: NO_MATCH source=cmds query=殿裁定 2026-09-02 20:44(§14.4: U6 は U3 dry-run と並走)。設計書 §13 H3『台帳ノイズ同士の分岐』は本日 15:2x-16:44 の便停止 1h20m(分岐 63/95 が全て insights autopush)で実証済み。台帳 4 本の root 直接追記を op file 化し、publisher が bat"
+  priority: "low"
+  source: "semantic_stress_test"
+  fix_known: false
+  status: pending
