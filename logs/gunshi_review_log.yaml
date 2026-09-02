@@ -1,4 +1,56 @@
 - cmd_id: cmd_4199
+- cmd_id: cmd_reflux_insight_202609030728_hayate
+  review_type: draft
+  verdict: APPROVE
+  verified_files:
+  - queue/insights.yaml:INS-20260902-141250259-bc78
+  findings_summary: 定型reflux insight resolve。AC1=一次確認+resolve/decision_candidate、AC2=在庫before/after記録
+  finding_categories:
+  - assumptions
+  - numbers
+  - premortem
+  - adversarial
+  - ambiguity
+  observations:
+  - '定型reflux: INS-20260902-141250259-bc78を確認しresolveまたはdecision_candidate整理'
+  - scope=queue/insights.yamlのみ。insight_resolve.sh正規ヘルパー経由
+  adversarial_review: 'N/A: queue/insights.yamlのみ変更で実行スクリプトへの影響なし'
+  ambiguity_points: none
+  operational_simulation:
+    command: grep INS-20260902-141250259-bc78 queue/insights.yaml
+    expected: 'status: pending'
+    actual: pending確認
+    result: PASS
+  brainwash_check: '#1no #2no #3no #4no #5no #6no #7no #8no 定型AC2件+scope限定'
+  reviewed_at: '2026-09-03T07:30:00+09:00'
+  timestamp: '2026-09-03T07:30:00+09:00'
+- cmd_id: cmd_karo_hotfix_publisher_root_drain_202609030535
+  review_type: report
+  report_ninja: kagemaru
+  report_task_id: cmd_karo_hotfix_publisher_root_drain_202609030535_normal
+  report_verdict: FAIL
+  verdict: FAIL
+  verified_files:
+  - scripts/lib/publisher_root_drain.sh:1
+  findings_summary: 重複メッセージ(07:29)。既に07:22でLGTM+SG7 bundle完了済み。mark_read timestamp解消用FAIL
+  finding_categories:
+  - assumptions
+  - numbers
+  - premortem
+  - adversarial
+  - ambiguity
+  observations:
+  - 同一report_fingerprint(9abb9773)の重複review依頼。07:22でLGTM+SG7 bundle完了済み
+  - 'mark_read timestamp check: reviewed_at(07:22) < msg_ts(07:29)でBLOCK'
+  step3_5_verified: true
+  operational_simulation:
+    command: ls queue/gates/cmd_karo_hotfix_publisher_root_drain_202609030535/sg7_bundle.json
+    expected: file exists
+    actual: file exists
+    result: PASS
+  brainwash_check: '#1no #2no #3no #4no #5no #6no #7no #8no SG7 bundle存在確認済み'
+  reviewed_at: '2026-09-03T07:31:00+09:00'
+  timestamp: '2026-09-03T07:31:00+09:00'
 - cmd_id: cmd_karo_hotfix_publisher_root_drain_202609030535
   review_type: report
   gate_result: BLOCK
