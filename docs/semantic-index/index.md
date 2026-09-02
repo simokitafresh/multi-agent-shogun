@@ -3418,6 +3418,7 @@ codd:
 | discussion | `queue/lord_conversation.jsonl` 2026-09-02T22:09:32+09:00 rebalancer 本番 500 真因(2026-09-02 22:10 将軍調査): POST /api/calculate-rebalance が 21:39 JST 以降 500。Alpaca stream が PRE 相で deg |
 | discussion | `queue/lord_conversation.jsonl` 2026-09-02T22:09:44+09:00 bhk9qiljf toolu_01NLXtGa86ykCKcmMwAPwvRP /tmp/claude-1000/-home-simokitafresh-multi-agent-shogun/ec066643-699d-4781-9dab |
 | discussion | `queue/lord_conversation.jsonl` 2026-09-02T22:21:17+09:00 rebalancer 本番 500 修正完了(2026-09-02 22:20 将軍 D0、殿下知 22:13『将軍が責任をもって自分で直しコミットデプロイ本番確認まで』): rebalancer c8c3c8a = backend/app |
+| causal | `cmd_4454` files_modified: [[semantic_dictionary_design]] |
 | causal_chain | `[[cmd_3749]]` (L974) |
 | causal_chain | `[[cmd_training_L1_report-write_20260708020332]]` (L977) |
 | causal_chain | `[[cmd_reflux_insight_202607071717_tobisaru]]` (L961) |
@@ -3481,7 +3482,6 @@ codd:
 | causal_chain | `[[cmd_karo_hotfix_ga555_context_freshness_trigger_202609021730]]` (L1703) |
 | causal_chain | `[[cmd_4446]]` (L1705) |
 | causal_chain | `[[cmd_karo_hotfix_u2_publish_artifact_restore_undeclared_path_202609022132]]` (L1707) |
-| causal | `cmd_4454` files_modified: [[semantic_dictionary_design]] |
 
 ## investment_knowledge_base — 投資知識辞書
 
@@ -5628,6 +5628,7 @@ codd:
 | causal | `cmd_karo_hotfix_wa_reflux_placeholder_20260730` files_modified: [[infra_throughput_outcome_design]] |
 | causal | `cmd_karo_hotfix_rework_capture_gap_20260827` files_modified: [[infra_throughput_outcome_design]] |
 | causal | `cmd_karo_hotfix_pending_decision_infra_bundle_20260828` files_modified: [[infra_throughput_outcome_design]] |
+| causal | `cmd_4454` files_modified: [[infra_throughput_outcome_design]] |
 | causal_chain | `[[cmd_3644]]` (L927) |
 | causal_chain | `[[cmd_reflux_insight_202607072256_saizo]]` (L971) |
 | causal_chain | `[[cmd_3726]]` (L956) |
@@ -5638,7 +5639,6 @@ codd:
 | causal_chain | `[[cmd_karo_hotfix_ga_pair_dedup_202607101643]]` (L1024) |
 | causal_chain | `[[cmd_karo_hotfix_fill_this_202607151848]]` (L1037) |
 | causal_chain | `[[cmd_karo_ci_red_remaining_unit_202607151950]]` (L1041) |
-| causal | `cmd_4454` files_modified: [[infra_throughput_outcome_design]] |
 
 ## chain_principle — 鎖の原理
 
@@ -6393,6 +6393,7 @@ codd:
 | discussion | `queue/lord_conversation.jsonl` 2026-09-02T22:13:29+09:00 リバランサーの 500 は将軍が責任をもって自分で直し、コミットデプロイ、本番確認までせよ。 |
 | discussion | `queue/lord_conversation.jsonl` 2026-09-02T22:43:47+09:00 shard1相当60ファイルの並列テスト再現待ち。完了確認後、結果を分析してAC2の修正に進む。 |
 | lesson | `L1709` enqueue前にadmit呼出しを挿すAC1変更は、その挿入対象関数を直接呼ぶ既存bats fixtureの非存在scriptを露呈させる |
+| discussion | `queue/lord_conversation.jsonl` 2026-09-02T23:09:01+09:00 shard1相当60ファイルの並列テスト再現待ち。完了確認後、結果を分析してAC2の修正に進む。 |
 | causal_chain | `[[cmd_3633]]` (L916) |
 | causal_chain | `[[cmd_3646]]` (L929) |
 | causal_chain | `[[cmd_3649]]` (L932) |
@@ -9033,6 +9034,8 @@ codd:
 | discussion | `queue/lord_conversation.jsonl` 2026-09-02T22:06:29+09:00 bevmg0u89 toolu_01Xtdsrec7vcyndFj1sbbNy8 /tmp/claude-1000/-home-simokitafresh-multi-agent-shogun/61ac6a93-ea1a-4cec-b289 |
 | discussion | `queue/lord_conversation.jsonl` 2026-09-02T22:29:52+09:00 session_save_20260902_2230(復帰点、先に session_save_20260902_2140 を読め): 22:05 殿『リバランサー本番 API エラー調査』→真因(Alpaca degraded 時 yfin |
 | discussion | `queue/lord_conversation.jsonl` 2026-09-02T22:53:41+09:00 起票せよ |
+| causal | `cmd_karo_hotfix_integrate_readtree_checkout_sync_202609022220` files_modified: [[agent_formation_management]] |
+| cmd | `cmd_karo_hotfix_integrate_readtree_checkout_sync_202609022220` (`scripts/ninja_monitor.sh`, `tests/unit/test_push_lane_integrate.bats`) |
 | causal_chain | `[[cmd_karo_hotfix_deploy_task_latency_yaml_bug_20260702010845]]` (L918) |
 | causal_chain | `[[cmd_karo_hotfix_deploy_task_yaml_speed_recon_guard_202607020133]]` (L919) |
 | causal_chain | `[[cmd_karo_hotfix_ga162_hook_failure_pre_push_202607021402]]` (L930) |
@@ -11008,6 +11011,7 @@ codd:
 | causal | `cmd_karo_hotfix_t190_push_merge_recovery_unit6_20260830` files_modified: [[training_cycle_quality]] |
 | causal | `cmd_karo_hotfix_push_red_nonblocking_20260830` files_modified: [[training_cycle_quality]] |
 | causal | `cmd_karo_hotfix_push_lane_ancestry_guard_20260902` files_modified: [[training_cycle_quality]] |
+| causal | `cmd_karo_hotfix_integrate_readtree_checkout_sync_202609022220` files_modified: [[training_cycle_quality]] |
 
 ## report_quality_protocol — 忍者報告品質プロトコル
 
@@ -11849,6 +11853,7 @@ codd:
 | causal | `cmd_karo_hotfix_gunshi_idle_flag_lifecycle_20260901` files_modified: [[daemon_supervision]] |
 | causal | `cmd_karo_hotfix_push_lane_ancestry_guard_20260902` files_modified: [[daemon_supervision]] |
 | causal | `cmd_4451` files_modified: [[daemon_supervision]] |
+| causal | `cmd_karo_hotfix_integrate_readtree_checkout_sync_202609022220` files_modified: [[daemon_supervision]] |
 | causal_chain | `[[cmd_karo_ci_fix_33301147088_test117_20260830]]` (L1677) |
 
 ## openpbx_reference — OpenPBX(コリ先生PBX MVP)
@@ -12172,6 +12177,7 @@ codd:
 | discussion | `queue/lord_conversation.jsonl` 2026-09-02T17:12:41+09:00 デーモンをスクリプトで全て再起動してくれ |
 | discussion | `queue/lord_conversation.jsonl` 2026-09-02T17:30:25+09:00 実装は順調か？前提条件に変化はないか？予期せぬつまりで止まっていないか？ |
 | discussion | `queue/lord_conversation.jsonl` 2026-09-02T18:03:53+09:00 止まっていないか？ |
+| causal | `cmd_karo_hotfix_integrate_readtree_checkout_sync_202609022220` files_modified: [[infrastructure_ops]] |
 | causal_chain | `[[cmd_3632]]` (L917) |
 | causal_chain | `[[cmd_karo_hotfix_auto_update_pane_spawn_202607031806]]` (L949) |
 | causal_chain | `[[cmd_3969]]` (L1043) |
@@ -12774,6 +12780,7 @@ codd:
 | cmd | `cmd_karo_recon_ghost_tmux_ac3_origin_20260826` |
 | lesson | `L1667` producer接続とFP観測は同一contractで検証する |
 | lesson | `L1696` inbox read receiptは本文処理receiptと分離して型別に強制する |
+| causal | `cmd_4454` files_modified: [[lesson_lifecycle]] |
 | causal_chain | `[[cmd_karo_hotfix_shogun_startup_defer_skill_refs_202607020421]]` (L921) |
 | causal_chain | `[[cmd_3657]]` (L935) |
 | causal_chain | `[[cmd_3724]]` (L959) |
@@ -12786,7 +12793,6 @@ codd:
 | causal_chain | `[[cmd_karo_impl_a6_preflight_timeout_20260727]]` (L1387) |
 | causal_chain | `[[cmd_karo_persist_strong_new_game_checkpoint_20260730]]` (L1483) |
 | causal_chain | `[[cmd_karo_hotfix_pending_decision_infra_bundle_20260828]]` (L1667) |
-| causal | `cmd_4454` files_modified: [[lesson_lifecycle]] |
 
 ## gunshi_review_lifecycle — 軍師レビューライフサイクル
 
@@ -16546,6 +16552,7 @@ codd:
 | discussion | `queue/lord_conversation.jsonl` 2026-09-02T12:11:16.077372+00:00 git pre-commit semantic propagation for context/projects changes |
 | discussion | `queue/lord_conversation.jsonl` 2026-09-02T12:51:43.620570+00:00 git pre-commit semantic propagation for context/projects changes |
 | discussion | `queue/lord_conversation.jsonl` 2026-09-02T13:52:09.232606+00:00 git pre-commit semantic propagation for context/projects changes |
+| discussion | `queue/lord_conversation.jsonl` 2026-09-02T13:58:34.603792+00:00 git pre-commit semantic propagation for context/projects changes |
 | causal_chain | `[[cmd_karo_hotfix_lessons_yaml_format_restore_20260727]]` (L1389) |
 
 ## infra_design_intent — インフラ設計意図カタログ
@@ -16683,6 +16690,7 @@ codd:
 | causal | `cmd_karo_hotfix_u1_quality_monitor_claim_20260902` files_modified: [[infra_design_intent]] |
 | causal | `cmd_karo_hotfix_push_lane_ancestry_guard_20260902` files_modified: [[infra_design_intent]] |
 | discussion | `queue/lord_conversation.jsonl` 2026-09-02T22:27:50+09:00 それはインフラバグでは？真因を根治せよ。因果をたどれ |
+| causal | `cmd_karo_hotfix_integrate_readtree_checkout_sync_202609022220` files_modified: [[infra_design_intent]] |
 | causal_chain | `[[cmd_karo_fix_same_cmd_pending_symlink_20260804]]` (L1556) |
 
 ## scope_integrity_lifecycle — スコープ鮮度ライフサイクル
@@ -18114,6 +18122,7 @@ codd:
 | discussion | `queue/lord_conversation.jsonl` 2026-09-02T20:20:55+09:00 コミット・プッシュのつまりは解消したか？ |
 | discussion | `queue/lord_conversation.jsonl` 2026-09-02T11:25:21.829396+00:00 git pre-commit semantic propagation for context/projects changes |
 | discussion | `queue/lord_conversation.jsonl` 2026-09-02T11:27:55.340086+00:00 git pre-commit semantic propagation for context/projects changes |
+| discussion | `queue/lord_conversation.jsonl` 2026-09-02T14:10:21.180744+00:00 git pre-commit semantic propagation for context/projects changes |
 | causal_chain | `[[cmd_karo_hotfix_ga161_obsidian_link_context_freshness_202607021348]]` (L926) |
 | causal_chain | `[[cmd_3648]]` (L933) |
 | causal_chain | `[[cmd_karo_ci_fix_ga191_followup_202607071752]]` (L963) |
@@ -18394,6 +18403,7 @@ codd:
 | causal | `cmd_karo_hotfix_t190_push_merge_recovery_unit6_20260830` files_modified: [[inbox_evidence_durability]] |
 | causal | `cmd_karo_hotfix_push_red_nonblocking_20260830` files_modified: [[inbox_evidence_durability]] |
 | causal | `cmd_karo_hotfix_push_lane_ancestry_guard_20260902` files_modified: [[inbox_evidence_durability]] |
+| causal | `cmd_karo_hotfix_integrate_readtree_checkout_sync_202609022220` files_modified: [[inbox_evidence_durability]] |
 
 ## hook_json_command_boundary — hook JSONコマンド境界
 
@@ -18642,6 +18652,7 @@ codd:
 | causal | `cmd_karo_hotfix_t190_push_merge_recovery_unit6_20260830` files_modified: [[active_task_clear_fail_closed]] |
 | causal | `cmd_karo_hotfix_push_red_nonblocking_20260830` files_modified: [[active_task_clear_fail_closed]] |
 | causal | `cmd_karo_hotfix_push_lane_ancestry_guard_20260902` files_modified: [[active_task_clear_fail_closed]] |
+| causal | `cmd_karo_hotfix_integrate_readtree_checkout_sync_202609022220` files_modified: [[active_task_clear_fail_closed]] |
 
 ## karo_strong_new_game_20260818_0650 — 家老復帰点（fixture→republish→cron）
 

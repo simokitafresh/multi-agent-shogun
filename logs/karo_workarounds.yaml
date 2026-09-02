@@ -1,29 +1,3 @@
-- cmd_id: cmd_karo_hotfix_dm_signal_backup_push_20260829
-  timestamp: '2026-08-29T09:51:45Z'
-  ninja: system
-  workaround: false
-  event_kind: hotfix
-  auto_captured: true
-  category: rework_auto_capture
-  detail: 'cmd_complete_gate completed rework event'
-  root_cause: 'automatic completion observation'
-  lesson_required: false
-  lesson_disposition: not_applicable
-  lesson_reference: 'not_applicable'
-  resolved_by_cmd: 'cmd_karo_hotfix_dm_signal_backup_push_20260829'
-- cmd_id: cmd_karo_hotfix_command_scope_directory_prefix_20260829
-  timestamp: '2026-08-29T12:10:42Z'
-  ninja: system
-  workaround: false
-  event_kind: hotfix
-  auto_captured: true
-  category: rework_auto_capture
-  detail: 'cmd_complete_gate completed rework event'
-  root_cause: 'automatic completion observation'
-  lesson_required: false
-  lesson_disposition: not_applicable
-  lesson_reference: 'not_applicable'
-  resolved_by_cmd: 'cmd_karo_hotfix_command_scope_directory_prefix_20260829'
 - cmd_id: cmd_karo_hotfix_lifecycle_worker_singleton_unit4_20260829
   timestamp: '2026-08-29T12:23:06Z'
   ninja: system
@@ -1304,3 +1278,32 @@
   environment_change: 'type=script; file=scripts/ninja_monitor.sh; pattern=auto_commit_before_clear.disabled'
   brainwash_check: '洗脳#5先送り防止: 偽BLOCK 7例を gate 直接再実行で CLEAR 7/7'
   resolved_by_cmd: ''
+- cmd_id: cmd_karo_ci_fix_33630722226_instructions_sync_fp_vocab_202609022153
+  timestamp: '2026-09-02T14:08:25Z'
+  ninja: tobisaru
+  workaround: true
+  event_kind: manual_wa
+  auto_captured: false
+  category: infra
+  root_signature: 'infra::general'
+  detail: 'report_field_set.sh が files_modified の path に ''/'' を必須とし top-level file(AGENTS.md)を BLOCK する一方、gate_report_format の manifest_consistency は ''./'' 無しの ''AGENTS.md'' 厳密一致を要求=忍者が両立不能で行き詰まり'
+  root_cause: '家老が報告 YAML の ''path: ./AGENTS.md'' を ''path: AGENTS.md'' へ文字列置換(1 箇所)し gate_report_format PASS を確認。検出器の矛盾は insight 在庫化'
+  lesson_required: true
+  lesson_disposition: 'new_lesson_required'
+  lesson_reference: ''
+  environment_change: 'type=script; file=scripts/report_field_set.sh; pattern=if ''/'' not in path'
+  brainwash_check: '洗脳#3他者依存防止: 忍者がtool矛盾で行き詰まり→家老が1文字列置換で解消 1→0'
+  resolved_by_cmd: ''
+- cmd_id: cmd_karo_hotfix_integrate_readtree_checkout_sync_202609022220
+  timestamp: '2026-09-02T14:10:05Z'
+  ninja: system
+  workaround: false
+  event_kind: hotfix
+  auto_captured: true
+  category: rework_auto_capture
+  detail: 'cmd_complete_gate completed rework event'
+  root_cause: 'automatic completion observation'
+  lesson_required: false
+  lesson_disposition: not_applicable
+  lesson_reference: 'not_applicable'
+  resolved_by_cmd: 'cmd_karo_hotfix_integrate_readtree_checkout_sync_202609022220'
