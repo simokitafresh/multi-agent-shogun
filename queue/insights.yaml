@@ -13025,7 +13025,10 @@ insights:
   priority: "medium"
   source: "lord_conversation:lesson_candidate"
   fix_known: false
-  status: pending
+  status: resolved
+  resolved_reason: "一次情報の三層照合で、元inboundは2026-09-02T13:07:35の説明依頼であり、正本lord_conversationには13:10:18の3点説明と13:11:07および13:12:48の推奨とトレードオフ回答が存在する。semantic indexにも同発言と因果リンクがあり、既存設計書v1.7のD9/D10記載と整合するため、新規実修正およびdecision_candidateは不要。"
+  action_artifact: "primary=queue/lord_conversation.jsonl:483-489;memory=memory_db_query exact ID and inbound;semantic=docs/semantic-index/index.md:4610-4613;context=docs/research/single_publisher_asis_tobe_5w1h_20260902.md:1-7,128-129;decision_candidate=none;verification=three-layer evidence matched"
+  resolved_at: "2026-09-02T13:23:38+09:00"
 - id: INS-20260902-130807187-46c9
   ts: "2026-09-02T13:08:07+09:00"
   insight: "semantic_map_generate新規ファイル候補: `archive/cmd-chronicle/2026-08.md` は semantic index未登録。既存概念へのfile追加または新概念定義を検討せよ"
