@@ -13832,3 +13832,10 @@ insights:
   source: "semantic_index_update"
   fix_known: false
   status: pending
+- id: INS-20260902-194111614-3f80
+  ts: "2026-09-02T19:41:11+09:00"
+  insight: "[[CI RED修正 — Build Instructions Checkでinstructions generated b]] NO_MATCH purpose pending alias: cmd_complete時にdeploy_task.logでNO_MATCHだったpurpose。類似概念TOP3: agent_formation_management(編成管理; alias=build_instructions; score=14.0) / infrastructure_ops(インフラ運用基盤; alias=CI RED残存修正 — test daemon maintenance lock bats の restart def; score=12.8) / semantic_dictionary_design(セマンティック辞書構想; alias=source shogun CI GREEN; score=9.4)。既存概念aliasesへの自動昇格候補"
+  priority: "low"
+  source: "semantic_index_update"
+  fix_known: false
+  status: pending
