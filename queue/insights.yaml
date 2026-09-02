@@ -14263,7 +14263,10 @@ insights:
   priority: "medium"
   source: "manual"
   fix_known: false
-  status: pending
+  status: resolved
+  resolved_reason: 一次検証で report_field_set.sh は AGENTS.md を rc=1 で拒否し nested path は rc=0。gate 側 dotslash 修正 a6ebc5b58 は済みだが入口validator矛盾は残存。scope外実装につき decision_candidate へ整理。
+  action_artifact: decision_candidate=report_field_set.sh の files_modified validator を repo 内 tracked path 判定へ改修する実装cmdを別起票; primary_probe=AGENTS.md rc1, scripts/report_field_set.sh rc0; related_fix=a6ebc5b58 gate manifest dotslash normalization
+  resolved_at: "2026-09-03T03:19:43+09:00"
 - id: INS-20260902-231705670-7185
   ts: "2026-09-02T23:17:05+09:00"
   insight: "[[Console「URL 検査→インデックス登録をリクエストするページを明確にしてくれ]] semantic_stress_test candidate_aliases: NO_MATCH source=lord query=Console「URL 検査→インデックス登録をリクエストするページを明確にしてくれ"
@@ -14869,4 +14872,7 @@ insights:
   priority: "low"
   source: "semantic_index_update"
   fix_known: false
-  status: pending
+  status: "resolved"
+  resolved_reason: "semantic map generation verified the candidate is represented or intentionally ignored"
+  action_artifact: "semantic_map=/home/simokitafresh/multi-agent-shogun/context/semantic-map.md;semantic_index=/home/simokitafresh/multi-agent-shogun/docs/semantic-index/index.md"
+  resolved_at: "2026-09-03T03:16:41.865200"
