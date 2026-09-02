@@ -10,13 +10,13 @@ cli:
       model_name: fable-5-low
       role: shogun
       japanese_name: 将軍
-      launch_cmd: ~/bin/claude --dangerously-skip-permissions --model claude-fable-5 --effort low
+      launch_cmd: /home/simokitafresh/.local/bin/claude --dangerously-skip-permissions --model claude-fable-5 --effort low
     karo:
-      type: codex
-      model_name: gpt-5.6-sol-medium
+      type: claude
+      model_name: fable-5.1-low
       role: karo
-      launch_cmd: 
-      service_tier: fast
+      launch_cmd: /home/simokitafresh/.local/bin/claude --dangerously-skip-permissions --model fable --effort low
+      service_tier: default
       japanese_name: 家老
     gunshi:
       type: claude
@@ -53,19 +53,19 @@ cli:
       service_tier: default
       launch_cmd: 
     kotaro:
-      type: codex
-      model_name: gpt-5.6-luna-high
+      type: claude
+      model_name: sonnet-5-high
       role: ninja
       japanese_name: 小太郎
       service_tier: default
-      launch_cmd: 
+      launch_cmd: /home/simokitafresh/.local/bin/claude --dangerously-skip-permissions --model sonnet --effort high
     tobisaru:
-      type: codex
-      model_name: gpt-5.6-luna-high
+      type: claude
+      model_name: sonnet-5-high
       role: ninja
       japanese_name: 飛猿
       service_tier: default
-      launch_cmd: 
+      launch_cmd: /home/simokitafresh/.local/bin/claude --dangerously-skip-permissions --model sonnet --effort high
 idle_cycle: on
 effort: high
 token_budget:

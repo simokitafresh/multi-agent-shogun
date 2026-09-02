@@ -1,7 +1,7 @@
 summary:
-  total: 96
+  total: 97
   resolved: 94
-  pending: 1
+  pending: 2
   shelved: 1
   unknown: 0
 decisions:
@@ -1130,11 +1130,23 @@ decisions:
   context_synced: false
 - id: PD-141
   type: escalation
-  summary: workaround同一カテゴリ「infra」根本原因「infra::general」が3件蓄積。構造対策cmdの起票・裁定が必要
+  summary: workaround同一カテゴリ「infra」根本原因「infra::general」が4件蓄積。構造対策cmdの起票・裁定が必要
   source_cmd: cmd_karo_ci_fix_33630722226_instructions_sync_fp_vocab_202609022153
   status: pending
   created_at: '2026-09-02T23:08:36+09:00'
   created_by: karo
   dedup_key: wa_escalation:infra::infra::general
-  occurrence: 1
-  last_seen_at: '2026-09-02T23:08:36+09:00'
+  occurrence: 2
+  last_seen_at: '2026-09-03T03:48:32+09:00'
+  last_source_cmd: cmd_4463
+- id: PD-142
+  type: action_required
+  summary: 'tests/unit/test_review_approval_rc_*.batsがREVIEW_APPROVAL_ROOTでqueue系のみ隔離し、publisher_queue.sh(SHOGUN_STATE_DIR依存)へは伝播しないため、review_approval.sh経由で本番SHOGUN_STATE_DIR/publish_queueへfixture
+    request(commit aaaa..、cmd_rc_atomic_n1_normal等)が漏出する。run_tests.sh側でtest実行時にSHOGUN_STATE_DIRを一時dirへ強制exportする修正が必要(2026-09-02
+    quarantine後も2026-09-03に再発、構造未修正のため再発し続ける)。対象: scripts/run_tests.sh, tests/unit/test_review_approval_rc_revoke.bats,
+    tests/unit/test_review_approval_rc_task_status_atomic.bats'
+  source_cmd: cmd_reflux_insight_202609030410_tobisaru
+  status: pending
+  created_at: '2026-09-03T04:13:21+09:00'
+  created_by: tobisaru
+  origin: '[[INS-20260902-232045000-ba40]]'

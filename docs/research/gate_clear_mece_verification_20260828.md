@@ -187,6 +187,53 @@ UNVERIFIED 18件は全て「何が無いと判定できないか」=origin/main�
 - 01:29 t101 hotfix/02:11 saizo reflux の sg7_bundle_missing は split child でない別根(gate 実行時に bundle 未投稿の順序 race、数分後の再 GATE で CLEAR)。fix の対象外=FAIL に数えない。別根として INS へ(gate が bundle 未投稿を BLOCK でなく WAIT にする)。
 - 軍師の FAIL は将軍の一次候補を fix の AC と突合せず採用した=検証は『何を直した fix か』から終端条件を引くこと(LG 候補、家老へ)。
 
+## 軍師層C検証 T149(20:37 — hotfix/ci_fix本番proof)
+
+集計: 各cmd報告のACから終端条件→grep/awk/ls/wc -lで現在値。1件=gate_metrics CLEAR行のcmd_id。
+
+### ci_fix 10件
+
+| cmd_id | 終端条件 | 集計コマンド | 現在値 | 判定 |
+|--------|----------|-------------|--------|------|
+| ci_fix_33108071595_t104_context_fixture | CI対象test main反映 | git merge-base origin/main | 未push | UNVERIFIED(push待ち) |
+| ci_fix_33113951908_gunshi_map_fixture | CI対象test main反映 | git merge-base origin/main | on_main | PASS |
+| ci_fix_33120834061_inbox_delivery_cleanup | CI対象test main反映 | git merge-base origin/main | on_main | PASS |
+| ci_fix_33122914110_shard_inventory_ledger_r2 | CI対象test main反映 | git merge-base origin/main | on_main | PASS |
+| ci_fix_33135812913_build_cache | CI対象test main反映 | git merge-base origin/main | on_main | PASS |
+| ci_fix_33145710597_idle_priority_contract | CI対象test main反映 | git merge-base origin/main | on_main | PASS |
+| ci_fix_33147256383_compat_receipt | CI対象test main反映 | git merge-base origin/main | on_main | PASS |
+| ci_fix_33150376323_compat_ssot | CI対象test main反映 | git merge-base origin/main | 未push | UNVERIFIED(push待ち) |
+| ci_fix_33152966157_shard1_quality_contract | CI対象test main反映 | git merge-base origin/main | on_main | PASS |
+| ci_fix_33156085995_ga505_source_equivalent | CI対象test main反映 | git merge-base origin/main | on_main | PASS |
+
+### hotfix 14件
+
+| cmd_id | 終端条件(ACから) | 集計コマンド | 現在値 | 判定 |
+|--------|-----------------|-------------|--------|------|
+| auto_clear_cmd_context | CLEAR-COUNT-SKIP本日0件 | grep -c ninja_monitor.log | 0 | PASS |
+| ci_readiness_empty_json | JSONDecodeError traceback 0件 | grep -c ninja_monitor.log | 0 | PASS |
+| cmd_complete_report_gate_exec | Permission denied gate_report 0件 | grep -c | 0 | PASS |
+| finalize_segments | fin_a/b/c/d 4区間がCLEAR行に存在 | awk gate_metrics | 26件中26件 | PASS |
+| finalize_timezone | fin_a>36000(偽9h) 0件 | awk gate_metrics | 0 | PASS |
+| function_coverage | JSONL行数>0 | wc -l deploy_task.sh.jsonl | 7742 | PASS |
+| ga505_source_equivalent_pub_lag | unpublished auto-close nudge 0件(15:37以降) | grep ninja_monitor.log | 0 | PASS |
+| gate_completion_event_pairing | reversed_lgtm 修正後(19:50以降) 0件 | awk gate_metrics | 0 | PASS |
+| ninja_monitor_cycle_latency | cycle JSONL蓄積 | wc -l cycle.jsonl | 181行 | PASS |
+| report_ancestry_repo_resolution | typed ancestry BLOCK 修正後(18:37以降) 0件 | awk gate_metrics | 0 | PASS |
+| report_only_attestation_entry | correction-scope report SG7生成 | ls sg7_bundle.json | exists | PASS |
+| review_bundle_single_precheck_na | precheck_na コード実在 | grep -c review_bundle.py | 7 | PASS |
+| source_equivalent_dedupe | marker蓄積nudge反復 0件 | grep ninja_monitor.log | 0 | PASS |
+| t102_ext4_cutover | ext4残存WARN コード実在 | grep -c gate_shogun_startup.sh | 8 | PASS |
+
+### T149集計
+
+| 判定 | 件数 |
+|------|------|
+| PASS | 22 |
+| UNVERIFIED(未push) | 2 |
+| FAIL | 0 |
+| **合計** | **24** |
+
 ## 総括(19:08 時点、82 件)
 | 層 | 結果 |
 |---|---|
