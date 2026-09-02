@@ -15816,6 +15816,8 @@ sqlite3.Connection.backup()を使うとページ(4096byte)単位のread syscall�
 - **enforcement**: 未自動化
 - **when**: 未設定
 - **how**: 未設定
+- **retired**: true
+- **retired_at**: 2026-09-02
 - 次回チェックでは新規CLEARイベント後にscripts/model_analysis.sh --jsonを再実行し、known model行が増えunknown増分が0であることを数値確認する。assigned_to欠落taskでもtask filename ownerを解決するwriter契約を維持する。
 
 ### L1638: GA-496: 定義済みLevel5 detectorは最終判定callerまで接続する
@@ -16414,6 +16416,8 @@ sqlite3.Connection.backup()を使うとページ(4096byte)単位のread syscall�
 - **enforcement**: 未自動化
 - **when**: 未設定
 - **how**: 未設定
+- **retired**: true
+- **retired_at**: 2026-09-02
 - LPはexternal repo内のlpディレクトリにあり、run_tests.sh taskはbackend/frontendのテストエンジン写像しか持たないため、実装が正しくてもselection=0・rc=2となる。次回はLP用typecheck/build receipt経路またはtask明示のLP検証契約を追加すべきである。
 
 ### L1689: Review markerはterminalではなくcurrent-generation delivery receiptに限定する
@@ -16453,6 +16457,8 @@ sqlite3.Connection.backup()を使うとページ(4096byte)単位のread syscall�
 - **enforcement**: 未自動化
 - **when**: 未設定
 - **how**: 未設定
+- **retired**: true
+- **retired_at**: 2026-09-02
 - 初回canonical run_tests.sh taskはtask絶対source pathをworktree外として除外し、空reportのため選択0でterminal contract FAILとなった。対象worktree-relative pathをreport_field_set.shで登録すると外部LP npm runnerがtypecheck/buildを実行し、tests 1/1・SKIP 0のPASS receiptを生成した。
 
 ### L1692: append-only台帳の不正rowはskipせずdurable anomalyへ記録する
@@ -16532,3 +16538,16 @@ sqlite3.Connection.backup()を使うとページ(4096byte)単位のread syscall�
 - **when**: 未設定
 - **how**: 未設定
 - 現task identityだけで旧outbox行を昇格すると、同値IDでも旧世代通知を現taskへ誤配送する。queued_atとissued_at/deployed_atを比較し、証明不能/旧世代は原文archiveへ退避する。
+
+### L1699: doc_no_changelog失敗記録はhit行を再現可能な一次証跡として保持する
+- **日付**: 2026-09-02
+- **出典**: cmd_karo_recon_ga551_doc_no_changelog_20260902133308
+- **記録者**: hanzo
+- **tags**: [infra,testing,gate,yaml]
+- **subdomain**: infra
+- **target_files**: [queue/reports/hanzo_report_cmd_karo_recon_ga551_doc_no_changelog_20260902133308.yaml]
+- **origin**: [[cmd_karo_recon_ga551_doc_no_changelog_20260902133308]]
+- **enforcement**: 未自動化
+- **when**: 未設定
+- **how**: 未設定
+- GA-551ではhook_failures.yamlに対象pathとBLOCKは残ったが、200-byte bounded summaryのため実際のhit行とstaged blobを再現できなかった。履歴世代の分類を独立再検証するには、hook発火時のhit行またはstaged blob identityが必要。
