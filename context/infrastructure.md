@@ -1,5 +1,5 @@
 # インフラコンテキスト
-<!-- last_updated: 2026-09-02 将軍 doc lane: GA-554 lesson writer overlap 276b4a21b -->
+<!-- last_updated: 2026-09-02 将軍 doc lane: GA-555 context freshness 反映契約統一 d7485a8de -->
 <!-- source_commit:257c0c6de90f reason:2026-09-02 将軍 doc lane: source publication terminal 257c0c6de evidence:GATE CLEAR cmd_karo_hotfix_source_publication_terminal_20260902133800; 314/314 PASS -->
 <!-- source_commit:066bbede7c2e reason:2026-09-02 将軍 doc lane: review_approval JST epoch+archive 履歴 066bbede7 evidence:GATE CLEAR 12:49 cmd_karo_hotfix_review_epoch_refresh_20260902; 066bbede7 origin 祖先 yes -->
 <!-- source_commit:afde1f8c8 reason:2026-09-02 将軍 doc lane: cfc fixture 根治 afde1f8c8・CI GREEN evidence:run afde1f8c8/f589070ec success; 軍師実装+将軍独立検証 31/31 -->
@@ -11,7 +11,7 @@
 <!-- source_commit:e7c3beb64085 reason:2026-09-02 将軍 doc lane: ancestry 後退検出を push_lane/pre-push へ接続(efc16dcd6/e7c3beb64) evidence:CLEAR 03:02/03:09; safe_ff BLOCK 実証 02:50 -->
 <!-- source_commit:a7cb1ca59831 reason:2026-09-02 将軍 doc lane: legacy outbox envelope 移行 a7cb1ca59(T224 追補) evidence:commit a7cb1ca59; DOC_LANE_ALERT blt_022445 -->
 <!-- source_commit:64f01517a70b reason:2026-09-02 将軍 doc lane: U1 f92d1e376 + ancestry 後退 BLOCK 64f01517a evidence:commits f92d1e376/64f01517a; CLEAR 01:54/02:08; 消失 2 回目 16d831ed9 を復元 -->
-<!-- last_synced_lesson: L1702 -->
+<!-- last_synced_lesson: L1703 -->
 <!-- source_commit:593cfb27a612 reason:2026-09-02 将軍 doc lane: U9 safe_ff 既公開 ours merge 除外 593cfb27a evidence:commit 593cfb27a; CLEAR 01:20; integrate c7710efaf on origin/main -->
 <!-- source_commit:458fc4caa91a reason:2026-09-02 将軍 doc lane: U3 msg_id 限定 receipt 458fc4caa evidence:commit 458fc4caa; CLEAR 01:05; staged 11→0; watcher 9/9 restart 01:06 -->
 <!-- source_commit:4dd6898466a27f10ef7d08ed27549b3c095378de reason:2026-09-01 将軍 doc lane: CI RED #6 Integration ci_fix 59fa70e0b evidence:commit 59fa70e0b; CLEAR 22:57 -->
@@ -145,7 +145,7 @@
 <!-- source_commit:f8c49cbd7 reason:cmd_shogun_commit_reservation_ledger_phase1_20260805 evidence:reviewed -->
 <!-- source_commit:515f0214e reason:cmd_karo_hotfix_ga432_context_freshness reviewed source boundary evidence:cmd_complete_gate project=infra context=context/infrastructure.md commit=515f0214e -->
 <!-- source_commit:23a1ce61205ce4496ab11570583e8e8adcaeac4e reason:reflux backlink SSOT update reviewed evidence:incoming 0 to 1; runner69/69; target doc diff0 -->
-<!-- last_synced_lesson: L1702 -->
+<!-- last_synced_lesson: L1703 -->
 
 結論: 本ファイルは検索起点となる索引層。運用詳細・経緯・教訓本文は7つの詳細正本へ移設した。
 source boundary一致taskはregistryのowner/update_triggerからcontext_update_candidatesを自動注入し、未処理候補はcmd_complete_gateがBLOCK、明示処理済み/無関係はCLEAR。
@@ -196,7 +196,7 @@ source boundary一致taskはregistryのowner/update_triggerからcontext_update_
 結論: 詳細は `docs/research/infrastructure-lessons-reviews-operations.md` に保存。原文を省略せず移設済み。
 見出し: 前節「Infra教訓索引」の連続本文（source lines 1701-2123）。
 - L1503: 既存legacy欠損は不変multisetで隔離せよ（cmd_karo_hotfix_shared_operational_log_ownership_20260801）
-<!-- last_synced_lesson: L1702 -->
+<!-- last_synced_lesson: L1703 -->
 - L1504: appendとarchiveはreaderを含むgeneration transactionにせよ（cmd_karo_hotfix_gunshi_cs_remediation_generation_20260801）
 - L1505: 永続test宣言はtask正本に置く（cmd_4206）
 - L1506: active context DEFERはowner存在だけでなくdirty・baseline変化・fresh leaseの全ANDにせよ（cmd_karo_hotfix_active_context_gate_transient_20260801）
@@ -394,6 +394,7 @@ source boundary一致taskはregistryのowner/update_triggerからcontext_update_
 - L1700: hook失敗recordのbatsテストは呼出し後に_STDERR_FILEが無条件削除される前提でfixtureを書け（cmd_karo_hotfix_ga552_hook_artifact_20260902135701）
 - L1701: source:semantic_map_generate:new_file insightのresolveはindex.md直接編集ではなくdecision_candidate委譲が正規パターン（cmd_reflux_insight_202609021551_kotaro）
 - L1702: lesson writerのSSOT/cache pathはpre-push除外契約へ同期する（cmd_karo_hotfix_ga554_push_overlap_pattern_202609021650）
+- L1703: Global freshness ledger must share source reflection identity（cmd_karo_hotfix_ga555_context_freshness_trigger_202609021730）
 
 ## 設計標準・テスト・因果
 
@@ -506,3 +507,4 @@ source boundary一致taskはregistryのowner/update_triggerからcontext_update_
 - **単一 publisher 化 第 1 波の source 到達(cmd_4445 0e8d1b6d9=publisher_queue+lock-run shim+events writer / cmd_4446 79277e22b+58446a4dc=publish_artifact / cmd_4447 39b2d18b2=gate dual-read+pending gate)**: いずれも origin 統合済み(91ff1be41/90bff62aa/89315abde)だが **GATE は sg7_bundle_missing で BLOCK 中(軍師 SG7 再レビュー待ち)**。旧経路(autopush/push_lane/safe_shared_main_ff)は U7 まで不変。進捗正本 → 同設計書 §14.1
 - **SG-PRE25/PRE35 偽陽性の根治(才蔵 `cmd_karo_hotfix_gunshi_pre25_pre35_fp_202609021539` c2ef79e46 → 追加 `..._pre25_ninja_scope_exec_prefix_202609021655` 3acaae149、影丸 `cmd_karo_hotfix_planned_paths_exact_new_files_202609021539` 9c10158b8)**: 軍師 precheck が `ninja_scope_commit.sh -- <paths>` の exec prefix を planned_paths 不一致と誤判定→exec-prefix 参照を除外。deploy の planned_paths は新規 file を exact 化。hook artifact fail-closed fixture(小太郎 13af4660b/db95efe55、CLEAR 17:05)
 - **GA-PUSH1 dirty-tree guard の lesson writer 重複 path 免除(疾風 `cmd_karo_hotfix_ga554_push_overlap_pattern_202609021650` 276b4a21b)**: `projects/*/lessons.yaml` と `tasks/lessons.md` は lesson writer/sync の SSOT・cache 出力で、同一 lesson の公開と再同期が重なると同じ再生成差分になる→`scripts/lib/autogen_paths.sh` の `AUTOGEN_PATH_EXCLUDE_REGEX` へ exact pattern で追加(通常 source との混在は引き続き BLOCK)。bats +1(`test_pre_push_dirty_tree_guard.bats`)。発端=16:44 push lane の GA-PUSH1 重複 4 ledger path
+- **context freshness の global-ledger 経路を direct 経路と同じ反映契約へ(才蔵 `cmd_karo_hotfix_ga555_context_freshness_trigger_202609021730` d7485a8de)**: `scripts/context_freshness_check.sh` の global-ledger hot path は hash 一致だけで『反映済み』を判定していたため、cmd id が context 本文に記録済みの commit を再 ALERT し、lesson-only/reflux 除外も素通り→`commit_is_reflected_or_lesson_only` に統一(global と direct の判定不一致を解消)。bats +1。発端=17:27 DOC_LANE_ALERT 18 件の中に反映済み commit が混在
