@@ -14706,7 +14706,10 @@ insights:
   priority: "low"
   source: "semantic_index_update"
   fix_known: false
-  status: pending
+  status: "resolved"
+  resolved_reason: "semantic map generation verified the candidate is represented or intentionally ignored"
+  action_artifact: "semantic_map=/home/simokitafresh/multi-agent-shogun/context/semantic-map.md;semantic_index=/home/simokitafresh/multi-agent-shogun/docs/semantic-index/index.md"
+  resolved_at: "2026-09-03T02:14:29.944214"
 - id: INS-20260903-021415594-952e
   ts: "2026-09-03T02:14:15+09:00"
   insight: "U3 publisher(active、PUBLISHER_REPO_ROOT=infra)が dm-signal project の request(cmd_4459_full、repo=/mnt/c/Python_app/DM-signal)を infra repo に対して処理し『restore RC conflict=1』を返した(02:08)。将軍裁定は『infra repo のみ、dm-signal は D9 canary まで enqueue 対象外』だが enqueue 側(review_approval ACCEPT)に repo/project による除外が無い。enqueue 時に request.repo≠PUBLISHER_REPO_ROOT なら skip(legacy 経路)にする分岐が要る。"
