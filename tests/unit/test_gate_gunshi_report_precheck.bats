@@ -327,6 +327,78 @@ YAML
   [[ "$output" == *"GATE_PREDICTION=BLOCK"* ]]
 }
 
+# test_necessity: report review must use the deploy-generation lesson snapshot
+# after a worker lease changes, while a legacy report must not self-authorize
+# historical lessons from the replacement task.
+@test "lesson feedback follows immutable report snapshot across lease handoff" {
+  cat > "$TMP_DIR/tasks/kagemaru.yaml" <<'YAML'
+task:
+  parent_cmd: cmd_new_assignment
+  task_id: cmd_new_assignment_normal
+  related_lessons:
+    - id: L999
+YAML
+  cat > "$TMP_DIR/report.yaml" <<'YAML'
+worker_id: kagemaru
+parent_cmd: cmd_old_assignment
+task_id: cmd_old_assignment_normal
+task_contract_snapshot:
+  parent_cmd: cmd_old_assignment
+  task_id: cmd_old_assignment_normal
+  lesson_set:
+    mode: subset
+    ids: [L101, L202]
+lessons_useful:
+  - id: L101
+    useful: true
+YAML
+
+  run python3 "$REPO_ROOT/scripts/lib/report_gate_contract.py" \
+    lesson-feedback-set "$TMP_DIR/tasks/kagemaru.yaml" "$TMP_DIR/report.yaml"
+  [ "$status" -eq 0 ]
+  [[ "$output" == *"OK mode=subset allowed=2 reported=1"* ]]
+
+  sed -i '/^task_contract_snapshot:/,/^lessons_useful:/{ /^lessons_useful:/!d; }' "$TMP_DIR/report.yaml"
+  run python3 "$REPO_ROOT/scripts/lib/report_gate_contract.py" \
+    lesson-feedback-set "$TMP_DIR/tasks/kagemaru.yaml" "$TMP_DIR/report.yaml"
+  [ "$status" -eq 1 ]
+  [[ "$output" == *"MISMATCH mode=legacy-incompatible"* ]]
+  [[ "$output" == *"extra=L101"* ]]
+  [[ "$output" == *"compatibility=identity-mismatch"* ]]
+}
+
+# test_necessity: the consolidated precheck engine and SG-PRE11 caller must
+# expose the same snapshot-backed lesson decision, preventing a silent
+# engine CLEAR when the completion gate would BLOCK.
+@test "precheck engine reports snapshot-backed lesson feedback decision" {
+  cat > "$TMP_DIR/tasks/kagemaru.yaml" <<'YAML'
+task:
+  parent_cmd: cmd_new_assignment
+  task_id: cmd_new_assignment_normal
+  related_lessons:
+    - id: L999
+YAML
+  cat > "$TMP_DIR/report.yaml" <<'YAML'
+worker_id: kagemaru
+parent_cmd: cmd_old_assignment
+task_id: cmd_old_assignment_normal
+task_contract_snapshot:
+  parent_cmd: cmd_old_assignment
+  task_id: cmd_old_assignment_normal
+  lesson_set: {mode: subset, ids: [L101]}
+lessons_useful:
+  - id: L404
+    useful: false
+YAML
+
+  run python3 "$ENGINE" --report "$TMP_DIR/report.yaml" --tasks-dir "$TMP_DIR/tasks"
+  [ "$status" -eq 0 ]
+  [[ "$output" == *"LESSON_FEEDBACK_MISMATCH=1"* ]]
+  [[ "$output" == *"mode=subset"* ]]
+  [[ "$output" == *"extra=L404"* ]]
+  [[ "$output" == *"GATE_PREDICTION=BLOCK"* ]]
+}
+
 @test "shared contract blocks invalid numeric parent_cmd_contract before CLEAR prediction" {
   cat > "$TMP_DIR/tasks/kagemaru.yaml" <<'YAML'
 task:
