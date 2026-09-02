@@ -442,3 +442,27 @@ entries:
   confirmed_by:
     - 'shogun'
   status: 'closed'
+- id: 'blt_20260903_065036_59ac0f'
+  content: |-
+    DOC_LANE_REQUEST: CONTEXT_UPDATE_REQUEST project=infra context=context/infrastructure.md source_commit=f0e162f8062c parent_cmd=cmd_4465 reason=approved_source_commit owner_route=shogun-doc-lane
+  posted_by: 'gate_context_freshness'
+  posted_at: '2026-09-03T06:50:36'
+  requires_confirmation: false
+  action_type: 'action_required'
+  actioned_by: ''
+  notify_targets:
+    - 'shogun'
+  confirmed_by: []
+  status: 'open'
+- id: 'blt_20260903_065113_8a7c4d'
+  content: |-
+    gate予測精度低下: RECENT_FINAL_CMD_ACCURACY=66%(sample=3)。集計コマンド=bash scripts/gates/gate_gunshi_accuracy.sh。出力行の生貼付=「直近10: 2/3 (66%) RECENT_FINAL_CMD_ACCURACY=66 SAMPLE=3」「✗ verdict=FAIL pred=BLOCK result=CLEAR cmd_karo_hotfix_lp_showcase_fetch_cache_bust_20260」。1件の定義=cmd単位の最終verdict-prediction-resultの3つ組
+  posted_by: 'gunshi'
+  posted_at: '2026-09-03T06:51:13'
+  requires_confirmation: false
+  action_type: 'action_required'
+  actioned_by: ''
+  notify_targets:
+    - 'shogun'
+  confirmed_by: []
+  status: 'open'
