@@ -13089,3 +13089,10 @@ insights:
   source: "semantic_stress_test"
   fix_known: false
   status: pending
+- id: INS-20260902-131657555-f50b
+  ts: "2026-09-02T13:16:57+09:00"
+  insight: "[[家老をGPT5 6 sol mediumでrespawanせよ]] semantic_stress_test candidate_aliases: NO_MATCH source=lord query=家老をGPT5.6 sol mediumでrespawanせよ。スキルを使え"
+  priority: "low"
+  source: "semantic_stress_test"
+  fix_known: false
+  status: pending
