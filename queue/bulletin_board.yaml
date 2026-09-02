@@ -7,6 +7,7 @@ entries:
   requires_confirmation: false
   action_type: 'info'
   actioned_by: ''
+  notify_targets: []
   confirmed_by: []
   status: 'open'
 - id: 'blt_20260903_011240_32b267'
@@ -17,6 +18,7 @@ entries:
   requires_confirmation: false
   action_type: 'info'
   actioned_by: ''
+  notify_targets: []
   confirmed_by: []
   status: 'open'
 - id: 'blt_20260903_011148_9cfc54'
@@ -27,7 +29,9 @@ entries:
   requires_confirmation: false
   action_type: 'action_required'
   actioned_by: ''
-  confirmed_by: []
+  notify_targets: []
+  confirmed_by:
+    - 'shogun'
   status: 'open'
 - id: 'blt_20260903_010920_6c0e47'
   content: |-
@@ -37,6 +41,7 @@ entries:
   requires_confirmation: false
   action_type: 'info'
   actioned_by: ''
+  notify_targets: []
   confirmed_by: []
   status: 'open'
 - id: 'blt_20260903_003421_d12264'
@@ -47,6 +52,7 @@ entries:
   requires_confirmation: false
   action_type: 'info'
   actioned_by: ''
+  notify_targets: []
   confirmed_by: []
   status: 'open'
 - id: 'blt_20260903_002958_06bafc'
@@ -57,6 +63,7 @@ entries:
   requires_confirmation: false
   action_type: 'info'
   actioned_by: ''
+  notify_targets: []
   confirmed_by: []
   status: 'open'
 - id: 'blt_20260903_001618_65b660'
@@ -67,8 +74,22 @@ entries:
   requires_confirmation: false
   action_type: 'info'
   actioned_by: ''
+  notify_targets: []
   confirmed_by: []
   status: 'open'
+- id: 'blt_20260903_001703_fc70bf'
+  content: |-
+    integrate read-tree hotfix 本番 proof(将軍指示 msg_20260902_231301、関連 cmd_karo_hotfix_integrate_readtree_checkout_sync_202609022220): read-tree 行反映後の integrate 2 回(64e68a61c→1167f141d、87f495ef2→8e70baf70)で staged 削除 0。集計コマンド: git diff --cached --name-only | wc -l / 出力行: '0' / 1件の定義: index と HEAD で blob が異なる path 1 つ。root index 後退の再発なし。
+  posted_by: 'karo'
+  posted_at: '2026-09-03T00:17:03'
+  requires_confirmation: false
+  action_type: 'info'
+  actioned_by: ''
+  notify_targets:
+    - 'shogun'
+  confirmed_by:
+    - 'shogun'
+  status: 'closed'
 - id: 'blt_20260903_001533_762855'
   content: |-
     GATE CLEAR cmd_karo_hotfix_gate_publisher_pending_toplevel_only_202609022336: 完了
@@ -77,6 +98,7 @@ entries:
   requires_confirmation: false
   action_type: 'info'
   actioned_by: ''
+  notify_targets: []
   confirmed_by: []
   status: 'open'
 - id: 'blt_20260903_000525_5e362c'
@@ -87,6 +109,7 @@ entries:
   requires_confirmation: false
   action_type: 'info'
   actioned_by: ''
+  notify_targets: []
   confirmed_by: []
   status: 'open'
 - id: 'blt_20260903_000259_b94052'
@@ -97,6 +120,7 @@ entries:
   requires_confirmation: false
   action_type: 'info'
   actioned_by: ''
+  notify_targets: []
   confirmed_by: []
   status: 'open'
 - id: 'blt_20260902_234642_e3a2cd'
@@ -107,6 +131,7 @@ entries:
   requires_confirmation: false
   action_type: 'info'
   actioned_by: ''
+  notify_targets: []
   confirmed_by: []
   status: 'open'
 - id: 'blt_20260902_231015_046694'
@@ -117,6 +142,7 @@ entries:
   requires_confirmation: false
   action_type: 'info'
   actioned_by: ''
+  notify_targets: []
   confirmed_by: []
   status: 'open'
 - id: 'blt_20260902_230847_e39402'
@@ -127,6 +153,7 @@ entries:
   requires_confirmation: false
   action_type: 'action_required'
   actioned_by: ''
+  notify_targets: []
   confirmed_by:
     - 'shogun'
   status: 'open'
@@ -138,6 +165,7 @@ entries:
   requires_confirmation: false
   action_type: 'info'
   actioned_by: ''
+  notify_targets: []
   confirmed_by: []
   status: 'open'
 - id: 'blt_20260902_223641_ebbc2f'
@@ -148,6 +176,7 @@ entries:
   requires_confirmation: false
   action_type: 'info'
   actioned_by: ''
+  notify_targets: []
   confirmed_by: []
   status: 'open'
 - id: 'blt_20260902_222025_99a62b'
@@ -158,6 +187,7 @@ entries:
   requires_confirmation: false
   action_type: 'info'
   actioned_by: ''
+  notify_targets: []
   confirmed_by: []
   status: 'open'
 - id: 'blt_20260902_220414_30710d'
@@ -168,6 +198,7 @@ entries:
   requires_confirmation: false
   action_type: 'info'
   actioned_by: ''
+  notify_targets: []
   confirmed_by: []
   status: 'open'
 - id: 'blt_20260902_214727_84d01b'
@@ -178,6 +209,7 @@ entries:
   requires_confirmation: false
   action_type: 'info'
   actioned_by: ''
+  notify_targets: []
   confirmed_by: []
   status: 'open'
 - id: 'blt_20260902_211044_aa4b53'
@@ -188,6 +220,7 @@ entries:
   requires_confirmation: false
   action_type: 'info'
   actioned_by: ''
+  notify_targets: []
   confirmed_by: []
   status: 'open'
 - id: 'blt_20260902_210708_78232f'
@@ -198,6 +231,7 @@ entries:
   requires_confirmation: false
   action_type: 'info'
   actioned_by: ''
+  notify_targets: []
   confirmed_by: []
   status: 'open'
 - id: 'blt_20260902_202459_891a3d'
@@ -208,6 +242,7 @@ entries:
   requires_confirmation: false
   action_type: 'info'
   actioned_by: ''
+  notify_targets: []
   confirmed_by: []
   status: 'open'
 - id: 'blt_20260902_194114_cdb138'
@@ -218,6 +253,7 @@ entries:
   requires_confirmation: false
   action_type: 'info'
   actioned_by: ''
+  notify_targets: []
   confirmed_by: []
   status: 'open'
 - id: 'blt_20260902_193852_53032b'
@@ -228,6 +264,7 @@ entries:
   requires_confirmation: false
   action_type: 'info'
   actioned_by: ''
+  notify_targets: []
   confirmed_by: []
   status: 'open'
 - id: 'blt_20260902_172023_2be98e'
@@ -238,6 +275,7 @@ entries:
   requires_confirmation: false
   action_type: 'info'
   actioned_by: ''
+  notify_targets: []
   confirmed_by: []
   status: 'open'
 - id: 'blt_20260902_170532_0d5adb'
@@ -248,6 +286,7 @@ entries:
   requires_confirmation: false
   action_type: 'info'
   actioned_by: ''
+  notify_targets: []
   confirmed_by: []
   status: 'open'
 - id: 'blt_20260902_170028_eca4d5'
@@ -258,6 +297,7 @@ entries:
   requires_confirmation: false
   action_type: 'info'
   actioned_by: ''
+  notify_targets: []
   confirmed_by: []
   status: 'open'
 - id: 'blt_20260902_165940_6a048b'
@@ -268,6 +308,7 @@ entries:
   requires_confirmation: false
   action_type: 'info'
   actioned_by: ''
+  notify_targets: []
   confirmed_by: []
   status: 'open'
 - id: 'blt_20260902_165803_1281bc'
@@ -278,6 +319,7 @@ entries:
   requires_confirmation: false
   action_type: 'info'
   actioned_by: ''
+  notify_targets: []
   confirmed_by: []
   status: 'open'
 - id: 'blt_20260902_165553_bd1966'
@@ -288,6 +330,7 @@ entries:
   requires_confirmation: false
   action_type: 'info'
   actioned_by: ''
+  notify_targets: []
   confirmed_by: []
   status: 'open'
 - id: 'blt_20260902_165451_881cb1'
@@ -298,6 +341,7 @@ entries:
   requires_confirmation: false
   action_type: 'info'
   actioned_by: ''
+  notify_targets: []
   confirmed_by: []
   status: 'open'
 - id: 'blt_20260903_011622_3ba4d8'
@@ -311,3 +355,42 @@ entries:
   notify_targets: []
   confirmed_by: []
   status: 'open'
+- id: 'blt_20260903_011816_18bb78'
+  content: |-
+    家老報告(01:17): receipt pair hotfix(疾風)CLEAR→local 同期後の再 gate で 影丸 idle_flag 根治 hotfix・小太郎 reflux・飛猿 ci_fix の 3 cmd が CLEAR(01:12-01:16)。軍師/将軍停止の根治(watcher 再生成条件+stop hook 再入+log_append tty)は本番反映済。cmd_4457(U2 再検証、半蔵)は verdict PASS(13/13、敵対 fixture=manifest 過剰申告)、軍師 LGTM、家老 ACCEPT→gate 実行中。集計コマンド: grep -c 'GATE CLEAR' で本 4 cmd の trigger.log / 出力行: '4' / 1件の定義: cmd_complete_gate の CLEAR 1 回。cmd_4458(U1 再検証)の起票を待つ(才蔵は 4453 再実装中、次の idle=疾風/小太郎)。
+  posted_by: 'karo'
+  posted_at: '2026-09-03T01:18:16'
+  requires_confirmation: false
+  action_type: 'info'
+  actioned_by: ''
+  notify_targets:
+    - 'shogun'
+  confirmed_by:
+    - 'shogun'
+  status: 'closed'
+- id: 'blt_20260903_012207_8817d2'
+  content: |-
+    DOC_LANE_REQUEST: CONTEXT_UPDATE_REQUEST project=infra context=context/infrastructure.md source_commit=a332311425cb parent_cmd=cmd_4457 reason=approved_source_commit owner_route=shogun-doc-lane
+  posted_by: 'gate_context_freshness'
+  posted_at: '2026-09-03T01:22:07'
+  requires_confirmation: false
+  action_type: 'action_required'
+  actioned_by: ''
+  notify_targets:
+    - 'shogun'
+  confirmed_by:
+    - 'shogun'
+  status: 'closed'
+- id: 'blt_20260903_012324_8b361a'
+  content: |-
+    cmd_4453 手動 CLEAR 実行(将軍裁定 00:47 (A)、殿裁可 00:55): 才蔵の再配備報告も新 commit 無し(既存実装 93162eca0 を tip で検証 8/8 PASS、軍師 LGTM)で、gate は legacy(task idle 化)/publisher(後続 U1 修正との blob 差)/manifest(task_id 再利用の旧 capture)の 3 経路とも証明不能。証拠 queue/gates/cmd_4453/manual_clear_evidence_20260903.md を残し status completed+archive。集計コマンド: git diff --quiet 93162eca0 origin/main -- <path> を 5 path / 出力行: 'origin==93162eca0: 3、後続 U1 修正で上書き: 2' / 1件の定義: 成果物 path 1 つ。才蔵は idle 化。cmd_4458(U1 再検証)→小太郎配備済。
+  posted_by: 'karo'
+  posted_at: '2026-09-03T01:23:24'
+  requires_confirmation: false
+  action_type: 'info'
+  actioned_by: ''
+  notify_targets:
+    - 'shogun'
+  confirmed_by:
+    - 'shogun'
+  status: 'closed'
