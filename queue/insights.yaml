@@ -14317,6 +14317,7 @@ insights:
   resolved_reason: "一次情報確認: publisher_queue.sh(L19)はSHOGUN_STATE_DIR、review_approval.sh(L5)はREVIEW_APPROVAL_ROOTと別env変数で隔離判定するため、bats fixtureがREVIEW_APPROVAL_ROOTだけ隔離してもenqueue経路は本番publish_queueへ書く。dequeued/配下にcommit aaaa...のfixture(cmd_rc_atomic_n1_normal等)実在確認、fixture_residue_20260902の隔離後も再発を実測。実修正はdecision_candidate委譲(PD-142)、reflux taskのcommit_contract scope外のため直接修正せず"
   action_artifact: "pd=PD-142;evidence=publish_queue/dequeued/1788370622_000000000035_cmd_rc_atomic_n1_normal.request(commit_hash=aaaa...);root_cause=publisher_queue.sh:19 SHOGUN_STATE_DIR vs review_approval.sh:5 REVIEW_APPROVAL_ROOT不整合"
   resolved_at: "2026-09-03T04:13:28.814343"
+  verified_by: tobisaru(cmd_reflux_insight_202609030410_tobisaru_exact)
 - id: INS-20260902-232934434-c7d6
   ts: "2026-09-02T23:29:34+09:00"
   insight: "semantic_index_update新概念候補: discussion:貼った は 既存aliasesに一致なし。概念定義とaliases追加を検討せよ"
