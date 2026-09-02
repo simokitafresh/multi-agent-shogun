@@ -14974,7 +14974,10 @@ insights:
   priority: "medium"
   source: "karo_deepdive_replay_20260903"
   fix_known: false
-  status: pending
+  status: "resolved"
+  resolved_reason: "一次情報でcmd_complete_gate.sh L14877-14908を確認し真因を特定。L14904の無条件ALL_CLEAR=falseがelifブロック末尾(report_commit_main_ancestry auto-push wait分岐)にあり、L14893のGATE PASS成功パス(auto-push検証成功、本来ALL_CLEAR=trueを維持すべき)でも実行されALL_CLEARをfalseへ上書きする。結果、全gate.done済のままfallback_gate_status偽BLOCKへ落ちる。実修正はscope外(このタスクはqueue/insights.yamlのみ)のためdecision_candidateとして家老へエスカレーション"
+  action_artifact: "scripts/cmd_complete_gate.sh:14904(elifブロック末尾の余剰ALL_CLEAR=false; L14893のGATE PASS分岐でALL_CLEARをtrueのまま維持する修正が必要)"
+  resolved_at: "2026-09-03T06:29:47.170030"
 - id: INS-20260903-050228083-230c
   ts: "2026-09-03T05:02:28+09:00"
   insight: "semantic_index_update新概念候補: discussion:task notification task id begvr3qf4 task id tool use id toolu 01Y84KYKn9YxHWAhMD は 既存aliasesに一致なし。概念定義とaliases追加を検討せよ"
