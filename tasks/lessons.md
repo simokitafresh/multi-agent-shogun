@@ -16642,3 +16642,16 @@ sqlite3.Connection.backup()を使うとページ(4096byte)単位のread syscall�
 - **when**: 未設定
 - **how**: 未設定
 - completed reportのlesson feedbackはworker current taskではなくdeploy世代のimmutable lesson_set snapshotを正本にする。legacy reportはidentity不一致時に空allowlistと明示compatibilityで扱い、過去lessonの自己許可を防ぎつつ真正extraをBLOCKする。
+
+### L1707: manifest paths[]限定addによるwrite-tree比較は、patch.diff改ざんでの未申告path混入を検出できない
+- **日付**: 2026-09-02
+- **出典**: cmd_karo_hotfix_u2_publish_artifact_restore_undeclared_path_202609022132
+- **記録者**: tobisaru
+- **tags**: [infra,testing,api,testing,git]
+- **subdomain**: infra
+- **target_files**: [scripts/publish_artifact.sh,tests/unit/test_publish_artifact.bats]
+- **origin**: [[cmd_karo_hotfix_u2_publish_artifact_restore_undeclared_path_202609022132]]
+- **enforcement**: 未自動化
+- **when**: 未設定
+- **how**: 未設定
+- IF patch/manifestのような複数ファイルにまたがるintegrity検証を設計する THEN 最終状態(write-tree等)の一致比較だけでなく、各入力ファイルが実際に touch するpath集合そのものを他の宣言と事前突合せよ。理由: manifest.paths[]に列挙されたpathだけをgit addしてwrite-treeを比較する設計は、patch.diffだけが別途改ざんされ未申告pathの変更を含んでいても、そのpathはuntrackedのままstageされずwrite-tree比較に反映されないため静かに一致してしまう(cmd_4449疾風の敵対fixtureで実証: 攻撃者patchにextra.txtを混入してもrestoreはrc=0で成功していた)。対策はgit apply --numstatのようなdry-run手段で適用前にpatchの実タッチpath集合を取得し、宣言済み集合との完全一致を適用前に検証すること。
