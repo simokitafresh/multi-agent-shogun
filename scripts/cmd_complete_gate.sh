@@ -1807,6 +1807,27 @@ source_snapshot_matches_tip() {
     [ "$changed_count" -gt 0 ]
 }
 
+# Task-path equivalence for a source commit that may be a merge commit (diff-tree --root of a
+# merge lists nothing). The task's own paths are the diff from merge-base(remote_tip, source)
+# to source; every such path must carry the same blob in the candidate published commit.
+source_task_paths_match_commit() {
+    local repo="$1" source_sha="$2" remote_tip="$3" candidate="$4" base path source_blob cand_blob n=0
+    git -C "$repo" cat-file -e "${candidate}^{commit}" 2>/dev/null || return 1
+    base="$(git -C "$repo" merge-base "$remote_tip" "$source_sha" 2>/dev/null)" || return 1
+    [ -n "$base" ] || return 1
+    while IFS= read -r -d '' path; do
+        n=$((n + 1))
+        if git -C "$repo" cat-file -e "$source_sha:$path" 2>/dev/null; then
+            source_blob="$(git -C "$repo" rev-parse "$source_sha:$path" 2>/dev/null)" || return 1
+            cand_blob="$(git -C "$repo" rev-parse "$candidate:$path" 2>/dev/null)" || return 1
+            [ "$source_blob" = "$cand_blob" ] || return 1
+        else
+            ! git -C "$repo" cat-file -e "$candidate:$path" 2>/dev/null || return 1
+        fi
+    done < <(git -C "$repo" diff --name-only -z "$base" "$source_sha" 2>/dev/null)
+    [ "$n" -gt 0 ]
+}
+
 # Accept a non-ancestor report commit only after the source-only publication
 # identity and every report-owned path are independently proven equivalent.
 # A durable receipt is sufficient for task generations created before the
@@ -3756,7 +3777,7 @@ push_task_repositories() {
                 publisher_candidate=""
                 while IFS= read -r candidate; do
                     [ -n "$candidate" ] || continue
-                    if source_snapshot_matches_tip "$repo" "$source_sha" "$candidate"; then
+                    if source_task_paths_match_commit "$repo" "$source_sha" "$remote_tip" "$candidate"; then
                         publisher_candidate="$candidate"; break
                     fi
                 done < <(git -C "$repo" log -300 --format=%H --grep='^publisher: task=' "$remote_tip" 2>/dev/null)
