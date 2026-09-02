@@ -2,6 +2,16 @@
 set -euo pipefail
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+if [[ -r "$ROOT/scripts/lib/publisher_single_flag.sh" ]]; then
+    source "$ROOT/scripts/lib/publisher_single_flag.sh"
+else
+    # Unit fixtures may copy this script alone into an isolated repository.
+    # Keep that harness self-contained while retaining the production helper.
+    publisher_single_enabled() {
+        local _publisher_root="${1:-${REPO_ROOT:-${ROOT:-${SCRIPT_DIR:-}}}}"
+        [[ "${PUBLISHER_SINGLE:-0}" == 1 || ( -n "$_publisher_root" && -f "$_publisher_root/queue/flags/publisher_single" ) ]]
+    }
+fi
 if [[ "${1:-}" == "--repo" ]]; then
     [[ -n "${2:-}" && -n "${3:-}" && -z "${4:-}" ]] || {
         echo "usage: bash scripts/safe_shared_main_ff.sh [--repo <repo>] <target-commit>" >&2
@@ -25,7 +35,7 @@ fi
 # UNKNOWN, and RED all use the same normal push path; a CI verdict is observed
 # after publication rather than used as a circular precondition for it.
 safe_shared_main_auto_push() {
-    [ "${PUBLISHER_SINGLE:-0}" = 1 ] && { echo "PUBLISHER_SINGLE safe_shared_main_ff push=0 result=SKIP reason=publisher_request"; return 0; }
+    publisher_single_enabled && { echo "PUBLISHER_SINGLE safe_shared_main_ff push=0 result=SKIP reason=publisher_request"; return 0; }
     local repo="$1" threshold="${2:-1}" ci_state="${3:-}" remote_tip local_head
     local relation behind ahead common_dir lock_file lock_fd before_head before_index before_dirty
     local current_remote_tip
@@ -363,7 +373,7 @@ shared_state_fingerprint() {
 }
 
 isolated_publish_fallback() {
-    [ "${PUBLISHER_SINGLE:-0}" = 1 ] && { echo "PUBLISHER_SINGLE safe_shared_main_ff push=0 result=SKIP reason=publisher_request"; return 0; }
+    publisher_single_enabled && { echo "PUBLISHER_SINGLE safe_shared_main_ff push=0 result=SKIP reason=publisher_request"; return 0; }
     local target_head="$1" remote=origin push_ref=refs/heads/main
     local max_retries attempt remote_tip clean_repo temp_parent push_output
     local published_remote_sha cleanup_rc push_rc
