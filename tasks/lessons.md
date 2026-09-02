@@ -16564,3 +16564,16 @@ sqlite3.Connection.backup()を使うとページ(4096byte)単位のread syscall�
 - **when**: 未設定
 - **how**: 未設定
 - _record_hook_failure()は末尾でrm -f "$_STDERR_FILE"を成功/失敗を問わず無条件実行する(既存設計)。artifact永続化テストでcmp -sを元の$_STDERR_FILEに対して実行するとcmp status2(ファイル消失)でFAILする。テスト作成時は呼出し前に独立コピーを取り、それと比較すること。同じ罠は将来artifact/detail検証テストを書く全員に再発しうる
+
+### L1701: source:semantic_map_generate:new_file insightのresolveはindex.md直接編集ではなくdecision_candidate委譲が正規パターン
+- **日付**: 2026-09-02
+- **出典**: cmd_reflux_insight_202609021551_kotaro
+- **記録者**: kotaro
+- **tags**: [infra,bash,yaml,git]
+- **subdomain**: infra
+- **target_files**: [queue/insights.yaml]
+- **origin**: [[cmd_reflux_insight_202609021551_kotaro]]
+- **enforcement**: 未自動化
+- **when**: 未設定
+- **how**: 未設定
+- insight文面は『既存概念へのfile追加または新概念定義を検討せよ』と実修正を示唆するが、reflux_insightタスクのreflux_commit_contract.scopeはqueue/insights.yamlのみでdocs/semantic-index/index.mdは対象外。実際にindex.md/semantic-map.mdを編集しsemantic_map_generate.shまで再生成したが、grep -B1 -A5 'source: "semantic_map_generate:new_file"' queue/insights.yaml | grep -B6 'status: resolved' で直近8件の解決実例を確認したところ全件がdecision_candidate委譲でindex.md編集は0件だった。git checkoutでrevertし正規パターンに合わせ再解決した。次回このsource typeのinsightを扱う際は、insight文面を字義通り実行する前にqueue/insights.yaml内の同sourceの直近解決履歴をgrepし、実際のscope慣行を確認すべき
