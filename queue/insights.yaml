@@ -15011,3 +15011,17 @@ insights:
   resolved_reason: "semantic map generation verified the candidate is represented or intentionally ignored"
   action_artifact: "semantic_map=/home/simokitafresh/multi-agent-shogun/context/semantic-map.md;semantic_index=/home/simokitafresh/multi-agent-shogun/docs/semantic-index/index.md"
   resolved_at: "2026-09-03T05:29:59.850122"
+- id: INS-20260903-065124558-7246
+  ts: "2026-09-03T06:51:24+09:00"
+  insight: "semantic_map_generate新規ファイル候補: `LICENSE` は semantic index未登録。既存概念へのfile追加または新概念定義を検討せよ"
+  priority: "low"
+  source: "semantic_map_generate:new_file"
+  fix_known: false
+  status: pending
+- id: INS-20260903-065129287-ce4d
+  ts: "2026-09-03T06:51:29+09:00"
+  insight: "semantic_map_generate新規ファイル候補: `LICENSE` は semantic index未登録。既存概念へのfile追加または新概念定義を検討せよ"
+  priority: "low"
+  source: "semantic_map_generate:new_file"
+  fix_known: false
+  status: pending
