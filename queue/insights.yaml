@@ -13213,7 +13213,10 @@ insights:
   priority: "low"
   source: "semantic_map_generate:new_file"
   fix_known: false
-  status: pending
+  status: resolved
+  resolved_reason: 一次情報でgit ls-files --stage README.mdが追跡済み(100644)かつREADME.md実体は61807 bytesでプロジェクト概要・編成・運用を記載する実質文書と確認した。context/semantic-map.mdとdocs/semantic-index/index.mdへのREADME.md完全一致検索は0件、semantic_search.sh README.mdもNO_MATCH。定型boilerplateではないため索引追加は妥当だが、今回のscopeはqueue/insights.yamlのみなので実装修正は行わずdecision_candidateへ整理する。
+  action_artifact: "decision_candidate: README.mdをsemantic indexの既存concept=infrastructure_opsへfile resourceとして追加し、semantic_map_generate.sh再生成後にcontext/semantic-map.mdへの反映可否を確認する別cmdを起票。primary=README.md:1-80; docs/semantic-index/index.md:README.md完全一致0件; context/semantic-map.md:README.md完全一致0件; semantic_search.sh README.md=NO_MATCH; scope=queue/insights.yamlのみのため実装修正は別cmd"
+  resolved_at: "2026-09-03T08:00:17+09:00"
 - id: INS-20260902-141250479-8da8
   ts: "2026-09-02T14:12:50+09:00"
   insight: "semantic_map_generate新規ファイル候補: `README_ja.md` は semantic index未登録。既存概念へのfile追加または新概念定義を検討せよ"
