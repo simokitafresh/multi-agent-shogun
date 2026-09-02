@@ -1,5 +1,10 @@
 # 戦局日誌 (Campaign Log)
-<!-- last_updated: 2026-08-03 karo_strong_new_game_dm_monthly_boundary -->
+<!-- last_updated: 2026-09-02 kotaro_hook_artifact_ga552 -->
+## 2026-09-02 cmd_karo_hotfix_ga552_hook_artifact_20260902135701 (kotaro)
+| cmd/action | 意図 | 結果 | 因果 |
+|-----|------|------|------|
+| cmd_karo_hotfix_ga552_hook_artifact_20260902135701 (kotaro) | GA-551/GA-552でpre-commit失敗のhit行・staged世代を再現不能にした200-byte要約-only記録を根治 | AC1でGA-551/GA-552対象4件全てartifact欠落(4/4)を実測確認。AC2で_record_hook_failure()にfull stderrのlogs/hook_artifacts原子保存(cp+mv)+artifact_sha256+staged_diff_sha256を追加、200byte要約は維持。bats 7/7 PASS SKIP0(hit行201byte以降保持/空stderr省略/staged差分あり無し/並行プロセス衝突なし/artifact書込み失敗時の縮退)、gate_report_format PASS、commit `13af4660b8848946b59758d7fd394f975fae630d` | [[GA-551]] -> [[hook_failure_detail_bounded]] -> [[artifact永続化+sha256識別子追加]] |
+
 ## 2026-08-31 cmd_karo_hotfix_external_repo_worktree_remote_tip_20260831
 | cmd/action | 意図 | 結果 | 因果 |
 |-----|------|------|------|

@@ -16551,3 +16551,16 @@ sqlite3.Connection.backup()を使うとページ(4096byte)単位のread syscall�
 - **when**: 未設定
 - **how**: 未設定
 - GA-551ではhook_failures.yamlに対象pathとBLOCKは残ったが、200-byte bounded summaryのため実際のhit行とstaged blobを再現できなかった。履歴世代の分類を独立再検証するには、hook発火時のhit行またはstaged blob identityが必要。
+
+### L1700: hook失敗recordのbatsテストは呼出し後に_STDERR_FILEが無条件削除される前提でfixtureを書け
+- **日付**: 2026-09-02
+- **出典**: cmd_karo_hotfix_ga552_hook_artifact_20260902135701
+- **記録者**: kotaro
+- **tags**: [infra,testing,testing]
+- **subdomain**: infra
+- **target_files**: [scripts/hooks/git-pre-commit.sh,tests/unit/test_git_pre_commit_hook_failure_utf8.bats]
+- **origin**: [[cmd_karo_hotfix_ga552_hook_artifact_20260902135701]]
+- **enforcement**: 未自動化
+- **when**: 未設定
+- **how**: 未設定
+- _record_hook_failure()は末尾でrm -f "$_STDERR_FILE"を成功/失敗を問わず無条件実行する(既存設計)。artifact永続化テストでcmp -sを元の$_STDERR_FILEに対して実行するとcmp status2(ファイル消失)でFAILする。テスト作成時は呼出し前に独立コピーを取り、それと比較すること。同じ罠は将来artifact/detail検証テストを書く全員に再発しうる

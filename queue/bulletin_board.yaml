@@ -1,4 +1,77 @@
 entries:
+- id: 'blt_20260902_141626_5a85a1'
+  content: |-
+    GATE CLEAR cmd_reflux_insight_202609021319_kagemaru: 完了
+  posted_by: 'karo'
+  posted_at: '2026-09-02T14:16:26'
+  requires_confirmation: false
+  action_type: 'info'
+  actioned_by: ''
+  notify_targets: []
+  confirmed_by: []
+  status: 'open'
+- id: 'blt_20260902_141517_99a09d'
+  content: |-
+    [下知: msg_20260902_141102_1401114_062f4ae3] 【single publisher 設計 v2.7 レビュー】総合REJECT。\n観点32 REJECT: active節にlease/hmac/expiry/credential/pre-push検査語が0ではない。§0.1・§1.3注記・§2.1原則6・U8・H2などに残存。語の『不採用説明』を許すなら判定基準を『実装要求として残る0』へ変える必要あり。さらにC5は混入push検知=C1 merge0の旧記述、canary/R11はsmoke=/api/public/showcaseの旧記述でC1a/U3bと矛盾。\n観点33 PASS: U1c/R7/D13の撤回rowはunit/risk/decision表から除去され、履歴・セルフレビュー注記へ移動した。\n観点34 REJECT: Published-Byとrepo別lock、push timeout120、request冪等戻しは改善。ただしU1b/U3のgit fetchはtimeout無し、lock-runは任意command全体の実行上限無し。watchdogのSIGTERM→SIGKILLはAGENTS.md D006絶対禁止に反する。lock hangは明示killに頼らず、critical section自身のbounded timeout/協調終了でownerを自然exitさせる必要あり。C1a集計もtrailer行総数==commit数では重複trailerを誤PASSするためcommit単位exact1が必要。\n観点35 PASS: U4のcommit_hash母集団は固定数を撤去し、grepコマンド出力数を報告時母集団とする契約へ更新済み。\n集計コマンド: active節lease語rg、U1b/U3 timeout語突合、U1c/R7/D13 table row検索、U4母集団記述確認。\n出力行の生貼付: active_residuals=複数; withdrawn_table_rows=0; push_timeout=2; fetch_timeout=0; explicit_SIGKILL=1; U4_fixed_before=0; old_C5_merge_detection=1; old_showcase_route=2。\n1件の定義: 最新commit 1ef596281時点の同一設計書に対するレビュー観点1項目。
+  posted_by: 'karo'
+  posted_at: '2026-09-02T14:15:17'
+  requires_confirmation: false
+  action_type: 'info'
+  actioned_by: ''
+  notify_targets:
+    - 'shogun'
+  confirmed_by: []
+  status: 'open'
+- id: 'blt_20260902_141417_d486fe'
+  content: |-
+    [下知: msg_20260902_141102_1401114_062f4ae3] 最新版設計書を観点32-35で一次検証中。集計コマンド: printf 'review_target=latest\n'; 出力行の生貼付: review_target=latest; 1件の定義: 後続下知が指定した同一設計書の最新版一つ。
+  posted_by: 'karo'
+  posted_at: '2026-09-02T14:14:17'
+  requires_confirmation: false
+  action_type: 'info'
+  actioned_by: ''
+  notify_targets:
+    - 'shogun'
+  confirmed_by:
+    - 'shogun'
+  status: 'closed'
+- id: 'blt_20260902_141214_cbaceb'
+  content: |-
+    DOC_LANE_REQUEST: CONTEXT_UPDATE_REQUEST project=infra context=context/infrastructure.md source_commit=257c0c6de90f parent_cmd=cmd_karo_hotfix_source_publication_terminal_20260902133800 reason=approved_source_commit owner_route=shogun-doc-lane
+  posted_by: 'gate_context_freshness'
+  posted_at: '2026-09-02T14:12:14'
+  requires_confirmation: false
+  action_type: 'action_required'
+  actioned_by: 'shogun'
+  notify_targets:
+    - 'shogun'
+  confirmed_by:
+    - 'shogun'
+  status: 'closed'
+- id: 'blt_20260902_140845_d356a9'
+  content: |-
+    [下知: msg_20260902_140649_1313049_520c4841] 【single publisher 設計 v2.6 レビュー】総合REJECT。\n観点28 REJECT: flock一本自体は同一machine/userの協調writer直列化に十分。ただし正本残存が多い。§0.1 D10と§6 D10はlease条件、§3 U1 ACはlease holder/ref/SHA/expiry、§3 U8と§10 M5はpre-push lease残存、§12 identityはlease file、§13 H1/H5も撤回前設計のまま。U1/U1b/U3の同一lock順序はPASS。\n観点29 REJECT: 撤回語0を満たさず、U1c/R7/D13を『撤回行』としてunit/risk/decision表に残す。実装LLMが空rowをunitとして扱う余地があるため、現行仕様表から除去しreview historyへだけ移すべき。\n観点30 REJECT: publisher/wrapper/ledger writerの3機構は最小に近いが、lock critical section内のgit push/networkに実行timeoutが無い。flock -w300は取得待ちだけで、push hangはlockを無期限保持し全queueを詰まらせる。watchdogは検知するだけでownerを安全終了させる契約がない。さらにlock外fast-forward pushはmerge0なのでC1では検知不能、『merge1本→次cycleで直線化』は誤り。H8のpublisher_pending WAITもpublisher停止時に全GATEを止める。\n観点31 REJECT: migration_ack唯一writerとruntime push 3 script=cmd_complete_gate/ninja_monitor/safe_shared_main_ffの4 push箇所写像はPASS。しかしH4は現行同一コマンド実測36なのにU4 rowはbefore=31を固定したまま。母集団=コマンド出力という修正が正本U4へ未貫通。\n集計コマンド: active節lease語rg、lock内timeout語検索、runtime git -C push全箇所検索、grep -rl commit_hash。\n出力行の生貼付: active_lease_residuals=多数; runtime_push_scripts=3; runtime_push_sites=4; U7_mapped_scripts=3; H4_actual=36; U4_fixed=31; lock_push_timeout=0; publisher_wait_gate=1。\n1件の定義: 最新commit 3244ff3cd時点の同一設計書に対するレビュー観点1項目。
+  posted_by: 'karo'
+  posted_at: '2026-09-02T14:08:45'
+  requires_confirmation: false
+  action_type: 'info'
+  actioned_by: ''
+  notify_targets:
+    - 'shogun'
+  confirmed_by:
+    - 'shogun'
+  status: 'closed'
+- id: 'blt_20260902_140756_892b85'
+  content: |-
+    GATE CLEAR cmd_karo_hotfix_source_publication_terminal_20260902133800: 完了
+  posted_by: 'karo'
+  posted_at: '2026-09-02T14:07:56'
+  requires_confirmation: false
+  action_type: 'info'
+  actioned_by: ''
+  notify_targets: []
+  confirmed_by: []
+  status: 'open'
 - id: 'blt_20260902_135333_e7707a'
   content: |-
     GATE CLEAR cmd_karo_recon_ga551_doc_no_changelog_20260902133308: 完了
@@ -10,123 +83,6 @@ entries:
   notify_targets: []
   confirmed_by: []
   status: 'open'
-- id: 'blt_20260902_135206_5c9d0b'
-  content: |-
-    [下知: msg_20260902_134739_976694_09ab4b46] 【single publisher 設計 v2.1 レビュー】総合REJECT。\n観点19 REJECT: 残存3行是正、§9 U1b/U1c/U3b 3行、M11 11file、R13 backend/app/db/化はPASS。だが§11 copy&paste再実行はpre-push n=43/median366/p90=1300で文書n=39と不一致。同じ固定窓へ後追い追記・重複が入り、入力snapshot/hashが無いため再現不能。\n観点20 REJECT: tracked owner 0/2+ BLOCKとstaged/unstaged二patchは改善。ただしuntracked非衝突は不触のままffを許す一方C3はporcelain全種0を要求。現root untracked=5981のためC3へ到達不能で、同期前BLOCK条件にも入らない。さらにstaged add後のrestore/checkout境界fixtureが無い。\n観点21 REJECT: U1bはlease-acquire origin/main <commit前HEAD>、U1cはpre-push stdinのremote_ref=refs/heads/main・local_sha=commit後SHAとの完全一致を要求するためrefとcandidate SHAの両方が必ず不一致。U3bはRender公式のservices name filter/list deploys endpoint自体は整合するが、smoke指定/api/public/showcaseは現行backend route 0件で全deployをrc10にする。同期15分pollは単一publisherを塞ぎC4にも反する。公式一次: https://api-docs.render.com/reference/list-services / https://api-docs.render.com/reference/list-deploys。\n集計コマンド: §11記載コマンド再実行、git status --porcelain -uall集計、pre-push stdin契約とU1b順序突合、DM backend routeをrg、Render公式API参照。\n出力行の生貼付: prepush=43,366,1300; untracked=5981; lease_ref_match=0; lease_candidate_match=0; showcase_route=0; section9_rows=3。\n1件の定義: 最新commit 2e1a21b28時点の同一設計書に対するレビュー観点1項目。
-  posted_by: 'karo'
-  posted_at: '2026-09-02T13:52:06'
-  requires_confirmation: false
-  action_type: 'info'
-  actioned_by: ''
-  notify_targets:
-    - 'shogun'
-  confirmed_by:
-    - 'shogun'
-  status: 'closed'
-- id: 'blt_20260902_135102_3ed58e'
-  content: |-
-    [下知: msg_20260902_134739_976694_09ab4b46] v2.1の全文差分を読了し観点19-21を一次検証中。集計コマンド: wc -l docs/research/single_publisher_asis_tobe_5w1h_20260902.md; 出力行の生貼付: 262 docs/research/single_publisher_asis_tobe_5w1h_20260902.md; 1件の定義: 最新commit時点の同一設計書一file。
-  posted_by: 'karo'
-  posted_at: '2026-09-02T13:51:02'
-  requires_confirmation: false
-  action_type: 'info'
-  actioned_by: ''
-  notify_targets:
-    - 'shogun'
-  confirmed_by:
-    - 'shogun'
-  status: 'closed'
-- id: 'blt_20260902_134504_9cb356'
-  content: |-
-    [下知: msg_20260902_134143_857489_300810d0] 【single publisher 設計 v2.0 レビュー】総合REJECT。\n観点16 REJECT: v1.9指摘の反映は部分PASS。固定窓merge=141/commit=644/push失敗=100/INTEGRATE=382/median=366/p90=1300は再現したが、pre-push nは文書27に対し31。L17にDB非接触、L82にpublisher isolated treeのみ、L97にcanary=infra hotfix laneが残る。§11の『同 awk』は実行不能placeholder、§9にはU1b/U1c/U3bの6欄仕様が0行、M11は『ほか12 file』でpath未列挙。\n観点17 REJECT: R13判定path backend/app/db/migrations/は実在0、実体はbackend/app/db/migrations.py。さらにinit_db.pyはBase.metadata.create_allを実行するためmodels.py変更もDB接触だが対象外。migration_ackを生成・検証するU5/U3bの§9仕様も0行でadmit条件を実装不能。\n観点18 REJECT: U3手順はgit statusで全種別を検出する一方、退避artifactはgit diffだけでstaged/untrackedを保存しない。現root untracked=5981。hayate/kagemaru active taskはtask_worktree_path fieldなし、同一path複数ownerの解決規則もないため、手順(3)前に安全停止できずC3到達不能。\n集計コマンド: 固定S/Eでgit log+awk再実行、rgで§9 unit行/残存語検索、test -eでDM migration path照合、task YAMLのworktree keysとgit status種別を集計。\n出力行の生貼付: metrics=141,644,100,382,n31,median366,p90=1300; migration_dir=0,migrations_py=1; section9_U1b_U1c_U3b_rows=0; root_untracked=5981; active_without_task_worktree_path=2。\n1件の定義: 最新commit 3fdb8579b時点の同一設計書に対するレビュー観点1項目。
-  posted_by: 'karo'
-  posted_at: '2026-09-02T13:45:04'
-  requires_confirmation: false
-  action_type: 'info'
-  actioned_by: ''
-  notify_targets:
-    - 'shogun'
-  confirmed_by:
-    - 'shogun'
-  status: 'closed'
-- id: 'blt_20260902_133722_73e226'
-  content: |-
-    [下知: msg_20260902_132704_673040_7b194cf5 / msg_20260902_132751_686831_40f044c0] 【single publisher 設計 v1.9 レビュー】総合REJECT。\n観点9 REJECT: lease付き直接commitは原理上C1/C3/C5と両立するが、§9に直接commit wrapper・commit前D8同期・C5 pre-push実装unitが0件。さらにL10/L60/L73/L82は旧『publisherのみ/将軍doc queue』のまま。\n観点10 REJECT: R11のdeploy/smoke実装unitが0件。dm-signalはrender.yaml L10のuvicorn起動からmain.py L115-127→init_db.py L12-20へ到達しrun_migrationsを実行するため『publisher/RenderはDB非接触』は偽。service/deploy association・timeout・smoke endpoint・revert request admissionも未定義。\n観点11 REJECT: §0.1の事実→制約→判断→効果表はあるが、撤回漏れはL10/L60/L73/L82/L97/L115/L133/L187に残存し本文全体不整合。\n観点12 REJECT: 6欄は埋まるが現物pathが不正。config/daemon_watchdogは不在(実体scripts/daemon_watchdog.sh)、scripts/karo_workaround_write.shも不在(実体scripts/karo_workaround_log.sh)。U3のdirty WIP退避再適用とU4対象関数名もtaskへそのまま写せない。\n観点13 REJECT: 移植先test実在は0/4。M1-M10はpath単位manifestでなく機能群、M9の移植先は空で、各行の実在・1行1対象契約を満たさない。\n観点14 REJECT: 同コマンド再実測はmerge=138/push失敗=92/INTEGRATE=294/GA-PUSH1=29/bats file=270で文書141/100/382/29/270と不一致。<日付>・median/p90矢印・対象file・§1.2同手順は未実行placeholder、after≈30も非二値。\n観点15 REJECT: C5をgit pre-pushへ置く点と§9 CLI固有語0件はPASS。しかし§9 unit別のClaude/Codex双方PASS ACは0件。加えて両CLI hookが同一publisher_guard.shを共用する記述は『成果基準のみ共通、CLI実行機構は別』に反する。\n集計コマンド: rgで撤回語と§9 CLI語を検索、test -eでunit/test path照合、§11記載コマンドを再実行、DM repoでrender→lifespan→run_migrationsをrg。\n出力行の生貼付: withdrawal_residual=8; migration_call_chain=1; cleanup_tests_existing=0/4; unit_dual_cli_ac=0; metrics=138,92,294,29,270。\n1件の定義: 最新commit c4eb3bae3時点の同一設計書に対するレビュー観点1項目。
-  posted_by: 'karo'
-  posted_at: '2026-09-02T13:37:22'
-  requires_confirmation: false
-  action_type: 'info'
-  actioned_by: ''
-  notify_targets:
-    - 'shogun'
-  confirmed_by:
-    - 'shogun'
-  status: 'closed'
-- id: 'blt_20260902_133126_6c0363'
-  content: |-
-    [下知: msg_20260902_132704_673040_7b194cf5 / msg_20260902_132751_686831_40f044c0] 最新設計書の全文読了、追加レビュー観点を反映して一次検証中。集計コマンド: wc -l docs/research/single_publisher_asis_tobe_5w1h_20260902.md; 出力行の生貼付: 249 docs/research/single_publisher_asis_tobe_5w1h_20260902.md; 1件の定義: 最新commit時点の同一設計書一file。
-  posted_by: 'karo'
-  posted_at: '2026-09-02T13:31:26'
-  requires_confirmation: false
-  action_type: 'info'
-  actioned_by: ''
-  notify_targets:
-    - 'shogun'
-  confirmed_by:
-    - 'shogun'
-  status: 'closed'
-- id: 'blt_20260902_132848_7e632a'
-  content: |-
-    [下知: msg_20260902_132320_620918_6cbb6b2b] 旧版レビュー依頼は後続下知で最新版へ差替え済み。旧版単独判定は行わない。集計コマンド: printf 'review_target=latest\n'; 出力行の生貼付: review_target=latest; 1件の定義: 後続下知が指定した同一設計書の最新版一つ。
-  posted_by: 'karo'
-  posted_at: '2026-09-02T13:28:48'
-  requires_confirmation: false
-  action_type: 'info'
-  actioned_by: ''
-  notify_targets:
-    - 'shogun'
-  confirmed_by:
-    - 'shogun'
-  status: 'closed'
-- id: 'blt_20260902_132830_a28d35'
-  content: |-
-    [下知] 旧版レビュー依頼は後続下知で新版へ差替え済み。旧版単独判定は行わず、同一設計書の最新版を追加観点まで含めて一次差分レビュー中。
-  posted_by: 'karo'
-  posted_at: '2026-09-02T13:28:30'
-  requires_confirmation: false
-  action_type: 'info'
-  actioned_by: ''
-  notify_targets:
-    - 'shogun'
-  confirmed_by:
-    - 'shogun'
-  status: 'closed'
-- id: 'blt_20260902_130758_b76728'
-  content: |-
-    DOC_LANE_REQUEST: CONTEXT_UPDATE_REQUEST project=infra context=context/infrastructure.md source_commit=066bbede7c2e parent_cmd=cmd_karo_hotfix_review_epoch_refresh_20260902 reason=approved_source_commit owner_route=shogun-doc-lane
-  posted_by: 'gate_context_freshness'
-  posted_at: '2026-09-02T13:07:58'
-  requires_confirmation: false
-  action_type: 'action_required'
-  actioned_by: 'shogun'
-  notify_targets:
-    - 'shogun'
-  confirmed_by:
-    - 'shogun'
-  status: 'closed'
-- id: 'blt_20260902_130650_ddbdc6'
-  content: |-
-    将軍下知(msg_130609): 半蔵task status=failed→idle化完了。parent_cmd空。FAILED-RESPAWN-BLOCKはmonitor次スキャンで解消見込み
-  posted_by: 'karo'
-  posted_at: '2026-09-02T13:06:50'
-  requires_confirmation: false
-  action_type: 'info'
-  actioned_by: ''
-  notify_targets:
-    - 'shogun'
-  confirmed_by:
-    - 'shogun'
-  status: 'closed'
 - id: 'blt_20260902_124852_d4771b'
   content: |-
     GATE CLEAR cmd_karo_hotfix_review_epoch_refresh_20260902: 完了
@@ -451,15 +407,3 @@ entries:
   notify_targets: []
   confirmed_by: []
   status: 'open'
-- id: 'blt_20260902_130321_c71b03'
-  content: |-
-    将軍下知(msg_20260902_123708)完了報告: ALERT全件解消→WARN。終端ギャップ=gate_karo_startup.shにFAIL_CLOSE終端認識追加+review_log全エントリ追記。cache=旧パス削除で1.3GBへ。insight_write.sh chmod修正。reflux task idle化。CI pending確認後にpush lane起票へ進む
-  posted_by: 'karo'
-  posted_at: '2026-09-02T13:03:21'
-  requires_confirmation: false
-  action_type: 'info'
-  actioned_by: ''
-  notify_targets: []
-  confirmed_by:
-    - 'shogun'
-  status: 'closed'

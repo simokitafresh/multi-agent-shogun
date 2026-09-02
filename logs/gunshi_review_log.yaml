@@ -2218,6 +2218,8 @@
   worker_id: kagemaru
 - cmd_id: cmd_reflux_insight_202609021319_kagemaru
   review_type: report
+  gate_result: CLEAR
+  gate_synced_at: 2026-09-02T14:16:43+09:00
   worker_id: kagemaru
   reviewed_at: "2026-09-02T13:33:00+09:00"
   verdict: LGTM
@@ -2245,6 +2247,8 @@
   brainwash_check: "#1no #2no #3no #4no #5no #6no #7no #8no 秒差re-record north_star: N/A"
 - cmd_id: cmd_reflux_insight_202609021319_kagemaru
   review_type: report
+  gate_result: CLEAR
+  gate_synced_at: 2026-09-02T14:16:43+09:00
   worker_id: kagemaru
   reviewed_at: "2026-09-02T13:49:00+09:00"
   verdict: LGTM
@@ -2274,7 +2278,7 @@
   timestamp: "2026-09-02T13:49:00+09:00"
 - cmd_id: cmd_karo_recon_ga551_doc_no_changelog_20260902133308
   gate_result: CLEAR
-  gate_synced_at: 2026-09-02T13:53:35+09:00
+  gate_synced_at: 2026-09-02T13:55:13+09:00
   review:
     cmd_id: cmd_karo_recon_ga551_doc_no_changelog_20260902133308
     cmd_spec_summary:
@@ -2294,3 +2298,105 @@
       SG6_code_quality: PASS
       SG7_gate_prediction: PASS
     verdict: APPROVE
+- cmd_id: cmd_karo_hotfix_source_publication_terminal_20260902133800
+  gate_result: CLEAR
+  gate_synced_at: 2026-09-02T14:08:10+09:00
+  review:
+    cmd_id: cmd_karo_hotfix_source_publication_terminal_20260902133800
+    cmd_spec_summary:
+      acceptance_criteria_count: 2
+      project: infra
+      scope: scripts/cmd_complete_gate.sh source-only publication終端+insights等価更新
+    gate_prediction: CLEAR
+    gate_prediction_reason: all checks passed
+    reviewed_at: '2026-09-02T14:05:00+09:00'
+    reviewer: gunshi
+    sg_checklist:
+      SG1_ac_coverage: PASS
+      SG2_test_pass: PASS
+      SG3_parity: N/A
+      SG4_no_regression: PASS
+      SG5_lesson_candidate: PASS
+      SG6_code_quality: PASS
+      SG7_gate_prediction: PASS
+    verdict: APPROVE
+- cmd_id: cmd_karo_hotfix_source_publication_terminal_20260902133800
+  review_type: report
+  gate_result: CLEAR
+  gate_synced_at: 2026-09-02T14:08:10+09:00
+  worker_id: saizo
+  reviewed_at: "2026-09-02T14:06:30+09:00"
+  verdict: LGTM
+  gate_prediction: CLEAR
+  gate_prediction_reason: "all checks passed — 重複配信2回目確認"
+  verified_files:
+    - "queue/gates/cmd_karo_hotfix_source_publication_terminal_20260902133800/sg7_bundle.json:1"
+  findings_summary: "重複配信2回目。14:05にLGTM+sg7_bundle済み。確認のみ"
+  finding_categories:
+    - assumptions: 1
+    - numbers: 0
+    - simulation: 0
+    - premortem: 0
+    - north_star: 0
+    - ambiguity: 0
+    - adversarial: 0
+  step3_5_verified: true
+  operational_simulation:
+    command: "ls -la queue/gates/cmd_karo_hotfix_source_publication_terminal_20260902133800/sg7_bundle.json"
+    expected: "sg7_bundle.json存在"
+    actual: "sg7_bundle.json存在確認済み(14:05生成)"
+    result: "PASS"
+  observations:
+    - "事実: sg7_bundle.json 14:05生成済み。review_log LGTM 14:05記録済み。重複配信確認"
+  causal_chain: "2回目通知→既にLGTM+bundle済み→確認エントリ"
+  brainwash_check: "#1no#2no#3no#4no#5no#6no#7no#8no 重複配信確認"
+  timestamp: "2026-09-02T14:06:30+09:00"
+- cmd_id: cmd_karo_hotfix_ga552_hook_artifact_20260902135701
+  review:
+    cmd_id: cmd_karo_hotfix_ga552_hook_artifact_20260902135701
+    cmd_spec_summary:
+      acceptance_criteria_count: 2
+      project: infra
+      scope: scripts/hooks/git-pre-commit.sh hook failure artifact永続化+sha256
+    gate_prediction: CLEAR
+    gate_prediction_reason: all checks passed
+    reviewed_at: '2026-09-02T14:11:00+09:00'
+    reviewer: gunshi
+    sg_checklist:
+      SG1_ac_coverage: PASS
+      SG2_test_pass: PASS
+      SG3_parity: N/A
+      SG4_no_regression: PASS
+      SG5_lesson_candidate: PASS
+      SG6_code_quality: PASS
+      SG7_gate_prediction: PASS
+    verdict: APPROVE
+- cmd_id: cmd_karo_hotfix_ga552_hook_artifact_20260902135701
+  review_type: report
+  worker_id: kotaro
+  reviewed_at: "2026-09-02T14:14:00+09:00"
+  verdict: LGTM
+  gate_prediction: CLEAR
+  gate_prediction_reason: "all checks passed — 重複配信確認"
+  verified_files:
+    - "queue/gates/cmd_karo_hotfix_ga552_hook_artifact_20260902135701/sg7_bundle.json:1"
+  findings_summary: "重複配信。14:11にLGTM+sg7_bundle済み"
+  finding_categories:
+    - assumptions: 1
+    - numbers: 0
+    - simulation: 0
+    - premortem: 0
+    - north_star: 0
+    - ambiguity: 0
+    - adversarial: 0
+  step3_5_verified: true
+  operational_simulation:
+    command: "ls queue/gates/cmd_karo_hotfix_ga552_hook_artifact_20260902135701/sg7_bundle.json"
+    expected: "存在"
+    actual: "存在確認済み(14:11生成)"
+    result: "PASS"
+  observations:
+    - "事実: sg7_bundle.json 14:11生成済み。重複配信確認のみ"
+  causal_chain: "重複通知→既にLGTM+bundle済み→確認"
+  brainwash_check: "#1no#2no#3no#4no#5no#6no#7no#8no"
+  timestamp: "2026-09-02T14:14:00+09:00"
