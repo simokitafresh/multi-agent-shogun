@@ -4206,6 +4206,8 @@ export -f capture_durable_writer_paths
 publish_postclear_runtime_deltas() {
     (
     local phase="${1:-postclear}"
+    # PUBLISHER_SINGLE ON: root で checkpoint commit を作らない(将軍裁定 2026-09-03 05:22。M8 削除まで flag で no-op)
+    publisher_single_enabled && { echo "PUBLISHER_SINGLE ${phase} runtime checkpoint=0 result=SKIP reason=publisher_request"; return 0; }
     local strict_nonruntime=1
     if declare -p MATCHING_TASK_FILES >/dev/null 2>&1 \
         && [ "${#MATCHING_TASK_FILES[@]}" -gt 0 ]; then
