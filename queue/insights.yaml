@@ -13014,6 +13014,9 @@ insights:
   source: "skill_script_refs:9abfd94ce2d8bec9"
   fix_known: false
   status: resolved
+  resolved_reason: 一次検証でgate_skill_script_refs.shを実走し、rc=2 REVIEW_REQUIREDは契約hash変更の追従候補をinsightからrefluxで扱う仕様と確認。41 SKILL.md・82参照・required=0・deduped=34・FOLLOWUP_ACTIVE=34・FOLLOWUP_COVERS_REVIEW_REQUIRED=yes、参照先実在・SKILL更新日鮮度・静的パス・日時付き実走マーカーは全てOK。関連unit 7/7 PASS、追加のSKILL修正・decision_candidateは不要。
+  action_artifact: "gate=gate_skill_script_refs.sh;command=bash scripts/gates/gate_skill_script_refs.sh;rc=2;result=REVIEW_REQUIRED;all_checks=OK;FOLLOWUP_ACTIVE=34;FOLLOWUP_COVERS_REVIEW_REQUIRED=yes;test=run_tests.sh file tests/unit/test_gate_skill_script_refs.bats 7/7 PASS SKIP0;promotion_pause=queue/gates/reflux_promotion.paused;verified_at=2026-09-02T13:13:11+09:00"
+  resolved_at: "2026-09-02T13:13:11+09:00"
 - id: INS-20260902-130735902-ef5a
   ts: "2026-09-02T13:07:35+09:00"
   insight: "lord_conversation教訓候補: target=shogun trigger=inbound_lord detail=裁定待ちの3点について詳しく教えてくれ"
