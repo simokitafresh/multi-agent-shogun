@@ -13087,7 +13087,10 @@ insights:
   priority: "medium"
   source: "skill_script_refs:9abfd94ce2d8bec9"
   fix_known: false
-  status: pending
+  status: resolved
+  resolved_reason: 一次情報で gate_skill_script_refs.sh を再実走し、rc=2 REVIEW_REQUIRED だが参照先欠落0・鮮度差0・例示パス欠落0・副作用実走marker欠落0、FOLLOWUP_ACTIVE=34かつFOLLOWUP_COVERS_REVIEW_REQUIRED=yesを確認した。既存follow-upで被覆済みのため追加実修正とdecision_candidateは不要。
+  action_artifact: "target=queue/insights.yaml:INS-20260902-131626077-2cd0;gate=SKILL_REF_DISABLE_CACHE=1 bash scripts/gates/gate_skill_script_refs.sh .;gate_rc=2;result=REVIEW_REQUIRED;observed=41_SKILL.md/82_refs/30_referenced/required0/deduped34/missing_refs0/stale_refs0/example_paths_missing0/side_effect_markers_missing0;FOLLOWUP_ACTIVE=34;FOLLOWUP_COVERS_REVIEW_REQUIRED=yes;memory=memory_db_query exact target;semantic=semantic_search exact target no direct ID match, concept=semantic_dictionary_design;causal=.cache/causal_index.tsv exact target no direct ID match, related skill_script_refs chain;test=logs/test_receipts/run_tests_20260902T055253_1955529.json 7/7 PASS SKIP0;inventory_before=insights_pending43/zero_backlinks17/promotions609/total669;decision_candidate=none"
+  resolved_at: "2026-09-02T14:53:19+09:00"
 - id: INS-20260902-131646701-b4a9
   ts: "2026-09-02T13:16:46+09:00"
   insight: "[[DM signal側のリスクは？リスクが小さく普及可能であれば一気にやるべきではないか？]] semantic_stress_test candidate_aliases: NO_MATCH source=lord query=DM-signal側のリスクは？リスクが小さく普及可能であれば一気にやるべきではないか？"
