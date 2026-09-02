@@ -1,5 +1,5 @@
 <!-- gist-master: 77538fe909ed4d3b83b61b4baf99cacf single_publisher_asis_tobe_5w1h_20260902.md -->
-# origin/main 単一 publisher 化 — AsIs / ToBe / 5W1H 設計書 v3.16(09-03 07:20: U6b cmd_4465 CLEAR=ledger route 本番初稼働(将軍手動 1 周 a6f54a6a9)、batch 中止欠陥→hotfix 待ち。v3.15=06:15: **U8 凍結**(cmd_4466 も正当 FAIL=現役 test の推移的被覆と別機能再利用に結合、将軍裁定 (b))。v3.14=05:50: U8 cmd_4464 正当 FAIL→cmd_4466(chain+test 単位、M7 除外)、U6b cmd_4465(ledger 消費者)、root drain/worktree 回収 hotfix、daemon 死亡→根治。v3.13=04:55: U7 完了・PUBLISHER_SINGLE ON 04:37・U8 AC2=cmd_4464 起票。v3.12=状況盤 02:32。v3.11=§14 02:15、殿指示 02:13: U3 active 初 publish 05fe87b68、U1/U2 再検証 CLEAR、第 3 波 U7 走行・U8 AC1 完了。殿裁定 01:30『先に進んでから戻れ』でcanary 待ち撤回。v3.10=§14.1 00:50。v3.9=§14 00:05: 実装 CLEAR 6 unit、U5 着地で ACCEPT→enqueue が生き publisher 未起動で全 CLEAR 閉塞→家老 dry-run で U3 欠陥 3 点検出→修正 lane、active 化は保留。v3.8=22:25。v3.7=§14 追加、殿指示 17:18。v3.6=§9.1 共通 AC の 2 巡目を『別 cmd の検証 task』へ。同 cmd 再配備は deploy_task completed-peer guard の正規 BLOCK 対象、15:35)
+# origin/main 単一 publisher 化 — AsIs / ToBe / 5W1H 設計書 v3.17(09-03 07:50: ledger batch 根治(滞留 15→0、n=70)・root drain hotfix CLEAR・worktree 回収 sweep(225→143)。v3.16=07:20: U6b cmd_4465 CLEAR=ledger route 本番初稼働(将軍手動 1 周 a6f54a6a9)、batch 中止欠陥→hotfix 待ち。v3.15=06:15: **U8 凍結**(cmd_4466 も正当 FAIL=現役 test の推移的被覆と別機能再利用に結合、将軍裁定 (b))。v3.14=05:50: U8 cmd_4464 正当 FAIL→cmd_4466(chain+test 単位、M7 除外)、U6b cmd_4465(ledger 消費者)、root drain/worktree 回収 hotfix、daemon 死亡→根治。v3.13=04:55: U7 完了・PUBLISHER_SINGLE ON 04:37・U8 AC2=cmd_4464 起票。v3.12=状況盤 02:32。v3.11=§14 02:15、殿指示 02:13: U3 active 初 publish 05fe87b68、U1/U2 再検証 CLEAR、第 3 波 U7 走行・U8 AC1 完了。殿裁定 01:30『先に進んでから戻れ』でcanary 待ち撤回。v3.10=§14.1 00:50。v3.9=§14 00:05: 実装 CLEAR 6 unit、U5 着地で ACCEPT→enqueue が生き publisher 未起動で全 CLEAR 閉塞→家老 dry-run で U3 欠陥 3 点検出→修正 lane、active 化は保留。v3.8=22:25。v3.7=§14 追加、殿指示 17:18。v3.6=§9.1 共通 AC の 2 巡目を『別 cmd の検証 task』へ。同 cmd 再配備は deploy_task completed-peer guard の正規 BLOCK 対象、15:35)
 
 - 作成: 2026-09-02 02:30 将軍(殿指示 02:16『忍者はコミットしない。コミットは家老/将軍のみ』→02:18『コミットのやり方・スキル・構造の検証』→02:24『AsIs/ToBe 5W1H 設計書。不要になる複雑さを先に検証』)
 - 協議: 家老回答 blt_20260902_021944(single publisher + local commit artifact)。協議記録=`queue/notes/shogun_karo_single_committer_hypothesis_20260902_0220.md` §1-6
@@ -275,10 +275,10 @@ canary 判定: **(v1.8 殿裁定 D9)** infra と dm-signal の両 repo を U1 �
 | U3b | deploy check 三段 receipt | ⛔ | — | — | 撤回(殿 01:30) |
 | U7 | PUBLISHER_SINGLE 下流化 | ✅ 4460(67ced64ee) | ✅ repo guard d61ef6907 / ✅ flag file helper d42b62a90 | — | **ON 04:37**(queue/flags/publisher_single、可逆=rm) |
 | U8 | cleanup M1-M11 | ✅ AC1 台帳 4461 | ❌ 4464/4466 とも正当 FAIL(rg literal census は推移的 test 被覆を見落とす。M1/M8 削除で完了 gate suite 数十本+別機能が壊れる) | — | ⏸ **凍結(将軍裁定 06:13)**。flag ON で旧経路は no-op=目的達成。再開条件=運用 7 日後に chain ごとの契約 test 移植設計書 |
-| U6b | ledger 消費者(publisher が ledger_inbox を apply) | ✅ cmd_4465 半蔵 f0e162f80 **CLEAR 07:0x** | ✅ capture base refresh dded45428 / 🔵 batch 中止欠陥(重複 1 op で全 batch 中止、root sync BLOCK で applied 移動前に抜ける)hotfix | 初 batch a6f54a6a9(将軍手動、bulletin 2+insights 2) | 🟡 稼働=旧 daemon は loop から呼ばず、手動 1 周のみ。滞留 bulletin 3/insights 12 |
-| U3c | root drain(root ahead を lock-run 下で ff push)+worktree 回収 | 🔵 影丸/才蔵 hotfix(05:35) | — | — | flag ON 後の root 直 commit は U1b のみ(将軍 doc lane 実証 db11e00b8/11974b8a5) |
+| U6b | ledger 消費者(publisher が ledger_inbox を apply) | ✅ cmd_4465 半蔵 f0e162f80 CLEAR 07:19 | ✅ capture base refresh dded45428 / ✅ batch 根治 195a924a7+4d0897c46+5895fc921(重複=already_published、失敗 op は rc/ 退避で継続、applied+event を root sync 前に確定)/ ✅ insight_write fixture 分離 f4e6ab789 | batch n=70 a8b7c3895(滞留 15→0) | 🟡 稼働=旧 daemon は loop から呼ばず家老/将軍が手動 1 周。daemon 入替後に全自動 |
+| U3c | root drain(root ahead を lock-run 下で ff push)+worktree 回収 | ✅ 影丸 root drain a1a0640eb CLEAR 07:4x / ✅ 才蔵 reclaim 01eba6725 CLEAR 07:13→sweep 本実行(dir 125→43、git worktree 225→143、removed 82、active 誤回収 0) | — | — | root 直 commit は U1b のみ(将軍 doc lane 実証)。root 台帳 4 file の取残し(read-tree が dirty path 保護)は家老が復元 53408f376 |
 
-**進捗 9/12 完了、U8 凍結、U3b 撤回。残=U6b batch 欠陥 hotfix・U3c(root drain 再提出/worktree 回収 ✅ 01eba6725)・stop flag/watchdog 自動再起動 hotfix・旧 daemon 入替(自己修復)。root fileMode=false を再設定(2020 件の mode 差分は config 書直しが原因)。** 残り工程: cmd_4464 batch 1→4(各 1 commit)→ §11 after 計測(台帳集計行)→ 完了。旧 push 経路は 04:37 以降 no-op、origin 到達は publisher 由来のみ。
+**進捗 10/12 完了、U8 凍結、U3b 撤回。残=stop flag/watchdog 自動再起動 hotfix・旧 daemon 入替(自己修復)・fileMode=false 保存・bulletin fallback。** 残り工程: cmd_4464 batch 1→4(各 1 commit)→ §11 after 計測(台帳集計行)→ 完了。旧 push 経路は 04:37 以降 no-op、origin 到達は publisher 由来のみ。
 
 #### 14.1.1 詳細(cmd・commit・GATE 時刻)
 
@@ -338,6 +338,7 @@ canary 判定: **(v1.8 殿裁定 D9)** infra と dm-signal の両 repo を U1 �
 - 例外適用の記録(22:18): push_lane integrate(§10 M2)は捨てる file だが、その欠陥が第 2 波の成果物(U3/U1b)を root から staged 削除し続ける(5 回)。『捨てる壁』と『成果物を壊す壁』は別物で、後者は 1 行で塞ぐ。判定基準=その壁を放置すると実装 file(§9 の成果物)が失われるか。
 
 ## §5 レビュー履歴
+- v3.17(09-03 07:50) U6b 根治・U3c CLEAR・sweep 実行、10/12
 - v3.16(09-03 07:20) U6b CLEAR・ledger route 初稼働・batch 中止欠陥・fileMode 真因
 - v3.15(09-03 06:15) U8 凍結(4466 正当 FAIL、decision_candidate『削除には chain ごとの契約 test 移植設計が要る』)。殿 01:31『無駄な複雑化に時間をかけるな』に従う
 - v3.14(09-03 05:50) 4464 正当 FAIL→4466、U6b(4465)・U3c(root drain)追加、publisher daemon 死亡→a5781a4bc 根治、root 直 commit は U1b のみ
