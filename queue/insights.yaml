@@ -13732,3 +13732,10 @@ insights:
   source: "semantic_index_update"
   fix_known: false
   status: pending
+- id: INS-20260902-184304470-a790
+  ts: "2026-09-02T18:43:04+09:00"
+  insight: "[[詩の世界ではスペースや行下げで時間や場面の切り替えをする]] semantic_stress_test candidate_aliases: NO_MATCH source=lord query=詩の世界ではスペースや行下げで時間や場面の切り替えをする。noteなら横線だろうな"
+  priority: "low"
+  source: "semantic_stress_test"
+  fix_known: false
+  status: pending
