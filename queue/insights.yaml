@@ -13973,3 +13973,10 @@ insights:
   source: "semantic_stress_test"
   fix_known: false
   status: pending
+- id: INS-20260902-210436403-8ebb
+  ts: "2026-09-02T21:04:36+09:00"
+  insight: "[[単一 publisher U3 publisher daemon scripts publisher sh を dry ]] semantic_stress_test candidate_aliases: NO_MATCH source=cmds query=単一 publisher U3: publisher daemon(scripts/publisher.sh)を dry-run 既定で実装。dequeue→lock-run --bound 600→fetch→isolated tree@tip→C2a 検査→apply→commit-tree(trailer Published-By: publisher"
+  priority: "low"
+  source: "semantic_stress_test"
+  fix_known: false
+  status: pending
