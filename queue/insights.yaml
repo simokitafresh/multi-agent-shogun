@@ -14015,7 +14015,10 @@ insights:
   priority: "medium"
   source: "semantic_stress_test"
   fix_known: false
-  status: pending
+  status: resolved
+  resolved_reason: "semantic index candidate was absorbed into a registered concept"
+  action_artifact: "semantic_index=/home/simokitafresh/multi-agent-shogun/docs/semantic-index/index.md"
+  resolved_at: "2026-09-02T21:13:16+09:00"
 - id: INS-20260902-210657141-b1ac
   ts: "2026-09-02T21:06:57+09:00"
   insight: "review_bundle.py singleのreview_entryはreview:ラッパーなしのTOP-LEVEL形式(cmd_id/verdict/reviewer/sg_checklist/precheck_na等を直接トップに置く)。review:で包むとprecheck_naが読まれずprecheckが走る。cmd_4445で3回試行して判明(19:28-19:39)"
@@ -14059,11 +14062,24 @@ insights:
   priority: "low"
   source: "semantic_index_update"
   fix_known: false
-  status: pending
+  status: resolved
+  resolved_reason: "semantic map generation verified the candidate is represented or intentionally ignored"
+  action_artifact: "semantic_map=/home/simokitafresh/multi-agent-shogun/context/semantic-map.md;semantic_index=/home/simokitafresh/multi-agent-shogun/docs/semantic-index/index.md"
+  resolved_at: "2026-09-02T21:13:22+09:00"
 - id: INS-20260902-211038429-c96d
   ts: "2026-09-02T21:10:38+09:00"
   insight: "[[sh の source only insights id merge が『remote tip が中間 source c]] NO_MATCH purpose pending alias: cmd_complete時にdeploy_task.logでNO_MATCHだったpurpose。類似概念TOP3: provisional_insights(仮: Insights; alias=insights; score=13.4) / semantic_dictionary_design(セマンティック辞書構想; alias=source; score=11.5) / provisional_log_terminal_input(仮: Log Terminal Input; alias=scripts log terminal input.sh; score=9.3)。既存概念aliasesへの自動昇格候補"
   priority: "low"
   source: "semantic_index_update"
+  fix_known: false
+  status: resolved
+  resolved_reason: "semantic map generation verified the candidate is represented or intentionally ignored"
+  action_artifact: "semantic_map=/home/simokitafresh/multi-agent-shogun/context/semantic-map.md;semantic_index=/home/simokitafresh/multi-agent-shogun/docs/semantic-index/index.md"
+  resolved_at: "2026-09-02T21:13:23+09:00"
+- id: INS-20260902-211319259-4949
+  ts: "2026-09-02T21:13:19+09:00"
+  insight: "semantic_map_generate新規ファイル候補: `CONTRIBUTING.md` は semantic index未登録。既存概念へのfile追加または新概念定義を検討せよ"
+  priority: "low"
+  source: "semantic_map_generate:new_file"
   fix_known: false
   status: pending
