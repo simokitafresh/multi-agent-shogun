@@ -571,3 +571,10 @@ null/NaN → INSUFFICIENT_DATA(灰)。Label→色変換は `labelToColorDot()` �
 - `ShowcaseEvent`(models.py)+`showcase_events` テーブル(migrations.py: step/ua_class/lang/occurred_at、index step・occurred_at・複合)。mutation は `_block_showcase_event_mutation` で遮断=追記専用テレメトリ(cmd_4422 5b50424e)。
 - 制約: `from __future__ import annotations` を public_showcase.py に置くな(e94cda07: slowapi wrapper 経由で PydanticUndefinedAnnotation→Render deploy 失敗、cmd_4419 5ddd1e96 で文書化)。
 - 境界=origin/main 172b6d35e7f2。
+
+## §97 showcase hero.series に月次 holding 付与 (cmd_4459, 2026-09-03)
+- 事象: `/ja/signals/YYYY-MM/` が全期間で同じ保有を表示(殿 09-03 00:52『バグだな』)。真因=`hero.holding` は最新 Signal の holding_signal 1 値のみで、series は {year_month, multiple} だけ。
+- f392a504(AC1): `_hero_holding_by_month(db, portfolio_id)` を追加。Signal を date 昇順で 1 query し、月内で最大 date の holding_signal が勝つ。series 各要素に `holding`(None 可)を付与。`hero.holding`(最新)は維持。contract test 3 本(月内複数 signal/signal 無し月/holding 差異)。fallback 禁止。
+- 59b7b679(AC2): LP `monthly-signal-page.tsx` は `point.holding ?? "—"` を表示、`lib/showcase.ts` 型に `holding?`、copy ja/en に見出し追加。
+- 確認: post_deploy_check で 2008-10 と 2026-08 の保有欄が異なること(家老 lane)。
+- 境界=origin/main 59b7b679。
