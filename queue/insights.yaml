@@ -14421,7 +14421,10 @@ insights:
   priority: "high"
   source: "gate_loop_health"
   fix_known: false
-  status: pending
+  status: "resolved"
+  resolved_reason: "一次確認で「import json」は実FAILではなく、gate_fire_logのcross_repo_commits FIX hint内のpython3コマンドをgate_loop_health.shが「; 」分割して抽出した引用断片と判定。新規gate強化・推定auto-fixは不要。"
+  action_artifact: "target=queue/insights.yaml:INS-20260903-001619950-275c;primary=scripts/gates/gate_loop_health.sh:L120-L135,L267-L301;primary=logs/gate_fire_log.yaml:L54816-L54835;prior=tasks/lessons.md:L10445-L10455;decision_candidate=gate_loop_healthのreasons解析を構造化しFIX hint内コード断片をFAIL patternから除外する恒久修正を別cmdで検討"
+  resolved_at: "2026-09-03T01:43:20.060808"
 - id: INS-20260903-002130110-d8fb
   ts: "2026-09-03T00:21:30+09:00"
   insight: "publisher.sh を PUBLISHER_ONCE=1 で連続実行すると 2 回目に dequeued/ への move で FileNotFoundError traceback(既に移動済の request を再参照)。once 実行の request 選択と move の順序に競合/二重処理がある。"
