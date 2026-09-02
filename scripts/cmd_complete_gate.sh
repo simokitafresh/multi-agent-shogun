@@ -3740,17 +3740,40 @@ push_task_repositories() {
             fi
             local all_remote=true
             source_equivalent_used=false
+            local publisher_commit="" publisher_candidate
             for source_sha in "${source_commits[@]}"; do
                 if git -C "$repo" merge-base --is-ancestor "$source_sha" "$remote_tip"; then
                     continue
                 fi
                 if source_snapshot_matches_tip "$repo" "$source_sha" "$remote_tip"; then
                     source_equivalent_used=true
+                    continue
+                fi
+                # Single publisher (2026-09-03): the publisher lands the task as its own
+                # "publisher: task=<id>" commit on origin. Later commits on the tip may touch the
+                # same paths, so prove equivalence against that published commit (an ancestor of
+                # the tip) instead of the tip itself.
+                publisher_candidate=""
+                while IFS= read -r candidate; do
+                    [ -n "$candidate" ] || continue
+                    if source_snapshot_matches_tip "$repo" "$source_sha" "$candidate"; then
+                        publisher_candidate="$candidate"; break
+                    fi
+                done < <(git -C "$repo" log -300 --format=%H --grep='^publisher: task=' "$remote_tip" 2>/dev/null)
+                if [ -n "$publisher_candidate" ]; then
+                    source_equivalent_used=true
+                    publisher_commit="$publisher_candidate"
+                    echo "  git push: publisher publication proof ($repo source $source_sha equivalent to published ${publisher_candidate:0:12})"
                 else
                     all_remote=false
                     break
                 fi
             done
+            if [ "$all_remote" = true ] && [ -n "$publisher_commit" ]; then
+                # Receipt/worktree marker bind to the published commit so the L4 path proof
+                # compares against the blobs the publisher actually landed.
+                remote_tip="$publisher_commit"
+            fi
             if [ "$all_remote" = true ]; then
                 if [ "$receipt_expected" = true ]; then
                     write_source_publish_receipt "$receipt" "$CMD_ID" \
