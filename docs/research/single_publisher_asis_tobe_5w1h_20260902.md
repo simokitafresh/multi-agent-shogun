@@ -257,7 +257,7 @@ canary 判定: **(v1.8 殿裁定 D9)** infra と dm-signal の両 repo を U1 �
 
 - 根拠: 殿 2026-09-02 17:18『single_publisher_asis_tobe_5w1h_20260902.md も随時更新しないと後で混乱する』。設計本文(§0-§13)と実装の現在値を同じ file に置き、読者が別 file を探さずに済むようにする
 
-最終更新: 2026-09-02 20:20(CLEAR 2/3。cmd_4449 の敵対 fixture が U2 の実欠陥を検出=検証 cmd 型の実証)
+最終更新: 2026-09-02 20:32(push lane 1h 停止を解消、cmd_4450 report PASS・gate BLOCK 調査中)
 
 ### 14.1 unit × cmd 対応表(実装 cmd=片 CLI、検証 cmd=他 CLI・別番号。§9.1 共通 AC)
 | U | 内容 | 実装 cmd | 実装忍者(CLI) | 実装 commit | 実装 GATE | 検証 cmd | 検証忍者(CLI) | 検証 GATE |
@@ -290,6 +290,8 @@ canary 判定: **(v1.8 殿裁定 D9)** infra と dm-signal の両 repo を U1 �
 | 16:56-19:25 | **判断を検出器に従わせた**(殿 19:21『自分で制限をかけて複雑化していないか』) | 4445/4447/4446 は 4 観点 LGTM・report_verdict PASS なのに bundle は precheck 出力の『FAIL にせよ』に従い FAIL。偽陽性を消す hotfix を 4 本直列で待ち、軍師案 A(gate 直接実行)を家老が迂回と却下 | 将軍 19:23 下知: 4 観点 LGTM を正本に karo_attention へ FP 根拠を書いて APPROVE。FAIL 再発行と 5 本目 hotfix 待ちを禁止。主線を hotfix の CLEAR に従属させない | 4446 CLEAR 19:26、4445/4447 再生成中 |
 | 19:44-継続 | cmd_4445 SG7 APPROVE 後に gate が起動しない | gate_metrics/phases に 16:56 以降 0 行、ninja_monitor は 4448 を not_clear で skip | 家老へ gate 起動→CLEAR→4448 配備の順序 1 通(20:20) | 未解消 |
 | 20:17 | **cmd_4449 が U2 の実欠陥を検出**(検証 cmd 型の初の実証) | restore が manifest 未申告 path を tree 比較で見逃し rc 0(§9.1 U2『manifest 不一致は gate FAIL』違反)。既存 11/11 PASS では見えず、敵対 fixture で露出 | fail-close 報告→U2 実装者へ差し戻し→修正後 cmd_4449 再検証 | 修正 lane 未配備 |
+| 19:16-20:23 | **push lane 1h07m 停止**(unpushed 16) | worker 内で `fatal: unable to access …: Could not resolve host: github.com` が 19:50/19:57/20:03/20:09/20:15 の 5 回(将軍 shell からは ls-remote 到達)。lane は `network_failure` として 6 分ごとに同じ retry のみ | 将軍が `ninja_monitor.sh --lifecycle-worker check_push_lane` を前景で 1 回実行→20:23:49 PUSH(16 commit)、origin 618e95669 まで到達。**D15(retry counter+exhausted→家老 inbox)の必要性の実証**: 現行 lane は失敗を数えず沈黙して繰り返す(殿の『時間依存・サイレントフォールバック禁止』違反の現物) | 解消(20:32 ahead 4/behind 0=lane 通常運転) |
+| 20:24-20:26 | hotfix 3 件の REGATE-FAIL rc=1(ci_fix 33611379072 / ga554 / ga555) | push 直後の再 gate が `WAIT:report_commit_main_ancestry` のまま(lane の REGATE が origin 更新前の判定を使った可能性) | 次 cycle の自動再 gate を観測、20:51 loop で突合 | 未確認 |
 
 ### 14.3 §11 速度検証の現在値
 - before: snapshot 固定済み(merge 141/push 失敗 100/INTEGRATE 382/pre-push n=45 median 366 p90 1300/bats 270)。after は U8 完了後に同コマンドで計測(未着手)。
