@@ -1,5 +1,5 @@
 # CMD年代記
-<!-- last_updated: 2026-09-02 -->
+<!-- last_updated: 2026-09-03 -->
 
 > 完了cmdの1行索引。詳細は queue/archive/cmds/{cmd_id}.yaml 参照。
 
@@ -58,10 +58,6 @@
 
 | cmd | title | project | date | key_result |
 |-----|-------|---------|------|------------|
-| cmd_4222 | 殿下知2026-08-03 02:37『では起票せよ』。設計書v4.4(docs/research/dm-monthly-trade-bug-asis-tobe-5w1h_20260802.md §2.5レーンA0)のW0工程A0-0c: 月次境界日の一次SSOT(優先順位=ledger確定decisionの効力日→expanded weightsの実切替日)について、signal_decision_ledgerのどのフィールドが効力日を表すかをコード現物とDB現物で確定する。オラクル(A0-1)とboundary helper(B1)のStart前提を独立工程として供給する | dm-signal | 08-03 | signal_decision_ledgerの効力開始フィー |
-| cmd_4223 | 殿下知2026-08-03 02:37『では起票せよ』。設計書v4.5(docs/research/dm-monthly-trade-bug-asis-tobe-5w1h_20260802.md §2.5レーンA0)のW0工程A0-3: 同一暦月内の重複Monthly行のうち発生日が月初から離れた少数の残余(真の月中トレード疑い)を行単位で個別調査し、実トレードか記録バグかを確定分類する | dm-signal | 08-03 | 本番readonlyで§1c母集団14/14件を再現し、実ト |
-| cmd_4220 | 殿下知2026-08-03 02:37『では起票せよ』。設計書v3.9(docs/research/dm-monthly-trade-bug-asis-tobe-5w1h_20260802.md §2.5レーンA0)のW0工程A0-0a: Phase 0三者突合CSVの全行を§0.6の四分類(Normal・Partial・MTD・未開始)+要調査へ機械分類し、再裁定A0-2の母集団を確定する | dm-signal | 08-03 | A0-0c GATE CLEAR・v4.12後、本番read |
-| cmd_4221 | 殿下知2026-08-03 02:37『では起票せよ』。設計書v4.3(docs/research/dm-monthly-trade-bug-asis-tobe-5w1h_20260802.md §2.5レーンA0)のW0工程A0-0b: 月次境界日が当月初回取引日と一致しない月(執行ずれ月)の全数一覧を、汚染疑いのあるtrade_performance境界を母集団にせず、primitive(signals・ledger・prices・再帰展開)から独立導出する | dm-signal | 08-03 | 本番readonlyで102 PF・17,379 PF月をv |
 | cmd_4226 | 殿指示2026-08-04 02:36『株価の取得時間の表示もリアルタイムにしてくれ』。cmd_4225で計算価格が最新価格ソース化されas_ofが返るようになるのに対し、本cmdは画面上の価格取得時刻表示を最新tickに追随して更新し続けるようにする。現状の表示は取得時点で固定され、SSEで価格が動いても時刻表示が古いまま残りうる(ユーザー報告『現在値が反映されません』の誤認源の一つ) | rebalancer | 08-04 | SSE livePricesの最新as_of/fetched |
 | cmd_4227 | 殿裁可2026-08-04 11:20(設計書rebalancer-market-phase-asis-tobe-5w1h_20260804.md v1.2 §1・独立レビュー2系統反映済み)。フェーズ判定3系統併存の根治第1弾として、米国株式市場セッションの単一SSOT(clock snapshot層+pure phase関数)を実装する。セッション時刻・TTL・fixture日付は全て設計書v1.2 §1と§4が正 | rebalancer | 08-04 | clock snapshot取得を60秒refresh経路へ |
 | cmd_4224 | 殿下知2026-08-03 22:13『８月の保有シグナルの計算は完了しているか？BEの保有シグナルとFEの表示に乖離はないか？全PFを確認せよ』。殿の確立裁定(2026-05-01)=前月末終値が確定した時点で当月の保有ポジションは確定し、フル再計算後に当月保有シグナルが表示される仕組み。殿観察=あるFoF系PFは前月と当月の表示が異なる一方、別PFは前月と同一表示。BE実測では全PFのholding_signalが前月から不変のため、計算完了性と表示経路の乖離有無を全数で確定する | dm-signal | 08-04 | AC1-AC3 PASS。DB全102 PFの8月計算完了、 |

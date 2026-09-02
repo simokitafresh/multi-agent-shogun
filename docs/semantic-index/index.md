@@ -3421,6 +3421,7 @@ codd:
 | discussion | `queue/lord_conversation.jsonl` 2026-09-02T22:21:17+09:00 rebalancer 本番 500 修正完了(2026-09-02 22:20 将軍 D0、殿下知 22:13『将軍が責任をもって自分で直しコミットデプロイ本番確認まで』): rebalancer c8c3c8a = backend/app |
 | causal | `cmd_4454` files_modified: [[semantic_dictionary_design]] |
 | lesson | `L1710` locale非依存化fixは対象クラス全体を横断確認せよ。1関数だけ直すと同型バグが別関数に残り再発する |
+| lesson | `L1711` publisherの既公開判定はsource_treeのpath blobを正規解決する |
 | causal_chain | `[[cmd_3749]]` (L974) |
 | causal_chain | `[[cmd_training_L1_report-write_20260708020332]]` (L977) |
 | causal_chain | `[[cmd_reflux_insight_202607071717_tobisaru]]` (L961) |
@@ -3485,6 +3486,7 @@ codd:
 | causal_chain | `[[cmd_4446]]` (L1705) |
 | causal_chain | `[[cmd_karo_hotfix_u2_publish_artifact_restore_undeclared_path_202609022132]]` (L1707) |
 | causal_chain | `[[cmd_karo_ci_fix_33630722226_instructions_sync_fp_vocab_202609022153]]` (L1710) |
+| causal_chain | `[[cmd_karo_hotfix_u3_publisher_idempotent_restore_notify_202609022337]]` (L1711) |
 
 ## investment_knowledge_base — 投資知識辞書
 
@@ -14880,6 +14882,8 @@ codd:
 | cmd | `cmd_reflux_insight_202609022210_kagemaru` (`queue/insights.yaml`) |
 | causal | `cmd_reflux_insight_202609022228_saizo` files_modified: [[provisional_insights]] |
 | cmd | `cmd_reflux_insight_202609022228_saizo` (`queue/insights.yaml`) |
+| causal | `cmd_reflux_insight_202609022322_hanzo` files_modified: [[provisional_insights]] |
+| cmd | `cmd_reflux_insight_202609022322_hanzo` (`queue/insights.yaml`) |
 | causal_chain | `[[cmd_reflux_insight_202608040505_kagemaru]]` (L1545) |
 
 ## provisional_heavy_job_admission — 仮: Heavy Job Admission
@@ -16562,6 +16566,7 @@ codd:
 | discussion | `queue/lord_conversation.jsonl` 2026-09-02T14:11:13.159609+00:00 git pre-commit semantic propagation for context/projects changes |
 | discussion | `queue/lord_conversation.jsonl` 2026-09-02T14:25:52.565694+00:00 git pre-commit semantic propagation for context/projects changes |
 | discussion | `queue/lord_conversation.jsonl` 2026-09-02T14:47:14.258465+00:00 git pre-commit semantic propagation for context/projects changes |
+| discussion | `queue/lord_conversation.jsonl` 2026-09-02T14:57:52.278132+00:00 git pre-commit semantic propagation for context/projects changes |
 | causal_chain | `[[cmd_karo_hotfix_lessons_yaml_format_restore_20260727]]` (L1389) |
 
 ## infra_design_intent — インフラ設計意図カタログ

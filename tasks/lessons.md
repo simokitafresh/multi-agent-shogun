@@ -16681,3 +16681,29 @@ sqlite3.Connection.backup()を使うとページ(4096byte)単位のread syscall�
 - **when**: 未設定
 - **how**: 未設定
 - design.mdのAC1『publisher_queue.shのenqueue前にadmit呼出しを1行挿す』を実装すると、tests/unit/test_publisher_queue.bats(既存・cmd_4445実装)のsetup()はpublisher_admit.shをfixture rootへ用意していないため、その全testがbash: .../publisher_admit.sh: No such file or directoryでFAILした(commit_contract.planned_pathsの4ファイルに列挙されていない依存)。既存の外部依存を追加するhotfix/機能追加task設計時は、挿入先関数の全既存呼び出し元(rg -n の対象を関数/scriptで列挙)のtest fixtureが新依存を用意しているかを事前確認し、必要ならplanned_pathsへ既存test fixtureの最小stub追加を含めるべき。
+
+### L1710: locale非依存化fixは対象クラス全体を横断確認せよ。1関数だけ直すと同型バグが別関数に残り再発する
+- **日付**: 2026-09-02
+- **出典**: cmd_karo_ci_fix_33630722226_instructions_sync_fp_vocab_202609022153
+- **記録者**: tobisaru
+- **tags**: [infra,instructions,gate,bash,lesson]
+- **subdomain**: infra
+- **target_files**: [scripts/lib/gate_hook_quality_contract.sh,./AGENTS.md,.github/copilot-instructions.md,agents/default/system.md,instructions/generated/.build_cache/AGENTS.md.cache]
+- **origin**: [[cmd_karo_ci_fix_33630722226_instructions_sync_fp_vocab_202609022153]]
+- **enforcement**: 未自動化
+- **when**: 未設定
+- **how**: 未設定
+- gate_hook_quality_contract.shのfp_measurement側grep -qiE(日本語語彙混在正規表現)は3回(d8d2821b3/6b622373d/e52b849ac)修正されhas_measurement_vocabulary()のliteral substringへ移行済みだったが、構造的に同一のaction_conversion側grep -qiEは一度も修正対象にならず残存し、CI run 33630722226で同じクラスの失敗として再発した。『同じファイル内に同型のgrep -qiE呼び出しが複数ある場合、1箇所を直したら他の全箇所もgrep -rn <同じパターン語彙>で洗い出し、同じ修正パターンを横展開する』を教訓化する。origin: [[L1660]] -> [[fp_measurement側のみ3回修正]] -> [[action_conversion側未修正で再発]]
+
+### L1711: publisherの既公開判定はsource_treeのpath blobを正規解決する
+- **日付**: 2026-09-03
+- **出典**: cmd_karo_hotfix_u3_publisher_idempotent_restore_notify_202609022337
+- **記録者**: saizo
+- **tags**: [infra,testing,git]
+- **subdomain**: infra
+- **target_files**: [scripts/publisher.sh,scripts/lib/publisher_event.sh,tests/unit/test_publisher.bats]
+- **origin**: [[cmd_karo_hotfix_u3_publisher_idempotent_restore_notify_202609022337]]
+- **enforcement**: 未自動化
+- **when**: 未設定
+- **how**: 未設定
+- manifest source_treeはtree objectでありtree:pathのrev-parseではpath blobを解決できない。既公開判定はgit ls-treeでsource_tree/pathのblobを取得し、tip blobと完全一致した時だけalready_publishedへ進む。
