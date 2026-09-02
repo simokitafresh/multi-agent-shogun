@@ -14671,3 +14671,10 @@ insights:
   source: "semantic_stress_test"
   fix_known: false
   status: pending
+- id: INS-20260903-015719715-8be6
+  ts: "2026-09-03T01:57:19+09:00"
+  insight: "U3 publisher active 化後、reflux exact task(reflux_commit_contract、artifact capture 経路なし)の ACCEPT request は publisher が『missing artifact』(publisher.sh L137、rc 31)で rc/ へ回し、gate は legacy ancestry 経路(auto-push)で CLEAR した(影丸 reflux 01:55 実測)。reflux/exact 型は artifact capture を持たないため publisher 対象外にするか、enqueue 時点で capture を行う設計判断が要る(U7/U8)。"
+  priority: "medium"
+  source: "manual"
+  fix_known: false
+  status: pending
