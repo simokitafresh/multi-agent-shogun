@@ -14627,3 +14627,10 @@ insights:
   source: "semantic_stress_test"
   fix_known: false
   status: pending
+- id: INS-20260903-014546344-a0fd
+  ts: "2026-09-03T01:45:46+09:00"
+  insight: "[[プッシュも完了しているか？]] semantic_stress_test candidate_aliases: NO_MATCH source=lord query=プッシュも完了しているか？"
+  priority: "low"
+  source: "semantic_stress_test"
+  fix_known: false
+  status: pending
