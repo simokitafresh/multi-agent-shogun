@@ -15108,7 +15108,10 @@ insights:
   priority: "medium"
   source: "skill_script_refs:9abfd94ce2d8bec9"
   fix_known: false
-  status: pending
+  status: "resolved"
+  resolved_reason: "一次情報で34組を再検分し、参照先欠落0・鮮度差0・静的例示パス欠落0・副作用実走marker欠落0を確認。rc=2は既存follow-upが扱うREVIEW_REQUIREDで、同一sourceの既存resolved記録に被覆されるため追加実修正とdecision_candidateは不要。"
+  action_artifact: "target=queue/insights.yaml:INS-20260903-071932329-ab8e;gate=scripts/gates/gate_skill_script_refs.sh;rc=2;observed=42_SKILL.md/83_refs/31_with_refs/required0/deduped34/missing_refs0/stale_refs0/example_paths_missing0;duplicate_of=INS-20260902-131626077-2cd0;decision_candidate=none"
+  resolved_at: "2026-09-03T07:45:53.162726"
 - id: INS-20260903-071951713-5411
   ts: "2026-09-03T07:19:51+09:00"
   insight: "semantic_index_update未登録cmd originノード: [[家老発見_ledger_route未稼働_20260903_0458]] は既存aliasesに一致なし。類似概念TOP3: growth_loop(学習ループ; alias=loop_ledger; score=14.5) / skill_design_rules(Skill設計ルール; alias=skill outcome ledger; score=14.4) / commit_reservation_ledger_asis_tobe_20260805(commit予約台帳設計; alias=commit reservation ledger; score=13.9)。概念定義とaliases追加を検討せよ"
