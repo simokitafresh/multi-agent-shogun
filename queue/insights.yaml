@@ -13311,3 +13311,10 @@ insights:
   source: "semantic_stress_test"
   fix_known: false
   status: pending
+- id: INS-20260902-151058052-3468
+  ts: "2026-09-02T15:10:58+09:00"
+  insight: "[[30分ごとのループは今も有効？]] semantic_stress_test candidate_aliases: NO_MATCH source=lord query=30分ごとのループは今も有効？"
+  priority: "low"
+  source: "semantic_stress_test"
+  fix_known: false
+  status: pending
