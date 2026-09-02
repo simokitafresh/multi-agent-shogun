@@ -989,6 +989,36 @@ print('CONCURRENT_OK entries=' + str(len(entries)) + ' resolved=' + str(len(reso
     [[ "$output" == *"merge.semantic-index-regenerate.driver bash ${repo}/scripts/semantic_index_update.sh --merge-driver %O %A %B"* ]]
 }
 
+# test_necessity: registering the merge driver from a linked worktree must
+# still resolve to the primary worktree root (INS-20260903-012906038-b245:
+# a driver command that bakes in the linked worktree's own removable path
+# fails every future merge once that worktree is reclaimed).
+@test "merge driver設定: linked worktreeから登録してもdriver pathは正本rootになる" {
+    local root="$TEST_TMP/driver-root" linked="$TEST_TMP/driver-linked"
+    mkdir -p "$root/scripts/lib"
+    cp "$PROJECT_ROOT/scripts/insight_write.sh" "$root/scripts/insight_write.sh"
+    ln -s "$PROJECT_ROOT/scripts/lib/yaml_field_set.sh" "$root/scripts/lib/yaml_field_set.sh"
+    ln -s "$PROJECT_ROOT/scripts/lib/defense_overhead_writer.sh" "$root/scripts/lib/defense_overhead_writer.sh"
+    ln -s "$PROJECT_ROOT/scripts/semantic_index_update.sh" "$root/scripts/semantic_index_update.sh"
+    git init -q "$root"
+    git -C "$root" add -A
+    git -C "$root" -c user.email=t@t -c user.name=t commit -q -m init
+    git -C "$root" worktree add -q -b feature-branch "$linked"
+
+    run bash "$linked/scripts/insight_write.sh" --configure-merge-driver
+    [ "$status" -eq 0 ]
+    run git -C "$root" config --get-regexp '^merge\.(insights-id|bulletin-id|karo-workarounds-id|semantic-index-regenerate)\.driver$'
+    [ "$status" -eq 0 ]
+    [[ "$output" != *"$linked"* ]]
+    [[ "$output" == *"merge.insights-id.driver bash ${root}/scripts/insight_write.sh --merge-driver %O %A %B"* ]]
+    [[ "$output" == *"merge.karo-workarounds-id.driver bash ${root}/scripts/insight_write.sh --stable-merge-driver workarounds %O %A %B"* ]]
+
+    git -C "$root" worktree remove --force "$linked"
+    run git -C "$root" config --get merge.karo-workarounds-id.driver
+    [ "$status" -eq 0 ]
+    [ "$output" = "bash ${root}/scripts/insight_write.sh --stable-merge-driver workarounds %O %A %B" ]
+}
+
 # test_necessity: Bulletin and workaround append ledgers must union disjoint
 # stable IDs exactly once and reject divergent same-ID edits.
 @test "stable runtime ledgers: bulletin and workaround IDs compose and conflict closed" {
@@ -1014,6 +1044,42 @@ PY
     run bash "${TEST_TMP}/scripts/insight_write.sh" --stable-merge-driver workarounds "$base" "$ours" "$theirs"
     [ "$status" -eq 1 ]
     [[ "$output" == *"same workaround command ID changed on both parents: WA-BASE"* ]]
+}
+
+# test_necessity: a single cmd_id legitimately logs multiple WA events (e.g.
+# a manual entry plus its auto-captured rework observation, as in
+# logs/karo_workarounds.yaml L1028/L1041). The merge driver must key
+# workaround identity on cmd_id+timestamp so those repeats parse and merge
+# instead of aborting as a duplicate cmd_id.
+@test "同一cmd_idの複数WA記録はmergeを壊さない" {
+    local base="$TEST_TMP/wa-dup-base.yaml" ours="$TEST_TMP/wa-dup-ours.yaml" theirs="$TEST_TMP/wa-dup-theirs.yaml"
+    cat >"$base" <<'EOF'
+- cmd_id: cmd_example_20260902
+  timestamp: '2026-09-02T03:43:57Z'
+  detail: manual
+- cmd_id: cmd_example_20260902
+  timestamp: '2026-09-02T03:48:46Z'
+  detail: auto_captured
+EOF
+    cp "$base" "$ours"
+    cp "$base" "$theirs"
+    cat >>"$theirs" <<'EOF'
+- cmd_id: cmd_theirs_only
+  timestamp: '2026-09-02T05:00:00Z'
+  detail: theirs
+EOF
+    run bash "${TEST_TMP}/scripts/insight_write.sh" --stable-merge-driver workarounds "$base" "$ours" "$theirs"
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"STABLE_MERGE_OK kind=workarounds entries=3 duplicate_ids=0"* ]]
+    run python3 - "$ours" <<'PY'
+import sys, yaml
+rows = yaml.safe_load(open(sys.argv[1], encoding="utf-8"))
+ids = [row["cmd_id"] for row in rows]
+assert ids.count("cmd_example_20260902") == 2, ids
+assert "cmd_theirs_only" in ids, ids
+assert len(rows) == 3, rows
+PY
+    [ "$status" -eq 0 ]
 }
 
 # test_necessity: Semantic concept blocks must merge by canonical concept ID,

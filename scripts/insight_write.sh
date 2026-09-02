@@ -51,6 +51,13 @@ if [ "${1:-}" = "--configure-merge-driver" ]; then
   [[ "$#" -le 2 ]] || { echo "ERROR: --configure-merge-driver accepts at most one repo path" >&2; exit 2; }
   merge_repo="${2:-$SCRIPT_DIR}"
   merge_repo="$(cd "$merge_repo" && pwd)"
+  # Resolve the primary worktree root (parent of the shared git-common-dir)
+  # so a registration run from a linked worktree does not bake that
+  # worktree's removable absolute path into the shared .git/config driver
+  # commands (INS-20260903-012906038-b245: the linked worktree path survives
+  # in merge.*.driver after the worktree is reclaimed, failing every merge).
+  driver_common_dir="$(git -C "$merge_repo" rev-parse --path-format=absolute --git-common-dir)"
+  driver_root="$(cd "$driver_common_dir/.." && pwd)"
   # Runtime ledgers are different contracts: append-only ID ledgers compose
   # by stable key, while generated/stable documents use their own driver.
   # Keep all registrations in this one setup entrypoint so a fresh clone does
@@ -58,17 +65,17 @@ if [ "${1:-}" = "--configure-merge-driver" ]; then
   git -C "$merge_repo" config merge.ours.driver true
   git -C "$merge_repo" config merge.insights-id.name "ID-keyed insights merge"
   git -C "$merge_repo" config merge.insights-id.driver \
-    "bash $merge_repo/scripts/insight_write.sh --merge-driver %O %A %B"
+    "bash $driver_root/scripts/insight_write.sh --merge-driver %O %A %B"
   git -C "$merge_repo" config merge.bulletin-id.name "ID-keyed bulletin merge"
   git -C "$merge_repo" config merge.bulletin-id.driver \
-    "bash $merge_repo/scripts/insight_write.sh --stable-merge-driver bulletin %O %A %B"
+    "bash $driver_root/scripts/insight_write.sh --stable-merge-driver bulletin %O %A %B"
   git -C "$merge_repo" config merge.karo-workarounds-id.name "ID-keyed karo workarounds merge"
   git -C "$merge_repo" config merge.karo-workarounds-id.driver \
-    "bash $merge_repo/scripts/insight_write.sh --stable-merge-driver workarounds %O %A %B"
+    "bash $driver_root/scripts/insight_write.sh --stable-merge-driver workarounds %O %A %B"
   git -C "$merge_repo" config merge.semantic-index-regenerate.name "Regenerate semantic index from merged source"
   git -C "$merge_repo" config merge.semantic-index-regenerate.driver \
-    "bash $merge_repo/scripts/semantic_index_update.sh --merge-driver %O %A %B"
-  echo "configured runtime merge drivers for $merge_repo"
+    "bash $driver_root/scripts/semantic_index_update.sh --merge-driver %O %A %B"
+  echo "configured runtime merge drivers for $merge_repo (driver root: $driver_root)"
   exit 0
 fi
 
@@ -88,13 +95,27 @@ from pathlib import Path
 import yaml
 
 kind, ancestor_path, ours_path, theirs_path = sys.argv[1:]
+# workarounds carries legitimate repeat cmd_id entries (one command can log
+# several WA events, e.g. a manual entry plus an auto-captured rework
+# observation). The identity key for that kind must be cmd_id+timestamp so
+# those repeats do not collide as duplicates; bulletin ids stay singular.
 spec = {
-    "bulletin": ("entries", "id", "bulletin entry ID"),
-    "workarounds": (None, "cmd_id", "workaround command ID"),
+    "bulletin": ("entries", "id", "bulletin entry ID", None),
+    "workarounds": (None, "cmd_id", "workaround command ID", "timestamp"),
 }
 if kind not in spec:
     raise SystemExit(f"BLOCK: unsupported stable merge kind: {kind}")
-container_key, id_key, label = spec[kind]
+container_key, id_key, label, composite_key = spec[kind]
+
+
+def entry_identity(item):
+    primary = str(item.get(id_key, "")).strip()
+    if not composite_key:
+        return primary
+    secondary = str(item.get(composite_key, "")).strip()
+    if not secondary:
+        return primary
+    return f"{primary}\x1f{secondary}"
 
 
 def parse_document(path, name):
@@ -139,9 +160,13 @@ def parse_document(path, name):
             item = item[0]
         if not isinstance(item, dict) or not str(item.get(id_key, "")).strip():
             raise ValueError(f"{name} has an invalid {label}")
-        item_id = str(item[id_key])
+        item_id = entry_identity(item)
         if item_id in entries:
-            raise ValueError(f"{name} duplicate {id_key}: {item_id}")
+            if composite_key:
+                raise ValueError(
+                    f"{name} duplicate {label}: {item[id_key]} @ {item.get(composite_key)}"
+                )
+            raise ValueError(f"{name} duplicate {label}: {item[id_key]}")
         entries[item_id] = (item, raw)
         order.append(item_id)
     if len(order) != len(expected):
@@ -177,7 +202,8 @@ try:
         if chosen is not None:
             merged_entries[item_id] = chosen
     if conflicts:
-        print(f"BLOCK: same {label} changed on both parents: " + ", ".join(sorted(conflicts)), file=sys.stderr)
+        display = sorted(c.replace("\x1f", " @ ") for c in conflicts)
+        print(f"BLOCK: same {label} changed on both parents: " + ", ".join(display), file=sys.stderr)
         raise SystemExit(1)
     order = [item_id for item_id in ours[4] if item_id in merged_entries]
     order.extend(item_id for item_id in theirs[4] if item_id in merged_entries and item_id not in order)
@@ -190,9 +216,11 @@ try:
         merged_text += "\n"
     parsed = yaml.safe_load(merged_text)
     rows = parsed.get(container_key) if isinstance(parsed, dict) else parsed
-    ids = [str(row.get(id_key, "")) for row in (rows or [])]
-    if len(ids) != len(set(ids)) or any(not item_id.strip() for item_id in ids):
-        raise ValueError(f"merged {kind} has duplicate or empty {id_key}s")
+    rows = rows or []
+    identities = [entry_identity(row) if isinstance(row, dict) else "" for row in rows]
+    primary_ids = [str(row.get(id_key, "")) if isinstance(row, dict) else "" for row in rows]
+    if len(identities) != len(set(identities)) or any(not primary.strip() for primary in primary_ids):
+        raise ValueError(f"merged {kind} has duplicate or empty {label}s")
     target = Path(ours_path)
     fd, temporary = tempfile.mkstemp(prefix=f".{kind}-merge.", suffix=".tmp", dir=target.parent)
     try:
@@ -204,7 +232,7 @@ try:
     finally:
         if os.path.exists(temporary):
             os.unlink(temporary)
-    print(f"STABLE_MERGE_OK kind={kind} entries={len(ids)} duplicate_ids=0")
+    print(f"STABLE_MERGE_OK kind={kind} entries={len(identities)} duplicate_ids=0")
 except (OSError, ValueError, yaml.YAMLError) as exc:
     print(f"BLOCK: {kind} merge failed: {exc}", file=sys.stderr)
     raise SystemExit(2)
