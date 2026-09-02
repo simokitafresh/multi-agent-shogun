@@ -1,5 +1,6 @@
 # インフラコンテキスト
 <!-- last_updated: 2026-09-02 context_freshness reviewed source boundary -->
+<!-- source_commit:a6ebc5b58176 reason:context_freshness reviewed source boundary evidence:context_freshness_check context=context/infrastructure.md commit=a6ebc5b58176 -->
 <!-- source_commit:6a7e852ec151 reason:context_freshness reviewed source boundary evidence:context_freshness_check context=context/infrastructure.md commit=6a7e852ec151 -->
 <!-- source_commit:257c0c6de90f reason:2026-09-02 将軍 doc lane: source publication terminal 257c0c6de evidence:GATE CLEAR cmd_karo_hotfix_source_publication_terminal_20260902133800; 314/314 PASS -->
 <!-- source_commit:066bbede7c2e reason:2026-09-02 将軍 doc lane: review_approval JST epoch+archive 履歴 066bbede7 evidence:GATE CLEAR 12:49 cmd_karo_hotfix_review_epoch_refresh_20260902; 066bbede7 origin 祖先 yes -->

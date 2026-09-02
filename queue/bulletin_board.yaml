@@ -332,3 +332,53 @@ entries:
   notify_targets: []
   confirmed_by: []
   status: 'open'
+- id: 'blt_20260902_233846_ae1a94'
+  content: |-
+    cmd_4455 post_deploy_check(家老 lane、将軍裁定 23:34 (d)): 才蔵 commit 8422d8c3 は DM-signal origin/main に到達し Render dm-signal-lp が自動 deploy 済。集計コマンド: curl -s -o /dev/null -w '%{http_code}' https://dm-signal.com/signals/ ; https://dm-signal.com/ja/signals/ ; curl -s https://dm-signal.com/sitemap.xml | grep -c '<loc>' ; curl -s https://dm-signal.com/ | grep -c 'href="/signals/' / 出力行: 'EN=200 JA=200 loc=558 href=0' / 1件の定義: sitemap の <loc> 要素 1 つ、または / 内の /signals/ への href 1 つ。判定: /signals/ 200(EN/JA)、sitemap 558 loc(期待 556 以上)、LP 導線 href 0 件。殿の note リンク先は稼働中。
+  posted_by: 'karo'
+  posted_at: '2026-09-02T23:38:46'
+  requires_confirmation: false
+  action_type: 'info'
+  actioned_by: ''
+  notify_targets:
+    - 'shogun'
+  confirmed_by:
+    - 'shogun'
+  status: 'closed'
+- id: 'blt_20260902_234103_712651'
+  content: |-
+    cmd_4455 post_deploy_check 訂正・完了(家老 lane): 先報の href=0 は JP からの https://dm-signal.com/ が Cloudflare 規則で /ja/ へ 302(size 143)するためで、EN 本体は Render origin で確認。Render dm-signal-lp(srv-da9uon8n74is739a1uhg)は dep-dac3301t0dsc73d7qqk0 live、commit 8422d8c34、23:25 JST 完了。集計コマンド: curl -s https://dm-signal-lp.onrender.com/ | grep -c 'href="https://dm-signal.com/signals/"' ; curl -s https://dm-signal.com/ja/ | grep -c 'href="https://dm-signal.com/ja/signals/"' / 出力行: 'EN=1 JA=1' / 1件の定義: トップ footer 内の signals 一覧への href 1 つ。/signals/ 200・/ja/signals/ 200・sitemap 558 loc。全 AC 本番充足。
+  posted_by: 'karo'
+  posted_at: '2026-09-02T23:41:03'
+  requires_confirmation: false
+  action_type: 'info'
+  actioned_by: ''
+  notify_targets:
+    - 'shogun'
+  confirmed_by:
+    - 'shogun'
+  status: 'closed'
+- id: 'blt_20260902_234421_10881b'
+  content: |-
+    DOC_LANE_REQUEST: CONTEXT_UPDATE_REQUEST project=infra context=context/infrastructure.md source_commit=a6ebc5b58176 parent_cmd=cmd_karo_hotfix_report_format_manifest_dotslash_202609022312 reason=approved_source_commit owner_route=shogun-doc-lane
+  posted_by: 'gate_context_freshness'
+  posted_at: '2026-09-02T23:44:21'
+  requires_confirmation: false
+  action_type: 'action_required'
+  actioned_by: ''
+  notify_targets:
+    - 'shogun'
+  confirmed_by:
+    - 'shogun'
+  status: 'closed'
+- id: 'blt_20260902_234642_e3a2cd'
+  content: |-
+    GATE CLEAR cmd_karo_hotfix_report_format_manifest_dotslash_202609022312: 完了
+  posted_by: 'karo'
+  posted_at: '2026-09-02T23:46:42'
+  requires_confirmation: false
+  action_type: 'info'
+  actioned_by: ''
+  notify_targets: []
+  confirmed_by: []
+  status: 'open'

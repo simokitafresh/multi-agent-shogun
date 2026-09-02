@@ -1,4 +1,53 @@
 commands:
+  cmd_4456:
+    title: "LP 画像 SEO: 検索結果にチャートのサムネイルを出す条件を揃える — 全頁 max-image-preview:large+構造化データの image/logo+月次頁にチャート画像と og:image/Article+img の width/height"
+    status: draft
+    project: dm-signal
+    purpose: "殿 2026-09-02 23:35『google で検索したときにチャート画像が横に出るといいよな。ALT も登録しているのか？』→23:41『起票せよ』。本番 curl 23:37 一次: LP は img 1 枚(basic-dm-vs-spy PNG 1566×921、alt あり)だが robots に max-image-preview 0、JSON-LD の Organization に logo 0・WebSite に image 0、img に width/height 0。月次頁 558 本は img 0・og:image 0・JSON-LD 0・twitter:card=summary。Google が結果横にサムネイルを出す条件(大きい関連画像+max-image-preview:large+構造化データでの画像宣言)を LP と月次頁の両方で満たす(SEO 案 v5 docs/research/dm-signal-lp-seo-plan_20260830.md の次弾)"
+    scope_mode: FULL
+    target_path: lp
+    acceptance_criteria:
+      AC1:
+        description: "root layout の metadata.robots を index/follow に加えて googleBot の max-image-preview:large・max-snippet:-1・max-video-preview:-1 を含む形にする(Next.js 14 Metadata の robots.googleBot)。structured-data component の Organization に logo(ImageObject、url=siteUrl の og 画像、width/height を実寸で)、WebSite に image を追加。landing-page component の chart img に width=1566 height=921 と loading=lazy を追加(alt は現状維持)。path は command 1 の file 一覧を正とする。cd lp && npm ci && npm run typecheck && npm run build が exit 0。中断再開時の成果物引継ぎ: 未 commit の worktree 差分と build log を報告 YAML の progress に path で残し、再開者はそこから継続する"
+        binary_check: "build 後の out の EN/JA top index に max-image-preview:large を含む robots meta が各 1 ∧ Organization JSON-LD に logo の url が 1 かつ WebSite に image が 1 ∧ chart img に width と height 属性が各 1 ∧ typecheck/build exit 0 か?"
+      AC2:
+        description: "monthly-signal-page component にチャート画像 1 枚(当面は LP と同じ静的 PNG を流用、alt は copy の en/ja に追加した key から『Basic-DualMomentum vs SPY through <month>, log scale』の型で月を埋める、width/height 付き)を追加。signals month page(EN/JA)の generateMetadata に openGraph.images(同 PNG、width/height/alt)と twitter card=summary_large_image+images を追加し、Article JSON-LD(headline=title、datePublished=<month>-01、dateModified=最新月は data-through 日付、image=同 PNG、inLanguage、mainEntityOfPage=canonical)を月次頁本文へ 1 つ出す。一覧 page(EN/JA)にも og:image を追加。価格・無料期間の文言追加は禁止(SEO 案 §3)。変更 file は command 2 の commit 対象 10 file 以内"
+        binary_check: "out の signals/2026-08 index に img 1(alt に 2026-08 を含む、width/height 各 1)∧ og:image 1 ∧ twitter:card=summary_large_image 1 ∧ Article JSON-LD 1(image 1、datePublished=2026-08-01)∧ signals/2003-09 index でも同じ 4 点が 1 ずつ ∧ 一覧 index に og:image 1 ∧ rg -i 'free trial|first month free|初月無料' lp → 0 ∧ 変更 file 10 以内 か?"
+    command: |
+      1. docs/research/dm-signal-lp-seo-plan_20260830.md v5 と origin/main(8422d8c3)の lp/app/layout.tsx・lp/components/structured-data.tsx・lp/components/landing-page.tsx L129 を読み、origin/main を base に AC1(robots googleBot・Organization logo・WebSite image・img width/height)を実装し、cd lp && npm ci && npm run typecheck && npm run build を通し、out/ を grep で binary_check どおりに数える。
+      2. AC2 を lp/components/monthly-signal-page.tsx・lp/app/signals/[month]/page.tsx・lp/app/ja/signals/[month]/page.tsx・lp/app/signals/page.tsx・lp/app/ja/signals/page.tsx・lp/copy/en.ts・lp/copy/ja.ts に実装して再 build し、bash scripts/ninja_scope_commit.sh -m "<msg>" -- lp/app/layout.tsx lp/components/structured-data.tsx lp/components/landing-page.tsx lp/components/monthly-signal-page.tsx lp/app/signals/[month]/page.tsx lp/app/ja/signals/[month]/page.tsx lp/app/signals/page.tsx lp/app/ja/signals/page.tsx lp/copy/en.ts lp/copy/ja.ts で commit し、報告 YAML に source_sha・build log path・out/ の件数 8 点を書く。deploy(Render dm-signal-lp 自動)と本番 curl(/ja/ に max-image-preview、/signals/2026-08/ に og:image と Article)は家老 lane の post_deploy_check で行う。
+    assumptions:
+      claim: "origin/main 8422d8c3(cmd_4455)に lp/app/layout.tsx(metadata.robots={index,follow} のみ)・lp/components/structured-data.tsx(Organization に logo 無し、WebSite に image 無し)・lp/components/landing-page.tsx L129 の img(alt あり、width/height 無し)・lp/app/signals/[month]/page.tsx(openGraph に images 無し)・lp/public/basic-dm-vs-spy_20260831.png(1566×921、144KB)・og-en.png/og-ja.png が存在(git show origin/main で 2026-09-02 23:42 確認)。本番 /ja/ の robots meta は 'index, follow' のみ、max-image-preview 0(curl 23:37)"
+      source: "git show origin/main:lp/app/layout.tsx, lp/components/structured-data.tsx, lp/components/landing-page.tsx, lp/app/signals/[month]/page.tsx(DM-signal origin/main 8422d8c3)、本番 curl https://dm-signal.com/ja/ と /signals/2026-08/ 2026-09-02 23:37、docs/research/dm-signal-lp-seo-plan_20260830.md v5"
+      trust: verified
+    timeout_minutes: 45
+    estimated_minutes: 30
+    execution_env:
+      runtime_constraints: "npm ci+next build は lp/ 配下で完結(getShowcase のビルド時 fetch のみ=読み取り)。本番 deploy は本 cmd の範囲外(家老 lane)"
+      long_runtime_reason: "next build が 558 静的頁生成で 1 回 3-5 分、AC1/AC2 で最低 2 回 build する(同型 cmd_4455 実測 23:04 委任→23:25 CLEAR)。AC2 の alt/og/Article は同じ月 string と同じ PNG を共有するため 1 忍者で一貫させる"
+      measured_runtime_sec: 1800
+    split_decision:
+      boundary_ac_ids: [AC1, AC2]
+      integration_tasks: 1
+    serial_dependency_evidence: "AC2 の月次頁 Article/og は AC1 で決める画像の実寸(width/height)と Organization logo の url を参照する(同じ PNG と同じ寸法を 1 か所で定義して使い回す)。別忍者に分けると寸法と url の定義が二重になる"
+    quality_gate:
+      q1_firefighting: "品質向上。理由: 検索結果のサムネイル表示条件(max-image-preview・構造化データの画像・大きい関連画像)を頁の型に埋め込み、月が増えても自動で満たす"
+      q2_learning: "奪わない。理由: 忍者の判断点は alt の文言型と Article の日付 2 つで、いずれも AC に固定"
+      q3_next_quality: "上がる。理由: 月次頁にチャートが乗ると、次弾で月ごとのチャート生成(公開集計 EP から)へ差し替えるだけになる"
+      q4_depth: "medium — 理由: 既存 7 file+copy 2 の小変更、binary は out/ の件数 8 点"
+      q5_verified_source: "structure_verified — 対象を実行して確認(2026-09-02 23:37-23:42): curl /ja/ | grep -c max-image-preview → 0、grep -o '<img[^>]*>' → alt あり width 0、python struct で PNG 1566×921、curl /signals/2026-08/ | grep -c og:image → 0、grep twitter:card → summary、git show origin/main:lp/app/layout.tsx → robots: { index: true, follow: true }"
+      q6_not_hiding: "隠していない。理由: 『alt はある』で終えず、サムネイル表示に足りない 4 条件を本番 curl で数値化した。月次頁の画像は当面 LP と同じ静的 PNG の流用であることを AC に明記"
+      q7_definition_verified: "max-image-preview・Article・ImageObject の定義は Next.js 14 Metadata robots.googleBot と schema.org の各型、および Google 検索セントラル『robots meta タグ』『Article 構造化データ』で確認(確認日: 2026-09-02)"
+      q8_why_what: "WHY: 殿 23:35 検索結果にチャートを出したい / WHAT: robots googleBot+logo/image+img 寸法+月次頁 img/og/Article / WHEN: cmd_4455 live 後の今夜 / WHERE: DM-signal lp/ / WHO: 家老配備(Claude/Codex どちらでも) / HOW: 同じ PNG と寸法を 1 か所で定義し out/ を数える / 複利: 月次頁 558 本全てに一度で効く"
+      q9_firefighting_root_cause: "根本対応。理由: 画像を 1 枚足すのではなく、サムネイル表示の判定条件(robots・構造化データ・寸法)を頁の型へ入れる"
+      q10_knowledge_boundary: "検証済み: LP と月次頁の meta/JSON-LD/img の現物、PNG 寸法。スコープ外: 月ごとのチャート画像生成、Google 側の表示判定時期、og 画像の再デザイン"
+      q11_not_already_done: "既存代替の現物確認(2026-09-02 23:37): curl /ja/ | grep -c 'max-image-preview' → 0、grep -o '\"logo\"' → 0、curl /signals/2026-08/ | grep -c '<img' → 0、grep -c 'ld+json' → 0"
+      q_ambiguity: "曖昧さ: Article の datePublished。解消: <month>-01、dateModified は最新月のみ data-through 日付(cmd_4455 と同じ規則)、他は <month>-01。どちらを使ったかを報告 YAML に書く"
+      q12_lord_30min_cost: "no — 殿 23:41『起票せよ』で確定、判定は out/ の件数"
+      diagnosis: "BLOCK理由: 該当なし(新規起票) / 対策: 既存 7 file+copy 2 の小変更、build 2 回"
+    environment_change: "type=lesson; file=projects/infra/lessons_shogun.yaml; pattern=cmdテンプレートルール"
+    depends_on: none
+    origin: "[[殿指摘_検索結果にチャート_20260902_2335]] -> [[サムネイル条件4点欠落_max-image-preview0]] -> [[cmd_4456_image_seo]]"
   cmd_4453:
     title: "単一 publisher U5: scripts/publisher_admit.sh(承認 2 file の存在で admit、doc kind は将軍 identity+path allowlist、R13 db_migration は migration_ack 必須)と review_approval.sh karo ACCEPT --migration-ack(唯一の enqueue caller・唯一の ack writer)"
     status: delegated

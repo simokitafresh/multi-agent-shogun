@@ -1635,3 +1635,4 @@
 - 2026-09-02 22:59 cmd_4454(疾風 U6 ledger_writer)GATE CLEAR(偽 BLOCK→直接再実行)。才蔵 reflux CLEAR。4453/半蔵 hotfix/飛猿 ci_fix は報告契約の記載修正 RC 中(repo path/files_modified/manifest path)。
 - 2026-09-02 23:10 半蔵 integrate read-tree hotfix GATE CLEAR(偽 BLOCK→直接再実行、bbfcca679)。cmd_4455(月次頁孤立解消)を才蔵へ配備。飛猿 ci_fix は gate_report_format 内で path 形式('/'必須)と manifest 厳密一致('./'無し)が矛盾し top-level file 報告が通らない(PD-141/INS-7c46)。
 - 2026-09-02 23:22 U5 統合により karo ACCEPT→publisher_queue enqueue が有効化、gate は publisher_pending で WAIT。U3 daemon 未起動(dry-run 既定)のため全 CLEAR 閉塞→将軍へ裁定要請(推奨=daemon active 起動)。
+- 2026-09-02 23:42 cmd_4455 本番反映確認(Render dep-dac3301t live 8422d8c34、/signals/ EN/JA 200、sitemap 558、導線 EN1/JA1)。gate rglob 1 行 hotfix→小太郎、U3 欠陥 3 点→才蔵、dotslash hotfix は LG051 caller 証跡 RC。
