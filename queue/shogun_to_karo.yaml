@@ -1,4 +1,87 @@
 commands:
+  cmd_4458:
+    title: "単一 publisher U1 再検証(cmd_4448 の後継): Codex 忍者が隔離 clone で修正後の publisher_queue(enqueue の sequence lock eb136fdbc)に対し bats 9 本を選択実行し、並行 enqueue の FIFO 敵対 fixture をもう 1 本追加して順序契約を証明する"
+    status: draft
+    project: infra
+    purpose: "殿 2026-09-03 00:49『再検証 cmd を起票せよ』。cmd_4448(影丸 Codex)は隔離 clone で FIFO fixture が 8/9 FAIL=dequeue が epoch_seq の辞書順で秒境界をまたぐ並行 enqueue の順序を崩す欠陥を検出し fail-close(家老 ACCEPT)、才蔵の修正 lane(採番→原子的公開まで sequence lock)が origin eb136fdbc で着地(CLEAR 22:05、8 並行×20 回逆転 0)。§9.1 共通 AC に従い新番号で再検証(§14.1 U1 行の残件)"
+    scope_mode: FULL
+    target_path: tests/unit
+    acceptance_criteria:
+      AC1:
+        description: "origin/main(eb136fdbc 以降)を隔離 clone し、scripts/publisher_queue.sh の enqueue に sequence lock が到達していることを grep で確認した上で、選択実行 bash scripts/run_tests.sh file tests/unit/test_publisher_queue.bats を FAIL 0・SKIP 0 で通し(既存 9 test、cmd_4448 で FAIL した FIFO fixture を含む)、実行 log を報告 YAML に path で残す"
+        binary_check: "隔離 clone の enqueue に lock 取得の行が 1 以上 ∧ @test 9 本 ∧ 選択実行 FAIL 0 ∧ SKIP 0 ∧ 実行 log の path が報告にある か?"
+      AC2:
+        description: "設計書 §9.1 U1 行・§6 D2/D3/D14 から、既存 9 本に無い敵対 fixture を 1 本(候補: 秒境界をまたぐ 2 秒間の並行 enqueue 16 件で dequeue 順==投入順 / enqueue 途中で process を異常終了させても seq に欠番・重複が出ない / STATE_DIR が root 配下を指す時に rc≠0)選んで tests/unit/test_publisher_queue.bats に追加し、選択実行 bash scripts/run_tests.sh file tests/unit/test_publisher_queue.bats を FAIL 0・SKIP 0 で通して commit する。fixture が FAIL する場合は実装を直さず FAIL 内容を報告して停止する(修正は U1 実装 lane へ差し戻し)。中断再開時の成果物引継ぎ: 未 commit の worktree 差分と最終 bats 出力 log を報告 YAML の progress に path で残し、再開者はそこから継続する"
+        binary_check: "追加 fixture が 1 本 ∧ fixture 名と契約の出典(設計書の行)が報告にある ∧ 選択実行 FAIL 0 ∧ SKIP 0(FAIL 時は停止して FAIL 内容が報告にある)∧ 新規 test に非空 test_necessity ∧ 変更 file が tests/unit/test_publisher_queue.bats のみ か?"
+    command: |
+      1. 設計書 §9.0 共通則と §9.1 U1 行・§6 D2/D3/D14・§14.1 U1 行を読み、隔離 clone で origin/main を checkout して enqueue の sequence lock を grep で確認し、選択実行 bash scripts/run_tests.sh file tests/unit/test_publisher_queue.bats で FAIL 0・SKIP 0 を確認する。
+      2. 敵対 fixture を 1 本追加して同コマンドを再実行し、bash scripts/ninja_scope_commit.sh -m "<msg>" -- tests/unit/test_publisher_queue.bats で commit し、報告 YAML に source_sha と fixture 名・出典・実行 log path を書く。
+    assumptions:
+      claim: "U1 修正 eb136fdbc は origin/main 祖先(git merge-base --is-ancestor → yes、2026-09-03 00:52)。origin/main の tests/unit/test_publisher_queue.bats は @test 9 本。cmd_4448 は家老 ACCEPT で fail-close 済み(kagemaru_report_cmd_4448.yaml)。同 cmd 再配備は completed-peer guard の正規 BLOCK 対象のため新番号"
+      source: "docs/research/single_publisher_asis_tobe_5w1h_20260902.md §9.1 U1 §6 D2/D3/D14 §14.1、git merge-base --is-ancestor eb136fdbc origin/main、git show origin/main:tests/unit/test_publisher_queue.bats、queue/reports/kagemaru_report_cmd_4448.yaml"
+      trust: verified
+    depends_on: none
+    timeout_minutes: 30
+    estimated_minutes: 10
+    quality_gate:
+      q1_firefighting: "品質向上。理由: 修正版 U1 の FIFO 契約を修正者と別 CLI が並行 fixture で再検証する(§12)"
+      q2_learning: "奪わない。理由: fixture 選択は Codex 忍者の判断で、隔離 clone で完結する"
+      q3_next_quality: "上がる。理由: U1 は publisher の入口 queue であり、順序契約の証明が U3 active の前提"
+      q4_depth: "shallow — 理由: 実装は完了済み、bats 選択実行と fixture 1 本"
+      q5_verified_source: "structure_verified — 対象を実行して確認(2026-09-03 00:52): git merge-base --is-ancestor eb136fdbc origin/main → yes、git show origin/main:tests/unit/test_publisher_queue.bats | grep -c '^@test' → 9、gate_metrics 22:03 cmd_karo_hotfix_u1_publisher_queue_fifo_order CLEAR"
+      q6_not_hiding: "隠していない。理由: fixture FAIL 時は実装を直さず停止・報告する契約(AC2)。変更 file を bats 1 本に縛る"
+      q7_definition_verified: "FIFO・seq・STATE_DIR の定義は設計書 §6 D2/D3/D14 と §9.1 U1 行で確認(確認日: 2026-09-03)"
+      q8_why_what: "WHY: cmd_4448 が検出した欠陥の修正版を同じ型で再検証する / WHAT: Codex 忍者が隔離 clone で bats 9 本 FAIL 0+並行 fixture 1 本 commit / WHEN: 今夜(cmd_4457 と並走可) / WHERE: tests/unit / WHO: 家老配備(Codex 忍者) / HOW: §9.1 U1 行・D2/D3/D14 を fixture 出典に限定 / 複利: 第 1 波 3 unit の検証が全 CLEAR になる"
+      q9_firefighting_root_cause: "根本対応。理由: 修正の正しさを修正者以外の CLI が fixture で証明する構造を維持する"
+      q10_knowledge_boundary: "検証済み: 修正 commit の origin 到達、bats 9 本。スコープ外: 実装の修正、U2 再検証(cmd_4457)"
+      q11_not_already_done: "ls queue/reports/*cmd_4448* → kagemaru 1 本(FAIL 版)のみ、修正版に対する Codex 検証報告 0(2026-09-03 00:52)。rg -c 'cmd_4458' queue/shogun_to_karo.yaml → 0(起票前)"
+      q_ambiguity: "曖昧さ: 敵対 fixture の選択。解消: §9.1 U1 行・D2/D3/D14 を出典に限定し、出典の行を報告に書かせる"
+      q12_lord_30min_cost: "no — 殿 00:49『起票せよ』で確定、判定は bats"
+      diagnosis: "BLOCK理由: 該当なし(新規起票) / 対策: 新規 file 0(既存 bats へ fixture 追加のみ)"
+    environment_change: "type=lesson; file=projects/infra/lessons_shogun.yaml; pattern=cmdテンプレートルール"
+    origin: "[[cmd_4448_U1_検証_Codex_FAIL]] -> [[U1_FIFO_修正_eb136fdbc]] -> [[cmd_4458_U1_再検証]]"
+  cmd_4457:
+    title: "単一 publisher U2 再検証(cmd_4449 の後継): Codex 忍者が隔離 clone で修正後の publish_artifact(restore の manifest 完全一致検証 71162b246)に対し bats 12 本を選択実行し、設計書契約から敵対 fixture をもう 1 本追加して fail-close 契約を証明する"
+    status: delegated
+    project: infra
+    purpose: "殿 2026-09-03 00:49『再検証 cmd を起票せよ』。cmd_4449(疾風 Codex)は敵対 fixture『manifest 未申告 path』で U2 の実欠陥を検出し fail-close(家老 ACCEPT 20:17)、飛猿の修正 lane(restore が git apply --numstat の実タッチ path と manifest paths[] を完全一致検証、不一致 rc=1)が origin 71162b246 で着地(CLEAR 21:47)。設計書 v3.6 §9.1 共通 AC『同 cmd 再配備は行わず別番号の検証 task』に従い、修正版に対する再検証を新番号で行う(§14.1 U2 行の残件)"
+    scope_mode: FULL
+    target_path: tests/unit
+    acceptance_criteria:
+      AC1:
+        description: "origin/main(71162b246 以降)を隔離 clone し、scripts/publish_artifact.sh の restore に numstat 比較が到達していることを grep で確認した上で、選択実行 bash scripts/run_tests.sh file tests/unit/test_publish_artifact.bats を FAIL 0・SKIP 0 で通し(既存 12 test、cmd_4449 の未申告 path fixture を含む)、実行 log を報告 YAML に path で残す"
+        binary_check: "隔離 clone の restore に numstat 比較の行が 1 以上 ∧ @test 12 本 ∧ 選択実行 FAIL 0 ∧ SKIP 0 ∧ 実行 log の path が報告にある か?"
+      AC2:
+        description: "設計書 §9.1 U2 行・§2.3 C6・§13 H7 から、既存 12 本に無い敵対 fixture を 1 本(候補: manifest の paths[] に申告があるが patch に含まれない path=申告過多で rc=1 / patch が rename を含む時の path 集合一致 / source_tree が manifest と不一致の時に restore が適用しない)選んで tests/unit/test_publish_artifact.bats に追加し、選択実行 bash scripts/run_tests.sh file tests/unit/test_publish_artifact.bats を FAIL 0・SKIP 0 で通して commit する。fixture が FAIL する場合は実装を直さず FAIL 内容を報告して停止する(修正は U2 実装 lane へ差し戻し)。中断再開時の成果物引継ぎ: 未 commit の worktree 差分と最終 bats 出力 log を報告 YAML の progress に path で残し、再開者はそこから継続する"
+        binary_check: "追加 fixture が 1 本 ∧ fixture 名と契約の出典(設計書の行)が報告にある ∧ 選択実行 FAIL 0 ∧ SKIP 0(FAIL 時は停止して FAIL 内容が報告にある)∧ 新規 test に非空 test_necessity ∧ 変更 file が tests/unit/test_publish_artifact.bats のみ か?"
+    command: |
+      1. 設計書 §9.0 共通則と §9.1 U2 行・§2.3 C6・§13 H7・§14.1 U2 行を読み、隔離 clone で origin/main を checkout して restore の numstat 比較を grep で確認し、選択実行 bash scripts/run_tests.sh file tests/unit/test_publish_artifact.bats で FAIL 0・SKIP 0 を確認する。
+      2. 敵対 fixture を 1 本追加して同コマンドを再実行し、bash scripts/ninja_scope_commit.sh -m "<msg>" -- tests/unit/test_publish_artifact.bats で commit し、報告 YAML に source_sha と fixture 名・出典・実行 log path を書く。
+    assumptions:
+      claim: "U2 修正 71162b246 は origin/main 祖先(git log origin/main -- scripts/publish_artifact.sh の先頭、2026-09-03 00:52)。origin/main の tests/unit/test_publish_artifact.bats は @test 12 本(git show origin/main で確認)。cmd_4449 は家老 ACCEPT で fail-close 済み(hayate_report_cmd_4449.yaml)。同 cmd 再配備は deploy_task completed-peer guard の正規 BLOCK 対象のため新番号"
+      source: "docs/research/single_publisher_asis_tobe_5w1h_20260902.md §9.1 U2 §2.3 C6 §13 H7 §14.1、git log origin/main -- scripts/publish_artifact.sh、git show origin/main:tests/unit/test_publish_artifact.bats、queue/reports/hayate_report_cmd_4449.yaml"
+      trust: verified
+    depends_on: none
+    timeout_minutes: 30
+    estimated_minutes: 10
+    quality_gate:
+      q1_firefighting: "品質向上。理由: 修正版 U2 を修正者と別 CLI が敵対 fixture で再検証し、fail-close 契約が閉じたことを証明する(§12 multi-CLI 同品質)"
+      q2_learning: "奪わない。理由: Codex 忍者が設計書の契約から fixture を選ぶ判断は学習機会で、隔離 clone で完結する"
+      q3_next_quality: "上がる。理由: U2 の検証 CLEAR で第 1 波の検証が 2/3 揃い、U3 active canary の前提(publish_artifact の restore が publisher の入口)が固まる"
+      q4_depth: "shallow — 理由: 実装は完了済み、bats 選択実行と fixture 1 本"
+      q5_verified_source: "structure_verified — 対象を実行して確認(2026-09-03 00:52): git log origin/main --oneline -- scripts/publish_artifact.sh | head -1 → 71162b246、git show origin/main:tests/unit/test_publish_artifact.bats | grep -c '^@test' → 12、gate_metrics 21:47 cmd_karo_hotfix_u2_publish_artifact_restore_undeclared_path CLEAR"
+      q6_not_hiding: "隠していない。理由: fixture FAIL 時は実装を直さず停止・報告する契約(AC2)。変更 file を bats 1 本に縛る"
+      q7_definition_verified: "検証 cmd・敵対 fixture の定義は設計書 v3.6 §9.1 共通 AC と §12 で確認(確認日: 2026-09-03)"
+      q8_why_what: "WHY: cmd_4449 が検出した欠陥の修正版を同じ型で再検証する / WHAT: Codex 忍者が隔離 clone で bats 12 本 FAIL 0+敵対 fixture 1 本 commit / WHEN: 今夜 / WHERE: tests/unit / WHO: 家老配備(Codex 忍者、才蔵 idle) / HOW: §9.1 U2 行・C6・H7 を fixture 出典に限定 / 複利: 検証 cmd 型が『検出→修正→再検証』の 1 周を初めて完走する"
+      q9_firefighting_root_cause: "根本対応。理由: 修正の正しさを修正者以外の CLI が fixture で証明する構造を維持する"
+      q10_knowledge_boundary: "検証済み: 修正 commit の origin 到達、bats 12 本。スコープ外: 実装の修正、U1 再検証(cmd_4458)"
+      q11_not_already_done: "ls queue/reports/*cmd_4449* → hayate 1 本(FAIL 版)のみ、修正版に対する Codex 検証報告 0(2026-09-03 00:52)。rg -c 'cmd_4457' queue/shogun_to_karo.yaml → 0(起票前)"
+      q_ambiguity: "曖昧さ: 敵対 fixture の選択。解消: §9.1 U2 行・C6・H7 を出典に限定し、出典の行を報告に書かせる"
+      q12_lord_30min_cost: "no — 殿 00:49『起票せよ』で確定、判定は bats"
+      diagnosis: "BLOCK理由: 該当なし(新規起票) / 対策: 新規 file 0(既存 bats へ fixture 追加のみ)"
+    environment_change: "type=lesson; file=projects/infra/lessons_shogun.yaml; pattern=cmdテンプレートルール"
+    delegated_at: "\"2026-09-03T01:01:05\""
+    origin: "[[cmd_4449_U2_検証_Codex_FAIL]] -> [[U2_restore_修正_71162b246]] -> [[cmd_4457_U2_再検証]]"
   cmd_4453:
     title: "単一 publisher U5: scripts/publisher_admit.sh(承認 2 file の存在で admit、doc kind は将軍 identity+path allowlist、R13 db_migration は migration_ack 必須)と review_approval.sh karo ACCEPT --migration-ack(唯一の enqueue caller・唯一の ack writer)"
     status: delegated
