@@ -1,6 +1,7 @@
 #!/bin/bash
 # scripts/publish_artifact.sh — 忍者 local commit 成果物(source_tree+patch)の複製(capture)と復元(restore)
 # 設計書: docs/research/single_publisher_asis_tobe_5w1h_20260902.md §9.1 U2 / §2.4 C6 / §13 H7
+# cmd_4446 AC1: このファイルの新規実装がAC1(capture/restore本体)
 #
 # 目的: worktree cleanup・pane 停止・respawn を経ても、忍者が local commit した成果物を
 #       publisher が復元・公開できるようにする(H7: LGTM 時点では STAGE1 誤終端 respawn に間に合わない

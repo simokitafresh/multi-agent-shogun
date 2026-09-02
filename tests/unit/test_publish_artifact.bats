@@ -1,5 +1,5 @@
 #!/usr/bin/env bats
-# test_necessity: 単一publisher化 U2(docs/research/single_publisher_asis_tobe_5w1h_20260902.md
+# test_necessity: cmd_4446 単一publisher化 U2(docs/research/single_publisher_asis_tobe_5w1h_20260902.md
 # §9.1)。忍者 worktree の local commit 成果物(source_tree+patch)を report_received 時点で
 # STATE_DIR へ複製し、worktree 消失後も publisher が tree id 一致で復元できることと、
 # 報告 gate が manifest の source_sha/paths 不一致を検出することを守る不変量。

@@ -9,7 +9,7 @@
 
 set -e
 
-# --manifest-check: 単一publisher化 U2(docs/research/single_publisher_asis_tobe_5w1h_20260902.md
+# --manifest-check: cmd_4446 単一publisher化 U2(docs/research/single_publisher_asis_tobe_5w1h_20260902.md
 # §9.1)。報告の commit_hash/files_modified と scripts/publish_artifact.sh capture が書いた
 # manifest.yaml の source_sha/paths が一致するか検証する。manifest が存在しない task_id
 # (=capture未実行、または対象外の報告)はこの検査の対象外として PASS 扱いにする
