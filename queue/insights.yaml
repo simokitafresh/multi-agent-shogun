@@ -14373,3 +14373,10 @@ insights:
   source: "semantic_index_update"
   fix_known: false
   status: pending
+- id: INS-20260902-235449244-3cfa
+  ts: "2026-09-02T23:54:49+09:00"
+  insight: "semantic_index_update未登録[[リンク]]ターゲット: [[action_conversion側未修正で再発]] は既存aliasesに一致なし。類似概念TOP3: production_parity(本番パリティ; alias=NO ACTION; score=20.8) / cdp_browser_capability(CDP(ブラウザ操作能力); alias=touch-action none; score=15.0) / growth_loop(学習ループ; alias=docs research three layer per action lookup asis tobe 5w1h 2; score=6.5)。概念定義とaliases追加を検討せよ"
+  priority: "low"
+  source: "semantic_index_update"
+  fix_known: false
+  status: pending
