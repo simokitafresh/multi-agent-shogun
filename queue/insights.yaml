@@ -13952,3 +13952,10 @@ insights:
   source: "semantic_stress_test"
   fix_known: false
   status: pending
+- id: INS-20260902-210342725-5bd7
+  ts: "2026-09-02T21:03:42+09:00"
+  insight: "[[殿裁定 13 2x D10『将軍・家老の直接 commit は wrapper 存続 gist・小修正は影響なし 』と ]] semantic_stress_test candidate_aliases: NO_MATCH source=cmds query=殿裁定 2026-09-02 13:2x D10『将軍・家老の直接 commit は wrapper 存続(gist・小修正は影響なし)』と 20:44『捨てる壁に時間をかけるな』(§14.4: U1b は U3 dry-run と並走)。将軍 D0・家老 hotfix・doc lane の commit を publisher と同じ flock 1 本の"
+  priority: "low"
+  source: "semantic_stress_test"
+  fix_known: false
+  status: pending
