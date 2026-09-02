@@ -13980,3 +13980,10 @@ insights:
   source: "semantic_stress_test"
   fix_known: false
   status: pending
+- id: INS-20260902-210458298-af64
+  ts: "2026-09-02T21:04:58+09:00"
+  insight: "[[単一 publisher U1b 将軍・家老の直接 commit wrapper scripts publish dir]] semantic_stress_test candidate_aliases: NO_MATCH source=cmds query=単一 publisher U1b: 将軍・家老の直接 commit wrapper scripts/publish_direct_commit.sh(cwd=root 検査 rc=7→lock-run --bound 300 内で fetch→ff-only→ninja_scope_commit(trailer Published-By: wrapper)→"
+  priority: "low"
+  source: "semantic_stress_test"
+  fix_known: false
+  status: pending
