@@ -14783,10 +14783,60 @@ insights:
   priority: "low"
   source: "semantic_index_update"
   fix_known: false
-  status: pending
+  status: "resolved"
+  resolved_reason: "semantic map generation verified the candidate is represented or intentionally ignored"
+  action_artifact: "semantic_map=/home/simokitafresh/multi-agent-shogun/context/semantic-map.md;semantic_index=/home/simokitafresh/multi-agent-shogun/docs/semantic-index/index.md"
+  resolved_at: "2026-09-03T02:53:51.736741"
 - id: INS-20260903-025258210-cafc
   ts: "2026-09-03T02:52:58+09:00"
   insight: "semantic_index_update未登録cmd originノード: [[殿指示_先に進んでから戻れ_20260903_0130]] は既存aliasesに一致なし。類似概念TOP3: creator_brainwashing_defense(創造主の洗脳防御; alias=殿指示; score=25.2) / strong_new_game_completion_contract(強くてニューゲーム完遂契約; alias=殿指示_強くてニューゲーム_20260831_1319; score=21.1) / known_unknowns_principle(無知の知; alias=殿指示 「2層SSOTにするべき仕組みが他にないか確認しよう」; score=19.0)。概念定義とaliases追加を検討せよ"
+  priority: "low"
+  source: "semantic_index_update"
+  fix_known: false
+  status: "resolved"
+  resolved_reason: "semantic index candidate was absorbed into a registered concept"
+  action_artifact: "semantic_index=/home/simokitafresh/multi-agent-shogun/docs/semantic-index/index.md"
+  resolved_at: "2026-09-03T02:53:16.177886"
+- id: INS-20260903-025327347-88fa
+  ts: "2026-09-03T02:53:27+09:00"
+  insight: "[[14 1 unit × cmdを覚醒してアップデートしてくれ]] semantic_stress_test candidate_aliases: NO_MATCH source=lord query=14.1 unit × cmdを覚醒してアップデートしてくれ。スクロールしないでも進捗が見えるようにして"
+  priority: "low"
+  source: "semantic_stress_test"
+  fix_known: false
+  status: pending
+- id: INS-20260903-025327699-814f
+  ts: "2026-09-03T02:53:27+09:00"
+  insight: "[[ループは動作しているか？]] semantic_stress_test candidate_aliases: NO_MATCH source=lord query=ループは動作しているか？"
+  priority: "low"
+  source: "semantic_stress_test"
+  fix_known: false
+  status: "resolved"
+  resolved_reason: "semantic index candidate was absorbed into a registered concept"
+  action_artifact: "semantic_index=/home/simokitafresh/multi-agent-shogun/docs/semantic-index/index.md"
+  resolved_at: "2026-09-03T02:54:38.150764"
+- id: INS-20260903-025328436-3793
+  ts: "2026-09-03T02:53:28+09:00"
+  insight: "[[殿 02 40『起票してしまおう』]] semantic_stress_test candidate_aliases: NO_MATCH source=cmds query=殿 2026-09-03 02:40『起票してしまおう』。cmd_4459 で backend(59b7b679)は 17:20Z に live し API series に holding が入ったが、17:24Z に再 build した LP(dm-signal-lp、static export)は /ja/signals/2008-10/ と /202"
+  priority: "low"
+  source: "semantic_stress_test"
+  fix_known: false
+  status: "resolved"
+  resolved_reason: "semantic index candidate was absorbed into a registered concept"
+  action_artifact: "semantic_index=/home/simokitafresh/multi-agent-shogun/docs/semantic-index/index.md"
+  resolved_at: "2026-09-03T02:54:38.246789"
+- id: INS-20260903-025328706-e02d
+  ts: "2026-09-03T02:53:28+09:00"
+  insight: "[[LP build の showcase fetch を cache 無しにする static export の buil]] semantic_stress_test candidate_aliases: NO_MATCH source=cmds query=LP build の showcase fetch を cache 無しにする(static export の build 時 fetch が Next data cache+Render build cache で旧 API 形を焼く再発防止)+build 後の holding 存在 assert"
+  priority: "low"
+  source: "semantic_stress_test"
+  fix_known: false
+  status: "resolved"
+  resolved_reason: "semantic index candidate was absorbed into a registered concept"
+  action_artifact: "semantic_index=/home/simokitafresh/multi-agent-shogun/docs/semantic-index/index.md"
+  resolved_at: "2026-09-03T02:54:38.374543"
+- id: INS-20260903-025438454-b2f7
+  ts: "2026-09-03T02:54:38+09:00"
+  insight: "semantic_index_update新概念候補: discussion:C \\Users\\simok\\OneDrive\\デスクトップ\\入手できればマニュアルが一段正確になるのは、包装の原則ではなく 実測の txt と C \\User は 既存aliasesに一致なし。概念定義とaliases追加を検討せよ"
   priority: "low"
   source: "semantic_index_update"
   fix_known: false
