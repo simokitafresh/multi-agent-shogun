@@ -13461,3 +13461,10 @@ insights:
   source: "semantic_stress_test"
   fix_known: false
   status: pending
+- id: INS-20260902-162453639-79ec
+  ts: "2026-09-02T16:24:53+09:00"
+  insight: "[[単一 publisher U1 検証 Codex 忍者が隔離 clone で publisher queue と loc]] semantic_stress_test candidate_aliases: NO_MATCH source=cmds query=単一 publisher U1 検証: Codex 忍者が隔離 clone で publisher_queue と lock_run_shim の bats を選択実行し、設計書契約から敵対 fixture を 1 本追加して multi-CLI 同品質を証明する"
+  priority: "low"
+  source: "semantic_stress_test"
+  fix_known: false
+  status: pending
