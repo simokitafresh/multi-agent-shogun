@@ -1,6 +1,6 @@
 # Rebalancer Context
-<!-- last_updated: 2026-09-01 source_equivalent -->
-<!-- source_commit:ea45534ba9c6 reason:source_equivalent evidence:gate_context_freshness context=context/rebalancer.md source_commit=ea45534ba9c6 reason=source_equivalent -->
+<!-- last_updated: 2026-09-02 source_equivalent -->
+<!-- source_commit:c8c3c8aa1801 reason:source_equivalent evidence:gate_context_freshness context=context/rebalancer.md source_commit=c8c3c8aa1801 reason=source_equivalent -->
 
 <!-- source_commit:e3c456584109 reason:将軍誤断定の撤回: e3c456584109 は rebalancer 正準 repo(/mnt/c/Python_app/rebalancer)の cmd_4227 commit で origin/main 祖先。07:36 の marker 除去(a0b850188)は control repo で rev-parse した将軍の誤り evidence:git -C /mnt/c/Python_app/rebalancer cat-file -t e3c456584109 = commit; merge-base --is-ancestor origin/main = yes -->
 <!-- source_commit:e26ba8187794 reason:DOC_LANE_REQUEST blt_042404 source_equivalent 内容変更なし境界のみ evidence:git log --oneline -1 e26ba8187794; reason=source_equivalent -->
@@ -132,3 +132,4 @@ Source of truthは `backend/app/config.py`。
 | CLOSED終値 | `CLOSED` はEODHDの `is_final=true` 最新確定終値を使用。取得失敗時のみ直前snapshotを `degraded` として復元し、障害状態を明示 |
 | 本番反映 | Renderの `deploy_commit` が `f202c578e44ba99e1daf9232a18b905142e99615` と一致し、cmd_4229のGATE CLEARを確認済み |
 | 契約テスト | `backend/tests/test_price_snapshot_contract.py` で表示・計算同値、POST→CLOSEDのRT残値無効化、CLOSED EODHD障害時のdegraded復元を検証 |
+| 計算経路の source 制約 | `api/rebalance.py` `_get_calculation_prices` は snapshot の `source` が alpaca/eodhd 以外(Alpaca degraded 時の yfinance 表示 fallback)の銘柄を EODHD 確定値へ回す。2026-09-02 本番 500(FinalStockPrice literal_error)の修正、commit `c8c3c8a`、契約 test `test_calculate_rebalance_degraded_yfinance_snapshot_uses_eodhd` |
