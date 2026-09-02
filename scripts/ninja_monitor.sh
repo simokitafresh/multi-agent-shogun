@@ -112,6 +112,7 @@ source "$SCRIPT_DIR/scripts/lib/field_get.sh"
 source "$SCRIPT_DIR/scripts/lib/yaml_field_set.sh"
 source "$SCRIPT_DIR/scripts/lib/task_lifecycle.sh"
 source "$SCRIPT_DIR/scripts/lib/review_approval.sh"
+source "$SCRIPT_DIR/scripts/lib/publisher_single_flag.sh"
 source "$SCRIPT_DIR/scripts/lib/tmux_utils.sh"
 source "$SCRIPT_DIR/lib/agent_state.sh"
 source "$SCRIPT_DIR/lib/rotate_log.sh"
@@ -766,7 +767,7 @@ push_lane_pre_push_hook_ready() {
 }
 
 push_lane_publish_one() {
-    [ "${PUBLISHER_SINGLE:-0}" = 1 ] && { push_lane_log "PUBLISHER_SINGLE push_lane push=0 result=SKIP reason=publisher_request"; return 0; }
+    publisher_single_enabled && { push_lane_log "PUBLISHER_SINGLE push_lane push=0 result=SKIP reason=publisher_request"; return 0; }
     local repo="$1" remote_name="$2" sha="$3"
     # Keep this command literal and force-free: the repository hook remains
     # the final dirty-path/test safety boundary for every automatic publish.
