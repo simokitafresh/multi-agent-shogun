@@ -15,6 +15,27 @@ LOG_FILE="$SCRIPT_DIR/logs/gunshi_review_log.yaml"
 ARCHIVE_DIR="$SCRIPT_DIR/logs/archive"
 MAX_LINES=2500
 
+usage() {
+    cat <<'EOF'
+Usage: bash scripts/gunshi_log_append.sh [--batch]
+
+Append one review entry (YAML list item) from stdin. Use --batch to append a
+non-empty YAML list of review entries from stdin.
+EOF
+}
+
+case "${1:-}" in
+    --help|-h)
+        usage
+        exit 0
+        ;;
+esac
+
+if [ -t 0 ]; then
+    usage
+    exit 2
+fi
+
 # The review ledger is live runtime state.  A clean checkout intentionally
 # does not track it, so the first review must be able to create the ledger
 # without a bootstrap race.  Use the same lock as append/archive and publish

@@ -257,3 +257,97 @@ printf "active_deferred=1 recovery=0\n"
     [ "$status" -eq 0 ]
     [[ "$output" == *"active_deferred=1 recovery=0"* ]]
 }
+
+# test_necessity: A missed bash PostToolUse callback must not strand a Claude
+# pane in bash_running forever when its live tail is back at a normal prompt;
+# the existing confirmation guard remains the safety boundary for delivery.
+@test "stale bash_running with normal prompt reconciles despite busy subprocess" {
+    run bash -c '
+set -euo pipefail
+root="'"$PROJECT_ROOT"'"
+tmp="$(mktemp -d)"
+trap "rm -rf \"$tmp\"" EXIT
+mkdir -p "$tmp/root/scripts/lib" "$tmp/root/lib" "$tmp/root/queue/inbox" "$tmp/state"
+for f in lock_path.sh cli_lookup.sh tmux_utils.sh script_update.sh inbox_nudge_policy.sh respawn_recovery.sh pane_confirmation_guard.sh; do
+  ln -s "$root/scripts/lib/$f" "$tmp/root/scripts/lib/$f"
+done
+ln -s "$root/lib/agent_state.sh" "$tmp/root/lib/agent_state.sh"
+ln -s "$root/scripts/inbox_watcher.sh" "$tmp/root/scripts/inbox_watcher.sh"
+export SHOGUN_STATE_DIR="$tmp/state" INBOX_WATCHER_LIB_ONLY=1
+source "$tmp/root/scripts/inbox_watcher.sh" fixture dummy-pane
+unset INBOX_WATCHER_LIB_ONLY
+ensure_current_pane_target() { return 0; }
+_agent_state_has_busy_subprocess() { return 0; }
+_pane_has_confirmation_prompt() { return 1; }
+tmux() {
+  case "$1" in
+    display-message)
+      case "${*: -1}" in
+        *agent_id*) echo fixture ;;
+        *agent_state*) echo bash_running ;;
+        *bash_running_since*) echo $((EPOCHSECONDS - 60)) ;;
+        *) echo active ;;
+      esac
+      ;;
+    capture-pane) printf "output\n❯ " ;;
+    *) : ;;
+  esac
+}
+BUSY_TIMEOUT_SEC=30
+rm -f "$idle_flag"
+maybe_force_idle_flag claude 2>"$tmp/stderr"
+test -f "$idle_flag"
+grep -q "IDLE-RECONCILED.*@agent_state=bash_running" "$tmp/stderr"
+printf "reconciled=1 busy_subprocess=1\n"
+'
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"reconciled=1 busy_subprocess=1"* ]]
+}
+
+# test_necessity: The stale bash-running recovery must remain fail-closed for
+# confirmation dialogs, because a queued nudge could otherwise become the
+# dialog's authorization choice.
+@test "stale bash_running with confirmation prompt remains deferred" {
+    run bash -c '
+set -euo pipefail
+root="'"$PROJECT_ROOT"'"
+tmp="$(mktemp -d)"
+trap "rm -rf \"$tmp\"" EXIT
+mkdir -p "$tmp/root/scripts/lib" "$tmp/root/lib" "$tmp/root/queue/inbox" "$tmp/state"
+for f in lock_path.sh cli_lookup.sh tmux_utils.sh script_update.sh inbox_nudge_policy.sh respawn_recovery.sh pane_confirmation_guard.sh; do
+  ln -s "$root/scripts/lib/$f" "$tmp/root/scripts/lib/$f"
+done
+ln -s "$root/lib/agent_state.sh" "$tmp/root/lib/agent_state.sh"
+ln -s "$root/scripts/inbox_watcher.sh" "$tmp/root/scripts/inbox_watcher.sh"
+export SHOGUN_STATE_DIR="$tmp/state" INBOX_WATCHER_LIB_ONLY=1
+source "$tmp/root/scripts/inbox_watcher.sh" fixture dummy-pane
+unset INBOX_WATCHER_LIB_ONLY
+ensure_current_pane_target() { return 0; }
+_agent_state_has_busy_subprocess() { return 0; }
+_pane_has_confirmation_prompt() { return 0; }
+tmux() {
+  case "$1" in
+    display-message)
+      case "${*: -1}" in
+        *agent_id*) echo fixture ;;
+        *agent_state*) echo bash_running ;;
+        *bash_running_since*) echo $((EPOCHSECONDS - 60)) ;;
+        *) echo active ;;
+      esac
+      ;;
+    capture-pane) printf "Do you want to proceed?\n❯ 1. Yes\n❯ 2. No\n" ;;
+    *) : ;;
+  esac
+}
+BUSY_TIMEOUT_SEC=30
+rm -f "$idle_flag"
+if maybe_force_idle_flag claude 2>"$tmp/stderr"; then
+  echo "unexpected_reconcile"
+  exit 1
+fi
+test ! -e "$idle_flag"
+printf "confirmation_deferred=1\n"
+'
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"confirmation_deferred=1"* ]]
+}
