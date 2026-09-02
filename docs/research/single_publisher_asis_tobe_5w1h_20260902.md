@@ -257,14 +257,14 @@ canary 判定: **(v1.8 殿裁定 D9)** infra と dm-signal の両 repo を U1 �
 
 - 根拠: 殿 2026-09-02 17:18『single_publisher_asis_tobe_5w1h_20260902.md も随時更新しないと後で混乱する』。設計本文(§0-§13)と実装の現在値を同じ file に置き、読者が別 file を探さずに済むようにする
 
-最終更新: 2026-09-02 18:57(将軍 loop 18:54 の一次確認)
+最終更新: 2026-09-02 19:12(殿下問 19:02『進展が遅すぎないか』→検証 cmd 2 本を CLEAR 待ちにせず起票)
 
 ### 14.1 unit × cmd 対応表(実装 cmd=片 CLI、検証 cmd=他 CLI・別番号。§9.1 共通 AC)
 | U | 内容 | 実装 cmd | 実装忍者(CLI) | 実装 commit | 実装 GATE | 検証 cmd | 検証忍者(CLI) | 検証 GATE |
 |---|---|---|---|---|---|---|---|---|
 | U1 | publish queue+lock-run shim+events writer | cmd_4445(delegated 14:41) | 小太郎(Claude Sonnet) | 0e8d1b6d9(origin 統合済 16:5x) | **SG7 bundle FAIL 17:43**(report_verdict PASS、precheck PRE25 FP 残存=疾風 hotfix 待ち) | cmd_4448(delegated 15:34、depends_on 4445 CLEAR) | 影丸(Codex)予定 | 未配備 |
-| U2 | publish_artifact capture/restore | cmd_4446(delegated 14:54) | 飛猿(Claude Sonnet) | 58446a4dc(origin 統合済) | **BLOCK sg7_bundle_missing 16:57**+才蔵 PRE25 追加根治中 | 未起票(4446 CLEAR 後) | Codex 予定 | — |
-| U4 | gate dual-read+census | cmd_4447(delegated 14:57) | 疾風(Codex) | 39b2d18b2(origin 統合済) | **SG7 bundle FAIL 17:43**(report_verdict PASS、precheck PRE25 FP 残存=疾風 hotfix 待ち) | 未起票(4447 CLEAR 後) | Claude 予定 | — |
+| U2 | publish_artifact capture/restore | cmd_4446(delegated 14:54) | 飛猿(Claude Sonnet) | 58446a4dc(origin 統合済) | **BLOCK sg7_bundle_missing 16:57**+才蔵 PRE25 追加根治中 | cmd_4449(delegated 19:10、depends_on 4446 CLEAR) | Codex(家老配備) | 未配備 |
+| U4 | gate dual-read+census | cmd_4447(delegated 14:57) | 疾風(Codex) | 39b2d18b2(origin 統合済) | **SG7 bundle FAIL 17:43**(report_verdict PASS、precheck PRE25 FP 残存=疾風 hotfix 待ち) | cmd_4450(delegated 19:11、depends_on 4447 CLEAR) | Claude(家老配備) | 未配備 |
 | U1b | 直接 commit wrapper(将軍・家老) | 未起票(第 2 波) | — | — | — | — | — | — |
 | U5 | publisher_admit(migration_ack) | 未起票(第 2 波) | — | — | — | — | — | — |
 | U6 | ledger writer(insights/bulletin/lesson) | 未起票(第 2 波) | — | — | — | — | — | — |
