@@ -268,7 +268,7 @@ move_ledger_to() {
 }
 
 process_ledger_batch() {
-    local -a operations=() ledgers=()
+    local -a operations=() ledgers=() applied_operations=() skipped_operations=()
     local operation ledger isolated="" stage_root="" tip origin_url tree published_sha
     while IFS= read -r operation; do
         [ -n "$operation" ] || continue
@@ -299,13 +299,32 @@ process_ledger_batch() {
             event ledger ledger_batch 1 "failed_op=$(basename "$operation") reason=source_outside_root"
             return 31
         fi
-        if ! LEDGER_SOURCE_FILE="$source_file" LEDGER_WRITER_NOTIFY=0 \
-            bash "$SCRIPT_DIR/ledger_writer.sh" apply "$staged_operation"; then
+        local apply_rc=0
+        LEDGER_SOURCE_FILE="$source_file" LEDGER_WRITER_NOTIFY=0 \
+            bash "$SCRIPT_DIR/ledger_writer.sh" apply "$staged_operation" || apply_rc=$?
+        if [ "$apply_rc" -eq 11 ]; then
+            # duplicate_id: the entry already exists on the canonical tip (published by an earlier
+            # batch whose applied/ move was lost, or re-issued). Treat as already_published and keep
+            # the batch moving instead of aborting it (2026-09-03 shogun 07:14 (a)).
+            move_ledger_to "$operation" "$(ledger_directory "$ledger")/applied"
+            event ledger ledger_batch 0 "already_published_op=$(basename "$operation") reason=duplicate_id"
+            skipped_operations+=("$operation")
+            continue
+        elif [ "$apply_rc" -ne 0 ]; then
+            # One bad op must not hold every other ledger hostage: park it in rc/ and continue.
             move_ledger_to "$operation" "$(ledger_directory "$ledger")/rc"
-            event ledger ledger_batch 1 "failed_op=$(basename "$operation") reason=apply_failed"
-            return 31
+            event ledger ledger_batch 1 "failed_op=$(basename "$operation") reason=apply_failed rc=$apply_rc"
+            skipped_operations+=("$operation")
+            continue
         fi
+        applied_operations+=("$operation")
     done
+    if [ "${#applied_operations[@]}" -eq 0 ]; then
+        cleanup_isolated "$isolated"; isolated=""
+        cleanup_ledger_stage "$stage_root"; stage_root=""
+        return 0
+    fi
+    operations=("${applied_operations[@]}")
 
     git -C "$isolated" add --all -- .
     tree="$(git -C "$isolated" write-tree)"
@@ -315,8 +334,20 @@ process_ledger_batch() {
         commit-tree "$tree" -p "$tip")"
     if [ "${PUBLISHER_MODE:-dry-run}" = active ]; then
         timeout 120 git -C "$isolated" push origin "$published_sha:refs/heads/main"
-        timeout 120 git -C "$REPO_ROOT" fetch origin
-        sync_root "$REPO_ROOT" origin/main
+        # Confirm applied/ and the event as soon as the push landed; root sync is best-effort
+        # (a dirty root must not leave published ops pending -> re-applied -> duplicate rc).
+        for operation in "${operations[@]}"; do
+            ledger="$(basename "$(dirname "$operation")")"
+            move_ledger_to "$operation" "$(ledger_directory "$ledger")/applied"
+        done
+        event ledger ledger_batch 0 "n=${#operations[@]} ledgers=$(IFS=,; echo "${ledgers[*]}") published_sha=$published_sha"
+        timeout 120 git -C "$REPO_ROOT" fetch origin || true
+        if ! sync_root "$REPO_ROOT" origin/main; then
+            event root_sync_skipped ledger_batch 0 "published_sha=$published_sha root_dirty=$(tracked_dirty_count "$REPO_ROOT")"
+        fi
+        cleanup_isolated "$isolated"; isolated=""
+        cleanup_ledger_stage "$stage_root"; stage_root=""
+        return 0
     else
         event ledger ledger_batch 0 "n=${#operations[@]} origin_update=0 published_sha=$published_sha"
         cleanup_isolated "$isolated"; isolated=""
