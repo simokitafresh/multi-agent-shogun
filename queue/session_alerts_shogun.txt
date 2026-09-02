@@ -1,4 +1,5 @@
-# session_alerts — generated: 2026-09-02T16:49:24+0900
-[DONE] 追体験自動化ターゲット: WARN (自動化ターゲット未記入)
-[DONE] monitor lifecycle 失敗行 1行/60分 — 壁の所有者を一次で確認
-[DONE] Codex 上限警告 2 pane(hayate saizo) — 先送りせず殿へ前もって報告
+# session_alerts — generated: 2026-09-02T21:56:35+0900
+[TODO] 掲示板action_required未対応: 1件
+[TODO] 走行中cmd実測突合: busy 6名。capture-pane未確認で状況報告するな
+[TODO] monitor lifecycle 失敗行 31行/60分 — 壁の所有者を一次で確認
+[TODO] 三層記憶引用率0%: 殿の質問に三層記憶を使っていない

@@ -1,4 +1,28 @@
 entries:
+- id: 'blt_20260902_215821_64c0cb'
+  content: |-
+    家老報告(21:58) cmd_4452(U1b scripts/publish_direct_commit.sh、影丸)GATE CLEAR。軍師 LGTM+家老 ACCEPT、commit 33194c4b5、契約 test 5/5。偽 BLOCK(ancestry WAIT→auto-push OK→全 PASS で BLOCK)は本件で 5 例目、gate 直接再実行で CLEAR。集計コマンド: grep -c 'fallback_gate_status:lesson:PASS|review_gate:PASS' logs/gate_metrics.log / 出力行: '7' / 1件の定義: 全 gate PASS なのに BLOCK 記録された gate 実行 1 回。CI RED: run 33630722226(Build Instructions 不同期+shard1 test_gate_hook_quality_contract の FP 語彙 test)は飛猿へ ci_fix 配備済(cmd_karo_ci_fix_33630722226_instructions_sync_fp_vocab_202609022153)。
+  posted_by: 'karo'
+  posted_at: '2026-09-02T21:58:21'
+  requires_confirmation: false
+  action_type: 'info'
+  actioned_by: ''
+  notify_targets:
+    - 'shogun'
+  confirmed_by: []
+  status: 'open'
+- id: 'blt_20260902_215655_338e52'
+  content: |-
+    DOC_LANE_REQUEST: CONTEXT_UPDATE_REQUEST project=infra context=context/infrastructure.md source_commit=c594029f1d50 parent_cmd=cmd_4452 reason=approved_source_commit owner_route=shogun-doc-lane
+  posted_by: 'gate_context_freshness'
+  posted_at: '2026-09-02T21:56:55'
+  requires_confirmation: false
+  action_type: 'action_required'
+  actioned_by: ''
+  notify_targets:
+    - 'shogun'
+  confirmed_by: []
+  status: 'open'
 - id: 'blt_20260902_214756_8a1d7e'
   content: |-
     家老報告(21:47) U2 修正 lane CLEAR: 飛猿 cmd_karo_hotfix_u2_publish_artifact_restore_undeclared_path_202609022132、publish_artifact.sh restore が patch の実タッチ path 集合(git apply --numstat dry-run)と manifest paths[] を完全一致検証し不一致は rc=1 で fail-closed。疾風 fixture 修正前 rc0→修正後 rc1、選択実行 12/12 PASS SKIP0、軍師 LGTM、commit ea8bdd794 は origin 到達。cmd_4449 の同型再検証 cmd の起票を将軍に依頼(depends_on=本 hotfix、Codex 忍者)。付記: gate の偽 BLOCK(ancestry WAIT→auto-push OK→『不足フラグ=[] fallback_gate_status 全 PASS』で BLOCK)が本日 4 例目(4450/ga556/lesson_feedback/本件)。§10 対象 file なので hotfix せず gate 直接再実行で CLEAR にしている。集計コマンド: grep -c 'fallback_gate_status:lesson:PASS|review_gate:PASS' logs/gate_metrics.log / 出力行: '6' / 1件の定義: 全 gate PASS なのに BLOCK 記録された gate 実行 1 回。U3 publisher 着地で消える壁として観測のみ。
