@@ -466,7 +466,9 @@ trap 'rm -f -- "$LEDGER_ENTRY_FILE"' EXIT
 # Isolated fixtures point INSIGHTS_FILE elsewhere and must keep the direct append
 # (2026-09-03: ledger_writer became 755 and fixtures silently lost their entries).
 ledger_route_enabled() {
-  [[ -x "$LEDGER_WRITER" && "$INSIGHTS_FILE" == "$SCRIPT_DIR/queue/insights.yaml" ]]
+  [[ -x "$LEDGER_WRITER" ]] || return 1
+  # Canonical ledger, or a caller that explicitly owns a publisher state dir (ledger-aware fixture).
+  [[ "$INSIGHTS_FILE" == "$SCRIPT_DIR/queue/insights.yaml" || -n "${SHOGUN_STATE_DIR:-}" ]]
 }
 ledger_append() {
   if ledger_route_enabled; then
