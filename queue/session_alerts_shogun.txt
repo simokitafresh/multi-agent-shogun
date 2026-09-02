@@ -1,4 +1,4 @@
 # session_alerts — generated: 2026-09-03T01:55:07+0900
-[TODO] 掲示板action_required未対応: 2件
-[TODO] 走行中cmd実測突合: busy 5名。capture-pane未確認で状況報告するな
-[TODO] failed task残置: saizo — 真因確認と再配備/クローズを確定せよ
+[DONE] 掲示板action_required未対応: 2件
+[DONE] 走行中cmd実測突合: busy 5名。capture-pane未確認で状況報告するな
+[DONE] failed task残置: saizo — 真因確認と再配備/クローズを確定せよ

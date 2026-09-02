@@ -1929,3 +1929,101 @@
   origin: "[[cmd_4461]] -> [[flag待ち]] -> [[FAIL正当]]"
   reviewed_at: "2026-09-03T01:55:00+09:00"
   timestamp: "2026-09-03T01:55:00+09:00"
+- cmd_id: cmd_4459
+  review_type: report
+  report_ninja: tobisaru
+  report_task_id: cmd_4459_full
+  report_verdict: FAIL
+  verdict: FAIL
+  verified_files:
+    - "queue/reports/tobisaru_report_cmd_4459.yaml:1"
+  fail_reasons:
+    - "SG-PRE25 command欄ninja_scope_commit.shがfiles_modifiedに不在(LG037)"
+    - "test必要性契約未解消"
+  lesson_quality: OK
+  escalation_needed: false
+  finding_categories:
+    - assumptions
+    - numbers
+    - premortem
+    - adversarial
+    - ambiguity
+  observations:
+    - "BC全yes。実装は正確だがcommand欄/test_necessity契約不足"
+  operational_simulation:
+    command: "precheck"
+    expected: "CLEAR"
+    actual: "ERRORS=2(PRE25+PRE35)"
+    result: "FAIL"
+  causal_chain: "command欄に実行のみ参照残存→GATE BLOCK予測→FAIL"
+  brainwash_check: "#1no #2no #3no #4no #5no #6no #7no #8no ERRORS=2検出"
+  step3_5_verified: true
+  gate_prediction: CLEAR
+  gate_prediction_reason: "lesson_candidate有(INFO)"
+  origin: "[[cmd_4459]] -> [[PRE25_mismatch]] -> [[FAIL]]"
+  reviewed_at: "2026-09-03T02:00:00+09:00"
+  timestamp: "2026-09-03T02:00:00+09:00"
+- brainwash_check: '#1no #2no #3no #4no #5no #6no #7no #8no ERRORS=0'
+  causal_chain: insight在庫→消化→LGTM
+  cmd_id: cmd_reflux_insight_202609030152_hanzo
+  escalation_needed: false
+  finding_categories:
+  - assumptions
+  - numbers
+  - premortem
+  - adversarial
+  - ambiguity
+  findings_summary: 定型reflux。ERRORS=0。LGTM
+  gate_prediction: CLEAR
+  gate_prediction_reason: all checks passed
+  lesson_quality: OK
+  observations:
+  - 定型reflux完了
+  operational_simulation:
+    actual: CLEAR ERRORS=0
+    command: precheck
+    expected: CLEAR
+    result: PASS
+  origin: '[[reflux]] -> [[LGTM]]'
+  report_ninja: hanzo
+  report_task_id: cmd_reflux_insight_202609030152_hanzo_exact
+  report_verdict: LGTM
+  review_type: report
+  reviewed_at: '2026-09-03T02:08:00+09:00'
+  step3_5_verified: true
+  timestamp: '2026-09-03T02:04:00+09:00'
+  verdict: LGTM
+  verified_files:
+  - queue/reports/hanzo_report_cmd_reflux_insight_202609030152_hanzo.yaml:1
+- brainwash_check: '#1no #2no #3no #4no #5no #6no #7no #8no ERRORS=0'
+  causal_chain: FAIL(PRE25+PRE35)→RC修正→ERRORS=0→LGTM
+  cmd_id: cmd_4459
+  escalation_needed: false
+  finding_categories:
+  - assumptions
+  - numbers
+  - premortem
+  - adversarial
+  - ambiguity
+  findings_summary: RC版。command欄+test_necessity解消。ERRORS=0。LGTM
+  gate_prediction: CLEAR
+  gate_prediction_reason: all checks passed
+  lesson_quality: OK
+  observations:
+  - 'RC: PRE25(command欄mismatch)+PRE35(test_necessity)解消。ERRORS=0'
+  operational_simulation:
+    actual: CLEAR ERRORS=0
+    command: precheck
+    expected: CLEAR ERRORS=0
+    result: PASS
+  origin: '[[cmd_4459]] -> [[RC_PRE25_PRE35解消]] -> [[LGTM]]'
+  report_ninja: tobisaru
+  report_task_id: cmd_4459_full
+  report_verdict: LGTM
+  review_type: report
+  reviewed_at: '2026-09-03T02:06:00+09:00'
+  step3_5_verified: true
+  timestamp: '2026-09-03T02:06:00+09:00'
+  verdict: LGTM
+  verified_files:
+  - queue/reports/tobisaru_report_cmd_4459.yaml:1

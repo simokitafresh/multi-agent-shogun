@@ -526,6 +526,7 @@ codd:
 | causal | `cmd_4431` files_modified: [[cmd_chronicle]] |
 | discussion | `queue/lord_conversation.jsonl` 2026-09-01T10:26:42.918136+00:00 git pre-commit semantic propagation for context/projects changes |
 | discussion | `queue/lord_conversation.jsonl` 2026-09-02T12:58:30.358374+00:00 git pre-commit semantic propagation for context/projects changes |
+| discussion | `queue/lord_conversation.jsonl` 2026-09-02T16:57:54.126384+00:00 git pre-commit semantic propagation for context/projects changes |
 
 ## unread_cmd_new_deployment_guard — 未読cmd_new配備漏れ防止
 
@@ -3428,6 +3429,7 @@ codd:
 | discussion | `queue/lord_conversation.jsonl` 2026-09-03T00:17:28+09:00 integrate read-tree hotfix 本番 proof(2026-09-03 00:17): ninja_monitor.sh integrate に read-tree -m -u を入れた後の integrate 2 回 |
 | cmd | `cmd_karo_hotfix_gate_receipt_pair_multi_source_202609030042` |
 | discussion | `queue/lord_conversation.jsonl` 2026-09-03T01:27:41+09:00 session_save_20260903_0130(復帰点、先に session_save_20260903_0005 を読め): 00:05-01:30: 設計書 v3.10 §14.1 全面更新(b26bfb898、gist 597b |
+| discussion | `queue/lord_conversation.jsonl` 2026-09-03T01:45:14+09:00 単一 publisher 初 publish(2026-09-03 01:4x): U3 daemon active(pid 2103173)が cmd_4458(小太郎、U1 再検証)の ACCEPT request を origin/m |
 | causal_chain | `[[cmd_3749]]` (L974) |
 | causal_chain | `[[cmd_training_L1_report-write_20260708020332]]` (L977) |
 | causal_chain | `[[cmd_reflux_insight_202607071717_tobisaru]]` (L961) |
@@ -3493,7 +3495,6 @@ codd:
 | causal_chain | `[[cmd_karo_hotfix_u2_publish_artifact_restore_undeclared_path_202609022132]]` (L1707) |
 | causal_chain | `[[cmd_karo_ci_fix_33630722226_instructions_sync_fp_vocab_202609022153]]` (L1710) |
 | causal_chain | `[[cmd_karo_hotfix_u3_publisher_idempotent_restore_notify_202609022337]]` (L1711) |
-| discussion | `queue/lord_conversation.jsonl` 2026-09-03T01:45:14+09:00 単一 publisher 初 publish(2026-09-03 01:4x): U3 daemon active(pid 2103173)が cmd_4458(小太郎、U1 再検証)の ACCEPT request を origin/m |
 
 ## investment_knowledge_base — 投資知識辞書
 
@@ -14908,6 +14909,8 @@ codd:
 | cmd | `cmd_reflux_insight_202609022322_hanzo` (`queue/insights.yaml`) |
 | causal | `cmd_reflux_insight_202609030028_kotaro` files_modified: [[provisional_insights]] |
 | cmd | `cmd_reflux_insight_202609030028_kotaro` (`queue/insights.yaml`) |
+| causal | `cmd_reflux_insight_202609030152_hanzo` files_modified: [[provisional_insights]] |
+| cmd | `cmd_reflux_insight_202609030152_hanzo` (`queue/insights.yaml`) |
 | causal_chain | `[[cmd_reflux_insight_202608040505_kagemaru]]` (L1545) |
 
 ## provisional_heavy_job_admission — 仮: Heavy Job Admission
@@ -15358,6 +15361,7 @@ codd:
 | causal | `cmd_karo_hotfix_run_tests_test_necessity_selector_20260830` files_modified: [[provisional_run_tests]] |
 | cmd | `cmd_karo_hotfix_run_tests_test_necessity_selector_20260830` (`scripts/run_tests.sh`, `tests/unit/test_run_tests.bats`) |
 | discussion | `queue/lord_conversation.jsonl` 2026-09-02T22:09:39+09:00 b4se36ctj toolu_01W8jT22Mxz2SzQz1EAGbmCd /tmp/claude-1000/-home-simokitafresh-multi-agent-shogun/ec066643-699d-4781-9dab |
+| discussion | `queue/lord_conversation.jsonl` 2026-09-03T02:03:49+09:00 bul2u8mlz toolu_01NZopNZooms3MwHyi8cW6E2 /tmp/claude-1000/-home-simokitafresh-multi-agent-shogun/096a7687-1a27-4f68-b89e |
 | causal_chain | `[[cmd_karo_hotfix_git_index_singleflight_202608191445]]` (L1618) |
 
 ## provisional_.gitignore — 仮: .Gitignore

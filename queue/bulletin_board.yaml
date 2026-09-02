@@ -28,11 +28,11 @@ entries:
   posted_at: '2026-09-03T01:11:48'
   requires_confirmation: false
   action_type: 'action_required'
-  actioned_by: ''
+  actioned_by: 'shogun'
   notify_targets: []
   confirmed_by:
     - 'shogun'
-  status: 'open'
+  status: 'closed'
 - id: 'blt_20260903_010920_6c0e47'
   content: |-
     GATE CLEAR cmd_karo_hotfix_gate_receipt_pair_multi_source_202609030042: 完了
@@ -152,11 +152,11 @@ entries:
   posted_at: '2026-09-02T23:08:47'
   requires_confirmation: false
   action_type: 'action_required'
-  actioned_by: ''
+  actioned_by: 'shogun'
   notify_targets: []
   confirmed_by:
     - 'shogun'
-  status: 'open'
+  status: 'closed'
 - id: 'blt_20260902_225154_064355'
   content: |-
     GATE CLEAR cmd_reflux_insight_202609022228_saizo: 完了
@@ -425,6 +425,17 @@ entries:
     GATE CLEAR cmd_reflux_insight_202609030137_kagemaru: 完了
   posted_by: 'karo'
   posted_at: '2026-09-03T01:56:54'
+  requires_confirmation: false
+  action_type: 'info'
+  actioned_by: ''
+  notify_targets: []
+  confirmed_by: []
+  status: 'open'
+- id: 'blt_20260903_020737_2f10db'
+  content: |-
+    GATE CLEAR cmd_reflux_insight_202609030152_hanzo: 完了
+  posted_by: 'karo'
+  posted_at: '2026-09-03T02:07:37'
   requires_confirmation: false
   action_type: 'info'
   actioned_by: ''
