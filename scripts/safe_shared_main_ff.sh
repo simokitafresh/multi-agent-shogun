@@ -25,6 +25,7 @@ fi
 # UNKNOWN, and RED all use the same normal push path; a CI verdict is observed
 # after publication rather than used as a circular precondition for it.
 safe_shared_main_auto_push() {
+    [ "${PUBLISHER_SINGLE:-0}" = 1 ] && { echo "PUBLISHER_SINGLE safe_shared_main_ff push=0 result=SKIP reason=publisher_request"; return 0; }
     local repo="$1" threshold="${2:-1}" ci_state="${3:-}" remote_tip local_head
     local relation behind ahead common_dir lock_file lock_fd before_head before_index before_dirty
     local current_remote_tip
@@ -362,6 +363,7 @@ shared_state_fingerprint() {
 }
 
 isolated_publish_fallback() {
+    [ "${PUBLISHER_SINGLE:-0}" = 1 ] && { echo "PUBLISHER_SINGLE safe_shared_main_ff push=0 result=SKIP reason=publisher_request"; return 0; }
     local target_head="$1" remote=origin push_ref=refs/heads/main
     local max_retries attempt remote_tip clean_repo temp_parent push_output
     local published_remote_sha cleanup_rc push_rc

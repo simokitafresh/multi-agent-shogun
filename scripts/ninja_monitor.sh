@@ -766,6 +766,7 @@ push_lane_pre_push_hook_ready() {
 }
 
 push_lane_publish_one() {
+    [ "${PUBLISHER_SINGLE:-0}" = 1 ] && { push_lane_log "PUBLISHER_SINGLE push_lane push=0 result=SKIP reason=publisher_request"; return 0; }
     local repo="$1" remote_name="$2" sha="$3"
     # Keep this command literal and force-free: the repository hook remains
     # the final dirty-path/test safety boundary for every automatic publish.
