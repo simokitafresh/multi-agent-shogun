@@ -68,6 +68,7 @@ cmd_enqueue() {
         echo "publisher_queue: enqueue requires an existing request file" >&2
         return 1
     fi
+    bash "$SCRIPT_DIR/publisher_admit.sh" admit "$req"
     local task_id
     task_id="$(grep -m1 '^task_id:' "$req" 2>/dev/null | sed -E 's/^task_id:[[:space:]]*//; s/^["'"'"']//; s/["'"'"']$//')"
     task_id="$(printf '%s' "$task_id" | tr -c 'A-Za-z0-9_-' '_')"

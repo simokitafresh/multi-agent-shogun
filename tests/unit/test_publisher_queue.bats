@@ -22,10 +22,18 @@ setup() {
 printf '%s\n' "$*" >> "${INBOX_WRITE_STUB_LOG:-/dev/null}"
 exit 0
 STUB
+    # U5(cmd_4453): enqueue が呼ぶ admit gate はここでは対象外(このfileのtest_necessity=
+    # FIFO/並行/lock-run機構)。admission判定自体はtest_publisher_admit.batsが固定するため、
+    # ここでは常時admitのstubで機構テストを汚染しない。
+    cat > "$FIXTURE_ROOT/scripts/publisher_admit.sh" <<'STUB'
+#!/bin/bash
+exit 0
+STUB
     chmod +x "$FIXTURE_ROOT/scripts/publisher_queue.sh" \
         "$FIXTURE_ROOT/scripts/lib/lock_run_shim.sh" \
         "$FIXTURE_ROOT/scripts/lib/publisher_event.sh" \
-        "$FIXTURE_ROOT/scripts/inbox_write.sh"
+        "$FIXTURE_ROOT/scripts/inbox_write.sh" \
+        "$FIXTURE_ROOT/scripts/publisher_admit.sh"
 
     git -C "$FIXTURE_ROOT" init -q
     git -C "$FIXTURE_ROOT" -c user.email=t@t -c user.name=t add -A
