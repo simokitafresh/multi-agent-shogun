@@ -14321,7 +14321,10 @@ insights:
   priority: "high"
   source: "manual"
   fix_known: false
-  status: pending
+  status: "resolved"
+  resolved_reason: "GATE CLEAR: cmd_karo_hotfix_gate_publisher_pending_toplevel_only_202609022336 completed declared remediation"
+  action_artifact: "cmd=cmd_karo_hotfix_gate_publisher_pending_toplevel_only_202609022336;gate=cmd_complete_gate;result=CLEAR"
+  resolved_at: "2026-09-03T00:15:33.475896"
 - id: INS-20260902-233107841-b4ac
   ts: "2026-09-02T23:31:07+09:00"
   insight: "publisher.sh(U3) は C2a で base と tip の blob 差を全て衝突扱いにするため、旧 auto-push 経路で既に origin へ載った変更を RC に回す(冪等性欠陥)。また restore は tip が base から進むと tree mismatch で FAIL し rebase 手段が無い。さらに notify_karo が investigation_result type で inbox_write され『ninja -> karo only』で BLOCK=通知消失。active 化前に 3 点の修正が必要。"
