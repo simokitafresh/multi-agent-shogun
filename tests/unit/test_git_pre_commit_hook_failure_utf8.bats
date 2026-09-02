@@ -240,3 +240,42 @@ PY
   [ "$staged_hash" != "$empty_hash" ]
   [ "$staged_hash" != "$unstaged_hash" ]
 }
+
+@test "concurrent failures in the same second do not collide on artifact filenames" {
+  record_function="$REPO/record_function"
+  record_function_file "$record_function"
+  log_file="$REPO/logs/hook_failures.yaml"
+  mkdir -p "$REPO/logs"
+  stderr_a="$REPO/stderr_a"
+  stderr_b="$REPO/stderr_b"
+  python3 -c "from pathlib import Path; Path('$stderr_a').write_text('A'*250 + 'MARK_A', encoding='utf-8')"
+  python3 -c "from pathlib import Path; Path('$stderr_b').write_text('B'*250 + 'MARK_B', encoding='utf-8')"
+
+  # Two genuinely separate processes (distinct $$) racing to append the same
+  # log and, absent PID-qualified artifact filenames, the same artifact_id.
+  env REPO_ROOT="$REPO" _STDERR_FILE="$stderr_a" TMUX_PANE="" bash -c "$(cat "$record_function"); _record_hook_failure 1" &
+  pid_a=$!
+  env REPO_ROOT="$REPO" _STDERR_FILE="$stderr_b" TMUX_PANE="" bash -c "$(cat "$record_function"); _record_hook_failure 1" &
+  pid_b=$!
+  wait "$pid_a"
+  wait "$pid_b"
+
+  [ -f "$log_file" ]
+  python3 - "$log_file" "$REPO" <<'PY'
+from pathlib import Path
+import sys
+import yaml
+
+log_file, repo = sys.argv[1:]
+rows = yaml.safe_load(Path(log_file).read_bytes().decode("utf-8"))
+assert len(rows) == 2, rows
+artifacts = [row["artifact"] for row in rows]
+assert len(set(artifacts)) == 2, ("artifact filename collision", artifacts)
+contents = {row["artifact"]: (Path(repo) / row["artifact"]).read_text(encoding="utf-8") for row in rows}
+marks = sorted("".join(v[-6:]) for v in contents.values())
+assert marks == ["MARK_A", "MARK_B"], marks
+for row in rows:
+    on_disk_sha256 = __import__("hashlib").sha256((Path(repo) / row["artifact"]).read_bytes()).hexdigest()
+    assert on_disk_sha256 == row["artifact_sha256"], (row["artifact"], on_disk_sha256, row["artifact_sha256"])
+PY
+}
