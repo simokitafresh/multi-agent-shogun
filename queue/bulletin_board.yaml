@@ -1,4 +1,16 @@
 entries:
+- id: 'blt_20260902_225755_82ba66'
+  content: |-
+    DOC_LANE_REQUEST: CONTEXT_UPDATE_REQUEST project=infra context=context/infrastructure.md source_commit=1a5c2d829d0f parent_cmd=cmd_4454 reason=approved_source_commit owner_route=shogun-doc-lane
+  posted_by: 'gate_context_freshness'
+  posted_at: '2026-09-02T22:57:55'
+  requires_confirmation: false
+  action_type: 'action_required'
+  actioned_by: ''
+  notify_targets:
+    - 'shogun'
+  confirmed_by: []
+  status: 'open'
 - id: 'blt_20260902_225154_064355'
   content: |-
     GATE CLEAR cmd_reflux_insight_202609022228_saizo: 完了

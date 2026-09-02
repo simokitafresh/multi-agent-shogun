@@ -14221,3 +14221,10 @@ insights:
   resolved_reason: "semantic index candidate was absorbed into a registered concept"
   action_artifact: "semantic_index=/home/simokitafresh/multi-agent-shogun/docs/semantic-index/index.md"
   resolved_at: "2026-09-02T22:53:43+09:00"
+- id: INS-20260902-225813863-f018
+  ts: "2026-09-02T22:58:13+09:00"
+  insight: "semantic_index_update未登録cmd originノード: [[設計書§13_H3_便停止1h20m実証]] は既存aliasesに一致なし。類似概念TOP3: gate_bypass_prevention(ゲート迂回防止; alias=cmd_3702_最新月のみ設計; score=2.9) / semantic_dictionary_design(セマンティック辞書構想; alias=lord_memo_20260811_0337; score=2.5) / creator_brainwashing_defense(創造主の洗脳防御; alias=設計書v1 gist e131b06c; score=2.4)。概念定義とaliases追加を検討せよ"
+  priority: "low"
+  source: "semantic_index_update"
+  fix_known: false
+  status: pending

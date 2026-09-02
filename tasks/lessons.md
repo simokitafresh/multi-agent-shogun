@@ -16668,3 +16668,16 @@ sqlite3.Connection.backup()を使うとページ(4096byte)単位のread syscall�
 - **when**: 未設定
 - **how**: 未設定
 - sleepで起動時刻をずらした並行fixtureはprocess schedulingによりtask順を保証しない。投入順の契約testは同期投入で明示し、真の並行性はseq重複欠落・反復probeで独立計測する。
+
+### L1709: enqueue前にadmit呼出しを挿すAC1変更は、その挿入対象関数を直接呼ぶ既存bats fixtureの非存在scriptを露呈させる
+- **日付**: 2026-09-02
+- **出典**: cmd_4453
+- **記録者**: kotaro
+- **tags**: [infra,testing,testing,bash,git]
+- **subdomain**: infra
+- **target_files**: [scripts/publisher_admit.sh,scripts/publisher_queue.sh,scripts/review_approval.sh,tests/unit/test_publisher_admit.bats,tests/unit/test_publisher_queue.bats]
+- **origin**: [[cmd_4453]]
+- **enforcement**: 未自動化
+- **when**: 未設定
+- **how**: 未設定
+- design.mdのAC1『publisher_queue.shのenqueue前にadmit呼出しを1行挿す』を実装すると、tests/unit/test_publisher_queue.bats(既存・cmd_4445実装)のsetup()はpublisher_admit.shをfixture rootへ用意していないため、その全testがbash: .../publisher_admit.sh: No such file or directoryでFAILした(commit_contract.planned_pathsの4ファイルに列挙されていない依存)。既存の外部依存を追加するhotfix/機能追加task設計時は、挿入先関数の全既存呼び出し元(rg -n の対象を関数/scriptで列挙)のtest fixtureが新依存を用意しているかを事前確認し、必要ならplanned_pathsへ既存test fixtureの最小stub追加を含めるべき。

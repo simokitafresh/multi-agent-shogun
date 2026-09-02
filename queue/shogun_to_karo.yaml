@@ -1,54 +1,52 @@
 commands:
-  cmd_4451:
-    title: "単一 publisher U3: publisher daemon(scripts/publisher.sh)を dry-run 既定で実装。dequeue→lock-run --bound 600→fetch→isolated tree@tip→C2a 検査→apply→commit-tree(trailer Published-By: publisher)→dry-run は log のみ→root ff 同期。rc=210 requeue と D15 counter、daemon_watchdog 監視 1 関数"
-    status: delegated
-    project: infra
-    purpose: "殿裁定 2026-09-02 20:44『捨てる壁に時間をかけるのは原理原則に反していないか』→設計書 §14.4: 第 2 波は U3 を dry-run で先頭に前倒す。U3 が origin へ publish し始めた時点で ancestry WAIT・push lane・GA-PUSH1 の壁(今日の hotfix 15 本の主対象=§10 で捨てる file)が主線から消える。§3 の U5→U3 順は『U5 admit が無い間は enqueue 側で migration_ack を要求しない dry-run』で代替。U1(cmd_4445 publisher_queue+lock_run_shim+publisher_event)は origin 到達済みで、本 unit はその上に載る"
+  cmd_4455:
+    title: "LP SEO: 月次シグナル頁 554 本の孤立解消 — /signals/ 年別一覧頁(EN/JA)+LP からの導線 1 本+月次頁の前月/翌月/一覧リンク+最新月の lastmod を data-through 日付に"
+    status: draft
+    project: dm-signal
+    purpose: "殿 2026-09-02 22:44『sitemap 554 に増えている。ページのインデックス登録にはまだ進んでいない』→22:53『起票せよ』。本番 curl 22:45 一次: LP(/)から /signals/ への href 0、/signals/ は 404、月次頁に前月/翌月リンク 0、lastmod は全月『月初 00:00Z』(2003 年含む)。∴ 月次頁 554 本は sitemap 以外から到達できない孤立頁で、Google の crawl 優先度が最下位に落ちる構造。内部リンクで到達可能にし、最新月の更新日を正しく申告する(SEO 案 v4 P1-1 の後段。docs/research/dm-signal-lp-seo-plan_20260830.md)"
     scope_mode: FULL
-    target_path: scripts
+    target_path: lp
     acceptance_criteria:
       AC1:
-        description: "scripts/publisher.sh を新規作成し、PUBLISHER_MODE=dry-run(既定)|active で loop{publisher_queue.sh dequeue→lock-run --bound 600{timeout 120 git fetch origin→$STATE_DIR 配下の isolated tree を origin/main tip で作成→C2a(全 paths で git rev-parse tip:<path> == manifest の base blob、不一致は request を rc/ へ移動+scripts/lib/publisher_event.sh append c2a_rc+家老 inbox 1 通)→publish_artifact.sh restore で patch 適用→git commit-tree(親 1、trailer Published-By: publisher)→dry-run は events.jsonl に kind=dry_run_publish 1 行のみ(origin 更新 0)/active は §9.1 U3 行の origin 送出経路(timeout 120 秒)→root で git merge --ff-only origin/main(§9.1 U3 の同期条件: tracked porcelain 0 ∧ untracked と差分 path の交差 0。非 0 なら同期せず家老 inbox 1 通)}}。lock-run rc=210 は isolated tree 破棄+request を queue 先頭へ戻し request の publish_attempts を yaml_field_set で +1(D15 state table: 0→1→2→3 requeue、4 で kind=retry_exhausted+家老 inbox 1 通で停止)。rc=124 等の固有失敗は rc/ へ(requeue しない)。root 配下に queue/artifacts/tree を作った時点で FAIL(§9.0)。選択実行 bash scripts/run_tests.sh file tests/unit/test_publisher.bats で FAIL 0・SKIP 0。中断再開時の成果物引継ぎ: 未 commit の worktree 差分と最終 bats 出力 log を報告 YAML の progress に path で残し、再開者はそこから継続する"
-        binary_check: "dry-run fixture で events.jsonl に dry_run_publish 1 行 ∧ origin 更新 0 ∧ isolated tree が $STATE_DIR 配下 ∧ C2a 不一致 fixture で rc/ 1 件+c2a_rc 1 行+家老 inbox 1 通 ∧ rc=210 fixture で publish_attempts 0→1 と queue 先頭復帰 ∧ 4 回目で retry_exhausted 1 行 ∧ root ff 同期条件(tracked 差分あり)で同期 0+inbox 1 通 ∧ 選択実行 FAIL 0 ∧ SKIP 0 ∧ 新規 test に非空 test_necessity か?"
+        description: "lp/app/signals/page.tsx と lp/app/ja/signals/page.tsx を新規作成(静的、canonical+hreflang en/ja/x-default、title/description は lp/copy/{en,ja}.ts に追加した key から): monthlySignalMonths(getShowcase()) を年で group し、各月へ siteUrl(`/signals/<month>/`)(JA は /ja/ 前置)のリンクを全件出す(月ハードコード禁止、月が増えれば自動で増える)。lp/components/landing-page.tsx の lp-footer nav(L117-118 付近の header nav でも可、どちらか 1 箇所)に /signals/(JA は /ja/signals/)への href を 1 本追加。lp/components/monthly-signal-page.tsx に『一覧へ』『前月』『翌月』の 3 リンク(前月/翌月は monthlySignalMonths の隣接要素、端は非表示)を追加。lp/app/sitemap.ts に /signals/ と /ja/signals/ の 2 entry を追加。cd lp && npm ci && npm run typecheck && npm run build が exit 0。中断再開時の成果物引継ぎ: 未 commit の worktree 差分と build log を報告 YAML の progress に path で残し、再開者はそこから継続する"
+        binary_check: "build 後の out に signals/index.html と ja/signals/index.html が存在 ∧ signals/index.html 内の href='/signals/<YYYY-MM>/' 件数 == monthlySignalMonths の件数(277) ∧ out/index.html と out/ja/index.html に /signals/ への href が各 1 以上 ∧ out/signals/2026-08/index.html に /signals/2026-07/ への href 1 かつ /signals/ への href 1 かつ翌月 href 0(端) ∧ out/sitemap.xml の <loc> が 554+2=556 ∧ typecheck/build exit 0 か?"
       AC2:
-        description: "scripts/daemon_watchdog.sh に既存の ninja_monitor 監視関数と同型の watchdog_publisher_healthy 1 関数を追加(publisher.sh の pid file と events.jsonl の最終 ts で生死判定、死亡時は再起動せず家老 inbox 1 通=意志依存でなく通知)。tests/unit/test_publisher.bats に生死判定 fixture 1 本。変更 file は scripts/publisher.sh(新規)・tests/unit/test_publisher.bats(新規)・scripts/daemon_watchdog.sh(1 関数追加)の 3 つのみ。git diff -U0 -- scripts/daemon_watchdog.sh の hunk が 1 関数の追加のみで既存関数への差分 0"
-        binary_check: "daemon_watchdog.sh の diff hunk が watchdog_publisher_healthy 追加のみ ∧ 生死 fixture で healthy/dead の 2 値が出る ∧ dead 時に inbox 1 通・再起動 0 ∧ 変更 file が上記 3 つのみ か?"
+        description: "lp/app/sitemap.ts の lastModified を『最新月(monthlySignalMonths の末尾)は showcase の data-through 日付(lp/lib/showcase.ts の ShowcaseData にある最終データ日。無ければ build 時刻 new Date())、それ以外の月は従来どおり月初』に変更。/signals/ 一覧 2 entry の lastModified も同じ最新日付。変更 file は lp/app/signals/page.tsx(新規)・lp/app/ja/signals/page.tsx(新規)・lp/components/landing-page.tsx・lp/components/monthly-signal-page.tsx・lp/app/sitemap.ts・lp/copy/en.ts・lp/copy/ja.ts・(必要なら)lp/app/globals.css の 8 つ以内。LP 本文の価格・無料期間の文言追加は禁止(SEO 案 §3)"
+        binary_check: "out/sitemap.xml で /signals/2026-08/ の <lastmod> が 2026-08-01T00:00:00.000Z ではなく data-through 日付(または build 日) ∧ /signals/2003-09/ の <lastmod> は 2003-09-01T00:00:00.000Z のまま ∧ 変更 file が上記 8 つ以内 ∧ rg -i 'free trial|first month free|初月無料' lp/ → 0 か?"
     command: |
-      1. 設計書 §9.0 共通則と §9.1 U3 行・§6 D14 D15・§2.3 C2a・§13 H9 を読み、origin/main を base に scripts/publisher.sh と tests/unit/test_publisher.bats を作り、選択実行 bash scripts/run_tests.sh file tests/unit/test_publisher.bats で FAIL 0・SKIP 0 を確認する。
-      2. scripts/daemon_watchdog.sh に watchdog_publisher_healthy を 1 関数追加して同 bats に生死 fixture を足し、bash scripts/ninja_scope_commit.sh -m "<msg>" -- scripts/publisher.sh tests/unit/test_publisher.bats scripts/daemon_watchdog.sh で commit し、報告 YAML に source_sha と実行 log path を書く。
+      1. docs/research/dm-signal-lp-seo-plan_20260830.md §0/§2 P1-1 と origin/main の lp/app/sitemap.ts・lp/components/monthly-signal-page.tsx(monthlySignalMonths/monthlySignalPoint)・lp/components/landing-page.tsx L105-134・lp/copy/{en,ja}.ts を読み、origin/main を base に AC1 の一覧頁 2 file+導線+前後リンク+sitemap 2 entry を実装し、cd lp && npm ci && npm run typecheck && npm run build を通し、out/ 配下を grep で binary_check どおりに数える。
+      2. AC2 の lastModified を実装して再 build し、out/sitemap.xml の lastmod 2 点を確認して、bash scripts/ninja_scope_commit.sh -m "<msg>" -- lp/app/signals/page.tsx lp/app/ja/signals/page.tsx lp/components/landing-page.tsx lp/components/monthly-signal-page.tsx lp/app/sitemap.ts lp/copy/en.ts lp/copy/ja.ts で commit し、報告 YAML に source_sha・build log path・out/ の件数 6 点を書く。deploy(Render dm-signal-lp)と本番 curl(/signals/ 200、/ に /signals/ href、/signals/2026-08/ に前月 href、sitemap 556)は家老 lane の post_deploy_check で行う。
     assumptions:
-      claim: "U1 の scripts/publisher_queue.sh(enqueue/dequeue/peek/lock-run の 4 subcommand)・scripts/lib/lock_run_shim.sh・scripts/lib/publisher_event.sh は commit 0e8d1b6d9 で origin/main に到達済み(git merge-base --is-ancestor 0e8d1b6d9 origin/main = yes、2026-09-02 20:50)。U2 の scripts/publish_artifact.sh restore は cmd_4449 が『manifest 未申告 path を適用する』欠陥を検出しており修正 lane 待ちだが、本 unit は restore を呼ぶだけで restore の内部は触らない(修正は U2 lane)。scripts/publisher.sh は未存在(ls → no、設計書内の参照 4)"
-      source: "docs/research/single_publisher_asis_tobe_5w1h_20260902.md §9.0 §9.1 U3 §6 D14 D15 §2.3 C2a §13 H9 §14.4、git show 0e8d1b6d9:scripts/publisher_queue.sh(case 分岐 enqueue/dequeue/peek/lock-run L161-164)、scripts/daemon_watchdog.sh(watchdog_*_healthy 関数 1 本を型として参照)"
+      claim: "origin/main(60336747 cmd_4436)に lp/app/signals/[month]/page.tsx・lp/app/ja/signals/[month]/page.tsx・lp/app/sitemap.ts(monthlySignalMonths で 277 月×2 entry)・lp/components/monthly-signal-page.tsx(export monthlySignalMonths/monthlySignalPoint/MonthlySignalPage、footer L128)・lp/components/landing-page.tsx(footer/header nav L117-118、note CTA L105)が存在(git show origin/main で 2026-09-02 22:55 確認)。lp/app/signals/page.tsx は未存在(本番 /signals/ 404 で確認)。lp/package.json scripts: build/typecheck のみ(test 無し)"
+      source: "git show origin/main:lp/app/sitemap.ts, lp/components/monthly-signal-page.tsx, lp/components/landing-page.tsx, lp/package.json(DM-signal origin/main 4ad5ddf9)、本番 curl https://dm-signal.com/sitemap.xml(<loc> 554)・/signals/(404)・/(signals href 0) 2026-09-02 22:45、docs/research/dm-signal-lp-seo-plan_20260830.md v4"
       trust: verified
-    depends_on: cmd_4445
-    timeout_minutes: 60
-    estimated_minutes: 45
+    timeout_minutes: 45
+    estimated_minutes: 30
     execution_env:
-      runtime_constraints: "bats は $BATS_TEST_TMPDIR の bare remote と SHOGUN_STATE_DIR を指す一時 dir で完結(実 origin へ push 0、root 配下に queue/tree を作らない)。daemon は fixture 内で 1 loop だけ回す"
-      long_runtime_reason: "AC1(daemon loop+C2a+rc210 requeue+D15 counter+root 同期条件)と AC2(watchdog 1 関数)は同じ publisher.sh の状態機械を共有し、分割すると requeue と同期の境界で fixture が二重になる。同型の U1(cmd_4445: queue+shim+events の 3 script)は配備 14:44:58→報告 15:33 の実測 2880s"
-      measured_runtime_sec: 2880
+      runtime_constraints: "npm ci+next build は lp/ 配下で完結(本番 API への fetch は getShowcase のビルド時 fetch のみ=読み取り)。本番 deploy は本 cmd の範囲外(家老 lane)"
+      long_runtime_reason: "next build が showcase fetch+554 静的頁生成で 1 回 3-5 分、AC1/AC2 で最低 2 回 build する(同型の cmd_4436 実測 14:57 配備→15:48 CLEAR)。AC1 の一覧頁と前後リンクは monthlySignalMonths の同一配列を共有するため 1 忍者で一貫させる"
+      measured_runtime_sec: 1800
     split_decision:
       boundary_ac_ids: [AC1, AC2]
       integration_tasks: 1
-    serial_dependency_evidence: "AC2 の watchdog 関数は AC1 が書く pid file と events.jsonl の最終 ts を読む(AC1 の出力が AC2 の入力)。AC1 内の requeue/同期/C2a は同一 lock-run ブロックの分岐で、別忍者に分けると lock の所有が分裂する(§9.0『直列化は flock だけ』)"
+    serial_dependency_evidence: "AC2 の lastModified は AC1 で追加する /signals/ 2 entry にも適用するため、AC1 の sitemap 変更の上に AC2 を重ねる(同一 file lp/app/sitemap.ts の 2 段変更)。別忍者に分けると sitemap.ts の commit 競合が起きる"
     quality_gate:
-      q1_firefighting: "品質向上。理由: 単一 publisher の本体。dry-run で origin を触らずに queue→commit-tree→root 同期の全経路を bats で固め、active 切替は別 cmd(canary D9)にする"
-      q2_learning: "奪わない。理由: 忍者は設計書 §9.1 U3 行の契約から実装と fixture を組む。判断は C2a/D15/同期条件の 3 点で、全て設計書に二値で書いてある"
-      q3_next_quality: "上がる。理由: U3 が動けば U7(runtime push の flag 下流化)と U8(§10 削除)へ進め、今日の壁(ancestry WAIT/push lane/GA-PUSH1)が構造的に消える"
-      q4_depth: "deep — 理由: daemon・lock・retry counter・root 同期条件の 4 契約を 1 unit で実装する。fixture は 7 本以上"
-      q5_verified_source: "structure_verified — 対象を実行して確認(2026-09-02 20:50): git merge-base --is-ancestor 0e8d1b6d9 origin/main → yes、git show 0e8d1b6d9:scripts/publisher_queue.sh | grep -nE 'enqueue\\)|dequeue\\)|peek\\)|lock-run\\)' → L161-164 の 4 分岐、ls scripts/publisher.sh → no、rg -c 'watchdog_.*_healthy\\(\\)' scripts/daemon_watchdog.sh → 1(型あり)"
-      q6_not_hiding: "隠していない。理由: dry-run 既定で push 0 を bats で固定。active は本 cmd の対象外(別 cmd で canary)。restore の既知欠陥は U2 lane の責務として明記"
-      q7_definition_verified: "publisher daemon・C2a・D14・D15・root 同期条件の定義は設計書 v3.7 §9.1 U3 行と §6 で確認(確認日: 2026-09-02、家老 APPROVE v3.5 blt_143800 の骨格)"
-      q8_why_what: "WHY: 殿 20:44『捨てる壁に時間をかけるな』→捨てる壁を消す本体(U3)を前倒す / WHAT: scripts/publisher.sh dry-run+test_publisher.bats+daemon_watchdog 1 関数 / WHEN: cmd_4445 CLEAR 後(U1 API 到達済み) / WHERE: scripts, tests/unit / WHO: 家老配備(Claude または Codex 1 名、検証は他 CLI の別 cmd) / HOW: §9.1 U3 行の 6 欄を契約に / 複利: U7/U8 が着手可能になり旧経路の hotfix が不要になる"
-      q9_firefighting_root_cause: "根本対応。理由: 今日の 15 本の hotfix は §10 で捨てる file への対症。U3 を先に立てるのが唯一の根治"
-      q10_knowledge_boundary: "検証済み: U1 API 到達、publisher_queue の subcommand、watchdog の型。スコープ外: active 切替と canary(D9、別 cmd)、U3b deploy check(別 cmd)、restore 欠陥の修正(U2 lane)"
-      q11_not_already_done: "既存代替の現物確認(2026-09-02 20:50): ls scripts/publisher.sh → 存在しない。rg -c 'publisher.sh' scripts/ docs/research/single_publisher_asis_tobe_5w1h_20260902.md → 4(全て設計書内の参照、実装 0)。rg -c 'cmd_4451' queue/shogun_to_karo.yaml → 0(起票前)。旧経路 scripts/ninja_monitor.sh の check_push_lane は §10 M2 で削除対象であり代替にならない"
-      q_ambiguity: "曖昧さ: U5 admit が無い間の enqueue 側の扱い。解消: 本 cmd は dry-run で admit を呼ばず、U5(cmd_4453)が enqueue 前に admit を挿す。root 同期の所有者解決は §9.1 U3 行の (1)-(3) をそのまま実装"
-      q12_lord_30min_cost: "no — 殿裁定 20:44 で確定、判定は bats"
-      diagnosis: "BLOCK理由: 該当なし(新規起票) / 対策: 新規 file 2(publisher.sh・test_publisher.bats)+既存 1 関数追加。depends_on=cmd_4445 は実依存(U1 API の origin 到達)であり起票ゲート回避の流用ではない(LS-A04(47))"
+      q1_firefighting: "品質向上。理由: 孤立頁 554 本を内部リンクで到達可能にする構造の是正であり、索引されない現象への場当たりではない。月ハードコード禁止で今後の月も自動で載る"
+      q2_learning: "奪わない。理由: 忍者は monthlySignalMonths の既存配列を使い、判断点は『前後リンクの端の扱い』のみで AC に固定"
+      q3_next_quality: "上がる。理由: 索引が進めば Search Console の表示/クリック計測(SEO 案 §4)が初めて意味を持つ"
+      q4_depth: "medium — 理由: 新規頁 2+既存 5 file の小変更、binary は out/ の件数 6 点"
+      q5_verified_source: "structure_verified — 対象を実行して確認(2026-09-02 22:45-22:55): curl sitemap.xml | grep -c '<loc>' → 554、curl -o /dev/null -w %{http_code} /signals/ → 404、curl / | grep -o 'href=\"[^\"]*signals' → 0 行、git show origin/main:lp/app/sitemap.ts → lastModified=new Date(`${month}-01T00:00:00.000Z`)"
+      q6_not_hiding: "隠していない。理由: 索引未登録の原因を『時間』で片付けず、構造(孤立頁・lastmod)を本番 curl で特定して直す。価格文言の禁則を binary に入れた"
+      q7_definition_verified: "孤立頁・lastmod・hreflang の定義は docs/research/dm-signal-lp-seo-plan_20260830.md §0/§2 と Next.js 14 MetadataRoute.Sitemap 型(lp/app/sitemap.ts 現物)で確認(確認日: 2026-09-02)"
+      q8_why_what: "WHY: 殿 22:44 索引未登録→構造原因 3 点 / WHAT: /signals/ 一覧 EN/JA+LP 導線+前後リンク+lastmod / WHEN: 今夜 / WHERE: DM-signal lp/ / WHO: 家老配備(Claude または Codex どちらでも可) / HOW: monthlySignalMonths を共有し out/ を数える / 複利: 月が増えるたび一覧と sitemap が自動で伸びる"
+      q9_firefighting_root_cause: "根本対応。理由: 検索エンジンが辿れない構造そのものを直す。URL 検査の手動リクエストは殿の 4 本のみで、それ以外を手作業にしない"
+      q10_knowledge_boundary: "検証済み: LP の file 構成と sitemap 生成、本番 curl の 3 事実。スコープ外: Google 側の索引時期、用語頁(P1-4)、/ja 末尾スラッシュ統一(P2)"
+      q11_not_already_done: "既存代替の現物確認(2026-09-02 22:45): curl /signals/ → 404、git ls-tree origin/main lp/app/signals/ → [month] のみ(page.tsx 無し)、rg -c 'signals' lp/components/landing-page.tsx(origin/main) → 0"
+      q_ambiguity: "曖昧さ: data-through 日付の取得元。解消: lp/lib/showcase.ts の ShowcaseData に最終データ日 field があればそれ、無ければ build 時刻。どちらを使ったかを報告 YAML に書く"
+      q12_lord_30min_cost: "no — 殿 22:53『起票せよ』で確定、判定は out/ の件数"
+      diagnosis: "BLOCK理由: 該当なし(新規起票) / 対策: 新規 2 file+既存 5 file の小変更、build 2 回"
     environment_change: "type=lesson; file=projects/infra/lessons_shogun.yaml; pattern=cmdテンプレートルール"
-    delegated_at: "\"2026-09-02T21:29:20\""
-    origin: "[[殿裁定_捨てる壁凍結_20260902_2044]] -> [[設計書§14.4_U3前倒し]] -> [[cmd_4451_U3_dryrun]]"
+    origin: "[[殿指摘_索引未登録_20260902_2244]] -> [[月次頁554本が孤立_内部リンク0]] -> [[cmd_4455_signals_index_internal_links]]"
   cmd_4453:
     title: "単一 publisher U5: scripts/publisher_admit.sh(承認 2 file の存在で admit、doc kind は将軍 identity+path allowlist、R13 db_migration は migration_ack 必須)と review_approval.sh karo ACCEPT --migration-ack(唯一の enqueue caller・唯一の ack writer)"
     status: delegated
@@ -99,56 +97,6 @@ commands:
     environment_change: "type=lesson; file=projects/infra/lessons_shogun.yaml; pattern=cmdテンプレートルール"
     delegated_at: "\"2026-09-02T21:33:02\""
     origin: "[[殿裁定_捨てる壁凍結_20260902_2044]] -> [[設計書§14.4_第2波並走]] -> [[cmd_4453_U5_admit]]"
-  cmd_4454:
-    title: "単一 publisher U6: 台帳 writer scripts/ledger_writer.sh(append/update/resolve op を $STATE_DIR/ledger_inbox へ、可変 field allowlist と CAS)と insight/bulletin/lesson/workaround 4 writer の op 経路への付替え"
-    status: delegated
-    project: infra
-    purpose: "殿裁定 2026-09-02 20:44(§14.4: U6 は U3 dry-run と並走)。設計書 §13 H3『台帳ノイズ同士の分岐』は本日 15:2x-16:44 の便停止 1h20m(分岐 63/95 が全て insights autopush)で実証済み。台帳 4 本の root 直接追記を op file 化し、publisher が batch で commit(ledger: <names> <n>)することで、台帳 commit による分岐と ID merge driver(§10 M4)を不要にする"
-    scope_mode: FULL
-    target_path: scripts
-    acceptance_criteria:
-      AC1:
-        description: "scripts/ledger_writer.sh を新規作成: op=append <ledger> <entry.yaml> / update <ledger> <id> <field>=<value> --expect <field>=<old> / resolve <ledger> <id> --expect status=<old> を $STATE_DIR/ledger_inbox/<ledger>/<ts>_<seq>.yaml(op・対象 id・expected 値・op 発行時の entry hash を含む)へ書く。構造制約: (a) 台帳ごとの可変 field allowlist(insights: status/resolved_reason/action_artifact/resolved_at/fix_known、lessons: status/retired_at/retire_reason、bulletin: status/actioned_by/confirmed_by、workarounds: status)以外への update は rc=12 (b) CAS: 取込み側(本 cmd では ledger_writer.sh apply <op> の関数として同 script に置く)は entry の現在値が expected と一致する時だけ適用、不一致は op を rejected/ へ移し家老 inbox 1 通。root 配下に ledger_inbox を作った時点で FAIL(§9.0)。選択実行 bash scripts/run_tests.sh file tests/unit/test_ledger_writer.bats で FAIL 0・SKIP 0。中断再開時の成果物引継ぎ: 未 commit の worktree 差分と最終 bats 出力 log を報告 YAML の progress に path で残し、再開者はそこから継続する"
-        binary_check: "allowlist 外 field の update で rc=12 ∧ CAS 不一致で rejected/ 1 件+inbox 1 通+台帳無変更 ∧ CAS 一致で適用 1 ∧ append が末尾追加で既存 id/ts/created_at 不変 ∧ op file が $STATE_DIR 配下 ∧ 選択実行 FAIL 0 ∧ SKIP 0 ∧ 新規 test に非空 test_necessity か?"
-      AC2:
-        description: "scripts/insight_write.sh・scripts/bulletin_write.sh・scripts/lesson_write.sh・scripts/karo_workaround_log.sh の root file 追記 1 箇所ずつを ledger_writer append <ledger> <entry.yaml> 呼出しへ付替える(各 script の diff は追記箇所の置換 1 hunk のみ。読み側・通知側は不変)。insight_resolve.sh と lesson_write.sh --retire は update/resolve op へ付替える。付替え後も既存 bats(tests/unit/test_insight_write.bats・test_bulletin_write.bats・test_lesson_write.bats)が選択実行で FAIL 0・SKIP 0。変更 file は scripts/ledger_writer.sh(新規)・tests/unit/test_ledger_writer.bats(新規)+上記 writer 5 script のみ"
-        binary_check: "4 writer+insight_resolve+--retire の diff が各 1 hunk ∧ 付替え後に既存 3 bats が FAIL 0 ∧ SKIP 0 ∧ 変更 file が上記 7 つのみ か?"
-    command: |
-      1. 設計書 §9.0 共通則と §9.1 U6 行・§2.3 C7・§13 H3・§6 D14 を読み、origin/main を base に scripts/ledger_writer.sh と tests/unit/test_ledger_writer.bats を作り、選択実行 bash scripts/run_tests.sh file tests/unit/test_ledger_writer.bats で FAIL 0・SKIP 0 を確認する。
-      2. insight_write/bulletin_write/lesson_write/karo_workaround_log の追記 1 箇所と insight_resolve・lesson_write --retire を op 経路へ付替え、既存 3 bats を選択実行して FAIL 0・SKIP 0 を確認し、bash scripts/ninja_scope_commit.sh -m "<msg>" -- scripts/ledger_writer.sh tests/unit/test_ledger_writer.bats scripts/insight_write.sh scripts/bulletin_write.sh scripts/lesson_write.sh scripts/karo_workaround_log.sh scripts/insight_resolve.sh で commit し、報告 YAML に source_sha と実行 log path を書く。
-    assumptions:
-      claim: "台帳 4 writer は root file へ直接追記している(rg -c 'insights.yaml' scripts/insight_write.sh → 10、2026-09-02 20:50)。scripts/ledger_writer.sh は未存在(ls → no、設計書内参照 1)。本日 15:2x-16:44 の便停止は分岐 63/95 が全て insights autopush merge(将軍実測、session_save_20260902_1625)で §13 H3 の実証"
-      source: "docs/research/single_publisher_asis_tobe_5w1h_20260902.md §9.0 §9.1 U6 §2.3 C7 §13 H3 §6 D14 §14.4、scripts/insight_write.sh、scripts/bulletin_write.sh、scripts/lesson_write.sh、scripts/karo_workaround_log.sh、scripts/insight_resolve.sh"
-      trust: verified
-    depends_on: cmd_4445
-    timeout_minutes: 60
-    estimated_minutes: 45
-    execution_env:
-      runtime_constraints: "bats は一時 SHOGUN_STATE_DIR/ledger_inbox と一時 台帳 file のコピーで完結(本番 queue/insights.yaml・bulletin_board.yaml・lessons.yaml を書かない)。既存 3 bats(insight/bulletin/lesson)は選択実行で回帰確認"
-      long_runtime_reason: "AC1(ledger_writer の allowlist+CAS+apply)と AC2(4 writer+resolve+retire の付替え)は『writer が root file を直接書かない』を成立させて初めて既存 3 bats が意味を持つため、AC1 だけ先行しても検証が閉じない。同型の U1 実測 2880s と同規模(file 7)"
-      measured_runtime_sec: 2880
-    split_decision:
-      boundary_ac_ids: [AC1, AC2]
-      integration_tasks: 1
-    serial_dependency_evidence: "AC2 の付替え 5 script は AC1 の ledger_writer append/update/resolve の CLI 契約を呼ぶ(AC1 が無いと AC2 は実行不能)。CAS の expected は AC1 の op file 形式で決まる"
-    quality_gate:
-      q1_firefighting: "品質向上。理由: 台帳 commit の分岐(本日の便停止 1h20m の直接原因)を op file 化で構造的に消す。CAS で古い op の上書きを防ぐ"
-      q2_learning: "奪わない。理由: 忍者は §9.1 U6 行の allowlist と CAS 契約から実装する。判断点は 4 writer の追記箇所の特定で、rg で機械的に出る"
-      q3_next_quality: "上がる。理由: U6 が入ると §10 M4(ID merge driver)と M8(auto_commit 群)を捨てられ、reflux の台帳 commit も op 経路に乗る"
-      q4_depth: "deep — 理由: allowlist・CAS・4 writer の付替え・reflux 写像の 4 契約"
-      q5_verified_source: "structure_verified — 対象を実行して確認(2026-09-02 20:50): rg -c 'insights.yaml' scripts/insight_write.sh → 10、ls scripts/ledger_writer.sh → no、rg -c 'ledger_writer' scripts/ → 0、将軍実測 16:2x: git rev-list --left-right --count origin/main...HEAD → 63/95 で remote 63 は全て insights autopush merge"
-      q6_not_hiding: "隠していない。理由: 読み側・通知側を不変と AC で固定し、既存 3 bats の PASS を付替えの二値条件にする。root 配下 ledger_inbox は FAIL"
-      q7_definition_verified: "ledger op・allowlist・CAS・C7・H3 の定義は設計書 v3.7 §9.1 U6 行・§2.3・§13 で確認(確認日: 2026-09-02)"
-      q8_why_what: "WHY: 殿 20:44→第 2 波を今夜起票、H3 は本日実証済み / WHAT: ledger_writer.sh+bats+4 writer 付替え / WHEN: cmd_4445 CLEAR 後、U3 と並走 / WHERE: scripts, tests/unit / WHO: 家老配備(U3/U1b/U5 と別の忍者) / HOW: §9.1 U6 行の 6 欄 / 複利: 台帳分岐が消え、M4/M8 の削除が可能になる"
-      q9_firefighting_root_cause: "根本対応。理由: 台帳 commit の分岐は多重 writer の構造問題。op file 化+publisher batch が唯一の根治"
-      q10_knowledge_boundary: "検証済み: 4 writer の追記、便停止の分岐内訳。スコープ外: publisher 側の batch 取込み loop(U3 の次 cmd)、M4/M8 の削除(U8)、deploy_task の STATE_DIR allow(reflux 写像、別 cmd)"
-      q11_not_already_done: "既存代替の現物確認(2026-09-02 20:50): ls scripts/ledger_writer.sh → 存在しない。rg -c 'ledger_writer' scripts/ → 0。rg -c 'cmd_4454' queue/shogun_to_karo.yaml → 0(起票前)。既存の ID merge driver(.gitattributes insights-id 等)は分岐後の解決であり分岐の発生を防がない(§10 M4 で削除対象)"
-      q_ambiguity: "曖昧さ: CAS の expected をどこで取るか。解消: op 発行時に entry の現在値と hash を op file に書き、apply 側はその値と突合(§9.1 U6 行の (b))。reflux 写像(deploy_task の STATE_DIR allow)は本 cmd の対象外"
-      q12_lord_30min_cost: "no — 殿裁定で確定、判定は bats"
-      diagnosis: "BLOCK理由: 該当なし(新規起票) / 対策: 新規 file 2+既存 writer 5 script へ各 1 hunk。depends_on=cmd_4445 は実依存(D14 events writer と STATE_DIR 契約の origin 到達)であり起票ゲート回避の流用ではない(LS-A04(47))"
-    environment_change: "type=lesson; file=projects/infra/lessons_shogun.yaml; pattern=cmdテンプレートルール"
-    delegated_at: "\"2026-09-02T21:35:24\""
-    origin: "[[殿裁定_捨てる壁凍結_20260902_2044]] -> [[設計書§13_H3_便停止1h20m実証]] -> [[cmd_4454_U6_ledger_writer]]"
   cmd_4449:
     title: "単一 publisher U2 検証: Codex 忍者が隔離 clone で publish_artifact(capture/restore)と gate_report_format の manifest 検証の bats を選択実行し、設計書契約から敵対 fixture を 1 本追加して multi-CLI 同品質を証明する(実装は飛猿=Claude Sonnet)"
     status: blocked
