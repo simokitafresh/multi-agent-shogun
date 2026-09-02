@@ -1643,6 +1643,14 @@ PY
 }
 
 # --- Failure recording trap (cmd_1117) ---
+# GA-551/GA-552 (cmd_karo_hotfix_ga552_hook_artifact_20260902135701): the
+# 200-byte bounded summary was the *only* record kept, and $_STDERR_FILE was
+# deleted unconditionally below, so a historical failure's hit line and staged
+# generation could never be reconstructed after the fact. Persist the full
+# stderr as an artifact (atomic write: tmp file in the same dir, then rename)
+# before the temp file is removed, and record its content hash plus a hash of
+# the staged diff at failure time so a later investigation can verify both
+# identities without re-running anything.
 # shellcheck disable=SC2317  # Called indirectly via trap EXIT below
 _record_hook_failure() {
     local exit_code=$1
@@ -1651,6 +1659,22 @@ _record_hook_failure() {
             ninja_name=$(tmux display-message -t "$TMUX_PANE" -p '#{@agent_id}' 2>/dev/null || echo "unknown")
             stderr_summary=""
             [ -s "$_STDERR_FILE" ] && stderr_summary=$(_bounded_utf8_summary "$_STDERR_FILE" 200)
+            artifact_rel=""
+            artifact_sha256=""
+            if [ -s "$_STDERR_FILE" ]; then
+                artifact_dir="$REPO_ROOT/logs/hook_artifacts"
+                artifact_id="$(date +%Y%m%dT%H%M%S)_pre-commit_$$"
+                mkdir -p "$artifact_dir"
+                artifact_tmp="$artifact_dir/.${artifact_id}.log.tmp"
+                if cp "$_STDERR_FILE" "$artifact_tmp" 2>/dev/null \
+                        && mv -f "$artifact_tmp" "$artifact_dir/${artifact_id}.log" 2>/dev/null; then
+                    artifact_rel="logs/hook_artifacts/${artifact_id}.log"
+                    artifact_sha256=$(sha256sum "$artifact_dir/${artifact_id}.log" 2>/dev/null | awk '{print $1}')
+                else
+                    rm -f "$artifact_tmp" 2>/dev/null
+                fi
+            fi
+            staged_diff_sha256=$(git -C "$REPO_ROOT" diff --cached 2>/dev/null | sha256sum | awk '{print $1}')
             printf -v _hook_failure_ts '%(%Y-%m-%dT%H:%M:%S%z)T' -1
             if [[ "$_hook_failure_ts" =~ ^(.+)([+-][0-9]{2})([0-9]{2})$ ]]; then
                 _hook_failure_ts="${BASH_REMATCH[1]}${BASH_REMATCH[2]}:${BASH_REMATCH[3]}"
@@ -1661,6 +1685,11 @@ _record_hook_failure() {
                 echo "  hook: pre-commit"
                 echo "  ninja: $ninja_name"
                 echo "  exit_code: $exit_code"
+                if [ -n "$artifact_rel" ]; then
+                    echo "  artifact: \"$artifact_rel\""
+                    echo "  artifact_sha256: \"$artifact_sha256\""
+                fi
+                echo "  staged_diff_sha256: \"$staged_diff_sha256\""
                 echo "  detail: |-"
                 printf '    %s\n' "$stderr_summary"
             } >> "$REPO_ROOT/logs/hook_failures.yaml"
