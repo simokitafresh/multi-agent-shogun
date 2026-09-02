@@ -14537,3 +14537,10 @@ insights:
   source: "semantic_index_update"
   fix_known: false
   status: pending
+- id: INS-20260903-010137149-8952
+  ts: "2026-09-03T01:01:37+09:00"
+  insight: "殿裁可で cmd を再配備する際、ninja_monitor の AUTO-VOID が queue/reports と queue/archive/reports の完了報告を根拠に新 task を即 void する(cmd_4453 実例 00:58)。再配備の正規手段(cmd_reopen は archive 済 cmd 専用)が無く、家老が旧報告を走査対象外 dir へ退避する WA が必要。cmd 再配備の正規 SSOT(旧報告を retired 扱いにする印)を設ける。"
+  priority: "medium"
+  source: "manual"
+  fix_known: false
+  status: pending
