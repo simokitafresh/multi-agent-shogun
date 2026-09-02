@@ -14886,3 +14886,10 @@ insights:
   resolved_reason: "semantic map generation verified the candidate is represented or intentionally ignored"
   action_artifact: "semantic_map=/home/simokitafresh/multi-agent-shogun/context/semantic-map.md;semantic_index=/home/simokitafresh/multi-agent-shogun/docs/semantic-index/index.md"
   resolved_at: "2026-09-03T03:28:20.576079"
+- id: INS-20260903-034240282-2dc0
+  ts: "2026-09-03T03:42:40+09:00"
+  insight: "docs-only task(cmd_4463 偵察、owned .bats/.py 無し)で report_field_set.sh L314 _autolink_terminal_test_receipt が task.test_receipt_path(前 task の PASS receipt が残留)を task_id 不一致で BLOCK し、status completed に遷移不能。加えて run_tests.sh task mode は owned test 無しで RUN_TESTS_ACTIVE 継承の再帰 BLOCK。deploy_task の reset_stale_fields が test_receipt_path を消していない+docs-only task は receipt 要件を免除すべき(構造 2 点)。"
+  priority: "high"
+  source: "manual"
+  fix_known: false
+  status: pending
