@@ -209,7 +209,7 @@ handle_lock_failure() {
     local request="$1" rc="$2" task next
     # C2a/restore RC already rotated the request out of dequeued; reading it again
     # raised FileNotFoundError under set -e and killed the daemon (2026-09-03 05:35).
-    [ -f "$request" ] || return 0
+    [ -f "$request" ] || return "$rc"
     task="$(request_id "$request")"
     if [ "$rc" -eq 210 ]; then
         notify_karo "publisher lock-run timeout rc=210 task=$task"
@@ -222,9 +222,10 @@ handle_lock_failure() {
     elif [ "$rc" -ne 0 ]; then
         # C2a already rotated the request and emitted its own terminal evidence.
         # Do not manufacture a second generic failure event for the same request.
-        [ -f "$request" ] || return 0
+        [ -f "$request" ] || return "$rc"
         event git_fail "$task" "$rc" "publisher request failed"; notify_karo "publisher request failed task=$task rc=$rc"; [ -f "$request" ] && move_to_rc "$request"
     fi
+    return "$rc"
 }
 
 run_one() {
@@ -240,7 +241,8 @@ run_one() {
 daemon_main() {
     local once="${PUBLISHER_ONCE:-0}" sleep_seconds="${PUBLISHER_SLEEP_SECONDS:-2}"
     printf '%s\n' "$$" > "$PID_FILE"; trap 'rm -f "$PID_FILE"' EXIT
-    while :; do run_one; [ "$once" = 1 ] && break; sleep "$sleep_seconds"; done
+    # A rejected request (RC) is terminal evidence for that request only; the daemon must keep serving the queue.
+    while :; do run_one || true; [ "$once" = 1 ] && break; sleep "$sleep_seconds"; done
 }
 
 if [ "${1:-}" = --process-request ]; then process_request "$2" "$3"
