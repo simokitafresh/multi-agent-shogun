@@ -68,6 +68,9 @@ queue_count() {
 
 # ---- unit-level admit() 契約(AC1) ----
 
+# test_necessity: review_approvals/reports/<key>/{gunshi,karo}.yaml が一方でも欠ければ
+# admit は rc=5 を返し、publisher_queue.sh の enqueue はそれを検知して queue へ 1 件も
+# 積まないという不変量を固定する。
 @test "missing approvals reject admission with rc=5 and enqueue never runs" {
     req="$FIXTURE_ROOT/queue/reports/req_missing.yaml"
     cat > "$req" <<'REQ'
@@ -88,6 +91,9 @@ REQ
     [ "$(queue_count)" -eq 0 ]
 }
 
+# test_necessity: gunshi+karo の両承認が揃った通常の code-kind request は admit が rc=0 を
+# 返し、publisher_queue.sh の enqueue が実際に1件 queue へ投入するという通過経路の不変量を
+# 固定する。
 @test "approved code-kind request is admitted with rc=0 and enqueue publishes one request" {
     req="$FIXTURE_ROOT/queue/reports/req_ok.yaml"
     cat > "$req" <<'REQ'
@@ -105,6 +111,9 @@ REQ
     [ "$(queue_count)" -eq 1 ]
 }
 
+# test_necessity: kind=doc(将軍投入)の request が docs/ context/ queue/shogun_todo_map.md
+# の allowlist 外 path を1つでも含む場合、admit は rc=6 で拒否するという identity+path
+# allowlist の不変量を固定する。
 @test "kind doc path outside the shogun allowlist is rejected with rc=6" {
     req="$FIXTURE_ROOT/queue/reports/req_doc_bad.yaml"
     cat > "$req" <<'REQ'
@@ -119,6 +128,9 @@ REQ
     [ "$status" -eq 6 ]
 }
 
+# test_necessity: kind=doc の request が全 path とも allowlist 内(docs/ context/
+# queue/shogun_todo_map.md)であれば admit は rc=0 を返すという、rc=6 の裏返しとなる
+# 正常系不変量を固定する。
 @test "kind doc path inside the shogun allowlist is admitted with rc=0" {
     req="$FIXTURE_ROOT/queue/reports/req_doc_ok.yaml"
     cat > "$req" <<'REQ'
@@ -135,6 +147,10 @@ REQ
     [ "$status" -eq 0 ]
 }
 
+# test_necessity: R13。request の path に backend/app/db/ 配下が含まれるのに karo.yaml に
+# migration_ack が無ければ admit は rc=11 で拒否し、request へ db_migration: true を書き、
+# events.jsonl に kind=r13_reject を1行、家老 inbox へ1通記録するという沈黙 0 の不変量を
+# 固定する。
 @test "backend/app/db path without migration_ack is rejected and records r13_reject" {
     req="$FIXTURE_ROOT/queue/reports/req_r13.yaml"
     cat > "$req" <<'REQ'
@@ -153,6 +169,8 @@ REQ
     grep -q '^karo ' "$INBOX_WRITE_STUB_LOG"
 }
 
+# test_necessity: R13 の裏返し。backend/app/db/ 配下 path を含む request でも karo.yaml に
+# migration_ack が既に記録されていれば admit は rc=0 を返すという不変量を固定する。
 @test "backend/app/db path with migration_ack present in karo.yaml is admitted with rc=0" {
     req="$FIXTURE_ROOT/queue/reports/req_r13_ack.yaml"
     cat > "$req" <<'REQ'
@@ -216,6 +234,9 @@ trigger_queue_count() {
     find "$TRIGGER_STATE_DIR/publish_queue" -maxdepth 1 -type f -name '*.request' 2>/dev/null | wc -l | tr -d ' '
 }
 
+# test_necessity: review_approval.sh の karo ACCEPT <report> --migration-ack <value> は
+# review_approvals/reports/<key>/karo.yaml へ migration_ack: <value> を書く唯一の writer
+# であり、書いた直後に publisher_admit.sh の admit が rc=0 で通ることを固定する。
 @test "review_approval karo ACCEPT --migration-ack writes migration_ack and the report is then admitted" {
     setup_trigger_fixture
     report="$TRIGGER_ROOT/queue/reports/worker_report_cmd_trigger.yaml"
@@ -229,6 +250,9 @@ trigger_queue_count() {
     [ "$(trigger_queue_count)" -eq 1 ]
 }
 
+# test_necessity: --migration-ack option を付けない通常の karo ACCEPT は
+# migration_ack: を karo.yaml へ一切書かないという、option 有り writer の裏返しとなる
+# 不変量を固定する(option 無しで書いてしまうと R13 の migration_ack 判定が偽陽性化する)。
 @test "review_approval karo ACCEPT without the option does not write migration_ack" {
     setup_trigger_fixture
     report="$TRIGGER_ROOT/queue/reports/worker_report_cmd_trigger.yaml"
