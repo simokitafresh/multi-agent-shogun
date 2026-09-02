@@ -14717,3 +14717,10 @@ insights:
   source: "manual"
   fix_known: false
   status: pending
+- id: INS-20260903-022036382-515d
+  ts: "2026-09-03T02:20:36+09:00"
+  insight: "軍師の inbox_mark_read fingerprint ガード(93f0efee)は msg.report_fingerprint が無い message(ninja_monitor の review_draft 等)を素通しするため、軍師が review 未実施のまま既読化して idle 待機する事象が再発(02:19 小太郎 hotfix)。fingerprint 欠落 message は report path から fingerprint を計算して照合すべき。"
+  priority: "medium"
+  source: "manual"
+  fix_known: false
+  status: pending
