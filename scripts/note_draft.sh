@@ -25,7 +25,7 @@ die() { echo "ERROR: $*" >&2; exit 1; }
 readonly CDP_PORT="${CDP_PORT:-9234}"
 
 # Source repo_root helper (no hardcoded path)
-_ND_ROOT="${BASH_SOURCE[0]%/scripts/*}"
+_ND_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"  # 相対path起動(scripts/note_draft.sh)でも解決。旧 %/scripts/* は先頭 / 無しで不一致→自分自身を dir 扱いし source 失敗(2026-09-02 実測)
 # shellcheck source=scripts/lib/repo_root.sh
 source "${_ND_ROOT}/scripts/lib/repo_root.sh"
 # shellcheck source=scripts/lib/project_path.sh
