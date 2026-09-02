@@ -14251,6 +14251,7 @@ insights:
   resolved_reason: "一次情報で infra::general の現物3件と PD-141 を確認し、重複起票せず既存構造対策 task へ整理済み"
   action_artifact: PD-141;queue/tasks/hayate.yaml;cmd_karo_hotfix_report_format_manifest_dotslash_202609022312
   resolved_at: "2026-09-02T23:28:15+09:00"
+  last_seen: "2026-09-02T23:33:46+09:00"
 - id: INS-20260902-230836832-7c46
   ts: "2026-09-02T23:08:36+09:00"
   insight: "report_field_set.sh は files_modified path に '/' を必須(L1386/L1930)として top-level file(AGENTS.md 等)を BLOCK するが、gate_report_format の manifest_consistency は './' 無しの厳密一致を要求する。top-level file を変更する task(build_instructions 同期等)は忍者が報告を書けない矛盾。report_field_set の判定を『repo 内 tracked path なら可』へ改める"
@@ -14311,7 +14312,10 @@ insights:
   priority: "low"
   source: "semantic_index_update"
   fix_known: false
-  status: pending
+  status: "resolved"
+  resolved_reason: "semantic map generation verified the candidate is represented or intentionally ignored"
+  action_artifact: "semantic_map=/home/simokitafresh/multi-agent-shogun/context/semantic-map.md;semantic_index=/home/simokitafresh/multi-agent-shogun/docs/semantic-index/index.md"
+  resolved_at: "2026-09-02T23:31:20.170570"
 - id: INS-20260902-233053659-5bdb
   ts: "2026-09-02T23:30:53+09:00"
   insight: "cmd_complete_gate.sh の publisher_pending 判定は publish_queue を rglob('*.request') で走査するため、publisher が処理済みとして dequeued/ や rc/ へ移した request も pending 扱いになり永久 WAIT する。top-level(未処理)だけを見るべき(1 行)。"
