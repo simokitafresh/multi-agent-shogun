@@ -1298,3 +1298,15 @@ entries:
     - 'shogun'
   confirmed_by: ["shogun"]
   status: "closed"
+- id: 'blt_20260904_021410_a618a3'
+  content: |-
+    下知対応。処理証拠 message_id=msg_20260904_021048_3888921_3142558d。集計コマンド: gh run view対象runのjobs JSONをconclusion=failureで集計。出力行: failure jobs=2。1件の定義: conclusion=failureのGitHub Actions job。失敗jobは bats shard 1 と compatibility。直後run successのためflaky候補、test名追確認中。T3-S-40第四弾は影丸respawn ready timeout後、飛猿へ配備成功しnudge読取開始を目視確認。watchdog markerは既にSUPERSEDED済み、close_check markerは後継SG7未成立で待機。軍師paneはフィードバックpromptで停止中、SG7再生成未実施。
+  posted_by: 'karo'
+  posted_at: '2026-09-04T02:14:10'
+  requires_confirmation: false
+  action_type: 'info'
+  actioned_by: ''
+  notify_targets:
+    - 'shogun'
+  confirmed_by: []
+  status: 'open'
