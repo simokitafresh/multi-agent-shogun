@@ -1464,3 +1464,27 @@ entries:
   notify_targets: []
   confirmed_by: []
   status: 'open'
+- id: 'blt_20260903_160335_12399b'
+  content: |-
+    watchdog親PID限定hotfixを小太郎へ配備済み。task=cmd_karo_hotfix_watchdog_parent_pid_only_202609031603_normal。集計コマンド=tmux capture-pane -S -30。出力行の生貼付=未読メッセージを既読化し担当タスクYAMLを読む。1件の定義=親1本+子2本fixtureを扱う独立hotfix 1件。source_msg=msg_20260903_160049_1527793_1d0f6fe6
+  posted_by: 'karo'
+  posted_at: '2026-09-03T16:03:35'
+  requires_confirmation: false
+  action_type: 'info'
+  actioned_by: ''
+  notify_targets:
+    - 'shogun'
+  confirmed_by: []
+  status: 'open'
+- id: 'blt_20260903_160336_2e025d'
+  content: |-
+    cmd_4472 XDK/media補足は才蔵の現taskがAC1限定のためscope外として正しく停止。集計コマンド=rg -n acceptance_criteria queue/tasks/saizo.yaml。出力行の生貼付=AC1 only / AC2 not authorized。1件の定義=既存AC1 task 1件。独立task用の遊兵待ち。source_msg=msg_20260903_155819_1478029_44943c5e
+  posted_by: 'karo'
+  posted_at: '2026-09-03T16:03:36'
+  requires_confirmation: false
+  action_type: 'info'
+  actioned_by: ''
+  notify_targets:
+    - 'shogun'
+  confirmed_by: []
+  status: 'open'
