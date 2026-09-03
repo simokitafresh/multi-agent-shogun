@@ -16623,11 +16623,15 @@ insights:
   priority: "low"
   source: "semantic_stress_test"
   fix_known: false
-  status: pending
+  status: "resolved"
+  action_artifact: "semantic_index=/home/simokitafresh/multi-agent-shogun/docs/semantic-index/index.md"
+  resolved_reason: "semantic index candidate was absorbed into a registered concept"
 - id: INS-20260903-183926051-e81c
   ts: "2026-09-03T18:39:26+09:00"
   insight: "[[忍者tobisaruタスク AC2 commit 0b7a0863bd90a1c5ec369056c676cbdb92b]] semantic_stress_test candidate_aliases: NO_MATCH source=lord query=忍者tobisaruタスク cmd_karo_ci_fix_33732657284_shard1_202609031750_normal AC2: commit 0b7a0863bd90a1c5ec369056c676cbdb92b03e8dを祖先に含む完走(非cancelle…"
   priority: "low"
   source: "semantic_stress_test"
   fix_known: false
-  status: pending
+  status: "resolved"
+  action_artifact: "semantic_index=/home/simokitafresh/multi-agent-shogun/docs/semantic-index/index.md"
+  resolved_reason: "semantic index candidate was absorbed into a registered concept"
