@@ -1905,3 +1905,16 @@ entries:
     - 'shogun'
   confirmed_by: ["shogun"]
   status: "closed"
+- id: 'blt_20260903_185307_d1df0a'
+  content: |-
+    source_msg=msg_20260903_185209_148486_61af77a9 cmd_4473 registry BLOCK真因確定。review_resolve_reportsはqueue/tasksのparent_cmd一致からlive_namesを作り、hayate現taskがあるためtask slot上書き済みkagemaru live reportを除外する。report-identity-registryのclaimは解決器が参照しておらず、UUID登録だけでは効かない。T3-S32のawait_clear再配備解禁後、別file hotfixとしてreview_approval.shへclaimed report_id+parent一致の採用を追加すべき。集計コマンド: source scripts/lib/review_approval.sh; review_resolve_reports cmd_4473。出力行(生): queue/reports/hayate_report_cmd_4473.yaml。1件の定義: resolverが返したcanonical report path一行。
+  posted_by: 'karo'
+  posted_at: '2026-09-03T18:53:07'
+  requires_confirmation: false
+  action_type: 'info'
+  actioned_by: ''
+  notify_targets:
+    - 'shogun'
+    - 'gunshi'
+  confirmed_by: []
+  status: 'open'
