@@ -13258,7 +13258,9 @@ insights:
   priority: "low"
   source: "semantic_map_generate:new_file"
   fix_known: false
-  status: pending
+  status: "resolved"
+  action_artifact: "decision_candidate=shogun_android_app概念(index.md L9208)へandroid/README_ja.mdをfile行追加し、必要ならalias追加後semantic_map_generate.shで再生成。既存file行(android/, android/app/build.gradle.kts, android/app/src/main/java/com/shogun/android/)はディレクトリ/個別ソース単位でREADME_ja.md未列挙のため家老判断で別cmd起票を推奨"
+  resolved_reason: "一次確認: android/README_ja.mdは実在(4763bytes)。内容全文確認(SSH監視アプリのREADME、4タブ構成/音声入力/BGM/ANSI/スクショ共有)。semantic-map.md/index.mdの既存概念shogun_android_app(index.md L9208)と内容一致確認(file行はandroid/, android/app/build.gradle.kts等のディレクトリ単位でREADME_ja.md自体は未列挙)。reflux_commit_contract.scope=[queue/insights.yaml]のみでindex.md/semantic-map.mdは対象外。L1701(同sourceの直近解決パターン=decision_candidate委譲)に従い、index.md直接編集はscope外と判断しdecision_candidateへ整理"
 - id: INS-20260902-141251046-2ad1
   ts: "2026-09-02T14:12:51+09:00"
   insight: "semantic_map_generate新規ファイル候補: `android/app/src/main/java/com/shogun/android/MainActivity.kt` は semantic index未登録。既存概念へのfile追加または新概念定義を検討せよ"
@@ -15845,3 +15847,38 @@ insights:
   status: "resolved"
   action_artifact: "semantic_index=/home/simokitafresh/multi-agent-shogun/docs/semantic-index/index.md"
   resolved_reason: "semantic index candidate was absorbed into a registered concept"
+- id: INS-20260903-125640641-c8e4
+  ts: "2026-09-03T12:56:40+09:00"
+  insight: "[[C \\Users\\simok\\OneDrive\\デスクトップ\\バム型・届け方マニュアル v4 txt をよんでx acc]] semantic_stress_test candidate_aliases: NO_MATCH source=lord query=\"C:\\Users\\simok\\OneDrive\\デスクトップ\\バム型・届け方マニュアル v4.txt\"をよんでx_account_ops_automation_asis_tobe_5w1h_20260903.mdを更新して"
+  priority: "low"
+  source: "semantic_stress_test"
+  fix_known: false
+  status: pending
+- id: INS-20260903-125641089-2674
+  ts: "2026-09-03T12:56:41+09:00"
+  insight: "[[x account ops automation asis tobe 5w1h 20260903 mdについてチャットし]] semantic_stress_test candidate_aliases: NO_MATCH source=lord query=x_account_ops_automation_asis_tobe_5w1h_20260903.mdについてチャットしよう。俺はもう1軸欲しいと思う。テーマはドリームだ。詐欺でも煽りでもなくDM-siganal の生データや研究歴を知っている俺らはDM-signalの信頼性を…"
+  priority: "low"
+  source: "semantic_stress_test"
+  fix_known: false
+  status: pending
+- id: INS-20260903-125641541-fd29
+  ts: "2026-09-03T12:56:41+09:00"
+  insight: "[[迂回をするよりも]] semantic_stress_test candidate_aliases: NO_MATCH source=lord query=迂回をするよりも、問題inbo"
+  priority: "low"
+  source: "semantic_stress_test"
+  fix_known: false
+  status: pending
+- id: INS-20260903-125641922-b411
+  ts: "2026-09-03T12:56:41+09:00"
+  insight: "[[利他の精神で毎回迂回しているものがないか調査して]] semantic_stress_test candidate_aliases: NO_MATCH source=lord query=利他の精神で毎回迂回しているものがないか調査して、問題を直そう"
+  priority: "low"
+  source: "semantic_stress_test"
+  fix_known: false
+  status: pending
+- id: INS-20260903-125642283-06ce
+  ts: "2026-09-03T12:56:42+09:00"
+  insight: "[[われわれは情報提供業ではない]] semantic_stress_test candidate_aliases: NO_MATCH source=lord query=われわれは情報提供業ではない。あくまで個人の研究を共有しているだけだ。法務はマナーとして下品でなければいいのでは？絶対に儲かるとかそういうことを言わないのが俺なのは将軍もよく理解しているはずだ"
+  priority: "low"
+  source: "semantic_stress_test"
+  fix_known: false
+  status: pending
