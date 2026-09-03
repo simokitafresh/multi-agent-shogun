@@ -16,8 +16,24 @@ SYSTEM_PROMPT_FILE="${X_POST_SYSTEM_PROMPT_FILE:-$REPO_ROOT/skills/x-post-pipeli
 LEDGER_LOOKUP="${X_POST_LEDGER_LOOKUP:-$SCRIPT_DIR/x_post_ledger_lookup.py}"
 GATE_SCRIPT="${X_POST_GATE_SCRIPT:-$SCRIPT_DIR/x_post_gate.sh}"
 NTFY_SCRIPT="${X_POST_NTFY_SCRIPT:-$REPO_ROOT/scripts/ntfy.sh}"
-LLM_CMD="${X_POST_LLM_CMD:-claude --print}"
 API_ENV_FILE="${X_POST_API_ENV_FILE:-$REPO_ROOT/config/x_api.env}"
+
+if [[ -n "${X_POST_LLM_CMD:-}" ]]; then
+    LLM_CMD="$X_POST_LLM_CMD"
+else
+    # latest Claude正本を既定にする(pinned ~/bin/claudeはモデル未対応のAPI Error 400を返す)。
+    # モデル名は指定しない(未指定=CLI既定)。オペレータがX_POST_LLM_MODELを設定した時のみ付与する。
+    LLM_LATEST_BIN="$HOME/.local/bin/claude"
+    [[ -x "$LLM_LATEST_BIN" ]] || LLM_LATEST_BIN="claude"
+    LLM_CMD='timeout '"${X_POST_LLM_TIMEOUT:-150}"' '"$LLM_LATEST_BIN"' --print'
+    if [[ -n "${X_POST_LLM_MODEL:-}" ]]; then
+        LLM_CMD+=' --model "$X_POST_LLM_MODEL"'
+    fi
+    # system_prompt_v4.txtの内容をsystem promptとして分離注入する。
+    # (stdinへ混入させるとClaudeが前置き・見出し・区切り線を書く傾向が実測で確認されたため)
+    LLM_CMD+=' --system-prompt "$SYSTEM_PROMPT_TEXT"'
+fi
+X_POST_DISCLAIMER='教育目的。推奨ではない。過去は将来を保証しない。'
 
 usage() {
     cat >&2 <<'EOF'
@@ -65,7 +81,6 @@ cmd_draft() {
     output_file="$(mktemp)"
     trap 'rm -f "$prompt_file" "$output_file"' RETURN
     {
-        cat "$SYSTEM_PROMPT_FILE"
         printf '\n--- slot instruction ---\nslot: %s\n' "$slot"
         python3 - "$record" <<'PY'
 import json, sys
@@ -83,11 +98,106 @@ for label, value in (
     print(f"{label}: {value}")
 PY
     } > "$prompt_file"
-    if ! bash -c "$LLM_CMD" < "$prompt_file" > "$output_file"; then
+
+    local system_prompt_text
+    system_prompt_text="$(cat "$SYSTEM_PROMPT_FILE")"
+    if ! SYSTEM_PROMPT_TEXT="$system_prompt_text" X_POST_LLM_MODEL="${X_POST_LLM_MODEL:-}" bash -c "$LLM_CMD" < "$prompt_file" > "$output_file"; then
         echo "x_post.sh draft: LLM command failed" >&2
         exit 1
     fi
-    [[ -s "$output_file" ]] || { echo "x_post.sh draft: empty LLM output" >&2; exit 1; }
+
+    local ledger_usable_numbers ledger_url
+    ledger_usable_numbers="$(python3 -c '
+import json, sys
+record = json.loads(sys.argv[1])
+entry = record.get("entry", record)
+slot = record.get("slot", {})
+print(slot.get("usable_numbers") or entry.get("usable_numbers", ""))
+' "$record")"
+    ledger_url="$(python3 -c '
+import json, sys
+record = json.loads(sys.argv[1])
+entry = record.get("entry", record)
+print(entry.get("url", ""))
+' "$record")"
+
+    local validation_reasons
+    if ! validation_reasons="$(X_POST_VALIDATE_NUMBERS="$ledger_usable_numbers" X_POST_VALIDATE_URL="$ledger_url" X_POST_VALIDATE_DISCLAIMER="$X_POST_DISCLAIMER" python3 - "$output_file" <<'PY'
+import os, re, sys
+
+path = sys.argv[1]
+usable_numbers = os.environ.get("X_POST_VALIDATE_NUMBERS", "")
+allowed_url = os.environ.get("X_POST_VALIDATE_URL", "")
+disclaimer = os.environ.get("X_POST_VALIDATE_DISCLAIMER", "")
+
+with open(path, "r", encoding="utf-8", errors="replace") as fh:
+    text = fh.read()
+
+reasons = []
+raw_bytes = len(text.encode("utf-8"))
+
+for pat in ("Execution error", "API Error", "invalid_request_error", "error_code"):
+    if pat in text:
+        reasons.append(f"error_pattern:{pat}")
+
+if raw_bytes < 40:
+    reasons.append(f"too_short_bytes:{raw_bytes}")
+
+META_LINE_PATTERNS = [
+    r"^-{3,}\s*$",
+    r"^\*\*.+\*\*\s*$",
+    r"以下が",
+    r"本文です",
+    r"字\(全角換算",
+    r"字以内",
+    r"最終投稿",
+    r"\[MEM:",
+    r"^angle:",
+    r"^draft_seed:",
+    r"^usable_numbers:",
+    r"^slot:",
+    r"^first_line_candidate:",
+]
+for line in text.splitlines():
+    for pat in META_LINE_PATTERNS:
+        if re.search(pat, line):
+            reasons.append(f"meta_word:{pat}")
+
+urls = re.findall(r'https?://[^\s<>"]+', text)
+url_set = set(urls)
+if allowed_url:
+    bad_urls = sorted(u for u in url_set if allowed_url not in u)
+    if bad_urls:
+        reasons.append(f"url_mismatch:{','.join(bad_urls)}")
+    if not any(allowed_url in u for u in url_set):
+        reasons.append("url_missing")
+elif url_set:
+    reasons.append(f"url_unexpected:{','.join(sorted(url_set))}")
+
+text_no_url = re.sub(r'https?://[^\s<>"]+', "", text)
+char_count = len(text_no_url.strip())
+if char_count > 280:
+    reasons.append(f"too_long_chars:{char_count}")
+
+if disclaimer and disclaimer not in text:
+    reasons.append("missing_disclaimer")
+
+allowed_numbers = set(re.findall(r"\d+(?:\.\d+)?", usable_numbers or ""))
+body_numbers = set(re.findall(r"\d+(?:\.\d+)?", text_no_url))
+off_ledger = sorted(body_numbers - allowed_numbers)
+if off_ledger:
+    reasons.append(f"off_ledger_numbers:{','.join(off_ledger)}")
+
+if reasons:
+    print(";".join(reasons))
+    sys.exit(1)
+sys.exit(0)
+PY
+    )"; then
+        echo "x_post.sh draft: invalid LLM output, draft not saved: $validation_reasons" >&2
+        exit 1
+    fi
+
     cp "$output_file" "$(draft_file "$draft_id")"
     printf '%s\n' "$(draft_file "$draft_id")"
 }

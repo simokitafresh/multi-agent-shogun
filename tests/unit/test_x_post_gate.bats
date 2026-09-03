@@ -247,12 +247,19 @@ EOF
     [[ "$output" == *"credentials file not found"* ]]
 }
 
-@test "x_post draft: 日付_slot名へslot instructionと台帳値を注入" {
-    setup_x_post
+# draft生成テスト専用の軽量setup。setup_x_postはdate依存の固定ファイル名
+# (2026-09-03_A.txt)を事前生成するため、当日日付での衝突を避けて分離する。
+setup_x_post_minimal() {
+    X_POST="$PROJECT_ROOT/scripts/x_ops/x_post.sh"
+    export X_POST_DRAFTS_DIR="$FIXTURE_DIR/x_drafts_min"
+    mkdir -p "$X_POST_DRAFTS_DIR"
+}
+
+setup_x_post_draft_ledger() {
     cat > "$FIXTURE_DIR/ledger.yaml" <<'EOF'
 entries:
 - key: demo
-  url: https://note.com/tokyojibika/n/demo
+  url: https://note.com/tokyojibika/n/n171daa7f92a1
   title: デモ記事
   usable_numbers: '期間2020年〜2024年、CAGR 10%、MaxDD -20%、ベンチSPY'
   first_line_candidate: 最初の一文。
@@ -267,12 +274,215 @@ EOF
     export X_POST_LEDGER_FILE="$FIXTURE_DIR/ledger.yaml"
     export X_POST_SLOT_CALENDAR_FILE="$FIXTURE_DIR/slots.yaml"
     export X_POST_SYSTEM_PROMPT_FILE="$PROJECT_ROOT/skills/x-post-pipeline/system_prompt_v4.txt"
-    export X_POST_LLM_CMD="cat"
+}
+
+# stdinを$X_POST_LLM_CAPTUREへ保存し、契約に準拠した本文をstdoutへ返すstub。
+make_compliant_llm_stub() {
+    cat > "$FIXTURE_DIR/llm_stub.sh" <<'EOF'
+#!/usr/bin/env bash
+cat > "$X_POST_LLM_CAPTURE"
+cat <<'BODY'
+CAGR10%、MaxDD-20%、2020年〜2024年、SPY比較。
+https://note.com/tokyojibika/n/n171daa7f92a1
+教育目的。推奨ではない。過去は将来を保証しない。
+BODY
+EOF
+    chmod +x "$FIXTURE_DIR/llm_stub.sh"
+}
+
+# test_necessity: x_post.sh draft はLLM出力をそのままdraft保存する唯一の入口(P1)。
+# system promptを分離注入し、台帳データ(angle/draft_seed等)がユーザーメッセージへ
+# 正しく渡ることを固定する回帰テスト。Execution error/API Errorをdraft保存前に
+# fail-closeする契約(cmd_karo_hotfix_x_draft_generation_contract_202609031802)の前提。
+@test "x_post draft: slot instructionと台帳値をLLMへ注入し契約準拠の本文をdraft保存" {
+    setup_x_post_minimal
+    setup_x_post_draft_ledger
+    make_compliant_llm_stub
+    export X_POST_LLM_CAPTURE="$FIXTURE_DIR/llm_capture.txt"
+    export X_POST_LLM_CMD="$FIXTURE_DIR/llm_stub.sh"
     run bash "$X_POST" draft A demo
     [ "$status" -eq 0 ]
     [[ "$output" == "$X_POST_DRAFTS_DIR/20"*"_A.txt" ]]
-    grep -q '^angle: 定義$' "$output"
-    grep -q '^draft_seed: 二つだけ見る。$' "$output"
+    grep -q '^angle: 定義$' "$FIXTURE_DIR/llm_capture.txt"
+    grep -q '^draft_seed: 二つだけ見る。$' "$FIXTURE_DIR/llm_capture.txt"
+    run bash "$GATE" "$output"
+    [ "$status" -eq 0 ]
+    [[ "$output" == "PASS" ]]
+}
+
+# test_necessity: 過去に既定LLM(pinned CLI)がExecution errorをdraftへ丸ごと保存した
+# 実障害(cmd_karo_hotfix_x_draft_generation_contract_202609031802起票根拠)の回帰テスト。
+# fail-closeせず保存すると無効な投稿候補が承認導線に載る。
+@test "x_post draft: LLM出力がExecution errorならdraft保存前にfail-close" {
+    setup_x_post_minimal
+    setup_x_post_draft_ledger
+    cat > "$FIXTURE_DIR/llm_error_stub.sh" <<'EOF'
+#!/usr/bin/env bash
+cat > /dev/null
+printf 'Execution error'
+EOF
+    chmod +x "$FIXTURE_DIR/llm_error_stub.sh"
+    export X_POST_LLM_CMD="$FIXTURE_DIR/llm_error_stub.sh"
+    run bash "$X_POST" draft A demo
+    [ "$status" -eq 1 ]
+    [[ "$output" == *"invalid LLM output"* ]]
+    [[ "$output" == *"error_pattern:Execution error"* ]]
+    [ ! -f "$X_POST_DRAFTS_DIR/$(date -u +%Y-%m-%d)_A.txt" ]
+}
+
+# test_necessity: latest ClaudeがAPI Error本文をrc=0で返す経路のfail-close回帰。
+@test "x_post draft: LLM出力がAPI ErrorならFAIL・draft保存なし" {
+    setup_x_post_minimal
+    setup_x_post_draft_ledger
+    cat > "$FIXTURE_DIR/llm_apierr_stub.sh" <<'EOF'
+#!/usr/bin/env bash
+cat > /dev/null
+printf 'API Error: 400 {"type":"error"}'
+EOF
+    chmod +x "$FIXTURE_DIR/llm_apierr_stub.sh"
+    export X_POST_LLM_CMD="$FIXTURE_DIR/llm_apierr_stub.sh"
+    run bash "$X_POST" draft A demo
+    [ "$status" -eq 1 ]
+    [[ "$output" == *"error_pattern:API Error"* ]]
+}
+
+# test_necessity: 40byte未満の短文出力(空・切断応答)はSNSに投稿できる本文たり得ない。
+@test "x_post draft: 40byte未満の出力はFAIL" {
+    setup_x_post_minimal
+    setup_x_post_draft_ledger
+    cat > "$FIXTURE_DIR/llm_short_stub.sh" <<'EOF'
+#!/usr/bin/env bash
+cat > /dev/null
+printf 'OK'
+EOF
+    chmod +x "$FIXTURE_DIR/llm_short_stub.sh"
+    export X_POST_LLM_CMD="$FIXTURE_DIR/llm_short_stub.sh"
+    run bash "$X_POST" draft A demo
+    [ "$status" -eq 1 ]
+    [[ "$output" == *"too_short_bytes"* ]]
+}
+
+# test_necessity: 「以下が最終投稿本文です」等のメタ発話混入は実測(latest Claude既定応答)で
+# 再現した障害。本文と地の文が混在すると投稿がそのままメタ発話を含んでしまう。
+@test "x_post draft: メタ語(前置き)混入の出力はFAIL" {
+    setup_x_post_minimal
+    setup_x_post_draft_ledger
+    cat > "$FIXTURE_DIR/llm_meta_stub.sh" <<'EOF'
+#!/usr/bin/env bash
+cat > /dev/null
+cat <<'BODY'
+以下が最終投稿本文です。
+CAGR10%、MaxDD-20%、2020年〜2024年、SPY比較。
+https://note.com/tokyojibika/n/n171daa7f92a1
+教育目的。推奨ではない。過去は将来を保証しない。
+BODY
+EOF
+    chmod +x "$FIXTURE_DIR/llm_meta_stub.sh"
+    export X_POST_LLM_CMD="$FIXTURE_DIR/llm_meta_stub.sh"
+    run bash "$X_POST" draft A demo
+    [ "$status" -eq 1 ]
+    [[ "$output" == *"meta_word"* ]]
+}
+
+# test_necessity: Markdown区切り線(---)混入は本文と前置き/補足の境界を示すメタ記法であり、
+# 投稿本文に含めてはならない。
+@test "x_post draft: 区切り線(---)混入の出力はFAIL" {
+    setup_x_post_minimal
+    setup_x_post_draft_ledger
+    cat > "$FIXTURE_DIR/llm_sep_stub.sh" <<'EOF'
+#!/usr/bin/env bash
+cat > /dev/null
+cat <<'BODY'
+CAGR10%、MaxDD-20%、2020年〜2024年、SPY比較。
+---
+https://note.com/tokyojibika/n/n171daa7f92a1
+教育目的。推奨ではない。過去は将来を保証しない。
+BODY
+EOF
+    chmod +x "$FIXTURE_DIR/llm_sep_stub.sh"
+    export X_POST_LLM_CMD="$FIXTURE_DIR/llm_sep_stub.sh"
+    run bash "$X_POST" draft A demo
+    [ "$status" -eq 1 ]
+    [[ "$output" == *"meta_word"* ]]
+}
+
+# test_necessity: 280字超はX投稿として成立しない長さであり、システムプロンプトの
+# 140字目標を大きく逸脱した出力を機械的に弾く最終防御線。
+@test "x_post draft: 280字超の出力はFAIL" {
+    setup_x_post_minimal
+    setup_x_post_draft_ledger
+    cat > "$FIXTURE_DIR/llm_long_stub.sh" <<EOF
+#!/usr/bin/env bash
+cat > /dev/null
+printf '%s' "$(python3 -c "print('あ' * 300)")"
+printf '\n教育目的。推奨ではない。過去は将来を保証しない。\n'
+EOF
+    chmod +x "$FIXTURE_DIR/llm_long_stub.sh"
+    export X_POST_LLM_CMD="$FIXTURE_DIR/llm_long_stub.sh"
+    run bash "$X_POST" draft A demo
+    [ "$status" -eq 1 ]
+    [[ "$output" == *"too_long_chars"* ]]
+}
+
+# test_necessity: usable_numbersに無い数字(台帳外)の混入は誤った実績値のねつ造・誤記混入を
+# 検出できないと防げない。殿裁定B-6(数字の欠落時不使用)の裏面。
+@test "x_post draft: 台帳外数字混入の出力はFAIL" {
+    setup_x_post_minimal
+    setup_x_post_draft_ledger
+    cat > "$FIXTURE_DIR/llm_offnum_stub.sh" <<'EOF'
+#!/usr/bin/env bash
+cat > /dev/null
+cat <<'BODY'
+CAGR999%、MaxDD-20%、2020年〜2024年、SPY比較。
+https://note.com/tokyojibika/n/n171daa7f92a1
+教育目的。推奨ではない。過去は将来を保証しない。
+BODY
+EOF
+    chmod +x "$FIXTURE_DIR/llm_offnum_stub.sh"
+    export X_POST_LLM_CMD="$FIXTURE_DIR/llm_offnum_stub.sh"
+    run bash "$X_POST" draft A demo
+    [ "$status" -eq 1 ]
+    [[ "$output" == *"off_ledger_numbers:999"* ]]
+}
+
+# test_necessity: ledgerが渡した1本以外のURLが混入すると、未許可リンクへの誘導になる。
+@test "x_post draft: URL不一致の出力はFAIL" {
+    setup_x_post_minimal
+    setup_x_post_draft_ledger
+    cat > "$FIXTURE_DIR/llm_badurl_stub.sh" <<'EOF'
+#!/usr/bin/env bash
+cat > /dev/null
+cat <<'BODY'
+CAGR10%、MaxDD-20%、2020年〜2024年、SPY比較。
+https://example.com/spam
+教育目的。推奨ではない。過去は将来を保証しない。
+BODY
+EOF
+    chmod +x "$FIXTURE_DIR/llm_badurl_stub.sh"
+    export X_POST_LLM_CMD="$FIXTURE_DIR/llm_badurl_stub.sh"
+    run bash "$X_POST" draft A demo
+    [ "$status" -eq 1 ]
+    [[ "$output" == *"url_mismatch"* ]]
+}
+
+# test_necessity: fail-close発火時に既存の有効draftを破壊しないことを固定する回帰テスト。
+# 上書きしてしまうと承認待ちの正常な下書きが無効出力で失われる。
+@test "x_post draft: fail-close時は既存の有効draftを上書きしない" {
+    setup_x_post_minimal
+    setup_x_post_draft_ledger
+    mkdir -p "$X_POST_DRAFTS_DIR"
+    local existing="$X_POST_DRAFTS_DIR/$(date -u +%Y-%m-%d)_A.txt"
+    printf '既存の有効な下書き本文。教育目的。推奨ではない。過去は将来を保証しない。\n' > "$existing"
+    cat > "$FIXTURE_DIR/llm_error_stub2.sh" <<'EOF'
+#!/usr/bin/env bash
+cat > /dev/null
+printf 'Execution error'
+EOF
+    chmod +x "$FIXTURE_DIR/llm_error_stub2.sh"
+    export X_POST_LLM_CMD="$FIXTURE_DIR/llm_error_stub2.sh"
+    run bash "$X_POST" draft A demo
+    [ "$status" -eq 1 ]
+    grep -qF '既存の有効な下書き本文' "$existing"
 }
 
 @test "x_post approve: 本文全文とpathを通知し外部approved markerを待つ" {
