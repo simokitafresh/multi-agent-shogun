@@ -1,5 +1,5 @@
 <!-- gist-master: 77538fe909ed4d3b83b61b4baf99cacf single_publisher_asis_tobe_5w1h_20260902.md -->
-# origin/main 単一 publisher 化 — AsIs / ToBe / 5W1H 設計書 v3.18(09-03 08:20: hotfix 列完了=stop flag/watchdog 自動再起動/fileMode 固定/偽 BLOCK 根治(c3fdc90aa・5a52b29cd)。残=旧 daemon 入替のみ。v3.17=07:50: ledger batch 根治(滞留 15→0、n=70)・root drain hotfix CLEAR・worktree 回収 sweep(225→143)。v3.16=07:20: U6b cmd_4465 CLEAR=ledger route 本番初稼働(将軍手動 1 周 a6f54a6a9)、batch 中止欠陥→hotfix 待ち。v3.15=06:15: **U8 凍結**(cmd_4466 も正当 FAIL=現役 test の推移的被覆と別機能再利用に結合、将軍裁定 (b))。v3.14=05:50: U8 cmd_4464 正当 FAIL→cmd_4466(chain+test 単位、M7 除外)、U6b cmd_4465(ledger 消費者)、root drain/worktree 回収 hotfix、daemon 死亡→根治。v3.13=04:55: U7 完了・PUBLISHER_SINGLE ON 04:37・U8 AC2=cmd_4464 起票。v3.12=状況盤 02:32。v3.11=§14 02:15、殿指示 02:13: U3 active 初 publish 05fe87b68、U1/U2 再検証 CLEAR、第 3 波 U7 走行・U8 AC1 完了。殿裁定 01:30『先に進んでから戻れ』でcanary 待ち撤回。v3.10=§14.1 00:50。v3.9=§14 00:05: 実装 CLEAR 6 unit、U5 着地で ACCEPT→enqueue が生き publisher 未起動で全 CLEAR 閉塞→家老 dry-run で U3 欠陥 3 点検出→修正 lane、active 化は保留。v3.8=22:25。v3.7=§14 追加、殿指示 17:18。v3.6=§9.1 共通 AC の 2 巡目を『別 cmd の検証 task』へ。同 cmd 再配備は deploy_task completed-peer guard の正規 BLOCK 対象、15:35)
+# origin/main 単一 publisher 化 — AsIs / ToBe / 5W1H 設計書 v3.19(09-03 09:15: §15 クローズ判定を追加=未完了(origin 到達の publisher/wrapper 由来 67/101=66%、ToBe 100%)。v3.18=08:20: hotfix 列完了=stop flag/watchdog 自動再起動/fileMode 固定/偽 BLOCK 根治(c3fdc90aa・5a52b29cd)。残=旧 daemon 入替のみ。v3.17=07:50: ledger batch 根治(滞留 15→0、n=70)・root drain hotfix CLEAR・worktree 回収 sweep(225→143)。v3.16=07:20: U6b cmd_4465 CLEAR=ledger route 本番初稼働(将軍手動 1 周 a6f54a6a9)、batch 中止欠陥→hotfix 待ち。v3.15=06:15: **U8 凍結**(cmd_4466 も正当 FAIL=現役 test の推移的被覆と別機能再利用に結合、将軍裁定 (b))。v3.14=05:50: U8 cmd_4464 正当 FAIL→cmd_4466(chain+test 単位、M7 除外)、U6b cmd_4465(ledger 消費者)、root drain/worktree 回収 hotfix、daemon 死亡→根治。v3.13=04:55: U7 完了・PUBLISHER_SINGLE ON 04:37・U8 AC2=cmd_4464 起票。v3.12=状況盤 02:32。v3.11=§14 02:15、殿指示 02:13: U3 active 初 publish 05fe87b68、U1/U2 再検証 CLEAR、第 3 波 U7 走行・U8 AC1 完了。殿裁定 01:30『先に進んでから戻れ』でcanary 待ち撤回。v3.10=§14.1 00:50。v3.9=§14 00:05: 実装 CLEAR 6 unit、U5 着地で ACCEPT→enqueue が生き publisher 未起動で全 CLEAR 閉塞→家老 dry-run で U3 欠陥 3 点検出→修正 lane、active 化は保留。v3.8=22:25。v3.7=§14 追加、殿指示 17:18。v3.6=§9.1 共通 AC の 2 巡目を『別 cmd の検証 task』へ。同 cmd 再配備は deploy_task completed-peer guard の正規 BLOCK 対象、15:35)
 
 - 作成: 2026-09-02 02:30 将軍(殿指示 02:16『忍者はコミットしない。コミットは家老/将軍のみ』→02:18『コミットのやり方・スキル・構造の検証』→02:24『AsIs/ToBe 5W1H 設計書。不要になる複雑さを先に検証』)
 - 協議: 家老回答 blt_20260902_021944(single publisher + local commit artifact)。協議記録=`queue/notes/shogun_karo_single_committer_hypothesis_20260902_0220.md` §1-6
@@ -337,7 +337,24 @@ canary 判定: **(v1.8 殿裁定 D9)** infra と dm-signal の両 repo を U1 �
 - 例外適用の記録(23:12/23:34): gate_report_format の `./` 正規化 1 行(疾風 a6ebc5b58、AGENTS.md 等最上位 file の task が CLEAR 不能=全 CLEAR を塞ぐ)/ gate publisher_pending の rglob→未処理のみ 1 行(小太郎)/ U3 欠陥 3 点(才蔵、実装 file)。
 - 例外適用の記録(22:18): push_lane integrate(§10 M2)は捨てる file だが、その欠陥が第 2 波の成果物(U3/U1b)を root から staged 削除し続ける(5 回)。『捨てる壁』と『成果物を壊す壁』は別物で、後者は 1 行で塞ぐ。判定基準=その壁を放置すると実装 file(§9 の成果物)が失われるか。
 
+## §15 クローズ判定(殿下問 09-03 09:13『完了したか？追加でやるべき点は？』)
+
+**判定: 未完了(クローズしない)。** 実装 unit は 11/12 着地(U8 凍結)だが、設計の目的値(§11『origin 到達 commit は publisher/wrapper 由来 100%』)に達していない。
+
+| 計測(09:15、flag ON 04:37 以降の origin/main) | 値 | ToBe |
+|---|---|---|
+| origin 到達 commit 数 | 101 | — |
+| うち Published-By trailer 付き | 67(publisher 7 / wrapper 60)= **66%** | 100% |
+| trailer 無し 34 の内訳 | insights auto-commit(旧経路、将軍/家老が lock-run で ff push)・runtime integrate(monitor)・D012 merge(家老 lock-run)・reflux 直 commit(506e77b6e で根治済) | 0 |
+| 稼働 daemon | 旧コード(05:46 起動、ledger 消費/root drain/stop flag を持たない)=手動 1 周で代替中 | 新コードで全自動 |
+| root と origin | 台帳 dirty で ff 不能が周期的に発生(09:10 behind 1) | ahead 0/behind 0/dirty 0 |
+| §11 after 計測 | 未 | before snapshot と同じ窓で after を取る |
+
+**クローズ条件(全て二値)**: (1) 旧 daemon が新コードへ入替(自壊→watchdog 自動再起動、または stop flag)後 24 時間、origin 到達 commit の trailer 率 100%(集計: `git log --since=<入替時刻> --format=%B origin/main | grep -c '^Published-By:'` == `git rev-list --count --since=<入替時刻> origin/main`) (2) 同 24 時間、loop tick ごとの root が ahead 0/behind 0/tracked dirty 0(集計: `git status -sb` と `git status --porcelain -uno | wc -l`) (3) daemon 自壊 0(watchdog 自動再起動 log 0 行) (4) §11 after を before と同窓で取り §14.3 に記入 (5) trailer 無し経路(insights auto-commit・monitor integrate・D012 merge)が publisher/wrapper に寄っている(rg で root 直 push の呼出し 0)。
+**追加でやるべき点(クローズ前)**: A) insights auto-commit と monitor integrate を publisher request か U1b に寄せる(残る trailer 無し経路 2 本) B) root sync の field-aware merge(台帳 dirty と ledger batch の衝突) C) 旧 daemon 入替の完了確認 D) §11 after 計測。U8(物理削除)はクローズ条件に含めない(凍結、運用 7 日後に別設計書)。
+
 ## §5 レビュー履歴
+- v3.19(09-03 09:15) §15 クローズ判定=未完了(trailer 66%)、条件 5 点と追加 4 点
 - v3.18(09-03 08:20) hotfix 列完了、11/12、残=旧 daemon 入替
 - v3.17(09-03 07:50) U6b 根治・U3c CLEAR・sweep 実行、10/12
 - v3.16(09-03 07:20) U6b CLEAR・ledger route 初稼働・batch 中止欠陥・fileMode 真因
