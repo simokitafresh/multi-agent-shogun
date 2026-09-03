@@ -15076,7 +15076,10 @@ insights:
   priority: "low"
   source: "semantic_stress_test"
   fix_known: false
-  status: pending
+  status: "resolved"
+  resolved_reason: "semantic index candidate was absorbed into a registered concept"
+  action_artifact: "semantic_index=/home/simokitafresh/multi-agent-shogun/docs/semantic-index/index.md"
+  resolved_at: "2026-09-03T09:08:59.934342"
 - id: INS-20260903-070251107-3330
   ts: "2026-09-03T07:02:51+09:00"
   insight: "[[AC1 の台帳 docs research single publisher cleanup manifest 2026]] semantic_stress_test candidate_aliases: NO_MATCH source=cmds query=cmd_4461 AC1 の台帳(docs/research/single_publisher_cleanup_manifest_20260902.md、a7b41bc64)は M2-M8 を『surviving references が非 0』で blocked にしたが、その参照元の大半は同時に消す旧 test(M10/M11)と旧経路どうしの相互参照で"
