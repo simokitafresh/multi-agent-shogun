@@ -9582,6 +9582,15 @@ EOF
 # the durable source-only receipt when unrelated local work is present.
 # regression_justification: the old WAIT branch called safe_shared_main_ff
 # directly, publishing shared HEAD and leaving the report source dangling.
+# cmd_karo_hotfix_t3s40_auto_push_wait_async: the L4 WAIT branch no longer
+# calls cmd_complete_gate_auto_push_ancestry_wait synchronously/inline -- that
+# ~28.043s call is now dispatched off the sync path by the new
+# cmd_complete_gate_queue_auto_push_ancestry_retry wrapper (see
+# test_cmd_complete_gate_source_publish.bats for its non-blocking-dispatch
+# fixtures). Re-anchor both structural assertions on the new call chain so
+# this regression guard still fails closed if a future edit reintroduces a
+# direct safe_shared_main_ff call anywhere between L4 and the source
+# publisher.
 @test "ancestry WAIT auto-push routes source commits to the source publisher" {
     local route_log="$BATS_TEST_TMPDIR/source-auto-push-route.log"
 
@@ -9599,10 +9608,22 @@ EOF
     [ "$(sed -n '1p' "$route_log")" = "task-source-a.yaml" ]
     [ "$(sed -n '2p' "$route_log")" = "task-source-b.yaml" ]
 
-    run grep -Fc 'if cmd_complete_gate_auto_push_ancestry_wait "${MATCHING_TASK_FILES[@]}"; then' \
+    # L4 dispatches the retry off the sync path instead of calling
+    # cmd_complete_gate_auto_push_ancestry_wait inline.
+    run grep -Fc '        cmd_complete_gate_queue_auto_push_ancestry_retry "${MATCHING_TASK_FILES[@]}"' \
         "$SRC_GATE_SCRIPT"
     [ "$status" -eq 0 ]
     [ "$output" -eq 1 ]
+
+    # The dispatcher itself must still route through
+    # cmd_complete_gate_auto_push_ancestry_wait (proven above to route source
+    # commits to push_task_repositories), not a re-introduced direct
+    # safe_shared_main_ff call.
+    local wrapper_body
+    wrapper_body="$(sed -n '/^cmd_complete_gate_queue_auto_push_ancestry_retry() {/,/^}/p' "$SRC_GATE_SCRIPT")"
+    [ -n "$wrapper_body" ]
+    [[ "$wrapper_body" == *'cmd_complete_gate_auto_push_ancestry_wait "${task_file_args[@]}"'* ]]
+    [[ "$wrapper_body" != *'safe_shared_main_ff.sh'* ]]
 }
 
 # test_necessity: CI status and terminal ancestry share an immutable report and
