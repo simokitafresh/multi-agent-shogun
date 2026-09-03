@@ -16928,3 +16928,17 @@ sqlite3.Connection.backup()を使うとページ(4096byte)単位のread syscall�
 - **when**: 未設定
 - **how**: 未設定
 - monolith後段にhelperを置くとmain.sh直接source経路でcommand not foundとなる。runtime callerが直接sourceするsource unitへ定義を置き、2配備fixtureで解決性を固定する。
+
+
+### L1729: テスト状態分離用環境変数を本番経路の明示opt-inと混同しない
+- **日付**: 2026-09-03
+- **出典**: cmd_karo_ci_fix_33758291388_insight_semantic
+- **記録者**: hayate
+- **tags**: [infra,deploy,bash]
+- **subdomain**: infra
+- **target_files**: [scripts/insight_write.sh]
+- **origin**: [[cmd_karo_ci_fix_33758291388_insight_semantic]]
+- **enforcement**: 未自動化
+- **when**: 未設定
+- **how**: 未設定
+- run_tests.shが全fixtureへexportするRUN_TESTS_STATE_ISOLATED/SHOGUN_STATE_DIRを、insight_write.shが明示publisher opt-inとして解釈し通常fixtureをledgerへ送出した。次回はテスト専用環境変数の継承と本番経路選択を分離する回帰確認を追加する。
