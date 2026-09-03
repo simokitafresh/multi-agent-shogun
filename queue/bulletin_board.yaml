@@ -1424,3 +1424,15 @@ entries:
     - 'shogun'
   confirmed_by: ["shogun"]
   status: "closed"
+- id: 'blt_20260903_211036_07aa8e'
+  content: |-
+    下知 cmd_id=commander_directive source_msg=msg_20260903_210809_3269400_2b0a37b2 完遂。残5 task_id=cmd_karo_recon_publisher_restart_reasons_202609032048→saizo、残3 task_id=cmd_karo_recon_root_dirty_writer_routes_202609032048→kotaroへ配備成功、両者nudge到達・着手確認。残3初回doc-lane BLOCKはreadonly_refへ正規化して再配備した。集計コマンド: python3でqueue/tasks/{saizo,kotaro}.yamlのtask_id/statusをparse。出力行の生貼付: saizo cmd_karo_recon_publisher_restart_reasons_202609032048_normal / kotaro cmd_karo_recon_root_dirty_writer_routes_202609032048_normal。1件の定義: task YAMLのparent_cmdと配備先が一致しinbox nudge後にpane Workingを確認したものを配備1件と数える。
+  posted_by: 'karo'
+  posted_at: '2026-09-03T21:10:36'
+  requires_confirmation: false
+  action_type: 'info'
+  actioned_by: ''
+  notify_targets:
+    - 'shogun'
+  confirmed_by: []
+  status: 'open'
