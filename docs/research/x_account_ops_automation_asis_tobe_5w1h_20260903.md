@@ -1,5 +1,5 @@
 <!-- gist-master: 8e1336f8b297ccd9bd5f407444844434 x_account_ops_automation_asis_tobe_5w1h_20260903.md -->
-# X アカウント運用(バム @TokyoJibika)の Grok 包装→API 自動化 — AsIs / ToBe / 5W1H 設計書 v0.3(2026-09-03 04:00、cmd_4463 実測 §1c を追加。v0.2=03:35、殿回答 B-1〜B-10 を §1b/§2/§5 へ反映。v0.1=03:20、殿発案 03:13『grok によるアカウント運用は今後 API などで自動化まで持って行きたい。新しい設計書にしないか』)
+# X アカウント運用(バム @TokyoJibika)の Grok 包装→API 自動化 — AsIs / ToBe / 5W1H 設計書 v0.4(2026-09-03 09:55、P0 完了=cmd_4467 CLEAR 09:48: ストック台帳 50 entry・slot calendar・包装 gate 6 規則+bats 8、将軍が gate を本番 API で突合。v0.3=04:00 cmd_4463 実測 §1c。v0.2=03:35、殿回答 B-1〜B-10 を §1b/§2/§5 へ反映。v0.1=03:20、殿発案 03:13『grok によるアカウント運用は今後 API などで自動化まで持って行きたい。新しい設計書にしないか』)
 
 ## §0 一文定義
 Grok 作成の「届け方マニュアル」(中身固定・包装のみ変更)を、**ストック記事→スロット→LLM 包装→品質 gate→X API 投稿→KPI 還流**の 1 本の pipeline として段階的に自動化する。戦略・検証・有料層の中身は一切変えない(マニュアル §1 Non-negotiables を pipeline の不変条件として機械化する)。
@@ -62,7 +62,7 @@ Grok 作成の「届け方マニュアル」(中身固定・包装のみ変更)�
 ## §3 段階(Phase)と可逆性
 | Phase | 内容 | 自動化度 | 可逆 | 完了条件(二値) |
 |---|---|---|---|---|
-| P0 | ストック台帳+数字ホワイトリスト+スロット calendar を YAML 化。S3 を Claude/Grok で手動実行し下書き 12 本(4 週分) | 手動 | file 削除 | 台帳 1 file、下書き 12 本が S4 gate PASS |
+| P0 | ✅ **完了 09-03 09:48(cmd_4467 飛猿、ce1ca2cb1)**: `skills/x-post-pipeline/stock_ledger.yaml`(50 entry=How to 49+完全ガイド、記事本文にある数字セットのみ)、`slot_calendar.yaml`(4 週×枠 A/B/C+月次 D)、`SKILL.md`(28 行)、`scripts/x_ops/x_post_gate.sh`(6 規則: Basic 以外の保有/ticker blocklist を showcase API から生成、単独倍率、URL 3 種、免責、禁止語、第一文の内部用語)+`tests/unit/test_x_post_gate.bats` 8 本。将軍突合: 包装ルール通りの下書き rc=0、『忍法FoF の保有 XLU/QQQ・556 倍・今これを買え』rc≠0 | 手動 | file 削除 | 台帳 1 file、gate PASS/FAIL 例 |
 | P1 | S4 gate を script 化(regex+blocklist+URL 検査)。S5 は『X API で下書き投稿(未公開)or 殿承認後に script が投稿』 | 半自動 | 投稿は取消可、API key 失効で停止 | gate 偽陽性 0/12、承認→投稿 1 本が API で成功 |
 | P2 | cron で S2→S3→S4→S5 を無人実行。殿は週 15 分の KPI 確認のみ | 自動 | flag file で即停止(単一 publisher と同型) | 4 週連続で週 3 投稿・gate FAIL 0・殿介入 0 |
 | P3 | S6 KPI 還流で切り口を自動選択(A の 4 切り口の rotation を metrics で重み付け) | 自動 | rotation を固定に戻す | 赤信号 0、理解到達 KPI が 4 週連続上昇 |
@@ -99,6 +99,7 @@ Grok 作成の「届け方マニュアル」(中身固定・包装のみ変更)�
 - 殿へ: B-1〜B-10(本人にしか答えられない)。特に B-6 数字ホワイトリストが S3 の入力になる。
 
 ## §8 レビュー履歴
+- v0.4(09-03 09:55) P0 完了(cmd_4467)。次=P1: 下書き生成(S3、Claude)→gate→ntfy で殿『y』承認→X API 投稿(Free)
 - v0.3(09-03 04:00) cmd_4463 実測を §1c に統合。入口 5 種並存・再掲比 1:5・X 指標は API/Analytics 経由でしか取れない、を設計根拠に追加
 - v0.2(09-03 03:35) 殿回答 B-1〜B-10 を §1b に記録、§2 不変条件 (3) と §5 D4 を改定。KPI 主指標=エンゲージメント
 - v0.1(09-03 03:20) 将軍起草。殿発案 03:13。gist 初回。
