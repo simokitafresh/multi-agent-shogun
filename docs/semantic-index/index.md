@@ -13784,6 +13784,28 @@ codd:
 | causal | `cmd_4431` files_modified: [[semantic_causal_automation]] |
 | causal_chain | `[[cmd_karo_hotfix_hot_script_q11_semantic_search_retry_20260728]]` (L1418) |
 
+## provisional_cli_lookup — 仮: Cli Lookup
+
+| 属性 | 値 |
+|------|---|
+| id | provisional_cli_lookup |
+| label | 仮: Cli Lookup |
+| aliases | cli_lookup, scripts/lib/cli_lookup.sh, scripts lib cli lookup.sh, provisional_cli_lookup |
+| status | provisional |
+| auto_generated | true |
+| source_cmd | cmd_karo_hotfix_codex_update_prompt_auto_skip_202609040727 |
+| source_files | scripts/lib/cli_lookup.sh |
+| no_match_count | 3 |
+| created_at | 2026-09-03T23:39:10Z |
+| promotion_threshold | 5 |
+| related_concepts | |
+
+| 種別 | パス/参照 |
+|------|----------|
+| file | `scripts/lib/cli_lookup.sh` |
+| causal | `cmd_karo_hotfix_codex_update_prompt_auto_skip_202609040727` -> [[provisional_cli_lookup]] (auto_generated) |
+| cmd | `cmd_karo_hotfix_codex_update_prompt_auto_skip_202609040727` (`scripts/agent_respawn.sh`, `scripts/lib/cli_lookup.sh`, `tests/unit/test_respawn_recovery.bats`) |
+
 ## provisional_ledger_writer — 仮: Ledger Writer
 
 | 属性 | 値 |

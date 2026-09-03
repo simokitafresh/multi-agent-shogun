@@ -16984,3 +16984,17 @@ sqlite3.Connection.backup()を使うとページ(4096byte)単位のread syscall�
 - **when**: 未設定
 - **how**: 未設定
 - cmd_complete_gate.shのようにif [ "$ALL_CLEAR" = true ]; thenが複数箇所(3箇所)存在するファイルで、テキスト順の開始/終了アンカーだけでWAIT経路のコード範囲を抽出すると、実行時は排他的な分岐(WAIT/CLEAR)がテキスト上は連続しているため、抽出範囲が無関係なCLEARブロック全体を呑み込む。構造sweepツールをまず小さいプロトタイプスクリプトで試作し、抽出結果の行数/内容を出力して目視確認してからbatsへ組み込むことで検出できた。今後同種の抽出(関数境界ではなくif/fi範囲)を書く際は、開始・終了アンカーそれぞれの一意性だけでなく「間に他の分岐の終端が現れないか」を検証してから使うべき
+
+
+### L1733: formal RCはreport/taskだけでなくdeploy_generation markerを同一transactionで更新する
+- **日付**: 2026-09-04
+- **出典**: cmd_karo_hotfix_deploy_generation_rc_sync_202609040724
+- **記録者**: saizo
+- **tags**: [infra,testing,deploy]
+- **subdomain**: infra
+- **target_files**: [scripts/lib/review_approval.sh,scripts/review_approval.sh,tests/unit/test_review_approval_fail_close_filter.bats]
+- **origin**: [[cmd_karo_hotfix_deploy_generation_rc_sync_202609040724]]
+- **enforcement**: 未自動化
+- **when**: 未設定
+- **how**: 未設定
+- RCでreport_idだけを更新するとmarkerが旧generationを主張し、canonical resolverがfail-closedで対象reportを解決できなくなる。RC snapshotへmarkerの実体または欠落状態を保存し、report/task/markerを同じfence内で更新・rollbackする。
