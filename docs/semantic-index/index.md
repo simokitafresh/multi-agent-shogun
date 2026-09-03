@@ -15487,6 +15487,7 @@ codd:
 | discussion | `queue/lord_conversation.jsonl` 2026-09-03T09:33:20+09:00 b0dnu0ppw toolu_01AYjptEpGRQyMU8LJ3fHDB7 /tmp/claude-1000/-home-simokitafresh-multi-agent-shogun/bd8c1107-7ad7-4d24-a924 |
 | causal_chain | `[[cmd_karo_hotfix_git_index_singleflight_202608191445]]` (L1618) |
 | causal_chain | `[[cmd_4463]]` (L1713) |
+| discussion | `queue/lord_conversation.jsonl` 2026-09-03T15:22:17+09:00 bad4xooqu toolu_01956wa2pKwMq4v7xc9ei1YW /tmp/claude-1000/-home-simokitafresh-multi-agent-shogun/f643d19f-58a8-4b8d-91fa |
 
 ## provisional_.gitignore — 仮: .Gitignore
 
