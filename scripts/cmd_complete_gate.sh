@@ -115,6 +115,18 @@ PY
 )"
     report_identity="$report_commit"
     [ -n "$report_identity" ] || report_identity="$report_published_sha"
+    # reflux resolve-only(U9 原則): insight_resolve.sh の ledger op だけを出し commit を作らない
+    # report は 40hex も published_sha も持たない。review_approval の identity 判定
+    # (scripts/lib/review_approval.sh: ledger-resolve)と同じ契約で no-code 経路へ寄せる
+    # (2026-09-03 12:12 飛猿 1136『report commit invalid or unresolvable』BLOCK の根治)。
+    if [ -z "$report_identity" ] && [ -f "$SCRIPT_DIR/scripts/lib/review_approval.sh" ]; then
+        local _ledger_identity
+        _ledger_identity="$(bash -c 'source "$1"; review_report_commit_identity "$2"' _ "$SCRIPT_DIR/scripts/lib/review_approval.sh" "$report_file" 2>/dev/null | tail -n 1)" || _ledger_identity=""
+        if [ "$_ledger_identity" = "ledger-resolve" ]; then
+            report_commit="no-code-change"
+            report_identity="no-code-change"
+        fi
+    fi
 
     # The commit contract is the source of truth for the repository that owns
     # this report. Resolve it before consuming either the remote boundary or a
