@@ -16069,7 +16069,9 @@ insights:
   priority: "high"
   source: "karo:fail_close_idle_transition"
   fix_known: false
-  status: pending
+  status: "resolved"
+  action_artifact: "target=queue/insights.yaml:INS-20260903-131751917-5be8;primary=scripts/review_approval.sh:L1183-L1190;primary=scripts/agent_respawn.sh:L70-L75;primary=scripts/ninja_monitor.sh:L7351-L7354,L7584-L7589;context=context/infrastructure.md:fail-close/respawn lifecycle;semantic=docs/semantic-index/index.md:fail-close respawn lineage"
+  resolved_reason: "一次情報で対象事象を確認。review_approval fail-close は failed task を agent_respawn に渡すが、respawn成功後も task status を failed のまま保持し、monitor の再respawn抑止と idle通知抑止を招くため、既存の根因候補として解決記録する。"
 - id: INS-20260903-131827481-f8bd
   ts: "2026-09-03T13:18:27+09:00"
   insight: "semantic_index_update新概念候補: discussion:task notification task id brjbsyl9r task id tool use id toolu 01W2Dw2MfBJ5kcNatx は 既存aliasesに一致なし。概念定義とaliases追加を検討せよ"
