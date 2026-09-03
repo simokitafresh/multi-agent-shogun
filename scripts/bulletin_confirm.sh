@@ -37,6 +37,25 @@ path, ident, agent = sys.argv[1:]
 data = yaml.safe_load(open(path, encoding="utf-8")) or {}
 target = next((e for e in data.get("entries", []) if str(e.get("id", "")) == ident), None)
 if target is None:
+    # 2026-09-03 18:10 将軍 D0(T3-S-29): bulletin_write は ledger op を enqueue した直後に inbox notify を送る。
+    # ledger 適用前に受け手が inbox_mark_read→本 script を呼ぶと board file に entry が無く confirm が消えていた
+    # (18:0x 実測 4 件連続 WARN)。未適用の append op から entry を復元し、confirm を同じ ledger 順序で後続させる。
+    import glob, os
+    pend_dir = os.environ.get("BULLETIN_LEDGER_PENDING_DIR", "")
+    if not pend_dir:
+        state = os.environ.get("SHOGUN_STATE_DIR") or os.path.expanduser("~/.local/share/multi-agent-shogun")
+        pend_dir = os.path.join(state, "ledger_inbox", "bulletin")
+    for op_path in sorted(glob.glob(os.path.join(pend_dir, "*.yaml"))):
+        try:
+            op = json.load(open(op_path, encoding="utf-8"))
+        except Exception:
+            continue
+        if op.get("op") == "append" and str(op.get("id", "")) == ident:
+            parsed = yaml.safe_load(op.get("entry_text", "")) or []
+            if isinstance(parsed, list) and parsed and isinstance(parsed[0], dict):
+                target = parsed[0]
+                break
+if target is None:
     raise SystemExit(f"ERROR: entry not found: {ident}")
 confirmed = list(target.get("confirmed_by") or [])
 if agent not in confirmed:

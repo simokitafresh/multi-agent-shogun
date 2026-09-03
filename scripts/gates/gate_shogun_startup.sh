@@ -2105,7 +2105,10 @@ if [ -s "$_mon_log" ]; then
     _mon_fail=$(awk -v t="[$_mon_since" 'substr($0,1,17) >= t' "$_mon_log" 2>/dev/null \
         | grep -E 'rc=64|rc=([2-9]|[1-9][0-9]+)( |$)|[A-Z0-9-]+-(FAIL|TIMEOUT):|STAGE1-[A-Z-]*(FAIL|TIMEOUT)|CODEX-RESPAWN-FALLBACK|RESPAWN-FALLBACK' 2>/dev/null \
         | grep -vE 'REPORT-PENDING-BLOCK|REVIEW-PENDING-SKIP|BOUNDED-FAIL: [a-z]+ rc=1( |$)' 2>/dev/null || true)
-    _mon_fail_n=$(printf '%s\n' "$_mon_fail" | grep -c . 2>/dev/null || echo 0)
+    # 2026-09-03 18:10 将軍 D0: grep -c は 0 件でも「0」を出力して exit 1 するため `|| echo 0` が "0\n0" を作り
+    # `[: 0\n0: integer expression expected` で本 Gate が毎回壊れていた(startup 17:46 実測)。`|| true` で値は 1 行に保つ。
+    _mon_fail_n=$(printf '%s\n' "$_mon_fail" | grep -c . 2>/dev/null || true)
+    _mon_fail_n="${_mon_fail_n:-0}"
     if [ "${_mon_fail_n:-0}" -gt 0 ]; then
         echo "  WARN: lifecycle 失敗行 ${_mon_fail_n}行/60分(集計: awk ts>=-60min logs/ninja_monitor.log | grep -E 'rc=64|rc>=2|*-FAIL:|*-TIMEOUT:|RESPAWN-FALLBACK' -v 'REPORT-PENDING-BLOCK|REVIEW-PENDING-SKIP|BOUNDED-FAIL rc=1'。1行=daemon 機構の失敗ログ1行、忍者側の pending と no-op 契約 rc=1 は除外 INS-054212)"
         printf '%s\n' "$_mon_fail" | awk '{k=$0; sub(/^\[[^]]*\] */,"",k); sub(/ .*/,"",k); c[k]++} END{for(k in c) printf "    %s ×%d\n", k, c[k]}'

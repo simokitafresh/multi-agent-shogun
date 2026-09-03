@@ -3106,3 +3106,130 @@ PY
   [ "$status" -eq 0 ]
   [ "$output" = "PRODUCTION_PROOF_EXTRACTION_OK" ]
 }
+
+# test_necessity: cmd_karo_hotfix_deploy_yaml_worktree_default_202609031708 —
+# a karo_direct code task (hotfix/impl/ci_fix) that declares no target_path/
+# planned_paths must not silently skip task worktree creation. The prior
+# behavior let deploy_task_original_prepare_remote_tip_worktree's
+# source_path_count==0 short-circuit stand even for code tasks, so the ninja's
+# implementation commit landed on shared root HEAD instead of an isolated
+# worktree (reproduced from cmd_karo_hotfix_watchdog_parent_pid_only_202609031603,
+# commit 3516dfcccb).
+setup_worktree_default_fixture_repo() {
+    FIXTURE="$BATS_TEST_TMPDIR/wtdefault-repo"
+    git init --bare -q "$FIXTURE/remote.git"
+    git clone -q "$FIXTURE/remote.git" "$FIXTURE/shared"
+    git -C "$FIXTURE/shared" config user.email test@example.invalid
+    git -C "$FIXTURE/shared" config user.name fixture
+    git -C "$FIXTURE/shared" switch -c main -q
+    mkdir -p "$FIXTURE/shared/scripts" "$FIXTURE/shared/queue"
+    printf 'echo base\n' > "$FIXTURE/shared/scripts/app.sh"
+    printf 'runtime: base\n' > "$FIXTURE/shared/queue/notes.md"
+    printf 'queue/gates/\n' > "$FIXTURE/shared/.gitignore"
+    git -C "$FIXTURE/shared" add scripts/app.sh queue/notes.md .gitignore
+    git -C "$FIXTURE/shared" commit -q -m base
+    git -C "$FIXTURE/shared" push -q -u origin main
+}
+
+@test "worktree default injection: code task without declared target_path gets task_worktree_required and stays off shared root" {
+    setup_worktree_default_fixture_repo
+    task="$BATS_TEST_TMPDIR/task-nodecl.yaml"
+    printf 'task:\n  task_id: task_nodecl\n  parent_cmd: cmd_nodecl\n  project: infra\n  task_type: hotfix\n  status: assigned\n' > "$task"
+    run env PROJECT_ROOT="$BATS_TEST_DIRNAME/../.." FIXTURE="$FIXTURE/shared" TASK="$task" bash -c '
+        set -euo pipefail
+        export DEPLOY_TASK_LIB_ONLY=1
+        source "$PROJECT_ROOT/scripts/deploy_task.sh"
+        SCRIPT_DIR="$FIXTURE"; LOG=/dev/null; STATE_DIR="$FIXTURE/state"; mkdir -p "$STATE_DIR"
+        shared_head_before=$(git -C "$FIXTURE" rev-parse HEAD)
+        deploy_task_prepare_remote_tip_worktree "$TASK" saizo
+        req=$(FIELD_GET_NO_LOG=1 field_get "$TASK" task_worktree_required)
+        wt=$(FIELD_GET_NO_LOG=1 field_get "$TASK" task_worktree_workdir)
+        [ "$req" = "true" ] || { printf "required=%s\n" "$req" >&2; exit 1; }
+        [ -n "$wt" ] && [ -d "$wt" ] || { printf "workdir_missing=%s\n" "$wt" >&2; exit 1; }
+        [ "$(git -C "$FIXTURE" rev-parse HEAD)" = "$shared_head_before" ] || { echo "shared_head_moved" >&2; exit 1; }
+        [ -z "$(git -C "$FIXTURE" status --porcelain)" ] || { echo "shared_dirty" >&2; exit 1; }
+        echo "worktree_default_injected=1 shared_head_unchanged=1"
+    '
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"worktree_default_injected=1 shared_head_unchanged=1"* ]]
+}
+
+@test "worktree default injection: non-code task_type is left to existing source_path_count classification" {
+    setup_worktree_default_fixture_repo
+    task="$BATS_TEST_TMPDIR/task-normal-nodecl.yaml"
+    printf 'task:\n  task_id: task_normal_nodecl\n  parent_cmd: cmd_normal_nodecl\n  project: infra\n  task_type: normal\n  status: assigned\n' > "$task"
+    run env PROJECT_ROOT="$BATS_TEST_DIRNAME/../.." FIXTURE="$FIXTURE/shared" TASK="$task" bash -c '
+        set -euo pipefail
+        export DEPLOY_TASK_LIB_ONLY=1
+        source "$PROJECT_ROOT/scripts/deploy_task.sh"
+        SCRIPT_DIR="$FIXTURE"; LOG=/dev/null; STATE_DIR="$FIXTURE/state"; mkdir -p "$STATE_DIR"
+        deploy_task_prepare_remote_tip_worktree "$TASK" saizo
+        req=$(FIELD_GET_NO_LOG=1 field_get "$TASK" task_worktree_required)
+        wt=$(FIELD_GET_NO_LOG=1 field_get "$TASK" task_worktree_workdir)
+        [ "$req" != "true" ] || { echo "unexpected_required=true" >&2; exit 1; }
+        [ -z "$wt" ] || { printf "unexpected_workdir=%s\n" "$wt" >&2; exit 1; }
+        echo "non_code_no_forced_worktree=1"
+    '
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"non_code_no_forced_worktree=1"* ]]
+}
+
+@test "worktree default injection: declared no-code-only target_path exception is preserved for code task types" {
+    setup_worktree_default_fixture_repo
+    task="$BATS_TEST_TMPDIR/task-nocode-declared.yaml"
+    printf 'task:\n  task_id: task_nocode_declared\n  parent_cmd: cmd_nocode_declared\n  project: infra\n  task_type: hotfix\n  target_path: queue/notes.md\n  status: assigned\n' > "$task"
+    run env PROJECT_ROOT="$BATS_TEST_DIRNAME/../.." FIXTURE="$FIXTURE/shared" TASK="$task" bash -c '
+        set -euo pipefail
+        export DEPLOY_TASK_LIB_ONLY=1
+        source "$PROJECT_ROOT/scripts/deploy_task.sh"
+        SCRIPT_DIR="$FIXTURE"; LOG=/dev/null; STATE_DIR="$FIXTURE/state"; mkdir -p "$STATE_DIR"
+        deploy_task_prepare_remote_tip_worktree "$TASK" saizo
+        req=$(FIELD_GET_NO_LOG=1 field_get "$TASK" task_worktree_required)
+        wt=$(FIELD_GET_NO_LOG=1 field_get "$TASK" task_worktree_workdir)
+        [ "$req" != "true" ] || { echo "unexpected_required=true" >&2; exit 1; }
+        [ -z "$wt" ] || { printf "unexpected_workdir=%s\n" "$wt" >&2; exit 1; }
+        echo "declared_nocode_exception_preserved=1"
+    '
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"declared_nocode_exception_preserved=1"* ]]
+}
+
+@test "worktree default injection: already-active worktree is reused, not re-created by the injector" {
+    setup_worktree_default_fixture_repo
+    task="$BATS_TEST_TMPDIR/task-reuse.yaml"
+    printf 'task:\n  task_id: task_reuse\n  parent_cmd: cmd_reuse\n  project: infra\n  task_type: hotfix\n  status: assigned\n' > "$task"
+    run env PROJECT_ROOT="$BATS_TEST_DIRNAME/../.." FIXTURE="$FIXTURE/shared" TASK="$task" bash -c '
+        set -euo pipefail
+        export DEPLOY_TASK_LIB_ONLY=1
+        source "$PROJECT_ROOT/scripts/deploy_task.sh"
+        SCRIPT_DIR="$FIXTURE"; LOG=/dev/null; STATE_DIR="$FIXTURE/state"; mkdir -p "$STATE_DIR"
+        deploy_task_prepare_remote_tip_worktree "$TASK" saizo
+        wt_first=$(FIELD_GET_NO_LOG=1 field_get "$TASK" task_worktree_workdir)
+        deploy_task_prepare_remote_tip_worktree "$TASK" saizo
+        wt_second=$(FIELD_GET_NO_LOG=1 field_get "$TASK" task_worktree_workdir)
+        [ "$wt_first" = "$wt_second" ] || { printf "reuse_mismatch first=%s second=%s\n" "$wt_first" "$wt_second" >&2; exit 1; }
+        [ "$(git -C "$FIXTURE" worktree list --porcelain | grep -c shogun-task-worktrees)" -eq 1 ] || { echo "duplicate_worktree" >&2; exit 1; }
+        echo "reuse_no_duplicate=1"
+    '
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"reuse_no_duplicate=1"* ]]
+}
+
+@test "worktree default injection: publish failure rolls back cleanly and leaves shared root untouched" {
+    setup_worktree_default_fixture_repo
+    task="$BATS_TEST_TMPDIR/task-rollback.yaml"
+    printf 'task:\n  task_id: task_rollback\n  parent_cmd: cmd_rollback\n  project: infra\n  task_type: ci_fix\n  status: assigned\n' > "$task"
+    run env PROJECT_ROOT="$BATS_TEST_DIRNAME/../.." FIXTURE="$FIXTURE/shared" TASK="$task" bash -c '
+        set -euo pipefail
+        export DEPLOY_TASK_LIB_ONLY=1 DEPLOY_TASK_TEST_FAIL_WORKTREE_YAML_PUBLISH=1
+        source "$PROJECT_ROOT/scripts/deploy_task.sh"; SCRIPT_DIR="$FIXTURE"; LOG=/dev/null
+        shared_head_before=$(git -C "$FIXTURE" rev-parse HEAD)
+        if deploy_task_prepare_remote_tip_worktree "$TASK" saizo; then exit 9; fi
+        [ "$(git -C "$FIXTURE" worktree list --porcelain | grep -c shogun-task-worktrees)" -eq 0 ]
+        [ ! -e "$FIXTURE/queue/gates/cmd_rollback/task_worktree.json" ]
+        [ "$(git -C "$FIXTURE" rev-parse HEAD)" = "$shared_head_before" ]
+        echo "rollback_clean=1 shared_head_unchanged=1"
+    '
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"rollback_clean=1 shared_head_unchanged=1"* ]]
+}
