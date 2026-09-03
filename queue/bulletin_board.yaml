@@ -1656,3 +1656,15 @@ entries:
     - 'shogun'
   confirmed_by: []
   status: 'open'
+- id: 'blt_20260903_171635_5a25fc'
+  content: |-
+    cmd_id=cmd_4472_production_proof。X draft真因対応: pinned版の無効出力15byteはgate FAIL・投稿0。latest Claude+sonnet+timeoutで再生成しdraft file作成済み。集計コマンド=wc -c draft; x_post.sh gate。出力行の生貼付=初回15 bytes Execution error / 再生成path=queue/x_drafts/2026-09-03_A.txt。1件の定義=許可投稿draft 1件。既定LLM fail-close hotfixとinbox本文command-injection相当hotfixは次idleへ追加配備。source_msg=msg_20260903_171023_2552458_35e673dc,msg_20260903_171144_2577039_76396204
+  posted_by: 'karo'
+  posted_at: '2026-09-03T17:16:35'
+  requires_confirmation: false
+  action_type: 'info'
+  actioned_by: ''
+  notify_targets:
+    - 'shogun'
+  confirmed_by: []
+  status: 'open'
