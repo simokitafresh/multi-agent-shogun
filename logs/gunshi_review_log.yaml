@@ -3425,3 +3425,57 @@
   step3_5_verified: true
   origin: "[[cmd_karo_hotfix_codex_update_prompt_auto_skip_202609040727]] -> [[update画面自動Skip]] -> [[負fixture不足 REQUEST_CHANGES]]"
   timestamp: "2026-09-04T07:36:49"
+- adversarial_review:
+    reason: review_bundle.py修正。fail-closed維持
+    required: false
+    verdict: PASS
+  brainwash_check: '#1no #2no(実gate+隔離test実測) #3no #4no #5no #6no #7no #8no 数値: gate
+    rc=0 1/1, test 11/11, resolve 非空 1/1'
+  causal_chain: review_bundle.py batch→ledger_writer.sh→entry must contain id→cmd_id欠落→manifest
+    cmd identity結合→解消
+  cmd_id: cmd_karo_hotfix_review_bundle_batch_id_202609040019
+  conflict_of_interest: review_bundle.pyは軍師のレビュー承認フロー。本cmdはbatch entry identity結合でありレビュー判定ロジック不変
+  escalation_needed: false
+  finding_categories:
+  - assumptions
+  - numbers
+  - simulation
+  - premortem
+  - adversarial
+  - ambiguity
+  findings_summary: '4観点OK(RC改訂版 d34882ef): 前提OK(status completed, test source_head=b2cdb18b
+    19/19, origin記入)/数値OK(軍師隔離worktree b2cdb18b6 で test_ledger_writer 11/11 PASS)/検死OK(exact
+    replay 冪等は同一ブロック完全一致でのみ発火)/完全性OK(RC要求の replay 冪等・空list受理を実装)。実gate rc=0・precheck
+    ERRORS=0'
+  gate_prediction: CLEAR
+  gate_prediction_reason: all checks passed
+  lesson_quality: OK
+  observations:
+  - '事実1: gate_report_format.sh rc=0、precheck ERRORS=0/CLEAR(07:36 再実行)。report sha256=d34882ef=家老依頼
+    07:25:04 と一致'
+  - '事実2: deploy_generation marker が 07:34:53 に rpt-e2d4aaea へ同期され review_resolve_reports
+    が非空(07:2x は stale marker で空=才蔵 cmd の対象)'
+  - '事実3: 軍師が git worktree add --detach b2cdb18b6 で隔離し run_tests.sh file test_ledger_writer
+    → 11/11 PASS(TEST_RECEIPT_PASS)。commit parent 17b65ecf4 は origin/main 祖先'
+  - '所見: 受理判定が startswith(''- '')→^-\s+(cmd_id|id): へ狭まりRC文言『既存list-root受理は変更せず』と齟齬(本番
+    review_log は ''- cmd_id:'' 先頭で実害なし。家老へ msg_072950 で通知済み)'
+  operational_simulation:
+    actual: gate rc=0 / 11/11 PASS SKIP0
+    command: bash scripts/gates/gate_report_format.sh queue/reports/hanzo_report_cmd_karo_hotfix_review_bundle_batch_id_202609040019.yaml;
+      git worktree add --detach <tmp> b2cdb18b6 && bash scripts/run_tests.sh file
+      tests/unit/test_ledger_writer.bats
+    expected: gate PASS / test 全PASS
+    result: PASS
+  origin: '[[cmd_karo_hotfix_review_bundle_batch_id_202609040019]] -> [[batch_entry_cmd_id欠落]]
+    -> [[manifest_identity結合]]'
+  report_fingerprint: d34882ef3f750e7f280f61ce35668ad8fd791a83b30056f1b7d7412219a0745d
+  report_ninja: hanzo
+  report_task_id: cmd_karo_hotfix_review_bundle_batch_id_202609040019_normal
+  report_verdict: PASS
+  review_type: report
+  reviewed_at: '2026-09-04T07:38:39+09:00'
+  step3_5_verified: true
+  timestamp: '2026-09-04T07:38:39'
+  verdict: LGTM
+  verified_files:
+  - scripts/review_bundle.py:1
