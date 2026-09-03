@@ -2649,6 +2649,8 @@
   timestamp: '2026-09-04T00:17:00'
 - cmd_id: cmd_karo_hotfix_review_bundle_batch_id_202609040019
   review_type: report
+  gate_result: CLEAR
+  gate_synced_at: 2026-09-04T07:40:33+09:00
   verdict: LGTM
   report_ninja: hanzo
   report_task_id: cmd_karo_hotfix_review_bundle_batch_id_202609040019_normal
@@ -2801,6 +2803,8 @@
   timestamp: "2026-09-04T02:38:00"
 - cmd_id: cmd_karo_hotfix_review_bundle_batch_id_202609040019
   review_type: report
+  gate_result: CLEAR
+  gate_synced_at: 2026-09-04T07:40:33+09:00
   verdict: LGTM
   report_ninja: hanzo
   report_task_id: cmd_karo_hotfix_review_bundle_batch_id_202609040019_normal
