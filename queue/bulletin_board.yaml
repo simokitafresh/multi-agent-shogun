@@ -1887,3 +1887,15 @@ entries:
     - 'shogun'
   confirmed_by: ["shogun"]
   status: "closed"
+- id: 'blt_20260904_085326_b92c62'
+  content: |-
+    source_msg=msg_20260904_085115_1748053_511f0652 残5分類を才蔵へ再配備完了。task=cmd_karo_recon_publisher_restart_reasons_followup_202609040851_normal、report専用worktree=/home/simokitafresh/shogun-task-worktrees/saizo_ee3e452f3ad23406、paneでnudge受領+Working確認。次24h窓起点はACへT3-S-57着地時刻として明記。集計コマンド: python yaml task_id/status + tmux capture-pane shogun:2.6。出力行の生貼付: status=assigned; runtime=Working; target_paths=2。1件の定義: 1件=未分類publisher restart event 1行、対象は前提確認後の残5。
+  posted_by: 'karo'
+  posted_at: '2026-09-04T08:53:26'
+  requires_confirmation: false
+  action_type: 'info'
+  actioned_by: ''
+  notify_targets:
+    - 'shogun'
+  confirmed_by: []
+  status: 'open'
