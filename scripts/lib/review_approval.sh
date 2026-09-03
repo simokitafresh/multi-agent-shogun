@@ -332,6 +332,45 @@ for task_path in sorted((root / "queue" / "tasks").glob("*.yaml")):
     filename = str(task.get("report_filename") or "").strip()
     live_names.add(filename or f"{task_path.stem}_report_{cmd_id}.yaml")
 
+# A generation marker is the durable claim for a report whose task slot was
+# later overwritten by another deployment.  The task file is only a volatile
+# pointer; the marker binds the report path to the immutable report_id minted
+# at publication time.  Authenticate the marker before using it as a task
+# replacement, and fail closed on malformed or reused identities.
+claimed_reports = {}
+for marker in sorted(reports_dir.glob(".deploy_generation_*.yaml")):
+    marker_report_name = marker.name[len(".deploy_generation_"):]
+    if not re.search(r"_report_" + re.escape(cmd_id) + r"(?:_[^/]*)?\.yaml\Z", marker_report_name):
+        continue
+    try:
+        raw = marker.read_text(encoding="utf-8").splitlines()
+    except OSError:
+        raise SystemExit(1)
+    if len(raw) != 1:
+        raise SystemExit(1)
+    fields = raw[0].split("\t")
+    if len(fields) != 4:
+        raise SystemExit(1)
+    relative, source_fp, query_key, marker_report_id = (str(value).strip() for value in fields)
+    relative_path = pathlib.PurePosixPath(relative)
+    if (relative_path.parts[:2] != ("queue", "reports")
+            or len(relative_path.parts) != 3
+            or relative_path.name != marker_report_name
+            or not relative_path.name.endswith(".yaml")
+            or not re.fullmatch(r"[0-9a-f]{64}", source_fp)
+            or not re.fullmatch(r"[0-9a-f]{64}", query_key)
+            or not marker_report_id):
+        raise SystemExit(1)
+    marker_path = reports_dir / relative_path.name
+    if not marker_path.is_file():
+        raise SystemExit(1)
+    if relative_path.name in claimed_reports and claimed_reports[relative_path.name] != marker_report_id:
+        raise SystemExit(1)
+    if marker_report_id in claimed_reports.values() and claimed_reports.get(relative_path.name) != marker_report_id:
+        raise SystemExit(1)
+    claimed_reports[relative_path.name] = marker_report_id
+    live_names.add(relative_path.name)
+
 # A report can be revised after an earlier completion attempt has already
 # published an immutable archive generation.  The active task slot then owns
 # a new report_id, while the archived generation remains history.  Keep the
@@ -406,8 +445,17 @@ for report_path in sorted(candidates):
         doc = yaml.safe_load(report_path.read_text(encoding="utf-8")) or {}
     except (OSError, yaml.YAMLError):
         raise SystemExit(1)
-    if not isinstance(doc, dict) or str(doc.get("parent_cmd") or "") != cmd_id:
+    claimed_report_id = claimed_reports.get(report_path.name)
+    if not isinstance(doc, dict):
+        if claimed_report_id:
+            raise SystemExit(1)
         continue
+    if str(doc.get("parent_cmd") or "") != cmd_id:
+        if claimed_report_id:
+            raise SystemExit(1)
+        continue
+    if claimed_report_id and str(doc.get("report_id") or "").strip() != claimed_report_id:
+        raise SystemExit(1)
     is_live = report_path.parent == reports_dir
     if is_live and report_path.name not in live_names:
         # Task YAML may have been archived after completion (status=done).

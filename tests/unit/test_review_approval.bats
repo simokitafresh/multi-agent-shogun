@@ -8,6 +8,98 @@ setup_file() {
     REVIEW_APPROVAL_SCRIPT="$(cd "$(dirname "$BATS_TEST_FILENAME")/../.." && pwd)/scripts/review_approval.sh"
 }
 
+setup_resolve_fixture() {
+    export RESOLVE_ROOT="$BATS_TEST_TMPDIR/resolve-root"
+    mkdir -p "$RESOLVE_ROOT/queue/reports" "$RESOLVE_ROOT/queue/archive/reports" \
+        "$RESOLVE_ROOT/queue/tasks"
+    cat > "$RESOLVE_ROOT/queue/tasks/hayate.yaml" <<'YAML'
+task:
+  task_id: cmd_registry_hayate_normal
+  parent_cmd: cmd_registry
+  report_filename: hayate_report_cmd_registry.yaml
+  status: done
+YAML
+    cat > "$RESOLVE_ROOT/queue/reports/hayate_report_cmd_registry.yaml" <<'YAML'
+worker_id: hayate
+task_id: cmd_registry_hayate_normal
+report_id: rpt-registry-hayate
+report_identity_version: 2
+parent_cmd: cmd_registry
+status: completed
+YAML
+    cat > "$RESOLVE_ROOT/queue/reports/kagemaru_report_cmd_registry.yaml" <<'YAML'
+worker_id: kagemaru
+task_id: cmd_registry_kagemaru_normal
+report_id: rpt-registry-kagemaru
+report_identity_version: 2
+parent_cmd: cmd_registry
+status: completed
+YAML
+    printf 'queue/reports/kagemaru_report_cmd_registry.yaml\t%s\t%s\trpt-registry-kagemaru\n' \
+        "$(printf '%064d' 1)" "$(printf '%064d' 2)" \
+        > "$RESOLVE_ROOT/queue/reports/.deploy_generation_kagemaru_report_cmd_registry.yaml"
+}
+
+resolve_fixture_reports() {
+    PROJECT_ROOT="$RESOLVE_ROOT" bash -c \
+        'source "$(dirname "$1")/lib/review_approval.sh"; review_resolve_reports cmd_registry' _ \
+        "$REVIEW_APPROVAL_SCRIPT"
+}
+
+# test_necessity: report identity registry is the durable owner for a completed
+# report after its task slot is overwritten; without this, split AC completion
+# loses one report and cannot construct the canonical SG7 set.
+@test "resolver keeps claimed report after task slot overwrite and excludes unclaimed" {
+    setup_resolve_fixture
+    cat > "$RESOLVE_ROOT/queue/reports/unclaimed_report_cmd_registry.yaml" <<'YAML'
+worker_id: unclaimed
+task_id: cmd_registry_unclaimed_normal
+report_id: rpt-registry-unclaimed
+report_identity_version: 2
+parent_cmd: cmd_registry
+status: completed
+YAML
+
+    run resolve_fixture_reports
+    [ "$status" -eq 0 ]
+    [ "$(printf '%s\n' "$output" | wc -l)" -eq 2 ]
+    [[ "$output" == *"hayate_report_cmd_registry.yaml"* ]]
+    [[ "$output" == *"kagemaru_report_cmd_registry.yaml"* ]]
+    [[ "$output" != *"unclaimed_report_cmd_registry.yaml"* ]]
+}
+
+# test_necessity: a registry claim must authenticate both report_id and
+# parent_cmd; accepting either mismatch would bind approvals to another report
+# generation or command.
+@test "resolver blocks claimed report identity mismatch and reuse" {
+    setup_resolve_fixture
+    sed -i 's/^parent_cmd: cmd_registry$/parent_cmd: cmd_other/' \
+        "$RESOLVE_ROOT/queue/reports/kagemaru_report_cmd_registry.yaml"
+    run resolve_fixture_reports
+    [ "$status" -ne 0 ]
+
+    setup_resolve_fixture
+    cat > "$RESOLVE_ROOT/queue/reports/other_report_cmd_registry.yaml" <<'YAML'
+worker_id: other
+task_id: cmd_registry_other_normal
+report_id: rpt-registry-other
+report_identity_version: 2
+parent_cmd: cmd_registry
+status: completed
+YAML
+    printf 'queue/reports/other_report_cmd_registry.yaml\t%s\t%s\trpt-registry-kagemaru\n' \
+        "$(printf '%064d' 3)" "$(printf '%064d' 4)" \
+        > "$RESOLVE_ROOT/queue/reports/.deploy_generation_other_report_cmd_registry.yaml"
+    run resolve_fixture_reports
+    [ "$status" -ne 0 ]
+
+    setup_resolve_fixture
+    cp "$RESOLVE_ROOT/queue/reports/kagemaru_report_cmd_registry.yaml" \
+        "$RESOLVE_ROOT/queue/archive/reports/kagemaru_report_cmd_registry.yaml"
+    run resolve_fixture_reports
+    [ "$status" -ne 0 ]
+}
+
 @test "report-only RC notification keeps recalculation decision neutral" {
     run grep -c '前報告の実測・成果物は有効\|再計算・再実装は禁止' "$REVIEW_APPROVAL_SCRIPT"
     [ "$status" -eq 1 ]
