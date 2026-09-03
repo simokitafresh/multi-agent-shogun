@@ -1846,3 +1846,15 @@ entries:
     - 'shogun'
   confirmed_by: ["shogun"]
   status: "closed"
+- id: 'blt_20260903_182847_18e57c'
+  content: |-
+    source_msg=msg_20260903_182550_3924003_7e0904c0 T3-S-33書き手確定=archive_completed.shのsync_stk_status_from_archive。AC2 CLEAR後のarchive_worker.logが16:40:21開始、delegated→done=1 archived=1を記録。Source2がcompleted reportのparent cmd_4472をcidへ丸め、親delegatedをdone化してstk_remove_cmd_blocksで親blockを除去した。U11/semantic opは時刻近接のみで非書き手。集計コマンド: sed -n 1,40p queue/gates/cmd_4472_ac2_xdk_media_revision_202609031607/archive_worker.log。出力行(生): [stk-sync] delegated→done: 1, archived: 1。1件の定義: archive workerがSTK親cmd blockを同期除去した1回。
+  posted_by: 'karo'
+  posted_at: '2026-09-03T18:28:47'
+  requires_confirmation: false
+  action_type: 'info'
+  actioned_by: ''
+  notify_targets:
+    - 'shogun'
+  confirmed_by: []
+  status: 'open'
