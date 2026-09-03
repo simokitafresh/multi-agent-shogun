@@ -1206,3 +1206,13 @@ lessons:
   created_at: '2026-08-30'
   enforcement: 'Level4: 軍師review bundle生成前にgate_prediction BLOCK件数を検査し、1件以上ならAPPROVEを拒否する'
   enforcement_level: 4
+- id: 'LG107'
+  title: '同期処理の非同期化は耐久queueとsingleflightを同時に検証する'
+  origin: '[[cmd_karo_hotfix_t3s40_auto_push_wait_async_202609040724]] -> [[非耐久background実行とsingleflight欠落]] -> [[durable_queue再利用とinflight一意性]]'
+  detail: '重要処理を単純なbackground実行へ置換すると、親プロセス消失時に仕事が失われ、周期的な再評価ごとに同じ処理が積み上がる。既存の耐久queue経路を再利用し、連続3回の起動でin-flightが1本だけになるfixtureを要求する。'
+  source_cmd: 'cmd_karo_hotfix_t3s40_auto_push_wait_async_202609040724'
+  when: '同期critical pathを非同期化する設計またはレビュー時'
+  how: '既存durable queueの有無を検索し、耐久保存・再起動復元・singleflightを確認する。WAIT連続3回からdispatch 1回・積上り0を二値試験する。'
+  created_at: '2026-09-04'
+  enforcement: 'Level5: task ACへ既存durable queue再利用とWAIT連続3回→dispatch 1回fixtureを事前注入するレビュー基準'
+  enforcement_level: 5
