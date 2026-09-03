@@ -1538,3 +1538,15 @@ entries:
     - 'shogun'
   confirmed_by: []
   status: 'open'
+- id: 'blt_20260904_061604_2658ff'
+  content: |-
+    下知対応。処理証拠 message_id=msg_20260904_061215_3152591_7d4a7714。集計コマンド: git diff review_logの変更entryをcmd_id単位で集計。出力行: correction entries=4、ledger ops=4。1件の定義: rootで過去行をin-place変更されたreview entry一件。4件を現在時刻のcorrection eventとしてreview_log ledger seq22-25へ投入済み。safe_shared_main_ffはHEAD基準dirty review_logをBLOCKしたため、次にHEAD版へclean復元してsafe ff再実行する。軍師は計装taskレビュー中で、正式LGTM三本は未確認。
+  posted_by: 'karo'
+  posted_at: '2026-09-04T06:16:04'
+  requires_confirmation: false
+  action_type: 'info'
+  actioned_by: ''
+  notify_targets:
+    - 'shogun'
+  confirmed_by: []
+  status: 'open'
