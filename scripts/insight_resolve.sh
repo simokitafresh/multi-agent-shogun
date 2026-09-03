@@ -31,7 +31,17 @@ if [[ "$current_status" == resolved && "$current_reason" == "$REASON" && "$curre
     echo "IDEMPOTENT: $INSIGHT_ID already resolved with identical evidence"
     exit 0
 fi
-if [[ ! -x "$SCRIPT_DIR/ledger_writer.sh" ]]; then
+LEDGER_WRITER="$SCRIPT_DIR/scripts/ledger_writer.sh"
+PUBLISHER_SINGLE_HELPER="$SCRIPT_DIR/scripts/lib/publisher_single_flag.sh"
+publisher_single_insights_enabled() {
+    [[ -x "$LEDGER_WRITER" ]] || return 1
+    [[ "$INSIGHTS_FILE" == "$SCRIPT_DIR/queue/insights.yaml" ]] || return 1
+    [[ -f "$PUBLISHER_SINGLE_HELPER" ]] || return 1
+    # shellcheck source=lib/publisher_single_flag.sh
+    source "$PUBLISHER_SINGLE_HELPER"
+    publisher_single_enabled "$SCRIPT_DIR"
+}
+if ! publisher_single_insights_enabled; then
     INSIGHTS_FILE_ENV="$INSIGHTS_FILE" INSIGHT_ID_ENV="$INSIGHT_ID" REASON_ENV="$REASON" ACTION_ENV="$ACTION_ARTIFACT" python3 - <<'PY'
 import json, os, tempfile
 path=os.environ['INSIGHTS_FILE_ENV']; ident=os.environ['INSIGHT_ID_ENV']
@@ -55,6 +65,7 @@ PY
     echo "OK: $INSIGHT_ID → resolved"
     exit 0
 fi
-LEDGER_SOURCE_FILE="$INSIGHTS_FILE" bash "$SCRIPT_DIR/ledger_writer.sh" resolve insights "$INSIGHT_ID" \
-    --expect "status=${current_status}" --resolved-reason "$REASON" --action-artifact "$ACTION_ARTIFACT" >/dev/null
+ledger_op_path="$(LEDGER_SOURCE_FILE="$INSIGHTS_FILE" bash "$LEDGER_WRITER" resolve insights "$INSIGHT_ID" \
+    --expect "status=${current_status}" --resolved-reason "$REASON" --action-artifact "$ACTION_ARTIFACT")"
+printf '%s\n' "$ledger_op_path"
 echo "OK: $INSIGHT_ID → resolved"

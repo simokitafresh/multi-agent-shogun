@@ -545,7 +545,10 @@ import sys
 import yaml
 
 task = yaml.safe_load(open(sys.argv[1], encoding="utf-8"))["task"]
-assert task["planned_paths"] == ["queue/insights.yaml"]
+assert task["planned_paths"] == []
+assert task["reflux_resolution_only"] is True
+assert task["commit_contract"]["required"] is False
+assert task["commit_contract"]["planned_paths"] == []
 print("REFLUX_INSIGHT_GENERATOR_OK runs=3")
 PY
 (
@@ -560,7 +563,7 @@ import yaml
 
 task = yaml.safe_load(open(sys.argv[1], encoding="utf-8"))["task"]
 contract = task["reflux_commit_contract"]
-assert contract["scope"] == ["queue/insights.yaml"]
+assert contract["scope"] == []
 assert contract["producer"] == {"field": "source", "value": "self_retro"}
 assert contract["post_commit_allowed_fields"] == ["occurrence_count", "last_seen"]
 print("REFLUX_INSIGHT_CONTRACT_OK")

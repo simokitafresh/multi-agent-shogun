@@ -9402,10 +9402,10 @@ _handle_reflux_auto_deploy() {
     case "$kind" in
       insight)
         target_path="queue/insights.yaml"
-        planned_paths_line=$'  planned_paths:\n    - queue/insights.yaml'
-        purpose="reflux insight 還流在庫自動消化: queue/insights.yaml の pending insight ${first_insight} を三層記憶・semantic-map・既存contextで確認し、resolveまたは必要な実修正/decision_candidateへ整理する"
+        planned_paths_line=$'  planned_paths: []'
+        purpose="reflux insight 還流在庫自動消化: queue/insights.yaml の pending insight ${first_insight} を三層記憶・semantic-map・既存contextで確認し、直接編集せず ledger resolve op へ整理する"
         purpose_yaml="  purpose: $(_yaml_single_quote_scalar "$purpose")"
-        ac1="対象insight ${first_insight} を一次情報で確認し、resolveまたは必要な実修正/decision_candidateへ整理する"
+        ac1="対象insight ${first_insight} を一次情報で確認する。queue/insights.yaml を直接編集せず、resolve は bash scripts/insight_resolve.sh <insight_id> <reason> <action_artifact> で ledger op を出し publisher が apply する。"
         ;;
       backlink)
         if [ ! -f "$SCRIPT_DIR/docs/semantic-index/index.md" ] ||
@@ -9440,7 +9440,7 @@ _handle_reflux_auto_deploy() {
         return 1
         ;;
     esac
-    ac2="作業前後の還流在庫残数(insights_pending/zero_backlinks/promotions/total)を報告YAMLへ記録し、実行証拠を残す"
+    ac2="作業前後の還流在庫残数(insights_pending/zero_backlinks/promotions/total)を報告YAMLへ記録し、insight_resolve.sh のstdoutに出るledger op pathを report の finding.evidence_path へ記録して実行証拠を残す"
     ac1_yaml=$(_yaml_single_quote_scalar "$ac1")
     ac2_yaml=$(_yaml_single_quote_scalar "$ac2")
     if [ -z "$purpose_yaml" ]; then
@@ -9481,6 +9481,24 @@ task:
   target_path: ${target_path}
 ${planned_paths_line}
 ${inspection_path_line}
+  reflux_resolution_only: true
+  commit_contract:
+    required: false
+    reason: "reflux_insight_ledger_resolve"
+    task_type: "reflux_resolve"
+    planned_paths: []
+  reflux_commit_contract:
+    helper_path: "${SCRIPT_DIR}/scripts/ninja_scope_commit.sh"
+    repo_root: "${SCRIPT_DIR}"
+    scope: []
+    producer:
+      field: "source"
+      value: "self_retro"
+    stable_id_field: "id"
+    post_commit_allowed_fields:
+      - "occurrence_count"
+      - "last_seen"
+    uncommitted_worker_policy: "block"
   scout_exempt: true
   task_worktree_required: true
   estimated_minutes: 5
