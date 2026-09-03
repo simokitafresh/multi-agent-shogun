@@ -1,5 +1,6 @@
 # インフラコンテキスト
-<!-- last_updated: 2026-09-04 bulletin prune ledger/T3-S-40 v3 反映 -->
+<!-- last_updated: 2026-09-04 T3-S-50 watcher Claude pane idle 復元 反映 -->
+<!-- source_commit:e4b5e2265f0c reason:T3-S-50 watcher Claude pane idle 復元 反映 evidence:context_freshness_check context=context/infrastructure.md commit=e4b5e2265f0c -->
 <!-- source_commit:9ac0df65cd91 reason:bulletin prune ledger/T3-S-40 v3 反映 evidence:context_freshness_check context=context/infrastructure.md commit=9ac0df65cd91 -->
 <!-- source_commit:eb846efea700 reason:review_log ledger read fallback 反映 evidence:context_freshness_check context=context/infrastructure.md commit=eb846efea700 report=hanzo_report_cmd_karo_hotfix_review_log_ledger_read_fallback_202609032349 -->
 <!-- source_commit:0b7b79061b52 reason:T3-S-39 第2弾 本番達成 反映 evidence:context_freshness_check context=context/infrastructure.md commit=0b7b79061b52 report=saizo_report_cmd_karo_hotfix_t3s39_memory_live_insert_perf_202609032243 -->
