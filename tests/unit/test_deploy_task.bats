@@ -69,6 +69,99 @@ printf "source_local=1 positive=2 busy_negative=1 pending_negative=1 false_posit
     [ "$output" = "source_local=1 positive=2 busy_negative=1 pending_negative=1 false_positive=0 false_negative=0" ]
 }
 
+# test_necessity: T3-S-49 — await_clear admission must key off report-completed
+# identity, not task status. A status=done slot with a matching completed
+# report must release exactly like an in_progress slot; a status=done slot
+# with no report at all must stay refused. Guards against 53ed713ff's gap
+# (task_status forced to in_progress only), which BLOCKed every reported
+# status=done slot from being reused.
+@test "await_clear admission releases done-report-completed identically to in_progress and refuses done-report-absent" {
+    run bash -lc '
+set -euo pipefail
+PROJECT_ROOT="'"$PROJECT_ROOT"'"
+export DEPLOY_TASK_LIB_ONLY=1
+export DEPLOY_TASK_ENTRYPOINT_SOURCE="$PROJECT_ROOT/scripts/deploy_task.sh"
+source "$PROJECT_ROOT/scripts/deploy_task/bootstrap.sh"
+source "$PROJECT_ROOT/scripts/deploy_task/main.sh"
+ROOT="'"$BATS_TEST_TMPDIR"'/await-clear-status-matrix"
+SCRIPT_DIR="$ROOT"
+mkdir -p "$ROOT/queue/tasks" "$ROOT/queue/reports" "$ROOT/logs"
+resolve_pane() { printf "%s-pane\n" "$1"; }
+check_idle() { [ "${PANE_STATE:-idle}" = idle ]; }
+PANE_STATE=idle
+
+# Fixture 1: status=done + completed report identity match -> released.
+cat > "$ROOT/queue/tasks/t3_s49_done.yaml" <<EOF
+task:
+  status: done
+  parent_cmd: cmd_t3_s49_done
+  task_id: cmd_t3_s49_done_normal
+  report_id: rpt_t3_s49_done
+  report_identity_version: 2
+  report_path: queue/reports/t3_s49_done_report_cmd_t3_s49_done.yaml
+  deployed_at: 2026-09-03T18:00:00
+EOF
+cat > "$ROOT/queue/reports/t3_s49_done_report_cmd_t3_s49_done.yaml" <<EOF
+status: completed
+verdict: PASS
+parent_cmd: cmd_t3_s49_done
+task_id: cmd_t3_s49_done_normal
+report_id: rpt_t3_s49_done
+report_identity_version: 2
+timestamp: 2026-09-03T19:00:00
+EOF
+
+# Fixture 2: status=done + no report file at all -> stays refused.
+cat > "$ROOT/queue/tasks/t3_s49_done_noreport.yaml" <<EOF
+task:
+  status: done
+  parent_cmd: cmd_t3_s49_done_noreport
+  task_id: cmd_t3_s49_done_noreport_normal
+  report_path: queue/reports/t3_s49_done_noreport_report_cmd_t3_s49_done_noreport.yaml
+EOF
+
+# Fixture 3: status=in_progress + completed report identity match -> released
+# (pre-existing admission path; must keep working unchanged).
+cat > "$ROOT/queue/tasks/t3_s49_inprogress.yaml" <<EOF
+task:
+  status: in_progress
+  parent_cmd: cmd_t3_s49_inprogress
+  task_id: cmd_t3_s49_inprogress_normal
+  report_id: rpt_t3_s49_inprogress
+  report_identity_version: 2
+  report_path: queue/reports/t3_s49_inprogress_report_cmd_t3_s49_inprogress.yaml
+EOF
+cat > "$ROOT/queue/reports/t3_s49_inprogress_report_cmd_t3_s49_inprogress.yaml" <<EOF
+status: completed
+verdict: PASS
+parent_cmd: cmd_t3_s49_inprogress
+task_id: cmd_t3_s49_inprogress_normal
+report_id: rpt_t3_s49_inprogress
+report_identity_version: 2
+timestamp: 2026-09-03T19:00:00
+EOF
+
+done_report_admitted=0
+deploy_task_current_report_is_await_clear "$ROOT/queue/tasks/t3_s49_done.yaml" t3_s49_done \
+    && done_report_admitted=1
+test "$done_report_admitted" -eq 1
+
+done_noreport_admitted=0
+deploy_task_current_report_is_await_clear "$ROOT/queue/tasks/t3_s49_done_noreport.yaml" t3_s49_done_noreport \
+    && done_noreport_admitted=1
+test "$done_noreport_admitted" -eq 0
+
+inprogress_report_admitted=0
+deploy_task_current_report_is_await_clear "$ROOT/queue/tasks/t3_s49_inprogress.yaml" t3_s49_inprogress \
+    && inprogress_report_admitted=1
+test "$inprogress_report_admitted" -eq 1
+
+printf "done_report_completed=admitted done_report_absent=refused in_progress_report_completed=admitted false_positive=0 false_negative=0\n"
+'
+    [ "$status" -eq 0 ]
+    [ "$output" = "done_report_completed=admitted done_report_absent=refused in_progress_report_completed=admitted false_positive=0 false_negative=0" ]
+}
+
 # The suite setup already sources deploy_task.sh once per Bats process. Keep
 # each cached-library call isolated while avoiding a second parse of the
 # 10k-line shell library in every small contract test.

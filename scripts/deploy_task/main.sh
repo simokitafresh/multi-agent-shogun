@@ -32,12 +32,13 @@ source "$_dt_module_root/gates.sh"
 source "$_dt_module_root/delivery.sh"
 unset _dt_module_root
 
-# The worker task slot remains in_progress until the ordered completion lane
-# closes it, but a matching terminal report plus an actually idle pane is
-# already safe to reuse.  Keep this check independent from the mutable
-# snapshot and fail closed for stale identities, busy panes, and confirmation
-# prompts.  It lives in this source unit because some production and fixture
-# paths source main.sh directly rather than the monolithic wrapper.
+# The worker task slot can sit at in_progress or done until the ordered
+# completion lane closes it, but a matching terminal report plus an actually
+# idle pane is already safe to reuse regardless of which of those two statuses
+# the slot is in.  Keep this check independent from the mutable snapshot and
+# fail closed for stale identities, busy panes, and confirmation prompts.  It
+# lives in this source unit because some production and fixture paths source
+# main.sh directly rather than the monolithic wrapper.
 deploy_task_current_report_is_await_clear() {
     local task_file="$1" worker_name="$2"
     local task_status parent_cmd task_id task_report_id task_report_version
@@ -46,7 +47,7 @@ deploy_task_current_report_is_await_clear() {
 
     [ -f "$task_file" ] || return 1
     task_status=$(field_get "$task_file" "status" "" 2>/dev/null || true)
-    [ "$task_status" = "in_progress" ] || return 1
+    [[ "$task_status" =~ ^(in_progress|done)$ ]] || return 1
     parent_cmd=$(field_get "$task_file" "parent_cmd" "" 2>/dev/null || true)
     task_id=$(field_get "$task_file" "task_id" "" 2>/dev/null || true)
     task_report_id=$(field_get "$task_file" "report_id" "" 2>/dev/null || true)
