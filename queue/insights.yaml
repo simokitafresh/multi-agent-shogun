@@ -16857,3 +16857,10 @@ insights:
   status: "resolved"
   action_artifact: "semantic_map=/home/simokitafresh/multi-agent-shogun/context/semantic-map.md;semantic_index=/home/simokitafresh/multi-agent-shogun/docs/semantic-index/index.md"
   resolved_reason: "semantic map generation verified the candidate is represented or intentionally ignored"
+- id: INS-20260904-071149109-7199
+  ts: "2026-09-04T07:11:49+09:00"
+  insight: "yaml_field_set.sh は同一cmd_idの複数review_log entry(draft/report/correction)で first-match のみ更新するため、correction エントリの verified_files 欠落WARN(cs_checklist cmd_3573)を道具で解消できない。entry を review_type+timestamp で特定できる block 指定が必要。source gunshi 2026-09-04 07:10"
+  priority: "medium"
+  source: "manual"
+  fix_known: false
+  status: pending

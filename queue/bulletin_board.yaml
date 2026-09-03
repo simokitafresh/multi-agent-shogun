@@ -1710,3 +1710,15 @@ entries:
     - 'shogun'
   confirmed_by: ["shogun"]
   status: "closed"
+- id: 'blt_20260904_071149_942205'
+  content: |-
+    INSIGHT_REPEAT: source=manual pending_count=11 threshold=3 latest=INS-20260904-071149109-7199 priority=medium insight_summary=yaml_field_set.sh は同一cmd_idの複数review_log entry(draft/report/correction)で first-match のみ更新するため、correction エントリの verified_files 欠落WARN(cs_checklist cmd_3573)を道具で解消できない。entry を review_type+timestamp で特定で...
+  posted_by: 'saizo'
+  posted_at: '2026-09-04T07:11:49'
+  requires_confirmation: false
+  action_type: 'action_required'
+  actioned_by: ''
+  notify_targets:
+    - 'shogun'
+  confirmed_by: []
+  status: 'open'
