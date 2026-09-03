@@ -1,5 +1,5 @@
 <!-- gist-master: b48264be3a2e1bc8434ee2b64b8264c6 x_api_registration_runbook_20260903.md -->
-# X API 登録ランブック(バム @TokyoJibika の自動投稿用)v1.1
+# X API 登録ランブック(バム @TokyoJibika の自動投稿用)v1.2
 
 - 作成: 2026-09-03 15:35 将軍(殿指示 15:33『x API 登録のステップバイステップのランブック』)
 - 目的: 設計書 `docs/research/x_account_ops_automation_asis_tobe_5w1h_20260903.md` §10/§11 の P1(下書き→gate→承認→X API 投稿)に必要な X API の登録・認可・トークン保管を、殿の操作と将軍側の作業に分けて 1 手ずつ書く
@@ -61,20 +61,43 @@ https://console.x.com/accounts/2095362144241930242 は殿の **developer account
    - Website: `https://dm-signal.com`
 2. 作成直後に **Keys** タブに 4 種の認証情報が出る。**本運用で使うのは「Client ID & Secret(OAuth 2.0)」だけ**。Bearer Token・API Key/Secret・Access Token/Secret(OAuth 1.0a)は使わないので、画面を閉じてよい(必要なら後で Keys タブから再生成できる)。
 
-## 4. User authentication settings(殿)
+## 4. User authentication settings(殿)— 殿スクショ 15:53 準拠の具体値
 
-App の **Settings**(または Auth)タブ › **User authentication settings › Set up**(console.x.com では App 詳細の中にある)。
+殿の画面(15:53): App「TokyoJibika」(id 33393963、active、プロジェクトアクセス=Default Project (Pay Per Use))の **Keys & Tokens** タブ。段 1〜3 は完了している。
 
-| 項目 | 値 |
+### 4.1 Keys & Tokens タブで触るもの・触らないもの
+| 行 | 操作 |
 |---|---|
-| App permissions | **Read and write** |
-| Type of App | **Web App, Automated App or Bot**(Confidential client) |
-| Callback URI / Redirect URL | `http://127.0.0.1:8585/callback` |
-| Website URL | `https://dm-signal.com` |
-| Organization name(任意) | 空欄または DM-Signal |
-| Terms of service / Privacy policy(任意) | 空欄で可 |
+| アプリ専用認証 › ベアラートークン | **触らない**(app-only。本運用では未使用。既に生成済みでも放置でよい) |
+| OAuth 1.0 キー › コンシューマーキー | **触らない** |
+| OAuth 1.0 キー › アクセストークン「生成する」 | **押さない**(OAuth 1.0a 用。今の権限「読む」で生成しても投稿できない) |
+| OAuth 2.0 キー › ユーザー認証設定「セットアップ」 | **これだけ押す** → 4.2 の「認証設定」画面へ |
 
-Save すると **OAuth 2.0 Client ID** と **Client Secret** が 1 度だけ表示される。Client Secret はこの画面でしか見えないので、**殿が将軍へ渡す前に自分の端末のパスワードマネージャへ保存**する。将軍へは次の 5 節の方法で渡す(チャットに貼らない)。
+### 4.2 「認証設定」画面の入力値(上から順に)
+| 項目 | 選ぶ・入れる値 | 理由 |
+|---|---|---|
+| アプリの権限(必須) | **「読み取りと書き込み」**(現在は「読む」が選ばれている→変更する) | 投稿には write が要る。DM は不要なので 3 つ目は選ばない |
+| Request email from users | **OFF のまま** | ON にすると利用規約とプライバシーポリシーの URL が必須になる |
+| アプリの種類(必須) | **「ウェブアプリ、自動化アプリまたはボット(機密クライアント)」**(現在は「ネイティブアプリ」→変更する) | 機密クライアントにすると Client Secret が発行され、5 節の token 交換で Basic 認証を使う設計に合う |
+| コールバック URI / リダイレクト URL(必須) | `http://127.0.0.1:8585/callback` | 5.3 でブラウザがここへ飛ぶ。**この文字列と完全一致**が必要。保存時に http を拒否されたら `http://localhost:8585/callback` にして、5 節の `X_REDIRECT_URI` も同じ値にする |
+| さらに追加する | 押さない | 1 本で足りる |
+| ウェブサイト URL(必須) | `https://dm-signal.com` | 必須欄 |
+| 組織名 | 空欄可(入れるなら `DM-Signal`) | 任意 |
+| 組織の URL | 空欄可(入れるなら `https://dm-signal.com`) | 任意 |
+| 利用規約 / プライバシーポリシー | **空欄** | Request email が OFF なら不要 |
+
+最後に右下 **「変更を保存する」**。
+
+### 4.3 保存直後に出る 2 値
+保存すると **Client ID** と **Client Secret** が表示される(Secret はこの 1 回だけ)。
+1. 両方を殿の端末のパスワードマネージャに保存する。
+2. 将軍へは 5.1 の方法(WSL の `config/x_api.env` に殿が直接書く)で渡す。チャット・スクショに貼らない。
+3. 画面を閉じてから Keys & Tokens に戻ると「OAuth 2.0 キー」の行に Client ID だけが見え、Secret は「再生成」でしか出ない(再生成すると旧 Secret は無効)。
+
+### 4.4 よくある詰まり
+- 「読み取りと書き込み」に変えて保存したのに投稿が 403 → 保存後に **5 節の認可をやり直す**(権限変更前に発行した token は read のまま)。
+- コールバックで「無効な URL」→ 末尾のスラッシュ有無まで 5 節の値と同一にする。`http://127.0.0.1:8585/callback` が通らなければ `http://localhost:8585/callback`。
+- プロジェクトアクセスが「Pay Per Use」と出ているのが正常。2 節のクレジット残高が 0 だと投稿時に 402/429。
 
 ## 5. 一度だけの認可(PKCE)と token 保管(殿+将軍)
 
@@ -212,6 +235,10 @@ client.posts.create(post_data={"text": "..."})   # POST /2/tweets
 | 4 | cmd_4472 の `x_post.sh post` が creds ありで 201(gate PASS 本文) | 家老 production_proof |
 
 ---
+
+## v1.2 (2026-09-03 15:58)
+
+AsIs 注釈: 殿スクショ 15:53(Keys & Tokens、認証設定)を受け、§4 を画面の日本語文言と具体値に置換。
 
 ## v1.1 (2026-09-03 15:45)
 
