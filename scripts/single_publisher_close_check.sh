@@ -91,25 +91,109 @@ else
     c4=FAIL
 fi
 
-direct_pushes="$(python3 - "$REPO_ROOT/scripts" <<'PY'
+runtime_logs="${SINGLE_PUBLISHER_RUNTIME_LOGS:-${SINGLE_PUBLISHER_RUNTIME_LOG:-${SINGLE_PUBLISHER_PUSH_LANE_LOG:-$REPO_ROOT/logs/ninja_monitor_push_lane.log}}}"
+direct_push_report="$(SINGLE_PUBLISHER_RUNTIME_LOGS="$runtime_logs" python3 - "$REPO_ROOT" "$RELOAD_ISO" <<'PY'
+import datetime as dt
+import os
 import re
+import subprocess
 import sys
 from pathlib import Path
 
-root = Path(sys.argv[1])
-allowed = {"publisher.sh", "publish_direct_commit.sh", "publisher_root_drain.sh"}
-count = 0
-for path in root.rglob("*"):
-    if not path.is_file() or path.name in allowed:
+repo, reload_iso = sys.argv[1:]
+local_tz = dt.datetime.now().astimezone().tzinfo
+
+def epoch(value):
+    parsed = dt.datetime.fromisoformat(value.replace("Z", "+00:00"))
+    if parsed.tzinfo is None:
+        parsed = parsed.replace(tzinfo=local_tz)
+    return parsed.timestamp()
+
+start = epoch(reload_iso)
+commits = []
+git_log = subprocess.run(
+    ["git", "-C", repo, "log", "origin/main", f"--since={reload_iso}",
+     "--format=%H%x09%(trailers:key=Published-By,valueonly)%x09%s"],
+    check=False, capture_output=True, text=True,
+)
+for row in git_log.stdout.splitlines():
+    sha, trailer, subject = (row.split("\t", 2) + ["", "", ""])[:3]
+    if re.fullmatch(r"[0-9a-f]{40}", sha) and not trailer.strip():
+        commits.append((sha, subject))
+
+def parse_log_time(line):
+    match = re.match(r"^\[([^]]+)\]", line)
+    if not match:
+        return None
+    value = match.group(1).strip()
+    try:
+        parsed = dt.datetime.fromisoformat(value.replace("Z", "+00:00"))
+    except ValueError:
+        for fmt in ("%Y-%m-%d %H:%M:%S", "%Y-%m-%dT%H:%M:%S"):
+            try:
+                parsed = dt.datetime.strptime(value, fmt)
+                break
+            except ValueError:
+                parsed = None
+        if parsed is None:
+            return None
+    if parsed.tzinfo is None:
+        parsed = parsed.replace(tzinfo=local_tz)
+    return parsed.timestamp()
+
+def is_push_event(line):
+    lower = line.lower()
+    if re.search(r"\bpush\s*=\s*0\b", lower) or "result=skip" in lower:
+        return False
+    return bool(re.search(r"\bgit(?:\s+-c\s+\S+)?\s+push\b", lower) or
+                re.search(r"(?:^|[\s])push(?:[\s=:]|$)", lower))
+
+def classification(source, line):
+    lower = line.lower()
+    if "publisher_root_drain" in lower or "root drain" in lower:
+        return "publisher_root_drain", True
+    if "publish_direct_commit" in lower or "u1b" in lower or "wrapper" in lower:
+        return "u1b_wrapper", True
+    if "publisher" in lower and "ninja_monitor" not in lower:
+        return "publisher", True
+    return source, False
+
+logs = [item for item in os.environ.get("SINGLE_PUBLISHER_RUNTIME_LOGS", "").split(os.pathsep) if item]
+hits = {}
+for log_name in logs:
+    path = Path(log_name)
+    if not path.is_file():
         continue
-    for line in path.read_text(encoding="utf-8", errors="replace").splitlines():
-        if line.lstrip().startswith("#"):
+    try:
+        lines = path.read_text(encoding="utf-8", errors="replace").splitlines()
+    except OSError:
+        continue
+    source = path.name
+    for number, line in enumerate(lines, 1):
+        timestamp = parse_log_time(line)
+        if timestamp is None or timestamp < start or not is_push_event(line):
             continue
-        if re.search(r"\bgit\s+push\b", line):
-            count += 1
-print(count)
+        event_shas = re.findall(r"\b(?:sha|commit|head)=([0-9a-f]{7,40})\b", line, re.I)
+        if not event_shas:
+            continue
+        label, allowed = classification(source, line)
+        for event_sha in event_shas:
+            matches = [(sha, subject) for sha, subject in commits if sha.startswith(event_sha.lower())]
+            for sha, subject in matches:
+                if allowed:
+                    continue
+                hits.setdefault(sha, (subject, label, str(path), number))
+
+print(f"count={len(hits)}")
+for sha, subject in commits:
+    if sha in hits:
+        subject, label, path, number = hits[sha]
+        print(f"runtime_direct_push: sha={sha} subject={subject} classification={label} log={path} line={number}")
 PY
 )"
+direct_pushes="${direct_push_report%%$'\n'*}"
+direct_pushes="${direct_pushes#count=}"
+printf '%s\n' "$direct_push_report" | sed -n '2,$p'
 if [[ "$direct_pushes" == 0 ]]; then
     printf 'root_direct_push: PASS calls=%s\n' "$direct_pushes"
     c5=PASS
