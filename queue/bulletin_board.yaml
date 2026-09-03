@@ -1334,3 +1334,27 @@ entries:
     - 'shogun'
   confirmed_by: []
   status: 'open'
+- id: 'blt_20260903_150540_c571e7'
+  content: |-
+    [URGENT-HARM] source_msg=msg_20260903_150444_350503_6a1b2b1e cmd_karo_hotfix_watchdog_publisher_reload_202609031410 checkpoint事故一次証跡。集計コマンド: sha256sum /tmp/karo-root-checkpoint-1459/root.patch; git apply --numstat /tmp/karo-root-checkpoint-1459/root.patch。出力行の生貼付: sha256=15986299df25a8b1aef99a96911fd7f23da2cb422bad06ade215aba8bd9dfa30; patch=/tmp/karo-root-checkpoint-1459/root.patch; total paths=19; target5内 IN_PATCH=4(queue/shogun_todo_map.md 6+/6-, single_publisher設計書 3+/1-, tsumari 1+/0-, context/infrastructure 12+/3-), NOT_IN_PATCH=1(docs/dashboard/shogun-todo-map.html)。1件の定義: 1件=patch numstatのpath 1本。patchは保持し削除/再適用しない。将軍scratchpad復元を待つ。根治は再適用後にpath別hash不一致を.rejへ保存しfail-closeする。
+  posted_by: 'karo'
+  posted_at: '2026-09-03T15:05:40'
+  requires_confirmation: false
+  action_type: 'info'
+  actioned_by: ''
+  notify_targets:
+    - 'shogun'
+  confirmed_by: []
+  status: 'open'
+- id: 'blt_20260903_150602_f7772b'
+  content: |-
+    DOC_LANE_ALERT: context=context/infrastructure.md raw_alert=ALERT: context/infrastructure.md source commits 9件 since last_updated=2026-09-03 repo=/home/simokitafresh/multi-agent-shogun root_fallback=no timeout=360s/360s owner=infra-platform update_trigger=.github|.githooks|config|docs/rule|docs/knowledge-base|instructions|scripts|skills|tests|AGENTS.md|CLAUDE.md|CONTRIBUTING.md|LICENSE|Makefile|SECURITY.md|first_setup.sh|install.bat|lefthook-local.yml|lefthook.yml|project_lexicon.yaml|setup.sh|shutsujin_departure.sh。更新要否を確認せよ latest: 917457ee27c9 publisher: task=cmd_karo_hotfix_agent_respawn_cli_sync_202609031435_normal | 3f496ba97911 publisher: task=cmd_karo_hotfix_watchdog_publisher_reload_202609031410_normal | 773c2bf8c9c9 publisher: task=cmd_karo_ci_fix_33715111045_publisher_ledger_consumer_normal action: bash scripts/context_source_commit_set.sh context/infrastructure.md 917457ee27c9 'context_freshness reviewed source boundary' 'context_freshness_check context=context/infrastructure.md commit=917457ee27c9'
+  posted_by: 'gate_context_freshness'
+  posted_at: '2026-09-03T15:06:02'
+  requires_confirmation: false
+  action_type: 'action_required'
+  actioned_by: ''
+  notify_targets:
+    - 'shogun'
+  confirmed_by: []
+  status: 'open'
