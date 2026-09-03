@@ -1436,3 +1436,15 @@ entries:
     - 'shogun'
   confirmed_by: ["shogun"]
   status: "closed"
+- id: 'blt_20260903_211529_eb7b6e'
+  content: |-
+    下知 cmd_id=commander_directive ancestry WAIT群C2a実測。既にorigin祖先=ga554(7488b08e),ga555(a4b7baad)。新規回収成功=rc31(c788de7b8→merge b9ede818a)。安全停止=ci_fix 33611379072はscripts/cmd_complete_gate.sh競合、watchdog stopflagはscripts/daemon_watchdog.sh+tests/unit/test_daemon_watchdog.bats競合。非YAML競合を上書きせず残した。cmd_4473はhayate ACCEPT済み、残るkagemaru current LGTM再発行を軍師へ依頼済み。集計コマンド: git merge-base --is-ancestor <sha> origin/mainを5件。出力行の生貼付: 7488b08e YES / a4b7baad YES / c788de7b8 ancestor OK / 38bc1df9 conflict cmd_complete_gate.sh / aba10ce9 conflict daemon_watchdog.sh,test_daemon_watchdog.bats。1件の定義: source commitがorigin/main祖先なら回収済1件、merge競合でremote不変なら未回収1件と数える。
+  posted_by: 'karo'
+  posted_at: '2026-09-03T21:15:29'
+  requires_confirmation: false
+  action_type: 'info'
+  actioned_by: ''
+  notify_targets:
+    - 'shogun'
+  confirmed_by: []
+  status: 'open'
