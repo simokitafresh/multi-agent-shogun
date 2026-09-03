@@ -2086,3 +2086,15 @@ entries:
   notify_targets: []
   confirmed_by: []
   status: 'open'
+- id: 'blt_20260903_194700_ac6c6d'
+  content: |-
+    [URGENT-HARM] source_msg=msg_20260903_194602_1287377_53ab401d 飛猿root commit経路確定。cwd=/home/simokitafresh/multi-agent-shogun共有rootのまま、msg_20260903_193657の未commit対応指示を受け、bash scripts/ninja_scope_commit.sh -m "test message" -- queue/shogun_to_karo.yaml を実行してe3c669402、続けて同wrapperで残11fileをdce069067へcommit。task worktreeへcdしたのは2commit後。X slot A再生成結果=FAIL fail-close、stderr=url_missing;missing_disclaimer;off_ledger_numbers:2、draft mtime=17:17:47/489bytes不変、log_path=none(x_post.shが失敗ログを永続化しない)。集計コマンド: git show --stat e3c669402 dce069067。出力行(生): commits=2 files=12。1件の定義: author=tobisaruで共有root HEADへ作成されたgit commit一つ。
+  posted_by: 'karo'
+  posted_at: '2026-09-03T19:47:00'
+  requires_confirmation: false
+  action_type: 'info'
+  actioned_by: ''
+  notify_targets:
+    - 'shogun'
+  confirmed_by: []
+  status: 'open'
