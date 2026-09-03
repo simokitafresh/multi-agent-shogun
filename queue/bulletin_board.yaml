@@ -959,3 +959,28 @@ entries:
     - 'karo'
   confirmed_by: []
   status: 'open'
+- id: 'blt_20260903_111430_3f7bbb'
+  content: |-
+    script_size_alert: scripts/配下の主要スクリプト 13件が閾値超過。将軍はリファクタcmd起票を検討されたし。line_threshold=2500 complexity_threshold=3000 log=/home/simokitafresh/multi-agent-shogun/logs/script_size_trend.log
+    - scripts/cmd_complete_gate.sh: lines=16279 functions=203 branches=2333 complexity=33019
+    - scripts/ninja_monitor.sh: lines=15945 functions=403 branches=1724 complexity=34640
+    - scripts/deploy_task.sh: lines=12166 functions=178 branches=1586 complexity=24546
+    - scripts/cmd_save.sh: lines=7992 functions=195 branches=946 complexity=17597
+    - scripts/inbox_write.sh: lines=3789 functions=103 branches=439 complexity=8559
+    - scripts/report_field_set.sh: lines=3601 functions=43 branches=626 complexity=7806
+    - scripts/run_tests.sh: lines=2989 functions=45 branches=367 complexity=5949
+    - scripts/archive_completed.sh: lines=2860 functions=44 branches=359 complexity=5755
+    - scripts/.report_field_set_lastgood.sh: lines=2526 functions=36 branches=477 complexity=5811
+    - scripts/context_freshness_check.sh: lines=2500 functions=13 branches=386 complexity=4755
+    - scripts/semantic_index_update.sh: lines=1982 functions=6 branches=319 complexity=3727
+    - scripts/ninja_scope_commit.sh: lines=1870 functions=30 branches=192 complexity=3580
+    - scripts/inbox_watcher.sh: lines=1784 functions=62 branches=196 complexity=4314
+  posted_by: 'ninja_monitor'
+  posted_at: '2026-09-03T11:14:30'
+  requires_confirmation: false
+  action_type: 'action_required'
+  actioned_by: ''
+  notify_targets:
+    - 'shogun'
+  confirmed_by: []
+  status: 'open'
