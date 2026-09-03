@@ -3653,3 +3653,47 @@
     verified_files:
     - scripts/agent_respawn.sh:commit 63d96f189
     - tests/unit/test_respawn_recovery.bats:22/22 PASS
+- cmd_id: cmd_karo_hotfix_codex_update_prompt_auto_skip_202609040727
+  review:
+    adversarial_review:
+      reason: 変更行数<200。前回指摘のsurve/Working画面陰性が追加済み。fail-closed維持
+      required: false
+      verdict: N/A
+    brainwash_check: 陰性4画面×送信0=洗脳#1確認。22/22 PASS=数値確認。前回FAIL指摘項目の解消を現物precheck PASSで検証
+    causal_chain: 前回FAIL(負fixture不足)→陰性4画面追加→全送出0→構造的安全性確保→正の複利
+    cmd_id: cmd_karo_hotfix_codex_update_prompt_auto_skip_202609040727
+    cmd_spec_summary:
+      acceptance_criteria_count: 2
+      project: infra
+      scope: scripts/agent_respawn.sh, scripts/lib/cli_lookup.sh, tests/unit/test_respawn_recovery.bats
+    finding_categories:
+    - assumptions
+    - numbers
+    - premortem
+    - adversarial
+    gate_prediction: CLEAR
+    gate_prediction_reason: precheck cache PASS — SG-PRE1 PASS, commit worktree存在,
+      ac_version 246bfa49一致, binary_checks全yes, SG-PRE9c PASS
+    observations:
+    - '事実1: 前回FAIL指摘(負fixture2種のみ)に対し、陰性4画面(通常prompt/Claude survey/Codex Working/不完全dialog)全追加済み。22/22
+      PASS'
+    - '事実2: 共有pane_confirmation_guardへの委譲で構造的に誤送出防止。Codex固有matcherは更新意味判定のみ'
+    - '事実3: fail-closed(復帰検知失敗=rc=1)維持。precheck cache PASS'
+    report_fingerprint: a910dc2a4cfe5b8d41e28f987c5c58eb554a936a7bb43b14439c7cfee5f7661a
+    report_task_id: cmd_karo_hotfix_codex_update_prompt_auto_skip_202609040727_normal
+    review_ninja: hayate
+    review_type: report
+    reviewed_at: '2026-09-04T08:35:00+09:00'
+    reviewer: gunshi
+    sg_checklist:
+      SG1_ac_coverage: PASS
+      SG2_test_pass: PASS
+      SG3_parity: N/A
+      SG4_no_regression: PASS
+      SG5_lesson_candidate: PASS
+      SG6_code_quality: PASS
+      SG7_gate_prediction: PASS
+    verdict: APPROVE
+    verified_files:
+    - scripts/agent_respawn.sh:commit 63d96f189 worktree
+    - tests/unit/test_respawn_recovery.bats:22/22 PASS
