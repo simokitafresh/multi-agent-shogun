@@ -3387,3 +3387,41 @@
   step3_5_verified: true
   origin: "[[cmd_karo_ci_fix_33807468742_hot_reload_third]] -> [[karo_direct draft]] -> [[APPROVE]]"
   timestamp: "2026-09-04T07:29:31"
+- cmd_id: cmd_karo_hotfix_codex_update_prompt_auto_skip_202609040727
+  review_type: draft
+  verdict: REQUEST_CHANGES
+  severity: normal
+  confidence: HIGH
+  verified_files:
+    - "scripts/agent_respawn.sh:32"
+    - "scripts/lib/pane_confirmation_guard.sh:13"
+  findings_summary: "6観点: 前提OK(~/.codex/config.toml:78 check_for_update_on_startup=false なのに respawn 後 update 画面 2/2=家老 blt 07:20 と一致、agent_respawn.sh:32 に capture 点既存)/数値OK/時系列OK/検死NG: AC2 の負fixtureが通常prompt・確認promptの2種のみ。同型の選択ダイアログである survey(直近 kagemaru cmd で実害)と Working 中画面が無く、Down Down Enter 誤送出の最頻FPを検証しない(LG053 敵対的FP変形3件以上)/north_star OK"
+  observations:
+    - "事実1: grep check_for_update ~/.codex/config.toml → L78 false。ninja_monitor.log 07:18:17 CODEX-RESPAWN-VERIFY-FAIL kagemaru ready handshake timed out(update画面で停止の痕跡)"
+    - "事実2: capture-pane shogun:2.3/2.4 は 07:35 時点で通常 prompt(› Ask Codex)。家老掲示板 blt_072055 は update prompt停止=2/2"
+    - "事実3: scripts/lib/pane_confirmation_guard.sh:13 _pane_confirmation_screen_has_survey が選択ダイアログの完全構造一致検出の既存実装。同じ手法を update 画面へ流用可(LG023 原理1行)"
+  operational_simulation:
+    command: "grep -n check_for_update ~/.codex/config.toml; tmux capture-pane -p -t shogun:2.3 | tail -8; grep -n send-keys scripts/agent_respawn.sh"
+    expected: "設定false・pane通常prompt・respawn内capture点の実在"
+    actual: "L78 false / 通常prompt 2/2 / capture-pane L32 実在"
+    result: PASS
+  ambiguity_points:
+    - "AC2 負fixture『通常prompt/確認prompt』のみで、survey ダイアログ・Working 中画面(いずれも選択/入力待ちで誤送出リスク最大)が対象外"
+  discretion_fills: none
+  suggested_changes: "AC2 の負fixtureへ (a) Claude survey ダイアログ(kagemaru cmd の fixture 流用) (b) Codex 'Working … esc to interrupt' 画面 (c) 通常 prompt の3件以上を追加し全て送出0を実測。検出は pane_confirmation_guard.sh の構造一致関数へ update 画面判定を追加して共有せよ(agent_respawn 側の独自 regex を増やさない)"
+  finding_categories: [assumptions, numbers, simulation, premortem, north_star, adversarial, ambiguity]
+  adversarial_review:
+    required: true
+    verdict: PASS
+    reason: "pane へのキー送出は誤爆で作業文字列混入(2026-07-26 半蔵『2』混入と同型)。完全構造一致+負fixture3件で封じる"
+  gate_prediction: CLEAR
+  gate_prediction_reason: "draft段階。負fixture追加後は二値AC"
+  finding_confidence_1_10: 8
+  fix_first: ASK
+  second_opinion: NOT_NEEDED
+  brainwash_check: "#1no #2no(config/pane/log 3点を実測) #3no #4no #5no #6no #7no #8no 数値: 負fixture 2種→3種以上を要求、実測 3/3"
+  causal_chain: "設定 false が効かない→respawn 後 update 画面で停止→ready handshake timeout→配備不能(疾風 deploy 公開0)。自動 Skip は有効だが送出先誤認=作業混入。負fixture 不足のまま10回繰り返せば誤爆確率が積む=負の複利"
+  hole_action: none
+  step3_5_verified: true
+  origin: "[[cmd_karo_hotfix_codex_update_prompt_auto_skip_202609040727]] -> [[update画面自動Skip]] -> [[負fixture不足 REQUEST_CHANGES]]"
+  timestamp: "2026-09-04T07:36:49"
