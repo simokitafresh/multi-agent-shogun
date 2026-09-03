@@ -14603,18 +14603,15 @@ check_bulletin_archive() {
     fi
     local entry_count
     entry_count=$(awk '/^- id:/ {c++} END {print c+0}' "$bulletin_file" 2>/dev/null || echo 0)
-    # PUBLISHER_SINGLE flag ON: bulletin_board.yaml は publisher が正本を commit する。root での
-    # 時間 archive trim は origin(72件)と root(30件)の恒久乖離を生み ff を阻害するため skip
-    # (2026-09-03 09:38 家老実測 origin_only=42/wt_only=0。bulletin_write.sh 側は 65f52c33a で同処置)。
-    if [ -f "$SCRIPT_DIR/scripts/lib/publisher_single_flag.sh" ] && \
-        bash -c 'source "$1"; publisher_single_enabled "$2"' _ "$SCRIPT_DIR/scripts/lib/publisher_single_flag.sh" "$SCRIPT_DIR"; then
-        LAST_BULLETIN_ARCHIVE=$now
-        return 0
-    fi
+    # PUBLISHER_SINGLE flag ON時もbulletin_archive.sh自体がpublisher_single_enabledを検知し
+    # root trimではなくledger update op(status=closed発行、root書換なし)へルーティングする
+    # (scripts/bulletin_archive.sh参照)。ここで早期returnしていた旧実装は、periodic route
+    # からのledger適用そのものを止めてしまい、root board肥大(2026-09-03 23:27 -11行prune
+    # 事故の傍証)を招いた。entry_count閾値のみで起動判断し、trim方式の選択はスクリプト自身に委ねる。
     if [ "$entry_count" -gt 30 ]; then
         local result
         result=$(timeout 30 bash "$SCRIPT_DIR/scripts/bulletin_archive.sh" 2>&1) || true
-        if [[ "$result" == *"Archived"* ]]; then
+        if [[ "$result" == *"Archived"* || "$result" == *"closed"* ]]; then
             log "BULLETIN-ARCHIVE: $result"
         fi
     fi

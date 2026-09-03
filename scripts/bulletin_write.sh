@@ -630,7 +630,11 @@ if [[ -f "$SCRIPT_DIR/scripts/lib/publisher_single_flag.sh" ]]; then
     # shellcheck source=scripts/lib/publisher_single_flag.sh
     source "$SCRIPT_DIR/scripts/lib/publisher_single_flag.sh"
 fi
+_BW_PUBLISHER_SINGLE=0
 if declare -f publisher_single_enabled >/dev/null 2>&1 && publisher_single_enabled; then
+    _BW_PUBLISHER_SINGLE=1
+fi
+if [[ "$_BW_PUBLISHER_SINGLE" == "1" ]]; then
     :
 elif [[ -f "$BULLETIN_FILE" && -x "$SCRIPT_DIR/scripts/bulletin_archive.sh" ]]; then
     ENTRY_COUNT="$(awk '/^- id: / {count++} END {print count + 0}' "$BULLETIN_FILE")"
@@ -639,7 +643,13 @@ elif [[ -f "$BULLETIN_FILE" && -x "$SCRIPT_DIR/scripts/bulletin_archive.sh" ]]; 
     fi
 fi
 
-if [[ -x "$SCRIPT_DIR/scripts/yaml_auto_archive.sh" ]]; then
+# PUBLISHER_SINGLE中はyaml_auto_archive.sh(汎用count-basedトリム)がPUBLISHER_SINGLEを
+# 判定せずrootを直接書き換えてしまう(2026-09-03 23:27 queue/bulletin_board.yaml -11行prune
+# 事故の実writer)。bulletin_board.yamlの周期整理は上記のledger routeへ一元化し、
+# PUBLISHER_SINGLE中はこの経路を起動しない。
+if [[ "$_BW_PUBLISHER_SINGLE" == "1" ]]; then
+    :
+elif [[ -x "$SCRIPT_DIR/scripts/yaml_auto_archive.sh" ]]; then
     if [[ "${BULLETIN_AUTO_ARCHIVE_SYNC:-0}" == "1" ]]; then
         SHOGUN_ROOT="$SCRIPT_DIR" bash "$SCRIPT_DIR/scripts/yaml_auto_archive.sh" >/dev/null 2>&1 || true
     else
