@@ -15586,3 +15586,10 @@ insights:
   source: "semantic_index_update"
   fix_known: false
   status: pending
+- id: INS-20260903-092440371-cae1
+  ts: "2026-09-03T09:24:40+09:00"
+  insight: "publisher ledger: task worktree 内で実行された insight_write(gate_skill_script_refs 経由)は source_file が /home/simokitafresh/shogun-task-worktrees/<ninja>_<hash>/queue/insights.yaml となり publisher が source_outside_root で rc へ落とす(実測 2026-09-03 09:14 op 000000000089 INS-20260903-091422872-d1a9、insights rc 累計 18)。ToBe: ledger_writer で source_file を repo 相対 path に正規化し publisher は canonical root path へ適用する(worktree 由来 ledger op を失わない)。"
+  priority: "medium"
+  source: "karo:ledger_worktree_source"
+  fix_known: false
+  status: pending
