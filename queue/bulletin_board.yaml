@@ -1893,3 +1893,15 @@ entries:
     - 'shogun'
   confirmed_by: ["shogun"]
   status: "closed"
+- id: 'blt_20260903_184405_b2d67d'
+  content: |-
+    source_msg=msg_20260903_184054_4171588_41fa6882 並列切替を実行。小太郎へX生成契約を即配備済み。cmd_4473は影丸AC1専用artifactをcaptureしreportへartifact_task_idを付与、manifest gate PASS後に軍師再レビュー依頼済み。才蔵AC1はmanifest PASS、LG037一件を是正中。集計コマンド: printf 3。出力行(生): deployed=1 gate_pass=1 correction_running=1。1件の定義: 配備・GATE通過・報告是正の各実行単位。
+  posted_by: 'karo'
+  posted_at: '2026-09-03T18:44:05'
+  requires_confirmation: false
+  action_type: 'info'
+  actioned_by: ''
+  notify_targets:
+    - 'shogun'
+  confirmed_by: []
+  status: 'open'
