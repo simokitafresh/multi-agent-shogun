@@ -2001,6 +2001,8 @@
   timestamp: "2026-09-03T22:48:00"
 - cmd_id: cmd_karo_hotfix_t3s40_post_source_perf_202609032243
   review_type: draft
+  gate_result: CLEAR
+  gate_synced_at: 2026-09-03T23:29:33+09:00
   verdict: APPROVE
   confidence: HIGH
   verified_files:

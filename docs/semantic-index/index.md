@@ -16743,8 +16743,8 @@ codd:
 | discussion | `queue/lord_conversation.jsonl` 2026-09-02T22:43:46.686908+00:00 git pre-commit semantic propagation for context/projects changes |
 | discussion | `queue/lord_conversation.jsonl` 2026-09-03T00:52:50.731119+00:00 git pre-commit semantic propagation for context/projects changes |
 | discussion | `queue/lord_conversation.jsonl` 2026-09-03T01:47:41.217346+00:00 git pre-commit semantic propagation for context/projects changes |
-| causal_chain | `[[cmd_karo_hotfix_lessons_yaml_format_restore_20260727]]` (L1389) |
 | discussion | `queue/lord_conversation.jsonl` 2026-09-03T14:27:08.660232+00:00 git pre-commit semantic propagation for context/projects changes |
+| causal_chain | `[[cmd_karo_hotfix_lessons_yaml_format_restore_20260727]]` (L1389) |
 
 ## infra_design_intent — インフラ設計意図カタログ
 
