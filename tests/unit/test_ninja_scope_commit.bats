@@ -881,7 +881,12 @@ HOOK
     git -C "$REPO" add queue/tasks/hayate.yaml projects/infra/lessons_gunshi.yaml
     task_index_before="$(git -C "$REPO" ls-files -s -- queue/tasks/hayate.yaml)"
 
-    run bash -c "cd '$REPO' && bash '$HELPER' -m ga282-mixed -- queue/tasks/hayate.yaml projects/infra/lessons_gunshi.yaml"
+    # cmd_karo_hotfix_ninja_shared_root_commit_guard_202609031955: queue/tasks/*.yaml
+    # is now a protected shared ledger; a scoped commit that touches it must carry
+    # the same Published-By trailer publish_direct_commit.sh stamps on every
+    # commit it publishes (see scripts/single_publisher_close_check.sh), or the
+    # helper rejects it before this GA-282 separation logic ever runs.
+    run bash -c "cd '$REPO' && bash '$HELPER' -m \$'ga282-mixed\n\nPublished-By: test-harness' -- queue/tasks/hayate.yaml projects/infra/lessons_gunshi.yaml"
 
     [ "$status" -eq 0 ]
     [[ "$output" == *"INFO(GA-282): separated live task YAML"* ]]
@@ -898,7 +903,9 @@ HOOK
     printf 'task: completed\n' > "$REPO/queue/tasks/hayate.yaml"
     git -C "$REPO" add queue/tasks/hayate.yaml
 
-    run bash -c "cd '$REPO' && bash '$HELPER' -m ga282-task-only -- queue/tasks/hayate.yaml"
+    # cmd_karo_hotfix_ninja_shared_root_commit_guard_202609031955: same
+    # Published-By requirement as the mixed-stage case above.
+    run bash -c "cd '$REPO' && bash '$HELPER' -m \$'ga282-task-only\n\nPublished-By: test-harness' -- queue/tasks/hayate.yaml"
 
     [ "$status" -eq 0 ]
     [[ "$output" != *"INFO(GA-282)"* ]]
@@ -927,9 +934,11 @@ HOOK
     git -C "$REPO" add queue/tasks/hayate.yaml projects/infra/lessons_gunshi.yaml projects/infra/lessons_karo.yaml
     task_index_before="$(git -C "$REPO" ls-files -s -- queue/tasks/hayate.yaml)"
 
-    (cd "$REPO" && bash "$HELPER" -m ga282-worker-a -- queue/tasks/hayate.yaml projects/infra/lessons_gunshi.yaml) >"$REPO/a.out" 2>&1 &
+    # cmd_karo_hotfix_ninja_shared_root_commit_guard_202609031955: same
+    # Published-By requirement as the mixed-stage case above.
+    (cd "$REPO" && bash "$HELPER" -m $'ga282-worker-a\n\nPublished-By: test-harness' -- queue/tasks/hayate.yaml projects/infra/lessons_gunshi.yaml) >"$REPO/a.out" 2>&1 &
     a_pid=$!
-    (cd "$REPO" && bash "$HELPER" -m ga282-worker-b -- queue/tasks/hayate.yaml projects/infra/lessons_karo.yaml) >"$REPO/b.out" 2>&1 &
+    (cd "$REPO" && bash "$HELPER" -m $'ga282-worker-b\n\nPublished-By: test-harness' -- queue/tasks/hayate.yaml projects/infra/lessons_karo.yaml) >"$REPO/b.out" 2>&1 &
     b_pid=$!
     wait "$a_pid"; a_rc=$?
     wait "$b_pid"; b_rc=$?
@@ -1122,6 +1131,84 @@ YAML
     [ "$status" -eq 2 ]
     [[ "$output" == *"regular-file parity unavailable: scripts/cache-two.sh"* ]]
     [ -n "$(git -C "$linked" status --porcelain -- own.txt)" ]
+    git -C "$REPO" worktree remove -f "$linked"
+}
+
+# test_necessity: cmd_karo_hotfix_ninja_shared_root_commit_guard_202609031955
+# closes the hole where a ninja committed queue/shogun_to_karo.yaml from the
+# shared root checkout (bulletin_board.yaml 2026-09-03 19:46 URGENT-HARM). The
+# following 3 contracts pin the two independent guards it adds: (1) a task that
+# declares task_worktree_required=true must never silently fall back to a
+# shared-root cwd when the worktree path field itself is missing, (2) any scope
+# containing a protected shared ledger is rejected regardless of cwd or task
+# context unless the caller carries the recognized U1b Published-By trailer,
+# and (3) a properly provisioned task worktree still commits normal
+# implementation scope while the ledger-scope guard stays active inside it.
+@test "cmd_karo_hotfix_ninja_shared_root_commit_guard: task_worktree_required=trueでpath欠落は共有root cwdをexit 2でBLOCKする" {
+    mkdir -p "$REPO/queue/tasks"
+    cat > "$REPO/queue/tasks/hayate.yaml" <<'YAML'
+task:
+  task_id: shared-root-guard-contract
+  parent_cmd: cmd_shared-root-guard-contract
+  task_worktree_required: true
+YAML
+    printf 'implementation change\n' >> "$REPO/own.txt"
+    before_head="$(git -C "$REPO" rev-parse HEAD)"
+
+    run bash -c 'cd "$1" && NINJA_SCOPE_TASK_FILE="$3" bash "$2" -m shared-root-attempt -- own.txt' _ "$REPO" "$HELPER" "$REPO/queue/tasks/hayate.yaml"
+
+    [ "$status" -eq 2 ]
+    [[ "$output" == *"task_worktree_required=true"* ]]
+    [ "$(git -C "$REPO" rev-parse HEAD)" = "$before_head" ]
+    [ -n "$(git -C "$REPO" status --porcelain -- own.txt)" ]
+}
+
+@test "cmd_karo_hotfix_ninja_shared_root_commit_guard: 共有台帳scopeはPublished-By無しならcwd/task context非依存でexit 2拒否、trailer付きは許可する" {
+    mkdir -p "$REPO/queue"
+    printf 'commands: {edited: true}\n' > "$REPO/queue/shogun_to_karo.yaml"
+    before_head="$(git -C "$REPO" rev-parse HEAD)"
+
+    # Bare invocation: no NINJA_SCOPE_TASK_FILE at all, matching the actual
+    # incident's invocation shape exactly.
+    run bash -c "cd '$REPO' && env -u NINJA_SCOPE_TASK_FILE bash '$HELPER' -m unauthorized-ledger-commit -- queue/shogun_to_karo.yaml"
+    [ "$status" -eq 2 ]
+    [[ "$output" == *"protected shared ledger"* ]]
+    [ "$(git -C "$REPO" rev-parse HEAD)" = "$before_head" ]
+    [ -n "$(git -C "$REPO" status --porcelain -- queue/shogun_to_karo.yaml)" ]
+
+    # Recognized U1b publisher path (Published-By trailer) remains functional.
+    run bash -c "cd '$REPO' && bash '$HELPER' -m \$'publisher-ledger-commit\n\nPublished-By: wrapper' -- queue/shogun_to_karo.yaml"
+    [ "$status" -eq 0 ]
+    [ "$(git -C "$REPO" rev-parse HEAD)" != "$before_head" ]
+    [ "$(git -C "$REPO" show HEAD:queue/shogun_to_karo.yaml)" = 'commands: {edited: true}' ]
+}
+
+@test "cmd_karo_hotfix_ninja_shared_root_commit_guard: task worktree正常系は実装scopeをcommitしつつ同worktree内でも共有台帳scopeを拒否する" {
+    mkdir -p "$REPO/queue/tasks"
+    linked="$(mktemp -d "${TMPDIR:-/tmp}/ninja-shared-root-guard-${BATS_TEST_NUMBER}.XXXXXX")"
+    rmdir "$linked"
+    git -C "$REPO" worktree add -q -b "shared-root-guard-${BATS_TEST_NUMBER}" "$linked"
+    cat > "$REPO/queue/tasks/hayate.yaml" <<YAML
+task:
+  task_id: worktree-normal-contract
+  parent_cmd: cmd_worktree-normal-contract
+  task_worktree_required: true
+  task_worktree_path: $linked
+YAML
+    printf 'implementation change from worktree\n' >> "$linked/own.txt"
+
+    run bash -c 'cd "$1" && NINJA_SCOPE_TASK_FILE="$3" bash "$2" -m worktree-normal-implementation -- own.txt' _ "$REPO" "$HELPER" "$REPO/queue/tasks/hayate.yaml"
+    [ "$status" -eq 0 ]
+    [ "$(git -C "$linked" show --format= --name-only HEAD)" = own.txt ]
+
+    mkdir -p "$linked/queue"
+    printf 'commands: {from-worktree: true}\n' > "$linked/queue/shogun_to_karo.yaml"
+    before_head="$(git -C "$linked" rev-parse HEAD)"
+    run bash -c 'cd "$1" && NINJA_SCOPE_TASK_FILE="$3" bash "$2" -m worktree-ledger-attempt -- queue/shogun_to_karo.yaml' _ "$REPO" "$HELPER" "$REPO/queue/tasks/hayate.yaml"
+    [ "$status" -eq 2 ]
+    [[ "$output" == *"protected shared ledger"* ]]
+    [ "$(git -C "$linked" rev-parse HEAD)" = "$before_head" ]
+
     git -C "$REPO" worktree remove -f "$linked"
 }
 

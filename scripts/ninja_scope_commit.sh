@@ -282,6 +282,23 @@ PY
             || { echo "BLOCK: task worktree is not a Git worktree: $_task_worktree_path" >&2; exit 2; }
         cd "$_task_worktree_path"
         export NINJA_SCOPE_TASK_WORKTREE_ACTIVE=1
+    else
+        # cmd_karo_hotfix_ninja_shared_root_commit_guard_202609031955: a task that
+        # declares task_worktree_required must never silently fall back to the
+        # caller's cwd (the shared root checkout) merely because the worktree
+        # field itself is missing/empty.  That silent fallback is exactly how a
+        # ninja committed queue/shogun_to_karo.yaml from the shared root
+        # (bulletin_board.yaml 2026-09-03 19:46 URGENT-HARM entry).
+        _task_worktree_required="$(python3 - "$NINJA_SCOPE_TASK_FILE" <<'PY'
+import sys, yaml
+task = (yaml.safe_load(open(sys.argv[1], encoding="utf-8")) or {}).get("task", {})
+print("true" if str(task.get("task_worktree_required") or "").strip().lower() == "true" else "false")
+PY
+)"
+        if [[ "$_task_worktree_required" == true ]]; then
+            echo "BLOCK: ninja task declares task_worktree_required=true but task_worktree_path is missing: $NINJA_SCOPE_TASK_FILE" >&2
+            exit 2
+        fi
     fi
 fi
 
@@ -1026,6 +1043,32 @@ for path in "$@"; do
     paths+=("$normalized")
 done
 requested_paths=("${paths[@]}")
+
+# cmd_karo_hotfix_ninja_shared_root_commit_guard_202609031955: shared ledgers
+# (将軍配備台帳・忍者task台帳・U6 single-publisher台帳)は、その正本publisher
+# 経路以外からscoped commitへ入れさせない。publish_direct_commit.shが公開する
+# commitは常にこの"Published-By:"trailerを持つ(scripts/single_publisher_close_check.sh
+# が同じtrailerでpublisher発行commitを数える。GA-231で忍者の直git commitは既に
+# BLOCK済みだが、ninja_scope_commit.sh自体を共有rootから叩けば台帳をcommitできた
+# 穴が実際に使われた(bulletin_board.yaml 2026-09-03 19:46 URGENT-HARM: 飛猿が
+# cwd=共有rootのまま `-- queue/shogun_to_karo.yaml` をcommit)。
+is_shared_ledger_commit_path() {
+    local candidate="${1:-}"
+    case "$candidate" in
+        queue/shogun_to_karo.yaml|queue/tasks/*.yaml|queue/insights.yaml|queue/bulletin_board.yaml|logs/karo_workarounds.yaml|docs/semantic-index/index.md)
+            return 0 ;;
+        *)
+            return 1 ;;
+    esac
+}
+
+if ! grep -qE '^Published-By:' <<<"$message"; then
+    for scope_ledger_path in "${paths[@]}"; do
+        is_shared_ledger_commit_path "$scope_ledger_path" || continue
+        echo "BLOCK: scope includes a protected shared ledger (single-publisher owned; use scripts/publish_direct_commit.sh): $scope_ledger_path" >&2
+        exit 2
+    done
+fi
 
 # Transient tests are proof artifacts, not contract code.  Immediately before
 # the commit boundary, require a complete primary receipt and remove only
