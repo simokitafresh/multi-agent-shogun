@@ -3469,6 +3469,7 @@ codd:
 | discussion | `queue/lord_conversation.jsonl` 2026-09-03T15:06:52+09:00 session_save_20260903_1504(軍師復帰点): 12:50 y復帰→deepdive全10Phase→ALERT3件全解消(gate-sync 7件/GP-262遡及/意志依存gate化)。D0 3件(LG070+07 |
 | discussion | `queue/lord_conversation.jsonl` 2026-09-03T15:13:05+09:00 artifactも更新しておいて |
 | discussion | `queue/lord_conversation.jsonl` 2026-09-03T15:25:22+09:00 session_save_20260903_1530(復帰点、先に session_save_20260903_1515 を読め): 15:15 todo map artifact 再公開(★空白バグ修正で T237-239 が HTML  |
+| discussion | `queue/lord_conversation.jsonl` 2026-09-03T22:42:02+09:00 殿下問 2026-09-03 22:39『数値として速くなったか？』→将軍本番再計測: T3-S-39 記憶DB live insert は window p50 8.89→0.20 s のみ達成、refresh_copy 3.93→3.7 |
 | causal_chain | `[[cmd_3749]]` (L974) |
 | causal_chain | `[[cmd_training_L1_report-write_20260708020332]]` (L977) |
 | causal_chain | `[[cmd_reflux_insight_202607071717_tobisaru]]` (L961) |
@@ -3535,7 +3536,6 @@ codd:
 | causal_chain | `[[cmd_karo_ci_fix_33630722226_instructions_sync_fp_vocab_202609022153]]` (L1710) |
 | causal_chain | `[[cmd_karo_hotfix_u3_publisher_idempotent_restore_notify_202609022337]]` (L1711) |
 | causal_chain | `[[cmd_karo_hotfix_workarounds_merge_driver_dup_cmd_id_202609030148]]` (L1712) |
-| discussion | `queue/lord_conversation.jsonl` 2026-09-03T22:42:02+09:00 殿下問 2026-09-03 22:39『数値として速くなったか？』→将軍本番再計測: T3-S-39 記憶DB live insert は window p50 8.89→0.20 s のみ達成、refresh_copy 3.93→3.7 |
 
 ## investment_knowledge_base — 投資知識辞書
 
@@ -18355,6 +18355,7 @@ codd:
 | discussion | `queue/lord_conversation.jsonl` 2026-09-03T11:42:24+09:00 session_save_20260903_1145(復帰点、先に session_save_20260903_1115 を読め): loop 11:42: cmd_4470 note 5 本着地(hayate/karo/kotaro/sa |
 | discussion | `queue/lord_conversation.jsonl` 2026-09-03T06:08:50.007227+00:00 git pre-commit semantic propagation for context/projects changes |
 | discussion | `queue/lord_conversation.jsonl` 2026-09-03T11:14:18.533021+00:00 git pre-commit semantic propagation for context/projects changes |
+| discussion | `queue/lord_conversation.jsonl` 2026-09-03T13:43:36.753428+00:00 git pre-commit semantic propagation for context/projects changes |
 | causal_chain | `[[cmd_karo_hotfix_ga161_obsidian_link_context_freshness_202607021348]]` (L926) |
 | causal_chain | `[[cmd_3648]]` (L933) |
 | causal_chain | `[[cmd_karo_ci_fix_ga191_followup_202607071752]]` (L963) |
@@ -18377,7 +18378,6 @@ codd:
 | causal_chain | `[[cmd_reflux_insight_202608040505_kagemaru]]` (L1545) |
 | causal_chain | `[[cmd_karo_recon2_ninja_prerequisite_audit_20260814]]` (L1588) |
 | causal_chain | `[[cmd_karo_hotfix_inject_seam_contract_missing_202608190548]]` (L1612) |
-| discussion | `queue/lord_conversation.jsonl` 2026-09-03T13:43:36.753428+00:00 git pre-commit semantic propagation for context/projects changes |
 
 ## commander_role_ssot_analysis — Commanderロール SSOT分析
 
