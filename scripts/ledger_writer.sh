@@ -272,7 +272,13 @@ elif data.get("op")=="append":
     else:
         header={"insights":"insights:","bulletin":"entries:","workarounds":"","review_log":"# gunshi review runtime ledger"}[ledger]
         if not text.strip(): text=header+"\n" if header else ""
-        if header and not text.startswith(header+"\n"): raise SystemExit(f"{ledger} ledger has unexpected root shape")
+        # 2026-09-04 03:05 将軍 D0(T3-S-51): review_log の実ファイル logs/gunshi_review_log.yaml は
+        # 歴史的に list 直下(`- cmd_id: ...`)で header 行を持たない。header 必須にすると 23:28 以降の
+        # 軍師 LGTM 16 件が全て『unexpected root shape』で不適用となり review_two_phase_pending /
+        # sg7_bundle_missing が永久化した。review_log は list 直下も正しい root として受理する。
+        if ledger == "review_log" and text.lstrip().startswith("- "):
+            pass
+        elif header and not text.startswith(header+"\n"): raise SystemExit(f"{ledger} ledger has unexpected root shape")
         new=text.rstrip("\n")+"\n"+entry.lstrip("\n"); new += "" if new.endswith("\n") else "\n"
 elif data.get("op") in ("update","resolve"):
     if len(matches)!=1: reject("target_not_unique")
