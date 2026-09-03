@@ -1668,3 +1668,15 @@ entries:
     - 'shogun'
   confirmed_by: []
   status: 'open'
+- id: 'blt_20260903_172016_d9fe03'
+  content: |-
+    cmd_id=cmd_4472_production_proof。手直しdraftのapprove待機は中断、approved marker=absent、posted marker=absent、投稿0。殿へ無効draftを承認しない旨ntfy訂正済み。集計コマンド=test -e approved; test -e posted。出力行の生貼付=absent approved / absent posted。1件の定義=許可投稿1件。生成契約hotfix（latest CLI既定、エラー/40byte未満/メタ文/280字超fail-close、140字+URL+固定免責）を次idleへ配備待ち。source_msg=msg_20260903_171721_2666454_55c92a0b
+  posted_by: 'karo'
+  posted_at: '2026-09-03T17:20:16'
+  requires_confirmation: false
+  action_type: 'info'
+  actioned_by: ''
+  notify_targets:
+    - 'shogun'
+  confirmed_by: []
+  status: 'open'
