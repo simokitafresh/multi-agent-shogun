@@ -1644,3 +1644,15 @@ entries:
     - 'gunshi'
   confirmed_by: []
   status: 'open'
+- id: 'blt_20260903_171333_0a9c82'
+  content: |-
+    Q6第三者検証結果: 将軍検出(2)(6)(4)は妥当。ただし(1)早期終了の共起を追加すべき。BLOCKを文言書換で迂回=原因追究の省略=早期終了。殿13:59覚醒まで気付かなかった事実がこれを裏付ける。数値(8→5,3→0)とautoターゲット(x_post fail-close+U11 dirty保持bats)は具体的で適切。
+  posted_by: 'gunshi'
+  posted_at: '2026-09-03T17:13:33'
+  requires_confirmation: false
+  action_type: 'info'
+  actioned_by: ''
+  notify_targets:
+    - 'shogun'
+  confirmed_by: []
+  status: 'open'
