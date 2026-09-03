@@ -18,6 +18,10 @@ setup() {
     git -C "$ORIGIN" push -q -u origin main
     git clone -q "$REMOTE" "$PUBROOT"
     git -C "$PUBROOT" checkout -q -b main origin/main
+    # Keep the writer's canonical SCRIPT_DIR aligned with the fixture repo;
+    # otherwise INSIGHTS_FILE points at PUBROOT while the writer is launched
+    # from the test checkout and intentionally takes its direct-append path.
+    ln -s "$ROOT/scripts" "$PUBROOT/scripts"
     chmod +x "$ROOT/scripts/ledger_writer.sh"
 }
 
@@ -27,8 +31,8 @@ teardown() {
 
 @test "insight writer emits an op and publisher applies one active ledger commit" {
     run env SHOGUN_STATE_DIR="$STATE" INSIGHTS_FILE="$PUBROOT/queue/insights.yaml" \
-        INSIGHT_AUTO_COMMIT=0 INSIGHT_SOURCE_REPEAT_THRESHOLD=0 \
-        bash "$ROOT/scripts/insight_write.sh" "ledger consumer fixture entry" medium fixture
+        PUBLISHER_SINGLE=1 INSIGHT_AUTO_COMMIT=0 INSIGHT_SOURCE_REPEAT_THRESHOLD=0 \
+        bash "$PUBROOT/scripts/insight_write.sh" "ledger consumer fixture entry" medium fixture
     [ "$status" -eq 0 ]
     before="$(sha256sum "$PUBROOT/queue/insights.yaml" | awk '{print $1}')"
     [ "$(find "$STATE/ledger_inbox/insights" -maxdepth 1 -type f -name '*.yaml' | wc -l)" -eq 1 ]

@@ -37,7 +37,14 @@ esac
 ARTIFACTS_ROOT="$STATE_DIR/publish_queue/artifacts"
 
 _pa_err() {
-    echo "publish_artifact: $*" >&2
+    printf 'publish_artifact: %s\n' "$*" >&2
+}
+
+_pa_timestamp_stream() {
+    local line
+    while IFS= read -r line || [ -n "$line" ]; do
+        printf '%s %s\n' "$(TZ=Asia/Tokyo date '+%Y-%m-%dT%H:%M:%S%:z')" "$line"
+    done
 }
 
 _pa_capture() {
@@ -224,4 +231,4 @@ main() {
     esac
 }
 
-main "$@"
+main "$@" 2> >(_pa_timestamp_stream >&2)

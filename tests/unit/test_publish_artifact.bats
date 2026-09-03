@@ -60,6 +60,24 @@ print('OK')
     [[ "$output" == *"OK"* ]]
 }
 
+# test_necessity: capture diagnostics are consumed through a durable log and
+# every emitted line must carry an unambiguous JST publication timestamp.
+@test "publish_artifact capture diagnostics start with JST ISO timestamps" {
+    local repo="$BATS_TEST_TMPDIR/repo_timestamp"
+    setup_fixture_repo "$repo"
+    local base
+    base="$(git -C "$repo" rev-parse HEAD)"
+    printf 'A\nB\n' > "$repo/a.txt"
+    git -C "$repo" add a.txt
+    local tree sha
+    tree="$(git -C "$repo" write-tree)"
+    sha="$(printf change | git -C "$repo" commit-tree "$tree" -p "$base")"
+
+    run --separate-stderr bash "$PUBLISH_ARTIFACT" capture task_timestamp "$repo" "$base" "$sha"
+    [ "$status" -eq 0 ]
+    [ "$(printf "%s\n" "$stderr" | grep -Ec "^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}\+09:00 publish_artifact: ")" -eq 1 ]
+}
+
 @test "publish_artifact capture then restore reproduces tree id after worktree removal" {
     local repo="$BATS_TEST_TMPDIR/repo2"
     setup_fixture_repo "$repo"

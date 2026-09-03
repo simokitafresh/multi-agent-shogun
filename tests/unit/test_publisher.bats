@@ -133,3 +133,43 @@ teardown() {
     [ "$(git -C "$PUBROOT" log -1 --format=%P | wc -w)" -eq 1 ]
     git -C "$PUBROOT" log -1 --format=%B | grep -q 'Published-By: publisher'
 }
+
+# test_necessity: a tracked dirty path with a configured .gitattributes driver
+# must be integrated against the incoming published tip and leave HEAD there.
+@test "active root sync integrates a dirty overlapping path with its merge driver" {
+    printf 'payload.txt merge=test-driver\n' > "$PUBROOT/.gitattributes"
+    git -C "$PUBROOT" config merge.test-driver.driver 'cp %B %A'
+    printf 'local-dirty\n' > "$PUBROOT/payload.txt"
+    git -C "$WORK" push -q origin HEAD
+    git -C "$PUBROOT" fetch -q origin
+    tip="$(git -C "$PUBROOT" rev-parse origin/main)"
+
+    run bash -c 'PUBLISHER_LIB_ONLY=1 PUBLISHER_REPO_ROOT="$1" source "$2/scripts/publisher.sh"; sync_root "$1" "$3"' _ "$PUBROOT" "$ROOT" "$tip"
+    [ "$status" -eq 0 ]
+    [ "$(git -C "$PUBROOT" rev-parse HEAD)" = "$tip" ]
+    [ "$(<"$PUBROOT/payload.txt")" = "published" ]
+}
+
+# test_necessity: an overlapping tracked dirty path without an explicitly
+# configured driver must fail closed and preserve both the ref and local data.
+@test "active root sync skips dirty overlap when no merge driver is configured" {
+    printf 'local-dirty\n' > "$PUBROOT/payload.txt"
+    git -C "$WORK" push -q origin HEAD
+    git -C "$PUBROOT" fetch -q origin
+    tip="$(git -C "$PUBROOT" rev-parse origin/main)"
+    base="$(git -C "$PUBROOT" rev-parse HEAD)"
+
+    run bash -c 'PUBLISHER_LIB_ONLY=1 PUBLISHER_REPO_ROOT="$1" source "$2/scripts/publisher.sh"; sync_root "$1" "$3"' _ "$PUBROOT" "$ROOT" "$tip"
+    [ "$status" -eq 32 ]
+    [ "$(git -C "$PUBROOT" rev-parse HEAD)" = "$base" ]
+    [ "$(<"$PUBROOT/payload.txt")" = "local-dirty" ]
+    [[ "$output" == *"no_driver paths=payload.txt"* ]]
+}
+
+# test_necessity: every externally visible publisher daemon line must retain
+# its JST timestamp prefix so logs can be assigned to a publication window.
+@test "publisher daemon output lines start with JST ISO timestamps" {
+    run bash -c 'PUBLISHER_LIB_ONLY=1 source "$1/scripts/publisher.sh"; printf "first\n\nlast\n" | publisher_timestamp_stream' _ "$ROOT"
+    [ "$status" -eq 0 ]
+    [ "$(printf "%s\n" "$output" | grep -Ec "^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}\+09:00 ")" -eq 3 ]
+}

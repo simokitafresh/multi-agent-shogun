@@ -128,17 +128,141 @@ PY
 tracked_dirty_count() { git -C "$1" status --porcelain -uno | awk 'NF { n++ } END { print n + 0 }'; }
 tracked_dirty_paths() { git -C "$1" status --porcelain -uno | sed 's/^.. //' | sort -u | paste -sd, -; }
 
+publisher_timestamp() { TZ=Asia/Tokyo date '+%Y-%m-%dT%H:%M:%S%:z'; }
+
+publisher_timestamp_stream() {
+    local line
+    while IFS= read -r line || [ -n "$line" ]; do
+        printf '%s %s\n' "$(publisher_timestamp)" "$line"
+    done
+}
+
+root_sync_write_blob() {
+    local root="$1" tree="$2" path="$3" destination="$4"
+    if git -C "$root" cat-file -e "$tree:$path" 2>/dev/null; then
+        git -C "$root" show "$tree:$path" > "$destination"
+    else
+        : > "$destination"
+    fi
+}
+
+root_sync_driver_command() {
+    local driver="$1" base_file="$2" ours_file="$3" theirs_file="$4"
+    python3 - "$driver" "$base_file" "$ours_file" "$theirs_file" <<'PY'
+import shlex
+import sys
+
+driver, base, ours, theirs = sys.argv[1:]
+for marker, value in (("%O", base), ("%A", ours), ("%B", theirs)):
+    driver = driver.replace(marker, shlex.quote(value))
+print(driver)
+PY
+}
+
+root_sync_attr_driver() {
+    local root="$1" path="$2" attr driver
+    attr="$(git -C "$root" check-attr merge -- "$path" 2>/dev/null | sed 's/^.*: //')"
+    case "$attr" in
+        ""|unspecified|unset) return 1 ;;
+    esac
+    driver="$(git -C "$root" config --get "merge.${attr}.driver" 2>/dev/null || true)"
+    [ -n "$driver" ] || return 1
+    printf '%s\n' "$attr"
+}
+
+# Merge only tracked dirty paths that overlap the incoming publication. The
+# shared checkout is never merged/rebased/cherry-picked: drivers operate on
+# explicit blobs, then the ref and index advance independently.
 sync_root() {
-    local root="$1" tip="$2" dirty collision
+    local root="$1" tip="$2" dirty collision head changed_path dirty_path overlap_path
+    local -a changed_paths=() dirty_paths=() overlap_paths=() merge_results=()
+    local -A dirty_set=()
+    SYNC_ROOT_SKIP_REASON=""
+    SYNC_ROOT_SKIP_PATHS=""
+    head="$(git -C "$root" rev-parse HEAD)"
     dirty="$(tracked_dirty_count "$root")"
     collision="$(root_has_untracked_collision "$root" "$tip")"
-    if [ "$dirty" -ne 0 ] || [ "$collision" -ne 0 ]; then
-        echo "publisher: root sync BLOCK tracked_dirty=$dirty untracked_collision=$collision paths=$(tracked_dirty_paths "$root")" >&2
+    if [ "$collision" -ne 0 ]; then
+        SYNC_ROOT_SKIP_REASON="untracked_collision"
+        SYNC_ROOT_SKIP_PATHS="$(tracked_dirty_paths "$root")"
+        echo "publisher: root sync BLOCK tracked_dirty=$dirty untracked_collision=$collision paths=$SYNC_ROOT_SKIP_PATHS" >&2
         return 32
     fi
-    git -C "$root" merge --ff-only origin/main
-    [ "$(git -C "$root" rev-parse HEAD)" = "$(git -C "$root" rev-parse origin/main)" ]
-    [ "$(tracked_dirty_count "$root")" -eq 0 ]
+    git -C "$root" merge-base --is-ancestor "$head" "$tip" || {
+        SYNC_ROOT_SKIP_REASON="not_descendant"
+        SYNC_ROOT_SKIP_PATHS="$(git -C "$root" diff --name-only --no-renames "$head" "$tip" | sort -u | paste -sd, -)"
+        echo "publisher: root sync BLOCK not_descendant head=$head tip=$tip" >&2
+        return 32
+    }
+
+    mapfile -t changed_paths < <(git -C "$root" diff --name-only --no-renames "$head" "$tip")
+    while IFS= read -r dirty_path; do
+        [ -n "$dirty_path" ] || continue
+        dirty_paths+=("$dirty_path")
+        dirty_set["$dirty_path"]=1
+    done < <(git -C "$root" status --porcelain=v1 -uno | sed 's/^.. //' | sort -u)
+    for changed_path in "${changed_paths[@]}"; do
+        [ -n "$changed_path" ] || continue
+        if [ -n "${dirty_set[$changed_path]+yes}" ]; then
+            overlap_paths+=("$changed_path")
+        fi
+    done
+
+    if [ "${#overlap_paths[@]}" -gt 0 ]; then
+        local merge_root base_file ours_file theirs_file result_file attr driver command
+        merge_root="$(mktemp -d "$root/.git/publisher-root-sync.XXXXXX")"
+        for overlap_path in "${overlap_paths[@]}"; do
+            attr="$(root_sync_attr_driver "$root" "$overlap_path" || true)"
+            driver=""
+            [ -n "$attr" ] && driver="$(git -C "$root" config --get "merge.${attr}.driver" 2>/dev/null || true)"
+            if [ -z "$driver" ]; then
+                SYNC_ROOT_SKIP_REASON="no_driver"
+                SYNC_ROOT_SKIP_PATHS="$(IFS=,; echo "${overlap_paths[*]}")"
+                rm -rf -- "$merge_root"
+                echo "publisher: root sync BLOCK no_driver paths=$SYNC_ROOT_SKIP_PATHS" >&2
+                return 32
+            fi
+            base_file="$merge_root/base.${#merge_results[@]}"
+            ours_file="$merge_root/ours.${#merge_results[@]}"
+            theirs_file="$merge_root/theirs.${#merge_results[@]}"
+            result_file="$merge_root/result.${#merge_results[@]}"
+            root_sync_write_blob "$root" "$head" "$overlap_path" "$base_file"
+            if [ -e "$root/$overlap_path" ] || [ -L "$root/$overlap_path" ]; then
+                cp -a -- "$root/$overlap_path" "$ours_file"
+            else
+                : > "$ours_file"
+            fi
+            root_sync_write_blob "$root" "$tip" "$overlap_path" "$theirs_file"
+            command="$(root_sync_driver_command "$driver" "$base_file" "$ours_file" "$theirs_file")"
+            if ! (cd "$root" && bash -c "$command"); then
+                SYNC_ROOT_SKIP_REASON="driver_failed"
+                SYNC_ROOT_SKIP_PATHS="$overlap_path"
+                rm -rf -- "$merge_root"
+                echo "publisher: root sync BLOCK driver_failed path=$overlap_path driver=$attr" >&2
+                return 32
+            fi
+            cp -a -- "$ours_file" "$result_file"
+            merge_results+=("$overlap_path|$result_file")
+        done
+
+        git -C "$root" update-ref HEAD "$tip" "$head"
+        # --reset is intentional: driver outputs are already preserved in
+        # merge_results, so the index/worktree can be aligned to tip before
+        # restoring each merged dirty path.
+        git -C "$root" read-tree -u --reset "$tip"
+        local result_path result_source merge_result
+        for merge_result in "${merge_results[@]}"; do
+            result_path="${merge_result%%|*}"
+            result_source="${merge_result#*|}"
+            rm -f -- "$root/$result_path"
+            cp -a -- "$result_source" "$root/$result_path"
+        done
+        rm -rf -- "$merge_root"
+    else
+        git -C "$root" update-ref HEAD "$tip" "$head"
+        git -C "$root" read-tree -u -m "$tip"
+    fi
+    [ "$(git -C "$root" rev-parse HEAD)" = "$tip" ]
 }
 
 process_request() {
@@ -216,7 +340,7 @@ process_request() {
         # root (rc=32) must not abort after the push already landed, or the request stays in
         # dequeued/ with no done receipt and no event (cmd_4465 06:47, root tracked_dirty>0).
         if ! sync_root "$REPO_ROOT" origin/main; then
-            event root_sync_skipped "$task" 0 "published_sha=$published_sha root_dirty=$(tracked_dirty_count "$REPO_ROOT") paths=$(tracked_dirty_paths "$REPO_ROOT")"
+            event root_sync_skipped "$task" 0 "published_sha=$published_sha reason=${SYNC_ROOT_SKIP_REASON:-unknown} paths=${SYNC_ROOT_SKIP_PATHS:-$(tracked_dirty_paths "$REPO_ROOT")}"
         fi
     fi
     cleanup_isolated "$isolated"; trap - RETURN
@@ -348,7 +472,7 @@ process_ledger_batch() {
         event ledger ledger_batch 0 "n=${#operations[@]} ledgers=$(IFS=,; echo "${ledgers[*]}") published_sha=$published_sha"
         timeout 120 git -C "$REPO_ROOT" fetch origin || true
         if ! sync_root "$REPO_ROOT" origin/main; then
-            event root_sync_skipped ledger_batch 0 "published_sha=$published_sha root_dirty=$(tracked_dirty_count "$REPO_ROOT") paths=$(tracked_dirty_paths "$REPO_ROOT")"
+            event root_sync_skipped ledger_batch 0 "published_sha=$published_sha reason=${SYNC_ROOT_SKIP_REASON:-unknown} paths=${SYNC_ROOT_SKIP_PATHS:-$(tracked_dirty_paths "$REPO_ROOT")}"
         fi
         cleanup_isolated "$isolated"; isolated=""
         cleanup_ledger_stage "$stage_root"; stage_root=""
@@ -441,5 +565,8 @@ daemon_main() {
 
 if [ "${1:-}" = --process-request ]; then process_request "$2" "$3"
 elif [ "${1:-}" = --process-ledger ]; then process_ledger_batch
-elif [ "${PUBLISHER_LIB_ONLY:-0}" != 1 ]; then daemon_main
+elif [ "${PUBLISHER_LIB_ONLY:-0}" != 1 ]; then
+    daemon_main 2>&1 | publisher_timestamp_stream
+    daemon_rc="${PIPESTATUS[0]}"
+    exit "$daemon_rc"
 fi
