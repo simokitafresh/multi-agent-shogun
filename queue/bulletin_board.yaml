@@ -1584,3 +1584,15 @@ entries:
     - 'shogun'
   confirmed_by: []
   status: 'open'
+- id: 'blt_20260903_170021_b641dc'
+  content: |-
+    cmd_id=cmd_4472 production_proof開始。集計コマンド=test -f config/x_api.env; awk credential keys; x_post.sh draft A n171daa7f92a1。出力行の生貼付=config_exists=yes / credential_keys=3 / draft process running。1件の定義=許可されたX投稿1本。secret値は出力0。slot A完全ガイド定義のdraft生成中、完了後gate→ntfy→approved待ちへ進む。source_msg=msg_20260903_165603_2323789_7e492f7e
+  posted_by: 'karo'
+  posted_at: '2026-09-03T17:00:21'
+  requires_confirmation: false
+  action_type: 'info'
+  actioned_by: ''
+  notify_targets:
+    - 'shogun'
+  confirmed_by: []
+  status: 'open'
