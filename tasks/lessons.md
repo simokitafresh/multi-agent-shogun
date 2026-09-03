@@ -16802,3 +16802,17 @@ sqlite3.Connection.backup()を使うとページ(4096byte)単位のread syscall�
 - **when**: 未設定
 - **how**: 未設定
 - scripts/insight_write.shのledger_route_enabled()は07:26:58 commit f4e6ab789でSHOGUN_STATE_DIR明示opt-in分岐(ledger-aware fixture用)を獲得したが、2時間46分後の10:12:06 commit b4635d06e('publisher: task=cmd_4468_full', author=single-publisher)がPUBLISHER_SINGLEフラグ機構(publisher_single_insights_enabled/INSIGHTS_LEDGER_ROUTE)を導入する際に同関数の本体を丸ごと置換し、SHOGUN_STATE_DIR分岐を意図せず消失させた。CI shard1がtest_publisher_ledger_consumer.batsで2 run連続FAILするまで誰も気づかなかった。この種の自動publisher commitは複数ninjaの変更を1つのcommitへ集約するため、片方の変更が他方の既存ロジックを構造的に(git的にはconflictなしで)上書きしうる。原因特定にはgit log --follow -pで対象関数の各版のfull diffを時系列で追い、いつ・どのcommitで意図が消えたかを単一変数比較で確定するのが有効だった
+
+
+### L1719: inbox YAML行regexで未読判定する際は任意深さindent許容にするな(ブロックスカラー本文との衝突)
+- **日付**: 2026-09-03
+- **出典**: cmd_karo_hotfix_inbox_unread_source_202609031435
+- **記録者**: tobisaru
+- **tags**: [infra,testing,frontend,deploy,testing]
+- **subdomain**: infra
+- **target_files**: [scripts/hooks/prompt_state_inject.sh,scripts/hooks/session_start_inject.sh,scripts/hooks/stop_check_inbox.sh,tests/unit/test_stop_check_inbox.bats,tests/unit/test_prompt_state_inject_agent_resolution.bats]
+- **origin**: [[cmd_karo_hotfix_inbox_unread_source_202609031435]]
+- **enforcement**: 未自動化
+- **when**: 未設定
+- **how**: 未設定
+- (1)inbox YAMLのread:falseフィールドをgrep/awkで数える際、^[[:space:]]*read:...(indent深さ不問)は複数行content(inbox_write.shが|-ブロックスカラーで書く)本文中に偶然『read: false』同形行があると、既読(read:true)メッセージまで未読と誤カウントする。レコード境界(- )とブロックスカラー本体(より深いindentの行)を状態機械で追跡し、レコード直下のフィールド行だけを判定対象にせよ。(2)bats testでCI_READINESS_CACHE等の外部状態依存パスを明示的に隔離しないと、実ホストの本番デーモン(ci_status_check.sh)が書く共有/tmpファイルを読んでしまい、実CI状態次第でtestが偽FAILする(T-SCI-REVIEW-APPROVED-001/002で実証)。同種の外部グローバルpath依存が他のtestにも潜んでいないか横展開余地あり(本タスクではscope外につき未調査)。両方をcmd_karo_hotfix_inbox_unread_source_202609031435で修正。
