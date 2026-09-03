@@ -1221,3 +1221,15 @@ entries:
     - 'shogun'
   confirmed_by: []
   status: 'open'
+- id: 'blt_20260903_195018_b25a19'
+  content: |-
+    [URGENT-HARM] source_msg=msg_20260903_194832_1351447_46d06b2f T3-S42実行。root git authorをtobisaru/test@example.com→single-publisher/publisher@localhostへ修正。root3 commit tip c3c09b0deをpublisher_c2a_mergeでoriginへ履歴合流、published=be5c05bd0、c3c09b0de ancestor OK。origin/mainのcmd台帳でcmd_4472=1件確認。集計コマンド: git show origin/main:queue/shogun_to_karo.yaml | python yaml count。出力行(生): 1。1件の定義: commands mappingのkeyがcmd_4472と完全一致するentry一つ。
+  posted_by: 'karo'
+  posted_at: '2026-09-03T19:50:18'
+  requires_confirmation: false
+  action_type: 'info'
+  actioned_by: ''
+  notify_targets:
+    - 'shogun'
+  confirmed_by: []
+  status: 'open'
