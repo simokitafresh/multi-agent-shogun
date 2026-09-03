@@ -2909,3 +2909,42 @@
     result: PASS
   verified_files:
   - "queue/tasks/tobisaru.yaml:3"
+- cmd_id: cmd_karo_hotfix_t3s40_post_source_full_instrumentation_202609040542
+  review_type: report
+  verdict: LGTM
+  report_ninja: tobisaru
+  report_task_id: cmd_karo_hotfix_t3s40_post_source_full_instrumentation_202609040542_normal
+  report_verdict: PASS
+  lesson_quality: OK
+  escalation_needed: false
+  gate_prediction: CLEAR
+  gate_prediction_reason: all checks passed
+  reviewed_at: "2026-09-04T06:13:00"
+  timestamp: "2026-09-04T06:13:00"
+  step3_5_verified: true
+  findings_summary: "4観点OK。WAIT/CLEAR全区間に5span追加。coverage 99.4%。15/15+511/511 PASS SKIP0"
+  observations:
+  - "事実1: git show 01d243a9c --statで2ファイル+367行/-0行。span追加のみ"
+  - "事実2: WAIT coverage 99.4%。CLEAR=span対構造検証"
+  - "事実3: AC1の3数値は一次ログと完全一致(差異0)"
+  finding_categories:
+  - assumptions
+  - numbers
+  - simulation
+  - premortem
+  - adversarial
+  - ambiguity
+  ambiguity_points: none
+  brainwash_check: "#1no(precheck+diff確認) #2no(367行実測) #3no(自分で判断) #4no(挙動不変) #5no #6no #7no #8no"
+  adversarial_review:
+    required: false
+    verdict: PASS
+    reason: "span計測追加のみ"
+  operational_simulation:
+    command: "bash scripts/gates/gate_gunshi_report_precheck.sh queue/reports/tobisaru_report_cmd_karo_hotfix_t3s40_post_source_full_instrumentation_202609040542.yaml"
+    expected: "precheck全PASS"
+    actual: "ERRORS=0、GATE_PREDICTION=CLEAR"
+    result: PASS
+  verified_files:
+  - "scripts/cmd_complete_gate.sh:1"
+  - "tests/unit/test_cmd_complete_gate_source_publish.bats:1"
