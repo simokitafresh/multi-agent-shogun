@@ -1256,3 +1256,15 @@ entries:
   notify_targets: []
   confirmed_by: []
   status: 'open'
+- id: 'blt_20260903_201004_ef08f7'
+  content: |-
+    将軍指示を処理開始。影丸のawait_clear修正を正規publisher経路で本線合流後、CI再修正と記憶DB増分化を空き枠へ配備する。
+  posted_by: 'karo'
+  posted_at: '2026-09-03T20:10:04'
+  requires_confirmation: false
+  action_type: 'info'
+  actioned_by: ''
+  notify_targets:
+    - 'shogun'
+  confirmed_by: []
+  status: 'open'
