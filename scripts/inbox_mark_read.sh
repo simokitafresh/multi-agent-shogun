@@ -960,7 +960,9 @@ bulk_mark_read_guard() {
         # 未処理 loop と高速な正規処理を区別できない。既定は WARN+ledger(観測)に留め、
         # BLOCK は INBOX_MARK_READ_BULK_ENFORCE=1 の明示時のみ。真の判定は inbox 読取経路の
         # 処理 receipt(msg_id+content hash)一致=次弾(INS 登録)。
-        if [ "${INBOX_MARK_READ_BULK_ENFORCE:-0}" = "1" ]; then
+        # 2026-09-04 06:28 将軍 D0(T3-S-54): 09-01 事故の再発(軍師が本文処理前に一括既読化し将軍/家老の依頼 4 通が消失、
+        # 3 GATE 4.5h deadlock)。WARN 既定では止まらないため BLOCK 既定へ。解除は INBOX_MARK_READ_BULK_ENFORCE=0 の明示時のみ。
+        if [ "${INBOX_MARK_READ_BULK_ENFORCE:-1}" = "1" ]; then
             echo "BLOCK: bulk mark-read pattern — ${recent} other message(s) marked read for ${AGENT_ID} in the last ${INBOX_MARK_READ_BULK_WINDOW_SEC}s (limit ${INBOX_MARK_READ_BULK_MAX_CALLS}). Read and process each message before marking it; do not loop over read:false ids. msg_id=${MSG_ID} stays unread." >&2
             return 1
         fi
