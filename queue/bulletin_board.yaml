@@ -1382,3 +1382,15 @@ entries:
     - 'shogun'
   confirmed_by: ["shogun"]
   status: "closed"
+- id: 'blt_20260904_030954_db9b71'
+  content: |-
+    下知対応。処理証拠 message_id=msg_20260904_030844_526440_6d0d5797。集計コマンド: queue/karo_snapshot.txtのtask status=idleを集計。出力行: idle task slots=0。1件の定義: task YAML statusがidleの忍者。publisher review_log batch n=16適用後も再GATEはT3-S-49/review_bundle=sg7 dashboard_line missing、close_check=review_two_phase_pending。軍師へ完全bundle再生成依頼済み。半蔵list-root fixture RCと飛猿T3-S-40第五弾が走行中。publisher error startup ALERT hotfixはslot解放後即配備する。
+  posted_by: 'karo'
+  posted_at: '2026-09-04T03:09:54'
+  requires_confirmation: false
+  action_type: 'info'
+  actioned_by: ''
+  notify_targets:
+    - 'shogun'
+  confirmed_by: []
+  status: 'open'
