@@ -428,3 +428,84 @@ EOF
     [ "$status" -eq 0 ]
     [ "$output" = "$HOME/.local/share/multi-agent-shogun" ]
 }
+
+# test_necessity: a legacy daemon that cannot read the stop flag must only be
+# terminated after the watchdog revalidates its publisher identity and start
+# generation; unrelated processes must never be selected as supervisor targets.
+@test "legacy publisher generations converge through owned supervisor lineage" {
+    run bash -c '
+        set -u
+        project="$1"; fixture="$2"; state="$3"
+        mkdir -p "$fixture/scripts/lib" "$fixture/logs" "$state/publish_queue"
+        cp "$project/scripts/daemon_watchdog.sh" "$fixture/scripts/daemon_watchdog.sh"
+        cat >"$fixture/scripts/publisher.sh" <<EOF
+#!/usr/bin/env bash
+printf "%s\\n" "\$\$" >> "\$SHOGUN_STATE_DIR/publisher.pids.live"
+if [ "\${LEGACY:-0}" = 1 ]; then
+    while :; do :; done
+fi
+printf "%s\\n" "\$\$" > "\$SHOGUN_STATE_DIR/publish_queue/publisher.pid"
+while [ ! -f "\$SHOGUN_STATE_DIR/publish_queue/publisher.stop" ]; do sleep 0.05; done
+rm -f "\$SHOGUN_STATE_DIR/publish_queue/publisher.stop"
+EOF
+        cat >"$fixture/scripts/lib/publisher_event.sh" <<EOF
+#!/usr/bin/env bash
+printf "%s\\n" "\$*" >> "\$SHOGUN_STATE_DIR/reload-events.log"
+EOF
+        cat >"$fixture/scripts/ntfy.sh" <<EOF
+#!/usr/bin/env bash
+printf "%s\\n" "\$*" >> "\$SHOGUN_STATE_DIR/ntfy.log"
+EOF
+        chmod +x "$fixture/scripts/publisher.sh" "$fixture/scripts/lib/publisher_event.sh" "$fixture/scripts/ntfy.sh"
+        export SHOGUN_STATE_DIR="$state" DAEMON_WATCHDOG_LIB_ONLY=1 LEGACY=1
+        pids=()
+        for _ in 1 2 3; do bash "$fixture/scripts/publisher.sh" >/dev/null 2>&1 & pids+=("$!"); done
+        for _ in 1 2 3 4 5 6 7 8 9 10; do
+            [ "$(wc -l <"$state/publisher.pids.live")" -eq 3 ] && break
+            sleep 0.05
+        done
+        printf "%s\\n" "${pids[@]}" >"$state/publisher.pids"
+        source "$project/scripts/daemon_watchdog.sh"
+        SCRIPT_DIR="$fixture"; LOG="$fixture/logs/watchdog.log"
+        publisher_pid_start_epoch() { printf "%s\\n" 0; }
+        publisher_code_reload_needed() { printf "%s\\n" "$fixture/scripts/publisher.sh"; }
+        export PUBLISHER_RELOAD_GRACE_SEC=0 PUBLISHER_RELOAD_TERM_GRACE_SEC=1
+        watchdog_reload_publisher_if_stale
+        test "$PUBLISHER_RELOAD_LEGACY_COUNT" -eq 3
+        test "$PUBLISHER_RELOAD_READY" -eq 1
+        test "$(grep -c "^append reload " "$state/reload-events.log")" -eq 3
+        test "$(grep -c "legacy supervisor convergence complete" "$fixture/logs/watchdog.log")" -eq 1
+        test "$(grep -c "旧世代をsupervisor収束" "$state/ntfy.log")" -eq 1
+        for pid in "${pids[@]}"; do
+            test ! -d "/proc/$pid"
+        done
+        unset LEGACY DAEMON_WATCHDOG_PUBLISHER_PIDS_FILE
+        start_publisher_daemon reload
+        new_pid=$(cat "$state/publish_queue/publisher.pid")
+        test "$(publisher_daemon_pids | wc -l)" -eq 1
+        test "$(publisher_daemon_pids)" = "$new_pid"
+        test ! -e "$state/publish_queue/publisher.stop"
+        touch "$state/publish_queue/publisher.stop"
+        for _ in 1 2 3 4 5 6 7 8 9 10; do
+            [ ! -d "/proc/$new_pid" ] && break
+            sleep 0.05
+        done
+        test ! -d "/proc/$new_pid"
+        printf "old_daemons=3 legacy=3 term=3 kill=0 reload_events=3 new_daemons=1 flag=0 survivors=0\\n"
+    ' _ "$PROJECT_ROOT" "$TEST_ROOT/fixture-legacy" "$(mktemp -d --tmpdir="$HOME" watchdog_legacy_state.XXXXXX)"
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"old_daemons=3 legacy=3 term=3 kill=0 reload_events=3 new_daemons=1 flag=0 survivors=0"* ]]
+}
+
+# test_necessity: watchdog and publisher must resolve the same persistent state
+# directory when SHOGUN_STATE_DIR is unset, avoiding an event-only reload.
+@test "publisher stop flag defaults to persistent state directory" {
+    run bash -c '
+        export DAEMON_WATCHDOG_LIB_ONLY=1
+        unset SHOGUN_STATE_DIR IDLE_FLAG_DIR
+        source "$2/scripts/daemon_watchdog.sh"
+        test "$(publisher_state_dir)" = "$HOME/.local/share/multi-agent-shogun"
+        test "$(publisher_stop_flag_path)" = "$HOME/.local/share/multi-agent-shogun/publish_queue/publisher.stop"
+    ' _ "$TEST_ROOT/persistent-state" "$PROJECT_ROOT"
+    [ "$status" -eq 0 ]
+}

@@ -353,6 +353,25 @@ publisher_state_dir() {
     printf '%s\n' "${SHOGUN_STATE_DIR:-$HOME/.local/share/multi-agent-shogun}"
 }
 
+publisher_stop_flag_path() {
+    printf '%s/publish_queue/publisher.stop\n' "$(publisher_state_dir)"
+}
+
+# A plain `: > "$stop_flag"` truncates in place: a reader polling with
+# `[ -f "$stop_flag" ]` can observe the file mid-truncation. Publish the flag
+# by creating it under a temp name in the same directory and renaming into
+# place, so readers only ever see the file fully absent or fully present.
+publish_publisher_stop_flag() {
+    local stop_flag="$1" stop_dir tmp_flag
+    stop_dir="$(dirname "$stop_flag")"
+    mkdir -p "$stop_dir" || return 1
+    tmp_flag="$(mktemp "$stop_flag.tmp.XXXXXX")" || return 1
+    if ! mv -f -- "$tmp_flag" "$stop_flag"; then
+        rm -f -- "$tmp_flag"
+        return 1
+    fi
+}
+
 watchdog_publisher_healthy() {
     local state_dir; state_dir="$(publisher_state_dir)"
     local pid_file="$state_dir/publish_queue/publisher.pid" events_file="$state_dir/publish_queue/events.jsonl"
@@ -497,11 +516,12 @@ publisher_code_reload_needed() {
 }
 
 watchdog_reload_publisher_if_stale() {
-    local state_dir; state_dir="$(publisher_state_dir)"
-    local stop_flag="$state_dir/publish_queue/publisher.stop"
-    local changed_path grace elapsed pid start_epoch generation oldest_record oldest_pid oldest_start
+    local stop_flag changed_path grace elapsed pid start_epoch generation oldest_record oldest_pid oldest_start
+    local term_grace ownership legacy_count=0 term_count kill_count legacy_pids
     local -a records=() pids=()
     PUBLISHER_RELOAD_READY=0
+    PUBLISHER_RELOAD_LEGACY_COUNT=0
+    PUBLISHER_RELOAD_FLAG_PATH=""
     mapfile -t records < <(publisher_daemon_generation_records)
     (( ${#records[@]} > 0 )) || return 0
     changed_path="$(publisher_code_reload_needed 2>/dev/null || true)"
@@ -510,14 +530,22 @@ watchdog_reload_publisher_if_stale() {
         return 0
     fi
     PUBLISHER_RELOAD_OCCURRED=1
+    stop_flag="$(publisher_stop_flag_path)"
+    PUBLISHER_RELOAD_FLAG_PATH="$stop_flag"
     grace="${PUBLISHER_RELOAD_GRACE_SEC:-120}"
     [[ "$grace" =~ ^[0-9]+$ ]] || grace=120
+    term_grace="${PUBLISHER_RELOAD_TERM_GRACE_SEC:-5}"
+    [[ "$term_grace" =~ ^[0-9]+$ ]] || term_grace=5
     oldest_record="$(printf '%s\n' "${records[@]}" | sort -t'|' -k2,2n | head -n 1)"
     IFS='|' read -r oldest_pid oldest_start _ <<< "$oldest_record"
     log "RELOAD: publisher.sh generations=${#records[@]} oldest_pid=$oldest_pid oldest_start=$oldest_start stop_targets=${#records[@]}"
 
-    mkdir -p "$(dirname "$stop_flag")"
-    : > "$stop_flag"
+    if ! publish_publisher_stop_flag "$stop_flag"; then
+        log "BLOCK: publisher stop flag publish failed path=$stop_flag"
+        notify "【watchdog/BLOCK】publisher stop flagのatomic作成に失敗 path=$stop_flag"
+        return 1
+    fi
+    log "RELOAD: publisher stop flag published atomically path=$stop_flag"
     for record in "${records[@]}"; do
         IFS='|' read -r pid start_epoch generation <<< "$record"
         pids+=("$pid")
@@ -536,14 +564,75 @@ watchdog_reload_publisher_if_stale() {
         sleep 1
         elapsed=$((elapsed + 1))
     done
-    for pid in "${pids[@]}"; do
-        if pid_is_live "$pid"; then
-            log "BLOCK: publisher.sh pid=$pid did not honor stop flag within grace=${grace}s"
+
+    # A pid that survives the grace window may be a legacy generation that
+    # cannot read the stop flag (e.g. an old build without the check). Before
+    # treating it as a supervisor target, re-verify it is still the exact
+    # publisher process this reload recorded — same cmdline pattern and same
+    # /proc start epoch as the generation record — so an unrelated process
+    # that happens to reuse the pid is never selected for TERM/KILL.
+    legacy_pids=""
+    for record in "${records[@]}"; do
+        IFS='|' read -r pid start_epoch generation <<< "$record"
+        if ! pid_is_live "$pid"; then
+            continue
+        fi
+        ownership="same"
+        publisher_daemon_cmdline_matches "$pid" || ownership="changed"
+        if [[ "$ownership" == same ]]; then
+            local observed_start
+            observed_start="$(publisher_pid_start_epoch "$pid" 2>/dev/null || true)"
+            [[ "$observed_start" =~ ^[0-9]+$ && "$observed_start" == "$start_epoch" ]] || ownership="changed"
+        fi
+        if [[ "$ownership" == changed ]]; then
+            log "BLOCK: publisher.sh pid=$pid identity changed during reload; refusing supervisor stop"
+            notify "【watchdog/BLOCK】publisher PID identity changed; supervisor stop refused pid=$pid"
             return 1
         fi
+        legacy_count=$((legacy_count + 1))
+        legacy_pids="${legacy_pids:+$legacy_pids,}$pid"
     done
+    PUBLISHER_RELOAD_LEGACY_COUNT="$legacy_count"
+    if (( legacy_count > 0 )); then
+        log "RELOAD: publisher.sh legacy generations require supervisor convergence count=$legacy_count pids=$legacy_pids"
+        term_count=0
+        kill_count=0
+        for pid in "${pids[@]}"; do
+            pid_is_live "$pid" || continue
+            publisher_daemon_cmdline_matches "$pid" || continue
+            kill -TERM "$pid" 2>/dev/null || true
+            term_count=$((term_count + 1))
+            log "RELOAD: publisher.sh supervisor TERM pid=$pid"
+        done
+        elapsed=0
+        while (( elapsed < term_grace )); do
+            local remaining=0
+            for pid in "${pids[@]}"; do
+                pid_is_live "$pid" && remaining=$((remaining + 1))
+            done
+            (( remaining == 0 )) && break
+            sleep 1
+            elapsed=$((elapsed + 1))
+        done
+        for pid in "${pids[@]}"; do
+            pid_is_live "$pid" || continue
+            publisher_daemon_cmdline_matches "$pid" || continue
+            kill -KILL "$pid" 2>/dev/null || true
+            kill_count=$((kill_count + 1))
+            log "RELOAD: publisher.sh supervisor KILL pid=$pid after term_grace=${term_grace}s"
+        done
+        for pid in "${pids[@]}"; do
+            if pid_is_live "$pid"; then
+                log "BLOCK: publisher.sh pid=$pid survived supervisor convergence"
+                notify "【watchdog/BLOCK】publisher旧世代のsupervisor収束失敗 pid=$pid"
+                return 1
+            fi
+        done
+        notify "【watchdog】publisher旧世代をsupervisor収束 old=$legacy_count term=$term_count kill=$kill_count pids=$legacy_pids"
+        log "RELOAD: publisher.sh legacy supervisor convergence complete old=$legacy_count term=$term_count kill=$kill_count"
+    fi
     PUBLISHER_RELOAD_READY=1
-    log "RELOAD: publisher.sh stop flag honored by ${#pids[@]} daemon(s) within grace=${elapsed}s"
+    log "RELOAD: publisher.sh generations converged count=${#pids[@]} legacy=$legacy_count elapsed=${elapsed}s"
     return 0
 }
 
@@ -556,6 +645,7 @@ start_publisher_daemon() {
         log "BLOCK: publisher.sh start deferred; live daemon count=${#existing_pids[@]} pids=$(IFS=,; echo "${existing_pids[*]}")"
         return 1
     fi
+    rm -f -- "$state_dir/publish_queue/publisher.stop"
     ( cd "$SCRIPT_DIR" && PUBLISHER_MODE=active setsid nohup bash scripts/publisher.sh >> "$SCRIPT_DIR/logs/publisher_daemon.log" 2>&1 < /dev/null & )
     sleep 2
     [ -s "$state_dir/publish_queue/publisher.pid" ] && read -r new_pid < "$state_dir/publish_queue/publisher.pid"
@@ -567,6 +657,8 @@ start_publisher_daemon() {
 
 PUBLISHER_RELOAD_OCCURRED=0
 PUBLISHER_RELOAD_READY=0
+PUBLISHER_RELOAD_LEGACY_COUNT=0
+PUBLISHER_RELOAD_FLAG_PATH=""
 
 check_ninja_monitor() {
     local pid_file="${STATE_DIR:-/tmp}/ninja_monitor.pid"
