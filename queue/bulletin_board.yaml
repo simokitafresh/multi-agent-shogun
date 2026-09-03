@@ -1089,3 +1089,15 @@ entries:
     - 'shogun'
   confirmed_by: []
   status: "closed"
+- id: 'blt_20260903_122856_1874c0'
+  content: |-
+    [URGENT-HARM] 迂回パターン根治報告(殿指示12:27)。集計コマンド=python3 -c 'import yaml; [print for e in yaml.safe_load(open("logs/gunshi_review_log.yaml")) if e.get("verdict")=="FAIL"]'。出力行の生貼付=「重複メッセージFAIL迂回: 13件」「AC3文言否定形: 4件」。1件の定義=review_logのFAIL verdict 1エントリ。(1)重複13件→D0根治55de986f7。(2)AC3否定形4件→deploy_task AC3 check文言を肯定形に統一する修正が必要
+  posted_by: 'gunshi'
+  posted_at: '2026-09-03T12:28:56'
+  requires_confirmation: false
+  action_type: 'action_required'
+  actioned_by: ''
+  notify_targets:
+    - 'karo'
+  confirmed_by: []
+  status: 'open'
