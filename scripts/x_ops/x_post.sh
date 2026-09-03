@@ -17,6 +17,7 @@ LEDGER_LOOKUP="${X_POST_LEDGER_LOOKUP:-$SCRIPT_DIR/x_post_ledger_lookup.py}"
 GATE_SCRIPT="${X_POST_GATE_SCRIPT:-$SCRIPT_DIR/x_post_gate.sh}"
 NTFY_SCRIPT="${X_POST_NTFY_SCRIPT:-$REPO_ROOT/scripts/ntfy.sh}"
 API_ENV_FILE="${X_POST_API_ENV_FILE:-$REPO_ROOT/config/x_api.env}"
+FAILURE_LOG_FILE="${X_POST_FAILURE_LOG:-$REPO_ROOT/logs/x_post_draft_failures.log}"
 
 if [[ -n "${X_POST_LLM_CMD:-}" ]]; then
     LLM_CMD="$X_POST_LLM_CMD"
@@ -50,6 +51,14 @@ draft_file() { printf '%s/%s.txt' "$DRAFTS_DIR" "$1"; }
 approved_file() { printf '%s/%s.approved' "$DRAFTS_DIR" "$1"; }
 posted_file() { printf '%s/%s.posted' "$DRAFTS_DIR" "$1"; }
 
+# 失敗理由(パターン名・安全な要約のみ)を永続ログへ残す。秘密値(トークン等)は一切含めない。
+log_draft_failure() {
+    local draft_id="$1" slot="$2" key="$3" reasons="$4"
+    mkdir -p "$(dirname "$FAILURE_LOG_FILE")"
+    printf '%s draft_id=%s slot=%s key=%s reasons=%s\n' \
+        "$(date -u +%Y-%m-%dT%H:%M:%SZ)" "$draft_id" "$slot" "$key" "$reasons" >> "$FAILURE_LOG_FILE"
+}
+
 cmd_draft() {
     local slot="${1:-}" key="${2:-}"
     [[ "$slot" =~ ^[A-E]$ ]] && [[ -n "$key" ]] || {
@@ -76,10 +85,11 @@ cmd_draft() {
 
     mkdir -p "$DRAFTS_DIR"
     local draft_id="$(date -u +%Y-%m-%d)_${slot}"
-    local output_file prompt_file
+    local output_file prompt_file composed_file
     prompt_file="$(mktemp)"
     output_file="$(mktemp)"
-    trap 'rm -f "$prompt_file" "$output_file"' RETURN
+    composed_file="$(mktemp)"
+    trap 'rm -f "$prompt_file" "$output_file" "$composed_file"' RETURN
     {
         printf '\n--- slot instruction ---\nslot: %s\n' "$slot"
         python3 - "$record" <<'PY'
@@ -122,13 +132,12 @@ print(entry.get("url", ""))
 ' "$record")"
 
     local validation_reasons
-    if ! validation_reasons="$(X_POST_VALIDATE_NUMBERS="$ledger_usable_numbers" X_POST_VALIDATE_URL="$ledger_url" X_POST_VALIDATE_DISCLAIMER="$X_POST_DISCLAIMER" python3 - "$output_file" <<'PY'
+    if ! validation_reasons="$(X_POST_VALIDATE_NUMBERS="$ledger_usable_numbers" X_POST_VALIDATE_URL="$ledger_url" python3 - "$output_file" <<'PY'
 import os, re, sys
 
 path = sys.argv[1]
 usable_numbers = os.environ.get("X_POST_VALIDATE_NUMBERS", "")
 allowed_url = os.environ.get("X_POST_VALIDATE_URL", "")
-disclaimer = os.environ.get("X_POST_VALIDATE_DISCLAIMER", "")
 
 with open(path, "r", encoding="utf-8", errors="replace") as fh:
     text = fh.read()
@@ -166,11 +175,11 @@ for line in text.splitlines():
 urls = re.findall(r'https?://[^\s<>"]+', text)
 url_set = set(urls)
 if allowed_url:
+    # LLMは本文のみを担当する。URLはscript側が台帳から合成するため、
+    # 本文中にURLが無いこと自体はFAILにしない。ただし台帳外URLの混入はFAILとする。
     bad_urls = sorted(u for u in url_set if allowed_url not in u)
     if bad_urls:
         reasons.append(f"url_mismatch:{','.join(bad_urls)}")
-    if not any(allowed_url in u for u in url_set):
-        reasons.append("url_missing")
 elif url_set:
     reasons.append(f"url_unexpected:{','.join(sorted(url_set))}")
 
@@ -179,8 +188,7 @@ char_count = len(text_no_url.strip())
 if char_count > 280:
     reasons.append(f"too_long_chars:{char_count}")
 
-if disclaimer and disclaimer not in text:
-    reasons.append("missing_disclaimer")
+# 免責はscript側が固定文言を合成するため、本文中に無いこと自体はFAILにしない。
 
 allowed_numbers = set(re.findall(r"\d+(?:\.\d+)?", usable_numbers or ""))
 body_numbers = set(re.findall(r"\d+(?:\.\d+)?", text_no_url))
@@ -195,10 +203,39 @@ sys.exit(0)
 PY
     )"; then
         echo "x_post.sh draft: invalid LLM output, draft not saved: $validation_reasons" >&2
+        log_draft_failure "$draft_id" "$slot" "$key" "$validation_reasons"
         exit 1
     fi
 
-    cp "$output_file" "$(draft_file "$draft_id")"
+    # LLM本文からURL/免責の重複混入を除去し、台帳由来URLと固定免責をscript側で決定的に合成する。
+    if ! X_POST_COMPOSE_URL="$ledger_url" X_POST_COMPOSE_DISCLAIMER="$X_POST_DISCLAIMER" python3 - "$output_file" > "$composed_file" <<'PY'
+import os, re, sys
+
+path = sys.argv[1]
+url = os.environ.get("X_POST_COMPOSE_URL", "")
+disclaimer = os.environ.get("X_POST_COMPOSE_DISCLAIMER", "")
+
+with open(path, "r", encoding="utf-8", errors="replace") as fh:
+    text = fh.read()
+
+text = re.sub(r'https?://[^\s<>"]+', "", text)
+if disclaimer:
+    text = text.replace(disclaimer, "")
+body = text.strip()
+
+parts = [body]
+if url:
+    parts.append(url)
+if disclaimer:
+    parts.append(disclaimer)
+sys.stdout.write("\n".join(parts) + "\n")
+PY
+    then
+        echo "x_post.sh draft: compose failed, draft not saved" >&2
+        exit 1
+    fi
+
+    cp "$composed_file" "$(draft_file "$draft_id")"
     printf '%s\n' "$(draft_file "$draft_id")"
 }
 

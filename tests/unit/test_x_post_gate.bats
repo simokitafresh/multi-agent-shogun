@@ -465,6 +465,75 @@ EOF
     [[ "$output" == *"url_mismatch"* ]]
 }
 
+# test_necessity: LLMは本文のみを担当し、URLはscript側が台帳から決定的に合成する契約(AC1)。
+# 本文にURLが無い出力でもfail-closeせず、合成後にgateがPASSすることを固定する回帰テスト。
+@test "x_post draft: URL欠落LLM出力は台帳URL合成後gate PASS" {
+    setup_x_post_minimal
+    setup_x_post_draft_ledger
+    cat > "$FIXTURE_DIR/llm_nourl_stub.sh" <<'EOF'
+#!/usr/bin/env bash
+cat > /dev/null
+cat <<'BODY'
+CAGR10%、MaxDD-20%、2020年〜2024年、SPY比較。
+教育目的。推奨ではない。過去は将来を保証しない。
+BODY
+EOF
+    chmod +x "$FIXTURE_DIR/llm_nourl_stub.sh"
+    export X_POST_LLM_CMD="$FIXTURE_DIR/llm_nourl_stub.sh"
+    run bash "$X_POST" draft A demo
+    [ "$status" -eq 0 ]
+    local draft_path="$output"
+    grep -qF 'https://note.com/tokyojibika/n/n171daa7f92a1' "$draft_path"
+    run bash "$GATE" "$draft_path"
+    [ "$status" -eq 0 ]
+    [[ "$output" == "PASS" ]]
+}
+
+# test_necessity: 免責も同様にscript側が固定文言を決定的に合成する契約(AC1)。免責欠落の
+# 本文でもfail-closeせず、合成後にgateがPASSすることを固定する回帰テスト。
+@test "x_post draft: 免責欠落LLM出力は固定免責合成後gate PASS" {
+    setup_x_post_minimal
+    setup_x_post_draft_ledger
+    cat > "$FIXTURE_DIR/llm_nodisclaimer_stub.sh" <<'EOF'
+#!/usr/bin/env bash
+cat > /dev/null
+cat <<'BODY'
+CAGR10%、MaxDD-20%、2020年〜2024年、SPY比較。
+https://note.com/tokyojibika/n/n171daa7f92a1
+BODY
+EOF
+    chmod +x "$FIXTURE_DIR/llm_nodisclaimer_stub.sh"
+    export X_POST_LLM_CMD="$FIXTURE_DIR/llm_nodisclaimer_stub.sh"
+    run bash "$X_POST" draft A demo
+    [ "$status" -eq 0 ]
+    local draft_path="$output"
+    grep -qF '保証しない' "$draft_path"
+    run bash "$GATE" "$draft_path"
+    [ "$status" -eq 0 ]
+    [[ "$output" == "PASS" ]]
+}
+
+# test_necessity: fail-close時の失敗理由はパターン名のみの安全な要約とし、秘密値(トークン等)を
+# 含まず永続ログへ残す契約(AC1)を固定する回帰テスト。
+@test "x_post draft: 失敗理由は秘密値なしで永続ログへ記録される" {
+    setup_x_post_minimal
+    setup_x_post_draft_ledger
+    export X_POST_FAILURE_LOG="$FIXTURE_DIR/x_post_draft_failures.log"
+    cat > "$FIXTURE_DIR/llm_short_stub2.sh" <<'EOF'
+#!/usr/bin/env bash
+cat > /dev/null
+printf 'OK'
+EOF
+    chmod +x "$FIXTURE_DIR/llm_short_stub2.sh"
+    export X_POST_LLM_CMD="$FIXTURE_DIR/llm_short_stub2.sh"
+    run bash "$X_POST" draft A demo
+    [ "$status" -eq 1 ]
+    [ -f "$X_POST_FAILURE_LOG" ]
+    grep -q 'draft_id=' "$X_POST_FAILURE_LOG"
+    grep -q 'reasons=too_short_bytes' "$X_POST_FAILURE_LOG"
+    ! grep -qE 'X_ACCESS_TOKEN|X_CLIENT_SECRET|ADMIN_PASS|Bearer ' "$X_POST_FAILURE_LOG"
+}
+
 # test_necessity: fail-close発火時に既存の有効draftを破壊しないことを固定する回帰テスト。
 # 上書きしてしまうと承認待ちの正常な下書きが無効出力で失われる。
 @test "x_post draft: fail-close時は既存の有効draftを上書きしない" {
