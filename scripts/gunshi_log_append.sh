@@ -237,9 +237,10 @@ if review_type in {"draft", "report", "self_study", "consultation"}:
             print("BLOCK: actual「0件/不在」主張にはcommandに同一ファイル通読またはgit log -S証跡が必須(LG072)", file=sys.stderr); raise SystemExit(2)
 verdict = str(item.get("verdict") or "").strip().upper()
 if verdict in {"APPROVE", "LGTM"}:
-    _ops_actual = str((item.get("operational_simulation") or {}).get("actual") or "")
-    if re.search(r"\bERRORS\s*=\s*[1-9][0-9]*\b", _ops_actual, re.IGNORECASE):
-        print("BLOCK: precheck ERRORS>0の報告はAPPROVE/LGTM不可。理由に関わらずFAIL/RCへ送れ(LG085)", file=sys.stderr); raise SystemExit(2)
+    # LG085: gate_predictionがBLOCKならAPPROVE/LGTM不可(actual欄の自然言語regex検査は偽陽性を生むため廃止)
+    _gate_pred = str(item.get("gate_prediction") or "").strip().upper()
+    if _gate_pred == "BLOCK":
+        print("BLOCK: gate_prediction=BLOCKの報告はAPPROVE/LGTM不可。FAILにせよ(LG085)", file=sys.stderr); raise SystemExit(2)
     files = item.get("verified_files")
     if isinstance(files, str): files = [files]
     valid = isinstance(files, list) and any(isinstance(v, str) and re.search(r"^[^:\s]+:(?:[1-9][0-9]*|[A-Za-z_][A-Za-z0-9_.-]*)$", v.strip()) for v in files)
