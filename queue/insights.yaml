@@ -16717,3 +16717,10 @@ insights:
   status: "resolved"
   action_artifact: "semantic_index=/home/simokitafresh/multi-agent-shogun/docs/semantic-index/index.md"
   resolved_reason: "semantic index candidate was absorbed into a registered concept"
+- id: INS-20260903-204822576-49f6
+  ts: "2026-09-03T20:48:22+09:00"
+  insight: "[[semantic index]] semantic_stress_test candidate_aliases: NO_MATCH source=file query=semantic-index"
+  priority: "low"
+  source: "semantic_stress_test"
+  fix_known: false
+  status: pending
