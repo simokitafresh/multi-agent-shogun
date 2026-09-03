@@ -16660,3 +16660,10 @@ insights:
   source: "manual"
   fix_known: false
   status: pending
+- id: INS-20260903-185440666-0e39
+  ts: "2026-09-03T18:54:40+09:00"
+  insight: "[[slot A angle 定義 draft seed 二つだけ見る]] semantic_stress_test candidate_aliases: NO_MATCH source=lord query=slot: A angle: 定義 draft_seed: 二つだけ見る。 url: title: デモ記事 usable_numbers: 期間2020年〜2024年、CAGR 10%、…"
+  priority: "low"
+  source: "semantic_stress_test"
+  fix_known: false
+  status: pending
