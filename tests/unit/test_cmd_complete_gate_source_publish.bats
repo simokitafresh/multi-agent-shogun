@@ -60,6 +60,91 @@ for name in names:
     chunks.append(match.group(0))
 print("\n\n".join(chunks))
 PY
+
+    # cmd_karo_hotfix_t3s40_post_source_full_instrumentation AC1/AC2: real
+    # gate_detail_begin/finish/gate_subphase_tick (the span primitives
+    # themselves) plus the literal WAIT-path code -- the L4 ancestry
+    # if/elif/else block and the else/wait_block_finalize tail that follows
+    # it -- extracted verbatim (not reimplemented) so the dynamic coverage
+    # fixture below runs the actual production control flow, not a
+    # hand-written stand-in that could silently drift from it.
+    export GATE_DETAIL_SPAN_HELPERS="$BATS_FILE_TMPDIR/gate_detail_span_helpers.sh"
+    python3 - "$BATS_TEST_DIRNAME/../../scripts/cmd_complete_gate.sh" >"$GATE_DETAIL_SPAN_HELPERS" <<'PY'
+import re
+import sys
+from pathlib import Path
+
+text = Path(sys.argv[1]).read_text(encoding="utf-8")
+lines = text.split("\n")
+
+def find_line(substr, start_from=0):
+    for i in range(start_from, len(lines)):
+        if substr in lines[i]:
+            return i
+    raise SystemExit("anchor not found: " + substr)
+
+def extract_func(name):
+    match = re.search(r"(?ms)^" + re.escape(name) + r"\(\) \{.*?^\}", text)
+    if match is None:
+        raise SystemExit(name + " not found")
+    return match.group(0)
+
+chunks = []
+for name in (
+    "gate_phase_now_us",
+    "gate_detail_now_us",
+    "gate_detail_finish",
+    "gate_detail_begin",
+    "gate_subphase_tick",
+):
+    chunks.append(extract_func(name))
+# gate_phase_tick/GATE_PHASE_LOG govern a separate, coarser log this fixture
+# does not exercise; gate_phase_finish's real body is
+# "gate_phase_tick terminal; gate_subphase_finish" -- keep only the half that
+# closes the subphase clock this fixture measures.
+chunks.append('gate_subphase_finish() { gate_subphase_tick "terminal"; }')
+chunks.append('gate_phase_finish() { gate_subphase_tick "terminal"; }')
+
+# --- WAIT path L4 ancestry block: `if [ "$ALL_CLEAR" = true ]; then` two
+# lines above the unique L4 heading, through its own matching top-level
+# (column-0) `fi`. ---
+l4_anchor = find_line('level_heading "[L4]" "Report commit main ancestry check:"')
+l4_start = l4_anchor - 2
+assert lines[l4_start].strip() == 'if [ "$ALL_CLEAR" = true ]; then', lines[l4_start]
+l4_end = None
+for i in range(l4_start + 1, len(lines)):
+    if lines[i] == "fi":
+        l4_end = i
+        break
+assert l4_end is not None, "L4 block closing fi not found"
+chunks.append("run_wait_l4_block() {\n" + "\n".join(lines[l4_start:l4_end + 1]) + "\n}")
+
+# --- WAIT path tail: the else-branch body (block-reason classification +
+# metrics append + rotate_gate_metrics.sh + the self-contained
+# `if [ "$_gate_record_category" = WAIT ]; then ... fi`), excluding the
+# outer `else`/`fi` keywords themselves so the body stands alone as a valid
+# function. ---
+tail_anchor = find_line(
+    "cmd_karo_hotfix_t3s40_post_source_full_instrumentation: block-reason"
+)
+tail_else_line = tail_anchor - 1
+assert lines[tail_else_line].strip() == "else", lines[tail_else_line]
+wait_if_anchor = find_line('if [ "$_gate_record_category" = WAIT ]; then')
+tail_end = None
+for i in range(wait_if_anchor + 1, len(lines)):
+    if lines[i] == "    fi":
+        tail_end = i
+        break
+assert tail_end is not None, "WAIT tail block closing fi not found"
+chunks.append(
+    "run_wait_tail_block() {\n"
+    + "\n".join(lines[tail_else_line + 1:tail_end + 1])
+    + "\n}"
+)
+
+print("\n\n".join(chunks))
+PY
+    bash -n "$GATE_DETAIL_SPAN_HELPERS"
 }
 
 @test "stale receipt cannot mark current non-equivalent remote tip published" {
@@ -450,4 +535,248 @@ STUB
     [ -n "$status_line" ]
     sed -n "${status_line}p" "$gate_script" | grep -qv ' &[[:space:]]*$'
     grep -q 'echo "GATE BLOCK: \${CMD_ID}:status_completed_publish_failed"' "$gate_script"
+}
+
+# test_necessity: cmd_karo_hotfix_t3s40_post_source_full_instrumentation AC2
+# (WAIT fixture). Runs the ACTUAL WAIT-path source (the L4 ancestry block
+# and the wait_block_finalize tail, extracted verbatim by setup_file, not
+# reimplemented) with the real gate_detail_begin/finish/gate_subphase_tick
+# span primitives and a stubbed cmd_complete_gate_auto_push_ancestry_wait
+# (the call that WAS the unwrapped 28.043s residual in AC1) sleeping a fixed
+# 3s so real span/flock/fork overhead (single-digit ms) cannot plausibly
+# erode the 95% floor. false_positive = an unexpected/duplicate span label
+# (would mean a span re-opened without closing, double counting time);
+# false_negative = named_sum falling under the total (a still-unwrapped
+# region). Asserts both are 0, coverage >=95%, and the fixture itself
+# produces no additional FAIL/SKIP (a non-zero exit from run_wait_tail_block
+# other than the expected WAIT-path 1 would be exactly that).
+@test "AC2 WAIT fixture: post_source_checks named span coverage is >=95% with 0 false positives/negatives" {
+    source "$GATE_DETAIL_SPAN_HELPERS"
+
+    local base="$BATS_TEST_TMPDIR/wait-coverage"
+    mkdir -p "$base/gates"
+    GATE_DETAIL_LOG="$base/details.log"
+    GATE_SUBPHASE_LOG="$base/subphases.log"
+    GATE_DETAIL_LOG_MAX_BYTES=5242880
+    GATE_DETAIL_LOG_ROTATION_CHECKED=false
+    GATE_DETAIL_CURRENT=""
+    GATE_DETAIL_CLASS=""
+    GATE_DETAIL_START_US=""
+    GATE_SUBPHASE_LOG_MAX_BYTES=5242880
+    GATE_SUBPHASE_LOG_ROTATION_CHECKED=false
+    GATE_SUBPHASE_CURRENT=""
+    GATE_SUBPHASE_START_US=""
+    CMD_ID="cmd_wait_coverage_probe"
+    SCRIPT_DIR="$base/no-such-scripts-dir"
+    GATE_METRICS_LOG="$base/gate_metrics.log"
+    GATES_DIR="$base/gates"
+    GATE_TASK_TYPE="" GATE_MODEL="" GATE_BLOOM_LEVEL="" GATE_INJECTED_LESSONS=""
+    CMD_TITLE="" GATE_FIRST_MODEL_METRIC="" ci_run_id="" ci_run_conclusion=""
+    ALL_GATES=() DEFERRED_GATES=()
+    ALL_CLEAR=true
+    MATCHING_TASK_FILES=()
+    BLOCK_REASONS=()
+    WAIT_REASONS=()
+    MISSING_GATES=()
+
+    # Real function used verbatim; only the two production dependencies that
+    # would otherwise touch git/network/disk are stubbed.
+    level_heading() { :; }
+    local _ancestry_calls=0
+    check_report_commit_main_ancestry() {
+        _ancestry_calls=$((_ancestry_calls + 1))
+        REPORT_COMMIT_MAIN_ANCESTRY_WAIT=true
+        [ "$_ancestry_calls" -eq 1 ]
+    }
+    record_block_reason() { :; }
+    record_wait_reason() { WAIT_REASONS+=("$1"); }
+    cmd_complete_gate_auto_push_ancestry_wait() {
+        # Stands in for the real push_task_repositories call this span now
+        # wraps (production measured ~28s here); scaled to a fixed 3s so the
+        # single-digit-ms fork/flock overhead between spans cannot approach
+        # 5% of the total under any realistic CI load.
+        sleep 3
+        return 0
+    }
+    classify_gate_record_reasons() { printf 'WAIT'; }
+    append_line_locked() { :; }
+    format_ci_raw_columns() { printf 'stub'; }
+
+    gate_subphase_tick "post_source_checks"
+    run_wait_l4_block
+    run run_wait_tail_block
+    [ "$status" -eq 1 ]
+
+    [ -s "$GATE_DETAIL_LOG" ]
+    [ -s "$GATE_SUBPHASE_LOG" ]
+
+    local total named_sum label_count
+    total=$(awk -F'\t' '$3=="post_source_checks"{print $4}' "$GATE_SUBPHASE_LOG")
+    [ -n "$total" ]
+    named_sum=$(awk -F'\t' '{sum+=$5} END{printf "%.6f", sum+0}' "$GATE_DETAIL_LOG")
+
+    # false_positive check: exactly the 4 expected labels, each exactly once
+    # (a duplicate would mean a span re-opened without its own begin, i.e.
+    # double-counted/overlapping time).
+    local expected_labels actual_labels
+    expected_labels=$'post_source_checks.report_commit_main_ancestry\npost_source_checks.report_commit_main_ancestry.auto_push_wait\npost_source_checks.report_commit_main_ancestry.reverify\npost_source_checks.wait_block_finalize'
+    actual_labels=$(awk -F'\t' '{print $4}' "$GATE_DETAIL_LOG" | sort)
+    [ "$actual_labels" = "$(printf '%s\n' "$expected_labels" | sort)" ]
+
+    # false_negative check + 95% floor, via python for float comparison.
+    CMD_COMPLETE_GATE_TOTAL="$total" CMD_COMPLETE_GATE_NAMED_SUM="$named_sum" python3 - <<'PY'
+import os
+total = float(os.environ["CMD_COMPLETE_GATE_TOTAL"])
+named_sum = float(os.environ["CMD_COMPLETE_GATE_NAMED_SUM"])
+assert named_sum <= total + 0.01, f"named_sum {named_sum} exceeds total {total} (span overlap / false positive)"
+coverage = named_sum / total
+assert coverage >= 0.95, f"coverage {coverage:.4f} under the 95% floor (total={total}, named_sum={named_sum})"
+PY
+}
+
+# test_necessity: cmd_karo_hotfix_t3s40_post_source_full_instrumentation AC2
+# (CLEAR fixture, structural). The CLEAR path's dominant span
+# (finalize_pre_postclear) already has its own exclusivity fixture above;
+# this proves the two additions this task made -- clear_metrics_build
+# (wraps the 4 build_clear_*/build_karo_ctx_metric subshell calls between
+# capture_durable_writer_snapshot and cdp_production_check) and
+# postclear_status_archive (wraps status/archive/notify-enqueue between
+# queue_postclear_publication_followup and gate_phase_finish) -- leave no
+# gap: begin/finish counts balance across every branch (including both
+# early-exit failure arms of the status case statement), and the only
+# non-span-wrapped statement in the connecting stretches is the
+# already-proven-non-blocking queue_postclear_publication_followup dispatch
+# itself. A false positive here = a claimed span whose begin/finish counts
+# don't balance (an accidental early return leaves it permanently "open" for
+# the next cmd's gate run); a false negative = a synchronous subprocess call
+# outside every span in this stretch.
+@test "AC2 CLEAR fixture: clear_metrics_build and postclear_status_archive spans close every gap with no orphaned begin" {
+    local gate_script="$BATS_TEST_DIRNAME/../../scripts/cmd_complete_gate.sh"
+
+    # clear_metrics_build: begin immediately after the snapshot span's
+    # finish, finish immediately before cdp_production_check's begin -- no
+    # other gate_detail_begin/finish appears between them (a single,
+    # non-overlapping pair).
+    local metrics_begin cdp_begin
+    metrics_begin=$(grep -n 'gate_detail_begin "post_source_checks.clear_metrics_build"' "$gate_script" | head -1 | cut -d: -f1)
+    cdp_begin=$(grep -n 'gate_detail_begin "post_source_checks.cdp_production_check"' "$gate_script" | head -1 | cut -d: -f1)
+    [ -n "$metrics_begin" ]; [ -n "$cdp_begin" ]
+    [ "$metrics_begin" -lt "$cdp_begin" ]
+    local metrics_span_begins metrics_span_finishes
+    metrics_span_begins=$(sed -n "$((metrics_begin + 1)),$((cdp_begin - 1))p" "$gate_script" | grep -c 'gate_detail_begin' || true)
+    metrics_span_finishes=$(sed -n "$((metrics_begin + 1)),$((cdp_begin - 1))p" "$gate_script" | grep -c 'gate_detail_finish' || true)
+    [ "$metrics_span_begins" -eq 0 ]
+    [ "$metrics_span_finishes" -eq 1 ]
+    sed -n "$((cdp_begin - 1))p" "$gate_script" | grep -q 'gate_detail_finish'
+
+    # postclear_status_archive: begin immediately follows the
+    # queue_postclear_publication_followup dispatch (only comments/blank
+    # lines between them -- that dispatch itself is the already-proven
+    # non-blocking call, see the "stays non-blocking" fixtures above).
+    local archive_begin followup_line
+    archive_begin=$(grep -n 'gate_detail_begin "post_source_checks.postclear_status_archive"' "$gate_script" | head -1 | cut -d: -f1)
+    followup_line=$(grep -n '^    queue_postclear_publication_followup$' "$gate_script" | tail -1 | cut -d: -f1)
+    [ -n "$archive_begin" ]; [ -n "$followup_line" ]
+    [ "$archive_begin" -gt "$followup_line" ]
+    sed -n "$((followup_line + 1)),$((archive_begin - 1))p" "$gate_script" | grep -qvE '^\s*(#.*)?$' && {
+        echo "non-comment statement between queue_postclear_publication_followup and postclear_status_archive begin" >&2
+        return 1
+    }
+
+    # The span must close exactly once on the normal completion path,
+    # immediately before gate_phase_finish (with two additional early-exit
+    # finishes on the case statement's failure arms in between -- verified
+    # by the existing "durable CLEAR marker/status/notify stay synchronous"
+    # fixture's grep anchors on the same exit points).
+    local phase_finish_line
+    phase_finish_line=$(awk -v s="$archive_begin" 'NR>s && $0=="    gate_phase_finish"{print NR; exit}' "$gate_script")
+    [ -n "$phase_finish_line" ]
+    local nearest_nonblank
+    nearest_nonblank=$(awk -v end="$phase_finish_line" 'NR<end && NF{last=$0} END{print last}' "$gate_script")
+    printf '%s\n' "$nearest_nonblank" | grep -q 'gate_detail_finish'
+    local total_begins total_finishes
+    total_begins=$(sed -n "${archive_begin},${phase_finish_line}p" "$gate_script" | grep -c 'gate_detail_begin' || true)
+    total_finishes=$(sed -n "${archive_begin},${phase_finish_line}p" "$gate_script" | grep -c 'gate_detail_finish' || true)
+    [ "$total_begins" -eq 1 ]
+    [ "$total_finishes" -eq 3 ]
+}
+
+# test_necessity: regression guard for the two dynamically-fixtured WAIT-path
+# blocks above. Re-scans their literal source for any statement that spawns
+# a subprocess (bash/python3/git -C/sleep/tmux/curl, or any $(...)/backtick
+# command substitution) outside an open gate_detail_begin..gate_detail_finish
+# span. A future edit that adds a new synchronous call inside either block
+# without wrapping it would silently reopen the exact class of gap this task
+# closed; this fails loudly instead the next time named_sum vs total drifts
+# structurally, without needing to wait for another 28s production WAIT
+# cycle to notice.
+@test "AC2 regression guard: no synchronous subprocess call in the WAIT-path blocks sits outside a named span" {
+    local gate_script="$BATS_TEST_DIRNAME/../../scripts/cmd_complete_gate.sh"
+
+    run python3 - "$gate_script" <<'PY'
+import re
+import sys
+from pathlib import Path
+
+gate_script = sys.argv[1]
+text = Path(gate_script).read_text(encoding="utf-8")
+lines = text.split("\n")
+
+def find_line(substr, start_from=0):
+    for i in range(start_from, len(lines)):
+        if substr in lines[i]:
+            return i
+    raise SystemExit("anchor not found: " + substr)
+
+risky = re.compile(r'\bbash\s+"|`|\$\(|\bpython3\b|\bgit\s+-C\b|\bsleep\b|\btmux\b|\bcurl\b')
+
+def sweep(start, end, allow):
+    open_span = False
+    violations = []
+    for i in range(start, end + 1):
+        line = lines[i]
+        if "gate_detail_begin" in line:
+            open_span = True
+            continue
+        if "gate_detail_finish" in line:
+            open_span = False
+            continue
+        if open_span:
+            continue
+        stripped = line.strip()
+        if stripped.startswith("#") or stripped == "":
+            continue
+        if any(a in line for a in allow):
+            continue
+        if risky.search(line):
+            violations.append((i + 1, line))
+    return violations
+
+l4_anchor = find_line('level_heading "[L4]" "Report commit main ancestry check:"')
+l4_start = l4_anchor - 2
+l4_end = None
+for i in range(l4_start + 1, len(lines)):
+    if lines[i] == "fi":
+        l4_end = i
+        break
+
+tail_anchor = find_line(
+    "cmd_karo_hotfix_t3s40_post_source_full_instrumentation: block-reason"
+)
+tail_start = tail_anchor - 1
+wait_if_anchor = find_line('if [ "$_gate_record_category" = WAIT ]; then')
+tail_end = None
+for i in range(wait_if_anchor + 1, len(lines)):
+    if lines[i] == "    fi":
+        tail_end = i
+        break
+
+all_violations = sweep(l4_start, l4_end, ()) + sweep(tail_start, tail_end, ())
+if all_violations:
+    for ln, text_ in all_violations:
+        print(f"{ln}: {text_}")
+    sys.exit(1)
+PY
+    [ "$status" -eq 0 ]
+    [ -z "$output" ]
 }

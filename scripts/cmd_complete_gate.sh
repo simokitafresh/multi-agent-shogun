@@ -15375,19 +15375,33 @@ if [ "$ALL_CLEAR" = true ]; then
         ALL_CLEAR=false
     elif [ "${REPORT_COMMIT_MAIN_ANCESTRY_WAIT:-false}" = true ]; then
         gate_detail_finish
+        # cmd_karo_hotfix_t3s40_post_source_full_instrumentation: this call is
+        # the dominant unmeasured region of the WAIT cycle (production
+        # measured post_source_checks total 29.475s vs named 1.432s here,
+        # i.e. this single unwrapped call was the ~28.043s residual). It
+        # contains the ancestry fetch/merge-base checks, lock waits, and the
+        # retry/sleep loop inside push_task_repositories, so classify it
+        # external_wait as a single span rather than decomposing internals
+        # that push_task_repositories does not itself expose.
+        gate_detail_begin "post_source_checks.report_commit_main_ancestry.auto_push_wait" external_wait
         if cmd_complete_gate_auto_push_ancestry_wait "${MATCHING_TASK_FILES[@]}"; then
+            gate_detail_finish
             # The helper refreshes origin/main after publication. Re-run the
             # same ancestry SSOT so a successful push clears this WAIT in the
             # current gate invocation and leaves no stale terminal row.
+            gate_detail_begin "post_source_checks.report_commit_main_ancestry.reverify" pure_processing
             if check_report_commit_main_ancestry \
                 && [ "${REPORT_COMMIT_MAIN_ANCESTRY_WAIT:-false}" != true ]; then
+                gate_detail_finish
                 echo "GATE PASS: report_commit_main_ancestry auto-push verified"
             else
+                gate_detail_finish
                 echo "GATE WAIT: report_commit_main_ancestry (auto-push did not clear the boundary)"
                 record_wait_reason "WAIT:report_commit_main_ancestry"
                 ALL_CLEAR=false
             fi
         else
+            gate_detail_finish
             echo "GATE WAIT: report_commit_main_ancestry (auto-push failed closed)"
             record_wait_reason "WAIT:report_commit_main_ancestry"
             ALL_CLEAR=false
@@ -15438,6 +15452,11 @@ if [ "$ALL_CLEAR" = true ]; then
         exit 1
     }
     gate_detail_finish
+    # cmd_karo_hotfix_t3s40_post_source_full_instrumentation: the 4
+    # build_clear_*_metric calls below each fork a subshell (git/python3/find
+    # work) and previously ran between the snapshot and cdp_production_check
+    # spans with no span of their own.
+    gate_detail_begin "post_source_checks.clear_metrics_build" pure_processing
     GATE_CLEAR_TS="$(date +%Y-%m-%dT%H:%M:%S)"
     GATE_DURATION_METRIC=$(build_clear_duration_metric)
     GATE_THROUGHPUT_METRIC=$(build_clear_throughput_metric "$GATE_CLEAR_TS")
@@ -15451,6 +15470,7 @@ if [ "$ALL_CLEAR" = true ]; then
     {
     GATE_CTX_METRIC=$(build_clear_ctx_metric)
     GATE_KARO_CTX_METRIC=$(build_karo_ctx_metric)
+    gate_detail_finish
     gate_detail_begin "post_source_checks.cdp_production_check" external_wait
     if ! run_cdp_production_check; then
         gate_detail_finish
@@ -16206,6 +16226,14 @@ PYEOF
     gate_detail_finish
     queue_postclear_publication_followup
 
+    # cmd_karo_hotfix_t3s40_post_source_full_instrumentation: status/archive/
+    # notify-enqueue below was the last unwrapped synchronous stretch of the
+    # CLEAR cycle (subprocess spawns for yaml_field_set.sh and, on the
+    # tmux-unavailable fallback, a synchronous archive_completed.sh run).
+    # Single span, classified pure_processing to match the dominant
+    # yaml_field_set.sh/case-statement work; the archive fallback branch is a
+    # rare non-tmux path, not the steady-state cost.
+    gate_detail_begin "post_source_checks.postclear_status_archive" pure_processing
     # COMPLETE is published after the gate decision.  Durable writer and
     # tracked runtime publication continue in their own fail-visible worker;
     # they must not hold the current decision on unrelated external waits.
@@ -16220,6 +16248,7 @@ PYEOF
     case "$terminal_status_target" in
       registered)
         if ! bash "$SCRIPT_DIR/scripts/lib/yaml_field_set.sh" "$YAML_FILE" "$CMD_ID" status completed >/dev/null 2>&1; then
+            gate_detail_finish
             echo "GATE BLOCK: ${CMD_ID}:status_completed_publish_failed" >&2
             exit 1
         fi
@@ -16234,6 +16263,7 @@ PYEOF
         echo "  status: completed (direct parent-report contract; command entry absent)"
         ;;
       *)
+        gate_detail_finish
         echo "GATE BLOCK: ${CMD_ID}:status_completed_publish_target_missing" >&2
         exit 1
         ;;
@@ -16286,11 +16316,18 @@ PYEOF
     echo "Async completion wait (pre-exit):"
     echo "  async jobs: queued"
     print_matching_task_files_summary
+    gate_detail_finish
 
     gate_phase_finish
     exit 0
     }
 else
+    # cmd_karo_hotfix_t3s40_post_source_full_instrumentation: block-reason
+    # classification + metrics append + log rotation is the remaining
+    # synchronous work in this branch before the WAIT/BLOCK-specific tail;
+    # wrap it as one span shared by both outcomes rather than leaving it
+    # unmeasured.
+    gate_detail_begin "post_source_checks.wait_block_finalize" pure_processing
     missing_list=$(IFS=,; echo "${MISSING_GATES[*]}")
     if [ ${#BLOCK_REASONS[@]} -gt 0 ]; then
         block_reason=$(IFS='|'; echo "${BLOCK_REASONS[*]}")
@@ -16325,6 +16362,7 @@ else
     _gate_record_category=$(classify_gate_record_reasons "$block_reason")
     append_line_locked "$GATE_METRICS_LOG" "$(printf '%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s' "$(date +%Y-%m-%dT%H:%M:%S)" "$CMD_ID" "$_gate_record_category" "$block_reason" "$GATE_TASK_TYPE" "$GATE_MODEL" "$GATE_BLOOM_LEVEL" "$GATE_INJECTED_LESSONS" "$CMD_TITLE" "$GATE_FIRST_MODEL_METRIC" "$(format_ci_raw_columns "${ci_run_id:-}" "${ci_run_conclusion:-}")")"
     bash "$SCRIPT_DIR/scripts/rotate_gate_metrics.sh" 2>/dev/null || true
+    gate_detail_finish
     if [ "$_gate_record_category" = WAIT ]; then
         echo "GATE WAIT: 待機理由=${block_reason} (解消後にmonitorが再GATEする)"
         gate_phase_finish
