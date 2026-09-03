@@ -1,5 +1,5 @@
 <!-- gist-master: 8e1336f8b297ccd9bd5f407444844434 x_account_ops_automation_asis_tobe_5w1h_20260903.md -->
-# X アカウント運用(バム @TokyoJibika)の Grok 包装→API 自動化 — AsIs / ToBe / 5W1H 設計書 v0.10(2026-09-03 16:02、殿裁定 15:55: 画像添付あり→S5 は XDK 必須、scope media.write、S1 台帳に media/。v0.9=15:45、§10 訂正=X API は従量課金のみ(投稿 URL 付き $0.20)・入口 console.x.com・XDK、ランブック docs/research/x_api_registration_runbook_20260903.md。v0.8=13:00 §12 E 軸ドリーム。v0.7=12:40 §11 マニュアル v4 取込。v0.6=11:22 §10 X API と xAI API の違い+P1 手順。v0.5=11:05、§9 Grok 質問状への回答=コピペ用、殿指示 10:57。v0.4=09:55、P0 完了=cmd_4467 CLEAR 09:48: ストック台帳 50 entry・slot calendar・包装 gate 6 規則+bats 8、将軍が gate を本番 API で突合。v0.3=04:00 cmd_4463 実測 §1c。v0.2=03:35、殿回答 B-1〜B-10 を §1b/§2/§5 へ反映。v0.1=03:20、殿発案 03:13『grok によるアカウント運用は今後 API などで自動化まで持って行きたい。新しい設計書にしないか』)
+# X アカウント運用(バム @TokyoJibika)の Grok 包装→API 自動化 — AsIs / ToBe / 5W1H 設計書 v0.11(2026-09-03 17:55 覚醒更新=P1 実装現在値・§13 実装進捗台帳新設。v0.10=16:02、殿裁定 15:55: 画像添付あり→S5 は XDK 必須、scope media.write、S1 台帳に media/。v0.9=15:45、§10 訂正=X API は従量課金のみ(投稿 URL 付き $0.20)・入口 console.x.com・XDK、ランブック docs/research/x_api_registration_runbook_20260903.md。v0.8=13:00 §12 E 軸ドリーム。v0.7=12:40 §11 マニュアル v4 取込。v0.6=11:22 §10 X API と xAI API の違い+P1 手順。v0.5=11:05、§9 Grok 質問状への回答=コピペ用、殿指示 10:57。v0.4=09:55、P0 完了=cmd_4467 CLEAR 09:48: ストック台帳 50 entry・slot calendar・包装 gate 6 規則+bats 8、将軍が gate を本番 API で突合。v0.3=04:00 cmd_4463 実測 §1c。v0.2=03:35、殿回答 B-1〜B-10 を §1b/§2/§5 へ反映。v0.1=03:20、殿発案 03:13『grok によるアカウント運用は今後 API などで自動化まで持って行きたい。新しい設計書にしないか』)
 
 ## §0 一文定義
 Grok 作成の「届け方マニュアル」(中身固定・包装のみ変更)を、**ストック記事→スロット→LLM 包装→品質 gate→X API 投稿→KPI 還流**の 1 本の pipeline として段階的に自動化する。戦略・検証・有料層の中身は一切変えない(マニュアル §1 Non-negotiables を pipeline の不変条件として機械化する)。
@@ -10,10 +10,10 @@ Grok 作成の「届け方マニュアル」(中身固定・包装のみ変更)�
 | マニュアル | Grok 作成 `docs/research/bam_delivery_manual_grok_20260902.md`(433 行、§0-§14)。実測で精度を上げる質問集 `bam_delivery_manual_questions_20260902.md`(A 公開 6 問/B 本人 10 問/C 法務 5 問/D 反映先) | 殿デスクトップ 09-02 21:05/21:06、将軍複写 9198f53a0 |
 | 投稿 | 殿の手動。不規則(マニュアル §2『接触回数が医師スケジュール』) | マニュアル §2 |
 | Grok API | `config/xai_api.env` に XAI_API_KEY。x_search を `skills/x-research`・`skills/x-thread-fetch`・`skills/weekly-report-writer` が使用(読み専用) | skills/*/SKILL.md |
-| X 投稿 API | **未整備**。repo に投稿 script 0 | rg twitter/tweepy/api.x.com → 0 |
+| X 投稿 API | **整備済(09-03 17:17 時点)**。`config/x_api.env`(git-ignore、600、client id/secret+access/refresh token、scope 5=tweet.read tweet.write users.read media.write offline.access、認可 16:53 受け口 `scripts/x_ops/x_oauth_listener.py`)。`scripts/x_ops/x_post.sh`(draft/gate/approve/post 4 段、影丸 fd6b8c633)+`x_post_gate.sh`(規則 1-6+blocklist fail-close 2fa437a9c)+`x_post_ledger_lookup.py`。投稿実績 **0**(draft A は gate PASS だが手直し版のため承認保留、§13) | ls scripts/x_ops、/tmp/x_oauth_listener.log 16:53 token ok |
 | note | `skills/note-writer`(CDP 経由の下書き作成、ProseMirror 制約)、`/prose-polish` | skills/note-writer/SKILL.md、CLAUDE.md |
 | 素材 | 完全ガイド(note n171daa7f92a1)、How to マガジン(mb4377418b422)、dm-signal.com(LP EN/JA、月次頁 /signals/YYYY-MM/、Basic 無料)、堅牢性レポート、showcase API(hero/series/plans) | マニュアル §1、dm-signal-lp-seo-plan_20260830.md v5 |
-| KPI | 未計測。Search Console/Bing は SEO lane で登録済(T201)。X analytics 未接続 | seo-plan v5 |
+| KPI | 未計測(X 側は pay-per-usage の owned reads $0.001 で取得可、§10)。Search Console/Bing は SEO lane で登録済(T201)。X analytics 未接続 | seo-plan v5 |
 | 制約 | 医師の可用時間(週 90 分未満想定、B-1 未回答)、助言規制(マニュアル §10)、有料中身の非公開 | マニュアル §5 §10 |
 
 ## §1b 殿回答(2026-09-03 03:31、原文要旨。質問集 §B の 10 問)
@@ -63,7 +63,7 @@ Grok 作成の「届け方マニュアル」(中身固定・包装のみ変更)�
 | Phase | 内容 | 自動化度 | 可逆 | 完了条件(二値) |
 |---|---|---|---|---|
 | P0 | ✅ **完了 09-03 09:48(cmd_4467 飛猿、ce1ca2cb1)**: `skills/x-post-pipeline/stock_ledger.yaml`(50 entry=How to 49+完全ガイド、記事本文にある数字セットのみ)、`slot_calendar.yaml`(4 週×枠 A/B/C+月次 D)、`SKILL.md`(28 行)、`scripts/x_ops/x_post_gate.sh`(6 規則: Basic 以外の保有/ticker blocklist を showcase API から生成、単独倍率、URL 3 種、免責、禁止語、第一文の内部用語)+`tests/unit/test_x_post_gate.bats` 8 本。将軍突合: 包装ルール通りの下書き rc=0、禁止語/内部用語/単独倍率は FAIL。**穴(09:58 発見)**: 規則 1 の blocklist を公開 showcase API から作るため非公開 PF の holding が blocklist に入らず、空なら PASS(沈黙フォールバック)→家老 hotfix: 認証付き /api/signals の全 PF holding(Basic 除外)を正本に、取得失敗は FAIL | 手動 | file 削除 | 台帳 1 file、gate PASS/FAIL 例 |
-| P1 | S4 gate を script 化(regex+blocklist+URL 検査)。S5 は『X API で下書き投稿(未公開)or 殿承認後に script が投稿』 | 半自動 | 投稿は取消可、API key 失効で停止 | gate 偽陽性 0/12、承認→投稿 1 本が API で成功 |
+| P1 | **実装中(09-03)**: S4 gate=script 化済(P0)、S5=`x_post.sh` draft→gate→approve(殿 y→将軍が approved marker)→post(XDK、201 で posted marker+URL)。認可完了 16:53。残=生成契約 hotfix(既定 LLM を latest CLI、エラー/40 byte 未満/メタ文/280 字超は fail-close、本文 140 字+URL+固定免責)→slot A 再生成→gate PASS→ntfy→殿『y』→post 201 が cmd_4472 production_proof | 半自動 | 投稿は取消可、API key 失効で停止 | gate 偽陽性 0/12、承認→投稿 1 本が API で成功(**現在 0/1**) |
 | P2 | cron で S2→S3→S4→S5 を無人実行。殿は週 15 分の KPI 確認のみ | 自動 | flag file で即停止(単一 publisher と同型) | 4 週連続で週 3 投稿・gate FAIL 0・殿介入 0 |
 | P3 | S6 KPI 還流で切り口を自動選択(A の 4 切り口の rotation を metrics で重み付け) | 自動 | rotation を固定に戻す | 赤信号 0、理解到達 KPI が 4 週連続上昇 |
 
@@ -78,9 +78,9 @@ Grok 作成の「届け方マニュアル」(中身固定・包装のみ変更)�
 ## §5 未決事項(殿裁定が必要。返答なければ既定案)
 | # | 論点 | 既定案 |
 |---|---|---|
-| D1 | S3 の LLM は Grok か Claude か | 既定=Claude(repo 内 skill で回せる)。Grok は x_search 収集+A 面の別案生成に使う |
-| D2 | X API のプラン(Free は書込み 1,500/月・読取り不可、Basic は $100/月で metrics 可) | 既定=P1 は Free で投稿のみ、P3 で Basic |
-| D3 | 殿承認の UI(P1) | 既定=ntfy に下書きを送り「y」で投稿(将軍と同じ y 復帰の型) |
+| D1 | S3 の LLM は Grok か Claude か | **確定=Claude**(x_post.sh の LLM_CMD。pinned 2.1.87 は API 400 で無効出力 15 byte→既定を latest CLI へ hotfix 中)。Grok は x_search 収集+A 面の別案生成に使う |
+| D2 | X API のプラン | **確定=pay-per-usage のみ**(§10 訂正 15:45。投稿 $0.015、URL 付き $0.20、owned reads $0.001)。console.x.com でクレジット前払い。登録完了 16:53 |
+| D3 | 殿承認の UI(P1) | **確定=ntfy に本文を送り殿『y』→将軍が approved marker を置く→家老 `x_post.sh post`**。手直し draft は承認対象外(家老 17:17 訂正 ntfy 済) |
 | D4 | B 質問 10 問の回答 | **回答済 03:31(§1b)**。残り実測=B-3/B-4/B-5 は cmd_4463 と S6 で埋める |
 | D5 | A 質問 6 問の偵察 cmd を先に出すか | 既定=出す(cmd_4463、忍者 1 名、Grok x_search+web) |
 | D6 | 法務 C 5 問 | 既定=偵察 cmd に含めず、P1 前に別 cmd で一般論を集める |
@@ -264,7 +264,22 @@ P1 の AC への追加(起票時に反映): (a) gate 規則 7/7b/8/9/10 と規�
 
 ---
 
+## §13 実装進捗台帳(loop ごと更新。殿指示 09-02 17:18『随時更新しないと後で混乱する』の型を本設計書にも適用)
+| 時刻 | 段 | 現在値 | 証跡 |
+|---|---|---|---|
+| 09-03 09:48 | P0 | CLEAR(台帳 50 entry・calendar・gate 6 規則・bats 8) | cmd_4467 ce1ca2cb1 |
+| 09-03 10:07 | S4 | 規則 1 blocklist の沈黙フォールバック根治(認証 /api/signals 全 PF holding、空/失敗は exit 1、bats 3) | hotfix 2fa437a9c、家老 blt 10:07 |
+| 09-03 15:55 | S5 | 殿裁定 media 添付あり→XDK 必須、scope media.write、cmd_4472 AC2 差替え | v0.10 |
+| 09-03 16:37 | S5 | `x_post.sh` 4 段(draft/gate/approve/post)+`x_post_ledger_lookup.py` 着地 | 影丸 fd6b8c633 |
+| 09-03 16:47-16:53 | 認可 | 殿が console.x.com で App(TokyoJibika)作成→`config/x_api.env`→手貼り code 失効(400)→受け口 listener で token ok(scope 5、refresh あり、users/me 200) | b0c83705e、/tmp/x_oauth_listener.log |
+| 09-03 17:00-17:17 | proof | slot A draft 生成 2 回 gate FAIL(pinned CLI 無効出力 15 byte/メタ文混入)→家老が latest CLI+sonnet で再生成し手直し→gate PASS(将軍 17:50 再実測 rc=0、243 字)。**手直し版は承認しない**(家老 17:17 ntfy 訂正)。approved/posted marker=absent、投稿 0 | 家老 blt 17:10/17:17 |
+| 09-03 17:31 | hotfix | 生成契約 hotfix(既定 LLM latest CLI、fail-close 4 条件、140 字+URL+固定免責)+inbox 本文 command-injection 相当 hotfix は **次 idle 忍者へ配備予約**(現在 idle 0/6、cmd_4472 AC1=才蔵 in_progress) | 家老 blt 17:33、tasks/*.yaml |
+| 次 | proof | hotfix 着地→slot A 再生成→gate PASS→ntfy 本文→殿『y』→将軍 approved marker→家老 post 201→URL を cmd_4472 production_proof へ | — |
+
+**P1 完了までの残壁(順序)**: (1) 生成契約 hotfix 着地 (2) 再生成 draft の gate PASS (3) 殿承認 1 回 (4) post 201=投稿 1 本 (5) cmd_4472 GATE CLEAR。(3) だけが殿の手、他は鎖内。
+
 ## §8 レビュー履歴
+- v0.11(09-03 17:55) 覚醒更新: §1 X 投稿 API を『整備済・投稿 0』へ、§3 P1 を実装中の現在値へ、§5 D1/D2/D3 を確定へ、§13 実装進捗台帳を新設(認可 16:53、draft gate FAIL 2 回→手直し PASS は承認外、生成契約 hotfix 配備待ち)
 - v0.10(09-03 16:02) 殿裁定 15:55『media 添付やるだろ、画像とか。XDK インストール必須』→S5=XDK(pip install xdk、OAuth2PKCEAuth、posts.create+media upload)、scope に media.write、S1 台帳に media/(体験 1 枚・1 枚比較の PNG、保有・ticker 不可)。cmd_4472 AC2 は XDK 実装へ差替え(task_supplement)
 - v0.9(09-03 15:45) §10 訂正: 2026 年の X API v2 は pay-per-usage(クレジット前払い)のみ、Free/Basic/Pro 月額は無し。投稿 $0.015、URL 付き投稿 $0.20、owned reads $0.001。入口は console.x.com。公式 XDK(pip install xdk、OAuth2PKCEAuth)。登録手順は x_api_registration_runbook_20260903.md v1.1
 - v0.8(09-03 13:00) §12 E 軸ドリーム(殿発案 12:49): 分身・四つ目の metrics を inception 以来のセットで、1 投稿 1 PF・同居禁止(殿 12:55)、研究証跡併記、gate 規則 11/12、P1 AC (e)-(g)
