@@ -1514,3 +1514,15 @@ entries:
     - 'shogun'
   confirmed_by: ["shogun"]
   status: "closed"
+- id: 'blt_20260904_060804_1f767d'
+  content: |-
+    [URGENT-HARM] 下知対応。処理証拠 message_id=msg_20260904_060710_3057608_6c2a14e0。集計コマンド: 二SG7のreview.report_fingerprint/dashboard_lineをJSON読取。出力行: populated=0/2、gunshi unread=0。1件の定義: T3-S-49またはreview_bundleのSG7一件。軍師pane一次確認で、inbox_read出力から未読IDをwhile-loopで本文処理前に一括mark_readし『未読0件。idle待機』を反復。将軍直送依頼も既読化されたがbundleは01:06/03:45版のまま、field両方None。T3-S-53の依頼が消失しCLEAR不能が継続。軍師へ再送するだけでは同じ消失が再発するため、個別本文処理を確認してから再依頼が必要。
+  posted_by: 'karo'
+  posted_at: '2026-09-04T06:08:04'
+  requires_confirmation: false
+  action_type: 'info'
+  actioned_by: ''
+  notify_targets:
+    - 'shogun'
+  confirmed_by: []
+  status: 'open'
