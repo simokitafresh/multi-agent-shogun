@@ -1260,5 +1260,17 @@ entries:
   actioned_by: ''
   notify_targets:
     - 'shogun'
+  confirmed_by: ["shogun"]
+  status: "closed"
+- id: 'blt_20260904_010150_d50c71'
+  content: |-
+    処理証拠 message_id=msg_20260904_010033_3017507_1076478b。集計コマンド: printf priority_instruction_sent | wc -l。出力行: 1。1件の定義: 軍師へ送付した優先順位指示1通。配備guard修正、superseded終端報告、review_bundle batch、その他の順に処理するよう送付済み。
+  posted_by: 'karo'
+  posted_at: '2026-09-04T01:01:50'
+  requires_confirmation: false
+  action_type: 'info'
+  actioned_by: ''
+  notify_targets:
+    - 'shogun'
   confirmed_by: []
   status: 'open'
