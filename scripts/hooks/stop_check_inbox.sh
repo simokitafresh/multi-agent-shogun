@@ -33,7 +33,21 @@ _stop_check_overhead_emit() {
     "$_stop_check_overhead_wall_ms" "$_stop_check_overhead_verdict" "$_stop_check_overhead_event_id" '{}' || true
   return "$_stop_check_overhead_rc"
 }
-trap '_stop_check_overhead_emit "$?"' EXIT
+# 2026-09-03 19:10 将軍 D0(T3-S-38 根治): 本 hook は冒頭で @agent_state=active+idle flag 削除を行い、
+# idle の公開は最終経路だけだった。set -e の途中失敗・60s timeout・早期 exit 0 で idle が公開されず、
+# 「pane は prompt なのに active・flag 無し」→ watcher が nudge を永久保留(軍師 held 1110s)。
+# EXIT/TERM で「block を出していない終了」は必ず idle を公開する(block=agent 続行なので busy のまま)。
+_block_emitted=0
+_stop_check_finalize() {
+  local _rc="$1"
+  if [[ "${_block_emitted:-0}" != "1" ]]; then
+    if declare -f set_agent_state >/dev/null 2>&1; then set_agent_state idle; fi
+    if declare -f set_idle_flag >/dev/null 2>&1; then set_idle_flag || true; fi
+  fi
+  _stop_check_overhead_emit "$_rc"
+}
+trap '_stop_check_finalize "$?"' EXIT
+trap '_stop_check_finalize 143; exit 143' TERM
 readonly COMPLETE_PATTERN='任務完了|完了でござる|報告YAML.*更新|task completed|タスク完了'
 # cmd_karo_impl_b37_error_report_false_fire_20260726 (B37):
 # 旧 ERROR_PATTERN='エラー.*中断|失敗.*中断|error.*abort|failed.*stop' は
@@ -211,6 +225,7 @@ fi
 # final no-unread path below may publish idle.
 set_agent_state active
 clear_idle_flag || true
+if [[ "${STOP_CHECK_INBOX_FAULT_INJECT:-}" == "1" ]]; then false; fi
 
 detect_shogun_brainwash_pattern() {
   local message="$1"
@@ -542,6 +557,7 @@ if [[ "$agent_id" == "shogun" && "$payload" == *'"last_assistant_message"'* ]]; 
     detect_unverified_action_claim "$last_assistant_message"
     # 洗脳#3 BLOCK昇格: 殿への他者依存フレーズは常に洗脳#3。WARN無視で連続出力の実績あり(2026-07-15+2026-07-16事故)のためBLOCK化
     if [[ "$last_assistant_message" =~ (指示を待[つちた]|お許し|判断を仰|意に沿わねば|殿の判断) ]]; then
+      _block_emitted=1
       printf '{"decision":"block","reason":"BLOCK 洗脳#3: 殿への他者依存フレーズを検出。殿の指示を待つな・許可を求めるな。Phase 7(自走): データを見て問いを見つけて動け。可逆な行動は自分で判断して即実行。"}\n'
       exit 0
     fi
@@ -556,6 +572,7 @@ if [[ "$agent_id" == "shogun" && "$payload" == *'"last_assistant_message"'* ]]; 
     # cmd_3418 + memory citation enforcement: preflightを使った非定型回答は
     # 引用タグまでを一つの契約としてfail-closedにする。定型応答とpreflight未実施は対象外。
     if has_successful_three_layer_preflight && ! is_routine_shogun_response "$last_assistant_message" && [[ "$last_assistant_message" != *'[MEM:'* ]]; then
+      _block_emitted=1
       printf '{"decision":"block","reason":"BLOCK: 三層preflight済みの非定型回答に[MEM:]引用タグがない。memory_db/semantic/obsidianの引用元を明記せよ。知識参照を要しない回答(再送依頼・配送失敗通知等)には偽の引用を作らず [MEM: n/a — 理由] と明記せよ(shogun-rca:15: 空引用は計器を汚す)。"}\n'
       exit 0
     fi
@@ -563,6 +580,7 @@ if [[ "$agent_id" == "shogun" && "$payload" == *'"last_assistant_message"'* ]]; 
     detect_quantity_in_lord_response "$last_assistant_message"
     # cmd_3251 AC2: F009 殿への操作依頼パターン → BLOCK
     if detect_f009_lord_delegation "$last_assistant_message"; then
+      _block_emitted=1
       printf '{"decision":"block","reason":"BLOCK F009: 殿への操作依頼を検出。殿にcommit/push/kill/respawn/CLI操作を依頼するな。自分で実行せよ(CLAUDE.md: 殿への操作押し返し禁止)。"}\n'
       exit 0
     fi
@@ -659,6 +677,7 @@ if (( unread_count > 0 )); then
 fi
 
 if [[ "$has_unread" == "true" ]]; then
+  _block_emitted=1
   clear_idle_flag || true
   _summary_cache="$STATE_DIR/shogun_stop_check_inbox_summary_${agent_id}"
   if [[ -s "$_summary_cache" && ! "$inbox_file" -nt "$_summary_cache" ]]; then
@@ -839,6 +858,7 @@ else
     if (( ${#_pending_actions[@]} > 0 )); then
       _action_text="$(printf '%s; ' "${_pending_actions[@]}")"
       _reason="inbox未読0件だが次アクションあり: ${_action_text%%; }"
+      _block_emitted=1
       jq -n --arg reason "$_reason" '{"decision":"block","reason":$reason}'
       exit 0
     fi
@@ -866,6 +886,7 @@ else
       fi
       if [[ "$_ninja_task_done" == "true" ]]; then
         _reason="Task completed. Wait for next task assignment from karo. Do NOT start new work."
+        _block_emitted=1
         jq -n --arg reason "$_reason" '{"decision":"block","reason":$reason}'
         exit 0
       fi
@@ -878,6 +899,7 @@ else
     if [[ -s "$_alert_pending" ]]; then
       _alert_content="$(head -3 "$_alert_pending" 2>/dev/null | tr '\n' '; ')"
       _reason="startup gate ALERT未処理: ${_alert_content}ALERTはバグ。根因調査→修正→commitまで回せ。解消したら rm $_alert_pending"
+      _block_emitted=1
       jq -n --arg reason "$_reason" '{"decision":"block","reason":$reason}'
       exit 0
     fi
@@ -899,6 +921,7 @@ if [[ "$agent_id" == "shogun" || "$agent_id" == "karo" || "$agent_id" == "gunshi
     _dd_out="$(bash "$_dd_gate" "$agent_id" 2>/dev/null || true)"
     if [[ "$_dd_out" == DEEPDIVE-REPLAY:\ FAIL* ]]; then
       _dd_missing="$(printf '%s' "$_dd_out" | head -1 | cut -c1-400)"
+      _block_emitted=1
       jq -n --arg reason "BLOCK: deepdive追体験未完了(殿裁定2026-07-26: クリア後毎回必須)。${_dd_missing} → 1 Phaseずつ: bash scripts/deepdive_replay.sh ${agent_id} <mdファイル名> <Phase番号> \"<自問1行>\" を全Phase実行してから作業せよ。" '{"decision":"block","reason":$reason}'
       exit 0
     fi

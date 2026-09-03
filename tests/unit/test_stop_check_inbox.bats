@@ -1205,3 +1205,32 @@ printf "%s" "$PAYLOAD" | CI_READINESS_CACHE="$CI_READINESS_CACHE" "$TEST_PROJECT
     [[ "$output" == *"報告レビュー/GATE処理を進めよ"* ]]
     [[ "$output" != *"承認済み・GATE自動処理待ち"* ]]
 }
+
+# test_necessity: Stop hook が block を出さずに途中終了(set -e 失敗/timeout/早期 exit)した時、
+# @agent_state=idle と idle flag を必ず公開する(T3-S-38: 未公開だと watcher が nudge を永久保留する)
+@test "T-SCI-IDLE-FAILSAFE: aborted stop hook without block still publishes idle" {
+    printf 'messages:\n' > "$TEST_PROJECT/queue/inbox/hayate.yaml"
+    rm -f "$TEST_IDLE_FLAG"
+    STOP_CHECK_INBOX_FAULT_INJECT=1 run_hook '{"stop_hook_active":false}'
+    [ "$status" -ne 0 ]
+    [ -f "$TEST_IDLE_FLAG" ]
+    ! echo "$output" | grep -q '"decision": *"block"'
+    tail -1 "$TMUX_LOG" | grep -q '@agent_state idle'
+}
+
+# test_necessity: block を出した終了では idle を公開しない(agent は続行中=busy が正)
+@test "T-SCI-IDLE-FAILSAFE: blocking exit keeps busy state" {
+    cat > "$TEST_PROJECT/queue/inbox/hayate.yaml" <<'EOF2'
+messages:
+  - id: msg1
+    from: karo
+    type: task_assigned
+    content: 新タスクを確認せよ
+    read: false
+EOF2
+    rm -f "$TEST_IDLE_FLAG"
+    run_hook '{"stop_hook_active":false}'
+    [ "$status" -eq 0 ]
+    [ ! -f "$TEST_IDLE_FLAG" ]
+    echo "$output" | jq -e '.decision == "block"' >/dev/null
+}

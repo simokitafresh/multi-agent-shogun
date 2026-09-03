@@ -744,6 +744,24 @@ maybe_force_idle_flag() {
         pane_tail=$(tmux capture-pane -t "$PANE_TARGET" -p -J -S -3 2>/dev/null || true)
         last_line=$(printf '%s\n' "$pane_tail" | sed '/^[[:space:]]*$/d' | tail -1)
         [[ "$last_line" =~ ^[[:space:]]*[❯›][[:space:]]* ]] || return 1
+    elif [ "$agent_state" = "active" ]; then
+        # 2026-09-03 19:10 将軍 D0(T3-S-38): Stop hook が失敗/timeout すると active のまま flag 無しで
+        # 残り、nudge が永久保留になる。@last_active が BUSY_TIMEOUT_SEC 以上古く、pane 末尾が
+        # prompt で確認ダイアログでもない時だけ idle として復元する(bash_running 分岐と同じ境界)。
+        local last_active
+        last_active=$(tmux display-message -t "$PANE_TARGET" -p '#{@last_active}' 2>/dev/null || true)
+        [[ "$last_active" =~ ^[0-9]+$ ]] || return 1
+        [[ "$BUSY_TIMEOUT_SEC" =~ ^[0-9]+$ ]] || return 1
+        now="$EPOCHSECONDS"
+        elapsed=$((now - last_active))
+        [ "$elapsed" -ge "$BUSY_TIMEOUT_SEC" ] || return 1
+        _agent_state_has_busy_subprocess "$PANE_TARGET" && return 1
+        _pane_has_confirmation_prompt "$PANE_TARGET" && return 1
+        local pane_tail last_line
+        pane_tail=$(tmux capture-pane -t "$PANE_TARGET" -p -J -S -3 2>/dev/null || true)
+        last_line=$(printf '%s\n' "$pane_tail" | sed '/^[[:space:]]*$/d' | tail -1)
+        [[ "$last_line" =~ ^[[:space:]]*[❯›][[:space:]]* ]] || return 1
+        tmux set-option -p -t "$PANE_TARGET" @agent_state idle 2>/dev/null || return 1
     else
         return 1
     fi
