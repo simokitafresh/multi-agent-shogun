@@ -1504,6 +1504,81 @@ if actual != expected:
 PY
 }
 
+# cmd_karo_hotfix_cmd_complete_post_source_async_202609031931: rc31
+# origin-ancestor resolution is the publisher's (scripts/publisher.sh)
+# own asynchronous job: when a request's target commit is already an
+# ancestor of origin/main it records kind=already_published rc=0 in
+# events.jsonl instead of a missing-artifact rc31.  When
+# source_publish_receipt_matches has not yet proven the exact pair, GATE must
+# not re-derive that same ancestry verdict itself via a synchronous
+# `git log -300 --grep` scan (measured: post_source_checks 22245s/day,
+# max 220s/call, cmd_karo_hotfix_cmd_complete_post_source_async_202609031931).
+# Defer to the publisher's own verdict instead, bounded to a short local poll;
+# an absent/negative verdict still fails closed (falls through to the
+# existing PUBLISHER_SINGLE WAIT path unchanged).
+cmd_complete_gate_publisher_origin_ready() {
+    local -n _ids_ref="$1"
+    shift
+    local -a _source_shas=("$@")
+    local timeout_seconds="${CMD_COMPLETE_GATE_ORIGIN_ANCESTOR_WAIT_SECONDS:-10}"
+    local events_file="${SHOGUN_STATE_DIR:-$HOME/.local/share/multi-agent-shogun}/publish_queue/events.jsonl"
+    local start_ts now_ts
+    [[ "$timeout_seconds" =~ ^[0-9]+$ ]] || timeout_seconds=10
+    start_ts=$(date +%s)
+    while :; do
+        if [ -f "$events_file" ] \
+            && PUBLISHER_EVENTS_FILE="$events_file" \
+               GATE_IDS_JSON="$(printf '%s\n' "${_ids_ref[@]}" | python3 -c 'import json,sys; print(json.dumps([l.strip() for l in sys.stdin if l.strip()]))')" \
+               GATE_SOURCE_SHAS_JSON="$(printf '%s\n' "${_source_shas[@]}" | python3 -c 'import json,sys; print(json.dumps([l.strip() for l in sys.stdin if l.strip()]))')" \
+               python3 - <<'PY'
+import json, os
+
+ids = {value for value in json.loads(os.environ["GATE_IDS_JSON"]) if value}
+source_shas = [value for value in json.loads(os.environ["GATE_SOURCE_SHAS_JSON"]) if value]
+if not ids or not source_shas:
+    raise SystemExit(1)
+
+path = os.environ["PUBLISHER_EVENTS_FILE"]
+try:
+    with open(path, encoding="utf-8") as fh:
+        lines = fh.readlines()[-2000:]
+except OSError:
+    raise SystemExit(1)
+for line in reversed(lines):
+    line = line.strip()
+    if not line:
+        continue
+    try:
+        event = json.loads(line)
+    except (ValueError, TypeError):
+        continue
+    if event.get("kind") != "already_published":
+        continue
+    try:
+        rc = int(event.get("rc"))
+    except (TypeError, ValueError):
+        continue
+    if rc != 0:
+        continue
+    request = str(event.get("request") or "")
+    if request not in ids:
+        continue
+    reason = str(event.get("reason") or "")
+    if any(sha in reason for sha in source_shas):
+        raise SystemExit(0)
+raise SystemExit(1)
+PY
+        then
+            return 0
+        fi
+        now_ts=$(date +%s)
+        if (( now_ts - start_ts >= timeout_seconds )); then
+            return 1
+        fi
+        sleep 0.5
+    done
+}
+
 # A durable receipt proves that a source-only publication succeeded at the
 # time it was written.  It is reusable only while the current remote tip still
 # contains every source commit.  Without this second proof an exact receipt
@@ -3639,6 +3714,40 @@ push_task_repositories() {
         [ "${#repos[@]}" -gt 0 ] || repos=("$SCRIPT_DIR")
     fi
 
+    # Same task/cmd identity set the publisher's request YAML carries as
+    # task_id, reused here to correlate this gate run with the publisher's
+    # own already_published events (see cmd_complete_gate_publisher_origin_ready).
+    local -a publisher_origin_ids=()
+    if [ "${#eligible_task_files[@]}" -gt 0 ] || [ -n "${CMD_ID:-}" ]; then
+        local -A _publisher_origin_ids_seen=()
+        while IFS= read -r _poi_value; do
+            [ -n "$_poi_value" ] || continue
+            [ -n "${_publisher_origin_ids_seen[$_poi_value]+yes}" ] && continue
+            _publisher_origin_ids_seen["$_poi_value"]=1
+            publisher_origin_ids+=("$_poi_value")
+        done < <(CMD_ID_VALUE="${CMD_ID:-}" TASK_FILES_JSON="$(printf '%s\n' "${eligible_task_files[@]}" | python3 -c 'import json,sys; print(json.dumps([l.strip() for l in sys.stdin if l.strip()]))')" python3 - <<'PY'
+import json, os
+import yaml
+
+cmd_id = os.environ.get("CMD_ID_VALUE", "").strip()
+if cmd_id:
+    print(cmd_id)
+for task_file in json.loads(os.environ["TASK_FILES_JSON"]):
+    try:
+        task_raw = yaml.safe_load(open(task_file, encoding="utf-8")) or {}
+    except (OSError, yaml.YAMLError):
+        continue
+    task = task_raw.get("task", task_raw) if isinstance(task_raw, dict) else {}
+    if not isinstance(task, dict):
+        continue
+    for key in ("task_id", "parent_cmd", "cmd_id", "issued_cmd_id"):
+        value = str(task.get(key) or "").strip()
+        if value:
+            print(value)
+PY
+)
+    fi
+
     for repo in "${repos[@]}"; do
         if [ "${CMD_COMPLETE_GATE_PUSH_DRY_RUN:-0}" = "1" ]; then
             echo "  git push: DRY_RUN ($repo)"
@@ -3799,12 +3908,22 @@ push_task_repositories() {
             local all_remote=true
             source_equivalent_used=false
             local publisher_commit="" publisher_candidate
+            local -a _origin_ready_pending_shas=()
             for source_sha in "${source_commits[@]}"; do
                 if git -C "$repo" merge-base --is-ancestor "$source_sha" "$remote_tip"; then
                     continue
                 fi
                 if source_snapshot_matches_tip "$repo" "$source_sha" "$remote_tip"; then
                     source_equivalent_used=true
+                    continue
+                fi
+                if [ "$publisher_proof_only" -eq 1 ]; then
+                    # rc31 origin-ancestor is the publisher's own async job
+                    # (scripts/publisher.sh); defer to its verdict instead of
+                    # re-deriving the same equivalence via a synchronous
+                    # `git log -300 --grep` scan here (see
+                    # cmd_complete_gate_publisher_origin_ready above).
+                    _origin_ready_pending_shas+=("$source_sha")
                     continue
                 fi
                 # Single publisher (2026-09-03): the publisher lands the task as its own
@@ -3827,6 +3946,13 @@ push_task_repositories() {
                     break
                 fi
             done
+            if [ "$all_remote" = true ] && [ "${#_origin_ready_pending_shas[@]}" -gt 0 ]; then
+                if cmd_complete_gate_publisher_origin_ready publisher_origin_ids "${_origin_ready_pending_shas[@]}"; then
+                    source_equivalent_used=true
+                else
+                    all_remote=false
+                fi
+            fi
             if [ "$all_remote" = true ] && [ -n "$publisher_commit" ]; then
                 # Receipt/worktree marker bind to the published commit so the L4 path proof
                 # compares against the blobs the publisher actually landed.
