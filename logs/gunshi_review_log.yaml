@@ -3540,3 +3540,71 @@
   verified_files:
   - scripts/lib/cli_lookup.sh:codex_update_prompt_screen_matches
   - queue/reports/hayate_report_cmd_karo_hotfix_codex_update_prompt_auto_skip_202609040727.yaml:8
+- adversarial_review:
+    reason: 並走 push は ff-only なので破壊はしないが、lock 待ちで 28s×N が積み上がり WAIT 解消がむしろ遅れる。durable
+      queue+singleflight で封じる
+    required: false
+    verdict: PASS
+  brainwash_check: '#1no #2no(隔離test 17/17+現物 grep 3箇所) #3no #4no #5no #6no #7no #8no
+    数値: flock/setsid 0/1関数, durable 経路 2 箇所実在, monitor poll 20s'
+  causal_chain: 同期 28s 除去→'&' で背景化→耐久性・singleflight なし→monitor 20s poll の再 gate ごとに再試行が並走→lock
+    待ちで解消が遅延/host 再起動で再試行消失。10回繰り返せば push 再試行の負の複利。既存 durable queue に載せれば正の複利
+  cmd_id: cmd_karo_hotfix_t3s40_auto_push_wait_async_202609040724
+  escalation_needed: false
+  fail_reasons:
+  - AC2『durable 非同期化または同期上限化』に対し、実装は cmd_complete_gate_queue_auto_push_ancestry_retry(:3603-3615)の
+    plain '( … ) &' subshell で耐久性なし(gate プロセス消失・host 再起動で再試行が消え retry log のみ)。同ファイルに既存の
+    durable 経路 gate_notify_enqueue(:5494『works even though the original process that
+    enqueued the work is gone』)/queue_postclear_publication_followup(:4819)があるため、そこへ載せよ(LG023
+    既存の仕組みに乗せる)
+  - 'singleflight なし: ninja_monitor.sh:778-781 は ANCESTRY_WAIT の cmd を毎 poll(POLL_INTERVAL=20s)で
+    gate 再実行し、再実行ごとに新しい背景 push 再試行(~28s)を dispatch するため同一 cmd の push_task_repositories
+    が並走・積み上がる。cmd 単位で in-flight 1 本に制限し、fixture で『WAIT 3 回連続→dispatch 1 回』を実証せよ'
+  - 'AC1『本番 WAIT cycle で名前付き span 再確認』は該当 cycle 未発生で未実施(unclear_points で正直申告)。前 task
+    の 28.043s 実測を代替証跡としたことは妥当だが AC 文言の充足は家老 WAIVE か AC 改訂が必要(LG044: 正直報告≠AC充足)'
+  - origin 欄空(precheck WARN)
+  finding_categories:
+  - assumptions
+  - numbers
+  - simulation
+  - premortem
+  - adversarial
+  - ambiguity
+  findings_summary: '4観点: 前提OK(28.043s 残差は前 task 計装値、L4 WAIT 分岐の同期呼び出しを現物確認)/数値OK(軍師隔離
+    worktree abf713276 で test_cmd_complete_gate_source_publish 17/17 PASS、実gate rc=0、precheck
+    ERRORS=0)/検死NG(非耐久 ''&''+singleflight なし=monitor 20s poll で再試行が積み上がる)/完全性NG(AC2
+    の durable 未充足、AC1 は代替証跡)。設計方向(critical path から除去、fail-closed WAIT を先に記録)は正しい'
+  gate_prediction: CLEAR
+  gate_prediction_reason: precheck ERRORS=0。FAIL 理由は AC 充足・設計耐久性(gate 形式外)
+  hole_action: none
+  lesson_quality: OK
+  observations:
+  - '事実1: git show abf713276 → cmd_complete_gate.sh +67/-51、test +107。parent は origin/main
+    祖先。旧 reverify 分岐(同 cycle 内 PASS)は削除され、ancestry WAIT は常に WAIT 記録+背景 dispatch'
+  - '事実2: 軍師隔離 worktree で run_tests.sh file → 17/17 PASS(ok 8 非ブロッキング 8032ms、ok 9
+    失敗時 outcome 記録)。gate_report_format rc=0、precheck ERRORS=0(WARN: infra 対象・忍者3名稼働)'
+  - '事実3: 同ファイル :5494 gate_notify_enqueue は durable queue(enqueue→worker→complete、test
+    ok 11 で gunshi_reflux 経路が使用)。:3603 の新関数は subshell ''&'' のみで flock/singleflight/setsid
+    なし。ninja_monitor.sh:778 は ANCESTRY_WAIT cmd を列挙して再 gate する'
+  operational_simulation:
+    actual: 17/17 PASS / flock・setsid 0 件 / :778-781 で ANCESTRY_WAIT を毎 poll 再 gate
+    command: git worktree add --detach <tmp> abf713276 && bash scripts/run_tests.sh
+      file tests/unit/test_cmd_complete_gate_source_publish.bats; git show abf713276:scripts/cmd_complete_gate.sh
+      | sed -n 3600,3650p | grep -nE 'flock|lock|setsid'; grep -n ANCESTRY_WAIT scripts/ninja_monitor.sh
+    expected: test 全PASS / 再試行に singleflight・耐久化あり / monitor 再実行が dispatch を重複させない
+    result: FAIL
+  origin: '[[cmd_karo_hotfix_t3s40_auto_push_wait_async_202609040724]] -> [[非耐久&+singleflight欠落]]
+    -> [[FAIL implementation]]'
+  report_fingerprint: 1b58bba68beb8d20e693573dc1958cbbecbe6de1feaca965d947c54645ec7542
+  report_ninja: tobisaru
+  report_task_id: cmd_karo_hotfix_t3s40_auto_push_wait_async_202609040724_normal
+  report_verdict: PASS
+  review_type: report
+  reviewed_at: '2026-09-04T07:44:57+09:00'
+  step3_5_verified: true
+  timestamp: '2026-09-04T07:44:57'
+  verdict: FAIL
+  verified_files:
+  - scripts/cmd_complete_gate.sh:3603
+  - scripts/cmd_complete_gate.sh:5494
+  - scripts/ninja_monitor.sh:778
