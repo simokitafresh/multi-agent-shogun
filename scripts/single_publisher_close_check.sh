@@ -145,7 +145,7 @@ def is_push_event(line):
     lower = line.lower()
     if re.search(r"\bpush\s*=\s*0\b", lower) or "result=skip" in lower:
         return False
-    return bool(re.search(r"\bgit(?:\s+-c\s+\S+)?\s+push\b", lower) or
+    return bool(re.search(r"\bgit(?:\s+-c\s+\S+)*\s+push\b", lower) or
                 re.search(r"(?:^|[\s])push(?:[\s=:]|$)", lower))
 
 def classification(source, line):

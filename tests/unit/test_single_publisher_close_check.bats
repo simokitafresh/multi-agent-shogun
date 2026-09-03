@@ -104,6 +104,19 @@ teardown() {
     [[ "$output" == *"runtime_direct_push: sha=$sha subject=runtime direct push classification=runtime.log"* ]]
 }
 
+@test "root direct push condition detects runtime git push with multiple config flags" {
+    printf 'unmarked multi-config runtime\n' > "$FIXTURE_ROOT/multi_config_runtime.txt"
+    git -C "$FIXTURE_ROOT" add multi_config_runtime.txt
+    git -C "$FIXTURE_ROOT" commit -qm 'runtime multi-config direct push'
+    git -C "$FIXTURE_ROOT" push -q origin main
+    sha="$(git -C "$FIXTURE_ROOT" rev-parse HEAD)"
+    printf '[2099-01-01 00:00:01] git -c protocol.version=2 -c push.followTags=true push origin main sha=%s\n' "$sha" > "$RUNTIME_LOG"
+    run bash "$CLOSE" "$START"
+    [ "$status" -eq 1 ]
+    [[ "$output" == *"root_direct_push: FAIL calls=1"* ]]
+    [[ "$output" == *"runtime_direct_push: sha=$sha subject=runtime multi-config direct push classification=runtime.log"* ]]
+}
+
 @test "root direct push condition excludes the publisher runtime path" {
     printf 'publisher runtime\n' > "$FIXTURE_ROOT/publisher.txt"
     git -C "$FIXTURE_ROOT" add publisher.txt
