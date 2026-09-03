@@ -16942,3 +16942,17 @@ sqlite3.Connection.backup()を使うとページ(4096byte)単位のread syscall�
 - **when**: 未設定
 - **how**: 未設定
 - run_tests.shが全fixtureへexportするRUN_TESTS_STATE_ISOLATED/SHOGUN_STATE_DIRを、insight_write.shが明示publisher opt-inとして解釈し通常fixtureをledgerへ送出した。次回はテスト専用環境変数の継承と本番経路選択を分離する回帰確認を追加する。
+
+
+### L1730: sleep-based bounded poll loopは経過時間チェックを『各iteration開始前』に置き、iteration内部の外部呼び出し(python3等のfork)自体もtimeoutで打ち切らないと本番CPU競合下で設定上限を大幅超過する
+- **日付**: 2026-09-03
+- **出典**: cmd_karo_hotfix_t3s40_post_source_perf_202609032243
+- **記録者**: tobisaru
+- **tags**: [infra,cmd-quality,deploy,gate]
+- **subdomain**: infra
+- **target_files**: [scripts/cmd_complete_gate.sh,tests/unit/test_cmd_complete_gate_source_publish.bats]
+- **origin**: [[cmd_karo_hotfix_t3s40_post_source_perf_202609032243]]
+- **enforcement**: 未自動化
+- **when**: 未設定
+- **how**: 未設定
+- cmd_complete_gate_publisher_origin_ready(9ff24e941着地)は『while開始→check→elapsed判定→sleep 0.5』というbounded pollループで、コメント上は『bounded to a short local poll』10s上限のはずだった。しかし経過時間判定はcheck完了『後』にしか行われず、check自体(python3 fork、しかもids/source_shasをloop内で毎回再エンコードする冗長構造)が本番のCPU競合下で数秒〜十数秒に伸びると、1回のiterationだけでtimeout予算を超過し、繰り返せば設定値の3-6倍(実測max59.948s、設定10s)まで超過した。是正は(1)loop不変の計算をloop外へ出す(2)loop内の外部呼び出しは残り予算をtimeoutコマンドで強制付与する、の2点。この構造(『経過時間チェックは仕事の後』+『1回のiteration自体に上限がない』)は他のsleep-basedポーリングloop設計でも再発しうる汎用パターンであり、新規のbounded wait loopを書く際は必ず(1)(2)を満たしているか確認すべき。
