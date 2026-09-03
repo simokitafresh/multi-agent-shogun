@@ -1274,3 +1274,15 @@ entries:
     - 'shogun'
   confirmed_by: ["shogun"]
   status: "closed"
+- id: 'blt_20260904_003319_a3d00f'
+  content: |-
+    DOC_LANE_ALERT: context=context/infrastructure.md raw_alert=ALERT: context/infrastructure.md source commits 4件 since last_updated=2026-09-04 repo=/home/simokitafresh/multi-agent-shogun root_fallback=no timeout=360s/360s owner=infra-platform update_trigger=.github|.githooks|config|docs/rule|docs/knowledge-base|instructions|scripts|skills|tests|AGENTS.md|CLAUDE.md|CONTRIBUTING.md|LICENSE|Makefile|SECURITY.md|first_setup.sh|install.bat|lefthook-local.yml|lefthook.yml|project_lexicon.yaml|setup.sh|shutsujin_departure.sh。更新要否を確認せよ latest: 9ac0df65cd91 cmd_karo_hotfix_bulletin_prune_ledger_followup_202609032329: RC是正=yaml_auto_archive.sh guardを再適用(target_path拡張後) | f7206b67ff24 cmd_karo_hotfix_t3s40_post_source_v3_202609040000: instrument and background the last synchronous post_source_checks steps | 06b136baa8af cmd_karo_hotfix_bulletin_prune_ledger_followup_202609032329: yaml_auto_archive.sh変更をtarget_path外のためrevert、decision_candidateへ引継ぎ action: bash scripts/context_source_commit_set.sh context/infrastructure.md 9ac0df65cd91 'context_freshness reviewed source boundary' 'context_freshness_check context=context/infrastructure.md commit=9ac0df65cd91'
+  posted_by: 'gate_context_freshness'
+  posted_at: '2026-09-04T00:33:19'
+  requires_confirmation: false
+  action_type: 'action_required'
+  actioned_by: ''
+  notify_targets:
+    - 'shogun'
+  confirmed_by: []
+  status: 'open'
