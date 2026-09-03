@@ -71,6 +71,10 @@ count_entries() {
 }
 
 @test "all quality-log writers use the same canonical lock identity" {
+    # cmd_karo_hotfix_t3s40_post_source_v6: the gunshi_verdict update body
+    # moved (not duplicated) to scripts/gate_gunshi_verdict_sync.sh so it can
+    # be launched from a durable worker (nohup+setsid); the lock pattern now
+    # lives there instead of inline in scripts/cmd_complete_gate.sh.
     run bash -c '
         root="$1"
         source "$root/scripts/lib/lock_path.sh"
@@ -80,7 +84,7 @@ count_entries() {
         [[ "$canonical" == "${log}.lock" || "$canonical" == /tmp/shogun_lock_*.lock ]] &&
         grep -Fq '\''LOCK_FILE="$(lock_path "$LOG_FILE")"'\'' "$root/scripts/cmd_quality_log.sh" &&
         grep -Fq '\''exec 201>"$(lock_path "$fp")"'\'' "$root/scripts/yaml_auto_archive.sh" &&
-        grep -Fq '\''200>"$(lock_path "$_GV_DQ_FILE")"'\'' "$root/scripts/cmd_complete_gate.sh"
+        grep -Fq '\''200>"$(lock_path "$_GV_DQ_FILE")"'\'' "$root/scripts/gate_gunshi_verdict_sync.sh"
     ' _ "$PROJECT_ROOT"
     [ "$status" -eq 0 ]
 }

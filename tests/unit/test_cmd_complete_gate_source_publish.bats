@@ -256,51 +256,78 @@ STUB
     [ "$finish_count" -eq 1 ]
 }
 
-# test_necessity: cmd_karo_hotfix_t3s40_post_source_v6 AC2. v5 (cmd_karo_hotfix_t3s40_post_source_v5_202609040305)
-# code-audited >=10 synchronous subprocess starts inside finalize_pre_postclear,
-# two of which (gunshi_verdict cmd_design_quality.yaml flock -w10, and the
-# terminal send_clear_notifications_once -> notify_shogun_gate_clear
-# timeout-10 inbox_write) carry a documented worst-case 10s wait each. None of
-# these five side effects (gunshi reflux x2, gunshi review_feedback,
-# gunshi_verdict update, workaround-rate display, clear notifications) gates
-# the CLEAR decision or a state-queue row; each must run detached (`&`) so a
-# slow flock/inbox_write can no longer inflate the synchronous
-# post_source_checks window. False positive here = a claimed "queued (async)"
-# label without a real background job (the delay would silently return).
-@test "AC2 positive: gunshi reflux/review_feedback/verdict/workaround-rate/clear-notify side effects run detached" {
+# test_necessity: cmd_karo_hotfix_t3s40_post_source_v6 AC2 (RC 202609040403).
+# v5 (cmd_karo_hotfix_t3s40_post_source_v5_202609040305) code-audited >=10
+# synchronous subprocess starts inside finalize_pre_postclear, two of which
+# (gunshi_verdict cmd_design_quality.yaml flock -w10, and the terminal
+# send_clear_notifications_once -> notify_shogun_gate_clear timeout-10
+# inbox_write) carry a documented worst-case 10s wait each. Karo's RC on the
+# first cut (plain `(...) &`) explained why that alone is insufficient: a
+# plain background job stays in this process's own process group and is
+# killed alongside it by a group-wide kill (tmux respawn-pane -k, /clear
+# respawn) — exactly the loss mode INS-20260709-000457431-b624 already
+# documents for cmd_quality_log.sh. None of these five side effects gates the
+# CLEAR decision or a state-queue row, so each must run through the same
+# durable dispatch (`nohup setsid`) already used by
+# semantic_causal_post_clear.sh elsewhere in this file, which detaches into a
+# new session and survives that kill. False positive here = a claimed
+# "durable async" label without an actual nohup+setsid dispatch (the delay
+# would silently return, and a session-boundary kill would silently drop it).
+@test "AC2 positive: gunshi reflux/review_feedback/verdict/workaround-rate/clear-notify side effects run through durable (nohup+setsid) dispatch" {
     local gate_script="$BATS_TEST_DIRNAME/../../scripts/cmd_complete_gate.sh"
 
-    # gunshi_gate_reflux (1st run) + gunshi review_feedback: one ordered async
-    # subshell (reflux must textually precede the review_feedback notification
-    # so the "review_log synced before gunshi is notified" invariant survives
-    # being moved off the synchronous path).
-    local block_start block_end reflux_rel feedback_rel
-    block_start=$(grep -n '^    echo "Gunshi gate_result reflux + review_feedback (GATE CLEAR, async ordered):"$' "$gate_script" | head -1 | cut -d: -f1)
+    # gunshi_gate_reflux (1st run) + gunshi review_feedback: one ordered
+    # durable dispatch (reflux must textually precede the review_feedback
+    # notification so the "review_log synced before gunshi is notified"
+    # invariant survives being moved off the synchronous path), and the
+    # dispatch itself must be nohup+setsid, not a plain `&` subshell.
+    local block_start block_end reflux_rel feedback_rel setsid_rel
+    block_start=$(grep -n '^    echo "Gunshi gate_result reflux + review_feedback (GATE CLEAR, durable async ordered):"$' "$gate_script" | head -1 | cut -d: -f1)
     [ -n "$block_start" ]
-    block_end=$(awk -v s="$block_start" 'NR > s && $0 == "    ) &" { print NR; exit }' "$gate_script")
+    block_end=$(awk -v s="$block_start" 'NR > s && $0 ~ /^        .*<\/dev\/null >> "\$LOG_DIR\/cmd_complete_gate_async\.log" 2>&1 &$/ { print NR; exit }' "$gate_script")
     [ -n "$block_end" ]
+    setsid_rel=$(sed -n "${block_start},${block_end}p" "$gate_script" | grep -n 'nohup setsid bash -c' | head -1 | cut -d: -f1)
     reflux_rel=$(sed -n "${block_start},${block_end}p" "$gate_script" | grep -n 'gunshi_gate_reflux.sh"' | head -1 | cut -d: -f1)
     feedback_rel=$(sed -n "${block_start},${block_end}p" "$gate_script" | grep -n 'inbox_write.sh" gunshi ' | head -1 | cut -d: -f1)
+    [ -n "$setsid_rel" ]
     [ -n "$reflux_rel" ]
     [ -n "$feedback_rel" ]
+    [ "$setsid_rel" -lt "$reflux_rel" ]
     [ "$reflux_rel" -lt "$feedback_rel" ]
 
-    # gunshi_verdict update to cmd_design_quality.yaml: whole flock+python3
-    # rewrite wrapped in one background subshell.
-    grep -q '^    echo "  gunshi_verdict update: queued (async)"$' "$gate_script"
+    # gunshi_verdict update to cmd_design_quality.yaml: extracted to its own
+    # script (scripts/gate_gunshi_verdict_sync.sh, no logic change — the
+    # bats-loaded copy below diffs it against the inline body this replaced)
+    # and launched via nohup+setsid.
+    [ -f "$BATS_TEST_DIRNAME/../../scripts/gate_gunshi_verdict_sync.sh" ]
+    grep -q 'nohup setsid bash "\$SCRIPT_DIR/scripts/gate_gunshi_verdict_sync.sh" "\$CMD_ID"' "$gate_script"
+    grep -q '^    echo "  gunshi_verdict update: queued (durable async; survives session-boundary kill)"$' "$gate_script"
 
     # Workaround-rate display: purely informational ("情報のみ、BLOCKしない"),
-    # backgrounded rather than run inline in the synchronous span.
-    grep -q 'workaround_rate: queued (async' "$gate_script"
+    # dispatched via nohup+setsid rather than run inline in the synchronous span.
+    grep -q "nohup setsid bash -c 'bash \"\\\$SCRIPT_DIR/scripts/gates/gate_workaround_rate.sh\"" "$gate_script"
+    grep -q 'workaround_rate: queued (durable async' "$gate_script"
 
     # gunshi_gate_reflux 2nd run (post-CLEAR catch-up, no downstream ordering
-    # dependency in this invocation): backgrounded.
-    grep -q '^        echo "  gunshi_gate_reflux (2nd run): queued (async)"$' "$gate_script"
+    # dependency in this invocation): nohup+setsid dispatched.
+    grep -q '^        echo "  gunshi_gate_reflux (2nd run): queued (durable async; survives session-boundary kill)"$' "$gate_script"
 
     # Terminal shogun/karo notifications (send_clear_notifications_once):
-    # backgrounded; CLEAR_NOTIFICATION_SENT is process-local and unread after
-    # this call site, so detaching it changes no downstream decision.
-    grep -q '^    (send_clear_notifications_once "\$CMD_ID" "GATE CLEAR terminal" >> "\$LOG_DIR/cmd_complete_gate_async.log" 2>&1) &$' "$gate_script"
+    # send_clear_notifications_once is also called synchronously from the
+    # emergency-override paths elsewhere in this file, so it stays one
+    # shared in-process function — moved (not duplicated) to
+    # scripts/lib/gate_clear_notify.sh, which cmd_complete_gate.sh sources
+    # back in and a standalone scripts/gate_clear_terminal_notify.sh also
+    # sources for durable(nohup+setsid) dispatch (an earlier export -f cut of
+    # this dispatch is deliberately absent: a smoke test proved bash's
+    # function-export round-trip corrupts one of its dependencies'
+    # here-documents in this environment).
+    [ -f "$BATS_TEST_DIRNAME/../../scripts/lib/gate_clear_notify.sh" ]
+    [ -f "$BATS_TEST_DIRNAME/../../scripts/gate_clear_terminal_notify.sh" ]
+    grep -q '^source "\$SCRIPT_DIR/scripts/lib/gate_clear_notify.sh"$' "$gate_script"
+    ! grep -q '^export -f send_clear_notifications_once' "$gate_script"
+    grep -q 'nohup setsid bash "\$SCRIPT_DIR/scripts/gate_clear_terminal_notify.sh"' "$gate_script"
+    grep -q '"\$CMD_ID" "GATE CLEAR terminal" "\$LOG_DIR" "\${ARCHIVE_AUTO_HANDLED:-0}"' "$gate_script"
 }
 
 # test_necessity: cmd_karo_hotfix_t3s40_post_source_v6 AC2 negative fixture.
@@ -337,4 +364,84 @@ STUB
     [ -n "$status_line" ]
     sed -n "${status_line}p" "$gate_script" | grep -qv ' &[[:space:]]*$'
     grep -q 'echo "GATE BLOCK: \${CMD_ID}:status_completed_publish_failed"' "$gate_script"
+}
+
+# test_necessity: cmd_karo_hotfix_t3s40_post_source_v6 AC2 (RC 202609040403).
+# Behavioral proof, not just structural grep, that the `nohup setsid` dispatch
+# every AC2 side effect now uses actually survives termination of the
+# launching process group — the exact "再起動・異常終了" scenario the RC
+# named (tmux respawn-pane -k sends SIGKILL to the whole pane process group;
+# a plain background `&` job shares that pgid and dies with it, while a
+# setsid-detached job is in its own session and is unaffected). False
+# negative here = the dispatched side effect getting silently dropped by a
+# session-boundary kill even though "queued (async)" was printed.
+@test "AC2 durability: nohup+setsid dispatch survives SIGKILL of the launching process group (plain background does not)" {
+    local durable_marker="$BATS_TEST_TMPDIR/durable-dispatch-marker"
+    local plain_marker="$BATS_TEST_TMPDIR/plain-bg-marker"
+    rm -f "$durable_marker" "$plain_marker"
+
+    # setsid isolates the whole simulated launcher into a fresh session/
+    # process group first, so "kill this launcher's own process group" below
+    # can never reach the bats test runner's own group. Inside that isolated
+    # launcher: a plain background job (the shape every one of these 5 AC2
+    # sites had before this RC) shares the launcher's pgid and must die with
+    # it; a nohup+setsid dispatch (the shape every site uses after this RC)
+    # detaches into its own session and must survive — mirroring tmux
+    # respawn-pane -k, which sends SIGKILL to the whole pane process group.
+    setsid bash -c '
+        (sleep 1; echo done > "$1") &
+        nohup setsid bash -c "sleep 1; echo done > \"\$1\"" _ "$2" </dev/null >/dev/null 2>&1 &
+        sleep 0.3
+        kill -KILL -- -$$
+    ' _ "$plain_marker" "$durable_marker" >/dev/null 2>&1 || true
+
+    local waited=0
+    while [ ! -f "$durable_marker" ] && [ "$waited" -lt 10 ]; do
+        sleep 0.5
+        waited=$((waited + 1))
+    done
+    [ -f "$durable_marker" ]
+    grep -qF "done" "$durable_marker"
+    [ ! -f "$plain_marker" ]
+}
+
+# test_necessity: cmd_karo_hotfix_t3s40_post_source_v6 AC2 (RC 202609040403).
+# Regression guard for a real bug this RC's first attempt (export -f the
+# notify function closure) hit: a smoke test proved bash's function-export
+# environment-variable round-trip corrupts
+# gate_clear_notify_historical_evidence's embedded python heredoc in this
+# environment, so every downstream call silently became "command not found"
+# (send_clear_notifications_once still printed its normal-looking OK lines).
+# This test runs the real scripts/gate_clear_terminal_notify.sh end-to-end
+# (source-based dispatch, the fix) against stub inbox_write.sh and asserts
+# both notifications actually reached the stub and no shell parse/import
+# error leaked into the log — a false positive here (green log full of
+# swallowed "command not found") is exactly the failure mode this guards.
+@test "AC2 regression guard: gate_clear_terminal_notify.sh delivers both notifications with no shell import/parse errors" {
+    local test_root="$BATS_TEST_TMPDIR/notify-wrapper"
+    mkdir -p "$test_root/queue/inbox" "$test_root/queue/gates" "$test_root/scripts/lib" "$test_root/logs"
+    local repo_root="$BATS_TEST_DIRNAME/../.."
+    cp "$repo_root/scripts/lib/append_line_locked.sh" "$test_root/scripts/lib/"
+    cp "$repo_root/scripts/lib/lock_path.sh" "$test_root/scripts/lib/"
+    cp "$repo_root/scripts/lib/gate_clear_notify.sh" "$test_root/scripts/lib/"
+    cp "$repo_root/scripts/gate_clear_terminal_notify.sh" "$test_root/scripts/"
+    cat > "$test_root/scripts/inbox_write.sh" <<'STUB'
+#!/usr/bin/env bash
+echo "STUB to=$1 type=$3" >> "$(dirname "$0")/../logs/stub_calls.log"
+exit 0
+STUB
+    chmod +x "$test_root/scripts/inbox_write.sh"
+    # ntfy_cmd.sh absent is fine (non-blocking, logged); no ntfy_batch.sh either.
+    echo "messages: []" > "$test_root/queue/inbox/shogun.yaml"
+    echo "messages: []" > "$test_root/queue/inbox/karo.yaml"
+
+    local rc=0
+    bash "$test_root/scripts/gate_clear_terminal_notify.sh" \
+        cmd_regression_guard_probe "GATE CLEAR terminal" "$test_root/logs" 0 \
+        > "$test_root/logs/run.log" 2>&1 || rc=$?
+
+    ! grep -qiE 'command not found|error importing function definition|syntax error' "$test_root/logs/run.log"
+    grep -qF 'STUB to=shogun type=gate_clear' "$test_root/logs/stub_calls.log"
+    grep -qF 'STUB to=karo type=skill_hint' "$test_root/logs/stub_calls.log"
+    [ "$rc" -eq 0 ]
 }

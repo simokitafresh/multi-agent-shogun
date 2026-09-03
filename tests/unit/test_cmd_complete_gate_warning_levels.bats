@@ -12,16 +12,23 @@ setup_file() {
     [ -f "$SRC_FIELD_GET_SCRIPT" ] || return 1
     command -v python3 >/dev/null 2>&1 || return 1
 
+    # cmd_karo_hotfix_t3s40_post_source_v6: dispatch_gate_notification_async
+    # through send_clear_notifications_once moved (not duplicated) to
+    # scripts/lib/gate_clear_notify.sh (sourced back into $SRC_GATE_SCRIPT),
+    # so those 9 extractions now also search that lib file. karo_gate_block_*
+    # and everything after stayed inline in $SRC_GATE_SCRIPT and are unaffected.
+    export SRC_GATE_CLEAR_NOTIFY_LIB="$PROJECT_ROOT/scripts/lib/gate_clear_notify.sh"
+    [ -f "$SRC_GATE_CLEAR_NOTIFY_LIB" ] || return 1
     {
-        sed -n '/^dispatch_gate_notification_async()/,/^}/p' "$SRC_GATE_SCRIPT"
-        sed -n '/^send_info_cmd_notification()/,/^}/p' "$SRC_GATE_SCRIPT"
-        sed -n '/^gate_clear_notify_dedup_key()/,/^}/p' "$SRC_GATE_SCRIPT"
-        sed -n '/^gate_clear_notify_flag_path()/,/^}/p' "$SRC_GATE_SCRIPT"
-        sed -n '/^gate_clear_notify_historical_evidence()/,/^}/p' "$SRC_GATE_SCRIPT"
-        sed -n '/^gate_clear_notify_claim()/,/^}/p' "$SRC_GATE_SCRIPT"
-        sed -n '/^notify_shogun_gate_clear()/,/^}/p' "$SRC_GATE_SCRIPT"
-        sed -n '/^notify_karo_cmd_complete_skill_hint()/,/^}/p' "$SRC_GATE_SCRIPT"
-        sed -n '/^send_clear_notifications_once()/,/^}/p' "$SRC_GATE_SCRIPT"
+        sed -n '/^dispatch_gate_notification_async()/,/^}/p' "$SRC_GATE_SCRIPT" "$SRC_GATE_CLEAR_NOTIFY_LIB"
+        sed -n '/^send_info_cmd_notification()/,/^}/p' "$SRC_GATE_SCRIPT" "$SRC_GATE_CLEAR_NOTIFY_LIB"
+        sed -n '/^gate_clear_notify_dedup_key()/,/^}/p' "$SRC_GATE_SCRIPT" "$SRC_GATE_CLEAR_NOTIFY_LIB"
+        sed -n '/^gate_clear_notify_flag_path()/,/^}/p' "$SRC_GATE_SCRIPT" "$SRC_GATE_CLEAR_NOTIFY_LIB"
+        sed -n '/^gate_clear_notify_historical_evidence()/,/^}/p' "$SRC_GATE_SCRIPT" "$SRC_GATE_CLEAR_NOTIFY_LIB"
+        sed -n '/^gate_clear_notify_claim()/,/^}/p' "$SRC_GATE_SCRIPT" "$SRC_GATE_CLEAR_NOTIFY_LIB"
+        sed -n '/^notify_shogun_gate_clear()/,/^}/p' "$SRC_GATE_SCRIPT" "$SRC_GATE_CLEAR_NOTIFY_LIB"
+        sed -n '/^notify_karo_cmd_complete_skill_hint()/,/^}/p' "$SRC_GATE_SCRIPT" "$SRC_GATE_CLEAR_NOTIFY_LIB"
+        sed -n '/^send_clear_notifications_once()/,/^}/p' "$SRC_GATE_SCRIPT" "$SRC_GATE_CLEAR_NOTIFY_LIB"
         sed -n '/^karo_gate_block_unread_exists()/,/^}/p' "$SRC_GATE_SCRIPT"
         sed -n '/^notify_karo_gate_block()/,/^}/p' "$SRC_GATE_SCRIPT"
         sed -n '/^notify_karo_cmd_fail()/,/^}/p' "$SRC_GATE_SCRIPT"
@@ -710,6 +717,11 @@ EOF
 }
 
 @test "cmd_complete_gate queues post-CLEAR follow-up before terminal clear notifications" {
+    # cmd_karo_hotfix_t3s40_post_source_v6: the terminal call site now
+    # dispatches send_clear_notifications_once through a durable worker
+    # (scripts/gate_clear_terminal_notify.sh via nohup+setsid) instead of
+    # calling it directly, so this checks for that dispatch call instead of
+    # the literal in-process invocation.
     run python3 - "$SRC_GATE_SCRIPT" <<'PY'
 import sys
 
@@ -720,10 +732,8 @@ queue_heading = text.index(
     clear,
 )
 queue_call = text.index('    queue_postclear_publication_followup', queue_heading)
-terminal_notify = text.index(
-    'send_clear_notifications_once "$CMD_ID" "GATE CLEAR terminal"',
-    queue_call,
-)
+terminal_dispatch_marker = 'nohup setsid bash "$SCRIPT_DIR/scripts/gate_clear_terminal_notify.sh"'
+terminal_notify = text.index(terminal_dispatch_marker, queue_call)
 
 # GATE CLEAR is durable before the post-CLEAR follow-up is queued, and the
 # terminal notification follows the queue proof without waiting for external
@@ -731,7 +741,8 @@ terminal_notify = text.index(
 assert clear < queue_heading < queue_call < terminal_notify
 terminal_queue_section = text[queue_heading:terminal_notify]
 assert 'publish_postclear_runtime_deltas' not in terminal_queue_section
-assert text.count('send_clear_notifications_once "$CMD_ID" "GATE CLEAR terminal"') == 1
+assert text.count(terminal_dispatch_marker) == 1
+assert 'send_clear_notifications_once "$CMD_ID" "GATE CLEAR terminal"' not in text
 PY
     [ "$status" -eq 0 ]
 }
