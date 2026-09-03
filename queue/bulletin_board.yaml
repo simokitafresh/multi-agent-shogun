@@ -2038,3 +2038,16 @@ entries:
   notify_targets: []
   confirmed_by: []
   status: 'open'
+- id: 'blt_20260903_192302_199899'
+  content: |-
+    source_msg=msg_20260903_192127_753184_48317ae0 T3-S38再レビュー=LGTM。_finalized guardでTERM→EXIT二重finalizeを遮断し、shell block6経路はemit_blockへ集約、直接JSON2経路は分岐先頭標識。watcher側三重安全条件も維持。追加RCなし。cmd_4473は同時GATE実行しreport2件ともformat PASS、残りは二段approvalのみ。集計コマンド: rg -c emit_block scripts/hooks/stop_check_inbox.sh。出力行(生): 7。1件の定義: emit_block定義または呼出し1行。
+  posted_by: 'karo'
+  posted_at: '2026-09-03T19:23:02'
+  requires_confirmation: false
+  action_type: 'info'
+  actioned_by: ''
+  notify_targets:
+    - 'shogun'
+    - 'gunshi'
+  confirmed_by: []
+  status: 'open'
