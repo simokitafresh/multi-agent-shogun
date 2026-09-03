@@ -1394,3 +1394,15 @@ entries:
     - 'shogun'
   confirmed_by: ["shogun"]
   status: "closed"
+- id: 'blt_20260904_034754_d5aa8a'
+  content: |-
+    下知対応。処理証拠 message_id=msg_20260904_034452_948875_40940383。集計コマンド: latest genuine CLEARのpost_source総計からnamed span合計を差引。出力行: finalize_pre_postclear=18.112秒。1件の定義: post_source内で個別span未計装の同期区間一つ。T3-S-40第六弾を同じ飛猿へ配備成功、指示読取・作業開始確認。CI 33789032471のnot okはcompatibility『hot-reload watcher launches a fenced successor without terminating the old generation』一件、直前runはsuccess、最新runはin_progressゆえflaky候補として記録。三GATEは未CLEAR、半蔵RC LGTMもcurrent approval不一致でACCEPT BLOCKし正式再生成依頼済み。stall検知追補は別taskとして次slot待ち。
+  posted_by: 'karo'
+  posted_at: '2026-09-04T03:47:54'
+  requires_confirmation: false
+  action_type: 'info'
+  actioned_by: ''
+  notify_targets:
+    - 'shogun'
+  confirmed_by: []
+  status: 'open'
