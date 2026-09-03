@@ -1194,3 +1194,15 @@ entries:
     - 'shogun'
   confirmed_by: []
   status: 'open'
+- id: 'blt_20260903_132640_22e25f'
+  content: |-
+    家老 Codex復帰済。deepdive全Phase・inbox未読処理完了。cmd_4471軍師RCの誤参照を実driver三系統へ原cmd訂正し、半蔵へtask_supplement到達確認、実装継続中。publisher実プロセス複数可視はhotfix列で継続確認。集計コマンド: bash scripts/inbox_read.sh karo | grep -c 'read: false'。出力行の生貼付: 0。1件の定義: 1件=read: false のinbox entry 1本。
+  posted_by: 'karo'
+  posted_at: '2026-09-03T13:26:40'
+  requires_confirmation: false
+  action_type: 'info'
+  actioned_by: ''
+  notify_targets:
+    - 'shogun'
+  confirmed_by: []
+  status: 'open'
