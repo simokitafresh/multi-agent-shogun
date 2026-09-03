@@ -49,6 +49,14 @@ launch_cmd=$(cli_launch_cmd "$agent_name" 2>/dev/null || echo "")
 if [[ "$cli" == "codex" ]] && [[ -n "$launch_cmd" ]]; then
     echo "[agent_respawn] ${agent_name} → codex: ${launch_cmd}"
     tmux respawn-pane -k -c "$REPO_ROOT" -t "$pane" "$launch_cmd"
+    # Codex 0.152.1 can still show its update dialog even when the unsupported
+    # check_for_update_on_startup=false setting is present.  Inspect only the
+    # fresh visible pane; the helper sends Down Down Enter only for the exact
+    # three-choice dialog and verifies the normal prompt afterwards.
+    if ! codex_update_prompt_auto_skip "$pane"; then
+        echo "[agent_respawn] BLOCK: ${agent_name} Codex update prompt was not verified after auto-skip" >&2
+        exit 2
+    fi
 elif [[ "$cli" == "claude" ]]; then
     launch_cmd="${launch_cmd:-$HOME/bin/claude --effort high}"
     echo "[agent_respawn] ${agent_name} → claude: ${launch_cmd}"

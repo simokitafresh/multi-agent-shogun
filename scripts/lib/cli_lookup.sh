@@ -22,6 +22,15 @@ unset _cli_lookup_self
 _CLI_LOOKUP_SETTINGS="${CLI_ADAPTER_SETTINGS:-${CLI_LOOKUP_SETTINGS:-${_CLI_LOOKUP_DIR}/config/settings.yaml}}"
 _CLI_LOOKUP_PROFILES="${CLI_LOOKUP_PROFILES:-${_CLI_LOOKUP_DIR}/config/cli_profiles.yaml}"
 
+# Confirmation structure is owned by the shared pane guard.  Keep Codex
+# update handling on that same boundary so this library never grows a second
+# structural prompt detector with different false-positive behavior.
+_CLI_LOOKUP_CONFIRMATION_GUARD="${_CLI_LOOKUP_DIR}/scripts/lib/pane_confirmation_guard.sh"
+if [[ -f "$_CLI_LOOKUP_CONFIRMATION_GUARD" ]]; then
+    # shellcheck source=scripts/lib/pane_confirmation_guard.sh
+    source "$_CLI_LOOKUP_CONFIRMATION_GUARD"
+fi
+
 # キャッシュ（連想配列、bash 4+）
 # re-source時にキャッシュをクリアし、declare -gAでグローバルスコープに宣言
 # （関数内からsourceされた場合でもグローバルになるよう -g フラグを使用）
@@ -729,4 +738,101 @@ codex_capture_model_effort() {
         *) effort="" ;;
     esac
     printf '%s|%s\n' "$model" "$effort"
+}
+
+# codex_update_prompt_screen_matches <capture>
+# Codex の起動直後に表示される update dialog を、可視画面の構造でのみ
+# 判定する。単に「Update available」や選択肢の文言を含む説明文では入力を
+# 送らない。3択の第3項が Skip until next version であることまで一致した
+# 場合だけ、Down Down Enter の安全な解除シーケンスを許可する。
+codex_update_prompt_screen_matches() {
+    local screen="${1:-}"
+    [ -n "$screen" ] || return 1
+
+    # The shared guard owns visible-screen/dialog structure.  This function
+    # only adds the Codex update semantics needed to choose option 3 safely.
+    declare -F _pane_confirmation_screen_has_prompt >/dev/null 2>&1 || return 1
+    _pane_confirmation_screen_has_prompt "$screen" || return 1
+
+    printf '%s\n' "$screen" | awk '
+        function choice(line, number, label) {
+            return line ~ ("^[[:space:]]*[❯›>]?[[:space:]]*" number "\\.[[:space:]]+" label "[[:space:]]*$")
+        }
+        {
+            sub(/\r$/, "", $0)
+            lines[NR] = $0
+        }
+        END {
+            for (i = 1; i <= NR; i++) {
+                # Versioned heading and ordered labels identify the Codex
+                # update meaning; structural dialog detection is delegated to
+                # pane_confirmation_guard.sh above.
+                if (lines[i] !~ /^[[:space:]]*Update available![[:space:]]+[0-9][0-9A-Za-z._-]*[[:space:]]*->[[:space:]]*[0-9][0-9A-Za-z._-]*[[:space:]]*$/) {
+                    continue
+                }
+
+                first = second = third = 0
+                for (j = i + 1; j <= NR && j <= i + 4; j++) {
+                    if (choice(lines[j], 1, "Update now")) { first = j; break }
+                }
+                if (!first) continue
+                for (j = first + 1; j <= NR && j <= first + 4; j++) {
+                    if (choice(lines[j], 2, "Skip")) { second = j; break }
+                }
+                if (!second) continue
+                for (j = second + 1; j <= NR && j <= second + 4; j++) {
+                    if (choice(lines[j], 3, "Skip until next version")) { third = j; break }
+                }
+                if (third) exit 0
+            }
+            exit 1
+        }'
+}
+
+# codex_update_prompt_screen_is_ready <capture>
+# auto-skip 後に通常の Codex 入力待ちへ戻ったことを確認する。
+codex_update_prompt_screen_is_ready() {
+    local screen="${1:-}"
+    [ -n "$screen" ] || return 1
+    printf '%s\n' "$screen" | grep -Eq '^[[:space:]]*›[[:space:]]+Ask Codex to do anything[[:space:]]*$|^[[:space:]]*›[[:space:]]*$' || return 1
+    ! printf '%s\n' "$screen" | grep -Eq 'esc to interrupt|Working \(|Running [0-9]+ [A-Za-z]* ?hooks?|SessionStart hook'
+}
+
+# codex_update_prompt_auto_skip <pane_target>
+# respawn 直後の短い監視窓だけで update dialog を解除する。
+# 戻り値: 0=dialogなし/解除+通常prompt確認済み、1=dialogを検知したが確認失敗。
+# dialog未検知時は何も送らず、既存の通常respawnを妨げない。
+codex_update_prompt_auto_skip() {
+    local pane_target="$1"
+    local tmux_bin="${CODEX_UPDATE_PROMPT_TMUX_BIN:-tmux}"
+    local attempts="${CODEX_UPDATE_PROMPT_WAIT_ATTEMPTS:-12}"
+    local delay="${CODEX_UPDATE_PROMPT_WAIT_DELAY_SECONDS:-0.25}"
+    local verify_attempts="${CODEX_UPDATE_PROMPT_VERIFY_ATTEMPTS:-12}"
+    local screen="" matched=0 i j
+
+    [[ "$attempts" =~ ^[0-9]+$ && "$attempts" -gt 0 ]] || attempts=12
+    [[ "$verify_attempts" =~ ^[0-9]+$ && "$verify_attempts" -gt 0 ]] || verify_attempts=12
+
+    for ((i = 1; i <= attempts; i++)); do
+        screen=$("$tmux_bin" capture-pane -t "$pane_target" -p 2>/dev/null || true)
+        if codex_update_prompt_screen_matches "$screen"; then
+            matched=1
+            break
+        fi
+        sleep "$delay"
+    done
+
+    # Normal startup has no update dialog; do not inject keys into its prompt.
+    [ "$matched" -eq 1 ] || return 0
+
+    "$tmux_bin" send-keys -t "$pane_target" Down Down Enter || return 1
+    for ((j = 1; j <= verify_attempts; j++)); do
+        screen=$("$tmux_bin" capture-pane -t "$pane_target" -p 2>/dev/null || true)
+        if codex_update_prompt_screen_is_ready "$screen"; then
+            return 0
+        fi
+        sleep "$delay"
+    done
+
+    return 1
 }

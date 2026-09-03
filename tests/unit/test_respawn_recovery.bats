@@ -381,3 +381,102 @@ SH
   [ "$status" -ne 0 ]
   [ "$(<"$root/captures")" -eq 3 ]
 }
+
+# test_necessity: Codex update auto-skip must emit exactly one Down Down Enter only for the exact three-choice dialog and require normal-prompt recovery.
+# regression_justification: the live 0.152.1 dialog bypassed check_for_update_on_startup=false twice and stopped two panes; this contract prevents prompt/input corruption.
+@test "Codex update dialog auto-skip requires exact structure and verifies normal prompt" {
+  repo="$BATS_TEST_DIRNAME/../.."
+  cat > "$root/tmux-update" <<'SH'
+#!/usr/bin/env bash
+case "$1" in
+  capture-pane)
+    count=$(<"$FIXTURE_CAPTURE_COUNT")
+    count=$((count + 1))
+    printf '%s\n' "$count" > "$FIXTURE_CAPTURE_COUNT"
+    if [ "$count" -eq 1 ]; then
+      printf 'Update available! 0.151.0 -> 0.152.0\n› 1. Update now\n  2. Skip\n  3. Skip until next version\n'
+    else
+      printf '› Ask Codex to do anything\n  gpt-5.6-luna high · Context 0%% used\n'
+    fi
+    ;;
+  send-keys)
+    printf '%s\n' "$*" >> "$FIXTURE_SENDS"
+    ;;
+esac
+SH
+  chmod +x "$root/tmux-update"
+  printf '0\n' > "$root/captures"
+  : > "$root/sends"
+  export FIXTURE_CAPTURE_COUNT="$root/captures" FIXTURE_SENDS="$root/sends"
+
+  run env CODEX_UPDATE_PROMPT_TMUX_BIN="$root/tmux-update" \
+    CODEX_UPDATE_PROMPT_WAIT_DELAY_SECONDS=0 CODEX_UPDATE_PROMPT_VERIFY_ATTEMPTS=2 \
+    bash -c 'source "$1/scripts/lib/cli_lookup.sh"; codex_update_prompt_auto_skip pane' _ "$repo"
+  [ "$status" -eq 0 ]
+  [ "$(wc -l < "$root/sends")" -eq 1 ]
+  grep -q 'send-keys -t pane Down Down Enter' "$root/sends"
+}
+
+@test "Codex update auto-skip sends no keys for normal, survey, working, or incomplete screens" {
+  repo="$BATS_TEST_DIRNAME/../.."
+  cat > "$root/tmux-no-update" <<'SH'
+#!/usr/bin/env bash
+case "$1" in
+  capture-pane) printf '%s\n' "$FIXTURE_SCREEN" ;;
+  send-keys) printf '%s\n' "$*" >> "$FIXTURE_SENDS" ;;
+esac
+SH
+  chmod +x "$root/tmux-no-update"
+  : > "$root/sends"
+  export FIXTURE_SENDS="$root/sends"
+  for fixture in \
+    $'› Ask Codex to do anything\n  gpt-5.6-luna high · Context 0% used' \
+    $'How is Claude doing this session? (optional)\n  1 Bad\n  2 Fine\n  3 Good\n  0 Dismiss' \
+    $'› Ask Codex to do anything\n  gpt-5.6-luna high · Context 0% used\n◦ Working (10s)' \
+    $'Update available! 0.151.0 -> 0.152.0\n› 1. Update now\n  2. Skip until next version\n  3. Never'; do
+    export FIXTURE_SCREEN="$fixture"
+    run env CODEX_UPDATE_PROMPT_TMUX_BIN="$root/tmux-no-update" \
+      CODEX_UPDATE_PROMPT_WAIT_ATTEMPTS=1 CODEX_UPDATE_PROMPT_WAIT_DELAY_SECONDS=0 \
+      bash -c 'source "$1/scripts/lib/cli_lookup.sh"; codex_update_prompt_auto_skip pane' _ "$repo"
+    [ "$status" -eq 0 ]
+  done
+  [ ! -s "$root/sends" ]
+}
+
+@test "Codex update auto-skip delegates structure to shared pane guard" {
+  repo="$BATS_TEST_DIRNAME/../.."
+  cat > "$root/tmux-guard-block" <<'SH'
+#!/usr/bin/env bash
+case "$1" in
+  capture-pane) printf 'Update available! 0.151.0 -> 0.152.0\n› 1. Update now\n  2. Skip\n  3. Skip until next version\n' ;;
+  send-keys) printf '%s\n' "$*" >> "$FIXTURE_SENDS" ;;
+esac
+SH
+  chmod +x "$root/tmux-guard-block"
+  : > "$root/sends"
+  export FIXTURE_SENDS="$root/sends"
+  run env CODEX_UPDATE_PROMPT_TMUX_BIN="$root/tmux-guard-block" \
+    CODEX_UPDATE_PROMPT_WAIT_ATTEMPTS=1 CODEX_UPDATE_PROMPT_WAIT_DELAY_SECONDS=0 \
+    bash -c 'source "$1/scripts/lib/cli_lookup.sh"; _pane_confirmation_screen_has_prompt() { return 1; }; codex_update_prompt_auto_skip pane' _ "$repo"
+  [ "$status" -eq 0 ]
+  [ ! -s "$root/sends" ]
+}
+
+@test "Codex update auto-skip fails closed when normal prompt is not restored" {
+  repo="$BATS_TEST_DIRNAME/../.."
+  cat > "$root/tmux-stuck-update" <<'SH'
+#!/usr/bin/env bash
+case "$1" in
+  capture-pane) printf 'Update available! 0.151.0 -> 0.152.0\n› 1. Update now\n  2. Skip\n  3. Skip until next version\n' ;;
+  send-keys) printf '%s\n' "$*" >> "$FIXTURE_SENDS" ;;
+esac
+SH
+  chmod +x "$root/tmux-stuck-update"
+  : > "$root/sends"
+  export FIXTURE_SENDS="$root/sends"
+  run env CODEX_UPDATE_PROMPT_TMUX_BIN="$root/tmux-stuck-update" \
+    CODEX_UPDATE_PROMPT_WAIT_DELAY_SECONDS=0 CODEX_UPDATE_PROMPT_VERIFY_ATTEMPTS=1 \
+    bash -c 'source "$1/scripts/lib/cli_lookup.sh"; codex_update_prompt_auto_skip pane' _ "$repo"
+  [ "$status" -ne 0 ]
+  [ "$(wc -l < "$root/sends")" -eq 1 ]
+}
