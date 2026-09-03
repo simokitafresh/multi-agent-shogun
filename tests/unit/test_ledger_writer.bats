@@ -83,12 +83,48 @@ PY
   [ "$status" -eq 0 ]
 }
 @test "review log append permits repeated reviews for one command" {
-  make_entry cmd-review repeated
+  printf '%s\n' '- cmd_id: cmd-review' '  review_type: report' '  reviewed_at: first' > "$TEST_ROOT/entry.yaml"
+  printf '%s\n' '- cmd_id: cmd-review' '  review_type: report' '  reviewed_at: second' > "$TEST_ROOT/entry-second.yaml"
   op1="$(env LEDGER_SOURCE_FILE="$TEST_ROOT/logs/gunshi_review_log.yaml" writer append review_log "$TEST_ROOT/entry.yaml")"
-  op2="$(env LEDGER_SOURCE_FILE="$TEST_ROOT/logs/gunshi_review_log.yaml" writer append review_log "$TEST_ROOT/entry.yaml")"
+  op2="$(env LEDGER_SOURCE_FILE="$TEST_ROOT/logs/gunshi_review_log.yaml" writer append review_log "$TEST_ROOT/entry-second.yaml")"
   env LEDGER_SOURCE_FILE="$TEST_ROOT/logs/gunshi_review_log.yaml" writer apply "$op1" >/dev/null
   env LEDGER_SOURCE_FILE="$TEST_ROOT/logs/gunshi_review_log.yaml" writer apply "$op2" >/dev/null
   [ "$(grep -c 'cmd-review' "$TEST_ROOT/logs/gunshi_review_log.yaml")" -eq 2 ]
+}
+
+# test_necessity: the residual retry contract must support production list-root
+# review logs, make exact operation replay idempotent, and keep invalid roots
+# fail-closed after the origin/main list-root fix.
+@test "review-log residual replay is idempotent and empty-list compatible" {
+  printf '%s\n' '- cmd_id: cmd-existing' '  review_type: report' > "$TEST_ROOT/logs/gunshi_review_log.yaml"
+  printf '%s\n' '- cmd_id: cmd-batch' '  review_type: report' > "$TEST_ROOT/entry.yaml"
+  op="$(env LEDGER_SOURCE_FILE="$TEST_ROOT/logs/gunshi_review_log.yaml" writer append review_log "$TEST_ROOT/entry.yaml")"
+  env LEDGER_SOURCE_FILE="$TEST_ROOT/logs/gunshi_review_log.yaml" writer apply "$op" >/dev/null
+  before="$(sha256sum "$TEST_ROOT/logs/gunshi_review_log.yaml" | awk '{print $1}')"
+  replay="$STATE_DIR/replay-op.yaml"
+  cp "$STATE_DIR/ledger_inbox/review_log/applied/$(basename "$op")" "$replay"
+  run env LEDGER_SOURCE_FILE="$TEST_ROOT/logs/gunshi_review_log.yaml" writer apply "$replay"
+  [ "$status" -eq 0 ]
+  after="$(sha256sum "$TEST_ROOT/logs/gunshi_review_log.yaml" | awk '{print $1}')"
+  [ "$before" = "$after" ]
+  [ "$(grep -c 'cmd-batch' "$TEST_ROOT/logs/gunshi_review_log.yaml")" -eq 1 ]
+
+  printf '[]\n' > "$TEST_ROOT/logs/gunshi_review_log.yaml"
+  empty_op="$(env LEDGER_SOURCE_FILE="$TEST_ROOT/logs/gunshi_review_log.yaml" writer append review_log "$TEST_ROOT/entry.yaml")"
+  run env LEDGER_SOURCE_FILE="$TEST_ROOT/logs/gunshi_review_log.yaml" writer apply "$empty_op"
+  [ "$status" -eq 0 ]
+  run python3 - "$TEST_ROOT/logs/gunshi_review_log.yaml" <<'PY'
+import sys, yaml
+rows = yaml.safe_load(open(sys.argv[1], encoding="utf-8"))
+assert rows == [{"cmd_id": "cmd-batch", "review_type": "report"}], rows
+PY
+  [ "$status" -eq 0 ]
+
+  printf '%s\n' 'root: mapping' > "$TEST_ROOT/logs/gunshi_review_log.yaml"
+  bad_op="$(env LEDGER_SOURCE_FILE="$TEST_ROOT/logs/gunshi_review_log.yaml" writer append review_log "$TEST_ROOT/entry.yaml")"
+  run env LEDGER_SOURCE_FILE="$TEST_ROOT/logs/gunshi_review_log.yaml" writer apply "$bad_op"
+  [ "$status" -ne 0 ]
+  [[ "$output" == *"unexpected root shape"* ]]
 }
 
 # test_necessity: review-log operation identity must follow canonical cmd_id
