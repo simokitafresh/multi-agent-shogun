@@ -16823,3 +16823,10 @@ insights:
   status: "resolved"
   action_artifact: "semantic_map=/home/simokitafresh/multi-agent-shogun/context/semantic-map.md;semantic_index=/home/simokitafresh/multi-agent-shogun/docs/semantic-index/index.md"
   resolved_reason: "semantic map generation verified the candidate is represented or intentionally ignored"
+- id: INS-20260903-231227353-cc16
+  ts: "2026-09-03T23:12:27+09:00"
+  insight: "[[task scoped test run b9rfj4orr の完了を確認し]] semantic_stress_test candidate_aliases: NO_MATCH source=lord query=task-scoped test run (b9rfj4orr) の完了を確認し、報告YAML作成へ進め"
+  priority: "low"
+  source: "semantic_stress_test"
+  fix_known: false
+  status: pending
