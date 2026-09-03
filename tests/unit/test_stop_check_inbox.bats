@@ -1156,10 +1156,18 @@ YAML
     write_review_approval_report_fixture cmd_9999 queue/reports/hayate_report_cmd_9999.yaml
     write_review_approval_records cmd_9999 queue/reports/hayate_report_cmd_9999.yaml
 
-    PAYLOAD='{"stop_hook_active":false}' TEST_PROJECT_PATH="$TEST_PROJECT" run bash -c '
+    # cmd_karo_hotfix_inbox_unread_source_202609031435 RC是正: このtestはCI_READINESS_CACHEを
+    # 指定していなかったため、既定値の共有/tmp/last_ci_notify_state(実ホストのci_status_check.sh
+    # デーモンが書く本物のCI状態キャッシュ)を読んでいた。実CIがRED直後(TTL内)にこのtestが走ると
+    # CI RED分岐が先に成立し、期待する「承認済み・GATE自動処理待ち」文言が出ずFAILする
+    # (実測: 2026-09-03 /tmp/last_ci_notify_state=failure:33718237903 でFAIL再現)。
+    # 他のCI関連testと同じくtest専用path(未作成=キャッシュなし=CI RED扱いされない)を渡して隔離する。
+    _ci_cache="$TEST_ROOT/ci_state"
+
+    CI_READINESS_CACHE="$_ci_cache" PAYLOAD='{"stop_hook_active":false}' TEST_PROJECT_PATH="$TEST_PROJECT" run bash -c '
 set -euo pipefail
 TMUX_AGENT_ID="karo"
-printf "%s" "$PAYLOAD" | "$TEST_PROJECT_PATH/scripts/hooks/stop_check_inbox.sh"
+printf "%s" "$PAYLOAD" | CI_READINESS_CACHE="$CI_READINESS_CACHE" "$TEST_PROJECT_PATH/scripts/hooks/stop_check_inbox.sh"
 '
     [ "$status" -eq 0 ]
     [[ "$output" == *"承認済み・GATE自動処理待ち"* ]]
@@ -1184,10 +1192,14 @@ YAML
     write_review_approval_report_fixture cmd_9999 queue/reports/hayate_report_cmd_9999.yaml
     # 承認記録(gunshi.yaml/karo.yaml)は書き込まない = 未承認状態
 
-    PAYLOAD='{"stop_hook_active":false}' TEST_PROJECT_PATH="$TEST_PROJECT" run bash -c '
+    # cmd_karo_hotfix_inbox_unread_source_202609031435 RC是正: T-SCI-REVIEW-APPROVED-001と同じ理由で
+    # 共有/tmp/last_ci_notify_stateから隔離する(詳細は同ファイルの001コメント参照)。
+    _ci_cache="$TEST_ROOT/ci_state"
+
+    CI_READINESS_CACHE="$_ci_cache" PAYLOAD='{"stop_hook_active":false}' TEST_PROJECT_PATH="$TEST_PROJECT" run bash -c '
 set -euo pipefail
 TMUX_AGENT_ID="karo"
-printf "%s" "$PAYLOAD" | "$TEST_PROJECT_PATH/scripts/hooks/stop_check_inbox.sh"
+printf "%s" "$PAYLOAD" | CI_READINESS_CACHE="$CI_READINESS_CACHE" "$TEST_PROJECT_PATH/scripts/hooks/stop_check_inbox.sh"
 '
     [ "$status" -eq 0 ]
     [[ "$output" == *"報告レビュー/GATE処理を進めよ"* ]]
