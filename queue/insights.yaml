@@ -16107,3 +16107,10 @@ insights:
   source: "lord_conversation:lesson_candidate"
   fix_known: false
   status: pending
+- id: INS-20260903-134935435-75ae
+  ts: "2026-09-03T13:49:35+09:00"
+  insight: "[[X運用P1のdraft→gate→承認待ち→OAuth投稿をx post shへ接続し]] NO_MATCH purpose pending alias: cmd_complete時にdeploy_task.logでNO_MATCHだったpurpose。類似概念TOP3: hook_automation_framework(Hook自動化フレームワーク; alias=post-bash-combined; score=14.0) / dmsignal_fe_experience_deploy(DM-Signal体感主導デプロイ; alias=post-deploy FE正しさ検分; score=13.9) / agent_formation_management(編成管理; alias=post_deploy_check; score=13.7)。既存概念aliasesへの自動昇格候補"
+  priority: "low"
+  source: "semantic_index_update"
+  fix_known: false
+  status: pending
