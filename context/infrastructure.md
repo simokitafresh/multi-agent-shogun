@@ -1,5 +1,6 @@
 # インフラコンテキスト
-<!-- last_updated: 2026-09-03 registry hotfix 反映 -->
+<!-- last_updated: 2026-09-03 complete gate 非同期化反映 -->
+<!-- source_commit:9ff24e941eae reason:complete gate 非同期化反映 evidence:context_freshness_check context=context/infrastructure.md commit=9ff24e941eae -->
 <!-- source_commit:16521692a3f1 reason:registry hotfix 反映 evidence:context_freshness_check context=context/infrastructure.md commit=16521692a3f1 -->
 <!-- source_commit:22f382b65 reason:T3-S-38 根治反映 evidence:context_freshness_check context=context/infrastructure.md commit=22f382b65 -->
 <!-- source_commit:822317d83dbd reason:report/artifact identity 分離反映 evidence:context_freshness_check context=context/infrastructure.md commit=822317d83dbd -->
@@ -60,7 +61,7 @@
 <!-- source_commit:e7c3beb64085 reason:2026-09-02 将軍 doc lane: ancestry 後退検出を push_lane/pre-push へ接続(efc16dcd6/e7c3beb64) evidence:CLEAR 03:02/03:09; safe_ff BLOCK 実証 02:50 -->
 <!-- source_commit:a7cb1ca59831 reason:2026-09-02 将軍 doc lane: legacy outbox envelope 移行 a7cb1ca59(T224 追補) evidence:commit a7cb1ca59; DOC_LANE_ALERT blt_022445 -->
 <!-- source_commit:64f01517a70b reason:2026-09-02 将軍 doc lane: U1 f92d1e376 + ancestry 後退 BLOCK 64f01517a evidence:commits f92d1e376/64f01517a; CLEAR 01:54/02:08; 消失 2 回目 16d831ed9 を復元 -->
-<!-- last_synced_lesson: L1727 -->
+<!-- last_synced_lesson: L1728 -->
 <!-- source_commit:593cfb27a612 reason:2026-09-02 将軍 doc lane: U9 safe_ff 既公開 ours merge 除外 593cfb27a evidence:commit 593cfb27a; CLEAR 01:20; integrate c7710efaf on origin/main -->
 <!-- source_commit:458fc4caa91a reason:2026-09-02 将軍 doc lane: U3 msg_id 限定 receipt 458fc4caa evidence:commit 458fc4caa; CLEAR 01:05; staged 11→0; watcher 9/9 restart 01:06 -->
 <!-- source_commit:4dd6898466a27f10ef7d08ed27549b3c095378de reason:2026-09-01 将軍 doc lane: CI RED #6 Integration ci_fix 59fa70e0b evidence:commit 59fa70e0b; CLEAR 22:57 -->
@@ -194,7 +195,7 @@
 <!-- source_commit:f8c49cbd7 reason:cmd_shogun_commit_reservation_ledger_phase1_20260805 evidence:reviewed -->
 <!-- source_commit:515f0214e reason:cmd_karo_hotfix_ga432_context_freshness reviewed source boundary evidence:cmd_complete_gate project=infra context=context/infrastructure.md commit=515f0214e -->
 <!-- source_commit:23a1ce61205ce4496ab11570583e8e8adcaeac4e reason:reflux backlink SSOT update reviewed evidence:incoming 0 to 1; runner69/69; target doc diff0 -->
-<!-- last_synced_lesson: L1727 -->
+<!-- last_synced_lesson: L1728 -->
 
 結論: 本ファイルは検索起点となる索引層。運用詳細・経緯・教訓本文は7つの詳細正本へ移設した。
 source boundary一致taskはregistryのowner/update_triggerからcontext_update_candidatesを自動注入し、未処理候補はcmd_complete_gateがBLOCK、明示処理済み/無関係はCLEAR。
@@ -245,7 +246,7 @@ source boundary一致taskはregistryのowner/update_triggerからcontext_update_
 結論: 詳細は `docs/research/infrastructure-lessons-reviews-operations.md` に保存。原文を省略せず移設済み。
 見出し: 前節「Infra教訓索引」の連続本文（source lines 1701-2123）。
 - L1503: 既存legacy欠損は不変multisetで隔離せよ（cmd_karo_hotfix_shared_operational_log_ownership_20260801）
-<!-- last_synced_lesson: L1727 -->
+<!-- last_synced_lesson: L1728 -->
 - L1504: appendとarchiveはreaderを含むgeneration transactionにせよ（cmd_karo_hotfix_gunshi_cs_remediation_generation_20260801）
 - L1505: 永続test宣言はtask正本に置く（cmd_4206）
 - L1506: active context DEFERはowner存在だけでなくdirty・baseline変化・fresh leaseの全ANDにせよ（cmd_karo_hotfix_active_context_gate_transient_20260801）
@@ -468,6 +469,7 @@ source boundary一致taskはregistryのowner/update_triggerからcontext_update_
 - L1725: X投稿draft生成のLLM呼び出しはsystem_promptをstdinへ混在させるとClaude CLIが前置き/見出し/区切り線を書きやすい。--system-promptで分離注入すると顕著に減る（cmd_karo_hotfix_x_draft_generation_contract_202609031802）
 - L1726: X投稿draft生成のLLM呼び出しはsystem_promptをstdinへ混在させるとClaude CLIが前置き/見出し/区切り線を書きやすい。--system-promptで分離注入すると顕著に減る（cmd_karo_hotfix_x_draft_generation_contract_202609031802）
 - L1727: gunshi_review_log.yamlのフィールド名drift(reviewed_at→timestamp)が既存fallback判定を静かに無効化した（cmd_karo_hotfix_stale_review_notification_supersede_202609031859）
+- L1728: 実行されるsource単位へhelperを配置する（cmd_karo_hotfix_await_clear_slot_release_202609031920）
 
 ## 設計標準・テスト・因果
 
@@ -634,6 +636,8 @@ source boundary一致taskはregistryのowner/update_triggerからcontext_update_
 - **U11 root sync の reason=unknown 分岐漏れ根治(小太郎 `cmd_karo_hotfix_u11_unknown_reason_branch_202609031635` be30f9808、publisher 発行 16:54)**: `scripts/publisher.sh` の root sync で、driver 無し dirty path が incoming と重なる場合に第 4 経路へ落ちて `root_sync_skipped reason=unknown`(events seq 679/693)を出していた分岐漏れを、AC1 の 3 分岐(ff / driver 3-way / no_driver skip)へ閉じ、events の reason 文字列を契約 bats に固定。
 - **publisher rc31 の origin 祖先判定(影丸 `cmd_karo_hotfix_publisher_rc31_origin_ancestor_202609031708` f35982096、publisher 発行 17:28)**: `scripts/publisher.sh` は request の成果 commit が origin/main の ancestor なら missing artifact(rc31)を出さず already_published として events に記録し家老へ通知しない(16:09/16:24 の偽 rc31 通知 2 回の根治)。ancestor 判定は fetch 後の origin/main で行う(ローカル main は不可)。
 - **deploy_task の code task は path 未宣言でも task worktree を既定 ON(小太郎 `cmd_karo_hotfix_deploy_yaml_worktree_default_202609031708` 4e60ff1e1、publisher 発行 17:59)**: hotfix/impl/ci_fix の task が target_path/planned_paths を一切宣言しないと source_path_count=0 で task_worktree_required=false のまま skip され、忍者の実装 commit が shared root HEAD へ直接作られていた(実例 3516dfccc=watchdog parent pid hotfix)。未宣言時のみ worktree を強制し、宣言済みの既存判定(no-code 例外含む)は不変。bats `tests/unit/test_deploy_task_yaml_injection.bats` +127 行。tsumari 型 1(root writer 複数)の発生源 1 つを閉じる。
+- **report completed の忍者は CLEAR 前でも配備可(await_clear slot release、影丸 `cmd_karo_hotfix_await_clear_slot_release_202609031920` 53ed713ff、publisher 発行 20:13、T3-S-32)**: ninja_monitor は task in_progress ∧ report completed を runtime_state=await_clear とし(陣形図 RUNTIME:await_clear)、STAGE1 の /clear 禁止を解除。deploy_task は `deploy_task_current_report_is_await_clear` で同状態の slot への新 task 配備を許可(旧 GA-257 の in_progress 拒否は report 未完了時のみ)。忍者に記憶は無く RC は再配備で済むため『CLEAR まで slot 拘束』は純損失(殿裁定 18:39)。bats deploy_task +59・ninja_monitor +60。
+- **cmd_complete_gate の post_source_checks を非同期化(飛猿 `cmd_karo_hotfix_cmd_complete_post_source_async_202609031931` 9ff24e941、publisher 発行 20:08、T3-S-40)**: durable_writer_wait が単一 publisher の発行完了を同期ポーリングし今日合計 22,136 s(最大 220 s/回)を占めていた。GATE は publisher receipt の存在で即返し、origin 到達は publisher の rc31 origin-ancestor 判定(events.jsonl の already_published)へ委譲、待ち上限 10 s。`scripts/cmd_complete_gate.sh` +126 行、bats `test_cmd_complete_gate_source_publish.bats` +54 行。効果は subphases log の post_source_checks で before/after を家老が報告。
 - **review 解決器が claimed report_id+parent 一致を canonical 採用(影丸 `cmd_karo_hotfix_review_registry_claimed_report_202609031855` 16521692a、publisher 発行 19:18、T3-S-36)**: `scripts/lib/review_approval.sh` の review_resolve_reports は queue/tasks の parent_cmd 一致だけで live report を選び、task slot が後発 AC に上書きされた AC1 report を除外していた(cmd_4473 registry BLOCK)。report-identity-registry の claim を解決器が参照するよう変更。多 AC 1 cmd の report が slot 上書き後も canonical に残る。
 - **Stop hook の idle 公開を fail-safe 化+watcher が stale active を復元(将軍 D0 19:12、T3-S-38)**: `scripts/hooks/stop_check_inbox.sh` は冒頭で active 化+flag 削除し idle 公開は最終経路のみだったため、途中失敗・timeout・早期 exit で「active・flag 無し」が残り nudge が永久保留(軍師 held 1110s、才蔵 4472 レビュー 19 分停止)。EXIT/TERM trap で block 非出力の終了は idle+flag を公開(`_block_emitted` 標識 8 箇所)。`scripts/inbox_watcher.sh` の `maybe_force_idle_flag` に active 分岐(@last_active 30s 超+prompt 検出+ダイアログ無し)。bats `test_stop_check_inbox.bats` 62/62(+2)。
 - **report identity と artifact identity の分離(小太郎 `cmd_karo_hotfix_report_artifact_identity_202609031819` 822317d83、publisher 発行 18:39)**: 同一 task identity の後発 AC2 manifest(source=97923ad0)が旧 AC1 report(source=6f8368b9)を上書きして cmd_4473 の manifest_consistency が BLOCK した。`gate_report_format.sh` が artifact_task_id で AC ごとの manifest を結び直し、report 単位の identity を保つ(+41 行、bats `test_publish_artifact.bats` +87 行)。効果=cmd_4473 再 GATE と才蔵 AC1 の循環解放。
