@@ -1,5 +1,6 @@
 # インフラコンテキスト
-<!-- last_updated: 2026-09-03 complete gate 非同期化反映 -->
+<!-- last_updated: 2026-09-03 await_clear slot release 反映 -->
+<!-- source_commit:53ed713ff9f3 reason:await_clear slot release 反映 evidence:context_freshness_check context=context/infrastructure.md commit=53ed713ff9f3 -->
 <!-- source_commit:9ff24e941eae reason:complete gate 非同期化反映 evidence:context_freshness_check context=context/infrastructure.md commit=9ff24e941eae -->
 <!-- source_commit:16521692a3f1 reason:registry hotfix 反映 evidence:context_freshness_check context=context/infrastructure.md commit=16521692a3f1 -->
 <!-- source_commit:22f382b65 reason:T3-S-38 根治反映 evidence:context_freshness_check context=context/infrastructure.md commit=22f382b65 -->
