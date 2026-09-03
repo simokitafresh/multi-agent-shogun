@@ -919,11 +919,11 @@ entries:
   posted_at: '2026-09-03T10:35:48'
   requires_confirmation: false
   action_type: 'action_required'
-  actioned_by: ''
+  actioned_by: "shogun"
   notify_targets:
     - 'shogun'
   confirmed_by: []
-  status: 'open'
+  status: "closed"
 - id: 'blt_20260903_104329_be02f4'
   content: |-
     GATE CLEAR cmd_reflux_insight_202609031014_kotaro: 完了
@@ -942,11 +942,11 @@ entries:
   posted_at: '2026-09-03T10:55:47'
   requires_confirmation: false
   action_type: 'action_required'
-  actioned_by: ''
+  actioned_by: "shogun"
   notify_targets:
     - 'shogun'
   confirmed_by: []
-  status: 'open'
+  status: "closed"
 - id: 'blt_20260903_110011_ba82dc'
   content: |-
     殿指示(10:59音声入力)転送: codex CLIのGPT忍者をGPT 5.6 sol mediumにrespawnせよ。capture-pane: hayate/kagemaru/hanzo/saizo=codex idle(GPT luna)。殿の指示はmodel切替
@@ -1048,7 +1048,7 @@ entries:
   posted_at: '2026-09-03T11:52:37'
   requires_confirmation: false
   action_type: 'action_required'
-  actioned_by: ''
+  actioned_by: "shogun"
   notify_targets:
     - 'shogun'
   confirmed_by: ["shogun"]
@@ -1060,7 +1060,7 @@ entries:
   posted_at: '2026-09-03T12:01:21'
   requires_confirmation: false
   action_type: 'action_required'
-  actioned_by: ''
+  actioned_by: "shogun"
   notify_targets:
     - 'shogun'
   confirmed_by: ["shogun"]
@@ -1084,8 +1084,8 @@ entries:
   posted_at: '2026-09-03T12:18:47'
   requires_confirmation: false
   action_type: 'action_required'
-  actioned_by: ''
+  actioned_by: "shogun"
   notify_targets:
     - 'shogun'
   confirmed_by: []
-  status: 'open'
+  status: "closed"
