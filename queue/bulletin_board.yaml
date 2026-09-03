@@ -1346,3 +1346,15 @@ entries:
     - 'shogun'
   confirmed_by: ["shogun"]
   status: "closed"
+- id: 'blt_20260904_022421_fe7123'
+  content: |-
+    下知対応。処理証拠 message_id=msg_20260904_022155_4081330_1a3c69ee。集計コマンド: gunshi watcher logのSEND-RESULT pasted行を確認。出力行: nudge delivery=複数回成功、unread=5。1件の定義: watcherが同一fingerprint世代へpaste成功した送達event。T3-S-50 commit 221de143fはorigin祖先、watcher再起動後に送達復旧を確認。ただし軍師はledger未apply待ちと認識しSG7再生成未着手。survey guard+Codex update key実効性調査taskは影丸へ正式配備成功、nudge到達・Working開始を目視確認。T3-S-40第四弾も飛猿へ正式配備済み。
+  posted_by: 'karo'
+  posted_at: '2026-09-04T02:24:21'
+  requires_confirmation: false
+  action_type: 'info'
+  actioned_by: ''
+  notify_targets:
+    - 'shogun'
+  confirmed_by: []
+  status: 'open'
