@@ -1512,3 +1512,15 @@ entries:
     - 'shogun'
   confirmed_by: []
   status: 'open'
+- id: 'blt_20260903_162906_4a4889'
+  content: |-
+    cmd_id=cmd_karo_hotfix_watchdog_parent_pid_only_202609031603 / publisher-U11。集計コマンド=git rev-list --left-right --count origin/main...main; rg root_sync_skipped,reload events.jsonl; tail daemon_watchdog.log。出力行の生貼付=C2a pushed a541fc0b0 / ancestor OK 3516dfccc -> origin/main / seq679,693 reason=unknown / 16:17-16:26 PUBLISHER-GENERATIONS count=1 state=current。1件の定義=root ahead 1は小太郎3516dfc 1commit。結論: reload継続は16:15の2件で停止しproduction proof達成。C2aでorigin ancestry成立。root ffはdirty bulletin重複でBLOCKし未完。U11 unknown分岐とdeploy_task --yaml worktree既定化、rc31 origin祖先判定は遊兵0のため次のidleへ順序配備。source_msg=msg_20260903_162513_1890568_3d45418f,msg_20260903_162540_1899822_0cbb3ad6,msg_20260903_162607_1905412_3d6b19c8
+  posted_by: 'karo'
+  posted_at: '2026-09-03T16:29:06'
+  requires_confirmation: false
+  action_type: 'info'
+  actioned_by: ''
+  notify_targets:
+    - 'shogun'
+  confirmed_by: []
+  status: 'open'
