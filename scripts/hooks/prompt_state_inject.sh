@@ -1024,33 +1024,9 @@ if [[ -f "$inbox_file" ]]; then
   # 任意深さのインデントを許容するため、複数行content(|-ブロックスカラー)の中に偶然
   # 「read: false」相当の行が現れると、既読(read:true)メッセージまで未読として誤カウントした。
   # レコード境界(`- `)とブロックスカラー本体を追跡し、レコード直下のフィールド行のみを数える。
-  unread_count="$(awk '
-    BEGIN { in_block = 0; block_indent = -1; field_indent = -1 }
-    {
-      line = $0
-      match(line, /^[ ]*/)
-      ind = RLENGTH
-      content = substr(line, ind + 1)
-      is_new_record = (content ~ /^-([ ]|$)/)
-      if (is_new_record) {
-        sub(/^-[ ]*/, "", content)
-        ind = ind + 2
-        in_block = 0
-        field_indent = ind
-        if (content == "") next
-      } else if (in_block) {
-        if (ind > block_indent) { next }
-        in_block = 0
-      }
-      if (!is_new_record && ind != field_indent) { next }
-      if (content ~ /^read:[ ]*false[ ]*$/) { c++ }
-      else if (content ~ /^[A-Za-z_][A-Za-z0-9_]*:[ ]*[|>][+-]?[ ]*$/) { in_block = 1; block_indent = ind }
-    }
-    END { print c + 0 }
-  ' "$inbox_file" 2>/dev/null)"
-  if [[ ! "$unread_count" =~ ^[0-9]+$ ]]; then
-    unread_count=0
-  fi
+  # T3-S-43 follow-up(家老 APPROVE 20:54): 同じレコード境界 awk を scripts/lib/inbox_unread_count.sh へ寄せ drift を防ぐ
+  . "$SCRIPT_DIR/scripts/lib/inbox_unread_count.sh"
+  unread_count="$(inbox_unread_count "$inbox_file")"
   if [[ "$agent_id" == "karo" ]]; then
     unread_cmd_new_summary="$(awk '
       function finalize() {
