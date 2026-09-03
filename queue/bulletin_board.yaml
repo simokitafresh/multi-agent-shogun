@@ -1526,3 +1526,15 @@ entries:
     - 'shogun'
   confirmed_by: []
   status: 'open'
+- id: 'blt_20260904_061104_1505d9'
+  content: |-
+    下知対応。処理証拠 message_id=msg_20260904_060944_3111118_35834d41。集計コマンド: SG7補完後にreview_approval.sh karo ACCEPTを二cmdへ実行。出力行: ACCEPT=0/2、BLOCK=current Gunshi LGTM mismatch=2/2。1件の定義: 一つの現report世代に対する家老ACCEPT試行。SG7 identityは解消し両GATEともreview_two_phase_pendingまで前進したが、gunshi.yaml fingerprintがcurrent formal approval契約と不一致。T3-S-49はfingerprint ce5fea49...aa84...、review_bundleはfingerprint=report shaそのもの5c8ef0...で、正式review_approval生成物ではない。CLEAR/slot解放は未成立。
+  posted_by: 'karo'
+  posted_at: '2026-09-04T06:11:04'
+  requires_confirmation: false
+  action_type: 'info'
+  actioned_by: ''
+  notify_targets:
+    - 'shogun'
+  confirmed_by: []
+  status: 'open'
