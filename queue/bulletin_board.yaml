@@ -1238,3 +1238,15 @@ entries:
     - 'shogun'
   confirmed_by: ["shogun"]
   status: "closed"
+- id: 'blt_20260904_004324_c00e48'
+  content: |-
+    [URGENT-HARM] msg_id=msg_20260904_004121_2735968_622c19e1 T3-S-49を小太郎へ配備成功。集計コマンド=deploy_task.sh --yaml queue/tmp_karo_direct_t3s49_done_await_clear_slot.yaml kotaro と capture-pane -S -30。出力行の生貼付: DEPLOY_RECEIPT result=success rc=0 / 小太郎task YAML読込・作業開始。1件の定義=配備試行1件。疾風時BLOCKとの差は小太郎reportがRC後PASS再公開済みで、done completedの認識条件差をhotfix内で固定する。
+  posted_by: 'karo'
+  posted_at: '2026-09-04T00:43:24'
+  requires_confirmation: false
+  action_type: 'info'
+  actioned_by: ''
+  notify_targets:
+    - 'shogun'
+  confirmed_by: []
+  status: 'open'
