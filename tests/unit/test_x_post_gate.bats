@@ -147,3 +147,149 @@ EOF
     [ "$status" -eq 1 ]
     [[ "$output" == *"x_post_gate: FAIL rule1 blocklist unavailable (fail-close)"* ]]
 }
+
+# test_necessity: x_post.sh のXDK境界をfixtureで固定する。承認なし・認証なし・media有無・
+# 201/401を同じCLIで確認し、誤投稿と画像media_id欠落を防ぐ。
+setup_x_post() {
+    X_POST="$PROJECT_ROOT/scripts/x_ops/x_post.sh"
+    export X_POST_DRAFTS_DIR="$FIXTURE_DIR/x_drafts"
+    export X_POST_API_ENV_FILE="$FIXTURE_DIR/x_api.env"
+    export XDK_CALL_LOG="$FIXTURE_DIR/xdk_calls.log"
+    mkdir -p "$X_POST_DRAFTS_DIR" "$FIXTURE_DIR/fake_xdk/xdk/media" "$FIXTURE_DIR/fake_xdk/xdk/posts"
+    cat > "$FIXTURE_DIR/fake_xdk/xdk/__init__.py" <<'PY'
+import json, os
+class _ResponseError(RuntimeError):
+    def __init__(self, status):
+        super().__init__(f"HTTP {status}")
+        self.response = type("Response", (), {"status_code": status})()
+class _Media:
+    def upload(self, *args, **kwargs):
+        with open(os.environ["XDK_CALL_LOG"], "a", encoding="utf-8") as f:
+            f.write("media " + json.dumps({"args": len(args), "kwargs": list(kwargs)}) + "\n")
+        return {"data": {"id": "media-1"}}
+class _Posts:
+    def create(self, *args, **kwargs):
+        if os.environ.get("XDK_STATUS") == "401":
+            raise _ResponseError(401)
+        with open(os.environ["XDK_CALL_LOG"], "a", encoding="utf-8") as f:
+            f.write("post " + json.dumps(list(kwargs)) + "\n")
+        return {"data": {"id": "post-1"}}
+class Client:
+    def __init__(self, token=None, **kwargs):
+        self.token = token
+        self.media = _Media()
+        self.posts = _Posts()
+PY
+    cat > "$FIXTURE_DIR/fake_xdk/xdk/oauth2_auth.py" <<'PY'
+class OAuth2PKCEAuth:
+    def __init__(self, **kwargs):
+        self.kwargs = kwargs
+PY
+    cat > "$FIXTURE_DIR/fake_xdk/xdk/media/models.py" <<'PY'
+class UploadRequest:
+    def __init__(self, media, media_category):
+        self.media = media
+        self.media_category = media_category
+PY
+    cat > "$FIXTURE_DIR/fake_xdk/xdk/posts/models.py" <<'PY'
+class CreateRequest:
+    def __init__(self, **kwargs):
+        self.kwargs = kwargs
+PY
+    cat > "$X_POST_DRAFTS_DIR/2026-09-03_A.txt" <<'EOF'
+デュアルモメンタムは2つだけ見る。助言ではない。過去は将来を保証しない。
+EOF
+    printf 'approved\n' > "$X_POST_DRAFTS_DIR/2026-09-03_A.approved"
+    printf 'X_ACCESS_TOKEN=test-token\n' > "$X_POST_API_ENV_FILE"
+}
+
+@test "x_post post: XDKでmediaなし201を投稿済みmarkerへ記録" {
+    setup_x_post
+    run env PYTHONPATH="$FIXTURE_DIR/fake_xdk" bash "$X_POST" post 2026-09-03_A
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"post-1"* ]]
+    [ ! -s "$XDK_CALL_LOG" ] || ! grep -q '^media ' "$XDK_CALL_LOG"
+    [ -f "$X_POST_DRAFTS_DIR/2026-09-03_A.posted" ]
+}
+
+@test "x_post post: PNGをXDK media.uploadしmedia_ids付き201を投稿" {
+    setup_x_post
+    printf '\x89PNG\r\n\x1a\n' > "$FIXTURE_DIR/experience.png"
+    run env PYTHONPATH="$FIXTURE_DIR/fake_xdk" bash "$X_POST" post 2026-09-03_A --media "$FIXTURE_DIR/experience.png"
+    [ "$status" -eq 0 ]
+    grep -q '^media ' "$XDK_CALL_LOG"
+    grep -q '^post ' "$XDK_CALL_LOG"
+    [ -f "$X_POST_DRAFTS_DIR/2026-09-03_A.posted" ]
+}
+
+@test "x_post post: XDK HTTP401は投稿済みmarkerを作らずexit1" {
+    setup_x_post
+    run env PYTHONPATH="$FIXTURE_DIR/fake_xdk" XDK_STATUS=401 bash "$X_POST" post 2026-09-03_A
+    [ "$status" -eq 1 ]
+    [[ "$output" == *"HTTP 401"* ]]
+    [ ! -f "$X_POST_DRAFTS_DIR/2026-09-03_A.posted" ]
+}
+
+@test "x_post post: 承認marker不在はXDKを呼ばずexit1" {
+    setup_x_post
+    rm -f "$X_POST_DRAFTS_DIR/2026-09-03_A.approved"
+    run env PYTHONPATH="$FIXTURE_DIR/fake_xdk" bash "$X_POST" post 2026-09-03_A
+    [ "$status" -eq 1 ]
+    [[ "$output" == *"not approved"* ]]
+    [ ! -f "$XDK_CALL_LOG" ]
+}
+
+@test "x_post post: creds file不在はexit2でXDKを呼ばない" {
+    setup_x_post
+    rm -f "$X_POST_API_ENV_FILE"
+    run env PYTHONPATH="$FIXTURE_DIR/fake_xdk" bash "$X_POST" post 2026-09-03_A
+    [ "$status" -eq 2 ]
+    [[ "$output" == *"credentials file not found"* ]]
+}
+
+@test "x_post draft: 日付_slot名へslot instructionと台帳値を注入" {
+    setup_x_post
+    cat > "$FIXTURE_DIR/ledger.yaml" <<'EOF'
+entries:
+- key: demo
+  url: https://note.com/tokyojibika/n/demo
+  title: デモ記事
+  usable_numbers: '期間2020年〜2024年、CAGR 10%、MaxDD -20%、ベンチSPY'
+  first_line_candidate: 最初の一文。
+EOF
+    cat > "$FIXTURE_DIR/slots.yaml" <<'EOF'
+slots:
+- slot: A
+  angle: 定義
+  draft_seed: 二つだけ見る。
+  usable_numbers: '期間2020年〜2024年、CAGR 10%、MaxDD -20%、ベンチSPY'
+EOF
+    export X_POST_LEDGER_FILE="$FIXTURE_DIR/ledger.yaml"
+    export X_POST_SLOT_CALENDAR_FILE="$FIXTURE_DIR/slots.yaml"
+    export X_POST_SYSTEM_PROMPT_FILE="$PROJECT_ROOT/skills/x-post-pipeline/system_prompt_v4.txt"
+    export X_POST_LLM_CMD="cat"
+    run bash "$X_POST" draft A demo
+    [ "$status" -eq 0 ]
+    [[ "$output" == "$X_POST_DRAFTS_DIR/20"*"_A.txt" ]]
+    grep -q '^angle: 定義$' "$output"
+    grep -q '^draft_seed: 二つだけ見る。$' "$output"
+}
+
+@test "x_post approve: 本文全文とpathを通知し外部approved markerを待つ" {
+    setup_x_post
+    cat > "$FIXTURE_DIR/ntfy_stub.sh" <<'EOF'
+#!/usr/bin/env bash
+printf '%s\n' "$1" > "$NTFY_CAPTURE"
+printf 'approved\n' > "$X_POST_APPROVED_MARKER"
+EOF
+    chmod +x "$FIXTURE_DIR/ntfy_stub.sh"
+    export NTFY_CAPTURE="$FIXTURE_DIR/ntfy_message"
+    export X_POST_APPROVED_MARKER="$X_POST_DRAFTS_DIR/2026-09-03_A.approved"
+    export X_POST_NTFY_SCRIPT="$FIXTURE_DIR/ntfy_stub.sh"
+    export X_POST_APPROVAL_WAIT_SECONDS=2
+    run bash "$X_POST" approve 2026-09-03_A
+    [ "$status" -eq 0 ]
+    [ "$output" = "$X_POST_APPROVED_MARKER" ]
+    grep -qF "$X_POST_DRAFTS_DIR/2026-09-03_A.txt" "$NTFY_CAPTURE"
+    grep -qF 'デュアルモメンタムは2つだけ見る' "$NTFY_CAPTURE"
+}
