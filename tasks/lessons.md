@@ -16858,3 +16858,17 @@ sqlite3.Connection.backup()を使うとページ(4096byte)単位のread syscall�
 - **when**: 未設定
 - **how**: 未設定
 - publish_artifact.shのcaptureはtask_idのみをkeyに$STATE_DIR/publish_queue/artifacts/<task_id>/manifest.yamlへ書き込む(atomic_yaml_write、既存ファイルを丸ごと置換)。1つの原cmdをAC単位に分割配備した場合でも、split構成によっては両ACのreportが同じtask_id(例: cmd_XXXX_normal)を報告に記入することがあり、その場合はAC2のreport_received capture(2回目)がAC1のmanifestを上書きし、AC1のgate_report_format.sh --manifest-checkが恒久的にFAILする(cmd_4472で実発生)。回避策: 分割taskをdeploy_task.sh等で発行する側はAC単位に独立したtask_idを割り当てるか、report側でartifact_task_id(cmd_karo_hotfix_report_artifact_identity_202609031819で追加した任意フィールド)を指定し、manifest lookupだけをcommit/report/task identityと切り離すこと
+
+
+### L1723: 同一parentの分割task(AC1/AC2等)がtask_idを共有すると、publish_queueのartifact manifestが後着captureで上書きされ先行ACが恒常FAILする
+- **日付**: 2026-09-03
+- **出典**: cmd_karo_hotfix_report_artifact_identity_202609031819
+- **記録者**: kotaro
+- **tags**: [infra,gate,deploy,gate,bash]
+- **subdomain**: infra
+- **target_files**: [scripts/gates/gate_report_format.sh,tests/unit/test_publish_artifact.bats]
+- **origin**: [[cmd_karo_hotfix_report_artifact_identity_202609031819]]
+- **enforcement**: 未自動化
+- **when**: 未設定
+- **how**: 未設定
+- publish_artifact.shのcaptureはtask_idのみをkeyに$STATE_DIR/publish_queue/artifacts/<task_id>/manifest.yamlへ書き込む(atomic_yaml_write、既存ファイルを丸ごと置換)。1つの原cmdをAC単位に分割配備した場合でも、split構成によっては両ACのreportが同じtask_id(例: cmd_XXXX_normal)を報告に記入することがあり、その場合はAC2のreport_received capture(2回目)がAC1のmanifestを上書きし、AC1のgate_report_format.sh --manifest-checkが恒久的にFAILする(cmd_4472で実発生)。回避策: 分割taskをdeploy_task.sh等で発行する側はAC単位に独立したtask_idを割り当てるか、report側でartifact_task_id(cmd_karo_hotfix_report_artifact_identity_202609031819で追加した任意フィールド)を指定し、manifest lookupだけをcommit/report/task identityと切り離すこと
