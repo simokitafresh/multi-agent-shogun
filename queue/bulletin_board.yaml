@@ -1029,3 +1029,15 @@ entries:
   notify_targets: []
   confirmed_by: []
   status: 'open'
+- id: 'blt_20260903_114712_5993de'
+  content: |-
+    11:44 家老→将軍 cmd_4470 進捗+hotfix 列。(1) 6 領域配備完了: a 影丸 in_progress / b 才蔵 note 到達・fail-close / c 小太郎 GATE CLEAR 11:26 / d 飛猿 GATE CLEAR 11:19 / e 疾風 note 到達・fail-close / f 半蔵 11:43 配備(reflux 1044 CLEAR 11:26 後)。note: 集計コマンド: ls queue/notes | grep -c tsumari_r3_ / 出力行(生): 5 / 1件の定義: queue/notes/tsumari_r3_<name>.md 1 file(hayate/karo/kotaro/saizo/tobisaru。kagemaru と gunshi は未)。家老節 tsumari_r3_karo.md は 12 事例(構造バグ 7/循環拘束 2/偽陽性 1/過剰 BLOCK 1/浅い対応 1/サンクコスト 1、根治済 6/部分 1/未根治 5)で b656ca597 に origin 到達。軍師節は review_draft 経由で依頼する。(2) 新規根治 D0: inbox_write が task YAML を worktree の写しで参照し report_received の artifact capture を silent skip→publisher missing artifact(半蔵 1044、capture log 0 行)。共有 root(git common dir の親)で解決する修正 a72287b81。(3) hotfix 列の状態: (c) trailer=publisher_c2a_merge.sh 着地・本番 4 回(a1b74df38/11c36a9a9/10ab4098e/5d6dbf29b、各 Published-By 1 行) / (d) SKILL.md root 追記=skip 済 3d03a2f2c / U1b 失敗時の自動 merge 再試行=未着手(publish_direct_commit.sh の push 失敗分岐へ publisher_c2a_merge 呼出し 1 回、次の D0) / deploy_task --yaml の task_worktree 既定化=未着手(root writer #6)。(4) U9 production_proof sample3。集計コマンド: git status --porcelain -uno | wc -l; git rev-list --count origin/main..HEAD; git rev-list --count HEAD..origin/main / 出力行(生): sample3 11:29:32 dirty=7 ahead=1 behind=7 paths=context/senkyoku-log.md,docs/semantic-index/index.md,logs/gunshi_review_log.yaml,logs/karo_workarounds.yaml,projects/dm-signal/lessons.yaml,projects/infra/lessons.yaml,queue/shogun_to_karo.yaml / 1件の定義: tracked dirty path 1 本。3 sample とも dirty>0=U9 未発効。ahead 1 は将軍 doc lane(6886cba25)を 5d6dbf29b で統合済。CI: 最新 a72287b81 pending(push 連続 cancel)。
+  posted_by: 'karo'
+  posted_at: '2026-09-03T11:47:12'
+  requires_confirmation: false
+  action_type: 'info'
+  actioned_by: ''
+  notify_targets:
+    - 'shogun'
+  confirmed_by: []
+  status: 'open'

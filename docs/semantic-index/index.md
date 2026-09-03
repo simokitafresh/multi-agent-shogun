@@ -4704,9 +4704,9 @@ codd:
 | causal | `cmd_4373` files_modified: [[production_parity]] |
 | discussion | `queue/lord_conversation.jsonl` 2026-08-29T16:28:32+09:00 T106 DM-signal の ext4 移設について詳しく教えてくれ。asis/tobe whyが欲しい |
 | discussion | `queue/lord_conversation.jsonl` 2026-09-02T13:07:45+09:00 裁定待ちの3点について詳しく教えてくれ |
+| discussion | `queue/lord_conversation.jsonl` 2026-09-03T11:19:05+09:00 自動で投稿するためのx APIについて詳しく教えてくれ、xAIのAPIとはまた違うものなのか？ |
 | causal_chain | `[[cmd_karo_hotfix_shogun_startup_defer_skill_refs_202607020421]]` (L921) |
 | causal_chain | `[[cmd_karo_hotfix_ga168_lesson_health_202607021948]]` (L939) |
-| discussion | `queue/lord_conversation.jsonl` 2026-09-03T11:19:05+09:00 自動で投稿するためのx APIについて詳しく教えてくれ、xAIのAPIとはまた違うものなのか？ |
 
 ## deepdive_principles — deepdive原理
 
@@ -16735,9 +16735,8 @@ codd:
 | discussion | `queue/lord_conversation.jsonl` 2026-09-02T21:15:12.775898+00:00 git pre-commit semantic propagation for context/projects changes |
 | discussion | `queue/lord_conversation.jsonl` 2026-09-02T22:43:46.686908+00:00 git pre-commit semantic propagation for context/projects changes |
 | discussion | `queue/lord_conversation.jsonl` 2026-09-03T00:52:50.731119+00:00 git pre-commit semantic propagation for context/projects changes |
-| causal_chain | `[[cmd_karo_hotfix_lessons_yaml_format_restore_20260727]]` (L1389) |
 | discussion | `queue/lord_conversation.jsonl` 2026-09-03T01:47:41.217346+00:00 git pre-commit semantic propagation for context/projects changes |
-| discussion | `queue/lord_conversation.jsonl` 2026-09-03T02:31:43.334480+00:00 git pre-commit semantic propagation for context/projects changes |
+| causal_chain | `[[cmd_karo_hotfix_lessons_yaml_format_restore_20260727]]` (L1389) |
 
 ## infra_design_intent — インフラ設計意図カタログ
 
@@ -18345,6 +18344,7 @@ codd:
 | discussion | `queue/lord_conversation.jsonl` 2026-09-03T00:22:04.266996+00:00 git pre-commit semantic propagation for context/projects changes |
 | discussion | `queue/lord_conversation.jsonl` 2026-09-03T00:27:38.107927+00:00 git pre-commit semantic propagation for context/projects changes |
 | discussion | `queue/lord_conversation.jsonl` 2026-09-03T00:43:43.711326+00:00 git pre-commit semantic propagation for context/projects changes |
+| discussion | `queue/lord_conversation.jsonl` 2026-09-03T01:56:48.158307+00:00 git pre-commit semantic propagation for context/projects changes |
 | causal_chain | `[[cmd_karo_hotfix_ga161_obsidian_link_context_freshness_202607021348]]` (L926) |
 | causal_chain | `[[cmd_3648]]` (L933) |
 | causal_chain | `[[cmd_karo_ci_fix_ga191_followup_202607071752]]` (L963) |
@@ -18367,7 +18367,7 @@ codd:
 | causal_chain | `[[cmd_reflux_insight_202608040505_kagemaru]]` (L1545) |
 | causal_chain | `[[cmd_karo_recon2_ninja_prerequisite_audit_20260814]]` (L1588) |
 | causal_chain | `[[cmd_karo_hotfix_inject_seam_contract_missing_202608190548]]` (L1612) |
-| discussion | `queue/lord_conversation.jsonl` 2026-09-03T01:56:48.158307+00:00 git pre-commit semantic propagation for context/projects changes |
+| discussion | `queue/lord_conversation.jsonl` 2026-09-03T11:42:24+09:00 session_save_20260903_1145(復帰点、先に session_save_20260903_1115 を読め): loop 11:42: cmd_4470 note 5 本着地(hayate/karo/kotaro/sa |
 
 ## commander_role_ssot_analysis — Commanderロール SSOT分析
 
