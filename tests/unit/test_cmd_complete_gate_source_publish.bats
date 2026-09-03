@@ -52,6 +52,7 @@ names = (
     "gate_run_gunshi_verdict_update",
     "gate_notify_reconcile_stale",
     "gate_run_auto_push_ancestry_retry",
+    "gate_notify_claim_auto_push_ancestry_retry",
     "cmd_complete_gate_queue_auto_push_ancestry_retry",
 )
 chunks = []
@@ -406,53 +407,145 @@ STUB
     [ -f "$(gate_notify_done_path "$cmd_id" auto_push_ancestry_retry)" ]
 }
 
-# test_necessity: gunshi formal FAIL (msg_20260904_074552_549133_38de3e9a) --
-# a bare `&` had no single-flight guard, so three consecutive WAIT
-# invocations for the same cmd (the exact production pattern: the monitor
-# re-runs cmd_complete_gate.sh on the same still-unresolved cmd every cycle)
-# would each spawn their own redundant push attempt and pile up concurrent
-# pushes. false_negative here = a second/third dispatch actually launching
-# (piled-up retries); false_positive = the real work never running at all.
-@test "cmd_complete_gate_queue_auto_push_ancestry_retry is single-flight across 3 consecutive WAIT invocations for the same cmd" {
-    local base="$BATS_TEST_TMPDIR/auto-push-retry-singleflight"
+# test_necessity: karo review (msg_20260904_080633_981530_67f5467a) rejected
+# a sequential-3-calls-in-one-process fixture as insufficient proof of
+# single-flight: "並行3プロセス同時start→dispatch 1... 逐次3回だけでsingleflight
+# PASSにしないこと" (three concurrent PROCESSES starting at once must dispatch
+# exactly once; do not pass single-flight with 3 sequential calls alone).
+# This launches 3 real OS processes (`( ... ) &`, genuine forks, not
+# sequential function calls) that all race to claim the same (cmd_id, item)
+# reservation at essentially the same time. Correctness comes from
+# gate_notify_claim_auto_push_ancestry_retry's os.open(O_EXCL), which POSIX
+# guarantees admits exactly one winner among any number of concurrent
+# racers -- this proves that guarantee holds under real concurrent process
+# scheduling, not just cooperative single-process sequencing.
+# false_negative = more than one process's stub increment (piled-up
+# dispatch); false_positive = zero increments (the real work never ran).
+@test "cmd_complete_gate_queue_auto_push_ancestry_retry: 3 concurrent OS processes for the same cmd dispatch exactly once" {
+    local base="$BATS_TEST_TMPDIR/auto-push-retry-concurrent"
     mkdir -p "$base"
     SCRIPT_DIR="$base"
     LOG_DIR="$base/logs"
     mkdir -p "$LOG_DIR"
-    local cmd_id="cmd_auto_push_retry_singleflight_probe"
+    local cmd_id="cmd_auto_push_retry_concurrent_probe"
     local dispatch_count_file="$base/dispatch_count"
     : > "$dispatch_count_file"
 
-    # Held open until the test explicitly releases it, so the first dispatch
-    # is still in-flight (pending record present) when invocations 2 and 3
-    # run -- modeling the monitor re-invoking the gate before the first
-    # background push has finished.
-    local release_fifo="$base/release"
-    mkfifo "$release_fifo"
     cmd_complete_gate_auto_push_ancestry_wait() {
         printf 'x\n' >> "$dispatch_count_file"
-        read -r _ < "$release_fifo"
         return 0
     }
 
     source "$GATE_SOURCE_PUBLISH_HELPERS_DURABLE"
 
-    # Invocation 1: real dispatch (no pending record exists yet).
-    cmd_complete_gate_queue_auto_push_ancestry_retry "$cmd_id" task1.yaml
-    # Invocations 2 and 3: same cmd, still WAIT -- must be no-ops while the
-    # first dispatch's pending record is still on disk.
-    run cmd_complete_gate_queue_auto_push_ancestry_retry "$cmd_id" task1.yaml
-    [ "$status" -eq 0 ]
-    [[ "$output" == *"SKIP (already in-flight"* ]]
-    run cmd_complete_gate_queue_auto_push_ancestry_retry "$cmd_id" task1.yaml
-    [ "$status" -eq 0 ]
-    [[ "$output" == *"SKIP (already in-flight"* ]]
-
-    # Release the held dispatch and let it complete.
-    printf 'go\n' > "$release_fifo"
+    local i
+    for i in 1 2 3; do
+        ( cmd_complete_gate_queue_auto_push_ancestry_retry "$cmd_id" task1.yaml ) &
+    done
     wait
+
+    # The 3 forked processes above are this shell's direct children, so the
+    # `wait` above reaps them; each process's own internal `(...) &`
+    # dispatch (the actual worker) is a grandchild that keeps running
+    # detached after its parent exits (that IS the non-blocking contract
+    # under test), so poll briefly for it to finish appending rather than
+    # assuming it already has.
+    local waited_ms=0
+    while [ "$waited_ms" -lt 3000 ] && [ ! -s "$base/queue/gates/$cmd_id/auto_push_ancestry_retry.log" ]; do
+        sleep 0.1
+        waited_ms=$((waited_ms + 100))
+    done
+    sleep 0.2
+
     [ "$(wc -l < "$dispatch_count_file")" -eq 1 ]
+    [ "$(wc -l < "$base/queue/gates/$cmd_id/auto_push_ancestry_retry.log")" -eq 1 ]
     grep -qF "$(printf '\t%s\tPASS' "$cmd_id")" "$base/queue/gates/$cmd_id/auto_push_ancestry_retry.log"
+}
+
+# test_necessity: karo review, second half -- "enqueue失敗→dispatch 0" must
+# hold, i.e. a reservation-write failure for a reason OTHER than "already
+# reserved" must fail closed (no worker launch), not silently proceed the
+# way the old check-then-enqueue shape did (gate_notify_enqueue's
+# `... || true` swallowed any write error and the caller never checked
+# whether the file actually landed). Force a failure gate_notify_enqueue
+# itself cannot distinguish from ordinary contention: pre-occupy the
+# reservation path with a directory, so os.open(O_WRONLY|O_CREAT|O_EXCL)
+# raises IsADirectoryError -- not FileExistsError -- and must not be
+# swallowed into a false "claimed" success.
+@test "cmd_complete_gate_queue_auto_push_ancestry_retry: a reservation write failure dispatches zero workers" {
+    local base="$BATS_TEST_TMPDIR/auto-push-retry-enqueue-fail"
+    mkdir -p "$base"
+    SCRIPT_DIR="$base"
+    LOG_DIR="$base/logs"
+    mkdir -p "$LOG_DIR"
+    local cmd_id="cmd_auto_push_retry_enqueue_fail_probe"
+    local dispatch_count_file="$base/dispatch_count"
+    : > "$dispatch_count_file"
+
+    cmd_complete_gate_auto_push_ancestry_wait() {
+        printf 'x\n' >> "$dispatch_count_file"
+        return 0
+    }
+
+    source "$GATE_SOURCE_PUBLISH_HELPERS_DURABLE"
+
+    local pending
+    pending="$(gate_notify_pending_path "$cmd_id" auto_push_ancestry_retry)"
+    mkdir -p "$pending"
+
+    run cmd_complete_gate_queue_auto_push_ancestry_retry "$cmd_id" task1.yaml
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"SKIP"* ]]
+    wait
+    sleep 0.2
+    [ "$(wc -l < "$dispatch_count_file")" -eq 0 ]
+    [ -d "$pending" ]
+    [ ! -f "$base/queue/gates/$cmd_id/auto_push_ancestry_retry.log" ]
+}
+
+# test_necessity: karo review, reconcile half -- "reconcile競合→replay 1" must
+# hold: two or more independent gate invocations (each processing a
+# different cmd of their own) can run gate_notify_reconcile_stale
+# concurrently and both discover the same stale, not-done pending record.
+# Without an atomic tie-breaker both would replay the recovery, double
+# counting the effect. Launches 3 real OS processes all running the sweep at
+# once against one pre-seeded stale record.
+@test "auto_push_ancestry_retry: concurrent reconcile sweeps replay a stale item exactly once" {
+    local base="$BATS_TEST_TMPDIR/auto-push-retry-reconcile-race"
+    mkdir -p "$base/scripts" "$base/logs" "$base/queue/tasks"
+    SCRIPT_DIR="$base"
+    LOG_DIR="$base/logs"
+    TASKS_DIR="$base/queue/tasks"
+    lock_path() { printf '%s.lock\n' "$1"; }
+    list_task_files_for_cmd() { :; }
+    local dispatch_count_file="$base/dispatch_count"
+    : > "$dispatch_count_file"
+    cmd_complete_gate_auto_push_ancestry_wait() {
+        printf 'x\n' >> "$dispatch_count_file"
+        return 0
+    }
+
+    source "$GATE_SOURCE_PUBLISH_HELPERS_DURABLE"
+
+    local cmd_id="cmd_auto_push_retry_reconcile_race_probe"
+    gate_notify_enqueue "$cmd_id" auto_push_ancestry_retry
+    local pending done
+    pending="$(gate_notify_pending_path "$cmd_id" auto_push_ancestry_retry)"
+    done="$(gate_notify_done_path "$cmd_id" auto_push_ancestry_retry)"
+    [ -f "$pending" ]
+
+    local i
+    for i in 1 2 3; do
+        ( GATE_NOTIFY_STALE_AFTER_S=0 gate_notify_reconcile_stale ) &
+    done
+    wait
+    sleep 0.2
+
+    [ "$(wc -l < "$dispatch_count_file")" -eq 1 ]
+    [ -f "$done" ]
+    [ ! -f "$pending" ]
+    [ ! -e "${pending}.recovering" ]
+    [ "$(wc -l < "$base/queue/gates/$cmd_id/auto_push_ancestry_retry.log")" -eq 1 ]
 }
 
 # test_necessity: gunshi formal FAIL, durability half. A worker that never

@@ -3624,17 +3624,59 @@ gate_run_auto_push_ancestry_retry() {
     fi
 }
 
+# karo review differentiation (msg_20260904_080633_981530_67f5467a): the
+# check-then-enqueue shape above raced -- two concurrent invocations for the
+# same cmd_id (or a dispatch racing a reconcile-sweep recovery) could both
+# observe "no pending file yet" and both proceed to enqueue+launch, because
+# gate_notify_enqueue's mkstemp+os.replace always succeeds and silently
+# clobbers an existing reservation instead of reporting a conflict, and its
+# `... || true` swallows any real write failure so a worker could launch even
+# though no reservation was actually persisted. Replace the check+enqueue
+# pair with a single atomic reservation: os.open(..., O_EXCL) either creates
+# the pending record or fails with FileExistsError, and POSIX guarantees
+# exactly one caller among any number of concurrent racers wins that create.
+# Only the winner (verified by the reservation file's postcondition existing
+# on disk) launches the worker; every other racer -- concurrent or
+# sequential -- observes the failure and skips with zero dispatch.
+gate_notify_claim_auto_push_ancestry_retry() {
+    local cmd_id="$1" pending
+    pending="$(gate_notify_pending_path "$cmd_id" auto_push_ancestry_retry)"
+    mkdir -p "$(dirname "$pending")" 2>/dev/null
+    python3 - "$pending" "$cmd_id" <<'PY'
+import json, os, sys, time
+path, cmd_id = sys.argv[1:]
+try:
+    fd = os.open(path, os.O_WRONLY | os.O_CREAT | os.O_EXCL, 0o600)
+except FileExistsError:
+    sys.exit(1)
+data = {"version": 1, "cmd_id": cmd_id, "item": "auto_push_ancestry_retry",
+        "state": "pending", "queued_at_ns": time.time_ns()}
+with os.fdopen(fd, "w", encoding="utf-8") as fh:
+    json.dump(data, fh, sort_keys=True)
+    fh.write("\n")
+    fh.flush()
+    os.fsync(fh.fileno())
+sys.exit(0)
+PY
+}
+export -f gate_notify_claim_auto_push_ancestry_retry
+
 cmd_complete_gate_queue_auto_push_ancestry_retry() {
     local cmd_id="$1"
     shift
     local -a task_file_args=("$@")
-    local pending
-    pending="$(gate_notify_pending_path "$cmd_id" auto_push_ancestry_retry)"
-    if [ -f "$pending" ]; then
-        echo "  auto_push_ancestry_retry: SKIP (already in-flight; single-flight guard)"
+    if ! gate_notify_claim_auto_push_ancestry_retry "$cmd_id"; then
+        echo "  auto_push_ancestry_retry: SKIP (reservation claim failed -- already in-flight or write failed; single-flight guard)"
         return 0
     fi
-    gate_notify_enqueue "$cmd_id" auto_push_ancestry_retry
+    # Postcondition: only launch the worker once the reservation is
+    # confirmed to actually exist on disk (the atomic create above already
+    # guarantees this on success, but this is the explicit check karo asked
+    # for rather than trusting the exit code alone).
+    if [ ! -f "$(gate_notify_pending_path "$cmd_id" auto_push_ancestry_retry)" ]; then
+        echo "  auto_push_ancestry_retry: SKIP (reservation postcondition missing after claim)"
+        return 0
+    fi
     (
         gate_run_auto_push_ancestry_retry "$cmd_id" "${task_file_args[@]}"
         gate_notify_complete "$cmd_id" auto_push_ancestry_retry
@@ -5722,9 +5764,28 @@ print(int(json.load(open(sys.argv[1]))["queued_at_ns"] // 1_000_000_000))
                     ( CLEAR_NOTIFICATION_SENT=false send_clear_notifications_once "$cmd_id_rec" "GATE CLEAR terminal (recovered)" )
                     ;;
                 auto_push_ancestry_retry)
+                    # karo review (msg_20260904_080633_981530_67f5467a): two
+                    # concurrent gate invocations (each processing a
+                    # different cmd_id of their own) can each run this same
+                    # reconcile sweep and both observe this exact stale,
+                    # not-done pending file at the same time. Without an
+                    # atomic tie-breaker both would replay the recovery,
+                    # double-dispatching. `set -o noclobber` redirection uses
+                    # O_EXCL under the hood: creating the sidecar marker is
+                    # atomic, so exactly one concurrent sweep wins the create
+                    # and proceeds; every other racer sees the marker already
+                    # exists and skips (leaving its own gate_notify_complete
+                    # call below un-run for this item -- the winner's own
+                    # post-recovery gate_notify_complete clears it).
+                    local _apar_claim="${pending}.recovering"
+                    if ! (set -o noclobber; : > "$_apar_claim") 2>/dev/null; then
+                        echo "  gate_notify_reconcile: ${cmd_id_rec}/auto_push_ancestry_retry claim lost to a concurrent sweep (skip)"
+                        continue
+                    fi
                     local -a _apar_recover_files=()
                     mapfile -t _apar_recover_files < <(list_task_files_for_cmd "$TASKS_DIR" "$cmd_id_rec" | sort -u || true)
                     gate_run_auto_push_ancestry_retry "$cmd_id_rec" "${_apar_recover_files[@]}"
+                    rm -f "$_apar_claim" 2>/dev/null || true
                     ;;
                 *) echo "[WARN] gate_notify_reconcile: unknown item ${item} (leaving pending)"; continue ;;
             esac

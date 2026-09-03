@@ -9629,23 +9629,37 @@ EOF
     [[ "$wrapper_body" != *'safe_shared_main_ff.sh'* ]]
     [[ "$worker_body" != *'safe_shared_main_ff.sh'* ]]
 
-    # gunshi formal FAIL (msg_20260904_074552_549133_38de3e9a): the dispatch
-    # wrapper must be single-flight (a pending durable-queue record already
-    # on disk short-circuits a second concurrent dispatch for the same
-    # cmd_id) rather than a bare, unguarded background `&`.
-    [[ "$wrapper_body" == *'gate_notify_pending_path "$cmd_id" auto_push_ancestry_retry'* ]]
-    [[ "$wrapper_body" == *'gate_notify_enqueue "$cmd_id" auto_push_ancestry_retry'* ]]
+    # karo review (msg_20260904_080633_981530_67f5467a): a plain
+    # check-pending-then-enqueue pair is not atomic across concurrent
+    # processes. The dispatch wrapper must instead call a dedicated claim
+    # helper whose reservation write uses O_EXCL (atomic create-or-fail, not
+    # gate_notify_enqueue's mkstemp+os.replace which always succeeds and can
+    # silently clobber a concurrent reservation), and must only launch the
+    # worker after that claim call reports success.
+    [[ "$wrapper_body" == *'gate_notify_claim_auto_push_ancestry_retry "$cmd_id"'* ]]
     [[ "$wrapper_body" == *'gate_notify_complete "$cmd_id" auto_push_ancestry_retry'* ]]
+    local claim_body
+    claim_body="$(sed -n '/^gate_notify_claim_auto_push_ancestry_retry() {/,/^}/p' "$SRC_GATE_SCRIPT")"
+    [ -n "$claim_body" ]
+    [[ "$claim_body" == *'O_EXCL'* ]]
+    [[ "$claim_body" == *'FileExistsError'* ]]
 
     # ...and durable: the reconcile sweep (already invoked once,
     # unconditionally, per gate invocation) must know how to recover this
-    # item if the worker crashes before completing.
+    # item if the worker crashes before completing, and must itself be
+    # race-safe against a second concurrent sweep recovering the same stale
+    # record (an atomic `set -o noclobber` marker create, not a plain
+    # existence check, must gate the replay).
     run grep -Fc 'auto_push_ancestry_retry)' "$SRC_GATE_SCRIPT"
     [ "$status" -eq 0 ]
     [ "$output" -ge 1 ]
     run grep -Fc 'gate_run_auto_push_ancestry_retry "$cmd_id_rec"' "$SRC_GATE_SCRIPT"
     [ "$status" -eq 0 ]
     [ "$output" -eq 1 ]
+    local reconcile_body
+    reconcile_body="$(sed -n '/^gate_notify_reconcile_stale() {/,/^}/p' "$SRC_GATE_SCRIPT")"
+    [ -n "$reconcile_body" ]
+    [[ "$reconcile_body" == *'set -o noclobber'* ]]
 }
 
 # test_necessity: CI status and terminal ancestry share an immutable report and
