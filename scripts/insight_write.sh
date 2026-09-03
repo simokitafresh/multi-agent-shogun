@@ -489,6 +489,13 @@ trap 'rm -f -- "$LEDGER_ENTRY_FILE"' EXIT
 ledger_route_enabled() {
   [[ -x "$LEDGER_WRITER" ]] || return 1
   [[ "$INSIGHTS_LEDGER_ROUTE" == 1 ]] && return 0
+  # run_tests.sh exports an isolated SHOGUN_STATE_DIR to every fixture so
+  # nested publisher consumers cannot touch live state.  That inherited
+  # namespace is not an explicit opt-in to the ledger route: ordinary
+  # INSIGHTS_FILE fixtures must still materialize their own YAML.  The
+  # explicit INSIGHTS_LEDGER_ROUTE path above remains authoritative for
+  # publisher-single tests and canonical writes.
+  [[ "${RUN_TESTS_STATE_ISOLATED:-0}" == 1 ]] && return 1
   [[ -n "${SHOGUN_STATE_DIR:-}" ]]
 }
 ledger_append() {
