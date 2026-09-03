@@ -1,5 +1,6 @@
 # インフラコンテキスト
-<!-- last_updated: 2026-09-04 close_check runtime 再実装 反映 -->
+<!-- last_updated: 2026-09-04 survey guard/draft_review envelope 反映 -->
+<!-- source_commit:52d67c89310a reason:survey guard/draft_review envelope 反映 evidence:context_freshness_check context=context/infrastructure.md commit=52d67c89310a -->
 <!-- source_commit:e4ab98d6bede reason:close_check runtime 再実装 反映 evidence:context_freshness_check context=context/infrastructure.md commit=e4ab98d6bede report=hayate_report_cmd_karo_hotfix_close_check_runtime_reapply_202609032326 -->
 <!-- source_commit:b93ab3c07c93 reason:T3-S-55 軍師 CLI latest 切替 反映 evidence:context_freshness_check context=context/infrastructure.md commit=b93ab3c07c93 -->
 <!-- source_commit:bb2837cd706f reason:T3-S-54 bulk mark_read guard BLOCK 既定 反映 evidence:context_freshness_check context=context/infrastructure.md commit=bb2837cd706f -->
@@ -83,7 +84,7 @@
 <!-- source_commit:e7c3beb64085 reason:2026-09-02 将軍 doc lane: ancestry 後退検出を push_lane/pre-push へ接続(efc16dcd6/e7c3beb64) evidence:CLEAR 03:02/03:09; safe_ff BLOCK 実証 02:50 -->
 <!-- source_commit:a7cb1ca59831 reason:2026-09-02 将軍 doc lane: legacy outbox envelope 移行 a7cb1ca59(T224 追補) evidence:commit a7cb1ca59; DOC_LANE_ALERT blt_022445 -->
 <!-- source_commit:64f01517a70b reason:2026-09-02 将軍 doc lane: U1 f92d1e376 + ancestry 後退 BLOCK 64f01517a evidence:commits f92d1e376/64f01517a; CLEAR 01:54/02:08; 消失 2 回目 16d831ed9 を復元 -->
-<!-- last_synced_lesson: L1730 -->
+<!-- last_synced_lesson: L1732 -->
 <!-- source_commit:593cfb27a612 reason:2026-09-02 将軍 doc lane: U9 safe_ff 既公開 ours merge 除外 593cfb27a evidence:commit 593cfb27a; CLEAR 01:20; integrate c7710efaf on origin/main -->
 <!-- source_commit:458fc4caa91a reason:2026-09-02 将軍 doc lane: U3 msg_id 限定 receipt 458fc4caa evidence:commit 458fc4caa; CLEAR 01:05; staged 11→0; watcher 9/9 restart 01:06 -->
 <!-- source_commit:4dd6898466a27f10ef7d08ed27549b3c095378de reason:2026-09-01 将軍 doc lane: CI RED #6 Integration ci_fix 59fa70e0b evidence:commit 59fa70e0b; CLEAR 22:57 -->
@@ -217,7 +218,7 @@
 <!-- source_commit:f8c49cbd7 reason:cmd_shogun_commit_reservation_ledger_phase1_20260805 evidence:reviewed -->
 <!-- source_commit:515f0214e reason:cmd_karo_hotfix_ga432_context_freshness reviewed source boundary evidence:cmd_complete_gate project=infra context=context/infrastructure.md commit=515f0214e -->
 <!-- source_commit:23a1ce61205ce4496ab11570583e8e8adcaeac4e reason:reflux backlink SSOT update reviewed evidence:incoming 0 to 1; runner69/69; target doc diff0 -->
-<!-- last_synced_lesson: L1730 -->
+<!-- last_synced_lesson: L1732 -->
 
 結論: 本ファイルは検索起点となる索引層。運用詳細・経緯・教訓本文は7つの詳細正本へ移設した。
 source boundary一致taskはregistryのowner/update_triggerからcontext_update_candidatesを自動注入し、未処理候補はcmd_complete_gateがBLOCK、明示処理済み/無関係はCLEAR。
@@ -268,7 +269,7 @@ source boundary一致taskはregistryのowner/update_triggerからcontext_update_
 結論: 詳細は `docs/research/infrastructure-lessons-reviews-operations.md` に保存。原文を省略せず移設済み。
 見出し: 前節「Infra教訓索引」の連続本文（source lines 1701-2123）。
 - L1503: 既存legacy欠損は不変multisetで隔離せよ（cmd_karo_hotfix_shared_operational_log_ownership_20260801）
-<!-- last_synced_lesson: L1730 -->
+<!-- last_synced_lesson: L1732 -->
 - L1504: appendとarchiveはreaderを含むgeneration transactionにせよ（cmd_karo_hotfix_gunshi_cs_remediation_generation_20260801）
 - L1505: 永続test宣言はtask正本に置く（cmd_4206）
 - L1506: active context DEFERはowner存在だけでなくdirty・baseline変化・fresh leaseの全ANDにせよ（cmd_karo_hotfix_active_context_gate_transient_20260801）
@@ -494,6 +495,8 @@ source boundary一致taskはregistryのowner/update_triggerからcontext_update_
 - L1728: 実行されるsource単位へhelperを配置する（cmd_karo_hotfix_await_clear_slot_release_202609031920）
 - L1729: テスト状態分離用環境変数を本番経路の明示opt-inと混同しない（cmd_karo_ci_fix_33758291388_insight_semantic）
 - L1730: sleep-based bounded poll loopは経過時間チェックを『各iteration開始前』に置き、iteration内部の外部呼び出し(python3等のfork)自体もtimeoutで打ち切らないと本番CPU競合下で設定上限を大幅超過する（cmd_karo_hotfix_t3s40_post_source_perf_202609032243）
+- L1731: sed行範囲抽出は非一意アンカーで分岐をまたいで誤爆する（cmd_karo_hotfix_t3s40_post_source_full_instrumentation_202609040542）
+- L1732: sed行範囲抽出は非一意アンカーで分岐をまたいで誤爆する（cmd_karo_hotfix_t3s40_post_source_full_instrumentation_202609040542）
 
 ## 設計標準・テスト・因果
 
@@ -660,6 +663,8 @@ source boundary一致taskはregistryのowner/update_triggerからcontext_update_
 - **U11 root sync の reason=unknown 分岐漏れ根治(小太郎 `cmd_karo_hotfix_u11_unknown_reason_branch_202609031635` be30f9808、publisher 発行 16:54)**: `scripts/publisher.sh` の root sync で、driver 無し dirty path が incoming と重なる場合に第 4 経路へ落ちて `root_sync_skipped reason=unknown`(events seq 679/693)を出していた分岐漏れを、AC1 の 3 分岐(ff / driver 3-way / no_driver skip)へ閉じ、events の reason 文字列を契約 bats に固定。
 - **publisher rc31 の origin 祖先判定(影丸 `cmd_karo_hotfix_publisher_rc31_origin_ancestor_202609031708` f35982096、publisher 発行 17:28)**: `scripts/publisher.sh` は request の成果 commit が origin/main の ancestor なら missing artifact(rc31)を出さず already_published として events に記録し家老へ通知しない(16:09/16:24 の偽 rc31 通知 2 回の根治)。ancestor 判定は fetch 後の origin/main で行う(ローカル main は不可)。
 - **deploy_task の code task は path 未宣言でも task worktree を既定 ON(小太郎 `cmd_karo_hotfix_deploy_yaml_worktree_default_202609031708` 4e60ff1e1、publisher 発行 17:59)**: hotfix/impl/ci_fix の task が target_path/planned_paths を一切宣言しないと source_path_count=0 で task_worktree_required=false のまま skip され、忍者の実装 commit が shared root HEAD へ直接作られていた(実例 3516dfccc=watchdog parent pid hotfix)。未宣言時のみ worktree を強制し、宣言済みの既存判定(no-code 例外含む)は不変。bats `tests/unit/test_deploy_task_yaml_injection.bats` +127 行。tsumari 型 1(root writer 複数)の発生源 1 つを閉じる。
+- **Claude Code の満足度 survey 抑止を起動 SSOT へ注入+survey 画面を confirmation guard で検出(影丸 `cmd_karo_hotfix_claude_survey_prompt_guard_202609040216` ec6d13d7d、09-04 07:03、T3-S-52 系)**: 02:14 に軍師 pane が『How is Claude doing this session?』で停止した件。現行 2.1.259 の抑止環境変数を実バイナリ・公式 docs・設定 schema で確認し `scripts/lib/cli_lookup.sh` の起動コマンドへ注入、`pane_confirmation_guard.sh` に survey 構造検出(1: Bad / 2: Fine / 3: Good / 0: Dismiss)を追加(+36)、正負 fixture 32 行。Codex の update 確認は config key が無効と確定したため、respawn 直後の自動『3. Skip until next version』送出を別 task(疾風 07:27)で実装中。
+- **draft_review_approval の review_result 通知に commander identity envelope を付与(軍師 D0 52d67c893、07:33)**: receipt 記録後の家老通知が inbox_write の envelope ガードで BLOCK され『receipt あり・通知なし』の半端状態になっていた(軍師 latest CLI 復帰後の自走 D0 2 件目、T3-S-56 と同じく approval 経路の穴)。bats test_deploy_task_draft_review +10。
 - **close_check の runtime direct-push 判定を現 origin/main へ再実装(疾風 `cmd_karo_hotfix_close_check_runtime_reapply_202609032326` e4ab98d6b、09-04 07:01、単一 publisher §15 残2 の 3 件目)**: 元 commit(13:27 起票)は test_single_publisher_close_check.bats の競合で合流不能。複数 `git -c ... push` 形式を fixture で網羅し、task 帰属テスト 10/10。`scripts/single_publisher_close_check.sh` 2 行、bats +13。これで残2 の非 YAML 競合 3 件(gate dual-read/watchdog stopflag/close_check runtime)は全て再実装で着地。
 - **軍師の Claude CLI を pinned 2.1.87 から latest へ可逆切替(将軍 D0 b93ab3c07、09-04 07:00、T3-S-55)**: 06:44 以降、pinned `~/bin/claude`(2.1.87)の API 呼出が `claude_code_version_too_old` で全拒否され、軍師の review が停止(T3-S-54 の既読化反復はこの障害下の退行)。`config/settings.yaml` の gunshi.launch_cmd を `~/.local/bin/claude`(2.1.259)へ(`shogun_cli_switch.sh unpin-latest --agent gunshi`)+`agent_respawn.sh gunshi`。model は settings.yaml の model_name が正本(表示は resolve_model_display)。他の Claude 忍者(小太郎/飛猿)は latest で無影響、Codex は無関係。戻す時は `pin-2.1.87 --agent gunshi`。教訓: pinned 版固定は API 側の最低版数引上げに追随しない。watcher/monitor は error JSON を busy と誤認するため『version_too_old』検知→latest respawn の経路が要る(家老 hotfix 候補)。同 pane で weekly limit 84%% 警告。
 - **inbox_mark_read の bulk guard を BLOCK 既定へ(将軍 D0 bb2837cd7、09-04 06:28、T3-S-54)**: 軍師が inbox_read 出力の未読 ID を while-loop で本文処理前に一括 mark_read し(09-01 事故の再発)、家老 3 通+将軍 1 通の bundle 再生成依頼が既読化のみで消失、3 GATE の deadlock が 4.5 時間続いた。bf13c13bd で WARN 既定にしていた `INBOX_MARK_READ_BULK_ENFORCE` を既定 1(BLOCK)へ。解除は明示 0 のみ。bats test_inbox_mark_read 29/29。同時に将軍が 2 bundle へ review.report_fingerprint(report sha256)を直接付与し consume OK にしたが、家老 ACCEPT には review_approval.sh による正式 LGTM が必要=軍師へコマンド 3 本を直送(06:30)。
