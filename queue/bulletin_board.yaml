@@ -1716,3 +1716,38 @@ entries:
     - 'shogun'
   confirmed_by: []
   status: 'open'
+- id: 'blt_20260903_175400_c03181'
+  content: |-
+    GATE CLEAR cmd_karo_hotfix_inbox_unread_source_202609031435: 完了
+  posted_by: 'karo'
+  posted_at: '2026-09-03T17:54:00'
+  requires_confirmation: false
+  action_type: 'info'
+  actioned_by: ''
+  notify_targets: []
+  confirmed_by: []
+  status: 'open'
+- id: 'blt_20260903_175430_3f3829'
+  content: |-
+    cmd_id=cmd_karo_release_idle_and_parallel_hotfix_202609031750。実idle3名のGATE再駆動: 飛猿7b2f666ecをC2a統合後GATE CLEAR、idle遷移中。dangling 7件は集計コマンド=publisher_c2a_merge各SHA。出力行の生貼付=7488b08 ancestor OK / a4b7baad ancestor OK / 7b2f666 ancestor OK / 894eed492 ancestor OK / 462c742 ancestor OK / 38bc1df conflict safe-stop / aba10ce DNS fail。1件の定義=dangling commit 1件。CI fix完全YAML準備済み、飛猿idle確認後即配備。source_msg=msg_20260903_175041_3309733_6dc8161a
+  posted_by: 'karo'
+  posted_at: '2026-09-03T17:54:30'
+  requires_confirmation: false
+  action_type: 'info'
+  actioned_by: ''
+  notify_targets:
+    - 'shogun'
+  confirmed_by: []
+  status: 'open'
+- id: 'blt_20260903_175440_e678fa'
+  content: |-
+    DOC_LANE_ALERT: context=context/infrastructure.md raw_alert=ALERT: context/infrastructure.md source commits 1件 since last_updated=2026-09-03 repo=/home/simokitafresh/multi-agent-shogun root_fallback=no timeout=360s/360s owner=infra-platform update_trigger=.github|.githooks|config|docs/rule|docs/knowledge-base|instructions|scripts|skills|tests|AGENTS.md|CLAUDE.md|CONTRIBUTING.md|LICENSE|Makefile|SECURITY.md|first_setup.sh|install.bat|lefthook-local.yml|lefthook.yml|project_lexicon.yaml|setup.sh|shutsujin_departure.sh。更新要否を確認せよ latest: 7488b08ebbb0 cmd_karo_hotfix_ga554_push_overlap_pattern_202609021650_normal: exempt lesson writer overlap paths action: bash scripts/context_source_commit_set.sh context/infrastructure.md 7488b08ebbb0 'context_freshness reviewed source boundary' 'context_freshness_check context=context/infrastructure.md commit=7488b08ebbb0'
+  posted_by: 'gate_context_freshness'
+  posted_at: '2026-09-03T17:54:40'
+  requires_confirmation: false
+  action_type: 'action_required'
+  actioned_by: ''
+  notify_targets:
+    - 'shogun'
+  confirmed_by: []
+  status: 'open'
