@@ -1,0 +1,510 @@
+meta:
+  source_magazine: https://note.com/tokyojibika/m/mb4377418b422
+  complete_guide: https://note.com/tokyojibika/n/n171daa7f92a1
+  fetched_at: '2026-09-03'
+  total_entries: 50
+  rule: usable_numbers は記事本文にある期間/CAGR/MaxDD/ベンチのセットのみ(推測禁止・無ければ空文字)。frames は マニュアル§5 の 週次枠A(教材再掲)/B(検証の一切れ)/C(運用の形)
+    のいずれに使えるか(空リスト=台帳掲載のみで投稿枠には使わない)
+entries:
+- key: nbdb2d8e0287f
+  url: https://note.com/tokyojibika/n/nbdb2d8e0287f
+  title: 投資戦略で重要なポジションの決定性 — 浮動小数点ノイズで動く穴を「同値帯ε＋根拠あるtie-break」で閉じる
+  published: '2026-08-18'
+  price_yen: 0
+  frames:
+  - B
+  usable_numbers: ''
+  first_line_candidate: バックテストの成績は、実は小数点以下の丸め方一つで変わることがある。
+  note: ''
+- key: n036cc9a843a4
+  url: https://note.com/tokyojibika/n/n036cc9a843a4
+  title: トレンドフォローに最適なシグナルはたった1つのEMAだった — Valeyre (2026) 論文解説
+  published: '2026-08-07'
+  price_yen: 0
+  frames:
+  - B
+  usable_numbers: ''
+  first_line_candidate: トレンドフォローの理論では、指標を増やすほど良くなるとは限らない。
+  note: 内部用語(理論式)は2投稿目以降
+- key: nb9c81390c146
+  url: https://note.com/tokyojibika/n/nb9c81390c146
+  title: 期待値がプラスでも勝てない。投資戦略の「継続可能性」を測る5つの指標
+  published: '2026-08-03'
+  price_yen: 0
+  frames:
+  - B
+  usable_numbers: ''
+  first_line_candidate: 期待値がプラスの戦略でも、続けられなければ意味がない。
+  note: ''
+- key: ndddc13881ad5
+  url: https://note.com/tokyojibika/n/ndddc13881ad5
+  title: デュアルモメンタムは古くなったのか？2026年の最新研究4本が示す答え
+  published: '2026-07-30'
+  price_yen: 0
+  frames:
+  - B
+  usable_numbers: ''
+  first_line_candidate: 複数のうち今強い方を持つやり方は、最新の研究でも裏付けられている。
+  note: ''
+- key: n8bb0c02267b3
+  url: https://note.com/tokyojibika/n/n8bb0c02267b3
+  title: 生き残るだけでは足りない。有限時間でモメンタムが最も基本的な投資戦略になる理由。
+  published: '2026-07-27'
+  price_yen: 0
+  frames:
+  - B
+  usable_numbers: ''
+  first_line_candidate: 短期の勝率よりも、長く続けられるかの方が重要という研究がある。
+  note: ''
+- key: n55d0e2f78af5
+  url: https://note.com/tokyojibika/n/n55d0e2f78af5
+  title: 2026年時点で有効と考えられるクオンツ・ファクター
+  published: '2026-07-21'
+  price_yen: 0
+  frames:
+  - B
+  usable_numbers: ''
+  first_line_candidate: 値動きの荒さを抑える要因として、今も有効とされる要素がある。
+  note: 学術的知見で内部戦略名は出さない
+- key: ne4a042a92874
+  url: https://note.com/tokyojibika/n/ne4a042a92874
+  title: プラン別ポートフォリオ一覧ガイド
+  published: '2026-05-11'
+  price_yen: 0
+  frames:
+  - C
+  usable_numbers: ''
+  first_line_candidate: 月1回の確認だけで完結する仕組みを、無料の体験から始められる。
+  note: ''
+- key: nfdf1b319eee9
+  url: https://note.com/tokyojibika/n/nfdf1b319eee9
+  title: プレミアムプラン限定ポートフォリオの実力
+  published: '2026-05-11'
+  price_yen: 0
+  frames:
+  - B
+  usable_numbers: '期間2013年4月〜2026年5月(約13年)、ベンチSPY/TQQQ。CAGR: SPY約14%・TQQQ44.6%(上位戦略はTQQQ超)。MaxDD: SPY-23.8%・TQQQ-79.1%(上位戦略は-21.2%〜-63.1%の範囲)'
+  first_line_candidate: 下がるときも3倍のTQQQと、下落局面で退避する仕組みを並べて比較した。
+  note: 保有シグナル・構成tickerは出さない。metrics(CAGR/MaxDD)のみ
+- key: n0d5fb0fff96b
+  url: https://note.com/tokyojibika/n/n0d5fb0fff96b
+  title: スタンダードプランのポートフォリオ解説
+  published: '2026-05-11'
+  price_yen: 0
+  frames:
+  - B
+  usable_numbers: '期間2012年4月〜2026年5月(約14年)、ベンチSPY/TQQQ。CAGR: SPY約14%・TQQQ40.6%。MaxDD: SPY-23.8%・TQQQ-79.1%'
+  first_line_candidate: 同じ14年間、レバレッジを掛けたままのTQQQと退避ありの戦略で下落幅がどう違うかを見る。
+  note: 保有シグナル・構成tickerは出さない。metrics(CAGR/MaxDD)のみ
+- key: ncb0f14c4ebdb
+  url: https://note.com/tokyojibika/n/ncb0f14c4ebdb
+  title: ベーシックプランでデュアルモメンタムの基本を体験する
+  published: '2026-05-11'
+  price_yen: 0
+  frames:
+  - A
+  - C
+  usable_numbers: '期間2007年1月〜2026年5月(19年)、ベンチSPY。CAGR: Basic-DualMomentum 17.2%・SPY10.8%。MaxDD: Basic-DualMomentum
+    -41.0%・SPY-52.9%'
+  first_line_candidate: 19年間、月1回の確認だけでSPYより浅い下落を実現した仕組みがある。
+  note: Basic-DualMomentumは殿B-6によりholdingまで公開可
+- key: nb338776237c5
+  url: https://note.com/tokyojibika/n/nb338776237c5
+  title: リターンだけでは見えないもの
+  published: '2026-05-06'
+  price_yen: 0
+  frames:
+  - B
+  usable_numbers: '期間14年間、ベンチSPY。SPY: CAGR14.4%・MaxDD-23.8%・PTU66.5%・平均含み損期間4.2ヶ月'
+  first_line_candidate: リターンが高くても、その裏で何割の時間が含み損なのかは語られない。
+  note: 他戦略のCAGR/MaxDDはmetricsのみ引用可
+- key: n9a1689c1b58a
+  url: https://note.com/tokyojibika/n/n9a1689c1b58a
+  title: DM-Signal Weekly — 2026-04-30
+  published: '2026-04-30'
+  price_yen: 0
+  frames: []
+  usable_numbers: ''
+  first_line_candidate: ''
+  note: 週次速報は鮮度が命のため台帳の再掲対象から除外(枠なし)
+- key: nd28c8bceb705
+  url: https://note.com/tokyojibika/n/nd28c8bceb705
+  title: SPY・TQQQ・AI戦略 — 市場の追い風を差し引いたら何が残るか
+  published: '2026-04-28'
+  price_yen: 0
+  frames:
+  - B
+  usable_numbers: '期間2011年10月〜2026年4月(175ヶ月・約14.5年)、ベンチSPY。CAGR: SPY15.6%・TQQQ43.7%・戦略101.9%。MaxDD: SPY-23.8%・TQQQ-79.1%・戦略-17.7%'
+  first_line_candidate: 年率40%と言われたら、まずそのうちどれだけが市場全体の値上がりのおかげかを疑うべきだ。
+  note: ''
+- key: n1573f826b53f
+  url: https://note.com/tokyojibika/n/n1573f826b53f
+  title: AIが作ったバックテスト戦略、信じていいの? — 過剰最適化を見抜く5つの検証
+  published: '2026-04-17'
+  price_yen: 0
+  frames:
+  - B
+  usable_numbers: ''
+  first_line_candidate: 年率90%のバックテストを見せられたら、まず過剰最適化を疑うべきだ。
+  note: ''
+- key: n0c2911cc90f8
+  url: https://note.com/tokyojibika/n/n0c2911cc90f8
+  title: DM-Signal ユーザーマニュアル
+  published: '2026-03-26'
+  price_yen: 0
+  frames:
+  - C
+  usable_numbers: ''
+  first_line_candidate: 毎月やることは1つ、シグナルを確認するだけの使い方をまとめた。
+  note: ''
+- key: n7b5a2ef10b6e
+  url: https://note.com/tokyojibika/n/n7b5a2ef10b6e
+  title: 殿、大発見でございます — 戦国デュアルモメンタムの全貌
+  published: '2026-02-14'
+  price_yen: 0
+  frames: []
+  usable_numbers: ''
+  first_line_candidate: ''
+  note: 戦国語り口はB面(ファン向け)専用。A面第一文には不可
+- key: nc5e1e51356d2
+  url: https://note.com/tokyojibika/n/nc5e1e51356d2
+  title: 投資で豊かになりたいならウサギであれ。亀はゆっくり貧乏になる。
+  published: '2026-01-17'
+  price_yen: 0
+  frames: []
+  usable_numbers: ''
+  first_line_candidate: ''
+  note: 比喩エッセイ・DM固有の検証数字なし。台帳対象外(枠なし)
+- key: ncc0b652f7dcd
+  url: https://note.com/tokyojibika/n/ncc0b652f7dcd
+  title: なぜ多くの投資シグナルは失敗するのか？
+  published: '2026-01-06'
+  price_yen: 0
+  frames:
+  - B
+  usable_numbers: ''
+  first_line_candidate: 多くの投資シグナルが失敗する理由は、検証方法そのものにある。
+  note: ''
+- key: n23e96226520b
+  url: https://note.com/tokyojibika/n/n23e96226520b
+  title: 収入を最速で伸ばす「順番の理論」 | ストック×フロー×レバレッジ×複利
+  published: '2025-11-17'
+  price_yen: 0
+  frames: []
+  usable_numbers: ''
+  first_line_candidate: ''
+  note: 不動産等DM以外のテーマ混在。マニュアル§9によりDM入口に混ぜない対象外
+- key: n59059a69c260
+  url: https://note.com/tokyojibika/n/n59059a69c260
+  title: 年率35%で増え続けるポートフォリオがある
+  published: '2025-11-09'
+  price_yen: 0
+  frames:
+  - B
+  usable_numbers: ''
+  first_line_candidate: SPYの半分以下のリスクで、年率で上回り続けるやり方がある。
+  note: 期間の明記なし。数字は空欄のまま(推測禁止)
+- key: n8be35549c907
+  url: https://note.com/tokyojibika/n/n8be35549c907
+  title: 攻撃型デュアルモメンタム×3倍レバレッジ「DM2」 パフォーマンスレポート
+  published: '2025-11-08'
+  price_yen: 0
+  frames:
+  - B
+  usable_numbers: '期間2012年〜2025年、ベンチS&P500。CAGR: 戦略59.91%・S&P500 14.80%。MaxDD: 戦略-56.62%・S&P500-23.93%'
+  first_line_candidate: 3倍レバレッジを使った積極運用の戦略を、S&P500と並べて13年分検証した。
+  note: 保有シグナルは出さない。metricsのみ
+- key: nd6739b8be332
+  url: https://note.com/tokyojibika/n/nd6739b8be332
+  title: 固すぎるデュアルモメンタムこと「DM-safe」パフォーマンスレポート
+  published: '2025-11-07'
+  price_yen: 0
+  frames:
+  - B
+  usable_numbers: '期間2005年〜2025年、ベンチS&P500。CAGR: 戦略16.20%・S&P500 10.85%。MaxDD: 戦略-22.72%・S&P500-50.80%'
+  first_line_candidate: レバレッジを使わない守り型の戦略でも、20年でS&P500を上回った実績がある。
+  note: 保有シグナルは出さない。metricsのみ
+- key: n7fb8e23edd91
+  url: https://note.com/tokyojibika/n/n7fb8e23edd91
+  title: 800年実証されたトレンドフォロー:デュアルモメンタム投資の源流を理解する
+  published: '2025-10-31'
+  price_yen: 0
+  frames:
+  - B
+  usable_numbers: ''
+  first_line_candidate: トレンドに乗るという発想は、800年分のデータで検証されている。
+  note: ''
+- key: n5370e64f57ee
+  url: https://note.com/tokyojibika/n/n5370e64f57ee
+  title: デュアルモメンタム投資とモメンタムクラッシュへの備え：個人投資家が使える現実的防御策（2025年版）
+  published: '2025-10-24'
+  price_yen: 0
+  frames:
+  - B
+  usable_numbers: ''
+  first_line_candidate: 急な下落局面はゼロにはできないが、備え方は具体的に語れる。
+  note: ''
+- key: nb244c3d1d704
+  url: https://note.com/tokyojibika/n/nb244c3d1d704
+  title: あなたは「正しい投資」をしているつもりで、ゆっくり貧乏になっている
+  published: '2025-10-19'
+  price_yen: 0
+  frames:
+  - B
+  usable_numbers: ''
+  first_line_candidate: 真面目に積立を続けているのに、資産が思うように増えない理由がある。
+  note: ''
+- key: n71204f1c655d
+  url: https://note.com/tokyojibika/n/n71204f1c655d
+  title: インデックス投資の弱点を補う：デュアルモメンタム投資入門
+  published: '2025-10-17'
+  price_yen: 0
+  frames:
+  - A
+  - B
+  usable_numbers: '期間2001年〜2025年(約25年間)、ベンチSPY/QQQ。MaxDD: 戦略-27.09%・S&P500-50.80%。シャープ比: 戦略0.81・S&P500
+    0.51'
+  first_line_candidate: 下落局面で資産が大きく減るインデックス投資には、補い方がある。
+  note: CAGRは記事内で数値未提示のため含めない
+- key: n805b8b31060e
+  url: https://note.com/tokyojibika/n/n805b8b31060e
+  title: 👉️「デュアルモメンタム投資」で豊かな人生を手に入れよう！バムのメンバーシップでデュアルモメンタム投資を始めるまえに読む完全ガイドブック
+  published: '2025-10-13'
+  price_yen: 0
+  frames:
+  - A
+  usable_numbers: '期間2001年〜2025年(約25年間)、ベンチSPY/QQQ。MaxDD: 戦略-27.09%・S&P500-50.80%。シャープ比: 戦略0.81・S&P500
+    0.51'
+  first_line_candidate: 投資を始める前に、まず仕組みだけを無料で理解しておく。
+  note: CAGRは記事内で数値未提示のため含めない
+- key: n4551d2a7a262
+  url: https://note.com/tokyojibika/n/n4551d2a7a262
+  title: VUCA時代に医師が選ぶべき投資戦略｜デュアルモメンタム投資がインデックス投資より優れる5つの理由
+  published: '2025-10-06'
+  price_yen: 0
+  frames:
+  - A
+  usable_numbers: ''
+  first_line_candidate: 相場が急変する時代でも、月1回の確認で済む投資の形がある。
+  note: ''
+- key: n5be6673bad6b
+  url: https://note.com/tokyojibika/n/n5be6673bad6b
+  title: デュアルモメンタム投資戦略の進化：2015年以降の最新研究動向
+  published: '2025-05-10'
+  price_yen: 0
+  frames:
+  - B
+  usable_numbers: ''
+  first_line_candidate: 2015年以降の学術研究は、この手法の弱点をどう補ってきたかを教えてくれる。
+  note: ''
+- key: n9f730e0ef74c
+  url: https://note.com/tokyojibika/n/n9f730e0ef74c
+  title: '#20｜デュアルモメンタムのポジティブスキュー効果：長期投資でリスクを抑えて高リターンを目指す'
+  published: '2025-01-13'
+  price_yen: 0
+  frames:
+  - B
+  usable_numbers: ''
+  first_line_candidate: 下落のクセ(歪度)まで見ることで、長期投資のリスクの取り方が変わる。
+  note: ''
+- key: n36b433a414fd
+  url: https://note.com/tokyojibika/n/n36b433a414fd
+  title: '#19｜2024年デュアルモメンタム投資のパフォーマンス総括：成功ポイントと課題'
+  published: '2024-12-31'
+  price_yen: 0
+  frames: []
+  usable_numbers: ''
+  first_line_candidate: ''
+  note: 本文に内部プロダクト名(裏Ave7等)が主語で頻出、A面不可。B面(2投稿目以降)限定
+- key: ndd7f66f75617
+  url: https://note.com/tokyojibika/n/ndd7f66f75617
+  title: '#18｜デュアルモメンタムの相対モメンタム徹底解説：初心者でもわかる基本と実践攻略法'
+  published: '2024-12-04'
+  price_yen: 0
+  frames:
+  - A
+  usable_numbers: ''
+  first_line_candidate: 複数の資産のうち、今いちばん強いものを選ぶ考え方を解説する。
+  note: ''
+- key: n1572dc5f1d2b
+  url: https://note.com/tokyojibika/n/n1572dc5f1d2b
+  title: '#17｜デュアルモメンタムの絶対モメンタム徹底解説：初心者でもわかる基本と実践攻略法'
+  published: '2024-12-04'
+  price_yen: 0
+  frames:
+  - A
+  usable_numbers: ''
+  first_line_candidate: 自分自身が上がっているかどうかで、持つか退避するかを決める考え方を解説する。
+  note: ''
+- key: n87f976405c43
+  url: https://note.com/tokyojibika/n/n87f976405c43
+  title: '#16｜デュアルモメンタム投資の理論と実践：基礎から応用まで完全攻略ガイド'
+  published: '2024-11-17'
+  price_yen: 0
+  frames:
+  - A
+  usable_numbers: ''
+  first_line_candidate: 複数のうち今強い方を持ち、自分自身が弱ければ退避する。この2段階を基礎から解説する。
+  note: ''
+- key: naa477d726c48
+  url: https://note.com/tokyojibika/n/naa477d726c48
+  title: '#15｜デュアルモメンタム投資のエッジを徹底解剖：優位性を活かす戦略と実践法'
+  published: '2024-09-08'
+  price_yen: 0
+  frames:
+  - B
+  usable_numbers: ''
+  first_line_candidate: なぜ勝者に乗るやり方が効くのか、学術的な理由を整理した。
+  note: ''
+- key: n35605e0ede99
+  url: https://note.com/tokyojibika/n/n35605e0ede99
+  title: '#14｜デュアルモメンタム DM11徹底解説：レバレッジなしでインデックスETFを49倍にする秘訣'
+  published: '2024-05-26'
+  price_yen: 5000
+  frames:
+  - B
+  usable_numbers: '期間2002年〜2024年5月(20年超)、ベンチSPY(インデックス)。CAGR: 戦略19.78%・インデックス11.07%。MaxDD: 戦略-40.08%・インデックス-50.80%。シャープ比:
+    戦略1.07・インデックス0.69'
+  first_line_candidate: レバレッジを使わなくても、20年間インデックスを上回り続けた検証がある。
+  note: 有料記事(¥5000)。数字は無料プレビュー部分に記載の値のみ使用
+- key: n80a71a460371
+  url: https://note.com/tokyojibika/n/n80a71a460371
+  title: '#13｜デュアルモメンタム DM7の戦略：安定運用と爆発的リターンを両立する方法'
+  published: '2024-04-03'
+  price_yen: 7000
+  frames:
+  - B
+  usable_numbers: ''
+  first_line_candidate: 安定運用と高いリターンを両立できるか、実データで検証した。
+  note: 有料記事(¥7000)。プレビュー内の数字は単独倍率のみのため未使用(推測禁止)
+- key: n17aff7266d58
+  url: https://note.com/tokyojibika/n/n17aff7266d58
+  title: '#12｜トレンドフォローの本質を探る：デュアルモメンタムとの組み合わせで成功する投資戦略'
+  published: '2024-01-31'
+  price_yen: 0
+  frames:
+  - B
+  usable_numbers: ''
+  first_line_candidate: トレンドフォローという考え方の本質を、組み合わせの観点から見直す。
+  note: ''
+- key: n6b0a881d9930
+  url: https://note.com/tokyojibika/n/n6b0a881d9930
+  title: '#11｜デュアルモメンタム×3倍レバレッジの威力：ハイリスク・ハイリターンの投資戦略を徹底解説'
+  published: '2023-12-29'
+  price_yen: 0
+  frames:
+  - B
+  usable_numbers: ''
+  first_line_candidate: レバレッジを使う運用のリターンとリスクを、ローリング収益率で確認する。
+  note: ''
+- key: n89b5a6147608
+  url: https://note.com/tokyojibika/n/n89b5a6147608
+  title: '#10｜デュアルモメンタム投資の拡張方法：成功率を高める新たなアプローチ'
+  published: '2023-10-01'
+  price_yen: 0
+  frames:
+  - B
+  usable_numbers: ''
+  first_line_candidate: 期間の異なるモメンタムを組み合わせると、成功率がどう変わるかを検証した。
+  note: ''
+- key: neb0d211a83ee
+  url: https://note.com/tokyojibika/n/neb0d211a83ee
+  title: 'デュアルモメンタム #9：資産が141倍になったSPXLのデュアルモメンタム＆306倍DM1も追加＆320倍DM1＋も追加（リターン増加に伴い題名も更新2024/11/27）'
+  published: '2023-09-10'
+  price_yen: 7000
+  frames:
+  - B
+  usable_numbers: ''
+  first_line_candidate: レバレッジ型ETFを使った運用を、長期のシャープレシオで評価した。
+  note: 有料記事(¥7000)。プレビュー内の数字は単独倍率のみのため未使用(推測禁止)
+- key: nae7688354cd8
+  url: https://note.com/tokyojibika/n/nae7688354cd8
+  title: '#8｜デュアルモメンタム投資の落とし穴：モメンタムクラッシュの原因と具体的な対策'
+  published: '2023-09-08'
+  price_yen: 0
+  frames:
+  - B
+  usable_numbers: ''
+  first_line_candidate: 強いリターンの裏にある急落リスクと、その対策を整理した。
+  note: ''
+- key: nddb7e9681e4f
+  url: https://note.com/tokyojibika/n/nddb7e9681e4f
+  title: '#7｜デュアルモメンタム必読！モメンタム戦略を深掘りする論文30選'
+  published: '2023-09-03'
+  price_yen: 0
+  frames:
+  - B
+  usable_numbers: ''
+  first_line_candidate: この考え方を裏付ける学術研究は、1930年代から積み重ねられている。
+  note: ''
+- key: nd9a189de6522
+  url: https://note.com/tokyojibika/n/nd9a189de6522
+  title: '#6｜ノンレバで88倍達成！デュアルモメンタムを強化するコンポジット・デュアルモメンタム戦略'
+  published: '2023-08-27'
+  price_yen: 7000
+  frames:
+  - B
+  usable_numbers: ''
+  first_line_candidate: 複数の資産を組み合わせることで、下落の深さをさらに抑えられるかを検証した。
+  note: 有料記事(¥7000)。プレビュー内に期間/CAGR/MaxDDの明確な数値セットなし
+- key: n4cf7bc5e1446
+  url: https://note.com/tokyojibika/n/n4cf7bc5e1446
+  title: '#5｜初心者にもわかるセクターローテーション×デュアルモメンタムの基本と応用'
+  published: '2023-08-22'
+  price_yen: 0
+  frames:
+  - B
+  usable_numbers: ''
+  first_line_candidate: 業種を入れ替える発想と組み合わせた、初心者向けの応用パターンを紹介する。
+  note: ''
+- key: n95b4f711651b
+  url: https://note.com/tokyojibika/n/n95b4f711651b
+  title: '#4｜Portfolio Visualizerを使ったデュアルモメンタム投資の基本：$TMFトレードモデルを動かしてみよう'
+  published: '2023-08-16'
+  price_yen: 2000
+  frames:
+  - B
+  usable_numbers: ''
+  first_line_candidate: 無料で使えるバックテストツールで、この考え方を自分の目で確かめる方法を紹介する。
+  note: 有料記事(¥2000)。プレビュー内に期間/CAGR/MaxDDの明確な数値セットなし
+- key: n30ce0b596fc6
+  url: https://note.com/tokyojibika/n/n30ce0b596fc6
+  title: '#3｜デュアルモメンタム投資の基本用語と手順：初心者向けステップバイステップガイド'
+  published: '2023-08-15'
+  price_yen: 0
+  frames:
+  - A
+  usable_numbers: ''
+  first_line_candidate: 用語と手順だけを、初心者向けに一つずつ整理した。
+  note: ''
+- key: n7782994c63c3
+  url: https://note.com/tokyojibika/n/n7782994c63c3
+  title: '#2｜デュアルモメンタムの基本：投資を始める前に知っておきたい基礎知識'
+  published: '2023-08-13'
+  price_yen: 0
+  frames:
+  - A
+  usable_numbers: ''
+  first_line_candidate: 投資を始める前に知っておきたい基礎知識を、実例のバックテストとあわせて紹介する。
+  note: ''
+- key: ndfbf503352b8
+  url: https://note.com/tokyojibika/n/ndfbf503352b8
+  title: '#1｜モメンタムファクターの基礎知識：デュアルモメンタム投資を始めるための第一歩'
+  published: '2023-08-11'
+  price_yen: 0
+  frames:
+  - A
+  usable_numbers: ''
+  first_line_candidate: 値動きの勢いを利用するという考え方の、いちばん最初の一歩を解説する。
+  note: ''
+- key: n171daa7f92a1
+  url: https://note.com/tokyojibika/n/n171daa7f92a1
+  title: デュアルモメンタムとは【完全ガイド】定義から実践まで徹底解説
+  published: '2025-09-25'
+  price_yen: 0
+  frames:
+  - A
+  usable_numbers: '期間1974年〜2023年(GEM)、ベンチS&P500。CAGR: GEM14.5%・S&P500 10.8%。MaxDD: GEM-22.7%・S&P500-50.9%。シャープ比:
+    GEM0.78・S&P500 0.45'
+  first_line_candidate: デュアルモメンタムは2つだけ見る。今いちばん強い資産か、その資産は現金より強いか。
+  note: S1入口の中核。完全ガイド
