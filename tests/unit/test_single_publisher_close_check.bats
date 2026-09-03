@@ -36,6 +36,9 @@ setup() {
     export SINGLE_PUBLISHER_REPO_ROOT="$FIXTURE_ROOT"
     export SINGLE_PUBLISHER_AFTER_SNAPSHOT_DIR="$AFTER"
     export DAEMON_WATCHDOG_LOG="$FIXTURE_ROOT/logs/daemon_watchdog.log"
+    RUNTIME_LOG="$STATE_ROOT/runtime.log"
+    : > "$RUNTIME_LOG"
+    export SINGLE_PUBLISHER_RUNTIME_LOG="$RUNTIME_LOG"
     CLOSE="$FIXTURE_ROOT/scripts/single_publisher_close_check.sh"
 }
 
@@ -81,11 +84,36 @@ teardown() {
     [[ "$output" == *"after_snapshot: FAIL"* ]]
 }
 
-@test "root direct push condition fails outside the allowlist" {
+@test "root direct push condition ignores static push text without a runtime event" {
     printf 'git push origin main\n' > "$FIXTURE_ROOT/scripts/legacy_push.sh"
+    run bash "$CLOSE" "$START"
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"root_direct_push: PASS calls=0"* ]]
+}
+
+@test "root direct push condition reports an unmarked runtime push with commit identity" {
+    printf 'unmarked runtime\n' > "$FIXTURE_ROOT/runtime.txt"
+    git -C "$FIXTURE_ROOT" add runtime.txt
+    git -C "$FIXTURE_ROOT" commit -qm 'runtime direct push'
+    git -C "$FIXTURE_ROOT" push -q origin main
+    sha="$(git -C "$FIXTURE_ROOT" rev-parse HEAD)"
+    printf '[2099-01-01 00:00:01] PUSH ci=GREEN sha=%s force=0 hook=1\n' "$sha" > "$RUNTIME_LOG"
     run bash "$CLOSE" "$START"
     [ "$status" -eq 1 ]
     [[ "$output" == *"root_direct_push: FAIL calls=1"* ]]
+    [[ "$output" == *"runtime_direct_push: sha=$sha subject=runtime direct push classification=runtime.log"* ]]
+}
+
+@test "root direct push condition excludes the publisher runtime path" {
+    printf 'publisher runtime\n' > "$FIXTURE_ROOT/publisher.txt"
+    git -C "$FIXTURE_ROOT" add publisher.txt
+    git -C "$FIXTURE_ROOT" commit -qm $'publisher runtime\n\nPublished-By: publisher'
+    git -C "$FIXTURE_ROOT" push -q origin main
+    sha="$(git -C "$FIXTURE_ROOT" rev-parse HEAD)"
+    printf '[2099-01-01 00:00:01] publisher: root drain push=1 sha=%s\n' "$sha" > "$RUNTIME_LOG"
+    run bash "$CLOSE" "$START"
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"root_direct_push: PASS calls=0"* ]]
 }
 
 @test "after snapshot records window files and SHA256SUMS" {
