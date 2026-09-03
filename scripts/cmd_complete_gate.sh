@@ -3599,16 +3599,46 @@ PY
 # boundary once this background retry lands. There is no correctness reason
 # to block the current invocation on its outcome, so dispatch it off the
 # synchronous critical path; the outcome surfaces only in the retry log.
+#
+# gunshi formal FAIL (msg_20260904_074552_549133_38de3e9a): a bare background
+# `&` is neither durable (a crash between dispatch and completion loses the
+# retry with no recovery path) nor single-flight (three consecutive WAIT
+# invocations for the same cmd would each spawn their own redundant push
+# attempt, piling up concurrent pushes). Reuse the same
+# gate_notify_enqueue/gate_notify_complete durable-queue primitives the other
+# non-critical GATE CLEAR side effects already use (gunshi_reflux_feedback
+# etc.): the pending record on disk both blocks a second concurrent dispatch
+# for the same cmd_id (single-flight) and gives gate_notify_reconcile_stale
+# (already invoked once, unconditionally, near the top of every gate
+# invocation) a durable trail to recover a worker that crashed before
+# completing -- or before even launching.
+gate_run_auto_push_ancestry_retry() {
+    local cmd_id="$1"
+    shift
+    local retry_log="$SCRIPT_DIR/queue/gates/${cmd_id}/auto_push_ancestry_retry.log"
+    mkdir -p "$(dirname "$retry_log")" 2>/dev/null
+    if cmd_complete_gate_auto_push_ancestry_wait "$@"; then
+        printf '%s\t%s\tPASS\n' "$(date -Iseconds)" "$cmd_id" >> "$retry_log"
+    else
+        printf '%s\t%s\tFAIL\n' "$(date -Iseconds)" "$cmd_id" >> "$retry_log"
+    fi
+}
+
 cmd_complete_gate_queue_auto_push_ancestry_retry() {
+    local cmd_id="$1"
+    shift
     local -a task_file_args=("$@")
-    local retry_log="$GATES_DIR/auto_push_ancestry_retry.log"
+    local pending
+    pending="$(gate_notify_pending_path "$cmd_id" auto_push_ancestry_retry)"
+    if [ -f "$pending" ]; then
+        echo "  auto_push_ancestry_retry: SKIP (already in-flight; single-flight guard)"
+        return 0
+    fi
+    gate_notify_enqueue "$cmd_id" auto_push_ancestry_retry
     (
-        if cmd_complete_gate_auto_push_ancestry_wait "${task_file_args[@]}"; then
-            printf '%s\t%s\tPASS\n' "$(date -Iseconds)" "$CMD_ID" >> "$retry_log"
-        else
-            printf '%s\t%s\tFAIL\n' "$(date -Iseconds)" "$CMD_ID" >> "$retry_log"
-        fi
-    ) >> "$retry_log" 2>&1 &
+        gate_run_auto_push_ancestry_retry "$cmd_id" "${task_file_args[@]}"
+        gate_notify_complete "$cmd_id" auto_push_ancestry_retry
+    ) >> "${LOG_DIR:-/tmp}/cmd_complete_gate_async.log" 2>&1 &
 }
 export -f cmd_complete_gate_queue_auto_push_ancestry_retry
 
@@ -5690,6 +5720,11 @@ print(int(json.load(open(sys.argv[1]))["queued_at_ns"] // 1_000_000_000))
                 gunshi_reflux_2nd) gate_run_gunshi_reflux_only "$cmd_id_rec" ;;
                 clear_notify)
                     ( CLEAR_NOTIFICATION_SENT=false send_clear_notifications_once "$cmd_id_rec" "GATE CLEAR terminal (recovered)" )
+                    ;;
+                auto_push_ancestry_retry)
+                    local -a _apar_recover_files=()
+                    mapfile -t _apar_recover_files < <(list_task_files_for_cmd "$TASKS_DIR" "$cmd_id_rec" | sort -u || true)
+                    gate_run_auto_push_ancestry_retry "$cmd_id_rec" "${_apar_recover_files[@]}"
                     ;;
                 *) echo "[WARN] gate_notify_reconcile: unknown item ${item} (leaving pending)"; continue ;;
             esac
@@ -15409,7 +15444,7 @@ if [ "$ALL_CLEAR" = true ]; then
         # re-derives REPORT_COMMIT_MAIN_ANCESTRY_WAIT from scratch and will
         # see the boundary resolved once the retry lands.
         gate_detail_begin "post_source_checks.report_commit_main_ancestry.auto_push_wait" external_wait
-        cmd_complete_gate_queue_auto_push_ancestry_retry "${MATCHING_TASK_FILES[@]}"
+        cmd_complete_gate_queue_auto_push_ancestry_retry "$CMD_ID" "${MATCHING_TASK_FILES[@]}"
         gate_detail_finish
         echo "GATE WAIT: report_commit_main_ancestry (auto-push retry queued off sync path)"
         record_wait_reason "WAIT:report_commit_main_ancestry"

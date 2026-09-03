@@ -21,7 +21,6 @@ names = (
     "source_publish_receipt_matches",
     "cmd_complete_gate_publisher_origin_ready",
     "queue_postclear_publication_followup",
-    "cmd_complete_gate_queue_auto_push_ancestry_retry",
 )
 chunks = []
 for name in names:
@@ -52,6 +51,8 @@ names = (
     "gate_run_gunshi_reflux_only",
     "gate_run_gunshi_verdict_update",
     "gate_notify_reconcile_stale",
+    "gate_run_auto_push_ancestry_retry",
+    "cmd_complete_gate_queue_auto_push_ancestry_retry",
 )
 chunks = []
 for name in names:
@@ -356,22 +357,29 @@ STUB
 @test "cmd_complete_gate_queue_auto_push_ancestry_retry stays non-blocking when the underlying push retry is slow" {
     local base="$BATS_TEST_TMPDIR/auto-push-retry-slow"
     mkdir -p "$base"
-    GATES_DIR="$base"
-    CMD_ID="cmd_auto_push_retry_slow_probe"
+    SCRIPT_DIR="$base"
+    LOG_DIR="$base/logs"
+    mkdir -p "$LOG_DIR"
+    local cmd_id="cmd_auto_push_retry_slow_probe"
 
     cmd_complete_gate_auto_push_ancestry_wait() { sleep 8; return 0; }
 
-    source "$GATE_SOURCE_PUBLISH_HELPERS"
+    source "$GATE_SOURCE_PUBLISH_HELPERS_DURABLE"
 
     local start_ts end_ts elapsed
     start_ts=$(date +%s)
-    cmd_complete_gate_queue_auto_push_ancestry_retry task1.yaml task2.yaml
+    cmd_complete_gate_queue_auto_push_ancestry_retry "$cmd_id" task1.yaml task2.yaml
     end_ts=$(date +%s)
     elapsed=$((end_ts - start_ts))
     [ "$elapsed" -le 2 ]
+    # the pending record is written synchronously before the `&` dispatch, so
+    # it must already exist even though the underlying push is still sleeping.
+    [ -f "$(gate_notify_pending_path "$cmd_id" auto_push_ancestry_retry)" ]
 
     wait
-    grep -qF "$(printf '\t%s\tPASS' "$CMD_ID")" "$base/auto_push_ancestry_retry.log"
+    grep -qF "$(printf '\t%s\tPASS' "$cmd_id")" "$base/queue/gates/$cmd_id/auto_push_ancestry_retry.log"
+    [ ! -f "$(gate_notify_pending_path "$cmd_id" auto_push_ancestry_retry)" ]
+    [ -f "$(gate_notify_done_path "$cmd_id" auto_push_ancestry_retry)" ]
 }
 
 # test_necessity: false-positive guard for the same fixture -- a failed
@@ -382,17 +390,113 @@ STUB
 @test "cmd_complete_gate_queue_auto_push_ancestry_retry records a distinguishable outcome when the underlying push retry fails" {
     local base="$BATS_TEST_TMPDIR/auto-push-retry-fail"
     mkdir -p "$base"
-    GATES_DIR="$base"
-    CMD_ID="cmd_auto_push_retry_fail_probe"
+    SCRIPT_DIR="$base"
+    LOG_DIR="$base/logs"
+    mkdir -p "$LOG_DIR"
+    local cmd_id="cmd_auto_push_retry_fail_probe"
 
     cmd_complete_gate_auto_push_ancestry_wait() { return 1; }
 
-    source "$GATE_SOURCE_PUBLISH_HELPERS"
+    source "$GATE_SOURCE_PUBLISH_HELPERS_DURABLE"
 
-    cmd_complete_gate_queue_auto_push_ancestry_retry task1.yaml
+    cmd_complete_gate_queue_auto_push_ancestry_retry "$cmd_id" task1.yaml
     wait
-    grep -qF "$(printf '\t%s\tFAIL' "$CMD_ID")" "$base/auto_push_ancestry_retry.log"
-    ! grep -qF "$(printf '\t%s\tPASS' "$CMD_ID")" "$base/auto_push_ancestry_retry.log"
+    grep -qF "$(printf '\t%s\tFAIL' "$cmd_id")" "$base/queue/gates/$cmd_id/auto_push_ancestry_retry.log"
+    ! grep -qF "$(printf '\t%s\tPASS' "$cmd_id")" "$base/queue/gates/$cmd_id/auto_push_ancestry_retry.log"
+    [ -f "$(gate_notify_done_path "$cmd_id" auto_push_ancestry_retry)" ]
+}
+
+# test_necessity: gunshi formal FAIL (msg_20260904_074552_549133_38de3e9a) --
+# a bare `&` had no single-flight guard, so three consecutive WAIT
+# invocations for the same cmd (the exact production pattern: the monitor
+# re-runs cmd_complete_gate.sh on the same still-unresolved cmd every cycle)
+# would each spawn their own redundant push attempt and pile up concurrent
+# pushes. false_negative here = a second/third dispatch actually launching
+# (piled-up retries); false_positive = the real work never running at all.
+@test "cmd_complete_gate_queue_auto_push_ancestry_retry is single-flight across 3 consecutive WAIT invocations for the same cmd" {
+    local base="$BATS_TEST_TMPDIR/auto-push-retry-singleflight"
+    mkdir -p "$base"
+    SCRIPT_DIR="$base"
+    LOG_DIR="$base/logs"
+    mkdir -p "$LOG_DIR"
+    local cmd_id="cmd_auto_push_retry_singleflight_probe"
+    local dispatch_count_file="$base/dispatch_count"
+    : > "$dispatch_count_file"
+
+    # Held open until the test explicitly releases it, so the first dispatch
+    # is still in-flight (pending record present) when invocations 2 and 3
+    # run -- modeling the monitor re-invoking the gate before the first
+    # background push has finished.
+    local release_fifo="$base/release"
+    mkfifo "$release_fifo"
+    cmd_complete_gate_auto_push_ancestry_wait() {
+        printf 'x\n' >> "$dispatch_count_file"
+        read -r _ < "$release_fifo"
+        return 0
+    }
+
+    source "$GATE_SOURCE_PUBLISH_HELPERS_DURABLE"
+
+    # Invocation 1: real dispatch (no pending record exists yet).
+    cmd_complete_gate_queue_auto_push_ancestry_retry "$cmd_id" task1.yaml
+    # Invocations 2 and 3: same cmd, still WAIT -- must be no-ops while the
+    # first dispatch's pending record is still on disk.
+    run cmd_complete_gate_queue_auto_push_ancestry_retry "$cmd_id" task1.yaml
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"SKIP (already in-flight"* ]]
+    run cmd_complete_gate_queue_auto_push_ancestry_retry "$cmd_id" task1.yaml
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"SKIP (already in-flight"* ]]
+
+    # Release the held dispatch and let it complete.
+    printf 'go\n' > "$release_fifo"
+    wait
+    [ "$(wc -l < "$dispatch_count_file")" -eq 1 ]
+    grep -qF "$(printf '\t%s\tPASS' "$cmd_id")" "$base/queue/gates/$cmd_id/auto_push_ancestry_retry.log"
+}
+
+# test_necessity: gunshi formal FAIL, durability half. A worker that never
+# even launches (crash between the pending-record write and the background
+# subshell actually starting) must still be recoverable by a later,
+# independent gate_notify_reconcile_stale sweep -- the same recovery
+# contract the other 4 non-critical GATE CLEAR side effects already prove
+# (see the AC2 durability fixture above), now extended to this item.
+@test "auto_push_ancestry_retry: a worker that never launches is recovered by a later reconcile sweep" {
+    local base="$BATS_TEST_TMPDIR/auto-push-retry-recover"
+    mkdir -p "$base/scripts" "$base/logs" "$base/queue/tasks"
+    SCRIPT_DIR="$base"
+    LOG_DIR="$base/logs"
+    TASKS_DIR="$base/queue/tasks"
+    lock_path() { printf '%s.lock\n' "$1"; }
+    list_task_files_for_cmd() { :; }
+    cmd_complete_gate_auto_push_ancestry_wait() { return 0; }
+
+    source "$GATE_SOURCE_PUBLISH_HELPERS_DURABLE"
+
+    local cmd_id="cmd_auto_push_retry_recover_probe"
+    # Step 1: enqueue only -- models a crash between the pending-record write
+    # and the worker subshell actually starting.
+    gate_notify_enqueue "$cmd_id" auto_push_ancestry_retry
+    local pending done
+    pending="$(gate_notify_pending_path "$cmd_id" auto_push_ancestry_retry)"
+    done="$(gate_notify_done_path "$cmd_id" auto_push_ancestry_retry)"
+    [ -f "$pending" ]
+    [ ! -f "$done" ]
+
+    # Step 2: a later, independent reconcile sweep (what any future cmd's own
+    # gate invocation would run) recovers it.
+    GATE_NOTIFY_STALE_AFTER_S=0 gate_notify_reconcile_stale
+    [ -f "$done" ]
+    [ ! -f "$pending" ]
+    grep -qF "$(printf '\t%s\tPASS' "$cmd_id")" "$base/queue/gates/$cmd_id/auto_push_ancestry_retry.log"
+    grep -q "gate_notify_reconcile: recovering stale ${cmd_id}/auto_push_ancestry_retry" "$LOG_DIR/cmd_complete_gate_async.log"
+
+    # Step 3: idempotency -- a second sweep after done must not replay it.
+    local before after
+    before=$(wc -l < "$base/queue/gates/$cmd_id/auto_push_ancestry_retry.log")
+    GATE_NOTIFY_STALE_AFTER_S=0 gate_notify_reconcile_stale
+    after=$(wc -l < "$base/queue/gates/$cmd_id/auto_push_ancestry_retry.log")
+    [ "$before" -eq "$after" ]
 }
 
 # test_necessity: AC2 requires the region between capture_rework_event and

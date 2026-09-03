@@ -9610,20 +9610,42 @@ EOF
 
     # L4 dispatches the retry off the sync path instead of calling
     # cmd_complete_gate_auto_push_ancestry_wait inline.
-    run grep -Fc '        cmd_complete_gate_queue_auto_push_ancestry_retry "${MATCHING_TASK_FILES[@]}"' \
+    run grep -Fc '        cmd_complete_gate_queue_auto_push_ancestry_retry "$CMD_ID" "${MATCHING_TASK_FILES[@]}"' \
         "$SRC_GATE_SCRIPT"
     [ "$status" -eq 0 ]
     [ "$output" -eq 1 ]
 
     # The dispatcher itself must still route through
     # cmd_complete_gate_auto_push_ancestry_wait (proven above to route source
-    # commits to push_task_repositories), not a re-introduced direct
-    # safe_shared_main_ff call.
-    local wrapper_body
+    # commits to push_task_repositories) via the durable-queue worker, not a
+    # re-introduced direct safe_shared_main_ff call.
+    local wrapper_body worker_body
     wrapper_body="$(sed -n '/^cmd_complete_gate_queue_auto_push_ancestry_retry() {/,/^}/p' "$SRC_GATE_SCRIPT")"
+    worker_body="$(sed -n '/^gate_run_auto_push_ancestry_retry() {/,/^}/p' "$SRC_GATE_SCRIPT")"
     [ -n "$wrapper_body" ]
-    [[ "$wrapper_body" == *'cmd_complete_gate_auto_push_ancestry_wait "${task_file_args[@]}"'* ]]
+    [ -n "$worker_body" ]
+    [[ "$wrapper_body" == *'gate_run_auto_push_ancestry_retry "$cmd_id" "${task_file_args[@]}"'* ]]
+    [[ "$worker_body" == *'cmd_complete_gate_auto_push_ancestry_wait "$@"'* ]]
     [[ "$wrapper_body" != *'safe_shared_main_ff.sh'* ]]
+    [[ "$worker_body" != *'safe_shared_main_ff.sh'* ]]
+
+    # gunshi formal FAIL (msg_20260904_074552_549133_38de3e9a): the dispatch
+    # wrapper must be single-flight (a pending durable-queue record already
+    # on disk short-circuits a second concurrent dispatch for the same
+    # cmd_id) rather than a bare, unguarded background `&`.
+    [[ "$wrapper_body" == *'gate_notify_pending_path "$cmd_id" auto_push_ancestry_retry'* ]]
+    [[ "$wrapper_body" == *'gate_notify_enqueue "$cmd_id" auto_push_ancestry_retry'* ]]
+    [[ "$wrapper_body" == *'gate_notify_complete "$cmd_id" auto_push_ancestry_retry'* ]]
+
+    # ...and durable: the reconcile sweep (already invoked once,
+    # unconditionally, per gate invocation) must know how to recover this
+    # item if the worker crashes before completing.
+    run grep -Fc 'auto_push_ancestry_retry)' "$SRC_GATE_SCRIPT"
+    [ "$status" -eq 0 ]
+    [ "$output" -ge 1 ]
+    run grep -Fc 'gate_run_auto_push_ancestry_retry "$cmd_id_rec"' "$SRC_GATE_SCRIPT"
+    [ "$status" -eq 0 ]
+    [ "$output" -eq 1 ]
 }
 
 # test_necessity: CI status and terminal ancestry share an immutable report and
