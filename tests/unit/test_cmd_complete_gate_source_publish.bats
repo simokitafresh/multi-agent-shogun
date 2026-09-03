@@ -255,3 +255,86 @@ STUB
     [ "$begin_count" -eq 0 ]
     [ "$finish_count" -eq 1 ]
 }
+
+# test_necessity: cmd_karo_hotfix_t3s40_post_source_v6 AC2. v5 (cmd_karo_hotfix_t3s40_post_source_v5_202609040305)
+# code-audited >=10 synchronous subprocess starts inside finalize_pre_postclear,
+# two of which (gunshi_verdict cmd_design_quality.yaml flock -w10, and the
+# terminal send_clear_notifications_once -> notify_shogun_gate_clear
+# timeout-10 inbox_write) carry a documented worst-case 10s wait each. None of
+# these five side effects (gunshi reflux x2, gunshi review_feedback,
+# gunshi_verdict update, workaround-rate display, clear notifications) gates
+# the CLEAR decision or a state-queue row; each must run detached (`&`) so a
+# slow flock/inbox_write can no longer inflate the synchronous
+# post_source_checks window. False positive here = a claimed "queued (async)"
+# label without a real background job (the delay would silently return).
+@test "AC2 positive: gunshi reflux/review_feedback/verdict/workaround-rate/clear-notify side effects run detached" {
+    local gate_script="$BATS_TEST_DIRNAME/../../scripts/cmd_complete_gate.sh"
+
+    # gunshi_gate_reflux (1st run) + gunshi review_feedback: one ordered async
+    # subshell (reflux must textually precede the review_feedback notification
+    # so the "review_log synced before gunshi is notified" invariant survives
+    # being moved off the synchronous path).
+    local block_start block_end reflux_rel feedback_rel
+    block_start=$(grep -n '^    echo "Gunshi gate_result reflux + review_feedback (GATE CLEAR, async ordered):"$' "$gate_script" | head -1 | cut -d: -f1)
+    [ -n "$block_start" ]
+    block_end=$(awk -v s="$block_start" 'NR > s && $0 == "    ) &" { print NR; exit }' "$gate_script")
+    [ -n "$block_end" ]
+    reflux_rel=$(sed -n "${block_start},${block_end}p" "$gate_script" | grep -n 'gunshi_gate_reflux.sh"' | head -1 | cut -d: -f1)
+    feedback_rel=$(sed -n "${block_start},${block_end}p" "$gate_script" | grep -n 'inbox_write.sh" gunshi ' | head -1 | cut -d: -f1)
+    [ -n "$reflux_rel" ]
+    [ -n "$feedback_rel" ]
+    [ "$reflux_rel" -lt "$feedback_rel" ]
+
+    # gunshi_verdict update to cmd_design_quality.yaml: whole flock+python3
+    # rewrite wrapped in one background subshell.
+    grep -q '^    echo "  gunshi_verdict update: queued (async)"$' "$gate_script"
+
+    # Workaround-rate display: purely informational ("情報のみ、BLOCKしない"),
+    # backgrounded rather than run inline in the synchronous span.
+    grep -q 'workaround_rate: queued (async' "$gate_script"
+
+    # gunshi_gate_reflux 2nd run (post-CLEAR catch-up, no downstream ordering
+    # dependency in this invocation): backgrounded.
+    grep -q '^        echo "  gunshi_gate_reflux (2nd run): queued (async)"$' "$gate_script"
+
+    # Terminal shogun/karo notifications (send_clear_notifications_once):
+    # backgrounded; CLEAR_NOTIFICATION_SENT is process-local and unread after
+    # this call site, so detaching it changes no downstream decision.
+    grep -q '^    (send_clear_notifications_once "\$CMD_ID" "GATE CLEAR terminal" >> "\$LOG_DIR/cmd_complete_gate_async.log" 2>&1) &$' "$gate_script"
+}
+
+# test_necessity: cmd_karo_hotfix_t3s40_post_source_v6 AC2 negative fixture.
+# AC2 requires keeping "必須状態遷移のみ同期保持" (only essential state
+# transitions stay synchronous). A false negative here = one of these three
+# fail-closed state transitions getting accidentally backgrounded by a future
+# edit, which would let GATE CLEAR return before the durable marker/quality
+# log/terminal status row is actually persisted (session-boundary kill would
+# then silently lose it, reproducing the exact class of bug documented at
+# INS-20260709-000457431-b624 for cmd_quality_log.sh).
+@test "AC2 negative: durable CLEAR marker, cmd_quality_log, and terminal status stay synchronous and fail-closed" {
+    local gate_script="$BATS_TEST_DIRNAME/../../scripts/cmd_complete_gate.sh"
+
+    # Durable CLEAR marker write: "Everything above this point is fail-closed"
+    # boundary comment; must still hard BLOCK (exit 1) on persist failure and
+    # must not be backgrounded.
+    local marker_line
+    marker_line=$(grep -n 'if ! python3 - "\$CMD_COMPLETE_GATE_CLEAR_MARKER" "\$CMD_ID" \\$' "$gate_script" | head -1 | cut -d: -f1)
+    [ -n "$marker_line" ]
+    sed -n "${marker_line}p" "$gate_script" | grep -qv ' &[[:space:]]*$'
+    grep -q 'echo "GATE BLOCK: \${CMD_ID}:durable_clear_marker_persist_failed"' "$gate_script"
+
+    # cmd_quality_log.sh: documented synchronous-by-design (INS-20260709-000457431-b624).
+    local cql_line
+    cql_line=$(grep -n 'bash "\$SCRIPT_DIR/scripts/cmd_quality_log.sh" "\$CMD_ID" "CLEAR"' "$gate_script" | head -1 | cut -d: -f1)
+    [ -n "$cql_line" ]
+    sed -n "${cql_line}p" "$gate_script" | grep -qv ' &[[:space:]]*$'
+    grep -q '同期実行必須(INS-20260709-000457431-b624)' "$gate_script"
+
+    # Terminal "status: completed" write: must still hard BLOCK (exit 1) on
+    # setter failure and must not be backgrounded.
+    local status_line
+    status_line=$(grep -n 'yaml_field_set.sh" "\$YAML_FILE" "\$CMD_ID" status completed' "$gate_script" | head -1 | cut -d: -f1)
+    [ -n "$status_line" ]
+    sed -n "${status_line}p" "$gate_script" | grep -qv ' &[[:space:]]*$'
+    grep -q 'echo "GATE BLOCK: \${CMD_ID}:status_completed_publish_failed"' "$gate_script"
+}

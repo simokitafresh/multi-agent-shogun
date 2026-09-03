@@ -15548,17 +15548,31 @@ PY
     echo "  gist_sync: queued (async)"
 
     # GATE結果通知より先にreview_logへ同期し、/gate-sync手動依存を残さない。
+    # cmd_karo_hotfix_t3s40_post_source_v6: reflux→review_feedback通知の相対順序
+    # (このコメントの制約)はGATE決定自体との同期を要求しない。1本の非同期subshell内で
+    # 順序(reflux完了→通知)を保ったまま同期critical pathから外す。
     echo ""
-    echo "Gunshi gate_result reflux (GATE CLEAR):"
-    if [ -f "$SCRIPT_DIR/scripts/gunshi_gate_reflux.sh" ]; then
-        if bash "$SCRIPT_DIR/scripts/gunshi_gate_reflux.sh" "$CMD_ID" "CLEAR" 2>&1; then
-            echo "  gunshi_gate_reflux: OK"
+    echo "Gunshi gate_result reflux + review_feedback (GATE CLEAR, async ordered):"
+    (
+        if [ -f "$SCRIPT_DIR/scripts/gunshi_gate_reflux.sh" ]; then
+            if bash "$SCRIPT_DIR/scripts/gunshi_gate_reflux.sh" "$CMD_ID" "CLEAR" >> "$LOG_DIR/cmd_complete_gate_async.log" 2>&1; then
+                echo "gunshi_gate_reflux: OK" >> "$LOG_DIR/cmd_complete_gate_async.log"
+            else
+                echo "[INFO] gunshi_gate_reflux: WARN (non-blocking)" >> "$LOG_DIR/cmd_complete_gate_async.log"
+            fi
         else
-            echo "  [INFO] gunshi_gate_reflux: WARN (non-blocking)"
+            echo "[INFO] gunshi_gate_reflux: SKIP (script not found)" >> "$LOG_DIR/cmd_complete_gate_async.log"
         fi
-    else
-        echo "  SKIP (gunshi_gate_reflux.sh not found)"
-    fi
+        # GP-209: dedup — 同一cmd+同一resultが既にinboxにあればスキップ
+        if grep -q "${CMD_ID} gate_result: CLEAR" "$SCRIPT_DIR/queue/inbox/gunshi.yaml" 2>/dev/null; then
+            echo "gunshi review_feedback: SKIP (dedup — already in inbox)" >> "$LOG_DIR/cmd_complete_gate_async.log"
+        elif timeout 10 bash "$SCRIPT_DIR/scripts/inbox_write.sh" gunshi "${CMD_ID} gate_result: CLEAR" gate_clear system >> "$LOG_DIR/cmd_complete_gate_async.log" 2>&1; then
+            echo "gunshi review_feedback: OK (CLEAR)" >> "$LOG_DIR/cmd_complete_gate_async.log"
+        else
+            echo "[INFO] gunshi review_feedback: WARN (non-blocking)" >> "$LOG_DIR/cmd_complete_gate_async.log"
+        fi
+    ) &
+    echo "  gunshi_gate_reflux + review_feedback: queued (async, ordered)"
 
     # ntfy_cmd / shogun / karo は未送信時だけ補完。
 
@@ -15572,18 +15586,6 @@ PY
     ' "$SCRIPT_DIR/queue/shogun_to_karo.yaml" 2>/dev/null || true)
     (BULLETIN_NOTIFY=karo timeout 10 bash "$SCRIPT_DIR/scripts/bulletin_write.sh" karo "GATE CLEAR ${CMD_ID}: ${_blt_title:-完了}" false >/dev/null 2>&1 || true) &
     echo "  bulletin: queued (async)"
-
-    # ─── gunshi review_feedback自動送信（GATE CLEAR） ───
-    # GP-209: dedup — 同一cmd+同一resultが既にinboxにあればスキップ
-    echo ""
-    echo "Gunshi review_feedback (GATE CLEAR):"
-    if grep -q "${CMD_ID} gate_result: CLEAR" "$SCRIPT_DIR/queue/inbox/gunshi.yaml" 2>/dev/null; then
-        echo "  gunshi review_feedback: SKIP (dedup — already in inbox)"
-    elif timeout 10 bash "$SCRIPT_DIR/scripts/inbox_write.sh" gunshi "${CMD_ID} gate_result: CLEAR" gate_clear system 2>/dev/null; then
-        echo "  gunshi review_feedback: OK (CLEAR)"
-    else
-        echo "  [INFO] gunshi review_feedback: WARN (non-blocking)"
-    fi
 
     # ─── GATE CLEAR時 淘汰候補自動deprecate（ベストエフォート） ───
     echo ""
@@ -15648,6 +15650,7 @@ PY
     _GV_REVIEW_LOG="$SCRIPT_DIR/logs/gunshi_review_log.yaml"
     _GV_ARCHIVE_DIR="$SCRIPT_DIR/logs/archive"
     _GV_DQ_FILE="$SCRIPT_DIR/logs/cmd_design_quality.yaml"
+    (
     if [ -f "$_GV_DQ_FILE" ] && [ -f "$_GV_REVIEW_LOG" ]; then
         _gv_result=$(
             (
@@ -15740,10 +15743,12 @@ else:
 END_GV_PY
             ) 200>"$(lock_path "$_GV_DQ_FILE")"
         ) || _gv_result="[INFO] gunshi_verdict update failed (non-blocking)"
-        echo "  ${_gv_result}"
+        echo "  ${_gv_result}" >> "$LOG_DIR/cmd_complete_gate_async.log"
     else
-        echo "  SKIP (cmd_design_quality.yaml or gunshi_review_log.yaml not found)"
+        echo "  SKIP (cmd_design_quality.yaml or gunshi_review_log.yaml not found)" >> "$LOG_DIR/cmd_complete_gate_async.log"
     fi
+    ) &
+    echo "  gunshi_verdict update: queued (async)"
 
     # ─── GATE CLEAR時 insight候補通知（cmd_1217: lesson_candidate/decision_candidate found:true検出） ───
     echo ""
@@ -15994,7 +15999,8 @@ PYEOF
     echo ""
     echo "Workaround rate (GATE CLEAR):"
     if [ -x "$SCRIPT_DIR/scripts/gates/gate_workaround_rate.sh" ]; then
-        bash "$SCRIPT_DIR/scripts/gates/gate_workaround_rate.sh" --last 10 2>&1 || echo "  [INFO] gate_workaround_rate.sh failed (non-blocking)"
+        (bash "$SCRIPT_DIR/scripts/gates/gate_workaround_rate.sh" --last 10 >> "$LOG_DIR/cmd_complete_gate_async.log" 2>&1 || echo "[INFO] gate_workaround_rate.sh failed (non-blocking)" >> "$LOG_DIR/cmd_complete_gate_async.log") &
+        echo "  workaround_rate: queued (async; log=$LOG_DIR/cmd_complete_gate_async.log)"
     else
         echo "  SKIP (gate_workaround_rate.sh not found)"
     fi
@@ -16048,11 +16054,14 @@ PYEOF
     echo ""
     echo "Gunshi gate_result reflux (post-GATE CLEAR 2nd run):"
     if [ -f "$SCRIPT_DIR/scripts/gunshi_gate_reflux.sh" ]; then
-        if bash "$SCRIPT_DIR/scripts/gunshi_gate_reflux.sh" "$CMD_ID" "CLEAR" 2>&1; then
-            echo "  gunshi_gate_reflux: OK"
-        else
-            echo "  [INFO] gunshi_gate_reflux: WARN (non-blocking)"
-        fi
+        (
+            if bash "$SCRIPT_DIR/scripts/gunshi_gate_reflux.sh" "$CMD_ID" "CLEAR" >> "$LOG_DIR/cmd_complete_gate_async.log" 2>&1; then
+                echo "gunshi_gate_reflux (2nd run): OK" >> "$LOG_DIR/cmd_complete_gate_async.log"
+            else
+                echo "[INFO] gunshi_gate_reflux (2nd run): WARN (non-blocking)" >> "$LOG_DIR/cmd_complete_gate_async.log"
+            fi
+        ) &
+        echo "  gunshi_gate_reflux (2nd run): queued (async)"
     else
         echo "  SKIP (gunshi_gate_reflux.sh not found)"
     fi
@@ -16127,7 +16136,8 @@ PYEOF
         || true) &
     echo "Task idle transition: queued (async)"
     echo "Git push (post-GATE CLEAR): queued (asynchronous follow-up)"
-    send_clear_notifications_once "$CMD_ID" "GATE CLEAR terminal"
+    (send_clear_notifications_once "$CMD_ID" "GATE CLEAR terminal" >> "$LOG_DIR/cmd_complete_gate_async.log" 2>&1) &
+    echo "  clear notifications (shogun/karo): queued (async; log=$LOG_DIR/cmd_complete_gate_async.log)"
 
     echo ""
     echo "Async completion wait (pre-exit):"
