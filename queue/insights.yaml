@@ -15622,3 +15622,24 @@ insights:
   resolved_reason: "一次情報で対象INS-20260903-094422155-1367を確認。現行scripts/insight_resolve.shはcmd_4454_full(commit 1a5c2d829)でledger_writer publisher op経路へ移行済みのため、対象の既知設計候補は実装済み部分として解決する。reflux taskのqueue/insights.yaml scope除外は未実施の残課題であり、別cmdのdecision_candidateへ分離する。"
   action_artifact: "target queue/insights.yaml:INS-20260903-094422155-1367;implementation scripts/insight_resolve.sh+scripts/ledger_writer.sh@1a5c2d829;ledger route verified;remaining decision_candidate=reflux task commit scope exclusion from queue/insights.yaml;inventory_before=96/19/545/660"
   resolved_at: "2026-09-03T10:02:50.118369"
+- id: INS-20260903-101856841-bb09
+  ts: "2026-09-03T10:18:56+09:00"
+  insight: "semantic_index_update未登録cmd originノード: [[single_publisher_§15_クローズ判定_20260903_0915]] は既存aliasesに一致なし。類似概念TOP3: growth_loop(学習ループ; alias=single publisher asis tobe 5w1h 20260902 mdを更新せよ; score=16.3) / provisional_hidden-infrastructure-gate-hook-canonical-manifest-20260731(仮: Hidden Infrastructure Gate Hook Canonical Manifest 20260731; alias=AC1 の台帳 docs research single publisher cleanup manifest 2026; score=12.9) / production_parity(本番パリティ; alias=monthly_boundary_§0.6; score=11.8)。概念定義とaliases追加を検討せよ"
+  priority: "low"
+  source: "semantic_index_update"
+  fix_known: false
+  status: pending
+- id: INS-20260903-101857434-4e7d
+  ts: "2026-09-03T10:18:57+09:00"
+  insight: "semantic_index_update未登録cmd originノード: [[root直書き生産者_trailer66%]] は既存aliasesに一致なし。類似概念TOP3: growth_loop(学習ループ; alias=gate_fire_log; score=4.4) / gate_quality_framework(ゲート品質統合フレームワーク; alias=gate_fire_log; score=4.4) / yaml_safe_write(YAML安全書込み; alias=atomic_yaml_write; score=4.0)。概念定義とaliases追加を検討せよ"
+  priority: "low"
+  source: "semantic_index_update"
+  fix_known: false
+  status: pending
+- id: INS-20260903-101858037-6cd4
+  ts: "2026-09-03T10:18:58+09:00"
+  insight: "semantic_index_update未登録cmd originノード: [[cmd_4468_U9_root直書き0]] は既存aliasesに一致なし。類似概念TOP3: ac_merit_review_integrity(AC本旨レビュー整合性; alias=cmd_4098_境界fixture固定; score=16.2) / strong_new_game_completion_contract(強くてニューゲーム完遂契約; alias=T-e4本番検証_cmd_4284; score=14.7) / cmd_quality_logging(cmd設計品質ログ; alias=cmd_quality_log記録; score=14.6)。概念定義とaliases追加を検討せよ"
+  priority: "low"
+  source: "semantic_index_update"
+  fix_known: false
+  status: pending
