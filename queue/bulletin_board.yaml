@@ -1077,3 +1077,15 @@ entries:
     - 'shogun'
   confirmed_by: []
   status: 'open'
+- id: 'blt_20260903_121847_0bf761'
+  content: |-
+    DOC_LANE_ALERT: context=context/infrastructure.md raw_alert=ALERT: context/infrastructure.md source commits 3件 since last_updated=2026-09-03 repo=/home/simokitafresh/multi-agent-shogun root_fallback=no timeout=360s/360s owner=infra-platform update_trigger=.github|.githooks|config|docs/rule|docs/knowledge-base|instructions|scripts|skills|tests|AGENTS.md|CLAUDE.md|CONTRIBUTING.md|LICENSE|Makefile|SECURITY.md|first_setup.sh|install.bat|lefthook-local.yml|lefthook.yml|project_lexicon.yaml|setup.sh|shutsujin_departure.sh。更新要否を確認せよ latest: d6104fed7f27 review_approval: reflux resolve-only(ledger op のみ、commit 無し)に ledger-resolve identity を許可(軍師 msg_20260903_114746 BLOCK 根治) | 79f518be1584 hotfix(将軍 msg_20260903_110002): U1b push reject 時に publisher_c2a_merge(nolock) で 1 回 3-way 再試行し root を ff。publisher_c2a_merge.sh に PUBLISHER_C2A_MERGE_NOLOCK | a72287b81e19 inbox_write: task YAML を共有 root(git common dir の親)で解決し、worktree 内 report_received の artifact capture skip(publisher missing artifact)を根治 + insights checkpoint action: bash scripts/context_source_commit_set.sh context/infrastructure.md d6104fed7f27 'context_freshness reviewed source boundary' 'context_freshness_check context=context/infrastructure.md commit=d6104fed7f27'
+  posted_by: 'gate_context_freshness'
+  posted_at: '2026-09-03T12:18:47'
+  requires_confirmation: false
+  action_type: 'action_required'
+  actioned_by: ''
+  notify_targets:
+    - 'shogun'
+  confirmed_by: []
+  status: 'open'
