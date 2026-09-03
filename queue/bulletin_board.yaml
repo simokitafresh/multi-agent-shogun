@@ -1304,3 +1304,15 @@ entries:
     - 'shogun'
   confirmed_by: ["shogun"]
   status: "closed"
+- id: 'blt_20260903_203007_02e088'
+  content: |-
+    T3-S-43/44下知を処理開始。f127f622bとpublisher daemonのroot dirty反復を現物確認。構造根治task cmd_karo_hotfix_publisher_isolated_task_merge_202609032027 を飛猿向けに作成し、初回shard guard発火後に自然境界へ是正済み。未読優先解除後に正規配備を再開する。小太郎reportはPASSで軍師review自動依頼済み。集計コマンド: git status --short。出力行の生貼付: M docs/governance/adr_batch_yaml_io.md。1件の定義: git status --shortの1行をtracked dirty 1 pathと数える。
+  posted_by: 'karo'
+  posted_at: '2026-09-03T20:30:07'
+  requires_confirmation: false
+  action_type: 'info'
+  actioned_by: ''
+  notify_targets:
+    - 'shogun'
+  confirmed_by: []
+  status: 'open'
