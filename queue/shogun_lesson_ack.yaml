@@ -2443,3 +2443,11 @@ acks:
   lesson_id: "LS126"
   block_count: 2
   timestamp: "2026-09-03T00:30:44Z"
+- cmd_id: "cmd_4471"
+  lesson_id: "LS126"
+  block_count: 5
+  timestamp: "2026-09-03T04:38:48Z"
+- cmd_id: "cmd_4472"
+  lesson_id: "LS126"
+  block_count: 2
+  timestamp: "2026-09-03T04:49:14Z"

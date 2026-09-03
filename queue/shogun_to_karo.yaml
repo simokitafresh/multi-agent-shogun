@@ -1,162 +1,166 @@
 commands:
-  cmd_4469:
-    title: "単一 publisher U10: watchdog による publisher daemon の code-reload(旧 daemon 入替)と §11 after 計測 script、24 時間クローズ検証(trailer 率・root 3 値・自壊 0)の集計 script を実装し、設計書 §15 のクローズ条件を機械判定にする"
-    status: delegated
-    project: infra
-    purpose: "殿 2026-09-03 09:16『追加 4 点を起票してクローズまで持っていけ』。設計書 §15: 稼働 daemon(pid 2581118、05:46 起動)は旧コードで stop flag/ledger 消費/root drain を持たず、家老と将軍が手動で 1 周ずつ回している。D006 により agent は kill せず、F009 により殿にも依頼しない=入替は infra(watchdog)の役目として構造化する。§11 after 計測は before snapshot(単一 publisher before snapshot 20260902、SHA256SUMS 付き)と同窓で未実施。クローズ条件 5 点(§15)は手集計のため、script 1 本で二値化して家老が周期で回せるようにする"
-    scope_mode: FULL
-    target_path: scripts
+  cmd_4473:
+    title: "dm-signal.com Agent Readiness Level3 2-6+2-7: LP の well-known 配下に Web Bot Auth 公開鍵 directory(Ed25519 JWKS、HTTP Message Signatures)を配置し、LP に WebMCP(navigator.modelContext polyfill+プラン表照会 tool 1 本)を最小実装して、Cloudflare 診断の 2 項目を ✅ にする"
+    status: pending
+    project: dm-signal
+    purpose: "殿指示 08-31 05:22『Level3 まで全て完了させるロードマップ』(docs/research/agent_readiness_level3_roadmap_20260831.md v1.3、gist da1b7617)。現状(将軍 curl 13:40 本番): 2-2 PRM・2-3/2-4 Agent Card+skills(cmd_4444)・2-8 DNS-AID(TXT 投入済)は done。未着手=2-5(backend /mcp、2 cmd・直列)・2-6(Web Bot Auth 鍵 directory)・2-7(LP WebMCP)。本 cmd は LP のみで完結し可逆な 2-6 と 2-7 を並走で先に閉じ、2-5 は別 cmd(backend)へ。T212 は 09-02 18:45 から起票 0 で 2 日止まっていた"
+    scope_mode: NORMAL
+    target_path: lp
     acceptance_criteria:
       AC1:
-        description: "scripts/daemon_watchdog.sh に publisher code-reload を追加: 稼働 daemon の起動時刻(pid の起動 epoch)より scripts/publisher.sh・scripts/lib/publisher_*.sh・scripts/ledger_writer.sh のいずれかの mtime(または git blob)が新しければ (1) $STATE_DIR/publish_queue/publisher.stop を置く (2) 猶予 PUBLISHER_RELOAD_GRACE_SEC(既定 120)待つ (3) まだ pid が生きていれば watchdog が supervisor として SIGTERM→5 秒後 SIGKILL(watchdog は infra であり D006 の agent 手動 kill には当たらない。event に kind=reload を記録) (4) 既存の自動再起動(c3fdc90aa)で新コード起動+ntfy。契約 bats tests/unit/test_daemon_watchdog.bats に『fixture daemon の script を更新→stop flag→再起動され pid が変わる』@test 1 と『script 不変なら reload しない』@test 1(test_necessity 非空)。選択実行コマンド=bash scripts/run_tests.sh file tests/unit/test_daemon_watchdog.bats で FAIL 0・SKIP 0。中断再開時の成果物引継ぎ: 未 commit の worktree 差分と最終 bats 出力 log を報告 YAML の progress に path で残し、再開者はそこから継続する"
-        binary_check: "fixture で script 更新→reload event 1・新 pid ≠ 旧 pid ∧ 不変なら reload 0 ∧ 選択実行 FAIL 0 ∧ SKIP 0 か?"
+        description: "2-6 Web Bot Auth。Ed25519 鍵ペアを生成(秘密鍵は DM-signal backend の .env 系と同じ扱いで repo に入れない。生成手順と保存先を DM-signal repo の docs 配下 research ディレクトリに web_bot_auth_keys という名の md で残す、値は書かない)し、公開鍵を JWKS 形式(kty=OKP、crv=Ed25519、kid、x)で LP repo の public 配下 well-known ディレクトリに http-message-signatures-directory として配置(Cloudflare Web Bot Auth 仕様: Content-Type application/http-message-signatures-directory+json、Cache-Control 付与は next.config の headers で)。検証 script(verify_web_bot_auth、curl で 200・content-type・JWKS parse・kid 一致)を DM-signal repo の scripts 配下に level3 ディレクトリを設けて追加。署名運用(outbound bot)は対象外=directory 公開まで"
+        binary_check: "LP の static export 出力(next build)に well-known の http-message-signatures-directory が含まれ、検証 script を export 出力へ向けて実行すると JWKS parse OK(keys 1、crv Ed25519)∧ next.config の headers に content-type 宣言 ∧ 手順書に秘密鍵値 0 ∧ 選択実行コマンド=bash scripts/run_tests.sh task queue/tasks/<ninja>.yaml で FAIL0・SKIP0 か?(本番 URL の 200 は production_proof)"
       AC2:
-        description: "scripts/single_publisher_close_check.sh を新規作成: 引数=入替時刻(ISO)、出力=§15 の 5 条件を二値で 1 行ずつ+総合 PASS/FAIL。(1) trailer 率=git log --since=<入替時刻> --format=%B origin/main の Published-By 行数 と git rev-list --count --since=<入替時刻> origin/main の一致 (2) root=git status --porcelain -uno の行数 0 かつ origin/main..HEAD と HEAD..origin/main が 0 (3) 自壊 0=watchdog log の publisher 自動再起動行が入替時刻以降 0(reload による再起動は除外) (4) §11 after=scripts/single_publisher_after_snapshot.sh(新規、before と同じ抽出=push_lane/pre_push の log 窓・merges・commits・bats_files を $HOME/.local/share/multi-agent-shogun/single_publisher_after_snapshot_<date>/ に SHA256SUMS 付きで保存し、before との件数差を表で stdout)の snapshot 存在 (5) root 直 push 呼出し 0=rg で scripts/ から『git push』の実行行が publisher.sh/publish_direct_commit.sh/publisher_root_drain.sh 以外に 0。契約 bats tests/unit/test_single_publisher_close_check.bats: fixture repo で 5 条件 PASS/FAIL の各 1 @test 以上(計 6 本以上、test_necessity 非空)。選択実行=bash scripts/run_tests.sh file tests/unit/test_single_publisher_close_check.bats で FAIL 0・SKIP 0。bash scripts/ninja_scope_commit.sh -m \"<msg>\" -- scripts/daemon_watchdog.sh scripts/single_publisher_close_check.sh scripts/single_publisher_after_snapshot.sh tests/unit/test_daemon_watchdog.bats tests/unit/test_single_publisher_close_check.bats で 1 commit"
-        binary_check: "close_check が 5 条件を各 1 行で出し総合判定 ∧ after_snapshot が SHA256SUMS 付き dir を作り before との差を表で出す ∧ bats 6 本以上 FAIL 0 ∧ SKIP 0 ∧ 変更 file 5 以内 か?"
+        description: "2-7 WebMCP。Cloudflare の『Let AI agents run in-browser tools』ガイドに従い、LP(Next static export)に navigator.modelContext の polyfill(公式 or webmcp polyfill を npm 依存でなく public 配下の script 1 枚として同梱、出典 URL と版を script 先頭コメントに)と tool 宣言 1 本(name=get_plans、説明=プラン表の照会、入力なし、出力=無料 Basic と有料上級の 2 段の JSON、値は LP のプラン表 copy から生成し保有・ticker・up to 数値は含めない)を追加。EN/JA 両 LP で登録される。ブラウザ console で navigator.modelContext の tool 一覧に get_plans 1 件が出ることを Playwright(既存 e2e 基盤)で固定"
+        binary_check: "ローカルの static export を next start 相当で配信し、Playwright が EN と JA の両ページで navigator.modelContext の tools に get_plans 1 件を検出 ∧ script に出典と版 ∧ 出力 JSON に ticker と up to の文字列 0 ∧ 選択実行コマンド=bash scripts/run_tests.sh task queue/tasks/<ninja>.yaml で FAIL0・SKIP0 か?(本番 LP での検出は production_proof)"
+      numeric_provenance: "AC 内の数値の算出元(将軍 13:40 実測): well-known 既存 file 数 6=git ls-tree --name-only -r origin/main で grep well-known → 6 行。本番 404 の 2 件=curl -o /dev/null -w %{http_code} で http-message-signatures-directory → 404、mcp.json → 404。keys 1・tool 1 件・プラン 2 段は仕様値(roadmap v1.3 §2C の AC『JWKS valid』『tool 登録 1 件』、公開面のプラン語『無料 Basic / 有料上級』=マニュアル v4 §2)であり実測値ではない"
     production_proof:
       owner: monitor
-      description: "着地後、家老が watchdog の reload event(旧 pid 2581118→新 pid)と新 daemon の ledger 消費/root drain の自動稼働(手動 1 周なしで ledger_inbox 0・root ahead 0)を確認して掲示板 1 行。入替時刻から 24 時間後に bash scripts/single_publisher_close_check.sh <入替時刻> を実行し PASS なら将軍が設計書 §15 に『クローズド』を明記。忍者は待たない"
-      binary_check: "reload event 1 ∧ 手動 1 周なしで ledger_inbox 0・root ahead 0 ∧ 24h 後 close_check 総合 PASS か?"
+      description: "LP autoDeploy 後に家老が本番 curl(directory 200+JWKS)と Playwright(get_plans 1 件)を再実行し、殿に Cloudflare AI Crawl Control の Rescan を依頼せず、次回殿がスクショを共有した時に 2-6/2-7 ✅ を突合して掲示板に記録"
     command: |
-      1. scripts/daemon_watchdog.sh(watchdog_publisher_healthy L344、自動再起動 L702)と scripts/publisher.sh の stop flag(L424)を読み、code-reload を足して fixture daemon で reload を確認、bats を選択実行して結果を報告 YAML に生貼付する。
-      2. close_check と after_snapshot の 2 script と bats を書き、選択実行し、ninja_scope_commit で 1 commit する(本番の入替確認と 24h 判定は production_proof=家老)。
+      1. AC1: 鍵生成→JWKS 配置→headers→検証 script→手順書(値なし)。
+      2. AC2: polyfill 同梱→tool 宣言→EN/JA 両方→Playwright 固定。報告 YAML→家老レビュー→publish(DM-signal は LP autoDeploy)。
     assumptions:
-      claim: "稼働 daemon pid 2581118 は 05:46:14 起動で旧コード(pgrep/ps lstart)。stop flag は c3fdc90aa で publisher.sh L424 に実装済(旧 daemon は認識しない)。watchdog の自動再起動は L702(PUBLISHER_MODE=active setsid nohup)。before snapshot=$HOME/.local/share/multi-agent-shogun/single_publisher_before_snapshot_20260902/(SHA256SUMS bats_files.txt commits.window.txt merges.window.txt pre_push.window.log push_lane.window.log、窓 09-01T13:25〜09-02T13:25)。§15 の集計 5 点は 09:15 に将軍が手で実行(trailer 67/101)"
-      source: "ps -o lstart -p 2581118、grep -n publisher.stop scripts/publisher.sh、sed -n 344,360p と 702p scripts/daemon_watchdog.sh、ls before snapshot dir、docs/research/single_publisher_asis_tobe_5w1h_20260902.md §11 §15"
+      claim: "LP は DM-signal repo の lp ディレクトリ(Next static export、Render dm-signal-lp autoDeploy)。well-known は lp の public 配下に agent-card.json/api-catalog/auth.md/oauth-authorization-server/oauth-protected-resource/skills.json が既に存在(origin/main ls-tree で確認)。http-message-signatures-directory と mcp.json は本番 404。2-8 DNS TXT は 09-02 01:17 投入済(record e1fa9b06)。Cloudflare 診断は殿の画面でしか Rescan できない"
+      source: "curl 13:40: agent-card.json 200 application/json、http-message-signatures-directory 404、mcp.json 404。git ls-tree origin/main lp/public/.well-known → 6 file。roadmap v1.3 §2C と進捗表(2-5〜2-7 open)"
       trust: verified
     depends_on: none
-    timeout_minutes: 90
-    estimated_minutes: 60
+    timeout_minutes: 120
+    estimated_minutes: 80
     execution_env:
-      runtime_constraints: "本番 daemon の kill は忍者が行わない(fixture daemon のみ)。本番の reload は着地後に watchdog が行う。before snapshot は読取りのみ。bats は選択実行のみ"
-      long_runtime_reason: "watchdog の reload 分岐と fixture daemon の起動/更新/再起動 test、close_check 5 条件と after_snapshot の抽出 5 種、bats 8 本"
-      measured_runtime_sec: 3600
+      runtime_constraints: "task_worktree 必須(DM-signal repo)。秘密鍵を repo・報告・手順書に書かない。LP 以外(backend)は触らない。本番反映は autoDeploy(可逆=revert で戻る)"
+      long_runtime_reason: "鍵生成+JWKS+headers+検証 script と polyfill+tool+Playwright の 2 塊"
+      measured_runtime_sec: 4800
     split_decision:
       boundary_ac_ids: [AC1, AC2]
-      integration_tasks: 1
-    serial_dependency_evidence: "AC2 の close_check 条件(3)は AC1 の reload event を『自壊』から除外する定義に依存するため同一忍者で AC1→AC2 の順に書く"
+      integration_tasks: 2
+      parallel_ok: true
+    serial_dependency_evidence: "AC1(well-known 静的 file+headers)と AC2(LP script+tool)は触る file が別(public/.well-known と next.config vs public/js と layout)で並列可。next.config の headers 追記は AC1 のみ"
     quality_gate:
-      q1_firefighting: "品質向上。理由: daemon 入替を『自壊待ち』や殿依頼(F009)から watchdog の責務へ構造化し、クローズ判定を手集計から script の二値へ"
-      q2_learning: "奪わない。理由: 判断点は『reload=stop flag→猶予→supervisor が終了→再起動』の順序と『自壊と reload の区別』で AC に固定"
-      q3_next_quality: "上がる。理由: 以後の publisher 変更は着地即反映、クローズ判定は家老が script 1 本で回せる"
-      q4_depth: "deep — 理由: supervisor の reload 契約と 5 条件の機械化、before/after の同窓計測"
-      q5_verified_source: "structure_verified — 対象を実行して確認(2026-09-03 09:25): ps -o lstart -p 2581118 → 05:46:14、grep -n publisher.stop scripts/publisher.sh → L424、grep -n 'PUBLISHER_MODE=active setsid' scripts/daemon_watchdog.sh → L702、ls before snapshot dir → 6 file、git log --since=04:37 trailer 67/101"
-      q6_not_hiding: "隠していない。理由: reload は event に記録し自壊と区別、close_check は 5 条件を個別に出す(総合だけで隠さない)"
-      q7_definition_verified: "クローズ条件 5 点と §11 の before 抽出定義は設計書 §11/§15 原文で確認。D006 は『agent が kill』を禁じ、watchdog(infra)の supervisor 動作は cli_profiles/reset_layout の respawn と同型(確認日: 2026-09-03)"
-      q8_why_what: "WHY: 殿 09:16『クローズまで』、旧 daemon が新コードを実行せず手動運用が続く / WHAT: watchdog reload+close_check+after_snapshot / WHEN: 即(4468 と並走可、file 重複なし) / WHERE: scripts/daemon_watchdog.sh, scripts/single_publisher_*.sh, tests/unit / WHO: 家老配備(Codex 可) / HOW: reload 分岐→fixture→close_check→bats→1 commit→家老が本番 reload と 24h 判定 / 複利: 以後の daemon 更新と §15 判定が無人"
-      q9_firefighting_root_cause: "根本対応。理由: 『次に自壊するまで待つ』を supervisor の reload に置換"
-      q10_knowledge_boundary: "検証済み: daemon 状態・stop flag・watchdog 再起動・before snapshot。スコープ外: cmd_4468(root 直書き)、U8、24h の実運用判定(production_proof)"
-      q11_not_already_done: "rg -c 'reload' scripts/daemon_watchdog.sh → 0(09:25)。ls scripts/single_publisher_close_check.sh scripts/single_publisher_after_snapshot.sh → 無し。rg -c cmd_4469 queue/shogun_to_karo.yaml → 0(起票前)"
-      q_ambiguity: "曖昧さ: reload と自壊の区別。解消: reload は watchdog が event kind=reload を先に記録してから終了させる。event 無しの pid 死亡=自壊"
-      q12_lord_30min_cost: "no — 殿 09:16 で確定、判定は event 数・pid 変化・bats・close_check の 5 行"
-      diagnosis: "BLOCK理由: 該当なし(新規起票。4468 の BLOCK『観測窓を AC に置くな』を先取りして production_proof に分離) / 対策: 2 AC・5 file・production_proof=家老"
-    environment_change: "type=lesson; file=projects/infra/lessons_shogun.yaml; pattern=cmdテンプレートルール"
-    delegated_at: "\"2026-09-03T09:33:06\""
-    origin: "[[single_publisher_§15_クローズ判定_20260903_0915]] -> [[旧daemon入替_D006とF009の板挟み]] -> [[cmd_4469_U10_watchdog_reload_close_check]]"
-  cmd_4468:
-    title: "単一 publisher U9: root 直書き・直 commit の生産者 4 経路(insights auto-commit / semantic_index_update / bulletin 系 / ninja_monitor の runtime integrate)を ledger route か U1b へ寄せ、root の tracked dirty と trailer 無し commit を 0 にする"
+      q1_firefighting: "品質向上。理由: Level3 の未着手 3 項目のうち LP で閉じる 2 項目を先に本番へ出す。診断の残りは 2-5 のみになる"
+      q2_learning: "奪わない。理由: 判断点は『仕様どおりの file 配置と tool 1 本』で、AC が二値"
+      q3_next_quality: "上がる。理由: 検証 script と Playwright が本番 URL を固定し、以後の LP 変更で退行を検知する"
+      q4_depth: "medium — 理由: 仕様準拠の静的配置+script 1 枚。設計判断は少なく検証を厚くする"
+      q5_verified_source: "structure_verified — 本番を実測して確認(2026-09-03 13:40、bash で curl と git を実行): git ls-tree で well-known 既存 file → 6 件、curl 404 → 2 件。curl https://dm-signal.com/.well-known/agent-card.json → 200 application/json、curl .../http-message-signatures-directory → 404、curl .../mcp.json → 404、curl https://dm-signal.com/ → 302(geo redirect)。git ls-tree origin/main lp/public/.well-known → 6 file(directory と mcp.json は無し)"
+      q6_not_hiding: "隠していない。理由: 診断 ✅ は殿の画面でしか取れないため production_proof に分離し、cmd は本番 curl と Playwright で二値化"
+      q7_definition_verified: "Web Bot Auth=HTTP Message Signatures(RFC 9421)+JWKS directory、WebMCP=navigator.modelContext。定義は roadmap v1.3 §2C と Cloudflare ガイド(確認日: 2026-09-03、ガイド URL は忍者が script 先頭に記録)"
+      q8_why_what: "WHY: T212 が 09-02 18:45 から起票 0 で停止 / WHAT: 2-6+2-7 を LP で実装 / WHEN: 即 / WHERE: DM-signal repo lp/public/.well-known、lp/public、next.config、scripts/level3、docs/research / WHO: 家老配備(2 忍者並列) / HOW: 実装→本番 autoDeploy→curl と Playwright→殿の次回スクショで ✅ 突合 / 複利: Level3 残りが 2-5 のみになり、診断 8/8 の終端が見える"
+      q9_firefighting_root_cause: "根本対応。理由: 起票停止の解消と、検証 script による恒久化"
+      q10_knowledge_boundary: "検証済み: 本番 404/200、repo 配置、DNS 済。スコープ外: 2-5 backend /mcp(別 cmd)、outbound bot の署名運用、Rescan 実行(殿)"
+      q11_not_already_done: "git ls-tree origin/main lp/public/.well-known で http-message-signatures-directory 0 件・mcp.json 0 件。grep -rl modelContext lp(origin/main ls-tree -r で js/ts を検索) → 0 件(13:40)。rg -c cmd_4473 queue/shogun_to_karo.yaml → 0(起票前)"
+      q_ambiguity: "none。2-5 は含めない。秘密鍵の保管先は backend .env 系と同じ(値は書かない)"
+      q12_lord_30min_cost: "no"
+      diagnosis: "BLOCK理由: 初回起票(想定=AC 内の本番 URL 検証が phase 混在と判定されうる)。対策: 診断 ✅ 突合は production_proof に分離、AC は本番 curl と Playwright の二値のみ"
+    measurement_source: "本番 live 実測 evidence=curl 13:40 timestamp(agent-card 200、directory 404、mcp.json 404)と git ls-tree origin/main の log"
+    environment_change: "type=gate; file=docs/research/agent_readiness_level3_roadmap_20260831.md; pattern=2-5〜2-7"
+    origin: "[[agent_readiness_level3_roadmap_20260831]] -> [[T212_起票停止]] -> [[cmd_4473_level3_2-6_2-7]]"
+  cmd_4472:
+    title: "X 運用 P1: 下書き生成(S3、マニュアル v4 §11 システム文固定)→gate 規則 7〜12+語彙拡張(S4)→ntfy 承認待ち→X API v2 投稿 client(S5、OAuth 2.0 PKCE、creds 不在は fail-close)を 1 本の CLI に接続し、台帳に site_public_table と advanced_metrics(分身・四つ目、1 投稿 1 PF)を追加する"
     status: delegated
     project: infra
-    purpose: "殿 2026-09-03 09:16『追加 4 点を起票してクローズまで持っていけ』。設計書 §15(v3.19): flag ON 04:37 以降の origin 101 commit 中 Published-By trailer 67=66%(ToBe 100%)。trailer 無しの出所=insights auto-commit 7・runtime integrate 4・D012 merge 2・reflux 直 1。家老 09:13/09:19 実測: root 直書き生産者の残存=semantic_index_update(commit 直後に index.md を再追記)と bulletin 系(bulletin_write.sh:619 の archive trim が root で HEAD 66 vs worktree 30 の恒久乖離を作っていた→65f52c33a で ON 時 skip)、root の台帳 dirty が ledger batch と衝突して ff 不能(09:10 behind 1)。root が dirty を持たなければ ff は常に通り §15 の field-aware merge は不要になる=本 cmd で B(root sync)も同時に解ける"
-    scope_mode: FULL
-    target_path: scripts
+    purpose: "殿発案 09-03 03:13『Grok によるアカウント運用を API で自動化』の設計書 v0.8(docs/research/x_account_ops_automation_asis_tobe_5w1h_20260903.md、gist 8e1336f8)。P0(cmd_4467、台帳 50/calendar/gate 6 規則)は 09:48 CLEAR、規則 1 の fail-close hotfix 2fa437a9c 着地。以後の殿裁定: 12:34 マニュアル v4 取込(§11: 体験 C を『登録無料・全機能・PF は Basic のみ』で毎週、dm-signal 3 層、サイト表は Basic+SPY のみ引用可で up to と ×N と Secret 行は主語禁止、記事 17.2% とサイト 16.1% の混在禁止、数字は 5 項目セット)、12:49〜12:55 E 軸ドリーム(§12: 分身・四つ目の metrics を inception 以来のセットで、1 投稿 1 PF、同居禁止、研究証跡併記)。X Developer Portal は殿が申請中(13:01 用途説明文を提示済)のため、投稿段は creds file 不在で fail-close し、下書き→gate→承認までを今日動かす"
+    scope_mode: NORMAL
+    target_path: skills/x-post-pipeline
     acceptance_criteria:
       AC1:
-        description: "root 直書き生産者を ledger route へ: (a) scripts/insight_write.sh の auto-commit 経路(git commit が 2 箇所)を PUBLISHER_SINGLE ON 時は ledger_writer append のみ(root file を書かず commit も作らない)にする (b) scripts/semantic_index_update.sh の INS status 書換えと docs/semantic-index/index.md 再生成を ON 時は ledger op(kind=semantic_index、ledger_writer に apply を追加)へ (c) bulletin_write.sh は既に ledger route(06:50 以降)だが bulletin_confirm/bulletin_action/bulletin_archive の root board 直書きを ledger op(update/resolve)へ。3 経路とも OFF 時は従来どおり。ledger_writer.sh の apply に semantic_index 種別を追加(index.md は apply 時に再生成)。契約 bats: tests/unit/test_ledger_writer.bats に semantic_index/bulletin update の @test 各 1、tests/unit/test_insight_write.bats に『ON 時 root 不変・ledger_inbox に op』@test 1。選択実行コマンド=bash scripts/run_tests.sh file tests/unit/test_ledger_writer.bats tests/unit/test_insight_write.bats tests/unit/test_semantic_index_update.bats で FAIL 0・SKIP 0。中断再開時の成果物引継ぎ: 未 commit の worktree 差分と最終 bats 出力 log を報告 YAML の progress に path で残し、再開者はそこから継続する"
-        binary_check: "flag ON fixture で insight_write/semantic_index_update/bulletin_confirm を実行後 git status --porcelain -uno が空 ∧ ledger_inbox に op 3 種 ∧ publisher --process-ledger 1 周で origin fixture に 3 種の変更が載る ∧ OFF fixture は従来の直書き ∧ 選択実行 FAIL 0 ∧ SKIP 0 か?"
+        description: "台帳と gate(S1+S4)。(a) skills/x-post-pipeline/stock_ledger.yaml に site_public_table(観測日 2026-08-31、Basic-DualMomentum 行と SPY 行の CAGR/Sharpe/MDD/倍率と次回リバランス日、記事セット 3 本と別 key)と advanced_metrics(分身=Standard、四つ目=Premium の各 1 entry: inception・period_end・cagr・maxdd・sharpe・bench・worst_year・best_year・recovery_months。値は本番 DB の inception 以来の実測、取得 SQL または API と実行日時を note 欄に残す)と research_evidence(パリティ 100%・fullrecalc resilience・L3 robustness の結論 1 行+出典 path)を追加。(b) scripts/x_ops/x_post_gate.sh に規則 7(up to と ×[3 桁以上] と Secret が第 1〜2 文に出れば FAIL)・7b(Basic 行の数字を出す時 SPY 行が同一本文に無ければ FAIL)・8(CAGR/MaxDD/Sharpe のいずれかがあるのに期間または時点とベンチ値が無ければ FAIL)・9(17.2 と 16.1 が同一本文に共存で FAIL)・10(slot=C の本文に『登録』と『Basic』の両語が無ければ FAIL)・11(『分身』と『四つ目』が同一本文に共存で FAIL)・12(slot=E で倍率または CAGR があるのに MaxDD と回復期間が無ければ FAIL)を追加し、規則 5 に Standard/Premium/Secret(プラン名)を、規則 6 に『Know what to hold next』『劇薬』『戦国』『倍』を第 1 行禁止語として追加。slot は第 2 引数で受ける。(c) slot_calendar.yaml を v4 の A(4 週ローテ)/B/C(毎週固定)/D(隔週)+E(月次、分身と四つ目を交互、exclusive_pair)に置換。マニュアル v4 §6 のテンプレ A/B/C/D/懐疑 5 本は全 PASS、§4『使わない』行(Basic plan up to +38.8% など)を第 1 文にした本文と分身+四つ目同居本文は FAIL を bats で固定"
+        binary_check: "stock_ledger に site_public_table 1・advanced_metrics 2・research_evidence 1 以上 ∧ 選択実行コマンド=bash scripts/run_tests.sh task queue/tasks/<ninja>.yaml で FAIL0・SKIP0 ∧ テンプレ 5 本 PASS ∧ 禁止本文 2 種 FAIL か?"
       AC2:
-        description: "scripts/ninja_monitor.sh の push_lane integrate(『runtime: integrate <ref> (push_lane auto)』merge commit を root に作る経路、L475 付近)を PUBLISHER_SINGLE ON 時は作らない(root は publisher の root drain/sync が ff するだけ)。root sync(scripts/publisher.sh sync_root と scripts/lib/publisher_root_drain.sh)は tracked dirty が 0 でないとき『dirty path 一覧』を event に記録して fail-close(現状維持)。ON fixture(一時 STATE_DIR+fixture repo)で integrate が commit を作らないことを bats で固定。契約 bats tests/unit/test_push_lane_integrate.bats に『ON 時 integrate commit 0』@test 1。選択実行=bash scripts/run_tests.sh file tests/unit/test_push_lane_integrate.bats tests/unit/test_publisher_root_drain.bats で FAIL 0・SKIP 0。bash scripts/ninja_scope_commit.sh -m \"<msg>\" -- <変更 path> で 1 commit(AC1 と合わせて 1〜2 commit)"
-        binary_check: "ON fixture で integrate commit 0 ∧ OFF fixture で従来の integrate ∧ 選択実行 FAIL 0 ∧ SKIP 0 ∧ 変更 file が insight_write/semantic_index_update/bulletin 3 script/ledger_writer/ninja_monitor/bats 4 の 10 以内 か?"
+        description: "CLI 1 本 scripts/x_ops/x_post.sh(S3→S4→承認→S5)。(a) draft: 引数 slot(A/B/C/D/E)と台帳 key から、skills/x-post-pipeline/system_prompt_v4.txt(設計書 §11 のシステム文をそのまま保存)+スロット指示で Claude(claude --print)に本文を生成させ、queue/x_drafts/<date>_<slot>.txt に保存。(b) gate: 同 file を x_post_gate.sh slot 付きで判定、FAIL なら理由を stderr に出して exit 1。(c) approve: PASS した本文を ntfy で殿へ送り(本文全文+file path)、殿の『y』は queue/x_drafts/<name>.approved の存在で受ける(将軍が置く)。(d) post: approved があれば config/x_api.env(git-ignore、X_CLIENT_ID/X_ACCESS_TOKEN/X_REFRESH_TOKEN)を読み POST /2/tweets(OAuth 2.0 user context、refresh token で更新)。env file 不在または token 空なら『creds absent(fail-close)』で exit 2 し投稿しない。(e) 初回 OAuth 2.0 PKCE 認可の手順書 docs/research/x_api_oauth_setup_20260903.md(callback は localhost、scope=tweet.write tweet.read users.read offline.access、token の保存先と更新手順、secret 値は書かない)。bats: draft→gate→approve 不在で停止、approved+creds 不在で exit 2、post の HTTP 層は curl を mock して 201 と 401 の分岐"
+        binary_check: "x_post.sh draft/gate/approve/post の 4 subcommand が存在 ∧ creds 不在で post が exit 2 ∧ mock 201/401 の bats PASS ∧ 手順書に secret 値 0 ∧ 選択実行コマンド=bash scripts/run_tests.sh task queue/tasks/<ninja>.yaml で FAIL0・SKIP0 か?"
     production_proof:
       owner: monitor
-      description: "着地後の本番で 3 周期(各周期=publisher の request か ledger batch 1 回)連続で root の tracked dirty 0・ahead 0・behind 0 を家老が集計(git status --porcelain -uno の行数、git rev-list --count origin/main..HEAD、git rev-list --count HEAD..origin/main)し掲示板へ 1 行。忍者は待たない"
-      binary_check: "本番 3 周期で dirty 0・ahead 0・behind 0(集計行 3 組)か?"
+      description: "殿の X API 承認後(creds 投入後)に家老が x_post.sh を slot A で 1 本通し、ntfy 承認→POST /2/tweets 201→X 上の投稿 URL を掲示板に記録。creds 承認前はここを待たずに GATE CLEAR してよい(投稿段は fail-close の証明で足りる)"
     command: |
-      1. 4 経路の現物(rg -n で git commit と git push と ninja_scope_commit の呼出しを scripts/insight_write.sh scripts/semantic_index_update.sh scripts/bulletin_*.sh scripts/ninja_monitor.sh から列挙)を読み、AC1 の 3 経路を ledger route へ寄せ、ledger_writer に semantic_index apply を足し、fixture で ON/OFF 両方を実行して結果を報告 YAML に生貼付する。
-      2. AC2 の integrate を ON 時に抑止し、bats を選択実行、ninja_scope_commit で commit する(本番 3 周期観測は production_proof=家老)。
+      1. AC1: 台帳 3 key の追加(advanced_metrics は本番 DB から実測)、gate 規則 7〜12+語彙拡張、calendar 置換、bats。
+      2. AC2: x_post.sh 4 subcommand と system_prompt_v4.txt、OAuth 手順書、mock bats。報告 YAML→家老レビュー→publish。
     assumptions:
-      claim: "rg -n で git commit と ninja_scope_commit と publish_direct_commit の呼出しを数えると insight_write.sh 2 箇所、ninja_monitor.sh 4 箇所(うち L475 が runtime: integrate)。semantic_index_update.sh と bulletin_*.sh は root file 直書き(commit は auto-commit 経路が拾う)。ledger_writer.sh は append/update/resolve と apply を持つ(cmd_4454/4465)。bulletin_write は 06:50 以降 ledger route、archive trim は 65f52c33a で ON 時 skip。家老実測 09:19: 残 dirty=docs/semantic-index/index.md(commit 直後に再追記)。origin 101 commit 中 trailer 67(09:15 将軍集計)"
-      source: "rg 出力(09:16)、docs/research/single_publisher_asis_tobe_5w1h_20260902.md §15、家老掲示板 blt_20260903_091357/091751、git log --since=04:37 origin/main の trailer 集計"
+      claim: "x_post_gate.sh は規則 1〜6 実装済(2fa437a9c、規則 1 は認証付き /api/signals で fail-close)。stock_ledger は 50 entry(url 50)。slot_calendar は weeks 4・slots_per_week 3 の旧構成。X API v2 POST /2/tweets は OAuth 2.0 user context(PKCE)で Free tier でも投稿可、読取り metrics は Basic 以上(設計書 §10)。creds は config/x_api.env(git-ignore)。分身と四つ目の metrics は B-6 で公開可、保有・ticker・重み・パラメータ値は禁止"
+      source: "bash scripts/x_ops/x_post_gate.sh <テンプレ A> → PASS rc=0(13:36 実行)、grep -c url: stock_ledger.yaml → 50、slot_calendar.yaml 先頭 5 行、設計書 §10/§11/§12(v0.8 e73f45ae8)、殿裁定 12:34/12:49/12:52/12:55"
       trust: verified
     depends_on: none
     timeout_minutes: 120
     estimated_minutes: 90
     execution_env:
-      runtime_constraints: "本番 publisher daemon と queue/flags/publisher_single は触らない。fixture は一時 STATE_DIR。OFF 時の挙動は不変(可逆=flag OFF で戻る)。bats は選択実行のみ"
-      long_runtime_reason: "4 script の経路特定と ON/OFF 分岐、ledger_writer の新 kind、bats 4 本、本番 3 周期の観測(周期は数分〜)"
+      runtime_constraints: "task_worktree 必須。本番 X へは投稿しない(creds 不在で fail-close を証明するのみ)。secret 値を報告・手順書・commit に書かない。advanced_metrics の値は本番 DB 読取りのみ(書込み 0)"
+      long_runtime_reason: "gate 規則 7 本+bats、CLI 4 subcommand+mock、本番 DB 読取りの 3 塊"
       measured_runtime_sec: 5400
     split_decision:
       boundary_ac_ids: [AC1, AC2]
-      integration_tasks: 1
-    serial_dependency_evidence: "AC2 の本番 3 周期観測は AC1 の 3 経路が着地して root dirty が消えることを前提にする。別忍者では観測の前提が揃わない"
+      integration_tasks: 2
+      parallel_ok: true
+    serial_dependency_evidence: "AC1(台帳+gate)と AC2(CLI)は file が別(gate.sh と ledger vs x_post.sh)で並列可。AC2 の gate 呼出しは既存 I/F(file 引数)に slot 引数を足すだけで、AC1 着地前は規則 1〜6 で動く"
     quality_gate:
-      q1_firefighting: "品質向上。理由: root 直書き生産者を 0 にして『root は publisher の ff 先』という設計(§2)を成立させる。field-aware merge という追加機構を不要にする"
-      q2_learning: "奪わない。理由: 判断点は『ON 時は ledger op、OFF 時は従来』の 1 つで AC に固定。新 kind は既存 apply の型に従う"
-      q3_next_quality: "上がる。理由: trailer 率 100% と root dirty 0 が §15 クローズ条件(1)(2)(5)を直接満たす"
-      q4_depth: "deep — 理由: 4 経路の分岐と ledger_writer の kind 追加、本番観測 3 周期"
-      q5_verified_source: "structure_verified — 対象を実行して確認(2026-09-03 09:16): rg -n で git commit と ninja_scope_commit と publish_direct_commit の呼出しを 4 script から数え insight_write 2/ninja_monitor 4、grep -n 'runtime: integrate' scripts/ninja_monitor.sh → L475、git log --since=04:37 origin/main trailer 67/101"
-      q6_not_hiding: "隠していない。理由: OFF 時の挙動は不変、ON 時の root dirty 0 は本番 3 周期の集計行で証明させる"
-      q7_definition_verified: "ledger op の種別と apply 契約は ledger_writer.sh 現物(cmd_4454/4465)、trailer 率の定義は設計書 §15 で確認(確認日: 2026-09-03)"
-      q8_why_what: "WHY: 殿 09:16『クローズまで持っていけ』、trailer 66% の出所=root 直書き経路 / WHAT: 3 経路の ledger route 化+integrate 抑止 / WHEN: 即 / WHERE: scripts/insight_write.sh, semantic_index_update.sh, bulletin_*.sh, ledger_writer.sh, ninja_monitor.sh, tests/unit / WHO: 家老配備(Codex 可、publisher/ledger 実装者=半蔵 推奨) / HOW: 経路特定→ON 分岐→kind 追加→bats→本番 3 周期観測 / 複利: root dirty 0 で ff が常に通り、手動 checkpoint と D012 merge が消える"
-      q9_firefighting_root_cause: "根本対応。理由: root sync を賢くする(消火)のではなく root を汚す生産者を消す"
-      q10_knowledge_boundary: "検証済み: 4 経路の位置・trailer 集計・家老実測。スコープ外: 旧 daemon 入替(cmd_4469)、§11 after(cmd_4469)、U8"
-      q11_not_already_done: "rg -c 'publisher_single_enabled' scripts/semantic_index_update.sh scripts/bulletin_confirm.sh → 0(09:16)。rg -c cmd_4468 queue/shogun_to_karo.yaml → 0(起票前)。insight_write の auto-commit は 9dae7921f で U1b 経由になったが root file 直書き+commit は残る(ledger route と二重)"
-      q_ambiguity: "曖昧さ: bulletin_confirm/action の『update』を ledger op でどう表すか。解消: ledger_writer の update op(id 指定で field を上書き)を使い、apply 側で entries[].id 一致行を更新"
-      q12_lord_30min_cost: "no — 殿 09:16 で確定、判定は dirty/ahead/behind の集計と bats"
-      diagnosis: "BLOCK理由: 該当なし(新規起票) / 対策: 2 AC・10 file 以内・本番観測は集計行"
-    environment_change: "type=lesson; file=projects/infra/lessons_shogun.yaml; pattern=cmdテンプレートルール"
-    delegated_at: "\"2026-09-03T09:30:12\""
-    origin: "[[single_publisher_§15_クローズ判定_20260903_0915]] -> [[root直書き生産者_trailer66%]] -> [[cmd_4468_U9_root直書き0]]"
-  cmd_4467:
-    title: "X 運用自動化 P0: ストック台帳(note 49 本+完全ガイド)と 4 週スロット calendar を YAML 化し、包装 gate(数字ホワイトリスト・保有/ticker blocklist・URL 3 つ・免責・禁止語)を script+bats にする(投稿はしない)"
-    status: delegated
+      q1_firefighting: "品質向上。理由: 設計書 v0.8 の S1〜S5 を 1 本の CLI に接続し、殿承認と fail-close を構造にする。手作業の投稿を置換"
+      q2_learning: "奪わない。理由: 判断点は殿の『y』(approved file)の 1 つ。生成・判定・投稿は機械"
+      q3_next_quality: "上がる。理由: gate 規則 7〜12 で v4 とドリーム軸の禁則が本文に対して機械検証される"
+      q4_depth: "deep — 理由: 台帳 3 key(本番 DB 実測)+gate 7 規則+語彙+CLI 4 段+OAuth 手順+mock bats"
+      q5_verified_source: "structure_verified — 対象 script を実行して確認(2026-09-03 13:36): bash scripts/x_ops/x_post_gate.sh <v4 テンプレ A の本文 file> → 出力 PASS、exit 0(規則 1〜6 が本番 API 認証で動作)。grep -c url: skills/x-post-pipeline/stock_ledger.yaml → 50。ls config → xai_api.env あり・x_api.env なし(creds 未投入=fail-close 分岐が本番で踏まれる)"
+      q6_not_hiding: "隠していない。理由: creds 不在は exit 2 で明示、gate FAIL は理由付き stderr。投稿段の本番 proof は production_proof に分離"
+      q7_definition_verified: "v4 の禁則と E 軸の定義は docs/research/bam_delivery_manual_v4_20260903.md §0/§4/§6 と設計書 §11/§12 で確認(確認日: 2026-09-03)。X API v2 の認証と tier は設計書 §10"
+      q8_why_what: "WHY: P0 完了後 P1 が未起票で X 運用が止まっている(T230) / WHAT: 台帳+gate 拡張+CLI 4 段 / WHEN: 即(creds は後追い) / WHERE: skills/x-post-pipeline、scripts/x_ops、docs/research / WHO: 家老配備(2 忍者並列可、Claude 推奨=claude --print を使う) / HOW: AC1 と AC2 並走→レビュー→publish→creds 投入後に家老が 1 本通す / 複利: 以後の投稿は slot 指定 1 コマンド+殿の y だけ"
+      q9_firefighting_root_cause: "根本対応。理由: 手作業投稿の代替ではなく、禁則を gate に埋め込んだ pipeline を作る"
+      q10_knowledge_boundary: "検証済み: gate 1〜6 の動作、台帳件数、設計書の裁定。スコープ外: X API 承認(殿)、S6 KPI 還流(P2)、reply 集計(P2)、xAI API"
+      q11_not_already_done: "ls scripts/x_ops → x_post_gate.sh のみ(x_post.sh 無し)。grep -c advanced_metrics skills/x-post-pipeline/stock_ledger.yaml → 0。grep -c rule7 scripts/x_ops/x_post_gate.sh → 0(13:36)。rg -c cmd_4472 queue/shogun_to_karo.yaml → 0(起票前)"
+      q_ambiguity: "none。承認は approved file の存在で受ける(ntfy の返信は取れないため将軍が置く)。creds 不在時の挙動は exit 2 固定"
+      q12_lord_30min_cost: "no"
+      diagnosis: "BLOCK理由: 初回起票(想定 BLOCK=command steps と AC 数、phase 混在)。対策: command 2 step=AC 2、本番投稿は production_proof に分離"
+    measurement_source: "本番 live 実測 evidence=docs/research/x_account_asis_measurement_20260903.md(cmd_4463 の本番観測 09-02、X 4,434 フォロワー・note 49 本・再掲比 約 1 対 5)と x_post_gate.sh の本番 /api/signals 認証 PASS run(13:36 timestamp)と ls config(x_api.env 不在)の log"
+    environment_change: "type=gate; file=scripts/x_ops/x_post_gate.sh; pattern=rule6_internal_term_in_first_line"
+    delegated_at: "\"2026-09-03T13:40:04\""
+    origin: "[[cmd_4467]] -> [[bam_delivery_manual_v4_20260903]] -> [[cmd_4472_x_p1_pipeline]]"
+  cmd_4470:
+    title: "偵察(全ロール・第 3 回): PUBLISHER_SINGLE ON(09-03 04:37)以降の便を止める『つまり』を 8 分類(偽陽性/過剰 BLOCK/構造バグ/循環拘束/遅い script・test/Claude↔Codex 仕組み差/サンクコスト過剰複雑化/影響範囲・依存未解明の浅い対応)で全数リストアップし、忍者 6 名は領域分担で queue/notes/tsumari_r3_<name>.md に、軍師・家老は各節を書き、将軍が tsumari_root_causes_20260901.md 第 3 回へ統合する"
+    status: in_progress
     project: infra
-    purpose: "殿 2026-09-03 03:13『grok によるアカウント運用は今後 API などで自動化まで』→設計書 v0.3(docs/research/x_account_ops_automation_asis_tobe_5w1h_20260903.md、gist 8e1336f8)。殿回答 B-6(03:31)『metrics は全 PF 公開可、保有シグナル・構成 ticker は Basic DualMomentum 以外禁止』が S4 gate の核心規則。cmd_4463 実測(x_account_asis_measurement_20260903.md): note How to 49 本、完全ガイド スキ 53、入口 5 種並存、再掲比 1:5。P0=手動運用の土台(台帳+calendar+gate)で、P1(下書き→殿 y 承認→X API 投稿)の前提。未決 D1-D3 は既定案(包装 LLM=Claude、X API=Free、承認=ntfy に y)"
-    scope_mode: FULL
-    target_path: skills
+    purpose: "殿 2026-09-03 10:46『前提とする環境が変わったはずだ。もう一度 8 分類で全員で探索。tsumari_root_causes_20260901.md を更新しよう』。第 1 回(09-01 cmd_4442、27 事例)・第 2 回(09-03 02:53 将軍単独、24 事例+T2-27)は旧 push 経路の時代。04:37 の flag ON、09:23 の daemon 入替、U9(root 直書き 0)・U10(watchdog reload/close_check)着地で、つまりの発生源が『旧経路の衝突』から『publisher/ledger 経路・root sync・gate の単一 publisher 未対応(precheck の worktree 不在 FILE NOT FOUND、fallback_gate_status 偽 BLOCK、SG-PRE35 既存 test 混入)』へ移った。close_check 初回(10:42)=trailer 45/50、root dirty 9。第 3 回は新環境の一次 log(publisher events.jsonl/ledger_inbox rc/gate_metrics/hook_artifacts/inbox_watcher/daemon_watchdog)から全数を取る"
+    scope_mode: SCOUT
+    target_path: queue/notes
     acceptance_criteria:
       AC1:
-        description: "skills/x-post-pipeline/stock_ledger.yaml を新規作成: note How to マガジン(https://note.com/tokyojibika/m/mb4377418b422)の 49 本+完全ガイド(n171daa7f92a1)を 1 記事 1 entry で列挙(url、title、公開日、マニュアル §5 の枠 A/B/C いずれに使えるか、使ってよい数字=記事本文にある期間/CAGR/MaxDD/ベンチのセットのみ、初見向け第一文候補 1 行)。WebFetch/curl で本文を取り、数字は記事に無いものを書かない(推測禁止、無ければ空)。skills/x-post-pipeline/slot_calendar.yaml を新規作成: 4 週分×週 3 枠(A 教材再掲/B 検証の一切れ/C 運用の形)+月次 D の 13 slot に台帳 entry を割当(同一記事は切り口を変えて最大 4 回、マニュアル §6)。skills/x-post-pipeline/SKILL.md は What/When/NOT When 付きで台帳と calendar の使い方を 30 行以内"
-        binary_check: "台帳 entry 数 == 50 ∧ 各 entry に url・title・枠・数字セット(空可)・第一文候補 ∧ 数字は全て記事本文に出典(entry に本文引用 1 行)∧ calendar slot 数 == 13 ∧ 全 slot が台帳 entry を参照 ∧ SKILL.md が 30 行以内 か?"
+        description: "忍者 6 名の領域分担(家老が配備時に名を割当): (a) publisher/ledger 経路(publish_queue/events.jsonl の c2a_rc・root_sync_skipped・ledger rc/、publisher_daemon.log) (b) gate 系(logs/gate_metrics.jsonl・queue/gates/*/cmd_complete_gate.trigger.log の BLOCK/WAIT 理由、precheck SG-PRE の ERROR) (c) monitor/watchdog/inbox_watcher(ninja_monitor.log の WAKE-DEFER/HOOK-TRUST/CLEAR-LOOP、daemon_watchdog.log、inbox_watcher_*.log) (d) reflux/insights/semantic_index(reflux task の FAIL・C2a・dirty-guard) (e) hook/CLI 摩擦(logs/hook_artifacts の pre-push reject、pre-bash BLOCK 文言、Claude と Codex の差) (f) X 運用 lane と doc lane(cmd_4467 gate・U1b ff-only 失敗・bulletin『entry not found』)。各忍者は自領域の 09-03 04:37〜配備時刻の一次 log を機械抽出(コマンドと件数を生貼付)し、事例を『ID(T3-<name>-NN)・時刻・事象・主分類(8 分類の 1 つ)・副分類・真因・根治済/未根治・次の一手』の表で queue/notes/tsumari_r3_<name>.md に書く。推測禁止、log 行の引用必須、事例 0 なら『0 件、探索したコマンドと件数』を書く。中断再開時の成果物引継ぎ: 未 commit の worktree 差分と抽出 log を報告 YAML の progress に path で残し、再開者はそこから継続する"
+        binary_check: "note 6 file が存在 ∧ 各 file に抽出コマンドと件数の生貼付 ∧ 各事例に主分類(8 分類のいずれか)と log 引用 ∧ 推測語(おそらく/と思われる)0 ∧ 未根治には次の一手 か?"
       AC2:
-        description: "scripts/x_ops/x_post_gate.sh を新規作成: 引数=下書き text file、終了 0/1。規則(設計書 §2 不変条件+殿 B-6): (1) 保有シグナル・構成 ticker・FoF 重みの値(https://dm-signal-backend.onrender.com/api/public/showcase の hero.holding と plans[].holding・ticker を起動時に取得し blocklist、ただし plans[] の name が Basic-DualMomentum の holding は許可)が本文にあれば FAIL (2) 単独倍率(『N 倍』が期間/CAGR/MaxDD/ベンチのいずれとも同一段落に無い)は FAIL (3) URL は完全ガイド/How to マガジン/dm-signal.com の 3 種以外があれば FAIL (4) 免責 1 行(『助言ではない』『保証しない』のいずれか)が無ければ FAIL (5) 禁止語(無敵/確実/人生が変わる/今これを買え/劇薬)があれば FAIL (6) 第一文に内部用語(四神/忍法/Ave/FoF/CPCV)があれば FAIL。tests/unit/test_x_post_gate.bats を新規作成(test_necessity 非空): PASS 例 2 本・各規則の FAIL 例 6 本の 8 @test。選択実行コマンド=bash scripts/run_tests.sh file tests/unit/test_x_post_gate.bats で FAIL 0・SKIP 0。API 取得は fixture では env X_GATE_SHOWCASE_JSON で差替え可能にする。bash scripts/ninja_scope_commit.sh -m \"<msg>\" -- skills/x-post-pipeline/ scripts/x_ops/x_post_gate.sh tests/unit/test_x_post_gate.bats で 1 commit。中断再開時の成果物引継ぎ: 未 commit の worktree 差分と最終 bats 出力 log を報告 YAML の progress に path で残し、再開者はそこから継続する"
-        binary_check: "x_post_gate.sh が 6 規則を実装(各規則に対応する FAIL 例 @test が FAIL を返す)∧ PASS 例 2 本 exit 0 ∧ 選択実行 FAIL 0 ∧ SKIP 0 ∧ 本番 API の Basic-DualMomentum holding を含む下書きは PASS・他 PF の holding を含む下書きは FAIL ∧ commit 1 か?"
+        description: "軍師節: 軍師は review/precheck 側の視点(review_feedback で出た偽陽性、SG-PRE の ERRORS、bundle 再実行、review_log の欠落・上書き)を同じ表形式で queue/notes/tsumari_r3_gunshi.md に書く(cmd_4442_gunshi_view と同型、家老が review_draft 経由で依頼)。家老節: 家老は配備・merge・checkpoint・hotfix の視点(D012 merge の回数と理由、checkpoint 回数、hotfix 列と §14.4 例外の適用、CI RED の真因)を queue/notes/tsumari_r3_karo.md に書く。両節とも 8 分類の主分類と『根治済/未根治・次の一手』必須。各 note は bash scripts/ninja_scope_commit.sh(忍者)/publish_direct_commit.sh(家老)で commit"
+        binary_check: "tsumari_r3_gunshi.md と tsumari_r3_karo.md が存在 ∧ 各事例に主分類と根治状態 ∧ 全 8 note が origin 到達(publisher/U1b)か?"
     command: |
-      1. 設計書 §1b/§1c/§2 と cmd_4463 実測、マニュアル(docs/research/bam_delivery_manual_grok_20260902.md §4-§6)を読み、note マガジン 49 本+完全ガイドを取得して stock_ledger.yaml と slot_calendar.yaml と SKILL.md を書き、entry 数と slot 数を報告 YAML に生貼付する。
-      2. x_post_gate.sh と bats 8 本を書き、本番 showcase API で Basic の holding PASS/他 PF の holding FAIL を実行して結果を報告 YAML に生貼付し、ninja_scope_commit で 1 commit する。
+      1. 家老が 6 領域を忍者へ割当(1 忍者 1 領域、同時配備)、各忍者は一次 log を機械抽出して表を書き ninja_scope_commit で commit、報告 YAML に事例数と未根治数を書く。
+      2. 軍師節・家老節を同時に書き、8 note の origin 到達を家老が確認して掲示板 1 行。将軍が第 3 回として tsumari_root_causes_20260901.md へ統合し gist 更新(将軍 doc lane)。
     assumptions:
-      claim: "設計書 v0.3(cc62ff748)§2 不変条件 5 点と §1b 殿回答 B-6、cmd_4463 実測(795dbd37a): note How to 49 本・完全ガイド n171daa7f92a1。showcase API(https://dm-signal-backend.onrender.com/api/public/showcase)は 02:35 の curl で data.hero.holding=XLU、hero.series 277 要素に holding、plans[] に name/holding。skills/x-post-pipeline/ と scripts/x_ops/ は未存在(ls 08:20)。マニュアル docs/research/bam_delivery_manual_grok_20260902.md §4 包装ルール・§5 週次枠・§6 テンプレ"
-      source: "docs/research/x_account_ops_automation_asis_tobe_5w1h_20260903.md、docs/research/x_account_asis_measurement_20260903.md、docs/research/bam_delivery_manual_grok_20260902.md、curl showcase API(02:35/03:0x)、ls skills scripts"
+      claim: "第 1 回=cmd_4442(27 事例、S/R/G/K 節)、第 2 回=将軍単独 T2-01〜T2-27(25 事例、09-03 02:53 起票+04:58 追記)。新環境の一次 log: ~/.local/share/multi-agent-shogun/publish_queue/events.jsonl(seq 78 まで、kind=c2a_rc/root_sync_skipped/ledger/already_published)、ledger_inbox/*/rc/(退避 19+)、logs/gate_metrics.jsonl、queue/gates/*/cmd_complete_gate.trigger.log、logs/ninja_monitor.log、logs/daemon_watchdog.log、logs/inbox_watcher_*.log、logs/hook_artifacts/、logs/publisher_daemon.log。close_check 10:42: trailer 45/50・root dirty 9。queue/notes は忍者 commit 可(docs/ は将軍 doc lane)"
+      source: "docs/research/tsumari_root_causes_20260901.md、ls ~/.local/share/multi-agent-shogun/publish_queue/、tail events.jsonl、ls logs/、bash scripts/single_publisher_close_check.sh 2026-09-03T09:23:18+09:00(10:42)"
       trust: verified
     depends_on: none
-    timeout_minutes: 90
-    estimated_minutes: 60
+    timeout_minutes: 60
+    estimated_minutes: 40
     execution_env:
-      runtime_constraints: "読取りと file 作成のみ(X 投稿・note 編集・dm-signal 変更なし)。note 取得は公開ページのみ、有料本文は取得しない。API key 不要"
-      long_runtime_reason: "note 50 記事の取得と数字抽出(AC1 40 分)、gate 6 規則+bats 8 本(AC2 20 分)"
-      measured_runtime_sec: 3600
+      runtime_constraints: "読取りと note 作成のみ(本番 file・daemon・gate を変更しない)。log は機械抽出(grep/jq/awk)で件数付き。忍者 6 名同時配備"
+      long_runtime_reason: "6 領域×log 抽出+表化(各 20-30 分)、軍師・家老節の並走"
+      measured_runtime_sec: 2400
     split_decision:
       boundary_ac_ids: [AC1, AC2]
-      integration_tasks: 1
-    serial_dependency_evidence: "AC2 の gate は AC1 の台帳の数字セット形式(期間/CAGR/MaxDD/ベンチ)を入力契約にするため同一忍者で AC1→AC2 の順に作る"
+      integration_tasks: 6
+      parallel_ok: true
+    serial_dependency_evidence: "AC1 の 6 領域は log source が互いに独立(events.jsonl/gate_metrics/monitor log/reflux/hook_artifacts/X lane)で並列可。AC2 は AC1 と独立(視点が review/配備側)。統合のみ将軍が直列"
     quality_gate:
-      q1_firefighting: "品質向上。理由: マニュアルの Non-negotiables を script で機械化し、以後の全下書きが同じ規則で判定される。人手の目視確認を gate に置換"
-      q2_learning: "奪わない。理由: 判断点は『数字は記事本文にあるものだけ』『Basic 以外の保有は禁止』の 2 つで AC に固定。gate 規則は設計書と殿回答から写す"
-      q3_next_quality: "上がる。理由: P1(下書き生成→承認→投稿)が台帳と gate を前提に起票でき、S4 gate の FAIL 率が計測できる"
-      q4_depth: "medium — 理由: 台帳 50 entry の収集と gate 6 規則。判断は殿回答で確定済み"
-      q5_verified_source: "structure_verified — 対象を実行して確認(2026-09-03 08:20): grep -c '^| B-' 設計書 §1b → 10、grep -c 'How to' x_account_asis_measurement → 1 以上(49 本)、curl showcase API → hero.holding=XLU・series 277、ls skills/x-post-pipeline scripts/x_ops → 無し"
-      q6_not_hiding: "隠していない。理由: 数字が記事に無い entry は空のまま報告させる。gate の FAIL 例を bats で固定"
-      q7_definition_verified: "枠 A/B/C/D・包装順・禁止語・URL 3 つはマニュアル §3-§6 の原文、保有/ticker 規則は殿 B-6 原文(03:31)で確認(確認日: 2026-09-03)"
-      q8_why_what: "WHY: 殿 03:13 の自動化構想の P0=手動運用の土台 / WHAT: 台帳 50+calendar 13+gate 6 規則+bats 8 / WHEN: 即 / WHERE: skills/x-post-pipeline, scripts/x_ops, tests/unit / WHO: 家老配備(Claude 推奨、note 本文の読解) / HOW: 取得→YAML→gate→bats→1 commit / 複利: 以後の下書きは全て gate を通り、殿の確認は y のみ"
-      q9_firefighting_root_cause: "根本対応。理由: 届け方の欠陥(反復なし・入口過多)を人手でなく台帳と calendar で構造化"
-      q10_knowledge_boundary: "検証済み: 設計書・殿回答・実測・API 形。スコープ外: X API 投稿(P1)、Grok 生成(S3)、KPI(S6)、note 本文の変更"
-      q11_not_already_done: "ls skills/x-post-pipeline scripts/x_ops → 無し(08:20)。rg -c 'x_post_gate' scripts tests → 0。rg -c cmd_4467 queue/shogun_to_karo.yaml → 0(起票前)"
-      q_ambiguity: "曖昧さ: 『Basic DualMomentum の保有』の判定。解消: showcase API の plans[] で name が Basic-DualMomentum の entry の holding のみ許可、hero.holding は Basic と同一なら許可"
-      q12_lord_30min_cost: "no — 殿 03:13/03:31 で確定、判定は entry 数・slot 数・bats"
-      diagnosis: "BLOCK理由: 該当なし(新規起票) / 対策: 2 AC・file 作成のみ・bats 固定"
+      q1_firefighting: "品質向上。理由: 新環境のつまりを一次 log で全数化し、8 分類で発生源の移動(旧経路→publisher/gate)を可視化する。個別 hotfix の連打を止める"
+      q2_learning: "奪わない。理由: 判断点は『主分類 1 つを選ぶ』『根治済/未根治』で、基準は第 1・2 回の表と同じ"
+      q3_next_quality: "上がる。理由: 未根治×分類の一覧から次の hotfix 列と §15 クローズ阻害要因が直接出る"
+      q4_depth: "deep — 理由: 8 log source の機械抽出、6 領域+2 視点、全数(サンプリング禁止)"
+      q5_verified_source: "structure_verified — 対象を実行して確認(2026-09-03 10:48): grep -n '^## ' tsumari_root_causes_20260901.md → 第 1 回 4 節+第 2 回 3 節、tail events.jsonl → seq 78 root_sync_skipped root_dirty=8、close_check → trailer 45/50 root dirty 9、ls queue/notes → 書込み可"
+      q6_not_hiding: "隠していない。理由: 事例 0 の領域も探索コマンドと件数を書かせる。推測禁止、log 引用必須"
+      q7_definition_verified: "8 分類の定義は殿 09-02 20:44 の原文と tsumari 第 1 回の分類表、事例の列は第 2 回 T2 表で確認(確認日: 2026-09-03)"
+      q8_why_what: "WHY: 殿 10:46『環境が変わった、もう一度全員で』 / WHAT: 6 領域+2 視点の全数表→将軍統合 / WHEN: 即 / WHERE: queue/notes/tsumari_r3_*.md→docs/research/tsumari_root_causes_20260901.md 第 3 回 / WHO: 家老配備(忍者 6 同時、Claude/Codex 混在可)+軍師+家老 / HOW: log 機械抽出→表→commit→将軍統合→gist / 複利: つまりの発生源の移動が見え、hotfix 列が根拠付きで並ぶ"
+      q9_firefighting_root_cause: "根本対応。理由: 個別事象の消火でなく発生源の分布を測る"
+      q10_knowledge_boundary: "検証済み: 第 1・2 回の形式、新環境の log 所在、close_check 値。スコープ外: 根治の実装(別 cmd/hotfix)、U8"
+      q11_not_already_done: "ls queue/notes/tsumari_r3_* → 無し(10:48)。第 2 回は将軍単独で忍者・軍師・家老の視点なし。rg -c cmd_4470 queue/shogun_to_karo.yaml → 0(起票前)"
+      q_ambiguity: "曖昧さ: 主分類が複数に跨る事例。解消: 第 1 回と同じく主分類 1 つ+副分類列、集計は主分類のみ"
+      q12_lord_30min_cost: "no — 殿 10:46 で確定、判定は note 数・事例数・分類の有無"
+      diagnosis: "BLOCK理由: 該当なし(新規起票) / 対策: SCOUT・読取りのみ・並列 6"
     environment_change: "type=lesson; file=projects/infra/lessons_shogun.yaml; pattern=cmdテンプレートルール"
-    delegated_at: "\"2026-09-03T08:21:39\""
-    origin: "[[x_account_ops_automation_設計書v0.3]] -> [[殿回答B-6_数字ホワイトリスト_20260903_0331]] -> [[cmd_4467_X運用P0_台帳とgate]]"
+    delegated_at: "\"2026-09-03T10:51:46\""
+    karo_note: "recon2 6 領域配備完了(a-f)、note 8 本 origin 到達(忍者 6+家老+軍師)。将軍統合待ち 2026-09-03 13:35"
+    origin: "[[殿指示_環境変化後の再探索_20260903_1046]] -> [[tsumari_第1回_cmd_4442/第2回_T2]] -> [[cmd_4470_tsumari_第3回_全ロール]]"
   cmd_4466:
     title: "単一 publisher U8 第 2 弾: 旧 push 経路を『関数 chain+それを縛る test』の単位で batch 削除し(M10 と同型)、M7 は blocked 確定で除外、4 file 合計行数を 33,238 から減らす"
     status: void

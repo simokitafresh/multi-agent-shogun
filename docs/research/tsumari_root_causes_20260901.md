@@ -255,6 +255,7 @@ X lane(hanzo-01/02、karo-08)は cmd_4467 gate の沈黙フォールバック=�
 | T3-S-23 | 10:42 | close_check 条件(5)が静的 rg で 51 件 FAIL | ① | U8 凍結で残る no-op 行を数える | §15 を runtime 判定に明確化(v3.23b)。根治(定義) |
 | T3-S-24 | 10:42 | publisher の C2a 3-way merge commit に trailer 無し(trailer 45/50 の 2 件) | ⑧ | merge 経路で trailer 付与を忘れ | 3d03a2f2c `publisher_c2a_merge.sh`(trailer 固定)。根治 10:55 |
 | T3-S-25 | 10:42 | gate が SKILL.md の『gate FAIL 履歴』を root で自動 commit(60c20e901) | ③ | 第 5 の root 直書き生産者 | 3d03a2f2c(ON 時 skip)。根治 10:55 |
+| T3-S-27 | 13:2x〜15:00 | root behind 5→19 に拡大、cmd_4471(U11)と watchdog reload hotfix が CLEAR しても daemon 旧 pid 3 本のまま | ④ | **root checkout の script を daemon が実行する構造で、root sync の新コードは root sync 後にしか root に載らない(循環)**。dirty∩incoming の重なりは bulletin_board.yaml 1 本 | 家老 lane の checkpoint 1 回で切断(msg_145935)。恒久=watchdog が origin/main の blob から起動する(root 非依存)か、root sync を watchdog 側で先に行う=U12 候補 |
 | T3-S-26 | 06:13 | 将軍が家老の誤報で spinner 中の軍師 pane へ send-keys | ⑧ | capture を tail 3 行で判断し spinner を見落とした | 実害なし。以後 -S -40。根治(手順) |
 
 集計コマンド: `grep -oE '^\| T3-S-[0-9]+ \|' docs/research/tsumari_root_causes_20260901.md | wc -l` → 26。根治 23 / 未根治 3(T3-S-19/20/21b)、10:58 更新。忍者 6 領域(T3-<name>-NN)・軍師節・家老節は cmd_4470 着地後にここへ統合。
