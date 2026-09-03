@@ -616,7 +616,16 @@ if [[ -f "$MEMORY_DB_LIVE_INSERT" ]]; then
     fi
 fi
 
-if [[ -f "$BULLETIN_FILE" && -x "$SCRIPT_DIR/scripts/bulletin_archive.sh" ]]; then
+# PUBLISHER_SINGLE flag ON: bulletin_board.yaml は publisher(ledger route)が正本を commit する。
+# root での archive trim は HEAD(66件)と worktree(30件)の恒久乖離を生み U1b ff を阻害するため skip する
+# (2026-09-03 09:20 家老実測 head_only=36/wt_only=0)。
+if [[ -f "$SCRIPT_DIR/scripts/lib/publisher_single_flag.sh" ]]; then
+    # shellcheck source=scripts/lib/publisher_single_flag.sh
+    source "$SCRIPT_DIR/scripts/lib/publisher_single_flag.sh"
+fi
+if declare -f publisher_single_enabled >/dev/null 2>&1 && publisher_single_enabled; then
+    :
+elif [[ -f "$BULLETIN_FILE" && -x "$SCRIPT_DIR/scripts/bulletin_archive.sh" ]]; then
     ENTRY_COUNT="$(awk '/^- id: / {count++} END {print count + 0}' "$BULLETIN_FILE")"
     if [[ "$ENTRY_COUNT" -gt 50 ]]; then
         bash "$SCRIPT_DIR/scripts/bulletin_archive.sh" --max-keep 30 >/dev/null 2>&1 || true

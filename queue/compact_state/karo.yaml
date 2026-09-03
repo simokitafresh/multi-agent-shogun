@@ -1,9 +1,6 @@
 agent: karo
-timestamp: "2026-09-03T03:20:00+09:00"
-compact_trigger: shogun_ctx90_clear_directive_20260903_0318
-current_task: publisher_wave3_landing
-session_id: karo_fable_low_recovery_20260902_2052
-status: active
-recovery_pointer: "記憶DB session_save_20260903_0320 → session_save_20260902_1314 の順に読め"
-next_action: "4465/root drain/reclaim 全 CLEAR、sweep 実行済(125→43 dir)。次 hotfix 列: (1)core.fileMode=false 保存+起動 check 1 行 (2)daemon stop flag+watchdog 自動再起動+ntfy (3)bulletin_confirm の ledger 経路整合。gate: 偽 BLOCK 根治済(5a52b29cd、次 CLEAR で検証)。root ledger は U1b checkpoint、軍師 review_log 上書き是正待ち。U8 凍結。"
-session_summary: "Role=karo。単一 publisher 第 1-3 波 CLEAR、U3 daemon active(publisher.pid)、push 閉塞 5 段解消(origin 同期済)、軍師停止根治 CLEAR、4453 手動 CLEAR(証拠 file)、4459 本番 PASS、4462 は AC1 改訂 hotfix(小太郎)。gunshi_review_log の local-only 24 entry は scratchpad に退避済(要追記)。auto_commit flag off 継続。"
+timestamp: '2026-09-03T00:07:33Z'
+compact_trigger: manual
+current_task: 
+session_id: e8039773-4b9c-46b9-a5d1-d6d0b78468bf
+next_action: "09:14 insights dirty→adfe68672 push 済/bulletin HEAD 復元/CI RED 33695410178 ci_fix 才蔵配備(cmd_karo_ci_fix_publisher_single_flag_202609030915)。待ち: 才蔵報告→gunshi LGTM→ACCEPT→GATE→CI GREEN確認、飛猿 cmd_4467 報告、疾風 reflux 0910 再試行"

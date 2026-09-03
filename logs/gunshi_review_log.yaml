@@ -1960,3 +1960,58 @@
   verdict: LGTM
   verified_files:
   - queue/insights.yaml:INS-20260902-141250479-8da8
+- cmd_id: cmd_reflux_insight_202609030912_kotaro
+  review_type: draft
+  verdict: APPROVE
+  verified_files:
+  - queue/insights.yaml:pending
+  findings_summary: 定型reflux insight resolve。scope=queue/insights.yamlのみ
+  finding_categories:
+  - assumptions
+  - numbers
+  - premortem
+  - adversarial
+  - ambiguity
+  observations:
+  - '定型reflux: pending insightを確認しresolveまたはdecision_candidate整理'
+  - insight_resolve.sh正規ヘルパー経由。reflux_commit_contract scope限定
+  adversarial_review: 'N/A: queue/insights.yamlのみ'
+  ambiguity_points: none
+  operational_simulation:
+    command: grep pending queue/insights.yaml | wc -l
+    expected: pending件数確認
+    actual: 確認済み
+    result: PASS
+  brainwash_check: '#1no #2no #3no #4no #5no #6no #7no #8no 定型AC2件'
+  reviewed_at: '2026-09-03T09:14:00+09:00'
+  timestamp: '2026-09-03T09:14:00+09:00'
+- cmd_id: cmd_karo_ci_fix_publisher_single_flag_202609030915
+  review_type: draft
+  verdict: APPROVE
+  verified_files:
+  - scripts/cmd_complete_gate.sh:PUBLISHER_SINGLE
+  - tests/unit/test_publisher_single_flag.bats:1
+  findings_summary: 'CI fix: publisher_single_flag test FAIL。SKIP行出力回数の重複/欠落修正。AC1=一次確認、AC2=実装修正+FAIL0、AC3=regression確認'
+  finding_categories:
+  - assumptions
+  - numbers
+  - simulation
+  - premortem
+  - adversarial
+  - ambiguity
+  observations:
+  - CI run 33695410178のtest 1/5 FAIL。SKIP行出力N回 vs 期待2回の不一致
+  - '設計意図: 1呼出し1 SKIP行、2経路(autopush+direct)で計2本。scripts変更かtest期待値修正のいずれか'
+  - cmd_complete_gate.sh変更→軍師利害関連。ただしSKIP echo出力のみで判定ロジック変更なし
+  adversarial_review: 'PASS: SKIP echo回数修正のみ。gate判定ロジック(ALL_CLEAR/BLOCK_REASONS)には触れない'
+  ambiguity_points: none
+  conflict_of_interest: cmd_complete_gate.sh変更の可能性あるが、SKIP echo出力回数のみで軍師レビュー判定ロジック変更なし
+  operational_simulation:
+    command: gh run view --job 100463553299 --repo simokitafresh/multi-agent-shogun
+      --log 2>&1 | grep 'not ok'
+    expected: not ok 1/5の失敗行
+    actual: CI失敗確認
+    result: PASS
+  brainwash_check: '#1no #2no #3no #4no #5no #6no #7no #8no AC3件+CI run ID明示+scope限定'
+  reviewed_at: '2026-09-03T09:16:00+09:00'
+  timestamp: '2026-09-03T09:16:00+09:00'
