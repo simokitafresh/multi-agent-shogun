@@ -1,4 +1,162 @@
 commands:
+  cmd_4469:
+    title: "単一 publisher U10: watchdog による publisher daemon の code-reload(旧 daemon 入替)と §11 after 計測 script、24 時間クローズ検証(trailer 率・root 3 値・自壊 0)の集計 script を実装し、設計書 §15 のクローズ条件を機械判定にする"
+    status: delegated
+    project: infra
+    purpose: "殿 2026-09-03 09:16『追加 4 点を起票してクローズまで持っていけ』。設計書 §15: 稼働 daemon(pid 2581118、05:46 起動)は旧コードで stop flag/ledger 消費/root drain を持たず、家老と将軍が手動で 1 周ずつ回している。D006 により agent は kill せず、F009 により殿にも依頼しない=入替は infra(watchdog)の役目として構造化する。§11 after 計測は before snapshot(単一 publisher before snapshot 20260902、SHA256SUMS 付き)と同窓で未実施。クローズ条件 5 点(§15)は手集計のため、script 1 本で二値化して家老が周期で回せるようにする"
+    scope_mode: FULL
+    target_path: scripts
+    acceptance_criteria:
+      AC1:
+        description: "scripts/daemon_watchdog.sh に publisher code-reload を追加: 稼働 daemon の起動時刻(pid の起動 epoch)より scripts/publisher.sh・scripts/lib/publisher_*.sh・scripts/ledger_writer.sh のいずれかの mtime(または git blob)が新しければ (1) $STATE_DIR/publish_queue/publisher.stop を置く (2) 猶予 PUBLISHER_RELOAD_GRACE_SEC(既定 120)待つ (3) まだ pid が生きていれば watchdog が supervisor として SIGTERM→5 秒後 SIGKILL(watchdog は infra であり D006 の agent 手動 kill には当たらない。event に kind=reload を記録) (4) 既存の自動再起動(c3fdc90aa)で新コード起動+ntfy。契約 bats tests/unit/test_daemon_watchdog.bats に『fixture daemon の script を更新→stop flag→再起動され pid が変わる』@test 1 と『script 不変なら reload しない』@test 1(test_necessity 非空)。選択実行コマンド=bash scripts/run_tests.sh file tests/unit/test_daemon_watchdog.bats で FAIL 0・SKIP 0。中断再開時の成果物引継ぎ: 未 commit の worktree 差分と最終 bats 出力 log を報告 YAML の progress に path で残し、再開者はそこから継続する"
+        binary_check: "fixture で script 更新→reload event 1・新 pid ≠ 旧 pid ∧ 不変なら reload 0 ∧ 選択実行 FAIL 0 ∧ SKIP 0 か?"
+      AC2:
+        description: "scripts/single_publisher_close_check.sh を新規作成: 引数=入替時刻(ISO)、出力=§15 の 5 条件を二値で 1 行ずつ+総合 PASS/FAIL。(1) trailer 率=git log --since=<入替時刻> --format=%B origin/main の Published-By 行数 と git rev-list --count --since=<入替時刻> origin/main の一致 (2) root=git status --porcelain -uno の行数 0 かつ origin/main..HEAD と HEAD..origin/main が 0 (3) 自壊 0=watchdog log の publisher 自動再起動行が入替時刻以降 0(reload による再起動は除外) (4) §11 after=scripts/single_publisher_after_snapshot.sh(新規、before と同じ抽出=push_lane/pre_push の log 窓・merges・commits・bats_files を $HOME/.local/share/multi-agent-shogun/single_publisher_after_snapshot_<date>/ に SHA256SUMS 付きで保存し、before との件数差を表で stdout)の snapshot 存在 (5) root 直 push 呼出し 0=rg で scripts/ から『git push』の実行行が publisher.sh/publish_direct_commit.sh/publisher_root_drain.sh 以外に 0。契約 bats tests/unit/test_single_publisher_close_check.bats: fixture repo で 5 条件 PASS/FAIL の各 1 @test 以上(計 6 本以上、test_necessity 非空)。選択実行=bash scripts/run_tests.sh file tests/unit/test_single_publisher_close_check.bats で FAIL 0・SKIP 0。bash scripts/ninja_scope_commit.sh -m \"<msg>\" -- scripts/daemon_watchdog.sh scripts/single_publisher_close_check.sh scripts/single_publisher_after_snapshot.sh tests/unit/test_daemon_watchdog.bats tests/unit/test_single_publisher_close_check.bats で 1 commit"
+        binary_check: "close_check が 5 条件を各 1 行で出し総合判定 ∧ after_snapshot が SHA256SUMS 付き dir を作り before との差を表で出す ∧ bats 6 本以上 FAIL 0 ∧ SKIP 0 ∧ 変更 file 5 以内 か?"
+    production_proof:
+      owner: monitor
+      description: "着地後、家老が watchdog の reload event(旧 pid 2581118→新 pid)と新 daemon の ledger 消費/root drain の自動稼働(手動 1 周なしで ledger_inbox 0・root ahead 0)を確認して掲示板 1 行。入替時刻から 24 時間後に bash scripts/single_publisher_close_check.sh <入替時刻> を実行し PASS なら将軍が設計書 §15 に『クローズド』を明記。忍者は待たない"
+      binary_check: "reload event 1 ∧ 手動 1 周なしで ledger_inbox 0・root ahead 0 ∧ 24h 後 close_check 総合 PASS か?"
+    command: |
+      1. scripts/daemon_watchdog.sh(watchdog_publisher_healthy L344、自動再起動 L702)と scripts/publisher.sh の stop flag(L424)を読み、code-reload を足して fixture daemon で reload を確認、bats を選択実行して結果を報告 YAML に生貼付する。
+      2. close_check と after_snapshot の 2 script と bats を書き、選択実行し、ninja_scope_commit で 1 commit する(本番の入替確認と 24h 判定は production_proof=家老)。
+    assumptions:
+      claim: "稼働 daemon pid 2581118 は 05:46:14 起動で旧コード(pgrep/ps lstart)。stop flag は c3fdc90aa で publisher.sh L424 に実装済(旧 daemon は認識しない)。watchdog の自動再起動は L702(PUBLISHER_MODE=active setsid nohup)。before snapshot=$HOME/.local/share/multi-agent-shogun/single_publisher_before_snapshot_20260902/(SHA256SUMS bats_files.txt commits.window.txt merges.window.txt pre_push.window.log push_lane.window.log、窓 09-01T13:25〜09-02T13:25)。§15 の集計 5 点は 09:15 に将軍が手で実行(trailer 67/101)"
+      source: "ps -o lstart -p 2581118、grep -n publisher.stop scripts/publisher.sh、sed -n 344,360p と 702p scripts/daemon_watchdog.sh、ls before snapshot dir、docs/research/single_publisher_asis_tobe_5w1h_20260902.md §11 §15"
+      trust: verified
+    depends_on: none
+    timeout_minutes: 90
+    estimated_minutes: 60
+    execution_env:
+      runtime_constraints: "本番 daemon の kill は忍者が行わない(fixture daemon のみ)。本番の reload は着地後に watchdog が行う。before snapshot は読取りのみ。bats は選択実行のみ"
+      long_runtime_reason: "watchdog の reload 分岐と fixture daemon の起動/更新/再起動 test、close_check 5 条件と after_snapshot の抽出 5 種、bats 8 本"
+      measured_runtime_sec: 3600
+    split_decision:
+      boundary_ac_ids: [AC1, AC2]
+      integration_tasks: 1
+    serial_dependency_evidence: "AC2 の close_check 条件(3)は AC1 の reload event を『自壊』から除外する定義に依存するため同一忍者で AC1→AC2 の順に書く"
+    quality_gate:
+      q1_firefighting: "品質向上。理由: daemon 入替を『自壊待ち』や殿依頼(F009)から watchdog の責務へ構造化し、クローズ判定を手集計から script の二値へ"
+      q2_learning: "奪わない。理由: 判断点は『reload=stop flag→猶予→supervisor が終了→再起動』の順序と『自壊と reload の区別』で AC に固定"
+      q3_next_quality: "上がる。理由: 以後の publisher 変更は着地即反映、クローズ判定は家老が script 1 本で回せる"
+      q4_depth: "deep — 理由: supervisor の reload 契約と 5 条件の機械化、before/after の同窓計測"
+      q5_verified_source: "structure_verified — 対象を実行して確認(2026-09-03 09:25): ps -o lstart -p 2581118 → 05:46:14、grep -n publisher.stop scripts/publisher.sh → L424、grep -n 'PUBLISHER_MODE=active setsid' scripts/daemon_watchdog.sh → L702、ls before snapshot dir → 6 file、git log --since=04:37 trailer 67/101"
+      q6_not_hiding: "隠していない。理由: reload は event に記録し自壊と区別、close_check は 5 条件を個別に出す(総合だけで隠さない)"
+      q7_definition_verified: "クローズ条件 5 点と §11 の before 抽出定義は設計書 §11/§15 原文で確認。D006 は『agent が kill』を禁じ、watchdog(infra)の supervisor 動作は cli_profiles/reset_layout の respawn と同型(確認日: 2026-09-03)"
+      q8_why_what: "WHY: 殿 09:16『クローズまで』、旧 daemon が新コードを実行せず手動運用が続く / WHAT: watchdog reload+close_check+after_snapshot / WHEN: 即(4468 と並走可、file 重複なし) / WHERE: scripts/daemon_watchdog.sh, scripts/single_publisher_*.sh, tests/unit / WHO: 家老配備(Codex 可) / HOW: reload 分岐→fixture→close_check→bats→1 commit→家老が本番 reload と 24h 判定 / 複利: 以後の daemon 更新と §15 判定が無人"
+      q9_firefighting_root_cause: "根本対応。理由: 『次に自壊するまで待つ』を supervisor の reload に置換"
+      q10_knowledge_boundary: "検証済み: daemon 状態・stop flag・watchdog 再起動・before snapshot。スコープ外: cmd_4468(root 直書き)、U8、24h の実運用判定(production_proof)"
+      q11_not_already_done: "rg -c 'reload' scripts/daemon_watchdog.sh → 0(09:25)。ls scripts/single_publisher_close_check.sh scripts/single_publisher_after_snapshot.sh → 無し。rg -c cmd_4469 queue/shogun_to_karo.yaml → 0(起票前)"
+      q_ambiguity: "曖昧さ: reload と自壊の区別。解消: reload は watchdog が event kind=reload を先に記録してから終了させる。event 無しの pid 死亡=自壊"
+      q12_lord_30min_cost: "no — 殿 09:16 で確定、判定は event 数・pid 変化・bats・close_check の 5 行"
+      diagnosis: "BLOCK理由: 該当なし(新規起票。4468 の BLOCK『観測窓を AC に置くな』を先取りして production_proof に分離) / 対策: 2 AC・5 file・production_proof=家老"
+    environment_change: "type=lesson; file=projects/infra/lessons_shogun.yaml; pattern=cmdテンプレートルール"
+    delegated_at: "\"2026-09-03T09:33:06\""
+    origin: "[[single_publisher_§15_クローズ判定_20260903_0915]] -> [[旧daemon入替_D006とF009の板挟み]] -> [[cmd_4469_U10_watchdog_reload_close_check]]"
+  cmd_4468:
+    title: "単一 publisher U9: root 直書き・直 commit の生産者 4 経路(insights auto-commit / semantic_index_update / bulletin 系 / ninja_monitor の runtime integrate)を ledger route か U1b へ寄せ、root の tracked dirty と trailer 無し commit を 0 にする"
+    status: delegated
+    project: infra
+    purpose: "殿 2026-09-03 09:16『追加 4 点を起票してクローズまで持っていけ』。設計書 §15(v3.19): flag ON 04:37 以降の origin 101 commit 中 Published-By trailer 67=66%(ToBe 100%)。trailer 無しの出所=insights auto-commit 7・runtime integrate 4・D012 merge 2・reflux 直 1。家老 09:13/09:19 実測: root 直書き生産者の残存=semantic_index_update(commit 直後に index.md を再追記)と bulletin 系(bulletin_write.sh:619 の archive trim が root で HEAD 66 vs worktree 30 の恒久乖離を作っていた→65f52c33a で ON 時 skip)、root の台帳 dirty が ledger batch と衝突して ff 不能(09:10 behind 1)。root が dirty を持たなければ ff は常に通り §15 の field-aware merge は不要になる=本 cmd で B(root sync)も同時に解ける"
+    scope_mode: FULL
+    target_path: scripts
+    acceptance_criteria:
+      AC1:
+        description: "root 直書き生産者を ledger route へ: (a) scripts/insight_write.sh の auto-commit 経路(git commit が 2 箇所)を PUBLISHER_SINGLE ON 時は ledger_writer append のみ(root file を書かず commit も作らない)にする (b) scripts/semantic_index_update.sh の INS status 書換えと docs/semantic-index/index.md 再生成を ON 時は ledger op(kind=semantic_index、ledger_writer に apply を追加)へ (c) bulletin_write.sh は既に ledger route(06:50 以降)だが bulletin_confirm/bulletin_action/bulletin_archive の root board 直書きを ledger op(update/resolve)へ。3 経路とも OFF 時は従来どおり。ledger_writer.sh の apply に semantic_index 種別を追加(index.md は apply 時に再生成)。契約 bats: tests/unit/test_ledger_writer.bats に semantic_index/bulletin update の @test 各 1、tests/unit/test_insight_write.bats に『ON 時 root 不変・ledger_inbox に op』@test 1。選択実行コマンド=bash scripts/run_tests.sh file tests/unit/test_ledger_writer.bats tests/unit/test_insight_write.bats tests/unit/test_semantic_index_update.bats で FAIL 0・SKIP 0。中断再開時の成果物引継ぎ: 未 commit の worktree 差分と最終 bats 出力 log を報告 YAML の progress に path で残し、再開者はそこから継続する"
+        binary_check: "flag ON fixture で insight_write/semantic_index_update/bulletin_confirm を実行後 git status --porcelain -uno が空 ∧ ledger_inbox に op 3 種 ∧ publisher --process-ledger 1 周で origin fixture に 3 種の変更が載る ∧ OFF fixture は従来の直書き ∧ 選択実行 FAIL 0 ∧ SKIP 0 か?"
+      AC2:
+        description: "scripts/ninja_monitor.sh の push_lane integrate(『runtime: integrate <ref> (push_lane auto)』merge commit を root に作る経路、L475 付近)を PUBLISHER_SINGLE ON 時は作らない(root は publisher の root drain/sync が ff するだけ)。root sync(scripts/publisher.sh sync_root と scripts/lib/publisher_root_drain.sh)は tracked dirty が 0 でないとき『dirty path 一覧』を event に記録して fail-close(現状維持)。ON fixture(一時 STATE_DIR+fixture repo)で integrate が commit を作らないことを bats で固定。契約 bats tests/unit/test_push_lane_integrate.bats に『ON 時 integrate commit 0』@test 1。選択実行=bash scripts/run_tests.sh file tests/unit/test_push_lane_integrate.bats tests/unit/test_publisher_root_drain.bats で FAIL 0・SKIP 0。bash scripts/ninja_scope_commit.sh -m \"<msg>\" -- <変更 path> で 1 commit(AC1 と合わせて 1〜2 commit)"
+        binary_check: "ON fixture で integrate commit 0 ∧ OFF fixture で従来の integrate ∧ 選択実行 FAIL 0 ∧ SKIP 0 ∧ 変更 file が insight_write/semantic_index_update/bulletin 3 script/ledger_writer/ninja_monitor/bats 4 の 10 以内 か?"
+    production_proof:
+      owner: monitor
+      description: "着地後の本番で 3 周期(各周期=publisher の request か ledger batch 1 回)連続で root の tracked dirty 0・ahead 0・behind 0 を家老が集計(git status --porcelain -uno の行数、git rev-list --count origin/main..HEAD、git rev-list --count HEAD..origin/main)し掲示板へ 1 行。忍者は待たない"
+      binary_check: "本番 3 周期で dirty 0・ahead 0・behind 0(集計行 3 組)か?"
+    command: |
+      1. 4 経路の現物(rg -n で git commit と git push と ninja_scope_commit の呼出しを scripts/insight_write.sh scripts/semantic_index_update.sh scripts/bulletin_*.sh scripts/ninja_monitor.sh から列挙)を読み、AC1 の 3 経路を ledger route へ寄せ、ledger_writer に semantic_index apply を足し、fixture で ON/OFF 両方を実行して結果を報告 YAML に生貼付する。
+      2. AC2 の integrate を ON 時に抑止し、bats を選択実行、ninja_scope_commit で commit する(本番 3 周期観測は production_proof=家老)。
+    assumptions:
+      claim: "rg -n で git commit と ninja_scope_commit と publish_direct_commit の呼出しを数えると insight_write.sh 2 箇所、ninja_monitor.sh 4 箇所(うち L475 が runtime: integrate)。semantic_index_update.sh と bulletin_*.sh は root file 直書き(commit は auto-commit 経路が拾う)。ledger_writer.sh は append/update/resolve と apply を持つ(cmd_4454/4465)。bulletin_write は 06:50 以降 ledger route、archive trim は 65f52c33a で ON 時 skip。家老実測 09:19: 残 dirty=docs/semantic-index/index.md(commit 直後に再追記)。origin 101 commit 中 trailer 67(09:15 将軍集計)"
+      source: "rg 出力(09:16)、docs/research/single_publisher_asis_tobe_5w1h_20260902.md §15、家老掲示板 blt_20260903_091357/091751、git log --since=04:37 origin/main の trailer 集計"
+      trust: verified
+    depends_on: none
+    timeout_minutes: 120
+    estimated_minutes: 90
+    execution_env:
+      runtime_constraints: "本番 publisher daemon と queue/flags/publisher_single は触らない。fixture は一時 STATE_DIR。OFF 時の挙動は不変(可逆=flag OFF で戻る)。bats は選択実行のみ"
+      long_runtime_reason: "4 script の経路特定と ON/OFF 分岐、ledger_writer の新 kind、bats 4 本、本番 3 周期の観測(周期は数分〜)"
+      measured_runtime_sec: 5400
+    split_decision:
+      boundary_ac_ids: [AC1, AC2]
+      integration_tasks: 1
+    serial_dependency_evidence: "AC2 の本番 3 周期観測は AC1 の 3 経路が着地して root dirty が消えることを前提にする。別忍者では観測の前提が揃わない"
+    quality_gate:
+      q1_firefighting: "品質向上。理由: root 直書き生産者を 0 にして『root は publisher の ff 先』という設計(§2)を成立させる。field-aware merge という追加機構を不要にする"
+      q2_learning: "奪わない。理由: 判断点は『ON 時は ledger op、OFF 時は従来』の 1 つで AC に固定。新 kind は既存 apply の型に従う"
+      q3_next_quality: "上がる。理由: trailer 率 100% と root dirty 0 が §15 クローズ条件(1)(2)(5)を直接満たす"
+      q4_depth: "deep — 理由: 4 経路の分岐と ledger_writer の kind 追加、本番観測 3 周期"
+      q5_verified_source: "structure_verified — 対象を実行して確認(2026-09-03 09:16): rg -n で git commit と ninja_scope_commit と publish_direct_commit の呼出しを 4 script から数え insight_write 2/ninja_monitor 4、grep -n 'runtime: integrate' scripts/ninja_monitor.sh → L475、git log --since=04:37 origin/main trailer 67/101"
+      q6_not_hiding: "隠していない。理由: OFF 時の挙動は不変、ON 時の root dirty 0 は本番 3 周期の集計行で証明させる"
+      q7_definition_verified: "ledger op の種別と apply 契約は ledger_writer.sh 現物(cmd_4454/4465)、trailer 率の定義は設計書 §15 で確認(確認日: 2026-09-03)"
+      q8_why_what: "WHY: 殿 09:16『クローズまで持っていけ』、trailer 66% の出所=root 直書き経路 / WHAT: 3 経路の ledger route 化+integrate 抑止 / WHEN: 即 / WHERE: scripts/insight_write.sh, semantic_index_update.sh, bulletin_*.sh, ledger_writer.sh, ninja_monitor.sh, tests/unit / WHO: 家老配備(Codex 可、publisher/ledger 実装者=半蔵 推奨) / HOW: 経路特定→ON 分岐→kind 追加→bats→本番 3 周期観測 / 複利: root dirty 0 で ff が常に通り、手動 checkpoint と D012 merge が消える"
+      q9_firefighting_root_cause: "根本対応。理由: root sync を賢くする(消火)のではなく root を汚す生産者を消す"
+      q10_knowledge_boundary: "検証済み: 4 経路の位置・trailer 集計・家老実測。スコープ外: 旧 daemon 入替(cmd_4469)、§11 after(cmd_4469)、U8"
+      q11_not_already_done: "rg -c 'publisher_single_enabled' scripts/semantic_index_update.sh scripts/bulletin_confirm.sh → 0(09:16)。rg -c cmd_4468 queue/shogun_to_karo.yaml → 0(起票前)。insight_write の auto-commit は 9dae7921f で U1b 経由になったが root file 直書き+commit は残る(ledger route と二重)"
+      q_ambiguity: "曖昧さ: bulletin_confirm/action の『update』を ledger op でどう表すか。解消: ledger_writer の update op(id 指定で field を上書き)を使い、apply 側で entries[].id 一致行を更新"
+      q12_lord_30min_cost: "no — 殿 09:16 で確定、判定は dirty/ahead/behind の集計と bats"
+      diagnosis: "BLOCK理由: 該当なし(新規起票) / 対策: 2 AC・10 file 以内・本番観測は集計行"
+    environment_change: "type=lesson; file=projects/infra/lessons_shogun.yaml; pattern=cmdテンプレートルール"
+    delegated_at: "\"2026-09-03T09:30:12\""
+    origin: "[[single_publisher_§15_クローズ判定_20260903_0915]] -> [[root直書き生産者_trailer66%]] -> [[cmd_4468_U9_root直書き0]]"
+  cmd_4467:
+    title: "X 運用自動化 P0: ストック台帳(note 49 本+完全ガイド)と 4 週スロット calendar を YAML 化し、包装 gate(数字ホワイトリスト・保有/ticker blocklist・URL 3 つ・免責・禁止語)を script+bats にする(投稿はしない)"
+    status: delegated
+    project: infra
+    purpose: "殿 2026-09-03 03:13『grok によるアカウント運用は今後 API などで自動化まで』→設計書 v0.3(docs/research/x_account_ops_automation_asis_tobe_5w1h_20260903.md、gist 8e1336f8)。殿回答 B-6(03:31)『metrics は全 PF 公開可、保有シグナル・構成 ticker は Basic DualMomentum 以外禁止』が S4 gate の核心規則。cmd_4463 実測(x_account_asis_measurement_20260903.md): note How to 49 本、完全ガイド スキ 53、入口 5 種並存、再掲比 1:5。P0=手動運用の土台(台帳+calendar+gate)で、P1(下書き→殿 y 承認→X API 投稿)の前提。未決 D1-D3 は既定案(包装 LLM=Claude、X API=Free、承認=ntfy に y)"
+    scope_mode: FULL
+    target_path: skills
+    acceptance_criteria:
+      AC1:
+        description: "skills/x-post-pipeline/stock_ledger.yaml を新規作成: note How to マガジン(https://note.com/tokyojibika/m/mb4377418b422)の 49 本+完全ガイド(n171daa7f92a1)を 1 記事 1 entry で列挙(url、title、公開日、マニュアル §5 の枠 A/B/C いずれに使えるか、使ってよい数字=記事本文にある期間/CAGR/MaxDD/ベンチのセットのみ、初見向け第一文候補 1 行)。WebFetch/curl で本文を取り、数字は記事に無いものを書かない(推測禁止、無ければ空)。skills/x-post-pipeline/slot_calendar.yaml を新規作成: 4 週分×週 3 枠(A 教材再掲/B 検証の一切れ/C 運用の形)+月次 D の 13 slot に台帳 entry を割当(同一記事は切り口を変えて最大 4 回、マニュアル §6)。skills/x-post-pipeline/SKILL.md は What/When/NOT When 付きで台帳と calendar の使い方を 30 行以内"
+        binary_check: "台帳 entry 数 == 50 ∧ 各 entry に url・title・枠・数字セット(空可)・第一文候補 ∧ 数字は全て記事本文に出典(entry に本文引用 1 行)∧ calendar slot 数 == 13 ∧ 全 slot が台帳 entry を参照 ∧ SKILL.md が 30 行以内 か?"
+      AC2:
+        description: "scripts/x_ops/x_post_gate.sh を新規作成: 引数=下書き text file、終了 0/1。規則(設計書 §2 不変条件+殿 B-6): (1) 保有シグナル・構成 ticker・FoF 重みの値(https://dm-signal-backend.onrender.com/api/public/showcase の hero.holding と plans[].holding・ticker を起動時に取得し blocklist、ただし plans[] の name が Basic-DualMomentum の holding は許可)が本文にあれば FAIL (2) 単独倍率(『N 倍』が期間/CAGR/MaxDD/ベンチのいずれとも同一段落に無い)は FAIL (3) URL は完全ガイド/How to マガジン/dm-signal.com の 3 種以外があれば FAIL (4) 免責 1 行(『助言ではない』『保証しない』のいずれか)が無ければ FAIL (5) 禁止語(無敵/確実/人生が変わる/今これを買え/劇薬)があれば FAIL (6) 第一文に内部用語(四神/忍法/Ave/FoF/CPCV)があれば FAIL。tests/unit/test_x_post_gate.bats を新規作成(test_necessity 非空): PASS 例 2 本・各規則の FAIL 例 6 本の 8 @test。選択実行コマンド=bash scripts/run_tests.sh file tests/unit/test_x_post_gate.bats で FAIL 0・SKIP 0。API 取得は fixture では env X_GATE_SHOWCASE_JSON で差替え可能にする。bash scripts/ninja_scope_commit.sh -m \"<msg>\" -- skills/x-post-pipeline/ scripts/x_ops/x_post_gate.sh tests/unit/test_x_post_gate.bats で 1 commit。中断再開時の成果物引継ぎ: 未 commit の worktree 差分と最終 bats 出力 log を報告 YAML の progress に path で残し、再開者はそこから継続する"
+        binary_check: "x_post_gate.sh が 6 規則を実装(各規則に対応する FAIL 例 @test が FAIL を返す)∧ PASS 例 2 本 exit 0 ∧ 選択実行 FAIL 0 ∧ SKIP 0 ∧ 本番 API の Basic-DualMomentum holding を含む下書きは PASS・他 PF の holding を含む下書きは FAIL ∧ commit 1 か?"
+    command: |
+      1. 設計書 §1b/§1c/§2 と cmd_4463 実測、マニュアル(docs/research/bam_delivery_manual_grok_20260902.md §4-§6)を読み、note マガジン 49 本+完全ガイドを取得して stock_ledger.yaml と slot_calendar.yaml と SKILL.md を書き、entry 数と slot 数を報告 YAML に生貼付する。
+      2. x_post_gate.sh と bats 8 本を書き、本番 showcase API で Basic の holding PASS/他 PF の holding FAIL を実行して結果を報告 YAML に生貼付し、ninja_scope_commit で 1 commit する。
+    assumptions:
+      claim: "設計書 v0.3(cc62ff748)§2 不変条件 5 点と §1b 殿回答 B-6、cmd_4463 実測(795dbd37a): note How to 49 本・完全ガイド n171daa7f92a1。showcase API(https://dm-signal-backend.onrender.com/api/public/showcase)は 02:35 の curl で data.hero.holding=XLU、hero.series 277 要素に holding、plans[] に name/holding。skills/x-post-pipeline/ と scripts/x_ops/ は未存在(ls 08:20)。マニュアル docs/research/bam_delivery_manual_grok_20260902.md §4 包装ルール・§5 週次枠・§6 テンプレ"
+      source: "docs/research/x_account_ops_automation_asis_tobe_5w1h_20260903.md、docs/research/x_account_asis_measurement_20260903.md、docs/research/bam_delivery_manual_grok_20260902.md、curl showcase API(02:35/03:0x)、ls skills scripts"
+      trust: verified
+    depends_on: none
+    timeout_minutes: 90
+    estimated_minutes: 60
+    execution_env:
+      runtime_constraints: "読取りと file 作成のみ(X 投稿・note 編集・dm-signal 変更なし)。note 取得は公開ページのみ、有料本文は取得しない。API key 不要"
+      long_runtime_reason: "note 50 記事の取得と数字抽出(AC1 40 分)、gate 6 規則+bats 8 本(AC2 20 分)"
+      measured_runtime_sec: 3600
+    split_decision:
+      boundary_ac_ids: [AC1, AC2]
+      integration_tasks: 1
+    serial_dependency_evidence: "AC2 の gate は AC1 の台帳の数字セット形式(期間/CAGR/MaxDD/ベンチ)を入力契約にするため同一忍者で AC1→AC2 の順に作る"
+    quality_gate:
+      q1_firefighting: "品質向上。理由: マニュアルの Non-negotiables を script で機械化し、以後の全下書きが同じ規則で判定される。人手の目視確認を gate に置換"
+      q2_learning: "奪わない。理由: 判断点は『数字は記事本文にあるものだけ』『Basic 以外の保有は禁止』の 2 つで AC に固定。gate 規則は設計書と殿回答から写す"
+      q3_next_quality: "上がる。理由: P1(下書き生成→承認→投稿)が台帳と gate を前提に起票でき、S4 gate の FAIL 率が計測できる"
+      q4_depth: "medium — 理由: 台帳 50 entry の収集と gate 6 規則。判断は殿回答で確定済み"
+      q5_verified_source: "structure_verified — 対象を実行して確認(2026-09-03 08:20): grep -c '^| B-' 設計書 §1b → 10、grep -c 'How to' x_account_asis_measurement → 1 以上(49 本)、curl showcase API → hero.holding=XLU・series 277、ls skills/x-post-pipeline scripts/x_ops → 無し"
+      q6_not_hiding: "隠していない。理由: 数字が記事に無い entry は空のまま報告させる。gate の FAIL 例を bats で固定"
+      q7_definition_verified: "枠 A/B/C/D・包装順・禁止語・URL 3 つはマニュアル §3-§6 の原文、保有/ticker 規則は殿 B-6 原文(03:31)で確認(確認日: 2026-09-03)"
+      q8_why_what: "WHY: 殿 03:13 の自動化構想の P0=手動運用の土台 / WHAT: 台帳 50+calendar 13+gate 6 規則+bats 8 / WHEN: 即 / WHERE: skills/x-post-pipeline, scripts/x_ops, tests/unit / WHO: 家老配備(Claude 推奨、note 本文の読解) / HOW: 取得→YAML→gate→bats→1 commit / 複利: 以後の下書きは全て gate を通り、殿の確認は y のみ"
+      q9_firefighting_root_cause: "根本対応。理由: 届け方の欠陥(反復なし・入口過多)を人手でなく台帳と calendar で構造化"
+      q10_knowledge_boundary: "検証済み: 設計書・殿回答・実測・API 形。スコープ外: X API 投稿(P1)、Grok 生成(S3)、KPI(S6)、note 本文の変更"
+      q11_not_already_done: "ls skills/x-post-pipeline scripts/x_ops → 無し(08:20)。rg -c 'x_post_gate' scripts tests → 0。rg -c cmd_4467 queue/shogun_to_karo.yaml → 0(起票前)"
+      q_ambiguity: "曖昧さ: 『Basic DualMomentum の保有』の判定。解消: showcase API の plans[] で name が Basic-DualMomentum の entry の holding のみ許可、hero.holding は Basic と同一なら許可"
+      q12_lord_30min_cost: "no — 殿 03:13/03:31 で確定、判定は entry 数・slot 数・bats"
+      diagnosis: "BLOCK理由: 該当なし(新規起票) / 対策: 2 AC・file 作成のみ・bats 固定"
+    environment_change: "type=lesson; file=projects/infra/lessons_shogun.yaml; pattern=cmdテンプレートルール"
+    delegated_at: "\"2026-09-03T08:21:39\""
+    origin: "[[x_account_ops_automation_設計書v0.3]] -> [[殿回答B-6_数字ホワイトリスト_20260903_0331]] -> [[cmd_4467_X運用P0_台帳とgate]]"
   cmd_4466:
     title: "単一 publisher U8 第 2 弾: 旧 push 経路を『関数 chain+それを縛る test』の単位で batch 削除し(M10 と同型)、M7 は blocked 確定で除外、4 file 合計行数を 33,238 から減らす"
     status: void
@@ -56,56 +214,6 @@ commands:
     environment_change: "type=lesson; file=projects/infra/lessons_shogun.yaml; pattern=cmdテンプレートルール"
     delegated_at: "\"2026-09-03T05:29:15\""
     origin: "[[cmd_4464_U8_AC2_batch削除]] -> [[test が旧 chain を縛る構造_20260903_0525]] -> [[cmd_4466_U8_第2弾_chain+test単位]]"
-  cmd_4465:
-    title: "単一 publisher U6b: publisher daemon に ledger 消費者(ledger_inbox の op を seq 順に isolated clone へ apply→1 commit→publish→applied へ移動)を実装し、ledger_writer.sh を実行 bit 付きで追跡して writer route を本番で生かす"
-    status: delegated
-    project: infra
-    purpose: "家老が 04:58 deepdive 追体験で発見(blt_045610): cmd_4454(U6)の ledger route は本番で一度も動いていない。理由 2 層=(a) 4 caller(insight/lesson/bulletin/workaround)の `[[ -x ledger_writer.sh ]]` 検査が file mode 644 のため常に偽で legacy 直書きへ沈黙フォールバック (b) `$STATE_DIR/ledger_inbox` の op を origin へ apply する消費者が publisher.sh に未実装(grep -c apply → 0)。PUBLISHER_SINGLE ON(04:37)以後は legacy auto-commit が no-op のため、ledger 4 種の origin 到達経路は本 route しか無く、root の tracked dirty が 14 に溜まり publisher の root sync が fail-closed(tracked_dirty)し続ける。将軍裁定 04:56: route 撤去ではなく消費者を実装。cmd_4464(削除)と触る file が重ならず並走可"
-    scope_mode: FULL
-    target_path: scripts
-    acceptance_criteria:
-      AC1:
-        description: "scripts/publisher.sh に ledger 消費(kind=ledger)を追加: daemon の各周期で `$STATE_DIR/ledger_inbox/<ledger>/*.yaml`(applied/ を除く)を name(UTC 時刻+seq)昇順に読み、既存 flock 1 本の下で isolated clone(origin/main tip)に対し `bash scripts/ledger_writer.sh apply <op file>` を op ごとに実行し、全 op 成功なら 1 commit(message『publisher: ledger batch n=<件数> ledgers=<種別>』+Published-By trailer)→既存 publish 経路(push→sync_root)→op file を ledger_inbox/<ledger>/applied/ へ移動。1 op でも apply 失敗なら commit せず isolated を捨て、失敗 op だけ ledger_inbox/<ledger>/rc/ へ移し残りは次周期へ(fail-close、他 op を巻き込まない)。code request(既存 kind)と ledger の順序は queue の到着順、同一周期では code→ledger。events.jsonl に kind=ledger の event 1 行。既存 bats tests/unit/test_publisher.bats は選択実行コマンド=bash scripts/run_tests.sh file tests/unit/test_publisher.bats tests/unit/test_ledger_writer.bats で FAIL 0・SKIP 0。中断再開時の成果物引継ぎ: 未 commit の worktree 差分と最終 bats 出力 log を報告 YAML の progress に path で残し、再開者はそこから継続する"
-        binary_check: "publisher.sh に ledger 消費関数 1 つ以上(rg -c 'ledger_inbox' scripts/publisher.sh ≥ 1)∧ fixture で op 3 件→isolated commit 1 つ・origin fixture に 3 entry・applied/ に 3 file ∧ 失敗 op 1 件混在で commit 0・rc/ に 1 file・残 2 は次周期で applied ∧ 既存 2 bats 選択実行 FAIL 0 ∧ SKIP 0 か?"
-      AC2:
-        description: "scripts/ledger_writer.sh を git mode 100755 で追跡する(git update-index --chmod=+x、bash scripts/ninja_scope_commit.sh で commit)。4 caller(scripts/insight_write.sh L463/L473/L493 の -x 判定と lesson/bulletin/workaround の同型箇所)は判定を変えず、-x が偽かつ file が存在する場合に stderr へ『LEDGER-ROUTE-SKIP: ledger_writer.sh exists but not executable』を 1 行出す(沈黙フォールバックの可視化のみ、分岐は不変)。tests/unit/test_publisher_ledger_consumer.bats を新規作成(test_necessity 非空): (1) ledger_writer.sh の実行 bit が git tree で 100755 (2) insight_write を fixture で実行→legacy file 不変・ledger_inbox に op 1 件→publisher 1 周期→origin fixture に entry・root porcelain 0。選択実行=bash scripts/run_tests.sh file tests/unit/test_publisher_ledger_consumer.bats で FAIL 0・SKIP 0。変更 file は publisher.sh・ledger_writer.sh(mode)・4 caller・新規 bats 1 の 7 つ以内"
-        binary_check: "git ls-tree HEAD scripts/ledger_writer.sh の mode が 100755 ∧ 4 caller に LEDGER-ROUTE-SKIP 出力 1 行ずつ(rg -c 'LEDGER-ROUTE-SKIP' scripts → 4)∧ 新規 bats @test 2 本以上・test_necessity 非空 ∧ 選択実行 FAIL 0 ∧ SKIP 0 ∧ 変更 file ≤7 か?"
-    command: |
-      1. scripts/publisher.sh(process_request/run_one/daemon_main と sync_root)と scripts/ledger_writer.sh(write_op/apply_op、L185)を読み、ledger 消費関数を publisher.sh に足し、fixture(正常 3 op/失敗混在)で確認して既存 2 bats を選択実行し、報告 YAML に fixture の origin 側 entry 数と applied/rc の file 数を生貼付する。
-      2. ledger_writer.sh を 100755 で追跡し 4 caller に LEDGER-ROUTE-SKIP 1 行を足し、新規 bats を書いて選択実行し、bash scripts/ninja_scope_commit.sh -m "<msg>" -- scripts/publisher.sh scripts/ledger_writer.sh scripts/insight_write.sh <他 3 caller> tests/unit/test_publisher_ledger_consumer.bats で commit、報告 YAML に本番 STATE_DIR の ledger_inbox 件数(着地前後)を書く。
-    assumptions:
-      claim: "scripts/ledger_writer.sh は mode 644(ls -la → -rw-r--r--、04:56)で apply サブコマンド(L185 apply_op、L263 dispatch)を既に持つ。scripts/publisher.sh に ledger_inbox の参照 0(rg)。本番 ledger_inbox は insights/ のみ(.seq=1、applied/ 空、滞留 1 op は家老が手動 apply 済)。insight_write.sh の -x 判定は L463/L473/L493。root tracked dirty 14(git status --porcelain -uno、04:56)。cmd_4464(削除 lane)の対象は cmd_complete_gate/ninja_monitor/safe_shared_main_ff/pre-push/gate_report_format/ninja_scope_commit で publisher.sh・ledger_writer.sh・insight_write.sh と重ならない"
-      source: "ls -la scripts/ledger_writer.sh、grep -n apply_op scripts/ledger_writer.sh、rg -c ledger_inbox scripts/publisher.sh → 0、ls ~/.local/share/multi-agent-shogun/ledger_inbox/、grep -n -e '-x ' scripts/insight_write.sh、git status --porcelain -uno | wc -l、家老掲示板 blt_20260903_045610"
-      trust: verified
-    depends_on: none
-    timeout_minutes: 60
-    estimated_minutes: 40
-    execution_env:
-      runtime_constraints: "本番 publisher daemon(pid 3399892)と本番 STATE_DIR は触らない(fixture は一時 STATE_DIR)。着地後の daemon 再読込は家老 lane。既存 4 caller の分岐ロジックは変えない(出力 1 行のみ)。bats は選択実行のみ"
-      long_runtime_reason: "publisher.sh の flock/isolated/sync_root 経路への統合と fixture 2 種(正常・失敗混在)、新規 bats 1 本。code と ledger の順序制御を同一 daemon 内で保つため 1 忍者"
-      measured_runtime_sec: 2400
-    split_decision:
-      boundary_ac_ids: [AC1, AC2]
-      integration_tasks: 1
-    serial_dependency_evidence: "AC2 の e2e bats(writer→inbox→publisher→origin)は AC1 の消費者が無いと PASS しないため同一忍者で AC1→AC2 の順に実装する"
-    quality_gate:
-      q1_firefighting: "品質向上。理由: U6 の設計意図(§13 H3 台帳ノイズの分離)を本番で初めて成立させる。flag ON 後に ledger が origin へ届かない構造欠陥の根治"
-      q2_learning: "奪わない。理由: 判断点は『失敗 op は隔離し他を巻き込まない』の 1 つで AC に固定。4 caller の分岐は不変"
-      q3_next_quality: "上がる。理由: root tracked dirty が 0 に収束し publisher の root sync が通る。台帳ノイズ commit(『insights: auto-commit』等)が publisher の ledger batch 1 本に置き換わる"
-      q4_depth: "deep — 理由: daemon への新 kind 追加+fail-close 隔離+実行 bit の契約化。可逆=消費関数を呼ばなければ現状(legacy)へ戻る"
-      q5_verified_source: "structure_verified — 対象を実行して確認(2026-09-03 04:56): ls -la scripts/ledger_writer.sh → -rw-r--r--、grep -n apply_op scripts/ledger_writer.sh → L185、rg -c ledger_inbox scripts/publisher.sh → 0、ls ledger_inbox → insights/(applied 空)、git status --porcelain -uno | wc -l → 14"
-      q6_not_hiding: "隠していない。理由: 失敗 op は rc/ に残し件数を報告させる。沈黙フォールバックは LEDGER-ROUTE-SKIP で可視化"
-      q7_definition_verified: "U6 の入出力(ledger_inbox/op/append-update-resolve)は設計書 §9.1 U6 行と ledger_writer.sh 現物、publisher の request 契約は publisher.sh 現物で確認(確認日: 2026-09-03)"
-      q8_why_what: "WHY: 家老発見=U6 route が本番で未稼働、flag ON 後は ledger の到達経路が無い / WHAT: publisher に ledger 消費者+実行 bit 追跡+可視化 1 行 / WHEN: 即(4464 と並走) / WHERE: scripts/publisher.sh, scripts/ledger_writer.sh, 4 caller, tests/unit / WHO: 家老配備(Codex/Claude どちらでも、publisher.sh は半蔵 Codex が実装) / HOW: 消費関数→fixture→bats→commit→家老が daemon 再読込 / 複利: 台帳 commit が 1 経路に収束し root dirty 0"
-      q9_firefighting_root_cause: "根本対応。理由: -x を -f に変える消火(家老が試して死路に落ちた)ではなく、消費者の欠落という真因を埋める"
-      q10_knowledge_boundary: "検証済み: writer の apply API・publisher の構造・本番 inbox 状態・root dirty 数。スコープ外: 4464 の削除対象、gate_skill_script_refs/auto_failure_lesson の -x 修正(家老が済)、daemon 再読込手順"
-      q11_not_already_done: "rg -c ledger_inbox scripts/publisher.sh → 0(04:56)。rg -c 'LEDGER-ROUTE-SKIP' scripts → 0。git ls-tree HEAD scripts/ledger_writer.sh → 100644。rg -c cmd_4465 queue/shogun_to_karo.yaml → 0(起票前)"
-      q_ambiguity: "曖昧さ: code request と ledger op の同一周期での順序。解消: code→ledger の固定順(code の commit に ledger が乗ることを防ぐ)。ledger 種別間は name 昇順"
-      q12_lord_30min_cost: "no — 家老発見+将軍裁定 04:56、判定は fixture 件数・mode・bats"
-      diagnosis: "BLOCK理由: 該当なし(新規起票) / 対策: 2 AC・7 file 以内・fail-close 隔離"
-    environment_change: "type=lesson; file=projects/infra/lessons_shogun.yaml; pattern=cmdテンプレートルール"
-    delegated_at: "\"2026-09-03T05:03:03\""
-    origin: "[[cmd_4454_U6_ledger_writer]] -> [[家老発見_ledger_route未稼働_20260903_0458]] -> [[cmd_4465_publisher_ledger消費者]]"
   cmd_4464:
     title: "単一 publisher U8 AC2: PUBLISHER_SINGLE ON(04:37)の下で cleanup manifest の M1-M11 を batch 4 回(各 1 commit・10 file 以内)で物理削除し、census は同 batch で消える file を除いて数える"
     status: void
