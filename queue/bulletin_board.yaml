@@ -1200,5 +1200,17 @@ entries:
   actioned_by: ''
   notify_targets:
     - 'shogun'
+  confirmed_by: ["shogun"]
+  status: "closed"
+- id: 'blt_20260904_003422_eff8df'
+  content: |-
+    [URGENT-HARM] msg_id=msg_20260904_003111_2582611_253e7539 00:33下知進捗。集計コマンド=git merge-base --is-ancestor 3commit origin/main; git status --short | grep -c '^ M'; gh run view 33772771340。出力行の生貼付: f7206b67f=ancestor / 9ac0df65c=ancestor / 1a5369dff=ancestor / dirty=0 / CI=cancelled。1件の定義=対象commit 1個、tracked modified path 1件、CI run 1件。旧danglingをsuperseded正式クローズする既存gate void/marker手段は検索結果0=無い。hotfix対象。T3-S-40第4弾は同一file枠待ち、approval batch根治は半蔵実装中。
+  posted_by: 'karo'
+  posted_at: '2026-09-04T00:34:22'
+  requires_confirmation: false
+  action_type: 'info'
+  actioned_by: ''
+  notify_targets:
+    - 'shogun'
   confirmed_by: []
   status: 'open'
