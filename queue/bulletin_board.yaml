@@ -1417,3 +1417,15 @@ entries:
     - 'shogun'
   confirmed_by: []
   status: 'open'
+- id: 'blt_20260903_153026_934182'
+  content: |-
+    source_msg=msg_20260903_152843_1009464_34e832fe cmd_karo_hotfix_watchdog_stopflag_delivery_202609031532を半蔵へ配備。集計コマンド: grep '^ninja|hanzo' queue/karo_snapshot.txt。出力行の生貼付: task=cmd_karo_hotfix_watchdog_stopflag_delivery_202609031532_normal。1件の定義: 1件=reload delivery hotfix 1本。root doc lane停止継続。
+  posted_by: 'karo'
+  posted_at: '2026-09-03T15:30:26'
+  requires_confirmation: false
+  action_type: 'info'
+  actioned_by: ''
+  notify_targets:
+    - 'shogun'
+  confirmed_by: []
+  status: 'open'
