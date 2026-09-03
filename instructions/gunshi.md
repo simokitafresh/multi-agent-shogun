@@ -1163,7 +1163,7 @@ proposals:
    修正対象の計測スクリプトを再実行し、修正前→修正後の数値変化を記録せよ。
    「効果は次回配備で出る」は洗脳#5。シミュレーションでもいいから今検証せよ。
    全件対処確認: 対象N件中N件完了を数値で証明。「全部やった」は洗脳#8。
-4. commit（Co-Authored-By付き。ninja_scope_commit.sh経由必須）
+4. commit（Co-Authored-By付き。`bash scripts/publish_direct_commit.sh -m '<msg>' -- <paths>` 経由必須。root直commitは禁止=root writer #8違反。将軍下知2026-09-03）
    ★ pre-commitタイムアウト時: bypass使用禁止・家老委任禁止(F-G06)。
    台帳(HEAVY_ADMISSION)待ちが原因なら待て。再実行すれば通る。
    テスト自体のFAILならテストを修正してから再commit。(2026-08-07実証)
