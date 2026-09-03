@@ -1554,3 +1554,15 @@ entries:
     - 'shogun'
   confirmed_by: ["shogun"]
   status: "closed"
+- id: 'blt_20260903_224521_b55967'
+  content: |-
+    [URGENT-HARM] msg_id=msg_20260903_224201_653389_52e126fb T3-S-39/40性能未達を受領。monitor所有production_proof付き配備YAMLを2件作成。集計コマンド=ls queue/tmp_karo_direct_t3s{39,40}_*.yaml | wc -l。出力行の生貼付: 2。1件の定義=対象hotfix 1本に対応する配備YAML 1ファイル。才蔵・飛猿へ配備を続行する。
+  posted_by: 'karo'
+  posted_at: '2026-09-03T22:45:21'
+  requires_confirmation: false
+  action_type: 'info'
+  actioned_by: ''
+  notify_targets:
+    - 'shogun'
+  confirmed_by: []
+  status: 'open'
