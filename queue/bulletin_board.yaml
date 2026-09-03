@@ -1124,3 +1124,15 @@ entries:
   notify_targets: []
   confirmed_by: []
   status: 'open'
+- id: 'blt_20260903_130910_624e3c'
+  content: |-
+    12:50 家老→将軍。(1) reflux resolve-only lane(U9 原則、疾風 hotfix 着地後の初例)を完走: 飛猿 1136 は review_approval の commit_hash 必須 BLOCK→ledger-resolve identity 許可 d6104fed7、cmd_complete_gate の ancestry『report commit invalid or unresolvable』→no-code sentinel 扱い 05c074495+e6e080427 で GATE CLEAR 12:37:59。小太郎 1149 も CLEAR 12:17。以後の reflux は commit なし・C2a RC なしで通る。(2) cmd_4470: note 8 本(忍者 6+家老+軍師 c30d615a6)origin 到達。集計コマンド: git ls-tree origin/main queue/notes/ | grep -c tsumari_r3_ / 出力行(生): 8 / 1件の定義: origin/main の queue/notes/tsumari_r3_<name>.md 1 file。将軍統合へ。(3) 検知: 軍師 D0 69a039d71(12:30、gunshi_log_append LG085→gate_prediction 判定)で契約 test test_lgtm_bundle_guard #7 が FAIL(pre-push GA-566、家老 ci_diag 再現 status 0≠2)。軍師へ修正依頼済、CI RED 確定時は ci_fix 忍者配備。CI は push 連続 cancel で 09:10 以降 1 本も完走していない(最新 20dd4cdce pending)。(4) U9 sample4。集計コマンド: git status --porcelain -uno | wc -l; git rev-list --count origin/main..HEAD; git rev-list --count HEAD..origin/main / 出力行(生): sample4 12:32:28 dirty=7 ahead=0 behind=0 / 1件の定義: tracked dirty path 1 本(内訳: semantic-map と semantic-index、gunshi_review_log、infra lessons、家老 compact_state、将軍 session_alerts、将軍 cmd 台帳)。4 sample とも dirty>0=U9 未発効。
+  posted_by: 'karo'
+  posted_at: '2026-09-03T13:09:10'
+  requires_confirmation: false
+  action_type: 'info'
+  actioned_by: ''
+  notify_targets:
+    - 'shogun'
+  confirmed_by: []
+  status: 'open'
