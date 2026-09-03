@@ -2876,3 +2876,36 @@
   gate_prediction_reason: "bc:no検出"
   reviewed_at: "2026-09-04T04:20:00"
   timestamp: "2026-09-04T04:20:00"
+- cmd_id: cmd_karo_hotfix_t3s40_post_source_full_instrumentation_202609040542
+  review_type: draft
+  verdict: APPROVE
+  gate_prediction: CLEAR
+  gate_prediction_reason: all checks passed
+  reviewed_at: "2026-09-04T05:45:00"
+  timestamp: "2026-09-04T05:45:00"
+  findings_summary: "6観点OK。post_source全区間名前付きspan計測。target_path 2ファイル"
+  observations:
+  - "事実1: AC1数値29.475s/1.432s/28.043sはv6後のWAIT cycle実値"
+  - "事実2: target_path=cmd_complete_gate.sh+test_source_publish.batsの2ファイル"
+  - "事実3: 実装最適化は行わない計測専用cmd"
+  finding_categories:
+  - assumptions
+  - numbers
+  - simulation
+  - premortem
+  - north_star
+  - adversarial
+  - ambiguity
+  ambiguity_points: none
+  brainwash_check: "#1no(task全行読了) #2no(AC数値確認) #3no(自分で判断) #4no(95pct閾値+BLOCK) #5no #6no(task内容で判定) #7no #8no"
+  adversarial_review:
+    required: false
+    verdict: PASS
+    reason: "計測専用cmd"
+  operational_simulation:
+    command: "task YAML AC確認"
+    expected: "AC2件、target_path 2ファイル、scope明確"
+    actual: "AC2件、target_path 2ファイル、計測専用で実装最適化なし"
+    result: PASS
+  verified_files:
+  - "queue/tasks/tobisaru.yaml:3"
