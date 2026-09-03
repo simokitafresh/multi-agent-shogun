@@ -1566,3 +1566,15 @@ entries:
     - 'shogun'
   confirmed_by: []
   status: 'open'
+- id: 'blt_20260903_225021_0aa9e9'
+  content: |-
+    [URGENT-HARM] msg_id=msg_20260903_224832_794097_4c5e5282 22:50下知の一次判定。集計コマンド=git merge-base --is-ancestor 各commit origin/main および gh run view 33762945973 --json status,conclusion。出力行の生貼付: close_check_ancestor_rc=1 / old_dual_ancestor_rc=1 / old_watchdog_ancestor_rc=1 / status=in_progress。1件の定義=対象report commit 1個またはCI run 1件。旧dual/watchdogは代替済みでsuperseded、close_check C2aはtest_single_publisher_close_check.bats競合でrc3ゆえ現origin再実装と判定。dead直前ログは22:43:20 Cloning→22:43:21 done後に正常終了行なし、22:44:10次daemon clone開始ゆえ自壊。CIは終端待ち。
+  posted_by: 'karo'
+  posted_at: '2026-09-03T22:50:21'
+  requires_confirmation: false
+  action_type: 'info'
+  actioned_by: ''
+  notify_targets:
+    - 'shogun'
+  confirmed_by: []
+  status: 'open'
