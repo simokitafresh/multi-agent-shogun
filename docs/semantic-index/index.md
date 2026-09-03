@@ -3466,6 +3466,9 @@ codd:
 | discussion | `queue/lord_conversation.jsonl` 2026-09-03T09:15:22+09:00 殿下問 2026-09-03 09:13『single_publisher 設計書は完了か』→将軍判定: 未完了。実測(flag ON 04:37 以降 origin 101 commit 中 Published-By trailer 67 |
 | discussion | `queue/lord_conversation.jsonl` 2026-09-03T09:32:46+09:00 session_save_20260903_0935(復帰点、先に session_save_20260903_0910 を読め): 殿 09:13『完了か』→未完了(trailer 66%)、09:16『追加 4 点を起票してクローズまで |
 | discussion | `queue/lord_conversation.jsonl` 2026-09-03T09:52:10+09:00 cmd_4467(X 運用 P0)CLEAR 09:48 将軍突合: 台帳 50 entry・calendar・gate 6 規則+bats 8。穴=規則 1 blocklist が公開 showcase API 由来で非公開 PF の h |
+| discussion | `queue/lord_conversation.jsonl` 2026-09-03T15:06:52+09:00 session_save_20260903_1504(軍師復帰点): 12:50 y復帰→deepdive全10Phase→ALERT3件全解消(gate-sync 7件/GP-262遡及/意志依存gate化)。D0 3件(LG070+07 |
+| discussion | `queue/lord_conversation.jsonl` 2026-09-03T15:13:05+09:00 artifactも更新しておいて |
+| discussion | `queue/lord_conversation.jsonl` 2026-09-03T15:25:22+09:00 session_save_20260903_1530(復帰点、先に session_save_20260903_1515 を読め): 15:15 todo map artifact 再公開(★空白バグ修正で T237-239 が HTML  |
 | causal_chain | `[[cmd_3749]]` (L974) |
 | causal_chain | `[[cmd_training_L1_report-write_20260708020332]]` (L977) |
 | causal_chain | `[[cmd_reflux_insight_202607071717_tobisaru]]` (L961) |
@@ -3532,9 +3535,6 @@ codd:
 | causal_chain | `[[cmd_karo_ci_fix_33630722226_instructions_sync_fp_vocab_202609022153]]` (L1710) |
 | causal_chain | `[[cmd_karo_hotfix_u3_publisher_idempotent_restore_notify_202609022337]]` (L1711) |
 | causal_chain | `[[cmd_karo_hotfix_workarounds_merge_driver_dup_cmd_id_202609030148]]` (L1712) |
-| discussion | `queue/lord_conversation.jsonl` 2026-09-03T15:06:52+09:00 session_save_20260903_1504(軍師復帰点): 12:50 y復帰→deepdive全10Phase→ALERT3件全解消(gate-sync 7件/GP-262遡及/意志依存gate化)。D0 3件(LG070+07 |
-| discussion | `queue/lord_conversation.jsonl` 2026-09-03T15:13:05+09:00 artifactも更新しておいて |
-| discussion | `queue/lord_conversation.jsonl` 2026-09-03T15:25:22+09:00 session_save_20260903_1530(復帰点、先に session_save_20260903_1515 を読め): 15:15 todo map artifact 再公開(★空白バグ修正で T237-239 が HTML  |
 
 ## investment_knowledge_base — 投資知識辞書
 
@@ -15486,9 +15486,9 @@ codd:
 | causal | `cmd_karo_hotfix_run_tests_task_mode_nested_guard_202609030347` files_modified: [[provisional_run_tests]] |
 | cmd | `cmd_karo_hotfix_run_tests_task_mode_nested_guard_202609030347` (`scripts/run_tests.sh`, `tests/unit/test_run_tests.bats`) |
 | discussion | `queue/lord_conversation.jsonl` 2026-09-03T09:33:20+09:00 b0dnu0ppw toolu_01AYjptEpGRQyMU8LJ3fHDB7 /tmp/claude-1000/-home-simokitafresh-multi-agent-shogun/bd8c1107-7ad7-4d24-a924 |
+| discussion | `queue/lord_conversation.jsonl` 2026-09-03T15:22:17+09:00 bad4xooqu toolu_01956wa2pKwMq4v7xc9ei1YW /tmp/claude-1000/-home-simokitafresh-multi-agent-shogun/f643d19f-58a8-4b8d-91fa |
 | causal_chain | `[[cmd_karo_hotfix_git_index_singleflight_202608191445]]` (L1618) |
 | causal_chain | `[[cmd_4463]]` (L1713) |
-| discussion | `queue/lord_conversation.jsonl` 2026-09-03T15:22:17+09:00 bad4xooqu toolu_01956wa2pKwMq4v7xc9ei1YW /tmp/claude-1000/-home-simokitafresh-multi-agent-shogun/f643d19f-58a8-4b8d-91fa |
 
 ## provisional_.gitignore — 仮: .Gitignore
 
@@ -18350,6 +18350,8 @@ codd:
 | discussion | `queue/lord_conversation.jsonl` 2026-09-03T00:27:38.107927+00:00 git pre-commit semantic propagation for context/projects changes |
 | discussion | `queue/lord_conversation.jsonl` 2026-09-03T00:43:43.711326+00:00 git pre-commit semantic propagation for context/projects changes |
 | discussion | `queue/lord_conversation.jsonl` 2026-09-03T01:56:48.158307+00:00 git pre-commit semantic propagation for context/projects changes |
+| discussion | `queue/lord_conversation.jsonl` 2026-09-03T11:42:24+09:00 session_save_20260903_1145(復帰点、先に session_save_20260903_1115 を読め): loop 11:42: cmd_4470 note 5 本着地(hayate/karo/kotaro/sa |
+| discussion | `queue/lord_conversation.jsonl` 2026-09-03T06:08:50.007227+00:00 git pre-commit semantic propagation for context/projects changes |
 | causal_chain | `[[cmd_karo_hotfix_ga161_obsidian_link_context_freshness_202607021348]]` (L926) |
 | causal_chain | `[[cmd_3648]]` (L933) |
 | causal_chain | `[[cmd_karo_ci_fix_ga191_followup_202607071752]]` (L963) |
@@ -18372,8 +18374,6 @@ codd:
 | causal_chain | `[[cmd_reflux_insight_202608040505_kagemaru]]` (L1545) |
 | causal_chain | `[[cmd_karo_recon2_ninja_prerequisite_audit_20260814]]` (L1588) |
 | causal_chain | `[[cmd_karo_hotfix_inject_seam_contract_missing_202608190548]]` (L1612) |
-| discussion | `queue/lord_conversation.jsonl` 2026-09-03T11:42:24+09:00 session_save_20260903_1145(復帰点、先に session_save_20260903_1115 を読め): loop 11:42: cmd_4470 note 5 本着地(hayate/karo/kotaro/sa |
-| discussion | `queue/lord_conversation.jsonl` 2026-09-03T06:08:50.007227+00:00 git pre-commit semantic propagation for context/projects changes |
 
 ## commander_role_ssot_analysis — Commanderロール SSOT分析
 
