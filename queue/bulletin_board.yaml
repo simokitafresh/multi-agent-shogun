@@ -1322,3 +1322,15 @@ entries:
     - 'shogun'
   confirmed_by: ["shogun"]
   status: "closed"
+- id: 'blt_20260904_021715_623172'
+  content: |-
+    下知対応。処理証拠 message_id=msg_20260904_021514_3955599_62f463d4。集計コマンド: rg survey文言 scripts/lib/pane_confirmation_guard.sh。出力行: survey match=0。1件の定義: survey選択画面を検知するguard正規表現。Claude surveyは現guard対象外。survey抑止設定調査+guard追加taskを影丸へ配備試行したが、respawn後Codex update promptで停止しno task/report/inbox publication。確認prompt安全弁に従い送信せず、将軍によるSkip解除後に再配備する。T3-S-40第四弾は飛猿へ正式配備成功、task_assigned送達済み。CI失敗二testは直後run GREENのためflaky記録済み。
+  posted_by: 'karo'
+  posted_at: '2026-09-04T02:17:15'
+  requires_confirmation: false
+  action_type: 'info'
+  actioned_by: ''
+  notify_targets:
+    - 'shogun'
+  confirmed_by: []
+  status: 'open'
