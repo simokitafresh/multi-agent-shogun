@@ -15855,35 +15855,45 @@ insights:
   priority: "low"
   source: "semantic_stress_test"
   fix_known: false
-  status: pending
+  status: "resolved"
+  action_artifact: "semantic_index=/home/simokitafresh/multi-agent-shogun/docs/semantic-index/index.md"
+  resolved_reason: "semantic index candidate was absorbed into a registered concept"
 - id: INS-20260903-125641089-2674
   ts: "2026-09-03T12:56:41+09:00"
   insight: "[[x account ops automation asis tobe 5w1h 20260903 mdについてチャットし]] semantic_stress_test candidate_aliases: NO_MATCH source=lord query=x_account_ops_automation_asis_tobe_5w1h_20260903.mdについてチャットしよう。俺はもう1軸欲しいと思う。テーマはドリームだ。詐欺でも煽りでもなくDM-siganal の生データや研究歴を知っている俺らはDM-signalの信頼性を…"
   priority: "low"
   source: "semantic_stress_test"
   fix_known: false
-  status: pending
+  status: "resolved"
+  action_artifact: "semantic_index=/home/simokitafresh/multi-agent-shogun/docs/semantic-index/index.md"
+  resolved_reason: "semantic index candidate was absorbed into a registered concept"
 - id: INS-20260903-125641541-fd29
   ts: "2026-09-03T12:56:41+09:00"
   insight: "[[迂回をするよりも]] semantic_stress_test candidate_aliases: NO_MATCH source=lord query=迂回をするよりも、問題inbo"
   priority: "low"
   source: "semantic_stress_test"
   fix_known: false
-  status: pending
+  status: "resolved"
+  action_artifact: "semantic_index=/home/simokitafresh/multi-agent-shogun/docs/semantic-index/index.md"
+  resolved_reason: "semantic index candidate was absorbed into a registered concept"
 - id: INS-20260903-125641922-b411
   ts: "2026-09-03T12:56:41+09:00"
   insight: "[[利他の精神で毎回迂回しているものがないか調査して]] semantic_stress_test candidate_aliases: NO_MATCH source=lord query=利他の精神で毎回迂回しているものがないか調査して、問題を直そう"
   priority: "low"
   source: "semantic_stress_test"
   fix_known: false
-  status: pending
+  status: "resolved"
+  action_artifact: "semantic_index=/home/simokitafresh/multi-agent-shogun/docs/semantic-index/index.md"
+  resolved_reason: "semantic index candidate was absorbed into a registered concept"
 - id: INS-20260903-125642283-06ce
   ts: "2026-09-03T12:56:42+09:00"
   insight: "[[われわれは情報提供業ではない]] semantic_stress_test candidate_aliases: NO_MATCH source=lord query=われわれは情報提供業ではない。あくまで個人の研究を共有しているだけだ。法務はマナーとして下品でなければいいのでは？絶対に儲かるとかそういうことを言わないのが俺なのは将軍もよく理解しているはずだ"
   priority: "low"
   source: "semantic_stress_test"
   fix_known: false
-  status: pending
+  status: "resolved"
+  action_artifact: "semantic_index=/home/simokitafresh/multi-agent-shogun/docs/semantic-index/index.md"
+  resolved_reason: "semantic index candidate was absorbed into a registered concept"
 - id: INS-20260903-130123621-8c41
   ts: "2026-09-03T13:01:23+09:00"
   insight: "semantic_index_update新概念候補: discussion:X apiを取得しようとしたらこれを要求された。開発者PPUパイロット契約および開発者ポリシー XのデータおよびAPIのすべてのユースケースを説明してください： は 既存aliasesに一致なし。概念定義とaliases追加を検討せよ"
@@ -15897,130 +15907,173 @@ insights:
   priority: "low"
   source: "semantic_stress_test"
   fix_known: false
-  status: pending
+  status: "resolved"
+  action_artifact: "semantic_index=/home/simokitafresh/multi-agent-shogun/docs/semantic-index/index.md"
+  resolved_reason: "semantic index candidate was absorbed into a registered concept"
 - id: INS-20260903-130130819-ac9d
   ts: "2026-09-03T13:01:30+09:00"
   insight: "[[われわれは情報提供業ではない]] semantic_stress_test candidate_aliases: NO_MATCH source=lord query=われわれは情報提供業ではない。あくまで個人の研究を共有しているだけだ。法務はマナーとして下品でなければいいのでは？絶対に儲かるとかそういうことを言わないのが俺なのは将軍もよく理解しているはずだ"
   priority: "low"
   source: "semantic_stress_test"
   fix_known: false
-  status: pending
+  status: "resolved"
+  action_artifact: "semantic_index=/home/simokitafresh/multi-agent-shogun/docs/semantic-index/index.md"
+  resolved_reason: "semantic index candidate was absorbed into a registered concept"
 - id: INS-20260903-130131030-c0e0
   ts: "2026-09-03T13:01:31+09:00"
   insight: "[[利他の精神で毎回迂回しているものがないか調査して]] semantic_stress_test candidate_aliases: NO_MATCH source=lord query=利他の精神で毎回迂回しているものがないか調査して、問題を直そう"
   priority: "low"
   source: "semantic_stress_test"
   fix_known: false
-  status: pending
+  status: "resolved"
+  action_artifact: "semantic_index=/home/simokitafresh/multi-agent-shogun/docs/semantic-index/index.md"
+  resolved_reason: "semantic index candidate was absorbed into a registered concept"
 - id: INS-20260903-130131239-949a
   ts: "2026-09-03T13:01:31+09:00"
   insight: "[[C \\Users\\simok\\OneDrive\\デスクトップ\\バム型・届け方マニュアル v4 txt をよんでx acc]] semantic_stress_test candidate_aliases: NO_MATCH source=lord query=\"C:\\Users\\simok\\OneDrive\\デスクトップ\\バム型・届け方マニュアル v4.txt\"をよんでx_account_ops_automation_asis_tobe_5w1h_20260903.mdを更新して"
   priority: "low"
   source: "semantic_stress_test"
   fix_known: false
-  status: pending
+  status: "resolved"
+  action_artifact: "semantic_index=/home/simokitafresh/multi-agent-shogun/docs/semantic-index/index.md"
+  resolved_reason: "semantic index candidate was absorbed into a registered concept"
 - id: INS-20260903-130131470-4c06
   ts: "2026-09-03T13:01:31+09:00"
   insight: "[[x account ops automation asis tobe 5w1h 20260903 mdについてチャットし]] semantic_stress_test candidate_aliases: NO_MATCH source=lord query=x_account_ops_automation_asis_tobe_5w1h_20260903.mdについてチャットしよう。俺はもう1軸欲しいと思う。テーマはドリームだ。詐欺でも煽りでもなくDM-siganal の生データや研究歴を知っている俺らはDM-signalの信頼性を…"
   priority: "low"
   source: "semantic_stress_test"
   fix_known: false
-  status: pending
+  status: "resolved"
+  action_artifact: "semantic_index=/home/simokitafresh/multi-agent-shogun/docs/semantic-index/index.md"
+  resolved_reason: "semantic index candidate was absorbed into a registered concept"
 - id: INS-20260903-130131676-b3a2
   ts: "2026-09-03T13:01:31+09:00"
   insight: "[[X apiを取得しようとしたらこれを要求された]] semantic_stress_test candidate_aliases: NO_MATCH source=lord query=X-apiを取得しようとしたらこれを要求された。開発者PPUパイロット契約および開発者ポリシー XのデータおよびAPIのすべてのユースケースを説明してください： この情報はデータ保護のために必要です"
   priority: "low"
   source: "semantic_stress_test"
   fix_known: false
-  status: pending
+  status: "resolved"
+  action_artifact: "semantic_index=/home/simokitafresh/multi-agent-shogun/docs/semantic-index/index.md"
+  resolved_reason: "semantic index candidate was absorbed into a registered concept"
 - id: INS-20260903-130556715-dc5c
   ts: "2026-09-03T13:05:56+09:00"
   insight: "[[x account ops automation asis tobe 5w1h 20260903 mdについてチャットし]] semantic_stress_test candidate_aliases: NO_MATCH source=lord query=x_account_ops_automation_asis_tobe_5w1h_20260903.mdについてチャットしよう。俺はもう1軸欲しいと思う。テーマはドリームだ。詐欺でも煽りでもなくDM-siganal の生データや研究歴を知っている俺らはDM-signalの信頼性を…"
   priority: "low"
   source: "semantic_stress_test"
   fix_known: false
-  status: pending
+  status: "resolved"
+  action_artifact: "semantic_index=/home/simokitafresh/multi-agent-shogun/docs/semantic-index/index.md"
+  resolved_reason: "semantic index candidate was absorbed into a registered concept"
 - id: INS-20260903-130556999-0ea5
   ts: "2026-09-03T13:05:56+09:00"
   insight: "[[われわれは情報提供業ではない]] semantic_stress_test candidate_aliases: NO_MATCH source=lord query=われわれは情報提供業ではない。あくまで個人の研究を共有しているだけだ。法務はマナーとして下品でなければいいのでは？絶対に儲かるとかそういうことを言わないのが俺なのは将軍もよく理解しているはずだ"
   priority: "low"
   source: "semantic_stress_test"
   fix_known: false
-  status: pending
+  status: "resolved"
+  action_artifact: "semantic_index=/home/simokitafresh/multi-agent-shogun/docs/semantic-index/index.md"
+  resolved_reason: "semantic index candidate was absorbed into a registered concept"
 - id: INS-20260903-130557294-af01
   ts: "2026-09-03T13:05:57+09:00"
   insight: "[[利他の精神で毎回迂回しているものがないか調査して]] semantic_stress_test candidate_aliases: NO_MATCH source=lord query=利他の精神で毎回迂回しているものがないか調査して、問題を直そう"
   priority: "low"
   source: "semantic_stress_test"
   fix_known: false
-  status: pending
+  status: "resolved"
+  action_artifact: "semantic_index=/home/simokitafresh/multi-agent-shogun/docs/semantic-index/index.md"
+  resolved_reason: "semantic index candidate was absorbed into a registered concept"
 - id: INS-20260903-130557530-5631
   ts: "2026-09-03T13:05:57+09:00"
   insight: "[[X apiを取得しようとしたらこれを要求された]] semantic_stress_test candidate_aliases: NO_MATCH source=lord query=X-apiを取得しようとしたらこれを要求された。開発者PPUパイロット契約および開発者ポリシー XのデータおよびAPIのすべてのユースケースを説明してください： この情報はデータ保護のために必要です"
   priority: "low"
   source: "semantic_stress_test"
   fix_known: false
-  status: pending
+  status: "resolved"
+  action_artifact: "semantic_index=/home/simokitafresh/multi-agent-shogun/docs/semantic-index/index.md"
+  resolved_reason: "semantic index candidate was absorbed into a registered concept"
 - id: INS-20260903-130557783-ff9f
   ts: "2026-09-03T13:05:57+09:00"
   insight: "[[迂回をするよりも]] semantic_stress_test candidate_aliases: NO_MATCH source=lord query=迂回をするよりも、問題inbo"
   priority: "low"
   source: "semantic_stress_test"
   fix_known: false
-  status: pending
+  status: "resolved"
+  action_artifact: "semantic_index=/home/simokitafresh/multi-agent-shogun/docs/semantic-index/index.md"
+  resolved_reason: "semantic index candidate was absorbed into a registered concept"
 - id: INS-20260903-130558030-68f8
   ts: "2026-09-03T13:05:58+09:00"
   insight: "[[C \\Users\\simok\\OneDrive\\デスクトップ\\バム型・届け方マニュアル v4 txt をよんでx acc]] semantic_stress_test candidate_aliases: NO_MATCH source=lord query=\"C:\\Users\\simok\\OneDrive\\デスクトップ\\バム型・届け方マニュアル v4.txt\"をよんでx_account_ops_automation_asis_tobe_5w1h_20260903.mdを更新して"
   priority: "low"
   source: "semantic_stress_test"
   fix_known: false
-  status: pending
+  status: "resolved"
+  action_artifact: "semantic_index=/home/simokitafresh/multi-agent-shogun/docs/semantic-index/index.md"
+  resolved_reason: "semantic index candidate was absorbed into a registered concept"
 - id: INS-20260903-131031293-0458
   ts: "2026-09-03T13:10:31+09:00"
   insight: "[[x account ops automation asis tobe 5w1h 20260903 mdについてチャットし]] semantic_stress_test candidate_aliases: NO_MATCH source=lord query=x_account_ops_automation_asis_tobe_5w1h_20260903.mdについてチャットしよう。俺はもう1軸欲しいと思う。テーマはドリームだ。詐欺でも煽りでもなくDM-siganal の生データや研究歴を知っている俺らはDM-signalの信頼性を…"
   priority: "low"
   source: "semantic_stress_test"
   fix_known: false
-  status: pending
+  status: "resolved"
+  action_artifact: "semantic_index=/home/simokitafresh/multi-agent-shogun/docs/semantic-index/index.md"
+  resolved_reason: "semantic index candidate was absorbed into a registered concept"
 - id: INS-20260903-131031945-3b5e
   ts: "2026-09-03T13:10:31+09:00"
   insight: "[[C \\Users\\simok\\OneDrive\\デスクトップ\\バム型・届け方マニュアル v4 txt をよんでx acc]] semantic_stress_test candidate_aliases: NO_MATCH source=lord query=\"C:\\Users\\simok\\OneDrive\\デスクトップ\\バム型・届け方マニュアル v4.txt\"をよんでx_account_ops_automation_asis_tobe_5w1h_20260903.mdを更新して"
   priority: "low"
   source: "semantic_stress_test"
   fix_known: false
-  status: pending
+  status: "resolved"
+  action_artifact: "semantic_index=/home/simokitafresh/multi-agent-shogun/docs/semantic-index/index.md"
+  resolved_reason: "semantic index candidate was absorbed into a registered concept"
 - id: INS-20260903-131032363-8fbd
   ts: "2026-09-03T13:10:32+09:00"
   insight: "[[X apiを取得しようとしたらこれを要求された]] semantic_stress_test candidate_aliases: NO_MATCH source=lord query=X-apiを取得しようとしたらこれを要求された。開発者PPUパイロット契約および開発者ポリシー XのデータおよびAPIのすべてのユースケースを説明してください： この情報はデータ保護のために必要です"
   priority: "low"
   source: "semantic_stress_test"
   fix_known: false
-  status: pending
+  status: "resolved"
+  action_artifact: "semantic_index=/home/simokitafresh/multi-agent-shogun/docs/semantic-index/index.md"
+  resolved_reason: "semantic index candidate was absorbed into a registered concept"
 - id: INS-20260903-131032645-0403
   ts: "2026-09-03T13:10:32+09:00"
   insight: "[[われわれは情報提供業ではない]] semantic_stress_test candidate_aliases: NO_MATCH source=lord query=われわれは情報提供業ではない。あくまで個人の研究を共有しているだけだ。法務はマナーとして下品でなければいいのでは？絶対に儲かるとかそういうことを言わないのが俺なのは将軍もよく理解しているはずだ"
   priority: "low"
   source: "semantic_stress_test"
   fix_known: false
-  status: pending
+  status: "resolved"
+  action_artifact: "semantic_index=/home/simokitafresh/multi-agent-shogun/docs/semantic-index/index.md"
+  resolved_reason: "semantic index candidate was absorbed into a registered concept"
 - id: INS-20260903-131032900-63a8
   ts: "2026-09-03T13:10:32+09:00"
   insight: "[[利他の精神で毎回迂回しているものがないか調査して]] semantic_stress_test candidate_aliases: NO_MATCH source=lord query=利他の精神で毎回迂回しているものがないか調査して、問題を直そう"
   priority: "low"
   source: "semantic_stress_test"
   fix_known: false
-  status: pending
+  status: "resolved"
+  action_artifact: "semantic_index=/home/simokitafresh/multi-agent-shogun/docs/semantic-index/index.md"
+  resolved_reason: "semantic index candidate was absorbed into a registered concept"
 - id: INS-20260903-131033143-91e6
   ts: "2026-09-03T13:10:33+09:00"
   insight: "[[迂回をするよりも]] semantic_stress_test candidate_aliases: NO_MATCH source=lord query=迂回をするよりも、問題inbo"
   priority: "low"
   source: "semantic_stress_test"
   fix_known: false
-  status: pending
+  status: "resolved"
+  action_artifact: "semantic_index=/home/simokitafresh/multi-agent-shogun/docs/semantic-index/index.md"
+  resolved_reason: "semantic index candidate was absorbed into a registered concept"
 - id: INS-20260903-131751917-5be8
   ts: "2026-09-03T13:17:51+09:00"
   insight: "fail-close(失敗 report への家老 ACCEPT)後、agent_respawn formal_fail_close で pane は再生成されるが task YAML の status が failed のまま残り、ninja_monitor が FAILED-RESPAWN-DEDUPE で再 respawn を抑止し IDLE-NOTIFY-SKIP(not assignable)で配備不能になる(実測 2026-09-03 11:16-13:20 hayate/saizo/kagemaru/hanzo の 4 名、家老が task_lifecycle_set_idle で手動 idle 化)。ToBe: review_approval の fail-close 経路で respawn 成功後に task_lifecycle_set_idle を呼ぶ(1 行)。"
   priority: "high"
   source: "karo:fail_close_idle_transition"
+  fix_known: false
+  status: pending
+- id: INS-20260903-131827481-f8bd
+  ts: "2026-09-03T13:18:27+09:00"
+  insight: "semantic_index_update新概念候補: discussion:task notification task id brjbsyl9r task id tool use id toolu 01W2Dw2MfBJ5kcNatx は 既存aliasesに一致なし。概念定義とaliases追加を検討せよ"
+  priority: "low"
+  source: "semantic_index_update"
   fix_known: false
   status: pending
