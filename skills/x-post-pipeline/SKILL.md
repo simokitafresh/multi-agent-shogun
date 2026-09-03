@@ -1,9 +1,9 @@
 ---
 name: x-post-pipeline
 description: |
-  X運用自動化P1(台帳+calendar+XDK)。stock_ledger.yaml(note 49本+完全ガイドの数字ホワイトリスト付き一覧)と
-  slot_calendar.yaml(4週×週3枠A/B/C+月次D=13slot)を読み、x_post.shで下書き・gate・承認・公式XDK投稿を行う。
-  TRIGGER: X投稿の下書き作成、週次枠の記事選定、台帳の参照、XDK投稿
+  What: X運用自動化P1(台帳+calendar+XDK)。stock_ledger.yaml(note 49本+完全ガイドの数字ホワイトリスト付き一覧)と
+  slot_calendar.yaml(4週×週3枠A/B/C+月次D=13slot)を読み、x_post.shで下書き・gate・承認・公式XDK投稿を行うスキル。
+  TRIGGER: /x-post-pipeline、X投稿の下書き作成、週次枠の記事選定、台帳の参照、XDK投稿
   DO NOT TRIGGER: note記事本体の編集、dm-signal側の変更
 allowed-tools:
   - Read
