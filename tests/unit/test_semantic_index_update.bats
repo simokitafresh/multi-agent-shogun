@@ -130,6 +130,20 @@ teardown() {
     [ ! -f "$TEST_TMPDIR/queue/insights.log" ]
 }
 
+# test_necessity: ON updates must not replace the canonical index in the
+# caller's checkout; the publisher receives the generated candidate instead.
+@test "PUBLISHER_SINGLE: semantic indexはroot不変でledgerへ出す" {
+    local state="${TEST_TMPDIR}/state"
+    export SHOGUN_STATE_DIR="$state" PUBLISHER_SINGLE=1
+    before="$(sha256sum "$SEMANTIC_INDEX_PATH" | awk '{print $1}')"
+    run bash "$PROJECT_ROOT/scripts/semantic_index_update.sh" cmd_complete \
+        '{"id":"cmd_publisher_single_semantic","title":"セマンティクスインデックス","purpose":"段階3","files":["scripts/semantic_index_update.sh"]}'
+    [ "$status" -eq 0 ]
+    [ "$(sha256sum "$SEMANTIC_INDEX_PATH" | awk '{print $1}')" = "$before" ]
+    [ "$(find "$state/ledger_inbox/semantic_index" -maxdepth 1 -type f -name '*.yaml' | wc -l)" -eq 1 ]
+    grep -q '"ledger": "semantic_index"' "$state"/ledger_inbox/semantic_index/*.yaml
+}
+
 @test "concurrent semantic writers serialize and preserve both updates without concept loss" {
     export SEMANTIC_MAP_GENERATE=/bin/true
     before="$(grep -c '^| id |' "$SEMANTIC_INDEX_PATH")"

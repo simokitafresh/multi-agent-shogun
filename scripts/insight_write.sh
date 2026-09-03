@@ -27,6 +27,20 @@ if [[ ! -f "$MEMORY_DB_LIVE_INSERT" ]]; then
 fi
 SOURCE_REPEAT_THRESHOLD="${INSIGHT_SOURCE_REPEAT_THRESHOLD:-3}"
 
+# In single-publisher mode this writer emits an append operation only; the
+# publisher owns materialization of the canonical root ledger.
+PUBLISHER_SINGLE_HELPER="$SCRIPT_DIR/scripts/lib/publisher_single_flag.sh"
+publisher_single_insights_enabled() {
+  [[ -x "$SCRIPT_DIR/scripts/ledger_writer.sh" ]] || return 1
+  [[ "$INSIGHTS_FILE" == "$SCRIPT_DIR/queue/insights.yaml" ]] || return 1
+  [[ -f "$PUBLISHER_SINGLE_HELPER" ]] || return 1
+  # shellcheck source=lib/publisher_single_flag.sh
+  source "$PUBLISHER_SINGLE_HELPER"
+  publisher_single_enabled "$SCRIPT_DIR"
+}
+INSIGHTS_LEDGER_ROUTE=0
+publisher_single_insights_enabled && INSIGHTS_LEDGER_ROUTE=1
+
 usage() {
   cat <<'EOF'
 Usage: bash scripts/insight_write.sh "気づきの内容" [priority] [source]
@@ -469,9 +483,7 @@ trap 'rm -f -- "$LEDGER_ENTRY_FILE"' EXIT
 # Isolated fixtures point INSIGHTS_FILE elsewhere and must keep the direct append
 # (2026-09-03: ledger_writer became 755 and fixtures silently lost their entries).
 ledger_route_enabled() {
-  [[ -x "$LEDGER_WRITER" ]] || return 1
-  # Canonical ledger, or a caller that explicitly owns a publisher state dir (ledger-aware fixture).
-  [[ "$INSIGHTS_FILE" == "$SCRIPT_DIR/queue/insights.yaml" || -n "${SHOGUN_STATE_DIR:-}" ]]
+  [[ "$INSIGHTS_LEDGER_ROUTE" == 1 ]]
 }
 ledger_append() {
   if ledger_route_enabled; then
@@ -619,7 +631,7 @@ def repair_trailing_partial_entry(path):
         if os.path.exists(tmp_path):
             os.unlink(tmp_path)
 
-if os.path.exists(insights_file):
+if os.path.exists(insights_file) and os.environ.get('LEDGER_LEGACY_FIXTURE') != '0':
     repair_trailing_partial_entry(insights_file)
 
 def parse_scalar(raw):
@@ -952,7 +964,7 @@ rm -f -- "$LEDGER_ENTRY_FILE"
 # 実証: 2026-08-25 03:28将軍のinsight_write→未commit→03:35のsaizo宛reflux弾BLOCK。
 # 書込み成功のたびにscope commitしてレーンを常時通す。repo既定パスのみ対象
 # (テストのINSIGHTS_FILE差替えは対象外)。commit失敗は本体成功を壊さない。
-if [[ "${INSIGHT_AUTO_COMMIT:-1}" == "1" && "$INSIGHTS_FILE" == "$SCRIPT_DIR/queue/insights.yaml" ]]; then
+if [[ "${INSIGHT_AUTO_COMMIT:-1}" == "1" && "$INSIGHTS_FILE" == "$SCRIPT_DIR/queue/insights.yaml" && "$INSIGHTS_LEDGER_ROUTE" != 1 ]]; then
   if ! git -C "$SCRIPT_DIR" diff --quiet -- queue/insights.yaml 2>/dev/null; then
     # index.lock競合(他忍者のcommit中)はfail-fast BLOCKされるため短いリトライで吸収
     _iac_ok=0

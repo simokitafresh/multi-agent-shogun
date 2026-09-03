@@ -472,10 +472,17 @@ LEDGER_WRITER="$SCRIPT_DIR/scripts/ledger_writer.sh"
 if [[ -f "$LEDGER_WRITER" && ! -x "$LEDGER_WRITER" ]]; then
     printf '%s\n' 'LEDGER-ROUTE-SKIP: ledger_writer.sh exists but not executable' >&2
 fi
+PUBLISHER_SINGLE_HELPER="$SCRIPT_DIR/scripts/lib/publisher_single_flag.sh"
+bulletin_ledger_route_enabled() {
+    [[ -x "$LEDGER_WRITER" && -f "$PUBLISHER_SINGLE_HELPER" ]] || return 1
+    # shellcheck source=lib/publisher_single_flag.sh
+    source "$PUBLISHER_SINGLE_HELPER"
+    publisher_single_enabled "$SCRIPT_DIR"
+}
 LEDGER_ENTRY_FILE="$(mktemp)"
 trap 'rm -f -- "$LEDGER_ENTRY_FILE"' EXIT
 ledger_append() {
-    if [[ -x "$LEDGER_WRITER" ]]; then
+    if bulletin_ledger_route_enabled; then
         LEDGER_SOURCE_FILE="$BULLETIN_FILE" bash "$LEDGER_WRITER" append bulletin "$LEDGER_ENTRY_FILE" >/dev/null
     else
         [[ -s "$BULLETIN_FILE" ]] || printf 'entries:\n' > "$BULLETIN_FILE"

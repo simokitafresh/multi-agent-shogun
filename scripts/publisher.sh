@@ -126,13 +126,14 @@ PY
 }
 
 tracked_dirty_count() { git -C "$1" status --porcelain -uno | awk 'NF { n++ } END { print n + 0 }'; }
+tracked_dirty_paths() { git -C "$1" status --porcelain -uno | sed 's/^.. //' | sort -u | paste -sd, -; }
 
 sync_root() {
     local root="$1" tip="$2" dirty collision
     dirty="$(tracked_dirty_count "$root")"
     collision="$(root_has_untracked_collision "$root" "$tip")"
     if [ "$dirty" -ne 0 ] || [ "$collision" -ne 0 ]; then
-        echo "publisher: root sync BLOCK tracked_dirty=$dirty untracked_collision=$collision" >&2
+        echo "publisher: root sync BLOCK tracked_dirty=$dirty untracked_collision=$collision paths=$(tracked_dirty_paths "$root")" >&2
         return 32
     fi
     git -C "$root" merge --ff-only origin/main
@@ -215,7 +216,7 @@ process_request() {
         # root (rc=32) must not abort after the push already landed, or the request stays in
         # dequeued/ with no done receipt and no event (cmd_4465 06:47, root tracked_dirty>0).
         if ! sync_root "$REPO_ROOT" origin/main; then
-            event root_sync_skipped "$task" 0 "published_sha=$published_sha root_dirty=$(tracked_dirty_count "$REPO_ROOT")"
+            event root_sync_skipped "$task" 0 "published_sha=$published_sha root_dirty=$(tracked_dirty_count "$REPO_ROOT") paths=$(tracked_dirty_paths "$REPO_ROOT")"
         fi
     fi
     cleanup_isolated "$isolated"; trap - RETURN
@@ -247,14 +248,14 @@ PY
 
 ledger_directory() {
     case "$1" in
-        insights|lessons|bulletin|workarounds) printf '%s/ledger_inbox/%s\n' "$STATE_DIR" "$1" ;;
+        insights|lessons|bulletin|workarounds|semantic_index) printf '%s/ledger_inbox/%s\n' "$STATE_DIR" "$1" ;;
         *) return 1 ;;
     esac
 }
 
 ledger_operations() {
     local dir
-    for dir in insights lessons bulletin workarounds; do
+    for dir in insights lessons bulletin workarounds semantic_index; do
         [ -d "$STATE_DIR/ledger_inbox/$dir" ] || continue
         find "$STATE_DIR/ledger_inbox/$dir" -mindepth 1 -maxdepth 1 -type f -name '*.yaml' \
             -printf '%f\t%p\n'
@@ -347,7 +348,7 @@ process_ledger_batch() {
         event ledger ledger_batch 0 "n=${#operations[@]} ledgers=$(IFS=,; echo "${ledgers[*]}") published_sha=$published_sha"
         timeout 120 git -C "$REPO_ROOT" fetch origin || true
         if ! sync_root "$REPO_ROOT" origin/main; then
-            event root_sync_skipped ledger_batch 0 "published_sha=$published_sha root_dirty=$(tracked_dirty_count "$REPO_ROOT")"
+            event root_sync_skipped ledger_batch 0 "published_sha=$published_sha root_dirty=$(tracked_dirty_count "$REPO_ROOT") paths=$(tracked_dirty_paths "$REPO_ROOT")"
         fi
         cleanup_isolated "$isolated"; isolated=""
         cleanup_ledger_stage "$stage_root"; stage_root=""

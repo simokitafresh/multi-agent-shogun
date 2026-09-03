@@ -29,6 +29,53 @@ if [[ ! -f "$BULLETIN_FILE" ]]; then
     exit 0
 fi
 
+# The publisher owns the canonical board while PUBLISHER_SINGLE is enabled.
+# Archive eligibility is represented as bulletin status updates; no root trim
+# is performed by this caller.  The next publisher apply can then materialize
+# the state without creating a competing root write.
+LEDGER_WRITER="$SCRIPT_DIR/scripts/ledger_writer.sh"
+PUBLISHER_SINGLE_HELPER="$SCRIPT_DIR/scripts/lib/publisher_single_flag.sh"
+if [[ -x "$LEDGER_WRITER" && -f "$PUBLISHER_SINGLE_HELPER" ]]; then
+    # shellcheck source=lib/publisher_single_flag.sh
+    source "$PUBLISHER_SINGLE_HELPER"
+fi
+if declare -f publisher_single_enabled >/dev/null 2>&1 && publisher_single_enabled "$SCRIPT_DIR"; then
+    if [[ "${DRY_RUN:-0}" == 1 ]]; then
+        echo "[bulletin_archive] DRY RUN: publisher ledger route leaves root unchanged"
+        exit 0
+    fi
+    route_ids="$(python3 - "$BULLETIN_FILE" "$MAX_AGE_HOURS" <<'PY'
+import sys, yaml
+from datetime import datetime, timedelta, timezone
+data = yaml.safe_load(open(sys.argv[1], encoding="utf-8")) or {}
+entries = data.get("entries") or []
+now = datetime.now(timezone(timedelta(hours=9)))
+cutoff = now - timedelta(hours=int(sys.argv[2]))
+selected = []
+for entry in entries:
+    if str(entry.get("status", "open")) == "closed":
+        continue
+    try:
+        posted = datetime.fromisoformat(str(entry.get("posted_at", "")))
+        if posted.tzinfo is None:
+            posted = posted.replace(tzinfo=now.tzinfo)
+    except ValueError:
+        continue
+    old = posted < cutoff
+    rc = entry.get("requires_confirmation", False)
+    if old and (rc is False or rc is None or isinstance(rc, list) and all(a in (entry.get("confirmed_by") or []) for a in rc)):
+        selected.append((entry.get("id", ""), entry.get("status", "open")))
+print("\n".join(f"{ident}\t{status}" for ident, status in selected if ident))
+PY
+    )"
+    while IFS=$'\t' read -r entry_id old_status; do
+        [[ -n "$entry_id" ]] || continue
+        LEDGER_SOURCE_FILE="$BULLETIN_FILE" bash "$LEDGER_WRITER" update bulletin "$entry_id" \
+            status=closed --expect "status=$old_status"
+    done <<< "$route_ids"
+    exit 0
+fi
+
 if [[ "$MAX_KEEP" =~ ^[0-9]+$ ]]; then
     entry_count=$(awk '
         /^entries:/ { in_entries = 1; next }

@@ -27,7 +27,7 @@ resolve_state_dir() {
 }
 ledger_dir() {
     case "$1" in
-        insights|lessons|bulletin|workarounds) printf '%s/ledger_inbox/%s\n' "$STATE_DIR" "$1";;
+        insights|lessons|bulletin|workarounds|semantic_index) printf '%s/ledger_inbox/%s\n' "$STATE_DIR" "$1";;
         *) die "unknown ledger: $1";;
     esac
 }
@@ -37,6 +37,7 @@ ledger_file() {
         insights) value="${LEDGER_INSIGHTS_FILE:-${INSIGHTS_FILE:-$REPO_ROOT/queue/insights.yaml}}";;
         bulletin) value="${LEDGER_BULLETIN_FILE:-${BULLETIN_FILE:-$REPO_ROOT/queue/bulletin_board.yaml}}";;
         workarounds) value="${LEDGER_WORKAROUNDS_FILE:-${KARO_WORKAROUND_LOG_FILE:-$REPO_ROOT/logs/karo_workarounds.yaml}}";;
+        semantic_index) value="${LEDGER_SEMANTIC_INDEX_FILE:-${SEMANTIC_INDEX_PATH:-$REPO_ROOT/docs/semantic-index/index.md}}";;
         lessons) value="${LEDGER_LESSONS_FILE:-${LESSONS_FILE:-}}";;
         *) die "unknown ledger: $ledger";;
     esac
@@ -68,26 +69,32 @@ write_op() {
 }
 entry_id() {
     python3 - "$1" <<'PY'
-import re, sys
+import os, re, sys
 text = open(sys.argv[1], encoding="utf-8").read()
 for pattern in (r"^\s*-\s+(?:id|cmd_id):\s*['\"]?([^'\"\s]+)", r"^###\s+(L[0-9]+):"):
     match = re.search(pattern, text, re.MULTILINE)
     if match:
         print(match.group(1)); raise SystemExit(0)
+if os.environ.get("LEDGER_OPERATION_ID"):
+    print(os.environ["LEDGER_OPERATION_ID"]); raise SystemExit(0)
 raise SystemExit("entry must contain id, cmd_id, or a markdown lesson heading")
 PY
 }
 append_op() {
     [[ $# -eq 2 ]] || die "usage: append <ledger> <entry.yaml>"
-    local ledger="$1" entry="$2" source hash body id
+    local ledger="$1" entry="$2" source hash source_hash body id
     [[ -f "$entry" ]] || die "entry file not found: $entry"
     source="${LEDGER_SOURCE_FILE:-$(ledger_file "$ledger")}"
     hash="$(sha256sum "$entry" | awk '{print $1}')"
-    id="$(entry_id "$entry")"
-    body="$(LEDGER_ENV_LEDGER="$ledger" LEDGER_ENV_SOURCE="$source" LEDGER_ENV_ENTRY="$entry" LEDGER_ENV_HASH="$hash" LEDGER_ENV_ID="$id" python3 - <<'PY'
+    id="$(LEDGER_OPERATION_ID="${LEDGER_OPERATION_ID:-}" entry_id "$entry")"
+    source_hash="$(sha256sum "$source" | awk '{print $1}')"
+    body="$(LEDGER_ENV_LEDGER="$ledger" LEDGER_ENV_SOURCE="$source" LEDGER_ENV_ENTRY="$entry" LEDGER_ENV_HASH="$hash" LEDGER_ENV_SOURCE_HASH="$source_hash" LEDGER_ENV_ID="$id" python3 - <<'PY'
 import json, os
 from datetime import datetime, timezone
-print(json.dumps({"op":"append","ledger":os.environ["LEDGER_ENV_LEDGER"],"id":os.environ["LEDGER_ENV_ID"],"entry_hash":os.environ["LEDGER_ENV_HASH"],"issued_at":datetime.now(timezone.utc).isoformat(),"source_file":os.environ["LEDGER_ENV_SOURCE"],"entry_text":open(os.environ["LEDGER_ENV_ENTRY"],encoding="utf-8").read()},ensure_ascii=False,sort_keys=True))
+data={"op":"append","ledger":os.environ["LEDGER_ENV_LEDGER"],"id":os.environ["LEDGER_ENV_ID"],"entry_hash":os.environ["LEDGER_ENV_HASH"],"issued_at":datetime.now(timezone.utc).isoformat(),"source_file":os.environ["LEDGER_ENV_SOURCE"],"entry_text":open(os.environ["LEDGER_ENV_ENTRY"],encoding="utf-8").read()}
+if data["ledger"] == "semantic_index":
+    data["source_hash"] = os.environ["LEDGER_ENV_SOURCE_HASH"]
+print(json.dumps(data,ensure_ascii=False,sort_keys=True))
 PY
     )"
     write_op "$ledger" "$body"
@@ -145,7 +152,13 @@ field,value=os.environ["LEDGER_ENV_EXPECT_FIELD"],os.environ["LEDGER_ENV_EXPECT_
 if field not in values and value != "": raise SystemExit(f"expected field not found: {field}")
 assignments={}
 for item in os.environ["LEDGER_ENV_ASSIGNMENTS"].splitlines():
-    if item: k,v=item.split("=",1); assignments[k]=v
+    if item:
+        k,v=item.split("=",1)
+        try:
+            parsed=json.loads(v)
+        except json.JSONDecodeError:
+            parsed=v
+        assignments[k]=parsed
 print(hashlib.sha256("".join(lines[start:end]).encode()).hexdigest(),end="\t")
 print(json.dumps(assignments,ensure_ascii=False),end="\t")
 print(json.dumps({field:value},ensure_ascii=False))
@@ -213,7 +226,19 @@ def reject(reason):
     if os.environ.get("LEDGER_WRITER_NOTIFY", "1") == "1" and helper.exists(): subprocess.run(["bash",str(helper),"karo",f"ledger CAS rejected ledger={ledger} id={ident} op={operation.name} reason={reason}","report_received","ledger_writer","notify_karo"],check=False,stdout=subprocess.DEVNULL,stderr=subprocess.DEVNULL)
     print(f"REJECTED {dest}"); raise SystemExit(11)
 matches=found()
-if data.get("op")=="append":
+if data.get("op")=="append" and ledger == "semantic_index":
+    if hashlib.sha256(path.read_bytes()).hexdigest() != data.get("source_hash"):
+        reject("source_hash_mismatch")
+    entry=str(data.get("entry_text",""))
+    if not re.search(r"(?m)^##\s+", entry) or not re.search(r"(?m)^\|\s*id\s*\|", entry):
+        raise SystemExit("semantic index entry must contain concept blocks")
+    concept_ids=re.findall(r"(?m)^\|\s*id\s*\|\s*([^|]+?)\s*\|", entry)
+    if len(concept_ids) != len(set(concept_ids)):
+        raise SystemExit("semantic index contains duplicate concept ids")
+    if hashlib.sha256(entry.encode()).hexdigest() != data.get("entry_hash"):
+        raise SystemExit("entry_hash mismatch")
+    new=entry if entry.endswith("\n") else entry+"\n"
+elif data.get("op")=="append":
     if matches: reject("duplicate_id")
     entry=str(data.get("entry_text",""))
     if hashlib.sha256(entry.encode()).hexdigest()!=data.get("entry_hash"): raise SystemExit("entry_hash mismatch")
@@ -239,10 +264,11 @@ elif data.get("op") in ("update","resolve"):
     if any(field not in allowed for field in fields): raise SystemExit("field outside allowlist")
     for field,value in fields.items():
         pattern=r"^\s*(?:-\s*)?(?:\*\*)?"+re.escape(field)+r"\*?:\s*"; changed=False
+        rendered=json.dumps(value,ensure_ascii=False) if isinstance(value,list) else json.dumps(str(value),ensure_ascii=False)
         for i,line in enumerate(block):
             if re.match(pattern,line):
-                block[i]=line.split(":",1)[0]+": "+json.dumps(str(value),ensure_ascii=False)+"\n"; changed=True; break
-        if not changed: block.append(("- **"+field+"**: " if is_lesson else "  "+field+": ")+json.dumps(str(value),ensure_ascii=False)+"\n")
+                block[i]=line.split(":",1)[0]+": "+rendered+"\n"; changed=True; break
+        if not changed: block.append(("- **"+field+"**: " if is_lesson else "  "+field+": ")+rendered+"\n")
     lines[start:stop]=block; new="".join(lines)
 else: raise SystemExit("unsupported op")
 fd,tmp=tempfile.mkstemp(prefix="."+path.name+".ledger.",dir=str(path.parent))

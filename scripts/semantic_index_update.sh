@@ -174,6 +174,15 @@ insight_write="${SEMANTIC_INSIGHT_WRITE:-$script_dir/scripts/insight_write.sh}"
 stress_test="${SEMANTIC_STRESS_CMD:-$script_dir/scripts/semantic_stress_test.sh}"
 lock_path="${SEMANTIC_INDEX_LOCK:-${index_path}.lock}"
 
+# In single-publisher mode this process computes candidate index bytes but
+# leaves materialization to publisher.sh through ledger_writer.sh.
+semantic_ledger_route=0
+if [[ -x "$script_dir/scripts/ledger_writer.sh" && -f "$script_dir/scripts/lib/publisher_single_flag.sh" ]]; then
+    # shellcheck source=scripts/lib/publisher_single_flag.sh
+    source "$script_dir/scripts/lib/publisher_single_flag.sh"
+    publisher_single_enabled "$script_dir" && semantic_ledger_route=1
+fi
+
 # WSL2 /mnt/c上のSQLite正本をtag propagationが直接走査すると、events×conceptsの
 # random row I/OがP9待ちになり数分化する。読取先の解決は共通SSOTへ委譲し、
 # 明示的なテストDBはdefault_path不一致により従来どおりそのまま使用する。
@@ -240,9 +249,11 @@ run_semantic_quality_after_alias_change() {
 }
 
 post_state_file="$(mktemp "${TMPDIR:-/tmp}/semantic_index_update.post.XXXXXX")"
+semantic_ledger_entry="$(mktemp "${TMPDIR:-/tmp}/semantic_index_update.ledger.XXXXXX")"
 semantic_index_update_cleanup_on_exit() {
     local rc=$?
     rm -f "${post_state_file:-}"
+    rm -f "${semantic_ledger_entry:-}"
     semantic_index_update_record_total "$rc"
     return "$rc"
 }
@@ -251,6 +262,7 @@ trap semantic_index_update_cleanup_on_exit EXIT
 (
     flock -w 10 200 || { echo "ERROR: lock timeout: $lock_path" >&2; exit 1; }
     changed_flag="$(
+    SEMANTIC_LEDGER_ROUTE="$semantic_ledger_route" SEMANTIC_LEDGER_ENTRY="$semantic_ledger_entry" \
     python3 - "$source_type" "$payload_json" "$index_path" "$insight_write" <<'PY'
 import hashlib
 import json
@@ -268,6 +280,8 @@ from pathlib import Path
 source_type, payload_raw, index_arg, insight_arg = sys.argv[1:5]
 index_path = Path(index_arg)
 insight_write = Path(insight_arg)
+semantic_ledger_route = os.environ.get("SEMANTIC_LEDGER_ROUTE") == "1"
+semantic_ledger_entry = Path(os.environ["SEMANTIC_LEDGER_ENTRY"])
 semantic_root = index_path.parent.parent.parent
 sys.path.insert(0, str(semantic_root))
 insights_path = Path(os.environ.get("SEMANTIC_INSIGHTS_PATH", str(semantic_root / "queue" / "insights.yaml")))
@@ -301,6 +315,9 @@ def atomic_write_text(path, text):
             )
         if len(candidate_ids) != len(set(candidate_ids)):
             raise RuntimeError("semantic index invalid: duplicate concept ids")
+    if path == index_path and semantic_ledger_route:
+        semantic_ledger_entry.write_text(text, encoding="utf-8")
+        return
     fd, tmp_name = tempfile.mkstemp(prefix=f".{path.name}.", suffix=".tmp", dir=path.parent)
     try:
         with os.fdopen(fd, "w", encoding="utf-8") as fh:
@@ -1932,6 +1949,11 @@ PY
         fi
     done <<< "$changed_flag"
     printf '%s %s\n' "$index_changed" "$aliases_changed" > "$post_state_file"
+    if [ "$semantic_ledger_route" = 1 ] && [ "$index_changed" = true ] && [ -s "$semantic_ledger_entry" ]; then
+        _semantic_entry_id="semantic-index-$(sha256sum "$semantic_ledger_entry" | awk '{print substr($1,1,16)}')"
+        LEDGER_SOURCE_FILE="$index_path" LEDGER_OPERATION_ID="$_semantic_entry_id" \
+            bash "$script_dir/scripts/ledger_writer.sh" append semantic_index "$semantic_ledger_entry" >/dev/null
+    fi
 ) 200>"$lock_path"
 
 # Post-update consumers may acquire the semantic index lock themselves.
@@ -1947,7 +1969,9 @@ if [ "$index_changed" = true ]; then
         run_semantic_stress_after_alias_change
         run_semantic_quality_after_alias_change
     fi
-    if [ -f "$map_generate" ]; then
+    if [ "$semantic_ledger_route" = 1 ]; then
+        echo "semantic-map regeneration deferred to publisher"
+    elif [ -f "$map_generate" ]; then
         # バックグラウンド実行: semantic-mapはeventual consistencyで問題なし。
         # lock解放後に起動し、generator自身の正規lock取得を省略しない。
         bash "$map_generate" >/dev/null &

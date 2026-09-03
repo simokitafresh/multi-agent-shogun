@@ -89,6 +89,17 @@ setup() {
   [ "$(git -C "$LOCAL" log -1 --format=%s)" = "local" ]
 }
 
+@test "PUBLISHER_SINGLE: integrate does not create a merge commit" {
+  printf 'remote\n' > "$OTHER/b.txt"; git -C "$OTHER" add b.txt; git -C "$OTHER" commit -qm remote; git -C "$OTHER" push -q origin main
+  printf 'local\n' > "$LOCAL/c.txt"; git -C "$LOCAL" add c.txt; git -C "$LOCAL" commit -qm local
+  git -C "$LOCAL" fetch -q origin
+  before="$(git -C "$LOCAL" rev-parse HEAD)"
+  run bash -c "$(declare -f push_lane_integrate_remote); PUBLISHER_SINGLE=1 push_lane_integrate_remote '$LOCAL' origin/main \$(git -C '$LOCAL' rev-parse origin/main)"
+  [ "$status" -ne 0 ]
+  [ "$(git -C "$LOCAL" rev-parse HEAD)" = "$before" ]
+  [[ "$output" != *'runtime: integrate'* ]]
+}
+
 # test_necessity: integrate must synchronize the shared root index/worktree
 # with the integrated tree so an upstream-added file is not exposed as a
 # staged deletion, while a dirty overlapping root path remains untouched and

@@ -18,6 +18,12 @@ publisher_root_drain() {
     bound="${PUBLISHER_ROOT_DRAIN_BOUND:-600}"
 
     mkdir -p "$(dirname "$log_path")"
+    local dirty_paths
+    dirty_paths="$(git -C "$repo_root" status --porcelain=v1 -uno 2>/dev/null | sed 's/^.. //' | sort -u | paste -sd, -)"
+    if [ -n "$dirty_paths" ]; then
+        printf '%s\n' "publisher: root drain BLOCK tracked_dirty_paths=$dirty_paths" >> "$log_path"
+        return 32
+    fi
     if ! timeout 120 git -C "$repo_root" fetch origin; then
         printf '%s\n' "publisher: root drain BLOCK fetch_failed" >> "$log_path"
         return 1
@@ -51,4 +57,3 @@ publisher_root_drain() {
     printf '%s\n' "publisher: root drain BLOCK push_failed base=$base head=$head rc=$push_rc" >> "$log_path"
     return "$push_rc"
 }
-

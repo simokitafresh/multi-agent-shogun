@@ -37,6 +37,26 @@ writer() { bash "$TEST_ROOT/ledger_writer.sh" "$@"; }
   run env LEDGER_SOURCE_FILE="$TEST_ROOT/bulletin.yaml" writer apply "$op"
   [ "$status" -eq 0 ]; grep -q 'blt-001' "$TEST_ROOT/bulletin.yaml"
 }
+@test "semantic_index append/apply replaces index atomically" {
+  printf '%s\n' '## semantic_dictionary_design' '| id | semantic_dictionary_design |' > "$TEST_ROOT/index.md"
+  printf '%s\n' '## semantic_dictionary_design' '| id | semantic_dictionary_design |' 'alias: appended' > "$TEST_ROOT/index.next.md"
+  op="$(env LEDGER_SOURCE_FILE="$TEST_ROOT/index.md" LEDGER_OPERATION_ID=semantic-index-test writer append semantic_index "$TEST_ROOT/index.next.md")"
+  run env LEDGER_SOURCE_FILE="$TEST_ROOT/index.md" writer apply "$op"
+  [ "$status" -eq 0 ]; grep -q 'alias: appended' "$TEST_ROOT/index.md"
+}
+@test "bulletin update preserves confirmed_by as a YAML list" {
+  printf '%s\n' 'entries:' '- id: blt-list' '  status: open' '  confirmed_by: []' > "$TEST_ROOT/bulletin.yaml"
+  op="$(env LEDGER_SOURCE_FILE="$TEST_ROOT/bulletin.yaml" writer update bulletin blt-list 'confirmed_by=["karo"]' status=closed --expect status=open)"
+  run env LEDGER_SOURCE_FILE="$TEST_ROOT/bulletin.yaml" writer apply "$op"
+  [ "$status" -eq 0 ]
+  run python3 - "$TEST_ROOT/bulletin.yaml" <<'PY'
+import sys, yaml
+entry = yaml.safe_load(open(sys.argv[1], encoding='utf-8'))['entries'][0]
+assert entry['confirmed_by'] == ['karo'], entry
+assert entry['status'] == 'closed', entry
+PY
+  [ "$status" -eq 0 ]
+}
 @test "append supports workarounds flat ledger" {
   : > "$TEST_ROOT/workarounds.yaml"; make_entry cmd-001 workaround
   op="$(env LEDGER_SOURCE_FILE="$TEST_ROOT/workarounds.yaml" writer append workarounds "$TEST_ROOT/entry.yaml")"

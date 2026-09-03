@@ -22,10 +22,36 @@ if [[ ! -f "$BULLETIN_FILE" ]]; then
     exit 1
 fi
 
+LEDGER_WRITER="$SCRIPT_DIR/scripts/ledger_writer.sh"
+PUBLISHER_SINGLE_HELPER="$SCRIPT_DIR/scripts/lib/publisher_single_flag.sh"
+if [[ -x "$LEDGER_WRITER" && -f "$PUBLISHER_SINGLE_HELPER" ]]; then
+    # shellcheck source=lib/publisher_single_flag.sh
+    source "$PUBLISHER_SINGLE_HELPER"
+fi
+if declare -f publisher_single_enabled >/dev/null 2>&1 && publisher_single_enabled "$SCRIPT_DIR"; then
+    route="$(python3 - "$BULLETIN_FILE" "$ENTRY_ID" <<'PY'
+import sys, yaml
+path, ident = sys.argv[1:]
+data = yaml.safe_load(open(path, encoding="utf-8")) or {}
+target = next((e for e in data.get("entries", []) if str(e.get("id", "")) == ident), None)
+if target is None:
+    raise SystemExit(f"ERROR: entry not found: {ident}")
+old_status = str(target.get("status", "open") or "open")
+new_status = "closed" if str(target.get("action_type", "info")) == "action_required" else old_status
+print(f"{old_status}\t{new_status}")
+PY
+)"
+    IFS=$'\t' read -r old_status new_status <<< "$route"
+    LEDGER_SOURCE_FILE="$BULLETIN_FILE" bash "$LEDGER_WRITER" update bulletin "$ENTRY_ID" \
+        "actioned_by=$AGENT_ID" "status=$new_status" --expect "status=$old_status"
+    exit 0
+fi
+
 {
     flock -x 200
     python3 - "$BULLETIN_FILE" "$ENTRY_ID" "$AGENT_ID" <<'PY'
 import os
+import json
 import sys
 
 bulletin_file, entry_id, agent_id = sys.argv[1:4]
@@ -44,6 +70,11 @@ def parse_scalar(value):
         return False
     if value == "[]":
         return []
+    if value.startswith("["):
+        try:
+            return json.loads(value)
+        except json.JSONDecodeError:
+            pass
     return unquote(value)
 
 def parse_bulletin(path):

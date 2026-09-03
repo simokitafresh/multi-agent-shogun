@@ -416,6 +416,10 @@ push_lane_integrate_remote() (
     local temp_parent isolated cleanup_rc
 
     [ "${PUSH_LANE_AUTO_INTEGRATE:-1}" = "1" ] || return 1
+    if [ "${PUBLISHER_SINGLE:-0}" = "1" ] || [ -f "$repo/queue/flags/publisher_single" ]; then
+        push_lane_log "PUBLISHER_SINGLE push_lane integrate=0 result=SKIP reason=publisher_request"
+        return 1
+    fi
     current_head=$(git -C "$repo" rev-parse HEAD 2>/dev/null || true)
     root_ref=$(git -C "$repo" symbolic-ref --quiet HEAD 2>/dev/null || true)
     [[ "$current_head" =~ ^[0-9a-fA-F]{40}$ && "$root_ref" =~ ^refs/heads/ ]] || {

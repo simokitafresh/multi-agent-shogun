@@ -43,9 +43,9 @@ teardown() {
     find "$FIXTURE" -depth -delete 2>/dev/null || true
 }
 
-# test_necessity: an ahead root HEAD is pushed with fast-forward semantics,
-# and tracked dirty content is excluded because the push names only HEAD.
-@test "pushes committed root ahead and excludes tracked dirty content" {
+# test_necessity: tracked dirty content must fail-close before root drain and
+# the exact dirty path must remain observable for diagnosis.
+@test "tracked dirty root blocks drain and records the dirty path" {
     printf 'committed\n' > "$PUBROOT/payload.txt"
     git -C "$PUBROOT" add payload.txt
     git -C "$PUBROOT" commit -q -m committed
@@ -53,11 +53,10 @@ teardown() {
     printf 'dirty-not-committed\n' > "$PUBROOT/payload.txt"
 
     run bash -c 'source "$1/scripts/lib/publisher_root_drain.sh"; publisher_root_drain "$2"' _ "$ROOT" "$PUBROOT"
-    [ "$status" -eq 0 ]
-    [ "$(git --git-dir="$REMOTE" rev-parse refs/heads/main)" = "$ahead" ]
-    [ "$(git --git-dir="$REMOTE" show refs/heads/main:payload.txt)" = committed ]
-    grep -q "publisher: root drain push=1" "$LOG"
-    [ "$(grep -c "publisher: root drain push=1" "$LOG")" -eq 1 ]
+    [ "$status" -eq 32 ]
+    [ "$(git --git-dir="$REMOTE" rev-parse refs/heads/main)" != "$ahead" ]
+    grep -q "publisher: root drain BLOCK tracked_dirty_paths=payload.txt" "$LOG"
+    [ "$(grep -c "publisher: root drain BLOCK tracked_dirty_paths=" "$LOG")" -eq 1 ]
     [ ! -f "$INBOX_LOG" ] || [ "$(wc -l < "$INBOX_LOG" | tr -d ' ')" -eq 0 ]
 }
 

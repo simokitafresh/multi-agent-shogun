@@ -24,10 +24,44 @@ if [[ ! -f "$BULLETIN_FILE" ]]; then
     exit 1
 fi
 
+LEDGER_WRITER="$SCRIPT_DIR/scripts/ledger_writer.sh"
+PUBLISHER_SINGLE_HELPER="$SCRIPT_DIR/scripts/lib/publisher_single_flag.sh"
+if [[ -x "$LEDGER_WRITER" && -f "$PUBLISHER_SINGLE_HELPER" ]]; then
+    # shellcheck source=lib/publisher_single_flag.sh
+    source "$PUBLISHER_SINGLE_HELPER"
+fi
+if declare -f publisher_single_enabled >/dev/null 2>&1 && publisher_single_enabled "$SCRIPT_DIR"; then
+    route="$(python3 - "$BULLETIN_FILE" "$ENTRY_ID" "$AGENT_ID" <<'PY'
+import json, sys, yaml
+path, ident, agent = sys.argv[1:]
+data = yaml.safe_load(open(path, encoding="utf-8")) or {}
+target = next((e for e in data.get("entries", []) if str(e.get("id", "")) == ident), None)
+if target is None:
+    raise SystemExit(f"ERROR: entry not found: {ident}")
+confirmed = list(target.get("confirmed_by") or [])
+if agent not in confirmed:
+    confirmed.append(agent)
+rc = target.get("requires_confirmation", False)
+notify = target.get("notify_targets") or []
+status = str(target.get("status", "open") or "open")
+if isinstance(rc, list) and all(a in confirmed for a in rc):
+    status = "closed"
+elif notify and all(a in confirmed for a in notify):
+    status = "closed"
+print(f"{target.get('status', 'open')}\t{json.dumps(confirmed, ensure_ascii=False, separators=(',', ':'))}\t{status}")
+PY
+)"
+    IFS=$'\t' read -r old_status confirmed_json new_status <<< "$route"
+    LEDGER_SOURCE_FILE="$BULLETIN_FILE" bash "$LEDGER_WRITER" update bulletin "$ENTRY_ID" \
+        "confirmed_by=$confirmed_json" "status=$new_status" --expect "status=$old_status"
+    exit 0
+fi
+
 {
     flock -x 200
     python3 - "$BULLETIN_FILE" "$ENTRY_ID" "$AGENT_ID" "$SCRIPT_DIR/config/settings.yaml" <<'PY'
 import os
+import json
 import sys
 from datetime import datetime, timezone
 
@@ -48,6 +82,11 @@ def parse_scalar(value):
         return False
     if value == "[]":
         return []
+    if value.startswith("["):
+        try:
+            return json.loads(value)
+        except json.JSONDecodeError:
+            pass
     return unquote(value)
 
 def parse_bulletin(path):

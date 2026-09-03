@@ -19,6 +19,8 @@ setup() {
     ln -s "$PROJECT_ROOT/scripts/insight_resolve.sh" "${TEST_TMP}/scripts/insight_resolve.sh"
     ln -s "$PROJECT_ROOT/scripts/lib/yaml_field_set.sh" "${TEST_TMP}/scripts/lib/yaml_field_set.sh"
     ln -s "$PROJECT_ROOT/scripts/lib/defense_overhead_writer.sh" "${TEST_TMP}/scripts/lib/defense_overhead_writer.sh"
+    ln -s "$PROJECT_ROOT/scripts/ledger_writer.sh" "${TEST_TMP}/scripts/ledger_writer.sh"
+    ln -s "$PROJECT_ROOT/scripts/lib/publisher_single_flag.sh" "${TEST_TMP}/scripts/lib/publisher_single_flag.sh"
     ln -s "$PROJECT_ROOT/scripts/semantic_index_update.sh" "${TEST_TMP}/scripts/semantic_index_update.sh"
     chmod +x "${TEST_TMP}/scripts/insight_write.sh"
 
@@ -144,6 +146,22 @@ print('ALL FIELDS OK')
 "
     [ "$status" -eq 0 ]
     [[ "$output" == *"ALL FIELDS OK"* ]]
+}
+
+# test_necessity: PUBLISHER_SINGLE must keep the canonical root bytes unchanged
+# and leave exactly one durable ledger operation for the publisher.
+@test "PUBLISHER_SINGLE: insightはroot不変でledgerへ1件だけ出す" {
+    local insights="${TEST_TMP}/queue/insights.yaml" state="${BATS_TEST_TMPDIR}/insight-publisher-state"
+    printf 'insights:\n' > "$insights"
+    before="$(sha256sum "$insights" | awk '{print $1}')"
+    mkdir -p "${TEST_TMP}/queue/flags"
+    : > "${TEST_TMP}/queue/flags/publisher_single"
+    run env INSIGHTS_FILE="$insights" SHOGUN_STATE_DIR="$state" INSIGHT_AUTO_COMMIT=1 \
+        bash "${TEST_TMP}/scripts/insight_write.sh" "publisher ledger route" medium contract_test
+    [ "$status" -eq 0 ]
+    [ "$(sha256sum "$insights" | awk '{print $1}')" = "$before" ]
+    [ "$(find "$state/ledger_inbox/insights" -maxdepth 1 -type f -name '*.yaml' | wc -l)" -eq 1 ]
+    grep -q '"ledger": "insights"' "$state"/ledger_inbox/insights/*.yaml
 }
 
 @test "DB連携: insight write後にmemory DB eventsとFTSへ投入される" {
