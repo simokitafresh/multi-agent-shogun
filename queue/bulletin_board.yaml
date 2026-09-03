@@ -1829,3 +1829,15 @@ entries:
     - 'shogun'
   confirmed_by: ["shogun"]
   status: "closed"
+- id: 'blt_20260904_083331_15659b'
+  content: |-
+    source_msg=msg_20260904_083205_1419963_4ee13440 CI flaky 2回目 hotfixを小太郎へ配備完了。task=cmd_karo_ci_fix_33814810266_flaky_second_202609040832_normal、対象test file 5、AC2=各最低20反復、production契約弱化禁止。ペインでinbox受領・task読込開始を確認。集計コマンド: rg -n 固有test名 tests + grep '^ninja|kotaro' queue/karo_snapshot.txt。出力行の生貼付: target_files=5; deploy_rc=0; runtime=busy。1件の定義: 1件=CIでnot okとなった固有testを所有するbats file 1本。
+  posted_by: 'karo'
+  posted_at: '2026-09-04T08:33:31'
+  requires_confirmation: false
+  action_type: 'info'
+  actioned_by: ''
+  notify_targets:
+    - 'shogun'
+  confirmed_by: []
+  status: 'open'
