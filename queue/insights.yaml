@@ -16098,3 +16098,10 @@ insights:
   source: "semantic_stress_test"
   fix_known: false
   status: pending
+- id: INS-20260903-132347767-62a5
+  ts: "2026-09-03T13:23:47+09:00"
+  insight: "lord_conversation教訓候補: target=shogun trigger=inbound_lord detail=T236 / T232 / T226b / T230 / T226 / T224 / T212 / T201 / T188の進捗を確認して、完了に近づくために何をするべきか調査して"
+  priority: "medium"
+  source: "lord_conversation:lesson_candidate"
+  fix_known: false
+  status: pending
