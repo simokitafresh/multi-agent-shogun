@@ -62,7 +62,7 @@ Grok 作成の「届け方マニュアル」(中身固定・包装のみ変更)�
 ## §3 段階(Phase)と可逆性
 | Phase | 内容 | 自動化度 | 可逆 | 完了条件(二値) |
 |---|---|---|---|---|
-| P0 | ✅ **完了 09-03 09:48(cmd_4467 飛猿、ce1ca2cb1)**: `skills/x-post-pipeline/stock_ledger.yaml`(50 entry=How to 49+完全ガイド、記事本文にある数字セットのみ)、`slot_calendar.yaml`(4 週×枠 A/B/C+月次 D)、`SKILL.md`(28 行)、`scripts/x_ops/x_post_gate.sh`(6 規則: Basic 以外の保有/ticker blocklist を showcase API から生成、単独倍率、URL 3 種、免責、禁止語、第一文の内部用語)+`tests/unit/test_x_post_gate.bats` 8 本。将軍突合: 包装ルール通りの下書き rc=0、『忍法FoF の保有 XLU/QQQ・556 倍・今これを買え』rc≠0 | 手動 | file 削除 | 台帳 1 file、gate PASS/FAIL 例 |
+| P0 | ✅ **完了 09-03 09:48(cmd_4467 飛猿、ce1ca2cb1)**: `skills/x-post-pipeline/stock_ledger.yaml`(50 entry=How to 49+完全ガイド、記事本文にある数字セットのみ)、`slot_calendar.yaml`(4 週×枠 A/B/C+月次 D)、`SKILL.md`(28 行)、`scripts/x_ops/x_post_gate.sh`(6 規則: Basic 以外の保有/ticker blocklist を showcase API から生成、単独倍率、URL 3 種、免責、禁止語、第一文の内部用語)+`tests/unit/test_x_post_gate.bats` 8 本。将軍突合: 包装ルール通りの下書き rc=0、禁止語/内部用語/単独倍率は FAIL。**穴(09:58 発見)**: 規則 1 の blocklist を公開 showcase API から作るため非公開 PF の holding が blocklist に入らず、空なら PASS(沈黙フォールバック)→家老 hotfix: 認証付き /api/signals の全 PF holding(Basic 除外)を正本に、取得失敗は FAIL | 手動 | file 削除 | 台帳 1 file、gate PASS/FAIL 例 |
 | P1 | S4 gate を script 化(regex+blocklist+URL 検査)。S5 は『X API で下書き投稿(未公開)or 殿承認後に script が投稿』 | 半自動 | 投稿は取消可、API key 失効で停止 | gate 偽陽性 0/12、承認→投稿 1 本が API で成功 |
 | P2 | cron で S2→S3→S4→S5 を無人実行。殿は週 15 分の KPI 確認のみ | 自動 | flag file で即停止(単一 publisher と同型) | 4 週連続で週 3 投稿・gate FAIL 0・殿介入 0 |
 | P3 | S6 KPI 還流で切り口を自動選択(A の 4 切り口の rotation を metrics で重み付け) | 自動 | rotation を固定に戻す | 赤信号 0、理解到達 KPI が 4 週連続上昇 |
