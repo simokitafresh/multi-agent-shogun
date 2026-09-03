@@ -2338,3 +2338,464 @@
   verdict: LGTM
   verified_files:
   - scripts/cmd_complete_gate.sh:1
+- cmd_id: cmd_karo_hotfix_close_check_runtime_reapply_202609032326
+  review_type: draft
+  verdict: APPROVE
+  confidence: HIGH
+  verified_files:
+    - "scripts/single_publisher_close_check.sh:1"
+  findings_summary: "6観点OK。close_check runtime direct-push判定再実装。正負fixture。AC2件15分"
+  observations:
+    - "事実1: target_path 2ファイル"
+    - "事実2: quality_gateで現行変更消失/判定不一致→BLOCK"
+  operational_simulation:
+    command: "head -60 queue/tasks/hayate.yaml"
+    expected: "hotfix AC2件確認"
+    actual: "AC2件、15分、quality_gate明記"
+    result: PASS
+  causal_chain: "旧3c7f94f85が非YAML競合→現mainへruntime判定再実装→正負fixture"
+  brainwash_check: "#1no #2no #3no #4no #5no #6no #7no #8no"
+  step3_5_verified: false
+  ambiguity_points: none
+  finding_categories: [assumptions, numbers, simulation, premortem, north_star, adversarial, ambiguity]
+  adversarial_review: {required: false, verdict: N/A, reason: "draftレビュー"}
+  origin: "[[cmd_karo_hotfix_close_check_runtime_reapply_202609032326]] -> [[旧3c7f94f85_非YAML競合]]"
+  reviewed_at: "2026-09-03T23:27:00"
+  timestamp: "2026-09-03T23:27:00"
+- cmd_id: cmd_karo_hotfix_bulletin_prune_ledger_followup_202609032329
+  review_type: draft
+  verdict: APPROVE
+  confidence: HIGH
+  verified_files:
+    - "scripts/bulletin_archive.sh:1"
+  findings_summary: "6観点OK。bulletin prune/archive ledger op一元化。3 caller fixture。AC2件15分"
+  observations:
+    - "事実1: 23:27:42 prune -11行でroot再dirty"
+    - "事実2: quality_gateでroot直接trim/ledger適用欠落→BLOCK"
+  operational_simulation:
+    command: "head -55 queue/tasks/kotaro.yaml"
+    expected: "hotfix AC2件確認"
+    actual: "AC2件、15分、3 fixture"
+    result: PASS
+  causal_chain: "bulletin prune→root board直接trim→再dirty→ledger update/delete op→root不変"
+  brainwash_check: "#1no #2no #3no #4no #5no #6no #7no #8no"
+  step3_5_verified: false
+  ambiguity_points: none
+  finding_categories: [assumptions, numbers, simulation, premortem, north_star, adversarial, ambiguity]
+  adversarial_review: {required: false, verdict: N/A, reason: "draftレビュー"}
+  origin: "[[cmd_karo_hotfix_bulletin_prune_ledger_followup_202609032329]] -> [[bulletin_prune_root_dirty]]"
+  reviewed_at: "2026-09-03T23:31:00"
+  timestamp: "2026-09-03T23:31:00"
+- cmd_id: cmd_karo_hotfix_close_check_runtime_reapply_202609032326
+  review_type: report
+  verdict: LGTM
+  report_ninja: hayate
+  report_task_id: cmd_karo_hotfix_close_check_runtime_reapply_202609032326_normal
+  report_verdict: PASS
+  lesson_quality: OK
+  escalation_needed: false
+  verified_files:
+    - "scripts/single_publisher_close_check.sh:1"
+  findings_summary: "4観点OK。close_check runtime direct-push判定再実装。10/10 PASS SKIP0。precheck CLEAR"
+  observations:
+    - "事実1: 複数git -c push形式のfixtureを追加"
+    - "事実2: commit前後とも10/10 PASS SKIP0"
+  operational_simulation:
+    command: "bash scripts/gates/gate_gunshi_report_precheck.sh queue/reports/hayate_report_cmd_karo_hotfix_close_check_runtime_reapply_202609032326.yaml"
+    expected: "precheck全PASS"
+    actual: "ERRORS=0、GATE_PREDICTION=CLEAR"
+    result: PASS
+  causal_chain: "旧3c7f94f85が非YAML競合→runtime判定を現mainへ再実装→10/10 PASS"
+  brainwash_check: "#1no #2no #3no #4no #5no #6no #7no #8no"
+  step3_5_verified: true
+  finding_categories: [assumptions, numbers, simulation, premortem, adversarial, ambiguity]
+  adversarial_review: {required: false, verdict: PASS, reason: "close_check+test変更。正負fixture"}
+  gate_prediction: CLEAR
+  gate_prediction_reason: "all checks passed"
+  origin: "[[cmd_karo_hotfix_close_check_runtime_reapply_202609032326]] -> [[runtime判定再実装]]"
+  reviewed_at: "2026-09-03T23:35:00"
+  timestamp: "2026-09-03T23:35:00"
+- cmd_id: cmd_karo_hotfix_close_check_runtime_reapply_202609032326
+  review_type: report
+  verdict: FAIL
+  report_ninja: hayate
+  report_task_id: cmd_karo_hotfix_close_check_runtime_reapply_202609032326_normal
+  report_verdict: PASS
+  fail_reasons:
+    - "review_bundle.py batch appendフォーマットエラーでapproval未記録。4観点OK+CLEAR。家老に手動completion依頼済み"
+  lesson_quality: OK
+  escalation_needed: false
+  verified_files:
+    - "scripts/single_publisher_close_check.sh:1"
+  findings_summary: "4観点OK。review_bundle部分失敗。review_log+sg7_bundle済みだがapproval未記録"
+  observations:
+    - "事実1: 10/10 PASS SKIP0 precheck CLEAR"
+    - "事実2: review_bundle.py batch append段階で entry must contain id エラー"
+  operational_simulation:
+    command: "python3 scripts/review_bundle.py single ..."
+    expected: "bundle成功"
+    actual: "BLOCK: entry must contain id, cmd_id"
+    result: FAIL
+  causal_chain: "review_bundle.py batch formatエラー→approval未記録→手動completion依頼"
+  brainwash_check: "#1no #2no #3no #4no #5no #6no #7no #8no"
+  step3_5_verified: true
+  finding_categories: [assumptions, numbers, adversarial, ambiguity]
+  gate_prediction: CLEAR
+  gate_prediction_reason: "all checks passed"
+  origin: "[[cmd_karo_hotfix_close_check_runtime_reapply_202609032326]] -> [[bundle_format_error]]"
+  reviewed_at: "2026-09-03T23:37:00"
+  timestamp: "2026-09-03T23:37:00"
+- cmd_id: cmd_karo_hotfix_close_check_runtime_reapply_202609032326
+  review_type: report
+  verdict: LGTM
+  report_ninja: hayate
+  report_task_id: cmd_karo_hotfix_close_check_runtime_reapply_202609032326_normal
+  report_verdict: PASS
+  lesson_quality: OK
+  escalation_needed: false
+  verified_files:
+  - scripts/single_publisher_close_check.sh:1
+  findings_summary: 4観点OK。close_check runtime direct-push判定再実装。10/10 PASS SKIP0。precheck
+    CLEAR
+  observations:
+  - '事実1: 複数git -c push形式のfixtureを追加'
+  - '事実2: commit前後とも10/10 PASS SKIP0'
+  operational_simulation:
+    command: bash scripts/gates/gate_gunshi_report_precheck.sh queue/reports/hayate_report_cmd_karo_hotfix_close_check_runtime_reapply_202609032326.yaml
+    expected: precheck全PASS
+    actual: ERRORS=0、GATE_PREDICTION=CLEAR
+    result: PASS
+  causal_chain: 旧3c7f94f85が非YAML競合→runtime判定を現mainへ再実装→10/10 PASS
+  brainwash_check: '#1no #2no #3no #4no #5no #6no #7no #8no'
+  step3_5_verified: true
+  finding_categories:
+  - assumptions
+  - numbers
+  - simulation
+  - premortem
+  - adversarial
+  - ambiguity
+  adversarial_review:
+    required: false
+    verdict: PASS
+    reason: close_check+test変更。正負fixture
+  gate_prediction: CLEAR
+  gate_prediction_reason: all checks passed
+  origin: '[[cmd_karo_hotfix_close_check_runtime_reapply_202609032326]] -> [[runtime判定再実装]]'
+  reviewed_at: '2026-09-03T23:35:00'
+  timestamp: '2026-09-03T23:35:00'
+- cmd_id: cmd_karo_hotfix_review_log_ledger_read_fallback_202609032349
+  review_type: draft
+  verdict: APPROVE
+  confidence: HIGH
+  verified_files:
+    - "scripts/lib/review_approval.sh:1"
+    - "scripts/inbox_mark_read.sh:1"
+  findings_summary: "6観点OK。ledger route後のpublisher apply待ちBLOCK根治。5状態fixture(root/origin/applied/pending/missing)"
+  observations:
+    - "事実1: 軍師が今踏んでいるバグ(msg_045528a4構造的BLOCK)の直接修正"
+    - "事実2: identity不一致/双方missing→BLOCK維持でセキュリティ設計不変"
+  operational_simulation:
+    command: "head -55 queue/tasks/hanzo.yaml"
+    expected: "hotfix AC2件+5 fixture確認"
+    actual: "AC2件、15分、5状態FP0/FN0"
+    result: PASS
+  causal_chain: "review_log ledger route化→publisher apply待ち→approval/mark_read BLOCK→origin/applied/pending fallback読取→BLOCK解消"
+  brainwash_check: "#1no #2no #3no #4no #5no #6no #7no #8no"
+  step3_5_verified: false
+  ambiguity_points: none
+  finding_categories: [assumptions, numbers, simulation, premortem, north_star, adversarial, ambiguity]
+  adversarial_review: {required: false, verdict: N/A, reason: "draftレビュー"}
+  conflict_of_interest: "review_approval.sh/inbox_mark_read.shは軍師の既読化・approval経路。本cmdはfallback読取追加でありレビュー判定ロジック不変"
+  origin: "[[cmd_karo_hotfix_review_log_ledger_read_fallback_202609032349]] -> [[publisher_apply待ちBLOCK]] -> [[fallback読取根治]]"
+  reviewed_at: "2026-09-03T23:50:00"
+  timestamp: "2026-09-03T23:50:00"
+- cmd_id: cmd_karo_hotfix_t3s40_post_source_v3_202609040000
+  review_type: draft
+  verdict: APPROVE
+  confidence: HIGH
+  verified_files:
+    - "scripts/cmd_complete_gate.sh:1"
+  findings_summary: "6観点OK。本番実測根拠(durable_writer 10.8s/push 6s/未計測6s)でpost_source 3遅延根治。max 10s"
+  observations:
+    - "事実1: 本番23:29 cycleの一次データ(durable_writer 10.791s/push 6.022s/未計測~6s)"
+    - "事実2: CDP 0.005s/ancestry 1.601sは主因外として保持"
+  operational_simulation:
+    command: "head -55 queue/tasks/tobisaru.yaml"
+    expected: "hotfix AC2件確認"
+    actual: "AC2件、15分"
+    result: PASS
+  causal_chain: "本番post_source 23s超→3遅延特定→同期から外すかmax 10s強制→合計10s以下"
+  brainwash_check: "#1no #2no #3no #4no #5no #6no #7no #8no"
+  step3_5_verified: false
+  ambiguity_points: none
+  finding_categories: [assumptions, numbers, simulation, premortem, north_star, adversarial, ambiguity]
+  adversarial_review: {required: false, verdict: N/A, reason: "draftレビュー"}
+  origin: "[[cmd_karo_hotfix_t3s40_post_source_v3_202609040000]] -> [[post_source_3遅延]]"
+  reviewed_at: "2026-09-04T00:01:00"
+  timestamp: "2026-09-04T00:01:00"
+- cmd_id: cmd_karo_hotfix_review_log_ledger_read_fallback_202609032349
+  review_type: report
+  verdict: LGTM
+  report_ninja: hanzo
+  report_task_id: cmd_karo_hotfix_review_log_ledger_read_fallback_202609032349_normal
+  report_verdict: PASS
+  lesson_quality: OK
+  escalation_needed: false
+  verified_files:
+  - scripts/lib/review_approval.sh:1
+  - scripts/inbox_mark_read.sh:1
+  findings_summary: 4観点OK。review_logのactive/origin/applied/pending fallback実装。5状態fixture(4PASS/1BLOCK)。49/49
+    PASS SKIP0
+  observations:
+  - '事実1: commit eb846efeで3ファイル変更。identity束縛付きfallback'
+  - '事実2: 軍師が踏んでいたpublisher apply待ちBLOCKの直接修正'
+  operational_simulation:
+    command: bash scripts/gates/gate_gunshi_report_precheck.sh queue/reports/hanzo_report_cmd_karo_hotfix_review_log_ledger_read_fallback_202609032349.yaml
+    expected: precheck全PASS
+    actual: ERRORS=0、GATE_PREDICTION=CLEAR
+    result: PASS
+  causal_chain: ledger route化→publisher apply待ち→approval/mark_read BLOCK→fallback読取追加→BLOCK解消
+  brainwash_check: '#1no(49/49確認) #2no(precheck CLEAR) #3no(自分で判定) #4no(identity不一致BLOCK維持)
+    #5no #6no #7no #8no'
+  step3_5_verified: true
+  finding_categories:
+  - assumptions
+  - numbers
+  - simulation
+  - premortem
+  - adversarial
+  - ambiguity
+  adversarial_review:
+    required: false
+    verdict: PASS
+    reason: review_approval/inbox_mark_read変更。identity不一致/双方missing→BLOCK維持
+  conflict_of_interest: review_approval.sh/inbox_mark_read.shは軍師のapproval/既読化経路。本cmdはfallback追加でありレビュー判定ロジック不変
+  gate_prediction: CLEAR
+  gate_prediction_reason: all checks passed
+  origin: '[[cmd_karo_hotfix_review_log_ledger_read_fallback_202609032349]] -> [[publisher_apply待ちBLOCK]]
+    -> [[fallback読取根治]]'
+  reviewed_at: '2026-09-04T00:10:00'
+  timestamp: '2026-09-04T00:10:00'
+- cmd_id: cmd_karo_hotfix_bulletin_prune_ledger_followup_202609032329
+  review_type: report
+  verdict: FAIL
+  report_ninja: kotaro
+  report_task_id: cmd_karo_hotfix_bulletin_prune_ledger_followup_202609032329_normal
+  report_verdict: FAIL
+  fail_reasons:
+    - "FAIL追認。bulletin_write経路遮断済みだがyaml_auto_archive.sh本体(target_path外)未修正。bc:no1件"
+  lesson_quality: OK
+  escalation_needed: false
+  verified_files:
+    - "queue/reports/kotaro_report_cmd_karo_hotfix_bulletin_prune_ledger_followup_202609032329.yaml:1"
+  findings_summary: "FAIL追認。部分修正(bulletin_write経路)だがscope外再発リスク残"
+  observations:
+    - "事実1: bulletin_write経路の無条件archive呼出し遮断は完了"
+    - "事実2: yaml_auto_archive.sh本体がtarget_path外で未修正"
+  operational_simulation:
+    command: "bash scripts/gates/gate_gunshi_report_precheck.sh queue/reports/kotaro_report_cmd_karo_hotfix_bulletin_prune_ledger_followup_202609032329.yaml"
+    expected: "precheck確認"
+    actual: "GATE_PREDICTION=BLOCK(bc:no1件)"
+    result: FAIL
+  causal_chain: "bulletin_write→yaml_auto_archive→root直接trim→dirty→bulletin_write経路遮断→yaml_auto_archive本体未修正→再発リスク"
+  brainwash_check: "#1no #2no #3no #4no #5no #6no #7no #8no"
+  step3_5_verified: true
+  finding_categories: [assumptions, numbers, adversarial, ambiguity]
+  gate_prediction: BLOCK
+  gate_prediction_reason: "bc:no検出"
+  origin: "[[cmd_karo_hotfix_bulletin_prune_ledger_followup_202609032329]] -> [[partial_fix]]"
+  reviewed_at: "2026-09-04T00:12:00"
+  timestamp: "2026-09-04T00:12:00"
+- cmd_id: cmd_karo_hotfix_t3s40_post_source_v3_202609040000
+  review_type: report
+  verdict: LGTM
+  report_ninja: tobisaru
+  report_task_id: cmd_karo_hotfix_t3s40_post_source_v3_202609040000_normal
+  report_verdict: PASS
+  lesson_quality: OK
+  escalation_needed: false
+  verified_files:
+  - scripts/cmd_complete_gate.sh:1
+  findings_summary: 4観点OK。未計装同期区間をdetail span完全計装+memory_semantic_scan非同期化。precheck
+    CLEAR
+  observations:
+  - '事実1: capture_rework_event~queue_postclear区間を計装し未計測0に'
+  - '事実2: run_report_memory_semantic_scanを非同期化'
+  operational_simulation:
+    command: bash scripts/gates/gate_gunshi_report_precheck.sh queue/reports/tobisaru_report_cmd_karo_hotfix_t3s40_post_source_v3_202609040000.yaml
+    expected: precheck全PASS
+    actual: ERRORS=0、GATE_PREDICTION=CLEAR
+    result: PASS
+  causal_chain: 未計装同期区間6-13s→detail span計装+semantic_scan非同期化→post_source合計10s以下
+  brainwash_check: '#1no #2no #3no #4no #5no #6no #7no #8no'
+  step3_5_verified: true
+  finding_categories:
+  - assumptions
+  - numbers
+  - simulation
+  - premortem
+  - adversarial
+  - ambiguity
+  adversarial_review:
+    required: false
+    verdict: PASS
+    reason: cmd_complete_gate.sh変更。非同期化+計装
+  gate_prediction: CLEAR
+  gate_prediction_reason: all checks passed
+  origin: '[[cmd_karo_hotfix_t3s40_post_source_v3_202609040000]] -> [[未計装同期区間]] ->
+    [[計装+非同期化]]'
+  reviewed_at: '2026-09-04T00:17:00'
+  timestamp: '2026-09-04T00:17:00'
+- cmd_id: cmd_karo_hotfix_review_bundle_batch_id_202609040019
+  review_type: report
+  verdict: LGTM
+  report_ninja: hanzo
+  report_task_id: cmd_karo_hotfix_review_bundle_batch_id_202609040019_normal
+  report_verdict: PASS
+  findings_summary: "4観点OK。batch entry cmd_id欠落修正。51/51 PASS"
+  verified_files:
+    - "scripts/review_bundle.py:1"
+  observations:
+    - "事実1: batch entry identity結合で修正"
+    - "事実2: 51/51 PASS SKIP0"
+  operational_simulation:
+    command: "precheck"
+    expected: "CLEAR"
+    actual: "ERRORS=0 CLEAR"
+    result: PASS
+  causal_chain: "batch cmd_id欠落→identity結合→解消"
+  brainwash_check: "#1no #2no #3no #4no #5no #6no #7no #8no"
+  step3_5_verified: true
+  finding_categories: [assumptions, numbers, simulation, premortem, adversarial, ambiguity]
+  adversarial_review: {required: false, verdict: PASS, reason: "review_bundle.py修正"}
+  conflict_of_interest: "review_bundle.pyは軍師承認フロー。判定ロジック不変"
+  gate_prediction: CLEAR
+  gate_prediction_reason: "all checks passed"
+  origin: "[[cmd_karo_hotfix_review_bundle_batch_id_202609040019]]"
+  reviewed_at: "2026-09-04T00:59:00"
+  timestamp: "2026-09-04T00:59:00"
+- cmd_id: cmd_karo_hotfix_semantic_index_root_write_followup_202609040001
+  review_type: report
+  verdict: LGTM
+  report_ninja: saizo
+  report_task_id: cmd_karo_hotfix_semantic_index_root_write_followup_202609040001_normal
+  report_verdict: PASS
+  findings_summary: "4観点OK。semantic_map_generate ledger op化。46/46 PASS"
+  verified_files:
+    - "scripts/semantic_index_update.sh:1"
+  observations:
+    - "事実1: CAS付きledger opでroot SHA不変"
+  operational_simulation:
+    command: precheck
+    expected: CLEAR
+    actual: ERRORS=0
+    result: PASS
+  causal_chain: "root直接write→ledger op→root不変"
+  brainwash_check: "#1no #2no #3no #4no #5no #6no #7no #8no"
+  step3_5_verified: true
+  finding_categories: [assumptions, numbers, simulation, premortem, adversarial, ambiguity]
+  gate_prediction: CLEAR
+  gate_prediction_reason: "all checks passed"
+  reviewed_at: "2026-09-04T01:05:00"
+  timestamp: "2026-09-04T01:05:00"
+- cmd_id: cmd_karo_hotfix_t3s49_done_await_clear_slot_202609040042
+  review_type: report
+  verdict: LGTM
+  report_ninja: kotaro
+  report_task_id: cmd_karo_hotfix_t3s49_done_await_clear_slot_202609040042_normal
+  report_verdict: PASS
+  findings_summary: "4観点OK。deploy_task done+completed配備可拡張。precheck CLEAR"
+  verified_files:
+    - "scripts/deploy_task/main.sh:1"
+  observations:
+    - "事実1: status判定in_progress|doneへ拡張"
+  operational_simulation:
+    command: precheck
+    expected: CLEAR
+    actual: ERRORS=0
+    result: PASS
+  causal_chain: "done status配備不可→in_progress|done拡張→配備可"
+  brainwash_check: "#1no #2no #3no #4no #5no #6no #7no #8no"
+  step3_5_verified: true
+  finding_categories: [assumptions, numbers, simulation, premortem, adversarial, ambiguity]
+  gate_prediction: CLEAR
+  gate_prediction_reason: "all checks passed"
+  reviewed_at: "2026-09-04T01:05:00"
+  timestamp: "2026-09-04T01:05:00"
+- cmd_id: cmd_karo_hotfix_gate_superseded_terminal_202609040036
+  review_type: report
+  verdict: FAIL
+  report_ninja: tobisaru
+  report_task_id: cmd_karo_hotfix_gate_superseded_terminal_202609040036_normal
+  report_verdict: FAIL
+  fail_reasons:
+    - "FAIL追認。本番3件中2件実証だが残1件bc:no。status=revision_requested"
+  findings_summary: "gate_superseded_mark/state追加。2/3件実証"
+  verified_files:
+    - "scripts/cmd_complete_gate.sh:1"
+  observations:
+    - "事実1: dual_read/watchdog→SUPERSEDEDは実証OK"
+  operational_simulation:
+    command: precheck
+    expected: BLOCK(bc:no)
+    actual: GATE_PREDICTION=BLOCK
+    result: FAIL
+  causal_chain: "本番3件中2件実証→残1件未完→FAIL"
+  brainwash_check: "#1no #2no #3no #4no #5no #6no #7no #8no"
+  step3_5_verified: true
+  finding_categories: [assumptions, numbers, adversarial, ambiguity]
+  gate_prediction: BLOCK
+  gate_prediction_reason: "bc:no検出"
+  reviewed_at: "2026-09-04T01:18:00"
+  timestamp: "2026-09-04T01:18:00"
+- cmd_id: cmd_karo_hotfix_claude_survey_prompt_guard_202609040216
+  review_type: report
+  verdict: LGTM
+  report_ninja: kagemaru
+  report_task_id: cmd_karo_hotfix_claude_survey_prompt_guard_202609040216_normal
+  report_verdict: PASS
+  findings_summary: "4観点OK。survey抑止env注入+guard。45/45 PASS"
+  verified_files:
+    - "scripts/cli_lookup.sh:1"
+  observations:
+    - "事実1: 45/45 PASS SKIP0"
+  operational_simulation:
+    command: precheck
+    expected: CLEAR
+    actual: ERRORS=0
+    result: PASS
+  causal_chain: "survey prompt干渉→env抑止+guard→解消"
+  brainwash_check: "#1no #2no #3no #4no #5no #6no #7no #8no"
+  step3_5_verified: true
+  finding_categories: [assumptions, numbers, simulation, premortem, adversarial, ambiguity]
+  gate_prediction: CLEAR
+  gate_prediction_reason: "all checks passed"
+  reviewed_at: "2026-09-04T02:33:00"
+  timestamp: "2026-09-04T02:33:00"
+- cmd_id: cmd_karo_hotfix_t3s40_post_source_v4_202609040036
+  review_type: report
+  verdict: FAIL
+  report_ninja: tobisaru
+  report_task_id: cmd_karo_hotfix_t3s40_post_source_v4_202609040036_normal
+  report_verdict: FAIL
+  fail_reasons:
+    - "FAIL追認。AC1前提不成立(v3で既に非同期化済み)。bc:no=3"
+  findings_summary: "FAIL追認。前提が既にv3で解消済み"
+  verified_files:
+    - "scripts/cmd_complete_gate.sh:1"
+  observations:
+    - "事実1: durable_writer_wait/postclear_pushはv3で非同期化済み"
+  operational_simulation:
+    command: precheck
+    expected: BLOCK(bc:no)
+    actual: GATE_PREDICTION=BLOCK
+    result: FAIL
+  causal_chain: "v3で非同期化済み→v4前提不成立→FAIL"
+  brainwash_check: "#1no #2no #3no #4no #5no #6no #7no #8no"
+  step3_5_verified: true
+  finding_categories: [assumptions, numbers, adversarial, ambiguity]
+  gate_prediction: BLOCK
+  gate_prediction_reason: "bc:no検出"
+  reviewed_at: "2026-09-04T02:38:00"
+  timestamp: "2026-09-04T02:38:00"
