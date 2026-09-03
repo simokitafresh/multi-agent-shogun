@@ -35,7 +35,7 @@ if declare -f publisher_single_enabled >/dev/null 2>&1 && publisher_single_enabl
 import json, sys, yaml
 path, ident, agent = sys.argv[1:]
 data = yaml.safe_load(open(path, encoding="utf-8")) or {}
-target = next((e for e in data.get("entries", []) if str(e.get("id", "")) == ident), None)
+target = next((e for e in (data.get("entries") or []) if isinstance(e, dict) and str(e.get("id", "")) == ident), None)
 if target is None:
     # 2026-09-03 18:10 将軍 D0(T3-S-29): bulletin_write は ledger op を enqueue した直後に inbox notify を送る。
     # ledger 適用前に受け手が inbox_mark_read→本 script を呼ぶと board file に entry が無く confirm が消えていた

@@ -129,14 +129,25 @@ update_op() {
     source="${LEDGER_SOURCE_FILE:-$(ledger_file "$ledger")}" 
     [[ -f "$source" ]] || die "ledger file not found: $source"
     IFS=$'\t' read -r hash fields expected < <(
-        LEDGER_ENV_FILE="$source" LEDGER_ENV_ID="$id" LEDGER_ENV_EXPECT_FIELD="$expect_field" LEDGER_ENV_EXPECT_VALUE="$expect_value" LEDGER_ENV_ASSIGNMENTS="$(printf '%s\n' "${assignments[@]}")" python3 - <<'PY'
-import hashlib, json, os, re
+        LEDGER_ENV_FILE="$source" LEDGER_ENV_ID="$id" LEDGER_ENV_PENDING_DIR="$(ledger_dir "$ledger")" LEDGER_ENV_EXPECT_FIELD="$expect_field" LEDGER_ENV_EXPECT_VALUE="$expect_value" LEDGER_ENV_ASSIGNMENTS="$(printf '%s\n' "${assignments[@]}")" python3 - <<'PY'
+import glob, hashlib, json, os, re
 path, ident = os.environ["LEDGER_ENV_FILE"], os.environ["LEDGER_ENV_ID"]
 text=open(path,encoding="utf-8").read(); lines=text.splitlines(keepends=True)
-if re.fullmatch(r"L[0-9]+",ident):
-    starts=[i for i,l in enumerate(lines) if re.match(r"^###\s+"+re.escape(ident)+r":",l)]
-else:
-    starts=[i for i,l in enumerate(lines) if re.search(r"^\s*-\s+(?:id|cmd_id):\s*['\"]?"+re.escape(ident)+r"(?:['\"]|\s|$)",l)]
+def find_starts(ls):
+    if re.fullmatch(r"L[0-9]+",ident):
+        return [i for i,l in enumerate(ls) if re.match(r"^###\s+"+re.escape(ident)+r":",l)]
+    return [i for i,l in enumerate(ls) if re.search(r"^\s*-\s+(?:id|cmd_id):\s*['\"]?"+re.escape(ident)+r"(?:['\"]|\s|$)",l)]
+starts=find_starts(lines)
+if len(starts)==0:
+    # 2026-09-03 18:20 将軍 D0(T3-S-29): append op が未適用のまま同 id へ update(confirm/action)が来ると
+    # 「target id must be unique (0)」で enqueue が落ち、confirm が消えていた。apply は順序保証されるので、
+    # pending の append op から entry を取り enqueue を通す(apply 時の CAS は expected 欄で行う)。
+    pend=os.environ.get("LEDGER_ENV_PENDING_DIR","")
+    for op_path in sorted(glob.glob(os.path.join(pend,"*.yaml"))) if pend else []:
+        try: op=json.load(open(op_path,encoding="utf-8"))
+        except Exception: continue
+        if op.get("op")=="append" and str(op.get("id",""))==ident:
+            lines=str(op.get("entry_text","")).splitlines(keepends=True); starts=find_starts(lines); break
 if len(starts)!=1: raise SystemExit(f"target id must be unique: {ident} ({len(starts)})")
 start=starts[0]; base=len(lines[start])-len(lines[start].lstrip()); end=len(lines)
 for i in range(start+1,len(lines)):
