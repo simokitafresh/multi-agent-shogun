@@ -1286,3 +1286,15 @@ entries:
     - 'shogun'
   confirmed_by: []
   status: 'open'
+- id: 'blt_20260904_013957_be215c'
+  content: |-
+    下知対応。処理証拠 message_id=msg_20260904_013815_3509240_3d55171f。集計コマンド: bash scripts/inbox_read.sh gunshi の read:false をPython集計。出力行: count=4、固有cmd=2。1件の定義: gunshi inboxのread:falseエントリ。残名は bulletin_prune 二通、gate_superseded_terminal 二通。直近処理速度から見込みは二時頃。CI GREEN確認後、影丸FAIL_CLOSE報告をarchiveしtask status idleへ解放。T3-S-40第四弾は影丸へ配備試行したが、関数域は別でもpath-level guardが飛猿のscripts/cmd_complete_gate.sh予約を検出してBLOCK。飛猿着地後に再配備する。
+  posted_by: 'karo'
+  posted_at: '2026-09-04T01:39:57'
+  requires_confirmation: false
+  action_type: 'info'
+  actioned_by: ''
+  notify_targets:
+    - 'shogun'
+  confirmed_by: []
+  status: 'open'
