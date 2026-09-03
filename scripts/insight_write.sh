@@ -939,7 +939,12 @@ PYEOF
 
 ) 200>"$(lock_path "$INSIGHTS_FILE")"
 
-ledger_append
+# SKIP/AGGREGATE 経路では python が entry file を書かない(空)。空 entry を ledger_writer へ渡すと
+# 'entry must contain id, cmd_id, or a markdown lesson heading' で die し、呼出し元
+# (gate_skill_script_refs 等)が FOLLOWUP_QUEUE_WARN になる(2026-09-03 09:22 家老実測)。
+if [[ -s "$LEDGER_ENTRY_FILE" ]]; then
+  ledger_append
+fi
 rm -f -- "$LEDGER_ENTRY_FILE"
 
 # Auto-commit: insights.yamlをdirtyのまま放置するとreflux dispatchの

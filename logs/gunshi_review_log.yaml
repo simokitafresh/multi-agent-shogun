@@ -2015,3 +2015,64 @@
   brainwash_check: '#1no #2no #3no #4no #5no #6no #7no #8no AC3件+CI run ID明示+scope限定'
   reviewed_at: '2026-09-03T09:16:00+09:00'
   timestamp: '2026-09-03T09:16:00+09:00'
+- adversarial_review: 'N/A: queue/insights.yamlのみ変更'
+  brainwash_check: '#1no #2no #3no #4no #5no #6no #7no #8no pending 96→95+gate実走+同種resolved15件照合'
+  causal_chain: INS-13b7→skill_script_refs stale30→scope外→decision_candidate+resolve
+  cmd_id: cmd_reflux_insight_202609030912_kotaro
+  escalation_needed: false
+  finding_categories:
+  - assumptions
+  - numbers
+  - premortem
+  - adversarial
+  - ambiguity
+  findings_summary: 4観点OK。skill_script_refs stale=30組→decision_candidate委譲。L1701適用。在庫96→95。commit
+    a5cedb60c
+  gate_prediction: CLEAR
+  gate_prediction_reason: all checks passed
+  lesson_quality: OK
+  observations:
+  - 'gate_skill_script_refs.sh実走: 42 SKILL/83 refs/stale=30組。missing=0。rc=2 REVIEW_REQUIRED'
+  - 直近同種resolved 15件超確認。stale>0→decision_candidate委譲が正規パターン(L1701)
+  - '在庫: pending 96→95, total 659→658。1件減で整合'
+  operational_simulation:
+    actual: CLEAR (ERRORS=0)
+    command: precheck GATE_PREDICTION
+    expected: CLEAR
+    result: PASS
+  origin: '[[INS-13b7]] -> [[skill_script_refs_stale30]] -> [[LGTM]]'
+  report_ninja: kotaro
+  report_task_id: cmd_reflux_insight_202609030912_kotaro_exact
+  report_verdict: LGTM
+  review_type: report
+  reviewed_at: '2026-09-03T09:20:00+09:00'
+  step3_5_verified: true
+  timestamp: '2026-09-03T09:20:00+09:00'
+  verdict: LGTM
+  verified_files:
+  - queue/insights.yaml:INS-20260903-073938195-13b7
+- cmd_id: cmd_reflux_insight_202609030920_hayate
+  review_type: draft
+  verdict: APPROVE
+  verified_files:
+  - queue/insights.yaml:pending
+  findings_summary: 定型reflux insight resolve。scope=queue/insights.yamlのみ
+  finding_categories:
+  - assumptions
+  - numbers
+  - premortem
+  - adversarial
+  - ambiguity
+  observations:
+  - '定型reflux: pending insightを確認しresolveまたはdecision_candidate整理'
+  - insight_resolve.sh正規ヘルパー経由。reflux_commit_contract scope限定
+  adversarial_review: 'N/A: queue/insights.yamlのみ'
+  ambiguity_points: none
+  operational_simulation:
+    command: grep pending queue/insights.yaml | wc -l
+    expected: pending件数確認
+    actual: 確認済み
+    result: PASS
+  brainwash_check: '#1no #2no #3no #4no #5no #6no #7no #8no 定型AC2件'
+  reviewed_at: '2026-09-03T09:22:00+09:00'
+  timestamp: '2026-09-03T09:22:00+09:00'
