@@ -137,3 +137,30 @@ finally:
     if os.path.exists(tmp): os.unlink(tmp)
 PY
 echo "SOURCE_COMMIT_SET path=$context_path commit=$commit"
+# 2026-09-03 18:10 将軍 D0(T3-S-30): doc lane 反映後も DOC_LANE_ALERT/REQUEST の掲示板 entry は actioned_by 空のまま残り、
+# startup gate が毎回「action_required 未対応 14 件」を鳴らしていた(実測 16 件中 12 件は反映済)。反映済みの source_commit に
+# 一致する open entry を本 script が閉じる。閉じ漏れの数値=grep actioned_by 空 ∧ 同 commit → 0。
+_bb="$ROOT/queue/bulletin_board.yaml"
+if [ -f "$_bb" ] && [ -x "$ROOT/scripts/bulletin_action.sh" ]; then
+    _short="${commit:0:7}"
+    _ctx_base="$(basename "$context_path")"
+    python3 - "$_bb" "$_short" "$context_path" <<'PY2' | while IFS= read -r _bid; do
+import sys, yaml
+path, short, ctx = sys.argv[1:]
+data = yaml.safe_load(open(path, encoding="utf-8")) or {}
+for e in data.get("entries", []) or []:
+    if not isinstance(e, dict): continue
+    if str(e.get("action_type", "")).strip() != "action_required": continue
+    if str(e.get("actioned_by", "") or "").strip(): continue
+    if str(e.get("status", "")).lower() == "closed": continue
+    c = str(e.get("content", ""))
+    if not c.startswith("DOC_LANE_"): continue
+    if ctx not in c: continue
+    if short in c: print(e.get("id"))
+PY2
+        [ -n "$_bid" ] || continue
+        bash "$ROOT/scripts/bulletin_action.sh" shogun "$_bid" >/dev/null 2>&1 \
+            && echo "DOC_LANE_ACTIONED entry=$_bid commit=$_short" \
+            || echo "DOC_LANE_ACTION_FAIL entry=$_bid commit=$_short" >&2
+    done
+fi
