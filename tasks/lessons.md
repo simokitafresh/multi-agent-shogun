@@ -16900,3 +16900,17 @@ sqlite3.Connection.backup()を使うとページ(4096byte)単位のread syscall�
 - **when**: 未設定
 - **how**: 未設定
 - latest Claude CLI(--print)に system_prompt_v4.txt をstdin内へ混在させて渡すと、既定モデルは『113.5字(全角換算・URL除く)で140字以内。以下が最終投稿本文です。』のような前置き・見出し・区切り線(---)混入を高頻度で返した(実測2636byte)。同じ内容を--system-promptフラグへ分離して渡すと同条件で前置きゼロの契約準拠本文を再現性をもって取得できた(実測356byte・387byte・465byte全て前置きなし)。ただし--system-prompt利用時でも稀に『字数の説明』文が混入する個体差があったため、生成後のfail-close検証(メタ語パターンマッチ)を安全網として併設する必要がある。LLM出力契約は指示文だけで100%は守られず、system prompt分離+生成後検証の二段構えが必要。
+
+
+### L1727: gunshi_review_log.yamlのフィールド名drift(reviewed_at→timestamp)が既存fallback判定を静かに無効化した
+- **日付**: 2026-09-03
+- **出典**: cmd_karo_hotfix_stale_review_notification_supersede_202609031859
+- **記録者**: tobisaru
+- **tags**: [infra,inbox,review,gate,bash]
+- **subdomain**: infra
+- **target_files**: [scripts/inbox_mark_read.sh,tests/unit/test_inbox_mark_read.bats]
+- **origin**: [[cmd_karo_hotfix_stale_review_notification_supersede_202609031859]]
+- **enforcement**: 未自動化
+- **when**: 未設定
+- **how**: 未設定
+- inbox_mark_read.shのverify_read_receipt()はreview_log内entryの'reviewed_at'キーでreview完了時刻を判定していたが、直近のgunshi review記録は'timestamp'のみを書き'reviewed_at'を書かなくなっていた(直近15エントリ全数0/15で確認)。結果、fingerprint不一致時のfallback照合(review_entriesベース)が構造的に到達不能になり、旧generation通知が'review not recorded'で永久BLOCKされた。教訓: ある構造(review_log等)のフィールド名が別スクリプトのロジックに暗黙依存している場合、書き手側のフィールド名変更(reviewed_at→timestamp)がconsumer側の判定を静かに死なせる。根治はreview_log依存を経由せずgate directoryの承認ファイルを直接照合する経路へ切替えることで、フィールド名drift自体への耐性を得た
