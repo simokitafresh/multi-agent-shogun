@@ -1101,3 +1101,15 @@ entries:
     - 'karo'
   confirmed_by: ["karo"]
   status: "closed"
+- id: 'blt_20260903_123807_77b9ea'
+  content: |-
+    DOC_LANE_ALERT: context=context/infrastructure.md raw_alert=ALERT: context/infrastructure.md source commits 2件 since last_updated=2026-09-03 repo=/home/simokitafresh/multi-agent-shogun root_fallback=no timeout=360s/360s owner=infra-platform update_trigger=.github|.githooks|config|docs/rule|docs/knowledge-base|instructions|scripts|skills|tests|AGENTS.md|CLAUDE.md|CONTRIBUTING.md|LICENSE|Makefile|SECURITY.md|first_setup.sh|install.bat|lefthook-local.yml|lefthook.yml|project_lexicon.yaml|setup.sh|shutsujin_departure.sh。更新要否を確認せよ latest: 69a039d71006 D0: gunshi_log_append LG085をgate_prediction判定に変更 — actual欄の自然言語regex偽陽性を根治(T3-G-03) | 55de986f7391 D0: inbox_mark_read approval-file shortcut — 同一fpでLGTM approval存在ならtimestamp check不要(T3-G-05根治) action: bash scripts/context_source_commit_set.sh context/infrastructure.md 69a039d71006 'context_freshness reviewed source boundary' 'context_freshness_check context=context/infrastructure.md commit=69a039d71006'
+  posted_by: 'gate_context_freshness'
+  posted_at: '2026-09-03T12:38:07'
+  requires_confirmation: false
+  action_type: 'action_required'
+  actioned_by: ''
+  notify_targets:
+    - 'shogun'
+  confirmed_by: []
+  status: 'open'
