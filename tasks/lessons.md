@@ -16788,3 +16788,17 @@ sqlite3.Connection.backup()を使うとページ(4096byte)単位のread syscall�
 - **when**: 未設定
 - **how**: 未設定
 - cmd_reflux_insight_202609031149_kotaroでbash scripts/insight_resolve.shをtask worktree(/home/simokitafresh/shogun-task-worktrees/kotaro_316468498dd90a52)内で実行したところ、メインリポジトリのqueue/flags/publisher_singleは存在する(2026-09-03T04:37:56作成)がworktreeには複製されておらず、insight_resolve.sh内のpublisher_single_insights_enabled()がfalseと判定された。この結果ledger_writer.sh経由のledger op発行ではなく、python3による直接ファイル置換(legacy経路)が使われ、stdoutは'OK: <id> → resolved'のみでledger op pathが出力されなかった。AC2は『insight_resolve.shのstdoutに出るledger op pathをfinding.evidence_pathへ記録』を要求するが、task worktree環境では構造的にこの証跡が得られないケースがある。同種reflux_insightタスクで再発しうるため、worktree生成時にqueue/flags/*フラグファイルを複製するか、insight_resolve.shがREPO_ROOTをworktreeでなく元repoから解決するようフォールバックする対策を検討すべき
+
+
+### L1718: 自動publisher commitが直前セッションの手動fixを無自覚に上書きしうる: git log --follow -pで関数単位の変遷を確認せよ
+- **日付**: 2026-09-03
+- **出典**: cmd_karo_ci_fix_33715111045_publisher_ledger_consumer
+- **記録者**: tobisaru
+- **tags**: [infra,testing,bash,git]
+- **subdomain**: infra
+- **target_files**: [scripts/insight_write.sh]
+- **origin**: [[cmd_karo_ci_fix_33715111045_publisher_ledger_consumer]]
+- **enforcement**: 未自動化
+- **when**: 未設定
+- **how**: 未設定
+- scripts/insight_write.shのledger_route_enabled()は07:26:58 commit f4e6ab789でSHOGUN_STATE_DIR明示opt-in分岐(ledger-aware fixture用)を獲得したが、2時間46分後の10:12:06 commit b4635d06e('publisher: task=cmd_4468_full', author=single-publisher)がPUBLISHER_SINGLEフラグ機構(publisher_single_insights_enabled/INSIGHTS_LEDGER_ROUTE)を導入する際に同関数の本体を丸ごと置換し、SHOGUN_STATE_DIR分岐を意図せず消失させた。CI shard1がtest_publisher_ledger_consumer.batsで2 run連続FAILするまで誰も気づかなかった。この種の自動publisher commitは複数ninjaの変更を1つのcommitへ集約するため、片方の変更が他方の既存ロジックを構造的に(git的にはconflictなしで)上書きしうる。原因特定にはgit log --follow -pで対象関数の各版のfull diffを時系列で追い、いつ・どのcommitで意図が消えたかを単一変数比較で確定するのが有効だった
