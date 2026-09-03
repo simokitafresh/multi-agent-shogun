@@ -3261,3 +3261,36 @@
     actual: "commit"
     result: PASS
   timestamp: "2026-09-04T07:13:20"
+- cmd_id: self_study_remediation_verified_files_20260904_02
+  review_type: self_study
+  verdict: N/A
+  remediation:
+    target_cmd_id: cmd_karo_hotfix_bulletin_prune_ledger_followup_202609032329
+    target_review_type: correction
+    target_reviewed_at: "2026-09-04T06:13:00+09:00"
+    fields:
+      verified_files: "queue/reports/kotaro_report_cmd_karo_hotfix_bulletin_prune_ledger_followup_202609032329.yaml:228"
+    evidence:
+      - "queue/reports/kotaro_report_cmd_karo_hotfix_bulletin_prune_ledger_followup_202609032329.yaml:228"
+      - "9ac0df65cd919927b49c9af87814d175f0b3dab0"
+  findings_summary: "cs_checklist cmd_3573 WARN: correction entry(06:13 root_dirty_recovery_T3-S-54)にverified_files欠落。報告のcommit_hash行と実commit実在(git cat-file -t=commit)を現物照合し構造化remediationで補完"
+  observations:
+    - "事実1: queue/reports/kotaro_report_cmd_karo_hotfix_bulletin_prune_ledger_followup_202609032329.yaml:228 に commit_hash 9ac0df65cd919927b49c9af87814d175f0b3dab0 が記載され git cat-file -t が commit を返した"
+    - "事実2: yaml_field_set.sh は同一cmd_idの first-match(draft entry)しか更新できず correction entry へ直接追記不可(INS-20260904-071149109-7199)"
+    - "事実3: cs_checklist は self_study remediation(target_review_type+target_reviewed_at一致)で欠落fieldを被覆する契約を持つ(gate_gunshi_cs_checklist.sh:798-)"
+  cs_checklist:
+    CS1: "review_log の当該cmd_id全entry(draft/report/correction)を sed で全件確認"
+    CS2: "自システムの cs_checklist 出力で WARN 2件を実測"
+    CS3: "gate_gunshi_cs_checklist.sh:798-840 の remediation 判定コードを現物確認"
+    CS4: "remediation entry 追記で被覆=行動。yaml_field_set の block 指定不足は insight 化済み"
+    CS5: "correction entry を生成する root_dirty_recovery 側で verified_files を必須化する余地あり"
+    CS6: "correction entry 生成→verified_files 欠落→cs WARN→remediation 被覆。真因は生成側の契約欠落"
+  brainwash_check: "#1no #2no #3no #4no #5no #6no #7no #8no 数値: WARN 2件中 本entryで1件被覆、commit実在 1/1"
+  causal_chain: "root_dirty_recovery が correction entry を verified_files なしで生成→cs_checklist WARN→first-match 制約で直接修正不可→構造化 remediation で被覆。10回繰り返すなら生成側契約が正(負の複利回避)"
+  origin: "[[root_dirty_recovery_T3-S-54]] -> [[correction_entry_verified_files欠落]] -> [[self_study_remediation]]"
+  operational_simulation:
+    command: "git cat-file -t 9ac0df65cd919927b49c9af87814d175f0b3dab0"
+    expected: "commit"
+    actual: "commit"
+    result: PASS
+  timestamp: "2026-09-04T07:13:20"
