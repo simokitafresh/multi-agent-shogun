@@ -1534,15 +1534,31 @@ cmd_complete_gate_publisher_origin_ready() {
     local -a _source_shas=("$@")
     local timeout_seconds="${CMD_COMPLETE_GATE_ORIGIN_ANCESTOR_WAIT_SECONDS:-10}"
     local events_file="${SHOGUN_STATE_DIR:-$HOME/.local/share/multi-agent-shogun}/publish_queue/events.jsonl"
-    local start_ts now_ts
+    local start_ts now_ts remaining
     [[ "$timeout_seconds" =~ ^[0-9]+$ ]] || timeout_seconds=10
+    # cmd_karo_hotfix_t3s40_post_source_perf_202609032243: ids/source_shas are
+    # invariant across every poll iteration. Re-encoding them via two extra
+    # python3 spawns per 0.5s tick (as landed in 9ff24e941) turned the
+    # configured 10s ceiling into an unbounded cost under production CPU
+    # contention (measured: post_source_checks max ~60s, p50 16.1s->27.5s
+    # after that landing) because the elapsed check only runs *after* each
+    # iteration's work, and a single slow python3 fork can itself exceed the
+    # remaining budget. Encode once outside the loop, and bound the one
+    # remaining python3 call to the actual remaining budget with `timeout` so
+    # a stalled/slow check cannot push the total wait past timeout_seconds.
+    local gate_ids_json gate_source_shas_json
+    gate_ids_json="$(printf '%s\n' "${_ids_ref[@]}" | python3 -c 'import json,sys; print(json.dumps([l.strip() for l in sys.stdin if l.strip()]))')"
+    gate_source_shas_json="$(printf '%s\n' "${_source_shas[@]}" | python3 -c 'import json,sys; print(json.dumps([l.strip() for l in sys.stdin if l.strip()]))')"
     start_ts=$(date +%s)
     while :; do
+        now_ts=$(date +%s)
+        remaining=$(( timeout_seconds - (now_ts - start_ts) ))
+        (( remaining > 0 )) || return 1
         if [ -f "$events_file" ] \
             && PUBLISHER_EVENTS_FILE="$events_file" \
-               GATE_IDS_JSON="$(printf '%s\n' "${_ids_ref[@]}" | python3 -c 'import json,sys; print(json.dumps([l.strip() for l in sys.stdin if l.strip()]))')" \
-               GATE_SOURCE_SHAS_JSON="$(printf '%s\n' "${_source_shas[@]}" | python3 -c 'import json,sys; print(json.dumps([l.strip() for l in sys.stdin if l.strip()]))')" \
-               python3 - <<'PY'
+               GATE_IDS_JSON="$gate_ids_json" \
+               GATE_SOURCE_SHAS_JSON="$gate_source_shas_json" \
+               timeout "$remaining" python3 - <<'PY'
 import json, os
 
 ids = {value for value in json.loads(os.environ["GATE_IDS_JSON"]) if value}
