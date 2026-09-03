@@ -99,7 +99,7 @@ report_logical=$(PROJECT_ROOT="$ROOT" review_report_logical_path "$report") || {
 rc_restore_snapshot_common() {
   local snap="$1" task_path="$2" report_path="$3" approval_dir="$4" approval_base="$5" restore_worker="$6"
   local scope_path="$7" commit_path="$8" payload_path="$9" expected_task_sha="${10}" expected_report_sha="${11}"
-  local actual_task_sha actual_report_sha tmp i src dest restore_ok=1 manifest
+  local actual_task_sha actual_report_sha tmp i src dest restore_ok=1 manifest generation_marker
   [ -f "$snap/task.yaml" ] && [ -f "$snap/report.yaml" ] || return 1
   python3 -c 'import sys,yaml; yaml.safe_load(open(sys.argv[1],encoding="utf-8")); yaml.safe_load(open(sys.argv[2],encoding="utf-8"))' \
     "$snap/task.yaml" "$snap/report.yaml" >/dev/null 2>&1 || return 1
@@ -114,6 +114,16 @@ rc_restore_snapshot_common() {
     src="$snap/${srcs[$i]}"
     [ ! -e "$src" ] || { [ -f "$src" ] && [ ! -L "$src" ]; } || return 1
   done
+  generation_marker="$ROOT/queue/reports/.deploy_generation_$(basename "$report_path")"
+  if [ -e "$snap/deploy_generation.marker" ] || [ -e "$snap/deploy_generation.marker.absent" ]; then
+    [ ! -e "$snap/deploy_generation.marker" ] || {
+      [ -f "$snap/deploy_generation.marker" ] && [ ! -L "$snap/deploy_generation.marker" ] || return 1
+    }
+    [ ! -e "$snap/deploy_generation.marker.absent" ] || {
+      [ -f "$snap/deploy_generation.marker.absent" ] && [ ! -L "$snap/deploy_generation.marker.absent" ] || return 1
+    }
+    [ ! -e "$snap/deploy_generation.marker" ] || [ ! -e "$snap/deploy_generation.marker.absent" ] || return 1
+  fi
   if [ -e "$snap/gate_triggered.manifest" ] || [ -e "$snap/gate_triggered.marker" ]; then
     [ -f "$snap/gate_triggered.manifest" ] && [ ! -L "$snap/gate_triggered.manifest" ] \
       && [ -f "$snap/gate_triggered.marker" ] && [ ! -L "$snap/gate_triggered.marker" ] || return 1
@@ -132,6 +142,17 @@ rc_restore_snapshot_common() {
     fi
   done
   [ "$restore_ok" -eq 1 ] || return 1
+  if [ -f "$snap/deploy_generation.marker" ]; then
+    tmp=$(mktemp "${generation_marker}.rc-restore.XXXXXX") || return 1
+    if ! cp -f "$snap/deploy_generation.marker" "$tmp" || ! mv -f "$tmp" "$generation_marker"; then
+      rm -f "$tmp"
+      return 1
+    fi
+    cmp -s "$snap/deploy_generation.marker" "$generation_marker" || return 1
+  elif [ -f "$snap/deploy_generation.marker.absent" ]; then
+    rm -f "$generation_marker"
+    [ ! -e "$generation_marker" ] || return 1
+  fi
   if [ -f "$snap/gate_triggered.manifest" ]; then
     dest="$approval_base/.gate_triggered.$manifest"; tmp=$(mktemp "${dest}.rc-restore.XXXXXX") || return 1
     cp -f "$snap/gate_triggered.marker" "$tmp" && mv -f "$tmp" "$dest" || return 1
@@ -916,6 +937,15 @@ if [ "$role" = karo ] && [ "$result" = RC ]; then
   printf '%s\n' "$canonical_generation" > "$snapshot_dir/report_generation"
   cp -f "$task_file" "$snapshot_dir/task.yaml"
   cp -f "$report" "$snapshot_dir/report.yaml"
+  rc_generation_marker="$ROOT/queue/reports/.deploy_generation_$(basename "$report_logical")"
+  if [ -f "$rc_generation_marker" ] && [ ! -L "$rc_generation_marker" ]; then
+    cp -f "$rc_generation_marker" "$snapshot_dir/deploy_generation.marker"
+  elif [ ! -e "$rc_generation_marker" ]; then
+    : > "$snapshot_dir/deploy_generation.marker.absent"
+  else
+    echo "BLOCK: formal RC deployment-generation marker is not a regular file: $rc_generation_marker" >&2
+    exit 1
+  fi
   snapshot_task_sha=$(sha256sum "$snapshot_dir/task.yaml" | awk '{print $1}')
   snapshot_report_sha=$(sha256sum "$snapshot_dir/report.yaml" | awk '{print $1}')
   printf '%s\n' "$snapshot_task_sha" > "$snapshot_dir/task.sha256"
@@ -1082,6 +1112,11 @@ PY
     "completed_at=" \
     "done_at="; then
     echo "BLOCK: formal RC task/report identity transaction rolled back: worker=$worker_id" >&2
+    exit 1
+  fi
+  if [ "$rc_test_fault" = marker_update ] \
+    || ! review_deploy_generation_marker_update "$ROOT" "$report_logical" "$pre_rc_report_id" "$rc_report_id"; then
+    echo "BLOCK: formal RC deployment-generation marker identity publication rolled back: $report_logical" >&2
     exit 1
   fi
   # RC_REVOKE compares against the generation produced by this RC, not the

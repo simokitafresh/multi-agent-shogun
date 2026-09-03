@@ -415,6 +415,41 @@ review_report_logical_path() {
     printf 'queue/reports/%s\n' "$base"
 }
 
+# A formal RC rotates the live report identity without changing the report
+# generation inputs used by deploy_task. Keep the deployment-generation
+# marker's source/query columns stable and atomically replace only its report_id
+# column. Authenticate the old ID first so an unrelated marker cannot be
+# silently repaired into this generation.
+review_deploy_generation_marker_update() {
+    local root="$1" report_logical="$2" old_report_id="$3" new_report_id="$4"
+    local report_base marker marker_line marker_path marker_source marker_query marker_id marker_tmp
+    [[ "$report_logical" == queue/reports/*.yaml ]] || return 1
+    report_base=${report_logical#queue/reports/}
+    [[ "$report_base" != */* && -n "$report_base" ]] || return 1
+    [ -n "$old_report_id" ] && [ -n "$new_report_id" ] || return 1
+    marker="$root/queue/reports/.deploy_generation_$report_base"
+    [ -f "$marker" ] && [ ! -L "$marker" ] || return 1
+    [ "$(wc -l < "$marker")" -eq 1 ] || return 1
+    marker_line=$(<"$marker")
+    IFS=$'\t' read -r marker_path marker_source marker_query marker_id <<< "$marker_line"
+    [ "$marker_path" = "$report_logical" ] || return 1
+    [[ "$marker_source" =~ ^[0-9a-f]{64}$ ]] || return 1
+    [[ "$marker_query" =~ ^[0-9a-f]{64}$ ]] || return 1
+    [ "$marker_id" = "$old_report_id" ] || return 1
+    marker_tmp=$(mktemp "${marker}.rc.XXXXXX") || return 1
+    if ! printf '%s\t%s\t%s\t%s\n' \
+        "$marker_path" "$marker_source" "$marker_query" "$new_report_id" > "$marker_tmp"; then
+        rm -f "$marker_tmp"
+        return 1
+    fi
+    if ! mv -f "$marker_tmp" "$marker"; then
+        rm -f "$marker_tmp"
+        return 1
+    fi
+    [ "$(wc -l < "$marker")" -eq 1 ] || return 1
+    return 0
+}
+
 review_validate_cmd_id() { [[ "$1" =~ ^cmd_[A-Za-z0-9_]+$ || "$1" =~ ^campaign_lane_[A-Za-z0-9._-]+$ ]]; }
 
 # Resolve the terminal report set from report-owned identity.  Task YAML is a

@@ -25,6 +25,7 @@ YAML
 
 _make_rc_identity_fixture() {
     local cmd_id="$1" worker="$2"
+    local report="$PROJECT_ROOT/queue/reports/${worker}_report_${cmd_id}.yaml"
     mkdir -p "$PROJECT_ROOT/queue/tasks" "$PROJECT_ROOT/queue/locks" \
         "$PROJECT_ROOT/queue/inbox" "$PROJECT_ROOT/logs"
     cat > "$PROJECT_ROOT/queue/tasks/${worker}.yaml" <<YAML
@@ -58,6 +59,16 @@ binary_checks:
 files_modified:
   - path: scripts/review_approval.sh
 YAML
+    _seed_generation_marker "$report" rpt-22222222-2222-4222-8222-222222222222
+}
+
+_seed_generation_marker() {
+    local report="$1" report_id="$2"
+    printf 'queue/reports/%s\t%s\t%s\t%s\n' \
+        "$(basename "$report")" \
+        1111111111111111111111111111111111111111111111111111111111111111 \
+        2222222222222222222222222222222222222222222222222222222222222222 \
+        "$report_id" > "$PROJECT_ROOT/queue/reports/.deploy_generation_$(basename "$report")"
 }
 
 _assert_yaml_equal() {
@@ -91,17 +102,19 @@ _seed_rc_markers() {
 }
 
 _marker_fingerprint() {
-    local cmd_id="$1" worker="$2" report="$3" key base dir
+    local cmd_id="$1" worker="$2" report="$3" key base dir generation_marker
     key="$(PROJECT_ROOT="$PROJECT_ROOT" bash -c 'source "$1/scripts/lib/review_approval.sh"; review_report_key "${2#"$1"/}"' _ "$PROJECT_ROOT" "$report")"
     base="$PROJECT_ROOT/queue/gates/$cmd_id/review_approvals"
     dir="$base/reports/$key"
-    python3 - "$dir" "$base" "$PROJECT_ROOT/queue/gates/$cmd_id" "$worker" <<'PY'
+    generation_marker="$PROJECT_ROOT/queue/reports/.deploy_generation_$(basename "$report")"
+    python3 - "$dir" "$base" "$PROJECT_ROOT/queue/gates/$cmd_id" "$worker" "$generation_marker" <<'PY'
 import hashlib, pathlib, sys
-directory, base, gate, worker = pathlib.Path(sys.argv[1]), pathlib.Path(sys.argv[2]), pathlib.Path(sys.argv[3]), sys.argv[4]
+directory, base, gate, worker, generation_marker = pathlib.Path(sys.argv[1]), pathlib.Path(sys.argv[2]), pathlib.Path(sys.argv[3]), sys.argv[4], pathlib.Path(sys.argv[5])
 paths = [directory / name for name in (
     "karo.yaml", "gunshi.yaml", "gunshi_notice.sent", "last_rc_scope",
     "last_rc_commit", "last_rc_report_payload", "last_rc_snapshot_dir")]
 paths += [base / "karo_rework.seen", gate / "review_gate.done", gate / f"gunshi_report_review_notify_{worker}.done"]
+paths.append(generation_marker)
 paths += sorted(base.glob(".gate_triggered.*"))
 for path in paths:
     payload = path.read_bytes() if path.is_file() else b"<absent>"
@@ -256,6 +269,7 @@ YAML
     local archive_before old_id new_task_id new_report_id
     archive_before="$(sha256sum "$archive" | awk '{print $1}')"
     old_id=rpt-11111111-1111-4111-8111-111111111111
+    _seed_generation_marker "$report" "$old_id"
 
     run bash "$PROJECT_ROOT/scripts/review_approval.sh" "$cmd_id" karo RC "$report" implementation
     echo "$output" >&3
@@ -264,6 +278,7 @@ YAML
     new_report_id="$(python3 -c 'import sys,yaml; print(yaml.safe_load(open(sys.argv[1]))["report_id"])' "$report")"
     [ "$new_task_id" = "$new_report_id" ]
     [ "$new_report_id" != "$old_id" ]
+    [ "$(awk -F '\t' '{print $4}' "$PROJECT_ROOT/queue/reports/.deploy_generation_$(basename "$report")")" = "$new_report_id" ]
     [ "$(sha256sum "$archive" | awk '{print $1}')" = "$archive_before" ]
 
     run bash -c 'source "$1/scripts/lib/review_approval.sh"; PROJECT_ROOT="$1" review_resolve_reports "$2"' _ "$PROJECT_ROOT" "$cmd_id"
@@ -275,6 +290,64 @@ YAML
     [ "$status" -eq 0 ]
     [ "$(python3 -c 'import sys,yaml; print(yaml.safe_load(open(sys.argv[1]))["task"]["report_id"])' "$task")" = "$old_id" ]
     [ "$(python3 -c 'import sys,yaml; print(yaml.safe_load(open(sys.argv[1]))["report_id"])' "$report")" = "$old_id" ]
+}
+
+# test_necessity: missing or malformed deployment metadata must fail closed
+# regression_justification: cmd_karo_hotfix_deploy_generation_rc_sync_202609040724
+# before an RC can publish a report/task split identity.
+@test "formal RC blocks on missing or stale deployment-generation marker" {
+    local cmd_id=cmd_karo_rc_identity_marker_guard worker=identitymarkerguard
+    _make_rc_identity_fixture "$cmd_id" "$worker"
+    local task="$PROJECT_ROOT/queue/tasks/${worker}.yaml"
+    local report="$PROJECT_ROOT/queue/reports/${worker}_report_${cmd_id}.yaml"
+    local marker="$PROJECT_ROOT/queue/reports/.deploy_generation_${worker}_report_${cmd_id}.yaml"
+    cp "$task" "$BATS_TEST_TMPDIR/task.before"
+    cp "$report" "$BATS_TEST_TMPDIR/report.before"
+    rm -f "$marker"
+
+    run bash "$PROJECT_ROOT/scripts/review_approval.sh" "$cmd_id" karo RC "$report" implementation
+    [ "$status" -ne 0 ]
+    _assert_yaml_equal "$BATS_TEST_TMPDIR/task.before" "$task"
+    _assert_yaml_equal "$BATS_TEST_TMPDIR/report.before" "$report"
+    [ ! -e "$marker" ]
+
+    _seed_generation_marker "$report" rpt-stale-marker
+    cp "$task" "$BATS_TEST_TMPDIR/task.before-invalid"
+    cp "$report" "$BATS_TEST_TMPDIR/report.before-invalid"
+    run bash "$PROJECT_ROOT/scripts/review_approval.sh" "$cmd_id" karo RC "$report" implementation
+    [ "$status" -ne 0 ]
+    _assert_yaml_equal "$BATS_TEST_TMPDIR/task.before-invalid" "$task"
+    _assert_yaml_equal "$BATS_TEST_TMPDIR/report.before-invalid" "$report"
+    [ "$(awk -F '\t' '{print $4}' "$marker")" = rpt-stale-marker ]
+}
+
+# test_necessity: every formal RC generation, including a repeated RC, must
+# leave task, report, and marker identities equal.
+# regression_justification: cmd_karo_hotfix_deploy_generation_rc_sync_202609040724
+@test "repeated formal RC keeps task report and marker identities aligned" {
+    local cmd_id=cmd_karo_rc_identity_marker_repeat worker=identitymarkerrepeat
+    _make_rc_identity_fixture "$cmd_id" "$worker"
+    local task="$PROJECT_ROOT/queue/tasks/${worker}.yaml"
+    local report="$PROJECT_ROOT/queue/reports/${worker}_report_${cmd_id}.yaml"
+    local marker="$PROJECT_ROOT/queue/reports/.deploy_generation_${worker}_report_${cmd_id}.yaml"
+    run bash "$PROJECT_ROOT/scripts/review_approval.sh" "$cmd_id" karo RC "$report" implementation
+    [ "$status" -eq 0 ]
+    local first_id
+    first_id="$(awk -F '\t' '{print $4}' "$marker")"
+    [ "$first_id" = "$(python3 -c 'import sys,yaml; print(yaml.safe_load(open(sys.argv[1]))["report_id"])' "$report")" ]
+    bash "$PROJECT_ROOT/scripts/report_field_set.sh" "$report" status revision_requested
+    bash "$PROJECT_ROOT/scripts/report_field_set.sh" "$report" commit_hash bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb
+    bash "$PROJECT_ROOT/scripts/report_field_set.sh" "$report" status completed
+    bash "$PROJECT_ROOT/scripts/lib/yaml_field_set.sh" "$task" task status done
+    run bash "$PROJECT_ROOT/scripts/review_approval.sh" "$cmd_id" karo RC "$report" implementation
+    [ "$status" -eq 0 ]
+    local second_id task_id report_id marker_id
+    task_id="$(python3 -c 'import sys,yaml; print(yaml.safe_load(open(sys.argv[1]))["task"]["report_id"])' "$task")"
+    report_id="$(python3 -c 'import sys,yaml; print(yaml.safe_load(open(sys.argv[1]))["report_id"])' "$report")"
+    marker_id="$(awk -F '\t' '{print $4}' "$marker")"
+    [ "$task_id" = "$report_id" ]
+    [ "$report_id" = "$marker_id" ]
+    [ "$report_id" != "$first_id" ]
 }
 
 # test_necessity: a task publication failure after the live report rotates must
@@ -452,6 +525,7 @@ YAML
     bash "$PROJECT_ROOT/scripts/report_field_set.sh" "$report" status revision_requested
     bash "$PROJECT_ROOT/scripts/report_field_set.sh" "$report" report_id \
         rpt-33333333-3333-4333-8333-333333333333
+    _seed_generation_marker "$report" rpt-33333333-3333-4333-8333-333333333333
     local fence="$PROJECT_ROOT/queue/gates/$cmd_id/review_approvals/.rc_identity_transaction"
     mkdir -p "${fence%/*}"
     printf 'cmd_id: %s\n' "$cmd_id" > "$fence"
