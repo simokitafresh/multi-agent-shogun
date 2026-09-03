@@ -710,6 +710,29 @@ has_deferred_nudge_for_fp() {
     grep -q "^fingerprint=${fingerprint}\$" "$DEFERRED_NUDGE_FILE" 2>/dev/null
 }
 
+# 2026-09-04 04:25 将軍 D0(T3-S-52): Claude CLI は前 turn の tool 表示(『1 shell still running』)が
+# 終端しないと入力欄の queued テキスト(『❯ inbox3』)を送信しない。軍師が 02:50〜03:44、03:5x〜04:20 の
+# 2 回、この状態で静止し nudge が永久保留になった。pane 末尾に『❯ <非空テキスト>』があり、その内容が
+# BUSY_TIMEOUT_SEC 以上不変で、確認ダイアログでも実行中表示でもなければ Enter を 1 回送って送信させる。
+# 送出は 1 stall につき 1 回(state file の hash 単位)。confirmation guard を通過した後だけ送る。
+_release_queued_prompt_if_stalled() {
+    local target="$1" pane_tail queued_line state_file prev_hash sent_hash
+    pane_tail=$(tmux capture-pane -t "$target" -p -J -S -30 2>/dev/null | sed '/^[[:space:]]*$/d' | tail -8)
+    printf '%s\n' "$pane_tail" | grep -Eq 'esc to interrupt|Running…|Running\.\.\.|Working \(' && return 1
+    queued_line=$(printf '%s\n' "$pane_tail" | grep -E '^[[:space:]]*❯[[:space:]]+[^[:space:]]' | tail -1)
+    [ -n "$queued_line" ] || return 1
+    _pane_has_confirmation_prompt "$target" && return 1
+    _pane_tail_stable_for "$target" "$BUSY_TIMEOUT_SEC" || return 1
+    state_file="/tmp/inbox_watcher_pane_tail_${AGENT_ID:-unknown}"
+    prev_hash=$(cut -d' ' -f1 "$state_file" 2>/dev/null || true)
+    sent_hash=$(cat "${state_file}.released" 2>/dev/null || true)
+    [ -n "$prev_hash" ] && [ "$prev_hash" = "$sent_hash" ] && return 1
+    tmux send-keys -t "$target" Enter 2>/dev/null || return 1
+    printf '%s\n' "$prev_hash" > "${state_file}.released" 2>/dev/null || true
+    echo "[$(date)] [STALL-RELEASE] queued prompt unchanged for ${BUSY_TIMEOUT_SEC}s on $AGENT_ID; sent Enter (line: ${queued_line:0:40})" >&2
+    return 0
+}
+
 # pane 末尾(非空 12 行)の hash を /tmp に記録し、同じ hash が min_sec 以上続いていれば 0 を返す。
 _pane_tail_stable_for() {
     local target="$1" min_sec="$2" tail_hash state_file now
@@ -790,6 +813,8 @@ maybe_force_idle_flag() {
         if _pane_tail_stable_for "$PANE_TARGET" "$BUSY_TIMEOUT_SEC"; then
             last_active=0
         fi
+        # T3-S-52: queued 入力が送信されずに止まっているなら Enter で送信させ、この周期は idle 化しない
+        _release_queued_prompt_if_stalled "$PANE_TARGET" && return 1
         [[ "$BUSY_TIMEOUT_SEC" =~ ^[0-9]+$ ]] || return 1
         now="$EPOCHSECONDS"
         elapsed=$((now - last_active))
