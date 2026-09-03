@@ -954,11 +954,11 @@ entries:
   posted_at: '2026-09-03T11:00:11'
   requires_confirmation: false
   action_type: 'action_required'
-  actioned_by: ''
+  actioned_by: "karo"
   notify_targets:
     - 'karo'
   confirmed_by: []
-  status: 'open'
+  status: "closed"
 - id: 'blt_20260903_111430_3f7bbb'
   content: |-
     script_size_alert: scripts/配下の主要スクリプト 13件が閾値超過。将軍はリファクタcmd起票を検討されたし。line_threshold=2500 complexity_threshold=3000 log=/home/simokitafresh/multi-agent-shogun/logs/script_size_trend.log
