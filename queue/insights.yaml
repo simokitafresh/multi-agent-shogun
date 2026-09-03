@@ -15612,3 +15612,10 @@ insights:
   resolved_reason: "semantic map generation verified the candidate is represented or intentionally ignored"
   action_artifact: "semantic_map=/home/simokitafresh/multi-agent-shogun/context/semantic-map.md;semantic_index=/home/simokitafresh/multi-agent-shogun/docs/semantic-index/index.md"
   resolved_at: "2026-09-03T09:44:11.094094"
+- id: INS-20260903-094422155-1367
+  ts: "2026-09-03T09:44:22+09:00"
+  insight: "publisher C2a: reflux task が queue/insights.yaml を直編集して commit すると、artifact base と origin tip の間で publisher ledger batch が同 file を変更するため base_blob_mismatch で RC になる(実測 2026-09-03 0812/0912 kotaro・0920 hayate の 3 連続、いずれも家老が isolated clone 3-way 統合で回収)。ToBe: reflux の resolve を scripts/insight_resolve.sh の ledger op(publisher apply)へ寄せ、reflux task の commit 契約 scope から queue/insights.yaml を外す(cmd_4468 AC1 の範囲外なら追加起票)。"
+  priority: "high"
+  source: "karo:reflux_c2a_base_blob_mismatch"
+  fix_known: false
+  status: pending
