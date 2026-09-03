@@ -15692,3 +15692,24 @@ insights:
   source: "semantic_stress_test"
   fix_known: false
   status: pending
+- id: INS-20260903-105722225-437c
+  ts: "2026-09-03T10:57:22+09:00"
+  insight: "[[ginbox1r]] semantic_stress_test candidate_aliases: NO_MATCH source=lord query=ginbox1r"
+  priority: "low"
+  source: "semantic_stress_test"
+  fix_known: false
+  status: pending
+- id: INS-20260903-105722624-c003
+  ts: "2026-09-03T10:57:22+09:00"
+  insight: "[[殿 10 46『前提とする環境が変わったはずだ]] semantic_stress_test candidate_aliases: NO_MATCH source=cmds query=殿 2026-09-03 10:46『前提とする環境が変わったはずだ。もう一度 8 分類で全員で探索。tsumari_root_causes_20260901.md を更新しよう』。第 1 回(09-01 cmd_4442、27 事例)・第 2 回(09-03 02:53 将軍単独、24 事例+T2-27)は旧 push 経路の時代。04:37 の flag"
+  priority: "low"
+  source: "semantic_stress_test"
+  fix_known: false
+  status: pending
+- id: INS-20260903-105722971-ed59
+  ts: "2026-09-03T10:57:22+09:00"
+  insight: "[[偵察 全ロール・第 3 回 PUBLISHER SINGLE ON 09 03 04 37 以降の便を止める『つまり』を]] semantic_stress_test candidate_aliases: NO_MATCH source=cmds query=偵察(全ロール・第 3 回): PUBLISHER_SINGLE ON(09-03 04:37)以降の便を止める『つまり』を 8 分類(偽陽性/過剰 BLOCK/構造バグ/循環拘束/遅い script・test/Claude↔Codex 仕組み差/サンクコスト過剰複雑化/影響範囲・依存未解明の浅い対応)で全数リストアップし、忍者 6 名は領域分担で queu"
+  priority: "low"
+  source: "semantic_stress_test"
+  fix_known: false
+  status: pending
