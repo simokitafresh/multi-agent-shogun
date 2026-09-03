@@ -3111,3 +3111,39 @@
   verdict: LGTM
   verified_files:
   - scripts/single_publisher_close_check.sh:1
+- brainwash_check: '#1no #2no #3no #4no #5no #6no #7no #8no | 再承認: precheck 1/1 ERRORS=0,
+    旧key generation==msg fingerprint 一致を実測'
+  causal_chain: survey prompt干渉→env抑止+guard→解消
+  cmd_id: cmd_karo_hotfix_claude_survey_prompt_guard_202609040216
+  finding_categories:
+  - assumptions
+  - numbers
+  - simulation
+  - premortem
+  - adversarial
+  - ambiguity
+  findings_summary: 4観点OK。survey抑止env注入+guard。45/45 PASS
+  gate_prediction: CLEAR
+  gate_prediction_reason: all checks passed
+  observations:
+  - '事実1: 45/45 PASS SKIP0'
+  - '事実(再承認 2026-09-04T07:02:14): 前LGTM 2026-09-04T02:33:00 は旧identity keyに記録され、identity
+    v2 key bfaef142c146 には gunshi.yaml 不在(review_two_phase_ready_gunshi=NO)。同一generation
+    63abc0d3aa12 へ正規入口 single で正式approval発行。precheck再実行 ERRORS=0/CLEAR。ledger_writer
+    entry_id は軍師D0 f1dc1f764 で先頭キー非依存化済み'
+  operational_simulation:
+    actual: ERRORS=0
+    command: precheck
+    expected: CLEAR
+    result: PASS
+  report_fingerprint: 63abc0d3aa12c85f406bf163d62ab6fbcb29654782cfdcdc176bd29f5d1240f1
+  report_ninja: kagemaru
+  report_task_id: cmd_karo_hotfix_claude_survey_prompt_guard_202609040216_normal
+  report_verdict: PASS
+  review_type: report
+  reviewed_at: '2026-09-04T07:02:14+09:00'
+  step3_5_verified: true
+  timestamp: '2026-09-04T07:02:14'
+  verdict: LGTM
+  verified_files:
+  - scripts/cli_lookup.sh:1
