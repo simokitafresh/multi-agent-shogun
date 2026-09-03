@@ -95,6 +95,84 @@ run_tests_install_cleanup_traps() {
     trap 'run_tests_on_signal' TERM INT
 }
 
+# Test fixtures may invoke review/publisher commands that use SHOGUN_STATE_DIR
+# rather than the fixture's own REVIEW_APPROVAL_ROOT.  Keep every public test
+# execution in a task-specific state namespace so those child processes cannot
+# enqueue requests into the live publisher queue.  The state parent deliberately
+# lives under the durable state root: publisher_queue.sh rejects /tmp and any
+# repository path because both are unsafe for publication state.
+run_tests_init_state_isolation() {
+    if [[ "${RUN_TESTS_STATE_ISOLATED:-0}" == "1" ]]; then
+        [[ -n "${SHOGUN_STATE_DIR:-}" ]] || {
+            printf 'BLOCK: test state isolation marker has no SHOGUN_STATE_DIR\n' >&2
+            return 2
+        }
+        local inherited_state
+        inherited_state="$(realpath -m -- "$SHOGUN_STATE_DIR")" || {
+            printf 'BLOCK: inherited test state isolation path cannot be resolved: %s\n' "$SHOGUN_STATE_DIR" >&2
+            return 2
+        }
+        case "$inherited_state" in
+            /tmp|/tmp/*|"$REPO_ROOT"|"$REPO_ROOT"/*)
+                printf 'BLOCK: inherited test state isolation path is unsafe: %s\n' "$inherited_state" >&2
+                return 2
+                ;;
+        esac
+        return 0
+    fi
+
+    local mode="${1:-affected}" identity="${2:-}" state_parent state_dir key state_home
+    identity="${identity##*/}"
+    identity="${identity%.yaml}"
+    [ -n "$identity" ] || identity="$mode"
+    key="$(printf '%s' "$identity" | tr -c 'A-Za-z0-9_.-' '_')"
+    [ -n "$key" ] || key=run
+    state_home="${HOME:-}"
+    [ -n "$state_home" ] || {
+        printf 'BLOCK: test state isolation requires HOME\n' >&2
+        return 2
+    }
+    state_parent="$state_home/.local/share/multi-agent-shogun/run-tests-state"
+
+    mkdir -p "$state_parent" || {
+        printf 'BLOCK: test state isolation parent initialization failed: %s\n' "$state_parent" >&2
+        return 2
+    }
+    [ -d "$state_parent" ] && [ -w "$state_parent" ] || {
+        printf 'BLOCK: test state isolation parent is not writable: %s\n' "$state_parent" >&2
+        return 2
+    }
+    state_dir="$(mktemp -d "$state_parent/${key}.XXXXXX")" || {
+        printf 'BLOCK: test state isolation directory initialization failed: %s\n' "$state_parent" >&2
+        return 2
+    }
+    state_dir="$(realpath -m -- "$state_dir")"
+    case "$state_dir" in
+        /tmp|/tmp/*|"$REPO_ROOT"|"$REPO_ROOT"/*)
+            printf 'BLOCK: test state isolation directory is unsafe: %s\n' "$state_dir" >&2
+            return 2
+            ;;
+    esac
+    mkdir -p "$state_dir/publish_queue/run" \
+        "$state_dir/publish_queue/rc" \
+        "$state_dir/publish_queue/dequeued" || {
+        printf 'BLOCK: test publisher state initialization failed: %s\n' "$state_dir" >&2
+        return 2
+    }
+    [ -d "$state_dir/publish_queue/run" ] \
+        && [ -d "$state_dir/publish_queue/rc" ] \
+        && [ -d "$state_dir/publish_queue/dequeued" ] \
+        && [ -w "$state_dir/publish_queue" ] || {
+        printf 'BLOCK: test publisher state is not writable: %s\n' "$state_dir" >&2
+        return 2
+    }
+    export SHOGUN_STATE_DIR="$state_dir"
+    export RUN_TESTS_STATE_DIR="$state_dir"
+    export RUN_TESTS_STATE_ISOLATED=1
+    printf 'TEST_STATE_ISOLATION mode=%s identity=%s state_dir=%s\n' \
+        "$mode" "$identity" "$state_dir" >&2
+}
+
 snapshot_test_tree() {
     local mode="$1" out="$2"
     case "$mode" in
@@ -2169,6 +2247,7 @@ cleanup_frontend_ext4_fallback() {
 # 経路(関数直接呼出し)で回避するために必要な構造。
 _run_tests_main() {
     run_tests_queue_root_guard
+    run_tests_init_state_isolation "${1:-affected}" "${2:-}" || return $?
 
     # cmd_karo_hotfix_heavy_job_admission_202607121348: 全量/unit/affectedモードは
     # host-wide flock semaphore(scripts/heavy_job_admission.sh)経由で自分自身を
@@ -2699,12 +2778,14 @@ if [[ "${BASH_SOURCE[0]:-$0}" == "${0}" ]]; then
     fi
     if [[ "${1:-}" == "--receipt-inner" ]]; then
         shift
+        run_tests_init_state_isolation "${1:-affected}" "${2:-}" || exit $?
         _run_tests_main "$@"
     else
         _requested_tap="${BATS_TAP_OUTPUT:-}"
         _receipt_dir="${RUN_TESTS_RECEIPT_DIR:-$REPO_ROOT/logs/test_receipts}"
         mkdir -p "$_receipt_dir"
         _mode="${1:-affected}"
+        run_tests_init_state_isolation "$_mode" "${2:-}" || exit $?
         _singleflight=0
         # Explicit heavy_job_admission callers already own the outer lock.
         # Taking the single-flight lock underneath it would invert the normal

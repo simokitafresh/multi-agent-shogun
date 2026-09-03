@@ -201,3 +201,35 @@ PY
     [ "$status" -ne 0 ]
     [[ "$output" == *"unchanged since Karo RC"* ]]
 }
+
+# test_necessity: every run_tests child must inherit a task-specific publisher
+# state root, so an enqueue from a review fixture can never reach the live
+# publish_queue.
+# regression_justification: PD-142 / cmd_karo_hotfix_test_publisher_state_isolation_202609032047
+@test "run_tests propagates isolated publisher state to child fixtures" {
+    local fixture="$BATS_TEST_TMPDIR/publisher-state-probe.bats"
+    cat > "$fixture" <<'BATS'
+#!/usr/bin/env bats
+
+@test "publisher event stays in the runner state root" {
+    [[ "${SHOGUN_STATE_DIR:-}" == */.local/share/multi-agent-shogun/run-tests-state/* ]]
+    [ -d "$SHOGUN_STATE_DIR/publish_queue/run" ]
+    [ -d "$SHOGUN_STATE_DIR/publish_queue/rc" ]
+    [ -d "$SHOGUN_STATE_DIR/publish_queue/dequeued" ]
+
+    run bash "$PROJECT_ROOT/scripts/lib/publisher_event.sh" append dry_run_publish cmd_state_isolation_probe 0 state_probe
+    [ "$status" -eq 0 ]
+    [ -s "$SHOGUN_STATE_DIR/publish_queue/events.jsonl" ]
+    grep -q 'cmd_state_isolation_probe' "$SHOGUN_STATE_DIR/publish_queue/events.jsonl"
+
+    live="$HOME/.local/share/multi-agent-shogun/publish_queue"
+    ! grep -q 'cmd_state_isolation_probe' "$live/events.jsonl" 2>/dev/null
+}
+BATS
+
+    run bash "$PROJECT_ROOT/scripts/run_tests.sh" file "$fixture"
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"TEST_RECEIPT_PASS"* ]]
+    [[ "$output" == *"tests=1/1"* ]]
+    [[ "$output" == *"skip=0"* ]]
+}
