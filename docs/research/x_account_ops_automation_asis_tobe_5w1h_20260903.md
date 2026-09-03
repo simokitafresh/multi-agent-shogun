@@ -1,5 +1,5 @@
 <!-- gist-master: 8e1336f8b297ccd9bd5f407444844434 x_account_ops_automation_asis_tobe_5w1h_20260903.md -->
-# X アカウント運用(バム @TokyoJibika)の Grok 包装→API 自動化 — AsIs / ToBe / 5W1H 設計書 v0.5(2026-09-03 11:05、§9 Grok 質問状への回答=コピペ用、殿指示 10:57。v0.4=09:55、P0 完了=cmd_4467 CLEAR 09:48: ストック台帳 50 entry・slot calendar・包装 gate 6 規則+bats 8、将軍が gate を本番 API で突合。v0.3=04:00 cmd_4463 実測 §1c。v0.2=03:35、殿回答 B-1〜B-10 を §1b/§2/§5 へ反映。v0.1=03:20、殿発案 03:13『grok によるアカウント運用は今後 API などで自動化まで持って行きたい。新しい設計書にしないか』)
+# X アカウント運用(バム @TokyoJibika)の Grok 包装→API 自動化 — AsIs / ToBe / 5W1H 設計書 v0.6(2026-09-03 11:22、§10 X API と xAI API の違い+P1 手順。v0.5=11:05、§9 Grok 質問状への回答=コピペ用、殿指示 10:57。v0.4=09:55、P0 完了=cmd_4467 CLEAR 09:48: ストック台帳 50 entry・slot calendar・包装 gate 6 規則+bats 8、将軍が gate を本番 API で突合。v0.3=04:00 cmd_4463 実測 §1c。v0.2=03:35、殿回答 B-1〜B-10 を §1b/§2/§5 へ反映。v0.1=03:20、殿発案 03:13『grok によるアカウント運用は今後 API などで自動化まで持って行きたい。新しい設計書にしないか』)
 
 ## §0 一文定義
 Grok 作成の「届け方マニュアル」(中身固定・包装のみ変更)を、**ストック記事→スロット→LLM 包装→品質 gate→X API 投稿→KPI 還流**の 1 本の pipeline として段階的に自動化する。戦略・検証・有料層の中身は一切変えない(マニュアル §1 Non-negotiables を pipeline の不変条件として機械化する)。
@@ -175,7 +175,21 @@ B-10 成功指標: エンゲージメント
 3. 読者が最初に聞く質問 10: 不明(公開リプと記事コメントの収集は未実施。B-4 も不明)
 ```
 
+## §10 X API と xAI API の違い(殿下問 09-03 11:19『自動投稿の X API は xAI と別物か』)
+
+| | X API(投稿用、S5/S6 の自分の metrics) | xAI API(Grok、S3 包装/S6 反応収集) |
+|---|---|---|
+| 提供 | X Corp、developer.x.com | xAI、api.x.ai |
+| できること | 投稿・返信・スレッド・自分の投稿 metrics・フォロワー読取り | 文章生成、Live Search(x_search)で X を検索して読む |
+| できないこと | 文章生成 | X への投稿 |
+| 認証 | OAuth 2.0 user context(PKCE、scope=tweet.write tweet.read users.read offline.access)。初回のみブラウザ認可、以後 refresh token | API key(Bearer) |
+| 課金 | 階層制(Free=投稿のみ・月上限/Basic=読取り・metrics 可・有料/Pro=高額)。現行値は developer.x.com Pricing で登録時に確認 | 従量(トークン)+Live Search 回数 |
+| repo 現状 | 未整備(投稿 script 0) | XAI_API_KEY(config/xai_api.env)、x-research/x-thread-fetch skill が読取りで使用 |
+
+P1 実装手順: (1) developer.x.com で Project+App(Free) (2) OAuth 2.0 有効化+scope 4 つ、callback は localhost (3) 一度ブラウザ認可→access/refresh token を `config/x_api.env`(git-ignore)へ (4) `POST /2/tweets`(text)、スレッドは `reply.in_reply_to_tweet_id`、画像は media upload→media_ids (5) 予約は X API に無いので自前 cron が slot_calendar で実行(P2) (6) Automation rules(bot 明示・同一内容連投の制限)に従う=切り口を変える台帳運用が規約面でも必要。token は殿の X アカウント権限そのもの(backend/.env と同等の扱い)。
+
 ## §8 レビュー履歴
+- v0.6(09-03 11:22) §10 X API/xAI API 対比と P1 実装手順
 - v0.5(09-03 11:05) §9 Grok 質問状への回答(A 6 問・B 10 問・D 反映・3 問。C は範囲外)
 - v0.4(09-03 09:55) P0 完了(cmd_4467)。次=P1: 下書き生成(S3、Claude)→gate→ntfy で殿『y』承認→X API 投稿(Free)
 - v0.3(09-03 04:00) cmd_4463 実測を §1c に統合。入口 5 種並存・再掲比 1:5・X 指標は API/Analytics 経由でしか取れない、を設計根拠に追加
