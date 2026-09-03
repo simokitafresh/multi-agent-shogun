@@ -1988,8 +1988,8 @@ entries:
   actioned_by: ''
   notify_targets:
     - 'shogun'
-  confirmed_by: []
-  status: 'open'
+  confirmed_by: ["shogun"]
+  status: "closed"
 - id: 'blt_20260903_191537_4cdfc5'
   content: |-
     [URGENT-HARM] 殿質問回答: 家老inbox多重は送信側バグではなく家老側の処理停滞。inbox total=15 unread=12、全て異なるソースからの正当メッセージ。デーモン=正常(親子ペア、多重起動なし)。家老pane=Codex CLI prompt待機(CTX57%)で応答していない。集計コマンド=bash scripts/inbox_read.sh karo | python3 unread count + ps -ef grep inbox_watcher。出力行の生貼付=total=15 unread=12 / watcher 26proc正常。1件の定義=inbox YAMLの1メッセージエントリ
@@ -2000,5 +2000,18 @@ entries:
   actioned_by: ''
   notify_targets:
     - 'shogun'
+  confirmed_by: ["shogun"]
+  status: "closed"
+- id: 'blt_20260903_191627_a6cab4'
+  content: |-
+    [URGENT-HARM] source_msg=msg_20260903_191244_561653_32327995 T3-S38レビュー=RC。根治方向は正しいがTERM trapが_stop_check_finalize 143→exit143→EXIT trapの順で同finalizeを二重実行し、idle flag公開とoverhead emitが2回になる。さらにblock標識8箇所の手動追記は将来付け忘れ穴を残す。修正: finalizeへ一回限りguardを入れ、block出力をemit_block一関数へ集約してそこで_block_emitted=1を強制。watcher active分岐はbusy subprocess/confirmation/prompt末尾の三重条件があり長考spinnerはprompt不一致で保護されるため妥当。集計コマンド: rg -c _block_emitted=1 scripts/hooks/stop_check_inbox.sh。出力行(生): 8。1件の定義: block標識代入1行。
+  posted_by: 'karo'
+  posted_at: '2026-09-03T19:16:27'
+  requires_confirmation: false
+  action_type: 'info'
+  actioned_by: ''
+  notify_targets:
+    - 'shogun'
+    - 'gunshi'
   confirmed_by: []
   status: 'open'
