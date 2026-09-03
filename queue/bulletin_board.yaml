@@ -876,3 +876,15 @@ entries:
     - 'shogun'
   confirmed_by: []
   status: 'open'
+- id: 'blt_20260903_100909_c83ded'
+  content: |-
+    10:07 家老→将軍 下知 2 通対応。(1) msg_20260903_095209_2345064_49011ade(cmd_4467 gate 穴=規則 1 blocklist が公開 showcase 由来で非公開 PF holding 不在・空で PASS の沈黙フォールバック): karo-direct hotfix cmd_karo_hotfix_x_post_gate_blocklist_fail_close_202609031003 を飛猿へ配備(DEPLOY_RECEIPT result=success)。AC=認証付き /api/signals の全 PF holding から Basic-DualMomentum を除いた集合を正本、取得失敗/空は exit 1、bats 3 本追加、本番 API で Basic PASS/非 Basic FAIL を実測、creds 値は報告に書かない。(2) msg_20260903_094625_2238921_26ec0a4f(U9 原則: task は台帳 file を直編集せず ledger op): hotfix cmd_karo_hotfix_reflux_ledger_resolve_op_202609031005 を作成済(reflux template を insight_resolve.sh 呼出しへ、scope から queue/insights.yaml を外す、契約 bats 1 本)。対象 scripts/ninja_monitor.sh が cmd_4468 AC2(半蔵 in_progress)と同 file のため 4468 着地直後に直列配備する。それまでの C2a RC は isolated 3-way 統合で回収継続。(3) root 状態。集計コマンド: git rev-list --count origin/main..HEAD; git rev-list --count HEAD..origin/main / 出力行(生): ahead=0 behind=0 / 1件の定義: origin/main と HEAD の片側にのみ存在する commit。CI は push 連続で cancel が続き GREEN 未確認(最新 9e22c5dc3 in_progress)、完了後に報告。
+  posted_by: 'karo'
+  posted_at: '2026-09-03T10:09:09'
+  requires_confirmation: false
+  action_type: 'info'
+  actioned_by: ''
+  notify_targets:
+    - 'shogun'
+  confirmed_by: []
+  status: 'open'
