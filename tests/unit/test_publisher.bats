@@ -66,6 +66,27 @@ teardown() {
     [ "$(find "$STATE/publish_queue/done" -name '*.request' | wc -l)" -eq 1 ]
 }
 
+# test_necessity: isolated publication must clone from the local publisher
+# root with an object reference, then fetch only the remote delta from origin.
+@test "isolated publication uses a local reference clone before origin fetch" {
+    mkdir -p "$FIXTURE/bin"
+    cat > "$FIXTURE/bin/git" <<'EOF'
+#!/bin/bash
+printf '%s\n' "$*" >> "${GIT_CALL_LOG:?}"
+exec /usr/bin/git "$@"
+EOF
+    chmod +x "$FIXTURE/bin/git"
+    export GIT_CALL_LOG="$FIXTURE/git-calls"
+    bash "$ROOT/scripts/publisher_queue.sh" enqueue "$FIXTURE/request.yaml" >/dev/null
+    run env PATH="$FIXTURE/bin:$PATH" SHOGUN_STATE_DIR="$STATE" PUBLISHER_REPO_ROOT="$PUBROOT" PUBLISHER_INBOX_WRITER="$FIXTURE/inbox_write.sh" PUBLISHER_ONCE=1 bash "$ROOT/scripts/publisher.sh"
+    [ "$status" -eq 0 ]
+    clone_line="$(grep -- 'clone --no-checkout' "$GIT_CALL_LOG")"
+    [[ "$clone_line" == *"--reference"* ]]
+    [[ "$clone_line" == *"$PUBROOT"* ]]
+    [[ "$clone_line" != *"$REMOTE"* ]]
+    [ "$(grep -c -- '-C .* fetch origin' "$GIT_CALL_LOG")" -ge 1 ]
+}
+
 @test "watchdog publisher health requires live pid and fresh event" {
     mkdir -p "$STATE/publish_queue"
     printf '%s\n' "$$" > "$STATE/publish_queue/publisher.pid"
