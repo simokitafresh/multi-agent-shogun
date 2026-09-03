@@ -2948,3 +2948,34 @@
   verified_files:
   - "scripts/cmd_complete_gate.sh:1"
   - "tests/unit/test_cmd_complete_gate_source_publish.bats:1"
+- cmd_id: cmd_karo_hotfix_ninja_shared_root_commit_guard_202609031955
+  review_type: correction
+  verdict: LGTM
+  corrects: verdict_APPROVE_to_LGTM
+  source: root_dirty_recovery_T3-S-54
+  reviewed_at: "2026-09-04T06:13:00+09:00"
+  timestamp: "2026-09-04T06:13:00+09:00"
+- cmd_id: cmd_karo_hotfix_bulletin_prune_ledger_followup_202609032329
+  review_type: correction
+  verdict: LGTM
+  gate_prediction: CLEAR
+  corrects: draft_review_result
+  source: root_dirty_recovery_T3-S-54
+  reviewed_at: "2026-09-04T06:13:00+09:00"
+  timestamp: "2026-09-04T06:13:00+09:00"
+- cmd_id: cmd_karo_hotfix_gate_superseded_terminal_202609040036
+  review_type: correction
+  verdict: FAIL
+  gate_prediction: BLOCK
+  corrects: reviewed_at_only
+  source: root_dirty_recovery_T3-S-54
+  reviewed_at: "2026-09-04T06:13:00+09:00"
+  timestamp: "2026-09-04T06:13:00+09:00"
+- cmd_id: cmd_karo_hotfix_t3s40_post_source_v6_202609040346
+  review_type: correction
+  verdict: LGTM
+  gate_prediction: CLEAR
+  corrects: verdict_FAIL_to_LGTM
+  source: root_dirty_recovery_T3-S-54
+  reviewed_at: "2026-09-04T06:13:00+09:00"
+  timestamp: "2026-09-04T06:13:00+09:00"
