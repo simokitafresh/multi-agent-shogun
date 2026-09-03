@@ -753,3 +753,39 @@ entries:
     - 'shogun'
   confirmed_by: []
   status: 'open'
+- id: 'blt_20260903_091357_5d2ff0'
+  content: |-
+    09:13 家老報告(msg_20260903_091006_1367570_7f1a4cd9 対応 + CI RED run 33695410178)。(1) reflux dirty dispatch blocked(cmd_reflux_insight_202609030910_hayate, target queue/insights.yaml)=semantic_index_update が root 直で INS status を resolved に書いた dirty 1 件。集計コマンド: git diff --stat queue/insights.yaml / 出力行(生): queue/insights.yaml | 5 ++++-  1 file changed, 4 insertions(+), 1 deletion(-) / 1件の定義=git diff で差分を持つ tracked path 1 本。root が origin より 1 behind(031a87021 vs cc38a2b08 publisher batch)で U1b が rc=8 のため、patch 退避→safe_shared_main_ff cc38a2b08→patch 再適用→U1b で adfe68672 を origin へ push。ahead/behind=0/0。(2) 同時に queue/bulletin_board.yaml が worktree 30 entries vs HEAD 62 entries(wt_only=0, head_only=32)で欠落していたため checkout HEAD で復元(worktree 固有 entry 0 件を確認済)。集計コマンド: python yaml 比較 / 出力行(生): head 62 wt 30 wt_only 0 head_only 32 / 1件の定義=entries[].id。root 直書き生産者の残存=semantic_index_update と bulletin 系の 2 経路。(3) CI RED run 33695410178 sha 506e77b6e: tests/unit/test_publisher_single_flag test 1(line27)/test 5(line85)が SKIP echo 行数 -eq 2 を期待して FAIL(家老 D0 d4da5a26d/c9c92254a の publisher_proof_only 経路が原因)。集計コマンド: gh run view --job 100463553299 --log | grep -c 'not ok' / 出力行(生): not ok 1 PUBLISHER_SINGLE=1 disables cmd_complete_gate autopush and direct source push, not ok 5 publisher flag file disables three legacy paths and removal restores them / 1件の定義=not ok 行。ci_fix を才蔵へ配備(cmd_karo_ci_fix_publisher_single_flag_202609030915, ci_run_id=33695410178)。
+  posted_by: 'karo'
+  posted_at: '2026-09-03T09:13:57'
+  requires_confirmation: false
+  action_type: 'info'
+  actioned_by: ''
+  notify_targets:
+    - 'shogun'
+  confirmed_by: []
+  status: 'open'
+- id: 'blt_20260903_091751_ac339f'
+  content: |-
+    09:19 家老→将軍 下知 msg_20260903_091045_1375556_1d514981(将軍 09:10 台帳 checkpoint 指示)対応完了。関連 cmd: cmd_karo_ci_fix_publisher_single_flag_202609030915(才蔵 ci_fix、run 33695410178)および cmd_reflux_insight_202609030910_hayate(dirty-guard 解除)。台帳 dirty checkpoint(U1b)で root を ff 済: adfe68672(insights)→65f52c33a(bulletin_write fix+insights/gunshi_review_log/semantic/compact_state)→bd3cf9ecd(semantic index 追記分)。集計コマンド: git rev-list --count origin/main..HEAD; git rev-list --count HEAD..origin/main / 出力行(生): ahead=0 behind=0 / 1件の定義=commit。残 dirty=docs/semantic-index/index.md(root writer=semantic_index_update が commit 直後に再追記、周期的に再 checkpoint 要)+queue/shogun_to_karo.yaml(将軍 lane、未接触)。根因 1 件 D0: bulletin_write.sh:619 が entries>50 で bulletin_archive --max-keep 30 を root で実行し、publisher が commit する HEAD(66件)と worktree(30件)の恒久乖離(head_only=36, wt_only=0)を作っていた→flag ON では trim を skip(65f52c33a)。ToBe(台帳 field-aware root sync)までは drain 前の家老 checkpoint 運用を継続。
+  posted_by: 'karo'
+  posted_at: '2026-09-03T09:17:51'
+  requires_confirmation: false
+  action_type: 'info'
+  actioned_by: ''
+  notify_targets:
+    - 'shogun'
+  confirmed_by: []
+  status: 'open'
+- id: 'blt_20260903_091832_b3574c'
+  content: |-
+    INSIGHT_REPEAT: source=skill_script_refs:9abfd94ce2d8bec9 pending_count=4 threshold=3 latest=INS-20260903-091832111-e163 priority=medium insight_summary=SKILL.md追従task[9abfd94ce2d8bec9]: repro
+  posted_by: 'saizo'
+  posted_at: '2026-09-03T09:18:32'
+  requires_confirmation: false
+  action_type: 'action_required'
+  actioned_by: ''
+  notify_targets:
+    - 'shogun'
+  confirmed_by: []
+  status: 'open'

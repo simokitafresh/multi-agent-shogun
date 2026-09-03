@@ -1310,3 +1310,29 @@
   lesson_disposition: not_applicable
   lesson_reference: 'not_applicable'
   resolved_by_cmd: 'cmd_karo_hotfix_publisher_single_flag_file_202609030257'
+- cmd_id: cmd_karo_hotfix_publisher_root_drain_202609030535
+  timestamp: '2026-09-02T22:56:32Z'
+  ninja: system
+  workaround: false
+  event_kind: hotfix
+  auto_captured: true
+  category: rework_auto_capture
+  detail: 'cmd_complete_gate completed rework event (家老 re-capture 09:20: root 直書き entry が ledger lineage 再構成で欠落)'
+  root_cause: 'automatic completion observation'
+  lesson_required: false
+  lesson_disposition: not_applicable
+  lesson_reference: 'not_applicable'
+  resolved_by_cmd: 'cmd_karo_hotfix_publisher_root_drain_202609030535'
+- cmd_id: cmd_karo_hotfix_task_worktree_reclaim_202609030535
+  timestamp: '2026-09-02T22:39:20Z'
+  ninja: system
+  workaround: false
+  event_kind: hotfix
+  auto_captured: true
+  category: rework_auto_capture
+  detail: 'cmd_complete_gate completed rework event (家老 re-capture 09:20: root 直書き entry が ledger lineage 再構成で欠落)'
+  root_cause: 'automatic completion observation'
+  lesson_required: false
+  lesson_disposition: not_applicable
+  lesson_reference: 'not_applicable'
+  resolved_by_cmd: 'cmd_karo_hotfix_task_worktree_reclaim_202609030535'
