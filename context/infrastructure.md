@@ -1,5 +1,6 @@
 # インフラコンテキスト
 <!-- last_updated: 2026-09-03 context_freshness reviewed source boundary -->
+<!-- source_commit:3516dfcccb4e reason:context_freshness reviewed source boundary evidence:context_freshness_check context=context/infrastructure.md commit=3516dfcccb4e -->
 <!-- source_commit:c7b359cfe033 reason:context_freshness reviewed source boundary evidence:context_freshness_check context=context/infrastructure.md commit=c7b359cfe033 -->
 <!-- source_commit:917457ee27c9 reason:context_freshness reviewed source boundary evidence:context_freshness_check context=context/infrastructure.md commit=917457ee27c9 -->
 <!-- source_commit:773c2bf8c9c9 reason:context_freshness reviewed source boundary evidence:context_freshness_check context=context/infrastructure.md commit=773c2bf8c9c9 -->
@@ -50,7 +51,7 @@
 <!-- source_commit:e7c3beb64085 reason:2026-09-02 将軍 doc lane: ancestry 後退検出を push_lane/pre-push へ接続(efc16dcd6/e7c3beb64) evidence:CLEAR 03:02/03:09; safe_ff BLOCK 実証 02:50 -->
 <!-- source_commit:a7cb1ca59831 reason:2026-09-02 将軍 doc lane: legacy outbox envelope 移行 a7cb1ca59(T224 追補) evidence:commit a7cb1ca59; DOC_LANE_ALERT blt_022445 -->
 <!-- source_commit:64f01517a70b reason:2026-09-02 将軍 doc lane: U1 f92d1e376 + ancestry 後退 BLOCK 64f01517a evidence:commits f92d1e376/64f01517a; CLEAR 01:54/02:08; 消失 2 回目 16d831ed9 を復元 -->
-<!-- last_synced_lesson: L1720 -->
+<!-- last_synced_lesson: L1721 -->
 <!-- source_commit:593cfb27a612 reason:2026-09-02 将軍 doc lane: U9 safe_ff 既公開 ours merge 除外 593cfb27a evidence:commit 593cfb27a; CLEAR 01:20; integrate c7710efaf on origin/main -->
 <!-- source_commit:458fc4caa91a reason:2026-09-02 将軍 doc lane: U3 msg_id 限定 receipt 458fc4caa evidence:commit 458fc4caa; CLEAR 01:05; staged 11→0; watcher 9/9 restart 01:06 -->
 <!-- source_commit:4dd6898466a27f10ef7d08ed27549b3c095378de reason:2026-09-01 将軍 doc lane: CI RED #6 Integration ci_fix 59fa70e0b evidence:commit 59fa70e0b; CLEAR 22:57 -->
@@ -184,7 +185,7 @@
 <!-- source_commit:f8c49cbd7 reason:cmd_shogun_commit_reservation_ledger_phase1_20260805 evidence:reviewed -->
 <!-- source_commit:515f0214e reason:cmd_karo_hotfix_ga432_context_freshness reviewed source boundary evidence:cmd_complete_gate project=infra context=context/infrastructure.md commit=515f0214e -->
 <!-- source_commit:23a1ce61205ce4496ab11570583e8e8adcaeac4e reason:reflux backlink SSOT update reviewed evidence:incoming 0 to 1; runner69/69; target doc diff0 -->
-<!-- last_synced_lesson: L1720 -->
+<!-- last_synced_lesson: L1721 -->
 
 結論: 本ファイルは検索起点となる索引層。運用詳細・経緯・教訓本文は7つの詳細正本へ移設した。
 source boundary一致taskはregistryのowner/update_triggerからcontext_update_candidatesを自動注入し、未処理候補はcmd_complete_gateがBLOCK、明示処理済み/無関係はCLEAR。
@@ -235,7 +236,7 @@ source boundary一致taskはregistryのowner/update_triggerからcontext_update_
 結論: 詳細は `docs/research/infrastructure-lessons-reviews-operations.md` に保存。原文を省略せず移設済み。
 見出し: 前節「Infra教訓索引」の連続本文（source lines 1701-2123）。
 - L1503: 既存legacy欠損は不変multisetで隔離せよ（cmd_karo_hotfix_shared_operational_log_ownership_20260801）
-<!-- last_synced_lesson: L1720 -->
+<!-- last_synced_lesson: L1721 -->
 - L1504: appendとarchiveはreaderを含むgeneration transactionにせよ（cmd_karo_hotfix_gunshi_cs_remediation_generation_20260801）
 - L1505: 永続test宣言はtask正本に置く（cmd_4206）
 - L1506: active context DEFERはowner存在だけでなくdirty・baseline変化・fresh leaseの全ANDにせよ（cmd_karo_hotfix_active_context_gate_transient_20260801）
@@ -451,6 +452,7 @@ source boundary一致taskはregistryのowner/update_triggerからcontext_update_
 - L1718: 自動publisher commitが直前セッションの手動fixを無自覚に上書きしうる: git log --follow -pで関数単位の変遷を確認せよ（cmd_karo_ci_fix_33715111045_publisher_ledger_consumer）
 - L1719: inbox YAML行regexで未読判定する際は任意深さindent許容にするな(ブロックスカラー本文との衝突)（cmd_karo_hotfix_inbox_unread_source_202609031435）
 - L1720: inbox YAML行regexで未読判定する際は任意深さindent許容にするな(ブロックスカラー本文との衝突)（cmd_karo_hotfix_inbox_unread_source_202609031435）
+- L1721: 意図的安全BLOCKはartifact意味分類を共通層で検証せよ（cmd_karo_hotfix_hook_failure_ga568_202609031539）
 
 ## 設計標準・テスト・因果
 
@@ -612,3 +614,4 @@ source boundary一致taskはregistryのowner/update_triggerからcontext_update_
 - **cmd_save 偽陽性 5 件の根治(影丸 `cmd_karo_hotfix_cmd_save_five_root_causes_202609031435` 6593ed077、publisher 発行 15:2x)+軍師 D0 手順を U1b へ(e0ff6fcf6)**: `scripts/cmd_save.sh` の (1) q11 検索が /mnt/c の DM-signal tree を走査し 6 分超→対象限定 (2) ac_missing_parent_path が stale checkout 基準→origin/main tree 基準 (3) LG020 が HTTP status/日付/RFC 番号を算出値扱い→除外 (4) PD-104 が awk -F: で値を切詰め→修正 (5) ac_phase_mixing が production_proof 参照文と『検出』で誤判定+別 cmd と合算昇格→修正。殿裁定 13:59『つまりは迂回せずにバグの根治で対応しよう』。→ `memory_db lord_ruling_no_workaround_20260903`
 - **U11 root sync の read-tree --reset 事故(15:00/15:04/15:24)**: `scripts/publisher.sh:252` の `git read-tree -u --reset tip` が tracked path の未 commit 変更を全て捨て、将軍 doc file と cmd queue 登録が消失→家老 checkpoint patch から復元(572b02fbc)。merge=ours の todo map md は残り、driver 無しの infrastructure.md/html は消えた=非重なり dirty path の保護欠落の実証。STOP-SHIP hotfix=半蔵 `cmd_karo_hotfix_u11_nonoverlap_dirty_preserve_202609031510`。→ tsumari T3-S-28
 - **watchdog stop flag delivery(半蔵 `cmd_karo_hotfix_watchdog_stopflag_delivery_202609031532`、殿裁定 15:30『異論はない。正しく直そう』)**: daemon_watchdog は reload 要否を検知したら `publish_queue/publisher.stop` を置き、daemon が request 境界で exit→新コードで再起動→flag 除去を 1 周期で完結させる。flag 非対応の旧 pid は supervisor の職務として watchdog が停止・再起動する(agent の D006 とは別)。15:58 に publisher.sh の旧 pid 3 本(05:56/09:33/13:19)が退場し 15:58:04 起動の新 daemon に入替(将軍 ps 実測)。→ `memory_db lord_ruling_watchdog_supervisor_lifecycle_20260903`
+- **watchdog の daemon 計数を親 pid に限定(小太郎 `cmd_karo_hotfix_watchdog_parent_pid_only_202609031603` 3516dfccc、c2a merge a541fc0b0 で origin 到達 16:2x)**: `scripts/daemon_watchdog.sh` は publisher.sh の pipeline 子 subshell(親 1 本+子 2 本)を daemon 3 本と数え毎分 reload を要求していた(events reload 206 件)→publisher.pid の親 pid のみで生存判定。16:15 以降 reload 0、PUBLISHER-GENERATIONS count=1 state=current。なお本 commit は小太郎 task に task_worktree が無く root 直 commit(root writer #9)→deploy_task --yaml の task_worktree 既定化が残 hotfix。
