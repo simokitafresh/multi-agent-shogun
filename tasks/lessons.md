@@ -16830,3 +16830,17 @@ sqlite3.Connection.backup()を使うとページ(4096byte)単位のread syscall�
 - **when**: 未設定
 - **how**: 未設定
 - (1)inbox YAMLのread:falseフィールドをgrep/awkで数える際、^[[:space:]]*read:...(indent深さ不問)は複数行content(inbox_write.shが|-ブロックスカラーで書く)本文中に偶然『read: false』同形行があると、既読(read:true)メッセージまで未読と誤カウントする。レコード境界(- )とブロックスカラー本体(より深いindentの行)を状態機械で追跡し、レコード直下のフィールド行だけを判定対象にせよ。(2)bats testでCI_READINESS_CACHE等の外部状態依存パスを明示的に隔離しないと、実ホストの本番デーモン(ci_status_check.sh)が書く共有/tmpファイルを読んでしまい、実CI状態次第でtestが偽FAILする(T-SCI-REVIEW-APPROVED-001/002で実証)。同種の外部グローバルpath依存が他のtestにも潜んでいないか横展開余地あり(本タスクではscope外につき未調査)。両方をcmd_karo_hotfix_inbox_unread_source_202609031435で修正。
+
+
+### L1721: 意図的安全BLOCKはartifact意味分類を共通層で検証せよ
+- **日付**: 2026-09-03
+- **出典**: cmd_karo_hotfix_hook_failure_ga568_202609031539
+- **記録者**: kagemaru
+- **tags**: [infra,testing,testing,gate,git]
+- **subdomain**: infra
+- **target_files**: [scripts/gate_improvement_trigger.sh,tests/unit/test_gate_improvement_trigger.bats]
+- **origin**: [[cmd_karo_hotfix_hook_failure_ga568_202609031539]]
+- **enforcement**: 未自動化
+- **when**: 未設定
+- **how**: 未設定
+- 発端: GA-568でpre-commit doc_no_changelogの意図的BLOCKが2件発生。原因: 改善トリガーがGA-PUSH1だけをartifact分類しdoc_no_changelogをlegacy扱い。結果: total=1158のlegacy=2として誤警報。次回はhook種別・rc・artifact実在・固有BLOCK marker・修正文markerを共通分類器で検証し、証跡不備は抑止しない。
