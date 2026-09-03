@@ -15618,4 +15618,7 @@ insights:
   priority: "high"
   source: "karo:reflux_c2a_base_blob_mismatch"
   fix_known: false
-  status: pending
+  status: "resolved"
+  resolved_reason: "一次情報で対象INS-20260903-094422155-1367を確認。現行scripts/insight_resolve.shはcmd_4454_full(commit 1a5c2d829)でledger_writer publisher op経路へ移行済みのため、対象の既知設計候補は実装済み部分として解決する。reflux taskのqueue/insights.yaml scope除外は未実施の残課題であり、別cmdのdecision_candidateへ分離する。"
+  action_artifact: "target queue/insights.yaml:INS-20260903-094422155-1367;implementation scripts/insight_resolve.sh+scripts/ledger_writer.sh@1a5c2d829;ledger route verified;remaining decision_candidate=reflux task commit scope exclusion from queue/insights.yaml;inventory_before=96/19/545/660"
+  resolved_at: "2026-09-03T10:02:50.118369"
