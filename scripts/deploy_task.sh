@@ -11878,7 +11878,51 @@ PY
     return 0
 }
 
+# cmd_karo_hotfix_deploy_yaml_worktree_default_202609031708: code task(hotfix/
+# impl/ci_fix)がtarget_path/planned_pathsを一切宣言しない場合、
+# deploy_task_original_prepare_remote_tip_worktreeのsource_path_count判定が0を
+# 返しtask_worktree_requiredがfalseのまま既定スキップされ、忍者の実装commitが
+# task worktreeではなくshared root HEADへ直接作られていた(karo_direct方式で
+# 配備されたcmd_karo_hotfix_watchdog_parent_pid_only_202609031603が実例、
+# commit 3516dfcccb)。target_path/planned_pathsが宣言されている通常配備は
+# 既存のsource_path_count判定(no-code例外含む)をそのまま尊重し、未宣言時のみ
+# task_worktree_required=trueを既定注入してworktree生成経路へ合流させる。
+# projectが宣言されていないtaskはdeploy_task_resolve_source_repoがそもそも
+# 解決不能でBLOCKするため対象外とする(pre-implementation-review等の最小
+# fixtureがproject無しでdeploy_task_apply_task_mutationsをstub化して直接
+# deploy_task_mainを呼ぶ既存契約を壊さないため)。
+deploy_task_inject_worktree_required_for_code_tasks() {
+    local task_file="$1"
+    local task_type task_worktree_required project has_declared_target
+    task_type=$(FIELD_GET_NO_LOG=1 field_get "$task_file" "task_type" "" 2>/dev/null || true)
+    case "$task_type" in
+        hotfix|impl|ci_fix) ;;
+        *) return 0 ;;
+    esac
+    project=$(FIELD_GET_NO_LOG=1 field_get "$task_file" "project" "" 2>/dev/null || true)
+    [ -n "$project" ] || return 0
+    task_worktree_required=$(FIELD_GET_NO_LOG=1 field_get "$task_file" "task_worktree_required" "false" 2>/dev/null || true)
+    [ "$task_worktree_required" = "true" ] && return 0
+    has_declared_target=$(python3 -c '
+import sys, yaml
+t = (yaml.safe_load(open(sys.argv[1], encoding="utf-8")) or {}).get("task", {})
+v = []
+for k in ("target_path", "planned_paths"):
+    val = t.get(k)
+    if isinstance(val, str):
+        v.append(val)
+    elif isinstance(val, list):
+        v.extend(val)
+print("1" if any(str(x).strip() for x in v) else "0")
+' "$task_file" 2>/dev/null || echo 0)
+    if [ "$has_declared_target" != "1" ]; then
+        yaml_field_set "$task_file" "task" "task_worktree_required" "true"
+        log "WORKTREE_DEFAULT: task_type=$task_type project=$project target_path/planned_paths未宣言のためtask_worktree_required=trueを既定注入"
+    fi
+}
+
 deploy_task_prepare_remote_tip_worktree_dispatch() {
+    deploy_task_inject_worktree_required_for_code_tasks "$1"
     if deploy_task_reuse_existing_remote_tip_worktree "$@"; then
         return 0
     fi
