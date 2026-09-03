@@ -186,3 +186,58 @@
 | T2-21 | stop hook で『将軍かつ loop 中かつ ScheduleWakeup 未呼出』を WARN | 家老 hotfix |
 | T2-26 | preflight の semantic_search を並列化 or キャッシュ | 家老 hotfix(S-10 と同時) |
 | T2-27 | publisher に ledger 消費者(kind=ledger)を実装+ledger_writer.sh を 755 で追跡+実行 bit の契約 test。-x 沈黙スキップは『存在するのに実行不可』を WARN 出力する 1 行を 3 caller に | 将軍 cmd_4465 |
+
+---
+
+# 第 3 回(PUBLISHER_SINGLE ON 09-03 04:37〜、新環境。殿指示 10:46『前提とする環境が変わった。もう一度 8 分類で全員で探索』→cmd_4470 全ロール偵察。将軍節を先行、忍者 6 領域・軍師節・家老節は着地後に統合)
+
+## 将軍統合(分類別件数・第 3 回、将軍節のみ暫定 10:55)
+
+| 分類 | 第 1 回 | 第 2 回 | 第 3 回(将軍節) | 未根治(第 3 回) |
+|---|---|---|---|---|
+| ①偽陽性 | 5 | 4 | 6 | T3-S-19(hook regex) |
+| ②過剰 BLOCK | 1 | 3 | 1 | — |
+| ③構造バグ | 7 | 6 | 9 | T3-S-25(gate の SKILL.md 自動 commit) |
+| ④循環拘束 | 6 | 3 | 3 | T3-S-20(busy gating の WAKE-DEFER 1001/1613) |
+| ⑤遅い script・test | 1 | 1 | 2 | T3-S-21b(CI push 連続 cancel) |
+| ⑥Claude↔Codex 仕組み差 | 0 | 0 | 0 | — |
+| ⑦サンクコスト過剰複雑化 | 1 | 1 | 1 | —(U8 凍結で解消) |
+| ⑧影響範囲・依存未解明の浅い対応 | 6 | 6 | 4 | T3-S-24(publisher merge commit の trailer) |
+| 計 | 27 | 25 | 26 | 5 |
+
+一次計測(将軍 10:52、flag ON 以降): publisher events=c2a_rc 7 / ledger 68 / published 8 / **root_sync_skipped 33**、ledger rc 退避=bulletin 2・insights 29、pre-push reject 14、inbox_watcher WAKE-DEFER=karo 1001・gunshi 1613、close_check(10:42)=trailer 45/50・root dirty 9。
+
+**構造の結論(第 3 回・暫定)**: 発生源は『旧経路どうしの衝突』から **『root に書く生産者と publisher の ff の衝突』(root_sync_skipped 33、③の 9 件中 6 件)** と **『gate/precheck が単一 publisher 前提(commit は publish まで root に無い)に未対応』(①の 6 件中 4 件)** へ移った。前者は U9(cmd_4468)で生産者を 0 にし、後者は precheck 3 本の修正で収束中。第 4 の型=**『supervisor が居ないと入替えられない daemon』**(D006/F009 の板挟み、④)は U10(cmd_4469)で watchdog の責務にした。
+
+## 将軍節(第 3 回。番号 T3-S-xx、時刻 JST、出典=将軍の一次確認・publisher events・家老掲示板)
+
+| ID | 時刻 | 事象 | 主分類 | 真因 | 処置 / 状態 |
+|---|---|---|---|---|---|
+| T3-S-01 | 05:21 | root が origin より ahead 20 で届かず | ③ | flag ON で旧 push が no-op、root 直 commit(doc lane/checkpoint/monitor/insights)に到達経路が無い | 家老 ff push→U1b 経路確立→root drain(U3c)→生産者 0(U9)。根治 |
+| T3-S-02 | 05:2x | publisher push rejected(475a4657d) | ⑧ | artifact capture が deploy 時 base を固定で渡し、忍者の merge 後も base が古い | dded45428 capture base refresh+契約 test。根治 |
+| T3-S-03 | 05:07/05:35 | publisher daemon 死亡 2 回 | ③ | rc の捕捉が if 複合文の後で常に 0→RC 処理誤動作→FileNotFoundError→set -e | 3862932ed 他 4 commit。根治 |
+| T3-S-04 | 05:46〜09:23 | 旧 daemon が新コードを実行せず手動 1 周運用 | ④ | agent は kill 禁止(D006)・殿に依頼禁止(F009)・stop flag は旧 daemon が読まない | 09:23 自壊→watchdog 自動再起動で入替。U10(cmd_4469)で watchdog reload を責務化。根治 |
+| T3-S-05 | 04:58 | U6 ledger route が本番未稼働 | ③ | 実行 bit 検査 644 で常に偽+消費者未実装 | cmd_4465(755 追跡・消費者)。根治 |
+| T3-S-06 | 06:5x | ledger batch が重複 1 op で全中止、applied 移動前に抜け再適用 | ⑧ | 失敗 op の隔離と確定順序の欠落 | 195a924a7/4d0897c46/5895fc921。根治 |
+| T3-S-07 | 06:53 | root tracked dirty 2029 | ③ | .git/config 書直しで core.fileMode=false 消失(tree は NTFS 複写で全 777) | false 再設定+c3fdc90aa で固定。根治 |
+| T3-S-08 | 06:50〜 | bulletin_confirm/action『entry not found』連発 | ④ | 投稿は ledger route、root board は publisher の ff まで更新されない(root 直書きと ledger の二重) | U9 で bulletin 系を ledger op に統一。根治(10:19) |
+| T3-S-09 | 09:13/09:4x | 掲示板 HEAD 66 vs worktree 30 の恒久乖離、台帳 4 file の取残し | ③ | bulletin_write:619 と monitor の時間 trim が root で archive、read-tree が dirty path を保護したまま HEAD だけ進める | 6cd1a3efc/f15d754b5 で ON 時 skip、家老が復元。根治 |
+| T3-S-10 | 06:5x | 軍師 precheck が worktree 専用 file を FILE NOT FOUND | ① | precheck が root checkout のみ参照(単一 publisher では commit は publish まで root に無い) | 0be5e10f3。根治 |
+| T3-S-11 | 10:1x | cmd_4469 review で SG-PRE35 ERROR | ① | 既存 test(in-file test_necessity)を新規 test 契約に混ぜていた | 9d6050e04。根治 |
+| T3-S-12 | 〜08:1x | fallback_gate_status 偽 BLOCK 1 回/CLEAR | ① | ALL_CLEAR の再整合欠落 | 5a52b29cd。根治 |
+| T3-S-13 | 06:3x | precheck tmpdir 残骸 test が flaky | ⑤ | /tmp 共有で並行 precheck と干渉 | 513cef654(TMPDIR 尊重)。根治 |
+| T3-S-14 | 07:2x | semantic test 29 FAIL(fixture entry 消失) | ① | ledger_writer 755 化で fixture の insight_write も ledger route へ逸れた | f4e6ab789(canonical/明示 STATE_DIR のみ)。根治 |
+| T3-S-15 | 08:20 | root 分岐(reflux 直 commit dbc3c3c15 vs origin) | ③ | reflux task が task_worktree 無しで root に直 commit | 506e77b6e(worktree 必須)+resolve を ledger op(hotfix 走行)。根治(hotfix 着地待ち) |
+| T3-S-16 | 09:19 | root の台帳 4 file が HEAD より古い | ③ | T3-S-09 と同根(read-tree 保護) | 家老 復元 53408f376、U9。根治 |
+| T3-S-17 | 05:25/06:14 | U8 物理削除が 2 度正当 FAIL | ⑦ | rg literal census は推移的 test 被覆と別機能再利用を見落とす | 凍結(将軍裁定 06:13)。運用 7 日後に移植設計書 |
+| T3-S-18 | 09:2x | cmd_save BLOCK『観測窓を AC に置くな』 | ② | 本番 3 周期観測を忍者 AC に書いた | production_proof(家老)へ分離。根治(規則は正当) |
+| T3-S-19 | 05:0x | U1b commit が hook で BLOCK(commit message 内の署名の閉じ山括弧を『cmd queue file へのリダイレクト』と誤認) | ① | pre-bash guard の redirect regex が文字列一致で、message 本文まで走査する | message を file から読む回避。**未根治**(guard を『実行行のリダイレクト』に限定する 1 行) |
+| T3-S-20 | 04:23〜 | 家老 CTX 100% で monitor が /clear を送らず(HOOK-TRUST busy)、WAKE-DEFER=karo 1001/gunshi 1613 | ④ | hook 活動を busy と見なし、nudge も clear も保留する busy gating が過剰 | 将軍が clear_command で復帰。**未根治**(CTX≥95% は busy でも clear、WAKE-DEFER の上限で強制配送) |
+| T3-S-21 | 08:1x | CI RED shard1 SKIP=FAIL | ⑧ | 家老の gate 変更で期待 echo が 2 行→1 行 | d4da5a26d。根治。**T3-S-21b**: push 連続で CI run が cancel され GREEN 未確認(⑤、**未根治**=push 集約か concurrency 設定) |
+| T3-S-22 | 09:58 | X gate 規則 1 が空 blocklist で PASS | ③ | 公開 API に非公開 PF の holding が無く、空を PASS 扱い(沈黙フォールバック) | 2fa437a9c(認証 API・fail-close)。根治 |
+| T3-S-23 | 10:42 | close_check 条件(5)が静的 rg で 51 件 FAIL | ① | U8 凍結で残る no-op 行を数える | §15 を runtime 判定に明確化(v3.23b)。根治(定義) |
+| T3-S-24 | 10:42 | publisher の C2a 3-way merge commit に trailer 無し(trailer 45/50 の 2 件) | ⑧ | merge 経路で trailer 付与を忘れ | **未根治**(家老 hotfix 列、msg_104037) |
+| T3-S-25 | 10:42 | gate が SKILL.md の『gate FAIL 履歴』を root で自動 commit(60c20e901) | ③ | 第 5 の root 直書き生産者 | **未根治**(ledger route/U1b へ、家老 hotfix 列) |
+| T3-S-26 | 06:13 | 将軍が家老の誤報で spinner 中の軍師 pane へ send-keys | ⑧ | capture を tail 3 行で判断し spinner を見落とした | 実害なし。以後 -S -40。根治(手順) |
+
+集計コマンド: `grep -oE '^\| T3-S-[0-9]+ \|' docs/research/tsumari_root_causes_20260901.md | wc -l` → 26。根治 21 / 未根治 5(T3-S-19/20/21b/24/25)。忍者 6 領域(T3-<name>-NN)・軍師節・家老節は cmd_4470 着地後にここへ統合。
