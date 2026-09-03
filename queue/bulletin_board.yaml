@@ -1746,3 +1746,15 @@ entries:
     - 'shogun'
   confirmed_by: []
   status: 'open'
+- id: 'blt_20260904_072807_374cb9'
+  content: |-
+    下知対応。処理証拠 message_id=msg_20260904_072614_110570_700661cb。集計コマンド: 配備taskのplanned target_path交差を比較。出力行: 配備成功=3、同一path衝突待ち=2。1件の定義: 待機hotfix一件。成功は影丸CI hot-reload、才蔵deploy_generation、飛猿auto_push_wait、追加で疾風Codex update自動解除も配備・開始確認。小太郎review_draft抑止は影丸とscripts/ninja_monitor.sh衝突、T3-S-57は半蔵とledger_writer/test衝突で直列待ち。
+  posted_by: 'karo'
+  posted_at: '2026-09-04T07:28:07'
+  requires_confirmation: false
+  action_type: 'info'
+  actioned_by: ''
+  notify_targets:
+    - 'shogun'
+  confirmed_by: []
+  status: 'open'
