@@ -342,6 +342,12 @@ for marker in sorted(reports_dir.glob(".deploy_generation_*.yaml")):
     marker_report_name = marker.name[len(".deploy_generation_"):]
     if not re.search(r"_report_" + re.escape(cmd_id) + r"(?:_[^/]*)?\.yaml\Z", marker_report_name):
         continue
+    # A hidden marker is only a claim for the visible report with the same
+    # basename.  Stale/orphan metadata must not poison the active task's
+    # canonical registry: it is deployment TSV, not a report candidate.
+    marker_path = reports_dir / marker_report_name
+    if not marker_path.is_file() or marker_path.is_symlink():
+        continue
     try:
         raw = marker.read_text(encoding="utf-8").splitlines()
     except OSError:
@@ -360,9 +366,6 @@ for marker in sorted(reports_dir.glob(".deploy_generation_*.yaml")):
             or not re.fullmatch(r"[0-9a-f]{64}", source_fp)
             or not re.fullmatch(r"[0-9a-f]{64}", query_key)
             or not marker_report_id):
-        raise SystemExit(1)
-    marker_path = reports_dir / relative_path.name
-    if not marker_path.is_file():
         raise SystemExit(1)
     if relative_path.name in claimed_reports and claimed_reports[relative_path.name] != marker_report_id:
         raise SystemExit(1)
