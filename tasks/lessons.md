@@ -16914,3 +16914,17 @@ sqlite3.Connection.backup()を使うとページ(4096byte)単位のread syscall�
 - **when**: 未設定
 - **how**: 未設定
 - inbox_mark_read.shのverify_read_receipt()はreview_log内entryの'reviewed_at'キーでreview完了時刻を判定していたが、直近のgunshi review記録は'timestamp'のみを書き'reviewed_at'を書かなくなっていた(直近15エントリ全数0/15で確認)。結果、fingerprint不一致時のfallback照合(review_entriesベース)が構造的に到達不能になり、旧generation通知が'review not recorded'で永久BLOCKされた。教訓: ある構造(review_log等)のフィールド名が別スクリプトのロジックに暗黙依存している場合、書き手側のフィールド名変更(reviewed_at→timestamp)がconsumer側の判定を静かに死なせる。根治はreview_log依存を経由せずgate directoryの承認ファイルを直接照合する経路へ切替えることで、フィールド名drift自体への耐性を得た
+
+
+### L1728: 実行されるsource単位へhelperを配置する
+- **日付**: 2026-09-03
+- **出典**: cmd_karo_hotfix_await_clear_slot_release_202609031920
+- **記録者**: kagemaru
+- **tags**: [infra,ninja-monitor,bash]
+- **subdomain**: infra
+- **target_files**: [scripts/ninja_monitor.sh,scripts/deploy_task/main.sh,tests/unit/test_ninja_monitor.bats,tests/unit/test_deploy_task.bats]
+- **origin**: [[cmd_karo_hotfix_await_clear_slot_release_202609031920]]
+- **enforcement**: 未自動化
+- **when**: 未設定
+- **how**: 未設定
+- monolith後段にhelperを置くとmain.sh直接source経路でcommand not foundとなる。runtime callerが直接sourceするsource unitへ定義を置き、2配備fixtureで解決性を固定する。
