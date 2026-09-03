@@ -3532,6 +3532,7 @@ codd:
 | causal_chain | `[[cmd_karo_ci_fix_33630722226_instructions_sync_fp_vocab_202609022153]]` (L1710) |
 | causal_chain | `[[cmd_karo_hotfix_u3_publisher_idempotent_restore_notify_202609022337]]` (L1711) |
 | causal_chain | `[[cmd_karo_hotfix_workarounds_merge_driver_dup_cmd_id_202609030148]]` (L1712) |
+| discussion | `queue/lord_conversation.jsonl` 2026-09-03T15:06:52+09:00 session_save_20260903_1504(軍師復帰点): 12:50 y復帰→deepdive全10Phase→ALERT3件全解消(gate-sync 7件/GP-262遡及/意志依存gate化)。D0 3件(LG070+07 |
 
 ## investment_knowledge_base — 投資知識辞書
 
