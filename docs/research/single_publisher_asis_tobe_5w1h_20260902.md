@@ -352,10 +352,11 @@ canary 判定: **(v1.8 殿裁定 D9)** infra と dm-signal の両 repo を U1 �
 | root と origin | 台帳 dirty で ff 不能が周期的に発生(09:10 behind 1) | ahead 0/behind 0/dirty 0 |
 | §11 after 計測 | 未 | before snapshot と同じ窓で after を取る |
 
-**クローズ条件(全て二値)**: 入替時刻=2026-09-03T09:23:18+09:00(確定)。(1) 入替後 24 時間(=09-04 09:23 以降)、origin 到達 commit の trailer 率 100%(集計: `git log --since=<入替時刻> --format=%B origin/main | grep -c '^Published-By:'` == `git rev-list --count --since=<入替時刻> origin/main`) (2) 同 24 時間、loop tick ごとの root が ahead 0/behind 0/tracked dirty 0(集計: `git status -sb` と `git status --porcelain -uno | wc -l`) (3) daemon 自壊 0(watchdog 自動再起動 log 0 行) (4) §11 after を before と同窓で取り §14.3 に記入 (5) trailer 無し経路(insights auto-commit・monitor integrate・D012 merge)が publisher/wrapper に寄っている(rg で root 直 push の呼出し 0)。
+**クローズ条件(全て二値)**: 入替時刻=2026-09-03T09:23:18+09:00(確定)。(1) 入替後 24 時間(=09-04 09:23 以降)、origin 到達 commit の trailer 率 100%(集計: `git log --since=<入替時刻> --format=%B origin/main | grep -c '^Published-By:'` == `git rev-list --count --since=<入替時刻> origin/main`) (2) 同 24 時間、loop tick ごとの root が ahead 0/behind 0/tracked dirty 0(集計: `git status -sb` と `git status --porcelain -uno | wc -l`) (3) daemon 自壊 0(watchdog 自動再起動 log 0 行) (4) §11 after を before と同窓で取り §14.3 に記入 (5) trailer 無し経路(insights auto-commit・monitor integrate・D012 merge)が publisher/wrapper に寄っている=**flag ON 中に旧経路が実行した push が 0**(runtime 判定: 旧 3 経路の log は『PUBLISHER_SINGLE … result=SKIP』のみ、`git push` 実行 event が publisher/wrapper/root_drain 以外に 0)。※静的な rg 件数(close_check 初版の root_direct_push calls=51)は U8 凍結で残る no-op 行を数えるため条件にしない(ToBe=U8 で行自体も 0、別設計書)。
 **追加でやるべき点(クローズ前)→起票済(09:35)**: A)+B)=cmd_4468(U9)、C)+D)=cmd_4469(U10)。旧: A) insights auto-commit と monitor integrate を publisher request か U1b に寄せる(残る trailer 無し経路 2 本) B) root sync の field-aware merge(台帳 dirty と ledger batch の衝突) C) 旧 daemon 入替の完了確認 D) §11 after 計測。U8(物理削除)はクローズ条件に含めない(凍結、運用 7 日後に別設計書)。
 
 ## §5 レビュー履歴
+- v3.23b(09-03 10:45) §15 条件(5)を runtime 判定に明確化(静的 rg は U8 凍結の no-op 行を数える)。close_check 初回実測(将軍 10:42、起点 09:23:18): trailer 45/50、root dirty 9、自壊 0、after 未、直 push 静的 51
 - v3.23(09-03 10:40) U10 CLEAR、追加 4 点の実装完了。クローズは 24h 実績待ち
 - v3.22(09-03 10:22) U9 CLEAR
 - v3.21(09-03 10:08) 旧 daemon 入替完了 09:23:18、クローズ 24h 窓の起点確定
