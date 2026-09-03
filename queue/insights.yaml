@@ -16472,10 +16472,21 @@ insights:
   priority: "low"
   source: "semantic_index_update"
   fix_known: false
-  status: pending
+  status: "resolved"
+  action_artifact: "semantic_index=/home/simokitafresh/multi-agent-shogun/docs/semantic-index/index.md"
+  resolved_reason: "semantic index candidate was absorbed into a registered concept"
 - id: INS-20260903-170142411-1822
   ts: "2026-09-03T17:01:42+09:00"
   insight: "semantic_index_update未登録[[リンク]]ターゲット: [[X投稿1本]] は既存aliasesに一致なし。類似概念TOP3: semantic_dictionary_design(セマンティック辞書構想; alias=fix R1; score=2.5) / inbox_watcher_process_model(inbox_watcherプロセスモデル; alias=18本正常; score=2.5) / bulletin_communication(掲示板通信基盤; alias=掲示板投稿; score=2.5)。概念定義とaliases追加を検討せよ"
+  priority: "low"
+  source: "semantic_index_update"
+  fix_known: false
+  status: "resolved"
+  action_artifact: "semantic_index=/home/simokitafresh/multi-agent-shogun/docs/semantic-index/index.md"
+  resolved_reason: "semantic index candidate was absorbed into a registered concept"
+- id: INS-20260903-170449161-cb90
+  ts: "2026-09-03T17:04:49+09:00"
+  insight: "semantic_index_update未登録[[リンク]]ターゲット: [[karo_checkpoint_20260903_1703]] は既存aliasesに一致なし。類似概念TOP3: strong_new_game_completion_contract(強くてニューゲーム完遂契約; alias=karo_checkpoint_20260831_0309; score=44.0) / skill_routing(スキルルーティング; alias=karo_direct; score=22.0) / gate_bypass_prevention(ゲート迂回防止; alias=karo_notify; score=21.3)。概念定義とaliases追加を検討せよ"
   priority: "low"
   source: "semantic_index_update"
   fix_known: false
