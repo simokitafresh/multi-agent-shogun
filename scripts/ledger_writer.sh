@@ -73,7 +73,10 @@ entry_id() {
     python3 - "$1" <<'PY'
 import os, re, sys
 text = open(sys.argv[1], encoding="utf-8").read()
-for pattern in (r"^\s*-\s+(?:id|cmd_id):\s*['\"]?([^'\"\s]+)", r"^###\s+(L[0-9]+):"):
+# Review-log entries use cmd_id as the canonical identity. Prefer it when a
+# legacy/generic entry also carries an unrelated id; retain id as fallback for
+# other ledgers and old entries.
+for pattern in (r"^\s*(?:-\s+)?cmd_id:\s*['\"]?([^'\"\s]+)", r"^\s*(?:-\s+)?id:\s*['\"]?([^'\"\s]+)", r"^###\s+(L[0-9]+):"):
     match = re.search(pattern, text, re.MULTILINE)
     if match:
         print(match.group(1)); raise SystemExit(0)

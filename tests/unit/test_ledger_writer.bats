@@ -90,6 +90,21 @@ PY
   env LEDGER_SOURCE_FILE="$TEST_ROOT/logs/gunshi_review_log.yaml" writer apply "$op2" >/dev/null
   [ "$(grep -c 'cmd-review' "$TEST_ROOT/logs/gunshi_review_log.yaml")" -eq 2 ]
 }
+
+# test_necessity: review-log operation identity must follow canonical cmd_id
+# when a legacy entry also carries a generic id field.
+# regression_justification: choosing id first made the ledger operation
+# identity diverge from review_log_has_identity's cmd_id lookup.
+@test "review-log append prefers canonical cmd_id over legacy id" {
+  printf '%s\n' '- id: legacy-review-id' '  cmd_id: cmd-canonical' '  review_type: report' > "$TEST_ROOT/entry.yaml"
+  op="$(env LEDGER_SOURCE_FILE="$TEST_ROOT/logs/gunshi_review_log.yaml" writer append review_log "$TEST_ROOT/entry.yaml")"
+  run python3 - "$op" <<'PY'
+import json, sys
+data = json.load(open(sys.argv[1], encoding="utf-8"))
+assert data["id"] == "cmd-canonical", data
+PY
+  [ "$status" -eq 0 ]
+}
 @test "workaround update operation applies multiple allowlisted fields" {
   printf '%s\n' '- cmd_id: wa-001' '  category: old' '  root_signature: old::family' "  resolved_by_cmd: ''" > "$TEST_ROOT/workarounds.yaml"
   op="$(env LEDGER_SOURCE_FILE="$TEST_ROOT/workarounds.yaml" writer update workarounds wa-001 category=new root_signature=new::family resolved_by_cmd=cmd_fix --expect category=old)"
