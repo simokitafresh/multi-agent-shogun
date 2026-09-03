@@ -15784,3 +15784,10 @@ insights:
   status: "resolved"
   action_artifact: "semantic_map=/home/simokitafresh/multi-agent-shogun/context/semantic-map.md;semantic_index=/home/simokitafresh/multi-agent-shogun/docs/semantic-index/index.md"
   resolved_reason: "semantic map generation verified the candidate is represented or intentionally ignored"
+- id: INS-20260903-122757345-67e4
+  ts: "2026-09-03T12:27:57+09:00"
+  insight: "semantic_index_update新概念候補: discussion:利他の精神で毎回迂回しているものがないか調査して、問題を直そう は 既存aliasesに一致なし。概念定義とaliases追加を検討せよ"
+  priority: "low"
+  source: "semantic_index_update"
+  fix_known: false
+  status: pending
