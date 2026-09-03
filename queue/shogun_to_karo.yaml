@@ -1,7 +1,7 @@
 commands:
   cmd_4473:
     title: "dm-signal.com Agent Readiness Level3 2-6+2-7: LP の well-known 配下に Web Bot Auth 公開鍵 directory(Ed25519 JWKS、HTTP Message Signatures)を配置し、LP に WebMCP(navigator.modelContext polyfill+プラン表照会 tool 1 本)を最小実装して、Cloudflare 診断の 2 項目を ✅ にする"
-    status: pending
+    status: delegated
     project: dm-signal
     purpose: "殿指示 08-31 05:22『Level3 まで全て完了させるロードマップ』(docs/research/agent_readiness_level3_roadmap_20260831.md v1.3、gist da1b7617)。現状(将軍 curl 13:40 本番): 2-2 PRM・2-3/2-4 Agent Card+skills(cmd_4444)・2-8 DNS-AID(TXT 投入済)は done。未着手=2-5(backend /mcp、2 cmd・直列)・2-6(Web Bot Auth 鍵 directory)・2-7(LP WebMCP)。本 cmd は LP のみで完結し可逆な 2-6 と 2-7 を並走で先に閉じ、2-5 は別 cmd(backend)へ。T212 は 09-02 18:45 から起票 0 で 2 日止まっていた"
     scope_mode: NORMAL
