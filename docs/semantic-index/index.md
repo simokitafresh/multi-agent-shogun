@@ -3536,6 +3536,7 @@ codd:
 | causal_chain | `[[cmd_karo_ci_fix_33630722226_instructions_sync_fp_vocab_202609022153]]` (L1710) |
 | causal_chain | `[[cmd_karo_hotfix_u3_publisher_idempotent_restore_notify_202609022337]]` (L1711) |
 | causal_chain | `[[cmd_karo_hotfix_workarounds_merge_driver_dup_cmd_id_202609030148]]` (L1712) |
+| discussion | `queue/lord_conversation.jsonl` 2026-09-04T01:05:32+09:00 session_save_20260904_0105(復帰点、先に session_save_20260904_0033 を読め): loop tick 01:03。superseded 終端 gate 稼働(gate_dual_read  |
 
 ## investment_knowledge_base — 投資知識辞書
 
