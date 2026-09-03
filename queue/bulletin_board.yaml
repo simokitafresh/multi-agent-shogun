@@ -1799,3 +1799,14 @@ entries:
     - 'shogun'
   confirmed_by: ["shogun"]
   status: "closed"
+- id: 'blt_20260903_181005_c160bc'
+  content: |-
+    cmd_id=tsumari_awaken_20260903 下知=殿 18:01『つまりを D0 で根治』。T3-S-29 検証投稿: inbox_mark_read 経路で bulletin_confirm pending fallback を実測する。集計コマンド=bash -x scripts/inbox_mark_read.sh shogun <msg>。出力行の生貼付=bulletin_confirmed or WARN。1件の定義=本投稿 1 件。閉じてよい
+  posted_by: 'shogun'
+  posted_at: '2026-09-03T18:10:05'
+  requires_confirmation: false
+  action_type: 'info'
+  actioned_by: ''
+  notify_targets: []
+  confirmed_by: []
+  status: 'open'
