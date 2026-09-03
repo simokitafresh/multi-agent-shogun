@@ -245,11 +245,19 @@ sync_root() {
             merge_results+=("$overlap_path|$result_file")
         done
 
-        git -C "$root" update-ref HEAD "$tip" "$head"
-        # --reset is intentional: driver outputs are already preserved in
-        # merge_results, so the index/worktree can be aligned to tip before
-        # restoring each merged dirty path.
-        git -C "$root" read-tree -u --reset "$tip"
+        # Update the index without touching the worktree.  Dirty paths are
+        # intentionally left in place; clean paths changed by the tip are
+        # checked out explicitly below, avoiding any operation that can erase
+        # unrelated local edits.
+        git -C "$root" read-tree "$tip"
+        for changed_path in "${changed_paths[@]}"; do
+            [ -n "${dirty_set[$changed_path]+yes}" ] && continue
+            if git -C "$root" cat-file -e "$tip:$changed_path" 2>/dev/null; then
+                git -C "$root" checkout-index -f -- "$changed_path"
+            else
+                rm -f -- "$root/$changed_path"
+            fi
+        done
         local result_path result_source merge_result
         for merge_result in "${merge_results[@]}"; do
             result_path="${merge_result%%|*}"
@@ -257,6 +265,7 @@ sync_root() {
             rm -f -- "$root/$result_path"
             cp -a -- "$result_source" "$root/$result_path"
         done
+        git -C "$root" update-ref HEAD "$tip" "$head"
         rm -rf -- "$merge_root"
     else
         git -C "$root" update-ref HEAD "$tip" "$head"

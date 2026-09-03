@@ -8,7 +8,9 @@ setup() {
     REMOTE="$FIXTURE/remote.git"; WORK="$FIXTURE/work"; PUBROOT="$FIXTURE/pubroot"; STATE="$FIXTURE/state"
     git init --bare -q "$REMOTE"; git init -q "$WORK"
     git -C "$WORK" config user.email test@example.invalid; git -C "$WORK" config user.name test
-    printf 'base\n' > "$WORK/payload.txt"; git -C "$WORK" add payload.txt
+    printf 'base\n' > "$WORK/payload.txt"
+    printf 'base-unrelated\n' > "$WORK/unrelated.txt"
+    git -C "$WORK" add payload.txt unrelated.txt
     git -C "$WORK" commit -q -m base; git -C "$WORK" branch -M main
     git -C "$WORK" remote add origin "$REMOTE"; git -C "$WORK" push -q -u origin main
     BASE="$(git -C "$WORK" rev-parse HEAD)"
@@ -148,6 +150,28 @@ teardown() {
     [ "$status" -eq 0 ]
     [ "$(git -C "$PUBROOT" rev-parse HEAD)" = "$tip" ]
     [ "$(<"$PUBROOT/payload.txt")" = "published" ]
+}
+
+# test_necessity: a tracked dirty path outside the incoming publication must
+# retain its exact bytes while an overlapping path is merged by its driver.
+@test "active root sync preserves a dirty non-overlapping path" {
+    printf 'payload.txt merge=test-driver\n' > "$PUBROOT/.gitattributes"
+    git -C "$PUBROOT" config merge.test-driver.driver 'cp %B %A'
+    printf 'local-overlap\n' > "$PUBROOT/payload.txt"
+    printf 'local-unrelated\n' > "$PUBROOT/unrelated.txt"
+    before_payload="$(sha256sum "$PUBROOT/payload.txt" | awk '{print $1}')"
+    before_unrelated="$(sha256sum "$PUBROOT/unrelated.txt" | awk '{print $1}')"
+    git -C "$WORK" push -q origin HEAD
+    git -C "$PUBROOT" fetch -q origin
+    tip="$(git -C "$PUBROOT" rev-parse origin/main)"
+
+    run bash -c 'PUBLISHER_LIB_ONLY=1 PUBLISHER_REPO_ROOT="$1" source "$2/scripts/publisher.sh"; sync_root "$1" "$3"' _ "$PUBROOT" "$ROOT" "$tip"
+    [ "$status" -eq 0 ]
+    [ "$(git -C "$PUBROOT" rev-parse HEAD)" = "$tip" ]
+    [ "$(sha256sum "$PUBROOT/payload.txt" | awk '{print $1}')" != "$before_payload" ]
+    [ "$(sha256sum "$PUBROOT/unrelated.txt" | awk '{print $1}')" = "$before_unrelated" ]
+    [ "$(<"$PUBROOT/payload.txt")" = "published" ]
+    [ "$(<"$PUBROOT/unrelated.txt")" = "local-unrelated" ]
 }
 
 # test_necessity: an overlapping tracked dirty path without an explicitly
