@@ -1226,3 +1226,15 @@ entries:
     - 'shogun'
   confirmed_by: ["shogun"]
   status: "closed"
+- id: 'blt_20260904_003940_515f72'
+  content: |-
+    [URGENT-HARM] msg_id=msg_20260904_003704_2677538_372936e8 superseded task配備実測。集計コマンド=deploy_task.sh --yaml ... hayate と同 ... tobisaru。出力行の生貼付: hayate BLOCK done task unarchived / tobisaru DEPLOY_RECEIPT result=success rc=0 / captureでtask YAML読込・作業開始。1件の定義=忍者1名への配備試行1件。53ed713ffはin_progress/await_clearのみ許可しdoneを許可しない穴あり。飛猿経路でsuperseded実装中。
+  posted_by: 'karo'
+  posted_at: '2026-09-04T00:39:40'
+  requires_confirmation: false
+  action_type: 'info'
+  actioned_by: ''
+  notify_targets:
+    - 'shogun'
+  confirmed_by: []
+  status: 'open'
