@@ -645,6 +645,32 @@ karo_task_assignment_rows() {
     ' "$inbox_file"
 }
 
+karo_task_assignment_bulletin_stale_evidence() {
+    # 2026-09-03 T3-S-48: a task-worktree checkout (pinned to an old base
+    # commit) or a plain root behind an un-pulled push never sees a bulletin
+    # write the single publisher already committed/applied elsewhere.  Check
+    # the publisher's committed origin/main blob and the shared applied-op
+    # ledger (SHOGUN_STATE_DIR, outside any worktree) before concluding the
+    # needle is absent from the bulletin board.
+    local needle="$1"
+    local remote_ref="${BULLETIN_SOURCE_REMOTE_REF:-origin/main}"
+    local state_dir="${SHOGUN_STATE_DIR:-${HOME:-}/.local/share/multi-agent-shogun}"
+    local applied_dir="${BULLETIN_LEDGER_APPLIED_DIR:-$state_dir/ledger_inbox/bulletin/applied}"
+    local f
+
+    if git -C "$SCRIPT_DIR" rev-parse --verify "${remote_ref}^{commit}" >/dev/null 2>&1 \
+        && git -C "$SCRIPT_DIR" show "${remote_ref}:queue/bulletin_board.yaml" 2>/dev/null | grep -qF "$needle"; then
+        return 0
+    fi
+    if [ -d "$applied_dir" ]; then
+        for f in "$applied_dir"/*.yaml; do
+            [ -f "$f" ] || continue
+            grep -qF "$needle" "$f" && return 0
+        done
+    fi
+    return 1
+}
+
 karo_task_assignment_has_evidence() {
     local message_id="$1" raw_record="$2"
     local task_file="$SCRIPT_DIR/queue/tasks/karo.yaml"
@@ -680,6 +706,16 @@ karo_task_assignment_has_evidence() {
             fi
         done <<< "$cmd_ids"
     done
+
+    if karo_task_assignment_bulletin_stale_evidence "$message_id"; then
+        return 0
+    fi
+    while IFS= read -r cmd_id; do
+        [ -n "$cmd_id" ] || continue
+        if karo_task_assignment_bulletin_stale_evidence "$cmd_id"; then
+            return 0
+        fi
+    done <<< "$cmd_ids"
     return 1
 }
 

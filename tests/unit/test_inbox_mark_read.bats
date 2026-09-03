@@ -35,6 +35,10 @@ SH
     export TEST_READ_SCRIPT="$TEST_ROOT/scripts/inbox_read.sh"
     export INBOX_MARK_READ_ROOT_OVERRIDE="$TEST_ROOT"
     export INBOX_MARK_READ_RECEIPT_DIR="$TEST_ROOT/receipts"
+    # Isolate the bulletin stale-evidence fallback (T3-S-48) from the real
+    # production ledger state; without this, the karo evidence guard would
+    # scan ~/.local/share/multi-agent-shogun's live applied-op ledger.
+    export SHOGUN_STATE_DIR="$TEST_ROOT/state"
 }
 
 teardown() {
@@ -118,6 +122,9 @@ _read_inbox() {
 
 # test_necessity: an unprocessed shogun task_assigned must stay unread in the
 # commander inbox; otherwise the command can be lost without a durable trace.
+# AC2 fixture "双方missing" — no root bulletin entry, no .git (so no
+# origin/main ref), and no applied-ledger dir under the isolated
+# SHOGUN_STATE_DIR: the T3-S-48 fallback must not manufacture evidence.
 @test "karo self task_assigned without processing evidence is blocked" {
     mkdir -p "$TEST_ROOT/queue/tasks"
     printf 'task:\n  status: idle\n' > "$TEST_ROOT/queue/tasks/karo.yaml"
@@ -163,6 +170,7 @@ YAML
 
 # test_necessity: bulletin processing is an alternate durable trace accepted
 # by the commander guard without changing ninja/normal acknowledgement.
+# AC2 fixture "root present" — the normal, unchanged fast path.
 @test "karo self task_assigned with bulletin evidence is allowed" {
     mkdir -p "$TEST_ROOT/queue/tasks"
     printf 'task:\n  status: idle\n' > "$TEST_ROOT/queue/tasks/karo.yaml"
@@ -180,6 +188,70 @@ YAML
     run env INBOX_MARK_READ_ROOT_OVERRIDE="$TEST_ROOT" bash "$TEST_SCRIPT" karo msg_shogun_003
     [ "$status" -eq 0 ]
     [ "$(_get_read_status karo msg_shogun_003)" = "true" ]
+}
+
+# test_necessity: T3-S-48 invariant — a stale local bulletin_board.yaml (task
+# worktree pinned to an old base commit, or a root behind an un-pulled push)
+# must not BLOCK Karo's ack when the single publisher already committed the
+# processing trace to origin/main. AC2 fixture "root stale/origin present".
+@test "karo self task_assigned with stale root but origin/main bulletin evidence is allowed" {
+    mkdir -p "$TEST_ROOT/queue/tasks"
+    printf 'task:\n  status: idle\n' > "$TEST_ROOT/queue/tasks/karo.yaml"
+    cat > "$TEST_ROOT/queue/inbox/karo.yaml" <<'YAML'
+messages:
+- id: msg_shogun_004
+  from: shogun
+  timestamp: '2026-08-28T14:00:00'
+  type: task_assigned
+  content: 'cmd_t122_guard_004 process this task'
+  read: false
+YAML
+    printf 'entries: []\n' > "$TEST_ROOT/queue/bulletin_board.yaml"
+
+    git init -q -b main "$TEST_ROOT"
+    git -C "$TEST_ROOT" config user.email test@example.com
+    git -C "$TEST_ROOT" config user.name test
+    blob="$(printf 'entries:\n- id: bulletin_t122_004\n  content: cmd_t122_guard_004\n' \
+        | git -C "$TEST_ROOT" hash-object -w --stdin)"
+    queue_tree="$(printf '100644 blob %s\tbulletin_board.yaml\n' "$blob" | git -C "$TEST_ROOT" mktree)"
+    root_tree="$(printf '040000 tree %s\tqueue\n' "$queue_tree" | git -C "$TEST_ROOT" mktree)"
+    commit="$(printf 'origin fixture\n' | git -C "$TEST_ROOT" commit-tree "$root_tree")"
+    git -C "$TEST_ROOT" update-ref refs/remotes/origin/main "$commit"
+
+    _read_inbox karo
+    run env INBOX_MARK_READ_ROOT_OVERRIDE="$TEST_ROOT" bash "$TEST_SCRIPT" karo msg_shogun_004
+    [ "$status" -eq 0 ]
+    [ "$(_get_read_status karo msg_shogun_004)" = "true" ]
+}
+
+# test_necessity: same invariant as above for the applied-op ledger source
+# (SHOGUN_STATE_DIR is shared across worktrees, unlike the repo working tree).
+@test "karo self task_assigned with stale root but applied-ledger bulletin evidence is allowed" {
+    mkdir -p "$TEST_ROOT/queue/tasks"
+    printf 'task:\n  status: idle\n' > "$TEST_ROOT/queue/tasks/karo.yaml"
+    cat > "$TEST_ROOT/queue/inbox/karo.yaml" <<'YAML'
+messages:
+- id: msg_shogun_005
+  from: shogun
+  timestamp: '2026-08-28T14:00:00'
+  type: task_assigned
+  content: 'cmd_t122_guard_005 process this task'
+  read: false
+YAML
+    printf 'entries: []\n' > "$TEST_ROOT/queue/bulletin_board.yaml"
+    mkdir -p "$TEST_ROOT/state/ledger_inbox/bulletin/applied"
+    python3 - "$TEST_ROOT/state/ledger_inbox/bulletin/applied/20260903T090000000000000Z_000000000001.yaml" <<'PY'
+import hashlib, json, sys
+entry = "- id: 'bulletin_t122_005'\n  content: cmd_t122_guard_005\n"
+json.dump({"op": "append", "ledger": "bulletin", "id": "bulletin_t122_005",
+           "entry_text": entry, "entry_hash": hashlib.sha256(entry.encode()).hexdigest()},
+          open(sys.argv[1], "w"))
+PY
+
+    _read_inbox karo
+    run env INBOX_MARK_READ_ROOT_OVERRIDE="$TEST_ROOT" bash "$TEST_SCRIPT" karo msg_shogun_005
+    [ "$status" -eq 0 ]
+    [ "$(_get_read_status karo msg_shogun_005)" = "true" ]
 }
 
 @test "msg_id omission blocks when unread messages exist" {
