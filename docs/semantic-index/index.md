@@ -18370,6 +18370,7 @@ codd:
 | causal_chain | `[[cmd_karo_recon2_ninja_prerequisite_audit_20260814]]` (L1588) |
 | causal_chain | `[[cmd_karo_hotfix_inject_seam_contract_missing_202608190548]]` (L1612) |
 | discussion | `queue/lord_conversation.jsonl` 2026-09-03T11:42:24+09:00 session_save_20260903_1145(復帰点、先に session_save_20260903_1115 を読め): loop 11:42: cmd_4470 note 5 本着地(hayate/karo/kotaro/sa |
+| discussion | `queue/lord_conversation.jsonl` 2026-09-03T06:08:50.007227+00:00 git pre-commit semantic propagation for context/projects changes |
 
 ## commander_role_ssot_analysis — Commanderロール SSOT分析
 
