@@ -433,8 +433,11 @@ def validate(bundle, expected_cmd=None, expected_verdict=None):
     if generation and generation != str(review.get("report_fingerprint") or ""):
         raise ValueError("report_generation must match report_fingerprint")
     line = str(review.get("dashboard_line") or "").strip()
-    if not line: raise ValueError("dashboard_line is missing")
-    if not line.startswith(f"- **{cmd_id}**:"): raise ValueError("dashboard_line contradicts cmd_id")
+    # 2026-09-04 05:35 将軍 D0(T3-S-53): dashboard_line は dashboard 表示用の 1 行であり品質判定ではない。
+    # 欠落を BLOCK にすると、軍師の bundle 生成器が field を落とした瞬間に全 cmd の CLEAR が止まる
+    # (T3-S-49/review_bundle が 3.5h BLOCK、全 6 slot が done unarchived で配備不能=陣形 deadlock)。
+    # 欠落は許容し、存在する場合だけ cmd_id との矛盾を検査する。
+    if line and not line.startswith(f"- **{cmd_id}**:"): raise ValueError("dashboard_line contradicts cmd_id")
     return review
 
 # hook_failures.count records how many times a hook fired; it says nothing about
