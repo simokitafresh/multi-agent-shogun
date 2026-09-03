@@ -3546,6 +3546,7 @@ codd:
 | discussion | `queue/lord_conversation.jsonl` 2026-09-04T04:23:13+09:00 session_save_20260904_0430(復帰点、先に session_save_20260904_0348 を読め): loop tick 04:18。軍師 queued『inbox3』未送信 stall 2 回目(03:5x |
 | discussion | `queue/lord_conversation.jsonl` 2026-09-04T04:31:22+09:00 b6h4v704p toolu_01QM4NNvw6ongSCskzA2BYpt /tmp/claude-1000/-home-simokitafresh-multi-agent-shogun/97597e58-25ef-4d7b-bb17 |
 | discussion | `queue/lord_conversation.jsonl` 2026-09-04T06:07:45+09:00 session_save_20260904_0614(復帰点、先に session_save_20260904_0542 を読め): loop tick 06:06。3 GATE(T3-S-49/review_bundle)は sg7_co |
+| discussion | `queue/lord_conversation.jsonl` 2026-09-04T06:19:44+09:00 session_save_20260904_0638(復帰点、先に session_save_20260904_0614 を読め): root review_log dirty を家老が correction ledger(seq22-25 |
 
 ## investment_knowledge_base — 投資知識辞書
 
