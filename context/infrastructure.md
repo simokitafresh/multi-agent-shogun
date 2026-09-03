@@ -1,5 +1,6 @@
 # インフラコンテキスト
 <!-- last_updated: 2026-09-03 context_freshness reviewed source boundary -->
+<!-- source_commit:d6104fed7f27 reason:context_freshness reviewed source boundary evidence:context_freshness_check context=context/infrastructure.md commit=d6104fed7f27 -->
 <!-- source_commit:3d03a2f2c988 reason:context_freshness reviewed source boundary evidence:context_freshness_check context=context/infrastructure.md commit=3d03a2f2c988; grep -c 3d03a2f2c context/infrastructure.md = 1 -->
 <!-- source_commit:2fa437a9cbcb reason:context_freshness reviewed source boundary evidence:context_freshness_check context=context/infrastructure.md commit=2fa437a9cbcb; grep -c 2fa437a9c context/infrastructure.md = 1 -->
 <!-- source_commit:b4635d06e7b4 reason:context_freshness reviewed source boundary evidence:context_freshness_check context=context/infrastructure.md commit=b4635d06e7b4; grep -c b4635d06e context/infrastructure.md = 1 -->
@@ -44,7 +45,7 @@
 <!-- source_commit:e7c3beb64085 reason:2026-09-02 将軍 doc lane: ancestry 後退検出を push_lane/pre-push へ接続(efc16dcd6/e7c3beb64) evidence:CLEAR 03:02/03:09; safe_ff BLOCK 実証 02:50 -->
 <!-- source_commit:a7cb1ca59831 reason:2026-09-02 将軍 doc lane: legacy outbox envelope 移行 a7cb1ca59(T224 追補) evidence:commit a7cb1ca59; DOC_LANE_ALERT blt_022445 -->
 <!-- source_commit:64f01517a70b reason:2026-09-02 将軍 doc lane: U1 f92d1e376 + ancestry 後退 BLOCK 64f01517a evidence:commits f92d1e376/64f01517a; CLEAR 01:54/02:08; 消失 2 回目 16d831ed9 を復元 -->
-<!-- last_synced_lesson: L1716 -->
+<!-- last_synced_lesson: L1717 -->
 <!-- source_commit:593cfb27a612 reason:2026-09-02 将軍 doc lane: U9 safe_ff 既公開 ours merge 除外 593cfb27a evidence:commit 593cfb27a; CLEAR 01:20; integrate c7710efaf on origin/main -->
 <!-- source_commit:458fc4caa91a reason:2026-09-02 将軍 doc lane: U3 msg_id 限定 receipt 458fc4caa evidence:commit 458fc4caa; CLEAR 01:05; staged 11→0; watcher 9/9 restart 01:06 -->
 <!-- source_commit:4dd6898466a27f10ef7d08ed27549b3c095378de reason:2026-09-01 将軍 doc lane: CI RED #6 Integration ci_fix 59fa70e0b evidence:commit 59fa70e0b; CLEAR 22:57 -->
@@ -178,7 +179,7 @@
 <!-- source_commit:f8c49cbd7 reason:cmd_shogun_commit_reservation_ledger_phase1_20260805 evidence:reviewed -->
 <!-- source_commit:515f0214e reason:cmd_karo_hotfix_ga432_context_freshness reviewed source boundary evidence:cmd_complete_gate project=infra context=context/infrastructure.md commit=515f0214e -->
 <!-- source_commit:23a1ce61205ce4496ab11570583e8e8adcaeac4e reason:reflux backlink SSOT update reviewed evidence:incoming 0 to 1; runner69/69; target doc diff0 -->
-<!-- last_synced_lesson: L1716 -->
+<!-- last_synced_lesson: L1717 -->
 
 結論: 本ファイルは検索起点となる索引層。運用詳細・経緯・教訓本文は7つの詳細正本へ移設した。
 source boundary一致taskはregistryのowner/update_triggerからcontext_update_candidatesを自動注入し、未処理候補はcmd_complete_gateがBLOCK、明示処理済み/無関係はCLEAR。
@@ -229,7 +230,7 @@ source boundary一致taskはregistryのowner/update_triggerからcontext_update_
 結論: 詳細は `docs/research/infrastructure-lessons-reviews-operations.md` に保存。原文を省略せず移設済み。
 見出し: 前節「Infra教訓索引」の連続本文（source lines 1701-2123）。
 - L1503: 既存legacy欠損は不変multisetで隔離せよ（cmd_karo_hotfix_shared_operational_log_ownership_20260801）
-<!-- last_synced_lesson: L1716 -->
+<!-- last_synced_lesson: L1717 -->
 - L1504: appendとarchiveはreaderを含むgeneration transactionにせよ（cmd_karo_hotfix_gunshi_cs_remediation_generation_20260801）
 - L1505: 永続test宣言はtask正本に置く（cmd_4206）
 - L1506: active context DEFERはowner存在だけでなくdirty・baseline変化・fresh leaseの全ANDにせよ（cmd_karo_hotfix_active_context_gate_transient_20260801）
@@ -441,6 +442,7 @@ source boundary一致taskはregistryのowner/update_triggerからcontext_update_
 - L1714: 外部task childへaggregate実行状態を継承しない（cmd_karo_hotfix_run_tests_task_mode_nested_guard_202609030347）
 - L1715: showcase API plans[]にholding/ticker非公開(集計metricsのみ)（cmd_4467）
 - L1716: security/complianceゲートのblocklistを外部APIから構築する時は公開範囲を一次確認せよ、取得失敗はfail-close必須（cmd_karo_hotfix_x_post_gate_blocklist_fail_close_202609031003）
+- L1717: task worktreeにはqueue/flags/publisher_singleが伝播せずinsight_resolve.shがlegacy直接書込み経路にフォールバックしledger op pathが出力されない（cmd_reflux_insight_202609031149_kotaro）
 
 ## 設計標準・テスト・因果
 
@@ -591,3 +593,4 @@ source boundary一致taskはregistryのowner/update_triggerからcontext_update_
 - **U9 root 直書き生産者 0(半蔵 cmd_4468 b4635d06e、publisher 発行 10:13)**: PUBLISHER_SINGLE ON 時、insight_write は ledger append のみ(root file 不変・commit 無し)、semantic_index_update は ledger op(kind=semantic_index、apply 時に index.md 再生成)、bulletin 系 confirm/action/archive は ledger update/resolve、ninja_monitor の push_lane integrate(『runtime: integrate』merge commit)は作らない。ledger_writer に semantic_index apply(+46)、root drain は dirty path 一覧を event に。契約 bats 4 file +78。OFF 時は従来どおり。production_proof=本番 3 周期で root dirty 0/ahead 0/behind 0(家老集計)。
 - **X 包装 gate 規則 1 の fail-close(飛猿 `cmd_karo_hotfix_x_post_gate_blocklist_fail_close_202609031003` 2fa437a9c、publisher 発行 10:35)**: blocklist の正本を認証付き `/api/signals` の全 PF holding から Basic-DualMomentum を除いた集合に変更(公開 showcase API には非公開 PF の holding が無く、空なら PASS していた沈黙フォールバックを根治)。取得失敗/空は exit 1。bats 3 本追加。creds は DM-signal backend/.env(報告に値を書かない)。
 - **publisher C2a merge の trailer 固定+第 5 の root writer 抑止(家老 D0 10:5x、3d03a2f2c、U1b)**: `scripts/publisher_c2a_merge.sh` 新設=家老 lane の C2a 3-way 統合を script 化し Published-By trailer を固定(close_check trailer 45/50 の欠落 2 件の根治)。`skill_gate_feedback` は PUBLISHER_SINGLE ON で SKILL.md の注意ポイント追記を skip(gate が root で SKILL.md を自動 commit していた第 5 の root writer)。2e2f56316=疾風 `cmd_karo_hotfix_reflux_ledger_resolve_op_202609031005`(reflux resolve を insight_resolve.sh の ledger update op へ、scope から insights.yaml を除外)。これで tsumari 第 3 回の未根治は 3(hook redirect regex/busy gating/CI cancel 連続)。
+- **U1b push reject の自動 3-way 再試行+inbox_write の task YAML 共有 root 解決+reflux resolve-only identity(家老 D0 11:5x〜12:1x、79f518be1/a72287b81/d6104fed7、publisher 発行)**: `publish_direct_commit.sh` は push reject(origin 先行)時に `publisher_c2a_merge.sh`(PUBLISHER_C2A_MERGE_NOLOCK=1)で 1 回だけ isolated 3-way 統合→root ff(手回し checkpoint の根治、tsumari T3-K-09)。`inbox_write.sh` は task YAML を git common dir の親(共有 root)で解決し、worktree 内 report_received でも publish_artifact capture を skip しない(publisher『missing artifact』根治、T3-K-04)。`review_approval` は reflux resolve-only(ledger op のみ・commit 無し)に ledger-resolve identity を許可(軍師 BLOCK 根治)。→ `docs/research/tsumari_root_causes_20260901.md` 第 3 回 型 1・2
