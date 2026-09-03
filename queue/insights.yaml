@@ -16309,3 +16309,10 @@ insights:
   source: "semantic_index_update"
   fix_known: false
   status: pending
+- id: INS-20260903-153323001-291d
+  ts: "2026-09-03T15:33:23+09:00"
+  insight: "semantic_index_update新概念候補: discussion:ｘAPI登録のステップバイステップのランブックを作ってくれ は 既存aliasesに一致なし。概念定義とaliases追加を検討せよ"
+  priority: "low"
+  source: "semantic_index_update"
+  fix_known: false
+  status: pending
