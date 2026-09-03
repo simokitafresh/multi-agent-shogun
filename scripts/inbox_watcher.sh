@@ -710,6 +710,25 @@ has_deferred_nudge_for_fp() {
     grep -q "^fingerprint=${fingerprint}\$" "$DEFERRED_NUDGE_FILE" 2>/dev/null
 }
 
+# pane 末尾(非空 12 行)の hash を /tmp に記録し、同じ hash が min_sec 以上続いていれば 0 を返す。
+_pane_tail_stable_for() {
+    local target="$1" min_sec="$2" tail_hash state_file now
+    local prev_hash="" prev_ts=""
+    tail_hash=$(tmux capture-pane -t "$target" -p -J -S -30 2>/dev/null | sed '/^[[:space:]]*$/d' | tail -12 | sha256sum | cut -c1-16)
+    [ -n "$tail_hash" ] || return 1
+    state_file="/tmp/inbox_watcher_pane_tail_${AGENT_ID:-unknown}"
+    now=$(date +%s)
+    if [ -r "$state_file" ]; then
+        IFS=' ' read -r prev_hash prev_ts < "$state_file" || true
+    fi
+    if [ "$prev_hash" = "$tail_hash" ] && [[ "$prev_ts" =~ ^[0-9]+$ ]]; then
+        [ $((now - prev_ts)) -ge "$min_sec" ] && return 0
+        return 1
+    fi
+    printf '%s %s\n' "$tail_hash" "$now" > "$state_file" 2>/dev/null || true
+    return 1
+}
+
 # 2026-09-04 02:20 将軍 D0(T3-S-50): Claude CLI の pane は prompt(❯)行の後に区切り線と
 # 状態行(CTX:xx% / ⏵⏵ bypass permissions / Stop hook error occurred)が続くため、
 # 「末尾 1 行が prompt」判定は Claude agent では永久に偽になり、T3-S-38 の fallback が
@@ -763,6 +782,14 @@ maybe_force_idle_flag() {
         local last_active
         last_active=$(tmux display-message -t "$PANE_TARGET" -p '#{@last_active}' 2>/dev/null || true)
         [[ "$last_active" =~ ^[0-9]+$ ]] || return 1
+        # 2026-09-04 02:30 将軍 D0(T3-S-50 追補): Claude pane では scripts/statusline.sh が
+        # 数秒ごとに @last_active を更新するため、@last_active は「最後の活動」ではなく
+        # statusline の心拍になり、BUSY_TIMEOUT_SEC に永久に届かない(軍師 02:22 実測:
+        # 8 秒間隔で 4 回更新)。pane 末尾の内容が BUSY_TIMEOUT_SEC 以上不変なら、
+        # @last_active の鮮度に関わらず活動停止とみなす(内容が変わらない=出力していない)。
+        if _pane_tail_stable_for "$PANE_TARGET" "$BUSY_TIMEOUT_SEC"; then
+            last_active=0
+        fi
         [[ "$BUSY_TIMEOUT_SEC" =~ ^[0-9]+$ ]] || return 1
         now="$EPOCHSECONDS"
         elapsed=$((now - last_active))
