@@ -16871,3 +16871,10 @@ insights:
   source: "manual"
   fix_known: false
   status: pending
+- id: INS-20260904-074027340-57f3
+  ts: "2026-09-04T07:40:27+09:00"
+  insight: "[[post source最大項auto push wait約28秒を同期critical pathから除去する]] NO_MATCH purpose pending alias: cmd_complete時にdeploy_task.logでNO_MATCHだったpurpose。類似概念TOP3: deepdive_principles(deepdive原理; alias=殿にcommit/push/killを命令するな; score=10.2) / semantic_dictionary_design(セマンティック辞書構想; alias=LS A24 post deploy check; score=10.0) / provisional_pre-push(仮: Pre Push; alias=provisional_pre-push; score=10.0)。既存概念aliasesへの自動昇格候補"
+  priority: "low"
+  source: "semantic_index_update"
+  fix_known: false
+  status: pending
