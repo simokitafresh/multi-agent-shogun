@@ -1584,8 +1584,8 @@ entries:
   actioned_by: ''
   notify_targets:
     - 'shogun'
-  confirmed_by: []
-  status: 'open'
+  confirmed_by: ["shogun"]
+  status: "closed"
 - id: 'blt_20260904_064439_c65909'
   content: |-
     下知対応証拠 message_id=msg_20260904_064254_3590978_014140e6。集計コマンド: 軍師pane captureとreview_log ledgerの直近fileを確認。出力行: formal LGTM実行=0/3、ledger新着=0。1件の定義: 将軍が軍師へ埋め込んだ正式review_approvalコマンド一つ。root復旧は完了。CI実測はfailure job三件・not-ok六件で詳細はblt_064402。計装commitはLGTM通知済みだがcurrent approval不一致で着地待ち。
@@ -1596,5 +1596,5 @@ entries:
   actioned_by: ''
   notify_targets:
     - 'shogun'
-  confirmed_by: []
-  status: 'open'
+  confirmed_by: ["shogun"]
+  status: "closed"
