@@ -13783,6 +13783,28 @@ codd:
 | causal | `cmd_4431` files_modified: [[semantic_causal_automation]] |
 | causal_chain | `[[cmd_karo_hotfix_hot_script_q11_semantic_search_retry_20260728]]` (L1418) |
 
+## provisional_ledger_writer — 仮: Ledger Writer
+
+| 属性 | 値 |
+|------|---|
+| id | provisional_ledger_writer |
+| label | 仮: Ledger Writer |
+| aliases | ledger_writer, scripts/ledger_writer.sh, scripts ledger writer.sh, provisional_ledger_writer |
+| status | provisional |
+| auto_generated | true |
+| source_cmd | cmd_karo_hotfix_review_bundle_batch_id_202609040019 |
+| source_files | scripts/ledger_writer.sh |
+| no_match_count | 3 |
+| created_at | 2026-09-03T22:40:30Z |
+| promotion_threshold | 5 |
+| related_concepts | |
+
+| 種別 | パス/参照 |
+|------|----------|
+| file | `scripts/ledger_writer.sh` |
+| causal | `cmd_karo_hotfix_review_bundle_batch_id_202609040019` -> [[provisional_ledger_writer]] (auto_generated) |
+| cmd | `cmd_karo_hotfix_review_bundle_batch_id_202609040019` (`scripts/ledger_writer.sh`, `tests/unit/test_ledger_writer.bats`) |
+
 ## provisional_safe_shared_main_ff — 仮: Safe Shared Main Ff
 
 | 属性 | 値 |
