@@ -58,6 +58,17 @@ else
     exit 1
 fi
 
+# @agent_cli同期(cmd_karo_hotfix_agent_respawn_cli_sync_202609031435根治): 上のcli変数はcli_type()が
+# respawn直前のpane_current_command(旧CLIプロセス)を優先するため、settings.type切替直後は
+# stale値になりうる。@agent_cliはsettings.type(SSOT)を直接読み直し、respawn呼出しが成功して
+# ここへ到達した場合にのみ焼き込む(set -euoにより失敗時はこの行へ到達せず旧値を保持する)。
+respawn_settings_cli=$(_cli_lookup_settings_get "$agent_name" "type" "claude")
+case "$respawn_settings_cli" in
+    claude|codex|copilot|kimi) ;;
+    *) respawn_settings_cli="claude" ;;
+esac
+tmux set-option -p -t "$pane" @agent_cli "$respawn_settings_cli" 2>/dev/null || true
+
 # LS078根治: settings.yaml model_nameをそのまま@model_nameへ焼込み(バナーパース非経由)
 apply_model_name_tag "$agent_name" "$pane" || true
 

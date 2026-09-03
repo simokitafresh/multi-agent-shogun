@@ -17,6 +17,10 @@ cli:
       model_name: sonnet-5-high
     blankagent:
       type: claude
+    codexagent:
+      type: codex
+    badtypeagent:
+      type: bogus
 YAML
 
   # fake tmux: only implements set-option / show-options against a flat state file
@@ -121,4 +125,49 @@ SH
   run sed -n '/^check_model_names()/,/^}/p' "$repo/scripts/ninja_monitor.sh"
   [ "$status" -eq 0 ]
   [[ "$output" == *'expected=$(_cli_lookup_settings_get "$name" "model_name" "")'* ]]
+}
+
+# test_necessity(cmd_karo_hotfix_agent_respawn_cli_sync_202609031435根治): agent_respawn.sh's
+# @agent_cli tag must reflect settings.yaml type (SSOT) after a successful respawn, not the
+# pre-respawn `cli` variable — which cli_type() can resolve from the live pane's
+# pane_current_command (the CLI process about to be replaced) when settings.type has just changed.
+# A tag written from the stale variable would leave watchers (health_check.sh, daemon_watchdog.sh,
+# inbox_watcher.sh) routing to the wrong CLI after a claude<->codex switch.
+
+@test "agent_respawn @agent_cli sync reads settings.type directly, ignoring a stale pre-respawn cli variable" {
+  repo="$BATS_TEST_DIRNAME/../.."
+  snippet="$root/agent_cli_sync_snippet.sh"
+  sed -n '/^respawn_settings_cli=/,/^# LS078根治/p' "$repo/scripts/agent_respawn.sh" | sed '$d' > "$snippet"
+  run bash -c 'source "$1/scripts/lib/cli_lookup.sh"; agent_name="codexagent"; pane="codexpane"; cli="claude"; source "$2"' _ "$root" "$snippet"
+  [ "$status" -eq 0 ]
+  result=$(awk -F'\t' -v t="codexpane" -v v="@agent_cli" '$1==t && $2==v {val=$3} END {print val}' "$FAKE_TMUX_STATE")
+  [ "$result" = "codex" ]
+}
+
+@test "agent_respawn @agent_cli sync writes claude when settings.type is claude" {
+  repo="$BATS_TEST_DIRNAME/../.."
+  snippet="$root/agent_cli_sync_snippet.sh"
+  sed -n '/^respawn_settings_cli=/,/^# LS078根治/p' "$repo/scripts/agent_respawn.sh" | sed '$d' > "$snippet"
+  run bash -c 'source "$1/scripts/lib/cli_lookup.sh"; agent_name="testagent"; pane="testpane2"; cli="codex"; source "$2"' _ "$root" "$snippet"
+  [ "$status" -eq 0 ]
+  result=$(awk -F'\t' -v t="testpane2" -v v="@agent_cli" '$1==t && $2==v {val=$3} END {print val}' "$FAKE_TMUX_STATE")
+  [ "$result" = "claude" ]
+}
+
+@test "agent_respawn @agent_cli sync falls back to claude for an unrecognized settings.type value" {
+  repo="$BATS_TEST_DIRNAME/../.."
+  snippet="$root/agent_cli_sync_snippet.sh"
+  sed -n '/^respawn_settings_cli=/,/^# LS078根治/p' "$repo/scripts/agent_respawn.sh" | sed '$d' > "$snippet"
+  run bash -c 'source "$1/scripts/lib/cli_lookup.sh"; agent_name="badtypeagent"; pane="badpane"; cli="codex"; source "$2"' _ "$root" "$snippet"
+  [ "$status" -eq 0 ]
+  result=$(awk -F'\t' -v t="badpane" -v v="@agent_cli" '$1==t && $2==v {val=$3} END {print val}' "$FAKE_TMUX_STATE")
+  [ "$result" = "claude" ]
+}
+
+@test "agent_respawn.sh derives @agent_cli from settings.type via _cli_lookup_settings_get, not the live-detected cli variable" {
+  repo="$BATS_TEST_DIRNAME/../.."
+  run sed -n '/^respawn_settings_cli=/,/^# LS078根治/p' "$repo/scripts/agent_respawn.sh"
+  [ "$status" -eq 0 ]
+  [[ "$output" == *'_cli_lookup_settings_get "$agent_name" "type"'* ]]
+  [[ "$output" != *'@agent_cli "$cli"'* ]]
 }
