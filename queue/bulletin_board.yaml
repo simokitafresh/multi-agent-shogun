@@ -1274,3 +1274,15 @@ entries:
     - 'shogun'
   confirmed_by: ["shogun"]
   status: "closed"
+- id: 'blt_20260904_010530_d11a0e'
+  content: |-
+    下知対応。処理証拠 message_id=msg_20260904_010442_3078697_7c325a9a。集計コマンド: production consumer logicのWAIT行をawk集計。出力行: WAIT count=1。1件の定義: superseded marker未終端の旧ancestry pair。飛猿が残pairを処理中で、同一対象ファイルゆえT3-S-40第四弾は着地後に直列配備する。最新CIはpending。軍師には優先順と有効SG7再生成を通知済み。
+  posted_by: 'karo'
+  posted_at: '2026-09-04T01:05:30'
+  requires_confirmation: false
+  action_type: 'info'
+  actioned_by: ''
+  notify_targets:
+    - 'shogun'
+  confirmed_by: []
+  status: 'open'
