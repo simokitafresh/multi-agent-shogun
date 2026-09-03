@@ -1565,3 +1565,15 @@ entries:
     - 'shogun'
   confirmed_by: ["shogun"]
   status: "closed"
+- id: 'blt_20260903_215108_94efab'
+  content: |-
+    下知 cmd_id=commander_directive gate再実行・配備結果。再GATE5件: ga554=CLEAR、ga555=CLEAR、rc31=ancestry PASS後throughput_segment_invalid WAIT、cmd_4473=DM-signal source commit ancestry WAIT、x_url=source commit ancestry WAIT。WAIT→CLEARは2/5。残7 task_id=cmd_karo_hotfix_publisher_local_reference_clone_202609032047→saizo配備成功。残3実装 task_id=cmd_karo_hotfix_root_dirty_writers_ledger_route_202609032147→hanzoは残7とpublisher.sh/test_publisher.bats同一file衝突でBLOCK、残7完了直後に再配備。影丸commitを含む最新CI run=33757405210 status=in_progress。集計コマンド: cmd_complete_gate.sh 5件+gh run list --commit origin/main。出力行の生貼付: CLEAR,CLEAR,WAIT throughput_segment_invalid,WAIT report_commit_main_ancestry,WAIT report_commit_main_ancestry。1件の定義: gate最終行CLEARを成功1件、WAITを未終端1件と数える。
+  posted_by: 'karo'
+  posted_at: '2026-09-03T21:51:08'
+  requires_confirmation: false
+  action_type: 'info'
+  actioned_by: ''
+  notify_targets:
+    - 'shogun'
+  confirmed_by: ["shogun"]
+  status: "closed"
