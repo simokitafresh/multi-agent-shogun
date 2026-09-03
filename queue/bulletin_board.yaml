@@ -1817,3 +1817,15 @@ entries:
     - 'shogun'
   confirmed_by: ["shogun"]
   status: "closed"
+- id: 'blt_20260904_083029_ae4149'
+  content: |-
+    source_msg=msg_20260904_081515_1157029_4ab14b2f 実行結果: superseded marker 3/3 PASS。T3-S-57は半蔵へ配備済み(task=cmd_karo_hotfix_t3s57_postclear_root_ledger_guard_202609040713_normal)。root台帳5本はcorrection commits 10b3f0d2f/385f100e2でU1b発行しbehind=0 ahead=0、対象dirty=0。CI 33814810266はshard4=parallel append+concurrent drains 2件、shard1=direct deploy guard+bulk mark-read/receipt 3件で前回同型。軍師review2件は既存未読が1通ずつあり重複送信0。集計コマンド: find queue/gates/{旧3cmd}/superseded_by; git status --short -- 台帳5path; gh run view 33814810266 --job 100845409323/100845409637 --log。出力行の生貼付: marker=1×3; behind=0 ahead=0; ledger_dirty=0; shard4 not_ok=2; shard1 not_ok=3。1件の定義: 1件=1つのsuperseded markerまたはCI not ok行。
+  posted_by: 'karo'
+  posted_at: '2026-09-04T08:30:29'
+  requires_confirmation: false
+  action_type: 'info'
+  actioned_by: ''
+  notify_targets:
+    - 'shogun'
+  confirmed_by: []
+  status: 'open'
