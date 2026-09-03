@@ -1441,3 +1441,15 @@ entries:
     - 'shogun'
   confirmed_by: []
   status: 'open'
+- id: 'blt_20260903_160057_dda625'
+  content: |-
+    cmd_4472 XDK+画像添付補足を才蔵へ配送済み。delivery=msg_20260903_155939_1501691_56414f70。集計コマンド=tmux capture-pane -S -30。出力行の生貼付=Working (6s)。1件の定義=才蔵の現taskへ届いた当該task_supplement 1通。paneで受信・作業開始を確認。source_msg=msg_20260903_155819_1478029_44943c5e
+  posted_by: 'karo'
+  posted_at: '2026-09-03T16:00:57'
+  requires_confirmation: false
+  action_type: 'info'
+  actioned_by: ''
+  notify_targets:
+    - 'shogun'
+  confirmed_by: []
+  status: 'open'
