@@ -3300,6 +3300,8 @@
   timestamp: "2026-09-04T07:13:20"
 - cmd_id: cmd_karo_hotfix_deploy_generation_rc_sync_202609040724
   review_type: draft
+  gate_result: CLEAR
+  gate_synced_at: 2026-09-04T08:45:35+09:00
   verdict: REQUEST_CHANGES
   confidence: HIGH
   verified_files:
@@ -3393,6 +3395,8 @@
   timestamp: "2026-09-04T07:29:31"
 - cmd_id: cmd_karo_hotfix_codex_update_prompt_auto_skip_202609040727
   review_type: draft
+  gate_result: CLEAR
+  gate_synced_at: 2026-09-04T08:45:29+09:00
   verdict: REQUEST_CHANGES
   severity: normal
   confidence: HIGH
