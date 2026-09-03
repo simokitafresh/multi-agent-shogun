@@ -5,6 +5,66 @@ setup() {
     PROJECT_ROOT="$(cd "$BATS_TEST_DIRNAME/../.." && pwd)"
 }
 
+# test_necessity: report completed + task in_progress must release only an
+# actually idle current generation; pending reports and busy panes remain
+# unavailable so the slot accounting cannot create false idle capacity.
+@test "await_clear runtime state releases completed-report slots with FP0" {
+    run bash -lc '
+set -euo pipefail
+PROJECT_ROOT="'"$PROJECT_ROOT"'"
+export NINJA_MONITOR_LIB_ONLY=1
+source "$PROJECT_ROOT/scripts/ninja_monitor.sh"
+unset NINJA_MONITOR_LIB_ONLY
+ROOT="'"$BATS_TEST_TMPDIR"'/await-clear-runtime"
+SCRIPT_DIR="$ROOT"; STATE_DIR="$ROOT/state"; LOG="$ROOT/monitor.log"
+mkdir -p "$ROOT/queue/tasks" "$ROOT/queue/reports" "$ROOT/queue/gates" "$ROOT/queue" "$STATE_DIR"
+: > "$LOG"
+declare -A PANE_TARGETS
+PANE_TARGETS[alpha]=pane-alpha
+check_idle() { [ "${AWAIT_PANE_STATE:-idle}" = idle ]; }
+_pane_has_confirmation_prompt() { [ "${AWAIT_PANE_STATE:-idle}" = confirmation ]; }
+_pane_has_active_background_compute() { [ "${AWAIT_PANE_STATE:-idle}" = background ]; }
+cat > "$ROOT/queue/tasks/alpha.yaml" <<EOF
+task:
+  status: in_progress
+  parent_cmd: cmd_await_clear
+  task_id: cmd_await_clear_normal
+  report_id: rpt-await-clear
+  report_identity_version: 2
+  report_path: queue/reports/alpha_report_cmd_await_clear.yaml
+EOF
+cat > "$ROOT/queue/reports/alpha_report_cmd_await_clear.yaml" <<EOF
+status: completed
+verdict: PASS
+parent_cmd: cmd_await_clear
+task_id: cmd_await_clear_normal
+report_id: rpt-await-clear
+report_identity_version: 2
+timestamp: 2026-09-03T19:00:00
+EOF
+AWAIT_PANE_STATE=idle
+refresh_karo_snapshot_task_assignment alpha
+idle_line=$(grep "^ninja|alpha" "$ROOT/queue/karo_snapshot.txt")
+test "${idle_line#*|RUNTIME:}" = await_clear
+AWAIT_PANE_STATE=busy
+refresh_karo_snapshot_task_assignment alpha
+busy_line=$(grep "^ninja|alpha" "$ROOT/queue/karo_snapshot.txt")
+test "${busy_line#*|RUNTIME:}" = busy
+AWAIT_PANE_STATE=confirmation
+refresh_karo_snapshot_task_assignment alpha
+confirmation_line=$(grep "^ninja|alpha" "$ROOT/queue/karo_snapshot.txt")
+test "${confirmation_line#*|RUNTIME:}" = busy
+sed -i "s/status: completed/status: pending/" "$ROOT/queue/reports/alpha_report_cmd_await_clear.yaml"
+AWAIT_PANE_STATE=idle
+refresh_karo_snapshot_task_assignment alpha
+pending_line=$(grep "^ninja|alpha" "$ROOT/queue/karo_snapshot.txt")
+test "${pending_line#*|RUNTIME:}" = busy
+printf "positive=1 busy_negative=1 confirmation_negative=1 pending_negative=1 false_positive=0 false_negative=0\n"
+'
+    [ "$status" -eq 0 ]
+    [ "$output" = "positive=1 busy_negative=1 confirmation_negative=1 pending_negative=1 false_positive=0 false_negative=0" ]
+}
+
 # test_necessity: consumed current-generation review requests remain visible
 # through repeated consumer acknowledgements until terminal review exists.
 @test "read current-generation review requests survive repeated consumers" {

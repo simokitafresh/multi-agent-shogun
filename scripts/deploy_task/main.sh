@@ -32,6 +32,76 @@ source "$_dt_module_root/gates.sh"
 source "$_dt_module_root/delivery.sh"
 unset _dt_module_root
 
+# The worker task slot remains in_progress until the ordered completion lane
+# closes it, but a matching terminal report plus an actually idle pane is
+# already safe to reuse.  Keep this check independent from the mutable
+# snapshot and fail closed for stale identities, busy panes, and confirmation
+# prompts.  It lives in this source unit because some production and fixture
+# paths source main.sh directly rather than the monolithic wrapper.
+deploy_task_current_report_is_await_clear() {
+    local task_file="$1" worker_name="$2"
+    local task_status parent_cmd task_id task_report_id task_report_version
+    local report_path report_file report_parent report_task report_id report_version report_status
+    local report_timestamp deployed_at report_epoch deployed_epoch pane_target
+
+    [ -f "$task_file" ] || return 1
+    task_status=$(field_get "$task_file" "status" "" 2>/dev/null || true)
+    [ "$task_status" = "in_progress" ] || return 1
+    parent_cmd=$(field_get "$task_file" "parent_cmd" "" 2>/dev/null || true)
+    task_id=$(field_get "$task_file" "task_id" "" 2>/dev/null || true)
+    task_report_id=$(field_get "$task_file" "report_id" "" 2>/dev/null || true)
+    task_report_version=$(field_get "$task_file" "report_identity_version" "" 2>/dev/null || true)
+    [ -n "$parent_cmd" ] || return 1
+
+    report_path=$(field_get "$task_file" "report_path" "" 2>/dev/null || true)
+    if [ -z "$report_path" ]; then
+        report_path=$(field_get "$task_file" "report_filename" "" 2>/dev/null || true)
+        [ -z "$report_path" ] || report_path="queue/reports/$report_path"
+    fi
+    [ -n "$report_path" ] || report_path="queue/reports/${worker_name}_report_${parent_cmd}.yaml"
+    if [[ "$report_path" = /* ]]; then
+        report_file="$report_path"
+    else
+        report_file="$SCRIPT_DIR/$report_path"
+    fi
+    [ -f "$report_file" ] && [ ! -L "$report_file" ] || return 1
+
+    report_parent=$(field_get "$report_file" "parent_cmd" "" 2>/dev/null || true)
+    report_task=$(field_get "$report_file" "task_id" "" 2>/dev/null || true)
+    report_id=$(field_get "$report_file" "report_id" "" 2>/dev/null || true)
+    report_version=$(field_get "$report_file" "report_identity_version" "" 2>/dev/null || true)
+    report_status=$(field_get "$report_file" "status" "" 2>/dev/null || true)
+    [ "$report_parent" = "$parent_cmd" ] || return 1
+    [ -z "$task_id" ] || [ -z "$report_task" ] || [ "$task_id" = "$report_task" ] || return 1
+    [ -z "$task_report_id" ] || [ "$task_report_id" = "$report_id" ] || return 1
+    [ -z "$task_report_version" ] || [ "$task_report_version" = "$report_version" ] || return 1
+    [[ "$report_status" =~ ^(completed|done|success)$ ]] || return 1
+
+    report_timestamp=$(field_get "$report_file" "timestamp" "" 2>/dev/null || true)
+    deployed_at=$(field_get "$task_file" "deployed_at" "" 2>/dev/null || true)
+    if [ -n "$report_timestamp" ] && [ -n "$deployed_at" ]; then
+        report_epoch=$(date -d "$report_timestamp" +%s 2>/dev/null || true)
+        deployed_epoch=$(date -d "$deployed_at" +%s 2>/dev/null || true)
+        if [[ "$report_epoch" =~ ^[0-9]+$ ]] && [[ "$deployed_epoch" =~ ^[0-9]+$ ]] && \
+           [ "$report_epoch" -lt "$deployed_epoch" ]; then
+            return 1
+        fi
+    fi
+
+    pane_target=$(resolve_pane "$worker_name" 2>/dev/null || true)
+    [ -n "$pane_target" ] || return 1
+    check_idle "$pane_target" "$worker_name" || return 1
+    if declare -F _pane_has_confirmation_prompt >/dev/null 2>&1 && \
+       _pane_has_confirmation_prompt "$pane_target"; then
+        return 1
+    fi
+    if declare -F _pane_has_active_background_compute >/dev/null 2>&1 && \
+       _pane_has_active_background_compute "$pane_target"; then
+        return 1
+    fi
+    return 0
+}
+
 deploy_task_main() {
     DEPLOY_TASK_STARTED_US="${EPOCHREALTIME/./}"
     DEPLOY_TASK_STARTED_US="${DEPLOY_TASK_STARTED_US:0:16}"
@@ -187,7 +257,10 @@ except Exception:
     if [ -n "$YAML_FILE" ] && [ -f "$YAML_FILE" ]; then
         DEPLOY_INCOMING_TASK_TYPE=$(FIELD_GET_NO_LOG=1 field_get "$YAML_FILE" "task_type" "" 2>/dev/null || true)
     fi
-    if [ -n "$CMD_ID" ] && ! deploy_task_guard_worker_assignment "$task_yaml" "$CMD_ID"; then
+    if [ -n "$CMD_ID" ] && ! {
+        deploy_task_current_report_is_await_clear "$task_yaml" "$NINJA_NAME" || \
+            deploy_task_guard_worker_assignment "$task_yaml" "$CMD_ID"
+    }; then
         deploy_task_release_lock "$deploy_lock_fd" "$deploy_lock_file"
         return 1
     fi
@@ -410,7 +483,8 @@ except Exception:
     task_status=$(field_get "$task_yaml" "status" "unknown")
     log "${NINJA_NAME}: CTX=${ctx_pct}%, idle=${is_idle}, task_status=${task_status}, pane=${pane_target}"
 
-    if [ "$task_status" = "in_progress" ] && [ "$TYPE" != "in_progress" ]; then
+    if [ "$task_status" = "in_progress" ] && [ "$TYPE" != "in_progress" ] && \
+       ! deploy_task_current_report_is_await_clear "$task_yaml" "$NINJA_NAME"; then
         current_cmd=$(field_get "$task_yaml" "parent_cmd" "")
         log "BLOCK: ${NINJA_NAME} is in_progress on ${current_cmd:-unknown}. 前タスク完了を待て。"
         echo "BLOCK: ${NINJA_NAME} は ${current_cmd:-unknown} を実行中。二重配備禁止(GP-069)。" >&2
@@ -664,4 +738,3 @@ except Exception:
         log "${NINJA_NAME}: delayed re-nudge not scheduled (delivery evidence already present)"
     fi
 }
-

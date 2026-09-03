@@ -10,6 +10,65 @@ setup_file() {
     deploy_task_setup_file
 }
 
+# test_necessity: the await_clear admission helper must be available from the
+# executable main source itself and must release exactly the two completed
+# report fixtures while rejecting incomplete reports and busy panes.
+@test "await_clear admission is source-local and identity/runtime bound" {
+    run bash -lc '
+set -euo pipefail
+PROJECT_ROOT="'"$PROJECT_ROOT"'"
+export DEPLOY_TASK_LIB_ONLY=1
+export DEPLOY_TASK_ENTRYPOINT_SOURCE="$PROJECT_ROOT/scripts/deploy_task.sh"
+source "$PROJECT_ROOT/scripts/deploy_task/bootstrap.sh"
+source "$PROJECT_ROOT/scripts/deploy_task/main.sh"
+ROOT="'"$BATS_TEST_TMPDIR"'/await-clear-admission"
+SCRIPT_DIR="$ROOT"
+mkdir -p "$ROOT/queue/tasks" "$ROOT/queue/reports" "$ROOT/logs"
+resolve_pane() { printf "%s-pane\n" "$1"; }
+check_idle() { [ "${PANE_STATE:-idle}" = idle ]; }
+for name in t3_s39 t3_s40; do
+    cat > "$ROOT/queue/tasks/${name}.yaml" <<EOF
+task:
+  status: in_progress
+  parent_cmd: cmd_${name}
+  task_id: cmd_${name}_normal
+  report_id: rpt_${name}
+  report_identity_version: 2
+  report_path: queue/reports/${name}_report_cmd_${name}.yaml
+EOF
+    cat > "$ROOT/queue/reports/${name}_report_cmd_${name}.yaml" <<EOF
+status: completed
+verdict: PASS
+parent_cmd: cmd_${name}
+task_id: cmd_${name}_normal
+report_id: rpt_${name}
+report_identity_version: 2
+timestamp: 2026-09-03T19:00:00
+EOF
+done
+
+test "$(declare -F deploy_task_current_report_is_await_clear)" = "deploy_task_current_report_is_await_clear"
+positive=0
+for name in t3_s39 t3_s40; do
+    deploy_task_current_report_is_await_clear "$ROOT/queue/tasks/${name}.yaml" "$name" && positive=$((positive + 1))
+done
+test "$positive" -eq 2
+
+PANE_STATE=busy
+busy_negative=0
+deploy_task_current_report_is_await_clear "$ROOT/queue/tasks/t3_s39.yaml" t3_s39 || busy_negative=1
+test "$busy_negative" -eq 1
+PANE_STATE=idle
+sed -i "s/status: completed/status: pending/" "$ROOT/queue/reports/t3_s40_report_cmd_t3_s40.yaml"
+pending_negative=0
+deploy_task_current_report_is_await_clear "$ROOT/queue/tasks/t3_s40.yaml" t3_s40 || pending_negative=1
+test "$pending_negative" -eq 1
+printf "source_local=1 positive=2 busy_negative=1 pending_negative=1 false_positive=0 false_negative=0\n"
+'
+    [ "$status" -eq 0 ]
+    [ "$output" = "source_local=1 positive=2 busy_negative=1 pending_negative=1 false_positive=0 false_negative=0" ]
+}
+
 # The suite setup already sources deploy_task.sh once per Bats process. Keep
 # each cached-library call isolated while avoiding a second parse of the
 # 10k-line shell library in every small contract test.

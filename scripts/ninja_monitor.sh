@@ -275,6 +275,48 @@ _task_done_report_review_pending() {
     return 0
 }
 
+# An in-progress task may have already published its current terminal report
+# while the ordered review/clear pipeline is still running.  Keep this
+# predicate identity-bound and runtime-bound: an unrelated/old report, a
+# worker that is still busy, or a confirmation prompt must never release the
+# slot.  The task remains in_progress until the normal deployment transaction
+# replaces it, so this is an availability state rather than a lifecycle
+# mutation.
+_task_in_progress_current_report_await_clear() {
+    local name="$1"
+    local task_file="$SCRIPT_DIR/queue/tasks/${name}.yaml"
+    local report_file report_status pane_target
+
+    [ -f "$task_file" ] || return 1
+    [ "$(yaml_field_get "$task_file" "status" "" 2>/dev/null || true)" = "in_progress" ] || return 1
+    report_file=$(find_matching_report_file "$name" 2>/dev/null || true)
+    [ -n "$report_file" ] && [ -f "$report_file" ] && [ ! -L "$report_file" ] || return 1
+    report_status=$(yaml_field_get "$report_file" "status" "" 2>/dev/null || true)
+    [[ "$report_status" =~ ^(completed|done|success)$ ]] || return 1
+    if declare -F report_monitor_state >/dev/null 2>&1 && \
+       [ "$(report_monitor_state "$report_file" 2>/dev/null || true)" = "awaiting_evidence" ]; then
+        return 1
+    fi
+
+    pane_target="${PANE_TARGETS[$name]:-}"
+    if [ -z "$pane_target" ] && declare -F pane_lookup >/dev/null 2>&1; then
+        pane_target=$(pane_lookup "$name" 2>/dev/null || true)
+    fi
+    [ -n "$pane_target" ] || return 1
+    check_idle "$pane_target" "$name" || return $?
+    if declare -F _pane_has_confirmation_prompt >/dev/null 2>&1 && \
+       _pane_has_confirmation_prompt "$pane_target"; then
+        log "AWAIT-CLEAR-BLOCK: $name confirmation prompt present"
+        return 1
+    fi
+    if declare -F _pane_has_active_background_compute >/dev/null 2>&1 && \
+       _pane_has_active_background_compute "$pane_target"; then
+        log "AWAIT-CLEAR-BLOCK: $name background compute active"
+        return 1
+    fi
+    return 0
+}
+
 _ci_red_idle_count() {
     python3 - "$SCRIPT_DIR/queue/tasks" <<'PY'
 import glob, sys, yaml
@@ -5774,9 +5816,16 @@ check_idle_backlog_alert() {
             task_status=""
             [ -f "$task_file" ] && task_status=$(yaml_field_get "$task_file" "status" 2>/dev/null || true)
             case "$task_status" in
-                assigned|acknowledged|in_progress|pending)
+                assigned|acknowledged|pending)
                     log "IDLE-BACKLOG-SKIP: $name pane_idle=1 task_status=$task_status (already deployed)"
                     continue
+                    ;;
+                in_progress)
+                    if ! _task_in_progress_current_report_await_clear "$name"; then
+                        log "IDLE-BACKLOG-SKIP: $name pane_idle=1 task_status=$task_status (report/runtime not await_clear)"
+                        continue
+                    fi
+                    log "IDLE-BACKLOG-AWAIT-CLEAR: $name pane_idle=1 current report completed"
                     ;;
             esac
             _IDLE_BACKLOG_CURRENT_IDLE["$name"]=1
@@ -7153,6 +7202,16 @@ _handle_deploy_stall() {
     local task_status
     task_status=$(yaml_field_get "$task_file" "status")
 
+    # await_clear is an availability state for an in_progress task whose
+    # current report is terminal and whose pane is idle.  It must not enter
+    # the ordinary deploy-stall recovery lane, which would wait for the
+    # active-task clear debounce and hide the newly available slot.
+    if [ "$task_status" = "in_progress" ] && \
+       _task_in_progress_current_report_await_clear "$name"; then
+        log "DEPLOY-STALL-AWAIT-CLEAR: $name current report completed and pane idle; slot is deployable"
+        return 1
+    fi
+
     # acknowledged/in_progress はStage 1（Phase 1）で既にフィルタ済み
     # ここに到達するのは assigned/done/idle/statusなし のみ
 
@@ -7476,8 +7535,12 @@ _handle_auto_clear() {
     if [ -f "$_ac_task_file" ]; then
         _ac_task_status=$(yaml_field_get "$_ac_task_file" "status")
         if [[ "$_ac_task_status" =~ ^(assigned|acknowledged|in_progress)$ ]]; then
-            log "AUTO-CLEAR-SKIP: $name has active task (status=$_ac_task_status), deferring to DEPLOY-STALL"
-            return
+            if [ "$_ac_task_status" != "in_progress" ] || \
+               ! _task_in_progress_current_report_await_clear "$name"; then
+                log "AUTO-CLEAR-SKIP: $name has active task (status=$_ac_task_status), deferring to DEPLOY-STALL"
+                return
+            fi
+            log "AUTO-CLEAR-AWAIT-CLEAR: $name current report completed and pane idle"
         fi
         if _task_done_report_review_pending "$name"; then
             log "AUTO-CLEAR-SKIP-REVIEW-PENDING: $name status=$_ac_task_status task/pane unchanged"
@@ -12892,10 +12955,18 @@ write_karo_snapshot() {
                                 bash|zsh|sh) runtime_state="dead" ;;
                             esac
                         fi
+                        # A current terminal report releases the slot before
+                        # GATE CLEAR, but only when the pane is actually idle.
+                        # Keep incomplete reports and busy/confirmation panes
+                        # on the ordinary active path.
+                        local _ctx_num_snap="${_ctx%\%}"
+                        if [ "$runtime_state" != "dead" ] && \
+                           [ "$status" = "in_progress" ] && \
+                           _task_in_progress_current_report_await_clear "$name"; then
+                            runtime_state="await_clear"
                         # snapshot実態乖離補正: task YAMLがidle/completedだがCTX>0%ならcapture-paneで実態確認
                         # Codex CLIはhook未発火で@agent_stateが更新されず、snapshotが古いstatusを表示し続ける問題の根治
-                        local _ctx_num_snap="${_ctx%\%}"
-                        if [[ "$status" =~ ^(idle|completed|done)$ ]] && [ -n "$_ctx_num_snap" ] && [ "$_ctx_num_snap" != "?" ] && [ "$_ctx_num_snap" -gt 0 ] 2>/dev/null; then
+                        elif [[ "$status" =~ ^(idle|completed|done)$ ]] && [ -n "$_ctx_num_snap" ] && [ "$_ctx_num_snap" != "?" ] && [ "$_ctx_num_snap" -gt 0 ] 2>/dev/null; then
                             if [ -n "$_pane_target" ] && check_agent_busy "$_pane_target" "$name"; then
                                 runtime_state="busy"
                             fi
@@ -12977,7 +13048,10 @@ write_karo_snapshot() {
                 local idle_list=""
                 for name in "${rotated_names[@]}"; do
                     local _prev_state="${PREV_STATE[$name]:-idle}"
-                    if [ "$_prev_state" = "idle" ] || [ "$_prev_state" = "done" ]; then
+                    local _await_clear=0 _prev_idle=0
+                    [ "$_prev_state" = "idle" ] || [ "$_prev_state" = "done" ] && _prev_idle=1
+                    _task_in_progress_current_report_await_clear "$name" && _await_clear=1
+                    if [ "$_prev_idle" -eq 1 ] || [ "$_await_clear" -eq 1 ]; then
                         local task_file="$SCRIPT_DIR/queue/tasks/${name}.yaml"
                         # キャッシュから取得（ninja sectionで収集済み。yaml_field_get再読込排除 L4-R24）
                         local task_status="${_snapshot_status[$name]:-}"
@@ -12992,7 +13066,8 @@ write_karo_snapshot() {
                                 continue
                             fi
                         fi
-                        if [ "$task_status" != "in_progress" ] && [ "$task_status" != "acknowledged" ] && [ "$task_status" != "assigned" ] && [ "$task_status" != "failed" ]; then
+                        if [ "$_await_clear" -eq 1 ] || \
+                           { [ "$task_status" != "in_progress" ] && [ "$task_status" != "acknowledged" ] && [ "$task_status" != "assigned" ] && [ "$task_status" != "failed" ]; }; then
                             idle_list="${idle_list}${name},"
                         fi
                     fi
@@ -13074,7 +13149,14 @@ refresh_karo_snapshot_task_assignment() {
     source_ts=$(date -r "$task_file" '+%Y-%m-%dT%H:%M:%S' 2>/dev/null || echo unknown)
     printf -v timestamp '%(%Y-%m-%dT%H:%M:%S)T' -1
     case "$status" in
-        assigned|acknowledged|in_progress|pending) runtime_state=busy ;;
+        assigned|acknowledged|pending) runtime_state=busy ;;
+        in_progress)
+            if _task_in_progress_current_report_await_clear "$name"; then
+                runtime_state=await_clear
+            else
+                runtime_state=busy
+            fi
+            ;;
         *) runtime_state=idle ;;
     esac
 
@@ -14581,7 +14663,7 @@ get_idle_pipeline_state() {
     snapshot_counts=$(awk -F'|' '
         /^ninja\|/ {
             total++
-            if ($4 !~ /^(idle|completed|done)$/) active++
+            if ($4 !~ /^(idle|completed|done)$/ && $NF != "RUNTIME:await_clear") active++
         }
         END { print total+0 "|" active+0 }
     ' "$snapshot_file" 2>/dev/null || echo "0|0")
@@ -15545,7 +15627,12 @@ while true; do
                         # 根因: fast_pathのAUTO-DONEとSTAGE1の間で報告提出→GATE CLEAR
                         # が発生するとSTAGE1が古いin_progressでcontinueし、clearが
                         # 次サイクルまで最大20秒+遅延する(実測14分の遅延事例あり)。
-                        if _ninja_monitor_observe_call "stage1_done_check:$name" _ninja_monitor_run_bounded_done_check "$name" 2>/dev/null; then
+                        if _task_in_progress_current_report_await_clear "$name"; then
+                            log "STAGE1-IN-PROGRESS-AWAIT-CLEAR: $name current report completed and pane idle; slot released"
+                            maybe_idle+=("$name")
+                            PREV_STATE[$name]="idle"
+                            continue
+                        elif _ninja_monitor_observe_call "stage1_done_check:$name" _ninja_monitor_run_bounded_done_check "$name" 2>/dev/null; then
                             log "STAGE1-IN-PROGRESS-RESOLVED: $name was in_progress but report completed, proceeding to clear"
                             _s1_task_status="done"
                         else
