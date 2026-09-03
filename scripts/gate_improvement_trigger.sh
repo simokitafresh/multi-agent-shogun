@@ -672,6 +672,9 @@ check_hook_failures() {
         [ -f "$tracked_hook" ] && tracked_hash=$(sha256sum "$tracked_hook" 2>/dev/null | awk '{print $1}')
         [ -f "$active_hook" ] && active_hash=$(sha256sum "$active_hook" 2>/dev/null | awk '{print $1}')
         local classification
+        # Classify intentional safety BLOCKs from their artifact semantics,
+        # not from the free-form detail or missing generation hash. A
+        # malformed/missing artifact remains actionable by design.
         classification=$(python3 - "$failures_file" "$last_count" "$tracked_hash" "$active_hash" "$SCRIPT_DIR" <<'PY'
 import sys
 from pathlib import Path
@@ -685,21 +688,27 @@ if isinstance(rows, dict):
 rows = rows[cursor:]
 current_hashes = {h for h in (tracked, active) if h}
 
-def is_expected_ga_push1_safety_block(row):
-    """Require the recorded artifact to prove the hook's safety-block path."""
+def artifact_text(row, hook_name):
+    """Load an artifact only for the hook/exit shape that can be classified."""
     if not isinstance(row, dict):
-        return False
-    if row.get("hook") != "pre-push" or row.get("exit_code") != 1:
-        return False
+        return None
+    if row.get("hook") != hook_name or row.get("exit_code") != 1:
+        return None
     artifact = row.get("artifact")
     if not isinstance(artifact, str) or not artifact:
-        return False
+        return None
     artifact_path = Path(artifact)
     if not artifact_path.is_absolute():
         artifact_path = Path(script_root) / artifact_path
     try:
-        text = artifact_path.read_text(encoding="utf-8")
+        return artifact_path.read_text(encoding="utf-8")
     except (OSError, UnicodeError):
+        return None
+
+def is_expected_ga_push1_safety_block(row):
+    """Require the recorded artifact to prove the hook's safety-block path."""
+    text = artifact_text(row, "pre-push")
+    if text is None:
         return False
     required = (
         "[pre-push] BLOCK(GA-PUSH1): pushしようとしているcommitと、作業ツリーの未commit変更が同一pathを差している。",
@@ -707,23 +716,38 @@ def is_expected_ga_push1_safety_block(row):
     )
     return all(marker in text for marker in required)
 
-expected = [r for r in rows if is_expected_ga_push1_safety_block(r)]
+def is_expected_doc_no_changelog_safety_block(row):
+    """Require the artifact to prove the intentional doc policy BLOCK."""
+    text = artifact_text(row, "pre-commit")
+    if text is None:
+        return False
+    required = (
+        "BLOCK(doc_no_changelog):",
+        "修正文:",
+    )
+    return all(marker in text for marker in required)
+
+expected_ga_push1 = [r for r in rows if is_expected_ga_push1_safety_block(r)]
+expected_doc_no_changelog = [r for r in rows if is_expected_doc_no_changelog_safety_block(r)]
+expected = expected_ga_push1 + expected_doc_no_changelog
 remaining = [r for r in rows if r not in expected]
 current = [r for r in remaining if isinstance(r, dict) and r.get("hook_sha256") in current_hashes]
 legacy = [r for r in remaining if not isinstance(r, dict) or not r.get("hook_sha256")]
 old = len(remaining) - len(current) - len(legacy)
-print(f"{len(current)} {old} {len(legacy)} {len(expected)}")
+print(f"{len(current)} {old} {len(legacy)} {len(expected_ga_push1)} {len(expected_doc_no_changelog)}")
 PY
 )
-        local current_generation_count old_generation_count legacy_count expected_ga_push1_count
-        read -r current_generation_count old_generation_count legacy_count expected_ga_push1_count <<< "$classification"
+        local current_generation_count old_generation_count legacy_count expected_ga_push1_count expected_doc_no_changelog_count
+        read -r current_generation_count old_generation_count legacy_count expected_ga_push1_count expected_doc_no_changelog_count <<< "$classification"
 
         # Failures from an already-running old hook can finish after a fix is
         # committed. They are evidence, but not a recurrence of the tracked
         # generation. Advance the cursor without minting a false GA alert.
         if [ "$current_generation_count" -eq 0 ] && [ "$legacy_count" -eq 0 ]; then
             echo "$current_count" > "$state_file"
-            if [ "$expected_ga_push1_count" -gt 0 ]; then
+            if [ "$expected_doc_no_changelog_count" -gt 0 ]; then
+                echo "OK: ${gate_name} — expected safety BLOCKs ignored (expected_ga_push1=${expected_ga_push1_count}, expected_doc_no_changelog=${expected_doc_no_changelog_count}, old=${old_generation_count}, current=0)"
+            elif [ "$expected_ga_push1_count" -gt 0 ]; then
                 echo "OK: ${gate_name} — expected GA-PUSH1 safety BLOCKs ignored (expected=${expected_ga_push1_count}, old=${old_generation_count}, current=0)"
             else
                 echo "OK: ${gate_name} — old generation completions ignored (old=${old_generation_count}, current=0)"
@@ -731,7 +755,7 @@ PY
             return 0
         fi
         local alert_lines="ALERT: hook失敗 ${new_count}件の新規レコード検知(total: ${current_count})"
-        alert_lines+=" current_generation=${current_generation_count} old_generation=${old_generation_count} legacy=${legacy_count} expected_ga_push1=${expected_ga_push1_count}"
+        alert_lines+=" current_generation=${current_generation_count} old_generation=${old_generation_count} legacy=${legacy_count} expected_ga_push1=${expected_ga_push1_count} expected_doc_no_changelog=${expected_doc_no_changelog_count}"
 
         # 最新の失敗レコードを取得（最後の5行）
         local latest_detail

@@ -248,6 +248,44 @@ run_ga531_mixed_fixture() {
         bash "$PROJECT_ROOT/scripts/gate_improvement_trigger.sh"
 }
 
+run_ga568_doc_no_changelog_fixture() {
+    local root="$FIXTURE_ROOT/ga568-doc-no-changelog"
+    local artifact i
+    mkdir -p "$root/scripts/gates" "$root/bin" "$root/tmp" "$root/logs/hook_artifacts" \
+        "$root/.githooks" "$root/.git/hooks"
+    cp "$TEMPLATE_ROOT/scripts/inbox_write.sh" "$root/scripts/inbox_write.sh"
+    cp "$TEMPLATE_ROOT/scripts/ntfy.sh" "$root/scripts/ntfy.sh"
+    cp "$TEMPLATE_ROOT/bin/gh" "$root/bin/gh"
+    chmod +x "$root/scripts/inbox_write.sh" "$root/scripts/ntfy.sh" "$root/bin/gh"
+    for gate in gate_lesson_health.sh gate_cmd_state.sh gate_context_freshness.sh gate_p_average_freshness.sh; do
+        printf '%s\n' '#!/usr/bin/env bash' 'printf "%s\n" "--- 総合判定: OK ---"' \
+            > "$root/scripts/gates/$gate"
+        chmod +x "$root/scripts/gates/$gate"
+    done
+    for i in 1 2; do
+        artifact="$root/logs/hook_artifacts/doc-$i.log"
+        printf '%s\n' \
+            '[pre-commit] runtime tests deferred to final checkpoint; launches=0' \
+            '  BLOCK(doc_no_changelog): docs/research/sample.md に変更履歴の記述。' \
+            '    修正文: 該当行を削除し、版番号+タイムスタンプだけにする。' > "$artifact"
+    done
+    printf '%s\n' \
+        '- timestamp: 2026-09-03T15:36:54+09:00' \
+        '  hook: pre-commit' \
+        '  exit_code: 1' \
+        '  artifact: logs/hook_artifacts/doc-1.log' \
+        '  detail: doc_no_changelog' \
+        '- timestamp: 2026-09-03T15:37:04+09:00' \
+        '  hook: pre-commit' \
+        '  exit_code: 1' \
+        '  artifact: logs/hook_artifacts/doc-2.log' \
+        '  detail: doc_no_changelog' > "$root/logs/hook_failures.yaml"
+    run env PATH="$root/bin:$PATH" TMPDIR="$root/tmp" \
+        GATE_IMPROVEMENT_ROOT="$root" GATE_IMPROVEMENT_NOW=1770000000 \
+        GATE_IMPROVEMENT_DEDUP_WINDOW_SECONDS=0 \
+        bash "$PROJECT_ROOT/scripts/gate_improvement_trigger.sh"
+}
+
 assert_gate_identity() {
     local calls_file="$1" gate_name="$2"
     grep -Eq "task_id=commander_directive subject_task_id=gate_alert_${gate_name}_GA-[0-9]+ parent_cmd=cmd_gate_improvement_${gate_name}" \
@@ -338,4 +376,17 @@ assert_gate_record_identity() {
         "$FIXTURE_ROOT/ga531-mixed/logs/gate_alerts.yaml"
     grep -q 'legacy=3 expected_ga_push1=5' \
         "$FIXTURE_ROOT/ga531-mixed/logs/gate_alerts.yaml"
+}
+
+# test_necessity: GA-568's two intentional pre-commit doc policy BLOCKs are
+# suppressed only when their artifacts prove the exact safety path. The
+# existing GA-531 mixed-batch contract separately proves legacy failures stay
+# actionable alongside expected safety blocks.
+# regression_justification: the production trigger counted both records as
+# legacy because only GA-PUSH1 had artifact semantic classification.
+@test "GA-568 expected doc_no_changelog blocks are suppressed with fail-closed mix" {
+    run_ga568_doc_no_changelog_fixture
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"expected safety BLOCKs ignored (expected_ga_push1=0, expected_doc_no_changelog=2"* ]]
+    [[ "$output" != *"SENT: hook_failure"* ]]
 }
