@@ -15791,3 +15791,10 @@ insights:
   source: "semantic_index_update"
   fix_known: false
   status: pending
+- id: INS-20260903-123428691-dfc9
+  ts: "2026-09-03T12:34:28+09:00"
+  insight: "semantic_index_update新概念候補: discussion:C \\Users\\simok\\OneDrive\\デスクトップ\\バム型・届け方マニュアル v4 txt をよんでx account ops automation  は 既存aliasesに一致なし。概念定義とaliases追加を検討せよ"
+  priority: "low"
+  source: "semantic_index_update"
+  fix_known: false
+  status: pending
