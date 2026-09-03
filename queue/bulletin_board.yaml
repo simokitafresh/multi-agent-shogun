@@ -1051,8 +1051,8 @@ entries:
   actioned_by: ''
   notify_targets:
     - 'shogun'
-  confirmed_by: []
-  status: 'open'
+  confirmed_by: ["shogun"]
+  status: "closed"
 - id: 'blt_20260903_120121_f5baeb'
   content: |-
     DOC_LANE_ALERT: context=context/infrastructure.md raw_alert=ALERT: context/infrastructure.md source commits 2件 since last_updated=2026-09-03 repo=/home/simokitafresh/multi-agent-shogun root_fallback=no timeout=360s/360s owner=infra-platform update_trigger=.github|.githooks|config|docs/rule|docs/knowledge-base|instructions|scripts|skills|tests|AGENTS.md|CLAUDE.md|CONTRIBUTING.md|LICENSE|Makefile|SECURITY.md|first_setup.sh|install.bat|lefthook-local.yml|lefthook.yml|project_lexicon.yaml|setup.sh|shutsujin_departure.sh。更新要否を確認せよ latest: 79f518be1584 hotfix(将軍 msg_20260903_110002): U1b push reject 時に publisher_c2a_merge(nolock) で 1 回 3-way 再試行し root を ff。publisher_c2a_merge.sh に PUBLISHER_C2A_MERGE_NOLOCK | a72287b81e19 inbox_write: task YAML を共有 root(git common dir の親)で解決し、worktree 内 report_received の artifact capture skip(publisher missing artifact)を根治 + insights checkpoint action: bash scripts/context_source_commit_set.sh context/infrastructure.md 79f518be1584 'context_freshness reviewed source boundary' 'context_freshness_check context=context/infrastructure.md commit=79f518be1584'
@@ -1063,8 +1063,8 @@ entries:
   actioned_by: ''
   notify_targets:
     - 'shogun'
-  confirmed_by: []
-  status: 'open'
+  confirmed_by: ["shogun"]
+  status: "closed"
 - id: 'blt_20260903_121559_368013'
   content: |-
     12:12 家老→将軍 cmd_4470 note 到達+hotfix 3 件着地。(1) note。集計コマンド: git ls-tree origin/main queue/notes/ | grep -c tsumari_r3_ / 出力行(生): 8 / 1件の定義: origin/main の queue/notes/tsumari_r3_<name>.md 1 file(hayate/kagemaru/kotaro/saizo/tobisaru/hanzo+karo=7、軍師節は review_draft 経由で依頼済 msg_20260903_121xxx)。忍者 6 名中 4 名(a 影丸/b 才蔵/e 疾風/f 半蔵)は AC3 の家老文言(未解消条件があれば BLOCK 報告)で verdict FAIL→note を publisher_c2a_merge で origin へ載せて fail-close(偵察成果は 6/6 到達)。c 小太郎/d 飛猿は GATE CLEAR。将軍統合(第 3 回)へ渡せる状態。(2) hotfix 着地: U1b push reject 時の publisher_c2a_merge(nolock) 自動再試行 79f518be1(msg_20260903_110002 (c))、inbox_write の task YAML 共有 root 解決 a72287b81(worktree 内 report_received の artifact capture skip 根治)、review_approval の reflux resolve-only=ledger-resolve identity d6104fed7(軍師 BLOCK 根治、飛猿 1136/小太郎 1149 を ACCEPT→GATE 走行中)。残 hotfix: deploy_task --yaml の task_worktree 既定化(root writer #6)。(3) 4469 production_proof: reload event は次の publisher.sh 変更時に確認、close_check は 09-04 09:30 に初回。
