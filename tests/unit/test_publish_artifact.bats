@@ -274,6 +274,25 @@ mk_report() {
     } > "$path"
 }
 
+# cmd_karo_hotfix_report_artifact_identity_202609031819 AC2: report fixture
+# with an explicit artifact_task_id, distinct from the shared task_id used for
+# commit/report/task identity and parent matching.
+mk_report_with_artifact_id() {
+    local path="$1" task_id="$2" artifact_task_id="$3" sha="$4"
+    shift 4
+    {
+        echo "task_id: $task_id"
+        printf 'artifact_task_id: "%s"\n' "$artifact_task_id"
+        echo "commit_hash: $sha"
+        echo "files_modified:"
+        local p
+        for p in "$@"; do
+            echo "- path: $p"
+            echo "  change: test"
+        done
+    } > "$path"
+}
+
 @test "gate_report_format --manifest-check PASSes when report and manifest fully match" {
     mk_manifest match_ok aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa base1 a.txt b.txt
     local report="$BATS_TEST_TMPDIR/report_match.yaml"
@@ -310,6 +329,74 @@ mk_report() {
 
     run bash "$GATE" --manifest-check "$report"
     [ "$status" -eq 0 ]
+}
+
+# --- AC2 (cmd_karo_hotfix_report_artifact_identity_202609031819): optional
+# artifact_task_id decouples manifest lookup from the shared task_id, so a
+# split task's sibling AC reports stop colliding on one publish_queue capture.
+
+# test_necessity: reproduces the real cmd_4472 incident (AC1 commit
+# b281c33e3.../4 paths, AC2 commit bb6049dc7.../3 paths, both reports declaring
+# task_id=cmd_4472_normal) and proves both artifact_task_id fixes it. Without
+# this test, the AC2 capture overwriting the shared task_id's manifest could
+# silently regress to permanently FAILing the sibling AC's report again.
+# origin: [[cmd_4472]] -> [[manifest上書き循環]] -> [[artifact_task_id分離]]
+@test "regression(cmd_4472): sibling AC report without artifact_task_id FAILs after the shared task_id manifest is overwritten, artifact_task_id resolves it" {
+    # AC2 captured last and overwrote the shared task_id's manifest, as it did in production.
+    mk_manifest cmd_4472_normal bb6049dc74087ab081eb0a807c324cef7288423e base_ac2 \
+        scripts/x_ops/x_post.sh scripts/x_ops/x_post_ledger_lookup.py tests/unit/test_x_post.bats
+
+    # AC1's report still declares the shared task_id (legacy field): it FAILs.
+    local ac1_legacy="$BATS_TEST_TMPDIR/report_cmd_4472_ac1_legacy.yaml"
+    mk_report "$ac1_legacy" cmd_4472_normal b281c33e3cc87418320280ae2ea1e29d19854dab \
+        scripts/x_ops/x_post_gate.sh skills/x-post-pipeline/slot_calendar.yaml \
+        skills/x-post-pipeline/stock_ledger.yaml tests/unit/test_x_post_gate.bats
+    run bash "$GATE" --manifest-check "$ac1_legacy"
+    [ "$status" -eq 1 ]
+    [[ "$output" == *"source_sha mismatch"* ]]
+    [[ "$output" == *"paths mismatch"* ]]
+
+    # AC1's own capture, under its own artifact identity, is untouched by AC2's overwrite.
+    mk_manifest cmd_4472_ac1 b281c33e3cc87418320280ae2ea1e29d19854dab base_ac1 \
+        scripts/x_ops/x_post_gate.sh skills/x-post-pipeline/slot_calendar.yaml \
+        skills/x-post-pipeline/stock_ledger.yaml tests/unit/test_x_post_gate.bats
+
+    # AC1's report declares artifact_task_id pointing at its own capture: PASSes.
+    local ac1_fixed="$BATS_TEST_TMPDIR/report_cmd_4472_ac1_fixed.yaml"
+    mk_report_with_artifact_id "$ac1_fixed" cmd_4472_normal cmd_4472_ac1 \
+        b281c33e3cc87418320280ae2ea1e29d19854dab \
+        scripts/x_ops/x_post_gate.sh skills/x-post-pipeline/slot_calendar.yaml \
+        skills/x-post-pipeline/stock_ledger.yaml tests/unit/test_x_post_gate.bats
+    run bash "$GATE" --manifest-check "$ac1_fixed"
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"paths=4"* ]]
+
+    # AC2's own report (legacy, no artifact_task_id) still matches the shared
+    # task_id manifest it wrote: both siblings PASS simultaneously.
+    local ac2_report="$BATS_TEST_TMPDIR/report_cmd_4472_ac2.yaml"
+    mk_report "$ac2_report" cmd_4472_normal bb6049dc74087ab081eb0a807c324cef7288423e \
+        scripts/x_ops/x_post.sh scripts/x_ops/x_post_ledger_lookup.py tests/unit/test_x_post.bats
+    run bash "$GATE" --manifest-check "$ac2_report"
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"paths=3"* ]]
+}
+
+# test_necessity: artifact_task_id resolves a filesystem path
+# ($state_dir/publish_queue/artifacts/<id>/manifest.yaml); an unvalidated value
+# must never let a report traverse or escape that directory.
+@test "gate_report_format --manifest-check BLOCKs invalid artifact_task_id (empty, path traversal, bad characters)" {
+    mk_manifest safe_task_blk aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa base1 a.txt
+
+    local i=0 bad
+    for bad in '' '../safe_task_blk' 'foo/bar' 'foo bar' 'foo;rm -rf'; do
+        i=$((i + 1))
+        local report="$BATS_TEST_TMPDIR/report_bad_artifact_id_${i}.yaml"
+        mk_report_with_artifact_id "$report" safe_task_blk "$bad" \
+            aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa a.txt
+        run bash "$GATE" --manifest-check "$report"
+        [ "$status" -eq 1 ]
+        [[ "$output" == *"invalid artifact_task_id"* ]]
+    done
 }
 
 @test "gate_report_format normal invocation is byte-identical to pre-change behavior when no manifest exists" {

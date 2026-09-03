@@ -17,7 +17,7 @@ set -e
 _gate_manifest_consistency_check() {
     local report_path="$1"
     local state_dir="${SHOGUN_STATE_DIR:-$HOME/.local/share/multi-agent-shogun}"
-    local task_id manifest_path
+    local task_id manifest_path manifest_id
     [ -n "$report_path" ] && [ -f "$report_path" ] || {
         echo "FAIL(manifest_consistency): report file not found: ${report_path:-<empty>}" >&2
         return 1
@@ -28,7 +28,44 @@ d = yaml.safe_load(open(sys.argv[1])) or {}
 print(str(d.get('task_id') or ''))
 " "$report_path" 2>/dev/null) || return 0
     [ -n "$task_id" ] || return 0
-    manifest_path="$state_dir/publish_queue/artifacts/$task_id/manifest.yaml"
+    manifest_id="$task_id"
+
+    # cmd_karo_hotfix_report_artifact_identity_202609031819 AC2: a split task's
+    # AC-scoped report may declare artifact_task_id to point manifest lookup at
+    # its own capture, so a sibling AC's report_received capture under the same
+    # shared task_id cannot overwrite it out from under this check (cmd_4472
+    # AC1/AC2 shared task_id=cmd_4472_normal; the later AC2 capture overwrote
+    # AC1's manifest and made AC1 permanently FAIL here). commit/report/task
+    # identity and parent matching elsewhere in this file stay on task_id
+    # unchanged; only this manifest lookup key is affected, and only when the
+    # report explicitly opts in.
+    local artifact_task_id_state
+    artifact_task_id_state=$(python3 -c "
+import yaml, sys
+d = yaml.safe_load(open(sys.argv[1])) or {}
+if 'artifact_task_id' not in d:
+    print('ABSENT')
+else:
+    v = d.get('artifact_task_id')
+    print('PRESENT:' + ('' if v is None else str(v)))
+" "$report_path" 2>/dev/null) || return 0
+    case "$artifact_task_id_state" in
+        ABSENT) : ;;
+        PRESENT:*)
+            local artifact_task_id="${artifact_task_id_state#PRESENT:}"
+            if ! [[ "$artifact_task_id" =~ ^[A-Za-z0-9_-]+$ ]]; then
+                echo "FAIL(manifest_consistency): invalid artifact_task_id: '${artifact_task_id}'" >&2
+                return 1
+            fi
+            manifest_id="$artifact_task_id"
+            ;;
+        *)
+            echo "FAIL(manifest_consistency): invalid artifact_task_id: '${artifact_task_id_state}'" >&2
+            return 1
+            ;;
+    esac
+
+    manifest_path="$state_dir/publish_queue/artifacts/$manifest_id/manifest.yaml"
     [ -f "$manifest_path" ] || return 0
     python3 - "$report_path" "$manifest_path" <<'MANIFEST_CHECK_PY'
 import sys
