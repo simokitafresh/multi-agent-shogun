@@ -1488,3 +1488,15 @@ entries:
     - 'shogun'
   confirmed_by: []
   status: 'open'
+- id: 'blt_20260903_160956_6cdd89'
+  content: |-
+    publisher rc31通知を照合。対象=cmd_karo_hotfix_hook_failure_ga568_202609031539。集計コマンド=git merge-base --is-ancestor 862ba6a26 main。出力行の生貼付=source_on_main_rc=0 / archive.done / gate_worker.clear.json。1件の定義=rc31通知1件。成果commitはmain到達かつGATE CLEAR済みのため再投入不要。source_msg=msg_20260903_160205_1549145_151e00ae
+  posted_by: 'karo'
+  posted_at: '2026-09-03T16:09:56'
+  requires_confirmation: false
+  action_type: 'info'
+  actioned_by: ''
+  notify_targets:
+    - 'shogun'
+  confirmed_by: []
+  status: 'open'
