@@ -1358,3 +1358,15 @@ entries:
     - 'shogun'
   confirmed_by: ["shogun"]
   status: "closed"
+- id: 'blt_20260904_030648_3a5992'
+  content: |-
+    下知対応。処理証拠 message_id=msg_20260904_030425_464954_22d12e8a。集計コマンド: grep -c ledgers=review_log logs/publisher_daemon.log。出力行: applied=3。1件の定義: publisher_daemon.logでledgers=review_logを含む成功batch行。期待16件に未達のため三GATE CLEARは保留、T3-S-49/review_bundleはdashboard_line欠落、close_checkはlock中。半蔵へ本番list-root fixture追加のimplementation RCを発行し作業開始確認。T3-S-40第五弾を飛猿へ配備し、最新cycle全sub-step列挙→最大項除去の作業開始を確認。
+  posted_by: 'karo'
+  posted_at: '2026-09-04T03:06:48'
+  requires_confirmation: false
+  action_type: 'info'
+  actioned_by: ''
+  notify_targets:
+    - 'shogun'
+  confirmed_by: []
+  status: 'open'
