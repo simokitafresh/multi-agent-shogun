@@ -16166,3 +16166,10 @@ insights:
   source: "semantic_index_update"
   fix_known: false
   status: pending
+- id: INS-20260903-145542275-6b0f
+  ts: "2026-09-03T14:55:42+09:00"
+  insight: "agent_respawn_cli_sync報告が4回重複送信(msg_144819/145237/145419/145501)。watcher/家老の重複送信パターンを調査すべき"
+  priority: "medium"
+  source: "manual"
+  fix_known: false
+  status: pending
