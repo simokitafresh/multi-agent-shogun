@@ -278,11 +278,13 @@ P1 の AC への追加(起票時に反映): (a) gate 規則 7/7b/8/9/10 と規�
 | 09-03 20:30 | proof | 将軍再実測: draft `queue/x_drafts/2026-09-03_A.txt`(17:17 版、243 字、GEM CAGR14.5%/MaxDD-22.7%/Sharpe0.78 vs S&P500、note URL、免責 1 行)は `x_post.sh gate 2026-09-03_A A` → PASS rc=0。marker .approved/.posted 0 件。第 2 弾を待たず本 draft で承認へ進める(gate が品質正本。『家老方針で承認外』は根拠なき直列=殿 19:04 裁定違反) | 将軍実行ログ |
 | 09-03 20:30 | proof | `x_post.sh approve 2026-09-03_A` を起動(ntfy 送信、marker 待ち 1800 s)。殿『y』→将軍が `.approved` marker→`x_post.sh post 2026-09-03_A`→201→URL を cmd_4472 production_proof へ | logs/x_post_approve_20260903_2030.log |
 | 09-03 20:31 | proof | **投稿 1 本成功**: 殿『y』(ntfy 20:30)→将軍 `.approved` marker→`x_post.sh post 2026-09-03_A`→post id 2095474791797100686(https://x.com/i/status/2095474791797100686)、`.posted` marker 20:31:36Z、media なし。壁 1 つ追加発見=official xdk 未インストール(python3=.codd-venv)→`pip install xdk` 0.10.6 で解消。P1 残壁 (4) 完了、残=(5) cmd_4472 GATE CLEAR | queue/x_drafts/2026-09-03_A.posted |
+| 09-03 21:39 | hotfix | 生成契約 第 2 弾着地(小太郎 4d7830dc0): URL/免責を script 合成、LLM は本文のみ、台帳外 URL/数字は FAIL。xdk を requirements.txt/first_setup.sh へ固定。bats +69 | publisher 4d7830dc0 |
 | 次 | P1 close | 家老が URL を cmd_4472 production_proof へ記録→GATE CLEAR。次 slot B 以降=第 2 弾 hotfix(URL/免責 script 合成)着地後に calendar 通りの生成→gate→殿 y→post。xdk は .codd-venv に常設(requirements へ固定は家老 lane) | — |
 
 **P1 完了までの残壁(20:33 現在値)**: (1)〜(4) 完了(投稿 1 本 https://x.com/i/status/2095474791797100686)。残=(5) cmd_4472 GATE CLEAR のみ。
 
 ## §8 レビュー履歴
+- v0.14(09-03 21:46) §13 に第 2 弾着地(4d7830dc0)と xdk 固定を追記。
 - v0.13(09-03 20:33) 投稿 1 本成功を §13 に記録(post id 2095474791797100686)。xdk 未インストールの壁を解消。§1 を『投稿 1』へ。
 - v0.12(09-03 20:30) 覚醒更新: §13 に hotfix 第 1 弾着地(8a0a4ae1e)、draft A gate PASS 再実測、approve 起動(ntfy)を追記。残壁を『殿承認 1 回』へ更新。第 2 弾 hotfix を proof の前提から外す(根拠なき直列の排除、殿 19:04 裁定)。
 - v0.11(09-03 17:55) 覚醒更新: §1 X 投稿 API を『整備済・投稿 1(09-03 20:31)』へ、§3 P1 を実装中の現在値へ、§5 D1/D2/D3 を確定へ、§13 実装進捗台帳を新設(認可 16:53、draft gate FAIL 2 回→手直し PASS は承認外、生成契約 hotfix 配備待ち)
