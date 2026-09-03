@@ -3421,8 +3421,8 @@ assert '--cmd-warnings "$CMD_ID"' in script
 assert 'BULLETIN_NOTIFY=shogun' in script
 assert 'record_wait_reason "WAIT:review_two_phase_pending"' in script
 assert 'GATE WAIT: review_two_phase_pending' in script
-assert 'record_wait_reason "WAIT:throughput_segment_invalid"' in script
-assert 'GATE WAIT: ${CMD_ID}:throughput_segment_invalid' in script
+assert 'GATE WARN: ${CMD_ID}:throughput_segment_invalid' in script
+assert 'record_wait_reason "WAIT:throughput_segment_invalid"' not in script
 assert 'GATE BLOCK: ${CMD_ID}:throughput_segment_invalid' not in script
 PY
 }
