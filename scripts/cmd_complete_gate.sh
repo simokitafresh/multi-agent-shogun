@@ -81,6 +81,79 @@ report_ci_push_state_cached() {
     printf '%s\n' "$REPORT_CI_PUSH_STATE_CACHED"
 }
 
+# Verify publisher-owned publication evidence without consulting the legacy
+# commit_hash path.  This keeps the migration dual-read explicit: a report
+# carrying only published_sha is accepted only when the publisher's exact
+# path/blob receipt is present and contained by the canonical remote tip.
+report_published_receipt_state() {
+    local report_file="$1" repo_dir="$2" expected_head="$3"
+    REPORT_FILE="$report_file" REPO_DIR="$repo_dir" EXPECTED_HEAD="$expected_head" python3 - <<'PY'
+import os
+import pathlib
+import re
+import subprocess
+import yaml
+
+def fail(message):
+    print("BLOCK: " + message)
+    raise SystemExit(0)
+
+try:
+    report = yaml.safe_load(pathlib.Path(os.environ["REPORT_FILE"]).read_text(encoding="utf-8")) or {}
+except (OSError, yaml.YAMLError):
+    fail("report unreadable")
+published = str(report.get("published_sha") or "").strip().lower()
+if not re.fullmatch(r"[0-9a-f]{40}", published):
+    fail("published_sha invalid")
+repo = pathlib.Path(os.environ["REPO_DIR"]).resolve()
+head = os.environ["EXPECTED_HEAD"].strip().lower()
+for revision, label in ((published, "published_sha"), (head, "canonical head")):
+    if subprocess.run(["git", "-C", str(repo), "cat-file", "-e", revision + "^{commit}"],
+                      stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL).returncode:
+        fail(label + " unavailable")
+if subprocess.run(["git", "-C", str(repo), "merge-base", "--is-ancestor", published, head],
+                  stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL).returncode:
+    fail("published_sha not contained by canonical head")
+
+receipt = None
+for key in ("path_blob_receipt", "path_blob_receipts", "path_receipt", "published_path_receipt"):
+    if key in report:
+        receipt = report.get(key)
+        break
+if isinstance(receipt, dict):
+    for wrapper in ("paths", "entries", "receipts"):
+        if wrapper in receipt:
+            receipt = receipt[wrapper]
+            break
+if isinstance(receipt, dict):
+    receipt = [{"path": path, "blob": blob} for path, blob in receipt.items()]
+if not isinstance(receipt, list) or not receipt:
+    fail("path/blob receipt missing")
+
+matched = 0
+seen_paths = set()
+for entry in receipt:
+    if not isinstance(entry, dict):
+        fail("path/blob receipt entry invalid")
+    path = str(entry.get("path") or "").strip()
+    expected = str(entry.get("blob") or entry.get("blob_sha") or entry.get("sha") or "").strip().lower()
+    if not path or path.startswith("/") or ".." in pathlib.PurePosixPath(path).parts:
+        fail("path/blob receipt path invalid")
+    if path in seen_paths:
+        fail("path/blob receipt duplicate path:" + path)
+    seen_paths.add(path)
+    if not re.fullmatch(r"[0-9a-f]{40}", expected):
+        fail("path/blob receipt blob invalid")
+    result = subprocess.run(["git", "-C", str(repo), "rev-parse", published + ":" + path],
+                            stdout=subprocess.PIPE, stderr=subprocess.DEVNULL, text=True)
+    actual = result.stdout.strip() if result.returncode == 0 else "__ABSENT__"
+    if actual != expected:
+        fail("path/blob receipt mismatch:" + path)
+    matched += 1
+print("PASS: published_sha=" + published + " paths=" + str(matched) + " contained_by=" + head)
+PY
+}
+
 report_commit_main_ancestry_state() {
     local report_file="$1"
     local repo_dir="${2:-$SCRIPT_DIR}"
@@ -198,68 +271,7 @@ PY
             printf 'BLOCK: published report receipt: remote main/master boundary missing\n'
             return 1
         fi
-        published_state="$(REPORT_FILE="$report_file" REPO_DIR="$repo_dir" EXPECTED_HEAD="$expected_head" python3 - <<'PY'
-import os
-import pathlib
-import re
-import subprocess
-import yaml
-
-def fail(message):
-    print("BLOCK: " + message)
-    raise SystemExit(0)
-
-try:
-    report = yaml.safe_load(pathlib.Path(os.environ["REPORT_FILE"]).read_text(encoding="utf-8")) or {}
-except (OSError, yaml.YAMLError):
-    fail("report unreadable")
-published = str(report.get("published_sha") or "").strip().lower()
-if not re.fullmatch(r"[0-9a-f]{40}", published):
-    fail("published_sha invalid")
-repo = pathlib.Path(os.environ["REPO_DIR"]).resolve()
-head = os.environ["EXPECTED_HEAD"].strip().lower()
-for revision, label in ((published, "published_sha"), (head, "canonical head")):
-    if subprocess.run(["git", "-C", str(repo), "cat-file", "-e", revision + "^{commit}"],
-                      stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL).returncode:
-        fail(label + " unavailable")
-if subprocess.run(["git", "-C", str(repo), "merge-base", "--is-ancestor", published, head],
-                  stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL).returncode:
-    fail("published_sha not contained by canonical head")
-
-receipt = None
-for key in ("path_blob_receipt", "path_blob_receipts", "path_receipt", "published_path_receipt"):
-    if key in report:
-        receipt = report.get(key)
-        break
-if isinstance(receipt, dict):
-    for wrapper in ("paths", "entries", "receipts"):
-        if wrapper in receipt:
-            receipt = receipt[wrapper]
-            break
-if isinstance(receipt, dict):
-    receipt = [{"path": path, "blob": blob} for path, blob in receipt.items()]
-if not isinstance(receipt, list) or not receipt:
-    fail("path/blob receipt missing")
-
-matched = 0
-for entry in receipt:
-    if not isinstance(entry, dict):
-        fail("path/blob receipt entry invalid")
-    path = str(entry.get("path") or "").strip()
-    expected = str(entry.get("blob") or entry.get("blob_sha") or entry.get("sha") or "").strip().lower()
-    if not path or path.startswith("/") or ".." in pathlib.PurePosixPath(path).parts:
-        fail("path/blob receipt path invalid")
-    if not re.fullmatch(r"[0-9a-f]{40}", expected):
-        fail("path/blob receipt blob invalid")
-    result = subprocess.run(["git", "-C", str(repo), "rev-parse", published + ":" + path],
-                            stdout=subprocess.PIPE, stderr=subprocess.DEVNULL, text=True)
-    actual = result.stdout.strip() if result.returncode == 0 else "__ABSENT__"
-    if actual != expected:
-        fail("path/blob receipt mismatch:" + path)
-    matched += 1
-print("PASS: published_sha=" + published + " paths=" + str(matched) + " contained_by=" + head)
-PY
-)"
+        published_state="$(report_published_receipt_state "$report_file" "$repo_dir" "$expected_head")"
         case "$published_state" in
             PASS:*)
                 printf '%s\n' "$published_state"

@@ -99,6 +99,24 @@ run_gate() {
     [ "$output" = "BLOCK: path/blob receipt missing" ]
 }
 
+@test "published_sha accepts the wrapped path/blob receipt form" {
+    report="$TEST_ROOT/wrapped.yaml"
+    printf 'verdict: PASS\npublished_sha: %s\npath_blob_receipt:\n  paths:\n    state: %s\n' \
+        "$(<"$TEST_ROOT/commit")" "$(<"$TEST_ROOT/blob_value")" > "$report"
+    run_gate "$report"
+    [ "$status" -eq 0 ]
+    [[ "$output" == "PASS: published_sha="*" paths=1 contained_by="* ]]
+}
+
+@test "published path/blob receipt rejects duplicate paths" {
+    report="$TEST_ROOT/duplicate.yaml"
+    printf 'verdict: PASS\npublished_sha: %s\npath_blob_receipt:\n  - path: state\n    blob: %s\n  - path: state\n    blob: %s\n' \
+        "$(<"$TEST_ROOT/commit")" "$(<"$TEST_ROOT/blob_value")" "$(<"$TEST_ROOT/blob_value")" > "$report"
+    run_gate "$report"
+    [ "$status" -eq 1 ]
+    [ "$output" = "BLOCK: path/blob receipt duplicate path:state" ]
+}
+
 @test "legacy commit_hash takes priority over published_sha when both are present" {
     report="$TEST_ROOT/both.yaml"
     printf 'verdict: PASS\ncommit_hash: %s\npublished_sha: %s\n' \
@@ -113,4 +131,3 @@ run_gate() {
     run bash -c 'git diff -U0 -- scripts/cmd_complete_gate.sh | grep -E "^@@.*source_only_(path_snapshot_generic|cumulative_equivalence|insights_id_merge|lessons_id_merge)"'
     [ "$status" -eq 1 ]
 }
-
