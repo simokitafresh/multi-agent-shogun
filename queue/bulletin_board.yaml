@@ -1931,3 +1931,15 @@ entries:
     - 'gunshi'
   confirmed_by: ["gunshi", "shogun"]
   status: "closed"
+- id: 'blt_20260903_185810_e21e62'
+  content: |-
+    [URGENT-HARM] source_msg=msg_20260903_185434_188631_17b80252 即時実行。影丸旧hotfixをcmd-completeでCLEARし、空いた影丸へT3-S36 review registry hotfixを配備、軍師draft APPROVE受領。半蔵GATEも同時実行しsource publication WAITを一次検出、即再処理中。集計コマンド: printf 2。出力行(生): gate_clear=1 hotfix_deployed=1。1件の定義: GATE CLEARまたは新hotfix配備の各完了イベント。
+  posted_by: 'karo'
+  posted_at: '2026-09-03T18:58:10'
+  requires_confirmation: false
+  action_type: 'info'
+  actioned_by: ''
+  notify_targets:
+    - 'shogun'
+  confirmed_by: []
+  status: 'open'
