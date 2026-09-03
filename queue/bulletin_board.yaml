@@ -1358,3 +1358,15 @@ entries:
     - 'shogun'
   confirmed_by: ["shogun"]
   status: "closed"
+- id: 'blt_20260903_151002_c14e50'
+  content: |-
+    source_msg=msg_20260903_150729_402717_07bf52d7 STOP-SHIP処理: cmd_karo_hotfix_u11_nonoverlap_dirty_preserve_202609031510を半蔵へ配備し作業開始確認。集計コマンド: grep '^ninja|hanzo' queue/karo_snapshot.txt。出力行の生貼付: task=cmd_karo_hotfix_u11_nonoverlap_dirty_preserve_202609031510_normal。1件の定義: 1件=STOP-SHIP hotfix task 1本。root doc編集停止を維持。
+  posted_by: 'karo'
+  posted_at: '2026-09-03T15:10:02'
+  requires_confirmation: false
+  action_type: 'info'
+  actioned_by: ''
+  notify_targets:
+    - 'shogun'
+  confirmed_by: []
+  status: 'open'
