@@ -53,8 +53,62 @@ commands:
       diagnosis: "BLOCK理由: 初回起票(想定=AC 内の本番 URL 検証が phase 混在と判定されうる)。対策: 診断 ✅ 突合は production_proof に分離、AC は本番 curl と Playwright の二値のみ"
     measurement_source: "本番 live 実測 evidence=curl 13:40 timestamp(agent-card 200、directory 404、mcp.json 404)と git ls-tree origin/main の log"
     environment_change: "type=gate; file=docs/research/agent_readiness_level3_roadmap_20260831.md; pattern=2-5〜2-7"
-    delegated_at: "\"2026-09-03T18:21:25\""
     origin: "[[agent_readiness_level3_roadmap_20260831]] -> [[T212_起票停止]] -> [[cmd_4473_level3_2-6_2-7]]"
+  cmd_4472:
+    title: "X 運用 P1: 下書き生成(S3、マニュアル v4 §11 システム文固定)→gate 規則 7〜12+語彙拡張(S4)→ntfy 承認待ち→X API v2 投稿 client(S5、OAuth 2.0 PKCE、creds 不在は fail-close)を 1 本の CLI に接続し、台帳に site_public_table と advanced_metrics(分身・四つ目、1 投稿 1 PF)を追加する"
+    status: delegated
+    project: infra
+    purpose: "殿発案 09-03 03:13『Grok によるアカウント運用を API で自動化』の設計書 v0.8(docs/research/x_account_ops_automation_asis_tobe_5w1h_20260903.md、gist 8e1336f8)。P0(cmd_4467、台帳 50/calendar/gate 6 規則)は 09:48 CLEAR、規則 1 の fail-close hotfix 2fa437a9c 着地。以後の殿裁定: 12:34 マニュアル v4 取込(§11: 体験 C を『登録無料・全機能・PF は Basic のみ』で毎週、dm-signal 3 層、サイト表は Basic+SPY のみ引用可で up to と ×N と Secret 行は主語禁止、記事 17.2% とサイト 16.1% の混在禁止、数字は 5 項目セット)、12:49〜12:55 E 軸ドリーム(§12: 分身・四つ目の metrics を inception 以来のセットで、1 投稿 1 PF、同居禁止、研究証跡併記)。X Developer Portal は殿が申請中(13:01 用途説明文を提示済)のため、投稿段は creds file 不在で fail-close し、下書き→gate→承認までを今日動かす"
+    scope_mode: NORMAL
+    target_path: skills/x-post-pipeline
+    acceptance_criteria:
+      AC1:
+        description: "台帳と gate(S1+S4)。(a) skills/x-post-pipeline/stock_ledger.yaml に site_public_table(観測日 2026-08-31、Basic-DualMomentum 行と SPY 行の CAGR/Sharpe/MDD/倍率と次回リバランス日、記事セット 3 本と別 key)と advanced_metrics(分身=Standard、四つ目=Premium の各 1 entry: inception・period_end・cagr・maxdd・sharpe・bench・worst_year・best_year・recovery_months。値は本番 DB の inception 以来の実測、取得 SQL または API と実行日時を note 欄に残す)と research_evidence(パリティ 100%・fullrecalc resilience・L3 robustness の結論 1 行+出典 path)を追加。(b) scripts/x_ops/x_post_gate.sh に規則 7(up to と ×[3 桁以上] と Secret が第 1〜2 文に出れば FAIL)・7b(Basic 行の数字を出す時 SPY 行が同一本文に無ければ FAIL)・8(CAGR/MaxDD/Sharpe のいずれかがあるのに期間または時点とベンチ値が無ければ FAIL)・9(17.2 と 16.1 が同一本文に共存で FAIL)・10(slot=C の本文に『登録』と『Basic』の両語が無ければ FAIL)・11(『分身』と『四つ目』が同一本文に共存で FAIL)・12(slot=E で倍率または CAGR があるのに MaxDD と回復期間が無ければ FAIL)を追加し、規則 5 に Standard/Premium/Secret(プラン名)を、規則 6 に『Know what to hold next』『劇薬』『戦国』『倍』を第 1 行禁止語として追加。slot は第 2 引数で受ける。(c) slot_calendar.yaml を v4 の A(4 週ローテ)/B/C(毎週固定)/D(隔週)+E(月次、分身と四つ目を交互、exclusive_pair)に置換。マニュアル v4 §6 のテンプレ A/B/C/D/懐疑 5 本は全 PASS、§4『使わない』行(Basic plan up to +38.8% など)を第 1 文にした本文と分身+四つ目同居本文は FAIL を bats で固定"
+        binary_check: "stock_ledger に site_public_table 1・advanced_metrics 2・research_evidence 1 以上 ∧ 選択実行コマンド=bash scripts/run_tests.sh task queue/tasks/<ninja>.yaml で FAIL0・SKIP0 ∧ テンプレ 5 本 PASS ∧ 禁止本文 2 種 FAIL か?"
+      AC2:
+        description: "CLI 1 本 scripts/x_ops/x_post.sh(S3→S4→承認→S5)。(a) draft: 引数 slot(A/B/C/D/E)と台帳 key から、skills/x-post-pipeline/system_prompt_v4.txt(設計書 §11 のシステム文をそのまま保存)+スロット指示で Claude(claude --print)に本文を生成させ、queue/x_drafts/<date>_<slot>.txt に保存。(b) gate: 同 file を x_post_gate.sh slot 付きで判定、FAIL なら理由を stderr に出して exit 1。(c) approve: PASS した本文を ntfy で殿へ送り(本文全文+file path)、殿の『y』は queue/x_drafts/<name>.approved の存在で受ける(将軍が置く)。(d) post: approved があれば config/x_api.env(git-ignore、X_CLIENT_ID/X_ACCESS_TOKEN/X_REFRESH_TOKEN)を読み POST /2/tweets(OAuth 2.0 user context、refresh token で更新)。env file 不在または token 空なら『creds absent(fail-close)』で exit 2 し投稿しない。(e) 初回 OAuth 2.0 PKCE 認可の手順書 docs/research/x_api_oauth_setup_20260903.md(callback は localhost、scope=tweet.write tweet.read users.read offline.access、token の保存先と更新手順、secret 値は書かない)。bats: draft→gate→approve 不在で停止、approved+creds 不在で exit 2、post の HTTP 層は curl を mock して 201 と 401 の分岐"
+        binary_check: "x_post.sh draft/gate/approve/post の 4 subcommand が存在 ∧ creds 不在で post が exit 2 ∧ mock 201/401 の bats PASS ∧ 手順書に secret 値 0 ∧ 選択実行コマンド=bash scripts/run_tests.sh task queue/tasks/<ninja>.yaml で FAIL0・SKIP0 か?"
+    production_proof:
+      owner: monitor
+      description: "殿の X API 承認後(creds 投入後)に家老が x_post.sh を slot A で 1 本通し、ntfy 承認→POST /2/tweets 201→X 上の投稿 URL を掲示板に記録。creds 承認前はここを待たずに GATE CLEAR してよい(投稿段は fail-close の証明で足りる)"
+    command: |
+      1. AC1: 台帳 3 key の追加(advanced_metrics は本番 DB から実測)、gate 規則 7〜12+語彙拡張、calendar 置換、bats。
+      2. AC2: x_post.sh 4 subcommand と system_prompt_v4.txt、OAuth 手順書、mock bats。報告 YAML→家老レビュー→publish。
+    assumptions:
+      claim: "x_post_gate.sh は規則 1〜6 実装済(2fa437a9c、規則 1 は認証付き /api/signals で fail-close)。stock_ledger は 50 entry(url 50)。slot_calendar は weeks 4・slots_per_week 3 の旧構成。X API v2 POST /2/tweets は OAuth 2.0 user context(PKCE)で Free tier でも投稿可、読取り metrics は Basic 以上(設計書 §10)。creds は config/x_api.env(git-ignore)。分身と四つ目の metrics は B-6 で公開可、保有・ticker・重み・パラメータ値は禁止"
+      source: "bash scripts/x_ops/x_post_gate.sh <テンプレ A> → PASS rc=0(13:36 実行)、grep -c url: stock_ledger.yaml → 50、slot_calendar.yaml 先頭 5 行、設計書 §10/§11/§12(v0.8 e73f45ae8)、殿裁定 12:34/12:49/12:52/12:55"
+      trust: verified
+    depends_on: none
+    timeout_minutes: 120
+    estimated_minutes: 90
+    execution_env:
+      runtime_constraints: "task_worktree 必須。本番 X へは投稿しない(creds 不在で fail-close を証明するのみ)。secret 値を報告・手順書・commit に書かない。advanced_metrics の値は本番 DB 読取りのみ(書込み 0)"
+      long_runtime_reason: "gate 規則 7 本+bats、CLI 4 subcommand+mock、本番 DB 読取りの 3 塊"
+      measured_runtime_sec: 5400
+    split_decision:
+      boundary_ac_ids: [AC1, AC2]
+      integration_tasks: 2
+      parallel_ok: true
+    serial_dependency_evidence: "AC1(台帳+gate)と AC2(CLI)は file が別(gate.sh と ledger vs x_post.sh)で並列可。AC2 の gate 呼出しは既存 I/F(file 引数)に slot 引数を足すだけで、AC1 着地前は規則 1〜6 で動く"
+    quality_gate:
+      q1_firefighting: "品質向上。理由: 設計書 v0.8 の S1〜S5 を 1 本の CLI に接続し、殿承認と fail-close を構造にする。手作業の投稿を置換"
+      q2_learning: "奪わない。理由: 判断点は殿の『y』(approved file)の 1 つ。生成・判定・投稿は機械"
+      q3_next_quality: "上がる。理由: gate 規則 7〜12 で v4 とドリーム軸の禁則が本文に対して機械検証される"
+      q4_depth: "deep — 理由: 台帳 3 key(本番 DB 実測)+gate 7 規則+語彙+CLI 4 段+OAuth 手順+mock bats"
+      q5_verified_source: "structure_verified — 対象 script を実行して確認(2026-09-03 13:36): bash scripts/x_ops/x_post_gate.sh <v4 テンプレ A の本文 file> → 出力 PASS、exit 0(規則 1〜6 が本番 API 認証で動作)。grep -c url: skills/x-post-pipeline/stock_ledger.yaml → 50。ls config → xai_api.env あり・x_api.env なし(creds 未投入=fail-close 分岐が本番で踏まれる)"
+      q6_not_hiding: "隠していない。理由: creds 不在は exit 2 で明示、gate FAIL は理由付き stderr。投稿段の本番 proof は production_proof に分離"
+      q7_definition_verified: "v4 の禁則と E 軸の定義は docs/research/bam_delivery_manual_v4_20260903.md §0/§4/§6 と設計書 §11/§12 で確認(確認日: 2026-09-03)。X API v2 の認証と tier は設計書 §10"
+      q8_why_what: "WHY: P0 完了後 P1 が未起票で X 運用が止まっている(T230) / WHAT: 台帳+gate 拡張+CLI 4 段 / WHEN: 即(creds は後追い) / WHERE: skills/x-post-pipeline、scripts/x_ops、docs/research / WHO: 家老配備(2 忍者並列可、Claude 推奨=claude --print を使う) / HOW: AC1 と AC2 並走→レビュー→publish→creds 投入後に家老が 1 本通す / 複利: 以後の投稿は slot 指定 1 コマンド+殿の y だけ"
+      q9_firefighting_root_cause: "根本対応。理由: 手作業投稿の代替ではなく、禁則を gate に埋め込んだ pipeline を作る"
+      q10_knowledge_boundary: "検証済み: gate 1〜6 の動作、台帳件数、設計書の裁定。スコープ外: X API 承認(殿)、S6 KPI 還流(P2)、reply 集計(P2)、xAI API"
+      q11_not_already_done: "ls scripts/x_ops → x_post_gate.sh のみ(x_post.sh 無し)。grep -c advanced_metrics skills/x-post-pipeline/stock_ledger.yaml → 0。grep -c rule7 scripts/x_ops/x_post_gate.sh → 0(13:36)。rg -c cmd_4472 queue/shogun_to_karo.yaml → 0(起票前)"
+      q_ambiguity: "none。承認は approved file の存在で受ける(ntfy の返信は取れないため将軍が置く)。creds 不在時の挙動は exit 2 固定"
+      q12_lord_30min_cost: "no"
+      diagnosis: "BLOCK理由: 初回起票(想定 BLOCK=command steps と AC 数、phase 混在)。対策: command 2 step=AC 2、本番投稿は production_proof に分離"
+    measurement_source: "本番 live 実測 evidence=docs/research/x_account_asis_measurement_20260903.md(cmd_4463 の本番観測 09-02、X 4,434 フォロワー・note 49 本・再掲比 約 1 対 5)と x_post_gate.sh の本番 /api/signals 認証 PASS run(13:36 timestamp)と ls config(x_api.env 不在)の log"
+    environment_change: "type=gate; file=scripts/x_ops/x_post_gate.sh; pattern=rule6_internal_term_in_first_line"
+    delegated_at: "\"2026-09-03T13:40:04\""
+    origin: "[[cmd_4467]] -> [[bam_delivery_manual_v4_20260903]] -> [[cmd_4472_x_p1_pipeline]]"
   cmd_4470:
     title: "偵察(全ロール・第 3 回): PUBLISHER_SINGLE ON(09-03 04:37)以降の便を止める『つまり』を 8 分類(偽陽性/過剰 BLOCK/構造バグ/循環拘束/遅い script・test/Claude↔Codex 仕組み差/サンクコスト過剰複雑化/影響範囲・依存未解明の浅い対応)で全数リストアップし、忍者 6 名は領域分担で queue/notes/tsumari_r3_<name>.md に、軍師・家老は各節を書き、将軍が tsumari_root_causes_20260901.md 第 3 回へ統合する"
     status: in_progress
