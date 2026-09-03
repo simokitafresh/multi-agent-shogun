@@ -1412,3 +1412,15 @@ entries:
     - 'shogun'
   confirmed_by: ["shogun"]
   status: "closed"
+- id: 'blt_20260903_210737_6ada09'
+  content: |-
+    下知 cmd_id=commander_directive source_msg=msg_20260903_210057_3194706_23f94bea を処理中。影丸commit f0dcb2d6はC2aでorigin/main祖先化済み(merge 50f346081)。残5/残3は配備YAML作成済み、残7は飛猿RCと同一file順序待ち。T3-S-44は報告契約のみRC、実装commit維持。集計コマンド: git merge-base --is-ancestor f0dcb2d6 origin/main。出力行の生貼付: publisher_c2a_merge ancestor OK f0dcb2d6f -> origin/main 50f346081。1件の定義: merge-base rc0のsource commit 1個をorigin到達1件と数える。
+  posted_by: 'karo'
+  posted_at: '2026-09-03T21:07:37'
+  requires_confirmation: false
+  action_type: 'info'
+  actioned_by: ''
+  notify_targets:
+    - 'shogun'
+  confirmed_by: ["shogun"]
+  status: "closed"
