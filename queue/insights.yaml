@@ -16098,7 +16098,9 @@ insights:
   priority: "low"
   source: "semantic_stress_test"
   fix_known: false
-  status: pending
+  status: "resolved"
+  action_artifact: "semantic_index=/home/simokitafresh/multi-agent-shogun/docs/semantic-index/index.md"
+  resolved_reason: "semantic index candidate was absorbed into a registered concept"
 - id: INS-20260903-132158008-2c28
   ts: "2026-09-03T13:21:58+09:00"
   insight: "[[U9b publisher の root sync を ff only から field aware 3 way へ拡張]] semantic_stress_test candidate_aliases: NO_MATCH source=cmds query=U9b: publisher の root sync を ff-only から field-aware 3-way へ拡張(dirty path が incoming と重なる場合、merge driver 付き台帳は base=HEAD/ours=worktree/theirs=incoming で統合、driver 無しは fail-close)+dae"
@@ -16116,6 +16118,15 @@ insights:
 - id: INS-20260903-134935435-75ae
   ts: "2026-09-03T13:49:35+09:00"
   insight: "[[X運用P1のdraft→gate→承認待ち→OAuth投稿をx post shへ接続し]] NO_MATCH purpose pending alias: cmd_complete時にdeploy_task.logでNO_MATCHだったpurpose。類似概念TOP3: hook_automation_framework(Hook自動化フレームワーク; alias=post-bash-combined; score=14.0) / dmsignal_fe_experience_deploy(DM-Signal体感主導デプロイ; alias=post-deploy FE正しさ検分; score=13.9) / agent_formation_management(編成管理; alias=post_deploy_check; score=13.7)。既存概念aliasesへの自動昇格候補"
+  priority: "low"
+  source: "semantic_index_update"
+  fix_known: false
+  status: "resolved"
+  action_artifact: "semantic_index=/home/simokitafresh/multi-agent-shogun/docs/semantic-index/index.md"
+  resolved_reason: "semantic index candidate was absorbed into a registered concept"
+- id: INS-20260903-135234798-04e7
+  ts: "2026-09-03T13:52:34+09:00"
+  insight: "semantic_index_update新概念候補: discussion:task notification task id b0ba5q14j task id tool use id toolu 014KEK9kGpovgoyMvF は 既存aliasesに一致なし。概念定義とaliases追加を検討せよ"
   priority: "low"
   source: "semantic_index_update"
   fix_known: false
