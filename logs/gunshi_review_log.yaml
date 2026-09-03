@@ -3742,3 +3742,50 @@
   verified_files:
   - scripts/agent_respawn.sh:88
   - tests/unit/test_respawn_recovery.bats:1
+- adversarial_review:
+    reason: 変更行数<200。fail-closed設計。4類型fixtureで負ケース網羅
+    required: false
+    verdict: N/A
+  ambiguity_points: none
+  brainwash_check: '#1no #2no #3no #4no #5no #6no #7no #8no marker ID一致0→1、resolver
+    rc 1→0=数値確認。15/15 PASS=全件確認'
+  causal_chain: RC時report_id更新→marker旧IDでstale→resolver BLOCK→原子的marker同期実装→identity三者一致→正の複利
+  cmd_id: cmd_karo_hotfix_deploy_generation_rc_sync_202609040724
+  conflict_of_interest: review_approval.shは軍師のレビューフロー(review_approval→LGTM)に関わるが、今回の変更はRC時のdeploy_generation
+    marker同期のみ。軍師のLGTM判定ロジック・accuracy計測・review_log構造には影響しない。変更対象のreview_deploy_generation_marker_update関数はmarker
+    4列目のreport_id書換えのみ
+  escalation_needed: false
+  finding_categories:
+  - assumptions
+  - numbers
+  - premortem
+  - adversarial
+  - ambiguity
+  findings_summary: 4観点OK。RC marker identity同期を原子的更新で実装。15/15 PASS。fail-closed維持
+  gate_prediction: CLEAR
+  gate_prediction_reason: precheck cache PASS — SG-PRE1 PASS, commit 46e7af8d存在, ac_version
+    4e4fc138一致, binary_checks全yes
+  lesson_quality: OK
+  observations:
+  - '事実1: RC時にreport_id更新だがmarker旧ID(rpt-5d998639)→修正後marker ID一致1、resolver rc 1→0'
+  - '事実2: 4類型fixture(通常RC/再RC/欠落/不正marker)で15/15 PASS、FAIL=0、SKIP=0'
+  - '事実3: 原子的更新(temp+mv)、欠落/不正はfail-closed(修復せずBLOCK)。RC snapshot/rollbackにmarker含む'
+  operational_simulation:
+    actual: precheck cache PASS, marker ID一致 0→1, resolver rc 1→0, 15/15 PASS
+    command: precheck cache PASS。commit 46e7af8d存在。task receipt 15/15 PASS確認
+    expected: precheck PASS, identity三者一致, resolver rc=0
+    result: PASS
+  origin: '[[cmd_karo_hotfix_deploy_generation_rc_sync_202609040724]] -> [[report_task_marker_identity_split]]
+    -> [[LGTM]]'
+  report_fingerprint: 05f201b37e48015b5686ca37343cab3a41e7d4b53ab8fb6a14df70eef0abe744
+  report_ninja: saizo
+  report_path: queue/reports/saizo_report_cmd_karo_hotfix_deploy_generation_rc_sync_202609040724.yaml
+  report_task_id: cmd_karo_hotfix_deploy_generation_rc_sync_202609040724_normal
+  review_type: report
+  reviewed_at: '2026-09-04T08:45:00+09:00'
+  reviewer: gunshi
+  step3_5_verified: true
+  verdict: LGTM
+  verified_files:
+  - scripts/lib/review_approval.sh:946
+  - scripts/review_approval.sh:1315
