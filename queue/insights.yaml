@@ -15713,3 +15713,10 @@ insights:
   source: "semantic_stress_test"
   fix_known: false
   status: pending
+- id: INS-20260903-105903630-f6ab
+  ts: "2026-09-03T10:59:03+09:00"
+  insight: "semantic_index_update新概念候補: discussion:家老がidleになったらcodex CLIのGPT sol mediumにresinbox1pa は 既存aliasesに一致なし。概念定義とaliases追加を検討せよ"
+  priority: "low"
+  source: "semantic_index_update"
+  fix_known: false
+  status: pending
