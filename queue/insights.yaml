@@ -16340,3 +16340,38 @@ insights:
   status: "resolved"
   action_artifact: "semantic_map=/home/simokitafresh/multi-agent-shogun/context/semantic-map.md;semantic_index=/home/simokitafresh/multi-agent-shogun/docs/semantic-index/index.md"
   resolved_reason: "semantic map generation verified the candidate is represented or intentionally ignored"
+- id: INS-20260903-165355711-5e18
+  ts: "2026-09-03T16:53:55+09:00"
+  insight: "[[認可完了]] semantic_stress_test candidate_aliases: NO_MATCH source=lord query=認可完了。token を保存しました。このタブは閉じてよい。とでたよ"
+  priority: "low"
+  source: "semantic_stress_test"
+  fix_known: false
+  status: pending
+- id: INS-20260903-165356299-1ec5
+  ts: "2026-09-03T16:53:56+09:00"
+  insight: "[[ｘAPI登録のステップバイステップのランブックを作ってくれ]] semantic_stress_test candidate_aliases: NO_MATCH source=lord query=ｘAPI登録のステップバイステップのランブックを作ってくれ"
+  priority: "low"
+  source: "semantic_stress_test"
+  fix_known: false
+  status: pending
+- id: INS-20260903-165405787-20b9
+  ts: "2026-09-03T16:54:05+09:00"
+  insight: "[[C \\Users\\simok\\OneDrive\\デスクトップ\\バム型・届け方マニュアル v4 txt をよんでx acc]] semantic_stress_test candidate_aliases: NO_MATCH source=lord query=\"C:\\Users\\simok\\OneDrive\\デスクトップ\\バム型・届け方マニュアル v4.txt\"をよんでx_account_ops_automation_asis_tobe_5w1h_20260903.mdを更新して"
+  priority: "low"
+  source: "semantic_stress_test"
+  fix_known: false
+  status: pending
+- id: INS-20260903-165406461-0970
+  ts: "2026-09-03T16:54:06+09:00"
+  insight: "[[Image 2 と Image 3 を確認して明確な指示をドキュメントに追記して]] semantic_stress_test candidate_aliases: NO_MATCH source=lord query=[Image #2] と[Image #3] を確認して明確な指示をドキュメントに追記して"
+  priority: "low"
+  source: "semantic_stress_test"
+  fix_known: false
+  status: pending
+- id: INS-20260903-165406815-bd22
+  ts: "2026-09-03T16:54:06+09:00"
+  insight: "[[異論はない]] semantic_stress_test candidate_aliases: NO_MATCH source=lord query=異論はない。正しく直そう"
+  priority: "low"
+  source: "semantic_stress_test"
+  fix_known: false
+  status: pending
