@@ -133,6 +133,34 @@ cleanup_ledger_stage() {
     esac
 }
 
+create_isolated_clone() {
+    local tip="$1" origin_url reference_repo isolated=""
+    origin_url="$(git -C "$REPO_ROOT" remote get-url origin)"
+    reference_repo="$(git -C "$REPO_ROOT" rev-parse --git-common-dir)"
+    case "$reference_repo" in
+        /*) ;;
+        *) reference_repo="$REPO_ROOT/$reference_repo" ;;
+    esac
+    isolated="$(mktemp -d "$REPO_ROOT/.git/publisher-isolated.XXXXXX")"
+    if ! git clone --no-checkout --reference "$reference_repo" "$REPO_ROOT" "$isolated"; then
+        cleanup_isolated "$isolated"
+        return 1
+    fi
+    if ! git -C "$isolated" remote set-url origin "$origin_url"; then
+        cleanup_isolated "$isolated"
+        return 1
+    fi
+    if ! timeout 120 git -C "$isolated" fetch origin; then
+        cleanup_isolated "$isolated"
+        return 1
+    fi
+    if ! git -C "$isolated" checkout --detach "$tip"; then
+        cleanup_isolated "$isolated"
+        return 1
+    fi
+    ISOLATED_CLONE="$isolated"
+}
+
 root_has_untracked_collision() {
     local root="$1" tip="$2" status_file diff_file
     status_file="$(mktemp)"; diff_file="$(mktemp)"
@@ -328,7 +356,7 @@ sync_root() {
 }
 
 process_request() {
-    local request="$1" mode="$2" task artifact manifest base source_tree tip origin_url isolated
+    local request="$1" mode="$2" task artifact manifest base source_tree tip isolated
     local artifact_missing=0 identity_field identity
     task="$(request_id "$request")"
     artifact="$STATE_DIR/publish_queue/artifacts/$task"
@@ -395,12 +423,9 @@ process_request() {
         return 0
     fi
 
-    origin_url="$(git -C "$REPO_ROOT" remote get-url origin)"
-    isolated="$(mktemp -d "$REPO_ROOT/.git/publisher-isolated.XXXXXX")"
+    create_isolated_clone "$tip"
+    isolated="$ISOLATED_CLONE"
     trap 'cleanup_isolated "${isolated:-}"' RETURN
-    git clone --no-checkout "$origin_url" "$isolated"
-    git -C "$isolated" remote set-url origin "$origin_url"
-    git -C "$isolated" checkout --detach "$tip"
     if ! git -C "$isolated" apply --3way --binary --whitespace=nowarn "$artifact/patch.diff"; then
         event git_fail "$task" 30 "restore_threeway_conflict=1"
         notify_karo "publisher restore RC task=$task conflict=1"
@@ -480,7 +505,7 @@ move_ledger_to() {
 
 process_ledger_batch() {
     local -a operations=() ledgers=() applied_operations=() skipped_operations=()
-    local operation ledger isolated="" stage_root="" tip origin_url tree published_sha
+    local operation ledger isolated="" stage_root="" tip tree published_sha
     while IFS= read -r operation; do
         [ -n "$operation" ] || continue
         operations+=("$operation")
@@ -491,13 +516,10 @@ process_ledger_batch() {
 
     timeout 120 git -C "$REPO_ROOT" fetch origin
     tip="$(git -C "$REPO_ROOT" rev-parse origin/main)"
-    origin_url="$(git -C "$REPO_ROOT" remote get-url origin)"
-    isolated="$(mktemp -d "$REPO_ROOT/.git/publisher-isolated.XXXXXX")"
+    create_isolated_clone "$tip"
+    isolated="$ISOLATED_CLONE"
     stage_root="$(mktemp -d "$REPO_ROOT/.git/publisher-ledger-stage.XXXXXX")"
     trap 'cleanup_isolated "${isolated:-}"; cleanup_ledger_stage "${stage_root:-}"' RETURN
-    git clone --no-checkout "$origin_url" "$isolated"
-    git -C "$isolated" remote set-url origin "$origin_url"
-    git -C "$isolated" checkout --detach "$tip"
 
     local index=0 source_file staged_operation
     for operation in "${operations[@]}"; do
