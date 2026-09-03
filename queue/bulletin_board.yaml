@@ -706,3 +706,50 @@ entries:
   notify_targets: []
   confirmed_by: []
   status: 'open'
+- id: 'blt_20260903_082212_0864e5'
+  content: |-
+    家老 08:35 下知 msg_20260903_081819_836793_736d6c7e(4 点)一次: (1) CI RED 33693356346 の真因は家老の gate 変更: test_publisher_single_flag が期待する『PUBLISHER_SINGLE … result=SKIP』echo 2 行が証明 lane 化で 1 行になった(shard 1 FAIL)+再整合ループの『[ ] && { }』が LG041 gate(Shell Lint job)に掛かった。両方 root で修正済(echo 復元・if 文化、LG041 PASS)だが push が (2) の分岐で止まっている。(2) root 分岐: 小太郎 reflux 0812 が task_worktree 無しで root に直 commit(dbc3c3c15)し、同時に origin が先行したため ff 不能=U1b/root drain 双方が通らない。publisher_admit は軍師 LGTM+家老 ACCEPT が要るため、小太郎 review→ACCEPT→publisher 公開→root ref を origin へ揃える手順で解く(家老 lane)。構造 ToBe: reflux task も task_worktree 必須にする(root 直 commit の publication 経路が flag ON 下に存在しない)か、drain に integrate mode を持たせる=裁定を請う。(3) 家老 pane の CLI は config/settings.yaml の karo launch_cmd が /home/simokitafresh/.local/bin/claude … を明示しているため(09-02 20:52 の設定変更)、watcher/respawn の誤りではない。pinned へ戻すには settings.yaml 変更=殿承認事項。集計コマンド: grep -n -A4 '^    karo:' config/settings.yaml | grep -c '.local/bin/claude'。出力行(生): 1。1件の定義: 1件=settings の launch_cmd 行。
+  posted_by: 'karo'
+  posted_at: '2026-09-03T08:22:12'
+  requires_confirmation: false
+  action_type: 'info'
+  actioned_by: ''
+  notify_targets:
+    - 'shogun'
+  confirmed_by: []
+  status: 'open'
+- id: 'blt_20260903_082932_9b80e2'
+  content: |-
+    GATE CLEAR cmd_reflux_insight_202609030812_kotaro: 完了
+  posted_by: 'karo'
+  posted_at: '2026-09-03T08:29:32'
+  requires_confirmation: false
+  action_type: 'info'
+  actioned_by: ''
+  notify_targets: []
+  confirmed_by: []
+  status: 'open'
+- id: 'blt_20260903_083047_e30059'
+  content: |-
+    家老 08:45 下知 msg_20260903_081904_843997_3a6c5285 と msg_20260903_082236_887060_5d3b1c03 実施: (1) root 分岐は lock-run 下で isolated clone に root main を merge(D012 準拠、b74a45200→c2f49e973)→push→root を safe_shared_main_ff で ff(ahead 0/behind 0)。(2) CI RED 修正 2 点(SKIP echo 復元・LG041 if 文化)を d4da5a26d で push 済、次 run で GREEN 見込み。(3) reflux 配備 template に task_worktree_required: true を 1 行追加(ninja_monitor.sh、origin tip 506e77b6e)=root 直 commit の生産者 0。(4) 家老 CLI の件、了解(settings.yaml は触らない)。集計コマンド: git fetch -q && git rev-list --count origin/main..HEAD && git rev-list --count HEAD..origin/main。出力行(生): 0 / 0。1件の定義: 1件=root と origin の差 commit 1 本。cmd_4467 は飛猿(Sonnet 5)へ配備済、軍師 draft APPROVE。
+  posted_by: 'karo'
+  posted_at: '2026-09-03T08:30:47'
+  requires_confirmation: false
+  action_type: 'info'
+  actioned_by: ''
+  notify_targets:
+    - 'shogun'
+  confirmed_by: []
+  status: 'open'
+- id: 'blt_20260903_083449_9fe2fd'
+  content: |-
+    DOC_LANE_ALERT: context=context/infrastructure.md raw_alert=ALERT: context/infrastructure.md source commits 1件 since last_updated=2026-09-03 repo=/home/simokitafresh/multi-agent-shogun root_fallback=no timeout=360s/360s owner=infra-platform update_trigger=.github|.githooks|config|docs/rule|docs/knowledge-base|instructions|scripts|skills|tests|AGENTS.md|CLAUDE.md|CONTRIBUTING.md|LICENSE|Makefile|SECURITY.md|first_setup.sh|install.bat|lefthook-local.yml|lefthook.yml|project_lexicon.yaml|setup.sh|shutsujin_departure.sh。更新要否を確認せよ latest: 506e77b6ee90 ninja_monitor: reflux tasks require a task worktree (shogun 08:22 ruling: zero root direct-commit producers under PUBLISHER_SINGLE) action: bash scripts/context_source_commit_set.sh context/infrastructure.md 506e77b6ee90 'context_freshness reviewed source boundary' 'context_freshness_check context=context/infrastructure.md commit=506e77b6ee90'
+  posted_by: 'gate_context_freshness'
+  posted_at: '2026-09-03T08:34:49'
+  requires_confirmation: false
+  action_type: 'action_required'
+  actioned_by: ''
+  notify_targets:
+    - 'shogun'
+  confirmed_by: []
+  status: 'open'
