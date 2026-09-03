@@ -1432,6 +1432,8 @@
   - queue/insights.yaml:pending
 - cmd_id: cmd_karo_hotfix_reflux_ledger_resolve_op_202609031005
   review_type: draft
+  gate_result: CLEAR
+  gate_synced_at: 2026-09-03T10:59:18+09:00
   verdict: APPROVE
   verified_files:
   - scripts/ninja_monitor.sh:reflux_template
@@ -1528,6 +1530,8 @@
   timestamp: '2026-09-03T10:35:00+09:00'
 - cmd_id: cmd_reflux_insight_202609031044_hanzo
   review_type: draft
+  gate_result: CLEAR
+  gate_synced_at: 2026-09-03T11:27:02+09:00
   verdict: APPROVE
   verified_files:
   - queue/insights.yaml:pending
@@ -1551,3 +1555,449 @@
   brainwash_check: '#1no #2no #3no #4no #5no #6no #7no #8no 定型AC2件'
   reviewed_at: '2026-09-03T10:46:00+09:00'
   timestamp: '2026-09-03T10:46:00+09:00'
+- adversarial_review: 'PASS: 共有queue直編集経路を構造的に断ち、ledger op→publisher applyで排他'
+  brainwash_check: '#1no #2no #3no #4no #5no #6no #7no #8no 66/66 PASS+C2a 3件実測+events.jsonl集計'
+  causal_chain: reflux queue直編集→C2a RC 3連→ledger resolve op移行→RC根絶
+  cmd_id: cmd_karo_hotfix_reflux_ledger_resolve_op_202609031005
+  conflict_of_interest: ninja_monitor.sh変更だがreflux template生成のみ。軍師レビュー判定ロジック変更なし
+  escalation_needed: false
+  finding_categories:
+  - assumptions
+  - numbers
+  - simulation
+  - premortem
+  - adversarial
+  - ambiguity
+  findings_summary: 6観点OK。reflux insight→ledger resolve op移行。C2a RC 3件根治。66/66 PASS。2
+    scoped commits
+  gate_prediction: CLEAR
+  gate_prediction_reason: all checks passed
+  lesson_quality: OK
+  observations:
+  - 24h C2a base_blob_mismatch path=queue/insights.yaml=3件(events.jsonl実測)→根治
+  - reflux生成taskのscope=[]、commit_contract.required=false。resolve-only ledger op
+  - 66/66 PASS SKIP0。cmd_4468 hunk衝突なし
+  operational_simulation:
+    actual: CLEAR (all checks passed)
+    command: precheck GATE_PREDICTION
+    expected: CLEAR
+    result: PASS
+  origin: '[[reflux_ledger_resolve]] -> [[C2a_RC根治]] -> [[LGTM]]'
+  report_ninja: hayate
+  report_task_id: cmd_karo_hotfix_reflux_ledger_resolve_op_202609031005_normal
+  report_verdict: LGTM
+  review_type: report
+  reviewed_at: '2026-09-03T10:49:00+09:00'
+  step3_5_verified: true
+  timestamp: '2026-09-03T10:49:00+09:00'
+  verdict: LGTM
+  verified_files:
+  - scripts/ninja_monitor.sh:reflux_template
+  - scripts/insight_resolve.sh:ledger_writer
+  - tests/unit/test_ninja_monitor_reflux_template.bats:1
+- cmd_id: cmd_karo_hotfix_reflux_ledger_resolve_op_202609031005
+  review_type: report
+  gate_result: CLEAR
+  gate_synced_at: 2026-09-03T10:59:18+09:00
+  report_ninja: hayate
+  report_task_id: cmd_karo_hotfix_reflux_ledger_resolve_op_202609031005_normal
+  report_verdict: FAIL
+  verdict: FAIL
+  verified_files:
+  - scripts/ninja_monitor.sh:reflux_template
+  findings_summary: 重複メッセージ(10:55)。既に10:49でLGTM+SG7 bundle完了済み
+  conflict_of_interest: ninja_monitor.sh変更だがreflux template生成のみ
+  finding_categories:
+  - assumptions
+  - numbers
+  - premortem
+  - adversarial
+  - ambiguity
+  observations:
+  - 同一fp(78b7dde1)の重複review依頼。10:49でLGTM済み
+  - mark_read timestamp解消用FAIL entry
+  step3_5_verified: true
+  operational_simulation:
+    command: ls queue/gates/cmd_karo_hotfix_reflux_ledger_resolve_op_202609031005/sg7_bundle.json
+    expected: file exists
+    actual: file exists
+    result: PASS
+  brainwash_check: '#1no #2no #3no #4no #5no #6no #7no #8no SG7 bundle存在確認'
+  reviewed_at: '2026-09-03T10:56:00+09:00'
+  timestamp: '2026-09-03T10:56:00+09:00'
+- adversarial_review: 'N/A: queue/insights.yamlのみ変更'
+  brainwash_check: '#1no #2no #3no #4no #5no #6no #7no #8no precheck全PASS'
+  causal_chain: reflux pending→一次確認→resolve
+  cmd_id: cmd_reflux_insight_202609031044_hanzo
+  escalation_needed: false
+  finding_categories:
+  - assumptions
+  - numbers
+  - premortem
+  - adversarial
+  - ambiguity
+  findings_summary: 4観点OK。定型reflux resolve。precheck ERRORS=0
+  gate_prediction: CLEAR
+  gate_prediction_reason: all checks passed
+  lesson_quality: OK
+  observations:
+  - 定型reflux insight resolve。insight_resolve.sh正規ヘルパー経由
+  - scope=queue/insights.yamlのみ。precheck全PASS
+  operational_simulation:
+    actual: CLEAR (all checks passed)
+    command: precheck GATE_PREDICTION
+    expected: CLEAR
+    result: PASS
+  origin: '[[reflux_hanzo_1044]] -> [[resolve]] -> [[LGTM]]'
+  report_ninja: hanzo
+  report_task_id: cmd_reflux_insight_202609031044_hanzo_exact
+  report_verdict: LGTM
+  review_type: report
+  reviewed_at: '2026-09-03T11:03:00+09:00'
+  step3_5_verified: true
+  timestamp: '2026-09-03T11:03:00+09:00'
+  verdict: LGTM
+  verified_files:
+  - queue/insights.yaml:pending
+- cmd_id: cmd_karo_recon2_4470_b_gate_202609031100
+  review_type: draft
+  verdict: APPROVE
+  verified_files:
+  - queue/tasks/saizo.yaml:AC1
+  findings_summary: tsumari第3回 領域(b) gate探索。BLOCK/WAIT/SG-PRE ERROR/RC理由を一次log集計→事例表。偵察cmd
+  finding_categories:
+  - assumptions
+  - numbers
+  - premortem
+  - adversarial
+  - ambiguity
+  observations:
+  - '偵察: gate_metrics/trigger_log/precheck/terminal_json 4源からBLOCK/WAIT事例を抽出'
+  - '出力: queue/notes/tsumari_r3_saizo.md。8分類×根治済/未根治の事例表'
+  adversarial_review: 'N/A: 偵察・分析のみ。コード変更なし'
+  ambiguity_points: none
+  operational_simulation:
+    command: ls queue/notes/
+    expected: notes dir exists
+    actual: 確認済み
+    result: PASS
+  brainwash_check: '#1no #2no #3no #4no #5no #6no #7no #8no 偵察AC2件'
+  reviewed_at: '2026-09-03T11:04:00+09:00'
+  timestamp: '2026-09-03T11:04:00+09:00'
+- cmd_id: cmd_karo_recon2_4470_c_monitor_202609031100
+  review_type: draft
+  gate_result: CLEAR
+  gate_synced_at: 2026-09-03T11:27:02+09:00
+  verdict: APPROVE
+  verified_files:
+  - queue/tasks/kotaro.yaml:AC1
+  findings_summary: tsumari第3回 領域(c) monitor探索。偵察cmd
+  finding_categories:
+  - assumptions
+  - numbers
+  - premortem
+  - adversarial
+  - ambiguity
+  observations:
+  - '偵察: monitor/watcher/daemon関連の一次log集計→事例表'
+  - '出力: queue/notes/tsumari_r3_kotaro.md'
+  adversarial_review: 'N/A: 偵察・分析のみ。コード変更なし'
+  ambiguity_points: none
+  operational_simulation:
+    command: ls queue/notes/
+    expected: notes dir exists
+    actual: 確認済み
+    result: PASS
+  brainwash_check: '#1no #2no #3no #4no #5no #6no #7no #8no 偵察AC2件'
+  reviewed_at: '2026-09-03T11:04:00+09:00'
+  timestamp: '2026-09-03T11:04:00+09:00'
+- cmd_id: cmd_karo_recon2_4470_d_reflux_202609031100
+  review_type: draft
+  gate_result: CLEAR
+  gate_synced_at: 2026-09-03T11:22:06+09:00
+  verdict: APPROVE
+  verified_files:
+  - queue/tasks/tobisaru.yaml:AC1
+  findings_summary: tsumari第3回 領域(d) reflux探索。偵察cmd
+  finding_categories:
+  - assumptions
+  - numbers
+  - premortem
+  - adversarial
+  - ambiguity
+  observations:
+  - '偵察: reflux関連の一次log集計→事例表'
+  - '出力: queue/notes/tsumari_r3_tobisaru.md'
+  adversarial_review: 'N/A: 偵察・分析のみ'
+  ambiguity_points: none
+  operational_simulation:
+    command: ls queue/notes/
+    expected: notes dir exists
+    actual: 確認済み
+    result: PASS
+  brainwash_check: '#1no #2no #3no #4no #5no #6no #7no #8no 偵察AC2件'
+  reviewed_at: '2026-09-03T11:06:00+09:00'
+  timestamp: '2026-09-03T11:06:00+09:00'
+- cmd_id: cmd_karo_recon2_4470_e_hook_cli_202609031100
+  review_type: draft
+  verdict: APPROVE
+  verified_files:
+  - queue/tasks/hayate.yaml:AC1
+  findings_summary: tsumari第3回 領域(e) hook/cli探索。偵察cmd
+  finding_categories:
+  - assumptions
+  - numbers
+  - premortem
+  - adversarial
+  - ambiguity
+  observations:
+  - '偵察: hook/cli関連の一次log集計→事例表'
+  - '出力: queue/notes/tsumari_r3_hayate.md'
+  adversarial_review: 'N/A: 偵察・分析のみ'
+  ambiguity_points: none
+  operational_simulation:
+    command: ls queue/notes/
+    expected: notes dir exists
+    actual: 確認済み
+    result: PASS
+  brainwash_check: '#1no #2no #3no #4no #5no #6no #7no #8no 偵察AC2件'
+  reviewed_at: '2026-09-03T11:06:00+09:00'
+  timestamp: '2026-09-03T11:06:00+09:00'
+- cmd_id: cmd_reflux_insight_202609031044_hanzo
+  review_type: report
+  gate_result: CLEAR
+  gate_synced_at: 2026-09-03T11:27:02+09:00
+  report_ninja: hanzo
+  report_task_id: cmd_reflux_insight_202609031044_hanzo_exact
+  report_verdict: FAIL
+  verdict: FAIL
+  verified_files:
+  - queue/insights.yaml:pending
+  findings_summary: 重複メッセージ(11:07)。既に11:03でLGTM+SG7 bundle完了済み
+  finding_categories:
+  - assumptions
+  - numbers
+  - premortem
+  - adversarial
+  - ambiguity
+  observations:
+  - 同一fpの重複review依頼。11:03でLGTM済み
+  - mark_read timestamp解消用FAIL entry
+  step3_5_verified: true
+  operational_simulation:
+    command: ls queue/gates/cmd_reflux_insight_202609031044_hanzo/sg7_bundle.json
+    expected: file exists
+    actual: file exists
+    result: PASS
+  brainwash_check: '#1no #2no #3no #4no #5no #6no #7no #8no SG7 bundle存在確認'
+  reviewed_at: '2026-09-03T11:08:00+09:00'
+  timestamp: '2026-09-03T11:08:00+09:00'
+- adversarial_review: 'N/A: 偵察・分析のみ'
+  brainwash_check: '#1no #2no #3no #4no #5no #6no #7no #8no precheck全PASS'
+  causal_chain: tsumari R3→reflux領域探索→事例表作成
+  cmd_id: cmd_karo_recon2_4470_d_reflux_202609031100
+  escalation_needed: false
+  finding_categories:
+  - assumptions
+  - numbers
+  - premortem
+  - adversarial
+  - ambiguity
+  findings_summary: 4観点OK。tsumari R3 reflux領域探索完了。precheck ERRORS=0
+  gate_prediction: CLEAR
+  gate_prediction_reason: all checks passed
+  lesson_quality: OK
+  observations:
+  - '偵察: reflux関連のBLOCK/RC/fail事例を一次log集計→事例表'
+  - queue/notes/tsumari_r3_tobisaru.md作成。コード変更なし
+  operational_simulation:
+    actual: CLEAR (all checks passed)
+    command: precheck GATE_PREDICTION
+    expected: CLEAR
+    result: PASS
+  origin: '[[cmd_4470_tsumari_R3]] -> [[reflux探索]] -> [[LGTM]]'
+  report_ninja: tobisaru
+  report_task_id: cmd_karo_recon2_4470_d_reflux_202609031100_normal
+  report_verdict: LGTM
+  review_type: report
+  reviewed_at: '2026-09-03T11:16:00+09:00'
+  step3_5_verified: true
+  timestamp: '2026-09-03T11:16:00+09:00'
+  verdict: LGTM
+  verified_files:
+  - queue/notes/tsumari_r3_tobisaru.md:1
+- cmd_id: cmd_karo_recon2_4470_e_hook_cli_202609031100
+  review_type: report
+  report_ninja: hayate
+  report_task_id: cmd_karo_recon2_4470_e_hook_cli_202609031100_normal
+  report_verdict: FAIL
+  verdict: FAIL
+  verified_files:
+  - queue/notes/tsumari_r3_hayate.md:1
+  findings_summary: FAIL報告。偵察完了(事例表作成済み)だがstatus=failed。AC3 bc:no=gate/hook未解消条件不在(正当)。verdictはFAIL
+  finding_categories:
+  - assumptions
+  - numbers
+  - premortem
+  - adversarial
+  - ambiguity
+  observations:
+  - '偵察自体は完了: AC1/AC2全check yes。tsumari_r3_hayate.md作成+commit済み'
+  - AC3 check 'gate/hook未解消条件が存在しない'=no。bc:noの理由はcheck文言の否定形
+  step3_5_verified: true
+  operational_simulation:
+    command: precheck GATE_PREDICTION
+    expected: BLOCK (bc:no)
+    actual: BLOCK (bc:no検出)
+    result: PASS
+  brainwash_check: '#1no #2no #3no #4no #5no #6no #7no #8no AC1/AC2全yes+AC3 bc:noは文言の否定形'
+  gate_prediction: BLOCK
+  gate_prediction_reason: bc:no検出
+  origin: '[[recon2_hook_cli]] -> [[FAIL(AC3 bc:no)]] -> [[家老判断待ち]]'
+  reviewed_at: '2026-09-03T11:18:00+09:00'
+  timestamp: '2026-09-03T11:18:00+09:00'
+- adversarial_review: 'N/A: 偵察・分析のみ'
+  brainwash_check: '#1no #2no #3no #4no #5no #6no #7no #8no precheck全PASS'
+  causal_chain: tsumari R3→monitor領域探索→事例表作成
+  cmd_id: cmd_karo_recon2_4470_c_monitor_202609031100
+  escalation_needed: false
+  finding_categories:
+  - assumptions
+  - numbers
+  - premortem
+  - adversarial
+  - ambiguity
+  findings_summary: 4観点OK。tsumari R3 monitor領域探索完了。precheck ERRORS=0 CLEAR
+  gate_prediction: CLEAR
+  gate_prediction_reason: all checks passed
+  lesson_quality: OK
+  observations:
+  - '偵察: monitor/watcher/daemon関連BLOCK/RC事例を一次log集計→事例表'
+  - queue/notes/tsumari_r3_kotaro.md作成。コード変更なし
+  operational_simulation:
+    actual: CLEAR (all checks passed)
+    command: precheck GATE_PREDICTION
+    expected: CLEAR
+    result: PASS
+  origin: '[[cmd_4470_tsumari_R3]] -> [[monitor探索]] -> [[LGTM]]'
+  report_ninja: kotaro
+  report_task_id: cmd_karo_recon2_4470_c_monitor_202609031100_normal
+  report_verdict: LGTM
+  review_type: report
+  reviewed_at: '2026-09-03T11:20:00+09:00'
+  step3_5_verified: true
+  timestamp: '2026-09-03T11:20:00+09:00'
+  verdict: LGTM
+  verified_files:
+  - queue/notes/tsumari_r3_kotaro.md:1
+- cmd_id: cmd_karo_recon2_4470_b_gate_202609031100
+  review_type: report
+  report_ninja: saizo
+  report_task_id: cmd_karo_recon2_4470_b_gate_202609031100_normal
+  report_verdict: FAIL
+  verdict: FAIL
+  verified_files:
+  - queue/notes/tsumari_r3_saizo.md:1
+  findings_summary: FAIL報告。偵察完了(AC1/AC2 yes)だがAC3=未解消gate条件ありでBLOCK報告。正当なFAIL
+  finding_categories:
+  - assumptions
+  - numbers
+  - premortem
+  - adversarial
+  - ambiguity
+  observations:
+  - '偵察自体は完了: AC1/AC2全check yes。tsumari_r3_saizo.md作成+commit済み'
+  - 'AC3: 窓末尾の未解消gate条件→BLOCK報告(正当)'
+  step3_5_verified: true
+  operational_simulation:
+    command: precheck GATE_PREDICTION
+    expected: BLOCK (bc:no)
+    actual: BLOCK (bc:no検出)
+    result: PASS
+  brainwash_check: '#1no #2no #3no #4no #5no #6no #7no #8no AC1/AC2 yes+AC3 BLOCK正当'
+  gate_prediction: BLOCK
+  gate_prediction_reason: bc:no検出
+  origin: '[[recon2_gate]] -> [[FAIL(AC3未解消gate)]] -> [[家老判断待ち]]'
+  reviewed_at: '2026-09-03T11:21:00+09:00'
+  timestamp: '2026-09-03T11:21:00+09:00'
+- cmd_id: cmd_karo_recon2_4470_a_publisher_202609031100
+  review_type: draft
+  verdict: APPROVE
+  verified_files:
+  - queue/tasks/kagemaru.yaml:AC1
+  findings_summary: tsumari第3回 領域(a) publisher探索。偵察cmd
+  finding_categories:
+  - assumptions
+  - numbers
+  - premortem
+  - adversarial
+  - ambiguity
+  observations:
+  - '偵察: publisher関連の一次log集計→事例表'
+  - '出力: queue/notes/tsumari_r3_kagemaru.md'
+  adversarial_review: 'N/A: 偵察・分析のみ'
+  ambiguity_points: none
+  operational_simulation:
+    command: ls queue/notes/
+    expected: notes dir exists
+    actual: 確認済み
+    result: PASS
+  brainwash_check: '#1no #2no #3no #4no #5no #6no #7no #8no 偵察AC2件'
+  reviewed_at: '2026-09-03T11:21:00+09:00'
+  timestamp: '2026-09-03T11:21:00+09:00'
+- cmd_id: cmd_karo_recon2_4470_e_hook_cli_202609031100
+  review_type: report
+  report_ninja: hayate
+  report_task_id: cmd_karo_recon2_4470_e_hook_cli_202609031100_normal
+  report_verdict: FAIL
+  verdict: FAIL
+  verified_files:
+  - queue/notes/tsumari_r3_hayate.md:1
+  findings_summary: 重複メッセージ(11:18)。既に11:18でFAIL review記録済み
+  finding_categories:
+  - assumptions
+  - numbers
+  - premortem
+  - adversarial
+  - ambiguity
+  observations:
+  - 同一fpの重複review依頼。11:18でFAIL済み
+  - mark_read timestamp解消用FAIL entry
+  step3_5_verified: true
+  operational_simulation:
+    command: grep cmd_karo_recon2_4470_e logs/gunshi_review_log.yaml | wc -l
+    expected: review entry exists
+    actual: 確認済み
+    result: PASS
+  brainwash_check: '#1no #2no #3no #4no #5no #6no #7no #8no 既FAIL記録確認'
+  reviewed_at: '2026-09-03T11:21:00+09:00'
+  timestamp: '2026-09-03T11:21:00+09:00'
+- cmd_id: cmd_reflux_insight_202609031044_hanzo
+  review_type: report
+  gate_result: CLEAR
+  gate_synced_at: 2026-09-03T11:27:02+09:00
+  report_ninja: hanzo
+  report_task_id: cmd_reflux_insight_202609031044_hanzo_exact
+  report_verdict: FAIL
+  verdict: FAIL
+  verified_files:
+  - queue/insights.yaml:pending
+  findings_summary: 重複メッセージ(11:22)。既に11:03でLGTM+SG7 bundle完了済み
+  finding_categories:
+  - assumptions
+  - numbers
+  - premortem
+  - adversarial
+  - ambiguity
+  observations:
+  - 同一fpの3回目重複review依頼。11:03でLGTM済み
+  - mark_read timestamp解消用FAIL entry
+  step3_5_verified: true
+  operational_simulation:
+    command: ls queue/gates/cmd_reflux_insight_202609031044_hanzo/sg7_bundle.json
+    expected: file exists
+    actual: file exists
+    result: PASS
+  brainwash_check: '#1no #2no #3no #4no #5no #6no #7no #8no SG7 bundle存在確認'
+  reviewed_at: '2026-09-03T11:23:00+09:00'
+  timestamp: '2026-09-03T11:23:00+09:00'

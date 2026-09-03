@@ -1668,3 +1668,4 @@
 - 2026-09-03 03:58 小太郎 reflux(INS-2dc0 resolve)CLEAR。
 - 2026-09-03 04:14 半蔵 reflux(INS-b8e2、infra::general WA 4 件→構造対策 cmd 候補)CLEAR。
 - 2026-09-03 04:38 [karo] publisher single 第3波 U7 flag file hotfix(疾風)CLEAR→queue/flags/publisher_single ON。真因=task正本 planned scope 不足(AC1が5入口要求、契約3path)。影丸 nested guard hotfix CLEAR(worktree task mode の再帰ガード誤発火解消)。
+- 2026-09-03 10:47 hayate cmd_karo_hotfix_reflux_ledger_resolve_op CLEAR: reflux insight生成をresolve-only ledger opへ変更、scope0/commit optional化。resolverはpublisher-single時にoperation pathをstdoutへ出力し、現HEAD receipt 66/66 PASS・SKIP0、report gate PASS。
