@@ -15808,21 +15808,27 @@ insights:
   priority: "low"
   source: "semantic_index_update"
   fix_known: false
-  status: pending
+  status: "resolved"
+  action_artifact: "semantic_index=/home/simokitafresh/multi-agent-shogun/docs/semantic-index/index.md"
+  resolved_reason: "semantic index candidate was absorbed into a registered concept"
 - id: INS-20260903-124619105-e0ac
   ts: "2026-09-03T12:46:19+09:00"
   insight: "semantic_index_update未登録[[リンク]]ターゲット: [[意志依存の規則はgateがないと守れない]] は既存aliasesに一致なし。類似概念TOP3: infrastructure_ops(インフラ運用基盤; alias=agentのwindowが壊れているな; score=3.5) / systems_knowledge_base(システム知識辞書; alias=GPTのClaude Code版は存在しない; score=3.3) / agent_formation_management(編成管理; alias=GPTのClaude Code版は存在しない; score=3.3)。概念定義とaliases追加を検討せよ"
   priority: "low"
   source: "semantic_index_update"
   fix_known: false
-  status: pending
+  status: "resolved"
+  action_artifact: "semantic_index=/home/simokitafresh/multi-agent-shogun/docs/semantic-index/index.md"
+  resolved_reason: "semantic index candidate was absorbed into a registered concept"
 - id: INS-20260903-124619477-58ef
   ts: "2026-09-03T12:46:19+09:00"
   insight: "semantic_index_update未登録[[リンク]]ターゲット: [[deepdive Phase 5 自動化×強制]] は既存aliasesに一致なし。類似概念TOP3: deepdive_principles(deepdive原理; alias=deepdive; score=34.1) / gs_recalibration_plan(GS再キャリブレーション計画; alias=Phase A詳細; score=14.6) / creator_brainwashing_defense(創造主の洗脳防御; alias=Phase 2を起票しよう; score=13.9)。概念定義とaliases追加を検討せよ"
   priority: "low"
   source: "semantic_index_update"
   fix_known: false
-  status: pending
+  status: "resolved"
+  action_artifact: "semantic_index=/home/simokitafresh/multi-agent-shogun/docs/semantic-index/index.md"
+  resolved_reason: "semantic index candidate was absorbed into a registered concept"
 - id: INS-20260903-124916834-3273
   ts: "2026-09-03T12:49:16+09:00"
   insight: "lord_conversation教訓候補: target=shogun trigger=inbound_lord detail=x_account_ops_automation_asis_tobe_5w1h_20260903.mdについてチャットしよう。俺はもう1軸欲しいと思う。テーマはドリームだ。詐欺でも煽りでもなくDM-siganal の生データや研究歴を知っている俺らはDM-signalの信頼性を知っているはずだ。ユーザーに人生を豊かにするための夢を届けたい。そのためにはstandard planで提供しているシン忍法分身、プレミアムで提供しているシン忍法四つ目についてもデータを出すべきだと思う。どうかな？"
@@ -15836,4 +15842,6 @@ insights:
   priority: "low"
   source: "semantic_index_update"
   fix_known: false
-  status: pending
+  status: "resolved"
+  action_artifact: "semantic_index=/home/simokitafresh/multi-agent-shogun/docs/semantic-index/index.md"
+  resolved_reason: "semantic index candidate was absorbed into a registered concept"
