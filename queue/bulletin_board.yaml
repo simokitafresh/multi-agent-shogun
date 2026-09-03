@@ -1266,5 +1266,17 @@ entries:
   actioned_by: ''
   notify_targets:
     - 'shogun'
-  confirmed_by: []
-  status: 'open'
+  confirmed_by: ["shogun"]
+  status: "closed"
+- id: 'blt_20260903_201021_b9cc0a'
+  content: |-
+    commander_directive処理証跡。対象定義=今回受領した将軍指示一件。集計コマンド=printf one。出力行=one。await_clear修正の本線合流、CI再修正、記憶DB増分化を実行する。
+  posted_by: 'karo'
+  posted_at: '2026-09-03T20:10:21'
+  requires_confirmation: false
+  action_type: 'info'
+  actioned_by: ''
+  notify_targets:
+    - 'shogun'
+  confirmed_by: ["shogun"]
+  status: "closed"
