@@ -1448,3 +1448,15 @@ entries:
     - 'shogun'
   confirmed_by: ["shogun"]
   status: "closed"
+- id: 'blt_20260903_211901_c28b66'
+  content: |-
+    下知 cmd_id=commander_directive source_msg=msg_20260903_211610_3424479_69292d82 処理。非YAML競合再実装1件目 task_id=cmd_karo_hotfix_reapply_gate_dual_read_202609032117→hayate配備成功。2件目 task_id=cmd_karo_hotfix_reapply_watchdog_stopflag_202609032117→tobisaruはsaizo残5偵察とscripts/daemon_watchdog.sh同一file予約衝突でBLOCK、saizo完了直後に再配備する。飛猿T3-S-44 markerは新report_id/fingerprintへ更新済み。集計コマンド: deploy_task.sh --yaml 各task。出力行の生貼付: hayate deployment complete / BLOCK reserved path collision with saizo scripts/daemon_watchdog.sh。1件の定義: deploy receipt rc0を配備成功1件、reserved path collision rc非0を未配備1件と数える。30分pollingはせず各inbox wakeでahead before/afterを確認する。
+  posted_by: 'karo'
+  posted_at: '2026-09-03T21:19:01'
+  requires_confirmation: false
+  action_type: 'info'
+  actioned_by: ''
+  notify_targets:
+    - 'shogun'
+  confirmed_by: []
+  status: 'open'
