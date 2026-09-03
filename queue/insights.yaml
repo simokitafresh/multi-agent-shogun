@@ -15643,3 +15643,24 @@ insights:
   source: "semantic_index_update"
   fix_known: false
   status: pending
+- id: INS-20260903-102131658-5d88
+  ts: "2026-09-03T10:21:31+09:00"
+  insight: "[[追加 4 点を起票してクローズまで持っていけ]] semantic_stress_test candidate_aliases: NO_MATCH source=lord query=追加 4 点を起票してクローズまで持っていけ"
+  priority: "low"
+  source: "semantic_stress_test"
+  fix_known: false
+  status: pending
+- id: INS-20260903-102132083-5041
+  ts: "2026-09-03T10:21:32+09:00"
+  insight: "[[殿 09 16『追加 4 点を起票してクローズまで持っていけ』]] semantic_stress_test candidate_aliases: NO_MATCH source=cmds query=殿 2026-09-03 09:16『追加 4 点を起票してクローズまで持っていけ』。設計書 §15: 稼働 daemon(pid 2581118、05:46 起動)は旧コードで stop flag/ledger 消費/root drain を持たず、家老と将軍が手動で 1 周ずつ回している。D006 により agent は kill せず、F009 により"
+  priority: "low"
+  source: "semantic_stress_test"
+  fix_known: false
+  status: pending
+- id: INS-20260903-102132463-ea53
+  ts: "2026-09-03T10:21:32+09:00"
+  insight: "[[単一 publisher U10 watchdog による publisher daemon の code reload]] semantic_stress_test candidate_aliases: NO_MATCH source=cmds query=単一 publisher U10: watchdog による publisher daemon の code-reload(旧 daemon 入替)と §11 after 計測 script、24 時間クローズ検証(trailer 率・root 3 値・自壊 0)の集計 script を実装し、設計書 §15 のクローズ条件を機械判定にする"
+  priority: "low"
+  source: "semantic_stress_test"
+  fix_known: false
+  status: pending
