@@ -1,5 +1,5 @@
 <!-- gist-master: b48264be3a2e1bc8434ee2b64b8264c6 x_api_registration_runbook_20260903.md -->
-# X API 登録ランブック(バム @TokyoJibika の自動投稿用)v1.2
+# X API 登録ランブック(バム @TokyoJibika の自動投稿用)v1.3
 
 - 作成: 2026-09-03 15:35 将軍(殿指示 15:33『x API 登録のステップバイステップのランブック』)
 - 目的: 設計書 `docs/research/x_account_ops_automation_asis_tobe_5w1h_20260903.md` §10/§11 の P1(下書き→gate→承認→X API 投稿)に必要な X API の登録・認可・トークン保管を、殿の操作と将軍側の作業に分けて 1 手ずつ書く
@@ -112,7 +112,7 @@ cat > ~/multi-agent-shogun/config/x_api.env <<'ENV'
 X_CLIENT_ID=ここに Client ID
 X_CLIENT_SECRET=ここに Client Secret
 X_REDIRECT_URI=http://127.0.0.1:8585/callback
-X_SCOPES=tweet.read tweet.write users.read offline.access
+X_SCOPES=tweet.read tweet.write users.read media.write offline.access
 ENV
 chmod 600 ~/multi-agent-shogun/config/x_api.env
 ```
@@ -196,26 +196,34 @@ curl -s -H "Authorization: Bearer $X_ACCESS_TOKEN" -H 'Content-Type: application
 
 201 と `data.id` が返れば成功。最初の 1 本は設計書 §11 の固定ポスト(完全ガイド / How to / dm-signal 登録無料・PF は Basic / 境界の一文)。
 
-## 6b. XDK(公式 SDK)を使う場合(将軍、cmd_4472 の実装判断)
+## 6b. XDK(公式 SDK)は必須(殿裁定 15:55『media 添付やるだろ、画像とか。XDK インストール必須』)
 
-X 公式の Python/TypeScript SDK「XDK」がある(devcommunity の告知は要ログインで本文を取れず、docs.x.com/xdks で 15:40 に確認)。
+画像付き投稿(設計書 §7 の「体験 1 枚」「1 枚比較」)は v2 の chunked media upload(INIT→APPEND→FINALIZE→STATUS の 4 呼出し、画像 5 MB 上限、docs.x.com 15:57 確認)が要るため、curl 直叩きでは手順が増える。**cmd_4472 の CLI は XDK(公式 Python SDK)を標準にする**。
 
 ```bash
+# 将軍または忍者(worktree の venv で)
 pip install xdk
 ```
 
 ```python
 from xdk.oauth2_auth import OAuth2PKCEAuth
 from xdk import Client
-auth = OAuth2PKCEAuth(client_id=..., redirect_uri="http://127.0.0.1:8585/callback",
-                      scope="tweet.read tweet.write users.read offline.access")
-print(auth.get_authorization_url())          # 5.2 と同じ URL
-tokens = auth.fetch_token(authorization_response=callback_url)   # 5.4 と同じ
-client = Client(token=tokens)                # token 辞書を渡すと自動 refresh
-client.posts.create(post_data={"text": "..."})   # POST /2/tweets
+
+auth = OAuth2PKCEAuth(client_id=CLIENT_ID, redirect_uri="http://127.0.0.1:8585/callback",
+                      scope="tweet.read tweet.write users.read media.write offline.access")
+print(auth.get_authorization_url())                       # 5.2 の代わり(URL を殿へ)
+tokens = auth.fetch_token(authorization_response=callback_url)   # 5.4 の代わり(殿から受けた URL)
+client = Client(token=tokens)                             # token 辞書を渡すと自動 refresh
+
+# 画像付き投稿: MediaClient は initialize_upload / append_upload / finalize_upload(chunked)と
+# 単発の upload を持つ。返る media_id を posts.create の media.media_ids に渡す
+media_id = client.media.upload(...)                       # 画像(PNG/JPG、5 MB 以下)
+client.posts.create(post_data={"text": "...", "media": {"media_ids": [media_id]}})
 ```
 
-判断: cmd_4472 の CLI は curl 直叩き(依存 0、fail-close が書きやすい)で先に作り、XDK は S6 の読取りや将来の media 添付で採用を検討する。どちらでも token の保管先は `config/x_api.env` で同じ。
+- scope に **`media.write`** を含める(4.2 の認証設定で scope 一覧が出る場合はチェック、出ない場合は 5.2 の URL の scope で指定)。含めずに発行した token では upload が 403 になる→再認可。
+- token の保管先は `config/x_api.env` のまま(tokens 辞書を JSON で `X_TOKEN_JSON=` に入れるか、access/refresh を分けて入れる。cmd_4472 の実装で 1 つに決める)。
+- 画像は cmd_4472 の S3(下書き)で生成せず、S1 台帳の `media/` に置いた既存 PNG(体験 1 枚=Basic 画面のスクショ、1 枚比較=Basic/safe/入門の表)だけを添付する。保有・ticker が写る画像は gate 規則 1 の対象(画像内文字の検査は P2)。
 
 ## 7. 上限と注意
 
@@ -235,6 +243,10 @@ client.posts.create(post_data={"text": "..."})   # POST /2/tweets
 | 4 | cmd_4472 の `x_post.sh post` が creds ありで 201(gate PASS 本文) | 家老 production_proof |
 
 ---
+
+## v1.3 (2026-09-03 16:02)
+
+AsIs 注釈: 殿裁定 15:55『media 添付やるだろ、XDK 必須』→§6b を XDK 必須+画像 upload(v2 chunked、5 MB)に置換、scope に media.write を追加。
 
 ## v1.2 (2026-09-03 15:58)
 

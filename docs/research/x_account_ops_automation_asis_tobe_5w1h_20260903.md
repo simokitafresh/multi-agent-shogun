@@ -1,5 +1,5 @@
 <!-- gist-master: 8e1336f8b297ccd9bd5f407444844434 x_account_ops_automation_asis_tobe_5w1h_20260903.md -->
-# X アカウント運用(バム @TokyoJibika)の Grok 包装→API 自動化 — AsIs / ToBe / 5W1H 設計書 v0.9(2026-09-03 15:45、§10 訂正=X API は従量課金のみ(投稿 URL 付き $0.20)・入口 console.x.com・XDK、ランブック docs/research/x_api_registration_runbook_20260903.md。v0.8=13:00 §12 E 軸ドリーム。v0.7=12:40 §11 マニュアル v4 取込。v0.6=11:22 §10 X API と xAI API の違い+P1 手順。v0.5=11:05、§9 Grok 質問状への回答=コピペ用、殿指示 10:57。v0.4=09:55、P0 完了=cmd_4467 CLEAR 09:48: ストック台帳 50 entry・slot calendar・包装 gate 6 規則+bats 8、将軍が gate を本番 API で突合。v0.3=04:00 cmd_4463 実測 §1c。v0.2=03:35、殿回答 B-1〜B-10 を §1b/§2/§5 へ反映。v0.1=03:20、殿発案 03:13『grok によるアカウント運用は今後 API などで自動化まで持って行きたい。新しい設計書にしないか』)
+# X アカウント運用(バム @TokyoJibika)の Grok 包装→API 自動化 — AsIs / ToBe / 5W1H 設計書 v0.10(2026-09-03 16:02、殿裁定 15:55: 画像添付あり→S5 は XDK 必須、scope media.write、S1 台帳に media/。v0.9=15:45、§10 訂正=X API は従量課金のみ(投稿 URL 付き $0.20)・入口 console.x.com・XDK、ランブック docs/research/x_api_registration_runbook_20260903.md。v0.8=13:00 §12 E 軸ドリーム。v0.7=12:40 §11 マニュアル v4 取込。v0.6=11:22 §10 X API と xAI API の違い+P1 手順。v0.5=11:05、§9 Grok 質問状への回答=コピペ用、殿指示 10:57。v0.4=09:55、P0 完了=cmd_4467 CLEAR 09:48: ストック台帳 50 entry・slot calendar・包装 gate 6 規則+bats 8、将軍が gate を本番 API で突合。v0.3=04:00 cmd_4463 実測 §1c。v0.2=03:35、殿回答 B-1〜B-10 を §1b/§2/§5 へ反映。v0.1=03:20、殿発案 03:13『grok によるアカウント運用は今後 API などで自動化まで持って行きたい。新しい設計書にしないか』)
 
 ## §0 一文定義
 Grok 作成の「届け方マニュアル」(中身固定・包装のみ変更)を、**ストック記事→スロット→LLM 包装→品質 gate→X API 投稿→KPI 還流**の 1 本の pipeline として段階的に自動化する。戦略・検証・有料層の中身は一切変えない(マニュアル §1 Non-negotiables を pipeline の不変条件として機械化する)。
@@ -265,6 +265,7 @@ P1 の AC への追加(起票時に反映): (a) gate 規則 7/7b/8/9/10 と規�
 ---
 
 ## §8 レビュー履歴
+- v0.10(09-03 16:02) 殿裁定 15:55『media 添付やるだろ、画像とか。XDK インストール必須』→S5=XDK(pip install xdk、OAuth2PKCEAuth、posts.create+media upload)、scope に media.write、S1 台帳に media/(体験 1 枚・1 枚比較の PNG、保有・ticker 不可)。cmd_4472 AC2 は XDK 実装へ差替え(task_supplement)
 - v0.9(09-03 15:45) §10 訂正: 2026 年の X API v2 は pay-per-usage(クレジット前払い)のみ、Free/Basic/Pro 月額は無し。投稿 $0.015、URL 付き投稿 $0.20、owned reads $0.001。入口は console.x.com。公式 XDK(pip install xdk、OAuth2PKCEAuth)。登録手順は x_api_registration_runbook_20260903.md v1.1
 - v0.8(09-03 13:00) §12 E 軸ドリーム(殿発案 12:49): 分身・四つ目の metrics を inception 以来のセットで、1 投稿 1 PF・同居禁止(殿 12:55)、研究証跡併記、gate 規則 11/12、P1 AC (e)-(g)
 - v0.7(09-03 12:40) §11 マニュアル v4 取込(体験 C 分解・dm-signal 3 層・サイト表 Basic+SPY 可/up to・×N 禁止・17.2 と 16.1 混在禁止・数字セット 5 項)。gate 規則 7-10 と P1 AC 追加
