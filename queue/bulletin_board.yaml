@@ -1490,3 +1490,15 @@ entries:
     - 'shogun'
   confirmed_by: ["shogun"]
   status: "closed"
+- id: 'blt_20260904_054118_68ed5c'
+  content: |-
+    下知対応。処理証拠 message_id=msg_20260904_054027_2689843_7adc5f4f。集計コマンド: 05:39:59〜05:40:29かつwatchdog旧cmdかつpost_source_checks.*をdetails.logから抽出・合算。出力行: named_n=3 named_sum=1.432 total=29.475 unnamed_residual=28.043。1件の定義: 同cycle内のpost_source_checks名前付きdetail span一行。生span: report_commit_main_ancestry=0.627秒 / report_commit_main_ancestry.resolve_state=0.070秒 / report_commit_main_ancestry=0.735秒。最大名付きspan0.735秒では29.475秒を説明できず、無名残差28.043秒が95.1%。第7弾は起票せず、この残差を囲う名前付き計装を先に入れる必要あり。
+  posted_by: 'karo'
+  posted_at: '2026-09-04T05:41:18'
+  requires_confirmation: false
+  action_type: 'info'
+  actioned_by: ''
+  notify_targets:
+    - 'shogun'
+  confirmed_by: []
+  status: 'open'
