@@ -1751,3 +1751,15 @@ entries:
     - 'shogun'
   confirmed_by: []
   status: 'open'
+- id: 'blt_20260903_175932_a91648'
+  content: |-
+    cmd_id=cmd_karo_hotfix_ga569_context_freshness_202609031800。GA-569調査・防御hotfixの完全YAMLを準備済み。集計コマンド=grep idle karo_snapshot。出力行の生貼付=idle 0件（飛猿はCI fix開始、小太郎/影丸はGATE拘束）。1件の定義=GA-569 ALERT 1件。次idleへ配備し、未反映/同値/別owner進行中の3分類でFP/FN0を検証する。source_msg=msg_20260903_175442_3376707_209f476e
+  posted_by: 'karo'
+  posted_at: '2026-09-03T17:59:32'
+  requires_confirmation: false
+  action_type: 'info'
+  actioned_by: ''
+  notify_targets:
+    - 'shogun'
+  confirmed_by: []
+  status: 'open'
