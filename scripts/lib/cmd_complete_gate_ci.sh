@@ -439,6 +439,22 @@ if not commit:
     sys.path.insert(0, str(root / "scripts" / "lib"))
     from report_commit_identity import permits_no_code_identity
 
+    # reflux resolve-only(U9 原則): insight_resolve.sh の ledger op のみで commit を作らない。
+    # scripts/lib/review_approval.sh の ledger-resolve identity と同じ 3 条件
+    # (reflux_commit_contract.scope==[] / files_modified が queue/ のみ / ledger op path 記録)を
+    # 満たす report は no-code sentinel と同じ扱いにする(2026-09-03 12:26 飛猿 1136 根治)。
+    import json as _json
+    _reflux_contract = report.get("reflux_commit_contract") or {}
+    _scope_empty = isinstance(_reflux_contract, dict) and _reflux_contract.get("scope") == []
+    _queue_only = bool(files) and all(
+        str((item.get("path") if isinstance(item, dict) else item) or "").strip().startswith("queue/")
+        for item in (files if isinstance(files, list) else [])
+    )
+    _op_recorded = bool(re.search(r"[0-9]{8}T[0-9]{9,15}Z_[0-9]{12}\.yaml", _json.dumps(report, default=str, ensure_ascii=False))) if _scope_empty else False
+    if _scope_empty and _queue_only and _op_recorded:
+        print("sentinel\t")
+        raise SystemExit
+
     if permits_no_code_identity(report, root):
         evidence = report.get("no_code_change_evidence") or {}
         print("tree-sentinel\t" + str(evidence.get("before_tree") or "").strip().lower())
