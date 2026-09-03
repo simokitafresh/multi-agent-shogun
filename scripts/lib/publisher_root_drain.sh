@@ -31,7 +31,7 @@ publisher_root_drain() {
 
     if [ "$base" != "$(git -C "$repo_root" rev-parse "$remote_ref")" ]; then
         printf '%s\n' "publisher: root drain BLOCK divergence base=$base" >> "$log_path"
-        if ! bash "$inbox_writer" karo "publisher: root drain BLOCK divergence base=$base head=$head" task_supplement publisher_root_drain notify_karo; then
+        if ! bash "$inbox_writer" karo "publisher: root drain BLOCK divergence base=$base head=$head task_id=commander_directive subject_task_id=publisher_root_drain parent_cmd=publisher_root_drain" task_supplement publisher_root_drain notify_karo; then
             return 1
         fi
         return 1

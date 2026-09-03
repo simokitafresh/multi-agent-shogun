@@ -9097,6 +9097,7 @@ codd:
 | causal | `cmd_4460` files_modified: [[agent_formation_management]] |
 | causal | `cmd_karo_hotfix_publisher_single_flag_file_202609030257` files_modified: [[agent_formation_management]] |
 | causal | `cmd_4465` files_modified: [[agent_formation_management]] |
+| discussion | `queue/lord_conversation.jsonl` 2026-09-03T09:29:47+09:00 b6a5nvpt5 Monitor event: "task-scoped run_tests.sh完了待ち(2回目)" [Monitor timed out — re-arm if needed.] |
 | causal_chain | `[[cmd_karo_hotfix_deploy_task_latency_yaml_bug_20260702010845]]` (L918) |
 | causal_chain | `[[cmd_karo_hotfix_deploy_task_yaml_speed_recon_guard_202607020133]]` (L919) |
 | causal_chain | `[[cmd_karo_hotfix_ga162_hook_failure_pre_push_202607021402]]` (L930) |
@@ -18328,6 +18329,7 @@ codd:
 | discussion | `queue/lord_conversation.jsonl` 2026-09-03T00:15:37.423152+00:00 git pre-commit semantic propagation for context/projects changes |
 | discussion | `queue/lord_conversation.jsonl` 2026-09-03T00:16:00.887843+00:00 git pre-commit semantic propagation for context/projects changes |
 | discussion | `queue/lord_conversation.jsonl` 2026-09-03T00:22:04.266996+00:00 git pre-commit semantic propagation for context/projects changes |
+| discussion | `queue/lord_conversation.jsonl` 2026-09-03T00:27:38.107927+00:00 git pre-commit semantic propagation for context/projects changes |
 | causal_chain | `[[cmd_karo_hotfix_ga161_obsidian_link_context_freshness_202607021348]]` (L926) |
 | causal_chain | `[[cmd_3648]]` (L933) |
 | causal_chain | `[[cmd_karo_ci_fix_ga191_followup_202607071752]]` (L963) |

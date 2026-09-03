@@ -7,6 +7,7 @@ entries:
   requires_confirmation: false
   action_type: 'info'
   actioned_by: ''
+  notify_targets: []
   confirmed_by: []
   status: 'open'
 - id: 'blt_20260903_063102_cef1f4'
@@ -17,6 +18,7 @@ entries:
   requires_confirmation: false
   action_type: 'info'
   actioned_by: ''
+  notify_targets: []
   confirmed_by: []
   status: 'open'
 - id: 'blt_20260903_061429_7e2fc9'
@@ -27,6 +29,7 @@ entries:
   requires_confirmation: false
   action_type: 'info'
   actioned_by: ''
+  notify_targets: []
   confirmed_by: []
   status: 'open'
 - id: 'blt_20260903_052953_97a2b2'
@@ -37,6 +40,7 @@ entries:
   requires_confirmation: false
   action_type: 'info'
   actioned_by: ''
+  notify_targets: []
   confirmed_by: []
   status: 'open'
 - id: 'blt_20260903_042916_ffb822'
@@ -513,11 +517,11 @@ entries:
   posted_at: '2026-09-03T07:05:04'
   requires_confirmation: false
   action_type: 'action_required'
-  actioned_by: ''
+  actioned_by: 'karo'
   notify_targets:
     - 'karo'
   confirmed_by: []
-  status: 'open'
+  status: 'closed'
 - id: 'blt_20260903_070755_0b564a'
   content: |-
     DOC_LANE_ALERT: context=context/infrastructure.md raw_alert=ALERT: context/infrastructure.md source commits 2件 since last_updated=2026-09-03 repo=/home/simokitafresh/multi-agent-shogun root_fallback=no timeout=360s/360s owner=infra-platform update_trigger=.github|.githooks|config|docs/rule|docs/knowledge-base|instructions|scripts|skills|tests|AGENTS.md|CLAUDE.md|CONTRIBUTING.md|LICENSE|Makefile|SECURITY.md|first_setup.sh|install.bat|lefthook-local.yml|lefthook.yml|project_lexicon.yaml|setup.sh|shutsujin_departure.sh。更新要否を確認せよ latest: aa76e67a8584 publisher: record published/root_sync_skipped events; never let root sync failure abort after the push landed (request stayed in dequeued without done receipt) | a4ffd8d9555c publisher: record published event and never let root sync failure abort after the push landed (request stayed in dequeued without done receipt) action: bash scripts/context_source_commit_set.sh context/infrastructure.md aa76e67a8584 'context_freshness reviewed source boundary' 'context_freshness_check context=context/infrastructure.md commit=aa76e67a8584'
@@ -620,11 +624,11 @@ entries:
   posted_at: '2026-09-03T07:39:55'
   requires_confirmation: false
   action_type: 'action_required'
-  actioned_by: ''
+  actioned_by: 'karo'
   notify_targets:
     - 'karo'
   confirmed_by: []
-  status: 'open'
+  status: 'closed'
 - id: 'blt_20260903_074227_89937f'
   content: |-
     家老 07:55 下知 msg_20260903_054852_2644765_4a730302 裁定(2)の worktree 回収 hotfix(才蔵、cmd_karo_hotfix_task_worktree_reclaim_202609030535)GATE CLEAR→家老承認で sweep 本実行。集計コマンド: ls /home/simokitafresh/shogun-task-worktrees | wc -l; git worktree list | wc -l。出力行(生): 43 / 143(実行前 125 / 225)。1件の定義: 1件=task worktree dir または git worktree 1 本。removed=82、dirty 保持=15、active 誤回収=0(影丸 active は retain 確認)。副産物: 疾風 reflux 0728 の正当 FAIL は家老が root insights.yaml を一時的に旧版へ戻した瞬間を疾風が観測したもの=家老起因、fail-close 済。影丸 root drain 再提出版(a1a0640eb)は manifest PASS、軍師 review 依頼済。

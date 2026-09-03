@@ -27,6 +27,13 @@ set -eu
 
 REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 STATE_DIR="${SHOGUN_STATE_DIR:-$HOME/.local/share/multi-agent-shogun}"
+# ninja_monitor の lifecycle worker は SHOGUN_STATE_DIR=/tmp(自身の一時 state)を子へ渡す。
+# その環境で report_received→capture が走ると artifact が /tmp/publish_queue/artifacts へ落ち、
+# publisher(~/.local/share)が 'missing artifact' で RC する(2026-09-03 09:17 kotaro/hanzo/saizo 実測)。
+# publisher_queue.sh と同じく bare /tmp は非永続として扱い、永続既定へ寄せる(明示 fixture の /tmp/<dir> は許容)。
+case "$STATE_DIR" in
+    /tmp|/tmp/) STATE_DIR="$HOME/.local/share/multi-agent-shogun" ;;
+esac
 ARTIFACTS_ROOT="$STATE_DIR/publish_queue/artifacts"
 
 _pa_err() {

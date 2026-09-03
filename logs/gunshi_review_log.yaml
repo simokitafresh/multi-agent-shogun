@@ -2076,3 +2076,78 @@
   brainwash_check: '#1no #2no #3no #4no #5no #6no #7no #8no 定型AC2件'
   reviewed_at: '2026-09-03T09:22:00+09:00'
   timestamp: '2026-09-03T09:22:00+09:00'
+- adversarial_review: 'PASS: echo出力位置変更のみ。gate判定ALL_CLEAR/BLOCK_REASONS分岐は不変'
+  brainwash_check: '#1no #2no #3no #4no #5no #6no #7no #8no 5/5+316/316 PASS+pre/post
+    receipt突合'
+  causal_chain: CI RED→c9c92254a入口return→SKIPログ欠落→入口1回集約→5/5 PASS
+  cmd_id: cmd_karo_ci_fix_publisher_single_flag_202609030915
+  conflict_of_interest: cmd_complete_gate.sh変更だがPUBLISHER_SINGLE SKIPのecho出力位置修正のみ。gate判定ロジック(ALL_CLEAR/BLOCK_REASONS)変更なし
+  escalation_needed: false
+  finding_categories:
+  - assumptions
+  - numbers
+  - premortem
+  - adversarial
+  - ambiguity
+  findings_summary: 4観点OK。PUBLISHER_SINGLEログを関数入口1回出力に集約。5/5 PASS+316/316関連PASS。commit
+    8ef4ac0ed
+  gate_prediction: CLEAR
+  gate_prediction_reason: all checks passed
+  lesson_quality: OK
+  observations:
+  - 'CI FAIL原因: c9c92254aの入口return移動+d4da5a26dの後段echo追加→fixture count 1 vs 期待2'
+  - '修正: 入口で1回出力、proof-only後段の重複除去。5/5 PASS、関連316/316 PASS'
+  - 'ci_fix_clean_repro_evidence: pre_fix FAIL 2→post_fix PASS 0、commit 8ef4ac0ed'
+  operational_simulation:
+    actual: CLEAR (ERRORS=0)
+    command: precheck GATE_PREDICTION
+    expected: CLEAR
+    result: PASS
+  origin: '[[CI_RED_33695410178]] -> [[PUBLISHER_SINGLEログ欠落]] -> [[LGTM]]'
+  report_ninja: saizo
+  report_task_id: cmd_karo_ci_fix_publisher_single_flag_202609030915_normal
+  report_verdict: LGTM
+  review_type: report
+  reviewed_at: '2026-09-03T09:30:00+09:00'
+  step3_5_verified: true
+  timestamp: '2026-09-03T09:30:00+09:00'
+  verdict: LGTM
+  verified_files:
+  - scripts/cmd_complete_gate.sh:push_task_repositories
+  - tests/unit/test_publisher_single_flag.bats:1
+- adversarial_review: 'N/A: queue/insights.yamlのみ変更'
+  brainwash_check: '#1no #2no #3no #4no #5no #6no #7no #8no pending 95→94+正規化比較+gate実走'
+  causal_chain: INS-d643→先行INS-13b7重複確認→対象のみresolved→在庫1減
+  cmd_id: cmd_reflux_insight_202609030920_hayate
+  escalation_needed: false
+  finding_categories:
+  - assumptions
+  - numbers
+  - premortem
+  - adversarial
+  - ambiguity
+  findings_summary: 4観点OK。先行pending INS-13b7との完全重複→対象resolved。gate rc=2 stale30。在庫95→94。commit
+    0034216358
+  gate_prediction: CLEAR
+  gate_prediction_reason: all checks passed
+  lesson_quality: OK
+  observations:
+  - same_source=true, same_normalized_text=true。先行pendingとの完全重複を正規化比較で確認
+  - gate rc=2, stale=30組, missing=0。scope外はdecision_candidateへ
+  - '在庫: pending 95→94, total 658→657。1件減で整合'
+  operational_simulation:
+    actual: CLEAR (ERRORS=0)
+    command: precheck GATE_PREDICTION
+    expected: CLEAR
+    result: PASS
+  origin: '[[INS-d643]] -> [[重複resolve]] -> [[LGTM]]'
+  report_ninja: hayate
+  report_task_id: cmd_reflux_insight_202609030920_hayate_exact
+  report_verdict: LGTM
+  review_type: report
+  reviewed_at: '2026-09-03T09:33:00+09:00'
+  step3_5_verified: true
+  timestamp: '2026-09-03T09:33:00+09:00'
+  verdict: LGTM
+  verified_files:
+  - queue/insights.yaml:INS-20260903-082929190-d643
