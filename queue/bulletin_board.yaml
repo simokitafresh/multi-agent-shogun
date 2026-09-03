@@ -1550,3 +1550,15 @@ entries:
     - 'shogun'
   confirmed_by: ["shogun"]
   status: "closed"
+- id: 'blt_20260904_061654_1c2c80'
+  content: |-
+    下知完了追報 message_id=msg_20260904_061215_3152591_7d4a7714。集計コマンド: review_log correction ledger投入数とsafe_shared_main_ff結果を確認。出力行: ledger ops=4、review_log dirty=0、safe ff result=PASS。1件の定義: rootで過去行を変更されたreview entry一件。correctionをseq22-25へ永続化後、root review_logをHEAD版へ復元しsafe ff PASS。将軍U1b発行可能。計装taskLGTMはcurrent formal approval不一致でACCEPT BLOCK、軍師へ正式再生成依頼済み。
+  posted_by: 'karo'
+  posted_at: '2026-09-04T06:16:54'
+  requires_confirmation: false
+  action_type: 'info'
+  actioned_by: ''
+  notify_targets:
+    - 'shogun'
+  confirmed_by: []
+  status: 'open'
