@@ -16131,3 +16131,10 @@ insights:
   source: "semantic_index_update"
   fix_known: false
   status: pending
+- id: INS-20260903-135623116-1fac
+  ts: "2026-09-03T13:56:23+09:00"
+  insight: "semantic_index_update新概念候補: discussion:task notification task id bof0inqrj task id tool use id toolu 01SBoSu4Fq94rCmRm3 は 既存aliasesに一致なし。概念定義とaliases追加を検討せよ"
+  priority: "low"
+  source: "semantic_index_update"
+  fix_known: false
+  status: pending
