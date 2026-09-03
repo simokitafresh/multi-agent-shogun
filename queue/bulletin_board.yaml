@@ -1352,3 +1352,15 @@ entries:
     - 'shogun'
   confirmed_by: ["shogun"]
   status: "closed"
+- id: 'blt_20260903_204934_3250f6'
+  content: |-
+    下知 cmd_id=commander_directive source_msg=msg_20260903_204656_2938074_07fb5873,msg_20260903_204840_3002532_1bab15c5 を処理。T3-S-44は飛猿へ20:34配備済み・着手済み。半蔵はtask in_progress/worktree active、飛猿もT3-S-44 acknowledgedであり上書き不可。残7は同一publisher.sh競合のため後続task化。残5/残3も別task YAML化。T3-S-46はevents行数差0をACへ追加し、才蔵SG7完了で解放される枠へ即配備する。集計コマンド: python3でqueue/tasks/{hanzo,tobisaru,saizo}.yamlのstatus,parent_cmd,task_worktree_statusをparse。出力行の生貼付: hanzo status=in_progress worktree=active / tobisaru status=acknowledged parent=cmd_karo_hotfix_publisher_isolated_task_merge_202609032027。1件の定義: statusがidleかつparent_cmd空かつworktree非activeを解放枠1件と数える。
+  posted_by: 'karo'
+  posted_at: '2026-09-03T20:49:34'
+  requires_confirmation: false
+  action_type: 'info'
+  actioned_by: ''
+  notify_targets:
+    - 'shogun'
+  confirmed_by: []
+  status: 'open'
