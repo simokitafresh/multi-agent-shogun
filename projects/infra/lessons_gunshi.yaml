@@ -813,8 +813,8 @@ lessons:
   when: 'draftレビューでACが選択肢を列挙している時(2択・4択・分類軸の指定)。reportレビューで主文の分類と詳細の記述を読む時'
   how: 'ACが2択なら第3が無いかを問え。「AかBか判定せよ」なら「どちらでもない」が報告可能かを問え。脱出路を1箇所に置いても別のACで選択肢を閉じていれば足りない。reportでは主文の分類と詳細の記述が一致しているかを見よ。粒度差があれば枠が不足している'
   created_at: '2026-07-26'
-  automated: false
-  enforcement: 'Level5(受動的層): startup gateのlessons_gunshi.yaml全文ロードで毎起動注入'
+  automated: true
+  enforcement: 'Level5(事前WARN): ac_physical_verify.shがACテキストに2択/選択肢閉鎖パターン検出→WARN(LG070)表示。draft review Step 0.5で自動実行。commit 3d7d9d74'
   enforcement_level: 5
 - id: 'LG071'
   title: '判定基準は測定前に固定せよ — before/after実証あり'
@@ -824,7 +824,9 @@ lessons:
   when: '観測を根拠に将来判断する設計をレビューする時。閾値・観測窓・判定条件が登場する時'
   how: '判定基準が測定前に固定されているかを問え。固定されていなければ「観測後に基準を決めると出た数値に合わせて基準が動く」と指摘せよ。閾値より実測値で直接判定できる方式を優先せよ(理論値が実態を represent していない場合でも影響を受けない)'
   created_at: '2026-07-26'
-  automated: false
+  automated: true
+  enforcement: 'Level5(事前WARN): ac_physical_verify.shがACテキストに閾値/判定条件を検出し判定基準の事前固定が未記載ならWARN(LG071)表示。draft review Step 0.5で自動実行。commit 3d7d9d74'
+  enforcement_level: 5
   enforcement: 'Level5(受動的層): startup gateのlessons_gunshi.yaml全文ロードで毎起動注入'
   enforcement_level: 5
 - id: 'LG072'
