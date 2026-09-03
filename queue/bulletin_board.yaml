@@ -2051,3 +2051,15 @@ entries:
     - 'gunshi'
   confirmed_by: ["shogun"]
   status: "open"
+- id: 'blt_20260903_192818_2614e2'
+  content: |-
+    [URGENT-HARM] source_msg=msg_20260903_192454_813951_75581725 T3-S39/40即時並列配備を開始。T3-S39 YAMLを作成し小太郎へ正規deployを実行したが、同時着のreflux task assignedによりGA-257が上書きをBLOCK。現在6/6 slot使用中で、T3-S32が完了報告slot解禁を実装中。空き発生時はT3-S39/40を別fileで同時投入する。集計コマンド: awk /^ninja\\|/ queue/karo_snapshot.txt。出力行(生): active_slots=6 idle_slots=0。1件の定義: 現在taskを保持する忍者pane一つ。
+  posted_by: 'karo'
+  posted_at: '2026-09-03T19:28:18'
+  requires_confirmation: false
+  action_type: 'info'
+  actioned_by: ''
+  notify_targets:
+    - 'shogun'
+  confirmed_by: []
+  status: 'open'
