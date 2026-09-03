@@ -1,3 +1,2 @@
-# session_alerts — generated: 2026-09-03T18:05:02+0900
-[DONE] 掲示板action_required未対応: 16件 — 18:33 yaml 突合 open=1(script_size_alert のみ、リファクタ cmd 要)。16 は ledger 適用前の gate 集計。backfill 16 件+auto-close を context_source_commit_set.sh に埋込(ffca772bc)
-[DONE] 走行中cmd実測突合: 18:33 capture-pane 6 pane 実測。疾風/影丸/半蔵=Codex 初期画面(報告済み GATE 待ち)、才蔵 44%・小太郎・飛猿=稼働。RUNTIME 誤表示は T3-S-32 として家老 hotfix 依頼済(msg 18:30)
+# session_alerts — generated: 2026-09-03T20:19:39+0900
+[DONE] 走行中cmd実測突合: busy 3名。capture-pane 20:26 実測=影丸 idle prompt(run_tests unit 終了、ci_fix 報告待ち)/小太郎 bash_running CTX36%/才蔵 Working 40s。snapshot busy 3 は影丸分が実態 idle(await report)。

@@ -38,6 +38,8 @@ codd:
 
 deploy_task.sh (3,607行) の `resolve_cmd_to_task()` および `inject_ac_version()` が、同一ファイルに対する `yaml_field_set` / `field_get` の逐次呼び出しによりテスト1件あたり 2.6秒（全体の93%）を消費している。根因は毎回の flock 排他ロック取得 + awk 全量 rewrite + post-write verification の繰り返しである。
 
+加えて、`deploy_task_current_report_is_await_clear()` が配備ガード判定のたびに task_file と report_file の2ファイルに対して最大14回の `field_get` を逐次呼び出す（task_file: 8回、report_file: 6回）。本関数は配備試行ごとに最大2箇所（初期ガード + in_progress 判定）から呼ばれるため、worst case で28回の field_get が発生する。
+
 本 ADR は、既存 API 互換を維持したまま batch I/O ユーティリティ (`yaml_field_set_batch`, `field_get_multi`) を導入し、48テスト (ac_handling) の実行時間を 34秒 → 約5秒 (−85%) に短縮する意思決定を記録する。
 
 ### 定量プロファイル (2026-04-15 実測)
@@ -46,6 +48,7 @@ deploy_task.sh (3,607行) の `resolve_cmd_to_task()` および `inject_ac_versi
 |------|--------|-------------|--------|------|
 | `resolve_cmd_to_task` | 627ms | ~100ms | −84% | yaml_field_set 7回 → 1回 (flock 7→1, awk rewrite 7→1) |
 | `inject_ac_version` | 541ms | ~80ms | −85% | field_get 6–7回 → awk 1回, yaml_field_set 3回 → 1回 |
+| `deploy_task_current_report_is_await_clear` | ~70–210ms (推定) | ~15–30ms (期待) | −78–86% | field_get 14回 (2ファイル) → field_get_multi 2回 |
 | source deploy_task.sh | 137ms | 137ms | — | 対象外 |
 | **1テスト合計** | **2,639ms** | **~400ms** | **−85%** | |
 | **48テスト** | **34s** | **~5s** | **−85%** | |
@@ -92,7 +95,7 @@ yaml_field_set_batch <file> <block_id> <field1>=<value1> [<field2>=<value2> ...]
 
 **決定**: `field_get_multi` を `lib/field_get.sh` に新規追加する。
 
-**理由**: inject_ac_version() が同一ファイルを 6–7回 grep するオーバーヘッドを排除する。1回の awk pass で全フィールドを抽出すれば I/O を 1/7 に削減できる。
+**理由**: inject_ac_version() が同一ファイルを 6–7回 grep するオーバーヘッドを排除する。加えて deploy_task_current_report_is_await_clear() が task_file に対して最大8回、report_file に対して最大6回の field_get を逐次呼び出しており、配備ガード判定のたびに合計14回の I/O が発生する。field_get_multi でファイルごとに 1回の awk pass に統合すれば、inject_ac_version は I/O を 1/7 に、deploy_task_current_report_is_await_clear は 14回 → 2回（ファイル2種×1回）に削減できる。
 
 **API 定義**:
 ```bash
@@ -102,7 +105,7 @@ field_get_multi <file> <field1> [<field2> ...] → stdout: "field1=value1\nfield
 - 存在しないフィールドは空値 (`field1=`) として出力 (呼び出し元で存在判定可能)
 - 既存 `field_get` は温存し、単一フィールド取得の既存呼び出し元に影響なし
 
-### D-003: 実施順序は R3 → R4 → R1 → R2 → 全量検証
+### D-003: 実施順序は R3 → R4 → R1 → R2 → R5 → 全量検証
 
 **決定**: ユーティリティ関数を先に作成・テストし、その後 deploy_task.sh の呼び出し元を段階的に切り替える。
 
@@ -114,7 +117,8 @@ field_get_multi <file> <field1> [<field2> ...] → stdout: "field1=value1\nfield
 | 2 | R4: `field_get_multi` | 新ユーティリティ + 単体テスト | 複数フィールド一括抽出、eval 可能出力、存在しないフィールドの空値出力 |
 | 3 | R1: `resolve_cmd_to_task` | yaml_field_set 7回 → yaml_field_set_batch 1回 | 既存 deploy_task テスト全 PASS |
 | 4 | R2: `inject_ac_version` | field_get 6–7回 → field_get_multi 1回, yaml_field_set 3回 → yaml_field_set_batch 1回 | 既存 deploy_task テスト全 PASS |
-| 5 | 全量検証 | 48テスト (ac_handling) + プロファイル再計測 | before/after 比較で −85% 確認 |
+| 5 | R5: `deploy_task_current_report_is_await_clear` | field_get 14回 (task_file 8回 + report_file 6回) → field_get_multi 2回 (ファイルごと1回) | 既存 deploy_task テスト全 PASS、await_clear 判定の正確性 |
+| 6 | 全量検証 | 48テスト (ac_handling) + プロファイル再計測 | before/after 比較で −85% 確認 |
 
 ### D-004: flock 取得戦略は「1 batch = 1 flock」
 
@@ -147,5 +151,5 @@ field_get_multi <file> <field1> [<field2> ...] → stdout: "field1=value1\nfield
 | FU-1 | yaml_field_set_batch の並行書込みストレステスト | R3 実装完了後 | module:yaml_helpers |
 | FU-2 | deploy_task.sh 以外の逐次 yaml_field_set 呼び出し箇所の棚卸し | 全量検証完了後 | module:yaml_helpers 全利用元 |
 | FU-3 | field_get_multi の出力形式が eval injection に対して安全であることの検証 | R4 実装完了後。value に `$(...)` やバッククォートを含む YAML フィールドでの挙動確認 | module:yaml_helpers |
-| FU-4 | プロファイル再計測による実測値と期待値 (−85%) の突合 | Step 5 完了後。乖離が 10% 以上の場合は原因調査 | module:deploy_task |
+| FU-4 | プロファイル再計測による実測値と期待値 (−85%) の突合 | Step 6 完了後。乖離が 10% 以上の場合は原因調査。deploy_task_current_report_is_await_clear の寄与分を含む | module:deploy_task |
 | FU-5 | inbox_write.sh (FR-7) 側の yaml_field_set 呼び出しが batch 化の恩恵を受けるかの評価 | FU-2 の棚卸し結果に基づく | module:yaml_helpers, scripts/inbox_write.sh |

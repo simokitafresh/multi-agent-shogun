@@ -15174,10 +15174,13 @@ if [ "$ALL_CLEAR" = true ]; then
     GATE_DURATION_METRIC=$(build_clear_duration_metric)
     GATE_THROUGHPUT_METRIC=$(build_clear_throughput_metric "$GATE_CLEAR_TS")
     if [[ "$GATE_THROUGHPUT_METRIC" == *"segment_status=BLOCK"* ]]; then
-        echo "GATE WAIT: ${CMD_ID}:throughput_segment_invalid (measurement inputs are not yet consistent)"
-        record_wait_reason "WAIT:throughput_segment_invalid"
-        ALL_CLEAR=false
-    else
+        # 2026-09-03 21:58 将軍 D0(型② 過剰 BLOCK): throughput は計測であり品質 gate ではない。
+        # c2a 後追い合流や再適用で finalize/e2e の順序が崩れると segment_status=BLOCK になり、
+        # rc31/cmd_4473/x_url の 3 cmd が ancestry PASS 後も永久 WAIT した。計測不整合は
+        # metric に記録して通し、CLEAR を止めない(殿 07-21『計測は品質管理、止めるな』)。
+        echo "GATE WARN: ${CMD_ID}:throughput_segment_invalid (measurement inputs inconsistent; recorded, not gating)"
+    fi
+    {
     GATE_CTX_METRIC=$(build_clear_ctx_metric)
     GATE_KARO_CTX_METRIC=$(build_karo_ctx_metric)
     gate_detail_begin "post_source_checks.cdp_production_check" external_wait
@@ -16092,7 +16095,7 @@ PYEOF
 
     gate_phase_finish
     exit 0
-    fi
+    }
 else
     missing_list=$(IFS=,; echo "${MISSING_GATES[*]}")
     if [ ${#BLOCK_REASONS[@]} -gt 0 ]; then

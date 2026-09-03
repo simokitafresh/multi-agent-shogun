@@ -80,7 +80,9 @@ _UNREAD_CACHED_STAMP=""
 if [ -r "$_UNREAD_CACHE" ] && [ "$_UNREAD_CACHED_STAMP" = "$_INBOX_STAMP" ]; then
     { IFS= read -r UNREAD; } < "$_UNREAD_CACHE"
 else
-    UNREAD=$(awk '/read: false/{n++}END{print n+0}' "$INBOX")
+    # T3-S-43: レコード直下の read フィールドのみ数える(本文中の文字列を未読扱いしない)
+    . "${SCRIPT_DIR}/scripts/lib/inbox_unread_count.sh"
+    UNREAD=$(inbox_unread_count "$INBOX")
     printf '%s\n' "$UNREAD" > "$_UNREAD_CACHE" 2>/dev/null
     printf '%s\n' "$_INBOX_STAMP" > "$_UNREAD_META" 2>/dev/null
 fi
