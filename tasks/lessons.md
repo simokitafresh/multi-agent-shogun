@@ -16970,3 +16970,17 @@ sqlite3.Connection.backup()を使うとページ(4096byte)単位のread syscall�
 - **when**: 未設定
 - **how**: 未設定
 - cmd_complete_gate.shのようにif [ "$ALL_CLEAR" = true ]; thenが複数箇所(3箇所)存在するファイルで、テキスト順の開始/終了アンカーだけでWAIT経路のコード範囲を抽出すると、実行時は排他的な分岐(WAIT/CLEAR)がテキスト上は連続しているため、抽出範囲が無関係なCLEARブロック全体を呑み込む。構造sweepツールをまず小さいプロトタイプスクリプトで試作し、抽出結果の行数/内容を出力して目視確認してからbatsへ組み込むことで検出できた。今後同種の抽出(関数境界ではなくif/fi範囲)を書く際は、開始・終了アンカーそれぞれの一意性だけでなく「間に他の分岐の終端が現れないか」を検証してから使うべき
+
+
+### L1732: sed行範囲抽出は非一意アンカーで分岐をまたいで誤爆する
+- **日付**: 2026-09-04
+- **出典**: cmd_karo_hotfix_t3s40_post_source_full_instrumentation_202609040542
+- **記録者**: tobisaru
+- **tags**: [infra,cmd-quality,testing,gate,bash]
+- **subdomain**: infra
+- **target_files**: [scripts/cmd_complete_gate.sh,tests/unit/test_cmd_complete_gate_source_publish.bats]
+- **origin**: [[cmd_karo_hotfix_t3s40_post_source_full_instrumentation_202609040542]]
+- **enforcement**: 未自動化
+- **when**: 未設定
+- **how**: 未設定
+- cmd_complete_gate.shのようにif [ "$ALL_CLEAR" = true ]; thenが複数箇所(3箇所)存在するファイルで、テキスト順の開始/終了アンカーだけでWAIT経路のコード範囲を抽出すると、実行時は排他的な分岐(WAIT/CLEAR)がテキスト上は連続しているため、抽出範囲が無関係なCLEARブロック全体を呑み込む。構造sweepツールをまず小さいプロトタイプスクリプトで試作し、抽出結果の行数/内容を出力して目視確認してからbatsへ組み込むことで検出できた。今後同種の抽出(関数境界ではなくif/fi範囲)を書く際は、開始・終了アンカーそれぞれの一意性だけでなく「間に他の分岐の終端が現れないか」を検証してから使うべき
