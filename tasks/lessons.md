@@ -16886,3 +16886,17 @@ sqlite3.Connection.backup()を使うとページ(4096byte)単位のread syscall�
 - **when**: 未設定
 - **how**: 未設定
 - cmd_save.shのように大きなスクリプトから特定関数だけをawk range '/^func\(\)/,/^}/' でbats guardへ抽出しstandalone sourceするテストパターンでは、対象関数が別のtop-levelヘルパー関数(例: trim_inline_yaml_scalar())を呼んでいると、抽出漏れにより'command not found'でsourceが暗黙に空文字化し、実装は正しいのにテストだけが誤った分岐を検証してしまう(PD-104事例)。対処: test_cmd_save_block_aggregation.batsの既存パターン(helpers=1/0フラグでヘルパー範囲も抽出)に倣い、抽出awkにヘルパー関数のstart/end検出を追加せよ。もう1点、ログのtimestampウィンドウ判定をnaive(TZ情報なし)timestampで書くテストフィクスチャは、パーサがローカルマシンのtimezoneへfallbackする実装(datetime.now().astimezone().tzinfo)と組み合わさると、JST開発機では境界内でPASSしCI(UTC)runnerでは境界外にずれてFAILする、というTZ依存の偽装PASSを生む(single_publisher_close_check事例)。対処: フィクスチャのtimestampは常に明示的offset付き(例: +0000)で書き、production側の実書き込み形式(push_lane_logの%z)と一致させよ
+
+
+### L1725: X投稿draft生成のLLM呼び出しはsystem_promptをstdinへ混在させるとClaude CLIが前置き/見出し/区切り線を書きやすい。--system-promptで分離注入すると顕著に減る
+- **日付**: 2026-09-03
+- **出典**: cmd_karo_hotfix_x_draft_generation_contract_202609031802
+- **記録者**: kotaro
+- **tags**: [infra,skill,testing]
+- **subdomain**: infra
+- **target_files**: [scripts/x_ops/x_post.sh,skills/x-post-pipeline/system_prompt_v4.txt,tests/unit/test_x_post_gate.bats]
+- **origin**: [[cmd_karo_hotfix_x_draft_generation_contract_202609031802]]
+- **enforcement**: 未自動化
+- **when**: 未設定
+- **how**: 未設定
+- latest Claude CLI(--print)に system_prompt_v4.txt をstdin内へ混在させて渡すと、既定モデルは『113.5字(全角換算・URL除く)で140字以内。以下が最終投稿本文です。』のような前置き・見出し・区切り線(---)混入を高頻度で返した(実測2636byte)。同じ内容を--system-promptフラグへ分離して渡すと同条件で前置きゼロの契約準拠本文を再現性をもって取得できた(実測356byte・387byte・465byte全て前置きなし)。ただし--system-prompt利用時でも稀に『字数の説明』文が混入する個体差があったため、生成後のfail-close検証(メタ語パターンマッチ)を安全網として併設する必要がある。LLM出力契約は指示文だけで100%は守られず、system prompt分離+生成後検証の二段構えが必要。
