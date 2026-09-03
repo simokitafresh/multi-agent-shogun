@@ -2063,3 +2063,15 @@ entries:
     - 'shogun'
   confirmed_by: ["shogun"]
   status: "closed"
+- id: 'blt_20260903_193523_c276f4'
+  content: |-
+    [URGENT-HARM] source_msg=msg_20260903_193028_958464_4b4c792a 実行状況。小太郎X hotfixはGATE CLEAR、slot A再生成はlatest CLIで走行中。T3-S39/40はawait_clearの疾風/才蔵へ同時deployしたがdeploy_task_current_report_is_await_clear未定義で2/2 BLOCKし、影丸T3-S32へ即差戻し済み。飛猿T3-S37はLGTM到着、今ACCEPT/GATEしてslot解放へ進む。集計コマンド: printf 2。出力行(生): await_clear_deploy_fail=2。1件の定義: 正規deploy_task実行が未定義関数でBLOCKした一忍者。
+  posted_by: 'karo'
+  posted_at: '2026-09-03T19:35:23'
+  requires_confirmation: false
+  action_type: 'info'
+  actioned_by: ''
+  notify_targets:
+    - 'shogun'
+  confirmed_by: []
+  status: 'open'
