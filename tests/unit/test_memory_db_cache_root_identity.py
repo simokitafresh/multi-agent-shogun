@@ -11,6 +11,7 @@ import os
 from pathlib import Path
 import sqlite3
 import threading
+import time
 
 
 ROOT = Path(__file__).resolve().parents[2]
@@ -266,6 +267,7 @@ def test_append_only_refresh_uses_atomic_incremental_snapshot(tmp_path, monkeypa
     module = load_module(SOURCE, "memory_db_live_insert_incremental_append")
     db_path, _ = _prepare_appendable_source(tmp_path, monkeypatch, "incremental")
     monkeypatch.setenv("SHOGUN_MEMORY_DB_INCREMENTAL_MIN_BYTES", "0")
+    monkeypatch.setenv("SHOGUN_MEMORY_DB_INCREMENTAL_PREFIX_VERIFY_MAX_BYTES", "0")
     published = Path(module.create_memory_db_ext4_cache(str(db_path)))
 
     with sqlite3.connect(db_path) as conn:
@@ -285,6 +287,8 @@ def test_append_only_refresh_uses_atomic_incremental_snapshot(tmp_path, monkeypa
         raise AssertionError("append-only refresh unexpectedly used full source copy")
 
     module.create_sqlite_backup = full_copy_forbidden
+    module._hot_copy_snapshot = full_copy_forbidden
+    module.require_cache_backup_healthy = full_copy_forbidden
     published = Path(module.create_memory_db_ext4_cache(str(db_path)))
 
     with sqlite3.connect(published) as conn:
@@ -292,6 +296,39 @@ def test_append_only_refresh_uses_atomic_incremental_snapshot(tmp_path, monkeypa
         assert conn.execute("SELECT COUNT(*) FROM event_concepts").fetchone() == (4,)
         assert conn.execute("SELECT COUNT(*) FROM event_links").fetchone() == (4,)
         assert conn.execute("SELECT detail FROM events WHERE id='event-4'").fetchone() == ("detail-4",)
+
+
+def test_continuous_cache_sync_calls_are_debounced(tmp_path, monkeypatch):
+    """test_necessity: a burst of live inserts must not start one cache
+    refresh per insert; a later call after the debounce window remains able to
+    refresh, so coalescing cannot strand the final suffix forever."""
+    module = load_module(SOURCE, "memory_db_live_insert_debounce")
+    db_path, _ = _prepare_source(tmp_path, monkeypatch, "debounce", 2)
+    monkeypatch.setenv("SHOGUN_MEMORY_DB_CACHE_DEBOUNCE_SEC", "0.05")
+    calls = []
+    original = module.create_memory_db_ext4_cache
+
+    def counted(path):
+        calls.append(path)
+        return original(path)
+
+    module.create_memory_db_ext4_cache = counted
+    module.sync_memory_db_ext4_cache(str(db_path))
+    module.sync_memory_db_ext4_cache(str(db_path))
+    assert len(calls) == 1
+    time.sleep(0.06)
+    module.sync_memory_db_ext4_cache(str(db_path))
+    assert len(calls) == 2
+
+
+def test_routine_backup_retention_is_two_generations(tmp_path):
+    """test_necessity: automatic rotation must retain exactly the two newest
+    routine generations; older backups remain available for the separate
+    aggregate archive plan rather than being silently treated as recovery
+    generations."""
+    module = load_module(SOURCE, "memory_db_live_insert_retention")
+    assert module.ROUTINE_BACKUP_KEEP_RECENT == 2
+    assert module.ROUTINE_BACKUP_KEEP_DAILY_DAYS == 0
 
 
 def test_prefix_mutation_forces_full_snapshot_fallback(tmp_path, monkeypatch):

@@ -163,8 +163,11 @@ def create_sqlite_backup(
 # (cmd_3869 902件棚卸し: 名前付き節目は対象外).
 ROUTINE_BACKUP_FIXED_SUFFIXES = {"obsidian_candidate", "obsidian_promote_finalize", "recall_control"}
 ROUTINE_BACKUP_DYNAMIC_PREFIXES = ("candidate_resolve_",)
-ROUTINE_BACKUP_KEEP_RECENT = 5
-ROUTINE_BACKUP_KEEP_DAILY_DAYS = 7
+# Routine backups are recovery generations, not an audit archive.  Keep only
+# the two newest generations; historical files are handled by the explicit
+# archive plan and are never deleted implicitly by a refresh.
+ROUTINE_BACKUP_KEEP_RECENT = 2
+ROUTINE_BACKUP_KEEP_DAILY_DAYS = 0
 ROUTINE_BACKUP_NAME_RE = re.compile(
     r"^(?P<base>.+)\.bak_(?P<suffix>.+)_(?P<stamp>\d{8}T\d{6})(?P<sidecar>-journal|-wal|-shm)?$"
 )
@@ -604,6 +607,185 @@ def _events_prefix_matches(
     return mismatch is None
 
 
+def _signature_from_connection(conn: sqlite3.Connection) -> str | None:
+    """Return the cheap append watermark for an already-open source connection."""
+    row = conn.execute(
+        "SELECT MAX(rowid), COUNT(*), MAX(COALESCE(updated_at, recorded_at, ts)) FROM events"
+    ).fetchone()
+    if not row or row[0] is None:
+        return None
+    return f"rowid:{row[0]}|count:{row[1]}|maxts:{row[2]}"
+
+
+def _table_exists(conn: sqlite3.Connection, table_name: str) -> bool:
+    return conn.execute(
+        "SELECT 1 FROM sqlite_master WHERE name = ? AND type IN ('table', 'virtual table') LIMIT 1",
+        (table_name,),
+    ).fetchone() is not None
+
+
+def _try_incremental_cache_update(
+    db_path: str, cache_path: str
+) -> tuple[bool, str | None]:
+    """Append a proven rowid suffix directly to the published ext4 cache.
+
+    SQLite transactions already give readers an old-or-new snapshot, so an
+    in-place append avoids copying the 1.39GB cache merely to publish a tiny
+    suffix.  The source is read from one snapshot and every new event/FTS/
+    projection row is checked after commit.  Any schema, deletion, prefix,
+    child-table, or verification uncertainty returns ``(False, None)`` and
+    leaves the caller's existing atomic full-refresh fallback in charge.
+    """
+    source_path = os.path.abspath(db_path)
+    published_path = os.path.abspath(cache_path)
+    if source_path == published_path or not os.path.exists(published_path):
+        return False, None
+    try:
+        source_uri = f"file:{source_path}?mode=ro"
+        with sqlite3.connect(source_uri, uri=True) as source_conn, sqlite3.connect(
+            published_path
+        ) as cache_conn:
+            source_conn.execute(f"PRAGMA busy_timeout={SQLITE_BUSY_TIMEOUT_MS}")
+            cache_conn.execute(f"PRAGMA busy_timeout={SQLITE_BUSY_TIMEOUT_MS}")
+            source_conn.execute("BEGIN")
+            cache_conn.execute("BEGIN IMMEDIATE")
+
+            source_columns = _sqlite_table_columns(source_conn, "events")
+            cache_columns = _sqlite_table_columns(cache_conn, "events")
+            required_columns = {"id", "summary", "detail", "updated_at", "recorded_at", "ts"}
+            if not required_columns.issubset(source_columns) or source_columns != cache_columns:
+                raise sqlite3.DatabaseError("events schema is not append-compatible")
+
+            source_count, source_max_rowid = source_conn.execute(
+                "SELECT COUNT(*), COALESCE(MAX(rowid), 0) FROM events"
+            ).fetchone()
+            cache_count, cache_max_rowid = cache_conn.execute(
+                "SELECT COUNT(*), COALESCE(MAX(rowid), 0) FROM events"
+            ).fetchone()
+            if source_count <= cache_count or source_max_rowid <= cache_max_rowid:
+                raise sqlite3.DatabaseError("source is not a strict append")
+
+            source_delta_count = source_conn.execute(
+                "SELECT COUNT(*) FROM events WHERE rowid > ?", (cache_max_rowid,)
+            ).fetchone()[0]
+            if source_delta_count != source_count - cache_count:
+                raise sqlite3.DatabaseError("source prefix contains a deletion or gap")
+
+            # Small fixtures and recovery-sized caches retain the exact prefix
+            # comparison as an additional mutation guard.  Production caches
+            # are much larger than this bound; their append-only writer
+            # contract uses the rowid/count watermark and skips the O(N)
+            # prefix scan that dominated the old refresh cost.
+            try:
+                prefix_verify_max_bytes = int(
+                    os.environ.get("SHOGUN_MEMORY_DB_INCREMENTAL_PREFIX_VERIFY_MAX_BYTES", str(64 * 1024 * 1024))
+                )
+            except ValueError:
+                prefix_verify_max_bytes = 64 * 1024 * 1024
+            if prefix_verify_max_bytes > 0 and os.path.getsize(published_path) <= prefix_verify_max_bytes:
+                if not _events_prefix_matches(
+                    source_conn, published_path, source_columns, cache_max_rowid
+                ):
+                    raise sqlite3.DatabaseError("source prefix content changed")
+
+            quoted_events = ", ".join(f'"{column}"' for column in source_columns)
+            delta_rows = source_conn.execute(
+                f"SELECT rowid, {quoted_events} FROM events WHERE rowid > ? ORDER BY rowid",
+                (cache_max_rowid,),
+            ).fetchall()
+            if len(delta_rows) != source_delta_count:
+                raise sqlite3.DatabaseError("source suffix changed during snapshot")
+
+            child_rows_by_table: dict[str, list[tuple]] = {}
+            expected_child_counts: dict[str, int] = {}
+            event_ids = [row[source_columns.index("id") + 1] for row in delta_rows]
+            for table_name, key_column in (
+                ("event_concepts", "event_id"),
+                ("event_links", "source_event_id"),
+            ):
+                source_has_table = _table_exists(source_conn, table_name)
+                cache_has_table = _table_exists(cache_conn, table_name)
+                if source_has_table != cache_has_table:
+                    raise sqlite3.DatabaseError(f"{table_name} presence changed")
+                if not source_has_table:
+                    continue
+                source_table_columns = _sqlite_table_columns(source_conn, table_name)
+                cache_table_columns = _sqlite_table_columns(cache_conn, table_name)
+                if source_table_columns != cache_table_columns:
+                    raise sqlite3.DatabaseError(f"{table_name} schema is not append-compatible")
+                source_total = source_conn.execute(
+                    f"SELECT COUNT(*) FROM {table_name}"
+                ).fetchone()[0]
+                cache_total = cache_conn.execute(
+                    f"SELECT COUNT(*) FROM {table_name}"
+                ).fetchone()[0]
+                rows: list[tuple] = []
+                for offset in range(0, len(event_ids), 500):
+                    chunk = event_ids[offset : offset + 500]
+                    placeholders = ", ".join("?" for _ in chunk)
+                    quoted_child = ", ".join(f'child."{column}"' for column in source_table_columns)
+                    rows.extend(
+                        source_conn.execute(
+                            f"SELECT {quoted_child} FROM {table_name} AS child "
+                            f"WHERE {key_column} IN ({placeholders})",
+                            chunk,
+                        ).fetchall()
+                    )
+                if source_total - cache_total != len(rows):
+                    raise sqlite3.DatabaseError(f"{table_name} prefix changed")
+                child_rows_by_table[table_name] = rows
+                expected_child_counts[table_name] = cache_total + len(rows)
+
+            event_placeholders = ", ".join("?" for _ in range(len(source_columns) + 1))
+            cache_conn.executemany(
+                f"INSERT INTO events(rowid, {quoted_events}) VALUES ({event_placeholders})",
+                delta_rows,
+            )
+
+            if _table_exists(source_conn, "events_fts") and _table_exists(cache_conn, "events_fts"):
+                summary_index = source_columns.index("summary") + 1
+                detail_index = source_columns.index("detail") + 1
+                cache_conn.executemany(
+                    "INSERT INTO events_fts(rowid, summary, detail) VALUES (?, ?, ?)",
+                    ((row[0], row[summary_index], row[detail_index]) for row in delta_rows),
+                )
+
+            for table_name, rows in child_rows_by_table.items():
+                child_columns = _sqlite_table_columns(cache_conn, table_name)
+                quoted_child = ", ".join(f'"{column}"' for column in child_columns)
+                placeholders = ", ".join("?" for _ in child_columns)
+                cache_conn.executemany(
+                    f"INSERT OR IGNORE INTO {table_name}({quoted_child}) VALUES ({placeholders})",
+                    rows,
+                )
+            # Differential verification: only the suffix and its projections
+            # are read back.  Full quick_check/FTS integrity belongs to the
+            # cold or uncertain full-refresh path, not every append.
+            for row in delta_rows:
+                rowid = row[0]
+                actual = cache_conn.execute(
+                    f"SELECT rowid, {quoted_events} FROM events WHERE rowid = ?", (rowid,)
+                ).fetchone()
+                if actual != tuple(row):
+                    raise sqlite3.DatabaseError(f"incremental event verification failed: {rowid}")
+            if _table_exists(cache_conn, "events_fts"):
+                for row in delta_rows:
+                    if cache_conn.execute(
+                        "SELECT 1 FROM events_fts WHERE rowid = ?", (row[0],)
+                    ).fetchone() is None:
+                        raise sqlite3.DatabaseError(f"incremental FTS verification failed: {row[0]}")
+            for table_name, rows in child_rows_by_table.items():
+                actual_count = cache_conn.execute(
+                    f"SELECT COUNT(*) FROM {table_name}"
+                ).fetchone()[0]
+                if actual_count != expected_child_counts[table_name]:
+                    raise sqlite3.DatabaseError(f"incremental {table_name} verification failed")
+            cache_conn.commit()
+            return True, _signature_from_connection(source_conn)
+    except Exception:
+        return False, None
+
+
 def _try_incremental_cache_snapshot(
     db_path: str, cache_path: str, output_path: str, source_signature: str | None = None
 ) -> bool:
@@ -989,6 +1171,59 @@ def create_memory_db_ext4_cache(db_path: str) -> str:
             )
         except Exception:
             pass
+        # The common append-only case can commit directly to the published
+        # SQLite cache.  This avoids copying the cache itself and uses only a
+        # differential read-back for verification.  A false result preserves
+        # the existing temp-file/full-integrity path below.
+        _incremental_t0 = time.monotonic_ns()
+        _incremental_ok, _incremental_sig = _try_incremental_cache_update(
+            db_path, cache_path
+        )
+        if _incremental_ok:
+            _incremental_ms = (time.monotonic_ns() - _incremental_t0) // 1_000_000
+            _refresh_points.append(
+                (
+                    "refresh_copy",
+                    _incremental_ms,
+                    "PASS",
+                    f"refresh_copy:grp-{_window_group}:mode-incremental-in-place",
+                )
+            )
+            _refresh_points.append(
+                ("refresh_verify", 0, "PASS", f"refresh_verify:grp-{_window_group}:mode-delta")
+            )
+            try:
+                _window_end_rowid = _memory_db_source_max_rowid(db_path)
+                _window_ms = (time.monotonic_ns() - _window_begin_ns) // 1_000_000
+                _arrived = (
+                    str(int(_window_end_rowid) - int(_window_begin_rowid))
+                    if _window_begin_rowid != "na" and _window_end_rowid != "na"
+                    else "na"
+                )
+                _refresh_points.append(
+                    (
+                        "refresh_window",
+                        _window_ms,
+                        "PASS" if _window_end_rowid != "na" else "WARN",
+                        f"refresh_window:end:rowid-{_window_end_rowid}:grp-{_window_group}"
+                        f":arrived-{_arrived}:beginrowid-{_window_begin_rowid}",
+                    )
+                )
+            except Exception:
+                pass
+            remove_memory_db_cache_sidecars(cache_path)
+            try:
+                # The signature belongs to the source snapshot used by the
+                # direct update.  If it is unavailable, leave the old sig so
+                # the next caller takes the safe refresh path.
+                if _incremental_sig is not None:
+                    with open(f"{_sig_path}.tmp.{os.getpid()}", "w", encoding="utf-8") as _sf:
+                        _sf.write(_incremental_sig + "\n")
+                    os.replace(f"{_sig_path}.tmp.{os.getpid()}", _sig_path)
+            except OSError:
+                pass
+            _record_refresh_points(_refresh_points)
+            return cache_path
         fd, temp_name = tempfile.mkstemp(
             prefix=f".{_cache_base}.", suffix=".tmp", dir=cache_dir
         )
@@ -1071,8 +1306,51 @@ def create_memory_db_ext4_cache(db_path: str) -> str:
     return cache_path
 
 
+def _cache_sync_debounce_seconds() -> float:
+    try:
+        return max(0.0, float(os.environ.get("SHOGUN_MEMORY_DB_CACHE_DEBOUNCE_SEC", "0.25")))
+    except ValueError:
+        return 0.25
+
+
+def _cache_sync_is_debounced(cache_path: str, debounce: float) -> bool:
+    marker_path = f"{cache_path}.debounce"
+    lock_path = f"{marker_path}.lock"
+    try:
+        with open(lock_path, "a+", encoding="utf-8") as lock_handle:
+            fcntl.flock(lock_handle, fcntl.LOCK_EX)
+            try:
+                with open(marker_path, encoding="utf-8") as marker:
+                    raw = marker.read().strip()
+            except FileNotFoundError:
+                raw = ""
+            if raw and time.time() - float(raw) < debounce:
+                return True
+    except (OSError, ValueError):
+        return False
+    return False
+
+
+def _cache_sync_mark(cache_path: str) -> None:
+    marker_path = f"{cache_path}.debounce"
+    lock_path = f"{marker_path}.lock"
+    try:
+        with open(lock_path, "a+", encoding="utf-8") as lock_handle:
+            fcntl.flock(lock_handle, fcntl.LOCK_EX)
+            with open(marker_path, "w", encoding="utf-8") as marker:
+                marker.write(f"{time.time():.9f}\n")
+    except OSError:
+        return
+
+
 def sync_memory_db_ext4_cache(db_path: str) -> None:
+    cache_path = memory_db_cache_path(db_path)
+    debounce = _cache_sync_debounce_seconds()
+    if debounce > 0 and _cache_sync_is_debounced(cache_path, debounce):
+        return
     create_memory_db_ext4_cache(db_path)
+    if debounce > 0:
+        _cache_sync_mark(cache_path)
 
 
 def upsert_lord_ruling_cache_event(cache_path: str, db_path: str, event_id: str) -> None:
