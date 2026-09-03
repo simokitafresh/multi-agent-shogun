@@ -236,8 +236,8 @@
 | T3-S-21 | 08:1x | CI RED shard1 SKIP=FAIL | ⑧ | 家老の gate 変更で期待 echo が 2 行→1 行 | d4da5a26d。根治。**T3-S-21b**: push 連続で CI run が cancel され GREEN 未確認(⑤、**未根治**=push 集約か concurrency 設定) |
 | T3-S-22 | 09:58 | X gate 規則 1 が空 blocklist で PASS | ③ | 公開 API に非公開 PF の holding が無く、空を PASS 扱い(沈黙フォールバック) | 2fa437a9c(認証 API・fail-close)。根治 |
 | T3-S-23 | 10:42 | close_check 条件(5)が静的 rg で 51 件 FAIL | ① | U8 凍結で残る no-op 行を数える | §15 を runtime 判定に明確化(v3.23b)。根治(定義) |
-| T3-S-24 | 10:42 | publisher の C2a 3-way merge commit に trailer 無し(trailer 45/50 の 2 件) | ⑧ | merge 経路で trailer 付与を忘れ | **未根治**(家老 hotfix 列、msg_104037) |
-| T3-S-25 | 10:42 | gate が SKILL.md の『gate FAIL 履歴』を root で自動 commit(60c20e901) | ③ | 第 5 の root 直書き生産者 | **未根治**(ledger route/U1b へ、家老 hotfix 列) |
+| T3-S-24 | 10:42 | publisher の C2a 3-way merge commit に trailer 無し(trailer 45/50 の 2 件) | ⑧ | merge 経路で trailer 付与を忘れ | 3d03a2f2c `publisher_c2a_merge.sh`(trailer 固定)。根治 10:55 |
+| T3-S-25 | 10:42 | gate が SKILL.md の『gate FAIL 履歴』を root で自動 commit(60c20e901) | ③ | 第 5 の root 直書き生産者 | 3d03a2f2c(ON 時 skip)。根治 10:55 |
 | T3-S-26 | 06:13 | 将軍が家老の誤報で spinner 中の軍師 pane へ send-keys | ⑧ | capture を tail 3 行で判断し spinner を見落とした | 実害なし。以後 -S -40。根治(手順) |
 
-集計コマンド: `grep -oE '^\| T3-S-[0-9]+ \|' docs/research/tsumari_root_causes_20260901.md | wc -l` → 26。根治 21 / 未根治 5(T3-S-19/20/21b/24/25)。忍者 6 領域(T3-<name>-NN)・軍師節・家老節は cmd_4470 着地後にここへ統合。
+集計コマンド: `grep -oE '^\| T3-S-[0-9]+ \|' docs/research/tsumari_root_causes_20260901.md | wc -l` → 26。根治 23 / 未根治 3(T3-S-19/20/21b)、10:58 更新。忍者 6 領域(T3-<name>-NN)・軍師節・家老節は cmd_4470 着地後にここへ統合。
