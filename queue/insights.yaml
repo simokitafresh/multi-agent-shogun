@@ -15554,7 +15554,10 @@ insights:
   priority: "medium"
   source: "lord_conversation:lesson_candidate"
   fix_known: false
-  status: pending
+  status: "resolved"
+  resolved_reason: "殿下問(09-03 09:13)への回答は設計書docs/research/single_publisher_asis_tobe_5w1h_20260902.md §15(v3.19-v3.21)に既に記載済み: 判定=未完了(クローズしない)、trailer率66%(ToBe100%)、クローズ5条件+追加対応(U9=cmd_4468,U10=cmd_4469)を明記。将軍の日次更新(§5レビュー履歴)により継続反映されており追加対応不要"
+  action_artifact: "docs/research/single_publisher_asis_tobe_5w1h_20260902.md §15"
+  resolved_at: "2026-09-03T10:18:15.056918"
 - id: INS-20260903-091538752-0b95
   ts: "2026-09-03T09:15:38+09:00"
   insight: "[[殿 03 13『grok によるアカウント運用は今後 API などで自動化まで』→設計書 v0 3 docs resea]] semantic_stress_test candidate_aliases: NO_MATCH source=cmds query=殿 2026-09-03 03:13『grok によるアカウント運用は今後 API などで自動化まで』→設計書 v0.3(docs/research/x_account_ops_automation_asis_tobe_5w1h_20260903.md、gist 8e1336f8)。殿回答 B-6(03:31)『metrics は全 PF 公開可、保有シグナ"
