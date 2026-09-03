@@ -10,9 +10,45 @@
 # 引用は行頭に来ない。∴ 可視画面のみ・行頭構造のみで判定する。
 
 # $1 = 可視画面テキスト。実確認プロンプトなら 0。
+_pane_confirmation_screen_has_survey() {
+    local screen="${1:-}"
+    [ -n "$screen" ] || return 1
+    printf '%s\n' "$screen" | awk '
+        function is_survey_choice(line, n, label) {
+            return line ~ ("^[[:space:]]*[❯›>]?[[:space:]]*" n "[[:space:]]+" label "[[:space:]]*$")
+        }
+        {
+            lines[NR] = $0
+        }
+        END {
+            for (i = 1; i <= NR; i++) {
+                # Claude Code session quality survey. Require the exact
+                # heading and every choice so quoted prose cannot hold
+                # nudges, while the visible survey dialog is safely deferred.
+                if (lines[i] !~ /^[[:space:]]*How is Claude doing this session\?[[:space:]]*(\(optional\))?[[:space:]]*$/) {
+                    continue
+                }
+                bad = fine = good = dismiss = 0
+                for (j = i + 1; j <= NR && j <= i + 8; j++) {
+                    if (is_survey_choice(lines[j], 1, "Bad")) bad = 1
+                    if (is_survey_choice(lines[j], 2, "Fine")) fine = 1
+                    if (is_survey_choice(lines[j], 3, "Good")) good = 1
+                    if (is_survey_choice(lines[j], 0, "Dismiss")) dismiss = 1
+                }
+                if (bad && fine && good && dismiss) {
+                    exit 0
+                }
+            }
+            exit 1
+        }'
+}
+
 _pane_confirmation_screen_has_prompt() {
     local screen="${1:-}"
     [ -n "$screen" ] || return 1
+    if _pane_confirmation_screen_has_survey "$screen"; then
+        return 0
+    fi
     printf '%s\n' "$screen" | awk '
         function is_choice(line, n) {
             return line ~ ("^[[:space:]]*[❯›>]?[[:space:]]*" n "\\.[[:space:]]+[^[:space:]]")

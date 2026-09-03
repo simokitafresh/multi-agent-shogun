@@ -40,3 +40,35 @@ setup() {
   run _pane_confirmation_screen_has_prompt $'次の手順:\n  1. push する\n  その後に GATE\n❯ '
   [ "$status" -ne 0 ]
 }
+
+@test "claude session quality survey is a confirmation prompt" {
+  run _pane_confirmation_screen_has_prompt $'How is Claude doing this session? (optional)\n  1 Bad\n  2 Fine\n  3 Good\n  0 Dismiss'
+  [ "$status" -eq 0 ]
+}
+
+@test "survey prose without the visible choice structure is not a prompt" {
+  run _pane_confirmation_screen_has_prompt $'The docs mention "How is Claude doing this session?" and choices 1 Bad, 2 Fine, 3 Good, 0 Dismiss.\n❯ '
+  [ "$status" -ne 0 ]
+}
+
+@test "claude launch command carries the documented survey opt-out" {
+  fixture="$BATS_TEST_TMPDIR/cli-lookup"
+  mkdir -p "$fixture/config"
+  cat > "$fixture/settings.yaml" <<'YAML'
+cli:
+  default: claude
+  agents:
+    dummyclaude:
+      type: claude
+      model_name: claude-opus-4-6
+YAML
+  cat > "$fixture/profiles.yaml" <<'YAML'
+profiles:
+  claude:
+    launch_cmd: /bin/true
+YAML
+  run env CLI_LOOKUP_SETTINGS="$fixture/settings.yaml" CLI_LOOKUP_PROFILES="$fixture/profiles.yaml" \
+    bash -c 'source "$1/scripts/lib/cli_lookup.sh"; cli_launch_cmd dummyclaude' _ "$ROOT"
+  [ "$status" -eq 0 ]
+  [ "$output" = "env CLAUDE_CODE_DISABLE_FEEDBACK_SURVEY=1 /bin/true" ]
+}

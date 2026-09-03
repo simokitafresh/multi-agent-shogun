@@ -540,6 +540,15 @@ cli_launch_cmd() {
         base_cmd="$_CLI_LAUNCH_CMD_OVERRIDE"
     fi
 
+    # Claude Code's documented session-quality survey can consume an inbox
+    # nudge as its numeric rating. Keep the opt-out at this launch choke
+    # point so every Claude respawn path inherits the same SSOT behavior.
+    # `env` is intentional: respawn_recovery_launch_command validates the
+    # first word as an executable and safely preserves this assignment.
+    if [[ "$_CLI_LAUNCH_TYPE" == "claude" ]]; then
+        base_cmd="env CLAUDE_CODE_DISABLE_FEEDBACK_SURVEY=1${base_cmd:+ $base_cmd}"
+    fi
+
     # model_nameからCLI引数を自動生成
     local extra_args=""
     if [[ "$model_name" == gpt-* ]]; then
