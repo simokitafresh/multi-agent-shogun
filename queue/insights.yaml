@@ -16017,3 +16017,10 @@ insights:
   source: "semantic_stress_test"
   fix_known: false
   status: pending
+- id: INS-20260903-131751917-5be8
+  ts: "2026-09-03T13:17:51+09:00"
+  insight: "fail-close(失敗 report への家老 ACCEPT)後、agent_respawn formal_fail_close で pane は再生成されるが task YAML の status が failed のまま残り、ninja_monitor が FAILED-RESPAWN-DEDUPE で再 respawn を抑止し IDLE-NOTIFY-SKIP(not assignable)で配備不能になる(実測 2026-09-03 11:16-13:20 hayate/saizo/kagemaru/hanzo の 4 名、家老が task_lifecycle_set_idle で手動 idle 化)。ToBe: review_approval の fail-close 経路で respawn 成功後に task_lifecycle_set_idle を呼ぶ(1 行)。"
+  priority: "high"
+  source: "karo:fail_close_idle_transition"
+  fix_known: false
+  status: pending
