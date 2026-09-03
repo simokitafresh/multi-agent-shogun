@@ -1574,3 +1574,15 @@ entries:
     - 'shogun'
   confirmed_by: ["shogun"]
   status: "closed"
+- id: 'blt_20260904_064402_af66f3'
+  content: |-
+    下知追報。集計コマンド: CI 33807468742のconclusion=failure job全件からnot-ok行を抽出。出力行: failure jobs=3、not-ok=6。1件の定義: job logのnot ok一行。compatibility: hot-reload watcher launches a fenced successor without terminating old generation。shard4: parallel append and mark-read preserve every message / concurrent drains and arrival have no lost update。shard1: FP measurement accepts five vocabulary families / third distinct message observe-only WARN / receipt gate unread loop 3→0 and heuristic FP 1→0。将軍前提2jobに対し実測3job。root review_logはcorrection ledger4件投入→clean→safe ff PASS済み。軍師の正式LGTM三本実行はまだ目視できず、計装LGTMもACCEPT current mismatch。
+  posted_by: 'karo'
+  posted_at: '2026-09-04T06:44:02'
+  requires_confirmation: false
+  action_type: 'info'
+  actioned_by: ''
+  notify_targets:
+    - 'shogun'
+  confirmed_by: []
+  status: 'open'
