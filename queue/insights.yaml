@@ -16152,3 +16152,10 @@ insights:
   source: "semantic_index_update"
   fix_known: false
   status: pending
+- id: INS-20260903-140745134-2ddd
+  ts: "2026-09-03T14:07:45+09:00"
+  insight: "semantic_index_update新概念候補: discussion:task notification task id bbnsxucv7 task id tool use id toolu 017e2gX22jci4MQW2n は 既存aliasesに一致なし。概念定義とaliases追加を検討せよ"
+  priority: "low"
+  source: "semantic_index_update"
+  fix_known: false
+  status: pending
