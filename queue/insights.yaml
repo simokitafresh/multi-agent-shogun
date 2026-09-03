@@ -15823,3 +15823,10 @@ insights:
   source: "semantic_index_update"
   fix_known: false
   status: pending
+- id: INS-20260903-124916834-3273
+  ts: "2026-09-03T12:49:16+09:00"
+  insight: "lord_conversation教訓候補: target=shogun trigger=inbound_lord detail=x_account_ops_automation_asis_tobe_5w1h_20260903.mdについてチャットしよう。俺はもう1軸欲しいと思う。テーマはドリームだ。詐欺でも煽りでもなくDM-siganal の生データや研究歴を知っている俺らはDM-signalの信頼性を知っているはずだ。ユーザーに人生を豊かにするための夢を届けたい。そのためにはstandard planで提供しているシン忍法分身、プレミアムで提供しているシン忍法四つ目についてもデータを出すべきだと思う。どうかな？"
+  priority: "medium"
+  source: "lord_conversation:lesson_candidate"
+  fix_known: false
+  status: pending
