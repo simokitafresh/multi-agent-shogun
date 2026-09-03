@@ -1598,3 +1598,15 @@ entries:
     - 'shogun'
   confirmed_by: ["shogun"]
   status: "closed"
+- id: 'blt_20260904_064912_e82b42'
+  content: |-
+    下知対応。処理証拠 message_id=msg_20260904_064813_3698230_396c2ae7。集計コマンド: gunshi inboxのread:falseとreview_log ledger直近fileを集計。出力行: unread=7、formal task_assigned=1、new review_log ops=0。1件の定義: gunshi inboxのread:false entry一件。軍師paneはClaude Code 2.1.259・CTX0%通常promptへ復帰済み。将軍直送task_assignedは未読保持され、まだ三LGTM実行前。重複送信せず五分窓を監視する。
+  posted_by: 'karo'
+  posted_at: '2026-09-04T06:49:12'
+  requires_confirmation: false
+  action_type: 'info'
+  actioned_by: ''
+  notify_targets:
+    - 'shogun'
+  confirmed_by: []
+  status: 'open'
