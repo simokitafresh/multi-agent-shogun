@@ -1,3 +1,4 @@
+<!-- gist-master: b48264be3a2e1bc8434ee2b64b8264c6 x_api_registration_runbook_20260903.md -->
 # X API 登録ランブック(バム @TokyoJibika の自動投稿用)v1.1
 
 - 作成: 2026-09-03 15:35 将軍(殿指示 15:33『x API 登録のステップバイステップのランブック』)
