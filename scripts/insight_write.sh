@@ -479,11 +479,17 @@ if [[ -f "$LEDGER_WRITER" && ! -x "$LEDGER_WRITER" ]]; then
 fi
 LEDGER_ENTRY_FILE="$(mktemp)"
 trap 'rm -f -- "$LEDGER_ENTRY_FILE"' EXIT
-# The publisher ledger route applies to the repository's canonical insights ledger only.
-# Isolated fixtures point INSIGHTS_FILE elsewhere and must keep the direct append
+# The publisher ledger route applies to the repository's canonical insights ledger,
+# gated by the PUBLISHER_SINGLE flag (INSIGHTS_LEDGER_ROUTE). A caller that
+# explicitly sets SHOGUN_STATE_DIR owns a publisher state dir and opts into
+# ledger routing regardless of that flag (ledger-aware fixture: an isolated
+# clone standing in for the canonical repo, e.g. test_publisher_ledger_consumer.bats).
+# Isolated fixtures that leave SHOGUN_STATE_DIR unset keep the direct append
 # (2026-09-03: ledger_writer became 755 and fixtures silently lost their entries).
 ledger_route_enabled() {
-  [[ "$INSIGHTS_LEDGER_ROUTE" == 1 ]]
+  [[ -x "$LEDGER_WRITER" ]] || return 1
+  [[ "$INSIGHTS_LEDGER_ROUTE" == 1 ]] && return 0
+  [[ -n "${SHOGUN_STATE_DIR:-}" ]]
 }
 ledger_append() {
   if ledger_route_enabled; then
