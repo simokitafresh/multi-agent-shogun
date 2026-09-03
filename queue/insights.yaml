@@ -16848,3 +16848,10 @@ insights:
   source: "skill_script_refs:6497bfa1b6428ade"
   fix_known: false
   status: pending
+- id: INS-20260904-013203973-39f1
+  ts: "2026-09-04T01:32:03+09:00"
+  insight: "semantic_index_update新概念候補: discussion:task notification task id bslzd3q3d task id tool use id toolu 0136BAYFfc3TyXcibu は 既存aliasesに一致なし。概念定義とaliases追加を検討せよ"
+  priority: "low"
+  source: "semantic_index_update"
+  fix_known: false
+  status: pending
