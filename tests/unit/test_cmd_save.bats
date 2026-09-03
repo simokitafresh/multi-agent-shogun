@@ -159,6 +159,36 @@ SH
   [[ "$output" != *"causal-arg:"*"cmd_RESULT_ONLY"* ]]
 }
 
+# test_necessity: q11 causal検索がrepoのgit管理集合だけを走査し、.git等の
+# 再帰領域へ脱線しない不変量を固定する。
+@test "q11 causal backlinks stay inside bounded git file set" {
+  local q11_repo="$BATS_TEST_TMPDIR/q11repo"
+  mkdir -p "$q11_repo"
+  git -C "$q11_repo" init -q
+  printf 'kept [[cmd_KEEP]]\n' > "$q11_repo/kept.md"
+  git -C "$q11_repo" add kept.md
+  git -C "$q11_repo" -c user.name=test -c user.email=test@example.invalid commit -qm init
+  mkdir -p "$q11_repo/.git/private"
+  printf 'hidden [[cmd_KEEP]]\n' > "$q11_repo/.git/private/hidden.txt"
+  : > "$q11_repo/causal.sh"
+
+  awk '
+    /^show_q11_causal_backlinks\(\)/ { emit=1 }
+    emit && /^extract_memory_db_search_tokens\(\)/ { exit }
+    emit { print }
+  ' "$REPO_ROOT/scripts/cmd_save.sh" > "$BATS_TEST_TMPDIR/q11_bounded.sh"
+  run bash -c '
+    source "$1"
+    PROJECT_DIR="$2"
+    SEMANTIC_CAUSAL_ROOT="$2"
+    CMD_SAVE_CAUSAL_BACKLINKS_SCRIPT="$2/causal.sh"
+    show_q11_causal_backlinks "[[cmd_KEEP]]"
+  ' _ "$BATS_TEST_TMPDIR/q11_bounded.sh" "$q11_repo"
+  [ "$status" -eq 0 ]
+  [[ "$output" == *"kept.md"* ]]
+  [[ "$output" != *"hidden.txt"* ]]
+}
+
 # test_necessity: fixed snapshot targets must be WARN-only, while an explicit
 # but incomplete self-measurement contract must BLOCK before cmd publication.
 @test "T25 fixed baseline warns and explicit measurement omissions block" {
@@ -217,4 +247,133 @@ warn=1 block=0" ]
   ' _ "$BATS_TEST_TMPDIR/dynamic_contract.sh" "$neutral"
   [ "$status" -eq 0 ]
   [ "$output" = "warn=0 block=0" ]
+}
+
+# test_necessity: staleなprojects pathを参照せずorigin treeとplanned_pathsを
+# 新規成果物の許容根拠にする不変量を固定する。
+@test "AC new paths use origin tree parent or planned_paths" {
+  awk '
+    /^path_exists_for_cmd_source\(\)/ { emit=1 }
+    emit && /^update_bulletin_actioned_by_for_cmd\(\)/ { exit }
+    emit { print }
+  ' "$REPO_ROOT/scripts/cmd_save.sh" > "$BATS_TEST_TMPDIR/path_guard.sh"
+  awk '
+    /^check_ac_file_paths\(\)/ { emit=1 }
+    emit && /^check_ac_file_paths$/ { exit }
+    emit { print }
+  ' "$REPO_ROOT/scripts/cmd_save.sh" >> "$BATS_TEST_TMPDIR/path_guard.sh"
+  mkdir -p "$WORK/future" "$BATS_TEST_TMPDIR/stale-repo"
+  local origin_block=$'project: infra
+acceptance_criteria:
+  - description: scripts/new_origin.sh'
+
+  run bash -c '
+    source "$1"
+    record_warn_reason() { printf "WARN:%s\n" "$1"; }
+    PROJECT_DIR="$2"
+    CMD_SAVE_PROJECT_WD_OVERRIDE="$3"
+    CMD_BLOCK_PROJECT=infra
+    CMD_BLOCK="$4"
+    CMD_BLOCK_NC="$CMD_BLOCK"
+    check_ac_file_paths
+  ' _ "$BATS_TEST_TMPDIR/path_guard.sh" "$WORK" "$BATS_TEST_TMPDIR/stale-repo" "$origin_block"
+  [ "$status" -eq 0 ]
+  [[ "$output" == *"origin treeの親ディレクトリ"* ]]
+  [[ "$output" != *"WARN:"* ]]
+
+  local planned_block=$'project: infra
+planned_paths:
+  - future/new_planned.sh
+acceptance_criteria:
+  - description: future/new_planned.sh'
+  run bash -c '
+    source "$1"
+    record_warn_reason() { printf "WARN:%s\n" "$1"; }
+    PROJECT_DIR="$2"
+    CMD_SAVE_PROJECT_WD_OVERRIDE="$3"
+    CMD_BLOCK_PROJECT=infra
+    CMD_BLOCK="$4"
+    CMD_BLOCK_NC="$CMD_BLOCK"
+    check_ac_file_paths
+  ' _ "$BATS_TEST_TMPDIR/path_guard.sh" "$WORK" "$BATS_TEST_TMPDIR/stale-repo" "$planned_block"
+  [ "$status" -eq 0 ]
+  [[ "$output" == *"planned_paths"* ]]
+  [[ "$output" != *"WARN:"* ]]
+}
+
+# test_necessity: LG020が測定値だけを要求し、HTTP/ISO/RFC/path/cmd識別子を
+# 算出値として誤認しない不変量を固定する。
+@test "LG020 excludes protocol dates paths and cmd identifiers" {
+  awk '
+    /^extract_lg020_numeric_claims\(\)/ { emit=1 }
+    emit && /^count_acceptance_criteria_items\(\)/ { exit }
+    emit { print }
+  ' "$REPO_ROOT/scripts/cmd_save.sh" > "$BATS_TEST_TMPDIR/lg020.sh"
+  run bash -c '
+    source "$1"
+    extract_lg020_numeric_claims
+  ' _ "$BATS_TEST_TMPDIR/lg020.sh" <<'EOF'
+HTTP status 404, RFC 9421, 2026-09-03T13:40:00Z, /2/tweets, cmd_4473
+実測値 300件
+EOF
+  [ "$status" -eq 0 ]
+  [ "$output" = "実測値 300件" ]
+}
+
+# test_necessity: measurement_sourceのURL/timestamp/log識別子を最初のcolonで
+# 切断せず、production evidence判定へ完全な値を渡す不変量を固定する。
+@test "PD-104 preserves measurement_source after the first colon" {
+  awk '
+    /^check_production_measurement_source\(\)/ { emit=1 }
+    emit && /^check_rule_doc_sync_contract\(\)/ { exit }
+    emit { print }
+  ' "$REPO_ROOT/scripts/cmd_save.sh" > "$BATS_TEST_TMPDIR/pd104.sh"
+  run bash -c '
+    trim_inline_yaml_scalar() { printf "%s" "$1" | sed -E "s/^[[:space:]]+//; s/[[:space:]]+$//; s/^\\\"//; s/\\\"$//"; }
+    record_block_reason() { printf "BLOCK:%s\n" "$1"; }
+    source "$1"
+    check_production_measurement_source "$2"
+  ' _ "$BATS_TEST_TMPDIR/pd104.sh" $'本番ボトルネックを実測
+measurement_source: "production log https://example.test/run:8443/evidence:abc timestamp 2026-09-03T13:40:00Z"'
+  [ "$status" -eq 0 ]
+  [ -z "$output" ]
+}
+
+# test_necessity: production_proof/detectは検証フェーズとしてphase mixingから
+# 除外し、同一cmd再保存の同一WARNを一度しか数えない不変量を固定する。
+@test "phase mixing excludes production proof and dedupes same cmd warning" {
+  awk '
+    /^check_ac_phase_mixing\(\)/ { emit=1 }
+    emit && /^check_ac_test_scope\(\)/ { exit }
+    emit { print }
+  ' "$REPO_ROOT/scripts/cmd_save.sh" > "$BATS_TEST_TMPDIR/phase.sh"
+  run bash -c '
+    extract_acceptance_criteria_block() { printf "%s\n" "$CMD_BLOCK_NC"; }
+    WARN_COUNT=0
+    record_warn_reason() { WARN_COUNT=$((WARN_COUNT + 1)); }
+    source "$1"
+    CMD_BLOCK_NC=$'"'"'acceptance_criteria:
+  - description: implement gate; production_proof: detect and measure after deploy'"'"'
+    check_ac_phase_mixing
+    printf "warn=%s\n" "$WARN_COUNT"
+  ' _ "$BATS_TEST_TMPDIR/phase.sh"
+  [ "$status" -eq 0 ]
+  [[ "$output" == *"warn=0"* ]]
+  [[ "$output" != *"WARN:"* ]]
+
+  awk '
+    /^build_warn_note\(\)/ { emit=1 }
+    emit && /^warn_q5_pair_missing_session_state\(\)/ { exit }
+    emit { print }
+  ' "$REPO_ROOT/scripts/cmd_save.sh" > "$BATS_TEST_TMPDIR/warn.sh"
+  run bash -c '
+    WARN_REASONS=(); WARN_COUNT=0; declare -A WARN_KEYS_SEEN=(); CMD_ID=cmd_same
+    count_same_warn_pattern() { (( WARN_COUNT > 0 )) && printf "%s" "$CMD_ID" || true; }
+    source "$1"
+    record_warn_reason ac_phase_mixing check=check_ac_phase_mixing
+    record_warn_reason ac_phase_mixing check=check_ac_phase_mixing
+    printf "warn=%s reasons=%s\n" "$WARN_COUNT" "${#WARN_REASONS[@]}"
+  ' _ "$BATS_TEST_TMPDIR/warn.sh"
+  [ "$status" -eq 0 ]
+  [ "$output" = "warn=1 reasons=1" ]
 }

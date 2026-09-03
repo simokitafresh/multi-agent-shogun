@@ -131,6 +131,7 @@ declare -a BLOCK_REASONS=()
 declare -a WARN_REASONS=()
 declare -a BLOCK_CHECKS=()
 declare -A CMD_BLOCK_CACHE=()
+declare -A WARN_KEYS_SEEN=()
 
 # 内部フェーズ計装(cmd_4169): defense_overhead_writer.sh経由でsource:cmd_saveへwall_ms記録。
 # 判定ロジック(BLOCK_COUNT/WARN_COUNT)には一切関与しない。setに-uがあるため空でも常に宣言する。
@@ -330,7 +331,11 @@ path_exists_for_cmd_source() {
         return $?
     fi
 
-    [[ -n "$project_wd" && -e "$project_wd/$fpath" ]] || [[ -e "$PROJECT_DIR/$fpath" ]]
+    if [[ -n "$project_wd" ]]; then
+        [[ -e "$project_wd/$fpath" ]]
+    else
+        [[ -e "${PROJECT_DIR:-}/$fpath" ]]
+    fi
 }
 
 parent_exists_for_cmd_source() {
@@ -345,7 +350,11 @@ parent_exists_for_cmd_source() {
         return $?
     fi
 
-    [[ -n "$project_wd" && -d "$project_wd/$parent_dir" ]] || [[ -d "$PROJECT_DIR/$parent_dir" ]]
+    if [[ -n "$project_wd" ]]; then
+        [[ -d "$project_wd/$parent_dir" ]]
+    else
+        [[ -d "${PROJECT_DIR:-}/$parent_dir" ]]
+    fi
 }
 
 display_parent_for_cmd_source() {
@@ -357,6 +366,58 @@ display_parent_for_cmd_source() {
     else
         printf '%s/%s' "$project_wd" "$(dirname "$fpath")"
     fi
+}
+
+resolve_cmd_source_origin_tree() {
+    local configured_wd="${1:-}" origin=""
+
+    # projects/*.yaml can retain a path from another checkout (for example the
+    # old /mnt/c deployment tree).  Only a real git worktree is authoritative;
+    # otherwise resolve against the cmd_save checkout itself.
+    if [[ -n "$configured_wd" && -d "$configured_wd" ]]; then
+        origin="$(git -C "$configured_wd" rev-parse --show-toplevel 2>/dev/null || true)"
+    fi
+    if [[ -z "$origin" && -d "${PROJECT_DIR:-}" ]]; then
+        origin="$(git -C "$PROJECT_DIR" rev-parse --show-toplevel 2>/dev/null || true)"
+    fi
+    [[ -n "$origin" ]] || origin="${PROJECT_DIR:-}"
+    printf '%s' "$origin"
+}
+
+cmd_source_path_is_planned() {
+    local candidate="${1:-}" planned
+    [[ -n "$candidate" ]] || return 1
+    while IFS= read -r planned; do
+        planned="${planned#./}"
+        planned="${planned#\"}"; planned="${planned%\"}"
+        planned="${planned#\'}"; planned="${planned%\'}"
+        [[ "$planned" == "$candidate" ]] && return 0
+    done < <(
+        awk '
+            /^[[:space:]]*planned_paths:[[:space:]]*/ {
+                in_paths=1
+                indent=$0
+                sub(/[^ ].*/, "", indent)
+                inline=$0
+                sub(/^[^:]*:[[:space:]]*/, "", inline)
+                if (inline != "" && inline != "[]") {
+                    gsub(/[\[\],]/, " ", inline)
+                    print inline
+                }
+                next
+            }
+            in_paths {
+                current=$0
+                sub(/[^ ].*/, "", current)
+                if ($0 !~ /^[[:space:]]*$/ && length(current) <= length(indent)) exit
+                if ($0 ~ /^[[:space:]]*-[[:space:]]+/) {
+                    sub(/^[[:space:]]*-[[:space:]]+/, "")
+                    print
+                }
+            }
+        ' <<< "${CMD_BLOCK_NC:-${CMD_BLOCK:-}}"
+    )
+    return 1
 }
 
 update_bulletin_actioned_by_for_cmd() {
@@ -817,43 +878,34 @@ show_q11_causal_backlinks() {
     _q11_rg="$(command -v rg 2>/dev/null || true)"
     [[ -z "$_q11_rg" && -x "$HOME/.local/bin/rg" ]] && _q11_rg="$HOME/.local/bin/rg"
 
-    # causal_backlinks.shをlinkごとに最大12回起動すると、同じ8 treeを12回走査する。
-    # fixed-string multi-patternの1走査へ畳み、hit行をlink別pathへ再分配する。
-    # 各linkの最終出力（sort -uされた先頭8 path）は従来契約と同一。
+    # causal_backlinks.shをlinkごとに最大12回起動すると、同じtreeを12回走査する。
+    # さらにrootを再帰走査すると、staleな外部repoや巨大な未追跡領域までq11へ混入する。
+    # gitの管理対象集合を先に固定し、全linkを1回だけ検索することで、q11の探索空間と
+    # wall timeをboundedにする。未追跡ファイルは--othersで含めるが、ignore対象は除外する。
     if [[ -n "$_q11_rg" && -d "$_q11_root" ]]; then
         : > "$_q11_tmpdir/patterns"
         for _q11_link_id in "${_q11_link_ids[@]}"; do
             printf '[[%s]]\n' "$_q11_link_id" >> "$_q11_tmpdir/patterns"
         done
-        (
-            cd "$_q11_root" 2>/dev/null || exit 0
-            _q11_paths=()
-            for _q11_path in AGENTS.md instructions context projects skills scripts docs tasks; do
-                [[ -e "$_q11_path" ]] && _q11_paths+=("$_q11_path")
-            done
-            [[ "${#_q11_paths[@]}" -gt 0 ]] || exit 0
-            "$_q11_rg" -l --fixed-strings --hidden \
-                --glob '!.git/**' --glob '!node_modules/**' --glob '!__pycache__/**' \
-                --glob '!docs/obsidian-promoted/**' --glob '!*.cache.json' \
-                --glob '!*.pyc' --glob '!*.lock' \
-                -f "$_q11_tmpdir/patterns" "${_q11_paths[@]}" 2>/dev/null || true
-        ) > "$_q11_tmpdir/candidates"
-
-        # The first scan keeps the complete original tree/path space but emits
-        # only matching filenames.  Attribute links inside that narrowed file
-        # set so large matching lines never cross the shell pipeline.
-        if [[ -s "$_q11_tmpdir/candidates" ]]; then
-            mapfile -t _q11_candidate_paths < "$_q11_tmpdir/candidates"
+        _q11_files_file="$_q11_tmpdir/files"
+        if git -C "$_q11_root" rev-parse --show-toplevel >/dev/null 2>&1; then
+            git -C "$_q11_root" ls-files --cached --others --exclude-standard > "$_q11_files_file" 2>/dev/null || :
+        fi
+        if [[ -s "$_q11_files_file" ]]; then
+            mapfile -t _q11_candidate_paths < <(
+                while IFS= read -r _q11_path; do
+                    [[ -n "$_q11_path" ]] && printf '%s/%s\n' "$_q11_root" "$_q11_path"
+                done < "$_q11_files_file"
+            )
+            timeout --kill-after=1s "${CMD_SAVE_Q11_TIMEOUT_SECONDS:-20}s" \
+                "$_q11_rg" -n --no-heading --color never --fixed-strings \
+                -f "$_q11_tmpdir/patterns" -- "${_q11_candidate_paths[@]}" \
+                2>/dev/null > "$_q11_tmpdir/hits" || :
             _q11_idx=0
             for _q11_link_id in "${_q11_link_ids[@]}"; do
-                (
-                    cd "$_q11_root" 2>/dev/null || exit 0
-                    "$_q11_rg" -l --fixed-strings --hidden \
-                        --glob '!.git/**' --glob '!node_modules/**' --glob '!__pycache__/**' \
-                        --glob '!docs/obsidian-promoted/**' --glob '!*.cache.json' \
-                        --glob '!*.pyc' --glob '!*.lock' \
-                        "[[$_q11_link_id]]" "${_q11_candidate_paths[@]}" 2>/dev/null || true
-                ) > "$_q11_tmpdir/$_q11_idx"
+                awk -v needle="[[$_q11_link_id]]" -F: \
+                    'index($0, needle) { print $1 }' "$_q11_tmpdir/hits" \
+                    | sort -u | head -8 > "$_q11_tmpdir/$_q11_idx"
                 ((_q11_idx++)) || true
             done
         fi
@@ -2500,6 +2552,21 @@ record_warn_reason() {
     warn_key="$(warn_note_key "$warn_note")"
     display_reason="$(warn_note_message "$warn_note")"
 
+    # production_proof is an explicit post-implementation verification lane.
+    # A phase-mixing WARN about that lane is advisory, so repeating the same
+    # cmd_save must not accumulate duplicate WARNs and self-escalate to BLOCK.
+    if [[ "$warn_key" == "ac_phase_mixing" ]]; then
+        [[ "${WARN_KEYS_SEEN[$warn_key]:-0}" == "1" ]] && return 0
+        if [[ -n "${CMD_ID:-}" ]]; then
+            local _phase_warn_prior_ids
+            _phase_warn_prior_ids="$(count_same_warn_pattern "$warn_key" cmd_ids 2>/dev/null || true)"
+            case ",${_phase_warn_prior_ids}," in
+                *,"${CMD_ID}",*) return 0 ;;
+            esac
+        fi
+        WARN_KEYS_SEEN[$warn_key]=1
+    fi
+
     WARN_REASONS+=("$warn_note")
     WARN_COUNT=$((WARN_COUNT + 1))
     # 遡及学習: 過去の同一WARN件数を即表示（殿裁定2026-04-21）
@@ -3765,9 +3832,16 @@ check_production_measurement_source() {
     grep -Eqi '本番[^[:cntrl:]]{0,40}(ボトルネック|性能|律速|実測)|production[^[:cntrl:]]{0,40}(bottleneck|performance)|bottleneck' <<< "$search_text" || return 0
 
     local source=""
-    source="$(awk -F: '/^[[:space:]]*measurement_source:/ {sub(/^[[:space:]]*/, "", $2); print $2; exit}' <<< "$search_text")"
-    source="${source#\"}"; source="${source%\"}"
-    source="${source#\'}"; source="${source%\'}"
+    # Split only at the field delimiter.  `awk -F:` and `$2` truncate
+    # evidence URLs, timestamps, and log identifiers at their first colon,
+    # which made a valid production source look local-only or incomplete.
+    source="$(awk '/^[[:space:]]*measurement_source:/ {
+        line=$0
+        sub(/^[[:space:]]*measurement_source:[[:space:]]*/, "", line)
+        print line
+        exit
+    }' <<< "$search_text")"
+    source="$(trim_inline_yaml_scalar "$source")"
     if [[ -z "${source//[[:space:]]/}" ]]; then
         echo "BLOCK(PD-104): production bottleneck claim requires measurement_source with production evidence" >&2
         record_block_reason "PD-104 measurement_source missing for production bottleneck claim" "check=production_measurement_source"
@@ -4619,6 +4693,10 @@ QG_TEMPLATE
     # 起源: cmd_1916 — q11手動記入は嘘が書ける。自動露出で車輪の再発明を補助的に防ぐ
     _Q11_PROJECT_DIR="${PROJECT_DIR:-${PROJECT_ROOT:-.}}"
     _Q11_RESEARCH_DIR="${CMD_SAVE_Q11_RESEARCH_DIR:-${_Q11_PROJECT_DIR}/docs/research}"
+    _Q11_BUDGET_SECONDS="${CMD_SAVE_Q11_TIMEOUT_SECONDS:-20}"
+    [[ "$_Q11_BUDGET_SECONDS" =~ ^[1-9][0-9]*$ ]] || _Q11_BUDGET_SECONDS=20
+    _Q11_T0_US="${EPOCHREALTIME/./}"
+    _Q11_T0_US="${_Q11_T0_US:0:16}"
     if [[ -d "$_Q11_RESEARCH_DIR" ]]; then
         _Q11_COMMAND_SECTION=$(awk '
             /^\s*command:\s*\|/ { found=1; next }
@@ -4725,9 +4803,9 @@ QG_TEMPLATE
                             _Q11_PATTERN_ARGS+=(-e "$_q11_base")
                         fi
                         if [[ "$_Q11_USE_RG" == true ]]; then
-                            _Q11_MATCHES=$(rg -l -F "${_Q11_PATTERN_ARGS[@]}" "$_Q11_RESEARCH_DIR" 2>/dev/null || true)
+                            _Q11_MATCHES=$(timeout --kill-after=1s "${_Q11_BUDGET_SECONDS}s" rg -l -F "${_Q11_PATTERN_ARGS[@]}" "$_Q11_RESEARCH_DIR" 2>/dev/null || true)
                         else
-                            _Q11_MATCHES=$(grep -rl -F "${_Q11_PATTERN_ARGS[@]}" "$_Q11_RESEARCH_DIR" 2>/dev/null || true)
+                            _Q11_MATCHES=$(timeout --kill-after=1s "${_Q11_BUDGET_SECONDS}s" grep -rl -F "${_Q11_PATTERN_ARGS[@]}" "$_Q11_RESEARCH_DIR" 2>/dev/null || true)
                         fi
                         [[ -z "${_Q11_MATCHES:-}" ]] && continue
                         if [[ "$_Q11_ANY_MATCH" == false ]]; then
@@ -4750,6 +4828,14 @@ QG_TEMPLATE
             fi
             fi  # end FAST_METADATA guard for Q11 research dir scan
         fi
+    fi
+
+    _Q11_T1_US="${EPOCHREALTIME/./}"
+    _Q11_T1_US="${_Q11_T1_US:0:16}"
+    _Q11_WALL_MS=$(( (_Q11_T1_US - _Q11_T0_US + 999) / 1000 ))
+    if (( _Q11_WALL_MS > _Q11_BUDGET_SECONDS * 1000 )); then
+        echo "WARNING: q11 metadata search exceeded ${_Q11_BUDGET_SECONDS}s (${_Q11_WALL_MS}ms)。bounded集合を確認せよ" >&2
+        record_warn_reason "q11_overhead_exceeded" "check=q11_metadata_budget" "wall_ms=${_Q11_WALL_MS}"
     fi
 
     check_q11_guard_duplicate_block
@@ -5190,23 +5276,33 @@ check_ac_file_paths() {
         ' "$PROJECT_DIR/config/projects.yaml" 2>/dev/null)
     fi
 
+    PROJECT_WD="${CMD_SAVE_PROJECT_WD_OVERRIDE:-$PROJECT_WD}"
     [[ -z "${PROJECT_WD:-}" ]] && return 0
+    local PROJECT_ORIGIN_WD
+    PROJECT_ORIGIN_WD="$(resolve_cmd_source_origin_tree "$PROJECT_WD")"
+    [[ -n "${PROJECT_ORIGIN_WD:-}" ]] || return 0
 
     # 各パスの存在チェック
     local HAS_MISSING=false
     local HAS_CREATABLE=false
     while IFS= read -r fpath; do
         [[ -z "$fpath" ]] && continue
-        if ! path_exists_for_cmd_source "$PROJECT_WD" "$fpath"; then
+        if ! path_exists_for_cmd_source "$PROJECT_ORIGIN_WD" "$fpath"; then
             local display_parent
-            display_parent=$(display_parent_for_cmd_source "$PROJECT_WD" "$fpath")
+            display_parent=$(display_parent_for_cmd_source "$PROJECT_ORIGIN_WD" "$fpath")
 
-            if parent_exists_for_cmd_source "$PROJECT_WD" "$fpath"; then
+            if cmd_source_path_is_planned "$fpath"; then
                 if [[ "$HAS_CREATABLE" == false ]]; then
-                    echo "INFO: AC内の未作成ファイルは親ディレクトリが存在するため作成対象として扱います:" >&2
+                    echo "INFO: AC内の未作成ファイルはplanned_pathsに含まれるため作成対象として扱います:" >&2
                     HAS_CREATABLE=true
                 fi
-                echo "  • $fpath (parent: $display_parent)" >&2
+                echo "  • $fpath (planned_paths)" >&2
+            elif parent_exists_for_cmd_source "$PROJECT_ORIGIN_WD" "$fpath"; then
+                if [[ "$HAS_CREATABLE" == false ]]; then
+                    echo "INFO: AC内の未作成ファイルはorigin treeの親ディレクトリが存在するため作成対象として扱います:" >&2
+                    HAS_CREATABLE=true
+                fi
+                echo "  • $fpath (origin parent: $display_parent)" >&2
             else
                 if [[ "$HAS_MISSING" == false ]]; then
                     echo "WARNING: AC内のファイルパスが存在せず、親ディレクトリも不在です（cmd_1464教訓）:" >&2
@@ -7451,12 +7547,37 @@ numeric_derivation_source_evidence_exists() {
     grep -qE '→|->|=>|[0-9]+[[:space:]]*(件|行|個|本|箇所|matches?|lines?)|0件|0[[:space:]]+lines?' <<< "$evidence_text"
 }
 
+extract_lg020_numeric_claims() {
+    # LG020 is for unexplained measured/claimed quantities.  Protocol/status
+    # constants, ISO dates, RFC identifiers, paths, and cmd numbers are
+    # identifiers rather than measurements and must not trigger the gate.
+    python3 -c '
+import re
+import sys
+
+patterns = [
+    r"\b(?:HTTP(?:[ -]+status)?|status|code)\s*[:=]?\s*\d{3,}\b",
+    r"\bRFC\s*[- ]?\s*\d+\b",
+    r"\bcmd(?:[_ -])\d+\b",
+    r"\b\d{4}-\d{2}-\d{2}(?:[T ][0-9:.+Z-]+)?\b",
+    r"(?<!\S)(?:https?://|[^\s,;()]+/)[^\s,;()]*",
+]
+for raw in sys.stdin:
+    line = raw.rstrip("\\n")
+    scrubbed = line
+    for pattern in patterns:
+        scrubbed = re.sub(pattern, " ", scrubbed, flags=re.IGNORECASE)
+    if re.search(r"(?<![A-Za-z0-9_])(?:\d{3,}|L\d+)(?![A-Za-z0-9_])", scrubbed):
+        print(line)
+'
+}
+
 check_numeric_literal_derivation_source_info() {
     local search_text numeric_hits first_hit
     search_text="$(extract_acceptance_criteria_block; extract_command_text_block)"
     [[ -n "${search_text//[[:space:]]/}" ]] || return 0
 
-    numeric_hits="$(grep -E '(^|[^[:alnum:]_])([0-9]{3,}|L[0-9]+)([^[:alnum:]_]|$)' <<< "$search_text" || true)"
+    numeric_hits="$(extract_lg020_numeric_claims <<< "$search_text")"
     [[ -n "$numeric_hits" ]] || return 0
     numeric_derivation_source_evidence_exists && return 0
 
@@ -7484,9 +7605,20 @@ count_acceptance_criteria_items() {
 }
 
 check_ac_phase_mixing() {
-    local ac_block
+    local ac_block phase_ac_block
     ac_block="$(extract_acceptance_criteria_block)"
     [[ -n "${ac_block//[[:space:]]/}" ]] || return 0
+    if grep -Eqi 'production[ _-]?proof' <<< "$ac_block" || \
+       grep -Eqi '^[[:space:]]*production[ _-]?proof:' <<< "${CMD_BLOCK_NC:-}"; then
+        echo "INFO: phase_mixing: production_proof参照は検証laneとして除外" >&2
+        return 0
+    fi
+    # production_proof and detect/detection belong to the verification lane.
+    # Remove their AC lines before classifying implementation vs measurement;
+    # otherwise a post-implementation proof reference is misclassified as a
+    # mixed implementation AC and repeats on every cmd_save retry.
+    phase_ac_block="$(grep -viE 'production[ _-]?proof|(^|[^[:alnum:]_])detect(ion|ed|s)?([^[:alnum:]_]|$)|検出' <<< "$ac_block" || true)"
+    [[ -n "${phase_ac_block//[[:space:]]/}" ]] || return 0
 
     # AC単位の文脈判定: 同一AC内にimpl+measure/deliveryが共起する場合のみWARN
     # 異なるAC間にまたがる場合は正当(実装ACとテストACの共存)
@@ -7495,6 +7627,11 @@ check_ac_phase_mixing() {
     function check_buf(text,    lt) {
         if (text == "") return
         lt = tolower(text)
+        # production_proof is deliberately the post-implementation lane; its
+        # reference must not turn an implementation AC into phase mixing.
+        # Likewise, detect/detection is an observation verb, not delivery.
+        gsub(/production[ _-]?proof|本番[[:space:]]*証跡/, " ", lt)
+        gsub(/(^|[^a-z])detect(ion|ed|s)?([^a-z]|$)/, " ", lt)
         # Exclude concrete file/script references before keyword matching.
         # Example: scripts/deploy_task.sh contains "deploy" but is not a delivery action.
         gsub(/[A-Za-z0-9_.\/-]+\.(md|sh|bash|py|tsx|ts|jsx|js|yaml|yml|json|sql|html|css|toml|cfg|env|bats)/, " ", lt)
@@ -7531,14 +7668,14 @@ check_ac_phase_mixing() {
         }
     }
     END { check_buf(buf) }
-    ' <<< "$ac_block")"
+    ' <<< "$phase_ac_block")"
 
     [[ -n "$mixing_found" ]] || return 0
 
     local impl_hits measure_hits delivery_hits
-    impl_hits="$(grep -inE '実装|追加|修正|改修|変更|作成|導入|implement|implementation|add|fix|modify|change|create|introduce' <<< "$ac_block" || true)"
-    measure_hits="$(grep -inE 'CDP|計測|測定|実測|measure|measurement|benchmark|ベンチ' <<< "$ac_block" || true)"
-    delivery_hits="$(grep -inE 'push|deploy|デプロイ' <<< "$ac_block" || true)"
+    impl_hits="$(grep -inE '実装|追加|修正|改修|変更|作成|導入|implement|implementation|add|fix|modify|change|create|introduce' <<< "$phase_ac_block" || true)"
+    measure_hits="$(grep -inE 'CDP|計測|測定|実測|measure|measurement|benchmark|ベンチ' <<< "$phase_ac_block" || true)"
+    delivery_hits="$(grep -inE 'push|deploy|デプロイ' <<< "$phase_ac_block" || true)"
 
     echo "WARN: ACフェーズ混在を検出。同一AC内に実装と計測/deployが共起しています" >&2
     echo "  実装ACと後続フェーズACはcmdを分割せよ(cmd_2300教訓)" >&2
