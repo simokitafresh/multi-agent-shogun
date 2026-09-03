@@ -58,6 +58,28 @@ PY
 
 request_id() { request_field "$1" task_id | head -n1; }
 
+request_publication_identities() {
+    local request="$1"
+    python3 - "$request" <<'PY'
+import re
+import sys
+import yaml
+
+data = yaml.safe_load(open(sys.argv[1], encoding="utf-8")) or {}
+if not isinstance(data, dict):
+    raise SystemExit(0)
+
+# A missing artifact can be safely retired only when a canonical identity from
+# the request is already reachable from the fetched origin/main.  Keep the
+# field name in the output so the event records which identity justified the
+# idempotent decision.  Do not infer identities from prose or filenames.
+for field in ("published_sha", "report_commit", "commit_hash"):
+    value = str(data.get(field) or "").strip()
+    if re.fullmatch(r"[0-9a-fA-F]{40}", value):
+        print(f"{field}\t{value.lower()}")
+PY
+}
+
 tree_blob() {
     local tree="$1" path="$2" blob
     blob="$(git -C "$REPO_ROOT" ls-tree -r "$tree" -- "$path" | awk 'NR == 1 { print $3; exit }')"
@@ -307,12 +329,34 @@ sync_root() {
 
 process_request() {
     local request="$1" mode="$2" task artifact manifest base source_tree tip origin_url isolated
+    local artifact_missing=0 identity_field identity
     task="$(request_id "$request")"
     artifact="$STATE_DIR/publish_queue/artifacts/$task"
     manifest="$artifact/manifest.yaml"
-    [ -f "$manifest" ] && [ -f "$artifact/patch.diff" ] || { echo "publisher: missing artifact task=$task" >&2; return 31; }
-    timeout 120 git -C "$REPO_ROOT" fetch origin
-    tip="$(git -C "$REPO_ROOT" rev-parse origin/main)"
+    if [ ! -f "$manifest" ] || [ ! -f "$artifact/patch.diff" ]; then
+        artifact_missing=1
+    fi
+    if ! timeout 120 git -C "$REPO_ROOT" fetch origin; then
+        echo "publisher: fetch failed task=$task" >&2
+        return 31
+    fi
+    if ! tip="$(git -C "$REPO_ROOT" rev-parse origin/main)"; then
+        echo "publisher: origin/main unavailable after fetch task=$task" >&2
+        return 31
+    fi
+    if [ "$artifact_missing" -eq 1 ]; then
+        while IFS=$'\t' read -r identity_field identity; do
+            [ -n "$identity" ] || continue
+            if git -C "$REPO_ROOT" cat-file -e "$identity^{commit}" 2>/dev/null \
+                && git -C "$REPO_ROOT" merge-base --is-ancestor "$identity" "$tip" 2>/dev/null; then
+                event already_published "$task" 0 "identity=${identity_field}:$identity origin_tip=$tip artifact=missing"
+                move_to_done "$request"
+                return 0
+            fi
+        done < <(request_publication_identities "$request")
+        echo "publisher: missing artifact task=$task" >&2
+        return 31
+    fi
     base="$(manifest_field "$manifest" base | head -n1)"
     [ -n "$base" ] || { echo "publisher: manifest base missing task=$task" >&2; return 31; }
     source_tree="$(manifest_field "$manifest" source_tree | head -n1)"
