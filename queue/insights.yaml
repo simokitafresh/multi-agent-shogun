@@ -13248,7 +13248,10 @@ insights:
   priority: "low"
   source: "semantic_map_generate:new_file"
   fix_known: false
-  status: pending
+  status: "resolved"
+  resolved_reason: "android/README.mdの内容(将軍Androidアプリ companion app README: 4-Tab Navigation/Features/SSH接続設定等)をindex.md/semantic-map.mdでgrep確認したところ既存概念shogun_android_app(id: shogun_android_app, file: android/)に一致。reflux_commit_contract.scope=[queue/insights.yaml]のためindex.md編集は本task scope外(L1701既知パターン)。decision_candidateへ委譲"
+  action_artifact: "decision_candidate=android/README.mdをdocs/semantic-index/index.mdの既存概念shogun_android_appのfile欄へ追加登録し、semantic_map_generate.shで再生成する。次回index全体更新cmdで一括処理を推奨"
+  resolved_at: "2026-09-03T11:51:13.498904"
 - id: INS-20260902-141250936-56f2
   ts: "2026-09-02T14:12:50+09:00"
   insight: "semantic_map_generate新規ファイル候補: `android/README_ja.md` は semantic index未登録。既存概念へのfile追加または新概念定義を検討せよ"
