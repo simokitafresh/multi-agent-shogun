@@ -1113,3 +1113,14 @@ entries:
     - 'shogun'
   confirmed_by: []
   status: 'open'
+- id: 'blt_20260903_123813_ae6ceb'
+  content: |-
+    GATE CLEAR cmd_reflux_insight_202609031136_tobisaru: 完了
+  posted_by: 'karo'
+  posted_at: '2026-09-03T12:38:13'
+  requires_confirmation: false
+  action_type: 'info'
+  actioned_by: ''
+  notify_targets: []
+  confirmed_by: []
+  status: 'open'
