@@ -556,6 +556,83 @@ PY
     [ "$status" -eq 0 ]
 }
 
+# test_necessity: a stale report_review notification carrying an earlier
+# report_fingerprint must not stay unread forever once a LATER revision of
+# the SAME report already earned an LGTM approval under a newer
+# fingerprint/generation in the same cmd's gate directory (superseded).
+@test "stale report_review notification with newer approved generation is superseded" {
+    mkdir -p "$TEST_ROOT/queue/reports" "$TEST_ROOT/logs" \
+        "$TEST_ROOT/queue/gates/cmd_test001/review_approvals/reports/keyA"
+    echo "report: {}" > "$TEST_ROOT/queue/reports/tester_report_cmd_test001.yaml"
+
+    cat > "$TEST_ROOT/queue/inbox/gunshi.yaml" <<'YAML'
+messages:
+- id: msg_stale
+  from: karo
+  timestamp: '2026-09-01T10:00:00'
+  type: report_review
+  content: 'review request'
+  report_path: 'queue/reports/tester_report_cmd_test001.yaml'
+  report_fingerprint: 'oldfp0000000000000000000000000000000000000000000000000000'
+  cmd_id: 'cmd_test001'
+  read: false
+YAML
+
+    cat > "$TEST_ROOT/logs/gunshi_review_log.yaml" <<'YAML'
+- cmd_id: cmd_test001
+  verdict: LGTM
+  reviewed_at: '2026-09-01T10:05:00'
+YAML
+
+    cat > "$TEST_ROOT/queue/gates/cmd_test001/review_approvals/reports/keyA/gunshi.yaml" <<'YAML'
+timestamp: '2026-09-01T10:10:00'
+role: gunshi
+result: LGTM
+fingerprint: 'newfp1111111111111111111111111111111111111111111111111111'
+generation: 'newgen222222222222222222222222222222222222222222222222222'
+report: queue/reports/tester_report_cmd_test001.yaml
+YAML
+
+    _read_inbox gunshi
+    run bash "$TEST_SCRIPT" gunshi msg_stale
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"Marked 1 message"* ]]
+    [ "$(_get_read_status gunshi msg_stale)" = "true" ]
+}
+
+# test_necessity: without any current LGTM approval on file for the same
+# report, a fingerprint-mismatched report_review notification must keep
+# blocking exactly as before (no accidental widening of the supersede path).
+@test "report_review notification without any current approval stays blocked" {
+    mkdir -p "$TEST_ROOT/queue/reports" "$TEST_ROOT/logs"
+    echo "report: {}" > "$TEST_ROOT/queue/reports/tester_report_cmd_test002.yaml"
+
+    cat > "$TEST_ROOT/queue/inbox/gunshi.yaml" <<'YAML'
+messages:
+- id: msg_noapproval
+  from: karo
+  timestamp: '2026-09-01T10:00:00'
+  type: report_review
+  content: 'review request'
+  report_path: 'queue/reports/tester_report_cmd_test002.yaml'
+  report_fingerprint: 'oldfp0000000000000000000000000000000000000000000000000000'
+  cmd_id: 'cmd_test002'
+  read: false
+YAML
+
+    cat > "$TEST_ROOT/logs/gunshi_review_log.yaml" <<'YAML'
+- cmd_id: cmd_test002
+  verdict: LGTM
+  reviewed_at: '2026-09-01T10:05:00'
+YAML
+
+    _read_inbox gunshi
+    run bash "$TEST_SCRIPT" gunshi msg_noapproval
+    [ "$status" -eq 2 ]
+    [[ "$output" == *"fingerprint mismatch"* ]]
+    [ "$(_get_read_status gunshi msg_noapproval)" = "false" ]
+}
+
 # test_necessity: gate_clear is an actionable completion event and must remain
 # unread for the recipient's self-drive, while the four informational types
 # continue to be auto-acknowledged and digested.

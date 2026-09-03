@@ -312,6 +312,45 @@ def entry_matches_report(entry, report_name):
     return bool(match and entry_has_cmd_id(entry, match.group(1)))
 
 
+def find_superseding_approval(gates_dir, report_name, msg_fingerprint, message_at):
+    # A stale review-request notification (msg_fingerprint from an earlier
+    # report revision) must not stay unread forever once a LATER revision of
+    # the SAME report already earned an LGTM approval in the SAME cmd's gate
+    # directory.  Require: same report identity (not just same cmd — a cmd
+    # can carry multiple independently-reviewed reports), a non-FAIL result,
+    # a different generation/fingerprint than the stale message (otherwise
+    # the exact-match check above would already have matched it), and an
+    # approval timestamp at or after the stale message so an approval that
+    # predates this notification cannot supersede it.
+    if not report_name or not os.path.isdir(gates_dir):
+        return None
+    best = None
+    best_at = None
+    for key_dir in os.listdir(gates_dir):
+        gunshi_path = os.path.join(gates_dir, key_dir, "gunshi.yaml")
+        if not os.path.isfile(gunshi_path):
+            continue
+        try:
+            with open(gunshi_path, encoding="utf-8") as gf:
+                gdata = yaml.safe_load(gf) or {}
+        except Exception:
+            continue
+        if os.path.basename(str(gdata.get("report") or "")) != report_name:
+            continue
+        if str(gdata.get("result") or "").upper() != "LGTM":
+            continue
+        fp = str(gdata.get("fingerprint") or "")
+        gen = str(gdata.get("generation") or "")
+        if msg_fingerprint and msg_fingerprint in (fp, gen):
+            continue
+        approved_at = parse_timestamp(gdata.get("timestamp"))
+        if approved_at is None or message_at is None or approved_at < message_at:
+            continue
+        if best_at is None or approved_at > best_at:
+            best, best_at = gdata, approved_at
+    return best
+
+
 review_requirements = []
 for msg_id, message in ((msg_id, current[msg_id]) for msg_id in wanted):
     # review_draft is a draft handoff, not proof that a report was reviewed.
@@ -366,6 +405,18 @@ if review_requirements:
                                         break
                                 except Exception:
                                     pass
+                    # A stale notification (this message's fingerprint predates
+                    # the report's current reviewed generation) must not stay
+                    # unread forever once a LATER revision of the SAME report
+                    # already earned an LGTM approval.  review_log entries no
+                    # longer carry "reviewed_at" (only "timestamp"), which had
+                    # made the fallback below permanently unreachable and left
+                    # every superseded notification BLOCKed.  Checking the gate
+                    # directory directly for a newer approval does not depend
+                    # on that field.
+                    if not matched and os.path.isdir(approval_gates_dir):
+                        if find_superseding_approval(approval_gates_dir, report_name, msg_fingerprint, message_at) is not None:
+                            matched = True
             if matched:
                 continue
             # 全matchingエントリから最新reviewed_atのverdictを取得(first matchの罠回避)
@@ -413,7 +464,7 @@ if review_requirements:
                                                 break
                                         except Exception:
                                             pass
-                            if not fp_matched:
+                            if not fp_matched and find_superseding_approval(gates_dir, report_name, msg_fingerprint, message_at) is None:
                                 print(
                                     f"BLOCK: fingerprint mismatch msg_id={message.get('id', '')} msg_fp={msg_fingerprint[:16]}... no matching gunshi.yaml approval",
                                     file=sys.stderr,
