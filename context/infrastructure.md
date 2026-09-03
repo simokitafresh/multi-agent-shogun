@@ -1,5 +1,6 @@
 # インフラコンテキスト
-<!-- last_updated: 2026-09-03 将軍 D0 T3-S-47/43 反映 -->
+<!-- last_updated: 2026-09-03 残3 ledger route/T3-S-48/ci_fix insight 反映 -->
+<!-- source_commit:0498039082f9 reason:残3 ledger route/T3-S-48/ci_fix insight 反映 evidence:context_freshness_check context=context/infrastructure.md commit=0498039082f9 reports=hanzo/kotaro/hayate -->
 <!-- source_commit:b1661cde28d3 reason:将軍 D0 T3-S-47/43 反映 evidence:context_freshness_check context=context/infrastructure.md commit=b1661cde28d3 -->
 <!-- source_commit:8242aac6ea1c reason:残7 publisher local reference clone 反映 evidence:context_freshness_check context=context/infrastructure.md commit=8242aac6ea1c report=saizo_report_cmd_karo_hotfix_publisher_local_reference_clone_202609032047 -->
 <!-- source_commit:e57b3ed6e8d8 reason:watchdog stop flag 再実装(残2 競合解消) 反映 evidence:context_freshness_check context=context/infrastructure.md commit=e57b3ed6e8d8 report=tobisaru_report_cmd_karo_hotfix_reapply_watchdog_stopflag_202609032117 -->
@@ -71,7 +72,7 @@
 <!-- source_commit:e7c3beb64085 reason:2026-09-02 将軍 doc lane: ancestry 後退検出を push_lane/pre-push へ接続(efc16dcd6/e7c3beb64) evidence:CLEAR 03:02/03:09; safe_ff BLOCK 実証 02:50 -->
 <!-- source_commit:a7cb1ca59831 reason:2026-09-02 将軍 doc lane: legacy outbox envelope 移行 a7cb1ca59(T224 追補) evidence:commit a7cb1ca59; DOC_LANE_ALERT blt_022445 -->
 <!-- source_commit:64f01517a70b reason:2026-09-02 将軍 doc lane: U1 f92d1e376 + ancestry 後退 BLOCK 64f01517a evidence:commits f92d1e376/64f01517a; CLEAR 01:54/02:08; 消失 2 回目 16d831ed9 を復元 -->
-<!-- last_synced_lesson: L1728 -->
+<!-- last_synced_lesson: L1730 -->
 <!-- source_commit:593cfb27a612 reason:2026-09-02 将軍 doc lane: U9 safe_ff 既公開 ours merge 除外 593cfb27a evidence:commit 593cfb27a; CLEAR 01:20; integrate c7710efaf on origin/main -->
 <!-- source_commit:458fc4caa91a reason:2026-09-02 将軍 doc lane: U3 msg_id 限定 receipt 458fc4caa evidence:commit 458fc4caa; CLEAR 01:05; staged 11→0; watcher 9/9 restart 01:06 -->
 <!-- source_commit:4dd6898466a27f10ef7d08ed27549b3c095378de reason:2026-09-01 将軍 doc lane: CI RED #6 Integration ci_fix 59fa70e0b evidence:commit 59fa70e0b; CLEAR 22:57 -->
@@ -205,7 +206,7 @@
 <!-- source_commit:f8c49cbd7 reason:cmd_shogun_commit_reservation_ledger_phase1_20260805 evidence:reviewed -->
 <!-- source_commit:515f0214e reason:cmd_karo_hotfix_ga432_context_freshness reviewed source boundary evidence:cmd_complete_gate project=infra context=context/infrastructure.md commit=515f0214e -->
 <!-- source_commit:23a1ce61205ce4496ab11570583e8e8adcaeac4e reason:reflux backlink SSOT update reviewed evidence:incoming 0 to 1; runner69/69; target doc diff0 -->
-<!-- last_synced_lesson: L1728 -->
+<!-- last_synced_lesson: L1730 -->
 
 結論: 本ファイルは検索起点となる索引層。運用詳細・経緯・教訓本文は7つの詳細正本へ移設した。
 source boundary一致taskはregistryのowner/update_triggerからcontext_update_candidatesを自動注入し、未処理候補はcmd_complete_gateがBLOCK、明示処理済み/無関係はCLEAR。
@@ -256,7 +257,7 @@ source boundary一致taskはregistryのowner/update_triggerからcontext_update_
 結論: 詳細は `docs/research/infrastructure-lessons-reviews-operations.md` に保存。原文を省略せず移設済み。
 見出し: 前節「Infra教訓索引」の連続本文（source lines 1701-2123）。
 - L1503: 既存legacy欠損は不変multisetで隔離せよ（cmd_karo_hotfix_shared_operational_log_ownership_20260801）
-<!-- last_synced_lesson: L1728 -->
+<!-- last_synced_lesson: L1730 -->
 - L1504: appendとarchiveはreaderを含むgeneration transactionにせよ（cmd_karo_hotfix_gunshi_cs_remediation_generation_20260801）
 - L1505: 永続test宣言はtask正本に置く（cmd_4206）
 - L1506: active context DEFERはowner存在だけでなくdirty・baseline変化・fresh leaseの全ANDにせよ（cmd_karo_hotfix_active_context_gate_transient_20260801）
@@ -480,6 +481,8 @@ source boundary一致taskはregistryのowner/update_triggerからcontext_update_
 - L1726: X投稿draft生成のLLM呼び出しはsystem_promptをstdinへ混在させるとClaude CLIが前置き/見出し/区切り線を書きやすい。--system-promptで分離注入すると顕著に減る（cmd_karo_hotfix_x_draft_generation_contract_202609031802）
 - L1727: gunshi_review_log.yamlのフィールド名drift(reviewed_at→timestamp)が既存fallback判定を静かに無効化した（cmd_karo_hotfix_stale_review_notification_supersede_202609031859）
 - L1728: 実行されるsource単位へhelperを配置する（cmd_karo_hotfix_await_clear_slot_release_202609031920）
+- L1729: テスト状態分離用環境変数を本番経路の明示opt-inと混同しない（cmd_karo_ci_fix_33758291388_insight_semantic）
+- L1730: sleep-based bounded poll loopは経過時間チェックを『各iteration開始前』に置き、iteration内部の外部呼び出し(python3等のfork)自体もtimeoutで打ち切らないと本番CPU競合下で設定上限を大幅超過する（cmd_karo_hotfix_t3s40_post_source_perf_202609032243）
 
 ## 設計標準・テスト・因果
 
@@ -646,6 +649,9 @@ source boundary一致taskはregistryのowner/update_triggerからcontext_update_
 - **U11 root sync の reason=unknown 分岐漏れ根治(小太郎 `cmd_karo_hotfix_u11_unknown_reason_branch_202609031635` be30f9808、publisher 発行 16:54)**: `scripts/publisher.sh` の root sync で、driver 無し dirty path が incoming と重なる場合に第 4 経路へ落ちて `root_sync_skipped reason=unknown`(events seq 679/693)を出していた分岐漏れを、AC1 の 3 分岐(ff / driver 3-way / no_driver skip)へ閉じ、events の reason 文字列を契約 bats に固定。
 - **publisher rc31 の origin 祖先判定(影丸 `cmd_karo_hotfix_publisher_rc31_origin_ancestor_202609031708` f35982096、publisher 発行 17:28)**: `scripts/publisher.sh` は request の成果 commit が origin/main の ancestor なら missing artifact(rc31)を出さず already_published として events に記録し家老へ通知しない(16:09/16:24 の偽 rc31 通知 2 回の根治)。ancestor 判定は fetch 後の origin/main で行う(ローカル main は不可)。
 - **deploy_task の code task は path 未宣言でも task worktree を既定 ON(小太郎 `cmd_karo_hotfix_deploy_yaml_worktree_default_202609031708` 4e60ff1e1、publisher 発行 17:59)**: hotfix/impl/ci_fix の task が target_path/planned_paths を一切宣言しないと source_path_count=0 で task_worktree_required=false のまま skip され、忍者の実装 commit が shared root HEAD へ直接作られていた(実例 3516dfccc=watchdog parent pid hotfix)。未宣言時のみ worktree を強制し、宣言済みの既存判定(no-code 例外含む)は不変。bats `tests/unit/test_deploy_task_yaml_injection.bats` +127 行。tsumari 型 1(root writer 複数)の発生源 1 つを閉じる。
+- **root 常時 dirty の writer を ledger route へ(半蔵 `cmd_karo_hotfix_root_dirty_writers_ledger_route_202609032147` 049803908、23:13、single_publisher §15 残3/T3-S-34)**: gunshi_log_append(review_log)・karo_workaround_log(workaround 3 系統)・lesson_write(projects/*/lessons)が root file を直接書き換え、drain BLOCK の恒常原因になっていた。ledger_writer 経由の append op へ寄せ、publisher が isolated clone で発行。`scripts/karo_workaround_log.sh` +109、lesson_write +65、ledger_writer +31、bats test_ledger_writer +32。着地以前の dirty 11 file は別途 commit が要る(23:21 時点 root dirty 11)。
+- **bulletin_confirm/inbox_mark_read が root より新しい origin の掲示板も参照(小太郎 `cmd_karo_hotfix_t3s48_bulletin_confirm_origin_202609032240` 52525c2af、23:02、T3-S-48)**: root drain 停滞で root の bulletin_board が origin より古い間、origin 到達済み entry が『entry not found』になった(22:25 doc-lane 通知 2 件)。root→origin/main→applied ledger の順で entry を探索。bats confirm_pending_fallback +82、inbox_mark_read +72。
+- **insight_write の暗黙 STATE_DIR による ledger route 誤発火を修正(疾風 `cmd_karo_ci_fix_33758291388_insight_semantic` 4e5f063c4、22:57、CI RED shard 3/7)**: run_tests の暗黙 SHOGUN_STATE_DIR(T3-S-46 の隔離)下で通常 fixture が ledger 経路へ送られ insight_write 27 件+semantic 1 件が FAIL。明示 STATE_DIR のみ ledger route。対象 88/88 FAIL 0、CLEAR 22:59。
 - **cmd_complete_gate の throughput 計測不整合を WAIT から WARN へ(将軍 D0 b1661cde2、22:03、T3-S-47)**: `segment_status=BLOCK`(reversed/finalize_exceeds_e2e/segment_total_mismatch/unresolved)で ALL_CLEAR=false にしていた型② 過剰 BLOCK。c2a 後追い合流や再適用では finalize と e2e の順序が必ず崩れ、rc31/cmd_4473/x_url が ancestry PASS 後に永久 WAIT した。計測は metric に記録して通し CLEAR を止めない。bats 契約を『WAIT/BLOCK を出さない』へ更新、test_cmd_complete_gate 316/316。直後 3 cmd が CLEAR(22:00/22:02/22:07)。§10 M1 凍結の例外(全 CLEAR を塞ぐ壁)。
 - **inbox 未読件数をレコード境界で数える共通 lib(将軍 D0 f127f622b、20:22、T3-S-43)**: `.claude/hooks/post-shogun-inbox-check.sh` が `awk '/read: false/'` の素朴一致で本文中の『read: false』文字列を未読 1 と誤カウント(14:35 hotfix が prompt_state_inject.sh だけを直した横展開漏れ)。`scripts/lib/inbox_unread_count.sh` へ共通化し両 hook から source(prompt_state_inject は 9370dd55c で追随)。bats 2/2、本番 1→0。
 - **publisher の isolated clone を local reference clone+差分 fetch へ(才蔵 `cmd_karo_hotfix_publisher_local_reference_clone_202609032047` 8242aac6e、21:51、single_publisher §15 残7/T3-S-45)**: 従来は request/ledger の op ごとに GitHub から `git clone --no-checkout` をフル実行し(20:35 開始分は 9 分 41 秒、22:05 開始分は 10 分 7 秒、通常 26-40 s)、lock-run bound 600 s に迫って U1b を飢餓させた。`create_isolated_clone()` が `--reference <git-common-dir>` で local clone→origin は差分 fetch のみ。対象 19/19、bats test_publisher +21。**22:33 時点で root main 未着地(origin 側のみ)=root で走る daemon にはまだ効かない。root 合流+watchdog code-reload 後に 1 op の clone 時間 before/after を計測すること。**
