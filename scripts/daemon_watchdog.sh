@@ -359,6 +359,94 @@ watchdog_publisher_healthy() {
     (( now >= last_epoch && now - last_epoch <= max_age ))
 }
 
+# Return the daemon start epoch from /proc rather than from the mutable
+# publisher pid-file timestamp.  The process start time is the reload baseline.
+publisher_pid_start_epoch() {
+    local pid="$1" stat_line start_ticks boot_epoch ticks_per_second
+    [[ "$pid" =~ ^[0-9]+$ ]] || return 1
+    stat_line="$(cat "/proc/${pid}/stat" 2>/dev/null || true)"
+    start_ticks="$(awk '{print $22}' <<< "$stat_line")"
+    boot_epoch="$(awk '$1 == "btime" {print $2; exit}' /proc/stat 2>/dev/null || true)"
+    ticks_per_second="$(getconf CLK_TCK 2>/dev/null || true)"
+    [[ "$start_ticks" =~ ^[0-9]+$ && "$boot_epoch" =~ ^[0-9]+$ && "$ticks_per_second" =~ ^[0-9]+$ && "$ticks_per_second" -gt 0 ]] || return 1
+    printf '%s\n' "$((boot_epoch + start_ticks / ticks_per_second))"
+}
+
+publisher_code_reload_needed() {
+    local pid_file="${SHOGUN_STATE_DIR:-${IDLE_FLAG_DIR:-/tmp}}/publish_queue/publisher.pid"
+    local pid daemon_start_epoch path mtime
+    [[ -s "$pid_file" ]] || return 1
+    read -r pid < "$pid_file" 2>/dev/null || return 1
+    [[ "$pid" =~ ^[0-9]+$ ]] || return 1
+    pid_is_live "$pid" || return 1
+    pid_cmdline_matches "$pid" "publisher.sh" || return 1
+    daemon_start_epoch="$(publisher_pid_start_epoch "$pid")" || return 1
+
+    while IFS= read -r path; do
+        [[ -f "$path" ]] || continue
+        mtime="$(stat -c '%Y' "$path" 2>/dev/null || true)"
+        if [[ "$mtime" =~ ^[0-9]+$ ]] && (( mtime > daemon_start_epoch )); then
+            printf '%s\n' "$path"
+            return 0
+        fi
+    done < <(
+        printf '%s\n' "$SCRIPT_DIR/scripts/publisher.sh" "$SCRIPT_DIR/scripts/ledger_writer.sh"
+        compgen -G "$SCRIPT_DIR/scripts/lib/publisher_*.sh" || true
+    )
+    return 1
+}
+
+watchdog_reload_publisher_if_stale() {
+    local state_dir="${SHOGUN_STATE_DIR:-${IDLE_FLAG_DIR:-/tmp}}"
+    local pid_file="$state_dir/publish_queue/publisher.pid" stop_flag="$state_dir/publish_queue/publisher.stop"
+    local pid changed_path grace elapsed term_grace
+    changed_path="$(publisher_code_reload_needed 2>/dev/null || true)"
+    [[ -n "$changed_path" ]] || return 0
+    PUBLISHER_RELOAD_OCCURRED=1
+    read -r pid < "$pid_file" 2>/dev/null || return 0
+    grace="${PUBLISHER_RELOAD_GRACE_SEC:-120}"
+    [[ "$grace" =~ ^[0-9]+$ ]] || grace=120
+    term_grace="${PUBLISHER_RELOAD_TERM_GRACE_SEC:-5}"
+    [[ "$term_grace" =~ ^[0-9]+$ ]] || term_grace=5
+
+    mkdir -p "$(dirname "$stop_flag")"
+    : > "$stop_flag"
+    log "RELOAD: publisher.sh code newer than pid=$pid start; path=$changed_path stop_flag=$stop_flag grace=${grace}s"
+    bash "$SCRIPT_DIR/scripts/lib/publisher_event.sh" append reload "$pid" 0 "publisher code reload requested path=$changed_path" >/dev/null 2>&1 || \
+        log "WARN: publisher reload event write failed pid=$pid"
+
+    elapsed=0
+    while pid_is_live "$pid" && (( elapsed < grace )); do
+        sleep 1
+        elapsed=$((elapsed + 1))
+    done
+    if pid_is_live "$pid"; then
+        kill -TERM "$pid" 2>/dev/null || true
+        log "RELOAD: publisher.sh pid=$pid SIGTERM sent after grace=${grace}s"
+        sleep "$term_grace"
+        if pid_is_live "$pid"; then
+            kill -KILL "$pid" 2>/dev/null || true
+            log "RELOAD: publisher.sh pid=$pid SIGKILL sent after TERM grace"
+        fi
+    else
+        log "RELOAD: publisher.sh pid=$pid honored stop flag within grace=${elapsed}s"
+    fi
+    return 0
+}
+
+start_publisher_daemon() {
+    local state_dir="${SHOGUN_STATE_DIR:-$HOME/.local/share/multi-agent-shogun}" new_pid="" reason="${1:-dead}"
+    ( cd "$SCRIPT_DIR" && PUBLISHER_MODE=active setsid nohup bash scripts/publisher.sh >> "$SCRIPT_DIR/logs/publisher_daemon.log" 2>&1 < /dev/null & )
+    sleep 2
+    [ -s "$state_dir/publish_queue/publisher.pid" ] && read -r new_pid < "$state_dir/publish_queue/publisher.pid"
+    log "RESTART: publisher.sh restarted on current code pid=${new_pid:-unknown} reason=$reason"
+    bash "$SCRIPT_DIR/scripts/ntfy.sh" "【watchdog】publisher.sh を自動再起動 pid=${new_pid:-unknown}" >/dev/null 2>&1 || true
+    bash "$SCRIPT_DIR/scripts/inbox_write.sh" karo "publisher.sh was dead; watchdog restarted it on current code pid=${new_pid:-unknown}" task_supplement daemon_watchdog notify_karo >/dev/null 2>&1 || true
+    RESTARTED=$((RESTARTED + 1))
+}
+
+PUBLISHER_RELOAD_OCCURRED=0
+
 check_ninja_monitor() {
     local pid_file="${STATE_DIR:-/tmp}/ninja_monitor.pid"
     local owner_file="${NINJA_MONITOR_OWNER_FILE:-${STATE_DIR:-/tmp}/ninja_monitor.owner}"
@@ -689,6 +777,7 @@ check_inbox_watchers
 check_daemon_inventory
 check_tmux_health || true
 check_tmux_duplicate_servers
+watchdog_reload_publisher_if_stale || true
 if ! watchdog_publisher_healthy; then
     # 2026-09-03 shogun 05:55 (b): a dead daemon must come back on the current code, not wait for
     # a human. A live pid with only stale events is idle, not unhealthy (events are activity-only).
@@ -699,12 +788,11 @@ if ! watchdog_publisher_healthy; then
     elif is_maintenance_active; then
         log "SKIP: daemon maintenance active; publisher restart deferred"
     else
-        ( cd "$SCRIPT_DIR" && PUBLISHER_MODE=active setsid nohup bash scripts/publisher.sh >> "$SCRIPT_DIR/logs/publisher_daemon.log" 2>&1 < /dev/null & )
-        sleep 2
-        _new_pid=""; [ -s "$_pub_state_dir/publish_queue/publisher.pid" ] && read -r _new_pid < "$_pub_state_dir/publish_queue/publisher.pid"
-        log "RESTART: publisher.sh restarted on current code pid=${_new_pid:-unknown}"
-        bash "$SCRIPT_DIR/scripts/ntfy.sh" "【watchdog】publisher.sh を自動再起動 pid=${_new_pid:-unknown}" >/dev/null 2>&1 || true
-        bash "$SCRIPT_DIR/scripts/inbox_write.sh" karo "publisher.sh was dead; watchdog restarted it on current code pid=${_new_pid:-unknown}" task_supplement daemon_watchdog notify_karo >/dev/null 2>&1 || true
+        if [[ "$PUBLISHER_RELOAD_OCCURRED" == 1 ]]; then
+            start_publisher_daemon reload
+        else
+            start_publisher_daemon dead
+        fi
     fi
 fi
 
