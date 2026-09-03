@@ -46,7 +46,7 @@ fi
 
 skills_dirs="${SKILL_FEEDBACK_SKILLS_DIRS:-${SHOGUN_REPO_ROOT:-$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)}/skills:$HOME/.codex/skills:$HOME/.claude/skills}"
 
-python3 - "$skills_dirs" "$explicit_skill" "$gate" "$result" "$reason" "$executor" "$source" "$LOG_SCRIPT" "$dry_run" <<'PY'
+SKILL_FEEDBACK_REPO_ROOT="$REPO_ROOT" python3 - "$skills_dirs" "$explicit_skill" "$gate" "$result" "$reason" "$executor" "$source" "$LOG_SCRIPT" "$dry_run" <<'PY'
 import fcntl
 import os
 import re
@@ -281,6 +281,14 @@ if not logged_entry:
 
 if result.upper() != "FAIL":
     print(f"LOGGED: {skill} {result}")
+    raise SystemExit(0)
+
+# PUBLISHER_SINGLE flag ON: SKILL.md への FAIL 注意ポイント追記は shared root を汚す
+# 第 5 の root writer(2026-09-03 60c20e901、将軍 msg_20260903_104037)。生ログ
+# (skill log / gate_fire_log)が正本なので、ON 時は SKILL.md 追記を行わない。
+_flag_root = os.environ.get("SHOGUN_REPO_ROOT") or os.environ.get("SKILL_FEEDBACK_REPO_ROOT", "")
+if os.environ.get("PUBLISHER_SINGLE") == "1" or (_flag_root and os.path.isfile(os.path.join(_flag_root, "queue", "flags", "publisher_single"))):
+    print(f"LOGGED: {skill} FAIL (SKILL.md caution append skipped: PUBLISHER_SINGLE)")
     raise SystemExit(0)
 
 text = skill_file.read_text(encoding="utf-8", errors="ignore")
