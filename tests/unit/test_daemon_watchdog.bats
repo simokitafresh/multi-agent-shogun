@@ -331,3 +331,100 @@ EOF
     [ "$status" -eq 0 ]
     [[ "$output" == *"old_daemons=3 reload_events=3 current_daemons=1 signals=0"* ]]
 }
+
+# test_necessity: scripts/publisher.sh:578 runs daemon_main at the end of a
+# two-stage pipe (`daemon_main 2>&1 | publisher_timestamp_stream`). Both pipe
+# stages are bash functions, so bash forks them without exec and each child
+# keeps the identical "bash scripts/publisher.sh" cmdline as the top-level
+# process. publisher_daemon_root_pids() must collapse the launcher plus its
+# two pipe-stage children into a single generation so one unchanged daemon
+# is never miscounted as 3 and reloaded (regression for the 2026-09-03
+# 16:0x false-positive publisher reload loop, cmd_karo_hotfix_watchdog_parent_pid_only_202609031603).
+@test "publisher pipeline stage children do not inflate the daemon generation count" {
+    run bash -c '
+        set -u
+        project="$1"; fixture="$2"; state="$3"
+        mkdir -p "$fixture/scripts/lib" "$fixture/logs" "$state/publish_queue"
+        cp "$project/scripts/daemon_watchdog.sh" "$fixture/scripts/daemon_watchdog.sh"
+        cat > "$fixture/scripts/publisher.sh" <<EOF
+#!/usr/bin/env bash
+daemon_main() {
+    printf "%s\\n" "\$\$" > "\$SHOGUN_STATE_DIR/publish_queue/publisher.pid"
+    while [ ! -f "\$SHOGUN_STATE_DIR/publish_queue/publisher.stop" ]; do sleep 0.05; done
+}
+publisher_timestamp_stream() { cat; }
+daemon_main 2>&1 | publisher_timestamp_stream
+EOF
+        chmod +x "$fixture/scripts/publisher.sh"
+        export SHOGUN_STATE_DIR="$state" DAEMON_WATCHDOG_LIB_ONLY=1
+        bash "$fixture/scripts/publisher.sh" &
+        root_launcher=$!
+        for _ in 1 2 3 4 5 6 7 8 9 10; do [ -s "$state/publish_queue/publisher.pid" ] && break; sleep 0.05; done
+        registered_pid=$(cat "$state/publish_queue/publisher.pid")
+        for _ in 1 2 3 4 5 6 7 8 9 10; do
+            count=$(pgrep -f "$fixture/scripts/publisher.sh" | wc -l)
+            [ "$count" -ge 3 ] && break
+            sleep 0.05
+        done
+        start_epoch=$(date +%s)
+        pgrep -f "$fixture/scripts/publisher.sh" > "$state/all_pids.txt"
+        test "$(wc -l < "$state/all_pids.txt")" -ge 3
+        # $$ inside a pipe stage still resolves to the invoking (top-level)
+        # shells pid, so the pid file must name the launcher, not a child.
+        test "$registered_pid" = "$root_launcher"
+
+        source "$project/scripts/daemon_watchdog.sh"
+        SCRIPT_DIR="$fixture"; LOG="$fixture/logs/watchdog.log"
+        # Pin start_epoch instead of trusting the real /proc-based reader:
+        # /proc start-tick -> epoch conversion truncates to whole seconds, so
+        # a file written milliseconds before the daemon starts can round to
+        # the same or a later second and look newer than the daemon
+        # (flaky false "stale"). A fixed epoch plus a 10s-old mtime removes
+        # that race, matching the "unchanged publisher script" test above.
+        publisher_pid_start_epoch() { printf "%s\\n" "$start_epoch"; }
+        touch -d "@$((start_epoch - 10))" "$fixture/scripts/publisher.sh"
+        export DAEMON_WATCHDOG_PUBLISHER_PIDS_FILE="$state/all_pids.txt"
+
+        test "$(publisher_daemon_pids | wc -l)" -ge 3
+        test "$(publisher_daemon_root_pids | wc -l)" -eq 1
+        test "$(publisher_daemon_root_pids)" = "$registered_pid"
+        test "$(publisher_daemon_generation_records | wc -l)" -eq 1
+        test -z "$(publisher_code_reload_needed)"
+
+        export PUBLISHER_RELOAD_GRACE_SEC=2
+        watchdog_reload_publisher_if_stale
+        test "$PUBLISHER_RELOAD_OCCURRED" -eq 0
+        test ! -e "$state/publish_queue/publisher.stop"
+
+        printf "all_pids=%s root_pids=%s reload_occurred=%s\\n" \
+            "$(wc -l < "$state/all_pids.txt")" \
+            "$(publisher_daemon_root_pids | wc -l)" "$PUBLISHER_RELOAD_OCCURRED"
+
+        touch "$state/publish_queue/publisher.stop"
+        for _ in 1 2 3 4 5 6 7 8 9 10; do
+            [ ! -d "/proc/$root_launcher" ] && break
+            sleep 0.05
+        done
+    ' _ "$PROJECT_ROOT" "$TEST_ROOT/fixture-pipe" "$(mktemp -d --tmpdir="$HOME" watchdog_reload_state.XXXXXX)"
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"all_pids=3"* ]]
+    [[ "$output" == *"root_pids=1"* ]]
+    [[ "$output" == *"reload_occurred=0"* ]]
+}
+
+# test_necessity: watchdog_publisher_healthy() and watchdog_reload_publisher_if_stale()
+# must resolve the same state dir publisher.sh itself uses
+# ($HOME/.local/share/multi-agent-shogun by default per scripts/publisher.sh:7),
+# not the ${IDLE_FLAG_DIR:-/tmp} default shared by inbox/idle-flag daemons.
+# A mismatch makes the watchdog write publisher.stop to a path publisher.sh
+# never reads, so reload never truly converges.
+@test "publisher_state_dir matches publisher.sh state dir default, not the idle-flag default" {
+    run bash -c '
+        unset SHOGUN_STATE_DIR IDLE_FLAG_DIR
+        DAEMON_WATCHDOG_LIB_ONLY=1
+        source "$1/scripts/daemon_watchdog.sh"
+        publisher_state_dir
+    ' _ "$PROJECT_ROOT"
+    [ "$status" -eq 0 ]
+    [ "$output" = "$HOME/.local/share/multi-agent-shogun" ]
+}
