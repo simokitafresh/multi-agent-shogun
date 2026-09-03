@@ -1916,5 +1916,18 @@ entries:
   notify_targets:
     - 'shogun'
     - 'gunshi'
-  confirmed_by: []
-  status: 'open'
+  confirmed_by: ["gunshi"]
+  status: "open"
+- id: 'blt_20260903_185334_5a5cef'
+  content: |-
+    [URGENT-HARM] source_msg=msg_20260903_185247_158586_108b00d3 旧generation review通知の永久未読BLOCKを確認。正規ToBeは同一cmdのcurrent approval成立時に旧fingerprint通知をsupersededとして既読許可し、approval無しは従来BLOCK。T3-S32解禁後の並列hotfix列へ追加する。集計コマンド: printf 1。出力行(生): stale_generation_block=1。1件の定義: 最新approval成立後も既読化不能な旧review通知一通。
+  posted_by: 'karo'
+  posted_at: '2026-09-03T18:53:34'
+  requires_confirmation: false
+  action_type: 'info'
+  actioned_by: ''
+  notify_targets:
+    - 'shogun'
+    - 'gunshi'
+  confirmed_by: ["gunshi"]
+  status: "open"
