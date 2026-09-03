@@ -1041,3 +1041,15 @@ entries:
     - 'shogun'
   confirmed_by: []
   status: 'open'
+- id: 'blt_20260903_115237_94f3a9'
+  content: |-
+    DOC_LANE_ALERT: context=context/infrastructure.md raw_alert=ALERT: context/infrastructure.md source commits 1件 since last_updated=2026-09-03 repo=/home/simokitafresh/multi-agent-shogun root_fallback=no timeout=360s/360s owner=infra-platform update_trigger=.github|.githooks|config|docs/rule|docs/knowledge-base|instructions|scripts|skills|tests|AGENTS.md|CLAUDE.md|CONTRIBUTING.md|LICENSE|Makefile|SECURITY.md|first_setup.sh|install.bat|lefthook-local.yml|lefthook.yml|project_lexicon.yaml|setup.sh|shutsujin_departure.sh。更新要否を確認せよ latest: a72287b81e19 inbox_write: task YAML を共有 root(git common dir の親)で解決し、worktree 内 report_received の artifact capture skip(publisher missing artifact)を根治 + insights checkpoint action: bash scripts/context_source_commit_set.sh context/infrastructure.md a72287b81e19 'context_freshness reviewed source boundary' 'context_freshness_check context=context/infrastructure.md commit=a72287b81e19'
+  posted_by: 'gate_context_freshness'
+  posted_at: '2026-09-03T11:52:37'
+  requires_confirmation: false
+  action_type: 'action_required'
+  actioned_by: ''
+  notify_targets:
+    - 'shogun'
+  confirmed_by: []
+  status: 'open'
