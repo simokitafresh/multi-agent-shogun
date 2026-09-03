@@ -241,9 +241,11 @@ RESTART_THROTTLE_WINDOW=600  # 10 minutes
 RESTART_THROTTLE_MAX=3       # max restarts within window
 
 pid_is_live() {
-    local pid="${1:-}"
+    local pid="${1:-}" proc_state=""
     [[ "$pid" =~ ^[0-9]+$ ]] || return 1
-    kill -0 "$pid" 2>/dev/null
+    kill -0 "$pid" 2>/dev/null || return 1
+    proc_state="$(awk '{print $3}' "/proc/${pid}/stat" 2>/dev/null || true)"
+    [[ "$proc_state" != Z ]]
 }
 
 pid_cmdline_matches() {
@@ -372,16 +374,40 @@ publisher_pid_start_epoch() {
     printf '%s\n' "$((boot_epoch + start_ticks / ticks_per_second))"
 }
 
-publisher_code_reload_needed() {
-    local pid_file="${SHOGUN_STATE_DIR:-${IDLE_FLAG_DIR:-/tmp}}/publish_queue/publisher.pid"
-    local pid daemon_start_epoch path mtime
-    [[ -s "$pid_file" ]] || return 1
-    read -r pid < "$pid_file" 2>/dev/null || return 1
-    [[ "$pid" =~ ^[0-9]+$ ]] || return 1
-    pid_is_live "$pid" || return 1
-    pid_cmdline_matches "$pid" "publisher.sh" || return 1
-    daemon_start_epoch="$(publisher_pid_start_epoch "$pid")" || return 1
+publisher_daemon_cmdline_matches() {
+    local pid="$1" cmdline=""
+    cmdline="$(tr '\0' ' ' < "/proc/${pid}/cmdline" 2>/dev/null || true)"
+    # Ledger/request workers carry an option after publisher.sh.  Only the
+    # long-lived daemon entrypoint is part of the daemon generation inventory.
+    [[ "$cmdline" =~ (^|[[:space:]])([^[:space:]]*/)?publisher\.sh[[:space:]]*$ ]]
+}
 
+publisher_daemon_pids() {
+    local pid
+    if [[ -n "${DAEMON_WATCHDOG_PUBLISHER_PIDS_FILE:-}" ]]; then
+        while IFS= read -r pid; do
+            [[ "$pid" =~ ^[0-9]+$ ]] || continue
+            pid_is_live "$pid" || continue
+            printf '%s\n' "$pid"
+        done < "$DAEMON_WATCHDOG_PUBLISHER_PIDS_FILE" | sort -n -u
+        return 0
+    fi
+
+    while IFS= read -r pid; do
+        [[ "$pid" =~ ^[0-9]+$ ]] || continue
+        pid_is_live "$pid" || continue
+        publisher_daemon_cmdline_matches "$pid" || continue
+        printf '%s\n' "$pid"
+    done < <(pgrep -f '(^|/)[p]ublisher\.sh([[:space:]]|$)' 2>/dev/null || true) | sort -n -u
+}
+
+publisher_code_paths() {
+    printf '%s\n' "$SCRIPT_DIR/scripts/publisher.sh" "$SCRIPT_DIR/scripts/ledger_writer.sh"
+    compgen -G "$SCRIPT_DIR/scripts/lib/publisher_*.sh" || true
+}
+
+publisher_stale_code_path() {
+    local daemon_start_epoch="$1" path mtime
     while IFS= read -r path; do
         [[ -f "$path" ]] || continue
         mtime="$(stat -c '%Y' "$path" 2>/dev/null || true)"
@@ -389,53 +415,99 @@ publisher_code_reload_needed() {
             printf '%s\n' "$path"
             return 0
         fi
-    done < <(
-        printf '%s\n' "$SCRIPT_DIR/scripts/publisher.sh" "$SCRIPT_DIR/scripts/ledger_writer.sh"
-        compgen -G "$SCRIPT_DIR/scripts/lib/publisher_*.sh" || true
-    )
+    done < <(publisher_code_paths)
+    return 1
+}
+
+publisher_daemon_generation_records() {
+    local pid start_epoch stale_path generation
+    while IFS= read -r pid; do
+        [[ -n "$pid" ]] || continue
+        start_epoch="$(publisher_pid_start_epoch "$pid" 2>/dev/null || true)"
+        [[ "$start_epoch" =~ ^[0-9]+$ ]] || continue
+        stale_path="$(publisher_stale_code_path "$start_epoch" 2>/dev/null || true)"
+        generation=current
+        [[ -n "$stale_path" ]] && generation="stale:$stale_path"
+        printf '%s|%s|%s\n' "$pid" "$start_epoch" "$generation"
+    done < <(publisher_daemon_pids)
+}
+
+publisher_code_reload_needed() {
+    local -a records=()
+    mapfile -t records < <(publisher_daemon_generation_records)
+    (( ${#records[@]} > 0 )) || return 1
+    if (( ${#records[@]} > 1 )); then
+        printf '%s\n' "multiple publisher daemons: ${#records[@]}"
+        return 0
+    fi
+    local pid start_epoch generation
+    IFS='|' read -r pid start_epoch generation <<< "${records[0]}"
+    if [[ "$generation" == stale:* ]]; then
+        printf '%s\n' "${generation#stale:}"
+        return 0
+    fi
     return 1
 }
 
 watchdog_reload_publisher_if_stale() {
     local state_dir="${SHOGUN_STATE_DIR:-${IDLE_FLAG_DIR:-/tmp}}"
-    local pid_file="$state_dir/publish_queue/publisher.pid" stop_flag="$state_dir/publish_queue/publisher.stop"
-    local pid changed_path grace elapsed term_grace
+    local stop_flag="$state_dir/publish_queue/publisher.stop"
+    local changed_path grace elapsed pid start_epoch generation oldest_record oldest_pid oldest_start
+    local -a records=() pids=()
+    PUBLISHER_RELOAD_READY=0
+    mapfile -t records < <(publisher_daemon_generation_records)
+    (( ${#records[@]} > 0 )) || return 0
     changed_path="$(publisher_code_reload_needed 2>/dev/null || true)"
-    [[ -n "$changed_path" ]] || return 0
+    if [[ -z "$changed_path" ]]; then
+        log "PUBLISHER-GENERATIONS: count=${#records[@]} state=current"
+        return 0
+    fi
     PUBLISHER_RELOAD_OCCURRED=1
-    read -r pid < "$pid_file" 2>/dev/null || return 0
     grace="${PUBLISHER_RELOAD_GRACE_SEC:-120}"
     [[ "$grace" =~ ^[0-9]+$ ]] || grace=120
-    term_grace="${PUBLISHER_RELOAD_TERM_GRACE_SEC:-5}"
-    [[ "$term_grace" =~ ^[0-9]+$ ]] || term_grace=5
+    oldest_record="$(printf '%s\n' "${records[@]}" | sort -t'|' -k2,2n | head -n 1)"
+    IFS='|' read -r oldest_pid oldest_start _ <<< "$oldest_record"
+    log "RELOAD: publisher.sh generations=${#records[@]} oldest_pid=$oldest_pid oldest_start=$oldest_start stop_targets=${#records[@]}"
 
     mkdir -p "$(dirname "$stop_flag")"
     : > "$stop_flag"
-    log "RELOAD: publisher.sh code newer than pid=$pid start; path=$changed_path stop_flag=$stop_flag grace=${grace}s"
-    bash "$SCRIPT_DIR/scripts/lib/publisher_event.sh" append reload "$pid" 0 "publisher code reload requested path=$changed_path" >/dev/null 2>&1 || \
-        log "WARN: publisher reload event write failed pid=$pid"
+    for record in "${records[@]}"; do
+        IFS='|' read -r pid start_epoch generation <<< "$record"
+        pids+=("$pid")
+        log "RELOAD: publisher.sh generation pid=$pid start=$start_epoch state=$generation path=$changed_path stop_flag=$stop_flag grace=${grace}s"
+        bash "$SCRIPT_DIR/scripts/lib/publisher_event.sh" append reload "$pid" 0 "publisher code reload requested path=$changed_path" >/dev/null 2>&1 || \
+            log "WARN: publisher reload event write failed pid=$pid"
+    done
 
     elapsed=0
-    while pid_is_live "$pid" && (( elapsed < grace )); do
+    while (( elapsed < grace )); do
+        local live_count=0
+        for pid in "${pids[@]}"; do
+            pid_is_live "$pid" && live_count=$((live_count + 1))
+        done
+        (( live_count == 0 )) && break
         sleep 1
         elapsed=$((elapsed + 1))
     done
-    if pid_is_live "$pid"; then
-        kill -TERM "$pid" 2>/dev/null || true
-        log "RELOAD: publisher.sh pid=$pid SIGTERM sent after grace=${grace}s"
-        sleep "$term_grace"
+    for pid in "${pids[@]}"; do
         if pid_is_live "$pid"; then
-            kill -KILL "$pid" 2>/dev/null || true
-            log "RELOAD: publisher.sh pid=$pid SIGKILL sent after TERM grace"
+            log "BLOCK: publisher.sh pid=$pid did not honor stop flag within grace=${grace}s"
+            return 1
         fi
-    else
-        log "RELOAD: publisher.sh pid=$pid honored stop flag within grace=${elapsed}s"
-    fi
+    done
+    PUBLISHER_RELOAD_READY=1
+    log "RELOAD: publisher.sh stop flag honored by ${#pids[@]} daemon(s) within grace=${elapsed}s"
     return 0
 }
 
 start_publisher_daemon() {
     local state_dir="${SHOGUN_STATE_DIR:-$HOME/.local/share/multi-agent-shogun}" new_pid="" reason="${1:-dead}"
+    local -a existing_pids=()
+    mapfile -t existing_pids < <(publisher_daemon_pids)
+    if (( ${#existing_pids[@]} > 0 )); then
+        log "BLOCK: publisher.sh start deferred; live daemon count=${#existing_pids[@]} pids=$(IFS=,; echo "${existing_pids[*]}")"
+        return 1
+    fi
     ( cd "$SCRIPT_DIR" && PUBLISHER_MODE=active setsid nohup bash scripts/publisher.sh >> "$SCRIPT_DIR/logs/publisher_daemon.log" 2>&1 < /dev/null & )
     sleep 2
     [ -s "$state_dir/publish_queue/publisher.pid" ] && read -r new_pid < "$state_dir/publish_queue/publisher.pid"
@@ -446,6 +518,7 @@ start_publisher_daemon() {
 }
 
 PUBLISHER_RELOAD_OCCURRED=0
+PUBLISHER_RELOAD_READY=0
 
 check_ninja_monitor() {
     local pid_file="${STATE_DIR:-/tmp}/ninja_monitor.pid"
@@ -778,7 +851,14 @@ check_daemon_inventory
 check_tmux_health || true
 check_tmux_duplicate_servers
 watchdog_reload_publisher_if_stale || true
-if ! watchdog_publisher_healthy; then
+if [[ "$PUBLISHER_RELOAD_OCCURRED" == 1 ]]; then
+    if [[ "$PUBLISHER_RELOAD_READY" == 1 ]]; then
+        start_publisher_daemon reload
+    else
+        log "BLOCK: publisher reload incomplete; supervisor start deferred until all old daemons exit"
+        notify "【watchdog/BLOCK】publisher旧daemonのstop flag終了待ちが未完了。新daemon起動を保留"
+    fi
+elif ! watchdog_publisher_healthy; then
     # 2026-09-03 shogun 05:55 (b): a dead daemon must come back on the current code, not wait for
     # a human. A live pid with only stale events is idle, not unhealthy (events are activity-only).
     _pub_state_dir="${SHOGUN_STATE_DIR:-$HOME/.local/share/multi-agent-shogun}"
@@ -788,11 +868,7 @@ if ! watchdog_publisher_healthy; then
     elif is_maintenance_active; then
         log "SKIP: daemon maintenance active; publisher restart deferred"
     else
-        if [[ "$PUBLISHER_RELOAD_OCCURRED" == 1 ]]; then
-            start_publisher_daemon reload
-        else
-            start_publisher_daemon dead
-        fi
+        start_publisher_daemon dead
     fi
 fi
 

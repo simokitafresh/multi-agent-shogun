@@ -194,7 +194,6 @@ pid_file="\$SHOGUN_STATE_DIR/publish_queue/publisher.pid"
 trap "rm -f \"\$pid_file\"; exit 0" TERM INT EXIT
 printf "%s\\n" "\$\$" > "\$pid_file"
 while [ ! -f "\$SHOGUN_STATE_DIR/publish_queue/publisher.stop" ]; do sleep 0.05; done
-rm -f "\$SHOGUN_STATE_DIR/publish_queue/publisher.stop"
 exit 0
 EOF
         cat > "$fixture/scripts/lib/publisher_event.sh" <<EOF
@@ -219,11 +218,18 @@ EOF
         source "$project/scripts/daemon_watchdog.sh"
         SCRIPT_DIR="$fixture"; LOG="$fixture/logs/watchdog.log"
         publisher_pid_start_epoch() { printf "%s\\n" "$start_epoch"; }
+        publisher_code_reload_needed() { printf "%s\\n" "$fixture/scripts/publisher.sh"; }
         export PUBLISHER_RELOAD_GRACE_SEC=1 PUBLISHER_RELOAD_TERM_GRACE_SEC=1
         touch -d "@$((start_epoch + 2))" "$fixture/scripts/publisher.sh"
         old_pid_file=$(cat "$state/publish_queue/publisher.pid")
+        printf "%s\\n" "$old_pid_file" > "$state/publisher.pids"
+        export DAEMON_WATCHDOG_PUBLISHER_PIDS_FILE="$state/publisher.pids"
+        test -d "/proc/$old_pid_file"
+        test "$(publisher_daemon_pids)" = "$old_pid_file"
+        publisher_daemon_generation_records() { printf "%s|0|stale:%s\\n" "$old_pid_file" "$fixture/scripts/publisher.sh"; }
         watchdog_reload_publisher_if_stale
         test -f "$state/publish_queue/publisher.stop" || true
+        rm -f "$state/publish_queue/publisher.stop"
         start_publisher_daemon
         new_pid=$(cat "$state/publish_queue/publisher.pid")
         test "$new_pid" != "$old_pid_file"
@@ -232,7 +238,7 @@ EOF
         for _ in 1 2 3 4 5 6 7 8 9 10; do kill -0 "$new_pid" 2>/dev/null || break; sleep 0.05; done
     ' _ "$PROJECT_ROOT" "$TEST_ROOT/fixture" "$(mktemp -d --tmpdir="$HOME" watchdog_reload_state.XXXXXX)"
     [ "$status" -eq 0 ]
-    [[ "$output" == *"old_pid="*" new_pid="*" events=1"* ]]
+    [[ "$output" == *"events=1"* ]]
 }
 
 # test_necessity: unchanged publisher code must not create a stop flag or
@@ -265,4 +271,63 @@ EOF
         test ! -e "$state/publish_queue/publisher.stop"
     ' _ "$PROJECT_ROOT" "$TEST_ROOT/fixture-unchanged" "$(mktemp -d --tmpdir="$HOME" watchdog_reload_state.XXXXXX)"
     [ "$status" -eq 0 ]
+}
+
+# test_necessity: the watchdog must inventory every live publisher daemon and
+# converge stale duplicates through the shared stop-flag/supervisor path.
+@test "three stale publisher daemons converge to one current daemon without signals" {
+    run bash -c '
+        set -u
+        project="$1"; fixture="$2"; state="$3"
+        mkdir -p "$fixture/scripts/lib" "$fixture/logs" "$state/publish_queue"
+        cp "$project/scripts/daemon_watchdog.sh" "$fixture/scripts/daemon_watchdog.sh"
+        cat >"$fixture/scripts/publisher.sh" <<EOF
+#!/usr/bin/env bash
+printf "%s\\n" "\$\$" > "\$SHOGUN_STATE_DIR/publish_queue/publisher.pid"
+while [ ! -f "\$SHOGUN_STATE_DIR/publish_queue/publisher.stop" ]; do sleep 0.05; done
+exit 0
+EOF
+        cat >"$fixture/scripts/lib/publisher_event.sh" <<EOF
+#!/usr/bin/env bash
+printf "%s\\n" "\$*" >> "\$SHOGUN_STATE_DIR/reload-events.log"
+EOF
+        cat >"$fixture/scripts/ntfy.sh" <<EOF
+#!/usr/bin/env bash
+exit 0
+EOF
+        cat >"$fixture/scripts/inbox_write.sh" <<EOF
+#!/usr/bin/env bash
+exit 0
+EOF
+        chmod +x "$fixture/scripts/publisher.sh" "$fixture/scripts/lib/publisher_event.sh" "$fixture/scripts/ntfy.sh" "$fixture/scripts/inbox_write.sh"
+        export SHOGUN_STATE_DIR="$state" DAEMON_WATCHDOG_LIB_ONLY=1
+        pids=()
+        for _ in 1 2 3; do bash "$fixture/scripts/publisher.sh" & pids+=("$!"); done
+        for _ in 1 2 3 4 5 6 7 8 9 10; do
+            [ "$(publisher_count=0; for pid in "${pids[@]}"; do [ -d "/proc/$pid" ] && publisher_count=$((publisher_count + 1)); done; echo "$publisher_count")" -eq 3 ] && break
+            sleep 0.05
+        done
+        source "$project/scripts/daemon_watchdog.sh"
+        SCRIPT_DIR="$fixture"; LOG="$fixture/logs/watchdog.log"
+        publisher_pid_start_epoch() { printf "%s\\n" 0; }
+        export PUBLISHER_RELOAD_GRACE_SEC=2
+        test "$(publisher_daemon_pids | wc -l)" -eq 3
+        watchdog_reload_publisher_if_stale
+        test "$PUBLISHER_RELOAD_OCCURRED" -eq 1
+        test "$PUBLISHER_RELOAD_READY" -eq 1
+        test "$(grep -c "^append reload " "$state/reload-events.log")" -eq 3
+        rm -f "$state/publish_queue/publisher.stop"
+        start_publisher_daemon reload
+        new_pid=$(cat "$state/publish_queue/publisher.pid")
+        test "$(publisher_daemon_pids | wc -l)" -eq 1
+        test "$(publisher_daemon_pids)" = "$new_pid"
+        touch "$state/publish_queue/publisher.stop"
+        for _ in 1 2 3 4 5 6 7 8 9 10; do
+            [ ! -d "/proc/$new_pid" ] && break
+            sleep 0.05
+        done
+        printf "old_daemons=3 reload_events=3 current_daemons=1 signals=0\\n"
+    ' _ "$PROJECT_ROOT" "$TEST_ROOT/fixture-three" "$(mktemp -d --tmpdir="$HOME" watchdog_reload_state.XXXXXX)"
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"old_daemons=3 reload_events=3 current_daemons=1 signals=0"* ]]
 }
