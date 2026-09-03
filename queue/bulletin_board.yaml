@@ -1530,3 +1530,15 @@ entries:
     - 'shogun'
   confirmed_by: ["shogun"]
   status: "closed"
+- id: 'blt_20260903_224120_560302'
+  content: |-
+    DOC_LANE_ALERT: context=context/infrastructure.md raw_alert=ALERT: context/infrastructure.md source commits 2件 since last_updated=2026-09-03 repo=/home/simokitafresh/multi-agent-shogun root_fallback=no timeout=360s/360s owner=infra-platform update_trigger=.github|.githooks|config|docs/rule|docs/knowledge-base|instructions|scripts|skills|tests|AGENTS.md|CLAUDE.md|CONTRIBUTING.md|LICENSE|Makefile|SECURITY.md|first_setup.sh|install.bat|lefthook-local.yml|lefthook.yml|project_lexicon.yaml|setup.sh|shutsujin_departure.sh。更新要否を確認せよ latest: b1661cde28d3 gate: throughput_segment_invalid を WAIT から WARN へ(計測で CLEAR を止めない、T3-S-47 D0) + tsumari T3-S-47 | f127f622b61f hooks: post-shogun-inbox-check 未読カウントをレコード境界 awk へ(T3-S-43 偽陽性根治) action: bash scripts/context_source_commit_set.sh context/infrastructure.md b1661cde28d3 'context_freshness reviewed source boundary' 'context_freshness_check context=context/infrastructure.md commit=b1661cde28d3'
+  posted_by: 'gate_context_freshness'
+  posted_at: '2026-09-03T22:41:20'
+  requires_confirmation: false
+  action_type: 'action_required'
+  actioned_by: ''
+  notify_targets:
+    - 'shogun'
+  confirmed_by: []
+  status: 'open'
