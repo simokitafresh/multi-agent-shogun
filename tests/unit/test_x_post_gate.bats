@@ -9,10 +9,10 @@ setup() {
     GATE="$PROJECT_ROOT/scripts/x_ops/x_post_gate.sh"
     FIXTURE_DIR="$BATS_TEST_TMPDIR"
 
-    cat > "$FIXTURE_DIR/showcase.json" <<'EOF'
-{"data":{"hero":{"name":"Basic-DualMomentum","holding":"XLU","components":{"relative_assets":["SPY","QQQ"],"safe_haven_asset":"XLU"}},"plans":[{"name":"Premium-ShinYotsume","holding":"XLK","ticker":"XLK","components":{"relative_assets":["IWM"],"safe_haven_asset":"BIL"}}]}}
+    cat > "$FIXTURE_DIR/signals.json" <<'EOF'
+{"data":{"portfolios":[{"name":"Basic-DualMomentum","signal":"XLU"},{"name":"Premium-ShinYotsume","signal":"XLK 100.0%"}]}}
 EOF
-    export X_GATE_SHOWCASE_JSON="$FIXTURE_DIR/showcase.json"
+    export X_GATE_SIGNALS_JSON="$FIXTURE_DIR/signals.json"
 }
 
 run_gate() {
@@ -100,4 +100,50 @@ EOF
     run_gate "$FIXTURE_DIR/fail6.txt"
     [ "$status" -eq 1 ]
     [[ "$output" == *"rule6_internal_term_in_first_line:FoF"* ]]
+}
+
+# test_necessity: /api/signals のweight付きticker表記("TMV 50.0%"のような重み付き構成ticker)が
+# blocklist生成時に正しく単一tickerへ剥離されないと、非公開FoFのholdingがgateをすり抜ける
+# (cmd_karo_hotfix_x_post_gate_blocklist_fail_close_202609031003の直接契機)。
+@test "FAIL rule1(signals API): 非BasicのFoF重み付きholding(TMV等)を含む下書きはFAIL" {
+    cat > "$FIXTURE_DIR/signals_fof.json" <<'EOF'
+{"data":{"portfolios":[{"name":"Basic-DualMomentum","signal":"XLU"},{"name":"裏Ave-X","signal":"GLD 50.0%, TMV 50.0%"}]}}
+EOF
+    export X_GATE_SIGNALS_JSON="$FIXTURE_DIR/signals_fof.json"
+    cat > "$FIXTURE_DIR/fail_fof.txt" <<'EOF'
+プレミアム限定戦略はTMVを中心に運用しています。助言ではない。過去は未来を保証しない。
+EOF
+    run_gate "$FIXTURE_DIR/fail_fof.txt"
+    [ "$status" -eq 1 ]
+    [[ "$output" == *"rule1_holding_or_ticker_leak:TMV"* ]]
+}
+
+# test_necessity: 本番API不達(接続失敗)時にblocklistが取得できないと、旧実装は{}へ
+# 沈黙フォールバックしrule1が無条件でスキップされていた(殿裁定B-6違反)。fail-closeへの
+# 転換を固定する回帰テスト。
+@test "FAIL rule1: API不達(接続失敗)はfail-close" {
+    unset X_GATE_SIGNALS_JSON
+    export X_GATE_SIGNALS_URL="http://127.0.0.1:9/"
+    cat > "$FIXTURE_DIR/fail_unreachable.txt" <<'EOF'
+デュアルモメンタムは2つだけ見る。今いちばん強い資産か。助言ではない。過去は未来を保証しない。
+EOF
+    run_gate "$FIXTURE_DIR/fail_unreachable.txt"
+    [ "$status" -eq 1 ]
+    [[ "$output" == *"x_post_gate: FAIL rule1 blocklist unavailable (fail-close)"* ]]
+}
+
+# test_necessity: blocklistが空集合(非Basic全PFがBasicと同一holdingのみ、または
+# portfolios自体が空)の時、旧実装はrule1を無条件PASS扱いした。空集合もfail-closeに
+# 倒すことを固定する回帰テスト。
+@test "FAIL rule1: blocklist空JSONはfail-close" {
+    cat > "$FIXTURE_DIR/signals_empty.json" <<'EOF'
+{"data":{"portfolios":[{"name":"Basic-DualMomentum","signal":"XLU"}]}}
+EOF
+    export X_GATE_SIGNALS_JSON="$FIXTURE_DIR/signals_empty.json"
+    cat > "$FIXTURE_DIR/fail_empty_blocklist.txt" <<'EOF'
+デュアルモメンタムは2つだけ見る。今いちばん強い資産か。助言ではない。過去は未来を保証しない。
+EOF
+    run_gate "$FIXTURE_DIR/fail_empty_blocklist.txt"
+    [ "$status" -eq 1 ]
+    [[ "$output" == *"x_post_gate: FAIL rule1 blocklist unavailable (fail-close)"* ]]
 }

@@ -5,7 +5,20 @@
 set -euo pipefail
 export LC_ALL=C.UTF-8
 
-SHOWCASE_URL_DEFAULT="https://dm-signal-backend.onrender.com/api/public/showcase"
+SIGNALS_URL_DEFAULT="https://dm-signal-backend.onrender.com/api/signals"
+
+_SELF_PATH="${BASH_SOURCE[0]:-$0}"
+[[ "$_SELF_PATH" != /* ]] && _SELF_PATH="$PWD/$_SELF_PATH"
+_SCRIPT_DIR="$(cd "$(dirname "$_SELF_PATH")/../.." && pwd)"
+if [ -f "${_SCRIPT_DIR}/scripts/lib/project_path.sh" ]; then
+    # shellcheck source=scripts/lib/project_path.sh
+    source "${_SCRIPT_DIR}/scripts/lib/project_path.sh"
+fi
+_DM_SIGNAL_PATH="${DM_SIGNAL_DIR:-}"
+if [ -z "$_DM_SIGNAL_PATH" ] && command -v get_project_path >/dev/null 2>&1; then
+    _DM_SIGNAL_PATH="$(get_project_path 'dm-signal' 2>/dev/null || true)"
+fi
+SIGNALS_ENV_FILE_DEFAULT="${_DM_SIGNAL_PATH:+${_DM_SIGNAL_PATH}/backend/.env}"
 
 usage() {
     echo "Usage: $0 <draft_text_file>" >&2
@@ -19,37 +32,72 @@ DRAFT_FILE="${1:-}"
 DRAFT_TEXT="$(cat "$DRAFT_FILE")"
 FAILS=()
 
-# --- showcase JSON取得(fixture差替え可能) ---
-showcase_json() {
-    if [ -n "${X_GATE_SHOWCASE_JSON:-}" ]; then
-        if [ -f "$X_GATE_SHOWCASE_JSON" ]; then
-            cat "$X_GATE_SHOWCASE_JSON"
-        else
-            printf '%s' "$X_GATE_SHOWCASE_JSON"
-        fi
-    else
-        curl -s --max-time 10 "${X_GATE_SHOWCASE_URL:-$SHOWCASE_URL_DEFAULT}" || echo '{}'
-    fi
+fail_close_rule1() {
+    printf 'x_post_gate: FAIL rule1 blocklist unavailable (fail-close)\n' >&2
+    exit 1
 }
 
-SHOWCASE_JSON="$(showcase_json)"
+# --- 認証情報取得(env優先、無ければbackend/.env。値をlog/stdoutに出さない) ---
+_signals_creds() {
+    if [ -n "${X_GATE_SIGNALS_USER:-}" ] && [ -n "${X_GATE_SIGNALS_PASS:-}" ]; then
+        printf '%s:%s' "$X_GATE_SIGNALS_USER" "$X_GATE_SIGNALS_PASS"
+        return 0
+    fi
+    local env_file="${X_GATE_SIGNALS_ENV_FILE:-$SIGNALS_ENV_FILE_DEFAULT}"
+    [ -n "$env_file" ] && [ -f "$env_file" ] || return 1
+    local user="" pass=""
+    while IFS='=' read -r key value; do
+        case "$key" in
+            ADMIN_USER) user="$value" ;;
+            ADMIN_PASS) pass="$value" ;;
+        esac
+    done < <(grep -E '^ADMIN_(USER|PASS)=' "$env_file" | tr -d '\r')
+    [ -n "$user" ] && [ -n "$pass" ] || return 1
+    printf '%s:%s' "$user" "$pass"
+}
 
-# --- Rule 1: 保有シグナル・構成ticker・FoF重み blocklist (Basic-DualMomentumは除外) ---
-BLOCKLIST="$(printf '%s' "$SHOWCASE_JSON" | jq -r '
-  .data as $d
-  | (
-      (if (($d.hero.name // "") != "Basic-DualMomentum") then
-          [$d.hero.holding, $d.hero.ticker, ($d.hero.components.relative_assets[]? ), $d.hero.components.safe_haven_asset]
-       else [] end)
-      +
-      ([$d.plans[]? | select((.name // "") != "Basic-DualMomentum") |
-          (.holding, .ticker, (.components.relative_assets[]? ), .components.safe_haven_asset) ])
-    )
-  | flatten
-  | map(select(. != null and . != ""))
-  | unique
-  | .[]
-' 2>/dev/null || true)"
+# --- signals JSON取得(fixture差替え可能。取得失敗はrc!=0で呼び出し元へ通知) ---
+signals_json() {
+    if [ -n "${X_GATE_SIGNALS_JSON:-}" ]; then
+        if [ -f "$X_GATE_SIGNALS_JSON" ]; then
+            cat "$X_GATE_SIGNALS_JSON"
+        else
+            printf '%s' "$X_GATE_SIGNALS_JSON"
+        fi
+        return 0
+    fi
+
+    local creds
+    creds="$(_signals_creds)" || return 1
+
+    local url="${X_GATE_SIGNALS_URL:-$SIGNALS_URL_DEFAULT}"
+    local body_file http_code
+    body_file="$(mktemp)"
+    if ! http_code="$(curl -sS --max-time 10 -o "$body_file" -w '%{http_code}' -u "$creds" "$url" 2>/dev/null)"; then
+        rm -f "$body_file"
+        return 1
+    fi
+    if [ "$http_code" != "200" ]; then
+        rm -f "$body_file"
+        return 1
+    fi
+    cat "$body_file"
+    rm -f "$body_file"
+}
+
+SIGNALS_JSON="$(signals_json)" || fail_close_rule1
+
+# --- Rule 1: 保有シグナル・構成ticker blocklist (認証付き/api/signals全PFのholdingからBasic-DualMomentumのholdingを除いた集合。取得失敗/空はfail-close) ---
+BLOCKLIST="$(printf '%s' "$SIGNALS_JSON" | jq -r -e '
+  def tickers(s):
+    if (s == null) or (s == "") or (s == "No Data") then []
+    else (s | split(",") | map(gsub("^\\s+|\\s+$";"") | gsub("\\s+[0-9.]+%\\s*$";"")) | map(select(. != "")))
+    end;
+  .data.portfolios as $pf
+  | ($pf | map(select(.name == "Basic-DualMomentum")) | map(tickers(.signal)) | flatten | unique) as $basic
+  | ($pf | map(select(.name != "Basic-DualMomentum")) | map(tickers(.signal)) | flatten | unique) as $others
+  | ($others - $basic) | unique | .[]
+' 2>/dev/null)" || fail_close_rule1
 
 if [ -n "$BLOCKLIST" ]; then
     while IFS= read -r tok; do
