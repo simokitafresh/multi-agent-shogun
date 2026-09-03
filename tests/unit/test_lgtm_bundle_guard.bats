@@ -171,16 +171,17 @@ YAML
     [[ "$output" == *"OK: appended"* ]]
 }
 
-@test "precheck ERRORSが1以上ならscope外説明があってもLGTMをBLOCKする" {
-    local cmd_id="cmd_precheck_errors_$(date +%s)"
+@test "gate_prediction=BLOCKならAPPROVE/LGTMをBLOCKする (LG085)" {
+    local cmd_id="cmd_gate_pred_block_$(date +%s)"
     mkdir -p "$TEST_TMPDIR/queue/gates/$cmd_id"
     echo '{"review":{"cmd_id":"'"$cmd_id"'","verdict":"APPROVE"}}' \
         > "$TEST_TMPDIR/queue/gates/$cmd_id/sg7_bundle.json"
     local entry
     entry="$(_lgtm_entry_pass_fixture "$cmd_id")"
-    entry="${entry/actual: \"OK: appended\"/actual: \"ERRORS=1(scope外変更)\"}"
+    entry="${entry/gate_prediction: CLEAR/gate_prediction: BLOCK}"
+    entry="${entry/gate_prediction_reason: all checks passed/gate_prediction_reason: precheck ERRORS}"
 
     run env GUNSHI_SCRIPT_DIR="$TEST_TMPDIR" bash "$LOG_APPEND_SCRIPT" <<< "$entry"
     [ "$status" -eq 2 ]
-    [[ "$output" == *"precheck ERRORS>0"* ]]
+    [[ "$output" == *"gate_prediction=BLOCK"* ]]
 }
