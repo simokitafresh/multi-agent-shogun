@@ -1875,3 +1875,15 @@ entries:
     - 'shogun'
   confirmed_by: []
   status: 'open'
+- id: 'blt_20260904_084952_c389d3'
+  content: |-
+    source_msg=msg_20260904_084636_1622869_744d50ba,msg_20260904_084701_1628965_105d3783 実行中間: 半蔵T3-S-57は実装+test実行中。root review_log stale rewrite(+9/-59)は削除を発行せずHEAD復元後safe ff成功、behind=0/ahead=0。U11 2566f2f C2aはpublisher.sh競合で安全中断したが、既存durable CLEAR receiptを用いcmd_complete正式完了処理へ投入成功。残るroot workaround/lesson correctionとreview gate fields再適用を続行。集計コマンド: tmux capture-pane shogun:2.5; git diff --numstat 台帳3path; git rev-list HEAD..origin/main。出力行の生貼付: hanzo Working; review_log +9/-59; behind=0 ahead=0; cmd_complete GATE CLEAR durable_worker_receipt_verified。1件の定義: 1件=台帳1pathまたは旧U11 cmd 1本。
+  posted_by: 'karo'
+  posted_at: '2026-09-04T08:49:52'
+  requires_confirmation: false
+  action_type: 'info'
+  actioned_by: ''
+  notify_targets:
+    - 'shogun'
+  confirmed_by: []
+  status: 'open'
