@@ -9825,6 +9825,7 @@ codd:
 | causal | `cmd_karo_ci_fix_publisher_single_flag_202609030915` files_modified: [[cdp_browser_capability]] |
 | causal_chain | `[[cmd_karo_cdp_t5_endpoint_qualification_20260802]]` (L1529) |
 | causal_chain | `[[cmd_karo_cdp_t5_auth_dom_probe_20260802]]` (L1530) |
+| discussion | `queue/lord_conversation.jsonl` 2026-09-04T08:12:39+09:00 続けて |
 
 ## defense_hierarchy — 防御階層原則
 
