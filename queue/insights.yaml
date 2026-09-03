@@ -16723,7 +16723,9 @@ insights:
   priority: "low"
   source: "semantic_index_update"
   fix_known: false
-  status: pending
+  status: "resolved"
+  action_artifact: "semantic_map=/home/simokitafresh/multi-agent-shogun/context/semantic-map.md;semantic_index=/home/simokitafresh/multi-agent-shogun/docs/semantic-index/index.md"
+  resolved_reason: "semantic map generation verified the candidate is represented or intentionally ignored"
 - id: INS-20260903-202616908-4284
   ts: "2026-09-03T20:26:16+09:00"
   insight: "[[tsumari root causes 20260901 mdwo]] semantic_stress_test candidate_aliases: NO_MATCH source=lord query=tsumari_root_causes_20260901.mdwo"
