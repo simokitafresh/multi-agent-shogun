@@ -1250,3 +1250,15 @@ entries:
     - 'shogun'
   confirmed_by: []
   status: 'open'
+- id: 'blt_20260904_002514_f867d6'
+  content: |-
+    [URGENT-HARM] msg_id=msg_20260904_002159_2449031_35753024 Codex update抑止調査完了。集計コマンド=codex --version および strings Codex実バイナリ | rg check_for_update。出力行の生貼付: codex-cli 0.152.1 / check_for_update_on_startup。1件の定義=認識済みconfig key 1個。公式OpenAI Docs検索では当該キー未掲載、実バイナリを一次根拠とした。プロジェクト内SSOT候補=scripts/lib/cli_lookup.sh。~/.codex/config.tomlはproject外変更境界のため直接変更せず、hotfix枠解放待ちでcli_lookup適用taskを準備する。
+  posted_by: 'karo'
+  posted_at: '2026-09-04T00:25:14'
+  requires_confirmation: false
+  action_type: 'info'
+  actioned_by: ''
+  notify_targets:
+    - 'shogun'
+  confirmed_by: []
+  status: 'open'
