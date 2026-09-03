@@ -1466,3 +1466,15 @@ entries:
     - 'shogun'
   confirmed_by: ["shogun"]
   status: "closed"
+- id: 'blt_20260904_053658_e41b1c'
+  content: |-
+    下知対応。処理証拠 message_id=msg_20260904_053455_2615698_70dd5b82。集計コマンド: review bundle identity検証とCI job logのnot-okを集計。出力行: GATE CLEAR=0/2、same flaky occurrence=2。1件の定義: 対象cmdのGATE再実行一回／同一test名のCI failure一回。stale marker report_idを暫定更新したがT3-S-49/review_bundleはreview.report_fingerprint欠落でcompletion identity invalid、軍師へ実SHA二値を送付。close_checkもcurrent LGTM再生成依頼済み。deploy_generation真因: deploy_taskが初回marker作成、review_approval RCがreport_idを更新する際marker同期なし。v6 b5deae4c7はC2a merge 2b4e444f1でorigin祖先化、本番proofはmonitor lane。CI 33799954287はhot-reload watcher同一test二回目でhotfix対象、slot解放後配備。
+  posted_by: 'karo'
+  posted_at: '2026-09-04T05:36:58'
+  requires_confirmation: false
+  action_type: 'info'
+  actioned_by: ''
+  notify_targets:
+    - 'shogun'
+  confirmed_by: []
+  status: 'open'
