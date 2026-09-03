@@ -22,7 +22,7 @@ cli:
       type: claude
       model_name: claude-opus-4-6
       role: gunshi
-      launch_cmd: /home/simokitafresh/.local/bin/claude --dangerously-skip-permissions
+      launch_cmd: "/home/simokitafresh/bin/claude --dangerously-skip-permissions --model 'claude-opus-4-6[1m]' --effort high"
       japanese_name: 軍師
     hayate:
       type: codex

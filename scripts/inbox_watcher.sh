@@ -719,7 +719,7 @@ _release_queued_prompt_if_stalled() {
     local target="$1" pane_tail queued_line state_file prev_hash sent_hash
     pane_tail=$(tmux capture-pane -t "$target" -p -J -S -30 2>/dev/null | sed '/^[[:space:]]*$/d' | tail -8)
     printf '%s\n' "$pane_tail" | grep -Eq 'esc to interrupt|Running…|Running\.\.\.|Working \(' && return 1
-    queued_line=$(printf '%s\n' "$pane_tail" | grep -E '^[[:space:]]*❯[[:space:]]+[^[:space:]]' | tail -1)
+    queued_line=$(printf '%s\n' "$pane_tail" | sed 's/ / /g' | grep -E '^[[:space:]]*❯[[:space:]]+[^[:space:]]' | tail -1)
     [ -n "$queued_line" ] || return 1
     _pane_has_confirmation_prompt "$target" && return 1
     _pane_tail_stable_for "$target" "$BUSY_TIMEOUT_SEC" || return 1
@@ -763,7 +763,9 @@ _pane_tail_has_idle_prompt() {
     pane_tail=$(tmux capture-pane -t "$target" -p -J -S -30 2>/dev/null || true)
     pane_tail=$(printf '%s\n' "$pane_tail" | sed '/^[[:space:]]*$/d' | tail -8)
     printf '%s\n' "$pane_tail" | grep -Eq 'esc to interrupt|Running…|Running\.\.\.|Working \(' && return 1
-    printf '%s\n' "$pane_tail" | grep -Eq '^[[:space:]]*[❯›][[:space:]]*$' || return 1
+    # 2026-09-04 09:00 将軍 D0(T3-S-50 追補): Claude CLI の空 prompt 行は『❯』の後に U+00A0(NBSP)を置くため
+    # [[:space:]] に一致せず idle 判定が永久に偽だった(軍師 08:48 実測: state=active/flag 無し/prompt 表示で WAKE-DEFER)。
+    printf '%s\n' "$pane_tail" | grep -Eq '^[[:space:]]*[❯›]([[:space:]]| )*$' || return 1
     return 0
 }
 
