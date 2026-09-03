@@ -26,7 +26,7 @@ source "$SCRIPT_DIR/scripts/lib/daemon_maintenance_lock.sh"
 close_inherited_restart_watchers_lock() {
     local lock_path="${RESTART_WATCHERS_LOCK_FILE:-/tmp/restart_watchers.lock}"
     local fd_path fd target
-    for fd_path in /proc/$$/fd/*; do
+    for fd_path in "/proc/$$/fd"/*; do
         fd="${fd_path##*/}"
         [[ "$fd" =~ ^[0-9]+$ && "$fd" != 0 && "$fd" != 1 && "$fd" != 2 ]] || continue
         target="$(readlink "$fd_path" 2>/dev/null || true)"
@@ -256,7 +256,7 @@ pid_cmdline_matches() {
     local cmdline=""
     # The process can disappear between kill -0 and reading cmdline.  Keep the
     # pathname open inside cat so that a failed open is silenced as well.
-    cmdline=$(cat "/proc/${pid}/cmdline" 2>/dev/null | tr '\0' ' ' || true)
+    cmdline=$(tr '\0' ' ' < "/proc/${pid}/cmdline" 2>/dev/null || true)
     [[ "$cmdline" == *"$needle"* ]]
 }
 
@@ -333,6 +333,7 @@ watchdog_ninja_monitor_owner_healthy() {
     read -r owner_pid generation heartbeat _legacy_mtime _legacy_fingerprint < "$owner_file" 2>/dev/null || return 1
     [[ "$owner_pid" =~ ^[0-9]+$ && -n "$generation" && "$heartbeat" =~ ^[0-9]+$ ]] || return 1
     pid_cmdline_matches "$owner_pid" "ninja_monitor.sh" || return 1
+    # shellcheck disable=SC2034 # positional placeholder; only fingerprint is compared
     read -r script_mtime fingerprint < "$identity_file" 2>/dev/null || return 1
     current_fingerprint="$(sha256sum "$SCRIPT_DIR/scripts/ninja_monitor.sh" 2>/dev/null | awk '{print $1}')"
     [ -n "$fingerprint" ] && [ "$fingerprint" = "$current_fingerprint" ]
@@ -343,8 +344,17 @@ watchdog_ninja_monitor_owner_generation() {
     awk 'NR==1 {print $2; exit}' "$owner_file" 2>/dev/null || true
 }
 
+# publisher.sh's own STATE_DIR default (scripts/publisher.sh:7) is
+# $HOME/.local/share/multi-agent-shogun, not the codebase-wide
+# ${IDLE_FLAG_DIR:-/tmp} pattern used by idle-flag/inbox daemons. Every
+# publisher-facing path in this file must resolve through this helper or a
+# pid/stop-flag check silently misses the real files publisher.sh reads.
+publisher_state_dir() {
+    printf '%s\n' "${SHOGUN_STATE_DIR:-$HOME/.local/share/multi-agent-shogun}"
+}
+
 watchdog_publisher_healthy() {
-    local state_dir="${SHOGUN_STATE_DIR:-${IDLE_FLAG_DIR:-/tmp}}"
+    local state_dir; state_dir="$(publisher_state_dir)"
     local pid_file="$state_dir/publish_queue/publisher.pid" events_file="$state_dir/publish_queue/events.jsonl"
     local pid last_ts last_epoch now max_age
     [ -s "$pid_file" ] || return 1
@@ -380,6 +390,43 @@ publisher_daemon_cmdline_matches() {
     # Ledger/request workers carry an option after publisher.sh.  Only the
     # long-lived daemon entrypoint is part of the daemon generation inventory.
     [[ "$cmdline" =~ (^|[[:space:]])([^[:space:]]*/)?publisher\.sh[[:space:]]*$ ]]
+}
+
+# Return the PPid: value from /proc/<pid>/status. Reading /proc/<pid>/stat's
+# 4th field is unsafe: the 2nd field (comm) can contain spaces/parens and
+# shifts every later awk field, so /status is used instead.
+publisher_pid_parent_pid() {
+    local pid="$1"
+    awk '/^PPid:/ {print $2; exit}' "/proc/${pid}/status" 2>/dev/null
+}
+
+# publisher.sh's daemon_main runs at the end of a two-stage pipe
+# (`daemon_main 2>&1 | publisher_timestamp_stream`, scripts/publisher.sh:578).
+# bash forks one child per pipe stage without exec, so both children keep the
+# identical "bash scripts/publisher.sh" cmdline and match the same pgrep
+# pattern as the top-level process that owns publisher.pid. Counting every
+# cmdline match as an independent daemon generation over-counts 1 real
+# daemon as 3 and triggers a false-positive reload (root cause of the
+# 2026-09-03 16:0x publisher reload loop). Restrict generation counting to
+# root PIDs only: a candidate whose PPID is itself another live candidate is
+# a pipeline-stage child of that candidate, not a separate daemon instance.
+# Genuinely independent daemons (e.g. two separate start_publisher_daemon
+# invocations) are never parent/child of each other and remain distinct
+# roots, so real multi-daemon detection is unaffected.
+publisher_daemon_root_pids() {
+    local -A candidates=()
+    local pid ppid
+    while IFS= read -r pid; do
+        [[ -n "$pid" ]] || continue
+        candidates["$pid"]=1
+    done < <(publisher_daemon_pids)
+    for pid in "${!candidates[@]}"; do
+        ppid="$(publisher_pid_parent_pid "$pid")"
+        if [[ -n "$ppid" && -n "${candidates[$ppid]:-}" ]]; then
+            continue
+        fi
+        printf '%s\n' "$pid"
+    done | sort -n
 }
 
 publisher_daemon_pids() {
@@ -429,7 +476,7 @@ publisher_daemon_generation_records() {
         generation=current
         [[ -n "$stale_path" ]] && generation="stale:$stale_path"
         printf '%s|%s|%s\n' "$pid" "$start_epoch" "$generation"
-    done < <(publisher_daemon_pids)
+    done < <(publisher_daemon_root_pids)
 }
 
 publisher_code_reload_needed() {
@@ -450,7 +497,7 @@ publisher_code_reload_needed() {
 }
 
 watchdog_reload_publisher_if_stale() {
-    local state_dir="${SHOGUN_STATE_DIR:-${IDLE_FLAG_DIR:-/tmp}}"
+    local state_dir; state_dir="$(publisher_state_dir)"
     local stop_flag="$state_dir/publish_queue/publisher.stop"
     local changed_path grace elapsed pid start_epoch generation oldest_record oldest_pid oldest_start
     local -a records=() pids=()
@@ -501,7 +548,8 @@ watchdog_reload_publisher_if_stale() {
 }
 
 start_publisher_daemon() {
-    local state_dir="${SHOGUN_STATE_DIR:-$HOME/.local/share/multi-agent-shogun}" new_pid="" reason="${1:-dead}"
+    local state_dir; state_dir="$(publisher_state_dir)"
+    local new_pid="" reason="${1:-dead}"
     local -a existing_pids=()
     mapfile -t existing_pids < <(publisher_daemon_pids)
     if (( ${#existing_pids[@]} > 0 )); then
@@ -861,7 +909,7 @@ if [[ "$PUBLISHER_RELOAD_OCCURRED" == 1 ]]; then
 elif ! watchdog_publisher_healthy; then
     # 2026-09-03 shogun 05:55 (b): a dead daemon must come back on the current code, not wait for
     # a human. A live pid with only stale events is idle, not unhealthy (events are activity-only).
-    _pub_state_dir="${SHOGUN_STATE_DIR:-$HOME/.local/share/multi-agent-shogun}"
+    _pub_state_dir="$(publisher_state_dir)"
     _pub_pid=""; [ -s "$_pub_state_dir/publish_queue/publisher.pid" ] && read -r _pub_pid < "$_pub_state_dir/publish_queue/publisher.pid"
     if [[ "$_pub_pid" =~ ^[0-9]+$ ]] && pid_is_live "$_pub_pid" && pid_cmdline_matches "$_pub_pid" "publisher.sh"; then
         log "INFO: publisher.sh pid=$_pub_pid live; events stale only (idle), no restart"
