@@ -354,6 +354,23 @@ else:
     sys.exit(0)
 " <<< "$CMD_TEXT"
 
+# --- LG070: ACで選択肢を閉じるな (Level 5 WARN) ---
+if echo "$CMD_TEXT" | grep -qiE '(AかBか|どちらか|2択|二択|判定せよ.*(する|しない)|いずれか)'; then
+    _choice_count=$(echo "$CMD_TEXT" | grep -oiE '(AかBか|どちらか|2択|二択)' | wc -l)
+    if [[ "$_choice_count" -gt 0 ]]; then
+        echo ""
+        echo "WARN(LG070): ACが選択肢を閉じている可能性。第3の選択肢(どちらでもない/脱出路)が報告可能か確認せよ"
+    fi
+fi
+
+# --- LG071: 判定基準は測定前に固定せよ (Level 5 WARN) ---
+if echo "$CMD_TEXT" | grep -qiE '(閾値|threshold|以上|以下|未満|超えた|を超)'; then
+    if ! echo "$CMD_TEXT" | grep -qiE '(判定基準|事前.*固定|baseline|ベースライン)'; then
+        echo ""
+        echo "WARN(LG071): 閾値/判定条件が検出されたが判定基準の事前固定の明示なし。観測後に基準が動くリスクを確認せよ"
+    fi
+fi
+
 if [[ "$CMD_ID" == "-" ]]; then
     exit 0
 fi
