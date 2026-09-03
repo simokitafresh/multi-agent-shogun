@@ -108,6 +108,11 @@ if task.get("pre_implementation_review") != json.loads(sys.argv[2]):
     raise SystemExit(1)
 PY
 
+# inbox_write requires the commander identity envelope for review_result to karo
+# (task_id=commander_directive subject_task_id=<task> parent_cmd=<cmd>). Derive
+# parent_cmd from the task itself so the receipt and the notice bind one identity.
+parent_cmd=$(python3 -c 'import sys,yaml; d=yaml.safe_load(open(sys.argv[1],encoding="utf-8")) or {}; t=d.get("task") or d; print(str(t.get("parent_cmd") or "").strip())' "$task_file" 2>/dev/null || true)
 notice="${expected_task_id} draft review verdict: APPROVE; task_fingerprint: ${expected_fingerprint}; evidence_message_id: ${evidence_id}; receipt_recorded: true"
+[ -z "$parent_cmd" ] || notice="${notice} task_id=commander_directive subject_task_id=${expected_task_id} parent_cmd=${parent_cmd}"
 bash "$INBOX_WRITE" karo "$notice" review_result gunshi notify_karo >/dev/null || die "receipt recorded but review_result notification failed"
 printf 'APPROVAL_RECORDED task=%s fingerprint=%s evidence=%s\n' "$expected_task_id" "$expected_fingerprint" "$evidence_id"

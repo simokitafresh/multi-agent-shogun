@@ -46,6 +46,16 @@ assert r == {'reviewer':'gunshi','result':'LGTM','task_id':'cmd-new','task_finge
 PY
 }
 
+# test_necessity: the review_result notice to karo must carry the commander identity
+# envelope bound to the task parent_cmd, otherwise inbox_write rejects it after the
+# receipt is already recorded (2026-09-04 07:29 real BLOCK on two approvals).
+@test "notice carries commander envelope when task has parent_cmd" {
+  printf '%s\n' '  parent_cmd: cmd_parent_x' >> "$TASK"
+  run approve
+  [ "$status" -eq 0 ]
+  grep -q 'task_id=commander_directive subject_task_id=cmd-new parent_cmd=cmd_parent_x' "$CALLS"
+}
+
 @test "same exact receipt rerun is idempotent without duplicate notification" {
   approve
   before="$(sha)"
