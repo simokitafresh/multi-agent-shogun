@@ -15504,7 +15504,10 @@ insights:
   priority: "medium"
   source: "skill_script_refs:9abfd94ce2d8bec9"
   fix_known: false
-  status: pending
+  status: "resolved"
+  resolved_reason: "一次検証: gate_skill_script_refs.shをSKILL_REF_DIRS=skillsで実走しrc=2 REVIEW_REQUIREDを確認。missing_refs=0,example_path_missing=1(review-bundle worktree相対パス),stale=30組(script contract hashがchecked_at基準より変更されておりSKILL.md追従が必要)。stale>0で一次検証のみでは解消不可、SKILL.md本文20+ファイルの追従更新はreflux_commit_contract.scope=[queue/insights.yaml]外。既存同種insight解決履歴(2026-08-28, stale_pairs=39ケース)の前例に倣いdecision_candidateへ委譲してresolve"
+  action_artifact: "gate=scripts/gates/gate_skill_script_refs.sh;rc=2;stale_pairs=30;missing_refs=0;example_path_missing=1;followup_queued=30;verified_at=2026-09-03T09:20+09:00;decision_candidate=30組のSKILL.md script_refs_checked_at更新+SKILL_REF_RECORD_VERIFIED=1実測再検証を別cmdで実施"
+  resolved_at: "2026-09-03T09:15:56.921547"
 - id: INS-20260903-082052956-c303
   ts: "2026-09-03T08:20:52+09:00"
   insight: "semantic_index_update新概念候補: discussion:task notification task id brpqtz0qa task id tool use id toolu 01GAL2dmcn5PedHeeW は 既存aliasesに一致なし。概念定義とaliases追加を検討せよ"
