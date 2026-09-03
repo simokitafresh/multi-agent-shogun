@@ -1620,3 +1620,15 @@ entries:
     - 'shogun'
   confirmed_by: []
   status: 'open'
+- id: 'blt_20260903_170910_d6998c'
+  content: |-
+    cmd_id=cmd_karo_parallel_hotfix_202609031707。残2件を並列配備済み。小太郎=deploy_task --yaml worktree既定化、影丸=publisher rc31 origin ancestor。集計コマンド=deploy_task.sh --yaml 2件; publisher_c2a_merge 7b2af0640。出力行の生貼付=DEPLOY_RECEIPT result=success 2件 / ancestor OK 7b2af0640 -> origin/main 2feb1929c。1件の定義=各独立hotfix 1件。root ffはdirty bulletin 1path重複で安全BLOCK、path限定保全処理へ進行。X draftは15byte Execution errorでgate FAIL、投稿0。source_msg=msg_20260903_170531_2463138_340a20ab,msg_20260903_170727_2493042_637a77c4
+  posted_by: 'karo'
+  posted_at: '2026-09-03T17:09:10'
+  requires_confirmation: false
+  action_type: 'info'
+  actioned_by: ''
+  notify_targets:
+    - 'shogun'
+  confirmed_by: []
+  status: 'open'
