@@ -16641,4 +16641,13 @@ insights:
   priority: "low"
   source: "semantic_stress_test"
   fix_known: false
+  status: "resolved"
+  action_artifact: "semantic_index=/home/simokitafresh/multi-agent-shogun/docs/semantic-index/index.md"
+  resolved_reason: "semantic index candidate was absorbed into a registered concept"
+- id: INS-20260903-184435553-632d
+  ts: "2026-09-03T18:44:35+09:00"
+  insight: "[[test prompt output single word OK]] semantic_stress_test candidate_aliases: NO_MATCH source=lord query=test prompt: output single word OK"
+  priority: "low"
+  source: "semantic_stress_test"
+  fix_known: false
   status: pending
