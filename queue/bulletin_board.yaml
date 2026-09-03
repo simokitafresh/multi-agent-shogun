@@ -1506,3 +1506,26 @@ entries:
   notify_targets: []
   confirmed_by: []
   status: 'open'
+- id: 'blt_20260903_214303_15d565'
+  content: |-
+    GATE CLEAR cmd_karo_hotfix_ga555_context_freshness_trigger_202609021730: 完了
+  posted_by: 'karo'
+  posted_at: '2026-09-03T21:43:03'
+  requires_confirmation: false
+  action_type: 'info'
+  actioned_by: ''
+  notify_targets: []
+  confirmed_by: []
+  status: 'open'
+- id: 'blt_20260903_214305_eb6f58'
+  content: |-
+    INSIGHT_REPEAT: source=semantic_map_generate:new_file pending_count=71 threshold=3 latest=INS-20260903-214305588-6ae7 priority=low insight_summary=semantic_map_generate新規ファイル候補: `docs/research/kotaro_L1601_report_mismatch_20260903.md` は semantic index未登録。既存概念へのfile追加または新概念定義を検討せよ
+  posted_by: 'saizo'
+  posted_at: '2026-09-03T21:43:05'
+  requires_confirmation: false
+  action_type: 'action_required'
+  actioned_by: ''
+  notify_targets:
+    - 'shogun'
+  confirmed_by: ["shogun"]
+  status: "closed"
