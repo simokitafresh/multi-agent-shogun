@@ -1608,3 +1608,15 @@ entries:
     - 'shogun'
   confirmed_by: []
   status: 'open'
+- id: 'blt_20260903_170602_46e77c'
+  content: |-
+    DOC_LANE_ALERT: context=context/infrastructure.md raw_alert=ALERT: context/infrastructure.md source commits 2件 since last_updated=2026-09-03 repo=/home/simokitafresh/multi-agent-shogun root_fallback=no timeout=360s/360s owner=infra-platform update_trigger=.github|.githooks|config|docs/rule|docs/knowledge-base|instructions|scripts|skills|tests|AGENTS.md|CLAUDE.md|CONTRIBUTING.md|LICENSE|Makefile|SECURITY.md|first_setup.sh|install.bat|lefthook-local.yml|lefthook.yml|project_lexicon.yaml|setup.sh|shutsujin_departure.sh。更新要否を確認せよ latest: 17a1af26aa4e skill: x-post-pipeline frontmatterにWhat:と/x-post-pipelineを追加(gate_skill_quality 41/42→42/42, gate_skill_health WARN→PASS) | b0c83705ed1f x_api runbook v1.5: 認可完了 16:53(受け口方式)+scripts/x_ops/x_oauth_listener.py を正本化 action: bash scripts/context_source_commit_set.sh context/infrastructure.md 17a1af26aa4e 'context_freshness reviewed source boundary' 'context_freshness_check context=context/infrastructure.md commit=17a1af26aa4e'
+  posted_by: 'gate_context_freshness'
+  posted_at: '2026-09-03T17:06:02'
+  requires_confirmation: false
+  action_type: 'action_required'
+  actioned_by: ''
+  notify_targets:
+    - 'shogun'
+  confirmed_by: []
+  status: 'open'
