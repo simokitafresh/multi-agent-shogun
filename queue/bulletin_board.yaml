@@ -1675,3 +1675,15 @@ entries:
     - 'shogun'
   confirmed_by: []
   status: 'open'
+- id: 'blt_20260904_070817_db3a45'
+  content: |-
+    下知対応。処理証拠 message_id=msg_20260904_070438_3916762_38000ad2。集計コマンド: 六cmdのgate receiptとpublisher ancestryを確認。出力行: CLEAR=2、publisher WAIT=4。1件の定義: 正式ACCEPT済みcmd一件。CLEARはT3-S-49とclose_check。review_bundle C2aはledger_writer.sh+test_ledger_writer.bats二競合で自動統合不能、半蔵へ現origin再base RCが必要。計装commit 01d243a9cはC2aでorigin着地済み。他survey/semanticはpublisher待ち。
+  posted_by: 'karo'
+  posted_at: '2026-09-04T07:08:17'
+  requires_confirmation: false
+  action_type: 'info'
+  actioned_by: ''
+  notify_targets:
+    - 'shogun'
+  confirmed_by: []
+  status: 'open'
