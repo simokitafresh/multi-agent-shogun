@@ -1,5 +1,5 @@
 <!-- gist-master: 0471675066394649c8e5f9bfabd2e048 tsumari_root_causes_20260901.md -->
-# 便を止める「つまり」の原因分類 2026-09-01（第22便 17:17〜22:15、全ロール探索・将軍統合。**09-03 18:12/18:35 覚醒追補=T3-S-29〜37、殿『小さなつまりも負の複利。D0 で根治→家老レビュー』**）
+# 便を止める「つまり」の原因分類 2026-09-01（第22便 17:17〜22:15、全ロール探索・将軍統合。**09-03 18:12/18:35 覚醒追補=T3-S-29〜38、殿『小さなつまりも負の複利。D0 で根治→家老レビュー』**）
 
 殿指示 20:44/20:46: 偽陽性・過剰 BLOCK・構造バグ・循環拘束・遅い script/test・Claude↔Codex 仕組み差・サンクコスト過剰複雑化・影響範囲/依存未解明の浅い対応、で分類し全員で探索。
 
@@ -267,5 +267,6 @@ X lane(hanzo-01/02、karo-08)は cmd_4467 gate の沈黙フォールバック=�
 | T3-S-35 | 14:43〜18:21 | cmd_4473 が report completed のまま 3.5h。将軍が cmd_save 根治後に再委任せず status=pending のまま放置 | ④ | 将軍の便回転漏れ(delegated∧未配備は gate が見るが、配備済∧pending は見ない盲点) | **18:21 委任**(ALREADY_DELEGATED 18:21:25)。家老 GATE 18:23=BLOCK manifest_consistency(AC1 影丸 report と AC2 疾風 manifest の identity 衝突)→小太郎 identity 分離 hotfix 着地後に再 GATE |
 | T3-S-36 | 18:52 | cmd_4473 registry BLOCK の真因(家老): `review_resolve_reports`(scripts/lib/review_approval.sh)が queue/tasks の parent_cmd 一致から live_names を作るため、task slot が疾風 AC2 に上書きされた影丸 AC1 の live report を除外する。report-identity-registry の claim は解決器が参照せず UUID 登録だけでは効かない | ③ | 多 AC 1 cmd で「task slot=1 忍者」前提の解決器が AC ごとの report を扱えない(T3-S-32 の await_clear と同根=1 task slot に状態を全部載せる設計) | 将軍 18:55: 別 file(review_approval.sh)なので T3-S-32 を待たず即配備を下知。claimed report_id+parent 一致の採用、bats=slot 上書き後も AC1 report が canonical に残る 1 本 |
 | T3-S-37 | 18:53 | [URGENT-HARM] 旧 generation の review 通知が永久に既読化できず BLOCK(家老)。同一 cmd の current approval が成立しても旧 fingerprint の通知は inbox_mark_read の receipt 契約で拒否され続ける | ② | receipt 契約(09-01 軍師一括既読事故の根治)が「世代が古い=未処理」と「世代が古い=superseded」を区別しない | 家老 ToBe=current approval 成立時に旧 fingerprint 通知を superseded として既読許可、approval 無しは従来 BLOCK。将軍 18:57: 別 file(inbox_mark_read.sh)なので T3-S-32 を待たず即配備 |
+| T3-S-38 | 18:40〜18:59 | 軍師 inbox に才蔵 cmd_4472 review 依頼など未読 3 が 19 分滞留。軍師 pane は idle prompt だが tmux @agent_state=active・idle flag(/tmp/shogun_idle_gunshi)不在→watcher が nudge を『busy gating』で保留し続け、Stop hook も走らないので永久保留(DELIVERY-LATENCY-WARN held 1110s) | ③ | 前ターン終了時に idle flag が置かれなかった(09-01 の『軍師 idle flag 遅延 74 回/日』hotfix 後の再発)。watcher は保留解除を次の inbox MODIFY か Stop hook にしか委ねず、pane 実態を見ない | **将軍 D0 18:59**: 殿裁定 18:56『根拠のある待機か確認せよ』で発見。flag 設置+@agent_state idle+再 inbox_write で MODIFY を起こし配達(3 unread via paste-buffer)。根治=watcher の保留再評価を pane 実態(prompt 検出)でも行う。T3-S-32 と同じ hotfix 枠(ninja_monitor/inbox_watcher は別 file なので並列可) |
 
 集計コマンド: `grep -oE '^\| T3-S-[0-9]+ \|' docs/research/tsumari_root_causes_20260901.md | wc -l` → 26。根治 23 / 未根治 3(T3-S-19/20/21b)、10:58 更新。忍者 6 領域(T3-<name>-NN)・軍師節・家老節は cmd_4470 着地後にここへ統合。
