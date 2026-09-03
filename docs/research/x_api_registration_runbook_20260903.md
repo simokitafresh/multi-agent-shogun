@@ -1,5 +1,5 @@
 <!-- gist-master: b48264be3a2e1bc8434ee2b64b8264c6 x_api_registration_runbook_20260903.md -->
-# X API 登録ランブック(バム @TokyoJibika の自動投稿用)v1.3
+# X API 登録ランブック(バム @TokyoJibika の自動投稿用)v1.4
 
 - 作成: 2026-09-03 15:35 将軍(殿指示 15:33『x API 登録のステップバイステップのランブック』)
 - 目的: 設計書 `docs/research/x_account_ops_automation_asis_tobe_5w1h_20260903.md` §10/§11 の P1(下書き→gate→承認→X API 投稿)に必要な X API の登録・認可・トークン保管を、殿の操作と将軍側の作業に分けて 1 手ずつ書く
@@ -112,7 +112,7 @@ cat > ~/multi-agent-shogun/config/x_api.env <<'ENV'
 X_CLIENT_ID=ここに Client ID
 X_CLIENT_SECRET=ここに Client Secret
 X_REDIRECT_URI=http://127.0.0.1:8585/callback
-X_SCOPES=tweet.read tweet.write users.read media.write offline.access
+X_SCOPES="tweet.read tweet.write users.read media.write offline.access"
 ENV
 chmod 600 ~/multi-agent-shogun/config/x_api.env
 ```
@@ -243,6 +243,10 @@ client.posts.create(post_data={"text": "...", "media": {"media_ids": [media_id]}
 | 4 | cmd_4472 の `x_post.sh post` が creds ありで 201(gate PASS 本文) | 家老 production_proof |
 
 ---
+
+## v1.4 (2026-09-03 16:50)
+
+AsIs 注釈: 殿が 16:47 に `config/x_api.env` を作成(Client ID/Secret/redirect/scopes、600、git-ignore 確認)。X_SCOPES は空白を含むため引用符必須(未引用だと source 時に壊れる=将軍実測)。将軍が media.write を追加し §5.2 の認可 URL を生成、殿へ渡した。
 
 ## v1.3 (2026-09-03 16:02)
 
