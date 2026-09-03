@@ -626,20 +626,21 @@ def _table_exists(conn: sqlite3.Connection, table_name: str) -> bool:
 
 def _try_incremental_cache_update(
     db_path: str, cache_path: str
-) -> tuple[bool, str | None]:
+) -> tuple[bool, str | None, str | None, tuple[str, ...]]:
     """Append a proven rowid suffix directly to the published ext4 cache.
 
     SQLite transactions already give readers an old-or-new snapshot, so an
     in-place append avoids copying the 1.39GB cache merely to publish a tiny
     suffix.  The source is read from one snapshot and every new event/FTS/
     projection row is checked after commit.  Any schema, deletion, prefix,
-    child-table, or verification uncertainty returns ``(False, None)`` and
+    child-table, or verification uncertainty returns ``(False, None, reason, ids)`` and
     leaves the caller's existing atomic full-refresh fallback in charge.
     """
     source_path = os.path.abspath(db_path)
     published_path = os.path.abspath(cache_path)
+    event_ids: list[str] = []
     if source_path == published_path or not os.path.exists(published_path):
-        return False, None
+        return False, None, "cache_unavailable_or_same_path", ()
     try:
         source_uri = f"file:{source_path}?mode=ro"
         with sqlite3.connect(source_uri, uri=True) as source_conn, sqlite3.connect(
@@ -662,6 +663,15 @@ def _try_incremental_cache_update(
             cache_count, cache_max_rowid = cache_conn.execute(
                 "SELECT COUNT(*), COALESCE(MAX(rowid), 0) FROM events"
             ).fetchone()
+            if "id" in source_columns:
+                event_ids = [
+                    str(row[0])
+                    for row in source_conn.execute(
+                        "SELECT id FROM events WHERE rowid > ? ORDER BY rowid",
+                        (cache_max_rowid,),
+                    ).fetchall()
+                    if row[0] is not None
+                ]
             if source_count <= cache_count or source_max_rowid <= cache_max_rowid:
                 raise sqlite3.DatabaseError("source is not a strict append")
 
@@ -698,7 +708,11 @@ def _try_incremental_cache_update(
 
             child_rows_by_table: dict[str, list[tuple]] = {}
             expected_child_counts: dict[str, int] = {}
-            event_ids = [row[source_columns.index("id") + 1] for row in delta_rows]
+            event_ids = [
+                str(row[source_columns.index("id") + 1])
+                for row in delta_rows
+                if row[source_columns.index("id") + 1] is not None
+            ]
             for table_name, key_column in (
                 ("event_concepts", "event_id"),
                 ("event_links", "source_event_id"),
@@ -781,9 +795,22 @@ def _try_incremental_cache_update(
                 if actual_count != expected_child_counts[table_name]:
                     raise sqlite3.DatabaseError(f"incremental {table_name} verification failed")
             cache_conn.commit()
-            return True, _signature_from_connection(source_conn)
-    except Exception:
-        return False, None
+            return True, _signature_from_connection(source_conn), None, tuple(event_ids)
+    except Exception as exc:
+        reason = f"{type(exc).__name__}:{str(exc).strip()}"[:240]
+        return False, None, reason or "unknown_incremental_failure", tuple(event_ids)
+
+
+def _telemetry_token(value: object) -> str:
+    """Encode arbitrary event/reason text for the ledger's token contract."""
+    token = re.sub(r"[^A-Za-z0-9_.:-]+", "_", str(value))
+    return token[:160] or "unknown"
+
+
+def _telemetry_reason(value: object) -> str:
+    """Encode a fallback reason without colliding with ledger separators."""
+    token = re.sub(r"[^A-Za-z0-9_.-]+", "_", str(value))
+    return token[:160] or "unknown"
 
 
 def _try_incremental_cache_snapshot(
@@ -1176,7 +1203,12 @@ def create_memory_db_ext4_cache(db_path: str) -> str:
         # differential read-back for verification.  A false result preserves
         # the existing temp-file/full-integrity path below.
         _incremental_t0 = time.monotonic_ns()
-        _incremental_ok, _incremental_sig = _try_incremental_cache_update(
+        (
+            _incremental_ok,
+            _incremental_sig,
+            _incremental_reason,
+            _incremental_event_ids,
+        ) = _try_incremental_cache_update(
             db_path, cache_path
         )
         if _incremental_ok:
@@ -1191,6 +1223,15 @@ def create_memory_db_ext4_cache(db_path: str) -> str:
             )
             _refresh_points.append(
                 ("refresh_verify", 0, "PASS", f"refresh_verify:grp-{_window_group}:mode-delta")
+            )
+            _refresh_points.extend(
+                (
+                    "refresh_incremental_event",
+                    0,
+                    "PASS",
+                    f"refresh_incremental:event-{_telemetry_token(_event_id)}:grp-{_window_group}",
+                )
+                for _event_id in _incremental_event_ids
             )
             try:
                 _window_end_rowid = _memory_db_source_max_rowid(db_path)
@@ -1224,6 +1265,21 @@ def create_memory_db_ext4_cache(db_path: str) -> str:
                 pass
             _record_refresh_points(_refresh_points)
             return cache_path
+        if _incremental_reason and (
+            _incremental_event_ids
+            or _incremental_reason != "cache_unavailable_or_same_path"
+        ):
+            _fallback_event_ids = _incremental_event_ids or ("na",)
+            _refresh_points.extend(
+                (
+                    "refresh_fallback",
+                    0,
+                    "WARN",
+                    f"refresh_fallback:event-{_telemetry_token(_event_id)}"
+                    f":reason-{_telemetry_reason(_incremental_reason)}:grp-{_window_group}",
+                )
+                for _event_id in _fallback_event_ids
+            )
         fd, temp_name = tempfile.mkstemp(
             prefix=f".{_cache_base}.", suffix=".tmp", dir=cache_dir
         )

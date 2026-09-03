@@ -265,7 +265,7 @@ def test_append_only_refresh_uses_atomic_incremental_snapshot(tmp_path, monkeypa
     published cache without re-reading the canonical full database, while the
     returned cache remains complete for events and child projections."""
     module = load_module(SOURCE, "memory_db_live_insert_incremental_append")
-    db_path, _ = _prepare_appendable_source(tmp_path, monkeypatch, "incremental")
+    db_path, ledger = _prepare_appendable_source(tmp_path, monkeypatch, "incremental")
     monkeypatch.setenv("SHOGUN_MEMORY_DB_INCREMENTAL_MIN_BYTES", "0")
     monkeypatch.setenv("SHOGUN_MEMORY_DB_INCREMENTAL_PREFIX_VERIFY_MAX_BYTES", "0")
     published = Path(module.create_memory_db_ext4_cache(str(db_path)))
@@ -296,6 +296,9 @@ def test_append_only_refresh_uses_atomic_incremental_snapshot(tmp_path, monkeypa
         assert conn.execute("SELECT COUNT(*) FROM event_concepts").fetchone() == (4,)
         assert conn.execute("SELECT COUNT(*) FROM event_links").fetchone() == (4,)
         assert conn.execute("SELECT detail FROM events WHERE id='event-4'").fetchone() == ("detail-4",)
+    incremental_rows = _ledger_rows(ledger, "refresh_incremental_event")
+    assert len(incremental_rows) == 1
+    assert ":event-event-4:" in incremental_rows[0]["event_id"]
 
 
 def test_continuous_cache_sync_calls_are_debounced(tmp_path, monkeypatch):
@@ -336,7 +339,7 @@ def test_prefix_mutation_forces_full_snapshot_fallback(tmp_path, monkeypatch):
     append-only delta; uncertain provenance falls back to the existing full
     snapshot and integrity path."""
     module = load_module(SOURCE, "memory_db_live_insert_incremental_fallback")
-    db_path, _ = _prepare_appendable_source(tmp_path, monkeypatch, "fallback")
+    db_path, ledger = _prepare_appendable_source(tmp_path, monkeypatch, "fallback")
     module.create_memory_db_ext4_cache(str(db_path))
 
     with sqlite3.connect(db_path) as conn:
@@ -364,3 +367,7 @@ def test_prefix_mutation_forces_full_snapshot_fallback(tmp_path, monkeypatch):
     assert len(calls) == 1
     with sqlite3.connect(published) as conn:
         assert conn.execute("SELECT COUNT(*) FROM events").fetchone() == (4,)
+    fallback_rows = _ledger_rows(ledger, "refresh_fallback")
+    assert len(fallback_rows) == 1
+    assert ":event-event-4:" in fallback_rows[0]["event_id"]
+    assert "reason-DatabaseError_source_prefix_content_changed" in fallback_rows[0]["event_id"]
