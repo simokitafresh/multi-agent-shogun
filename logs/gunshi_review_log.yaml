@@ -3479,3 +3479,64 @@
   verdict: LGTM
   verified_files:
   - scripts/review_bundle.py:1
+- adversarial_review:
+    reason: キー送出は完全構造一致+fail-closed だが、負fixtureの網羅が不足。survey/Working を加えれば封じられる
+    required: false
+    verdict: PASS
+  brainwash_check: '#1no #2no(隔離test 21/21 実測+実gate) #3no #4no #5no #6no #7no #8no
+    数値: 負fixture 2/3+ 不足, precheck ERRORS 1, gate rc 0'
+  causal_chain: check_for_update_on_startup=false が Codex 0.152.1 で無効→respawn 後 update
+    画面停止→自動 Skip 実装→送出先誤認の負fixtureが2種のみ→survey 等の同型画面で誤送出の余地。10回繰り返せば作業混入(07-26『2』混入と同型)=負の複利
+  cmd_id: cmd_karo_hotfix_codex_update_prompt_auto_skip_202609040727
+  escalation_needed: false
+  fail_reasons:
+  - '負fixtureが『通常prompt』『不完全ダイアログ(第3項 Never)』の2種のみ。同型の選択ダイアログ(Claude survey: Bad/…の3択、影丸
+    cmd fixture 流用可)と Codex『Working … esc to interrupt』画面が無く、Down Down Enter 誤送出の最頻FPを検証していない(LG053
+    敵対的FP変形3件以上、draft RC msg_073649 と同内容)。3件以上追加し送出0を実測せよ'
+  - 'precheck SG-PRE9c ERRORS=1: discretion_fills『復帰未確認はrc=1』の『未確認』が未達成語として検出される。設計語なら『復帰検知失敗時は
+    rc=1(fail-closed)』等へ言い換え、precheck ERRORS=0 を再確認して再提出'
+  - task_worktree.json の path が空で、commit 56361fd4b の作業 worktree と publisher 発行対象の対応を報告に明記せよ(parent
+    は origin/main 祖先で発行自体は可能)
+  finding_categories:
+  - assumptions
+  - numbers
+  - simulation
+  - premortem
+  - adversarial
+  - ambiguity
+  findings_summary: '4観点: 前提OK(config.toml:78 false でも update 画面が出る事実と整合)/数値OK(軍師隔離worktree
+    56361fd4b で test_respawn_recovery 21/21 PASS)/検死NG(負fixture 2種のみ、survey/Working
+    欠落)/完全性NG(precheck ERRORS=1 SG-PRE9c、実gate rc=0)。実装(awk 3択完全一致・fail-closed・1回送出)は妥当'
+  gate_prediction: BLOCK
+  gate_prediction_reason: SG-PRE9c 未達成語(未確認) ERRORS=1
+  hole_action: none
+  lesson_quality: WEAK
+  observations:
+  - '事実1: git show 56361fd4b → agent_respawn.sh +8, cli_lookup.sh +91(codex_update_prompt_screen_matches:
+    3択第3項 ''Skip until next version'' 完全一致のみ許可), test +78。parent は origin/main 祖先'
+  - '事実2: 軍師が隔離 worktree で run_tests.sh file test_respawn_recovery → 21/21 PASS(ok
+    19-21 が新規3件)。負fixture は normal prompt と第3項 Never の不完全ダイアログのみ'
+  - '事実3: precheck SG-PRE9c が discretion_fills の『復帰未確認はrc=1』を未達成語として ERRORS=1、gate_report_format.sh
+    は rc=0(LG080 両方向確認)'
+  operational_simulation:
+    actual: 21/21 PASS / precheck ERRORS=1(SG-PRE9c) / gate rc=0
+    command: git worktree add --detach <tmp> 56361fd4b && bash scripts/run_tests.sh
+      file tests/unit/test_respawn_recovery.bats; bash scripts/gates/gate_gunshi_report_precheck.sh
+      queue/reports/hayate_report_cmd_karo_hotfix_codex_update_prompt_auto_skip_202609040727.yaml;
+      bash scripts/gates/gate_report_format.sh queue/reports/hayate_report_cmd_karo_hotfix_codex_update_prompt_auto_skip_202609040727.yaml
+    expected: test 全PASS / precheck ERRORS=0 / gate PASS
+    result: FAIL
+  origin: '[[cmd_karo_hotfix_codex_update_prompt_auto_skip_202609040727]] -> [[負fixture不足+SG-PRE9c]]
+    -> [[FAIL implementation]]'
+  report_fingerprint: 90283c1cbc5c8d8f79f2e44685fe21e2cfb667bc6bbab8e6fb06f695c425c167
+  report_ninja: hayate
+  report_task_id: cmd_karo_hotfix_codex_update_prompt_auto_skip_202609040727_normal
+  report_verdict: PASS
+  review_type: report
+  reviewed_at: '2026-09-04T07:39:43+09:00'
+  step3_5_verified: true
+  timestamp: '2026-09-04T07:39:43'
+  verdict: FAIL
+  verified_files:
+  - scripts/lib/cli_lookup.sh:codex_update_prompt_screen_matches
+  - queue/reports/hayate_report_cmd_karo_hotfix_codex_update_prompt_auto_skip_202609040727.yaml:8
