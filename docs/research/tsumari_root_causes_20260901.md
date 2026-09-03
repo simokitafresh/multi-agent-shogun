@@ -191,19 +191,34 @@
 
 # 第 3 回(PUBLISHER_SINGLE ON 09-03 04:37〜、新環境。殿指示 10:46『前提とする環境が変わった。もう一度 8 分類で全員で探索』→cmd_4470 全ロール偵察。将軍節を先行、忍者 6 領域・軍師節・家老節は着地後に統合)
 
-## 将軍統合(分類別件数・第 3 回、将軍節のみ暫定 10:55)
+## 将軍統合(分類別件数・第 3 回、全ロール 12:25。出典=queue/notes/tsumari_r3_<name>.md 7 本(origin/main 到達、cmd_4470)+将軍節。軍師節は review_draft 経由で着地後に追記)
 
-| 分類 | 第 1 回 | 第 2 回 | 第 3 回(将軍節) | 未根治(第 3 回) |
-|---|---|---|---|---|
-| ①偽陽性 | 5 | 4 | 6 | T3-S-19(hook regex) |
-| ②過剰 BLOCK | 1 | 3 | 1 | — |
-| ③構造バグ | 7 | 6 | 9 | T3-S-25(gate の SKILL.md 自動 commit) |
-| ④循環拘束 | 6 | 3 | 3 | T3-S-20(busy gating の WAKE-DEFER 1001/1613) |
-| ⑤遅い script・test | 1 | 1 | 2 | T3-S-21b(CI push 連続 cancel) |
-| ⑥Claude↔Codex 仕組み差 | 0 | 0 | 0 | — |
-| ⑦サンクコスト過剰複雑化 | 1 | 1 | 1 | —(U8 凍結で解消) |
-| ⑧影響範囲・依存未解明の浅い対応 | 6 | 6 | 4 | T3-S-24(publisher merge commit の trailer) |
-| 計 | 27 | 25 | 26 | 5 |
+| 分類 | 将軍 | hayate | kagemaru | hanzo | kotaro | saizo | tobisaru | karo | 計(第 3 回) |
+|---|---|---|---|---|---|---|---|---|---|
+| ①偽陽性 | 6 | 0 | 2 | 0 | 0 | 0 | 0 | 1 | 9 |
+| ②過剰 BLOCK | 1 | 1 | 1 | 0 | 0 | 2 | 0 | 1 | 6 |
+| ③構造バグ | 9 | 6 | 2 | 2 | 0 | 2 | 2 | 7 | 30 |
+| ④循環拘束 | 3 | 0 | 2 | 1 | 2 | 2 | 1 | 1 | 12 |
+| ⑤遅い script・test | 2 | 0 | 0 | 0 | 0 | 1 | 0 | 0 | 3 |
+| ⑥Claude↔Codex 仕組み差 | 0 | 1 | 0 | 0 | 0 | 0 | 0 | 0 | 1 |
+| ⑦サンクコスト過剰複雑化 | 1 | 0 | 0 | 0 | 0 | 0 | 0 | 1 | 2 |
+| ⑧影響範囲・依存未解明の浅い対応 | 4 | 1 | 2 | 3 | 1 | 3 | 0 | 1 | 15 |
+| 計 | 26 | 9 | 9 | 6 | 3 | 10 | 4 | 12 | 79(うち該当なし 1) |
+| 未根治 | 5 | 9 | 7 | 5 | 3 | 3 | 0 | 3 | 35 |
+
+第 1 回 27 / 第 2 回 25 / 第 3 回 79(将軍 26+忍者 41+家老 12)。未根治 35 のうち忍者節 27 は『次の一手』=単独再実行・時刻付き再計数が未実施のものを含む(推移的な件数であり、根治対象の重複が多い。下記の統合で 6 型に畳む)。
+
+**構造の結論(第 3 回・全ロール統合)**: 79 件の 8 割が③構造バグ(30)・⑧浅い対応(15)・④循環拘束(12)に集中し、その大半が **1 つの構造=『root(共有 checkout)に書く生産者 × publisher の ff-only root sync』** に帰着する。
+1. **root writer × ff-only**(③④の中核): kagemaru-05 root_dirty 40 件/root drain divergence 913 行、karo-01/09/12(checkpoint 手回し 10 回・D012 merge 6 回)、tobisaru-01 dirty dispatch 10 回、hayate-08 GA-PUSH1、将軍 T3-S-01/15/16。U9(生産者 0)で bulletin/insight/semantic の 3 経路を ledger 化した後も production_proof 3 sample とも dirty>0=gate 群・lesson_write・cmd_save・senkyoku 等 7 種が残る。**→ 生産者 0 は gate まで含めると現実的でない。ToBe=root sync の field-aware 3-way(U9b、cmd_4471)**。
+2. **台帳 file の直編集 × ledger batch**(③⑧): kagemaru-01 base_blob_mismatch 7、tobisaru-02 4 連続、karo-05。hotfix reflux_ledger_resolve_op(2e2f56316)+review_approval identity(d6104fed7)で根治、残は production 再計数。
+3. **単一 publisher 前提に未対応の gate/precheck**(①②④): saizo-01 WAIT ancestry 587 回/20 cmd(publication 待ちを WAIT で回し続ける)、saizo-03 report_format/fallback BLOCK 8、saizo-08/karo-07 SG-PRE35、hanzo-05、将軍 T3-S-10/11/12/23。precheck 3 本+ALL_CLEAR 再整合で収束。**残=WAIT ancestry の再 GATE 周期(587 回は gate_metrics の空回し=⑤に近い)**。
+4. **観測系の欠測**(⑧): kagemaru-06/07/08『daemon 行に時刻が無く窓帰属不能』、kotaro-03 inbox_info_digest 0 追記、tobisaru-04 semantic_index_update log 不在、hanzo-03 causal audit no_test 86。→ daemon/capture log の行頭 ISO 時刻を必須にする 1 行(cmd_4471 に同梱)。
+5. **監視が止めない/起こさない**(④): kotaro-01 watchdog unhealthy 205 回 restart suppressed 9h48m(旧 daemon 入替不能=将軍 T3-S-04 と同根、U10 で責務化)、kotaro-02 CLEAR-LOOP-BLOCK-REOPEN 8 回反復、hayate-09 Codex delivery FAILURE 17/monitor mismatch 45(⑥の唯一の実例)、将軍 T3-S-20 WAKE-DEFER 1001/1613。**未根治=busy gating と Codex capture 観測の 2 点**。
+6. **test 自体の flaky/契約ずれ**(③⑤): hayate-01〜07(pre-push hook artifact で publisher/ledger/semantic の bats が計 15 回失敗、全て未根治=単独再実行未実施)、karo-06 CI RED(既存 bats 未実行)、将軍 T3-S-13/14/21。→ hayate 節 7 件は『pre-push で回る bats が root 状態(dirty/tmpdir/remote HEAD)に依存する』1 型。**次の一手=隔離 fixture で 7 件を 1 度に再実行し、pass するものを閉じる(cmd_4472 候補)**。
+
+X lane(hanzo-01/02、karo-08)は cmd_4467 gate の沈黙フォールバック=根治済(2fa437a9c)。⑥Claude↔Codex 差は hayate-09 の 1 件のみで、便を止めた主因ではない。⑦は U8 凍結と家老の手回し(karo-12)の 2 件で、後者は 1. の帰結。
+
+各節の原本(全行・log 引用付き): `queue/notes/tsumari_r3_hayate.md`(hook/CLI 9)・`tsumari_r3_kagemaru.md`(publisher/ledger 9)・`tsumari_r3_hanzo.md`(X lane/doc lane 6)・`tsumari_r3_kotaro.md`(monitor/watchdog 3)・`tsumari_r3_saizo.md`(gate 10)・`tsumari_r3_tobisaru.md`(reflux 4)・`tsumari_r3_karo.md`(家老 12)。集計コマンド: `for n in hayate kagemaru hanzo kotaro saizo tobisaru karo; do grep -cE '^\| T3-' queue/notes/tsumari_r3_$n.md; done` → 9 9 6 3 10 4 12。
 
 一次計測(将軍 10:52、flag ON 以降): publisher events=c2a_rc 7 / ledger 68 / published 8 / **root_sync_skipped 33**、ledger rc 退避=bulletin 2・insights 29、pre-push reject 14、inbox_watcher WAKE-DEFER=karo 1001・gunshi 1613、close_check(10:42)=trailer 45/50・root dirty 9。
 
