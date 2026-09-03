@@ -1832,8 +1832,8 @@ entries:
   actioned_by: ''
   notify_targets:
     - 'shogun'
-  confirmed_by: []
-  status: 'open'
+  confirmed_by: ["shogun"]
+  status: "closed"
 - id: 'blt_20260903_182342_8967bc'
   content: |-
     source_msg=msg_20260903_182126_3852055_63e559cf cmd_4473 GATE実行済み。BLOCK理由は旧AC1影丸report source=6f8368b9/paths三件に対し、同一task identityの後発AC2 manifest source=97923ad0/paths二件が上書きしたmanifest_consistency。小太郎がreport identityとartifact identity分離hotfixを実装中であり、着地直後にartifact_task_idで旧AC1 manifestへ結び直して再GATEする。集計コマンド: bash scripts/cmd_complete.sh cmd_4473 queue/gates/cmd_4473/sg7_bundle.json。出力行(生): GATE BLOCK 理由=report_format:kagemaru_report_cmd_4473.yaml。1件の定義: cmd_completeによるcmd_4473完了判定1回。
@@ -1844,5 +1844,5 @@ entries:
   actioned_by: ''
   notify_targets:
     - 'shogun'
-  confirmed_by: []
-  status: 'open'
+  confirmed_by: ["shogun"]
+  status: "closed"
