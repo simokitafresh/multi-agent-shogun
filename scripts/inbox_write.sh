@@ -42,6 +42,19 @@ _iw_self="${BASH_SOURCE[0]:-$0}"
 [[ "$_iw_self" != /* ]] && _iw_self="$PWD/$_iw_self"
 INBOX_WRITE_INSTALL_ROOT="${_iw_self%/scripts/inbox_write.sh}"
 SCRIPT_DIR="${INBOX_WRITE_ROOT_OVERRIDE:-${_iw_self%/scripts/inbox_write.sh}}"
+# 忍者が task worktree 内から inbox_write を実行すると SCRIPT_DIR は worktree root になり、
+# queue/tasks/<ninja>.yaml は base 時点の写し(task_worktree_path 等が無い)を指す。その結果
+# report_received の publish_artifact capture が silent skip され publisher が missing artifact で
+# RC する(2026-09-03 11:19 hanzo 1044、家老実測: capture log 0 行)。task YAML は共有 root
+# (git common dir の親)で解決する。linked worktree でなければ SCRIPT_DIR と同じ。
+INBOX_CANONICAL_ROOT="$SCRIPT_DIR"
+if _iw_common="$(git -C "$SCRIPT_DIR" rev-parse --path-format=absolute --git-common-dir 2>/dev/null)" && [ -n "$_iw_common" ]; then
+    _iw_common_parent="${_iw_common%/.git}"
+    if [ "$_iw_common_parent" != "$_iw_common" ] && [ -d "$_iw_common_parent/queue/tasks" ]; then
+        INBOX_CANONICAL_ROOT="$_iw_common_parent"
+    fi
+fi
+unset _iw_common _iw_common_parent
 SELF_SCRIPT_PATH="$_iw_self"
 NINJA_NAMES=""
 AGENT_CONFIG_LOADED=0
@@ -2828,7 +2841,7 @@ if inbox_type_triggers_report_completion "$TYPE"; then
     done
 
     if [ "$is_ninja_reporter" -eq 1 ]; then
-        TASK_YAML="$SCRIPT_DIR/queue/tasks/${FROM}.yaml"
+        TASK_YAML="$INBOX_CANONICAL_ROOT/queue/tasks/${FROM}.yaml"
         if [ -f "$TASK_YAML" ]; then
             REPORT_PATH=$(inbox_yaml_field_get "$TASK_YAML" "report_path" "")
 
@@ -3299,7 +3312,7 @@ case "$TYPE" in
         STRUCTURED_REPORT_FINGERPRINT=$(inbox_report_fingerprint "$_structured_candidate" "$STRUCTURED_REPORT_ID:$STRUCTURED_REPORT_VERSION") || exit 1
         _identity_fields=(report_id "$STRUCTURED_REPORT_ID" report_identity_version "$STRUCTURED_REPORT_VERSION" report_fingerprint "$STRUCTURED_REPORT_FINGERPRINT" report_path "$STRUCTURED_REPORT_PATH" task_id "$STRUCTURED_TASK_ID" parent_cmd "$STRUCTURED_PARENT_CMD")
         # cmd_4446 単一publisher化 U2(H7): report_received 時点で忍者 worktree の成果物を STATE_DIR へ複製する(ベストエフォート、報告フローをBLOCKしない)。
-        [ "$TYPE" = "report_received" ] && [ -n "${TASK_YAML:-}" ] && [ -f "$TASK_YAML" ] && bash "$SCRIPT_DIR/scripts/publish_artifact.sh" capture "$STRUCTURED_TASK_ID" "$(inbox_yaml_field_get "$TASK_YAML" "task_worktree_path" "")" "$(inbox_yaml_field_get "$TASK_YAML" "task_worktree_base" "")" "$(inbox_yaml_field_get "$_structured_candidate" "commit_hash" "")" >>"$SCRIPT_DIR/logs/publish_artifact_capture.log" 2>&1 || true
+        [ "$TYPE" = "report_received" ] && [ -n "${TASK_YAML:-}" ] && [ -f "$TASK_YAML" ] && bash "$SCRIPT_DIR/scripts/publish_artifact.sh" capture "$STRUCTURED_TASK_ID" "$(inbox_yaml_field_get "$TASK_YAML" "task_worktree_path" "")" "$(inbox_yaml_field_get "$TASK_YAML" "task_worktree_base" "")" "$(inbox_yaml_field_get "$_structured_candidate" "commit_hash" "")" >>"$INBOX_CANONICAL_ROOT/logs/publish_artifact_capture.log" 2>&1 || true
         ;;
     review_report|accept_report|run_cmd_complete)
         _identity_fields=(task_id "$REVIEW_PENDING_NUDGE_TASK_ID" subject_task_id "$REVIEW_PENDING_NUDGE_SUBJECT_TASK_ID" parent_cmd "$REVIEW_PENDING_NUDGE_PARENT_CMD" report_fingerprint "$REVIEW_PENDING_NUDGE_FINGERPRINT" report "$REVIEW_PENDING_NUDGE_REPORT" review_pending_state "$REVIEW_PENDING_NUDGE_STATE")
@@ -3620,7 +3633,7 @@ while [ $attempt -lt $max_attempts ]; do
             done
 
             if [ "$is_ninja" -eq 1 ]; then
-                TASK_YAML="$SCRIPT_DIR/queue/tasks/${FROM}.yaml"
+                TASK_YAML="$INBOX_CANONICAL_ROOT/queue/tasks/${FROM}.yaml"
                 if [ -f "$TASK_YAML" ]; then
                     # Report YAML existence verification before done transition (cmd_813)
                     REPORT_FILENAME=$(inbox_yaml_field_get "$TASK_YAML" "report_filename" "")
