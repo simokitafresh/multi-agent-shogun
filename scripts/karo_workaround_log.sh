@@ -57,6 +57,8 @@ LESSON_REFERENCE="${KARO_WA_LESSON_REFERENCE:-}"
 LEDGER_WRITER="$REPO_ROOT/scripts/ledger_writer.sh"
 if [[ -f "$LEDGER_WRITER" && ! -x "$LEDGER_WRITER" ]]; then
     printf '%s\n' 'LEDGER-ROUTE-SKIP: ledger_writer.sh exists but not executable' >&2
+elif [[ ! -e "$LEDGER_WRITER" ]]; then
+    printf '%s\n' 'LEDGER-ROUTE-SKIP: ledger_writer.sh is unavailable; using legacy workaround writer' >&2
 fi
 LEDGER_ENTRY_FILE="$(mktemp)"
 trap 'rm -f -- "$LEDGER_ENTRY_FILE"' EXIT
@@ -77,6 +79,36 @@ if [[ "${1:-}" == "--resolve" ]]; then
     if [[ -z "${RESOLVE_CMD_ID//[[:space:]]/}" || -z "${RESOLVED_BY_CMD//[[:space:]]/}" ]]; then
         echo "[resolve] ERROR: cmd_id and resolved_by_cmd must be non-empty" >&2
         exit 1
+    fi
+    if [[ -x "$LEDGER_WRITER" ]]; then
+        current="$(python3 - "$LOG_FILE" "$RESOLVE_CMD_ID" <<'PY'
+import re, sys
+path, target = sys.argv[1:]
+lines = open(path, encoding="utf-8").read().splitlines()
+starts = [i for i, line in enumerate(lines) if re.match(r"^-\s+[A-Za-z_][A-Za-z0-9_]*:", line)] + [len(lines)]
+matches = []
+for start, end in zip(starts, starts[1:]):
+    values = {}
+    for line in lines[start:end]:
+        match = re.match(r"^\s*(?:-\s*)?([A-Za-z_][A-Za-z0-9_]*):\s*(.*?)\s*$", line)
+        if match: values[match.group(1)] = match.group(2).strip("'\"")
+    if values.get("cmd_id") == target or values.get("cmd") == target:
+        matches.append(values.get("resolved_by_cmd", ""))
+if len(matches) != 1: raise SystemExit(f"[resolve] ERROR: expected exactly one entry for {target}, found {len(matches)}")
+print(matches[0])
+PY
+        )"
+        if [[ -n "$current" ]]; then
+            if [[ "$current" != "$RESOLVED_BY_CMD" ]]; then
+                echo "[resolve] ERROR: $RESOLVE_CMD_ID already resolved by $current" >&2
+                exit 1
+            fi
+            echo "[resolve] unchanged=1 cmd_id=$RESOLVE_CMD_ID resolved_by_cmd=$RESOLVED_BY_CMD"
+            exit 0
+        fi
+        op="$(LEDGER_SOURCE_FILE="$LOG_FILE" bash "$LEDGER_WRITER" update workarounds "$RESOLVE_CMD_ID" "resolved_by_cmd=$RESOLVED_BY_CMD" --expect resolved_by_cmd=)"
+        echo "[resolve] queued=1 cmd_id=$RESOLVE_CMD_ID resolved_by_cmd=$RESOLVED_BY_CMD op=$op"
+        exit 0
     fi
     (
         flock -w 10 200 || { echo "[resolve] ERROR: lock timeout" >&2; exit 1; }
@@ -171,6 +203,51 @@ if [[ "${1:-}" == "--backfill-reflux" ]]; then
     }
     REFLUX_RESOLUTION_CMD="$1"
     shift
+    if [[ -x "$LEDGER_WRITER" ]]; then
+        updates="$(python3 - "$LOG_FILE" "$REFLUX_RESOLUTION_CMD" "$@" <<'PY'
+import re, sys
+path, resolution, *mapping_args = sys.argv[1:]
+mappings = {}
+for item in mapping_args:
+    signature, sep, lesson = item.partition("=")
+    if not sep or not signature or not lesson: raise SystemExit(f"[backfill-reflux] ERROR: invalid mapping {item!r}")
+    mappings[signature] = lesson
+lines = open(path, encoding="utf-8").read().splitlines()
+starts = [i for i, line in enumerate(lines) if re.match(r"^-\s+[A-Za-z_][A-Za-z0-9_]*:", line)] + [len(lines)]
+rows = []; counts = {"not_applicable": 0, "integrated_existing": 0}
+for start, end in zip(starts, starts[1:]):
+    values = {}
+    for line in lines[start:end]:
+        match = re.match(r"^\s*(?:-\s*)?([A-Za-z_][A-Za-z0-9_]*):\s*(.*?)\s*$", line)
+        if match: values[match.group(1)] = match.group(2).strip("'\"")
+    is_wa = values.get("workaround") == "true"
+    placeholder = is_wa and values.get("lesson_disposition") == "new_lesson_required" and not values.get("lesson_reference")
+    if values.get("resolved_by_cmd") and not placeholder: continue
+    if "resolved_by_cmd" not in values: raise SystemExit(f"[backfill-reflux] ERROR: entry at line {start + 1} lacks resolved_by_cmd")
+    if is_wa:
+        signature = values.get("root_signature") or f"legacy::{values.get('category', 'uncategorized')}"
+        if signature not in mappings: raise SystemExit(f"[backfill-reflux] ERROR: no lesson mapping for {signature}")
+        disposition, reference, resolved = "integrated_existing", mappings[signature], resolution
+    else:
+        disposition, reference, resolved = "not_applicable", "not_applicable", values.get("cmd_id") or values.get("cmd") or resolution
+    counts[disposition] += 1
+    rows.append((values.get("cmd_id") or values.get("cmd") or "", values.get("resolved_by_cmd", ""), disposition, reference, resolved))
+print(f"#counts\t{counts['not_applicable']}\t{counts['integrated_existing']}")
+for row in rows: print("\t".join(row))
+PY
+        )"
+        counts_line="${updates%%$'\n'*}"
+        not_applicable="$(printf '%s\n' "$counts_line" | awk -F '\t' '{print $2}')"
+        integrated_existing="$(printf '%s\n' "$counts_line" | awk -F '\t' '{print $3}')"
+        rows="${updates#*$'\n'}"
+        while IFS=$'\t' read -r ident expected disposition reference resolved; do
+            [[ -n "$ident" ]] || continue
+            op="$(LEDGER_SOURCE_FILE="$LOG_FILE" bash "$LEDGER_WRITER" update workarounds "$ident" lesson_required=false "lesson_disposition=$disposition" "lesson_reference=$reference" "resolved_by_cmd=$resolved" --expect "resolved_by_cmd=$expected")"
+            echo "[backfill-reflux] queued=1 id=$ident op=$op"
+        done <<< "$rows"
+        echo "[backfill-reflux] updated=$(printf '%s\n' "$rows" | awk 'NF{n++}END{print n+0}') not_applicable=$not_applicable integrated_existing=$integrated_existing"
+        exit 0
+    fi
     (
         flock -w 10 200 || { echo "[backfill-reflux] ERROR: lock timeout" >&2; exit 1; }
         python3 - "$LOG_FILE" "$REFLUX_RESOLUTION_CMD" "$@" <<'PY'
@@ -279,6 +356,38 @@ if [[ "${1:-}" == "--reclassify" ]]; then
     NEW_CAT="$2"
     NEW_ROOT_SIGNATURE="${3:-}"
     DETAIL_PATTERN="${4:-}"
+    if [[ -x "$LEDGER_WRITER" ]]; then
+        updates="$(python3 - "$LOG_FILE" "$PATTERN" "$NEW_CAT" "$NEW_ROOT_SIGNATURE" "$DETAIL_PATTERN" <<'PY'
+import re, sys
+path, pattern, new_category, explicit_root, detail_pattern = sys.argv[1:]
+try:
+    command_re = re.compile(pattern); detail_re = re.compile(detail_pattern) if detail_pattern else None
+except re.error as exc: raise SystemExit(f"[reclassify] Error: invalid pattern: {exc}")
+lines = open(path, encoding="utf-8").read().splitlines()
+starts = [i for i, line in enumerate(lines) if re.match(r"^-\s+[A-Za-z_][A-Za-z0-9_]*:", line)] + [len(lines)]
+for start, end in zip(starts, starts[1:]):
+    values = {}
+    for line in lines[start:end]:
+        match = re.match(r"^\s*(?:-\s*)?([A-Za-z_][A-Za-z0-9_]*):\s*(.*?)\s*$", line)
+        if match: values[match.group(1)] = match.group(2).strip("'\"")
+    ident = values.get("cmd_id") or values.get("cmd") or ""
+    if not ident or not command_re.search(ident) or (detail_re and not detail_re.search(values.get("detail", ""))): continue
+    root = explicit_root; old_category = values.get("category", "")
+    if not root and old_category and values.get("root_signature", "").startswith(old_category + "::"):
+        root = new_category + values["root_signature"][len(old_category):]
+    print("\t".join((ident, old_category, new_category, root)))
+PY
+        )"
+        while IFS=$'\t' read -r ident old_category new_category root_signature; do
+            [[ -n "$ident" ]] || continue
+            args=("category=$new_category")
+            [[ -n "$root_signature" ]] && args+=("root_signature=$root_signature")
+            op="$(LEDGER_SOURCE_FILE="$LOG_FILE" bash "$LEDGER_WRITER" update workarounds "$ident" "${args[@]}" --expect "category=$old_category")"
+            echo "[reclassify] queued=1 id=$ident op=$op"
+        done <<< "$updates"
+        echo "[reclassify] queued=$(printf '%s\n' "$updates" | awk 'NF{n++}END{print n+0}') entries matching '$PATTERN' → category: $NEW_CAT"
+        exit 0
+    fi
     (
         flock -w 10 200 || { echo "[reclassify] Error: lock" >&2; exit 1; }
         TMPFILE="/tmp/.kwl_reclassify_$$"

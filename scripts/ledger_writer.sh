@@ -27,7 +27,7 @@ resolve_state_dir() {
 }
 ledger_dir() {
     case "$1" in
-        insights|lessons|bulletin|workarounds|semantic_index) printf '%s/ledger_inbox/%s\n' "$STATE_DIR" "$1";;
+        insights|lessons|lessons_yaml|review_log|bulletin|workarounds|semantic_index) printf '%s/ledger_inbox/%s\n' "$STATE_DIR" "$1";;
         *) die "unknown ledger: $1";;
     esac
 }
@@ -37,8 +37,10 @@ ledger_file() {
         insights) value="${LEDGER_INSIGHTS_FILE:-${INSIGHTS_FILE:-$REPO_ROOT/queue/insights.yaml}}";;
         bulletin) value="${LEDGER_BULLETIN_FILE:-${BULLETIN_FILE:-$REPO_ROOT/queue/bulletin_board.yaml}}";;
         workarounds) value="${LEDGER_WORKAROUNDS_FILE:-${KARO_WORKAROUND_LOG_FILE:-$REPO_ROOT/logs/karo_workarounds.yaml}}";;
+        review_log) value="${LEDGER_REVIEW_LOG_FILE:-$REPO_ROOT/logs/gunshi_review_log.yaml}";;
         semantic_index) value="${LEDGER_SEMANTIC_INDEX_FILE:-${SEMANTIC_INDEX_PATH:-$REPO_ROOT/docs/semantic-index/index.md}}";;
         lessons) value="${LEDGER_LESSONS_FILE:-${LESSONS_FILE:-}}";;
+        lessons_yaml) value="${LEDGER_LESSONS_YAML_FILE:-${LESSONS_FILE:-}}";;
         *) die "unknown ledger: $ledger";;
     esac
     [[ -n "$value" ]] || die "lessons ledger requires LEDGER_LESSONS_FILE or LESSONS_FILE"
@@ -87,7 +89,13 @@ append_op() {
     source="${LEDGER_SOURCE_FILE:-$(ledger_file "$ledger")}"
     hash="$(sha256sum "$entry" | awk '{print $1}')"
     id="$(LEDGER_OPERATION_ID="${LEDGER_OPERATION_ID:-}" entry_id "$entry")"
-    source_hash="$(sha256sum "$source" | awk '{print $1}')"
+    source_hash=""
+    if [[ "$ledger" != lessons_yaml && "$ledger" != review_log ]]; then
+        [[ -f "$source" ]] || die "ledger file not found: $source"
+    fi
+    if [[ "$ledger" == semantic_index ]]; then
+        source_hash="$(sha256sum "$source" | awk '{print $1}')"
+    fi
     body="$(LEDGER_ENV_LEDGER="$ledger" LEDGER_ENV_SOURCE="$source" LEDGER_ENV_ENTRY="$entry" LEDGER_ENV_HASH="$hash" LEDGER_ENV_SOURCE_HASH="$source_hash" LEDGER_ENV_ID="$id" python3 - <<'PY'
 import json, os
 from datetime import datetime, timezone
@@ -122,7 +130,7 @@ update_op() {
     for assignment in "${assignments[@]}"; do
         field_name="${assignment%%=*}"
         case "$ledger:$field_name" in
-            insights:status|insights:resolved_reason|insights:action_artifact|insights:resolved_at|insights:fix_known|lessons:status|lessons:retired_at|lessons:retire_reason|bulletin:status|bulletin:actioned_by|bulletin:confirmed_by|workarounds:status) ;;
+            insights:status|insights:resolved_reason|insights:action_artifact|insights:resolved_at|insights:fix_known|lessons:status|lessons:retired_at|lessons:retire_reason|lessons_yaml:status|lessons_yaml:retired_at|lessons_yaml:retire_reason|lessons_yaml:helpful_count|lessons_yaml:harmful_count|lessons_yaml:injection_count|lessons_yaml:last_referenced|bulletin:status|bulletin:actioned_by|bulletin:confirmed_by|workarounds:status|workarounds:resolved_by_cmd|workarounds:category|workarounds:root_signature|workarounds:lesson_required|workarounds:lesson_disposition|workarounds:lesson_reference) ;;
             *) printf 'ledger_writer: field outside %s allowlist: %s\n' "$ledger" "$field_name" >&2; return 12 ;;
         esac
     done
@@ -219,8 +227,11 @@ operation=Path(os.environ["LEDGER_ENV_OP"]); data=json.loads(operation.read_text
 ledger=data.get("ledger"); source=os.environ.get("LEDGER_SOURCE_FILE") or data.get("source_file")
 if not source: raise SystemExit("apply requires source_file in operation or LEDGER_SOURCE_FILE")
 path=Path(source)
-if not path.exists(): raise SystemExit(f"ledger file not found: {path}")
-text=path.read_text(encoding="utf-8"); lines=text.splitlines(keepends=True); ident=str(data.get("id","")); is_lesson=ledger=="lessons" or bool(re.fullmatch(r"L[0-9]+",ident))
+allow_create = ledger in {"lessons_yaml", "review_log"} and data.get("op") == "append"
+if not path.exists() and not allow_create: raise SystemExit(f"ledger file not found: {path}")
+if allow_create: path.parent.mkdir(parents=True, exist_ok=True)
+text=path.read_text(encoding="utf-8") if path.exists() else ""
+lines=text.splitlines(keepends=True); ident=str(data.get("id","")); is_lesson=ledger=="lessons"
 def found():
     if is_lesson: return [i for i,l in enumerate(lines) if re.match(r"^###\s+"+re.escape(ident)+r":",l)]
     return [i for i,l in enumerate(lines) if re.search(r"^\s*-\s+(?:id|cmd_id):\s*['\"]?"+re.escape(ident)+r"(?:['\"]|\s|$)",l)]
@@ -250,12 +261,16 @@ if data.get("op")=="append" and ledger == "semantic_index":
         raise SystemExit("entry_hash mismatch")
     new=entry if entry.endswith("\n") else entry+"\n"
 elif data.get("op")=="append":
-    if matches: reject("duplicate_id")
+    if matches and ledger != "review_log": reject("duplicate_id")
     entry=str(data.get("entry_text",""))
     if hashlib.sha256(entry.encode()).hexdigest()!=data.get("entry_hash"): raise SystemExit("entry_hash mismatch")
     if ledger=="lessons": new=text.rstrip("\n")+"\n\n"+entry.rstrip("\n")+"\n"
+    elif ledger=="lessons_yaml":
+        if not text.strip(): text="ssot_path: projects/lessons.yaml\nlessons:\n"
+        if "lessons:" not in text.splitlines()[:8]: raise SystemExit("lessons_yaml ledger has unexpected root shape")
+        new=text.rstrip("\n")+"\n"+entry.lstrip("\n"); new += "" if new.endswith("\n") else "\n"
     else:
-        header={"insights":"insights:","bulletin":"entries:","workarounds":""}[ledger]
+        header={"insights":"insights:","bulletin":"entries:","workarounds":"","review_log":"# gunshi review runtime ledger"}[ledger]
         if not text.strip(): text=header+"\n" if header else ""
         if header and not text.startswith(header+"\n"): raise SystemExit(f"{ledger} ledger has unexpected root shape")
         new=text.rstrip("\n")+"\n"+entry.lstrip("\n"); new += "" if new.endswith("\n") else "\n"
@@ -270,7 +285,7 @@ elif data.get("op") in ("update","resolve"):
         if m: values[m.group(1)]=scalar(m.group(2))
     for field,expected in (data.get("expected") or {}).items():
         if values.get(field, "")!=str(expected): reject("expected_"+field+"_mismatch")
-    allowed={"insights":{"status","resolved_reason","action_artifact","resolved_at","fix_known"},"lessons":{"status","retired_at","retire_reason"},"bulletin":{"status","actioned_by","confirmed_by"},"workarounds":{"status"}}[ledger]
+    allowed={"insights":{"status","resolved_reason","action_artifact","resolved_at","fix_known"},"lessons":{"status","retired_at","retire_reason"},"lessons_yaml":{"status","retired_at","retire_reason","helpful_count","harmful_count","injection_count","last_referenced"},"review_log":set(),"bulletin":{"status","actioned_by","confirmed_by"},"workarounds":{"status","resolved_by_cmd","category","root_signature","lesson_required","lesson_disposition","lesson_reference"}}[ledger]
     fields=data.get("fields") or {}
     if any(field not in allowed for field in fields): raise SystemExit("field outside allowlist")
     for field,value in fields.items():

@@ -481,14 +481,14 @@ PY
 
 ledger_directory() {
     case "$1" in
-        insights|lessons|bulletin|workarounds|semantic_index) printf '%s/ledger_inbox/%s\n' "$STATE_DIR" "$1" ;;
+        insights|lessons|lessons_yaml|review_log|bulletin|workarounds|semantic_index) printf '%s/ledger_inbox/%s\n' "$STATE_DIR" "$1" ;;
         *) return 1 ;;
     esac
 }
 
 ledger_operations() {
     local dir
-    for dir in insights lessons bulletin workarounds semantic_index; do
+    for dir in insights lessons lessons_yaml review_log bulletin workarounds semantic_index; do
         [ -d "$STATE_DIR/ledger_inbox/$dir" ] || continue
         find "$STATE_DIR/ledger_inbox/$dir" -mindepth 1 -maxdepth 1 -type f -name '*.yaml' \
             -printf '%f\t%p\n'

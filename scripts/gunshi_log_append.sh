@@ -14,6 +14,7 @@ SCRIPT_DIR="${GUNSHI_SCRIPT_DIR:-$(cd "$(dirname "$0")/.." && pwd)}"
 LOG_FILE="$SCRIPT_DIR/logs/gunshi_review_log.yaml"
 ARCHIVE_DIR="$SCRIPT_DIR/logs/archive"
 MAX_LINES=2500
+LEDGER_WRITER="$SCRIPT_DIR/scripts/ledger_writer.sh"
 
 usage() {
     cat <<'EOF'
@@ -319,6 +320,25 @@ fi
 if [ "${GUNSHI_VALIDATE_ONLY:-0}" = "1" ]; then
     echo "OK: review entry validated"
     exit 0
+fi
+
+# Keep review-log writes outside the shared checkout.  The publisher owns the
+# canonical append and archive; this writer emits only an operation file.
+if [[ -x "$LEDGER_WRITER" ]]; then
+    _review_entry_file="$(mktemp)"
+    printf '%s\n' "$ENTRY" >"$_review_entry_file"
+    if ! _review_op_path="$(LEDGER_SOURCE_FILE="$LOG_FILE" bash "$LEDGER_WRITER" append review_log "$_review_entry_file")"; then
+        rm -f -- "$_review_entry_file"
+        exit 1
+    fi
+    rm -f -- "$_review_entry_file"
+    printf 'LEDGER-ROUTE: review_log op=%s\n' "$_review_op_path"
+    exit 0
+fi
+if [[ -e "$LEDGER_WRITER" ]]; then
+    printf '%s\n' 'LEDGER-ROUTE-SKIP: ledger_writer.sh is not executable; using legacy review-log writer' >&2
+else
+    printf '%s\n' 'LEDGER-ROUTE-SKIP: ledger_writer.sh is unavailable; using legacy review-log writer' >&2
 fi
 
 # Publish append and any resulting archive as one generation transaction.

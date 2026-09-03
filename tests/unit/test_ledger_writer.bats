@@ -70,6 +70,38 @@ PY
   run env LEDGER_SOURCE_FILE="$TEST_ROOT/lessons.md" writer apply "$op"
   [ "$status" -eq 0 ]; grep -q '### L001: lesson' "$TEST_ROOT/lessons.md"
 }
+@test "append/apply creates a project lessons YAML ledger" {
+  make_entry L009 project
+  op="$(env LEDGER_SOURCE_FILE="$TEST_ROOT/projects/demo/lessons.yaml" writer append lessons_yaml "$TEST_ROOT/entry.yaml")"
+  run env LEDGER_SOURCE_FILE="$TEST_ROOT/projects/demo/lessons.yaml" writer apply "$op"
+  [ "$status" -eq 0 ]
+  run python3 - "$TEST_ROOT/projects/demo/lessons.yaml" <<'PY'
+import sys, yaml
+data = yaml.safe_load(open(sys.argv[1], encoding='utf-8'))
+assert data['lessons'][0]['id'] == 'L009', data
+PY
+  [ "$status" -eq 0 ]
+}
+@test "review log append permits repeated reviews for one command" {
+  make_entry cmd-review repeated
+  op1="$(env LEDGER_SOURCE_FILE="$TEST_ROOT/logs/gunshi_review_log.yaml" writer append review_log "$TEST_ROOT/entry.yaml")"
+  op2="$(env LEDGER_SOURCE_FILE="$TEST_ROOT/logs/gunshi_review_log.yaml" writer append review_log "$TEST_ROOT/entry.yaml")"
+  env LEDGER_SOURCE_FILE="$TEST_ROOT/logs/gunshi_review_log.yaml" writer apply "$op1" >/dev/null
+  env LEDGER_SOURCE_FILE="$TEST_ROOT/logs/gunshi_review_log.yaml" writer apply "$op2" >/dev/null
+  [ "$(grep -c 'cmd-review' "$TEST_ROOT/logs/gunshi_review_log.yaml")" -eq 2 ]
+}
+@test "workaround update operation applies multiple allowlisted fields" {
+  printf '%s\n' '- cmd_id: wa-001' '  category: old' '  root_signature: old::family' "  resolved_by_cmd: ''" > "$TEST_ROOT/workarounds.yaml"
+  op="$(env LEDGER_SOURCE_FILE="$TEST_ROOT/workarounds.yaml" writer update workarounds wa-001 category=new root_signature=new::family resolved_by_cmd=cmd_fix --expect category=old)"
+  run env LEDGER_SOURCE_FILE="$TEST_ROOT/workarounds.yaml" writer apply "$op"
+  [ "$status" -eq 0 ]
+  run python3 - "$TEST_ROOT/workarounds.yaml" <<'PY'
+import sys, yaml
+row = yaml.safe_load(open(sys.argv[1], encoding='utf-8'))[0]
+assert (row['category'], row['root_signature'], row['resolved_by_cmd']) == ('new', 'new::family', 'cmd_fix')
+PY
+  [ "$status" -eq 0 ]
+}
 @test "append records the exact entry hash" {
   printf 'insights:\n' > "$TEST_ROOT/insights.yaml"; make_entry INS-003 hash
   op="$(env LEDGER_SOURCE_FILE="$TEST_ROOT/insights.yaml" writer append insights "$TEST_ROOT/entry.yaml")"

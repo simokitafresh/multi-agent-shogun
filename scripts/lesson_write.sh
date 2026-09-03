@@ -686,6 +686,16 @@ write_project_yaml_lesson() {
     # before this function is called, so the derived directory is bounded.
     mkdir -p "$lessons_dir" || return 1
     lockfile="$(lock_path "$lessons_yaml")"
+    local ledger_writer="$SCRIPT_DIR/scripts/ledger_writer.sh"
+    local ledger_route=0 route_entry=""
+    if [[ -x "$ledger_writer" ]]; then
+        ledger_route=1
+        route_entry="$(mktemp)"
+    elif [[ -e "$ledger_writer" ]]; then
+        echo "LEDGER-ROUTE-SKIP: ledger_writer.sh is not executable; using legacy project lesson writer" >&2
+    else
+        echo "LEDGER-ROUTE-SKIP: ledger_writer.sh is unavailable; using legacy project lesson writer" >&2
+    fi
 
     timestamp=$(date "+%Y-%m-%d")
     RESOLVED_ORIGIN="$(require_origin_value)"
@@ -693,7 +703,7 @@ write_project_yaml_lesson() {
     (
         flock -w 10 200 || { echo "ERROR: Could not acquire lock" >&2; exit 1; }
 
-        if [ ! -f "$lessons_yaml" ]; then
+        if [ ! -f "$lessons_yaml" ] && [ "$ledger_route" -eq 0 ]; then
             local init_tmp
             init_tmp="$(mktemp "${lessons_yaml}.init.XXXXXX")" || exit 1
             {
@@ -709,7 +719,7 @@ write_project_yaml_lesson() {
             mv -f "$init_tmp" "$lessons_yaml"
         fi
 
-        LESSONS_YAML_ENV="$lessons_yaml" \
+        if ! LESSONS_YAML_ENV="$lessons_yaml" \
         TITLE_ENV="$TITLE" \
         DETAIL_ENV="$DETAIL" \
         SOURCE_CMD_ENV="$SOURCE_CMD" \
@@ -720,6 +730,8 @@ write_project_yaml_lesson() {
         ENFORCEMENT_ENV="${ENFORCEMENT:-未自動化}" \
         TIMESTAMP_ENV="$timestamp" \
         FORCE_ENV="${FORCE:-0}" \
+        LEDGER_ROUTE_ENV="$ledger_route" \
+        ROUTE_ENTRY_FILE_ENV="$route_entry" \
         python3 <<'PY'
 import os
 import re
@@ -739,8 +751,13 @@ force = os.environ.get("FORCE_ENV", "0") == "1"
 tags = [t.strip() for t in os.environ.get("TAGS_ENV", "").split(",") if t.strip()]
 target_files = [p.strip() for p in os.environ.get("TARGET_FILES_ENV", "").split(",") if p.strip()]
 
-with open(path, encoding="utf-8") as fh:
-    content = fh.read()
+if os.path.exists(path):
+    with open(path, encoding="utf-8") as fh:
+        content = fh.read()
+else:
+    content = ""
+if not content and os.environ.get("LEDGER_ROUTE_ENV") == "1":
+    content = f"ssot_path: projects/{os.path.basename(os.path.dirname(path))}/lessons.yaml\nlessons:\n"
 
 if not force:
     for m in re.finditer(r"^[ \t]+title:[ \t]*(.+)$", content, re.MULTILINE):
@@ -818,24 +835,36 @@ if not isinstance(generated, dict) or not isinstance(generated.get("lessons"), l
     print(f"ERROR: generated lesson YAML has invalid schema; preserving {path}", file=sys.stderr)
     sys.exit(1)
 
-directory = os.path.dirname(path) or "."
-fd, temporary = tempfile.mkstemp(prefix=".lesson-write.", suffix=".tmp", dir=directory)
-try:
-    with os.fdopen(fd, "w", encoding="utf-8") as fh:
-        fh.write(candidate)
-        fh.flush()
-        os.fsync(fh.fileno())
-    os.replace(temporary, path)
-except BaseException:
+if os.environ.get("LEDGER_ROUTE_ENV") == "1":
+    with open(os.environ["ROUTE_ENTRY_FILE_ENV"], "w", encoding="utf-8") as fh:
+        fh.write("\n".join(entry).lstrip("\n") + "\n")
+else:
+    directory = os.path.dirname(path) or "."
+    fd, temporary = tempfile.mkstemp(prefix=".lesson-write.", suffix=".tmp", dir=directory)
     try:
-        os.unlink(temporary)
-    except FileNotFoundError:
-        pass
-    raise
+        with os.fdopen(fd, "w", encoding="utf-8") as fh:
+            fh.write(candidate)
+            fh.flush()
+            os.fsync(fh.fileno())
+        os.replace(temporary, path)
+    except BaseException:
+        try:
+            os.unlink(temporary)
+        except FileNotFoundError:
+            pass
+        raise
 
 print(f"{new_id} added to {path}")
 PY
-    ) 200>"$lockfile" || return 1
+        then
+            exit 1
+        fi
+        if [ "$ledger_route" -eq 1 ]; then
+            LEDGER_SOURCE_FILE="$lessons_yaml" bash "$ledger_writer" append lessons_yaml "$route_entry" >/dev/null
+            echo "LEDGER-ROUTE: lessons_yaml append queued for $lessons_yaml"
+            rm -f -- "$route_entry"
+        fi
+    ) 200>"$lockfile" || { [ -z "$route_entry" ] || rm -f -- "$route_entry"; return 1; }
 
     # cmd_108: Write .done flag for cmd_complete_gate
     if [ -n "$CMD_ID" ]; then
