@@ -3511,7 +3511,12 @@ push_task_repositories() {
     # PUBLISHER_SINGLE: never push from the gate, but still run the publication-proof lanes below
     # (publisher-commit equivalence writes the receipt). The real push is guarded at the push site.
     local publisher_proof_only=0
-    publisher_single_enabled && publisher_proof_only=1
+    if publisher_single_enabled; then
+        # Emit exactly one decision row per gate invocation, while continuing
+        # through the proof-only lanes below.
+        echo "PUBLISHER_SINGLE cmd_complete_gate push=0 result=SKIP reason=publisher_request"
+        publisher_proof_only=1
+    fi
     local task_file repo upstream_ref upstream_sha remote push_ref remote_tip source_sha
     local overlap_blocking all_sources_ok push_rc attempt max_retries refreshed_tip
     local source_equivalent_used source_base_tree_noop source_noop_all
@@ -3838,7 +3843,6 @@ push_task_repositories() {
 
             overlap_blocking="$(push_overlap_blocking_paths "$repo" "" "$(git -C "$repo" rev-parse HEAD 2>/dev/null || true)" "$upstream_sha")"
             if [ "$publisher_proof_only" -eq 1 ]; then
-                echo "PUBLISHER_SINGLE cmd_complete_gate push=0 result=SKIP reason=publisher_request"
                 echo "  git push: PUBLISHER_SINGLE awaiting publisher publication ($repo; no gate push)"
                 return 1
             fi
