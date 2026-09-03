@@ -1,10 +1,10 @@
-# 将軍 全体状況マップ(やることリスト) — 2026-08-26 13:55 作成 / 09-03 10:05 更新(単一 publisher 11/12+U9/U10 起票・旧 daemon 入替済・X 運用 P0 CLEAR)
+# 将軍 全体状況マップ(やることリスト) — 2026-08-26 13:55 作成 / 09-03 10:40 更新(単一 publisher: 追加 4 点 U9/U10 CLEAR、クローズは 09-04 09:23 以降の close_check)
 # ★殿裁定 2026-08-29 10:26『バグの修正は必須だが、一回終わりを作ろう。速度向上は今取り掛かっているタスクたちを全て完了させたら一旦俺の指示を待て。バグの根治は俺の指示を待たずに継続せよ』→ 速度 lane は走行分の終端で凍結(新規配備 0、家老 blt_102819 で適用確認)。バグ根治 lane(T180/CI RED/便停止/Guard14)は継続。
 # 原則(殿13:52-13:54): シングルタスクを高速に切替える。優先順位なし=全部やる。依存は構造としてだけ記す。一定時間ごと(各inbox処理後・30分毎)に更新。 ★らせんの原理: ①計測器を律速の名指しから仕込み本番に常設→②1 unit だけ切る(1 unit/commit)→③計測を一段深く→④計測器は残す。切るのは機械的待ちのみ。逸脱チェック3問(名指しから始めたか/一段深くしたか/本番に残るか)。対象=速度/デッドコード/リファクタ/知識。成果指標=PJ 成果の e2e と件数
 # artifact: https://claude.ai/code/artifact/a88c6c42-a725-4201-af4e-008697d70b28 (HTML正本 docs/dashboard/shogun-todo-map.html。更新=正本Edit→Artifact再公開 同file_path)
 # 記法: [ ] 未 / [~] 走行中(担当) / [x] 済(証跡)。★=速度向上へのつながり1行必須
 
-- [~] T236(09-03 09:13 殿『完了か？』→未完了 66%/09:16『追加 4 点を起票してクローズまで』) cmd_4468(U9 root 直書き生産者 0、半蔵)・cmd_4469(U10 watchdog reload+close_check+after snapshot、影丸)起票・委任。旧 daemon は 09:23 に自壊→watchdog 自動再起動で新コード稼働(ledger 消費/root drain 自動化)。クローズ=4469 着地→24h 後 close_check PASS→§15 に『クローズド』 ★trailer 100%・root 3 値 0 で手動 checkpoint/merge が消える
+- [~] T236(09-03 09:13 殿『完了か？』→未完了 66%/09:16『追加 4 点を起票してクローズまで』) cmd_4468(U9)CLEAR 10:19(b4635d06e)・cmd_4469(U10)CLEAR 10:36(5a43fe663)=追加 4 点の実装完了。X gate 規則 1 fail-close hotfix 2fa437a9c 着地。旧 daemon は 09:23 に自壊→watchdog 自動再起動で新コード稼働(ledger 消費/root drain 自動化)。クローズ=4469 着地→24h 後 close_check PASS→§15 に『クローズド』 ★trailer 100%・root 3 値 0 で手動 checkpoint/merge が消える
 - [x] T232b(09-03 07:50 T232 追補) cmd_4465 CLEAR 07:19→ledger route 初稼働(将軍手動 1 周 a6f54a6a9)→batch 欠陥 3 根治(家老 195a924a7/4d0897c46/5895fc921)→滞留 15→0(n=70 a8b7c3895)。副産物: fileMode=false 消失で mode 差分 2020 件露出(将軍再設定)、root 台帳 4 file 取残し(家老復元 53408f376)、semantic test 29 の真因=fixture が ledger route へ逸れる(f4e6ab789) ★台帳 commit が publisher 1 経路に収束
 - [x] T235(09-03 07:13/07:45) worktree 回収 hotfix CLEAR→sweep 本実行(dir 125→43、git worktree 225→143、removed 82、dirty 保持 15、active 誤回収 0)。root drain hotfix(影丸 a1a0640eb)CLEAR ★root 乖離と worktree 残骸の自動回収=publisher 停止要因 2 つを構造で塞いだ
 - [x] T231(09-03 04:37〜06:13 単一 publisher 第 3 波終端) PUBLISHER_SINGLE ON 04:37(d42b62a90 flag file helper、queue/flags/publisher_single)。U8 は cmd_4464(M10 のみ・行数 0)/cmd_4466(M1/M8 削除で gate suite 数十本+別機能が壊れ revert)とも正当 FAIL→将軍裁定 06:13 凍結(再開条件=運用 7 日後に chain ごとの契約 test 移植設計書)。旧経路は no-op で壁の発生源は停止=目的達成。設計書 v3.15(8/12 完了) ★物理削除より運用実績。hotfix 対象は publisher 系 6 file に収束
