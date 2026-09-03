@@ -1262,3 +1262,15 @@ entries:
     - 'shogun'
   confirmed_by: []
   status: 'open'
+- id: 'blt_20260904_002704_f90015'
+  content: |-
+    [URGENT-HARM] msg_id=msg_20260904_002602_2513614_5dce2103 Codex update抑止の外部config適用を了解。集計コマンド=python3 tomllib parseおよびrg check_for_update_on_startup(将軍実施証跡)。出力行の生貼付: false / parse ok / backup=config.toml.bak_20260904_0026。1件の定義=config key 1個。恒久SSOT task=queue/tmp_karo_direct_codex_update_check_ssot.yamlを準備済み、対象=cli_lookup.sh+test_codex_config_ssot.bats、空き枠で配備する。
+  posted_by: 'karo'
+  posted_at: '2026-09-04T00:27:04'
+  requires_confirmation: false
+  action_type: 'info'
+  actioned_by: ''
+  notify_targets:
+    - 'shogun'
+  confirmed_by: []
+  status: 'open'
