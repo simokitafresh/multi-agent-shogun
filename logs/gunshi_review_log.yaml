@@ -3016,3 +3016,98 @@
   verdict: LGTM
   verified_files:
   - scripts/deploy_task/main.sh:1
+- adversarial_review:
+    reason: review_bundle.py修正。fail-closed維持
+    required: false
+    verdict: PASS
+  brainwash_check: '#1no #2no #3no #4no #5no #6no #7no #8no | 再承認: precheck 3/3 ERRORS=0,
+    registry 3/3 登録済, 旧key gunshi.yaml 3/3 fp不一致を実測'
+  causal_chain: review_bundle.py batch→ledger_writer.sh→entry must contain id→cmd_id欠落→manifest
+    cmd identity結合→解消
+  cmd_id: cmd_karo_hotfix_review_bundle_batch_id_202609040019
+  conflict_of_interest: review_bundle.pyは軍師のレビュー承認フロー。本cmdはbatch entry identity結合でありレビュー判定ロジック不変
+  escalation_needed: false
+  finding_categories:
+  - assumptions
+  - numbers
+  - simulation
+  - premortem
+  - adversarial
+  - ambiguity
+  findings_summary: 4観点OK。batch entry cmd_id欠落をmanifest cmd由来identityで結合。51/51 PASS
+    SKIP0。自分が踏んでいたbatchバグの直接修正
+  gate_prediction: CLEAR
+  gate_prediction_reason: all checks passed
+  lesson_quality: OK
+  observations:
+  - '事実1: review_bundle.py batch appendで entry must contain id エラーが発生していた根因修正'
+  - '事実2: 51/51 PASS SKIP0'
+  - '事実(再承認 2026-09-04T06:55:06): 前LGTM 2026-09-04T03:44:00 は旧identity keyに記録され、identity
+    v2 key 27172be3e4b6 には gunshi.yaml 不在。将軍下知06:30/06:48に従い同一generation 5c8ef0b7067c
+    へ正規入口(review_bundle.py single)で正式approvalを発行。precheck再実行 ERRORS=0/CLEAR'
+  - '事実(2026-09-04T06:59:30): 初回 single 実行は ledger_writer entry_id が先頭キー限定 regex で
+    ''entry must contain id'' BLOCK(3/3 同一)。軍師 D0 f1dc1f764(半蔵 18e2de6ea と同一 hunk)で解消後に再実行'
+  operational_simulation:
+    actual: ERRORS=0、GATE_PREDICTION=CLEAR
+    command: bash scripts/gates/gate_gunshi_report_precheck.sh queue/reports/hanzo_report_cmd_karo_hotfix_review_bundle_batch_id_202609040019.yaml
+    expected: precheck全PASS
+    result: PASS
+  origin: '[[cmd_karo_hotfix_review_bundle_batch_id_202609040019]] -> [[batch_entry_cmd_id欠落]]
+    -> [[manifest_identity結合]]'
+  report_fingerprint: 5c8ef0b7067c9a568976a29b91c85f9643b1a4f626ade987c15965351cdb0e50
+  report_ninja: hanzo
+  report_task_id: cmd_karo_hotfix_review_bundle_batch_id_202609040019_normal
+  report_verdict: PASS
+  review_type: report
+  reviewed_at: '2026-09-04T06:59:30+09:00'
+  step3_5_verified: true
+  timestamp: '2026-09-04T06:59:30'
+  verdict: LGTM
+  verified_files:
+  - scripts/review_bundle.py:1
+- adversarial_review:
+    reason: close_check+test変更。正負fixture
+    required: false
+    verdict: PASS
+  brainwash_check: '#1no #2no #3no #4no #5no #6no #7no #8no | 再承認: precheck 3/3 ERRORS=0,
+    registry 3/3 登録済, 旧key gunshi.yaml 3/3 fp不一致を実測'
+  causal_chain: 旧3c7f94f85が非YAML競合→runtime判定を現mainへ再実装→10/10 PASS
+  cmd_id: cmd_karo_hotfix_close_check_runtime_reapply_202609032326
+  escalation_needed: false
+  finding_categories:
+  - assumptions
+  - numbers
+  - simulation
+  - premortem
+  - adversarial
+  - ambiguity
+  findings_summary: 4観点OK。close_check runtime direct-push判定再実装。10/10 PASS SKIP0。precheck
+    CLEAR
+  gate_prediction: CLEAR
+  gate_prediction_reason: all checks passed
+  lesson_quality: OK
+  observations:
+  - '事実1: 複数git -c push形式のfixtureを追加'
+  - '事実2: commit前後とも10/10 PASS SKIP0'
+  - '事実(再承認 2026-09-04T06:55:06): 前LGTM 2026-09-03T23:35:00 は旧identity keyに記録され、identity
+    v2 key f9794bbc4ea4 には gunshi.yaml 不在。将軍下知06:30/06:48に従い同一generation 670a4bfd7681
+    へ正規入口(review_bundle.py single)で正式approvalを発行。precheck再実行 ERRORS=0/CLEAR'
+  - '事実(2026-09-04T06:59:30): 初回 single 実行は ledger_writer entry_id が先頭キー限定 regex で
+    ''entry must contain id'' BLOCK(3/3 同一)。軍師 D0 f1dc1f764(半蔵 18e2de6ea と同一 hunk)で解消後に再実行'
+  operational_simulation:
+    actual: ERRORS=0、GATE_PREDICTION=CLEAR
+    command: bash scripts/gates/gate_gunshi_report_precheck.sh queue/reports/hayate_report_cmd_karo_hotfix_close_check_runtime_reapply_202609032326.yaml
+    expected: precheck全PASS
+    result: PASS
+  origin: '[[cmd_karo_hotfix_close_check_runtime_reapply_202609032326]] -> [[runtime判定再実装]]'
+  report_fingerprint: 670a4bfd76814f64fd6e760735ddddd46fc37257a2168449b675c0eb7a335042
+  report_ninja: hayate
+  report_task_id: cmd_karo_hotfix_close_check_runtime_reapply_202609032326_normal
+  report_verdict: PASS
+  review_type: report
+  reviewed_at: '2026-09-04T06:59:30+09:00'
+  step3_5_verified: true
+  timestamp: '2026-09-04T06:59:30'
+  verdict: LGTM
+  verified_files:
+  - scripts/single_publisher_close_check.sh:1
