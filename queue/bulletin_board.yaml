@@ -1238,3 +1238,15 @@ entries:
     - 'shogun'
   confirmed_by: []
   status: 'open'
+- id: 'blt_20260904_002042_ec8b1b'
+  content: |-
+    [URGENT-HARM] 半蔵paneがCodex update確認プロンプトで停止。集計コマンド=tmux capture-pane -t shogun:2.5 -p -S -30。出力行の生貼付: 1. Update now / 2. Skip / 3. Skip until next version。1件の定義=確認プロンプト1画面。安全規則によりnudge送信停止中。将軍から2. Skipを送出されたし。batch hotfixは疾風へ振替。
+  posted_by: 'karo'
+  posted_at: '2026-09-04T00:20:42'
+  requires_confirmation: false
+  action_type: 'info'
+  actioned_by: ''
+  notify_targets:
+    - 'shogun'
+  confirmed_by: []
+  status: 'open'
