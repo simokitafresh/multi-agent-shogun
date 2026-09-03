@@ -16180,3 +16180,59 @@ insights:
   source: "semantic_index_update"
   fix_known: false
   status: pending
+- id: INS-20260903-150459510-079e
+  ts: "2026-09-03T15:04:59+09:00"
+  insight: "[[つまりは迂回せずにバグの根治で対応しよう]] semantic_stress_test candidate_aliases: NO_MATCH source=lord query=つまりは迂回せずにバグの根治で対応しよう"
+  priority: "low"
+  source: "semantic_stress_test"
+  fix_known: false
+  status: pending
+- id: INS-20260903-150459908-c94f
+  ts: "2026-09-03T15:04:59+09:00"
+  insight: "[[C \\Users\\simok\\OneDrive\\デスクトップ\\バム型・届け方マニュアル v4 txt をよんでx acc]] semantic_stress_test candidate_aliases: NO_MATCH source=lord query=\"C:\\Users\\simok\\OneDrive\\デスクトップ\\バム型・届け方マニュアル v4.txt\"をよんでx_account_ops_automation_asis_tobe_5w1h_20260903.mdを更新して"
+  priority: "low"
+  source: "semantic_stress_test"
+  fix_known: false
+  status: pending
+- id: INS-20260903-150500493-94f9
+  ts: "2026-09-03T15:05:00+09:00"
+  insight: "[[T236 T232 T226b T230 T226 T224 T212 T201 T188の進捗を確認して]] semantic_stress_test candidate_aliases: NO_MATCH source=lord query=T236 / T232 / T226b / T230 / T226 / T224 / T212 / T201 / T188の進捗を確認して、完了に近づくために何をするべきか調査して"
+  priority: "low"
+  source: "semantic_stress_test"
+  fix_known: false
+  status: pending
+- id: INS-20260903-150501260-9241
+  ts: "2026-09-03T15:05:01+09:00"
+  insight: "[[殿 09 16『追加 4 点を起票してクローズまで持っていけ』]] semantic_stress_test test_set_candidate: high_frequency_NO_MATCH count=2 source=cmds query=殿 2026-09-03 09:16『追加 4 点を起票してクローズまで持っていけ』。設計書 §15: 稼働 daemon(pid 2581118、05:46 起動)は旧コードで stop flag/ledger 消費/root drain を持たず、家老と将軍が手動で 1 周ずつ回している。D006 により agent は kill せず、F009 により quality_gate=blind_hit_rate_non_regression fixed_50_role=regression_detection_only"
+  priority: "medium"
+  source: "semantic_stress_test"
+  fix_known: false
+  status: pending
+- id: INS-20260903-150509442-f600
+  ts: "2026-09-03T15:05:09+09:00"
+  insight: "[[つまりは迂回せずにバグの根治で対応しよう]] semantic_stress_test candidate_aliases: NO_MATCH source=lord query=つまりは迂回せずにバグの根治で対応しよう"
+  priority: "low"
+  source: "semantic_stress_test"
+  fix_known: false
+  status: pending
+- id: INS-20260903-150509982-3fea
+  ts: "2026-09-03T15:05:09+09:00"
+  insight: "[[C \\Users\\simok\\OneDrive\\デスクトップ\\バム型・届け方マニュアル v4 txt をよんでx acc]] semantic_stress_test candidate_aliases: NO_MATCH source=lord query=\"C:\\Users\\simok\\OneDrive\\デスクトップ\\バム型・届け方マニュアル v4.txt\"をよんでx_account_ops_automation_asis_tobe_5w1h_20260903.mdを更新して"
+  priority: "low"
+  source: "semantic_stress_test"
+  fix_known: false
+  status: pending
+- id: INS-20260903-150510486-3ca0
+  ts: "2026-09-03T15:05:10+09:00"
+  insight: "[[T236 T232 T226b T230 T226 T224 T212 T201 T188の進捗を確認して]] semantic_stress_test candidate_aliases: NO_MATCH source=lord query=T236 / T232 / T226b / T230 / T226 / T224 / T212 / T201 / T188の進捗を確認して、完了に近づくために何をするべきか調査して"
+  priority: "low"
+  source: "semantic_stress_test"
+  fix_known: false
+  status: pending
+- id: INS-20260903-150511052-d234
+  ts: "2026-09-03T15:05:11+09:00"
+  insight: "[[殿 09 16『追加 4 点を起票してクローズまで持っていけ』]] semantic_stress_test test_set_candidate: high_frequency_NO_MATCH count=2 source=cmds query=殿 2026-09-03 09:16『追加 4 点を起票してクローズまで持っていけ』。設計書 §15(v3.19): flag ON 04:37 以降の origin 101 commit 中 Published-By trailer 67=66%(ToBe 100%)。trailer 無しの出所=insights auto-commit 7・runtime quality_gate=blind_hit_rate_non_regression fixed_50_role=regression_detection_only"
+  priority: "medium"
+  source: "semantic_stress_test"
+  fix_known: false
+  status: pending
