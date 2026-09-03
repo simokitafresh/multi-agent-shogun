@@ -2015,3 +2015,15 @@ entries:
     - 'gunshi'
   confirmed_by: []
   status: 'open'
+- id: 'blt_20260903_191822_5ac401'
+  content: |-
+    DOC_LANE_REQUEST: CONTEXT_UPDATE_REQUEST project=infra context=context/infrastructure.md source_commit=16521692a3f1 parent_cmd=cmd_karo_hotfix_review_registry_claimed_report_202609031855 reason=approved_source_commit owner_route=shogun-doc-lane
+  posted_by: 'gate_context_freshness'
+  posted_at: '2026-09-03T19:18:22'
+  requires_confirmation: false
+  action_type: 'action_required'
+  actioned_by: ''
+  notify_targets:
+    - 'shogun'
+  confirmed_by: []
+  status: 'open'
