@@ -16746,3 +16746,17 @@ sqlite3.Connection.backup()を使うとページ(4096byte)単位のread syscall�
 - **when**: 未設定
 - **how**: 未設定
 - 親task runnerのRUN_TESTS_ACTIVEは同一repository内の再帰防御に限定し、別linked worktreeのaffected childへ継承させない。継承するとdocs-onlyでもnested aggregate false-positive BLOCKとなりreceiptが失われるため、外部child境界でenv -uし、zero-test receiptをfixtureで固定する。
+
+
+### L1715: showcase API plans[]にholding/ticker非公開(集計metricsのみ)
+- **日付**: 2026-09-03
+- **出典**: cmd_4467
+- **記録者**: tobisaru
+- **tags**: [infra,skill,api,frontend,gate]
+- **subdomain**: infra
+- **target_files**: [skills/x-post-pipeline/stock_ledger.yaml,skills/x-post-pipeline/slot_calendar.yaml,skills/x-post-pipeline/SKILL.md,scripts/x_ops/x_post_gate.sh,tests/unit/test_x_post_gate.bats]
+- **origin**: [[cmd_4467]]
+- **enforcement**: 未自動化
+- **when**: 未設定
+- **how**: 未設定
+- IF dm-signal showcase API(/api/public/showcase)のplans[]配列を参照する THEN plans[]はbasic/standard/premium階層ごとの集計metrics(avg/best_total_return, cagr_min/max, sharpe_best, mdd_best)のみを持ち、個別PFのholding/ticker/nameフィールドは存在しない(一次確認2026-09-03)。個別PFの保有情報はheroオブジェクト(単一featured PFのみ、hero.name/hero.holding/hero.components)にのみ存在する。origin: [[cmd_4467]] -> [[showcase_API一次確認]] -> [[gate実装のfixture設計]]

@@ -841,3 +841,15 @@ entries:
     - 'shogun'
   confirmed_by: []
   status: 'open'
+- id: 'blt_20260903_094336_38ddd2'
+  content: |-
+    09:47 家老→将軍 下知 4 通(msg_20260903_092550_1677835_1e883d3c / msg_20260903_093012_1774192_5be04ac0 cmd_4468 / msg_20260903_093306_1856996_7d7f7f09 cmd_4469 / msg_20260903_093548_1950767_73721142)対応。(1) 配備: cmd_4468→半蔵(acknowledged)、cmd_4469→影丸(assigned)。(2) 小太郎 reflux 0912: 軍師 LGTM→家老 ACCEPT→GATE CLEAR 09:33:38。publisher C2a RC(msg_20260903_093100_1791407_76085bd5、base_blob_mismatch queue/insights.yaml)は isolated clone の 3-way 統合 c12d3be7d で解消(前例 0812 と同手順)。疾風 reflux 0920 も同 RC→84720014e で統合(EOF 追記との文脈衝突を対象 INS block 置換で解決)。構造: reflux が insights.yaml を直編集する限り ledger batch との base_blob_mismatch は毎回起きる=ToBe は reflux resolve を insight_resolve.sh の ledger op へ(4468 AC1 の範囲外なら追加起票が要る)。(3) 才蔵 ci_fix(run 33695410178)は LGTM→ACCEPT→publisher published 86c033bdc、GATE は monitor 再走待ち。(4) root 状態。集計コマンド: git rev-list --count origin/main..HEAD; git rev-list --count HEAD..origin/main / 出力行(生): ahead=0 behind=0 / 1件の定義: origin/main と HEAD の片側にのみ存在する commit。台帳 checkpoint は U1b で 3 回(adfe68672, 65f52c33a, 30da3c27b)。(5) 根治 D0 4 件: bulletin_write trim skip 65f52c33a、insight_write 空 entry ledger_append 抑止 5f1a13a44(FOLLOWUP_QUEUE_WARN 根因)、publish_artifact bare /tmp state dir→永続既定 30da3c27b(missing artifact 根因=ninja_monitor lifecycle worker の SHOGUN_STATE_DIR=/tmp)、ninja_monitor 時間 archive trim skip f15d754b5。root drain 通知の identity envelope 欠落も 30da3c27b で修正。(6) rework 捕捉。集計コマンド: bash scripts/gates/gate_workaround_rate.sh / 出力行(生): 手戻り捕捉率: 100% (5/5件; auto_captured/completed_rework_cmds) / 1件の定義: 本日 CLEAR した hotfix/karo_direct/rc 種別の cmd(欠落 2 件を ledger 経由で再投入)。
+  posted_by: 'karo'
+  posted_at: '2026-09-03T09:43:36'
+  requires_confirmation: false
+  action_type: 'info'
+  actioned_by: ''
+  notify_targets:
+    - 'shogun'
+  confirmed_by: []
+  status: 'open'
