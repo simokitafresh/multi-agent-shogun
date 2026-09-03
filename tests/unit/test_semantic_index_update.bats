@@ -144,6 +144,34 @@ teardown() {
     grep -q '"ledger": "semantic_index"' "$state"/ledger_inbox/semantic_index/*.yaml
 }
 
+# test_necessity: Standalone semantic_map_generate intake must preserve the
+# caller checkout and become visible only after publisher applies its CAS op.
+@test "PUBLISHER_SINGLE: semantic map generatorはroot不変でledger適用後にindexへ反映する" {
+    local state="${TEST_TMPDIR}/map-state"
+    local config="$TEST_TMPDIR/projects.yaml"
+    local map="$SEMANTIC_MAP_PATH"
+    printf 'projects:\n  - id: beta_tool\n    name: Beta Tool\n    context_file: context/beta.md\n' > "$config"
+    printf 'sentinel map\n' > "$map"
+    export SHOGUN_STATE_DIR="$state" PUBLISHER_SINGLE=1
+    export SEMANTIC_PROJECTS_CONFIG="$config" SEMANTIC_NEW_FILE_LIST="__semantic_test_no_new_files__"
+    local before_index before_map
+    before_index="$(sha256sum "$SEMANTIC_INDEX_PATH" | awk '{print $1}')"
+    before_map="$(sha256sum "$map" | awk '{print $1}')"
+
+    run bash "$PROJECT_ROOT/scripts/semantic_map_generate.sh"
+    [ "$status" -eq 0 ]
+    [ "$(sha256sum "$SEMANTIC_INDEX_PATH" | awk '{print $1}')" = "$before_index" ]
+    [ "$(sha256sum "$map" | awk '{print $1}')" = "$before_map" ]
+    [ "$(find "$state/ledger_inbox/semantic_index" -maxdepth 1 -type f -name '*.yaml' | wc -l)" -eq 1 ]
+
+    local operation
+    operation="$(find "$state/ledger_inbox/semantic_index" -maxdepth 1 -type f -name '*.yaml' -print -quit)"
+    LEDGER_SOURCE_FILE="$SEMANTIC_INDEX_PATH" \
+        bash "$PROJECT_ROOT/scripts/ledger_writer.sh" apply "$operation" >/dev/null
+    grep -q '^## project_beta_tool — Beta Tool$' "$SEMANTIC_INDEX_PATH"
+    [ "$(sha256sum "$map" | awk '{print $1}')" = "$before_map" ]
+}
+
 @test "concurrent semantic writers serialize and preserve both updates without concept loss" {
     export SEMANTIC_MAP_GENERATE=/bin/true
     before="$(grep -c '^| id |' "$SEMANTIC_INDEX_PATH")"

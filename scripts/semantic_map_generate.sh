@@ -36,6 +36,25 @@ if [ "${SEMANTIC_INDEX_LOCK_HELD:-0}" != "1" ]; then
     flock -w 10 9 || { echo "ERROR: lock timeout: $lock_path" >&2; exit 1; }
 fi
 
+# In single-publisher mode the generator may discover new index rows while it
+# is running, but the caller's checkout is not the publication authority.
+# Keep the complete candidate in a ledger operation and let publisher.sh
+# apply it with the source-hash CAS contract.
+semantic_ledger_route=0
+if [[ -x "$repo_root/scripts/ledger_writer.sh" && -f "$repo_root/scripts/lib/publisher_single_flag.sh" ]]; then
+    # shellcheck source=scripts/lib/publisher_single_flag.sh
+    source "$repo_root/scripts/lib/publisher_single_flag.sh"
+    publisher_single_enabled "$repo_root" && semantic_ledger_route=1
+fi
+semantic_ledger_entry="$(mktemp "${TMPDIR:-/tmp}/semantic_map_generate.ledger.XXXXXX")"
+semantic_map_generate_cleanup() {
+    local rc=$?
+    rm -f "${semantic_ledger_entry:-}"
+    return "$rc"
+}
+trap semantic_map_generate_cleanup EXIT
+
+SEMANTIC_LEDGER_ROUTE="$semantic_ledger_route" SEMANTIC_LEDGER_ENTRY="$semantic_ledger_entry" \
 python3 - "$index_path" "$map_path" "$body_only" "$repo_root" <<'PY'
 import glob
 import json
@@ -51,12 +70,20 @@ index_path = Path(sys.argv[1])
 map_path = Path(sys.argv[2])
 body_only = sys.argv[3] == "true"
 repo_root = Path(sys.argv[4]) if len(sys.argv) > 4 else index_path.parent.parent.parent
+semantic_ledger_route = os.environ.get("SEMANTIC_LEDGER_ROUTE") == "1"
+semantic_ledger_entry = Path(os.environ["SEMANTIC_LEDGER_ENTRY"])
+
+def read_index_text():
+    """Read the in-process candidate before falling back to canonical bytes."""
+    if semantic_ledger_route and semantic_ledger_entry.exists() and semantic_ledger_entry.stat().st_size:
+        return semantic_ledger_entry.read_text(encoding="utf-8")
+    return index_path.read_text(encoding="utf-8")
 
 def atomic_write_text(path, text):
     """Publish complete text only; readers must never observe a prefix."""
     path.parent.mkdir(parents=True, exist_ok=True)
     if path == index_path and path.exists():
-        current = path.read_text(encoding="utf-8")
+        current = read_index_text()
         current_ids = re.findall(r"(?m)^\|\s*id\s*\|\s*([^|]+?)\s*\|$", current)
         candidate_ids = re.findall(r"(?m)^\|\s*id\s*\|\s*([^|]+?)\s*\|$", text)
         if not candidate_ids or len(candidate_ids) < len(current_ids):
@@ -65,6 +92,20 @@ def atomic_write_text(path, text):
             )
         if len(candidate_ids) != len(set(candidate_ids)):
             raise RuntimeError("semantic index invalid: duplicate concept ids")
+    if path == index_path and semantic_ledger_route:
+        fd, tmp_name = tempfile.mkstemp(
+            prefix=f".{semantic_ledger_entry.name}.", suffix=".tmp", dir=semantic_ledger_entry.parent
+        )
+        try:
+            with os.fdopen(fd, "w", encoding="utf-8") as fh:
+                fh.write(text)
+                fh.flush()
+                os.fsync(fh.fileno())
+            os.replace(tmp_name, semantic_ledger_entry)
+        finally:
+            if os.path.exists(tmp_name):
+                os.unlink(tmp_name)
+        return
     fd, tmp_name = tempfile.mkstemp(prefix=f".{path.name}.", suffix=".tmp", dir=path.parent)
     try:
         with os.fdopen(fd, "w", encoding="utf-8") as fh:
@@ -541,7 +582,7 @@ def backfill_zero_cmd_concepts(text):
     return updated, sum(len(v) for v in rows_by_id.values()) if changed else 0
 
 def auto_intake_semantic_index():
-    text = index_path.read_text(encoding="utf-8")
+    text = read_index_text()
     original_text = text
     text, project_count = ensure_project_concepts(text)
     text, backfill_count = backfill_zero_cmd_concepts(text)
@@ -685,7 +726,7 @@ def inject_causal_chains(index_path, origins):
     """index.mdの各概念のlesson参照からoriginを取得しcausal_chainを注入（冪等）"""
     if not origins:
         return 0
-    text = index_path.read_text(encoding="utf-8")
+    text = read_index_text() if index_path == globals()["index_path"] else index_path.read_text(encoding="utf-8")
     parts = re.split(r"(?m)(?=^## )", text)
     new_parts = []
     injected = 0
@@ -777,7 +818,7 @@ def cell(values, default="なし"):
         return values or default
     return ", ".join(values) if values else default
 
-concepts = parse_concepts(index_path.read_text(encoding="utf-8"))
+concepts = parse_concepts(read_index_text())
 lines = [
     "# セマンティクスマップ",
     "",
@@ -808,14 +849,24 @@ codd:
 ---
 
 """
-    map_path.parent.mkdir(parents=True, exist_ok=True)
-    atomic_write_text(map_path, frontmatter + body)
-    print(f"generated: {map_path}")
     origins = load_lesson_origins(repo_root)
     injected = inject_causal_chains(index_path, origins)
     if injected:
         print(f"causal_chain entries injected: {injected}")
+    if semantic_ledger_route:
+        print("semantic-map regeneration deferred to publisher")
+    else:
+        map_path.parent.mkdir(parents=True, exist_ok=True)
+        atomic_write_text(map_path, frontmatter + body)
+        print(f"generated: {map_path}")
 PY
+
+if [ "$semantic_ledger_route" = 1 ] && [ -s "$semantic_ledger_entry" ]; then
+    _semantic_entry_id="semantic-map-$(sha256sum "$semantic_ledger_entry" | awk '{print substr($1,1,16)}')"
+    LEDGER_SOURCE_FILE="$index_path" LEDGER_OPERATION_ID="$_semantic_entry_id" \
+        bash "$repo_root/scripts/ledger_writer.sh" append semantic_index "$semantic_ledger_entry" >/dev/null
+    echo "semantic-index ledger queued: $_semantic_entry_id"
+fi
 
 auto_resolve_semantic_index_insights() {
     local insight_script="$repo_root/scripts/insight_write.sh"
