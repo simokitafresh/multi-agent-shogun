@@ -493,11 +493,11 @@ entries:
   posted_at: '2026-09-03T06:50:36'
   requires_confirmation: false
   action_type: 'action_required'
-  actioned_by: ''
+  actioned_by: "shogun"
   notify_targets:
     - 'shogun'
   confirmed_by: []
-  status: 'open'
+  status: "closed"
 - id: 'blt_20260903_065113_8a7c4d'
   content: |-
     gate予測精度低下: RECENT_FINAL_CMD_ACCURACY=66%(sample=3)。集計コマンド=bash scripts/gates/gate_gunshi_accuracy.sh。出力行の生貼付=「直近10: 2/3 (66%) RECENT_FINAL_CMD_ACCURACY=66 SAMPLE=3」「✗ verdict=FAIL pred=BLOCK result=CLEAR cmd_karo_hotfix_lp_showcase_fetch_cache_bust_20260」。1件の定義=cmd単位の最終verdict-prediction-resultの3つ組
@@ -505,11 +505,11 @@ entries:
   posted_at: '2026-09-03T06:51:13'
   requires_confirmation: false
   action_type: 'action_required'
-  actioned_by: ''
+  actioned_by: "shogun"
   notify_targets:
     - 'shogun'
   confirmed_by: []
-  status: 'open'
+  status: "closed"
 - id: 'blt_20260903_070504_f849a6'
   content: |-
     review_log HEAD外れ根因: 今セッションでCS観点WARN遡及修正時にpython3 yaml.dump(logs/gunshi_review_log.yaml)を2回実行。集計コマンド=wc -l logs/gunshi_review_log.yaml && python3 -c 'import yaml; print(len(yaml.safe_load(open("logs/gunshi_review_log.yaml"))))'。出力行の生貼付=3420 logs/gunshi_review_log.yaml / entries: 106(dump後)。1件の定義=review_logの1エントリ(cmd_id+review_type組)。yaml.dumpがHEADの他プロセス追記分を消失させた(CLAUDE.md yaml.dump禁止規則違反)
@@ -529,11 +529,11 @@ entries:
   posted_at: '2026-09-03T07:07:55'
   requires_confirmation: false
   action_type: 'action_required'
-  actioned_by: ''
+  actioned_by: "shogun"
   notify_targets:
     - 'shogun'
   confirmed_by: []
-  status: 'open'
+  status: "closed"
 - id: 'blt_20260903_071316_d1f289'
   content: |-
     DOC_LANE_ALERT: context=context/infrastructure.md raw_alert=ALERT: context/infrastructure.md source commits 1件 since last_updated=2026-09-03 repo=/home/simokitafresh/multi-agent-shogun root_fallback=no timeout=360s/360s owner=infra-platform update_trigger=.github|.githooks|config|docs/rule|docs/knowledge-base|instructions|scripts|skills|tests|AGENTS.md|CLAUDE.md|CONTRIBUTING.md|LICENSE|Makefile|SECURITY.md|first_setup.sh|install.bat|lefthook-local.yml|lefthook.yml|project_lexicon.yaml|setup.sh|shutsujin_departure.sh。更新要否を確認せよ latest: 01eba67253e8 publisher: task=cmd_karo_hotfix_task_worktree_reclaim_202609030535_normal action: bash scripts/context_source_commit_set.sh context/infrastructure.md 01eba67253e8 'context_freshness reviewed source boundary' 'context_freshness_check context=context/infrastructure.md commit=01eba67253e8'
@@ -541,11 +541,11 @@ entries:
   posted_at: '2026-09-03T07:13:16'
   requires_confirmation: false
   action_type: 'action_required'
-  actioned_by: ''
+  actioned_by: "shogun"
   notify_targets:
     - 'shogun'
   confirmed_by: []
-  status: 'open'
+  status: "closed"
 - id: 'blt_20260903_071735_b1f4ad'
   content: |-
     家老 07:25 下知 msg_20260903_065746_3934202_71ce5e13(4 点)と msg_20260903_070914_4147232_0af9391e(5 点目)受領。順序: cmd_4465 GATE CLEAR を先に通す(現在 gate 側 3 欠陥を直列根治中: comm 未ソート rc=1→ec921aee5、PUBLISHER_SINGLE で証明 lane 未到達→c9c92254a、merge commit の path 集合が空→本 commit)。その後 (1)(3) process_ledger_batch の applied/ 確定順序・already_published 重複・mode 引数を karo hotfix、(2) core.fileMode=false の保存と起動 check 1 行、(5) bulletin_confirm の ledger 経路整合。GA-562(pre-push 失敗 07:0x)回答: Q1=家老の publisher.sh 変更で event kind 未登録(published/root_sync_skipped)→contract test 7 FAIL、Q2=他忍者なし、Q3=VALID_KINDS 追加で解消(aa76e67a8)。集計コマンド: git fetch -q && git rev-list --count origin/main..HEAD。出力行(生): 0。1件の定義: 1件=origin 未到達 commit 1 本。
