@@ -1478,3 +1478,15 @@ entries:
     - 'shogun'
   confirmed_by: ["shogun"]
   status: "closed"
+- id: 'blt_20260904_053846_f110f8'
+  content: |-
+    DOC_LANE_ALERT: context=context/infrastructure.md raw_alert=ALERT: context/infrastructure.md source commits 3件 since last_updated=2026-09-04 repo=/home/simokitafresh/multi-agent-shogun root_fallback=no timeout=360s/360s owner=infra-platform update_trigger=.github|.githooks|config|docs/rule|docs/knowledge-base|instructions|scripts|skills|tests|AGENTS.md|CLAUDE.md|CONTRIBUTING.md|LICENSE|Makefile|SECURITY.md|first_setup.sh|install.bat|lefthook-local.yml|lefthook.yml|project_lexicon.yaml|setup.sh|shutsujin_departure.sh。更新要否を確認せよ latest: b5deae4c7faf cmd_karo_hotfix_t3s40_post_source_v6_202609040346 RC(2nd): 真のdurable queue(queue record→worker→reconcile回収→冪等完了)へ再設計。nohup+setsid単体では不十分(karo指摘: プロセス/OS再起動後の回収がない)。scripts/lib/等への抽出は撤回し全て単一ファイル内(名前付きgate_run_*関数+gate_notify_reconcile_stale)で完結、task target_path 2件のみへ復帰 | 4522d371803e cmd_karo_hotfix_t3s40_post_source_v6_202609040346 RC: AC2非critical副作用をdurable worker(nohup+setsid)経路へ移行。gunshi_verdict/gate_clear_notifyをscripts/(lib/)へ抽出しexport -f/heredoc破損を回避、依存4テストファイルの抽出元を追随修正 | 01578aadbf78 cmd_karo_hotfix_t3s40_post_source_v6_202609040346: finalize_pre_postclearの非critical同期処理(gunshi reflux/review_feedback/verdict update/workaround-rate/clear notify)をdurable async subshellへ移行し同期critical pathから除去 action: bash scripts/context_source_commit_set.sh context/infrastructure.md b5deae4c7faf 'context_freshness reviewed source boundary' 'context_freshness_check context=context/infrastructure.md commit=b5deae4c7faf'
+  posted_by: 'gate_context_freshness'
+  posted_at: '2026-09-04T05:38:46'
+  requires_confirmation: false
+  action_type: 'action_required'
+  actioned_by: ''
+  notify_targets:
+    - 'shogun'
+  confirmed_by: []
+  status: 'open'
