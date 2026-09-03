@@ -159,6 +159,22 @@ _valid_hex_identity = (
     and len(commit_hash) == 40
     and all(c in "0123456789abcdef" for c in commit_hash)
 )
+# reflux resolve-only (U9 原則, cmd_karo_hotfix_reflux_ledger_resolve_op_202609031005): reflux task は
+# queue/insights.yaml を直接編集せず insight_resolve.sh の ledger op(publisher が別 commit で apply)
+# だけを出す。commit は存在しないので 40hex identity は無い。reflux_commit_contract.scope が空、
+# files_modified が queue/ 配下のみ、かつ ledger op path(<UTC>Z_<seq>.yaml)が報告に記録されている
+# 場合に限り、"ledger-resolve" identity を許可する(2026-09-03 11:47 飛猿 1136 で実証)。
+import re as _re
+_reflux_contract = d.get("reflux_commit_contract") or {}
+_reflux_scope_empty = isinstance(_reflux_contract, dict) and _reflux_contract.get("scope") == []
+_report_blob = __import__("json").dumps(d, default=str, ensure_ascii=False) if _reflux_scope_empty else ""
+_ledger_op_recorded = bool(_re.search(r"[0-9]{8}T[0-9]{9,15}Z_[0-9]{12}\.yaml", _report_blob))
+_queue_only = isinstance(files_modified, list) and bool(files_modified) and all(
+    isinstance(item, dict) and str(item.get("path", "")).strip().startswith("queue/") for item in files_modified
+)
+if _reflux_scope_empty and _ledger_op_recorded and _queue_only and not _valid_hex_identity:
+    print("ledger-resolve")
+    raise SystemExit(0)
 if operational_runtime_files and not _valid_hex_identity:
     print("no-code-change")
     raise SystemExit(0)
