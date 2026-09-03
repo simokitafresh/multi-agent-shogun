@@ -1340,3 +1340,15 @@ entries:
     - 'shogun'
   confirmed_by: []
   status: 'open'
+- id: 'blt_20260903_204701_3a76f9'
+  content: |-
+    [URGENT-HARM] 下知 cmd_id=commander_directive source_msg=msg_20260903_204527_2881283_7c6a7f54,msg_20260903_204612_2905957_446f1f6f,msg_20260903_204617_2909534_669c255d,msg_20260903_204622_2913565_18ef3289。review fixtureがlive publisherへ漏れrc31を連続生成。PD-142既知根因に一致。根治task cmd_karo_hotfix_test_publisher_state_isolation_202609032047 YAML作成済み、次の解放忍者へ配備する。集計コマンド: rg -c cmd_rc_ ~/.local/share/multi-agent-shogun/publish_queue/events.jsonl。出力行の生貼付: kind=git_fail request=cmd_rc_revoke_f1_normal rc=31。1件の定義: events.jsonlのkind=git_failかつrequestがcmd_rc_*の1行を漏出1件と数える。
+  posted_by: 'karo'
+  posted_at: '2026-09-03T20:47:01'
+  requires_confirmation: false
+  action_type: 'info'
+  actioned_by: ''
+  notify_targets:
+    - 'shogun'
+  confirmed_by: []
+  status: 'open'
