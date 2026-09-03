@@ -2979,3 +2979,40 @@
   source: root_dirty_recovery_T3-S-54
   reviewed_at: "2026-09-04T06:13:00+09:00"
   timestamp: "2026-09-04T06:13:00+09:00"
+- brainwash_check: '#1no #2no #3no #4no #5no #6no #7no #8no | 再承認: precheck 3/3 ERRORS=0,
+    registry 3/3 登録済, 旧key gunshi.yaml 3/3 fp不一致を実測'
+  causal_chain: done status配備不可→in_progress|done拡張→配備可
+  cmd_id: cmd_karo_hotfix_t3s49_done_await_clear_slot_202609040042
+  finding_categories:
+  - assumptions
+  - numbers
+  - simulation
+  - premortem
+  - adversarial
+  - ambiguity
+  findings_summary: 4観点OK。deploy_task done+completed配備可拡張。precheck CLEAR
+  gate_prediction: CLEAR
+  gate_prediction_reason: all checks passed
+  observations:
+  - '事実1: status判定in_progress|doneへ拡張'
+  - '事実(再承認 2026-09-04T06:55:06): 前LGTM 2026-09-04T01:05:00 は旧identity keyに記録され、identity
+    v2 key d356c272f547 には gunshi.yaml 不在。将軍下知06:30/06:48に従い同一generation ce5fea49cf33
+    へ正規入口(review_bundle.py single)で正式approvalを発行。precheck再実行 ERRORS=0/CLEAR'
+  - '事実(2026-09-04T06:59:30): 初回 single 実行は ledger_writer entry_id が先頭キー限定 regex で
+    ''entry must contain id'' BLOCK(3/3 同一)。軍師 D0 f1dc1f764(半蔵 18e2de6ea と同一 hunk)で解消後に再実行'
+  operational_simulation:
+    actual: ERRORS=0
+    command: precheck
+    expected: CLEAR
+    result: PASS
+  report_fingerprint: ce5fea49cf3389e3970869a115309717b6da69bb74a27ca5b49ab816aee66fa7
+  report_ninja: kotaro
+  report_task_id: cmd_karo_hotfix_t3s49_done_await_clear_slot_202609040042_normal
+  report_verdict: PASS
+  review_type: report
+  reviewed_at: '2026-09-04T06:59:30+09:00'
+  step3_5_verified: true
+  timestamp: '2026-09-04T06:59:30'
+  verdict: LGTM
+  verified_files:
+  - scripts/deploy_task/main.sh:1
