@@ -245,6 +245,24 @@ sync_root() {
             merge_results+=("$overlap_path|$result_file")
         done
 
+        # update-ref's third argument is a compare-and-swap on the ref's current
+        # value. A concurrent writer (another publisher pass, a direct commit in
+        # the shared root) can advance HEAD between the "$head" capture above and
+        # this call; the CAS then fails without touching the ref. Attempt it
+        # before mutating the index/worktree below, so a lost race leaves every
+        # local edit (merged results included) exactly as found instead of
+        # applying an update the ref never actually advanced to. Pre-fix, this
+        # 4th path fell through the reason-less final check further down and was
+        # reported as reason=unknown (38/39 current-format root_sync_skipped
+        # events, 2026-09-03 06:01-07:34). Classify it explicitly instead: a
+        # protective skip, symmetric with no_driver/driver_failed above.
+        if ! git -C "$root" update-ref HEAD "$tip" "$head"; then
+            SYNC_ROOT_SKIP_REASON="head_moved"
+            SYNC_ROOT_SKIP_PATHS="$(IFS=,; echo "${overlap_paths[*]}")"
+            rm -rf -- "$merge_root"
+            echo "publisher: root sync BLOCK head_moved head=$head tip=$tip paths=$SYNC_ROOT_SKIP_PATHS" >&2
+            return 32
+        fi
         # Update the index without touching the worktree.  Dirty paths are
         # intentionally left in place; clean paths changed by the tip are
         # checked out explicitly below, avoiding any operation that can erase
@@ -265,13 +283,26 @@ sync_root() {
             rm -f -- "$root/$result_path"
             cp -a -- "$result_source" "$root/$result_path"
         done
-        git -C "$root" update-ref HEAD "$tip" "$head"
         rm -rf -- "$merge_root"
     else
-        git -C "$root" update-ref HEAD "$tip" "$head"
+        if ! git -C "$root" update-ref HEAD "$tip" "$head"; then
+            SYNC_ROOT_SKIP_REASON="head_moved"
+            SYNC_ROOT_SKIP_PATHS="$(tracked_dirty_paths "$root")"
+            echo "publisher: root sync BLOCK head_moved head=$head tip=$tip paths=$SYNC_ROOT_SKIP_PATHS" >&2
+            return 32
+        fi
         git -C "$root" read-tree -u -m "$tip"
     fi
-    [ "$(git -C "$root" rev-parse HEAD)" = "$tip" ]
+    if [ "$(git -C "$root" rev-parse HEAD)" != "$tip" ]; then
+        # update-ref reported success above, so HEAD must already be "$tip".
+        # This is an unreachable-in-practice safety net; still name it so no
+        # branch of sync_root ever depends on the caller's "unknown" fallback.
+        SYNC_ROOT_SKIP_REASON="postsync_verify_mismatch"
+        SYNC_ROOT_SKIP_PATHS="$(tracked_dirty_paths "$root")"
+        echo "publisher: root sync BLOCK postsync_verify_mismatch head=$head tip=$tip actual=$(git -C "$root" rev-parse HEAD)" >&2
+        return 32
+    fi
+    return 0
 }
 
 process_request() {

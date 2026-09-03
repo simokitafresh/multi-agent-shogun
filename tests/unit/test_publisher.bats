@@ -190,6 +190,83 @@ teardown() {
     [[ "$output" == *"no_driver paths=payload.txt"* ]]
 }
 
+# test_necessity: a concurrent writer moving root HEAD between the head
+# capture and update-ref's compare-and-swap must be classified explicitly,
+# not fall through to the reason-less "unknown" default (38/39 current-format
+# root_sync_skipped events on 2026-09-03 06:01-07:34 were reason=unknown
+# before this fix, per the ff/no-overlap branch's update-ref call).
+@test "active root sync classifies a lost HEAD race as head_moved, not unknown" {
+    git -C "$WORK" push -q origin HEAD
+    git -C "$PUBROOT" fetch -q origin
+    tip="$(git -C "$PUBROOT" rev-parse origin/main)"
+    base="$(git -C "$PUBROOT" rev-parse HEAD)"
+
+    run bash -c '
+        PUBLISHER_LIB_ONLY=1 PUBLISHER_REPO_ROOT="$1" source "$2/scripts/publisher.sh"
+        git() {
+            if [ "$1" = -C ] && [ "$3" = update-ref ] && [ "$4" = HEAD ]; then
+                echo "fatal: simulated CAS loss" >&2
+                return 1
+            fi
+            command git "$@"
+        }
+        sync_root "$1" "$3"
+    ' _ "$PUBROOT" "$ROOT" "$tip"
+    [ "$status" -eq 32 ]
+    [ "$(git -C "$PUBROOT" rev-parse HEAD)" = "$base" ]
+    [[ "$output" == *"head_moved"* ]]
+    [[ "$output" != *"reason=unknown"* ]]
+}
+
+# test_necessity: the same CAS-loss classification must also apply inside the
+# driver 3-way branch (the branch most commonly overlapping in production),
+# and the locally merged dirty content must not be discarded when the skip
+# is reported.
+@test "active root sync classifies a lost HEAD race during driver merge as head_moved" {
+    printf 'payload.txt merge=test-driver\n' > "$PUBROOT/.gitattributes"
+    git -C "$PUBROOT" config merge.test-driver.driver 'cp %B %A'
+    printf 'local-dirty\n' > "$PUBROOT/payload.txt"
+    git -C "$WORK" push -q origin HEAD
+    git -C "$PUBROOT" fetch -q origin
+    tip="$(git -C "$PUBROOT" rev-parse origin/main)"
+    base="$(git -C "$PUBROOT" rev-parse HEAD)"
+
+    run bash -c '
+        PUBLISHER_LIB_ONLY=1 PUBLISHER_REPO_ROOT="$1" source "$2/scripts/publisher.sh"
+        git() {
+            if [ "$1" = -C ] && [ "$3" = update-ref ] && [ "$4" = HEAD ]; then
+                echo "fatal: simulated CAS loss" >&2
+                return 1
+            fi
+            command git "$@"
+        }
+        sync_root "$1" "$3"
+    ' _ "$PUBROOT" "$ROOT" "$tip"
+    [ "$status" -eq 32 ]
+    [ "$(git -C "$PUBROOT" rev-parse HEAD)" = "$base" ]
+    [ "$(<"$PUBROOT/payload.txt")" = "local-dirty" ]
+    [[ "$output" == *"head_moved"* ]]
+    [[ "$output" != *"reason=unknown"* ]]
+}
+
+# test_necessity: local HEAD diverging from the incoming tip (not an
+# ancestor) must stay reported as not_descendant, distinct from head_moved,
+# and must not touch the root's ref or worktree.
+@test "active root sync reports not_descendant when local HEAD diverges from tip" {
+    printf 'root-local\n' > "$PUBROOT/rootlocal.txt"
+    git -C "$PUBROOT" add rootlocal.txt
+    git -C "$PUBROOT" commit -q -m root-local
+    git -C "$WORK" push -q origin HEAD
+    git -C "$PUBROOT" fetch -q origin
+    tip="$(git -C "$PUBROOT" rev-parse origin/main)"
+    head="$(git -C "$PUBROOT" rev-parse HEAD)"
+
+    run bash -c 'PUBLISHER_LIB_ONLY=1 PUBLISHER_REPO_ROOT="$1" source "$2/scripts/publisher.sh"; sync_root "$1" "$3"' _ "$PUBROOT" "$ROOT" "$tip"
+    [ "$status" -eq 32 ]
+    [ "$(git -C "$PUBROOT" rev-parse HEAD)" = "$head" ]
+    [[ "$output" == *"not_descendant"* ]]
+}
+
 # test_necessity: every externally visible publisher daemon line must retain
 # its JST timestamp prefix so logs can be assigned to a publication window.
 @test "publisher daemon output lines start with JST ISO timestamps" {
