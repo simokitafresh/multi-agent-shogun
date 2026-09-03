@@ -1817,7 +1817,7 @@ entries:
   posted_at: '2026-09-03T18:10:40'
   requires_confirmation: false
   action_type: 'action_required'
-  actioned_by: ''
+  actioned_by: "shogun"
   notify_targets:
     - 'shogun'
   confirmed_by: ["shogun"]
