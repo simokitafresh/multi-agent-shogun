@@ -16956,3 +16956,17 @@ sqlite3.Connection.backup()を使うとページ(4096byte)単位のread syscall�
 - **when**: 未設定
 - **how**: 未設定
 - cmd_complete_gate_publisher_origin_ready(9ff24e941着地)は『while開始→check→elapsed判定→sleep 0.5』というbounded pollループで、コメント上は『bounded to a short local poll』10s上限のはずだった。しかし経過時間判定はcheck完了『後』にしか行われず、check自体(python3 fork、しかもids/source_shasをloop内で毎回再エンコードする冗長構造)が本番のCPU競合下で数秒〜十数秒に伸びると、1回のiterationだけでtimeout予算を超過し、繰り返せば設定値の3-6倍(実測max59.948s、設定10s)まで超過した。是正は(1)loop不変の計算をloop外へ出す(2)loop内の外部呼び出しは残り予算をtimeoutコマンドで強制付与する、の2点。この構造(『経過時間チェックは仕事の後』+『1回のiteration自体に上限がない』)は他のsleep-basedポーリングloop設計でも再発しうる汎用パターンであり、新規のbounded wait loopを書く際は必ず(1)(2)を満たしているか確認すべき。
+
+
+### L1731: sed行範囲抽出は非一意アンカーで分岐をまたいで誤爆する
+- **日付**: 2026-09-04
+- **出典**: cmd_karo_hotfix_t3s40_post_source_full_instrumentation_202609040542
+- **記録者**: tobisaru
+- **tags**: [infra,cmd-quality,testing,gate,bash]
+- **subdomain**: infra
+- **target_files**: [scripts/cmd_complete_gate.sh,tests/unit/test_cmd_complete_gate_source_publish.bats]
+- **origin**: [[cmd_karo_hotfix_t3s40_post_source_full_instrumentation_202609040542]]
+- **enforcement**: 未自動化
+- **when**: 未設定
+- **how**: 未設定
+- cmd_complete_gate.shのようにif [ "$ALL_CLEAR" = true ]; thenが複数箇所(3箇所)存在するファイルで、テキスト順の開始/終了アンカーだけでWAIT経路のコード範囲を抽出すると、実行時は排他的な分岐(WAIT/CLEAR)がテキスト上は連続しているため、抽出範囲が無関係なCLEARブロック全体を呑み込む。構造sweepツールをまず小さいプロトタイプスクリプトで試作し、抽出結果の行数/内容を出力して目視確認してからbatsへ組み込むことで検出できた。今後同種の抽出(関数境界ではなくif/fi範囲)を書く際は、開始・終了アンカーそれぞれの一意性だけでなく「間に他の分岐の終端が現れないか」を検証してから使うべき
