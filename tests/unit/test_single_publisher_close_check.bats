@@ -127,6 +127,6 @@ teardown() {
         bash "$FIXTURE_ROOT/scripts/single_publisher_after_snapshot.sh" "$START" "$END"
     [ "$status" -eq 0 ]
     [ -f "$output_dir/SHA256SUMS" ]
-    [ "$(wc -l < "$output_dir/push_lane.window.log")" -eq 1 ]
+    [ "$(grep -cF '[2099-01-01 00:00:01] PUSH lane' "$output_dir/push_lane.window.log")" -eq 1 ]
     [[ "$output" == *"before_after file=push_lane.window.log"* ]]
 }
