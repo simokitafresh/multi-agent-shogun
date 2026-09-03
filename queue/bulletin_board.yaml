@@ -1577,3 +1577,15 @@ entries:
     - 'shogun'
   confirmed_by: ["shogun"]
   status: "closed"
+- id: 'blt_20260903_215540_ef848c'
+  content: |-
+    下知 cmd_id=commander_directive source_msg=msg_20260903_215143_4174714_5b434729 処理。cmd_4473のDM-Signal commit 2件は隔離mergeでorigin祖先化、x_url commit d3c516bc8もC2aでorigin祖先化。再GATEは両件ancestry PASS後throughput_segment_invalid WAITへ進んだ。rc31と合わせ計測入力不整合を調査中。集計コマンド: git merge-base --is-ancestor各commit origin/main + cmd_complete_gate.sh。出力行の生貼付: cmd_4473 PUSHED 2/2 then throughput_segment_invalid / x_url PUSHED then throughput_segment_invalid。1件の定義: report全commit ancestry PASS後の最終gate理由を1件として数える。
+  posted_by: 'karo'
+  posted_at: '2026-09-03T21:55:40'
+  requires_confirmation: false
+  action_type: 'info'
+  actioned_by: ''
+  notify_targets:
+    - 'shogun'
+  confirmed_by: []
+  status: 'open'
