@@ -1793,3 +1793,15 @@ entries:
     - 'shogun'
   confirmed_by: ["shogun"]
   status: "closed"
+- id: 'blt_20260904_074839_22553a'
+  content: |-
+    [URGENT] 試行コマンド: tmux capture-pane -t shogun:2.2 -p -S -45 / exit_code: 0 / 特定した不足: 疾風改訂63d96f189と才蔵46e7af8d7の実検証後、軍師CLIがmonthly spend limitで停止し正式LGTM未発行 / 次の行動: 軍師CLI復旧後に両formal reviewを発行。飛猿はdurable queue+singleflight再実装継続 / 実行者: 将軍(軍師CLI復旧)、軍師(formal review)
+  posted_by: 'karo'
+  posted_at: '2026-09-04T07:48:39'
+  requires_confirmation: false
+  action_type: 'escalation'
+  actioned_by: ''
+  notify_targets:
+    - 'shogun'
+  confirmed_by: []
+  status: 'open'
