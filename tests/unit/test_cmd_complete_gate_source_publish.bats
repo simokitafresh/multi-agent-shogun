@@ -17,7 +17,11 @@ import sys
 from pathlib import Path
 
 text = Path(sys.argv[1]).read_text(encoding="utf-8")
-names = ("source_publish_receipt_matches", "cmd_complete_gate_publisher_origin_ready")
+names = (
+    "source_publish_receipt_matches",
+    "cmd_complete_gate_publisher_origin_ready",
+    "queue_postclear_publication_followup",
+)
 chunks = []
 for name in names:
     match = re.search(r"(?ms)^" + re.escape(name) + r"\(\) \{.*?^\}", text)
@@ -134,4 +138,120 @@ STUB
     elapsed=$((end_ts - start_ts))
     [ "$status" -ne 0 ]
     [ "$elapsed" -le 5 ]
+}
+
+# test_necessity: cmd_karo_hotfix_t3s40_post_source_v3_202609040000 AC1/AC2.
+# Production evidence (bulletin msg_20260903_235739_1881534_35233737 /
+# docs/research/tsumari_root_causes_20260901.md T3-S-40, cmd
+# cmd_karo_hotfix_t3s40_post_source_perf_202609032243, 23:29 cycle):
+# postclear_followup.push_task_repositories=6.022s,
+# post_source_checks.durable_writer_wait=10.791s. Both run inside
+# queue_postclear_publication_followup's detached background subshell
+# (trailing `&`); the caller must never observe either delay, or a
+# regression that drops the trailing `&` would silently re-inflate the
+# synchronous post_source_checks subphase past the 5s p50 / 10s max target.
+@test "queue_postclear_publication_followup stays non-blocking when the durable writer drain is slow" {
+    local base="$BATS_TEST_TMPDIR/postclear-slow-durable"
+    mkdir -p "$base"
+    GATES_DIR="$base"
+    CMD_ID="cmd_postclear_slow_durable_probe"
+    MATCHING_TASK_FILES=()
+
+    push_task_repositories() { return 0; }
+    wait_for_postclear_durable_writers() { sleep 8; return 0; }
+    publish_postclear_runtime_deltas() { return 0; }
+    gate_detail_begin() { :; }
+    gate_detail_finish() { :; }
+
+    source "$GATE_SOURCE_PUBLISH_HELPERS"
+
+    local start_ts end_ts elapsed
+    start_ts=$(date +%s)
+    queue_postclear_publication_followup
+    end_ts=$(date +%s)
+    elapsed=$((end_ts - start_ts))
+    [ "$elapsed" -le 2 ]
+
+    wait
+    grep -qF "$(printf '\t%s\t0\t0\t0' "$CMD_ID")" "$base/postclear_publication.log"
+}
+
+@test "queue_postclear_publication_followup stays non-blocking when push_task_repositories is slow" {
+    local base="$BATS_TEST_TMPDIR/postclear-slow-push"
+    mkdir -p "$base"
+    GATES_DIR="$base"
+    CMD_ID="cmd_postclear_slow_push_probe"
+    MATCHING_TASK_FILES=()
+
+    push_task_repositories() { sleep 8; return 0; }
+    wait_for_postclear_durable_writers() { return 0; }
+    publish_postclear_runtime_deltas() { return 0; }
+    gate_detail_begin() { :; }
+    gate_detail_finish() { :; }
+
+    source "$GATE_SOURCE_PUBLISH_HELPERS"
+
+    local start_ts end_ts elapsed
+    start_ts=$(date +%s)
+    queue_postclear_publication_followup
+    end_ts=$(date +%s)
+    elapsed=$((end_ts - start_ts))
+    [ "$elapsed" -le 2 ]
+
+    wait
+    grep -qF "$(printf '\t%s\t0\t0\t0' "$CMD_ID")" "$base/postclear_publication.log"
+}
+
+@test "queue_postclear_publication_followup: normal path finishes end-to-end well under the 10s ceiling" {
+    local base="$BATS_TEST_TMPDIR/postclear-normal"
+    mkdir -p "$base"
+    GATES_DIR="$base"
+    CMD_ID="cmd_postclear_normal_probe"
+    MATCHING_TASK_FILES=()
+
+    push_task_repositories() { return 0; }
+    wait_for_postclear_durable_writers() { return 0; }
+    publish_postclear_runtime_deltas() { return 0; }
+    gate_detail_begin() { :; }
+    gate_detail_finish() { :; }
+
+    source "$GATE_SOURCE_PUBLISH_HELPERS"
+
+    local start_ts end_ts elapsed
+    start_ts=$(date +%s)
+    queue_postclear_publication_followup
+    wait
+    end_ts=$(date +%s)
+    elapsed=$((end_ts - start_ts))
+    [ "$elapsed" -le 10 ]
+    grep -qF "$(printf '\t%s\t0\t0\t0' "$CMD_ID")" "$base/postclear_publication.log"
+}
+
+# test_necessity: AC2 requires the region between capture_rework_event and
+# queue_postclear_publication_followup to have zero unmeasured detail-log
+# gap (production showed ~6-13s unaccounted there). Assert the wrapping
+# post_source_checks.finalize_pre_postclear span exists, precedes the call,
+# and is the only gate_detail_begin/finish pair in that stretch (no nested
+# begin re-opens/steals the span before it is explicitly closed), and that
+# the semantic memory scan that used to run synchronously inside that
+# stretch is launched through the async queue wrapper instead.
+@test "post_source finalize_pre_postclear span is exclusive and semantic memory scan runs off the sync path" {
+    local gate_script="$BATS_TEST_DIRNAME/../../scripts/cmd_complete_gate.sh"
+
+    ! grep -q 'run_report_memory_semantic_scan ||' "$gate_script"
+    grep -q '^queue_report_memory_semantic_scan()' "$gate_script"
+    grep -q '    queue_report_memory_semantic_scan$' "$gate_script"
+
+    local finalize_begin_line followup_line
+    finalize_begin_line=$(grep -n 'gate_detail_begin "post_source_checks.finalize_pre_postclear"' "$gate_script" | head -1 | cut -d: -f1)
+    followup_line=$(grep -n '^    queue_postclear_publication_followup$' "$gate_script" | tail -1 | cut -d: -f1)
+    [ -n "$finalize_begin_line" ]
+    [ -n "$followup_line" ]
+    [ "$finalize_begin_line" -lt "$followup_line" ]
+
+    local begin_count finish_count
+    begin_count=$(sed -n "$((finalize_begin_line + 1)),$((followup_line - 1))p" "$gate_script" | grep -c 'gate_detail_begin' || true)
+    finish_count=$(sed -n "$((finalize_begin_line + 1)),$((followup_line - 1))p" "$gate_script" | grep -c 'gate_detail_finish' || true)
+    [ "$begin_count" -eq 0 ]
+    [ "$finish_count" -eq 1 ]
 }

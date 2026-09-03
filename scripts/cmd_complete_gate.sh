@@ -7646,6 +7646,18 @@ PY
     return 0
 }
 
+# cmd_karo_hotfix_t3s40_post_source_v3_202609040000: this was the last
+# remaining synchronous, non-critical step in the post_source_checks region
+# (one semantic_search.sh call per lesson/knowledge/decision candidate found
+# across all matching task files). Every neighboring GATE CLEAR side effect
+# in this region is already backgrounded; run it the same way so it stops
+# contributing to the synchronous post_source_checks budget.
+queue_report_memory_semantic_scan() {
+    (run_report_memory_semantic_scan || echo "  [WARN] report memory semantic scan failed (non-blocking)") \
+        >> "$LOG_DIR/cmd_complete_gate_async.log" 2>&1 &
+}
+export -f queue_report_memory_semantic_scan
+
 auto_resolve_cmd_related_insights() {
     local cmd_id="$1"
     local insight_script="$SCRIPT_DIR/scripts/insight_resolve.sh"
@@ -15217,6 +15229,17 @@ if [ "$ALL_CLEAR" = true ]; then
         exit 1
     fi
     gate_detail_finish
+    # cmd_karo_hotfix_t3s40_post_source_v3_202609040000: everything from here
+    # to queue_postclear_publication_followup was previously uninstrumented,
+    # showing up as an unexplained gap between capture_rework_event and the
+    # postclear_followup.* details (production measured ~6-13s, see
+    # docs bulletin msg_20260903_235739_1881534_35233737 / tsumari T3-S-40).
+    # Wrap it as a single named span so no synchronous time in this region is
+    # unmeasured; queue_postclear_publication_followup/durable_writer_wait/
+    # push_task_repositories themselves already run detached in the
+    # background (see queue_postclear_publication_followup) and correctly
+    # stay outside this span and outside the post_source_checks subphase.
+    gate_detail_begin "post_source_checks.finalize_pre_postclear" pure_processing
     # The wrapper's durable worker waits for this generation-bound marker,
     # rather than for this gate process to finish. Everything above this point
     # is fail-closed; everything below remains in that same durable worker.
@@ -15337,7 +15360,8 @@ PY
         echo "  [INFO] semantic_index_update.sh not found (skip)"
     fi
     echo "  semantic-map regeneration follows index update inside durable worker"
-    run_report_memory_semantic_scan || echo "  [WARN] report memory semantic scan failed (non-blocking)"
+    queue_report_memory_semantic_scan
+    echo "  report memory semantic scan: queued (async; log=$LOG_DIR/cmd_complete_gate_async.log)"
 
     # ─── Semantic causal traverse（GATE CLEAR時 パルス伝達, cmd_3439） ───
     # Long-running affected-node tests are detached, but never best-effort:
@@ -16035,6 +16059,7 @@ PYEOF
 
     echo ""
     echo "Durable writer/runtime publication (post-CLEAR follow-up):"
+    gate_detail_finish
     queue_postclear_publication_followup
 
     # COMPLETE is published after the gate decision.  Durable writer and
