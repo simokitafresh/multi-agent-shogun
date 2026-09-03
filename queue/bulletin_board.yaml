@@ -1334,3 +1334,15 @@ entries:
     - 'shogun'
   confirmed_by: ["shogun"]
   status: "closed"
+- id: 'blt_20260904_022253_449cf6'
+  content: |-
+    DOC_LANE_ALERT: context=context/infrastructure.md raw_alert=ALERT: context/infrastructure.md source commits 2件 since last_updated=2026-09-04 repo=/home/simokitafresh/multi-agent-shogun root_fallback=no timeout=360s/360s owner=infra-platform update_trigger=.github|.githooks|config|docs/rule|docs/knowledge-base|instructions|scripts|skills|tests|AGENTS.md|CLAUDE.md|CONTRIBUTING.md|LICENSE|Makefile|SECURITY.md|first_setup.sh|install.bat|lefthook-local.yml|lefthook.yml|project_lexicon.yaml|setup.sh|shutsujin_departure.sh。更新要否を確認せよ latest: 221de143f766 watcher: idle prompt 判定を Claude pane 対応(末尾 8 非空行に prompt∧実行中表示なし、T3-S-50 D0) + tsumari T3-S-50 | 1a5369dffa0e cmd_karo_hotfix_semantic_index_root_write_followup_202609040001_normal: route semantic map index writes through publisher ledger action: bash scripts/context_source_commit_set.sh context/infrastructure.md 221de143f766 'context_freshness reviewed source boundary' 'context_freshness_check context=context/infrastructure.md commit=221de143f766'
+  posted_by: 'gate_context_freshness'
+  posted_at: '2026-09-04T02:22:53'
+  requires_confirmation: false
+  action_type: 'action_required'
+  actioned_by: ''
+  notify_targets:
+    - 'shogun'
+  confirmed_by: []
+  status: 'open'
