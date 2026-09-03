@@ -21,6 +21,7 @@ names = (
     "source_publish_receipt_matches",
     "cmd_complete_gate_publisher_origin_ready",
     "queue_postclear_publication_followup",
+    "cmd_complete_gate_queue_auto_push_ancestry_retry",
 )
 chunks = []
 for name in names:
@@ -342,6 +343,58 @@ STUB
     grep -qF "$(printf '\t%s\t0\t0\t0' "$CMD_ID")" "$base/postclear_publication.log"
 }
 
+# test_necessity: cmd_karo_hotfix_t3s40_auto_push_wait_async AC2. Production
+# evidence (cmd_karo_hotfix_t3s40_post_source_full_instrumentation) measured
+# post_source_checks.report_commit_main_ancestry.auto_push_wait
+# (cmd_complete_gate_auto_push_ancestry_wait -> push_task_repositories) as a
+# ~28.043s unnamed residual dominating the WAIT cycle. The L4 caller's gate
+# decision is already fail-closed WAIT the instant the ancestry boundary is
+# unresolved, independent of this retry's outcome, so the retry must never
+# block the current gate invocation. False negative here = a regression that
+# drops the trailing `&`, silently re-inflating post_source_checks past the
+# ~28s the production cycle measured.
+@test "cmd_complete_gate_queue_auto_push_ancestry_retry stays non-blocking when the underlying push retry is slow" {
+    local base="$BATS_TEST_TMPDIR/auto-push-retry-slow"
+    mkdir -p "$base"
+    GATES_DIR="$base"
+    CMD_ID="cmd_auto_push_retry_slow_probe"
+
+    cmd_complete_gate_auto_push_ancestry_wait() { sleep 8; return 0; }
+
+    source "$GATE_SOURCE_PUBLISH_HELPERS"
+
+    local start_ts end_ts elapsed
+    start_ts=$(date +%s)
+    cmd_complete_gate_queue_auto_push_ancestry_retry task1.yaml task2.yaml
+    end_ts=$(date +%s)
+    elapsed=$((end_ts - start_ts))
+    [ "$elapsed" -le 2 ]
+
+    wait
+    grep -qF "$(printf '\t%s\tPASS' "$CMD_ID")" "$base/auto_push_ancestry_retry.log"
+}
+
+# test_necessity: false-positive guard for the same fixture -- a failed
+# underlying retry (push_task_repositories exhausted its own retries and
+# failed closed) must still record a distinguishable outcome, not be silently
+# swallowed as if it had passed, so a human/monitor scanning the retry log can
+# tell a still-unresolved boundary from a landed one.
+@test "cmd_complete_gate_queue_auto_push_ancestry_retry records a distinguishable outcome when the underlying push retry fails" {
+    local base="$BATS_TEST_TMPDIR/auto-push-retry-fail"
+    mkdir -p "$base"
+    GATES_DIR="$base"
+    CMD_ID="cmd_auto_push_retry_fail_probe"
+
+    cmd_complete_gate_auto_push_ancestry_wait() { return 1; }
+
+    source "$GATE_SOURCE_PUBLISH_HELPERS"
+
+    cmd_complete_gate_queue_auto_push_ancestry_retry task1.yaml
+    wait
+    grep -qF "$(printf '\t%s\tFAIL' "$CMD_ID")" "$base/auto_push_ancestry_retry.log"
+    ! grep -qF "$(printf '\t%s\tPASS' "$CMD_ID")" "$base/auto_push_ancestry_retry.log"
+}
+
 # test_necessity: AC2 requires the region between capture_rework_event and
 # queue_postclear_publication_followup to have zero unmeasured detail-log
 # gap (production showed ~6-13s unaccounted there). Assert the wrapping
@@ -537,19 +590,22 @@ STUB
     grep -q 'echo "GATE BLOCK: \${CMD_ID}:status_completed_publish_failed"' "$gate_script"
 }
 
-# test_necessity: cmd_karo_hotfix_t3s40_post_source_full_instrumentation AC2
-# (WAIT fixture). Runs the ACTUAL WAIT-path source (the L4 ancestry block
-# and the wait_block_finalize tail, extracted verbatim by setup_file, not
+# test_necessity: cmd_karo_hotfix_t3s40_auto_push_wait_async AC2 (WAIT
+# fixture, updated from the cmd_karo_hotfix_t3s40_post_source_full_instrumentation
+# version). Runs the ACTUAL WAIT-path source (the L4 ancestry block and the
+# wait_block_finalize tail, extracted verbatim by setup_file, not
 # reimplemented) with the real gate_detail_begin/finish/gate_subphase_tick
-# span primitives and a stubbed cmd_complete_gate_auto_push_ancestry_wait
-# (the call that WAS the unwrapped 28.043s residual in AC1) sleeping a fixed
-# 3s so real span/flock/fork overhead (single-digit ms) cannot plausibly
-# erode the 95% floor. false_positive = an unexpected/duplicate span label
-# (would mean a span re-opened without closing, double counting time);
-# false_negative = named_sum falling under the total (a still-unwrapped
-# region). Asserts both are 0, coverage >=95%, and the fixture itself
-# produces no additional FAIL/SKIP (a non-zero exit from run_wait_tail_block
-# other than the expected WAIT-path 1 would be exactly that).
+# span primitives and a stubbed cmd_complete_gate_queue_auto_push_ancestry_retry
+# (the fire-and-forget dispatcher that replaced the direct, blocking
+# cmd_complete_gate_auto_push_ancestry_wait call -- the ~28.043s residual
+# AC1 confirmed) returning immediately, matching its real non-blocking
+# contract (proved separately above). false_positive = an unexpected/
+# duplicate span label (would mean a span re-opened without closing, double
+# counting time); false_negative = named_sum falling under the total (a
+# still-unwrapped region). Asserts both are 0, coverage >=95%, and the
+# fixture itself produces no additional FAIL/SKIP (a non-zero exit from
+# run_wait_tail_block other than the expected WAIT-path 1 would be exactly
+# that).
 @test "AC2 WAIT fixture: post_source_checks named span coverage is >=95% with 0 false positives/negatives" {
     source "$GATE_DETAIL_SPAN_HELPERS"
 
@@ -584,18 +640,25 @@ STUB
     level_heading() { :; }
     local _ancestry_calls=0
     check_report_commit_main_ancestry() {
+        # This remains real synchronous work on the L4 sync path (unlike the
+        # push retry, it was not moved off it). A fixed delay large enough to
+        # dominate fork/flock/tick overhead (the same margin the original
+        # fixture used before this task moved the ~28s push off this path)
+        # keeps this span's share of the total stable against timer noise,
+        # without fabricating time inside the (now near-instant) dispatch
+        # span below.
         _ancestry_calls=$((_ancestry_calls + 1))
+        sleep 3
         REPORT_COMMIT_MAIN_ANCESTRY_WAIT=true
         [ "$_ancestry_calls" -eq 1 ]
     }
     record_block_reason() { :; }
     record_wait_reason() { WAIT_REASONS+=("$1"); }
-    cmd_complete_gate_auto_push_ancestry_wait() {
-        # Stands in for the real push_task_repositories call this span now
-        # wraps (production measured ~28s here); scaled to a fixed 3s so the
-        # single-digit-ms fork/flock overhead between spans cannot approach
-        # 5% of the total under any realistic CI load.
-        sleep 3
+    cmd_complete_gate_queue_auto_push_ancestry_retry() {
+        # Real contract: fire-and-forget dispatch that returns immediately
+        # (see the dedicated non-blocking fixtures above); the ~28s
+        # push_task_repositories work this replaced now runs detached and
+        # must never appear inside this span's duration.
         return 0
     }
     classify_gate_record_reasons() { printf 'WAIT'; }
@@ -615,11 +678,13 @@ STUB
     [ -n "$total" ]
     named_sum=$(awk -F'\t' '{sum+=$5} END{printf "%.6f", sum+0}' "$GATE_DETAIL_LOG")
 
-    # false_positive check: exactly the 4 expected labels, each exactly once
+    # false_positive check: exactly the 3 expected labels, each exactly once
     # (a duplicate would mean a span re-opened without its own begin, i.e.
-    # double-counted/overlapping time).
+    # double-counted/overlapping time). No .reverify span exists any more --
+    # the synchronous reverify-after-inline-push step was removed along with
+    # the blocking push itself.
     local expected_labels actual_labels
-    expected_labels=$'post_source_checks.report_commit_main_ancestry\npost_source_checks.report_commit_main_ancestry.auto_push_wait\npost_source_checks.report_commit_main_ancestry.reverify\npost_source_checks.wait_block_finalize'
+    expected_labels=$'post_source_checks.report_commit_main_ancestry\npost_source_checks.report_commit_main_ancestry.auto_push_wait\npost_source_checks.wait_block_finalize'
     actual_labels=$(awk -F'\t' '{print $4}' "$GATE_DETAIL_LOG" | sort)
     [ "$actual_labels" = "$(printf '%s\n' "$expected_labels" | sort)" ]
 

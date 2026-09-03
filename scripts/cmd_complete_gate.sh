@@ -3587,6 +3587,31 @@ else:
 PY
 }
 
+# cmd_karo_hotfix_t3s40_auto_push_wait_async: cmd_complete_gate_auto_push_ancestry_wait
+# below is the ~28.043s synchronous residual measured in production
+# (cmd_karo_hotfix_t3s40_post_source_full_instrumentation: post_source_checks
+# total 29.475s vs named 1.432s, i.e. this single unwrapped call was the
+# residual). The L4 caller's gate decision for the current invocation is
+# already fail-closed WAIT the instant REPORT_COMMIT_MAIN_ANCESTRY_WAIT is
+# true, independent of whether this retry succeeds -- a later gate invocation
+# (this cmd's own re-run, or another cmd's) re-derives the ancestry boundary
+# from scratch via check_report_commit_main_ancestry and observes a resolved
+# boundary once this background retry lands. There is no correctness reason
+# to block the current invocation on its outcome, so dispatch it off the
+# synchronous critical path; the outcome surfaces only in the retry log.
+cmd_complete_gate_queue_auto_push_ancestry_retry() {
+    local -a task_file_args=("$@")
+    local retry_log="$GATES_DIR/auto_push_ancestry_retry.log"
+    (
+        if cmd_complete_gate_auto_push_ancestry_wait "${task_file_args[@]}"; then
+            printf '%s\t%s\tPASS\n' "$(date -Iseconds)" "$CMD_ID" >> "$retry_log"
+        else
+            printf '%s\t%s\tFAIL\n' "$(date -Iseconds)" "$CMD_ID" >> "$retry_log"
+        fi
+    ) >> "$retry_log" 2>&1 &
+}
+export -f cmd_complete_gate_queue_auto_push_ancestry_retry
+
 cmd_complete_gate_auto_push_ancestry_wait() {
     local repo="${CMD_COMPLETE_GATE_AUTO_PUSH_REPO:-$SCRIPT_DIR}" remote_tip ci_state push_output
     local threshold="${CMD_COMPLETE_GATE_AUTO_PUSH_THRESHOLD:-1}"
@@ -15375,37 +15400,19 @@ if [ "$ALL_CLEAR" = true ]; then
         ALL_CLEAR=false
     elif [ "${REPORT_COMMIT_MAIN_ANCESTRY_WAIT:-false}" = true ]; then
         gate_detail_finish
-        # cmd_karo_hotfix_t3s40_post_source_full_instrumentation: this call is
-        # the dominant unmeasured region of the WAIT cycle (production
-        # measured post_source_checks total 29.475s vs named 1.432s here,
-        # i.e. this single unwrapped call was the ~28.043s residual). It
-        # contains the ancestry fetch/merge-base checks, lock waits, and the
-        # retry/sleep loop inside push_task_repositories, so classify it
-        # external_wait as a single span rather than decomposing internals
-        # that push_task_repositories does not itself expose.
+        # cmd_karo_hotfix_t3s40_auto_push_wait_async: this invocation is
+        # already fail-closed WAIT the moment the boundary is unresolved, so
+        # queue the retry off the synchronous path instead of blocking this
+        # invocation on the ~28.043s push_task_repositories retry/sleep loop
+        # that cmd_karo_hotfix_t3s40_post_source_full_instrumentation measured
+        # as the dominant unnamed residual. A later gate invocation
+        # re-derives REPORT_COMMIT_MAIN_ANCESTRY_WAIT from scratch and will
+        # see the boundary resolved once the retry lands.
         gate_detail_begin "post_source_checks.report_commit_main_ancestry.auto_push_wait" external_wait
-        if cmd_complete_gate_auto_push_ancestry_wait "${MATCHING_TASK_FILES[@]}"; then
-            gate_detail_finish
-            # The helper refreshes origin/main after publication. Re-run the
-            # same ancestry SSOT so a successful push clears this WAIT in the
-            # current gate invocation and leaves no stale terminal row.
-            gate_detail_begin "post_source_checks.report_commit_main_ancestry.reverify" pure_processing
-            if check_report_commit_main_ancestry \
-                && [ "${REPORT_COMMIT_MAIN_ANCESTRY_WAIT:-false}" != true ]; then
-                gate_detail_finish
-                echo "GATE PASS: report_commit_main_ancestry auto-push verified"
-            else
-                gate_detail_finish
-                echo "GATE WAIT: report_commit_main_ancestry (auto-push did not clear the boundary)"
-                record_wait_reason "WAIT:report_commit_main_ancestry"
-                ALL_CLEAR=false
-            fi
-        else
-            gate_detail_finish
-            echo "GATE WAIT: report_commit_main_ancestry (auto-push failed closed)"
-            record_wait_reason "WAIT:report_commit_main_ancestry"
-            ALL_CLEAR=false
-        fi
+        cmd_complete_gate_queue_auto_push_ancestry_retry "${MATCHING_TASK_FILES[@]}"
+        gate_detail_finish
+        echo "GATE WAIT: report_commit_main_ancestry (auto-push retry queued off sync path)"
+        record_wait_reason "WAIT:report_commit_main_ancestry"
         ALL_CLEAR=false
     else
         gate_detail_finish
