@@ -561,16 +561,17 @@ if [ "${#MISSING_COMMANDS[@]}" -gt 0 ] && command -v apt-get >/dev/null 2>&1; th
 fi
 
 # Python dependencies are isolated per clone and never installed globally.
+# xdk(official X API SDK, scripts/x_ops/x_post.sh postの必須依存)もPyYAMLと同様にimport可能かを検証する。
 VENV_DIR="$SCRIPT_DIR/.venv"
-if [ -x "$VENV_DIR/bin/python3" ] && "$VENV_DIR/bin/python3" -c 'import yaml' >/dev/null 2>&1; then
-    record_dependency "python-venv:PyYAML" "既存"
+if [ -x "$VENV_DIR/bin/python3" ] && "$VENV_DIR/bin/python3" -c 'import yaml, xdk' >/dev/null 2>&1; then
+    record_dependency "python-venv:PyYAML+xdk" "既存"
 else
-    if python3 -m venv "$VENV_DIR" >/dev/null 2>&1 && "$VENV_DIR/bin/pip" install -r "$SCRIPT_DIR/requirements.txt" -q >/dev/null 2>&1 && "$VENV_DIR/bin/python3" -c 'import yaml' >/dev/null 2>&1; then
-        record_dependency "python-venv:PyYAML" "作成"
+    if python3 -m venv "$VENV_DIR" >/dev/null 2>&1 && "$VENV_DIR/bin/pip" install -r "$SCRIPT_DIR/requirements.txt" -q >/dev/null 2>&1 && "$VENV_DIR/bin/python3" -c 'import yaml, xdk' >/dev/null 2>&1; then
+        record_dependency "python-venv:PyYAML+xdk" "作成"
     else
-        log_warn "Python venv/PyYAMLを準備できませんでした"
+        log_warn "Python venv/PyYAML/xdkを準備できませんでした"
         HAS_ERROR=true
-        record_dependency "python-venv:PyYAML" "不足"
+        record_dependency "python-venv:PyYAML+xdk" "不足"
     fi
 fi
 

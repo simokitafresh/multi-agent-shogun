@@ -1,2 +1,3 @@
 PyYAML==6.0.3
 websocket-client>=1.6.0  # CDP daemon mode (cdp_server.py) — persistent WebSocket connection
+xdk==0.10.6  # official X API Python SDK (scripts/x_ops/x_post.sh post)
