@@ -611,7 +611,7 @@ fi
 #   前提として課すのも、軍師の accuracy 母集団に家老の判断を持ち込むことになる。
 if [ "$role" = gunshi ] && [ "$result" = LGTM ] && [ "${REVIEW_APPROVAL_SKIP_LEDGER_CHECK:-0}" != 1 ]; then
   ledger_file="$ROOT/logs/gunshi_review_log.yaml"
-  if ! grep -Eq "^[[:space:]]*-?[[:space:]]*cmd_id:[[:space:]]*[\"']?${cmd_id}[\"']?[[:space:]]*$" "$ledger_file" 2>/dev/null; then
+  if ! review_log_has_identity "$ROOT" "$cmd_id" "$report" "$fingerprint" "$canonical_generation"; then
     echo "BLOCK: review ledger entry missing for $cmd_id — approval withheld." >&2
     echo "  正規入口: python3 scripts/review_bundle.py single --cmd '$cmd_id' --verdict APPROVE --report '$report_rel' --review-entry <review-entry.yaml>" >&2
     echo "  この入口がbundle生成→review ledger追記→正式approval→家老通知を一試行で順序保証する。" >&2

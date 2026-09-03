@@ -8,6 +8,90 @@ setup_file() {
     REVIEW_APPROVAL_SCRIPT="$(cd "$(dirname "$BATS_TEST_FILENAME")/../.." && pwd)/scripts/review_approval.sh"
 }
 
+setup_ledger_fallback_fixture() {
+    export LEDGER_ROOT="$BATS_TEST_TMPDIR/review-log-ledger-root"
+    export LEDGER_STATE="$BATS_TEST_TMPDIR/review-log-ledger-state"
+    mkdir -p "$LEDGER_ROOT/logs" "$LEDGER_ROOT/queue/reports" "$LEDGER_STATE/ledger_inbox/review_log"
+    cat > "$LEDGER_ROOT/queue/reports/worker_report_cmd_ledger_fixture.yaml" <<'YAML'
+worker_id: worker
+task_id: cmd_ledger_fixture_normal
+report_id: rpt-ledger-fixture
+report_identity_version: 2
+YAML
+    export LEDGER_ENTRY="- cmd_id: cmd_ledger_fixture\n  verdict: LGTM\n  report: queue/reports/worker_report_cmd_ledger_fixture.yaml\n  report_task_id: cmd_ledger_fixture_normal\n  report_id: rpt-ledger-fixture\n  report_identity_version: 2\n"
+}
+
+review_log_fallback_lookup() {
+    REVIEW_LOG_SOURCE_REMOTE_REF=origin/main SHOGUN_STATE_DIR="$LEDGER_STATE" \
+      bash -c 'source "$1"; review_log_has_identity "$2" cmd_ledger_fixture "$2/queue/reports/worker_report_cmd_ledger_fixture.yaml" fp gen' \
+      _ "$REVIEW_APPROVAL_SCRIPT_DIR/scripts/lib/review_approval.sh" "$LEDGER_ROOT"
+}
+
+# test_necessity: review approval must accept the publisher's four durable
+# review-log locations while binding every candidate to the current report.
+@test "review log fallback accepts root, origin, applied, and pending identities" {
+    export REVIEW_APPROVAL_SCRIPT_DIR="$(cd "$(dirname "$BATS_TEST_FILENAME")/../.." && pwd)"
+    setup_ledger_fallback_fixture
+
+    printf '%b' "$LEDGER_ENTRY" > "$LEDGER_ROOT/logs/gunshi_review_log.yaml"
+    run review_log_fallback_lookup
+    [ "$status" -eq 0 ]
+
+    printf '[]\n' > "$LEDGER_ROOT/logs/gunshi_review_log.yaml"
+    git init -q -b main "$LEDGER_ROOT"
+    git -C "$LEDGER_ROOT" config user.email test@example.com
+    git -C "$LEDGER_ROOT" config user.name test
+    blob="$(printf '%b' "$LEDGER_ENTRY" | git -C "$LEDGER_ROOT" hash-object -w --stdin)"
+    logs_tree="$(printf '100644 blob %s\tgunshi_review_log.yaml\n' "$blob" | git -C "$LEDGER_ROOT" mktree)"
+    root_tree="$(printf '040000 tree %s\tlogs\n' "$logs_tree" | git -C "$LEDGER_ROOT" mktree)"
+    commit="$(printf 'origin fixture\n' | git -C "$LEDGER_ROOT" commit-tree "$root_tree")"
+    git -C "$LEDGER_ROOT" update-ref refs/remotes/origin/main "$commit"
+    run review_log_fallback_lookup
+    [ "$status" -eq 0 ]
+
+    cat > "$LEDGER_STATE/ledger_inbox/review_log/applied.yaml" <<YAML
+op: append
+ledger: review_log
+entry_text: |
+  - cmd_id: cmd_ledger_fixture
+    verdict: LGTM
+    report: queue/reports/worker_report_cmd_ledger_fixture.yaml
+    report_task_id: cmd_ledger_fixture_normal
+    report_id: rpt-ledger-fixture
+    report_identity_version: 2
+YAML
+    git -C "$LEDGER_ROOT" update-ref -d refs/remotes/origin/main
+    run review_log_fallback_lookup
+    [ "$status" -eq 0 ]
+
+    cp "$LEDGER_STATE/ledger_inbox/review_log/applied.yaml" "$LEDGER_STATE/ledger_inbox/review_log/pending.yaml"
+    rm -f "$LEDGER_STATE/ledger_inbox/review_log/applied.yaml"
+    run review_log_fallback_lookup
+    [ "$status" -eq 0 ]
+}
+
+# test_necessity: stale or absent review evidence must remain fail-closed even
+# when the command id alone matches.
+@test "review log fallback rejects identity mismatch and missing sources" {
+    export REVIEW_APPROVAL_SCRIPT_DIR="$(cd "$(dirname "$BATS_TEST_FILENAME")/../.." && pwd)"
+    setup_ledger_fallback_fixture
+    printf '[]\n' > "$LEDGER_ROOT/logs/gunshi_review_log.yaml"
+    mismatch='- cmd_id: cmd_ledger_fixture
+  verdict: LGTM
+  report: queue/reports/other_report.yaml
+  report_task_id: other_task
+  report_id: other-report
+  report_identity_version: 9
+'
+    printf '%s' "$mismatch" > "$LEDGER_STATE/ledger_inbox/review_log/pending.yaml"
+    run review_log_fallback_lookup
+    [ "$status" -eq 1 ]
+
+    rm -f "$LEDGER_STATE/ledger_inbox/review_log/pending.yaml"
+    run review_log_fallback_lookup
+    [ "$status" -eq 1 ]
+}
+
 setup_resolve_fixture() {
     export RESOLVE_ROOT="$BATS_TEST_TMPDIR/resolve-root"
     mkdir -p "$RESOLVE_ROOT/queue/reports" "$RESOLVE_ROOT/queue/archive/reports" \
