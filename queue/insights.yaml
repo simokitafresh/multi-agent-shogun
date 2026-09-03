@@ -16290,7 +16290,9 @@ insights:
   priority: "low"
   source: "semantic_stress_test"
   fix_known: false
-  status: pending
+  status: "resolved"
+  action_artifact: "semantic_index=/home/simokitafresh/multi-agent-shogun/docs/semantic-index/index.md"
+  resolved_reason: "semantic index candidate was absorbed into a registered concept"
 - id: INS-20260903-151359699-0cdf
   ts: "2026-09-03T15:13:59+09:00"
   insight: "[[X 運用 P1 下書き生成 S3]] semantic_stress_test candidate_aliases: NO_MATCH source=cmds query=X 運用 P1: 下書き生成(S3、マニュアル v4 §11 システム文固定)→gate 規則 7〜12+語彙拡張(S4)→ntfy 承認待ち→X API v2 投稿 client(S5、OAuth 2.0 PKCE、creds 不在は fail-close)を 1 本の CLI に接続し、台帳に site_public_table と advanced_m"
