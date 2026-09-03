@@ -40,6 +40,29 @@ _archive_one() {
         return 1
     fi
 
+    # PUBLISHER_SINGLE flag ON: queue/bulletin_board.yaml は publisher(ledger route)が正本を
+    # commit する。この関数のcount-basedトリムはPUBLISHER_SINGLEを判定せずrootを直接書き換え、
+    # root/origin間の恒久乖離を生む(2026-09-03 23:27 -11行prune事故の実writer。呼出元は
+    # bulletin_write.sh/cmd_save.sh等、複数の生存caller)。周期整理はbulletin_archive.sh
+    # (ledger update op、root書換なし)へ委譲し、root trimはしない。呼出元を問わずここで
+    # 一元的にガードするため、bulletin_write.sh/cmd_save.sh側の個別修正は不要になる。
+    if [[ "$relpath" == "queue/bulletin_board.yaml" ]]; then
+        local _yaa_flag_helper="$ROOT_DIR/scripts/lib/publisher_single_flag.sh"
+        if [[ -f "$_yaa_flag_helper" ]]; then
+            # shellcheck source=lib/publisher_single_flag.sh
+            source "$_yaa_flag_helper"
+        fi
+        if declare -f publisher_single_enabled >/dev/null 2>&1 && publisher_single_enabled "$ROOT_DIR"; then
+            # bulletin_archive.shはbash経由起動のため実行bitは不要(-fで存在確認する。
+            # -xで判定すると core.fileMode=false 環境の素チェックアウトで誤ってskipされる)。
+            if [[ -f "$ROOT_DIR/scripts/bulletin_archive.sh" ]]; then
+                bash "$ROOT_DIR/scripts/bulletin_archive.sh" >/dev/null 2>&1 || true
+            fi
+            echo "SKIP $relpath: PUBLISHER_SINGLE ON — routed via bulletin_archive.sh ledger op instead of root trim"
+            return 0
+        fi
+    fi
+
     if [[ ! -f "$path" ]]; then
         echo "SKIP missing $relpath"
         return

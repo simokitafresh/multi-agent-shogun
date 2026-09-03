@@ -13,7 +13,10 @@ setup() {
     cp "$BATS_TEST_DIRNAME/../../scripts/lib/lock_path.sh" "$TEST_ROOT/scripts/lib/lock_path.sh"
     cp "$BATS_TEST_DIRNAME/../../scripts/bulletin_archive.sh" "$TEST_ROOT/scripts/bulletin_archive.sh"
     cp "$BATS_TEST_DIRNAME/../../scripts/ledger_writer.sh" "$TEST_ROOT/scripts/ledger_writer.sh"
-    mkdir -p "$TEST_ROOT/queue/archive" "$TEST_ROOT/queue/flags"
+    cp "$BATS_TEST_DIRNAME/../../scripts/yaml_auto_archive.sh" "$TEST_ROOT/scripts/yaml_auto_archive.sh"
+    mkdir -p "$TEST_ROOT/config" "$TEST_ROOT/queue/archive" "$TEST_ROOT/queue/flags"
+    printf 'queue/bulletin_board.yaml\t2\tentries\t^\\s*-\\s+id:\tqueue/archive/bulletin_board_archive.yaml\n' \
+        > "$TEST_ROOT/config/yaml_auto_archive.tsv"
     cat > "$TEST_ROOT/scripts/inbox_write_fixture.sh" <<'SH'
 #!/bin/bash
 printf '%s\n' "$1|$3|$4|$5" >> "$BULLETIN_NOTIFY_CAPTURE"
@@ -270,6 +273,51 @@ EOF
     run env SHOGUN_STATE_DIR="$LEDGER_STATE" bash "$TEST_ROOT/scripts/ledger_writer.sh" apply "$update_op"
     [ "$status" -eq 0 ]
     grep -q 'status: "closed"' "$TEST_ROOT/queue/bulletin_board.yaml"
+}
+
+# test_necessity: PUBLISHER_SINGLE中、yaml_auto_archive.sh(汎用count-basedトリム)自体も
+# queue/bulletin_board.yamlをroot trimせず、bulletin_archive.shのledger routeへ委譲する
+# (2026-09-03 23:27 -11行prune事故の実writerに対する直接regression test)。
+@test "PUBLISHER_SINGLE ON: generic yaml_auto_archive.sh delegates bulletin_board.yaml to the ledger route instead of trimming root" {
+    _publisher_single_write_old_board "$TEST_ROOT/queue/bulletin_board.yaml"
+    _publisher_single_git_init "$TEST_ROOT"
+    LEDGER_STATE="$BATS_TEST_TMPDIR/ledger_state_yaa"
+    mkdir -p "$LEDGER_STATE"
+
+    run env SHOGUN_ROOT="$TEST_ROOT" SHOGUN_STATE_DIR="$LEDGER_STATE" \
+        bash "$TEST_ROOT/scripts/yaml_auto_archive.sh"
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"SKIP queue/bulletin_board.yaml"*"PUBLISHER_SINGLE ON"* ]]
+
+    # AC2: root tracked porcelain増分0 — 汎用archiverもrootを直接trimしない
+    [ -z "$(git -C "$TEST_ROOT" status --porcelain -- queue/bulletin_board.yaml)" ]
+
+    local update_op
+    update_op="$(grep -l '"op": "update"' "$LEDGER_STATE"/ledger_inbox/bulletin/*.yaml | head -1)"
+    [ -n "$update_op" ]
+}
+
+# test_necessity: AC1「全caller」要件の直接証跡。cmd_save.sh(quality logがrepository既定の
+# 場合に無条件でyaml_auto_archive.shを呼ぶ、target_pathに含まれる別caller)からの起動でも
+# root boardを直接trimしないことを、cmd_save.shが実際に使う呼出し形(引数なしbash起動)で確認する。
+@test "PUBLISHER_SINGLE ON: cmd_save.sh's unconditional yaml_auto_archive.sh call never trims root board" {
+    _publisher_single_write_old_board "$TEST_ROOT/queue/bulletin_board.yaml"
+    _publisher_single_git_init "$TEST_ROOT"
+    LEDGER_STATE="$BATS_TEST_TMPDIR/ledger_state_cmdsave"
+    mkdir -p "$LEDGER_STATE"
+
+    # scripts/cmd_save.sh:3146 の呼出し形を再現: `bash "$SCRIPT_DIR/yaml_auto_archive.sh"`
+    # (引数なし・SHOGUN_ROOT未設定・SCRIPT_DIRのみ既知)。
+    run env SHOGUN_STATE_DIR="$LEDGER_STATE" \
+        bash "$TEST_ROOT/scripts/yaml_auto_archive.sh"
+    [ "$status" -eq 0 ]
+
+    # AC1: cmd_save.sh経由でもroot tracked porcelain増分0
+    [ -z "$(git -C "$TEST_ROOT" status --porcelain -- queue/bulletin_board.yaml)" ]
+
+    local update_op
+    update_op="$(grep -l '"op": "update"' "$LEDGER_STATE"/ledger_inbox/bulletin/*.yaml 2>/dev/null | head -1)"
+    [ -n "$update_op" ]
 }
 
 # test_necessity: PUBLISHER_SINGLE中、bulletin_archive.shの直接呼び出し経路もroot boardを
