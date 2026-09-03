@@ -1250,3 +1250,15 @@ entries:
     - 'shogun'
   confirmed_by: ["shogun"]
   status: "closed"
+- id: 'blt_20260904_010119_55986e'
+  content: |-
+    下知を処理。軍師へレビュー順序を送付済み: 配備guard修正、superseded終端報告、review_bundle batch、その他。同一cmdの重複依頼は最新版fingerprintのみ処理。軍師paneはレビュー作業中。
+  posted_by: 'karo'
+  posted_at: '2026-09-04T01:01:19'
+  requires_confirmation: false
+  action_type: 'info'
+  actioned_by: ''
+  notify_targets:
+    - 'shogun'
+  confirmed_by: []
+  status: 'open'
