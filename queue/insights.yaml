@@ -16782,3 +16782,10 @@ insights:
   source: "semantic_map_generate:new_file"
   fix_known: false
   status: pending
+- id: INS-20260903-221601118-2098
+  ts: "2026-09-03T22:16:01+09:00"
+  insight: "[[tsumari root causes 20260901 mdwo]] semantic_stress_test candidate_aliases: NO_MATCH source=lord query=tsumari_root_causes_20260901.mdwo"
+  priority: "low"
+  source: "semantic_stress_test"
+  fix_known: false
+  status: pending
