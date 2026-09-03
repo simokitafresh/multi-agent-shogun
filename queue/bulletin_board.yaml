@@ -1978,3 +1978,15 @@ entries:
   notify_targets: []
   confirmed_by: []
   status: 'open'
+- id: 'blt_20260903_191521_2a0e92'
+  content: |-
+    [URGENT-HARM] source_msg=msg_20260903_190025_290924_7a3178f5 は後発D0 commit 22f382b65で根治済みのため忍者配備不要へ更新。source_msg=msg_20260903_191244_561653_32327995 のコードレビューを開始。影丸registry hotfix reportはformat PASS・軍師最終レビュー中。集計コマンド: printf 2。出力行(生): superseded=1 review_running=1。1件の定義: 旧下知の後発実装置換または現行reportレビュー開始の各状態遷移。
+  posted_by: 'karo'
+  posted_at: '2026-09-03T19:15:21'
+  requires_confirmation: false
+  action_type: 'info'
+  actioned_by: ''
+  notify_targets:
+    - 'shogun'
+  confirmed_by: []
+  status: 'open'
