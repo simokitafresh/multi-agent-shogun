@@ -15837,7 +15837,9 @@ insights:
   priority: "medium"
   source: "lord_conversation:lesson_candidate"
   fix_known: false
-  status: pending
+  status: "resolved"
+  action_artifact: "primary=docs/research/x_account_ops_automation_asis_tobe_5w1h_20260903.md:233-268(§12 E軸ドリーム v0.8, 殿裁定12:52/12:55反映済み);memory_db=knowledge:658d2d9e56f64a45(shogun 2026-09-03T12:56:31 裁定記録);queue/pending_decisions.yaml:一致する未解決裁定なし(grep 0件);semantic-map.md:一過性発案のため該当エントリなし・新規concept化不要;task=cmd_reflux_insight_202609031303_tobisaru_exact"
+  resolved_reason: "一次情報で確認した結論は、殿発案(2026-09-03 12:49)『X運用にE軸ドリームを追加、分身・四つ目のデータも出すべき』は既に殿裁定(12:52/12:55)として確定し、docs/research/x_account_ops_automation_asis_tobe_5w1h_20260903.md v0.8 §12『E軸ドリーム』へ反映済み(inception以来のセット数字公開・分身/四つ目を同一投稿へ同居させない設計・gate規則11/12・P1 AC(e)-(g)まで具体化)。記憶DB knowledge:658d2d9e56f64a45(shogun 2026-09-03T12:56:31)にも同一裁定が記録済み。pending_decisions.yamlに一致する未解決裁定なし、semantic-map.mdは一過性の殿発案のため新規concept化不要と判断。新規実修正・decision_candidateは不要のためresolveのみ行う。"
 - id: INS-20260903-125240981-6534
   ts: "2026-09-03T12:52:40+09:00"
   insight: "semantic_index_update新概念候補: discussion:われわれは情報提供業ではない。あくまで個人の研究を共有しているだけだ。法務はマナーとして下品でなければいいのでは？絶対に儲かるとかそういうことを言わないのが俺な は 既存aliasesに一致なし。概念定義とaliases追加を検討せよ"
@@ -15927,6 +15929,48 @@ insights:
 - id: INS-20260903-130131676-b3a2
   ts: "2026-09-03T13:01:31+09:00"
   insight: "[[X apiを取得しようとしたらこれを要求された]] semantic_stress_test candidate_aliases: NO_MATCH source=lord query=X-apiを取得しようとしたらこれを要求された。開発者PPUパイロット契約および開発者ポリシー XのデータおよびAPIのすべてのユースケースを説明してください： この情報はデータ保護のために必要です"
+  priority: "low"
+  source: "semantic_stress_test"
+  fix_known: false
+  status: pending
+- id: INS-20260903-130556715-dc5c
+  ts: "2026-09-03T13:05:56+09:00"
+  insight: "[[x account ops automation asis tobe 5w1h 20260903 mdについてチャットし]] semantic_stress_test candidate_aliases: NO_MATCH source=lord query=x_account_ops_automation_asis_tobe_5w1h_20260903.mdについてチャットしよう。俺はもう1軸欲しいと思う。テーマはドリームだ。詐欺でも煽りでもなくDM-siganal の生データや研究歴を知っている俺らはDM-signalの信頼性を…"
+  priority: "low"
+  source: "semantic_stress_test"
+  fix_known: false
+  status: pending
+- id: INS-20260903-130556999-0ea5
+  ts: "2026-09-03T13:05:56+09:00"
+  insight: "[[われわれは情報提供業ではない]] semantic_stress_test candidate_aliases: NO_MATCH source=lord query=われわれは情報提供業ではない。あくまで個人の研究を共有しているだけだ。法務はマナーとして下品でなければいいのでは？絶対に儲かるとかそういうことを言わないのが俺なのは将軍もよく理解しているはずだ"
+  priority: "low"
+  source: "semantic_stress_test"
+  fix_known: false
+  status: pending
+- id: INS-20260903-130557294-af01
+  ts: "2026-09-03T13:05:57+09:00"
+  insight: "[[利他の精神で毎回迂回しているものがないか調査して]] semantic_stress_test candidate_aliases: NO_MATCH source=lord query=利他の精神で毎回迂回しているものがないか調査して、問題を直そう"
+  priority: "low"
+  source: "semantic_stress_test"
+  fix_known: false
+  status: pending
+- id: INS-20260903-130557530-5631
+  ts: "2026-09-03T13:05:57+09:00"
+  insight: "[[X apiを取得しようとしたらこれを要求された]] semantic_stress_test candidate_aliases: NO_MATCH source=lord query=X-apiを取得しようとしたらこれを要求された。開発者PPUパイロット契約および開発者ポリシー XのデータおよびAPIのすべてのユースケースを説明してください： この情報はデータ保護のために必要です"
+  priority: "low"
+  source: "semantic_stress_test"
+  fix_known: false
+  status: pending
+- id: INS-20260903-130557783-ff9f
+  ts: "2026-09-03T13:05:57+09:00"
+  insight: "[[迂回をするよりも]] semantic_stress_test candidate_aliases: NO_MATCH source=lord query=迂回をするよりも、問題inbo"
+  priority: "low"
+  source: "semantic_stress_test"
+  fix_known: false
+  status: pending
+- id: INS-20260903-130558030-68f8
+  ts: "2026-09-03T13:05:58+09:00"
+  insight: "[[C \\Users\\simok\\OneDrive\\デスクトップ\\バム型・届け方マニュアル v4 txt をよんでx acc]] semantic_stress_test candidate_aliases: NO_MATCH source=lord query=\"C:\\Users\\simok\\OneDrive\\デスクトップ\\バム型・届け方マニュアル v4.txt\"をよんでx_account_ops_automation_asis_tobe_5w1h_20260903.mdを更新して"
   priority: "low"
   source: "semantic_stress_test"
   fix_known: false
