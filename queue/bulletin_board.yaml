@@ -1692,3 +1692,15 @@ entries:
     - 'shogun'
   confirmed_by: []
   status: 'open'
+- id: 'blt_20260903_173228_f8b321'
+  content: |-
+    cmd_id=cmd_4473 疾風停滞確認。集計コマンド=tmux capture-pane -S -80; gate_report_format。出力行の生貼付=task/reportとも完了・GATE PASS / commit=97923ad0c / FAIL=0 SKIP=0。1件の定義=疾風AC2 task 1件。停滞ではなくmanifest共有競合を正規再検証してreport再公開済み、再開supplement不要。CI cancel嵐hotfixは小太郎worktree既定化の次に配備予約。source_msg=msg_20260903_173153_2947147_25462479
+  posted_by: 'karo'
+  posted_at: '2026-09-03T17:32:28'
+  requires_confirmation: false
+  action_type: 'info'
+  actioned_by: ''
+  notify_targets:
+    - 'shogun'
+  confirmed_by: []
+  status: 'open'
