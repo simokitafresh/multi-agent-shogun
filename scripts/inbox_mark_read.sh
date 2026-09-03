@@ -344,6 +344,30 @@ if review_requirements:
         msg_fingerprint = str(message.get("report_fingerprint") or "")
         matched = False
         if report_name and message_at is not None:
+            # approval file存在+fp一致なら、timestamp無関係にmatched(重複メッセージ迂回不要化)
+            if msg_fingerprint:
+                cmd_id_for_approval = ""
+                for key in ("cmd_id", "parent_cmd"):
+                    v = message.get(key)
+                    if v:
+                        cmd_id_for_approval = str(v)
+                        break
+                if cmd_id_for_approval:
+                    approval_gates_dir = os.path.join(os.path.dirname(review_log_path), "..", "queue", "gates", cmd_id_for_approval, "review_approvals", "reports")
+                    if os.path.isdir(approval_gates_dir):
+                        for key_dir in os.listdir(approval_gates_dir):
+                            gunshi_path = os.path.join(approval_gates_dir, key_dir, "gunshi.yaml")
+                            if os.path.isfile(gunshi_path):
+                                try:
+                                    with open(gunshi_path, encoding="utf-8") as gf:
+                                        gdata = yaml.safe_load(gf) or {}
+                                    if str(gdata.get("fingerprint") or "") == msg_fingerprint or str(gdata.get("generation") or "") == msg_fingerprint:
+                                        matched = True
+                                        break
+                                except Exception:
+                                    pass
+            if matched:
+                continue
             # 全matchingエントリから最新reviewed_atのverdictを取得(first matchの罠回避)
             latest_verdict_for_fp = ""
             latest_reviewed_at_for_fp = None
