@@ -16872,3 +16872,17 @@ sqlite3.Connection.backup()を使うとページ(4096byte)単位のread syscall�
 - **when**: 未設定
 - **how**: 未設定
 - publish_artifact.shのcaptureはtask_idのみをkeyに$STATE_DIR/publish_queue/artifacts/<task_id>/manifest.yamlへ書き込む(atomic_yaml_write、既存ファイルを丸ごと置換)。1つの原cmdをAC単位に分割配備した場合でも、split構成によっては両ACのreportが同じtask_id(例: cmd_XXXX_normal)を報告に記入することがあり、その場合はAC2のreport_received capture(2回目)がAC1のmanifestを上書きし、AC1のgate_report_format.sh --manifest-checkが恒久的にFAILする(cmd_4472で実発生)。回避策: 分割taskをdeploy_task.sh等で発行する側はAC単位に独立したtask_idを割り当てるか、report側でartifact_task_id(cmd_karo_hotfix_report_artifact_identity_202609031819で追加した任意フィールド)を指定し、manifest lookupだけをcommit/report/task identityと切り離すこと
+
+
+### L1724: bats guardのawk function抽出は呼び出し先helper関数も含めよ。naive timestampフィクスチャはCI(UTC)とローカル(JST等)でTZ依存の偽PASS/FAILを生む
+- **日付**: 2026-09-03
+- **出典**: cmd_karo_ci_fix_33732657284_shard1_202609031750
+- **記録者**: tobisaru
+- **tags**: [infra,testing,testing,gate,bash]
+- **subdomain**: infra
+- **target_files**: [tests/unit/test_pending_decision_infra_bundle.bats,tests/unit/test_single_publisher_close_check.bats]
+- **origin**: [[cmd_karo_ci_fix_33732657284_shard1_202609031750]]
+- **enforcement**: 未自動化
+- **when**: 未設定
+- **how**: 未設定
+- cmd_save.shのように大きなスクリプトから特定関数だけをawk range '/^func\(\)/,/^}/' でbats guardへ抽出しstandalone sourceするテストパターンでは、対象関数が別のtop-levelヘルパー関数(例: trim_inline_yaml_scalar())を呼んでいると、抽出漏れにより'command not found'でsourceが暗黙に空文字化し、実装は正しいのにテストだけが誤った分岐を検証してしまう(PD-104事例)。対処: test_cmd_save_block_aggregation.batsの既存パターン(helpers=1/0フラグでヘルパー範囲も抽出)に倣い、抽出awkにヘルパー関数のstart/end検出を追加せよ。もう1点、ログのtimestampウィンドウ判定をnaive(TZ情報なし)timestampで書くテストフィクスチャは、パーサがローカルマシンのtimezoneへfallbackする実装(datetime.now().astimezone().tzinfo)と組み合わさると、JST開発機では境界内でPASSしCI(UTC)runnerでは境界外にずれてFAILする、というTZ依存の偽装PASSを生む(single_publisher_close_check事例)。対処: フィクスチャのtimestampは常に明示的offset付き(例: +0000)で書き、production側の実書き込み形式(push_lane_logの%z)と一致させよ

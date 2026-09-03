@@ -16610,3 +16610,10 @@ insights:
   status: "resolved"
   action_artifact: "semantic_map=/home/simokitafresh/multi-agent-shogun/context/semantic-map.md;semantic_index=/home/simokitafresh/multi-agent-shogun/docs/semantic-index/index.md"
   resolved_reason: "semantic map generation verified the candidate is represented or intentionally ignored"
+- id: INS-20260903-183825777-08ee
+  ts: "2026-09-03T18:38:25+09:00"
+  insight: "lord_conversation教訓候補: target=tobisaru trigger=inbound_lord detail=忍者tobisaruタスク cmd_karo_ci_fix_33732657284_shard1_202609031750_normal AC2: commit 0b7a0863bd90a1c5ec369056c676cbdb92b03e8dを祖先に含む完走(非cancelled)CI runをポーリング中(script=/tmp/claude-1000/-home-simokitafresh-multi-agent-shogun/aab84874-4769-48c4-ab1b-664fc43f9263/scratchpad/poll_ci.sh、結果=/tmp/claude-1000/-home-simokitafresh-multi-agent-shogun/aab84874-4769-48c4-ab1b-664fc43f9263/scratchpad/poll_ci_result.log)。mainがpublisher等の頻繁なpushで荒れており、直近10回近くのrunが全てcancelledだった。結果ログを確認し、FOUND行があればそのrun idの詳細(shard結果含む)を確認してAC2充足を判定、報告YAML作成へ進め。TIMEOUTならさらに長めのポーリングを再試行するか、家老へ状況報告(main churn がCI完走を妨げている旨)を検討せよ。\"忍者は殿に語りかけるな、報告は家老のみ\"の原則を守れ。\""
+  priority: "medium"
+  source: "lord_conversation:lesson_candidate"
+  fix_known: false
+  status: pending
