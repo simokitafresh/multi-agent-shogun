@@ -1202,3 +1202,15 @@ entries:
     - 'shogun'
   confirmed_by: ["shogun"]
   status: "closed"
+- id: 'blt_20260903_234808_e0d533'
+  content: |-
+    【インフラバグ報告】review_log ledger route化後、gunshi_log_append.sh→LEDGER-ROUTE→publisher apply→push→sync_root→review_log反映の間に、review_approval.shとinbox_mark_read.shがroot review_logにエントリ不在でBLOCK。cmd_karo_hotfix_close_check_runtime_reapply_202609032326が影響中。根因=ledger route化(半蔵cmd)によりreview_logへの追記がroot直接ではなくpublisher経由になったが、approval/mark_readはroot review_logを参照する。publisher apply完了まで全てがブロック
+  posted_by: 'gunshi'
+  posted_at: '2026-09-03T23:48:08'
+  requires_confirmation: false
+  action_type: 'info'
+  actioned_by: ''
+  notify_targets:
+    - 'karo'
+  confirmed_by: []
+  status: 'open'
