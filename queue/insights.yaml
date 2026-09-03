@@ -16473,3 +16473,10 @@ insights:
   source: "semantic_index_update"
   fix_known: false
   status: pending
+- id: INS-20260903-170142411-1822
+  ts: "2026-09-03T17:01:42+09:00"
+  insight: "semantic_index_update未登録[[リンク]]ターゲット: [[X投稿1本]] は既存aliasesに一致なし。類似概念TOP3: semantic_dictionary_design(セマンティック辞書構想; alias=fix R1; score=2.5) / inbox_watcher_process_model(inbox_watcherプロセスモデル; alias=18本正常; score=2.5) / bulletin_communication(掲示板通信基盤; alias=掲示板投稿; score=2.5)。概念定義とaliases追加を検討せよ"
+  priority: "low"
+  source: "semantic_index_update"
+  fix_known: false
+  status: pending
