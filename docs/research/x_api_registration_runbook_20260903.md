@@ -1,5 +1,5 @@
 <!-- gist-master: b48264be3a2e1bc8434ee2b64b8264c6 x_api_registration_runbook_20260903.md -->
-# X API 登録ランブック(バム @TokyoJibika の自動投稿用)v1.4
+# X API 登録ランブック(バム @TokyoJibika の自動投稿用)v1.5
 
 - 作成: 2026-09-03 15:35 将軍(殿指示 15:33『x API 登録のステップバイステップのランブック』)
 - 目的: 設計書 `docs/research/x_account_ops_automation_asis_tobe_5w1h_20260903.md` §10/§11 の P1(下書き→gate→承認→X API 投稿)に必要な X API の登録・認可・トークン保管を、殿の操作と将軍側の作業に分けて 1 手ずつ書く
@@ -143,8 +143,7 @@ PY
 
 1. 5.2 の URL を **@TokyoJibika でログインしているブラウザ**で開く。
 2. 「Authorize app」を押す。
-3. `http://127.0.0.1:8585/callback?state=...&code=...` へ飛び、ブラウザは「接続できません」と出る(ローカルに受け口が無いため正常)。**アドレスバーの URL 全体をコピー**して将軍へ渡す(`code` は 30 秒程度で失効するので、コピーしたらすぐ渡す)。
-   - 代替: 将軍が 5.2 の直前に `python3 -m http.server 8585 --bind 127.0.0.1` を別 pane で立てておけば、アクセスログに `code=` が残る。
+3. `http://127.0.0.1:8585/callback?state=...&code=...` へ飛ぶ。**将軍が事前に受け口(scratchpad/x_oauth_listener.py)を 127.0.0.1:8585 に立てておく**と、code は受信と同時に token 交換され「認可完了。token を保存しました」と表示される(v1.5 実証)。受け口が無い場合は「接続できません」と出るので URL 全体をすぐ将軍へ渡す(code は 30 秒で失効。16:51 に手貼りで失効した実績あり)。
 
 ### 5.4 token 交換と保管(将軍)
 
@@ -243,6 +242,10 @@ client.posts.create(post_data={"text": "...", "media": {"media_ids": [media_id]}
 | 4 | cmd_4472 の `x_post.sh post` が creds ありで 201(gate PASS 本文) | 家老 production_proof |
 
 ---
+
+## v1.5 (2026-09-03 16:55)
+
+AsIs 注釈: 16:51 手貼りの code は失効(30 秒)で 400。ToBe 注釈: 127.0.0.1:8585 の受け口(python、code 受信→即 token 交換→env 追記)を立ててから認可 URL を開く方式に変更し 16:53 成功(scope 5 つ、expires_in 7200、refresh あり、GET /2/users/me 200 TokyoJibika)。§8 完了判定 1〜3 は PASS、4 は家老 production_proof。access token は 2 時間で失効するため post 前に refresh(x_post.sh が XDK の token 辞書で自動)。
 
 ## v1.4 (2026-09-03 16:50)
 
