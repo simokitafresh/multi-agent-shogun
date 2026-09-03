@@ -16774,3 +16774,17 @@ sqlite3.Connection.backup()を使うとページ(4096byte)単位のread syscall�
 - **when**: 未設定
 - **how**: 未設定
 - x_post_gate.shのRule1は非公開PF(忍法/FoF)のholding漏洩を防ぐblocklistを、公開showcase API(/api/public/showcase)から構築していたが、このAPIはBasic-DualMomentum以外のholdingを一切含まない(plans[].holdingが常時null)ため、blocklistが恒常的に空となり検知機能が実質無効化されていた(cmd_4467の実装時の欠陥)。加えて取得失敗時は '{}' への沈黙フォールバックで無条件PASSしていた。教訓: (1)blocklist/allowlistを外部APIから構築する設計では、そのAPIの公開範囲が『守りたい対象データ』を実際に含むかを一次データで確認してから実装せよ(showcaseは公開表示用APIであり非公開情報を含まない設計は当然)。(2)security/compliance目的のgateでは、データ取得失敗・空結果を無条件PASSにせず必ずfail-close(exit1)にせよ。silent fallback(空JSON等)は『検知できない』を『安全』と誤認させる
+
+
+### L1717: task worktreeにはqueue/flags/publisher_singleが伝播せずinsight_resolve.shがlegacy直接書込み経路にフォールバックしledger op pathが出力されない
+- **日付**: 2026-09-03
+- **出典**: cmd_reflux_insight_202609031149_kotaro
+- **記録者**: kotaro
+- **tags**: [infra,bash,grid_search]
+- **subdomain**: infra
+- **target_files**: [queue/insights.yaml]
+- **origin**: [[cmd_reflux_insight_202609031149_kotaro]]
+- **enforcement**: 未自動化
+- **when**: 未設定
+- **how**: 未設定
+- cmd_reflux_insight_202609031149_kotaroでbash scripts/insight_resolve.shをtask worktree(/home/simokitafresh/shogun-task-worktrees/kotaro_316468498dd90a52)内で実行したところ、メインリポジトリのqueue/flags/publisher_singleは存在する(2026-09-03T04:37:56作成)がworktreeには複製されておらず、insight_resolve.sh内のpublisher_single_insights_enabled()がfalseと判定された。この結果ledger_writer.sh経由のledger op発行ではなく、python3による直接ファイル置換(legacy経路)が使われ、stdoutは'OK: <id> → resolved'のみでledger op pathが出力されなかった。AC2は『insight_resolve.shのstdoutに出るledger op pathをfinding.evidence_pathへ記録』を要求するが、task worktree環境では構造的にこの証跡が得られないケースがある。同種reflux_insightタスクで再発しうるため、worktree生成時にqueue/flags/*フラグファイルを複製するか、insight_resolve.shがREPO_ROOTをworktreeでなく元repoから解決するようフォールバックする対策を検討すべき
