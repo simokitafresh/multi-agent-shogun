@@ -195,6 +195,18 @@ elif not task.get("test_necessity"):
                 ).returncode == 0
                 if not present:
                     continue
+                # Only *new* tests (absent from the shared HEAD) enter the
+                # necessity contract.  An existing persisted test already
+                # carries its in-file declaration; feeding it into
+                # validate_entries makes SG-PRE35 fail with "not an actual new
+                # test" whenever a task touches an existing declared test
+                # (2026-09-03 cmd_4469: tests/unit/test_daemon_watchdog.bats).
+                existing_at_head = subprocess.run(
+                    ["git", "-C", repo, "cat-file", "-e", f"HEAD:{path}"],
+                    stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL,
+                ).returncode == 0
+                if existing_at_head:
+                    continue
                 source = subprocess.check_output(
                     ["git", "-C", repo, "show", f"{commit}:{path}"],
                     text=True, stderr=subprocess.DEVNULL,
