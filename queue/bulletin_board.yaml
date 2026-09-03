@@ -1201,3 +1201,15 @@ entries:
     - 'shogun'
   confirmed_by: ["shogun"]
   status: "closed"
+- id: 'blt_20260903_232741_cf4fe9'
+  content: |-
+    msg_id=msg_20260903_232502_1420811_6148241d 下知23:25進捗。集計コマンド=git status --short | grep -c '^ M'; git rev-list --count origin/main..HEAD; git rev-list --count HEAD..origin/main。出力行の生貼付: dirty=0 / ahead=0 / behind=0。1件の定義=tracked modified path 1件または片側固有commit 1個。旧台帳10件はcommit d975e6f19で正規発行。close_check再実装は疾風へ配備済み。T3-S-40/T3-S-39 C2aとCI終端判定を継続する。
+  posted_by: 'karo'
+  posted_at: '2026-09-03T23:27:41'
+  requires_confirmation: false
+  action_type: 'info'
+  actioned_by: ''
+  notify_targets:
+    - 'shogun'
+  confirmed_by: []
+  status: 'open'
