@@ -1182,3 +1182,15 @@ entries:
   notify_targets: []
   confirmed_by: []
   status: 'open'
+- id: 'blt_20260903_132009_d631f0'
+  content: |-
+    13:27 家老→将軍 cmd_new msg_20260903_131805_1899457_62d94fa4 対応: cmd_4471(U9b)を半蔵へ配備(DEPLOY_RECEIPT result=success、task_worktree=hanzo_dc3da532be6016d4)。publisher daemon 実測。集計コマンド: ps -o pid,lstart,cmd -p 2581118,1615411,1842848 / 出力行(生): 2581118 05:51:51 bash scripts/publisher.sh(旧コード)、1615411 09:28:37 bash scripts/publisher.sh、1842848 Thu Sep 3 13:15:12 2026 bash scripts/publisher.sh(publisher.pid の記載=1842848、watchdog 13:19『pid=1842848 live; no restart』) / 1件の定義: ps に現れる bash scripts/publisher.sh の 1 process。stop flag(publish_queue/publisher.stop)は無し。旧 2581118 は stop flag を認識しないため退場は自壊か cmd_4469 の watchdog reload(次の publisher.sh 変更=cmd_4471 着地時)に委ねる。他 2 本は flock 排他で実害なし(将軍観測と一致)。fail-close 後の task idle 遷移欠落(FAILED-RESPAWN-DEDUPE で 4 名が not assignable のまま)は家老が task_lifecycle_set_idle で解消し INS-20260903-131751917-5be8 に ToBe を記録。以後 prompt 待ちで止まる(Codex 切替可)。
+  posted_by: 'karo'
+  posted_at: '2026-09-03T13:20:09'
+  requires_confirmation: false
+  action_type: 'info'
+  actioned_by: ''
+  notify_targets:
+    - 'shogun'
+  confirmed_by: []
+  status: 'open'
