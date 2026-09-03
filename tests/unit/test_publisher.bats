@@ -100,6 +100,63 @@ teardown() {
     [ ! -f "$FIXTURE/inbox.log" ] || [ "$(wc -l < "$FIXTURE/inbox.log")" -eq 0 ]
 }
 
+# test_necessity: a missing artifact must be retired only when an explicitly
+# recorded publication identity is reachable from the fetched canonical tip.
+@test "missing artifact uses a published_sha ancestor as an idempotent no-op" {
+    find "$STATE/publish_queue/artifacts/task_u3" -depth -delete
+    printf "published_sha: '%s'\n" "$BASE" >> "$FIXTURE/request.yaml"
+    bash "$ROOT/scripts/publisher_queue.sh" enqueue "$FIXTURE/request.yaml" >/dev/null
+    run env SHOGUN_STATE_DIR="$STATE" PUBLISHER_REPO_ROOT="$PUBROOT" PUBLISHER_INBOX_WRITER="$FIXTURE/inbox_write.sh" PUBLISHER_ONCE=1 bash "$ROOT/scripts/publisher.sh"
+    [ "$status" -eq 0 ]
+    [ "$(find "$STATE/publish_queue/done" -name '*.request' | wc -l)" -eq 1 ]
+    [ "$(find "$STATE/publish_queue/rc" -name '*.request' | wc -l)" -eq 0 ]
+    jq -e 'select(.kind=="already_published" and (.reason|contains("identity=published_sha:")) and (.reason|contains("artifact=missing")))' "$STATE/publish_queue/events.jsonl" >/dev/null
+    [ ! -f "$FIXTURE/inbox.log" ] || [ "$(wc -l < "$FIXTURE/inbox.log")" -eq 0 ]
+}
+
+# test_necessity: a commit reachable only from local main is not proof of
+# publication and must remain an rc31 fail-close.
+@test "missing artifact keeps rc31 when identity is local-main-only" {
+    printf 'local-only\n' > "$PUBROOT/local-only.txt"
+    git -C "$PUBROOT" add local-only.txt; git -C "$PUBROOT" commit -q -m local-only
+    local_only="$(git -C "$PUBROOT" rev-parse HEAD)"
+    find "$STATE/publish_queue/artifacts/task_u3" -depth -delete
+    printf "report_commit: '%s'\n" "$local_only" >> "$FIXTURE/request.yaml"
+    bash "$ROOT/scripts/publisher_queue.sh" enqueue "$FIXTURE/request.yaml" >/dev/null
+    run env SHOGUN_STATE_DIR="$STATE" PUBLISHER_REPO_ROOT="$PUBROOT" PUBLISHER_INBOX_WRITER="$FIXTURE/inbox_write.sh" PUBLISHER_ONCE=1 bash "$ROOT/scripts/publisher.sh"
+    [ "$status" -ne 0 ]
+    [ "$(find "$STATE/publish_queue/rc" -name '*.request' | wc -l)" -eq 1 ]
+    [ "$(jq -r 'select(.kind=="already_published") | .kind' "$STATE/publish_queue/events.jsonl")" = "" ]
+    [ "$(jq -r 'select(.kind=="git_fail") | .rc' "$STATE/publish_queue/events.jsonl" | tail -n1)" = "31" ]
+}
+
+# test_necessity: malformed publication identities must not be treated as
+# canonical ancestry evidence when the artifact is absent.
+@test "missing artifact keeps rc31 for an unknown identity" {
+    find "$STATE/publish_queue/artifacts/task_u3" -depth -delete
+    printf 'published_sha: not-a-commit\n' >> "$FIXTURE/request.yaml"
+    bash "$ROOT/scripts/publisher_queue.sh" enqueue "$FIXTURE/request.yaml" >/dev/null
+    run env SHOGUN_STATE_DIR="$STATE" PUBLISHER_REPO_ROOT="$PUBROOT" PUBLISHER_INBOX_WRITER="$FIXTURE/inbox_write.sh" PUBLISHER_ONCE=1 bash "$ROOT/scripts/publisher.sh"
+    [ "$status" -ne 0 ]
+    [ "$(find "$STATE/publish_queue/rc" -name '*.request' | wc -l)" -eq 1 ]
+    [ "$(jq -r 'select(.kind=="already_published") | .kind' "$STATE/publish_queue/events.jsonl")" = "" ]
+    [ "$(jq -r 'select(.kind=="git_fail") | .rc' "$STATE/publish_queue/events.jsonl" | tail -n1)" = "31" ]
+}
+
+# test_necessity: a fetch failure leaves missing-artifact requests fail-closed
+# even when their identity would otherwise be a valid commit.
+@test "missing artifact keeps rc31 when origin fetch fails" {
+    find "$STATE/publish_queue/artifacts/task_u3" -depth -delete
+    printf "published_sha: '%s'\n" "$BASE" >> "$FIXTURE/request.yaml"
+    bash "$ROOT/scripts/publisher_queue.sh" enqueue "$FIXTURE/request.yaml" >/dev/null
+    git -C "$PUBROOT" remote set-url origin "$FIXTURE/missing-remote.git"
+    run env SHOGUN_STATE_DIR="$STATE" PUBLISHER_REPO_ROOT="$PUBROOT" PUBLISHER_INBOX_WRITER="$FIXTURE/inbox_write.sh" PUBLISHER_ONCE=1 bash "$ROOT/scripts/publisher.sh"
+    [ "$status" -ne 0 ]
+    [ "$(find "$STATE/publish_queue/rc" -name '*.request' | wc -l)" -eq 1 ]
+    [ "$(jq -r 'select(.kind=="already_published") | .kind' "$STATE/publish_queue/events.jsonl")" = "" ]
+    [ "$(jq -r 'select(.kind=="git_fail") | .rc' "$STATE/publish_queue/events.jsonl" | tail -n1)" = "31" ]
+}
+
 # test_necessity: a non-conflicting patch must apply against the isolated tip
 # even when an unrelated file advanced after the request was captured.
 @test "restore applies patch to an advanced tip without a conflict" {
