@@ -15,15 +15,7 @@ setup_file() {
 
     # Extract function bodies once to $BATS_FILE_TMPDIR (avoids per-test sed overhead)
     export GATE_HELPERS_FILE="$BATS_FILE_TMPDIR/gate_helpers.sh"
-    # cmd_karo_hotfix_t3s40_post_source_v6: append_line_locked/log_gate_stderr_file
-    # and dispatch_gate_notification_async/send_high_notification/
-    # send_info_cmd_notification moved (not duplicated) to
-    # scripts/lib/append_line_locked.sh and scripts/lib/gate_clear_notify.sh
-    # (both sourced back into $SRC_GATE_SCRIPT); the extraction below now also
-    # scans those two files.
-    python3 - "$SRC_GATE_SCRIPT" "$PROJECT_ROOT/scripts/lib/cmd_complete_gate_ci.sh" \
-        "$PROJECT_ROOT/scripts/lib/append_line_locked.sh" "$PROJECT_ROOT/scripts/lib/gate_clear_notify.sh" \
-        > "$GATE_HELPERS_FILE" <<'PY'
+    python3 - "$SRC_GATE_SCRIPT" "$PROJECT_ROOT/scripts/lib/cmd_complete_gate_ci.sh" > "$GATE_HELPERS_FILE" <<'PY'
 import re
 import sys
 from pathlib import Path
@@ -1409,11 +1401,7 @@ PY
     run grep -F '200>"$(lock_path "$DASHBOARD")"' "$SRC_GATE_SCRIPT"
     [ "$status" -eq 0 ]
 
-    # cmd_karo_hotfix_t3s40_post_source_v6: the gunshi_verdict update body
-    # moved (not duplicated) to scripts/gate_gunshi_verdict_sync.sh so it can
-    # be launched from a durable worker (nohup+setsid); the lock pattern now
-    # lives there instead of inline in $SRC_GATE_SCRIPT.
-    run grep -F '200>"$(lock_path "$_GV_DQ_FILE")"' "$PROJECT_ROOT/scripts/gate_gunshi_verdict_sync.sh"
+    run grep -F '200>"$(lock_path "$_GV_DQ_FILE")"' "$SRC_GATE_SCRIPT"
     [ "$status" -eq 0 ]
 
     run grep -F 'END_VERDICT_PY' "$SRC_GATE_SCRIPT"
@@ -3889,11 +3877,6 @@ CASES
 }
 
 @test "normal CLEAR captures synchronously before sending its terminal CLEAR notification" {
-    # cmd_karo_hotfix_t3s40_post_source_v6: the terminal call site now
-    # dispatches send_clear_notifications_once through a durable worker
-    # (scripts/gate_clear_terminal_notify.sh via nohup+setsid) instead of
-    # calling it directly, so this checks for that dispatch call instead of
-    # the literal in-process invocation.
     run env SRC_GATE_SCRIPT="$SRC_GATE_SCRIPT" python3 - <<'PY'
 from pathlib import Path
 import os
@@ -3903,7 +3886,7 @@ start = text.index('if [ "$ALL_CLEAR" = true ]; then')
 end = text.index('echo "  status: completed"', start)
 branch = text[start:end]
 capture = branch.index('if ! capture_completed_rework_event "$CMD_ID"; then')
-notify = text.index('nohup setsid bash "$SCRIPT_DIR/scripts/gate_clear_terminal_notify.sh"', end)
+notify = text.index('send_clear_notifications_once "$CMD_ID" "GATE CLEAR terminal"', end)
 assert start + capture < notify, branch
 assert 'capture_completed_rework_event "$CMD_ID" >>' not in branch, branch
 PY
@@ -8726,16 +8709,11 @@ PY
 # then failed only because their intentionally absent command rows were
 # passed to yaml_field_set.sh unconditionally.
 @test "terminal status publish accepts direct parent reports but keeps registered commands fail-closed" {
-    # cmd_karo_hotfix_t3s40_post_source_v6: the terminal call site now
-    # dispatches send_clear_notifications_once through a durable worker
-    # (scripts/gate_clear_terminal_notify.sh via nohup+setsid) instead of
-    # calling it directly, so this checks for that dispatch call instead of
-    # the literal in-process invocation.
     run python3 - "$PROJECT_ROOT/scripts/cmd_complete_gate.sh" <<'PY'
 import pathlib, sys
 text = pathlib.Path(sys.argv[1]).read_text(encoding="utf-8")
 start = text.rindex('Status completed (post-runtime-publish):')
-end = text.index('nohup setsid bash "$SCRIPT_DIR/scripts/gate_clear_terminal_notify.sh"', start)
+end = text.index('send_clear_notifications_once "$CMD_ID" "GATE CLEAR terminal"', start)
 block = text[start:end]
 assert 'terminal_status_target="missing"' in block
 assert block.count('cmd_entry_exists "$CMD_ID"') == 1
@@ -8757,11 +8735,6 @@ PY
 # regression_justification: the prior operational gate queued both side effects
 # before status_completed_publish_failed terminated the command.
 @test "terminal status precedes archive and idle with BLOCK side effects zero" {
-    # cmd_karo_hotfix_t3s40_post_source_v6: the terminal call site now
-    # dispatches send_clear_notifications_once through a durable worker
-    # (scripts/gate_clear_terminal_notify.sh via nohup+setsid) instead of
-    # calling it directly, so this checks for that dispatch call instead of
-    # the literal in-process invocation.
     run python3 - "$PROJECT_ROOT/scripts/cmd_complete_gate.sh" <<'PY'
 import pathlib, sys
 text = pathlib.Path(sys.argv[1]).read_text(encoding="utf-8")
@@ -8769,7 +8742,7 @@ status = text.rindex('Status completed (post-runtime-publish):')
 failure = text.index('status_completed_publish_failed', status)
 archive = text.rindex('Archive (post-GATE CLEAR):')
 idle = text.rindex('Task idle transition: queued (async)')
-notify = text.index('nohup setsid bash "$SCRIPT_DIR/scripts/gate_clear_terminal_notify.sh"', status)
+notify = text.index('send_clear_notifications_once "$CMD_ID" "GATE CLEAR terminal"', status)
 assert status < failure < archive < idle < notify
 assert 'archive_completed.sh' not in text[status:failure]
 assert 'set_matching_tasks_idle' not in text[status:failure]
@@ -9214,11 +9187,6 @@ PY
 # and completion notifications must describe a terminal decision while the
 # publication worker remains independently observable.
 @test "post-CLEAR generation and notification bracket terminal work" {
-    # cmd_karo_hotfix_t3s40_post_source_v6: the terminal call site now
-    # dispatches send_clear_notifications_once through a durable worker
-    # (scripts/gate_clear_terminal_notify.sh via nohup+setsid) instead of
-    # calling it directly, so this checks for that dispatch call instead of
-    # the literal in-process invocation.
     run python3 - "$PROJECT_ROOT/scripts/cmd_complete_gate.sh" <<'PY'
 import sys
 text = open(sys.argv[1], encoding="utf-8").read()
@@ -9226,7 +9194,7 @@ decision = text.index('if [ "$ALL_CLEAR" = true ]; then', text.index('if [ "$ALL
 snapshot = text.index('capture_durable_writer_paths start', decision)
 wait = text.index('queue_postclear_publication_followup', snapshot)
 completed = text.index('echo "  status: completed"', wait)
-notify = text.index('nohup setsid bash "$SCRIPT_DIR/scripts/gate_clear_terminal_notify.sh"', completed)
+notify = text.index('send_clear_notifications_once "$CMD_ID" "GATE CLEAR terminal"', completed)
 assert snapshot < wait < completed < notify
 window = text[decision:notify]
 assert '"GATE CLEAR immediate"' not in window

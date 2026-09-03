@@ -4864,11 +4864,29 @@ else
     }
 fi
 
-# cmd_karo_hotfix_t3s40_post_source_v6: append_line_locked/log_gate_stderr_file
-# moved to scripts/lib/append_line_locked.sh (source of truth) so
-# scripts/gate_clear_terminal_notify.sh can source the identical definition.
-# shellcheck source=scripts/lib/append_line_locked.sh
-source "$SCRIPT_DIR/scripts/lib/append_line_locked.sh"
+append_line_locked() {
+    local target_file="$1"
+    local line="$2"
+    local target_dir
+    target_dir="$(dirname "$target_file")"
+    mkdir -p "$target_dir" 2>/dev/null || true
+
+    (
+        flock -w 10 200 || exit 1
+        printf '%s\n' "$line" >> "$target_file"
+    ) 200>"$(lock_path "$target_file")"
+}
+
+log_gate_stderr_file() {
+    local label="$1"
+    local stderr_file="$2"
+    local line
+
+    [ -s "$stderr_file" ] || return 0
+    while IFS= read -r line; do
+        append_line_locked "$LOG_DIR/cmd_complete_gate_stderr.log" "$(date '+%Y-%m-%dT%H:%M:%S') [${CMD_ID}] ${label}: ${line}"
+    done < "$stderr_file"
+}
 
 queue_lesson_impact_followup() {
     (
@@ -5199,12 +5217,461 @@ fi
 unset _report_cache_task_files _report_cache_file _report_cache_name _report_cache_ninja
 gate_phase_tick "task_snapshot_start"
 
-# cmd_karo_hotfix_t3s40_post_source_v6: this notify subsystem moved to
-# scripts/lib/gate_clear_notify.sh (source of truth) so
-# scripts/gate_clear_terminal_notify.sh can source the identical definitions
-# for its durable-worker dispatch instead of re-implementing them.
-# shellcheck source=scripts/lib/gate_clear_notify.sh
-source "$SCRIPT_DIR/scripts/lib/gate_clear_notify.sh"
+LAST_GATE_NOTIFY_ROUTE=""
+CLEAR_NOTIFICATION_SENT=false
+
+dispatch_gate_notification_async() {
+    local route="$1"
+    shift
+    local log_file="$SCRIPT_DIR/logs/cmd_complete_gate_async.log"
+
+    # Notification delivery is deliberately outside the completion decision.
+    # Match deploy_task.sh's fire-and-forget boundary so endpoint retries and
+    # ntfy_batch's bounded flock cannot delay or alter the gate result.
+    (
+        if ! bash "$@" >> "$log_file" 2>&1; then
+            printf '%(%Y-%m-%dT%H:%M:%S%z)T notification route=%s status=failed\n' -1 "$route" >> "$log_file"
+        fi
+    ) </dev/null &
+    return 0
+}
+
+send_high_notification() {
+    local message="$1"
+    LAST_GATE_NOTIFY_ROUTE="ntfy.sh"
+    dispatch_gate_notification_async "$LAST_GATE_NOTIFY_ROUTE" \
+        "$SCRIPT_DIR/scripts/ntfy.sh" "$message"
+}
+
+send_info_cmd_notification() {
+    local cmd_id="$1"
+    local message="$2"
+    local batch_script="$SCRIPT_DIR/scripts/ntfy_batch.sh"
+
+    if [ -x "$batch_script" ]; then
+        LAST_GATE_NOTIFY_ROUTE="ntfy_batch.sh"
+        # ntfy_batch.sh accepts the message as its sole argument.
+        dispatch_gate_notification_async "$LAST_GATE_NOTIFY_ROUTE" \
+            "$batch_script" "$message"
+    else
+        LAST_GATE_NOTIFY_ROUTE="ntfy_cmd.sh"
+        dispatch_gate_notification_async "$LAST_GATE_NOTIFY_ROUTE" \
+            "$SCRIPT_DIR/scripts/ntfy_cmd.sh" "$cmd_id" "$message"
+    fi
+}
+
+gate_clear_notify_dedup_key() {
+    local cmd_id="$1"
+    if [[ "$cmd_id" =~ ^(cmd_karo_hotfix_ga[0-9]+)(_.+)?$ ]]; then
+        printf '%s\n' "${BASH_REMATCH[1]}"
+        return 0
+    fi
+    if [[ "$cmd_id" =~ ^(.+)_[0-9]{12,14}$ ]]; then
+        printf '%s\n' "${BASH_REMATCH[1]}"
+        return 0
+    fi
+    printf '%s\n' "$cmd_id"
+}
+
+# cmd_karo_hotfix_gate_clear_notify_dedup_20260728: 旧dedupはqueue/inbox/{shogun,karo}.yaml
+# (live inboxのみ)をgrep/re-parseする方式だった。karoは完了時手順でinbox_archive.shを高頻度
+# 実行するため、1度目の通知が既読化→archiveへ退避された直後に同一cmd(family)が再GATE実行
+# (BLOCK→修正→CLEAR)されると、live inboxに見つからず「未送信」と誤判定し重複配送していた
+# (実測: cmd_3513/cmd_3869/cmd_4122でkaro skill_hintが2通ずつ配送。archive.doneと同じ
+# queue/gates/{key}/配下に永続flagを置き、archiveの影響を受けない冪等境界にする。
+# 別プロセスの同時実行に対しては (set -C) のO_EXCL相当でatomicにclaimし、
+# check-then-actのレース窓を閉じる。
+gate_clear_notify_flag_path() {
+    local recipient="$1" cmd_id="$2" key
+    key="$(gate_clear_notify_dedup_key "$cmd_id")"
+    printf '%s/queue/gates/%s/notify_%s.done\n' "$SCRIPT_DIR" "$key" "$recipient"
+}
+
+# 移行backfill (家老差分レビュー2回目でグローバルmarker/lock方式を撤回): 本修正より前に
+# queue/inbox(live)またはarchive/inboxへ配送済みのcmdはflagが存在しないため、無対応だと
+# 次回の再GATEで1通だけ余計に送られてしまう。グローバルmarkerで「移行済み」を1回だけ判定
+# する設計は、(a) marker未確定の間に他プロセスがclaimへ素通りできる競合、(b) 1ファイルの
+# parse失敗を握り潰したままmarkerを確定させ欠落を永続化する、という2つの穴を持っていた。
+# 対象key(recipient+cmd family)のflagをatomicにclaimできたプロセスだけがそのkeyの
+# live+archive履歴を1回走査する設計にすると、claim自体が排他制御を兼ねるため上記2つの
+# 穴が構造的に消える: 敗者はflag存在で即SKIP(履歴走査自体を行わない)、勝者はkeyごとに
+# 高々1回だけ走査し、parse失敗はそのkeyについてだけ「証跡なし」扱いになる(他keyへ波及しない)。
+gate_clear_notify_historical_evidence() {
+    local recipient="$1" cmd_id="$2" key type_match f
+    key="$(gate_clear_notify_dedup_key "$cmd_id")"
+    case "$recipient" in
+        shogun) type_match='gate_clear' ;;
+        karo) type_match='skill_hint' ;;
+        *) return 1 ;;
+    esac
+
+    for f in "$SCRIPT_DIR/queue/inbox/${recipient}.yaml" "$SCRIPT_DIR/archive/inbox/${recipient}_"*.yaml; do
+        [ -f "$f" ] || continue
+        # 高速前置フィルタ: keyが出現しないファイルはpython3起動を払わずに除外する。
+        # 該当メッセージのcontentは常にkey(または家族名の元となった長いcmd_id)を
+        # 部分文字列として含むため、この前置grepは偽陰性を生まない。
+        grep -qF -- "$key" "$f" 2>/dev/null || continue
+        if GCN_KEY="$key" GCN_TYPE="$type_match" python3 - "$f" <<'PY' 2>/dev/null
+import os
+import re
+import sys
+import yaml
+yaml.SafeLoader = getattr(yaml, 'CSafeLoader', yaml.SafeLoader)  # cmd-lord-20260803: libyaml C loader (same safe schema)
+
+path = sys.argv[1]
+key = os.environ["GCN_KEY"]
+type_match = os.environ["GCN_TYPE"]
+
+
+def dedup_key(cmd_id):
+    m = re.match(r"^(cmd_karo_hotfix_ga[0-9]+)(_.+)?$", cmd_id)
+    if m:
+        return m.group(1)
+    m = re.match(r"^(.+)_[0-9]{12,14}$", cmd_id)
+    if m:
+        return m.group(1)
+    return cmd_id
+
+
+try:
+    data = yaml.safe_load(open(path, encoding="utf-8")) or {}
+except Exception:
+    sys.exit(1)
+
+for msg in data.get("messages") or []:
+    if not isinstance(msg, dict) or msg.get("type") != type_match:
+        continue
+    content = str(msg.get("content") or "")
+    m = re.search(r"GATE CLEAR\s+—\s+(\S+)\s+完了", content)
+    if m and dedup_key(m.group(1)) == key:
+        sys.exit(0)
+sys.exit(1)
+PY
+        then
+            return 0
+        fi
+    done
+    return 1
+}
+
+gate_clear_notify_claim() {
+    local recipient="$1" cmd_id="$2" flag_file
+    flag_file="$(gate_clear_notify_flag_path "$recipient" "$cmd_id")"
+    mkdir -p "$(dirname "$flag_file")" 2>/dev/null
+
+    if ! ( set -C; printf '%s\n' "$cmd_id" > "$flag_file" ) 2>/dev/null; then
+        return 1
+    fi
+
+    if gate_clear_notify_historical_evidence "$recipient" "$cmd_id"; then
+        printf '%s\tbackfill\n' "$cmd_id" > "$flag_file"
+        return 1
+    fi
+
+    return 0
+}
+
+notify_shogun_gate_clear() {
+    local cmd_id="$1"
+    local message="${2:-GATE CLEAR — ${cmd_id} 完了}"
+    local stderr_tmp flag_file
+    stderr_tmp="$(mktemp)"
+    flag_file="$(gate_clear_notify_flag_path shogun "$cmd_id")"
+
+    if ! gate_clear_notify_claim shogun "$cmd_id"; then
+        echo "  shogun inbox: SKIP (gate clear notify dedup)"
+        rm -f "$stderr_tmp"
+        return 0
+    fi
+
+    if timeout 10 bash "$SCRIPT_DIR/scripts/inbox_write.sh" shogun "$message" gate_clear cmd_complete_gate 2>"$stderr_tmp"; then
+        echo "  shogun inbox: OK (gate clear notify)"
+    else
+        log_gate_stderr_file "notify_shogun_gate_clear inbox_write" "$stderr_tmp"
+        echo "  [INFO] shogun inbox: WARN (gate clear notify failed, non-blocking)"
+        # 直前のgate_clear_notify_claimが成功した(=このプロセスが排他的に作成した)flagのみを
+        # 対象とするため、他プロセスのclaimを誤って消す競合はない。送信失敗時にflagを残すと
+        # 通知が永久に欠落するため、次回の再試行を許可するためロールバックする。
+        rm -f "$flag_file"
+    fi
+    rm -f "$stderr_tmp"
+}
+
+notify_karo_cmd_complete_skill_hint() {
+    local cmd_id="$1"
+    local message="GATE CLEAR — ${cmd_id} 完了。/cmd-complete スキルで完了処理を実行せよ。"
+    local flag_file
+    flag_file="$(gate_clear_notify_flag_path karo "$cmd_id")"
+
+    # 自動archive(queued/sync/既存)を本gateが担った場合、hintの指示内容は機械が実行済み。
+    # 送ると家老inboxに完了済cmdのゾンビhintが永久残留する(2026-08-26実測16件/未読19件、最古10h47m)。
+    if [ "${ARCHIVE_AUTO_HANDLED:-0}" = "1" ]; then
+        echo "  karo /cmd-complete hint: SKIP (archive auto-handled by gate)"
+        return 0
+    fi
+    if ! gate_clear_notify_claim karo "$cmd_id"; then
+        echo "  karo /cmd-complete hint: SKIP (dedup — already in inbox)"
+    elif timeout 10 bash "$SCRIPT_DIR/scripts/inbox_write.sh" karo "$message" skill_hint cmd_complete_gate 2>/dev/null; then
+        echo "  karo /cmd-complete hint: OK"
+    else
+        echo "  [INFO] karo /cmd-complete hint: WARN (non-blocking)"
+        rm -f "$flag_file"
+    fi
+}
+
+send_clear_notifications_once() {
+    local cmd_id="$1"
+    local phase="${2:-GATE CLEAR}"
+
+    if [ "${CLEAR_NOTIFICATION_SENT:-false}" = true ]; then
+        echo "  clear notification: SKIP (already sent)"
+        return 0
+    fi
+
+    echo "Auto-notification (${phase}):"
+    if send_info_cmd_notification "$cmd_id" "GATE CLEAR — ${cmd_id} 完了" 2>/dev/null; then
+        echo "  ${LAST_GATE_NOTIFY_ROUTE}: OK (INFO)"
+    else
+        echo "  [INFO] ${LAST_GATE_NOTIFY_ROUTE:-notification}: WARN (INFO notification failed, non-blocking)" >&2
+    fi
+    notify_shogun_gate_clear "$cmd_id" "GATE CLEAR — ${cmd_id} 完了"
+    notify_karo_cmd_complete_skill_hint "$cmd_id"
+    CLEAR_NOTIFICATION_SENT=true
+}
+
+# ─── durable queue: reservation + recovery for non-critical GATE CLEAR side effects ───
+# cmd_karo_hotfix_t3s40_post_source_v6 RC (2nd, msg_20260904_044654): plain
+# background `&` and nohup+setsid both survive only as long as *some* process
+# from *this* invocation keeps running; neither recovers work that never even
+# started (a crash between enqueue and worker launch) or that was still
+# in-flight across a full process/OS restart with no later re-invocation for
+# the same cmd. This models scripts/cmd_complete.sh's
+# launch_or_observe_durable_gate_worker pattern (atomic reservation json ->
+# worker -> terminal marker json -> next invocation recovers via marker
+# state) at a much smaller scale: the reservation lives under
+# queue/gates/<cmd_id>/ (on disk, not /tmp), and gate_notify_reconcile_stale
+# is called once near the top of *every* cmd_complete_gate.sh invocation (for
+# *any* cmd) — so recovery does not depend on this cmd, or this process,
+# running again. It depends only on the GATE running at all somewhere,
+# which it does for every cmd in the system. Recovery replays the action
+# in-process via the named gate_run_* functions below (no export -f/declare -f
+# serialization needed — both were verified via smoke test to corrupt
+# gate_clear_notify_historical_evidence's embedded heredoc when round-tripped),
+# so it works even though the original process that enqueued the work is gone.
+gate_notify_pending_path() {
+    printf '%s/queue/gates/%s/notify_pending_%s.json\n' "$SCRIPT_DIR" "$1" "$2"
+}
+
+gate_notify_done_path() {
+    printf '%s/queue/gates/%s/notify_done_%s.json\n' "$SCRIPT_DIR" "$1" "$2"
+}
+
+gate_notify_enqueue() {
+    local cmd_id="$1" item="$2" pending
+    pending="$(gate_notify_pending_path "$cmd_id" "$item")"
+    mkdir -p "$(dirname "$pending")" 2>/dev/null
+    python3 - "$pending" "$cmd_id" "$item" <<'PY' 2>/dev/null || true
+import json, os, sys, tempfile, time
+path, cmd_id, item = sys.argv[1:]
+data = {"version": 1, "cmd_id": cmd_id, "item": item, "state": "pending",
+        "queued_at_ns": time.time_ns()}
+fd, tmp = tempfile.mkstemp(prefix=".notify_pending.", dir=os.path.dirname(path))
+with os.fdopen(fd, "w", encoding="utf-8") as fh:
+    json.dump(data, fh, sort_keys=True); fh.write("\n"); fh.flush(); os.fsync(fh.fileno())
+os.replace(tmp, path)
+PY
+}
+
+gate_notify_complete() {
+    local cmd_id="$1" item="$2"
+    python3 - "$(gate_notify_done_path "$cmd_id" "$item")" "$cmd_id" "$item" <<'PY' 2>/dev/null || true
+import json, os, sys, tempfile, time
+path, cmd_id, item = sys.argv[1:]
+data = {"version": 1, "cmd_id": cmd_id, "item": item, "state": "done",
+        "completed_at_ns": time.time_ns()}
+fd, tmp = tempfile.mkstemp(prefix=".notify_done.", dir=os.path.dirname(path))
+with os.fdopen(fd, "w", encoding="utf-8") as fh:
+    json.dump(data, fh, sort_keys=True); fh.write("\n"); fh.flush(); os.fsync(fh.fileno())
+os.replace(tmp, path)
+PY
+    rm -f "$(gate_notify_pending_path "$cmd_id" "$item")" 2>/dev/null || true
+}
+
+gate_run_gunshi_reflux_feedback() {
+    local cmd_id="$1"
+    if [ -f "$SCRIPT_DIR/scripts/gunshi_gate_reflux.sh" ]; then
+        if bash "$SCRIPT_DIR/scripts/gunshi_gate_reflux.sh" "$cmd_id" "CLEAR"; then
+            echo "gunshi_gate_reflux: OK"
+        else
+            echo "[INFO] gunshi_gate_reflux: WARN (non-blocking)"
+        fi
+    else
+        echo "[INFO] gunshi_gate_reflux: SKIP (script not found)"
+    fi
+    # GP-209: dedup — 同一cmd+同一resultが既にinboxにあればスキップ
+    if grep -q "${cmd_id} gate_result: CLEAR" "$SCRIPT_DIR/queue/inbox/gunshi.yaml" 2>/dev/null; then
+        echo "gunshi review_feedback: SKIP (dedup — already in inbox)"
+    elif timeout 10 bash "$SCRIPT_DIR/scripts/inbox_write.sh" gunshi "${cmd_id} gate_result: CLEAR" gate_clear system; then
+        echo "gunshi review_feedback: OK (CLEAR)"
+    else
+        echo "[INFO] gunshi review_feedback: WARN (non-blocking)"
+    fi
+}
+
+gate_run_gunshi_reflux_only() {
+    local cmd_id="$1"
+    if [ -f "$SCRIPT_DIR/scripts/gunshi_gate_reflux.sh" ]; then
+        if bash "$SCRIPT_DIR/scripts/gunshi_gate_reflux.sh" "$cmd_id" "CLEAR"; then
+            echo "gunshi_gate_reflux (2nd run): OK"
+        else
+            echo "[INFO] gunshi_gate_reflux (2nd run): WARN (non-blocking)"
+        fi
+    else
+        echo "  SKIP (gunshi_gate_reflux.sh not found)"
+    fi
+}
+
+gate_run_gunshi_verdict_update() {
+    local cmd_id="$1"
+    local _GV_REVIEW_LOG="$SCRIPT_DIR/logs/gunshi_review_log.yaml"
+    local _GV_ARCHIVE_DIR="$SCRIPT_DIR/logs/archive"
+    local _GV_DQ_FILE="$SCRIPT_DIR/logs/cmd_design_quality.yaml"
+    if [ -f "$_GV_DQ_FILE" ] && [ -f "$_GV_REVIEW_LOG" ]; then
+        local _gv_result
+        _gv_result=$(
+            (
+                flock -w 10 200 || exit 1
+                python3 - "$cmd_id" "$_GV_REVIEW_LOG" "$_GV_ARCHIVE_DIR" "$_GV_DQ_FILE" 2>/dev/null <<'END_GV_PY'
+import sys, re, os, glob, tempfile
+
+cmd_id = sys.argv[1]
+review_log = sys.argv[2]
+archive_dir = sys.argv[3]
+dq_file = sys.argv[4]
+
+# データソース: gunshi_review_log.yaml + archive直近2ファイル
+sources = []
+if os.path.exists(review_log):
+    sources.append(review_log)
+archives = sorted(glob.glob(os.path.join(archive_dir, "gunshi_review_log*.yaml")))
+sources.extend(archives[-2:])
+
+# draft verdictを取得: REQUEST_CHANGESが一度でも出た場合はそちらを優先
+found_rc = False
+found_approve = False
+for src in sources:
+    try:
+        with open(src, encoding='utf-8') as f:
+            content = f.read()
+    except Exception:
+        continue
+    for m in re.finditer(r'^- cmd_id:.*?(?=^- cmd_id:|\Z)', content, re.MULTILINE | re.DOTALL):
+        entry = m.group(0)
+        cm = re.match(r'^- cmd_id:\s*["\']?([^"\'\n]+)["\']?', entry)
+        if not cm or cm.group(1).strip() != cmd_id:
+            continue
+        if 'review_type: draft' not in entry:
+            continue
+        vm = re.search(r'(?<![a-z_])verdict:\s*(\S+)', entry)
+        if vm:
+            v = vm.group(1).strip('"\'')
+            if v == 'REQUEST_CHANGES':
+                found_rc = True
+            elif v == 'APPROVE':
+                found_approve = True
+
+if found_rc:
+    new_verdict = 'REQUEST_CHANGES'
+elif found_approve:
+    new_verdict = 'LGTM'
+else:
+    print(f"[INFO] {cmd_id}: no draft verdict found, keeping existing")
+    sys.exit(0)
+
+# cmd_design_quality.yaml の対象cmd_idエントリのgunshi_verdictを更新
+try:
+    with open(dq_file, encoding='utf-8') as f:
+        lines = f.readlines()
+except Exception as e:
+    print(f"[ERROR] Failed to read {dq_file}: {e}")
+    sys.exit(0)
+
+updated = 0
+in_entry = False
+match_entry = False
+new_lines = []
+for line in lines:
+    if re.match(r'\s*- cmd_id:', line):
+        cid_m = re.search(r'cmd_id:\s*["\']?([^"\'\n]+)["\']?', line)
+        match_entry = bool(cid_m and cid_m.group(1).strip() == cmd_id)
+        in_entry = True
+    elif line.strip() and not line.startswith(' ') and not line.startswith('\t') and not line.strip().startswith('#'):
+        in_entry = False
+        match_entry = False
+    if match_entry and re.match(r'\s+gunshi_verdict:', line):
+        new_lines.append(re.sub(r'(gunshi_verdict:\s*)["\']?[^"\'\n]*["\']?', f'\\1"{new_verdict}"', line))
+        updated += 1
+    else:
+        new_lines.append(line)
+
+if updated > 0:
+    try:
+        tmp_fd, tmp_path = tempfile.mkstemp(dir=os.path.dirname(dq_file), suffix='.tmp')
+        os.close(tmp_fd)
+        with open(tmp_path, 'w', encoding='utf-8') as f:
+            f.writelines(new_lines)
+        os.replace(tmp_path, dq_file)
+        print(f"{cmd_id}: gunshi_verdict → {new_verdict} ({updated} entries updated)")
+    except Exception as e:
+        print(f"[ERROR] Failed to write {dq_file}: {e}")
+else:
+    print(f"[INFO] {cmd_id}: no matching entries found in cmd_design_quality.yaml")
+END_GV_PY
+            ) 200>"$(lock_path "$_GV_DQ_FILE")"
+        ) || _gv_result="[INFO] gunshi_verdict update failed (non-blocking)"
+        echo "  ${_gv_result}"
+    else
+        echo "  SKIP (cmd_design_quality.yaml or gunshi_review_log.yaml not found)"
+    fi
+}
+
+# Runs once, synchronously and in-process (no export -f/declare -f), near the
+# top of every GATE invocation. Cheap: a bounded glob + one small python3
+# parse per pending file. Fail-open: any error here must never affect this
+# cmd's own gate decision, so every call site below is guarded with `|| true`.
+gate_notify_reconcile_stale() {
+    local stale_after_s="${GATE_NOTIFY_STALE_AFTER_S:-120}"
+    local now_s pending item cmd_id_rec queued_at_s age
+    now_s=$(date +%s)
+    shopt -s nullglob
+    for pending in "$SCRIPT_DIR"/queue/gates/*/notify_pending_*.json; do
+        item="$(basename "$pending")"; item="${item#notify_pending_}"; item="${item%.json}"
+        cmd_id_rec="$(basename "$(dirname "$pending")")"
+        if [ -f "$(gate_notify_done_path "$cmd_id_rec" "$item")" ]; then
+            rm -f "$pending" 2>/dev/null || true
+            continue
+        fi
+        queued_at_s=$(python3 -c '
+import json, sys
+print(int(json.load(open(sys.argv[1]))["queued_at_ns"] // 1_000_000_000))
+' "$pending" 2>/dev/null) || continue
+        age=$(( now_s - queued_at_s ))
+        [ "$age" -ge "$stale_after_s" ] || continue
+        {
+            echo "  gate_notify_reconcile: recovering stale ${cmd_id_rec}/${item} (age=${age}s)"
+            case "$item" in
+                gunshi_reflux_feedback) gate_run_gunshi_reflux_feedback "$cmd_id_rec" ;;
+                gunshi_verdict_update) gate_run_gunshi_verdict_update "$cmd_id_rec" ;;
+                gunshi_reflux_2nd) gate_run_gunshi_reflux_only "$cmd_id_rec" ;;
+                clear_notify)
+                    ( CLEAR_NOTIFICATION_SENT=false send_clear_notifications_once "$cmd_id_rec" "GATE CLEAR terminal (recovered)" )
+                    ;;
+                *) echo "[WARN] gate_notify_reconcile: unknown item ${item} (leaving pending)"; continue ;;
+            esac
+        } >> "${LOG_DIR:-/tmp}/cmd_complete_gate_async.log" 2>&1 || true
+        gate_notify_complete "$cmd_id_rec" "$item"
+    done
+}
 
 notify_karo_lesson_registration_reminder() {
     local cmd_id="$1"
@@ -5298,6 +5765,12 @@ notify_karo_cmd_fail() {
         echo "  [INFO] karo cmd_fail notify: WARN (non-blocking)"
     fi
 }
+
+# Recovery sweep runs once per invocation, for ANY cmd — not just this one —
+# so a stale side effect from a crashed/never-launched worker (this cmd's or
+# another cmd's) gets picked up by whichever GATE happens to run next.
+# Fail-open: never let a reconcile error affect this cmd's own gate decision.
+gate_notify_reconcile_stale || true
 
 log_skill_execution_pass() {
     local skill_name="$1"
@@ -15315,36 +15788,21 @@ PY
     echo "  gist_sync: queued (async)"
 
     # GATE結果通知より先にreview_logへ同期し、/gate-sync手動依存を残さない。
-    # cmd_karo_hotfix_t3s40_post_source_v6 RC: reflux→review_feedback通知の相対順序
-    # (このコメントの制約)はGATE決定自体との同期を要求しない。durable worker(setsid detach)
-    # へ1本で送り込み、順序(reflux完了→通知)を保ったまま同期critical pathから外す。
-    # plain background `&` はこのプロセスと同じprocess groupに留まるため
-    # tmux respawn-pane -k等のgroup-wide killで道連れに消える(semantic_causal_post_clear.sh
-    # のnohup+setsidコメントと同じ理由)。setsidで新セッションへ切り離し消失耐性を持たせる。
+    # cmd_karo_hotfix_t3s40_post_source_v6 RC(2nd): reflux→review_feedback通知の
+    # 相対順序(このコメントの制約)はGATE決定自体との同期を要求しない。queue record
+    # (notify_pending_gunshi_reflux_feedback.json)を先に永続化してから1本の非同期
+    # subshell内で順序(reflux完了→通知)を保ったまま実行し、完了時にdone markerへ
+    # 遷移する。workerが起動すらしないまま死んでも(プロセス/OS再起動含む)、後続の
+    # 別cmdのGATE実行がgate_notify_reconcile_staleで検知しgate_run_gunshi_reflux_feedback
+    # を同一プロセス内でそのまま呼び直して回収する(export -f/declare -f不要)。
     echo ""
     echo "Gunshi gate_result reflux + review_feedback (GATE CLEAR, durable async ordered):"
-    SCRIPT_DIR="$SCRIPT_DIR" CMD_ID="$CMD_ID" LOG_DIR="$LOG_DIR" \
-        nohup setsid bash -c '
-            log_file="$LOG_DIR/cmd_complete_gate_async.log"
-            if [ -f "$SCRIPT_DIR/scripts/gunshi_gate_reflux.sh" ]; then
-                if bash "$SCRIPT_DIR/scripts/gunshi_gate_reflux.sh" "$CMD_ID" "CLEAR" >> "$log_file" 2>&1; then
-                    echo "gunshi_gate_reflux: OK" >> "$log_file"
-                else
-                    echo "[INFO] gunshi_gate_reflux: WARN (non-blocking)" >> "$log_file"
-                fi
-            else
-                echo "[INFO] gunshi_gate_reflux: SKIP (script not found)" >> "$log_file"
-            fi
-            # GP-209: dedup — 同一cmd+同一resultが既にinboxにあればスキップ
-            if grep -q "${CMD_ID} gate_result: CLEAR" "$SCRIPT_DIR/queue/inbox/gunshi.yaml" 2>/dev/null; then
-                echo "gunshi review_feedback: SKIP (dedup — already in inbox)" >> "$log_file"
-            elif timeout 10 bash "$SCRIPT_DIR/scripts/inbox_write.sh" gunshi "${CMD_ID} gate_result: CLEAR" gate_clear system >> "$log_file" 2>&1; then
-                echo "gunshi review_feedback: OK (CLEAR)" >> "$log_file"
-            else
-                echo "[INFO] gunshi review_feedback: WARN (non-blocking)" >> "$log_file"
-            fi
-        ' </dev/null >> "$LOG_DIR/cmd_complete_gate_async.log" 2>&1 &
-    echo "  gunshi_gate_reflux + review_feedback: queued (durable async, ordered; survives session-boundary kill)"
+    gate_notify_enqueue "$CMD_ID" gunshi_reflux_feedback
+    (
+        gate_run_gunshi_reflux_feedback "$CMD_ID"
+        gate_notify_complete "$CMD_ID" gunshi_reflux_feedback
+    ) >> "$LOG_DIR/cmd_complete_gate_async.log" 2>&1 &
+    echo "  gunshi_gate_reflux + review_feedback: queued (durable async, ordered)"
 
     # ntfy_cmd / shogun / karo は未送信時だけ補完。
 
@@ -15417,15 +15875,17 @@ PY
     fi
 
     # ─── gunshi_verdict自動更新（GATE CLEAR時、cmd_design_quality.yaml） ───
+    # cmd_karo_hotfix_t3s40_post_source_v6 RC(2nd): 本体はgate_run_gunshi_verdict_update
+    # (このファイル冒頭のnotify infra群と一緒に定義済み)へ移動。queue record→worker→
+    # done markerのdurable queueは上のgunshi_reflux_feedbackと同じ構造。
     echo ""
     echo "Gunshi verdict update to cmd_design_quality (GATE CLEAR):"
-    # cmd_karo_hotfix_t3s40_post_source_v6 RC: 独立script(scripts/gate_gunshi_verdict_sync.sh)
-    # へ抽出しdurable worker(nohup+setsid)から起動する。ロジックは移動のみで変更なし。
-    # plain background `&` はこのプロセスと同じprocess groupに留まるためtmux
-    # respawn-pane -k等のgroup-wide killで道連れに消える(理由はsite上の他箇所と同じ)。
-    nohup setsid bash "$SCRIPT_DIR/scripts/gate_gunshi_verdict_sync.sh" "$CMD_ID" \
-        </dev/null >> "$LOG_DIR/cmd_complete_gate_async.log" 2>&1 &
-    echo "  gunshi_verdict update: queued (durable async; survives session-boundary kill)"
+    gate_notify_enqueue "$CMD_ID" gunshi_verdict_update
+    (
+        gate_run_gunshi_verdict_update "$CMD_ID"
+        gate_notify_complete "$CMD_ID" gunshi_verdict_update
+    ) >> "$LOG_DIR/cmd_complete_gate_async.log" 2>&1 &
+    echo "  gunshi_verdict update: queued (durable async)"
 
     # ─── GATE CLEAR時 insight候補通知（cmd_1217: lesson_candidate/decision_candidate found:true検出） ───
     echo ""
@@ -15673,14 +16133,11 @@ PYEOF
     fi
 
     # ─── Workaround率表示（情報のみ、BLOCKしない） ───
-    # cmd_karo_hotfix_t3s40_post_source_v6 RC: durable worker(nohup+setsid)へ委譲。
     echo ""
     echo "Workaround rate (GATE CLEAR):"
     if [ -x "$SCRIPT_DIR/scripts/gates/gate_workaround_rate.sh" ]; then
-        SCRIPT_DIR="$SCRIPT_DIR" LOG_DIR="$LOG_DIR" \
-            nohup setsid bash -c 'bash "$SCRIPT_DIR/scripts/gates/gate_workaround_rate.sh" --last 10 >> "$LOG_DIR/cmd_complete_gate_async.log" 2>&1 || echo "[INFO] gate_workaround_rate.sh failed (non-blocking)" >> "$LOG_DIR/cmd_complete_gate_async.log"' \
-            </dev/null >> "$LOG_DIR/cmd_complete_gate_async.log" 2>&1 &
-        echo "  workaround_rate: queued (durable async; survives session-boundary kill; log=$LOG_DIR/cmd_complete_gate_async.log)"
+        (bash "$SCRIPT_DIR/scripts/gates/gate_workaround_rate.sh" --last 10 >> "$LOG_DIR/cmd_complete_gate_async.log" 2>&1 || echo "[INFO] gate_workaround_rate.sh failed (non-blocking)" >> "$LOG_DIR/cmd_complete_gate_async.log") &
+        echo "  workaround_rate: queued (async; log=$LOG_DIR/cmd_complete_gate_async.log)"
     else
         echo "  SKIP (gate_workaround_rate.sh not found)"
     fi
@@ -15734,16 +16191,12 @@ PYEOF
     echo ""
     echo "Gunshi gate_result reflux (post-GATE CLEAR 2nd run):"
     if [ -f "$SCRIPT_DIR/scripts/gunshi_gate_reflux.sh" ]; then
-        # cmd_karo_hotfix_t3s40_post_source_v6 RC: durable worker(nohup+setsid)へ委譲。
-        SCRIPT_DIR="$SCRIPT_DIR" CMD_ID="$CMD_ID" LOG_DIR="$LOG_DIR" \
-            nohup setsid bash -c '
-                if bash "$SCRIPT_DIR/scripts/gunshi_gate_reflux.sh" "$CMD_ID" "CLEAR" >> "$LOG_DIR/cmd_complete_gate_async.log" 2>&1; then
-                    echo "gunshi_gate_reflux (2nd run): OK" >> "$LOG_DIR/cmd_complete_gate_async.log"
-                else
-                    echo "[INFO] gunshi_gate_reflux (2nd run): WARN (non-blocking)" >> "$LOG_DIR/cmd_complete_gate_async.log"
-                fi
-            ' </dev/null >> "$LOG_DIR/cmd_complete_gate_async.log" 2>&1 &
-        echo "  gunshi_gate_reflux (2nd run): queued (durable async; survives session-boundary kill)"
+        gate_notify_enqueue "$CMD_ID" gunshi_reflux_2nd
+        (
+            gate_run_gunshi_reflux_only "$CMD_ID"
+            gate_notify_complete "$CMD_ID" gunshi_reflux_2nd
+        ) >> "$LOG_DIR/cmd_complete_gate_async.log" 2>&1 &
+        echo "  gunshi_gate_reflux (2nd run): queued (durable async)"
     else
         echo "  SKIP (gunshi_gate_reflux.sh not found)"
     fi
@@ -15818,22 +16271,16 @@ PYEOF
         || true) &
     echo "Task idle transition: queued (async)"
     echo "Git push (post-GATE CLEAR): queued (asynchronous follow-up)"
-    # cmd_karo_hotfix_t3s40_post_source_v6 RC: send_clear_notifications_once (and its
-    # emergency-override call sites elsewhere in this file) must stay a real in-process
-    # function shared from scripts/lib/gate_clear_notify.sh (source of truth). A prior
-    # `export -f` cut of this dispatch was reverted after a smoke test proved that
-    # bash's function-export environment-variable round-trip corrupts
-    # gate_clear_notify_historical_evidence's embedded python heredoc in this
-    # environment (verified: "error importing function definition" — the child
-    # silently lost the function and every downstream call became a swallowed
-    # "command not found"). scripts/gate_clear_terminal_notify.sh sources the same
-    # lib by file instead, which re-parses the original source text and has no such
-    # failure mode; nohup+setsid still gives it the same session-boundary-kill
-    # durability semantic_causal_post_clear.sh already relies on elsewhere in this file.
-    nohup setsid bash "$SCRIPT_DIR/scripts/gate_clear_terminal_notify.sh" \
-        "$CMD_ID" "GATE CLEAR terminal" "$LOG_DIR" "${ARCHIVE_AUTO_HANDLED:-0}" \
-        </dev/null >> "$LOG_DIR/cmd_complete_gate_async.log" 2>&1 &
-    echo "  clear notifications (shogun/karo): queued (durable async; survives session-boundary kill; log=$LOG_DIR/cmd_complete_gate_async.log)"
+    # cmd_karo_hotfix_t3s40_post_source_v6 RC(2nd): same durable queue as the
+    # 3 sites above; recovery (gate_notify_reconcile_stale, item=clear_notify)
+    # resets CLEAR_NOTIFICATION_SENT locally before replaying so a stale
+    # record from a crashed worker is not silently skipped as "already sent".
+    gate_notify_enqueue "$CMD_ID" clear_notify
+    (
+        send_clear_notifications_once "$CMD_ID" "GATE CLEAR terminal"
+        gate_notify_complete "$CMD_ID" clear_notify
+    ) >> "$LOG_DIR/cmd_complete_gate_async.log" 2>&1 &
+    echo "  clear notifications (shogun/karo): queued (durable async; log=$LOG_DIR/cmd_complete_gate_async.log)"
 
     echo ""
     echo "Async completion wait (pre-exit):"

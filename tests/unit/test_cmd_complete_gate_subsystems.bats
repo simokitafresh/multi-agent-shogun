@@ -32,10 +32,7 @@ setup_file() {
             emit = wanted[name]
         }
         emit { print }
-    ' "$SRC_GATE_SCRIPT" "$PROJECT_ROOT/scripts/lib/append_line_locked.sh" > "$SUBSYSTEM_HELPERS"
-    # cmd_karo_hotfix_t3s40_post_source_v6: append_line_locked moved (not
-    # duplicated) to scripts/lib/append_line_locked.sh (sourced back into
-    # $SRC_GATE_SCRIPT); the awk extraction above now also scans that file.
+    ' "$SRC_GATE_SCRIPT" > "$SUBSYSTEM_HELPERS"
 }
 
 setup() {
