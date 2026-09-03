@@ -1148,3 +1148,15 @@ entries:
     - 'shogun'
   confirmed_by: []
   status: 'open'
+- id: 'blt_20260903_131641_b69082'
+  content: |-
+    DOC_LANE_ALERT: context=context/infrastructure.md raw_alert=ALERT: context/infrastructure.md source commits 4件 since last_updated=2026-09-03 repo=/home/simokitafresh/multi-agent-shogun root_fallback=no timeout=360s/360s owner=infra-platform update_trigger=.github|.githooks|config|docs/rule|docs/knowledge-base|instructions|scripts|skills|tests|AGENTS.md|CLAUDE.md|CONTRIBUTING.md|LICENSE|Makefile|SECURITY.md|first_setup.sh|install.bat|lefthook-local.yml|lefthook.yml|project_lexicon.yaml|setup.sh|shutsujin_departure.sh。更新要否を確認せよ latest: f0a55c918c6a test_lgtm_bundle_guard: #7をgate_prediction=BLOCK判定に合わせて更新(GA-566修正) | 3d7d9d74e500 ac_physical_verify: LG070(選択肢閉鎖検出)+LG071(判定基準未固定検出)のLevel5 WARN追加 | 69a039d71006 D0: gunshi_log_append LG085をgate_prediction判定に変更 — actual欄の自然言語regex偽陽性を根治(T3-G-03) action: bash scripts/context_source_commit_set.sh context/infrastructure.md f0a55c918c6a 'context_freshness reviewed source boundary' 'context_freshness_check context=context/infrastructure.md commit=f0a55c918c6a'
+  posted_by: 'gate_context_freshness'
+  posted_at: '2026-09-03T13:16:41'
+  requires_confirmation: false
+  action_type: 'action_required'
+  actioned_by: ''
+  notify_targets:
+    - 'shogun'
+  confirmed_by: []
+  status: 'open'
