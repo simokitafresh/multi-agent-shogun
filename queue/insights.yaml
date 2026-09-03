@@ -13239,7 +13239,9 @@ insights:
   priority: "low"
   source: "semantic_map_generate:new_file"
   fix_known: false
-  status: pending
+  status: "resolved"
+  action_artifact: "target=queue/insights.yaml:INS-20260902-141250704-658d;concept=shogun_android_app;semantic=context/semantic-map.md:69;index=docs/semantic-index/index.md:9208-9222;git=git ls-files android/.gitignore(tracked, commit 462ea2ee3);decision_candidate=android/.gitignore個別path行追加要否をsemantic-map更新の別scopeとして家老判断へ委譲"
+  resolved_reason: "一次確認: android/.gitignore はgit管理下に実在(git ls-files確認、462ea2ee3で復元済)。context/semantic-map.md:69 と docs/semantic-index/index.md:9208-9222 の shogun_android_app 概念は android/ ディレクトリを file 登録済みで android/.gitignore はその配下として既にカバーされる。個別path行への昇格要否はL1701方針に従いdecision_candidateとして別途整理し、本taskでは実装修正なしで対象insightのみresolve。"
 - id: INS-20260902-141250820-8c9e
   ts: "2026-09-02T14:12:50+09:00"
   insight: "semantic_map_generate新規ファイル候補: `android/README.md` は semantic index未登録。既存概念へのfile追加または新概念定義を検討せよ"
