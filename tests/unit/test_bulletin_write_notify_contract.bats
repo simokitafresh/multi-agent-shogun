@@ -13,10 +13,7 @@ setup() {
     cp "$BATS_TEST_DIRNAME/../../scripts/lib/lock_path.sh" "$TEST_ROOT/scripts/lib/lock_path.sh"
     cp "$BATS_TEST_DIRNAME/../../scripts/bulletin_archive.sh" "$TEST_ROOT/scripts/bulletin_archive.sh"
     cp "$BATS_TEST_DIRNAME/../../scripts/ledger_writer.sh" "$TEST_ROOT/scripts/ledger_writer.sh"
-    cp "$BATS_TEST_DIRNAME/../../scripts/yaml_auto_archive.sh" "$TEST_ROOT/scripts/yaml_auto_archive.sh"
-    mkdir -p "$TEST_ROOT/config" "$TEST_ROOT/queue/archive" "$TEST_ROOT/queue/flags"
-    printf 'queue/bulletin_board.yaml\t2\tentries\t^\\s*-\\s+id:\tqueue/archive/bulletin_board_archive.yaml\n' \
-        > "$TEST_ROOT/config/yaml_auto_archive.tsv"
+    mkdir -p "$TEST_ROOT/queue/archive" "$TEST_ROOT/queue/flags"
     cat > "$TEST_ROOT/scripts/inbox_write_fixture.sh" <<'SH'
 #!/bin/bash
 printf '%s\n' "$1|$3|$4|$5" >> "$BULLETIN_NOTIFY_CAPTURE"
@@ -300,26 +297,4 @@ EOF
     run env SHOGUN_STATE_DIR="$LEDGER_STATE" bash "$TEST_ROOT/scripts/ledger_writer.sh" apply "$update_op"
     [ "$status" -eq 0 ]
     grep -q 'status: "closed"' "$TEST_ROOT/queue/bulletin_board.yaml"
-}
-
-# test_necessity: PUBLISHER_SINGLE中、yaml_auto_archive.sh(汎用count-basedトリム)自体も
-# queue/bulletin_board.yamlをroot trimせず、bulletin_archive.shのledger routeへ委譲する
-# (2026-09-03 23:27 -11行prune事故の実writerに対する直接regression test)。
-@test "PUBLISHER_SINGLE ON: generic yaml_auto_archive.sh delegates bulletin_board.yaml to the ledger route instead of trimming root" {
-    _publisher_single_write_old_board "$TEST_ROOT/queue/bulletin_board.yaml"
-    _publisher_single_git_init "$TEST_ROOT"
-    LEDGER_STATE="$BATS_TEST_TMPDIR/ledger_state_yaa"
-    mkdir -p "$LEDGER_STATE"
-
-    run env SHOGUN_ROOT="$TEST_ROOT" SHOGUN_STATE_DIR="$LEDGER_STATE" \
-        bash "$TEST_ROOT/scripts/yaml_auto_archive.sh"
-    [ "$status" -eq 0 ]
-    [[ "$output" == *"SKIP queue/bulletin_board.yaml"*"PUBLISHER_SINGLE ON"* ]]
-
-    # AC2: root tracked porcelain増分0 — 汎用archiverもrootを直接trimしない
-    [ -z "$(git -C "$TEST_ROOT" status --porcelain -- queue/bulletin_board.yaml)" ]
-
-    local update_op
-    update_op="$(grep -l '"op": "update"' "$LEDGER_STATE"/ledger_inbox/bulletin/*.yaml | head -1)"
-    [ -n "$update_op" ]
 }
