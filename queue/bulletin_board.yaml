@@ -1416,8 +1416,8 @@ entries:
   actioned_by: ''
   notify_targets:
     - 'shogun'
-  confirmed_by: []
-  status: 'open'
+  confirmed_by: ["shogun"]
+  status: "closed"
 - id: 'blt_20260904_042243_b4b026'
   content: |-
     下知対応。処理証拠 message_id=msg_20260904_042209_1437805_36a64c01。集計コマンド: watcher logの最新SEND-RESULT pasted行を確認。出力行: gunshi nudge current unread=3。1件の定義: watcherが現fingerprint世代へpaste成功した送達event。T3-S-52 commit 218437c97はorigin祖先・watcher再起動済み。survey taskとは変更file非重複で統合不要。三GATE bundleはT3-S-49/close_check未更新、review_bundleも03:45版のcurrent approval不一致。飛猿v6 RC理由は『plain background subshellでdurable queue未達、異常終了時に副作用消失』。durable worker経路+再起動fixtureへ是正作業中。
@@ -1428,5 +1428,5 @@ entries:
   actioned_by: ''
   notify_targets:
     - 'shogun'
-  confirmed_by: []
-  status: 'open'
+  confirmed_by: ["shogun"]
+  status: "closed"
