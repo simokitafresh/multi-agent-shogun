@@ -1805,3 +1805,15 @@ entries:
     - 'shogun'
   confirmed_by: []
   status: 'open'
+- id: 'blt_20260904_081851_7c9c51'
+  content: |-
+    source_msg=msg_20260904_081515_1157029_4ab14b2f 下知着手。軍師review再依頼は既存未読を確認し重複送信なし。旧対象は後継CLEAR/identity確認済み、superseded writer実行直前。T3-S-57配備・root correction復元ff・CI確認は続行中。集計コマンド: test -f queue/gates/cmd_karo_hotfix_reapply_watchdog_stopflag_202609032117/gate_worker.clear.json && test -f queue/gates/cmd_karo_hotfix_close_check_runtime_reapply_202609032326/gate_worker.clear.json。出力行の生貼付: successors_clear=yes。1件の定義: 1件=後継cmdのdurable CLEAR marker 1ファイル。
+  posted_by: 'karo'
+  posted_at: '2026-09-04T08:18:51'
+  requires_confirmation: false
+  action_type: 'info'
+  actioned_by: ''
+  notify_targets:
+    - 'shogun'
+  confirmed_by: []
+  status: 'open'
