@@ -710,6 +710,21 @@ has_deferred_nudge_for_fp() {
     grep -q "^fingerprint=${fingerprint}\$" "$DEFERRED_NUDGE_FILE" 2>/dev/null
 }
 
+# 2026-09-04 02:20 将軍 D0(T3-S-50): Claude CLI の pane は prompt(❯)行の後に区切り線と
+# 状態行(CTX:xx% / ⏵⏵ bypass permissions / Stop hook error occurred)が続くため、
+# 「末尾 1 行が prompt」判定は Claude agent では永久に偽になり、T3-S-38 の fallback が
+# 軍師(Claude)には一度も効かなかった(02:16 実測: state=active・flag 無し・prompt 表示・
+# WAKE-DEFER 連続)。末尾 30 行を取り、直近 8 非空行に空 prompt 行があり、実行中表示
+# (esc to interrupt/Running…/Working ()が無ければ idle prompt とみなす。Codex(›)も包含。
+_pane_tail_has_idle_prompt() {
+    local target="$1" pane_tail
+    pane_tail=$(tmux capture-pane -t "$target" -p -J -S -30 2>/dev/null || true)
+    pane_tail=$(printf '%s\n' "$pane_tail" | sed '/^[[:space:]]*$/d' | tail -8)
+    printf '%s\n' "$pane_tail" | grep -Eq 'esc to interrupt|Running…|Running\.\.\.|Working \(' && return 1
+    printf '%s\n' "$pane_tail" | grep -Eq '^[[:space:]]*[❯›][[:space:]]*$' || return 1
+    return 0
+}
+
 maybe_force_idle_flag() {
     local effective_cli="$1"
     [ "$effective_cli" = "claude" ] || return 1
@@ -740,10 +755,7 @@ maybe_force_idle_flag() {
         # recognizing the dialog shape.
         _pane_has_confirmation_prompt "$PANE_TARGET" && return 1
 
-        local pane_tail last_line
-        pane_tail=$(tmux capture-pane -t "$PANE_TARGET" -p -J -S -3 2>/dev/null || true)
-        last_line=$(printf '%s\n' "$pane_tail" | sed '/^[[:space:]]*$/d' | tail -1)
-        [[ "$last_line" =~ ^[[:space:]]*[❯›][[:space:]]* ]] || return 1
+        _pane_tail_has_idle_prompt "$PANE_TARGET" || return 1
     elif [ "$agent_state" = "active" ]; then
         # 2026-09-03 19:10 将軍 D0(T3-S-38): Stop hook が失敗/timeout すると active のまま flag 無しで
         # 残り、nudge が永久保留になる。@last_active が BUSY_TIMEOUT_SEC 以上古く、pane 末尾が
@@ -757,10 +769,7 @@ maybe_force_idle_flag() {
         [ "$elapsed" -ge "$BUSY_TIMEOUT_SEC" ] || return 1
         _agent_state_has_busy_subprocess "$PANE_TARGET" && return 1
         _pane_has_confirmation_prompt "$PANE_TARGET" && return 1
-        local pane_tail last_line
-        pane_tail=$(tmux capture-pane -t "$PANE_TARGET" -p -J -S -3 2>/dev/null || true)
-        last_line=$(printf '%s\n' "$pane_tail" | sed '/^[[:space:]]*$/d' | tail -1)
-        [[ "$last_line" =~ ^[[:space:]]*[❯›][[:space:]]* ]] || return 1
+        _pane_tail_has_idle_prompt "$PANE_TARGET" || return 1
         tmux set-option -p -t "$PANE_TARGET" @agent_state idle 2>/dev/null || return 1
     else
         return 1
