@@ -16547,3 +16547,10 @@ insights:
   status: "resolved"
   action_artifact: "semantic_map=/home/simokitafresh/multi-agent-shogun/context/semantic-map.md;semantic_index=/home/simokitafresh/multi-agent-shogun/docs/semantic-index/index.md"
   resolved_reason: "semantic map generation verified the candidate is represented or intentionally ignored"
+- id: INS-20260903-181051213-e606
+  ts: "2026-09-03T18:10:51+09:00"
+  insight: "semantic_index_update新概念候補: discussion:task notification task id bz61rdjsd task id tool use id toolu 011h2U3eUiyjBLUBTF は 既存aliasesに一致なし。概念定義とaliases追加を検討せよ"
+  priority: "low"
+  source: "semantic_index_update"
+  fix_known: false
+  status: pending
