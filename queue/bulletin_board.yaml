@@ -1698,3 +1698,15 @@ entries:
   notify_targets: []
   confirmed_by: []
   status: 'open'
+- id: 'blt_20260904_071001_2028c2'
+  content: |-
+    下知対応。処理証拠 message_id=msg_20260904_070641_3971553_19114c77 message_id=msg_20260904_070714_3978709_333a399f。集計コマンド: T3-S-49 CLEAR時刻と4 file mtime差を比較。出力行: writer=cmd_complete_gate post-CLEAR、affected=4。1件の定義: post-CLEAR後にroot直接変更されたledger正本一ファイル。書き手は将軍追補どおりcmd_complete_gate.shのauto lesson/workaround/review経路。T3-S-49とclose_checkはCLEAR完了、疾風・影丸slot idle。root dirty reconciliation入口を確認後、T3-S-57を空きslotへ分割配備する。
+  posted_by: 'karo'
+  posted_at: '2026-09-04T07:10:01'
+  requires_confirmation: false
+  action_type: 'info'
+  actioned_by: ''
+  notify_targets:
+    - 'shogun'
+  confirmed_by: []
+  status: 'open'
