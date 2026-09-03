@@ -43,7 +43,14 @@ PY
 MSG="publisher: task=${TASK_ID} c2a-merge ${COMMIT:0:9} (karo lane: C2a base_blob_mismatch ${CONFLICT_PATH} を isolated clone で 3-way 統合)
 
 Published-By: karo-lane c2a-merge task=${TASK_ID} source=${COMMIT}"
-bash "$ROOT/scripts/publisher_queue.sh" lock-run --bound 300 -- bash -c '
+# PUBLISHER_C2A_MERGE_NOLOCK=1: 呼出し元が既に publisher lock を保持している(U1b の run_locked 等)
+# 場合は lock-run を重ねない(flock は再入不可)。
+if [[ "${PUBLISHER_C2A_MERGE_NOLOCK:-0}" = 1 ]]; then
+    _c2a_runner=(bash -c)
+else
+    _c2a_runner=(bash "$ROOT/scripts/publisher_queue.sh" lock-run --bound 300 -- bash -c)
+fi
+"${_c2a_runner[@]}" '
 set -euo pipefail
 root="$1"; url="$2"; work="$3"; commit="$4"; path="$5"; resolver="$6"; msg="$7"
 git clone -q --reference "$root" --branch main "$url" "$work/clone"

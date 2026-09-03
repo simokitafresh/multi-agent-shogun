@@ -89,7 +89,19 @@ Published-By: wrapper" -- "${paths[@]}")"; then
         echo "publish_direct_commit: scope commit returned invalid hash" >&2
         return 1
     }
-    timeout 120 git push origin main
+    if timeout 120 git push origin main; then
+        return 0
+    fi
+    # lock 外で origin が進んだ(publisher batch 等)ため non-ff で reject された場合は、
+    # 同じ lock 内で isolated clone の 3-way merge(Published-By trailer 付き)を 1 回だけ試み、
+    # root を origin へ ff する(将軍 2026-09-03 11:07 hotfix 列)。
+    echo "publish_direct_commit: push rejected; retrying via publisher_c2a_merge (nolock)" >&2
+    if PUBLISHER_C2A_MERGE_NOLOCK=1 bash "$SCRIPT_DIR/publisher_c2a_merge.sh" "u1b_retry_$(date +%H%M%S)" "$commit_hash" \
+        && timeout 120 git fetch origin && git merge --ff-only origin/main; then
+        return 0
+    fi
+    echo "publish_direct_commit: push retry failed (rc=9)" >&2
+    return 9
 }
 
 # The inner invocation is deliberately the same script so lock-run owns the
