@@ -15758,3 +15758,10 @@ insights:
   source: "semantic_stress_test"
   fix_known: false
   status: pending
+- id: INS-20260903-112631853-6093
+  ts: "2026-09-03T11:26:31+09:00"
+  insight: "[[偵察第 回 殿 『前提とする環境が変わった]] NO_MATCH purpose pending alias: cmd_complete時にdeploy_task.logでNO_MATCHだったpurpose。類似概念TOP3: agent_formation_management(編成管理; alias=偵察; score=6.3) / rebalancer_app(Rebalancerアプリ; alias=前の方が精度がよかったことになるな; score=2.2) / db_price_data_range(DB価格データ範囲; alias=LQDの値が変わった; score=2.2)。既存概念aliasesへの自動昇格候補"
+  priority: "low"
+  source: "semantic_index_update"
+  fix_known: false
+  status: pending
