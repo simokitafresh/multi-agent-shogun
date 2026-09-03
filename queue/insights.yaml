@@ -16864,3 +16864,10 @@ insights:
   source: "manual"
   fix_known: false
   status: pending
+- id: INS-20260904-071834390-e3ce
+  ts: "2026-09-04T07:18:34+09:00"
+  insight: "gunshi_gate_reflux.sh と yaml_field_set.sh(--append含む)は PUBLISHER_SINGLE 中も root の logs/gunshi_review_log.yaml を直接書く root-dirty writer(T3-S-34 残)。2026-09-04 07:05-07:15 の gate-sync(reflux 35cmd)+観測追記で root review_log が dirty(59+/30-)になり root drain BLOCK の dirty path に加わった(既存 dirty: context/cmd-chronicle.md 等)。gate_result 更新も ledger update op へ寄せる必要。source gunshi 2026-09-04 07:20"
+  priority: "medium"
+  source: "manual"
+  fix_known: false
+  status: pending
