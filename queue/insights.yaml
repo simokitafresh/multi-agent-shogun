@@ -15521,4 +15521,7 @@ insights:
   priority: "medium"
   source: "skill_script_refs:9abfd94ce2d8bec9"
   fix_known: false
-  status: pending
+  status: resolved
+  resolved_reason: 一次情報で gate_skill_script_refs.sh を再実行し、対象は同一source hashの先行pending INS-20260903-073938195-13b7と本文完全一致する重複と確認した。現行gateは参照先欠落0、追従要更新30組、例示パス欠落1件、実走マーカー欠落0件のREVIEW_REQUIREDであり、SKILL本文の変更は本task scope外のため対象IDのみ解決した。
+  action_artifact: "target queue/insights.yaml:INS-20260903-082929190-d643;duplicate_of INS-20260903-073938195-13b7;gate scripts/gates/gate_skill_script_refs.sh;gate_rc 2;referenced 83;required_contract_refs 30;stale_refs 30;missing_refs 0;missing_example_paths 1;missing_side_effect_markers 0;followup_queued 30;decision_candidate source単位のSKILL追従30組を後続taskで実施"
+  resolved_at: "2026-09-03T09:25:40+09:00"
