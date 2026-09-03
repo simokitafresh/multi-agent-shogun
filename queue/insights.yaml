@@ -16678,3 +16678,17 @@ insights:
   status: "resolved"
   action_artifact: "semantic_map=/home/simokitafresh/multi-agent-shogun/context/semantic-map.md;semantic_index=/home/simokitafresh/multi-agent-shogun/docs/semantic-index/index.md"
   resolved_reason: "semantic map generation verified the candidate is represented or intentionally ignored"
+- id: INS-20260903-191402411-c066
+  ts: "2026-09-03T19:14:02+09:00"
+  insight: "[[根拠のない待機はバグだな]] semantic_stress_test candidate_aliases: NO_MATCH source=lord query=根拠のない待機はバグだな。真因にたどり着き根治しよう"
+  priority: "low"
+  source: "semantic_stress_test"
+  fix_known: false
+  status: pending
+- id: INS-20260903-191402683-e433
+  ts: "2026-09-03T19:14:02+09:00"
+  insight: "[[slot instruction slot A angle 定義 draft seed 二つだけ見る]] semantic_stress_test candidate_aliases: NO_MATCH source=lord query=slot instruction --- slot: A angle: 定義 draft_seed: 二つだけ見る。 url: title: デュアルモメンタム記事 usable_…"
+  priority: "low"
+  source: "semantic_stress_test"
+  fix_known: false
+  status: pending
