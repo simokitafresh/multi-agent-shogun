@@ -15889,3 +15889,45 @@ insights:
   source: "semantic_index_update"
   fix_known: false
   status: pending
+- id: INS-20260903-130130601-6b35
+  ts: "2026-09-03T13:01:30+09:00"
+  insight: "[[迂回をするよりも]] semantic_stress_test candidate_aliases: NO_MATCH source=lord query=迂回をするよりも、問題inbo"
+  priority: "low"
+  source: "semantic_stress_test"
+  fix_known: false
+  status: pending
+- id: INS-20260903-130130819-ac9d
+  ts: "2026-09-03T13:01:30+09:00"
+  insight: "[[われわれは情報提供業ではない]] semantic_stress_test candidate_aliases: NO_MATCH source=lord query=われわれは情報提供業ではない。あくまで個人の研究を共有しているだけだ。法務はマナーとして下品でなければいいのでは？絶対に儲かるとかそういうことを言わないのが俺なのは将軍もよく理解しているはずだ"
+  priority: "low"
+  source: "semantic_stress_test"
+  fix_known: false
+  status: pending
+- id: INS-20260903-130131030-c0e0
+  ts: "2026-09-03T13:01:31+09:00"
+  insight: "[[利他の精神で毎回迂回しているものがないか調査して]] semantic_stress_test candidate_aliases: NO_MATCH source=lord query=利他の精神で毎回迂回しているものがないか調査して、問題を直そう"
+  priority: "low"
+  source: "semantic_stress_test"
+  fix_known: false
+  status: pending
+- id: INS-20260903-130131239-949a
+  ts: "2026-09-03T13:01:31+09:00"
+  insight: "[[C \\Users\\simok\\OneDrive\\デスクトップ\\バム型・届け方マニュアル v4 txt をよんでx acc]] semantic_stress_test candidate_aliases: NO_MATCH source=lord query=\"C:\\Users\\simok\\OneDrive\\デスクトップ\\バム型・届け方マニュアル v4.txt\"をよんでx_account_ops_automation_asis_tobe_5w1h_20260903.mdを更新して"
+  priority: "low"
+  source: "semantic_stress_test"
+  fix_known: false
+  status: pending
+- id: INS-20260903-130131470-4c06
+  ts: "2026-09-03T13:01:31+09:00"
+  insight: "[[x account ops automation asis tobe 5w1h 20260903 mdについてチャットし]] semantic_stress_test candidate_aliases: NO_MATCH source=lord query=x_account_ops_automation_asis_tobe_5w1h_20260903.mdについてチャットしよう。俺はもう1軸欲しいと思う。テーマはドリームだ。詐欺でも煽りでもなくDM-siganal の生データや研究歴を知っている俺らはDM-signalの信頼性を…"
+  priority: "low"
+  source: "semantic_stress_test"
+  fix_known: false
+  status: pending
+- id: INS-20260903-130131676-b3a2
+  ts: "2026-09-03T13:01:31+09:00"
+  insight: "[[X apiを取得しようとしたらこれを要求された]] semantic_stress_test candidate_aliases: NO_MATCH source=lord query=X-apiを取得しようとしたらこれを要求された。開発者PPUパイロット契約および開発者ポリシー XのデータおよびAPIのすべてのユースケースを説明してください： この情報はデータ保護のために必要です"
+  priority: "low"
+  source: "semantic_stress_test"
+  fix_known: false
+  status: pending
