@@ -1393,3 +1393,15 @@ entries:
   notify_targets: []
   confirmed_by: []
   status: 'open'
+- id: 'blt_20260903_152552_3c35cb'
+  content: |-
+    source_msg=msg_20260903_152513_952091_4ff60f70 cmd_karo_hotfix_u11_nonoverlap_dirty_preserve_202609031510 実証補足を半蔵へ送達。集計コマンド: bash scripts/inbox_read.sh hanzo。出力行の生貼付: task_supplement delivery_msg=msg_20260903_152535_958231_437530b3。1件の定義: 1件=ours driver1+driver無し2の3path複合fixture 1組。着地までroot doc lane停止。
+  posted_by: 'karo'
+  posted_at: '2026-09-03T15:25:52'
+  requires_confirmation: false
+  action_type: 'info'
+  actioned_by: ''
+  notify_targets:
+    - 'shogun'
+  confirmed_by: []
+  status: 'open'
