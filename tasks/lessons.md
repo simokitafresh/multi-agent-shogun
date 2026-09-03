@@ -16760,3 +16760,17 @@ sqlite3.Connection.backup()を使うとページ(4096byte)単位のread syscall�
 - **when**: 未設定
 - **how**: 未設定
 - IF dm-signal showcase API(/api/public/showcase)のplans[]配列を参照する THEN plans[]はbasic/standard/premium階層ごとの集計metrics(avg/best_total_return, cagr_min/max, sharpe_best, mdd_best)のみを持ち、個別PFのholding/ticker/nameフィールドは存在しない(一次確認2026-09-03)。個別PFの保有情報はheroオブジェクト(単一featured PFのみ、hero.name/hero.holding/hero.components)にのみ存在する。origin: [[cmd_4467]] -> [[showcase_API一次確認]] -> [[gate実装のfixture設計]]
+
+
+### L1716: security/complianceゲートのblocklistを外部APIから構築する時は公開範囲を一次確認せよ、取得失敗はfail-close必須
+- **日付**: 2026-09-03
+- **出典**: cmd_karo_hotfix_x_post_gate_blocklist_fail_close_202609031003
+- **記録者**: tobisaru
+- **tags**: [infra,testing,api,gate,bash]
+- **subdomain**: infra
+- **target_files**: [scripts/x_ops/x_post_gate.sh,tests/unit/test_x_post_gate.bats]
+- **origin**: [[cmd_karo_hotfix_x_post_gate_blocklist_fail_close_202609031003]]
+- **enforcement**: 未自動化
+- **when**: 未設定
+- **how**: 未設定
+- x_post_gate.shのRule1は非公開PF(忍法/FoF)のholding漏洩を防ぐblocklistを、公開showcase API(/api/public/showcase)から構築していたが、このAPIはBasic-DualMomentum以外のholdingを一切含まない(plans[].holdingが常時null)ため、blocklistが恒常的に空となり検知機能が実質無効化されていた(cmd_4467の実装時の欠陥)。加えて取得失敗時は '{}' への沈黙フォールバックで無条件PASSしていた。教訓: (1)blocklist/allowlistを外部APIから構築する設計では、そのAPIの公開範囲が『守りたい対象データ』を実際に含むかを一次データで確認してから実装せよ(showcaseは公開表示用APIであり非公開情報を含まない設計は当然)。(2)security/compliance目的のgateでは、データ取得失敗・空結果を無条件PASSにせず必ずfail-close(exit1)にせよ。silent fallback(空JSON等)は『検知できない』を『安全』と誤認させる
