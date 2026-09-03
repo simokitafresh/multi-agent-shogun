@@ -1720,5 +1720,5 @@ entries:
   actioned_by: ''
   notify_targets:
     - 'shogun'
-  confirmed_by: []
-  status: 'open'
+  confirmed_by: ["shogun"]
+  status: "closed"
