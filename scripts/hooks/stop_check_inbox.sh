@@ -624,7 +624,35 @@ fi
 
 has_unread=false
 unread_count=0
-unread_count=$(grep -c '^[[:space:]]*read:[[:space:]]*false[[:space:]]*$' "$inbox_file" 2>/dev/null) || unread_count=0
+# cmd_karo_hotfix_inbox_unread_source_202609031435: 旧実装(grep -c、任意深さindent許容)は
+# 複数行content(|-ブロックスカラー)内に偶然「read: false」形の行があると、既読メッセージ
+# まで未読扱いした。レコード境界とブロックスカラー本体を追跡し、レコード直下のフィールド
+# 行のみを数える(session_start_inject.sh/prompt_state_inject.shと同一ロジック)。
+unread_count=$(awk '
+  BEGIN { in_block = 0; block_indent = -1; field_indent = -1 }
+  {
+    line = $0
+    match(line, /^[ ]*/)
+    ind = RLENGTH
+    content = substr(line, ind + 1)
+    is_new_record = (content ~ /^-([ ]|$)/)
+    if (is_new_record) {
+      sub(/^-[ ]*/, "", content)
+      ind = ind + 2
+      in_block = 0
+      field_indent = ind
+      if (content == "") next
+    } else if (in_block) {
+      if (ind > block_indent) { next }
+      in_block = 0
+    }
+    if (!is_new_record && ind != field_indent) { next }
+    if (content ~ /^read:[ ]*false[ ]*$/) { c++ }
+    else if (content ~ /^[A-Za-z_][A-Za-z0-9_]*:[ ]*[|>][+-]?[ ]*$/) { in_block = 1; block_indent = ind }
+  }
+  END { print c + 0 }
+' "$inbox_file" 2>/dev/null) || unread_count=0
+[[ "$unread_count" =~ ^[0-9]+$ ]] || unread_count=0
 
 if (( unread_count > 0 )); then
   has_unread=true

@@ -53,3 +53,72 @@ run_hook() {
   [[ "$output" != *"agent: shogun"* ]]
   [ -z "$(find "$T/logs" -type f -name '*shogun*' 2>/dev/null)" ]
 }
+
+# test_necessity: cmd_karo_hotfix_inbox_unread_source_202609031435 — the
+# `inbox_unread:` field injected into every prompt must equal the inbox
+# file's actual read:false field count for its own generation, even when a
+# multi-line block-scalar `content: |-` value happens to contain a standalone
+# line shaped like "read: false". Guards the regression where an already-read
+# (read:true) message kept inflating the displayed unread count.
+@test "inbox_unread stays 0 when a phantom 'read: false' line lives only inside a read:true message's block content" {
+  cat > "$T/queue/inbox/gunshi.yaml" <<'EOF'
+messages:
+- content: |-
+    これはブロックリテラルの例。
+    read: false
+    という行がcontent内にあるが実フィールドではない。
+  from: 'karo'
+  id: 'msg1'
+  read: true
+  timestamp: '2026-09-03T13:40:00'
+  type: 'task_supplement'
+EOF
+  run run_hook pane
+  [[ "$output" == *"inbox_unread: 0"* ]]
+}
+
+@test "inbox_unread shows 1 for a genuinely unread message even with the phantom line present" {
+  cat > "$T/queue/inbox/gunshi.yaml" <<'EOF'
+messages:
+- content: |-
+    これはブロックリテラルの例。
+    read: false
+    という行がcontent内にあるが実フィールドではない。
+  from: 'karo'
+  id: 'msg1'
+  read: true
+  timestamp: '2026-09-03T13:40:00'
+  type: 'task_supplement'
+- content: '本物の未読'
+  from: 'karo'
+  id: 'msg2'
+  read: false
+  timestamp: '2026-09-03T13:41:00'
+  type: 'wake_up'
+EOF
+  run run_hook pane
+  [[ "$output" == *"inbox_unread: 1"* ]]
+}
+
+@test "inbox_unread returns to 0 after the genuinely unread message is marked read, phantom line still present" {
+  cat > "$T/queue/inbox/gunshi.yaml" <<'EOF'
+messages:
+- content: |-
+    これはブロックリテラルの例。
+    read: false
+    という行がcontent内にあるが実フィールドではない。
+  from: 'karo'
+  id: 'msg1'
+  read: true
+  timestamp: '2026-09-03T13:40:00'
+  type: 'task_supplement'
+- content: '本物の未読'
+  from: 'karo'
+  id: 'msg2'
+  read: true
+  timestamp: '2026-09-03T13:41:00'
+  type: 'wake_up'
+EOF
+  run run_hook pane
+  [[ "$output" == *"inbox_unread: 0"* ]]
+}

@@ -389,6 +389,84 @@ EOF
     [[ "$output" != *"初回タスクを確認せよ"* ]]
 }
 
+# test_necessity: cmd_karo_hotfix_inbox_unread_source_202609031435 — a multi-line
+# block-scalar `content: |-` value that happens to contain a standalone line
+# shaped like "read: false" must never be miscounted as an unread field. The
+# unread count/decision must always match the record's own `read:` field for
+# its generation, regardless of what its content body contains.
+@test "T-SCI-INBOX-COUNT-001: phantom 'read: false' inside a read:true message's block content does not trigger block" {
+    cat > "$TEST_PROJECT/queue/inbox/hayate.yaml" <<'EOF'
+messages:
+  - id: msg1
+    from: karo
+    type: task_supplement
+    content: |-
+      これはブロックリテラルの例。
+      read: false
+      という行がcontent内にあるが実フィールドではない。
+    read: true
+EOF
+
+    run_hook '{"stop_hook_active":false}'
+    [ "$status" -eq 0 ]
+    [ -f "$TEST_IDLE_FLAG" ]
+    if [[ -n "$output" ]]; then
+        ! echo "$output" | jq -e '.decision == "block"' >/dev/null 2>&1 || false
+    fi
+}
+
+@test "T-SCI-INBOX-COUNT-002: a genuinely unread message still blocks even with the phantom line present" {
+    cat > "$TEST_PROJECT/queue/inbox/hayate.yaml" <<'EOF'
+messages:
+  - id: msg1
+    from: karo
+    type: task_supplement
+    content: |-
+      これはブロックリテラルの例。
+      read: false
+      という行がcontent内にあるが実フィールドではない。
+    read: true
+  - id: msg2
+    from: karo
+    type: task_assigned
+    content: 本物の未読タスク
+    read: false
+EOF
+
+    run_hook '{"stop_hook_active":false}'
+    [ "$status" -eq 0 ]
+    [ ! -f "$TEST_IDLE_FLAG" ]
+    echo "$output" | jq -e '.decision == "block"' >/dev/null
+    [[ "$output" == *"inbox未読1件あり。内容:"* ]]
+    [[ "$output" == *"[karo/task_assigned] 本物の未読タスク"* ]]
+}
+
+@test "T-SCI-INBOX-COUNT-003: block clears after the genuinely unread message is marked read, phantom line still present" {
+    cat > "$TEST_PROJECT/queue/inbox/hayate.yaml" <<'EOF'
+messages:
+  - id: msg1
+    from: karo
+    type: task_supplement
+    content: |-
+      これはブロックリテラルの例。
+      read: false
+      という行がcontent内にあるが実フィールドではない。
+    read: true
+  - id: msg2
+    from: karo
+    type: task_assigned
+    content: 本物の未読タスク
+    read: true
+EOF
+
+    run_hook '{"stop_hook_active":false}'
+    [ "$status" -eq 0 ]
+    [ -f "$TEST_IDLE_FLAG" ]
+    if [[ -n "$output" ]]; then
+        ! echo "$output" | jq -e '.decision == "block"' >/dev/null 2>&1 || false
+    fi
+}
+
 @test "T-SCI-006: no unread exits cleanly" {
     printf 'messages:\n' > "$TEST_PROJECT/queue/inbox/hayate.yaml"
 
