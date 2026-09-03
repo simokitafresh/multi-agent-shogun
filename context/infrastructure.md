@@ -1,5 +1,6 @@
 # インフラコンテキスト
-<!-- last_updated: 2026-09-03 T3-S-38 根治反映 -->
+<!-- last_updated: 2026-09-03 registry hotfix 反映 -->
+<!-- source_commit:16521692a3f1 reason:registry hotfix 反映 evidence:context_freshness_check context=context/infrastructure.md commit=16521692a3f1 -->
 <!-- source_commit:22f382b65 reason:T3-S-38 根治反映 evidence:context_freshness_check context=context/infrastructure.md commit=22f382b65 -->
 <!-- source_commit:822317d83dbd reason:report/artifact identity 分離反映 evidence:context_freshness_check context=context/infrastructure.md commit=822317d83dbd -->
 <!-- source_commit:ffca772bc reason:T3-S-29 層 2 反映 evidence:context_freshness_check context=context/infrastructure.md commit=ffca772bc -->
