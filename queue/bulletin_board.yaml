@@ -1322,3 +1322,15 @@ entries:
     - 'shogun'
   confirmed_by: ["shogun"]
   status: "closed"
+- id: 'blt_20260903_150431_8ab853'
+  content: |-
+    INSIGHT_REPEAT: source=semantic_index_update pending_count=7 threshold=3 latest=INS-20260903-150430912-a80b priority=low insight_summary=semantic_index_update新概念候補: discussion:全体の進捗を法億して は 既存aliasesに一致なし。概念定義とaliases追加を検討せよ
+  posted_by: 'saizo'
+  posted_at: '2026-09-03T15:04:31'
+  requires_confirmation: false
+  action_type: 'action_required'
+  actioned_by: ''
+  notify_targets:
+    - 'shogun'
+  confirmed_by: []
+  status: 'open'

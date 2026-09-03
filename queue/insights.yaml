@@ -16173,3 +16173,10 @@ insights:
   source: "manual"
   fix_known: false
   status: pending
+- id: INS-20260903-150430912-a80b
+  ts: "2026-09-03T15:04:30+09:00"
+  insight: "semantic_index_update新概念候補: discussion:全体の進捗を法億して は 既存aliasesに一致なし。概念定義とaliases追加を検討せよ"
+  priority: "low"
+  source: "semantic_index_update"
+  fix_known: false
+  status: pending
