@@ -119,14 +119,14 @@ teardown() {
 @test "after snapshot records window files and SHA256SUMS" {
     log="$STATE_ROOT/push_lane.log"
     pre="$STATE_ROOT/pre_push.log"
-    printf '[2099-01-01 00:00:01] PUSH lane\n' > "$log"
-    printf '[2099-01-01 00:00:01] pre_push_wall_ms=10\n' > "$pre"
+    printf '[2050-06-15T12:00:00+0000] PUSH lane\n' > "$log"
+    printf '[2050-06-15T12:00:00+0000] pre_push_wall_ms=10\n' > "$pre"
     output_dir="$STATE_ROOT/generated-after"
     run env SINGLE_PUBLISHER_AFTER_SNAPSHOT_DIR="$output_dir" \
         SINGLE_PUBLISHER_PUSH_LANE_LOG="$log" SINGLE_PUBLISHER_PRE_PUSH_LOG="$pre" \
         bash "$FIXTURE_ROOT/scripts/single_publisher_after_snapshot.sh" "$START" "$END"
     [ "$status" -eq 0 ]
     [ -f "$output_dir/SHA256SUMS" ]
-    [ "$(grep -cF '[2099-01-01 00:00:01] PUSH lane' "$output_dir/push_lane.window.log")" -eq 1 ]
+    [ "$(grep -cF '[2050-06-15T12:00:00+0000] PUSH lane' "$output_dir/push_lane.window.log")" -eq 1 ]
     [[ "$output" == *"before_after file=push_lane.window.log"* ]]
 }

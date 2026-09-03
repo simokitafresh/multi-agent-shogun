@@ -11,7 +11,12 @@ setup() {
 
 @test "PD-104 production measurement source blocks missing/local evidence" {
   guard="$BATS_TEST_TMPDIR/measurement.sh"
-  awk '/^check_production_measurement_source\(\)/,/^}/' "$ROOT/scripts/cmd_save.sh" > "$guard"
+  awk '
+    /^trim_inline_yaml_scalar\(\)/ { helpers=1 }
+    helpers { print }
+    helpers && /^}/ { helpers=0 }
+    /^check_production_measurement_source\(\)/,/^}/
+  ' "$ROOT/scripts/cmd_save.sh" > "$guard"
 
   run bash -c '
     source "$1"
