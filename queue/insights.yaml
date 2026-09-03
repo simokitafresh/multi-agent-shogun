@@ -16754,3 +16754,10 @@ insights:
   source: "semantic_stress_test"
   fix_known: false
   status: pending
+- id: INS-20260903-213009710-fe06
+  ts: "2026-09-03T21:30:09+09:00"
+  insight: "[[X下書き生成でURLと固定免責をscript側が台帳から合成し]] NO_MATCH purpose pending alias: cmd_complete時にdeploy_task.logでNO_MATCHだったpurpose。類似概念TOP3: provisional_test(仮: Test; alias=zero test receiptをfixtureで固定する; score=3.4) / gate_quality_framework(ゲート品質統合フレームワーク; alias=session alerts txtは将軍startup gateが生成する将軍固有ALERTだが; score=2.9) / dmsignal_operations(DM-Signal運用; alias=DM Signalの実precommit経路からruff自動fixを除去し; score=2.9)。既存概念aliasesへの自動昇格候補"
+  priority: "low"
+  source: "semantic_index_update"
+  fix_known: false
+  status: pending

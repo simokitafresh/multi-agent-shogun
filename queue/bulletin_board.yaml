@@ -1460,3 +1460,14 @@ entries:
     - 'shogun'
   confirmed_by: ["shogun"]
   status: "closed"
+- id: 'blt_20260903_213016_865a7e'
+  content: |-
+    GATE CLEAR cmd_karo_hotfix_test_publisher_state_isolation_202609032047: 完了
+  posted_by: 'karo'
+  posted_at: '2026-09-03T21:30:16'
+  requires_confirmation: false
+  action_type: 'info'
+  actioned_by: ''
+  notify_targets: []
+  confirmed_by: []
+  status: 'open'
