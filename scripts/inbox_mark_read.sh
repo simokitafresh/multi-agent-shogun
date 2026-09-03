@@ -149,7 +149,9 @@ verify_read_receipt() {
 import hashlib
 import json
 import os
+import pathlib
 import re
+import subprocess
 import sys
 from datetime import datetime, timezone, timedelta
 
@@ -305,7 +307,49 @@ def entry_has_cmd_id(entry, cmd_id):
     return False
 
 
-def entry_matches_report(entry, report_name):
+def report_identity_matches(entry, report_reference):
+    try:
+        report_path = pathlib.Path(report_reference)
+        if not report_path.is_absolute():
+            report_path = pathlib.Path(script_root) / report_path
+        report_path = report_path.resolve()
+        report = yaml.safe_load(report_path.read_text(encoding="utf-8")) or {}
+    except Exception:
+        report = {}
+        report_path = pathlib.Path(report_reference)
+    root_path = pathlib.Path(script_root).resolve()
+    try:
+        report_rel = str(report_path.relative_to(root_path))
+    except ValueError:
+        report_rel = str(report_path)
+    expected = {
+        "report": {report_rel, report_path.name},
+        "report_path": {report_rel, report_path.name},
+        "report_filename": {report_path.name},
+        "report_ninja": {str(report.get("worker_id") or "")},
+        "report_task_id": {str(report.get("task_id") or "")},
+        "task_id": {str(report.get("task_id") or "")},
+        "report_id": {str(report.get("report_id") or "")},
+        "report_identity_version": {str(report.get("report_identity_version") or report.get("identity_version") or "")},
+        "identity_version": {str(report.get("report_identity_version") or report.get("identity_version") or "")},
+    }
+    for key, allowed in expected.items():
+        actual = entry.get(key)
+        if actual in (None, "", []) or not any(allowed):
+            continue
+        value = str(actual).strip().strip("'\"")
+        if key in {"report", "report_path"}:
+            value = value[2:] if value.startswith("./") else value
+            if value not in allowed and pathlib.Path(value).name != report_path.name:
+                return False
+        elif value not in allowed:
+            return False
+    return True
+
+
+def entry_matches_report(entry, report_name, report_reference):
+    if not report_identity_matches(entry, report_reference):
+        return False
     if any(os.path.basename(value.strip().strip("'\"")) == report_name for value in nested_strings(entry)):
         return True
     match = re.match(r"^[^/]+_report_(cmd_.+)\.ya?ml$", report_name)
@@ -362,23 +406,61 @@ for msg_id, message in ((msg_id, current[msg_id]) for msg_id in wanted):
     # receipt proves that message delivery was consumed; review_log matching
     # is only meaningful once the referenced report exists.
     if report_exists(report_reference):
-        review_requirements.append((message, os.path.basename(report_reference)))
+        review_requirements.append((message, os.path.basename(report_reference), report_reference))
 
 if review_requirements:
+    def payload_entries(payload):
+        # ledger_writer emits JSON operation files whose entry_text is the
+        # canonical review entry.  YAML accepts JSON, so one parser covers both
+        # the pending and publisher-applied states.
+        if isinstance(payload, dict) and "entry_text" in payload:
+            try:
+                payload = yaml.safe_load(str(payload["entry_text"]))
+            except yaml.YAMLError:
+                return []
+        if isinstance(payload, dict) and payload.get("op") and "entry_text" not in payload:
+            return []
+        if isinstance(payload, dict):
+            payload = payload.get("reviews", [payload])
+        return payload if isinstance(payload, list) else []
+
+    def append_source(payload, entries):
+        try:
+            entries.extend(item for item in payload_entries(payload) if isinstance(item, dict))
+        except Exception:
+            return
+
+    review_entries = []
     try:
-        with open(review_log_path, encoding="utf-8") as fh:
-            review_data = yaml.safe_load(fh) or []
+        append_source(yaml.safe_load(open(review_log_path, encoding="utf-8")), review_entries)
     except Exception:
-        review_data = None
-    if isinstance(review_data, list):
-        review_entries = [item for item in review_data if isinstance(item, dict)]
-    elif isinstance(review_data, dict):
-        candidate = review_data.get("reviews")
-        review_entries = candidate if isinstance(candidate, list) else [review_data]
-        review_entries = [item for item in review_entries if isinstance(item, dict)]
-    else:
-        review_entries = []
-    for message, report_name in review_requirements:
+        pass
+
+    # A worktree may lag behind the publisher's committed review log.  Read
+    # that immutable snapshot and the shared pending/applied ledger before
+    # treating the report as unreviewed.
+    remote_ref = os.environ.get("REVIEW_LOG_SOURCE_REMOTE_REF", "origin/main")
+    try:
+        remote = subprocess.run(
+            ["git", "-C", script_root, "show", f"{remote_ref}:logs/gunshi_review_log.yaml"],
+            capture_output=True, text=True, check=True,
+        ).stdout
+        append_source(yaml.safe_load(remote), review_entries)
+    except Exception:
+        pass
+    state_dir = pathlib.Path(os.environ.get(
+        "SHOGUN_STATE_DIR", os.path.expanduser("~/.local/share/multi-agent-shogun")
+    ))
+    ledger_root = state_dir / "ledger_inbox" / "review_log"
+    for ledger_dir in (ledger_root, ledger_root / "pending", ledger_root / "applied"):
+        if not ledger_dir.is_dir():
+            continue
+        for ledger_path in sorted(ledger_dir.glob("*.yaml")):
+            try:
+                append_source(yaml.safe_load(ledger_path.read_text(encoding="utf-8")), review_entries)
+            except Exception:
+                continue
+    for message, report_name, report_reference in review_requirements:
         message_at = parse_timestamp(message.get("timestamp"))
         msg_fingerprint = str(message.get("report_fingerprint") or "")
         matched = False
@@ -423,14 +505,14 @@ if review_requirements:
             latest_verdict_for_fp = ""
             latest_reviewed_at_for_fp = None
             for re_scan in review_entries:
-                if not entry_matches_report(re_scan, report_name):
+                if not entry_matches_report(re_scan, report_name, report_reference):
                     continue
                 for rat in [parse_timestamp(v) for v in nested_values(re_scan, "reviewed_at")]:
                     if rat is not None and (latest_reviewed_at_for_fp is None or rat >= latest_reviewed_at_for_fp):
                         latest_reviewed_at_for_fp = rat
                         latest_verdict_for_fp = str(re_scan.get("verdict") or re_scan.get("report_verdict") or "")
             for review_entry in review_entries:
-                if not entry_matches_report(review_entry, report_name):
+                if not entry_matches_report(review_entry, report_name, report_reference):
                     continue
                 review_times = [parse_timestamp(value) for value in nested_values(review_entry, "reviewed_at")]
                 if any(review_at is not None and review_at >= message_at for review_at in review_times):

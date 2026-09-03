@@ -14,6 +14,123 @@ if [ -z "${REVIEW_FP_CACHE_DIR:-}" ] || [ "${REVIEW_FP_CACHE_OWNER_PID:-}" != "$
 fi
 mkdir -p "$REVIEW_FP_CACHE_DIR"
 
+# Resolve a review entry across the live checkout, the publisher's committed
+# origin/main snapshot, and the review_log ledger.  The writer intentionally
+# leaves the root log untouched until the publisher applies its operation, so
+# callers must authenticate the same review identity at every source.
+review_log_has_identity() {
+    local root="$1" cmd_id="$2" report="$3" fingerprint="${4:-}" generation="${5:-}"
+    REVIEW_LOG_ROOT="$root" REVIEW_LOG_CMD="$cmd_id" REVIEW_LOG_REPORT="$report" \
+    REVIEW_LOG_FINGERPRINT="$fingerprint" REVIEW_LOG_GENERATION="$generation" \
+    python3 - <<'PY'
+import json
+import os
+import subprocess
+from pathlib import Path
+
+import yaml
+
+root = Path(os.environ["REVIEW_LOG_ROOT"]).resolve()
+wanted_cmd = os.environ["REVIEW_LOG_CMD"]
+report_path = Path(os.environ["REVIEW_LOG_REPORT"]).resolve()
+try:
+    report_rel = str(report_path.relative_to(root))
+except ValueError:
+    raise SystemExit(1)
+report = yaml.safe_load(report_path.read_text(encoding="utf-8")) or {}
+wanted_fp = os.environ.get("REVIEW_LOG_FINGERPRINT", "")
+wanted_generation = os.environ.get("REVIEW_LOG_GENERATION", "")
+
+def text(value):
+    return str(value or "").strip().strip("'\"")
+
+def path_matches(value):
+    candidate = text(value)
+    if not candidate:
+        return True
+    if candidate.startswith(str(root) + "/"):
+        candidate = candidate[len(str(root)) + 1:]
+    candidate = candidate[2:] if candidate.startswith("./") else candidate
+    return candidate in {report_rel, report_path.name, Path(report_rel).name}
+
+def entry_items(payload):
+    if isinstance(payload, dict) and "entry_text" in payload:
+        try:
+            payload = yaml.safe_load(str(payload["entry_text"]))
+        except yaml.YAMLError:
+            return []
+    if isinstance(payload, dict) and payload.get("op") and "entry_text" not in payload:
+        return []
+    if isinstance(payload, dict):
+        payload = payload.get("reviews", [payload])
+    return payload if isinstance(payload, list) else []
+
+def load_path(path):
+    try:
+        payload = yaml.safe_load(path.read_text(encoding="utf-8"))
+    except (OSError, ValueError, yaml.YAMLError):
+        return []
+    return entry_items(payload)
+
+sources = []
+active = root / "logs" / "gunshi_review_log.yaml"
+if active.is_file():
+    sources.extend(load_path(active))
+
+remote_ref = os.environ.get("REVIEW_LOG_SOURCE_REMOTE_REF", "origin/main")
+try:
+    remote = subprocess.run(
+        ["git", "-C", str(root), "show", f"{remote_ref}:logs/gunshi_review_log.yaml"],
+        capture_output=True, text=True, check=True,
+    ).stdout
+    sources.extend(entry_items(yaml.safe_load(remote)))
+except (OSError, subprocess.CalledProcessError, yaml.YAMLError):
+    pass
+
+state_dir = Path(os.environ.get("SHOGUN_STATE_DIR", str(Path.home() / ".local/share/multi-agent-shogun")))
+ledger = state_dir / "ledger_inbox" / "review_log"
+ledger_paths = []
+for directory in (ledger, ledger / "pending", ledger / "applied"):
+    if directory.is_dir():
+        ledger_paths.extend(sorted(directory.glob("*.yaml")))
+for path in ledger_paths:
+    sources.extend(load_path(path))
+
+identity_fields = {
+    "report": (report_rel, path_matches),
+    "report_path": (report_rel, path_matches),
+    "report_filename": (report_path.name, lambda value: Path(text(value)).name == report_path.name),
+    "report_ninja": (text(report.get("worker_id")), lambda value: text(value) == text(report.get("worker_id"))),
+    "report_task_id": (text(report.get("task_id")), lambda value: text(value) == text(report.get("task_id"))),
+    "task_id": (text(report.get("task_id")), lambda value: text(value) == text(report.get("task_id"))),
+    "report_id": (text(report.get("report_id")), lambda value: text(value) == text(report.get("report_id"))),
+    "report_identity_version": (text(report.get("report_identity_version") or report.get("identity_version")), lambda value: text(value) == text(report.get("report_identity_version") or report.get("identity_version"))),
+    "identity_version": (text(report.get("report_identity_version") or report.get("identity_version")), lambda value: text(value) == text(report.get("report_identity_version") or report.get("identity_version"))),
+    "report_fingerprint": (wanted_generation, lambda value: text(value) in {wanted_fp, wanted_generation}),
+    "fingerprint": (wanted_fp, lambda value: text(value) in {wanted_fp, wanted_generation}),
+    "generation": (wanted_generation, lambda value: text(value) in {wanted_fp, wanted_generation}),
+}
+
+for entry in sources:
+    if not isinstance(entry, dict) or text(entry.get("cmd_id") or entry.get("id")) != wanted_cmd:
+        continue
+    verdict = text(entry.get("verdict") or entry.get("review_verdict") or entry.get("result"))
+    if verdict.upper() != "LGTM":
+        continue
+    valid = True
+    for key, (expected, matcher) in identity_fields.items():
+        actual = entry.get(key)
+        if actual in (None, "", []) or not expected:
+            continue
+        if not matcher(actual):
+            valid = False
+            break
+    if valid:
+        raise SystemExit(0)
+raise SystemExit(1)
+PY
+}
+
 review_report_fingerprint() {
     local report="$1" content_hash raw_hash commit_identity root cache_key cache_file
     [ -f "$report" ] || return 1

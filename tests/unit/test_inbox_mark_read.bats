@@ -120,6 +120,120 @@ _read_inbox() {
     [ "$(_get_read_status testagent msg_003)" = "true" ]
 }
 
+setup_review_log_fallback_fixture() {
+    mkdir -p "$TEST_ROOT/queue/reports" "$TEST_ROOT/logs"
+    cat > "$TEST_ROOT/queue/reports/worker_report_cmd_ledger_fixture.yaml" <<'YAML'
+worker_id: worker
+task_id: cmd_ledger_fixture_normal
+report_id: rpt-ledger-fixture
+report_identity_version: 2
+YAML
+    cat > "$TEST_ROOT/queue/inbox/gunshi.yaml" <<'YAML'
+messages:
+- id: review_ledger_fixture
+  from: karo
+  timestamp: '2026-09-03T10:00:00+00:00'
+  type: report_review
+  cmd_id: cmd_ledger_fixture
+  report_path: queue/reports/worker_report_cmd_ledger_fixture.yaml
+  content: review request
+  read: false
+YAML
+    _read_inbox gunshi
+}
+
+review_log_fixture_entry() {
+    cat <<'YAML'
+- cmd_id: cmd_ledger_fixture
+  verdict: LGTM
+  report: queue/reports/worker_report_cmd_ledger_fixture.yaml
+  report_task_id: cmd_ledger_fixture_normal
+  report_id: rpt-ledger-fixture
+  report_identity_version: 2
+  reviewed_at: '2026-09-03T10:01:00+00:00'
+YAML
+}
+
+review_log_fixture_op() {
+    cat <<'YAML'
+op: append
+ledger: review_log
+entry_text: |
+  - cmd_id: cmd_ledger_fixture
+    verdict: LGTM
+    report: queue/reports/worker_report_cmd_ledger_fixture.yaml
+    report_task_id: cmd_ledger_fixture_normal
+    report_id: rpt-ledger-fixture
+    report_identity_version: 2
+    reviewed_at: '2026-09-03T10:01:00+00:00'
+YAML
+}
+
+# test_necessity: mark-read must use the same four durable review-log sources as
+# approval, otherwise publisher apply latency loses the receipt boundary.
+@test "report review mark-read accepts root, origin, applied, and pending review-log identity" {
+    setup_review_log_fallback_fixture
+    review_log_fixture_entry > "$TEST_ROOT/logs/gunshi_review_log.yaml"
+    run bash "$TEST_SCRIPT" gunshi review_ledger_fixture
+    [ "$status" -eq 0 ]
+
+    setup_review_log_fallback_fixture
+    printf '[]\n' > "$TEST_ROOT/logs/gunshi_review_log.yaml"
+    git init -q -b main "$TEST_ROOT"
+    git -C "$TEST_ROOT" config user.email test@example.com
+    git -C "$TEST_ROOT" config user.name test
+    blob="$(review_log_fixture_entry | git -C "$TEST_ROOT" hash-object -w --stdin)"
+    logs_tree="$(printf '100644 blob %s\tgunshi_review_log.yaml\n' "$blob" | git -C "$TEST_ROOT" mktree)"
+    root_tree="$(printf '040000 tree %s\tlogs\n' "$logs_tree" | git -C "$TEST_ROOT" mktree)"
+    commit="$(printf 'origin fixture\n' | git -C "$TEST_ROOT" commit-tree "$root_tree")"
+    git -C "$TEST_ROOT" update-ref refs/remotes/origin/main "$commit"
+    run bash "$TEST_SCRIPT" gunshi review_ledger_fixture
+    [ "$status" -eq 0 ]
+
+    setup_review_log_fallback_fixture
+    printf '[]\n' > "$TEST_ROOT/logs/gunshi_review_log.yaml"
+    rm -rf "$TEST_ROOT/.git"
+    mkdir -p "$TEST_ROOT/state/ledger_inbox/review_log/applied"
+    review_log_fixture_op > "$TEST_ROOT/state/ledger_inbox/review_log/applied/20260903T100000000000000Z_000000000001.yaml"
+    run bash "$TEST_SCRIPT" gunshi review_ledger_fixture
+    [ "$status" -eq 0 ]
+
+    setup_review_log_fallback_fixture
+    printf '[]\n' > "$TEST_ROOT/logs/gunshi_review_log.yaml"
+    rm -rf "$TEST_ROOT/.git"
+    mkdir -p "$TEST_ROOT/state/ledger_inbox/review_log"
+    review_log_fixture_op > "$TEST_ROOT/state/ledger_inbox/review_log/20260903T100000000000000Z_000000000001.yaml"
+    run bash "$TEST_SCRIPT" gunshi review_ledger_fixture
+    [ "$status" -eq 0 ]
+}
+
+# test_necessity: mark-read must not consume a report_review message on a
+# command-id-only or absent review-log match.
+@test "report review mark-read blocks review-log identity mismatch and missing sources" {
+    setup_review_log_fallback_fixture
+    mkdir -p "$TEST_ROOT/state/ledger_inbox/review_log"
+    cat > "$TEST_ROOT/state/ledger_inbox/review_log/20260903T100000000000000Z_000000000001.yaml" <<'YAML'
+op: append
+ledger: review_log
+entry_text: |
+  - cmd_id: cmd_ledger_fixture
+    verdict: LGTM
+    report: queue/reports/other_report.yaml
+    report_task_id: other_task
+    report_id: other-report
+    report_identity_version: 9
+    reviewed_at: '2026-09-03T10:01:00+00:00'
+YAML
+    run bash "$TEST_SCRIPT" gunshi review_ledger_fixture
+    [ "$status" -eq 2 ]
+    [ "$(_get_read_status gunshi review_ledger_fixture)" = "false" ]
+
+    setup_review_log_fallback_fixture
+    run bash "$TEST_SCRIPT" gunshi review_ledger_fixture
+    [ "$status" -eq 2 ]
+    [ "$(_get_read_status gunshi review_ledger_fixture)" = "false" ]
+}
+
 # test_necessity: an unprocessed shogun task_assigned must stay unread in the
 # commander inbox; otherwise the command can be lost without a durable trace.
 # AC2 fixture "双方missing" — no root bulletin entry, no .git (so no
