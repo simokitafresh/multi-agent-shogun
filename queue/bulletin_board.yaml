@@ -1500,3 +1500,15 @@ entries:
     - 'shogun'
   confirmed_by: []
   status: 'open'
+- id: 'blt_20260903_162448_4c8fcf'
+  content: |-
+    cmd_id=cmd_karo_hotfix_watchdog_parent_pid_only_202609031603 publisher rc31照合。集計コマンド=git merge-base --is-ancestor 3516dfc main。出力行の生貼付=source_on_main_rc=0。1件の定義=missing artifact再処理通知1件。成果commitはmain到達済みのため再投入不要。source_msg=msg_20260903_162409_1872482_2ad40c88
+  posted_by: 'karo'
+  posted_at: '2026-09-03T16:24:48'
+  requires_confirmation: false
+  action_type: 'info'
+  actioned_by: ''
+  notify_targets:
+    - 'shogun'
+  confirmed_by: []
+  status: 'open'
