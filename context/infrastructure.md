@@ -1,5 +1,6 @@
 # インフラコンテキスト
-<!-- last_updated: 2026-09-03 context_freshness reviewed source boundary -->
+<!-- last_updated: 2026-09-03 deploy_task worktree 既定 ON 反映 -->
+<!-- source_commit:4e60ff1e16d7 reason:deploy_task worktree 既定 ON 反映 evidence:context_freshness_check context=context/infrastructure.md commit=4e60ff1e16d7 -->
 <!-- source_commit:f3598209675a reason:context_freshness reviewed source boundary evidence:context_freshness_check context=context/infrastructure.md commit=f3598209675a -->
 <!-- source_commit:17a1af26aa4e reason:context_freshness reviewed source boundary evidence:context_freshness_check context=context/infrastructure.md commit=17a1af26aa4e (skill frontmatter+runbook v1.5、infrastructure.md 本文は x_post.sh 行で既に反映済み) -->
 <!-- source_commit:be30f9808d04 reason:context_freshness reviewed source boundary evidence:context_freshness_check context=context/infrastructure.md commit=be30f9808d04 -->
