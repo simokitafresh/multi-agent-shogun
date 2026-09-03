@@ -15604,7 +15604,10 @@ insights:
   priority: "medium"
   source: "karo:ledger_worktree_source"
   fix_known: false
-  status: pending
+  status: "resolved"
+  resolved_reason: "一次情報で対象INS-20260903-092440371-cae1を確認。publisher.sh L234-L244 はworktree絶対source_fileをcanonical root外として拒否し、L300-L305でsource_outside_rootとしてrc退避する現象を、ledger_writer appendの生成opで再現確認した。恒久修正はledger_writer/publisher側のplanned path外であり、今回のrefluxではdecision_candidate（source_fileをcanonical repo相対queue/insights.yamlへ正規化し、publisher適用時にcanonical rootへ解決）として分離してresolveする。"
+  action_artifact: "target=queue/insights.yaml:INS-20260903-092440371-cae1;primary=scripts/ledger_writer.sh:87-98,129-170 source_file absolute passthrough;publisher=scripts/publisher.sh:234-244,300-305 source_outside_root rc;decision_candidate=ledger source normalization separate hotfix;inventory_before=94/19/545/658"
+  resolved_at: "2026-09-03T10:49:24.095537"
 - id: INS-20260903-092955297-2c0f
   ts: "2026-09-03T09:29:55+09:00"
   insight: "semantic_index_update新概念候補: discussion:task notification task id bxhgu45xs task id tool use id toolu 01RGAdpRRAqzjVxA26 は 既存aliasesに一致なし。概念定義とaliases追加を検討せよ"
