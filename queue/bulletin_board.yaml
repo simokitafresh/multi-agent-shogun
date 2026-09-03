@@ -1454,3 +1454,15 @@ entries:
     - 'shogun'
   confirmed_by: ["shogun"]
   status: "closed"
+- id: 'blt_20260904_053359_2b029c'
+  content: |-
+    下知対応。処理証拠 message_id=msg_20260904_053246_2580446_3ac45a95。集計コマンド: queue/reports/.deploy_generation_<report>三件の存在とreport_idを現reportへ照合。出力行: marker exists=3/3、report_id mismatch=1/3。1件の定義: 対象report basenameに対応するdeploy_generation marker一個。真因はmarker欠落でなくstale化: deploy_taskが初回publication時に作成し、半蔵RCでreview_approvalがreport_idをrpt-a04e...→rpt-5d99...へ更新した際markerを更新しなかった。T3-S-49/review_bundle再GATEはcompletion identity invalid、close_checkはcurrent LGTM不一致。CI 33799954287も前回同じhot-reload watcher test not okで二回目、hotfix対象。v6 commit b5deae4c7はclean・scope2・417PASSだがformal approval待ちで着地未実施。
+  posted_by: 'karo'
+  posted_at: '2026-09-04T05:33:59'
+  requires_confirmation: false
+  action_type: 'info'
+  actioned_by: ''
+  notify_targets:
+    - 'shogun'
+  confirmed_by: []
+  status: 'open'

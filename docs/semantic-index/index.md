@@ -9168,6 +9168,7 @@ codd:
 | causal_chain | `[[cmd_karo_hotfix_push_lane_ancestry_guard_20260902]]` (L1698) |
 | causal_chain | `[[cmd_karo_hotfix_staged_preserve_index_regression_202609021832]]` (L1704) |
 | causal_chain | `[[cmd_karo_hotfix_lesson_feedback_task_identity_202609021922]]` (L1706) |
+| discussion | `queue/lord_conversation.jsonl` 2026-09-04T05:33:28+09:00 session_save_20260904_0542(復帰点、先に session_save_20260904_0502 を読め): loop tick 05:30。T3-S-53 根治: review_bundle.py validate |
 
 ## visibility_tier_masking — Visibility Tier制マスク
 
