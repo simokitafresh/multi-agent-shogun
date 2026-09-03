@@ -3147,3 +3147,39 @@
   verdict: LGTM
   verified_files:
   - scripts/cli_lookup.sh:1
+- brainwash_check: '#1no #2no #3no #4no #5no #6no #7no #8no | 再承認: precheck 1/1 ERRORS=0,
+    旧key generation==msg fingerprint 一致を実測'
+  causal_chain: root直接write→ledger op→root不変
+  cmd_id: cmd_karo_hotfix_semantic_index_root_write_followup_202609040001
+  finding_categories:
+  - assumptions
+  - numbers
+  - simulation
+  - premortem
+  - adversarial
+  - ambiguity
+  findings_summary: 4観点OK。semantic_map_generate ledger op化。46/46 PASS
+  gate_prediction: CLEAR
+  gate_prediction_reason: all checks passed
+  observations:
+  - '事実1: CAS付きledger opでroot SHA不変'
+  - '事実(再承認 2026-09-04T07:02:14): 前LGTM 2026-09-04T01:05:00 は旧identity keyに記録され、identity
+    v2 key db22b453873d には gunshi.yaml 不在(review_two_phase_ready_gunshi=NO)。同一generation
+    408e65f35948 へ正規入口 single で正式approval発行。precheck再実行 ERRORS=0/CLEAR。ledger_writer
+    entry_id は軍師D0 f1dc1f764 で先頭キー非依存化済み'
+  operational_simulation:
+    actual: ERRORS=0
+    command: precheck
+    expected: CLEAR
+    result: PASS
+  report_fingerprint: 408e65f35948a70e907962e7ac56616831c2f979fdf6e2409a0b318bf6f123dc
+  report_ninja: saizo
+  report_task_id: cmd_karo_hotfix_semantic_index_root_write_followup_202609040001_normal
+  report_verdict: PASS
+  review_type: report
+  reviewed_at: '2026-09-04T07:02:14+09:00'
+  step3_5_verified: true
+  timestamp: '2026-09-04T07:02:14'
+  verdict: LGTM
+  verified_files:
+  - scripts/semantic_index_update.sh:1
