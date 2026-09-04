@@ -18090,11 +18090,15 @@ insights:
   priority: "low"
   source: "semantic_index_update"
   fix_known: false
-  status: pending
+  status: "resolved"
+  action_artifact: "semantic_map=/home/simokitafresh/multi-agent-shogun/context/semantic-map.md;semantic_index=/home/simokitafresh/multi-agent-shogun/docs/semantic-index/index.md"
+  resolved_reason: "semantic map generation verified the candidate is represented or intentionally ignored"
 - id: INS-20260905-065406083-46b0
   ts: "2026-09-05T06:54:06+09:00"
   insight: "[[source only publication後のgate再試行がtask worktree json publishe]] NO_MATCH purpose pending alias: cmd_complete時にdeploy_task.logでNO_MATCHだったpurpose。類似概念TOP3: semantic_dictionary_design(セマンティック辞書構想; alias=source; score=13.7) / gist_master_three_step_rule(gist正本3点セット規律; alias=source shogun gist update; score=10.8) / tier_plan_mapping(Tier-プラン対応; alias=standard menber only premium menber only 更にlimited menber on; score=10.3)。既存概念aliasesへの自動昇格候補"
   priority: "low"
   source: "semantic_index_update"
   fix_known: false
-  status: pending
+  status: "resolved"
+  action_artifact: "semantic_map=/home/simokitafresh/multi-agent-shogun/context/semantic-map.md;semantic_index=/home/simokitafresh/multi-agent-shogun/docs/semantic-index/index.md"
+  resolved_reason: "semantic map generation verified the candidate is represented or intentionally ignored"
