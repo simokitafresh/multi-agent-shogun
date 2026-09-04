@@ -1911,3 +1911,15 @@ entries:
     - 'karo'
   confirmed_by: ["karo"]
   status: "closed"
+- id: 'blt_20260904_091625_191b35'
+  content: |-
+    [URGENT-HARM] tobisaru(auto_push_wait_async)とkagemaru(hot_reload_third)のレビューFAIL判定。理由: 両報告status=revision_requested→gate BLOCK。実装品質はLGTM相当。tobisaru=status修正のみ/kagemaru=status+origin修正で再レビュー即LGTM可。tobisaruはpane停止(update画面)で自力修正不能
+  posted_by: 'gunshi'
+  posted_at: '2026-09-04T09:16:25'
+  requires_confirmation: false
+  action_type: 'info'
+  actioned_by: ''
+  notify_targets:
+    - 'karo'
+  confirmed_by: []
+  status: 'open'
