@@ -3364,6 +3364,8 @@
   timestamp: "2026-09-04T07:29:31"
 - cmd_id: cmd_karo_ci_fix_33807468742_hot_reload_third
   review_type: draft
+  gate_result: "CLEAR"
+  gate_synced_at: "2026-09-04T13:03:14+09:00"
   verdict: APPROVE
   confidence: MEDIUM
   verified_files:
@@ -3840,6 +3842,8 @@
 - cmd_id: cmd_karo_ci_fix_33807468742_hot_reload_third
   verdict: FAIL
   review_type: report
+  gate_result: "CLEAR"
+  gate_synced_at: "2026-09-04T13:03:14+09:00"
   reviewed_at: '2026-09-04T09:15:00+09:00'
   report_fingerprint: 305f5d52a40677f51cb65b1596f9527d45b30685b0c88473210ced87285d312b
   report_ninja: kagemaru
@@ -3928,6 +3932,8 @@
 - cmd_id: cmd_karo_ci_fix_33807468742_hot_reload_third
   verdict: FAIL
   review_type: report
+  gate_result: "CLEAR"
+  gate_synced_at: "2026-09-04T13:03:14+09:00"
   reviewed_at: '2026-09-04T09:22:00+09:00'
   report_fingerprint: 305f5d52a40677f51cb65b1596f9527d45b30685b0c88473210ced87285d312b
   report_ninja: kagemaru
@@ -4320,6 +4326,8 @@
 - cmd_id: cmd_karo_ci_fix_33807468742_hot_reload_third
   verdict: LGTM
   review_type: report
+  gate_result: "CLEAR"
+  gate_synced_at: "2026-09-04T13:03:14+09:00"
   reviewed_at: '2026-09-04T12:19:00+09:00'
   report_fingerprint: 77e002f5e7b0
   report_ninja: kagemaru
@@ -4351,6 +4359,8 @@
 - cmd_id: cmd_karo_ci_fix_33807468742_hot_reload_third
   verdict: FAIL
   review_type: report
+  gate_result: "CLEAR"
+  gate_synced_at: "2026-09-04T13:03:14+09:00"
   reviewed_at: '2026-09-04T12:20:00+09:00'
   report_fingerprint: 77e002f5e7b0
   report_ninja: kagemaru
@@ -4383,6 +4393,8 @@
 - cmd_id: cmd_karo_ci_fix_33807468742_hot_reload_third
   verdict: LGTM
   review_type: report
+  gate_result: "CLEAR"
+  gate_synced_at: "2026-09-04T13:03:14+09:00"
   reviewed_at: '2026-09-04T12:51:00+09:00'
   report_fingerprint: 3c1258feeb4b
   report_ninja: kagemaru
@@ -4414,6 +4426,8 @@
 - cmd_id: cmd_karo_ci_fix_33807468742_hot_reload_third
   verdict: LGTM
   review_type: report
+  gate_result: "CLEAR"
+  gate_synced_at: "2026-09-04T13:03:14+09:00"
   reviewed_at: '2026-09-04T13:02:00+09:00'
   report_fingerprint: 26019eb72156
   report_ninja: kagemaru
