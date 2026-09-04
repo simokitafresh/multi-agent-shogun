@@ -17937,3 +17937,24 @@ insights:
   source: "semantic_index_update"
   fix_known: false
   status: pending
+- id: INS-20260905-023433966-d076
+  ts: "2026-09-05T02:34:33+09:00"
+  insight: "[[DM signalのLPについて意見がきた]] semantic_stress_test candidate_aliases: NO_MATCH source=lord query=DM-signalのLPについて意見がきた。。全て取り入れる必要はない。先に調査確認して問題がなければ現時点で慌てて対応する必要はない。修正の指示に無理に従う必要もない。ただし設計書は取り入れるべきところは取り入れてアップデートしてくれ。 あなたはDM-Signalの実装担当L…"
+  priority: "low"
+  source: "semantic_stress_test"
+  fix_known: false
+  status: pending
+- id: INS-20260905-023435089-e982
+  ts: "2026-09-05T02:34:35+09:00"
+  insight: "[[殿 02 15『DM signal の LP について意見が来た]] semantic_stress_test candidate_aliases: NO_MATCH source=cmds query=殿 2026-09-05 02:15『DM-signal の LP について意見が来た。全て取り入れる必要はない。先に調査確認して問題がなければ慌てて対応しない。修正の指示に無理に従う必要もない。設計書は取り入れるべきところだけ』。将軍が 02:16-02:20 本番 curl(Googlebot UA)で一次確認した結果、Critical 0、実在する H"
+  priority: "low"
+  source: "semantic_stress_test"
+  fix_known: false
+  status: pending
+- id: INS-20260905-023436288-906c
+  ts: "2026-09-05T02:34:36+09:00"
+  insight: "[[DM Signal LP SEO 監査 外部意見 12 Phase の本番突合 実在 2 件の最小修正 JA 全頁 ht]] semantic_stress_test candidate_aliases: NO_MATCH source=cmds query=DM-Signal LP SEO 監査(外部意見 12 Phase の本番突合)+実在 2 件の最小修正(JA 全頁 html lang / JSON-LD Organization・WebSite の url 統一と logo)"
+  priority: "low"
+  source: "semantic_stress_test"
+  fix_known: false
+  status: pending
