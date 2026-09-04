@@ -277,12 +277,15 @@ PY
     inject_ci_fix_clean_repro_contract "$tmpdir/ci_fix.yaml"
     printf '%s\n' 'task:' '  task_type: hotfix' '  acceptance_criteria:' '    - id: AC1' '      description: push前FAIL→PASS clean-repro proof' > "$tmpdir/hotfix_clean.yaml"
     inject_ci_fix_clean_repro_contract "$tmpdir/hotfix_clean.yaml"
+    printf '%s\n' 'task:' '  task_type: hotfix' '  purpose: routine unrelated release maintenance' '  acceptance_criteria:' '    - id: AC1' '      description: update release metadata' '  related_lessons:' '    - id: L-ci-fix' '      summary: ci_fix clean-repro recipe is useful context' > "$tmpdir/hotfix_lesson_only.yaml"
+    inject_ci_fix_clean_repro_contract "$tmpdir/hotfix_lesson_only.yaml"
 
     python3 - "$tmpdir" <<'PY'
 import os, pathlib, sys, yaml
 root = pathlib.Path(sys.argv[1])
 ci = yaml.safe_load((root/'ci_fix.yaml').read_text())['task']
 hotfix = yaml.safe_load((root/'hotfix_clean.yaml').read_text())['task']
+lesson_only = yaml.safe_load((root/'hotfix_lesson_only.yaml').read_text())['task']
 assert ci['final_checkpoint']['type'] == 'ci_fix_clean_repro'
 assert ci['final_checkpoint']['required'] is True
 assert ci['final_checkpoint']['evidence_field'] == 'ci_fix_clean_repro_evidence'
@@ -302,6 +305,8 @@ assert 'ci_fix_clean_repro_evidence' not in ci
 assert [x['id'] for x in ci['acceptance_criteria']] == ['AC1']
 assert hotfix['final_checkpoint']['recipe'] == recipe
 assert hotfix['final_checkpoint']['type'] == 'ci_fix_clean_repro'
+assert 'final_checkpoint' not in lesson_only
+assert lesson_only['related_lessons'][0]['summary'].startswith('ci_fix')
 for kind in ('impl', 'recon', 'training'):
     task = yaml.safe_load((root/f'{kind}.yaml').read_text())['task']
     assert 'ci_fix_clean_repro_evidence' not in task

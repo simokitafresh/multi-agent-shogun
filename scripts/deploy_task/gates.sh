@@ -1993,9 +1993,20 @@ task_type = str(t.get('task_type') or '').strip().lower()
 if task_type != 'ci_fix':
     # This task family may be published as a hotfix while its AC still
     # explicitly asks for the ci_fix clean-repro proof.  Detect that authored
-    # contract instead of relying on a mutable label alone; unrelated hotfixes
-    # remain unchanged.
-    task_text = json.dumps(t, ensure_ascii=False, sort_keys=True)
+    # contract instead of relying on a mutable label alone.  Only author-owned
+    # purpose and acceptance-criteria text is eligible; injected lessons,
+    # reports, and other derived metadata must never become a trigger.
+    authored = [t.get('purpose') or '']
+    acs = t.get('acceptance_criteria') or []
+    if isinstance(acs, dict):
+        acs = [{'description': value} for value in acs.values()]
+    if isinstance(acs, list):
+        for item in acs:
+            if isinstance(item, dict):
+                authored.append(item.get('description') or item.get('criteria') or '')
+            else:
+                authored.append(item)
+    task_text = ' '.join(str(value or '') for value in authored)
     if task_type != 'hotfix' or not re.search(
         r'clean[- _]?repro|push前.*FAIL.*PASS|ci[ _-]?fix', task_text, re.IGNORECASE
     ):
