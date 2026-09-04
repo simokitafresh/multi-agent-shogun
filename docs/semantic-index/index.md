@@ -1875,6 +1875,7 @@ codd:
 | discussion | `queue/lord_conversation.jsonl` 2026-09-04T18:59:40+09:00 殿指示 2026-09-04 18:55『記事から投稿を作るな。ネタから投稿を作れ。記事は証拠として使え。外部バズから本人を作るな。投稿ノルマのために人格を壊すな』(20 項目)→実装: claim_bank.yaml に schema(b |
 | discussion | `queue/lord_conversation.jsonl` 2026-09-04T19:14:41+09:00 現在の claim-based generation への変更は正しいです。 特に、 記事 →要約 →本人Voice →投稿 から、 本人claim →context →evidence →本人Voice →投稿 へ生成起点を変更したことは |
 | discussion | `queue/lord_conversation.jsonl` 2026-09-05T01:44:54+09:00 前回のEvent / Market Contextへの追加です。 インフレも重要観測対象として明示してください。 ただし、 「CPI発表日にCPIを解説する」 だけの意味ではありません。 本人にとってインフレは、 - 現金の実質価値 - 名 |
+| discussion | `queue/lord_conversation.jsonl` 2026-09-05T02:15:42+09:00 DM-signalのLPについて意見がきた。。全て取り入れる必要はない。先に調査確認して問題がなければ現時点で慌てて対応する必要はない。修正の指示に無理に従う必要もない。ただし設計書は取り入れるべきところは取り入れてアップデートしてくれ。  |
 
 ## recalculate_pipeline — 再計算パイプライン
 

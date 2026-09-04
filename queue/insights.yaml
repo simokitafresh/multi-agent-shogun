@@ -17864,7 +17864,9 @@ insights:
   priority: "low"
   source: "semantic_stress_test"
   fix_known: false
-  status: pending
+  status: "resolved"
+  action_artifact: "semantic_index=/home/simokitafresh/multi-agent-shogun/docs/semantic-index/index.md"
+  resolved_reason: "semantic index candidate was absorbed into a registered concept"
 - id: INS-20260905-014531545-3ade
   ts: "2026-09-05T01:45:31+09:00"
   insight: "[[今回の方針変更は「Growth Engineを弱める」のではなく]] semantic_stress_test candidate_aliases: NO_MATCH source=lord query=今回の方針変更は「Growth Engineを弱める」のではなく、 本人スタイルに合わせて生成の起点を修正するものです。 以下を注意点として実装・運用してください。 # 1. 記事をネタとして扱わない 最重要。 note記事、DM-Signal記事、過去資料は 「そのままX投稿…"
@@ -17925,4 +17927,6 @@ insights:
   priority: "low"
   source: "semantic_stress_test"
   fix_known: false
-  status: pending
+  status: "resolved"
+  action_artifact: "semantic_index=/home/simokitafresh/multi-agent-shogun/docs/semantic-index/index.md"
+  resolved_reason: "semantic index candidate was absorbed into a registered concept"
