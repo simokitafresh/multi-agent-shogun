@@ -2801,3 +2801,15 @@ entries:
     - 'shogun'
   confirmed_by: []
   status: "closed"
+- id: 'blt_20260904_193036_53f087'
+  content: |-
+    DOC_LANE_ALERT: context=context/dm-signal-core.md raw_alert=ALERT: context/dm-signal-core.md source commits 2件 since last_updated=2026-09-03 repo=/mnt/c/Python_app/DM-signal root_fallback=no timeout=360s/360s owner=dm-signal-core update_trigger=backend/app|backend/tests|docs/rule|context/dm-signal-terminology.md|docs/knowledge-base/terminology/disambiguation.md。更新要否を確認せよ latest: 5b05427010fd cmd_4474_full: add explicit showcase attribution reverse migration | 9ea93b896243 cmd_4474_full: add campaign attribution across showcase funnel action: bash scripts/context_source_commit_set.sh context/dm-signal-core.md 5b05427010fd 'context_freshness reviewed source boundary' 'context_freshness_check context=context/dm-signal-core.md commit=5b05427010fd'
+  posted_by: 'gate_context_freshness'
+  posted_at: '2026-09-04T19:30:36'
+  requires_confirmation: false
+  action_type: 'action_required'
+  actioned_by: ''
+  notify_targets:
+    - 'shogun'
+  confirmed_by: []
+  status: 'open'
