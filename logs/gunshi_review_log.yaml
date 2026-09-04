@@ -4527,3 +4527,40 @@
     actual: "PASS"
     result: PASS
   timestamp: "2026-09-04T14:18:00+09:00"
+- cmd_id: cmd_karo_ci_fix_33833338308_review_approval_rc_contract
+  review_type: report
+  verdict: FAIL
+  report_ninja: hayate
+  report_task_id: cmd_karo_ci_fix_33833338308_review_approval_rc_contract_normal
+  report_path: queue/reports/hayate_report_cmd_karo_ci_fix_33833338308_review_approval_rc_contract.yaml
+  report_fingerprint: 4b81f68b9cb7
+  report_id: rpt-6e537810-14ef-4503-b2c9-d9db5371ad6e
+  report_identity_version: 2
+  gate_prediction: BLOCK
+  gate_prediction_reason: "ac_version_mismatch: parent_cmd contract vs report(将軍追補正当差異)"
+  finding_categories:
+  - assumptions
+  - numbers
+  - premortem
+  - simulation
+  - adversarial
+  - ambiguity
+  observations:
+  - "事実1: RC改訂版fp=4b81f68b。evidence時系列修正済み、gate_report_format PASS"
+  - "事実2: task_contract_snapshot.ac_fingerprint stale。44fb353aに更新必要"
+  - "adversarial: legacy互換+v2 fail-close確認済み"
+  - "ambiguity: 曖昧点なし"
+  fail_reasons:
+  - "LG106: BLOCK prediction中LGTM禁止。ac_fingerprint更新必要"
+  causal_chain: "将軍追補→snapshot未更新→precheck BLOCK→LG106→FAIL"
+  brainwash_check: "#1no #2no #3no #4no #5no #6no #7no #8no"
+  verified_files:
+  - "scripts/lib/review_approval.sh:422"
+  step3_5_verified: true
+  origin: "[[cmd_karo_ci_fix_33833338308]] -> [[ac_version_mismatch]] -> [[LG106_FAIL_r2]]"
+  operational_simulation:
+    command: "gate_report_format.sh"
+    expected: "PASS"
+    actual: "PASS"
+    result: PASS
+  timestamp: "2026-09-04T14:22:00+09:00"
