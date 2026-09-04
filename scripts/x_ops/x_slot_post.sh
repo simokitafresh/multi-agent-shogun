@@ -35,6 +35,11 @@ for k in range(n):
     idx = (ptr + k) % n
     cat, fm = slots[idx]
     cand = [e for e in ents if (cat == "*" or g(e).get("content_category") == cat) and g(e).get("format") == fm and not g(e).get("thread_position")]
+    # v1.7(2026-09-04 19:25): plan で日時指定された entry(growth.scheduled=YYYY-MM-DD HH:MM)は当日その slot でのみ選ぶ。指定日以外では選ばない
+    import datetime as _dt
+    now = _dt.datetime.now(); today_slot = f"{now:%Y-%m-%d} {'08:30' if now.hour < 13 else '18:30'}"
+    sched = [e for e in cand if g(e).get("scheduled") == today_slot]
+    cand = sched if sched else [e for e in cand if not g(e).get("scheduled")]
     fb = ""
     # v1.6(殿裁定 18:22): 在庫が無い slot は投稿しない(fallback 廃止)。次 slot へ繰り下げるだけ
     if cand:

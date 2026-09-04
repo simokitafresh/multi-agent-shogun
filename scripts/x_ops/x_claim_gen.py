@@ -22,6 +22,15 @@ FEW = """=== 殿版(合格)の実例。この書き方に合わせる(相槌→�
 """
 
 
+FEW_CLAIM = {"C01": "[D-5 合格]", "C11": "[A-1 殿版]", "C30": "[A-1 殿版]", "C10": "[B-4 殿版]", "C15": "[B-4 殿版]", "C26": "[C-1 殿版]", "C08": "[C-1 殿版]"}
+
+
+def few_for(key):
+    """claim と同じ主張の few-shot は外す(そのまま写しになるのを防ぐ。P9-S-1=D-5 写し 2026-09-04 19:22)"""
+    tag = FEW_CLAIM.get(key)
+    return "\n".join(l for l in FEW.splitlines() if not (tag and l.startswith(tag)))
+
+
 def llm(user):
     r = subprocess.run(["claude", "--print", "--setting-sources", "user", "--system-prompt", SP, user],
                        cwd=os.environ.get("SCRATCH", "/tmp"), capture_output=True, text=True, timeout=240)
@@ -64,9 +73,14 @@ def origin_ok(c):
 VOICE_RULE = "文体は本人(殿版 few-shot)からのみ。外部バズ投稿の語尾・煽り口調・キャラ・スラング・www・過激表現は使わない。借りてよいのは構造(対比・引用反証・VS・数字の置き方)だけ。"
 
 
-def slot_text(fmt, c, num):
+def slot_text(fmt, c, num, p=None):
     ctx = f"\nなぜ今言うか(発話動機。本文に書かなくてよい): {c['context']}" if c.get("context") else ""
     num = num + ctx
+    base = f"壊す前提: {c['belief']}\n主張: {c['claim']}\n裏付け(1 行): {c['why']}\n刺さる読者: {c['audience']}\n{num}"
+    if fmt == "series_entry":
+        return (f"format=Series Entry。全角 200 字以内。シリーズ「{p['series_title']}」の {p['series_order']}/{p['series_total']} 回目。この回だけで意味が通ること。冒頭か末尾に『{p['series_order']}/{p['series_total']}』だけ置き、続きがあると分かる一言を添える(宣伝調にしない)。全部説明しない。URL なし。DM-Signal の名前を出さない。\n{VOICE_RULE}\n{base}\n本文のみ出力。")
+    if fmt == "thread":
+        return (f"format=Thread。親投稿(全角 140 字以内)+自己リプ 2〜3 本(各 140 字以内)。各リプに新しい情報(数字・条件・別の角度)を 1 つ入れる。文字数回避の分割は禁止。親だけでも意味が通る。URL なし。DM-Signal の名前を出さない。\n{VOICE_RULE}\n{base}\n出力形式: 親本文、次に行『===R1===』、リプ 1 本文、『===R2===』、リプ 2 本文(必要なら『===R3===』)。それ以外を書かない。")
     if fmt == "long":
         return (f"format=Long。全角 300〜600 字。構成は claim→疑い→検証→数字→結論。記事の要約にしない。全部説明せず conversation gap を残す。URL なし。DM-Signal の名前を出さない。\n{VOICE_RULE}\n"
                 f"壊す前提: {c['belief']}\n主張: {c['claim']}\n裏付け(1 行): {c['why']}\n刺さる読者: {c['audience']}\n{num}\n本文のみ出力。")
@@ -74,8 +88,64 @@ def slot_text(fmt, c, num):
             f"壊す前提: {c['belief']}\n主張: {c['claim']}\n理由(1 行): {c['why']}\n刺さる読者: {c['audience']}\n{num}\n本文のみ出力。")
 
 
+GROWTH = {"short": ("reach", "investor", "contradiction", 2, "[dwell, reply, quote, profile]"),
+          "long": ("trust", "systematic", "story", 4, "[bookmark, profile, follow]"),
+          "thread": ("trust", "systematic", "question", 4, "[bookmark, reply, profile]"),
+          "series_entry": ("follow", "systematic", "question", 4, "[bookmark, profile, follow]")}
+
+
+def ledger_block(did, f, fmt, c, extra=""):
+    st, au, hk, tl, da = GROWTH[fmt]
+    return (f"- draft_id: {did}\n  draft_file: {f.relative_to(ROOT)}\n  growth:\n    format: {fmt}\n    physical_posts: 1\n    content_lane: investing\n    content_category: A\n"
+            f"    funnel_stage: {st}\n    audience: {au}\n    hook_type: {hk}\n    topic_level: {tl}\n    desired_action: {da}\n    conversation_gap: medium\n    link_type: none\n    external_context: standalone\n"
+            f"    claim_key: {c['key']}\n    claim_origin: {c['origin']}\n    approved: ''\n{extra}  post_id: ''\n  posted_at: ''\n  snapshots: {{}}\n")
+
+
+def run_plan(plan_path, only=None):
+    """plan の各 slot を生成→gate→台帳へ追記(未承認。殿が読んでから承認)。ledger は text 追記(yaml.dump 禁止)"""
+    plan = yaml.safe_load(Path(plan_path).read_text(encoding="utf-8"))["plan"]
+    vn = BANK["meta"]["verified_numbers"]; claims = {c["key"]: c for c in BANK["claims"]}
+    ledger = ROOT / "queue/x_live_oos/ledger.yaml"; today = dt.date.today().isoformat(); n = 0; tot = 0
+    for p in plan:
+        if not p.get("claim") or (only and p["draft_id"] not in only): continue
+        if any((DRAFTS / f"{today}_{p['draft_id']}{sfx}.txt").exists() for sfx in ("", "-P")): continue  # 再実行は未生成のみ
+        c = claims[p["claim"]]; fmt = p["format"]; did = p["draft_id"]; tot += 1
+        miss = [r for r in REQ if not c.get(r)]; bo = origin_ok(c)
+        if miss or bo:
+            print(f"{did}\t{c['key']}\tSKIP\t{miss or bo}", flush=True); continue
+        num = f"使ってよい数字(この 1 組だけ。使わなくてもよい): {vn[c['number']]}" if c.get("number") else "数字は使わない(使うなら禁止)。"
+        body = llm(f"{few_for(c['key'])}\n--- slot instruction ---\n{slot_text(fmt, c, num, p)}")
+        parts = [x.strip() for x in re.split(r"^===R\d===\s*$", body, flags=re.M)] if fmt == "thread" else [body]
+        parts = [x for x in parts if x]
+        if fmt == "thread" and len(parts) < 3:
+            print(f"{did}\t{c['key']}\tFAIL_thread_parts\t{len(parts)}", flush=True); continue
+        status = "PASS"; blocks = ""
+        for j, txt in enumerate(parts):
+            sub = f"{did}-P" if (fmt == "thread" and j == 0) else (f"{did}-R{j}" if fmt == "thread" else did)
+            f = DRAFTS / f"{today}_{sub}.txt"; f.write_text(txt + "\n", encoding="utf-8")
+            bad = numbers_ok(txt, [vn[c["number"]]] if c.get("number") else [])
+            gate = subprocess.run(["bash", "scripts/x_ops/x_post_gate.sh", str(f.relative_to(ROOT)), "A"], capture_output=True, text=True, cwd=ROOT)
+            illustrative = (not c.get("number")) and all(float(x) <= 100 for x in bad)
+            st = "FAIL_num" if (bad and not illustrative) else ("FAIL_gate" if gate.returncode else "PASS")
+            if st != "PASS": status = st
+            extra = ""
+            if fmt == "thread": extra = f"    thread_id: {did}\n    thread_position: {j}\n"
+            if fmt == "series_entry": extra = f"    series_id: {p['series_id']}\n    series_order: {p['series_order']}\n    series_total: {p['series_total']}\n"
+            blocks += ledger_block(sub, f, fmt, c, extra).replace("  post_id:", "    scheduled: '" + f"{p['date']} {p['time']}" + "'\n  post_id:")
+        if status == "PASS":
+            import fcntl
+            with ledger.open("a", encoding="utf-8") as fh:
+                fcntl.flock(fh, fcntl.LOCK_EX); fh.write(blocks); fh.flush(); fcntl.flock(fh, fcntl.LOCK_UN)
+            n += 1
+        print(f"{did}\t{c['key']}\t{fmt}\t{status}\t{sum(len(x) for x in parts)}字", flush=True)
+    print(f"plan done pass={n}/{tot}")
+
+
 def main():
     a = sys.argv[1:]
+    if "--plan" in a:
+        only = set(a[a.index("--only") + 1].split(",")) if "--only" in a else None
+        return run_plan(a[a.index("--plan") + 1], only)
     if "--recheck" in a:
         rnd = a[a.index("--round") + 1]; keys = a[a.index("--claims") + 1].split(","); return recheck(rnd, keys, "--approve" in a)
     rnd = a[a.index("--round") + 1] if "--round" in a else "6"
