@@ -3566,6 +3566,7 @@ codd:
 | discussion | `queue/lord_conversation.jsonl` 2026-09-04T11:48:48+09:00 https://claude.ai/code/artifact/4f5e79a2-b766-4c54-81da-d6fcdbdf7455を更新して |
 | cmd | `cmd_karo_recon_x_b_article_source_data_202609041123` |
 | discussion | `queue/lord_conversation.jsonl` 2026-09-04T12:03:28+09:00 殿裁定 2026-09-04 12:00(X 投稿・具象化禁止): 『DM-signal は株と債券などの話はしていないのに、株と債券の強いほうを持つとか意味不明なことが書いてある。間違った具象化は危険だ。本質を抽象化せよ』→デュアルモメン |
+| discussion | `queue/lord_conversation.jsonl` 2026-09-04T12:06:05+09:00 session_save_20260904_1210(復帰点、先に session_save_20260904_1145 を読め): loop 12:04。図 task: 疾風 B 偵察 CLEAR 11:51(記事 5 本の元データは直接 |
 
 ## investment_knowledge_base — 投資知識辞書
 
@@ -17595,7 +17596,7 @@ codd:
 |------|---|
 | id | content_artifacts |
 | label | 記事・成果物索引 |
-| aliases | 記事一覧, 書いた記事, note記事, gist一覧, 成果物, 今までやったCMD, CMD履歴, 戦局日誌, senkyoku-log, 将軍記事, 戦国AI列伝, weekly report, 週報一覧, 月報, marketing content, マーケティング記事, 下書き一覧, 過去の記事, 記事を書いた, 記事やドキュメント, もっとテックブログ風に英単語やロジックは元論文のままで使おう, compare-returns API週報, 8期間トレーリングリターン週報, MTD週報, 週報のcompare-returns移行, note下書き品質確認必須, 週報note下書き保存手順, gistをアップデート, gist更新, gist index更新, gistは更新したか, gist indexも更新した, skfolio論文, skfolio 論文, skfolioの論文, skyfolio論文, skyfolio 論文, skyfolioの論文, skyfolioの論文はわかるか, Skyfolio, skfolio, skyfolio, Stanford convex optimization research, stanford_convex_optimization_research, 外部論文調査, 参考論文解説, まずはgistで共有してくれ, 成果物は完成したか？検証はしたか？, 第二弾のgistをアップデートしてくれ, DM signalへの応用可能性について書いた記事を作成して, DM signalのallertについて詳しく教えてほしい, では gistをアップデートしてくれ, 第十二弾も作成してくれ16位～25位だ, 第二弾のnote記事と同じスタイル, gistをアップデートだな, いいね, weekly_limit警告放置_20260829_0040, 今の仕組みは単にnote記事の引用をしているだけに見える |
+| aliases | 記事一覧, 書いた記事, note記事, gist一覧, 成果物, 今までやったCMD, CMD履歴, 戦局日誌, senkyoku-log, 将軍記事, 戦国AI列伝, weekly report, 週報一覧, 月報, marketing content, マーケティング記事, 下書き一覧, 過去の記事, 記事を書いた, 記事やドキュメント, もっとテックブログ風に英単語やロジックは元論文のままで使おう, compare-returns API週報, 8期間トレーリングリターン週報, MTD週報, 週報のcompare-returns移行, note下書き品質確認必須, 週報note下書き保存手順, gistをアップデート, gist更新, gist index更新, gistは更新したか, gist indexも更新した, skfolio論文, skfolio 論文, skfolioの論文, skyfolio論文, skyfolio 論文, skyfolioの論文, skyfolioの論文はわかるか, Skyfolio, skfolio, skyfolio, Stanford convex optimization research, stanford_convex_optimization_research, 外部論文調査, 参考論文解説, まずはgistで共有してくれ, 成果物は完成したか？検証はしたか？, 第二弾のgistをアップデートしてくれ, DM signalへの応用可能性について書いた記事を作成して, DM signalのallertについて詳しく教えてほしい, では gistをアップデートしてくれ, 第十二弾も作成してくれ16位～25位だ, 第二弾のnote記事と同じスタイル, gistをアップデートだな, いいね, weekly_limit警告放置_20260829_0040, 今の仕組みは単にnote記事の引用をしているだけに見える, DM signalは株と債券などの話はしていないのに株と債券の強いほうを持つとか意味不明なことがたくさん書いてある |
 | related_concepts | dmsignal_operations, cmd_chronicle, skill_routing |
 
 | 種別 | パス/参照 |
