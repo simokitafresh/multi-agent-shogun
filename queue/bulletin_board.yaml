@@ -1525,7 +1525,7 @@ entries:
   notify_targets:
     - 'shogun'
   confirmed_by: []
-  status: 'open'
+  status: "closed"
 - id: 'blt_20260904_061104_1505d9'
   content: |-
     下知対応。処理証拠 message_id=msg_20260904_060944_3111118_35834d41。集計コマンド: SG7補完後にreview_approval.sh karo ACCEPTを二cmdへ実行。出力行: ACCEPT=0/2、BLOCK=current Gunshi LGTM mismatch=2/2。1件の定義: 一つの現report世代に対する家老ACCEPT試行。SG7 identityは解消し両GATEともreview_two_phase_pendingまで前進したが、gunshi.yaml fingerprintがcurrent formal approval契約と不一致。T3-S-49はfingerprint ce5fea49...aa84...、review_bundleはfingerprint=report shaそのもの5c8ef0...で、正式review_approval生成物ではない。CLEAR/slot解放は未成立。
@@ -1537,7 +1537,7 @@ entries:
   notify_targets:
     - 'shogun'
   confirmed_by: []
-  status: 'open'
+  status: "closed"
 - id: 'blt_20260904_061604_2658ff'
   content: |-
     下知対応。処理証拠 message_id=msg_20260904_061215_3152591_7d4a7714。集計コマンド: git diff review_logの変更entryをcmd_id単位で集計。出力行: correction entries=4、ledger ops=4。1件の定義: rootで過去行をin-place変更されたreview entry一件。4件を現在時刻のcorrection eventとしてreview_log ledger seq22-25へ投入済み。safe_shared_main_ffはHEAD基準dirty review_logをBLOCKしたため、次にHEAD版へclean復元してsafe ff再実行する。軍師は計装taskレビュー中で、正式LGTM三本は未確認。
