@@ -345,21 +345,25 @@ if task_file:
     except Exception:
         print("invalid\t")
         raise SystemExit
-    report_contract = report.get("commit_contract")
-    task_contract = task.get("commit_contract") if isinstance(task, dict) else None
-    if isinstance(task_contract, str):
+    def _decode_contract(value):
+        if not isinstance(value, str):
+            return value
         try:
             import json
-            decoded_contract = json.loads(task_contract)
+            decoded = json.loads(value)
         except (TypeError, ValueError):
-            decoded_contract = None
-        if isinstance(decoded_contract, dict):
-            task_contract = decoded_contract
+            return value
+        return decoded if isinstance(decoded, dict) else value
+
+    report_contract = _decode_contract(report.get("commit_contract"))
+    task_contract = _decode_contract(task.get("commit_contract")) if isinstance(task, dict) else None
+    report_contract_map = report_contract if isinstance(report_contract, dict) else {}
+    task_contract_map = task_contract if isinstance(task_contract, dict) else {}
     report_type = str(
-        (report_contract or {}).get("task_type") or report.get("task_type") or ""
+        report_contract_map.get("task_type") or report.get("task_type") or ""
     ).strip()
     task_type = str(
-        (task_contract or {}).get("task_type") or task.get("task_type") or ""
+        task_contract_map.get("task_type") or task.get("task_type") or ""
     ).strip()
     files = report.get("files_modified")
     commit = str(report.get("commit_hash") or "").strip()

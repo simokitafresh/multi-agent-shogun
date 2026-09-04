@@ -8007,6 +8007,85 @@ run_report_blob_parity_state() {
     [ "$output" = "UNPUSHED: commit_contract no-code task" ]
 }
 
+# test_necessity: report.commit_contract may be deployed as the same JSON
+# scalar as the task side (2026-09-05 疾風v2 real report: task_contract was a
+# YAML mapping, report_contract a JSON string). Only the task side decoded the
+# scalar; report_contract flowed into `(report_contract or {}).get(...)` and
+# crashed with AttributeError on every string, turning report_commit_main_
+# ancestry into a permanent false BLOCK. This must resolve identically to the
+# equivalent mapping instead of raising.
+@test "CI push detection resolves serialized report-side commit_contract like a mapping" {
+    local repo="$BATS_TEST_TMPDIR/report-serialized-contract"
+    local report="$BATS_TEST_TMPDIR/report-serialized-contract-report.yaml"
+    local task="$BATS_TEST_TMPDIR/report-serialized-contract-task.yaml"
+    make_ci_push_repo "$repo"
+    printf 'task_type: hotfix\ncommit_hash: %s\nfiles_modified: [{path: scripts/x.sh}]\ncommit_contract: '\''{"required":true,"task_type":"hotfix"}'\''\n' \
+        "$(git -C "$repo" rev-parse HEAD)" > "$report"
+    printf 'task:\n  task_type: hotfix\n  commit_contract: {required: true, task_type: hotfix}\n' > "$task"
+    run_ci_push_state "$repo" "$report" "$task"
+    [ "$status" -eq 0 ]
+    [[ "$output" == PUSHED:* ]]
+}
+
+# test_necessity: the no-code exemption must be symmetric; a serialized
+# report_contract must be recognized exactly like the already-covered
+# serialized task_contract case above.
+@test "CI push detection skips serialized symmetric no-code contract on report side" {
+    local repo="$BATS_TEST_TMPDIR/no-code-report-serialized"
+    local report="$BATS_TEST_TMPDIR/no-code-report-serialized-report.yaml"
+    local task="$BATS_TEST_TMPDIR/no-code-report-serialized-task.yaml"
+    make_ci_push_repo "$repo"
+    printf 'task_type: scout\ncommit_hash: no-code-change\nfiles_modified: [{path: %s}]\ncommit_contract: '\''{"required":false,"task_type":"scout"}'\''\n' "$report" > "$report"
+    printf 'task:\n  task_type: scout\n  commit_contract: {required: false, task_type: scout}\n' > "$task"
+    run_ci_push_state "$repo" "$report" "$task"
+    [ "$status" -eq 0 ]
+    [ "$output" = "UNPUSHED: commit_contract no-code task" ]
+}
+
+# test_necessity: a malformed JSON scalar must fail closed to the ordinary
+# commit-hash BLOCK path, not raise an uncaught AttributeError.
+@test "CI push detection blocks report-side commit_contract with invalid JSON instead of crashing" {
+    local repo="$BATS_TEST_TMPDIR/invalid-json-contract"
+    local report="$BATS_TEST_TMPDIR/invalid-json-contract-report.yaml"
+    local task="$BATS_TEST_TMPDIR/invalid-json-contract-task.yaml"
+    make_ci_push_repo "$repo"
+    printf 'task_type: hotfix\ncommit_hash: ""\nfiles_modified: []\ncommit_contract: "{not valid json"\n' > "$report"
+    printf 'task:\n  task_type: hotfix\n  commit_contract: {required: true, task_type: hotfix}\n' > "$task"
+    run_ci_push_state "$repo" "$report" "$task"
+    [ "$status" -eq 0 ]
+    [[ "$output" == "BLOCK: report commit"* ]]
+}
+
+# test_necessity: a commit_contract typed as a list (neither mapping nor a
+# decodable JSON object) must fail closed the same way, not raise.
+@test "CI push detection blocks report-side commit_contract typed as a list instead of crashing" {
+    local repo="$BATS_TEST_TMPDIR/list-type-contract"
+    local report="$BATS_TEST_TMPDIR/list-type-contract-report.yaml"
+    local task="$BATS_TEST_TMPDIR/list-type-contract-task.yaml"
+    make_ci_push_repo "$repo"
+    printf 'task_type: hotfix\ncommit_hash: ""\nfiles_modified: []\ncommit_contract: [required, hotfix]\n' > "$report"
+    printf 'task:\n  task_type: hotfix\n  commit_contract: {required: true, task_type: hotfix}\n' > "$task"
+    run_ci_push_state "$repo" "$report" "$task"
+    [ "$status" -eq 0 ]
+    [[ "$output" == "BLOCK: report commit"* ]]
+}
+
+# test_necessity: an absent report-side commit_contract (source欠落) must keep
+# resolving through the real commit hash rather than being treated as a crash
+# or a spurious no-code exemption.
+@test "CI push detection tolerates a missing report-side commit_contract with a real commit" {
+    local repo="$BATS_TEST_TMPDIR/missing-report-contract"
+    local report="$BATS_TEST_TMPDIR/missing-report-contract-report.yaml"
+    local task="$BATS_TEST_TMPDIR/missing-report-contract-task.yaml"
+    make_ci_push_repo "$repo"
+    printf 'task_type: hotfix\ncommit_hash: %s\nfiles_modified: [{path: scripts/x.sh}]\n' \
+        "$(git -C "$repo" rev-parse HEAD)" > "$report"
+    printf 'task:\n  task_type: hotfix\n  commit_contract: {required: true, task_type: hotfix}\n' > "$task"
+    run_ci_push_state "$repo" "$report" "$task"
+    [ "$status" -eq 0 ]
+    [[ "$output" == PUSHED:* ]]
+}
+
 # test_necessity: readonly recon reports may list the report itself as their
 # sole artifact without turning a no-code project task into a commit task.
 @test "CI push detection skips symmetric no-code recon with only its own report artifact" {
