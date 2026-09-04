@@ -6546,6 +6546,7 @@ codd:
 | discussion | `queue/lord_conversation.jsonl` 2026-09-04T10:45:32+09:00 例えば「年率43.7%と聞いたら、まずSPYの15.6%分は市場の追い風だと差し引く。残りが実力、代償は下落幅。2011/10〜2026/4・対SPY: ▎ SPY15.6%/-23.8%、TQQQ43.7%/-79.1%、記事の戦略101 |
 | discussion | `queue/lord_conversation.jsonl` 2026-09-04T11:34:02+09:00 kagemaruが放置されていないか？確認せよ |
 | discussion | `queue/lord_conversation.jsonl` 2026-09-04T12:42:30+09:00 X自動投稿の方針を根本から見直してください。 現行の - docs/research/x_account_ops_automation_asis_tobe_5w1h_20260903.md - docs/research/x_post_dr |
+| discussion | `queue/lord_conversation.jsonl` 2026-09-04T13:29:14+09:00 再認可したよ。確認して |
 
 ## no_auto_extinguish — 自動消火禁止
 
