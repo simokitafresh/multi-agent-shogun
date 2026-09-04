@@ -158,7 +158,7 @@ codd:
 |------|---|
 | id | strong_new_game_completion_contract |
 | label | 強くてニューゲーム完遂契約 |
-| aliases | 今クリアされても強くてニューゲーム, 今クリアされても今より強くてニューゲーム, 殿指示_今クリアされても強くてニューゲーム_20260810_0330, 殿指示_今クリアされても強くてニューゲーム_20260810_0818, 殿指示_強くてニューゲーム_20260813_1648, 殿指示_強くてニューゲーム_20260817_0000, RB6再採点復帰点20260813, RB6_post355_prices_oracle再採点, RB6_metrics残差980, RB6_BLOCK_20260813_1704, DM本番PITR_20260816, run397中断_run398自己復元, 月次リターン実装フェーズ高速回転, 通常実装33/33, 裁可限定2, 殿裁可_封印3件_20260810_0819, T-e1-e3三重防御完了, T-e4本番検証_cmd_4284, cmd_4284_remote_divergence, tree_level_merge_ad976db7, cmd_4284_AC1_reopened, single slow test 292.92s, review overlap rootfix, ボトルネック移動禁止, 完遂宣言後startup再実行, startup再起動検証, 配備品質契約射影, CI RED一担当原則, BLOCK CRITICAL 0を二値確認する, karo_clear_recovery_checkpoint, 家老強くてニューゲーム復帰点, 将軍強くてニューゲーム復帰点20260731, cmd_4200復帰点, hot-script第一弾復帰点, deploy_fixture_case51, memory_db_token_search_full_unit, run_tests親環境隔離, hot_script第一弾_12_of_12, 家老強くてニューゲーム復帰点更新, 表コンテナ内スクロール是正_cmd_4209, RB6_metrics最終判定v3, 殿指示_強くてニューゲーム_20260817_0852, 後着差分3_ID保持, tobisaru_review_pending, reflux_dirty_dispatch_blocked, 差分削除禁止, 家老強くてニューゲーム復帰点を新規固定, 殿指示_強くてニューゲーム_20260817_1507, 殿指示_今クリアされても今より強くてニューゲーム_20260827_0856, 家老強くてニューゲーム復帰点20260827, T12待機廃止, T40実回転, T47_idle起点固定hotfix, 後着事実追記型訂正_20260827_0914, 9p relocate hotfix CLEAR, 殿指示_強くてニューゲーム_20260827_2125, 家老強くてニューゲーム復帰点20260828, 殿指示_強くてニューゲーム_20260829_1250, CI_RED診断, 家老強くてニューゲーム復帰点20260831, karo_checkpoint_20260831_0309, 殿指示_強くてニューゲーム_20260831_1319, karo_checkpoint_20260831_1322, 家老強くてニューゲーム復帰点2026 52を最終化, 殿指示_強くてニューゲーム_20260831_1746, karo_checkpoint_20260831_1752, 家老強くてニューゲーム復帰点20260904, 殿指示_強くてニューゲーム_20260904_1624, karo_checkpoint_20260904_1624 |
+| aliases | 今クリアされても強くてニューゲーム, 今クリアされても今より強くてニューゲーム, 殿指示_今クリアされても強くてニューゲーム_20260810_0330, 殿指示_今クリアされても強くてニューゲーム_20260810_0818, 殿指示_強くてニューゲーム_20260813_1648, 殿指示_強くてニューゲーム_20260817_0000, RB6再採点復帰点20260813, RB6_post355_prices_oracle再採点, RB6_metrics残差980, RB6_BLOCK_20260813_1704, DM本番PITR_20260816, run397中断_run398自己復元, 月次リターン実装フェーズ高速回転, 通常実装33/33, 裁可限定2, 殿裁可_封印3件_20260810_0819, T-e1-e3三重防御完了, T-e4本番検証_cmd_4284, cmd_4284_remote_divergence, tree_level_merge_ad976db7, cmd_4284_AC1_reopened, single slow test 292.92s, review overlap rootfix, ボトルネック移動禁止, 完遂宣言後startup再実行, startup再起動検証, 配備品質契約射影, CI RED一担当原則, BLOCK CRITICAL 0を二値確認する, karo_clear_recovery_checkpoint, 家老強くてニューゲーム復帰点, 将軍強くてニューゲーム復帰点20260731, cmd_4200復帰点, hot-script第一弾復帰点, deploy_fixture_case51, memory_db_token_search_full_unit, run_tests親環境隔離, hot_script第一弾_12_of_12, 家老強くてニューゲーム復帰点更新, 表コンテナ内スクロール是正_cmd_4209, RB6_metrics最終判定v3, 殿指示_強くてニューゲーム_20260817_0852, 後着差分3_ID保持, tobisaru_review_pending, reflux_dirty_dispatch_blocked, 差分削除禁止, 家老強くてニューゲーム復帰点を新規固定, 殿指示_強くてニューゲーム_20260817_1507, 殿指示_今クリアされても今より強くてニューゲーム_20260827_0856, 家老強くてニューゲーム復帰点20260827, T12待機廃止, T40実回転, T47_idle起点固定hotfix, 後着事実追記型訂正_20260827_0914, 9p relocate hotfix CLEAR, 殿指示_強くてニューゲーム_20260827_2125, 家老強くてニューゲーム復帰点20260828, 殿指示_強くてニューゲーム_20260829_1250, CI_RED診断, 家老強くてニューゲーム復帰点20260831, karo_checkpoint_20260831_0309, 殿指示_強くてニューゲーム_20260831_1319, karo_checkpoint_20260831_1322, 家老強くてニューゲーム復帰点2026 52を最終化, 殿指示_強くてニューゲーム_20260831_1746, karo_checkpoint_20260831_1752, 家老強くてニューゲーム復帰点20260904 |
 | related_concepts | deepdive_principles, gate_quality_framework, growth_loop, three_layer_memory_system, context_freshness_retry_budget, gist_master_three_step_rule |
 
 | 種別 | パス/参照 |
@@ -1857,6 +1857,7 @@ codd:
 | discussion | `queue/lord_conversation.jsonl` 2026-09-04T14:59:52+09:00 session_save_20260904_1500(復帰点、先に session_save_20260904_1452 を読め): 殿指示 14:51 Growth Engine v1.0 実装完了(afc9f931c、gist da5a |
 | discussion | `queue/lord_conversation.jsonl` 2026-09-04T15:01:49+09:00 Growth Engine設計を以下の追加情報を反映して更新してください。 重要: 既存のContent Engine、author corpus、human rewrite corpus、承認済み投稿ストックは壊さない。 今回追加するのは |
 | discussion | `queue/lord_conversation.jsonl` 2026-09-04T15:11:22+09:00 Growth Engineの「投稿量」設計を、投稿本数だけではなく 「投稿フォーマット × 投稿量」 として拡張してください。 新しい殿裁定: X投稿には少なくとも4つの異なるフォーマットがある。 1. Short 2. Long 3. T |
+| discussion | `queue/lord_conversation.jsonl` 2026-09-04T16:23:47+09:00 X Growth Engine 設計書レビュー 全体として、Growth Engine の設計はかなり整理されてきています。 特に v1.3 で追加された KPI 取得可否の整理は良いです。実際の X API レスポンスを確認した上で、投稿 |
 | causal_chain | `[[cmd_karo_hotfix_ga221_context_freshness_202607110323]]` (L1032) |
 | causal_chain | `[[cmd_karo_recon2_r5_three_layer_acceptance_20260727]]` (L1397) |
 | causal_chain | `[[cmd_karo_hotfix_ga414_context_freshness_20260729]]` (L1454) |
@@ -1867,7 +1868,6 @@ codd:
 | causal_chain | `[[cmd_gunshi_d0_20260807]]` (L1569) |
 | causal_chain | `[[cmd_karo_hotfix_fail_close_worktree_cleanup_20260826]]` (L1642) |
 | causal_chain | `[[cmd_karo_hotfix_ga530_expected_pre_push_block_20260830]]` (L1674) |
-| discussion | `queue/lord_conversation.jsonl` 2026-09-04T16:23:47+09:00 X Growth Engine 設計書レビュー 全体として、Growth Engine の設計はかなり整理されてきています。 特に v1.3 で追加された KPI 取得可否の整理は良いです。実際の X API レスポンスを確認した上で、投稿 |
 
 ## recalculate_pipeline — 再計算パイプライン
 
@@ -3516,6 +3516,8 @@ codd:
 | discussion | `queue/lord_conversation.jsonl` 2026-09-04T15:17:20+09:00 session_save_20260904_1520(復帰点、先に session_save_20260904_1510 を読め): 殿裁定 15:11 Growth Engine v1.2『投稿フォーマット×投稿量』実装: 4 forma |
 | discussion | `queue/lord_conversation.jsonl` 2026-09-04T15:23:31+09:00 session_save_20260904_1525(復帰点、先に session_save_20260904_1520 を読め): loop 15:22。todo map T240(X Growth Engine v1.0-1.2、走行= |
 | discussion | `queue/lord_conversation.jsonl` 2026-09-04T15:55:03+09:00 session_save_20260904_1556(復帰点、先に session_save_20260904_1525 を読め): loop 15:54。変化なし: live OOS 初回 18:30 待ち、KPI cron nothin |
+| discussion | `queue/lord_conversation.jsonl` 2026-09-04T16:26:23+09:00 session_save_20260904_1632(復帰点、先に session_save_20260904_1618 を読め): 殿レビュー 16:23→Growth Engine v1.4: 7 日運用・3 content_units |
+| discussion | `queue/lord_conversation.jsonl` 2026-09-04T16:27:25+09:00 session_save_20260904_1628(復帰点、先に session_save_20260904_1632 を読め): loop 16:26。gate OK、push 0、CI 159c8bf03 pending、忍者 6 i |
 | causal_chain | `[[cmd_3749]]` (L974) |
 | causal_chain | `[[cmd_training_L1_report-write_20260708020332]]` (L977) |
 | causal_chain | `[[cmd_reflux_insight_202607071717_tobisaru]]` (L961) |
@@ -3582,8 +3584,6 @@ codd:
 | causal_chain | `[[cmd_karo_ci_fix_33630722226_instructions_sync_fp_vocab_202609022153]]` (L1710) |
 | causal_chain | `[[cmd_karo_hotfix_u3_publisher_idempotent_restore_notify_202609022337]]` (L1711) |
 | causal_chain | `[[cmd_karo_hotfix_workarounds_merge_driver_dup_cmd_id_202609030148]]` (L1712) |
-| discussion | `queue/lord_conversation.jsonl` 2026-09-04T16:26:23+09:00 session_save_20260904_1632(復帰点、先に session_save_20260904_1618 を読め): 殿レビュー 16:23→Growth Engine v1.4: 7 日運用・3 content_units |
-| discussion | `queue/lord_conversation.jsonl` 2026-09-04T16:27:25+09:00 session_save_20260904_1628(復帰点、先に session_save_20260904_1632 を読め): loop 16:26。gate OK、push 0、CI 159c8bf03 pending、忍者 6 i |
 
 ## investment_knowledge_base — 投資知識辞書
 
@@ -5365,9 +5365,9 @@ codd:
 | discussion | `queue/lord_conversation.jsonl` 2026-09-04T15:06:14+09:00 ゲートクリア・コミット・プッシュはスムーズか？ |
 | discussion | `queue/lord_conversation.jsonl` 2026-09-04T16:06:45+09:00 いまクリアされても今より強くてニューゲームできるようにせよ |
 | discussion | `queue/lord_conversation.jsonl` 2026-09-04T16:08:09+09:00 session_save_20260904_1610(復帰点、先に session_save_20260904_1556 を読め): 殿『いまクリアされても今より強くてニューゲーム』→MEMORY.md 最新復帰点を 09-04 16:10 |
+| discussion | `queue/lord_conversation.jsonl` 2026-09-04T16:24:42+09:00 いまクリアされても今より強くてニューゲームできるようにせよ |
 | causal_chain | `[[cmd_reflux_insight_202607081406_saizo]]` (L991) |
 | causal_chain | `[[cmd_karo_hotfix_gunshi_deepdive_recurrence_20260727]]` (L1408) |
-| discussion | `queue/lord_conversation.jsonl` 2026-09-04T16:24:42+09:00 いまクリアされても今より強くてニューゲームできるようにせよ |
 
 ## main_infra_double_loop — メイン作業＋インフラ改善の二重ループ
 
@@ -16876,7 +16876,6 @@ codd:
 | discussion | `queue/lord_conversation.jsonl` 2026-09-04T00:47:20.165530+00:00 git pre-commit semantic propagation for context/projects changes |
 | discussion | `queue/lord_conversation.jsonl` 2026-09-04T02:38:49.867468+00:00 git pre-commit semantic propagation for context/projects changes |
 | causal_chain | `[[cmd_karo_hotfix_lessons_yaml_format_restore_20260727]]` (L1389) |
-| discussion | `queue/lord_conversation.jsonl` 2026-09-04T07:29:11.979628+00:00 git pre-commit semantic propagation for context/projects changes |
 
 ## infra_design_intent — インフラ設計意図カタログ
 
