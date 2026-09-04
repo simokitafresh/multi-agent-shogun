@@ -17943,7 +17943,9 @@ insights:
   priority: "low"
   source: "semantic_stress_test"
   fix_known: false
-  status: pending
+  status: "resolved"
+  action_artifact: "semantic_index=/home/simokitafresh/multi-agent-shogun/docs/semantic-index/index.md"
+  resolved_reason: "semantic index candidate was absorbed into a registered concept"
 - id: INS-20260905-023435089-e982
   ts: "2026-09-05T02:34:35+09:00"
   insight: "[[殿 02 15『DM signal の LP について意見が来た]] semantic_stress_test candidate_aliases: NO_MATCH source=cmds query=殿 2026-09-05 02:15『DM-signal の LP について意見が来た。全て取り入れる必要はない。先に調査確認して問題がなければ慌てて対応しない。修正の指示に無理に従う必要もない。設計書は取り入れるべきところだけ』。将軍が 02:16-02:20 本番 curl(Googlebot UA)で一次確認した結果、Critical 0、実在する H"
