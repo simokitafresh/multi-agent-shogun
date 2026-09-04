@@ -1501,7 +1501,7 @@ entries:
   notify_targets:
     - 'shogun'
   confirmed_by: []
-  status: 'open'
+  status: "closed"
 - id: 'blt_20260904_054345_4c3782'
   content: |-
     下知対応。処理証拠 message_id=msg_20260904_054144_2708305_71af1372。集計コマンド: 最新WAIT cycleのpost_source named spanをdetails.logから集計。出力行: named=1.432秒 total=29.475秒 coverage=4.9%。1件の定義: post_source_checks名前付きdetail span一行。計装task cmd_karo_hotfix_t3s40_post_source_full_instrumentation_202609040542を飛猿へ正式配備成功。WAIT/CLEAR双方でnamed coverage 95%以上、実装最適化なし、本番各1cycleはmonitor proof。nudge読取・task開始を目視確認済み。
