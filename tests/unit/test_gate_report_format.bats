@@ -237,6 +237,88 @@ PY
     [[ "$output" == *"checkpoint PASS; invalid evidence BLOCK; intermediate AC count=1"* ]]
 }
 
+# test_necessity: generated task/report recipes must remain byte-equivalent so
+# a worker cannot receive one push-before sequence while the terminal gate
+# validates another.
+@test "ci_fix final checkpoint rejects task/report recipe drift" {
+    run python3 - "$MAIN" <<'PY'
+import copy, importlib.util, sys
+spec = importlib.util.spec_from_file_location("gate_report_format_main", sys.argv[1])
+mod = importlib.util.module_from_spec(spec); spec.loader.exec_module(mod)
+recipe = copy.deepcopy(mod.CI_FIX_CLEAN_REPRO_RECIPE)
+task = {
+    "task_type": "ci_fix",
+    "final_checkpoint": {
+        "type": "ci_fix_clean_repro",
+        "required": True,
+        "evidence_field": "ci_fix_clean_repro_evidence",
+        "recipe": recipe,
+    },
+}
+evidence = {
+    "recipe": copy.deepcopy(recipe),
+    "e2_harness_command": "bash scripts/ci_clean_repro.sh",
+    "pre_fix_receipt": {"path": "pre.json", "status": "FAIL", "source_commit": "a" * 40,
+                        "fixed_target": "tests/unit/x.bats#10", "started_at": "2026-07-20T01:00:00+09:00",
+                        "failures": 1, "skips": 0},
+    "post_fix_receipt": {"path": "post.json", "status": "PASS", "source_commit": "a" * 40,
+                         "fixed_target": "tests/unit/x.bats#10", "started_at": "2026-07-20T01:10:00+09:00",
+                         "failures": 0, "skips": 0},
+    "push_started_at": "2026-07-20T01:20:00+09:00",
+}
+assert mod._ci_fix_final_checkpoint_issues(
+    task, {"status": "completed", "ci_fix_clean_repro_evidence": evidence}
+) == []
+drifted = copy.deepcopy(evidence)
+drifted["recipe"]["receipt_contract"]["post_fix"] = "status=FAIL"
+errors = mod._ci_fix_final_checkpoint_issues(
+    task, {"status": "completed", "ci_fix_clean_repro_evidence": drifted}
+)
+assert any("recipe does not match" in error for error in errors), errors
+print("generated recipe match PASS; drift BLOCK; FP0")
+PY
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"generated recipe match PASS; drift BLOCK; FP0"* ]]
+}
+
+# test_necessity: the clean-repro terminal contract must distinguish generation
+# blanks, a normal incomplete terminal, receipt identity mismatch, and
+# push-first timestamps while accepting the valid pre-push pair (FP0/FN0).
+@test "ci_fix clean repro four-boundary matrix is fail-closed without CI wait" {
+    run python3 - "$MAIN" <<'PY'
+import copy, importlib.util, sys
+spec = importlib.util.spec_from_file_location("gate_report_format_main", sys.argv[1])
+mod = importlib.util.module_from_spec(spec); spec.loader.exec_module(mod)
+valid = {
+    "e2_harness_command": "bash scripts/ci_clean_repro.sh",
+    "pre_fix_receipt": {"path": "pre.json", "status": "FAIL", "source_commit": "a" * 40,
+                        "fixed_target": "tests/unit/x.bats#10", "started_at": "2026-07-20T01:00:00+09:00",
+                        "failures": 1, "skips": 0},
+    "post_fix_receipt": {"path": "post.json", "status": "PASS", "source_commit": "a" * 40,
+                         "fixed_target": "tests/unit/x.bats#10", "started_at": "2026-07-20T01:10:00+09:00",
+                         "failures": 0, "skips": 0},
+    "push_started_at": "2026-07-20T01:20:00+09:00",
+}
+cases = {
+    "generation": {},
+    "normal_terminal": {"e2_harness_command": "bash scripts/ci_clean_repro.sh"},
+    "receipt_mismatch": copy.deepcopy(valid),
+    "time_reversal": copy.deepcopy(valid),
+}
+cases["receipt_mismatch"]["post_fix_receipt"]["source_commit"] = "b" * 40
+cases["time_reversal"]["post_fix_receipt"]["started_at"] = "2026-07-20T01:21:00+09:00"
+for name, evidence in cases.items():
+    errors = mod.ci_fix_clean_repro_evidence_errors(evidence)
+    assert errors, (name, errors)
+    if name in {"generation", "normal_terminal"}:
+        assert any("no push or CI wait is required" in error for error in errors), (name, errors)
+assert mod.ci_fix_clean_repro_evidence_errors(valid) == []
+print("fixtures=4 invalid_detected=4 valid_detected=1 FP=0 FN=0 FAIL=0 SKIP=0")
+PY
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"fixtures=4 invalid_detected=4 valid_detected=1 FP=0 FN=0 FAIL=0 SKIP=0"* ]]
+}
+
 @test "positive structured mismatch with zero-tolerance yes is blocked" {
     run_detector 1 "許容誤差はゼロ"
     [ "$status" -eq 0 ]

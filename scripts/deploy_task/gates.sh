@@ -1978,14 +1978,28 @@ inject_ci_fix_clean_repro_contract() {
     local task_file="$1" task_type
     [ -f "$task_file" ] || return 0
     task_type=$(FIELD_GET_NO_LOG=1 field_get "$task_file" "task_type" "" 2>/dev/null || true)
-    [ "${task_type,,}" = "ci_fix" ] || return 0
+    case "${task_type,,}" in
+        ci_fix|hotfix) ;;
+        *) return 0 ;;
+    esac
 
-    python3 - "$task_file" <<'PY' || return 1
+    PYTHONPATH="$SCRIPT_DIR${PYTHONPATH:+:$PYTHONPATH}" python3 - "$task_file" <<'PY' || return 1
 import json, os, re, sys, tempfile, yaml
 path = sys.argv[1]
 raw = open(path, encoding='utf-8').read()
 d = yaml.safe_load(raw) or {}
 t = d.get('task', d)
+task_type = str(t.get('task_type') or '').strip().lower()
+if task_type != 'ci_fix':
+    # This task family may be published as a hotfix while its AC still
+    # explicitly asks for the ci_fix clean-repro proof.  Detect that authored
+    # contract instead of relying on a mutable label alone; unrelated hotfixes
+    # remain unchanged.
+    task_text = json.dumps(t, ensure_ascii=False, sort_keys=True)
+    if task_type != 'hotfix' or not re.search(
+        r'clean[- _]?repro|push前.*FAIL.*PASS|ci[ _-]?fix', task_text, re.IGNORECASE
+    ):
+        raise SystemExit(0)
 checkpoint = {
     'type': 'ci_fix_clean_repro',
     'required': True,
@@ -1993,6 +2007,11 @@ checkpoint = {
     'validator': 'deploy_task_ci_fix_clean_repro_evidence_validate',
     'phase': 'terminal_report_gate',
 }
+# The report gate owns the canonical structured recipe.  Import it here
+# so every publication path freezes the same worker-facing instructions in
+# the task contract instead of maintaining a second shell copy.
+from scripts.gates.gate_report_format_main import CI_FIX_CLEAN_REPRO_RECIPE
+checkpoint['recipe'] = CI_FIX_CLEAN_REPRO_RECIPE
 
 def replace_task_field(text, key, value):
     encoded = json.dumps(value, ensure_ascii=False, separators=(',', ':'))

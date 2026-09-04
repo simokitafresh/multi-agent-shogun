@@ -55,6 +55,18 @@ deploy_task_publish_report_metadata() {
     mv "$tmp" "$task_file"
 }
 
+# Return the canonical worker-facing recipe as JSON.  gates.sh is sourced
+# after this module, but calls this helper only after all modules are loaded.
+# Keeping the data in gate_report_format_main.py makes task injection and
+# report generation consume one source of truth.
+deploy_task_ci_fix_clean_repro_recipe_json() {
+    PYTHONPATH="$SCRIPT_DIR${PYTHONPATH:+:$PYTHONPATH}" python3 - <<'PY'
+import json
+from scripts.gates.gate_report_format_main import CI_FIX_CLEAN_REPRO_RECIPE
+print(json.dumps(CI_FIX_CLEAN_REPRO_RECIPE, ensure_ascii=False, separators=(",", ":")))
+PY
+}
+
 # A report template may be reused only while both its generator source and the
 # task-generation query are unchanged.  The marker is deliberately separate
 # from report YAML: worker edits remain byte-for-byte untouched and the report
@@ -882,8 +894,11 @@ PY
     local _level5_report_contract_json="$_plan_level5_report_contract_json"
     local _reflux_commit_contract_json="$_plan_reflux_commit_contract_json"
     if [ "$_plan_final_checkpoint_required" = true ]; then
-        _final_checkpoint_block=$(cat <<'EOF'
+        local _ci_fix_recipe_json=""
+        _ci_fix_recipe_json=$(deploy_task_ci_fix_clean_repro_recipe_json) || return 1
+        _final_checkpoint_block=$(cat <<EOF
 ci_fix_clean_repro_evidence:
+  recipe: ${_ci_fix_recipe_json}
   e2_harness_command: ""
   pre_fix_receipt:
     path: ""

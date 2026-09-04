@@ -31,6 +31,46 @@ from cross_repo_commit_contract import (
 RECON_TASK_TYPES = frozenset(("recon", "scout", "recon2"))
 
 
+# This is the worker-facing Level 5 recipe.  Keep it as structured data so
+# deploy_task can inject the exact same contract into both the task and the
+# report template; prose in a validator error is too late for a worker to
+# reliably discover the required local sequence.
+CI_FIX_CLEAN_REPRO_RECIPE = {
+    "recipe_id": "ci_fix_clean_repro_push_before_v1",
+    "command_template": (
+        'bash scripts/ci_clean_repro.sh --receipt "$PWD/logs/ci-pre.json" '
+        '-- bash scripts/run_tests.sh task queue/tasks/<ninja>.yaml'
+    ),
+    "steps": [
+        "Replace <ninja> with the assigned worker name and run the command on the failing code; this writes the pre-fix receipt.",
+        "Fix the target, then run the same command with --receipt \"$PWD/logs/ci-post.json\".",
+        "Copy path/status/source_commit/fixed_target/started_at/failures/skips from both receipt JSON files.",
+        "Set source_commit to the same 40-hex git rev-parse HEAD and fixed_target to the same failing test id in both receipts.",
+        "Record push_started_at only after both local runs finish; do not wait for post-push CI.",
+    ],
+    "receipt_contract": {
+        "pre_fix": "status=FAIL, failures>=1, skips=0",
+        "post_fix": "status=PASS, failures=0, skips=0",
+        "identity": "pre_fix.source_commit == post_fix.source_commit and pre_fix.fixed_target == post_fix.fixed_target",
+        "ordering": "pre_fix.started_at < push_started_at and post_fix.started_at < push_started_at",
+    },
+}
+
+
+# Keep terminal failures actionable for legacy reports that do not yet carry
+# the Level 5 recipe.  New task/report generations receive the structured
+# recipe above before a worker starts.
+CI_FIX_CLEAN_REPRO_HOWTO = (
+    "no push or CI wait is required for this checkpoint. Generate both "
+    "receipts locally BEFORE `git push`: (1) run the recipe's command_template "
+    "with --receipt \"$PWD/logs/ci-pre.json\" on the failing code; (2) after "
+    "fixing, run the same harness with --receipt \"$PWD/logs/ci-post.json\"; "
+    "(3) copy path/status/failures/skips from each receipt, use the same "
+    "source_commit and fixed_target in both, and record push_started_at only "
+    "after both local receipts."
+)
+
+
 def _task_type(report=None, task=None):
     """Resolve the effective task type from report/task contract data."""
     # The live task is authoritative when available; report metadata is the
@@ -1048,7 +1088,7 @@ def ci_fix_clean_repro_evidence_errors(evidence):
         errors.append("ci_fix clean repro evidence " + message)
 
     if not isinstance(evidence, dict):
-        add("evidence mapping missing")
+        add("evidence mapping missing — " + CI_FIX_CLEAN_REPRO_HOWTO)
         return errors
 
     if str(evidence.get("outcome") or "").strip().lower() == "not_reproducible":
@@ -1100,11 +1140,11 @@ def ci_fix_clean_repro_evidence_errors(evidence):
         return errors
 
     if not str(evidence.get("e2_harness_command") or "").strip():
-        add("harness command missing")
+        add("harness command missing — " + CI_FIX_CLEAN_REPRO_HOWTO)
     pre = evidence.get("pre_fix_receipt")
     post = evidence.get("post_fix_receipt")
     if not isinstance(pre, dict) or not isinstance(post, dict):
-        add("receipt mapping missing")
+        add("receipt mapping missing — " + CI_FIX_CLEAN_REPRO_HOWTO)
         return errors
     required = ("path", "status", "source_commit", "fixed_target", "started_at", "failures", "skips")
     for name, receipt in (("pre", pre), ("post", post)):
@@ -1142,7 +1182,7 @@ def ci_fix_clean_repro_evidence_errors(evidence):
             if started.tzinfo is None or push.tzinfo is None:
                 add("timestamps require timezone")
             elif started >= push:
-                add(name + " harness must start before push")
+                add(name + " harness must start before push (this checkpoint proves the fix locally pre-push; it is never satisfied by waiting for CI to go green after push)")
     return errors
 
 
@@ -1158,7 +1198,13 @@ def _ci_fix_final_checkpoint_issues(task, report):
     if str(checkpoint.get("type") or "").strip() != "ci_fix_clean_repro":
         return ["final_checkpoint: unsupported type"]
     field = str(checkpoint.get("evidence_field") or "ci_fix_clean_repro_evidence").strip()
-    return ci_fix_clean_repro_evidence_errors(report.get(field))
+    errors = ci_fix_clean_repro_evidence_errors(report.get(field))
+    recipe = checkpoint.get("recipe")
+    evidence = report.get(field)
+    if isinstance(recipe, dict):
+        if not isinstance(evidence, dict) or evidence.get("recipe") != recipe:
+            errors.append("ci_fix clean repro evidence recipe does not match the generated task recipe")
+    return errors
 
 
 def main(report_data=None) -> int:

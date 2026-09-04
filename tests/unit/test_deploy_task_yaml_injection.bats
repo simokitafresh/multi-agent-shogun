@@ -275,24 +275,49 @@ PY
     done
     [ "$failed" -eq 0 ]
     inject_ci_fix_clean_repro_contract "$tmpdir/ci_fix.yaml"
+    printf '%s\n' 'task:' '  task_type: hotfix' '  acceptance_criteria:' '    - id: AC1' '      description: push前FAIL→PASS clean-repro proof' > "$tmpdir/hotfix_clean.yaml"
+    inject_ci_fix_clean_repro_contract "$tmpdir/hotfix_clean.yaml"
 
     python3 - "$tmpdir" <<'PY'
-import pathlib, sys, yaml
+import os, pathlib, sys, yaml
 root = pathlib.Path(sys.argv[1])
 ci = yaml.safe_load((root/'ci_fix.yaml').read_text())['task']
-assert ci['final_checkpoint'] == {
-    'type': 'ci_fix_clean_repro',
-    'required': True,
-    'evidence_field': 'ci_fix_clean_repro_evidence',
-    'validator': 'deploy_task_ci_fix_clean_repro_evidence_validate',
-    'phase': 'terminal_report_gate',
+hotfix = yaml.safe_load((root/'hotfix_clean.yaml').read_text())['task']
+assert ci['final_checkpoint']['type'] == 'ci_fix_clean_repro'
+assert ci['final_checkpoint']['required'] is True
+assert ci['final_checkpoint']['evidence_field'] == 'ci_fix_clean_repro_evidence'
+assert ci['final_checkpoint']['validator'] == 'deploy_task_ci_fix_clean_repro_evidence_validate'
+assert ci['final_checkpoint']['phase'] == 'terminal_report_gate'
+recipe = ci['final_checkpoint']['recipe']
+assert recipe['recipe_id'] == 'ci_fix_clean_repro_push_before_v1'
+assert 'scripts/ci_clean_repro.sh' in recipe['command_template']
+assert recipe['receipt_contract']['pre_fix'] == 'status=FAIL, failures>=1, skips=0'
+assert recipe['receipt_contract']['post_fix'] == 'status=PASS, failures=0, skips=0'
+assert len(recipe['steps']) == 5
+assert set(ci['final_checkpoint']) == {
+    'type', 'required', 'evidence_field', 'validator', 'phase',
+    'recipe',
 }
 assert 'ci_fix_clean_repro_evidence' not in ci
 assert [x['id'] for x in ci['acceptance_criteria']] == ['AC1']
+assert hotfix['final_checkpoint']['recipe'] == recipe
+assert hotfix['final_checkpoint']['type'] == 'ci_fix_clean_repro'
 for kind in ('impl', 'recon', 'training'):
     task = yaml.safe_load((root/f'{kind}.yaml').read_text())['task']
     assert 'ci_fix_clean_repro_evidence' not in task
     assert [x['id'] for x in task['acceptance_criteria']] == ['AC1']
+
+# The monolith contains compatibility/static extraction copies.  The runtime
+# sources are the split modules loaded by main.sh, so prove the final active
+# definitions and their source order rather than counting dead copies.
+repo = pathlib.Path(os.environ['PROJECT_ROOT'])
+report_source = (repo/'scripts/deploy_task/report.sh').read_text()
+gates_source = (repo/'scripts/deploy_task/gates.sh').read_text()
+main_source = (repo/'scripts/deploy_task/main.sh').read_text()
+assert report_source.count('generate_report_template() {') == 1
+assert gates_source.count('inject_ci_fix_clean_repro_contract() {') == 1
+assert main_source.index('source "$_dt_module_root/report.sh"') < main_source.index('source "$_dt_module_root/gates.sh"')
+print('active_module_defs report=1 gates=1 order=report_before_gates dead_monolith_ignored=1')
 PY
 
     python3 - "$PROJECT_ROOT/scripts/deploy_task.sh" <<'PY'
