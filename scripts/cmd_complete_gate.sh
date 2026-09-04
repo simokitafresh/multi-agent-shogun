@@ -117,11 +117,11 @@ if task_file:
     except (OSError, yaml.YAMLError):
         raise SystemExit(1)
 sys.path.insert(0, str(root / "scripts" / "lib"))
-from report_commit_identity import permits_legacy_recon_identity
+from report_commit_identity import legacy_recon_task_state
 
-if permits_legacy_recon_identity(report, root, task):
-    evidence = report.get("no_code_change_evidence") or {}
-    print(str(evidence.get("before_tree") or "").strip().lower())
+valid, _reason, tree = legacy_recon_task_state(report, task)
+if valid:
+    print(tree)
     raise SystemExit(0)
 raise SystemExit(1)
 PY

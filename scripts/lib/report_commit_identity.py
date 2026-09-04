@@ -80,23 +80,18 @@ def _tree_evidence_valid(report: dict[str, Any]) -> bool:
     return bool(FULL_HASH_RE.fullmatch(before)) and before == after
 
 
-def permits_legacy_recon_identity(
-    report: dict[str, Any], root: pathlib.Path, task: dict[str, Any] | None = None
-) -> bool:
-    """Allow the pre-typed N/A form only with equivalent no-code proof.
-
-    Older recon reports used ``files_modified: N/A`` and an empty commit hash.
-    The marker alone is not an exemption: the effective task must remain a
-    recon task, both task/report contracts must reject a commit when present,
-    the report must affirm no commit, and before/after tree evidence must be
-    identical.  The caller still resolves the evidence tree in the owning
-    repository before accepting the identity.
-    """
-    if not isinstance(report, dict) or not _legacy_na_files(report) or not _tree_evidence_valid(report):
+def _legacy_recon_shape(report: dict[str, Any], task: dict[str, Any] | None = None) -> bool:
+    if not isinstance(report, dict) or not _legacy_na_files(report):
         return False
     report_type = _task_type(report)
-    task_node = task.get("task", task) if isinstance(task, dict) else None
+    task_node = _task_node(task)
     task_type = _task_type(task_node)
+    if isinstance(task_node, dict):
+        for key in ("task_id", "parent_cmd"):
+            report_value = str(report.get(key) or "").strip()
+            task_value = str(task_node.get(key) or "").strip()
+            if report_value and task_value and report_value != task_value:
+                return False
     if task_type:
         if task_type not in RECON_TASK_TYPES or report_type not in RECON_TASK_TYPES:
             return False
@@ -114,6 +109,139 @@ def permits_legacy_recon_identity(
         if isinstance(contract, dict) and contract.get("required") is True:
             return False
     return explicit_no_commit(report)
+
+
+def permits_legacy_recon_identity(
+    report: dict[str, Any], root: pathlib.Path, task: dict[str, Any] | None = None
+) -> bool:
+    """Allow the pre-typed N/A form only with equivalent no-code proof.
+
+    Older recon reports used ``files_modified: N/A`` and an empty commit hash.
+    The marker alone is not an exemption: the effective task must remain a
+    recon task, both task/report contracts must reject a commit when present,
+    the report must affirm no commit, and before/after tree evidence must be
+    identical.  The caller still resolves the evidence tree in the owning
+    repository before accepting the identity.
+    """
+    return _legacy_recon_shape(report, task) and _tree_evidence_valid(report)
+
+
+def _task_node(task: dict[str, Any] | None) -> dict[str, Any] | None:
+    if not isinstance(task, dict):
+        return None
+    node = task.get("task", task)
+    return node if isinstance(node, dict) else None
+
+
+def _legacy_task_paths(task_node: dict[str, Any]) -> list[str]:
+    """Resolve the read-only source scope used for a legacy recon proof."""
+    raw = task_node.get("task_worktree_source_paths")
+    if isinstance(raw, str):
+        try:
+            decoded = json.loads(raw)
+        except (TypeError, ValueError):
+            decoded = None
+        raw = decoded if decoded is not None else [raw]
+    if isinstance(raw, list) and raw:
+        values = raw
+    else:
+        raw = task_node.get("target_path")
+        values = raw if isinstance(raw, list) else [raw]
+    paths = []
+    for value in values:
+        text = str(value or "").strip()
+        if len(text) >= 2 and text[0] == text[-1] and text[0] in "'\"":
+            text = text[1:-1].strip()
+        if text:
+            paths.append(text)
+    return paths
+
+
+def legacy_recon_task_state(
+    report: dict[str, Any], task: dict[str, Any] | None
+) -> tuple[bool, str, str]:
+    """Validate a legacy N/A report against the task's immutable source scope.
+
+    The old report format has no typed tree evidence.  The task's fixed
+    independence base and live linked worktree are the independent witness:
+    the declared source scope must be unchanged in both the committed HEAD
+    and the current worktree.  Operational queue changes outside that scope
+    are intentionally irrelevant to a read-only recon.
+    """
+    task_node = _task_node(task)
+    if not _legacy_recon_shape(report, task):
+        return False, "identity mismatch", ""
+    if task_node is None:
+        return False, "task missing", ""
+
+    base = str(task_node.get("independence_base_commit") or "").strip().lower()
+    if not FULL_HASH_RE.fullmatch(base):
+        return False, "fixed base missing or invalid", ""
+    worktree_raw = str(task_node.get("task_worktree_path") or "").strip()
+    if not worktree_raw:
+        return False, "task worktree missing", ""
+    worktree = pathlib.Path(worktree_raw).resolve()
+    try:
+        git_root = pathlib.Path(
+            subprocess.run(
+                ["git", "-C", str(worktree), "rev-parse", "--show-toplevel"],
+                check=True,
+                capture_output=True,
+                text=True,
+                timeout=5,
+            ).stdout.strip()
+        ).resolve()
+    except (OSError, subprocess.CalledProcessError, subprocess.TimeoutExpired):
+        return False, "task worktree is not a git worktree", ""
+    if not git_root.is_dir():
+        return False, "task worktree is not a git worktree", ""
+
+    def git(*args: str) -> subprocess.CompletedProcess[str]:
+        return subprocess.run(
+            ["git", "-C", str(git_root), *args],
+            check=False,
+            capture_output=True,
+            text=True,
+            timeout=5,
+        )
+
+    if git("cat-file", "-e", base + "^{commit}").returncode != 0:
+        return False, "fixed base is unresolvable", ""
+    head_result = git("rev-parse", "--verify", "HEAD^{commit}")
+    if head_result.returncode != 0:
+        return False, "task worktree HEAD is unresolvable", ""
+    head = head_result.stdout.strip().lower()
+
+    raw_paths = _legacy_task_paths(task_node)
+    if not raw_paths:
+        return False, "task source scope missing", ""
+    paths: list[str] = []
+    for raw_path in raw_paths:
+        path = pathlib.Path(raw_path)
+        resolved = path.resolve() if path.is_absolute() else (git_root / path).resolve()
+        try:
+            relative = resolved.relative_to(git_root)
+        except ValueError:
+            return False, "task source scope escapes worktree", ""
+        if not relative.parts:
+            return False, "task source scope is worktree root", ""
+        paths.append(relative.as_posix())
+
+    path_args = ["--", *paths]
+    if git("diff", "--quiet", base, head, *path_args).returncode != 0:
+        return False, "source tree drift from fixed base", ""
+    if git("diff", "--quiet", base, *path_args).returncode != 0:
+        return False, "current worktree source drift", ""
+    status = git("status", "--porcelain", "--untracked-files=all", *path_args)
+    if status.returncode != 0:
+        return False, "current worktree status unavailable", ""
+    if status.stdout.strip():
+        return False, "implementation or source drift present", ""
+
+    base_tree = git("rev-parse", base + "^{tree}")
+    if base_tree.returncode != 0:
+        return False, "fixed base tree is unresolvable", ""
+    return True, "", base_tree.stdout.strip().lower()
 
 
 def _ignored_project_path(rel: pathlib.Path, root: pathlib.Path) -> bool:

@@ -7840,13 +7840,101 @@ run_report_blob_parity_state() {
     local report="$BATS_TEST_TMPDIR/legacy-na-recon-report.yaml"
     local task="$BATS_TEST_TMPDIR/legacy-na-recon-task.yaml"
     make_ci_push_repo "$repo"
-    local tree
+    local tree base
     tree="$(git -C "$repo" rev-parse HEAD^{tree})"
+    base="$(git -C "$repo" rev-parse HEAD)"
     printf 'verdict: PASS\ntask_type: recon2\ncommit_hash: ""\nfiles_modified: N/A\nbinary_checks:\n  commit:\n    - {check: "commit N/A証跡: readonly recon", result: yes}\nno_code_change_evidence: {before_tree: %s, after_tree: %s, tree_unchanged: true}\n' "$tree" "$tree" > "$report"
-    printf 'task:\n  task_id: legacy_na_fixture\n  parent_cmd: legacy_na_parent\n  task_type: recon2\n' > "$task"
+    printf 'task:\n  task_id: legacy_na_fixture\n  parent_cmd: legacy_na_parent\n  task_type: recon2\n  independence_base_commit: %s\n  task_worktree_path: %s\n  task_worktree_source_paths: '[\''"state"'\'']\n' "$base" "$repo" > "$task"
     run_report_main_ancestry_state "$repo" "$report" "$task"
     [ "$status" -eq 0 ]
     [ "$output" = "SKIP: UNPUSHED: legacy no-code recon" ]
+}
+
+# test_necessity: the real pre-v1 report may lack no_code_change_evidence;
+# task-owned base/worktree/source proof is the migration witness instead.
+# regression_justification: v1 still classified this completed PASS report as
+# invalid and kept the actual recon command blocked after the first CLEAR.
+@test "CI push detection canonicalizes legacy N/A from task base without report evidence" {
+    local repo="$BATS_TEST_TMPDIR/legacy-na-task-proof"
+    local worktree="$BATS_TEST_TMPDIR/legacy-na-task-proof-worktree"
+    local report="$BATS_TEST_TMPDIR/legacy-na-task-proof-report.yaml"
+    local task="$BATS_TEST_TMPDIR/legacy-na-task-proof-task.yaml"
+    make_ci_push_repo "$repo"
+    local base
+    base="$(git -C "$repo" rev-parse HEAD)"
+    git -C "$repo" worktree add -q --detach "$worktree" HEAD
+    printf 'task_id: legacy_task_proof\nparent_cmd: legacy_task_parent\ntask_type: recon2\ncommit_hash: ""\nfiles_modified: N/A\nbinary_checks:\n  commit:\n    - {check: "commit N/A証跡: readonly recon", result: yes}\n' > "$report"
+    printf 'task:\n  task_id: legacy_task_proof\n  parent_cmd: legacy_task_parent\n  task_type: recon2\n  independence_base_commit: %s\n  task_worktree_path: %s\n  task_worktree_source_paths: '[\''"state"'\'']\n  commit_contract: {required: false, task_type: recon2}\n' "$base" "$worktree" > "$task"
+    run_report_main_ancestry_state "$repo" "$report" "$task"
+    [ "$status" -eq 0 ]
+    [ "$output" = "SKIP: UNPUSHED: legacy no-code recon" ]
+}
+
+# test_necessity: a missing fixed base cannot establish legacy no-code safety.
+@test "CI push detection blocks legacy N/A when task base is missing" {
+    local repo="$BATS_TEST_TMPDIR/legacy-na-missing-base"
+    local report="$BATS_TEST_TMPDIR/legacy-na-missing-base-report.yaml"
+    local task="$BATS_TEST_TMPDIR/legacy-na-missing-base-task.yaml"
+    make_ci_push_repo "$repo"
+    printf 'task_type: recon2\ncommit_hash: ""\nfiles_modified: N/A\nbinary_checks:\n  commit:\n    - {check: "commit N/A証跡: readonly recon", result: yes}\n' > "$report"
+    printf 'task:\n  task_type: recon2\n  independence_base_commit: %040d\n  task_worktree_path: %s\n  task_worktree_source_paths: '[\''"state"'\'']\n  commit_contract: {required: false, task_type: recon2}\n' 9 "$repo" > "$task"
+    run_report_main_ancestry_state "$repo" "$report" "$task"
+    [ "$status" -eq 1 ]
+    [[ "$output" == *"BLOCK: report commit main ancestry: BLOCK: report commit invalid or unresolvable"* ]]
+}
+
+# test_necessity: a source change between the fixed base and worktree HEAD is
+# implementation, not a readonly recon, and must remain fail-closed.
+@test "CI push detection blocks legacy N/A after task source tree drift" {
+    local repo="$BATS_TEST_TMPDIR/legacy-na-task-tree-drift"
+    local worktree="$BATS_TEST_TMPDIR/legacy-na-task-tree-drift-worktree"
+    local report="$BATS_TEST_TMPDIR/legacy-na-task-tree-drift-report.yaml"
+    local task="$BATS_TEST_TMPDIR/legacy-na-task-tree-drift-task.yaml"
+    make_ci_push_repo "$repo"
+    local base
+    base="$(git -C "$repo" rev-parse HEAD)"
+    git -C "$repo" worktree add -q --detach "$worktree" HEAD
+    printf 'implementation\n' >> "$worktree/state"
+    git -C "$worktree" add state
+    git -C "$worktree" commit -qm drift
+    printf 'task_type: recon2\ncommit_hash: ""\nfiles_modified: N/A\nbinary_checks:\n  commit:\n    - {check: "commit N/A証跡: readonly recon", result: yes}\n' > "$report"
+    printf 'task:\n  task_type: recon2\n  independence_base_commit: %s\n  task_worktree_path: %s\n  task_worktree_source_paths: '[\''"state"'\'']\n  commit_contract: {required: false, task_type: recon2}\n' "$base" "$worktree" > "$task"
+    run_report_main_ancestry_state "$repo" "$report" "$task"
+    [ "$status" -eq 1 ]
+    [[ "$output" == *"BLOCK: report commit main ancestry: BLOCK: report commit invalid or unresolvable"* ]]
+}
+
+# test_necessity: source additions not represented by HEAD commits are also
+# implementation and may not be hidden behind the legacy marker.
+@test "CI push detection blocks legacy N/A with an untracked source file" {
+    local repo="$BATS_TEST_TMPDIR/legacy-na-untracked-source"
+    local report="$BATS_TEST_TMPDIR/legacy-na-untracked-source-report.yaml"
+    local task="$BATS_TEST_TMPDIR/legacy-na-untracked-source-task.yaml"
+    make_ci_push_repo "$repo"
+    local base
+    base="$(git -C "$repo" rev-parse HEAD)"
+    printf 'implementation\n' > "$repo/source.py"
+    printf 'task_type: recon2\ncommit_hash: ""\nfiles_modified: N/A\nbinary_checks:\n  commit:\n    - {check: "commit N/A証跡: readonly recon", result: yes}\n' > "$report"
+    printf 'task:\n  task_type: recon2\n  independence_base_commit: %s\n  task_worktree_path: %s\n  task_worktree_source_paths: '[\''"source.py"'\'']\n  commit_contract: {required: false, task_type: recon2}\n' "$base" "$repo" > "$task"
+    run_report_main_ancestry_state "$repo" "$report" "$task"
+    [ "$status" -eq 1 ]
+    [[ "$output" == *"BLOCK: report commit main ancestry: BLOCK: report commit invalid or unresolvable"* ]]
+}
+
+# test_necessity: report/task identity is part of the no-code contract; a
+# valid recon marker from another task must not be reused by this task.
+@test "CI push detection blocks legacy N/A when report identity mismatches task" {
+    local repo="$BATS_TEST_TMPDIR/legacy-na-identity-mismatch"
+    local report="$BATS_TEST_TMPDIR/legacy-na-identity-mismatch-report.yaml"
+    local task="$BATS_TEST_TMPDIR/legacy-na-identity-mismatch-task.yaml"
+    make_ci_push_repo "$repo"
+    local base
+    base="$(git -C "$repo" rev-parse HEAD)"
+    printf 'task_id: report_task\nparent_cmd: report_parent\ntask_type: recon2\ncommit_hash: ""\nfiles_modified: N/A\nbinary_checks:\n  commit:\n    - {check: "commit N/A証跡: readonly recon", result: yes}\n' > "$report"
+    printf 'task:\n  task_id: different_task\n  parent_cmd: report_parent\n  task_type: recon2\n  independence_base_commit: %s\n  task_worktree_path: %s\n  task_worktree_source_paths: '[\''"state"'\'']\n  commit_contract: {required: false, task_type: recon2}\n' "$base" "$repo" > "$task"
+    run_report_main_ancestry_state "$repo" "$report" "$task"
+    [ "$status" -eq 1 ]
+    [[ "$output" == *"BLOCK: report commit main ancestry: BLOCK: report commit invalid or unresolvable"* ]]
 }
 
 # test_necessity: N/A is not a no-code identity when the proof is absent.
