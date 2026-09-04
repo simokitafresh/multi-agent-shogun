@@ -16908,3 +16908,17 @@ insights:
   source: "semantic_index_update"
   fix_known: false
   status: pending
+- id: INS-20260904-090633647-5551
+  ts: "2026-09-04T09:06:33+09:00"
+  insight: "[[T237 T236 T226b T230 T226の進捗と完了までの見込みをひょけ意識で報告せよ]] semantic_stress_test candidate_aliases: NO_MATCH source=lord query=T237 / T236 / T226b / T230 / T226の進捗と完了までの見込みをひょけ意識で報告せよ"
+  priority: "low"
+  source: "semantic_stress_test"
+  fix_known: false
+  status: pending
+- id: INS-20260904-090634501-ba2f
+  ts: "2026-09-04T09:06:34+09:00"
+  insight: "[[軍師をピン止めclaude opus 4 6 1Mにrespwanせよ]] semantic_stress_test candidate_aliases: NO_MATCH source=lord query=軍師をピン止めclaude opus 4.6 1Mにrespwanせよ"
+  priority: "low"
+  source: "semantic_stress_test"
+  fix_known: false
+  status: pending
