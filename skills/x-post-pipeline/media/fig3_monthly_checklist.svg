@@ -1,0 +1,48 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="675" viewBox="0 0 1200 675">
+  <defs>
+    <style>
+      .bg { fill: #f8fafc; }
+      .title { font-family: "IPAexGothic", -apple-system, "Segoe UI", "Helvetica Neue", Arial, "Hiragino Kaku Gothic ProN", sans-serif; font-size: 34px; font-weight: 700; fill: #0f172a; }
+      .subtitle { font-family: "IPAexGothic", -apple-system, "Segoe UI", "Helvetica Neue", Arial, "Hiragino Kaku Gothic ProN", sans-serif; font-size: 18px; fill: #64748b; }
+      .card { fill: #ffffff; stroke: #e2e8f0; stroke-width: 1.5; }
+      .step-label { font-family: "IPAexGothic", -apple-system, "Segoe UI", "Helvetica Neue", Arial, "Hiragino Kaku Gothic ProN", sans-serif; font-size: 15px; font-weight: 700; letter-spacing: 1px; }
+      .step-heading { font-family: "IPAexGothic", -apple-system, "Segoe UI", "Helvetica Neue", Arial, "Hiragino Kaku Gothic ProN", sans-serif; font-size: 26px; font-weight: 700; fill: #0f172a; }
+      .step-body { font-family: "IPAexGothic", -apple-system, "Segoe UI", "Helvetica Neue", Arial, "Hiragino Kaku Gothic ProN", sans-serif; font-size: 19px; fill: #334155; }
+      .badge-see { fill: #2563eb; }
+      .badge-decide { fill: #0f766e; }
+      .badge-skip { fill: #b91c1c; }
+      .num { font-family: "IPAexGothic", -apple-system, "Segoe UI", "Helvetica Neue", Arial, sans-serif; font-size: 22px; font-weight: 700; fill: #ffffff; }
+    </style>
+  </defs>
+
+  <rect class="bg" x="0" y="0" width="1200" height="675"/>
+
+  <text class="title" x="60" y="80">月次シグナル確認の3ステップ</text>
+  <text class="subtitle" x="60" y="112">月に一度、これだけ確認する</text>
+
+  <!-- Step 1: 見る指標 -->
+  <rect class="card" x="60" y="150" width="1080" height="140" rx="14"/>
+  <circle class="badge-see" cx="110" cy="220" r="26"/>
+  <text class="num" x="110" y="228" text-anchor="middle">1</text>
+  <text class="step-label" x="160" y="192" fill="#2563eb">見る指標</text>
+  <text class="step-heading" x="160" y="228">候補の直近リターン</text>
+  <text class="step-body" x="160" y="260">各候補の直近の値動きを確認する</text>
+
+  <!-- Step 2: 決めること -->
+  <rect class="card" x="60" y="310" width="1080" height="140" rx="14"/>
+  <circle class="badge-decide" cx="110" cy="380" r="26"/>
+  <text class="num" x="110" y="388" text-anchor="middle">2</text>
+  <text class="step-label" x="160" y="352" fill="#0f766e">決めること</text>
+  <text class="step-heading" x="160" y="388">一番強い候補か、退避か</text>
+  <text class="step-body" x="160" y="420">最も強い候補を選ぶか、退避するかを判断する</text>
+
+  <!-- Step 3: 触らないこと -->
+  <rect class="card" x="60" y="470" width="1080" height="140" rx="14"/>
+  <circle class="badge-skip" cx="110" cy="540" r="26"/>
+  <text class="num" x="110" y="548" text-anchor="middle">3</text>
+  <text class="step-label" x="160" y="512" fill="#b91c1c">触らないこと</text>
+  <text class="step-heading" x="160" y="548">日々のニュース・月中の売買</text>
+  <text class="step-body" x="160" y="580">月1回の確認以外では動かない</text>
+
+  <text class="subtitle" x="60" y="645">月1回の確認だけで完結する運用</text>
+</svg>
