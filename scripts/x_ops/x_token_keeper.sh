@@ -22,8 +22,8 @@ if [[ "${1:-}" == "install" ]]; then
 fi
 
 [[ -f "$ENV_FILE" ]] || { log "env missing: $ENV_FILE"; exit 2; }
-obtained="$(grep -E '^X_TOKEN_OBTAINED_AT=' "$ENV_FILE" | head -1 | cut -d= -f2- | tr -d "'\"")"
-obtained_epoch="$(date -d "$obtained" +%s 2>/dev/null || echo 0)"
+obtained="$(grep -E '^X_TOKEN_OBTAINED_AT=' "$ENV_FILE" | tail -1 | cut -d= -f2- | tr -d "'\"")"
+if [[ "$obtained" =~ ^[0-9]{9,}$ ]]; then obtained_epoch="$obtained"; else obtained_epoch="$(date -d "$obtained" +%s 2>/dev/null || echo 0)"; fi
 age=$(( $(date +%s) - obtained_epoch ))
 fail_file="$STATE_DIR/refresh_failures"
 fails="$(cat "$fail_file" 2>/dev/null || echo 0)"

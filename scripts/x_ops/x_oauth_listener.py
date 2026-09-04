@@ -47,11 +47,27 @@ class H(http.server.BaseHTTPRequestHandler):
             body = ex.read().decode()
             log(f"token exchange http={ex.code} body={body[:200]}")
             self.send_response(500); self.end_headers(); self.wfile.write(("token exchange failed: " + body).encode()); return
-        with open(ENV, "a") as f:
-            f.write(f"X_ACCESS_TOKEN={tok['access_token']}\n")
-            if "refresh_token" in tok:
-                f.write(f"X_REFRESH_TOKEN={tok['refresh_token']}\n")
-            f.write(f"X_TOKEN_OBTAINED_AT={int(time.time())}\n")
+        # 2026-09-04 13:35 将軍 D0(T3-S-65): 追記方式は X_REFRESH_TOKEN を 2 行にし、keeper が旧行(head -1)を読んで
+        # 旧 refresh token で refresh→X の再利用検知で新 grant ごと revoke された。置換方式+ISO 時刻に変更。
+        repl = {"X_ACCESS_TOKEN": tok["access_token"], "X_TOKEN_OBTAINED_AT": time.strftime("%Y-%m-%dT%H:%M:%S%z")}
+        if "refresh_token" in tok:
+            repl["X_REFRESH_TOKEN"] = tok["refresh_token"]
+        lines, seen = [], set()
+        for line in open(ENV, encoding="utf-8").read().splitlines():
+            k = line.split("=", 1)[0].strip() if "=" in line else ""
+            if k in repl:
+                if k in seen:
+                    continue
+                lines.append(f"{k}={repl[k]}"); seen.add(k)
+            else:
+                lines.append(line)
+        for k, v in repl.items():
+            if k not in seen:
+                lines.append(f"{k}={v}")
+        tmp = ENV + ".tmp"
+        with open(tmp, "w", encoding="utf-8") as f:
+            f.write("\n".join(lines) + "\n")
+        os.chmod(tmp, 0o600); os.replace(tmp, ENV)
         log(f"token ok scope={tok.get('scope')} expires_in={tok.get('expires_in')} refresh={'refresh_token' in tok}")
         self.send_response(200); self.send_header("Content-Type", "text/plain; charset=utf-8"); self.end_headers()
         self.wfile.write("認可完了。token を保存しました。このタブは閉じてよい。".encode())
