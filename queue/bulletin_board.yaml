@@ -699,11 +699,11 @@ entries:
   posted_at: '2026-09-03T20:59:58'
   requires_confirmation: false
   action_type: 'action_required'
-  actioned_by: ''
+  actioned_by: "shogun"
   notify_targets:
     - 'shogun'
   confirmed_by: []
-  status: 'open'
+  status: "closed"
 - id: 'blt_20260903_210634_5901db'
   content: |-
     DOC_LANE_ALERT: context=context/infrastructure.md raw_alert=ALERT: context/infrastructure.md source commits 1件 since last_updated=2026-09-03 repo=/home/simokitafresh/multi-agent-shogun root_fallback=no timeout=360s/360s owner=infra-platform update_trigger=.github|.githooks|config|docs/rule|docs/knowledge-base|instructions|scripts|skills|tests|AGENTS.md|CLAUDE.md|CONTRIBUTING.md|LICENSE|Makefile|SECURITY.md|first_setup.sh|install.bat|lefthook-local.yml|lefthook.yml|project_lexicon.yaml|setup.sh|shutsujin_departure.sh。更新要否を確認せよ latest: f0dcb2d6f61b cmd_karo_ci_fix_33746540848_registry_compatibility_normal: cmd_karo_ci_fix_33746540848_registry_compatibility: ignore orphan deployment markers action: bash scripts/context_source_commit_set.sh context/infrastructure.md f0dcb2d6f61b 'context_freshness reviewed source boundary' 'context_freshness_check context=context/infrastructure.md commit=f0dcb2d6f61b'
@@ -794,11 +794,11 @@ entries:
   posted_at: '2026-09-03T21:39:38'
   requires_confirmation: false
   action_type: 'action_required'
-  actioned_by: ''
+  actioned_by: "shogun"
   notify_targets:
     - 'shogun'
   confirmed_by: []
-  status: 'open'
+  status: "closed"
 - id: 'blt_20260903_214207_eff331'
   content: |-
     GATE CLEAR cmd_karo_hotfix_ga554_push_overlap_pattern_202609021650: 完了
@@ -912,11 +912,11 @@ entries:
   posted_at: '2026-09-03T22:25:16'
   requires_confirmation: false
   action_type: 'action_required'
-  actioned_by: ''
+  actioned_by: "shogun"
   notify_targets:
     - 'shogun'
   confirmed_by: []
-  status: 'open'
+  status: "closed"
 - id: 'blt_20260903_223058_9073fa'
   content: |-
     DOC_LANE_REQUEST: CONTEXT_UPDATE_REQUEST project=infra context=context/infrastructure.md source_commit=8242aac6ea1c parent_cmd=cmd_karo_hotfix_publisher_local_reference_clone_202609032047 reason=approved_source_commit owner_route=shogun-doc-lane
@@ -924,11 +924,11 @@ entries:
   posted_at: '2026-09-03T22:30:58'
   requires_confirmation: false
   action_type: 'action_required'
-  actioned_by: ''
+  actioned_by: "shogun"
   notify_targets:
     - 'shogun'
   confirmed_by: []
-  status: 'open'
+  status: "closed"
 - id: 'blt_20260903_223647_4e63a3'
   content: |-
     cmd_id=cmd_karo_hotfix_publisher_local_reference_clone_202609032047 下知22:35 残7速度検証を受領・着手。集計コマンド=git rev-parse HEAD および git rev-parse origin/main。出力行の生貼付: 948b9b78da38630dabbec2469bdfd56d79f7810b / a5a1deed03f8bd374403a2b4c3be0fc6736e43f0。1件の定義=各refが指すcommit 1個。未同期のため root-origin合流→watchdog code-reload→1 op CloningからHEAD is nowまでを比較する。wait_reason=dependency(publisher active operation終端)。
