@@ -1681,19 +1681,29 @@ _record_hook_failure() {
                 _hook_failure_ts="${BASH_REMATCH[1]}${BASH_REMATCH[2]}:${BASH_REMATCH[3]}"
             fi
             mkdir -p "$REPO_ROOT/logs"
+            # GA-573相当: 2並行プロセスが同じ秒にfailureを記録すると、複数echo
+            # によるappendがinterleaveし、片方のrowから artifact/artifact_sha256
+            # 等のfieldが欠落する(KeyError: 'artifact')。entry単位でexclusive
+            # lockを取り、1entry分の書き込みをlock区間内で完結させる
+            # (既存lock_path契約: precommit_self_sync_write_async/
+            # precommit_instruction_sync_write_asyncと同じ "<ledger>.lock" FD方式)。
             {
-                echo "- timestamp: ${_hook_failure_ts}"
-                echo "  hook: pre-commit"
-                echo "  ninja: $ninja_name"
-                echo "  exit_code: $exit_code"
-                if [ -n "$artifact_rel" ]; then
-                    echo "  artifact: \"$artifact_rel\""
-                    echo "  artifact_sha256: \"$artifact_sha256\""
+                if flock -x -w 10 201; then
+                    echo "- timestamp: ${_hook_failure_ts}"
+                    echo "  hook: pre-commit"
+                    echo "  ninja: $ninja_name"
+                    echo "  exit_code: $exit_code"
+                    if [ -n "$artifact_rel" ]; then
+                        echo "  artifact: \"$artifact_rel\""
+                        echo "  artifact_sha256: \"$artifact_sha256\""
+                    fi
+                    echo "  staged_diff_sha256: \"$staged_diff_sha256\""
+                    echo "  detail: |-"
+                    printf '    %s\n' "$stderr_summary"
+                else
+                    echo "[hook_failure] WARN: flock timeout on hook_failures.yaml lock; skipping ledger entry" >&2
                 fi
-                echo "  staged_diff_sha256: \"$staged_diff_sha256\""
-                echo "  detail: |-"
-                printf '    %s\n' "$stderr_summary"
-            } >> "$REPO_ROOT/logs/hook_failures.yaml"
+            } >> "$REPO_ROOT/logs/hook_failures.yaml" 201>"$REPO_ROOT/logs/hook_failures.yaml.lock"
         ) || true
     fi
     rm -f "$_STDERR_FILE" 2>/dev/null
