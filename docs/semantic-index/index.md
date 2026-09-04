@@ -11869,6 +11869,7 @@ codd:
 | causal_chain | `[[cmd_karo_hotfix_r6_l3_wording_ruling_align_20260727]]` (L1396) |
 | causal_chain | `[[cmd_karo_round5_v5_fixed_window_track_a_20260729_recon2]]` (L1455) |
 | causal_chain | `[[cmd_karo_hotfix_uncommitted_scripts_20260806]]` (L1568) |
+| discussion | `queue/lord_conversation.jsonl` 2026-09-05T02:23:43+09:00 解放せよ。解放されないのはインフラバグだ。バグは根治せよ。根治したら将軍に報告してレビューしてもらえ |
 
 ## ac_merit_review_integrity — AC本旨レビュー整合性
 
