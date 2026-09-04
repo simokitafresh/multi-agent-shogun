@@ -17701,3 +17701,10 @@ insights:
   source: "semantic_stress_test"
   fix_known: false
   status: pending
+- id: INS-20260904-191621319-db5f
+  ts: "2026-09-04T19:16:21+09:00"
+  insight: "semantic_index_update新概念候補: discussion:一回投稿ネタは全部新しく作り直して、カレンダー形式で9月末までの投稿を埋めて見せてくれ は 既存aliasesに一致なし。概念定義とaliases追加を検討せよ"
+  priority: "low"
+  source: "semantic_index_update"
+  fix_known: false
+  status: pending
