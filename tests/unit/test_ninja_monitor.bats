@@ -1098,6 +1098,78 @@ YAML
     [ "$status" -eq 0 ]
 }
 
+# test_necessity: an exact CLEAR generation may leave its live completed report
+# visible until archive publication finishes; monitor retries must preserve the
+# already-released idle state, while missing/mismatched CLEAR evidence remains
+# fail-closed and a redeployed generation cannot consume the stale report.
+@test "AUTO-DONE does not replay an exact CLEAR generation after idle" {
+    run env PROJECT_ROOT="$PROJECT_ROOT" bash -c '
+        set -euo pipefail
+        export NINJA_MONITOR_LIB_ONLY=1
+        source "$PROJECT_ROOT/scripts/ninja_monitor.sh"
+        ROOT="$BATS_TEST_TMPDIR/idle-clear-replay"
+        SCRIPT_DIR="$ROOT"; STATE_DIR="$ROOT/state"; LOG="$ROOT/monitor.log"
+        mkdir -p "$ROOT/queue/tasks" "$ROOT/queue/reports" "$ROOT/queue/gates/cmd_exact" "$ROOT/queue/locks" "$STATE_DIR"
+        : >"$LOG"
+        log() { printf "%s\n" "$1" >>"$LOG"; }
+        report_monitor_state() { printf "pass_terminal\n"; }
+        run_report_gate_deduped() { printf "PASS\n"; return 0; }
+        review_two_phase_ready() { return 0; }
+        _reflux_promotion_record_completion_detached() { :; }
+        refresh_karo_snapshot_task_assignment() { :; }
+        yaml_field_set() { bash "$PROJECT_ROOT/scripts/lib/yaml_field_set.sh" "$@"; }
+        task="$ROOT/queue/tasks/alpha.yaml"
+        report="$ROOT/queue/reports/alpha_report_cmd_exact.yaml"
+        write_fixture() {
+            local status="$1" clear_cmd="$2" task_id="$3" report_id="$4" deployed_at="$5"
+            printf "task:\n  parent_cmd: cmd_exact\n  task_id: %s\n  report_id: %s\n  report_identity_version: 2\n  status: %s\n" \
+                "$task_id" "$report_id" "$status" >"$task"
+            if [ -n "$deployed_at" ]; then
+                printf "  deployed_at: %s\n" "$deployed_at" >>"$task"
+            fi
+            printf "parent_cmd: cmd_exact\ntask_id: %s\nreport_id: %s\nreport_identity_version: 2\nstatus: completed\nverdict: PASS\ntimestamp: 2026-09-05T02:00:00+09:00\n" \
+                "$task_id" "$report_id" >"$report"
+            rm -f "$ROOT/queue/gates/cmd_exact/gate_worker.clear.json"
+            if [ "$clear_cmd" = cmd_exact ]; then
+                python3 -c "import json,sys; json.dump({\"version\":1,\"state\":\"clear\",\"cmd_id\":sys.argv[2],\"completion_generation\":\"a\"*64,\"persisted_at_ns\":1},open(sys.argv[1],\"w\"))" \
+                    "$ROOT/queue/gates/cmd_exact/gate_worker.clear.json" "$clear_cmd"
+            elif [ "$clear_cmd" = cmd_other ]; then
+                mkdir -p "$ROOT/queue/gates/cmd_other"
+                python3 -c "import json,sys; json.dump({\"version\":1,\"state\":\"clear\",\"cmd_id\":sys.argv[2],\"completion_generation\":\"b\"*64,\"persisted_at_ns\":1},open(sys.argv[1],\"w\"))" \
+                    "$ROOT/queue/gates/cmd_other/gate_worker.clear.json" "$clear_cmd"
+            fi
+        }
+
+        # Exact CLEAR + identity match: live report is a stale publication
+        # window and must not turn the released idle slot back to done.
+        write_fixture idle cmd_exact task_exact rpt_exact ""
+        check_and_update_done_task alpha || true
+        [ "$(yaml_field_get "$task" status)" = idle ]
+        [ "$(grep -c "AUTO-DONE-SKIP-IDLE-CLEAR-REPLAY" "$LOG")" -eq 1 ]
+
+        # No CLEAR: retain the existing fail-closed behavior (idle is reverted
+        # to in_progress rather than being released as a completed task).
+        write_fixture idle none task_missing rpt_missing ""
+        check_and_update_done_task alpha || true
+        [ "$(yaml_field_get "$task" status)" = in_progress ]
+
+        # CLEAR for a different parent command is not exact evidence.
+        write_fixture idle cmd_other task_mismatch rpt_mismatch ""
+        check_and_update_done_task alpha || true
+        [ "$(yaml_field_get "$task" status)" = in_progress ]
+
+        # A redeployed generation remains active and stale report timestamps
+        # cannot complete it even when the old cmd receipt is present.
+        write_fixture in_progress cmd_exact task_redeployed rpt_redeployed 2026-09-05T03:00:00+09:00
+        check_and_update_done_task alpha || true
+        [ "$(yaml_field_get "$task" status)" = in_progress ]
+
+        printf "exact_clear_idle=1 no_clear_block=1 identity_mismatch_block=1 redeploy_block=1 false_positive=0 false_negative=0\n"
+    '
+    [ "$status" -eq 0 ]
+    [ "$output" = "exact_clear_idle=1 no_clear_block=1 identity_mismatch_block=1 redeploy_block=1 false_positive=0 false_negative=0" ]
+}
+
 # test_necessity: report完了をtask doneへ反映する前にcommit/report gateとtask-owned
 # dirtyを検証し、done後のdirty再発も検知し続ける不変量を守る。
 @test "AUTO-DONE blocks uncommitted or ungated reports before and after done" {

@@ -6771,6 +6771,17 @@ check_and_update_done_task() (
         return 1
     fi
 
+    # GATE CLEAR has already released this exact task generation to idle, but
+    # archive publication may still leave the live completed report visible for
+    # a short window.  Do not replay that report as idle -> done: doing so makes
+    # the slot look occupied again and can trigger a false redeployment race.
+    # Keep the check after report identity validation so a stale/mismatched
+    # report still follows the existing fail-closed path below.
+    if [ "$task_status" = "idle" ] && _gate_worker_clear_receipt_valid "$task_parent_cmd"; then
+        log "AUTO-DONE-SKIP-IDLE-CLEAR-REPLAY: $name report=$(basename "$report_file") parent_cmd=$task_parent_cmd status=idle"
+        return 1
+    fi
+
     # Read report status before any terminal transition.  A revision request
     # is explicitly review-pending and must leave task/pane state unchanged.
     local report_status
