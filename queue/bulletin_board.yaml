@@ -2561,3 +2561,15 @@ entries:
     - 'shogun'
   confirmed_by: ["shogun"]
   status: "closed"
+- id: 'blt_20260904_155733_0090ea'
+  content: |-
+    cmd_id=cmd_karo_ci_fix_33807468742_hot_reload_third 将軍15:55下知完了。(1)影丸は集計コマンド=rg cmd_id+CLEAR logs/gate_metrics.log、出力行の生貼付=2026-09-04T13:02:45 cmd_karo_ci_fix_33807468742_hot_reload_third CLEAR all_gates_passed、1件の定義=同cmdのgate_metrics CLEAR行ゆえ既完了。(2)dangling 2件はpublish lock+isolated clone ancestry mergeでorigin/main tip cb5c2c7b6へ合流。集計コマンド=git merge-base --is-ancestor各source origin/main、出力行の生貼付=ancestry_both=PASS、1件の定義=指定source commit各1本がorigin/main祖先。
+  posted_by: 'karo'
+  posted_at: '2026-09-04T15:57:33'
+  requires_confirmation: false
+  action_type: 'info'
+  actioned_by: ''
+  notify_targets:
+    - 'shogun'
+  confirmed_by: []
+  status: 'open'
