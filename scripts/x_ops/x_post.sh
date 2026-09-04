@@ -285,9 +285,13 @@ cmd_post() {
         echo "x_post.sh post: unknown argument: $1" >&2
         exit 2
     fi
-    local file="$(draft_file "$draft_id")" marker="$(approved_file "$draft_id")"
+    local file="$(draft_file "$draft_id")" marker="$(approved_file "$draft_id")" posted="$(posted_file "$draft_id")"
     [[ -f "$file" ]] || { echo "x_post.sh post: draft not found: $file" >&2; exit 2; }
     [[ -f "$marker" ]] || { echo "x_post.sh post: not approved, stopping: $draft_id" >&2; exit 1; }
+    if [[ -f "$posted" ]]; then
+        echo "x_post.sh post: already posted, stopping: $draft_id" >&2
+        exit 1
+    fi
     if [[ -n "$media" ]]; then
         [[ -f "$media" ]] || { echo "x_post.sh post: media not found: $media" >&2; exit 2; }
         [[ "$media" = *.png ]] || { echo "x_post.sh post: media must be a PNG" >&2; exit 2; }
@@ -305,12 +309,12 @@ cmd_post() {
     result_file="$(mktemp)"
     export X_POST_RESULT_FILE="$result_file"
     set +e
-    python3 - "$file" "$media" "$API_ENV_FILE" <<'PY'
-import base64, json, os, sys, tempfile
+    python3 - "$file" "$media" "$API_ENV_FILE" "$posted" <<'PY'
+import base64, json, os, sys, tempfile, time
 from collections.abc import Mapping
 from pathlib import Path
 
-draft_path, media_path, env_path = sys.argv[1:]
+draft_path, media_path, env_path, posted_path = sys.argv[1:]
 values = {}
 for line in Path(env_path).read_text(encoding="utf-8").splitlines():
     if "=" not in line or line.lstrip().startswith("#"):
@@ -448,14 +452,8 @@ except Exception as exc:
         print(f"x_post.sh post: XDK request failed: {type(exc).__name__}", file=sys.stderr)
     raise SystemExit(1)
 
-try:
-    atomic_persist_tokens(Path(env_path), client.token)
-except Exception:
-    print("x_post.sh post: token persistence failed", file=sys.stderr)
-    raise SystemExit(1)
-
 def as_json(value):
-    if isinstance(value, dict):
+    if isinstance(value, Mapping):
         return {
             key: as_json(item)
             for key, item in value.items()
@@ -465,16 +463,56 @@ def as_json(value):
         return as_json(value.model_dump(exclude_none=True))
     if isinstance(value, list):
         return [as_json(item) for item in value]
-    return {"response": str(value)}
+    if value is None or isinstance(value, (str, int, float, bool)):
+        return value
+    return str(value)
 
 result = as_json(response)
-print(json.dumps(result, ensure_ascii=False))
-Path(os.environ["X_POST_RESULT_FILE"]).write_text(json.dumps(result, ensure_ascii=False), encoding="utf-8")
+result_json = json.dumps(result, ensure_ascii=False)
+Path(os.environ["X_POST_RESULT_FILE"]).write_text(result_json, encoding="utf-8")
+
+
+def write_posted_marker(token_persistence, error=None):
+    marker = {
+        "posted_at": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
+        "media": media_path,
+        "token_persistence": token_persistence,
+        "result": result,
+    }
+    if error:
+        marker["error"] = error
+    fd, tmp_name = tempfile.mkstemp(prefix=f".{Path(posted_path).name}.", suffix=".tmp", dir=Path(posted_path).parent)
+    try:
+        os.fchmod(fd, 0o600)
+        with os.fdopen(fd, "w", encoding="utf-8") as out:
+            json.dump(marker, out, ensure_ascii=False)
+            out.write("\n")
+            out.flush()
+            os.fsync(out.fileno())
+        os.replace(tmp_name, posted_path)
+    except Exception:
+        try:
+            os.unlink(tmp_name)
+        except FileNotFoundError:
+            pass
+        raise
+
+
+write_posted_marker("pending")
+try:
+    atomic_persist_tokens(Path(env_path), client.token)
+except Exception:
+    try:
+        write_posted_marker("failed", "client token was not persisted")
+    except Exception:
+        pass
+    print("x_post.sh post: token persistence failed", file=sys.stderr)
+    raise SystemExit(1)
+write_posted_marker("persisted")
 PY
     python_status=$?
     set -e
     if (( python_status != 0 )); then exit "$python_status"; fi
-    printf 'posted_at=%s\nmedia=%s\n' "$(date -u +%Y-%m-%dT%H:%M:%SZ)" "$media" > "$(posted_file "$draft_id")"
     cat "$result_file"
     rm -f "$result_file"
     unset X_POST_RESULT_FILE

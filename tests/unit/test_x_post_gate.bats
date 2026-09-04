@@ -178,6 +178,8 @@ class _Posts:
             raise _ResponseError(401)
         if os.environ.get("XDK_ROTATE") == "1":
             self.owner.token = {"access_token": "post-access-token", "refresh_token": "post-rotated-refresh-token"}
+        if os.environ.get("XDK_REMOVE_ENV_ON_POST") == "1":
+            os.unlink(os.environ["X_POST_API_ENV_FILE"])
         with open(os.environ["XDK_CALL_LOG"], "a", encoding="utf-8") as f:
             f.write("post " + json.dumps(list(kwargs)) + "\n")
         return {"data": {"id": "post-1"}}
@@ -250,6 +252,15 @@ PY
     [[ "$output" == *"post-1"* ]]
     [ ! -s "$XDK_CALL_LOG" ] || ! grep -q '^media ' "$XDK_CALL_LOG"
     [ -f "$X_POST_DRAFTS_DIR/2026-09-03_A.posted" ]
+}
+
+# test_necessity: response serialization must preserve the XDK schema while removing only secret
+# token keys; recursive scalar wrapping would corrupt the durable/API result shape.
+@test "x_post post: XDK responseの非secret scalar構造を同値保持" {
+    setup_x_post
+    run env PYTHONPATH="$FIXTURE_DIR/fake_xdk" bash "$X_POST" post 2026-09-03_A
+    [ "$status" -eq 0 ]
+    python3 -c 'import json, sys; assert json.loads(sys.argv[1]) == {"data": {"id": "post-1"}}' "$output"
 }
 
 @test "x_post post: PNGをXDK media.uploadしmedia_ids付き201を投稿" {
@@ -346,6 +357,23 @@ PY
     run env PYTHONPATH="$FIXTURE_DIR/fake_xdk" bash "$X_POST" post 2026-09-03_A
     [ "$status" -eq 0 ]
     [ "$(stat -c '%a' "$X_POST_API_ENV_FILE")" = "600" ]
+}
+
+# test_necessity: a successful remote post followed by local persistence failure must leave a
+# durable posted marker and block retries, otherwise recovery re-posts the same content.
+@test "x_post post: token永続化失敗をmarkerへ記録し再投稿を遮断" {
+    setup_x_post
+    export XDK_REMOVE_ENV_ON_POST=1
+    run env PYTHONPATH="$FIXTURE_DIR/fake_xdk" bash "$X_POST" post 2026-09-03_A
+    [ "$status" -eq 1 ]
+    [[ "$output" == *"token persistence failed"* ]]
+    [ -f "$X_POST_DRAFTS_DIR/2026-09-03_A.posted" ]
+    grep -q '"token_persistence": "failed"' "$X_POST_DRAFTS_DIR/2026-09-03_A.posted"
+    [ "$(grep -c '^post ' "$XDK_CALL_LOG")" -eq 1 ]
+    run env PYTHONPATH="$FIXTURE_DIR/fake_xdk" bash "$X_POST" post 2026-09-03_A
+    [ "$status" -eq 1 ]
+    [[ "$output" == *"already posted"* ]]
+    [ "$(grep -c '^post ' "$XDK_CALL_LOG")" -eq 1 ]
 }
 
 # draft生成テスト専用の軽量setup。setup_x_postはdate依存の固定ファイル名
