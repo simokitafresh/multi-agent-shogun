@@ -7815,6 +7815,7 @@ codd:
 | cmd | `cmd_4434` LP に FoF 訴求 1 行を追加 — Fund of Funds が主力(active の 7 割超)である旨を Current signals 近傍に EN/JA で明記する |
 | discussion | `queue/lord_conversation.jsonl` 2026-09-01T15:13:27+09:00 DM-signalの話しをしよう。今日はリバランス日だ。本番に正しく計算された今月の保有ポジションが表示されているか？ |
 | causal_chain | `[[cmd_4330]]` (L1598) |
+| discussion | `queue/lord_conversation.jsonl` 2026-09-04T11:22:14+09:00 殿裁定 2026-09-04 11:17/11:19(X 枠 B・C): 枠 B の抜粋元は note マガジン『中身は固いバムの投資ショートコラム』 https://note.com/tokyojibika/m/m6557263f0241 |
 
 ## partial_turnover_execution_method — Partial Turnover実験実行・完了証跡方法論
 
