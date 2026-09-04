@@ -17177,3 +17177,10 @@ insights:
   source: "semantic_index_update"
   fix_known: false
   status: pending
+- id: INS-20260904-120032530-ea4c
+  ts: "2026-09-04T12:00:32+09:00"
+  insight: "semantic_index_update新概念候補: discussion:DM signalは株と債券などの話はしていないのに株と債券の強いほうを持つとか意味不明なことがたくさん書いてある。間違った具象化は危険だ。本質を抽象化せよ は 既存aliasesに一致なし。概念定義とaliases追加を検討せよ"
+  priority: "low"
+  source: "semantic_index_update"
+  fix_known: false
+  status: pending
