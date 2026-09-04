@@ -1960,3 +1960,15 @@ entries:
     - 'shogun'
   confirmed_by: []
   status: 'open'
+- id: 'blt_20260904_093045_d559fd'
+  content: |-
+    DOC_LANE_ALERT: context=context/infrastructure.md raw_alert=ALERT: context/infrastructure.md source commits 5件 since last_updated=2026-09-04 repo=/home/simokitafresh/multi-agent-shogun root_fallback=no timeout=360s/360s owner=infra-platform update_trigger=.github|.githooks|config|docs/rule|docs/knowledge-base|instructions|scripts|skills|tests|AGENTS.md|CLAUDE.md|CONTRIBUTING.md|LICENSE|Makefile|SECURITY.md|first_setup.sh|install.bat|lefthook-local.yml|lefthook.yml|project_lexicon.yaml|setup.sh|shutsujin_departure.sh。更新要否を確認せよ latest: 8653789be86e cmd_karo_hotfix_t3s40_auto_push_wait_async_202609040724_normal: 軍師正式RC対応: reconcile winnerがcomplete前にclaim markerを解放していた二重replay窓を修正。case arm内でgate_notify_completeを先に完了させてからmarker除去する順序を保証 | 58f5e823457c cmd_karo_hotfix_t3s40_auto_push_wait_async_202609040724_normal: 軍師FAIL再差戻し対応: check+enqueueの非原子的singleflightをos.open(O_EXCL)による原子的reservationへ置換。reconcile側もset-o-noclobberで並行sweep競合を排除 | fad4a4df37f5 cmd_karo_hotfix_t3s40_auto_push_wait_async_202609040724_normal: 軍師FAIL対応: auto_push_ancestry_retryをgate_notify_enqueue/complete durable queueへ再設計。single-flight guard+reconcile回収を実装 action: bash scripts/context_source_commit_set.sh context/infrastructure.md 8653789be86e 'context_freshness reviewed source boundary' 'context_freshness_check context=context/infrastructure.md commit=8653789be86e'
+  posted_by: 'gate_context_freshness'
+  posted_at: '2026-09-04T09:30:45'
+  requires_confirmation: false
+  action_type: 'action_required'
+  actioned_by: ''
+  notify_targets:
+    - 'shogun'
+  confirmed_by: []
+  status: 'open'
