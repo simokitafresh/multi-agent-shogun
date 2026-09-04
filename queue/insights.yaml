@@ -17018,21 +17018,27 @@ insights:
   priority: "low"
   source: "semantic_index_update"
   fix_known: false
-  status: pending
+  status: "resolved"
+  action_artifact: "semantic_map=/home/simokitafresh/multi-agent-shogun/context/semantic-map.md;semantic_index=/home/simokitafresh/multi-agent-shogun/docs/semantic-index/index.md"
+  resolved_reason: "semantic map generation verified the candidate is represented or intentionally ignored"
 - id: INS-20260904-103715242-b8e0
   ts: "2026-09-04T10:37:15+09:00"
   insight: "semantic_index_update新概念候補: discussion:ntfyが大量に届きすぎて埋もれてしまうな。refresh tokenが切れてるみたいだが、これでは自動投稿の仕組みとして成り立っていないのでは？ は 既存aliasesに一致なし。概念定義とaliases追加を検討せよ"
   priority: "low"
   source: "semantic_index_update"
   fix_known: false
-  status: pending
+  status: "resolved"
+  action_artifact: "semantic_map=/home/simokitafresh/multi-agent-shogun/context/semantic-map.md;semantic_index=/home/simokitafresh/multi-agent-shogun/docs/semantic-index/index.md"
+  resolved_reason: "semantic map generation verified the candidate is represented or intentionally ignored"
 - id: INS-20260904-103901119-9fe9
   ts: "2026-09-04T10:39:01+09:00"
   insight: "semantic_index_update新概念候補: discussion:あと投稿文が明らかに俺のスタイルではないな。「教育目的。推奨ではない。。。」などの部分は蛇足で余分だ。言い訳のためであってXnoポスト自体にその言い訳をつけるの は 既存aliasesに一致なし。概念定義とaliases追加を検討せよ"
   priority: "low"
   source: "semantic_index_update"
   fix_known: false
-  status: pending
+  status: "resolved"
+  action_artifact: "semantic_map=/home/simokitafresh/multi-agent-shogun/context/semantic-map.md;semantic_index=/home/simokitafresh/multi-agent-shogun/docs/semantic-index/index.md"
+  resolved_reason: "semantic map generation verified the candidate is represented or intentionally ignored"
 - id: INS-20260904-104007261-a969
   ts: "2026-09-04T10:40:07+09:00"
   insight: "[[ntfyが大量に届きすぎて埋もれてしまうな]] semantic_stress_test candidate_aliases: NO_MATCH source=lord query=ntfyが大量に届きすぎて埋もれてしまうな。refresh tokenが切れてるみたいだが、これでは自動投稿の仕組みとして成り立っていないのでは？"
@@ -17057,4 +17063,6 @@ insights:
   priority: "low"
   source: "semantic_index_update"
   fix_known: false
-  status: pending
+  status: "resolved"
+  action_artifact: "semantic_map=/home/simokitafresh/multi-agent-shogun/context/semantic-map.md;semantic_index=/home/simokitafresh/multi-agent-shogun/docs/semantic-index/index.md"
+  resolved_reason: "semantic map generation verified the candidate is represented or intentionally ignored"
