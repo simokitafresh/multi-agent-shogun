@@ -9,6 +9,7 @@ Usage: python3 scripts/x_ops/x_token_refresh.py [env_path]
 import base64
 import json
 import os
+import tempfile
 import sys
 import time
 import urllib.error
@@ -27,6 +28,25 @@ def load(path):
         k, v = line.split("=", 1)
         vals[k.strip()] = v.strip().strip('"').strip("'")
     return vals
+
+
+def atomic_write(path, content):
+    path.parent.mkdir(parents=True, exist_ok=True)
+    fd, tmp_name = tempfile.mkstemp(prefix=f".{path.name}.", suffix=".tmp", dir=path.parent)
+    try:
+        os.fchmod(fd, 0o600)
+        with os.fdopen(fd, "w", encoding="utf-8") as out:
+            out.write(content)
+            out.flush()
+            os.fsync(out.fileno())
+        os.replace(tmp_name, path)
+        os.chmod(path, 0o600)
+    except Exception:
+        try:
+            os.unlink(tmp_name)
+        except FileNotFoundError:
+            pass
+        raise
 
 
 def main():
@@ -48,8 +68,10 @@ def main():
         with urllib.request.urlopen(req, timeout=30) as r:
             tok = json.loads(r.read().decode())
     except urllib.error.HTTPError as ex:
-        body = ex.read().decode()
-        print(f"x_token_refresh: http={ex.code} body={body[:200]}", file=sys.stderr)
+        print(f"x_token_refresh: http={ex.code}", file=sys.stderr)
+        return 1
+    except (urllib.error.URLError, TimeoutError, OSError, ValueError) as ex:
+        print(f"x_token_refresh: request failed ({type(ex).__name__})", file=sys.stderr)
         return 1
     access = tok.get("access_token")
     refresh = tok.get("refresh_token") or e["X_REFRESH_TOKEN"]
@@ -73,10 +95,7 @@ def main():
     for k, v in repl.items():
         if k not in seen:
             out.append(f"{k}={v}")
-    tmp = ENV.with_suffix(".env.tmp")
-    tmp.write_text("\n".join(out) + "\n", encoding="utf-8")
-    os.chmod(tmp, 0o600)
-    os.replace(tmp, ENV)
+    atomic_write(ENV, "\n".join(out) + "\n")
     print(f"x_token_refresh: ok expires_in={tok.get('expires_in')} rotated_refresh={'yes' if tok.get('refresh_token') else 'no'}")
     return 0
 

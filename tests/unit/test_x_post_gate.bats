@@ -168,9 +168,16 @@ class _Media:
             f.write("media " + json.dumps({"args": len(args), "kwargs": list(kwargs)}) + "\n")
         return {"data": {"id": "media-1"}}
 class _Posts:
+    def __init__(self, owner):
+        self.owner = owner
+
     def create(self, *args, **kwargs):
         if os.environ.get("XDK_STATUS") == "401":
+            if os.environ.get("XDK_ROTATE_ON_FAILURE") == "1":
+                self.owner.token = {"access_token": "post-failed-access-token", "refresh_token": "post-failed-refresh-token"}
             raise _ResponseError(401)
+        if os.environ.get("XDK_ROTATE") == "1":
+            self.owner.token = {"access_token": "post-access-token", "refresh_token": "post-rotated-refresh-token"}
         with open(os.environ["XDK_CALL_LOG"], "a", encoding="utf-8") as f:
             f.write("post " + json.dumps(list(kwargs)) + "\n")
         return {"data": {"id": "post-1"}}
@@ -178,7 +185,7 @@ class Client:
     def __init__(self, token=None, **kwargs):
         self.token = token
         self.media = _Media()
-        self.posts = _Posts()
+        self.posts = _Posts(self)
 PY
     cat > "$FIXTURE_DIR/fake_xdk/xdk/oauth2_auth.py" <<'PY'
 class OAuth2PKCEAuth:
@@ -200,7 +207,40 @@ PY
 デュアルモメンタムは2つだけ見る。助言ではない。過去は将来を保証しない。
 EOF
     printf 'approved\n' > "$X_POST_DRAFTS_DIR/2026-09-03_A.approved"
-    printf 'X_ACCESS_TOKEN=test-token\n' > "$X_POST_API_ENV_FILE"
+    cat > "$X_POST_API_ENV_FILE" <<'EOF'
+X_CLIENT_ID=test-client-id
+X_CLIENT_SECRET=test-client-secret
+X_REDIRECT_URI=http://127.0.0.1:8585/callback
+X_ACCESS_TOKEN=initial-access-token
+X_REFRESH_TOKEN=initial-refresh-token
+EOF
+    chmod 600 "$X_POST_API_ENV_FILE"
+    cat > "$FIXTURE_DIR/x_token_refresh_stub.py" <<'PY'
+import os
+import sys
+from pathlib import Path
+
+path = Path(sys.argv[1])
+if os.environ.get("X_REFRESH_FAIL") == "1":
+    print("refresh failed with secret refresh-token", file=sys.stderr)
+    raise SystemExit(1)
+lines = path.read_text(encoding="utf-8").splitlines()
+out = []
+seen = set()
+for line in lines:
+    key = line.split("=", 1)[0] if "=" in line else ""
+    if key == "X_ACCESS_TOKEN":
+        out.append("X_ACCESS_TOKEN=refreshed-access-token")
+        seen.add(key)
+    elif key == "X_REFRESH_TOKEN" and os.environ.get("X_REFRESH_ROTATE") == "1":
+        out.append("X_REFRESH_TOKEN=refreshed-rotated-refresh-token")
+        seen.add(key)
+    else:
+        out.append(line)
+path.write_text("\n".join(out) + "\n", encoding="utf-8")
+os.chmod(path, 0o600)
+PY
+    export X_TOKEN_REFRESH_SCRIPT="$FIXTURE_DIR/x_token_refresh_stub.py"
 }
 
 @test "x_post post: XDKでmediaなし201を投稿済みmarkerへ記録" {
@@ -245,6 +285,67 @@ EOF
     run env PYTHONPATH="$FIXTURE_DIR/fake_xdk" bash "$X_POST" post 2026-09-03_A
     [ "$status" -eq 2 ]
     [[ "$output" == *"credentials file not found"* ]]
+}
+
+# test_necessity: OAuth2 refresh token rotation must survive a successful post, otherwise the
+# next post reuses the invalidated refresh token and fails with InvalidClientIdError.
+@test "x_post post: refresh後のrotate済みclient.tokenを成功後に永続化" {
+    setup_x_post
+    export XDK_ROTATE=1 X_REFRESH_ROTATE=1
+    run env PYTHONPATH="$FIXTURE_DIR/fake_xdk" bash "$X_POST" post 2026-09-03_A
+    [ "$status" -eq 0 ]
+    grep -q '^X_ACCESS_TOKEN=post-access-token$' "$X_POST_API_ENV_FILE"
+    grep -q '^X_REFRESH_TOKEN=post-rotated-refresh-token$' "$X_POST_API_ENV_FILE"
+    [ "$(stat -c '%a' "$X_POST_API_ENV_FILE")" = "600" ]
+    [[ "$output" != *"post-access-token"* ]]
+    [[ "$output" != *"post-rotated-refresh-token"* ]]
+}
+
+# test_necessity: XDK may omit refresh_token when it does not rotate. The existing refresh token
+# must remain usable while the newly refreshed access token is written back.
+@test "x_post post: 非rotate時はrefresh tokenを保持しaccess tokenのみ更新" {
+    setup_x_post
+    run env PYTHONPATH="$FIXTURE_DIR/fake_xdk" bash "$X_POST" post 2026-09-03_A
+    [ "$status" -eq 0 ]
+    grep -q '^X_ACCESS_TOKEN=refreshed-access-token$' "$X_POST_API_ENV_FILE"
+    grep -q '^X_REFRESH_TOKEN=initial-refresh-token$' "$X_POST_API_ENV_FILE"
+}
+
+# test_necessity: refresh failure is fail-closed and must prevent any XDK call or posted marker.
+@test "x_post post: 投稿前refresh失敗はXDKを呼ばず投稿済みmarkerを作らない" {
+    setup_x_post
+    export X_REFRESH_FAIL=1
+    run env PYTHONPATH="$FIXTURE_DIR/fake_xdk" bash "$X_POST" post 2026-09-03_A
+    [ "$status" -eq 1 ]
+    [[ "$output" == *"token refresh failed"* ]]
+    [ ! -s "$XDK_CALL_LOG" ]
+    [ ! -f "$X_POST_DRAFTS_DIR/2026-09-03_A.posted" ]
+    grep -q '^X_ACCESS_TOKEN=initial-access-token$' "$X_POST_API_ENV_FILE"
+    [[ "$output" != *"refresh-token"* ]]
+}
+
+# test_necessity: a post failure must not persist a token mutated by the failed request; only a
+# confirmed successful post may advance the local token state.
+@test "x_post post: 投稿失敗時はclient.tokenのrotateを永続化しない" {
+    setup_x_post
+    export XDK_STATUS=401 XDK_ROTATE_ON_FAILURE=1
+    run env PYTHONPATH="$FIXTURE_DIR/fake_xdk" bash "$X_POST" post 2026-09-03_A
+    [ "$status" -eq 1 ]
+    [[ "$output" == *"HTTP 401"* ]]
+    [ ! -f "$X_POST_DRAFTS_DIR/2026-09-03_A.posted" ]
+    grep -q '^X_ACCESS_TOKEN=refreshed-access-token$' "$X_POST_API_ENV_FILE"
+    grep -q '^X_REFRESH_TOKEN=initial-refresh-token$' "$X_POST_API_ENV_FILE"
+    [[ "$output" != *"post-failed-refresh-token"* ]]
+}
+
+# test_necessity: the credentials file must end every refresh/post cycle with owner-only mode,
+# even if an operator supplied a weaker mode before invocation.
+@test "x_post post: refresh後のcredentials modeを0600へ固定" {
+    setup_x_post
+    chmod 640 "$X_POST_API_ENV_FILE"
+    run env PYTHONPATH="$FIXTURE_DIR/fake_xdk" bash "$X_POST" post 2026-09-03_A
+    [ "$status" -eq 0 ]
+    [ "$(stat -c '%a' "$X_POST_API_ENV_FILE")" = "600" ]
 }
 
 # draft生成テスト専用の軽量setup。setup_x_postはdate依存の固定ファイル名
