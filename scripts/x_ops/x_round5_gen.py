@@ -87,6 +87,12 @@ def gen(item, k=None, prev=None):
 
 
 def main():
+    # 殿評 2026-09-04 17:47『記事の抜粋はネタではない』: 記事本文を LLM に渡す旧経路は封鎖。skills/x-post-pipeline/neta_ledger.yaml の entries(殿の種)からのみ生成する
+    import yaml
+    neta = yaml.safe_load((ROOT / 'skills/x-post-pipeline/neta_ledger.yaml').read_text(encoding='utf-8')) or {}
+    if not neta.get('entries'):
+        print('x_round5_gen: neta_ledger.yaml に entries が無い。記事本文からの生成は禁止(殿評 17:47)。殿の種を登録してから実行せよ', file=sys.stderr)
+        return 2
     DRAFTS.mkdir(exist_ok=True)
     md = ["<!-- Round5 2026-09-04 16:45 将軍生成。lane 別 Short 10 / Long 3 / Thread 2(親+3) / Series 8。殿の添削待ち -->",
           "# X 投稿 下書き 第 5 稿(Growth v1.4: lane 別 Reach Short・Long・Thread・Series)— 殿の直し待ち", "",
@@ -119,4 +125,4 @@ def main():
 
 
 if __name__ == "__main__":
-    main()
+    sys.exit(main())
