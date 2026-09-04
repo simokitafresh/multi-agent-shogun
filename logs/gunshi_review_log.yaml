@@ -5567,6 +5567,8 @@
   - scripts/cmd_complete_gate.sh:1
 - cmd_id: cmd_karo_hotfix_release_report_commit_contract_string
   review_type: report
+  gate_result: "CLEAR"
+  gate_synced_at: "2026-09-05T05:27:45+09:00"
   verdict: LGTM
   report_ninja: kotaro
   report_task_id: cmd_karo_hotfix_release_report_commit_contract_string_normal
