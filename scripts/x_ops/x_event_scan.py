@@ -27,7 +27,7 @@ def main():
     a = sys.argv[1:]; dry = "--dry-run" in a
     date = a[a.index("--date") + 1] if "--date" in a else dt.date.today().isoformat()
     import yfinance as yf
-    px = yf.download(["SPY", "^VIX", "^N225"], period="1y", progress=False, auto_adjust=True)["Close"].dropna(how="all")
+    px = yf.download(["SPY", "^VIX", "^N225", "JPY=X"], period="1y", progress=False, auto_adjust=True)["Close"].dropna(how="all")
     spy = px["SPY"].dropna(); n225 = px["^N225"].dropna(); vixs = px["^VIX"].dropna()  # 市場ごとに最終有効日が違う(日本が先に閉まる)
     asof = spy.index[-1].date().isoformat()
     spy_r = float(spy.iloc[-1] / spy.iloc[-2] - 1); n_r = float(n225.iloc[-1] / n225.iloc[-2] - 1)
@@ -35,6 +35,31 @@ def main():
     vix, vix_prev = float(vixs.iloc[-1]), float(vixs.iloc[-2])
     obs = dict(asof=asof, spy_ret=round(spy_r, 4), n225_ret=round(n_r, 4), spy_dd_52w=round(spy_dd, 4), vix=round(vix, 2))
     fired = []
+    # --- 殿 19:45 追加: 為替・金利・カーブ・インフレ。取得失敗はその trigger をスキップ(落とさない) ---
+    import urllib.request, io, csv
+    def fred(sid):
+        rows = [r for r in csv.reader(io.StringIO(urllib.request.urlopen(f"https://fred.stlouisfed.org/graph/fredgraph.csv?id={sid}", timeout=20).read().decode())) if len(r) == 2 and r[1] not in (".", "")]
+        return [(r[0], float(r[1])) for r in rows[-3:]]
+    try:
+        fx = px["JPY=X"].dropna(); fx_r = float(fx.iloc[-1] / fx.iloc[-2] - 1); obs["usdjpy"] = round(float(fx.iloc[-1]), 2); obs["usdjpy_ret"] = round(fx_r, 4)
+        if abs(fx_r) >= 0.02: fired.append("usdjpy_2")
+    except Exception as ex: obs["usdjpy"] = f"ERR {type(ex).__name__}"
+    try:
+        d2, d10, bei = fred("DGS2"), fred("DGS10"), fred("T10YIE")
+        dd2 = d2[-1][1] - d2[-2][1]; dd10 = d10[-1][1] - d10[-2][1]; sp, sp_prev = d10[-1][1] - d2[-1][1], d10[-2][1] - d2[-2][1]; dbei = bei[-1][1] - bei[-2][1]
+        obs.update(us2y=d2[-1][1], us2y_chg_bp=round(dd2 * 100, 1), us10y=d10[-1][1], us10y_chg_bp=round(dd10 * 100, 1), curve_10_2=round(sp, 2), curve_chg_bp=round((sp - sp_prev) * 100, 1), bei10=bei[-1][1], bei_chg_bp=round(dbei * 100, 1), fred_asof=d10[-1][0])
+        if abs(dd2) >= 0.15: fired.append("us2y_15bp")
+        if abs(dd10) >= 0.15: fired.append("us10y_15bp")
+        if abs(sp - sp_prev) >= 0.15 or (sp * sp_prev < 0): fired.append("curve_15bp")
+        if abs(dbei) >= 0.10: fired.append("breakeven_10bp")
+    except Exception as ex: obs["fred"] = f"ERR {type(ex).__name__}"
+    try:
+        raw = urllib.request.urlopen("https://www.mof.go.jp/jgbs/reference/interest_rate/jgbcm.csv", timeout=20).read().decode("shift_jis", "ignore")
+        rows = [r for r in csv.reader(io.StringIO(raw)) if r and r[0].startswith("R") and len(r) > 10 and r[10] not in ("", "-")]
+        j10 = [(r[0], float(r[10])) for r in rows[-2:]]; dj = j10[-1][1] - j10[-2][1]
+        obs.update(jgb10=j10[-1][1], jgb10_chg_bp=round(dj * 100, 1), jgb_asof=j10[-1][0])
+        if abs(dj) >= 0.10: fired.append("jgb10_10bp")
+    except Exception as ex: obs["jgb"] = f"ERR {type(ex).__name__}"
     if spy_r <= -0.03: fired.append("spy_drop_3")
     if spy_r >= 0.03: fired.append("spy_up_3")
     if spy_dd <= -0.10 and spy_dd_prev > -0.10: fired.append("spy_dd_10")

@@ -161,3 +161,4 @@ X 投稿を数学論文や完全な解説文にしない。正確性は守るが
 - **予定イベント**: `event_rules.yaml` scheduled_events(FOMC 9/15-16、月末 DM 判定日 9/30=F 枠、雇用統計 10/2)。planner が event 欄へ登録し、その日の Short をイベント対応 claim に寄せる。
 - **突発イベント**: 毎朝 07:05 `x_event_scan.py`(yfinance、SPY/^VIX/^N225)。数値規則のみ(SPY ±3%/52 週高値から -10% 初回/VIX 30 上抜け/日経 -3%)。発火→`queue/x_events/` に提案+ntfy→`x_claim_gen.py --event`(gate)→殿承認(.approved)→当日 12:30 event slot(poster v1.8、cron 追加)で投稿。1 日 1 unit、同一 claim 7 日再発火なし。
 - **実証**: 09-04 dry-run=発火なし(SPY +1.05%、VIX 14.2)。event 本文(C01、SPY -3% 想定)は本番 gate PASS。sandbox では blocklist 不在で fail-close を確認。
+- 殿 19:45 追加: 突発 trigger に USD/JPY |Δ|≥2%(yfinance JPY=X)、米 2 年/10 年 |Δ|≥15bp(FRED DGS2/DGS10、1 営業日遅れ)、10-2 年カーブ |Δ|≥15bp か符号反転、日本 10 年 |Δ|≥10bp(財務省 jgbcm.csv)、米 10 年 BEI |Δ|≥10bp(FRED T10YIE)。予定に米 CPI 9/10・日本 CPI 9/18(日付は要確認)。取得失敗はその trigger だけ skip。09-04 dry-run: USD/JPY -1.65%(未発火)、JGB10 2.966%(-4bp)、BEI 2.35%。

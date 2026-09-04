@@ -7,7 +7,17 @@ scheduled_events:
   - {date: '2026-09-16', name: FOMC 結果, claims: [C10, C15, C20], note: 当てた外したを言わない。予測を捨てた仕組みの話}
   - {date: '2026-09-30', name: 月末=DM 判定日(本人イベント), claims: [C33, C09, C21], note: F 枠。先出しシグナルと月次成績は追試できる}
   - {date: '2026-10-02', name: 米雇用統計, claims: [C10, C25], note: 指標で相場観を語らない}
+  # 殿 19:45『あとはインフレだな』。CPI 発表日は公式カレンダーで要確認(BLS/総務省)。日付が違えばここを直すだけ
+  - {date: '2026-09-10', name: 米 CPI(8 月分・要日付確認), claims: [C16, C12, C34], note: インフレ=現金の実質目減り。予測せず『名目と実質』の算数へ}
+  - {date: '2026-09-18', name: 日本 CPI(8 月分・要日付確認), claims: [C16, C11], note: 同上。日本の実質金利へ}
 reactive_triggers:
+  # 殿 19:45 追加: 為替・米金利・日本金利・カーブ・インフレ(source: yfinance JPY=X / FRED DGS2 DGS10 T10YIE / 財務省 jgbcm.csv)
+  - {id: usdjpy_2, rule: "USD/JPY 日次変化 |Δ| >= 2%", claims: [C16, C34, C01], format: short, funnel_stage: reach, audience: general, hook_type: contradiction, content_category: A}
+  - {id: us2y_15bp, rule: "米 2 年金利 日次変化 |Δ| >= 15bp(FRED DGS2、1 営業日遅れ)", claims: [C10, C24, C15], format: short, funnel_stage: trust, audience: systematic, hook_type: result, content_category: C}
+  - {id: us10y_15bp, rule: "米 10 年金利 日次変化 |Δ| >= 15bp(FRED DGS10)", claims: [C24, C16, C34], format: short, funnel_stage: reach, audience: investor, hook_type: question, content_category: A}
+  - {id: curve_15bp, rule: "米 10 年−2 年スプレッド 日次変化 |Δ| >= 15bp または符号反転", claims: [C24, C09, C21], format: short, funnel_stage: trust, audience: systematic, hook_type: result, content_category: E}
+  - {id: jgb10_10bp, rule: "日本 10 年金利 日次変化 |Δ| >= 10bp(財務省)", claims: [C16, C34, C11], format: short, funnel_stage: reach, audience: general, hook_type: contradiction, content_category: A}
+  - {id: breakeven_10bp, rule: "米 10 年 BEI 日次変化 |Δ| >= 10bp(FRED T10YIE)", claims: [C16, C12], format: short, funnel_stage: reach, audience: investor, hook_type: math, content_category: D}
   - {id: spy_drop_3, rule: "SPY 日次リターン <= -3%", claims: [C01, C03, C23, C34], format: short, funnel_stage: reach, audience: general, hook_type: contradiction, content_category: A}
   - {id: spy_up_3, rule: "SPY 日次リターン >= +3%", claims: [C02, C12, C22], format: short, funnel_stage: reach, audience: investor, hook_type: math, content_category: D}
   - {id: spy_dd_10, rule: "SPY 52 週高値からの下落 <= -10%(初回到達日のみ)", claims: [C05, C17, C13, C06], format: short, funnel_stage: trust, audience: investor, hook_type: question, content_category: A}
