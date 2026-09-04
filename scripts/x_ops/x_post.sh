@@ -17,6 +17,7 @@ LEDGER_LOOKUP="${X_POST_LEDGER_LOOKUP:-$SCRIPT_DIR/x_post_ledger_lookup.py}"
 GATE_SCRIPT="${X_POST_GATE_SCRIPT:-$SCRIPT_DIR/x_post_gate.sh}"
 NTFY_SCRIPT="${X_POST_NTFY_SCRIPT:-$REPO_ROOT/scripts/ntfy.sh}"
 API_ENV_FILE="${X_POST_API_ENV_FILE:-$REPO_ROOT/config/x_api.env}"
+TOKEN_REFRESH_SCRIPT="${X_TOKEN_REFRESH_SCRIPT:-$SCRIPT_DIR/x_token_refresh.py}"
 FAILURE_LOG_FILE="${X_POST_FAILURE_LOG:-$REPO_ROOT/logs/x_post_draft_failures.log}"
 
 if [[ -n "${X_POST_LLM_CMD:-}" ]]; then
@@ -284,9 +285,13 @@ cmd_post() {
         echo "x_post.sh post: unknown argument: $1" >&2
         exit 2
     fi
-    local file="$(draft_file "$draft_id")" marker="$(approved_file "$draft_id")"
+    local file="$(draft_file "$draft_id")" marker="$(approved_file "$draft_id")" posted="$(posted_file "$draft_id")"
     [[ -f "$file" ]] || { echo "x_post.sh post: draft not found: $file" >&2; exit 2; }
     [[ -f "$marker" ]] || { echo "x_post.sh post: not approved, stopping: $draft_id" >&2; exit 1; }
+    if [[ -f "$posted" ]]; then
+        echo "x_post.sh post: already posted, stopping: $draft_id" >&2
+        exit 1
+    fi
     if [[ -n "$media" ]]; then
         [[ -f "$media" ]] || { echo "x_post.sh post: media not found: $media" >&2; exit 2; }
         [[ "$media" = *.png ]] || { echo "x_post.sh post: media must be a PNG" >&2; exit 2; }
@@ -295,15 +300,21 @@ cmd_post() {
         (( size <= 5242880 )) || { echo "x_post.sh post: media exceeds 5MB" >&2; exit 2; }
     fi
     [[ -f "$API_ENV_FILE" ]] || { echo "x_post.sh post: credentials file not found: $API_ENV_FILE" >&2; exit 2; }
+    [[ -f "$TOKEN_REFRESH_SCRIPT" ]] || { echo "x_post.sh post: token refresh helper not found: $TOKEN_REFRESH_SCRIPT" >&2; exit 2; }
+    if ! python3 "$TOKEN_REFRESH_SCRIPT" "$API_ENV_FILE" >/dev/null 2>&1; then
+        echo "x_post.sh post: token refresh failed" >&2
+        exit 1
+    fi
     local python_status result_file
     result_file="$(mktemp)"
     export X_POST_RESULT_FILE="$result_file"
     set +e
-    python3 - "$file" "$media" "$API_ENV_FILE" <<'PY'
-import base64, json, os, sys
+    python3 - "$file" "$media" "$API_ENV_FILE" "$posted" <<'PY'
+import base64, json, os, sys, tempfile, time
+from collections.abc import Mapping
 from pathlib import Path
 
-draft_path, media_path, env_path = sys.argv[1:]
+draft_path, media_path, env_path, posted_path = sys.argv[1:]
 values = {}
 for line in Path(env_path).read_text(encoding="utf-8").splitlines():
     if "=" not in line or line.lstrip().startswith("#"):
@@ -326,6 +337,60 @@ else:
 if not access and not tokens.get("access_token"):
     print("x_post.sh post: token empty", file=sys.stderr)
     raise SystemExit(2)
+
+
+def token_fields(token):
+    if hasattr(token, "model_dump"):
+        token = token.model_dump(exclude_none=True)
+    if isinstance(token, Mapping):
+        return {
+            "access_token": token.get("access_token"),
+            "refresh_token": token.get("refresh_token"),
+        }
+    return {
+        "access_token": getattr(token, "access_token", None),
+        "refresh_token": getattr(token, "refresh_token", None),
+    }
+
+
+def atomic_persist_tokens(path, token):
+    refreshed = token_fields(token)
+    access_value = str(refreshed.get("access_token") or access or "").strip()
+    refresh_value = str(refreshed.get("refresh_token") or refresh or "").strip()
+    if not access_value or not refresh_value:
+        raise RuntimeError("post token is incomplete")
+    replacements = {
+        "X_ACCESS_TOKEN": access_value,
+        "X_REFRESH_TOKEN": refresh_value,
+    }
+    lines = path.read_text(encoding="utf-8").splitlines()
+    output = []
+    seen = set()
+    for line in lines:
+        key = line.split("=", 1)[0].strip() if "=" in line else ""
+        if key in replacements:
+            output.append(f"{key}={replacements[key]}")
+            seen.add(key)
+        else:
+            output.append(line)
+    for key, value in replacements.items():
+        if key not in seen:
+            output.append(f"{key}={value}")
+    fd, tmp_name = tempfile.mkstemp(prefix=f".{path.name}.", suffix=".tmp", dir=path.parent)
+    try:
+        os.fchmod(fd, 0o600)
+        with os.fdopen(fd, "w", encoding="utf-8") as out:
+            out.write("\n".join(output) + "\n")
+            out.flush()
+            os.fsync(out.fileno())
+        os.replace(tmp_name, path)
+        os.chmod(path, 0o600)
+    except Exception:
+        try:
+            os.unlink(tmp_name)
+        except FileNotFoundError:
+            pass
+        raise
 try:
     from xdk.oauth2_auth import OAuth2PKCEAuth
     from xdk import Client
@@ -388,20 +453,66 @@ except Exception as exc:
     raise SystemExit(1)
 
 def as_json(value):
-    if isinstance(value, dict):
-        return value
+    if isinstance(value, Mapping):
+        return {
+            key: as_json(item)
+            for key, item in value.items()
+            if key.lower() not in {"access_token", "refresh_token", "token"}
+        }
     if hasattr(value, "model_dump"):
-        return value.model_dump(exclude_none=True)
-    return {"response": str(value)}
+        return as_json(value.model_dump(exclude_none=True))
+    if isinstance(value, list):
+        return [as_json(item) for item in value]
+    if value is None or isinstance(value, (str, int, float, bool)):
+        return value
+    return str(value)
 
 result = as_json(response)
-print(json.dumps(result, ensure_ascii=False))
-Path(os.environ["X_POST_RESULT_FILE"]).write_text(json.dumps(result, ensure_ascii=False), encoding="utf-8")
+result_json = json.dumps(result, ensure_ascii=False)
+Path(os.environ["X_POST_RESULT_FILE"]).write_text(result_json, encoding="utf-8")
+
+
+def write_posted_marker(token_persistence, error=None):
+    marker = {
+        "posted_at": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
+        "media": media_path,
+        "token_persistence": token_persistence,
+        "result": result,
+    }
+    if error:
+        marker["error"] = error
+    fd, tmp_name = tempfile.mkstemp(prefix=f".{Path(posted_path).name}.", suffix=".tmp", dir=Path(posted_path).parent)
+    try:
+        os.fchmod(fd, 0o600)
+        with os.fdopen(fd, "w", encoding="utf-8") as out:
+            json.dump(marker, out, ensure_ascii=False)
+            out.write("\n")
+            out.flush()
+            os.fsync(out.fileno())
+        os.replace(tmp_name, posted_path)
+    except Exception:
+        try:
+            os.unlink(tmp_name)
+        except FileNotFoundError:
+            pass
+        raise
+
+
+write_posted_marker("pending")
+try:
+    atomic_persist_tokens(Path(env_path), client.token)
+except Exception:
+    try:
+        write_posted_marker("failed", "client token was not persisted")
+    except Exception:
+        pass
+    print("x_post.sh post: token persistence failed", file=sys.stderr)
+    raise SystemExit(1)
+write_posted_marker("persisted")
 PY
     python_status=$?
     set -e
     if (( python_status != 0 )); then exit "$python_status"; fi
-    printf 'posted_at=%s\nmedia=%s\n' "$(date -u +%Y-%m-%dT%H:%M:%SZ)" "$media" > "$(posted_file "$draft_id")"
     cat "$result_file"
     rm -f "$result_file"
     unset X_POST_RESULT_FILE
