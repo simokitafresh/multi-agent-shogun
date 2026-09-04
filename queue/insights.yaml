@@ -17363,3 +17363,10 @@ insights:
   status: "resolved"
   action_artifact: "semantic_map=/home/simokitafresh/multi-agent-shogun/context/semantic-map.md;semantic_index=/home/simokitafresh/multi-agent-shogun/docs/semantic-index/index.md"
   resolved_reason: "semantic map generation verified the candidate is represented or intentionally ignored"
+- id: INS-20260904-150024117-2035
+  ts: "2026-09-04T15:00:24+09:00"
+  insight: "[[現在のX投稿パイプラインは]] semantic_stress_test candidate_aliases: NO_MATCH source=lord query=現在のX投稿パイプラインは、Content Engineとしてかなり完成してきた。 本人X 400件 → X Voice実測 本人note 64記事 → Reasoning style抽出 本人添削 → human rewrite corpus few-shot反映 → 追加5…"
+  priority: "low"
+  source: "semantic_stress_test"
+  fix_known: false
+  status: pending
