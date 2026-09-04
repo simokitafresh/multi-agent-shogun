@@ -3973,6 +3973,8 @@
 - cmd_id: cmd_karo_hotfix_t3s57_postclear_root_ledger_guard_202609040713
   verdict: LGTM
   review_type: report
+  gate_result: "CLEAR"
+  gate_synced_at: "2026-09-04T09:49:53+09:00"
   reviewed_at: '2026-09-04T09:25:00+09:00'
   report_fingerprint: dd430a18cc1fd66e2dddcac08e5b0aa469c3e6fc6ef55e259e9f1a8ac58f64b9
   report_ninja: hanzo
