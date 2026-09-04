@@ -17495,46 +17495,60 @@ insights:
   priority: "low"
   source: "semantic_index_update"
   fix_known: false
-  status: pending
+  status: "resolved"
+  action_artifact: "semantic_map=/home/simokitafresh/multi-agent-shogun/context/semantic-map.md;semantic_index=/home/simokitafresh/multi-agent-shogun/docs/semantic-index/index.md"
+  resolved_reason: "semantic map generation verified the candidate is represented or intentionally ignored"
 - id: INS-20260904-164053319-3279
   ts: "2026-09-04T16:40:53+09:00"
   insight: "semantic_index_update新概念候補: discussion:tmux下方のstatusbarにclaudeのusageが表示されていたと思うのだが、再度表示できるか？個別のpaneではなくtmux全体のだ は 既存aliasesに一致なし。概念定義とaliases追加を検討せよ"
   priority: "low"
   source: "semantic_index_update"
   fix_known: false
-  status: pending
+  status: "resolved"
+  action_artifact: "semantic_map=/home/simokitafresh/multi-agent-shogun/context/semantic-map.md;semantic_index=/home/simokitafresh/multi-agent-shogun/docs/semantic-index/index.md"
+  resolved_reason: "semantic map generation verified the candidate is represented or intentionally ignored"
 - id: INS-20260904-164358245-2e62
   ts: "2026-09-04T16:43:58+09:00"
   insight: "semantic_index_update未登録[[リンク]]ターゲット: [[殿質問_tmux_usage表示_20260904]] は既存aliasesに一致なし。類似概念TOP3: agent_formation_management(編成管理; alias=settings tmux 実pane 三点照合; score=11.7) / dm_signal_pf_restore_guardrails(DM-Signal PF復元運用ガードレール; alias=T106_DM-signal_ext4移設; score=4.1) / sg_pre31_semantic_validation(SG-PRE31意味検算; alias=gunshi_idle_lg048_automate_sg_pre31_20260706; score=3.9)。概念定義とaliases追加を検討せよ"
   priority: "low"
   source: "semantic_index_update"
   fix_known: false
-  status: pending
+  status: "resolved"
+  action_artifact: "semantic_index=/home/simokitafresh/multi-agent-shogun/docs/semantic-index/index.md"
+  resolved_reason: "semantic index candidate was absorbed into a registered concept"
 - id: INS-20260904-164359054-d8d9
   ts: "2026-09-04T16:43:59+09:00"
   insight: "semantic_index_update未登録[[リンク]]ターゲット: [[usage_statusbar_loop.sh]] は既存aliasesに一致なし。類似概念TOP3: operational_ontology(操作的オントロジー; alias=project_path.sh; score=15.0) / provisional_review_approval(仮: Review Approval; alias=scripts/review_approval.sh; score=14.5) / semantic_dictionary_design(セマンティック辞書構想; alias=source shogun loop; score=14.4)。概念定義とaliases追加を検討せよ"
   priority: "low"
   source: "semantic_index_update"
   fix_known: false
-  status: pending
+  status: "resolved"
+  action_artifact: "semantic_index=/home/simokitafresh/multi-agent-shogun/docs/semantic-index/index.md"
+  resolved_reason: "semantic index candidate was absorbed into a registered concept"
 - id: INS-20260904-164359423-1bac
   ts: "2026-09-04T16:43:59+09:00"
   insight: "semantic_index_update未登録[[リンク]]ターゲット: [[tmux_shogun_session_status_right]] は既存aliasesに一致なし。類似概念TOP3: semantic_dictionary_design(セマンティック辞書構想; alias=source shogun session save; score=20.2) / gate_quality_framework(ゲート品質統合フレームワーク; alias=gate_shogun_startup; score=14.3) / yaml_safe_write(YAML安全書込み; alias=shogun_to_karo parse error; score=13.9)。概念定義とaliases追加を検討せよ"
   priority: "low"
   source: "semantic_index_update"
   fix_known: false
-  status: pending
+  status: "resolved"
+  action_artifact: "semantic_index=/home/simokitafresh/multi-agent-shogun/docs/semantic-index/index.md"
+  resolved_reason: "semantic index candidate was absorbed into a registered concept"
 - id: INS-20260904-164411065-0bf1
   ts: "2026-09-04T16:44:11+09:00"
   insight: "[[DM Signal campaign attribution X→dm signal com 直リンクの visit s]] semantic_stress_test candidate_aliases: NO_MATCH source=cmds query=DM-Signal campaign attribution(X→dm-signal.com 直リンクの visit/signup を campaign_id で外部帰属): LP が ?utm_campaign を読み showcase_events へ campaign_id を同送、backend は列追加+週次集計 API"
   priority: "low"
   source: "semantic_stress_test"
   fix_known: false
-  status: pending
+  status: "resolved"
+  action_artifact: "semantic_index=/home/simokitafresh/multi-agent-shogun/docs/semantic-index/index.md"
+  resolved_reason: "semantic index candidate was absorbed into a registered concept"
 - id: INS-20260904-164411450-3ee2
   ts: "2026-09-04T16:44:11+09:00"
   insight: "[[殿裁定 16 07 X Growth Engine v1 3 §48 X 側 KPI は投稿単位で取れるが]] semantic_stress_test candidate_aliases: NO_MATCH source=cmds query=殿裁定 2026-09-04 16:07(X Growth Engine v1.3 §48): X 側 KPI は投稿単位で取れるが、DM-Signal visit/signup/paid は campaign_id attribution を実装した後で初めて直接帰属できる。既存 showcase_events(POST /api/public/showc"
   priority: "low"
   source: "semantic_stress_test"
   fix_known: false
-  status: pending
+  status: "resolved"
+  action_artifact: "semantic_index=/home/simokitafresh/multi-agent-shogun/docs/semantic-index/index.md"
+  resolved_reason: "semantic index candidate was absorbed into a registered concept"
