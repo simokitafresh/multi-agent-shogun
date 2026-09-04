@@ -3587,6 +3587,103 @@ else:
 PY
 }
 
+# cmd_karo_hotfix_t3s40_auto_push_wait_async: cmd_complete_gate_auto_push_ancestry_wait
+# below is the ~28.043s synchronous residual measured in production
+# (cmd_karo_hotfix_t3s40_post_source_full_instrumentation: post_source_checks
+# total 29.475s vs named 1.432s, i.e. this single unwrapped call was the
+# residual). The L4 caller's gate decision for the current invocation is
+# already fail-closed WAIT the instant REPORT_COMMIT_MAIN_ANCESTRY_WAIT is
+# true, independent of whether this retry succeeds -- a later gate invocation
+# (this cmd's own re-run, or another cmd's) re-derives the ancestry boundary
+# from scratch via check_report_commit_main_ancestry and observes a resolved
+# boundary once this background retry lands. There is no correctness reason
+# to block the current invocation on its outcome, so dispatch it off the
+# synchronous critical path; the outcome surfaces only in the retry log.
+#
+# gunshi formal FAIL (msg_20260904_074552_549133_38de3e9a): a bare background
+# `&` is neither durable (a crash between dispatch and completion loses the
+# retry with no recovery path) nor single-flight (three consecutive WAIT
+# invocations for the same cmd would each spawn their own redundant push
+# attempt, piling up concurrent pushes). Reuse the same
+# gate_notify_enqueue/gate_notify_complete durable-queue primitives the other
+# non-critical GATE CLEAR side effects already use (gunshi_reflux_feedback
+# etc.): the pending record on disk both blocks a second concurrent dispatch
+# for the same cmd_id (single-flight) and gives gate_notify_reconcile_stale
+# (already invoked once, unconditionally, near the top of every gate
+# invocation) a durable trail to recover a worker that crashed before
+# completing -- or before even launching.
+gate_run_auto_push_ancestry_retry() {
+    local cmd_id="$1"
+    shift
+    local retry_log="$SCRIPT_DIR/queue/gates/${cmd_id}/auto_push_ancestry_retry.log"
+    mkdir -p "$(dirname "$retry_log")" 2>/dev/null
+    if cmd_complete_gate_auto_push_ancestry_wait "$@"; then
+        printf '%s\t%s\tPASS\n' "$(date -Iseconds)" "$cmd_id" >> "$retry_log"
+    else
+        printf '%s\t%s\tFAIL\n' "$(date -Iseconds)" "$cmd_id" >> "$retry_log"
+    fi
+}
+
+# karo review differentiation (msg_20260904_080633_981530_67f5467a): the
+# check-then-enqueue shape above raced -- two concurrent invocations for the
+# same cmd_id (or a dispatch racing a reconcile-sweep recovery) could both
+# observe "no pending file yet" and both proceed to enqueue+launch, because
+# gate_notify_enqueue's mkstemp+os.replace always succeeds and silently
+# clobbers an existing reservation instead of reporting a conflict, and its
+# `... || true` swallows any real write failure so a worker could launch even
+# though no reservation was actually persisted. Replace the check+enqueue
+# pair with a single atomic reservation: os.open(..., O_EXCL) either creates
+# the pending record or fails with FileExistsError, and POSIX guarantees
+# exactly one caller among any number of concurrent racers wins that create.
+# Only the winner (verified by the reservation file's postcondition existing
+# on disk) launches the worker; every other racer -- concurrent or
+# sequential -- observes the failure and skips with zero dispatch.
+gate_notify_claim_auto_push_ancestry_retry() {
+    local cmd_id="$1" pending
+    pending="$(gate_notify_pending_path "$cmd_id" auto_push_ancestry_retry)"
+    mkdir -p "$(dirname "$pending")" 2>/dev/null
+    python3 - "$pending" "$cmd_id" <<'PY'
+import json, os, sys, time
+path, cmd_id = sys.argv[1:]
+try:
+    fd = os.open(path, os.O_WRONLY | os.O_CREAT | os.O_EXCL, 0o600)
+except FileExistsError:
+    sys.exit(1)
+data = {"version": 1, "cmd_id": cmd_id, "item": "auto_push_ancestry_retry",
+        "state": "pending", "queued_at_ns": time.time_ns()}
+with os.fdopen(fd, "w", encoding="utf-8") as fh:
+    json.dump(data, fh, sort_keys=True)
+    fh.write("\n")
+    fh.flush()
+    os.fsync(fh.fileno())
+sys.exit(0)
+PY
+}
+export -f gate_notify_claim_auto_push_ancestry_retry
+
+cmd_complete_gate_queue_auto_push_ancestry_retry() {
+    local cmd_id="$1"
+    shift
+    local -a task_file_args=("$@")
+    if ! gate_notify_claim_auto_push_ancestry_retry "$cmd_id"; then
+        echo "  auto_push_ancestry_retry: SKIP (reservation claim failed -- already in-flight or write failed; single-flight guard)"
+        return 0
+    fi
+    # Postcondition: only launch the worker once the reservation is
+    # confirmed to actually exist on disk (the atomic create above already
+    # guarantees this on success, but this is the explicit check karo asked
+    # for rather than trusting the exit code alone).
+    if [ ! -f "$(gate_notify_pending_path "$cmd_id" auto_push_ancestry_retry)" ]; then
+        echo "  auto_push_ancestry_retry: SKIP (reservation postcondition missing after claim)"
+        return 0
+    fi
+    (
+        gate_run_auto_push_ancestry_retry "$cmd_id" "${task_file_args[@]}"
+        gate_notify_complete "$cmd_id" auto_push_ancestry_retry
+    ) >> "${LOG_DIR:-/tmp}/cmd_complete_gate_async.log" 2>&1 &
+}
+export -f cmd_complete_gate_queue_auto_push_ancestry_retry
+
 cmd_complete_gate_auto_push_ancestry_wait() {
     local repo="${CMD_COMPLETE_GATE_AUTO_PUSH_REPO:-$SCRIPT_DIR}" remote_tip ci_state push_output
     local threshold="${CMD_COMPLETE_GATE_AUTO_PUSH_THRESHOLD:-1}"
@@ -5665,6 +5762,48 @@ print(int(json.load(open(sys.argv[1]))["queued_at_ns"] // 1_000_000_000))
                 gunshi_reflux_2nd) gate_run_gunshi_reflux_only "$cmd_id_rec" ;;
                 clear_notify)
                     ( CLEAR_NOTIFICATION_SENT=false send_clear_notifications_once "$cmd_id_rec" "GATE CLEAR terminal (recovered)" )
+                    ;;
+                auto_push_ancestry_retry)
+                    # karo review (msg_20260904_080633_981530_67f5467a): two
+                    # concurrent gate invocations (each processing a
+                    # different cmd_id of their own) can each run this same
+                    # reconcile sweep and both observe this exact stale,
+                    # not-done pending file at the same time. Without an
+                    # atomic tie-breaker both would replay the recovery,
+                    # double-dispatching. `set -o noclobber` redirection uses
+                    # O_EXCL under the hood: creating the sidecar marker is
+                    # atomic, so exactly one concurrent sweep wins the create
+                    # and proceeds; every other racer sees the marker already
+                    # exists and skips.
+                    #
+                    # karo formal RC follow-up (msg_20260904_084454_1597920_2a5e34f0):
+                    # an earlier version removed this marker immediately after
+                    # gate_run_auto_push_ancestry_retry, before the trailing
+                    # gate_notify_complete call below had persisted the done
+                    # marker / removed pending. In that window the pending
+                    # file was still not-done AND the claim marker was
+                    # already gone, so a second concurrent sweep's claim
+                    # attempt would wrongly succeed and replay the recovery a
+                    # second time. Call gate_notify_complete here, inside the
+                    # winner's own case arm, BEFORE releasing the claim --
+                    # this guarantees pending/done are finalized while the
+                    # marker still blocks every other racer, so no window
+                    # ever has both "not done" and "marker absent" true at
+                    # once. The generic gate_notify_complete call after this
+                    # case statement still runs for every item including
+                    # this one; calling it again here first makes it an
+                    # idempotent no-op there (rm -f on an already-removed
+                    # pending file, and re-writing an unchanged done marker).
+                    local _apar_claim="${pending}.recovering"
+                    if ! (set -o noclobber; : > "$_apar_claim") 2>/dev/null; then
+                        echo "  gate_notify_reconcile: ${cmd_id_rec}/auto_push_ancestry_retry claim lost to a concurrent sweep (skip)"
+                        continue
+                    fi
+                    local -a _apar_recover_files=()
+                    mapfile -t _apar_recover_files < <(list_task_files_for_cmd "$TASKS_DIR" "$cmd_id_rec" | sort -u || true)
+                    gate_run_auto_push_ancestry_retry "$cmd_id_rec" "${_apar_recover_files[@]}"
+                    gate_notify_complete "$cmd_id_rec" auto_push_ancestry_retry
+                    rm -f "$_apar_claim" 2>/dev/null || true
                     ;;
                 *) echo "[WARN] gate_notify_reconcile: unknown item ${item} (leaving pending)"; continue ;;
             esac
@@ -15375,37 +15514,19 @@ if [ "$ALL_CLEAR" = true ]; then
         ALL_CLEAR=false
     elif [ "${REPORT_COMMIT_MAIN_ANCESTRY_WAIT:-false}" = true ]; then
         gate_detail_finish
-        # cmd_karo_hotfix_t3s40_post_source_full_instrumentation: this call is
-        # the dominant unmeasured region of the WAIT cycle (production
-        # measured post_source_checks total 29.475s vs named 1.432s here,
-        # i.e. this single unwrapped call was the ~28.043s residual). It
-        # contains the ancestry fetch/merge-base checks, lock waits, and the
-        # retry/sleep loop inside push_task_repositories, so classify it
-        # external_wait as a single span rather than decomposing internals
-        # that push_task_repositories does not itself expose.
+        # cmd_karo_hotfix_t3s40_auto_push_wait_async: this invocation is
+        # already fail-closed WAIT the moment the boundary is unresolved, so
+        # queue the retry off the synchronous path instead of blocking this
+        # invocation on the ~28.043s push_task_repositories retry/sleep loop
+        # that cmd_karo_hotfix_t3s40_post_source_full_instrumentation measured
+        # as the dominant unnamed residual. A later gate invocation
+        # re-derives REPORT_COMMIT_MAIN_ANCESTRY_WAIT from scratch and will
+        # see the boundary resolved once the retry lands.
         gate_detail_begin "post_source_checks.report_commit_main_ancestry.auto_push_wait" external_wait
-        if cmd_complete_gate_auto_push_ancestry_wait "${MATCHING_TASK_FILES[@]}"; then
-            gate_detail_finish
-            # The helper refreshes origin/main after publication. Re-run the
-            # same ancestry SSOT so a successful push clears this WAIT in the
-            # current gate invocation and leaves no stale terminal row.
-            gate_detail_begin "post_source_checks.report_commit_main_ancestry.reverify" pure_processing
-            if check_report_commit_main_ancestry \
-                && [ "${REPORT_COMMIT_MAIN_ANCESTRY_WAIT:-false}" != true ]; then
-                gate_detail_finish
-                echo "GATE PASS: report_commit_main_ancestry auto-push verified"
-            else
-                gate_detail_finish
-                echo "GATE WAIT: report_commit_main_ancestry (auto-push did not clear the boundary)"
-                record_wait_reason "WAIT:report_commit_main_ancestry"
-                ALL_CLEAR=false
-            fi
-        else
-            gate_detail_finish
-            echo "GATE WAIT: report_commit_main_ancestry (auto-push failed closed)"
-            record_wait_reason "WAIT:report_commit_main_ancestry"
-            ALL_CLEAR=false
-        fi
+        cmd_complete_gate_queue_auto_push_ancestry_retry "$CMD_ID" "${MATCHING_TASK_FILES[@]}"
+        gate_detail_finish
+        echo "GATE WAIT: report_commit_main_ancestry (auto-push retry queued off sync path)"
+        record_wait_reason "WAIT:report_commit_main_ancestry"
         ALL_CLEAR=false
     else
         gate_detail_finish
