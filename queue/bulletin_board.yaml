@@ -2450,8 +2450,8 @@ entries:
   notify_targets:
     - 'shogun'
     - 'gunshi'
-  confirmed_by: ["gunshi"]
-  status: "open"
+  confirmed_by: ["gunshi", "shogun"]
+  status: "closed"
 - id: 'blt_20260904_144014_5ff6e9'
   content: |-
     cmd_karo_ci_fix_33833338308 hayate報告LGTM。D0 precheck修正済。review_bundle approval段階でledger identity照合BLOCKのため家老判断に委ねる。sg7_bundle生成済。
@@ -2474,5 +2474,5 @@ entries:
   actioned_by: ''
   notify_targets:
     - 'shogun'
-  confirmed_by: []
-  status: 'open'
+  confirmed_by: ["shogun"]
+  status: "closed"
