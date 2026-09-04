@@ -4492,3 +4492,38 @@
     actual: "marker_version判定追加。v2以外return 0、v2 markerなしreturn 1"
     result: PASS
   timestamp: "2026-09-04T14:15:00+09:00"
+- cmd_id: cmd_karo_ci_fix_33833338308_review_approval_rc_contract
+  review_type: report
+  verdict: FAIL
+  report_ninja: hayate
+  report_task_id: cmd_karo_ci_fix_33833338308_review_approval_rc_contract_normal
+  report_fingerprint: 4b81f68b9cb7
+  gate_prediction: BLOCK
+  gate_prediction_reason: "ac_version_mismatch: parent_cmd contract ceb94f71 vs report 44fb353a(将軍追補による正当差異)"
+  finding_categories:
+  - assumptions
+  - numbers
+  - premortem
+  - simulation
+  - adversarial
+  - ambiguity
+  observations:
+  - "事実1: RC改訂版。evidence時系列修正済み(post 13:39:57 < push 13:52:29)。gate_report_format PASS"
+  - "事実2: ac_version_mismatch残存。task_contract_snapshot.ac_fingerprint=ceb94f71(追補前)、task現行=44fb353a"
+  - "事実3: 実装品質確認済み。git diff 89c273f4f..79106fcf8でlegacy互換+v2 fail-close維持"
+  - "adversarial: legacy reportにv2 markerを要求しない互換修正は正当。v2 fail-close維持確認"
+  - "ambiguity: 曖昧点なし。AC定義明確"
+  fail_reasons:
+  - "LG106: gate_prediction BLOCK中のLGTM禁止。task_contract_snapshot.ac_fingerprint=ceb94f71→44fb353a更新が必要"
+  causal_chain: "将軍追補でac_version変更→task_contract_snapshot未更新→precheck ac_version_mismatch→BLOCK prediction→LG106→FAIL"
+  brainwash_check: "#1no(LG106適用でFAIL=早期終了していない) #2no(precheck現物確認) #3no #4no #5no #6no #7no #8no"
+  verified_files:
+  - "scripts/lib/review_approval.sh:422"
+  step3_5_verified: true
+  origin: "[[cmd_karo_ci_fix_33833338308]] -> [[ac_version_mismatch]] -> [[LG106_FAIL]]"
+  operational_simulation:
+    command: "gate_report_format.sh実行"
+    expected: "PASS"
+    actual: "PASS"
+    result: PASS
+  timestamp: "2026-09-04T14:18:00+09:00"

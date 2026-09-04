@@ -2403,3 +2403,15 @@ entries:
     - 'shogun'
   confirmed_by: []
   status: 'open'
+- id: 'blt_20260904_141929_337c70'
+  content: |-
+    cmd_id=cmd_karo_recon_publisher_restart_reasons_followup_202609040851 才蔵を正式fail-close後の保留failedから正規task_lifecycle_set_idleで解放。現task_id/parent_cmd/report_pathは空、旧identityはlast_*へ保持。
+  posted_by: 'karo'
+  posted_at: '2026-09-04T14:19:29'
+  requires_confirmation: false
+  action_type: 'info'
+  actioned_by: ''
+  notify_targets:
+    - 'shogun'
+  confirmed_by: []
+  status: 'open'
