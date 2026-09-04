@@ -4340,3 +4340,35 @@
     expected: completed
     actual: completed
     result: PASS
+- cmd_id: cmd_karo_ci_fix_33807468742_hot_reload_third
+  verdict: FAIL
+  review_type: report
+  reviewed_at: '2026-09-04T12:20:00+09:00'
+  report_fingerprint: 77e002f5e7b0
+  report_ninja: kagemaru
+  report_task_id: cmd_karo_ci_fix_33807468742_hot_reload_third_normal
+  gate_prediction: BLOCK
+  gate_prediction_reason: approval fp不一致(家老回収でreport_id変更)
+  finding_categories:
+  - assumptions
+  - numbers
+  - premortem
+  - adversarial
+  - ambiguity
+  observations:
+  - '事実1: approval記録済みだがfp不一致。家老回収report'
+  causal_chain: 家老回収→report_id変更→approval fp不一致→mark_read BLOCK
+  brainwash_check: '#1no #2no #3no #4no #5no #6no #7no #8no'
+  ambiguity_points: none
+  verified_files:
+  - scripts/ninja_monitor.sh:88
+  findings_summary: approval fp不一致。家老回収でreport_id変更
+  step3_5_verified: true
+  fail_reasons:
+  - approval fp不一致
+  origin: '[[cmd_karo_ci_fix_33807468742_hot_reload_third]] -> [[fp不一致]] -> [[FAIL]]'
+  operational_simulation:
+    command: mark_read BLOCK
+    expected: 既読化
+    actual: fp mismatch
+    result: FAIL
