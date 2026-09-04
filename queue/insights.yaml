@@ -17890,3 +17890,10 @@ insights:
   status: "resolved"
   action_artifact: "semantic_index=/home/simokitafresh/multi-agent-shogun/docs/semantic-index/index.md"
   resolved_reason: "semantic index candidate was absorbed into a registered concept"
+- id: INS-20260905-015258626-1004
+  ts: "2026-09-05T01:52:58+09:00"
+  insight: "[[前回のEvent Market Contextへの追加です]] semantic_stress_test candidate_aliases: NO_MATCH source=lord query=前回のEvent / Market Contextへの追加です。 インフレも重要観測対象として明示してください。 ただし、 「CPI発表日にCPIを解説する」 だけの意味ではありません。 本人にとってインフレは、 - 現金の実質価値 - 名目リターンと実質リターン - 金利 -…"
+  priority: "low"
+  source: "semantic_stress_test"
+  fix_known: false
+  status: pending
