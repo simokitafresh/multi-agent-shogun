@@ -17961,7 +17961,9 @@ insights:
   priority: "low"
   source: "semantic_stress_test"
   fix_known: false
-  status: pending
+  status: "resolved"
+  action_artifact: "semantic_index=/home/simokitafresh/multi-agent-shogun/docs/semantic-index/index.md"
+  resolved_reason: "semantic index candidate was absorbed into a registered concept"
 - id: INS-20260905-024524318-84d4
   ts: "2026-09-05T02:45:24+09:00"
   insight: "[[DM SignalのLP・Free tier・マーケティング導線について]] semantic_stress_test candidate_aliases: NO_MATCH source=lord query=DM-SignalのLP・Free tier・マーケティング導線について、現状を再調査し、次段の設計を行ってください。 今回は「LPを大量に作る」ことが目的ではありません。 目的は、 1. 現行 \"dm-signal.com\" をSEO・ブランドのCore LPとして完成させる…"
