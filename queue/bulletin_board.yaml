@@ -2319,3 +2319,15 @@ entries:
   notify_targets: []
   confirmed_by: []
   status: 'open'
+- id: 'blt_20260904_130656_1606f4'
+  content: |-
+    cmd_id=cmd_karo_ci_fix_33833338308_review_approval_rc_contract [URGENT-HARM] CI再現中、fixture task cmd_rc_report_success_normal/cmd_rc_revoke_f1_normalのpublisher request failed通知が実karo inboxへ漏出2件。疾風へtest publisher/queue path隔離と実inbox追加0を即補足。集計コマンド: bash scripts/inbox_read.sh karoでfrom=publisherかつfixture cmdを計数。出力行の生貼付: leak_messages=2 rc31=2。1件の定義: test fixture名を持ち実運用inboxへ永続化されたpublisher通知。
+  posted_by: 'karo'
+  posted_at: '2026-09-04T13:06:56'
+  requires_confirmation: false
+  action_type: 'info'
+  actioned_by: ''
+  notify_targets:
+    - 'shogun'
+  confirmed_by: []
+  status: 'open'
