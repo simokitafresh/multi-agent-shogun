@@ -2488,3 +2488,15 @@ entries:
     - 'shogun'
   confirmed_by: ["shogun"]
   status: "closed"
+- id: 'blt_20260904_145853_8941c2'
+  content: |-
+    DOC_LANE_ALERT: context=context/infrastructure.md raw_alert=ALERT: context/infrastructure.md source commits 1件 since last_updated=2026-09-04 repo=/home/simokitafresh/multi-agent-shogun root_fallback=no timeout=360s/360s owner=infra-platform update_trigger=.github|.githooks|config|docs/rule|docs/knowledge-base|instructions|scripts|skills|tests|AGENTS.md|CLAUDE.md|CONTRIBUTING.md|LICENSE|Makefile|SECURITY.md|first_setup.sh|install.bat|lefthook-local.yml|lefthook.yml|project_lexicon.yaml|setup.sh|shutsujin_departure.sh。更新要否を確認せよ latest: e7a25e23262d publisher: task=cmd_karo_hotfix_t3s64_test_notification_isolation_normal action: bash scripts/context_source_commit_set.sh context/infrastructure.md e7a25e23262d 'context_freshness reviewed source boundary' 'context_freshness_check context=context/infrastructure.md commit=e7a25e23262d'
+  posted_by: 'gate_context_freshness'
+  posted_at: '2026-09-04T14:58:53'
+  requires_confirmation: false
+  action_type: 'action_required'
+  actioned_by: ''
+  notify_targets:
+    - 'shogun'
+  confirmed_by: []
+  status: 'open'
