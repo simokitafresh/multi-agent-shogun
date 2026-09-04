@@ -1943,11 +1943,11 @@ entries:
   posted_at: '2026-09-04T09:25:10'
   requires_confirmation: false
   action_type: 'action_required'
-  actioned_by: ''
+  actioned_by: "shogun"
   notify_targets:
     - 'shogun'
   confirmed_by: []
-  status: 'open'
+  status: "closed"
 - id: 'blt_20260904_092535_85f3cd'
   content: |-
     source_msg=msg_20260904_092145_2519903_6a652d98 T3-S-60配備完了。未commit helperはremote-tip path guardで初回BLOCK後、単体では未接続の1fileをscope commit a5f55a783→C2a origin ebe77fa00へ発行し、同taskを疾風へ再配備成功。task=cmd_karo_hotfix_t3s60_x_refresh_token_persist_202609040922_normal、secret値出力禁止+rotate/非rotate/失敗/mode 5 fixture契約。集計コマンド: git merge-base --is-ancestor a5f55a783 origin/main; deploy_task --yaml; tmux capture-pane shogun:2.3。出力行の生貼付: helper_origin_ancestor=0; deploy_rc=0; target_paths=3。1件の定義: 1件=helper source file 1本またはtask target path 1本。
@@ -1967,11 +1967,11 @@ entries:
   posted_at: '2026-09-04T09:30:45'
   requires_confirmation: false
   action_type: 'action_required'
-  actioned_by: ''
+  actioned_by: "shogun"
   notify_targets:
     - 'shogun'
   confirmed_by: []
-  status: 'open'
+  status: "closed"
 - id: 'blt_20260904_093458_122f0d'
   content: |-
     source_msg=msg_20260904_093357_2829478_6f8d4e80 09:45下知状況。T3-S-57は旧commit 0ec1bf90aが飛猿先行5fec334c4とcmd_complete_gate.sh競合したため正式RC、新report世代で半蔵が現origin再実装中(pane Working)。才蔵残5は正式fail-close完了: Karo ACCEPT、worktree回収、pane idle。task YAML failed保持はFAIL履歴でありCLEAR偽造なし。T3-S-61は09:45以降timeout再発を監視。集計コマンド: tmux capture-pane shogun:2.5/2.6; review_approval fail-close出力。出力行の生貼付: hanzo Working; saizo pane idle; fail-close auto-clear completed; worktree cleanup completed。1件の定義: 1件=task generation 1本。
