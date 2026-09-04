@@ -116,7 +116,8 @@ awk 'BEGIN{RS="";ORS="\x00"} {print}' "$DRAFT_FILE" > "$PARAGRAPHS_FILE"
 while IFS= read -r -d $'\0' para; do
     [ -z "$para" ] && continue
     if grep -qE '[0-9]+(\.[0-9]+)?[ ]*倍' <<<"$para"; then
-        if ! grep -qE '(CAGR|MaxDD|最大ドローダウン|SPY|S&P500|TQQQ|QQQ|ベンチマーク|対[A-Za-z]|[0-9]{4}年|[0-9]+年間|〜)' <<<"$para"; then
+        # 2026-09-04 14:20 将軍 D0(T3-S-66 gate 偽陽性): 下落・損失・リスクの文脈の『N倍』(『資産10倍の年は下落額も10倍』)は成績の誇示ではない
+        if ! grep -qE '(CAGR|MaxDD|最大ドローダウン|SPY|S&P500|TQQQ|QQQ|ベンチマーク|対[A-Za-z]|[0-9]{4}年|[0-9]+年間|〜|下落|損失|リスク|ドローダウン|喰ら)' <<<"$para"; then
             FAILS+=("rule2_standalone_multiplier")
         fi
     fi

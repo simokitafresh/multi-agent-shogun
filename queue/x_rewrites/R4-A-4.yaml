@@ -1,0 +1,34 @@
+draft_id: R4-A-4
+slot: A
+created_at: 2026-09-04T14:19:17+09:00
+original_llm: |
+    「複利で増える」。まあ半分は正しい。
+
+    資産に同じ比率のリスクを取り続けるってことは、額で見たリスクも同じ倍率で増えてるってこと。資産10倍の年は、同じ下落率でも下落額が10倍。
+
+    率は変わらないけど、額は変わる。ここを飛ばして複利を語る人が多いんよ。
+human_rewrite: |
+    「複利で増える」。まあ半分は正しい。
+
+    資産に同じ比率のリスクを取り続けるってことは、額で見たリスクも同じ倍率で増えてるってこと。資産10倍の年は、同じ下落率でも下落額が10倍。
+
+    率は変わらないけど、額は変わる。ここを飛ばして複利を語る人が多いんよ。
+delta_notes: |
+    - 殿 14:18『追加5本は合格』=無修正で承認。添削規則(相槌/抽象語を捨てる/専門語そのまま/口語落ち/DM 橋渡し)の汎化が成立
+tone_tags: ['approved_as_is']
+structure_tags: ['規則適用の第 1 世代']
+source_style_cluster: 'X 投資系単独(2026-06〜09)'
+source_x_examples: []
+source_note_examples: []
+posted:
+  post_id: ''
+  posted_at: ''
+kpi:
+  impressions: null
+  likes: null
+  reposts: null
+  replies: null
+  bookmarks: null
+  profile_visits: null
+  link_clicks: null
+  follows: null
