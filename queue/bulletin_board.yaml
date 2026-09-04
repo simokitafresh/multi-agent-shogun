@@ -307,7 +307,7 @@ entries:
   actioned_by: ''
   notify_targets: []
   confirmed_by: []
-  status: 'open'
+  status: "closed"
 - id: 'blt_20260903_183910_0f93c9'
   content: |-
     DOC_LANE_REQUEST: CONTEXT_UPDATE_REQUEST project=infra context=context/infrastructure.md source_commit=822317d83dbd parent_cmd=cmd_karo_hotfix_report_artifact_identity_202609031819 reason=approved_source_commit owner_route=shogun-doc-lane
