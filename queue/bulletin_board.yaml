@@ -1662,7 +1662,7 @@ entries:
   notify_targets:
     - 'shogun'
   confirmed_by: []
-  status: 'open'
+  status: "closed"
 - id: 'blt_20260904_070340_ce89f6'
   content: |-
     publisher下知処理。処理証拠 message_id=msg_20260904_070111_3866477_3fee6c4f。集計コマンド: publisher_c2a_merge.shをtask 992a43a02へ実行。出力行: conflicts=2。1件の定義: isolated clone mergeでunmergedとなったpath一つ。競合はscripts/ledger_writer.shとtests/unit/test_ledger_writer.bats。origin T3-S-51のlist-root受理と半蔵側のexact replay冪等/空list対応が重なり、ours単純採用不可。再base hotfixが必要。現在五GATEはpublisher ancestry待ち。
@@ -1674,7 +1674,7 @@ entries:
   notify_targets:
     - 'shogun'
   confirmed_by: []
-  status: 'open'
+  status: "closed"
 - id: 'blt_20260904_070817_db3a45'
   content: |-
     下知対応。処理証拠 message_id=msg_20260904_070438_3916762_38000ad2。集計コマンド: 六cmdのgate receiptとpublisher ancestryを確認。出力行: CLEAR=2、publisher WAIT=4。1件の定義: 正式ACCEPT済みcmd一件。CLEARはT3-S-49とclose_check。review_bundle C2aはledger_writer.sh+test_ledger_writer.bats二競合で自動統合不能、半蔵へ現origin再base RCが必要。計装commit 01d243a9cはC2aでorigin着地済み。他survey/semanticはpublisher待ち。
@@ -1697,7 +1697,7 @@ entries:
   actioned_by: ''
   notify_targets: []
   confirmed_by: []
-  status: 'open'
+  status: "closed"
 - id: 'blt_20260904_071001_2028c2'
   content: |-
     下知対応。処理証拠 message_id=msg_20260904_070641_3971553_19114c77 message_id=msg_20260904_070714_3978709_333a399f。集計コマンド: T3-S-49 CLEAR時刻と4 file mtime差を比較。出力行: writer=cmd_complete_gate post-CLEAR、affected=4。1件の定義: post-CLEAR後にroot直接変更されたledger正本一ファイル。書き手は将軍追補どおりcmd_complete_gate.shのauto lesson/workaround/review経路。T3-S-49とclose_checkはCLEAR完了、疾風・影丸slot idle。root dirty reconciliation入口を確認後、T3-S-57を空きslotへ分割配備する。
@@ -1733,7 +1733,7 @@ entries:
   notify_targets:
     - 'shogun'
   confirmed_by: []
-  status: 'open'
+  status: "closed"
 - id: 'blt_20260904_072545_3f85c5'
   content: |-
     下知対応。処理証拠 message_id=msg_20260904_072201_38381_247e5580 message_id=msg_20260904_072307_54281_4fd0644a。集計コマンド: deploy_task成功receiptを配備別に集計。出力行: success=3、blocked=1。1件の定義: 一忍者への一task配備試行。成功は影丸CI hot-reload、才蔵deploy_generation同期、飛猿auto_push_wait。T3-S-57疾風は半蔵RCとのledger_writer/test衝突でBLOCKし直列待ち。Codex update keyは二回不発で無効確定、survey taskの正式結果はenv keyがClaude専用でCodex抑止手段なし。
@@ -1745,7 +1745,7 @@ entries:
   notify_targets:
     - 'shogun'
   confirmed_by: []
-  status: 'open'
+  status: "closed"
 - id: 'blt_20260904_072807_374cb9'
   content: |-
     下知対応。処理証拠 message_id=msg_20260904_072614_110570_700661cb。集計コマンド: 配備taskのplanned target_path交差を比較。出力行: 配備成功=3、同一path衝突待ち=2。1件の定義: 待機hotfix一件。成功は影丸CI hot-reload、才蔵deploy_generation、飛猿auto_push_wait、追加で疾風Codex update自動解除も配備・開始確認。小太郎review_draft抑止は影丸とscripts/ninja_monitor.sh衝突、T3-S-57は半蔵とledger_writer/test衝突で直列待ち。
@@ -1780,7 +1780,7 @@ entries:
   actioned_by: ''
   notify_targets: []
   confirmed_by: []
-  status: 'open'
+  status: "closed"
 - id: 'blt_20260904_074512_fffa6a'
   content: |-
     DOC_LANE_ALERT: context=context/infrastructure.md raw_alert=ALERT: context/infrastructure.md source commits 1件 since last_updated=2026-09-04 repo=/home/simokitafresh/multi-agent-shogun root_fallback=no timeout=360s/360s owner=infra-platform update_trigger=.github|.githooks|config|docs/rule|docs/knowledge-base|instructions|scripts|skills|tests|AGENTS.md|CLAUDE.md|CONTRIBUTING.md|LICENSE|Makefile|SECURITY.md|first_setup.sh|install.bat|lefthook-local.yml|lefthook.yml|project_lexicon.yaml|setup.sh|shutsujin_departure.sh。更新要否を確認せよ latest: 49a8103b904a publisher: task=cmd_karo_hotfix_review_bundle_batch_id_202609040019_normal action: bash scripts/context_source_commit_set.sh context/infrastructure.md 49a8103b904a 'context_freshness reviewed source boundary' 'context_freshness_check context=context/infrastructure.md commit=49a8103b904a'
@@ -1804,7 +1804,7 @@ entries:
   notify_targets:
     - 'shogun'
   confirmed_by: []
-  status: 'open'
+  status: "closed"
 - id: 'blt_20260904_081851_7c9c51'
   content: |-
     source_msg=msg_20260904_081515_1157029_4ab14b2f 下知着手。軍師review再依頼は既存未読を確認し重複送信なし。旧対象は後継CLEAR/identity確認済み、superseded writer実行直前。T3-S-57配備・root correction復元ff・CI確認は続行中。集計コマンド: test -f queue/gates/cmd_karo_hotfix_reapply_watchdog_stopflag_202609032117/gate_worker.clear.json && test -f queue/gates/cmd_karo_hotfix_close_check_runtime_reapply_202609032326/gate_worker.clear.json。出力行の生貼付: successors_clear=yes。1件の定義: 1件=後継cmdのdurable CLEAR marker 1ファイル。
