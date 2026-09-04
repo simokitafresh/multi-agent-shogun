@@ -309,6 +309,22 @@ P1 の AC への追加(起票時に反映): (a) gate 規則 7/7b/8/9/10 と規�
 各枠の中身は上表の「中身(正本)」を継承し、E は『完全ガイド更新告知』から『完全ガイドの章を 1 つずつ紹介』へ広げないと 2 週で 4 回は埋まらない→E の定義は殿裁定待ち(既定案=ガイドの章紹介+更新時は告知)。実装順: (1) 品質層 S4b+自己完結 gate → (1.5) 図の生産ライン(下表) → (2) slot_calendar を 10 枠/週 ×ローテへ再生成 → (3) cron(08:30/18:30 JST、flag file 停止、失敗時 ntfy_action)。
 
 
+## §17 author corpus 段階(殿指示 09-04 13:08『本人の文体を想像しない。実物を見る』、13:15/13:19『X API の認可を毎回俺がとるのはおかしい。自動化せよ』)
+
+| 成果物 | 所在 | 状態 |
+|---|---|---|
+| X author corpus | docs/research/x_corpus/x/ (tweets.jsonl=X API、tweets_grok.jsonl=Grok x_search) | X API は 401(token 失効)→再認可後に `x_fetch_author_corpus.py` が自動実行。Grok x_search 経路 `x_corpus_via_grok.py` を月次窓で走行中 |
+| note author corpus | docs/research/x_corpus/note/{mb4377418b422,m6557263f0241}/*.md、note_stats.json | 64 記事取得(How to 50 全文、ショートコラム 14 は冒頭のみ=メンバー限定) |
+| X 文体分析 / note 文体分析 / Voice / Reasoning / clusters / negative corpus / slot→cluster / Round2 評価 / 未登録数字 | docs/research/x_author_corpus_analysis_20260904.md | note 側は実測済み。X 側は取得後に上書き |
+| note→X compression style | 同 §6 | X 取得後 |
+| Round2 KEEP/REWRITE/DROP | 同 §8 | KEEP(文体のみ)15/REWRITE 12/DROP→数字保留 3 |
+| Round3 投稿案 | docs/research/x_post_drafts_round3_20260904.md(artifact) | 30 本、note Voice で暫定再生成、代表 10 本に★ |
+| human rewrite 保存構造 | queue/x_rewrites/_template.yaml | 新設 |
+| system_prompt_v5.1 | skills/x-post-pipeline/system_prompt_v5_1.txt(x_post.sh 既定) | corpus 優先順位、Voice/Reasoning 分離、compression、negative、数字 fail-close を追加。分類は不変 |
+| X token 自動維持 | scripts/x_ops/x_token_keeper.sh(cron */30、refresh→3 回失敗で PKCE URL 生成+listener+要操作 topic) | 登録済み。殿の 1 回目の許可で以後は無人 |
+
+数学修正(Round3 反映): A-1『市場平均を確実に取れる』削除、『同じ市場平均を同じ比率で受け取り続ける限り元本比率は縮まらない』へ/A-3『長期の資産成長を決めるのは幾何平均』/B-5 800 年→数百年(出典未確認)/C-1・C-3・F-2 の未登録数字を外す/F-1 は公開表現在値(16.1%/-41.0%、時点明記)。
+
 ## §16 編集方針 v2 — 「DM-Signal を売るアカウント」から「投資を数学・確率・検証で考える人のアカウント」へ(殿裁定 09-04 12:42、正本 docs/research/x_editorial_doctrine_20260904.md)
 
 ### 16.1 ズレの抽出(現行 v0.16 までとの差)

@@ -1,0 +1,29 @@
+# human rewrite 保存構造(殿指示 2026-09-04 13:08 §14)。1 file = 1 投稿。
+# 優先順位: 最新 human_rewrite > 本人 X > 最近の note ショートコラム > 過去 note > system prompt
+draft_id: R3-A-1            # round と slot-番号
+slot: A                     # A-G
+created_at: 2026-09-04T13:40:00+09:00
+original_llm: |             # LLM(将軍)の原文
+  ...
+human_rewrite: |            # 殿が直した版(投稿正本)
+  ...
+delta_notes: |              # 何が変わったか(将軍が差分から記述、殿が補足)
+  - 文末: だ体→です・ます
+  - 削除: 名言風の締め
+tone_tags: []               # 例: 断定, 皮肉, 問いかけ, 自虐, 淡々
+structure_tags: []          # 例: 他人の言葉で開く, 疑い→設計→結論, 数字→解釈, 一段落一文
+source_style_cluster: ''    # x_author_corpus_analysis §5 の cluster 名
+source_x_examples: []       # 参照した本人 X 投稿 URL
+source_note_examples: []    # 参照した本人 note key
+posted:
+  post_id: ''
+  posted_at: ''
+kpi:                        # 投稿後に取得できた値のみ。推測しない
+  impressions: null
+  likes: null
+  reposts: null
+  replies: null
+  bookmarks: null
+  profile_visits: null
+  link_clicks: null
+  follows: null
