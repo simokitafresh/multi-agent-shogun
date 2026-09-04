@@ -1,3 +1,4 @@
+<!-- gist-master: da5adc2c7ff639d4b83e10355d46176b x_growth_engine_asis_tobe_5w1h_20260904.md -->
 # X Growth Engine 設計書 v1.0 — AsIs/ToBe 5W1H(2026-09-04 14:51 殿指示)
 
 - 発端: 殿 2026-09-04 14:51『Content Engine はかなり完成した。次は「その投稿でフォロワーが増えるか・note/DM-Signal へ流入するか・登録/有料化へつながるか」。Content Engine を再設計せず、上位に Growth Engine を設計・実装せよ』
