@@ -5323,3 +5323,38 @@
   verdict: LGTM
   verified_files:
   - scripts/cmd_complete_gate.sh:1
+- cmd_id: cmd_karo_hotfix_release_idle_redone_race
+  review_type: report
+  verdict: FAIL
+  report_ninja: saizo
+  report_task_id: cmd_karo_hotfix_release_idle_redone_race_normal
+  report_path: queue/reports/saizo_report_cmd_karo_hotfix_release_idle_redone_race.yaml
+  report_id: rpt-b6bc502d-7dd2-4e78-ac6f-23946cc5288c
+  report_identity_version: 2
+  gate_prediction: BLOCK
+  gate_prediction_reason: "LG043: bc全yesだがtask_clarity/purpose_gapに未完了語残留"
+  finding_categories:
+  - assumptions
+  - numbers
+  - premortem
+  - adversarial
+  - ambiguity
+  observations:
+  - "事実1: 実装自体は妥当。4/4回帰+49/49 PASS"
+  - "事実2: precheck LG043検出。task_clarity/purpose_gapに未完了語"
+  - "adversarial: ninja_monitor.sh変更。idle race防止"
+  - "ambiguity: 曖昧点なし"
+  fail_reasons:
+  - "LG043: bc全yes×task_clarity未完了語矛盾→BLOCK prediction→LG106→FAIL"
+  causal_chain: "idle done逆戻り→race防止実装→task_clarity未完了語残留→LG043→FAIL"
+  brainwash_check: "#1no #2no #3no #4no #5no #6no #7no #8no"
+  verified_files:
+  - "queue/reports/saizo_report_cmd_karo_hotfix_release_idle_redone_race.yaml:1"
+  step3_5_verified: true
+  origin: "[[cmd_karo_hotfix_release_idle_redone_race]] -> [[LG043]] -> [[FAIL]]"
+  operational_simulation:
+    command: "precheck"
+    expected: "BLOCK(LG043)"
+    actual: "BLOCK"
+    result: PASS
+  timestamp: "2026-09-05T03:45:00+09:00"
