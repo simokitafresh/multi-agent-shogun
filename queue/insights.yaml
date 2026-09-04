@@ -18063,4 +18063,13 @@ insights:
   priority: "low"
   source: "semantic_index_update"
   fix_known: false
+  status: "resolved"
+  action_artifact: "semantic_map=/home/simokitafresh/multi-agent-shogun/context/semantic-map.md;semantic_index=/home/simokitafresh/multi-agent-shogun/docs/semantic-index/index.md"
+  resolved_reason: "semantic map generation verified the candidate is represented or intentionally ignored"
+- id: INS-20260905-042614282-3567
+  ts: "2026-09-05T04:26:14+09:00"
+  insight: "gunshi_log_append.shのFAIL verdictでもreport_path/report_id/report_identity_versionを必須化すべき。不足するとinbox_mark_readのentry_matches_reportが照合できずmark_read BLOCK。本セッションで5回以上発生。"
+  priority: "medium"
+  source: "manual"
+  fix_known: false
   status: pending

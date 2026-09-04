@@ -5462,3 +5462,38 @@
     actual: "BLOCK"
     result: PASS
   timestamp: "2026-09-05T04:17:00+09:00"
+- cmd_id: cmd_karo_hotfix_deploy_external_worktree_timeout
+  review_type: report
+  verdict: FAIL
+  report_ninja: hanzo
+  report_task_id: cmd_karo_hotfix_deploy_external_worktree_timeout_normal
+  report_path: queue/reports/hanzo_report_cmd_karo_hotfix_deploy_external_worktree_timeout.yaml
+  report_id: rpt-2691e41a-3c3f-440b-b7a4-a0679c62c008
+  report_identity_version: 2
+  gate_prediction: BLOCK
+  gate_prediction_reason: "AC2 bc:no(task-mode全体FAIL/timeout)"
+  finding_categories:
+  - assumptions
+  - numbers
+  - premortem
+  - adversarial
+  - ambiguity
+  observations:
+  - "事実1: sparse checkout実装。直接lifecycle 11/11 PASS"
+  - "事実2: task-mode全体で既存suite FAIL/timeout→AC2 FAIL"
+  - "adversarial: 既存suiteの回帰可能性"
+  - "ambiguity: 曖昧点なし"
+  fail_reasons:
+  - "AC2 bc:no。task-mode既存suite FAIL/timeout"
+  causal_chain: "worktreeタイムアウト→sparse checkout→既存suite回帰→FAIL"
+  brainwash_check: "#1no #2no #3no #4no #5no #6no #7no #8no"
+  verified_files:
+  - "scripts/deploy_task.sh:1"
+  step3_5_verified: true
+  origin: "[[cmd_karo_hotfix_deploy_external_worktree_timeout]] -> [[既存suite回帰]] -> [[FAIL_r2]]"
+  operational_simulation:
+    command: "precheck"
+    expected: "BLOCK"
+    actual: "BLOCK"
+    result: PASS
+  timestamp: "2026-09-05T04:24:00+09:00"
