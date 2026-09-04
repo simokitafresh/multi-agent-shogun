@@ -1,0 +1,37 @@
+draft_id: R4-D-3
+slot: D
+created_at: 2026-09-04T14:16:32+09:00
+original_llm: |
+    期待値が正の戦略でも、資産が減り続ける経路はある。
+
+    そして人は減り続けてる時にやめる。やめた瞬間、期待値が正だった事実は何の意味も持たない。
+
+    期待値だけじゃ戦略は測れない。最後まで歩けるか。まあ僕も7月はガッツリ喰らったんだけどね。
+human_rewrite: |
+    期待値が正の戦略でも、資産が減り続けるパターンはある。
+
+    そして人は減り続けてる時にやめる。途中で逃げ出せば期待値が正だったのは何の意味も持たない。
+
+    期待値だけじゃ戦略は測れない。最後まで歩けるか。まあ僕もこの前はガッツリ喰らったんだけどね。
+delta_notes: |
+    - 『経路』→『パターン』(和語の抽象名詞→日常のカタカナ。本人 X で 経路 1 回、パターン 23 回)
+    - 『やめた瞬間、〜事実は』→『途中で逃げ出せば〜のは』(名詞的な硬さ→動作の口語)
+    - 『7月は』→『この前は』(具体の時期を曖昧にして普遍化)
+    - 殿の言葉: 単語をカタカナにするか英語にするか日本語かにセンスが出る
+tone_tags: ['自虐', '口語']
+structure_tags: ['語彙の層(カタカナ/英語/和語)']
+source_style_cluster: 'X 投資系単独(2026-06〜09)'
+source_x_examples: []
+source_note_examples: []
+posted:
+  post_id: ''
+  posted_at: ''
+kpi:
+  impressions: null
+  likes: null
+  reposts: null
+  replies: null
+  bookmarks: null
+  profile_visits: null
+  link_clicks: null
+  follows: null
