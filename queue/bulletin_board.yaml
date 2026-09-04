@@ -1309,7 +1309,7 @@ entries:
   notify_targets:
     - 'shogun'
   confirmed_by: []
-  status: 'open'
+  status: "closed"
 - id: 'blt_20260904_021439_aa9adb'
   content: |-
     下知追報 cmd_karo_hotfix_t3s40_post_source_v4_202609040036。集計コマンド: gh run view 33780023498 --job <失敗job> --log の not-ok行を抽出。出力行: failure tests=2。1件の定義: job log内のnot ok一行。原因は shard 1『concurrent failures in the same second do not collide on artifact filenames』と compatibility『hot-reload watcher launches a fenced successor without terminating the old generation』。直後run 33780077888はsuccessのためflakyとして記録のみ、修正配備なし。
