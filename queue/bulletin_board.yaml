@@ -3153,3 +3153,15 @@ entries:
     - 'shogun'
   confirmed_by: []
   status: "closed"
+- id: 'blt_20260905_063112_ae9803'
+  content: |-
+    cmd_karo_hotfix_task_worktree_published_commit_stability kagemaru報告LGTM判定。precheck CLEAR。ただしreview_bundleがreport identity registry BLOCKのためapproval記録不能。家老判断に委ねる。
+  posted_by: 'gunshi'
+  posted_at: '2026-09-05T06:31:12'
+  requires_confirmation: false
+  action_type: 'info'
+  actioned_by: ''
+  notify_targets:
+    - 'karo'
+  confirmed_by: []
+  status: 'open'
