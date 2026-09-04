@@ -28,8 +28,18 @@ mark_read_with_receipt() {
         SHOGUN_ROOT="$FIXTURE_ROOT" \
             INBOX_READ_RECEIPT_DIR="$FIXTURE_ROOT/logs/inbox_read_receipts" \
             bash "$FIXTURE_ROOT/scripts/inbox_read.sh" "$agent" >/dev/null
+        # This test's test_necessity is the inbox lock path (append/mark-read
+        # lost-update safety), not the bulk-mark-read anti-loop heuristic
+        # (INBOX_MARK_READ_BULK_ENFORCE default flipped 2026-09-04 06:28,
+        # T3-S-54). Each round here issues one legitimate batch mark-read
+        # call, but 10 adversarial rounds in quick succession still land >=2
+        # distinct round ids inside the guard's default 10s window, and the
+        # tight 20-attempt retry loop below has no backoff to outlast it.
+        # Disable the window for this fixture's calls only; production
+        # defaults are untouched.
         if INBOX_MARK_READ_ROOT_OVERRIDE="$FIXTURE_ROOT" \
             INBOX_MARK_READ_RECEIPT_DIR="$FIXTURE_ROOT/logs/inbox_read_receipts" \
+            INBOX_MARK_READ_BULK_WINDOW_SEC=0 \
             bash "$FIXTURE_ROOT/scripts/inbox_mark_read.sh" "$agent" "$@" >/dev/null; then
             return 0
         fi

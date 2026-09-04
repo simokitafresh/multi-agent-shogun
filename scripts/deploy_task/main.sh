@@ -258,8 +258,18 @@ except Exception:
     if [ -n "$YAML_FILE" ] && [ -f "$YAML_FILE" ]; then
         DEPLOY_INCOMING_TASK_TYPE=$(FIELD_GET_NO_LOG=1 field_get "$YAML_FILE" "task_type" "" 2>/dev/null || true)
     fi
+    # T3-S-49's await_clear fast path (53ed713ff/8c52d2c46) admits a
+    # status=in_progress|done slot whose own report is already terminal and
+    # whose pane is idle, without checking which cmd is asking. That is safe
+    # for the SAME cmd re-driving its own finished slot, but for a DIFFERENT
+    # incoming cmd it silently defeats deploy_task_guard_worker_assignment's
+    # done/PASS cross-cmd protection (unarchived report must block a
+    # different cmd's overwrite regardless of pane idleness). Only take the
+    # fast path when the slot's own parent_cmd already equals the incoming
+    # CMD_ID; otherwise fall through to the full ownership guard.
     if [ -n "$CMD_ID" ] && ! {
-        deploy_task_current_report_is_await_clear "$task_yaml" "$NINJA_NAME" || \
+        { [ "$pre_resolve_cmd" = "$CMD_ID" ] && \
+              deploy_task_current_report_is_await_clear "$task_yaml" "$NINJA_NAME"; } || \
             deploy_task_guard_worker_assignment "$task_yaml" "$CMD_ID"
     }; then
         deploy_task_release_lock "$deploy_lock_fd" "$deploy_lock_file"

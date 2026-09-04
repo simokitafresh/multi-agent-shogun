@@ -144,7 +144,18 @@ YAML
     [ "$status" -eq 2 ]
     sed -i 's/read: true/read: false/g' "$TEST_ROOT/queue/inbox/hayate.yaml"
     _read_inbox; receipt_success=0
-    for id in msg_a msg_b msg_c; do _mark "$id"; [ "$status" -eq 0 ] && receipt_success=$((receipt_success+1)); done
+    # This assertion's concern is receipt correctness (a valid receipt keeps
+    # authorizing each of the 3 distinct ids), not the bulk-mark-read
+    # anti-loop heuristic exercised explicitly above via
+    # INBOX_MARK_READ_BULK_ENFORCE=1. Disable the guard's window for just
+    # these 3 calls (INBOX_MARK_READ_BULK_ENFORCE default flipped
+    # 2026-09-04 06:28, T3-S-54) so it cannot turn this legitimate
+    # receipt-driven sequence into a false bulk-pattern positive; production
+    # defaults and the enforcement-mode assertion above are untouched.
+    for id in msg_a msg_b msg_c; do
+        run env INBOX_MARK_READ_BULK_WINDOW_SEC=0 bash "$MARK_SCRIPT" hayate "$id"
+        [ "$status" -eq 0 ] && receipt_success=$((receipt_success+1))
+    done
     [ "$receipt_success" -eq 3 ]
     printf 'loop_success=3->0 legitimate_success=2->3 heuristic_fp=1->0\n'
 }
