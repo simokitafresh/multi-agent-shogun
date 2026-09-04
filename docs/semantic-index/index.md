@@ -389,6 +389,7 @@ codd:
 | causal | `cmd_karo_hotfix_deploy_remote_tip_directory_v3_20260901` files_modified: [[dm_signal_pf_restore_guardrails]] |
 | causal | `cmd_karo_hotfix_planned_paths_exact_new_files_202609021539` files_modified: [[dm_signal_pf_restore_guardrails]] |
 | causal_chain | `[[cmd_karo_hotfix_ga161_obsidian_link_context_freshness_202607021348]]` (L926) |
+| causal | `cmd_karo_hotfix_deploy_external_worktree_timeout` files_modified: [[dm_signal_pf_restore_guardrails]] |
 
 ## gs_recalibration_plan — GS再キャリブレーション計画
 
@@ -9274,6 +9275,8 @@ codd:
 | discussion | `queue/lord_conversation.jsonl` 2026-09-05T02:52:28+09:00 blo8ttwdr toolu_01HogmgwVzSFoADRXmDrHsUo /tmp/claude-1000/-home-simokitafresh-multi-agent-shogun/4a60412c-3a76-403e-a76e |
 | discussion | `queue/lord_conversation.jsonl` 2026-09-05T05:16:44+09:00 2026-09-05 05:12 cmd_4475(DM-signal 外部 repo)の deploy が 4 回目 rc=124: deploy_task_prepare_remote_tip_worktree が 312s(/mnt/ |
 | cmd | `cmd_karo_hotfix_release_ci_clean_repro_level5_v2` (`scripts/deploy_task/gates.sh`, `tests/unit/test_deploy_task_yaml_injection.bats`) |
+| causal | `cmd_karo_hotfix_deploy_external_worktree_timeout` files_modified: [[agent_formation_management]] |
+| cmd | `cmd_karo_hotfix_deploy_external_worktree_timeout` (`scripts/deploy_task.sh`, `tests/unit/test_task_worktree_lifecycle.bats`) |
 
 ## visibility_tier_masking — Visibility Tier制マスク
 
@@ -11103,6 +11106,7 @@ codd:
 | causal | `cmd_karo_hotfix_pending_decision_infra_bundle_20260828` files_modified: [[task_modifier_injection]] |
 | causal | `cmd_karo_hotfix_deploy_remote_tip_directory_v3_20260901` files_modified: [[task_modifier_injection]] |
 | causal | `cmd_karo_hotfix_planned_paths_exact_new_files_202609021539` files_modified: [[task_modifier_injection]] |
+| causal | `cmd_karo_hotfix_deploy_external_worktree_timeout` files_modified: [[task_modifier_injection]] |
 
 ## training_cycle_quality — 忍者修行サイクル品質
 
@@ -13596,6 +13600,7 @@ codd:
 | causal | `cmd_karo_hotfix_gunshi_pre25_pre35_fp_202609021539` files_modified: [[causal_verification_l0_l7]] |
 | causal | `cmd_karo_hotfix_planned_paths_exact_new_files_202609021539` files_modified: [[causal_verification_l0_l7]] |
 | causal | `cmd_4465` files_modified: [[causal_verification_l0_l7]] |
+| causal | `cmd_karo_hotfix_deploy_external_worktree_timeout` files_modified: [[causal_verification_l0_l7]] |
 
 ## test_quality_framework — テスト品質統合フレームワーク
 
@@ -17157,6 +17162,7 @@ codd:
 | causal | `cmd_karo_hotfix_pending_decision_infra_bundle_20260828` files_modified: [[scope_integrity_lifecycle]] |
 | causal | `cmd_karo_hotfix_deploy_remote_tip_directory_v3_20260901` files_modified: [[scope_integrity_lifecycle]] |
 | causal | `cmd_karo_hotfix_planned_paths_exact_new_files_202609021539` files_modified: [[scope_integrity_lifecycle]] |
+| causal | `cmd_karo_hotfix_deploy_external_worktree_timeout` files_modified: [[scope_integrity_lifecycle]] |
 
 ## yaml_safe_write — YAML安全書込み
 
