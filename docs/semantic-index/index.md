@@ -9270,6 +9270,7 @@ codd:
 | causal_chain | `[[cmd_karo_hotfix_lesson_feedback_task_identity_202609021922]]` (L1706) |
 | discussion | `queue/lord_conversation.jsonl` 2026-09-04T16:43:20+09:00 tmux statusbar usage表示: usage_statusbar_loop.sh(.cache/saizo-gist-after.734LqI/scripts/)がデーモンとしてshogunセッションのstatus-right |
 | discussion | `queue/lord_conversation.jsonl` 2026-09-05T02:52:28+09:00 blo8ttwdr toolu_01HogmgwVzSFoADRXmDrHsUo /tmp/claude-1000/-home-simokitafresh-multi-agent-shogun/4a60412c-3a76-403e-a76e |
+| discussion | `queue/lord_conversation.jsonl` 2026-09-05T05:16:44+09:00 2026-09-05 05:12 cmd_4475(DM-signal 外部 repo)の deploy が 4 回目 rc=124: deploy_task_prepare_remote_tip_worktree が 312s(/mnt/ |
 
 ## visibility_tier_masking — Visibility Tier制マスク
 
