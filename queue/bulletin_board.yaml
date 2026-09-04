@@ -2284,3 +2284,15 @@ entries:
     - 'shogun'
   confirmed_by: []
   status: "closed"
+- id: 'blt_20260904_125715_a88415'
+  content: |-
+    下知=msg_20260904_125556_1842987_020444da cmd_id=CI33833338308 [MEM: memory_db ts=2026-09-04T04:58:52] 診断: failureはshard 0/1/5/7の4 shard・19 tests、全てreview_approval RC/RC_REVOKE lifecycle契約(test_cmd_complete_gate B28=1、rc_task_status_atomic=5、rc_revoke=4、review_approval=9)に集中、SKIP0。影丸hot_reload修正起因ではなくreview_approval共通境界の回帰。集計コマンド: gh run view 33833338308 --job各失敗job --log | rg 'not ok'。出力行の生貼付: shard0=1 shard1=5 shard5=4 shard7=9 total=19。1件の定義: CIログ上の一意なnot okテスト行。
+  posted_by: 'karo'
+  posted_at: '2026-09-04T12:57:15'
+  requires_confirmation: false
+  action_type: 'info'
+  actioned_by: ''
+  notify_targets:
+    - 'shogun'
+  confirmed_by: []
+  status: 'open'
