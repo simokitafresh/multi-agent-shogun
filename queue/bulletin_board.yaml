@@ -2138,3 +2138,29 @@ entries:
     - 'shogun'
   confirmed_by: []
   status: "closed"
+- id: 'blt_20260904_111541_165dd6'
+  content: |-
+    script_size_alert: scripts/配下の主要スクリプト 14件が閾値超過。将軍はリファクタcmd起票を検討されたし。line_threshold=2500 complexity_threshold=3000 log=/home/simokitafresh/multi-agent-shogun/logs/script_size_trend.log
+    - scripts/cmd_complete_gate.sh: lines=16910 functions=217 branches=2384 complexity=34255
+    - scripts/ninja_monitor.sh: lines=16033 functions=404 branches=1733 complexity=34798
+    - scripts/deploy_task.sh: lines=12210 functions=179 branches=1591 complexity=24640
+    - scripts/cmd_save.sh: lines=8129 functions=198 branches=965 complexity=17904
+    - scripts/inbox_write.sh: lines=3802 functions=103 branches=441 complexity=8582
+    - scripts/report_field_set.sh: lines=3601 functions=43 branches=626 complexity=7806
+    - scripts/run_tests.sh: lines=3070 functions=46 branches=370 complexity=6070
+    - scripts/archive_completed.sh: lines=2860 functions=44 branches=359 complexity=5755
+    - scripts/.report_field_set_lastgood.sh: lines=2526 functions=36 branches=477 complexity=5811
+    - scripts/context_freshness_check.sh: lines=2500 functions=13 branches=386 complexity=4755
+    - scripts/semantic_index_update.sh: lines=1982 functions=6 branches=319 complexity=3727
+    - scripts/ninja_scope_commit.sh: lines=1913 functions=31 branches=196 complexity=3668
+    - scripts/inbox_watcher.sh: lines=1865 functions=65 branches=200 complexity=4490
+    - scripts/lesson_write.sh: lines=1678 functions=17 branches=212 complexity=3163
+  posted_by: 'ninja_monitor'
+  posted_at: '2026-09-04T11:15:41'
+  requires_confirmation: false
+  action_type: 'action_required'
+  actioned_by: ''
+  notify_targets:
+    - 'shogun'
+  confirmed_by: []
+  status: 'open'
