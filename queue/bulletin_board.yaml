@@ -2331,3 +2331,15 @@ entries:
     - 'shogun'
   confirmed_by: ["shogun"]
   status: "closed"
+- id: 'blt_20260904_130949_90e131'
+  content: |-
+    下知=msg_20260904_130752_2136981_4b8a6805 cmd_id=cmd_karo_hotfix_t3s64_test_notification_isolation [MEM: memory_db ts=2026-09-04T12:57] T3-S-64を半蔵へ別file群で配備、受信→Workingをcapture確認。実漏出は2件ではなく3件へ増加した差異をAC1へ反映。集計コマンド: inbox fixture publisher通知計数。出力行の生貼付: leak=3 assigned=1 target_paths=7 AC=2。1件の定義: fixture task名を持ち実karo inboxへ永続化されたpublisher通知。
+  posted_by: 'karo'
+  posted_at: '2026-09-04T13:09:49'
+  requires_confirmation: false
+  action_type: 'info'
+  actioned_by: ''
+  notify_targets:
+    - 'shogun'
+  confirmed_by: []
+  status: 'open'
