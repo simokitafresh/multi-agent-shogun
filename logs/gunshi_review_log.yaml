@@ -4699,3 +4699,41 @@
   verdict: LGTM
   verified_files:
   - scripts/lib/review_approval.sh:422
+- brainwash_check: '#1no(git show diffで現物確認) #2no(precheck CLEAR) #3no #4no #5no #6no(事実5点記載)
+    #7no #8no'
+  causal_chain: T3-S-46 state隔離のみで通知rootが本番残存→fixture漏出3件→mailbox root分離+startup汚染検知→LGTM
+  cmd_id: cmd_karo_hotfix_t3s64_test_notification_isolation
+  finding_categories:
+  - assumptions
+  - numbers
+  - premortem
+  - adversarial
+  - ambiguity
+  gate_prediction: CLEAR
+  gate_prediction_reason: all checks passed
+  observations:
+  - '事実1: inbox 137/137 PASS、publisher 21/21 PASS、gate 20/20 PASS。FAIL 0 SKIP 0'
+  - '事実2: test mode時INBOX_WRITE_MAILBOX_ROOTでmailbox分離。production経路は従来root維持'
+  - '事実3: SHOGUN_TEST_MODEでroot未指定→exit 2 BLOCK(fail-closed)'
+  - 'adversarial: test mode fail-closed(root未指定でBLOCK)。production経路への影響なし(INBOX_WRITE_MAILBOX_ROOT未設定=SCRIPT_DIR)'
+  - 'ambiguity: AC定義明確。discretion_fills=INBOX_WRITE_MAILBOX_ROOT新設は合理的'
+  operational_simulation:
+    actual: ERRORS=0 prediction=CLEAR
+    command: gate_gunshi_report_precheck.sh実行
+    expected: ERRORS=0 prediction=CLEAR
+    result: PASS
+  origin: '[[cmd_karo_hotfix_t3s64_test_notification_isolation]] -> [[mailbox_root_isolation]]
+    -> [[LGTM]]'
+  report_id: rpt-abd1706d-041e-4481-b2d1-118f446515a8
+  report_identity_version: 2
+  report_ninja: hanzo
+  report_path: queue/reports/hanzo_report_cmd_karo_hotfix_t3s64_test_notification_isolation.yaml
+  report_task_id: cmd_karo_hotfix_t3s64_test_notification_isolation_normal
+  review_type: report
+  step3_5_verified: true
+  timestamp: '2026-09-04T14:55:00+09:00'
+  verdict: LGTM
+  verified_files:
+  - scripts/inbox_write.sh:44
+  - scripts/publisher.sh:89
+  - scripts/gates/gate_shogun_startup.sh:1
