@@ -10155,6 +10155,7 @@ codd:
 | causal_chain | `[[cmd_karo_cycle2_bugverify_perf_20260727]]` (L1378) |
 | causal_chain | `[[cmd_karo_hotfix_round2_parent_ac_coverage_20260728]]` (L1424) |
 | causal_chain | `[[cmd_reflux_insight_202608071332_tobisaru]]` (L1572) |
+| discussion | `queue/lord_conversation.jsonl` 2026-09-05T04:08:46+09:00 blaic7maw toolu_01V8szEG9hpZ5J3qK16X19SA /tmp/claude-1000/-home-simokitafresh-multi-agent-shogun/d9faccc5-127b-4b4f-bd18 |
 
 ## tier_plan_mapping — Tier-プラン対応
 
