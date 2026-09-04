@@ -11921,12 +11921,113 @@ print("1" if any(str(x).strip() for x in v) else "0")
     fi
 }
 
+# External repositories on WSL's v9fs mount pay a large checkout cost even
+# when a task declares one source path.  Keep the remote-tip and linked-
+# worktree contracts unchanged, but configure sparse checkout immediately
+# before the original full checkout.  The worktree then materializes only
+# declared source paths, avoiding the Windows-backed tree walk while keeping
+# the shared checkout and all undeclared files isolated.
+deploy_task_sparse_checkout_paths() {
+    local task_file="$1" repo="$2"
+    python3 - "$task_file" "$repo" <<'PY'
+import os
+import sys
+import yaml
+
+task = (yaml.safe_load(open(sys.argv[1], encoding="utf-8")) or {}).get("task", {})
+repo = os.path.realpath(sys.argv[2])
+values = []
+for key in ("target_path", "planned_paths"):
+    value = task.get(key) or []
+    if isinstance(value, str):
+        try:
+            decoded = yaml.safe_load(value)
+        except yaml.YAMLError:
+            decoded = None
+        value = decoded if isinstance(decoded, list) else [value]
+    if isinstance(value, list):
+        values.extend(str(item).strip() for item in value if str(item).strip())
+
+runtime_prefixes = ("queue/", "logs/", "context/", "projects/", "archive/", ".cache/")
+paths = []
+for raw in values:
+    if raw == "dashboard.md":
+        continue
+    if raw.startswith("/"):
+        relative = os.path.relpath(raw, repo)
+        if relative == ".." or relative.startswith("../"):
+            continue
+    else:
+        relative = raw[2:] if raw.startswith("./") else raw
+    relative = os.path.normpath(relative)
+    if relative and not relative.startswith(runtime_prefixes):
+        paths.append(relative)
+for path in dict.fromkeys(paths):
+    print(path)
+PY
+}
+
+deploy_task_prepare_sparse_checkout() {
+    local task_file="$1" repo="$2" worktree="$3" paths
+    paths="$(deploy_task_sparse_checkout_paths "$task_file" "$repo")" || return 1
+    [ -n "$paths" ] || return 0
+    command git -C "$worktree" sparse-checkout init --no-cone >/dev/null 2>&1 || return 1
+    printf '%s\n' "$paths" | command git -C "$worktree" sparse-checkout set --no-cone --stdin >/dev/null 2>&1 || return 1
+    log "TASK_WORKTREE_SPARSE_CHECKOUT: repo=$repo path=$worktree paths=$(printf '%s' "$paths" | awk 'NF {count++} END {print count+0}')"
+}
+
+deploy_task_source_repo_uses_slow_fs() {
+    local repo="$1" fs_type slow_types
+    fs_type="${DEPLOY_TASK_SOURCE_FS_TYPE_OVERRIDE:-$(stat -f -c '%T' "$repo" 2>/dev/null || true)}"
+    slow_types="${DEPLOY_TASK_SLOW_FS_TYPES:-v9fs}"
+    case ",$slow_types," in
+        *,"$fs_type",*) return 0 ;;
+        *) return 1 ;;
+    esac
+}
+
+deploy_task_prepare_remote_tip_worktree_sparse() {
+    local task_file="$1" ninja_name="$2" repo="" saved_git="" rc=0
+    repo=$(deploy_task_resolve_source_repo "$task_file" 2>/dev/null || true)
+    [ -n "$repo" ] || return 1
+    deploy_task_source_repo_uses_slow_fs "$repo" || {
+        deploy_task_original_prepare_remote_tip_worktree "$task_file" "$ninja_name"
+        return $?
+    }
+
+    saved_git="$(declare -f git 2>/dev/null || true)"
+    unset -f git 2>/dev/null || true
+    git() {
+        local arg worktree="" has_checkout=0
+        for arg in "$@"; do
+            if [ "$arg" = "checkout" ]; then
+                has_checkout=1
+            elif [ "$worktree" = "__next__" ]; then
+                worktree="$arg"
+            elif [ "$arg" = "-C" ]; then
+                worktree="__next__"
+            fi
+        done
+        if [ "$has_checkout" -eq 1 ] && [ -n "$worktree" ] && [ "$worktree" != "__next__" ] \
+            && [ "$worktree" != "$repo" ]; then
+            if ! deploy_task_prepare_sparse_checkout "$task_file" "$repo" "$worktree"; then
+                return 1
+            fi
+        fi
+        command git "$@"
+    }
+    deploy_task_original_prepare_remote_tip_worktree "$task_file" "$ninja_name" || rc=$?
+    unset -f git 2>/dev/null || true
+    [ -n "$saved_git" ] && eval "$saved_git"
+    return "$rc"
+}
+
 deploy_task_prepare_remote_tip_worktree_dispatch() {
     deploy_task_inject_worktree_required_for_code_tasks "$1"
     if deploy_task_reuse_existing_remote_tip_worktree "$@"; then
         return 0
     fi
-    deploy_task_original_prepare_remote_tip_worktree "$@"
+    deploy_task_prepare_remote_tip_worktree_sparse "$@"
 }
 
 # deploy_task_prepare_remote_tip_worktree contains an embedded Python heredoc,

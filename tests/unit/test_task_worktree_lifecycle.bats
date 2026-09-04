@@ -410,6 +410,37 @@ PY
     [[ "$output" == *"remote_tip_race=1 rollback_orphan=0"* ]]
 }
 
+# test_necessity: a source task on WSL's slow filesystem must retain the
+# remote-tip linked-worktree contract while materializing only declared source
+# paths, so a full checkout cannot reintroduce the external-I/O timeout.
+@test "slow source worktree uses declared-path sparse checkout" {
+    setup_fixture_repo
+    mkdir -p "$FIXTURE/shared/extra"
+    printf 'UNSELECTED=1\n' > "$FIXTURE/shared/extra/unselected.txt"
+    git -C "$FIXTURE/shared" add extra/unselected.txt
+    git -C "$FIXTURE/shared" commit -q -m sparse-checkout-target
+    git -C "$FIXTURE/shared" push -q origin main
+    task="$BATS_TEST_TMPDIR/slow-source.yaml"
+    printf 'task:\n  task_id: slow_source\n  parent_cmd: cmd_slow_source\n  project: infra\n  target_path: src/app.py\n  status: assigned\n' > "$task"
+
+    run env PROJECT_ROOT="$BATS_TEST_DIRNAME/../.." FIXTURE="$FIXTURE/shared" TASK="$task" \
+        DEPLOY_TASK_SOURCE_FS_TYPE_OVERRIDE=v9fs bash -c '
+        set -euo pipefail
+        export DEPLOY_TASK_LIB_ONLY=1 DEPLOY_TASK_WORKTREE_ROOT="$FIXTURE/worktrees-sparse"
+        source "$PROJECT_ROOT/scripts/deploy_task.sh"
+        SCRIPT_DIR="$FIXTURE"; LOG=/dev/null; STATE_DIR="$FIXTURE/state-sparse"; mkdir -p "$STATE_DIR"
+        deploy_task_prepare_remote_tip_worktree "$TASK" saizo
+        wt=$(FIELD_GET_NO_LOG=1 field_get "$TASK" task_worktree_path)
+        [ -f "$wt/src/app.py" ]
+        [ ! -e "$wt/extra/unselected.txt" ]
+        [ "$(git -C "$wt" rev-parse HEAD)" = "$(git -C "$FIXTURE" rev-parse HEAD)" ]
+        printf "sparse_declared=1 unselected_hidden=1 shared_head_unchanged=1\n"
+        deploy_task_rollback_remote_tip_worktree "$FIXTURE" "$wt" "$(FIELD_GET_NO_LOG=1 field_get "$TASK" task_worktree_marker)"
+    '
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"sparse_declared=1 unselected_hidden=1 shared_head_unchanged=1"* ]]
+}
+
 # test_necessity: runtime must honor canonical origin/main even when the
 # production checkout tracks a maintenance branch whose tip omits the target.
 @test "runtime remote-tip deploy normalizes maintenance upstream to canonical main" {
