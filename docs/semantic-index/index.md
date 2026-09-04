@@ -6759,6 +6759,7 @@ codd:
 | discussion | `queue/lord_conversation.jsonl` 2026-08-29T16:54:22+09:00 殿裁定 2026-08-29 16:53『本番で使用中の PF を作成するために使ったものは残しておく必要がある』(16:51『本番使用中以外は不要』の補足)。保持集合(一次 16:55)=outputs/grid_search/shin_ |
 | discussion | `queue/lord_conversation.jsonl` 2026-08-31T14:06:45+09:00 絵柄がじみすぎるな。basic-dualmomentumのchartを表示しよう。compare chartと同じスタイルだがstaticなchartでいい。 |
 | discussion | `queue/lord_conversation.jsonl` 2026-09-04T11:00:01+09:00 枠C：basic-dualmomentumが唯一のように見える。そうではない。あくまで有料への誘導が最終目的だ。C-4はでは「dm-signal を開き、Basic-DualMomentum の今月の判定を見る。」→dm-signal を開 |
+| discussion | `queue/lord_conversation.jsonl` 2026-09-04T11:01:07+09:00 殿裁定 2026-09-04 11:00(枠 C): 『Basic-DualMomentum が唯一のように見える。そうではない。あくまで有料への誘導が最終目的』。C-4『dm-signal を開き、Basic-DualMomentum の |
 
 ## shin_shijin_design — 四神設計
 
