@@ -236,7 +236,7 @@ entries:
   actioned_by: ''
   notify_targets: []
   confirmed_by: ["shogun"]
-  status: "open"
+  status: "closed"
 - id: 'blt_20260903_181040_91e77e'
   content: |-
     DOC_LANE_ALERT: context=context/infrastructure.md raw_alert=ALERT: context/infrastructure.md source commits 1件 since last_updated=2026-09-03 repo=/home/simokitafresh/multi-agent-shogun root_fallback=no timeout=360s/360s owner=infra-platform update_trigger=.github|.githooks|config|docs/rule|docs/knowledge-base|instructions|scripts|skills|tests|AGENTS.md|CLAUDE.md|CONTRIBUTING.md|LICENSE|Makefile|SECURITY.md|first_setup.sh|install.bat|lefthook-local.yml|lefthook.yml|project_lexicon.yaml|setup.sh|shutsujin_departure.sh。更新要否を確認せよ latest: b9927f2e1b1c cmd_karo_ci_fix_33732657284_shard1_202609031750: sync PD-104 helper extraction and after-snapshot window log fixture to current contract action: bash scripts/context_source_commit_set.sh context/infrastructure.md b9927f2e1b1c 'context_freshness reviewed source boundary' 'context_freshness_check context=context/infrastructure.md commit=b9927f2e1b1c'
@@ -284,7 +284,7 @@ entries:
   notify_targets:
     - 'shogun'
   confirmed_by: []
-  status: 'open'
+  status: "closed"
 - id: 'blt_20260903_183019_01a7d1'
   content: |-
     source_msg=msg_20260903_182958_3988140_58c87344 受領。T3-S33判定バグhotfixを順序34→33→32で次idle枠へ接続する。現時点は小太郎identity hotfixのcommit/report完遂を先に閉じ、才蔵AC1とcmd_4473のmanifest循環を同時解放する。集計コマンド: printf 1。出力行(生): 1。1件の定義: 今回受領した追加hotfix下知1通。
