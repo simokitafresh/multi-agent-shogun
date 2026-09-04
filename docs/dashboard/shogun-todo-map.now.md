@@ -1,5 +1,5 @@
-- 11:45 T236/T226/T226b クローズ: close_check(起点 09:46:15)5/5 PASS 11:42。trailer 集計を first-parent へ(e55cb0f97)、root dirty 6 を U1b 発行。以後は将軍 loop で日次監視
-- X 運用(T230): 殿裁定 8 本を設計書 v0.16 §14 に反映(免責削除/自己完結/週 10 投稿 A→E ローテ 08:30・18:30/B=ショートコラム抜粋/C=有料誘導/全投稿に図/gist 同時更新/25 本を殿が直す)。下書き 25 本は artifact 113cfdcf、殿の直し待ち(A/E 未)
-- 図の生産ライン 3 本を忍者 3 名が並列作業中(小太郎=図1、飛猿=表 capture+12 か月表、疾風=B 記事の元データ偵察)。11:26 配備、見積り 10〜15 分
-- 殿の手が要るもの 2 つ: X 再認可(要操作 topic shogun-simokitafresh-action に URL 送信済み、認可後は第 1 弾の免責なし差替えが自動)、下書きの直し
-- T237 監視モード: T3-S-63(要操作通知分離)着地、GATE-STALL 0、軍師未読 0。影丸 CI hot_reload 3 回目は 08:13 配備で長期化→12:02 loop で確認
+- 12:10 図の生産ライン: 疾風 B 元データ偵察 CLEAR 11:51(記事 5 本の元データは本陣/DM-signal に直接 ID 0、意味一致候補 N=1/E=1/N×E=2/turnover=2/EMA=3 成果物群)。小太郎 図1 done(ancestry WAIT)、飛猿 表 capture PNG+12 か月表 PNG 生成済み
+- 殿裁定 12:00『具象化は危険、本質を抽象化』→下書き 6 本を候補/退避先へ置換(artifact 113cfdcf 12:03 版)、prompt/gate 禁止語追加、図1 文言訂正(12:07)、飛猿 D 図は SPY/VEU/SGOV 表→図3 月次チェックリストへ差替え(12:10)
+- 11:45 T236/T226/T226b クローズ(close_check 5/5 PASS、trailer first-parent 化)。以後は将軍 loop で日次監視
+- 殿の手が要るもの 2 つ: X 再認可(要操作 topic に URL 送信済み)、下書き 25 本の直し(artifact コメント)
+- T237 監視: GATE-STALL 0、軍師未読 0。影丸 CI hot_reload 3 回目は assigned へ戻り(08:13 配備)長期化=家老へ 12:30 までに状況 1 行を要求
