@@ -17156,3 +17156,24 @@ insights:
   status: "resolved"
   action_artifact: "semantic_index=/home/simokitafresh/multi-agent-shogun/docs/semantic-index/index.md"
   resolved_reason: "semantic index candidate was absorbed into a registered concept"
+- id: INS-20260904-115203655-0832
+  ts: "2026-09-04T11:52:03+09:00"
+  insight: "[[X投稿A E共用の図1をSVG正本から1200x675 PNGとして生成し]] NO_MATCH purpose pending alias: cmd_complete時にdeploy_task.logでNO_MATCHだったpurpose。類似概念TOP3: growth_loop(学習ループ; alias=partial turnover experiment asis tobe 5w1h 20260805 mdを確認してく; score=3.3) / infrastructure_ops(インフラ運用基盤; alias=queue karo snapshot txtの生成停止根因を修正し; score=2.9) / deepdive_principles(deepdive原理; alias=session_save_20260829_1207; score=2.9)。既存概念aliasesへの自動昇格候補"
+  priority: "low"
+  source: "semantic_index_update"
+  fix_known: false
+  status: pending
+- id: INS-20260904-115204078-72a6
+  ts: "2026-09-04T11:52:04+09:00"
+  insight: "[[X投稿Bの対象記事5本について結果表・図の元データと再生成scriptの所在を特定し]] NO_MATCH purpose pending alias: cmd_complete時にdeploy_task.logでNO_MATCHだったpurpose。類似概念TOP3: growth_loop(学習ループ; alias=nxe 2d robustness asis tobe 5w1h 20260801 mdに結果を記入してアップデートせよ; score=2.6) / gate_quality_framework(ゲート品質統合フレームワーク; alias=GA 422のcontext freshness ALERTについて直接原因・根本原因・横展開を一次証拠で特定し; score=2.5) / skill_routing(スキルルーティング; alias=Session after commitでL5再生成を予約し; score=2.2)。既存概念aliasesへの自動昇格候補"
+  priority: "low"
+  source: "semantic_index_update"
+  fix_known: false
+  status: pending
+- id: INS-20260904-115204458-5b54
+  ts: "2026-09-04T11:52:04+09:00"
+  insight: "[[X投稿C用のdm signal公開表画像とD用の公開ユニバース12か月リターン表を]] NO_MATCH purpose pending alias: cmd_complete時にdeploy_task.logでNO_MATCHだったpurpose。類似概念TOP3: dm_signal_pf_restore_guardrails(DM-Signal PF復元運用ガードレール; alias=DM Signal 月次リターン再設計 実装タスクリストを開始しよう; score=3.6) / google_classroom(Google Classroom Dashboard; alias=context google classroom md と context saxo trade engine md の; score=3.2) / dm_signal_refactor_mission(DM-Signalリファクタ任務; alias=DM-Signalリファクタリング; score=2.9)。既存概念aliasesへの自動昇格候補"
+  priority: "low"
+  source: "semantic_index_update"
+  fix_known: false
+  status: pending
