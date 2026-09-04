@@ -21,7 +21,7 @@ import sys
 from pathlib import Path
 
 source = "\n\n".join(Path(path).read_text(encoding="utf-8") for path in sys.argv[1:])
-names = """record_block_reason record_wait_reason append_line_locked append_lesson_tracking dispatch_gate_notification_async send_high_notification send_info_cmd_notification log_gate_stderr_file lesson_done_satisfies_lesson_candidate_registration cmd_status_is_canceled level_heading check_context_update resolve_report_file update_lesson_impact_tsv build_clear_duration_metric build_clear_throughput_metric binary_checks_warn_reason report_has_commit_binary_check_yes collect_report_files_modified discover_reports_for_cmd collect_parent_cmd_report_files_modified has_parent_cmd_report collect_git_show_w_files collect_report_commit_hash collect_cmd_phase_git_files check_self_grade_commit_file_coverage is_lessons_useful_empty_warn_task_type handle_empty_lessons_useful_check validate_lesson_feedback_set detect_task_types _check_lc_found lesson_candidate_status preflight_gate_flags collect_report_modified_files load_validated_sg7_context collect_cmd_command_file_refs collect_report_verified_existing_deps collect_task_readonly_refs check_command_files_modified_coverage check_scope_drift check_wtf_likelihood check_script_wiring resolve_task_repo_dir cmd_requires_cdp_production_check run_cdp_production_check cmd_requires_dm_signal_production_smoke dm_signal_report_deploy_sha resolve_dm_signal_render_live_sha run_dm_signal_production_smoke_check append_codd_registry_entry run_codd_propagate_update normalize_block_reason_to_workaround_categories update_karo_workaround_resolutions classify_completed_rework_event_kind capture_completed_rework_event compute_task_ac_version check_task_ac_version_integrity resolve_ci_expected_head resolve_report_commit_repo report_ci_push_state_cached report_ci_push_state_legacy_compat report_ci_push_state report_commit_main_ancestry_state report_source_only_equivalence_state check_report_commit_main_ancestry resolve_ninja_test_receipt_path validate_ninja_test_receipt check_ninja_test_receipts cmd_complete_gate_auto_push_ci_state cmd_complete_gate_auto_push_ancestry_wait""".split()
+names = """record_block_reason record_wait_reason append_line_locked append_lesson_tracking dispatch_gate_notification_async send_high_notification send_info_cmd_notification log_gate_stderr_file lesson_done_satisfies_lesson_candidate_registration cmd_status_is_canceled level_heading check_context_update resolve_report_file update_lesson_impact_tsv build_clear_duration_metric build_clear_throughput_metric binary_checks_warn_reason report_has_commit_binary_check_yes collect_report_files_modified discover_reports_for_cmd collect_parent_cmd_report_files_modified has_parent_cmd_report collect_git_show_w_files collect_report_commit_hash collect_cmd_phase_git_files check_self_grade_commit_file_coverage is_lessons_useful_empty_warn_task_type handle_empty_lessons_useful_check validate_lesson_feedback_set detect_task_types _check_lc_found lesson_candidate_status preflight_gate_flags collect_report_modified_files load_validated_sg7_context collect_cmd_command_file_refs collect_report_verified_existing_deps collect_task_readonly_refs check_command_files_modified_coverage check_scope_drift check_wtf_likelihood check_script_wiring resolve_task_repo_dir cmd_requires_cdp_production_check run_cdp_production_check cmd_requires_dm_signal_production_smoke dm_signal_report_deploy_sha resolve_dm_signal_render_live_sha run_dm_signal_production_smoke_check append_codd_registry_entry run_codd_propagate_update normalize_block_reason_to_workaround_categories update_karo_workaround_resolutions classify_completed_rework_event_kind capture_completed_rework_event compute_task_ac_version check_task_ac_version_integrity resolve_ci_expected_head resolve_report_commit_repo report_ci_push_state_cached report_ci_push_state_legacy_compat report_ci_push_state report_commit_main_ancestry_state report_source_only_equivalence_state check_report_commit_main_ancestry resolve_ninja_test_receipt_path validate_ninja_test_receipt check_ninja_test_receipts cmd_complete_gate_auto_push_ci_state cmd_complete_gate_auto_push_ancestry_wait mark_task_worktree_published source_publish_receipt_tip""".split()
 names += " post_deploy_evidence_publication_status handle_post_deploy_evidence_failure queue_post_deploy_evidence_publication_followup".split()
 for name in names:
     match = re.search(rf"(?m)^{re.escape(name)}\(\) \{{.*?^\}}", source, re.DOTALL)
@@ -75,6 +75,7 @@ PY
 set -euo pipefail
 SCRIPT_DIR="$1"
 source "$2"
+publisher_single_enabled() { return 1; }
 if [ -f "$3" ] && [ -f "$4" ]; then
     shift 2
 else
@@ -6032,6 +6033,130 @@ PY
     [ "$status" -eq 0 ]
     [[ "$output" == *"durable source-only publication receipt exact-match"* ]]
     [ "$(grep -c . "$base/git_push_calls.log")" -eq 1 ]
+}
+
+# test_necessity: a later source-only retry may observe an unrelated canonical
+# tip, but must not replace the task-worktree publication identity established
+# by the first verified publish; an empty marker is initialized exactly once
+# and malformed existing identity fails closed.
+@test "AC2 marker: publication identity is write-once and fail-closed" {
+    local base="$BATS_TEST_TMPDIR/ac2-marker-write-once"
+    local marker="$base/task-worktree.json" task="$base/task.yaml"
+    local first="1111111111111111111111111111111111111111"
+    local later="2222222222222222222222222222222222222222"
+    local unrelated="3333333333333333333333333333333333333333"
+    mkdir -p "$base"
+    printf '{"version":1,"state":"active","published_commit":"","published_at_ns":null}\n' > "$marker"
+    printf 'task:\n  task_worktree_marker: %s\n' "$marker" > "$task"
+
+    run mark_task_worktree_published "$task" "$first"
+    [ "$status" -eq 0 ]
+    run python3 - "$marker" <<'PY'
+import json, sys
+data = json.load(open(sys.argv[1]))
+assert data['published_commit'] == '1111111111111111111111111111111111111111'
+first_timestamp = data['published_at_ns']
+assert isinstance(first_timestamp, int)
+print(first_timestamp)
+PY
+    [ "$status" -eq 0 ]
+    local first_timestamp="$output"
+
+    run mark_task_worktree_published "$task" "$later"
+    [ "$status" -eq 0 ]
+    run python3 - "$marker" "$first_timestamp" <<'PY'
+import json, sys
+data = json.load(open(sys.argv[1]))
+assert data['published_commit'] == '1111111111111111111111111111111111111111'
+assert str(data['published_at_ns']) == sys.argv[2]
+PY
+    [ "$status" -eq 0 ]
+
+    printf '{"version":1,"state":"active","published_commit":"%s"}\n' "$unrelated" > "$marker"
+    run mark_task_worktree_published "$task" "$later" "$first"
+    [ "$status" -eq 0 ]
+    run python3 - "$marker" <<'PY'
+import json, sys
+assert json.load(open(sys.argv[1]))['published_commit'] == '1111111111111111111111111111111111111111'
+PY
+    [ "$status" -eq 0 ]
+
+    printf '{"version":1,"state":"active","published_commit":"not-a-commit"}\n' > "$marker"
+    run mark_task_worktree_published "$task" "$later"
+    [ "$status" -ne 0 ]
+    run python3 - "$marker" <<'PY'
+import json, sys
+assert json.load(open(sys.argv[1]))['published_commit'] == 'not-a-commit'
+PY
+    [ "$status" -eq 0 ]
+}
+
+# test_necessity: the first marker write must select the task-bound publisher
+# commit, not the unrelated canonical ledger tip; a later retry must repair an
+# unrelated valid marker from the durable receipt without issuing another push.
+@test "AC2 marker: canonical publisher tip wins over ledger tip" {
+    local base="$BATS_TEST_TMPDIR/ac2-marker-publisher-tip"
+    local generation="abababababababababababababababababababababababababababababababab"
+    local marker="$base/task-worktree.json"
+    _push_overlap_repo_init "$base"
+    _push_overlap_repo_make_source_overlap "$base"
+
+    git clone -q "$base/origin.git" "$base/remote-clone"
+    git -C "$base/remote-clone" config user.email test@example.com
+    git -C "$base/remote-clone" config user.name test
+    printf 'base\nlocal change\n' > "$base/remote-clone/shared.txt"
+    git -C "$base/remote-clone" add shared.txt
+    git -C "$base/remote-clone" commit -q -m 'publisher: task=cmd_publisher_marker_probe_normal'
+    local publisher_tip
+    publisher_tip="$(git -C "$base/remote-clone" rev-parse HEAD)"
+    git -C "$base/remote-clone" push -q origin main
+    git -C "$base/repo" fetch -q origin main
+
+    _push_receipt_task_yaml "$base"
+    mkdir -p "$base/task-wt"
+    printf '{"version":1,"state":"active","task_id":"cmd_publisher_marker_probe_normal","parent_cmd":"cmd_publisher_marker_probe","generation":"%s","repo":"%s/repo","worktree":"%s/task-wt","published_commit":""}\n' \
+        "$generation" "$base" "$base" > "$marker"
+    cat >> "$base/task.yaml" <<YAML
+  task_id: cmd_publisher_marker_probe_normal
+  parent_cmd: cmd_publisher_marker_probe
+  task_worktree_generation: $generation
+  task_worktree_marker: $marker
+  task_worktree_workdir: $base/task-wt
+YAML
+    _push_overlap_install_git_call_counter "$base"
+
+    run env PATH="$base/bin:$PATH" CMD_COMPLETE_GATE_PUSH_REPOS_REAL=1 \
+        CMD_COMPLETE_GATE_SOURCE_PUBLISH_RECEIPT="$base/source-receipt.json" \
+        SHOGUN_COMPLETION_GENERATION="$generation" \
+        CMD_COMPLETE_GATE_TASK_FILE="$base/task.yaml" \
+        bash "$PUSH_RUNNER" "$base" "$PUSH_HELPERS_FILE" "$base/task.yaml" "cmd_publisher_marker_probe"
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"publisher publication proof"* ]]
+    [ "$(python3 -c 'import json,sys; print(json.load(open(sys.argv[1]))["published_commit"])' "$marker")" = "$publisher_tip" ]
+    [ "$(python3 -c 'import json,sys; d=json.load(open(sys.argv[1])); print(next(e["remote_tip"] for e in d["entries"] if e["repo"] == sys.argv[2]))' "$base/source-receipt.json" "$base/repo")" = "$publisher_tip" ]
+    [ "$(grep -c . "$base/git_push_calls.log" 2>/dev/null || true)" -eq 0 ]
+
+    git clone -q "$base/origin.git" "$base/remote-evolution"
+    git -C "$base/remote-evolution" config user.email test@example.com
+    git -C "$base/remote-evolution" config user.name test
+    printf 'ledger evolution\n' > "$base/remote-evolution/ledger.txt"
+    git -C "$base/remote-evolution" add ledger.txt
+    git -C "$base/remote-evolution" commit -q -m 'unrelated ledger commit'
+    local ledger_tip
+    ledger_tip="$(git -C "$base/remote-evolution" rev-parse HEAD)"
+    git -C "$base/remote-evolution" push -q origin main
+    printf '{"version":1,"state":"active","task_id":"cmd_publisher_marker_probe_normal","parent_cmd":"cmd_publisher_marker_probe","generation":"%s","repo":"%s/repo","worktree":"%s/task-wt","published_commit":"%s"}\n' \
+        "$generation" "$base" "$base" "$ledger_tip" > "$marker"
+
+    run env PATH="$base/bin:$PATH" CMD_COMPLETE_GATE_PUSH_REPOS_REAL=1 \
+        CMD_COMPLETE_GATE_SOURCE_PUBLISH_RECEIPT="$base/source-receipt.json" \
+        SHOGUN_COMPLETION_GENERATION="$generation" \
+        CMD_COMPLETE_GATE_TASK_FILE="$base/task.yaml" \
+        bash "$PUSH_RUNNER" "$base" "$PUSH_HELPERS_FILE" "$base/task.yaml" "cmd_publisher_marker_probe"
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"durable source-only publication receipt exact-match"* ]]
+    [ "$(python3 -c 'import json,sys; print(json.load(open(sys.argv[1]))["published_commit"])' "$marker")" = "$publisher_tip" ]
+    [ "$(grep -c . "$base/git_push_calls.log" 2>/dev/null || true)" -eq 0 ]
 }
 
 # test_necessity: receipt identity mismatches must not suppress normal remote

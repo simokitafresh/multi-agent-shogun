@@ -1522,10 +1522,10 @@ PY
 }
 
 mark_task_worktree_published() {
-    local task_file="$1" published_commit="$2" marker
+    local task_file="$1" published_commit="$2" receipt_tip="${3:-}" marker
     marker=$(python3 -c 'import sys,yaml; print(str(((yaml.safe_load(open(sys.argv[1],encoding="utf-8")) or {}).get("task") or {}).get("task_worktree_marker") or "").strip())' "$task_file")
     [ -f "$marker" ] || return 0
-    python3 -c 'import json,os,sys,tempfile,time; p,pub=sys.argv[1:]; d=json.load(open(p,encoding="utf-8")); assert d.get("version")==1 and d.get("state")=="active"; d["published_commit"]=pub; d["published_at_ns"]=time.time_ns(); fd,t=tempfile.mkstemp(prefix=".task_worktree_published.",dir=os.path.dirname(p)); f=os.fdopen(fd,"w",encoding="utf-8"); json.dump(d,f,sort_keys=True); f.write("\n"); f.flush(); os.fsync(f.fileno()); f.close(); os.replace(t,p)' "$marker" "$published_commit"
+    python3 -c 'import json,os,re,sys,tempfile,time; p,pub,tip=sys.argv[1:]; d=json.load(open(p,encoding="utf-8")); assert d.get("version")==1 and d.get("state")=="active"; current=str(d.get("published_commit") or "").strip().lower(); target=str(tip or pub).strip().lower(); assert not current or re.fullmatch(r"[0-9a-f]{40}",current); assert re.fullmatch(r"[0-9a-f]{40}",target); (sys.exit(0) if current and not tip else None); (sys.exit(0) if current == target else None); d["published_commit"]=target; d["published_at_ns"]=time.time_ns(); fd,t=tempfile.mkstemp(prefix=".task_worktree_published.",dir=os.path.dirname(p)); f=os.fdopen(fd,"w",encoding="utf-8"); json.dump(d,f,sort_keys=True); f.write("\n"); f.flush(); os.fsync(f.fileno()); f.close(); os.replace(t,p)' "$marker" "$published_commit" "$receipt_tip"
 }
 
 # A successful source-only push must survive a later retry of the same gate.
@@ -1622,6 +1622,54 @@ for entry in entries:
     actual.add((source_sha, report_generation))
 if actual != expected:
     raise SystemExit(1)
+PY
+}
+
+source_publish_receipt_tip() {
+    local receipt="$1" cmd_id="$2" completion_generation="$3" repo="$4"
+    shift 4
+    [ -f "$receipt" ] || return 1
+    [ "$#" -gt 0 ] && [ $(( $# % 2 )) -eq 0 ] || return 1
+    python3 - "$receipt" "$cmd_id" "$completion_generation" "$repo" "$@" <<'PY'
+import json
+import re
+import sys
+
+receipt, cmd_id, completion_generation, repo = sys.argv[1:5]
+raw = sys.argv[5:]
+expected = {(raw[i], raw[i + 1]) for i in range(0, len(raw), 2)}
+if not expected or not re.fullmatch(r"[0-9a-f]{64}", completion_generation):
+    raise SystemExit(1)
+try:
+    data = json.load(open(receipt, encoding="utf-8"))
+except (OSError, ValueError, TypeError):
+    raise SystemExit(1)
+if data.get("version") != 1 or data.get("state") != "published" \
+        or data.get("cmd_id") != cmd_id \
+        or data.get("completion_generation") != completion_generation:
+    raise SystemExit(1)
+actual = set()
+tips = set()
+for entry in data.get("entries") or []:
+    if not isinstance(entry, dict) or entry.get("repo") != repo:
+        continue
+    if (entry.get("cmd_id") != cmd_id
+            or entry.get("completion_generation") != completion_generation
+            or entry.get("remote_contains_source_rc") != 0):
+        raise SystemExit(1)
+    source_sha = str(entry.get("source_sha") or "")
+    report_generation = str(entry.get("report_generation") or "")
+    remote_tip = str(entry.get("remote_tip") or "").strip().lower()
+    if (not re.fullmatch(r"[0-9a-f]{40}", source_sha)
+            or not report_generation
+            or not re.fullmatch(r"[0-9a-f]{40}", remote_tip)):
+        raise SystemExit(1)
+    actual.add((source_sha, report_generation))
+    if (source_sha, report_generation) in expected:
+        tips.add(remote_tip)
+if actual != expected or len(tips) != 1:
+    raise SystemExit(1)
+print(next(iter(tips)))
 PY
 }
 
@@ -3841,13 +3889,15 @@ push_task_repositories() {
     local task_file repo upstream_ref upstream_sha remote push_ref remote_tip source_sha
     local overlap_blocking all_sources_ok push_rc attempt max_retries refreshed_tip
     local source_equivalent_used source_base_tree_noop source_noop_all
-    local source_report_generation receipt receipt_expected legacy_evidence legacy_receipt_migrated legacy_task_file
+    local source_report_generation receipt receipt_expected receipt_published_tip legacy_evidence legacy_receipt_migrated legacy_task_file
     local -a repos=() eligible_task_files=()
     local -a receipt_pairs=()
     local saw_task_file=0
     local report_repo report_source report_generation report_path_count path_index path report_sources_tmp report_sources_fd
+    local task_publication_id
     local source_repo source_generation source_path_count source_valid=true task_repo
     local -a report_paths=()
+    local -a publisher_task_ids=()
     local -A seen_repos=() report_sources_by_repo=() task_sources_by_repo=() receipt_pair_seen=()
 
     for task_file in "$@"; do
@@ -3864,6 +3914,18 @@ push_task_repositories() {
         echo "  git push: SKIP (all task sources push_allowed=false)"
         return 0
     fi
+
+    for task_file in "${eligible_task_files[@]}"; do
+        task_publication_id=$(python3 - "$task_file" <<'PY'
+import sys
+import yaml
+task = (yaml.safe_load(open(sys.argv[1], encoding="utf-8")) or {}).get("task", {})
+print(str(task.get("task_id") or "").strip())
+PY
+        ) || continue
+        [ -n "$task_publication_id" ] || continue
+        publisher_task_ids+=("$task_publication_id")
+    done
 
     for task_file in "${eligible_task_files[@]}"; do
         repo=$(resolve_task_publish_repo_dir "$task_file") || continue
@@ -4083,9 +4145,11 @@ PY
                     "$SHOGUN_COMPLETION_GENERATION" "$repo" "${receipt_pairs[@]}"; then
                 if receipt_source_commits_are_remote_ancestors "$repo" "$remote_tip" \
                     "${source_commits[@]}"; then
+                    receipt_published_tip=$(source_publish_receipt_tip "$receipt" "$CMD_ID" \
+                        "$SHOGUN_COMPLETION_GENERATION" "$repo" "${receipt_pairs[@]}") || return 1
                     for task_file in "${eligible_task_files[@]}"; do
                         [ "$(resolve_task_publish_repo_dir "$task_file")" = "$repo" ] || continue
-                        mark_task_worktree_published "$task_file" "$remote_tip" || return 1
+                        mark_task_worktree_published "$task_file" "$remote_tip" "$receipt_published_tip" || return 1
                     done
                     if [ "$legacy_receipt_migrated" = true ]; then
                         echo "  git push: SKIP ($repo migrated legacy source-only publication evidence exact-match+ancestry)"
@@ -4109,9 +4173,11 @@ PY
                         "$SHOGUN_COMPLETION_GENERATION" "$repo" "${receipt_pairs[@]}" \
                     && receipt_source_commits_are_remote_ancestors "$repo" "$remote_tip" \
                         "${source_commits[@]}"; then
+                    receipt_published_tip=$(source_publish_receipt_tip "$receipt" "$CMD_ID" \
+                        "$SHOGUN_COMPLETION_GENERATION" "$repo" "${receipt_pairs[@]}") || return 1
                     for task_file in "${eligible_task_files[@]}"; do
                         [ "$(resolve_task_publish_repo_dir "$task_file")" = "$repo" ] || continue
-                        mark_task_worktree_published "$task_file" "$remote_tip" || return 1
+                        mark_task_worktree_published "$task_file" "$remote_tip" "$receipt_published_tip" || return 1
                     done
                     echo "  git push: SKIP ($repo durable source-only publication receipt exact-match+ancestry after fetch)"
                     break
@@ -4147,6 +4213,28 @@ PY
                 if git -C "$repo" merge-base --is-ancestor "$source_sha" "$remote_tip"; then
                     continue
                 fi
+                if [ "$publisher_proof_only" -eq 0 ]; then
+                    # Prefer the publisher's task-bound commit over the current
+                    # canonical tip. The latter may be an unrelated ledger
+                    # commit whose tree happens to retain the same source blobs.
+                    publisher_candidate=""
+                    while IFS=$'\t' read -r candidate candidate_subject; do
+                        [ -n "$candidate" ] || continue
+                        for task_publication_id in "${publisher_task_ids[@]}"; do
+                            [ "$candidate_subject" = "publisher: task=$task_publication_id" ] || continue
+                            if source_task_paths_match_commit "$repo" "$source_sha" "$remote_tip" "$candidate"; then
+                                publisher_candidate="$candidate"
+                                break 2
+                            fi
+                        done
+                    done < <(git -C "$repo" log -300 --format='%H%x09%s' "$remote_tip" 2>/dev/null)
+                    if [ -n "$publisher_candidate" ]; then
+                        source_equivalent_used=true
+                        publisher_commit="$publisher_candidate"
+                        echo "  git push: publisher publication proof ($repo source $source_sha equivalent to published ${publisher_candidate:0:12})"
+                        continue
+                    fi
+                fi
                 if source_snapshot_matches_tip "$repo" "$source_sha" "$remote_tip"; then
                     source_equivalent_used=true
                     continue
@@ -4160,25 +4248,8 @@ PY
                     _origin_ready_pending_shas+=("$source_sha")
                     continue
                 fi
-                # Single publisher (2026-09-03): the publisher lands the task as its own
-                # "publisher: task=<id>" commit on origin. Later commits on the tip may touch the
-                # same paths, so prove equivalence against that published commit (an ancestor of
-                # the tip) instead of the tip itself.
-                publisher_candidate=""
-                while IFS= read -r candidate; do
-                    [ -n "$candidate" ] || continue
-                    if source_task_paths_match_commit "$repo" "$source_sha" "$remote_tip" "$candidate"; then
-                        publisher_candidate="$candidate"; break
-                    fi
-                done < <(git -C "$repo" log -300 --format=%H --grep='^publisher: task=' "$remote_tip" 2>/dev/null)
-                if [ -n "$publisher_candidate" ]; then
-                    source_equivalent_used=true
-                    publisher_commit="$publisher_candidate"
-                    echo "  git push: publisher publication proof ($repo source $source_sha equivalent to published ${publisher_candidate:0:12})"
-                else
-                    all_remote=false
-                    break
-                fi
+                all_remote=false
+                break
             done
             if [ "$all_remote" = true ] && [ "${#_origin_ready_pending_shas[@]}" -gt 0 ]; then
                 if cmd_complete_gate_publisher_origin_ready publisher_origin_ids "${_origin_ready_pending_shas[@]}"; then
@@ -4203,7 +4274,7 @@ PY
                 fi
                 for task_file in "${eligible_task_files[@]}"; do
                     [ "$(resolve_task_publish_repo_dir "$task_file")" = "$repo" ] || continue
-                    mark_task_worktree_published "$task_file" "$remote_tip" || return 1
+                    mark_task_worktree_published "$task_file" "$remote_tip" "${publisher_commit:-$remote_tip}" || return 1
                 done
                 if [ "$source_equivalent_used" = true ]; then
                     echo "  git push: SKIP ($repo report source commits source-equivalent to remote tip)"
@@ -4238,7 +4309,7 @@ PY
                 fi
                 for task_file in "${eligible_task_files[@]}"; do
                     [ "$(resolve_task_publish_repo_dir "$task_file")" = "$repo" ] || continue
-                    mark_task_worktree_published "$task_file" "$published_remote_sha" || return 1
+                    mark_task_worktree_published "$task_file" "$published_remote_sha" "$published_remote_sha" || return 1
                 done
                 echo "  git push: OK ($repo; source-only fast-forward; remote_contains_source_rc=0)"
                 break
