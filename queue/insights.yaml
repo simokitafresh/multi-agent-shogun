@@ -17919,3 +17919,10 @@ insights:
   status: "resolved"
   action_artifact: "semantic_map=/home/simokitafresh/multi-agent-shogun/context/semantic-map.md;semantic_index=/home/simokitafresh/multi-agent-shogun/docs/semantic-index/index.md"
   resolved_reason: "semantic map generation verified the candidate is represented or intentionally ignored"
+- id: INS-20260905-020334775-0a77
+  ts: "2026-09-05T02:03:34+09:00"
+  insight: "[[ただ]] semantic_stress_test candidate_aliases: NO_MATCH source=lord query=ただ、長期的には日本のインフレを重要視するなら、総務省統計局のCPIを正本として直接取得する経路を持った方がいいでしょう"
+  priority: "low"
+  source: "semantic_stress_test"
+  fix_known: false
+  status: pending
