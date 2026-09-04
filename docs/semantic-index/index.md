@@ -6591,6 +6591,7 @@ codd:
 | causal_chain | `[[cmd_karo_hotfix_report_unit_lock_residue_20260831135838]]` (L1690) |
 | causal_chain | `[[cmd_karo_hotfix_ancestry_merge_content_loss_20260902]]` (L1697) |
 | causal_chain | `[[cmd_4453]]` (L1709) |
+| discussion | `queue/lord_conversation.jsonl` 2026-09-04T19:17:14+09:00 4474はどうなった？未コミット、未プッシュがないか確認してくれ |
 
 ## no_auto_extinguish — 自動消火禁止
 
