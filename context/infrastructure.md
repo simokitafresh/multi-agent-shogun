@@ -1,5 +1,6 @@
 # インフラコンテキスト
 <!-- last_updated: 2026-09-04 context_freshness reviewed source boundary -->
+<!-- source_commit:0561dcf10 reason:context_freshness reviewed source boundary evidence:context_freshness_check context=context/infrastructure.md commit=0561dcf10 -->
 <!-- source_commit:8f016d193 reason:context_freshness reviewed source boundary evidence:context_freshness_check context=context/infrastructure.md commit=8f016d193 -->
 <!-- source_commit:4bc7edec3 reason:context_freshness reviewed source boundary evidence:context_freshness_check context=context/infrastructure.md commit=4bc7edec3 -->
 <!-- source_commit:0a4e3d8b8 reason:context_freshness reviewed source boundary evidence:context_freshness_check context=context/infrastructure.md commit=0a4e3d8b8 -->
@@ -754,3 +755,4 @@ source boundary一致taskはregistryのowner/update_triggerからcontext_update_
 - X Growth KPI 可否正本 skills/x-post-pipeline/kpi_availability.yaml(2026-09-04 殿裁定 16:07: 4 状態、null/0 区別、follow は account 日次 delta のみ、campaign_id で DM-Signal external_attribution)。x_kpi_snapshot.py は null 明示+followers_delta+日次構成
 - X Growth v1.4(2026-09-04 殿レビュー 16:23): slot_calendar v3=7 日運用・毎日 08:30/12:30/18:30 の 3 content_units(週 21)、cron 30 8,12,18 * * *。Conversation Entry は units に数えない → 設計書 §0/§14/§51
 - X Round5 生成器 scripts/x_ops/x_round5_gen.py と Thread runner scripts/x_ops/x_thread_post.sh(2026-09-04 将軍 D0)。x_drafts_render.py は R5-S-1/R5-T-1-P/R5-SE-2 形式も描画。cmd_4474=DM-Signal campaign attribution(家老 lane)
+- x_slot_post.sh は --dry-run/--help 以外の引数を exit 2 で拒否(2026-09-04 T3-S-69 誤投稿の再発防止)
