@@ -19,13 +19,12 @@ run_gate() {
     run bash "$GATE" "$1"
 }
 
-@test "PASS: 枠A教材再掲の下書き(数字なし、免責あり、許可URLのみ)" {
+@test "PASS: 枠A教材再掲の下書き(数字なし、免責なし、許可URLのみ)" {
     cat > "$FIXTURE_DIR/pass_a.txt" <<'EOF'
 デュアルモメンタムは2つだけ見る。今いちばん強い資産か。その資産は現金より強いか。弱ければ退避。確認は月1回。
 
 詳細と検証は無料ガイド。
 https://note.com/tokyojibika/n/n171daa7f92a1
-助言ではない。過去は未来を保証しない。
 EOF
     run_gate "$FIXTURE_DIR/pass_a.txt"
     [ "$status" -eq 0 ]
@@ -39,7 +38,6 @@ EOF
 
 期間と前提は記事に全部ある。
 https://note.com/tokyojibika/n/n171daa7f92a1
-教育目的。特定銘柄の推奨ではない。過去の検証は将来を保証しない。
 EOF
     run_gate "$FIXTURE_DIR/pass_b.txt"
     [ "$status" -eq 0 ]
@@ -48,7 +46,7 @@ EOF
 
 @test "FAIL rule1: Basic-DualMomentum以外の保有ticker(XLK)が本文にあればFAIL" {
     cat > "$FIXTURE_DIR/fail1.txt" <<'EOF'
-プレミアム限定戦略はXLKを中心に運用しています。助言ではない。過去は未来を保証しない。
+プレミアム限定戦略はXLKを中心に運用しています。
 EOF
     run_gate "$FIXTURE_DIR/fail1.txt"
     [ "$status" -eq 1 ]
@@ -57,7 +55,7 @@ EOF
 
 @test "FAIL rule2: 単独倍率(期間/CAGR/MaxDD/ベンチのいずれとも同一段落に無い)はFAIL" {
     cat > "$FIXTURE_DIR/fail2.txt" <<'EOF'
-このポートフォリオは資産を7倍にしました。助言ではない。過去は未来を保証しない。
+このポートフォリオは資産を7倍にしました。
 EOF
     run_gate "$FIXTURE_DIR/fail2.txt"
     [ "$status" -eq 1 ]
@@ -68,25 +66,27 @@ EOF
     cat > "$FIXTURE_DIR/fail3.txt" <<'EOF'
 詳細はこちら。
 https://example.com/spam
-助言ではない。過去は未来を保証しない。
 EOF
     run_gate "$FIXTURE_DIR/fail3.txt"
     [ "$status" -eq 1 ]
     [[ "$output" == *"rule3_disallowed_url:https://example.com/spam"* ]]
 }
 
-@test "FAIL rule4: 免責1行(助言ではない/保証しない)が無ければFAIL" {
-    cat > "$FIXTURE_DIR/fail4.txt" <<'EOF'
-デュアルモメンタムは2つだけ見る。今いちばん強い資産か。
+@test "FAIL rule4: 免責・言い訳文(教育目的/推奨ではない/保証しない)があればFAIL(殿裁定 2026-09-04)" {
+    draft="$(mktemp)"
+    cat >"$draft" <<'EOF'
+デュアルモメンタムは2つだけ見る。今いちばん強い資産か、その資産は現金より強いか。
+https://note.com/tokyojibika/n/n171daa7f92a1
+教育目的。推奨ではない。過去は将来を保証しない。
 EOF
-    run_gate "$FIXTURE_DIR/fail4.txt"
-    [ "$status" -eq 1 ]
-    [[ "$output" == *"rule4_missing_disclaimer"* ]]
+    run bash "$GATE" "$draft" A
+    [ "$status" -ne 0 ]
+    [[ "$output" == *"rule4_disclaimer_present"* ]]
 }
 
 @test "FAIL rule5: 禁止語(劇薬など)があればFAIL" {
     cat > "$FIXTURE_DIR/fail5.txt" <<'EOF'
-この劇薬のような戦略はすごい。助言ではない。過去は未来を保証しない。
+この劇薬のような戦略はすごい。
 EOF
     run_gate "$FIXTURE_DIR/fail5.txt"
     [ "$status" -eq 1 ]
@@ -95,7 +95,7 @@ EOF
 
 @test "FAIL rule6: 第一文に内部用語(FoFなど)があればFAIL" {
     cat > "$FIXTURE_DIR/fail6.txt" <<'EOF'
-FoFの仕組みで運用しています。助言ではない。過去は未来を保証しない。
+FoFの仕組みで運用しています。
 EOF
     run_gate "$FIXTURE_DIR/fail6.txt"
     [ "$status" -eq 1 ]
@@ -111,7 +111,7 @@ EOF
 EOF
     export X_GATE_SIGNALS_JSON="$FIXTURE_DIR/signals_fof.json"
     cat > "$FIXTURE_DIR/fail_fof.txt" <<'EOF'
-プレミアム限定戦略はTMVを中心に運用しています。助言ではない。過去は未来を保証しない。
+プレミアム限定戦略はTMVを中心に運用しています。
 EOF
     run_gate "$FIXTURE_DIR/fail_fof.txt"
     [ "$status" -eq 1 ]
@@ -125,7 +125,7 @@ EOF
     unset X_GATE_SIGNALS_JSON
     export X_GATE_SIGNALS_URL="http://127.0.0.1:9/"
     cat > "$FIXTURE_DIR/fail_unreachable.txt" <<'EOF'
-デュアルモメンタムは2つだけ見る。今いちばん強い資産か。助言ではない。過去は未来を保証しない。
+デュアルモメンタムは2つだけ見る。今いちばん強い資産か。
 EOF
     run_gate "$FIXTURE_DIR/fail_unreachable.txt"
     [ "$status" -eq 1 ]
@@ -141,7 +141,7 @@ EOF
 EOF
     export X_GATE_SIGNALS_JSON="$FIXTURE_DIR/signals_empty.json"
     cat > "$FIXTURE_DIR/fail_empty_blocklist.txt" <<'EOF'
-デュアルモメンタムは2つだけ見る。今いちばん強い資産か。助言ではない。過去は未来を保証しない。
+デュアルモメンタムは2つだけ見る。今いちばん強い資産か。
 EOF
     run_gate "$FIXTURE_DIR/fail_empty_blocklist.txt"
     [ "$status" -eq 1 ]
@@ -206,7 +206,7 @@ class CreateRequest:
         self.kwargs = kwargs
 PY
     cat > "$X_POST_DRAFTS_DIR/2026-09-03_A.txt" <<'EOF'
-デュアルモメンタムは2つだけ見る。助言ではない。過去は将来を保証しない。
+デュアルモメンタムは2つだけ見る。今いちばん強い資産か、その資産は現金より強いか。
 EOF
     printf 'approved\n' > "$X_POST_DRAFTS_DIR/2026-09-03_A.approved"
     cat > "$X_POST_API_ENV_FILE" <<'EOF'
@@ -413,7 +413,6 @@ cat > "$X_POST_LLM_CAPTURE"
 cat <<'BODY'
 CAGR10%、MaxDD-20%、2020年〜2024年、SPY比較。
 https://note.com/tokyojibika/n/n171daa7f92a1
-教育目的。推奨ではない。過去は将来を保証しない。
 BODY
 EOF
     chmod +x "$FIXTURE_DIR/llm_stub.sh"
@@ -503,7 +502,6 @@ cat <<'BODY'
 以下が最終投稿本文です。
 CAGR10%、MaxDD-20%、2020年〜2024年、SPY比較。
 https://note.com/tokyojibika/n/n171daa7f92a1
-教育目的。推奨ではない。過去は将来を保証しない。
 BODY
 EOF
     chmod +x "$FIXTURE_DIR/llm_meta_stub.sh"
@@ -525,7 +523,6 @@ cat <<'BODY'
 CAGR10%、MaxDD-20%、2020年〜2024年、SPY比較。
 ---
 https://note.com/tokyojibika/n/n171daa7f92a1
-教育目的。推奨ではない。過去は将来を保証しない。
 BODY
 EOF
     chmod +x "$FIXTURE_DIR/llm_sep_stub.sh"
@@ -544,7 +541,7 @@ EOF
 #!/usr/bin/env bash
 cat > /dev/null
 printf '%s' "$(python3 -c "print('あ' * 300)")"
-printf '\n教育目的。推奨ではない。過去は将来を保証しない。\n'
+printf ''
 EOF
     chmod +x "$FIXTURE_DIR/llm_long_stub.sh"
     export X_POST_LLM_CMD="$FIXTURE_DIR/llm_long_stub.sh"
@@ -564,7 +561,6 @@ cat > /dev/null
 cat <<'BODY'
 CAGR999%、MaxDD-20%、2020年〜2024年、SPY比較。
 https://note.com/tokyojibika/n/n171daa7f92a1
-教育目的。推奨ではない。過去は将来を保証しない。
 BODY
 EOF
     chmod +x "$FIXTURE_DIR/llm_offnum_stub.sh"
@@ -584,7 +580,6 @@ cat > /dev/null
 cat <<'BODY'
 CAGR10%、MaxDD-20%、2020年〜2024年、SPY比較。
 https://example.com/spam
-教育目的。推奨ではない。過去は将来を保証しない。
 BODY
 EOF
     chmod +x "$FIXTURE_DIR/llm_badurl_stub.sh"
@@ -604,7 +599,6 @@ EOF
 cat > /dev/null
 cat <<'BODY'
 CAGR10%、MaxDD-20%、2020年〜2024年、SPY比較。
-教育目的。推奨ではない。過去は将来を保証しない。
 BODY
 EOF
     chmod +x "$FIXTURE_DIR/llm_nourl_stub.sh"
@@ -618,9 +612,9 @@ EOF
     [[ "$output" == "PASS" ]]
 }
 
-# test_necessity: 免責も同様にscript側が固定文言を決定的に合成する契約(AC1)。免責欠落の
+# test_necessity: 免責は合成しない契約(殿裁定 2026-09-04『言い訳は削除せよ』)。LLM が免責を書いても
 # 本文でもfail-closeせず、合成後にgateがPASSすることを固定する回帰テスト。
-@test "x_post draft: 免責欠落LLM出力は固定免責合成後gate PASS" {
+@test "x_post draft: 免責は合成されない(殿裁定 2026-09-04)、URL 合成後 gate PASS" {
     setup_x_post_minimal
     setup_x_post_draft_ledger
     cat > "$FIXTURE_DIR/llm_nodisclaimer_stub.sh" <<'EOF'
@@ -636,7 +630,7 @@ EOF
     run bash "$X_POST" draft A demo
     [ "$status" -eq 0 ]
     local draft_path="$output"
-    grep -qF '保証しない' "$draft_path"
+    ! grep -qF '保証しない' "$draft_path"
     run bash "$GATE" "$draft_path"
     [ "$status" -eq 0 ]
     [[ "$output" == "PASS" ]]
@@ -670,7 +664,7 @@ EOF
     setup_x_post_draft_ledger
     mkdir -p "$X_POST_DRAFTS_DIR"
     local existing="$X_POST_DRAFTS_DIR/$(date -u +%Y-%m-%d)_A.txt"
-    printf '既存の有効な下書き本文。教育目的。推奨ではない。過去は将来を保証しない。\n' > "$existing"
+    printf '既存の有効な下書き本文。\n' > "$existing"
     cat > "$FIXTURE_DIR/llm_error_stub2.sh" <<'EOF'
 #!/usr/bin/env bash
 cat > /dev/null

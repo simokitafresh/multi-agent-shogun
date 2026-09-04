@@ -35,7 +35,9 @@ else
     # (stdinへ混入させるとClaudeが前置き・見出し・区切り線を書く傾向が実測で確認されたため)
     LLM_CMD+=' --system-prompt "$SYSTEM_PROMPT_TEXT"'
 fi
-X_POST_DISCLAIMER='教育目的。推奨ではない。過去は将来を保証しない。'
+# 2026-09-04 10:38 殿裁定: 免責文(『教育目的。推奨ではない。過去は将来を保証しない。』)は蛇足。言い訳を
+# 投稿本文に付けるのは論理的におかしい→合成しない。空文字なら compose は URL のみを付ける。
+X_POST_DISCLAIMER=''
 
 usage() {
     cat >&2 <<'EOF'

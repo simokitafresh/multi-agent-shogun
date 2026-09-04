@@ -136,10 +136,12 @@ if [ -n "$URLS" ]; then
     done <<<"$URLS"
 fi
 
-# --- Rule 4: 免責1行(『助言ではない』『保証しない』のいずれか)が無ければFAIL ---
-if ! grep -qF '助言ではない' <<<"$DRAFT_TEXT" && ! grep -qF '保証しない' <<<"$DRAFT_TEXT"; then
-    FAILS+=("rule4_missing_disclaimer")
-fi
+# --- Rule 4: 免責・言い訳文が含まれていればFAIL(殿裁定 2026-09-04 10:38『言い訳は削除せよ』。旧: 免責必須) ---
+for word in "教育目的" "推奨ではない" "助言ではない" "保証しない" "投資助言"; do
+    if grep -qF -- "$word" <<<"$DRAFT_TEXT"; then
+        FAILS+=("rule4_disclaimer_present:${word}")
+    fi
+done
 
 # --- Rule 5: 禁止語(無敵/確実/人生が変わる/今これを買え/劇薬) ---
 for word in "無敵" "確実" "人生が変わる" "今これを買え" "劇薬"; do
