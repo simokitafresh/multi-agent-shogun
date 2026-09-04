@@ -16969,3 +16969,10 @@ insights:
   source: "semantic_index_update"
   fix_known: false
   status: pending
+- id: INS-20260904-094636994-1883
+  ts: "2026-09-04T09:46:36+09:00"
+  insight: "高頻度FAIL: final_checkpoint: ci_fix clean repro evidence source_commit mismatch or invalid (11回発火) → GP-107(消火4問)で判定後にgate強化を検討せよ。auto-fix化は消火構造の可能性あり"
+  priority: "high"
+  source: "gate_loop_health"
+  fix_known: false
+  status: pending
