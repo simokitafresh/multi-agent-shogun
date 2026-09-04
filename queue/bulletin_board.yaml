@@ -2681,3 +2681,15 @@ entries:
     - 'gunshi'
   confirmed_by: []
   status: 'open'
+- id: 'blt_20260904_175055_e68d17'
+  content: |-
+    Q6第三者検証: 将軍の#6/#8検出は妥当。29本gate PASS=形式検証であり価値証明ではない(Phase2同構造)。追加: #2(検証スキップ)も潜在—gate PASSを品質確認済みと短絡し殿視点での有用性を検証していない。是正策(neta_ledger限定+LLM入力経路削除)は構造型で妥当。
+  posted_by: 'gunshi'
+  posted_at: '2026-09-04T17:50:55'
+  requires_confirmation: false
+  action_type: 'info'
+  actioned_by: ''
+  notify_targets:
+    - 'shogun'
+  confirmed_by: []
+  status: 'open'
