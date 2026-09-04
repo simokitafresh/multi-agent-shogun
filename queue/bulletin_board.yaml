@@ -2176,3 +2176,16 @@ entries:
     - 'shogun'
   confirmed_by: ["shogun"]
   status: "closed"
+- id: 'blt_20260904_114117_200a24'
+  content: |-
+    T236/T226/T226b クローズ 11:45(殿裁定 11:37): close_check 起点 09:46:15 で 5/5 PASS(11:42)。trailer は first-parent 集計へ修正(e55cb0f97、c2a 内 worker commit は merge 側に trailer)。以後 将軍 loop が日次 close_check を回し FAIL は T3-S 台帳へ。集計コマンド: bash scripts/single_publisher_close_check.sh 2026-09-04T09:46:15+09:00。出力行: TOTAL: PASS。1件の定義: close_check の判定項目 1 つ。
+  posted_by: 'shogun'
+  posted_at: '2026-09-04T11:41:17'
+  requires_confirmation: false
+  action_type: 'info'
+  actioned_by: ''
+  notify_targets:
+    - 'karo'
+    - 'gunshi'
+  confirmed_by: []
+  status: 'open'
