@@ -1,5 +1,6 @@
 # インフラコンテキスト
 <!-- last_updated: 2026-09-04 context_freshness reviewed source boundary -->
+<!-- source_commit:b6a30b56d reason:context_freshness reviewed source boundary evidence:context_freshness_check context=context/infrastructure.md commit=b6a30b56d -->
 <!-- source_commit:fe68b34e5 reason:context_freshness reviewed source boundary evidence:context_freshness_check context=context/infrastructure.md commit=fe68b34e5 -->
 <!-- source_commit:c14939a1b reason:context_freshness reviewed source boundary evidence:context_freshness_check context=context/infrastructure.md commit=c14939a1b -->
 <!-- source_commit:480548fc1 reason:context_freshness reviewed source boundary evidence:context_freshness_check context=context/infrastructure.md commit=480548fc1 -->
@@ -736,3 +737,4 @@ source boundary一致taskはregistryのowner/update_triggerからcontext_update_
 - **掲示板 confirm/action が ledger 適用前でも消えない(将軍 D0 57a2666a7+本 commit、T3-S-29/30/31)**: `bulletin_write` は ledger op enqueue 直後に inbox notify を送るため、受け手の `inbox_mark_read`→`bulletin_confirm` が board file に entry を見つけられず確認が消えていた(18:0x 4 件連続)。`bulletin_confirm.sh` と `ledger_writer.sh update` が pending append op を対象として enqueue を通す(apply は順序保証、CAS は expected 欄)。同時に `context_source_commit_set.sh` が反映済み commit の DOC_LANE 掲示板 entry を `bulletin_action` で自動 close(閉じ漏れ 15 件 backfill)、`gate_shogun_startup.sh` の `grep -c \|\| echo 0` 二重 0 を修正。bats `test_bulletin_confirm_pending_fallback.bats` 3 本。
 - **gunshi_log_append の LG085 判定を gate_prediction へ(軍師 D0 69a039d71 12:30、bats 追随 f0a55c918 13:09=GA-566)**: actual 欄の自然言語 regex が偽陽性を出していた(T3-G-03)ため、判定源を gate_prediction 値に固定。`tests/unit/test_lgtm_bundle_guard.bats` #7 を BLOCK 判定に合わせて更新。
 - **pre-push dirty-tree guard の overlap 判定から lesson writer 経路を免除(家老 hotfix `cmd_karo_hotfix_ga554_push_overlap_pattern_202609021650` 7488b08eb 17:03、c2a 合流 17:5x)**: `scripts/lib/autogen_paths.sh` に lesson writer の自動生成 path を追加し、GA-554 の push overlap 偽検知を止める。bats `test_pre_push_dirty_tree_guard.bats` +25 行。
+- X 投稿経路は xdk 非依存(2026-09-04 T3-S-68): `scripts/x_ops/x_post.sh` post/media upload は urllib で X API v2 直叩き。token を書くのは `x_token_refresh.py`/keeper のみ。xdk Client は access-only token で InvalidClientIdError を出すため投稿経路に使わない → `docs/research/tsumari_root_causes_20260901.md` T3-S-68
