@@ -3596,6 +3596,7 @@ codd:
 | discussion | `queue/lord_conversation.jsonl` 2026-09-04T17:50:56+09:00 殿裁定 2026-09-04 17:49『シリーズやスレッド、ロングはいいけど、ショートで切り抜きはだめだ。ショートは投資ネタに限る』→Round5 Long 3/Thread 2(親+3)/Series 2-9 の 19 本を承認(.ap |
 | discussion | `queue/lord_conversation.jsonl` 2026-09-04T17:54:54+09:00 session_save_20260904_1758(復帰点、先に session_save_20260904_1755 を読め): loop 17:54。自動化ターゲット実装=scripts/x_ops/x_round5_gen.py は |
 | discussion | `queue/lord_conversation.jsonl` 2026-09-04T18:25:34+09:00 殿裁定 2026-09-04 18:20/18:22『やはり満足いく X 投稿は難しそう。当分の間投資ネタだけ。4 週間続けて計測』→calendar v4(毎日 08:30 Short 投資/18:30 Series→Long→Threa |
+| discussion | `queue/lord_conversation.jsonl` 2026-09-04T18:27:25+09:00 session_save_20260904_1828(復帰点、先に session_save_20260904_1758 と lord_ruling_x_invest_only_4weeks_20260904 を読め): loop 18:2 |
 
 ## investment_knowledge_base — 投資知識辞書
 
