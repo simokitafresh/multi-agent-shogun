@@ -6593,6 +6593,7 @@ codd:
 | causal_chain | `[[cmd_karo_hotfix_ancestry_merge_content_loss_20260902]]` (L1697) |
 | causal_chain | `[[cmd_4453]]` (L1709) |
 | discussion | `queue/lord_conversation.jsonl` 2026-09-04T19:17:14+09:00 4474はどうなった？未コミット、未プッシュがないか確認してくれ |
+| discussion | `queue/lord_conversation.jsonl` 2026-09-04T19:28:24+09:00 現在の9月plan体制への変更は維持してください。 特に、 claim ↓ 月間editorial plan ↓ format選択 ↓ draft ↓ Fact / Voice gate ↓ 殿承認 ↓ scheduledのみ投稿 ↓ Li |
 
 ## no_auto_extinguish — 自動消火禁止
 
