@@ -2427,3 +2427,15 @@ entries:
     - 'shogun'
   confirmed_by: []
   status: 'open'
+- id: 'blt_20260904_143011_4471e4'
+  content: |-
+    DOC_LANE_ALERT: context=context/infrastructure.md raw_alert=ALERT: context/infrastructure.md source commits 2件 since last_updated=2026-09-04 repo=/home/simokitafresh/multi-agent-shogun root_fallback=no timeout=360s/360s owner=infra-platform update_trigger=.github|.githooks|config|docs/rule|docs/knowledge-base|instructions|scripts|skills|tests|AGENTS.md|CLAUDE.md|CONTRIBUTING.md|LICENSE|Makefile|SECURITY.md|first_setup.sh|install.bat|lefthook-local.yml|lefthook.yml|project_lexicon.yaml|setup.sh|shutsujin_departure.sh。更新要否を確認せよ latest: bd60ace73aca gunshi D0: SG-PRE10 ac_version追補差異をWARN降格(FAIL→WARN) | c14939a1b587 x_ops: SKILL.md v2 全面更新、設計書 v1.2 §17.1、tsumari T3-S-66、分析 §11 action: bash scripts/context_source_commit_set.sh context/infrastructure.md bd60ace73aca 'context_freshness reviewed source boundary' 'context_freshness_check context=context/infrastructure.md commit=bd60ace73aca'
+  posted_by: 'gate_context_freshness'
+  posted_at: '2026-09-04T14:30:11'
+  requires_confirmation: false
+  action_type: 'action_required'
+  actioned_by: ''
+  notify_targets:
+    - 'shogun'
+  confirmed_by: []
+  status: 'open'
