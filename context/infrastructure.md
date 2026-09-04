@@ -1,5 +1,6 @@
 # インフラコンテキスト
 <!-- last_updated: 2026-09-04 context_freshness reviewed source boundary -->
+<!-- source_commit:4494d0310 reason:context_freshness reviewed source boundary evidence:context_freshness_check context=context/infrastructure.md commit=4494d0310 -->
 <!-- source_commit:e76e07e12 reason:context_freshness reviewed source boundary evidence:context_freshness_check context=context/infrastructure.md commit=e76e07e12 -->
 <!-- source_commit:71ef6a744 reason:context_freshness reviewed source boundary evidence:context_freshness_check context=context/infrastructure.md commit=71ef6a744 -->
 <!-- source_commit:89f3cda35 reason:context_freshness reviewed source boundary evidence:context_freshness_check context=context/infrastructure.md commit=89f3cda35 -->
@@ -762,3 +763,4 @@ source boundary一致taskはregistryのowner/update_triggerからcontext_update_
 - X Profile/Pinned は Growth Engine の可変対象外(殿裁定 2026-09-04 17:11)。growth_schema.yaml profile_pinned_rule
 - X 定時投稿 v1.5(2026-09-04 17:50): 選定は live OOS 台帳の category×format、Thread は x_thread_post.sh へ委譲。殿裁定 17:49 Short は投資ネタ限定、記事切り抜き不可(neta_ledger.yaml)
 - x_round5_gen.py は neta_ledger.yaml の entries 無しで rc=2(記事本文経路封鎖、2026-09-04 殿評 17:47)
+- hook failure ログの append を atomic 化(2026-09-04 家老 lane cmd_karo_ci_fix_33853167037、小太郎、GATE CLEAR 18:01)
