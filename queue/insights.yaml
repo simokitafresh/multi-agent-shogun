@@ -17072,14 +17072,18 @@ insights:
   priority: "low"
   source: "semantic_index_update"
   fix_known: false
-  status: pending
+  status: "resolved"
+  action_artifact: "semantic_map=/home/simokitafresh/multi-agent-shogun/context/semantic-map.md;semantic_index=/home/simokitafresh/multi-agent-shogun/docs/semantic-index/index.md"
+  resolved_reason: "semantic map generation verified the candidate is represented or intentionally ignored"
 - id: INS-20260904-104923645-e182
   ts: "2026-09-04T10:49:23+09:00"
   insight: "semantic_index_update新概念候補: discussion:めんどくさがらずA～Eの5パターンの例をそれぞれ５つ書こう。それを俺が直す。これを何週か繰り返せばストックと俺の文章の癖が手に入るはずだ は 既存aliasesに一致なし。概念定義とaliases追加を検討せよ"
   priority: "low"
   source: "semantic_index_update"
   fix_known: false
-  status: pending
+  status: "resolved"
+  action_artifact: "semantic_map=/home/simokitafresh/multi-agent-shogun/context/semantic-map.md;semantic_index=/home/simokitafresh/multi-agent-shogun/docs/semantic-index/index.md"
+  resolved_reason: "semantic map generation verified the candidate is represented or intentionally ignored"
 - id: INS-20260904-110019292-d83b
   ts: "2026-09-04T11:00:19+09:00"
   insight: "[[枠C：basic dualmomentumが唯一のように見える]] semantic_stress_test candidate_aliases: NO_MATCH source=lord query=枠C：basic-dualmomentumが唯一のように見える。そうではない。あくまで有料への誘導が最終目的だ。C-4はでは「dm-signal を開き、Basic-DualMomentum の今月の判定を見る。」→dm-signal を開き、今月のシグナルを見る」のように直そう"
