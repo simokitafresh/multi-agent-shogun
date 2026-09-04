@@ -1,0 +1,5 @@
+meta:
+  purpose: ネタ台帳(殿評 2026-09-04 17:47『記事の抜粋はネタではない』)。生成器の入力は本ファイルの 1 行のみ。記事は数字の出典として source に置く
+  entry_format: {key, claim(壊す前提と主張。1 行), proof(数字 1 組と出典), target(刺さる相手), lane, seed_by(lord|shogun), status(seed|drafted|approved|withdrawn)}
+  rule: seed_by=shogun のネタは殿の裁定なしに本文化しない
+entries: []
