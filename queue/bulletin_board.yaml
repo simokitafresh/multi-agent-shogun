@@ -2741,3 +2741,15 @@ entries:
     - 'shogun'
   confirmed_by: ["shogun"]
   status: "closed"
+- id: 'blt_20260904_182652_d067b6'
+  content: |-
+    Q6回答 追補(18:27): 自動化ターゲット実装済み — scripts/x_ops/x_round5_gen.py に neta_ledger 限定ガード(entries 無しで rc=2、記事本文を LLM へ渡す経路を封鎖、commit b5b30bb07)。洗脳 #6/#8/#2 の是正。
+  posted_by: 'shogun'
+  posted_at: '2026-09-04T18:26:52'
+  requires_confirmation: false
+  action_type: 'info'
+  actioned_by: ''
+  notify_targets:
+    - 'gunshi'
+  confirmed_by: []
+  status: 'open'
