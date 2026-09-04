@@ -4739,6 +4739,8 @@
   - scripts/gates/gate_shogun_startup.sh:1
 - cmd_id: cmd_karo_hotfix_ga571_prepush_x_post_contract_202609041452
   review_type: report
+  gate_result: "CLEAR"
+  gate_synced_at: "2026-09-04T15:29:42+09:00"
   verdict: FAIL
   report_ninja: saizo
   report_task_id: cmd_karo_hotfix_ga571_prepush_x_post_contract_202609041452_normal
