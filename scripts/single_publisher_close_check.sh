@@ -11,8 +11,11 @@ if [[ -z "$RELOAD_ISO" ]]; then
 fi
 reload_epoch="$(date -d "$RELOAD_ISO" +%s 2>/dev/null)" || { echo "invalid reload ISO: $RELOAD_ISO" >&2; exit 2; }
 
-published_by="$(git -C "$REPO_ROOT" log origin/main --since="$RELOAD_ISO" --format='%B' 2>/dev/null | awk '/^Published-By:/ {n++} END {print n+0}')"
-commits="$(git -C "$REPO_ROOT" rev-list --count --since="$RELOAD_ISO" origin/main 2>/dev/null || echo 0)"
+# 2026-09-04 11:40 将軍 D0(殿『T236 を速く完了させろ』): 集計は origin/main の first-parent のみ。
+# publisher の c2a merge に含まれる忍者 worker commit(isolated clone 由来)は root 直書きではなく、
+# merge commit 側に Published-By が付く。全 commit を数えると worker commit 2 件で 95/97 FAIL になった。
+published_by="$(git -C "$REPO_ROOT" log --first-parent origin/main --since="$RELOAD_ISO" --format='%B' 2>/dev/null | awk '/^Published-By:/ {n++} END {print n+0}')"
+commits="$(git -C "$REPO_ROOT" rev-list --first-parent --count --since="$RELOAD_ISO" origin/main 2>/dev/null || echo 0)"
 if [[ "$published_by" == "$commits" ]]; then
     printf 'trailer_rate: PASS published_by=%s commits=%s\n' "$published_by" "$commits"
     c1=PASS
