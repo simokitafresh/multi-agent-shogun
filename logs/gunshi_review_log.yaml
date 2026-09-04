@@ -4812,3 +4812,37 @@
   verdict: LGTM
   verified_files:
   - tests/unit/test_x_post_gate.bats:151
+- brainwash_check: '#1no #2no(precheck CLEAR) #3no #4no #5no #6no #7no #8no'
+  causal_chain: bec5dab26 grep全廃→検出回帰→第3パターン追加→FP0/FN0→LGTM
+  cmd_id: cmd_karo_hotfix_ga573_startup_contamination_contract_202609041533
+  finding_categories:
+  - assumptions
+  - numbers
+  - premortem
+  - adversarial
+  - ambiguity
+  gate_prediction: CLEAR
+  gate_prediction_reason: all checks passed
+  observations:
+  - '事実1: 真因=bec5dab26の過剰縮小(本文grep全廃)。独立実験でstale test/fixture隔離を否認'
+  - '事実2: 第3パターン(publisher失敗通知task=<id>形)追加。FP0/FN0'
+  - '事実3: commit_hash+LG051証跡+origin記入。gate FAIL修正済み'
+  - 'adversarial: gate_shogun_startup.shの汚染検知。production変更なし。検出精度向上のみ'
+  - 'ambiguity: 曖昧点なし'
+  operational_simulation:
+    actual: ERRORS=0 prediction=CLEAR
+    command: gate_gunshi_report_precheck.sh
+    expected: ERRORS=0 prediction=CLEAR
+    result: PASS
+  origin: '[[cmd_karo_hotfix_ga573]] -> [[bec5dab26_grep全廃回帰]] -> [[LGTM]]'
+  report_id: rpt-e9db67f3-7186-4246-84f0-432ec5a4a4c1
+  report_identity_version: 2
+  report_ninja: kotaro
+  report_path: queue/reports/kotaro_report_cmd_karo_hotfix_ga573_startup_contamination_contract_202609041533.yaml
+  report_task_id: cmd_karo_hotfix_ga573_startup_contamination_contract_202609041533_normal
+  review_type: report
+  step3_5_verified: true
+  timestamp: '2026-09-04T15:44:00+09:00'
+  verdict: LGTM
+  verified_files:
+  - scripts/gates/gate_shogun_startup.sh:1
