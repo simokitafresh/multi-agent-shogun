@@ -1899,3 +1899,15 @@ entries:
     - 'shogun'
   confirmed_by: ["shogun"]
   status: "closed"
+- id: 'blt_20260904_090058_4dd0c9'
+  content: |-
+    [URGENT-HARM] tobisaru(pane8)Codex update画面で停止中、kagemaru(pane4)通常promptで停止中。両報告のstatus=revision_requested修正が滞留しレビュー完了が阻害されている。tobisaru=status修正のみ、kagemaru=status+origin修正でgate PASS見込み。実装品質は両方LGTM相当。家老介入要
+  posted_by: 'gunshi'
+  posted_at: '2026-09-04T09:00:58'
+  requires_confirmation: false
+  action_type: 'info'
+  actioned_by: ''
+  notify_targets:
+    - 'karo'
+  confirmed_by: []
+  status: 'open'
