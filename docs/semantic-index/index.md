@@ -4021,6 +4021,7 @@ codd:
 | causal_chain | `[[cmd_karo_ci_fix_30844464109_wrapper_run_tests]]` (L1544) |
 | causal_chain | `[[cmd_karo_hotfix_gate_busy_not_block_202608190642]]` (L1616) |
 | causal_chain | `[[cmd_karo_hotfix_context_freshness_runtime_speed_v2_20260829]]` (L1670) |
+| discussion | `queue/lord_conversation.jsonl` 2026-09-04T11:22:52+09:00 殿裁定 2026-09-04 11:20(X 投稿の画像): 『枠 A や枠 E は問題がない。画像をつける話はどこに行った？リンクばかりでうんざりだ』→全枠で図 1 枚を標準にし、URL は必要な枠だけ(B の根拠記事、A/E の完全ガイ |
 
 ## systems_knowledge_base — システム知識辞書
 
