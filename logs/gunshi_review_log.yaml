@@ -5430,7 +5430,7 @@
 - cmd_id: cmd_karo_hotfix_deploy_external_worktree_timeout
   review_type: report
   gate_result: "CLEAR"
-  gate_synced_at: "2026-09-05T07:27:15+09:00"
+  gate_synced_at: "2026-09-05T07:27:42+09:00"
   verdict: FAIL
   report_ninja: hanzo
   report_task_id: cmd_karo_hotfix_deploy_external_worktree_timeout_normal
@@ -5467,7 +5467,7 @@
 - cmd_id: cmd_karo_hotfix_deploy_external_worktree_timeout
   review_type: report
   gate_result: "CLEAR"
-  gate_synced_at: "2026-09-05T07:27:15+09:00"
+  gate_synced_at: "2026-09-05T07:27:42+09:00"
   verdict: FAIL
   report_ninja: hanzo
   report_task_id: cmd_karo_hotfix_deploy_external_worktree_timeout_normal
@@ -5640,7 +5640,7 @@
 - cmd_id: cmd_karo_hotfix_deploy_external_worktree_timeout
   review_type: report
   gate_result: "CLEAR"
-  gate_synced_at: "2026-09-05T07:27:15+09:00"
+  gate_synced_at: "2026-09-05T07:27:42+09:00"
   verdict: FAIL
   report_ninja: hanzo
   report_task_id: cmd_karo_hotfix_deploy_external_worktree_timeout_normal
