@@ -1055,6 +1055,7 @@ inject_cmd_time_contract() {
     local source_path
     source_path=$(resolve_cmd_source_path "$cmd_id") || return 1
     python3 - "$task_file" "$source_path" "$cmd_id" <<'TIME_CONTRACT_INJECT_PY'
+import json
 import os
 import re
 import sys
@@ -9261,7 +9262,8 @@ for key in ("target_path", "planned_paths"):
         value = decoded if isinstance(decoded, list) else [value]
     if isinstance(value, list):
         values.extend(str(item).strip() for item in value if str(item).strip())
-runtime_prefixes = ("queue/", "logs/", "context/", "projects/", "archive/", ".cache/")
+control_prefixes = ("context/",)
+runtime_prefixes = ("queue/", "logs/", "projects/", "archive/", ".cache/")
 missing = []
 invalid = []
 for raw in dict.fromkeys(values):
@@ -11928,51 +11930,106 @@ print("1" if any(str(x).strip() for x in v) else "0")
 # declared source paths, avoiding the Windows-backed tree walk while keeping
 # the shared checkout and all undeclared files isolated.
 deploy_task_sparse_checkout_paths() {
-    local task_file="$1" repo="$2"
-    python3 - "$task_file" "$repo" <<'PY'
+    local task_file="$1" repo="$2" runtime_repo="${3:-${SCRIPT_DIR:-}}"
+    python3 - "$task_file" "$repo" "$runtime_repo" <<'PY'
+import json
 import os
 import sys
 import yaml
 
 task = (yaml.safe_load(open(sys.argv[1], encoding="utf-8")) or {}).get("task", {})
 repo = os.path.realpath(sys.argv[2])
-values = []
-for key in ("target_path", "planned_paths"):
-    value = task.get(key) or []
+runtime_repo = os.path.realpath(sys.argv[3]) if len(sys.argv) > 3 and sys.argv[3] else ""
+
+def normalize(value):
     if isinstance(value, str):
         try:
             decoded = yaml.safe_load(value)
         except yaml.YAMLError:
             decoded = None
         value = decoded if isinstance(decoded, list) else [value]
-    if isinstance(value, list):
-        values.extend(str(item).strip() for item in value if str(item).strip())
+    return [str(item).strip() for item in value if str(item).strip()] if isinstance(value, list) else []
 
-runtime_prefixes = ("queue/", "logs/", "context/", "projects/", "archive/", ".cache/")
+target = normalize(task.get("target_path"))
+planned = normalize(task.get("planned_paths"))
+
+control_prefixes = ("context/",)
+runtime_prefixes = ("queue/", "logs/", "projects/", "archive/", ".cache/")
 paths = []
-for raw in values:
-    if raw == "dashboard.md":
-        continue
+
+def add_path(raw):
+    raw = str(raw or "").strip().strip(".,;:!?)]}'\"")
+    if not raw or raw == "dashboard.md":
+        return
     if raw.startswith("/"):
         relative = os.path.relpath(raw, repo)
         if relative == ".." or relative.startswith("../"):
-            continue
+            return
     else:
         relative = raw[2:] if raw.startswith("./") else raw
     relative = os.path.normpath(relative)
-    if relative and not relative.startswith(runtime_prefixes):
+    if relative in ("", ".") or relative.startswith(control_prefixes) \
+            or (repo == runtime_repo and relative.startswith(runtime_prefixes)):
+        return
+    if relative.startswith(("http/", "https/", "ssh/")) or "://" in raw:
+        return
+    candidate = os.path.join(repo, relative)
+    if not os.path.exists(candidate):
+        parent = os.path.dirname(relative)
+        if parent and parent not in paths:
+            paths.append(parent)
+    if relative not in paths:
         paths.append(relative)
-for path in dict.fromkeys(paths):
-    print(path)
+
+for raw in target + planned:
+    add_path(raw)
+
+root_target = False
+for raw in target:
+    if raw.startswith("/"):
+        root_target = root_target or os.path.realpath(raw) == repo
+    else:
+        root_target = root_target or raw in ("", ".")
+
+def visit(value):
+    if isinstance(value, dict):
+        for child in value.values():
+            yield from visit(child)
+    elif isinstance(value, list):
+        for child in value:
+            yield from visit(child)
+    elif isinstance(value, str):
+        yield value
+
+# A repo-root target is valid only when the authored task also names the
+# source files it needs. Extract those paths from AC/command prose; otherwise
+# the caller fails closed rather than restoring an expensive full checkout.
+if root_target:
+    import re
+    for text in list(visit(task.get("acceptance_criteria"))) + list(visit(task.get("command"))):
+        for match in re.findall(r"(?<![A-Za-z0-9_.-])(?:[A-Za-z0-9_.-]+/){1,}[A-Za-z0-9_.-]+", text):
+            add_path(match)
+
+print(json.dumps({"source_paths": paths, "root_target": root_target}, ensure_ascii=False))
 PY
 }
 
 deploy_task_prepare_sparse_checkout() {
-    local task_file="$1" repo="$2" worktree="$3" paths
-    paths="$(deploy_task_sparse_checkout_paths "$task_file" "$repo")" || return 1
+    local task_file="$1" repo="$2" worktree="$3" paths projection root_target
+    projection="$(deploy_task_sparse_checkout_paths "$task_file" "$repo")" || return 1
+    root_target="$(python3 -c 'import json,sys; print("1" if json.loads(sys.argv[1]).get("root_target") else "0")' "$projection")" || return 1
+    paths="$(python3 -c 'import json,sys; print("\n".join(json.loads(sys.argv[1]).get("source_paths") or []))' "$projection")" || return 1
+    if [ "$root_target" = "1" ] && [ -z "$paths" ]; then
+        log "BLOCK: root-target sparse checkout requires explicit source paths in acceptance criteria or command"
+        return 1
+    fi
     [ -n "$paths" ] || return 0
-    command git -C "$worktree" sparse-checkout init --no-cone >/dev/null 2>&1 || return 1
-    printf '%s\n' "$paths" | command git -C "$worktree" sparse-checkout set --no-cone --stdin >/dev/null 2>&1 || return 1
+    while IFS= read -r path; do
+        [ -n "$path" ] || continue
+        mkdir -p -- "$worktree/$(dirname -- "$path")"
+    done <<< "$paths"
+    command git -C "$worktree" sparse-checkout init --no-cone >/dev/null 2>&1 || { printf 'TASK_WORKTREE_SPARSE_CHECKOUT_FAILURE phase=init worktree=%s paths=%s\n' "$worktree" "$paths" >> "${LOG:-/dev/null}"; return 1; }
+    printf '%s\n' "$paths" | command git -C "$worktree" sparse-checkout set --no-cone --stdin >/dev/null 2>&1 || { printf 'TASK_WORKTREE_SPARSE_CHECKOUT_FAILURE phase=set worktree=%s paths=%s\n' "$worktree" "$paths" >> "${LOG:-/dev/null}"; return 1; }
     log "TASK_WORKTREE_SPARSE_CHECKOUT: repo=$repo path=$worktree paths=$(printf '%s' "$paths" | awk 'NF {count++} END {print count+0}')"
 }
 
@@ -11986,14 +12043,128 @@ deploy_task_source_repo_uses_slow_fs() {
     esac
 }
 
+deploy_task_source_repo_is_v9fs() {
+    [ "$(stat -f -c '%T' "$1" 2>/dev/null || true)" = "v9fs" ]
+}
+
+deploy_task_materialize_ext4_repo_cache() {
+    local source_repo="$1" remote_url cache_root cache_key cache_repo lock_path tmp_repo lock_fd
+    remote_url=$(command git -C "$source_repo" config --get remote.origin.url 2>/dev/null || true)
+    [ -n "$remote_url" ] || return 1
+    cache_root="${DEPLOY_TASK_REPO_CACHE_ROOT:-$HOME/shogun-task-worktrees/.repo-cache}"
+    cache_key=$(printf '%s\n' "$remote_url" | sha256sum | awk '{print $1}')
+    cache_repo="$cache_root/$cache_key.git"
+    lock_path="$cache_root/$cache_key.lock"
+    mkdir -p "$cache_root"
+    exec {lock_fd}>"$lock_path"
+    flock -w 60 "$lock_fd" || { eval "exec ${lock_fd}>&-"; return 1; }
+    if ! command git -C "$cache_repo" rev-parse --is-bare-repository >/dev/null 2>&1; then
+        tmp_repo="${cache_repo}.tmp.${BASHPID}"
+        command git clone --bare "$remote_url" "$tmp_repo" >/dev/null 2>&1 || {
+            eval "exec ${lock_fd}>&-"
+            return 1
+        }
+        mv -- "$tmp_repo" "$cache_repo"
+    fi
+    eval "exec ${lock_fd}>&-"
+    printf '%s\n' "$cache_repo"
+}
+
+if declare -F deploy_task_resolve_source_repo >/dev/null 2>&1 \
+    && ! declare -F deploy_task_original_resolve_source_repo >/dev/null 2>&1; then
+    eval "$(declare -f deploy_task_resolve_source_repo \
+        | sed '1s/^deploy_task_resolve_source_repo /deploy_task_original_resolve_source_repo /')"
+    deploy_task_resolve_source_repo() {
+        if [ -n "${DEPLOY_TASK_SOURCE_REPO_OVERRIDE:-}" ]; then
+            printf '%s\n' "$DEPLOY_TASK_SOURCE_REPO_OVERRIDE"
+            return 0
+        fi
+        deploy_task_original_resolve_source_repo "$@"
+    }
+fi
+
+if declare -F deploy_task_validate_remote_tip_paths >/dev/null 2>&1 \
+    && ! declare -F deploy_task_original_validate_remote_tip_paths >/dev/null 2>&1; then
+    eval "$(declare -f deploy_task_validate_remote_tip_paths \
+        | sed '1s/^deploy_task_validate_remote_tip_paths /deploy_task_original_validate_remote_tip_paths /')"
+    deploy_task_validate_remote_tip_paths() {
+        if [ -n "${DEPLOY_TASK_SOURCE_REPO_ORIGINAL:-}" ] \
+            && [ "$2" = "${DEPLOY_TASK_SOURCE_REPO_CACHE:-}" ]; then
+            deploy_task_original_validate_remote_tip_paths "$1" "$DEPLOY_TASK_SOURCE_REPO_ORIGINAL" "$3"
+        else
+            deploy_task_original_validate_remote_tip_paths "$@"
+        fi
+    }
+fi
+
+deploy_task_normalize_cached_worktree_projection() {
+    local task_file="$1" source_repo="$2" cached_repo="$3" worktree target_json source_json
+    worktree=$(FIELD_GET_NO_LOG=1 field_get "$task_file" "task_worktree_workdir" "" 2>/dev/null || true)
+    [ -n "$worktree" ] || return 1
+    eval "$(python3 - "$task_file" "$source_repo" "$worktree" <<'PY'
+import json
+import os
+import sys
+import yaml
+
+task = (yaml.safe_load(open(sys.argv[1], encoding="utf-8")) or {}).get("task", {})
+source = os.path.realpath(sys.argv[2])
+worktree = os.path.realpath(sys.argv[3])
+values = []
+for key in ("target_path", "planned_paths"):
+    value = task.get(key) or []
+    if isinstance(value, str):
+        try:
+            decoded = yaml.safe_load(value)
+        except yaml.YAMLError:
+            decoded = None
+        value = decoded if isinstance(decoded, list) else [value]
+    if isinstance(value, list):
+        values.extend(str(item).strip() for item in value if str(item).strip())
+
+relative = []
+for raw in values:
+    if raw.startswith("/"):
+        item = os.path.relpath(raw, source)
+        if item == ".." or item.startswith("../"):
+            continue
+    else:
+        item = raw[2:] if raw.startswith("./") else raw
+    item = os.path.normpath(item)
+    relative.append("." if item in ("", ".") else item)
+relative = list(dict.fromkeys(relative))
+targets = [os.path.join(worktree, item) for item in relative]
+print("_DT_TARGET_JSON=%r" % json.dumps(targets, ensure_ascii=False))
+print("_DT_SOURCE_JSON=%r" % json.dumps(relative, ensure_ascii=False))
+PY
+)" || return 1
+    yaml_field_set_batch "$task_file" task \
+        "task_worktree_target_paths=$_DT_TARGET_JSON" "task_worktree_source_paths=$_DT_SOURCE_JSON"
+}
+
 deploy_task_prepare_remote_tip_worktree_sparse() {
-    local task_file="$1" ninja_name="$2" repo="" saved_git="" rc=0
-    repo=$(deploy_task_resolve_source_repo "$task_file" 2>/dev/null || true)
+    local task_file="$1" ninja_name="$2" repo="" source_repo="" cached_repo="" saved_override="" saved_original="" saved_cache="" saved_git="" using_cache=0 rc=0
+    source_repo=$(deploy_task_original_resolve_source_repo "$task_file" 2>/dev/null || true)
+    repo="$source_repo"
     [ -n "$repo" ] || return 1
     deploy_task_source_repo_uses_slow_fs "$repo" || {
         deploy_task_original_prepare_remote_tip_worktree "$task_file" "$ninja_name"
         return $?
     }
+
+    if deploy_task_source_repo_is_v9fs "$repo"; then
+        cached_repo=$(deploy_task_materialize_ext4_repo_cache "$repo" 2>/dev/null || true)
+        if [ -n "$cached_repo" ]; then
+            saved_override="${DEPLOY_TASK_SOURCE_REPO_OVERRIDE-}"
+            saved_original="${DEPLOY_TASK_SOURCE_REPO_ORIGINAL-}"
+            saved_cache="${DEPLOY_TASK_SOURCE_REPO_CACHE-}"
+            DEPLOY_TASK_SOURCE_REPO_OVERRIDE="$cached_repo"
+            DEPLOY_TASK_SOURCE_REPO_ORIGINAL="$repo"
+            DEPLOY_TASK_SOURCE_REPO_CACHE="$cached_repo"
+            export DEPLOY_TASK_SOURCE_REPO_OVERRIDE DEPLOY_TASK_SOURCE_REPO_ORIGINAL DEPLOY_TASK_SOURCE_REPO_CACHE
+            using_cache=1
+        fi
+    fi
 
     saved_git="$(declare -f git 2>/dev/null || true)"
     unset -f git 2>/dev/null || true
@@ -12019,6 +12190,13 @@ deploy_task_prepare_remote_tip_worktree_sparse() {
     deploy_task_original_prepare_remote_tip_worktree "$task_file" "$ninja_name" || rc=$?
     unset -f git 2>/dev/null || true
     [ -n "$saved_git" ] && eval "$saved_git"
+    if [ "$using_cache" -eq 1 ]; then
+        [ "$rc" -ne 0 ] || deploy_task_normalize_cached_worktree_projection "$task_file" "$repo" "$cached_repo" || rc=$?
+        DEPLOY_TASK_SOURCE_REPO_OVERRIDE="$saved_override"
+        DEPLOY_TASK_SOURCE_REPO_ORIGINAL="$saved_original"
+        DEPLOY_TASK_SOURCE_REPO_CACHE="$saved_cache"
+        export DEPLOY_TASK_SOURCE_REPO_OVERRIDE DEPLOY_TASK_SOURCE_REPO_ORIGINAL DEPLOY_TASK_SOURCE_REPO_CACHE
+    fi
     return "$rc"
 }
 

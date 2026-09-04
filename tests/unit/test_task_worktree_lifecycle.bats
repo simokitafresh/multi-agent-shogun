@@ -441,6 +441,76 @@ PY
     [[ "$output" == *"sparse_declared=1 unselected_hidden=1 shared_head_unchanged=1"* ]]
 }
 
+# test_necessity: a repo-root target must derive explicit source paths from
+# authored AC/command text; with no such paths it must fail closed instead of
+# silently materializing the entire slow external repository.
+@test "repo-root target derives source paths or fails closed" {
+    setup_fixture_repo
+    mkdir -p "$FIXTURE/shared/lp/app" "$FIXTURE/shared/lp/components" "$FIXTURE/shared/lp/backend" \
+        "$FIXTURE/shared/docs/research" "$FIXTURE/shared/context" "$FIXTURE/control"
+    printf 'LAYOUT=1\n' > "$FIXTURE/shared/lp/app/layout.tsx"
+    printf 'STRUCTURED=1\n' > "$FIXTURE/shared/lp/components/structured-data.tsx"
+    printf 'UNSELECTED=1\n' > "$FIXTURE/shared/lp/backend/server.py"
+    printf 'AUDIT_BASELINE=1\n' > "$FIXTURE/shared/docs/research/baseline.md"
+    git -C "$FIXTURE/shared" add lp docs/research/baseline.md
+    git -C "$FIXTURE/shared" commit -q -m root-target-paths
+    git -C "$FIXTURE/shared" push -q origin main
+    root_task="$BATS_TEST_TMPDIR/root-target.yaml"
+    printf '%s\n' \
+        'task:' \
+        '  task_id: root_target_paths' \
+        '  parent_cmd: cmd_root_target_paths' \
+        '  project: dm-signal' \
+        "  target_path: $FIXTURE/shared" \
+        '  acceptance_criteria:' \
+        '  - description: "modify lp/app/layout.tsx and lp/components/structured-data.tsx; write docs/research/cmd_4475_lp_seo_audit.md and context/dm-signal-frontend.md"' \
+        '  command: "validate lp/app/layout.tsx and lp/components/structured-data.tsx"' \
+        '  status: assigned' > "$root_task"
+
+    run env PROJECT_ROOT="$BATS_TEST_DIRNAME/../.." FIXTURE="$FIXTURE/shared" TASK="$root_task" \
+        DEPLOY_TASK_SOURCE_FS_TYPE_OVERRIDE=v9fs bash -c '
+        set -euo pipefail
+        export DEPLOY_TASK_LIB_ONLY=1 DEPLOY_TASK_WORKTREE_ROOT="$FIXTURE/worktrees-root"
+        source "$PROJECT_ROOT/scripts/deploy_task.sh"
+        SCRIPT_DIR="$FIXTURE/control"; LOG=/dev/null; STATE_DIR="$FIXTURE/state-root"; mkdir -p "$STATE_DIR" "$SCRIPT_DIR/queue/gates"
+        deploy_task_prepare_remote_tip_worktree "$TASK" saizo
+        wt=$(FIELD_GET_NO_LOG=1 field_get "$TASK" task_worktree_path)
+        [ -f "$wt/lp/app/layout.tsx" ]
+        [ -f "$wt/lp/components/structured-data.tsx" ]
+        [ -d "$wt/docs/research" ]
+        [ ! -e "$wt/docs/research/cmd_4475_lp_seo_audit.md" ]
+        [ ! -e "$wt/context/dm-signal-frontend.md" ]
+        [ ! -e "$wt/lp/backend/server.py" ]
+        printf "root_target_paths=2 unselected_hidden=1\n"
+        deploy_task_rollback_remote_tip_worktree "$FIXTURE" "$wt" "$(FIELD_GET_NO_LOG=1 field_get "$TASK" task_worktree_marker)"
+    '
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"root_target_paths=2 unselected_hidden=1"* ]]
+
+    blocked_task="$BATS_TEST_TMPDIR/root-target-blocked.yaml"
+    printf '%s\n' \
+        'task:' \
+        '  task_id: root_target_blocked' \
+        '  parent_cmd: cmd_root_target_blocked' \
+        '  project: dm-signal' \
+        "  target_path: $FIXTURE/shared" \
+        '  acceptance_criteria:' \
+        '  - description: "inspect the repository"' \
+        '  status: assigned' > "$blocked_task"
+    run env PROJECT_ROOT="$BATS_TEST_DIRNAME/../.." FIXTURE="$FIXTURE/shared" TASK="$blocked_task" \
+        DEPLOY_TASK_SOURCE_FS_TYPE_OVERRIDE=v9fs bash -c '
+        set -euo pipefail
+        export DEPLOY_TASK_LIB_ONLY=1 DEPLOY_TASK_WORKTREE_ROOT="$FIXTURE/worktrees-root-blocked"
+        source "$PROJECT_ROOT/scripts/deploy_task.sh"
+        SCRIPT_DIR="$FIXTURE/control"; LOG=/dev/null; STATE_DIR="$FIXTURE/state-root-blocked"; mkdir -p "$STATE_DIR" "$SCRIPT_DIR/queue/gates"
+        if deploy_task_prepare_remote_tip_worktree "$TASK" saizo; then exit 9; fi
+        [ "$(git -C "$FIXTURE/shared" worktree list --porcelain | grep -c "$FIXTURE/worktrees-root-blocked" || true)" -eq 0 ]
+        printf "root_target_without_paths=1 worktree_rollback=1\n"
+    '
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"root_target_without_paths=1 worktree_rollback=1"* ]]
+}
+
 # test_necessity: runtime must honor canonical origin/main even when the
 # production checkout tracks a maintenance branch whose tip omits the target.
 @test "runtime remote-tip deploy normalizes maintenance upstream to canonical main" {
