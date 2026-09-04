@@ -9177,6 +9177,7 @@ codd:
 | causal_chain | `[[cmd_karo_hotfix_staged_preserve_index_regression_202609021832]]` (L1704) |
 | causal_chain | `[[cmd_karo_hotfix_lesson_feedback_task_identity_202609021922]]` (L1706) |
 | discussion | `queue/lord_conversation.jsonl` 2026-09-04T05:33:28+09:00 session_save_20260904_0542(復帰点、先に session_save_20260904_0502 を読め): loop tick 05:30。T3-S-53 根治: review_bundle.py validate |
+| cmd | `cmd_karo_ci_fix_33814810266_flaky_second_202609040832` (`scripts/deploy_task/main.sh`, `scripts/inbox_drain.sh`, `tests/unit/test_inbox_mark_read_bulk_guard.bats`) |
 
 ## visibility_tier_masking — Visibility Tier制マスク
 
@@ -9831,7 +9832,6 @@ codd:
 | causal_chain | `[[cmd_karo_cdp_t5_auth_dom_probe_20260802]]` (L1530) |
 | discussion | `queue/lord_conversation.jsonl` 2026-09-04T08:12:39+09:00 続けて |
 | discussion | `queue/lord_conversation.jsonl` 2026-09-04T08:59:59+09:00 続けて |
-| discussion | `queue/lord_conversation.jsonl` 2026-09-04T10:14:10+09:00 続けて |
 
 ## defense_hierarchy — 防御階層原則
 
@@ -17212,6 +17212,7 @@ codd:
 | causal | `cmd_karo_hotfix_gunshi_idle_flag_lifecycle_20260901` files_modified: [[inbox_processing_discipline]] |
 | causal | `cmd_karo_hotfix_review_processing_receipt_20260901` files_modified: [[inbox_processing_discipline]] |
 | causal | `cmd_karo_hotfix_idle_flag_bash_running_stop_reentry_202609022232` files_modified: [[inbox_processing_discipline]] |
+| causal | `cmd_karo_ci_fix_33814810266_flaky_second_202609040832` files_modified: [[inbox_processing_discipline]] |
 
 ## inbox_watcher_process_model — inbox_watcherプロセスモデル
 
