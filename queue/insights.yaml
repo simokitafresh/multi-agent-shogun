@@ -18008,3 +18008,24 @@ insights:
   source: "semantic_index_update"
   fix_known: false
   status: pending
+- id: INS-20260905-033716631-39d3
+  ts: "2026-09-05T03:37:16+09:00"
+  insight: "[[CI fix clean repro契約をpush後CI待ちと誤読して忍者が未解放になるLevel5不足を]] NO_MATCH purpose pending alias: cmd_complete時にdeploy_task.logでNO_MATCHだったpurpose。類似概念TOP3: semantic_dictionary_design(セマンティック辞書構想; alias=疾風 fixture ci fix; score=19.2) / codd_methodology(CoDD整合性駆動開発; alias=codd fix PHENOMENON; score=11.0) / infrastructure_ops(インフラ運用基盤; alias=CI green待ちが長いな; score=10.9)。既存概念aliasesへの自動昇格候補"
+  priority: "low"
+  source: "semantic_index_update"
+  fix_known: false
+  status: pending
+- id: INS-20260905-033719633-d3f2
+  ts: "2026-09-05T03:37:19+09:00"
+  insight: "[[外部repoのtask worktree準備が169秒・249秒かかりdeploy全体300秒timeoutで正常cmd]] NO_MATCH purpose pending alias: cmd_complete時にdeploy_task.logでNO_MATCHだったpurpose。類似概念TOP3: agent_formation_management(編成管理; alias=deploy; score=7.1) / semantic_dictionary_design(セマンティック辞書構想; alias=lesson write sh L1004でsemantic index update sh 10秒 semantic; score=4.6) / provisional_hidden-infrastructure-gate-hook-canonical-manifest-20260731(仮: Hidden Infrastructure Gate Hook Canonical Manifest 20260731; alias=docs research hidden infrastructure gate hook canonical manifest 20260731.yaml; score=4.3)。既存概念aliasesへの自動昇格候補"
+  priority: "low"
+  source: "semantic_index_update"
+  fix_known: false
+  status: pending
+- id: INS-20260905-033724256-aeb2
+  ts: "2026-09-05T03:37:24+09:00"
+  insight: "[[殿 『DM signal の LP について意見が来た]] NO_MATCH purpose pending alias: cmd_complete時にdeploy_task.logでNO_MATCHだったpurpose。類似概念TOP3: dmsignal_operations(DM-Signal運用; alias=dm-signal ops; score=9.7) / dm_signal_pf_restore_guardrails(DM-Signal PF復元運用ガードレール; alias=dm_signal; score=9.5) / production_parity(本番パリティ; alias=signal_pending; score=9.3)。既存概念aliasesへの自動昇格候補"
+  priority: "low"
+  source: "semantic_index_update"
+  fix_known: false
+  status: pending
