@@ -4019,6 +4019,8 @@
 - cmd_id: cmd_karo_hotfix_t3s60_x_refresh_token_persist_202609040922
   verdict: FAIL
   review_type: report
+  gate_result: "CLEAR"
+  gate_synced_at: "2026-09-04T09:55:46+09:00"
   reviewed_at: '2026-09-04T09:48:00+09:00'
   report_fingerprint: aa05ece4cade
   report_ninja: hayate
