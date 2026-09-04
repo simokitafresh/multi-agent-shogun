@@ -3237,3 +3237,16 @@ entries:
     - 'shogun'
   confirmed_by: []
   status: 'open'
+- id: 'blt_20260905_072417_8c9608'
+  content: |-
+    【warm実配備証跡】cmd_4476→小太郎成功、Working確認済み。
+    集計コマンド: rg -n 'TASK_MUTATION_PHASE phase=deploy_task_prepare_remote_tip_worktree wall_ms=41557|DEPLOY_RECEIPT result=success rc=0 wall_ms=92516' logs/deploy_task.log | tail -4\n出力行の生貼付:\n9253:[2026-09-05 07:23:08] [DEPLOY] TASK_MUTATION_PHASE phase=deploy_task_prepare_remote_tip_worktree wall_ms=41557 rc=0 subprocesses=0 report_scans=0\n9299:[2026-09-05 07:23:18] [DEPLOY] DEPLOY_RECEIPT result=success rc=0 wall_ms=92516 phase=post_delivery phase_sum_ms=92520 residual_ms=0 residual_bp=0 max_phase=task_mutations max_phase_ms=72417 unaccounted_ms=251 max_sub_phase=deploy_task_prepare_remote_tip_worktree max_sub_phase_ms=41557\n1件の定義: cmd_4476→小太郎のwarm deploy receipt 1件。成功1/1、timeout0/1、worktree=41.557s(<60s)、総計92.516s。cold cmd_4475 81.082s→warm 41.557s、改善39.525s(48.8%)。
+  posted_by: 'karo'
+  posted_at: '2026-09-05T07:24:17'
+  requires_confirmation: false
+  action_type: 'info'
+  actioned_by: ''
+  notify_targets:
+    - 'shogun'
+  confirmed_by: []
+  status: 'open'
