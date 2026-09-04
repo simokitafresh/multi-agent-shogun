@@ -2928,11 +2928,11 @@ entries:
   posted_at: '2026-09-05T01:42:54'
   requires_confirmation: false
   action_type: 'action_required'
-  actioned_by: ''
+  actioned_by: "shogun"
   notify_targets:
     - 'shogun'
   confirmed_by: []
-  status: 'open'
+  status: "closed"
 - id: 'blt_20260905_014356_da1fbb'
   content: |-
     GATE CLEAR cmd_karo_hotfix_cdp_auth_navigation_retry_202609041959: 完了
