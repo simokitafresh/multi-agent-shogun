@@ -35,3 +35,12 @@ topic_triggers:  # x_topic_scan.py(cron 毎時、X API tweets/counts/recent=数�
   - {id: inflation_talk, query: "(インフレ OR 物価 OR CPI OR 実質賃金) lang:ja -is:retweet", claims: [C16, C12, C11], format: short, funnel_stage: reach, audience: general, hook_type: math, content_category: D}
   - {id: crash_talk, query: "(暴落 OR 急落 OR 狼狽売り OR サーキットブレーカー) lang:ja -is:retweet", claims: [C01, C03, C05, C23], format: short, funnel_stage: reach, audience: general, hook_type: contradiction, content_category: A}
 topic_rule: 要人発言そのものを引用・要約して投稿しない(発言は context)。相場の方向を語らない。claim は bank から、本文は gate、殿承認後に投稿。1 日 1 event unit は reactive/intraday/topic 共通
+
+# 殿 2026-09-05 01:35: 為替・金利・カーブは『○% 動いたら投稿』の trigger ではなく『最近の市場を見て本人が何か言う価値があるか』を判断する常時観測対象(Market Context)
+market_context:
+  variables: [usdjpy, us2y, us10y, curve_10_2, jgb10, bei10, spy_ret, spy_dd_52w, vix, n225_ret]
+  sources: {usdjpy: yfinance JPY=X, us2y/us10y/bei10: FRED DGS2/DGS10/T10YIE, jgb10: 財務省 jgbcm.csv, spy/vix/n225: yfinance}
+  cadence: 毎朝 07:05 の x_event_scan.py が観測値を queue/x_market_context/daily.jsonl に追記(発火の有無に関係なく)。日曜 09:00 に 4 週表を docs/research/x_market_context_weekly/ へ書き、ntfy で 1 行要約
+  use: (1) event 提案の context に直近の市場環境 1 行を添える (2) 週次で編集計画を見直す時の材料(『今の金利・為替環境で本人の既存思想を適用できる claim はどれか』→ plan update は candidate→gate→editorial review の順、自動補充しない) (3) 予測はしない。分解・観測・検証の claim にだけ接続
+  chains: [FOMC→金利→為替→株式(連鎖を観測として分ける), 円安/円高→円建て米国株リターン→株式リターンと為替効果を分ける, 金利差→為替→ヘッジコスト]
+  lord_thesis: [表面の数字を分解する, 予測と観測を分ける, ニュースを見ることと売買することを分ける, 数字・構造・検証で考える]

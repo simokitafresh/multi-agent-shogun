@@ -29,10 +29,32 @@ def propose(date, rule, obs, ctx_extra=""):
     used = recent_claims(); claim = next((c for c in rule["claims"] if c not in used), None)
     if not claim: print("no unused claim for", rule["id"]); return None
     prop = dict(date=date, event_id=rule["id"], rule=rule["rule"] if "rule" in rule else rule.get("query", ""), observation=obs, claim=claim, format=rule["format"], funnel_stage=rule["funnel_stage"], audience=rule["audience"], hook_type=rule["hook_type"],
-                content_category=rule["content_category"], desired_action=["dwell", "reply", "quote", "profile"], context=f"{obs.get('asof', date)} {rule.get('rule', rule['id'])} 実測 {obs}{ctx_extra}", status="proposed", draft_id=f"EV-{date.replace('-', '')[4:]}-{rule['id']}")
+                content_category=rule["content_category"], desired_action=["dwell", "reply", "quote", "profile"], context=f"{obs.get('asof', date)} {rule.get('rule', rule['id'])} 実測 {obs}{ctx_extra} / {context_line()}", status="proposed", draft_id=f"EV-{date.replace('-', '')[4:]}-{rule['id']}")
     f = EV / f"{date}_{rule['id']}.yaml"; f.write_text(yaml.safe_dump(prop, allow_unicode=True, sort_keys=False), encoding="utf-8")
     subprocess.run(["bash", str(ROOT / "scripts/ntfy.sh"), f"【X イベント lane】{rule['id']} 発火。claim {claim} で Short を提案 → {f.name}。生成: python3 scripts/x_ops/x_claim_gen.py --event {f}"], cwd=ROOT)
     print("proposed", f); return f
+
+
+def context_line():
+    """直近の市場環境 1 行(event 提案の context に添える)。予測語は使わない"""
+    try:
+        rows = [json.loads(l) for l in (ROOT / "queue/x_market_context/daily.jsonl").read_text(encoding="utf-8").splitlines() if l.strip()]
+        a, b = rows[-1], (rows[-21] if len(rows) >= 21 else rows[0])
+        fx = f"USD/JPY {a.get('usdjpy')}({(a.get('usdjpy', 0) / b.get('usdjpy', 1) - 1) * 100:+.1f}% / 4w)" if isinstance(a.get("usdjpy"), (int, float)) and isinstance(b.get("usdjpy"), (int, float)) else ""
+        return f"市場環境 {a['date']}: {fx} 米2y {a.get('us2y')} 米10y {a.get('us10y')} 10-2y {a.get('curve_10_2')} JGB10 {a.get('jgb10')} BEI {a.get('bei10')} VIX {a.get('vix')} SPY 52w DD {a.get('spy_dd_52w')}"
+    except Exception: return ""
+
+
+def weekly_context():
+    """日曜 09:00: 4 週表を docs/research/x_market_context_weekly/ へ、ntfy で 1 行。編集計画見直しの材料(自動補充はしない)"""
+    rows = [json.loads(l) for l in (ROOT / "queue/x_market_context/daily.jsonl").read_text(encoding="utf-8").splitlines() if l.strip()][-28:]
+    out = ROOT / "docs/research/x_market_context_weekly"; out.mkdir(parents=True, exist_ok=True)
+    cols = ["date", "usdjpy", "us2y", "us10y", "curve_10_2", "jgb10", "bei10", "spy_ret", "spy_dd_52w", "vix", "n225_ret"]
+    md = "# Market Context 4 週(殿 2026-09-05 01:35: 観測対象。予測しない。本人思想=分解/観測と予測の分離/見ると売買の分離/検証)\n\n| " + " | ".join(cols) + " |\n|" + "---|" * len(cols) + "\n"
+    for r in rows: md += "| " + " | ".join(str(r.get(c, "")) for c in cols) + " |\n"
+    md += "\n適用候補 claim: C35 円建てリターン分解 / C36 FOMC 連鎖は観測 / C37 見ると売買は別 / C38 金利差は材料の 1 つ。plan へ入れる時は candidate→gate→editorial review(自動補充しない)。\n"
+    f = out / f"market_context_{dt.date.today():%Y%m%d}.md"; f.write_text(md, encoding="utf-8")
+    subprocess.run(["bash", str(ROOT / "scripts/ntfy.sh"), f"【Market Context 週次】{context_line()} → {f.name}"], cwd=ROOT); print("written", f)
 
 
 def intraday(dry):
@@ -64,6 +86,7 @@ def intraday(dry):
 def main():
     a = sys.argv[1:]; dry = "--dry-run" in a
     if "--intraday" in a: return intraday(dry)
+    if "--context-weekly" in a: return weekly_context()
     date = a[a.index("--date") + 1] if "--date" in a else dt.date.today().isoformat()
     import yfinance as yf
     px = yf.download(["SPY", "^VIX", "^N225", "JPY=X"], period="1y", progress=False, auto_adjust=True)["Close"].dropna(how="all")
@@ -104,6 +127,9 @@ def main():
     if spy_dd <= -0.10 and spy_dd_prev > -0.10: fired.append("spy_dd_10")
     if vix >= 30 and vix_prev < 30: fired.append("vix_30")
     if n_r <= -0.03: fired.append("n225_drop_3")
+    # Market Context(殿 01:35): 発火の有無に関係なく観測値を残す
+    MC = ROOT / "queue/x_market_context"; MC.mkdir(exist_ok=True)
+    with (MC / "daily.jsonl").open("a", encoding="utf-8") as fh: fh.write(json.dumps(dict(date=date, **obs), ensure_ascii=False) + "\n")
     sched = [e for e in RULES["scheduled_events"] if e["date"] == date]
     print(json.dumps(dict(date=date, obs=obs, fired=fired, scheduled=[e["name"] for e in sched]), ensure_ascii=False))
     if not fired or dry: return 0
