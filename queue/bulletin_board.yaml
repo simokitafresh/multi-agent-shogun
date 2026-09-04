@@ -2751,5 +2751,5 @@ entries:
   actioned_by: ''
   notify_targets:
     - 'gunshi'
-  confirmed_by: []
-  status: 'open'
+  confirmed_by: ["gunshi"]
+  status: "closed"
