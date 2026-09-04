@@ -5703,6 +5703,8 @@
   - scripts/deploy_task.sh:1
 - cmd_id: cmd_karo_hotfix_task_worktree_published_commit_stability
   review_type: report
+  gate_result: "CLEAR"
+  gate_synced_at: "2026-09-05T06:54:31+09:00"
   verdict: FAIL
   report_ninja: kagemaru
   report_task_id: cmd_karo_hotfix_task_worktree_published_commit_stability_normal

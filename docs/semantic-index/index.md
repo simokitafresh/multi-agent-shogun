@@ -3616,6 +3616,7 @@ codd:
 | cmd | `cmd_karo_hotfix_ga577_p_average_freshness` (`scripts/gates/gate_p_average_freshness.sh`, `tests/unit/test_gate_p_average_freshness_retry_recovery.bats`) |
 | discussion | `queue/lord_conversation.jsonl` 2026-09-05T02:32:22+09:00 殿 2026-09-05 02:15『DM-signal LP の SEO 意見(外部 LLM 12 Phase)は全て取り入れず、先に調査確認、問題なければ慌てない、設計書は取り入れる分だけ更新』→将軍 02:16-02:20 本番 cu |
 | discussion | `queue/lord_conversation.jsonl` 2026-09-05T03:20:35+09:00 bcqzn4keb toolu_01NmA3MqKWbprF2qH6G8DsYi /tmp/claude-1000/-home-simokitafresh-multi-agent-shogun/3761993c-8cac-456d-bf3b |
+| cmd | `cmd_karo_hotfix_task_worktree_published_commit_stability` (`scripts/cmd_complete_gate.sh`, `tests/unit/test_cmd_complete_gate.bats`) |
 
 ## investment_knowledge_base — 投資知識辞書
 
@@ -9927,6 +9928,7 @@ codd:
 | causal_chain | `[[cmd_karo_cdp_t5_endpoint_qualification_20260802]]` (L1529) |
 | causal_chain | `[[cmd_karo_cdp_t5_auth_dom_probe_20260802]]` (L1530) |
 | discussion | `queue/lord_conversation.jsonl` 2026-09-05T01:27:12+09:00 続けて |
+| causal | `cmd_karo_hotfix_task_worktree_published_commit_stability` files_modified: [[cdp_browser_capability]] |
 
 ## defense_hierarchy — 防御階層原則
 
@@ -11002,6 +11004,7 @@ codd:
 | causal | `cmd_karo_hotfix_publisher_single_flag_file_202609030257` files_modified: [[cmd_quality_logging]] |
 | causal | `cmd_karo_ci_fix_publisher_single_flag_202609030915` files_modified: [[cmd_quality_logging]] |
 | causal_chain | `[[cmd_3622_kotaro_r3]]` (infra:L893) |
+| causal | `cmd_karo_hotfix_task_worktree_published_commit_stability` files_modified: [[cmd_quality_logging]] |
 
 ## task_modifier_injection — タスク修飾子注入
 
