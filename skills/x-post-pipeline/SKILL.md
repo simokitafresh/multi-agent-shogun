@@ -1,30 +1,40 @@
 ---
 name: x-post-pipeline
 description: |
-  What: X運用自動化P1(台帳+calendar+XDK)。stock_ledger.yaml(note 49本+完全ガイドの数字ホワイトリスト付き一覧)と
-  slot_calendar.yaml(4週×週3枠A/B/C+月次D=13slot)を読み、x_post.shで下書き・gate・承認・公式XDK投稿を行うスキル。
-  TRIGGER: /x-post-pipeline、X投稿の下書き作成、週次枠の記事選定、台帳の参照、XDK投稿
+  What: X(@TokyoJibika)運用の自動化 v2(2026-09-04 殿裁定)。方針=「投資を数学・確率・検証で考える人のアカウント。その人が作っているものがDM-Signal」。
+  stock_ledger.yaml(64本、category A-G+shift)、slot_calendar.yaml(平日08:30/18:30×5=週10、2週20slotのA→G ローテ)、system_prompt_v5_1.txt(本人 author corpus 優先)、
+  x_post.sh(draft→gate→approve→post、token keeper)、queue/x_rewrites/(殿の添削=最優先教師データ)、docs/research/x_corpus/(本人 X 967件+note 64記事)を使う。
+  TRIGGER: /x-post-pipeline、X投稿の下書き作成、殿の添削の保存、投稿ストックの投稿、台帳・calendar の参照、X token/認可
   DO NOT TRIGGER: note記事本体の編集、dm-signal側の変更
 allowed-tools:
   - Read
   - Bash
 ---
 
-# X Post Pipeline (P1)
+# X Post Pipeline (v2 — author corpus 段階)
+
+正本の順序: 方針 `docs/research/x_editorial_doctrine_20260904.md` → 設計書 `docs/research/x_account_ops_automation_asis_tobe_5w1h_20260903.md` §16/§17 → 分析 `docs/research/x_author_corpus_analysis_20260904.md` → 本 SKILL。
 
 ## What
-`stock_ledger.yaml`(記事1件=1entry。url/title/公開日/frames[A/B/C]/usable_numbers/first_line_candidate)と
-`slot_calendar.yaml`(週3枠+月次Dの13slotに台帳entryを割当。angle=切り口)を提供する。
-`x_post.sh post` は承認marker・token・5MB画像上限を満たさない限り投稿しない。
-認証は `xdk.oauth2_auth.OAuth2PKCEAuth` + `Client(token=tokens)` のOAuth2 user contextを使う。
-添付候補は `media/experience-placeholder.png` と `media/comparison-placeholder.png`（いずれも5MB以下）で、保有・ticker情報を含めない。
+- `stock_ledger.yaml`: 記事 1 件=1 entry(url/title/published/usable_numbers/**category A-G**/**shift=起こす認識変化**)。frames は旧枠の残骸で参照しない。
+- `slot_calendar.yaml` v2: 平日 08:30/18:30 JST ×5=週 10 slot、2 週 20 slot で 1 周。A 常識を壊す/B DM 啓蒙/C 検証至上/D 数学小ネタ/E そこまで疑うか検証/F DM-Signal 検証・実績(15%)/G 直接誘導(5%)。各 slot に shift/question/ledger_key。
+- `system_prompt_v5_1.txt`(x_post.sh 既定): 教師データ優先順位=殿の添削(`queue/x_rewrites/*.yaml`) > 本人 X(`docs/research/x_corpus/x/`) > note ショートコラム > How to > prompt。Voice(X: 口語言い切り 56%/です・ます 35%、僕、改行 2 回、数字は 1 組)と Reasoning(note: 他人の言葉→疑い→設計→数字→短い解釈)を分けて合成。negative patterns、語彙の層(抽象名詞はカタカナ、指標は英語略号、動作は和語口語)、数字 fail-close。
+- `x_post.sh draft <slot A-G> <ledger_key>` → `gate <draft_id> <slot>` → `approve <draft_id>`(要操作 topic へ ntfy_action、殿 y で `.approved`)→ `post <draft_id> [--media png]`(post 前に `x_token_refresh.py` 必須、成功時に rotate した token を env へ永続化)。
+- `x_post_gate.sh <file> <slot>`: Rule 1 ticker/Rule 2 単独倍率(下落・損失文脈は除外)/Rule 3 URL/Rule 4 免責があれば FAIL/Rule 5 禁止語(株と債券・現金に退避 含む)/Rule 6 内部用語/Rule 7 分類別の宣伝混入(A-E に DM-Signal・Basic・プラン・登録で FAIL、F に登録・料金・無料で FAIL)。
+- token: `x_token_keeper.sh`(cron */30)が refresh を無人で回す。3 回失敗で PKCE URL を生成し listener(`x_oauth_listener.py`、置換方式で env 更新)を立て、要操作 topic へ 1 回送る。**env の X_REFRESH_TOKEN は必ず 1 行**(T3-S-65: 旧行で refresh すると X が grant を revoke する)。
+- corpus: `note_corpus_fetch.py`(note API→docs/research/x_corpus/note/)、`x_fetch_author_corpus.py`(X API、public_metrics 付き)、`x_corpus_via_grok.py`(Grok x_search、月次窓)。
+- 添削の保存: `queue/x_rewrites/_template.yaml` の形(original_llm/human_rewrite/delta_notes/tags/kpi)。殿版と無修正承認(approved_as_is)を区別する。
+- 投稿ストック: `queue/x_drafts/<date>_R<round>-<slot>-<n>.txt` + `.approved`。gate PASS 済みのみ。
+- レビュー面: `scripts/x_drafts_render.py <md> <html> <title>` → artifact(殿の直しはコメント→`Artifact comments` で読む)。
 
 ## When
-週次枠(マニュアル`docs/research/bam_delivery_manual_grok_20260902.md`§5)の下書きを作る時、
-`slot_calendar.yaml`の該当weekのslotから`ledger_key`で`stock_ledger.yaml`の該当entryを引き、
-`usable_numbers`(空なら数字は使わない)と`draft_seed`を元に§4包装ルールで整形する。
+- 新しい下書きを作る時: slot_calendar の shift/question と ledger の usable_numbers を渡し、v5.1+添削 few-shot で生成→gate→artifact で殿確認→添削を保存→ストックへ。
+- 殿の添削が来た時: `queue/x_rewrites/` に保存し、差分の規則を分析 §12/§13 と v5.1 に足す。
+- 投稿する時: slot 順に `x_post.sh post`。post 前 refresh は自動。失敗時は keeper のログ `logs/x_token_keeper.log`。
 
 ## NOT When
-- `usable_numbers`が空のentryで数字を作文しない(推測禁止)
-- 台帳にない記事URL・台帳にないticker/保有シグナルを下書きに入れない
-- 生成した下書きは`scripts/x_ops/x_post_gate.sh <file>`でPASSしない限り投稿しない
+- 未登録の数字(分析 §9 の一覧)を本文に入れない。記事本文にあっても台帳に無ければ使わない。
+- 株・債券・現金・特定 ETF で仕組みを具象化しない(候補/退避先の抽象で書く)。
+- A〜E で DM-Signal を主語にしない。免責・言い訳・「月 1 回見るだけ」・Basic 説明を書かない。
+- 本人の文体を想像しない。X の実例と殿の添削を読んで合わせる。
+- 本番 token に対して新しい token 操作を手動で試さない(fixture で回す)。

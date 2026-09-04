@@ -210,5 +210,5 @@
 ## 11. 次の手(順序)
 
 1. [済 13:45] X 400 件取得→§1X/§3X/§6 反映→Round4(★10 本、X Voice) docs/research/x_post_drafts_round4_20260904.md。次: 殿の直し→queue/x_rewrites/ 保存→残り 20 本を X Voice で再生成。
-2. §9 の数字 8 群を台帳登録 task(DM-signal repo の計算元と現在値を確認)。
+2. [済 14:20] 殿添削 8 本+合格 5 本→承認ストック 13 本(queue/x_drafts/2026-09-04_R4-*)。次: §9 の数字 8 群を台帳登録 task、E/G/F を同規則で追加。
 3. Round3(暫定、note Voice)を殿が 10 本直す → `queue/x_rewrites/` へ保存 → v5.1 の few-shot に注入。
