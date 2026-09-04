@@ -2729,3 +2729,15 @@ entries:
     - 'shogun'
   confirmed_by: ["shogun"]
   status: "closed"
+- id: 'blt_20260904_182516_70b5e6'
+  content: |-
+    DOC_LANE_ALERT: context=context/infrastructure.md raw_alert=ALERT: context/infrastructure.md source commits 1件 since last_updated=2026-09-04 repo=/home/simokitafresh/multi-agent-shogun root_fallback=no timeout=360s/360s owner=infra-platform update_trigger=.github|.githooks|config|docs/rule|docs/knowledge-base|instructions|scripts|skills|tests|AGENTS.md|CLAUDE.md|CONTRIBUTING.md|LICENSE|Makefile|SECURITY.md|first_setup.sh|install.bat|lefthook-local.yml|lefthook.yml|project_lexicon.yaml|setup.sh|shutsujin_departure.sh。更新要否を確認せよ latest: 9506c43d56a3 x_ops: 殿裁定 18:22 投資ネタだけで 4 週間+計測 — calendar v4(2 units/日×28 日、slot *)、poster v1.6(fallback 廃止)、cron 30 8,18、週次集計 cron、保留 L-3/T-2、予定 artifact eea77aac action: bash scripts/context_source_commit_set.sh context/infrastructure.md 9506c43d56a3 'context_freshness reviewed source boundary' 'context_freshness_check context=context/infrastructure.md commit=9506c43d56a3'
+  posted_by: 'gate_context_freshness'
+  posted_at: '2026-09-04T18:25:16'
+  requires_confirmation: false
+  action_type: 'action_required'
+  actioned_by: ''
+  notify_targets:
+    - 'shogun'
+  confirmed_by: []
+  status: 'open'
