@@ -110,3 +110,21 @@ X 投稿を数学論文や完全な解説文にしない。正確性は守るが
 - 運用: ネタ台帳 `skills/x-post-pipeline/neta_ledger.yaml`(殿が 1 行で種を落とす→将軍が本文化→殿添削)。記事は数字の出典としてだけ使う。
 - 殿裁定 2026-09-04 17:49: 『シリーズやスレッド、ロングはいいけど、ショートで切り抜きはだめだ。ショートは投資ネタに限る』→Round5 の Long 3・Thread 2(親+3)・Series 8 は承認、Short 10 は撤回のまま。Short の lane は investing/dm/math_probability/money_inequality に限定。不動産・医療・事業の lane は Long/Thread/Series でのみ。
 - 殿 2026-09-04 18:29『俺の種ってなんだ？俺が何もしなくても無限に生成し続けるから意味がある』→ 訂正: ネタは殿の種ではなく **claim_bank(主張の銀行)** から生成する。ネタ=前提を壊す構造的主張(投資の数学・検証原理)。記事本文は渡さない。数字は verified_numbers のみ、算数の例示(9 勝 1 敗=90%)は可。生成→gate→自動承認→cron。殿は事後に削除で拒否できる(可逆)。neta_ledger(殿の種)は任意で、無くても回る。
+
+## 追補 2026-09-04 18:55 殿指示「記事から投稿を作るな。ネタから投稿を作れ」(20 項目、本方針の上位)
+
+方針変更は Growth Engine を弱めるのではなく、生成の起点を本人スタイルへ合わせる修正。
+
+- **最重要 5 行**: 記事から投稿を作るな/ネタから投稿を作れ/記事は証拠として使え/外部バズから本人を作るな(本人の X と添削から作れ)/投稿ノルマのために人格を壊すな。
+- **生成順序(§1)**: claim・neta → 必要なら記事・repo・検証資料で裏付け → X 本文。article→summary→X には戻さない。記事は証拠・出典・背景資料。
+- **claim_bank が正本(§2/§14)**: 良いネタ=壊したい前提/主張/裏付ける数字か事実/刺さる読者の 4 項。無い claim は生成しない(`x_claim_gen.py` が SKIP_incomplete)。改善の中心は prompt ではなく claim_bank。項目は claim/counter_claim/evidence/audience/hook_candidate/source/confidence を必要最小限(`claim_bank.yaml` meta.schema_20260904_1855)。
+- **Short は投資ネタ限定(§3)**: インデックス/複利/勝率/期待値/暴落/MaxDD/モメンタム/DM/投資システム/OOS/β α/パラメータ/資産格差/投資数学。不動産・医療・住宅ローン・事業は Short へ変換しない(将来 Long/Thread/Series/手動)。
+- **Voice match ≠ Context match(§4)**: 本人 Voice でも投資中心 TL に突然出れば不自然な話題がある。「この人が今日突然これを言うのは自然か」を見る。claim_bank には投資ネタのみ収録(meta.context_rule)。
+- **外部バズの使い方(§5/§6/§15)**: 学ぶのは Hook 構造・具体化・対比・数字の置き方・常識→違和感・読者自身の問い・一瞬で通る構造まで。語尾・煽り・キャラ・スラング・www・癖は移植しない。文体優先順位=1 最新 human rewrite/2 本人 X/3 本人 note/4 system prompt/5 外部バズ(最下位)。外部投稿の言い換えではなく、その話題への本人独自 claim を作る(例: 外部「3000 万から複利が効く」→本人 C29「複利スイッチは無い。元本が増えた状態で強い相場が来ただけでは」)。新ネタは DM/検証/数学/確率/MaxDD/OOS/資産格差/複利/期待値へ接続(§16)。
+- **ノルマ生成禁止(§7/§8)**: 2 units/day・08:30/18:30・7 日・4 週は初期 Live OOS。在庫不足→切り抜き→穴埋めは禁止。poster の fallback 廃止を維持。3→2 は縮小ではなく「自然な本人投稿を十分な頻度で」。評価は posts/day ではなく impressions/profile_clicks/followers_delta/bookmarks/replies/link_clicks(1 投稿あたりだけで判断しない)。
+- **Series/Thread/Long(§9-§11)**: Series は 2/9 3/9 を毎晩機械的に続けない(SE→別 Short→別 Long→数日後に次 SE でよい。`slot_calendar.yaml` v5)。Thread は段階説明に意味がある時だけ、各リプに新情報(文字数回避の分割禁止)。Long は記事要約ではなく claim→疑い→検証→数字→結論(`x_claim_gen.py --format long`)。
+- **Fact Gate 維持(§12/§13)**: 未確認数字/数学的誤り/出典不明/古い数字を現在値扱い/因果捏造/DM-Signal 実績誤記/OOS・WF・β・α の定義違いは禁止。荒さ=全条件を書かない・強めに言う・リプ余地。荒さ≠誤り。Fact Gate と Voice Gate は分離のまま。
+- **Growth と本人らしさが衝突したら本人らしさ(§17)**: 煽り強化・外部 Voice 模倣・頻度の無理増・不自然テーマ混入をしない。Growth Engine は本人を増幅する装置であり、マーケ用人格へ変える装置ではない。
+- **Live OOS 維持(§18)**: 4 週間 2 units/day・investment-only・claim-based・Short/Long/Thread/Series・fallback なし。KPI は Observed/Inferred/Unavailable と 0/null を分離。
+- **prompt を頻繁にいじらない(§19)**: 動いたら細かい違和感で毎日 system prompt を変えない。変更理由は `skills/x-post-pipeline/prompt_changelog.md` に記録。大きな変更は本人が実際に使って明確なズレを感じた時だけ。
+- **成功条件(§20)**: 「本人が自分で書いていても違和感のない投資投稿を、本人のネタと証拠から継続的に生成できる」。その上で露出/フォロー/note 流入/DM-Signal 流入を Live OOS で見る。

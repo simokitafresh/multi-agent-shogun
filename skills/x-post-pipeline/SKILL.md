@@ -38,6 +38,7 @@ allowed-tools:
 - 殿裁定 17:47/17:49: **記事の抜粋はネタではない**(Round5 Short 10 撤回)。Short は投資ネタ(investing/dm/math/money_inequality)限定、不動産・医療・事業は Long/Thread/Series のみ。ネタ台帳 `neta_ledger.yaml`(殿の種→本文化)。定時投稿の選定は台帳の category×format(v1.5、Thread は x_thread_post.sh へ委譲)。
 - **殿裁定 18:22: 当分の間投資ネタだけで 4 週間(9/4〜10/2)続けて計測。** calendar v4=2 units/日(08:30 Short 投資/18:30 Series→Long→Thread)、slot '*'、在庫切れは投稿しない。予定表=docs/research/x_post_schedule_invest23_20260904.md(artifact eea77aac)。週次集計 cron 日曜 09:00。
 - **自動生成(殿 18:29『俺が何もしなくても無限に生成』)**: `claim_bank.yaml`(前提を壊す主張 28)→`scripts/x_ops/x_claim_gen.py --round N --claims ... --approve`(記事本文を渡さない、gate+数字 fail-close、PASS は自動承認)→台帳→cron。殿の種(neta_ledger)は任意。事後の拒否は削除で(可逆)。
+- **生成の起点(殿 18:55『記事から投稿を作るな。ネタから投稿を作れ』)**: claim/neta→裏付け(記事は証拠)→本文。claim は belief/claim/why/audience の 4 項必須(欠落は SKIP)。Short は投資ネタ限定。外部バズは hook 構造のみ借り Voice は本人 corpus からのみ(優先 human rewrite>本人 X>本人 note>SP>外部)。Series を毎晩機械的に続けない(calendar v5)。Long は `x_claim_gen.py --format long`。prompt 変更は `prompt_changelog.md` に理由付きで。正本=doctrine 追補 18:55 / growth_schema generation_origin_rule_20260904_1855
 - 禁止: 40 投稿貯まるまで比率・型の最適化をしない。Growth のために本文を書き換えない。自動 reply spam。
 
 ## When

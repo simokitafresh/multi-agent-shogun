@@ -285,3 +285,20 @@ x_format_analysis_20260904:
   thread_continuation_median: 0.42  # 自己リプ imp 平均 / 親 imp
   series_like: {n: 5, note: 番号マーカー付きは 5 本のみ。本人 X に Series 運用の実績は無い=Series は新規試行}
   reading: このアカウントでは Thread 親が全 format 中 imp/bookmark/reply とも最高(親 imp 中央値 893 vs Short 566)。上位 2 本(年収⇄手取り 916k、町医者データ 397k)は親+リプ 9〜15 本で後続も 5〜7 万 imp。因果ではない
+
+# 殿指示 2026-09-04 18:55「記事から投稿を作るな。ネタから投稿を作れ」(20 項目。正本=docs/research/x_editorial_doctrine_20260904.md 追補 18:55)
+generation_origin_rule_20260904_1855:
+  order: "claim/neta → 裏付け(記事・repo・検証資料は証拠として) → X 本文。article→summary→X 禁止"
+  claim_required: [belief, claim, why, audience]
+  short_scope: 投資ネタ限定(インデックス/複利/勝率/期待値/暴落/MaxDD/モメンタム/DM/OOS/β α/パラメータ/資産格差/投資数学)。不動産・医療・住宅ローン・事業は Short へ変換しない
+  context_match: "Voice match ≠ Context match。『この人が今日突然これを言うのは自然か』を見る"
+  voice_priority: [latest_human_rewrite, lord_x, lord_note, system_prompt, external_viral]
+  external_viral_allowed: [hook構造, 具体化, 対比, 数字の置き方, 常識→違和感, 読者自身の問い, 一瞬で通る構造, 今みんなが反応している話題]
+  external_viral_forbidden: [語尾, 煽り口調, キャラ, スラング, 過激表現, www, 独自の癖, 言い換え]
+  quota: "在庫不足→切り抜き→穴埋め禁止。良いネタが無ければ投稿しない(fallback 廃止維持)。評価は posts/day ではなく impressions/profile_clicks/followers_delta/bookmarks/replies/link_clicks"
+  series: "毎晩 2/9 3/9 と機械的に続けない。SE→別 Short→別 Long→数日後に次 SE でよい(slot_calendar v5)"
+  thread: "段階説明に意味がある時だけ。各リプに新情報。文字数回避の分割禁止"
+  long: "記事要約にしない。claim→疑い→検証→数字→結論"
+  conflict: "Growth と本人らしさが衝突したら本人らしさ優先。Growth Engine は本人を増幅する装置"
+  prompt_change: "動いたら頻繁に system prompt を変えない。理由を skills/x-post-pipeline/prompt_changelog.md に記録"
+  success: "本人が自分で書いていても違和感のない投資投稿を、本人のネタと証拠から継続的に生成できること。その上で露出/フォロー/note 流入/DM-Signal 流入を Live OOS で見る"

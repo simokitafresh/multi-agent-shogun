@@ -388,6 +388,17 @@ X Growth の dashboard は未作成(現状は `--summary` の表)。作る時の
 
 Observed / Inferred / Unavailable を必ず分ける。例: Observed「9/4 followers +7」「9/4 Short 3 本」→ Inferred「投稿量と followers 増に関連の可能性」。禁止「Short を 3 本出したので 7 人増えた」。投稿量比較(2/3/4 posts/day)は total_impressions/day・total_profile_clicks/day・total_link_clicks/day・followers_delta/day・week で行い、follow/post は作らない。取得不能 KPI 一覧と将来案は kpi_availability.yaml の unavailable 節(status / reason / possible_future_solution)。status を差し替えるだけで schema を壊さない(value/status/reason の 3 つ組)。
 
+### 実装進捗台帳(v1.7 — 殿指示 2026-09-04 18:55「記事から投稿を作るな。ネタから投稿を作れ」)
+
+| 項目 | 状態 | 現物 |
+|---|---|---|
+| claim_bank schema(4 項必須+source/confidence) | 完了 | `skills/x-post-pipeline/claim_bank.yaml` meta.schema_20260904_1855、34 claim 全てに audience |
+| 生成器 fail-close(欠落 SKIP)+Long claim 起点+外部 Voice 移植禁止 | 完了 | `scripts/x_ops/x_claim_gen.py`(`--format long`) |
+| Series 非連続化 | 完了 | `skills/x-post-pipeline/slot_calendar.yaml` v5(18:30=SE→L→SE→SE→T→SE→L→SE) |
+| 方針の正本 | 完了 | doctrine 追補 18:55 / growth_schema `generation_origin_rule_20260904_1855` / SKILL.md |
+| prompt 変更記録 | 完了 | `skills/x-post-pipeline/prompt_changelog.md`(system prompt v5.1 は不変) |
+| Live OOS 継続 | 走行 | 2 units/day・investment-only・fallback なし・4 週(10/2 判定) |
+
 ### 実装進捗台帳(v1.6)
 - 2026-09-04 18:25 **殿裁定 18:20/18:22『当分の間投資ネタだけ。4 週間続けて計測』**: calendar v4=毎日 08:30 Short(投資)/18:30 Series→Long→Thread、2 units/日、9/4 18:30〜10/2、slot は category 不問(*)。在庫 23 units(Short 12/Series 8/Long 2/Thread 1)、保留 L-3/T-2、在庫切れ slot は投稿しない(切り抜き生成に戻さない)。計測=毎時 snapshot+日曜 09:00 週次集計(docs/research/x_live_oos_weekly/)。予定表 artifact eea77aac。§39 の 3 units/日は superseded
 

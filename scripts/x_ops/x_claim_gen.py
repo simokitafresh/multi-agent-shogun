@@ -2,7 +2,8 @@
 """claim_bank(主張の銀行)から投資ネタ Short を生成する(殿 2026-09-04 18:29『俺が何もしなくても無限に生成し続けるから意味がある』)。
 記事本文は渡さない。入力=claim 1 行(belief/claim/why/number)+殿版 few-shot+system_prompt v5.x。
 出力: queue/x_drafts/<date>_R<round>-S-<n>.txt、gate(x_post_gate.sh)、数字 fail-close(verified_numbers 以外の数字は FAIL)。
-Usage: SHOGUN_ROOT=... python3 scripts/x_ops/x_claim_gen.py --round 6 --claims C04,C07 [--approve]
+Usage: SHOGUN_ROOT=... python3 scripts/x_ops/x_claim_gen.py --round 6 --claims C04,C07 [--approve] [--format short|long]
+殿指示 2026-09-04 18:55: 必須 4 項(belief/claim/why/audience)が無い claim は SKIP(記事が余っているから生成、は無い)。Long も claim 起点(claim→疑い→検証→数字→結論)。外部バズの語尾・煽りは移植しない
 """
 import os, re, subprocess, sys, datetime as dt
 from pathlib import Path
@@ -51,6 +52,18 @@ def recheck(rnd, keys, approve):
         print(f"{did}\t{k}\t{status}\t{len(body.strip())}字\t{bad if bad else ''}")
 
 
+REQ = ("belief", "claim", "why", "audience")
+VOICE_RULE = "文体は本人(殿版 few-shot)からのみ。外部バズ投稿の語尾・煽り口調・キャラ・スラング・www・過激表現は使わない。借りてよいのは構造(対比・引用反証・VS・数字の置き方)だけ。"
+
+
+def slot_text(fmt, c, num):
+    if fmt == "long":
+        return (f"format=Long。全角 300〜600 字。構成は claim→疑い→検証→数字→結論。記事の要約にしない。全部説明せず conversation gap を残す。URL なし。DM-Signal の名前を出さない。\n{VOICE_RULE}\n"
+                f"壊す前提: {c['belief']}\n主張: {c['claim']}\n裏付け(1 行): {c['why']}\n刺さる読者: {c['audience']}\n{num}\n本文のみ出力。")
+    return (f"format=Short。全角 140 字以内。1 つの主張だけ。全部説明しない。conversation gap を残す。URL なし。DM-Signal の名前を出さない。\n{VOICE_RULE}\n"
+            f"壊す前提: {c['belief']}\n主張: {c['claim']}\n理由(1 行): {c['why']}\n刺さる読者: {c['audience']}\n{num}\n本文のみ出力。")
+
+
 def main():
     a = sys.argv[1:]
     if "--recheck" in a:
@@ -58,17 +71,24 @@ def main():
     rnd = a[a.index("--round") + 1] if "--round" in a else "6"
     keys = a[a.index("--claims") + 1].split(",") if "--claims" in a else [c["key"] for c in BANK["claims"]]
     approve = "--approve" in a
+    fmt = a[a.index("--format") + 1] if "--format" in a else "short"
+    if fmt not in ("short", "long"):
+        print("--format must be short|long", file=sys.stderr); sys.exit(2)
+    tag = "S" if fmt == "short" else "L"
     today = dt.date.today().isoformat()
     vn = BANK["meta"]["verified_numbers"]
     claims = {c["key"]: c for c in BANK["claims"]}
     n = 0
     for i, k in enumerate(keys, 1):
         c = claims[k]
+        missing = [r for r in REQ if not c.get(r)]
+        if missing:
+            print(f"R{rnd}-{tag}-{i}\t{k}\tSKIP_incomplete\tmissing={missing}", flush=True); continue
         num = f"使ってよい数字(この 1 組だけ。使わなくてもよい): {vn[c['number']]}" if c.get("number") else "数字は使わない(使うなら禁止)。"
-        user = f"{FEW}\n--- slot instruction ---\nformat=Short。全角 140 字以内。1 つの主張だけ。全部説明しない。conversation gap を残す。URL なし。DM-Signal の名前を出さない。\n壊す前提: {c['belief']}\n主張: {c['claim']}\n理由(1 行): {c['why']}\n{num}\n本文のみ出力。"
+        user = f"{FEW}\n--- slot instruction ---\n{slot_text(fmt, c, num)}"
         body = llm(user)
         bad = numbers_ok(body, [vn[c["number"]]] if c.get("number") else [])
-        did = f"R{rnd}-S-{i}"
+        did = f"R{rnd}-{tag}-{i}"
         f = DRAFTS / f"{today}_{did}.txt"
         f.write_text(body + "\n", encoding="utf-8")
         gate = subprocess.run(["bash", "scripts/x_ops/x_post_gate.sh", str(f.relative_to(ROOT)), "A"], capture_output=True, text=True, cwd=ROOT)

@@ -1,5 +1,5 @@
 meta:
-  version: v4 (2026-09-04 18:22 殿裁定『投資ネタだけで 4 週間続けて計測』。v3 の 3 units/日・category 固定は superseded)
+  version: v5 (2026-09-04 18:55 殿指示 §9/§10『Series を毎晩機械的に続けない・Thread は段階説明に意味がある時だけ』→18:30 を SE→L→SE→SE→T→SE→L→SE の非連続順へ。v4=2026-09-04 18:22 殿裁定『投資ネタだけで 4 週間続けて計測』。v3 の 3 units/日・category 固定は superseded)
   doctrine: docs/research/x_editorial_doctrine_20260904.md
   source_ledger: skills/x-post-pipeline/stock_ledger.yaml
   schedule: "毎日 2 slot(JST 08:30 Short 投資ネタ / 18:30 Series→Long→Thread の在庫順)×28 日=4 週。category は問わない(slot: '*')。12:30 は廃止"
@@ -18,7 +18,8 @@ meta:
   format_mix_v1_2: superseded by format_mix_v1_4
   old_slots_superseded: 旧 A 教材再掲/B 検証の一切れ/C 運用の形/D 月次/E ガイド告知(マニュアル §5/§6)は廃止。旧 seed は stock_ledger の shift に吸収
   format_mix_v1_4: 週 21 units — Short 13(08:30 全日+12:30 月火木土+18:30 水金)/ Long 3(月木土 18:30)/ Thread 2(火日 18:30)/ Series Entry 3(水金日 12:30)。Conversation Entry は別 lane(units に数えない、conversation_entries に記録)
-  format_mix_v1_6: 08:30 short(investing/dm/math_probability/money_inequality の承認在庫のみ)/ 18:30 series_entry を先に 8 日、次に long 2 日、thread 1 日、以後は在庫順。在庫が無い slot は投稿しない(切り抜き生成に戻さない)
+  format_mix_v1_7: "08:30 short(claim_bank 起点の承認在庫のみ)/ 18:30 は SE→Long→SE→SE→Thread→SE→Long→SE を繰り返す(続き物を毎晩順番に出さない)。在庫が無い slot は投稿しない"
+  format_mix_v1_6: "superseded by format_mix_v1_7。旧: 08:30 short(investing/dm/math_probability/money_inequality の承認在庫のみ)/ 18:30 series_entry を先に 8 日、次に long 2 日、thread 1 日、以後は在庫順。在庫が無い slot は投稿しない(切り抜き生成に戻さない)"
   measurement: 4 週固定。日曜 09:00 に x_kpi_snapshot.py --summary を docs/research/x_live_oos_weekly/ へ保存。10/2 に Observed のみで読む
 slots:
 - date: '2026-09-04'
@@ -65,7 +66,7 @@ slots:
   day: 日
   time: '18:30'
   slot: '*'
-  format: series_entry
+  format: long
   funnel_stage: follow
   audience: investor
   shift: ''
@@ -125,7 +126,7 @@ slots:
   day: 水
   time: '18:30'
   slot: '*'
-  format: series_entry
+  format: thread
   funnel_stage: follow
   audience: investor
   shift: ''
@@ -165,7 +166,7 @@ slots:
   day: 金
   time: '18:30'
   slot: '*'
-  format: series_entry
+  format: long
   funnel_stage: follow
   audience: investor
   shift: ''
@@ -205,7 +206,7 @@ slots:
   day: 日
   time: '18:30'
   slot: '*'
-  format: long
+  format: series_entry
   funnel_stage: trust
   audience: investor
   shift: ''
@@ -245,7 +246,7 @@ slots:
   day: 火
   time: '18:30'
   slot: '*'
-  format: thread
+  format: series_entry
   funnel_stage: trust
   audience: investor
   shift: ''
@@ -285,7 +286,7 @@ slots:
   day: 木
   time: '18:30'
   slot: '*'
-  format: long
+  format: thread
   funnel_stage: trust
   audience: investor
   shift: ''
@@ -305,7 +306,7 @@ slots:
   day: 金
   time: '18:30'
   slot: '*'
-  format: thread
+  format: series_entry
   funnel_stage: trust
   audience: investor
   shift: ''
@@ -325,7 +326,7 @@ slots:
   day: 土
   time: '18:30'
   slot: '*'
-  format: series_entry
+  format: long
   funnel_stage: follow
   audience: investor
   shift: ''
@@ -345,7 +346,7 @@ slots:
   day: 日
   time: '18:30'
   slot: '*'
-  format: long
+  format: series_entry
   funnel_stage: trust
   audience: investor
   shift: ''
@@ -365,7 +366,7 @@ slots:
   day: 月
   time: '18:30'
   slot: '*'
-  format: thread
+  format: series_entry
   funnel_stage: trust
   audience: investor
   shift: ''
@@ -385,7 +386,7 @@ slots:
   day: 火
   time: '18:30'
   slot: '*'
-  format: series_entry
+  format: long
   funnel_stage: follow
   audience: investor
   shift: ''
@@ -405,7 +406,7 @@ slots:
   day: 水
   time: '18:30'
   slot: '*'
-  format: long
+  format: series_entry
   funnel_stage: trust
   audience: investor
   shift: ''
@@ -423,29 +424,29 @@ slots:
   question: ''
 - date: '2026-09-24'
   day: 木
-  time: '18:30'
-  slot: '*'
-  format: thread
-  funnel_stage: trust
-  audience: investor
-  shift: ''
-  ledger_key: ''
-  question: ''
-- date: '2026-09-25'
-  day: 金
-  time: '08:30'
-  slot: '*'
-  format: short
-  funnel_stage: reach
-  audience: investor
-  shift: ''
-  ledger_key: ''
-  question: ''
-- date: '2026-09-25'
-  day: 金
   time: '18:30'
   slot: '*'
   format: series_entry
+  funnel_stage: trust
+  audience: investor
+  shift: ''
+  ledger_key: ''
+  question: ''
+- date: '2026-09-25'
+  day: 金
+  time: '08:30'
+  slot: '*'
+  format: short
+  funnel_stage: reach
+  audience: investor
+  shift: ''
+  ledger_key: ''
+  question: ''
+- date: '2026-09-25'
+  day: 金
+  time: '18:30'
+  slot: '*'
+  format: thread
   funnel_stage: follow
   audience: investor
   shift: ''
@@ -465,7 +466,7 @@ slots:
   day: 土
   time: '18:30'
   slot: '*'
-  format: long
+  format: series_entry
   funnel_stage: trust
   audience: investor
   shift: ''
@@ -485,7 +486,7 @@ slots:
   day: 日
   time: '18:30'
   slot: '*'
-  format: thread
+  format: long
   funnel_stage: trust
   audience: investor
   shift: ''
@@ -525,7 +526,7 @@ slots:
   day: 火
   time: '18:30'
   slot: '*'
-  format: long
+  format: series_entry
   funnel_stage: trust
   audience: investor
   shift: ''
@@ -545,7 +546,7 @@ slots:
   day: 水
   time: '18:30'
   slot: '*'
-  format: thread
+  format: long
   funnel_stage: trust
   audience: investor
   shift: ''
@@ -585,7 +586,7 @@ slots:
   day: 金
   time: '18:30'
   slot: '*'
-  format: long
+  format: series_entry
   funnel_stage: trust
   audience: investor
   shift: ''
