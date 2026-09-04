@@ -16886,7 +16886,9 @@ insights:
   priority: "low"
   source: "semantic_index_update"
   fix_known: false
-  status: pending
+  status: "resolved"
+  action_artifact: "semantic_map=/home/simokitafresh/multi-agent-shogun/context/semantic-map.md;semantic_index=/home/simokitafresh/multi-agent-shogun/docs/semantic-index/index.md"
+  resolved_reason: "semantic map generation verified the candidate is represented or intentionally ignored"
 - id: INS-20260904-090050333-ead4
   ts: "2026-09-04T09:00:50+09:00"
   insight: "tobisaru(pane8)Codex update画面停止+kagemaru(pane4)通常prompt停止。両報告status=revision_requested修正が未完了。tobisaru=status修正のみ/kagemaru=status+origin修正で gate PASS見込み。実装レビューは両方LGTM相当。家老介入要"
@@ -16900,14 +16902,18 @@ insights:
   priority: "low"
   source: "semantic_index_update"
   fix_known: false
-  status: pending
+  status: "resolved"
+  action_artifact: "semantic_map=/home/simokitafresh/multi-agent-shogun/context/semantic-map.md;semantic_index=/home/simokitafresh/multi-agent-shogun/docs/semantic-index/index.md"
+  resolved_reason: "semantic map generation verified the candidate is represented or intentionally ignored"
 - id: INS-20260904-090557423-6666
   ts: "2026-09-04T09:05:57+09:00"
   insight: "semantic_index_update新概念候補: discussion:230はy は 既存aliasesに一致なし。概念定義とaliases追加を検討せよ"
   priority: "low"
   source: "semantic_index_update"
   fix_known: false
-  status: pending
+  status: "resolved"
+  action_artifact: "semantic_map=/home/simokitafresh/multi-agent-shogun/context/semantic-map.md;semantic_index=/home/simokitafresh/multi-agent-shogun/docs/semantic-index/index.md"
+  resolved_reason: "semantic map generation verified the candidate is represented or intentionally ignored"
 - id: INS-20260904-090633647-5551
   ts: "2026-09-04T09:06:33+09:00"
   insight: "[[T237 T236 T226b T230 T226の進捗と完了までの見込みをひょけ意識で報告せよ]] semantic_stress_test candidate_aliases: NO_MATCH source=lord query=T237 / T236 / T226b / T230 / T226の進捗と完了までの見込みをひょけ意識で報告せよ"
