@@ -1,5 +1,6 @@
 # インフラコンテキスト
 <!-- last_updated: 2026-09-05 context_freshness reviewed source boundary -->
+<!-- source_commit:719c5afbc reason:context_freshness reviewed source boundary evidence:context_freshness_check context=context/infrastructure.md commit=719c5afbc -->
 <!-- source_commit:2aac09599 reason:context_freshness reviewed source boundary evidence:context_freshness_check context=context/infrastructure.md commit=2aac09599 -->
 <!-- source_commit:4aeb63264 reason:context_freshness reviewed source boundary evidence:context_freshness_check context=context/infrastructure.md commit=4aeb63264 -->
 <!-- source_commit:aeac71c5a reason:context_freshness reviewed source boundary evidence:context_freshness_check context=context/infrastructure.md commit=aeac71c5a -->
@@ -791,3 +792,4 @@ source boundary一致taskはregistryのowner/update_triggerからcontext_update_
 - X 9 月 Stage 2 本文(09-05 01:45)|42 unit 全 gate PASS・未承認。台帳 P9 51 entries(thread 分割含む)。承認=x_stage2_approve.py|→ `docs/dashboard/x-post-calendar-202609.html`
 - インフレ=Market Context+Evergreen(殿 09-05 01:44)|CPI/コア PCE/BEI/実質利回りを毎朝観測、日本 CPI の FRED 系列は stale→null。claim C39-C41|→ `skills/x-post-pipeline/event_rules.yaml` market_context.inflation
 - gate_p_average_freshness retry/recovery(家老 hotfix GA-577 e7b2a45f3 09-05)|一時的な取得失敗で偽 ALERT を出さず retry 後に判定。bats 追加|→ `scripts/gates/gate_p_average_freshness.sh`
+- 日本 CPI 正本=総務省統計局 e-Stat 000032103842(殿 09-05 01:57)|x_event_scan.py が毎朝 総合/生鮮除く 前年比を算出(2026-07 +2.06/+1.79)。FRED 日本 CPI は使わない|→ `scripts/x_ops/x_event_scan.py`

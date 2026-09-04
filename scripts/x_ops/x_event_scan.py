@@ -41,7 +41,7 @@ def context_line():
         rows = [json.loads(l) for l in (ROOT / "queue/x_market_context/daily.jsonl").read_text(encoding="utf-8").splitlines() if l.strip()]
         a, b = rows[-1], (rows[-21] if len(rows) >= 21 else rows[0])
         fx = f"USD/JPY {a.get('usdjpy')}({(a.get('usdjpy', 0) / b.get('usdjpy', 1) - 1) * 100:+.1f}% / 4w)" if isinstance(a.get("usdjpy"), (int, float)) and isinstance(b.get("usdjpy"), (int, float)) else ""
-        return f"市場環境 {a['date']}: {fx} 米2y {a.get('us2y')} 米10y {a.get('us10y')} 10-2y {a.get('curve_10_2')} JGB10 {a.get('jgb10')} BEI {a.get('bei10')} 実質10y {a.get('real_us10')} 米CPI {a.get('cpi_us_yoy')}% コアPCE {a.get('core_pce_yoy')}% 日本CPI {a.get('cpi_jp_yoy')}% VIX {a.get('vix')} SPY 52w DD {a.get('spy_dd_52w')}"
+        return f"市場環境 {a['date']}: {fx} 米2y {a.get('us2y')} 米10y {a.get('us10y')} 10-2y {a.get('curve_10_2')} JGB10 {a.get('jgb10')} BEI {a.get('bei10')} 実質10y {a.get('real_us10')} 米CPI {a.get('cpi_us_yoy')}% コアPCE {a.get('core_pce_yoy')}% 日本CPI {a.get('cpi_jp_yoy')}%(コア {a.get('cpi_jp_core_yoy')}%) VIX {a.get('vix')} SPY 52w DD {a.get('spy_dd_52w')}"
     except Exception: return ""
 
 
@@ -49,7 +49,7 @@ def weekly_context():
     """日曜 09:00: 4 週表を docs/research/x_market_context_weekly/ へ、ntfy で 1 行。編集計画見直しの材料(自動補充はしない)"""
     rows = [json.loads(l) for l in (ROOT / "queue/x_market_context/daily.jsonl").read_text(encoding="utf-8").splitlines() if l.strip()][-28:]
     out = ROOT / "docs/research/x_market_context_weekly"; out.mkdir(parents=True, exist_ok=True)
-    cols = ["date", "usdjpy", "us2y", "us10y", "curve_10_2", "jgb10", "bei10", "real_us10", "cpi_us_yoy", "core_pce_yoy", "cpi_jp_yoy", "spy_ret", "spy_dd_52w", "vix", "n225_ret"]
+    cols = ["date", "usdjpy", "us2y", "us10y", "curve_10_2", "jgb10", "bei10", "real_us10", "cpi_us_yoy", "core_pce_yoy", "cpi_jp_yoy", "cpi_jp_core_yoy", "spy_ret", "spy_dd_52w", "vix", "n225_ret"]
     md = "# Market Context 4 週(殿 2026-09-05 01:35: 観測対象。予測しない。本人思想=分解/観測と予測の分離/見ると売買の分離/検証)\n\n| " + " | ".join(cols) + " |\n|" + "---|" * len(cols) + "\n"
     for r in rows: md += "| " + " | ".join(str(r.get(c, "")) for c in cols) + " |\n"
     md += "\nインフレ(殿 01:44)は観測対象+常時テーマ: 名目と実質を分ける(C39)/高所得でも実質で豊かとは限らない(C40)/インフレ→金利→為替→株債→実質リターン→資産形成の連鎖(C41)/現金の実質目減り(C16)。\n適用候補 claim: C35 円建てリターン分解 / C36 FOMC 連鎖は観測 / C37 見ると売買は別 / C38 金利差は材料の 1 つ。plan へ入れる時は candidate→gate→editorial review(自動補充しない)。\n"
@@ -123,10 +123,13 @@ def main():
         cu, cu_d = yoy("CPIAUCSL"); pc, pc_d = yoy("PCEPILFE"); rr = fred("DFII10")
         obs.update(cpi_us_yoy=cu, cpi_us_asof=cu_d, core_pce_yoy=pc, real_us10=rr[-1][1])
         try:
-            jr = [r for r in csv.reader(io.StringIO(urllib.request.urlopen("https://fred.stlouisfed.org/graph/fredgraph.csv?id=CPALTT01JPM659N", timeout=20).read().decode())) if len(r) == 2 and r[1] not in (".", "")]
-            fresh = (dt.date.today() - dt.date.fromisoformat(jr[-1][0])).days <= 120  # FRED の日本 CPI は 2021 で止まっている(2026-09-05 実測)。古い値は null(0 と混ぜない)
-            obs.update(cpi_jp_yoy=round(float(jr[-1][1]), 2) if fresh else None, cpi_jp_asof=jr[-1][0], cpi_jp_note=None if fresh else "stale_source")
-        except Exception: obs["cpi_jp_yoy"] = None
+            # 正本=総務省統計局(e-Stat 固定 ID 000032103842: 2020 年基準 全国 月次 指数、Shift_JIS。殿 2026-09-05 01:57『総務省統計局の CPI を正本として直接取得』)。列 1=総合、列 2=生鮮食品を除く総合
+            req = urllib.request.Request("https://www.e-stat.go.jp/stat-search/file-download?statInfId=000032103842&fileKind=1", headers={"User-Agent": "Mozilla/5.0"})
+            rows = [r for r in csv.reader(io.StringIO(urllib.request.urlopen(req, timeout=30).read().decode("shift_jis", "ignore"))) if r and len(r[0]) == 6 and r[0].isdigit() and len(r) > 2 and r[1]]
+            idx = {r[0]: (float(r[1]), float(r[2]) if r[2] else None) for r in rows}
+            ym = rows[-1][0]; prev = f"{int(ym[:4]) - 1}{ym[4:]}"
+            obs.update(cpi_jp_yoy=round((idx[ym][0] / idx[prev][0] - 1) * 100, 2), cpi_jp_core_yoy=round((idx[ym][1] / idx[prev][1] - 1) * 100, 2) if idx[ym][1] and idx[prev][1] else None, cpi_jp_asof=ym, cpi_jp_source="stat.go.jp e-Stat 000032103842")
+        except Exception as ex: obs.update(cpi_jp_yoy=None, cpi_jp_note=f"ERR {type(ex).__name__}")
     except Exception as ex: obs["inflation"] = f"ERR {type(ex).__name__}"
     try:
         raw = urllib.request.urlopen("https://www.mof.go.jp/jgbs/reference/interest_rate/jgbcm.csv", timeout=20).read().decode("shift_jis", "ignore")

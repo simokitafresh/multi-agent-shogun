@@ -39,7 +39,7 @@ topic_rule: 要人発言そのものを引用・要約して投稿しない(発�
 # 殿 2026-09-05 01:35: 為替・金利・カーブは『○% 動いたら投稿』の trigger ではなく『最近の市場を見て本人が何か言う価値があるか』を判断する常時観測対象(Market Context)
 market_context:
   variables: [usdjpy, us2y, us10y, curve_10_2, jgb10, bei10, real_us10, cpi_us_yoy, core_pce_yoy, cpi_jp_yoy, spy_ret, spy_dd_52w, vix, n225_ret]
-  sources: {real_us10: FRED DFII10(10 年 TIPS 実質利回り), cpi_us_yoy: FRED CPIAUCSL 前年比, core_pce_yoy: FRED PCEPILFE 前年比, cpi_jp_yoy: FRED CPALTT01JPM659N(月次・遅れあり), usdjpy: yfinance JPY=X, us2y/us10y/bei10: FRED DGS2/DGS10/T10YIE, jgb10: 財務省 jgbcm.csv, spy/vix/n225: yfinance}
+  sources: {real_us10: FRED DFII10(10 年 TIPS 実質利回り), cpi_us_yoy: FRED CPIAUCSL 前年比, core_pce_yoy: FRED PCEPILFE 前年比, cpi_jp_yoy/cpi_jp_core_yoy: 総務省統計局 e-Stat 固定 ID 000032103842(2020 年基準 全国 月次、総合/生鮮除く総合。正本、殿 09-05 01:57), usdjpy: yfinance JPY=X, us2y/us10y/bei10: FRED DGS2/DGS10/T10YIE, jgb10: 財務省 jgbcm.csv, spy/vix/n225: yfinance}
   cadence: 毎朝 07:05 の x_event_scan.py が観測値を queue/x_market_context/daily.jsonl に追記(発火の有無に関係なく)。日曜 09:00 に 4 週表を docs/research/x_market_context_weekly/ へ書き、ntfy で 1 行要約
   use: (1) event 提案の context に直近の市場環境 1 行を添える (2) 週次で編集計画を見直す時の材料(『今の金利・為替環境で本人の既存思想を適用できる claim はどれか』→ plan update は candidate→gate→editorial review の順、自動補充しない) (3) 予測はしない。分解・観測・検証の claim にだけ接続
   chains: [FOMC→金利→為替→株式(連鎖を観測として分ける), 円安/円高→円建て米国株リターン→株式リターンと為替効果を分ける, 金利差→為替→ヘッジコスト]
