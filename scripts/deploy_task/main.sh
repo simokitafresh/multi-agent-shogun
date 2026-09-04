@@ -32,6 +32,24 @@ source "$_dt_module_root/gates.sh"
 source "$_dt_module_root/delivery.sh"
 unset _dt_module_root
 
+# Keep each five-line Codex delivery record intact when different workers
+# append to the shared YAML ledger concurrently.  The lock follows the
+# existing preflight issue-log contract: one stable sibling lock protects the
+# complete entry, including every newline and the append itself.
+deploy_task_append_codex_delivery_log() {
+    local ninja_name="$1"
+    local command_id="$2"
+    local context_pct="$3"
+    local timestamp="$4"
+    local delivery_log="$SCRIPT_DIR/logs/codex_delivery_log.yaml"
+    mkdir -p "$(dirname "$delivery_log")"
+    (
+        flock -w 5 203 || exit 1
+        printf -- '- ninja: %s\n  cmd: %s\n  ctx_pct: %s\n  timestamp: %s\n  renudge: scheduled\n' \
+            "$ninja_name" "$command_id" "$context_pct" "$timestamp" >> "$delivery_log"
+    ) 203>"${delivery_log}.lock"
+}
+
 # The worker task slot can sit at in_progress or done until the ordered
 # completion lane closes it, but a matching terminal report plus an actually
 # idle pane is already safe to reuse regardless of which of those two statuses
@@ -735,10 +753,9 @@ except Exception:
     if [ "$(cli_type "$NINJA_NAME")" = "codex" ] && [ "${DEPLOY_TASK_DELIVERY_EVIDENCE:-0}" != "1" ]; then
         log "${NINJA_NAME}: Codex detected. Scheduling delayed re-nudge in 5s (background, ctx=${ctx_pct}%)"
         # 到達確認ログ: ninja/cmd/ctx/timestamp を記録
-        printf '- ninja: %s\n  cmd: %s\n  ctx_pct: %s\n  timestamp: %s\n  renudge: scheduled\n' \
+        deploy_task_append_codex_delivery_log \
             "$NINJA_NAME" "${deploy_parent_cmd:-unknown}" "${ctx_pct:-unknown}" \
-            "$(date '+%Y-%m-%dT%H:%M:%S')" \
-            >> "$SCRIPT_DIR/logs/codex_delivery_log.yaml" 2>/dev/null || true
+            "$(date '+%Y-%m-%dT%H:%M:%S')" 2>/dev/null || true
         local _renudge_name="$NINJA_NAME"
         (
             sleep 5
