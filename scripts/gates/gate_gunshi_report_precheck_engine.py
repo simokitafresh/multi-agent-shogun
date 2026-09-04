@@ -20,9 +20,36 @@ LIB_DIR = pathlib.Path(__file__).resolve().parents[1] / 'lib'
 if str(LIB_DIR) not in sys.path:
     sys.path.insert(0, str(LIB_DIR))
 from report_gate_contract import (  # noqa: E402
+    ac_version_from_criteria,
     lesson_feedback_set_status,
     parent_contract_ac_version,
 )
+
+
+def _resolve_task_current_ac(tasks_dir: str, report: dict) -> str:
+    """Read the task's current ac_version from the live task YAML.
+
+    When 将軍追補 updates ac_version after deployment, the task file has the
+    new value while the report's frozen snapshot still has the old one.
+    """
+    worker_id = str(report.get("worker_id") or "").strip()
+    if not worker_id:
+        return ""
+    task_path = pathlib.Path(tasks_dir) / f"{worker_id}.yaml"
+    if not task_path.is_file():
+        return ""
+    try:
+        task_data = yaml.safe_load(task_path.read_text(encoding="utf-8")) or {}
+    except (OSError, yaml.YAMLError):
+        return ""
+    task_node = task_data.get("task", task_data)
+    if not isinstance(task_node, dict):
+        return ""
+    ac = task_node.get("acceptance_criteria")
+    if isinstance(ac, list) and ac:
+        return ac_version_from_criteria(ac)
+    return ""
+
 
 def main():
     parser = argparse.ArgumentParser(
@@ -635,11 +662,23 @@ def main():
         elif expected_ac == acv_report:
             ac_ver_msg = f'  PASS: ac_version一致 ({expected_ac[:8]}) source={contract_source}'
         else:
-            ac_ver_msg = (
-                f'  ★ FAIL: ac_version不一致! '
-                f'parent={expected_ac[:8]} report={acv_report[:8]} '
-                f'source={contract_source}'
-            )
+            # Check if mismatch is due to 将軍追補 (task AC updated after
+            # deployment).  When the task's current ac_version matches the
+            # report's ac_version_read, the snapshot is simply stale — not a
+            # real contract violation.
+            task_ac = _resolve_task_current_ac(args.tasks_dir, report)
+            if task_ac and task_ac == acv_report:
+                ac_ver_msg = (
+                    f'  WARN: ac_version追補差異 '
+                    f'snapshot={expected_ac[:8]} report={acv_report[:8]} '
+                    f'task_current={task_ac[:8]} (追補による正当差異)'
+                )
+            else:
+                ac_ver_msg = (
+                    f'  ★ FAIL: ac_version不一致! '
+                    f'parent={expected_ac[:8]} report={acv_report[:8]} '
+                    f'source={contract_source}'
+                )
     except Exception:
         ac_ver_msg = '  SKIP: ac_version解析エラー'
     result['AC_VERSION_MSG'] = ac_ver_msg
