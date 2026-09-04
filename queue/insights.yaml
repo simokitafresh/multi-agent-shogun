@@ -16922,3 +16922,10 @@ insights:
   source: "semantic_stress_test"
   fix_known: false
   status: pending
+- id: INS-20260904-090700953-73bd
+  ts: "2026-09-04T09:07:00+09:00"
+  insight: "lord_conversation教訓候補: target=shogun trigger=inbound_lord detail=--- slot instruction ---\nslot: B\nangle: 市場の追い風を差し引いた実力比較\ndraft_seed: 年率40%と言われたら、まずそのうちどれだけが市場全体の値上がりのおかげかを疑うべきだ。\nurl: https://note.com/tokyojibika/n/nd28c8bceb705\ntitle: SPY・TQQQ・AI戦略 — 市場の追い風を差し引いたら何が残るか\nusable_numbers: 期間2011年10月〜2026年4月(175ヶ月・約14.5年)、ベンチSPY。CAGR: SPY15.6%・TQQQ43.7%・戦略101.9%。MaxDD: SPY-23.8%・TQQQ-79.1%・戦略-17.7%\nfirst_line_candidate: 年率40%と言われたら、まずそのうちどれだけが市場全体の値上がりのおかげかを疑うべきだ。"
+  priority: "medium"
+  source: "lord_conversation:lesson_candidate"
+  fix_known: false
+  status: pending
