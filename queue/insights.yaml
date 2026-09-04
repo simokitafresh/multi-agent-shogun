@@ -17433,3 +17433,17 @@ insights:
   source: "semantic_index_update"
   fix_known: false
   status: pending
+- id: INS-20260904-162632038-04ac
+  ts: "2026-09-04T16:26:32+09:00"
+  insight: "[[X Growth Engine 設計書レビュー 全体として]] semantic_stress_test candidate_aliases: NO_MATCH source=lord query=X Growth Engine 設計書レビュー 全体として、Growth Engine の設計はかなり整理されてきています。 特に v1.3 で追加された KPI 取得可否の整理は良いです。実際の X API レスポンスを確認した上で、投稿単位で取得できる指標、アカウント単位で…"
+  priority: "low"
+  source: "semantic_stress_test"
+  fix_known: false
+  status: pending
+- id: INS-20260904-162632215-223a
+  ts: "2026-09-04T16:26:32+09:00"
+  insight: "[[x growth engine asis tobe 5w1h 20260904 mdにフローチャートを作成して]] semantic_stress_test candidate_aliases: NO_MATCH source=lord query=x_growth_engine_asis_tobe_5w1h_20260904.mdにフローチャートを作成して"
+  priority: "low"
+  source: "semantic_stress_test"
+  fix_known: false
+  status: pending
