@@ -698,7 +698,9 @@ lessons:
 - id: 'LK012'
   title: 'karo_direct完了後はGATE CLEARだけでなく品質記録まで確認せよ'
   origin: '[[karo_direct_hotfix]] -> [[cmd_design_quality未記録]] -> [[gate_result_null蓄積]]'
-  detail: 'karo_direct方式のhotfixでcmd_complete_gate CLEAR済みでもcmd_design_quality未記録ならgate_result null/品質統計欠落として残る。gate_karo_startup.shで直近24時間のgate_metrics CLEAR/PASSとcmd_design_quality(archive含む)を突合し、未記録ならWARNでcmd_quality_log実行へ戻す。origin: [[karo_direct_hotfix]] -> [[cmd_design_quality未記録]] -> [[gate_result_null蓄積]]'
+  detail: |
+    karo_direct方式のhotfixでcmd_complete_gate CLEAR済みでもcmd_design_quality未記録ならgate_result null/品質統計欠落として残る。gate_karo_startup.shで直近24時間のgate_metrics CLEAR/PASSとcmd_design_quality(archive含む)を突合し、未記録ならWARNでcmd_quality_log実行へ戻す。origin: [[karo_direct_hotfix]] -> [[cmd_design_quality未記録]] -> [[gate_result_null蓄積]]
+    吸収(2026-09-04, cmd_karo_strong_new_game_20260904_1624, origin: [[殿指示_強くてニューゲーム_20260904_1624]] -> [[CLEARだけでは未完了]] -> [[五重終端条件]]): 2026-09-04、影丸と疾風はgate_metrics CLEAR済みでもtaskがdone/in_progress、archive.done欠落、task worktree activeのまま残り「全完了」ではなかった。さらに影丸はsource commitがorigin/main祖先でもgeneration-bound source_only_publish receipt欠落によりarchiveが正しくBLOCKした。positive_rule: 完了宣言前にCLEAR・archive.done・task idle・task_worktree state=cleaned・inbox unread 0の5条件を一次確認する。receipt欠落は手製状態変更ではなくcanonical receipt writerと/cmd-completeで復旧する。origin: [[CLEARだけで完了誤認]] -> [[archive_worktree残留]] -> [[五重終端条件]]
   source_cmd: 'cmd_karo_hotfix_quality_missing_guard_20260624'
   when: 'karo_direct完了処理、cmd_complete_gate CLEAR後、gunshi gate_reminder受信時'
   how: 'startup gateのcmd品質記録漏れチェックを見て、WARNなら/cmd-completeまたはcmd_quality_log.shで品質記録まで閉じる'
