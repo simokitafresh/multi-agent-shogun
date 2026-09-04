@@ -418,11 +418,16 @@ check_fixture_queue_contamination() {
     local root="${1:-.}" id_pat fx_matches fx_ids fx_hits fx_missing
     id_pat='cmd_bounded_done_check|cmd_fixture_[A-Za-z0-9_-]+|cmd_rc_report_success_normal|cmd_rc_revoke_f1_normal|cmd_karo_rc_revoke_generation_normal'
     # 2026-09-04 15:30 将軍 D0: 本文 grep は偽陽性(半蔵 T3-S-64 task の説明文・*.bak 退避が fixture ID を含む)。
-    # 汚染=fixture ID を『ファイル名』に持つ live ファイル(bak/lock/meta 除外)と、task/inbox の task_id 行のみ
+    # 汚染=fixture ID を『ファイル名』に持つ live ファイル(bak/lock/meta 除外)、task/inbox の task_id 行、
+    # および publisher 失敗通知の構造化本文(`task=<id>` 形)のみ。T3-S-64 の実漏出はこの形で
+    # inbox の content フィールドに残り、task_id 行にはならないため別パターンで拾う
+    # (家老の説明文は『task名cmd_rc_...』『...normal rc31』等で `task=` 直後に ID が来ないため誤検出しない)。
     fx_matches="$( { find "$root/queue/reports" "$root/queue/tasks" "$root/queue/inbox" -maxdepth 1 -type f \
             ! -name '*.bak' ! -name '*.lock' ! -name '*.meta.*' ! -name '*.validated_fingerprints' -printf '%f\n' 2>/dev/null \
             | rg -o "$id_pat" ;
           rg --no-ignore --no-filename -g '!*.bak' -o "^\s*(task_id|cmd_id|parent_cmd):\s*'?($id_pat)" \
+            "$root/queue/tasks" "$root/queue/inbox" 2>/dev/null | rg -o "$id_pat" ;
+          rg --no-ignore --no-filename -g '!*.bak' -o "task=($id_pat)" \
             "$root/queue/tasks" "$root/queue/inbox" 2>/dev/null | rg -o "$id_pat" ; } || true)"
     fx_ids="$(printf '%s\n' "$fx_matches" | sed '/^$/d' | sort -u | paste -sd, -)"
     fx_hits="$(printf '%s\n' "$fx_matches" | awk 'NF {n++} END {print n+0}')"
