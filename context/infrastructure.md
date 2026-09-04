@@ -1,5 +1,6 @@
 # インフラコンテキスト
 <!-- last_updated: 2026-09-04 context_freshness reviewed source boundary -->
+<!-- source_commit:e3272b23f reason:context_freshness reviewed source boundary evidence:context_freshness_check context=context/infrastructure.md commit=e3272b23f -->
 <!-- source_commit:4a23b0314 reason:context_freshness reviewed source boundary evidence:context_freshness_check context=context/infrastructure.md commit=4a23b0314 -->
 <!-- source_commit:cbb84f104 reason:context_freshness reviewed source boundary evidence:context_freshness_check context=context/infrastructure.md commit=cbb84f104 -->
 <!-- source_commit:8af237713 reason:context_freshness reviewed source boundary evidence:context_freshness_check context=context/infrastructure.md commit=8af237713 -->
@@ -783,3 +784,4 @@ source boundary一致taskはregistryのowner/update_triggerからcontext_update_
 - X campaign attribution 本番(cmd_4474 09-04)|DM-Signal showcase_events.campaign_id+admin campaigns API live。X→LP の visit/signup が campaign_id で帰属可(kpi_availability dm_signal_visit 実装済)|→ `context/dm-signal-core.md §98`
 - kpi_availability.yaml は safe_load PASS を維持せよ(v1.3 由来の flow 構文不正 4 箇所を 09-04 4ae12d10d で修正。編集後は必ず python3 -c 'import yaml;yaml.safe_load(...)')|→ `skills/x-post-pipeline/kpi_availability.yaml`
 - cmd_complete_gate post_deploy_evidence(家老 hotfix 1a0c62a3e 09-04 19:26)|本番証跡が必要な cmd は実装 commit が publish+deploy されるまで WAIT:post_deploy_evidence_pending(BLOCK ではない)。origin 到達後に READY、証跡欠落のみ BLOCK。cmd_4474 の 17:44 BLOCK『post_deploy_evidence_missing』が発端|→ `scripts/cmd_complete_gate.sh` post_deploy_evidence_publication_status()
+- Market Context 常時観測(殿 09-05 01:35)|為替・金利・カーブは trigger でなく観測対象。x_event_scan.py が毎朝 queue/x_market_context/daily.jsonl へ記録、日曜 --context-weekly で 4 週表。claim C35-C38|→ `skills/x-post-pipeline/event_rules.yaml` market_context
