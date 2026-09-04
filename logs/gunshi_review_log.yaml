@@ -4455,3 +4455,40 @@
     expected: completed
     actual: completed
     result: PASS
+- cmd_id: cmd_karo_ci_fix_33833338308_review_approval_rc_contract
+  review_type: report
+  verdict: FAIL
+  report_ninja: hayate
+  report_task_id: cmd_karo_ci_fix_33833338308_review_approval_rc_contract_normal
+  report_fingerprint: 0d64783c9d51
+  gate_prediction: BLOCK
+  gate_prediction_reason: "ac_version_mismatch + ci_fix_clean_repro_evidence時系列違反"
+  finding_categories:
+  - assumptions
+  - numbers
+  - premortem
+  - simulation
+  - adversarial
+  - ambiguity
+  observations:
+  - "事実1: 実装品質妥当。89c273f4f single-revert 19→0。870/870 PASS。legacy互換+v2 fail-close維持"
+  - "事実2: ci_fix_clean_repro_evidence時系列違反。post_fix started_at(13:52:39)>push_started_at(13:52:29)。10秒差"
+  - "事実3: DIVERGENT(同理由2回BLOCK)。source_commit/fixed_target mismatch"
+  - "adversarial: legacy reportにv2 markerを要求しない互換修正は正当。v2 fail-close維持確認"
+  - "ambiguity: ACのproduction契約弱化0の定義は明確。曖昧点なし"
+  fail_reasons:
+  - "ci_fix_clean_repro_evidence時系列違反: post harness must start before push"
+  - "source_commit mismatch or invalid"
+  - "fixed_target mismatch"
+  causal_chain: "89c273f4f marker無条件必須化→19 failures。修正正しいがevidence timestamp順序がgate契約違反→BLOCK"
+  brainwash_check: "#1no #2no #3no #4no #5no #6no #7no #8no"
+  verified_files:
+  - "scripts/lib/review_approval.sh:422"
+  step3_5_verified: true
+  origin: "[[cmd_karo_ci_fix_33833338308]] -> [[evidence時系列違反]] -> [[FAIL]]"
+  operational_simulation:
+    command: "git diff 89c273f4f..79106fcf8 -- scripts/lib/review_approval.sh"
+    expected: "legacy RC互換+v2 fail-close維持"
+    actual: "marker_version判定追加。v2以外return 0、v2 markerなしreturn 1"
+    result: PASS
+  timestamp: "2026-09-04T14:15:00+09:00"
