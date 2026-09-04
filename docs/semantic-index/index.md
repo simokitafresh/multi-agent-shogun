@@ -1866,6 +1866,7 @@ codd:
 | causal_chain | `[[cmd_gunshi_d0_20260807]]` (L1569) |
 | causal_chain | `[[cmd_karo_hotfix_fail_close_worktree_cleanup_20260826]]` (L1642) |
 | causal_chain | `[[cmd_karo_hotfix_ga530_expected_pre_push_block_20260830]]` (L1674) |
+| discussion | `queue/lord_conversation.jsonl` 2026-09-04T16:23:47+09:00 X Growth Engine 設計書レビュー 全体として、Growth Engine の設計はかなり整理されてきています。 特に v1.3 で追加された KPI 取得可否の整理は良いです。実際の X API レスポンスを確認した上で、投稿 |
 
 ## recalculate_pipeline — 再計算パイプライン
 
