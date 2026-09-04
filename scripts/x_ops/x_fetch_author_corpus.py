@@ -91,6 +91,10 @@ def main():
         if not token_next or not data:
             break
         time.sleep(1.0)
+    if not rows:
+        # 2026-09-04 14:45 将軍 D0: 401 等で 0 件の時に正本を空で上書きしない(waiter v4 が 400 件を消した)
+        print("x_fetch_author_corpus: 0 rows, keep existing corpus", file=sys.stderr)
+        return 1
     with (OUT / "tweets.jsonl").open("w", encoding="utf-8") as f:
         for t in rows:
             text = (t.get("note_tweet") or {}).get("text") or t.get("text", "")
