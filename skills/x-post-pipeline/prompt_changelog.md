@@ -14,3 +14,4 @@ system prompt 本体(v5.1)は 18:55 で変更していない。
 | 2026-09-04 19:28 | x_plan_calendar.py / x_claim_gen.py / ledger | format→stage/audience/hook/category の固定 mapping 撤廃、plan の editorial metadata を正本(欠落は SKIP)、empty slot 正式化、reuse_of/reuse_reason、Stage 1 承認なしで生成拒否、台帳に plan_id/event | 殿『カレンダーを埋めるな。編集計画を作れ』 |
 | 2026-09-04 19:33 | event_rules.yaml / x_event_scan.py / x_claim_gen --event / poster v1.8 | イベント lane(予定+突発)。イベントは context、claim は bank から | 殿『event-driven も設計して実装しよう』 |
 | 2026-09-04 19:45 | event_rules.yaml / x_event_scan.py | 為替・米 2y/10y・カーブ・JGB10・BEI trigger 追加、CPI 予定(要日付確認) | 殿『USD/JPY 急変 米 2 年/10 年金利 日本 10 年 金利カーブ あとはインフレ』 |
+| 2026-09-04 19:52 | x_event_scan.py --intraday / x_topic_scan.py / event_rules | 為替・SPY 日中監視(30 分)、要人発言 topic 検知(毎時、X API counts)、Grok は context 要約のみ | 殿『為替はリアルタイムじゃないと変。要人発言のトピックも欲しい』 |

@@ -23,8 +23,47 @@ def recent_claims(days=7):
     return used
 
 
+def propose(date, rule, obs, ctx_extra=""):
+    """提案ファイル+ntfy(reactive/intraday/topic 共通。1 日 1 unit、同 claim 7 日再発火なし)"""
+    if any(f.name.startswith(date) for f in EV.glob("*.yaml")): print("already proposed today (1 event unit/day)"); return None
+    used = recent_claims(); claim = next((c for c in rule["claims"] if c not in used), None)
+    if not claim: print("no unused claim for", rule["id"]); return None
+    prop = dict(date=date, event_id=rule["id"], rule=rule["rule"] if "rule" in rule else rule.get("query", ""), observation=obs, claim=claim, format=rule["format"], funnel_stage=rule["funnel_stage"], audience=rule["audience"], hook_type=rule["hook_type"],
+                content_category=rule["content_category"], desired_action=["dwell", "reply", "quote", "profile"], context=f"{obs.get('asof', date)} {rule.get('rule', rule['id'])} 実測 {obs}{ctx_extra}", status="proposed", draft_id=f"EV-{date.replace('-', '')[4:]}-{rule['id']}")
+    f = EV / f"{date}_{rule['id']}.yaml"; f.write_text(yaml.safe_dump(prop, allow_unicode=True, sort_keys=False), encoding="utf-8")
+    subprocess.run(["bash", str(ROOT / "scripts/ntfy.sh"), f"【X イベント lane】{rule['id']} 発火。claim {claim} で Short を提案 → {f.name}。生成: python3 scripts/x_ops/x_claim_gen.py --event {f}"], cwd=ROOT)
+    print("proposed", f); return f
+
+
+def intraday(dry):
+    """殿 19:48『為替はリアルタイムじゃないと変』。yfinance 5 分足(ほぼ実時間)。cron 30 分ごと"""
+    import yfinance as yf, pandas as pd
+    date = dt.date.today().isoformat(); fired = []; obs = {}
+    rules = {r["id"]: r for r in RULES["intraday_triggers"]}
+    try:
+        fx = yf.download("JPY=X", period="2d", interval="5m", progress=False)["Close"].dropna(); fx = fx.iloc[:, 0] if hasattr(fx, "columns") else fx
+        fx = fx.tz_convert("Asia/Tokyo"); today_fx = fx[fx.index.date == dt.date.today()]
+        last = float(fx.iloc[-1]); two_h = fx[fx.index >= fx.index[-1] - pd.Timedelta(hours=2)]; r2h = last / float(two_h.iloc[0]) - 1
+        r_open = (last / float(today_fx.iloc[0]) - 1) if len(today_fx) else 0.0
+        obs.update(asof=str(fx.index[-1])[:16], usdjpy=round(last, 3), usdjpy_2h=round(r2h, 4), usdjpy_open=round(r_open, 4))
+        if abs(r2h) >= 0.010 or abs(r_open) >= 0.015: fired.append("usdjpy_intraday")
+    except Exception as ex: obs["usdjpy"] = f"ERR {type(ex).__name__}"
+    try:
+        spy = yf.download("SPY", period="2d", interval="5m", progress=False)["Close"].dropna(); spy = spy.iloc[:, 0] if hasattr(spy, "columns") else spy
+        spy = spy.tz_convert("America/New_York"); sess = spy[spy.index.date == spy.index[-1].date()]
+        if len(sess) >= 2 and (dt.datetime.now(dt.timezone.utc) - spy.index[-1].tz_convert("UTC").to_pydatetime()).total_seconds() < 3600:
+            ro = float(sess.iloc[-1]) / float(sess.iloc[0]) - 1; obs.update(spy_session_open_ret=round(ro, 4), spy_asof=str(spy.index[-1])[:16])
+            if abs(ro) >= 0.02: fired.append("spy_intraday")
+        else: obs["spy_session"] = "closed"
+    except Exception as ex: obs["spy"] = f"ERR {type(ex).__name__}"
+    print(json.dumps(dict(mode="intraday", date=date, obs=obs, fired=fired), ensure_ascii=False))
+    if fired and not dry: propose(date, rules[fired[0]], obs)
+    return 0
+
+
 def main():
     a = sys.argv[1:]; dry = "--dry-run" in a
+    if "--intraday" in a: return intraday(dry)
     date = a[a.index("--date") + 1] if "--date" in a else dt.date.today().isoformat()
     import yfinance as yf
     px = yf.download(["SPY", "^VIX", "^N225", "JPY=X"], period="1y", progress=False, auto_adjust=True)["Close"].dropna(how="all")

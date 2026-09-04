@@ -24,6 +24,8 @@ for p in P:
              f'<td class="stage s-{p["funnel_stage"]}">{p["funnel_stage"]}</td><td>{p["audience"]}</td><td>{p["hook_type"]}</td>'
              f'<td class="why">{html.escape(p.get("why_this_day", ""))}{("<div class=ctx>" + html.escape(p["context"]) + "</div>") if p.get("context") else ""}</td></tr>')
 evrows = "".join(f'<li><b>{e["date"]}</b> {html.escape(e["name"])} → claim 候補 {", ".join(e["claims"])}<span class="mute"> {html.escape(e["note"])}</span></li>' for e in EV["scheduled_events"])
+intra = "".join(f'<li><b>{t["id"]}</b> {html.escape(t["rule"])} → {", ".join(t["claims"])}</li>' for t in EV.get("intraday_triggers", []))
+topics = "".join(f'<li><b>{t["id"]}</b> <code>{html.escape(t["query"])}</code> → {", ".join(t["claims"])}</li>' for t in EV.get("topic_triggers", []))
 trig = "".join(f'<li><b>{t["id"]}</b> {html.escape(t["rule"])} → {", ".join(t["claims"])} ({t["format"]}×{t["funnel_stage"]}×{t["content_category"]})</li>' for t in EV["reactive_triggers"])
 def kv(d): return " / ".join(f"{k} {v}" for k, v in d.items())
 page = f"""<title>X 編集計画 2026 年 9 月</title>
@@ -50,6 +52,9 @@ ul{{font-size:12.5px;padding-left:18px}} li{{margin:3px 0}}
 <div class="wrap"><table><thead><tr><th>日時</th><th>Format</th><th>Claim</th><th>Origin</th><th>Category</th><th>Funnel</th><th>Audience</th><th>Hook</th><th>なぜこの日に言うか</th></tr></thead><tbody>{rows}</tbody></table></div>
 <h2>イベント lane(計画の上に重ねる。claim は増やさない)</h2>
 <p class="sub">予定イベントは event 欄に事前登録。突発イベントは毎朝 07:05 に価格データ(yfinance)で数値規則だけで検知し、提案→本文生成→gate→殿承認→当日 12:30 の event slot か空き slot で投稿。1 日 1 unit、同一 claim は 7 日再発火しない。相場予測はしない。</p>
-<ul>{evrows}</ul><ul>{trig}</ul>
+<ul>{evrows}</ul>
+<p class="sub">日次(07:05、前日終値): </p><ul>{trig}</ul>
+<p class="sub">日中(30 分ごと、yfinance 5 分足=ほぼ実時間。殿 19:48『為替はリアルタイムじゃないと変』): </p><ul>{intra}</ul>
+<p class="sub">要人発言・話題(毎時、X API 投稿数が 7 日中央値の 3 倍かつ 200 以上で発火。発言は context にだけ使い引用・要約投稿はしない): </p><ul>{topics}</ul>
 """
 out = ROOT / "docs/dashboard/x-editorial-plan-202609.html"; out.write_text(page, encoding="utf-8"); print("bytes", out.stat().st_size)

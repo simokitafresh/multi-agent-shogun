@@ -23,3 +23,15 @@ reactive_triggers:
   - {id: spy_dd_10, rule: "SPY 52 週高値からの下落 <= -10%(初回到達日のみ)", claims: [C05, C17, C13, C06], format: short, funnel_stage: trust, audience: investor, hook_type: question, content_category: A}
   - {id: vix_30, rule: "VIX 終値 >= 30(前日 < 30)", claims: [C01, C34, C22], format: short, funnel_stage: reach, audience: general, hook_type: contradiction, content_category: A}
   - {id: n225_drop_3, rule: "日経 225 日次リターン <= -3%", claims: [C01, C03, C34], format: short, funnel_stage: reach, audience: general, hook_type: contradiction, content_category: A}
+
+# 殿 19:48『為替はリアルタイムじゃないと変。要人発言のトピックも欲しい。俺らはいろんな API 持ってる』
+intraday_triggers:  # x_event_scan.py --intraday(cron 30 分ごと 07:00-23:30 JST、yfinance 5 分足=ほぼ実時間)
+  - {id: usdjpy_intraday, rule: "USD/JPY 直近 2 時間 |Δ| >= 1.0% または当日始値比 |Δ| >= 1.5%", claims: [C16, C34, C01], format: short, funnel_stage: reach, audience: general, hook_type: contradiction, content_category: A}
+  - {id: spy_intraday, rule: "SPY 米国セッション中 当日始値比 |Δ| >= 2.0%", claims: [C01, C03, C34, C23], format: short, funnel_stage: reach, audience: general, hook_type: contradiction, content_category: A}
+topic_triggers:  # x_topic_scan.py(cron 毎時、X API tweets/counts/recent=数値規則。直近 1 時間の投稿数が 7 日中央値の 3 倍以上かつ 200 以上で発火。Grok は『何が言われたか』の要約(context)にだけ使い、claim は bank から)
+  - {id: boj_talk, query: "(日銀 OR 植田総裁 OR 利上げ OR 金融政策決定会合) lang:ja -is:retweet", claims: [C10, C15, C34], format: short, funnel_stage: reach, audience: general, hook_type: contradiction, content_category: B}
+  - {id: fx_intervention, query: "(為替介入 OR レートチェック OR 円安 OR 円高 OR 財務相 OR 財務官) lang:ja -is:retweet", claims: [C16, C34, C01], format: short, funnel_stage: reach, audience: general, hook_type: contradiction, content_category: A}
+  - {id: fed_talk, query: "(FRB OR パウエル OR FOMC OR 利下げ OR 米金利) lang:ja -is:retweet", claims: [C10, C24, C15], format: short, funnel_stage: trust, audience: investor, hook_type: result, content_category: C}
+  - {id: inflation_talk, query: "(インフレ OR 物価 OR CPI OR 実質賃金) lang:ja -is:retweet", claims: [C16, C12, C11], format: short, funnel_stage: reach, audience: general, hook_type: math, content_category: D}
+  - {id: crash_talk, query: "(暴落 OR 急落 OR 狼狽売り OR サーキットブレーカー) lang:ja -is:retweet", claims: [C01, C03, C05, C23], format: short, funnel_stage: reach, audience: general, hook_type: contradiction, content_category: A}
+topic_rule: 要人発言そのものを引用・要約して投稿しない(発言は context)。相場の方向を語らない。claim は bank から、本文は gate、殿承認後に投稿。1 日 1 event unit は reactive/intraday/topic 共通

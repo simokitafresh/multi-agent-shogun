@@ -395,7 +395,8 @@ Observed / Inferred / Unavailable を必ず分ける。例: Observed「9/4 follo
 | 月間 editorial plan(3 軸分離、empty 正常、reuse 理由、event 欄) | 完了 | `scripts/x_ops/x_plan_calendar.py` → `skills/x-post-pipeline/plan_202609.yaml`(52/42/10/34/8) |
 | Stage 1 artifact | 完了 | `docs/dashboard/x-editorial-plan-202609.html`(artifact b2f1b8ae) |
 | 生成器: GROWTH mapping 撤廃、editorial metadata fail-close、Stage 1 gate、--event | 完了 | `scripts/x_ops/x_claim_gen.py` |
-| イベント lane(予定+突発、07:05 scan、12:30 event slot) | 完了 | `event_rules.yaml` / `x_event_scan.py` / poster v1.8 / cron 2 本 |
+| イベント lane(予定+突発 日次 07:05、日中 30 分 為替/SPY、要人発言 topic 毎時、12:30 event slot) | 完了 | `event_rules.yaml`(scheduled 7/reactive 11/intraday 2/topic 5) / `x_event_scan.py` / `x_topic_scan.py` / poster v1.8 / cron 4 本 |
+| (旧行) | — | `event_rules.yaml` / `x_event_scan.py` / poster v1.8 / cron 2 本 |
 | 生成済み本文 61 本 | 保留 | `queue/x_drafts/plan_v1_pregen/`(Stage 1 承認後に claim×format 一致分を紐付け) |
 | Stage 2 本文カレンダー | 待ち | `scripts/x_calendar_render.py`(Stage 1 承認後) |
 
