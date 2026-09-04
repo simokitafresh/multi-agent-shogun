@@ -6553,6 +6553,7 @@ codd:
 | discussion | `queue/lord_conversation.jsonl` 2026-09-04T12:42:30+09:00 X自動投稿の方針を根本から見直してください。 現行の - docs/research/x_account_ops_automation_asis_tobe_5w1h_20260903.md - docs/research/x_post_dr |
 | discussion | `queue/lord_conversation.jsonl` 2026-09-04T13:29:14+09:00 再認可したよ。確認して |
 | discussion | `queue/lord_conversation.jsonl` 2026-09-04T14:38:03+09:00 現在のX投稿パイプラインはかなり良いところまで来ています。 本人X 400件 → Voice抽出 本人note 64記事 → Reasoning抽出 本人添削 → human rewrite corpus few-shot反映 追加5本 → |
+| discussion | `queue/lord_conversation.jsonl` 2026-09-04T14:42:31+09:00 殿裁定 2026-09-04 14:38(X 投稿『少し荒い方が隙が出来てプラス』): Fact correctness≠Explanation completeness。正しい核だけ置いて全部説明しない。conversation gap( |
 
 ## no_auto_extinguish — 自動消火禁止
 
