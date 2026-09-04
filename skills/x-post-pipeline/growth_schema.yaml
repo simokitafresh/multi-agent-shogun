@@ -212,6 +212,7 @@ prohibitions_v1_1: [DM-Signal へ無理につなげる, 全投稿を投資へ着
 format:
   rule: 4 つは別の商品。短いか長いかで分類しない。Short=発見される / Long=信頼される / Thread=深く読まれ会話される / Series=次を期待されフォローされる
   short:
+    lord_rule_20260904_1749: Short は投資ネタに限る(investing/dm/math_probability/money_inequality)。記事の切り抜きは不可。real_estate/medical/business の lane は Long・Thread・Series でのみ扱う
     definition: 短い単独投稿。違和感・数字・主張・疑問・ツッコミを 1 つだけ置く。全部説明しない。conversation gap を残してよい
     length: 全角 140 字以内目安(承認 13 本は 104〜147 字=全て short)
     roles: [reach, follow]

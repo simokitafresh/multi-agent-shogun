@@ -1,0 +1,23 @@
+draft_id: R5-T-1-R1
+slot: C
+created_at: 2026-09-04T17:50:56+09:00
+original_llm: |
+    年率100%の次に聞くのはMaxDD。途中で退場したら年率は絵に描いたモチ。
+    
+    本家デュアルモメンタムは1974〜2023年で年率14.5%、MaxDD -22.7%。S&P500は10.8%と-50.9%。
+    
+    派手な年率より先に、生き残れるかを疑うんよ。
+human_rewrite: |
+    年率100%の次に聞くのはMaxDD。途中で退場したら年率は絵に描いたモチ。
+    
+    本家デュアルモメンタムは1974〜2023年で年率14.5%、MaxDD -22.7%。S&P500は10.8%と-50.9%。
+    
+    派手な年率より先に、生き残れるかを疑うんよ。
+delta_notes: |
+    - 殿 2026-09-04 17:49『シリーズやスレッド、ロングはいい』=無修正承認。Short(記事切り抜き)は不可
+tone_tags: ['approved_as_is']
+structure_tags: ['thread']
+source_style_cluster: 'Round5'
+posted:
+  post_id: ''
+  posted_at: ''

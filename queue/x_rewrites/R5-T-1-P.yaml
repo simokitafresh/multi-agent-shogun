@@ -1,0 +1,31 @@
+draft_id: R5-T-1-P
+slot: C
+created_at: 2026-09-04T17:50:56+09:00
+original_llm: |
+    「年率100%のバックテストです」と言われたら？
+    
+    僕ならまず疑う。
+    
+    ①βを引く
+    ②OOSを見る
+    ③パラメータを全部振る
+    
+    この3つを通っても残るαだけがホンモノ。
+human_rewrite: |
+    「年率100%のバックテストです」と言われたら？
+    
+    僕ならまず疑う。
+    
+    ①βを引く
+    ②OOSを見る
+    ③パラメータを全部振る
+    
+    この3つを通っても残るαだけがホンモノ。
+delta_notes: |
+    - 殿 2026-09-04 17:49『シリーズやスレッド、ロングはいい』=無修正承認。Short(記事切り抜き)は不可
+tone_tags: ['approved_as_is']
+structure_tags: ['thread']
+source_style_cluster: 'Round5'
+posted:
+  post_id: ''
+  posted_at: ''

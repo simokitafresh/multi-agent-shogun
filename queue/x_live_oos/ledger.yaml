@@ -261,3 +261,404 @@ entries:
   post_id: '2095751048963240444'
   posted_at: '2026-09-04T05:49:21Z'
   snapshots: {}
+- draft_id: R5-L-1
+  draft_file: queue/x_drafts/2026-09-04_R5-L-1.txt
+  growth:
+    format: long
+    physical_posts: 1
+    content_lane: investing
+    content_category: C
+    funnel_stage: trust
+    audience: systematic
+    hook_type: story
+    topic_level: 4
+    desired_action: [bookmark, profile, follow]
+    conversation_gap: medium
+    link_type: none
+    external_context: standalone
+    approved: lord_20260904_1749
+  post_id: ''
+  posted_at: ''
+  snapshots: {}
+- draft_id: R5-L-2
+  draft_file: queue/x_drafts/2026-09-04_R5-L-2.txt
+  growth:
+    format: long
+    physical_posts: 1
+    content_lane: investing
+    content_category: E
+    funnel_stage: trust
+    audience: systematic
+    hook_type: story
+    topic_level: 4
+    desired_action: [bookmark, profile, follow]
+    conversation_gap: medium
+    link_type: none
+    external_context: standalone
+    approved: lord_20260904_1749
+  post_id: ''
+  posted_at: ''
+  snapshots: {}
+- draft_id: R5-L-3
+  draft_file: queue/x_drafts/2026-09-04_R5-L-3.txt
+  growth:
+    format: long
+    physical_posts: 1
+    content_lane: business_cash
+    content_category: D
+    funnel_stage: trust
+    audience: systematic
+    hook_type: story
+    topic_level: 4
+    desired_action: [bookmark, profile, follow]
+    conversation_gap: medium
+    link_type: none
+    external_context: standalone
+    approved: lord_20260904_1749
+  post_id: ''
+  posted_at: ''
+  snapshots: {}
+- draft_id: R5-SE-2
+  draft_file: queue/x_drafts/2026-09-04_R5-SE-2.txt
+  growth:
+    format: series_entry
+    physical_posts: 1
+    content_lane: investing
+    content_category: C
+    funnel_stage: follow
+    audience: systematic
+    hook_type: question
+    topic_level: 4
+    desired_action: [bookmark, profile, follow]
+    conversation_gap: medium
+    link_type: none
+    external_context: standalone
+    approved: lord_20260904_1749
+    series_id: trust_system
+    series_order: 2
+    series_total: 9
+  post_id: ''
+  posted_at: ''
+  snapshots: {}
+- draft_id: R5-SE-3
+  draft_file: queue/x_drafts/2026-09-04_R5-SE-3.txt
+  growth:
+    format: series_entry
+    physical_posts: 1
+    content_lane: investing
+    content_category: C
+    funnel_stage: follow
+    audience: systematic
+    hook_type: question
+    topic_level: 4
+    desired_action: [bookmark, profile, follow]
+    conversation_gap: medium
+    link_type: none
+    external_context: standalone
+    approved: lord_20260904_1749
+    series_id: trust_system
+    series_order: 3
+    series_total: 9
+  post_id: ''
+  posted_at: ''
+  snapshots: {}
+- draft_id: R5-SE-4
+  draft_file: queue/x_drafts/2026-09-04_R5-SE-4.txt
+  growth:
+    format: series_entry
+    physical_posts: 1
+    content_lane: investing
+    content_category: C
+    funnel_stage: follow
+    audience: systematic
+    hook_type: question
+    topic_level: 4
+    desired_action: [bookmark, profile, follow]
+    conversation_gap: medium
+    link_type: none
+    external_context: standalone
+    approved: lord_20260904_1749
+    series_id: trust_system
+    series_order: 4
+    series_total: 9
+  post_id: ''
+  posted_at: ''
+  snapshots: {}
+- draft_id: R5-SE-5
+  draft_file: queue/x_drafts/2026-09-04_R5-SE-5.txt
+  growth:
+    format: series_entry
+    physical_posts: 1
+    content_lane: investing
+    content_category: C
+    funnel_stage: follow
+    audience: systematic
+    hook_type: question
+    topic_level: 4
+    desired_action: [bookmark, profile, follow]
+    conversation_gap: medium
+    link_type: none
+    external_context: standalone
+    approved: lord_20260904_1749
+    series_id: trust_system
+    series_order: 5
+    series_total: 9
+  post_id: ''
+  posted_at: ''
+  snapshots: {}
+- draft_id: R5-SE-6
+  draft_file: queue/x_drafts/2026-09-04_R5-SE-6.txt
+  growth:
+    format: series_entry
+    physical_posts: 1
+    content_lane: investing
+    content_category: C
+    funnel_stage: follow
+    audience: systematic
+    hook_type: question
+    topic_level: 4
+    desired_action: [bookmark, profile, follow]
+    conversation_gap: medium
+    link_type: none
+    external_context: standalone
+    approved: lord_20260904_1749
+    series_id: trust_system
+    series_order: 6
+    series_total: 9
+  post_id: ''
+  posted_at: ''
+  snapshots: {}
+- draft_id: R5-SE-7
+  draft_file: queue/x_drafts/2026-09-04_R5-SE-7.txt
+  growth:
+    format: series_entry
+    physical_posts: 1
+    content_lane: investing
+    content_category: C
+    funnel_stage: follow
+    audience: systematic
+    hook_type: question
+    topic_level: 4
+    desired_action: [bookmark, profile, follow]
+    conversation_gap: medium
+    link_type: none
+    external_context: standalone
+    approved: lord_20260904_1749
+    series_id: trust_system
+    series_order: 7
+    series_total: 9
+  post_id: ''
+  posted_at: ''
+  snapshots: {}
+- draft_id: R5-SE-8
+  draft_file: queue/x_drafts/2026-09-04_R5-SE-8.txt
+  growth:
+    format: series_entry
+    physical_posts: 1
+    content_lane: investing
+    content_category: C
+    funnel_stage: follow
+    audience: systematic
+    hook_type: question
+    topic_level: 4
+    desired_action: [bookmark, profile, follow]
+    conversation_gap: medium
+    link_type: none
+    external_context: standalone
+    approved: lord_20260904_1749
+    series_id: trust_system
+    series_order: 8
+    series_total: 9
+  post_id: ''
+  posted_at: ''
+  snapshots: {}
+- draft_id: R5-SE-9
+  draft_file: queue/x_drafts/2026-09-04_R5-SE-9.txt
+  growth:
+    format: series_entry
+    physical_posts: 1
+    content_lane: investing
+    content_category: C
+    funnel_stage: follow
+    audience: systematic
+    hook_type: question
+    topic_level: 4
+    desired_action: [bookmark, profile, follow]
+    conversation_gap: medium
+    link_type: none
+    external_context: standalone
+    approved: lord_20260904_1749
+    series_id: trust_system
+    series_order: 9
+    series_total: 9
+  post_id: ''
+  posted_at: ''
+  snapshots: {}
+- draft_id: R5-T-1-P
+  draft_file: queue/x_drafts/2026-09-04_R5-T-1-P.txt
+  growth:
+    format: thread
+    physical_posts: 1
+    content_lane: investing
+    content_category: C
+    funnel_stage: trust
+    audience: systematic
+    hook_type: question
+    topic_level: 4
+    desired_action: [bookmark, profile, follow]
+    conversation_gap: medium
+    link_type: none
+    external_context: standalone
+    approved: lord_20260904_1749
+    thread_id: R5-T-1
+    thread_position: 0
+  post_id: ''
+  posted_at: ''
+  snapshots: {}
+- draft_id: R5-T-1-R1
+  draft_file: queue/x_drafts/2026-09-04_R5-T-1-R1.txt
+  growth:
+    format: thread
+    physical_posts: 1
+    content_lane: investing
+    content_category: C
+    funnel_stage: trust
+    audience: systematic
+    hook_type: question
+    topic_level: 4
+    desired_action: [bookmark, profile, follow]
+    conversation_gap: medium
+    link_type: none
+    external_context: standalone
+    approved: lord_20260904_1749
+    thread_id: R5-T-1
+    thread_position: 1
+  post_id: ''
+  posted_at: ''
+  snapshots: {}
+- draft_id: R5-T-1-R2
+  draft_file: queue/x_drafts/2026-09-04_R5-T-1-R2.txt
+  growth:
+    format: thread
+    physical_posts: 1
+    content_lane: investing
+    content_category: C
+    funnel_stage: trust
+    audience: systematic
+    hook_type: question
+    topic_level: 4
+    desired_action: [bookmark, profile, follow]
+    conversation_gap: medium
+    link_type: none
+    external_context: standalone
+    approved: lord_20260904_1749
+    thread_id: R5-T-1
+    thread_position: 2
+  post_id: ''
+  posted_at: ''
+  snapshots: {}
+- draft_id: R5-T-1-R3
+  draft_file: queue/x_drafts/2026-09-04_R5-T-1-R3.txt
+  growth:
+    format: thread
+    physical_posts: 1
+    content_lane: investing
+    content_category: C
+    funnel_stage: trust
+    audience: systematic
+    hook_type: question
+    topic_level: 4
+    desired_action: [bookmark, profile, follow]
+    conversation_gap: medium
+    link_type: none
+    external_context: standalone
+    approved: lord_20260904_1749
+    thread_id: R5-T-1
+    thread_position: 3
+  post_id: ''
+  posted_at: ''
+  snapshots: {}
+- draft_id: R5-T-2-P
+  draft_file: queue/x_drafts/2026-09-04_R5-T-2-P.txt
+  growth:
+    format: thread
+    physical_posts: 1
+    content_lane: real_estate_mortgage
+    content_category: A
+    funnel_stage: trust
+    audience: systematic
+    hook_type: question
+    topic_level: 4
+    desired_action: [bookmark, profile, follow]
+    conversation_gap: medium
+    link_type: none
+    external_context: standalone
+    approved: lord_20260904_1749
+    thread_id: R5-T-2
+    thread_position: 0
+  post_id: ''
+  posted_at: ''
+  snapshots: {}
+- draft_id: R5-T-2-R1
+  draft_file: queue/x_drafts/2026-09-04_R5-T-2-R1.txt
+  growth:
+    format: thread
+    physical_posts: 1
+    content_lane: real_estate_mortgage
+    content_category: A
+    funnel_stage: trust
+    audience: systematic
+    hook_type: question
+    topic_level: 4
+    desired_action: [bookmark, profile, follow]
+    conversation_gap: medium
+    link_type: none
+    external_context: standalone
+    approved: lord_20260904_1749
+    thread_id: R5-T-2
+    thread_position: 1
+  post_id: ''
+  posted_at: ''
+  snapshots: {}
+- draft_id: R5-T-2-R2
+  draft_file: queue/x_drafts/2026-09-04_R5-T-2-R2.txt
+  growth:
+    format: thread
+    physical_posts: 1
+    content_lane: real_estate_mortgage
+    content_category: A
+    funnel_stage: trust
+    audience: systematic
+    hook_type: question
+    topic_level: 4
+    desired_action: [bookmark, profile, follow]
+    conversation_gap: medium
+    link_type: none
+    external_context: standalone
+    approved: lord_20260904_1749
+    thread_id: R5-T-2
+    thread_position: 2
+  post_id: ''
+  posted_at: ''
+  snapshots: {}
+- draft_id: R5-T-2-R3
+  draft_file: queue/x_drafts/2026-09-04_R5-T-2-R3.txt
+  growth:
+    format: thread
+    physical_posts: 1
+    content_lane: real_estate_mortgage
+    content_category: A
+    funnel_stage: trust
+    audience: systematic
+    hook_type: question
+    topic_level: 4
+    desired_action: [bookmark, profile, follow]
+    conversation_gap: medium
+    link_type: none
+    external_context: standalone
+    approved: lord_20260904_1749
+    thread_id: R5-T-2
+    thread_position: 3
+  post_id: ''
+  posted_at: ''
+  snapshots: {}

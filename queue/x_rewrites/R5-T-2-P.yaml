@@ -1,0 +1,23 @@
+draft_id: R5-T-2-P
+slot: A
+created_at: 2026-09-04T17:50:56+09:00
+original_llm: |
+    「総資産10億｜経済的自由達成」。まあ凄いよね。
+    
+    中身は物件10億、借金9億、自己資本1億。
+    
+    政策金利2.5%の世界が来たら、この人はどうなるのか。僕ならまず疑う。
+human_rewrite: |
+    「総資産10億｜経済的自由達成」。まあ凄いよね。
+    
+    中身は物件10億、借金9億、自己資本1億。
+    
+    政策金利2.5%の世界が来たら、この人はどうなるのか。僕ならまず疑う。
+delta_notes: |
+    - 殿 2026-09-04 17:49『シリーズやスレッド、ロングはいい』=無修正承認。Short(記事切り抜き)は不可
+tone_tags: ['approved_as_is']
+structure_tags: ['thread']
+source_style_cluster: 'Round5'
+posted:
+  post_id: ''
+  posted_at: ''

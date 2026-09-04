@@ -9,14 +9,14 @@ series:
   funnel_stage: follow
   entries:
   - {order: 1, draft_id: R4-C-1, title: βを引く, post_id: '', posted_at: ''}
-  - {order: 2, draft_id: '', title: OOS を見る}
-  - {order: 3, draft_id: '', title: Walk Forward}
-  - {order: 4, draft_id: '', title: パラメータを全部振る}
-  - {order: 5, draft_id: '', title: 計算日をずらす}
-  - {order: 6, draft_id: '', title: 執行日をずらす}
-  - {order: 7, draft_id: '', title: 二次元でずらす}
-  - {order: 8, draft_id: '', title: 論文を自分のデータで再検証する}
-  - {order: 9, draft_id: '', title: 不採用結果を見る}
+  - {order: 2, draft_id: R5-SE-2, title: OOS を見る}
+  - {order: 3, draft_id: R5-SE-3, title: Walk Forward}
+  - {order: 4, draft_id: R5-SE-4, title: パラメータを全部振る}
+  - {order: 5, draft_id: R5-SE-5, title: 計算日をずらす}
+  - {order: 6, draft_id: R5-SE-6, title: 執行日をずらす}
+  - {order: 7, draft_id: R5-SE-7, title: 二次元でずらす}
+  - {order: 8, draft_id: R5-SE-8, title: 論文を自分のデータで再検証する}
+  - {order: 9, draft_id: R5-SE-9, title: 不採用結果を見る}
 - series_id: interest_world
   title: 金利のある世界
   total: null
