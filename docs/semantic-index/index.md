@@ -15930,6 +15930,7 @@ codd:
 | discussion | `queue/lord_conversation.jsonl` 2026-08-31T02:12:27+09:00 hanzoとsaizoが放置されていないか？ |
 | cmd | `cmd_reflux_insight_202609021458_saizo` |
 | causal_chain | `[[cmd_karo_cycle2_bugverify_b7_b19_20260727]]` (L1376) |
+| discussion | `queue/lord_conversation.jsonl` 2026-09-04T14:01:18+09:00 saizo,kotaro,tobisaruも解放されているか？ |
 
 ## provisional_tobisaru — 仮: Tobisaru
 
