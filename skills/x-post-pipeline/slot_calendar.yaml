@@ -1,8 +1,8 @@
 meta:
-  version: v3 (2026-09-04 16:23 殿レビュー裁定 — 7 日運用・3 content units/day を初期 Live OOS 候補。v2=平日 2/日は superseded)
+  version: v4 (2026-09-04 18:22 殿裁定『投資ネタだけで 4 週間続けて計測』。v3 の 3 units/日・category 固定は superseded)
   doctrine: docs/research/x_editorial_doctrine_20260904.md
   source_ledger: skills/x-post-pipeline/stock_ledger.yaml
-  schedule: 毎日 3 slot(JST 08:30 / 12:30 / 18:30)×7 日=週 21 content_units、2 週 42 slot で 1 周。physical_posts は Thread 分だけ増える
+  schedule: "毎日 2 slot(JST 08:30 Short 投資ネタ / 18:30 Series→Long→Thread の在庫順)×28 日=4 週。category は問わない(slot: '*')。12:30 は廃止"
   ratio: 分類 A-E を 80%(16/20)、F=DM-Signal 検証・実績を 15%(3/20)、G=直接誘導を 5%(1/20)
   rotation: 同じ分類が連続しない。F は各週 1〜2、G は 2 週に 1 回(第 2 週 金 18:30)
   categories:
@@ -18,430 +18,576 @@ meta:
   format_mix_v1_2: superseded by format_mix_v1_4
   old_slots_superseded: 旧 A 教材再掲/B 検証の一切れ/C 運用の形/D 月次/E ガイド告知(マニュアル §5/§6)は廃止。旧 seed は stock_ledger の shift に吸収
   format_mix_v1_4: 週 21 units — Short 13(08:30 全日+12:30 月火木土+18:30 水金)/ Long 3(月木土 18:30)/ Thread 2(火日 18:30)/ Series Entry 3(水金日 12:30)。Conversation Entry は別 lane(units に数えない、conversation_entries に記録)
+  format_mix_v1_6: 08:30 short(investing/dm/math_probability/money_inequality の承認在庫のみ)/ 18:30 series_entry を先に 8 日、次に long 2 日、thread 1 日、以後は在庫順。在庫が無い slot は投稿しない(切り抜き生成に戻さない)
+  measurement: 4 週固定。日曜 09:00 に x_kpi_snapshot.py --summary を docs/research/x_live_oos_weekly/ へ保存。10/2 に Observed のみで読む
 slots:
-- week: 1
-  day: 月
-  time: '08:30'
-  slot: A
+- date: '2026-09-04'
+  day: 木
+  time: '18:30'
+  slot: '*'
   format: short
   funnel_stage: reach
   audience: investor
-  shift: インデックスは優秀だが格差を逆転する装置ではない
-  ledger_key: 'nb244c3d1d704'
-  question: 正しい投資をしているつもりで、なぜ差が縮まらないのか
-- week: 1
-  day: 月
-  time: '12:30'
-  slot: D
+  shift: ''
+  ledger_key: ''
+  question: ''
+- date: '2026-09-05'
+  day: 土
+  time: '08:30'
+  slot: '*'
   format: short
   funnel_stage: reach
-  audience: general
-  shift: 平均リターンでは比べられない(算術平均と幾何平均)
+  audience: investor
+  shift: ''
   ledger_key: ''
-  question: +50% と -50% を交互に繰り返す資産の平均は 0% なのに、なぜ減るのか
-- week: 1
+  question: ''
+- date: '2026-09-05'
+  day: 土
+  time: '18:30'
+  slot: '*'
+  format: series_entry
+  funnel_stage: follow
+  audience: investor
+  shift: ''
+  ledger_key: ''
+  question: ''
+- date: '2026-09-06'
+  day: 日
+  time: '08:30'
+  slot: '*'
+  format: short
+  funnel_stage: reach
+  audience: investor
+  shift: ''
+  ledger_key: ''
+  question: ''
+- date: '2026-09-06'
+  day: 日
+  time: '18:30'
+  slot: '*'
+  format: series_entry
+  funnel_stage: follow
+  audience: investor
+  shift: ''
+  ledger_key: ''
+  question: ''
+- date: '2026-09-07'
+  day: 月
+  time: '08:30'
+  slot: '*'
+  format: short
+  funnel_stage: reach
+  audience: investor
+  shift: ''
+  ledger_key: ''
+  question: ''
+- date: '2026-09-07'
   day: 月
   time: '18:30'
-  slot: B
-  format: long
-  funnel_stage: trust
-  audience: systematic
-  shift: 未来を予測しない。今強いものを持ち、弱くなったら降りる
-  ledger_key: 'n171daa7f92a1'
-  question: 予測をやめると何が残るか
-- week: 1
+  slot: '*'
+  format: series_entry
+  funnel_stage: follow
+  audience: investor
+  shift: ''
+  ledger_key: ''
+  question: ''
+- date: '2026-09-08'
   day: 火
   time: '08:30'
-  slot: E
+  slot: '*'
   format: short
-  funnel_stage: trust
-  audience: systematic
-  shift: 月末判定がたまたま良かっただけでは、と疑って判定日をずらす
-  ledger_key: 'nc41e1f481754'
-  question: 1 日ずらして壊れる戦略は偶然か
-- week: 1
-  day: 火
-  time: '12:30'
-  slot: C
-  format: short
-  funnel_stage: trust
-  audience: systematic
-  shift: バックテスト 1 本では何も分からない
-  ledger_key: 'n1573f826b53f'
-  question: 年率 90% のバックテストを見て最初に疑うことは何か
-- week: 1
+  funnel_stage: reach
+  audience: investor
+  shift: ''
+  ledger_key: ''
+  question: ''
+- date: '2026-09-08'
   day: 火
   time: '18:30'
-  slot: F
+  slot: '*'
+  format: series_entry
+  funnel_stage: follow
+  audience: investor
+  shift: ''
+  ledger_key: ''
+  question: ''
+- date: '2026-09-09'
+  day: 水
+  time: '08:30'
+  slot: '*'
+  format: short
+  funnel_stage: reach
+  audience: investor
+  shift: ''
+  ledger_key: ''
+  question: ''
+- date: '2026-09-09'
+  day: 水
+  time: '18:30'
+  slot: '*'
+  format: series_entry
+  funnel_stage: follow
+  audience: investor
+  shift: ''
+  ledger_key: ''
+  question: ''
+- date: '2026-09-10'
+  day: 木
+  time: '08:30'
+  slot: '*'
+  format: short
+  funnel_stage: reach
+  audience: investor
+  shift: ''
+  ledger_key: ''
+  question: ''
+- date: '2026-09-10'
+  day: 木
+  time: '18:30'
+  slot: '*'
+  format: series_entry
+  funnel_stage: follow
+  audience: investor
+  shift: ''
+  ledger_key: ''
+  question: ''
+- date: '2026-09-11'
+  day: 金
+  time: '08:30'
+  slot: '*'
+  format: short
+  funnel_stage: reach
+  audience: investor
+  shift: ''
+  ledger_key: ''
+  question: ''
+- date: '2026-09-11'
+  day: 金
+  time: '18:30'
+  slot: '*'
+  format: series_entry
+  funnel_stage: follow
+  audience: investor
+  shift: ''
+  ledger_key: ''
+  question: ''
+- date: '2026-09-12'
+  day: 土
+  time: '08:30'
+  slot: '*'
+  format: short
+  funnel_stage: reach
+  audience: investor
+  shift: ''
+  ledger_key: ''
+  question: ''
+- date: '2026-09-12'
+  day: 土
+  time: '18:30'
+  slot: '*'
+  format: series_entry
+  funnel_stage: follow
+  audience: investor
+  shift: ''
+  ledger_key: ''
+  question: ''
+- date: '2026-09-13'
+  day: 日
+  time: '08:30'
+  slot: '*'
+  format: short
+  funnel_stage: reach
+  audience: investor
+  shift: ''
+  ledger_key: ''
+  question: ''
+- date: '2026-09-13'
+  day: 日
+  time: '18:30'
+  slot: '*'
+  format: long
+  funnel_stage: trust
+  audience: investor
+  shift: ''
+  ledger_key: ''
+  question: ''
+- date: '2026-09-14'
+  day: 月
+  time: '08:30'
+  slot: '*'
+  format: short
+  funnel_stage: reach
+  audience: investor
+  shift: ''
+  ledger_key: ''
+  question: ''
+- date: '2026-09-14'
+  day: 月
+  time: '18:30'
+  slot: '*'
+  format: long
+  funnel_stage: trust
+  audience: investor
+  shift: ''
+  ledger_key: ''
+  question: ''
+- date: '2026-09-15'
+  day: 火
+  time: '08:30'
+  slot: '*'
+  format: short
+  funnel_stage: reach
+  audience: investor
+  shift: ''
+  ledger_key: ''
+  question: ''
+- date: '2026-09-15'
+  day: 火
+  time: '18:30'
+  slot: '*'
   format: thread
   funnel_stage: trust
-  audience: dual_momentum
-  shift: 公開成績の見せ方=リターンより先に MaxDD とベンチ比較
-  ledger_key: 'ncb0f14c4ebdb'
-  question: 19 年の公開成績で、まず見るべき数字はどれか
-- week: 1
+  audience: investor
+  shift: ''
+  ledger_key: ''
+  question: ''
+- date: '2026-09-16'
   day: 水
   time: '08:30'
-  slot: D
-  format: short
-  funnel_stage: reach
-  audience: general
-  shift: 期待値が正でも資産が減る経路はある
-  ledger_key: 'nb9c81390c146'
-  question: 勝てる戦略で負ける人は何を見ていなかったか
-- week: 1
-  day: 水
-  time: '12:30'
-  slot: E
-  format: series_entry
-  funnel_stage: follow
-  audience: systematic
-  series_id: trust_system
-  shift: 執行日依存では、と疑って執行日をずらす
-  ledger_key: 'nb13c356f36ff'
-  question: 月初第 1 営業日に間に合わなかったら成績は変わるか
-- week: 1
-  day: 水
-  time: '18:30'
-  slot: A
+  slot: '*'
   format: short
   funnel_stage: reach
   audience: investor
-  shift: 長期なら上がる、で思考停止していないか(含み損の時間)
-  ledger_key: 'nb338776237c5'
-  question: 投資人生の何 % が含み損か
-- week: 1
-  day: 木
-  time: '08:30'
-  slot: B
-  format: short
-  funnel_stage: follow
-  audience: systematic
-  shift: デュアルモメンタムの本質は大勝ちより大負けを避ける構造
-  ledger_key: 'n171daa7f92a1'
-  question: 年率 3.7 ポイントの差より大きい差はどこにあるか
-- week: 1
-  day: 木
-  time: '12:30'
-  slot: C
-  format: short
-  funnel_stage: trust
-  audience: systematic
-  shift: 最良値を探すより壊れる領域が無いかを見る
-  ledger_key: 'n8da2aaf6ff34'
-  question: 縦と横を調べた。斜めはどうか
-- week: 1
-  day: 木
+  shift: ''
+  ledger_key: ''
+  question: ''
+- date: '2026-09-16'
+  day: 水
   time: '18:30'
-  slot: D
-  format: long
-  funnel_stage: trust
-  audience: general
-  shift: 複利は魔法ではなくリスク量の増加でもある(ボラティリティドラッグ)
-  ledger_key: 'nd28c8bceb705'
-  question: 3 倍レバレッジの年率 43.7% が「3 倍」にならない理由
-- week: 1
-  day: 金
-  time: '08:30'
-  slot: E
-  format: short
-  funnel_stage: trust
-  audience: systematic
-  shift: 論文で良かった方法は自分のデータでも良いか、と疑って再検証する
-  ledger_key: 'nb44887f51c66'
-  question: 半減期 78 日の EMA は本当に最強か
-- week: 1
-  day: 金
-  time: '12:30'
-  slot: F
+  slot: '*'
   format: series_entry
   funnel_stage: follow
-  audience: dual_momentum
-  series_id: interest_world
-  shift: 不採用実験を公開する(段階的リバランス、低相関選抜)
-  ledger_key: 'ned3f1dc3c266'
-  question: 直感的に良さそうで、検証したら捨てた方法
-- week: 1
-  day: 金
-  time: '18:30'
-  slot: A
+  audience: investor
+  shift: ''
+  ledger_key: ''
+  question: ''
+- date: '2026-09-17'
+  day: 木
+  time: '08:30'
+  slot: '*'
   format: short
   funnel_stage: reach
   audience: investor
-  shift: 1 個のパラメータで勝った戦略はむしろ疑う
+  shift: ''
   ledger_key: ''
-  question: 「最適化済み」は褒め言葉か
-- week: 1
-  day: 土
-  time: '08:30'
-  slot: B
-  format: short
-  funnel_stage: follow
-  audience: systematic
-  shift: 相場観を捨てるための投資法
-  ledger_key: 'n71204f1c655d'
-  question: 相場観が当たる人は何人いるか
-- week: 1
-  day: 土
-  time: '12:30'
-  slot: D
-  format: short
-  funnel_stage: reach
-  audience: general
-  shift: 相関は危機の時に上がる
-  ledger_key: 'n5370e64f57ee'
-  question: 分散が効かなくなる瞬間はいつか
-- week: 1
-  day: 土
+  question: ''
+- date: '2026-09-17'
+  day: 木
   time: '18:30'
-  slot: C
+  slot: '*'
   format: long
   funnel_stage: trust
-  audience: systematic
-  shift: IS で良くて OOS で崩れるものは、まだ何も証明していない
-  ledger_key: 'n1573f826b53f'
-  question: 見たことのないデータで試したか
-- week: 1
-  day: 日
-  time: '08:30'
-  slot: F
-  format: short
-  funnel_stage: convert
-  audience: dual_momentum
-  shift: 層を重ねても β の水増しではない(数万通り全てで α 正)
-  ledger_key: 'nd28c8bceb705'
-  question: 偶然では説明できない数はいくつか
-- week: 1
-  day: 日
-  time: '12:30'
-  slot: G
-  format: series_entry
-  funnel_stage: follow
-  audience: dm_signal
-  series_id: interest_world
-  shift: この検証思想の実装が DM-Signal。入口は公開表
+  audience: investor
+  shift: ''
   ledger_key: ''
-  question: 検証の続きはどこで見られるか
-- week: 1
-  day: 日
+  question: ''
+- date: '2026-09-18'
+  day: 金
+  time: '08:30'
+  slot: '*'
+  format: short
+  funnel_stage: reach
+  audience: investor
+  shift: ''
+  ledger_key: ''
+  question: ''
+- date: '2026-09-18'
+  day: 金
   time: '18:30'
-  slot: A
+  slot: '*'
   format: thread
   funnel_stage: trust
   audience: investor
-  shift: インデックスは優秀だが格差を逆転する装置ではない
-  ledger_key: 'nb244c3d1d704'
-  question: 正しい投資をしているつもりで、なぜ差が縮まらないのか
-- week: 2
-  day: 月
+  shift: ''
+  ledger_key: ''
+  question: ''
+- date: '2026-09-19'
+  day: 土
   time: '08:30'
-  slot: D
+  slot: '*'
   format: short
   funnel_stage: reach
-  audience: general
-  shift: 平均リターンでは比べられない(算術平均と幾何平均)
+  audience: investor
+  shift: ''
   ledger_key: ''
-  question: +50% と -50% を交互に繰り返す資産の平均は 0% なのに、なぜ減るのか
-- week: 2
-  day: 月
-  time: '12:30'
-  slot: B
-  format: short
-  funnel_stage: follow
-  audience: systematic
-  shift: 未来を予測しない。今強いものを持ち、弱くなったら降りる
-  ledger_key: 'n171daa7f92a1'
-  question: 予測をやめると何が残るか
-- week: 2
-  day: 月
+  question: ''
+- date: '2026-09-19'
+  day: 土
   time: '18:30'
-  slot: E
+  slot: '*'
+  format: series_entry
+  funnel_stage: follow
+  audience: investor
+  shift: ''
+  ledger_key: ''
+  question: ''
+- date: '2026-09-20'
+  day: 日
+  time: '08:30'
+  slot: '*'
+  format: short
+  funnel_stage: reach
+  audience: investor
+  shift: ''
+  ledger_key: ''
+  question: ''
+- date: '2026-09-20'
+  day: 日
+  time: '18:30'
+  slot: '*'
   format: long
   funnel_stage: trust
-  audience: systematic
-  shift: 月末判定がたまたま良かっただけでは、と疑って判定日をずらす
-  ledger_key: 'nc41e1f481754'
-  question: 1 日ずらして壊れる戦略は偶然か
-- week: 2
-  day: 火
+  audience: investor
+  shift: ''
+  ledger_key: ''
+  question: ''
+- date: '2026-09-21'
+  day: 月
   time: '08:30'
-  slot: C
+  slot: '*'
   format: short
-  funnel_stage: trust
-  audience: systematic
-  shift: バックテスト 1 本では何も分からない
-  ledger_key: 'n1573f826b53f'
-  question: 年率 90% のバックテストを見て最初に疑うことは何か
-- week: 2
-  day: 火
-  time: '12:30'
-  slot: F
-  format: short
-  funnel_stage: convert
-  audience: dual_momentum
-  shift: 公開成績の見せ方=リターンより先に MaxDD とベンチ比較
-  ledger_key: 'ncb0f14c4ebdb'
-  question: 19 年の公開成績で、まず見るべき数字はどれか
-- week: 2
-  day: 火
+  funnel_stage: reach
+  audience: investor
+  shift: ''
+  ledger_key: ''
+  question: ''
+- date: '2026-09-21'
+  day: 月
   time: '18:30'
-  slot: D
+  slot: '*'
   format: thread
   funnel_stage: trust
-  audience: general
-  shift: 期待値が正でも資産が減る経路はある
-  ledger_key: 'nb9c81390c146'
-  question: 勝てる戦略で負ける人は何を見ていなかったか
-- week: 2
-  day: 水
-  time: '08:30'
-  slot: E
-  format: short
-  funnel_stage: trust
-  audience: systematic
-  shift: 執行日依存では、と疑って執行日をずらす
-  ledger_key: 'nb13c356f36ff'
-  question: 月初第 1 営業日に間に合わなかったら成績は変わるか
-- week: 2
-  day: 水
-  time: '12:30'
-  slot: A
-  format: series_entry
-  funnel_stage: follow
   audience: investor
-  series_id: interest_world
-  shift: 長期なら上がる、で思考停止していないか(含み損の時間)
-  ledger_key: 'nb338776237c5'
-  question: 投資人生の何 % が含み損か
-- week: 2
-  day: 水
-  time: '18:30'
-  slot: B
-  format: short
-  funnel_stage: follow
-  audience: systematic
-  shift: デュアルモメンタムの本質は大勝ちより大負けを避ける構造
-  ledger_key: 'n171daa7f92a1'
-  question: 年率 3.7 ポイントの差より大きい差はどこにあるか
-- week: 2
-  day: 木
+  shift: ''
+  ledger_key: ''
+  question: ''
+- date: '2026-09-22'
+  day: 火
   time: '08:30'
-  slot: C
-  format: short
-  funnel_stage: trust
-  audience: systematic
-  shift: 最良値を探すより壊れる領域が無いかを見る
-  ledger_key: 'n8da2aaf6ff34'
-  question: 縦と横を調べた。斜めはどうか
-- week: 2
-  day: 木
-  time: '12:30'
-  slot: D
+  slot: '*'
   format: short
   funnel_stage: reach
-  audience: general
-  shift: 複利は魔法ではなくリスク量の増加でもある(ボラティリティドラッグ)
-  ledger_key: 'nd28c8bceb705'
-  question: 3 倍レバレッジの年率 43.7% が「3 倍」にならない理由
-- week: 2
-  day: 木
+  audience: investor
+  shift: ''
+  ledger_key: ''
+  question: ''
+- date: '2026-09-22'
+  day: 火
   time: '18:30'
-  slot: E
-  format: long
-  funnel_stage: trust
-  audience: systematic
-  shift: 論文で良かった方法は自分のデータでも良いか、と疑って再検証する
-  ledger_key: 'nb44887f51c66'
-  question: 半減期 78 日の EMA は本当に最強か
-- week: 2
-  day: 金
-  time: '08:30'
-  slot: F
-  format: short
-  funnel_stage: convert
-  audience: dual_momentum
-  shift: 不採用実験を公開する(段階的リバランス、低相関選抜)
-  ledger_key: 'ned3f1dc3c266'
-  question: 直感的に良さそうで、検証したら捨てた方法
-- week: 2
-  day: 金
-  time: '12:30'
-  slot: A
+  slot: '*'
   format: series_entry
   funnel_stage: follow
   audience: investor
-  series_id: interest_world
-  shift: 1 個のパラメータで勝った戦略はむしろ疑う
+  shift: ''
   ledger_key: ''
-  question: 「最適化済み」は褒め言葉か
-- week: 2
-  day: 金
-  time: '18:30'
-  slot: B
-  format: short
-  funnel_stage: follow
-  audience: systematic
-  shift: 相場観を捨てるための投資法
-  ledger_key: 'n71204f1c655d'
-  question: 相場観が当たる人は何人いるか
-- week: 2
-  day: 土
+  question: ''
+- date: '2026-09-23'
+  day: 水
   time: '08:30'
-  slot: D
+  slot: '*'
   format: short
   funnel_stage: reach
-  audience: general
-  shift: 相関は危機の時に上がる
-  ledger_key: 'n5370e64f57ee'
-  question: 分散が効かなくなる瞬間はいつか
-- week: 2
-  day: 土
-  time: '12:30'
-  slot: C
-  format: short
-  funnel_stage: trust
-  audience: systematic
-  shift: IS で良くて OOS で崩れるものは、まだ何も証明していない
-  ledger_key: 'n1573f826b53f'
-  question: 見たことのないデータで試したか
-- week: 2
-  day: 土
+  audience: investor
+  shift: ''
+  ledger_key: ''
+  question: ''
+- date: '2026-09-23'
+  day: 水
   time: '18:30'
-  slot: F
+  slot: '*'
   format: long
   funnel_stage: trust
-  audience: dual_momentum
-  shift: 層を重ねても β の水増しではない(数万通り全てで α 正)
-  ledger_key: 'nd28c8bceb705'
-  question: 偶然では説明できない数はいくつか
-- week: 2
-  day: 日
-  time: '08:30'
-  slot: G
-  format: short
-  funnel_stage: convert
-  audience: dm_signal
-  shift: この検証思想の実装が DM-Signal。入口は公開表
-  ledger_key: ''
-  question: 検証の続きはどこで見られるか
-- week: 2
-  day: 日
-  time: '12:30'
-  slot: A
-  format: series_entry
-  funnel_stage: follow
   audience: investor
-  series_id: interest_world
-  shift: インデックスは優秀だが格差を逆転する装置ではない
-  ledger_key: 'nb244c3d1d704'
-  question: 正しい投資をしているつもりで、なぜ差が縮まらないのか
-- week: 2
-  day: 日
+  shift: ''
+  ledger_key: ''
+  question: ''
+- date: '2026-09-24'
+  day: 木
+  time: '08:30'
+  slot: '*'
+  format: short
+  funnel_stage: reach
+  audience: investor
+  shift: ''
+  ledger_key: ''
+  question: ''
+- date: '2026-09-24'
+  day: 木
   time: '18:30'
-  slot: D
+  slot: '*'
   format: thread
   funnel_stage: trust
-  audience: general
-  shift: 平均リターンでは比べられない(算術平均と幾何平均)
+  audience: investor
+  shift: ''
   ledger_key: ''
-  question: +50% と -50% を交互に繰り返す資産の平均は 0% なのに、なぜ減るのか
+  question: ''
+- date: '2026-09-25'
+  day: 金
+  time: '08:30'
+  slot: '*'
+  format: short
+  funnel_stage: reach
+  audience: investor
+  shift: ''
+  ledger_key: ''
+  question: ''
+- date: '2026-09-25'
+  day: 金
+  time: '18:30'
+  slot: '*'
+  format: series_entry
+  funnel_stage: follow
+  audience: investor
+  shift: ''
+  ledger_key: ''
+  question: ''
+- date: '2026-09-26'
+  day: 土
+  time: '08:30'
+  slot: '*'
+  format: short
+  funnel_stage: reach
+  audience: investor
+  shift: ''
+  ledger_key: ''
+  question: ''
+- date: '2026-09-26'
+  day: 土
+  time: '18:30'
+  slot: '*'
+  format: long
+  funnel_stage: trust
+  audience: investor
+  shift: ''
+  ledger_key: ''
+  question: ''
+- date: '2026-09-27'
+  day: 日
+  time: '08:30'
+  slot: '*'
+  format: short
+  funnel_stage: reach
+  audience: investor
+  shift: ''
+  ledger_key: ''
+  question: ''
+- date: '2026-09-27'
+  day: 日
+  time: '18:30'
+  slot: '*'
+  format: thread
+  funnel_stage: trust
+  audience: investor
+  shift: ''
+  ledger_key: ''
+  question: ''
+- date: '2026-09-28'
+  day: 月
+  time: '08:30'
+  slot: '*'
+  format: short
+  funnel_stage: reach
+  audience: investor
+  shift: ''
+  ledger_key: ''
+  question: ''
+- date: '2026-09-28'
+  day: 月
+  time: '18:30'
+  slot: '*'
+  format: series_entry
+  funnel_stage: follow
+  audience: investor
+  shift: ''
+  ledger_key: ''
+  question: ''
+- date: '2026-09-29'
+  day: 火
+  time: '08:30'
+  slot: '*'
+  format: short
+  funnel_stage: reach
+  audience: investor
+  shift: ''
+  ledger_key: ''
+  question: ''
+- date: '2026-09-29'
+  day: 火
+  time: '18:30'
+  slot: '*'
+  format: long
+  funnel_stage: trust
+  audience: investor
+  shift: ''
+  ledger_key: ''
+  question: ''
+- date: '2026-09-30'
+  day: 水
+  time: '08:30'
+  slot: '*'
+  format: short
+  funnel_stage: reach
+  audience: investor
+  shift: ''
+  ledger_key: ''
+  question: ''
+- date: '2026-09-30'
+  day: 水
+  time: '18:30'
+  slot: '*'
+  format: thread
+  funnel_stage: trust
+  audience: investor
+  shift: ''
+  ledger_key: ''
+  question: ''
+- date: '2026-10-01'
+  day: 木
+  time: '08:30'
+  slot: '*'
+  format: short
+  funnel_stage: reach
+  audience: investor
+  shift: ''
+  ledger_key: ''
+  question: ''
+- date: '2026-10-01'
+  day: 木
+  time: '18:30'
+  slot: '*'
+  format: series_entry
+  funnel_stage: follow
+  audience: investor
+  shift: ''
+  ledger_key: ''
+  question: ''
+- date: '2026-10-02'
+  day: 金
+  time: '08:30'
+  slot: '*'
+  format: short
+  funnel_stage: reach
+  audience: investor
+  shift: ''
+  ledger_key: ''
+  question: ''
+- date: '2026-10-02'
+  day: 金
+  time: '18:30'
+  slot: '*'
+  format: long
+  funnel_stage: trust
+  audience: investor
+  shift: ''
+  ledger_key: ''
+  question: ''

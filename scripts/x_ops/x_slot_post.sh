@@ -1,5 +1,5 @@
 #!/bin/bash
-# 定時投稿(live OOS)。cron 毎日 08:30/12:30/18:30 JST から呼ぶ(v1.4: 7 日運用・3 content_units/日)。
+# 定時投稿(live OOS)。cron 毎日 08:30/18:30 JST(v1.6: 殿裁定 2026-09-04 18:22 投資ネタだけで 4 週間、2 units/日)。
 # v1.5(2026-09-04 17:50): 選定は live OOS 台帳の事前登録(content_category × format)で行う。
 #   calendar の slot 文字=category。format 一致を優先し、無ければ同 category の short(format_fallback を記録)、それも無ければ次 slot へ。
 #   Thread は x_thread_post.sh へ委譲(親+自己リプ=content_units 1)。
@@ -7,7 +7,7 @@
 set -euo pipefail
 # T3-S-69(2026-09-04 16:25): 引数無視で本番投稿が走った。引数は fail-close にする
 DRY=0
-for a in "$@"; do case "$a" in --dry-run) DRY=1;; --help|-h) echo "usage: x_slot_post.sh [--dry-run]  (cron: 30 8,12,18 * * *)"; exit 0;; *) echo "x_slot_post.sh: unknown arg $a" >&2; exit 2;; esac; done
+for a in "$@"; do case "$a" in --dry-run) DRY=1;; --help|-h) echo "usage: x_slot_post.sh [--dry-run]  (cron: 30 8,18 * * *)"; exit 0;; *) echo "x_slot_post.sh: unknown arg $a" >&2; exit 2;; esac; done
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
 cd "$ROOT"
 CAL="skills/x-post-pipeline/slot_calendar.yaml"
@@ -34,11 +34,9 @@ n = len(slots)
 for k in range(n):
     idx = (ptr + k) % n
     cat, fm = slots[idx]
-    cand = [e for e in ents if g(e).get("content_category") == cat and g(e).get("format") == fm and not g(e).get("thread_position")]
+    cand = [e for e in ents if (cat == "*" or g(e).get("content_category") == cat) and g(e).get("format") == fm and not g(e).get("thread_position")]
     fb = ""
-    if not cand:
-        cand = [e for e in ents if g(e).get("content_category") == cat and g(e).get("format") == "short"]
-        fb = "format_fallback=short"
+    # v1.6(殿裁定 18:22): 在庫が無い slot は投稿しない(fallback 廃止)。次 slot へ繰り下げるだけ
     if cand:
         e = sorted(cand, key=lambda e: e["draft_id"])[0]
         print("\t".join([str(idx), cat, fm, e["draft_id"], str(g(e).get("format")), fb, os.path.basename(str(e["draft_file"])).rsplit(".", 1)[0]]))
