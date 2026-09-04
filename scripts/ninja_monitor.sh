@@ -1452,6 +1452,19 @@ ninja_monitor_script_identity() {
     printf '%s %s\n' "$script_mtime" "$script_fingerprint"
 }
 
+# Hot-reload polling must distinguish a real file change even when the
+# filesystem clock remains within one second. The watcher compares metadata
+# plus a content fingerprint so same-size, same-mtime edits are observable.
+ninja_monitor_script_watch_identity() {
+    local script_path="$1"
+    local metadata fingerprint
+    metadata="$(stat -c '%Y:%y:%s:%i' "$script_path" 2>/dev/null || true)"
+    [ -n "$metadata" ] || return 0
+    fingerprint="$(sha256sum "$script_path" 2>/dev/null | awk '{print $1}' || true)"
+    [ -n "$fingerprint" ] || return 0
+    printf '%s:%s\n' "$metadata" "$fingerprint"
+}
+
 ninja_monitor_owner_identity_file() {
     printf '%s.identity\n' "$1"
 }
@@ -15016,12 +15029,12 @@ _ninja_monitor_read_hot_reload_owner_record() {
 
 _ninja_monitor_hot_reload_watch() {
     local script_path="$1"
-    local start_mtime="$2"
+    local start_identity="$2"
     local generation="$3"
     local parent_pid="$4"
     local poll_sec="${NINJA_MONITOR_HOT_RELOAD_POLL_SEC:-1}"
     local owner_file="${NINJA_MONITOR_OWNER_FILE:-${STATE_DIR}/ninja_monitor.owner}"
-    local owner_pid owner_generation owner_heartbeat current_mtime
+    local owner_pid owner_generation owner_heartbeat current_identity
 
     exec </dev/null >> "$LOG" 2>&1
     close_inherited_non_stdio_fds
@@ -15031,15 +15044,15 @@ _ninja_monitor_hot_reload_watch() {
             < <(_ninja_monitor_read_hot_reload_owner_record "$owner_file" "$parent_pid") || return 0
         _ninja_monitor_owner_record_matches "$owner_file" "$generation" "$parent_pid" || return 0
 
-        current_mtime="$(stat -c %Y "$script_path" 2>/dev/null || true)"
-        if [ -n "$current_mtime" ] && [ "$current_mtime" != "$start_mtime" ]; then
+        current_identity="$(ninja_monitor_script_watch_identity "$script_path")"
+        if [ -n "$current_identity" ] && [ "$current_identity" != "$start_identity" ]; then
             # stat on /mnt/c can itself stall.  Ownership may have changed
             # while it was blocked, so revalidate immediately before launch.
             IFS=$'\t' read -r owner_pid owner_generation owner_heartbeat _legacy_mtime _legacy_fingerprint \
                 < <(_ninja_monitor_read_hot_reload_owner_record "$owner_file" "$parent_pid") || return 0
             _ninja_monitor_owner_record_matches "$owner_file" "$generation" "$parent_pid" || return 0
-            log "HOT-RELOAD-DETECTED: generation=${generation} mtime ${start_mtime} -> ${current_mtime}"
-            _ninja_monitor_launch_hot_reload_successor "$script_path" "$generation" "$current_mtime"
+            log "HOT-RELOAD-DETECTED: generation=${generation} identity ${start_identity} -> ${current_identity}"
+            _ninja_monitor_launch_hot_reload_successor "$script_path" "$generation" "$current_identity"
             return 0
         fi
         sleep "$poll_sec"
@@ -15053,17 +15066,18 @@ start_ninja_monitor_hot_reload_watch() {
     # named bash -c process; the script path is environment-only so neither
     # supervisor pgrep predicate can match it.
     export -f log close_inherited_non_stdio_fds ninja_monitor_read_owner_record \
+        ninja_monitor_script_watch_identity \
         _ninja_monitor_pid_is_live _ninja_monitor_owner_record_matches \
         _ninja_monitor_launch_hot_reload_successor \
         _ninja_monitor_read_hot_reload_owner_record _ninja_monitor_hot_reload_watch
     NINJA_MONITOR_WATCH_SCRIPT_PATH="$_NM_SCRIPT_PATH"
-    NINJA_MONITOR_WATCH_START_MTIME="$_NM_START_MTIME"
+    NINJA_MONITOR_WATCH_START_IDENTITY="$(ninja_monitor_script_watch_identity "$_NM_SCRIPT_PATH")"
     NINJA_MONITOR_WATCH_GENERATION="$NINJA_MONITOR_GENERATION"
     NINJA_MONITOR_WATCH_PARENT_PID="$$"
     export LOG STATE_DIR NINJA_MONITOR_OWNER_FILE NINJA_MONITOR_HOT_RELOAD_POLL_SEC
-    export NINJA_MONITOR_WATCH_SCRIPT_PATH NINJA_MONITOR_WATCH_START_MTIME
+    export NINJA_MONITOR_WATCH_SCRIPT_PATH NINJA_MONITOR_WATCH_START_IDENTITY
     export NINJA_MONITOR_WATCH_GENERATION NINJA_MONITOR_WATCH_PARENT_PID
-    nohup bash -c '_ninja_monitor_hot_reload_watch "$NINJA_MONITOR_WATCH_SCRIPT_PATH" "$NINJA_MONITOR_WATCH_START_MTIME" "$NINJA_MONITOR_WATCH_GENERATION" "$NINJA_MONITOR_WATCH_PARENT_PID"' \
+    nohup bash -c '_ninja_monitor_hot_reload_watch "$NINJA_MONITOR_WATCH_SCRIPT_PATH" "$NINJA_MONITOR_WATCH_START_IDENTITY" "$NINJA_MONITOR_WATCH_GENERATION" "$NINJA_MONITOR_WATCH_PARENT_PID"' \
         shogun-hot-reload-watch >> "$LOG" 2>&1 &
     NINJA_MONITOR_HOT_RELOAD_WATCH_PID=$!
     disown "$NINJA_MONITOR_HOT_RELOAD_WATCH_PID" 2>/dev/null || true

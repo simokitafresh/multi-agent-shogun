@@ -1035,7 +1035,8 @@ wait "$maintenance_pid"
         source "$PROJECT_ROOT/scripts/ninja_monitor.sh"
         unset NINJA_MONITOR_LIB_ONLY
 
-        root="$BATS_TEST_TMPDIR/hot-reload-watch"
+        for iteration in $(seq 1 20); do
+        root="$BATS_TEST_TMPDIR/hot-reload-watch-$iteration"
         STATE_DIR="$root/state"
         LOG="$root/monitor.log"
         NINJA_MONITOR_OWNER_FILE="$STATE_DIR/ninja_monitor.owner"
@@ -1043,8 +1044,9 @@ wait "$maintenance_pid"
         capture="$root/launch.capture"
         generation="generation-live"
         mkdir -p "$SCRIPT_DIR" "$STATE_DIR"
-        printf "#!/bin/bash\n" > "$script_path"
+        printf "#!/bin/bash\n#A\n" > "$script_path"
         start_mtime=$(stat -c %Y "$script_path")
+        start_mtime_exact=$(stat -c %y "$script_path")
         printf "%s %s %s\n" "$$" "$generation" "$EPOCHSECONDS" > "$STATE_DIR/ninja_monitor.owner"
         NINJA_MONITOR_HOT_RELOAD_POLL_SEC=0.05
         # The fixture shell is not named ninja_monitor.sh; production uses the
@@ -1073,7 +1075,20 @@ wait "$maintenance_pid"
         [[ "$watcher_cmd" == *"shogun-hot-reload-watch"* ]]
         [[ "$watcher_cmd" != *"ninja_monitor.sh"* ]]
         sleep 0.1
-        touch -d "@$((start_mtime + 1))" "$script_path"
+        printf "checkpoint=watcher_started iteration=%s pid=%s cmd=%s\n" "$iteration" "$watcher_pid" "$watcher_cmd"
+        sleep 0.1
+        # Replace same-size content while restoring the exact original mtime.
+        # The watcher identity must detect this without a clock tick.
+        before_metadata=$(stat -c '%Y:%y:%s:%i' "$script_path")
+        before_hash=$(sha256sum "$script_path" | awk "{print \$1}")
+        printf "#!/bin/bash\n#B\n" > "$script_path"
+        touch -d "$start_mtime_exact" "$script_path"
+        after_metadata=$(stat -c '%Y:%y:%s:%i' "$script_path")
+        after_hash=$(sha256sum "$script_path" | awk "{print \$1}")
+        test "$after_metadata" = "$before_metadata"
+        identity_changed=0
+        [ "$after_hash" != "$before_hash" ] && identity_changed=1
+        printf "checkpoint=mutation iteration=%s metadata_unchanged=1 content_changed=%s\n" "$iteration" "$identity_changed"
         for _ in $(seq 1 100); do
             [ -s "$capture" ] && break
             sleep 0.05
@@ -1084,7 +1099,8 @@ wait "$maintenance_pid"
         grep -q "generation=$generation" "$capture"
         awk -v elapsed="$elapsed" "BEGIN { exit !(elapsed < 20000) }"
         test -d "/proc/$$"
-        printf "successor=1 old_generation_alive=1 elapsed_ms=%s\n" "$elapsed"
+        done
+        printf "successor=1 old_generation_alive=1 repetitions=20 elapsed_ms=%s\n" "$elapsed"
     '
     if [ "$status" -ne 0 ]; then
         printf 'HOT_RELOAD_FAILURE_OUTPUT_BEGIN\n%s\nHOT_RELOAD_FAILURE_OUTPUT_END\n' "$output" >&3
@@ -1098,7 +1114,7 @@ wait "$maintenance_pid"
         fi
     fi
     [ "$status" -eq 0 ]
-    [[ "$output" == successor=1\ old_generation_alive=1\ elapsed_ms=* ]]
+    [[ "$output" == *successor=1\ old_generation_alive=1\ repetitions=20\ elapsed_ms=* ]]
 }
 
 # test_necessity: changes to a sourced recovery library must restart the
