@@ -1,5 +1,6 @@
 # インフラコンテキスト
 <!-- last_updated: 2026-09-04 context_freshness reviewed source boundary -->
+<!-- source_commit:9d103e289 reason:context_freshness reviewed source boundary evidence:context_freshness_check context=context/infrastructure.md commit=9d103e289 -->
 <!-- source_commit:30a92e359 reason:context_freshness reviewed source boundary evidence:context_freshness_check context=context/infrastructure.md commit=30a92e359 -->
 <!-- source_commit:b6a30b56d reason:context_freshness reviewed source boundary evidence:context_freshness_check context=context/infrastructure.md commit=b6a30b56d -->
 <!-- source_commit:fe68b34e5 reason:context_freshness reviewed source boundary evidence:context_freshness_check context=context/infrastructure.md commit=fe68b34e5 -->
@@ -741,3 +742,5 @@ source boundary一致taskはregistryのowner/update_triggerからcontext_update_
 - X 投稿経路は xdk 非依存(2026-09-04 T3-S-68): `scripts/x_ops/x_post.sh` post/media upload は urllib で X API v2 直叩き。token を書くのは `x_token_refresh.py`/keeper のみ。xdk Client は access-only token で InvalidClientIdError を出すため投稿経路に使わない → `docs/research/tsumari_root_causes_20260901.md` T3-S-68
 - X Growth Engine v1(2026-09-04 殿指示 14:51): 定義 `skills/x-post-pipeline/growth_schema.yaml`、定時投稿 `scripts/x_ops/x_slot_post.sh`(cron 平日 08:30/18:30 JST、pointer=queue/x_live_oos/slot_pointer.txt)、KPI `scripts/x_ops/x_kpi_snapshot.py`(cron 毎時 15 分、24h/7d、台帳 queue/x_live_oos/ledger.yaml)、metadata 付与 `x_growth_tag.py` → `docs/research/x_growth_engine_asis_tobe_5w1h_20260904.md`(gist da5adc2c)
 - X Growth Engine v1.2(2026-09-04 殿裁定 15:11): 4 format(Short/Long/Thread/Series)と content_units/physical_posts。x_post.sh post --reply-to、x_kpi_snapshot.py --summary、台帳 queue/x_live_oos/{thread,series}_ledger.yaml → 設計書 §36-§42
+- inbox_mark_read の review 済み判定は reviewed_at 優先・欠落時 timestamp fallback(2026-09-04 軍師 D0 4c058a3d0、GA-571 家老 ACCEPT)
+- gate_shogun_startup 本番 queue 汚染チェックはファイル名+task_id 行のみ(2026-09-04 将軍 D0、本文 grep の偽陽性 33 件根治)
