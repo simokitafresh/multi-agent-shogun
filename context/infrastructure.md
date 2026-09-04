@@ -1,5 +1,6 @@
 # インフラコンテキスト
 <!-- last_updated: 2026-09-05 context_freshness reviewed source boundary -->
+<!-- source_commit:a9b959fd1 reason:context_freshness reviewed source boundary evidence:context_freshness_check context=context/infrastructure.md commit=a9b959fd1 -->
 <!-- source_commit:719c5afbc reason:context_freshness reviewed source boundary evidence:context_freshness_check context=context/infrastructure.md commit=719c5afbc -->
 <!-- source_commit:2aac09599 reason:context_freshness reviewed source boundary evidence:context_freshness_check context=context/infrastructure.md commit=2aac09599 -->
 <!-- source_commit:4aeb63264 reason:context_freshness reviewed source boundary evidence:context_freshness_check context=context/infrastructure.md commit=4aeb63264 -->
@@ -793,3 +794,4 @@ source boundary一致taskはregistryのowner/update_triggerからcontext_update_
 - インフレ=Market Context+Evergreen(殿 09-05 01:44)|CPI/コア PCE/BEI/実質利回りを毎朝観測、日本 CPI の FRED 系列は stale→null。claim C39-C41|→ `skills/x-post-pipeline/event_rules.yaml` market_context.inflation
 - gate_p_average_freshness retry/recovery(家老 hotfix GA-577 e7b2a45f3 09-05)|一時的な取得失敗で偽 ALERT を出さず retry 後に判定。bats 追加|→ `scripts/gates/gate_p_average_freshness.sh`
 - 日本 CPI 正本=総務省統計局 e-Stat 000032103842(殿 09-05 01:57)|x_event_scan.py が毎朝 総合/生鮮除く 前年比を算出(2026-07 +2.06/+1.79)。FRED 日本 CPI は使わない|→ `scripts/x_ops/x_event_scan.py`
+- Core LP × Simple LP × Free Interactive Proof 設計 v0.1(殿 09-05 02:42)|Simple は noindex 実験、Free で Performance を触らせる Interactive Proof、attribution source=core/simple、偵察 cmd_4476 で AsIs 確定|→ `docs/research/dm-signal-core-simple-free-proof-asis-tobe_20260905.md`(gist e590a96a)
