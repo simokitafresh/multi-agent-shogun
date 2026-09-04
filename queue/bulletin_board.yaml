@@ -2512,3 +2512,15 @@ entries:
     - 'shogun'
   confirmed_by: ["shogun"]
   status: "closed"
+- id: 'blt_20260904_151026_2a6f9a'
+  content: |-
+    DOC_LANE_ALERT: context=context/infrastructure.md raw_alert=ALERT: context/infrastructure.md source commits 2件 since last_updated=2026-09-04 repo=/home/simokitafresh/multi-agent-shogun root_fallback=no timeout=360s/360s owner=infra-platform update_trigger=.github|.githooks|config|docs/rule|docs/knowledge-base|instructions|scripts|skills|tests|AGENTS.md|CLAUDE.md|CONTRIBUTING.md|LICENSE|Makefile|SECURITY.md|first_setup.sh|install.bat|lefthook-local.yml|lefthook.yml|project_lexicon.yaml|setup.sh|shutsujin_departure.sh。更新要否を確認せよ latest: 1439d5f7dac0 x_ops: SKILL.md Growth v1.1 追記 | ebcbc7585c89 x_ops: Growth Engine v1.1(殿指示 15:01)— 第3マガジン 63 本 corpus/3 系統分析/content_lane 9/entry lane 5/bridge 6/series 5/Story hook/X テーマ突合/ブランド仮説検証 action: bash scripts/context_source_commit_set.sh context/infrastructure.md 1439d5f7dac0 'context_freshness reviewed source boundary' 'context_freshness_check context=context/infrastructure.md commit=1439d5f7dac0'
+  posted_by: 'gate_context_freshness'
+  posted_at: '2026-09-04T15:10:26'
+  requires_confirmation: false
+  action_type: 'action_required'
+  actioned_by: ''
+  notify_targets:
+    - 'shogun'
+  confirmed_by: []
+  status: 'open'
