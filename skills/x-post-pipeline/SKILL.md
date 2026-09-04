@@ -32,6 +32,7 @@ allowed-tools:
 - 付与: `python3 scripts/x_ops/x_growth_tag.py` が `queue/x_rewrites/R4-*.yaml` へ `growth:` を書き、`queue/x_live_oos/ledger.yaml` へ事前 metadata を登録する。
 - 定時投稿: `scripts/x_ops/x_slot_post.sh`(cron 平日 08:30/18:30 JST)が slot_calendar の順(pointer=queue/x_live_oos/slot_pointer.txt)で承認済み未投稿 draft を 1 本投稿し台帳へ post_id を書く。在庫が無い slot は繰り下げ+ntfy。
 - 計測: `scripts/x_ops/x_kpi_snapshot.py`(cron 毎時 15 分)が 24h/7d に public+non_public(profile_clicks/link_clicks)を台帳へ書き、followers 日次を `account_daily.jsonl` へ。推測値は書かない。投稿別 follow・note PV は取得不能。
+- v1.1(15:01): 第 3 マガジン m8357970d6430『俺たちはどう生き延びるか』63 本=Reach 一次資料(`docs/research/x_corpus/note/m8357970d6430/`)。3 軸=content_category×funnel_stage×content_lane(9)。entry lane 5・bridge 6・series 候補 5・hook_type に story/scenario/irony。ブランド=『数字を見て生き延びる方法を考える人。投資は DM、実装が DM-Signal』。Reach 投稿単体で DM-Signal へつなげない。バム persona(ヤーマン)は note 専用。
 - 禁止: 40 投稿貯まるまで比率・型の最適化をしない。Growth のために本文を書き換えない。自動 reply spam。
 
 ## When
