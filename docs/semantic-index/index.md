@@ -6564,6 +6564,7 @@ codd:
 | discussion | `queue/lord_conversation.jsonl` 2026-09-04T13:29:14+09:00 再認可したよ。確認して |
 | discussion | `queue/lord_conversation.jsonl` 2026-09-04T14:38:03+09:00 現在のX投稿パイプラインはかなり良いところまで来ています。 本人X 400件 → Voice抽出 本人note 64記事 → Reasoning抽出 本人添削 → human rewrite corpus few-shot反映 追加5本 → |
 | discussion | `queue/lord_conversation.jsonl` 2026-09-04T14:42:31+09:00 殿裁定 2026-09-04 14:38(X 投稿『少し荒い方が隙が出来てプラス』): Fact correctness≠Explanation completeness。正しい核だけ置いて全部説明しない。conversation gap( |
+| discussion | `queue/lord_conversation.jsonl` 2026-09-04T16:07:49+09:00 Growth EngineのKPI設計を、実際に取得可能な情報だけを使う形へ修正してください。 重要な殿裁定: 「取得不能なKPIを要求しない」 「取れないものを0として扱わない」 「推測値で埋めない」 「取れるもの、アカウント単位でしか取 |
 
 ## no_auto_extinguish — 自動消火禁止
 
