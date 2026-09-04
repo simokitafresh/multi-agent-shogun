@@ -507,7 +507,10 @@ if review_requirements:
             for re_scan in review_entries:
                 if not entry_matches_report(re_scan, report_name, report_reference):
                     continue
-                for rat in [parse_timestamp(v) for v in nested_values(re_scan, "reviewed_at")]:
+                _rats = [parse_timestamp(v) for v in nested_values(re_scan, "reviewed_at")]
+                if not _rats:
+                    _rats = [parse_timestamp(v) for v in nested_values(re_scan, "timestamp")]
+                for rat in _rats:
                     if rat is not None and (latest_reviewed_at_for_fp is None or rat >= latest_reviewed_at_for_fp):
                         latest_reviewed_at_for_fp = rat
                         latest_verdict_for_fp = str(re_scan.get("verdict") or re_scan.get("report_verdict") or "")
@@ -515,6 +518,8 @@ if review_requirements:
                 if not entry_matches_report(review_entry, report_name, report_reference):
                     continue
                 review_times = [parse_timestamp(value) for value in nested_values(review_entry, "reviewed_at")]
+                if not review_times:
+                    review_times = [parse_timestamp(value) for value in nested_values(review_entry, "timestamp")]
                 if any(review_at is not None and review_at >= message_at for review_at in review_times):
                     # fingerprint照合: 最新エントリのverdictがFAILならスキップ。
                     # FAIL verdictはapproval不要。
