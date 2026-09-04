@@ -5,7 +5,8 @@ meta:
   - '2026-09-05'
   - '2026-09-30'
   approval:
-    stage1_editorial: pending
+    stage1_editorial: approved
+    stage1_approved_at: '2026-09-04 20:39 殿『Stage 1 承認』'
     stage2_copy: pending
   rule: capacity≠quota。empty は正常。format/funnel/category は別軸で事前登録。fill_slot 目的の再利用禁止
   series:

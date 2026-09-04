@@ -32,8 +32,11 @@ def few_for(key):
 
 
 def llm(user):
-    r = subprocess.run(["claude", "--print", "--setting-sources", "user", "--system-prompt", SP, user],
-                       cwd=os.environ.get("SCRATCH", "/tmp"), capture_output=True, text=True, timeout=240)
+    try:
+        r = subprocess.run(["claude", "--print", "--setting-sources", "user", "--system-prompt", SP, user],
+                           cwd=os.environ.get("SCRATCH", "/tmp"), capture_output=True, text=True, timeout=300)
+    except subprocess.TimeoutExpired:
+        return ""  # 呼び出し側で FAIL_llm 扱い(1 本の timeout で plan 全体を落とさない。2026-09-05 01:28 実証)
     out = r.stdout.strip()
     return re.sub(r"^\s*(---|#+).*$", "", out, flags=re.M).strip()
 
@@ -112,20 +115,30 @@ def run_plan(plan_path, only=None, items=None):
     else:
         plan = items
     vn = BANK["meta"]["verified_numbers"]; claims = {c["key"]: c for c in BANK["claims"]}
-    ledger = ROOT / "queue/x_live_oos/ledger.yaml"; today = dt.date.today().isoformat(); n = 0; tot = 0
+    ledger = ROOT / "queue/x_live_oos/ledger.yaml"; n = 0; tot = 0
+    # draft ファイル名の日付は plan 生成日(=Stage 1 の版)に固定。日付跨ぎで紐付けが外れない
+    today = (doc["meta"].get("generated", "")[:10] if items is None else dt.date.today().isoformat()) or dt.date.today().isoformat()
     for p in plan:
         if p.get("status") == "empty" or not p.get("claim") or (only and p["draft_id"] not in only): continue
         if any(p.get(k) in (None, "", []) for k in EDITORIAL):
             print(f"{p.get('draft_id')}\t{p.get('claim')}\tSKIP_missing_editorial_metadata\t{[k for k in EDITORIAL if not p.get(k)]}", flush=True); continue
-        if any((DRAFTS / f"{today}_{p['draft_id']}{sfx}.txt").exists() for sfx in ("", "-P")): continue  # 再実行は未生成のみ
+        existing = [f for sfx in ("", "-P") for f in [DRAFTS / f"{today}_{p['draft_id']}{sfx}.txt"] if f.exists()]
         c = claims[p["claim"]]; fmt = p["format"]; did = p["draft_id"]; tot += 1
         miss = [r for r in REQ if not c.get(r)]; bo = origin_ok(c)
         if miss or bo:
             print(f"{did}\t{c['key']}\tSKIP\t{miss or bo}", flush=True); continue
         num = f"使ってよい数字(この 1 組だけ。使わなくてもよい): {vn[c['number']]}" if c.get("number") else "数字は使わない(使うなら禁止)。"
-        body = llm(f"{few_for(c['key'])}\n--- slot instruction ---\n{slot_text(fmt, c, num, p)}")
-        parts = [x.strip() for x in re.split(r"^===R\d===\s*$", body, flags=re.M)] if fmt == "thread" else [body]
+        if existing:  # 紐付け済み本文(plan_v1_pregen 由来)は LLM を呼ばず gate+台帳のみ
+            if fmt == "thread":
+                parts = [ (DRAFTS / f"{today}_{p['draft_id']}-P.txt").read_text(encoding="utf-8").strip()] + [f.read_text(encoding="utf-8").strip() for f in sorted(DRAFTS.glob(f"{today}_{p['draft_id']}-R*.txt"))]
+            else:
+                parts = [existing[0].read_text(encoding="utf-8").strip()]
+        else:
+            body = llm(f"{few_for(c['key'])}\n--- slot instruction ---\n{slot_text(fmt, c, num, p)}")
+            parts = [x.strip() for x in re.split(r"^===R\d===\s*$", body, flags=re.M)] if fmt == "thread" else [body]
         parts = [x for x in parts if x]
+        if not parts:
+            print(f"{did}\t{c['key']}\t{fmt}\tFAIL_llm\t0字", flush=True); continue
         if fmt == "thread" and len(parts) < 3:
             print(f"{did}\t{c['key']}\tFAIL_thread_parts\t{len(parts)}", flush=True); continue
         status = "PASS"; blocks = ""

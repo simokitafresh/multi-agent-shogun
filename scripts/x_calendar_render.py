@@ -34,16 +34,18 @@ while d <= last:
     else:
         items = ""
         for p in sorted(by.get(d.isoformat(), []), key=lambda x: x["time"]):
-            name, cls = FMT[p["format"]]; c = BANK.get(p["claim"]) if p["claim"] else None
-            b = body(p["draft_id"], p["format"]) if p["draft_id"] else None
+            name, cls = FMT[p["format"]]; c = BANK.get(p.get("claim")) if p.get("claim") else None
+            b = body(p["draft_id"], p["format"]) if p.get("draft_id") else None
             if b:
                 parts, ap = b; stats["gen"] += 1; stats["approved"] += ap
                 txt = "".join(f'<p class="post">{html.escape(x).replace(chr(10), "<br>")}</p>' + ('<p class="rep">↳ 自己リプ</p>' if i < len(parts) - 1 else "") for i, x in enumerate(parts))
                 st = '<span class="st ok">承認済</span>' if ap else '<span class="st">未承認</span>'
+            elif p.get("status") == "empty":
+                txt = ""; st = '<span class="st">空き</span>'
             else:
                 stats["todo"] += 1; txt = '<p class="post muted">生成中 / 未生成</p>'; st = '<span class="st">—</span>'
             ser = f' <span class="ser">{html.escape(p["series_title"])} {p["series_order"]}/{p["series_total"]}</span>' if p.get("series_id") else ""
-            claim = f'<div class="claim"><b>{p["claim"]}</b> {html.escape(c["claim"])}<span class="origin">{c["origin"]}</span></div>' if c else '<div class="claim muted">適切な claim なし → SKIP</div>'
+            claim = f'<div class="claim"><b>{p["claim"]}</b> {html.escape(c["claim"])}<span class="origin">{c["origin"]}</span><span class="origin">{p.get("content_category","")}·{p.get("funnel_stage","")}·{p.get("audience","")}·{p.get("hook_type","")}</span></div>' if c else f'<div class="claim muted">空き — {html.escape(p.get("reason",""))}</div>'
             items += f'<div class="slot {cls}"><div class="head"><span class="time">{p["time"]}</span><span class="fmt">{name}</span>{ser}{st}</div>{claim}{txt}</div>'
         wk = "土日"[d.weekday() - 5] if d.weekday() >= 5 else ""
         cells.append(f'<div class="day{" we" if wk else ""}"><div class="dnum">{d.day}<span class="wd">{"月火水木金土日"[d.weekday()]}</span></div>{items}</div>')
@@ -69,7 +71,7 @@ h1{{font-size:20px;margin:0 0 4px;text-wrap:balance}} .sub{{color:var(--mute);fo
 .post{{font-size:12.5px;margin:4px 0;white-space:normal}} .rep{{font-size:10px;color:var(--mute);margin:0}} .muted{{color:var(--mute)}}
 </style>
 <h1>X 投稿カレンダー 2026 年 9 月(9/5〜9/30)</h1>
-<p class="sub">claim_bank 起点で全 unit を作り直した版。生成 {stats["gen"]}/{len(PLAN["plan"])}、承認済 {stats["approved"]}、未生成 {stats["todo"]}。承認するまで cron は投稿しません(fallback なし)。更新 {gen_at}</p>
+<p class="sub">Stage 2(本文)。Stage 1 編集計画は {html.escape(str(PLAN["meta"]["approval"].get("stage1_approved_at","")))}。scheduled {PLAN["meta"]["stats"]["scheduled"]} / 空き {PLAN["meta"]["stats"]["empty"]}(空きは投稿しない)。本文生成 {stats["gen"]}、承認済 {stats["approved"]}、未生成 {stats["todo"]}。承認するまで cron は投稿しません。直したい本文は日付と draft_id で。全部よければ「Stage 2 承認」(除外があれば id を添えて)。更新 {gen_at}</p>
 <div class="legend"><span><i style="background:var(--s)"></i>Short 08:30</span><span><i style="background:var(--e)"></i>Series Entry 18:30</span><span><i style="background:var(--l)"></i>Long 18:30</span><span><i style="background:var(--t)"></i>Thread 18:30</span><span>origin: existing_user_thesis=本人の既存思想 / external_topic=外部で話題(ext_gate A-E 通過)</span></div>
 <div class="grid">{"".join(cells)}</div>
 """
