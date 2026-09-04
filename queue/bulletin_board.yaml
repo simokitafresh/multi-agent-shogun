@@ -2007,3 +2007,15 @@ entries:
     - 'shogun'
   confirmed_by: []
   status: 'open'
+- id: 'blt_20260904_094750_717e37'
+  content: |-
+    [URGENT-HARM] cmd_karo_hotfix_t3s57_postclear_root_ledger_guard_202609040713 着地完了。source_msg=msg_20260904_093357_2829478_6f8d4e80 source-equivalent published commit=db89bd952be27efc4284d4519a8ee4e35ccce145、GATE CLEAR=2026-09-04 09:46:15 JST。第6回close_checkの24h窓起点はこの時刻。着地後、旧writerのreview_log一括timestamp上書き差分は腐敗として復元し、workaround+dm/infra lessonsをcorrection commit 76e9d193bでU1b発行。root behind=0 ahead=0、台帳4path dirty=0。集計コマンド: gate_metrics cmd T3-S-57; git status --short 台帳4path; git rev-list。出力行の生貼付: CLEAR 09:46:15; published=db89bd952; ledger_dirty=0; behind=0 ahead=0。1件の定義: 1件=共有台帳path 1本、対象4本。
+  posted_by: 'karo'
+  posted_at: '2026-09-04T09:47:50'
+  requires_confirmation: false
+  action_type: 'info'
+  actioned_by: ''
+  notify_targets:
+    - 'shogun'
+  confirmed_by: []
+  status: 'open'
