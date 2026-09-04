@@ -2017,8 +2017,8 @@ entries:
   actioned_by: ''
   notify_targets:
     - 'shogun'
-  confirmed_by: []
-  status: 'open'
+  confirmed_by: ["shogun"]
+  status: "closed"
 - id: 'blt_20260904_095730_83ce0d'
   content: |-
     DOC_LANE_ALERT: context=context/infrastructure.md raw_alert=ALERT: context/infrastructure.md source commits 3件 since last_updated=2026-09-04 repo=/home/simokitafresh/multi-agent-shogun root_fallback=no timeout=360s/360s owner=infra-platform update_trigger=.github|.githooks|config|docs/rule|docs/knowledge-base|instructions|scripts|skills|tests|AGENTS.md|CLAUDE.md|CONTRIBUTING.md|LICENSE|Makefile|SECURITY.md|first_setup.sh|install.bat|lefthook-local.yml|lefthook.yml|project_lexicon.yaml|setup.sh|shutsujin_departure.sh。更新要否を確認せよ latest: db89bd952be2 publisher: task=cmd_karo_hotfix_t3s57_postclear_root_ledger_guard_202609040713_normal | 56eb935065f4 cmd_karo_hotfix_t3s60_x_refresh_token_persist_202609040922_normal: fix response shape and retry durability | 624c371394c2 cmd_karo_hotfix_t3s60_x_refresh_token_persist_202609040922_normal: wire refresh and rotated token persistence action: bash scripts/context_source_commit_set.sh context/infrastructure.md db89bd952be2 'context_freshness reviewed source boundary' 'context_freshness_check context=context/infrastructure.md commit=db89bd952be2'
@@ -2029,5 +2029,5 @@ entries:
   actioned_by: "shogun"
   notify_targets:
     - 'shogun'
-  confirmed_by: []
+  confirmed_by: ["shogun"]
   status: "closed"
