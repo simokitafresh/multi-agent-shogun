@@ -16887,3 +16887,10 @@ insights:
   source: "semantic_index_update"
   fix_known: false
   status: pending
+- id: INS-20260904-090050333-ead4
+  ts: "2026-09-04T09:00:50+09:00"
+  insight: "tobisaru(pane8)Codex update画面停止+kagemaru(pane4)通常prompt停止。両報告status=revision_requested修正が未完了。tobisaru=status修正のみ/kagemaru=status+origin修正で gate PASS見込み。実装レビューは両方LGTM相当。家老介入要"
+  priority: "medium"
+  source: "manual"
+  fix_known: false
+  status: pending
