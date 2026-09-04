@@ -9660,6 +9660,19 @@ EOF
     reconcile_body="$(sed -n '/^gate_notify_reconcile_stale() {/,/^}/p' "$SRC_GATE_SCRIPT")"
     [ -n "$reconcile_body" ]
     [[ "$reconcile_body" == *'set -o noclobber'* ]]
+
+    # karo formal RC follow-up (msg_20260904_084454_1597920_2a5e34f0): the
+    # winner must finalize pending/done (via gate_notify_complete, called
+    # explicitly inside its own case arm) strictly BEFORE releasing the
+    # claim marker, closing the double-replay window a prior version left
+    # open (marker removed first, gate_notify_complete only run afterward
+    # by the shared post-case-statement call).
+    local complete_line claim_rm_line
+    complete_line=$(grep -n 'gate_notify_complete "\$cmd_id_rec" auto_push_ancestry_retry' "$SRC_GATE_SCRIPT" | head -1 | cut -d: -f1)
+    claim_rm_line=$(grep -n 'rm -f "\$_apar_claim"' "$SRC_GATE_SCRIPT" | head -1 | cut -d: -f1)
+    [ -n "$complete_line" ]
+    [ -n "$claim_rm_line" ]
+    [ "$complete_line" -lt "$claim_rm_line" ]
 }
 
 # test_necessity: CI status and terminal ancestry share an immutable report and

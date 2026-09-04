@@ -5774,9 +5774,26 @@ print(int(json.load(open(sys.argv[1]))["queued_at_ns"] // 1_000_000_000))
                     # O_EXCL under the hood: creating the sidecar marker is
                     # atomic, so exactly one concurrent sweep wins the create
                     # and proceeds; every other racer sees the marker already
-                    # exists and skips (leaving its own gate_notify_complete
-                    # call below un-run for this item -- the winner's own
-                    # post-recovery gate_notify_complete clears it).
+                    # exists and skips.
+                    #
+                    # karo formal RC follow-up (msg_20260904_084454_1597920_2a5e34f0):
+                    # an earlier version removed this marker immediately after
+                    # gate_run_auto_push_ancestry_retry, before the trailing
+                    # gate_notify_complete call below had persisted the done
+                    # marker / removed pending. In that window the pending
+                    # file was still not-done AND the claim marker was
+                    # already gone, so a second concurrent sweep's claim
+                    # attempt would wrongly succeed and replay the recovery a
+                    # second time. Call gate_notify_complete here, inside the
+                    # winner's own case arm, BEFORE releasing the claim --
+                    # this guarantees pending/done are finalized while the
+                    # marker still blocks every other racer, so no window
+                    # ever has both "not done" and "marker absent" true at
+                    # once. The generic gate_notify_complete call after this
+                    # case statement still runs for every item including
+                    # this one; calling it again here first makes it an
+                    # idempotent no-op there (rm -f on an already-removed
+                    # pending file, and re-writing an unchanged done marker).
                     local _apar_claim="${pending}.recovering"
                     if ! (set -o noclobber; : > "$_apar_claim") 2>/dev/null; then
                         echo "  gate_notify_reconcile: ${cmd_id_rec}/auto_push_ancestry_retry claim lost to a concurrent sweep (skip)"
@@ -5785,6 +5802,7 @@ print(int(json.load(open(sys.argv[1]))["queued_at_ns"] // 1_000_000_000))
                     local -a _apar_recover_files=()
                     mapfile -t _apar_recover_files < <(list_task_files_for_cmd "$TASKS_DIR" "$cmd_id_rec" | sort -u || true)
                     gate_run_auto_push_ancestry_retry "$cmd_id_rec" "${_apar_recover_files[@]}"
+                    gate_notify_complete "$cmd_id_rec" auto_push_ancestry_retry
                     rm -f "$_apar_claim" 2>/dev/null || true
                     ;;
                 *) echo "[WARN] gate_notify_reconcile: unknown item ${item} (leaving pending)"; continue ;;

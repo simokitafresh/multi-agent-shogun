@@ -548,6 +548,65 @@ STUB
     [ "$(wc -l < "$base/queue/gates/$cmd_id/auto_push_ancestry_retry.log")" -eq 1 ]
 }
 
+# test_necessity: karo formal RC follow-up (msg_20260904_084454_1597920_2a5e34f0).
+# An earlier version of the case arm removed the `.recovering` claim marker
+# immediately after gate_run_auto_push_ancestry_retry, BEFORE the trailing
+# (shared, post-case-statement) gate_notify_complete call had persisted the
+# done marker / removed pending -- leaving a window where the pending file
+# was still not-done AND the claim marker was already gone, so a second
+# concurrent sweep's claim would wrongly succeed and replay a second time.
+# Deterministically pins a competing sweep INSIDE that exact window by
+# running it synchronously from within the real gate_notify_complete call
+# (wrapped here) -- i.e. after done/pending are finalized but before the
+# case arm's `rm -f "$_apar_claim"` (which only runs once this call
+# returns) has released the marker. No timing-dependent
+# background/FIFO/poll coordination is needed: the window is entered and
+# exited by construction of the call graph itself. false_negative = the
+# competing sweep's stub firing a second time (the exact bug karo
+# described); false_positive = the winner's own work never completing.
+@test "auto_push_ancestry_retry: a competing sweep run inside the post-complete/pre-claim-release window does not replay" {
+    local base="$BATS_TEST_TMPDIR/auto-push-retry-reconcile-hold-window"
+    mkdir -p "$base/scripts" "$base/logs" "$base/queue/tasks"
+    SCRIPT_DIR="$base"
+    LOG_DIR="$base/logs"
+    TASKS_DIR="$base/queue/tasks"
+    lock_path() { printf '%s.lock\n' "$1"; }
+    list_task_files_for_cmd() { :; }
+    local dispatch_count_file="$base/dispatch_count"
+    : > "$dispatch_count_file"
+    cmd_complete_gate_auto_push_ancestry_wait() {
+        printf 'x\n' >> "$dispatch_count_file"
+        return 0
+    }
+
+    source "$GATE_SOURCE_PUBLISH_HELPERS_DURABLE"
+
+    local cmd_id="cmd_auto_push_retry_hold_window_probe"
+    gate_notify_enqueue "$cmd_id" auto_push_ancestry_retry
+    local pending done
+    pending="$(gate_notify_pending_path "$cmd_id" auto_push_ancestry_retry)"
+    done="$(gate_notify_done_path "$cmd_id" auto_push_ancestry_retry)"
+
+    # Wrap the REAL gate_notify_complete: run its full effect (writes done,
+    # removes pending) exactly as production does, then -- while still
+    # inside this call, i.e. before the case arm's `rm -f "$_apar_claim"`
+    # below it has had a chance to run -- invoke a competing sweep and
+    # prove it does not replay.
+    eval "$(declare -f gate_notify_complete | sed '1s/^gate_notify_complete/__real_gate_notify_complete/')"
+    gate_notify_complete() {
+        __real_gate_notify_complete "$@"
+        GATE_NOTIFY_STALE_AFTER_S=0 gate_notify_reconcile_stale
+    }
+
+    GATE_NOTIFY_STALE_AFTER_S=0 gate_notify_reconcile_stale
+
+    [ -f "$done" ]
+    [ ! -f "$pending" ]
+    [ ! -e "${pending}.recovering" ]
+    [ "$(wc -l < "$dispatch_count_file")" -eq 1 ]
+    [ "$(wc -l < "$base/queue/gates/$cmd_id/auto_push_ancestry_retry.log")" -eq 1 ]
+}
+
 # test_necessity: gunshi formal FAIL, durability half. A worker that never
 # even launches (crash between the pending-record write and the background
 # subshell actually starting) must still be recoverable by a later,
