@@ -56,6 +56,7 @@ ul{{font-size:12.5px;padding-left:18px}} li{{margin:3px 0}}
 <p class="sub">日次(07:05、前日終値): </p><ul>{trig}</ul>
 <p class="sub">日中(30 分ごと、yfinance 5 分足=ほぼ実時間。殿 19:48『為替はリアルタイムじゃないと変』): </p><ul>{intra}</ul>
 <p class="sub">Market Context(常時観測。trigger ではない。殿 09-05 01:35): {html.escape(", ".join(EV["market_context"]["variables"]))} を毎朝記録、日曜に 4 週表。連鎖 {html.escape(" / ".join(EV["market_context"]["chains"]))} は予測でなく観測として分ける。適用 claim=C35-C38(human_seed)</p>
+<p class="sub">インフレ(殿 09-05 01:44)= Market Context+Evergreen Theme: 米 CPI/コア PCE 前年比・BEI・実質利回り・日本 CPI を観測。CPI 解説ではなく『名目で増えた』と『実質的に豊かになった』を分ける横断テーマ(現金/金利/債券/株式/為替/住宅ローン/資産格差)。連鎖=インフレ→金利→為替→株式・債券→実質リターン→資産形成。claim C16/C39/C40/C41/C35</p>
 <p class="sub">要人発言・話題(毎時、X API 投稿数が 7 日中央値の 3 倍かつ 200 以上で発火。発言は context にだけ使い引用・要約投稿はしない): </p><ul>{topics}</ul>
 """
 out = ROOT / "docs/dashboard/x-editorial-plan-202609.html"; out.write_text(page, encoding="utf-8"); print("bytes", out.stat().st_size)

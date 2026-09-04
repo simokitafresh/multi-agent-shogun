@@ -38,9 +38,16 @@ topic_rule: 要人発言そのものを引用・要約して投稿しない(発�
 
 # 殿 2026-09-05 01:35: 為替・金利・カーブは『○% 動いたら投稿』の trigger ではなく『最近の市場を見て本人が何か言う価値があるか』を判断する常時観測対象(Market Context)
 market_context:
-  variables: [usdjpy, us2y, us10y, curve_10_2, jgb10, bei10, spy_ret, spy_dd_52w, vix, n225_ret]
-  sources: {usdjpy: yfinance JPY=X, us2y/us10y/bei10: FRED DGS2/DGS10/T10YIE, jgb10: 財務省 jgbcm.csv, spy/vix/n225: yfinance}
+  variables: [usdjpy, us2y, us10y, curve_10_2, jgb10, bei10, real_us10, cpi_us_yoy, core_pce_yoy, cpi_jp_yoy, spy_ret, spy_dd_52w, vix, n225_ret]
+  sources: {real_us10: FRED DFII10(10 年 TIPS 実質利回り), cpi_us_yoy: FRED CPIAUCSL 前年比, core_pce_yoy: FRED PCEPILFE 前年比, cpi_jp_yoy: FRED CPALTT01JPM659N(月次・遅れあり), usdjpy: yfinance JPY=X, us2y/us10y/bei10: FRED DGS2/DGS10/T10YIE, jgb10: 財務省 jgbcm.csv, spy/vix/n225: yfinance}
   cadence: 毎朝 07:05 の x_event_scan.py が観測値を queue/x_market_context/daily.jsonl に追記(発火の有無に関係なく)。日曜 09:00 に 4 週表を docs/research/x_market_context_weekly/ へ書き、ntfy で 1 行要約
   use: (1) event 提案の context に直近の市場環境 1 行を添える (2) 週次で編集計画を見直す時の材料(『今の金利・為替環境で本人の既存思想を適用できる claim はどれか』→ plan update は candidate→gate→editorial review の順、自動補充しない) (3) 予測はしない。分解・観測・検証の claim にだけ接続
   chains: [FOMC→金利→為替→株式(連鎖を観測として分ける), 円安/円高→円建て米国株リターン→株式リターンと為替効果を分ける, 金利差→為替→ヘッジコスト]
   lord_thesis: [表面の数字を分解する, 予測と観測を分ける, ニュースを見ることと売買することを分ける, 数字・構造・検証で考える]
+  # 殿 2026-09-05 01:44: インフレは Market Context と Evergreen Theme の両方。CPI 解説ではなく本人の横断テーマ
+  inflation:
+    role: [market_context(常時観測: CPI/コア PCE 前年比・BEI・実質利回り・日本 CPI), evergreen_theme(常時語れる本人テーマ), event(CPI/PCE 発表日は予定イベントとして監視してよい)]
+    spans: [現金の実質価値, 名目リターンと実質リターン, 金利, 債券, 株式, 為替, 住宅ローン, 資産価格, 資産格差, 高所得者でも実質的に豊かにならない問題]
+    chain: インフレ→金利→為替→株式・債券→実質リターン→資産形成(FOMC/金利/為替/インフレを別々のニュースにしない)
+    core_view: 『名目で増えた』と『実質的に豊かになった』を分ける。数字を分解する/実質で見る/構造を見る/予測と観測を分ける。インフレ予測はしない
+    claims: [C16, C39, C40, C41, C35]

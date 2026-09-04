@@ -314,3 +314,8 @@ event_lane_20260904_1933:
   rules: skills/x-post-pipeline/event_rules.yaml
   scan: scripts/x_ops/x_event_scan.py(07:05 cron、yfinance、数値規則のみ)→queue/x_events/→x_claim_gen --event→gate→殿承認→12:30 event slot(poster v1.8)
   principle: イベントは context。claim は bank から。予測しない。空 slot 埋めのために発火しない。1 日 1 unit、同 claim 7 日再発火なし
+
+# 殿 2026-09-05 01:44: インフレは Market Context(観測)と Evergreen Theme(常時語れる本人テーマ)の両方
+evergreen_themes_20260905:
+  inflation: {spans: [現金の実質価値, 名目と実質リターン, 金利, 債券, 株式, 為替, 住宅ローン, 資産価格, 資産格差, 高所得でも実質的に豊かにならない], core: 名目で増えたと実質的に豊かになったを分ける, claims: [C16, C39, C40, C41, C35], rule: CPI 発表日の解説ではない。予測しない。分解・実質・構造・観測}
+  market_lens: 投資環境を見る時は金利・為替・インフレを常に視野に入れる(event_rules.market_context)
