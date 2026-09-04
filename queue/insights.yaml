@@ -17503,3 +17503,17 @@ insights:
   source: "semantic_index_update"
   fix_known: false
   status: pending
+- id: INS-20260904-164358245-2e62
+  ts: "2026-09-04T16:43:58+09:00"
+  insight: "semantic_index_update未登録[[リンク]]ターゲット: [[殿質問_tmux_usage表示_20260904]] は既存aliasesに一致なし。類似概念TOP3: agent_formation_management(編成管理; alias=settings tmux 実pane 三点照合; score=11.7) / dm_signal_pf_restore_guardrails(DM-Signal PF復元運用ガードレール; alias=T106_DM-signal_ext4移設; score=4.1) / sg_pre31_semantic_validation(SG-PRE31意味検算; alias=gunshi_idle_lg048_automate_sg_pre31_20260706; score=3.9)。概念定義とaliases追加を検討せよ"
+  priority: "low"
+  source: "semantic_index_update"
+  fix_known: false
+  status: pending
+- id: INS-20260904-164359054-d8d9
+  ts: "2026-09-04T16:43:59+09:00"
+  insight: "semantic_index_update未登録[[リンク]]ターゲット: [[usage_statusbar_loop.sh]] は既存aliasesに一致なし。類似概念TOP3: operational_ontology(操作的オントロジー; alias=project_path.sh; score=15.0) / provisional_review_approval(仮: Review Approval; alias=scripts/review_approval.sh; score=14.5) / semantic_dictionary_design(セマンティック辞書構想; alias=source shogun loop; score=14.4)。概念定義とaliases追加を検討せよ"
+  priority: "low"
+  source: "semantic_index_update"
+  fix_known: false
+  status: pending

@@ -2621,3 +2621,15 @@ entries:
     - 'shogun'
   confirmed_by: ["shogun"]
   status: "closed"
+- id: 'blt_20260904_164358_d0a1c7'
+  content: |-
+    INSIGHT_REPEAT: source=semantic_index_update pending_count=3 threshold=3 latest=INS-20260904-164358245-2e62 priority=low insight_summary=semantic_index_update未登録[[リンク]]ターゲット: [[殿質問_tmux_usage表示_20260904]] は既存aliasesに一致なし。類似概念TOP3: agent_formation_management(編成管理; alias=settings tmux 実pane 三点照合; score=11.7) / dm_signal_pf_restore_guardr...
+  posted_by: 'saizo'
+  posted_at: '2026-09-04T16:43:58'
+  requires_confirmation: false
+  action_type: 'action_required'
+  actioned_by: ''
+  notify_targets:
+    - 'shogun'
+  confirmed_by: []
+  status: 'open'
