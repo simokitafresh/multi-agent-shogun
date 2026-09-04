@@ -17138,3 +17138,17 @@ sqlite3.Connection.backup()を使うとページ(4096byte)単位のread syscall�
 - **when**: 未設定
 - **how**: 未設定
 - 旧reportに新形式証拠がない場合も、task固定baseとtask worktree対象scopeをゲートが直接照合すれば形式移行なしで安全に救済できる。ただしbase不在・tree drift・実装・identity不一致は必ずBLOCKする。
+
+
+### L1744: 外部worktree配備の実績証跡はcontrol rootログを正本として確認する
+- **日付**: 2026-09-05
+- **出典**: cmd_karo_hotfix_deploy_external_worktree_timeout
+- **記録者**: hanzo
+- **tags**: [infra,deploy-task,deploy,yaml,grid_search]
+- **subdomain**: infra
+- **target_files**: [scripts/deploy_task.sh,tests/unit/test_task_worktree_lifecycle.bats]
+- **origin**: [[cmd_karo_hotfix_deploy_external_worktree_timeout]]
+- **enforcement**: 未自動化
+- **when**: 未設定
+- **how**: 未設定
+- AC1の指定数値はtask worktree内ログではなくcontrol rootのlogs/deploy_task.logに保存されていた。task YAMLへ証拠所在を注入し、worktreeログ不在を前提不一致と誤判定しない。
