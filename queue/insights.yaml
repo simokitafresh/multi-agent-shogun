@@ -17622,3 +17622,10 @@ insights:
   source: "semantic_index_update"
   fix_known: false
   status: pending
+- id: INS-20260904-174941181-7a32
+  ts: "2026-09-04T17:49:41+09:00"
+  insight: "[[裁定待ちについて質問してくれ]] semantic_stress_test candidate_aliases: NO_MATCH source=lord query=裁定待ちについて質問してくれ"
+  priority: "low"
+  source: "semantic_stress_test"
+  fix_known: false
+  status: pending
