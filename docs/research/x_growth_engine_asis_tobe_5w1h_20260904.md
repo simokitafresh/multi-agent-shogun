@@ -335,3 +335,58 @@ continuation(自己リプ imp 平均/親 imp)の中央値 0.42。上位 2 Thread
 
 ### 実装進捗台帳(v1.2)
 - 2026-09-04 15:20 v1.2: format 定義・units/physical・Format×Funnel/Lane・4 週 mix・calendar format 列・thread/series ledger・X format 分析・`--reply-to` 実装・`--summary` 集計・台帳 14 entries 更新。未: Long/Thread/Series の在庫生成(Round5)、Thread 投稿 runner(親→リプ連投の 1 コマンド化)、repeat engagers 代理指標。
+
+---
+
+# v1.3 追補(2026-09-04 16:07 殿裁定『KPI は実際に取得可能な情報だけ』)
+
+殿裁定(要旨): 取得不能な KPI を要求しない。取れないものを 0 にしない。推測値で埋めない。取れる/アカウント単位/外部接続/不能を分ける。相関を因果と言わない。投稿単位に帰属できないものを投稿に割り振らない。取れないと明示すること自体を正しい実装とする。可否の正本=`skills/x-post-pipeline/kpi_availability.yaml`。v1.0 §17・v1.2 §36 の KPI 記述はこの §43-§50 で上書きする。
+
+## §43 KPI 取得可否監査(成果物 1・5・19)
+
+実測(16:10、自投稿 2095751048963240444 を GET /2/tweets、users/me):
+
+| 項目 | 実レスポンス | 判定 |
+|---|---|---|
+| public_metrics 6 種 | impression 314 / like 4 / reply 0 / retweet 0 / quote 0 / bookmark 1 | observable_post_level |
+| non_public_metrics | user_profile_clicks 2 / url_link_clicks 7 / engagements 15 / impression 312 | observable_post_level。**自投稿かつ 30 日以内のみ**(2022 年の投稿は「older than 30 days」で拒否) |
+| organic_metrics | 同上の内訳 | 同上(冗長。保存しない) |
+| promoted_metrics | 「promoted されていない投稿では取れない」 | 対象外 |
+| users/me public_metrics | followers 4,428 / following 981 / tweet 24,418 | observable_account_level |
+| non-follower impressions | tweet.fields に存在しない | **unavailable** |
+| dwell / read completion | 存在しない | **unavailable** |
+| 投稿別 follow | 存在しない | **unavailable** |
+
+`x_kpi_snapshot.py` 監査: v1.2 までは non_public が返らない時にキーごと欠落し、集計で 0 扱いになり得た→v1.3 で **null を明示的に書き、np_null_reason(older_than_30d / api_unavailable)を併記**。`--summary` は null を除外して中央値を出し n_null を併記(N/A を 0 にしない)。
+
+## §44 KPI availability matrix(成果物 2・3)
+
+4 状態 observable_post_level / observable_account_level / external_attribution / unavailable と attribution(direct / account_level / indirect / none)を全 KPI に持たせた。post: impressions・likes・replies・reposts・quotes・bookmarks・profile_clicks・link_clicks・engagements=post_level(direct)。account: followers・followers_delta_day・followers_delta_week・day_composition=account_level。external: dm_signal_visit・signup・paid=external_attribution(campaign_id 実装後のみ direct)。unavailable: follows/post・non_follower_impressions・dwell・read_completion・unique_readers・repeat_engagers・note_pv/post。
+
+## §45 NULL / 0 規則(成果物 4)
+
+0=計測してゼロ。null=取得不能・失敗・未接続・帰属不能。台帳(snapshot の値)、account_daily(delta の前日行なし)、集計(`--summary` の N/A)、dashboard(§49)の全てで区別。null を平均に混ぜない。
+
+## §46 account daily schema(成果物 6)
+
+`queue/x_live_oos/account_daily.jsonl` 1 日 1 行(当日行は最終観測で置換、過去日は不変): date / ts / followers_count / following_count / tweet_count / **followers_delta_day**(前日行なし→null)/ **followers_delta_week**(7 日前なし→null)/ status / **organic_posts・physical_posts・conversation_entries・formats{short,long,thread,series_entry}・funnel{reach,follow,trust,convert}**(台帳の事前登録から当日分を集計)。投稿構成と delta は同じ行に並ぶが、分解・断定はしない(§50)。
+
+## §47 live OOS ledger schema(成果物 7)
+
+entry: draft_id / draft_file / growth{format, physical_posts, content_lane, content_category, funnel_stage, audience, hook_type, topic_level, desired_action, conversation_gap, link_type, external_context, series_*, thread_*, **campaign_id(convert のみ、作成時発行)**} / post_id / posted_at / snapshots{t24h,t7d: 6 public + np_* 4(null 可)+ np_null_reason + api_errors}。meta に null_rule・campaign_rule。Thread は thread_ledger で親+リプの延べ合計(unique を捏造しない)、Series は series_ledger で entry 合計。
+
+## §48 DM-Signal campaign attribution 実装可能性(成果物 10・11)
+
+現物確認: DM-Signal backend に `showcase_events` テーブルと `POST /api/public/showcase/event`(step enum 9+Free 系 3 語、source∈{lp,login,direct,rebalancer})が live(設計 v3 §2.6、context/dm-signal-core.md source_commit 172b6d35)。backend/frontend に `utm` 実装は **0 件**(grep 実測)。LP(`lp/`)は本 clone に無く別 repo の可能性(dm-signal-lp サービス)。
+判定: **external_attribution として実装可能(未実装)**。案: (1) X 側で campaign_id `x_<YYYYMMDD>_<slot>_<nnn>` を作成時発行、link に `?utm_source=x&utm_medium=organic&utm_campaign=<campaign_id>&utm_content=<draft_id>` (2) LP が query を読み event POST に `campaign_id` を同送(静的 export でも client JS で可) (3) showcase_events に `campaign_id` 列追加、signup_google→ok まで持ち回り (4) 週報で campaign_id 別 visit/signup。paid は DM-Signal 内課金のみ追跡し、note 経由は帰属しない。起票は X lane 落着後(別 cmd)。
+
+## §49 dashboard N/A(成果物 8)
+
+X Growth の dashboard は未作成(現状は `--summary` の表)。作る時の規則: 0 と N/A を分け、N/A の理由(api_unavailable / not_measured / no_attribution / older_than_30d)を注記に出す。`--summary` は既に `N/A,n_null` 形式。
+
+## §50 分析原則と投稿量 OOS(成果物 9・20-24)
+
+Observed / Inferred / Unavailable を必ず分ける。例: Observed「9/4 followers +7」「9/4 Short 3 本」→ Inferred「投稿量と followers 増に関連の可能性」。禁止「Short を 3 本出したので 7 人増えた」。投稿量比較(2/3/4 posts/day)は total_impressions/day・total_profile_clicks/day・total_link_clicks/day・followers_delta/day・week で行い、follow/post は作らない。取得不能 KPI 一覧と将来案は kpi_availability.yaml の unavailable 節(status / reason / possible_future_solution)。status を差し替えるだけで schema を壊さない(value/status/reason の 3 つ組)。
+
+### 実装進捗台帳(v1.3)
+- 2026-09-04 16:15 v1.3: kpi_availability.yaml 新設、x_kpi_snapshot.py を null 明示+delta+日次構成へ改修(実走: 16:13 行に delta null_no_prev_day を記録)、ledger meta に null_rule/campaign_rule、DM-Signal attribution 可能性=可(未実装、showcase_events 拡張)。未: campaign_id 発行の x_growth_tag 対応(convert 投稿生成時)、LP→event の campaign_id 同送 cmd、dashboard。

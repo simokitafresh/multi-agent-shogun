@@ -3,6 +3,8 @@ meta:
   snapshot_script: scripts/x_ops/x_kpi_snapshot.py
   schema: skills/x-post-pipeline/growth_schema.yaml
   volume_rule: content_units=entry 数(Thread は親 1 entry)、physical_posts=実 tweet 数(Thread は親+リプ)。事前登録の format/funnel_stage が正本。事後に付け替えない(殿裁定 15:11)
+  null_rule: 0=計測してゼロ、null=取得不能/失敗/帰属不能(殿裁定 2026-09-04 16:07)。snapshot の np_* が null の時は np_null_reason を併記。投稿別 follow/note PV/paid は書かない(kpi_availability.yaml)
+  campaign_rule: convert 投稿で外部リンクを使う時は作成時に campaign_id(x_<YYYYMMDD>_<slot>_<nnn>)を発行し growth.campaign_id と link の utm_campaign に入れる。投稿後に後付けしない
 entries:
 - draft_id: R4-A-1
   draft_file: queue/x_drafts/2026-09-04_R4-A-1.txt

@@ -124,7 +124,7 @@ link_strategy:
   convert: note または DM-Signal
   observed: 投資系 single で URL あり n=395 imp_med 786 / なし n=174 imp_med 636。このアカウントでは URL ありの方が中央値が高かった(因果ではない。記事告知投稿が含まれる)
 
-kpi_schema:
+kpi_schema:  # v1.3: 正本は kpi_availability.yaml(4 状態・null/0 規則)。以下は v1.0 の要約
   per_post:
     available_public: [impression_count, like_count, reply_count, retweet_count, quote_count, bookmark_count]
     available_non_public: [user_profile_clicks, url_link_clicks, engagements]

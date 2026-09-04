@@ -1,0 +1,60 @@
+meta:
+  version: v1 (2026-09-04 16:07 殿裁定『取得不能な KPI を要求しない/取れないものを 0 にしない/推測値で埋めない/取れる・アカウント単位・外部接続・不能を分ける』)
+  audited_at: '2026-09-04T16:10+09:00'
+  audit_method: X API v2 実レスポンス(自投稿 2095751048963240444 を GET /2/tweets?tweet.fields=public_metrics,non_public_metrics,organic_metrics,promoted_metrics、users/me)、scripts/x_ops/x_kpi_snapshot.py、DM-Signal 設計書 dm-login-showcase v3 §2.6(showcase_events / POST /api/public/showcase/event、source∈{lp,login,direct,rebalancer})
+  status_enum: [observable_post_level, observable_account_level, external_attribution, unavailable]
+  attribution_enum: [direct, account_level, indirect, none]
+  null_vs_zero: 0=計測してゼロ。null=計測不能/取得失敗/未接続/帰属不能。台帳・集計・dashboard の全てで区別し、null を 0 に潰さない。集計は null を除外し n を併記する
+  analysis_rule: Observed(実測)/Inferred(観察上の関連。因果ではない)/Unavailable(取れない)を必ず分ける。『Short を 3 本出したから 7 人増えた』は禁止
+
+post_metrics:
+  impressions: {status: observable_post_level, attribution: direct, source: public_metrics.impression_count(+non_public.impression_count), evidence: '314/312 取得(16:10)'}
+  likes: {status: observable_post_level, attribution: direct, source: public_metrics.like_count, evidence: '4'}
+  replies: {status: observable_post_level, attribution: direct, source: public_metrics.reply_count, evidence: '0'}
+  reposts: {status: observable_post_level, attribution: direct, source: public_metrics.retweet_count, evidence: '0'}
+  quotes: {status: observable_post_level, attribution: direct, source: public_metrics.quote_count, evidence: '0'}
+  bookmarks: {status: observable_post_level, attribution: direct, source: public_metrics.bookmark_count, evidence: '1'}
+  profile_clicks: {status: observable_post_level, attribution: direct, source: non_public_metrics.user_profile_clicks, evidence: '2(自投稿・30 日以内のみ。30 日超は API が拒否→null)', limit: 投稿後 30 日以内、OAuth user context、自投稿のみ}
+  link_clicks: {status: observable_post_level, attribution: direct, source: non_public_metrics.url_link_clicks, evidence: '7(同上)', limit: 同上}
+  engagements: {status: observable_post_level, attribution: direct, source: non_public_metrics.engagements, evidence: '15'}
+  follows: {status: unavailable, attribution: none, value: null, reason: no_post_level_attribution(API に投稿別 follow が無い), substitute: account_metrics.followers_delta_day/week}
+  non_follower_impressions: {status: unavailable, attribution: none, value: null, reason: API v2 の tweet.fields に無い(X Analytics 画面のみ)。organic_metrics も総数のみ, substitute: impressions(total)}
+  dwell_read_time: {status: unavailable, attribution: none, value: null, reason: API 提供なし, substitute: '[bookmarks, replies, profile_clicks, link_clicks] を Long の反応として見る(dwell の代理とは断定しない)'}
+  read_completion: {status: unavailable, attribution: none, value: null, reason: API 提供なし}
+  unique_readers: {status: unavailable, attribution: none, value: null, reason: user 単位の閲覧は取れない。Thread/Series 合計は重複を含む延べ数として扱う}
+  repeat_engagers: {status: unavailable, attribution: none, value: null, reason: user 単位の反応履歴は API で取れない, possible_future_solution: reply/quote の author_id を conversation search で集め lane 跨ぎを数える(v1.2 代理。unique とは言わない)}
+  note_pv: {status: unavailable, attribution: none, value: null, reason: note は流入元を保持せず投稿別帰属が不可能。取れるのは link_clicks まで, account_day_optional: note_total_pv(手入力・日次・帰属なし)}
+
+account_metrics:
+  followers: {status: observable_account_level, attribution: account_level, source: users/me public_metrics.followers_count, evidence: '4428(16:10)', stored: queue/x_live_oos/account_daily.jsonl}
+  followers_delta_day: {status: observable_account_level, attribution: account_level, calc: 当日 followers − 前日 followers(前日行が無ければ null)}
+  followers_delta_week: {status: observable_account_level, attribution: account_level, calc: 当日 − 7 日前(無ければ null)}
+  following: {status: observable_account_level, source: public_metrics.following_count}
+  tweet_count: {status: observable_account_level, source: public_metrics.tweet_count}
+  day_composition: {status: observable_account_level, attribution: account_level, fields: [organic_posts, physical_posts, conversation_entries, formats{short,long,thread,series_entry}, funnel{reach,follow,trust,convert}], note: 同じ日付に保存して後から関連を見る。分解・断定はしない}
+
+external_metrics:
+  dm_signal_visit: {status: external_attribution, attribution: direct_if_campaign_id, value: null, feasibility: 高。DM-Signal に showcase_events テーブルと POST /api/public/showcase/event(source∈lp/login/direct/rebalancer)が live。LP は静的 Next.js で ?utm_* を捨てない。未実装=LP が query の campaign_id を event へ渡す+events に campaign_id 列, plan: '§48 campaign attribution'}
+  signup: {status: external_attribution, attribution: direct_if_campaign_id, value: null, feasibility: 中。signup_google step は設計 v3 §2.6 で『後段 cmd』=未実装。campaign_id を signup event まで持ち回る必要}
+  paid: {status: external_attribution, attribution: direct_if_campaign_id, value: null, feasibility: 低〜中。課金は note メンバーシップ経由が主で X→note→paid は帰属不能。DM-Signal 内 paid のみ campaign_id で追える}
+  rule: X→note→DM-Signal 経路は note が流入元を持たないため post_id→paid を結ばない。『この投稿から何人課金』を推測しない
+
+campaign_attribution:
+  id_format: x_<YYYYMMDD>_<slot>_<nnn>(例 x_20260904_G_001)。post 候補作成時に発行(投稿後に後付けしない)
+  carried_in: [growth metadata(campaign_id), link(?utm_source=x&utm_medium=organic&utm_campaign=<campaign_id>&utm_content=<draft_id>), DM-Signal showcase_events.campaign_id]
+  status: designed_not_implemented
+
+format_kpi:
+  short: [impressions, replies, quotes, bookmarks, profile_clicks]
+  long: [impressions, replies, bookmarks, profile_clicks, link_clicks(optional)]
+  thread: [parent/child impressions, replies, bookmarks, profile_clicks, thread_total(延べ合計。unique を捏造しない)]
+  series_entry: [各 entry metrics, series_total_impressions, series_total_bookmarks, series_total_profile_clicks]
+  follow_all_formats: account_level followers_delta のみ
+
+volume_oos:
+  compare_by: [total_impressions/day, total_profile_clicks/day, total_link_clicks/day, followers_delta/day, followers_delta/week]
+  never: follow/post
+
+dashboard_rule: 0 と N/A を分ける。N/A の理由(api_unavailable / not_measured / no_attribution / older_than_30d)を注記に出す
+
+future_proof: status を unavailable→observable_post_level 等へ変えるだけで schema を壊さない(value/status/reason の 3 つ組を全 KPI に固定)
