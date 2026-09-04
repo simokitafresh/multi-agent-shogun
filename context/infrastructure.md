@@ -1,5 +1,6 @@
 # インフラコンテキスト
 <!-- last_updated: 2026-09-05 context_freshness reviewed source boundary -->
+<!-- source_commit:3393b30c3 reason:context_freshness reviewed source boundary evidence:context_freshness_check context=context/infrastructure.md commit=3393b30c3 -->
 <!-- source_commit:f9d90d069 reason:context_freshness reviewed source boundary evidence:context_freshness_check context=context/infrastructure.md commit=f9d90d069 -->
 <!-- source_commit:f601eb9b5 reason:context_freshness reviewed source boundary evidence:context_freshness_check context=context/infrastructure.md commit=f601eb9b5 -->
 <!-- source_commit:ec8b2abc3 reason:context_freshness reviewed source boundary evidence:context_freshness_check context=context/infrastructure.md commit=ec8b2abc3 -->
@@ -801,3 +802,4 @@ source boundary一致taskはregistryのowner/update_triggerからcontext_update_
 - cmd_complete_gate legacy no-code recon(家老 hotfix db50537e4 09-05 03:24)|コード変更なしの偵察 cmd で report_commit_identity が legacy 形式でも識別できるよう拡張。bats 追加|→ `scripts/lib/report_commit_identity.py`
 - deploy_task gates/report+gate_report_format_main(家老 hotfix 8795cb637 09-05 04:22)|release_ci_clean_repro level5: report format gate と deploy gates の整合。ninja_monitor idle/redone race(b803d9a12): 再配備直後の idle 誤判定を抑止。deploy wall 420s→150s→89s(03:45/04:22 success)|→ `scripts/deploy_task/gates.sh` / `scripts/ninja_monitor.sh`
 - cmd_complete_gate legacy no-code recon v2(家老 hotfix db25987ca 09-05 05:0x、GATE CLEAR 05:04)|v1(db50537e4)の続き。task 固定 base/tree 一致で偵察 cmd を CLEAR|→ `scripts/lib/report_commit_identity.py`
+- report_commit_contract 文字列整合(家老 hotfix ae7dabeec 09-05 05:27 GATE CLEAR)|release lane: commit_contract の文字列比較を正規化し偽 BLOCK を防ぐ|→ `scripts/cmd_complete_gate.sh`
