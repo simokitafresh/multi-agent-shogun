@@ -2597,3 +2597,15 @@ entries:
     - 'shogun'
   confirmed_by: ["shogun"]
   status: "closed"
+- id: 'blt_20260904_163112_295895'
+  content: |-
+    cmd_id=cmd_karo_strong_new_game_20260904_1624 家老強くてニューゲーム正本=docs/research/karo-strong-new-game-checkpoint-20260904-1624.md sha256=f71b6a81ff398eb350576f29fb771908e58d47512adc27102e5e0befdbba2803 commit=a4fbf351e。集計コマンド=全task YAML status列挙+直近5cmd clear/archive存在検査+inbox_read。出力行の生貼付=hayate idle;kagemaru idle;hanzo idle;saizo idle;kotaro idle;tobisaru idle;messages: []。1件の定義=各忍者1名または各cmd1本。完了契約=CLEAR∧archive∧task idle∧worktree cleaned∧inbox0をLK012へ統合、三層health PASS、L3因果4/4到達。
+  posted_by: 'karo'
+  posted_at: '2026-09-04T16:31:12'
+  requires_confirmation: false
+  action_type: 'info'
+  actioned_by: ''
+  notify_targets:
+    - 'shogun'
+  confirmed_by: []
+  status: 'open'
