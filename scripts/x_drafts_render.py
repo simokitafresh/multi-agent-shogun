@@ -43,9 +43,17 @@ while i < len(lines):
             pid = f"{m.group(2)}-{m.group(3)}"; label = (("★ " if m.group(1) else "") + m.group(4)).strip()
             body, urls, figs = [], [], []
             i += 1
-            while i < len(lines) and lines[i].strip() and not post_re.match(lines[i]) and not lines[i].startswith("## "):
+            while i < len(lines) and not post_re.match(lines[i]) and not lines[i].startswith("## ") and not lines[i].startswith("---"):
                 s = lines[i].strip()
-                (urls if s.startswith("http") else (figs if s.startswith("図:") else body)).append(s)
+                if not s:
+                    # 空行=段落区切り(投稿内の改行として保持)。次の非空行が post/section なら終了
+                    j = i + 1
+                    while j < len(lines) and not lines[j].strip():
+                        j += 1
+                    if j >= len(lines) or post_re.match(lines[j]) or lines[j].startswith("## ") or lines[j].startswith("---"):
+                        break
+                    body.append(""); i += 1; continue
+                (urls if s.startswith("http") else (figs if s.startswith(("図:", "source_x:")) else body)).append(s)
                 i += 1
             cur["posts"].append({"id": pid, "label": label, "body": "\n".join(body), "urls": urls, "figs": figs})
             continue
