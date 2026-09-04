@@ -1,0 +1,85 @@
+#!/usr/bin/env python3
+"""X OAuth2 refresh_token で access token を更新し config/x_api.env を書き戻す。
+
+2026-09-04 将軍 D0: access token は 2h で失効し、xdk 内部 refresh は
+InvalidClientIdError で失敗した(第 2 弾投稿時に実測)。x_oauth_listener.py と
+同じ confidential client 方式(Basic auth)で refresh する。
+Usage: python3 scripts/x_ops/x_token_refresh.py [env_path]
+"""
+import base64
+import json
+import os
+import sys
+import time
+import urllib.error
+import urllib.parse
+import urllib.request
+from pathlib import Path
+
+ENV = Path(sys.argv[1] if len(sys.argv) > 1 else "config/x_api.env")
+
+
+def load(path):
+    vals = {}
+    for line in path.read_text(encoding="utf-8").splitlines():
+        if "=" not in line or line.lstrip().startswith("#"):
+            continue
+        k, v = line.split("=", 1)
+        vals[k.strip()] = v.strip().strip('"').strip("'")
+    return vals
+
+
+def main():
+    e = load(ENV)
+    for k in ("X_CLIENT_ID", "X_CLIENT_SECRET", "X_REFRESH_TOKEN"):
+        if not e.get(k):
+            print(f"x_token_refresh: {k} missing", file=sys.stderr)
+            return 2
+    data = urllib.parse.urlencode({
+        "grant_type": "refresh_token",
+        "refresh_token": e["X_REFRESH_TOKEN"],
+        "client_id": e["X_CLIENT_ID"],
+    }).encode()
+    req = urllib.request.Request("https://api.x.com/2/oauth2/token", data=data)
+    req.add_header("Content-Type", "application/x-www-form-urlencoded")
+    basic = base64.b64encode(f"{e['X_CLIENT_ID']}:{e['X_CLIENT_SECRET']}".encode()).decode()
+    req.add_header("Authorization", "Basic " + basic)
+    try:
+        with urllib.request.urlopen(req, timeout=30) as r:
+            tok = json.loads(r.read().decode())
+    except urllib.error.HTTPError as ex:
+        body = ex.read().decode()
+        print(f"x_token_refresh: http={ex.code} body={body[:200]}", file=sys.stderr)
+        return 1
+    access = tok.get("access_token")
+    refresh = tok.get("refresh_token") or e["X_REFRESH_TOKEN"]
+    if not access:
+        print("x_token_refresh: no access_token in response", file=sys.stderr)
+        return 1
+    lines = ENV.read_text(encoding="utf-8").splitlines()
+    out, seen = [], set()
+    repl = {
+        "X_ACCESS_TOKEN": access,
+        "X_REFRESH_TOKEN": refresh,
+        "X_TOKEN_OBTAINED_AT": time.strftime("%Y-%m-%dT%H:%M:%S%z"),
+    }
+    for line in lines:
+        key = line.split("=", 1)[0].strip() if "=" in line else ""
+        if key in repl:
+            out.append(f"{key}={repl[key]}")
+            seen.add(key)
+        else:
+            out.append(line)
+    for k, v in repl.items():
+        if k not in seen:
+            out.append(f"{k}={v}")
+    tmp = ENV.with_suffix(".env.tmp")
+    tmp.write_text("\n".join(out) + "\n", encoding="utf-8")
+    os.chmod(tmp, 0o600)
+    os.replace(tmp, ENV)
+    print(f"x_token_refresh: ok expires_in={tok.get('expires_in')} rotated_refresh={'yes' if tok.get('refresh_token') else 'no'}")
+    return 0
+
+
+if __name__ == "__main__":
+    sys.exit(main())
