@@ -6678,7 +6678,7 @@ codd:
 |------|---|
 | id | alm_research |
 | label | ALM研究 |
-| aliases | ALM, Adaptive Lookback Momentum, ALM四神, ALM忍法, l1_alm_wf_engine, WF, ALMはディスコンだから俺が明示的に言わない限り, ALMは既に使用していない, wfでやるのは覚えているか？, 3月のL0のGSはまだWFでやっていなかった, そうではない |
+| aliases | ALM, Adaptive Lookback Momentum, ALM四神, ALM忍法, l1_alm_wf_engine, WF, ALMはディスコンだから俺が明示的に言わない限り, ALMは既に使用していない, wfでやるのは覚えているか？, 3月のL0のGSはまだWFでやっていなかった, そうではない, C 2に |
 | skills | pf-registration, db-check |
 | related_concepts | dmsignal_operations, gs_ninpo_research, recalculate_pipeline |
 
@@ -6761,6 +6761,7 @@ codd:
 | discussion | `queue/lord_conversation.jsonl` 2026-08-31T14:06:45+09:00 絵柄がじみすぎるな。basic-dualmomentumのchartを表示しよう。compare chartと同じスタイルだがstaticなchartでいい。 |
 | discussion | `queue/lord_conversation.jsonl` 2026-09-04T11:00:01+09:00 枠C：basic-dualmomentumが唯一のように見える。そうではない。あくまで有料への誘導が最終目的だ。C-4はでは「dm-signal を開き、Basic-DualMomentum の今月の判定を見る。」→dm-signal を開 |
 | discussion | `queue/lord_conversation.jsonl` 2026-09-04T11:01:07+09:00 殿裁定 2026-09-04 11:00(枠 C): 『Basic-DualMomentum が唯一のように見える。そうではない。あくまで有料への誘導が最終目的』。C-4『dm-signal を開き、Basic-DualMomentum の |
+| discussion | `queue/lord_conversation.jsonl` 2026-09-04T11:19:39+09:00 C-2に、一番保守的などと正しくないことが書いてある。なぜbasic-dualmomentumのPFにこだわるんだ？ |
 
 ## shin_shijin_design — 四神設計
 
