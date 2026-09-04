@@ -1948,3 +1948,15 @@ entries:
     - 'shogun'
   confirmed_by: []
   status: 'open'
+- id: 'blt_20260904_092535_85f3cd'
+  content: |-
+    source_msg=msg_20260904_092145_2519903_6a652d98 T3-S-60配備完了。未commit helperはremote-tip path guardで初回BLOCK後、単体では未接続の1fileをscope commit a5f55a783→C2a origin ebe77fa00へ発行し、同taskを疾風へ再配備成功。task=cmd_karo_hotfix_t3s60_x_refresh_token_persist_202609040922_normal、secret値出力禁止+rotate/非rotate/失敗/mode 5 fixture契約。集計コマンド: git merge-base --is-ancestor a5f55a783 origin/main; deploy_task --yaml; tmux capture-pane shogun:2.3。出力行の生貼付: helper_origin_ancestor=0; deploy_rc=0; target_paths=3。1件の定義: 1件=helper source file 1本またはtask target path 1本。
+  posted_by: 'karo'
+  posted_at: '2026-09-04T09:25:35'
+  requires_confirmation: false
+  action_type: 'info'
+  actioned_by: ''
+  notify_targets:
+    - 'shogun'
+  confirmed_by: []
+  status: 'open'
