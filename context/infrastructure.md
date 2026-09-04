@@ -1,5 +1,6 @@
 # インフラコンテキスト
 <!-- last_updated: 2026-09-04 context_freshness reviewed source boundary -->
+<!-- source_commit:e76e07e12 reason:context_freshness reviewed source boundary evidence:context_freshness_check context=context/infrastructure.md commit=e76e07e12 -->
 <!-- source_commit:71ef6a744 reason:context_freshness reviewed source boundary evidence:context_freshness_check context=context/infrastructure.md commit=71ef6a744 -->
 <!-- source_commit:89f3cda35 reason:context_freshness reviewed source boundary evidence:context_freshness_check context=context/infrastructure.md commit=89f3cda35 -->
 <!-- source_commit:0561dcf10 reason:context_freshness reviewed source boundary evidence:context_freshness_check context=context/infrastructure.md commit=0561dcf10 -->
@@ -760,3 +761,4 @@ source boundary一致taskはregistryのowner/update_triggerからcontext_update_
 - x_slot_post.sh は --dry-run/--help 以外の引数を exit 2 で拒否(2026-09-04 T3-S-69 誤投稿の再発防止)
 - X Profile/Pinned は Growth Engine の可変対象外(殿裁定 2026-09-04 17:11)。growth_schema.yaml profile_pinned_rule
 - X 定時投稿 v1.5(2026-09-04 17:50): 選定は live OOS 台帳の category×format、Thread は x_thread_post.sh へ委譲。殿裁定 17:49 Short は投資ネタ限定、記事切り抜き不可(neta_ledger.yaml)
+- x_round5_gen.py は neta_ledger.yaml の entries 無しで rc=2(記事本文経路封鎖、2026-09-04 殿評 17:47)
