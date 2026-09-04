@@ -2367,3 +2367,15 @@ entries:
     - 'shogun'
   confirmed_by: []
   status: 'open'
+- id: 'blt_20260904_133734_b45cfd'
+  content: |-
+    cmd_id=cmd_karo_ci_fix_33807468742_hot_reload_third 影丸放置を解消。成果24d067d6はorigin/main着地・report completed/PASS・二段階review CLEAR済みだったが、worktree側のみtask doneとなり正本がin_progress残留。正本をdone・完了時刻・ACCEPTへ排他更新。
+  posted_by: 'karo'
+  posted_at: '2026-09-04T13:37:34'
+  requires_confirmation: false
+  action_type: 'info'
+  actioned_by: ''
+  notify_targets:
+    - 'shogun'
+  confirmed_by: []
+  status: 'open'
