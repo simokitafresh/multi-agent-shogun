@@ -5325,6 +5325,8 @@
   - scripts/cmd_complete_gate.sh:1
 - cmd_id: cmd_karo_hotfix_release_idle_redone_race
   review_type: report
+  gate_result: "CLEAR"
+  gate_synced_at: "2026-09-05T04:14:16+09:00"
   verdict: FAIL
   report_ninja: saizo
   report_task_id: cmd_karo_hotfix_release_idle_redone_race_normal
