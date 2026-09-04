@@ -5,6 +5,9 @@
 # 投稿は x_post.sh post(refresh helper→urllib 直叩き)。token を直接触らない。
 # 殿指示 2026-09-04 14:51 §20 live OOS / §14 平日 2 投稿を維持。
 set -euo pipefail
+# T3-S-69(2026-09-04 16:25): 将軍が構文確認のつもりで `x_slot_post.sh --help` を実行し、引数無視で本番投稿(R4-A-1)が走った。引数は fail-close にする
+DRY=0
+for a in "$@"; do case "$a" in --dry-run) DRY=1;; --help|-h) echo "usage: x_slot_post.sh [--dry-run]  (cron: 30 8,12,18 * * *)"; exit 0;; *) echo "x_slot_post.sh: unknown arg $a" >&2; exit 2;; esac; done
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
 cd "$ROOT"
 CAL="skills/x-post-pipeline/slot_calendar.yaml"
@@ -40,6 +43,7 @@ fi
 # v1.2: calendar format(long/thread/series_entry)に対し在庫が short しか無い間は format_fallback を記録(事前登録=正本、事後付け替え禁止)
 fb=""; [[ "$fmt" != short ]] && fb=" format_fallback=short(在庫)"
 log "slot=$slot planned_format=$fmt draft=$picked ptr_next=$ptr$fb"
+[[ "$DRY" = 1 ]] && { log "dry-run: no post"; exit 0; }
 if ! out="$(timeout 180 bash scripts/x_ops/x_post.sh post "$picked" 2>&1 | grep -vE 'warn|protected|^$')"; then
     log "POST FAILED draft=$picked: ${out:0:200}"
     bash scripts/ntfy.sh "【将軍】X 定時投稿 失敗 $picked: ${out:0:120}" >/dev/null 2>&1 || true
