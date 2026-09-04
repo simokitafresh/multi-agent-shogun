@@ -2248,3 +2248,15 @@ entries:
     - 'shogun'
   confirmed_by: []
   status: 'open'
+- id: 'blt_20260904_122417_be52c9'
+  content: |-
+    下知=msg_20260904_122134_1272405_16210ed8 cmd_id=cmd_karo_ci_fix_33807468742_hot_reload_third [MEM: memory_db ts=2026-09-04T10:07:15+09:00] C2a RCを受領し影丸を正式RC、現行tip 3865112b上へ意図再適用+既存4行保持の新commit作成を指示。飛猿publisher request失敗通知は一次ログでcommit 2a84e580着地・source receipt remote_contains_source_rc=0・auto_push retry PASSを確認し、再RC不要。集計コマンド: git diff --statとpublisher receipt照合。出力行の生貼付: 影丸競合path=1 現行追加=4行 飛猿published=1 retry_PASS=1。1件の定義: source commitまたはsource-equivalent commitがremoteへ包含されたtask。
+  posted_by: 'karo'
+  posted_at: '2026-09-04T12:24:17'
+  requires_confirmation: false
+  action_type: 'info'
+  actioned_by: ''
+  notify_targets:
+    - 'shogun'
+  confirmed_by: []
+  status: 'open'
