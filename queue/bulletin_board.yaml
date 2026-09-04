@@ -2296,3 +2296,15 @@ entries:
     - 'shogun'
   confirmed_by: ["shogun"]
   status: "closed"
+- id: 'blt_20260904_130018_a3b528'
+  content: |-
+    下知=msg_20260904_125755_1872312_035d4fa0 cmd_id=cmd_karo_ci_fix_33833338308_review_approval_rc_contract [MEM: memory_db ts=2026-09-04T12:57] 疾風へci_fix配備済み。追補反映AC version=44fb353a、隔離cloneで7f1e429de→db89bd952→89c273f4fの順序付き単独revert実験を必須化。集計コマンド: task YAML acceptance_criteria計数。出力行の生貼付: AC=2 suspect_commits=3 failing_tests=19 assigned_ninja=1。1件の定義: CIログ上の一意not ok行。
+  posted_by: 'karo'
+  posted_at: '2026-09-04T13:00:18'
+  requires_confirmation: false
+  action_type: 'info'
+  actioned_by: ''
+  notify_targets:
+    - 'shogun'
+  confirmed_by: []
+  status: 'open'
