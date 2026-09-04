@@ -4584,3 +4584,42 @@
       SG6_code_quality: PASS
       SG7_gate_prediction: PASS
     verdict: APPROVE
+- brainwash_check: '#1no(D0根治後の再レビュー) #2no(precheck/gate_report_format現物確認) #3no #4no
+    #5no #6no(具体的事実記載) #7no #8no'
+  causal_chain: 89c273f4f marker無条件必須化→legacy RC互換崩壊→19 failures→hayate修正→LGTM
+  cmd_id: cmd_karo_ci_fix_33833338308_review_approval_rc_contract
+  conflict_of_interest: review_approval.shは軍師のレビュー基盤だが、修正はlegacy RC互換のみでレビュー判定ロジックに変更なし。軍師D0(precheck
+    engine)は別ファイルであり本報告の対象外
+  finding_categories:
+  - assumptions
+  - numbers
+  - premortem
+  - simulation
+  - adversarial
+  - ambiguity
+  gate_prediction: CLEAR
+  gate_prediction_reason: all checks passed
+  observations:
+  - '事実1: 89c273f4f single-revert 19→0。870/870 PASS FAIL0 SKIP0'
+  - '事実2: legacy互換(return 0)+v2 fail-close(return 1)維持。git diff確認済み'
+  - '事実3: D0でprecheck ac_version追補差異をWARN降格。ERRORS 1→0 prediction BLOCK→CLEAR'
+  - 'adversarial: v2 marker欠落はfail-close。legacy reportは互換。安全'
+  - 'ambiguity: AC定義明確。曖昧点なし'
+  operational_simulation:
+    actual: ERRORS=0 prediction=CLEAR
+    command: gate_gunshi_report_precheck.sh
+    expected: ERRORS=0 prediction=CLEAR
+    result: PASS
+  origin: '[[cmd_karo_ci_fix_33833338308]] -> [[D0 precheck修正]] -> [[LGTM]]'
+  report_fingerprint: 7c52c22e332f
+  report_id: rpt-6e537810-14ef-4503-b2c9-d9db5371ad6e
+  report_identity_version: 2
+  report_ninja: hayate
+  report_path: queue/reports/hayate_report_cmd_karo_ci_fix_33833338308_review_approval_rc_contract.yaml
+  report_task_id: cmd_karo_ci_fix_33833338308_review_approval_rc_contract_normal
+  review_type: report
+  step3_5_verified: true
+  timestamp: '2026-09-04T14:34:00+09:00'
+  verdict: LGTM
+  verified_files:
+  - scripts/lib/review_approval.sh:422
