@@ -3567,6 +3567,7 @@ codd:
 | cmd | `cmd_karo_recon_x_b_article_source_data_202609041123` |
 | discussion | `queue/lord_conversation.jsonl` 2026-09-04T12:03:28+09:00 殿裁定 2026-09-04 12:00(X 投稿・具象化禁止): 『DM-signal は株と債券などの話はしていないのに、株と債券の強いほうを持つとか意味不明なことが書いてある。間違った具象化は危険だ。本質を抽象化せよ』→デュアルモメン |
 | discussion | `queue/lord_conversation.jsonl` 2026-09-04T12:55:57+09:00 殿裁定 2026-09-04 12:42(X 運用方針の根本転換、正本 docs/research/x_editorial_doctrine_20260904.md): 『DM-Signal を売るアカウント』→『投資を数学・確率・検証で考 |
+| discussion | `queue/lord_conversation.jsonl` 2026-09-04T12:56:25+09:00 X 下書き第 2 稿 artifact(方針 v2、30 本、殿の直し待ち): https://claude.ai/code/artifact/564f8508-a822-4f6e-9a77-e672230d9340 (🧪)。正本 docs |
 
 ## investment_knowledge_base — 投資知識辞書
 
