@@ -16998,3 +16998,17 @@ sqlite3.Connection.backup()を使うとページ(4096byte)単位のread syscall�
 - **when**: 未設定
 - **how**: 未設定
 - RCでreport_idだけを更新するとmarkerが旧generationを主張し、canonical resolverがfail-closedで対象reportを解決できなくなる。RC snapshotへmarkerの実体または欠落状態を保存し、report/task/markerを同じfence内で更新・rollbackする。
+
+
+### L1734: 同期呼び出しをasync dispatchへ置換する際は、呼び出し行の文字列をgrepする構造assertionがtarget_path外のtest fileに存在し得る
+- **日付**: 2026-09-04
+- **出典**: cmd_karo_hotfix_t3s40_auto_push_wait_async_202609040724
+- **記録者**: tobisaru
+- **tags**: [infra,cmd-quality,frontend,testing,process]
+- **subdomain**: infra
+- **target_files**: [scripts/cmd_complete_gate.sh,tests/unit/test_cmd_complete_gate_source_publish.bats,tests/unit/test_cmd_complete_gate.bats]
+- **origin**: [[cmd_karo_hotfix_t3s40_auto_push_wait_async_202609040724]]
+- **enforcement**: 未自動化
+- **when**: 未設定
+- **how**: 未設定
+- cmd_complete_gate.shのL4分岐でif cmd_complete_gate_auto_push_ancestry_wait ...; thenをasync dispatch呼び出しへ置換した際、同じ文字列をgrep -Fcで検査するtest_cmd_complete_gate.bats:9602(本taskのtarget_path外)がFAILすることが判明した。関数のリネーム/呼び出し形状変更前には、対象scriptを参照する全test file(tests/配下全体)をgrep -rln '<関数名>'で洗い出し、target_path内で修正できないtarget_path外の破壊はdecision_candidateで即報告する運用を徹底すべき。origin: [[cmd_karo_hotfix_t3s40_auto_push_wait_async_202609040724]] -> [[L4分岐の同期呼び出しをasync dispatchへ置換]] -> [[target_path外test_cmd_complete_gate.bats:9602のgrep構造assertionがFAIL]]
