@@ -60,6 +60,7 @@ def main():
         g["link_type"] = "none"
         g["external_context"] = "standalone"
         g.update(OVERRIDES.get(did, {}))
+        g["content_lane"] = schema.get("content_lane", {}).get("lane_of_13", {}).get(did, "investing")  # v1.1 3 軸目
         if "funnel_stage" in OVERRIDES.get(did, {}) and "desired_action" not in OVERRIDES[did]:
             g["desired_action"] = list(stages[g["funnel_stage"]]["desired_action"])
         text = p.read_text(encoding="utf-8")

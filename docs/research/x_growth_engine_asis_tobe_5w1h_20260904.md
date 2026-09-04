@@ -192,3 +192,92 @@ Content Engine=何を書くか・本人らしいか・数字は正しいか(v5.x
 
 ### 実装進捗台帳(loop ごとに更新)
 - 2026-09-04 15:00 v1.0: schema/tag/ledger/snapshot/slot_post/cron/calendar/分析/監査 完了。live OOS 開始=本日 18:30 slot A。
+
+---
+
+# v1.1 追補(2026-09-04 15:01 殿指示『第 3 マガジンで Reach を広げ、上位ブランドを置く』)
+
+不変: Content Engine・author corpus・human rewrite corpus・承認 13 本は壊さない。追加=「Reach を広げる本人一次資料」と「アカウント全体の上位ブランド」。定義の正本は `growth_schema.yaml` v1.1 追加節。
+
+## §24 第 3 マガジン corpus(成果物 1)
+
+`docs/research/x_corpus/note/m8357970d6430/`(63 記事、`_index.json`)。取得 2026-09-04 15:03、note API v1 layout/magazine → v3 notes。無料 49 本は全文、有料 14 本は導入のみ(文字数 120〜1,251)。**3 系統は混ぜない**:
+
+| 系統 | マガジン | 記事数 | 文字数中央値 | です/ます 中央値 | 数字/記事 | 役割 |
+|---|---|---|---|---|---|---|
+| DM 教育 | mb4377418b422 | 50 | 3,866 | 40.5 | 143.5 | Education(How to) |
+| 検証・数学 | m6557263f0241 | 14 | 519 | 3 | 58.5 | Proof |
+| サヴァイヴ/社会・経済 | m8357970d6430 | 63 | 2,738 | 7 | 30 | Reach |
+
+第 3 マガジンの題名分類(63): 医療経済 15(給与 800 万/二重累進/社会保険/開業規制/診療報酬)、不動産・住宅・金利 6(タワマン/表面利回り/フルレバ大家/相続アパート/繰り上げ返済/iDeCo)、事業・キャッシュ 8(真水のキャッシュ/法人成り/副業/レアリティ)、AI・戦国列伝 18、その他(思考法/イベント) 16。**Reach 向き=約 30 本。**
+
+## §25 第 3 マガジン文体分析(成果物 2・8)
+
+3 つの Voice を実測:
+1. **Story Voice**(2026-08〜09 の 4 本+2024 の勤務医/ニワトリ): 一人称「僕」または「A 氏」、1 行 1 文の短文改行、数字を列挙して開く(年収/価格/金利/利回り)、定型句**「これは金利のある世界の話。」**で前提転換を宣言、金利を段階的に上げて(0.8→2.5→3.5→4.5→5%)再計算、説教せず**皮肉の一句で終える**(「表面利回りは、8% だった。」「『不動産は長期目線が大事。』すぐに 87 件のいいねが付いた。」「パソコンを開いた。久しぶりに求人サイトを見た。」)。
+2. **バム persona Voice**(2025-10〜2026-07 の 3 本): 「ヤーマン、今日も生きてるか？俺はバムだ」、ゾンビ/荒野/ラムコーク/「アディオスアミーゴ」、俺・お前。**X 3,247 件に「ヤーマン」0 件=note 専用。X には持ち込まない。**
+3. **論説 Voice**(医療経済 15 本): です/ます、制度名と数字、結論は均衡点(年収 800 万、like 46)。
+
+X 圧縮の型(§story_hook_pattern): 1 投稿=構造の 1 段、数字 2 組(前提前/後)+皮肉の一句。root に前提、リプに転換(本人の二段目型)。note 本文の要約はしない。
+
+## §26 Reach topic map(成果物 3)+ X 突合(成果物 9)
+
+本人 X 単独投稿のテーマ別反応(観察。因果断定しない):
+
+| テーマ | n | imp 中央値 | imp 平均 | like 中央値 | bookmark 平均 |
+|---|---|---|---|---|---|
+| 高所得/年収 | 36 | 1,669 | **39,942** | 6 | **74.6**(年収⇄手取り 916k imp 含む) |
+| 医師/医者 | 75 | 1,279 | 11,619 | 5 | 7.5 |
+| インデックス | 37 | 1,060 | 9,126 | 7 | 20.7 |
+| 不動産 | 22 | 1,032 | 6,179 | 6 | 4.4 |
+| 住宅ローン | 10 | 1,288 | 5,004 | **9** | 4.9 |
+| 数学/確率 | 42 | 992 | 3,188 | 6 | 16.5 |
+| 開業 | 16 | 1,890 | 3,215 | 4 | 1.8 |
+| 相続/税 | 18 | 1,113 | 2,690 | 5 | 2.9 |
+| DM | 227 | 773 | 2,589 | 6 | 3.9 |
+| 事業/経営 | 58 | 764 | 1,750 | 4 | 1.6 |
+| 金利 | 23 | 826 | 1,650 | 3 | 1.1 |
+| AI | 104 | 618 | 1,061 | 3 | 0.5 |
+| FIRE | 1 | 756 | 756 | 10 | 0 |
+
+読み: 高所得・医師・インデックス・不動産・住宅ローンは imp 平均が DM 単独の 2〜15 倍。AI は本数 104 で最も反応が薄い(Reach ではなく Follow/Story 素材)。**Reach topic map の優先順=①高所得/年収≠資産 ②医師のお金 ③住宅ローン・不動産・金利 ④インデックス/格差 ⑤投資数学。**
+
+## §27 content_lane(成果物 4)
+
+9 lane(schema `content_lane`): investing / dm / math_probability / money_inequality / real_estate_mortgage / business_cash / medical_economics / ai_automation / survival_story。3 軸管理=content_category(何を話すか)×funnel_stage(どこを担当)×content_lane(何のレーン)。13 本に付与済み(dm 4、math_probability 5、investing 3、money_inequality 1)。**real_estate/business/medical は 0=Round5 で生成。**
+
+## §28 multi-entry funnel map(成果物 5)
+
+Lane A お金・格差 / B 住宅・不動産・金利 / C 医師・高所得 / D 事業・AI / E 投資直球(schema `entry_lanes`)。全て「数字で判断する思想→投資システム→DM→DM-Signal」へ収束。**Reach 投稿単体で DM-Signal へつなげない。橋は profile と次の投稿。**
+
+## §29 cross-topic bridge map(成果物 6)
+
+6 本(schema `cross_topic_bridges`、全て本人記事に source あり): 住宅ローン→キャッシュフロー→MaxDD→DM / 表面利回り→手残り→バックテスト年率も同じ→β・OOS / 利益とキャッシュ→経路→幾何平均・DD / 高年収→フローとストック→資本格差→DM / 相続アパート→金利が次の買い手の値段を下げる→前提が変わったら降りる(絶対モメンタム) / 給与均衡点 800 万→平均や肩書きではなく構造→A-1。
+
+## §30 Reach シリーズ候補(成果物 7)
+
+本人の題名・定型句から 5 本のみ(想像で増やさない): 「金利のある世界」(定型句 4 記事+X 投稿)、「俺たちはどう生き延びるか」(マガジン名、X imp 145,944)、「年収と資産は別物」、「見かけの数字と真水」、「医師のお金の罠」。hook_type に story / scenario / irony を追加。
+
+## §31 ブランド仮説の検証(成果物 11・12)
+
+仮説「数字を見て、どう生き延びるかを考える人。投資は DM を深くやり、実装が DM-Signal」。整合確認: 第 3 マガジン題名にサヴァイブ/詰む/ﾀﾋぬ 8、数字・年収・キャッシュ・利回り・金利 19、医療経済 15。X の imp 上位テーマは高所得・医師・不動産・住宅ローン。**整合する。** ただし AI・戦国列伝 18 本は「生き延びる」より「作る」の話で、ブランド thread では「検証・再現性」に接続する(Lane D)。
+Profile 再評価: 現 bio「デュアルモメンタム×配当｜開業医の DX｜インカム×キャピタル」は **DM 専門垢にも雑多垢にも見える両方の欠点**を持つ。上位概念を先頭に置き、DM-Signal は実績(Proof of Work)として後段に置く案: 「東京の耳鼻科医。数字を見て生き延びる方法を考える。投資・不動産・事業・医療をキャッシュフローと確率で見る。投資はデュアルモメンタムを自分で検証して運用、その実装が DM-Signal ▶ note」。**殿裁定待ち(変更しない)。**
+
+## §32 note 三層(成果物 10)
+
+Reach note=m8357970d6430「俺たちはどう生き延びるか」← Reach 投稿 / Education note=How to ← B / Proof note=検証ショートコラム ← C・E / DM-Signal ← Trust 十分な convert のみ。link_type に `note_reach / note_howto / note_proof` を区別して記録する(台帳 v1.2)。
+
+## §33 Reach mix 初期仮説(§12)
+
+Reach 内: money/social/survival 40 / investment math 30 / investment common sense 20 / DM intro 10。根拠は §26 の反応と素材数(Reach 向き 30 本、投資数学 12 本)。固定せず 40 投稿後に見直す。現在の在庫 13 本は全て投資・数学 lane のため、**Round5 で real_estate_mortgage 3・medical_economics 3・business_cash 2・money_inequality 2 を story/irony hook で生成**し、殿の添削を受ける。
+
+## §34 発信力 KPI(§13)
+
+取得可: profile_visits(np_user_profile_clicks)、follows(日次差分)、replies/quotes/bookmarks、topic_breadth(台帳 content_lane 分布)。**API で取得不能: non-follower impressions(X Analytics 画面のみ)、repeat engagers、cross-topic migration(user 単位)。** 代理設計 v1.2: 投稿ごとの reply/quote user id を conversation search で取り、lane を跨いで同じ user が現れる件数を migration の代理指標にする。
+
+## §35 禁止(§17)
+
+DM-Signal へ無理につなげる / 全投稿を投資へ着地 / 住宅・医療・不動産投稿を商品広告に / 雑多垢化 / 恐怖だけで釣る / 煽りを本人実績以上に / Reach のために Voice を壊す / 数字の正確性を落とす。gate 実装: x_post_gate Rule 7 を lane 別に拡張(real_estate/medical/business lane に DM-Signal 名が入ったら FAIL)は v1.2。
+
+### 実装進捗台帳(v1.1)
+- 2026-09-04 15:10 v1.1: 第 3 マガジン 63 本 corpus 化、3 系統統計、Story/persona/論説 Voice 実測、X テーマ突合 13 分類、content_lane 9+13 本付与、entry lane 5、bridge 6、series 5、note 三層、ブランド仮説検証(整合)、bio 案 v2(殿裁定待ち)。未: Round5 生成(lane 別 10 本)、gate lane 拡張、link_type 細分、migration 代理指標。

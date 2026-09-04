@@ -6,6 +6,7 @@ entries:
 - draft_id: R4-A-1
   draft_file: queue/x_drafts/2026-09-04_R4-A-1.txt
   growth:
+    content_lane: money_inequality
     content_category: A
     funnel_stage: reach
     audience: general
@@ -21,6 +22,7 @@ entries:
 - draft_id: R4-A-3
   draft_file: queue/x_drafts/2026-09-04_R4-A-3.txt
   growth:
+    content_lane: math_probability
     content_category: A
     funnel_stage: reach
     audience: general
@@ -36,6 +38,7 @@ entries:
 - draft_id: R4-A-4
   draft_file: queue/x_drafts/2026-09-04_R4-A-4.txt
   growth:
+    content_lane: math_probability
     content_category: A
     funnel_stage: reach
     audience: general
@@ -51,6 +54,7 @@ entries:
 - draft_id: R4-B-1
   draft_file: queue/x_drafts/2026-09-04_R4-B-1.txt
   growth:
+    content_lane: dm
     content_category: B
     funnel_stage: follow
     audience: systematic
@@ -66,6 +70,7 @@ entries:
 - draft_id: R4-B-3
   draft_file: queue/x_drafts/2026-09-04_R4-B-3.txt
   growth:
+    content_lane: dm
     content_category: B
     funnel_stage: trust
     audience: investor
@@ -81,6 +86,7 @@ entries:
 - draft_id: R4-B-4
   draft_file: queue/x_drafts/2026-09-04_R4-B-4.txt
   growth:
+    content_lane: dm
     content_category: B
     funnel_stage: follow
     audience: systematic
@@ -96,6 +102,7 @@ entries:
 - draft_id: R4-C-1
   draft_file: queue/x_drafts/2026-09-04_R4-C-1.txt
   growth:
+    content_lane: investing
     content_category: C
     funnel_stage: follow
     audience: systematic
@@ -114,6 +121,7 @@ entries:
 - draft_id: R4-C-2
   draft_file: queue/x_drafts/2026-09-04_R4-C-2.txt
   growth:
+    content_lane: investing
     content_category: C
     funnel_stage: trust
     audience: systematic
@@ -129,6 +137,7 @@ entries:
 - draft_id: R4-C-4
   draft_file: queue/x_drafts/2026-09-04_R4-C-4.txt
   growth:
+    content_lane: investing
     content_category: C
     funnel_stage: trust
     audience: systematic
@@ -144,6 +153,7 @@ entries:
 - draft_id: R4-D-1
   draft_file: queue/x_drafts/2026-09-04_R4-D-1.txt
   growth:
+    content_lane: math_probability
     content_category: D
     funnel_stage: reach
     audience: general
@@ -159,6 +169,7 @@ entries:
 - draft_id: R4-D-3
   draft_file: queue/x_drafts/2026-09-04_R4-D-3.txt
   growth:
+    content_lane: math_probability
     content_category: D
     funnel_stage: reach
     audience: general
@@ -174,6 +185,7 @@ entries:
 - draft_id: R4-D-5
   draft_file: queue/x_drafts/2026-09-04_R4-D-5.txt
   growth:
+    content_lane: math_probability
     content_category: D
     funnel_stage: reach
     audience: general
@@ -189,6 +201,7 @@ entries:
 - draft_id: R4-F-3
   draft_file: queue/x_drafts/2026-09-04_R4-F-3.txt
   growth:
+    content_lane: dm
     content_category: F
     funnel_stage: trust
     audience: dual_momentum

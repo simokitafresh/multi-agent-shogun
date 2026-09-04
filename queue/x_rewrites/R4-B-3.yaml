@@ -44,3 +44,4 @@ growth:
   conversation_gap: low
   link_type: none
   external_context: standalone
+  content_lane: dm

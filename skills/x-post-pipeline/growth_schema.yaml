@@ -1,5 +1,5 @@
 meta:
-  version: v1 (2026-09-04 14:51 殿指示『Growth Engine を設計・実装せよ』)
+  version: v1.1 (2026-09-04 15:01 殿指示『第 3 マガジンで Reach を広げ、上位ブランドを置く』。v1=14:51)
   design_doc: docs/research/x_growth_engine_asis_tobe_5w1h_20260904.md
   principle: Content Engine(何を書くか/本人らしいか/数字は正しいか)と Growth Engine(誰向けか/何をさせるか/どの段階か/いつ出すか/結果はどうか)を分離する。Growth のために Voice を壊さない。Voice のために Growth を無視しない。
   no_optimization_until: サンプルが貯まるまで比率・型の最適化禁止(殿 §22)。初期仮説を固定して forward test。
@@ -51,7 +51,8 @@ metadata_schema:
   audience: general|investor|systematic|dual_momentum|dm_signal
   funnel_stage: reach|follow|trust|convert
   desired_action: [dwell|reply|quote|profile|follow|bookmark|note|dm_signal]
-  hook_type: money|contradiction|math|result|question|story
+  hook_type: money|contradiction|math|result|question|story|scenario|irony  # v1.1: story=主人公が上手くいく→前提が変わる→数字で詰む→構造が見える / scenario=『もし政策金利 2.5% なら』の時間送り / irony=皮肉の一句で落とす
+  content_lane: investing|dm|math_probability|money_inequality|real_estate_mortgage|business_cash|medical_economics|ai_automation|survival_story  # v1.1 3 軸目(何のレーンか)
   conversation_gap: low|medium|high(殿裁定 14:38『少し荒い方が隙』。良い gap=核は正しく全部説明しない。悪い gap=誤り・誤認・重要条件の隠蔽)
   link_type: none|note|dm_signal
   series_id: optional
@@ -135,3 +136,73 @@ kpi_schema:
   per_account_daily: [followers_count, following_count, tweet_count]
   snapshots: [t24h, t7d]
   ratios: [follow_per_impression(日次近似), profile_click_per_impression, bookmark_per_impression, link_click_per_impression]
+
+# ===== v1.1 追加(2026-09-04 15:01 殿指示) =====
+brand:
+  hypothesis: 数字を見て、どう生き延びるかを考える人。その中で投資はデュアルモメンタムをかなり深くやっており、その実装が DM-Signal
+  thread: [数字, 確率, 検証, キャッシュフロー, 構造, 生存]
+  thesis: ["数字を見ずに思い込みで動くと詰む", "平均や肩書きではなく構造を見る", "期待値・リスク・キャッシュフロー・検証を見る", "生き残るために数字を使う"]
+  verification: 本人 note 3 マガジン 127 記事と X 3,247 件に整合(設計書 §31)。第 3 マガジン 63 記事の題名で『サヴァイブ/生き延びる/詰む/ﾀﾋぬ』系 8、『数字/年収/キャッシュ/利回り/金利』系 19、医療経済 15、AI/戦国 18。X の imp 平均上位=高所得/年収(39,942)・医師(11,619)・不動産(6,179)・住宅ローン(5,004)。DM 単独は 2,589
+  not: [デュアルモメンタムを売っている人, 何でも話す医師]
+  dm_signal_role: 商品であり Proof of Work(口だけでなく検証システムを作って運用している証拠)。プロフィールの実績に出してよいが、アカウントを DM-Signal 一色にしない
+
+content_lane:
+  rule: 第 3 マガジン 63 記事+既存 64 記事の実集合から MECE に近い最小 9 分類。細分化しない
+  investing: インデックス・暴落・積立・期待値・勝率(投資直球)
+  dm: デュアルモメンタム・DM-Signal
+  math_probability: 算術/幾何平均・非対称損失・複利・確率
+  money_inequality: 資産格差・平均リターンでは追いつけない・年収≠資産
+  real_estate_mortgage: 住宅ローン・不動産投資・金利・相続対策アパート
+  business_cash: 事業・粗利と真水のキャッシュ・法人・元本返済
+  medical_economics: 医師の給与・開業・診療報酬・社会保険・二重累進
+  ai_automation: AI・自動化・戦国 AI 列伝(Reach というより Follow/Story 素材)
+  survival_story: 主人公型ストーリー(タワマン/表面利回り 8%/フルレバ大家/相続アパート)。lane 横断の器
+  lane_of_13: {R4-A-1: money_inequality, R4-A-3: math_probability, R4-A-4: math_probability, R4-B-1: dm, R4-B-3: dm, R4-B-4: dm, R4-C-1: investing, R4-C-2: investing, R4-C-4: investing, R4-D-1: math_probability, R4-D-3: math_probability, R4-D-5: math_probability, R4-F-3: dm}
+
+entry_lanes:
+  A_money_inequality: [資産格差, 平均リターン, 複利, 投資数学, DM, DM-Signal]
+  B_real_estate_mortgage: [住宅ローン/不動産/金利上昇/相続, キャッシュフロー, リスク管理, 数字で判断する思想, 投資システム, DM-Signal]
+  C_medical_high_income: [高年収/住宅/開業/病院経営/働き方, 年収≠資産, キャッシュフロー, 資産形成, 投資, DM-Signal]
+  D_business_ai: [事業/利益/キャッシュ/AI/自動化, 数字で検証, 再現性, 投資システムの検証, DM-Signal]
+  E_investing_direct: [インデックス/暴落/期待値/勝率/モメンタム, DM, DM-Signal]
+  rule: 複数入口から同じ思想へ収束。Reach 投稿単体で DM-Signal へつなげない(§5 殿)。橋は profile と次の投稿が担う
+
+cross_topic_bridges:
+  - {from: real_estate_mortgage, hook: 金利が 1% 上がるだけで(1.4 億タワマン 0.8%→…), bridge: 大事なのは年収ではなくキャッシュフロー, to: 投資も期待リターンだけでは足りない→MaxDD→DM, source: n6ae69b4a1947}
+  - {from: real_estate_mortgage, hook: 表面利回り 8%, bridge: 表面の数字と手残りは違う, to: バックテストの年率も同じ→β/MaxDD/OOS→DM-Signal, source: n9ab9e12adee4}
+  - {from: business_cash, hook: 利益が出ていても現金がない(元本返済は経費にならない), bridge: 平均値ではなく経路を見る, to: 幾何平均/ドローダウン→投資数学, source: na68b0cd82b9c}
+  - {from: medical_economics, hook: 高年収でも資産が増えない(名目固定収入), bridge: フローとストックは別, to: 資本格差→市場平均→DM, source: n938cc77f66bb}
+  - {from: real_estate_mortgage, hook: 相続税対策のアパートが負の遺産になる(NOI 864→700、金利 1.5→5%), bridge: 金利は返済額だけでなく次の買い手の値段まで下げる, to: 前提が変わった時に降りるルール→絶対モメンタム, source: n48651b71f146}
+  - {from: medical_economics, hook: 大学病院の給与均衡点は年収 800 万, bridge: 平均や肩書きではなく構造, to: 平均狙いでは上のステージに行けない→A-1, source: n1d77aaf8e3ef}
+
+series_candidates_from_magazine3:
+  items:
+    - {series_id: interest_world, title: 金利のある世界, evidence: 本人の定型句『これは金利のある世界の話』が 4 記事(タワマン/表面利回り/フルレバ/相続アパート)+X 投稿『金利のある世界』, lane: real_estate_mortgage, hook: story}
+    - {series_id: survive, title: 俺たちはどう生き延びるか, evidence: マガジン名+X『俺たちはどう生き延びるか。新しい記事を書きました』(imp 145,944), lane: survival_story, hook: story}
+    - {series_id: income_vs_asset, title: 年収と資産は別物, evidence: 『年収 2000 万でも貧しくなる』『世帯年収 2000 万でタワマン』『年収⇄手取り』(bm 2,499), lane: medical_economics, hook: money}
+    - {series_id: paper_vs_cash, title: 見かけの数字と真水, evidence: 『表面利回り 8%』『真水のキャッシュを直視しろ』『黒字なのに金がない』, lane: business_cash, hook: contradiction}
+    - {series_id: doctor_money_trap, title: 医師のお金の罠, evidence: 二重累進課税/iDeCo/社会保険料/厚生年金要件/大学病院給与 800 万(like 46), lane: medical_economics, hook: irony}
+  rule: 想像で増やさない。上記 5 本は全て本人記事の題名・定型句から取った
+
+story_hook_pattern:
+  structure: [主人公は最初うまくいっている(数字を列挙: 年収/価格/金利/利回り), 『これは金利のある世界の話』で前提転換を宣言, 前提が段階的に変わる(金利 0.8→2.5→3.5→4.5→5%), 数字を再計算すると詰んでいる(NOI 864→700、手残り 313→−100), 構造が見える(金利は次の買い手の値段まで下げる), 説教せず皮肉の一句で終える(『表面利回りは、8% だった。』『「不動産は長期目線が大事。」すぐに 87 件のいいねが付いた。』)]
+  x_compression: 1 投稿=構造の 1 段だけ。数字 2 組(前提前/後)+皮肉の一句。全話を 1 投稿に入れない。root に前提、リプに転換(本人の二段目型)
+  voices_measured: {story: 短文改行・一人称『僕』または三人称 A 氏・です/ます ほぼ無し・数字列挙, persona_bam: 『ヤーマン、今日も生きてるか？俺はバムだ』ゾンビ/荒野/ラムコーク/アディオスアミーゴ(2025-10〜2026-07 の 3 記事), argument: 医療経済の論説(です/ます・数字・制度名)}
+  x_use: story と irony は X 向き。persona_bam は note 専用(X 3,247 件に『ヤーマン』0 件)
+
+note_three_layers:
+  reach: {magazine: m8357970d6430, name: 俺たちはどう生き延びるか, from_x: Reach 投稿}
+  education: {magazine: mb4377418b422, name: How to, from_x: DM 教育(B)}
+  proof: {magazine: m6557263f0241, name: 検証ショートコラム, from_x: 検証投稿(C/E)}
+  product: {dest: dm-signal.com, from_x: Trust が十分な convert 投稿のみ}
+
+reach_mix_hypothesis:
+  within_reach: {money_social_survival: 40, investment_math: 30, investment_common_sense: 20, dm_intro: 10}
+  basis: X 反応(高所得/医師/不動産/住宅ローンの imp 平均が DM 単独の 2〜15 倍)と素材数(第 3 マガジン Reach 向き 30 記事、投資数学 12)。固定しない。40 投稿後に見直す
+
+kpi_v1_1_additions:
+  available: [profile_visits(np_user_profile_clicks), follows(日次差分), replies, quotes, bookmarks, topic_breadth(台帳の content_lane 分布)]
+  unavailable_via_api: [non_follower_impressions(X Analytics 画面のみ), repeat_engagers(user 単位の反応履歴は API で取れない), cross_topic_migration(user 単位)]
+  proxy_design_v1_2: reply/quote を付けた user id を投稿ごとに取得(GET /2/tweets/search/recent conversation_id、Basic tier 可)し、lane を跨いで同じ user が現れる件数を cross_topic_migration の代理指標にする
+
+prohibitions_v1_1: [DM-Signal へ無理につなげる, 全投稿を投資へ着地させる, 住宅/医療/不動産投稿を商品広告にする, 雑多垢化, 恐怖だけで釣る, 煽りを本人実績以上に強くする, Reach のために本人 Voice を壊す, 数字の正確性を落とす]
