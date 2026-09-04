@@ -2184,6 +2184,7 @@ codd:
 | causal_chain | `[[cmd_karo_hotfix_recalculate_sync_end_date_20260729]]` (L1447) |
 | causal_chain | `[[cmd_karo_hotfix_deploy_task_yaml_speed_recon_guard_202607020133]]` (L919) |
 | causal_chain | `[[cmd_karo_ci_fix_30852904481_completion_tail_race]]` (L1548) |
+| discussion | `queue/lord_conversation.jsonl` 2026-09-04T16:42:42+09:00 表示されている。ありがとう |
 
 ## semantic_dictionary_design — セマンティック辞書構想
 
