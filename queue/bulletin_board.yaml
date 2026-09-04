@@ -2944,3 +2944,14 @@ entries:
   notify_targets: []
   confirmed_by: []
   status: 'open'
+- id: 'blt_20260905_015049_cf9cd0'
+  content: |-
+    GATE CLEAR cmd_4474: DM-Signal campaign attribution(X→dm-signal.com 直リンクの visit/signup を campaign_id で外部帰属): LP が ?utm_campaign を読み showcase_events へ campaign_id を同送、backend は列追加+週次集計 API
+  posted_by: 'karo'
+  posted_at: '2026-09-05T01:50:49'
+  requires_confirmation: false
+  action_type: 'info'
+  actioned_by: ''
+  notify_targets: []
+  confirmed_by: []
+  status: 'open'
