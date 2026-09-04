@@ -17073,3 +17073,10 @@ insights:
   source: "semantic_index_update"
   fix_known: false
   status: pending
+- id: INS-20260904-104923645-e182
+  ts: "2026-09-04T10:49:23+09:00"
+  insight: "semantic_index_update新概念候補: discussion:めんどくさがらずA～Eの5パターンの例をそれぞれ５つ書こう。それを俺が直す。これを何週か繰り返せばストックと俺の文章の癖が手に入るはずだ は 既存aliasesに一致なし。概念定義とaliases追加を検討せよ"
+  priority: "low"
+  source: "semantic_index_update"
+  fix_known: false
+  status: pending
