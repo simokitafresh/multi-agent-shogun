@@ -394,65 +394,34 @@ def atomic_persist_tokens(path, token):
         except FileNotFoundError:
             pass
         raise
+# 2026-09-04 14:55 将軍 D0(T3-S-68): xdk Client は access_token のみ渡しても InvalidClientIdError を投げる(内部 refresh 前提)。
+# 認可直後に投稿を落とすため、xdk を使わず X API v2 を urllib で直接叩く(Bearer=access token、token は一切触らない)。
+import urllib.request, urllib.error
+def api_post(url, body, content_type="application/json"):
+    data = body if isinstance(body, bytes) else json.dumps(body).encode("utf-8")
+    req = urllib.request.Request(url, data=data, method="POST", headers={
+        "Authorization": f"Bearer {access}", "Content-Type": content_type, "User-Agent": "multi-agent-shogun x_post"})
+    with urllib.request.urlopen(req, timeout=60) as r:
+        return json.load(r)
 try:
-    from xdk.oauth2_auth import OAuth2PKCEAuth
-    from xdk import Client
-except ImportError:
-    print("x_post.sh post: official xdk is not installed", file=sys.stderr)
-    raise SystemExit(2)
-
-scope = "tweet.read tweet.write users.read media.write offline.access"
-try:
-    OAuth2PKCEAuth(
-        client_id=values.get("X_CLIENT_ID") or None,
-        client_secret=values.get("X_CLIENT_SECRET") or None,
-        redirect_uri=values.get("X_REDIRECT_URI", "http://127.0.0.1:8585/callback"),
-        scope=scope,
-        token=tokens,
-    )
-    try:
-        client = Client(
-            token=tokens,
-            client_id=values.get("X_CLIENT_ID") or None,
-            client_secret=values.get("X_CLIENT_SECRET") or None,
-            redirect_uri=values.get("X_REDIRECT_URI", "http://127.0.0.1:8585/callback"),
-            scope=scope,
-        )
-    except TypeError:
-        client = Client(token=tokens)
     payload = {"text": Path(draft_path).read_text(encoding="utf-8")}
     if media_path:
         raw = base64.b64encode(Path(media_path).read_bytes()).decode("ascii")
-        media_id = None
-        try:
-            from xdk.media.models import UploadRequest
-            upload_body = UploadRequest(media=raw, media_category="tweet_image")
-            response = client.media.upload(body=upload_body)
-        except (ImportError, AttributeError, TypeError):
-            response = client.media.upload(media_path)
-        data = response.get("data") if isinstance(response, dict) else getattr(response, "data", None)
-        if isinstance(data, dict):
-            media_id = data.get("id")
-        else:
-            media_id = getattr(data, "id", None)
-        media_id = media_id or (response.get("id") if isinstance(response, dict) else getattr(response, "id", None))
+        up = api_post("https://api.x.com/2/media/upload", {"media": raw, "media_category": "tweet_image", "media_type": "image/png"})
+        media_id = (up.get("data") or {}).get("id") or up.get("id")
         if not media_id:
             raise RuntimeError("media upload returned no media_id")
         payload["media"] = {"media_ids": [str(media_id)]}
-    try:
-        response = client.posts.create(post_data=payload)
-    except TypeError:
-        try:
-            from xdk.posts.models import CreateRequest
-            response = client.posts.create(body=CreateRequest(**payload))
-        except (ImportError, AttributeError, TypeError):
-            response = client.posts.create(body=payload)
-except Exception as exc:
-    status = getattr(getattr(exc, "response", None), "status_code", None)
-    if status == 401 or "401" in str(exc):
+    response = api_post("https://api.x.com/2/tweets", payload)
+except urllib.error.HTTPError as exc:
+    detail = exc.read().decode("utf-8", "replace")[:300]
+    if exc.code == 401:
         print("x_post.sh post: unauthorized (HTTP 401)", file=sys.stderr)
     else:
-        print(f"x_post.sh post: XDK request failed: {type(exc).__name__}", file=sys.stderr)
+        print(f"x_post.sh post: X API failed http={exc.code} {detail}", file=sys.stderr)
+    raise SystemExit(1)
+except Exception as exc:
+    print(f"x_post.sh post: request failed: {type(exc).__name__}", file=sys.stderr)
     raise SystemExit(1)
 
 def as_json(value):
@@ -503,7 +472,7 @@ def write_posted_marker(token_persistence, error=None):
 
 write_posted_marker("pending")
 try:
-    atomic_persist_tokens(Path(env_path), client.token)
+    pass  # urllib 経路は token を rotate しない。env は helper(x_token_refresh.py)だけが書く
 except Exception:
     try:
         write_posted_marker("failed", "client token was not persisted")
