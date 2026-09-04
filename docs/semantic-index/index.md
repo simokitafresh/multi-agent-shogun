@@ -3601,6 +3601,7 @@ codd:
 | discussion | `queue/lord_conversation.jsonl` 2026-09-04T18:27:25+09:00 session_save_20260904_1828(復帰点、先に session_save_20260904_1758 と lord_ruling_x_invest_only_4weeks_20260904 を読め): loop 18:2 |
 | discussion | `queue/lord_conversation.jsonl` 2026-09-04T18:35:32+09:00 殿 2026-09-04 18:29『俺の種ってなんだ？俺が何もしなくても無限に生成し続けるから意味がある』→将軍訂正: ネタ台帳(殿の種)は誤り。claim_bank.yaml(前提を壊す構造的主張 28、verified_numbers |
 | discussion | `queue/lord_conversation.jsonl` 2026-09-04T18:48:16+09:00 殿 2026-09-04 18:38『x search でバズった投資ネタを探し、特徴を分析して俺のスタイルと融合』→X API recent(7 日)15 topic 1,263 本→like≥100 の 39 本を本人承認 37 本と同 |
+| discussion | `queue/lord_conversation.jsonl` 2026-09-04T19:03:28+09:00 session_save_20260904_1905(復帰点、先に session_save_20260904_1828 を読め): loop 19:03。殿指示 18:55『記事から投稿を作るな。ネタから投稿を作れ』20 項目を実装済み( |
 
 ## investment_knowledge_base — 投資知識辞書
 
