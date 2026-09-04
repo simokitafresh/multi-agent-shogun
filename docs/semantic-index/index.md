@@ -3604,6 +3604,7 @@ codd:
 | discussion | `queue/lord_conversation.jsonl` 2026-09-04T18:48:16+09:00 殿 2026-09-04 18:38『x search でバズった投資ネタを探し、特徴を分析して俺のスタイルと融合』→X API recent(7 日)15 topic 1,263 本→like≥100 の 39 本を本人承認 37 本と同 |
 | discussion | `queue/lord_conversation.jsonl` 2026-09-04T19:03:28+09:00 session_save_20260904_1905(復帰点、先に session_save_20260904_1828 を読め): loop 19:03。殿指示 18:55『記事から投稿を作るな。ネタから投稿を作れ』20 項目を実装済み( |
 | discussion | `queue/lord_conversation.jsonl` 2026-09-04T19:14:12+09:00 殿問 2026-09-04 19:12『在庫がない slot は投稿しないんで大丈夫なのか？』→実測: 未投稿在庫 Short 24/Long 3/SE 8、需要(9/5〜10/2) Short 28/SE 18/Long 7/Thread |
+| discussion | `queue/lord_conversation.jsonl` 2026-09-04T19:28:51+09:00 現在の9月plan体制への変更は維持してください。 特に、 claim ↓ 月間editorial plan ↓ format選択 ↓ draft ↓ Fact / Voice gate ↓ 殿承認 ↓ scheduledのみ投稿 ↓ Li |
 
 ## investment_knowledge_base — 投資知識辞書
 
