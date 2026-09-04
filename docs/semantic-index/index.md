@@ -3605,6 +3605,7 @@ codd:
 | discussion | `queue/lord_conversation.jsonl` 2026-09-04T19:03:28+09:00 session_save_20260904_1905(復帰点、先に session_save_20260904_1828 を読め): loop 19:03。殿指示 18:55『記事から投稿を作るな。ネタから投稿を作れ』20 項目を実装済み( |
 | discussion | `queue/lord_conversation.jsonl` 2026-09-04T19:14:12+09:00 殿問 2026-09-04 19:12『在庫がない slot は投稿しないんで大丈夫なのか？』→実測: 未投稿在庫 Short 24/Long 3/SE 8、需要(9/5〜10/2) Short 28/SE 18/Long 7/Thread |
 | discussion | `queue/lord_conversation.jsonl` 2026-09-04T19:28:51+09:00 現在の9月plan体制への変更は維持してください。 特に、 claim ↓ 月間editorial plan ↓ format選択 ↓ draft ↓ Fact / Voice gate ↓ 殿承認 ↓ scheduledのみ投稿 ↓ Li |
+| discussion | `queue/lord_conversation.jsonl` 2026-09-04T19:43:47+09:00 session_save_20260904_1942(復帰点、先に session_save_20260904_1905 を読め): 殿指示 3 本を実装。(1)19:14『claim_bank を切り抜き工場にしない』=origin 必須 |
 
 ## investment_knowledge_base — 投資知識辞書
 
