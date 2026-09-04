@@ -17235,3 +17235,10 @@ insights:
   source: "semantic_index_update"
   fix_known: false
   status: pending
+- id: INS-20260904-131902679-f62e
+  ts: "2026-09-04T13:19:02+09:00"
+  insight: "semantic_index_update新概念候補: discussion:xapiの認可も自動で出来るようにせよ。1回目は俺が助けるからどうすればいいか指示してくれ は 既存aliasesに一致なし。概念定義とaliases追加を検討せよ"
+  priority: "low"
+  source: "semantic_index_update"
+  fix_known: false
+  status: pending
