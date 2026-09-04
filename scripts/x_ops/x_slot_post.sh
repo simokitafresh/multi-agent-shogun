@@ -64,7 +64,11 @@ log "slot=$slot planned_format=$fmt draft=$picked real_format=$real_fmt ptr_next
 
 if [[ "$real_fmt" = thread ]]; then
     base="${picked%-P}"; tid="${picked_id%-P}"
-    reps=(); for r in 1 2 3; do [[ -f "queue/x_drafts/$base-R$r.approved" ]] && reps+=("$base-R$r"); done
+    reps=(); for r in 1 2 3; do
+        if [[ -f "queue/x_drafts/$base-R$r.approved" ]]; then
+            reps+=("$base-R$r")
+        fi
+    done
     if bash scripts/x_ops/x_thread_post.sh "$tid" "$picked" "${reps[@]}" --lane investing --stage trust; then
         echo "$ptr" > "$PTR"; log "THREAD POSTED $tid"; exit 0
     else
