@@ -2885,3 +2885,15 @@ entries:
     - 'karo'
   confirmed_by: ["karo"]
   status: "closed"
+- id: 'blt_20260904_200129_1240ee'
+  content: |-
+    DOC_LANE_ALERT: context=context/infrastructure.md raw_alert=ALERT: context/infrastructure.md source commits 4件 since last_updated=2026-09-04 repo=/home/simokitafresh/multi-agent-shogun root_fallback=no timeout=360s/360s owner=infra-platform update_trigger=.github|.githooks|config|docs/rule|docs/knowledge-base|instructions|scripts|skills|tests|AGENTS.md|CLAUDE.md|CONTRIBUTING.md|LICENSE|Makefile|SECURITY.md|first_setup.sh|install.bat|lefthook-local.yml|lefthook.yml|project_lexicon.yaml|setup.sh|shutsujin_departure.sh。更新要否を確認せよ latest: 4ae12d10d900 fix: kpi_availability.yaml を safe_load PASS まで修正(v1.3 由来の flow 構文不正 4 箇所を引用符化) | 85777b9958eb fix: kpi_availability.yaml v1.3 由来の flow mapping 不正(?utm_*)を除去。safe_load PASS 確認済み | 0a924506954a fix: kpi_availability.yaml flow mapping 内の ? を除去(safe_load PASS) action: bash scripts/context_source_commit_set.sh context/infrastructure.md 4ae12d10d900 'context_freshness reviewed source boundary' 'context_freshness_check context=context/infrastructure.md commit=4ae12d10d900'
+  posted_by: 'gate_context_freshness'
+  posted_at: '2026-09-04T20:01:29'
+  requires_confirmation: false
+  action_type: 'action_required'
+  actioned_by: ''
+  notify_targets:
+    - 'shogun'
+  confirmed_by: []
+  status: 'open'
