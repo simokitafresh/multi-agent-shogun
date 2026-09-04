@@ -17977,7 +17977,9 @@ insights:
   priority: "low"
   source: "semantic_stress_test"
   fix_known: false
-  status: pending
+  status: "resolved"
+  action_artifact: "semantic_index=/home/simokitafresh/multi-agent-shogun/docs/semantic-index/index.md"
+  resolved_reason: "semantic index candidate was absorbed into a registered concept"
 - id: INS-20260905-025459587-2da5
   ts: "2026-09-05T02:54:59+09:00"
   insight: "[[偵察 DM Signal Core LP Free tier Google Auth coupon visibility]] semantic_stress_test candidate_aliases: NO_MATCH source=cmds query=偵察: DM-Signal Core LP/Free tier/Google Auth/coupon/visibility/Performance 画面/analytics/note 導線の AsIs を現行コード・本番 DB(readonly)・本番実測で全数確認し、Core vs Simple LP+Free Interactive Proof 設計の材"
@@ -18071,5 +18073,12 @@ insights:
   insight: "gunshi_log_append.shのFAIL verdictでもreport_path/report_id/report_identity_versionを必須化すべき。不足するとinbox_mark_readのentry_matches_reportが照合できずmark_read BLOCK。本セッションで5回以上発生。"
   priority: "medium"
   source: "manual"
+  fix_known: false
+  status: pending
+- id: INS-20260905-065233813-00ef
+  ts: "2026-09-05T06:52:33+09:00"
+  insight: "semantic_index_update新概念候補: discussion:task notification task id bg0jn1xnq task id tool use id toolu 01AQfoR8frVXDTiHv7 は 既存aliasesに一致なし。概念定義とaliases追加を検討せよ"
+  priority: "low"
+  source: "semantic_index_update"
   fix_known: false
   status: pending
