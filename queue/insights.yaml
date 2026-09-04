@@ -17316,3 +17316,10 @@ insights:
   source: "semantic_index_update"
   fix_known: false
   status: pending
+- id: INS-20260904-142700471-ad28
+  ts: "2026-09-04T14:27:00+09:00"
+  insight: "[[結構いいな]] semantic_stress_test candidate_aliases: NO_MATCH source=lord query=結構いいな。もう5パターンついかしてみて。直すから"
+  priority: "low"
+  source: "semantic_stress_test"
+  fix_known: false
+  status: pending
