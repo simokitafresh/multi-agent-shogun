@@ -334,9 +334,9 @@ if token_json:
         print("x_post.sh post: X_TOKEN_JSON is invalid", file=sys.stderr)
         raise SystemExit(2)
 else:
+    # 2026-09-04 14:40 将軍 D0(T3-S-67): 直前に x_token_refresh.py で refresh 済み(access は 2h 有効)。xdk へ refresh_token を渡すと
+    # xdk が独自に rotate して env と食い違い、次の refresh で X の再利用検知が grant を revoke する。refresh は helper のみ。
     tokens = {"access_token": access}
-    if refresh:
-        tokens["refresh_token"] = refresh
 if not access and not tokens.get("access_token"):
     print("x_post.sh post: token empty", file=sys.stderr)
     raise SystemExit(2)

@@ -10,7 +10,7 @@ for l in env.read_text(encoding="utf-8").splitlines():
     if "=" in l and not l.lstrip().startswith("#"):
         k, x = l.split("=", 1); v[k.strip()] = x.strip().strip('"').strip("'")
 from xdk import Client
-c = Client(token={"access_token": v["X_ACCESS_TOKEN"], "refresh_token": v.get("X_REFRESH_TOKEN")},
-           client_id=v.get("X_CLIENT_ID"), client_secret=v.get("X_CLIENT_SECRET"))
+# 2026-09-04 14:40 将軍 D0(T3-S-67): xdk に refresh_token を渡すと内部で rotate し env と食い違う(→次の refresh で grant revoke)。access のみ渡す。refresh は x_token_refresh.py だけが行う。
+c = Client(token={"access_token": v["X_ACCESS_TOKEN"]})
 r = c.posts.delete(post_id)
 print("deleted", post_id, getattr(r, "data", r))
