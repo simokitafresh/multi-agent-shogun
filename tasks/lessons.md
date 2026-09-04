@@ -17026,3 +17026,17 @@ sqlite3.Connection.backup()を使うとページ(4096byte)単位のread syscall�
 - **when**: 未設定
 - **how**: 未設定
 - 2つの独立した本番裁定(T3-S-54: 2026-09-04 06:28 bulk mark-read guard既定WARN→BLOCK、T3-S-49: 2026-09-04 07:00 deploy_task_current_report_is_await_clearをin_progress限定からstatus=done/in_progress両対応へ拡張)が、それぞれ意図した1目的は正しく達成しつつ、(a)既定値変更はそれに依存する既存test(WARN前提のassertion)を同一commitで更新せず放置し、(b)bypass関数拡張はcmd識別なしで呼び出す既存の呼出し元(deploy_task_guard_worker_assignmentのcross-cmd保護)を再監査せず、結果として全く無関係な保護(別cmdによるdone task上書き禁止)を意図せず迂回する回帰を生んだ。origin: [[T3-S-54_bulk_guard既定BLOCK化]] + [[T3-S-49_await_clear_status_done拡張]] -> [[5test_flaky_2回連続_CI33814810266]]。次回追加すべきチェック: (1)security/guard関連の既定値(ENV var default)を変更するcommitは、その既定値を直接参照するtest(assertion内にBLOCK/WARN/PASS等の期待値がハードコードされたもの)をgrepし同一commitで更新する (2)fast-path/bypass関数の適用条件(if文)を拡張するcommitは、その関数を呼び出す全call siteを列挙し、各呼出し元が『cmd/task/agent等の識別子一致』を暗黙前提にしていないか再確認する。
+
+
+### L1736: 記事ID一致と研究成果物の意味一致を分離して探索する
+- **日付**: 2026-09-04
+- **出典**: cmd_karo_recon_x_b_article_source_data_202609041123
+- **記録者**: hayate
+- **tags**: [infra]
+- **subdomain**: infra
+- **target_files**: [queue/reports/hayate_report_cmd_karo_recon_x_b_article_source_data_202609041123.yaml]
+- **origin**: [[cmd_karo_recon_x_b_article_source_data_202609041123]]
+- **enforcement**: 未自動化
+- **when**: 未設定
+- **how**: 未設定
+- note記事IDは研究成果物へ直接埋込まれていないが、条件・指標・期間一致の成果物は存在する。今後はID検索だけで不在判定せず、記事条件の意味検索と行数再計数を必須化する。
