@@ -17110,3 +17110,17 @@ sqlite3.Connection.backup()を使うとページ(4096byte)単位のread syscall�
 - **when**: 未設定
 - **how**: 未設定
 - gate_p_average_freshness.shはAPI疎通失敗時にDB fallbackを参照する二段構えの設計だったが、curl呼出し自体が単発(リトライなし)だったため、API・DBへの外部到達性が同時に一過性で失われた瞬間(数秒〜十数秒)を捉えると'判定不能(通信障害)'として即ALERTし家老へ改善トリガーが飛んだ(GA-440, GA-577で2回発生)。実際には数秒後に自然回復する障害だった。対処は分類ロジックを変えず、curl_exit=6(DNS)/28(timeout)/22:5xx(サーバエラー)という再現性のある通信断クラスに限定して1回だけ短時間待機後にリトライする関数を追加するだけで足りた。認証失敗(401/403)等の非一過性エラーは対象外のまま維持し、無限リトライも避けた。外部依存(API/DB/他サービス)を単発チェックで判定するgateは同様の偽ALERTリスクを持つため、新規gate設計時は『一過性か恒常的か』を最初にクラス分けし、一過性クラスにのみ限定リトライを組み込む設計を標準とすべき
+
+
+### L1742: legacy N/A no-codeはtree証跡とtask契約の積でのみ互換化する
+- **日付**: 2026-09-05
+- **出典**: cmd_karo_hotfix_release_legacy_nocode_recon
+- **記録者**: kagemaru
+- **tags**: [infra,cmd-quality,recon,git,reporting]
+- **subdomain**: infra
+- **target_files**: [scripts/cmd_complete_gate.sh,scripts/lib/report_commit_identity.py,tests/unit/test_cmd_complete_gate.bats]
+- **origin**: [[cmd_karo_hotfix_release_legacy_nocode_recon]]
+- **enforcement**: 未自動化
+- **when**: 未設定
+- **how**: 未設定
+- 旧recon報告のcommit_hash空/files_modified=N/Aは、N/A文字列だけをno-code扱いすると実装taskの偽装余地になる。task/reportのrecon一致、明示commit N/A、before_tree=after_treeの40hex、tree実在、required=true拒否を全て機械判定し、legacy許可1/拒否4を323件suiteで固定する。
