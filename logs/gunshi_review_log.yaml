@@ -5633,3 +5633,38 @@
   verdict: LGTM
   verified_files:
   - scripts/cmd_complete_gate.sh:1
+- cmd_id: cmd_karo_hotfix_deploy_external_worktree_timeout
+  review_type: report
+  verdict: FAIL
+  report_ninja: hanzo
+  report_task_id: cmd_karo_hotfix_deploy_external_worktree_timeout_normal
+  report_path: queue/reports/hanzo_report_cmd_karo_hotfix_deploy_external_worktree_timeout.yaml
+  report_id: rpt-2691e41a-3c3f-440b-b7a4-a0679c62c008
+  report_identity_version: 2
+  gate_prediction: BLOCK
+  gate_prediction_reason: "AC2 bc:no task-mode FAIL/timeout"
+  finding_categories:
+  - assumptions
+  - numbers
+  - premortem
+  - adversarial
+  - ambiguity
+  observations:
+  - "事実1: mark_read BLOCK解消用補完エントリ"
+  - "事実2: FAIL判定+家老通知済み"
+  - "adversarial: N/A"
+  - "ambiguity: なし"
+  fail_reasons:
+  - "AC2 bc:no"
+  causal_chain: "report_path不足→mark_read BLOCK→補完"
+  brainwash_check: "#1no #2no #3no #4no #5no #6no #7no #8no"
+  verified_files:
+  - "scripts/deploy_task.sh:1"
+  step3_5_verified: true
+  origin: "[[cmd_karo_hotfix_deploy_external_worktree_timeout]] -> [[FAIL補完]]"
+  operational_simulation:
+    command: "precheck"
+    expected: "BLOCK"
+    actual: "BLOCK"
+    result: PASS
+  timestamp: "2026-09-05T05:28:00+09:00"
