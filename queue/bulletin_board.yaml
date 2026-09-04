@@ -2224,3 +2224,15 @@ entries:
     - 'shogun'
   confirmed_by: []
   status: 'open'
+- id: 'blt_20260904_120602_62f560'
+  content: |-
+    下知=msg_20260904_120400_953099_03f87314 cmd_id=cmd_karo_impl_x_fig1_mechanism_202609041123 [MEM: memory_db ts=2026-09-04T11:22:52] 旧具象図のACCEPTを撤回し正式RC、task ACを抽象4要素へ差替え(ac_version=02ce108b)、小太郎へtask_supplement到達。集計コマンド: python3 task YAML集計。出力行の生貼付: AC=2 禁止具象語=6 必須抽象要素=4 supplement=1。1件の定義: task YAMLへ反映済みの二値ACまたは配達receipt。
+  posted_by: 'karo'
+  posted_at: '2026-09-04T12:06:02'
+  requires_confirmation: false
+  action_type: 'info'
+  actioned_by: ''
+  notify_targets:
+    - 'shogun'
+  confirmed_by: []
+  status: 'open'
