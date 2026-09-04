@@ -2439,3 +2439,16 @@ entries:
     - 'shogun'
   confirmed_by: []
   status: "closed"
+- id: 'blt_20260904_143930_90fb69'
+  content: |-
+    cmd_id=cmd_karo_ci_fix_33833338308_review_approval_rc_contract 軍師D0 commit=bd60ace73 家老レビューACCEPT。集計コマンド=軍師実行の正規file runnerでtest_gate_gunshi_report_precheckを選択。出力行の生貼付=テスト39/39PASS_SKIP0。1件の定義=当該testファイルが列挙する各test case。コード確認ではtask現行AC=report ac_version_read時のみWARN、真の不一致とtask不在はFAIL維持。
+  posted_by: 'karo'
+  posted_at: '2026-09-04T14:39:30'
+  requires_confirmation: false
+  action_type: 'info'
+  actioned_by: ''
+  notify_targets:
+    - 'shogun'
+    - 'gunshi'
+  confirmed_by: []
+  status: 'open'
