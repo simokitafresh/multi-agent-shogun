@@ -276,7 +276,7 @@ codd:
 |------|---|
 | id | dm_signal_pf_restore_guardrails |
 | label | DM-Signal PF復元運用ガードレール |
-| aliases | PF復元ガードレール, PFロールバック手順, cmd_3786復旧手順, restore-all運用, PF一括削除反復削除, API参照保護反復削除, DELETE API 400参照保護, /api/portfolios/get, restore-all HTTP応答未返却, recalculation_status stale running, dm_signal_pf_operation_guardrails, PF削除復元前提知識, 新75削除→旧86復元, 旧102PF復旧, GA_220_invalid_DM_SIGNAL_REPO, dm_signal, Signal row dateは署名外, GA 436のcontext dm signal ops鮮度警報を一次情報で検証し, GA 436と同カテゴリのcontext dm signal frontend鮮度を横展開確認し, dm signal 5metrics selection v0 20260808 mdを読んで, DM Signal 月次リターン再設計 実装タスクリストを開始しよう, DM Signalにおいて, T106_DM-signal_ext4移設, dm signal jp を Cloudflare で取ろう, cloudflare dm signal jp domain runbook 20260830 mdに jpのハナシは不 |
+| aliases | PF復元ガードレール, PFロールバック手順, cmd_3786復旧手順, restore-all運用, PF一括削除反復削除, API参照保護反復削除, DELETE API 400参照保護, /api/portfolios/get, restore-all HTTP応答未返却, recalculation_status stale running, dm_signal_pf_operation_guardrails, PF削除復元前提知識, 新75削除→旧86復元, 旧102PF復旧, GA_220_invalid_DM_SIGNAL_REPO, dm_signal, Signal row dateは署名外, GA 436のcontext dm signal ops鮮度警報を一次情報で検証し, GA 436と同カテゴリのcontext dm signal frontend鮮度を横展開確認し, dm signal 5metrics selection v0 20260808 mdを読んで, DM Signal 月次リターン再設計 実装タスクリストを開始しよう, DM Signalにおいて, T106_DM-signal_ext4移設, dm signal jp を Cloudflare で取ろう, cloudflare dm signal jp domain runbook 20260830 mdに jpのハナシは不, DM signalのLPについて意見がきた |
 | related_concepts | pf_remote_restore, dmsignal_operations, production_parity, recalculate_pipeline, three_layer_memory_system |
 
 | 種別 | パス/参照 |
@@ -10309,6 +10309,7 @@ codd:
 | causal_chain | `[[cmd_4202]]` (L1500) |
 | causal_chain | `[[cmd_karo_hotfix_report_shared_provenance_fp_20260802]]` (L1521) |
 | causal_chain | `[[cmd_3665]]` (L942) |
+| discussion | `queue/lord_conversation.jsonl` 2026-09-05T02:42:49+09:00 DM-SignalのLP・Free tier・マーケティング導線について、現状を再調査し、次段の設計を行ってください。 今回は「LPを大量に作る」ことが目的ではありません。 目的は、 1. 現行 "dm-signal.com" をSEO・ブ |
 
 ## alpha_6_metrics — α6指標
 
