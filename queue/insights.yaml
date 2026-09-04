@@ -17114,3 +17114,10 @@ insights:
   source: "semantic_index_update"
   fix_known: false
   status: pending
+- id: INS-20260904-113437611-9d67
+  ts: "2026-09-04T11:34:37+09:00"
+  insight: "[[T237 T236 T226b T230 T226の進捗と今後の見込みを表形式で説明して]] semantic_stress_test candidate_aliases: NO_MATCH source=lord query=T237 / T236 / T226b / T230 / T226の進捗と今後の見込みを表形式で説明して"
+  priority: "low"
+  source: "semantic_stress_test"
+  fix_known: false
+  status: pending
