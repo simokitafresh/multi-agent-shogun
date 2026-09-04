@@ -1873,6 +1873,7 @@ codd:
 | discussion | `queue/lord_conversation.jsonl` 2026-09-04T18:20:35+09:00 やはり満足いくX投稿は難しそうだな。当分の間投資ネタだけにしよう。どういうスケジュールで行く？ |
 | discussion | `queue/lord_conversation.jsonl` 2026-09-04T18:55:50+09:00 今回の方針変更は「Growth Engineを弱める」のではなく、 本人スタイルに合わせて生成の起点を修正するものです。 以下を注意点として実装・運用してください。 # 1. 記事をネタとして扱わない 最重要。 note記事、DM-Sign |
 | discussion | `queue/lord_conversation.jsonl` 2026-09-04T18:59:40+09:00 殿指示 2026-09-04 18:55『記事から投稿を作るな。ネタから投稿を作れ。記事は証拠として使え。外部バズから本人を作るな。投稿ノルマのために人格を壊すな』(20 項目)→実装: claim_bank.yaml に schema(b |
+| discussion | `queue/lord_conversation.jsonl` 2026-09-04T19:14:41+09:00 現在の claim-based generation への変更は正しいです。 特に、 記事 →要約 →本人Voice →投稿 から、 本人claim →context →evidence →本人Voice →投稿 へ生成起点を変更したことは |
 
 ## recalculate_pipeline — 再計算パイプライン
 
