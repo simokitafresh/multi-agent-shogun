@@ -3595,6 +3595,7 @@ codd:
 | discussion | `queue/lord_conversation.jsonl` 2026-09-04T17:12:50+09:00 殿裁定 2026-09-04 17:11(X Growth 裁定待ち 3 件): (1) bio=今は変えない (2) 固定投稿=今後も変えない。変える時は殿の意志と判断で変える(将軍は提案も実施もしない) (3) 第 1 弾差替え投稿 2 |
 | discussion | `queue/lord_conversation.jsonl` 2026-09-04T17:50:56+09:00 殿裁定 2026-09-04 17:49『シリーズやスレッド、ロングはいいけど、ショートで切り抜きはだめだ。ショートは投資ネタに限る』→Round5 Long 3/Thread 2(親+3)/Series 2-9 の 19 本を承認(.ap |
 | discussion | `queue/lord_conversation.jsonl` 2026-09-04T17:54:54+09:00 session_save_20260904_1758(復帰点、先に session_save_20260904_1755 を読め): loop 17:54。自動化ターゲット実装=scripts/x_ops/x_round5_gen.py は |
+| discussion | `queue/lord_conversation.jsonl` 2026-09-04T18:25:34+09:00 殿裁定 2026-09-04 18:20/18:22『やはり満足いく X 投稿は難しそう。当分の間投資ネタだけ。4 週間続けて計測』→calendar v4(毎日 08:30 Short 投資/18:30 Series→Long→Threa |
 
 ## investment_knowledge_base — 投資知識辞書
 
