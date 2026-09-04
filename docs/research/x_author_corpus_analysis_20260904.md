@@ -1,3 +1,4 @@
+<!-- gist-master: 37254801d3dd2e56c3d887d6d62d15d7 x_author_corpus_analysis_20260904.md -->
 # 本人 author corpus 分析 v0.1(2026-09-04 13:20) — X は再認可待ち、note 64 記事は取得済み
 
 殿指示 13:08『本人の文体を想像しない。本人の X がある。本人の note がある。全部、実物を見る』。

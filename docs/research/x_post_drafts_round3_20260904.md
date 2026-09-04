@@ -1,3 +1,4 @@
+<!-- gist-master: 325667557e2df18cbf446cf6f440cb6f x_post_drafts_round3_20260904.md -->
 # X 投稿 下書き 第 3 稿(本人 note Voice で再生成、暫定)— 殿の直し待ち(代表 10 本に★)
 
 作成: 2026-09-04 13:30 将軍。根拠: docs/research/x_author_corpus_analysis_20260904.md(note 64 記事の実測)。

@@ -27,7 +27,7 @@ def width(s: str) -> float:
 text = MD.read_text(encoding="utf-8")
 lines = [l for l in text.split("\n") if not l.startswith("<!--")]
 head, sections, cur = [], [], None
-post_re = re.compile(r"^([A-G])-(\d)\s+(.*)$")
+post_re = re.compile(r"^(★?)([A-G])-(\d)\s+(.*)$")
 i = 0
 while i < len(lines):
     l = lines[i]
@@ -40,7 +40,7 @@ while i < len(lines):
     else:
         m = post_re.match(l)
         if m:
-            pid = f"{m.group(1)}-{m.group(2)}"; label = m.group(3).strip()
+            pid = f"{m.group(2)}-{m.group(3)}"; label = (("★ " if m.group(1) else "") + m.group(4)).strip()
             body, urls, figs = [], [], []
             i += 1
             while i < len(lines) and lines[i].strip() and not post_re.match(lines[i]) and not lines[i].startswith("## "):
