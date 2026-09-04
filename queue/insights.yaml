@@ -17628,4 +17628,20 @@ insights:
   priority: "low"
   source: "semantic_stress_test"
   fix_known: false
+  status: "resolved"
+  action_artifact: "semantic_index=/home/simokitafresh/multi-agent-shogun/docs/semantic-index/index.md"
+  resolved_reason: "semantic index candidate was absorbed into a registered concept"
+- id: INS-20260904-175116456-2766
+  ts: "2026-09-04T17:51:16+09:00"
+  insight: "[[Round5 の添削っていうのはなんだ？どこにある？]] semantic_stress_test candidate_aliases: NO_MATCH source=lord query=Round5 の添削っていうのはなんだ？どこにある？"
+  priority: "low"
+  source: "semantic_stress_test"
+  fix_known: false
+  status: pending
+- id: INS-20260904-175116660-5705
+  ts: "2026-09-04T17:51:16+09:00"
+  insight: "[[T240 T237 T230の進捗と見込みを表形式で教えてくれ]] semantic_stress_test candidate_aliases: NO_MATCH source=lord query=T240 / T237 / T230の進捗と見込みを表形式で教えてくれ"
+  priority: "low"
+  source: "semantic_stress_test"
+  fix_known: false
   status: pending
