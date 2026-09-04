@@ -829,7 +829,10 @@ case "$role:$result" in
     # U5(単一 publisher 化、観点 22): karo:ACCEPT が publisher_queue.sh enqueue の
     # 唯一の caller。外部PJの報告をinfra publisherへ渡すとrestore conflictを
     # 起こすため、requestのrepoがpublisherのrepo rootと一致する場合だけenqueueする。
-    publisher_request_repo=$(python3 - "$report" "$ROOT" <<'PY'
+    if [ "$current_commit" = "no-code-change" ]; then
+      echo "skip_enqueue reason=no-code-change" >&2
+    else
+      publisher_request_repo=$(python3 - "$report" "$ROOT" <<'PY'
 import pathlib
 import sys
 import yaml
@@ -870,12 +873,13 @@ else:
                         print(repo)
                     break
 PY
-    ) || publisher_request_repo=""
-    publisher_repo_root=$(cd "$ROOT" && pwd -P)
-    if [ -n "$publisher_request_repo" ] && [ "$publisher_request_repo" != "$publisher_repo_root" ]; then
-      echo "skip_enqueue repo=$publisher_request_repo" >&2
-    else
-      bash "$ROOT/scripts/publisher_queue.sh" enqueue "$report" >/dev/null || true
+      ) || publisher_request_repo=""
+      publisher_repo_root=$(cd "$ROOT" && pwd -P)
+      if [ -n "$publisher_request_repo" ] && [ "$publisher_request_repo" != "$publisher_repo_root" ]; then
+        echo "skip_enqueue repo=$publisher_request_repo" >&2
+      else
+        bash "$ROOT/scripts/publisher_queue.sh" enqueue "$report" >/dev/null || true
+      fi
     fi
     ;;
 esac
