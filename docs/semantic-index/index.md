@@ -3566,7 +3566,6 @@ codd:
 | discussion | `queue/lord_conversation.jsonl` 2026-09-04T11:48:48+09:00 https://claude.ai/code/artifact/4f5e79a2-b766-4c54-81da-d6fcdbdf7455を更新して |
 | cmd | `cmd_karo_recon_x_b_article_source_data_202609041123` |
 | discussion | `queue/lord_conversation.jsonl` 2026-09-04T12:03:28+09:00 殿裁定 2026-09-04 12:00(X 投稿・具象化禁止): 『DM-signal は株と債券などの話はしていないのに、株と債券の強いほうを持つとか意味不明なことが書いてある。間違った具象化は危険だ。本質を抽象化せよ』→デュアルモメン |
-| discussion | `queue/lord_conversation.jsonl` 2026-09-04T12:06:05+09:00 session_save_20260904_1210(復帰点、先に session_save_20260904_1145 を読め): loop 12:04。図 task: 疾風 B 偵察 CLEAR 11:51(記事 5 本の元データは直接 |
 
 ## investment_knowledge_base — 投資知識辞書
 
