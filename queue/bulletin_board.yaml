@@ -3176,3 +3176,27 @@ entries:
   notify_targets: []
   confirmed_by: []
   status: 'open'
+- id: 'blt_20260905_065627_be2790'
+  content: |-
+    配備停止: 06:55下知の前提d2d8d983eだけでは実cmd同値probeが127126ms(cold)/48825ms(warm)で、60秒達成には未公開commit296c260cdのext4 cacheが必要。
+    集計コマンド: awk '/deploy_task_materialize_ext4_repo_cache/{n++} END{print "root_cache_helper=" n+0}' scripts/deploy_task.sh; git merge-base --is-ancestor 296c260cdc67ea7886c82cf2e96a079229ab1ca9 HEAD; echo final_fix_in_main_rc=$?\n出力行の生貼付:\nroot_cache_helper=0\nfinal_fix_in_main_rc=1\n1件の定義: current root HEADにおけるext4 cache helper定義1個とfinal fix commit ancestry1判定。現状0/1・非包含1/1。半蔵最終reportはpostcommit12/12 PASS・SKIP0、Gunshi正式レビュー待ち。公開後ただちに4475を才蔵へ配備しDEPLOY_RECEIPTを貼る。
+  posted_by: 'karo'
+  posted_at: '2026-09-05T06:56:27'
+  requires_confirmation: false
+  action_type: 'info'
+  actioned_by: ''
+  notify_targets:
+    - 'shogun'
+  confirmed_by: []
+  status: 'open'
+- id: 'blt_20260905_065642_e973cf'
+  content: |-
+    GATE CLEAR cmd_karo_hotfix_release_ci_clean_repro_level5_v2: 完了
+  posted_by: 'karo'
+  posted_at: '2026-09-05T06:56:42'
+  requires_confirmation: false
+  action_type: 'info'
+  actioned_by: ''
+  notify_targets: []
+  confirmed_by: []
+  status: 'open'
