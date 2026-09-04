@@ -118,6 +118,27 @@ run_tests_init_state_isolation() {
                 return 2
                 ;;
         esac
+        local inherited_inbox_root="${SHOGUN_TEST_INBOX_ROOT:-${INBOX_WRITE_MAILBOX_ROOT:-}}"
+        [[ -n "$inherited_inbox_root" ]] || {
+            printf 'BLOCK: test state isolation marker has no isolated inbox root\n' >&2
+            return 2
+        }
+        inherited_inbox_root="$(realpath -m -- "$inherited_inbox_root")" || {
+            printf 'BLOCK: isolated test inbox root cannot be resolved: %s\n' "$inherited_inbox_root" >&2
+            return 2
+        }
+        case "$inherited_inbox_root" in
+            "$REPO_ROOT"|"$REPO_ROOT"/*)
+                printf 'BLOCK: isolated test inbox root is inside repository root: %s\n' "$inherited_inbox_root" >&2
+                return 2
+                ;;
+        esac
+        mkdir -p "$inherited_inbox_root/queue/inbox" || {
+            printf 'BLOCK: isolated test inbox initialization failed: %s\n' "$inherited_inbox_root" >&2
+            return 2
+        }
+        export SHOGUN_TEST_INBOX_ROOT="$inherited_inbox_root"
+        export SHOGUN_TEST_MODE=1
         return 0
     fi
 
@@ -166,11 +187,18 @@ run_tests_init_state_isolation() {
         printf 'BLOCK: test publisher state is not writable: %s\n' "$state_dir" >&2
         return 2
     }
+    mkdir -p "$state_dir/queue/inbox" || {
+        printf 'BLOCK: test inbox initialization failed: %s\n' "$state_dir" >&2
+        return 2
+    }
     export SHOGUN_STATE_DIR="$state_dir"
     export RUN_TESTS_STATE_DIR="$state_dir"
+    export RUN_TESTS_PRODUCTION_ROOT="${RUN_TESTS_PRODUCTION_ROOT:-$REPO_ROOT}"
+    export SHOGUN_TEST_INBOX_ROOT="$state_dir"
+    export SHOGUN_TEST_MODE=1
     export RUN_TESTS_STATE_ISOLATED=1
-    printf 'TEST_STATE_ISOLATION mode=%s identity=%s state_dir=%s\n' \
-        "$mode" "$identity" "$state_dir" >&2
+    printf 'TEST_STATE_ISOLATION mode=%s identity=%s state_dir=%s inbox_root=%s\n' \
+        "$mode" "$identity" "$state_dir" "$state_dir/queue/inbox" >&2
 }
 
 snapshot_test_tree() {

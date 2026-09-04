@@ -203,6 +203,51 @@ EOF
     grep -Eq ' (task_assigned|report_received|task_done|report_completed|report_done|report_ready|task_failed) publisher notify_karo$' "$FIXTURE/inbox.log"
 }
 
+# test_necessity: publisher failure notifications in test mode must use the
+# isolated inbox root even when the caller's configured root points at a live
+# queue symlink (T3-S-64 regression).
+@test "test-mode publisher notifications stay in test inbox" {
+    local live_root="$BATS_TEST_TMPDIR/live-root" isolated_root="$BATS_TEST_TMPDIR/test-root"
+    mkdir -p "$live_root/queue" "$live_root/live-inbox" "$isolated_root/scripts"
+    ln -s "$live_root/live-inbox" "$live_root/queue/inbox"
+    ln -s "$ROOT/scripts/lib" "$isolated_root/scripts/lib"
+    bash "$ROOT/scripts/publisher_queue.sh" enqueue "$FIXTURE/request.yaml" >/dev/null
+    printf 'remote-change\n' > "$PUBROOT/payload.txt"
+    git -C "$PUBROOT" add payload.txt; git -C "$PUBROOT" commit -q -m remote-change
+    git -C "$PUBROOT" push -q origin main
+
+    run env SHOGUN_TEST_MODE=1 SHOGUN_TEST_INBOX_ROOT="$isolated_root" \
+        INBOX_WRITE_ROOT_OVERRIDE="$live_root" \
+        SHOGUN_STATE_DIR="$STATE" PUBLISHER_REPO_ROOT="$PUBROOT" \
+        PUBLISHER_INBOX_WRITER="$ROOT/scripts/inbox_write.sh" PUBLISHER_ONCE=1 \
+        bash "$ROOT/scripts/publisher.sh"
+    [ "$status" -ne 0 ]
+    [ -f "$isolated_root/queue/inbox/karo.yaml" ]
+    grep -q 'publisher C2a RC' "$isolated_root/queue/inbox/karo.yaml"
+    [ ! -e "$live_root/queue/inbox/karo.yaml" ]
+}
+
+# test_necessity: production mode must preserve the configured inbox root so
+# real publisher failures continue to notify Karo through the live lane.
+@test "production publisher notifications retain the configured inbox root" {
+    local live_root="$BATS_TEST_TMPDIR/live-root"
+    mkdir -p "$live_root/queue" "$live_root/live-inbox"
+    ln -s "$live_root/live-inbox" "$live_root/queue/inbox"
+    bash "$ROOT/scripts/publisher_queue.sh" enqueue "$FIXTURE/request.yaml" >/dev/null
+    printf 'remote-change\n' > "$PUBROOT/payload.txt"
+    git -C "$PUBROOT" add payload.txt; git -C "$PUBROOT" commit -q -m remote-change
+    git -C "$PUBROOT" push -q origin main
+
+    run env -u SHOGUN_TEST_MODE -u SHOGUN_TEST_INBOX_ROOT -u INBOX_WRITE_ROOT_OVERRIDE \
+        INBOX_WRITE_MAILBOX_ROOT="$live_root" \
+        SHOGUN_STATE_DIR="$STATE" PUBLISHER_REPO_ROOT="$PUBROOT" \
+        PUBLISHER_INBOX_WRITER="$ROOT/scripts/inbox_write.sh" PUBLISHER_ONCE=1 \
+        bash "$ROOT/scripts/publisher.sh"
+    [ "$status" -ne 0 ]
+    [ -f "$live_root/queue/inbox/karo.yaml" ]
+    grep -q 'publisher C2a RC' "$live_root/queue/inbox/karo.yaml"
+}
+
 @test "active publishes parent-one commit and synchronizes clean root" {
     export PUBLISHER_REPO_ROOT="$PUBROOT" PUBLISHER_MODE=active
     bash "$ROOT/scripts/publisher_queue.sh" enqueue "$FIXTURE/request.yaml" >/dev/null

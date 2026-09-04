@@ -59,6 +59,37 @@ run_escalation_dedupe() {
     [[ "$output" == *'D-LANE RECEIPT: classified=9'*'result=PASS'* ]]
 }
 
+# test_necessity: startup contamination detection must inspect inbox
+# notifications as well as task/report filenames and expose every fixture ID.
+@test "fixture notification contamination reports count and IDs without false positives" {
+    local root="$BATS_TEST_TMPDIR/fixture-contamination"
+    mkdir -p "$root/queue/inbox" "$root/queue/tasks" "$root/queue/reports" "$root/logs"
+    cat > "$root/queue/inbox/karo.yaml" <<'YAML'
+messages:
+- {id: one, content: 'publisher request failed task=cmd_rc_report_success_normal rc=31'}
+- {id: two, content: 'publisher request failed task=cmd_rc_revoke_f1_normal rc=31'}
+- {id: three, content: 'publisher request failed task=cmd_karo_rc_revoke_generation_normal rc=31'}
+YAML
+
+    run env DEFENSE_OVERHEAD_ENABLED=0 SHOGUN_STARTUP_LIB_ONLY=1 \
+        bash -c 'source "$1/scripts/gates/gate_shogun_startup.sh"; overall=OK; alerts=(); check_fixture_queue_contamination "$2"; printf "overall=%s\\n" "$overall"' \
+        _ "$PROJECT_ROOT" "$root"
+    [ "$status" -eq 0 ]
+    [[ "$output" == *'fixture 由来 3 件'* ]]
+    [[ "$output" == *'cmd_rc_report_success_normal'* ]]
+    [[ "$output" == *'cmd_rc_revoke_f1_normal'* ]]
+    [[ "$output" == *'cmd_karo_rc_revoke_generation_normal'* ]]
+    [[ "$output" == *'overall=ALERT'* ]]
+
+    printf 'messages:\n- {id: clean, content: normal production notification}\n' > "$root/queue/inbox/karo.yaml"
+    run env DEFENSE_OVERHEAD_ENABLED=0 SHOGUN_STARTUP_LIB_ONLY=1 \
+        bash -c 'source "$1/scripts/gates/gate_shogun_startup.sh"; overall=OK; alerts=(); check_fixture_queue_contamination "$2"; printf "overall=%s\\n" "$overall"' \
+        _ "$PROJECT_ROOT" "$root"
+    [ "$status" -eq 0 ]
+    [[ "$output" == *'fixture 由来 0 件 / IDs=none'* ]]
+    [[ "$output" == *'overall=OK'* ]]
+}
+
 # test_necessity: escalationはread状態に依存せず意味キーをbounded cooldown中だけ重複抑制し、新規キーと期限後の再通知を失わない不変量を守る。
 @test "startup escalation dedupes same unresolved key despite companion warning changes" {
     cat > "$TEST_ROOT/queue/karo.yaml" <<'EOF'

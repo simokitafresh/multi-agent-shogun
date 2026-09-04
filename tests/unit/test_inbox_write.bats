@@ -14,6 +14,30 @@
         bash "$TEST_INBOX_WRITE" test_agent "invalid-id fixture" info test contract
     [ "$status" -ne 0 ]
 }
+
+# test_necessity: test mode may write only to an explicitly isolated inbox
+# root, never to the script checkout's queue/inbox path.
+@test "SHOGUN_TEST_MODE routes writes to the declared test inbox root" {
+    setup_basic_test_env
+    local isolated="$BATS_TEST_TMPDIR/shogun-test-root"
+    mkdir -p "$isolated/scripts"
+    ln -s "$PROJECT_ROOT/scripts/lib" "$isolated/scripts/lib"
+    run env -u INBOX_WRITE_ROOT_OVERRIDE -u RUN_TESTS_STATE_DIR \
+        SHOGUN_TEST_MODE=1 SHOGUN_TEST_INBOX_ROOT="$isolated" \
+        bash "$TEST_INBOX_WRITE" test_agent "isolated notification" info test contract
+    [ "$status" -eq 0 ]
+    grep -q "isolated notification" "$isolated/queue/inbox/test_agent.yaml"
+    [ ! -e "$TEST_TMPDIR/queue/inbox/test_agent.yaml" ]
+}
+
+@test "SHOGUN_TEST_MODE without an isolated root fails closed" {
+    setup_basic_test_env
+    run env -u INBOX_WRITE_ROOT_OVERRIDE -u SHOGUN_TEST_INBOX_ROOT -u RUN_TESTS_STATE_DIR \
+        SHOGUN_TEST_MODE=1 bash "$TEST_INBOX_WRITE" test_agent "unsafe notification" info test contract
+    [ "$status" -eq 2 ]
+    [[ "$output" == *"requires SHOGUN_TEST_INBOX_ROOT or RUN_TESTS_STATE_DIR"* ]]
+}
+
 # test_inbox_write.bats — inbox_write.sh ユニットテスト
 # T-001 ~ T-012: リグレッションテスト仕様書実装
 # Git uncommitted check: report_received時のコミット漏れ検知

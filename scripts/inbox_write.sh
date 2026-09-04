@@ -42,6 +42,42 @@ _iw_self="${BASH_SOURCE[0]:-$0}"
 [[ "$_iw_self" != /* ]] && _iw_self="$PWD/$_iw_self"
 INBOX_WRITE_INSTALL_ROOT="${_iw_self%/scripts/inbox_write.sh}"
 SCRIPT_DIR="${INBOX_WRITE_ROOT_OVERRIDE:-${_iw_self%/scripts/inbox_write.sh}}"
+INBOX_WRITE_MAILBOX_ROOT="${INBOX_WRITE_MAILBOX_ROOT:-}"
+# Test executions must name their isolated mailbox root explicitly. Without
+# this guard, a fixture launched from the production checkout can resolve the
+# repository's queue/inbox symlink and persist a test notification in the live
+# mailbox (T3-S-64/T3-S-46 recurrence).
+if [ "${SHOGUN_TEST_MODE:-0}" = "1" ]; then
+    _test_inbox_root="${SHOGUN_TEST_INBOX_ROOT:-${RUN_TESTS_STATE_DIR:-}}"
+    if [ -z "$_test_inbox_root" ]; then
+        echo "BLOCK: SHOGUN_TEST_MODE requires SHOGUN_TEST_INBOX_ROOT or RUN_TESTS_STATE_DIR" >&2
+        exit 2
+    fi
+    if [ -n "${INBOX_WRITE_ROOT_OVERRIDE:-}" ]; then
+        # An explicit override is an existing fixture contract: it names both
+        # the copied script's support root and its mailbox root.
+        INBOX_WRITE_MAILBOX_ROOT="$SCRIPT_DIR"
+    elif [ -z "$INBOX_WRITE_MAILBOX_ROOT" ]; then
+        _inbox_script_root="${_iw_self%/scripts/inbox_write.sh}"
+        _inbox_script_root="$(realpath -m -- "$_inbox_script_root")"
+        _inbox_production_root="${RUN_TESTS_PRODUCTION_ROOT:-}"
+        if [ -n "$_inbox_production_root" ]; then
+            _inbox_production_root="$(realpath -m -- "$_inbox_production_root")"
+        fi
+        # A copied fixture owns its own queue/inbox. Only the production-root
+        # runner is redirected to the task-specific test mailbox; this keeps
+        # fixture-local lock/read contracts self-contained.
+        if [ "${SHOGUN_TEST_INBOX_ROOT:-}" != "${RUN_TESTS_STATE_DIR:-}" ] \
+            || [ -z "$_inbox_production_root" ] || [ "$_inbox_script_root" = "$_inbox_production_root" ]; then
+            INBOX_WRITE_MAILBOX_ROOT="$_test_inbox_root"
+        else
+            INBOX_WRITE_MAILBOX_ROOT="$SCRIPT_DIR"
+        fi
+        unset _inbox_script_root _inbox_production_root
+    fi
+else
+    INBOX_WRITE_MAILBOX_ROOT="${INBOX_WRITE_MAILBOX_ROOT:-$SCRIPT_DIR}"
+fi
 # 忍者が task worktree 内から inbox_write を実行すると SCRIPT_DIR は worktree root になり、
 # queue/tasks/<ninja>.yaml は base 時点の写し(task_worktree_path 等が無い)を指す。その結果
 # report_received の publish_artifact capture が silent skip され publisher が missing artifact で
@@ -2681,7 +2717,7 @@ if [ "$FROM" = "shogun" ] && [ "$TYPE" = "task_new" ]; then
     exit 1
 fi
 
-INBOX_LINK_PATH="$SCRIPT_DIR/queue/inbox/${TARGET}.yaml"
+INBOX_LINK_PATH="$INBOX_WRITE_MAILBOX_ROOT/queue/inbox/${TARGET}.yaml"
 INBOX="$(resolve_inbox_file_path "$INBOX_LINK_PATH")"
 LOCKFILE="$(lock_path "$INBOX")"
 INBOX_DIR="${INBOX%/*}"

@@ -414,6 +414,29 @@ check_legacy_ext4_path_residuals() {
     return 0
 }
 
+check_fixture_queue_contamination() {
+    local root="${1:-.}" id_pat fx_matches fx_ids fx_hits fx_missing
+    id_pat='cmd_bounded_done_check|cmd_fixture_[A-Za-z0-9_-]+|cmd_rc_report_success_normal|cmd_rc_revoke_f1_normal|cmd_karo_rc_revoke_generation_normal'
+    fx_matches="$(rg --no-ignore -o --no-filename "$id_pat" \
+        "$root/queue/reports" "$root/queue/tasks" "$root/queue/inbox" 2>/dev/null || true)"
+    fx_ids="$(printf '%s\n' "$fx_matches" | sed '/^$/d' | sort -u | paste -sd, -)"
+    fx_hits="$(printf '%s\n' "$fx_matches" | awk 'NF {n++} END {print n+0}')"
+    if [ -f "$root/logs/ninja_monitor.log" ]; then
+        fx_missing="$(awk -v since="$(date -d '2 hours ago' '+%Y-%m-%d %H:%M:%S')" -F'[][]' '$2 >= since && /task file missing/ {c++} END{print c+0}' "$root/logs/ninja_monitor.log" 2>/dev/null)"
+    else
+        fx_missing=0
+    fi
+    echo "■ 本番 queue 汚染(fixture 由来)"
+    if [ "${fx_hits:-0}" -eq 0 ] && [ "${fx_missing:-0}" -eq 0 ]; then
+        echo "  OK: fixture 由来 ${fx_hits} 件 / IDs=${fx_ids:-none} / 直近2h『task file missing』0 行"
+    else
+        echo "  ALERT: fixture 由来 ${fx_hits} 件 / IDs=${fx_ids:-none} / 直近2h task file missing ${fx_missing} 行 — 忍者 bats の本番 root 実行を疑え"
+        echo "    → 集計: rg -o '$id_pat' queue/reports queue/tasks queue/inbox; grep 'task file missing' logs/ninja_monitor.log | tail; 復元は review_approvals/*/.pre_rc_snapshot.*/task.yaml"
+        alerts+=("本番 queue 汚染: fixture ${fx_hits}件 IDs=${fx_ids:-none}/task missing ${fx_missing}行")
+        if [ "$overall" != "BLOCK" ]; then overall="ALERT"; fi
+    fi
+}
+
 run_gate_shogun_startup() (
 local SCRIPT_DIR="${SHOGUN_STARTUP_ROOT:-}"
 if [ -z "$SCRIPT_DIR" ]; then
@@ -2368,27 +2391,7 @@ if ! check_legacy_ext4_path_residuals "$SCRIPT_DIR"; then
     if [ "$overall" != "BLOCK" ]; then overall="WARN"; fi
 fi
 
-# ── 本番 queue 汚染チェック(T157: 忍者 bats が本番 root で走り fixture が本番 queue を書換え) ──
-# 2026-08-28 20:55 Q6自動化ターゲット: 20:41 fixture report(cmd_bounded_done_check)が本番 queue/reports に現れ
-# 20:43 影丸 task YAML 消失(『task file missing』)。誰も検知せず殿の「強くてニューゲーム」保存中に将軍が気づいた。
-# 検知=fixture 由来 id が本番 queue に 0 件 + 直近 2h の『task file missing』0 行(型十弾-5)。
-echo "■ 本番 queue 汚染(fixture 由来)"
-_fx_pat='cmd_bounded_done_check|cmd_fixture_'
-_fx_hits=$( { ls queue/reports queue/tasks 2>/dev/null; } | grep -cE "$_fx_pat" || true )
-_fx_hits=${_fx_hits:-0}
-if [ -f logs/ninja_monitor.log ]; then
-    _fx_missing=$(awk -v since="$(date -d '2 hours ago' '+%Y-%m-%d %H:%M:%S')" -F'[][]' '$2 >= since && /task file missing/ {c++} END{print c+0}' logs/ninja_monitor.log 2>/dev/null)
-else
-    _fx_missing=0
-fi
-if [ "${_fx_hits:-0}" -eq 0 ] && [ "${_fx_missing:-0}" -eq 0 ]; then
-    echo "  OK: 本番 queue に fixture 由来 report/task 0 件、直近2h『task file missing』0 行"
-else
-    echo "  ALERT: fixture 由来 ${_fx_hits} 件 / 直近2h task file missing ${_fx_missing} 行 — 忍者 bats の本番 root 実行を疑え"
-    echo "    → 集計: ls queue/reports queue/tasks | grep -E '$_fx_pat'; grep 'task file missing' logs/ninja_monitor.log | tail; 復元は review_approvals/*/.pre_rc_snapshot.*/task.yaml"
-    alerts+=("本番 queue 汚染: fixture ${_fx_hits}件/task missing ${_fx_missing}行")
-    if [ "$overall" != "BLOCK" ]; then overall="ALERT"; fi
-fi
+check_fixture_queue_contamination "$SCRIPT_DIR"
 
 # ── スキル参照実在チェック(CLAUDE.md/instructions/*.md の /skill参照 → skills/<name>/SKILL.md) ──
 # 2026-08-25 22:11 Q6自動化ターゲット: /reset-layout がskills削除(efc8e016e)後もCLAUDE.mdに残り

@@ -88,7 +88,30 @@ tree_blob() {
 
 notify_karo() {
     local message="$1" action="${2:-task_assigned}"
-    if ! bash "$INBOX_WRITER" karo "$message" "$action" publisher notify_karo; then
+    if [ "${SHOGUN_TEST_MODE:-0}" = "1" ]; then
+        local test_inbox_root="${SHOGUN_TEST_INBOX_ROOT:-${INBOX_WRITE_ROOT_OVERRIDE:-${RUN_TESTS_STATE_DIR:-}}}"
+        local real_test_root real_repo_root
+        if [ -z "$test_inbox_root" ]; then
+            echo "publisher: SHOGUN_TEST_MODE requires an isolated test inbox root" >&2
+            return 2
+        fi
+        real_test_root="$(realpath -m -- "$test_inbox_root")" || return 2
+        real_repo_root="$(realpath -m -- "$REPO_ROOT")" || return 2
+        case "$real_test_root" in
+            "$real_repo_root"|"$real_repo_root"/*)
+                echo "publisher: refusing test inbox inside repository root: $real_test_root" >&2
+                return 2
+                ;;
+        esac
+        mkdir -p "$real_test_root/queue/inbox" || return 2
+        if ! env -u INBOX_WRITE_ROOT_OVERRIDE \
+            SHOGUN_TEST_MODE=1 SHOGUN_TEST_INBOX_ROOT="$real_test_root" \
+            INBOX_WRITE_MAILBOX_ROOT="$real_test_root" \
+            bash "$INBOX_WRITER" karo "$message" "$action" publisher notify_karo; then
+            echo "publisher: failed to notify karo: $message" >&2
+            return 1
+        fi
+    elif ! bash "$INBOX_WRITER" karo "$message" "$action" publisher notify_karo; then
         echo "publisher: failed to notify karo: $message" >&2
         return 1
     fi
