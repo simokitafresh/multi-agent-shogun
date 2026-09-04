@@ -17809,10 +17809,33 @@ insights:
   priority: "low"
   source: "semantic_stress_test"
   fix_known: false
-  status: pending
+  status: "resolved"
+  action_artifact: "semantic_index=/home/simokitafresh/multi-agent-shogun/docs/semantic-index/index.md"
+  resolved_reason: "semantic index candidate was absorbed into a registered concept"
 - id: INS-20260905-013608064-5a27
   ts: "2026-09-05T01:36:08+09:00"
   insight: "[[現在の claim based generation への変更は正しいです]] semantic_stress_test candidate_aliases: NO_MATCH source=lord query=現在の claim-based generation への変更は正しいです。 特に、 記事 →要約 →本人Voice →投稿 から、 本人claim →context →evidence →本人Voice →投稿 へ生成起点を変更したことは維持してください。 system pr…"
+  priority: "low"
+  source: "semantic_stress_test"
+  fix_known: false
+  status: pending
+- id: INS-20260905-014103015-d149
+  ts: "2026-09-05T01:41:03+09:00"
+  insight: "[[投資ネタ23unitを見せてくれ]] semantic_stress_test candidate_aliases: NO_MATCH source=lord query=投資ネタ23unitを見せてくれ"
+  priority: "low"
+  source: "semantic_stress_test"
+  fix_known: false
+  status: pending
+- id: INS-20260905-014103646-208e
+  ts: "2026-09-05T01:41:03+09:00"
+  insight: "[[Event driven Laneについて一点だけ追加で検討してください]] semantic_stress_test candidate_aliases: NO_MATCH source=lord query=Event-driven Laneについて一点だけ追加で検討してください。 現在はFOMC等の予定イベントと、SPY急落・VIX上昇等の急変検知が中心ですが、 - USD/JPYなど為替 - 米国2年・10年金利 - 日本国債金利 - 金利差 - イールドカーブ なども、投資ア…"
+  priority: "low"
+  source: "semantic_stress_test"
+  fix_known: false
+  status: pending
+- id: INS-20260905-014104229-2c93
+  ts: "2026-09-05T01:41:04+09:00"
+  insight: "[[x searchでバズった投資ネタを探さないか？その特徴を分析して俺のスタイルと融合しよう]] semantic_stress_test candidate_aliases: NO_MATCH source=lord query=x searchでバズった投資ネタを探さないか？その特徴を分析して俺のスタイルと融合しよう"
   priority: "low"
   source: "semantic_stress_test"
   fix_known: false
