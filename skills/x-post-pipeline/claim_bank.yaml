@@ -43,4 +43,9 @@ claims:
   - {key: C32, belief: 高配当かインデックスかの二択, claim: 二択の前に降りるルールがあるかを問う, why: どちらも下がる時は一緒に下がる。守るのは商品ではなくルール, hook_pattern: VS 構図を置いてから第 3 の軸を出す}
   - {key: C33, belief: 実績を出す人は特別, claim: 実績は公開して初めて検証可能になる, why: 先出しシグナルと月次成績は誰でも追試できる, hook_pattern: 月次実績の定期公開(F 枠)}
   - {key: C34, belief: 現金で待つのは機会損失, claim: 退避は損失ではなく次の弾, why: 退避した人だけが暴落で買える, hook_pattern: 常識の逆を一行で}
-  hook_patterns_from_viral: {quote_rebut: よくある発言「」→数字で反証(bm 20/like 360、フォロワー 875 でも届く), amount_contrast: 額の対比(1 億 vs 100 万。like 712・フォロワー 1,026), vs_frame: VS 構図(bm 152), monthly_results: 月次実績公開(FIRE 収支・NISA 実績。bm は低く like 中), metaphor_sting: 別ジャンルの比喩(パチンコ)}
+hook_patterns_from_viral:
+  quote_rebut: よくある発言「」→数字で反証(bm 20/like 360、フォロワー 875 でも届く)
+  amount_contrast: 額の対比(1 億 vs 100 万。like 712・フォロワー 1,026)
+  vs_frame: VS 構図(bm 152)
+  monthly_results: 月次実績公開(FIRE 収支・NISA 実績。bm は低く like 中)
+  metaphor_sting: 別ジャンルの比喩(パチンコ)
