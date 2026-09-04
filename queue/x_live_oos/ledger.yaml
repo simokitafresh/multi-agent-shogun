@@ -2,11 +2,14 @@ meta:
   purpose: live OOS 台帳(殿指示 2026-09-04 §20)。事前 metadata→投稿→24h/7d KPI→保存。推測値を書かない
   snapshot_script: scripts/x_ops/x_kpi_snapshot.py
   schema: skills/x-post-pipeline/growth_schema.yaml
+  volume_rule: content_units=entry 数(Thread は親 1 entry)、physical_posts=実 tweet 数(Thread は親+リプ)。事前登録の format/funnel_stage が正本。事後に付け替えない(殿裁定 15:11)
 entries:
 - draft_id: R4-A-1
   draft_file: queue/x_drafts/2026-09-04_R4-A-1.txt
   growth:
     content_lane: money_inequality
+    format: short
+    physical_posts: 1
     content_category: A
     funnel_stage: reach
     audience: general
@@ -23,6 +26,8 @@ entries:
   draft_file: queue/x_drafts/2026-09-04_R4-A-3.txt
   growth:
     content_lane: math_probability
+    format: short
+    physical_posts: 1
     content_category: A
     funnel_stage: reach
     audience: general
@@ -39,6 +44,8 @@ entries:
   draft_file: queue/x_drafts/2026-09-04_R4-A-4.txt
   growth:
     content_lane: math_probability
+    format: short
+    physical_posts: 1
     content_category: A
     funnel_stage: reach
     audience: general
@@ -55,6 +62,8 @@ entries:
   draft_file: queue/x_drafts/2026-09-04_R4-B-1.txt
   growth:
     content_lane: dm
+    format: short
+    physical_posts: 1
     content_category: B
     funnel_stage: follow
     audience: systematic
@@ -71,6 +80,8 @@ entries:
   draft_file: queue/x_drafts/2026-09-04_R4-B-3.txt
   growth:
     content_lane: dm
+    format: short
+    physical_posts: 1
     content_category: B
     funnel_stage: trust
     audience: investor
@@ -87,6 +98,8 @@ entries:
   draft_file: queue/x_drafts/2026-09-04_R4-B-4.txt
   growth:
     content_lane: dm
+    format: short
+    physical_posts: 1
     content_category: B
     funnel_stage: follow
     audience: systematic
@@ -103,6 +116,8 @@ entries:
   draft_file: queue/x_drafts/2026-09-04_R4-C-1.txt
   growth:
     content_lane: investing
+    format: short
+    physical_posts: 1
     content_category: C
     funnel_stage: follow
     audience: systematic
@@ -122,6 +137,8 @@ entries:
   draft_file: queue/x_drafts/2026-09-04_R4-C-2.txt
   growth:
     content_lane: investing
+    format: short
+    physical_posts: 1
     content_category: C
     funnel_stage: trust
     audience: systematic
@@ -138,6 +155,8 @@ entries:
   draft_file: queue/x_drafts/2026-09-04_R4-C-4.txt
   growth:
     content_lane: investing
+    format: short
+    physical_posts: 1
     content_category: C
     funnel_stage: trust
     audience: systematic
@@ -154,6 +173,8 @@ entries:
   draft_file: queue/x_drafts/2026-09-04_R4-D-1.txt
   growth:
     content_lane: math_probability
+    format: short
+    physical_posts: 1
     content_category: D
     funnel_stage: reach
     audience: general
@@ -170,6 +191,8 @@ entries:
   draft_file: queue/x_drafts/2026-09-04_R4-D-3.txt
   growth:
     content_lane: math_probability
+    format: short
+    physical_posts: 1
     content_category: D
     funnel_stage: reach
     audience: general
@@ -186,6 +209,8 @@ entries:
   draft_file: queue/x_drafts/2026-09-04_R4-D-5.txt
   growth:
     content_lane: math_probability
+    format: short
+    physical_posts: 1
     content_category: D
     funnel_stage: reach
     audience: general
@@ -202,6 +227,8 @@ entries:
   draft_file: queue/x_drafts/2026-09-04_R4-F-3.txt
   growth:
     content_lane: dm
+    format: short
+    physical_posts: 1
     content_category: F
     funnel_stage: trust
     audience: dual_momentum
@@ -217,6 +244,8 @@ entries:
 - draft_id: A
   draft_file: queue/x_drafts/2026-09-04_A.txt
   growth:
+    format: short
+    physical_posts: 1
     content_category: B
     funnel_stage: convert
     audience: investor

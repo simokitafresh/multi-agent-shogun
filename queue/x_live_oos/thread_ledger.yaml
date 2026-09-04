@@ -1,0 +1,12 @@
+meta:
+  purpose: Thread 台帳(殿裁定 2026-09-04 15:11)。親 1 本+自己リプ。content_units=1、physical_posts=1+リプ数。親だけ伸びたか後続まで読まれたかを分ける
+  post_cmd: bash scripts/x_ops/x_post.sh post <draft> --reply-to <parent_id>
+  kpi: [parent_np_impression, continuation(自己リプ imp 平均/親 imp), replies, bookmarks, profile_clicks, total_thread_engagement]
+threads: []
+# - thread_id: T1
+#   topic: 年率 100% のバックテストを僕ならまず疑う
+#   content_lane: investing
+#   funnel_stage: trust
+#   parent: {draft_id: '', post_id: '', posted_at: ''}
+#   replies: [{position: 1, draft_id: '', post_id: ''}]
+#   snapshots: {}

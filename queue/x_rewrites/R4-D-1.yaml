@@ -46,4 +46,5 @@ growth:
   conversation_gap: medium
   link_type: none
   external_context: standalone
+  format: short
   content_lane: math_probability

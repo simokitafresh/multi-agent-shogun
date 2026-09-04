@@ -45,4 +45,5 @@ growth:
   conversation_gap: high
   link_type: none
   external_context: standalone
+  format: short
   content_lane: money_inequality
