@@ -31,7 +31,7 @@ account_metrics:
   followers_delta_week: {status: observable_account_level, attribution: account_level, calc: 当日 − 7 日前(無ければ null)}
   following: {status: observable_account_level, source: public_metrics.following_count}
   tweet_count: {status: observable_account_level, source: public_metrics.tweet_count}
-  day_composition: {status: observable_account_level, attribution: account_level, fields: [organic_posts, physical_posts, conversation_entries, formats{short,long,thread,series_entry}, funnel{reach,follow,trust,convert}], note: 同じ日付に保存して後から関連を見る。分解・断定はしない}
+  day_composition: {status: observable_account_level, attribution: account_level, fields: [organic_posts, physical_posts, conversation_entries, formats(short,long,thread,series_entry), funnel(reach,follow,trust,convert)], note: 同じ日付に保存して後から関連を見る。分解・断定はしない}
 
 external_metrics:
   dm_signal_visit: {status: external_attribution, attribution: direct_if_campaign_id, value: null, feasibility: 高。DM-Signal に showcase_events テーブルと POST /api/public/showcase/event(source∈lp/login/direct/rebalancer)が live。LP は静的 Next.js で ?utm_* を捨てない。実装済 2026-09-04 cmd_4474(DM-signal 5b054270/9ea93b89 live): LP/login/free が utm_campaign を showcase_events.campaign_id へ同送、GET /api/admin/showcase/campaigns?since= で週次集計。本番証跡 lp_view 1(x_20260904_G_4474_browser), plan: '§48 campaign attribution'}
