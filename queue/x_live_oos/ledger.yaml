@@ -39,8 +39,8 @@ entries:
     conversation_gap: medium
     link_type: none
     external_context: standalone
-  post_id: ''
-  posted_at: ''
+  post_id: '2095807682527789546'
+  posted_at: '2026-09-04T09:34:24Z'
   snapshots: {}
 - draft_id: R4-A-4
   draft_file: queue/x_drafts/2026-09-04_R4-A-4.txt
@@ -659,6 +659,266 @@ entries:
     approved: lord_20260904_1749
     thread_id: R5-T-2
     thread_position: 3
+  post_id: ''
+  posted_at: ''
+  snapshots: {}
+- draft_id: R6-S-1
+  draft_file: queue/x_drafts/2026-09-04_R6-S-1.txt
+  growth:
+    format: short
+    physical_posts: 1
+    content_lane: investing
+    content_category: A
+    funnel_stage: reach
+    audience: investor
+    hook_type: contradiction
+    topic_level: 2
+    desired_action: [dwell, reply, quote, profile]
+    conversation_gap: medium
+    link_type: none
+    external_context: standalone
+    claim_key: C04
+    approved: auto_claim_bank_2026-09-04
+  post_id: ''
+  posted_at: ''
+  snapshots: {}
+- draft_id: R6-S-2
+  draft_file: queue/x_drafts/2026-09-04_R6-S-2.txt
+  growth:
+    format: short
+    physical_posts: 1
+    content_lane: investing
+    content_category: A
+    funnel_stage: reach
+    audience: investor
+    hook_type: contradiction
+    topic_level: 2
+    desired_action: [dwell, reply, quote, profile]
+    conversation_gap: medium
+    link_type: none
+    external_context: standalone
+    claim_key: C07
+    approved: auto_claim_bank_2026-09-04
+  post_id: ''
+  posted_at: ''
+  snapshots: {}
+- draft_id: R6-S-3
+  draft_file: queue/x_drafts/2026-09-04_R6-S-3.txt
+  growth:
+    format: short
+    physical_posts: 1
+    content_lane: investing
+    content_category: A
+    funnel_stage: reach
+    audience: investor
+    hook_type: contradiction
+    topic_level: 2
+    desired_action: [dwell, reply, quote, profile]
+    conversation_gap: medium
+    link_type: none
+    external_context: standalone
+    claim_key: C08
+    approved: auto_claim_bank_2026-09-04
+  post_id: ''
+  posted_at: ''
+  snapshots: {}
+- draft_id: R6-S-4
+  draft_file: queue/x_drafts/2026-09-04_R6-S-4.txt
+  growth:
+    format: short
+    physical_posts: 1
+    content_lane: investing
+    content_category: A
+    funnel_stage: reach
+    audience: investor
+    hook_type: contradiction
+    topic_level: 2
+    desired_action: [dwell, reply, quote, profile]
+    conversation_gap: medium
+    link_type: none
+    external_context: standalone
+    claim_key: C09
+    approved: auto_claim_bank_2026-09-04
+  post_id: ''
+  posted_at: ''
+  snapshots: {}
+- draft_id: R6-S-5
+  draft_file: queue/x_drafts/2026-09-04_R6-S-5.txt
+  growth:
+    format: short
+    physical_posts: 1
+    content_lane: investing
+    content_category: A
+    funnel_stage: reach
+    audience: investor
+    hook_type: contradiction
+    topic_level: 2
+    desired_action: [dwell, reply, quote, profile]
+    conversation_gap: medium
+    link_type: none
+    external_context: standalone
+    claim_key: C13
+    approved: auto_claim_bank_2026-09-04
+  post_id: ''
+  posted_at: ''
+  snapshots: {}
+- draft_id: R6-S-6
+  draft_file: queue/x_drafts/2026-09-04_R6-S-6.txt
+  growth:
+    format: short
+    physical_posts: 1
+    content_lane: investing
+    content_category: A
+    funnel_stage: reach
+    audience: investor
+    hook_type: contradiction
+    topic_level: 2
+    desired_action: [dwell, reply, quote, profile]
+    conversation_gap: medium
+    link_type: none
+    external_context: standalone
+    claim_key: C14
+    approved: auto_claim_bank_2026-09-04
+  post_id: ''
+  posted_at: ''
+  snapshots: {}
+- draft_id: R6-S-7
+  draft_file: queue/x_drafts/2026-09-04_R6-S-7.txt
+  growth:
+    format: short
+    physical_posts: 1
+    content_lane: investing
+    content_category: A
+    funnel_stage: reach
+    audience: investor
+    hook_type: contradiction
+    topic_level: 2
+    desired_action: [dwell, reply, quote, profile]
+    conversation_gap: medium
+    link_type: none
+    external_context: standalone
+    claim_key: C16
+    approved: auto_claim_bank_2026-09-04
+  post_id: ''
+  posted_at: ''
+  snapshots: {}
+- draft_id: R6-S-8
+  draft_file: queue/x_drafts/2026-09-04_R6-S-8.txt
+  growth:
+    format: short
+    physical_posts: 1
+    content_lane: investing
+    content_category: A
+    funnel_stage: reach
+    audience: investor
+    hook_type: contradiction
+    topic_level: 2
+    desired_action: [dwell, reply, quote, profile]
+    conversation_gap: medium
+    link_type: none
+    external_context: standalone
+    claim_key: C17
+    approved: auto_claim_bank_2026-09-04
+  post_id: ''
+  posted_at: ''
+  snapshots: {}
+- draft_id: R6-S-10
+  draft_file: queue/x_drafts/2026-09-04_R6-S-10.txt
+  growth:
+    format: short
+    physical_posts: 1
+    content_lane: investing
+    content_category: A
+    funnel_stage: reach
+    audience: investor
+    hook_type: contradiction
+    topic_level: 2
+    desired_action: [dwell, reply, quote, profile]
+    conversation_gap: medium
+    link_type: none
+    external_context: standalone
+    claim_key: C20
+    approved: auto_claim_bank_2026-09-04
+  post_id: ''
+  posted_at: ''
+  snapshots: {}
+- draft_id: R6-S-11
+  draft_file: queue/x_drafts/2026-09-04_R6-S-11.txt
+  growth:
+    format: short
+    physical_posts: 1
+    content_lane: investing
+    content_category: A
+    funnel_stage: reach
+    audience: investor
+    hook_type: contradiction
+    topic_level: 2
+    desired_action: [dwell, reply, quote, profile]
+    conversation_gap: medium
+    link_type: none
+    external_context: standalone
+    claim_key: C22
+    approved: auto_claim_bank_2026-09-04
+  post_id: ''
+  posted_at: ''
+  snapshots: {}
+- draft_id: R6-S-12
+  draft_file: queue/x_drafts/2026-09-04_R6-S-12.txt
+  growth:
+    format: short
+    physical_posts: 1
+    content_lane: investing
+    content_category: A
+    funnel_stage: reach
+    audience: investor
+    hook_type: contradiction
+    topic_level: 2
+    desired_action: [dwell, reply, quote, profile]
+    conversation_gap: medium
+    link_type: none
+    external_context: standalone
+    claim_key: C23
+    approved: auto_claim_bank_2026-09-04
+  post_id: ''
+  posted_at: ''
+  snapshots: {}
+- draft_id: R6-S-13
+  draft_file: queue/x_drafts/2026-09-04_R6-S-13.txt
+  growth:
+    format: short
+    physical_posts: 1
+    content_lane: investing
+    content_category: A
+    funnel_stage: reach
+    audience: investor
+    hook_type: contradiction
+    topic_level: 2
+    desired_action: [dwell, reply, quote, profile]
+    conversation_gap: medium
+    link_type: none
+    external_context: standalone
+    claim_key: C24
+    approved: auto_claim_bank_2026-09-04
+  post_id: ''
+  posted_at: ''
+  snapshots: {}
+- draft_id: R6-S-14
+  draft_file: queue/x_drafts/2026-09-04_R6-S-14.txt
+  growth:
+    format: short
+    physical_posts: 1
+    content_lane: investing
+    content_category: A
+    funnel_stage: reach
+    audience: investor
+    hook_type: contradiction
+    topic_level: 2
+    desired_action: [dwell, reply, quote, profile]
+    conversation_gap: medium
+    link_type: none
+    external_context: standalone
+    claim_key: C28
+    approved: auto_claim_bank_2026-09-04
   post_id: ''
   posted_at: ''
   snapshots: {}

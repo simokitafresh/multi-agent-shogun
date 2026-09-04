@@ -37,6 +37,7 @@ allowed-tools:
 - v1.3(16:07 殿裁定): KPI は kpi_availability.yaml の 4 状態(observable_post_level / observable_account_level / external_attribution / unavailable)で管理。0 と null を混ぜない(null=取得不能/帰属不能、np_null_reason 併記)。投稿別 follow・非フォロワー imp・dwell・note PV/post は unavailable。follow は account_daily の followers_delta_day/week のみ。DM-Signal 直リンクは campaign_id(作成時発行)で external_attribution(showcase_events 拡張、未実装)。分析は Observed/Inferred/Unavailable を分け、因果を断定しない。
 - 殿裁定 17:47/17:49: **記事の抜粋はネタではない**(Round5 Short 10 撤回)。Short は投資ネタ(investing/dm/math/money_inequality)限定、不動産・医療・事業は Long/Thread/Series のみ。ネタ台帳 `neta_ledger.yaml`(殿の種→本文化)。定時投稿の選定は台帳の category×format(v1.5、Thread は x_thread_post.sh へ委譲)。
 - **殿裁定 18:22: 当分の間投資ネタだけで 4 週間(9/4〜10/2)続けて計測。** calendar v4=2 units/日(08:30 Short 投資/18:30 Series→Long→Thread)、slot '*'、在庫切れは投稿しない。予定表=docs/research/x_post_schedule_invest23_20260904.md(artifact eea77aac)。週次集計 cron 日曜 09:00。
+- **自動生成(殿 18:29『俺が何もしなくても無限に生成』)**: `claim_bank.yaml`(前提を壊す主張 28)→`scripts/x_ops/x_claim_gen.py --round N --claims ... --approve`(記事本文を渡さない、gate+数字 fail-close、PASS は自動承認)→台帳→cron。殿の種(neta_ledger)は任意。事後の拒否は削除で(可逆)。
 - 禁止: 40 投稿貯まるまで比率・型の最適化をしない。Growth のために本文を書き換えない。自動 reply spam。
 
 ## When

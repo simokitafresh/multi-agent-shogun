@@ -39,19 +39,20 @@ for k in range(n):
     # v1.6(殿裁定 18:22): 在庫が無い slot は投稿しない(fallback 廃止)。次 slot へ繰り下げるだけ
     if cand:
         e = sorted(cand, key=lambda e: e["draft_id"])[0]
-        print("\t".join([str(idx), cat, fm, e["draft_id"], str(g(e).get("format")), fb, os.path.basename(str(e["draft_file"])).rsplit(".", 1)[0]]))
+        print("|".join([str(idx), cat, fm, e["draft_id"], str(g(e).get("format")), fb or "-", os.path.basename(str(e["draft_file"])).rsplit(".", 1)[0]]))
         break
-print("N\t" + str(n))
+print("N|" + str(n))
 PY
 )"
-n="$(printf '%s\n' "$sel" | awk -F'\t' '$1=="N"{print $2}')"
+n="$(printf '%s\n' "$sel" | awk -F'|' '$1=="N"{print $2}')"
 line="$(printf '%s\n' "$sel" | grep -v '^N' | head -1 || true)"
 if [[ -z "$line" ]]; then
     log "no approved unposted draft for any slot (ptr=$ptr)"
     bash scripts/ntfy.sh "【将軍】X 定時投稿: 承認済み在庫なし。生成→承認が必要" >/dev/null 2>&1 || true
     exit 0
 fi
-IFS=$'\t' read -r idx slot fmt picked_id real_fmt fb picked <<< "$line"
+# T3-S-70(18:30 投稿失敗): tab 区切りは bash read が連続 tab を潰し空欄で列がずれた→'|' 区切り+空欄は '-'
+IFS='|' read -r idx slot fmt picked_id real_fmt fb picked <<< "$line"
 ptr=$(( (idx + 1) % n ))
 log "slot=$slot planned_format=$fmt draft=$picked real_format=$real_fmt ptr_next=$ptr ${fb:-}"
 [[ "$DRY" = 1 ]] && { log "dry-run: no post"; exit 0; }

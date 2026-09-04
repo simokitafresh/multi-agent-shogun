@@ -1,0 +1,38 @@
+meta:
+  purpose: 投資ネタの自動生成用「主張の銀行」(殿 2026-09-04 18:29『俺が何もしなくても無限に生成し続けるから意味がある』)。記事の抜粋ではなく、多くの人が信じる前提を 1 つ壊す構造的な主張を種にする。数字は verified_numbers のみ
+  rule: 各 claim=(belief 壊す前提, claim 主張, why 1 行の理由, number 任意=verified_numbers のキー)。生成器は 1 claim→1 投稿。既存承認文との類似(同じ belief+同じ claim)は生成しない
+  verified_numbers:
+    gem_1974_2023: "GEM(本家デュアルモメンタム)1974〜2023 年 CAGR 14.5% / MaxDD -22.7% / Sharpe 0.78、S&P500 CAGR 10.8% / MaxDD -50.9% / Sharpe 0.45"
+    plus50_minus50: "+50%→-50% で 100→150→75。交互で 100→150→75→112→56"
+    recover_asym: "-50% を戻すには +100%、-80% なら +400%"
+    inflation_3pct_10y: "年 3% のインフレが 10 年で現金の価値は 74%"
+  origin_rule: 上記以外の数字を本文に入れない(fail-close)
+claims:
+  - {key: C01, belief: 分散していれば暴落でも守られる, claim: 分散は平時に効いて危機に効かない, why: 暴落の日は相関が 1 に寄る}
+  - {key: C02, belief: 平均リターンが高い戦略が良い, claim: 資産を決めるのは算術平均ではなく幾何平均, why: 上下の振れは同じ率でも額で効く, number: plus50_minus50}
+  - {key: C03, belief: 損は取り返せる, claim: 下落幅は非対称に効く, why: -50% の回復は +100%, number: recover_asym}
+  - {key: C04, belief: 勝率が高い戦略が良い, claim: 勝率は 1 回の負けの大きさで無意味になる, why: 期待値=勝率×平均利益−敗率×平均損失}
+  - {key: C05, belief: 長期なら上がる, claim: 上がることと持ち続けられることは別, why: 途中の MaxDD で降りる人が多い, number: gem_1974_2023}
+  - {key: C06, belief: バックテストの年率が高いほど良い, claim: 年率より先に MaxDD を見る, why: 途中退場した年率は絵に描いた餅, number: gem_1974_2023}
+  - {key: C07, belief: 最適パラメータを探すのが検証, claim: 検証は最良探しではなく壊れる場所探し, why: 最良の 1 点は偶然でも作れる}
+  - {key: C08, belief: IS の成績が実力, claim: 実力は OOS にしか無い, why: パラメータを決めた期間の成績は必ず良い}
+  - {key: C09, belief: 月末判定は固定でよい, claim: 計算日を数日ずらして崩れる戦略はカレンダーが勝っていた, why: 日付依存は偶然の山}
+  - {key: C10, belief: 相場観は当たれば価値がある, claim: 当たった経験が次の判断を歪める, why: 再現できない当たりは負債}
+  - {key: C11, belief: インデックスなら差は縮まる, claim: 同じ利回りなら元本の比率は縮まらない, why: 平均を取る限り順位は固定}
+  - {key: C12, belief: 複利は魔法, claim: リスク額も複利になる, why: 同じ下落率でも資産 10 倍なら下落額は 10 倍}
+  - {key: C13, belief: 積立を続ければ安心, claim: 積立は入口の話で出口の話ではない, why: 取り崩す時の MaxDD は積立額で薄まらない}
+  - {key: C14, belief: 高い Sharpe が良い, claim: Sharpe は上振れも罰する, why: 分母は上下両方の振れ}
+  - {key: C15, belief: 予測が当たれば儲かる, claim: デュアルモメンタムは予測を捨てて生き残った, why: 今強いものを持ち弱くなったら降りるだけ, number: gem_1974_2023}
+  - {key: C16, belief: 現金は安全, claim: 現金は名目で安全で実質で減る, why: インフレ 3% が 10 年で 26% 消す, number: inflation_3pct_10y}
+  - {key: C17, belief: ドローダウンは我慢すればよい, claim: 我慢できる DD は数字ではなく額で決まる, why: -30% は 1 千万と 1 億で別の痛み}
+  - {key: C18, belief: 検証が多いほど安心, claim: 検証の数より不採用の数を見る, why: 落とした案が無い検証は検証ではない}
+  - {key: C19, belief: 論文の結果はそのまま使える, claim: 論文は自分のデータで再現してから信じる, why: 期間と市場が違えば α は消える}
+  - {key: C20, belief: 利益が出ている戦略は続けるべき, claim: 前提が変わったら降りる, why: 勝ってる理由が消えたら勝ちは続かない}
+  - {key: C21, belief: リバランスは年 1 回で十分, claim: 判定間隔は戦略の一部で結果を変える, why: 月次と年次で MaxDD は別物}
+  - {key: C22, belief: レバレッジは危険, claim: 危険なのはレバレッジではなく降りないこと, why: 退避ルールがあれば倍率は設計変数}
+  - {key: C23, belief: 大勝ちが資産を作る, claim: 資産を作るのは大負けの回避, why: -50% を 1 回喰らうと +100% が要る, number: recover_asym}
+  - {key: C24, belief: 過去 10 年の成績で判断できる, claim: 10 年は 1 サイクルにも満たない, why: 金利上昇局面を含まない検証は片面}
+  - {key: C25, belief: 同じルールなら同じ結果, claim: 執行日を 1 日ずらすと結果は変わる, why: 計算日と執行日は別の変数}
+  - {key: C26, belief: α があれば良い戦略, claim: α は β を引いてから測る, why: 追い風を実力と数えない}
+  - {key: C27, belief: 手数料は誤差, claim: 月次回転の戦略で手数料は年率を削る変数, why: 回転数×コストは複利で効く}
+  - {key: C28, belief: 検証済みなら安心, claim: 検証は仮説を殺す道具で守る道具ではない, why: 生き残った仮説だけを使う}
