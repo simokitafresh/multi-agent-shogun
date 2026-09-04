@@ -1,0 +1,6 @@
+meta:
+  purpose: 外部で話題のテーマ(viral search=センサー)と本人思想の交点から起こした claim 候補の待機所(殿指示 2026-09-04 19:14 §4)。ここから claim_bank へ昇格するのは ext_gate A-E を通したものだけ
+  flow: viral search → topic detection(topic 欄) → 本人思想との交点(intersect 欄=本人 X/note/添削/DM-Signal 検証の該当) → claim candidate → ext_gate(A 現在話題か/B 本人思想と接続/C 独自 claim があるか/D 言い換えでないか/E 今日言って自然か) → claim_bank(origin external_topic、context 必須)
+  rule: 在庫不足を理由にここから量産して claim_bank へ流し込まない。1 つでも大きく欠ける候補は status skip
+  status_values: [pending, promoted, skip]
+candidates: []

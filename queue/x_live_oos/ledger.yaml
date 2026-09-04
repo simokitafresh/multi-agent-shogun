@@ -678,6 +678,7 @@ entries:
     link_type: none
     external_context: standalone
     claim_key: C04
+    claim_origin: existing_user_thesis
     approved: auto_claim_bank_2026-09-04
   post_id: ''
   posted_at: ''
@@ -698,6 +699,7 @@ entries:
     link_type: none
     external_context: standalone
     claim_key: C07
+    claim_origin: existing_user_thesis
     approved: auto_claim_bank_2026-09-04
   post_id: ''
   posted_at: ''
@@ -718,6 +720,7 @@ entries:
     link_type: none
     external_context: standalone
     claim_key: C08
+    claim_origin: existing_user_thesis
     approved: auto_claim_bank_2026-09-04
   post_id: ''
   posted_at: ''
@@ -738,6 +741,7 @@ entries:
     link_type: none
     external_context: standalone
     claim_key: C09
+    claim_origin: existing_user_thesis
     approved: auto_claim_bank_2026-09-04
   post_id: ''
   posted_at: ''
@@ -758,6 +762,7 @@ entries:
     link_type: none
     external_context: standalone
     claim_key: C13
+    claim_origin: existing_user_thesis
     approved: auto_claim_bank_2026-09-04
   post_id: ''
   posted_at: ''
@@ -778,6 +783,7 @@ entries:
     link_type: none
     external_context: standalone
     claim_key: C14
+    claim_origin: existing_user_thesis
     approved: auto_claim_bank_2026-09-04
   post_id: ''
   posted_at: ''
@@ -798,6 +804,7 @@ entries:
     link_type: none
     external_context: standalone
     claim_key: C16
+    claim_origin: existing_user_thesis
     approved: auto_claim_bank_2026-09-04
   post_id: ''
   posted_at: ''
@@ -818,6 +825,7 @@ entries:
     link_type: none
     external_context: standalone
     claim_key: C17
+    claim_origin: existing_user_thesis
     approved: auto_claim_bank_2026-09-04
   post_id: ''
   posted_at: ''
@@ -838,6 +846,7 @@ entries:
     link_type: none
     external_context: standalone
     claim_key: C20
+    claim_origin: existing_user_thesis
     approved: auto_claim_bank_2026-09-04
   post_id: ''
   posted_at: ''
@@ -858,6 +867,7 @@ entries:
     link_type: none
     external_context: standalone
     claim_key: C22
+    claim_origin: existing_user_thesis
     approved: auto_claim_bank_2026-09-04
   post_id: ''
   posted_at: ''
@@ -878,6 +888,7 @@ entries:
     link_type: none
     external_context: standalone
     claim_key: C23
+    claim_origin: existing_user_thesis
     approved: auto_claim_bank_2026-09-04
   post_id: ''
   posted_at: ''
@@ -898,6 +909,7 @@ entries:
     link_type: none
     external_context: standalone
     claim_key: C24
+    claim_origin: existing_user_thesis
     approved: auto_claim_bank_2026-09-04
   post_id: ''
   posted_at: ''
@@ -918,6 +930,7 @@ entries:
     link_type: none
     external_context: standalone
     claim_key: C28
+    claim_origin: existing_user_thesis
     approved: auto_claim_bank_2026-09-04
   post_id: ''
   posted_at: ''

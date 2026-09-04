@@ -1,0 +1,5 @@
+meta:
+  purpose: 殿の添削のうち『文章(Voice)の直し』ではなく『そもそも claim をどう変えたか』を残す(殿指示 2026-09-04 19:14 §18)。human rewrite corpus(queue/x_rewrites/)と併せて教師データにする
+  rule: LLM『A だから B』→殿『言いたいのは C』となった時、kind=claim として記録し、claim_bank の該当 claim を殿の C に更新する(origin は human_seed へ昇格)。文体だけの直しは kind=voice で queue/x_rewrites/ 側に残す
+  schema: {draft_id, claim_key, llm_claim, human_claim, kind: claim|voice, ts}
+corrections: []

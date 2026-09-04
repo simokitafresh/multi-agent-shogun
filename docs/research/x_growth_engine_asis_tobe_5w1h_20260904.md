@@ -388,6 +388,18 @@ X Growth の dashboard は未作成(現状は `--summary` の表)。作る時の
 
 Observed / Inferred / Unavailable を必ず分ける。例: Observed「9/4 followers +7」「9/4 Short 3 本」→ Inferred「投稿量と followers 増に関連の可能性」。禁止「Short を 3 本出したので 7 人増えた」。投稿量比較(2/3/4 posts/day)は total_impressions/day・total_profile_clicks/day・total_link_clicks/day・followers_delta/day・week で行い、follow/post は作らない。取得不能 KPI 一覧と将来案は kpi_availability.yaml の unavailable 節(status / reason / possible_future_solution)。status を差し替えるだけで schema を壊さない(value/status/reason の 3 つ組)。
 
+### 実装進捗台帳(v1.8 — 殿指示 2026-09-04 19:14「claim_bank を次の切り抜き工場にしない」)
+
+| 項目 | 状態 | 現物 |
+|---|---|---|
+| origin 必須(4 分類)+external_topic gate A-E+context/evidence/quality optional | 完了 | `claim_bank.yaml` meta.origin_20260904_1914、34/34 origin 付与、C29-C34 に context+ext_gate |
+| 生成器 SKIP_origin+context を発話動機として渡す | 完了 | `scripts/x_ops/x_claim_gen.py` origin_ok() |
+| viral search=センサー、candidate 待機所 | 完了 | `x_viral_search.py` docstring、`claim_candidates.yaml` |
+| claim correction 保存 | 完了 | `claim_corrections.yaml`(schema、殿添削時に記入) |
+| Live OOS metadata claim_id/origin | 完了 | `queue/x_live_oos/ledger.yaml` growth.claim_key/claim_origin(R6 13 本) |
+| 在庫警報(fallback なし) | 完了 | `x_inventory_check.py` 日次 07:00 cron |
+| fallback 禁止 | 維持 | `x_slot_post.sh` v1.6 |
+
 ### 実装進捗台帳(v1.7 — 殿指示 2026-09-04 18:55「記事から投稿を作るな。ネタから投稿を作れ」)
 
 | 項目 | 状態 | 現物 |

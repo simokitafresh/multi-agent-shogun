@@ -10,3 +10,4 @@
 | 2026-09-04 18:55 | x_claim_gen.py / claim_bank.yaml / slot_calendar v5 | 必須 4 項(belief/claim/why/audience)欠落は SKIP、`--format long`(claim→疑い→検証→数字→結論)、slot instruction に外部 Voice 移植禁止、18:30 の Series 連続を解除 | 殿『記事から投稿を作るな。ネタから投稿を作れ。外部バズから本人を作るな』 |
 
 system prompt 本体(v5.1)は 18:55 で変更していない。
+| 2026-09-04 19:14 | claim_bank.yaml / x_claim_gen.py / ledger | origin 必須(human_seed>existing_user_thesis>dm_signal_result>external_topic)、external_topic は ext_gate A-E+context 必須で無ければ SKIP、context(why_now)を発話動機として生成器へ渡す、quality 4 点(low/mid/high)、ledger に claim_origin、claim_candidates.yaml(viral=センサー)と claim_corrections.yaml(claim correction 保存)新設 | 殿『claim_bank を次の切り抜き工場にしない。外部バズは世間が何を気にしているかのセンサー』。system prompt v5.1 は不変 |

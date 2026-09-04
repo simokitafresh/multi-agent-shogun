@@ -52,11 +52,21 @@ def recheck(rnd, keys, approve):
         print(f"{did}\t{k}\t{status}\t{len(body.strip())}字\t{bad if bad else ''}")
 
 
-REQ = ("belief", "claim", "why", "audience")
+REQ = ("belief", "claim", "why", "audience", "origin")
+ORIGINS = ("human_seed", "existing_user_thesis", "dm_signal_result", "external_topic")
+
+
+def origin_ok(c):
+    """殿指示 2026-09-04 19:14: origin 必須。external_topic は ext_gate(A-E の記録)+context が無ければ SKIP。claim_bank を切り抜き工場にしない"""
+    if c.get("origin") not in ORIGINS: return f"origin invalid={c.get('origin')}"
+    if c["origin"] == "external_topic" and not (c.get("ext_gate") and c.get("context")): return "external_topic needs ext_gate+context"
+    return ""
 VOICE_RULE = "文体は本人(殿版 few-shot)からのみ。外部バズ投稿の語尾・煽り口調・キャラ・スラング・www・過激表現は使わない。借りてよいのは構造(対比・引用反証・VS・数字の置き方)だけ。"
 
 
 def slot_text(fmt, c, num):
+    ctx = f"\nなぜ今言うか(発話動機。本文に書かなくてよい): {c['context']}" if c.get("context") else ""
+    num = num + ctx
     if fmt == "long":
         return (f"format=Long。全角 300〜600 字。構成は claim→疑い→検証→数字→結論。記事の要約にしない。全部説明せず conversation gap を残す。URL なし。DM-Signal の名前を出さない。\n{VOICE_RULE}\n"
                 f"壊す前提: {c['belief']}\n主張: {c['claim']}\n裏付け(1 行): {c['why']}\n刺さる読者: {c['audience']}\n{num}\n本文のみ出力。")
@@ -84,6 +94,9 @@ def main():
         missing = [r for r in REQ if not c.get(r)]
         if missing:
             print(f"R{rnd}-{tag}-{i}\t{k}\tSKIP_incomplete\tmissing={missing}", flush=True); continue
+        bad_origin = origin_ok(c)
+        if bad_origin:
+            print(f"R{rnd}-{tag}-{i}\t{k}\tSKIP_origin\t{bad_origin}", flush=True); continue
         num = f"使ってよい数字(この 1 組だけ。使わなくてもよい): {vn[c['number']]}" if c.get("number") else "数字は使わない(使うなら禁止)。"
         user = f"{FEW}\n--- slot instruction ---\n{slot_text(fmt, c, num)}"
         body = llm(user)

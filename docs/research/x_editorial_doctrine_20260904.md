@@ -128,3 +128,18 @@ X 投稿を数学論文や完全な解説文にしない。正確性は守るが
 - **Live OOS 維持(§18)**: 4 週間 2 units/day・investment-only・claim-based・Short/Long/Thread/Series・fallback なし。KPI は Observed/Inferred/Unavailable と 0/null を分離。
 - **prompt を頻繁にいじらない(§19)**: 動いたら細かい違和感で毎日 system prompt を変えない。変更理由は `skills/x-post-pipeline/prompt_changelog.md` に記録。大きな変更は本人が実際に使って明確なズレを感じた時だけ。
 - **成功条件(§20)**: 「本人が自分で書いていても違和感のない投資投稿を、本人のネタと証拠から継続的に生成できる」。その上で露出/フォロー/note 流入/DM-Signal 流入を Live OOS で見る。
+
+## 追補 2026-09-04 19:14 殿指示「claim_bank を次の切り抜き工場にしない」(20 項目)
+
+生成起点 claim→context→evidence→本人 Voice→投稿 は維持。system prompt は不変。追加は claim の品質管理のみ。
+
+- **origin 必須**(§1/§2): human_seed(殿本人の発言・疑問) > existing_user_thesis(本人 X/note/添削で確認済み) > dm_signal_result(検証・実績から。事実根拠として強い) > external_topic(外部で話題のテーマを入口に)。順位は『本人が自然に言いそうか』。話題性だけで external_topic を大量採用しない。現在 34 claim=existing_user_thesis 28/external_topic 6(C29-C34)。
+- **external_topic gate**(§3): A 現在話題か/B 本人思想・検証・スタンスと接続できるか/C 本人に言うべき独自 claim があるか/D 元投稿の言い換えでないか/E 今日言って不自然でないか。1 つでも大きく欠ければ SKIP。`x_claim_gen.py` は ext_gate+context の無い external_topic を SKIP_origin。
+- **viral search の役割**(§4/§5): 投稿本文を作らない。世間が何を気にしているかのセンサー。viral→topic detection→本人思想との交点→claim candidate(`claim_candidates.yaml`)→gate→claim_bank。viral→rewrite→投稿は禁止。Topic と Hook 構造は外から、Voice と結論は本人から。
+- **claim の 4 欄を混同しない**(§6-§9): claim=何を言うか/why=なぜ成立するか/context(why_now)=なぜ今言うか/evidence=何で裏付けるか。記事・論文・repo・DM-Signal の数字は evidence。evidence から claim を逆生成しない(例外: DM-Signal の意外な結果→本人の違和感→claim=dm_signal_result)。context は生成器へ発話動機として渡す(本文には書かない)。
+- **在庫を KPI にしない**(§10/§11): claim 数の目標を置かない。2 posts/day 維持のための量産禁止。適切な claim が無い slot は SKIP。在庫不足→viral 量産、在庫不足→note 切り抜き、は禁止。fallback 廃止維持。
+- **quality 4 点**(§12-§15): 本人性(本人がその主張を本当に持っている。Voice で書けるかではない)/独自性(そのテーマで本人ならどこを見るか)/根拠/発話動機(『なぜ今日これを言う？』の答えが slot 空き・記事余り・viral 拾い、だけなら SKIP)。low/mid/high で持ち総合点を作らない。
+- **Series/Long**(§16/§17): 『昨日 2/9 だから今日 3/9』だけを理由にしない。calendar v5 の非連続を維持。claim→Long→gate→本人確認(R7-L-1)を続ける。
+- **claim correction の還流**(§18): 殿の添削で claim 自体が変わった時は `claim_corrections.yaml` に kind=claim で保存し、claim_bank を更新(origin=human_seed へ)。Voice の直しと分ける。
+- **Live OOS**(§19): 台帳 growth に claim_key と claim_origin を保存。origin 別の反応差は将来観察するが、サンプルが少ない段階で優劣を決めない。
+- **最終生成経路**: 世間の話題 or 本人の疑問・検証結果 → 本人思想との交点 → claim → なぜ今言うか → evidence → 本人 Voice → 投稿。適切な claim が無ければ投稿しない。Growth Engine の目的は slot を埋めることではなく、本人が自然に言いたいことを本人のまま多くの人へ届けること。

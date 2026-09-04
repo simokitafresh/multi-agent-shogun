@@ -1,6 +1,9 @@
 #!/usr/bin/env python3
 """xAI Grok x_search で「バズった投資ネタ」(日本語、高 like)を収集する(殿 2026-09-04 18:38『x search でバズった投資ネタを探し、特徴を分析して俺のスタイルと融合』)。
 出力: docs/research/x_corpus/viral/viral_invest.jsonl(dedupe)、収集ログ。分析は x_viral_analyze.py。
+役割(殿指示 2026-09-04 19:14 §4): 投稿本文を作らない。『今どんな投資テーマ・言説・疑問が注目されているか』を検出するセンサー。
+経路は viral search→topic detection→本人思想との交点→claim candidate(skills/x-post-pipeline/claim_candidates.yaml)→ext_gate A-E→claim_bank。
+viral post→rewrite→投稿は禁止。学ぶのは話題・Hook 構造・対比・数字の具体化・常識→違和感・読者への関係付け・問いの置き方まで。Voice・語尾・キャラ・スラング・煽り・www・独自フレーズ・結論は学ばない。
 Usage: python3 scripts/x_ops/x_viral_search.py [--from 2026-03] [--to 2026-09] [--min-likes 1000]
 """
 import json, re, sys, time
