@@ -32,3 +32,13 @@ kpi:
   profile_visits: null
   link_clicks: null
   follows: null
+growth:
+  content_category: A
+  funnel_stage: reach
+  audience: general
+  hook_type: money
+  topic_level: 1
+  desired_action: [dwell, reply, quote, profile]
+  conversation_gap: high
+  link_type: none
+  external_context: standalone

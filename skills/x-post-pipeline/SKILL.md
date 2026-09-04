@@ -27,6 +27,13 @@ allowed-tools:
 - 投稿ストック: `queue/x_drafts/<date>_R<round>-<slot>-<n>.txt` + `.approved`。gate PASS 済みのみ。
 - レビュー面: `scripts/x_drafts_render.py <md> <html> <title>` → artifact(殿の直しはコメント→`Artifact comments` で読む)。
 
+## Growth Engine(v1、2026-09-04 14:51 殿指示。Content Engine の上位)
+- 定義: `growth_schema.yaml`(funnel_stage reach/follow/trust/convert、audience 5 段、topic ladder 7 段、metadata schema、初期配分 reach 8/follow 4/trust 6/convert 2 を 4 週固定、series trust_system 9 本、Reach 素材 R01-R10、Conversation Entry、KPI 取得可否)。設計書 `docs/research/x_growth_engine_asis_tobe_5w1h_20260904.md`。
+- 付与: `python3 scripts/x_ops/x_growth_tag.py` が `queue/x_rewrites/R4-*.yaml` へ `growth:` を書き、`queue/x_live_oos/ledger.yaml` へ事前 metadata を登録する。
+- 定時投稿: `scripts/x_ops/x_slot_post.sh`(cron 平日 08:30/18:30 JST)が slot_calendar の順(pointer=queue/x_live_oos/slot_pointer.txt)で承認済み未投稿 draft を 1 本投稿し台帳へ post_id を書く。在庫が無い slot は繰り下げ+ntfy。
+- 計測: `scripts/x_ops/x_kpi_snapshot.py`(cron 毎時 15 分)が 24h/7d に public+non_public(profile_clicks/link_clicks)を台帳へ書き、followers 日次を `account_daily.jsonl` へ。推測値は書かない。投稿別 follow・note PV は取得不能。
+- 禁止: 40 投稿貯まるまで比率・型の最適化をしない。Growth のために本文を書き換えない。自動 reply spam。
+
 ## When
 - 新しい下書きを作る時: slot_calendar の shift/question と ledger の usable_numbers を渡し、v5.1+添削 few-shot で生成→gate→artifact で殿確認→添削を保存→ストックへ。
 - 殿の添削が来た時: `queue/x_rewrites/` に保存し、差分の規則を分析 §12/§13 と v5.1 に足す。

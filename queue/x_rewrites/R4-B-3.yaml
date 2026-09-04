@@ -34,3 +34,13 @@ kpi:
   profile_visits: null
   link_clicks: null
   follows: null
+growth:
+  content_category: B
+  funnel_stage: trust
+  audience: investor
+  hook_type: result
+  topic_level: 6
+  desired_action: [bookmark, follow, note]
+  conversation_gap: low
+  link_type: none
+  external_context: standalone

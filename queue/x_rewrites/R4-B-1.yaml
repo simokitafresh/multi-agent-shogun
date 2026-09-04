@@ -34,3 +34,13 @@ kpi:
   profile_visits: null
   link_clicks: null
   follows: null
+growth:
+  content_category: B
+  funnel_stage: follow
+  audience: systematic
+  hook_type: story
+  topic_level: 6
+  desired_action: [profile, follow]
+  conversation_gap: medium
+  link_type: none
+  external_context: standalone

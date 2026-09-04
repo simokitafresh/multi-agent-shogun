@@ -1,0 +1,219 @@
+meta:
+  purpose: live OOS 台帳(殿指示 2026-09-04 §20)。事前 metadata→投稿→24h/7d KPI→保存。推測値を書かない
+  snapshot_script: scripts/x_ops/x_kpi_snapshot.py
+  schema: skills/x-post-pipeline/growth_schema.yaml
+entries:
+- draft_id: R4-A-1
+  draft_file: queue/x_drafts/2026-09-04_R4-A-1.txt
+  growth:
+    content_category: A
+    funnel_stage: reach
+    audience: general
+    hook_type: money
+    topic_level: 1
+    desired_action: [dwell, reply, quote, profile]
+    conversation_gap: high
+    link_type: none
+    external_context: standalone
+  post_id: ''
+  posted_at: ''
+  snapshots: {}
+- draft_id: R4-A-3
+  draft_file: queue/x_drafts/2026-09-04_R4-A-3.txt
+  growth:
+    content_category: A
+    funnel_stage: reach
+    audience: general
+    hook_type: math
+    topic_level: 2
+    desired_action: [dwell, reply, quote, profile]
+    conversation_gap: medium
+    link_type: none
+    external_context: standalone
+  post_id: ''
+  posted_at: ''
+  snapshots: {}
+- draft_id: R4-A-4
+  draft_file: queue/x_drafts/2026-09-04_R4-A-4.txt
+  growth:
+    content_category: A
+    funnel_stage: reach
+    audience: general
+    hook_type: money
+    topic_level: 1
+    desired_action: [dwell, reply, quote, profile]
+    conversation_gap: high
+    link_type: none
+    external_context: standalone
+  post_id: ''
+  posted_at: ''
+  snapshots: {}
+- draft_id: R4-B-1
+  draft_file: queue/x_drafts/2026-09-04_R4-B-1.txt
+  growth:
+    content_category: B
+    funnel_stage: follow
+    audience: systematic
+    hook_type: story
+    topic_level: 6
+    desired_action: [profile, follow]
+    conversation_gap: medium
+    link_type: none
+    external_context: standalone
+  post_id: ''
+  posted_at: ''
+  snapshots: {}
+- draft_id: R4-B-3
+  draft_file: queue/x_drafts/2026-09-04_R4-B-3.txt
+  growth:
+    content_category: B
+    funnel_stage: trust
+    audience: investor
+    hook_type: result
+    topic_level: 6
+    desired_action: [bookmark, follow, note]
+    conversation_gap: low
+    link_type: none
+    external_context: standalone
+  post_id: ''
+  posted_at: ''
+  snapshots: {}
+- draft_id: R4-B-4
+  draft_file: queue/x_drafts/2026-09-04_R4-B-4.txt
+  growth:
+    content_category: B
+    funnel_stage: follow
+    audience: systematic
+    hook_type: story
+    topic_level: 6
+    desired_action: [profile, follow]
+    conversation_gap: medium
+    link_type: none
+    external_context: standalone
+  post_id: ''
+  posted_at: ''
+  snapshots: {}
+- draft_id: R4-C-1
+  draft_file: queue/x_drafts/2026-09-04_R4-C-1.txt
+  growth:
+    content_category: C
+    funnel_stage: follow
+    audience: systematic
+    hook_type: question
+    topic_level: 4
+    desired_action: [profile, follow]
+    conversation_gap: high
+    link_type: none
+    external_context: standalone
+    series_id: trust_system
+    series_order: 1
+    series_total: 9
+  post_id: ''
+  posted_at: ''
+  snapshots: {}
+- draft_id: R4-C-2
+  draft_file: queue/x_drafts/2026-09-04_R4-C-2.txt
+  growth:
+    content_category: C
+    funnel_stage: trust
+    audience: systematic
+    hook_type: question
+    topic_level: 4
+    desired_action: [bookmark, follow, note]
+    conversation_gap: medium
+    link_type: none
+    external_context: standalone
+  post_id: ''
+  posted_at: ''
+  snapshots: {}
+- draft_id: R4-C-4
+  draft_file: queue/x_drafts/2026-09-04_R4-C-4.txt
+  growth:
+    content_category: C
+    funnel_stage: trust
+    audience: systematic
+    hook_type: contradiction
+    topic_level: 4
+    desired_action: [bookmark, follow, note]
+    conversation_gap: medium
+    link_type: none
+    external_context: standalone
+  post_id: ''
+  posted_at: ''
+  snapshots: {}
+- draft_id: R4-D-1
+  draft_file: queue/x_drafts/2026-09-04_R4-D-1.txt
+  growth:
+    content_category: D
+    funnel_stage: reach
+    audience: general
+    hook_type: math
+    topic_level: 2
+    desired_action: [dwell, reply, quote, profile]
+    conversation_gap: medium
+    link_type: none
+    external_context: standalone
+  post_id: ''
+  posted_at: ''
+  snapshots: {}
+- draft_id: R4-D-3
+  draft_file: queue/x_drafts/2026-09-04_R4-D-3.txt
+  growth:
+    content_category: D
+    funnel_stage: reach
+    audience: general
+    hook_type: math
+    topic_level: 2
+    desired_action: [dwell, reply, quote, profile]
+    conversation_gap: medium
+    link_type: none
+    external_context: standalone
+  post_id: ''
+  posted_at: ''
+  snapshots: {}
+- draft_id: R4-D-5
+  draft_file: queue/x_drafts/2026-09-04_R4-D-5.txt
+  growth:
+    content_category: D
+    funnel_stage: reach
+    audience: general
+    hook_type: math
+    topic_level: 2
+    desired_action: [dwell, reply, quote, profile]
+    conversation_gap: medium
+    link_type: none
+    external_context: standalone
+  post_id: ''
+  posted_at: ''
+  snapshots: {}
+- draft_id: R4-F-3
+  draft_file: queue/x_drafts/2026-09-04_R4-F-3.txt
+  growth:
+    content_category: F
+    funnel_stage: trust
+    audience: dual_momentum
+    hook_type: result
+    topic_level: 7
+    desired_action: [bookmark, follow, note]
+    conversation_gap: low
+    link_type: none
+    external_context: standalone
+  post_id: ''
+  posted_at: ''
+  snapshots: {}
+- draft_id: A
+  draft_file: queue/x_drafts/2026-09-04_A.txt
+  growth:
+    content_category: B
+    funnel_stage: convert
+    audience: investor
+    hook_type: result
+    topic_level: 6
+    desired_action: [note]
+    conversation_gap: low
+    link_type: note
+    external_context: standalone
+    note: 旧方針(09-03 起草)の第 1 弾差替え。裁定前の文(現金/月 1 回を含む)。比較用 baseline
+  post_id: '2095751048963240444'
+  posted_at: '2026-09-04T05:49:21Z'
+  snapshots: {}

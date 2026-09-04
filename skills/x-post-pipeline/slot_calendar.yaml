@@ -14,6 +14,7 @@ meta:
     F: DM-Signal の検証・実績・設計思想 — 儲かると言わず強さを感じさせる
     G: 直接誘導 — 5% のみ
   figure_policy: 全投稿に図 1 枚。A/D=概念図(数式・棒 2 本など)、B=fig1 仕組み(抽象)、C/E=検証の結果図、F=公開成績/DD/履歴の図、G=dm-signal 公開表 capture
+  growth: Growth Engine v1(2026-09-04 14:51 殿指示)。各 slot に funnel_stage/audience を付与。初期配分仮説(固定、4 週)=reach 8/follow 4/trust 6/convert 2。定義=skills/x-post-pipeline/growth_schema.yaml
   old_slots_superseded: 旧 A 教材再掲/B 検証の一切れ/C 運用の形/D 月次/E ガイド告知(マニュアル §5/§6)は廃止。旧 seed は stock_ledger の shift に吸収
 
 slots:
@@ -21,6 +22,8 @@ slots:
   day: 月
   time: '08:30'
   slot: A
+  funnel_stage: reach
+  audience: investor
   shift: インデックスは優秀だが格差を逆転する装置ではない
   ledger_key: nb244c3d1d704
   question: 正しい投資をしているつもりで、なぜ差が縮まらないのか
@@ -28,6 +31,8 @@ slots:
   day: 月
   time: '18:30'
   slot: D
+  funnel_stage: reach
+  audience: general
   shift: 平均リターンでは比べられない(算術平均と幾何平均)
   ledger_key: ''
   question: +50% と -50% を交互に繰り返す資産の平均は 0% なのに、なぜ減るのか
@@ -35,6 +40,8 @@ slots:
   day: 火
   time: '08:30'
   slot: B
+  funnel_stage: follow
+  audience: systematic
   shift: 未来を予測しない。今強いものを持ち、弱くなったら降りる
   ledger_key: n171daa7f92a1
   question: 予測をやめると何が残るか
@@ -42,6 +49,8 @@ slots:
   day: 火
   time: '18:30'
   slot: E
+  funnel_stage: trust
+  audience: systematic
   shift: 月末判定がたまたま良かっただけでは、と疑って判定日をずらす
   ledger_key: nc41e1f481754
   question: 1 日ずらして壊れる戦略は偶然か
@@ -49,6 +58,9 @@ slots:
   day: 水
   time: '08:30'
   slot: C
+  funnel_stage: follow
+  audience: systematic
+  series_id: trust_system
   shift: バックテスト 1 本では何も分からない
   ledger_key: n1573f826b53f
   question: 年率 90% のバックテストを見て最初に疑うことは何か
@@ -56,6 +68,8 @@ slots:
   day: 水
   time: '18:30'
   slot: F
+  funnel_stage: convert
+  audience: dual_momentum
   shift: 公開成績の見せ方=リターンより先に MaxDD とベンチ比較
   ledger_key: ncb0f14c4ebdb
   question: 19 年の公開成績で、まず見るべき数字はどれか
@@ -63,6 +77,8 @@ slots:
   day: 木
   time: '08:30'
   slot: D
+  funnel_stage: reach
+  audience: general
   shift: 期待値が正でも資産が減る経路はある
   ledger_key: nb9c81390c146
   question: 勝てる戦略で負ける人は何を見ていなかったか
@@ -70,6 +86,8 @@ slots:
   day: 木
   time: '18:30'
   slot: E
+  funnel_stage: trust
+  audience: systematic
   shift: 執行日依存では、と疑って執行日をずらす
   ledger_key: nb13c356f36ff
   question: 月初第 1 営業日に間に合わなかったら成績は変わるか
@@ -77,6 +95,8 @@ slots:
   day: 金
   time: '08:30'
   slot: A
+  funnel_stage: reach
+  audience: investor
   shift: 長期なら上がる、で思考停止していないか(含み損の時間)
   ledger_key: nb338776237c5
   question: 投資人生の何 % が含み損か
@@ -84,6 +104,8 @@ slots:
   day: 金
   time: '18:30'
   slot: B
+  funnel_stage: follow
+  audience: systematic
   shift: デュアルモメンタムの本質は大勝ちより大負けを避ける構造
   ledger_key: n171daa7f92a1
   question: 年率 3.7 ポイントの差より大きい差はどこにあるか
@@ -91,6 +113,8 @@ slots:
   day: 月
   time: '08:30'
   slot: C
+  funnel_stage: trust
+  audience: systematic
   shift: 最良値を探すより壊れる領域が無いかを見る
   ledger_key: n8da2aaf6ff34
   question: 縦と横を調べた。斜めはどうか
@@ -98,6 +122,8 @@ slots:
   day: 月
   time: '18:30'
   slot: D
+  funnel_stage: reach
+  audience: general
   shift: 複利は魔法ではなくリスク量の増加でもある(ボラティリティドラッグ)
   ledger_key: nd28c8bceb705
   question: 3 倍レバレッジの年率 43.7% が「3 倍」にならない理由
@@ -105,6 +131,8 @@ slots:
   day: 火
   time: '08:30'
   slot: E
+  funnel_stage: trust
+  audience: systematic
   shift: 論文で良かった方法は自分のデータでも良いか、と疑って再検証する
   ledger_key: nb44887f51c66
   question: 半減期 78 日の EMA は本当に最強か
@@ -112,6 +140,8 @@ slots:
   day: 火
   time: '18:30'
   slot: F
+  funnel_stage: trust
+  audience: dual_momentum
   shift: 不採用実験を公開する(段階的リバランス、低相関選抜)
   ledger_key: ned3f1dc3c266
   question: 直感的に良さそうで、検証したら捨てた方法
@@ -119,6 +149,8 @@ slots:
   day: 水
   time: '08:30'
   slot: A
+  funnel_stage: reach
+  audience: investor
   shift: 1 個のパラメータで勝った戦略はむしろ疑う
   ledger_key: ''
   question: 「最適化済み」は褒め言葉か
@@ -126,6 +158,8 @@ slots:
   day: 水
   time: '18:30'
   slot: B
+  funnel_stage: follow
+  audience: systematic
   shift: 相場観を捨てるための投資法
   ledger_key: n71204f1c655d
   question: 相場観が当たる人は何人いるか
@@ -133,6 +167,8 @@ slots:
   day: 木
   time: '08:30'
   slot: D
+  funnel_stage: reach
+  audience: general
   shift: 相関は危機の時に上がる
   ledger_key: n5370e64f57ee
   question: 分散が効かなくなる瞬間はいつか
@@ -140,6 +176,8 @@ slots:
   day: 木
   time: '18:30'
   slot: C
+  funnel_stage: trust
+  audience: systematic
   shift: IS で良くて OOS で崩れるものは、まだ何も証明していない
   ledger_key: n1573f826b53f
   question: 見たことのないデータで試したか
@@ -147,6 +185,8 @@ slots:
   day: 金
   time: '08:30'
   slot: F
+  funnel_stage: trust
+  audience: dual_momentum
   shift: 層を重ねても β の水増しではない(数万通り全てで α 正)
   ledger_key: nd28c8bceb705
   question: 偶然では説明できない数はいくつか
@@ -154,6 +194,8 @@ slots:
   day: 金
   time: '18:30'
   slot: G
+  funnel_stage: convert
+  audience: dm_signal
   shift: この検証思想の実装が DM-Signal。入口は公開表
   ledger_key: ''
   question: 検証の続きはどこで見られるか

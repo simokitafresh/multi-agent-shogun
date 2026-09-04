@@ -32,3 +32,13 @@ kpi:
   profile_visits: null
   link_clicks: null
   follows: null
+growth:
+  content_category: F
+  funnel_stage: trust
+  audience: dual_momentum
+  hook_type: result
+  topic_level: 7
+  desired_action: [bookmark, follow, note]
+  conversation_gap: low
+  link_type: none
+  external_context: standalone
