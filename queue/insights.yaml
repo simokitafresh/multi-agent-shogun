@@ -17387,7 +17387,9 @@ insights:
   priority: "low"
   source: "semantic_stress_test"
   fix_known: false
-  status: pending
+  status: "resolved"
+  action_artifact: "semantic_index=/home/simokitafresh/multi-agent-shogun/docs/semantic-index/index.md"
+  resolved_reason: "semantic index candidate was absorbed into a registered concept"
 - id: INS-20260904-150852226-da6c
   ts: "2026-09-04T15:08:52+09:00"
   insight: "[[Growth Engine設計を以下の追加情報を反映して更新してください]] semantic_stress_test candidate_aliases: NO_MATCH source=lord query=Growth Engine設計を以下の追加情報を反映して更新してください。 重要: 既存のContent Engine、author corpus、human rewrite corpus、承認済み投稿ストックは壊さない。 今回追加するのは、 「Reachを広げるための本人一次…"
@@ -17397,3 +17399,10 @@ insights:
   status: "resolved"
   action_artifact: "semantic_index=/home/simokitafresh/multi-agent-shogun/docs/semantic-index/index.md"
   resolved_reason: "semantic index candidate was absorbed into a registered concept"
+- id: INS-20260904-151731611-ee5d
+  ts: "2026-09-04T15:17:31+09:00"
+  insight: "[[Growth Engineの「投稿量」設計を]] semantic_stress_test candidate_aliases: NO_MATCH source=lord query=Growth Engineの「投稿量」設計を、投稿本数だけではなく 「投稿フォーマット × 投稿量」 として拡張してください。 新しい殿裁定: X投稿には少なくとも4つの異なるフォーマットがある。 1. Short 2. Long 3. Thread 4. Series Ent…"
+  priority: "low"
+  source: "semantic_stress_test"
+  fix_known: false
+  status: pending
