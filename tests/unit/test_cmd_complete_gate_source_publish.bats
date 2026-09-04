@@ -735,6 +735,69 @@ STUB
     grep -q 'clear_notify)' "$gate_script"
 }
 
+# test_necessity: T3-S-57 requires the four post-CLEAR root-ledger writers to
+# leave root bytes unchanged while queuing publisher operations, and requires
+# a missing route to fail closed rather than silently falling back to a direct
+# tracked-file write.
+@test "T3-S-57 PUBLISHER_SINGLE routes review and workaround writers without root mutation" {
+    local fixture state review_log workaround before op_count
+    fixture="$BATS_TEST_TMPDIR/t3s57-root-ledger"
+    state="$fixture/state"
+    review_log="$fixture/gunshi_review_log.yaml"
+    workaround="$fixture/karo_workarounds.yaml"
+    mkdir -p "$fixture" "$state"
+
+    printf '%s\n' '- cmd_id: cmd-t3s57' '  review_type: report' '  gate_result: null' > "$review_log"
+    before="$(sha256sum "$review_log" | awk '{print $1}')"
+    run env PUBLISHER_SINGLE=1 SHOGUN_STATE_DIR="$state" GUNSHI_REVIEW_LOG="$review_log" \
+        bash "$BATS_TEST_DIRNAME/../../scripts/gunshi_gate_reflux.sh" cmd-t3s57 CLEAR
+    [ "$status" -eq 0 ]
+    [ "$before" = "$(sha256sum "$review_log" | awk '{print $1}')" ]
+    op_count="$(find "$state/ledger_inbox/review_log" -maxdepth 1 -type f -name '*.yaml' 2>/dev/null | wc -l)"
+    [ "$op_count" -eq 1 ]
+    op="$(find "$state/ledger_inbox/review_log" -maxdepth 1 -type f -name '*.yaml' | head -1)"
+    run env SHOGUN_STATE_DIR="$state" LEDGER_SOURCE_FILE="$review_log" \
+        bash "$BATS_TEST_DIRNAME/../../scripts/ledger_writer.sh" apply "$op"
+    [ "$status" -eq 0 ]
+    grep -q 'gate_result: "CLEAR"' "$review_log"
+
+    printf '%s\n' '- cmd_id: wa-existing' '  workaround: true' \
+        '  category: report_yaml_format' '  root_signature: report_yaml_format::general' \
+        '  resolved_by_cmd: ' > "$workaround"
+    before="$(sha256sum "$workaround" | awk '{print $1}')"
+    run env PUBLISHER_SINGLE=1 SHOGUN_STATE_DIR="$state" KARO_WORKAROUND_LOG_FILE="$workaround" \
+        KARO_WA_BRAINWASH_CHECK='洗脳#2検証スキップ防止: 0→1件 PASS' \
+        KARO_WORKAROUND_DISABLE_ALERTS=true \
+        bash "$BATS_TEST_DIRNAME/../../scripts/karo_workaround_log.sh" \
+        cmd-t3s57-wa hayate 'route issue' 'route fix' report_yaml_format
+    [ "$status" -eq 0 ]
+    [ "$before" = "$(sha256sum "$workaround" | awk '{print $1}')" ]
+    op_count="$(find "$state/ledger_inbox/workarounds" -maxdepth 1 -type f -name '*.yaml' 2>/dev/null | wc -l)"
+    [ "$op_count" -ge 1 ]
+
+    grep -q 'publisher_single_enabled' "$BATS_TEST_DIRNAME/../../scripts/cmd_complete_gate.sh"
+    grep -q 'PUBLISHER_SINGLE' "$BATS_TEST_DIRNAME/../../scripts/gunshi_gate_reflux.sh"
+    grep -q 'PUBLISHER_SINGLE' "$BATS_TEST_DIRNAME/../../scripts/karo_workaround_log.sh"
+    grep -q 'PUBLISHER_SINGLE' "$BATS_TEST_DIRNAME/../../scripts/lesson_write.sh"
+
+    # Negative fixture: a single-publisher writer without ledger_writer must
+    # fail closed and preserve the root bytes; it may not use legacy fallback.
+    local blocked_root blocked_log blocked_before
+    blocked_root="$fixture/missing-ledger"
+    mkdir -p "$blocked_root/scripts/lib" "$blocked_root/logs"
+    cp "$BATS_TEST_DIRNAME/../../scripts/gunshi_gate_reflux.sh" "$blocked_root/scripts/gunshi_gate_reflux.sh"
+    cp "$BATS_TEST_DIRNAME/../../scripts/lib/lock_path.sh" "$blocked_root/scripts/lib/lock_path.sh"
+    cp "$BATS_TEST_DIRNAME/../../scripts/lib/publisher_single_flag.sh" "$blocked_root/scripts/lib/publisher_single_flag.sh"
+    blocked_log="$blocked_root/logs/gunshi_review_log.yaml"
+    printf '%s\n' '- cmd_id: cmd-blocked' '  review_type: report' '  gate_result: null' > "$blocked_log"
+    blocked_before="$(sha256sum "$blocked_log" | awk '{print $1}')"
+    run env PUBLISHER_SINGLE=1 SHOGUN_STATE_DIR="$state" GUNSHI_REVIEW_LOG="$blocked_log" \
+        bash "$blocked_root/scripts/gunshi_gate_reflux.sh" cmd-blocked CLEAR
+    [ "$status" -eq 2 ]
+    [[ "$output" == *"requires executable ledger_writer.sh"* ]]
+    [ "$blocked_before" = "$(sha256sum "$blocked_log" | awk '{print $1}')" ]
+}
+
 # test_necessity: cmd_karo_hotfix_t3s40_post_source_v6 AC2 (RC 2nd). Structural
 # proof that the recovery sweep (a) is defined once and called exactly once,
 # unconditionally, near the top of the script (so it runs for every cmd's

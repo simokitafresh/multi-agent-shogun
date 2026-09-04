@@ -137,15 +137,15 @@ update_op() {
             *) printf 'ledger_writer: field outside %s allowlist: %s\n' "$ledger" "$field_name" >&2; return 12 ;;
         esac
     done
-    source="${LEDGER_SOURCE_FILE:-$(ledger_file "$ledger")}" 
+    source="${LEDGER_SOURCE_FILE:-$(ledger_file "$ledger")}"
     [[ -f "$source" ]] || die "ledger file not found: $source"
     IFS=$'\t' read -r hash fields expected < <(
-        LEDGER_ENV_FILE="$source" LEDGER_ENV_ID="$id" LEDGER_ENV_PENDING_DIR="$(ledger_dir "$ledger")" LEDGER_ENV_EXPECT_FIELD="$expect_field" LEDGER_ENV_EXPECT_VALUE="$expect_value" LEDGER_ENV_ASSIGNMENTS="$(printf '%s\n' "${assignments[@]}")" python3 - <<'PY'
+        LEDGER_ENV_FILE="$source" LEDGER_ENV_ID="$id" LEDGER_ENV_KIND="$ledger" LEDGER_ENV_PENDING_DIR="$(ledger_dir "$ledger")" LEDGER_ENV_EXPECT_FIELD="$expect_field" LEDGER_ENV_EXPECT_VALUE="$expect_value" LEDGER_ENV_ASSIGNMENTS="$(printf '%s\n' "${assignments[@]}")" python3 - <<'PY'
 import glob, hashlib, json, os, re
 path, ident = os.environ["LEDGER_ENV_FILE"], os.environ["LEDGER_ENV_ID"]
 text=open(path,encoding="utf-8").read(); lines=text.splitlines(keepends=True)
 def find_starts(ls):
-    if re.fullmatch(r"L[0-9]+",ident):
+    if re.fullmatch(r"L[0-9]+",ident) and os.environ.get("LEDGER_ENV_KIND") == "lessons":
         return [i for i,l in enumerate(ls) if re.match(r"^###\s+"+re.escape(ident)+r":",l)]
     return [i for i,l in enumerate(ls) if re.search(r"^\s*-\s+(?:id|cmd_id):\s*['\"]?"+re.escape(ident)+r"(?:['\"]|\s|$)",l)]
 starts=find_starts(lines)
@@ -190,6 +190,27 @@ PY
 import json, os
 from datetime import datetime, timezone
 print(json.dumps({"op":"update","ledger":os.environ["LEDGER_ENV_LEDGER"],"id":os.environ["LEDGER_ENV_ID"],"entry_hash":os.environ["LEDGER_ENV_HASH"],"issued_at":datetime.now(timezone.utc).isoformat(),"source_file":os.environ["LEDGER_ENV_SOURCE"],"fields":json.loads(os.environ["LEDGER_ENV_FIELDS"]),"expected":json.loads(os.environ["LEDGER_ENV_EXPECTED"])},ensure_ascii=False,sort_keys=True))
+PY
+    )"
+    write_op "$ledger" "$body"
+}
+reflux_op() {
+    [[ $# -eq 4 ]] || die "usage: reflux review_log <cmd_id> <gate_result> <gate_synced_at>"
+    local ledger="$1" id="$2" gate_result="$3" gate_synced_at="$4" source body
+    [[ "$ledger" == review_log ]] || die "reflux supports review_log only"
+    source="${LEDGER_SOURCE_FILE:-$(ledger_file "$ledger")}"
+    body="$(LEDGER_ENV_LEDGER="$ledger" LEDGER_ENV_SOURCE="$source" LEDGER_ENV_ID="$id" LEDGER_ENV_RESULT="$gate_result" LEDGER_ENV_SYNCED="$gate_synced_at" python3 - <<'PY'
+import json, os
+from datetime import datetime, timezone
+print(json.dumps({
+    "op": "reflux",
+    "ledger": os.environ["LEDGER_ENV_LEDGER"],
+    "id": os.environ["LEDGER_ENV_ID"],
+    "gate_result": os.environ["LEDGER_ENV_RESULT"],
+    "gate_synced_at": os.environ["LEDGER_ENV_SYNCED"],
+    "issued_at": datetime.now(timezone.utc).isoformat(),
+    "source_file": os.environ["LEDGER_ENV_SOURCE"],
+}, ensure_ascii=False, sort_keys=True))
 PY
     )"
     write_op "$ledger" "$body"
@@ -293,6 +314,75 @@ elif data.get("op")=="append":
             if not text.strip(): text=header+"\n" if header else ""
             if header and not text.startswith(header+"\n"): raise SystemExit(f"{ledger} ledger has unexpected root shape")
             new=text.rstrip("\n")+"\n"+entry.lstrip("\n"); new += "" if new.endswith("\n") else "\n"
+elif data.get("op") == "reflux":
+    if ledger != "review_log": raise SystemExit("reflux supports review_log only")
+    desired = str(data.get("gate_result", "")).strip()
+    synced = str(data.get("gate_synced_at", "")).strip()
+    ident = str(data.get("id", ""))
+    if not desired or not synced or not ident: raise SystemExit("reflux requires id, gate_result, and gate_synced_at")
+    if not text.strip(): raise SystemExit("review_log ledger has unexpected root shape")
+    stripped = text.strip()
+    if stripped != "[]" and not text.startswith("# gunshi review runtime ledger\n") and not re.match(r"(?m)^-\s+(?:cmd_id|id):", text):
+        raise SystemExit("review_log ledger has unexpected root shape")
+    if stripped == "[]":
+        new = text
+    else:
+        entry_start_re = re.compile(r"^-\s+(?:cmd_id|id):\s*['\"]?([^'\"\s]+)")
+        top_level_re = re.compile(r"^[^- #\s][^:]*:")
+        gate_any_re = re.compile(r"^(\s*gate_result:\s*)(.*?)(\s*)$")
+        synced_re = re.compile(r"^(\s*gate_synced_at:\s*)(.*?)(\s*)$")
+        entries = []
+        entry = []
+        matches = []
+        for line in lines:
+            if entry_start_re.match(line) or (entry and top_level_re.match(line)):
+                if entry: entries.append((entry, bool(matches and matches[0])))
+                entry = []
+                matches = []
+            if entry_start_re.match(line):
+                match = entry_start_re.match(line)
+                matches = [match.group(1) == ident]
+                entry.append(line)
+            elif entry:
+                entry.append(line)
+            else:
+                entries.append(([line], False))
+        if entry: entries.append((entry, bool(matches and matches[0])))
+        out = []
+        updated = 0
+        for block, is_target in entries:
+            if not is_target:
+                out.extend(block); continue
+            values = {}
+            for line in block:
+                m = re.match(r"^\s*([A-Za-z_][A-Za-z0-9_]*):\s*(.*?)\s*$", line.rstrip("\n"))
+                if m: values[m.group(1)] = m.group(2).strip("'\"")
+            existing = values.get("gate_result", "").strip()
+            if existing and existing not in {"null", "", desired}:
+                out.extend(block); continue
+            rendered_result = json.dumps(desired, ensure_ascii=False)
+            rendered_synced = json.dumps(synced, ensure_ascii=False)
+            changed_result = changed_synced = False
+            local = []
+            for line in block:
+                m = gate_any_re.match(line.rstrip("\n"))
+                if m and (not existing or existing in {"null", desired}):
+                    line = f"{m.group(1)}{rendered_result}{m.group(3)}\n"; changed_result = True
+                m = synced_re.match(line.rstrip("\n"))
+                if m:
+                    line = f"{m.group(1)}{rendered_synced}{m.group(3)}\n"; changed_synced = True
+                local.append(line)
+            if not changed_result:
+                insert_at = next((i for i, line in enumerate(local) if re.match(r"^\s*review_type:", line)), 0) + 1
+                local.insert(insert_at, f"  gate_result: {rendered_result}\n")
+            if not changed_synced:
+                gate_index = next((i for i, line in enumerate(local) if re.match(r"^\s*gate_result:", line)), len(local)-1)
+                local.insert(gate_index + 1, f"  gate_synced_at: {rendered_synced}\n")
+            updated += 1
+            out.extend(local)
+        new = "".join(out)
+        if updated == 0:
+            new = text
 elif data.get("op") in ("update","resolve"):
     if len(matches)!=1: reject("target_not_unique")
     start,stop=matches[0],end(matches[0]); block=lines[start:stop]
@@ -333,6 +423,7 @@ case "${1:-}" in
     append) shift; append_op "$@";;
     update) shift; update_op "$@";;
     resolve) shift; resolve_op "$@";;
+    reflux) shift; reflux_op "$@";;
     apply) shift; apply_op "$@";;
-    *) die "usage: append|update|resolve|apply ...";;
+    *) die "usage: append|update|resolve|reflux|apply ...";;
 esac

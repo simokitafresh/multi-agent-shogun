@@ -55,6 +55,24 @@ BRAINWASH_CHECK="${KARO_WA_BRAINWASH_CHECK:-}"
 LESSON_REQUIRED="${KARO_WA_LESSON_REQUIRED:-true}"
 LESSON_REFERENCE="${KARO_WA_LESSON_REFERENCE:-}"
 LEDGER_WRITER="$REPO_ROOT/scripts/ledger_writer.sh"
+if [[ -f "$REPO_ROOT/scripts/lib/publisher_single_flag.sh" ]]; then
+    source "$REPO_ROOT/scripts/lib/publisher_single_flag.sh"
+else
+    publisher_single_enabled() {
+        local _publisher_root="${1:-${REPO_ROOT:-}}"
+        [[ "${PUBLISHER_SINGLE:-0}" = 1 ]] || {
+            [[ -n "$_publisher_root" && -f "$_publisher_root/queue/flags/publisher_single" ]]
+        }
+    }
+fi
+PUBLISHER_SINGLE_ACTIVE=false
+if publisher_single_enabled "$REPO_ROOT"; then
+    PUBLISHER_SINGLE_ACTIVE=true
+    if [[ ! -x "$LEDGER_WRITER" ]]; then
+        printf '%s\n' 'BLOCK: PUBLISHER_SINGLE requires executable ledger_writer.sh; refusing root workaround write' >&2
+        exit 2
+    fi
+fi
 if [[ -f "$LEDGER_WRITER" && ! -x "$LEDGER_WRITER" ]]; then
     printf '%s\n' 'LEDGER-ROUTE-SKIP: ledger_writer.sh exists but not executable' >&2
 elif [[ ! -e "$LEDGER_WRITER" ]]; then
@@ -917,7 +935,7 @@ EOF
         echo "[karo_workaround_log] Clean: $CMD_ID/$NINJA_NAME [clean]"
         if [[ -x "$LEDGER_WRITER" ]]; then
             LEDGER_SOURCE_FILE="$LOG_FILE" bash "$LEDGER_WRITER" append workarounds "$LEDGER_ENTRY_FILE" >/dev/null
-        else
+        elif [[ "$PUBLISHER_SINGLE_ACTIVE" != true ]]; then
             cat "$LEDGER_ENTRY_FILE" >> "$LOG_FILE"
         fi
     else
@@ -963,7 +981,7 @@ EOF
 
         if [[ -x "$LEDGER_WRITER" ]]; then
             LEDGER_SOURCE_FILE="$LOG_FILE" bash "$LEDGER_WRITER" append workarounds "$LEDGER_ENTRY_FILE" >/dev/null
-        else
+        elif [[ "$PUBLISHER_SINGLE_ACTIVE" != true ]]; then
             cat "$LEDGER_ENTRY_FILE" >> "$LOG_FILE"
         fi
 
@@ -1013,6 +1031,13 @@ EOF
     fi
 
 ) 200>"$LOCK_FILE"
+# The publisher owns archive/prune of the canonical workaround ledger while
+# PUBLISHER_SINGLE is enabled.  The append above is already queued; checking
+# the root count and trimming it here would recreate the same race.
+if [ "$PUBLISHER_SINGLE_ACTIVE" = true ]; then
+    echo "[karo_workaround_log] PUBLISHER_SINGLE: archive deferred to publisher"
+    exit 0
+fi
 # karo_workarounds.yaml 専用軽量 archive:
 # yaml_auto_archive.sh の Python起動コスト(~45ms)をawk実装で削減。
 # keep=100件を超えた場合のみ、古いエントリをarchiveに移動する。

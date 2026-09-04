@@ -11,6 +11,17 @@ GATE_SYNCED_AT="$(date -Iseconds)"
 
 SCRIPT_DIR="$(cd "${BASH_SOURCE[0]%/*}/.." && pwd)"
 LOG_FILE="${GUNSHI_REVIEW_LOG:-$SCRIPT_DIR/logs/gunshi_review_log.yaml}"
+LEDGER_WRITER="$SCRIPT_DIR/scripts/ledger_writer.sh"
+if [ -f "$SCRIPT_DIR/scripts/lib/publisher_single_flag.sh" ]; then
+    source "$SCRIPT_DIR/scripts/lib/publisher_single_flag.sh"
+else
+    publisher_single_enabled() {
+        local _publisher_root="${1:-${SCRIPT_DIR:-}}"
+        [[ "${PUBLISHER_SINGLE:-0}" = 1 ]] || {
+            [[ -n "$_publisher_root" && -f "$_publisher_root/queue/flags/publisher_single" ]]
+        }
+    }
+fi
 
 case "$GATE_RESULT" in
     CLEAR|BLOCK|FAIL|WARN|N/A) ;;
@@ -21,6 +32,19 @@ case "$GATE_RESULT" in
 esac
 
 if [ ! -f "$LOG_FILE" ]; then
+    exit 0
+fi
+
+# During the single-publisher rollout the shared review log is immutable from
+# the gate process.  Queue one generation-bound reflux operation instead of
+# letting this legacy updater replace the root file directly.
+if publisher_single_enabled "$SCRIPT_DIR"; then
+    if [ ! -x "$LEDGER_WRITER" ]; then
+        echo "gunshi_gate_reflux: BLOCK PUBLISHER_SINGLE requires executable ledger_writer.sh" >&2
+        exit 2
+    fi
+    op_path="$(LEDGER_SOURCE_FILE="$LOG_FILE" bash "$LEDGER_WRITER" reflux review_log "$CMD_ID" "$GATE_RESULT" "$GATE_SYNCED_AT")"
+    echo "  gunshi_gate_reflux: LEDGER-ROUTE queued op=$op_path (${CMD_ID} → ${GATE_RESULT})"
     exit 0
 fi
 

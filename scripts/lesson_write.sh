@@ -52,6 +52,25 @@ if [ -f "$SCRIPT_DIR/scripts/lib/lock_path.sh" ]; then
 else
     lock_path() { printf '%s.lock' "$1"; }
 fi
+LEDGER_WRITER="$SCRIPT_DIR/scripts/ledger_writer.sh"
+if [ -f "$SCRIPT_DIR/scripts/lib/publisher_single_flag.sh" ]; then
+    source "$SCRIPT_DIR/scripts/lib/publisher_single_flag.sh"
+else
+    publisher_single_enabled() {
+        local _publisher_root="${1:-${SCRIPT_DIR:-}}"
+        [[ "${PUBLISHER_SINGLE:-0}" = 1 ]] || {
+            [[ -n "$_publisher_root" && -f "$_publisher_root/queue/flags/publisher_single" ]]
+        }
+    }
+fi
+PUBLISHER_SINGLE_ACTIVE=false
+if publisher_single_enabled "$SCRIPT_DIR"; then
+    PUBLISHER_SINGLE_ACTIVE=true
+    if [[ ! -x "$LEDGER_WRITER" ]]; then
+        echo "BLOCK: PUBLISHER_SINGLE requires executable ledger_writer.sh; refusing root lesson write" >&2
+        exit 2
+    fi
+fi
 PROJECT_ID="${1:-}"
 TITLE="${2:-}"
 DETAIL="${3:-}"
@@ -880,6 +899,10 @@ PY
 
 # ─── Retag mode: change tags of existing lesson (both lessons.md + sync) ───
 if [ -n "$RETAG_ID" ]; then
+    if [ "$PUBLISHER_SINGLE_ACTIVE" = true ]; then
+        echo "BLOCK: --retag is not ledger-backed during PUBLISHER_SINGLE" >&2
+        exit 2
+    fi
     if [ -z "$PROJECT_ID" ] || [ -z "$RETAG_TAGS" ]; then
         echo "Usage: lesson_write.sh <project_id> --retag <lesson_id> --new-tags \"tag1,tag2\"" >&2
         exit 1
@@ -968,8 +991,12 @@ RETAGPY
 
     ) 200>"$LOCKFILE"
 
-    # Re-sync YAML cache (both lessons.md → lessons.yaml)
-    bash "$SCRIPT_DIR/scripts/sync_lessons.sh" "$PROJECT_ID"
+    # Re-sync YAML cache only after the publisher applies the queued source.
+    if [ "$PUBLISHER_SINGLE_ACTIVE" = true ]; then
+        echo "[lesson_write] PUBLISHER_SINGLE: cache sync deferred to publisher"
+    else
+        bash "$SCRIPT_DIR/scripts/sync_lessons.sh" "$PROJECT_ID"
+    fi
 
     echo "[lesson_write] $RETAG_ID retag successfully"
     exit 0
@@ -1036,8 +1063,12 @@ PY
 
     ) 200>"$LOCKFILE"
 
-    # Re-sync YAML cache
-    bash "$SCRIPT_DIR/scripts/sync_lessons.sh" "$PROJECT_ID"
+    # Re-sync YAML cache only after the publisher applies the queued source.
+    if [ "$PUBLISHER_SINGLE_ACTIVE" = true ]; then
+        echo "[lesson_write] PUBLISHER_SINGLE: cache sync deferred to publisher"
+    else
+        bash "$SCRIPT_DIR/scripts/sync_lessons.sh" "$PROJECT_ID"
+    fi
 
     echo "[lesson_write] $RETIRE_ID retired successfully"
     exit 0
@@ -1385,8 +1416,12 @@ PYCOMBINED
         echo "$_lw_new_id_str added to $LESSONS_FILE"
 
     ) 200>"$LOCKFILE"; then
-        # AC3: Auto-call sync_lessons.sh after write (non-blocking: 失敗しても後続処理を続行)
-        if [ "${LESSON_WRITE_SKIP_SYNC:-0}" != "1" ]; then
+        # AC3: Auto-call sync_lessons.sh after write (non-blocking: 失敗しても後続処理を続行).
+        # PUBLISHER_SINGLE must not regenerate a tracked cache from the root
+        # process; the publisher applies the queued source first.
+        if [ "$PUBLISHER_SINGLE_ACTIVE" = true ]; then
+            echo "[lesson_write] PUBLISHER_SINGLE: cache sync deferred to publisher"
+        elif [ "${LESSON_WRITE_SKIP_SYNC:-0}" != "1" ]; then
             if [ "${LESSON_WRITE_SYNC_MODE:-async}" = "sync" ]; then
                 bash "$SCRIPT_DIR/scripts/sync_lessons.sh" "$PROJECT_ID" || echo "WARN: sync_lessons.sh failed (non-blocking — lesson is written)" >&2
             else
@@ -1403,8 +1438,11 @@ PYCOMBINED
         if [ -f "$LESSON_ID_FILE" ]; then
             read -r NEW_LESSON_ID < "$LESSON_ID_FILE" || true
         fi
-        # Context索引自動追記 (cmd_300)
-        if [ -n "$NEW_LESSON_ID" ]; then
+        # Context索引自動追記 (cmd_300).  Derived context is refreshed only
+        # after the publisher applies the source lesson operation.
+        if [ "$PUBLISHER_SINGLE_ACTIVE" = true ]; then
+            echo "[lesson_write] PUBLISHER_SINGLE: derived context sync deferred"
+        elif [ -n "$NEW_LESSON_ID" ]; then
             resolve_lesson_context_route "$PROJECT_ID" "${SUBDOMAIN:-}"
             CONTEXT_FILE="$CONTEXT_ROUTE_FILE"
             if [ -n "$CONTEXT_FILE" ]; then
@@ -1510,7 +1548,9 @@ CTXEOF
             echo "source: lesson_write" >> "$gates_dir/lesson.done"
         fi
         # セマンティクスインデックス: aliases照合で既存概念へlessonリソースを追記（失敗は非ブロック）
-        if [ -n "$NEW_LESSON_ID" ] && [ -f "$SCRIPT_DIR/scripts/semantic_index_update.sh" ]; then
+        if [ "$PUBLISHER_SINGLE_ACTIVE" = true ]; then
+            echo "[lesson_write] PUBLISHER_SINGLE: semantic index/map sync deferred"
+        elif [ -n "$NEW_LESSON_ID" ] && [ -f "$SCRIPT_DIR/scripts/semantic_index_update.sh" ]; then
             if _semantic_payload=$(LESSON_ID_ENV="$NEW_LESSON_ID" TITLE_ENV="$TITLE" DETAIL_ENV="$DETAIL" SOURCE_CMD_ENV="$SOURCE_CMD" ORIGIN_ENV="$(resolve_origin_value)" python3 - <<'PY' 2>/dev/null
 import json
 import os
@@ -1527,7 +1567,7 @@ PY
                 (bash "$SCRIPT_DIR/scripts/semantic_index_update.sh" lesson "$_semantic_payload" >/dev/null 2>&1 || true) &
             fi
         fi
-        if [ -f "$SCRIPT_DIR/scripts/semantic_map_generate.sh" ]; then
+        if [ "$PUBLISHER_SINGLE_ACTIVE" != true ] && [ -f "$SCRIPT_DIR/scripts/semantic_map_generate.sh" ]; then
             (bash "$SCRIPT_DIR/scripts/semantic_map_generate.sh" >/dev/null 2>&1 || true) &
         fi
         # REFLUX_CHECK: 穴検出3問チェック (cmd_1088)

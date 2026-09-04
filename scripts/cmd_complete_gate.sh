@@ -7548,6 +7548,51 @@ update_karo_workaround_resolutions() {
         return 0
     fi
 
+    # PUBLISHER_SINGLE owns the shared workaround ledger.  Preserve the
+    # category matching semantics, but emit CAS update operations rather than
+    # replacing the tracked root file from this gate process.
+    if publisher_single_enabled; then
+        local ledger_writer="$SCRIPT_DIR/scripts/ledger_writer.sh"
+        if [ ! -x "$ledger_writer" ]; then
+            echo "  BLOCK: PUBLISHER_SINGLE requires executable ledger_writer.sh" >&2
+            return 1
+        fi
+        local update_ids update_count=0
+        update_ids=$(python3 - "$wa_file" "$categories" <<'PY'
+import re, sys
+path, raw_categories = sys.argv[1:]
+categories = {item for item in raw_categories.split(',') if item}
+lines = open(path, encoding='utf-8').read().splitlines()
+starts = [i for i, line in enumerate(lines) if re.match(r'^\s*-\s+[A-Za-z0-9_]+:', line)]
+starts.append(len(lines))
+for start, end in zip(starts, starts[1:]):
+    values = {}
+    for offset, line in enumerate(lines[start:end]):
+        candidate = re.sub(r'^\s*-\s*', '', line, count=1) if offset == 0 else line
+        match = re.match(r'^\s*([A-Za-z_][A-Za-z0-9_]*):\s*(.*?)\s*$', candidate)
+        if match:
+            values[match.group(1)] = match.group(2).strip("'\"")
+    if (values.get('workaround') == 'true'
+            and values.get('category') in categories
+            and not values.get('resolved_by_cmd')
+            and values.get('cmd_id')):
+        print(values['cmd_id'])
+PY
+        )
+        while IFS= read -r _wa_id; do
+            [ -n "$_wa_id" ] || continue
+            if LEDGER_SOURCE_FILE="$wa_file" bash "$ledger_writer" update workarounds "$_wa_id" \
+                "resolved_by_cmd=$cmd_id" --expect resolved_by_cmd= >/dev/null; then
+                update_count=$((update_count + 1))
+            else
+                echo "  WARN: workaround ledger operation failed id=$_wa_id" >&2
+                return 1
+            fi
+        done <<< "$update_ids"
+        echo "  PUBLISHER_SINGLE workaround resolution queued=$update_count categories=$categories"
+        return 0
+    fi
+
     result=$(
         (
             flock -w 10 200 || { echo "WARN: lock timeout"; exit 0; }
@@ -7672,10 +7717,19 @@ capture_completed_rework_event() {
 
     local wa_file="${KARO_WORKAROUNDS_FILE:-$LOG_DIR/karo_workarounds.yaml}"
     local wa_lock="${KARO_WORKAROUNDS_LOCK_FILE:-$(lock_path "$wa_file")}"
+    local publisher_route=false route_file="" ledger_writer="$SCRIPT_DIR/scripts/ledger_writer.sh"
+    if publisher_single_enabled; then
+        publisher_route=true
+        if [ ! -x "$ledger_writer" ]; then
+            echo "  [ERROR] PUBLISHER_SINGLE requires executable ledger_writer.sh" >&2
+            return 1
+        fi
+        route_file="$(mktemp)"
+    fi
     local result
     if ! result=$( (
         flock -w 10 200 || { echo "ERROR: lock timeout"; exit 1; }
-        python3 - "$wa_file" "$cmd_id" "$event_kind" "$(date -u +%Y-%m-%dT%H:%M:%SZ)" <<'PY'
+        ROUTE_ENTRY_FILE="$route_file" python3 - "$wa_file" "$cmd_id" "$event_kind" "$(date -u +%Y-%m-%dT%H:%M:%SZ)" <<'PY'
 import os
 import re
 import sys
@@ -7684,6 +7738,7 @@ from pathlib import Path
 
 path = Path(sys.argv[1])
 cmd_id, event_kind, timestamp = sys.argv[2:]
+route_file = os.environ.get("ROUTE_ENTRY_FILE", "")
 path.parent.mkdir(parents=True, exist_ok=True)
 lines = path.read_text(encoding="utf-8").splitlines(keepends=True) if path.exists() else []
 starts = [i for i, line in enumerate(lines) if re.match(r"^-\s+[A-Za-z0-9_]+:\s*", line)]
@@ -7716,20 +7771,40 @@ entry = (
     f"  resolved_by_cmd: '{cmd_id}'\n"
 )
 fd, temporary = tempfile.mkstemp(dir=str(path.parent), suffix=".tmp")
-os.close(fd)
-try:
-    Path(temporary).write_text("".join(lines) + entry, encoding="utf-8")
-    os.replace(temporary, path)
-finally:
-    if os.path.exists(temporary):
-        os.unlink(temporary)
+if route_file:
+    Path(route_file).write_text(entry, encoding="utf-8")
+    os.close(fd)
+    os.unlink(temporary)
+else:
+    os.close(fd)
+    try:
+        Path(temporary).write_text("".join(lines) + entry, encoding="utf-8")
+        os.replace(temporary, path)
+    finally:
+        if os.path.exists(temporary):
+            os.unlink(temporary)
 print(f"captured=1 event_kind={event_kind}")
 PY
     ) 200>"$wa_lock" ); then
         echo "  [ERROR] rework event capture failed: ${result:-unknown error}" >&2
         return 1
     fi
-    echo "  ${result}"
+    if [ "$publisher_route" = true ]; then
+        if [[ "$result" == captured=* && -s "$route_file" ]]; then
+            local op_path
+            op_path="$(LEDGER_SOURCE_FILE="$wa_file" bash "$ledger_writer" append workarounds "$route_file")" || {
+                rm -f -- "$route_file"
+                return 1
+            }
+            rm -f -- "$route_file"
+            echo "  ${result} via LEDGER-ROUTE op=${op_path}"
+        else
+            rm -f -- "$route_file"
+            echo "  ${result}"
+        fi
+    else
+        echo "  ${result}"
+    fi
 }
 
 # ─── L6横展開候補自動保存（cmd_2653） ───
@@ -9990,6 +10065,56 @@ update_lesson_scores_batch() {
 
     if [ ! -f "$cache_file" ]; then
         echo "  [INFO] lesson score update skipped: ${cache_file} not found"
+        return 0
+    fi
+
+    # Lesson score feedback is another post-CLEAR writer of the tracked
+    # project/infra lesson cache.  Under PUBLISHER_SINGLE compute the same
+    # increments from the current snapshot, then queue one CAS update per
+    # lesson instead of replacing the cache in the shared root.
+    if publisher_single_enabled; then
+        local ledger_writer="$SCRIPT_DIR/scripts/ledger_writer.sh"
+        if [ ! -x "$ledger_writer" ]; then
+            echo "  BLOCK: PUBLISHER_SINGLE requires executable ledger_writer.sh" >&2
+            return 1
+        fi
+        local score_updates score_now score_count=0
+        score_now="$(date '+%Y-%m-%dT%H:%M:%S')"
+        score_updates=$(SCORE_ENTRIES="$score_entries" CACHE_FILE="$cache_file" python3 - <<'PY'
+import os
+from collections import Counter
+import yaml
+counts = Counter()
+for raw in os.environ.get("SCORE_ENTRIES", "").splitlines():
+    parts = raw.split("\t")
+    if len(parts) >= 2 and parts[1].strip():
+        counts[parts[1].strip()] += 1
+data = yaml.safe_load(open(os.environ["CACHE_FILE"], encoding="utf-8")) or {}
+for lesson in data.get("lessons", []) if isinstance(data.get("lessons"), list) else []:
+    if not isinstance(lesson, dict):
+        continue
+    ident = str(lesson.get("id", "")).strip()
+    if ident not in counts:
+        continue
+    try:
+        current = int(lesson.get("helpful_count", 0) or 0)
+    except (TypeError, ValueError):
+        current = 0
+    print(f"{ident}\t{current}\t{current + counts[ident]}")
+PY
+        )
+        while IFS=$'\t' read -r _score_id _score_old _score_new; do
+            [ -n "$_score_id" ] || continue
+            if LEDGER_SOURCE_FILE="$cache_file" bash "$ledger_writer" update lessons_yaml "$_score_id" \
+                "helpful_count=$_score_new" "last_referenced=$score_now" \
+                --expect "helpful_count=$_score_old" >/dev/null; then
+                score_count=$((score_count + 1))
+            else
+                echo "  WARN: lesson score ledger operation failed id=$_score_id" >&2
+                return 1
+            fi
+        done <<< "$score_updates"
+        echo "  PUBLISHER_SINGLE lesson score updates queued=$score_count cache=$cache_file"
         return 0
     fi
 

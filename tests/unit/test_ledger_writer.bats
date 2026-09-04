@@ -92,6 +92,39 @@ PY
   [ "$(grep -c 'cmd-review' "$TEST_ROOT/logs/gunshi_review_log.yaml")" -eq 2 ]
 }
 
+# test_necessity: PUBLISHER_SINGLE review reflux must queue an atomic operation,
+# update every eligible matching entry, preserve final results, and replay
+# without duplicating or changing the root ledger.
+@test "review-log reflux queues outside root, updates eligible entries, and replays idempotently" {
+  printf '%s\n' \
+    '- cmd_id: cmd-reflux' \
+    '  review_type: draft' \
+    '  gate_result: null' \
+    '- cmd_id: cmd-reflux' \
+    '  review_type: report' \
+    '  gate_result: ""' \
+    '- cmd_id: cmd-reflux' \
+    '  review_type: report' \
+    '  gate_result: BLOCK' \
+    '- cmd_id: cmd-other' \
+    '  review_type: report' > "$TEST_ROOT/logs/gunshi_review_log.yaml"
+  before="$(sha256sum "$TEST_ROOT/logs/gunshi_review_log.yaml" | awk '{print $1}')"
+  op="$(env LEDGER_SOURCE_FILE="$TEST_ROOT/logs/gunshi_review_log.yaml" writer reflux review_log cmd-reflux CLEAR 2026-09-04T08:00:00+09:00)"
+  [ -f "$op" ]
+  [ "$before" = "$(sha256sum "$TEST_ROOT/logs/gunshi_review_log.yaml" | awk '{print $1}')" ]
+  run env LEDGER_SOURCE_FILE="$TEST_ROOT/logs/gunshi_review_log.yaml" writer apply "$op"
+  [ "$status" -eq 0 ]
+  [ "$(grep -c 'gate_result: \"CLEAR\"' "$TEST_ROOT/logs/gunshi_review_log.yaml")" -eq 2 ]
+  [ "$(grep -c 'gate_result: BLOCK' "$TEST_ROOT/logs/gunshi_review_log.yaml")" -eq 1 ]
+  [ "$(grep -c 'gate_synced_at: \"2026-09-04T08:00:00+09:00\"' "$TEST_ROOT/logs/gunshi_review_log.yaml")" -eq 2 ]
+  replay="$STATE_DIR/reflux-replay.yaml"
+  cp "$STATE_DIR/ledger_inbox/review_log/applied/$(basename "$op")" "$replay"
+  after="$(sha256sum "$TEST_ROOT/logs/gunshi_review_log.yaml" | awk '{print $1}')"
+  run env LEDGER_SOURCE_FILE="$TEST_ROOT/logs/gunshi_review_log.yaml" writer apply "$replay"
+  [ "$status" -eq 0 ]
+  [ "$after" = "$(sha256sum "$TEST_ROOT/logs/gunshi_review_log.yaml" | awk '{print $1}')" ]
+}
+
 # test_necessity: the residual retry contract must support production list-root
 # review logs, make exact operation replay idempotent, and keep invalid roots
 # fail-closed after the origin/main list-root fix.
