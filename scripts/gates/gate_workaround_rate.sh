@@ -18,6 +18,10 @@ WA_FILE="${KARO_WORKAROUNDS_FILE:-$SCRIPT_DIR/logs/karo_workarounds.yaml}"
 GATE_LOG="${GATE_METRICS_LOG:-$SCRIPT_DIR/logs/gate_metrics.log}"
 REWORK_CAPTURE_SINCE="${REWORK_CAPTURE_SINCE:-today 00:00}"
 REWORK_CAPTURE_SINCE_LOCAL_ISO="$(date -d "$REWORK_CAPTURE_SINCE" +%Y-%m-%dT%H:%M:%S 2>/dev/null || true)"
+# PUBLISHER_SINGLE queues append operations outside the checkout.  The runtime
+# state defaults to /tmp (ninja_monitor's state), while tests and deployments
+# may provide an explicit state directory or pending ledger directory.
+REWORK_CAPTURE_PENDING_DIR="${REWORK_CAPTURE_PENDING_DIR:-${REWORK_CAPTURE_LEDGER_DIR:-${SHOGUN_STATE_DIR:-/tmp}/ledger_inbox/workarounds}}"
 LAST_N=10
 
 # 引数パース
@@ -170,45 +174,91 @@ function flush_item() {
 IFS='|' read -r LEVEL RATE WA_COUNT TOTAL CATS SOURCE <<< "$result"
 
 echo "  WA率: ${RATE}% (${WA_COUNT}/${TOTAL}件) — ${LEVEL}"
-capture_pair=$(LC_ALL=C "$_AWK_BIN" -F '\t' -v since="$REWORK_CAPTURE_SINCE_LOCAL_ISO" '
-function event_kind_for(cmd,    lowered) {
-    lowered = tolower(cmd)
-    if (lowered ~ /karo_direct/) return "karo_direct"
-    if (lowered ~ /hotfix/) return "hotfix"
-    if (lowered ~ /(^|[_:-])rc([_:-]|$)/) return "rc"
+capture_pair=$(REWORK_CAPTURE_PENDING_DIR="$REWORK_CAPTURE_PENDING_DIR" python3 - "$GATE_LOG" "$WA_FILE" "$REWORK_CAPTURE_SINCE_LOCAL_ISO" <<'PY'
+import json
+import os
+import re
+import sys
+from pathlib import Path
+
+import yaml
+
+
+gate_log = Path(sys.argv[1])
+workaround_file = Path(sys.argv[2])
+since = sys.argv[3]
+pending_dir = Path(os.environ["REWORK_CAPTURE_PENDING_DIR"])
+
+
+def event_kind_for(cmd):
+    lowered = str(cmd).lower()
+    if "karo_direct" in lowered:
+        return "karo_direct"
+    if "hotfix" in lowered:
+        return "hotfix"
+    if re.search(r"(^|[_:-])rc([_:-]|$)", lowered):
+        return "rc"
     return ""
-}
-function flush_wa(    key) {
-    key = wa_cmd SUBSEP wa_kind
-    if (wa_cmd != "" && wa_captured == "true" && key in eligible && !captured_seen[key]++) captured_count++
-    wa_cmd = ""; wa_kind = ""; wa_captured = ""
-}
-FILENAME == ARGV[1] {
-    if (NF >= 3 && $1 >= since && $3 == "CLEAR") {
-        kind = event_kind_for($2)
-        key = $2 SUBSEP kind
-        if (kind != "" && !eligible[key]++) eligible_count++
-    }
-    next
-}
-FILENAME == ARGV[2] {
-    if ($0 ~ /^- cmd_id:/) {
-        flush_wa()
-        wa_cmd=$0
-        sub(/^- cmd_id:[[:space:]]*/, "", wa_cmd)
-        gsub(/[^[:alnum:]_:-]/, "", wa_cmd)
-    } else if ($0 ~ /^  event_kind:/) {
-        wa_kind=$0
-        sub(/^[[:space:]]*event_kind:[[:space:]]*/, "", wa_kind)
-        gsub(/[^[:alnum:]_:-]/, "", wa_kind)
-    } else if ($0 ~ /^  auto_captured:/) {
-        wa_captured=$0
-        sub(/^[[:space:]]*auto_captured:[[:space:]]*/, "", wa_captured)
-        gsub(/[^[:alnum:]_:-]/, "", wa_captured)
-    }
-}
-END { flush_wa(); print captured_count+0 "|" eligible_count+0 }
-' "$GATE_LOG" "$WA_FILE" 2>/dev/null || echo '0|0')
+
+
+def as_entries(value):
+    if isinstance(value, list):
+        return [item for item in value if isinstance(item, dict)]
+    if isinstance(value, dict):
+        for key in ("workarounds", "entries"):
+            if key in value:
+                return as_entries(value[key])
+        return [value]
+    return []
+
+
+def load_entries(path):
+    try:
+        return as_entries(yaml.safe_load(path.read_text(encoding="utf-8")))
+    except (OSError, UnicodeError, yaml.YAMLError):
+        return []
+
+
+eligible = set()
+try:
+    for line in gate_log.read_text(encoding="utf-8", errors="replace").splitlines():
+        fields = line.split("\t")
+        if len(fields) < 3 or fields[0] < since or fields[2] != "CLEAR":
+            continue
+        kind = event_kind_for(fields[1])
+        if kind:
+            eligible.add((fields[1], kind))
+except OSError:
+    pass
+
+# The canonical YAML may lag while its publisher append operation is still
+# pending.  Treat both as one logical source and deduplicate by the same
+# cmd_id+event_kind identity used for the eligible CLEAR set.
+captured = set()
+for entry in load_entries(workaround_file):
+    if entry.get("auto_captured") is True:
+        key = (str(entry.get("cmd_id", "")), str(entry.get("event_kind", "")))
+        if key in eligible:
+            captured.add(key)
+
+if pending_dir.is_dir():
+    for operation_path in sorted(pending_dir.glob("*.yaml")):
+        try:
+            operation = json.loads(operation_path.read_text(encoding="utf-8"))
+            if operation.get("op") != "append" or operation.get("ledger") != "workarounds":
+                continue
+            entry_text = operation.get("entry_text", "")
+            for entry in as_entries(yaml.safe_load(entry_text)):
+                if entry.get("auto_captured") is True:
+                    key = (str(entry.get("cmd_id", "")), str(entry.get("event_kind", "")))
+                    if key in eligible:
+                        captured.add(key)
+        except (OSError, UnicodeError, json.JSONDecodeError, yaml.YAMLError, TypeError):
+            continue
+
+print(f"{len(captured)}|{len(eligible)}")
+PY
+ 2>/dev/null || echo '0|0')
 IFS='|' read -r capture_result eligible_result <<< "$capture_pair"
 if [ -z "$REWORK_CAPTURE_SINCE_LOCAL_ISO" ]; then
     echo "  手戻り捕捉率: N/A (invalid REWORK_CAPTURE_SINCE=$REWORK_CAPTURE_SINCE)"
