@@ -17033,3 +17033,17 @@ insights:
   source: "semantic_index_update"
   fix_known: false
   status: pending
+- id: INS-20260904-104007261-a969
+  ts: "2026-09-04T10:40:07+09:00"
+  insight: "[[ntfyが大量に届きすぎて埋もれてしまうな]] semantic_stress_test candidate_aliases: NO_MATCH source=lord query=ntfyが大量に届きすぎて埋もれてしまうな。refresh tokenが切れてるみたいだが、これでは自動投稿の仕組みとして成り立っていないのでは？"
+  priority: "low"
+  source: "semantic_stress_test"
+  fix_known: false
+  status: pending
+- id: INS-20260904-104007479-c286
+  ts: "2026-09-04T10:40:07+09:00"
+  insight: "[[あと投稿文が明らかに俺のスタイルではないな]] semantic_stress_test candidate_aliases: NO_MATCH source=lord query=あと投稿文が明らかに俺のスタイルではないな。「教育目的。推奨ではない。。。」などの部分は蛇足で余分だ。言い訳のためであってXnoポスト自体にその言い訳をつけるのは論理的におかしい。言い訳は削除せよ"
+  priority: "low"
+  source: "semantic_stress_test"
+  fix_known: false
+  status: pending
