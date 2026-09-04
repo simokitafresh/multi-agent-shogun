@@ -1865,6 +1865,7 @@ codd:
 | discussion | `queue/lord_conversation.jsonl` 2026-09-04T14:37:00+09:00 認可完了。token を保存しました。このタブは閉じてよい。でたよ |
 | discussion | `queue/lord_conversation.jsonl` 2026-09-04T14:59:52+09:00 session_save_20260904_1500(復帰点、先に session_save_20260904_1452 を読め): 殿指示 14:51 Growth Engine v1.0 実装完了(afc9f931c、gist da5a |
 | discussion | `queue/lord_conversation.jsonl` 2026-09-04T15:01:49+09:00 Growth Engine設計を以下の追加情報を反映して更新してください。 重要: 既存のContent Engine、author corpus、human rewrite corpus、承認済み投稿ストックは壊さない。 今回追加するのは |
+| discussion | `queue/lord_conversation.jsonl` 2026-09-04T15:11:22+09:00 Growth Engineの「投稿量」設計を、投稿本数だけではなく 「投稿フォーマット × 投稿量」 として拡張してください。 新しい殿裁定: X投稿には少なくとも4つの異なるフォーマットがある。 1. Short 2. Long 3. T |
 
 ## recalculate_pipeline — 再計算パイプライン
 
