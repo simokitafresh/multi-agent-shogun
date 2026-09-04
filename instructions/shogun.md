@@ -641,3 +641,11 @@ Lord: command → Shogun: write YAML → inbox_write → END TURN
 - **標準手順**: `/three-layer-penetrate`(`skills/three-layer-penetrate/SKILL.md`)
 - **reason**: 2026-07-27、実効ルートがhook4本へ移っているのに`instructions/*.md`に一文字も無く、家老が手順書だけを見て「すり替わりは無い」と誤答した(02:30→02:33訂正)。**hookのpath+行番号を明記するのは、次に手順書を読む者が実態へ到達できるようにするためである。** hook変更時は本表も同期せよ。
 - origin: `[[殿指摘_三層アクセスルートすり替わり_20260727]] -> [[A3手順書未記載]] -> [[R4実効ルート明記]]`
+
+
+## 復帰後の型・第二十三弾(2026-09-04 X Growth 便)
+1. 外部 API の token は「書く場所を 1 つ」に固定し、SDK に token を渡さない。認可直後に手動 token 操作をしない(T3-S-65/67/68。殿の認可を 3 回無効化した)。
+2. startup gate の WARN は家老へ送る前に集計式を 1 度読み、一次(gate_metrics 行・ファイル名)で裏取りする。本文 grep と ID suffix 不一致は偽陽性の常連(bec5dab26/400836977)。
+3. 殿の設計指示は「壊さない範囲」を先に列挙してから追加する。Content Engine を触らず Growth Engine を上位に積む(v1.0→1.1→1.2 で本文 0 字変更)。
+4. 分析は「このアカウントでは○○型の中央値が高かった」まで。因果を断定しない。取得不能な指標は推測せず不能と書く。
+5. 事前登録が正本。伸びた後に分類を付け替えない(format/funnel_stage/lane)。
