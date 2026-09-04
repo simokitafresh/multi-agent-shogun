@@ -21,8 +21,8 @@ entries:
     conversation_gap: high
     link_type: none
     external_context: standalone
-  post_id: ''
-  posted_at: ''
+  post_id: '2095775139766104341'
+  posted_at: '2026-09-04T07:25:04Z'
   snapshots: {}
 - draft_id: R4-A-3
   draft_file: queue/x_drafts/2026-09-04_R4-A-3.txt
