@@ -3588,6 +3588,7 @@ codd:
 | causal_chain | `[[cmd_karo_hotfix_workarounds_merge_driver_dup_cmd_id_202609030148]]` (L1712) |
 | discussion | `queue/lord_conversation.jsonl` 2026-09-04T16:43:56+09:00 usage_statusbar復旧手順: bash .cache/saizo-gist-after.734LqI/scripts/usage_statusbar_loop.sh &。origin: [[殿質問_tmux_usage表示_20 |
 | discussion | `queue/lord_conversation.jsonl` 2026-09-04T16:51:48+09:00 session_save_20260904_1655(復帰点、先に session_save_20260904_1632 を読め): 殿『では実装に入ろう』→(1) Round5 生成 29 本(Short 10 lane 別 Reach/ |
+| discussion | `queue/lord_conversation.jsonl` 2026-09-04T16:58:44+09:00 session_save_20260904_1700(復帰点、先に session_save_20260904_1655 を読め): loop 16:58。gate OK(busy 2=半蔵 hotfix・才蔵 cmd_4474 ackno |
 
 ## investment_knowledge_base — 投資知識辞書
 
