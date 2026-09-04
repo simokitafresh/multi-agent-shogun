@@ -75,10 +75,63 @@ report_ci_push_state_cached() {
     if [[ "${_CCG_REPORT_CI_PUSH_STATE_CACHE[$cache_key]+yes}" = yes ]]; then
         REPORT_CI_PUSH_STATE_CACHED="${_CCG_REPORT_CI_PUSH_STATE_CACHE[$cache_key]}"
     else
-        REPORT_CI_PUSH_STATE_CACHED="$(report_ci_push_state "$report_file" "$repo_dir" "$task_file" "$ancestry_snapshot_file")"
+        if REPORT_CI_PUSH_STATE_CACHED="$(report_ci_push_state_legacy_compat "$report_file" "$repo_dir" "$task_file")"; then
+            :
+        else
+            REPORT_CI_PUSH_STATE_CACHED="$(report_ci_push_state "$report_file" "$repo_dir" "$task_file" "$ancestry_snapshot_file")"
+        fi
         _CCG_REPORT_CI_PUSH_STATE_CACHE["$cache_key"]="$REPORT_CI_PUSH_STATE_CACHED"
     fi
     printf '%s\n' "$REPORT_CI_PUSH_STATE_CACHED"
+}
+
+# Legacy recon reports predate the typed no-code contract and encoded the same
+# claim as an empty commit_hash plus files_modified=N/A. Keep this compatibility
+# adapter in the completion-gate owner (rather than weakening the shared CI
+# classifier) so ordinary reports still use the strict publication contract.
+report_ci_push_state_legacy_compat() {
+    local report_file="$1" repo_dir="${2:-}" task_file="${3:-}" root tree
+    if [ -n "${PROJECT_ROOT:-}" ]; then
+        root="$PROJECT_ROOT"
+    else
+        root="${CMD_COMPLETE_GATE_CANONICAL_SOURCE:-${BASH_SOURCE[0]}}"
+        root="${root%/scripts/cmd_complete_gate.sh}"
+    fi
+    tree="$(REPORT_FILE="$report_file" TASK_FILE="$task_file" REPO_ROOT="$root" python3 - <<'PY'
+import os
+import pathlib
+import sys
+import yaml
+
+root = pathlib.Path(os.environ.get("REPO_ROOT", ".")).resolve()
+try:
+    report = yaml.safe_load(pathlib.Path(os.environ["REPORT_FILE"]).read_text(encoding="utf-8")) or {}
+except (OSError, yaml.YAMLError):
+    raise SystemExit(1)
+task = None
+task_file = os.environ.get("TASK_FILE", "")
+if task_file:
+    try:
+        task_raw = yaml.safe_load(pathlib.Path(task_file).read_text(encoding="utf-8")) or {}
+        task = task_raw.get("task", task_raw)
+    except (OSError, yaml.YAMLError):
+        raise SystemExit(1)
+sys.path.insert(0, str(root / "scripts" / "lib"))
+from report_commit_identity import permits_legacy_recon_identity
+
+if permits_legacy_recon_identity(report, root, task):
+    evidence = report.get("no_code_change_evidence") or {}
+    print(str(evidence.get("before_tree") or "").strip().lower())
+    raise SystemExit(0)
+raise SystemExit(1)
+PY
+    )" || return 1
+    [ -n "$tree" ] || return 1
+    if git -C "$repo_dir" cat-file -e "${tree}^{tree}" 2>/dev/null; then
+        printf 'UNPUSHED: legacy no-code recon\n'
+    else
+        printf 'BLOCK: legacy no-code tree unresolvable (%s)\n' "$tree"
+    fi
 }
 
 # Verify publisher-owned publication evidence without consulting the legacy
@@ -301,7 +354,7 @@ PY
             printf 'PASS: %s\n' "$state"
             return 0
             ;;
-        UNPUSHED:\ commit_contract\ no-code\ task|UNPUSHED:\ no-code-change\ sentinel|UNPUSHED:\ no-code-change\ tree\ sentinel\ *)
+        UNPUSHED:\ commit_contract\ no-code\ task|UNPUSHED:\ no-code-change\ sentinel|UNPUSHED:\ no-code-change\ tree\ sentinel\ *|UNPUSHED:\ legacy\ no-code\ recon)
             printf 'SKIP: %s\n' "$state"
             return 0
             ;;
@@ -769,6 +822,11 @@ if [ "${CMD_COMPLETE_GATE_COMMIT_REPO_ONLY:-0}" = "1" ]; then
     exit $?
 fi
 if [ "${CMD_COMPLETE_GATE_CI_PUSH_STATE_ONLY:-0}" = "1" ]; then
+    if report_ci_push_state_legacy_compat "${CMD_COMPLETE_GATE_CI_REPORT:?report required}" \
+        "${CMD_COMPLETE_GATE_CI_REPO_DIR:-$PWD}" \
+        "${CMD_COMPLETE_GATE_TASK_FILE:-}"; then
+        exit 0
+    fi
     report_ci_push_state "${CMD_COMPLETE_GATE_CI_REPORT:?report required}" \
         "${CMD_COMPLETE_GATE_CI_REPO_DIR:-$PWD}" \
         "${CMD_COMPLETE_GATE_TASK_FILE:-}"

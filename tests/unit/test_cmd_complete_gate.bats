@@ -21,7 +21,7 @@ import sys
 from pathlib import Path
 
 source = "\n\n".join(Path(path).read_text(encoding="utf-8") for path in sys.argv[1:])
-names = """record_block_reason record_wait_reason append_line_locked append_lesson_tracking dispatch_gate_notification_async send_high_notification send_info_cmd_notification log_gate_stderr_file lesson_done_satisfies_lesson_candidate_registration cmd_status_is_canceled level_heading check_context_update resolve_report_file update_lesson_impact_tsv build_clear_duration_metric build_clear_throughput_metric binary_checks_warn_reason report_has_commit_binary_check_yes collect_report_files_modified discover_reports_for_cmd collect_parent_cmd_report_files_modified has_parent_cmd_report collect_git_show_w_files collect_report_commit_hash collect_cmd_phase_git_files check_self_grade_commit_file_coverage is_lessons_useful_empty_warn_task_type handle_empty_lessons_useful_check validate_lesson_feedback_set detect_task_types _check_lc_found lesson_candidate_status preflight_gate_flags collect_report_modified_files load_validated_sg7_context collect_cmd_command_file_refs collect_report_verified_existing_deps collect_task_readonly_refs check_command_files_modified_coverage check_scope_drift check_wtf_likelihood check_script_wiring resolve_task_repo_dir cmd_requires_cdp_production_check run_cdp_production_check cmd_requires_dm_signal_production_smoke dm_signal_report_deploy_sha resolve_dm_signal_render_live_sha run_dm_signal_production_smoke_check append_codd_registry_entry run_codd_propagate_update normalize_block_reason_to_workaround_categories update_karo_workaround_resolutions classify_completed_rework_event_kind capture_completed_rework_event compute_task_ac_version check_task_ac_version_integrity resolve_ci_expected_head resolve_report_commit_repo report_ci_push_state_cached report_ci_push_state report_commit_main_ancestry_state report_source_only_equivalence_state check_report_commit_main_ancestry resolve_ninja_test_receipt_path validate_ninja_test_receipt check_ninja_test_receipts cmd_complete_gate_auto_push_ci_state cmd_complete_gate_auto_push_ancestry_wait""".split()
+names = """record_block_reason record_wait_reason append_line_locked append_lesson_tracking dispatch_gate_notification_async send_high_notification send_info_cmd_notification log_gate_stderr_file lesson_done_satisfies_lesson_candidate_registration cmd_status_is_canceled level_heading check_context_update resolve_report_file update_lesson_impact_tsv build_clear_duration_metric build_clear_throughput_metric binary_checks_warn_reason report_has_commit_binary_check_yes collect_report_files_modified discover_reports_for_cmd collect_parent_cmd_report_files_modified has_parent_cmd_report collect_git_show_w_files collect_report_commit_hash collect_cmd_phase_git_files check_self_grade_commit_file_coverage is_lessons_useful_empty_warn_task_type handle_empty_lessons_useful_check validate_lesson_feedback_set detect_task_types _check_lc_found lesson_candidate_status preflight_gate_flags collect_report_modified_files load_validated_sg7_context collect_cmd_command_file_refs collect_report_verified_existing_deps collect_task_readonly_refs check_command_files_modified_coverage check_scope_drift check_wtf_likelihood check_script_wiring resolve_task_repo_dir cmd_requires_cdp_production_check run_cdp_production_check cmd_requires_dm_signal_production_smoke dm_signal_report_deploy_sha resolve_dm_signal_render_live_sha run_dm_signal_production_smoke_check append_codd_registry_entry run_codd_propagate_update normalize_block_reason_to_workaround_categories update_karo_workaround_resolutions classify_completed_rework_event_kind capture_completed_rework_event compute_task_ac_version check_task_ac_version_integrity resolve_ci_expected_head resolve_report_commit_repo report_ci_push_state_cached report_ci_push_state_legacy_compat report_ci_push_state report_commit_main_ancestry_state report_source_only_equivalence_state check_report_commit_main_ancestry resolve_ninja_test_receipt_path validate_ninja_test_receipt check_ninja_test_receipts cmd_complete_gate_auto_push_ci_state cmd_complete_gate_auto_push_ancestry_wait""".split()
 names += " post_deploy_evidence_publication_status handle_post_deploy_evidence_failure queue_post_deploy_evidence_publication_followup".split()
 for name in names:
     match = re.search(rf"(?m)^{re.escape(name)}\(\) \{{.*?^\}}", source, re.DOTALL)
@@ -7828,6 +7828,80 @@ run_report_blob_parity_state() {
     run_ci_push_state "$repo" "$report" "$task"
     [ "$status" -eq 0 ]
     [ "$output" = "UNPUSHED: commit_contract no-code task" ]
+}
+
+# test_necessity: legacy recon reports used empty commit_hash and N/A scope;
+# immutable tree evidence and an affirmative no-commit assertion are required
+# before the compatibility identity can bypass publication ancestry.
+# regression_justification: the prior ancestry gate classified this exact
+# completed PASS report as an invalid commit and left the recon task blocked.
+@test "CI push detection accepts proven legacy N/A recon without a commit" {
+    local repo="$BATS_TEST_TMPDIR/legacy-na-recon"
+    local report="$BATS_TEST_TMPDIR/legacy-na-recon-report.yaml"
+    local task="$BATS_TEST_TMPDIR/legacy-na-recon-task.yaml"
+    make_ci_push_repo "$repo"
+    local tree
+    tree="$(git -C "$repo" rev-parse HEAD^{tree})"
+    printf 'verdict: PASS\ntask_type: recon2\ncommit_hash: ""\nfiles_modified: N/A\nbinary_checks:\n  commit:\n    - {check: "commit N/A証跡: readonly recon", result: yes}\nno_code_change_evidence: {before_tree: %s, after_tree: %s, tree_unchanged: true}\n' "$tree" "$tree" > "$report"
+    printf 'task:\n  task_id: legacy_na_fixture\n  parent_cmd: legacy_na_parent\n  task_type: recon2\n' > "$task"
+    run_report_main_ancestry_state "$repo" "$report" "$task"
+    [ "$status" -eq 0 ]
+    [ "$output" = "SKIP: UNPUSHED: legacy no-code recon" ]
+}
+
+# test_necessity: N/A is not a no-code identity when the proof is absent.
+# regression_justification: a legacy marker without immutable tree evidence is
+# indistinguishable from a forged no-code claim and must remain fail-closed.
+@test "CI push detection keeps unproven legacy N/A recon blocked" {
+    local repo="$BATS_TEST_TMPDIR/legacy-na-missing-proof"
+    local report="$BATS_TEST_TMPDIR/legacy-na-missing-proof-report.yaml"
+    local task="$BATS_TEST_TMPDIR/legacy-na-missing-proof-task.yaml"
+    make_ci_push_repo "$repo"
+    printf 'verdict: PASS\ntask_type: recon2\ncommit_hash: ""\nfiles_modified: N/A\nbinary_checks:\n  commit:\n    - {check: "commit N/A証跡: readonly recon", result: yes}\n' > "$report"
+    printf 'task:\n  task_id: legacy_na_missing\n  parent_cmd: legacy_na_missing_parent\n  task_type: recon2\n' > "$task"
+    run_report_main_ancestry_state "$repo" "$report" "$task"
+    [ "$status" -eq 1 ]
+    [[ "$output" == *"BLOCK: report commit main ancestry: BLOCK: report commit invalid or unresolvable"* ]]
+}
+
+# test_necessity: source tree drift invalidates a legacy no-code claim even
+# when the report retains an affirmative N/A marker.
+# regression_justification: tree/base evidence is the only legacy proof that
+# no implementation source entered the task; differing trees must not clear.
+@test "CI push detection keeps legacy N/A recon blocked after tree drift" {
+    local repo="$BATS_TEST_TMPDIR/legacy-na-tree-drift"
+    local report="$BATS_TEST_TMPDIR/legacy-na-tree-drift-report.yaml"
+    local task="$BATS_TEST_TMPDIR/legacy-na-tree-drift-task.yaml"
+    make_ci_push_repo "$repo"
+    local before after
+    before="$(git -C "$repo" rev-parse HEAD^{tree})"
+    printf 'changed\n' >> "$repo/state"
+    git -C "$repo" add state
+    git -C "$repo" commit -qm drift
+    after="$(git -C "$repo" rev-parse HEAD^{tree})"
+    printf 'verdict: PASS\ntask_type: recon2\ncommit_hash: ""\nfiles_modified: N/A\nbinary_checks:\n  commit:\n    - {check: "commit N/A証跡: readonly recon", result: yes}\nno_code_change_evidence: {before_tree: %s, after_tree: %s, tree_unchanged: false}\n' "$before" "$after" > "$report"
+    printf 'task:\n  task_id: legacy_na_drift\n  parent_cmd: legacy_na_drift_parent\n  task_type: recon2\n' > "$task"
+    run_report_main_ancestry_state "$repo" "$report" "$task"
+    [ "$status" -eq 1 ]
+    [[ "$output" == *"BLOCK: report commit main ancestry: BLOCK: report commit invalid or unresolvable"* ]]
+}
+
+# test_necessity: a task-side required commit contract must override a legacy
+# report marker and preserve the implementation boundary.
+# regression_justification: otherwise an implementation task could spoof N/A
+# in its report and bypass terminal commit ancestry.
+@test "CI push detection blocks legacy N/A when task requires a commit" {
+    local repo="$BATS_TEST_TMPDIR/legacy-na-required-commit"
+    local report="$BATS_TEST_TMPDIR/legacy-na-required-commit-report.yaml"
+    local task="$BATS_TEST_TMPDIR/legacy-na-required-commit-task.yaml"
+    make_ci_push_repo "$repo"
+    local tree
+    tree="$(git -C "$repo" rev-parse HEAD^{tree})"
+    printf 'verdict: PASS\ntask_type: recon2\ncommit_hash: ""\nfiles_modified: N/A\nbinary_checks:\n  commit:\n    - {check: "commit N/A証跡: readonly recon", result: yes}\nno_code_change_evidence: {before_tree: %s, after_tree: %s, tree_unchanged: true}\n' "$tree" "$tree" > "$report"
+    printf 'task:\n  task_id: legacy_na_required\n  parent_cmd: legacy_na_required_parent\n  task_type: recon2\n  commit_contract: {required: true, task_type: hotfix}\n' > "$task"
+    run_report_main_ancestry_state "$repo" "$report" "$task"
+    [ "$status" -eq 1 ]
+    [[ "$output" == *"BLOCK: report commit main ancestry: BLOCK: report commit invalid or unresolvable"* ]]
 }
 
 # test_necessity: deployed task YAMLs that carry the same typed contract as a
