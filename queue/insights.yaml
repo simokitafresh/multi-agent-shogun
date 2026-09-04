@@ -17756,11 +17756,15 @@ insights:
   priority: "low"
   source: "semantic_index_update"
   fix_known: false
-  status: pending
+  status: "resolved"
+  action_artifact: "semantic_map=/home/simokitafresh/multi-agent-shogun/context/semantic-map.md;semantic_index=/home/simokitafresh/multi-agent-shogun/docs/semantic-index/index.md"
+  resolved_reason: "semantic map generation verified the candidate is represented or intentionally ignored"
 - id: INS-20260904-194822299-414e
   ts: "2026-09-04T19:48:22+09:00"
   insight: "semantic_index_update新概念候補: discussion:為替はリアルタイムじゃないと変だよな。要人発言なんかのトピックも欲しい。俺らはいろんなAPIもってるだろ は 既存aliasesに一致なし。概念定義とaliases追加を検討せよ"
   priority: "low"
   source: "semantic_index_update"
   fix_known: false
-  status: pending
+  status: "resolved"
+  action_artifact: "semantic_map=/home/simokitafresh/multi-agent-shogun/context/semantic-map.md;semantic_index=/home/simokitafresh/multi-agent-shogun/docs/semantic-index/index.md"
+  resolved_reason: "semantic map generation verified the candidate is represented or intentionally ignored"
