@@ -1,5 +1,6 @@
 # インフラコンテキスト
 <!-- last_updated: 2026-09-04 context_freshness reviewed source boundary -->
+<!-- source_commit:96f094375 reason:context_freshness reviewed source boundary evidence:context_freshness_check context=context/infrastructure.md commit=96f094375 -->
 <!-- source_commit:b1afd6289 reason:context_freshness reviewed source boundary evidence:context_freshness_check context=context/infrastructure.md commit=b1afd6289 -->
 <!-- source_commit:4494d0310 reason:context_freshness reviewed source boundary evidence:context_freshness_check context=context/infrastructure.md commit=4494d0310 -->
 <!-- source_commit:e76e07e12 reason:context_freshness reviewed source boundary evidence:context_freshness_check context=context/infrastructure.md commit=e76e07e12 -->
@@ -766,3 +767,4 @@ source boundary一致taskはregistryのowner/update_triggerからcontext_update_
 - x_round5_gen.py は neta_ledger.yaml の entries 無しで rc=2(記事本文経路封鎖、2026-09-04 殿評 17:47)
 - hook failure ログの append を atomic 化(2026-09-04 家老 lane cmd_karo_ci_fix_33853167037、小太郎、GATE CLEAR 18:01)
 - X 投資ネタ 4 週間運用(殿裁定 2026-09-04 18:22): slot_calendar v4(2 units/日、slot *)、x_slot_post.sh v1.6 fallback 廃止、cron 30 8,18 + 日曜 09:00 週次集計 → docs/research/x_post_schedule_invest23_20260904.md
+- X 自動生成 claim_bank.yaml + scripts/x_ops/x_claim_gen.py(記事本文を渡さず主張から生成、gate+数字 fail-close→自動承認。殿 2026-09-04 18:29)。x_slot_post.sh は選定結果を | 区切り(T3-S-70)
