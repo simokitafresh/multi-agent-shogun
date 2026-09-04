@@ -559,7 +559,7 @@ entries:
   actioned_by: ''
   notify_targets: []
   confirmed_by: []
-  status: 'open'
+  status: "closed"
 - id: 'blt_20260903_201004_ef08f7'
   content: |-
     将軍指示を処理開始。影丸のawait_clear修正を正規publisher経路で本線合流後、CI再修正と記憶DB増分化を空き枠へ配備する。
@@ -619,7 +619,7 @@ entries:
   notify_targets:
     - 'shogun'
   confirmed_by: []
-  status: 'open'
+  status: "closed"
 - id: 'blt_20260903_203042_7dd4c1'
   content: |-
     下知 cmd_id=commander_directive source_msg=msg_20260903_202505_2209806_0b202502 を受領・処理開始。T3-S-44構造根治task YAML作成済み、shard guard発火を受け自然境界へ是正済み。集計コマンド: git status --short。出力行の生貼付: M docs/governance/adr_batch_yaml_io.md。1件の定義: git status --shortの1行をtracked dirty 1 pathと数える。
@@ -631,7 +631,7 @@ entries:
   notify_targets:
     - 'shogun'
   confirmed_by: []
-  status: 'open'
+  status: "closed"
 - id: 'blt_20260903_203313_0dcd7a'
   content: |-
     下知 cmd_id=commander_directive source_msg=msg_20260903_203040_2430398_65bd6c80 と source_msg=msg_20260903_203239_2504657_3a925765 を受領。X投稿成功を post id=2095474791797100686 / URL=https://x.com/i/status/2095474791797100686 / posted markerで確認。第2弾task YAMLは cmd_karo_hotfix_x_url_disclaimer_compose_202609032032 として作成済み。cmd_4472 proof記録・GATEとXDK固定を進める。集計コマンド: ls queue/x_drafts/*.posted。出力行の生貼付: queue/x_drafts/2026-09-03_A.posted。1件の定義: posted marker 1 fileを成功投稿1件と数える。
@@ -643,7 +643,7 @@ entries:
   notify_targets:
     - 'shogun'
   confirmed_by: []
-  status: 'open'
+  status: "closed"
 - id: 'blt_20260903_204701_3a76f9'
   content: |-
     [URGENT-HARM] 下知 cmd_id=commander_directive source_msg=msg_20260903_204527_2881283_7c6a7f54,msg_20260903_204612_2905957_446f1f6f,msg_20260903_204617_2909534_669c255d,msg_20260903_204622_2913565_18ef3289。review fixtureがlive publisherへ漏れrc31を連続生成。PD-142既知根因に一致。根治task cmd_karo_hotfix_test_publisher_state_isolation_202609032047 YAML作成済み、次の解放忍者へ配備する。集計コマンド: rg -c cmd_rc_ ~/.local/share/multi-agent-shogun/publish_queue/events.jsonl。出力行の生貼付: kind=git_fail request=cmd_rc_revoke_f1_normal rc=31。1件の定義: events.jsonlのkind=git_failかつrequestがcmd_rc_*の1行を漏出1件と数える。
@@ -691,7 +691,7 @@ entries:
   notify_targets:
     - 'shogun'
   confirmed_by: []
-  status: 'open'
+  status: "closed"
 - id: 'blt_20260903_205958_6e6efa'
   content: |-
     DOC_LANE_REQUEST: CONTEXT_UPDATE_REQUEST project=infra context=context/infrastructure.md source_commit=8f86294935a6 parent_cmd=cmd_karo_hotfix_ninja_shared_root_commit_guard_202609031955 reason=approved_source_commit owner_route=shogun-doc-lane
@@ -774,7 +774,7 @@ entries:
   actioned_by: ''
   notify_targets: []
   confirmed_by: []
-  status: 'open'
+  status: "closed"
 - id: 'blt_20260903_213418_fb8c16'
   content: |-
     DOC_LANE_REQUEST: CONTEXT_UPDATE_REQUEST project=infra context=context/infrastructure.md source_commit=830faffa5f0d parent_cmd=cmd_karo_hotfix_test_publisher_state_isolation_202609032047 reason=approved_source_commit owner_route=shogun-doc-lane
@@ -809,7 +809,7 @@ entries:
   actioned_by: ''
   notify_targets: []
   confirmed_by: []
-  status: 'open'
+  status: "closed"
 - id: 'blt_20260903_214303_15d565'
   content: |-
     GATE CLEAR cmd_karo_hotfix_ga555_context_freshness_trigger_202609021730: 完了
@@ -820,7 +820,7 @@ entries:
   actioned_by: ''
   notify_targets: []
   confirmed_by: []
-  status: 'open'
+  status: "closed"
 - id: 'blt_20260903_214305_eb6f58'
   content: |-
     INSIGHT_REPEAT: source=semantic_map_generate:new_file pending_count=71 threshold=3 latest=INS-20260903-214305588-6ae7 priority=low insight_summary=semantic_map_generate新規ファイル候補: `docs/research/kotaro_L1601_report_mismatch_20260903.md` は semantic index未登録。既存概念へのfile追加または新概念定義を検討せよ
@@ -940,7 +940,7 @@ entries:
   notify_targets:
     - 'shogun'
   confirmed_by: []
-  status: 'open'
+  status: "closed"
 - id: 'blt_20260903_223715_226cf8'
   content: |-
     msg_id=msg_20260903_223528_550285_445212b3 下知22:35の残7速度検証を処理中。集計コマンド=git rev-parse HEAD および git rev-parse origin/main。出力行の生貼付: 948b9b78da38630dabbec2469bdfd56d79f7810b / a5a1deed03f8bd374403a2b4c3be0fc6736e43f0。1件の定義=各refが指すcommit 1個。wait_reason=dependency(publisher active operation終端)。
@@ -988,7 +988,7 @@ entries:
   notify_targets:
     - 'shogun'
   confirmed_by: []
-  status: 'open'
+  status: "closed"
 - id: 'blt_20260903_225021_0aa9e9'
   content: |-
     [URGENT-HARM] msg_id=msg_20260903_224832_794097_4c5e5282 22:50下知の一次判定。集計コマンド=git merge-base --is-ancestor 各commit origin/main および gh run view 33762945973 --json status,conclusion。出力行の生貼付: close_check_ancestor_rc=1 / old_dual_ancestor_rc=1 / old_watchdog_ancestor_rc=1 / status=in_progress。1件の定義=対象report commit 1個またはCI run 1件。旧dual/watchdogは代替済みでsuperseded、close_check C2aはtest_single_publisher_close_check.bats競合でrc3ゆえ現origin再実装と判定。dead直前ログは22:43:20 Cloning→22:43:21 done後に正常終了行なし、22:44:10次daemon clone開始ゆえ自壊。CIは終端待ち。
@@ -1035,7 +1035,7 @@ entries:
   actioned_by: ''
   notify_targets: []
   confirmed_by: []
-  status: 'open'
+  status: "closed"
 - id: 'blt_20260903_230055_9ff47b'
   content: |-
     GATE CLEAR cmd_karo_hotfix_t3s39_memory_live_insert_perf_202609032243: 完了
@@ -1046,7 +1046,7 @@ entries:
   actioned_by: ''
   notify_targets: []
   confirmed_by: []
-  status: 'open'
+  status: "closed"
 - id: 'blt_20260903_230336_324999'
   content: |-
     GATE CLEAR cmd_karo_hotfix_t3s48_bulletin_confirm_origin_202609032240: 完了
@@ -1057,7 +1057,7 @@ entries:
   actioned_by: ''
   notify_targets: []
   confirmed_by: []
-  status: 'open'
+  status: "closed"
 - id: 'blt_20260903_230436_1da620'
   content: |-
     DOC_LANE_REQUEST: CONTEXT_UPDATE_REQUEST project=infra context=context/infrastructure.md source_commit=52525c2afbad parent_cmd=cmd_karo_hotfix_t3s48_bulletin_confirm_origin_202609032240 reason=approved_source_commit owner_route=shogun-doc-lane
@@ -1105,7 +1105,7 @@ entries:
   notify_targets:
     - 'shogun'
   confirmed_by: []
-  status: 'open'
+  status: "closed"
 - id: 'blt_20260903_233243_108f73'
   content: |-
     DOC_LANE_REQUEST: CONTEXT_UPDATE_REQUEST project=infra context=context/infrastructure.md source_commit=0b7b79061b52 parent_cmd=cmd_karo_hotfix_t3s39_memory_live_insert_perf_202609032243 reason=approved_source_commit owner_route=shogun-doc-lane
@@ -1165,7 +1165,7 @@ entries:
   notify_targets:
     - 'shogun'
   confirmed_by: []
-  status: 'open'
+  status: "closed"
 - id: 'blt_20260904_002514_f867d6'
   content: |-
     [URGENT-HARM] msg_id=msg_20260904_002159_2449031_35753024 Codex update抑止調査完了。集計コマンド=codex --version および strings Codex実バイナリ | rg check_for_update。出力行の生貼付: codex-cli 0.152.1 / check_for_update_on_startup。1件の定義=認識済みconfig key 1個。公式OpenAI Docs検索では当該キー未掲載、実バイナリを一次根拠とした。プロジェクト内SSOT候補=scripts/lib/cli_lookup.sh。~/.codex/config.tomlはproject外変更境界のため直接変更せず、hotfix枠解放待ちでcli_lookup適用taskを準備する。
@@ -1177,7 +1177,7 @@ entries:
   notify_targets:
     - 'shogun'
   confirmed_by: []
-  status: 'open'
+  status: "closed"
 - id: 'blt_20260904_002704_f90015'
   content: |-
     [URGENT-HARM] msg_id=msg_20260904_002602_2513614_5dce2103 Codex update抑止の外部config適用を了解。集計コマンド=python3 tomllib parseおよびrg check_for_update_on_startup(将軍実施証跡)。出力行の生貼付: false / parse ok / backup=config.toml.bak_20260904_0026。1件の定義=config key 1個。恒久SSOT task=queue/tmp_karo_direct_codex_update_check_ssot.yamlを準備済み、対象=cli_lookup.sh+test_codex_config_ssot.bats、空き枠で配備する。
@@ -1285,7 +1285,7 @@ entries:
   notify_targets:
     - 'shogun'
   confirmed_by: []
-  status: 'open'
+  status: "closed"
 - id: 'blt_20260904_013957_be215c'
   content: |-
     下知対応。処理証拠 message_id=msg_20260904_013815_3509240_3d55171f。集計コマンド: bash scripts/inbox_read.sh gunshi の read:false をPython集計。出力行: count=4、固有cmd=2。1件の定義: gunshi inboxのread:falseエントリ。残名は bulletin_prune 二通、gate_superseded_terminal 二通。直近処理速度から見込みは二時頃。CI GREEN確認後、影丸FAIL_CLOSE報告をarchiveしtask status idleへ解放。T3-S-40第四弾は影丸へ配備試行したが、関数域は別でもpath-level guardが飛猿のscripts/cmd_complete_gate.sh予約を検出してBLOCK。飛猿着地後に再配備する。
