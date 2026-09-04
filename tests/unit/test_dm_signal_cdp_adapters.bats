@@ -67,6 +67,79 @@ for required, viewer_ok in (("admin", True), ("viewer", False)):
         pass
     else:
         raise AssertionError((required, viewer_ok))
+
+class NavigationWebSocket:
+    def __init__(self, outcome):
+        self.outcome = outcome
+        self.sent = []
+        self.closed = False
+    def send(self, payload):
+        self.sent.append(json.loads(payload))
+    def recv(self):
+        request = self.sent[-1]
+        if self.outcome.startswith("transient:"):
+            return json.dumps({
+                "id": request["id"],
+                "error": {"code": -32000, "message": self.outcome.split(":", 1)[1]},
+            })
+        if self.outcome == "success":
+            return json.dumps({
+                "id": request["id"],
+                "result": {"result": {"value": {"ok": True, "url": "https://api/admin"}}},
+            })
+        return json.dumps({
+            "id": request["id"],
+            "result": {"result": {"value": {"ok": False, "reason": "invalid credentials"}}},
+        })
+    def close(self):
+        self.closed = True
+
+original_open = adapters._open_admin_page
+original_page_ws = adapters._page_ws
+original_create_connection = adapters.websocket.create_connection
+try:
+    for marker in ("Execution context was destroyed", "Inspected target navigated or closed"):
+        events = []
+        sockets = [NavigationWebSocket(f"transient:{marker}"), NavigationWebSocket("success")]
+        adapters._open_admin_page = lambda *_: (events.append("navigate") or "ws-initial")
+        adapters._page_ws = lambda *_: (events.append("reattach") or "ws-latest")
+        adapters.websocket.create_connection = lambda url, **_: sockets.pop(0)
+        ok, evidence = adapters._admin_ui_auth("https://api/admin", "fixture", receipt)
+        assert ok is True and "https://api/admin" in evidence
+        assert events == ["navigate", "reattach"], events
+        assert not sockets
+
+    events = []
+    sockets = [NavigationWebSocket("auth-failure")]
+    adapters._open_admin_page = lambda *_: (events.append("navigate") or "ws-initial")
+    adapters._page_ws = lambda *_: (events.append("reattach") or "ws-latest")
+    adapters.websocket.create_connection = lambda url, **_: sockets.pop(0)
+    try:
+        adapters._admin_ui_auth("https://api/admin", "fixture", receipt)
+    except adapters.AdapterError as exc:
+        assert "invalid credentials" in str(exc)
+    else:
+        raise AssertionError("authentication failure must block")
+    assert events == ["navigate"], events
+
+    events = []
+    sockets = [NavigationWebSocket("transient:Inspected target navigated or closed")
+               for _ in range(adapters.ADMIN_AUTH_NAVIGATION_RETRIES + 1)]
+    adapters._open_admin_page = lambda *_: (events.append("navigate") or "ws-initial")
+    adapters._page_ws = lambda *_: (events.append("reattach") or "ws-latest")
+    adapters.websocket.create_connection = lambda url, **_: sockets.pop(0)
+    try:
+        adapters._admin_ui_auth("https://api/admin", "fixture", receipt)
+    except adapters.AdapterError as exc:
+        assert "bounded navigation retries" in str(exc)
+    else:
+        raise AssertionError("retry exhaustion must block")
+    assert events == ["navigate"] + ["reattach"] * adapters.ADMIN_AUTH_NAVIGATION_RETRIES
+    assert not sockets
+finally:
+    adapters._open_admin_page = original_open
+    adapters._page_ws = original_page_ws
+    adapters.websocket.create_connection = original_create_connection
 head = subprocess.check_output(["git", "rev-parse", "HEAD"], text=True).strip()
 parent = subprocess.check_output(["git", "rev-parse", "HEAD^"], text=True).strip()
 assert adapters.deploy_verifier(parent, head, receipt, ".")["included"] is True

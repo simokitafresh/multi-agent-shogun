@@ -27,6 +27,13 @@ REQUIRED_RECEIPT_FIELDS = {
     "endpoint", "chrome_pid", "profile_path", "capabilities",
 }
 CAPABILITY_RANK = {"viewer": 1, "admin": 2}
+ADMIN_AUTH_NAVIGATION_RETRIES = 3
+ADMIN_AUTH_DOM_TIMEOUT_MS = 60000
+ADMIN_AUTH_WS_TIMEOUT_SEC = 90
+TRANSIENT_NAVIGATION_ERRORS = (
+    "Execution context was destroyed",
+    "Inspected target navigated or closed",
+)
 
 
 class AdapterError(RuntimeError):
@@ -122,6 +129,11 @@ def _open_admin_page(endpoint: str, target_url: str) -> str:
     return _page_ws(endpoint, target_url)
 
 
+def _is_transient_navigation_error(exc: AdapterError) -> bool:
+    message = str(exc)
+    return any(marker in message for marker in TRANSIENT_NAVIGATION_ERRORS)
+
+
 def _admin_ui_auth(target_url: str, env_file: str, receipt: dict) -> tuple[bool, str]:
     try:
         user = _load_env_value(env_file, "ADMIN_USER")
@@ -129,13 +141,15 @@ def _admin_ui_auth(target_url: str, env_file: str, receipt: dict) -> tuple[bool,
     except AdapterError as exc:
         return False, str(exc)
     endpoint = _cdp_endpoint(receipt)
-    ws_url = _open_admin_page(endpoint, target_url)
-    ws = websocket.create_connection(ws_url, timeout=30)
     script = """
     (async () => {
-      const deadline = Date.now() + 10000;
+      const deadline = Date.now() + %d;
       let passwordInput, userInput, button;
       while (Date.now() < deadline) {
+        const bodyText = document.body?.innerText || '';
+        if (!document.querySelector('input[type="password"]') &&
+            /\\bAdmin\\b/.test(bodyText) && /\\bLogout\\b/.test(bodyText))
+          return {ok:true, alreadyAuthenticated:true, url: location.href};
         const inputs = [...document.querySelectorAll('input')];
         passwordInput = inputs.find(x => x.type === 'password');
         userInput = inputs.find(x => x !== passwordInput &&
@@ -159,13 +173,31 @@ def _admin_ui_auth(target_url: str, env_file: str, receipt: dict) -> tuple[bool,
       return {ok: !document.querySelector('input[type="password"]'),
               url: location.href};
     })()
-    """ % (json.dumps(user), json.dumps(password))
-    try:
-        result = _cdp_request(ws, "Runtime.evaluate", {
-            "expression": script, "awaitPromise": True, "returnByValue": True,
-        })
-    finally:
-        ws.close()
+    """ % (ADMIN_AUTH_DOM_TIMEOUT_MS, json.dumps(user), json.dumps(password))
+    for attempt in range(ADMIN_AUTH_NAVIGATION_RETRIES + 1):
+        # Navigate only once. If the page is still replacing its execution
+        # context, attach to the newest matching target and evaluate again.
+        ws_url = (_open_admin_page(endpoint, target_url)
+                  if attempt == 0 else _page_ws(endpoint, target_url))
+        try:
+            ws = websocket.create_connection(ws_url, timeout=ADMIN_AUTH_WS_TIMEOUT_SEC)
+            try:
+                result = _cdp_request(ws, "Runtime.evaluate", {
+                    "expression": script, "awaitPromise": True, "returnByValue": True,
+                })
+            finally:
+                ws.close()
+        except AdapterError as exc:
+            if not _is_transient_navigation_error(exc):
+                raise
+            if attempt >= ADMIN_AUTH_NAVIGATION_RETRIES:
+                raise AdapterError(
+                    "admin authentication failed after bounded navigation retries: "
+                    f"{exc}"
+                ) from exc
+            time.sleep(0.2)
+            continue
+        break
     value = result.get("result", {}).get("value", {})
     if not value.get("ok"):
         raise AdapterError(f"admin authentication failed: {value.get('reason', 'form rejected')}")
