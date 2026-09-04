@@ -1,3 +1,4 @@
+<!-- gist-master: bc909570fec8c1736763d15447dc14a7 x_post_drafts_round5_20260904.md -->
 <!-- Round5 2026-09-04 16:45 将軍生成。lane 別 Short 10 / Long 3 / Thread 2(親+3) / Series 8。殿の添削待ち -->
 # X 投稿 下書き 第 5 稿(Growth v1.4: lane 別 Reach Short・Long・Thread・Series)— 殿の直し待ち
 
