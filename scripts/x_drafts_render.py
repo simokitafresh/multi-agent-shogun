@@ -14,6 +14,7 @@ from pathlib import Path
 
 MD = Path(sys.argv[1] if len(sys.argv) > 1 else "docs/research/x_post_drafts_round1_20260904.md")
 OUT = Path(sys.argv[2] if len(sys.argv) > 2 else "docs/dashboard/x-post-drafts-round1.html")
+TITLE = sys.argv[3] if len(sys.argv) > 3 else "バム X 下書き 第 1 巡"
 
 
 def width(s: str) -> float:
@@ -26,7 +27,7 @@ def width(s: str) -> float:
 text = MD.read_text(encoding="utf-8")
 lines = [l for l in text.split("\n") if not l.startswith("<!--")]
 head, sections, cur = [], [], None
-post_re = re.compile(r"^([A-E])-(\d)\s+(.*)$")
+post_re = re.compile(r"^([A-G])-(\d)\s+(.*)$")
 i = 0
 while i < len(lines):
     l = lines[i]
@@ -40,13 +41,13 @@ while i < len(lines):
         m = post_re.match(l)
         if m:
             pid = f"{m.group(1)}-{m.group(2)}"; label = m.group(3).strip()
-            body, urls = [], []
+            body, urls, figs = [], [], []
             i += 1
             while i < len(lines) and lines[i].strip() and not post_re.match(lines[i]) and not lines[i].startswith("## "):
                 s = lines[i].strip()
-                (urls if s.startswith("http") else body).append(s)
+                (urls if s.startswith("http") else (figs if s.startswith("図:") else body)).append(s)
                 i += 1
-            cur["posts"].append({"id": pid, "label": label, "body": "\n".join(body), "urls": urls})
+            cur["posts"].append({"id": pid, "label": label, "body": "\n".join(body), "urls": urls, "figs": figs})
             continue
         elif l.strip() and l.strip() != "---":
             cur["notes"].append(l.strip())
@@ -55,7 +56,7 @@ while i < len(lines):
 now = datetime.now().strftime("%Y-%m-%d %H:%M")
 h = html.escape
 parts = []
-parts.append(f"""<title>バム X 下書き 第 1 巡</title>
+parts.append(f"""<title>{h(TITLE)}</title>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Serif+JP:wght@600;700&family=BIZ+UDPGothic:wght@400;700&family=IBM+Plex+Mono:wght@400;500&display=swap">
 <style>
 :root{{--ground:#f1f3f4;--panel:#ffffff;--ink:#181c20;--ink2:#495159;--ink3:#7a838c;--line:#d3d9de;--accent:#0f5f66;--accent-soft:#dfeeef;--warn:#9a5b12;--warn-soft:#f6ead6;--url:#2c5fa8}}
@@ -89,8 +90,8 @@ a:focus-visible{{outline:2px solid var(--accent);outline-offset:2px}}
 </style>
 <div class="wrap">
 <header>
-<p class="eyebrow">bam · x drafts · round 1 · {h(now)}</p>
-<h1>バム X 下書き 第 1 巡</h1>
+<p class="eyebrow">bam · x drafts · {h(now)}</p>
+<h1>{h(TITLE)}</h1>
 <div class="lead">{''.join(f'<p>{h(x)}</p>' for x in head)}
 <p>字数は全角換算(URL を除く)。140 を超える行は色で示す。直しはこのページのコメントで。正本は docs/research/x_post_drafts_round1_20260904.md。</p></div>
 <nav>{''.join(f'<a href="#s{n}">{h(s["title"].split("(")[0].strip())}</a>' for n,s in enumerate(sections))}</nav>
@@ -103,7 +104,7 @@ for n, s in enumerate(sections):
     for p in s["posts"]:
         w = width(p["body"].replace("\n", ""))
         over = " over" if w > 140 else ""
-        parts.append(f'<article class="post" id="{p["id"]}"><div class="head"><span class="pid">{p["id"]}</span><span class="label">{h(p["label"])}</span><span class="count{over}">{w:.0f} 字</span></div><p class="body">{h(p["body"])}</p>{"".join(f"<p class=url>{h(u)}</p>" for u in p["urls"])}</article>')
+        parts.append(f'<article class="post" id="{p["id"]}"><div class="head"><span class="pid">{p["id"]}</span><span class="label">{h(p["label"])}</span><span class="count{over}">{w:.0f} 字</span></div><p class="body">{h(p["body"])}</p>{"".join(f"<p class=url>{h(u)}</p>" for u in p["urls"])}{"".join(f"<p class=note>{h(f)}</p>" for f in p.get("figs",[]))}</article>')
     for nt in s["notes"]:
         parts.append(f'<p class="note">{h(nt)}</p>')
     parts.append("</section>")

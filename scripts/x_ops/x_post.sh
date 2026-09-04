@@ -12,7 +12,8 @@ REPO_ROOT="$(cd "$SCRIPT_DIR/../.." && pwd)"
 DRAFTS_DIR="${X_POST_DRAFTS_DIR:-$REPO_ROOT/queue/x_drafts}"
 LEDGER_FILE="${X_POST_LEDGER_FILE:-$REPO_ROOT/skills/x-post-pipeline/stock_ledger.yaml}"
 SLOT_CALENDAR_FILE="${X_POST_SLOT_CALENDAR_FILE:-$REPO_ROOT/skills/x-post-pipeline/slot_calendar.yaml}"
-SYSTEM_PROMPT_FILE="${X_POST_SYSTEM_PROMPT_FILE:-$REPO_ROOT/skills/x-post-pipeline/system_prompt_v4.txt}"
+# 2026-09-04 12:50 殿裁定(方針の根本見直し): v5=投資・数学・検証の人の文体、DM-Signal は主語にしない
+SYSTEM_PROMPT_FILE="${X_POST_SYSTEM_PROMPT_FILE:-$REPO_ROOT/skills/x-post-pipeline/system_prompt_v5.txt}"
 LEDGER_LOOKUP="${X_POST_LEDGER_LOOKUP:-$SCRIPT_DIR/x_post_ledger_lookup.py}"
 GATE_SCRIPT="${X_POST_GATE_SCRIPT:-$SCRIPT_DIR/x_post_gate.sh}"
 NTFY_SCRIPT="${X_POST_NTFY_SCRIPT:-$REPO_ROOT/scripts/ntfy_action.sh}"
@@ -64,8 +65,8 @@ log_draft_failure() {
 
 cmd_draft() {
     local slot="${1:-}" key="${2:-}"
-    [[ "$slot" =~ ^[A-E]$ ]] && [[ -n "$key" ]] || {
-        echo "x_post.sh draft: slot A-E and ledger_key are required" >&2
+    [[ "$slot" =~ ^[A-G]$ ]] && [[ -n "$key" ]] || {
+        echo "x_post.sh draft: slot A-G and ledger_key are required" >&2
         exit 2
     }
     [[ -f "$LEDGER_FILE" && -f "$LEDGER_LOOKUP" ]] || {

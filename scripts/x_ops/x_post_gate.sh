@@ -143,6 +143,21 @@ for word in "教育目的" "推奨ではない" "助言ではない" "保証し�
     fi
 done
 
+# --- Rule 7: 分類別の宣伝混入(殿裁定 2026-09-04 12:42『DM-Signal を主語にしすぎない』) ---
+# A-E(80% 側)では DM-Signal/dm-signal/Basic/プラン/メンバーシップ/登録 を書かない。
+# F(検証・実績)では DM-Signal は可、登録/プラン/料金/メンバーシップは不可。G(直接誘導)は全て可。
+SLOT_ARG="${2:-}"
+case "$SLOT_ARG" in
+    A|B|C|D|E)
+        for word in "DM-Signal" "DM-signal" "dm-signal" "Basic" "プラン" "メンバーシップ" "登録"; do
+            if grep -qF -- "$word" <<<"$DRAFT_TEXT"; then FAILS+=("rule7_promo_in_${SLOT_ARG}:${word}"); fi
+        done ;;
+    F)
+        for word in "登録" "プラン" "料金" "メンバーシップ" "無料"; do
+            if grep -qF -- "$word" <<<"$DRAFT_TEXT"; then FAILS+=("rule7_sales_in_F:${word}"); fi
+        done ;;
+esac
+
 # --- Rule 5: 禁止語(無敵/確実/人生が変わる/今これを買え/劇薬) ---
 # 2026-09-04 12:00 殿裁定: 仕組みの誤った具象化(株と債券/現金に退避 等)は禁止語。抽象(候補/退避先)で書く
 for word in "無敵" "確実" "人生が変わる" "今これを買え" "劇薬" "株と債券" "現金に退避" "短期国債"; do

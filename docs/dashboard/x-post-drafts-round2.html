@@ -1,0 +1,102 @@
+<title>バム X 下書き 第 2 稿</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Serif+JP:wght@600;700&family=BIZ+UDPGothic:wght@400;700&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+:root{--ground:#f1f3f4;--panel:#ffffff;--ink:#181c20;--ink2:#495159;--ink3:#7a838c;--line:#d3d9de;--accent:#0f5f66;--accent-soft:#dfeeef;--warn:#9a5b12;--warn-soft:#f6ead6;--url:#2c5fa8}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--ground:#121517;--panel:#1a1e22;--ink:#e8e6e1;--ink2:#b3b9c0;--ink3:#7f8790;--line:#2e353b;--accent:#6fc2c8;--accent-soft:#1d3235;--warn:#e0a24f;--warn-soft:#3a2c14;--url:#8db4ee}}
+:root[data-theme="dark"]{--ground:#121517;--panel:#1a1e22;--ink:#e8e6e1;--ink2:#b3b9c0;--ink3:#7f8790;--line:#2e353b;--accent:#6fc2c8;--accent-soft:#1d3235;--warn:#e0a24f;--warn-soft:#3a2c14;--url:#8db4ee}
+*{box-sizing:border-box;min-width:0}
+html,body{max-width:100%;overflow-x:hidden}
+body{margin:0;padding:1.4rem 1rem 3rem;background:var(--ground);color:var(--ink);font-family:"BIZ UDPGothic","Hiragino Sans",system-ui,sans-serif;font-size:.97rem;line-height:1.75}
+.wrap{max-width:44rem;margin:0 auto;display:flex;flex-direction:column;gap:1.4rem}
+h1{font-family:"Noto Serif JP","Hiragino Mincho ProN",serif;font-weight:700;font-size:1.6rem;margin:0;letter-spacing:.02em;text-wrap:balance}
+.eyebrow{font-family:"IBM Plex Mono",monospace;font-size:.7rem;letter-spacing:.12em;text-transform:uppercase;color:var(--ink3);margin:0 0 .3rem}
+.lead{color:var(--ink2);font-size:.86rem;margin:.4rem 0 0;max-width:62ch}
+.lead p{margin:.2rem 0}
+nav{display:flex;flex-wrap:wrap;gap:.4rem}
+nav a{font-family:"IBM Plex Mono",monospace;font-size:.78rem;color:var(--accent);background:var(--accent-soft);padding:.15rem .55rem;border-radius:.25rem;text-decoration:none}
+section{display:flex;flex-direction:column;gap:.7rem}
+h2{font-family:"Noto Serif JP",serif;font-weight:600;font-size:1.12rem;margin:.6rem 0 0;padding-bottom:.35rem;border-bottom:2px solid var(--accent);text-wrap:balance}
+.def{color:var(--ink2);font-size:.84rem;margin:0;max-width:66ch}
+.post{background:var(--panel);border:1px solid var(--line);border-radius:.5rem;padding:.8rem .95rem .7rem;display:flex;flex-direction:column;gap:.4rem}
+.post .head{display:flex;align-items:baseline;gap:.6rem;flex-wrap:wrap}
+.pid{font-family:"IBM Plex Mono",monospace;font-weight:500;font-size:.82rem;color:var(--accent);background:var(--accent-soft);padding:.05rem .45rem;border-radius:.25rem}
+.label{font-size:.84rem;color:var(--ink2)}
+.count{margin-left:auto;font-family:"IBM Plex Mono",monospace;font-size:.72rem;color:var(--ink3);font-variant-numeric:tabular-nums}
+.count.over{color:var(--warn);background:var(--warn-soft);padding:0 .35rem;border-radius:.2rem}
+.body{margin:0;white-space:pre-wrap;font-size:1rem;line-height:1.8}
+.url{margin:0;font-family:"IBM Plex Mono",monospace;font-size:.76rem;color:var(--url);word-break:break-all}
+.note{color:var(--ink3);font-size:.8rem;margin:0}
+footer{color:var(--ink3);font-size:.74rem;font-family:"IBM Plex Mono",monospace}
+a:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+@media (max-width:40rem){body{padding:.9rem .7rem 2.5rem}.count{margin-left:0;flex-basis:100%}}
+</style>
+<div class="wrap">
+<header>
+<p class="eyebrow">bam · x drafts · 2026-09-04 12:52</p>
+<h1>バム X 下書き 第 2 稿</h1>
+<div class="lead"><p>作成: 2026-09-04 13:00 将軍。方針正本: docs/research/x_editorial_doctrine_20260904.md(殿裁定 12:42)。</p><p>比率: A〜E 24 本(80%)、F 4 本(13%)、G 2 本(7%)。</p><p>規則: 主語は考え方・疑い・検証・数字。DM-Signal は F/G 以外で名を出さない。免責なし。数字は台帳と元記事本文の値のみ(未登録の値は末尾に列挙=台帳登録 task)。仕組みは抽象(候補/退避先)。全投稿に図 1 枚(図の指定を各本に付す)。</p><p>第 1 稿(round1)との差: 教材再掲・運用の形・月次・使い方説明・Basic/プラン・「月 1 回だけ」を全廃。検証の一切れは E(疑い→設計→結論)へ、成績は F(強さを感じさせる)へ集約。</p><p>---</p>
+<p>字数は全角換算(URL を除く)。140 を超える行は色で示す。直しはこのページのコメントで。正本は docs/research/x_post_drafts_round1_20260904.md。</p></div>
+<nav><a href="#s0">A 投資常識を壊す</a><a href="#s1">B デュアルモメンタムの啓蒙</a><a href="#s2">C 検証至上主義</a><a href="#s3">D 数学・確率・投資の小ネタ</a><a href="#s4">E 普通そこまで疑うか検証</a><a href="#s5">F DM-Signal の検証・実績・設計思想</a><a href="#s6">G 直接誘導</a><a href="#s7">台帳未登録の数字</a></nav>
+</header>
+<section id="s0"><h2>A 投資常識を壊す</h2>
+<p class="def">5</p>
+<article class="post" id="A-1"><div class="head"><span class="pid">A-1</span><span class="label">インデックスと格差</span><span class="count over">154 字</span></div><p class="body">インデックス投資は優れている。低コストで、市場平均を確実に取れて、ほとんどの能動運用に勝つ。それでも、年率 10% 前後で増える装置は、元本の差をそのまま拡大する装置でもある。1 千万円と 1 億円の差は、30 年後も 10 倍のままだ。格差を逆転するには、平均と違うことをするしかない。その代償をどう払うかが、投資の本題だ。</p><p class=note>図: 元本 1 千万と 1 億を同じ年率で 30 年伸ばした 2 本の線(差が広がる)</p></article>
+<article class="post" id="A-2"><div class="head"><span class="pid">A-2</span><span class="label">長期なら上がる</span><span class="count">132 字</span></div><p class="body">「長期なら上がる」は正しい。だが「いつから」の長期かで結果は別物になる。S&amp;P500(SPY)を直近 14 年持った人の年率は 14.4%、最大ドローダウン -23.8%。ただし高値を更新していた時間は 66.5% で、3 分の 1 は含み損の中にいた。上がることと、上がるまで持てることは、別の問題だ。</p><p class=note>図: SPY の水面下期間(含み損の時間)を塗った累積曲線</p></article>
+<article class="post" id="A-3"><div class="head"><span class="pid">A-3</span><span class="label">平均リターンの罠</span><span class="count">125 字</span></div><p class="body">+50% と -50% を交互に繰り返す資産の平均リターンは 0% だ。だが 100 が 150 になり 75 になり 112 になり 56 になる。平均で比べると同じに見える二つの戦略が、経路で見ると片方は消えていく。算術平均は投資家の口座には存在しない。口座にあるのは幾何平均だけだ。</p><p class=note>図: 算術平均 0% と実際の資産推移(減衰)の 2 本</p></article>
+<article class="post" id="A-4"><div class="head"><span class="pid">A-4</span><span class="label">複利はリスクの増加でもある</span><span class="count">132 字</span></div><p class="body">複利で増える、は半分だけ正しい。増えた資産に同じ比率のリスクを取り続けるということは、金額で見たリスクも複利で増えているということだ。年率が同じなら、資産が 10 倍になった年の下落幅も 10 倍になる。複利を味方にする人は、最後の 1 回の下落に耐える設計を先に作っている。</p><p class=note>図: 資産額と年間最大損失額(金額)が同じ倍率で伸びる棒</p></article>
+<article class="post" id="A-5"><div class="head"><span class="pid">A-5</span><span class="label">最適化済み、は褒め言葉か</span><span class="count">124 字</span></div><p class="body">「最適化済みの戦略」と聞いて安心する人は多い。私は逆に身構える。1 つのパラメータで勝った戦略は、そのパラメータでしか勝たない可能性がある。隣の値で崩れるなら、それは戦略ではなく、過去への当てはめだ。見るべきは最良の 1 点ではなく、勝てる領域の広さだ。</p><p class=note>図: パラメータ面のヒートマップ(尖った 1 点と広い台地の対比、概念図)</p></article>
+</section>
+<section id="s1"><h2>B デュアルモメンタムの啓蒙</h2>
+<p class="def">5</p>
+<article class="post" id="B-1"><div class="head"><span class="pid">B-1</span><span class="label">予測をやめる</span><span class="count">134 字</span></div><p class="body">デュアルモメンタムは未来を予測しない。月に一度、候補のうち今いちばん強いものを持ち(相対)、それが退避先より弱ければ降りる(絶対)。それだけだ。予測を捨てると、当てる仕事が消えて、従う仕事だけが残る。候補と退避先が何かは戦略ごとに違い、そこが各ポートフォリオの中身になる。</p><p class=note>図: fig1 仕組み(相対→絶対→保有 or 退避、抽象)</p></article>
+<article class="post" id="B-2"><div class="head"><span class="pid">B-2</span><span class="label">相対と絶対</span><span class="count">137 字</span></div><p class="body">「デュアル」の二つは役割が違う。相対モメンタムは候補同士を比べて一番強いものを選ぶ。上げ相場で取り残されないための問い。絶対モメンタムは、その勝者が退避先より強いかを見る。下げ相場で一緒に沈まないための問い。片方だけでは足りない。二つ揃って、上でも下でも同じルールで動ける。</p><p class=note>図: 2 つの問いの分岐図(fig1 と共用)</p></article>
+<article class="post" id="B-3"><div class="head"><span class="pid">B-3</span><span class="label">大負けを避ける構造</span><span class="count over">141 字</span></div><p class="body">デュアルモメンタムの本質は大勝ちではない。1974〜2023 年の GEM は年率 14.5%、S&amp;P500 は 10.8%。差は 3.7 ポイント。だが最大ドローダウンは GEM -22.7%、S&amp;P500 -50.9%。半分以下だ。年率の差より、最悪の谷の差の方がずっと大きい。ここに構造がある。上がる時に少し遅れ、下がる時に大きく避ける。</p><p class=note>図: GEM と S&amp;P500 の累積と最大ドローダウンの 2 本(図2)</p></article>
+<article class="post" id="B-4"><div class="head"><span class="pid">B-4</span><span class="label">相場観を捨てるための投資法</span><span class="count">119 字</span></div><p class="body">相場観は当たる時もある。問題は、当たった経験が次の判断を歪めることだ。デュアルモメンタムは相場観を使わない。使わないから、外れた時に言い訳も要らない。ルールに従い、月に一度だけ判断する。相場観を捨てるのは諦めではなく、再現性を選ぶことだ。</p><p class=note>図: 「予測」と「観測」の対比を 2 語で置いた図(概念)</p></article>
+<article class="post" id="B-5"><div class="head"><span class="pid">B-5</span><span class="label">800 年の実証</span><span class="count">132 字</span></div><p class="body">トレンドに乗り、崩れたら降りる、という行動は新しい発明ではない。価格の勢いに従う投資は数百年分の記録で確認されている。デュアルモメンタムはその古い知見に、退避先との比較という 1 手を足しただけだ。新しいものを神格化しない。古いものが何度も生き残ってきた理由を使う。</p><p class=note>図: 年表 1 本(トレンドフォローの記録の長さ)</p></article>
+</section>
+<section id="s2"><h2>C 検証至上主義</h2>
+<p class="def">5</p>
+<article class="post" id="C-1"><div class="head"><span class="pid">C-1</span><span class="label">バックテスト 1 本</span><span class="count over">162 字</span></div><p class="body">年率 90% のバックテストを見せられた時、最初にすることは驚くことではなく、市場の追い風を引くことだ。ポートフォリオのリターンを市場に回帰して β を出し、β 分を差し引く。残りが α。あるモメンタム ETF 戦略では年率 93.9% のうち市場連動が約 27%、α が 67.5% だった。追い風を引いても残るか。これが第一関門で、関門はまだ四つある。</p><p class=note>図: リターンを β と α に分解した積み上げ棒</p></article>
+<article class="post" id="C-2"><div class="head"><span class="pid">C-2</span><span class="label">見たことのないデータ</span><span class="count over">143 字</span></div><p class="body">過去の全データで作った戦略が、過去の全データで良いのは当たり前だ。証明になるのは、作る時に見なかった期間で崩れないことだけ。イン・サンプルとアウト・オブ・サンプルを分け、さらに窓を毎月ずらして繰り返す。ウォーク・フォワードで残る戦略だけを信じる。手間はかかる。かからない方法は信じない。</p><p class=note>図: IS/OOS の時間軸分割と拡大窓の図</p></article>
+<article class="post" id="C-3"><div class="head"><span class="pid">C-3</span><span class="label">一つの指標で選ばない</span><span class="count over">150 字</span></div><p class="body">3,486 通りの戦略組合せで α 年率 1 位は 134.3% だった。同じ組合せを α Calmar(年率÷最大ドローダウン)で並べ替えると 11 位に落ちる。逆に α Calmar 1 位はリターン順では 131 位。一つの指標で見ると、深い谷を持つ戦略を上位に置いてしまう。CAGR、MaxDD、Calmar、PTU、NHF、MRU。六つで見て初めて性格が分かる。</p><p class=note>図: リターン順位と Calmar 順位の散布図(順位の入れ替わり)</p></article>
+<article class="post" id="C-4"><div class="head"><span class="pid">C-4</span><span class="label">壊れる領域を探す</span><span class="count">122 字</span></div><p class="body">検証の目的を「最良の設定を探すこと」だと思うと失敗する。目的は「壊れる領域が無いことを確認すること」だ。最良の 1 点は偶然でも作れる。壊れない台地は偶然では作れない。だから私は最良値を報告するより、崩壊する条件を探して、無かったことを報告する。</p><p class=note>図: 台地状のパラメータ面(壊れる領域=赤が無い)</p></article>
+<article class="post" id="C-5"><div class="head"><span class="pid">C-5</span><span class="label">論文を疑う</span><span class="count over">154 字</span></div><p class="body">論文で最適と結論された手法でも、自分のデータで試すまで採用しない。2026 年の論文 Valeyre &quot;Breaking the Trend&quot; は 70 種の先物で半減期 78 日の単一 EMA が最適だとした。シャープ比 1.24、MACD の 1.18 を上回る。魅力的だ。だから自分の ETF ユニバースで同じ比較をした。結論は記事に書いた。論文は出発点で、終点ではない。</p><p class=note>図: 論文の結論と自データの比較(2 本の棒)</p></article>
+</section>
+<section id="s3"><h2>D 数学・確率・投資の小ネタ</h2>
+<p class="def">5</p>
+<article class="post" id="D-1"><div class="head"><span class="pid">D-1</span><span class="label">戻らない</span><span class="count">118 字</span></div><p class="body">+50% の後に -50% では元に戻らない。100 が 150 になり、75 になる。戻すには +33% ではなく +100% が要る。損失は非対称だ。-50% を取り戻すのに +100% が要り、-80% なら +400% が要る。だから下落幅を抑えることは、上昇を追うことより算数的に強い。</p><p class=note>図: 損失率と回復に必要な上昇率の曲線</p></article>
+<article class="post" id="D-2"><div class="head"><span class="pid">D-2</span><span class="label">勝率より期待値</span><span class="count">102 字</span></div><p class="body">勝率 90% の戦略でも、負ける時に 10 倍負ければ期待値は負だ。勝率 40% でも、勝つ時に 3 倍勝てば期待値は正になる。人は勝率に安心し、期待値を見ない。だが口座を増やすのは期待値と、それを何回繰り返せるかだけだ。</p><p class=note>図: 勝率×損益比の期待値マップ</p></article>
+<article class="post" id="D-3"><div class="head"><span class="pid">D-3</span><span class="label">期待値が正でも減る</span><span class="count">118 字</span></div><p class="body">期待値が正の戦略でも、資産が減り続ける経路は存在する。そして人は、減り続ける経路に入った時にやめる。やめた瞬間、期待値が正だった事実は何の意味も持たない。戦略の良さは期待値だけでは測れない。その経路を最後まで歩けるかまで含めて、戦略だ。</p><p class=note>図: 同じ期待値の多数経路(扇形)と、途中で切れる線</p></article>
+<article class="post" id="D-4"><div class="head"><span class="pid">D-4</span><span class="label">ボラティリティドラッグ</span><span class="count">128 字</span></div><p class="body">3 倍レバレッジ ETF の年率は、元の 3 倍にはならない。2011 年 10 月〜2026 年 4 月、S&amp;P500(SPY)は年率 15.6%、その 3 倍レバ(TQQQ)は 43.7% で 3 倍の 46.8% に届かない。日々の変動が幾何平均を削る。これがボラティリティドラッグ。上下に揺れるほど、複利は目減りする。</p><p class=note>図: 3 倍の単純計算と実際の年率の差(棒 2 本)</p></article>
+<article class="post" id="D-5"><div class="head"><span class="pid">D-5</span><span class="label">危機時相関</span><span class="count">120 字</span></div><p class="body">分散は平時に効いて、危機に効かない。普段は相関の低い資産同士が、暴落の日には一斉に売られて相関が 1 に近づく。分散だけを守りにする設計は、いちばん守ってほしい日に守ってくれない。だから私は相関に頼らず、弱くなったものを降りる仕組みを別に持つ。</p><p class=note>図: 平時と危機時の相関行列の対比</p></article>
+</section>
+<section id="s4"><h2>E 普通そこまで疑うか検証</h2>
+<p class="def">4</p>
+<article class="post" id="E-1"><div class="head"><span class="pid">E-1</span><span class="label">判定日を 1 日ずらす</span><span class="count over">148 字</span></div><p class="body">月末の終値でモメンタムを計算している。その日が 1 日ずれたら成績は変わるのか。特定の 1 日に依存して成り立つ戦略なら脆い。計算日を月末から 0〜7 営業日前まで 1 日刻みでずらし、他の条件は全て固定して、性格の違う 2 本(DM2、DM6)で試した。基準の N=0 は本番実績と完全一致させた。結論、どの日でも壊れない。</p><p class=note>図: N=0〜7 の年率と MaxDD の推移(記事の結果図)</p></article>
+<article class="post" id="E-2"><div class="head"><span class="pid">E-2</span><span class="label">執行日をずらす</span><span class="count over">152 字</span></div><p class="body">月初第 1 営業日に執行できないことはある。出張、急変、単に翌日になった。1 日や 2 日のずれで成績が変わるなら、戦略は特定のタイミングに依存している。執行日を第 1 営業日から最大 7 営業日後までずらし、シグナルは月末の同じ判断に固定、買いと売りを同じ日数ずらして保有期間を揃えた。結論、数日のずれでは壊れない。</p><p class=note>図: E=0〜7 の年率と MaxDD の推移(記事の結果図)</p></article>
+<article class="post" id="E-3"><div class="head"><span class="pid">E-3</span><span class="label">縦と横は調べた、では斜めは</span><span class="count over">186 字</span></div><p class="body">計算日をずらしても、執行日をずらしても壊れなかった。だがどちらも一方を固定した検証で、平面の縁を一辺ずつなぞっただけだ。計算を 3 日早めて執行を 4 日遅らせた時だけ崩れる、そんな組合せの落とし穴があれば、一次元の検証は安全を過大評価している。計算日 8 通り×執行日 8 通りの 64 条件を総当たりし、対象月は全条件で完全に揃えた。探したのは最良ではなく、崩壊する領域が無いことだ。</p><p class=note>図: 8×8 ヒートマップ(記事の結果図)</p></article>
+<article class="post" id="E-4"><div class="head"><span class="pid">E-4</span><span class="label">半分だけ残す方が安定では</span><span class="count">137 字</span></div><p class="body">月初に好調だったポジションを全部手放して入れ替えるのは怖い。前月の一部を残して少しずつ移す方が安定するのではないか。前月ポジションの維持率を 0、25、50、75、100% と変え、75 の戦略で検証した。直感に反して、答えは一括だった。良さそうに見える方法を、良さそうだからと採用しない。</p><p class=note>図: 維持率別の成績(記事の結果図)</p></article>
+</section>
+<section id="s5"><h2>F DM-Signal の検証・実績・設計思想</h2>
+<p class="def">4</p>
+<article class="post" id="F-1"><div class="head"><span class="pid">F-1</span><span class="label">リターンより先に見る数字</span><span class="count over">142 字</span></div><p class="body">私が作っている DM-Signal の公開ポートフォリオは、2007 年 1 月〜2026 年 5 月の 19 年で年率 17.2%、最大ドローダウン -41.0%。同じ期間の S&amp;P500 は年率 10.8%、-52.9%。見てほしいのは年率の差ではなく、19 年の中で最悪の谷がどこまで浅いかだ。成績表はリターンから読むと騙される。私は谷から読む。</p><p class=note>図: 公開表 capture、または累積と DD の 2 本</p></article>
+<article class="post" id="F-2"><div class="head"><span class="pid">F-2</span><span class="label">数万通り全部で α が正</span><span class="count over">158 字</span></div><p class="body">層を重ねると見た目のリターンは上がる。だがそれが β の積み上げなら、市場が下がれば一緒に下がる。だから各層で β 調整後の α を確認し、数万通りの組合せを全て、複数の検証手法、複数の α 指標、全ての市場環境で評価した。結果は α の正率 100%。1 本なら偶然でも、全部で正なら構造だ。DM-Signal はその構造の上に載せている。</p><p class=note>図: 組合せ全体の α 分布(全て正側)</p></article>
+<article class="post" id="F-3"><div class="head"><span class="pid">F-3</span><span class="label">捨てた方法も書く</span><span class="count over">142 字</span></div><p class="body">採用しなかった方法を記事にしている。段階的リバランスは直感的に良さそうだったが 75 戦略で不採用。低相関選抜は理論上きれいだが、実験して不採用。論文で最強とされた EMA も、自分のデータでは現行方式に負けた。都合のいい結果だけを並べるのは簡単だ。捨てた実験の数が、残った設計の信頼になる。</p><p class=note>図: 検証した方法の一覧(採用/不採用の印)</p></article>
+<article class="post" id="F-4"><div class="head"><span class="pid">F-4</span><span class="label">過去のシグナルは書き換えない</span><span class="count over">141 字</span></div><p class="body">DM-Signal は毎日シグナルを再計算しているが、月初に確定した保有シグナルは二度と変わらない。株価データの遡及改定や計算順序の揺れで、過去の「買い」が「売り」に変わる構造的リスクがあった。一度それが起き、二度と起きない仕組みを作った。実害より先に、記録が書き換わること自体が信頼を壊す。</p><p class=note>図: 確定シグナルの履歴が固定される図(概念)</p></article>
+</section>
+<section id="s6"><h2>G 直接誘導</h2>
+<p class="def">2</p>
+<article class="post" id="G-1"><div class="head"><span class="pid">G-1</span><span class="label">続きは公開表で</span><span class="count">106 字</span></div><p class="body">ここまで書いてきた検証思想を、そのまま実装したのが DM-Signal だ。公開ポートフォリオの年率と最大ドローダウン、ベンチマークとの比較、過去のシグナル履歴はログインなしで見られる。数字を疑う人ほど、表から読んでほしい。</p><p class=url>https://dm-signal.com</p><p class=note>図: 公開表 capture</p></article>
+<article class="post" id="G-2"><div class="head"><span class="pid">G-2</span><span class="label">検証の全文</span><span class="count">82 字</span></div><p class="body">計算日、執行日、その組合せ、段階的入替、論文の再検証。この検証のショートコラムは無料で全部読める。結果表と図も記事側に置いてある。疑いの深さで信頼を判断してほしい。</p><p class=url>https://note.com/tokyojibika/m/m6557263f0241</p><p class=note>図: マガジンの記事一覧 capture</p></article>
+</section>
+<section id="s7"><h2>台帳未登録の数字</h2>
+<p class="def">登録 task 要</p>
+<p class="note">- 年率 93.9%/β 寄与約 27%/α 67.5%(note-beta-adjusted-robustness)</p>
+<p class="note">- 3,486 通り、α 年率 1 位 134.3%、Calmar 順 11 位、逆は 131 位(同)</p>
+<p class="note">- α Calmar 4 手法 4.12/3.01/4.75/3.06、全レジーム α 正(同)</p>
+<p class="note">- 数万通りで α 正率 100%(note-layered-alpha-not-overfitting)</p>
+<p class="note">- TQQQ 年率 42.8%/PTU 81.1%/MaxDD -78.9%/Avg UWP 6 ヶ月(note-ptu-underwater-time)</p>
+<p class="note">- Valeyre 2026 Sharpe 1.24/MACD 1.18/半減期 78 日/70 先物(nb44887f51c66)</p>
+<p class="note">- 低相関選抜の不採用(殿言。記事 key 未特定=要確認)</p>
+</section>
+<footer>rendered 2026-09-04 12:52 · 正本 md → scripts/x_drafts_render.py · gist 196943087ca81493731a7eaf4e95b6b1</footer></div>
