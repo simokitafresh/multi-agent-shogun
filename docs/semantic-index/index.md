@@ -4084,6 +4084,7 @@ codd:
 | causal_chain | `[[cmd_karo_hotfix_context_freshness_runtime_speed_v2_20260829]]` (L1670) |
 | discussion | `queue/lord_conversation.jsonl` 2026-09-05T03:26:49+09:00 b84h348xs toolu_01VmDvXvKDgAiG9uKxuizv8X /tmp/claude-1000/-home-simokitafresh-multi-agent-shogun/d9faccc5-127b-4b4f-bd18 |
 | discussion | `queue/lord_conversation.jsonl` 2026-09-05T07:35:34+09:00 a7e4460d007042468 toolu_01YXbAWXbA1KsNAKGC6qxDag /tmp/claude-1000/-home-simokitafresh-multi-agent-shogun/a782ae8d-7dc4-4 |
+| discussion | `queue/lord_conversation.jsonl` 2026-09-05T07:38:30+09:00 a7e4460d007042468 toolu_01NzufL6eqYdZF8zszjiJbGu /tmp/claude-1000/-home-simokitafresh-multi-agent-shogun/a782ae8d-7dc4-4 |
 
 ## systems_knowledge_base — システム知識辞書
 
