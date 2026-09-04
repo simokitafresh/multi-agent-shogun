@@ -17040,3 +17040,17 @@ sqlite3.Connection.backup()を使うとページ(4096byte)単位のread syscall�
 - **when**: 未設定
 - **how**: 未設定
 - note記事IDは研究成果物へ直接埋込まれていないが、条件・指標・期間一致の成果物は存在する。今後はID検索だけで不在判定せず、記事条件の意味検索と行数再計数を必須化する。
+
+
+### L1737: 本番transport変更時は対象contract testの境界fixtureを同一commitで更新する
+- **日付**: 2026-09-04
+- **出典**: cmd_karo_hotfix_ga571_prepush_x_post_contract_202609041452
+- **記録者**: saizo
+- **tags**: [infra,testing,deploy,testing,gate]
+- **subdomain**: infra
+- **target_files**: [tests/unit/test_x_post_gate.bats]
+- **origin**: [[cmd_karo_hotfix_ga571_prepush_x_post_contract_202609041452]]
+- **enforcement**: 未自動化
+- **when**: 未設定
+- **how**: 未設定
+- [[6b96c4588_xdk_to_urllib_contract_change]]でproduction投稿境界がXDKからurllibへ変わった後、旧fake_xdk fixtureを残したtest_x_post_gate.batsだけが9/38 FAILした。production契約を弱めず、sitecustomizeでurllib.urlopenを隔離してmedia/201/401/token非変異/marker不変量を再検証し、次回はtransport変更時にfixture・assert・test名を同一contract更新として確認する。
