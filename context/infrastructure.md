@@ -1,5 +1,6 @@
 # インフラコンテキスト
 <!-- last_updated: 2026-09-05 context_freshness reviewed source boundary -->
+<!-- source_commit:f601eb9b5 reason:context_freshness reviewed source boundary evidence:context_freshness_check context=context/infrastructure.md commit=f601eb9b5 -->
 <!-- source_commit:ec8b2abc3 reason:context_freshness reviewed source boundary evidence:context_freshness_check context=context/infrastructure.md commit=ec8b2abc3 -->
 <!-- source_commit:a9b959fd1 reason:context_freshness reviewed source boundary evidence:context_freshness_check context=context/infrastructure.md commit=a9b959fd1 -->
 <!-- source_commit:719c5afbc reason:context_freshness reviewed source boundary evidence:context_freshness_check context=context/infrastructure.md commit=719c5afbc -->
@@ -797,3 +798,4 @@ source boundary一致taskはregistryのowner/update_triggerからcontext_update_
 - 日本 CPI 正本=総務省統計局 e-Stat 000032103842(殿 09-05 01:57)|x_event_scan.py が毎朝 総合/生鮮除く 前年比を算出(2026-07 +2.06/+1.79)。FRED 日本 CPI は使わない|→ `scripts/x_ops/x_event_scan.py`
 - Core LP × Simple LP × Free Interactive Proof 設計 v0.1(殿 09-05 02:42)|Simple は noindex 実験、Free で Performance を触らせる Interactive Proof、attribution source=core/simple、偵察 cmd_4476 で AsIs 確定|→ `docs/research/dm-signal-core-simple-free-proof-asis-tobe_20260905.md`(gist e590a96a)
 - cmd_complete_gate legacy no-code recon(家老 hotfix db50537e4 09-05 03:24)|コード変更なしの偵察 cmd で report_commit_identity が legacy 形式でも識別できるよう拡張。bats 追加|→ `scripts/lib/report_commit_identity.py`
+- deploy_task gates/report+gate_report_format_main(家老 hotfix 8795cb637 09-05 04:22)|release_ci_clean_repro level5: report format gate と deploy gates の整合。ninja_monitor idle/redone race(b803d9a12): 再配備直後の idle 誤判定を抑止。deploy wall 420s→150s→89s(03:45/04:22 success)|→ `scripts/deploy_task/gates.sh` / `scripts/ninja_monitor.sh`
