@@ -36,6 +36,7 @@ allowed-tools:
 - v1.2(15:11 殿裁定): 4 format=Short(発見)/Long(信頼)/Thread(会話・深読み。x_post.sh post <draft> --reply-to <parent_id>)/Series Entry(フォロー・再接触)。content_units と physical_posts を分ける。calendar v3(v1.4 殿レビュー 16:23)=7 日運用・毎日 08:30/12:30/18:30 の 3 content_units、週 21(Short 13/Long 3/Thread 2/Series 3)、cron 30 8,12,18 * * *。Conversation Entry は units に数えない。台帳=queue/x_live_oos/{ledger,thread_ledger,series_ledger}.yaml、format 別集計=x_kpi_snapshot.py --summary。事前登録が正本、事後付け替え禁止。
 - v1.3(16:07 殿裁定): KPI は kpi_availability.yaml の 4 状態(observable_post_level / observable_account_level / external_attribution / unavailable)で管理。0 と null を混ぜない(null=取得不能/帰属不能、np_null_reason 併記)。投稿別 follow・非フォロワー imp・dwell・note PV/post は unavailable。follow は account_daily の followers_delta_day/week のみ。DM-Signal 直リンクは campaign_id(作成時発行)で external_attribution(showcase_events 拡張、未実装)。分析は Observed/Inferred/Unavailable を分け、因果を断定しない。
 - 殿裁定 17:47/17:49: **記事の抜粋はネタではない**(Round5 Short 10 撤回)。Short は投資ネタ(investing/dm/math/money_inequality)限定、不動産・医療・事業は Long/Thread/Series のみ。ネタ台帳 `neta_ledger.yaml`(殿の種→本文化)。定時投稿の選定は台帳の category×format(v1.5、Thread は x_thread_post.sh へ委譲)。
+- **殿裁定 18:22: 当分の間投資ネタだけで 4 週間(9/4〜10/2)続けて計測。** calendar v4=2 units/日(08:30 Short 投資/18:30 Series→Long→Thread)、slot '*'、在庫切れは投稿しない。予定表=docs/research/x_post_schedule_invest23_20260904.md(artifact eea77aac)。週次集計 cron 日曜 09:00。
 - 禁止: 40 投稿貯まるまで比率・型の最適化をしない。Growth のために本文を書き換えない。自動 reply spam。
 
 ## When

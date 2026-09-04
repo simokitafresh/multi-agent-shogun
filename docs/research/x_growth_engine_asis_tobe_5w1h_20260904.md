@@ -388,6 +388,9 @@ X Growth の dashboard は未作成(現状は `--summary` の表)。作る時の
 
 Observed / Inferred / Unavailable を必ず分ける。例: Observed「9/4 followers +7」「9/4 Short 3 本」→ Inferred「投稿量と followers 増に関連の可能性」。禁止「Short を 3 本出したので 7 人増えた」。投稿量比較(2/3/4 posts/day)は total_impressions/day・total_profile_clicks/day・total_link_clicks/day・followers_delta/day・week で行い、follow/post は作らない。取得不能 KPI 一覧と将来案は kpi_availability.yaml の unavailable 節(status / reason / possible_future_solution)。status を差し替えるだけで schema を壊さない(value/status/reason の 3 つ組)。
 
+### 実装進捗台帳(v1.6)
+- 2026-09-04 18:25 **殿裁定 18:20/18:22『当分の間投資ネタだけ。4 週間続けて計測』**: calendar v4=毎日 08:30 Short(投資)/18:30 Series→Long→Thread、2 units/日、9/4 18:30〜10/2、slot は category 不問(*)。在庫 23 units(Short 12/Series 8/Long 2/Thread 1)、保留 L-3/T-2、在庫切れ slot は投稿しない(切り抜き生成に戻さない)。計測=毎時 snapshot+日曜 09:00 週次集計(docs/research/x_live_oos_weekly/)。予定表 artifact eea77aac。§39 の 3 units/日は superseded
+
 ### 実装進捗台帳(v1.4)
 - 2026-09-04 17:11 殿裁定 3 件: bio 変えない / 固定投稿 変えない(殿の意志で) / 第 1 弾差替え 残す(baseline)。Profile・Pinned は Growth Engine の可変対象から外す(§11/§12 は記録)。16:25 R4-A-1 誤投稿(T3-S-69、dry-run ガード追加)
 - 2026-09-04 16:30 v1.4(殿レビュー): §0/§14 を 7 日運用・3 units/日へ同期、slot_calendar v3(42 slot、cron 30 8,12,18 * * *)、§51.1 に 4 format+units/physical+Conversation Entry lane、§51.2 を Conceptual/Observable/Unavailable に分離、DM-Signal attribution は可・未実装のまま(conversion KPI を埋めない)。在庫 Short 13 は 3/日で 4 日強→Round5 を急ぐ
