@@ -1,5 +1,6 @@
 # インフラコンテキスト
 <!-- last_updated: 2026-09-05 context_freshness reviewed source boundary -->
+<!-- source_commit:f9628c2c0 reason:context_freshness reviewed source boundary evidence:context_freshness_check context=context/infrastructure.md commit=f9628c2c0 -->
 <!-- source_commit:db52c723f reason:context_freshness reviewed source boundary evidence:context_freshness_check context=context/infrastructure.md commit=db52c723f -->
 <!-- source_commit:8c69f698e reason:context_freshness reviewed source boundary evidence:context_freshness_check context=context/infrastructure.md commit=8c69f698e -->
 <!-- source_commit:3547ad996 reason:context_freshness reviewed source boundary evidence:context_freshness_check context=context/infrastructure.md commit=3547ad996 -->
@@ -809,3 +810,4 @@ source boundary一致taskはregistryのowner/update_triggerからcontext_update_
 - deploy_task 外部 repo worktree timeout 根治(半蔵 hotfix d2d8d983e 09-05 05:46)|DM-signal(/mnt/c)の remote-tip worktree 準備が 312s→rc=124 だった件。sparse checkout 系で 60 秒未満化。cmd_4475/4476 の配備前提|→ `scripts/deploy_task/`
 - release_ci_clean_repro level5 v2(疾風 hotfix acc3d1035 09-05 06:07 done)|release lane の CI clean 再現。deploy gates/report との整合(8795cb637)の続き|→ `scripts/deploy_task/gates.sh`
 - task worktree published_commit 安定化(影丸 hotfix efd9c1968 09-05 06:54 GATE CLEAR)|deploy_task の task worktree が published commit を固定 base にして tree 一致を保つ。外部 repo(DM-signal)配備の前提 2 本目|→ `scripts/deploy_task.sh`
+- deploy_task ext4 repo cache(半蔵 hotfix 601f1f2e3 09-05 07:18、旧 296c260cd)|外部 repo(/mnt/c DM-signal)の worktree 準備を ext4 側 cache から materialize。probe cold 127s/warm 49s→60 秒未満目標|→ `scripts/deploy_task.sh` deploy_task_materialize_ext4_repo_cache
