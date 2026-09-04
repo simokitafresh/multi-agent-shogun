@@ -256,6 +256,10 @@ reachability_failure_with_db_fallback() {
 }
 
 # API呼出し
+# GA-577: 単発の一過性通信断(DNS/timeout/5xx)を無条件ALERTにしていたため、
+# 実際は数秒後に自己回復する障害でもDB fallback共倒れが起きると即ALERTしていた。
+# 再現性のある通信障害クラスに限り1回だけ短い待機を挟んで再試行し、自動回復の余地を与える。
+# 認証失敗(401/403)等の非一過性エラーは対象外(即ALERT継続)。
 response_file="$(mktemp)"
 curl_meta_file="$(mktemp)"
 curl_err_file="$(mktemp)"
@@ -264,17 +268,35 @@ cleanup_tmp() {
 }
 trap cleanup_tmp EXIT
 
-curl_exit=0
-"$CURL_BIN" -sS -f -u "${ADMIN_USER}:${ADMIN_PASS}" \
-    --max-time 15 \
-    -o "$response_file" \
-    -w '%{http_code} %{time_total}' \
-    "${API_BASE}/api/p-average" >"$curl_meta_file" 2>"$curl_err_file" || curl_exit=$?
+API_RETRY_SLEEP_SECONDS="${P_AVERAGE_API_RETRY_SLEEP_SECONDS:-2}"
 
-IFS=' ' read -r http_code elapsed < "$curl_meta_file" || true
-IFS= read -r curl_err < "$curl_err_file" || curl_err=""
-http_code="${http_code:-000}"
-elapsed="${elapsed:-unknown}"
+call_api_once() {
+    curl_exit=0
+    "$CURL_BIN" -sS -f -u "${ADMIN_USER}:${ADMIN_PASS}" \
+        --max-time 15 \
+        -o "$response_file" \
+        -w '%{http_code} %{time_total}' \
+        "${API_BASE}/api/p-average" >"$curl_meta_file" 2>"$curl_err_file" || curl_exit=$?
+
+    IFS=' ' read -r http_code elapsed < "$curl_meta_file" || true
+    IFS= read -r curl_err < "$curl_err_file" || curl_err=""
+    http_code="${http_code:-000}"
+    elapsed="${elapsed:-unknown}"
+}
+
+is_transient_network_failure() {
+    case "$curl_exit:$http_code" in
+        6:*|28:*|22:5*) return 0 ;;
+        *) return 1 ;;
+    esac
+}
+
+call_api_once
+if [ "$curl_exit" -ne 0 ] && is_transient_network_failure; then
+    sleep "$API_RETRY_SLEEP_SECONDS"
+    call_api_once
+fi
+
 _api_tmp="${API_BASE#*://}"; api_host="${_api_tmp%%/*}"
 
 if [ "$curl_exit" -ne 0 ]; then
