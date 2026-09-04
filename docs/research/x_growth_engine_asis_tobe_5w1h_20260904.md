@@ -12,9 +12,9 @@
 |---|---|---|
 | 最適化対象 | 投稿品質(Fact/Voice 6 軸) | ファネル全体。1 投稿の仕事は 1〜2 段階 |
 | 軸 | content_category A-G のみ | + audience / funnel_stage / desired_action / hook_type / conversation_gap / link_type / series / external_context / topic_level |
-| 配分 | 分類比 A-E 80/F 15/G 5 | + 段階比 reach 8/follow 4/trust 6/convert 2(20 slot、4 週固定) |
-| 投稿 | 手動 post | cron 定時投稿 `x_slot_post.sh`(平日 08:30/18:30)+ 台帳へ post_id |
-| 計測 | public_metrics 手動 | `x_kpi_snapshot.py` 毎時: 24h/7d snapshot(public + non_public: profile_clicks/link_clicks)+ followers 日次 |
+| 配分 | 分類比 A-E 80/F 15/G 5 | + format 比 Short 13/Long 3/Thread 2/Series 3 per 週(v1.4)+ 段階比(42 slot: reach 9/follow 11/trust 18/convert 4。Long/Thread を trust に置くため reach は format で稼ぐ)。4 週固定 |
+| 投稿 | 手動 post | cron 定時投稿 `x_slot_post.sh`(**v1.4: 7 日運用・毎日 08:30/12:30/18:30=3 content_units/日、週 21**。Thread は親+自己リプで units 1・physical_posts 1+n)+ 台帳へ post_id。Conversation Entry は別 lane で units に数えない |
+| 計測 | public_metrics 手動 | `x_kpi_snapshot.py` 毎時: 24h/7d snapshot(observable_post_level 8 種、取れない値は null)+ account 日次(followers_delta_day/week+当日構成)。可否正本=kpi_availability.yaml(v1.3) |
 | 会話 | なし(自分の島) | Conversation Entry lane(半自動、承認必須) |
 | プロフィール | 未監査 | §11/§12 監査済み、改善案提示(変更は殿) |
 | note | 販売リンク | Trust Amplifier(X=Hook、note=Proof、DM-Signal=Product) |
@@ -104,7 +104,7 @@ reach/follow=X 内完結、trust=必要時 note、convert=note/DM-Signal。観�
 
 ## §14 投稿頻度
 
-平日 2 投稿を維持(cron `30 8,18 * * 1-5`)。増やすなら Conversation Entry。
+~~平日 2 投稿(cron `30 8,18 * * 1-5`)~~ → **v1.4(2026-09-04 16:23 殿レビュー裁定): 7 日運用・3 content_units/日(cron `30 8,12,18 * * *`)を初期 Live OOS 候補**。Conversation Entry は別 lane。投稿量比較は §50(followers_delta/day・week、total impressions/day)。
 
 ## §15 metadata schema
 
@@ -388,6 +388,9 @@ X Growth の dashboard は未作成(現状は `--summary` の表)。作る時の
 
 Observed / Inferred / Unavailable を必ず分ける。例: Observed「9/4 followers +7」「9/4 Short 3 本」→ Inferred「投稿量と followers 増に関連の可能性」。禁止「Short を 3 本出したので 7 人増えた」。投稿量比較(2/3/4 posts/day)は total_impressions/day・total_profile_clicks/day・total_link_clicks/day・followers_delta/day・week で行い、follow/post は作らない。取得不能 KPI 一覧と将来案は kpi_availability.yaml の unavailable 節(status / reason / possible_future_solution)。status を差し替えるだけで schema を壊さない(value/status/reason の 3 つ組)。
 
+### 実装進捗台帳(v1.4)
+- 2026-09-04 16:30 v1.4(殿レビュー): §0/§14 を 7 日運用・3 units/日へ同期、slot_calendar v3(42 slot、cron 30 8,12,18 * * *)、§51.1 に 4 format+units/physical+Conversation Entry lane、§51.2 を Conceptual/Observable/Unavailable に分離、DM-Signal attribution は可・未実装のまま(conversion KPI を埋めない)。在庫 Short 13 は 3/日で 4 日強→Round5 を急ぐ
+
 ### 実装進捗台帳(v1.3)
 - 2026-09-04 16:15 v1.3: kpi_availability.yaml 新設、x_kpi_snapshot.py を null 明示+delta+日次構成へ改修(実走: 16:13 行に delta null_no_prev_day を記録)、ledger meta に null_rule/campaign_rule、DM-Signal attribution 可能性=可(未実装、showcase_events 拡張)。未: campaign_id 発行の x_growth_tag 対応(convert 投稿生成時)、LP→event の campaign_id 同送 cmd、dashboard。
 
@@ -395,43 +398,45 @@ Observed / Inferred / Unavailable を必ず分ける。例: Observed「9/4 follo
 
 # §51 フローチャート(2026-09-04 16:18 殿指示。v1.0〜v1.3 の全体像)
 
-## 51.1 全体パイプライン(Content Engine → Growth Engine → Live OOS → 次の仮説)
+## 51.1 全体パイプライン(v1.4: 4 format × content_units / physical_posts、Conversation Entry は別 lane)
 
 ```mermaid
 flowchart TB
   subgraph SRC[本人一次資料 author corpus]
     X[本人 X 3,247 件<br/>Voice / format / 反応]
-    N1[note 教育 50 本<br/>How to mb4377418b422]
-    N2[note 検証 14 本<br/>Proof m6557263f0241]
-    N3[note サヴァイヴ 63 本<br/>Reach m8357970d6430]
-    RW[殿の添削 corpus<br/>queue/x_rewrites]
+    N1[note 教育 50 本 How to]
+    N2[note 検証 14 本 Proof]
+    N3[note サヴァイヴ 63 本 Reach]
+    RW[殿の添削 corpus queue/x_rewrites]
   end
 
   subgraph CE[Content Engine 何を書くか・本人らしいか・数字は正しいか]
     SP[system_prompt v5.x<br/>優先: 添削 > X > note]
-    GEN[x_post.sh draft<br/>slot 指示=分類 A-G + shift + 実例]
-    FG{Fact gate<br/>数字 fail-close / 誤り / 隠蔽}
-    VG{Voice gate<br/>説明しすぎ / 優等生化 / LLM 調}
+    GEN[x_post.sh draft<br/>slot 指示=分類 A-G + format + shift + 実例]
+    FG{Fact gate}
+    VG{Voice gate}
     RG{x_post_gate Rule 1-7}
-    LORD[殿の添削・承認<br/>artifact コメント]
-    STOCK[承認ストック<br/>queue/x_drafts *.approved]
+    LORD[殿の添削・承認]
+    STOCK[承認ストック queue/x_drafts<br/>Short / Long / Thread / Series Entry]
   end
 
   subgraph GE[Growth Engine 誰に・何をさせ・どの段階で・いつ出し・結果はどうか]
-    META[事前 metadata 登録 x_growth_tag.py<br/>format / funnel_stage / audience<br/>content_lane / hook / gap / campaign_id]
-    CAL[slot_calendar v1.2<br/>平日 08:30 Short / 18:30 Long・Thread・Series・Short]
-    POST[x_slot_post.sh cron<br/>x_post.sh post --reply-to]
-    LEDG[(live OOS 台帳<br/>ledger / thread_ledger / series_ledger)]
-    SNAP[x_kpi_snapshot.py 毎時<br/>24h / 7d, null 明示]
-    ACC[(account_daily<br/>followers_delta + 日次構成)]
-    SUM[--summary<br/>format×stage×lane 中央値, N/A]
+    META[事前 metadata 登録 x_growth_tag.py<br/>format / funnel_stage / audience / content_lane<br/>hook / gap / series_id / thread_id / campaign_id]
+    CAL[slot_calendar v3<br/>毎日 08:30 / 12:30 / 18:30 = 3 content_units/日、7 日運用<br/>週 21 units: Short 13 / Long 3 / Thread 2 / Series 3]
+    POST[x_slot_post.sh cron 30 8,12,18 * * *<br/>Short・Long・Series=1 post / Thread=親+自己リプ --reply-to]
+    UNITS[content_units=1 per Short・Long・Series・Thread<br/>physical_posts=実 tweet 数<br/>例: Short 1+Series 1+Thread 親+3 → units 3 / physical 6]
+    CONV[Conversation Entry 別 lane<br/>他人の大きな話題へ reply / quote<br/>候補→LLM 案→人間承認→投稿<br/>units に数えず conversation_entries に記録]
+    LEDG[(live OOS 台帳 ledger / thread_ledger / series_ledger)]
+    SNAP[x_kpi_snapshot.py 毎時<br/>24h / 7d、取れない値は null]
+    ACC[(account_daily<br/>followers_delta_day / week + 当日構成 formats・funnel・physical_posts)]
+    SUM[--summary format×stage×lane 中央値<br/>N/A と n_null を併記]
   end
 
   subgraph AN[分析と次の仮説]
     OBS[Observed 実測]
-    INF[Inferred 観察上の関連<br/>因果ではない]
-    UNA[Unavailable 取れない]
-    HYP[次の仮説<br/>40 投稿までは mix 固定]
+    INF[Inferred 観察上の関連・因果ではない]
+    UNA[Unavailable 取れない=null]
+    HYP[次の仮説<br/>40 投稿までは mix 固定・Grid Search しない]
   end
 
   X --> SP
@@ -448,6 +453,8 @@ flowchart TB
   STOCK --> META --> LEDG
   CAL --> POST
   STOCK --> POST -->|post_id, posted_at| LEDG
+  POST --> UNITS --> ACC
+  CONV -->|post_id| LEDG
   LEDG --> SNAP --> LEDG
   SNAP --> ACC
   LEDG --> SUM
@@ -458,27 +465,44 @@ flowchart TB
   HYP -->|4 週後のみ| CAL
 ```
 
-## 51.2 ファネルと投稿の役割(1 投稿=1〜2 段階。Reach 投稿単体で DM-Signal へつなげない)
+## 51.2 Conceptual Funnel と Observable Funnel の分離(殿レビュー 16:23)
 
 ```mermaid
 flowchart LR
-  IMP[Impression] --> ENG[Engagement / Dwell*] --> PV[Profile Visit] --> FO[Follow] --> RE[再接触] --> TR[Trust] --> NOTE[note] --> DM[DM-Signal] --> SU[Signup] --> PD[Paid]
-
-  S[Short<br/>reach / follow] -.-> IMP
-  S -.-> PV
-  L[Long<br/>trust / follow] -.-> TR
-  L -.-> FO
-  T[Thread<br/>trust / conversation] -.-> ENG
-  T -.-> TR
-  SE[Series Entry<br/>follow / repeat] -.-> FO
-  SE -.-> RE
-  CV[Convert 投稿 F/G<br/>campaign_id 付き] -.-> NOTE
-  CV -.-> DM
-  PR[Profile / Pinned<br/>何者か・DM-Signal は実績] -.-> FO
-  PR -.-> TR
+  subgraph CF[Conceptual Funnel 追いたいもの]
+    IMP[Impression] --> ENG[Engagement] --> PV[Profile Visit] --> FO[Follow] --> RE[Repeat Exposure] --> TR[Trust] --> NOTE[note] --> DM[DM-Signal] --> SU[Signup] --> PD[Paid]
+  end
+  S[Short reach/follow] -.-> IMP
+  L[Long trust/follow] -.-> TR
+  T[Thread trust/conversation] -.-> ENG
+  SE[Series Entry follow/repeat] -.-> RE
+  CV[Convert F/G campaign_id] -.-> DM
+  PR[Profile / Pinned] -.-> FO
 ```
 
-`*Dwell` は API で取得不能(§43)。
+```mermaid
+flowchart LR
+  subgraph OF[Observable Funnel 今測れているもの]
+    subgraph PL[post level 自投稿・30 日以内]
+      OI[impressions] --> OE[engagement<br/>likes / replies / reposts / quotes / bookmarks] --> OP[profile_clicks] --> OL[link_clicks]
+    end
+    subgraph AL[account level 日次]
+      FD[followers_delta_day] --> FW[followers_delta_week]
+    end
+    subgraph EX[external attribution campaign_id 実装後のみ]
+      EV[DM-Signal visit] --> ES[signup] --> EP[paid]
+    end
+  end
+  subgraph UN[Unavailable = null 図にも残す]
+    U1[dwell / read completion]
+    U2[follow per post]
+    U3[non-follower impressions]
+    U4[note PV per post]
+    U5[signup / paid per post via note]
+  end
+  OL -. note 経由は帰属なし .-> U4
+  OP -. 投稿別 follow は無い .-> U2
+```
 
 ## 51.3 入口レーンの収束(v1.1 §28)と note 三層
 

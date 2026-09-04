@@ -251,7 +251,7 @@ volume:
   content_units_per_day: 1 Short=1 / 1 Long=1 / 1 Series Entry=1 / 1 Thread(親+自己リプ全部)=1
   physical_posts_per_day: 実 tweet 数(Thread は親+リプを全部数える)
   example: {short: 1, series_entry: 1, thread_parent_plus_3: 1, content_units: 3, physical_posts: 6}
-  current: 平日 2 content_units/日(slot_calendar 08:30/18:30)。3/日へ増やす時は Short を増やすのではなく mix を設計する
+  current: v1.4(2026-09-04 16:23 殿レビュー裁定)=7 日運用・3 content_units/日(08:30/12:30/18:30)、週 21 units。Conversation Entry は別 lane で units に数えない
 
 format_x_funnel_hypothesis:
   short: reach
@@ -262,12 +262,12 @@ format_x_funnel_hypothesis:
 
 format_x_lane_record: Short×money / Short×math / Short×mortgage / Long×verification / Long×story / Thread×verification / Series×investment_math 等を台帳に保存するだけ。初期段階で Grid Search しない(SNS 版過学習)
 
-initial_format_mix_4w:
-  short: 週 6〜7(平日 08:30 は常に Short。18:30 の半分)
-  long: 週 2〜3(火・木 18:30)
-  thread: 週 1(水 18:30。検証工程・Story のみ)
-  series_entry: 常時 1 シリーズ進行(金 18:30 に 1 回。trust_system 9 回)
-  weekly_units: 10 content_units(=現行 slot 数を維持)。physical_posts は Thread 分だけ増える
+initial_format_mix_4w:  # v1.4(16:23 殿レビュー裁定: 7 日運用・3 units/day)
+  short: 週 13(08:30 全日、12:30 月火木土、18:30 水金)
+  long: 週 3(月木土 18:30)
+  thread: 週 2(火日 18:30。検証工程・Story のみ)
+  series_entry: 週 3(水金日 12:30。trust_system と interest_world)
+  weekly_units: 21 content_units(7 日×3)。physical_posts は Thread 分だけ増える。土日も停止しない
   rule: 毎日同じ mix にしない。4 週固定、最適化しない
 
 depth_and_retention:
