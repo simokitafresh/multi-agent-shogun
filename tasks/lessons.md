@@ -17068,3 +17068,17 @@ sqlite3.Connection.backup()を使うとページ(4096byte)単位のread syscall�
 - **when**: 未設定
 - **how**: 未設定
 - commit bec5dab26は本文grep全廃で偽陽性33件を消したが、同じ操作でT3-S-64(publisher失敗通知'task=<id> rc=31'のinbox漏出)という既知の真陽性検出能力も同時に失った。偽陽性源(karoの調査プロース: fixture IDを'task名'等で言及)と真陽性源(publisherの構造化通知: 'task='直後に直接ID)は文字列構造が異なり、全廃ではなく形式限定(task=<id>のみ許可)で両立できた。origin: [[bec5dab26]] -> [[本文grep全廃で真陽性も除去]] -> [[GA-573_test2_FAIL]]。教訓: 偽陽性fixのcommit時、既存test/既知incidentログに対するfalse_negative回帰チェックを同一commitで実施し、fix後に「拾うべき実例1件+拾ってはいけない実例1件」の両方を最小実験で確認する
+
+
+### L1739: 共有YAML/JSONL台帳への複数echo/printf appendはPID一意化だけでは並行安全にならない。既存<ledger>.lock契約と横並びで確認せよ
+- **日付**: 2026-09-04
+- **出典**: cmd_karo_ci_fix_33853167037_hook_failure_append_atomic
+- **記録者**: kotaro
+- **tags**: [infra,deploy,pipeline,testing]
+- **subdomain**: infra
+- **target_files**: [scripts/hooks/git-pre-commit.sh]
+- **origin**: [[cmd_karo_ci_fix_33853167037_hook_failure_append_atomic]]
+- **enforcement**: 未自動化
+- **when**: 未設定
+- **how**: 未設定
+- scripts/hooks/git-pre-commit.sh の _record_hook_failure() は2026-09-02にartifact永続化機能が追加された際、artifact_idを$$(PID)でユニーク化したためファイル名衝突は避けられていたが、logs/hook_failures.yamlへのappend自体は { echo ...; echo ...; } >> file という複数write構成のままflock等の排他がなく、2並行プロセスが同じ秒に書き込むと行がinterleaveしartifact等のfieldを欠落させるバグが33853167037で顕在化した(CI RED)。同じファイル内のprecommit_self_sync_write_async/precommit_instruction_sync_write_asyncは既にPython fcntl.flockで<ledger>.lockを取得しており、新規追加した関数だけがこの契約から外れていた。新規に共有YAML/JSONL台帳へappendするコードを書く/レビューする際は、単一writer前提が崩れないか(cron/hook/複数忍者の並行実行)を確認し、姉妹関数に既存lock_path契約があるかを必ず横参照すること。grep '} >>' 系の粗いヒューリスティック走査で archive_completed.sh/deploy_task.sh/gist_index_update.sh/cmd_complete_gate.sh/cmd_absorb.sh/bulletin_write.sh/decision_write.sh/shogun_lesson_ack.sh/inbox_write.sh/prompt_state_inject.sh/ninja_monitor.sh 等に同型パターン候補が見つかった(未検証、decision_candidateへ記載)
