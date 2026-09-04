@@ -1,5 +1,6 @@
 # インフラコンテキスト
 <!-- last_updated: 2026-09-04 context_freshness reviewed source boundary -->
+<!-- source_commit:cbb84f104 reason:context_freshness reviewed source boundary evidence:context_freshness_check context=context/infrastructure.md commit=cbb84f104 -->
 <!-- source_commit:8af237713 reason:context_freshness reviewed source boundary evidence:context_freshness_check context=context/infrastructure.md commit=8af237713 -->
 
 <!-- source_commit:a26026ff5 reason:context_freshness reviewed source boundary evidence:context_freshness_check context=context/infrastructure.md commit=a26026ff5 -->
@@ -779,3 +780,4 @@ source boundary一致taskはregistryのowner/update_triggerからcontext_update_
 - X 9 月 plan(殿指示 2026-09-04 19:16『ネタを全部作り直してカレンダー形式で 9 月末まで』)|`x_plan_calendar.py`(claim→slot 割当、claim 増やさず 52/52)→`x_claim_gen.py --plan`(Short/Long/Thread/SE 生成+台帳 scheduled)→poster v1.7 は scheduled 一致のみ投稿。旧在庫 38 は withdrawn_v1(未承認化)|→ `skills/x-post-pipeline/plan_202609.yaml`
 - X 編集計画+イベント lane(殿 19:28/19:33)|`x_plan_calendar.py`(3 軸分離、empty 正常)/Stage 1 artifact b2f1b8ae/`x_event_scan.py` 07:05 cron+12:30 event slot|→ `docs/research/x_editorial_doctrine_20260904.md` 追補 19:28/19:33
 - X campaign attribution 本番(cmd_4474 09-04)|DM-Signal showcase_events.campaign_id+admin campaigns API live。X→LP の visit/signup が campaign_id で帰属可(kpi_availability dm_signal_visit 実装済)|→ `context/dm-signal-core.md §98`
+- kpi_availability.yaml は safe_load PASS を維持せよ(v1.3 由来の flow 構文不正 4 箇所を 09-04 4ae12d10d で修正。編集後は必ず python3 -c 'import yaml;yaml.safe_load(...)')|→ `skills/x-post-pipeline/kpi_availability.yaml`
