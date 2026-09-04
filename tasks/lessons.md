@@ -17054,3 +17054,17 @@ sqlite3.Connection.backup()を使うとページ(4096byte)単位のread syscall�
 - **when**: 未設定
 - **how**: 未設定
 - [[6b96c4588_xdk_to_urllib_contract_change]]でproduction投稿境界がXDKからurllibへ変わった後、旧fake_xdk fixtureを残したtest_x_post_gate.batsだけが9/38 FAILした。production契約を弱めず、sitecustomizeでurllib.urlopenを隔離してmedia/201/401/token非変異/marker不変量を再検証し、次回はtransport変更時にfixture・assert・test名を同一contract更新として確認する。
+
+
+### L1738: 偽陽性fix時は既知の真陽性実例(実インシデントログ)に対して回帰しないか個別検証せよ
+- **日付**: 2026-09-04
+- **出典**: cmd_karo_hotfix_ga573_startup_contamination_contract_202609041533
+- **記録者**: kotaro
+- **tags**: [infra,gate,testing,recon,git]
+- **subdomain**: infra
+- **target_files**: [scripts/gates/gate_shogun_startup.sh]
+- **origin**: [[cmd_karo_hotfix_ga573_startup_contamination_contract_202609041533]]
+- **enforcement**: 未自動化
+- **when**: 未設定
+- **how**: 未設定
+- commit bec5dab26は本文grep全廃で偽陽性33件を消したが、同じ操作でT3-S-64(publisher失敗通知'task=<id> rc=31'のinbox漏出)という既知の真陽性検出能力も同時に失った。偽陽性源(karoの調査プロース: fixture IDを'task名'等で言及)と真陽性源(publisherの構造化通知: 'task='直後に直接ID)は文字列構造が異なり、全廃ではなく形式限定(task=<id>のみ許可)で両立できた。origin: [[bec5dab26]] -> [[本文grep全廃で真陽性も除去]] -> [[GA-573_test2_FAIL]]。教訓: 偽陽性fixのcommit時、既存test/既知incidentログに対するfalse_negative回帰チェックを同一commitで実施し、fix後に「拾うべき実例1件+拾ってはいけない実例1件」の両方を最小実験で確認する
