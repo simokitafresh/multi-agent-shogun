@@ -1,28 +1,28 @@
 {
- "count": 400,
+ "count": 3247,
  "kinds": {
-  "retweet": 17,
-  "single": 165,
-  "reply": 179,
-  "quote": 39
+  "retweet": 151,
+  "single": 1511,
+  "reply": 1226,
+  "quote": 359
  },
  "period": [
-  "2026-06-17",
+  "2025-08-01",
   "2026-09-04"
  ],
- "single_len_median": 109,
- "single_len_p90": 160,
- "single_with_url": 90,
+ "single_len_median": 100,
+ "single_len_p90": 162,
+ "single_with_url": 851,
  "themes": {
-  "investing": 55,
-  "other": 70,
-  "dm_signal": 28,
-  "math_prob": 7,
-  "verification": 10,
-  "medical": 11,
-  "economy": 7
+  "investing": 385,
+  "other": 886,
+  "dm_signal": 180,
+  "medical": 75,
+  "economy": 46,
+  "verification": 73,
+  "math_prob": 44
  },
- "kuten_end_ratio": 0.27,
- "question_ratio": 0.11,
- "newline_median": 0
+ "kuten_end_ratio": 0.29,
+ "question_ratio": 0.09,
+ "newline_median": 1
 }
