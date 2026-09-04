@@ -17080,3 +17080,10 @@ insights:
   source: "semantic_index_update"
   fix_known: false
   status: pending
+- id: INS-20260904-110019292-d83b
+  ts: "2026-09-04T11:00:19+09:00"
+  insight: "[[枠C：basic dualmomentumが唯一のように見える]] semantic_stress_test candidate_aliases: NO_MATCH source=lord query=枠C：basic-dualmomentumが唯一のように見える。そうではない。あくまで有料への誘導が最終目的だ。C-4はでは「dm-signal を開き、Basic-DualMomentum の今月の判定を見る。」→dm-signal を開き、今月のシグナルを見る」のように直そう"
+  priority: "low"
+  source: "semantic_stress_test"
+  fix_known: false
+  status: pending
