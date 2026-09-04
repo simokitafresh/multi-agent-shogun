@@ -22,6 +22,7 @@ from pathlib import Path
 
 source = "\n\n".join(Path(path).read_text(encoding="utf-8") for path in sys.argv[1:])
 names = """record_block_reason record_wait_reason append_line_locked append_lesson_tracking dispatch_gate_notification_async send_high_notification send_info_cmd_notification log_gate_stderr_file lesson_done_satisfies_lesson_candidate_registration cmd_status_is_canceled level_heading check_context_update resolve_report_file update_lesson_impact_tsv build_clear_duration_metric build_clear_throughput_metric binary_checks_warn_reason report_has_commit_binary_check_yes collect_report_files_modified discover_reports_for_cmd collect_parent_cmd_report_files_modified has_parent_cmd_report collect_git_show_w_files collect_report_commit_hash collect_cmd_phase_git_files check_self_grade_commit_file_coverage is_lessons_useful_empty_warn_task_type handle_empty_lessons_useful_check validate_lesson_feedback_set detect_task_types _check_lc_found lesson_candidate_status preflight_gate_flags collect_report_modified_files load_validated_sg7_context collect_cmd_command_file_refs collect_report_verified_existing_deps collect_task_readonly_refs check_command_files_modified_coverage check_scope_drift check_wtf_likelihood check_script_wiring resolve_task_repo_dir cmd_requires_cdp_production_check run_cdp_production_check cmd_requires_dm_signal_production_smoke dm_signal_report_deploy_sha resolve_dm_signal_render_live_sha run_dm_signal_production_smoke_check append_codd_registry_entry run_codd_propagate_update normalize_block_reason_to_workaround_categories update_karo_workaround_resolutions classify_completed_rework_event_kind capture_completed_rework_event compute_task_ac_version check_task_ac_version_integrity resolve_ci_expected_head resolve_report_commit_repo report_ci_push_state_cached report_ci_push_state report_commit_main_ancestry_state report_source_only_equivalence_state check_report_commit_main_ancestry resolve_ninja_test_receipt_path validate_ninja_test_receipt check_ninja_test_receipts cmd_complete_gate_auto_push_ci_state cmd_complete_gate_auto_push_ancestry_wait""".split()
+names += " post_deploy_evidence_publication_status handle_post_deploy_evidence_failure queue_post_deploy_evidence_publication_followup".split()
 for name in names:
     match = re.search(rf"(?m)^{re.escape(name)}\(\) \{{.*?^\}}", source, re.DOTALL)
     if match is None:
@@ -4454,6 +4455,82 @@ EOF
     [ "$status" -eq 1 ]
     [[ "$output" == *"deploy_unreached"* ]]
     grep -q 'gate: "dm_signal_production_smoke", result: FAIL' "$TEST_PROJECT/logs/gate_fire_log.yaml"
+}
+
+# test_necessity: required post-deploy evidence must wait for publication of
+# the implementation commit, while published evidence and invalid publication
+# state retain their existing distinct outcomes.
+@test "post-deploy evidence publication status separates pending, ready, and block" {
+    source "$GATE_HELPERS_FILE"
+    report_ci_push_state() { printf '%s\n' "$PDE_TEST_STATE"; }
+
+    PDE_TEST_STATE='UNPUSHED: report commit 1111111111111111111111111111111111111111 not contained by 2222222222222222222222222222222222222222'
+    run post_deploy_evidence_publication_status report.yaml "$TEST_PROJECT" task.yaml
+    [ "$status" -eq 0 ]
+    [[ "$output" == WAIT:post_deploy_evidence_pending* ]]
+    [[ "$output" == *"origin=0"* ]]
+    [[ "$output" == *"evidence=0"* ]]
+
+    PDE_TEST_STATE='PUSHED: report commit 1111111111111111111111111111111111111111 contained by 2222222222222222222222222222222222222222'
+    run post_deploy_evidence_publication_status report.yaml "$TEST_PROJECT" task.yaml
+    [ "$status" -eq 0 ]
+    [[ "$output" == READY:post_deploy_evidence* ]]
+    [[ "$output" == *"origin=1"* ]]
+
+    PDE_TEST_STATE='BLOCK: remote main/master boundary missing'
+    run post_deploy_evidence_publication_status report.yaml "$TEST_PROJECT" task.yaml
+    [ "$status" -eq 0 ]
+    [[ "$output" == BLOCK:post_deploy_evidence_publication* ]]
+}
+
+# test_necessity: publication follow-up is a single-flight action; repeated
+# evidence checks must not enqueue duplicate publisher workers.
+@test "post-deploy publication follow-up queues exactly once" {
+    export PDE_TEST_MARKER="$BATS_TEST_TMPDIR/post-deploy-followup.marker"
+    run bash -c '
+        source "$1"
+        queue_postclear_publication_followup() { printf "queued\n" >> "$PDE_TEST_MARKER"; }
+        PDE_PUBLICATION_FOLLOWUP_QUEUED=false
+        queue_post_deploy_evidence_publication_followup
+        queue_post_deploy_evidence_publication_followup
+        printf "calls=%s\n" "$(wc -l < "$PDE_TEST_MARKER")"
+    ' _ "$GATE_HELPERS_FILE"
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"post-deploy publication follow-up: queued (count=1)"* ]]
+    [[ "$output" == *"skip (already queued)"* ]]
+    [[ "$output" == *"calls=1"* ]]
+}
+
+# test_necessity: missing, invalid, and ordering failures remain fail-closed
+# after publication; only the not-yet-published implementation commit becomes
+# a retryable evidence WAIT.
+@test "post-deploy evidence failure waits only for an unpublished implementation" {
+    export PDE_TEST_MARKER="$BATS_TEST_TMPDIR/post-deploy-handler.marker"
+    run bash -c '
+        source "$1"
+        resolve_task_repo_dir() { printf "%s\n" "$TEST_PROJECT"; }
+        queue_postclear_publication_followup() { printf "queued\n" >> "$PDE_TEST_MARKER"; }
+        record_wait_reason() { printf "wait=%s\n" "$1"; }
+        record_block_reason() { printf "block=%s\n" "$1"; }
+        PDE_PUBLICATION_FOLLOWUP_QUEUED=false
+        PDE_PENDING_COUNT=0
+        PDE_PENDING_EVIDENCE_COUNT=0
+        ALL_CLEAR=true
+        report_ci_push_state() {
+            printf "%s\n" "$PDE_TEST_STATE"
+        }
+        PDE_TEST_STATE="UNPUSHED: report commit 1111111111111111111111111111111111111111 not contained by 2222222222222222222222222222222222222222"
+        handle_post_deploy_evidence_failure sasuke report.yaml task.yaml "missing evidence" "sasuke:post_deploy_evidence_missing:source"
+        printf "pending=%s evidence=%s clear=%s queued=%s\n" "$PDE_PENDING_COUNT" "$PDE_PENDING_EVIDENCE_COUNT" "$ALL_CLEAR" "$(wc -l < "$PDE_TEST_MARKER")"
+        PDE_TEST_STATE="PUSHED: report commit 1111111111111111111111111111111111111111 contained by 2222222222222222222222222222222222222222"
+        handle_post_deploy_evidence_failure sasuke report.yaml task.yaml "invalid evidence" "sasuke:post_deploy_evidence_invalid_timestamp"
+        printf "pending=%s evidence=%s clear=%s\n" "$PDE_PENDING_COUNT" "$PDE_PENDING_EVIDENCE_COUNT" "$ALL_CLEAR"
+    ' _ "$GATE_HELPERS_FILE"
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"wait=WAIT:post_deploy_evidence_pending"* ]]
+    [[ "$output" == *"pending=1 evidence=1 clear=true queued=1"* ]]
+    [[ "$output" == *"block=sasuke:post_deploy_evidence_invalid_timestamp"* ]]
+    [[ "$output" == *"pending=1 evidence=1 clear=false"* ]]
 }
 
 teardown() {

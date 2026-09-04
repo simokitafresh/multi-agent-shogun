@@ -336,6 +336,57 @@ PY
     esac
 }
 
+# A required post-deploy proof cannot be completed until the implementation
+# commit is published and deployed. Keep this distinction explicit: only a
+# resolvable report commit that is not contained by the canonical remote tip
+# is retryable publication work. No-code sentinels, malformed identities, and
+# an unavailable remote boundary remain terminal/diagnostic failures.
+post_deploy_evidence_publication_status() {
+    local report_file="$1"
+    local repo_dir="${2:-$SCRIPT_DIR}"
+    local task_file="${3:-}"
+    local state
+
+    state="$(report_ci_push_state "$report_file" "$repo_dir" "$task_file")"
+    case "$state" in
+        UNPUSHED:\ report\ commit\ *\ not\ contained\ by\ *)
+            printf 'WAIT:post_deploy_evidence_pending origin=0 evidence=0 state=%s\n' "$state"
+            ;;
+        PUSHED:*)
+            printf 'READY:post_deploy_evidence origin=1 state=%s\n' "$state"
+            ;;
+        *)
+            printf 'BLOCK:post_deploy_evidence_publication state=%s\n' "$state"
+            ;;
+    esac
+}
+
+handle_post_deploy_evidence_failure() {
+    local ninja_name="$1"
+    local report_file="$2"
+    local task_file="$3"
+    local failure_detail="$4"
+    local block_reason="$5"
+    local task_repo publication_status
+
+    task_repo="$(resolve_task_repo_dir "$task_file" 2>/dev/null || printf '%s' "$SCRIPT_DIR")"
+    publication_status="$(post_deploy_evidence_publication_status "$report_file" "$task_repo" "$task_file")"
+    case "$publication_status" in
+        WAIT:post_deploy_evidence_pending\ *)
+            PDE_PENDING_COUNT=$((PDE_PENDING_COUNT + 1))
+            PDE_PENDING_EVIDENCE_COUNT=$((PDE_PENDING_EVIDENCE_COUNT + 1))
+            echo "  [WAIT] ${ninja_name}: ${publication_status} ${failure_detail}"
+            record_wait_reason "WAIT:post_deploy_evidence_pending"
+            queue_post_deploy_evidence_publication_followup
+            ;;
+        *)
+            echo "  [CRITICAL] ${ninja_name}: ${failure_detail} (${publication_status})"
+            record_block_reason "$block_reason"
+            ALL_CLEAR=false
+            ;;
+    esac
+}
+
 # Terminal publication must prove the bytes described by a PASS report reached
 # the canonical remote tip.  Commit ancestry alone is insufficient: an older
 # source commit can be an ancestor while a later publication has reverted or
@@ -4925,6 +4976,17 @@ queue_postclear_publication_followup() {
     echo "  post-CLEAR publication: queued (push/runtime/durable follow-up; log=$followup_log)"
 }
 export -f queue_postclear_publication_followup
+
+queue_post_deploy_evidence_publication_followup() {
+    if [ "${PDE_PUBLICATION_FOLLOWUP_QUEUED:-false}" = true ]; then
+        echo "  post-deploy publication follow-up: skip (already queued)"
+        return 0
+    fi
+    queue_postclear_publication_followup
+    PDE_PUBLICATION_FOLLOWUP_QUEUED=true
+    echo "  post-deploy publication follow-up: queued (count=1)"
+}
+export -f queue_post_deploy_evidence_publication_followup
 
 if [ "${CMD_COMPLETE_GATE_TASK_REPO_ONLY:-0}" = "1" ]; then
     resolve_task_repo_dir "${CMD_COMPLETE_GATE_TASK_FILE:?task file required}"
@@ -14041,6 +14103,9 @@ fi
 # ─── post_deploy_evidence検証（deploy後cron/外部job証跡の旧run流用防止） ───
 level_heading "[L2]" "Post-deploy evidence timestamp check:"
 PDE_CHECKED=false
+PDE_PENDING_COUNT=0
+PDE_PENDING_EVIDENCE_COUNT=0
+PDE_PUBLICATION_FOLLOWUP_QUEUED=false
 for task_file in "${MATCHING_TASK_FILES[@]}"; do
     if [ ! -f "$task_file" ]; then
         echo "  [WARN] matching task file disappeared, skipping: $task_file"
@@ -14131,31 +14196,34 @@ PY
         missing:*)
             PDE_CHECKED=true
             missing_fields="${pde_status#missing:}"
-            echo "  [CRITICAL] ${ninja_name}: NG ← post_deploy_evidence required but missing/false: ${missing_fields}"
-            record_block_reason "${ninja_name}:post_deploy_evidence_missing:${missing_fields}"
-            ALL_CLEAR=false
+            handle_post_deploy_evidence_failure "$ninja_name" "$report_file" "$task_file" \
+                "NG ← post_deploy_evidence required but missing/false: ${missing_fields}" \
+                "${ninja_name}:post_deploy_evidence_missing:${missing_fields}"
             ;;
         invalid_timestamp)
             PDE_CHECKED=true
-            echo "  [CRITICAL] ${ninja_name}: NG ← post_deploy_evidence timestamp invalid or timezone missing"
-            record_block_reason "${ninja_name}:post_deploy_evidence_invalid_timestamp"
-            ALL_CLEAR=false
+            handle_post_deploy_evidence_failure "$ninja_name" "$report_file" "$task_file" \
+                "NG ← post_deploy_evidence timestamp invalid or timezone missing" \
+                "${ninja_name}:post_deploy_evidence_invalid_timestamp"
             ;;
         order_fail:*)
             PDE_CHECKED=true
             pde_reason="${pde_status#order_fail:}"
-            echo "  [CRITICAL] ${ninja_name}: NG ← post_deploy_evidence order check failed: ${pde_reason}"
-            record_block_reason "${ninja_name}:post_deploy_evidence_${pde_reason}"
-            ALL_CLEAR=false
+            handle_post_deploy_evidence_failure "$ninja_name" "$report_file" "$task_file" \
+                "NG ← post_deploy_evidence order check failed: ${pde_reason}" \
+                "${ninja_name}:post_deploy_evidence_${pde_reason}"
             ;;
         *)
             PDE_CHECKED=true
-            echo "  [CRITICAL] ${ninja_name}: NG ← post_deploy_evidence parse error"
-            record_block_reason "${ninja_name}:post_deploy_evidence_parse_error"
-            ALL_CLEAR=false
+            handle_post_deploy_evidence_failure "$ninja_name" "$report_file" "$task_file" \
+                "NG ← post_deploy_evidence parse error" \
+                "${ninja_name}:post_deploy_evidence_parse_error"
             ;;
     esac
 done
+if [ "$PDE_PENDING_COUNT" -gt 0 ]; then
+    echo "  post_deploy_evidence_pending: count=${PDE_PENDING_COUNT} origin=0 evidence_incomplete=${PDE_PENDING_EVIDENCE_COUNT} followup=1"
+fi
 if [ "$PDE_CHECKED" = false ]; then
     echo "  (no post_deploy_evidence.required=true reports)"
 fi
