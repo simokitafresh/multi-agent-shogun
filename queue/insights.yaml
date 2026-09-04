@@ -17871,7 +17871,9 @@ insights:
   priority: "low"
   source: "semantic_stress_test"
   fix_known: false
-  status: pending
+  status: "resolved"
+  action_artifact: "semantic_index=/home/simokitafresh/multi-agent-shogun/docs/semantic-index/index.md"
+  resolved_reason: "semantic index candidate was absorbed into a registered concept"
 - id: INS-20260905-015039844-4dec
   ts: "2026-09-05T01:50:39+09:00"
   insight: "semantic_index_update未登録cmd originノード: [[殿裁定_KPI実取得のみ_20260904_1607]] は既存aliasesに一致なし。類似概念TOP3: semantic_dictionary_design(セマンティック辞書構想; alias=殿裁定_本質に戻ろう_20260902_1402; score=21.5) / creator_brainwashing_defense(創造主の洗脳防御; alias=殿裁定_LP_hero_chart_20260831_1406; score=12.2) / known_unknowns_principle(無知の知; alias=殿裁定 17 04 『 admin fofが縦に長くスクロールが大変だ; score=10.8)。概念定義とaliases追加を検討せよ"
@@ -17895,5 +17897,14 @@ insights:
   insight: "[[前回のEvent Market Contextへの追加です]] semantic_stress_test candidate_aliases: NO_MATCH source=lord query=前回のEvent / Market Contextへの追加です。 インフレも重要観測対象として明示してください。 ただし、 「CPI発表日にCPIを解説する」 だけの意味ではありません。 本人にとってインフレは、 - 現金の実質価値 - 名目リターンと実質リターン - 金利 -…"
   priority: "low"
   source: "semantic_stress_test"
+  fix_known: false
+  status: "resolved"
+  action_artifact: "semantic_index=/home/simokitafresh/multi-agent-shogun/docs/semantic-index/index.md"
+  resolved_reason: "semantic index candidate was absorbed into a registered concept"
+- id: INS-20260905-015812244-2c71
+  ts: "2026-09-05T01:58:12+09:00"
+  insight: "semantic_index_update新概念候補: discussion:ただ、長期的には日本のインフレを重要視するなら、総務省統計局のCPIを正本として直接取得する経路を持った方がいいでしょう は 既存aliasesに一致なし。概念定義とaliases追加を検討せよ"
+  priority: "low"
+  source: "semantic_index_update"
   fix_known: false
   status: pending
