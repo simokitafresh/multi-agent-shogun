@@ -1,15 +1,28 @@
 {
- "count": 0,
- "kinds": {},
+ "count": 400,
+ "kinds": {
+  "retweet": 17,
+  "single": 165,
+  "reply": 179,
+  "quote": 39
+ },
  "period": [
-  null,
-  null
+  "2026-06-17",
+  "2026-09-04"
  ],
- "single_len_median": 0,
- "single_len_p90": 0,
- "single_with_url": 0,
- "themes": {},
- "kuten_end_ratio": 0.0,
- "question_ratio": 0.0,
+ "single_len_median": 109,
+ "single_len_p90": 160,
+ "single_with_url": 90,
+ "themes": {
+  "investing": 55,
+  "other": 70,
+  "dm_signal": 28,
+  "math_prob": 7,
+  "verification": 10,
+  "medical": 11,
+  "economy": 7
+ },
+ "kuten_end_ratio": 0.27,
+ "question_ratio": 0.11,
  "newline_median": 0
 }
