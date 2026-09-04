@@ -17082,3 +17082,17 @@ sqlite3.Connection.backup()を使うとページ(4096byte)単位のread syscall�
 - **when**: 未設定
 - **how**: 未設定
 - scripts/hooks/git-pre-commit.sh の _record_hook_failure() は2026-09-02にartifact永続化機能が追加された際、artifact_idを$$(PID)でユニーク化したためファイル名衝突は避けられていたが、logs/hook_failures.yamlへのappend自体は { echo ...; echo ...; } >> file という複数write構成のままflock等の排他がなく、2並行プロセスが同じ秒に書き込むと行がinterleaveしartifact等のfieldを欠落させるバグが33853167037で顕在化した(CI RED)。同じファイル内のprecommit_self_sync_write_async/precommit_instruction_sync_write_asyncは既にPython fcntl.flockで<ledger>.lockを取得しており、新規追加した関数だけがこの契約から外れていた。新規に共有YAML/JSONL台帳へappendするコードを書く/レビューする際は、単一writer前提が崩れないか(cron/hook/複数忍者の並行実行)を確認し、姉妹関数に既存lock_path契約があるかを必ず横参照すること。grep '} >>' 系の粗いヒューリスティック走査で archive_completed.sh/deploy_task.sh/gist_index_update.sh/cmd_complete_gate.sh/cmd_absorb.sh/bulletin_write.sh/decision_write.sh/shogun_lesson_ack.sh/inbox_write.sh/prompt_state_inject.sh/ninja_monitor.sh 等に同型パターン候補が見つかった(未検証、decision_candidateへ記載)
+
+
+### L1740: 複数行YAML/JSONL appendはprintf1回呼出でもlockなしでは非原子(単一行は原子的だが多行は原子性なし)
+- **日付**: 2026-09-04
+- **出典**: cmd_karo_recon2_shared_ledger_append_audit_202609041802
+- **記録者**: tobisaru
+- **tags**: [infra,deploy,bash,yaml]
+- **subdomain**: infra
+- **target_files**: [N/A]
+- **origin**: [[cmd_karo_recon2_shared_ledger_append_audit_202609041802]]
+- **enforcement**: 未自動化
+- **when**: 未設定
+- **how**: 未設定
+- bashのprintf builtinで複数行フォーマット文字列を1回のprintf呼出で>>appendしても、内部的に複数write()に分割されうるため、flockなしでは並行呼出時に他プロセスのentryと行が混線しYAML/JSONLが破損する。40並列実験で6/40=15%破損を実証(scripts/deploy_task/main.sh:741, logs/codex_delivery_log.yaml)。一方、単一行JSONL(約150byte)のlockなしappendは60並列実験で0/60破損=POSIXのO_APPEND+PIPE_BUF内原子性により安全だった(scripts/deploy_task/state.sh:485)。今後の新規append実装では「単一行か複数行か」を必ず判定し、複数行なら既存の( flock -x N; ...) N>lockfile パターン(state.sh:885/902, git-pre-commit.sh:1706)を必須で使う、という判定基準を持つべき
