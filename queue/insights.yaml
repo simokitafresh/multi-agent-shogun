@@ -16988,7 +16988,9 @@ insights:
   priority: "low"
   source: "semantic_index_update"
   fix_known: false
-  status: pending
+  status: "resolved"
+  action_artifact: "semantic_map=/home/simokitafresh/multi-agent-shogun/context/semantic-map.md;semantic_index=/home/simokitafresh/multi-agent-shogun/docs/semantic-index/index.md"
+  resolved_reason: "semantic map generation verified the candidate is represented or intentionally ignored"
 - id: INS-20260904-100715920-afb5
   ts: "2026-09-04T10:07:15+09:00"
   insight: "kagemaru hot_reload: 影丸はsource_commit mismatchを改ざんせず止まっている(7分47秒作業後prompt停止)。diagnose_reason=capture未再実行でpublish manifestが旧commit。影丸は正直に不一致報告を選択したが修正方法不明で停止。家老がmanifest再生成またはworkaround必要"
