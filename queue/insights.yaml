@@ -17621,7 +17621,9 @@ insights:
   priority: "low"
   source: "semantic_index_update"
   fix_known: false
-  status: pending
+  status: "resolved"
+  action_artifact: "semantic_map=/home/simokitafresh/multi-agent-shogun/context/semantic-map.md;semantic_index=/home/simokitafresh/multi-agent-shogun/docs/semantic-index/index.md"
+  resolved_reason: "semantic map generation verified the candidate is represented or intentionally ignored"
 - id: INS-20260904-174941181-7a32
   ts: "2026-09-04T17:49:41+09:00"
   insight: "[[裁定待ちについて質問してくれ]] semantic_stress_test candidate_aliases: NO_MATCH source=lord query=裁定待ちについて質問してくれ"
@@ -17637,11 +17639,15 @@ insights:
   priority: "low"
   source: "semantic_stress_test"
   fix_known: false
-  status: pending
+  status: "resolved"
+  action_artifact: "semantic_index=/home/simokitafresh/multi-agent-shogun/docs/semantic-index/index.md"
+  resolved_reason: "semantic index candidate was absorbed into a registered concept"
 - id: INS-20260904-175116660-5705
   ts: "2026-09-04T17:51:16+09:00"
   insight: "[[T240 T237 T230の進捗と見込みを表形式で教えてくれ]] semantic_stress_test candidate_aliases: NO_MATCH source=lord query=T240 / T237 / T230の進捗と見込みを表形式で教えてくれ"
   priority: "low"
   source: "semantic_stress_test"
   fix_known: false
-  status: pending
+  status: "resolved"
+  action_artifact: "semantic_index=/home/simokitafresh/multi-agent-shogun/docs/semantic-index/index.md"
+  resolved_reason: "semantic index candidate was absorbed into a registered concept"
