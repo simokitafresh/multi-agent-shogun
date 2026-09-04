@@ -17096,3 +17096,17 @@ sqlite3.Connection.backup()を使うとページ(4096byte)単位のread syscall�
 - **when**: 未設定
 - **how**: 未設定
 - bashのprintf builtinで複数行フォーマット文字列を1回のprintf呼出で>>appendしても、内部的に複数write()に分割されうるため、flockなしでは並行呼出時に他プロセスのentryと行が混線しYAML/JSONLが破損する。40並列実験で6/40=15%破損を実証(scripts/deploy_task/main.sh:741, logs/codex_delivery_log.yaml)。一方、単一行JSONL(約150byte)のlockなしappendは60並列実験で0/60破損=POSIXのO_APPEND+PIPE_BUF内原子性により安全だった(scripts/deploy_task/state.sh:485)。今後の新規append実装では「単一行か複数行か」を必ず判定し、複数行なら既存の( flock -x N; ...) N>lockfile パターン(state.sh:885/902, git-pre-commit.sh:1706)を必須で使う、という判定基準を持つべき
+
+
+### L1741: 外部API+DB fallback併用gateは単発通信チェックだと一過性障害で即偽ALERTする。再現性のある通信断クラスのみ限定リトライで自動回復させよ
+- **日付**: 2026-09-05
+- **出典**: cmd_karo_hotfix_ga577_p_average_freshness
+- **記録者**: kotaro
+- **tags**: [infra,gate,db,api,communication]
+- **subdomain**: infra
+- **target_files**: [scripts/gates/gate_p_average_freshness.sh,tests/unit/test_gate_p_average_freshness_retry_recovery.bats]
+- **origin**: [[cmd_karo_hotfix_ga577_p_average_freshness]]
+- **enforcement**: 未自動化
+- **when**: 未設定
+- **how**: 未設定
+- gate_p_average_freshness.shはAPI疎通失敗時にDB fallbackを参照する二段構えの設計だったが、curl呼出し自体が単発(リトライなし)だったため、API・DBへの外部到達性が同時に一過性で失われた瞬間(数秒〜十数秒)を捉えると'判定不能(通信障害)'として即ALERTし家老へ改善トリガーが飛んだ(GA-440, GA-577で2回発生)。実際には数秒後に自然回復する障害だった。対処は分類ロジックを変えず、curl_exit=6(DNS)/28(timeout)/22:5xx(サーバエラー)という再現性のある通信断クラスに限定して1回だけ短時間待機後にリトライする関数を追加するだけで足りた。認証失敗(401/403)等の非一過性エラーは対象外のまま維持し、無限リトライも避けた。外部依存(API/DB/他サービス)を単発チェックで判定するgateは同様の偽ALERTリスクを持つため、新規gate設計時は『一過性か恒常的か』を最初にクラス分けし、一過性クラスにのみ限定リトライを組み込む設計を標準とすべき
