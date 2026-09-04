@@ -4182,6 +4182,8 @@
 - cmd_id: cmd_karo_impl_x_fig1_mechanism_202609041123
   verdict: FAIL
   review_type: report
+  gate_result: "CLEAR"
+  gate_synced_at: "2026-09-04T12:46:37+09:00"
   reviewed_at: '2026-09-04T11:55:00+09:00'
   report_fingerprint: 7b0fd97da4da
   report_ninja: kotaro
@@ -4250,6 +4252,8 @@
 - cmd_id: cmd_karo_impl_x_fig1_mechanism_202609041123
   verdict: FAIL
   review_type: report
+  gate_result: "CLEAR"
+  gate_synced_at: "2026-09-04T12:46:37+09:00"
   reviewed_at: '2026-09-04T11:58:00+09:00'
   report_fingerprint: b3945022fbd0
   report_ninja: kotaro
@@ -4282,6 +4286,8 @@
 - cmd_id: cmd_karo_impl_x_fig1_mechanism_202609041123
   verdict: FAIL
   review_type: report
+  gate_result: "CLEAR"
+  gate_synced_at: "2026-09-04T12:46:37+09:00"
   reviewed_at: '2026-09-04T12:00:00+09:00'
   report_fingerprint: 92aa91847be1
   report_ninja: kotaro
