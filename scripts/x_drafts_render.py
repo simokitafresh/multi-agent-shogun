@@ -27,7 +27,7 @@ def width(s: str) -> float:
 text = MD.read_text(encoding="utf-8")
 lines = [l for l in text.split("\n") if not l.startswith("<!--")]
 head, sections, cur = [], [], None
-post_re = re.compile(r"^(★?)([A-G])-(\d)\s+(.*)$")
+post_re = re.compile(r"^(★?)((?:R\d+-)?[A-Z]{1,2})-(\d+(?:-[PR]\d?)?)\s*(.*)$")  # 2026-09-04 Round5: R5-S-1 / R5-T-1-P / R5-SE-2 も受ける
 i = 0
 while i < len(lines):
     l = lines[i]

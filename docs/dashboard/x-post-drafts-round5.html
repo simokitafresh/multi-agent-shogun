@@ -1,0 +1,383 @@
+<title>X 下書き 第 5 稿(Growth v1.4)</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Serif+JP:wght@600;700&family=BIZ+UDPGothic:wght@400;700&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+:root{--ground:#f1f3f4;--panel:#ffffff;--ink:#181c20;--ink2:#495159;--ink3:#7a838c;--line:#d3d9de;--accent:#0f5f66;--accent-soft:#dfeeef;--warn:#9a5b12;--warn-soft:#f6ead6;--url:#2c5fa8}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--ground:#121517;--panel:#1a1e22;--ink:#e8e6e1;--ink2:#b3b9c0;--ink3:#7f8790;--line:#2e353b;--accent:#6fc2c8;--accent-soft:#1d3235;--warn:#e0a24f;--warn-soft:#3a2c14;--url:#8db4ee}}
+:root[data-theme="dark"]{--ground:#121517;--panel:#1a1e22;--ink:#e8e6e1;--ink2:#b3b9c0;--ink3:#7f8790;--line:#2e353b;--accent:#6fc2c8;--accent-soft:#1d3235;--warn:#e0a24f;--warn-soft:#3a2c14;--url:#8db4ee}
+*{box-sizing:border-box;min-width:0}
+html,body{max-width:100%;overflow-x:hidden}
+body{margin:0;padding:1.4rem 1rem 3rem;background:var(--ground);color:var(--ink);font-family:"BIZ UDPGothic","Hiragino Sans",system-ui,sans-serif;font-size:.97rem;line-height:1.75}
+.wrap{max-width:44rem;margin:0 auto;display:flex;flex-direction:column;gap:1.4rem}
+h1{font-family:"Noto Serif JP","Hiragino Mincho ProN",serif;font-weight:700;font-size:1.6rem;margin:0;letter-spacing:.02em;text-wrap:balance}
+.eyebrow{font-family:"IBM Plex Mono",monospace;font-size:.7rem;letter-spacing:.12em;text-transform:uppercase;color:var(--ink3);margin:0 0 .3rem}
+.lead{color:var(--ink2);font-size:.86rem;margin:.4rem 0 0;max-width:62ch}
+.lead p{margin:.2rem 0}
+nav{display:flex;flex-wrap:wrap;gap:.4rem}
+nav a{font-family:"IBM Plex Mono",monospace;font-size:.78rem;color:var(--accent);background:var(--accent-soft);padding:.15rem .55rem;border-radius:.25rem;text-decoration:none}
+section{display:flex;flex-direction:column;gap:.7rem}
+h2{font-family:"Noto Serif JP",serif;font-weight:600;font-size:1.12rem;margin:.6rem 0 0;padding-bottom:.35rem;border-bottom:2px solid var(--accent);text-wrap:balance}
+.def{color:var(--ink2);font-size:.84rem;margin:0;max-width:66ch}
+.post{background:var(--panel);border:1px solid var(--line);border-radius:.5rem;padding:.8rem .95rem .7rem;display:flex;flex-direction:column;gap:.4rem}
+.post .head{display:flex;align-items:baseline;gap:.6rem;flex-wrap:wrap}
+.pid{font-family:"IBM Plex Mono",monospace;font-weight:500;font-size:.82rem;color:var(--accent);background:var(--accent-soft);padding:.05rem .45rem;border-radius:.25rem}
+.label{font-size:.84rem;color:var(--ink2)}
+.count{margin-left:auto;font-family:"IBM Plex Mono",monospace;font-size:.72rem;color:var(--ink3);font-variant-numeric:tabular-nums}
+.count.over{color:var(--warn);background:var(--warn-soft);padding:0 .35rem;border-radius:.2rem}
+.body{margin:0;white-space:pre-wrap;font-size:1rem;line-height:1.8}
+.url{margin:0;font-family:"IBM Plex Mono",monospace;font-size:.76rem;color:var(--url);word-break:break-all}
+.note{color:var(--ink3);font-size:.8rem;margin:0}
+footer{color:var(--ink3);font-size:.74rem;font-family:"IBM Plex Mono",monospace}
+a:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+@media (max-width:40rem){body{padding:.9rem .7rem 2.5rem}.count{margin-left:0;flex-basis:100%}}
+</style>
+<div class="wrap">
+<header>
+<p class="eyebrow">bam · x drafts · 2026-09-04 16:50</p>
+<h1>X 下書き 第 5 稿(Growth v1.4)</h1>
+<div class="lead"><p>作成: 2026-09-04 16:45〜16:52。gate Rule 1-7=29/29 PASS。数字突合(記事原文)=未出典 0(『3.7』は 14.5−10.8 の差、『500』は S&amp;P500)。format: Short 10(lane 別 Reach)/ Long 3(trust)/ Thread 2(親+3)/ Series 8(trust_system 2〜9)。system_prompt v5.1+v5.2、few-shot=殿版 4 本、source=第 3 マガジン本文。数字は記事の値のみ。★は殿の直し用の印。</p><p>---</p>
+<p>字数は全角換算(URL を除く)。140 を超える行は色で示す。直しはこのページのコメントで。正本は docs/research/x_post_drafts_round1_20260904.md。</p></div>
+<nav><a href="#s0">R5-S-1 Short</a><a href="#s1">R5-S-2 Short</a><a href="#s2">R5-S-3 Short</a><a href="#s3">R5-S-4 Short</a><a href="#s4">R5-S-5 Short</a><a href="#s5">R5-S-6 Short</a><a href="#s6">R5-S-7 Short</a><a href="#s7">R5-S-8 Short</a><a href="#s8">R5-S-9 Short</a><a href="#s9">R5-S-10 Short</a><a href="#s10">R5-L-1 Long</a><a href="#s11">R5-L-2 Long</a><a href="#s12">R5-L-3 Long</a><a href="#s13">R5-T-1 Thread</a><a href="#s14">R5-T-2 Thread</a><a href="#s15">R5-SE-2 Series</a><a href="#s16">R5-SE-3 Series</a><a href="#s17">R5-SE-4 Series</a><a href="#s18">R5-SE-5 Series</a><a href="#s19">R5-SE-6 Series</a><a href="#s20">R5-SE-7 Series</a><a href="#s21">R5-SE-8 Series</a><a href="#s22">R5-SE-9 Series</a></nav>
+</header>
+<section id="s0"><h2>R5-S-1 Short</h2>
+<p class="def">A/real_estate_mortgage/reach) — 世帯年収2000万で1.4億タワマン。金利0.8%→上がると返済額はどうなるか。年収ではなくキャッシ</p>
+<article class="post" id="R5-S-1"><div class="head"><span class="pid">R5-S-1</span><span class="label">★</span><span class="count">111 字</span></div><p class="body">「世帯年収2000万で1.4億のタワマン」。まあ銀行も貸してくれるしね。
+
+金利0.8%なら返済は年459万。3%なら647万。差は年188万、10年で1880万。
+
+年収で見れば余裕。キャッシュフローで見ると別のハナシになるんよ。
+
+source_note: n6ae69b4a1947</p></article>
+</section>
+<section id="s1"><h2>R5-S-2 Short</h2>
+<p class="def">A/real_estate_mortgage/reach) — 表面利回り8%。表面の数字と手残りは別。バックテストの年率も同じ</p>
+<article class="post" id="R5-S-2"><div class="head"><span class="pid">R5-S-2</span><span class="label">★</span><span class="count">103 字</span></div><p class="body">「表面利回り8％」。すげえじゃん、と同僚は言う。
+
+嘘じゃない。ただ経費とローン返済を引いた手残りは、年15万円。月1万2500円。
+
+表面の数字と手残りは別モノ。
+
+バックテストの年率も同じハナシ。
+
+source_note: n9ab9e12adee4</p></article>
+</section>
+<section id="s2"><h2>R5-S-3 Short</h2>
+<p class="def">A/real_estate_mortgage/reach) — 相続税対策のアパート。金利は返済額だけでなく次の買い手が出せる値段まで下げる</p>
+<article class="post" id="R5-S-3"><div class="head"><span class="pid">R5-S-3</span><span class="label">★</span><span class="count">138 字</span></div><p class="body">「現金で持ってたって税金取られるだけだからな」。親父の相続税対策はアパートだった。まあ正しかった。
+
+金利1.5%なら年313万円残る。4.5%でほぼトントン。
+
+ただ金利で減るのは手残りだけじゃない。次に買う人が出せる値段も下がる。売って逃げる出口まで細くなるんよ。
+
+source_note: n48651b71f146</p></article>
+</section>
+<section id="s3"><h2>R5-S-4 Short</h2>
+<p class="def">D/medical_economics/reach) — 医者の給料は名目固定。インフレ3%が10年続くと現金の価値は74%。平均への収束はゆっくり貧乏</p>
+<article class="post" id="R5-S-4"><div class="head"><span class="pid">R5-S-4</span><span class="label">★</span><span class="count">134 字</span></div><p class="body">「医者は勝ち組」。まあ給料だけ見ればそうかもね。
+
+ただ医者の給料は名目固定。数字は変わらないのに、価値だけ減る。年3%のインフレが10年続けば、現金の価値は74%まで縮む。
+
+みんなと同じことをしていれば安全なつもりで、ゆっくり貧乏になる。そういうハナシ。
+
+source_note: n938cc77f66bb</p></article>
+</section>
+<section id="s4"><h2>R5-S-5 Short</h2>
+<p class="def">A/medical_economics/reach) — 大学病院の給与は安いのか。均衡点は年収800万。肩書きではなく構造</p>
+<article class="post" id="R5-S-5"><div class="head"><span class="pid">R5-S-5</span><span class="label">★</span><span class="count">128 字</span></div><p class="body">「大学病院は給料が安い」。まあ安いよね。
+
+でも総収入1800万を固定して本業の年収だけ動かすと、手取りの最大は本業800万のとき。1000万に上げると手取りは約1030万から約1010万に減る。
+
+給料が上がって手取りが減る。安い高いじゃなく配分のハナシ。
+
+source_note: n1d77aaf8e3ef</p></article>
+</section>
+<section id="s5"><h2>R5-S-6 Short</h2>
+<p class="def">A/medical_economics/reach) — 高年収でも資産が増えない。フローとストックは別。年収≠資産</p>
+<article class="post" id="R5-S-6"><div class="head"><span class="pid">R5-S-6</span><span class="label">★</span><span class="count">115 字</span></div><p class="body">「世帯年収2000万、1億4000万のタワマン」。まあ計算上は払えるよね。
+
+金利0.8%なら返済は年459万。3%なら647万。差は年188万、10年で1880万。
+
+年収はフロー、資産はストック。年収が高いのと資産が増えるのは別のハナシ。
+
+source_note: n6ae69b4a1947</p></article>
+</section>
+<section id="s6"><h2>R5-S-7 Short</h2>
+<p class="def">D/business_cash/reach) — 黒字なのに金がない。元本返済は経費にならない。税引後利益2000万で元本返済1500万なら手元500</p>
+<article class="post" id="R5-S-7"><div class="head"><span class="pid">R5-S-7</span><span class="label">★</span><span class="count">122 字</span></div><p class="body">「黒字なのに金がない」。まあ、よくあるハナシ。
+
+税引後利益2000万でも、借金の元本返済が1500万あれば手元は500万。
+
+利息は経費になる。元本は経費にならない。帳簿は黒字、財布はスッカラカン。
+
+利益って数字、まだ現金じゃないんよ。
+
+source_note: na68b0cd82b9c</p></article>
+</section>
+<section id="s7"><h2>R5-S-8 Short</h2>
+<p class="def">D/business_cash/reach) — 売上より利益、利益よりキャッシュ。真水のキャッシュを直視しろ</p>
+<article class="post" id="R5-S-8"><div class="head"><span class="pid">R5-S-8</span><span class="label">★</span><span class="count">132 字</span></div><p class="body">「税引後利益2,000万、黒字です」。まあ悪くないよね。
+
+ただ借入の元本返済が年1,500万あったら、財布に残るのは500万。元本返済は経費じゃないから、利益の数字には一切出てこない。
+
+売上より利益、利益より真水のキャッシュ。黒字倒産ってそういうハナシ。
+
+source_note: na68b0cd82b9c</p></article>
+</section>
+<section id="s8"><h2>R5-S-9 Short</h2>
+<p class="def">A/money_inequality/reach) — 総資産10億の大家。内訳は物件10億・借金9億・自己資本1億。金利2.5%の世界で何が起きるか</p>
+<article class="post" id="R5-S-9"><div class="head"><span class="pid">R5-S-9</span><span class="label">★</span><span class="count">126 字</span></div><p class="body">「総資産10億のメガ大家」。まあ凄いよね。
+
+内訳は物件10億、借金9億、自己資本1億。
+
+金利のある世界で要求利回りが5%から6%に動くと、同じ家賃でも物件は8.3億。借金は9億のまま。
+
+建物も入居者も同じ。金利だけ変わった。それで債務超過なんよ。
+
+source_note: n10271fbb6967</p></article>
+</section>
+<section id="s9"><h2>R5-S-10 Short</h2>
+<p class="def">A/money_inequality/reach) — 『勝率90%なら良い戦略』ではない。1回の負けの大きさで決まる。期待値=勝率×平均利益−敗率×平均損</p>
+<article class="post" id="R5-S-10"><div class="head"><span class="pid">R5-S-10</span><span class="label">★</span><span class="count">117 字</span></div><p class="body">「勝率90%の戦略です」。まあ聞こえはいいよね。
+
+期待値は 勝率×平均利益−敗率×平均損失。
+
+9回勝っても、10回目の負けが9回分より大きければマイナス。
+
+勝率は自慢になるけど、決めるのは1回の負けの大きさ。そういうハナシ。
+
+source_note: n1d77aaf8e3ef</p></article>
+</section>
+<section id="s10"><h2>R5-L-1 Long</h2>
+<p class="def">C/investing/trust) — 表面利回り8%の手残り計算と、バックテスト年率のβ調整後・OOS・MaxDD を同じ構造で疑う。数字</p>
+<article class="post" id="R5-L-1"><div class="head"><span class="pid">R5-L-1</span><span class="label">★</span><span class="count over">428 字</span></div><p class="body">「5000万円のアパート、家賃400万円、表面利回り8%」。まあ数字は嘘じゃない。
+
+でも僕が最初に疑うのは、この8%が何を固定して出た数字かってこと。
+
+金利4.0%で借りて、返済を引く。管理費も税金も空室も引く。そこまでやって手残りが出るか。金利だけ動かしてみると、手残りは簡単に消える。8%は入口の数字。手残りは別のハナシ。
+
+バックテストも同じ。
+
+「年率何%です」と言われたら、何を固定して何を動かしたのかを先に聞く。βを引いてαが残るか。ISで決めたルールをOOSに持ち込んで生き残るか。MaxDDはいくつか。
+
+GEM（本家デュアルモメンタム）の1974〜2023年は年率14.5%、S&amp;P500は10.8%。ここだけ見れば3.7ポイントの差。
+
+でもMaxDDはGEM -22.7%、S&amp;P500 -50.9%。僕が見ているのはこっち。半分喰らって続けられるか、という話なので。
+
+利回りも年率も、条件を動かした後に残る数字だけを信じる。
+
+金利が動いたら。相場が崩れたら。その時どこまで耐えるのか。表面の数字は答えてくれないんよ。
+
+source_note: n9ab9e12adee4</p></article>
+</section>
+<section id="s11"><h2>R5-L-2 Long</h2>
+<p class="def">E/investing/trust) — 相続アパートの NOI 864→780→700万と金利 1.5→2.5→3.5→4.5→5% の再計</p>
+<article class="post" id="R5-L-2"><div class="head"><span class="pid">R5-L-2</span><span class="label">★</span><span class="count over">452 字</span></div><p class="body">「借金してアパート建てれば相続税は減って家賃も残る」。まあ正しいよね。父の代では実際うまくいった。
+
+僕が疑ったのは計算そのものじゃない。この計算、何を固定して成り立ってるのか。
+
+固定したのはNOIと金利。動かしたのは時間だけ。じゃあ固定した方を動かしてみる。
+
+築10年でNOIは864万から780万に落ちた。家賃は下がる、空室は出る、給湯器は壊れる。金利は1.5%から2.5%、3.5%、4.5%。年間返済は551万から790万。
+
+手残りは313万、145万、70万、そしてほぼトントン。そこに外壁と防水で1480万の一括払いが乗る。
+
+黒字がトントンになるまで、金利差はたった3ポイント。借入1億5000万のレバレッジってこういうこと。
+
+損したことが問題なんじゃない。前提が変わっても降りるルールが無かったのが問題。
+
+投資システムなら、退避先より弱くなったら降りる。絶対モメンタムはそのためにある。負けないためじゃなく、致命傷を喰らわないため。
+
+次の疑い。金利5%なら。NOIが700万なら。再計算すれば誰でもわかる。降りられない資産ってのが一番怖いんよ。
+
+source_note: n48651b71f146</p></article>
+</section>
+<section id="s12"><h2>R5-L-3 Long</h2>
+<p class="def">D/business_cash/trust) — 粗利→営業利益→税引後利益→元本返済→設備投資→真水のキャッシュ。平均値ではなく経路を見る=幾何平均</p>
+<article class="post" id="R5-L-3"><div class="head"><span class="pid">R5-L-3</span><span class="label">★</span><span class="count over">444 字</span></div><p class="body">「売上は前年比アップ、粗利率は90%」。知り合いの経営者が嬉しそうに言っていました。まあ悪くない数字だよね。
+
+ただ僕は疑い深いので、そこで止まらずに聞きました。「で、手元にいくら残ったの」。
+
+やることは単純で、数字はそのまま、見る行だけを下にずらしていく。粗利から家賃と人件費と広告費を引いて営業利益。税金を引いて税引後利益。ここまでは帳簿に出ます。
+
+問題はここから。借入の元本返済は経費になりません。帳簿では「負債が減った」だけ。
+
+税引後利益が2,000万あっても、元本返済が年1,500万なら、残るのは500万。黒字なのに財布はスッカラカン。黒字倒産の正体です。
+
+設備投資も同じ。減価償却は何年もかけて費用になるけど、現金は買った瞬間に消える。帳簿と口座残高が全然違うのはザラなんよ。
+
+売上でも粗利でも利益でもなく、全部払い終わった後に残った真水のキャッシュ。見るのはそこだけでいい。
+
+投資も一緒で、平均リターンじゃなく、途中の下落を喰らった後にいくら残ったか。MaxDDを見るのと同じハナシ。
+
+source_note: na68b0cd82b9c</p></article>
+</section>
+<section id="s13"><h2>R5-T-1 Thread</h2>
+<p class="def">C/investing) — 年率100%のバックテスト。僕ならまず疑う。①βを引く ②OOSを見る ③パラメ</p>
+<article class="post" id="R5-T-1-P"><div class="head"><span class="pid">R5-T-1-P</span><span class="label">★ (親)</span><span class="count">71 字</span></div><p class="body">「年率100%のバックテストです」と言われたら？
+
+僕ならまず疑う。
+
+①βを引く
+②OOSを見る
+③パラメータを全部振る
+
+この3つを通っても残るαだけがホンモノ。</p></article>
+<article class="post" id="R5-T-1-R1"><div class="head"><span class="pid">R5-T-1-R1</span><span class="label">★</span><span class="count">98 字</span></div><p class="body">年率100%の次に聞くのはMaxDD。途中で退場したら年率は絵に描いたモチ。
+
+本家デュアルモメンタムは1974〜2023年で年率14.5%、MaxDD -22.7%。S&amp;P500は10.8%と-50.9%。
+
+派手な年率より先に、生き残れるかを疑うんよ。</p></article>
+<article class="post" id="R5-T-1-R2"><div class="head"><span class="pid">R5-T-1-R2</span><span class="label">★</span><span class="count">109 字</span></div><p class="body">「年率100%」で、もう一つ聞くのは期間。
+
+いつからいつまでか。
+
+本家デュアルモメンタムは1974〜2023年、50年で年率14.5%。
+
+3年で100%なら、それは戦略じゃなく追い風の数字かもしれない。
+
+追い風が止まった年も入れて、もう一度出してみ。</p></article>
+<article class="post" id="R5-T-1-R3"><div class="head"><span class="pid">R5-T-1-R3</span><span class="label">★</span><span class="count">114 字</span></div><p class="body">「年率100%」で最後に聞くのは、何本試したか。
+
+何十本も振って一番を見せてるなら、それは検証じゃなく選抜。
+
+隣のパラメータでも同じ形が残るか。ズラして崩れるならもろい。
+
+本家デュアルモメンタムは50年で年率14.5%。派手じゃないから残るんよ。</p></article>
+</section>
+<section id="s14"><h2>R5-T-2 Thread</h2>
+<p class="def">A/real_estate_mortgage) — 政策金利2.5%の世界。フルレバ大家に何が起きるか。①返済額 ②物件価格(買い手</p>
+<article class="post" id="R5-T-2-P"><div class="head"><span class="pid">R5-T-2-P</span><span class="label">★ (親)</span><span class="count">75 字</span></div><p class="body">「総資産10億｜経済的自由達成」。まあ凄いよね。
+
+中身は物件10億、借金9億、自己資本1億。
+
+政策金利2.5%の世界が来たら、この人はどうなるのか。僕ならまず疑う。</p></article>
+<article class="post" id="R5-T-2-R1"><div class="head"><span class="pid">R5-T-2-R1</span><span class="label">★</span><span class="count">105 字</span></div><p class="body">①返済額。
+
+借金9億の利息だけが動く。家賃は動かない。
+
+「家賃も上げればいい」。まあ言うのは簡単よね。入居者に来月から上げます、とは言えない。
+
+利息が増えた分だけ手残りが薄くなる。9億借りていれば、その差は小さくない。</p></article>
+<article class="post" id="R5-T-2-R2"><div class="head"><span class="pid">R5-T-2-R2</span><span class="label">★</span><span class="count">116 字</span></div><p class="body">②物件価格。
+
+建物も入居者も家賃も同じ。動くのは買い手の要求利回りだけ。
+
+「金利があるのに不動産の利回りがこれじゃ割に合わない」。買い手がそう言った日、値段は下がる。
+
+物件10億、借金9億。自己資本1億が溶けるのに、大きな下落はいらないんよ。</p></article>
+<article class="post" id="R5-T-2-R3"><div class="head"><span class="pid">R5-T-2-R3</span><span class="label">★</span><span class="count">116 字</span></div><p class="body">③銀行の態度。
+
+「売らなければ損じゃない」。まあ気持ちは分かるよね。
+
+でも銀行は担保を評価し直す。物件が下がれば担保も下がる。借金9億は動かない。
+
+黒字のまま債務超過。借り換えの電話はここで来る。
+
+「貸します」と「貸し続けます」は別のハナシ。</p></article>
+</section>
+<section id="s15"><h2>R5-SE-2 Series</h2>
+<p class="def">C/investing/follow) — OOS を見る</p>
+<article class="post" id="R5-SE-2"><div class="head"><span class="pid">R5-SE-2</span><span class="label">★</span><span class="count over">159 字</span></div><p class="body">僕が投資システムを信用するまで 2/9
+
+「年率90%のバックテストです」。すごいね。で、それはどの期間の話？
+
+パラメータを決めた期間(IS)の成績なら見ない。見るのはその外側、OOS。決めた後に来た相場で同じ成績が残るか。
+
+ISで輝いてOOSで消える。そればっかり。消えたらそれはそれでハッピーなんよ。次を探せる。
+
+source_note: なし(検証テーマ)</p></article>
+</section>
+<section id="s16"><h2>R5-SE-3 Series</h2>
+<p class="def">C/investing/follow) — Walk Forward</p>
+<article class="post" id="R5-SE-3"><div class="head"><span class="pid">R5-SE-3</span><span class="label">★</span><span class="count over">149 字</span></div><p class="body">僕が投資システムを信用するまで 3/9
+
+「バックテストで年率○%です」。そのパラメータ、いつのデータで決めた？
+
+僕はWFで見る。過去の一部で決めて、その先の未知区間で走らせる。窓をずらして何度も繰り返す。
+
+未知区間で残った分だけが実力。過去に合わせただけの数字は、ここで消えるんよ。
+
+source_note: なし(検証テーマ)</p></article>
+</section>
+<section id="s17"><h2>R5-SE-4 Series</h2>
+<p class="def">C/investing/follow) — パラメータを全部振る</p>
+<article class="post" id="R5-SE-4"><div class="head"><span class="pid">R5-SE-4</span><span class="label">★</span><span class="count over">150 字</span></div><p class="body">僕が投資システムを信用するまで 4/9
+
+「最適パラメータはこれです」と言われたら？
+
+一点じゃ何もわからん。隣を全部振れ。ルックバックも閾値も。
+
+隣の値でCAGRが崩れるなら、それは戦略じゃなく偶然の山。隣でも似た成績なら少しは信じる。
+
+最良探しじゃなく、壊れる場所探し。そういうハナシ。
+
+source_note: なし(検証テーマ)</p></article>
+</section>
+<section id="s18"><h2>R5-SE-5 Series</h2>
+<p class="def">C/investing/follow) — 計算日をずらす</p>
+<article class="post" id="R5-SE-5"><div class="head"><span class="pid">R5-SE-5</span><span class="label">★</span><span class="count over">148 字</span></div><p class="body">僕が投資システムを信用するまで 5/9
+
+月末に計算するルール。計算日が数日ずれたら、結果はどうなる？
+
+僕は計算日をずらして何通りも回す。
+
+これで成績が別物になるなら、勝っていたのはルールじゃなくてカレンダー。
+
+ずらしても崩れないやつだけ残す。地味だけど、ここで落ちるのが多いんよ。
+
+source_note: なし(検証テーマ)</p></article>
+</section>
+<section id="s19"><h2>R5-SE-6 Series</h2>
+<p class="def">C/investing/follow) — 執行日をずらす</p>
+<article class="post" id="R5-SE-6"><div class="head"><span class="pid">R5-SE-6</span><span class="label">★</span><span class="count over">162 字</span></div><p class="body">僕が投資システムを信用するまで 6/9
+
+「月末に判定して月初に買う」。その執行日、ずらしたら？
+
+月末だけよくて、数日ずらすと崩れるなら、トレンドじゃなくカレンダーの癖を拾ってるだけ。
+
+だから執行日を全部ずらして並べる。どこで切っても似た形なら信用していい。
+
+崩れたらオシマイ。それはそれでスッキリするんよ。
+
+source_note: なし(検証テーマ)</p></article>
+</section>
+<section id="s20"><h2>R5-SE-7 Series</h2>
+<p class="def">C/investing/follow) — 二次元でずらす(計算日×執行日</p>
+<article class="post" id="R5-SE-7"><div class="head"><span class="pid">R5-SE-7</span><span class="label">★</span><span class="count over">146 字</span></div><p class="body">僕が投資システムを信用するまで 7/9
+
+月末に計算して月末に売買。本番もその日に動けますか？
+
+だから計算日×執行日の二次元でずらす。月の何日に計算するか、何日後に売買するか、全部回す。
+
+特定の日付だけ成績がいいなら、それはカレンダーのクジ。ずらしても崩れない方だけ残すんよ。
+
+source_note: なし(検証テーマ)</p></article>
+</section>
+<section id="s21"><h2>R5-SE-8 Series</h2>
+<p class="def">C/investing/follow) — 論文を自分のデータで再検証する</p>
+<article class="post" id="R5-SE-8"><div class="head"><span class="pid">R5-SE-8</span><span class="label">★</span><span class="count over">152 字</span></div><p class="body">僕が投資システムを信用するまで 8/9
+
+「GEM（本家デュアルモメンタム）1974〜2023年、年率14.5%、MaxDD -22.7%」。論文にあったら信じる？
+
+僕は信じない。自分のデータで同じ計算をやり直す。
+
+期間をずらして、それでも数字が近いか。
+
+そこまでやって初めて自分の数字になる。まあ面倒なんだけどさ。
+
+source_note: なし(検証テーマ)</p></article>
+</section>
+<section id="s22"><h2>R5-SE-9 Series</h2>
+<p class="def">C/investing/follow) — 不採用結果を見る</p>
+<article class="post" id="R5-SE-9"><div class="head"><span class="pid">R5-SE-9</span><span class="label">★</span><span class="count over">140 字</span></div><p class="body">僕が投資システムを信用するまで 9/9
+
+「採用した戦略はこれです」。で、落とした戦略はどこ？
+
+僕が見たいのは不採用の山のほう。何本試して、何本捨てて、なぜ捨てたか。
+
+捨てた理由が言えない人は、次に壊れた時も言えない。
+
+だめだった実験を隠さない人しか信用しないんよ。
+
+source_note: なし(検証テーマ)</p></article>
+</section>
+<footer>rendered 2026-09-04 16:50 · 正本 md → scripts/x_drafts_render.py · gist 196943087ca81493731a7eaf4e95b6b1</footer></div>
