@@ -16894,3 +16894,10 @@ insights:
   source: "manual"
   fix_known: false
   status: pending
+- id: INS-20260904-090312271-5747
+  ts: "2026-09-04T09:03:12+09:00"
+  insight: "semantic_index_update新概念候補: discussion:T237 T236 T226b T230 T226の進捗と完了までの見込みをひょけ意識で報告せよ は 既存aliasesに一致なし。概念定義とaliases追加を検討せよ"
+  priority: "low"
+  source: "semantic_index_update"
+  fix_known: false
+  status: pending
