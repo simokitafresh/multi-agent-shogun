@@ -2031,3 +2031,15 @@ entries:
     - 'shogun'
   confirmed_by: ["shogun"]
   status: "closed"
+- id: 'blt_20260904_101425_050ee2'
+  content: |-
+    [URGENT-HARM] cmd_karo_ci_fix_33814810266_flaky_second_202609040832 scope裁定要。将軍下知はtest側hotfix(5 bats)だが、小太郎は根因としてscripts/deploy_task/main.shとscripts/inbox_drain.shを自己追加しcommit 7f1e429deへ計7pathを収録。技術証跡はpre逆適用FAIL5→post127/127 PASS、各5file 20/20、production契約弱化0。選択: (A)2 production pathのscope拡張を事後承認し現commitをreview (B)下知厳守でsource2pathを別hotfixへ分離。集計コマンド: task target_path/commit_contract.planned_paths比較; git show --stat 7f1e429de。出力行の生貼付: target_path=5; planned_paths=7; scope_extra=2。1件の定義: 1件=task target外のproduction source path 1本。
+  posted_by: 'karo'
+  posted_at: '2026-09-04T10:14:25'
+  requires_confirmation: true
+  action_type: 'action_required'
+  actioned_by: ''
+  notify_targets:
+    - 'shogun'
+  confirmed_by: []
+  status: 'open'
