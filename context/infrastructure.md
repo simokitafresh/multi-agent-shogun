@@ -1,5 +1,6 @@
 # インフラコンテキスト
 <!-- last_updated: 2026-09-04 context_freshness reviewed source boundary -->
+<!-- source_commit:30a92e359 reason:context_freshness reviewed source boundary evidence:context_freshness_check context=context/infrastructure.md commit=30a92e359 -->
 <!-- source_commit:b6a30b56d reason:context_freshness reviewed source boundary evidence:context_freshness_check context=context/infrastructure.md commit=b6a30b56d -->
 <!-- source_commit:fe68b34e5 reason:context_freshness reviewed source boundary evidence:context_freshness_check context=context/infrastructure.md commit=fe68b34e5 -->
 <!-- source_commit:c14939a1b reason:context_freshness reviewed source boundary evidence:context_freshness_check context=context/infrastructure.md commit=c14939a1b -->
@@ -739,3 +740,4 @@ source boundary一致taskはregistryのowner/update_triggerからcontext_update_
 - **pre-push dirty-tree guard の overlap 判定から lesson writer 経路を免除(家老 hotfix `cmd_karo_hotfix_ga554_push_overlap_pattern_202609021650` 7488b08eb 17:03、c2a 合流 17:5x)**: `scripts/lib/autogen_paths.sh` に lesson writer の自動生成 path を追加し、GA-554 の push overlap 偽検知を止める。bats `test_pre_push_dirty_tree_guard.bats` +25 行。
 - X 投稿経路は xdk 非依存(2026-09-04 T3-S-68): `scripts/x_ops/x_post.sh` post/media upload は urllib で X API v2 直叩き。token を書くのは `x_token_refresh.py`/keeper のみ。xdk Client は access-only token で InvalidClientIdError を出すため投稿経路に使わない → `docs/research/tsumari_root_causes_20260901.md` T3-S-68
 - X Growth Engine v1(2026-09-04 殿指示 14:51): 定義 `skills/x-post-pipeline/growth_schema.yaml`、定時投稿 `scripts/x_ops/x_slot_post.sh`(cron 平日 08:30/18:30 JST、pointer=queue/x_live_oos/slot_pointer.txt)、KPI `scripts/x_ops/x_kpi_snapshot.py`(cron 毎時 15 分、24h/7d、台帳 queue/x_live_oos/ledger.yaml)、metadata 付与 `x_growth_tag.py` → `docs/research/x_growth_engine_asis_tobe_5w1h_20260904.md`(gist da5adc2c)
+- X Growth Engine v1.2(2026-09-04 殿裁定 15:11): 4 format(Short/Long/Thread/Series)と content_units/physical_posts。x_post.sh post --reply-to、x_kpi_snapshot.py --summary、台帳 queue/x_live_oos/{thread,series}_ledger.yaml → 設計書 §36-§42

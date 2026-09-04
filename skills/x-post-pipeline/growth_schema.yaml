@@ -206,3 +206,80 @@ kpi_v1_1_additions:
   proxy_design_v1_2: reply/quote を付けた user id を投稿ごとに取得(GET /2/tweets/search/recent conversation_id、Basic tier 可)し、lane を跨いで同じ user が現れる件数を cross_topic_migration の代理指標にする
 
 prohibitions_v1_1: [DM-Signal へ無理につなげる, 全投稿を投資へ着地させる, 住宅/医療/不動産投稿を商品広告にする, 雑多垢化, 恐怖だけで釣る, 煽りを本人実績以上に強くする, Reach のために本人 Voice を壊す, 数字の正確性を落とす]
+
+# ===== v1.2 追加(2026-09-04 15:11 殿裁定『投稿フォーマット × 投稿量』) =====
+format:
+  rule: 4 つは別の商品。短いか長いかで分類しない。Short=発見される / Long=信頼される / Thread=深く読まれ会話される / Series=次を期待されフォローされる
+  short:
+    definition: 短い単独投稿。違和感・数字・主張・疑問・ツッコミを 1 つだけ置く。全部説明しない。conversation gap を残してよい
+    length: 全角 140 字以内目安(承認 13 本は 104〜147 字=全て short)
+    roles: [reach, follow]
+    audience: [general, investor]
+    fits: [+50/-50, 勝率, 複利, 格差, インデックス, 金利, 住宅ローン, 不動産, キャッシュフロー, 短い数学, 強い検証結果, 一言の違和感]
+    kpi: [np_impression_count(非フォロワー分は取得不能), np_user_profile_clicks, follows(日次), reply_count, quote_count]
+    cost: 低。大量試行=Right Tail 狙い。低反応は許容
+  long:
+    definition: X 内でまとまった説明をする長文単独投稿(note_tweet)。Short の水増しではない。本人 Reasoning(疑い→検証→数字→短い解釈→次の疑い)を X 内で体験させる。note より浅く Short より深い
+    length: 300〜1,000 字目安(長文投稿 slot)
+    roles: [trust, follow]
+    audience: [investor, systematic, dual_momentum]
+    fits: [OOS, Walk Forward, β/α, パラメータ全面, 論文再検証, 不採用実験, 投資数学, 住宅ローン計算, 不動産 CF, 社会構造, Story]
+    kpi: [bookmark_count, np_user_profile_clicks, follows, reply_count, np_url_link_clicks(note)]
+    note: dwell/read は API で取得不能。推測しない
+  thread:
+    definition: 親 1 本+自己リプで段階的に掘る。Long の細切れではなく、一段ごとに新しい疑問・数字・検証を置く。各段が単独でも意味を持つ
+    roles: [trust, conversation, follow]
+    fits: [検証工程, 数学の段階説明, 論文レビュー, Story, どう壊れるかの検証, 1 記事を複数角度で読む]
+    kpi: [parent np_impression_count, continuation(自己リプ imp 平均 / 親 imp), reply_count, bookmark_count, np_user_profile_clicks, follows, total_thread_engagement]
+    rule: 毎日量産しない。段階的に読むこと自体に意味があるテーマだけ。自己リプは必要な長さだけ(機械的に 10 個付けない)
+    implementation: x_post.sh post <draft> --reply-to <parent_id>
+  series_entry:
+    definition: 複数日にまたがる独立投稿シリーズ。各回は独立して TL に流れ、単独で価値を持ち、『続きがある』ことが分かる。過去回を読まないと分からない構造にしない
+    roles: [follow, repeat_engagement, trust]
+    kpi: [follows, repeat_engagers(取得不能→v1.2 代理), np_user_profile_clicks, bookmark_count, series_continuation(後半回 imp / 初回 imp), later_entry_impressions]
+    ids: [series_id, series_order, series_total]
+  thread_vs_series: Thread=同じ conversation_id・同テーマ・同時刻付近・自己リプ / Series=別々の独立投稿・複数日・各回単独成立・未来への期待。両方を別 format として記録
+  same_source_ok: 同じ検証記事から Short(結論 1 個)/Long(疑い→検証→結果)/Thread(検証工程)/Series(信用するまでの 1 回)を作ってよい。同じ文章の言い換え連投は禁止(役割が違うこと)
+
+format_metadata:
+  format: short|long|thread|series_entry
+  thread: [thread_id, thread_position, thread_total(optional), parent_id]
+  series: [series_id, series_order, series_total(optional)]
+  precommit_rule: 事前登録が正本。『伸びたから Reach 投稿だったことにする』は禁止
+
+volume:
+  content_units_per_day: 1 Short=1 / 1 Long=1 / 1 Series Entry=1 / 1 Thread(親+自己リプ全部)=1
+  physical_posts_per_day: 実 tweet 数(Thread は親+リプを全部数える)
+  example: {short: 1, series_entry: 1, thread_parent_plus_3: 1, content_units: 3, physical_posts: 6}
+  current: 平日 2 content_units/日(slot_calendar 08:30/18:30)。3/日へ増やす時は Short を増やすのではなく mix を設計する
+
+format_x_funnel_hypothesis:
+  short: reach
+  long: trust
+  thread: [trust, conversation]
+  series_entry: [follow, repeat]
+  rule: 全 format を likes で比較しない。それぞれの仕事(Short=Reach/Profile、Long=Trust/Bookmark/Follow、Thread=Conversation/Trust、Series=Follow/Repeat、Convert=note/DM-Signal)で評価
+
+format_x_lane_record: Short×money / Short×math / Short×mortgage / Long×verification / Long×story / Thread×verification / Series×investment_math 等を台帳に保存するだけ。初期段階で Grid Search しない(SNS 版過学習)
+
+initial_format_mix_4w:
+  short: 週 6〜7(平日 08:30 は常に Short。18:30 の半分)
+  long: 週 2〜3(火・木 18:30)
+  thread: 週 1(水 18:30。検証工程・Story のみ)
+  series_entry: 常時 1 シリーズ進行(金 18:30 に 1 回。trust_system 9 回)
+  weekly_units: 10 content_units(=現行 slot 数を維持)。physical_posts は Thread 分だけ増える
+  rule: 毎日同じ mix にしない。4 週固定、最適化しない
+
+depth_and_retention:
+  depth: [Short, Long/Thread, note, DM-Signal]
+  retention: [Series Entry, Series Entry, Series Entry]
+
+x_format_analysis_20260904:
+  source: docs/research/x_corpus/x/tweets.jsonl 3,247 件(format_stats_20260904.json)
+  short_le140: {n: 926, imp_med: 566, like_med: 3, bm_mean: 0.38, reply_mean: 0.11}
+  long_gt140: {n: 194, imp_med: 734, like_med: 4, bm_mean: 0.74, reply_mean: 0.07}
+  thread_parent: {n: 506, imp_med: 893, imp_mean: 5189, like_med: 5, bm_mean: 8.08, reply_mean: 1.16}
+  thread_self_replies: {n: 1002, imp_med: 344, like_med: 1, bm_mean: 0.27}
+  thread_continuation_median: 0.42  # 自己リプ imp 平均 / 親 imp
+  series_like: {n: 5, note: 番号マーカー付きは 5 本のみ。本人 X に Series 運用の実績は無い=Series は新規試行}
+  reading: このアカウントでは Thread 親が全 format 中 imp/bookmark/reply とも最高(親 imp 中央値 893 vs Short 566)。上位 2 本(年収⇄手取り 916k、町医者データ 397k)は親+リプ 9〜15 本で後続も 5〜7 万 imp。因果ではない

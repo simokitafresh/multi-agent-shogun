@@ -17,14 +17,14 @@ log() { echo "[$(date '+%Y-%m-%d %H:%M:%S')] $*" | tee -a "$LOG"; }
 mapfile -t SLOTS < <(python3 - "$CAL" <<'PY'
 import sys, yaml
 for s in yaml.safe_load(open(sys.argv[1], encoding="utf-8"))["slots"]:
-    print(s["slot"])
+    print(s["slot"] + ":" + s.get("format", "short"))
 PY
 )
 n=${#SLOTS[@]}
 ptr=$(cat "$PTR" 2>/dev/null || echo 0)
 picked=""; slot=""
 for ((k=0; k<n; k++)); do
-    idx=$(( (ptr + k) % n )); slot="${SLOTS[$idx]}"
+    idx=$(( (ptr + k) % n )); slot="${SLOTS[$idx]%%:*}"; fmt="${SLOTS[$idx]#*:}"
     for f in $(ls queue/x_drafts/*_R[0-9]*-"$slot"-[0-9]*.approved 2>/dev/null | sort); do
         base="${f%.approved}"
         [[ -f "$base.posted" ]] && continue
@@ -37,7 +37,9 @@ if [[ -z "$picked" ]]; then
     bash scripts/ntfy.sh "【将軍】X 定時投稿: 承認済み在庫なし。生成→承認が必要" >/dev/null 2>&1 || true
     exit 0
 fi
-log "slot=$slot draft=$picked ptr_next=$ptr"
+# v1.2: calendar format(long/thread/series_entry)に対し在庫が short しか無い間は format_fallback を記録(事前登録=正本、事後付け替え禁止)
+fb=""; [[ "$fmt" != short ]] && fb=" format_fallback=short(在庫)"
+log "slot=$slot planned_format=$fmt draft=$picked ptr_next=$ptr$fb"
 if ! out="$(timeout 180 bash scripts/x_ops/x_post.sh post "$picked" 2>&1 | grep -vE 'warn|protected|^$')"; then
     log "POST FAILED draft=$picked: ${out:0:200}"
     bash scripts/ntfy.sh "【将軍】X 定時投稿 失敗 $picked: ${out:0:120}" >/dev/null 2>&1 || true

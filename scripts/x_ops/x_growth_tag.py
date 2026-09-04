@@ -59,6 +59,7 @@ def main():
         g["conversation_gap"] = "medium"
         g["link_type"] = "none"
         g["external_context"] = "standalone"
+        g["format"] = "short"  # v1.2: 承認 13 本は 104〜147 字=全て short
         g.update(OVERRIDES.get(did, {}))
         g["content_lane"] = schema.get("content_lane", {}).get("lane_of_13", {}).get(did, "investing")  # v1.1 3 軸目
         if "funnel_stage" in OVERRIDES.get(did, {}) and "desired_action" not in OVERRIDES[did]:

@@ -47,6 +47,7 @@ growth:
   conversation_gap: high
   link_type: none
   external_context: standalone
+  format: short
   series_id: trust_system
   series_order: 1
   series_total: 9

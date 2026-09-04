@@ -281,3 +281,57 @@ DM-Signal へ無理につなげる / 全投稿を投資へ着地 / 住宅・医�
 
 ### 実装進捗台帳(v1.1)
 - 2026-09-04 15:10 v1.1: 第 3 マガジン 63 本 corpus 化、3 系統統計、Story/persona/論説 Voice 実測、X テーマ突合 13 分類、content_lane 9+13 本付与、entry lane 5、bridge 6、series 5、note 三層、ブランド仮説検証(整合)、bio 案 v2(殿裁定待ち)。未: Round5 生成(lane 別 10 本)、gate lane 拡張、link_type 細分、migration 代理指標。
+
+---
+
+# v1.2 追補(2026-09-04 15:11 殿裁定『投稿フォーマット × 投稿量』)
+
+殿裁定(要旨): X 投稿には Short / Long / Thread / Series Entry の 4 format があり、文字数違いではなく別の商品。Short=発見される、Long=信頼される、Thread=深く読まれ会話される、Series=次を期待されフォローされる。投稿量は content_units と physical_posts に分け、Volume×Format×Funnel×Topic で管理する。最初から多次元最適化せず、自然な初期 mix を固定して Live OOS。事前分類が正本、事後の付け替え禁止。定義の正本=`growth_schema.yaml` v1.2 追加節(format / format_metadata / volume / format_x_funnel_hypothesis / initial_format_mix_4w / x_format_analysis_20260904)。
+
+## §36 format 定義(成果物 1〜5)
+
+| format | 定義 | 役割 | 主 KPI(取得可のみ) | 実装 |
+|---|---|---|---|---|
+| Short | 違和感・数字・主張を 1 つ。全部説明しない。gap 可 | reach / follow | np_impression, profile_clicks, follows(日次), replies, quotes | 現行 x_post.sh |
+| Long | X 内で疑い→検証→数字→解釈→次の疑い。note より浅く Short より深い | trust / follow | bookmarks, profile_clicks, follows, replies, link_clicks | note_tweet(長文 slot) |
+| Thread | 親+自己リプ。一段ごとに新しい疑問/数字/検証。各段単独でも意味 | trust / conversation / follow | parent imp, continuation(リプ imp 平均/親 imp), replies, bookmarks, total | `x_post.sh post <draft> --reply-to <parent_id>`(実装済み) |
+| Series Entry | 複数日の独立投稿。各回単独成立、続きがあると分かる | follow / repeat / trust | follows, later_entry_impressions, series_continuation, bookmarks | series_id/order/total、`series_ledger.yaml` |
+
+dwell/read、repeat engagers、non-follower impressions は API で取得不能。推測しない。
+
+## §37 content_units / physical_posts(成果物 6)
+
+content_units=Short 1、Long 1、Series Entry 1、Thread(親+全リプ) 1。physical_posts=実 tweet 数。例: Short 1+Series 1+Thread(親+3)=units 3 / physical 6。台帳 meta `volume_rule` と各 entry `physical_posts` に記録。現行は平日 2 units/日。
+
+## §38 Format × Funnel / Format × Lane(成果物 7・8)
+
+仮説: Short→reach、Long→trust、Thread→trust+conversation、Series→follow+repeat。台帳は format×funnel_stage×content_lane を保存するだけ(`x_kpi_snapshot.py --summary` が中央値を format/stage/lane/window 別に出す)。Grid Search はしない。
+
+## §39 初期 4 週 Format Mix(成果物 9・15)
+
+slot_calendar v1.2: 08:30=Short(10)、月 18:30=Short(2)、火木 18:30=Long(4)、水 18:30=Thread(2)、金 18:30=Series Entry(2)。週 10 content_units は不変、physical_posts は Thread 分だけ増える。**現在の在庫 13 本は全て Short**(104〜147 字)なので、Long/Thread/Series slot は在庫ができるまで Short で埋め、`x_slot_post.sh` が `format_fallback=short` をログに残す(事前登録は short のまま。事後に long と呼ばない)。
+
+## §40 Thread / Series ledger(成果物 10・11)
+
+`queue/x_live_oos/thread_ledger.yaml`(親+リプ、continuation)、`queue/x_live_oos/series_ledger.yaml`(trust_system 9 回=1/9 割当済み、金利のある世界=候補)。
+
+## §41 本人 X の format 分析(成果物 12)
+
+conversation_id で自己リプ Thread を復元(親 506・自己リプ 1,002、親≥2 リプは 210):
+
+| format | n | imp 中央値 | imp 平均 | like 中央値 | bookmark 平均 | reply 平均 |
+|---|---|---|---|---|---|---|
+| Short(≤140、非 Thread) | 926 | 566 | 1,314 | 3 | 0.38 | 0.11 |
+| Long(>140、非 Thread) | 194 | 734 | 1,136 | 4 | 0.74 | 0.07 |
+| Thread 親 | 506 | **893** | **5,189** | **5** | **8.08** | **1.16** |
+| Thread 自己リプ | 1,002 | 344 | 989 | 1 | 0.27 | 0.52 |
+| Series-like(番号付き) | 5 | 1,043 | 983 | 4 | 0.60 | 0.40 |
+
+continuation(自己リプ imp 平均/親 imp)の中央値 0.42。上位 2 Thread(年収⇄手取り 916k、町医者データ 397k)は親+リプ 9〜15 本で後続も 5〜7 万 imp。**このアカウントでは Thread 親が全 format 中で最も反応が高かった**(因果ではない。本人が力を入れた話題ほど Thread にしている可能性)。Series は本人 X に運用実績が無く、新規試行。
+
+## §42 Live OOS schema 更新(成果物 14)
+
+台帳 entry に `format` / `physical_posts` を追加(14 entries 反映)。事前登録の format/funnel_stage/audience/content_lane/conversation_gap が正本。`x_growth_tag.py` は format=short を既定にし、Long/Thread/Series は生成時に明示する。
+
+### 実装進捗台帳(v1.2)
+- 2026-09-04 15:20 v1.2: format 定義・units/physical・Format×Funnel/Lane・4 週 mix・calendar format 列・thread/series ledger・X format 分析・`--reply-to` 実装・`--summary` 集計・台帳 14 entries 更新。未: Long/Thread/Series の在庫生成(Round5)、Thread 投稿 runner(親→リプ連投の 1 コマンド化)、repeat engagers 代理指標。

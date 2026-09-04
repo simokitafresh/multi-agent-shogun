@@ -15,12 +15,14 @@ meta:
     G: 直接誘導 — 5% のみ
   figure_policy: 全投稿に図 1 枚。A/D=概念図(数式・棒 2 本など)、B=fig1 仕組み(抽象)、C/E=検証の結果図、F=公開成績/DD/履歴の図、G=dm-signal 公開表 capture
   growth: Growth Engine v1(2026-09-04 14:51 殿指示)。各 slot に funnel_stage/audience を付与。初期配分仮説(固定、4 週)=reach 8/follow 4/trust 6/convert 2。定義=skills/x-post-pipeline/growth_schema.yaml
+  format_mix_v1_2: 殿裁定 2026-09-04 15:11『投稿フォーマット×投稿量』。08:30=Short、火木 18:30=Long、水 18:30=Thread、金 18:30=Series Entry、月 18:30=Short。週 10 content_units 不変。定義=growth_schema.yaml format
   old_slots_superseded: 旧 A 教材再掲/B 検証の一切れ/C 運用の形/D 月次/E ガイド告知(マニュアル §5/§6)は廃止。旧 seed は stock_ledger の shift に吸収
 
 slots:
 - week: 1
   day: 月
   time: '08:30'
+  format: short
   slot: A
   funnel_stage: reach
   audience: investor
@@ -30,6 +32,7 @@ slots:
 - week: 1
   day: 月
   time: '18:30'
+  format: short
   slot: D
   funnel_stage: reach
   audience: general
@@ -39,6 +42,7 @@ slots:
 - week: 1
   day: 火
   time: '08:30'
+  format: short
   slot: B
   funnel_stage: follow
   audience: systematic
@@ -48,6 +52,7 @@ slots:
 - week: 1
   day: 火
   time: '18:30'
+  format: long
   slot: E
   funnel_stage: trust
   audience: systematic
@@ -57,6 +62,7 @@ slots:
 - week: 1
   day: 水
   time: '08:30'
+  format: short
   slot: C
   funnel_stage: follow
   audience: systematic
@@ -67,6 +73,7 @@ slots:
 - week: 1
   day: 水
   time: '18:30'
+  format: thread
   slot: F
   funnel_stage: convert
   audience: dual_momentum
@@ -76,6 +83,7 @@ slots:
 - week: 1
   day: 木
   time: '08:30'
+  format: short
   slot: D
   funnel_stage: reach
   audience: general
@@ -85,6 +93,7 @@ slots:
 - week: 1
   day: 木
   time: '18:30'
+  format: long
   slot: E
   funnel_stage: trust
   audience: systematic
@@ -94,6 +103,7 @@ slots:
 - week: 1
   day: 金
   time: '08:30'
+  format: short
   slot: A
   funnel_stage: reach
   audience: investor
@@ -103,6 +113,7 @@ slots:
 - week: 1
   day: 金
   time: '18:30'
+  format: series_entry
   slot: B
   funnel_stage: follow
   audience: systematic
@@ -112,6 +123,7 @@ slots:
 - week: 2
   day: 月
   time: '08:30'
+  format: short
   slot: C
   funnel_stage: trust
   audience: systematic
@@ -121,6 +133,7 @@ slots:
 - week: 2
   day: 月
   time: '18:30'
+  format: short
   slot: D
   funnel_stage: reach
   audience: general
@@ -130,6 +143,7 @@ slots:
 - week: 2
   day: 火
   time: '08:30'
+  format: short
   slot: E
   funnel_stage: trust
   audience: systematic
@@ -139,6 +153,7 @@ slots:
 - week: 2
   day: 火
   time: '18:30'
+  format: long
   slot: F
   funnel_stage: trust
   audience: dual_momentum
@@ -148,6 +163,7 @@ slots:
 - week: 2
   day: 水
   time: '08:30'
+  format: short
   slot: A
   funnel_stage: reach
   audience: investor
@@ -157,6 +173,7 @@ slots:
 - week: 2
   day: 水
   time: '18:30'
+  format: thread
   slot: B
   funnel_stage: follow
   audience: systematic
@@ -166,6 +183,7 @@ slots:
 - week: 2
   day: 木
   time: '08:30'
+  format: short
   slot: D
   funnel_stage: reach
   audience: general
@@ -175,6 +193,7 @@ slots:
 - week: 2
   day: 木
   time: '18:30'
+  format: long
   slot: C
   funnel_stage: trust
   audience: systematic
@@ -184,6 +203,7 @@ slots:
 - week: 2
   day: 金
   time: '08:30'
+  format: short
   slot: F
   funnel_stage: trust
   audience: dual_momentum
@@ -193,6 +213,7 @@ slots:
 - week: 2
   day: 金
   time: '18:30'
+  format: series_entry
   slot: G
   funnel_stage: convert
   audience: dm_signal

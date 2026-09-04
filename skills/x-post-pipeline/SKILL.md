@@ -33,6 +33,7 @@ allowed-tools:
 - 定時投稿: `scripts/x_ops/x_slot_post.sh`(cron 平日 08:30/18:30 JST)が slot_calendar の順(pointer=queue/x_live_oos/slot_pointer.txt)で承認済み未投稿 draft を 1 本投稿し台帳へ post_id を書く。在庫が無い slot は繰り下げ+ntfy。
 - 計測: `scripts/x_ops/x_kpi_snapshot.py`(cron 毎時 15 分)が 24h/7d に public+non_public(profile_clicks/link_clicks)を台帳へ書き、followers 日次を `account_daily.jsonl` へ。推測値は書かない。投稿別 follow・note PV は取得不能。
 - v1.1(15:01): 第 3 マガジン m8357970d6430『俺たちはどう生き延びるか』63 本=Reach 一次資料(`docs/research/x_corpus/note/m8357970d6430/`)。3 軸=content_category×funnel_stage×content_lane(9)。entry lane 5・bridge 6・series 候補 5・hook_type に story/scenario/irony。ブランド=『数字を見て生き延びる方法を考える人。投資は DM、実装が DM-Signal』。Reach 投稿単体で DM-Signal へつなげない。バム persona(ヤーマン)は note 専用。
+- v1.2(15:11 殿裁定): 4 format=Short(発見)/Long(信頼)/Thread(会話・深読み。x_post.sh post <draft> --reply-to <parent_id>)/Series Entry(フォロー・再接触)。content_units と physical_posts を分ける。calendar に format 列(08:30 Short、火木 18:30 Long、水 Thread、金 Series)。台帳=queue/x_live_oos/{ledger,thread_ledger,series_ledger}.yaml、format 別集計=x_kpi_snapshot.py --summary。事前登録が正本、事後付け替え禁止。
 - 禁止: 40 投稿貯まるまで比率・型の最適化をしない。Growth のために本文を書き換えない。自動 reply spam。
 
 ## When

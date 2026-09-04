@@ -281,10 +281,15 @@ cmd_post() {
     local draft_id="${1:-}" media=""
     [[ -n "$draft_id" ]] || { echo "x_post.sh post: draft_id is required" >&2; exit 2; }
     shift || true
-    if [[ "${1:-}" = "--media" ]]; then
-        media="${2:-}"
-        [[ -n "$media" && -z "${3:-}" ]] || { echo "x_post.sh post: --media requires one PNG" >&2; exit 2; }
-    elif [[ -n "${1:-}" ]]; then
+    local reply_to=""
+    while [[ -n "${1:-}" ]]; do
+        case "$1" in
+            --media) media="${2:-}"; [[ -n "$media" ]] || { echo "x_post.sh post: --media requires one PNG" >&2; exit 2; }; shift 2 ;;
+            --reply-to) reply_to="${2:-}"; [[ "$reply_to" =~ ^[0-9]+$ ]] || { echo "x_post.sh post: --reply-to requires a tweet id" >&2; exit 2; }; shift 2 ;;
+            *) break ;;
+        esac
+    done
+    if [[ -n "${1:-}" ]]; then
         echo "x_post.sh post: unknown argument: $1" >&2
         exit 2
     fi
@@ -310,7 +315,7 @@ cmd_post() {
     fi
     local python_status result_file
     result_file="$(mktemp)"
-    export X_POST_RESULT_FILE="$result_file"
+    export X_POST_RESULT_FILE="$result_file" X_POST_REPLY_TO="$reply_to"
     set +e
     python3 - "$file" "$media" "$API_ENV_FILE" "$posted" <<'PY'
 import base64, json, os, sys, tempfile, time
@@ -412,6 +417,8 @@ try:
         if not media_id:
             raise RuntimeError("media upload returned no media_id")
         payload["media"] = {"media_ids": [str(media_id)]}
+    if os.environ.get("X_POST_REPLY_TO"):  # 2026-09-04 v1.2 Thread(自己リプ)
+        payload["reply"] = {"in_reply_to_tweet_id": os.environ["X_POST_REPLY_TO"]}
     response = api_post("https://api.x.com/2/tweets", payload)
 except urllib.error.HTTPError as exc:
     detail = exc.read().decode("utf-8", "replace")[:300]

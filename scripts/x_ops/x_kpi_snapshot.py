@@ -38,7 +38,28 @@ def api(path, params, token):
         return json.load(r)
 
 
+def summary():
+    """format×funnel_stage 別の t24h/t7d 中央値(殿裁定 15:11 §13 format 別 KPI 集計)。likes で横比較しない。"""
+    import statistics as st
+    import yaml
+    d = yaml.safe_load(LEDGER.read_text(encoding="utf-8"))
+    groups = {}
+    for e in d.get("entries", []):
+        g = e.get("growth", {}); snaps = e.get("snapshots") or {}
+        for w, m in snaps.items():
+            key = (g.get("format", "?"), g.get("funnel_stage", "?"), g.get("content_lane", "?"), w)
+            groups.setdefault(key, []).append(m)
+    print("format\tstage\tlane\twindow\tn\timp_med\tprofile_med\tbm_med\treply_med\tlink_med")
+    for k in sorted(groups):
+        ms = groups[k]
+        med = lambda f: st.median([x.get(f, 0) or 0 for x in ms])
+        print("\t".join(map(str, [*k, len(ms), med("np_impression_count"), med("np_user_profile_clicks"), med("bookmark_count"), med("reply_count"), med("np_url_link_clicks")])))
+    return 0
+
+
 def main():
+    if "--summary" in sys.argv:
+        return summary()
     force = "--force" in sys.argv
     token = env().get("X_ACCESS_TOKEN", "")
     if not token:
