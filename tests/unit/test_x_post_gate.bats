@@ -148,62 +148,49 @@ EOF
     [[ "$output" == *"x_post_gate: FAIL rule1 blocklist unavailable (fail-close)"* ]]
 }
 
-# test_necessity: x_post.sh のXDK境界をfixtureで固定する。承認なし・認証なし・media有無・
-# 201/401を同じCLIで確認し、誤投稿と画像media_id欠落を防ぐ。
+# test_necessity: x_post.sh のX API urllib境界をfixtureで固定する。承認なし・認証なし・
+# media有無・201/401を同じCLIで確認し、誤投稿と画像media_id欠落を防ぐ。
 setup_x_post() {
     X_POST="$PROJECT_ROOT/scripts/x_ops/x_post.sh"
     export X_POST_DRAFTS_DIR="$FIXTURE_DIR/x_drafts"
     export X_POST_API_ENV_FILE="$FIXTURE_DIR/x_api.env"
-    export XDK_CALL_LOG="$FIXTURE_DIR/xdk_calls.log"
-    mkdir -p "$X_POST_DRAFTS_DIR" "$FIXTURE_DIR/fake_xdk/xdk/media" "$FIXTURE_DIR/fake_xdk/xdk/posts"
-    cat > "$FIXTURE_DIR/fake_xdk/xdk/__init__.py" <<'PY'
-import json, os
-class _ResponseError(RuntimeError):
-    def __init__(self, status):
-        super().__init__(f"HTTP {status}")
-        self.response = type("Response", (), {"status_code": status})()
-class _Media:
-    def upload(self, *args, **kwargs):
-        with open(os.environ["XDK_CALL_LOG"], "a", encoding="utf-8") as f:
-            f.write("media " + json.dumps({"args": len(args), "kwargs": list(kwargs)}) + "\n")
-        return {"data": {"id": "media-1"}}
-class _Posts:
-    def __init__(self, owner):
-        self.owner = owner
+    export X_API_CALL_LOG="$FIXTURE_DIR/x_api_calls.log"
+    mkdir -p "$X_POST_DRAFTS_DIR" "$FIXTURE_DIR/fake_api"
+    cat > "$FIXTURE_DIR/fake_api/sitecustomize.py" <<'PY'
+import io
+import json
+import os
+import urllib.error
+import urllib.request
 
-    def create(self, *args, **kwargs):
-        if os.environ.get("XDK_STATUS") == "401":
-            if os.environ.get("XDK_ROTATE_ON_FAILURE") == "1":
-                self.owner.token = {"access_token": "post-failed-access-token", "refresh_token": "post-failed-refresh-token"}
-            raise _ResponseError(401)
-        if os.environ.get("XDK_ROTATE") == "1":
-            self.owner.token = {"access_token": "post-access-token", "refresh_token": "post-rotated-refresh-token"}
-        if os.environ.get("XDK_REMOVE_ENV_ON_POST") == "1":
-            os.unlink(os.environ["X_POST_API_ENV_FILE"])
-        with open(os.environ["XDK_CALL_LOG"], "a", encoding="utf-8") as f:
-            f.write("post " + json.dumps(list(kwargs)) + "\n")
-        return {"data": {"id": "post-1"}}
-class Client:
-    def __init__(self, token=None, **kwargs):
-        self.token = token
-        self.media = _Media()
-        self.posts = _Posts(self)
-PY
-    cat > "$FIXTURE_DIR/fake_xdk/xdk/oauth2_auth.py" <<'PY'
-class OAuth2PKCEAuth:
-    def __init__(self, **kwargs):
-        self.kwargs = kwargs
-PY
-    cat > "$FIXTURE_DIR/fake_xdk/xdk/media/models.py" <<'PY'
-class UploadRequest:
-    def __init__(self, media, media_category):
-        self.media = media
-        self.media_category = media_category
-PY
-    cat > "$FIXTURE_DIR/fake_xdk/xdk/posts/models.py" <<'PY'
-class CreateRequest:
-    def __init__(self, **kwargs):
-        self.kwargs = kwargs
+
+class _Response(io.BytesIO):
+    def __enter__(self):
+        return self
+
+    def __exit__(self, *_args):
+        self.close()
+
+
+def _urlopen(request, timeout=60):
+    url = request.full_url
+    body = request.data or b""
+    with open(os.environ["X_API_CALL_LOG"], "a", encoding="utf-8") as log:
+        log.write("request " + json.dumps({"url": url, "timeout": timeout}, sort_keys=True) + "\n")
+    if os.environ.get("X_API_STATUS") == "401":
+        raise urllib.error.HTTPError(url, 401, "unauthorized", {}, io.BytesIO(b'{"error":"unauthorized"}'))
+    if url.endswith("/media/upload"):
+        with open(os.environ["X_API_CALL_LOG"], "a", encoding="utf-8") as log:
+            log.write("media " + body.decode("utf-8") + "\n")
+        payload = {"data": {"id": "media-1"}}
+    else:
+        with open(os.environ["X_API_CALL_LOG"], "a", encoding="utf-8") as log:
+            log.write("post " + body.decode("utf-8") + "\n")
+        payload = {"data": {"id": "post-1"}}
+    return _Response(json.dumps(payload).encode("utf-8"))
+
+
+urllib.request.urlopen = _urlopen
 PY
     cat > "$X_POST_DRAFTS_DIR/2026-09-03_A.txt" <<'EOF'
 デュアルモメンタムは2つだけ見る。今いちばん強い資産か、その資産は現金より強いか。
@@ -245,102 +232,103 @@ PY
     export X_TOKEN_REFRESH_SCRIPT="$FIXTURE_DIR/x_token_refresh_stub.py"
 }
 
-@test "x_post post: XDKでmediaなし201を投稿済みmarkerへ記録" {
+@test "x_post post: urllibでmediaなし201を投稿済みmarkerへ記録" {
     setup_x_post
-    run env PYTHONPATH="$FIXTURE_DIR/fake_xdk" bash "$X_POST" post 2026-09-03_A
+    run env PYTHONPATH="$FIXTURE_DIR/fake_api" bash "$X_POST" post 2026-09-03_A
     [ "$status" -eq 0 ]
     [[ "$output" == *"post-1"* ]]
-    [ ! -s "$XDK_CALL_LOG" ] || ! grep -q '^media ' "$XDK_CALL_LOG"
+    ! grep -q '/media/upload' "$X_API_CALL_LOG"
+    grep -q '/2/tweets' "$X_API_CALL_LOG"
     [ -f "$X_POST_DRAFTS_DIR/2026-09-03_A.posted" ]
 }
 
-# test_necessity: response serialization must preserve the XDK schema while removing only secret
+# test_necessity: response serialization must preserve the API schema while removing only secret
 # token keys; recursive scalar wrapping would corrupt the durable/API result shape.
-@test "x_post post: XDK responseの非secret scalar構造を同値保持" {
+@test "x_post post: API responseの非secret scalar構造を同値保持" {
     setup_x_post
-    run env PYTHONPATH="$FIXTURE_DIR/fake_xdk" bash "$X_POST" post 2026-09-03_A
+    run env PYTHONPATH="$FIXTURE_DIR/fake_api" bash "$X_POST" post 2026-09-03_A
     [ "$status" -eq 0 ]
     python3 -c 'import json, sys; assert json.loads(sys.argv[1]) == {"data": {"id": "post-1"}}' "$output"
 }
 
-@test "x_post post: PNGをXDK media.uploadしmedia_ids付き201を投稿" {
+@test "x_post post: PNGをAPI media.uploadしmedia_ids付き201を投稿" {
     setup_x_post
     printf '\x89PNG\r\n\x1a\n' > "$FIXTURE_DIR/experience.png"
-    run env PYTHONPATH="$FIXTURE_DIR/fake_xdk" bash "$X_POST" post 2026-09-03_A --media "$FIXTURE_DIR/experience.png"
+    run env PYTHONPATH="$FIXTURE_DIR/fake_api" bash "$X_POST" post 2026-09-03_A --media "$FIXTURE_DIR/experience.png"
     [ "$status" -eq 0 ]
-    grep -q '^media ' "$XDK_CALL_LOG"
-    grep -q '^post ' "$XDK_CALL_LOG"
+    grep -q '^media ' "$X_API_CALL_LOG"
+    grep -q '^post ' "$X_API_CALL_LOG"
     [ -f "$X_POST_DRAFTS_DIR/2026-09-03_A.posted" ]
 }
 
-@test "x_post post: XDK HTTP401は投稿済みmarkerを作らずexit1" {
+@test "x_post post: API HTTP401は投稿済みmarkerを作らずexit1" {
     setup_x_post
-    run env PYTHONPATH="$FIXTURE_DIR/fake_xdk" XDK_STATUS=401 bash "$X_POST" post 2026-09-03_A
+    run env PYTHONPATH="$FIXTURE_DIR/fake_api" X_API_STATUS=401 bash "$X_POST" post 2026-09-03_A
     [ "$status" -eq 1 ]
     [[ "$output" == *"HTTP 401"* ]]
     [ ! -f "$X_POST_DRAFTS_DIR/2026-09-03_A.posted" ]
 }
 
-@test "x_post post: 承認marker不在はXDKを呼ばずexit1" {
+@test "x_post post: 承認marker不在はAPIを呼ばずexit1" {
     setup_x_post
     rm -f "$X_POST_DRAFTS_DIR/2026-09-03_A.approved"
-    run env PYTHONPATH="$FIXTURE_DIR/fake_xdk" bash "$X_POST" post 2026-09-03_A
+    run env PYTHONPATH="$FIXTURE_DIR/fake_api" bash "$X_POST" post 2026-09-03_A
     [ "$status" -eq 1 ]
     [[ "$output" == *"not approved"* ]]
-    [ ! -f "$XDK_CALL_LOG" ]
+    [ ! -f "$X_API_CALL_LOG" ]
 }
 
-@test "x_post post: creds file不在はexit2でXDKを呼ばない" {
+@test "x_post post: creds file不在はexit2でAPIを呼ばない" {
     setup_x_post
     rm -f "$X_POST_API_ENV_FILE"
-    run env PYTHONPATH="$FIXTURE_DIR/fake_xdk" bash "$X_POST" post 2026-09-03_A
+    run env PYTHONPATH="$FIXTURE_DIR/fake_api" bash "$X_POST" post 2026-09-03_A
     [ "$status" -eq 2 ]
     [[ "$output" == *"credentials file not found"* ]]
 }
 
-# test_necessity: OAuth2 refresh token rotation must survive a successful post, otherwise the
-# next post reuses the invalidated refresh token and fails with InvalidClientIdError.
-@test "x_post post: refresh後のrotate済みclient.tokenを成功後に永続化" {
+# test_necessity: refresh token rotation is performed by the helper before the API call; the
+# urllib posting boundary must not rotate or rewrite tokens after a successful post.
+@test "x_post post: refresh後のrotate済みtokenをhelper結果として保持" {
     setup_x_post
-    export XDK_ROTATE=1 X_REFRESH_ROTATE=1
-    run env PYTHONPATH="$FIXTURE_DIR/fake_xdk" bash "$X_POST" post 2026-09-03_A
+    export X_REFRESH_ROTATE=1
+    run env PYTHONPATH="$FIXTURE_DIR/fake_api" bash "$X_POST" post 2026-09-03_A
     [ "$status" -eq 0 ]
-    grep -q '^X_ACCESS_TOKEN=post-access-token$' "$X_POST_API_ENV_FILE"
-    grep -q '^X_REFRESH_TOKEN=post-rotated-refresh-token$' "$X_POST_API_ENV_FILE"
+    grep -q '^X_ACCESS_TOKEN=refreshed-access-token$' "$X_POST_API_ENV_FILE"
+    grep -q '^X_REFRESH_TOKEN=refreshed-rotated-refresh-token$' "$X_POST_API_ENV_FILE"
     [ "$(stat -c '%a' "$X_POST_API_ENV_FILE")" = "600" ]
-    [[ "$output" != *"post-access-token"* ]]
-    [[ "$output" != *"post-rotated-refresh-token"* ]]
+    [[ "$output" != *"refreshed-access-token"* ]]
+    [[ "$output" != *"refreshed-rotated-refresh-token"* ]]
 }
 
-# test_necessity: XDK may omit refresh_token when it does not rotate. The existing refresh token
+# test_necessity: the API boundary does not rotate refresh_token. The existing refresh token
 # must remain usable while the newly refreshed access token is written back.
 @test "x_post post: 非rotate時はrefresh tokenを保持しaccess tokenのみ更新" {
     setup_x_post
-    run env PYTHONPATH="$FIXTURE_DIR/fake_xdk" bash "$X_POST" post 2026-09-03_A
+    run env PYTHONPATH="$FIXTURE_DIR/fake_api" bash "$X_POST" post 2026-09-03_A
     [ "$status" -eq 0 ]
     grep -q '^X_ACCESS_TOKEN=refreshed-access-token$' "$X_POST_API_ENV_FILE"
     grep -q '^X_REFRESH_TOKEN=initial-refresh-token$' "$X_POST_API_ENV_FILE"
 }
 
-# test_necessity: refresh failure is fail-closed and must prevent any XDK call or posted marker.
-@test "x_post post: 投稿前refresh失敗はXDKを呼ばず投稿済みmarkerを作らない" {
+# test_necessity: refresh failure is fail-closed and must prevent any API call or posted marker.
+@test "x_post post: 投稿前refresh失敗はAPIを呼ばず投稿済みmarkerを作らない" {
     setup_x_post
     export X_REFRESH_FAIL=1
-    run env PYTHONPATH="$FIXTURE_DIR/fake_xdk" bash "$X_POST" post 2026-09-03_A
+    run env PYTHONPATH="$FIXTURE_DIR/fake_api" bash "$X_POST" post 2026-09-03_A
     [ "$status" -eq 1 ]
     [[ "$output" == *"token refresh failed"* ]]
-    [ ! -s "$XDK_CALL_LOG" ]
+    [ ! -s "$X_API_CALL_LOG" ]
     [ ! -f "$X_POST_DRAFTS_DIR/2026-09-03_A.posted" ]
     grep -q '^X_ACCESS_TOKEN=initial-access-token$' "$X_POST_API_ENV_FILE"
     [[ "$output" != *"refresh-token"* ]]
 }
 
-# test_necessity: a post failure must not persist a token mutated by the failed request; only a
-# confirmed successful post may advance the local token state.
-@test "x_post post: 投稿失敗時はclient.tokenのrotateを永続化しない" {
+# test_necessity: a post failure must not mutate credentials; only the refresh helper may advance
+# local token state before the API request.
+@test "x_post post: 投稿失敗時はAPI側token変異を永続化しない" {
     setup_x_post
-    export XDK_STATUS=401 XDK_ROTATE_ON_FAILURE=1
-    run env PYTHONPATH="$FIXTURE_DIR/fake_xdk" bash "$X_POST" post 2026-09-03_A
+    export X_API_STATUS=401
+    run env PYTHONPATH="$FIXTURE_DIR/fake_api" bash "$X_POST" post 2026-09-03_A
     [ "$status" -eq 1 ]
     [[ "$output" == *"HTTP 401"* ]]
     [ ! -f "$X_POST_DRAFTS_DIR/2026-09-03_A.posted" ]
@@ -349,31 +337,29 @@ PY
     [[ "$output" != *"post-failed-refresh-token"* ]]
 }
 
-# test_necessity: the credentials file must end every refresh/post cycle with owner-only mode,
+# test_necessity: the credentials file must end every refresh/API cycle with owner-only mode,
 # even if an operator supplied a weaker mode before invocation.
 @test "x_post post: refresh後のcredentials modeを0600へ固定" {
     setup_x_post
     chmod 640 "$X_POST_API_ENV_FILE"
-    run env PYTHONPATH="$FIXTURE_DIR/fake_xdk" bash "$X_POST" post 2026-09-03_A
+    run env PYTHONPATH="$FIXTURE_DIR/fake_api" bash "$X_POST" post 2026-09-03_A
     [ "$status" -eq 0 ]
     [ "$(stat -c '%a' "$X_POST_API_ENV_FILE")" = "600" ]
 }
 
-# test_necessity: a successful remote post followed by local persistence failure must leave a
-# durable posted marker and block retries, otherwise recovery re-posts the same content.
-@test "x_post post: token永続化失敗をmarkerへ記録し再投稿を遮断" {
+# test_necessity: a successful remote post must leave a durable posted marker and block retries,
+# even though token persistence is owned by the pre-post refresh helper.
+@test "x_post post: 成功markerを記録し再投稿を遮断" {
     setup_x_post
-    export XDK_REMOVE_ENV_ON_POST=1
-    run env PYTHONPATH="$FIXTURE_DIR/fake_xdk" bash "$X_POST" post 2026-09-03_A
-    [ "$status" -eq 1 ]
-    [[ "$output" == *"token persistence failed"* ]]
+    run env PYTHONPATH="$FIXTURE_DIR/fake_api" bash "$X_POST" post 2026-09-03_A
+    [ "$status" -eq 0 ]
     [ -f "$X_POST_DRAFTS_DIR/2026-09-03_A.posted" ]
-    grep -q '"token_persistence": "failed"' "$X_POST_DRAFTS_DIR/2026-09-03_A.posted"
-    [ "$(grep -c '^post ' "$XDK_CALL_LOG")" -eq 1 ]
-    run env PYTHONPATH="$FIXTURE_DIR/fake_xdk" bash "$X_POST" post 2026-09-03_A
+    grep -q '"token_persistence": "persisted"' "$X_POST_DRAFTS_DIR/2026-09-03_A.posted"
+    [ "$(grep -c '^post ' "$X_API_CALL_LOG")" -eq 1 ]
+    run env PYTHONPATH="$FIXTURE_DIR/fake_api" bash "$X_POST" post 2026-09-03_A
     [ "$status" -eq 1 ]
     [[ "$output" == *"already posted"* ]]
-    [ "$(grep -c '^post ' "$XDK_CALL_LOG")" -eq 1 ]
+    [ "$(grep -c '^post ' "$X_API_CALL_LOG")" -eq 1 ]
 }
 
 # draft生成テスト専用の軽量setup。setup_x_postはdate依存の固定ファイル名
