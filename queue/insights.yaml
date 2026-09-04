@@ -16931,3 +16931,10 @@ insights:
   source: "lord_conversation:lesson_candidate"
   fix_known: false
   status: pending
+- id: INS-20260904-090725648-beaf
+  ts: "2026-09-04T09:07:25+09:00"
+  insight: "[[slot instruction slot B angle 市場の追い風を差し引いた実力比較 draft seed 年率]] semantic_stress_test candidate_aliases: NO_MATCH source=lord query=slot instruction --- slot: B angle: 市場の追い風を差し引いた実力比較 draft_seed: 年率40%と言われたら、まずそのうちどれだけが市場全体の値上がりのおかげかを疑うべきだ。 url"
+  priority: "low"
+  source: "semantic_stress_test"
+  fix_known: false
+  status: pending
