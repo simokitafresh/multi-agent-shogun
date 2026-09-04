@@ -1,3 +1,4 @@
+<!-- gist-master: 9b3325625af5cf4514b8f4354657b543 x_editorial_doctrine_20260904.md -->
 # X 運用の編集方針(殿裁定 2026-09-04 12:42) — 正本
 
 > 殿の言葉を要約せず、判断の根拠になる形で保存する。設計書 §16・system_prompt_v5・slot_calendar・stock_ledger・gate はこの文書から派生する。

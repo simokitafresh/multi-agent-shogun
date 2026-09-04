@@ -1,3 +1,4 @@
+<!-- gist-master: c61ddf066aa89a4f807fa380b98df2a7 x_post_drafts_round2_20260904.md -->
 # X 投稿 下書き 第 2 稿(新方針 A〜G、30 本)— 殿の直し待ち
 
 作成: 2026-09-04 13:00 将軍。方針正本: docs/research/x_editorial_doctrine_20260904.md(殿裁定 12:42)。
