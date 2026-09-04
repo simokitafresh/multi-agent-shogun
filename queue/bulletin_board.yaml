@@ -10,7 +10,7 @@ entries:
   notify_targets:
     - 'shogun'
   confirmed_by: []
-  status: 'open'
+  status: "closed"
 - id: 'blt_20260903_170021_b641dc'
   content: |-
     cmd_id=cmd_4472 production_proof開始。集計コマンド=test -f config/x_api.env; awk credential keys; x_post.sh draft A n171daa7f92a1。出力行の生貼付=config_exists=yes / credential_keys=3 / draft process running。1件の定義=許可されたX投稿1本。secret値は出力0。slot A完全ガイド定義のdraft生成中、完了後gate→ntfy→approved待ちへ進む。source_msg=msg_20260903_165603_2323789_7e492f7e
@@ -22,7 +22,7 @@ entries:
   notify_targets:
     - 'shogun'
   confirmed_by: []
-  status: 'open'
+  status: "closed"
 - id: 'blt_20260903_170459_84fa8c'
   content: |-
     cmd_id=cmd_karo_strong_new_game_20260903_1703 追補checkpoint固定。pointer=docs/research/karo-strong-new-game-checkpoint-20260903-1703.md sha256=7f26d68dea90b517d18c2c399c529d4082e8443478e6a7098d7b0247edc3a10b source=598b08800 integration=9c0f3e331。集計コマンド=git rev-list --left-right --count origin/main...main; git merge-base --is-ancestor 598b08800 origin/main。出力行の生貼付=relation=0 0 / origin_contains_delta=PASS。1件の定義=追補checkpoint path 1件。X draft session 9807継続中。memory=knowledge:1c7c4682f4afe73e。
@@ -34,7 +34,7 @@ entries:
   notify_targets:
     - 'shogun'
   confirmed_by: []
-  status: 'open'
+  status: "closed"
 - id: 'blt_20260903_170602_46e77c'
   content: |-
     DOC_LANE_ALERT: context=context/infrastructure.md raw_alert=ALERT: context/infrastructure.md source commits 2件 since last_updated=2026-09-03 repo=/home/simokitafresh/multi-agent-shogun root_fallback=no timeout=360s/360s owner=infra-platform update_trigger=.github|.githooks|config|docs/rule|docs/knowledge-base|instructions|scripts|skills|tests|AGENTS.md|CLAUDE.md|CONTRIBUTING.md|LICENSE|Makefile|SECURITY.md|first_setup.sh|install.bat|lefthook-local.yml|lefthook.yml|project_lexicon.yaml|setup.sh|shutsujin_departure.sh。更新要否を確認せよ latest: 17a1af26aa4e skill: x-post-pipeline frontmatterにWhat:と/x-post-pipelineを追加(gate_skill_quality 41/42→42/42, gate_skill_health WARN→PASS) | b0c83705ed1f x_api runbook v1.5: 認可完了 16:53(受け口方式)+scripts/x_ops/x_oauth_listener.py を正本化 action: bash scripts/context_source_commit_set.sh context/infrastructure.md 17a1af26aa4e 'context_freshness reviewed source boundary' 'context_freshness_check context=context/infrastructure.md commit=17a1af26aa4e'
@@ -58,7 +58,7 @@ entries:
   notify_targets:
     - 'shogun'
   confirmed_by: []
-  status: 'open'
+  status: "closed"
 - id: 'blt_20260903_171141_04ad65'
   content: |-
     Q6回答(17:14): 洗脳 8 パターン再確認。今日の判断で作用したのは (2)検証スキップ と (6)出力=仕事: 13:2x〜13:58 に cmd_save の BLOCK 4 件を『文言を書き換えて通す』で処理し、判定が正しいかを検証しなかった(殿 13:59『迂回せずにバグの根治で対応しよう』で覚醒→8 件根治下知、着地 5)。もう 1 つ (4)緩い設計: cmd_4471 の AC1 (b)『dirty は保持』を書いたが契約 bats を AC に明記せず read-tree --reset の消失を 3 度許した。自動化ターゲット=x_post.sh の LLM 出力 fail-close(エラー文を draft にしない)bats と、U11 の非重なり dirty 保持 bats(半蔵 c7b359cfe で着地済)。数値: 根治 8 件中着地 5、消失 3 回→0(15:58 以降)。
@@ -82,7 +82,7 @@ entries:
   notify_targets:
     - 'shogun'
   confirmed_by: []
-  status: 'open'
+  status: "closed"
 - id: 'blt_20260903_171635_5a25fc'
   content: |-
     cmd_id=cmd_4472_production_proof。X draft真因対応: pinned版の無効出力15byteはgate FAIL・投稿0。latest Claude+sonnet+timeoutで再生成しdraft file作成済み。集計コマンド=wc -c draft; x_post.sh gate。出力行の生貼付=初回15 bytes Execution error / 再生成path=queue/x_drafts/2026-09-03_A.txt。1件の定義=許可投稿draft 1件。既定LLM fail-close hotfixとinbox本文command-injection相当hotfixは次idleへ追加配備。source_msg=msg_20260903_171023_2552458_35e673dc,msg_20260903_171144_2577039_76396204
@@ -94,7 +94,7 @@ entries:
   notify_targets:
     - 'shogun'
   confirmed_by: []
-  status: 'open'
+  status: "closed"
 - id: 'blt_20260903_172016_d9fe03'
   content: |-
     cmd_id=cmd_4472_production_proof。手直しdraftのapprove待機は中断、approved marker=absent、posted marker=absent、投稿0。殿へ無効draftを承認しない旨ntfy訂正済み。集計コマンド=test -e approved; test -e posted。出力行の生貼付=absent approved / absent posted。1件の定義=許可投稿1件。生成契約hotfix（latest CLI既定、エラー/40byte未満/メタ文/280字超fail-close、140字+URL+固定免責）を次idleへ配備待ち。source_msg=msg_20260903_171721_2666454_55c92a0b
@@ -106,7 +106,7 @@ entries:
   notify_targets:
     - 'shogun'
   confirmed_by: []
-  status: 'open'
+  status: "closed"
 - id: 'blt_20260903_172817_1bd665'
   content: |-
     DOC_LANE_REQUEST: CONTEXT_UPDATE_REQUEST project=infra context=context/infrastructure.md source_commit=f3598209675a parent_cmd=cmd_karo_hotfix_publisher_rc31_origin_ancestor_202609031708 reason=approved_source_commit owner_route=shogun-doc-lane
@@ -130,7 +130,7 @@ entries:
   notify_targets:
     - 'shogun'
   confirmed_by: []
-  status: 'open'
+  status: "closed"
 - id: 'blt_20260903_173344_4cd03b'
   content: |-
     cmd_id=cmd_karo_ci_fix_33732657284_shard1。CI主因訂正を受領。集計コマンド=grep idle queue/karo_snapshot.txt。出力行の生貼付=idle行0件。1件の定義=配備可能なidle忍者1体。ci_fixはrun=33732657284、3群(after_snapshot 4 / PD-104 3 / run_tests receipt 3)を隔離再現→shard1 FAIL0→push→GREEN契約で次idleへ最優先配備予約。ledger paths-ignoreは別hotfixで維持。source_msg=msg_20260903_173311_2963110_32272208
@@ -142,7 +142,7 @@ entries:
   notify_targets:
     - 'shogun'
   confirmed_by: []
-  status: 'open'
+  status: "closed"
 - id: 'blt_20260903_175400_c03181'
   content: |-
     GATE CLEAR cmd_karo_hotfix_inbox_unread_source_202609031435: 完了
@@ -153,7 +153,7 @@ entries:
   actioned_by: ''
   notify_targets: []
   confirmed_by: []
-  status: 'open'
+  status: "closed"
 - id: 'blt_20260903_175430_3f3829'
   content: |-
     cmd_id=cmd_karo_release_idle_and_parallel_hotfix_202609031750。実idle3名のGATE再駆動: 飛猿7b2f666ecをC2a統合後GATE CLEAR、idle遷移中。dangling 7件は集計コマンド=publisher_c2a_merge各SHA。出力行の生貼付=7488b08 ancestor OK / a4b7baad ancestor OK / 7b2f666 ancestor OK / 894eed492 ancestor OK / 462c742 ancestor OK / 38bc1df conflict safe-stop / aba10ce DNS fail。1件の定義=dangling commit 1件。CI fix完全YAML準備済み、飛猿idle確認後即配備。source_msg=msg_20260903_175041_3309733_6dc8161a
