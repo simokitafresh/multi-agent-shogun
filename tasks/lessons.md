@@ -17012,3 +17012,17 @@ sqlite3.Connection.backup()を使うとページ(4096byte)単位のread syscall�
 - **when**: 未設定
 - **how**: 未設定
 - cmd_complete_gate.shのL4分岐でif cmd_complete_gate_auto_push_ancestry_wait ...; thenをasync dispatch呼び出しへ置換した際、同じ文字列をgrep -Fcで検査するtest_cmd_complete_gate.bats:9602(本taskのtarget_path外)がFAILすることが判明した。関数のリネーム/呼び出し形状変更前には、対象scriptを参照する全test file(tests/配下全体)をgrep -rln '<関数名>'で洗い出し、target_path内で修正できないtarget_path外の破壊はdecision_candidateで即報告する運用を徹底すべき。origin: [[cmd_karo_hotfix_t3s40_auto_push_wait_async_202609040724]] -> [[L4分岐の同期呼び出しをasync dispatchへ置換]] -> [[target_path外test_cmd_complete_gate.bats:9602のgrep構造assertionがFAIL]]
+
+
+### L1735: 既定値変更・bypass拡張は全呼出し元/既存testの再監査とセットで行え
+- **日付**: 2026-09-04
+- **出典**: cmd_karo_ci_fix_33814810266_flaky_second_202609040832
+- **記録者**: kotaro
+- **tags**: [infra,deploy-task,deploy,testing,gate]
+- **subdomain**: infra
+- **target_files**: [scripts/deploy_task/main.sh,scripts/inbox_drain.sh,tests/unit/test_lock_path.bats,tests/unit/test_inbox_mark_read_bulk_guard.bats,tests/unit/test_inbox_processing_receipt.bats]
+- **origin**: [[cmd_karo_ci_fix_33814810266_flaky_second_202609040832]]
+- **enforcement**: 未自動化
+- **when**: 未設定
+- **how**: 未設定
+- 2つの独立した本番裁定(T3-S-54: 2026-09-04 06:28 bulk mark-read guard既定WARN→BLOCK、T3-S-49: 2026-09-04 07:00 deploy_task_current_report_is_await_clearをin_progress限定からstatus=done/in_progress両対応へ拡張)が、それぞれ意図した1目的は正しく達成しつつ、(a)既定値変更はそれに依存する既存test(WARN前提のassertion)を同一commitで更新せず放置し、(b)bypass関数拡張はcmd識別なしで呼び出す既存の呼出し元(deploy_task_guard_worker_assignmentのcross-cmd保護)を再監査せず、結果として全く無関係な保護(別cmdによるdone task上書き禁止)を意図せず迂回する回帰を生んだ。origin: [[T3-S-54_bulk_guard既定BLOCK化]] + [[T3-S-49_await_clear_status_done拡張]] -> [[5test_flaky_2回連続_CI33814810266]]。次回追加すべきチェック: (1)security/guard関連の既定値(ENV var default)を変更するcommitは、その既定値を直接参照するtest(assertion内にBLOCK/WARN/PASS等の期待値がハードコードされたもの)をgrepし同一commitで更新する (2)fast-path/bypass関数の適用条件(if文)を拡張するcommitは、その関数を呼び出す全call siteを列挙し、各呼出し元が『cmd/task/agent等の識別子一致』を暗黙前提にしていないか再確認する。
