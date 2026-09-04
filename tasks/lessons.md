@@ -17124,3 +17124,17 @@ sqlite3.Connection.backup()を使うとページ(4096byte)単位のread syscall�
 - **when**: 未設定
 - **how**: 未設定
 - 旧recon報告のcommit_hash空/files_modified=N/Aは、N/A文字列だけをno-code扱いすると実装taskの偽装余地になる。task/reportのrecon一致、明示commit N/A、before_tree=after_treeの40hex、tree実在、required=true拒否を全て機械判定し、legacy許可1/拒否4を323件suiteで固定する。
+
+
+### L1743: legacy no-codeの証拠はreportではなくtask現物で再構成する
+- **日付**: 2026-09-05
+- **出典**: cmd_karo_hotfix_release_legacy_nocode_recon_v2
+- **記録者**: kagemaru
+- **tags**: [infra,cmd-quality,gate]
+- **subdomain**: infra
+- **target_files**: [scripts/cmd_complete_gate.sh,scripts/lib/report_commit_identity.py,tests/unit/test_cmd_complete_gate.bats]
+- **origin**: [[cmd_karo_hotfix_release_legacy_nocode_recon_v2]]
+- **enforcement**: 未自動化
+- **when**: 未設定
+- **how**: 未設定
+- 旧reportに新形式証拠がない場合も、task固定baseとtask worktree対象scopeをゲートが直接照合すれば形式移行なしで安全に救済できる。ただしbase不在・tree drift・実装・identity不一致は必ずBLOCKする。
