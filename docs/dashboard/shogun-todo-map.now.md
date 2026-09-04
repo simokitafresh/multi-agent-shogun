@@ -1,5 +1,5 @@
-- 12:40 図の生産ライン: 飛猿 CLEAR 12:27(dm-signal 公開表 capture=C 枠採用、fig3 月次チェックリスト=D 枠、抽象 3 ステップで殿裁定 12:00 準拠)。小太郎 図1 は抽象 4 要素で作り直し中。疾風 B 偵察 CLEAR 11:51
-- 殿裁定 12:00『具象化は危険、本質を抽象化』を下書き 6 本/prompt/gate/図1・図3 へ反映済み(artifact 113cfdcf 12:03 版)
-- 11:45 T236/T226/T226b クローズ。以後は将軍 loop で日次 close_check 監視。GATE-STALL 0、root behind 0
-- 殿の手が要るもの 2 つ: X 再認可(要操作 topic に URL 送信済み)、下書き 25 本の直し(artifact コメント)
-- CI 33833338308 failure(12:3x)→家老 lane で診断・配備。影丸 hot_reload 3 回目は C2a RC→現行 tip へ再適用中
+- 13:30 X 運用: 殿裁定 12:42 方針 v2(A〜G、80/15/5)→13:08 author corpus 段階。note 64 記事 corpus 化(です・ます 100%、だ体 0)、Round2 評価 KEEP15/REWRITE12/DROP3、Round3 30 本を note Voice で暫定再生成(artifact 52022ffb、★10 本は殿の直し待ち)。X 本人投稿は再認可待ち+Grok x_search 収集走行中
+- X 認可の自動化: x_token_keeper.sh を cron */30 に登録。殿の 1 回目の許可(URL 送信済み)で以後は無人。認可後は第 1 弾差替え+本人 X 3,200 件取得が自動
+- 図: fig1(抽象)・fig3・公開表 capture 着地。次の図は殿が採用した投稿だけ起こす
+- CI: 影丸 hot_reload CLEAR 13:02。疾風 ci_fix(review_approval RC 19 tests)走行、半蔵 T3-S-64(test 通知の隔離)走行。最新 run pending
+- 単一 publisher クローズ後の監視: GATE-STALL 0、root behind 0。家老 Codex context 79%=次 idle で respawn 対象
