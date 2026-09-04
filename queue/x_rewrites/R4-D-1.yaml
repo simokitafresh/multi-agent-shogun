@@ -1,0 +1,38 @@
+draft_id: R4-D-1
+slot: D
+created_at: 2026-09-04T14:01:38+09:00
+original_llm: |
+    +50%の後に-50%では元に戻らない。100→150→75。
+
+    戻すには+33%じゃなくて+100%が要る。-80%なら+400%。
+
+    損失は非対称。下落幅を抑えるのは、上昇を追うより算数的に強いんよ。
+human_rewrite: |
+    +50%の後に-50%では元に戻らない。100→150→75。
+
+    戻すには+33%じゃなくて+100%が要る。-80%なら+400%。
+
+    損失は非対称。下落幅を抑えるのは、上昇を追うより算数的に強いんよ。
+
+    だからこそデュアルモメンタムの防御力が攻めにも役に立つ
+delta_notes: |
+    - 本文 3 段落は無修正(採用)
+    - 4 段落目を追加: 数学ネタをデュアルモメンタムへ橋渡し『防御力が攻めにも役に立つ』(D 枠でも DM への接続を 1 行)
+    - 句点なしで終える
+tone_tags: ['橋渡し', '句点なし終止']
+structure_tags: ['数学→DM への一行接続']
+source_style_cluster: 'X 投資系単独(2026-06〜09)'
+source_x_examples: []
+source_note_examples: []
+posted:
+  post_id: ''
+  posted_at: ''
+kpi:
+  impressions: null
+  likes: null
+  reposts: null
+  replies: null
+  bookmarks: null
+  profile_visits: null
+  link_clicks: null
+  follows: null

@@ -1,0 +1,36 @@
+draft_id: R4-A-3
+slot: A
+created_at: 2026-09-04T14:01:38+09:00
+original_llm: |
+    +50%と-50%を交互に繰り返す資産。平均リターンは0%。
+
+    でも実際の資産は100→150→75→112→56。減っていく。
+
+    長期の資産成長を決めるのは算術平均じゃなくて幾何平均。平均で比べると同じに見える2つの戦略が、経路で見ると片方は消える。
+human_rewrite: |
+    +50%と-50%を交互に繰り返す資産。一見すると増えも減りもせずにとんとん。
+
+    でも実際の資産は100→150→75→112→56。減っていく。
+
+    長期の資産成長を決めるのは算術平均じゃなくて幾何平均。指数関数的に増やしたいならCAGRは重要だ。
+delta_notes: |
+    - 『平均リターンは0%』の用語→『一見すると増えも減りもせずにとんとん』の日常語
+    - 抽象の補足(経路で見ると片方は消える)を捨て、実務語 CAGR へ着地『指数関数的に増やしたいならCAGRは重要だ』
+    - だ体の断定で締める(X では可)
+tone_tags: ['日常語', '断定']
+structure_tags: ['数字→解釈', '実務語で締める']
+source_style_cluster: 'X 投資系単独(2026-06〜09)'
+source_x_examples: []
+source_note_examples: []
+posted:
+  post_id: ''
+  posted_at: ''
+kpi:
+  impressions: null
+  likes: null
+  reposts: null
+  replies: null
+  bookmarks: null
+  profile_visits: null
+  link_clicks: null
+  follows: null

@@ -1,0 +1,35 @@
+draft_id: R4-C-4
+slot: C
+created_at: 2026-09-04T14:01:38+09:00
+original_llm: |
+    検証の目的を「最良の設定を探すこと」だと思うと失敗する。
+
+    目的は「壊れる領域が無いことを確認すること」。最良の1点は偶然でも作れる。壊れない台地は偶然では作れない。
+
+    だから僕は最良値を報告するより、崩壊する条件を探して、無かったことを報告する。
+human_rewrite: |
+    検証の目的を「最良の設定を探すこと」だと思うと失敗する。
+
+    目的は「壊れる領域が無いことを確認すること」。最良の1点は偶然でも作れる。壊れない土台は偶然では作れない。
+
+    オーバーフィッティングの誘惑に負けたらオシマイ。だめだとわかればそれはそれでハッピーなんよね。
+delta_notes: |
+    - 『台地』→『土台』(平易語)
+    - 『僕は〜を報告する』の姿勢文→『オーバーフィッティングの誘惑に負けたらオシマイ』(専門語+片仮名の断罪)+『だめだとわかればそれはそれでハッピーなんよね』(失敗を歓迎する態度)
+tone_tags: ['片仮名断罪', '明るい自嘲', '口語']
+structure_tags: ['定義→反例→態度で締める']
+source_style_cluster: 'X 投資系単独(2026-06〜09)'
+source_x_examples: []
+source_note_examples: []
+posted:
+  post_id: ''
+  posted_at: ''
+kpi:
+  impressions: null
+  likes: null
+  reposts: null
+  replies: null
+  bookmarks: null
+  profile_visits: null
+  link_clicks: null
+  follows: null

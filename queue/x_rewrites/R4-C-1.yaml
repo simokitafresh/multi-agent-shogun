@@ -1,0 +1,39 @@
+draft_id: R4-C-1
+slot: C
+created_at: 2026-09-04T14:01:38+09:00
+original_llm: |
+    「年率90%のバックテストです」と言われたら、驚く前に市場の追い風を引く。
+
+    リターンを市場に回帰してβを出して、βの分を引く。残ったのがα。
+
+    追い風を引いてもαが残るか。これが第一関門で、関門はあと4つある。
+human_rewrite: |
+    「年率90%のバックテストです」と言われたら？
+    驚いたり疑ったり喜んだりする前にやることがある。
+
+    β調整後リターンをWFで分析しろ。
+
+    それでもαが残るか。
+    これでふるい落とされるような投資戦略はもろい。
+delta_notes: |
+    - 開きを疑問形『〜と言われたら？』に(『？』を本文で使う)
+    - 手順の説明(回帰してβを出して引く)→命令形の専門語 1 行『β調整後リターンをWFで分析しろ。』
+    - 『関門はあと4つある』の予告を捨て、評価『ふるい落とされる戦略はもろい』で締める
+    - 1 行改行を多用(段落内でも改行)
+tone_tags: ['命令形', '専門語をそのまま', '疑問で開く']
+structure_tags: ['問い→やること→判定']
+source_style_cluster: 'X 投資系単独(2026-06〜09)'
+source_x_examples: []
+source_note_examples: []
+posted:
+  post_id: ''
+  posted_at: ''
+kpi:
+  impressions: null
+  likes: null
+  reposts: null
+  replies: null
+  bookmarks: null
+  profile_visits: null
+  link_clicks: null
+  follows: null

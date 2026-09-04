@@ -1,0 +1,36 @@
+draft_id: R4-B-3
+slot: B
+created_at: 2026-09-04T14:01:38+09:00
+original_llm: |
+    1974〜2023年、GEMの年率14.5%、S&P500は10.8%。差は3.7ポイント。
+
+    MaxDDはGEM -22.7%、S&P500 -50.9%。
+
+    デュアルモメンタムの本質は大勝ちじゃない。年率の差より最悪の谷の差の方がずっと大きい。ここに構造がある。
+human_rewrite: |
+    1974〜2023年、GEM（本家デュアルモメンタム）の年率14.5%、S&P500は10.8%。差は3.7ポイント。
+
+    MaxDDはGEM -22.7%、S&P500 -50.9%。
+
+    デュアルモメンタムの本質は大勝ちじゃない。ディフェンス重視。だから長期投資でデュアルモメンタムは輝くんよ
+delta_notes: |
+    - GEM に『（本家デュアルモメンタム）』の注釈=専門語は省かず一言で説明
+    - 『年率の差より最悪の谷の差の方がずっと大きい。ここに構造がある』→『ディフェンス重視。だから長期投資で〜輝くんよ』=抽象語(構造)を捨て、読者の行動(長期投資)へ
+    - 句点なしの『んよ』で終える
+tone_tags: ['注釈', '口語', '句点なし終止']
+structure_tags: ['数字→結論→読者の行動']
+source_style_cluster: 'X 投資系単独(2026-06〜09)'
+source_x_examples: []
+source_note_examples: []
+posted:
+  post_id: ''
+  posted_at: ''
+kpi:
+  impressions: null
+  likes: null
+  reposts: null
+  replies: null
+  bookmarks: null
+  profile_visits: null
+  link_clicks: null
+  follows: null
