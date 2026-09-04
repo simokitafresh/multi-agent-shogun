@@ -17969,3 +17969,17 @@ insights:
   status: "resolved"
   action_artifact: "semantic_index=/home/simokitafresh/multi-agent-shogun/docs/semantic-index/index.md"
   resolved_reason: "semantic index candidate was absorbed into a registered concept"
+- id: INS-20260905-025457171-a64a
+  ts: "2026-09-05T02:54:57+09:00"
+  insight: "[[殿 02 42『LP・Free tier・マーケティング導線を再調査し次段を設計]] semantic_stress_test candidate_aliases: NO_MATCH source=cmds query=殿 2026-09-05 02:42『LP・Free tier・マーケティング導線を再調査し次段を設計。Core LP は SEO・ブランド母艦として完成、Simple LP 1 本だけの価値検証、Google Auth→Free tier を Interactive Proof に、Core vs Simple の流入差を計測可能に。勝手に実装しない』。将"
+  priority: "low"
+  source: "semantic_stress_test"
+  fix_known: false
+  status: pending
+- id: INS-20260905-025459587-2da5
+  ts: "2026-09-05T02:54:59+09:00"
+  insight: "[[偵察 DM Signal Core LP Free tier Google Auth coupon visibility]] semantic_stress_test candidate_aliases: NO_MATCH source=cmds query=偵察: DM-Signal Core LP/Free tier/Google Auth/coupon/visibility/Performance 画面/analytics/note 導線の AsIs を現行コード・本番 DB(readonly)・本番実測で全数確認し、Core vs Simple LP+Free Interactive Proof 設計の材"
+  priority: "low"
+  source: "semantic_stress_test"
+  fix_known: false
+  status: pending
