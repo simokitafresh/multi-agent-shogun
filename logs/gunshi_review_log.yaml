@@ -4063,6 +4063,8 @@
 - cmd_id: cmd_karo_hotfix_t3s63_action_ntfy_split_202609041040
   verdict: LGTM
   review_type: report
+  gate_result: "CLEAR"
+  gate_synced_at: "2026-09-04T11:12:57+09:00"
   reviewed_at: '2026-09-04T11:02:00+09:00'
   report_fingerprint: db0af5b4d423
   report_ninja: hanzo
@@ -4104,6 +4106,8 @@
 - cmd_id: cmd_karo_hotfix_t3s63_action_ntfy_split_202609041040
   verdict: FAIL
   review_type: report
+  gate_result: "CLEAR"
+  gate_synced_at: "2026-09-04T11:12:57+09:00"
   reviewed_at: '2026-09-04T11:06:00+09:00'
   report_fingerprint: db0af5b4d423
   report_ninja: hanzo
