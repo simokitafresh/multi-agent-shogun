@@ -935,3 +935,1218 @@ entries:
   post_id: ''
   posted_at: ''
   snapshots: {}
+- draft_id: P9-S-1
+  draft_file: queue/x_drafts/2026-09-04_P9-S-1.txt
+  growth:
+    format: short
+    physical_posts: 1
+    content_lane: investing
+    content_category: A
+    funnel_stage: reach
+    audience: investor
+    hook_type: contradiction
+    desired_action: [dwell, reply, quote, profile]
+    conversation_gap: medium
+    link_type: none
+    external_context: standalone
+    plan_id: plan_202609
+    claim_key: C01
+    claim_origin: existing_user_thesis
+    approved: ''
+    scheduled: '2026-09-05 08:30'
+  post_id: ''
+  posted_at: ''
+  snapshots: {}
+- draft_id: P9-SE-1
+  draft_file: queue/x_drafts/2026-09-04_P9-SE-1.txt
+  growth:
+    format: series_entry
+    physical_posts: 1
+    content_lane: investing
+    content_category: E
+    funnel_stage: follow
+    audience: systematic
+    hook_type: contradiction
+    desired_action: [profile, follow, bookmark]
+    conversation_gap: medium
+    link_type: none
+    external_context: standalone
+    plan_id: plan_202609
+    claim_key: C07
+    claim_origin: existing_user_thesis
+    approved: ''
+    series_id: break_point
+    series_order: 1
+    series_total: 8
+    scheduled: '2026-09-05 18:30'
+  post_id: ''
+  posted_at: ''
+  snapshots: {}
+- draft_id: P9-S-2
+  draft_file: queue/x_drafts/2026-09-04_P9-S-2.txt
+  growth:
+    format: short
+    physical_posts: 1
+    content_lane: investing
+    content_category: B
+    funnel_stage: follow
+    audience: investor
+    hook_type: story
+    desired_action: [profile, follow, bookmark]
+    conversation_gap: medium
+    link_type: none
+    external_context: standalone
+    plan_id: plan_202609
+    claim_key: C10
+    claim_origin: existing_user_thesis
+    approved: ''
+    scheduled: '2026-09-06 08:30'
+  post_id: ''
+  posted_at: ''
+  snapshots: {}
+- draft_id: P9-L-1
+  draft_file: queue/x_drafts/2026-09-04_P9-L-1.txt
+  growth:
+    format: long
+    physical_posts: 1
+    content_lane: investing
+    content_category: A
+    funnel_stage: trust
+    audience: investor
+    hook_type: story
+    desired_action: [bookmark, profile, note]
+    conversation_gap: medium
+    link_type: none
+    external_context: standalone
+    plan_id: plan_202609
+    claim_key: C05
+    claim_origin: existing_user_thesis
+    approved: ''
+    scheduled: '2026-09-06 18:30'
+  post_id: ''
+  posted_at: ''
+  snapshots: {}
+- draft_id: P9-S-3
+  draft_file: queue/x_drafts/2026-09-04_P9-S-3.txt
+  growth:
+    format: short
+    physical_posts: 1
+    content_lane: investing
+    content_category: C
+    funnel_stage: reach
+    audience: investor
+    hook_type: contradiction
+    desired_action: [dwell, reply, quote, profile]
+    conversation_gap: medium
+    link_type: none
+    external_context: standalone
+    plan_id: plan_202609
+    claim_key: C14
+    claim_origin: existing_user_thesis
+    approved: ''
+    scheduled: '2026-09-07 08:30'
+  post_id: ''
+  posted_at: ''
+  snapshots: {}
+- draft_id: P9-S-4
+  draft_file: queue/x_drafts/2026-09-04_P9-S-4.txt
+  growth:
+    format: short
+    physical_posts: 1
+    content_lane: investing
+    content_category: C
+    funnel_stage: reach
+    audience: investor
+    hook_type: result
+    desired_action: [dwell, reply, quote, profile]
+    conversation_gap: medium
+    link_type: none
+    external_context: standalone
+    plan_id: plan_202609
+    claim_key: C21
+    claim_origin: existing_user_thesis
+    approved: ''
+    scheduled: '2026-09-08 08:30'
+  post_id: ''
+  posted_at: ''
+  snapshots: {}
+- draft_id: P9-SE-3
+  draft_file: queue/x_drafts/2026-09-04_P9-SE-3.txt
+  growth:
+    format: series_entry
+    physical_posts: 1
+    content_lane: investing
+    content_category: C
+    funnel_stage: follow
+    audience: systematic
+    hook_type: contradiction
+    desired_action: [profile, follow, bookmark]
+    conversation_gap: medium
+    link_type: none
+    external_context: standalone
+    plan_id: plan_202609
+    claim_key: C08
+    claim_origin: existing_user_thesis
+    approved: ''
+    series_id: break_point
+    series_order: 2
+    series_total: 8
+    scheduled: '2026-09-08 18:30'
+  post_id: ''
+  posted_at: ''
+  snapshots: {}
+- draft_id: P9-S-5
+  draft_file: queue/x_drafts/2026-09-04_P9-S-5.txt
+  growth:
+    format: short
+    physical_posts: 1
+    content_lane: investing
+    content_category: C
+    funnel_stage: reach
+    audience: investor
+    hook_type: math
+    desired_action: [dwell, reply, quote, profile]
+    conversation_gap: medium
+    link_type: none
+    external_context: standalone
+    plan_id: plan_202609
+    claim_key: C27
+    claim_origin: existing_user_thesis
+    approved: ''
+    scheduled: '2026-09-09 08:30'
+  post_id: ''
+  posted_at: ''
+  snapshots: {}
+- draft_id: P9-T-1-P
+  draft_file: queue/x_drafts/2026-09-04_P9-T-1-P.txt
+  growth:
+    format: thread
+    physical_posts: 1
+    content_lane: investing
+    content_category: D
+    funnel_stage: reach
+    audience: general
+    hook_type: math
+    desired_action: [dwell, reply, quote, profile]
+    conversation_gap: medium
+    link_type: none
+    external_context: standalone
+    plan_id: plan_202609
+    claim_key: C04
+    claim_origin: existing_user_thesis
+    approved: ''
+    thread_id: P9-T-1
+    thread_position: 0
+    scheduled: '2026-09-09 18:30'
+  post_id: ''
+  posted_at: ''
+  snapshots: {}
+- draft_id: P9-T-1-R1
+  draft_file: queue/x_drafts/2026-09-04_P9-T-1-R1.txt
+  growth:
+    format: thread
+    physical_posts: 1
+    content_lane: investing
+    content_category: D
+    funnel_stage: reach
+    audience: general
+    hook_type: math
+    desired_action: [dwell, reply, quote, profile]
+    conversation_gap: medium
+    link_type: none
+    external_context: standalone
+    plan_id: plan_202609
+    claim_key: C04
+    claim_origin: existing_user_thesis
+    approved: ''
+    thread_id: P9-T-1
+    thread_position: 1
+    scheduled: '2026-09-09 18:30'
+  post_id: ''
+  posted_at: ''
+  snapshots: {}
+- draft_id: P9-T-1-R2
+  draft_file: queue/x_drafts/2026-09-04_P9-T-1-R2.txt
+  growth:
+    format: thread
+    physical_posts: 1
+    content_lane: investing
+    content_category: D
+    funnel_stage: reach
+    audience: general
+    hook_type: math
+    desired_action: [dwell, reply, quote, profile]
+    conversation_gap: medium
+    link_type: none
+    external_context: standalone
+    plan_id: plan_202609
+    claim_key: C04
+    claim_origin: existing_user_thesis
+    approved: ''
+    thread_id: P9-T-1
+    thread_position: 2
+    scheduled: '2026-09-09 18:30'
+  post_id: ''
+  posted_at: ''
+  snapshots: {}
+- draft_id: P9-T-1-R3
+  draft_file: queue/x_drafts/2026-09-04_P9-T-1-R3.txt
+  growth:
+    format: thread
+    physical_posts: 1
+    content_lane: investing
+    content_category: D
+    funnel_stage: reach
+    audience: general
+    hook_type: math
+    desired_action: [dwell, reply, quote, profile]
+    conversation_gap: medium
+    link_type: none
+    external_context: standalone
+    plan_id: plan_202609
+    claim_key: C04
+    claim_origin: existing_user_thesis
+    approved: ''
+    thread_id: P9-T-1
+    thread_position: 3
+    scheduled: '2026-09-09 18:30'
+  post_id: ''
+  posted_at: ''
+  snapshots: {}
+- draft_id: P9-S-6
+  draft_file: queue/x_drafts/2026-09-04_P9-S-6.txt
+  growth:
+    format: short
+    physical_posts: 1
+    content_lane: investing
+    content_category: C
+    funnel_stage: reach
+    audience: investor
+    hook_type: question
+    desired_action: [dwell, reply, quote, profile]
+    conversation_gap: medium
+    link_type: none
+    external_context: standalone
+    plan_id: plan_202609
+    claim_key: C31
+    claim_origin: external_topic
+    approved: ''
+    scheduled: '2026-09-10 08:30'
+  post_id: ''
+  posted_at: ''
+  snapshots: {}
+- draft_id: P9-SE-4
+  draft_file: queue/x_drafts/2026-09-04_P9-SE-4.txt
+  growth:
+    format: series_entry
+    physical_posts: 1
+    content_lane: investing
+    content_category: D
+    funnel_stage: follow
+    audience: investor
+    hook_type: math
+    desired_action: [profile, follow, bookmark]
+    conversation_gap: medium
+    link_type: none
+    external_context: standalone
+    plan_id: plan_202609
+    claim_key: C03
+    claim_origin: existing_user_thesis
+    approved: ''
+    series_id: invest_math
+    series_order: 2
+    series_total: 8
+    scheduled: '2026-09-10 18:30'
+  post_id: ''
+  posted_at: ''
+  snapshots: {}
+- draft_id: P9-S-7
+  draft_file: queue/x_drafts/2026-09-04_P9-S-7.txt
+  growth:
+    format: short
+    physical_posts: 1
+    content_lane: investing
+    content_category: C
+    funnel_stage: reach
+    audience: investor
+    hook_type: contradiction
+    desired_action: [dwell, reply, quote, profile]
+    conversation_gap: medium
+    link_type: none
+    external_context: standalone
+    plan_id: plan_202609
+    claim_key: C06
+    claim_origin: existing_user_thesis
+    approved: ''
+    reuse_of: C06
+    reuse_reason: 'Short で問題提起した claim を long で検証まで掘る(5 日以上後)'
+    scheduled: '2026-09-11 08:30'
+  post_id: ''
+  posted_at: ''
+  snapshots: {}
+- draft_id: P9-L-2
+  draft_file: queue/x_drafts/2026-09-04_P9-L-2.txt
+  growth:
+    format: long
+    physical_posts: 1
+    content_lane: investing
+    content_category: B
+    funnel_stage: trust
+    audience: systematic
+    hook_type: result
+    desired_action: [bookmark, profile, note]
+    conversation_gap: medium
+    link_type: none
+    external_context: standalone
+    plan_id: plan_202609
+    claim_key: C15
+    claim_origin: existing_user_thesis
+    approved: ''
+    scheduled: '2026-09-11 18:30'
+  post_id: ''
+  posted_at: ''
+  snapshots: {}
+- draft_id: P9-S-8
+  draft_file: queue/x_drafts/2026-09-04_P9-S-8.txt
+  growth:
+    format: short
+    physical_posts: 1
+    content_lane: investing
+    content_category: F
+    funnel_stage: trust
+    audience: investor
+    hook_type: result
+    desired_action: [bookmark, profile, note]
+    conversation_gap: medium
+    link_type: none
+    external_context: standalone
+    plan_id: plan_202609
+    claim_key: C33
+    claim_origin: external_topic
+    approved: ''
+    scheduled: '2026-09-12 08:30'
+  post_id: ''
+  posted_at: ''
+  snapshots: {}
+- draft_id: P9-SE-5
+  draft_file: queue/x_drafts/2026-09-04_P9-SE-5.txt
+  growth:
+    format: series_entry
+    physical_posts: 1
+    content_lane: investing
+    content_category: E
+    funnel_stage: follow
+    audience: systematic
+    hook_type: result
+    desired_action: [profile, follow, bookmark]
+    conversation_gap: medium
+    link_type: none
+    external_context: standalone
+    plan_id: plan_202609
+    claim_key: C24
+    claim_origin: existing_user_thesis
+    approved: ''
+    series_id: break_point
+    series_order: 3
+    series_total: 8
+    scheduled: '2026-09-12 18:30'
+  post_id: ''
+  posted_at: ''
+  snapshots: {}
+- draft_id: P9-S-9
+  draft_file: queue/x_drafts/2026-09-04_P9-S-9.txt
+  growth:
+    format: short
+    physical_posts: 1
+    content_lane: investing
+    content_category: D
+    funnel_stage: reach
+    audience: investor
+    hook_type: math
+    desired_action: [dwell, reply, quote, profile]
+    conversation_gap: medium
+    link_type: none
+    external_context: standalone
+    plan_id: plan_202609
+    claim_key: C11
+    claim_origin: existing_user_thesis
+    approved: ''
+    reuse_of: C11
+    reuse_reason: 'Short で問題提起した claim を series_entry で検証まで掘る(5 日以上後)'
+    scheduled: '2026-09-13 08:30'
+  post_id: ''
+  posted_at: ''
+  snapshots: {}
+- draft_id: P9-SE-6
+  draft_file: queue/x_drafts/2026-09-04_P9-SE-6.txt
+  growth:
+    format: series_entry
+    physical_posts: 1
+    content_lane: investing
+    content_category: A
+    funnel_stage: follow
+    audience: investor
+    hook_type: math
+    desired_action: [profile, follow, bookmark]
+    conversation_gap: medium
+    link_type: none
+    external_context: standalone
+    plan_id: plan_202609
+    claim_key: C23
+    claim_origin: existing_user_thesis
+    approved: ''
+    series_id: invest_math
+    series_order: 3
+    series_total: 8
+    scheduled: '2026-09-13 18:30'
+  post_id: ''
+  posted_at: ''
+  snapshots: {}
+- draft_id: P9-S-10
+  draft_file: queue/x_drafts/2026-09-04_P9-S-10.txt
+  growth:
+    format: short
+    physical_posts: 1
+    content_lane: investing
+    content_category: B
+    funnel_stage: reach
+    audience: investor
+    hook_type: contradiction
+    desired_action: [dwell, reply, quote, profile]
+    conversation_gap: medium
+    link_type: none
+    external_context: standalone
+    plan_id: plan_202609
+    claim_key: C34
+    claim_origin: external_topic
+    approved: ''
+    scheduled: '2026-09-14 08:30'
+  post_id: ''
+  posted_at: ''
+  snapshots: {}
+- draft_id: P9-L-3
+  draft_file: queue/x_drafts/2026-09-04_P9-L-3.txt
+  growth:
+    format: long
+    physical_posts: 1
+    content_lane: investing
+    content_category: B
+    funnel_stage: reach
+    audience: investor
+    hook_type: contradiction
+    desired_action: [dwell, reply, quote, profile]
+    conversation_gap: medium
+    link_type: none
+    external_context: standalone
+    plan_id: plan_202609
+    claim_key: C22
+    claim_origin: existing_user_thesis
+    approved: ''
+    scheduled: '2026-09-14 18:30'
+  post_id: ''
+  posted_at: ''
+  snapshots: {}
+- draft_id: P9-S-11
+  draft_file: queue/x_drafts/2026-09-04_P9-S-11.txt
+  growth:
+    format: short
+    physical_posts: 1
+    content_lane: investing
+    content_category: A
+    funnel_stage: reach
+    audience: investor
+    hook_type: question
+    desired_action: [dwell, reply, quote, profile]
+    conversation_gap: medium
+    link_type: none
+    external_context: event
+    plan_id: plan_202609
+    claim_key: C13
+    claim_origin: existing_user_thesis
+    approved: ''
+    reuse_of: C13
+    reuse_reason: 'Short で問題提起した claim を series_entry で検証まで掘る(5 日以上後)'
+    event: 'FOMC 1 日目'
+    scheduled: '2026-09-15 08:30'
+  post_id: ''
+  posted_at: ''
+  snapshots: {}
+- draft_id: P9-SE-7
+  draft_file: queue/x_drafts/2026-09-04_P9-SE-7.txt
+  growth:
+    format: series_entry
+    physical_posts: 1
+    content_lane: investing
+    content_category: E
+    funnel_stage: follow
+    audience: systematic
+    hook_type: result
+    desired_action: [profile, follow, bookmark]
+    conversation_gap: medium
+    link_type: none
+    external_context: event
+    plan_id: plan_202609
+    claim_key: C09
+    claim_origin: existing_user_thesis
+    approved: ''
+    event: 'FOMC 1 日目'
+    series_id: break_point
+    series_order: 4
+    series_total: 8
+    scheduled: '2026-09-15 18:30'
+  post_id: ''
+  posted_at: ''
+  snapshots: {}
+- draft_id: P9-S-12
+  draft_file: queue/x_drafts/2026-09-04_P9-S-12.txt
+  growth:
+    format: short
+    physical_posts: 1
+    content_lane: investing
+    content_category: A
+    funnel_stage: reach
+    audience: investor
+    hook_type: math
+    desired_action: [dwell, reply, quote, profile]
+    conversation_gap: medium
+    link_type: none
+    external_context: event
+    plan_id: plan_202609
+    claim_key: C16
+    claim_origin: existing_user_thesis
+    approved: ''
+    reuse_of: C16
+    reuse_reason: 'Short で問題提起した claim を series_entry で検証まで掘る(5 日以上後)'
+    event: 'FOMC 結果'
+    scheduled: '2026-09-16 08:30'
+  post_id: ''
+  posted_at: ''
+  snapshots: {}
+- draft_id: P9-SE-8
+  draft_file: queue/x_drafts/2026-09-04_P9-SE-8.txt
+  growth:
+    format: series_entry
+    physical_posts: 1
+    content_lane: investing
+    content_category: D
+    funnel_stage: follow
+    audience: investor
+    hook_type: math
+    desired_action: [profile, follow, bookmark]
+    conversation_gap: medium
+    link_type: none
+    external_context: event
+    plan_id: plan_202609
+    claim_key: C12
+    claim_origin: existing_user_thesis
+    approved: ''
+    event: 'FOMC 結果'
+    series_id: invest_math
+    series_order: 4
+    series_total: 8
+    scheduled: '2026-09-16 18:30'
+  post_id: ''
+  posted_at: ''
+  snapshots: {}
+- draft_id: P9-S-13
+  draft_file: queue/x_drafts/2026-09-04_P9-S-13.txt
+  growth:
+    format: short
+    physical_posts: 1
+    content_lane: investing
+    content_category: E
+    funnel_stage: reach
+    audience: investor
+    hook_type: contradiction
+    desired_action: [dwell, reply, quote, profile]
+    conversation_gap: medium
+    link_type: none
+    external_context: standalone
+    plan_id: plan_202609
+    claim_key: C18
+    claim_origin: existing_user_thesis
+    approved: ''
+    reuse_of: C18
+    reuse_reason: 'Short で問題提起した claim を series_entry で検証まで掘る(5 日以上後)'
+    scheduled: '2026-09-17 08:30'
+  post_id: ''
+  posted_at: ''
+  snapshots: {}
+- draft_id: P9-T-2-P
+  draft_file: queue/x_drafts/2026-09-04_P9-T-2-P.txt
+  growth:
+    format: thread
+    physical_posts: 1
+    content_lane: investing
+    content_category: A
+    funnel_stage: trust
+    audience: investor
+    hook_type: question
+    desired_action: [bookmark, profile, note]
+    conversation_gap: medium
+    link_type: none
+    external_context: standalone
+    plan_id: plan_202609
+    claim_key: C17
+    claim_origin: existing_user_thesis
+    approved: ''
+    thread_id: P9-T-2
+    thread_position: 0
+    scheduled: '2026-09-17 18:30'
+  post_id: ''
+  posted_at: ''
+  snapshots: {}
+- draft_id: P9-T-2-R1
+  draft_file: queue/x_drafts/2026-09-04_P9-T-2-R1.txt
+  growth:
+    format: thread
+    physical_posts: 1
+    content_lane: investing
+    content_category: A
+    funnel_stage: trust
+    audience: investor
+    hook_type: question
+    desired_action: [bookmark, profile, note]
+    conversation_gap: medium
+    link_type: none
+    external_context: standalone
+    plan_id: plan_202609
+    claim_key: C17
+    claim_origin: existing_user_thesis
+    approved: ''
+    thread_id: P9-T-2
+    thread_position: 1
+    scheduled: '2026-09-17 18:30'
+  post_id: ''
+  posted_at: ''
+  snapshots: {}
+- draft_id: P9-T-2-R2
+  draft_file: queue/x_drafts/2026-09-04_P9-T-2-R2.txt
+  growth:
+    format: thread
+    physical_posts: 1
+    content_lane: investing
+    content_category: A
+    funnel_stage: trust
+    audience: investor
+    hook_type: question
+    desired_action: [bookmark, profile, note]
+    conversation_gap: medium
+    link_type: none
+    external_context: standalone
+    plan_id: plan_202609
+    claim_key: C17
+    claim_origin: existing_user_thesis
+    approved: ''
+    thread_id: P9-T-2
+    thread_position: 2
+    scheduled: '2026-09-17 18:30'
+  post_id: ''
+  posted_at: ''
+  snapshots: {}
+- draft_id: P9-T-2-R3
+  draft_file: queue/x_drafts/2026-09-04_P9-T-2-R3.txt
+  growth:
+    format: thread
+    physical_posts: 1
+    content_lane: investing
+    content_category: A
+    funnel_stage: trust
+    audience: investor
+    hook_type: question
+    desired_action: [bookmark, profile, note]
+    conversation_gap: medium
+    link_type: none
+    external_context: standalone
+    plan_id: plan_202609
+    claim_key: C17
+    claim_origin: existing_user_thesis
+    approved: ''
+    thread_id: P9-T-2
+    thread_position: 3
+    scheduled: '2026-09-17 18:30'
+  post_id: ''
+  posted_at: ''
+  snapshots: {}
+- draft_id: P9-S-14
+  draft_file: queue/x_drafts/2026-09-04_P9-S-14.txt
+  growth:
+    format: short
+    physical_posts: 1
+    content_lane: investing
+    content_category: C
+    funnel_stage: trust
+    audience: systematic
+    hook_type: math
+    desired_action: [bookmark, profile, note]
+    conversation_gap: medium
+    link_type: none
+    external_context: standalone
+    plan_id: plan_202609
+    claim_key: C26
+    claim_origin: existing_user_thesis
+    approved: ''
+    reuse_of: C26
+    reuse_reason: 'Short で問題提起した claim を long で検証まで掘る(5 日以上後)'
+    scheduled: '2026-09-18 08:30'
+  post_id: ''
+  posted_at: ''
+  snapshots: {}
+- draft_id: P9-SE-9
+  draft_file: queue/x_drafts/2026-09-04_P9-SE-9.txt
+  growth:
+    format: series_entry
+    physical_posts: 1
+    content_lane: investing
+    content_category: E
+    funnel_stage: follow
+    audience: systematic
+    hook_type: result
+    desired_action: [profile, follow, bookmark]
+    conversation_gap: medium
+    link_type: none
+    external_context: standalone
+    plan_id: plan_202609
+    claim_key: C25
+    claim_origin: existing_user_thesis
+    approved: ''
+    series_id: break_point
+    series_order: 5
+    series_total: 8
+    scheduled: '2026-09-18 18:30'
+  post_id: ''
+  posted_at: ''
+  snapshots: {}
+- draft_id: P9-S-15
+  draft_file: queue/x_drafts/2026-09-04_P9-S-15.txt
+  growth:
+    format: short
+    physical_posts: 1
+    content_lane: investing
+    content_category: E
+    funnel_stage: reach
+    audience: investor
+    hook_type: contradiction
+    desired_action: [dwell, reply, quote, profile]
+    conversation_gap: medium
+    link_type: none
+    external_context: standalone
+    plan_id: plan_202609
+    claim_key: C28
+    claim_origin: existing_user_thesis
+    approved: ''
+    reuse_of: C28
+    reuse_reason: 'Short で問題提起した claim を series_entry で検証まで掘る(5 日以上後)'
+    scheduled: '2026-09-19 08:30'
+  post_id: ''
+  posted_at: ''
+  snapshots: {}
+- draft_id: P9-L-4
+  draft_file: queue/x_drafts/2026-09-04_P9-L-4.txt
+  growth:
+    format: long
+    physical_posts: 1
+    content_lane: investing
+    content_category: C
+    funnel_stage: trust
+    audience: systematic
+    hook_type: result
+    desired_action: [bookmark, profile, note]
+    conversation_gap: medium
+    link_type: none
+    external_context: standalone
+    plan_id: plan_202609
+    claim_key: C06
+    claim_origin: existing_user_thesis
+    approved: ''
+    scheduled: '2026-09-19 18:30'
+  post_id: ''
+  posted_at: ''
+  snapshots: {}
+- draft_id: P9-S-16
+  draft_file: queue/x_drafts/2026-09-04_P9-S-16.txt
+  growth:
+    format: short
+    physical_posts: 1
+    content_lane: investing
+    content_category: A
+    funnel_stage: reach
+    audience: general
+    hook_type: contradiction
+    desired_action: [dwell, reply, quote, profile]
+    conversation_gap: medium
+    link_type: none
+    external_context: standalone
+    plan_id: plan_202609
+    claim_key: C29
+    claim_origin: external_topic
+    approved: ''
+    reuse_of: C29
+    reuse_reason: 'Short で問題提起した claim を long で検証まで掘る(5 日以上後)'
+    scheduled: '2026-09-20 08:30'
+  post_id: ''
+  posted_at: ''
+  snapshots: {}
+- draft_id: P9-SE-10
+  draft_file: queue/x_drafts/2026-09-04_P9-SE-10.txt
+  growth:
+    format: series_entry
+    physical_posts: 1
+    content_lane: investing
+    content_category: D
+    funnel_stage: follow
+    audience: investor
+    hook_type: math
+    desired_action: [profile, follow, bookmark]
+    conversation_gap: medium
+    link_type: none
+    external_context: standalone
+    plan_id: plan_202609
+    claim_key: C11
+    claim_origin: existing_user_thesis
+    approved: ''
+    series_id: invest_math
+    series_order: 5
+    series_total: 8
+    scheduled: '2026-09-20 18:30'
+  post_id: ''
+  posted_at: ''
+  snapshots: {}
+- draft_id: P9-SE-11
+  draft_file: queue/x_drafts/2026-09-04_P9-SE-11.txt
+  growth:
+    format: series_entry
+    physical_posts: 1
+    content_lane: investing
+    content_category: E
+    funnel_stage: follow
+    audience: systematic
+    hook_type: result
+    desired_action: [profile, follow, bookmark]
+    conversation_gap: medium
+    link_type: none
+    external_context: standalone
+    plan_id: plan_202609
+    claim_key: C19
+    claim_origin: existing_user_thesis
+    approved: ''
+    series_id: break_point
+    series_order: 6
+    series_total: 8
+    scheduled: '2026-09-21 18:30'
+  post_id: ''
+  posted_at: ''
+  snapshots: {}
+- draft_id: P9-L-5
+  draft_file: queue/x_drafts/2026-09-04_P9-L-5.txt
+  growth:
+    format: long
+    physical_posts: 1
+    content_lane: investing
+    content_category: B
+    funnel_stage: trust
+    audience: systematic
+    hook_type: story
+    desired_action: [bookmark, profile, note]
+    conversation_gap: medium
+    link_type: none
+    external_context: standalone
+    plan_id: plan_202609
+    claim_key: C20
+    claim_origin: existing_user_thesis
+    approved: ''
+    scheduled: '2026-09-22 18:30'
+  post_id: ''
+  posted_at: ''
+  snapshots: {}
+- draft_id: P9-SE-12
+  draft_file: queue/x_drafts/2026-09-04_P9-SE-12.txt
+  growth:
+    format: series_entry
+    physical_posts: 1
+    content_lane: investing
+    content_category: D
+    funnel_stage: follow
+    audience: investor
+    hook_type: math
+    desired_action: [profile, follow, bookmark]
+    conversation_gap: medium
+    link_type: none
+    external_context: standalone
+    plan_id: plan_202609
+    claim_key: C30
+    claim_origin: external_topic
+    approved: ''
+    series_id: invest_math
+    series_order: 6
+    series_total: 8
+    scheduled: '2026-09-23 18:30'
+  post_id: ''
+  posted_at: ''
+  snapshots: {}
+- draft_id: P9-SE-13
+  draft_file: queue/x_drafts/2026-09-04_P9-SE-13.txt
+  growth:
+    format: series_entry
+    physical_posts: 1
+    content_lane: investing
+    content_category: E
+    funnel_stage: follow
+    audience: systematic
+    hook_type: contradiction
+    desired_action: [profile, follow, bookmark]
+    conversation_gap: medium
+    link_type: none
+    external_context: standalone
+    plan_id: plan_202609
+    claim_key: C18
+    claim_origin: existing_user_thesis
+    approved: ''
+    series_id: break_point
+    series_order: 7
+    series_total: 8
+    scheduled: '2026-09-24 18:30'
+  post_id: ''
+  posted_at: ''
+  snapshots: {}
+- draft_id: P9-T-3-P
+  draft_file: queue/x_drafts/2026-09-04_P9-T-3-P.txt
+  growth:
+    format: thread
+    physical_posts: 1
+    content_lane: investing
+    content_category: A
+    funnel_stage: reach
+    audience: investor
+    hook_type: question
+    desired_action: [dwell, reply, quote, profile]
+    conversation_gap: medium
+    link_type: none
+    external_context: standalone
+    plan_id: plan_202609
+    claim_key: C32
+    claim_origin: external_topic
+    approved: ''
+    thread_id: P9-T-3
+    thread_position: 0
+    scheduled: '2026-09-25 18:30'
+  post_id: ''
+  posted_at: ''
+  snapshots: {}
+- draft_id: P9-T-3-R1
+  draft_file: queue/x_drafts/2026-09-04_P9-T-3-R1.txt
+  growth:
+    format: thread
+    physical_posts: 1
+    content_lane: investing
+    content_category: A
+    funnel_stage: reach
+    audience: investor
+    hook_type: question
+    desired_action: [dwell, reply, quote, profile]
+    conversation_gap: medium
+    link_type: none
+    external_context: standalone
+    plan_id: plan_202609
+    claim_key: C32
+    claim_origin: external_topic
+    approved: ''
+    thread_id: P9-T-3
+    thread_position: 1
+    scheduled: '2026-09-25 18:30'
+  post_id: ''
+  posted_at: ''
+  snapshots: {}
+- draft_id: P9-T-3-R2
+  draft_file: queue/x_drafts/2026-09-04_P9-T-3-R2.txt
+  growth:
+    format: thread
+    physical_posts: 1
+    content_lane: investing
+    content_category: A
+    funnel_stage: reach
+    audience: investor
+    hook_type: question
+    desired_action: [dwell, reply, quote, profile]
+    conversation_gap: medium
+    link_type: none
+    external_context: standalone
+    plan_id: plan_202609
+    claim_key: C32
+    claim_origin: external_topic
+    approved: ''
+    thread_id: P9-T-3
+    thread_position: 2
+    scheduled: '2026-09-25 18:30'
+  post_id: ''
+  posted_at: ''
+  snapshots: {}
+- draft_id: P9-T-3-R3
+  draft_file: queue/x_drafts/2026-09-04_P9-T-3-R3.txt
+  growth:
+    format: thread
+    physical_posts: 1
+    content_lane: investing
+    content_category: A
+    funnel_stage: reach
+    audience: investor
+    hook_type: question
+    desired_action: [dwell, reply, quote, profile]
+    conversation_gap: medium
+    link_type: none
+    external_context: standalone
+    plan_id: plan_202609
+    claim_key: C32
+    claim_origin: external_topic
+    approved: ''
+    thread_id: P9-T-3
+    thread_position: 3
+    scheduled: '2026-09-25 18:30'
+  post_id: ''
+  posted_at: ''
+  snapshots: {}
+- draft_id: P9-L-6
+  draft_file: queue/x_drafts/2026-09-04_P9-L-6.txt
+  growth:
+    format: long
+    physical_posts: 1
+    content_lane: investing
+    content_category: C
+    funnel_stage: trust
+    audience: systematic
+    hook_type: math
+    desired_action: [bookmark, profile, note]
+    conversation_gap: medium
+    link_type: none
+    external_context: standalone
+    plan_id: plan_202609
+    claim_key: C26
+    claim_origin: existing_user_thesis
+    approved: ''
+    scheduled: '2026-09-27 18:30'
+  post_id: ''
+  posted_at: ''
+  snapshots: {}
+- draft_id: P9-SE-15
+  draft_file: queue/x_drafts/2026-09-04_P9-SE-15.txt
+  growth:
+    format: series_entry
+    physical_posts: 1
+    content_lane: investing
+    content_category: E
+    funnel_stage: follow
+    audience: systematic
+    hook_type: contradiction
+    desired_action: [profile, follow, bookmark]
+    conversation_gap: medium
+    link_type: none
+    external_context: standalone
+    plan_id: plan_202609
+    claim_key: C28
+    claim_origin: existing_user_thesis
+    approved: ''
+    series_id: break_point
+    series_order: 8
+    series_total: 8
+    scheduled: '2026-09-28 18:30'
+  post_id: ''
+  posted_at: ''
+  snapshots: {}
+- draft_id: P9-SE-16
+  draft_file: queue/x_drafts/2026-09-04_P9-SE-16.txt
+  growth:
+    format: series_entry
+    physical_posts: 1
+    content_lane: investing
+    content_category: A
+    funnel_stage: follow
+    audience: investor
+    hook_type: question
+    desired_action: [profile, follow, bookmark]
+    conversation_gap: medium
+    link_type: none
+    external_context: standalone
+    plan_id: plan_202609
+    claim_key: C13
+    claim_origin: existing_user_thesis
+    approved: ''
+    series_id: invest_math
+    series_order: 8
+    series_total: 8
+    scheduled: '2026-09-29 18:30'
+  post_id: ''
+  posted_at: ''
+  snapshots: {}
+- draft_id: P9-L-7
+  draft_file: queue/x_drafts/2026-09-04_P9-L-7.txt
+  growth:
+    format: long
+    physical_posts: 1
+    content_lane: investing
+    content_category: A
+    funnel_stage: reach
+    audience: general
+    hook_type: contradiction
+    desired_action: [dwell, reply, quote, profile]
+    conversation_gap: medium
+    link_type: none
+    external_context: event
+    plan_id: plan_202609
+    claim_key: C29
+    claim_origin: external_topic
+    approved: ''
+    event: '月末=DM 判定日(本人イベント)'
+    scheduled: '2026-09-30 18:30'
+  post_id: ''
+  posted_at: ''
+  snapshots: {}
+- draft_id: P9-SE-2
+  draft_file: queue/x_drafts/2026-09-04_P9-SE-2.txt
+  growth:
+    format: series_entry
+    physical_posts: 1
+    content_lane: investing
+    content_category: D
+    funnel_stage: follow
+    audience: investor
+    hook_type: math
+    desired_action: [profile, follow, bookmark]
+    conversation_gap: medium
+    link_type: none
+    external_context: standalone
+    plan_id: plan_202609
+    claim_key: C02
+    claim_origin: existing_user_thesis
+    approved: ''
+    series_id: invest_math
+    series_order: 1
+    series_total: 8
+    scheduled: '2026-09-07 18:30'
+  post_id: ''
+  posted_at: ''
+  snapshots: {}
+- draft_id: P9-SE-14
+  draft_file: queue/x_drafts/2026-09-04_P9-SE-14.txt
+  growth:
+    format: series_entry
+    physical_posts: 1
+    content_lane: investing
+    content_category: A
+    funnel_stage: follow
+    audience: investor
+    hook_type: math
+    desired_action: [profile, follow, bookmark]
+    conversation_gap: medium
+    link_type: none
+    external_context: standalone
+    plan_id: plan_202609
+    claim_key: C16
+    claim_origin: existing_user_thesis
+    approved: ''
+    series_id: invest_math
+    series_order: 7
+    series_total: 8
+    scheduled: '2026-09-26 18:30'
+  post_id: ''
+  posted_at: ''
+  snapshots: {}

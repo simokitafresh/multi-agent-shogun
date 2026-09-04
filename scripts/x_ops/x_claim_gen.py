@@ -45,7 +45,7 @@ def numbers_ok(text, allowed):
     body = text.replace(",", "").replace("％", "%")
     nums = set(re.findall(r"\d+(?:\.\d+)?", body))
     corpus = " ".join(allowed).replace(",", "")
-    bad = [n for n in nums if n not in corpus and n not in ("1", "2", "3", "10", "100", "500")]
+    bad = [n for n in nums if n not in corpus and n not in tuple(str(i) for i in range(10)) + ("10", "100", "500")]  # 0-9=回数・順序(1/8 等)の構造数字は data ではない
     return bad
 
 

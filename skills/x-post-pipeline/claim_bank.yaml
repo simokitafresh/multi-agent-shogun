@@ -5,7 +5,7 @@ meta:
     gem_1974_2023: "GEM(本家デュアルモメンタム)1974〜2023 年 CAGR 14.5% / MaxDD -22.7% / Sharpe 0.78、S&P500 CAGR 10.8% / MaxDD -50.9% / Sharpe 0.45"
     plus50_minus50: "+50%→-50% で 100→150→75。交互で 100→150→75→112→56"
     recover_asym: "-50% を戻すには +100%、-80% なら +400%"
-    inflation_3pct_10y: "年 3% のインフレが 10 年で現金の価値は 74%"
+    inflation_3pct_10y: "年 3% のインフレが 10 年で現金の価値は 74%(=26% 目減り)"
   origin_rule: 上記以外の数字を本文に入れない(fail-close)
   schema_20260904_1855: 殿指示 18:55 §2/§14。必須 4 項=belief(壊す前提=counter_claim)/claim(主張)/why(裏付け=evidence。数字は number で verified_numbers を指す)/audience(刺さる読者)。任意=number/hook_pattern(hook_candidate)/source(出典=記事・repo。証拠としてのみ)/confidence(high/mid)。4 項が揃わない claim は x_claim_gen.py が SKIP する(記事が余っているから生成、は無い)
   generation_order: claim/neta → 必要なら記事・repo・検証資料で裏付け(source) → X 本文。article→summary→X には戻さない(殿 18:55 §1)
