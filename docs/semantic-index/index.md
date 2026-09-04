@@ -3612,6 +3612,7 @@ codd:
 | discussion | `queue/lord_conversation.jsonl` 2026-09-04T20:41:44+09:00 殿 2026-09-04 20:39『Stage 1 承認』(X 編集計画 9 月、artifact b2f1b8ae)→plan_202609 stage1_editorial=approved。Stage 2 本文: plan_v1_p |
 | discussion | `queue/lord_conversation.jsonl` 2026-09-05T01:39:35+09:00 殿 2026-09-05 01:35(Event lane 追加観点)『為替・金利・カーブは trigger ではなく Market Context として常時観測。予測ではなく本人思想(分解/観測と予測の分離/見ると売買の分離/検証)を適 |
 | discussion | `queue/lord_conversation.jsonl` 2026-09-05T01:51:36+09:00 殿 2026-09-05 01:44『インフレも重要観測対象として明示。CPI 解説ではなく本人の横断テーマ(現金実質価値/名目と実質/金利/債券/株式/為替/住宅ローン/資産価格/資産格差/高所得でも実質で豊かにならない)。Market  |
+| cmd | `cmd_karo_hotfix_ga577_p_average_freshness` (`scripts/gates/gate_p_average_freshness.sh`, `tests/unit/test_gate_p_average_freshness_retry_recovery.bats`) |
 
 ## investment_knowledge_base — 投資知識辞書
 
@@ -12835,6 +12836,7 @@ codd:
 | causal_chain | `[[cmd_karo_impl_cache_gap_telemetry_20260726]]` (L1345) |
 | causal_chain | `[[cmd_4182]]` (L1411) |
 | causal_chain | `[[cmd_karo_round5_lane_cmd_save_checks_main_20260729]]` (L1458) |
+| causal | `cmd_karo_hotfix_ga577_p_average_freshness` files_modified: [[gate_quality_framework]] |
 
 ## lesson_lifecycle — 教訓ライフサイクル管理
 
