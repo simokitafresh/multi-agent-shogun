@@ -17992,3 +17992,10 @@ insights:
   source: "skill_script_refs:112b329d751e6708"
   fix_known: false
   status: pending
+- id: INS-20260905-031312793-289b
+  ts: "2026-09-05T03:13:12+09:00"
+  insight: "[[ではT240について詳しく教えて]] semantic_stress_test candidate_aliases: NO_MATCH source=lord query=ではT240について詳しく教えて"
+  priority: "low"
+  source: "semantic_stress_test"
+  fix_known: false
+  status: pending

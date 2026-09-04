@@ -6606,7 +6606,6 @@ codd:
 | causal_chain | `[[cmd_4453]]` (L1709) |
 | discussion | `queue/lord_conversation.jsonl` 2026-09-04T19:17:14+09:00 4474はどうなった？未コミット、未プッシュがないか確認してくれ |
 | discussion | `queue/lord_conversation.jsonl` 2026-09-04T19:28:24+09:00 現在の9月plan体制への変更は維持してください。 特に、 claim ↓ 月間editorial plan ↓ format選択 ↓ draft ↓ Fact / Voice gate ↓ 殿承認 ↓ scheduledのみ投稿 ↓ Li |
-| discussion | `queue/lord_conversation.jsonl` 2026-09-05T03:09:53+09:00 忍者kotaro: cmd_karo_hotfix_release_ci_clean_repro_level5_normal 作業継続。バックグラウンドで実行中のtest_deploy_task_yaml_injection.bats(ta |
 
 ## no_auto_extinguish — 自動消火禁止
 
