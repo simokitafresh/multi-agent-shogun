@@ -17378,7 +17378,9 @@ insights:
   priority: "low"
   source: "semantic_index_update"
   fix_known: false
-  status: pending
+  status: "resolved"
+  action_artifact: "semantic_map=/home/simokitafresh/multi-agent-shogun/context/semantic-map.md;semantic_index=/home/simokitafresh/multi-agent-shogun/docs/semantic-index/index.md"
+  resolved_reason: "semantic map generation verified the candidate is represented or intentionally ignored"
 - id: INS-20260904-150851566-a36a
   ts: "2026-09-04T15:08:51+09:00"
   insight: "[[だいぶ俺っぽいんじゃないか？D 3を少し直した]] semantic_stress_test candidate_aliases: NO_MATCH source=lord query=だいぶ俺っぽいんじゃないか？D-3を少し直した。単語をカタカナにするか英語にするか日本語かにセンスが出る"
