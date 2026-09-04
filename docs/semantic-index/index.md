@@ -3606,6 +3606,7 @@ codd:
 | discussion | `queue/lord_conversation.jsonl` 2026-09-04T19:14:12+09:00 殿問 2026-09-04 19:12『在庫がない slot は投稿しないんで大丈夫なのか？』→実測: 未投稿在庫 Short 24/Long 3/SE 8、需要(9/5〜10/2) Short 28/SE 18/Long 7/Thread |
 | discussion | `queue/lord_conversation.jsonl` 2026-09-04T19:28:51+09:00 現在の9月plan体制への変更は維持してください。 特に、 claim ↓ 月間editorial plan ↓ format選択 ↓ draft ↓ Fact / Voice gate ↓ 殿承認 ↓ scheduledのみ投稿 ↓ Li |
 | discussion | `queue/lord_conversation.jsonl` 2026-09-04T19:43:47+09:00 session_save_20260904_1942(復帰点、先に session_save_20260904_1905 を読め): 殿指示 3 本を実装。(1)19:14『claim_bank を切り抜き工場にしない』=origin 必須 |
+| discussion | `queue/lord_conversation.jsonl` 2026-09-04T19:48:45+09:00 殿 2026-09-04 19:45『USD/JPY 急変 米 2 年/10 年金利急変 日本 10 年金利 金利カーブ変化 あとはインフレ』→event lane trigger 追加: usdjpy_2(yfinance JPY=X)/ |
 
 ## investment_knowledge_base — 投資知識辞書
 
