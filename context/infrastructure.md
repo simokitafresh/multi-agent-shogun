@@ -1,5 +1,6 @@
 # インフラコンテキスト
 <!-- last_updated: 2026-09-05 context_freshness reviewed source boundary -->
+<!-- source_commit:8c69f698e reason:context_freshness reviewed source boundary evidence:context_freshness_check context=context/infrastructure.md commit=8c69f698e -->
 <!-- source_commit:3547ad996 reason:context_freshness reviewed source boundary evidence:context_freshness_check context=context/infrastructure.md commit=3547ad996 -->
 <!-- source_commit:3393b30c3 reason:context_freshness reviewed source boundary evidence:context_freshness_check context=context/infrastructure.md commit=3393b30c3 -->
 <!-- source_commit:f9d90d069 reason:context_freshness reviewed source boundary evidence:context_freshness_check context=context/infrastructure.md commit=f9d90d069 -->
@@ -805,3 +806,4 @@ source boundary一致taskはregistryのowner/update_triggerからcontext_update_
 - cmd_complete_gate legacy no-code recon v2(家老 hotfix db25987ca 09-05 05:0x、GATE CLEAR 05:04)|v1(db50537e4)の続き。task 固定 base/tree 一致で偵察 cmd を CLEAR|→ `scripts/lib/report_commit_identity.py`
 - report_commit_contract 文字列整合(家老 hotfix ae7dabeec 09-05 05:27 GATE CLEAR)|release lane: commit_contract の文字列比較を正規化し偽 BLOCK を防ぐ|→ `scripts/cmd_complete_gate.sh`
 - deploy_task 外部 repo worktree timeout 根治(半蔵 hotfix d2d8d983e 09-05 05:46)|DM-signal(/mnt/c)の remote-tip worktree 準備が 312s→rc=124 だった件。sparse checkout 系で 60 秒未満化。cmd_4475/4476 の配備前提|→ `scripts/deploy_task/`
+- release_ci_clean_repro level5 v2(疾風 hotfix acc3d1035 09-05 06:07 done)|release lane の CI clean 再現。deploy gates/report との整合(8795cb637)の続き|→ `scripts/deploy_task/gates.sh`
