@@ -9232,6 +9232,7 @@ codd:
 | causal_chain | `[[cmd_karo_hotfix_push_lane_ancestry_guard_20260902]]` (L1698) |
 | causal_chain | `[[cmd_karo_hotfix_staged_preserve_index_regression_202609021832]]` (L1704) |
 | causal_chain | `[[cmd_karo_hotfix_lesson_feedback_task_identity_202609021922]]` (L1706) |
+| discussion | `queue/lord_conversation.jsonl` 2026-09-04T16:43:20+09:00 tmux statusbar usage表示: usage_statusbar_loop.sh(.cache/saizo-gist-after.734LqI/scripts/)がデーモンとしてshogunセッションのstatus-right |
 
 ## visibility_tier_masking — Visibility Tier制マスク
 
