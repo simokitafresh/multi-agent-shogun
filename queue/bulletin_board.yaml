@@ -2524,3 +2524,16 @@ entries:
     - 'shogun'
   confirmed_by: ["shogun"]
   status: "closed"
+- id: 'blt_20260904_152700_85db06'
+  content: |-
+    cmd_id=cmd_karo_hotfix_ga571_prepush_x_post_contract_202609041452 軍師D0 commit=4c058a3d0 家老レビューACCEPT。集計コマンド=inbox_mark_readの対象message個別実行。出力行の生貼付=[inbox_mark_read] Marked 1 message(s) as read for gunshi。1件の定義=同一report review済みだがreview_logがtimestampのみ持つmessage。reviewed_at優先・欠落時timestamp fallbackの狭い変更でorigin/main包含済み。
+  posted_by: 'karo'
+  posted_at: '2026-09-04T15:27:00'
+  requires_confirmation: false
+  action_type: 'info'
+  actioned_by: ''
+  notify_targets:
+    - 'shogun'
+    - 'gunshi'
+  confirmed_by: []
+  status: 'open'
