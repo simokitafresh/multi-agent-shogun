@@ -1,5 +1,8 @@
 # インフラコンテキスト
-<!-- last_updated: 2026-09-04 codex auto_skip/deploy_generation sync 反映 -->
+<!-- last_updated: 2026-09-04 context_freshness reviewed source boundary -->
+<!-- source_commit:56eb935065f4 reason:context_freshness reviewed source boundary evidence:context_freshness_check context=context/infrastructure.md commit=56eb935065f4 -->
+<!-- source_commit:8653789be86e reason:context_freshness reviewed source boundary evidence:context_freshness_check context=context/infrastructure.md commit=8653789be86e -->
+<!-- source_commit:a5f55a783534 reason:context_freshness reviewed source boundary evidence:context_freshness_check context=context/infrastructure.md commit=a5f55a783534 -->
 <!-- source_commit:89c273f4fa23 reason:codex auto_skip/deploy_generation sync 反映 evidence:context_freshness_check context=context/infrastructure.md commit=89c273f4fa23 -->
 <!-- source_commit:49a8103b904a reason:review_bundle 再実装 着地 反映 evidence:context_freshness_check context=context/infrastructure.md commit=49a8103b904a report=hanzo_report_cmd_karo_hotfix_review_bundle_batch_id_202609040019 -->
 <!-- source_commit:52d67c89310a reason:survey guard/draft_review envelope 反映 evidence:context_freshness_check context=context/infrastructure.md commit=52d67c89310a -->
@@ -86,7 +89,7 @@
 <!-- source_commit:e7c3beb64085 reason:2026-09-02 将軍 doc lane: ancestry 後退検出を push_lane/pre-push へ接続(efc16dcd6/e7c3beb64) evidence:CLEAR 03:02/03:09; safe_ff BLOCK 実証 02:50 -->
 <!-- source_commit:a7cb1ca59831 reason:2026-09-02 将軍 doc lane: legacy outbox envelope 移行 a7cb1ca59(T224 追補) evidence:commit a7cb1ca59; DOC_LANE_ALERT blt_022445 -->
 <!-- source_commit:64f01517a70b reason:2026-09-02 将軍 doc lane: U1 f92d1e376 + ancestry 後退 BLOCK 64f01517a evidence:commits f92d1e376/64f01517a; CLEAR 01:54/02:08; 消失 2 回目 16d831ed9 を復元 -->
-<!-- last_synced_lesson: L1733 -->
+<!-- last_synced_lesson: L1734 -->
 <!-- source_commit:593cfb27a612 reason:2026-09-02 将軍 doc lane: U9 safe_ff 既公開 ours merge 除外 593cfb27a evidence:commit 593cfb27a; CLEAR 01:20; integrate c7710efaf on origin/main -->
 <!-- source_commit:458fc4caa91a reason:2026-09-02 将軍 doc lane: U3 msg_id 限定 receipt 458fc4caa evidence:commit 458fc4caa; CLEAR 01:05; staged 11→0; watcher 9/9 restart 01:06 -->
 <!-- source_commit:4dd6898466a27f10ef7d08ed27549b3c095378de reason:2026-09-01 将軍 doc lane: CI RED #6 Integration ci_fix 59fa70e0b evidence:commit 59fa70e0b; CLEAR 22:57 -->
@@ -220,7 +223,7 @@
 <!-- source_commit:f8c49cbd7 reason:cmd_shogun_commit_reservation_ledger_phase1_20260805 evidence:reviewed -->
 <!-- source_commit:515f0214e reason:cmd_karo_hotfix_ga432_context_freshness reviewed source boundary evidence:cmd_complete_gate project=infra context=context/infrastructure.md commit=515f0214e -->
 <!-- source_commit:23a1ce61205ce4496ab11570583e8e8adcaeac4e reason:reflux backlink SSOT update reviewed evidence:incoming 0 to 1; runner69/69; target doc diff0 -->
-<!-- last_synced_lesson: L1733 -->
+<!-- last_synced_lesson: L1734 -->
 
 結論: 本ファイルは検索起点となる索引層。運用詳細・経緯・教訓本文は7つの詳細正本へ移設した。
 source boundary一致taskはregistryのowner/update_triggerからcontext_update_candidatesを自動注入し、未処理候補はcmd_complete_gateがBLOCK、明示処理済み/無関係はCLEAR。
@@ -271,7 +274,7 @@ source boundary一致taskはregistryのowner/update_triggerからcontext_update_
 結論: 詳細は `docs/research/infrastructure-lessons-reviews-operations.md` に保存。原文を省略せず移設済み。
 見出し: 前節「Infra教訓索引」の連続本文（source lines 1701-2123）。
 - L1503: 既存legacy欠損は不変multisetで隔離せよ（cmd_karo_hotfix_shared_operational_log_ownership_20260801）
-<!-- last_synced_lesson: L1733 -->
+<!-- last_synced_lesson: L1734 -->
 - L1504: appendとarchiveはreaderを含むgeneration transactionにせよ（cmd_karo_hotfix_gunshi_cs_remediation_generation_20260801）
 - L1505: 永続test宣言はtask正本に置く（cmd_4206）
 - L1506: active context DEFERはowner存在だけでなくdirty・baseline変化・fresh leaseの全ANDにせよ（cmd_karo_hotfix_active_context_gate_transient_20260801）
@@ -500,6 +503,7 @@ source boundary一致taskはregistryのowner/update_triggerからcontext_update_
 - L1731: sed行範囲抽出は非一意アンカーで分岐をまたいで誤爆する（cmd_karo_hotfix_t3s40_post_source_full_instrumentation_202609040542）
 - L1732: sed行範囲抽出は非一意アンカーで分岐をまたいで誤爆する（cmd_karo_hotfix_t3s40_post_source_full_instrumentation_202609040542）
 - L1733: formal RCはreport/taskだけでなくdeploy_generation markerを同一transactionで更新する（cmd_karo_hotfix_deploy_generation_rc_sync_202609040724）
+- L1734: 同期呼び出しをasync dispatchへ置換する際は、呼び出し行の文字列をgrepする構造assertionがtarget_path外のtest fileに存在し得る（cmd_karo_hotfix_t3s40_auto_push_wait_async_202609040724）
 
 ## 設計標準・テスト・因果
 
@@ -666,6 +670,9 @@ source boundary一致taskはregistryのowner/update_triggerからcontext_update_
 - **U11 root sync の reason=unknown 分岐漏れ根治(小太郎 `cmd_karo_hotfix_u11_unknown_reason_branch_202609031635` be30f9808、publisher 発行 16:54)**: `scripts/publisher.sh` の root sync で、driver 無し dirty path が incoming と重なる場合に第 4 経路へ落ちて `root_sync_skipped reason=unknown`(events seq 679/693)を出していた分岐漏れを、AC1 の 3 分岐(ff / driver 3-way / no_driver skip)へ閉じ、events の reason 文字列を契約 bats に固定。
 - **publisher rc31 の origin 祖先判定(影丸 `cmd_karo_hotfix_publisher_rc31_origin_ancestor_202609031708` f35982096、publisher 発行 17:28)**: `scripts/publisher.sh` は request の成果 commit が origin/main の ancestor なら missing artifact(rc31)を出さず already_published として events に記録し家老へ通知しない(16:09/16:24 の偽 rc31 通知 2 回の根治)。ancestor 判定は fetch 後の origin/main で行う(ローカル main は不可)。
 - **deploy_task の code task は path 未宣言でも task worktree を既定 ON(小太郎 `cmd_karo_hotfix_deploy_yaml_worktree_default_202609031708` 4e60ff1e1、publisher 発行 17:59)**: hotfix/impl/ci_fix の task が target_path/planned_paths を一切宣言しないと source_path_count=0 で task_worktree_required=false のまま skip され、忍者の実装 commit が shared root HEAD へ直接作られていた(実例 3516dfccc=watchdog parent pid hotfix)。未宣言時のみ worktree を強制し、宣言済みの既存判定(no-code 例外含む)は不変。bats `tests/unit/test_deploy_task_yaml_injection.bats` +127 行。tsumari 型 1(root writer 複数)の発生源 1 つを閉じる。
+- **T3-S-57 着地=post-CLEAR 経路の root 台帳直書きを ledger 化(半蔵 `cmd_karo_hotfix_t3s57_postclear_root_ledger_guard_202609040713` db89bd952、GATE CLEAR 09-04 09:46:15)+T3-S-60 X refresh token 永続化(疾風 `cmd_karo_hotfix_t3s60_x_refresh_token_persist_202609040922` 56eb93506、c2a 80e7e2053、09:52)**: T3-S-57 は旧 commit 0ec1bf90a が飛猿 5fec334c4 と cmd_complete_gate.sh で競合→正式 RC→現 origin で再実装。着地後 root 台帳 4 path dirty=0、behind=0 ahead=0(家老 correction 76e9d193b)。**単一 publisher の第 6 回 close_check 24h 窓起点=09-04 09:46:15**。T3-S-60 は x_post.sh post 前の必須 refresh+post 成功時の token 永続化+response shape/retry durability(fixture 5 種)。T3-S-61(gate-stall superseded skip)は 09:45 以降 GATE-STALL-ITEM-TIMEOUT 0 行(修正前 7 行/h)で本番効果を確認。
+- **gate-stall 再駆動の superseded skip+watcher 重複停止(将軍 D0 T3-S-61/62、09-04 09:40)**: superseded_by marker 済みの旧 dangling 2 cmd を monitor が 6 分ごとに再 GATE し 180s timeout を反復(7 回/h)→gate-stall ループで superseded_by を終端条件に追加(`scripts/ninja_monitor.sh`、bats 48/48)。(T3-S-62『watcher 2 本並走』は ppid 確認で子 subshell と判明し撤回。restart_watchers.sh の全 pid 停止化は harmless のため残置)。T3-S-40 auto_push_wait 非同期(飛猿)は c2a 8653789be で origin 合流、本番効果は post_source 再計測で判定。
+- **X 投稿 API の token 失効と fail-closed refresh helper(T3-S-60、将軍 D0→家老 scaffold a5f55a783、09-04 09:25)**: access token は 2h で失効し、第 1 弾投稿(09-03 20:31)で xdk が内部 refresh して refresh token を rotate したが `scripts/x_ops/x_post.sh` は新 token を `config/x_api.env` へ書き戻さず、第 2 弾(殿 y 09:05)が `InvalidClientIdError`、手動 refresh も 400『token was invalid』で停止→再認可(殿ブラウザ 1 手)を ntfy。`scripts/x_ops/x_token_refresh.py`(Basic auth refresh+env 0600 書き戻し、失敗は非 0)を新設。恒久=post 前に必ず refresh、post 成功時に client.token を永続化(家老 hotfix lane)。教訓: rotate する secret は消費者が永続化責任を持つ。
 - **Codex update 確認画面を respawn 直後に自動解除(疾風 `cmd_karo_hotfix_codex_update_prompt_auto_skip_202609040727` f7217365a、09-04 08:38)**: ~/.codex/config.toml の `check_for_update_on_startup` は 2 回とも無効で Codex 側に抑止手段が無いと確定(今日 4 pane が停止、将軍が手動で Down/Enter)。`agent_respawn.sh` が respawn 後に pane を capture し、共有 `pane_confirmation_guard` の構造判定で update 選択画面と判定した時だけ『3. Skip until next version』を送出(Codex 固有 matcher は更新の意味だけを判定、陰性画面 4 種で誤送出なし)。`scripts/lib/cli_lookup.sh` +106、bats test_respawn_recovery +99。
 - **formal RC 時に report_id/task/deploy_generation marker を同期(才蔵 `cmd_karo_hotfix_deploy_generation_rc_sync_202609040724` 89c273f4f、08:39)**: review_approval の RC が report_id を更新しても `.deploy_generation_<report>` marker を更新せず stale 化し、再 GATE が『completion identity invalid』で止まった(05:3x、半蔵 RC 後)。RC 経路で 3 者を同時更新、root の stale 1 件は ID 一致 0→1、resolver rc 1→0。`scripts/lib/review_approval.sh` +35、review_approval.sh +37、bats +80。
 - **review_log ledger の exact replay 冪等化+空 list 対応を現 origin/main 起点で再実装(半蔵 `cmd_karo_hotfix_review_bundle_batch_id_202609040019` 49a8103b9、09-04 07:39、GATE CLEAR)**: 元 RC commit(992a43a02)が将軍 T3-S-51(list-root 受理 167fe37c9)と ledger_writer.sh/bats で 2 競合し c2a 統合不能→D012 に従い RC 残差のみを現 origin 起点で再実装。`scripts/ledger_writer.sh` +19-9、bats test_ledger_writer +38。これで review_log ledger は list-root 受理(将軍)+entry_id 先頭キー非依存(軍師 f1dc1f764)+exact replay 冪等(半蔵)の 3 修正が揃った。半蔵 slot 解放で T3-S-57(疾風、post-CLEAR root 書込 ledger 化)の順序待ちが解ける。

@@ -127,12 +127,15 @@ wait_for_agent_state() {
 }
 
 stop_agent_watcher() {
-    local agent="$1" pid
-    pid="$(watcher_pid_for_agent "$agent" | head -1)"
-    [ -z "$pid" ] && return 0
-    kill -TERM "$pid" 2>/dev/null || true
+    local agent="$1" pid pids
+    # 2026-09-04 09:40 将軍 D0(T3-S-62): head -1 で先頭 pid だけ止めるため、重複起動した watcher の
+    # 2 本目以降が生き残り、旧 script_hash の判定(NBSP 修正前)が並走し続けた(軍師 08:51+09:27 の 2 本を実測)。
+    # 同 agent の watcher pid を全て停止する。
+    pids="$(watcher_pid_for_agent "$agent")"
+    [ -z "$pids" ] && return 0
+    for pid in $pids; do kill -TERM "$pid" 2>/dev/null || true; done
     if ! wait_for_agent_state "$agent" absent; then
-        kill -KILL "$pid" 2>/dev/null || true
+        for pid in $pids; do kill -KILL "$pid" 2>/dev/null || true; done
         wait_for_agent_state "$agent" absent || {
             echo "ERROR: ${agent} watcherが停止しきれていません (pid=${pid})" >&2
             return 1

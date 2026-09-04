@@ -3149,6 +3149,10 @@ check_gate_stall() {
         [[ "$cmd" == cmd_* ]] || continue
         [ "${GATE_STALL_ACTIVE_CMDS[$cmd]:-}" = "1" ] || continue
         [ -f "${marker%/review_gate.done}/archive.done" ] && continue
+        # 2026-09-04 09:35 将軍 D0(T3-S-61): superseded_by marker のある cmd は終端済み。gate-stall 再駆動が
+        # marker を見ず 6 分ごとに cmd_complete_gate を再実行し 180s timeout(GATE-STALL-ITEM-TIMEOUT ×7/h)を
+        # 反復した(09-04 08:54〜09:26 実測、旧 dangling 2 cmd)。superseded は skip する。
+        [ -f "${marker%/review_gate.done}/superseded_by" ] && continue
 
         marker_epoch=$(_gate_stall_marker_epoch "$marker" 2>/dev/null || true)
         [[ "$marker_epoch" =~ ^[0-9]+$ ]] || continue
