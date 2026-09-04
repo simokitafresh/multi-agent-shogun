@@ -2225,7 +2225,9 @@ for _tf in "$SCRIPT_DIR"/queue/tasks/*.yaml; do
     [ "$_tstat" = "done" ] || continue
     _tid=$(grep -m1 -E '^\s*task_id:' "$_tf" | awk '{print $2}')
     [ -n "$_tid" ] || continue
-    if [ -f "$_gm_log" ] && grep -qE "\b${_tid}(_[a-z]+)?\s+CLEAR\s" "$_gm_log" 2>/dev/null; then continue; fi
+    # 2026-09-04 15:58 将軍 D0: task_id は deploy 世代 suffix(_normal 等)付き、gate_metrics は base cmd_id で記録される→suffix を剥がして照合(影丸 141 分の偽 WARN 根治)
+    _tbase="${_tid%_normal}"
+    if [ -f "$_gm_log" ] && grep -qE "\b${_tbase}(_[a-z]+)?\s+CLEAR\s" "$_gm_log" 2>/dev/null; then continue; fi
     _ninja=$(basename "$_tf" .yaml)
     # done 時刻: task YAML の done_at を優先(一次)。無ければ報告YAML mtime(家老の注記で更新されるため下限値)
     _done_at=$(grep -m1 -E '^\s*done_at:' "$_tf" | sed -E 's/.*done_at:[[:space:]]*"?([^"]+)"?.*/\1/')
