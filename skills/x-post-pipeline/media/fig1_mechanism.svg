@@ -1,0 +1,50 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="675" viewBox="0 0 1200 675">
+  <defs>
+    <marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="#333333"/>
+    </marker>
+  </defs>
+  <rect x="0" y="0" width="1200" height="675" fill="#ffffff"/>
+
+  <text x="600" y="60" font-family="IPAexGothic, sans-serif" font-size="34" font-weight="bold" fill="#1a1a1a" text-anchor="middle">図1 仕組み</text>
+
+  <!-- 箱A -->
+  <g>
+    <rect x="60" y="150" width="300" height="300" rx="16" fill="#eef4ff" stroke="#3b5bdb" stroke-width="3"/>
+    <text x="210" y="200" font-family="IPAexGothic, sans-serif" font-size="26" font-weight="bold" fill="#1a1a1a" text-anchor="middle">箱A</text>
+    <line x1="90" y1="222" x2="330" y2="222" stroke="#3b5bdb" stroke-width="1.5"/>
+    <text x="210" y="300" font-family="IPAexGothic, sans-serif" font-size="22" fill="#1a1a1a" text-anchor="middle">候補のうち</text>
+    <text x="210" y="340" font-family="IPAexGothic, sans-serif" font-size="22" fill="#1a1a1a" text-anchor="middle">一番強いものを</text>
+    <text x="210" y="380" font-family="IPAexGothic, sans-serif" font-size="22" fill="#1a1a1a" text-anchor="middle">選ぶ</text>
+  </g>
+
+  <path d="M366 300 L426 300" stroke="#333333" stroke-width="3" marker-end="url(#arrow)"/>
+
+  <!-- 箱B -->
+  <g>
+    <rect x="432" y="150" width="300" height="300" rx="16" fill="#eefaf0" stroke="#2f9e44" stroke-width="3"/>
+    <text x="582" y="200" font-family="IPAexGothic, sans-serif" font-size="26" font-weight="bold" fill="#1a1a1a" text-anchor="middle">箱B</text>
+    <line x1="462" y1="222" x2="702" y2="222" stroke="#2f9e44" stroke-width="1.5"/>
+    <text x="582" y="300" font-family="IPAexGothic, sans-serif" font-size="22" fill="#1a1a1a" text-anchor="middle">その勝者は</text>
+    <text x="582" y="340" font-family="IPAexGothic, sans-serif" font-size="22" fill="#1a1a1a" text-anchor="middle">退避先より</text>
+    <text x="582" y="380" font-family="IPAexGothic, sans-serif" font-size="22" fill="#1a1a1a" text-anchor="middle">強いか</text>
+  </g>
+
+  <path d="M738 300 L798 300" stroke="#333333" stroke-width="3" marker-end="url(#arrow)"/>
+
+  <!-- 箱C -->
+  <g>
+    <rect x="804" y="150" width="300" height="300" rx="16" fill="#fff6e6" stroke="#e8590c" stroke-width="3"/>
+    <text x="954" y="200" font-family="IPAexGothic, sans-serif" font-size="26" font-weight="bold" fill="#1a1a1a" text-anchor="middle">箱C</text>
+    <text x="954" y="234" font-family="IPAexGothic, sans-serif" font-size="20" fill="#333333" text-anchor="middle">最終判定</text>
+    <line x1="834" y1="256" x2="1074" y2="256" stroke="#e8590c" stroke-width="1.5"/>
+    <text x="954" y="330" font-family="IPAexGothic, sans-serif" font-size="26" fill="#1a1a1a" text-anchor="middle">保有</text>
+    <text x="954" y="370" font-family="IPAexGothic, sans-serif" font-size="20" fill="#666666" text-anchor="middle">or</text>
+    <text x="954" y="412" font-family="IPAexGothic, sans-serif" font-size="26" fill="#1a1a1a" text-anchor="middle">退避</text>
+  </g>
+
+  <rect x="120" y="560" width="960" height="70" rx="12" fill="#f1f3f5" stroke="#adb5bd" stroke-width="1.5"/>
+  <text x="600" y="602" font-family="IPAexGothic, sans-serif" font-size="20" fill="#333333" text-anchor="middle">注記：候補と退避先は戦略ごとに違う。判定は月次。</text>
+
+  <text x="600" y="655" font-family="IPAexGothic, sans-serif" font-size="14" fill="#999999" text-anchor="middle">デュアルモメンタムの仕組み</text>
+</svg>
