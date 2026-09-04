@@ -21,8 +21,7 @@ mark_read="$root/scripts/inbox_mark_read.sh"
 source "$root/scripts/lib/lock_path.sh"
 drain_lock="$(lock_path "$inbox.drain")"
 snapshot="$(mktemp "${TMPDIR:-/tmp}/inbox-drain.XXXXXX")"
-output="$(mktemp "${TMPDIR:-/tmp}/inbox-drain-output.XXXXXX")"
-cleanup() { rm -f "$snapshot" "$output"; }
+cleanup() { rm -f "$snapshot"; }
 trap cleanup EXIT
 
 exec 9>>"$drain_lock"
@@ -48,11 +47,25 @@ with open(snapshot, "w", encoding="utf-8") as fh:
         fh.write(json.dumps(row, ensure_ascii=False, sort_keys=True) + "\n")
 PY
 
-while IFS= read -r row; do
-    [[ -n "$row" ]] || continue
-    msg_id="$(python3 -c 'import json,sys; print(json.loads(sys.argv[1])["id"])' "$row")"
-    INBOX_MARK_READ_ROOT_OVERRIDE="$root" bash "$mark_read" "$agent" "$msg_id" >/dev/null
-    printf '%s\n' "$row" >>"$output"
-done <"$snapshot"
+[[ -s "$snapshot" ]] || exit 0
 
-cat "$output"
+# Mark every drained id in one inbox_mark_read.sh invocation instead of
+# looping one call per id.  A single call with several explicit ids is the
+# documented bulk-mark-read exemption (2026-09-01 15:44 家老報告
+# blt_154408/bf13c13bd): the guard fires on *separate* process invocations
+# within its window, not on the id count inside one call.  A per-id loop here
+# is structurally identical to the "loop over read:false ids" anti-pattern
+# the guard exists to catch, even though drain already read every message's
+# content into the snapshot above — so a real drain of 3+ unread messages
+# would otherwise trip the guard in production.
+mapfile -t msg_ids < <(python3 -c '
+import json, sys
+for line in sys.stdin:
+    line = line.strip()
+    if line:
+        print(json.loads(line)["id"])
+' <"$snapshot")
+
+INBOX_MARK_READ_ROOT_OVERRIDE="$root" bash "$mark_read" "$agent" "${msg_ids[@]}" >/dev/null
+
+cat "$snapshot"
