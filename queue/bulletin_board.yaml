@@ -2765,3 +2765,15 @@ entries:
     - 'shogun'
   confirmed_by: ["shogun"]
   status: "closed"
+- id: 'blt_20260904_184901_77830a'
+  content: |-
+    DOC_LANE_ALERT: context=context/infrastructure.md raw_alert=ALERT: context/infrastructure.md source commits 2件 since last_updated=2026-09-04 repo=/home/simokitafresh/multi-agent-shogun root_fallback=no timeout=360s/360s owner=infra-platform update_trigger=.github|.githooks|config|docs/rule|docs/knowledge-base|instructions|scripts|skills|tests|AGENTS.md|CLAUDE.md|CONTRIBUTING.md|LICENSE|Makefile|SECURITY.md|first_setup.sh|install.bat|lefthook-local.yml|lefthook.yml|project_lexicon.yaml|setup.sh|shutsujin_departure.sh。更新要否を確認せよ latest: dd0b493d34e7 x_ops: claim_bank YAML 修正(hook_patterns を top-level へ) | 6ad62d33a35d x_ops: バズ投資ネタ分析 v0.1(X API recent 39 本 vs 本人 37 本)+claim_bank C29-C34/hook_patterns+x_viral_search.py action: bash scripts/context_source_commit_set.sh context/infrastructure.md dd0b493d34e7 'context_freshness reviewed source boundary' 'context_freshness_check context=context/infrastructure.md commit=dd0b493d34e7'
+  posted_by: 'gate_context_freshness'
+  posted_at: '2026-09-04T18:49:01'
+  requires_confirmation: false
+  action_type: 'action_required'
+  actioned_by: ''
+  notify_targets:
+    - 'shogun'
+  confirmed_by: []
+  status: 'open'
