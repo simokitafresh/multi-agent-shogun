@@ -34,14 +34,14 @@ account_metrics:
   day_composition: {status: observable_account_level, attribution: account_level, fields: [organic_posts, physical_posts, conversation_entries, formats(short,long,thread,series_entry), funnel(reach,follow,trust,convert)], note: 同じ日付に保存して後から関連を見る。分解・断定はしない}
 
 external_metrics:
-  dm_signal_visit: {status: external_attribution, attribution: direct_if_campaign_id, value: null, feasibility: 高。DM-Signal に showcase_events テーブルと POST /api/public/showcase/event(source∈lp/login/direct/rebalancer)が live。LP は静的 Next.js で utm_* query を捨てない。実装済 2026-09-04 cmd_4474(DM-signal 5b054270/9ea93b89 live): LP/login/free が utm_campaign を showcase_events.campaign_id へ同送、admin campaigns API(since 指定)で週次集計。本番証跡 lp_view 1(x_20260904_G_4474_browser), plan: '§48 campaign attribution'}
-  signup: {status: external_attribution, attribution: direct_if_campaign_id, value: null, feasibility: 中。signup_google step は設計 v3 §2.6 で『後段 cmd』=未実装。campaign_id を signup event まで持ち回る必要}
-  paid: {status: external_attribution, attribution: direct_if_campaign_id, value: null, feasibility: 低〜中。課金は note メンバーシップ経由が主で X→note→paid は帰属不能。DM-Signal 内 paid のみ campaign_id で追える}
+  dm_signal_visit: {status: external_attribution, attribution: direct_if_campaign_id, value: null, feasibility: "高。DM-Signal に showcase_events テーブルと POST /api/public/showcase/event(source∈lp/login/direct/rebalancer)が live。LP は静的 Next.js で utm_* query を捨てない。実装済 2026-09-04 cmd_4474(DM-signal 5b054270/9ea93b89 live): LP/login/free が utm_campaign を showcase_events.campaign_id へ同送、admin campaigns API(since 指定)で週次集計。本番証跡 lp_view 1(x_20260904_G_4474_browser)", plan: '§48 campaign attribution'}
+  signup: {status: external_attribution, attribution: direct_if_campaign_id, value: null, feasibility: "中。signup_google step は設計 v3 §2.6 で『後段 cmd』=未実装。campaign_id を signup event まで持ち回る必要"}
+  paid: {status: external_attribution, attribution: direct_if_campaign_id, value: null, feasibility: "低〜中。課金は note メンバーシップ経由が主で X→note→paid は帰属不能。DM-Signal 内 paid のみ campaign_id で追える"}
   rule: X→note→DM-Signal 経路は note が流入元を持たないため post_id→paid を結ばない。『この投稿から何人課金』を推測しない
 
 campaign_attribution:
   id_format: x_<YYYYMMDD>_<slot>_<nnn>(例 x_20260904_G_001)。post 候補作成時に発行(投稿後に後付けしない)
-  carried_in: [growth metadata(campaign_id), link(?utm_source=x&utm_medium=organic&utm_campaign=<campaign_id>&utm_content=<draft_id>), DM-Signal showcase_events.campaign_id]
+  carried_in: "[growth metadata(campaign_id), link(?utm_source=x&utm_medium=organic&utm_campaign=<campaign_id>&utm_content=<draft_id>), DM-Signal showcase_events.campaign_id]"
   status: designed_not_implemented
 
 format_kpi:
