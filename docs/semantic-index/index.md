@@ -4285,6 +4285,7 @@ codd:
 | causal_chain | `[[cmd_karo_ci_fix_31076764177_scope_commit_race]]` (L1570) |
 | causal_chain | `[[cmd_karo_hotfix_t99_report_precheck_20260828]]` (L1656) |
 | causal_chain | `[[cmd_karo_ci_fix_33308840348_receipt_missing_20260830]]` (L1678) |
+| discussion | `queue/lord_conversation.jsonl` 2026-09-05T03:59:37+09:00 bsnsb16j4 toolu_01PoHXzKP2JEYMWfFqthL5rA /tmp/claude-1000/-home-simokitafresh-multi-agent-shogun/d9faccc5-127b-4b4f-bd18 |
 
 ## codd_methodology — CoDD整合性駆動開発
 
@@ -16230,7 +16231,7 @@ codd:
 |------|---|
 | id | provisional_kotaro |
 | label | 仮: Kotaro |
-| aliases | kotaro, queue/tasks/kotaro.yaml, queue tasks kotaro.yaml, provisional_kotaro, kotaroはinbox1, kotaroからの問い合わせは届いているか？, kotaroが放置されていないか？, kotaroは？, kotaroをrespawanせよ, kotaroが放置されているのはバグか？, kotaroがauto clearされていない, kotaroがおかしなことを言っている気がする, kotaroをrespwanして, kotaroのpaneが死んだ, kotaro 42回目 |
+| aliases | kotaro, queue/tasks/kotaro.yaml, queue tasks kotaro.yaml, provisional_kotaro, kotaroはinbox1, kotaroからの問い合わせは届いているか？, kotaroが放置されていないか？, kotaroは？, kotaroをrespawanせよ, kotaroが放置されているのはバグか？, kotaroがauto clearされていない, kotaroがおかしなことを言っている気がする, kotaroをrespwanして, kotaroのpaneが死んだ, kotaro 42回目, 忍者kotaro 作業継続 |
 | status | provisional |
 | auto_generated | true |
 | source_cmd | cmd_3623 |
