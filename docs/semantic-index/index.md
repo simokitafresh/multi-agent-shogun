@@ -10075,7 +10075,7 @@ codd:
 |------|---|
 | id | tier_plan_mapping |
 | label | Tier-プラン対応 |
-| aliases | tier, 料金プラン, プラン, plan, subscription, メンバーシップ, membership, viewer_tiers, Basic, Standard, NewStandard, AddOn, premium, ベーシック, スタンダード, アドオン, プレミアム, 古参スペシャル, 劇薬DM, ドクタープレミアム, 特にビジネスプランの話を今後するときにスムーズにやりたいな, starterplanにcold startあったっけ？, Tier, スタンダードは新スタンダードと旧スタンダードの２種類ある, planモードが諸悪の根源では？, まずはプランを深掘ろう, プランを明確にせよ, asis tobe 5W1Hでプランを作成, EODHDのプランは現行で固定する, 次のステップのプランを考えよう, 先にプランをドキュメントにアップデートせよ, プランを将軍に確定して報告せよ, 進捗と今後のプランは？, これがわかればL2, ここからは別の話だ, standardPFのconfig項目 は一瞬で把握できるのか？, standard menber only premium menber only 更にlimited menber on, 他にやることはあるか？ |
+| aliases | tier, 料金プラン, プラン, plan, subscription, メンバーシップ, membership, viewer_tiers, Basic, Standard, NewStandard, AddOn, premium, ベーシック, スタンダード, アドオン, プレミアム, 古参スペシャル, 劇薬DM, ドクタープレミアム, 特にビジネスプランの話を今後するときにスムーズにやりたいな, starterplanにcold startあったっけ？, Tier, スタンダードは新スタンダードと旧スタンダードの２種類ある, planモードが諸悪の根源では？, まずはプランを深掘ろう, プランを明確にせよ, asis tobe 5W1Hでプランを作成, EODHDのプランは現行で固定する, 次のステップのプランを考えよう, 先にプランをドキュメントにアップデートせよ, プランを将軍に確定して報告せよ, 進捗と今後のプランは？, これがわかればL2, ここからは別の話だ, standardPFのconfig項目 は一瞬で把握できるのか？, standard menber only premium menber only 更にlimited menber on, 他にやることはあるか？, 少し直すか |
 | skills | note-writer |
 | related_concepts | visibility_tier_masking, dmsignal_operations |
 
@@ -10225,6 +10225,7 @@ codd:
 | causal_chain | `[[cmd_4202]]` (L1500) |
 | causal_chain | `[[cmd_karo_hotfix_report_shared_provenance_fp_20260802]]` (L1521) |
 | causal_chain | `[[cmd_3665]]` (L942) |
+| discussion | `queue/lord_conversation.jsonl` 2026-09-04T10:57:28+09:00 文層のレベルが低いな。少し直すか。B-1:追い風ではわからない。これは市場βとαの話だ。検証は有料記事のほうが濃い、読者は入り口だけ見えればいい、それが誘導にもなる。メンバーシップではより有用な検証をしていることに気づかせるのが枠Bの役割だ |
 
 ## alpha_6_metrics — α6指標
 
