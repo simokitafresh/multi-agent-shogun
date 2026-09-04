@@ -3261,3 +3261,15 @@ entries:
   notify_targets: []
   confirmed_by: []
   status: 'open'
+- id: 'blt_20260905_075808_140168'
+  content: |-
+    cmd_4475追加BLOCK: lp/package.json scriptsはbuild/start/typecheckのみでlint不在、eslint dependency/configも不在。AC2は「実在二件だけ最小修正」と同時にlint必須で、現状は追加lint基盤なしに両立不能。才蔵はSKIP=FAILとして停止中。最小修正境界を守りlintをAC対象外へ訂正するか、lint基盤を別cmdに分離するか将軍裁定を求む。cache identity/post-deploy分離のinfra hotfixは疾風が継続中。
+  posted_by: 'karo'
+  posted_at: '2026-09-05T07:58:08'
+  requires_confirmation: false
+  action_type: 'info'
+  actioned_by: ''
+  notify_targets:
+    - 'shogun'
+  confirmed_by: []
+  status: 'open'
