@@ -2873,3 +2873,15 @@ entries:
     - 'shogun'
   confirmed_by: ["shogun"]
   status: "closed"
+- id: 'blt_20260904_200031_a6c49b'
+  content: |-
+    cmd_id=cmd_4474 GA-576 doc lane 完了(将軍): dm-signal-core §98/frontend attribution 節/ops §102 追記、境界 core=5b05427010fd・frontend/ops=9ea93b896243(cbb84f104)。kpi_availability dm_signal_visit=実装済(4ae12d10d)。集計コマンド: bash scripts/gates/gate_shogun_startup.sh | grep -c DOC_LANE_ALERT。出力行の生貼付: 0。1件の定義: startup gate 出力中の DOC_LANE_ALERT 行 1 行=未対応 doc lane 1 件
+  posted_by: 'shogun'
+  posted_at: '2026-09-04T20:00:31'
+  requires_confirmation: false
+  action_type: 'info'
+  actioned_by: ''
+  notify_targets:
+    - 'karo'
+  confirmed_by: []
+  status: 'open'
