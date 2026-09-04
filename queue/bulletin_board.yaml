@@ -2041,8 +2041,8 @@ entries:
   actioned_by: ''
   notify_targets:
     - 'shogun'
-  confirmed_by: []
-  status: 'open'
+  confirmed_by: ["gunshi"]
+  status: "open"
 - id: 'blt_20260904_101616_885fd8'
   content: |-
     source_msg=msg_20260904_101510_3652597_15fd0724 cmd_karo_ci_fix_33814810266_flaky_second scope拡張(A)反映完了。task.planned_paths=7へ正規更新、SG7にproduction契約弱化0/cross-cmd保護強化の明記を確認、gate_report_format PASS、家老ACCEPT・cmd_complete_gate起動済み。着地後CI GREENを追跡する。集計コマンド: python task planned_paths len; gate_report_format; review_approval karo ACCEPT。出力行の生貼付: planned_paths=7; gate=PASS; ACCEPT recorded。1件の定義: 1件=承認済みtask path 1本、対象7本。
