@@ -5786,7 +5786,7 @@ codd:
 |------|---|
 | id | chain_principle |
 | label | 鎖の原理 |
-| aliases | 鎖, 鎖の原理, chain principle, weakest link, 最弱リンク, 全体クオリティ, ボトルネック原理, スクリプトなどの実行速度にボトルネックはないか, 実行回数が多いものや頻度の多いものにフォーカス, リンク, 元論文へのリンクを埋め込もう, 論文のリンクが消えているところがあるからチェックしてくれ, 元ネタの設計書や結果ファイルのリンクも忘れるな, まだLPのリンクが直っていないのでは？, note記事へのリンクは俺がやることもできるぞ, リンクを追加した, 画像をつける話はどこに行った？リンクばかりでうんざりだ |
+| aliases | 鎖, 鎖の原理, chain principle, weakest link, 最弱リンク, 全体クオリティ, ボトルネック原理, スクリプトなどの実行速度にボトルネックはないか, 実行回数が多いものや頻度の多いものにフォーカス, リンク, 元論文へのリンクを埋め込もう, 論文のリンクが消えているところがあるからチェックしてくれ, 元ネタの設計書や結果ファイルのリンクも忘れるな, まだLPのリンクが直っていないのでは？, note記事へのリンクは俺がやることもできるぞ, リンクを追加した, 画像をつける話はどこに行った？リンクばかりでうんざりだ, むしろ |
 | skills | なし |
 | related_concepts | growth_loop, defense_hierarchy, gate_quality_framework |
 
@@ -5835,6 +5835,7 @@ codd:
 | causal_chain | `[[cmd_karo_hotfix_ga220_dm_signal_research_freshness_202607110139]]` (L1031) |
 | causal_chain | `[[cmd_karo_impl_atomic_yaml_write_caller_log_20260727]]` (L1391) |
 | causal_chain | `[[cmd_reflux_backlink_202607281828_hanzo]]` (L1434) |
+| discussion | `queue/lord_conversation.jsonl` 2026-09-05T01:35:35+09:00 Event-driven Laneについて一点だけ追加で検討してください。 現在はFOMC等の予定イベントと、SPY急落・VIX上昇等の急変検知が中心ですが、 - USD/JPYなど為替 - 米国2年・10年金利 - 日本国債金利 - 金利 |
 
 ## known_unknowns_principle — 無知の知
 
