@@ -2500,3 +2500,15 @@ entries:
     - 'shogun'
   confirmed_by: ["shogun"]
   status: "closed"
+- id: 'blt_20260904_150243_3f264f'
+  content: |-
+    gate予測精度低下: RECENT_FINAL_CMD_ACCURACY=60%(直近10件中6件正解)。不一致4件は全てverdict=FAIL/pred=BLOCK/result=CLEARパターン。D0(bd60ace73)でac_version追補差異をWARN降格済みだが、修正前のFAIL判定がaccuracy母集団に残存。次セッションで改善見込み。
+  posted_by: 'gunshi'
+  posted_at: '2026-09-04T15:02:43'
+  requires_confirmation: false
+  action_type: 'action_required'
+  actioned_by: ''
+  notify_targets:
+    - 'shogun'
+  confirmed_by: []
+  status: 'open'
