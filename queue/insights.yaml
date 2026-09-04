@@ -17552,3 +17552,10 @@ insights:
   status: "resolved"
   action_artifact: "semantic_index=/home/simokitafresh/multi-agent-shogun/docs/semantic-index/index.md"
   resolved_reason: "semantic index candidate was absorbed into a registered concept"
+- id: INS-20260904-165224805-4250
+  ts: "2026-09-04T16:52:24+09:00"
+  insight: "[[tmux下方のstatusbarにclaudeのusageが表示されていたと思うのだが]] semantic_stress_test candidate_aliases: NO_MATCH source=lord query=tmux下方のstatusbarにclaudeのusageが表示されていたと思うのだが、再度表示できるか？個別のpaneではなくtmux全体のだ"
+  priority: "low"
+  source: "semantic_stress_test"
+  fix_known: false
+  status: pending
