@@ -16376,6 +16376,7 @@ codd:
 | discussion | `queue/lord_conversation.jsonl` 2026-09-02T17:20:42+09:00 kagemaruは？どういう扱いなんだ？ |
 | cmd | `cmd_reflux_insight_202609021449_kagemaru` |
 | causal_chain | `[[cmd_reflux_backlink_202608201539_kagemaru]]` (L1622) |
+| discussion | `queue/lord_conversation.jsonl` 2026-09-04T12:23:57+09:00 bc37kuu4b toolu_01KBMPTqigFZ9VxHSnDwgmjZ /tmp/claude-1000/-home-simokitafresh-multi-agent-shogun/d9faccc5-127b-4b4f-bd18 |
 
 ## provisional_lessons — 仮: Lessons
 
