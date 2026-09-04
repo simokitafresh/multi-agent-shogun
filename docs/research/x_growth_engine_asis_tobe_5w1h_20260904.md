@@ -390,3 +390,143 @@ Observed / Inferred / Unavailable を必ず分ける。例: Observed「9/4 follo
 
 ### 実装進捗台帳(v1.3)
 - 2026-09-04 16:15 v1.3: kpi_availability.yaml 新設、x_kpi_snapshot.py を null 明示+delta+日次構成へ改修(実走: 16:13 行に delta null_no_prev_day を記録)、ledger meta に null_rule/campaign_rule、DM-Signal attribution 可能性=可(未実装、showcase_events 拡張)。未: campaign_id 発行の x_growth_tag 対応(convert 投稿生成時)、LP→event の campaign_id 同送 cmd、dashboard。
+
+---
+
+# §51 フローチャート(2026-09-04 16:18 殿指示。v1.0〜v1.3 の全体像)
+
+## 51.1 全体パイプライン(Content Engine → Growth Engine → Live OOS → 次の仮説)
+
+```mermaid
+flowchart TB
+  subgraph SRC[本人一次資料 author corpus]
+    X[本人 X 3,247 件<br/>Voice / format / 反応]
+    N1[note 教育 50 本<br/>How to mb4377418b422]
+    N2[note 検証 14 本<br/>Proof m6557263f0241]
+    N3[note サヴァイヴ 63 本<br/>Reach m8357970d6430]
+    RW[殿の添削 corpus<br/>queue/x_rewrites]
+  end
+
+  subgraph CE[Content Engine 何を書くか・本人らしいか・数字は正しいか]
+    SP[system_prompt v5.x<br/>優先: 添削 > X > note]
+    GEN[x_post.sh draft<br/>slot 指示=分類 A-G + shift + 実例]
+    FG{Fact gate<br/>数字 fail-close / 誤り / 隠蔽}
+    VG{Voice gate<br/>説明しすぎ / 優等生化 / LLM 調}
+    RG{x_post_gate Rule 1-7}
+    LORD[殿の添削・承認<br/>artifact コメント]
+    STOCK[承認ストック<br/>queue/x_drafts *.approved]
+  end
+
+  subgraph GE[Growth Engine 誰に・何をさせ・どの段階で・いつ出し・結果はどうか]
+    META[事前 metadata 登録 x_growth_tag.py<br/>format / funnel_stage / audience<br/>content_lane / hook / gap / campaign_id]
+    CAL[slot_calendar v1.2<br/>平日 08:30 Short / 18:30 Long・Thread・Series・Short]
+    POST[x_slot_post.sh cron<br/>x_post.sh post --reply-to]
+    LEDG[(live OOS 台帳<br/>ledger / thread_ledger / series_ledger)]
+    SNAP[x_kpi_snapshot.py 毎時<br/>24h / 7d, null 明示]
+    ACC[(account_daily<br/>followers_delta + 日次構成)]
+    SUM[--summary<br/>format×stage×lane 中央値, N/A]
+  end
+
+  subgraph AN[分析と次の仮説]
+    OBS[Observed 実測]
+    INF[Inferred 観察上の関連<br/>因果ではない]
+    UNA[Unavailable 取れない]
+    HYP[次の仮説<br/>40 投稿までは mix 固定]
+  end
+
+  X --> SP
+  N1 --> SP
+  N2 --> SP
+  N3 --> SP
+  RW --> SP
+  SP --> GEN --> FG -->|PASS| VG -->|PASS| RG -->|PASS| LORD
+  FG -->|FAIL| GEN
+  VG -->|FAIL| GEN
+  RG -->|FAIL| GEN
+  LORD -->|殿版 / 無修正承認| STOCK
+  LORD -->|添削| RW
+  STOCK --> META --> LEDG
+  CAL --> POST
+  STOCK --> POST -->|post_id, posted_at| LEDG
+  LEDG --> SNAP --> LEDG
+  SNAP --> ACC
+  LEDG --> SUM
+  ACC --> SUM
+  SUM --> OBS --> INF --> HYP
+  SUM --> UNA
+  HYP -->|slot 指示 / 生成対象| GEN
+  HYP -->|4 週後のみ| CAL
+```
+
+## 51.2 ファネルと投稿の役割(1 投稿=1〜2 段階。Reach 投稿単体で DM-Signal へつなげない)
+
+```mermaid
+flowchart LR
+  IMP[Impression] --> ENG[Engagement / Dwell*] --> PV[Profile Visit] --> FO[Follow] --> RE[再接触] --> TR[Trust] --> NOTE[note] --> DM[DM-Signal] --> SU[Signup] --> PD[Paid]
+
+  S[Short<br/>reach / follow] -.-> IMP
+  S -.-> PV
+  L[Long<br/>trust / follow] -.-> TR
+  L -.-> FO
+  T[Thread<br/>trust / conversation] -.-> ENG
+  T -.-> TR
+  SE[Series Entry<br/>follow / repeat] -.-> FO
+  SE -.-> RE
+  CV[Convert 投稿 F/G<br/>campaign_id 付き] -.-> NOTE
+  CV -.-> DM
+  PR[Profile / Pinned<br/>何者か・DM-Signal は実績] -.-> FO
+  PR -.-> TR
+```
+
+`*Dwell` は API で取得不能(§43)。
+
+## 51.3 入口レーンの収束(v1.1 §28)と note 三層
+
+```mermaid
+flowchart LR
+  A[Lane A お金・格差] --> C0[数字で判断する思想]
+  B[Lane B 住宅・不動産・金利] --> C0
+  C[Lane C 医師・高所得] --> C0
+  D[Lane D 事業・AI] --> C0
+  E[Lane E 投資直球] --> C0
+  C0 --> SYS[投資システム / 検証] --> DMX[デュアルモメンタム] --> DMS[DM-Signal]
+
+  RN[Reach note<br/>俺たちはどう生き延びるか]
+  EN[Education note<br/>How to]
+  PN[Proof note<br/>検証ショートコラム]
+  A -.-> RN
+  B -.-> RN
+  C -.-> RN
+  SYS -.-> PN
+  DMX -.-> EN
+```
+
+## 51.4 KPI の取得可否と attribution(v1.3 §44。0 と null を混ぜない)
+
+```mermaid
+flowchart TB
+  P[投稿 post_id] --> PM[observable_post_level<br/>impressions / likes / replies / reposts / quotes / bookmarks<br/>profile_clicks / link_clicks 自投稿・30 日以内]
+  P -. 取れない .-> UN[unavailable = null<br/>follow/post / non-follower imp / dwell / read completion<br/>unique readers / repeat engagers / note PV per post]
+  ACC2[account 日次] --> AM[observable_account_level<br/>followers / delta_day / delta_week<br/>当日の投稿構成 formats・funnel]
+  P -->|link に campaign_id| EXT[external_attribution<br/>dm_signal_visit / signup / paid<br/>showcase_events + campaign_id 未実装]
+  P -. note 経由は帰属なし .-> NA[none<br/>post → note PV → paid は結ばない]
+  PM --> OBS2[Observed]
+  AM --> OBS2
+  EXT --> OBS2
+  OBS2 --> INF2[Inferred 関連の可能性<br/>Short 3 本と followers +7 を同日に置くだけ]
+  UN --> UNA2[Unavailable と明示]
+```
+
+## 51.5 X token と投稿経路(T3-S-65/67/68 の教訓を構造にした形)
+
+```mermaid
+flowchart LR
+  LORD2[殿がブラウザで認可<br/>PKCE URL] --> LIS[x_oauth_listener.py 8585<br/>置換方式で env へ 1 行]
+  LIS --> ENV[(config/x_api.env<br/>X_ACCESS_TOKEN / X_REFRESH_TOKEN 1 行)]
+  KEEP[x_token_keeper.sh cron */30] -->|refresh 30 日毎・失敗 3 回で再認可 URL| REF[x_token_refresh.py<br/>env を書く唯一の helper]
+  REF --> ENV
+  ENV -->|access のみ Bearer| POSTX[x_post.sh post<br/>urllib 直叩き, --reply-to]
+  ENV -->|access のみ| FETCH[x_fetch_author_corpus.py<br/>0 件なら上書きしない]
+  ENV -->|access のみ| SNAP2[x_kpi_snapshot.py]
+  XDK[xdk SDK] -. 使わない .-> POSTX
+```
