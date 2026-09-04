@@ -422,12 +422,32 @@ review_report_logical_path() {
 # silently repaired into this generation.
 review_deploy_generation_marker_update() {
     local root="$1" report_logical="$2" old_report_id="$3" new_report_id="$4"
-    local report_base marker marker_line marker_path marker_source marker_query marker_id marker_tmp
+    local report_base marker marker_line marker_path marker_source marker_query marker_id marker_tmp marker_version
     [[ "$report_logical" == queue/reports/*.yaml ]] || return 1
     report_base=${report_logical#queue/reports/}
     [[ "$report_base" != */* && -n "$report_base" ]] || return 1
-    [ -n "$old_report_id" ] && [ -n "$new_report_id" ] || return 1
     marker="$root/queue/reports/.deploy_generation_$report_base"
+    # Reports created before deployment-generation markers were introduced do
+    # not carry report_identity_version=2 and have no marker to rotate. Keep
+    # their established RC lifecycle intact; modern v2 reports remain
+    # fail-closed when the marker is absent.
+    if [ ! -e "$marker" ]; then
+      marker_version=$(python3 - "$root/$report_logical" <<'PY'
+import sys
+import yaml
+
+try:
+    report = yaml.safe_load(open(sys.argv[1], encoding="utf-8")) or {}
+except (OSError, yaml.YAMLError):
+    report = {}
+value = report.get("report_identity_version") if isinstance(report, dict) else None
+print(str(value or ""))
+PY
+      ) || marker_version=""
+      [ "$marker_version" = "2" ] || return 0
+      return 1
+    fi
+    [ -n "$old_report_id" ] && [ -n "$new_report_id" ] || return 1
     [ -f "$marker" ] && [ ! -L "$marker" ] || return 1
     [ "$(wc -l < "$marker")" -eq 1 ] || return 1
     marker_line=$(<"$marker")

@@ -227,7 +227,7 @@ PY
 }
 BATS
 
-    run bash "$PROJECT_ROOT/scripts/run_tests.sh" file "$fixture"
+    run env BATS_CACHE=0 bash "$PROJECT_ROOT/scripts/run_tests.sh" file "$fixture"
     [ "$status" -eq 0 ]
     [[ "$output" == *"TEST_RECEIPT_PASS"* ]]
     [[ "$output" == *"tests=1/1"* ]]

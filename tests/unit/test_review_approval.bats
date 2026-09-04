@@ -447,6 +447,12 @@ binary_checks:
 files_modified:
   - path: scripts/review_approval.sh
 YAML
+    printf 'queue/reports/%s\t%s\t%s\t%s\n' \
+      "$(basename "$report")" \
+      1111111111111111111111111111111111111111111111111111111111111111 \
+      2222222222222222222222222222222222222222222222222222222222222222 \
+      rpt-22222222-2222-4222-8222-222222222222 \
+      > "$PAIR_ROOT/queue/reports/.deploy_generation_$(basename "$report")"
     printf '%s\n' "$report"
 }
 
@@ -726,6 +732,12 @@ files_modified:
   - path: scripts/review_approval.sh
 REPORT
     export RC_REVOKE_REPORT="$RC_REVOKE_ROOT/queue/reports/worker_report_cmd_karo_rc_revoke_generation.yaml"
+    printf 'queue/reports/%s\t%s\t%s\t%s\n' \
+      "$(basename "$RC_REVOKE_REPORT")" \
+      1111111111111111111111111111111111111111111111111111111111111111 \
+      2222222222222222222222222222222222222222222222222222222222222222 \
+      rpt-rc-revoke-generation-v1 \
+      > "$RC_REVOKE_ROOT/queue/reports/.deploy_generation_$(basename "$RC_REVOKE_REPORT")"
     export REVIEW_APPROVAL_ROOT="$RC_REVOKE_ROOT"
     export REVIEW_APPROVAL_SKIP_LEDGER_CHECK=1
     export REVIEW_APPROVAL_NO_NOTIFY=1
@@ -832,6 +844,12 @@ files_modified:
   - path: scripts/review_approval.sh
 REPORT
     export LEGACY_RC_REPORT="$LEGACY_RC_ROOT/queue/reports/worker_report_cmd_4353.yaml"
+    printf 'queue/reports/%s\t%s\t%s\t%s\n' \
+      "$(basename "$LEGACY_RC_REPORT")" \
+      1111111111111111111111111111111111111111111111111111111111111111 \
+      2222222222222222222222222222222222222222222222222222222222222222 \
+      rpt-cmd-4353-legacy \
+      > "$LEGACY_RC_ROOT/queue/reports/.deploy_generation_worker_report_cmd_4353.yaml"
     export REVIEW_APPROVAL_ROOT="$LEGACY_RC_ROOT"
     export REVIEW_APPROVAL_SKIP_LEDGER_CHECK=1
     export REVIEW_APPROVAL_NO_NOTIFY=1
