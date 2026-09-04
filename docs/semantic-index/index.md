@@ -9914,6 +9914,7 @@ codd:
 | discussion | `queue/lord_conversation.jsonl` 2026-09-04T13:34:07+09:00 続けて |
 | causal_chain | `[[cmd_karo_cdp_t5_endpoint_qualification_20260802]]` (L1529) |
 | causal_chain | `[[cmd_karo_cdp_t5_auth_dom_probe_20260802]]` (L1530) |
+| discussion | `queue/lord_conversation.jsonl` 2026-09-05T01:27:12+09:00 続けて |
 
 ## defense_hierarchy — 防御階層原則
 
