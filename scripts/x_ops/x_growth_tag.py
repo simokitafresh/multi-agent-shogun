@@ -60,6 +60,9 @@ def main():
         g["link_type"] = "none"
         g["external_context"] = "standalone"
         g["format"] = "short"  # v1.2: 承認 13 本は 104〜147 字=全て short
+        if g["funnel_stage"] == "convert" or cat == "G":  # v1.3 §48: convert 投稿は作成時に campaign_id を発行(後付け禁止)
+            import datetime as _dt
+            g["campaign_id"] = g.get("campaign_id") or f"x_{_dt.date.today():%Y%m%d}_{cat}_{did.split('-')[-1].zfill(3)}"
         g.update(OVERRIDES.get(did, {}))
         g["content_lane"] = schema.get("content_lane", {}).get("lane_of_13", {}).get(did, "investing")  # v1.1 3 軸目
         if "funnel_stage" in OVERRIDES.get(did, {}) and "desired_action" not in OVERRIDES[did]:
