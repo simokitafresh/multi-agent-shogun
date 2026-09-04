@@ -1,5 +1,6 @@
 # インフラコンテキスト
 <!-- last_updated: 2026-09-04 context_freshness reviewed source boundary -->
+<!-- source_commit:0a4e3d8b8 reason:context_freshness reviewed source boundary evidence:context_freshness_check context=context/infrastructure.md commit=0a4e3d8b8 -->
 <!-- source_commit:8bc982df2 reason:context_freshness reviewed source boundary evidence:context_freshness_check context=context/infrastructure.md commit=8bc982df2 -->
 <!-- source_commit:e483d42b8 reason:context_freshness reviewed source boundary evidence:context_freshness_check context=context/infrastructure.md commit=e483d42b8 -->
 <!-- source_commit:9d103e289 reason:context_freshness reviewed source boundary evidence:context_freshness_check context=context/infrastructure.md commit=9d103e289 -->
@@ -748,3 +749,4 @@ source boundary一致taskはregistryのowner/update_triggerからcontext_update_
 - gate_shogun_startup 本番 queue 汚染チェックはファイル名+task_id 行のみ(2026-09-04 将軍 D0、本文 grep の偽陽性 33 件根治)
 - 汚染チェック追補(2026-09-04 家老 GA-573 c8d613ca9): publisher 失敗通知の `task=<id>` 形も検出対象(T3-S-64 の実漏出形)。将軍 D0 bec5dab26 の上に積層
 - gate_shogun_startup done∧CLEAR無し 判定は task_id の deploy suffix(_normal)を剥がして gate_metrics と照合(2026-09-04 将軍 D0 400836977)。close_check runtime direct push 分類(家老 3c7f94f85/58d2a648d、cmd_karo_hotfix_close_check_runtime_direct_push_202609031327)は origin/main 合流済み
+- X Growth KPI 可否正本 skills/x-post-pipeline/kpi_availability.yaml(2026-09-04 殿裁定 16:07: 4 状態、null/0 区別、follow は account 日次 delta のみ、campaign_id で DM-Signal external_attribution)。x_kpi_snapshot.py は null 明示+followers_delta+日次構成
