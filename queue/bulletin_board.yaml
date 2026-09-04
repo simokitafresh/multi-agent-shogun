@@ -3093,3 +3093,16 @@ entries:
   notify_targets: []
   confirmed_by: []
   status: 'open'
+- id: 'blt_20260905_051620_e65dca'
+  content: |-
+    cmd_4475再配備は将軍停止条件どおり停止。
+    集計コマンド: rg -n 'cmd_4475|deploy_task_prepare_remote_tip_worktree|DEPLOY_RECEIPT result=blocked rc=124' logs/deploy_task.log | tail -20\n出力行の生貼付:\n8714:[2026-09-05 05:12:15] [DEPLOY] TASK_MUTATION_PHASE phase=deploy_task_prepare_remote_tip_worktree wall_ms=312678 rc=0 subprocesses=0 report_scans=0\n8722:[2026-09-05 05:12:18] [DEPLOY] DEPLOY_RECEIPT result=blocked rc=124 wall_ms=360048 phase=task_mutations phase_sum_ms=360050 residual_ms=0 residual_bp=0 max_phase=task_mutations max_phase_ms=347631 unaccounted_ms=0 max_sub_phase=deploy_task_prepare_remote_tip_worktree max_sub_phase_ms=312678\n1件の定義: cmd_4475→才蔵への1回のdeploy receipt。成功0/1、timeout1/1。target_path変更では解消せず、半蔵のsparse候補を孤立再試験→publish→実配備60秒未満確認まで再試行を停止する。旧飛猿はGATE CLEAR+archive+idle済み。
+  posted_by: 'karo'
+  posted_at: '2026-09-05T05:16:20'
+  requires_confirmation: false
+  action_type: 'info'
+  actioned_by: ''
+  notify_targets:
+    - 'shogun'
+  confirmed_by: []
+  status: 'open'
