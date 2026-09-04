@@ -4079,6 +4079,7 @@ codd:
 | causal_chain | `[[cmd_karo_ci_fix_30844464109_wrapper_run_tests]]` (L1544) |
 | causal_chain | `[[cmd_karo_hotfix_gate_busy_not_block_202608190642]]` (L1616) |
 | causal_chain | `[[cmd_karo_hotfix_context_freshness_runtime_speed_v2_20260829]]` (L1670) |
+| discussion | `queue/lord_conversation.jsonl` 2026-09-05T03:26:49+09:00 b84h348xs toolu_01VmDvXvKDgAiG9uKxuizv8X /tmp/claude-1000/-home-simokitafresh-multi-agent-shogun/d9faccc5-127b-4b4f-bd18 |
 
 ## systems_knowledge_base — システム知識辞書
 
