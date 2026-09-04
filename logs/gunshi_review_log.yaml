@@ -4881,3 +4881,38 @@
   verdict: LGTM
   verified_files:
   - scripts/gates/gate_workaround_rate.sh:1
+- brainwash_check: '#1no #2no(precheck CLEAR) #3no #4no #5no #6no #7no #8no'
+  causal_chain: X Growth Engine KPI計測→campaign attribution必要→BE/FE/LP実装→LGTM
+  cmd_id: cmd_4474
+  finding_categories:
+  - assumptions
+  - numbers
+  - premortem
+  - adversarial
+  - ambiguity
+  gate_prediction: CLEAR
+  gate_prediction_reason: all checks passed
+  observations:
+  - '事実1: BE migration+API+FE UTM+LP+集計API。9ファイル変更'
+  - '事実2: backend contract 2/2、LP 563/563 PASS。FAIL0 SKIP0'
+  - '事実3: campaign_id nullable、UTM無し=null(0/空文字に潰さない)'
+  - 'adversarial: nullをno_attributionとして別行。既存event不変。migration可逆'
+  - 'ambiguity: 曖昧点なし'
+  operational_simulation:
+    actual: ERRORS=0 prediction=CLEAR
+    command: gate_gunshi_report_precheck.sh
+    expected: ERRORS=0 prediction=CLEAR
+    result: PASS
+  origin: '[[cmd_4474]] -> [[campaign_attribution]] -> [[LGTM]]'
+  report_id: rpt-6f012e3b-e786-4129-80a8-4298a516c909
+  report_identity_version: 2
+  report_ninja: saizo
+  report_path: queue/reports/saizo_report_cmd_4474.yaml
+  report_task_id: cmd_4474_full
+  review_type: report
+  step3_5_verified: true
+  timestamp: '2026-09-04T17:22:00+09:00'
+  verdict: LGTM
+  verified_files:
+  - backend/app/api/public_showcase.py:1
+  - frontend/lib/showcase-attribution.ts:1
