@@ -3617,6 +3617,7 @@ codd:
 | discussion | `queue/lord_conversation.jsonl` 2026-09-05T02:32:22+09:00 殿 2026-09-05 02:15『DM-signal LP の SEO 意見(外部 LLM 12 Phase)は全て取り入れず、先に調査確認、問題なければ慌てない、設計書は取り入れる分だけ更新』→将軍 02:16-02:20 本番 cu |
 | discussion | `queue/lord_conversation.jsonl` 2026-09-05T03:20:35+09:00 bcqzn4keb toolu_01NmA3MqKWbprF2qH6G8DsYi /tmp/claude-1000/-home-simokitafresh-multi-agent-shogun/3761993c-8cac-456d-bf3b |
 | cmd | `cmd_karo_hotfix_task_worktree_published_commit_stability` (`scripts/cmd_complete_gate.sh`, `tests/unit/test_cmd_complete_gate.bats`) |
+| discussion | `queue/lord_conversation.jsonl` 2026-09-05T07:24:47+09:00 2026-09-05 07:23 外部 repo(DM-signal)deploy 根治の実測: cold cmd_4475→才蔵 worktree 81.1s/receipt 118.5s、warm cmd_4476→小太郎 worktr |
 
 ## investment_knowledge_base — 投資知識辞書
 
