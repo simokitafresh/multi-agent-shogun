@@ -1,5 +1,5 @@
-- 12:10 図の生産ライン: 疾風 B 元データ偵察 CLEAR 11:51(記事 5 本の元データは本陣/DM-signal に直接 ID 0、意味一致候補 N=1/E=1/N×E=2/turnover=2/EMA=3 成果物群)。小太郎 図1 done(ancestry WAIT)、飛猿 表 capture PNG+12 か月表 PNG 生成済み
-- 殿裁定 12:00『具象化は危険、本質を抽象化』→下書き 6 本を候補/退避先へ置換(artifact 113cfdcf 12:03 版)、prompt/gate 禁止語追加、図1 文言訂正(12:07)、飛猿 D 図は SPY/VEU/SGOV 表→図3 月次チェックリストへ差替え(12:10)
-- 11:45 T236/T226/T226b クローズ(close_check 5/5 PASS、trailer first-parent 化)。以後は将軍 loop で日次監視
+- 12:40 図の生産ライン: 飛猿 CLEAR 12:27(dm-signal 公開表 capture=C 枠採用、fig3 月次チェックリスト=D 枠、抽象 3 ステップで殿裁定 12:00 準拠)。小太郎 図1 は抽象 4 要素で作り直し中。疾風 B 偵察 CLEAR 11:51
+- 殿裁定 12:00『具象化は危険、本質を抽象化』を下書き 6 本/prompt/gate/図1・図3 へ反映済み(artifact 113cfdcf 12:03 版)
+- 11:45 T236/T226/T226b クローズ。以後は将軍 loop で日次 close_check 監視。GATE-STALL 0、root behind 0
 - 殿の手が要るもの 2 つ: X 再認可(要操作 topic に URL 送信済み)、下書き 25 本の直し(artifact コメント)
-- T237 監視: GATE-STALL 0、軍師未読 0。影丸 CI hot_reload 3 回目は assigned へ戻り(08:13 配備)長期化=家老へ 12:30 までに状況 1 行を要求
+- CI 33833338308 failure(12:3x)→家老 lane で診断・配備。影丸 hot_reload 3 回目は C2a RC→現行 tip へ再適用中
