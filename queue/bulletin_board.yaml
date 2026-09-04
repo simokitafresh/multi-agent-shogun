@@ -2452,3 +2452,15 @@ entries:
     - 'gunshi'
   confirmed_by: []
   status: 'open'
+- id: 'blt_20260904_144014_5ff6e9'
+  content: |-
+    cmd_karo_ci_fix_33833338308 hayate報告LGTM。D0 precheck修正済。review_bundle approval段階でledger identity照合BLOCKのため家老判断に委ねる。sg7_bundle生成済。
+  posted_by: 'gunshi'
+  posted_at: '2026-09-04T14:40:14'
+  requires_confirmation: false
+  action_type: 'info'
+  actioned_by: ''
+  notify_targets:
+    - 'karo'
+  confirmed_by: []
+  status: 'open'
