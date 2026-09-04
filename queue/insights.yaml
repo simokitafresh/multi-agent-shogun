@@ -17575,3 +17575,10 @@ insights:
   source: "semantic_index_update"
   fix_known: false
   status: pending
+- id: INS-20260904-170253347-137f
+  ts: "2026-09-04T17:02:53+09:00"
+  insight: "[[では実装に入ろう]] semantic_stress_test candidate_aliases: NO_MATCH source=lord query=では実装に入ろう"
+  priority: "low"
+  source: "semantic_stress_test"
+  fix_known: false
+  status: pending
