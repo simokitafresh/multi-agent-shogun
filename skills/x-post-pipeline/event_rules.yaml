@@ -1,0 +1,15 @@
+meta:
+  purpose: イベント lane(殿 2026-09-04 19:30『投資アカウントとして投資イベントに振れなくていいのか』→19:33『event-driven も設計して実装しよう』)。イベントは context(なぜ今言うか)であって claim ではない。claim は claim_bank からのみ。相場予測・未検証数字・その場の claim 捏造は禁止
+  flow: 予定イベント=plan に事前登録(event 欄)→その日の slot の claim をイベント対応 claim に寄せる / 突発イベント=毎朝 07:05 x_event_scan.py が価格データ(yfinance)で検知→queue/x_events/ に提案+ntfy→x_claim_gen が Short 生成(gate)→殿承認(.approved)→当日の空 slot か 12:30 の event slot で投稿(poster v1.8)。fallback ではない(空 slot を埋める目的で発火しない。イベントが無ければ何も起きない)
+  guard: 同一 claim は 7 日以内に再発火しない。1 日 1 event unit まで。イベント検知は数値規則のみ(LLM 判断なし)。イベント文は本文に数字を入れる時 verified_numbers 以外は当日の実測(source に yfinance の値と日付を記録)だけ許可
+scheduled_events:
+  - {date: '2026-09-15', name: FOMC 1 日目, claims: [C34, C16, C24], note: 金利イベント。予測しない。『金利のある世界』の本人定型句へ接続}
+  - {date: '2026-09-16', name: FOMC 結果, claims: [C10, C15, C20], note: 当てた外したを言わない。予測を捨てた仕組みの話}
+  - {date: '2026-09-30', name: 月末=DM 判定日(本人イベント), claims: [C33, C09, C21], note: F 枠。先出しシグナルと月次成績は追試できる}
+  - {date: '2026-10-02', name: 米雇用統計, claims: [C10, C25], note: 指標で相場観を語らない}
+reactive_triggers:
+  - {id: spy_drop_3, rule: "SPY 日次リターン <= -3%", claims: [C01, C03, C23, C34], format: short, funnel_stage: reach, audience: general, hook_type: contradiction, content_category: A}
+  - {id: spy_up_3, rule: "SPY 日次リターン >= +3%", claims: [C02, C12, C22], format: short, funnel_stage: reach, audience: investor, hook_type: math, content_category: D}
+  - {id: spy_dd_10, rule: "SPY 52 週高値からの下落 <= -10%(初回到達日のみ)", claims: [C05, C17, C13, C06], format: short, funnel_stage: trust, audience: investor, hook_type: question, content_category: A}
+  - {id: vix_30, rule: "VIX 終値 >= 30(前日 < 30)", claims: [C01, C34, C22], format: short, funnel_stage: reach, audience: general, hook_type: contradiction, content_category: A}
+  - {id: n225_drop_3, rule: "日経 225 日次リターン <= -3%", claims: [C01, C03, C34], format: short, funnel_stage: reach, audience: general, hook_type: contradiction, content_category: A}

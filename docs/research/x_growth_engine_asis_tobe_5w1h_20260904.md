@@ -388,6 +388,17 @@ X Growth の dashboard は未作成(現状は `--summary` の表)。作る時の
 
 Observed / Inferred / Unavailable を必ず分ける。例: Observed「9/4 followers +7」「9/4 Short 3 本」→ Inferred「投稿量と followers 増に関連の可能性」。禁止「Short を 3 本出したので 7 人増えた」。投稿量比較(2/3/4 posts/day)は total_impressions/day・total_profile_clicks/day・total_link_clicks/day・followers_delta/day・week で行い、follow/post は作らない。取得不能 KPI 一覧と将来案は kpi_availability.yaml の unavailable 節(status / reason / possible_future_solution)。status を差し替えるだけで schema を壊さない(value/status/reason の 3 つ組)。
 
+### 実装進捗台帳(v1.9 — 殿指示 2026-09-04 19:28「編集計画」+19:33「event-driven」)
+
+| 項目 | 状態 | 現物 |
+|---|---|---|
+| 月間 editorial plan(3 軸分離、empty 正常、reuse 理由、event 欄) | 完了 | `scripts/x_ops/x_plan_calendar.py` → `skills/x-post-pipeline/plan_202609.yaml`(52/42/10/34/8) |
+| Stage 1 artifact | 完了 | `docs/dashboard/x-editorial-plan-202609.html`(artifact b2f1b8ae) |
+| 生成器: GROWTH mapping 撤廃、editorial metadata fail-close、Stage 1 gate、--event | 完了 | `scripts/x_ops/x_claim_gen.py` |
+| イベント lane(予定+突発、07:05 scan、12:30 event slot) | 完了 | `event_rules.yaml` / `x_event_scan.py` / poster v1.8 / cron 2 本 |
+| 生成済み本文 61 本 | 保留 | `queue/x_drafts/plan_v1_pregen/`(Stage 1 承認後に claim×format 一致分を紐付け) |
+| Stage 2 本文カレンダー | 待ち | `scripts/x_calendar_render.py`(Stage 1 承認後) |
+
 ### 実装進捗台帳(v1.8 — 殿指示 2026-09-04 19:14「claim_bank を次の切り抜き工場にしない」)
 
 | 項目 | 状態 | 現物 |

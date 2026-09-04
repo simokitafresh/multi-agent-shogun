@@ -1,356 +1,773 @@
 meta:
-  generated: '2026-09-04T19:20:55'
+  plan_id: plan_202609
+  generated: '2026-09-04T19:36:25'
   range:
   - '2026-09-05'
   - '2026-09-30'
-  rule: '規則: Short は claim を 1 回だけ使う。Long/Thread/Series Entry は同じ claim を深掘り形式として
-    1 回だけ再利用可(Short と 5 日以上離す)。'
+  approval:
+    stage1_editorial: pending
+    stage2_copy: pending
+  rule: capacity≠quota。empty は正常。format/funnel/category は別軸で事前登録。fill_slot 目的の再利用禁止
   series:
-    break_point:
-      title: 検証は最良探しじゃなく壊れる場所探し
-      claims:
-      - C07
-      - C08
-      - C24
-      - C09
-      - C25
-      - C19
-      - C18
-      - C28
-    invest_math:
-      title: 投資の算数
-      claims:
-      - C02
-      - C03
-      - C23
-      - C12
-      - C11
-      - C30
-      - C16
-      - C13
-  empty_slots: 0
+    break_point: 検証は最良探しじゃなく壊れる場所探し
+    invest_math: 投資の算数
+  stats:
+    capacity: 52
+    scheduled: 42
+    empty: 10
+    unique_claims: 34
+    reused_claims: 8
+    by_format:
+      short: 16
+      series_entry: 16
+      long: 7
+      thread: 3
+    by_stage:
+      reach: 17
+      follow: 17
+      trust: 8
+    by_category:
+      A: 11
+      E: 9
+      B: 5
+      C: 9
+      D: 7
+      F: 1
+    by_origin:
+      existing_user_thesis: 35
+      external_topic: 7
 plan:
 - date: '2026-09-05'
   time: 08:30
-  format: short
-  claim: C01
+  status: scheduled
   draft_id: P9-S-1
+  claim: C01
+  claim_origin: existing_user_thesis
+  content_category: A
+  format: short
+  funnel_stage: reach
+  audience: investor
+  hook_type: contradiction
+  desired_action: &id002
+  - dwell
+  - reply
+  - quote
+  - profile
+  context: ''
+  why_this_day: 本人の既存思想。今週のテーマと自然に接続
 - date: '2026-09-05'
   time: '18:30'
-  format: series_entry
-  claim: C07
+  status: scheduled
   draft_id: P9-SE-1
-  series_id: break_point
-  series_title: 検証は最良探しじゃなく壊れる場所探し
-  series_order: 1
-  series_total: 8
-- date: '2026-09-06'
-  time: 08:30
-  format: short
-  claim: C10
-  draft_id: P9-S-2
-- date: '2026-09-06'
-  time: '18:30'
-  format: long
-  claim: C05
-  draft_id: P9-L-1
-- date: '2026-09-07'
-  time: 08:30
-  format: short
-  claim: C14
-  draft_id: P9-S-3
-- date: '2026-09-07'
-  time: '18:30'
-  format: series_entry
-  claim: C02
-  draft_id: P9-SE-2
-  series_id: invest_math
-  series_title: 投資の算数
-  series_order: 1
-  series_total: 8
-- date: '2026-09-08'
-  time: 08:30
-  format: short
-  claim: C21
-  draft_id: P9-S-4
-- date: '2026-09-08'
-  time: '18:30'
-  format: series_entry
-  claim: C08
-  draft_id: P9-SE-3
-  series_id: break_point
-  series_title: 検証は最良探しじゃなく壊れる場所探し
-  series_order: 2
-  series_total: 8
-- date: '2026-09-09'
-  time: 08:30
-  format: short
-  claim: C27
-  draft_id: P9-S-5
-- date: '2026-09-09'
-  time: '18:30'
-  format: thread
-  claim: C04
-  draft_id: P9-T-1
-- date: '2026-09-10'
-  time: 08:30
-  format: short
-  claim: C31
-  draft_id: P9-S-6
-- date: '2026-09-10'
-  time: '18:30'
-  format: series_entry
-  claim: C03
-  draft_id: P9-SE-4
-  series_id: invest_math
-  series_title: 投資の算数
-  series_order: 2
-  series_total: 8
-- date: '2026-09-11'
-  time: 08:30
-  format: short
-  claim: C05
-  draft_id: P9-S-7
-- date: '2026-09-11'
-  time: '18:30'
-  format: long
-  claim: C15
-  draft_id: P9-L-2
-- date: '2026-09-12'
-  time: 08:30
-  format: short
-  claim: C33
-  draft_id: P9-S-8
-- date: '2026-09-12'
-  time: '18:30'
-  format: series_entry
-  claim: C24
-  draft_id: P9-SE-5
-  series_id: break_point
-  series_title: 検証は最良探しじゃなく壊れる場所探し
-  series_order: 3
-  series_total: 8
-- date: '2026-09-13'
-  time: 08:30
-  format: short
-  claim: C02
-  draft_id: P9-S-9
-- date: '2026-09-13'
-  time: '18:30'
-  format: series_entry
-  claim: C23
-  draft_id: P9-SE-6
-  series_id: invest_math
-  series_title: 投資の算数
-  series_order: 3
-  series_total: 8
-- date: '2026-09-14'
-  time: 08:30
-  format: short
-  claim: C34
-  draft_id: P9-S-10
-- date: '2026-09-14'
-  time: '18:30'
-  format: long
-  claim: C22
-  draft_id: P9-L-3
-- date: '2026-09-15'
-  time: 08:30
-  format: short
-  claim: C03
-  draft_id: P9-S-11
-- date: '2026-09-15'
-  time: '18:30'
-  format: series_entry
-  claim: C09
-  draft_id: P9-SE-7
-  series_id: break_point
-  series_title: 検証は最良探しじゃなく壊れる場所探し
-  series_order: 4
-  series_total: 8
-- date: '2026-09-16'
-  time: 08:30
-  format: short
-  claim: C04
-  draft_id: P9-S-12
-- date: '2026-09-16'
-  time: '18:30'
-  format: series_entry
-  claim: C12
-  draft_id: P9-SE-8
-  series_id: invest_math
-  series_title: 投資の算数
-  series_order: 4
-  series_total: 8
-- date: '2026-09-17'
-  time: 08:30
-  format: short
   claim: C07
+  claim_origin: existing_user_thesis
+  content_category: E
+  format: series_entry
+  funnel_stage: follow
+  audience: systematic
+  hook_type: contradiction
+  desired_action: &id001
+  - profile
+  - follow
+  - bookmark
+  context: ''
+  why_this_day: シリーズ『検証は最良探しじゃなく壊れる場所探し』の進行 1/8
+  series_id: break_point
+  series_title: 検証は最良探しじゃなく壊れる場所探し
+  series_order: 1
+  series_total: 8
+- date: '2026-09-06'
+  time: 08:30
+  status: scheduled
+  draft_id: P9-S-2
+  claim: C10
+  claim_origin: existing_user_thesis
+  content_category: B
+  format: short
+  funnel_stage: follow
+  audience: investor
+  hook_type: story
+  desired_action: *id001
+  context: ''
+  why_this_day: 本人の既存思想。今週のテーマと自然に接続
+- date: '2026-09-06'
+  time: '18:30'
+  status: scheduled
+  draft_id: P9-L-1
+  claim: C05
+  claim_origin: existing_user_thesis
+  content_category: A
+  format: long
+  funnel_stage: trust
+  audience: investor
+  hook_type: story
+  desired_action: &id003
+  - bookmark
+  - profile
+  - note
+  context: ''
+  why_this_day: claim を疑い→検証→数字→結論まで掘る
+- date: '2026-09-07'
+  time: 08:30
+  status: scheduled
+  draft_id: P9-S-3
+  claim: C14
+  claim_origin: existing_user_thesis
+  content_category: C
+  format: short
+  funnel_stage: reach
+  audience: investor
+  hook_type: contradiction
+  desired_action: *id002
+  context: ''
+  why_this_day: 本人の既存思想。今週のテーマと自然に接続
+- date: '2026-09-07'
+  time: '18:30'
+  status: scheduled
+  draft_id: P9-SE-2
+  claim: C02
+  claim_origin: existing_user_thesis
+  content_category: D
+  format: series_entry
+  funnel_stage: follow
+  audience: investor
+  hook_type: math
+  desired_action: *id001
+  context: ''
+  why_this_day: シリーズ『投資の算数』の進行 1/8
+  series_id: invest_math
+  series_title: 投資の算数
+  series_order: 1
+  series_total: 8
+- date: '2026-09-08'
+  time: 08:30
+  status: scheduled
+  draft_id: P9-S-4
+  claim: C21
+  claim_origin: existing_user_thesis
+  content_category: C
+  format: short
+  funnel_stage: reach
+  audience: investor
+  hook_type: result
+  desired_action: *id002
+  context: ''
+  why_this_day: 本人の既存思想。今週のテーマと自然に接続
+- date: '2026-09-08'
+  time: '18:30'
+  status: scheduled
+  draft_id: P9-SE-3
+  claim: C08
+  claim_origin: existing_user_thesis
+  content_category: C
+  format: series_entry
+  funnel_stage: follow
+  audience: systematic
+  hook_type: contradiction
+  desired_action: *id001
+  context: ''
+  why_this_day: シリーズ『検証は最良探しじゃなく壊れる場所探し』の進行 2/8
+  series_id: break_point
+  series_title: 検証は最良探しじゃなく壊れる場所探し
+  series_order: 2
+  series_total: 8
+- date: '2026-09-09'
+  time: 08:30
+  status: scheduled
+  draft_id: P9-S-5
+  claim: C27
+  claim_origin: existing_user_thesis
+  content_category: C
+  format: short
+  funnel_stage: reach
+  audience: investor
+  hook_type: math
+  desired_action: *id002
+  context: ''
+  why_this_day: 本人の既存思想。今週のテーマと自然に接続
+- date: '2026-09-09'
+  time: '18:30'
+  status: scheduled
+  draft_id: P9-T-1
+  claim: C04
+  claim_origin: existing_user_thesis
+  content_category: D
+  format: thread
+  funnel_stage: reach
+  audience: general
+  hook_type: math
+  desired_action: *id002
+  context: ''
+  why_this_day: 親で核、リプで条件と数字を段階的に足す
+- date: '2026-09-10'
+  time: 08:30
+  status: scheduled
+  draft_id: P9-S-6
+  claim: C31
+  claim_origin: external_topic
+  content_category: C
+  format: short
+  funnel_stage: reach
+  audience: investor
+  hook_type: question
+  desired_action: *id002
+  context: 暴落中の積立を期待値と呼ぶ投稿が伸びている
+  why_this_day: 外部で今話題のテーマへ本人の違和感を置く
+- date: '2026-09-10'
+  time: '18:30'
+  status: scheduled
+  draft_id: P9-SE-4
+  claim: C03
+  claim_origin: existing_user_thesis
+  content_category: D
+  format: series_entry
+  funnel_stage: follow
+  audience: investor
+  hook_type: math
+  desired_action: *id001
+  context: ''
+  why_this_day: シリーズ『投資の算数』の進行 2/8
+  series_id: invest_math
+  series_title: 投資の算数
+  series_order: 2
+  series_total: 8
+- date: '2026-09-11'
+  time: 08:30
+  status: scheduled
+  draft_id: P9-S-7
+  claim: C06
+  claim_origin: existing_user_thesis
+  content_category: C
+  format: short
+  funnel_stage: reach
+  audience: investor
+  hook_type: contradiction
+  desired_action: *id002
+  context: ''
+  why_this_day: 深掘り予定の claim を先に広い層へ問題提起
+  reuse_of: C06
+  reuse_reason: Short で問題提起した claim を long で検証まで掘る(5 日以上後)
+- date: '2026-09-11'
+  time: '18:30'
+  status: scheduled
+  draft_id: P9-L-2
+  claim: C15
+  claim_origin: existing_user_thesis
+  content_category: B
+  format: long
+  funnel_stage: trust
+  audience: systematic
+  hook_type: result
+  desired_action: *id003
+  context: ''
+  why_this_day: claim を疑い→検証→数字→結論まで掘る
+- date: '2026-09-12'
+  time: 08:30
+  status: scheduled
+  draft_id: P9-S-8
+  claim: C33
+  claim_origin: external_topic
+  content_category: F
+  format: short
+  funnel_stage: trust
+  audience: investor
+  hook_type: result
+  desired_action: *id003
+  context: FIRE 収支・NISA 実績の定期公開が反応を得ている
+  why_this_day: 外部で今話題のテーマへ本人の違和感を置く
+- date: '2026-09-12'
+  time: '18:30'
+  status: scheduled
+  draft_id: P9-SE-5
+  claim: C24
+  claim_origin: existing_user_thesis
+  content_category: E
+  format: series_entry
+  funnel_stage: follow
+  audience: systematic
+  hook_type: result
+  desired_action: *id001
+  context: ''
+  why_this_day: シリーズ『検証は最良探しじゃなく壊れる場所探し』の進行 3/8
+  series_id: break_point
+  series_title: 検証は最良探しじゃなく壊れる場所探し
+  series_order: 3
+  series_total: 8
+- date: '2026-09-13'
+  time: 08:30
+  status: scheduled
+  draft_id: P9-S-9
+  claim: C11
+  claim_origin: existing_user_thesis
+  content_category: D
+  format: short
+  funnel_stage: reach
+  audience: investor
+  hook_type: math
+  desired_action: *id002
+  context: ''
+  why_this_day: 深掘り予定の claim を先に広い層へ問題提起
+  reuse_of: C11
+  reuse_reason: Short で問題提起した claim を series_entry で検証まで掘る(5 日以上後)
+- date: '2026-09-13'
+  time: '18:30'
+  status: scheduled
+  draft_id: P9-SE-6
+  claim: C23
+  claim_origin: existing_user_thesis
+  content_category: A
+  format: series_entry
+  funnel_stage: follow
+  audience: investor
+  hook_type: math
+  desired_action: *id001
+  context: ''
+  why_this_day: シリーズ『投資の算数』の進行 3/8
+  series_id: invest_math
+  series_title: 投資の算数
+  series_order: 3
+  series_total: 8
+- date: '2026-09-14'
+  time: 08:30
+  status: scheduled
+  draft_id: P9-S-10
+  claim: C34
+  claim_origin: external_topic
+  content_category: B
+  format: short
+  funnel_stage: reach
+  audience: investor
+  hook_type: contradiction
+  desired_action: *id002
+  context: 『現金で待つのは機会損失』が常識として語られている
+  why_this_day: 外部で今話題のテーマへ本人の違和感を置く
+- date: '2026-09-14'
+  time: '18:30'
+  status: scheduled
+  draft_id: P9-L-3
+  claim: C22
+  claim_origin: existing_user_thesis
+  content_category: B
+  format: long
+  funnel_stage: reach
+  audience: investor
+  hook_type: contradiction
+  desired_action: *id002
+  context: ''
+  why_this_day: claim を疑い→検証→数字→結論まで掘る
+- date: '2026-09-15'
+  time: 08:30
+  status: scheduled
+  draft_id: P9-S-11
+  claim: C13
+  claim_origin: existing_user_thesis
+  content_category: A
+  format: short
+  funnel_stage: reach
+  audience: investor
+  hook_type: question
+  desired_action: *id002
+  context: ''
+  why_this_day: 深掘り予定の claim を先に広い層へ問題提起(予定イベント『FOMC 1 日目』の日)
+  reuse_of: C13
+  reuse_reason: Short で問題提起した claim を series_entry で検証まで掘る(5 日以上後)
+  event: FOMC 1 日目
+- date: '2026-09-15'
+  time: '18:30'
+  status: scheduled
+  draft_id: P9-SE-7
+  claim: C09
+  claim_origin: existing_user_thesis
+  content_category: E
+  format: series_entry
+  funnel_stage: follow
+  audience: systematic
+  hook_type: result
+  desired_action: *id001
+  context: ''
+  why_this_day: シリーズ『検証は最良探しじゃなく壊れる場所探し』の進行 4/8
+  series_id: break_point
+  series_title: 検証は最良探しじゃなく壊れる場所探し
+  series_order: 4
+  series_total: 8
+  event: FOMC 1 日目
+- date: '2026-09-16'
+  time: 08:30
+  status: scheduled
+  draft_id: P9-S-12
+  claim: C16
+  claim_origin: existing_user_thesis
+  content_category: A
+  format: short
+  funnel_stage: reach
+  audience: investor
+  hook_type: math
+  desired_action: *id002
+  context: ''
+  why_this_day: 深掘り予定の claim を先に広い層へ問題提起(予定イベント『FOMC 結果』の日)
+  reuse_of: C16
+  reuse_reason: Short で問題提起した claim を series_entry で検証まで掘る(5 日以上後)
+  event: FOMC 結果
+- date: '2026-09-16'
+  time: '18:30'
+  status: scheduled
+  draft_id: P9-SE-8
+  claim: C12
+  claim_origin: existing_user_thesis
+  content_category: D
+  format: series_entry
+  funnel_stage: follow
+  audience: investor
+  hook_type: math
+  desired_action: *id001
+  context: ''
+  why_this_day: シリーズ『投資の算数』の進行 4/8
+  series_id: invest_math
+  series_title: 投資の算数
+  series_order: 4
+  series_total: 8
+  event: FOMC 結果
+- date: '2026-09-17'
+  time: 08:30
+  status: scheduled
   draft_id: P9-S-13
+  claim: C18
+  claim_origin: existing_user_thesis
+  content_category: E
+  format: short
+  funnel_stage: reach
+  audience: investor
+  hook_type: contradiction
+  desired_action: *id002
+  context: ''
+  why_this_day: 深掘り予定の claim を先に広い層へ問題提起
+  reuse_of: C18
+  reuse_reason: Short で問題提起した claim を series_entry で検証まで掘る(5 日以上後)
 - date: '2026-09-17'
   time: '18:30'
-  format: thread
-  claim: C17
+  status: scheduled
   draft_id: P9-T-2
-- date: '2026-09-18'
-  time: 08:30
-  format: short
-  claim: C08
-  draft_id: P9-S-14
-- date: '2026-09-18'
-  time: '18:30'
-  format: series_entry
-  claim: C25
-  draft_id: P9-SE-9
-  series_id: break_point
-  series_title: 検証は最良探しじゃなく壊れる場所探し
-  series_order: 5
-  series_total: 8
-- date: '2026-09-19'
-  time: 08:30
-  format: short
-  claim: C13
-  draft_id: P9-S-15
-- date: '2026-09-19'
-  time: '18:30'
-  format: long
-  claim: C06
-  draft_id: P9-L-4
-- date: '2026-09-20'
-  time: 08:30
-  format: short
-  claim: C09
-  draft_id: P9-S-16
-- date: '2026-09-20'
-  time: '18:30'
-  format: series_entry
-  claim: C11
-  draft_id: P9-SE-10
-  series_id: invest_math
-  series_title: 投資の算数
-  series_order: 5
-  series_total: 8
-- date: '2026-09-21'
-  time: 08:30
-  format: short
-  claim: C12
-  draft_id: P9-S-17
-- date: '2026-09-21'
-  time: '18:30'
-  format: series_entry
-  claim: C19
-  draft_id: P9-SE-11
-  series_id: break_point
-  series_title: 検証は最良探しじゃなく壊れる場所探し
-  series_order: 6
-  series_total: 8
-- date: '2026-09-22'
-  time: 08:30
-  format: short
-  claim: C15
-  draft_id: P9-S-18
-- date: '2026-09-22'
-  time: '18:30'
-  format: long
-  claim: C20
-  draft_id: P9-L-5
-- date: '2026-09-23'
-  time: 08:30
-  format: short
   claim: C17
-  draft_id: P9-S-19
+  claim_origin: existing_user_thesis
+  content_category: A
+  format: thread
+  funnel_stage: trust
+  audience: investor
+  hook_type: question
+  desired_action: *id003
+  context: ''
+  why_this_day: 親で核、リプで条件と数字を段階的に足す
+- date: '2026-09-18'
+  time: 08:30
+  status: scheduled
+  draft_id: P9-S-14
+  claim: C26
+  claim_origin: existing_user_thesis
+  content_category: C
+  format: short
+  funnel_stage: trust
+  audience: systematic
+  hook_type: math
+  desired_action: *id003
+  context: ''
+  why_this_day: 深掘り予定の claim を先に広い層へ問題提起
+  reuse_of: C26
+  reuse_reason: Short で問題提起した claim を long で検証まで掘る(5 日以上後)
+- date: '2026-09-18'
+  time: '18:30'
+  status: scheduled
+  draft_id: P9-SE-9
+  claim: C25
+  claim_origin: existing_user_thesis
+  content_category: E
+  format: series_entry
+  funnel_stage: follow
+  audience: systematic
+  hook_type: result
+  desired_action: *id001
+  context: ''
+  why_this_day: シリーズ『検証は最良探しじゃなく壊れる場所探し』の進行 5/8
+  series_id: break_point
+  series_title: 検証は最良探しじゃなく壊れる場所探し
+  series_order: 5
+  series_total: 8
+- date: '2026-09-19'
+  time: 08:30
+  status: scheduled
+  draft_id: P9-S-15
+  claim: C28
+  claim_origin: existing_user_thesis
+  content_category: E
+  format: short
+  funnel_stage: reach
+  audience: investor
+  hook_type: contradiction
+  desired_action: *id002
+  context: ''
+  why_this_day: 深掘り予定の claim を先に広い層へ問題提起
+  reuse_of: C28
+  reuse_reason: Short で問題提起した claim を series_entry で検証まで掘る(5 日以上後)
+- date: '2026-09-19'
+  time: '18:30'
+  status: scheduled
+  draft_id: P9-L-4
+  claim: C06
+  claim_origin: existing_user_thesis
+  content_category: C
+  format: long
+  funnel_stage: trust
+  audience: systematic
+  hook_type: result
+  desired_action: *id003
+  context: ''
+  why_this_day: claim を疑い→検証→数字→結論まで掘る
+- date: '2026-09-20'
+  time: 08:30
+  status: scheduled
+  draft_id: P9-S-16
+  claim: C29
+  claim_origin: external_topic
+  content_category: A
+  format: short
+  funnel_stage: reach
+  audience: general
+  hook_type: contradiction
+  desired_action: *id002
+  context: 『3000 万から資産が急に増えた』型の投稿が複数伸びている(X API recent 7 日、like 360)
+  why_this_day: 深掘り予定の claim を先に広い層へ問題提起
+  reuse_of: C29
+  reuse_reason: Short で問題提起した claim を long で検証まで掘る(5 日以上後)
+- date: '2026-09-20'
+  time: '18:30'
+  status: scheduled
+  draft_id: P9-SE-10
+  claim: C11
+  claim_origin: existing_user_thesis
+  content_category: D
+  format: series_entry
+  funnel_stage: follow
+  audience: investor
+  hook_type: math
+  desired_action: *id001
+  context: ''
+  why_this_day: シリーズ『投資の算数』の進行 5/8
+  series_id: invest_math
+  series_title: 投資の算数
+  series_order: 5
+  series_total: 8
+- date: '2026-09-21'
+  time: 08:30
+  status: empty
+  format: short
+  reason: この日に自然に言える claim が無い(深掘り済み claim の再掲は水増し)
+- date: '2026-09-21'
+  time: '18:30'
+  status: scheduled
+  draft_id: P9-SE-11
+  claim: C19
+  claim_origin: existing_user_thesis
+  content_category: E
+  format: series_entry
+  funnel_stage: follow
+  audience: systematic
+  hook_type: result
+  desired_action: *id001
+  context: ''
+  why_this_day: シリーズ『検証は最良探しじゃなく壊れる場所探し』の進行 6/8
+  series_id: break_point
+  series_title: 検証は最良探しじゃなく壊れる場所探し
+  series_order: 6
+  series_total: 8
+- date: '2026-09-22'
+  time: 08:30
+  status: empty
+  format: short
+  reason: この日に自然に言える claim が無い(深掘り済み claim の再掲は水増し)
+- date: '2026-09-22'
+  time: '18:30'
+  status: scheduled
+  draft_id: P9-L-5
+  claim: C20
+  claim_origin: existing_user_thesis
+  content_category: B
+  format: long
+  funnel_stage: trust
+  audience: systematic
+  hook_type: story
+  desired_action: *id003
+  context: ''
+  why_this_day: claim を疑い→検証→数字→結論まで掘る
+- date: '2026-09-23'
+  time: 08:30
+  status: empty
+  format: short
+  reason: この日に自然に言える claim が無い(深掘り済み claim の再掲は水増し)
 - date: '2026-09-23'
   time: '18:30'
-  format: series_entry
-  claim: C30
+  status: scheduled
   draft_id: P9-SE-12
+  claim: C30
+  claim_origin: external_topic
+  content_category: D
+  format: series_entry
+  funnel_stage: follow
+  audience: investor
+  hook_type: math
+  desired_action: *id001
+  context: 『1 億の 7% と 100 万の 7%』型の額の対比が伸びている(like 712)
+  why_this_day: シリーズ『投資の算数』の進行 6/8
   series_id: invest_math
   series_title: 投資の算数
   series_order: 6
   series_total: 8
 - date: '2026-09-24'
   time: 08:30
+  status: empty
   format: short
-  claim: C06
-  draft_id: P9-S-20
+  reason: この日に自然に言える claim が無い(深掘り済み claim の再掲は水増し)
 - date: '2026-09-24'
   time: '18:30'
-  format: series_entry
-  claim: C18
+  status: scheduled
   draft_id: P9-SE-13
-  series_id: break_point
-  series_title: 検証は最良探しじゃなく壊れる場所探し
-  series_order: 7
-  series_total: 8
-- date: '2026-09-25'
-  time: 08:30
-  format: short
-  claim: C11
-  draft_id: P9-S-21
-- date: '2026-09-25'
-  time: '18:30'
-  format: thread
-  claim: C32
-  draft_id: P9-T-3
-- date: '2026-09-26'
-  time: 08:30
-  format: short
-  claim: C19
-  draft_id: P9-S-22
-- date: '2026-09-26'
-  time: '18:30'
-  format: series_entry
-  claim: C16
-  draft_id: P9-SE-14
-  series_id: invest_math
-  series_title: 投資の算数
-  series_order: 7
-  series_total: 8
-- date: '2026-09-27'
-  time: 08:30
-  format: short
-  claim: C20
-  draft_id: P9-S-23
-- date: '2026-09-27'
-  time: '18:30'
-  format: long
-  claim: C26
-  draft_id: P9-L-6
-- date: '2026-09-28'
-  time: 08:30
-  format: short
-  claim: C22
-  draft_id: P9-S-24
-- date: '2026-09-28'
-  time: '18:30'
-  format: series_entry
-  claim: C28
-  draft_id: P9-SE-15
-  series_id: break_point
-  series_title: 検証は最良探しじゃなく壊れる場所探し
-  series_order: 8
-  series_total: 8
-- date: '2026-09-29'
-  time: 08:30
-  format: short
   claim: C18
-  draft_id: P9-S-25
+  claim_origin: existing_user_thesis
+  content_category: E
+  format: series_entry
+  funnel_stage: follow
+  audience: systematic
+  hook_type: contradiction
+  desired_action: *id001
+  context: ''
+  why_this_day: シリーズ『検証は最良探しじゃなく壊れる場所探し』の進行 7/8
+  series_id: break_point
+  series_title: 検証は最良探しじゃなく壊れる場所探し
+  series_order: 7
+  series_total: 8
+- date: '2026-09-25'
+  time: 08:30
+  status: empty
+  format: short
+  reason: この日に自然に言える claim が無い(深掘り済み claim の再掲は水増し)
+- date: '2026-09-25'
+  time: '18:30'
+  status: scheduled
+  draft_id: P9-T-3
+  claim: C32
+  claim_origin: external_topic
+  content_category: A
+  format: thread
+  funnel_stage: reach
+  audience: investor
+  hook_type: question
+  desired_action: *id002
+  context: 高配当 vs インデックスの VS 投稿が伸びている(bm 152)
+  why_this_day: 親で核、リプで条件と数字を段階的に足す
+- date: '2026-09-26'
+  time: 08:30
+  status: empty
+  format: short
+  reason: この日に自然に言える claim が無い(深掘り済み claim の再掲は水増し)
+- date: '2026-09-26'
+  time: '18:30'
+  status: scheduled
+  draft_id: P9-SE-14
+  claim: C16
+  claim_origin: existing_user_thesis
+  content_category: A
+  format: series_entry
+  funnel_stage: follow
+  audience: investor
+  hook_type: math
+  desired_action: *id001
+  context: ''
+  why_this_day: シリーズ『投資の算数』の進行 7/8
+  series_id: invest_math
+  series_title: 投資の算数
+  series_order: 7
+  series_total: 8
+- date: '2026-09-27'
+  time: 08:30
+  status: empty
+  format: short
+  reason: この日に自然に言える claim が無い(深掘り済み claim の再掲は水増し)
+- date: '2026-09-27'
+  time: '18:30'
+  status: scheduled
+  draft_id: P9-L-6
+  claim: C26
+  claim_origin: existing_user_thesis
+  content_category: C
+  format: long
+  funnel_stage: trust
+  audience: systematic
+  hook_type: math
+  desired_action: *id003
+  context: ''
+  why_this_day: claim を疑い→検証→数字→結論まで掘る
+- date: '2026-09-28'
+  time: 08:30
+  status: empty
+  format: short
+  reason: この日に自然に言える claim が無い(深掘り済み claim の再掲は水増し)
+- date: '2026-09-28'
+  time: '18:30'
+  status: scheduled
+  draft_id: P9-SE-15
+  claim: C28
+  claim_origin: existing_user_thesis
+  content_category: E
+  format: series_entry
+  funnel_stage: follow
+  audience: systematic
+  hook_type: contradiction
+  desired_action: *id001
+  context: ''
+  why_this_day: シリーズ『検証は最良探しじゃなく壊れる場所探し』の進行 8/8
+  series_id: break_point
+  series_title: 検証は最良探しじゃなく壊れる場所探し
+  series_order: 8
+  series_total: 8
+- date: '2026-09-29'
+  time: 08:30
+  status: empty
+  format: short
+  reason: この日に自然に言える claim が無い(深掘り済み claim の再掲は水増し)
 - date: '2026-09-29'
   time: '18:30'
-  format: series_entry
-  claim: C13
+  status: scheduled
   draft_id: P9-SE-16
+  claim: C13
+  claim_origin: existing_user_thesis
+  content_category: A
+  format: series_entry
+  funnel_stage: follow
+  audience: investor
+  hook_type: question
+  desired_action: *id001
+  context: ''
+  why_this_day: シリーズ『投資の算数』の進行 8/8
   series_id: invest_math
   series_title: 投資の算数
   series_order: 8
   series_total: 8
 - date: '2026-09-30'
   time: 08:30
+  status: empty
   format: short
-  claim: C23
-  draft_id: P9-S-26
+  reason: この日に自然に言える claim が無い(深掘り済み claim の再掲は水増し)
+  event: 月末=DM 判定日(本人イベント)
 - date: '2026-09-30'
   time: '18:30'
-  format: long
-  claim: C29
+  status: scheduled
   draft_id: P9-L-7
+  claim: C29
+  claim_origin: external_topic
+  content_category: A
+  format: long
+  funnel_stage: reach
+  audience: general
+  hook_type: contradiction
+  desired_action: *id002
+  context: 『3000 万から資産が急に増えた』型の投稿が複数伸びている(X API recent 7 日、like 360)
+  why_this_day: claim を疑い→検証→数字→結論まで掘る
+  event: 月末=DM 判定日(本人イベント)

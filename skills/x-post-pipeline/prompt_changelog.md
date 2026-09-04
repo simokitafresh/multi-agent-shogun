@@ -11,3 +11,5 @@
 
 system prompt 本体(v5.1)は 18:55 で変更していない。
 | 2026-09-04 19:14 | claim_bank.yaml / x_claim_gen.py / ledger | origin 必須(human_seed>existing_user_thesis>dm_signal_result>external_topic)、external_topic は ext_gate A-E+context 必須で無ければ SKIP、context(why_now)を発話動機として生成器へ渡す、quality 4 点(low/mid/high)、ledger に claim_origin、claim_candidates.yaml(viral=センサー)と claim_corrections.yaml(claim correction 保存)新設 | 殿『claim_bank を次の切り抜き工場にしない。外部バズは世間が何を気にしているかのセンサー』。system prompt v5.1 は不変 |
+| 2026-09-04 19:28 | x_plan_calendar.py / x_claim_gen.py / ledger | format→stage/audience/hook/category の固定 mapping 撤廃、plan の editorial metadata を正本(欠落は SKIP)、empty slot 正式化、reuse_of/reuse_reason、Stage 1 承認なしで生成拒否、台帳に plan_id/event | 殿『カレンダーを埋めるな。編集計画を作れ』 |
+| 2026-09-04 19:33 | event_rules.yaml / x_event_scan.py / x_claim_gen --event / poster v1.8 | イベント lane(予定+突発)。イベントは context、claim は bank から | 殿『event-driven も設計して実装しよう』 |

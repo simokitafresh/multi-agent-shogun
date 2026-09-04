@@ -88,26 +88,35 @@ def slot_text(fmt, c, num, p=None):
             f"壊す前提: {c['belief']}\n主張: {c['claim']}\n理由(1 行): {c['why']}\n刺さる読者: {c['audience']}\n{num}\n本文のみ出力。")
 
 
-GROWTH = {"short": ("reach", "investor", "contradiction", 2, "[dwell, reply, quote, profile]"),
-          "long": ("trust", "systematic", "story", 4, "[bookmark, profile, follow]"),
-          "thread": ("trust", "systematic", "question", 4, "[bookmark, reply, profile]"),
-          "series_entry": ("follow", "systematic", "question", 4, "[bookmark, profile, follow]")}
+EDITORIAL = ("funnel_stage", "audience", "hook_type", "desired_action", "content_category")
 
 
-def ledger_block(did, f, fmt, c, extra=""):
-    st, au, hk, tl, da = GROWTH[fmt]
-    return (f"- draft_id: {did}\n  draft_file: {f.relative_to(ROOT)}\n  growth:\n    format: {fmt}\n    physical_posts: 1\n    content_lane: investing\n    content_category: A\n"
-            f"    funnel_stage: {st}\n    audience: {au}\n    hook_type: {hk}\n    topic_level: {tl}\n    desired_action: {da}\n    conversation_gap: medium\n    link_type: none\n    external_context: standalone\n"
-            f"    claim_key: {c['key']}\n    claim_origin: {c['origin']}\n    approved: ''\n{extra}  post_id: ''\n  posted_at: ''\n  snapshots: {{}}\n")
+def ledger_block(did, f, fmt, c, p, extra=""):
+    """殿指示 19:28 §4: format から stage/audience/hook/category を推定しない。plan(editorial decision)の値をそのまま台帳へ。無ければ呼び出し側が SKIP_missing_editorial_metadata"""
+    da = "[" + ", ".join(p["desired_action"]) + "]"
+    reuse = f"    reuse_of: {p['reuse_of']}\n    reuse_reason: '{p['reuse_reason']}'\n" if p.get("reuse_of") else ""
+    ev = f"    event: '{p['event']}'\n" if p.get("event") else ""
+    return (f"- draft_id: {did}\n  draft_file: {f.relative_to(ROOT)}\n  growth:\n    format: {fmt}\n    physical_posts: 1\n    content_lane: investing\n    content_category: {p['content_category']}\n"
+            f"    funnel_stage: {p['funnel_stage']}\n    audience: {p['audience']}\n    hook_type: {p['hook_type']}\n    desired_action: {da}\n    conversation_gap: medium\n    link_type: none\n    external_context: {'event' if p.get('event') or p.get('event_id') else 'standalone'}\n"
+            f"    plan_id: {p.get('plan_id', '')}\n    claim_key: {c['key']}\n    claim_origin: {c['origin']}\n    approved: ''\n{reuse}{ev}{extra}  post_id: ''\n  posted_at: ''\n  snapshots: {{}}\n")
 
 
-def run_plan(plan_path, only=None):
-    """plan の各 slot を生成→gate→台帳へ追記(未承認。殿が読んでから承認)。ledger は text 追記(yaml.dump 禁止)"""
-    plan = yaml.safe_load(Path(plan_path).read_text(encoding="utf-8"))["plan"]
+def run_plan(plan_path, only=None, items=None):
+    """plan の各 slot を生成→gate→台帳へ追記(未承認。殿が読んでから承認)。ledger は text 追記(yaml.dump 禁止)。
+    Stage 1(編集計画)が approved でなければ本文を作らない(殿 19:28 §25 二段階承認)"""
+    if items is None:
+        doc = yaml.safe_load(Path(plan_path).read_text(encoding="utf-8")); plan = doc["plan"]
+        if doc["meta"].get("approval", {}).get("stage1_editorial") != "approved":
+            print("REFUSE: plan meta.approval.stage1_editorial != approved(Stage 1 編集計画の殿承認が先)", file=sys.stderr); sys.exit(3)
+        for p in plan: p.setdefault("plan_id", doc["meta"].get("plan_id", ""))
+    else:
+        plan = items
     vn = BANK["meta"]["verified_numbers"]; claims = {c["key"]: c for c in BANK["claims"]}
     ledger = ROOT / "queue/x_live_oos/ledger.yaml"; today = dt.date.today().isoformat(); n = 0; tot = 0
     for p in plan:
-        if not p.get("claim") or (only and p["draft_id"] not in only): continue
+        if p.get("status") == "empty" or not p.get("claim") or (only and p["draft_id"] not in only): continue
+        if any(p.get(k) in (None, "", []) for k in EDITORIAL):
+            print(f"{p.get('draft_id')}\t{p.get('claim')}\tSKIP_missing_editorial_metadata\t{[k for k in EDITORIAL if not p.get(k)]}", flush=True); continue
         if any((DRAFTS / f"{today}_{p['draft_id']}{sfx}.txt").exists() for sfx in ("", "-P")): continue  # 再実行は未生成のみ
         c = claims[p["claim"]]; fmt = p["format"]; did = p["draft_id"]; tot += 1
         miss = [r for r in REQ if not c.get(r)]; bo = origin_ok(c)
@@ -131,7 +140,7 @@ def run_plan(plan_path, only=None):
             extra = ""
             if fmt == "thread": extra = f"    thread_id: {did}\n    thread_position: {j}\n"
             if fmt == "series_entry": extra = f"    series_id: {p['series_id']}\n    series_order: {p['series_order']}\n    series_total: {p['series_total']}\n"
-            blocks += ledger_block(sub, f, fmt, c, extra).replace("  post_id:", "    scheduled: '" + f"{p['date']} {p['time']}" + "'\n  post_id:")
+            blocks += ledger_block(sub, f, fmt, c, p, extra).replace("  post_id:", "    scheduled: '" + f"{p['date']} {p['time']}" + "'\n  post_id:")
         if status == "PASS":
             import fcntl
             with ledger.open("a", encoding="utf-8") as fh:
@@ -143,6 +152,10 @@ def run_plan(plan_path, only=None):
 
 def main():
     a = sys.argv[1:]
+    if "--event" in a:
+        ev = Path(a[a.index("--event") + 1]); p = yaml.safe_load(ev.read_text(encoding="utf-8"))
+        p["time"] = a[a.index("--time") + 1] if "--time" in a else "12:30"; p["plan_id"] = "event_lane"; p["event"] = p["event_id"]
+        return run_plan(None, items=[p])
     if "--plan" in a:
         only = set(a[a.index("--only") + 1].split(",")) if "--only" in a else None
         return run_plan(a[a.index("--plan") + 1], only)

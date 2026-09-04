@@ -143,3 +143,21 @@ X 投稿を数学論文や完全な解説文にしない。正確性は守るが
 - **claim correction の還流**(§18): 殿の添削で claim 自体が変わった時は `claim_corrections.yaml` に kind=claim で保存し、claim_bank を更新(origin=human_seed へ)。Voice の直しと分ける。
 - **Live OOS**(§19): 台帳 growth に claim_key と claim_origin を保存。origin 別の反応差は将来観察するが、サンプルが少ない段階で優劣を決めない。
 - **最終生成経路**: 世間の話題 or 本人の疑問・検証結果 → 本人思想との交点 → claim → なぜ今言うか → evidence → 本人 Voice → 投稿。適切な claim が無ければ投稿しない。Growth Engine の目的は slot を埋めることではなく、本人が自然に言いたいことを本人のまま多くの人へ届けること。
+
+## 追補 2026-09-04 19:28 殿指示「カレンダーを埋めるな。編集計画を作れ」(28 項目)
+
+- **3 軸を混ぜない**: Format=どう書くか(Short/Long/Thread/Series Entry の 4 つは維持)/Funnel=何をさせたいか(reach/follow/trust/convert)/Category=何を話すか(A-G は 12:42 doctrine の正本を使う)。format→stage/audience/hook/category の固定 mapping は撤廃(`x_claim_gen.py` の GROWTH 削除、`content_category: A` 固定撤廃)。plan に無ければ SKIP_missing_editorial_metadata。
+- **plan=editorial decision**: `x_plan_calendar.py` が claim/format/funnel_stage/audience/hook_type/desired_action/content_category/context/why_this_day/reuse_of/reuse_reason を事前登録。生成後に本文を見て stage を決めない。「伸びたから Reach だった」は禁止。
+- **capacity≠quota**: 52 枠は最大枠。`status: empty` は正常(自然な claim が無い枠は投稿しない)。表示は capacity/scheduled/empty/unique_claims/reused_claims。9 月 plan=52/42/10/34/8。空 slot を viral search や切り抜きで後から自動補充しない。
+- **claim 再利用**: Short で問題提起→5 日以上後に Long/Series/Thread で検証まで掘る、は可(reuse_reason 必須)。深掘り後の同 claim の Short は水増し=不可。fill_slot/need_52/inventory_shortage を理由にしない。
+- **二段階承認**: Stage 1=編集計画(何を・いつ・誰に・何の目的で・どの形式で)を artifact で殿が承認 → Stage 2=本文。plan meta.approval.stage1_editorial が approved でなければ生成器が本文を作らない(rc=3)。
+- **Live OOS metadata**: 台帳 growth に plan_id/claim_key/claim_origin/content_category/format/funnel_stage/audience/hook_type/reuse_of/event を保存。4 週間は最適化しない(overfitting 禁止)。
+- **旧在庫 withdrawn_v1 維持**: 必要な claim が同じでも 新 plan→新生成→新 gate→殿承認 を通す。
+- 成功条件=殿が月間 plan を見て「まあ俺ならこういう話をするな」と思え、各本文も「俺が書いていて違和感がない」こと。
+
+## 追補 2026-09-04 19:33 殿指示「event-driven も設計して実装しよう」(19:30『投資アカウントとして投資イベントに振れなくていいのか』)
+
+- **位置づけ**: イベント lane は月間 plan の上に重ねる。イベント=context(なぜ今言うか)であって claim ではない。claim は claim_bank からのみ。相場予測・未検証数字・その場の claim 捏造は禁止。空 slot を埋める目的で発火しない(fallback ではない)。
+- **予定イベント**: `event_rules.yaml` scheduled_events(FOMC 9/15-16、月末 DM 判定日 9/30=F 枠、雇用統計 10/2)。planner が event 欄へ登録し、その日の Short をイベント対応 claim に寄せる。
+- **突発イベント**: 毎朝 07:05 `x_event_scan.py`(yfinance、SPY/^VIX/^N225)。数値規則のみ(SPY ±3%/52 週高値から -10% 初回/VIX 30 上抜け/日経 -3%)。発火→`queue/x_events/` に提案+ntfy→`x_claim_gen.py --event`(gate)→殿承認(.approved)→当日 12:30 event slot(poster v1.8、cron 追加)で投稿。1 日 1 unit、同一 claim 7 日再発火なし。
+- **実証**: 09-04 dry-run=発火なし(SPY +1.05%、VIX 14.2)。event 本文(C01、SPY -3% 想定)は本番 gate PASS。sandbox では blocklist 不在で fail-close を確認。

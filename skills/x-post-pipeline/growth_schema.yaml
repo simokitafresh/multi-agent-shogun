@@ -302,3 +302,15 @@ generation_origin_rule_20260904_1855:
   conflict: "Growth と本人らしさが衝突したら本人らしさ優先。Growth Engine は本人を増幅する装置"
   prompt_change: "動いたら頻繁に system prompt を変えない。理由を skills/x-post-pipeline/prompt_changelog.md に記録"
   success: "本人が自分で書いていても違和感のない投資投稿を、本人のネタと証拠から継続的に生成できること。その上で露出/フォロー/note 流入/DM-Signal 流入を Live OOS で見る"
+
+# 殿指示 2026-09-04 19:28/19:33。正本=doctrine 追補 19:28/19:33
+editorial_plan_rule_20260904_1928:
+  axes: {format: どう書くか(short/long/thread/series_entry), funnel_stage: 何をさせたいか(reach/follow/trust/convert), content_category: 何を話すか(A-G)}
+  no_fixed_mapping: format から stage/audience/hook/category を推定しない。plan(x_plan_calendar.py)が事前登録。欠落は SKIP_missing_editorial_metadata
+  capacity_not_quota: 52 枠は capacity。status empty は正常。表示=capacity/scheduled/empty/unique_claims/reused_claims
+  reuse: Short 問題提起→5 日以上後に深掘り形式、は可(reuse_reason 必須)。fill_slot 目的は禁止
+  two_stage_approval: Stage 1 編集計画(artifact)→Stage 2 本文。stage1_editorial != approved なら生成器 rc=3
+event_lane_20260904_1933:
+  rules: skills/x-post-pipeline/event_rules.yaml
+  scan: scripts/x_ops/x_event_scan.py(07:05 cron、yfinance、数値規則のみ)→queue/x_events/→x_claim_gen --event→gate→殿承認→12:30 event slot(poster v1.8)
+  principle: イベントは context。claim は bank から。予測しない。空 slot 埋めのために発火しない。1 日 1 unit、同 claim 7 日再発火なし

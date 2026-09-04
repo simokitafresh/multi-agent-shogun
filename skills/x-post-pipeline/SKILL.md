@@ -40,6 +40,7 @@ allowed-tools:
 - **自動生成(殿 18:29『俺が何もしなくても無限に生成』)**: `claim_bank.yaml`(前提を壊す主張 28)→`scripts/x_ops/x_claim_gen.py --round N --claims ... --approve`(記事本文を渡さない、gate+数字 fail-close、PASS は自動承認)→台帳→cron。殿の種(neta_ledger)は任意。事後の拒否は削除で(可逆)。
 - **生成の起点(殿 18:55『記事から投稿を作るな。ネタから投稿を作れ』)**: claim/neta→裏付け(記事は証拠)→本文。claim は belief/claim/why/audience の 4 項必須(欠落は SKIP)。Short は投資ネタ限定。外部バズは hook 構造のみ借り Voice は本人 corpus からのみ(優先 human rewrite>本人 X>本人 note>SP>外部)。Series を毎晩機械的に続けない(calendar v5)。Long は `x_claim_gen.py --format long`。prompt 変更は `prompt_changelog.md` に理由付きで。正本=doctrine 追補 18:55 / growth_schema generation_origin_rule_20260904_1855
 - **claim の品質管理(殿 19:14『claim_bank を切り抜き工場にしない』)**: origin 必須(human_seed>existing_user_thesis>dm_signal_result>external_topic)、external_topic は ext_gate A-E+context が無ければ SKIP、viral search はセンサー(候補は `claim_candidates.yaml`)、claim 数を KPI にしない、殿の claim 修正は `claim_corrections.yaml`、台帳に claim_origin。正本=doctrine 追補 19:14
+- **月間編集計画+イベント lane(殿 19:28/19:33)**: `x_plan_calendar.py`(3 軸分離・capacity≠quota・empty 正常・reuse 理由)→Stage 1 artifact 殿承認→`x_claim_gen.py --plan`(Stage 2)→gate→殿承認→poster v1.8 scheduled 一致のみ。イベントは `event_rules.yaml`+`x_event_scan.py`(07:05)→`--event`→12:30 slot。正本=doctrine 追補 19:28/19:33
 - 禁止: 40 投稿貯まるまで比率・型の最適化をしない。Growth のために本文を書き換えない。自動 reply spam。
 
 ## When
