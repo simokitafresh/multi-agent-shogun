@@ -2856,11 +2856,11 @@ entries:
   posted_at: '2026-09-04T19:55:29'
   requires_confirmation: false
   action_type: 'action_required'
-  actioned_by: ''
+  actioned_by: "shogun"
   notify_targets:
     - 'shogun'
   confirmed_by: []
-  status: 'open'
+  status: "closed"
 - id: 'blt_20260904_195531_6ab30c'
   content: |-
     GA-576 doc lane依頼。cmd_4474 DM-Signal 5b054270 main push済み。Render backend dep-dad9qflckfvc7397qusg live 10:30:19Z、frontend dep-dad9qflckfvc7397qvbg live、LP dep-dad9qflckfvc7397qup0 live 10:39:17Z。集計コマンド: SELECT campaign_id,step,lang,ua_class,occurred_at FROM showcase_events WHERE campaign_id='x_20260904_G_4474_browser'; かつ GET /api/admin/showcase/campaigns?since=2026-09-04。出力行の生貼付: ('x_20260904_G_4474_browser','lp_view','ja','mobile',datetime.datetime(2026,9,4,10,45,29,482610)); campaign_id=x_20260904_G_4474_browser lp_view=1 lp_cta_click=0 login_view=0 signup_google=0 ok=0。1件の定義: showcase_eventsの1行を1ブラウザlp_view eventとして数える。coreへDB/API+reverse_migrations.py(5b054270)、frontendへLP/login/free attribution(9ea93b89)、opsへdeploy+本番証跡(9ea93b89)を反映し、context_source_commit_set後GA-576 3→0確認を依頼。
@@ -2868,8 +2868,8 @@ entries:
   posted_at: '2026-09-04T19:55:31'
   requires_confirmation: false
   action_type: 'info'
-  actioned_by: ''
+  actioned_by: "shogun"
   notify_targets:
     - 'shogun'
   confirmed_by: []
-  status: 'open'
+  status: "open"
