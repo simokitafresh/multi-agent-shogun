@@ -1414,3 +1414,29 @@
   lesson_disposition: not_applicable
   lesson_reference: 'not_applicable'
   resolved_by_cmd: 'cmd_karo_hotfix_deploy_generation_rc_sync_202609040724'
+- cmd_id: cmd_karo_hotfix_t3s40_auto_push_wait_async_202609040724
+  timestamp: '2026-09-04T00:33:34Z'
+  ninja: system
+  workaround: false
+  event_kind: hotfix
+  auto_captured: true
+  category: rework_auto_capture
+  detail: 'cmd_complete_gate completed rework event'
+  root_cause: 'automatic completion observation'
+  lesson_required: false
+  lesson_disposition: not_applicable
+  lesson_reference: 'not_applicable'
+  resolved_by_cmd: 'cmd_karo_hotfix_t3s40_auto_push_wait_async_202609040724'
+- cmd_id: cmd_karo_hotfix_t3s57_postclear_root_ledger_guard_202609040713
+  timestamp: '2026-09-04T00:46:22Z'
+  ninja: system
+  workaround: false
+  event_kind: hotfix
+  auto_captured: true
+  category: rework_auto_capture
+  detail: 'cmd_complete_gate completed rework event'
+  root_cause: 'automatic completion observation'
+  lesson_required: false
+  lesson_disposition: not_applicable
+  lesson_reference: 'not_applicable'
+  resolved_by_cmd: 'cmd_karo_hotfix_t3s57_postclear_root_ledger_guard_202609040713'
