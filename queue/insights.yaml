@@ -16954,21 +16954,27 @@ insights:
   priority: "low"
   source: "semantic_index_update"
   fix_known: false
-  status: pending
+  status: "resolved"
+  action_artifact: "semantic_map=/home/simokitafresh/multi-agent-shogun/context/semantic-map.md;semantic_index=/home/simokitafresh/multi-agent-shogun/docs/semantic-index/index.md"
+  resolved_reason: "semantic map generation verified the candidate is represented or intentionally ignored"
 - id: INS-20260904-092253807-3e0b
   ts: "2026-09-04T09:22:53+09:00"
   insight: "semantic_index_update未登録[[リンク]]ターゲット: [[L4分岐の同期呼び出しをasync dispatchへ置換]] は既存aliasesに一致なし。類似概念TOP3: recalculate_pipeline(再計算パイプライン; alias=sync_layers.py L243がrecalculate_history_fastを呼ぶ; score=3.6) / provisional_gunshi_log_append(仮: Gunshi Log Append; alias=単一 publisher U3 publisher daemon scripts publisher sh を dry; score=3.5) / yaml_safe_write(YAML安全書込み; alias=task yaml atomic handoff; score=3.4)。概念定義とaliases追加を検討せよ"
   priority: "low"
   source: "semantic_index_update"
   fix_known: false
-  status: pending
+  status: "resolved"
+  action_artifact: "semantic_index=/home/simokitafresh/multi-agent-shogun/docs/semantic-index/index.md"
+  resolved_reason: "semantic index candidate was absorbed into a registered concept"
 - id: INS-20260904-092254266-aa98
   ts: "2026-09-04T09:22:54+09:00"
   insight: "semantic_index_update未登録[[リンク]]ターゲット: [[target_path外test_cmd_complete_gate.bats:9602のgrep構造assertionがFAIL]] は既存aliasesに一致なし。類似概念TOP3: provisional_cmd_gate_scaffold(仮: Cmd Gate Scaffold; alias=tests helpers cmd gate scaffold.bash; score=15.5) / cmd_quality_logging(cmd設計品質ログ; alias=cmd complete gateのcommand files modified照合がmetadata openGrap; score=15.5) / gate_quality_framework(ゲート品質統合フレームワーク; alias=gate_cmd_state; score=13.1)。概念定義とaliases追加を検討せよ"
   priority: "low"
   source: "semantic_index_update"
   fix_known: false
-  status: pending
+  status: "resolved"
+  action_artifact: "semantic_index=/home/simokitafresh/multi-agent-shogun/docs/semantic-index/index.md"
+  resolved_reason: "semantic index candidate was absorbed into a registered concept"
 - id: INS-20260904-094636994-1883
   ts: "2026-09-04T09:46:36+09:00"
   insight: "高頻度FAIL: final_checkpoint: ci_fix clean repro evidence source_commit mismatch or invalid (11回発火) → GP-107(消火4問)で判定後にgate強化を検討せよ。auto-fix化は消火構造の可能性あり"
