@@ -4212,3 +4212,36 @@
     expected: completed
     actual: revision_requested
     result: FAIL
+- cmd_id: cmd_karo_impl_x_cd_tables_202609041123
+  verdict: FAIL
+  review_type: report
+  reviewed_at: '2026-09-04T11:57:00+09:00'
+  report_fingerprint: b8d1210ec63a
+  report_ninja: tobisaru
+  report_task_id: cmd_karo_impl_x_cd_tables_202609041123_normal
+  gate_prediction: BLOCK
+  gate_prediction_reason: status=revision_requested
+  finding_categories:
+  - assumptions
+  - numbers
+  - premortem
+  - adversarial
+  - ambiguity
+  observations:
+  - '事実1: 公開表3プラン行+SPY 8457件確認。VEU/SGOVはDB 0件'
+  - '事実2: status=revision_requested→gate BLOCK'
+  causal_chain: gate FAIL→status revision_requested→BLOCK
+  brainwash_check: '#1no #2no #3no #4no #5no #6no #7no #8no'
+  ambiguity_points: none
+  verified_files:
+  - queue/reports/tobisaru_report_cmd_karo_impl_x_cd_tables_202609041123.yaml:1
+  findings_summary: status=revision_requested→BLOCK。修正後に再レビュー
+  step3_5_verified: true
+  fail_reasons:
+  - status=revision_requested→gate BLOCK
+  origin: '[[cmd_karo_impl_x_cd_tables_202609041123]] -> [[status修正漏れ]] -> [[FAIL]]'
+  operational_simulation:
+    command: status確認→revision_requested
+    expected: completed
+    actual: revision_requested
+    result: FAIL
