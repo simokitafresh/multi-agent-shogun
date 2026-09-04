@@ -1,5 +1,7 @@
 # インフラコンテキスト
 <!-- last_updated: 2026-09-04 context_freshness reviewed source boundary -->
+<!-- source_commit:8af237713 reason:context_freshness reviewed source boundary evidence:context_freshness_check context=context/infrastructure.md commit=8af237713 -->
+
 <!-- source_commit:a26026ff5 reason:context_freshness reviewed source boundary evidence:context_freshness_check context=context/infrastructure.md commit=a26026ff5 -->
 <!-- source_commit:9302a64fa reason:context_freshness reviewed source boundary evidence:context_freshness_check context=context/infrastructure.md commit=9302a64fa -->
 <!-- source_commit:0587368ab reason:context_freshness reviewed source boundary evidence:context_freshness_check context=context/infrastructure.md commit=0587368ab -->
@@ -776,3 +778,4 @@ source boundary一致taskはregistryのowner/update_triggerからcontext_update_
 - X Growth Engine 生成起点(殿指示 2026-09-04 18:55『記事から投稿を作るな。ネタから投稿を作れ』)|claim_bank 4 項必須(欠落 SKIP)・`x_claim_gen.py --format long`・calendar v5 Series 非連続・prompt_changelog.md|→ `docs/research/x_editorial_doctrine_20260904.md` 追補 18:55
 - X 9 月 plan(殿指示 2026-09-04 19:16『ネタを全部作り直してカレンダー形式で 9 月末まで』)|`x_plan_calendar.py`(claim→slot 割当、claim 増やさず 52/52)→`x_claim_gen.py --plan`(Short/Long/Thread/SE 生成+台帳 scheduled)→poster v1.7 は scheduled 一致のみ投稿。旧在庫 38 は withdrawn_v1(未承認化)|→ `skills/x-post-pipeline/plan_202609.yaml`
 - X 編集計画+イベント lane(殿 19:28/19:33)|`x_plan_calendar.py`(3 軸分離、empty 正常)/Stage 1 artifact b2f1b8ae/`x_event_scan.py` 07:05 cron+12:30 event slot|→ `docs/research/x_editorial_doctrine_20260904.md` 追補 19:28/19:33
+- X campaign attribution 本番(cmd_4474 09-04)|DM-Signal showcase_events.campaign_id+admin campaigns API live。X→LP の visit/signup が campaign_id で帰属可(kpi_availability dm_signal_visit 実装済)|→ `context/dm-signal-core.md §98`

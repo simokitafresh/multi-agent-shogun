@@ -470,3 +470,7 @@ L122(キャッシュ無効化), L121(API実コード確認) → `context/dm-sign
 
 結論: SEO LP は `frontend/` とは別の Next.js app `lp/`(app/page.tsx=EN, app/ja/page.tsx=JA, components/ copy/ lib/ public/、static export・build-time fetch)。Current signals 表は cmd_4431(表現整列 22d60c15)→4432(total return 列除去+指標並び替え dfc87ceb)→4433(hero return series 公開+静的 LP chart cab3d5b8)→4434(FoF 価値提案 1589085a)→4437(太字 172b6d35、**08-31 20:41 将軍裁定で全太字撤回=cmd_4441 で表太字0へ**)。`/free` は noindex metadata(855f77e0 cmd_4435)。login は cmd_4420 で最小 sign-in 入口へ縮小+期限切れ password feedback 維持(d16a3d17/48565471)、bilingual FAQ ルートは cmd_4427(5001d88e)。
 → 正本 `context/dm-signal-ops.md §101`(deploy 契約)/`context/dm-signal-core.md §97`(showcase API)。境界=DM-signal origin/main 172b6d35e7f2(2026-08-31 20:02)。
+
+## §LP/login/free attribution(cmd_4474、2026-09-04)
+- 結論: LP(`lp/`)・/login・/free が `?utm_campaign=<campaign_id>&utm_content=<draft_id>` を読み、showcase event へ campaign_id を同送(9ea93b89)。static export のため build 時刻 > backend live 時刻を post_deploy_check で確認(ops §101)。
+- 境界=DM-signal origin/main 9ea93b89(frontend)。→ core §98(API/DB)。

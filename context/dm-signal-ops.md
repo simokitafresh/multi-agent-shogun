@@ -1224,3 +1224,8 @@ GA-144原因: `dm-signal-ops.md`のlast_updatedは2026-06-26で、2026-06-26以�
 - `showcase_events` は追記専用(UPDATE/DELETE は ORM 層で遮断 §core 97)。集計は step×occurred_at index 前提。DB 変更は migrations.py の CREATE TABLE/INDEX IF NOT EXISTS で冪等。
 - LP 表示変更(cmd_4431-4437)は backend 契約変更を伴う場合 `LP build 時刻 > backend live 時刻` を post_deploy_check で確認(§101)。cmd_4437 太字は将軍裁定(08-31 20:41)で撤回対象、後続 cmd_4441 が正。
 - 境界=origin/main 172b6d35e7f2(ローカル clone は origin と履歴分岐=同 subject 別 hash。DOC_LANE 判定は origin/main tip を基準にせよ。分岐 clone で祖先判定に失敗すると全履歴が「未反映」に見える偽陽性=本日 1390/789/1588 件アラートの正体)。
+
+## §102 cmd_4474 deploy 証跡(2026-09-04)
+- Render backend dep-dad9qflckfvc7397qusg live 10:30:19Z、frontend dep-dad9qflckfvc7397qvbg live、LP dep-dad9qflckfvc7397qup0 live 10:39:17Z(順序=backend→frontend→LP、§101 契約どおり)。
+- 本番集計: 管理 API `GET /api/admin/showcase/campaigns?since=2026-09-04` と DB 直接 SELECT(readonly、/db-check 経由)が一致=lp_view 1。
+- 境界=DM-signal origin/main 9ea93b89(ops)。

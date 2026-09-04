@@ -579,3 +579,9 @@ null/NaN → INSUFFICIENT_DATA(灰)。Label→色変換は `labelToColorDot()` �
 - 59b7b679(AC2): LP `monthly-signal-page.tsx` は `point.holding ?? "—"` を表示、`lib/showcase.ts` 型に `holding?`、copy ja/en に見出し追加。
 - 確認: post_deploy_check で 2008-10 と 2026-08 の保有欄が異なること(家老 lane)。
 - 境界=origin/main 59b7b679。
+
+## §98 campaign attribution(cmd_4474、2026-09-04)
+- 結論: `showcase_events` に `campaign_id` 列(+`ua_class`)。`POST /api/public/showcase/event` が campaign_id を受け、`GET /api/admin/showcase/campaigns?since=YYYY-MM-DD` が campaign_id×step の週次集計を返す。`reverse_migrations.py` に明示の逆 migration(5b054270)。
+- 1 件の定義: showcase_events の 1 行=1 ブラウザの 1 event(lp_view/lp_cta_click/login_view/signup_google/ok)。集計は `SELECT campaign_id,step,lang,ua_class,occurred_at FROM showcase_events WHERE campaign_id='<id>'`。
+- 本番証跡 09-04 19:45: campaign_id=x_20260904_G_4474_browser lp_view=1(ja/mobile)、他 step 0。
+- 境界=DM-signal origin/main 5b054270(core)。X 側の campaign_id 規則=`skills/x-post-pipeline/growth_schema.yaml` campaign_id。
