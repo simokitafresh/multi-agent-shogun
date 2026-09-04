@@ -1,5 +1,5 @@
 <!-- gist-master: 5edb5f6d5fab4e9578bc35fbfacf95b7 dm-signal-lp-seo-plan_20260830.md -->
-# DM-Signal LP(dm-signal.com) SEO 案 v5 — 2026-09-02 23:30 索引段階の再突合(v4 08-31 19:20 / v3 14:52 / v2 08-30 22:05 / v1 19:55)
+# DM-Signal LP(dm-signal.com) SEO 案 v6 — 2026-09-05 02:20 外部意見(12 Phase 監査案)の本番突合 / v5 2026-09-02 23:30 索引段階の再突合(v4 08-31 19:20 / v3 14:52 / v2 08-30 22:05 / v1 19:55)
 
 > **v5(09-02 23:30)**: 本番 curl 22:45 と note API 全 18 本走査で再突合。**P1-1 月次頁は live**(cmd_4436 CLEAR 09-01 15:48、sitemap 2→**554 URL**、Console 検出 554=殿確認 22:44)。しかし **索引 0**(URL 検査『登録されていません』)。構造原因 3 点を特定: (a) LP から `/signals/` への href 0 (b) `/signals/` 一覧頁 404 (c) 月次頁に前月/翌月リンク 0、lastmod 全月『月初』=**554 本が sitemap 以外から到達できない孤立頁**。→ **cmd_4455**(一覧頁 EN/JA+LP 導線+前後リンク+最新月 lastmod=data-through)起票 22:59、**GATE CLEAR 23:25**、deploy→post_deploy_check は家老 lane。殿の手作業: URL 検査→インデックス登録リクエスト 4 本(`/`・`/ja/`・`/signals/2026-08/`・`/ja/signals/2026-08/`)実施済み(23:09)。P1-3 note 側: 殿が **LP リンクを貼付(23:29)**、note API で外側から確認できた 4/6(完全ガイド・EMA 論文・研究 4 本・有限時間モメンタム)、未確認 2(5 つの指標・決定性)、メンバー限定 7 本は本文非公開で外側から検証不能。リンク先の規則(殿 23:24)=**不変記事→LP `/ja/`、時期のある記事→その月の月次頁 `/ja/signals/YYYY-MM/`**。無関係 5 本(不動産・戦国)には貼らない(SEO/AEO で無効)。
 
@@ -25,6 +25,29 @@
 | 配信 | Cloudflare proxy、`s-maxage=300`(custom-domain の deploy 反映は最大 5 分遅延=4433 で実証) | — | ○ |
 | 計測 | `lp_view` / `lp_cta_click` POST(4419)。Free 系 3 語は未(設計書 P-E) | — | ○ 土台あり |
 | 外部導線 | note membership・`/login`・`/free?from=lp`(**Free CTA live**、4424)・`/faq` | 同 | ○ |
+
+## §0.1 v6(2026-09-05 02:20): 外部 LLM の「単一 LP SEO 総合監査」提案を本番 curl(Googlebot UA、JST 02:16-02:20)で突合
+
+殿 02:15『全て取り入れる必要はない。先に調査確認して問題がなければ慌てて対応しない。設計書は取り入れるべきところだけ』。
+
+**一次確認の結果(5 分類)**
+
+| 分類 | 項目 | 本番の現物 | 判断 |
+|---|---|---|---|
+| Critical | なし | index/follow、canonical、sitemap 558 URL 全 200 系、robots Allow、404 は実 404 | 検索・index に実害なし |
+| High | JA 全頁の `<html lang="en">` | `/ja/`・`/ja/signals/`・月次頁とも `lang="en"`(本文は日本語) | **実在**。Root Layout 固定。修正価値あり(Google は lang 属性を無視するが、支援技術・翻訳提案・Bing に影響)。cmd_4475 で最小修正 |
+| High | Organization/WebSite の `url` が言語別(`/ja/`)、`logo` が OG 画像(1200×630) | JSON-LD 実測 | **実在**。url は `https://dm-signal.com/` に統一、logo は正方形ロゴが本来。cmd_4475(ロゴ画像が無ければ url 統一のみ) |
+| Medium | `/` が JP 訪問者に 302 → `/ja/`(Cloudflare geo rule、殿設定 08-31 02:13) | JP からの curl は `/`・`/?utm=` とも 302。canonical/x-default の指す `/` が JP では 302 | **仕様**。Googlebot は主に US から来るため `/` は 200 のはず。Search Console の URL 検査で「/」のレンダリング結果を人間が確認(§6 追記)。変更しない |
+| Medium | hreflang 3 本が head 内で 2 回出力 | `/ja/` 実測 | 無害な重複。次の LP 改修時に 1 回へ。単独 cmd は立てない |
+| Medium | 月次 Signal 頁の薄さ | 1 頁 本文 ≈770 字、title/description/canonical は月ごとに unique、prev/next・一覧リンクあり | thin content の閾値ではない。**過去頁は書き換えない(Trust asset)**。sitemap lastmod は運用どおり |
+| Low | www→non-www 301、`/ja`→`/ja/` は両方 200 で canonical は `/ja/` | 実測 | 問題なし |
+| Already Good | HTTPS/www 統一/trailing slash/canonical/hreflang+x-default/OG 言語別/Twitter Card/JSON-LD 3 型(validator エラー 0)/FAQ 実表示と一致/sitemap 自動生成/robots/`/login` `/free` noindex/404 | v4-v5 で完了済み | 二重実装しない |
+
+**取り入れる(設計原則として §1/§3 へ)**: (a) 現 LP=母艦。医師/Simple/Performance/Evidence/Rebalancer への分解は第二段階 (b) SEO 目的の肥大化禁止(長文キーワード・不自然 FAQ・同義語羅列・巨大フッター) (c) 過去 Signal を SEO で書き換えない (d) Static Export 維持、SSR 化しない (e) 変更は「現状→提案→理由」を先に出す(Phase 10 の 5 分類報告) (f) 複数 LP は必要になるまで作らない(metadata/canonical/hreflang/sitemap/JSON-LD/attribution の再利用は「価値があるか検討」まで)。
+
+**取り入れない**: title の再検討(現 title は v4 で検索語整合済み。無条件変更しない)、Core Web Vitals の全面計測(Static Export+Cloudflare で LCP 課題の実測なし。Search Console の CWV レポートで人間が見る)、Analytics の全面実装(lp_view/lp_cta_click+campaign_id は live。GA 導入は別裁定)、外部記事の修正。
+
+**次**: cmd_4475(SCOUT+最小修正 2 件+post-deploy 実測)。Search Console で人間が見る 3 点=`/` の URL 検査(US からの取得結果)/CWV/索引カバレッジ。
 
 ## §1 方針(結論 3 行)
 
@@ -82,6 +105,8 @@
 - 補足 4: Console のデータは将軍が読めないため、週報の §4 指標は **殿が数値 3 つ(表示/クリック/平均掲載順位)を貼る** か、後日 Search Console API(OAuth、殿の 1 回承認)を将軍に許可するかの二択。既定=当面は殿が貼る。
 
 ## §3 やらないこと(禁則)
+
+- **v6 追加(殿 09-05 02:15)**: 外部意見に無理に従わない。SEO のために稼働中プロダクトを作り変えない。1 LP を母艦として維持し分解しない。SEO 用テキスト・FAQ・フッターで肥大化させない。過去 Signal 頁を書き換えない。Static Export を SSR 化しない。実装前に本番 curl で「問題が実在するか」を確認し、実在しない項目は触らない。
 - 価格・無料期間の文言(`first month free`/`初月無料`/`free trial`)は書かない(殿裁定 13:41、設計書 v2 §4)。
 - 個別 PF 名・Secret の数値を索引可能な頁に出さない(§2.3 契約)。
 - 4〜5 桁 % の煽り見出し(信憑性を損なう。§6 未決 3 と同じ)。
