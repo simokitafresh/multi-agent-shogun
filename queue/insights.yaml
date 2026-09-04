@@ -17005,3 +17005,10 @@ insights:
   source: "skill_script_refs:083a7c8db37e6e61"
   fix_known: false
   status: pending
+- id: INS-20260904-101829604-579a
+  ts: "2026-09-04T10:18:29+09:00"
+  insight: "LGTM→BLOCK: kotaro ci_fix_flaky_second。BLOCK reason=ninja_test_receipt_invalid。precheck SG-PRE1 PASSだがcmd_complete_gate独自検証で検出。軍師precheckにninja_test_receipt検証を追加するか、報告レビュー時にtest_receipt_pathの実在・内容照合を義務化する必要あり"
+  priority: "medium"
+  source: "manual"
+  fix_known: false
+  status: pending
