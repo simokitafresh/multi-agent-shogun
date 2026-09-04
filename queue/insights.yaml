@@ -17782,3 +17782,38 @@ insights:
   source: "semantic_index_update"
   fix_known: false
   status: pending
+- id: INS-20260905-013606602-350d
+  ts: "2026-09-05T01:36:06+09:00"
+  insight: "[[USD JPY急変 米2年 10年金利急変 日本10年金利 金利カーブ変化なんかもあるといいかもね]] semantic_stress_test candidate_aliases: NO_MATCH source=lord query=USD/JPY急変 米2年/10年金利急変 日本10年金利 金利カーブ変化なんかもあるといいかもね。あとはインフレだな"
+  priority: "low"
+  source: "semantic_stress_test"
+  fix_known: false
+  status: pending
+- id: INS-20260905-013606958-8910
+  ts: "2026-09-05T01:36:06+09:00"
+  insight: "[[俺の種ってなんだ？俺が何もしなくても無限に生成し続けるから意味があるんじゃないか？]] semantic_stress_test candidate_aliases: NO_MATCH source=lord query=俺の種ってなんだ？俺が何もしなくても無限に生成し続けるから意味があるんじゃないか？"
+  priority: "low"
+  source: "semantic_stress_test"
+  fix_known: false
+  status: pending
+- id: INS-20260905-013607325-39e2
+  ts: "2026-09-05T01:36:07+09:00"
+  insight: "[[いま直してたんだけど]] semantic_stress_test candidate_aliases: NO_MATCH source=lord query=いま直してたんだけど、内容が本質的ではなくて俺の記事の抜粋みたいな薄っぺらい内容ばっかだな。使えるネタが一つもないぞ"
+  priority: "low"
+  source: "semantic_stress_test"
+  fix_known: false
+  status: pending
+- id: INS-20260905-013607677-1551
+  ts: "2026-09-05T01:36:07+09:00"
+  insight: "[[event drivenも設計して実装しよう]] semantic_stress_test candidate_aliases: NO_MATCH source=lord query=event-drivenも設計して実装しよう"
+  priority: "low"
+  source: "semantic_stress_test"
+  fix_known: false
+  status: pending
+- id: INS-20260905-013608064-5a27
+  ts: "2026-09-05T01:36:08+09:00"
+  insight: "[[現在の claim based generation への変更は正しいです]] semantic_stress_test candidate_aliases: NO_MATCH source=lord query=現在の claim-based generation への変更は正しいです。 特に、 記事 →要約 →本人Voice →投稿 から、 本人claim →context →evidence →本人Voice →投稿 へ生成起点を変更したことは維持してください。 system pr…"
+  priority: "low"
+  source: "semantic_stress_test"
+  fix_known: false
+  status: pending
