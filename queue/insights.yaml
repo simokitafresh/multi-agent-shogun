@@ -17379,3 +17379,17 @@ insights:
   source: "semantic_index_update"
   fix_known: false
   status: pending
+- id: INS-20260904-150851566-a36a
+  ts: "2026-09-04T15:08:51+09:00"
+  insight: "[[だいぶ俺っぽいんじゃないか？D 3を少し直した]] semantic_stress_test candidate_aliases: NO_MATCH source=lord query=だいぶ俺っぽいんじゃないか？D-3を少し直した。単語をカタカナにするか英語にするか日本語かにセンスが出る"
+  priority: "low"
+  source: "semantic_stress_test"
+  fix_known: false
+  status: pending
+- id: INS-20260904-150852226-da6c
+  ts: "2026-09-04T15:08:52+09:00"
+  insight: "[[Growth Engine設計を以下の追加情報を反映して更新してください]] semantic_stress_test candidate_aliases: NO_MATCH source=lord query=Growth Engine設計を以下の追加情報を反映して更新してください。 重要: 既存のContent Engine、author corpus、human rewrite corpus、承認済み投稿ストックは壊さない。 今回追加するのは、 「Reachを広げるための本人一次…"
+  priority: "low"
+  source: "semantic_stress_test"
+  fix_known: false
+  status: pending
