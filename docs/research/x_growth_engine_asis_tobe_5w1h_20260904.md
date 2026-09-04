@@ -83,7 +83,7 @@ X(疑問・違和感・結論・数字 1 組)→ note(検証設計・方法・�
 | followers/following | 4,428 / 981 | listed 47、tweet 24,418 |
 | profile image / header | 2021-07 の画像(URL のみ確認、内容は未確認) | 実物目視は殿 |
 
-改善案(勝手に変えない): bio 案「東京の耳鼻科医。投資を数学・確率・検証で考える。デュアルモメンタムを自分で検証して運用、その実装が DM-Signal。noteで検証を全部出す ▶ note.com/tokyojibika」。**殿の裁定待ち。**
+**殿裁定 2026-09-04 17:11: bio は今は変えない。** 改善案(記録のみ): bio 案「東京の耳鼻科医。投資を数学・確率・検証で考える。デュアルモメンタムを自分で検証して運用、その実装が DM-Signal。noteで検証を全部出す ▶ note.com/tokyojibika」。**殿の裁定待ち。**
 
 ## §12 Pinned Post 監査
 
@@ -96,7 +96,7 @@ X(疑問・違和感・結論・数字 1 組)→ note(検証設計・方法・�
 | P3 | 自己紹介+思想(3 原則を本人 Voice で) | follow | 何者かに即答 | 数字が無い |
 | P4 | DM-Signal 長期検証(公開成績+MaxDD+ベンチ) | trust | 本人 09-03 投稿(1,227 imp/4 bm)が実証 | 商品説明に見える危険 |
 
-推奨: **P3 を本文、P1 を返信 1 段目に付けた 2 段構成**(本人の型: root+リプ二段目)。series が揃ったら P2 へ差替え比較。裁定は殿。
+**殿裁定 2026-09-04 17:11: 固定投稿は今後も変えない。変える時は殿の意志と判断で変える。** 以下の比較は記録のみで、将軍は提案も実施もしない。
 
 ## §13 外部リンク戦略
 
@@ -389,6 +389,7 @@ X Growth の dashboard は未作成(現状は `--summary` の表)。作る時の
 Observed / Inferred / Unavailable を必ず分ける。例: Observed「9/4 followers +7」「9/4 Short 3 本」→ Inferred「投稿量と followers 増に関連の可能性」。禁止「Short を 3 本出したので 7 人増えた」。投稿量比較(2/3/4 posts/day)は total_impressions/day・total_profile_clicks/day・total_link_clicks/day・followers_delta/day・week で行い、follow/post は作らない。取得不能 KPI 一覧と将来案は kpi_availability.yaml の unavailable 節(status / reason / possible_future_solution)。status を差し替えるだけで schema を壊さない(value/status/reason の 3 つ組)。
 
 ### 実装進捗台帳(v1.4)
+- 2026-09-04 17:11 殿裁定 3 件: bio 変えない / 固定投稿 変えない(殿の意志で) / 第 1 弾差替え 残す(baseline)。Profile・Pinned は Growth Engine の可変対象から外す(§11/§12 は記録)。16:25 R4-A-1 誤投稿(T3-S-69、dry-run ガード追加)
 - 2026-09-04 16:30 v1.4(殿レビュー): §0/§14 を 7 日運用・3 units/日へ同期、slot_calendar v3(42 slot、cron 30 8,12,18 * * *)、§51.1 に 4 format+units/physical+Conversation Entry lane、§51.2 を Conceptual/Observable/Unavailable に分離、DM-Signal attribution は可・未実装のまま(conversion KPI を埋めない)。在庫 Short 13 は 3/日で 4 日強→Round5 を急ぐ
 
 ### 実装進捗台帳(v1.3)

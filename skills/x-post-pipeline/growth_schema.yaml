@@ -205,6 +205,7 @@ kpi_v1_1_additions:
   unavailable_via_api: [non_follower_impressions(X Analytics 画面のみ), repeat_engagers(user 単位の反応履歴は API で取れない), cross_topic_migration(user 単位)]
   proxy_design_v1_2: reply/quote を付けた user id を投稿ごとに取得(GET /2/tweets/search/recent conversation_id、Basic tier 可)し、lane を跨いで同じ user が現れる件数を cross_topic_migration の代理指標にする
 
+profile_pinned_rule: 殿裁定 2026-09-04 17:11 — bio・固定投稿は Growth Engine の可変対象外。変える時は殿の意志と判断。将軍は提案も実施もしない
 prohibitions_v1_1: [DM-Signal へ無理につなげる, 全投稿を投資へ着地させる, 住宅/医療/不動産投稿を商品広告にする, 雑多垢化, 恐怖だけで釣る, 煽りを本人実績以上に強くする, Reach のために本人 Voice を壊す, 数字の正確性を落とす]
 
 # ===== v1.2 追加(2026-09-04 15:11 殿裁定『投稿フォーマット × 投稿量』) =====
