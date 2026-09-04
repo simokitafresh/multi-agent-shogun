@@ -4,8 +4,10 @@
 
 setup() {
   TEST_ROOT="$(mktemp -d)"
-  mkdir -p "$TEST_ROOT/scripts" "$TEST_ROOT/lib" "$TEST_ROOT/config" "$TEST_ROOT/logs" "$TEST_ROOT/bin"
+  mkdir -p "$TEST_ROOT/scripts" "$TEST_ROOT/lib" "$TEST_ROOT/config" "$TEST_ROOT/logs" "$TEST_ROOT/bin" "$TEST_ROOT/queue"
   cp "$BATS_TEST_DIRNAME/../../scripts/ntfy.sh" "$TEST_ROOT/scripts/ntfy.sh"
+  cp "$BATS_TEST_DIRNAME/../../scripts/ntfy_action.sh" "$TEST_ROOT/scripts/ntfy_action.sh"
+  cp "$BATS_TEST_DIRNAME/../../scripts/x_ops/x_token_refresh.py" "$TEST_ROOT/x_token_refresh.py"
   cp "$BATS_TEST_DIRNAME/../../lib/ntfy_auth.sh" "$TEST_ROOT/lib/ntfy_auth.sh"
   cp "$BATS_TEST_DIRNAME/../../lib/lord_conversation.sh" "$TEST_ROOT/lib/lord_conversation.sh"
   printf 'ntfy_topic: test-topic\n' > "$TEST_ROOT/config/settings.yaml"
@@ -14,6 +16,7 @@ setup() {
   cat > "$TEST_ROOT/bin/curl" <<'SH'
 #!/bin/bash
 printf '%s %s %s\n' "$PPID" "$(ps -o sid= -p $$ | tr -d ' ')" "$(ps -o pgid= -p $$ | tr -d ' ')" >> "$MARKER"
+printf '%s\n' "$*" >> "${ACTION_REQUEST:-/dev/null}"
 printf '200'
 SH
   chmod +x "$TEST_ROOT/bin/curl"
@@ -21,6 +24,7 @@ SH
   export NTFY_MIN_INTERVAL_SECONDS=0 NTFY_STATE_DIR="$TEST_ROOT/state" TMUX='' TMUX_PANE=''
   export NTFY_ASYNC_STDERR="$TEST_ROOT/worker.err"
   export NTFY_ASYNC_EVIDENCE_FILE="$TEST_ROOT/worker.evidence"
+  export ACTION_REQUEST="$TEST_ROOT/action.request"
 }
 
 teardown() {
@@ -83,4 +87,51 @@ wait_for_lines() {
   run bash "$TEST_ROOT/scripts/ntfy.sh"
   [ "$status" -eq 1 ]
   [ ! -e "$MARKER" ]
+}
+
+# test_necessity: action-required transport must have a distinct topic,
+# high priority, fixed prefix, and synchronous failure visibility while the
+# existing ntfy.sh one-argument/info transport remains unchanged.
+@test "action transport fixes topic priority prefix and fails closed" {
+  run bash "$TEST_ROOT/scripts/ntfy_action.sh" "殿裁定を確認"
+  [ "$status" -eq 0 ]
+  [ "$(wc -l < "$MARKER")" -eq 1 ]
+  grep -qF 'https://ntfy.sh/shogun-simokitafresh-action?priority=high' "$ACTION_REQUEST"
+  grep -qF '【要操作】殿裁定を確認' "$ACTION_REQUEST"
+
+  run bash "$TEST_ROOT/scripts/ntfy_action.sh" "短時間の二通目"
+  [ "$status" -eq 0 ]
+  [ "$(wc -l < "$MARKER")" -eq 2 ]
+
+  cat > "$TEST_ROOT/bin/curl" <<'SH'
+#!/bin/bash
+printf '429'
+SH
+  chmod +x "$TEST_ROOT/bin/curl"
+  run bash "$TEST_ROOT/scripts/ntfy_action.sh" "429失敗確認"
+  [ "$status" -ne 0 ]
+}
+
+# test_necessity: refresh-token failure must produce a fresh PKCE
+# authorization URL through the action channel without exposing credentials.
+@test "refresh failure sends reauthorization URL through action channel" {
+  cat > "$TEST_ROOT/x_api.env" <<'EOF'
+X_CLIENT_ID=test-client-id
+X_CLIENT_SECRET=test-client-secret
+X_REDIRECT_URI=http://127.0.0.1:8585/callback
+EOF
+  cat > "$TEST_ROOT/reauth_action.sh" <<'SH'
+#!/usr/bin/env bash
+printf '%s\n' "$1" > "$REAUTH_CAPTURE"
+SH
+  chmod +x "$TEST_ROOT/reauth_action.sh"
+  export REAUTH_CAPTURE="$TEST_ROOT/reauth.message"
+  run env X_TOKEN_ACTION_NTFY_SCRIPT="$TEST_ROOT/reauth_action.sh" \
+    X_PKCE_VERIFIER_FILE="$TEST_ROOT/verifier" X_PKCE_STATE_FILE="$TEST_ROOT/state" \
+    python3 "$TEST_ROOT/x_token_refresh.py" "$TEST_ROOT/x_api.env"
+  [ "$status" -eq 2 ]
+  grep -qF 'X再認可URLを開いてAuthorize appを押してください。' "$REAUTH_CAPTURE"
+  grep -qF 'https://x.com/i/oauth2/authorize?' "$REAUTH_CAPTURE"
+  grep -qF 'code_challenge_method=S256' "$REAUTH_CAPTURE"
+  [[ "$output" != *"test-client-secret"* ]]
 }

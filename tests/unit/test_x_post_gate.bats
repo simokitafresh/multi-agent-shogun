@@ -695,3 +695,12 @@ EOF
     grep -qF "$X_POST_DRAFTS_DIR/2026-09-03_A.txt" "$NTFY_CAPTURE"
     grep -qF 'デュアルモメンタムは2つだけ見る' "$NTFY_CAPTURE"
 }
+
+# test_necessity: approval is an operator-action route and must select the
+# physically separated transport by default; the override remains available
+# for isolated callers/tests without changing the production default.
+@test "x_post approve defaults to action notification transport" {
+    local x_post="$BATS_TEST_DIRNAME/../../scripts/x_ops/x_post.sh"
+    grep -qF 'NTFY_SCRIPT="${X_POST_NTFY_SCRIPT:-$REPO_ROOT/scripts/ntfy_action.sh}"' "$x_post"
+    ! grep -qF 'NTFY_SCRIPT="${X_POST_NTFY_SCRIPT:-$REPO_ROOT/scripts/ntfy.sh}"' "$x_post"
+}

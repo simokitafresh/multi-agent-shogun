@@ -36,6 +36,7 @@ unset _self_path _script_dir
 DATA_FILE="$SCRIPT_DIR/queue/pending_decisions.yaml"
 LOCKFILE="${DATA_FILE}.lock"
 SUBCMD="$1"
+ACTION_NTFY_SCRIPT="${PENDING_DECISION_NTFY_SCRIPT:-$SCRIPT_DIR/scripts/ntfy_action.sh}"
 
 # Initialize data file if not exists
 init_data_file() {
@@ -328,6 +329,16 @@ PY
             NEW_PD_ID=$(printf "%s\n" "$create_output" | awk -F= '/^PD_ID=/{print $2; exit}')
             if [ -z "$NEW_PD_ID" ]; then
                 echo "[pending_decision] WARN: created PD id parse failed, skip dashboard sync" >&2
+            fi
+            if [ "$TYPE" = "action_required" ] || [ "$TYPE" = "lord_decision" ]; then
+                if [ ! -f "$ACTION_NTFY_SCRIPT" ]; then
+                    echo "[pending_decision] action notification script not found" >&2
+                    return 1
+                fi
+                if ! bash "$ACTION_NTFY_SCRIPT" "殿裁定依頼: $SUMMARY"; then
+                    echo "[pending_decision] action notification failed" >&2
+                    return 1
+                fi
             fi
             return 0
         else

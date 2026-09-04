@@ -62,6 +62,16 @@ setup() {
     cp "$SHARED_TMPDIR/config/projects.yaml" "$TEST_TMPDIR/config/"
     export SCRIPT_UNDER_TEST="$TEST_TMPDIR/scripts/pending_decision_write.sh"
 
+    cat > "$TEST_TMPDIR/scripts/ntfy_action.sh" <<'SH'
+#!/usr/bin/env bash
+if [ "${ACTION_FAIL:-0}" = "1" ]; then
+    exit 1
+fi
+printf '%s\n' "$1" >> "$TEST_TMPDIR/action_notifications"
+SH
+    chmod +x "$TEST_TMPDIR/scripts/ntfy_action.sh"
+    export PENDING_DECISION_NTFY_SCRIPT="$TEST_TMPDIR/scripts/ntfy_action.sh"
+
     # 可変ファイルを初期化
     cat > "$TEST_TMPDIR/dashboard.md" <<'EOF'
 ## 要対応
@@ -175,6 +185,23 @@ _run_pd() { bash "$SCRIPT_UNDER_TEST" "$@"; }
 
     # Verify 4 entries created
     [ "$(grep -c "^- id:" "$TEST_TMPDIR/queue/pending_decisions.yaml")" -eq 4 ]
+}
+
+# test_necessity: a pending Lord-decision request must use the action-only
+# transport, while a failed notification remains observable to the caller.
+@test "create action_required notifies and fails closed on transport error" {
+    run _run_pd create "殿裁定が必要" "cmd_lord_decision" "lord_decision" "karo"
+    [ "$status" -eq 0 ]
+    grep -qF '殿裁定依頼: 殿裁定が必要' "$TEST_TMPDIR/action_notifications"
+
+    run _run_pd create "操作要求型も通知" "cmd_action" "action_required" "karo"
+    [ "$status" -eq 0 ]
+    grep -qF '殿裁定依頼: 操作要求型も通知' "$TEST_TMPDIR/action_notifications"
+
+    export ACTION_FAIL=1
+    run _run_pd create "通知失敗を可視化" "cmd_action_fail" "action_required" "karo"
+    [ "$status" -ne 0 ]
+    [[ "$output" == *"action notification failed"* ]]
 }
 
 # ── Test 9: resolve - missing required fields exits 1 ──
