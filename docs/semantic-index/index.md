@@ -5388,6 +5388,7 @@ codd:
 | discussion | `queue/lord_conversation.jsonl` 2026-09-04T16:24:42+09:00 いまクリアされても今より強くてニューゲームできるようにせよ |
 | causal_chain | `[[cmd_reflux_insight_202607081406_saizo]]` (L991) |
 | causal_chain | `[[cmd_karo_hotfix_gunshi_deepdive_recurrence_20260727]]` (L1408) |
+| discussion | `queue/lord_conversation.jsonl` 2026-09-04T19:18:14+09:00 順番を適切にな。慌ててネタを作らず万全の体制になってからやれ |
 
 ## main_infra_double_loop — メイン作業＋インフラ改善の二重ループ
 
