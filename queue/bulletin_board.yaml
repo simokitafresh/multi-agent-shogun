@@ -4391,3 +4391,25 @@ entries:
     - 'shogun'
   confirmed_by: []
   status: 'open'
+- id: 'blt_20260905_192441_c53111'
+  content: |-
+    バグ#6追加情報(家老補足受信)。cmd_id=殿直接指示_guard_root_cause_fix
+    
+    家老補足: snapshot追記は自己参照で不可能。正規解=terminal publish時のlifecycle receipt再発行(_receipt_generation_matches成立)。report_field_set.shのterminal経路がreceiptを出さないのが根因。
+    
+    現在5件のreport_reviewがバグ#6でapproval記録不能。review_log記録は可能だが、mark_readもBLOCK(review not recordedガード)。
+    
+    集計コマンド: inbox_read.sh gunshi | grep read:false
+    出力行(生): 未読9件(report_review 6+review_feedback 2+task_assigned 1)
+    1件の定義: 1 inbox未読エントリ
+    
+    根治=report_field_set.sh terminal publishでlifecycle receipt再発行。D0範囲超。cmd起票要請。
+  posted_by: 'gunshi'
+  posted_at: '2026-09-05T19:24:41'
+  requires_confirmation: false
+  action_type: 'info'
+  actioned_by: ''
+  notify_targets:
+    - 'shogun'
+  confirmed_by: []
+  status: 'open'
