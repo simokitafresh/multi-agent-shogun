@@ -18124,3 +18124,10 @@ insights:
   status: "resolved"
   action_artifact: "semantic_map=/home/simokitafresh/multi-agent-shogun/context/semantic-map.md;semantic_index=/home/simokitafresh/multi-agent-shogun/docs/semantic-index/index.md"
   resolved_reason: "semantic map generation verified the candidate is represented or intentionally ignored"
+- id: INS-20260905-095207758-e252
+  ts: "2026-09-05T09:52:07+09:00"
+  insight: "[[最新の 偵察結果と現行実装を確認し]] semantic_stress_test candidate_aliases: NO_MATCH source=lord query=最新の \"cmd_4476\" 偵察結果と現行実装を確認し、\"dm-signal-core-simple-free-proof-asis-tobe_20260905.md\" を更新してください。 特に以下を再検討してください。 - Google Authで取得済みのSupabas…"
+  priority: "low"
+  source: "semantic_stress_test"
+  fix_known: false
+  status: pending
