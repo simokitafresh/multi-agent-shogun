@@ -1,9 +1,9 @@
 <!-- gist-master: e2219c69d927f32dc84d53e3e7daa97d dm-signal-market-direction-breadth-exposure-asis-tobe_20260905.md -->
-# DM-Signal 体系の保有 ticker×weight を月ごとに見る — 1 表設計書 v1.0(2026-09-05 22:35、殿 22:29『シンプルにデータを見たいだけだ。L0,L1,L2,L3,全体でどの ticker をどの weight で持っているかを知りたいだけだ。複雑さはすべて捨てろ』で v0.1〜v0.5 の 6 表・asset class・前月差・仮想 PF・裁定 4 点を全て撤去)
+# DM-Signal 体系の保有 ticker×weight を月ごとに見る — 1 表設計書 v1.1(2026-09-05 22:50 家老 R2-7: is_mtd 列追加、contract test を AC1/AC2 の 2 本に) / v1.0(2026-09-05 22:35、殿 22:29『シンプルにデータを見たいだけだ。L0,L1,L2,L3,全体でどの ticker をどの weight で持っているかを知りたいだけだ。複雑さはすべて捨てろ』で v0.1〜v0.5 の 6 表・asset class・前月差・仮想 PF・裁定 4 点を全て撤去)
 
 - 発端: 殿 19:32(市場方向性の PIT 観測)→ 22:29 で目的を 1 文に固定。
 - 版履歴(歴史修正禁止のため記録のみ): v0.1 19:50 6 表設計 / v0.2〜v0.5 21:40〜22:40 weight 正本の訂正往復(display_ticker_weights 直接採用は 08-06 partial-turnover v1.10 で棄却済み→history.py L224-237 方式) / **v1.0 22:35 1 表へ縮約**。旧版本文は git 履歴(5498c0f9b 以前)にある。
-- 入力の正本: 基盤設計書 `docs/research/dm-signal-research-data-foundation-asis-tobe_20260905.md` v0.4 F1 `holdings_monthly.csv`(PF × 月 × ticker × weight。展開規則・検算・対象 78 PF・manifest は全てそこにある)。本書は展開しない、DB を読まない、パラメータを持たない。
+- 入力の正本: 基盤設計書 `docs/research/dm-signal-research-data-foundation-asis-tobe_20260905.md` v0.5 F1 `holdings_monthly.csv`(PF × 月 × ticker × weight。展開規則・検算・対象 78 PF・manifest は全てそこにある)。本書は展開しない、DB を読まない、パラメータを持たない。
 
 ## §0.0 前提とスタイル
 
@@ -18,7 +18,8 @@
 
 | 列 | 意味 |
 |---|---|
-| year_month | 2010-04 〜 2026-09(2026-09 は MTD と明記) |
+| year_month | 2010-04 〜 2026-09 |
+| is_mtd | true = 月末未到達(2026-09 のような当月。F1 manifest の as-of から機械判定)。false = 確定月 |
 | layer | L0 / L1 / L2 / L3 / ALL |
 | ticker | XLU / TQQQ / GLD / TMV / TECL / Cash(基盤 F1 に現れたものだけ。手入力なし) |
 | weight | その月にその階層の PF が持つ ticker の平均 weight = Σ(PF の weight) ÷ 階層の PF 数 |
@@ -44,10 +45,11 @@ ALL 行 = 同じことを layer を無視して計算
 | AC | 判定 |
 |---|---|
 | AC1 | 全 (year_month, layer) で Σweight = 1.0 ± 1e-9。違反 0 |
-| AC2 | pf_count が manifest の layer 別 PF 数(12/21/24/21、ALL 78)以下で、F1 の I7(展開不能 PF-月)を引いた数と一致 |
+| AC2 | pf_count が manifest の layer 別 PF 数(12/21/24/21、ALL 78)から F1 の I7(展開不能 PF-月)を引いた数と一致 |
+| AC2b | is_mtd は as-of 月の行だけ true、それ以外 false(違反 0) |
 | AC3 | script 内に DB 接続・config 読取・展開コードが 0 件(grep: create_db_engine / component_portfolios / display_ticker_weights = 0) |
 
-test は AC1 の contract test 1 本のみ(`test_necessity` 宣言)。実装用 test は同一 cmd 内で削除。
+contract test は AC1(Σweight=1)と AC2(pf_count 分母一致)の 2 本(別々の永続不変量、各 `test_necessity` 宣言)。実装用 test は同一 cmd 内で削除。
 
 ## §4 捨てたもの(再導入しない。必要になったら殿が言う)
 
