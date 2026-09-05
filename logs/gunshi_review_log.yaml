@@ -7625,3 +7625,46 @@
     expected: "compatibility shard PASS"
     actual: "SHARD_RESULT declared=491 observed=491 rc=1 case15 FAIL"
     result: "FAIL"
+- ambiguity_points: none
+  brainwash_check: '#1no #2no #3no #4no #5no #6no #7no #8no 軍師自身が発見したバグの根治。302/302
+    PASS確認。conflict_of_interest明記'
+  cmd_id: cmd_karo_hotfix_review_bundle_precheck_parity_ins_20260905_135853
+  cmd_spec_summary:
+    acceptance_criteria_count: 2
+    project: infra
+    scope: precheck ERRORS/GATE_PREDICTION二重真実源のparity統合
+  conflict_of_interest: 軍師のprecheckの修正だが、ERRORSとGATE_PREDICTIONの二重真実源解消は客観的バグ修正。軍師がPASSしやすくなる方向ではなくparity確保
+  finding_categories:
+  - assumptions
+  - numbers
+  - simulation
+  - premortem
+  - adversarial
+  - ambiguity
+  gate_prediction: CLEAR
+  gate_prediction_reason: all checks passed
+  observations:
+  - '事実1: SG-PRE28のERRORS未加算が真因。engine.pyがGATE_PREDICTION=BLOCKを確定するのにshellがERRORS+=1しなかった=二重真実源'
+  - '事実2: 修正後はERRORS=1/exit=1が一致し、review_bundle._batch_precheckがWARN誤判定からBLOCK復帰'
+  - '事実3: 副次修正SG-PRE15の空task配列awkハングも実害確認済み(review_bundle.py timeout未指定でプロセスごと停止)'
+  operational_simulation:
+    actual: 302/302 PASS SKIP0 rc=0
+    command: bash scripts/run_tests.sh task queue/tasks/kotaro.yaml
+    expected: 302/302 PASS SKIP0
+    result: PASS
+  review_type: report
+  reviewed_at: '2026-09-05T15:18:00+09:00'
+  reviewer: gunshi
+  sg_checklist:
+    SG1_ac_coverage: PASS
+    SG2_test_pass: PASS
+    SG3_parity: N/A
+    SG4_no_regression: PASS
+    SG5_lesson_candidate: PASS
+    SG6_code_quality: PASS
+    SG7_gate_prediction: PASS
+  step3_5_verified: true
+  verdict: APPROVE
+  verified_files:
+  - scripts/gates/gate_gunshi_report_precheck.sh:1739
+  - tests/unit/test_review_bundle.bats:1
