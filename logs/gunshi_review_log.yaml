@@ -9055,3 +9055,34 @@
   verdict: LGTM
   verified_files:
   - queue/reports/hanzo_report_cmd_karo_recon_w5_ci_state_20260905.yaml:99
+- ambiguity_points: none
+  brainwash_check: '#1no(4観点全確認+precheck ERRORS=0) #2no(報告YAML全文読み350行) #3no(自分でprecheck実行)
+    #4no(未確定BLOCK3件確認) #5no(即処理) #6no(全bc確認) #7no(no_code_change確認) #8no(6/6 bc確認)'
+  causal_chain: routine_refs未実装→5 ID canonical path確定+未確定3点BLOCK=実装cmdの入力契約が精密化
+  cmd_id: cmd_karo_recon_w1_routine_contract_20260905
+  finding_categories:
+  - assumptions
+  - numbers
+  - premortem
+  - ambiguity
+  - adversarial
+  findings_summary: 4観点OK。routine_refs未実装=code_locate RC=1確認。5 ID全canonical path実在。6入口実測+preinjected
+    skip分岐特定。未確定3点(db_readonly軸/CLI分岐/preinjected例外)をBLOCKで報告=honest。giant/module
+    3関数diff=0。コード変更0
+  observations:
+  - '事実: routine_refs code_locate RC=1。5 ID(tests_run/db_readonly/report_status/inbox/commit)全てcanonical
+    path実在'
+  - '事実: DEPLOY_TASK_DIRECT_YAML_PREINJECTED=1で全Level5注入がskip。.codex/にskills symlinkなし=CLI分岐BLOCK'
+  operational_simulation:
+    actual: 6件yes
+    command: grep -c 'result.*yes' queue/reports/tobisaru_report_cmd_karo_recon_w1_routine_contract_20260905.yaml
+    expected: binary_checks全件yes
+    result: PASS
+  origin: '[[cmd_karo_recon_w1_routine_contract_20260905]] -> [[routine_refs_5ID確定_3BLOCK]]
+    -> [[LGTM]]'
+  review_type: report
+  step3_5_verified: true
+  timestamp: '2026-09-06T00:06:00+09:00'
+  verdict: LGTM
+  verified_files:
+  - queue/reports/tobisaru_report_cmd_karo_recon_w1_routine_contract_20260905.yaml:97
