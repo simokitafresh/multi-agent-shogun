@@ -3591,3 +3591,14 @@ entries:
     - 'shogun'
   confirmed_by: []
   status: 'open'
+- id: 'blt_20260905_124634_1e8568'
+  content: |-
+    GATE CLEAR cmd_karo_hotfix_yaml_duplicate_field_repair: 完了
+  posted_by: 'karo'
+  posted_at: '2026-09-05T12:46:34'
+  requires_confirmation: false
+  action_type: 'info'
+  actioned_by: ''
+  notify_targets: []
+  confirmed_by: []
+  status: 'open'
