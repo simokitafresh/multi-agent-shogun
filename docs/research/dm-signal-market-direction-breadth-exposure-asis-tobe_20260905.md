@@ -1,9 +1,9 @@
 <!-- gist-master: e2219c69d927f32dc84d53e3e7daa97d dm-signal-market-direction-breadth-exposure-asis-tobe_20260905.md -->
-# DM-Signal 体系の保有 ticker×weight を月ごとに見る — 1 表設計書 v1.1(2026-09-05 22:50 家老 R2-7: is_mtd 列追加、contract test を AC1/AC2 の 2 本に) / v1.0(2026-09-05 22:35、殿 22:29『シンプルにデータを見たいだけだ。L0,L1,L2,L3,全体でどの ticker をどの weight で持っているかを知りたいだけだ。複雑さはすべて捨てろ』で v0.1〜v0.5 の 6 表・asset class・前月差・仮想 PF・裁定 4 点を全て撤去)
+# DM-Signal 体系の保有 ticker×weight を月ごとに見る — 1 表設計書 v1.2(2026-09-05 22:50 家老 R3 途中指摘: 分母は manifest 総数−I7 ではなく『その月に F1 CSV に行がある PF 数』。未開始 layer(L3 は 2013-12 前)は自然に 0 行) / v1.1(2026-09-05 22:50 家老 R2-7: is_mtd 列追加、contract test を AC1/AC2 の 2 本に) / v1.0(2026-09-05 22:35、殿 22:29『シンプルにデータを見たいだけだ。L0,L1,L2,L3,全体でどの ticker をどの weight で持っているかを知りたいだけだ。複雑さはすべて捨てろ』で v0.1〜v0.5 の 6 表・asset class・前月差・仮想 PF・裁定 4 点を全て撤去)
 
 - 発端: 殿 19:32(市場方向性の PIT 観測)→ 22:29 で目的を 1 文に固定。
 - 版履歴(歴史修正禁止のため記録のみ): v0.1 19:50 6 表設計 / v0.2〜v0.5 21:40〜22:40 weight 正本の訂正往復(display_ticker_weights 直接採用は 08-06 partial-turnover v1.10 で棄却済み→history.py L224-237 方式) / **v1.0 22:35 1 表へ縮約**。旧版本文は git 履歴(5498c0f9b 以前)にある。
-- 入力の正本: 基盤設計書 `docs/research/dm-signal-research-data-foundation-asis-tobe_20260905.md` v0.5 F1 `holdings_monthly.csv`(PF × 月 × ticker × weight。展開規則・検算・対象 78 PF・manifest は全てそこにある)。本書は展開しない、DB を読まない、パラメータを持たない。
+- 入力の正本: 基盤設計書 `docs/research/dm-signal-research-data-foundation-asis-tobe_20260905.md` v0.6 F1 `holdings_monthly.csv`(PF × 月 × ticker × weight。展開規則・検算・対象 78 PF・manifest は全てそこにある)。本書は展開しない、DB を読まない、パラメータを持たない。
 
 ## §0.0 前提とスタイル
 
@@ -23,10 +23,10 @@
 | layer | L0 / L1 / L2 / L3 / ALL |
 | ticker | XLU / TQQQ / GLD / TMV / TECL / Cash(基盤 F1 に現れたものだけ。手入力なし) |
 | weight | その月にその階層の PF が持つ ticker の平均 weight = Σ(PF の weight) ÷ 階層の PF 数 |
-| pf_count | 分母(その月に展開できた PF 数) |
+| pf_count | 分母 = その月・その階層で F1 CSV に行がある PF 数(distinct portfolio_id)。未開始 layer は行が無いので出力しない |
 
 - 各 (year_month, layer) で weight の合計は 1.0。
-- ALL は 78 PF の単純平均(階層をまたいで 1 PF=1 票)。
+- ALL はその月に行がある全 PF の単純平均(階層をまたいで 1 PF=1 票。2013-12 以降は 78)。
 - これだけで「今月は体系全体が XLU 6 割・GLD 3 割・TQQQ 1 割」のように読める。見たい形(横持ち・グラフ)は CSV を pivot するだけ。
 
 ## §2 作り方(1 行の group-by)
@@ -45,7 +45,7 @@ ALL 行 = 同じことを layer を無視して計算
 | AC | 判定 |
 |---|---|
 | AC1 | 全 (year_month, layer) で Σweight = 1.0 ± 1e-9。違反 0 |
-| AC2 | pf_count が manifest の layer 別 PF 数(12/21/24/21、ALL 78)から F1 の I7(展開不能 PF-月)を引いた数と一致 |
+| AC2 | pf_count = F1 CSV の (year_month, layer) ごとの distinct portfolio_id 数と一致(全行)。かつ pf_count ≤ manifest の layer 別 PF 数(12/21/24/21、ALL 78) |
 | AC2b | is_mtd は as-of 月の行だけ true、それ以外 false(違反 0) |
 | AC3 | script 内に DB 接続・config 読取・展開コードが 0 件(grep: create_db_engine / component_portfolios / display_ticker_weights = 0) |
 

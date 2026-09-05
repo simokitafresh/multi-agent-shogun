@@ -1,5 +1,5 @@
 <!-- gist-master: 4afbab67cc111ff723c342aa48412ff8 dm-signal-research-data-foundation-asis-tobe_20260905.md -->
-# DM-Signal 研究データ基盤 F1 `holdings_monthly` — PF × 月 × ticker × weight を 1 表に固める 設計書 v0.5(2026-09-05 22:55 家老 R2 REJECT blt_223658 7 点を全採用: F1 だけに絞り F2〜F4/A1〜A11/I 一覧を `dm-signal-research-data-backlog_20260905.md` へ移設、流用元を full SHA+path+関数に一本化、展開辺を記録済み holding_signal の同月再帰に定義、semantic alias 正本訂正 / v0.4 22:35 家老 REJECT 6 点採用 / v0.3 22:25 / v0.2 22:05 / v0.1 21:40 殿 21:22『便利なものを先に解決』)
+# DM-Signal 研究データ基盤 F1 `holdings_monthly` — PF × 月 × ticker × weight を 1 表に固める 設計書 v0.6(2026-09-05 22:50 家老 R3 途中指摘: portfolios.type は列) / v0.5(2026-09-05 22:55 家老 R2 REJECT blt_223658 7 点を全採用: F1 だけに絞り F2〜F4/A1〜A11/I 一覧を `dm-signal-research-data-backlog_20260905.md` へ移設、流用元を full SHA+path+関数に一本化、展開辺を記録済み holding_signal の同月再帰に定義、semantic alias 正本訂正 / v0.4 22:35 家老 REJECT 6 点採用 / v0.3 22:25 / v0.2 22:05 / v0.1 21:40 殿 21:22『便利なものを先に解決』)
 
 - 発端: 殿 21:19『ticker×weight はすんなり DB から取れたか』→取れなかった → 21:22『先に解決しないか。他にも応用できる』→ 22:29『シンプルにデータを見たいだけ。複雑さは捨てろ』。
 - 本書の範囲: **F1 `holdings_monthly.csv` の生成・検算・provenance だけ。** それ以外(ledger の扱い、階層関数、アイデア、本番不整合一覧)は `docs/research/dm-signal-research-data-backlog_20260905.md` に移した(記録のみ、実装しない)。
@@ -9,7 +9,7 @@
 
 - 対象は DM-Signal 本番 Postgres(Render)。数値は 2026-09-05 21:24〜22:30 に readonly launcher で実測(nonce *-ro1〜ro9)。
 - 保有 = `monthly_returns.holding_signal`(PIT。リバランス月でなければ前月維持)。生シグナルではない。
-- 展開 = **その月の記録済み holding_signal を辿る再帰**(fof の UUID → その component の同月 holding_signal → … → ticker)。1 段ごとに 1/N、同一 ticker は合算。展開辺は記録済み holding_signal と `portfolios.config.type` だけで決まり、**現在の config tree を過去月へ当てない**(家老 R2-2。`portfolio_config_snapshots` は 2026-06 以降しか無く、PIT を証明できない)。config は対象 78 PF の選定と type 判定にだけ使う。
+- 展開 = **その月の記録済み holding_signal を辿る再帰**(fof の UUID → その component の同月 holding_signal → … → ticker)。1 段ごとに 1/N、同一 ticker は合算。展開辺は記録済み holding_signal と `portfolios.type`(列。config key ではない、家老 R3 途中指摘) だけで決まり、**現在の config tree を過去月へ当てない**(家老 R2-2。`portfolio_config_snapshots` は 2026-06 以降しか無く、PIT を証明できない)。config は対象 78 PF の選定と type 判定にだけ使う。
 - 本番に触るのは殿が明示的に OK を出した時だけ(殿 22:27)。本書は readonly、DDL/UPSERT なし。第 2 段(DB 昇格)は本書の範囲外。
 - 設計書が家老・軍師の APPROVE に到達するまで往復し、慌てて実装しない(殿 22:25)。cmd_4479 は draft のまま。
 - 既存コードを使う。新規の再帰は書かない。パラメータ 0。測れないものは書かない。歴史修正禁止。
@@ -87,7 +87,7 @@
 - `provenance.yaml`: 実行した全 SQL の readonly launcher nonce・as-of・query sha256、流用 blob の sha256(`git show d14a4ec3:scripts/analysis/partial_turnover_phase0_lagged.py | sha256sum` = `5a556df615be3c32204136fb5439b1a33320d49b68bb569587531c9a0d493487`、2026-09-05 22:40 将軍実測)。
 
 ### §3.2 入力と展開
-- 入力 SQL(全て readonly launcher): (a) 対象 78 PF(`portfolios` name 規則+type) (b) `monthly_returns(portfolio_id, year_month, holding_signal, monthly_return)` 対象 78 PF+**component として現れる全 PF**(再帰に必要。対象外の component も holding_signal だけ読む) (c) `portfolios.config->>'type'` 全 PF。
+- 入力 SQL(全て readonly launcher): (a) 対象 78 PF(`portfolios` name 規則+type) (b) `monthly_returns(portfolio_id, year_month, holding_signal, monthly_return)` 対象 78 PF+**component として現れる全 PF**(再帰に必要。対象外の component も holding_signal だけ読む) (c) `portfolios.type` 全 PF(列。将軍の実測 SQL は config->>'type' を使ったが正本は列)。
 - 展開: `_resolve_weights` を復元して呼ぶ。standard=`return_calculator_pure.holding_signal_to_weights`(現 HEAD、1/N)と同値であることを 1 回確認。fof=同月 component holding_signal を再帰。Cash/DTB3 終端、非 UUID 検出、cycle 検出は blob のまま。
 - 展開不能(component の同月 holding_signal 欠落)は行を出さず I7 として PF-月を列挙する。
 
