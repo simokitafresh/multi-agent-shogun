@@ -18341,3 +18341,10 @@ insights:
   source: "semantic_index_update"
   fix_known: false
   status: pending
+- id: INS-20260905-143023501-a42a
+  ts: "2026-09-05T14:30:23+09:00"
+  insight: "[[全体の進捗を表形式で報告してくれ]] semantic_stress_test candidate_aliases: NO_MATCH source=lord query=全体の進捗を表形式で報告してくれ、誰が何をやっていてどこで詰まってる？"
+  priority: "low"
+  source: "semantic_stress_test"
+  fix_known: false
+  status: pending
