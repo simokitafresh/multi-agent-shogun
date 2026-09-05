@@ -9323,8 +9323,6 @@ codd:
 | discussion | `queue/lord_conversation.jsonl` 2026-09-05T13:41:32+09:00 session_save_20260905_1342(復帰点、先に session_save_20260905_1310 を読め): 殿 13:19 収束裁定→設計書 v0.4 §M+§0.0(殿 13:21 スタイル指示、doc-styl |
 | discussion | `queue/lord_conversation.jsonl` 2026-09-05T14:07:07+09:00 session_save_20260905_1406(軍師復帰点): 本セッション成果=(1)D0 3件commit済み: precheck ac_version追補差異WARN降格(bd60ace73)、inbox_mark_read t |
 | discussion | `queue/lord_conversation.jsonl` 2026-09-05T14:38:39+09:00 bz4n0bwng toolu_01HmnX2UX3zvJrbZb9JGu2Q7 /tmp/claude-1000/-home-simokitafresh-multi-agent-shogun/f668db13-0cde-4f16-9196 |
-| causal | `cmd_karo_ci_fix_33939652526` files_modified: [[agent_formation_management]] |
-| cmd | `cmd_karo_ci_fix_33939652526` (`scripts/ninja_monitor.sh`, `tests/unit/test_ninja_monitor_stall.bats`) |
 
 ## visibility_tier_masking — Visibility Tier制マスク
 
@@ -11284,7 +11282,6 @@ codd:
 | causal | `cmd_karo_hotfix_integrate_readtree_checkout_sync_202609022220` files_modified: [[training_cycle_quality]] |
 | causal | `cmd_4460` files_modified: [[training_cycle_quality]] |
 | causal | `cmd_karo_hotfix_publisher_single_flag_file_202609030257` files_modified: [[training_cycle_quality]] |
-| causal | `cmd_karo_ci_fix_33939652526` files_modified: [[training_cycle_quality]] |
 
 ## report_quality_protocol — 忍者報告品質プロトコル
 
@@ -12132,7 +12129,6 @@ codd:
 | causal | `cmd_4460` files_modified: [[daemon_supervision]] |
 | causal | `cmd_karo_hotfix_publisher_single_flag_file_202609030257` files_modified: [[daemon_supervision]] |
 | causal_chain | `[[cmd_karo_ci_fix_33301147088_test117_20260830]]` (L1677) |
-| causal | `cmd_karo_ci_fix_33939652526` files_modified: [[daemon_supervision]] |
 
 ## openpbx_reference — OpenPBX(コリ先生PBX MVP)
 
@@ -12471,7 +12467,6 @@ codd:
 | causal_chain | `[[cmd_karo_hotfix_gunshi_cs_remediation_generation_20260801]]` (L1504) |
 | causal_chain | `[[cmd_karo_hotfix_safe_shared_convergence_202608191137]]` (L1615) |
 | causal_chain | `[[cmd_karo_hotfix_function_coverage_20260828]]` (L1664) |
-| causal | `cmd_karo_ci_fix_33939652526` files_modified: [[infrastructure_ops]] |
 
 ## context_freshness_retry_budget — context鮮度git再試行予算
 
@@ -16070,6 +16065,7 @@ codd:
 | cmd | `cmd_reflux_insight_202609021458_saizo` |
 | discussion | `queue/lord_conversation.jsonl` 2026-09-04T14:01:18+09:00 saizo,kotaro,tobisaruも解放されているか？ |
 | causal_chain | `[[cmd_karo_cycle2_bugverify_b7_b19_20260727]]` (L1376) |
+| discussion | `queue/lord_conversation.jsonl` 2026-09-05T14:56:55+09:00 b130mckoz toolu_01J7LxoMLwCe6ngHwDpFHX3f /tmp/claude-1000/-home-simokitafresh-multi-agent-shogun/d9faccc5-127b-4b4f-bd18 |
 
 ## provisional_tobisaru — 仮: Tobisaru
 
@@ -17132,7 +17128,6 @@ codd:
 | causal | `cmd_4460` files_modified: [[infra_design_intent]] |
 | causal | `cmd_karo_hotfix_publisher_single_flag_file_202609030257` files_modified: [[infra_design_intent]] |
 | causal_chain | `[[cmd_karo_fix_same_cmd_pending_symlink_20260804]]` (L1556) |
-| causal | `cmd_karo_ci_fix_33939652526` files_modified: [[infra_design_intent]] |
 
 ## scope_integrity_lifecycle — スコープ鮮度ライフサイクル
 
@@ -18973,7 +18968,6 @@ codd:
 | causal | `cmd_karo_hotfix_integrate_readtree_checkout_sync_202609022220` files_modified: [[inbox_evidence_durability]] |
 | causal | `cmd_4460` files_modified: [[inbox_evidence_durability]] |
 | causal | `cmd_karo_hotfix_publisher_single_flag_file_202609030257` files_modified: [[inbox_evidence_durability]] |
-| causal | `cmd_karo_ci_fix_33939652526` files_modified: [[inbox_evidence_durability]] |
 
 ## hook_json_command_boundary — hook JSONコマンド境界
 
@@ -19226,7 +19220,6 @@ codd:
 | causal | `cmd_4460` files_modified: [[active_task_clear_fail_closed]] |
 | causal | `cmd_karo_hotfix_publisher_single_flag_file_202609030257` files_modified: [[active_task_clear_fail_closed]] |
 | causal | `cmd_4465` files_modified: [[active_task_clear_fail_closed]] |
-| causal | `cmd_karo_ci_fix_33939652526` files_modified: [[active_task_clear_fail_closed]] |
 
 ## karo_strong_new_game_20260818_0650 — 家老復帰点（fixture→republish→cron）
 
