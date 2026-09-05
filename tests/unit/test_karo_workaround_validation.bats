@@ -404,20 +404,20 @@ YAML
   root_cause: 'legacy root cause'
   timestamp: '2026-04-25T00:00:00Z'
   workaround: true
-  root_signature: 'report_yaml_format::general'
+  root_signature: 'report_yaml_format::schema_shape'
   resolved_by_cmd: ''
 - cmd_id: cmd_modern_2
   timestamp: '2026-04-25T00:01:00Z'
   ninja: hanzo
   workaround: true
   category: report_yaml_format
-  root_signature: 'report_yaml_format::general'
+  root_signature: 'report_yaml_format::schema_shape'
   detail: 'modern'
   root_cause: 'modern root cause'
   resolved_by_cmd: ''
 YAML
 
-    run bash "$TEST_SCRIPT" cmd_test_3 kotaro "third issue" "third root cause" report_yaml_format
+    run bash "$TEST_SCRIPT" cmd_test_3 kotaro "third binary_checks issue" "third root cause" report_yaml_format
     [ "$status" -eq 0 ]
     [[ "$output" == *"ALERT: カテゴリ「report_yaml_format」が3件"* ]]
 }
@@ -429,7 +429,7 @@ YAML
   ninja: hayate
   workaround: true
   category: report_yaml_format
-  root_signature: 'report_yaml_format::general'
+  root_signature: 'report_yaml_format::schema_shape'
   detail: 'modern'
   root_cause: 'modern root cause'
   resolved_by_cmd: ''
@@ -438,14 +438,14 @@ YAML
   ninja: hanzo
   workaround: true
   category: report_yaml_format
-  root_signature: 'report_yaml_format::general'
+  root_signature: 'report_yaml_format::schema_shape'
   detail: 'modern'
   root_cause: 'modern root cause'
   resolved_by_cmd: ''
 YAML
 
     run env KARO_WORKAROUND_DISABLE_ALERTS=true \
-        bash "$TEST_SCRIPT" cmd_test_3 kotaro "third issue" "third root cause" report_yaml_format
+        bash "$TEST_SCRIPT" cmd_test_3 kotaro "third binary_checks issue" "third root cause" report_yaml_format
     [ "$status" -eq 0 ]
     [[ "$output" == *"ALERT: カテゴリ「report_yaml_format」が3件"* ]]
     [ ! -f "$TEST_DIR/scripts/pending_decision_write.log" ]
@@ -771,6 +771,44 @@ PY
     run bash "$TEST_SCRIPT" cmd_projection_3 hayate "QUALITY_CONTRACT投影が複数行commandのaction/fpを評価しない" "root cause 3" gate_logic_gap
     [ "$status" -eq 0 ]
     [[ "$output" == *"ALERT: カテゴリ「gate_logic_gap」が3件(root_signature=gate_logic_gap::contract_projection)"* ]]
+}
+
+# test_necessity: PD-141's four historical infra mechanisms must never share
+# the general bucket; the exact signature is the production alert aggregation
+# key and therefore must remain mechanism-specific.
+@test "AC1: PD-141 four infra mechanisms do not collapse into infra::general" {
+    local -a issues=(
+        "main checkoutのindex残渣と旧 blobをread-treeで復元"
+        "gate_worker.failed.json残存後にgate再起動せずfallback BLOCK"
+        "top-level file AGENTS.mdのfiles_modified path契約とmanifest厳密一致が矛盾"
+        "docs-only taskのreceipt必須とowned path契約がnested guardで衝突"
+    )
+    local -a signatures=(
+        worktree_index_sync gate_lifecycle_restart path_contract receipt_contract
+    )
+    local i
+    for i in "${!issues[@]}"; do
+        run bash "$TEST_SCRIPT" "cmd_pd141_fixture_$i" hayate "${issues[$i]}" "構造的な機構修正を適用" infra
+        [ "$status" -eq 0 ]
+        run grep -F "root_signature: 'infra::${signatures[$i]}'" "$TEST_DIR/logs/karo_workarounds.yaml"
+        [ "$status" -eq 0 ]
+    done
+
+    run grep -c "root_signature: 'infra::general'" "$TEST_DIR/logs/karo_workarounds.yaml"
+    [ "$status" -eq 1 ]
+    [ "$output" -eq 0 ]
+}
+
+@test "AC2: unknown mechanism uses distinct evidence signature, never general" {
+    run bash "$TEST_SCRIPT" cmd_unknown_a hayate "opaque mechanism alpha" "alpha mechanism repair" infra
+    [ "$status" -eq 0 ]
+    run bash "$TEST_SCRIPT" cmd_unknown_b hayate "opaque mechanism beta" "beta mechanism repair" infra
+    [ "$status" -eq 0 ]
+    run grep -E "root_signature: 'infra::evidence_[0-9a-f]{16}'" "$TEST_DIR/logs/karo_workarounds.yaml"
+    [ "$status" -eq 0 ]
+    run grep -c "root_signature: 'infra::general'" "$TEST_DIR/logs/karo_workarounds.yaml"
+    [ "$status" -eq 1 ]
+    [ "$output" -eq 0 ]
 }
 
 @test "AC3: root_signature欠落のlegacy entryは新規の特定root_signatureカウントに混入しない" {

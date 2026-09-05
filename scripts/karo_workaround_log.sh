@@ -5,13 +5,16 @@
 #   bash scripts/karo_workaround_log.sh <cmd_id> <ninja_name> "<issue>" "<fix>" [category] [missed_sg]
 #   bash scripts/karo_workaround_log.sh --wa <cmd_id> <ninja_name> "<issue>" "<fix>" [category] [missed_sg] [environment_change]
 #   bash scripts/karo_workaround_log.sh --resolve <cmd_id> <resolved_by_cmd>
+#   KARO_WA_ROOT_SIGNATURE='<category>::<mechanism>' may override the
+#   classifier when the mechanism cannot be inferred from the issue text.
 #
 # AC1(cmd_1211): カテゴリ別件数カウント。2件目WARN、3件目以上ALERT(ntfy+insight_write)
 # AC2(cmd_1211): classify_category改善(report_yaml_format/file_disappearance/uncategorized)
 # AC3(cmd_1211): resolved_by_cmdフィールド追加。resolved済みはALERTカウント除外
 # AC(cmd_karo_hotfix_wa_root_signature_202607121225): categoryに加えroot_signature(発生段階×破れた
 #   不変量)でN>=3を判定。異根WAの混入によるPD誤発火を防止。root_signature欠落の既存entryは
-#   「${category}::general」fallbackへ非破壊的に集約する(新規entryの既定bucketと同一。挙動非破壊)
+#   unknownな新規entryを「${category}::general」へ集約せず、明示署名または
+#   issue+fixの安定fingerprintへ分離する(異根の偽集約を防止)。
 
 set -euo pipefail
 
@@ -49,6 +52,7 @@ fi
 LOCK_FILE="${KARO_WORKAROUND_LOCK_FILE:-$(lock_path "$LOG_FILE")}"
 DISABLE_ALERTS="${KARO_WORKAROUND_DISABLE_ALERTS:-false}"
 BRAINWASH_CHECK="${KARO_WA_BRAINWASH_CHECK:-}"
+EXPLICIT_ROOT_SIGNATURE="${KARO_WA_ROOT_SIGNATURE:-}"
 # A workaround is the point where a reusable lesson is born.  Record that
 # decision in the same locked append as the WA itself so startup-time counting
 # cannot be the first place where the missing reflux is noticed.
@@ -773,6 +777,11 @@ classify_category() {
 classify_root_signature() {
     local category="$1"
     local issue="$2"
+    local fix="${3:-}"
+    local pattern_worktree_index='index.*(残渣|旧 blob)|staged.*残渣|worktree.*(旧|古い).*blob|read-tree|checkout HEAD.*復元'
+    local pattern_gate_lifecycle='gate.*(再起動|restart)|gate_worker.*(残存|再実行)|fallback.*BLOCK|ancestry WAIT.*auto-push'
+    local pattern_path_contract='top[- ]?level|AGENTS\.md|files_modified.*path|path.*(矛盾|厳密一致)|manifest.*(厳密一致|一致不能)|path.*BLOCK'
+    local pattern_receipt_contract='docs-only|receipt.*(必須|要求)|owned path|nested guard|run_tests.*(receipt|task mode)'
     local pattern_deploy_template='report_path.*欠落|ac_version.*欠落|標準スキル.*欠落|未引用.*コロン|deploy_task.*(fail|失敗)|最小task YAML'
     local pattern_lifecycle_stall='停滞|idle化|verdict_empty|Codex停止|未完了.*(commit未実施|status)'
     local pattern_commit_provenance='command_files_modified_mismatch|verified_existing_dependency|files_modified全件|commit未完了|uncommitted.*(gate|BLOCK)|report_received.*uncommitted|後続(integrator[[:space:]]*)?commit.*確認'
@@ -789,7 +798,18 @@ classify_root_signature() {
     local pattern_natural_boundary='自然境界|estimated_minutes|長時間契約|split_decision'
     local pattern_verification_evidence='variation_checks|variation.*(証跡|未実施|空)|報告証跡|report.*evidence|test_results.*details'
 
-    if [[ "$issue" =~ $pattern_verification_evidence ]]; then
+    # PD-141: these are distinct mechanisms that were historically collapsed
+    # into infra::general.  Keep the signatures mechanism-oriented and stable
+    # across wording changes in the surrounding report prose.
+    if [[ "$issue" =~ $pattern_worktree_index ]]; then
+        echo "${category}::worktree_index_sync"
+    elif [[ "$issue" =~ $pattern_gate_lifecycle ]]; then
+        echo "${category}::gate_lifecycle_restart"
+    elif [[ "$issue" =~ $pattern_path_contract ]]; then
+        echo "${category}::path_contract"
+    elif [[ "$issue" =~ $pattern_receipt_contract ]]; then
+        echo "${category}::receipt_contract"
+    elif [[ "$issue" =~ $pattern_verification_evidence ]]; then
         echo "${category}::verification_evidence"
     elif [[ "$issue" =~ $pattern_error_handling ]]; then
         echo "${category}::error_handling"
@@ -814,7 +834,14 @@ classify_root_signature() {
     elif [[ "$issue" =~ $pattern_schema_shape ]]; then
         echo "${category}::schema_shape"
     else
-        echo "${category}::general"
+        # A free-form issue is not evidence that two workarounds share a root
+        # mechanism.  Use a deterministic evidence fingerprint instead of a
+        # shared general bucket; callers with stronger evidence can provide an
+        # explicit KARO_WA_ROOT_SIGNATURE.
+        local fingerprint
+        fingerprint="$(printf '%s\036%s' "$issue" "$fix" | sha256sum | awk '{print substr($1, 1, 16)}')"
+        [[ -n "$fingerprint" ]] || return 1
+        echo "${category}::evidence_${fingerprint}"
     fi
 }
 
@@ -939,7 +966,22 @@ EOF
             cat "$LEDGER_ENTRY_FILE" >> "$LOG_FILE"
         fi
     else
-        ROOT_SIGNATURE=$(classify_root_signature "$CATEGORY" "$ISSUE")
+        if [[ -n "$EXPLICIT_ROOT_SIGNATURE" ]]; then
+            if [[ "$EXPLICIT_ROOT_SIGNATURE" != *'::'* || "$EXPLICIT_ROOT_SIGNATURE" != "$CATEGORY::"* ]]; then
+                echo "[karo_workaround_log] BLOCK: KARO_WA_ROOT_SIGNATUREは${CATEGORY}::<mechanism>形式で指定せよ: $EXPLICIT_ROOT_SIGNATURE" >&2
+                exit 1
+            fi
+            ROOT_SIGNATURE="$EXPLICIT_ROOT_SIGNATURE"
+        else
+            ROOT_SIGNATURE=$(classify_root_signature "$CATEGORY" "$ISSUE" "$FIX") || {
+                echo "[karo_workaround_log] BLOCK: root_signatureを安全に導出できない。KARO_WA_ROOT_SIGNATUREで機構を明示せよ" >&2
+                exit 1
+            }
+        fi
+        if [[ "$ROOT_SIGNATURE" == "${CATEGORY}::general" ]]; then
+            echo "[karo_workaround_log] BLOCK: 新規workaroundは${CATEGORY}::generalへ記録できない。機構root signatureを明示せよ" >&2
+            exit 1
+        fi
         SIG_COUNT=$(count_root_signature_entries "$CATEGORY" "$ROOT_SIGNATURE")
         OCCURRENCE=$((SIG_COUNT + 1))
 
