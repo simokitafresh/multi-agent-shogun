@@ -539,6 +539,7 @@ codd:
 | cmd | `cmd_reflux_insight_202609030347_kotaro` (`context/senkyoku-log.md`) |
 | discussion | `queue/lord_conversation.jsonl` 2026-09-02T19:15:41.169442+00:00 git pre-commit semantic propagation for context/projects changes |
 | discussion | `queue/lord_conversation.jsonl` 2026-09-03T09:13:03+09:00 single_publisher_asis_tobe_5w1h_20260902.mdは完了したか？追加でやるべき点はあるか？完了ならクローズドと明記しよう |
+| discussion | `queue/lord_conversation.jsonl` 2026-09-05T00:55:47.224114+00:00 git pre-commit semantic propagation for context/projects changes |
 
 ## unread_cmd_new_deployment_guard — 未読cmd_new配備漏れ防止
 
