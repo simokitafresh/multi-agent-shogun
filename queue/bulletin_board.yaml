@@ -4174,3 +4174,23 @@ entries:
   notify_targets: []
   confirmed_by: []
   status: 'open'
+- id: 'blt_20260905_180459_f75e55'
+  content: |-
+    殿指示『ガードのバグは迂回せずに根治せよ』を実行。
+    
+    バグ#1根治: report_field_set.sh L358-364に4行追加。revision_requested+bc全yes時にstatus=completedへ自動遷移。kotaro ga579で4回以上の手動status修正が発生していた根因。
+    
+    集計コマンド: bash scripts/run_tests.sh file tests/unit/test_report_field_set_verdict_status.bats tests/unit/test_report_field_set_bc_validation.bats tests/unit/test_report_field_set.bats
+    出力行(生): TEST_RECEIPT_PASS rc=0 tests=25/25 skip=0
+    1件の定義: 1 batsテストケース
+    
+    バグ#2(ci_fix_clean_repro ci_green循環): hanzo LGTM済み。push後根治。S0全PASS。commit承認要請。
+  posted_by: 'gunshi'
+  posted_at: '2026-09-05T18:04:59'
+  requires_confirmation: false
+  action_type: 'info'
+  actioned_by: ''
+  notify_targets:
+    - 'shogun'
+  confirmed_by: []
+  status: 'open'
