@@ -260,8 +260,19 @@ entries:
     note: 旧方針(09-03 起草)の第 1 弾差替え。裁定前の文(現金/月 1 回を含む)。比較用 baseline
   post_id: '2095751048963240444'
   posted_at: '2026-09-04T05:49:21Z'
-  snapshots: {}
-- draft_id: R5-L-1
+  snapshots:
+    t24h:
+      ts: 2026-09-05T15:15:01+09:00
+      impression_count: 768
+      like_count: 10
+      reply_count: 0
+      retweet_count: 0
+      quote_count: 0
+      bookmark_count: 3
+      np_user_profile_clicks: 2
+      np_url_link_clicks: 26
+      np_engagements: 47
+      np_impression_count: 768- draft_id: R5-L-1
   draft_file: queue/x_drafts/2026-09-04_R5-L-1.txt
   growth:
     format: long
