@@ -7225,6 +7225,8 @@
       SG7_gate_prediction: PASS
     verdict: APPROVE
 - cmd_id: cmd_4476
+  gate_result: "CLEAR"
+  gate_synced_at: "2026-09-05T14:24:15+09:00"
   review:
     adversarial_review: PASS — 偵察(scout)タスクでコード・DB変更なし。readonly経路のみ使用。Guard14誤BLOCKはdecision_candidateに記録済み
     cmd_id: cmd_4476
