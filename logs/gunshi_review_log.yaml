@@ -8286,3 +8286,38 @@
   verdict: LGTM
   verified_files:
   - scripts/lib/external_project_ref_resolver.sh:external_ref_canonical_project_id
+- brainwash_check: '#1no #2no #3no #4no #5no #6no #7no #8no deploy_injection 84/84+ci_readiness
+    18/18=102/102'
+  causal_chain: clean-repro recipe post-push不要→not_reproducible ci_green必須→循環→ci_green除去+completion
+    CI readiness分離で解消
+  cmd_id: cmd_karo_ci_fix_33952746916_clean_repro_cycle
+  finding_categories:
+  - assumptions
+  - numbers
+  - premortem
+  - adversarial
+  - ambiguity
+  findings_summary: 4観点OK。not_reproducibleからci_green必須除去。二段階契約(事前review証拠/公開後CI readiness)統一。102/102
+    PASS SKIP0
+  hole_action: none
+  observations:
+  - 'LG051 caller census: non-test caller 3件(deploy_task.sh, deploy_task/gates.sh,
+    gate_report_format_main.py)'
+  - ci_green欠落陽性+receipt/環境/診断欠落敵対例+非GREEN WAIT断言を検証
+  operational_simulation:
+    actual: validator内ci_green必須キー=0
+    command: grep -c ci_green scripts/gates/gate_report_format_main.py
+    expected: ci_green必須検査除去確認
+    result: PASS
+  origin: '[[cmd_karo_ci_fix_33952746916]] -> [[clean_repro_ci_circular]] -> [[two_stage_ci_contract]]'
+  precheck_na:
+    evidence: purpose=循環解消。validator ci_green必須キー0件(AC1実測)。102/102 PASS
+    reason: 'ci_fix_clean_repro not_reproducible ci_green: このcmd自体がci_green必須を除去する修正。修正後の状態でci_green欠落は期待動作'
+  report_ninja: hanzo
+  report_task_id: cmd_karo_ci_fix_33952746916_clean_repro_cycle_normal
+  review_type: report
+  step3_5_verified: true
+  timestamp: '2026-09-05T17:43:00+09:00'
+  verdict: LGTM
+  verified_files:
+  - scripts/gates/gate_report_format_main.py:ci_green
