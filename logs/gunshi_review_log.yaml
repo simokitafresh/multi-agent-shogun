@@ -8806,3 +8806,24 @@
   origin: "[[cmd_4479]] -> [[家老REJECT_六点]] -> [[v0.4_re-APPROVE]]"
   lesson_candidate: "parity実測の先例を三層検索せずにdisplay列を正本とAPPROVEした。semantic aliasのタイムスタンプ確認をAPPROVE前に義務化"
   timestamp: "2026-09-05T22:31:00"
+- cmd_id: cmd_4479_market_direction
+  review_type: draft
+  verdict: APPROVE
+  verified_files:
+    - "docs/research/dm-signal-market-direction-breadth-exposure-asis-tobe_20260905.md:24"
+  findings_summary: "市場方向性v1.0。1表定義(layer別平均weight)は整合。AC三つ穴なし。殿22:29『複雑さを捨てろ』に合致。"
+  observations:
+    - "各PF sum=1.0→layer平均sum=1.0は数学的に保証。追加検証不要"
+    - "v0.1-v0.5の6表・asset class等を全て撤去し、1表+groupbyに縮約"
+  operational_simulation:
+    command: "Read docs/research/dm-signal-market-direction-breadth-exposure-asis-tobe_20260905.md 全文精読(v1.0)"
+    expected: "1表定義とAC三つに穴がない"
+    actual: "穴なし。groupbyの数学的整合+grep条件で自作展開排除"
+    result: "PASS"
+  causal_chain: "殿22:29『複雑さを捨てろ』→v0.1-v0.5の6表を1表に縮約→pandas数行のgroupby=正の複利(最小複雑さ)"
+  confidence: HIGH
+  finding_categories: [assumptions, numbers, simulation, premortem, ambiguity, adversarial]
+  ambiguity_points: none
+  brainwash_check: "#1no #2no #3no #4no #5no #6no #7no #8no 1表定義の数学的整合確認"
+  origin: "[[cmd_4479_market_direction]] -> [[1表縮約_v1.0]] -> [[APPROVE]]"
+  timestamp: "2026-09-05T22:33:00"
