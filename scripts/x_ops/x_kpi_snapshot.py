@@ -180,11 +180,11 @@ def main():
     new_text = head + "".join(entries)
     # 殿 2026-09-05 19:36: 書込前に構文検証し、壊れた台帳は publish しない(fail-close)。
     try:
-        validate_ledger_text(new_text, expected_entries=len(entries))
+        from x_ledger_guard import write_ledger_text
+        write_ledger_text(LEDGER, new_text, expected_entries=len(entries), expected_current_text=text)
     except ValueError as exc:
         print(f"x_kpi_snapshot: BLOCK ledger not written: {exc}", file=sys.stderr)
         return 3
-    LEDGER.write_text(new_text, encoding="utf-8")
     print(f"x_kpi_snapshot: wrote {written} snapshots ({', '.join(w for _, _, w, _ in due)})")
     return 0
 

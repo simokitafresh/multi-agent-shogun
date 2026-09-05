@@ -14,7 +14,7 @@ def main():
     only = set(a[a.index("--only") + 1].split(",")) if "--only" in a else None
     exc = set(a[a.index("--except") + 1].split(",")) if "--except" in a else set()
     ids = [p["draft_id"] for p in plan["plan"] if p["status"] == "scheduled" and (not only or p["draft_id"] in only) and p["draft_id"] not in exc]
-    led = ROOT / "queue/x_live_oos/ledger.yaml"; s = led.read_text(encoding="utf-8"); stamp = f"lord_stage2_{dt.datetime.now():%Y%m%d_%H%M}"
+    led = ROOT / "queue/x_live_oos/ledger.yaml"; s = led.read_text(encoding="utf-8"); original = s; stamp = f"lord_stage2_{dt.datetime.now():%Y%m%d_%H%M}"
     n = 0
     for did in ids:
         files = glob.glob(str(ROOT / f"queue/x_drafts/*_{did}.txt")) + glob.glob(str(ROOT / f"queue/x_drafts/*_{did}-P.txt")) + glob.glob(str(ROOT / f"queue/x_drafts/*_{did}-R*.txt"))
@@ -32,7 +32,7 @@ def main():
         _sys.path.insert(0, str(_P(__file__).resolve().parent))
         from x_ledger_guard import write_ledger_text
         try:
-            write_ledger_text(led, s, expected_entries=s.count("- draft_id:"))
+            write_ledger_text(led, s, expected_entries=original.count("- draft_id:"), expected_current_text=original)
         except ValueError as exc:
             print(f"x_stage2_approve: BLOCK ledger not written: {exc}", file=_sys.stderr)
             raise SystemExit(3)

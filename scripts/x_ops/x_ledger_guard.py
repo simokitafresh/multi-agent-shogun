@@ -4,7 +4,12 @@
 validate_ledger_text を通し、失敗したら書かない(fail-close)。台帳は append-only の観測記録で、
 1 行の連結破損が safe_load 全体を止める(19:36 L275 実証)。
 """
+import fcntl
+import hashlib
+import os
 import re
+import tempfile
+from pathlib import Path
 
 import yaml
 
@@ -32,9 +37,36 @@ def validate_ledger_text(text: str, expected_entries=None) -> dict:
     return doc
 
 
-def write_ledger_text(path, text: str, expected_entries=None) -> dict:
-    """検証してから書く。検証失敗は ValueError を上げ、file は触らない。"""
+def _text_sha256(text: str) -> str:
+    return hashlib.sha256(text.encode("utf-8")).hexdigest()
+
+
+def write_ledger_text(path, text: str, expected_entries=None, expected_current_text=None) -> dict:
+    """CAS検証後に同一directoryへatomic replaceする。
+
+    各writerはread時のtextをexpected_current_textへ渡す。共有lock取得後の現物が
+    異なればstale writerとして書かずに停止し、後勝ち上書きを構造的に防ぐ。
+    """
     doc = validate_ledger_text(text, expected_entries)
-    with open(path, "w", encoding="utf-8") as fh:
-        fh.write(text)
+    path = Path(path)
+    path.parent.mkdir(parents=True, exist_ok=True)
+    lock_path = Path(str(path) + ".lock")
+    with lock_path.open("a+", encoding="utf-8") as lock_handle:
+        fcntl.flock(lock_handle.fileno(), fcntl.LOCK_EX)
+        current = path.read_text(encoding="utf-8") if path.exists() else ""
+        if expected_current_text is not None and current != expected_current_text:
+            raise ValueError(
+                "stale ledger generation: current_sha=" + _text_sha256(current)
+                + " expected_sha=" + _text_sha256(expected_current_text)
+            )
+        fd, tmp_name = tempfile.mkstemp(prefix=path.name + ".", suffix=".tmp", dir=path.parent)
+        try:
+            with os.fdopen(fd, "w", encoding="utf-8") as fh:
+                fh.write(text)
+                fh.flush()
+                os.fsync(fh.fileno())
+            os.replace(tmp_name, path)
+        finally:
+            if os.path.exists(tmp_name):
+                os.unlink(tmp_name)
     return doc

@@ -99,7 +99,7 @@ import os
 sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(p)), "..", "..", "scripts", "x_ops"))
 from x_ledger_guard import write_ledger_text
 try:
-    write_ledger_text(p, new_text, expected_entries=t.count("- draft_id:"))
+    write_ledger_text(p, new_text, expected_entries=t.count("- draft_id:"), expected_current_text=t)
 except ValueError as exc:
     print(f"x_slot_post: BLOCK ledger not written (post_id={pid} draft={did}): {exc}", file=sys.stderr)
     raise SystemExit(3)

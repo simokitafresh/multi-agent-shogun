@@ -94,7 +94,7 @@ def main():
         from x_ledger_guard import ensure_trailing_newline, write_ledger_text
         new_text = ensure_trailing_newline(existing) + add
         try:
-            write_ledger_text(LEDGER, new_text, expected_entries=existing.count("- draft_id:") + add.count("- draft_id:"))
+            write_ledger_text(LEDGER, new_text, expected_entries=existing.count("- draft_id:") + add.count("- draft_id:"), expected_current_text=existing)
         except ValueError as exc:
             print(f"x_growth_tag: BLOCK ledger not written: {exc}", file=_sys.stderr)
             raise SystemExit(3)
