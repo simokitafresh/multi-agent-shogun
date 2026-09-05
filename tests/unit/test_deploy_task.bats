@@ -1555,6 +1555,189 @@ assert task["description"] == "末尾説明"
 PY
 }
 
+# test_necessity: routine_refs must always supply report_status+inbox (every
+# task communicates and finalizes its report), must add tests_run+commit only
+# when commit_contract.required is true, and must never add db_readonly for a
+# non-dm-signal task even when commit is required.
+@test "inject_routine_refs injects report_status/inbox always and tests_run/commit only when commit is required" {
+    cat > "$TEST_PROJECT/queue/tasks/sasuke.yaml" <<'EOF'
+task:
+  purpose: "報告とcommitまで完了する"
+  project: infra
+  task_type: impl
+  commit_contract:
+    required: true
+  description: "末尾説明"
+EOF
+
+    run bash -c '
+        export DEPLOY_TASK_LIB_ONLY=1
+        source "$TEST_PROJECT/scripts/deploy_task.sh"
+        log() { :; }
+        inject_routine_refs "$TEST_PROJECT/queue/tasks/sasuke.yaml"
+    '
+    [ "$status" -eq 0 ]
+
+    TASK_FILE="$TEST_PROJECT/queue/tasks/sasuke.yaml" python3 - <<'PY'
+import os
+import yaml
+
+with open(os.environ["TASK_FILE"], encoding="utf-8") as f:
+    task = (yaml.safe_load(f) or {}).get("task") or {}
+
+ids = [row["id"] for row in task["routine_refs"]]
+assert set(ids) == {"report_status", "inbox", "tests_run", "commit"}, ids
+assert len(ids) == len(set(ids)), "duplicate routine_refs ids"
+for row in task["routine_refs"]:
+    assert not row["path"].startswith("/"), f"CLI-specific slash command leaked: {row}"
+PY
+}
+
+@test "inject_routine_refs omits tests_run/commit/db_readonly for a non-dm-signal recon task with no commit contract" {
+    cat > "$TEST_PROJECT/queue/tasks/sasuke.yaml" <<'EOF'
+task:
+  purpose: "本番DBの調査をせず設計だけ確認する"
+  project: infra
+  task_type: recon
+  description: "末尾説明"
+EOF
+
+    run bash -c '
+        export DEPLOY_TASK_LIB_ONLY=1
+        source "$TEST_PROJECT/scripts/deploy_task.sh"
+        log() { :; }
+        inject_routine_refs "$TEST_PROJECT/queue/tasks/sasuke.yaml"
+    '
+    [ "$status" -eq 0 ]
+
+    TASK_FILE="$TEST_PROJECT/queue/tasks/sasuke.yaml" python3 - <<'PY'
+import os
+import yaml
+
+with open(os.environ["TASK_FILE"], encoding="utf-8") as f:
+    task = (yaml.safe_load(f) or {}).get("task") or {}
+
+ids = {row["id"] for row in task["routine_refs"]}
+assert ids == {"report_status", "inbox"}, ids
+PY
+}
+
+@test "inject_routine_refs adds db_readonly only for dm-signal tasks with DB-related purpose" {
+    cat > "$TEST_PROJECT/queue/tasks/sasuke.yaml" <<'EOF'
+task:
+  purpose: "本番DBのholding_signalテーブルを確認する"
+  project: dm-signal
+  task_type: recon
+  description: "末尾説明"
+EOF
+
+    run bash -c '
+        export DEPLOY_TASK_LIB_ONLY=1
+        source "$TEST_PROJECT/scripts/deploy_task.sh"
+        log() { :; }
+        inject_routine_refs "$TEST_PROJECT/queue/tasks/sasuke.yaml"
+    '
+    [ "$status" -eq 0 ]
+
+    TASK_FILE="$TEST_PROJECT/queue/tasks/sasuke.yaml" python3 - <<'PY'
+import os
+import yaml
+
+with open(os.environ["TASK_FILE"], encoding="utf-8") as f:
+    task = (yaml.safe_load(f) or {}).get("task") or {}
+
+ids = {row["id"] for row in task["routine_refs"]}
+assert ids == {"report_status", "inbox", "db_readonly"}, ids
+path = {row["id"]: row["path"] for row in task["routine_refs"]}["db_readonly"]
+assert path == "skills/db-check/SKILL.md"
+PY
+}
+
+# test_necessity: explicit routine_refs supplied by the --yaml source must
+# merge with the auto-selected set without duplicating an id already present.
+@test "inject_routine_refs merges explicit refs with auto selection without duplicates" {
+    cat > "$TEST_PROJECT/queue/tasks/sasuke.yaml" <<'EOF'
+task:
+  purpose: "何かする"
+  project: infra
+  task_type: recon
+  routine_refs:
+  - id: "inbox"
+    path: "scripts/inbox_write.sh"
+  description: "末尾説明"
+EOF
+
+    run bash -c '
+        export DEPLOY_TASK_LIB_ONLY=1
+        source "$TEST_PROJECT/scripts/deploy_task.sh"
+        log() { :; }
+        inject_routine_refs "$TEST_PROJECT/queue/tasks/sasuke.yaml"
+    '
+    [ "$status" -eq 0 ]
+
+    TASK_FILE="$TEST_PROJECT/queue/tasks/sasuke.yaml" python3 - <<'PY'
+import os
+import yaml
+
+with open(os.environ["TASK_FILE"], encoding="utf-8") as f:
+    task = (yaml.safe_load(f) or {}).get("task") or {}
+
+ids = [row["id"] for row in task["routine_refs"]]
+assert ids == ["inbox", "report_status"], ids
+PY
+}
+
+# test_necessity: an explicit routine ID absent from the fixed registry must
+# BLOCK before publish (return non-zero, task file untouched) instead of being
+# silently handed to the ninja (§4 W1 output contract).
+@test "inject_routine_refs BLOCKs on an unknown explicit routine ID and leaves the task file untouched" {
+    cat > "$TEST_PROJECT/queue/tasks/sasuke.yaml" <<'EOF'
+task:
+  purpose: "何かする"
+  project: infra
+  task_type: recon
+  routine_refs:
+  - id: "totally_unknown_id"
+    path: "scripts/nope.sh"
+  description: "末尾説明"
+EOF
+    cp "$TEST_PROJECT/queue/tasks/sasuke.yaml" "$TEST_PROJECT/queue/tasks/sasuke.yaml.before"
+
+    run bash -c '
+        export DEPLOY_TASK_LIB_ONLY=1
+        source "$TEST_PROJECT/scripts/deploy_task.sh"
+        log() { :; }
+        inject_routine_refs "$TEST_PROJECT/queue/tasks/sasuke.yaml"
+    '
+    [ "$status" -eq 1 ]
+    diff "$TEST_PROJECT/queue/tasks/sasuke.yaml.before" "$TEST_PROJECT/queue/tasks/sasuke.yaml"
+}
+
+# test_necessity: an explicit routine ID that IS in the registry but whose
+# canonical path does not exist on disk must also BLOCK before publish
+# (registry drift defense — §4 W1 output contract "path不在").
+@test "inject_routine_refs BLOCKs when an explicit routine ID's canonical path is missing" {
+    cat > "$TEST_PROJECT/queue/tasks/sasuke.yaml" <<'EOF'
+task:
+  purpose: "何かする"
+  project: infra
+  task_type: recon
+  routine_refs:
+  - id: "tests_run"
+    path: "scripts/run_tests.sh"
+  description: "末尾説明"
+EOF
+    [ ! -e "$TEST_PROJECT/scripts/run_tests.sh" ]
+
+    run bash -c '
+        export DEPLOY_TASK_LIB_ONLY=1
+        source "$TEST_PROJECT/scripts/deploy_task.sh"
+        log() { :; }
+        inject_routine_refs "$TEST_PROJECT/queue/tasks/sasuke.yaml"
+    '
+    [ "$status" -eq 1 ]
+}
+
 @test "deploy_task --direct cmd_training injects L4 purpose and five ACs" {
     cat > "$TEST_PROJECT/queue/tasks/sasuke.yaml" <<'EOF'
 task:

@@ -2247,6 +2247,52 @@ YAML
     [ "$(printf '%s\n' "$output" | awk 'END { print NR + 0 }')" -eq 1 ]
 }
 
+# test_necessity: W1 6-c裁定 — preinjected --yaml fast pathは他のLevel5注入
+# (standard_skills等)と同じくroutine_refsもskipし、delivery.sh/preinjected
+# 完全性を変更しない(統合はK2完了後の統合taskへ明示handoff)。
+@test "inject_routine_refs is skipped under DEPLOY_TASK_DIRECT_YAML_PREINJECTED like other Level5 injectors" {
+    tmpdir="$(mktemp -d)"; task_file="$tmpdir/task.yaml"
+    marker="$tmpdir/routine_refs_called.marker"
+    mkdir -p "$tmpdir/queue/reports"
+    cat >"$task_file" <<'YAML'
+task:
+  status: assigned
+  task_id: cmd_fixture_preinject_normal
+  parent_cmd: cmd_fixture_preinject
+  project: infra
+YAML
+    run bash -lc "
+        set -euo pipefail
+        export DEPLOY_TASK_LIB_ONLY=1
+        source '$PROJECT_ROOT/scripts/deploy_task.sh'
+        SCRIPT_DIR='$tmpdir'
+        log() { :; }
+        for _f in inject_task_modifiers inject_session_state_hints inject_codd_failure_history \
+            inject_engineering_preferences inject_skill_hint inject_related_lessons \
+            inject_workaround_pattern_lessons inject_standard_skills inject_model_injection_profile \
+            inject_semantic_concepts inject_memory_db_context inject_causal_links \
+            inject_causal_verification_template inject_dm_signal_pf_operation_guardrails \
+            inject_dm_signal_golden_baseline_contract inject_context_hints \
+            inject_production_invariants postcondition_lesson_inject \
+            inject_reports_to_read register_blocked_parent_continuation inject_context_files \
+            inject_credential_files inject_target_path_check inject_context_update \
+            inject_push_allowed inject_independent_recon_contract inject_role_reminder \
+            inject_report_template deploy_task_normalize_report_metadata inject_bloom_level \
+            inject_execution_controls inject_ninja_weak_points check_context_freshness \
+            inject_ci_fix_clean_repro_contract inject_code_location_contract \
+            inject_scope_contract_fields deploy_task_guard_task_yaml_syntax \
+            deploy_task_test_necessity_precheck generate_report_template \
+            inject_parent_contract inject_done_redeploy_hints; do
+            eval \"\$_f() { return 0; }\"
+        done
+        inject_routine_refs() { echo CALLED > '$marker'; return 0; }
+        DEPLOY_TASK_DIRECT_YAML_PREINJECTED=1
+        deploy_task_apply_task_mutations hayate '$task_file'
+    "
+    [ "$status" -eq 0 ]
+    [ ! -e "$marker" ]
+}
+
 # test_necessity: mutation途中の後段FAILでは作業copyだけを破棄し、公開済taskのSHA/bytesを不変に保つ不変量を守る。
 @test "task mutation failure leaves original task SHA unchanged" {
     tmpdir="$(mktemp -d)"; task_file="$tmpdir/task.yaml"

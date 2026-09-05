@@ -1648,6 +1648,7 @@ deploy_task_apply_task_mutations() {
         inject_independent_recon_contract "$task_file" "$ninja_name" || return 1
         inject_role_reminder "$task_file" "$ninja_name" || true
         inject_report_template "$task_file" || true
+        inject_routine_refs "$task_file" || return 1  # Level5: W1正規経路ID注入(commit_contract確定後に判定)
     fi
 
     if [ "${DEPLOY_TASK_DIRECT_YAML_PREINJECTED:-0}" != "1" ]; then

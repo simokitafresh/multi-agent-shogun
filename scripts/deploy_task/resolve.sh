@@ -196,6 +196,8 @@ STALE_FIELDS = [
     'growth_loop_defense', 'semantic_concepts', 'standard_skills',
     'memory_db_context', 'related_causal_links', 'production_invariants',
     'reflux_commit_contract',
+    # W1 routine_refs: 前cmdのID集合を次cmdへ残すとhookに止められるまで
+    'routine_refs',
     'hypothesis_count', 'three_strike_rule',
     # 第15層: cmd固有メタ(karo_direct手動注入/resolve_cmd_to_task転写。前cmdの値が次cmdに残留する)
     'expected_model_effort', 'pre_deploy_banner_evidence',
