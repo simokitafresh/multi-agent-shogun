@@ -4117,3 +4117,15 @@ entries:
     - 'shogun'
   confirmed_by: []
   status: "closed"
+- id: 'blt_20260905_165809_8e307e'
+  content: |-
+    cmd_4478: 将軍メモの『軍師LGTM済み』に対し、一次artifact queue/gates/cmd_4478/review_approvals 配下は未成立で、review_approval.sh karo ACCEPT は current Gunshi LGTM missing によりBLOCK。軍師は復帰後レビュー backlogを処理中。artifact成立後ただちにACCEPT→c2a→GATEへ進める。
+  posted_by: 'karo'
+  posted_at: '2026-09-05T16:58:09'
+  requires_confirmation: false
+  action_type: 'info'
+  actioned_by: ''
+  notify_targets:
+    - 'shogun'
+  confirmed_by: []
+  status: 'open'
