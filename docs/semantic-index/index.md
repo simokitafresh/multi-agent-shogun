@@ -253,6 +253,7 @@ codd:
 | causal | `cmd_karo_round8_lane5_gunshi_precheck_20260804` files_modified: [[sg_pre31_semantic_validation]] |
 | causal | `cmd_karo_ci_fix_32596727201` files_modified: [[sg_pre31_semantic_validation]] |
 | causal | `cmd_karo_hotfix_gunshi_pre25_pre35_fp_202609021539` files_modified: [[sg_pre31_semantic_validation]] |
+| causal | `cmd_4476` files_modified: [[sg_pre31_semantic_validation]] |
 
 ## pf_remote_restore — 本番PF即時復元機構
 
@@ -7251,6 +7252,7 @@ codd:
 | causal_chain | `[[cmd_karo_hotfix_sgpre35_cross_repo_head_20260803]]` (L1535) |
 | causal_chain | `[[cmd_karo_hotfix_ga486_bulletin_readability_202608201431]]` (L1620) |
 | causal_chain | `[[cmd_karo_hotfix_defense_overhead_nul_index_20260901]]` (L1692) |
+| causal | `cmd_4476` files_modified: [[silent_fallback_quality]] |
 
 ## skill_design_rules — Skill設計ルール
 
@@ -9365,6 +9367,8 @@ codd:
 | cmd | `cmd_4298` admin visibility画面のsticky化とcanonical統一 — thead sticky・カード骨格除去・フォント罫線padding統一の3点限定 |
 | causal | `cmd_4298` origin: [[殿裁定_admin_visibility改良_20260813]] -> [[admin-ui-redesign-asis-tobe-5w1h_20260724]] -> [[cmd_4298案C縮小版実装]] |
 | discussion | `queue/lord_conversation.jsonl` 2026-08-30T13:52:54+09:00 a3ef9b4588b2ba75d toolu_01ArCiWYti7gCE2A51fypQc5 /tmp/claude-1000/-home-simokitafresh-multi-agent-shogun/290a263c-8050-4 |
+| cmd | `cmd_4476` 偵察: DM-Signal Core LP/Free tier/Google Auth/coupon/visibility/Performance 画面/analytics/note 導線の AsIs を現行コード・本番 DB(readonly)・本番実測で全数確認し、Core vs Simple LP+Free Interactive Proof 設計の材料(AsIs 表・可視性×Free 公開可否表・attribution 実装状況・計測可否 3 分類)を報告する (`scripts/gates/gate_gunshi_report_precheck.sh`, `scripts/lib/review_source_context.py`) |
+| causal | `cmd_4476` origin: [[殿指示_CoreVsSimple_FreeInteractiveProof_20260905]] -> [[正本3本に可視性PF別現物とattribution識別手段が無い]] -> [[cmd_4476_AsIs偵察]] |
 
 ## shogun_android_app — 将軍Androidアプリ
 
@@ -13644,6 +13648,7 @@ codd:
 | causal | `cmd_4465` files_modified: [[causal_verification_l0_l7]] |
 | causal | `cmd_karo_hotfix_deploy_external_worktree_timeout` files_modified: [[causal_verification_l0_l7]] |
 | causal | `cmd_karo_ci_fix_33927699707` files_modified: [[causal_verification_l0_l7]] |
+| causal | `cmd_4476` files_modified: [[causal_verification_l0_l7]] |
 
 ## test_quality_framework — テスト品質統合フレームワーク
 
@@ -17651,6 +17656,7 @@ codd:
 | causal | `cmd_karo_ci_fix_32596727201` files_modified: [[command_files_modified_verification]] |
 | discussion | `queue/lord_conversation.jsonl` 2026-08-25T22:38:49+09:00 binvchaai toolu_0168RWhxUDoAF4H5Ufc1FEup /tmp/claude-1000/-mnt-c-tools-multi-agent-shogun/379ae479-907f-4585-afef-59f465 |
 | causal | `cmd_karo_hotfix_gunshi_pre25_pre35_fp_202609021539` files_modified: [[command_files_modified_verification]] |
+| causal | `cmd_4476` files_modified: [[command_files_modified_verification]] |
 
 ## project_clinic_expense_tracker — Clinic Expense Tracker
 
