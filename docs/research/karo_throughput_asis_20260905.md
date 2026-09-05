@@ -150,6 +150,18 @@ flowchart TD
 | auto-push: 全行 | PASS/SKIP(rc 0)/FAIL の 3 種で 4 列目 result/reason と 5 列目 rc が期待どおり |
 | 既存読み手 | `defense_overhead_event_index.py` と gate_karo_startup が変更前と同じ結果 |
 
+### §6.6 実装状態(修正箇所 8 の着地。殿 15:19『D0 で直せるところは将軍自身で』)
+| 修正箇所 | 状態 | 証跡 |
+|---|---|---|
+| 1-3 function_timing observed 列 | 将軍 D0 着地 7d947ac33 | cmd_complete_gate/deploy_task/ninja_monitor の 3 printf、execution 開始時 1 回取得 |
+| 4 writer agent 列 | 着地 7d947ac33。本番で agent=shogun 行を確認(15:38、tail 200 行中 164 行に agent) | test_defense_overhead_writer.bats 19/19(agent 4 fixture+reserved 拒否 rc 3) |
+| 5 review_approval 実測 | 着地 7d947ac33 | test_review_approval.bats 20/20 |
+| 6 auto-push result/reason/rc | 着地 7d947ac33(関数戻り値は既存契約どおり 0、結果は retry_log 4〜5 列目) | test_cmd_complete_gate_source_publish.bats 23/23、test_cmd_complete_gate.bats 338/338 |
+| 7 c2a 単一 on_exit | 着地 7d947ac33 | 敵対 test(telemetry 失敗で rc 不変)は cmd_4478 に残す |
+| 8 watcher held event | 着地 7d947ac33。**既存 watcher は起動時に script を読むため次の respawn から有効**(kill しない。monitor の hot-reload/次回 /clear 起動で切替) | test_inbox_watcher.bats 7/7、test_ninja_monitor_stall.bats 176/176 |
+| §6.2 日次表 script | 未(cmd_4478 の残スコープ) | — |
+| §6.4 の敵対 test(c2a rc 不変/watcher bounded/agent 2 pane/auto-push 3 種) | 未(cmd_4478 の残スコープ) | — |
+
 ### §6.5 やらないこと(複雑化禁止)
 schema 名変更(v2)/新台帳 file/cron 登録/watcher の held 解消/合流自動化/health refresh 非同期化/速度最適化。全て計測後の別 cmd。
 
