@@ -284,19 +284,49 @@ verify_ours_equivalent_merge_trees() {
 # history and the local commit is safe to discard only after its effects are
 # proven retained.
 verify_local_effects_in_target() {
-    local repo="$1" old_head="$2" target_head="$3" base path old_entry target_entry
+    local repo="$1" old_head="$2" target_head="$3" base effect_base path old_entry target_entry
     local effect_count=0 mismatch_count=0
     local effects_file="${4:-}"
+    local commit cherry_line marker
+    local -A equivalent_commits=()
     base="$(git -C "$repo" merge-base "$old_head" "$target_head" 2>/dev/null || true)"
     [[ -n "$base" ]] || {
         echo "BLOCK: divergent histories have no merge base" >&2
         return 2
     }
+    # A root-local commit can already be represented by a different canonical
+    # origin commit.  Accept only two durable proofs: git's stable patch-id
+    # equivalence, or an exact marker recorded in target history after an
+    # explicit review.  Advance through the local first-parent chain only while
+    # every commit is accounted for; one gap keeps the remaining tree effects
+    # under the byte/mode equality check below.
+    while IFS= read -r cherry_line; do
+        [[ "$cherry_line" == -* ]] || continue
+        commit="${cherry_line#- }"
+        [[ "$commit" =~ ^[0-9a-f]{40}$ ]] && equivalent_commits["$commit"]=patch
+    done < <(git -C "$repo" cherry "$target_head" "$old_head" 2>/dev/null || true)
+    while IFS= read -r marker; do
+        [[ "$marker" =~ ^Safe-Shared-Main-Equivalent-Source:[[:space:]]+([0-9a-f]{40})$ ]] || continue
+        commit="${BASH_REMATCH[1]}"
+        if git -C "$repo" merge-base --is-ancestor "$base" "$commit" 2>/dev/null \
+                && git -C "$repo" merge-base --is-ancestor "$commit" "$old_head" 2>/dev/null; then
+            equivalent_commits["$commit"]=marker
+        fi
+    done < <(git -C "$repo" log --format=%B "$base..$target_head" 2>/dev/null || true)
+
+    effect_base="$base"
+    while IFS= read -r commit; do
+        [[ -n "$commit" ]] || continue
+        [[ -n "${equivalent_commits[$commit]+yes}" ]] || break
+        effect_base="$commit"
+    done < <(git -C "$repo" rev-list --reverse --first-parent "$base..$old_head")
+    printf 'SAFE_SHARED_MAIN_FF_EQUIVALENCE base=%s effect_base=%s accounted=%s result=PASS\n' \
+        "$base" "$effect_base" "$(git -C "$repo" rev-list --count "$base..$effect_base")"
     if [[ -n "$effects_file" ]]; then
-        git -C "$repo" diff-tree --no-commit-id --name-only -r "$base" "$old_head" | sort -u >"$effects_file"
+        git -C "$repo" diff-tree --no-commit-id --name-only -r "$effect_base" "$old_head" | sort -u >"$effects_file"
     else
         effects_file="$(mktemp "${TMPDIR:-/tmp}/safe-shared-main-effects.XXXXXX")"
-        git -C "$repo" diff-tree --no-commit-id --name-only -r "$base" "$old_head" | sort -u >"$effects_file"
+        git -C "$repo" diff-tree --no-commit-id --name-only -r "$effect_base" "$old_head" | sort -u >"$effects_file"
     fi
     while IFS= read -r path; do
         [[ -n "$path" ]] || continue
@@ -310,8 +340,8 @@ verify_local_effects_in_target() {
         fi
     done <"$effects_file"
     [[ -n "${4:-}" ]] || rm -f -- "$effects_file"
-    printf 'SAFE_SHARED_MAIN_FF_LOCAL_EFFECT_CHECK base=%s effect_paths=%s mismatches=%s result=%s\n' \
-        "$base" "$effect_count" "$mismatch_count" "$([[ "$mismatch_count" -eq 0 ]] && echo PASS || echo BLOCK)"
+    printf 'SAFE_SHARED_MAIN_FF_LOCAL_EFFECT_CHECK base=%s effect_base=%s effect_paths=%s mismatches=%s result=%s\n' \
+        "$base" "$effect_base" "$effect_count" "$mismatch_count" "$([[ "$mismatch_count" -eq 0 ]] && echo PASS || echo BLOCK)"
     [[ "$mismatch_count" -eq 0 ]]
 }
 
