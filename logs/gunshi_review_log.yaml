@@ -5877,3 +5877,38 @@
   verdict: LGTM
   verified_files:
   - scripts/deploy_task.sh:1
+- cmd_id: cmd_karo_hotfix_agent_respawn_preserve_active
+  review_type: report
+  verdict: FAIL
+  report_ninja: hanzo
+  report_task_id: cmd_karo_hotfix_agent_respawn_preserve_active_normal
+  report_path: queue/reports/hanzo_report_cmd_karo_hotfix_agent_respawn_preserve_active.yaml
+  report_id: rpt-692596e2-9547-4f4e-bc72-8f023de77a5e
+  report_identity_version: 2
+  gate_prediction: BLOCK
+  gate_prediction_reason: "LG043: 後で語残存"
+  finding_categories:
+  - assumptions
+  - numbers
+  - premortem
+  - adversarial
+  - ambiguity
+  observations:
+  - "事実1: LG043 bc全yes×task_clarity保留語(後で)矛盾"
+  - "事実2: 実装自体は妥当(respawn active task保全)"
+  - "adversarial: N/A"
+  - "ambiguity: なし"
+  fail_reasons:
+  - "LG043: 保留語(後で)残存→BLOCK"
+  causal_chain: "task_clarityに後で→bc全yes矛盾→LG043→FAIL"
+  brainwash_check: "#1no #2no #3no #4no #5no #6no #7no #8no"
+  verified_files:
+  - "scripts/agent_respawn.sh:1"
+  step3_5_verified: true
+  origin: "[[cmd_karo_hotfix_agent_respawn_preserve_active]] -> [[LG043]] -> [[FAIL]]"
+  operational_simulation:
+    command: "precheck"
+    expected: "BLOCK"
+    actual: "BLOCK"
+    result: PASS
+  timestamp: "2026-09-05T09:26:00+09:00"
