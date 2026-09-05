@@ -143,7 +143,10 @@ PY
 }
 
 # inboxを読む/既読化する操作は常に通す(これが出口)。
-if [[ "$command" == *"inbox_mark_read.sh"* || "$command" == *"queue/inbox/${agent}.yaml"* \
+# inbox_read.sh は receipt 契約(2026-09-01)以降の唯一の正規読取入口。ここを塞ぐと
+# 出口が存在しない循環BLOCKになる(2026-09-05 11:3x 家老 22分停止、3回連続再現)。
+if [[ "$command" == *"inbox_mark_read.sh"* || "$command" == *"inbox_read.sh"* \
+      || "$command" == *"queue/inbox/${agent}.yaml"* \
       || "$tool_target" == *"queue/inbox/${agent}.yaml"* || "$command" == *"inbox_archive.sh"* ]]; then
     exit 0
 fi

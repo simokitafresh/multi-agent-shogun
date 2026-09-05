@@ -1,5 +1,6 @@
 # DM-signal 研究コンテキスト
-<!-- last_updated: 2026-08-31 2026-08-31 06:45 将軍doc lane GA-535: 境界を origin/main tip へ是正(8-hex 旧hotfix markerだと分岐外祖先が非除外で1390/789/1588件の偽ALERT) -->
+<!-- last_updated: 2026-09-05 context_freshness reviewed source boundary -->
+<!-- source_commit:dca83523532d reason:context_freshness reviewed source boundary evidence:context_freshness_check context=context/dm-signal-research.md commit=dca83523532d -->
 <!-- source_commit:9734518397066f644bd7c7180bccc276d2bf5947 reason:2026-08-31 06:45 将軍doc lane GA-535: 境界を origin/main tip へ是正(8-hex 旧hotfix markerだと分岐外祖先が非除外で1390/789/1588件の偽ALERT) evidence:git -C /mnt/c/Python_app/DM-signal rev-list --count <tip>..origin/main=0 -->
 <!-- source_commit:3869db45 reason:2026-08-31 将軍doc lane GA-535: 3869db45/71d3b78d/67ffac99=cleanup manifest/recon記録で結論変更なし evidence:git log --oneline -1 3869db45=cleanup manifest -->
 <!-- source_commit:2854041dce67 reason:T188 DM-signal push 退避(DOC_LANE_REQUEST blt_210228) evidence:git -C /mnt/c/Python_app/DM-signal show --stat 2854041dce67 -->

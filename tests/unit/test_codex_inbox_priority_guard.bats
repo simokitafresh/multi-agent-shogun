@@ -63,6 +63,9 @@ run_guard() {
     [ "$status" -eq 0 ]
     run bash -c "echo '{\"tool_name\":\"Read\",\"tool_input\":{\"file_path\":\"/x/queue/inbox/karo.yaml\"}}' | SHOGUN_AGENT_ID=karo SHOGUN_INBOX_FILE='$INBOX' bash '$GUARD'"
     [ "$status" -eq 0 ]
+    # test_necessity: inbox_read.sh (receipt 正規入口) が塞がれると出口なしの循環BLOCKになる(2026-09-05 実証)
+    run bash -c "echo '{\"tool_name\":\"Bash\",\"tool_input\":{\"command\":\"bash scripts/inbox_read.sh karo\"}}' | SHOGUN_AGENT_ID=karo SHOGUN_INBOX_FILE='$INBOX' bash '$GUARD'"
+    [ "$status" -eq 0 ]
 }
 
 # test_necessity: stale commander inboxes must retain two viable durable
