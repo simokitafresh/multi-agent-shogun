@@ -8014,3 +8014,34 @@
   verdict: LGTM
   verified_files:
   - tests/unit/test_ninja_monitor_stall.bats:NINJA_MONITOR_HOT_RELOAD_WATCH_PID
+- brainwash_check: '#1no #2no #3no #4no #5no #6no #7no #8no recon2コード変更なし、偵察完結'
+  causal_chain: GA-579外部参照欠落→gate_vercel_phase case8 candidate_scan→43464ms/92343ms膨張→pre-push
+    60s timeout波及
+  cmd_id: cmd_karo_recon2_ga580_prepush_case8
+  finding_categories:
+  - assumptions
+  - numbers
+  - premortem
+  - adversarial
+  - ambiguity
+  findings_summary: 4観点OK。偵察recon2。2x2隔離実験でGA-579同根確認。case8=外部詳細参照欠落+43s/92s待ち。実装変更なし
+  hole_action: none
+  observations:
+  - '2x2結果: mapping有+detail無=exit1 broken_references、mapping無=0 refs黙過(INFO)'
+  operational_simulation:
+    actual: '1'
+    command: grep -c 'files_modified' queue/reports/hayate_report_cmd_karo_recon2_ga580_prepush_case8.yaml
+    expected: 1 (報告YAMLのみ)
+    result: PASS
+  origin: '[[GA-580]] -> [[external_project_detail_missing]] -> [[gate_vercel_phase_case8]]'
+  precheck_na:
+    evidence: files_modified=報告YAMLのみ。commit_contract.reason=allowed_no_code_task_type
+    reason: 'SG-PRE33 変形検査: recon2偵察タスクでコード変更なし(commit_contract.required=false)。変形検査は該当しない'
+  report_ninja: hayate
+  report_task_id: cmd_karo_recon2_ga580_prepush_case8_normal
+  review_type: report
+  step3_5_verified: true
+  timestamp: '2026-09-05T17:12:00+09:00'
+  verdict: LGTM
+  verified_files:
+  - queue/reports/hayate_report_cmd_karo_recon2_ga580_prepush_case8.yaml:96
