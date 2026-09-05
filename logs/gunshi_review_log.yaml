@@ -6520,6 +6520,8 @@
   timestamp: "2026-09-05T11:09:00+09:00"
 - cmd_id: cmd_4475
   review_type: report
+  gate_result: "BLOCK"
+  gate_synced_at: "2026-09-05T11:23:51+09:00"
   verdict: FAIL
   report_ninja: saizo
   report_task_id: cmd_4475_full
@@ -6555,6 +6557,8 @@
   timestamp: "2026-09-05T11:11:00+09:00"
 - cmd_id: cmd_4475
   review_type: report
+  gate_result: "BLOCK"
+  gate_synced_at: "2026-09-05T11:23:51+09:00"
   verdict: FAIL
   report_ninja: saizo
   report_task_id: cmd_4475_full
