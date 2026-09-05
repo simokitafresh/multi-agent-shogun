@@ -38,6 +38,7 @@ trade_rules:
 database:
   host: "singapore-postgres.render.com"
   connection: "backend/.env の DATABASE_URL"
+  local_isolated: "~/dm-signal-cmd3819-localpg (pgserver方式。Docker不可。ext4上。context/dm-signal.md L421参照)"
   rules: ["PostgreSQL経由必須", "SQLite=本番外・書込禁止", "UPSERT維持必須(DELETE+INSERT禁止)", "本番コードパス統一"]
   detail: "→ projects/dm-signal/database-detail.yaml (テーブルスキーマ・排他制御・よくある間違い)"
 
