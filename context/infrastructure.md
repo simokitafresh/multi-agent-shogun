@@ -1,5 +1,6 @@
 # インフラコンテキスト
 <!-- last_updated: 2026-09-05 context_freshness reviewed source boundary -->
+<!-- source_commit:79b8feba6 reason:context_freshness reviewed source boundary evidence:context_freshness_check context=context/infrastructure.md commit=79b8feba6 -->
 <!-- source_commit:b4c2dfd82 reason:context_freshness reviewed source boundary evidence:context_freshness_check context=context/infrastructure.md commit=b4c2dfd82 -->
 <!-- source_commit:f9628c2c0 reason:context_freshness reviewed source boundary evidence:context_freshness_check context=context/infrastructure.md commit=f9628c2c0 -->
 <!-- source_commit:db52c723f reason:context_freshness reviewed source boundary evidence:context_freshness_check context=context/infrastructure.md commit=db52c723f -->
@@ -813,3 +814,4 @@ source boundary一致taskはregistryのowner/update_triggerからcontext_update_
 - task worktree published_commit 安定化(影丸 hotfix efd9c1968 09-05 06:54 GATE CLEAR)|deploy_task の task worktree が published commit を固定 base にして tree 一致を保つ。外部 repo(DM-signal)配備の前提 2 本目|→ `scripts/deploy_task.sh`
 - deploy_task ext4 repo cache(半蔵 hotfix 601f1f2e3 09-05 07:18、旧 296c260cd)|外部 repo(/mnt/c DM-signal)の worktree 準備を ext4 側 cache から materialize。probe cold 127s/warm 49s→60 秒未満目標|→ `scripts/deploy_task.sh` deploy_task_materialize_ext4_repo_cache
 - ci_fix 33927699707(影丸 5019bfd46)+undeployed_revision_report(189758826、GATE CLEAR 09:40)|deploy_task に未配備 revision report の扱い、ninja_monitor stall 判定に revision_requested_live を追加。cmd_4476 は revision_requested_live で稼働中(gate の『配備痕跡なし』は偽)|→ `scripts/ninja_monitor.sh`
+- ext4 cache worktree の downstream identity(疾風 hotfix 90e83f2e2 09-05 09:47)|cache 由来 worktree でも report_commit_identity が published base と一致するよう整合。cold 81s/warm 42s 配備の後段|→ `scripts/deploy_task.sh`
