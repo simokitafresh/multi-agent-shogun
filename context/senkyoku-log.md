@@ -1682,3 +1682,4 @@
 - 2026-09-06 00:50 hayate cmd_karo_recon_k2_deploy_cost_20260905_normal完了: 固定snapshot 51配備/227関数、重いPython caller 3件、隔離probe128件rc不一致0、計測負荷12.991msを確定。no-code recon report gate PASS、ninja_done通知済み。
 - 2026-09-06 01:38 kagemaru cmd_4481_full完了: F1 CSV 23,175行からlayer/month/suspect別1,212群・4,493行を生成。Σweight/pf_count違反0、contract 2/2 PASS・SKIP0、commit 1deb06fe、report gate PASS。
 - 2026-09-06 02:42 kagemaru cmd_4481_full RC再提出完了: 公開cherry-pick e045d3372a7cffe7ec589a4b2a6699c1a71957beへreport/cross-repo identityを同期(base e7d保持)。公開HEAD receipt 2/2 PASS・SKIP0、成果物差分0、report gate PASS。
+- 2026-09-06 04:06 saizo cmd_karo_recon_insight_pending_triage_20260906: queue/insights.yamlを一次集計しpending 113（前提116との差-3、oldest日付一致）を重複0・欠落0で吸収2/close候補74/未解決37へ分類、未解決を3 task候補へ圧縮。台帳変更0、report gate PASS。

@@ -125,7 +125,7 @@ insights:
   priority: "medium"
   source: "throughput_scan:fp_rate:scripts_cmd_save.sh"
   fix_known: true
-  status: pending
+  status: "resolved"
   target_file: "scripts/cmd_save.sh"
   verify_command: "test -f logs/detector_fp_rate.yaml && test -f scripts/cmd_save.sh"
   insight_summary_hash: "f0fd45313dead7a09c4b689cc2b818b5e62537f8b0378397f270f8958a503df2"
@@ -135,6 +135,9 @@ insights:
     status: "failed"
     exit_code: 1
     output: ""
+  resolved_reason: "GATE CLEAR: cmd_karo_recon_insight_pending_triage_20260906 completed declared remediation"
+  action_artifact: "cmd=cmd_karo_recon_insight_pending_triage_20260906;gate=cmd_complete_gate;result=CLEAR"
+  resolved_at: "2026-09-06T04:08:30.158093"
 - id: INS-20260823-073238528-fb60
   ts: "2026-08-23T07:32:38+09:00"
   insight: "semantic_index_update新概念候補: discussion:task notification task id bgaz2fllk task id tool use id toolu 01Xtgq69zp2Md59d6d は 既存aliasesに一致なし。概念定義とaliases追加を検討せよ"
@@ -1330,7 +1333,10 @@ insights:
   priority: "low"
   source: "cmd_complete_gate:memory_phase"
   fix_known: false
-  status: pending
+  status: "resolved"
+  resolved_reason: "GATE CLEAR: cmd_karo_recon_insight_pending_triage_20260906 completed declared remediation"
+  action_artifact: "cmd=cmd_karo_recon_insight_pending_triage_20260906;gate=cmd_complete_gate;result=CLEAR"
+  resolved_at: "2026-09-06T04:08:30.338520"
 - id: INS-20260819-142139209-704e
   ts: "2026-08-19T14:21:39+09:00"
   insight: "同パターンLevel5未満候補: source_cmd=cmd_karo_hotfix_runtime_writer_singleflight_202608191225; matched=lessons,yaml; current_pattern=; candidate_level=4; candidate=cmd_1921 report_yaml_format WA(影丸lessons_useful dict/list混在)。GP-107撤去再評価: numbered dict({0:{id:X},1:{id:Y}})→list変換は内容不変。単一dict/ID-keyed dictは条件外(全キーint+全値dict)。家老workaround削減=利他; source=gunshi_gp_tracker.yaml"
@@ -1557,21 +1563,30 @@ insights:
   priority: "medium"
   source: "cmd_complete_gate:l6_horizontal:cmd_reflux_backlink_202608201618_tobisaru"
   fix_known: false
-  status: pending
+  status: "resolved"
+  resolved_reason: "GATE CLEAR: cmd_karo_recon_insight_pending_triage_20260906 completed declared remediation"
+  action_artifact: "cmd=cmd_karo_recon_insight_pending_triage_20260906;gate=cmd_complete_gate;result=CLEAR"
+  resolved_at: "2026-09-06T04:08:30.502094"
 - id: INS-20260821-021525116-8698
   ts: "2026-08-21T02:15:25+09:00"
   insight: "同パターンLevel5未満候補: source_cmd=cmd_reflux_insight_202608210159_hayate; matched=yaml; current_pattern=; candidate_level=3; candidate=家老がdeploy_task.shを実行→30秒timeout→配備不完了。3回連続発生。根因=WSL2 NTFSのflock+stat+write蓄積; source=gunshi_gp_tracker.yaml"
   priority: "medium"
   source: "cmd_complete_gate:l6_horizontal:cmd_reflux_insight_202608210159_hayate"
   fix_known: false
-  status: pending
+  status: "resolved"
+  resolved_reason: "GATE CLEAR: cmd_karo_recon_insight_pending_triage_20260906 completed declared remediation"
+  action_artifact: "cmd=cmd_karo_recon_insight_pending_triage_20260906;gate=cmd_complete_gate;result=CLEAR"
+  resolved_at: "2026-09-06T04:08:30.654762"
 - id: INS-20260821-025624452-5e64
   ts: "2026-08-21T02:56:24+09:00"
   insight: "SKILL.md追従task[28cb407b97fcfc07]: gate_skill_script_refs.sh rc=2。以下のSKILL.md×変更script対を検分し、必要な追従更新と実測を行え: skills/cmd-complete/SKILL.md <- scripts/gates/gate_context_freshness.sh; skills/codd-fix/SKILL.md <- scripts/cmd_complete_gate.sh; skills/dream/SKILL.md <- scripts/gates/gate_lesson_health.sh; skills/gate-sync/SKILL.md <- scripts/bulletin_write.sh; skills/idle-persist/SKILL.md <- scripts/bulletin_write.sh; skills/review-bundle/SKILL.md <- scripts/bulletin_write.sh; skills/shogun-teire/SKILL.md <- scripts/gates/gate_lesson_health.sh"
   priority: "medium"
   source: "skill_script_refs:28cb407b97fcfc07"
   fix_known: false
-  status: pending
+  status: "resolved"
+  resolved_reason: "GATE CLEAR: cmd_karo_recon_insight_pending_triage_20260906 completed declared remediation"
+  action_artifact: "cmd=cmd_karo_recon_insight_pending_triage_20260906;gate=cmd_complete_gate;result=CLEAR"
+  resolved_at: "2026-09-06T04:08:30.815560"
 - id: INS-20260821-033532218-4254
   ts: "2026-08-21T03:35:32+09:00"
   insight: "同パターンLevel5未満候補: source_cmd=cmd_reflux_insight_202608210318_hayate; matched=yaml; current_pattern=; candidate_level=3; candidate=家老がshogun_to_karoにないcmd(再配備cmd等)を配備できない。deploy_task.sh→ERROR、Write→hookブロック。殿指示案件; source=gunshi_gp_tracker.yaml"
@@ -1598,7 +1613,10 @@ insights:
   priority: "medium"
   source: "cmd_complete_gate:l6_horizontal:cmd_reflux_insight_202608210433_hayate"
   fix_known: false
-  status: pending
+  status: "resolved"
+  resolved_reason: "GATE CLEAR: cmd_karo_recon_insight_pending_triage_20260906 completed declared remediation"
+  action_artifact: "cmd=cmd_karo_recon_insight_pending_triage_20260906;gate=cmd_complete_gate;result=CLEAR"
+  resolved_at: "2026-09-06T04:08:30.963201"
 - id: INS-20260821-055638139-5f7c
   ts: "2026-08-21T05:56:38+09:00"
   insight: "semantic_index_update新概念候補: discussion:task notification task id byymqv7bw task id tool use id toolu 01GjZZG81rrNjY161q は 既存aliasesに一致なし。概念定義とaliases追加を検討せよ"
@@ -2804,14 +2822,20 @@ insights:
   priority: "medium"
   source: "manual"
   fix_known: false
-  status: pending
+  status: "resolved"
+  resolved_reason: "GATE CLEAR: cmd_karo_recon_insight_pending_triage_20260906 completed declared remediation"
+  action_artifact: "cmd=cmd_karo_recon_insight_pending_triage_20260906;gate=cmd_complete_gate;result=CLEAR"
+  resolved_at: "2026-09-06T04:08:31.111410"
 - id: INS-20260824-031619025-64be
   ts: "2026-08-24T03:16:19+09:00"
   insight: "cmd_4380 LG051連続BLOCK: saizo/hayateともに非test caller count証跡の書き方を学習できず同じアプローチを繰り返している(DIVERGENT v2)。gate FIXメッセージは明確だがGPT忍者が解釈できていない。対策=task YAMLにLG051証跡の具体例(rgコマンド+non-test caller count: N)を注入、またはreport_field_setにcausal_verification.evidenceテンプレートを追加"
   priority: "medium"
   source: "manual"
   fix_known: false
-  status: pending
+  status: "resolved"
+  resolved_reason: "GATE CLEAR: cmd_karo_recon_insight_pending_triage_20260906 completed declared remediation"
+  action_artifact: "cmd=cmd_karo_recon_insight_pending_triage_20260906;gate=cmd_complete_gate;result=CLEAR"
+  resolved_at: "2026-09-06T04:08:31.262993"
 - id: INS-20260824-054737158-9351
   ts: "2026-08-24T05:47:37+09:00"
   insight: "同パターンLevel5未満候補: source_cmd=cmd_4381; matched=実行; current_pattern=cmd_complete_gate.sh速度改善第三弾 — 本番実行の常時フェーズ記録化でgateが自分自身を計測する構造へ; candidate_level=4; candidate=LG025(WF並列禁止)がautomated:false(Level 2文書のみ)。Guard 8でLevel 4(フロー内BLOCK)に昇格。4テストPASS+既存9テストPASS(副作用なし); source=gunshi_gp_tracker.yaml"
@@ -2868,7 +2892,10 @@ insights:
   priority: "medium"
   source: "skill_script_refs:11fd6f77fef8c2ed"
   fix_known: false
-  status: pending
+  status: "resolved"
+  resolved_reason: "GATE CLEAR: cmd_karo_recon_insight_pending_triage_20260906 completed declared remediation"
+  action_artifact: "cmd=cmd_karo_recon_insight_pending_triage_20260906;gate=cmd_complete_gate;result=CLEAR"
+  resolved_at: "2026-09-06T04:08:31.412798"
 - id: INS-20260824-055435794-1ba8
   ts: "2026-08-24T05:54:35+09:00"
   insight: "semantic_index_update新概念候補: discussion:task notification task id bc0ovpf3v task id tool use id toolu 01UVsWkrbbFc6J5WxW は 既存aliasesに一致なし。概念定義とaliases追加を検討せよ"
@@ -3177,7 +3204,7 @@ insights:
   priority: "medium"
   source: "throughput_scan:fp_rate:scripts_cmd_save.sh"
   fix_known: true
-  status: pending
+  status: "resolved"
   target_file: "scripts/cmd_save.sh"
   verify_command: "test -f logs/detector_fp_rate.yaml && test -f scripts/cmd_save.sh"
   insight_summary_hash: "f0fd45313dead7a09c4b689cc2b818b5e62537f8b0378397f270f8958a503df2"
@@ -3187,6 +3214,9 @@ insights:
     status: "failed"
     exit_code: 1
     output: ""
+  resolved_reason: "GATE CLEAR: cmd_karo_recon_insight_pending_triage_20260906 completed declared remediation"
+  action_artifact: "cmd=cmd_karo_recon_insight_pending_triage_20260906;gate=cmd_complete_gate;result=CLEAR"
+  resolved_at: "2026-09-06T04:08:31.578553"
 - id: INS-20260824-132507856-d43e
   ts: "2026-08-24T13:25:07+09:00"
   insight: "semantic_index_update新概念候補: discussion:進捗を報告して は 既存aliasesに一致なし。概念定義とaliases追加を検討せよ"
@@ -4047,7 +4077,10 @@ insights:
   priority: "medium"
   source: "manual"
   fix_known: false
-  status: pending
+  status: "resolved"
+  resolved_reason: "GATE CLEAR: cmd_karo_recon_insight_pending_triage_20260906 completed declared remediation"
+  action_artifact: "cmd=cmd_karo_recon_insight_pending_triage_20260906;gate=cmd_complete_gate;result=CLEAR"
+  resolved_at: "2026-09-06T04:08:31.749857"
 - id: INS-20260826-184145666-058d
   ts: "2026-08-26T18:41:45+09:00"
   insight: "semantic_index_update新概念候補: discussion:task notification task id b9vnham7n task id tool use id toolu 011s6CN6F53Tfuxi36 は 既存aliasesに一致なし。概念定義とaliases追加を検討せよ"
@@ -6306,7 +6339,10 @@ insights:
   priority: "medium"
   source: "manual"
   fix_known: false
-  status: pending
+  status: "resolved"
+  resolved_reason: "GATE CLEAR: cmd_karo_recon_insight_pending_triage_20260906 completed declared remediation"
+  action_artifact: "cmd=cmd_karo_recon_insight_pending_triage_20260906;gate=cmd_complete_gate;result=CLEAR"
+  resolved_at: "2026-09-06T04:08:31.923332"
 - id: INS-20260828-063058643-aa26
   ts: "2026-08-28T06:30:58+09:00"
   insight: "semantic_index_update未登録[[リンク]]ターゲット: [[T114_ACK_STALL_task_id欠落]] は既存aliasesに一致なし。類似概念TOP3: inbox_processing_discipline(inbox処理規律; alias=duplicate_task_assigned; score=12.0) / yaml_safe_write(YAML安全書込み; alias=task yaml atomic handoff; score=11.2) / agent_formation_management(編成管理; alias=deploy_task; score=11.1)。概念定義とaliases追加を検討せよ"
@@ -6613,7 +6649,10 @@ insights:
   priority: "medium"
   source: "manual"
   fix_known: false
-  status: pending
+  status: "resolved"
+  resolved_reason: "GATE CLEAR: cmd_karo_recon_insight_pending_triage_20260906 completed declared remediation"
+  action_artifact: "cmd=cmd_karo_recon_insight_pending_triage_20260906;gate=cmd_complete_gate;result=CLEAR"
+  resolved_at: "2026-09-06T04:08:32.194770"
 - id: INS-20260828-091002773-a1ea
   ts: "2026-08-28T09:10:02+09:00"
   insight: "semantic_index_update未登録[[リンク]]ターゲット: [[殿指示_MECE検証_20260828_0903]] は既存aliasesに一致なし。類似概念TOP3: creator_brainwashing_defense(創造主の洗脳防御; alias=殿指示; score=26.4) / strong_new_game_completion_contract(強くてニューゲーム完遂契約; alias=殿指示_強くてニューゲーム_20260813_1648; score=21.1) / known_unknowns_principle(無知の知; alias=殿指示 「2層SSOTにするべき仕組みが他にないか確認しよう」; score=18.5)。概念定義とaliases追加を検討せよ"
@@ -7036,7 +7075,10 @@ insights:
   priority: "high"
   source: "shogun_instruction_20260828_140103"
   fix_known: false
-  status: pending
+  status: "resolved"
+  resolved_reason: "GATE CLEAR: cmd_karo_recon_insight_pending_triage_20260906 completed declared remediation"
+  action_artifact: "cmd=cmd_karo_recon_insight_pending_triage_20260906;gate=cmd_complete_gate;result=CLEAR"
+  resolved_at: "2026-09-06T04:08:32.343048"
 - id: INS-20260828-141452758-59dd
   ts: "2026-08-28T14:14:52+09:00"
   insight: "semantic_index_update新概念候補: discussion:おなじらせんをデッドコードやリファクタリング何かにも応用できるのか？ は 既存aliasesに一致なし。概念定義とaliases追加を検討せよ"
@@ -7296,7 +7338,10 @@ insights:
   priority: "medium"
   source: "manual"
   fix_known: false
-  status: pending
+  status: "resolved"
+  resolved_reason: "GATE CLEAR: cmd_karo_recon_insight_pending_triage_20260906 completed declared remediation"
+  action_artifact: "cmd=cmd_karo_recon_insight_pending_triage_20260906;gate=cmd_complete_gate;result=CLEAR"
+  resolved_at: "2026-09-06T04:08:32.497446"
 - id: INS-20260828-160644685-047f
   ts: "2026-08-28T16:06:44+09:00"
   insight: "semantic_index_update新概念候補: lesson:L1665 は 既存aliasesに一致なし。概念定義とaliases追加を検討せよ"
@@ -10802,7 +10847,10 @@ insights:
   priority: "medium"
   source: "manual"
   fix_known: false
-  status: pending
+  status: "resolved"
+  resolved_reason: "GATE CLEAR: cmd_karo_recon_insight_pending_triage_20260906 completed declared remediation"
+  action_artifact: "cmd=cmd_karo_recon_insight_pending_triage_20260906;gate=cmd_complete_gate;result=CLEAR"
+  resolved_at: "2026-09-06T04:08:32.649000"
 - id: INS-20260831-045819770-3ca3
   ts: "2026-08-31T04:58:19+09:00"
   insight: "semantic_index_update新概念候補: lesson:L1683 は 既存aliasesに一致なし。概念定義とaliases追加を検討せよ"
@@ -12676,7 +12724,10 @@ insights:
   priority: "low"
   source: "cmd_complete_gate:memory_phase"
   fix_known: false
-  status: pending
+  status: "resolved"
+  resolved_reason: "GATE CLEAR: cmd_karo_recon_insight_pending_triage_20260906 completed declared remediation"
+  action_artifact: "cmd=cmd_karo_recon_insight_pending_triage_20260906;gate=cmd_complete_gate;result=CLEAR"
+  resolved_at: "2026-09-06T04:08:32.867293"
 - id: INS-20260901-200345140-69f1
   ts: "2026-09-01T20:03:45+09:00"
   insight: "SKILL.md追従task[9abfd94ce2d8bec9]: gate_skill_script_refs.sh rc=2。以下のSKILL.md×変更script対を検分し、必要な追従更新と実測を行え: skills/cdp-browse/SKILL.md <- scripts/cdp/cdp_measure.sh; skills/cdp-browse/SKILL.md <- scripts/note_draft.sh; skills/cmd-complete/SKILL.md <- scripts/archive_completed.sh; skills/cmd-complete/SKILL.md <- scripts/gates/gate_context_freshness.sh; skills/cmd-complete/SKILL.md <- scripts/review_approval.sh; skills/cmd-complete/SKILL.md <- scripts/review_bundle.py; skills/codd-fix/SKILL.md <- scripts/cmd_complete_gate.sh; skills/codd-refactor/SKILL.md <- scripts/run_tests.sh; skills/dashboard-update/SKILL.md <- scripts/gates/gate_report_format.sh; skills/dream/SKILL.md <- scripts/gates/gate_lesson_health.sh; skills/dream/SKILL.md <- scripts/insight_write.sh; skills/dream/SKILL.md <- scripts/memory_db_query.sh; skills/gate-sync/SKILL.md <- scripts/bulletin_write.sh; skills/gate-sync/SKILL.md <- scripts/gates/gate_gunshi_accuracy.sh; skills/hot-script-design/SKILL.md <- scripts/ninja_scope_commit.sh; skills/idle-persist/SKILL.md <- scripts/bulletin_write.sh; skills/idle-persist/SKILL.md <- scripts/inbox_write.sh; skills/karo-direct/SKILL.md <- scripts/deploy_task.sh; skills/ninja-commit/SKILL.md <- scripts/ninja_scope_commit.sh; skills/ninja-commit/SKILL.md <- scripts/report_field_set.sh; skills/note-writer/SKILL.md <- scripts/note_draft.sh; skills/recon-dual/SKILL.md <- scripts/deploy_task.sh; skills/report-write/SKILL.md <- scripts/report_field_set.sh; skills/review-bundle/SKILL.md <- scripts/bulletin_write.sh; skills/review-bundle/SKILL.md <- scripts/inbox_write.sh; skills/review-bundle/SKILL.md <- scripts/review_bundle.py; skills/sengoku-writer/SKILL.md <- scripts/note_draft.sh; skills/shogun-cli-switch/SKILL.md <- scripts/agent_respawn.sh; skills/shogun-cli-switch/SKILL.md <- scripts/lib/cli_lookup.sh; skills/shogun-cli-switch/SKILL.md <- scripts/ninja_monitor.sh; skills/shogun-teire/SKILL.md <- scripts/gates/gate_lesson_health.sh; skills/three-layer-penetrate/SKILL.md <- scripts/memory_db_query.sh; skills/verdict-check/SKILL.md <- scripts/gates/gate_report_format.sh; skills/weekly-report-writer/SKILL.md <- scripts/note_draft.sh"
@@ -13206,7 +13257,10 @@ insights:
   priority: "low"
   source: "semantic_map_generate:new_file"
   fix_known: false
-  status: pending
+  status: "resolved"
+  resolved_reason: "GATE CLEAR: cmd_karo_recon_insight_pending_triage_20260906 completed declared remediation"
+  action_artifact: "cmd=cmd_karo_recon_insight_pending_triage_20260906;gate=cmd_complete_gate;result=CLEAR"
+  resolved_at: "2026-09-06T04:08:33.051114"
 - id: INS-20260902-141250373-beef
   ts: "2026-09-02T14:12:50+09:00"
   insight: "semantic_map_generate新規ファイル候補: `README.md` は semantic index未登録。既存概念へのfile追加または新概念定義を検討せよ"
@@ -13232,7 +13286,10 @@ insights:
   priority: "low"
   source: "semantic_map_generate:new_file"
   fix_known: false
-  status: pending
+  status: "resolved"
+  resolved_reason: "GATE CLEAR: cmd_karo_recon_insight_pending_triage_20260906 completed declared remediation"
+  action_artifact: "cmd=cmd_karo_recon_insight_pending_triage_20260906;gate=cmd_complete_gate;result=CLEAR"
+  resolved_at: "2026-09-06T04:08:33.220322"
 - id: INS-20260902-141250704-658d
   ts: "2026-09-02T14:12:50+09:00"
   insight: "semantic_map_generate新規ファイル候補: `android/.gitignore` は semantic index未登録。既存概念へのfile追加または新概念定義を検討せよ"
@@ -13267,42 +13324,60 @@ insights:
   priority: "low"
   source: "semantic_map_generate:new_file"
   fix_known: false
-  status: pending
+  status: "resolved"
+  resolved_reason: "GATE CLEAR: cmd_karo_recon_insight_pending_triage_20260906 completed declared remediation"
+  action_artifact: "cmd=cmd_karo_recon_insight_pending_triage_20260906;gate=cmd_complete_gate;result=CLEAR"
+  resolved_at: "2026-09-06T04:08:33.399644"
 - id: INS-20260902-141251524-78a7
   ts: "2026-09-02T14:12:51+09:00"
   insight: "semantic_map_generate新規ファイル候補: `android/app/src/test/java/com/shogun/android/util/VoiceDictionaryTest.kt` は semantic index未登録。既存概念へのfile追加または新概念定義を検討せよ"
   priority: "low"
   source: "semantic_map_generate:new_file"
   fix_known: false
-  status: pending
+  status: "resolved"
+  resolved_reason: "GATE CLEAR: cmd_karo_recon_insight_pending_triage_20260906 completed declared remediation"
+  action_artifact: "cmd=cmd_karo_recon_insight_pending_triage_20260906;gate=cmd_complete_gate;result=CLEAR"
+  resolved_at: "2026-09-06T04:08:33.546619"
 - id: INS-20260902-141252010-7f87
   ts: "2026-09-02T14:12:52+09:00"
   insight: "semantic_map_generate新規ファイル候補: `archive/frozen/gunshi.md` は semantic index未登録。既存概念へのfile追加または新概念定義を検討せよ"
   priority: "low"
   source: "semantic_map_generate:new_file"
   fix_known: false
-  status: pending
+  status: "resolved"
+  resolved_reason: "GATE CLEAR: cmd_karo_recon_insight_pending_triage_20260906 completed declared remediation"
+  action_artifact: "cmd=cmd_karo_recon_insight_pending_triage_20260906;gate=cmd_complete_gate;result=CLEAR"
+  resolved_at: "2026-09-06T04:08:33.705885"
 - id: INS-20260902-141252307-7d91
   ts: "2026-09-02T14:12:52+09:00"
   insight: "semantic_map_generate新規ファイル候補: `codd.bak.1776241363/.gitignore` は semantic index未登録。既存概念へのfile追加または新概念定義を検討せよ"
   priority: "low"
   source: "semantic_map_generate:new_file"
   fix_known: false
-  status: pending
+  status: "resolved"
+  resolved_reason: "GATE CLEAR: cmd_karo_recon_insight_pending_triage_20260906 completed declared remediation"
+  action_artifact: "cmd=cmd_karo_recon_insight_pending_triage_20260906;gate=cmd_complete_gate;result=CLEAR"
+  resolved_at: "2026-09-06T04:08:33.878228"
 - id: INS-20260902-141252415-4670
   ts: "2026-09-02T14:12:52+09:00"
   insight: "semantic_map_generate新規ファイル候補: `codd/.codd/dag.json` は semantic index未登録。既存概念へのfile追加または新概念定義を検討せよ"
   priority: "low"
   source: "semantic_map_generate:new_file"
   fix_known: false
-  status: pending
+  status: "resolved"
+  resolved_reason: "GATE CLEAR: cmd_karo_recon_insight_pending_triage_20260906 completed declared remediation"
+  action_artifact: "cmd=cmd_karo_recon_insight_pending_triage_20260906;gate=cmd_complete_gate;result=CLEAR"
+  resolved_at: "2026-09-06T04:08:34.073049"
 - id: INS-20260902-141252523-9b09
   ts: "2026-09-02T14:12:52+09:00"
   insight: "semantic_map_generate新規ファイル候補: `codd/brownfield/agent_status_brownfield.md` は semantic index未登録。既存概念へのfile追加または新概念定義を検討せよ"
   priority: "low"
   source: "semantic_map_generate:new_file"
   fix_known: false
-  status: pending
+  status: "resolved"
+  resolved_reason: "GATE CLEAR: cmd_karo_recon_insight_pending_triage_20260906 completed declared remediation"
+  action_artifact: "cmd=cmd_karo_recon_insight_pending_triage_20260906;gate=cmd_complete_gate;result=CLEAR"
+  resolved_at: "2026-09-06T04:08:34.223669"
 - id: INS-20260902-143851417-b4c5
   ts: "2026-09-02T14:38:51+09:00"
   insight: "semantic_index_update新概念候補: discussion:忍者が解放されていないようだ は 既存aliasesに一致なし。概念定義とaliases追加を検討せよ"
@@ -13449,14 +13524,20 @@ insights:
   priority: "low"
   source: "semantic_map_generate:new_file"
   fix_known: false
-  status: pending
+  status: "resolved"
+  resolved_reason: "GATE CLEAR: cmd_karo_recon_insight_pending_triage_20260906 completed declared remediation"
+  action_artifact: "cmd=cmd_karo_recon_insight_pending_triage_20260906;gate=cmd_complete_gate;result=CLEAR"
+  resolved_at: "2026-09-06T04:08:34.366547"
 - id: INS-20260902-155334843-24d0
   ts: "2026-09-02T15:53:34+09:00"
   insight: "semantic_map_generate新規ファイル候補: `docs/research/cmd_4416_post_deploy_check.md` は semantic index未登録。既存概念へのfile追加または新概念定義を検討せよ"
   priority: "low"
   source: "semantic_map_generate:new_file"
   fix_known: false
-  status: pending
+  status: "resolved"
+  resolved_reason: "GATE CLEAR: cmd_karo_recon_insight_pending_triage_20260906 completed declared remediation"
+  action_artifact: "cmd=cmd_karo_recon_insight_pending_triage_20260906;gate=cmd_complete_gate;result=CLEAR"
+  resolved_at: "2026-09-06T04:08:34.534414"
 - id: INS-20260902-161550789-0778
   ts: "2026-09-02T16:15:50+09:00"
   insight: "SKILL.md追従task[9abfd94ce2d8bec9]: gate_skill_script_refs.sh rc=2。以下のSKILL.md×変更script対を検分し、必要な追従更新と実測を行え: skills/cdp-browse/SKILL.md <- scripts/cdp/cdp_measure.sh; skills/cdp-browse/SKILL.md <- scripts/note_draft.sh; skills/cmd-complete/SKILL.md <- scripts/archive_completed.sh; skills/cmd-complete/SKILL.md <- scripts/gates/gate_context_freshness.sh; skills/cmd-complete/SKILL.md <- scripts/review_approval.sh; skills/cmd-complete/SKILL.md <- scripts/review_bundle.py; skills/codd-fix/SKILL.md <- scripts/cmd_complete_gate.sh; skills/codd-refactor/SKILL.md <- scripts/run_tests.sh; skills/dashboard-update/SKILL.md <- scripts/gates/gate_report_format.sh; skills/dream/SKILL.md <- scripts/gates/gate_lesson_health.sh; skills/dream/SKILL.md <- scripts/insight_write.sh; skills/dream/SKILL.md <- scripts/memory_db_query.sh; skills/gate-sync/SKILL.md <- scripts/bulletin_write.sh; skills/gate-sync/SKILL.md <- scripts/gates/gate_gunshi_accuracy.sh; skills/hot-script-design/SKILL.md <- scripts/ninja_scope_commit.sh; skills/idle-persist/SKILL.md <- scripts/bulletin_write.sh; skills/idle-persist/SKILL.md <- scripts/inbox_write.sh; skills/karo-direct/SKILL.md <- scripts/deploy_task.sh; skills/ninja-commit/SKILL.md <- scripts/ninja_scope_commit.sh; skills/ninja-commit/SKILL.md <- scripts/report_field_set.sh; skills/note-writer/SKILL.md <- scripts/note_draft.sh; skills/recon-dual/SKILL.md <- scripts/deploy_task.sh; skills/report-write/SKILL.md <- scripts/report_field_set.sh; skills/review-bundle/SKILL.md <- scripts/bulletin_write.sh; skills/review-bundle/SKILL.md <- scripts/inbox_write.sh; skills/review-bundle/SKILL.md <- scripts/review_bundle.py; skills/sengoku-writer/SKILL.md <- scripts/note_draft.sh; skills/shogun-cli-switch/SKILL.md <- scripts/agent_respawn.sh; skills/shogun-cli-switch/SKILL.md <- scripts/lib/cli_lookup.sh; skills/shogun-cli-switch/SKILL.md <- scripts/ninja_monitor.sh; skills/shogun-teire/SKILL.md <- scripts/gates/gate_lesson_health.sh; skills/three-layer-penetrate/SKILL.md <- scripts/memory_db_query.sh; skills/verdict-check/SKILL.md <- scripts/gates/gate_report_format.sh; skills/weekly-report-writer/SKILL.md <- scripts/note_draft.sh"
@@ -13474,14 +13555,20 @@ insights:
   priority: "low"
   source: "semantic_map_generate:new_file"
   fix_known: false
-  status: pending
+  status: "resolved"
+  resolved_reason: "GATE CLEAR: cmd_karo_recon_insight_pending_triage_20260906 completed declared remediation"
+  action_artifact: "cmd=cmd_karo_recon_insight_pending_triage_20260906;gate=cmd_complete_gate;result=CLEAR"
+  resolved_at: "2026-09-06T04:08:34.699845"
 - id: INS-20260902-161745419-02ff
   ts: "2026-09-02T16:17:45+09:00"
   insight: "semantic_map_generate新規ファイル候補: `docs/research/karo-review-trial-fixes-20260901.md` は semantic index未登録。既存概念へのfile追加または新概念定義を検討せよ"
   priority: "low"
   source: "semantic_map_generate:new_file"
   fix_known: false
-  status: pending
+  status: "resolved"
+  resolved_reason: "GATE CLEAR: cmd_karo_recon_insight_pending_triage_20260906 completed declared remediation"
+  action_artifact: "cmd=cmd_karo_recon_insight_pending_triage_20260906;gate=cmd_complete_gate;result=CLEAR"
+  resolved_at: "2026-09-06T04:08:34.913496"
 - id: INS-20260902-162440506-12ab
   ts: "2026-09-02T16:24:40+09:00"
   insight: "[[つまりはないか？家老と協議したほうがいいのでは？]] semantic_stress_test candidate_aliases: NO_MATCH source=lord query=つまりはないか？家老と協議したほうがいいのでは？"
@@ -13538,7 +13625,10 @@ insights:
   priority: "medium"
   source: "skill_script_refs:9abfd94ce2d8bec9"
   fix_known: false
-  status: pending
+  status: "resolved"
+  resolved_reason: "GATE CLEAR: cmd_karo_recon_insight_pending_triage_20260906 completed declared remediation"
+  action_artifact: "cmd=cmd_karo_recon_insight_pending_triage_20260906;gate=cmd_complete_gate;result=CLEAR"
+  resolved_at: "2026-09-06T04:08:35.142501"
 - id: INS-20260902-171234556-9649
   ts: "2026-09-02T17:12:34+09:00"
   insight: "semantic_index_update新概念候補: discussion:忍者が放置されていないか？ は 既存aliasesに一致なし。概念定義とaliases追加を検討せよ"
@@ -13575,7 +13665,10 @@ insights:
   priority: "low"
   source: "semantic_map_generate:new_file"
   fix_known: false
-  status: pending
+  status: "resolved"
+  resolved_reason: "GATE CLEAR: cmd_karo_recon_insight_pending_triage_20260906 completed declared remediation"
+  action_artifact: "cmd=cmd_karo_recon_insight_pending_triage_20260906;gate=cmd_complete_gate;result=CLEAR"
+  resolved_at: "2026-09-06T04:08:35.359923"
 - id: INS-20260902-172050801-76dd
   ts: "2026-09-02T17:20:50+09:00"
   insight: "[[single publisher asis tobe 5w1h 20260902 mdも随時更新しないと後で混乱する]] semantic_stress_test candidate_aliases: NO_MATCH source=lord query=single_publisher_asis_tobe_5w1h_20260902.mdも随時更新しないと後で混乱する"
@@ -13923,7 +14016,10 @@ insights:
   priority: "low"
   source: "self_retro"
   fix_known: false
-  status: pending
+  status: "resolved"
+  resolved_reason: "GATE CLEAR: cmd_karo_recon_insight_pending_triage_20260906 completed declared remediation"
+  action_artifact: "cmd=cmd_karo_recon_insight_pending_triage_20260906;gate=cmd_complete_gate;result=CLEAR"
+  resolved_at: "2026-09-06T04:08:35.568911"
 - id: INS-20260902-204812779-def0
   ts: "2026-09-02T20:48:12+09:00"
   insight: "[[捨てる壁に時間をかけるのは原理原則に反していないか？]] semantic_stress_test candidate_aliases: NO_MATCH source=lord query=捨てる壁に時間をかけるのは原理原則に反していないか？"
@@ -14111,7 +14207,10 @@ insights:
   priority: "low"
   source: "semantic_map_generate:new_file"
   fix_known: false
-  status: pending
+  status: "resolved"
+  resolved_reason: "GATE CLEAR: cmd_karo_recon_insight_pending_triage_20260906 completed declared remediation"
+  action_artifact: "cmd=cmd_karo_recon_insight_pending_triage_20260906;gate=cmd_complete_gate;result=CLEAR"
+  resolved_at: "2026-09-06T04:08:35.728750"
 - id: INS-20260902-211740713-6aae
   ts: "2026-09-02T21:17:40+09:00"
   insight: "semantic_index_update新概念候補: discussion:CMDを書く時のつまりも解消しよう は 既存aliasesに一致なし。概念定義とaliases追加を検討せよ"
@@ -14468,7 +14567,10 @@ insights:
   priority: "low"
   source: "manual"
   fix_known: false
-  status: pending
+  status: "resolved"
+  resolved_reason: "GATE CLEAR: cmd_karo_recon_insight_pending_triage_20260906 completed declared remediation"
+  action_artifact: "cmd=cmd_karo_recon_insight_pending_triage_20260906;gate=cmd_complete_gate;result=CLEAR"
+  resolved_at: "2026-09-06T04:08:35.891355"
 - id: INS-20260903-002549566-2174
   ts: "2026-09-03T00:25:49+09:00"
   insight: "半蔵 hotfix で cross_repo_commit_contract.py/close_gate_alerts.py の lstrip('./') 3 箇所は根治したが、scripts 全体に同じ lstrip('./')(文字集合除去)が 14 箇所残存(先頭ドット path を誤正規化しうる)。横展開の一括修正 lane が必要。"
@@ -15029,14 +15131,20 @@ insights:
   priority: "low"
   source: "semantic_map_generate:new_file"
   fix_known: false
-  status: pending
+  status: "resolved"
+  resolved_reason: "GATE CLEAR: cmd_karo_recon_insight_pending_triage_20260906 completed declared remediation"
+  action_artifact: "cmd=cmd_karo_recon_insight_pending_triage_20260906;gate=cmd_complete_gate;result=CLEAR"
+  resolved_at: "2026-09-06T04:08:36.051135"
 - id: INS-20260903-065129287-ce4d
   ts: "2026-09-03T06:51:29+09:00"
   insight: "semantic_map_generate新規ファイル候補: `LICENSE` は semantic index未登録。既存概念へのfile追加または新概念定義を検討せよ"
   priority: "low"
   source: "semantic_map_generate:new_file"
   fix_known: false
-  status: pending
+  status: "resolved"
+  resolved_reason: "GATE CLEAR: cmd_karo_recon_insight_pending_triage_20260906 completed declared remediation"
+  action_artifact: "cmd=cmd_karo_recon_insight_pending_triage_20260906;gate=cmd_complete_gate;result=CLEAR"
+  resolved_at: "2026-09-06T04:08:36.255728"
 - id: INS-20260903-065807070-84cd
   ts: "2026-09-03T06:58:07+09:00"
   insight: "[[小太郎]] semantic_stress_test candidate_aliases: NO_MATCH source=cmds query=cmd_4464(小太郎、正当 FAIL・家老 fail-close 05:25)の実測: 削除できたのは M10(旧 test 5 file)のみ、M1-M9/M11 は census 修正後も非ゼロ参照。真因は census ではなく構造=(a) M1 は source_only_path_snapshot() が 5 関数を fallback chai"
@@ -15113,28 +15221,40 @@ insights:
   priority: "low"
   source: "semantic_map_generate:new_file"
   fix_known: false
-  status: pending
+  status: "resolved"
+  resolved_reason: "GATE CLEAR: cmd_karo_recon_insight_pending_triage_20260906 completed declared remediation"
+  action_artifact: "cmd=cmd_karo_recon_insight_pending_triage_20260906;gate=cmd_complete_gate;result=CLEAR"
+  resolved_at: "2026-09-06T04:08:36.416492"
 - id: INS-20260903-070553340-0cf7
   ts: "2026-09-03T07:05:53+09:00"
   insight: "semantic_map_generate新規ファイル候補: `docs/research/cmd_4416_post_deploy_check.md` は semantic index未登録。既存概念へのfile追加または新概念定義を検討せよ"
   priority: "low"
   source: "semantic_map_generate:new_file"
   fix_known: false
-  status: pending
+  status: "resolved"
+  resolved_reason: "GATE CLEAR: cmd_karo_recon_insight_pending_triage_20260906 completed declared remediation"
+  action_artifact: "cmd=cmd_karo_recon_insight_pending_triage_20260906;gate=cmd_complete_gate;result=CLEAR"
+  resolved_at: "2026-09-06T04:08:36.567372"
 - id: INS-20260903-070744845-2428
   ts: "2026-09-03T07:07:44+09:00"
   insight: "semantic_map_generate新規ファイル候補: `docs/research/gunshi_idle_lgtm_block_root_cause_analysis_20260831.md` は semantic index未登録。既存概念へのfile追加または新概念定義を検討せよ"
   priority: "low"
   source: "semantic_map_generate:new_file"
   fix_known: false
-  status: pending
+  status: "resolved"
+  resolved_reason: "GATE CLEAR: cmd_karo_recon_insight_pending_triage_20260906 completed declared remediation"
+  action_artifact: "cmd=cmd_karo_recon_insight_pending_triage_20260906;gate=cmd_complete_gate;result=CLEAR"
+  resolved_at: "2026-09-06T04:08:36.724563"
 - id: INS-20260903-070820386-e9a9
   ts: "2026-09-03T07:08:20+09:00"
   insight: "semantic_map_generate新規ファイル候補: `docs/research/karo-review-trial-fixes-20260901.md` は semantic index未登録。既存概念へのfile追加または新概念定義を検討せよ"
   priority: "low"
   source: "semantic_map_generate:new_file"
   fix_known: false
-  status: pending
+  status: "resolved"
+  resolved_reason: "GATE CLEAR: cmd_karo_recon_insight_pending_triage_20260906 completed declared remediation"
+  action_artifact: "cmd=cmd_karo_recon_insight_pending_triage_20260906;gate=cmd_complete_gate;result=CLEAR"
+  resolved_at: "2026-09-06T04:08:36.886036"
 - id: INS-20260903-071932329-ab8e
   ts: "2026-09-03T07:19:32+09:00"
   insight: "SKILL.md追従task[9abfd94ce2d8bec9]: gate_skill_script_refs.sh rc=2。以下のSKILL.md×変更script対を検分し、必要な追従更新と実測を行え: skills/cmd-complete/SKILL.md <- scripts/review_approval.sh; skills/codd-fix/SKILL.md <- scripts/cmd_complete_gate.sh; skills/cdp-browse/SKILL.md <- scripts/cdp/cdp_measure.sh; skills/cdp-browse/SKILL.md <- scripts/note_draft.sh; skills/cmd-complete/SKILL.md <- scripts/archive_completed.sh; skills/cmd-complete/SKILL.md <- scripts/gates/gate_context_freshness.sh; skills/cmd-complete/SKILL.md <- scripts/review_bundle.py; skills/codd-refactor/SKILL.md <- scripts/run_tests.sh; skills/dashboard-update/SKILL.md <- scripts/gates/gate_report_format.sh; skills/dream/SKILL.md <- scripts/gates/gate_lesson_health.sh; skills/dream/SKILL.md <- scripts/insight_write.sh; skills/dream/SKILL.md <- scripts/memory_db_query.sh; skills/gate-sync/SKILL.md <- scripts/bulletin_write.sh; skills/gate-sync/SKILL.md <- scripts/gates/gate_gunshi_accuracy.sh; skills/hot-script-design/SKILL.md <- scripts/ninja_scope_commit.sh; skills/idle-persist/SKILL.md <- scripts/bulletin_write.sh; skills/idle-persist/SKILL.md <- scripts/inbox_write.sh; skills/karo-direct/SKILL.md <- scripts/deploy_task.sh; skills/ninja-commit/SKILL.md <- scripts/ninja_scope_commit.sh; skills/ninja-commit/SKILL.md <- scripts/report_field_set.sh; skills/note-writer/SKILL.md <- scripts/note_draft.sh; skills/recon-dual/SKILL.md <- scripts/deploy_task.sh; skills/report-write/SKILL.md <- scripts/report_field_set.sh; skills/review-bundle/SKILL.md <- scripts/bulletin_write.sh; skills/review-bundle/SKILL.md <- scripts/inbox_write.sh; skills/review-bundle/SKILL.md <- scripts/review_bundle.py; skills/sengoku-writer/SKILL.md <- scripts/note_draft.sh; skills/shogun-cli-switch/SKILL.md <- scripts/agent_respawn.sh; skills/shogun-cli-switch/SKILL.md <- scripts/lib/cli_lookup.sh; skills/shogun-cli-switch/SKILL.md <- scripts/ninja_monitor.sh; skills/shogun-teire/SKILL.md <- scripts/gates/gate_lesson_health.sh; skills/three-layer-penetrate/SKILL.md <- scripts/memory_db_query.sh; skills/verdict-check/SKILL.md <- scripts/gates/gate_report_format.sh; skills/weekly-report-writer/SKILL.md <- scripts/note_draft.sh"
@@ -15161,350 +15281,500 @@ insights:
   priority: "low"
   source: "semantic_map_generate:new_file"
   fix_known: false
-  status: pending
+  status: "resolved"
+  resolved_reason: "GATE CLEAR: cmd_karo_recon_insight_pending_triage_20260906 completed declared remediation"
+  action_artifact: "cmd=cmd_karo_recon_insight_pending_triage_20260906;gate=cmd_complete_gate;result=CLEAR"
+  resolved_at: "2026-09-06T04:08:37.040969"
 - id: INS-20260903-073155563-45df
   ts: "2026-09-03T07:31:55+09:00"
   insight: "semantic_map_generate新規ファイル候補: `LICENSE` は semantic index未登録。既存概念へのfile追加または新概念定義を検討せよ"
   priority: "low"
   source: "semantic_map_generate:new_file"
   fix_known: false
-  status: pending
+  status: "resolved"
+  resolved_reason: "GATE CLEAR: cmd_karo_recon_insight_pending_triage_20260906 completed declared remediation"
+  action_artifact: "cmd=cmd_karo_recon_insight_pending_triage_20260906;gate=cmd_complete_gate;result=CLEAR"
+  resolved_at: "2026-09-06T04:08:37.207326"
 - id: INS-20260903-073155773-f7a4
   ts: "2026-09-03T07:31:55+09:00"
   insight: "semantic_map_generate新規ファイル候補: `Makefile` は semantic index未登録。既存概念へのfile追加または新概念定義を検討せよ"
   priority: "low"
   source: "semantic_map_generate:new_file"
   fix_known: false
-  status: pending
+  status: "resolved"
+  resolved_reason: "GATE CLEAR: cmd_karo_recon_insight_pending_triage_20260906 completed declared remediation"
+  action_artifact: "cmd=cmd_karo_recon_insight_pending_triage_20260906;gate=cmd_complete_gate;result=CLEAR"
+  resolved_at: "2026-09-06T04:08:37.373071"
 - id: INS-20260903-073155978-f9d5
   ts: "2026-09-03T07:31:55+09:00"
   insight: "semantic_map_generate新規ファイル候補: `README.md` は semantic index未登録。既存概念へのfile追加または新概念定義を検討せよ"
   priority: "low"
   source: "semantic_map_generate:new_file"
   fix_known: false
-  status: pending
+  status: "resolved"
+  resolved_reason: "GATE CLEAR: cmd_karo_recon_insight_pending_triage_20260906 completed declared remediation"
+  action_artifact: "cmd=cmd_karo_recon_insight_pending_triage_20260906;gate=cmd_complete_gate;result=CLEAR"
+  resolved_at: "2026-09-06T04:08:37.535080"
 - id: INS-20260903-073156198-d034
   ts: "2026-09-03T07:31:56+09:00"
   insight: "semantic_map_generate新規ファイル候補: `README_ja.md` は semantic index未登録。既存概念へのfile追加または新概念定義を検討せよ"
   priority: "low"
   source: "semantic_map_generate:new_file"
   fix_known: false
-  status: pending
+  status: "resolved"
+  resolved_reason: "GATE CLEAR: cmd_karo_recon_insight_pending_triage_20260906 completed declared remediation"
+  action_artifact: "cmd=cmd_karo_recon_insight_pending_triage_20260906;gate=cmd_complete_gate;result=CLEAR"
+  resolved_at: "2026-09-06T04:08:37.695719"
 - id: INS-20260903-073156381-e36c
   ts: "2026-09-03T07:31:56+09:00"
   insight: "semantic_map_generate新規ファイル候補: `SECURITY.md` は semantic index未登録。既存概念へのfile追加または新概念定義を検討せよ"
   priority: "low"
   source: "semantic_map_generate:new_file"
   fix_known: false
-  status: pending
+  status: "resolved"
+  resolved_reason: "GATE CLEAR: cmd_karo_recon_insight_pending_triage_20260906 completed declared remediation"
+  action_artifact: "cmd=cmd_karo_recon_insight_pending_triage_20260906;gate=cmd_complete_gate;result=CLEAR"
+  resolved_at: "2026-09-06T04:08:37.885938"
 - id: INS-20260903-073156569-c22c
   ts: "2026-09-03T07:31:56+09:00"
   insight: "semantic_map_generate新規ファイル候補: `android/.gitignore` は semantic index未登録。既存概念へのfile追加または新概念定義を検討せよ"
   priority: "low"
   source: "semantic_map_generate:new_file"
   fix_known: false
-  status: pending
+  status: "resolved"
+  resolved_reason: "GATE CLEAR: cmd_karo_recon_insight_pending_triage_20260906 completed declared remediation"
+  action_artifact: "cmd=cmd_karo_recon_insight_pending_triage_20260906;gate=cmd_complete_gate;result=CLEAR"
+  resolved_at: "2026-09-06T04:08:38.057271"
 - id: INS-20260903-073156768-8bc0
   ts: "2026-09-03T07:31:56+09:00"
   insight: "semantic_map_generate新規ファイル候補: `android/README.md` は semantic index未登録。既存概念へのfile追加または新概念定義を検討せよ"
   priority: "low"
   source: "semantic_map_generate:new_file"
   fix_known: false
-  status: pending
+  status: "resolved"
+  resolved_reason: "GATE CLEAR: cmd_karo_recon_insight_pending_triage_20260906 completed declared remediation"
+  action_artifact: "cmd=cmd_karo_recon_insight_pending_triage_20260906;gate=cmd_complete_gate;result=CLEAR"
+  resolved_at: "2026-09-06T04:08:38.216994"
 - id: INS-20260903-073156980-01d9
   ts: "2026-09-03T07:31:56+09:00"
   insight: "semantic_map_generate新規ファイル候補: `android/README_ja.md` は semantic index未登録。既存概念へのfile追加または新概念定義を検討せよ"
   priority: "low"
   source: "semantic_map_generate:new_file"
   fix_known: false
-  status: pending
+  status: "resolved"
+  resolved_reason: "GATE CLEAR: cmd_karo_recon_insight_pending_triage_20260906 completed declared remediation"
+  action_artifact: "cmd=cmd_karo_recon_insight_pending_triage_20260906;gate=cmd_complete_gate;result=CLEAR"
+  resolved_at: "2026-09-06T04:08:38.400431"
 - id: INS-20260903-073157161-df3f
   ts: "2026-09-03T07:31:57+09:00"
   insight: "semantic_map_generate新規ファイル候補: `android/app/src/main/java/com/shogun/android/MainActivity.kt` は semantic index未登録。既存概念へのfile追加または新概念定義を検討せよ"
   priority: "low"
   source: "semantic_map_generate:new_file"
   fix_known: false
-  status: pending
+  status: "resolved"
+  resolved_reason: "GATE CLEAR: cmd_karo_recon_insight_pending_triage_20260906 completed declared remediation"
+  action_artifact: "cmd=cmd_karo_recon_insight_pending_triage_20260906;gate=cmd_complete_gate;result=CLEAR"
+  resolved_at: "2026-09-06T04:08:38.571700"
 - id: INS-20260903-073157353-4e98
   ts: "2026-09-03T07:31:57+09:00"
   insight: "semantic_map_generate新規ファイル候補: `android/app/src/main/java/com/shogun/android/data/GistFile.kt` は semantic index未登録。既存概念へのfile追加または新概念定義を検討せよ"
   priority: "low"
   source: "semantic_map_generate:new_file"
   fix_known: false
-  status: pending
+  status: "resolved"
+  resolved_reason: "GATE CLEAR: cmd_karo_recon_insight_pending_triage_20260906 completed declared remediation"
+  action_artifact: "cmd=cmd_karo_recon_insight_pending_triage_20260906;gate=cmd_complete_gate;result=CLEAR"
+  resolved_at: "2026-09-06T04:08:38.718320"
 - id: INS-20260903-073157558-1d8a
   ts: "2026-09-03T07:31:57+09:00"
   insight: "semantic_map_generate新規ファイル候補: `android/app/src/main/java/com/shogun/android/data/GistRepository.kt` は semantic index未登録。既存概念へのfile追加または新概念定義を検討せよ"
   priority: "low"
   source: "semantic_map_generate:new_file"
   fix_known: false
-  status: pending
+  status: "resolved"
+  resolved_reason: "GATE CLEAR: cmd_karo_recon_insight_pending_triage_20260906 completed declared remediation"
+  action_artifact: "cmd=cmd_karo_recon_insight_pending_triage_20260906;gate=cmd_complete_gate;result=CLEAR"
+  resolved_at: "2026-09-06T04:08:38.884175"
 - id: INS-20260903-073157773-7004
   ts: "2026-09-03T07:31:57+09:00"
   insight: "semantic_map_generate新規ファイル候補: `android/app/src/main/java/com/shogun/android/ui/ShogunScreen.kt` は semantic index未登録。既存概念へのfile追加または新概念定義を検討せよ"
   priority: "low"
   source: "semantic_map_generate:new_file"
   fix_known: false
-  status: pending
+  status: "resolved"
+  resolved_reason: "GATE CLEAR: cmd_karo_recon_insight_pending_triage_20260906 completed declared remediation"
+  action_artifact: "cmd=cmd_karo_recon_insight_pending_triage_20260906;gate=cmd_complete_gate;result=CLEAR"
+  resolved_at: "2026-09-06T04:08:39.065230"
 - id: INS-20260903-073158008-7176
   ts: "2026-09-03T07:31:58+09:00"
   insight: "semantic_map_generate新規ファイル候補: `android/app/src/main/java/com/shogun/android/util/VoiceDictionary.kt` は semantic index未登録。既存概念へのfile追加または新概念定義を検討せよ"
   priority: "low"
   source: "semantic_map_generate:new_file"
   fix_known: false
-  status: pending
+  status: "resolved"
+  resolved_reason: "GATE CLEAR: cmd_karo_recon_insight_pending_triage_20260906 completed declared remediation"
+  action_artifact: "cmd=cmd_karo_recon_insight_pending_triage_20260906;gate=cmd_complete_gate;result=CLEAR"
+  resolved_at: "2026-09-06T04:08:39.239023"
 - id: INS-20260903-073158218-80eb
   ts: "2026-09-03T07:31:58+09:00"
   insight: "semantic_map_generate新規ファイル候補: `android/app/src/test/java/com/shogun/android/util/VoiceDictionaryTest.kt` は semantic index未登録。既存概念へのfile追加または新概念定義を検討せよ"
   priority: "low"
   source: "semantic_map_generate:new_file"
   fix_known: false
-  status: pending
+  status: "resolved"
+  resolved_reason: "GATE CLEAR: cmd_karo_recon_insight_pending_triage_20260906 completed declared remediation"
+  action_artifact: "cmd=cmd_karo_recon_insight_pending_triage_20260906;gate=cmd_complete_gate;result=CLEAR"
+  resolved_at: "2026-09-06T04:08:39.520554"
 - id: INS-20260903-073158438-f555
   ts: "2026-09-03T07:31:58+09:00"
   insight: "semantic_map_generate新規ファイル候補: `archive/cmd-chronicle/2026-03-02_to_03-08.md` は semantic index未登録。既存概念へのfile追加または新概念定義を検討せよ"
   priority: "low"
   source: "semantic_map_generate:new_file"
   fix_known: false
-  status: pending
+  status: "resolved"
+  resolved_reason: "GATE CLEAR: cmd_karo_recon_insight_pending_triage_20260906 completed declared remediation"
+  action_artifact: "cmd=cmd_karo_recon_insight_pending_triage_20260906;gate=cmd_complete_gate;result=CLEAR"
+  resolved_at: "2026-09-06T04:08:39.698667"
 - id: INS-20260903-073158644-1b3b
   ts: "2026-09-03T07:31:58+09:00"
   insight: "semantic_map_generate新規ファイル候補: `archive/cmd-chronicle/2026-03.md` は semantic index未登録。既存概念へのfile追加または新概念定義を検討せよ"
   priority: "low"
   source: "semantic_map_generate:new_file"
   fix_known: false
-  status: pending
+  status: "resolved"
+  resolved_reason: "GATE CLEAR: cmd_karo_recon_insight_pending_triage_20260906 completed declared remediation"
+  action_artifact: "cmd=cmd_karo_recon_insight_pending_triage_20260906;gate=cmd_complete_gate;result=CLEAR"
+  resolved_at: "2026-09-06T04:08:40.016482"
 - id: INS-20260903-073158838-1734
   ts: "2026-09-03T07:31:58+09:00"
   insight: "semantic_map_generate新規ファイル候補: `archive/cmd-chronicle/2026-05.md` は semantic index未登録。既存概念へのfile追加または新概念定義を検討せよ"
   priority: "low"
   source: "semantic_map_generate:new_file"
   fix_known: false
-  status: pending
+  status: "resolved"
+  resolved_reason: "GATE CLEAR: cmd_karo_recon_insight_pending_triage_20260906 completed declared remediation"
+  action_artifact: "cmd=cmd_karo_recon_insight_pending_triage_20260906;gate=cmd_complete_gate;result=CLEAR"
+  resolved_at: "2026-09-06T04:08:40.299590"
 - id: INS-20260903-073159027-d832
   ts: "2026-09-03T07:31:59+09:00"
   insight: "semantic_map_generate新規ファイル候補: `archive/cmd-chronicle/2026-08.md` は semantic index未登録。既存概念へのfile追加または新概念定義を検討せよ"
   priority: "low"
   source: "semantic_map_generate:new_file"
   fix_known: false
-  status: pending
+  status: "resolved"
+  resolved_reason: "GATE CLEAR: cmd_karo_recon_insight_pending_triage_20260906 completed declared remediation"
+  action_artifact: "cmd=cmd_karo_recon_insight_pending_triage_20260906;gate=cmd_complete_gate;result=CLEAR"
+  resolved_at: "2026-09-06T04:08:40.584378"
 - id: INS-20260903-073159221-a92b
   ts: "2026-09-03T07:31:59+09:00"
   insight: "semantic_map_generate新規ファイル候補: `archive/frozen/gunshi.md` は semantic index未登録。既存概念へのfile追加または新概念定義を検討せよ"
   priority: "low"
   source: "semantic_map_generate:new_file"
   fix_known: false
-  status: pending
+  status: "resolved"
+  resolved_reason: "GATE CLEAR: cmd_karo_recon_insight_pending_triage_20260906 completed declared remediation"
+  action_artifact: "cmd=cmd_karo_recon_insight_pending_triage_20260906;gate=cmd_complete_gate;result=CLEAR"
+  resolved_at: "2026-09-06T04:08:40.851740"
 - id: INS-20260903-073159431-3d7a
   ts: "2026-09-03T07:31:59+09:00"
   insight: "semantic_map_generate新規ファイル候補: `archive/frozen/gunshi_inbox.yaml` は semantic index未登録。既存概念へのfile追加または新概念定義を検討せよ"
   priority: "low"
   source: "semantic_map_generate:new_file"
   fix_known: false
-  status: pending
+  status: "resolved"
+  resolved_reason: "GATE CLEAR: cmd_karo_recon_insight_pending_triage_20260906 completed declared remediation"
+  action_artifact: "cmd=cmd_karo_recon_insight_pending_triage_20260906;gate=cmd_complete_gate;result=CLEAR"
+  resolved_at: "2026-09-06T04:08:41.086923"
 - id: INS-20260903-073159646-f868
   ts: "2026-09-03T07:31:59+09:00"
   insight: "semantic_map_generate新規ファイル候補: `archive/frozen/gunshi_to_karo.yaml` は semantic index未登録。既存概念へのfile追加または新概念定義を検討せよ"
   priority: "low"
   source: "semantic_map_generate:new_file"
   fix_known: false
-  status: pending
+  status: "resolved"
+  resolved_reason: "GATE CLEAR: cmd_karo_recon_insight_pending_triage_20260906 completed declared remediation"
+  action_artifact: "cmd=cmd_karo_recon_insight_pending_triage_20260906;gate=cmd_complete_gate;result=CLEAR"
+  resolved_at: "2026-09-06T04:08:41.297582"
 - id: INS-20260903-073159893-c65b
   ts: "2026-09-03T07:31:59+09:00"
   insight: "semantic_map_generate新規ファイル候補: `codd.bak.1776241363/.gitignore` は semantic index未登録。既存概念へのfile追加または新概念定義を検討せよ"
   priority: "low"
   source: "semantic_map_generate:new_file"
   fix_known: false
-  status: pending
+  status: "resolved"
+  resolved_reason: "GATE CLEAR: cmd_karo_recon_insight_pending_triage_20260906 completed declared remediation"
+  action_artifact: "cmd=cmd_karo_recon_insight_pending_triage_20260906;gate=cmd_complete_gate;result=CLEAR"
+  resolved_at: "2026-09-06T04:08:41.541163"
 - id: INS-20260903-073200115-6f8b
   ts: "2026-09-03T07:32:00+09:00"
   insight: "semantic_map_generate新規ファイル候補: `codd/.codd/dag.json` は semantic index未登録。既存概念へのfile追加または新概念定義を検討せよ"
   priority: "low"
   source: "semantic_map_generate:new_file"
   fix_known: false
-  status: pending
+  status: "resolved"
+  resolved_reason: "GATE CLEAR: cmd_karo_recon_insight_pending_triage_20260906 completed declared remediation"
+  action_artifact: "cmd=cmd_karo_recon_insight_pending_triage_20260906;gate=cmd_complete_gate;result=CLEAR"
+  resolved_at: "2026-09-06T04:08:41.765023"
 - id: INS-20260903-073200302-4c99
   ts: "2026-09-03T07:32:00+09:00"
   insight: "semantic_map_generate新規ファイル候補: `codd/brownfield/agent_status_brownfield.md` は semantic index未登録。既存概念へのfile追加または新概念定義を検討せよ"
   priority: "low"
   source: "semantic_map_generate:new_file"
   fix_known: false
-  status: pending
+  status: "resolved"
+  resolved_reason: "GATE CLEAR: cmd_karo_recon_insight_pending_triage_20260906 completed declared remediation"
+  action_artifact: "cmd=cmd_karo_recon_insight_pending_triage_20260906;gate=cmd_complete_gate;result=CLEAR"
+  resolved_at: "2026-09-06T04:08:42.029984"
 - id: INS-20260903-073201954-99e5
   ts: "2026-09-03T07:32:01+09:00"
   insight: "semantic_map_generate新規ファイル候補: `CONTRIBUTING.md` は semantic index未登録。既存概念へのfile追加または新概念定義を検討せよ"
   priority: "low"
   source: "semantic_map_generate:new_file"
   fix_known: false
-  status: pending
+  status: "resolved"
+  resolved_reason: "GATE CLEAR: cmd_karo_recon_insight_pending_triage_20260906 completed declared remediation"
+  action_artifact: "cmd=cmd_karo_recon_insight_pending_triage_20260906;gate=cmd_complete_gate;result=CLEAR"
+  resolved_at: "2026-09-06T04:08:42.243700"
 - id: INS-20260903-073202185-53b4
   ts: "2026-09-03T07:32:02+09:00"
   insight: "semantic_map_generate新規ファイル候補: `LICENSE` は semantic index未登録。既存概念へのfile追加または新概念定義を検討せよ"
   priority: "low"
   source: "semantic_map_generate:new_file"
   fix_known: false
-  status: pending
+  status: "resolved"
+  resolved_reason: "GATE CLEAR: cmd_karo_recon_insight_pending_triage_20260906 completed declared remediation"
+  action_artifact: "cmd=cmd_karo_recon_insight_pending_triage_20260906;gate=cmd_complete_gate;result=CLEAR"
+  resolved_at: "2026-09-06T04:08:42.466531"
 - id: INS-20260903-073202391-341f
   ts: "2026-09-03T07:32:02+09:00"
   insight: "semantic_map_generate新規ファイル候補: `Makefile` は semantic index未登録。既存概念へのfile追加または新概念定義を検討せよ"
   priority: "low"
   source: "semantic_map_generate:new_file"
   fix_known: false
-  status: pending
+  status: "resolved"
+  resolved_reason: "GATE CLEAR: cmd_karo_recon_insight_pending_triage_20260906 completed declared remediation"
+  action_artifact: "cmd=cmd_karo_recon_insight_pending_triage_20260906;gate=cmd_complete_gate;result=CLEAR"
+  resolved_at: "2026-09-06T04:08:42.672398"
 - id: INS-20260903-073202585-8b6a
   ts: "2026-09-03T07:32:02+09:00"
   insight: "semantic_map_generate新規ファイル候補: `README.md` は semantic index未登録。既存概念へのfile追加または新概念定義を検討せよ"
   priority: "low"
   source: "semantic_map_generate:new_file"
   fix_known: false
-  status: pending
+  status: "resolved"
+  resolved_reason: "GATE CLEAR: cmd_karo_recon_insight_pending_triage_20260906 completed declared remediation"
+  action_artifact: "cmd=cmd_karo_recon_insight_pending_triage_20260906;gate=cmd_complete_gate;result=CLEAR"
+  resolved_at: "2026-09-06T04:08:42.883966"
 - id: INS-20260903-073202788-2845
   ts: "2026-09-03T07:32:02+09:00"
   insight: "semantic_map_generate新規ファイル候補: `README_ja.md` は semantic index未登録。既存概念へのfile追加または新概念定義を検討せよ"
   priority: "low"
   source: "semantic_map_generate:new_file"
   fix_known: false
-  status: pending
+  status: "resolved"
+  resolved_reason: "GATE CLEAR: cmd_karo_recon_insight_pending_triage_20260906 completed declared remediation"
+  action_artifact: "cmd=cmd_karo_recon_insight_pending_triage_20260906;gate=cmd_complete_gate;result=CLEAR"
+  resolved_at: "2026-09-06T04:08:43.168339"
 - id: INS-20260903-073202985-8560
   ts: "2026-09-03T07:32:02+09:00"
   insight: "semantic_map_generate新規ファイル候補: `SECURITY.md` は semantic index未登録。既存概念へのfile追加または新概念定義を検討せよ"
   priority: "low"
   source: "semantic_map_generate:new_file"
   fix_known: false
-  status: pending
+  status: "resolved"
+  resolved_reason: "GATE CLEAR: cmd_karo_recon_insight_pending_triage_20260906 completed declared remediation"
+  action_artifact: "cmd=cmd_karo_recon_insight_pending_triage_20260906;gate=cmd_complete_gate;result=CLEAR"
+  resolved_at: "2026-09-06T04:08:43.568579"
 - id: INS-20260903-073203224-cfca
   ts: "2026-09-03T07:32:03+09:00"
   insight: "semantic_map_generate新規ファイル候補: `android/.gitignore` は semantic index未登録。既存概念へのfile追加または新概念定義を検討せよ"
   priority: "low"
   source: "semantic_map_generate:new_file"
   fix_known: false
-  status: pending
+  status: "resolved"
+  resolved_reason: "GATE CLEAR: cmd_karo_recon_insight_pending_triage_20260906 completed declared remediation"
+  action_artifact: "cmd=cmd_karo_recon_insight_pending_triage_20260906;gate=cmd_complete_gate;result=CLEAR"
+  resolved_at: "2026-09-06T04:08:43.951069"
 - id: INS-20260903-073203475-17ae
   ts: "2026-09-03T07:32:03+09:00"
   insight: "semantic_map_generate新規ファイル候補: `android/README.md` は semantic index未登録。既存概念へのfile追加または新概念定義を検討せよ"
   priority: "low"
   source: "semantic_map_generate:new_file"
   fix_known: false
-  status: pending
+  status: "resolved"
+  resolved_reason: "GATE CLEAR: cmd_karo_recon_insight_pending_triage_20260906 completed declared remediation"
+  action_artifact: "cmd=cmd_karo_recon_insight_pending_triage_20260906;gate=cmd_complete_gate;result=CLEAR"
+  resolved_at: "2026-09-06T04:08:44.235975"
 - id: INS-20260903-073203696-8c7d
   ts: "2026-09-03T07:32:03+09:00"
   insight: "semantic_map_generate新規ファイル候補: `android/README_ja.md` は semantic index未登録。既存概念へのfile追加または新概念定義を検討せよ"
   priority: "low"
   source: "semantic_map_generate:new_file"
   fix_known: false
-  status: pending
+  status: "resolved"
+  resolved_reason: "GATE CLEAR: cmd_karo_recon_insight_pending_triage_20260906 completed declared remediation"
+  action_artifact: "cmd=cmd_karo_recon_insight_pending_triage_20260906;gate=cmd_complete_gate;result=CLEAR"
+  resolved_at: "2026-09-06T04:08:44.636494"
 - id: INS-20260903-073203900-2ab1
   ts: "2026-09-03T07:32:03+09:00"
   insight: "semantic_map_generate新規ファイル候補: `android/app/src/main/java/com/shogun/android/MainActivity.kt` は semantic index未登録。既存概念へのfile追加または新概念定義を検討せよ"
   priority: "low"
   source: "semantic_map_generate:new_file"
   fix_known: false
-  status: pending
+  status: "resolved"
+  resolved_reason: "GATE CLEAR: cmd_karo_recon_insight_pending_triage_20260906 completed declared remediation"
+  action_artifact: "cmd=cmd_karo_recon_insight_pending_triage_20260906;gate=cmd_complete_gate;result=CLEAR"
+  resolved_at: "2026-09-06T04:08:44.933220"
 - id: INS-20260903-073204102-6c48
   ts: "2026-09-03T07:32:04+09:00"
   insight: "semantic_map_generate新規ファイル候補: `android/app/src/main/java/com/shogun/android/data/GistFile.kt` は semantic index未登録。既存概念へのfile追加または新概念定義を検討せよ"
   priority: "low"
   source: "semantic_map_generate:new_file"
   fix_known: false
-  status: pending
+  status: "resolved"
+  resolved_reason: "GATE CLEAR: cmd_karo_recon_insight_pending_triage_20260906 completed declared remediation"
+  action_artifact: "cmd=cmd_karo_recon_insight_pending_triage_20260906;gate=cmd_complete_gate;result=CLEAR"
+  resolved_at: "2026-09-06T04:08:45.132499"
 - id: INS-20260903-073204349-0580
   ts: "2026-09-03T07:32:04+09:00"
   insight: "semantic_map_generate新規ファイル候補: `android/app/src/main/java/com/shogun/android/data/GistRepository.kt` は semantic index未登録。既存概念へのfile追加または新概念定義を検討せよ"
   priority: "low"
   source: "semantic_map_generate:new_file"
   fix_known: false
-  status: pending
+  status: "resolved"
+  resolved_reason: "GATE CLEAR: cmd_karo_recon_insight_pending_triage_20260906 completed declared remediation"
+  action_artifact: "cmd=cmd_karo_recon_insight_pending_triage_20260906;gate=cmd_complete_gate;result=CLEAR"
+  resolved_at: "2026-09-06T04:08:45.335667"
 - id: INS-20260903-073204572-6e0e
   ts: "2026-09-03T07:32:04+09:00"
   insight: "semantic_map_generate新規ファイル候補: `android/app/src/main/java/com/shogun/android/ui/ShogunScreen.kt` は semantic index未登録。既存概念へのfile追加または新概念定義を検討せよ"
   priority: "low"
   source: "semantic_map_generate:new_file"
   fix_known: false
-  status: pending
+  status: "resolved"
+  resolved_reason: "GATE CLEAR: cmd_karo_recon_insight_pending_triage_20260906 completed declared remediation"
+  action_artifact: "cmd=cmd_karo_recon_insight_pending_triage_20260906;gate=cmd_complete_gate;result=CLEAR"
+  resolved_at: "2026-09-06T04:08:45.542510"
 - id: INS-20260903-073204788-a656
   ts: "2026-09-03T07:32:04+09:00"
   insight: "semantic_map_generate新規ファイル候補: `android/app/src/main/java/com/shogun/android/util/VoiceDictionary.kt` は semantic index未登録。既存概念へのfile追加または新概念定義を検討せよ"
   priority: "low"
   source: "semantic_map_generate:new_file"
   fix_known: false
-  status: pending
+  status: "resolved"
+  resolved_reason: "GATE CLEAR: cmd_karo_recon_insight_pending_triage_20260906 completed declared remediation"
+  action_artifact: "cmd=cmd_karo_recon_insight_pending_triage_20260906;gate=cmd_complete_gate;result=CLEAR"
+  resolved_at: "2026-09-06T04:08:45.764296"
 - id: INS-20260903-073205019-b5e7
   ts: "2026-09-03T07:32:05+09:00"
   insight: "semantic_map_generate新規ファイル候補: `android/app/src/test/java/com/shogun/android/util/VoiceDictionaryTest.kt` は semantic index未登録。既存概念へのfile追加または新概念定義を検討せよ"
   priority: "low"
   source: "semantic_map_generate:new_file"
   fix_known: false
-  status: pending
+  status: "resolved"
+  resolved_reason: "GATE CLEAR: cmd_karo_recon_insight_pending_triage_20260906 completed declared remediation"
+  action_artifact: "cmd=cmd_karo_recon_insight_pending_triage_20260906;gate=cmd_complete_gate;result=CLEAR"
+  resolved_at: "2026-09-06T04:08:45.946671"
 - id: INS-20260903-073205269-5a26
   ts: "2026-09-03T07:32:05+09:00"
   insight: "semantic_map_generate新規ファイル候補: `archive/cmd-chronicle/2026-03-02_to_03-08.md` は semantic index未登録。既存概念へのfile追加または新概念定義を検討せよ"
   priority: "low"
   source: "semantic_map_generate:new_file"
   fix_known: false
-  status: pending
+  status: "resolved"
+  resolved_reason: "GATE CLEAR: cmd_karo_recon_insight_pending_triage_20260906 completed declared remediation"
+  action_artifact: "cmd=cmd_karo_recon_insight_pending_triage_20260906;gate=cmd_complete_gate;result=CLEAR"
+  resolved_at: "2026-09-06T04:08:46.171884"
 - id: INS-20260903-073205486-e9ea
   ts: "2026-09-03T07:32:05+09:00"
   insight: "semantic_map_generate新規ファイル候補: `archive/cmd-chronicle/2026-03.md` は semantic index未登録。既存概念へのfile追加または新概念定義を検討せよ"
   priority: "low"
   source: "semantic_map_generate:new_file"
   fix_known: false
-  status: pending
+  status: "resolved"
+  resolved_reason: "GATE CLEAR: cmd_karo_recon_insight_pending_triage_20260906 completed declared remediation"
+  action_artifact: "cmd=cmd_karo_recon_insight_pending_triage_20260906;gate=cmd_complete_gate;result=CLEAR"
+  resolved_at: "2026-09-06T04:08:46.398962"
 - id: INS-20260903-073205844-0ee7
   ts: "2026-09-03T07:32:05+09:00"
   insight: "semantic_map_generate新規ファイル候補: `archive/cmd-chronicle/2026-05.md` は semantic index未登録。既存概念へのfile追加または新概念定義を検討せよ"
   priority: "low"
   source: "semantic_map_generate:new_file"
   fix_known: false
-  status: pending
+  status: "resolved"
+  resolved_reason: "GATE CLEAR: cmd_karo_recon_insight_pending_triage_20260906 completed declared remediation"
+  action_artifact: "cmd=cmd_karo_recon_insight_pending_triage_20260906;gate=cmd_complete_gate;result=CLEAR"
+  resolved_at: "2026-09-06T04:08:46.784361"
 - id: INS-20260903-073206129-818b
   ts: "2026-09-03T07:32:06+09:00"
   insight: "semantic_map_generate新規ファイル候補: `archive/cmd-chronicle/2026-08.md` は semantic index未登録。既存概念へのfile追加または新概念定義を検討せよ"
   priority: "low"
   source: "semantic_map_generate:new_file"
   fix_known: false
-  status: pending
+  status: "resolved"
+  resolved_reason: "GATE CLEAR: cmd_karo_recon_insight_pending_triage_20260906 completed declared remediation"
+  action_artifact: "cmd=cmd_karo_recon_insight_pending_triage_20260906;gate=cmd_complete_gate;result=CLEAR"
+  resolved_at: "2026-09-06T04:08:48.250425"
 - id: INS-20260903-073206364-f454
   ts: "2026-09-03T07:32:06+09:00"
   insight: "semantic_map_generate新規ファイル候補: `archive/frozen/gunshi.md` は semantic index未登録。既存概念へのfile追加または新概念定義を検討せよ"
   priority: "low"
   source: "semantic_map_generate:new_file"
   fix_known: false
-  status: pending
+  status: "resolved"
+  resolved_reason: "GATE CLEAR: cmd_karo_recon_insight_pending_triage_20260906 completed declared remediation"
+  action_artifact: "cmd=cmd_karo_recon_insight_pending_triage_20260906;gate=cmd_complete_gate;result=CLEAR"
+  resolved_at: "2026-09-06T04:08:48.503890"
 - id: INS-20260903-073206658-1193
   ts: "2026-09-03T07:32:06+09:00"
   insight: "semantic_map_generate新規ファイル候補: `archive/frozen/gunshi_inbox.yaml` は semantic index未登録。既存概念へのfile追加または新概念定義を検討せよ"
   priority: "low"
   source: "semantic_map_generate:new_file"
   fix_known: false
-  status: pending
+  status: "resolved"
+  resolved_reason: "GATE CLEAR: cmd_karo_recon_insight_pending_triage_20260906 completed declared remediation"
+  action_artifact: "cmd=cmd_karo_recon_insight_pending_triage_20260906;gate=cmd_complete_gate;result=CLEAR"
+  resolved_at: "2026-09-06T04:08:48.754496"
 - id: INS-20260903-073206942-e5d6
   ts: "2026-09-03T07:32:06+09:00"
   insight: "semantic_map_generate新規ファイル候補: `archive/frozen/gunshi_to_karo.yaml` は semantic index未登録。既存概念へのfile追加または新概念定義を検討せよ"
   priority: "low"
   source: "semantic_map_generate:new_file"
   fix_known: false
-  status: pending
+  status: "resolved"
+  resolved_reason: "GATE CLEAR: cmd_karo_recon_insight_pending_triage_20260906 completed declared remediation"
+  action_artifact: "cmd=cmd_karo_recon_insight_pending_triage_20260906;gate=cmd_complete_gate;result=CLEAR"
+  resolved_at: "2026-09-06T04:08:48.983721"
 - id: INS-20260903-073207257-8d70
   ts: "2026-09-03T07:32:07+09:00"
   insight: "semantic_map_generate新規ファイル候補: `codd.bak.1776241363/.gitignore` は semantic index未登録。既存概念へのfile追加または新概念定義を検討せよ"
   priority: "low"
   source: "semantic_map_generate:new_file"
   fix_known: false
-  status: pending
+  status: "resolved"
+  resolved_reason: "GATE CLEAR: cmd_karo_recon_insight_pending_triage_20260906 completed declared remediation"
+  action_artifact: "cmd=cmd_karo_recon_insight_pending_triage_20260906;gate=cmd_complete_gate;result=CLEAR"
+  resolved_at: "2026-09-06T04:08:49.205736"
 - id: INS-20260903-073207537-f2e9
   ts: "2026-09-03T07:32:07+09:00"
   insight: "semantic_map_generate新規ファイル候補: `codd/.codd/dag.json` は semantic index未登録。既存概念へのfile追加または新概念定義を検討せよ"
   priority: "low"
   source: "semantic_map_generate:new_file"
   fix_known: false
-  status: pending
+  status: "resolved"
+  resolved_reason: "GATE CLEAR: cmd_karo_recon_insight_pending_triage_20260906 completed declared remediation"
+  action_artifact: "cmd=cmd_karo_recon_insight_pending_triage_20260906;gate=cmd_complete_gate;result=CLEAR"
+  resolved_at: "2026-09-06T04:08:49.478626"
 - id: INS-20260903-073207813-3f81
   ts: "2026-09-03T07:32:07+09:00"
   insight: "semantic_map_generate新規ファイル候補: `codd/brownfield/agent_status_brownfield.md` は semantic index未登録。既存概念へのfile追加または新概念定義を検討せよ"
   priority: "low"
   source: "semantic_map_generate:new_file"
   fix_known: false
-  status: pending
+  status: "resolved"
+  resolved_reason: "GATE CLEAR: cmd_karo_recon_insight_pending_triage_20260906 completed declared remediation"
+  action_artifact: "cmd=cmd_karo_recon_insight_pending_triage_20260906;gate=cmd_complete_gate;result=CLEAR"
+  resolved_at: "2026-09-06T04:08:49.661908"
 - id: INS-20260903-073938195-13b7
   ts: "2026-09-03T07:39:38+09:00"
   insight: "SKILL.md追従task[9abfd94ce2d8bec9]: gate_skill_script_refs.sh rc=2。以下のSKILL.md×変更script対を検分し、必要な追従更新と実測を行え: skills/codd-fix/SKILL.md <- scripts/cmd_complete_gate.sh; skills/cdp-browse/SKILL.md <- scripts/cdp/cdp_measure.sh; skills/cdp-browse/SKILL.md <- scripts/note_draft.sh; skills/cmd-complete/SKILL.md <- scripts/archive_completed.sh; skills/cmd-complete/SKILL.md <- scripts/gates/gate_context_freshness.sh; skills/cmd-complete/SKILL.md <- scripts/review_approval.sh; skills/cmd-complete/SKILL.md <- scripts/review_bundle.py; skills/codd-refactor/SKILL.md <- scripts/run_tests.sh; skills/dashboard-update/SKILL.md <- scripts/gates/gate_report_format.sh; skills/dream/SKILL.md <- scripts/gates/gate_lesson_health.sh; skills/dream/SKILL.md <- scripts/insight_write.sh; skills/dream/SKILL.md <- scripts/memory_db_query.sh; skills/gate-sync/SKILL.md <- scripts/bulletin_write.sh; skills/gate-sync/SKILL.md <- scripts/gates/gate_gunshi_accuracy.sh; skills/hot-script-design/SKILL.md <- scripts/ninja_scope_commit.sh; skills/idle-persist/SKILL.md <- scripts/bulletin_write.sh; skills/idle-persist/SKILL.md <- scripts/inbox_write.sh; skills/karo-direct/SKILL.md <- scripts/deploy_task.sh; skills/ninja-commit/SKILL.md <- scripts/ninja_scope_commit.sh; skills/ninja-commit/SKILL.md <- scripts/report_field_set.sh; skills/note-writer/SKILL.md <- scripts/note_draft.sh; skills/recon-dual/SKILL.md <- scripts/deploy_task.sh; skills/report-write/SKILL.md <- scripts/report_field_set.sh; skills/review-bundle/SKILL.md <- scripts/bulletin_write.sh; skills/review-bundle/SKILL.md <- scripts/inbox_write.sh; skills/review-bundle/SKILL.md <- scripts/review_bundle.py; skills/sengoku-writer/SKILL.md <- scripts/note_draft.sh; skills/shogun-cli-switch/SKILL.md <- scripts/agent_respawn.sh; skills/shogun-cli-switch/SKILL.md <- scripts/lib/cli_lookup.sh; skills/shogun-cli-switch/SKILL.md <- scripts/ninja_monitor.sh; skills/shogun-teire/SKILL.md <- scripts/gates/gate_lesson_health.sh; skills/three-layer-penetrate/SKILL.md <- scripts/memory_db_query.sh; skills/verdict-check/SKILL.md <- scripts/gates/gate_report_format.sh; skills/weekly-report-writer/SKILL.md <- scripts/note_draft.sh"
@@ -16189,7 +16459,10 @@ insights:
   priority: "medium"
   source: "manual"
   fix_known: false
-  status: pending
+  status: "resolved"
+  resolved_reason: "GATE CLEAR: cmd_karo_recon_insight_pending_triage_20260906 completed declared remediation"
+  action_artifact: "cmd=cmd_karo_recon_insight_pending_triage_20260906;gate=cmd_complete_gate;result=CLEAR"
+  resolved_at: "2026-09-06T04:08:49.849383"
 - id: INS-20260903-150430912-a80b
   ts: "2026-09-03T15:04:30+09:00"
   insight: "semantic_index_update新概念候補: discussion:全体の進捗を法億して は 既存aliasesに一致なし。概念定義とaliases追加を検討せよ"
@@ -16619,7 +16892,10 @@ insights:
   priority: "medium"
   source: "lord_conversation:lesson_candidate"
   fix_known: false
-  status: pending
+  status: "resolved"
+  resolved_reason: "GATE CLEAR: cmd_karo_recon_insight_pending_triage_20260906 completed declared remediation"
+  action_artifact: "cmd=cmd_karo_recon_insight_pending_triage_20260906;gate=cmd_complete_gate;result=CLEAR"
+  resolved_at: "2026-09-06T04:08:50.056972"
 - id: INS-20260903-183925570-dc1c
   ts: "2026-09-03T18:39:25+09:00"
   insight: "[[tsumari root causes 20260901 mdを覚醒して更新せよ]] semantic_stress_test candidate_aliases: NO_MATCH source=lord query=tsumari_root_causes_20260901.mdを覚醒して更新せよ。残るつまりを覚醒して解消しよう"
@@ -16662,7 +16938,10 @@ insights:
   priority: "medium"
   source: "manual"
   fix_known: false
-  status: pending
+  status: "resolved"
+  resolved_reason: "GATE CLEAR: cmd_karo_recon_insight_pending_triage_20260906 completed declared remediation"
+  action_artifact: "cmd=cmd_karo_recon_insight_pending_triage_20260906;gate=cmd_complete_gate;result=CLEAR"
+  resolved_at: "2026-09-06T04:08:50.231722"
 - id: INS-20260903-185440666-0e39
   ts: "2026-09-03T18:54:40+09:00"
   insight: "[[slot A angle 定義 draft seed 二つだけ見る]] semantic_stress_test candidate_aliases: NO_MATCH source=lord query=slot: A angle: 定義 draft_seed: 二つだけ見る。 url: title: デモ記事 usable_numbers: 期間2020年〜2024年、CAGR 10%、…"
@@ -16795,7 +17074,10 @@ insights:
   priority: "low"
   source: "semantic_map_generate:new_file"
   fix_known: false
-  status: pending
+  status: "resolved"
+  resolved_reason: "GATE CLEAR: cmd_karo_recon_insight_pending_triage_20260906 completed declared remediation"
+  action_artifact: "cmd=cmd_karo_recon_insight_pending_triage_20260906;gate=cmd_complete_gate;result=CLEAR"
+  resolved_at: "2026-09-06T04:08:50.401469"
 - id: INS-20260903-221601118-2098
   ts: "2026-09-03T22:16:01+09:00"
   insight: "[[tsumari root causes 20260901 mdwo]] semantic_stress_test candidate_aliases: NO_MATCH source=lord query=tsumari_root_causes_20260901.mdwo"
@@ -16847,7 +17129,10 @@ insights:
   priority: "medium"
   source: "skill_script_refs:6497bfa1b6428ade"
   fix_known: false
-  status: pending
+  status: "resolved"
+  resolved_reason: "GATE CLEAR: cmd_karo_recon_insight_pending_triage_20260906 completed declared remediation"
+  action_artifact: "cmd=cmd_karo_recon_insight_pending_triage_20260906;gate=cmd_complete_gate;result=CLEAR"
+  resolved_at: "2026-09-06T04:08:50.561658"
 - id: INS-20260904-013203973-39f1
   ts: "2026-09-04T01:32:03+09:00"
   insight: "semantic_index_update新概念候補: discussion:task notification task id bslzd3q3d task id tool use id toolu 0136BAYFfc3TyXcibu は 既存aliasesに一致なし。概念定義とaliases追加を検討せよ"
@@ -16863,14 +17148,20 @@ insights:
   priority: "medium"
   source: "manual"
   fix_known: false
-  status: pending
+  status: "resolved"
+  resolved_reason: "GATE CLEAR: cmd_karo_recon_insight_pending_triage_20260906 completed declared remediation"
+  action_artifact: "cmd=cmd_karo_recon_insight_pending_triage_20260906;gate=cmd_complete_gate;result=CLEAR"
+  resolved_at: "2026-09-06T04:08:50.729945"
 - id: INS-20260904-071834390-e3ce
   ts: "2026-09-04T07:18:34+09:00"
   insight: "gunshi_gate_reflux.sh と yaml_field_set.sh(--append含む)は PUBLISHER_SINGLE 中も root の logs/gunshi_review_log.yaml を直接書く root-dirty writer(T3-S-34 残)。2026-09-04 07:05-07:15 の gate-sync(reflux 35cmd)+観測追記で root review_log が dirty(59+/30-)になり root drain BLOCK の dirty path に加わった(既存 dirty: context/cmd-chronicle.md 等)。gate_result 更新も ledger update op へ寄せる必要。source gunshi 2026-09-04 07:20"
   priority: "medium"
   source: "manual"
   fix_known: false
-  status: pending
+  status: "resolved"
+  resolved_reason: "GATE CLEAR: cmd_karo_recon_insight_pending_triage_20260906 completed declared remediation"
+  action_artifact: "cmd=cmd_karo_recon_insight_pending_triage_20260906;gate=cmd_complete_gate;result=CLEAR"
+  resolved_at: "2026-09-06T04:08:50.914093"
 - id: INS-20260904-074027340-57f3
   ts: "2026-09-04T07:40:27+09:00"
   insight: "[[post source最大項auto push wait約28秒を同期critical pathから除去する]] NO_MATCH purpose pending alias: cmd_complete時にdeploy_task.logでNO_MATCHだったpurpose。類似概念TOP3: deepdive_principles(deepdive原理; alias=殿にcommit/push/killを命令するな; score=10.2) / semantic_dictionary_design(セマンティック辞書構想; alias=LS A24 post deploy check; score=10.0) / provisional_pre-push(仮: Pre Push; alias=provisional_pre-push; score=10.0)。既存概念aliasesへの自動昇格候補"
@@ -16895,7 +17186,10 @@ insights:
   priority: "medium"
   source: "manual"
   fix_known: false
-  status: pending
+  status: "resolved"
+  resolved_reason: "GATE CLEAR: cmd_karo_recon_insight_pending_triage_20260906 completed declared remediation"
+  action_artifact: "cmd=cmd_karo_recon_insight_pending_triage_20260906;gate=cmd_complete_gate;result=CLEAR"
+  resolved_at: "2026-09-06T04:08:51.066544"
 - id: INS-20260904-090312271-5747
   ts: "2026-09-04T09:03:12+09:00"
   insight: "semantic_index_update新概念候補: discussion:T237 T236 T226b T230 T226の進捗と完了までの見込みをひょけ意識で報告せよ は 既存aliasesに一致なし。概念定義とaliases追加を検討せよ"
@@ -16938,7 +17232,10 @@ insights:
   priority: "medium"
   source: "lord_conversation:lesson_candidate"
   fix_known: false
-  status: pending
+  status: "resolved"
+  resolved_reason: "GATE CLEAR: cmd_karo_recon_insight_pending_triage_20260906 completed declared remediation"
+  action_artifact: "cmd=cmd_karo_recon_insight_pending_triage_20260906;gate=cmd_complete_gate;result=CLEAR"
+  resolved_at: "2026-09-06T04:08:51.303229"
 - id: INS-20260904-090725648-beaf
   ts: "2026-09-04T09:07:25+09:00"
   insight: "[[slot instruction slot B angle 市場の追い風を差し引いた実力比較 draft seed 年率]] semantic_stress_test candidate_aliases: NO_MATCH source=lord query=slot instruction --- slot: B angle: 市場の追い風を差し引いた実力比較 draft_seed: 年率40%と言われたら、まずそのうちどれだけが市場全体の値上がりのおかげかを疑うべきだ。 url"
@@ -16981,7 +17278,10 @@ insights:
   priority: "high"
   source: "gate_loop_health"
   fix_known: false
-  status: pending
+  status: "resolved"
+  resolved_reason: "GATE CLEAR: cmd_karo_recon_insight_pending_triage_20260906 completed declared remediation"
+  action_artifact: "cmd=cmd_karo_recon_insight_pending_triage_20260906;gate=cmd_complete_gate;result=CLEAR"
+  resolved_at: "2026-09-06T04:08:51.487556"
 - id: INS-20260904-094835866-03c7
   ts: "2026-09-04T09:48:35+09:00"
   insight: "semantic_index_update新概念候補: discussion:task notification task id bsqslatw1 task id tool use id toolu 01FmenC6wHUxKN84fa は 既存aliasesに一致なし。概念定義とaliases追加を検討せよ"
@@ -16997,21 +17297,30 @@ insights:
   priority: "medium"
   source: "manual"
   fix_known: false
-  status: pending
+  status: "resolved"
+  resolved_reason: "GATE CLEAR: cmd_karo_recon_insight_pending_triage_20260906 completed declared remediation"
+  action_artifact: "cmd=cmd_karo_recon_insight_pending_triage_20260906;gate=cmd_complete_gate;result=CLEAR"
+  resolved_at: "2026-09-06T04:08:51.653328"
 - id: INS-20260904-101816768-4b9f
   ts: "2026-09-04T10:18:16+09:00"
   insight: "SKILL.md追従task[083a7c8db37e6e61]: gate_skill_script_refs.sh rc=2。以下のSKILL.md×変更script対を検分し、必要な追従更新と実測を行え: skills/cdp-browse/SKILL.md <- scripts/cdp/cdp_measure.sh; skills/cdp-browse/SKILL.md <- scripts/note_draft.sh; skills/cmd-complete/SKILL.md <- scripts/archive_completed.sh; skills/cmd-complete/SKILL.md <- scripts/gates/gate_context_freshness.sh; skills/cmd-complete/SKILL.md <- scripts/review_approval.sh; skills/cmd-complete/SKILL.md <- scripts/review_bundle.py; skills/codd-fix/SKILL.md <- scripts/cmd_complete_gate.sh; skills/codd-refactor/SKILL.md <- scripts/run_tests.sh; skills/dashboard-update/SKILL.md <- scripts/gates/gate_report_format.sh; skills/dream/SKILL.md <- scripts/gates/gate_lesson_health.sh; skills/dream/SKILL.md <- scripts/insight_write.sh; skills/dream/SKILL.md <- scripts/memory_db_query.sh; skills/gate-sync/SKILL.md <- scripts/bulletin_write.sh; skills/gate-sync/SKILL.md <- scripts/gates/gate_gunshi_accuracy.sh; skills/gate-sync/SKILL.md <- scripts/gunshi_gate_reflux.sh; skills/hot-script-design/SKILL.md <- scripts/ninja_scope_commit.sh; skills/idle-persist/SKILL.md <- scripts/bulletin_write.sh; skills/idle-persist/SKILL.md <- scripts/inbox_write.sh; skills/karo-direct/SKILL.md <- scripts/deploy_task.sh; skills/ninja-commit/SKILL.md <- scripts/ninja_scope_commit.sh; skills/ninja-commit/SKILL.md <- scripts/report_field_set.sh; skills/note-writer/SKILL.md <- scripts/note_draft.sh; skills/recon-dual/SKILL.md <- scripts/deploy_task.sh; skills/report-write/SKILL.md <- scripts/report_field_set.sh; skills/review-bundle/SKILL.md <- scripts/bulletin_write.sh; skills/review-bundle/SKILL.md <- scripts/inbox_write.sh; skills/review-bundle/SKILL.md <- scripts/review_bundle.py; skills/sengoku-writer/SKILL.md <- scripts/note_draft.sh; skills/shogun-cli-switch/SKILL.md <- scripts/agent_respawn.sh; skills/shogun-cli-switch/SKILL.md <- scripts/lib/cli_lookup.sh; skills/shogun-cli-switch/SKILL.md <- scripts/ninja_monitor.sh; skills/shogun-teire/SKILL.md <- scripts/gates/gate_lesson_health.sh; skills/three-layer-penetrate/SKILL.md <- scripts/memory_db_query.sh; skills/three-layer-penetrate/SKILL.md <- scripts/semantic_map_generate.sh; skills/verdict-check/SKILL.md <- scripts/gates/gate_report_format.sh; skills/weekly-report-writer/SKILL.md <- scripts/note_draft.sh"
   priority: "medium"
   source: "skill_script_refs:083a7c8db37e6e61"
   fix_known: false
-  status: pending
+  status: "resolved"
+  resolved_reason: "GATE CLEAR: cmd_karo_recon_insight_pending_triage_20260906 completed declared remediation"
+  action_artifact: "cmd=cmd_karo_recon_insight_pending_triage_20260906;gate=cmd_complete_gate;result=CLEAR"
+  resolved_at: "2026-09-06T04:08:51.806482"
 - id: INS-20260904-101829604-579a
   ts: "2026-09-04T10:18:29+09:00"
   insight: "LGTM→BLOCK: kotaro ci_fix_flaky_second。BLOCK reason=ninja_test_receipt_invalid。precheck SG-PRE1 PASSだがcmd_complete_gate独自検証で検出。軍師precheckにninja_test_receipt検証を追加するか、報告レビュー時にtest_receipt_pathの実在・内容照合を義務化する必要あり"
   priority: "medium"
   source: "manual"
   fix_known: false
-  status: pending
+  status: "resolved"
+  resolved_reason: "GATE CLEAR: cmd_karo_recon_insight_pending_triage_20260906 completed declared remediation"
+  action_artifact: "cmd=cmd_karo_recon_insight_pending_triage_20260906;gate=cmd_complete_gate;result=CLEAR"
+  resolved_at: "2026-09-06T04:08:51.966048"
 - id: INS-20260904-102154331-b810
   ts: "2026-09-04T10:21:54+09:00"
   insight: "semantic_index_update新概念候補: discussion:task notification task id bexixglq4 task id tool use id toolu 012M7BQbdRKqqWRVH5 は 既存aliasesに一致なし。概念定義とaliases追加を検討せよ"
@@ -17999,7 +18308,10 @@ insights:
   priority: "medium"
   source: "skill_script_refs:112b329d751e6708"
   fix_known: false
-  status: pending
+  status: "resolved"
+  resolved_reason: "GATE CLEAR: cmd_karo_recon_insight_pending_triage_20260906 completed declared remediation"
+  action_artifact: "cmd=cmd_karo_recon_insight_pending_triage_20260906;gate=cmd_complete_gate;result=CLEAR"
+  resolved_at: "2026-09-06T04:08:52.227667"
 - id: INS-20260905-031312793-289b
   ts: "2026-09-05T03:13:12+09:00"
   insight: "[[ではT240について詳しく教えて]] semantic_stress_test candidate_aliases: NO_MATCH source=lord query=ではT240について詳しく教えて"
@@ -18078,7 +18390,10 @@ insights:
   priority: "medium"
   source: "manual"
   fix_known: false
-  status: pending
+  status: "resolved"
+  resolved_reason: "GATE CLEAR: cmd_karo_recon_insight_pending_triage_20260906 completed declared remediation"
+  action_artifact: "cmd=cmd_karo_recon_insight_pending_triage_20260906;gate=cmd_complete_gate;result=CLEAR"
+  resolved_at: "2026-09-06T04:08:52.398498"
 - id: INS-20260905-065233813-00ef
   ts: "2026-09-05T06:52:33+09:00"
   insight: "semantic_index_update新概念候補: discussion:task notification task id bg0jn1xnq task id tool use id toolu 01AQfoR8frVXDTiHv7 は 既存aliasesに一致なし。概念定義とaliases追加を検討せよ"
@@ -18166,7 +18481,10 @@ insights:
   priority: "medium"
   source: "skill_script_refs:b2d58996361d2c76"
   fix_known: false
-  status: pending
+  status: "resolved"
+  resolved_reason: "GATE CLEAR: cmd_karo_recon_insight_pending_triage_20260906 completed declared remediation"
+  action_artifact: "cmd=cmd_karo_recon_insight_pending_triage_20260906;gate=cmd_complete_gate;result=CLEAR"
+  resolved_at: "2026-09-06T04:08:52.564815"
 - id: INS-20260905-125805644-e24e
   ts: "2026-09-05T12:58:05+09:00"
   insight: "semantic_index_update未登録cmd originノード: [[殿指示_LP_SEO外部意見_20260905]] は既存aliasesに一致なし。類似概念TOP3: creator_brainwashing_defense(創造主の洗脳防御; alias=殿指示; score=20.5) / strong_new_game_completion_contract(強くてニューゲーム完遂契約; alias=殿指示_強くてニューゲーム_20260829_1250; score=14.9) / loop_engineering(Loop Engineering論文; alias=殿指示 Loop Engineering論文知見の環境埋込み; score=14.2)。概念定義とaliases追加を検討せよ"
@@ -18308,7 +18626,10 @@ insights:
   priority: "medium"
   source: "manual"
   fix_known: false
-  status: pending
+  status: "resolved"
+  resolved_reason: "GATE CLEAR: cmd_karo_recon_insight_pending_triage_20260906 completed declared remediation"
+  action_artifact: "cmd=cmd_karo_recon_insight_pending_triage_20260906;gate=cmd_complete_gate;result=CLEAR"
+  resolved_at: "2026-09-06T04:08:52.722864"
 - id: INS-20260905-142427468-4bc4
   ts: "2026-09-05T14:24:27+09:00"
   insight: "semantic_index_update未登録cmd originノード: [[殿指示_CoreVsSimple_FreeInteractiveProof_20260905]] は既存aliasesに一致なし。類似概念TOP3: creator_brainwashing_defense(創造主の洗脳防御; alias=殿指示_artifact再構築_20260829_0115; score=17.0) / dm_fusion_app(DM-Fusionアプリ; alias=殿指示_admin設定+Xシェア_20260628; score=15.1) / loop_engineering(Loop Engineering論文; alias=殿指示 Loop Engineering論文知見の環境埋込み; score=14.6)。概念定義とaliases追加を検討せよ"
@@ -18540,7 +18861,10 @@ insights:
   priority: "medium"
   source: "manual"
   fix_known: false
-  status: pending
+  status: "resolved"
+  resolved_reason: "GATE CLEAR: cmd_karo_recon_insight_pending_triage_20260906 completed declared remediation"
+  action_artifact: "cmd=cmd_karo_recon_insight_pending_triage_20260906;gate=cmd_complete_gate;result=CLEAR"
+  resolved_at: "2026-09-06T04:08:52.869539"
 - id: INS-20260905-182307617-0cb9
   ts: "2026-09-05T18:23:07+09:00"
   insight: "[[karo throughput asis 20260905 mdの進捗と現時点での改良の成果を教えてくれ]] semantic_stress_test candidate_aliases: NO_MATCH source=lord query=karo_throughput_asis_20260905.mdの進捗と現時点での改良の成果を教えてくれ"
@@ -18808,14 +19132,20 @@ insights:
   priority: "medium"
   source: "manual"
   fix_known: false
-  status: pending
+  status: "resolved"
+  resolved_reason: "GATE CLEAR: cmd_karo_recon_insight_pending_triage_20260906 completed declared remediation"
+  action_artifact: "cmd=cmd_karo_recon_insight_pending_triage_20260906;gate=cmd_complete_gate;result=CLEAR"
+  resolved_at: "2026-09-06T04:08:53.050220"
 - id: INS-20260905-195731946-fdd9
   ts: "2026-09-05T19:57:31+09:00"
   insight: "LG072偽陽性: gunshi_log_append.sh L235のregex r'0件'が'10件'の部分マッチで発火。word boundary \\b0件 or (?<\\![0-9])0件 に修正すべき。D0適用可能(1行修正)。"
   priority: "medium"
   source: "manual"
   fix_known: false
-  status: pending
+  status: "resolved"
+  resolved_reason: "GATE CLEAR: cmd_karo_recon_insight_pending_triage_20260906 completed declared remediation"
+  action_artifact: "cmd=cmd_karo_recon_insight_pending_triage_20260906;gate=cmd_complete_gate;result=CLEAR"
+  resolved_at: "2026-09-06T04:08:53.205160"
 - id: INS-20260905-210813795-06b9
   ts: "2026-09-05T21:08:13+09:00"
   insight: "[[X Growth Engineは現状かなり完成しています]] semantic_stress_test candidate_aliases: NO_MATCH source=lord query=X Growth Engineは現状かなり完成しています。新機能追加や方針変更は不要です。 一点だけ整理してください。 設計書・SKILLに過去の - 平日2回 - 3 units/day - 現行2 units/day が履歴として混在し、LLMが現行運用を誤認する余地があり…"
@@ -18872,7 +19202,10 @@ insights:
   priority: "medium"
   source: "skill_script_refs:bb19ebccc33be729"
   fix_known: false
-  status: pending
+  status: "resolved"
+  resolved_reason: "GATE CLEAR: cmd_karo_recon_insight_pending_triage_20260906 completed declared remediation"
+  action_artifact: "cmd=cmd_karo_recon_insight_pending_triage_20260906;gate=cmd_complete_gate;result=CLEAR"
+  resolved_at: "2026-09-06T04:08:53.364543"
 - id: INS-20260905-214850784-0191
   ts: "2026-09-05T21:48:50+09:00"
   insight: "[[DM Signal 研究データ基盤 F1 holdings monthly 第1段 readonly long tabl]] semantic_stress_test candidate_aliases: NO_MATCH source=cmds query=DM-Signal 研究データ基盤 F1 holdings_monthly 第1段(readonly long table+検算3本)"
@@ -19049,7 +19382,10 @@ insights:
   priority: "medium"
   source: "lord_conversation:lesson_candidate"
   fix_known: false
-  status: pending
+  status: "resolved"
+  resolved_reason: "GATE CLEAR: cmd_karo_recon_insight_pending_triage_20260906 completed declared remediation"
+  action_artifact: "cmd=cmd_karo_recon_insight_pending_triage_20260906;gate=cmd_complete_gate;result=CLEAR"
+  resolved_at: "2026-09-06T04:08:53.541079"
 - id: INS-20260905-231307988-c65d
   ts: "2026-09-05T23:13:07+09:00"
   insight: "[[あれば便利なものを先に解決しないか？他に応用できるよな]] semantic_stress_test candidate_aliases: NO_MATCH source=lord query=あれば便利なものを先に解決しないか？他に応用できるよな。他にも今後便利になりそうなアイデアがあればまとめてgistに共有してくれ"
@@ -19216,7 +19552,10 @@ insights:
   priority: "medium"
   source: "manual"
   fix_known: false
-  status: pending
+  status: "resolved"
+  resolved_reason: "GATE CLEAR: cmd_karo_recon_insight_pending_triage_20260906 completed declared remediation"
+  action_artifact: "cmd=cmd_karo_recon_insight_pending_triage_20260906;gate=cmd_complete_gate;result=CLEAR"
+  resolved_at: "2026-09-06T04:08:53.707399"
 - id: INS-20260906-024326103-d225
   ts: "2026-09-06T02:43:26+09:00"
   insight: "[[CI shard1でtest publish direct commit bats case4が失敗するpublish ]] NO_MATCH purpose pending alias: cmd_complete時にdeploy_task.logでNO_MATCHだったpurpose。類似概念TOP3: skill_routing(スキルルーティング; alias=commit; score=12.8) / semantic_dictionary_design(セマンティック辞書構想; alias=bats; score=10.5) / infrastructure_ops(インフラ運用基盤; alias=CI RED残存修正 — test daemon maintenance lock bats の restart def; score=10.1)。既存概念aliasesへの自動昇格候補"
