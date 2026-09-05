@@ -18516,3 +18516,10 @@ insights:
   source: "semantic_index_update"
   fix_known: false
   status: pending
+- id: INS-20260905-181903091-2230
+  ts: "2026-09-05T18:19:03+09:00"
+  insight: "バグ#5: review_bundle.py/review_approval.shがfiles_modified空の報告(前提不成立honest fail)に対してapproval記録不能。kotaro inbox_priority_evidence_cycleで発現。review_two_phase_ready_gunshiのfingerprint一致チェックが未記録のためBLOCK。根因=generate時にfiles_modified空→commit検証スキップ→approval記録の前提条件不成立"
+  priority: "medium"
+  source: "manual"
+  fix_known: false
+  status: pending
