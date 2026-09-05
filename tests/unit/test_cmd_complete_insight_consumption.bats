@@ -7,7 +7,7 @@ setup() {
   cat > "$FIXTURE/queue/tasks/kotaro.yaml" <<'YAML'
 task:
   parent_cmd: cmd_test
-  origin_insight_ids: [INS-ROOT]
+  remediated_insight_ids: [INS-ROOT]
 YAML
   cat > "$FIXTURE/queue/reports/kotaro.yaml" <<'YAML'
 parent_cmd: cmd_test
@@ -47,7 +47,7 @@ run_resolver() {
   [[ "$output" == 100755\ * ]]
 }
 
-@test "declared origin is resolved with complete evidence while follow-up and unrelated stay pending" {
+@test "explicit remediation is resolved with complete evidence while follow-up and unrelated stay pending" {
   run run_resolver
   [ "$status" -eq 0 ]
   run python3 - "$FIXTURE/queue/insights.yaml" <<'PY'
@@ -91,7 +91,7 @@ PY
 }
 
 @test "structured action_cmd exact match resolves without substring matching" {
-  sed -i 's/origin_insight_ids: \[INS-ROOT\]/origin_insight_ids: []/' "$FIXTURE/queue/tasks/kotaro.yaml"
+  sed -i 's/remediated_insight_ids: \[INS-ROOT\]/remediated_insight_ids: []/' "$FIXTURE/queue/tasks/kotaro.yaml"
   sed -i 's/INS-ROOT/NO-DECLARATION/' "$FIXTURE/queue/reports/kotaro.yaml"
   sed -i '/id: INS-ROOT/a\  action_cmd: cmd_test' "$FIXTURE/queue/insights.yaml"
   run run_resolver
