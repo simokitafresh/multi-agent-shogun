@@ -1545,19 +1545,24 @@ pattern = re.compile(
     r"\.(?:sh|py|md|yaml|yml|json|toml|js|ts|tsx|jsx|css|html|sql|csv))"
     r"(?![A-Za-z0-9_.-])"
 )
-verbs = {"bash", "python3", "python", "sh", "bats", "node"}
+exec_prefix_pattern = re.compile(
+    r"(?:^|[\s;|&=])(?:bash|python3|python|sh|bats|node)\s*$",
+    re.IGNORECASE,
+)
 seen = set()
 for match in pattern.finditer(command):
-    prefix = command[max(0, match.start() - 60):match.start()].split()
-    if prefix and prefix[-1].lower() in verbs:
+    prefix = command[max(0, match.start() - 60):match.start()]
+    if exec_prefix_pattern.search(prefix):
         name = os.path.basename(match.group(1))
         if name not in seen:
             print(name)
             seen.add(name)
 PY
 )
-        _pre25_assigned_acs=$(python3 - "$REPORT_PATH" "${TASK_FILE:-}" <<'PY'
-import sys, yaml
+_pre25_assigned_acs=$(python3 - "$REPORT_PATH" "${TASK_FILE:-}" <<'PY'
+import re
+import sys
+import yaml
 def load(path):
     try:
         with open(path, encoding="utf-8") as fh:
@@ -1566,10 +1571,52 @@ def load(path):
         return {}
 report = load(sys.argv[1])
 task = load(sys.argv[2]).get("task", {}) if len(sys.argv) > 2 and sys.argv[2] else {}
-raw = report.get("assigned_acs") or report.get("parent_ac_coverage") or task.get("assigned_acs") or []
-if isinstance(raw, str):
-    raw = [raw]
-print(",".join(str(v) for v in raw if str(v).strip()))
+def tokens(value):
+    if isinstance(value, str):
+        return [v for v in re.split(r"[\s,|]+", value.strip().strip("[]")) if v]
+    if isinstance(value, (list, tuple, set)):
+        return [str(v).strip() for v in value if str(v).strip()]
+    return []
+
+def snapshot_ac_ids(snapshot):
+    if not isinstance(snapshot, dict):
+        return []
+    for key in ("assigned_acs", "ac_assigned", "parent_ac_coverage"):
+        values = tokens(snapshot.get(key))
+        if values:
+            return values
+    criteria = snapshot.get("acceptance_criteria")
+    if isinstance(criteria, dict):
+        return [str(key).strip() for key in criteria if str(key).strip()]
+    if isinstance(criteria, list):
+        values = []
+        for index, item in enumerate(criteria, 1):
+            if isinstance(item, dict):
+                ac_id = item.get("id") or item.get("ac") or f"AC{index}"
+                values.append(str(ac_id).split(":", 1)[0].strip())
+            else:
+                values.append(f"AC{index}")
+        return [value for value in values if value]
+    return []
+
+raw = []
+for source in (report, report.get("task_contract_snapshot")):
+    if not isinstance(source, dict):
+        continue
+    for key in ("assigned_acs", "ac_assigned", "parent_ac_coverage"):
+        raw = tokens(source.get(key))
+        if raw:
+            break
+    if raw:
+        break
+if not raw:
+    raw = snapshot_ac_ids(report.get("task_contract_snapshot"))
+if not raw and isinstance(task, dict) and task.get("parent_cmd") == report.get("parent_cmd"):
+    for key in ("assigned_acs", "ac_assigned"):
+        raw = tokens(task.get(key))
+        if raw:
+            break
+print(",".join(raw))
 PY
 )
         _pre25_result=$(bash "$REPO_ROOT/scripts/lib/extract_command_files.sh" \

@@ -4,7 +4,7 @@
 # test_necessity: SG-PRE3Xは共有cross-repo契約で所有repoを解決し、有効な外部repo成果の偽BLOCKを防ぎつつ不正repo/commit/path/primary矛盾をfail-closedに保つ。
 # test_necessity: precheckがCLEARと予測した報告はcmd_complete_gateのparent_cmd_contract/ac_version_stale/lesson_feedback_set_mismatchのいずれでもBLOCKされない（判定関数が同一）。
 # test_necessity: SG-PRE20はshared lesson-feedback-setのOK接頭辞付き成功結果をPASSとして扱い、MISMATCHのERROR/WARN契約を維持する。
-# test_necessity: SG-PRE25はbash/python等の実行prefixを成果物から除外しつつ、同一command内の真正な未計画pathを検出する。
+# test_necessity: SG-PRE25は担当AC外の将来成果物を除外し、bash/python等の実行prefixを成果物から除外しつつ、同一command内の真正な未計画pathを検出する。
 
 setup() {
   REPO_ROOT="$(cd "$BATS_TEST_DIRNAME/../.." && pwd)"
@@ -174,6 +174,86 @@ YAML
   [ "$status" -ne 0 ]
   [[ "$output" == *"ERROR: command欄ファイルがfiles_modifiedに不在(readonly_ref除外後): unplanned.sh"* ]]
   [[ "$output" != *"ERROR: command欄ファイルがfiles_modifiedに不在(readonly_ref除外後): ninja_scope_commit.sh"* ]]
+
+  cat > "$spec" <<'YAML'
+commands:
+  cmd_fixture:
+    target_path: [scripts]
+    command: 選択実行コマンド=bash scripts/run_tests.sh file tests/unit/target.bats
+YAML
+  run env GUNSHI_PRECHECK_ONLY=SG-PRE25 \
+    GUNSHI_PRECHECK_CMD_SPEC="$spec" \
+    GUNSHI_PRECHECK_TASKS_DIR="$TMP_DIR/tasks" \
+    bash "$REPO_ROOT/scripts/gates/gate_gunshi_report_precheck.sh" "$TMP_DIR/report.yaml"
+  [ "$status" -ne 0 ]
+  [[ "$output" != *"ERROR: command欄ファイルがfiles_modifiedに不在(readonly_ref除外後): run_tests.sh"* ]]
+}
+
+# test_necessity: SG-PRE25 must project the report snapshot's assigned AC set
+# before comparing command artifacts, so a completed AC1 report cannot be
+# blocked by AC2/AC3-only provenance or root-cause outputs.
+@test "SG-PRE25 projects snapshot AC scope before artifact comparison" {
+  local spec="$TMP_DIR/cmd-scope-spec.yaml"
+  cat > "$spec" <<'YAML'
+commands:
+  cmd_fixture:
+    target_path: [analysis_runs]
+    acceptance_criteria:
+      AC1:
+        description: "verify_parity.mdを読み、a1_data_recon.mdを作成する"
+      AC2:
+        description: "provenance.yamlを作成する"
+      AC3:
+        description: "root_cause_summary.mdを作成する"
+    command: |
+      AC1: verify_parity.mdを読み、a1_data_recon.mdを作成する
+      AC2: provenance.yamlを作成する
+      AC3: root_cause_summary.mdを作成する
+YAML
+  cat > "$TMP_DIR/tasks/kagemaru.yaml" <<'YAML'
+task:
+  parent_cmd: cmd_fixture
+  ac_assigned: AC1
+YAML
+  cat > "$TMP_DIR/report.yaml" <<'YAML'
+worker_id: kagemaru
+parent_cmd: cmd_fixture
+files_modified:
+  - {path: analysis_runs/a1_data_recon.md, change: artifact}
+YAML
+
+  run env GUNSHI_PRECHECK_ONLY=SG-PRE25 \
+    GUNSHI_PRECHECK_CMD_SPEC="$spec" \
+    GUNSHI_PRECHECK_TASKS_DIR="$TMP_DIR/tasks" \
+    bash "$REPO_ROOT/scripts/gates/gate_gunshi_report_precheck.sh" "$TMP_DIR/report.yaml"
+  [ "$status" -ne 0 ]
+  [[ "$output" == *"PASS: command欄ファイルとfiles_modified名前照合OK"* ]]
+  [[ "$output" != *"provenance.yaml"* ]]
+  [[ "$output" != *"root_cause_summary.md"* ]]
+
+  cat > "$TMP_DIR/tasks/kagemaru.yaml" <<'YAML'
+task:
+  parent_cmd: cmd_fixture
+YAML
+  cat > "$TMP_DIR/report.yaml" <<'YAML'
+worker_id: kagemaru
+parent_cmd: cmd_fixture
+task_contract_snapshot:
+  acceptance_criteria:
+    - id: AC1
+      description: "verify_parity.mdを読み、a1_data_recon.mdを作成する"
+files_modified:
+  - {path: analysis_runs/a1_data_recon.md, change: artifact}
+YAML
+
+  run env GUNSHI_PRECHECK_ONLY=SG-PRE25 \
+    GUNSHI_PRECHECK_CMD_SPEC="$spec" \
+    GUNSHI_PRECHECK_TASKS_DIR="$TMP_DIR/tasks" \
+    bash "$REPO_ROOT/scripts/gates/gate_gunshi_report_precheck.sh" "$TMP_DIR/report.yaml"
+  [ "$status" -ne 0 ]
+  [[ "$output" == *"PASS: command欄ファイルとfiles_modified名前照合OK"* ]]
+  [[ "$output" != *"provenance.yaml"* ]]
+  [[ "$output" != *"root_cause_summary.md"* ]]
 }
 
 make_source_context_fixture() {
