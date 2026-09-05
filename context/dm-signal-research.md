@@ -1,5 +1,6 @@
 # DM-signal 研究コンテキスト
 <!-- last_updated: 2026-09-05 context_freshness reviewed source boundary -->
+<!-- source_commit:8af98631921c reason:context_freshness reviewed source boundary evidence:context_freshness_check context=context/dm-signal-research.md commit=8af98631921c -->
 <!-- source_commit:dca83523532d reason:context_freshness reviewed source boundary evidence:context_freshness_check context=context/dm-signal-research.md commit=dca83523532d -->
 <!-- source_commit:9734518397066f644bd7c7180bccc276d2bf5947 reason:2026-08-31 06:45 将軍doc lane GA-535: 境界を origin/main tip へ是正(8-hex 旧hotfix markerだと分岐外祖先が非除外で1390/789/1588件の偽ALERT) evidence:git -C /mnt/c/Python_app/DM-signal rev-list --count <tip>..origin/main=0 -->
 <!-- source_commit:3869db45 reason:2026-08-31 将軍doc lane GA-535: 3869db45/71d3b78d/67ffac99=cleanup manifest/recon記録で結論変更なし evidence:git log --oneline -1 3869db45=cleanup manifest -->
@@ -100,3 +101,6 @@ DM2/DM6のN=0..7×E=0..7全128セルをThird common cohortで再集計。全セ�
 
 ## cmd_4475 LP SEO 監査+最小修正 (2026-09-05)
 - 殿 02:15『外部 SEO 意見は全部取り入れず先に本番確認』→将軍が本番 curl(Critical 0/High 2)→cmd_4475(才蔵): `lp/` の JA ページ `<html lang="ja">` 化+JSON-LD url を `https://dm-signal.com/` へ修正、重複 locale route 削除。DM-signal commit dca83523/6f394781(origin/main 07:35 publish)、本番 `/ja/` で lang・JSON-LD 一致を将軍が確認(11:2x)。監査 5 分類と設計書 v6 §0.1 突合表は `docs/research/dm-signal-lp-seo-plan_20260830.md`(gist 5edb5f6d)。origin: `[[殿指示_LP外部SEO意見_20260905_0215]] -> [[cmd_4475_LP_SEO監査]] -> [[dm-signal-lp-seo-plan_v6]]`
+
+## cmd_4477 identity 実装の証跡(2026-09-05)
+- 隔離 PostgreSQL(localpg 専用 schema)で migration upgrade→downgrade→upgrade 往復、計測 SQL 2 本、baseline 突合(変更前 origin/main 同環境 pytest 7 FAIL と完全一致、追加 contract test +3 PASS)。commit c8b34714(実装)/30429ac0(隔離証跡)/8af98631(runbook)。→ `docs/research/cmd_4477_identity_metrics_sql_20260905.md`

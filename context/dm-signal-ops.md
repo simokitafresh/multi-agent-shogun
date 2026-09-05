@@ -1,5 +1,6 @@
 # DM-signal 運用コンテキスト
-<!-- last_updated: 2026-09-04 context_freshness reviewed source boundary -->
+<!-- last_updated: 2026-09-05 context_freshness reviewed source boundary -->
+<!-- source_commit:c8b347140eee reason:context_freshness reviewed source boundary evidence:context_freshness_check context=context/dm-signal-ops.md commit=c8b347140eee -->
 <!-- source_commit:9ea93b896243 reason:context_freshness reviewed source boundary evidence:context_freshness_check context=context/dm-signal-ops.md commit=9ea93b896243 -->
 <!-- source_commit:172b6d35e7f2 reason:2026-09-01 将軍doc lane: DOC_LANE_ALERT 4件(偽陽性=marker d87339a4 not ancestor of local clone)。実欠落(showcase API/showcase_events/LP cmd_4431-4437/login minimal/noindex)を追記し境界をorigin/main tipへ evidence:git -C /mnt/c/Python_app/DM-signal log d87339a4..origin/main = 88 commits; diff --stat backend/app = 4 files +621; grep反映 showcase_events/api\/public/cmd_4433 各>=1 -->
 <!-- source_commit:9734518397066f644bd7c7180bccc276d2bf5947 reason:2026-08-31 06:45 将軍doc lane GA-535: 境界を origin/main tip へ是正(8-hex 旧hotfix markerだと分岐外祖先が非除外で1390/789/1588件の偽ALERT) evidence:git -C /mnt/c/Python_app/DM-signal rev-list --count <tip>..origin/main=0 -->
@@ -1230,3 +1231,6 @@ GA-144原因: `dm-signal-ops.md`のlast_updatedは2026-06-26で、2026-06-26以�
 - Render backend dep-dad9qflckfvc7397qusg live 10:30:19Z、frontend dep-dad9qflckfvc7397qvbg live、LP dep-dad9qflckfvc7397qup0 live 10:39:17Z(順序=backend→frontend→LP、§101 契約どおり)。
 - 本番集計: 管理 API `GET /api/admin/showcase/campaigns?since=2026-09-04` と DB 直接 SELECT(readonly、/db-check 経由)が一致=lp_view 1。
 - 境界=DM-signal origin/main 9ea93b89(ops)。
+
+## §103 identity 列の本番適用(cmd_4477、2026-09-05 15:2x)
+- 手順=Render backend の ADMIN one-off job で `python migrations/add_identity_columns.py`(冪等)。前後証跡=information_schema.columns(前 0/3→後 3/3)。restore=同 script の downgrade(新 3 列のみ drop)。deploy=backend/frontend とも Live。計測 SQL(LP→Auth 完了率 prefix 別/Auth→Free ログイン率)は `docs/research/cmd_4477_identity_metrics_sql_20260905.md`。段 4(Simple LP)は本番 SQL が 1 週間値を返してから。

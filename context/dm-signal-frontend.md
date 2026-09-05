@@ -1,5 +1,6 @@
 # DM-signal フロントエンド コンテキスト（索引）
-<!-- last_updated: 2026-09-04 context_freshness reviewed source boundary -->
+<!-- last_updated: 2026-09-05 context_freshness reviewed source boundary -->
+<!-- source_commit:c8b347140eee reason:context_freshness reviewed source boundary evidence:context_freshness_check context=context/dm-signal-frontend.md commit=c8b347140eee -->
 <!-- source_commit:9ea93b896243 reason:context_freshness reviewed source boundary evidence:context_freshness_check context=context/dm-signal-frontend.md commit=9ea93b896243 -->
 <!-- source_commit:172b6d35e7f2 reason:2026-09-01 将軍doc lane: DOC_LANE_ALERT 4件(偽陽性=marker d87339a4 not ancestor of local clone)。実欠落(showcase API/showcase_events/LP cmd_4431-4437/login minimal/noindex)を追記し境界をorigin/main tipへ evidence:git -C /mnt/c/Python_app/DM-signal log d87339a4..origin/main = 88 commits; diff --stat backend/app = 4 files +621; grep反映 showcase_events/api\/public/cmd_4433 各>=1 -->
 <!-- source_commit:9734518397066f644bd7c7180bccc276d2bf5947 reason:2026-08-31 06:45 将軍doc lane GA-535: 境界を origin/main tip へ是正(8-hex 旧hotfix markerだと分岐外祖先が非除外で1390/789/1588件の偽ALERT) evidence:git -C /mnt/c/Python_app/DM-signal rev-list --count <tip>..origin/main=0 -->
@@ -486,3 +487,6 @@ L122(キャッシュ無効化), L121(API実コード確認) → `context/dm-sign
 結論: 本番Googlebot取得と`lp/`現物の突合でCritical=0、HighはJA全ページの`<html lang="en">`固定とOrganization/WebSite URLの言語依存の2件のみ。修正対象はこの2件に限定し、本文・OG画像・robots・sitemap・canonical・hreflangは維持する。
 参照: `docs/research/cmd_4475_lp_seo_audit_20260905.md`、`lp/app/layout.tsx`、`lp/components/structured-data.tsx`、本番取得 2026-09-05 07:22 JST。
 将来LPの抽象化・Analytics全量化・slashなしURL redirectは今回行わず、既存のstatic exportと単一LP母艦を維持する。
+
+## identity 保持(cmd_4477、2026-09-05)
+- `frontend/lib/user-id.ts`(visitor-id.ts と同型、key `dm_user_id`)、`/auth/callback` 成功時に session.user.id を保存し step `auth_completed`、`showcase-attribution.ts` の campaign_id を localStorage 優先(sessionStorage 後方互換)、pageview/showcase payload に user_id・campaign_id を値がある時だけ同送。cookie/Tier/verify-viewer は不変。source=campaign_id prefix(lp_core_/lp_simple_/x_)。→ `docs/research/dm-signal-core-simple-free-proof-asis-tobe_20260905.md` §M-1

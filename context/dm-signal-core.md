@@ -1,5 +1,6 @@
 # DM-signal コアコンテキスト
-<!-- last_updated: 2026-09-04 context_freshness reviewed source boundary -->
+<!-- last_updated: 2026-09-05 context_freshness reviewed source boundary -->
+<!-- source_commit:c8b347140eee reason:context_freshness reviewed source boundary evidence:context_freshness_check context=context/dm-signal-core.md commit=c8b347140eee -->
 <!-- source_commit:5b05427010fd reason:context_freshness reviewed source boundary evidence:context_freshness_check context=context/dm-signal-core.md commit=5b05427010fd -->
 <!-- source_commit:59b7b6794 reason:2026-09-03 将軍doc lane: cmd_4459 showcase series holding(§97) evidence:git -C /mnt/c/Python_app/DM-signal show origin/main:backend/app/api/public_showcase.py | grep -c _hero_holding_by_month = 2; grep -c §97 context/dm-signal-core.md = 1 -->
 <!-- source_commit:172b6d35e7f2 reason:2026-09-01 将軍doc lane: DOC_LANE_ALERT 4件(偽陽性=marker d87339a4 not ancestor of local clone)。実欠落(showcase API/showcase_events/LP cmd_4431-4437/login minimal/noindex)を追記し境界をorigin/main tipへ evidence:git -C /mnt/c/Python_app/DM-signal log d87339a4..origin/main = 88 commits; diff --stat backend/app = 4 files +621; grep反映 showcase_events/api\/public/cmd_4433 各>=1 -->
@@ -586,3 +587,6 @@ null/NaN → INSUFFICIENT_DATA(灰)。Label→色変換は `labelToColorDot()` �
 - 1 件の定義: showcase_events の 1 行=1 ブラウザの 1 event(lp_view/lp_cta_click/login_view/signup_google/ok)。集計は `SELECT campaign_id,step,lang,ua_class,occurred_at FROM showcase_events WHERE campaign_id='<id>'`。
 - 本番証跡 09-04 19:45: campaign_id=x_20260904_G_4474_browser lp_view=1(ja/mobile)、他 step 0。
 - 境界=DM-signal origin/main 5b054270(core)。X 側の campaign_id 規則=`skills/x-post-pipeline/growth_schema.yaml` campaign_id。
+
+## §99 identity 3 層(cmd_4477、2026-09-05)
+- 殿裁定 13:19(v0.4 §M 収束)→疾風 c8b34714/30429ac0/8af98631: `page_views.user_id`/`page_views.campaign_id`、`showcase_events.user_id`(全て nullable、String(36)/String(64))、`PageViewPayload`/`ShowcaseEventPayload` に None 許容 field、冪等 migration `backend/migrations/add_identity_columns.py`(upgrade/downgrade)。本番適用=ADMIN one-off job 15:2x、3/3 列、pageview 204 受理。identity は visitor_id ⊂ tier ⊂ user_id の任意結合、結合はクエリ時。正本 `docs/research/dm-signal-core-simple-free-proof-asis-tobe_20260905.md` §M。origin: `[[殿裁定_LP_identity_最小収束_20260905_1319]] -> [[cmd_4477_identity_最小実装]] -> [[page_views_user_id]]`
