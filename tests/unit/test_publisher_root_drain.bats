@@ -94,3 +94,37 @@ teardown() {
     [ "$(grep -c 'publisher: root drain push=' "$LOG" || true)" -eq 0 ]
     [ ! -f "$INBOX_LOG" ] || [ "$(wc -l < "$INBOX_LOG" | tr -d ' ')" -eq 0 ]
 }
+
+# test_necessity: runtime ledger paths (lessons, cmd-chronicle, karo_workarounds,
+# x_live_oos, insights, bulletin, semantic index, review_log) are appended in the
+# shared root by other lanes and must not fail-close the drain; a dirty source
+# file still must. The ignored set is observable in the log for diagnosis.
+@test "runtime ledger dirty paths are ignored by drain while source dirty still blocks" {
+    printf 'committed\n' > "$PUBROOT/payload.txt"
+    mkdir -p "$PUBROOT/projects/infra" "$PUBROOT/context" "$PUBROOT/queue/x_live_oos"
+    printf 'l: 1\n' > "$PUBROOT/projects/infra/lessons.yaml"
+    printf 'k: 1\n' > "$PUBROOT/projects/infra/lessons_karo.yaml"
+    printf '# c\n' > "$PUBROOT/context/cmd-chronicle.md"
+    printf '{}\n' > "$PUBROOT/queue/x_live_oos/account_daily.jsonl"
+    git -C "$PUBROOT" add -A
+    git -C "$PUBROOT" commit -q -m committed
+    ahead="$(git -C "$PUBROOT" rev-parse HEAD)"
+    # only ledger/runtime paths dirty -> drain proceeds and pushes
+    printf 'l: 2\n' >> "$PUBROOT/projects/infra/lessons.yaml"
+    printf 'k: 2\n' >> "$PUBROOT/projects/infra/lessons_karo.yaml"
+    printf '# d\n' >> "$PUBROOT/context/cmd-chronicle.md"
+    printf '{"a":1}\n' >> "$PUBROOT/queue/x_live_oos/account_daily.jsonl"
+    run bash -c 'source "$1/scripts/lib/publisher_root_drain.sh"; publisher_root_drain "$2"' _ "$ROOT" "$PUBROOT"
+    [ "$status" -eq 0 ]
+    [ "$(git --git-dir="$REMOTE" rev-parse refs/heads/main)" = "$ahead" ]
+    grep -q "publisher: root drain ignored_dirty=context/cmd-chronicle.md,projects/infra/lessons.yaml,projects/infra/lessons_karo.yaml,queue/x_live_oos/account_daily.jsonl" "$LOG"
+    ! grep -q "publisher: root drain BLOCK tracked_dirty_paths=" "$LOG"
+    # a dirty source file alongside ledgers still fails closed, and both sets are named
+    printf 'x\n' > "$PUBROOT/payload2.txt"
+    git -C "$PUBROOT" add payload2.txt
+    git -C "$PUBROOT" commit -q -m second
+    printf 'dirty\n' >> "$PUBROOT/payload2.txt"
+    run bash -c 'source "$1/scripts/lib/publisher_root_drain.sh"; publisher_root_drain "$2"' _ "$ROOT" "$PUBROOT"
+    [ "$status" -eq 32 ]
+    grep -q "publisher: root drain BLOCK tracked_dirty_paths=payload2.txt ignored_dirty=context/cmd-chronicle.md" "$LOG"
+}
