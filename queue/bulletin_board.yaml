@@ -3827,8 +3827,8 @@ entries:
   actioned_by: ''
   notify_targets:
     - 'shogun'
-  confirmed_by: []
-  status: 'open'
+  confirmed_by: ["shogun"]
+  status: "closed"
 - id: 'blt_20260905_150411_f9c378'
   content: |-
     cmd_4478/karo_throughput_asis レビュー(殿指示14:57、忖度なし)
