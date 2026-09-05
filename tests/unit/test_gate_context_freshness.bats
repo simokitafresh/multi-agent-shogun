@@ -133,6 +133,53 @@ SH
   [ "$(grep -c '^  purpose: ' <<< "$output")" -eq 4 ]
 }
 
+# test_necessity: a source commit shared by split contexts must retain the
+# checker-provided horizontal-expansion GROUP evidence at the gate boundary;
+# otherwise the two context alerts become independent doc-lane work and the
+# coordinated completion path cannot prove that both candidates were handled.
+@test "shared source category is preserved and both stale candidates clear" {
+  local check_script="$FIXTURE_ROOT/scripts/check.sh"
+  cat > "$check_script" <<'SH'
+#!/usr/bin/env bash
+cat <<'EOF'
+ALERT: context/dm-signal-core.md source commits 1件 since last_updated=2026-09-05 repo=/fixture root_fallback=no owner=dm-signal-core update_trigger=backend/app latest: abc1234 shared source
+ALERT: context/dm-signal-ops.md source commits 1件 since last_updated=2026-09-05 repo=/fixture root_fallback=no owner=dm-signal-ops update_trigger=backend/tests latest: abc1234 shared source
+GROUP: context/dm-signal-core.md,context/dm-signal-ops.md share source commit abc1234 shared source
+EOF
+SH
+  chmod +x "$check_script"
+  printf '<!-- last_updated: 2026-09-05 cmd_fixture -->\n' > "$FIXTURE_ROOT/context/dm-signal-core.md"
+  printf '<!-- last_updated: 2026-09-05 cmd_fixture -->\n' > "$FIXTURE_ROOT/context/dm-signal-ops.md"
+
+  run env \
+    CONTEXT_FRESHNESS_ROOT="$FIXTURE_ROOT" \
+    CONTEXT_FRESHNESS_CHECK_SCRIPT="$check_script" \
+    CONTEXT_FRESHNESS_NTFY_SCRIPT=/bin/true \
+    CONTEXT_FRESHNESS_ALERT_STATE_DIR="$BATS_TEST_TMPDIR/state-shared-category" \
+    CONTEXT_FRESHNESS_GATE_DISABLE_CACHE=1 \
+    CONTEXT_FRESHNESS_TODAY=2026-09-06 \
+    bash "$ROOT/scripts/gates/gate_context_freshness.sh"
+
+  [ "$status" -eq 1 ]
+  [ "$(grep -c '^ALERT: ' <<< "$output")" -eq 2 ]
+  [[ "$output" == *"GROUP: context/dm-signal-core.md,context/dm-signal-ops.md share source commit abc1234"* ]]
+
+  printf '#!/usr/bin/env bash\nexit 0\n' > "$check_script"
+  chmod +x "$check_script"
+  run env \
+    CONTEXT_FRESHNESS_ROOT="$FIXTURE_ROOT" \
+    CONTEXT_FRESHNESS_CHECK_SCRIPT="$check_script" \
+    CONTEXT_FRESHNESS_NTFY_SCRIPT=/bin/true \
+    CONTEXT_FRESHNESS_ALERT_STATE_DIR="$BATS_TEST_TMPDIR/state-shared-category" \
+    CONTEXT_FRESHNESS_GATE_DISABLE_CACHE=1 \
+    CONTEXT_FRESHNESS_TODAY=2026-09-06 \
+    bash "$ROOT/scripts/gates/gate_context_freshness.sh"
+
+  [ "$status" -eq 0 ]
+  [ "$(grep -c '^ALERT: ' <<< "$output" || true)" -eq 0 ]
+  [[ "$output" != *"GROUP: context/dm-signal-core.md,context/dm-signal-ops.md"* ]]
+}
+
 @test "normal checker output produces zero false-positive alerts" {
   printf '#!/usr/bin/env bash\nexit 0\n' > "$FIXTURE_ROOT/scripts/check.sh"
 

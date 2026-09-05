@@ -1071,6 +1071,12 @@ warnings_output() {
 
 declare -A seen_paths=()
 declare -A source_alerts=()
+# GA-589: context_freshness_check.sh already emits a GROUP line when one
+# source commit is relevant to multiple split contexts.  Preserve that
+# horizontal-expansion evidence at the gate boundary; dropping it here made
+# the completion/doc lane see two independent alerts and lose the shared
+# source category needed for one coordinated review.
+GROUP_WARNINGS=()
 # GA-238: git log呼出しがtimeout/returncode異常でsource commit数を確定できなかった
 # ("source commit check failed", context_freshness_check.shのbuild_source_check_warning)
 # rel_pathを記録する。source_alertsが空のままdays_ago<=7だと従来はOK扱いへ落ちて
@@ -1083,6 +1089,10 @@ while IFS= read -r warning_line; do
     rel_path=""
     if [[ "$warning_line" =~ ^(WARN|ALERT):[[:space:]]([^[:space:]]+) ]]; then
         rel_path="${BASH_REMATCH[2]}"
+    fi
+    if [[ "$warning_line" == GROUP:* ]]; then
+        GROUP_WARNINGS+=("$warning_line")
+        continue
     fi
     [[ -n "$rel_path" ]] || continue
     if [[ "$warning_line" == ALERT:*"source commits"* ]]; then
@@ -1100,6 +1110,9 @@ done < <(
 )
 
 if [[ "${#target_rel_paths[@]}" -eq 0 ]]; then
+    if [[ "${#GROUP_WARNINGS[@]}" -gt 0 ]]; then
+        printf '%s\n' "${GROUP_WARNINGS[@]}" | sort -u
+    fi
     echo "--- 総合判定: OK ---"
     exit 0
 fi
@@ -1109,6 +1122,10 @@ fi
 # a stable notification order.
 if [[ "${#target_rel_paths[@]}" -gt 1 ]]; then
     mapfile -t target_rel_paths < <(printf '%s\n' "${target_rel_paths[@]}" | sort -u)
+fi
+
+if [[ "${#GROUP_WARNINGS[@]}" -gt 0 ]]; then
+    printf '%s\n' "${GROUP_WARNINGS[@]}" | sort -u
 fi
 
 for rel_path in "${target_rel_paths[@]}"; do
