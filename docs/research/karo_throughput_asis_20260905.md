@@ -203,7 +203,7 @@ origin収載と検証を確認して公開確認済みへ、分母付きbefore/a
 | M5 | call_site運用行 | 運用観測待ち | 計測実装と隔離8caller検証済み。固定snapshotの運用行は0 |
 | P1 | c2a後root同期 | 実装あり、旧版に実走記録 | safe_shared_main_ff callerあり。現在のroot収束/一般化効果はK1 |
 | P2 | publisher postsync偽BLOCK説 | 原因未確定 | HEAD比較は現存、lock/HEAD変化の再現なしに未修正断定しない |
-| K0〜K5/K7 | 配備カード | K2 は疾風が CI ci_fix 2 本(33978418361/受入)へ転用され 03:04 時点で K2 報告未着(疾風 task=ci_fix acknowledged)。他は未配備 | 03:04 日次: gate_clear=13 held_event=118 retry=14 defense=14605(karo_throughput_daily/2026-09-06.md)。K2 再配備は ci_fix 完了後(将軍追記 03:10) |
+| K0〜K5/K7 | 配備カード | K2 は疾風が CI ci_fix 2 本(33978418361/受入)へ転用され 03:04 時点で K2 報告未着(疾風 task=ci_fix acknowledged)。他は未配備 | 03:04 日次: gate_clear=13 held_event=118 retry=14 defense=14605(karo_throughput_daily/2026-09-06.md)。K2 再配備は ci_fix 完了後(将軍追記 03:10)。**03:23 再配備**(疾風 cmd_karo_recon_k2_deploy_python_callers_20260906、P-4 と非衝突並行、03:45 in_progress) |
 | K6→別書W5 | 世代不一致/ci_push_state根因調査 | 調査完了・追加fix不要 | 世代不一致は`7671bdb99`で既修復。ci_push_state WAIT10=6+3+1は9行CLEAR、残る1行も3秒後にpurpose不一致の正式BLOCK、5秒後archive。10/10終端接続済み。影丸/半蔵報告23:58、家老一次再確認 |
 | O1 | 9/6〜9/8の運用baseline | 未観測 | 当該日到来後に取得。これを待って独立調査を止めない |
 
