@@ -63,3 +63,18 @@ identity_of() {
     run identity_of "$TEST_ROOT/queue/reports/c.yaml"
     [ "$status" -ne 0 ]
 }
+
+@test "missing empty or unknown check result stays fail-closed" {
+    for invalid in "" maybe pending; do
+        write_report "$TEST_ROOT/queue/reports/invalid.yaml" "[]" "$invalid" "no"
+        run identity_of "$TEST_ROOT/queue/reports/invalid.yaml"
+        [ "$status" -ne 0 ]
+    done
+}
+
+@test "malformed binary check group stays fail-closed" {
+    write_report "$TEST_ROOT/queue/reports/malformed.yaml" "[]" "no" "no"
+    python3 -c 'from pathlib import Path; import sys; p=Path(sys.argv[1]); s=p.read_text(); s=s.replace("  acceptance:\n    - check: AC1 前提(CI run log 取得)が成立したか\n      result: no\n", "  acceptance: malformed\n"); p.write_text(s)' "$TEST_ROOT/queue/reports/malformed.yaml"
+    run identity_of "$TEST_ROOT/queue/reports/malformed.yaml"
+    [ "$status" -ne 0 ]
+}

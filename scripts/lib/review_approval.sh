@@ -269,13 +269,13 @@ def _all_checks_no(checks_obj):
     seen = False
     for group in checks_obj.values():
         if not isinstance(group, list):
-            continue
+            return False
         for item in group:
             if not isinstance(item, dict):
-                continue
+                return False
             seen = True
             r = item.get("result")
-            if r is True or str(r).strip().lower() == "yes":
+            if not (r is False or str(r).strip().lower() in {"no", "false"}):
                 return False
     return seen
 
