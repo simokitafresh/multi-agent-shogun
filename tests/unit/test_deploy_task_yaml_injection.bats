@@ -3539,3 +3539,159 @@ setup_independence_worktree_fixture_repo() {
     [ "$status" -eq 0 ]
     [[ "$output" == *"independence_missing_base_blocked=1"* ]]
 }
+
+# test_necessity: cmd_4480 real incident (RC 2026-09-06 03:38) — a no-code
+# independent-recon task previously routed through the sparse remote-tip
+# worktree path (a bare/cache-oriented worktree), so its report's
+# commit_contract.repo_root and the downstream gate check never observed a
+# real non-bare work tree, and report_ci_push_state's no-code classification
+# was never regression-tested against the fixed-base pinning path this task
+# adds (deploy_task_pin_independence_worktree_base). Point 3 of RC: no-code
+# recon's commit_contract.repo_root must be a real non-bare worktree, and
+# report_ci_push_state/report_commit_main_ancestry must not false-BLOCK it.
+@test "independence-required no-code recon: report_ci_push_state SKIPs against the pinned non-bare worktree, not BLOCK" {
+    setup_independence_worktree_fixture_repo
+    task="$BATS_TEST_TMPDIR/task-nocode-independence.yaml"
+    printf 'task:\n  task_id: task_nocode_independence\n  parent_cmd: cmd_nocode_independence\n  project: infra\n  task_type: recon2\n  status: assigned\n  independence_worktree_required: true\n  independence_base_commit: %s\n' "$FIXED_BASE" > "$task"
+
+    run env PROJECT_ROOT="$BATS_TEST_DIRNAME/../.." FIXTURE="$FIXTURE/shared" TASK="$task" bash -c '
+        set -euo pipefail
+        export DEPLOY_TASK_LIB_ONLY=1
+        source "$PROJECT_ROOT/scripts/deploy_task.sh"
+        SCRIPT_DIR="$FIXTURE"; LOG=/dev/null; STATE_DIR="$FIXTURE/state"; mkdir -p "$STATE_DIR"
+        deploy_task_prepare_remote_tip_worktree "$TASK" saizo
+        wt=$(FIELD_GET_NO_LOG=1 field_get "$TASK" task_worktree_workdir)
+
+        # Point 3: repo_root must be a real (non-bare) work tree, never a
+        # bare repo-cache, before the report is even generated.
+        is_wt=$(git -C "$wt" rev-parse --is-inside-work-tree 2>/dev/null || true)
+        [ "$is_wt" = "true" ] || { echo "repo_root_is_not_worktree=$is_wt" >&2; exit 1; }
+
+        python3 - "$TASK" "$wt" <<PY
+import sys, yaml
+p, wt = sys.argv[1], sys.argv[2]
+d = yaml.safe_load(open(p, encoding="utf-8"))
+d["task"]["commit_contract"] = {"required": False, "task_type": "recon2", "repo_root": wt}
+yaml.safe_dump(d, open(p, "w", encoding="utf-8"), allow_unicode=True, sort_keys=False)
+PY
+
+        report="$FIXTURE/report.yaml"
+        cat > "$report" <<REPORTYAML
+task_id: task_nocode_independence
+parent_cmd: cmd_nocode_independence
+task_type: recon2
+verdict: PASS
+commit_hash: ""
+files_modified: []
+commit_contract:
+  required: false
+  task_type: recon2
+  repo_root: "$wt"
+REPORTYAML
+
+        source "$PROJECT_ROOT/scripts/lib/cmd_complete_gate_ci.sh"
+        state=$(report_ci_push_state "$report" "$wt" "$TASK")
+        [ "$state" = "UNPUSHED: commit_contract no-code task" ] || { echo "unexpected_state=$state" >&2; exit 1; }
+        echo "nocode_independence_skip_ok=1"
+    '
+    if [ "$status" -ne 0 ]; then printf '%s\n' "$output" >&3; fi
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"nocode_independence_skip_ok=1"* ]]
+}
+
+# test_necessity: RC point 1 — a report explicitly carrying
+# commit_hash=no-code-change (with valid before==after tree evidence) must
+# also resolve through the pinned non-bare worktree without a false BLOCK, so
+# both the blank-commit and explicit-sentinel forms of the no-code contract
+# stay safe together against the same fixed-base worktree fix.
+@test "independence-required no-code recon: explicit commit_hash=no-code-change with tree evidence SKIPs, not BLOCK" {
+    setup_independence_worktree_fixture_repo
+    task="$BATS_TEST_TMPDIR/task-nocode-independence-sentinel.yaml"
+    printf 'task:\n  task_id: task_nocode_independence_sentinel\n  parent_cmd: cmd_nocode_independence_sentinel\n  project: infra\n  task_type: recon2\n  status: assigned\n  independence_worktree_required: true\n  independence_base_commit: %s\n' "$FIXED_BASE" > "$task"
+
+    run env PROJECT_ROOT="$BATS_TEST_DIRNAME/../.." FIXTURE="$FIXTURE/shared" TASK="$task" bash -c '
+        set -euo pipefail
+        export DEPLOY_TASK_LIB_ONLY=1
+        source "$PROJECT_ROOT/scripts/deploy_task.sh"
+        SCRIPT_DIR="$FIXTURE"; LOG=/dev/null; STATE_DIR="$FIXTURE/state"; mkdir -p "$STATE_DIR"
+        deploy_task_prepare_remote_tip_worktree "$TASK" saizo
+        wt=$(FIELD_GET_NO_LOG=1 field_get "$TASK" task_worktree_workdir)
+        tree=$(git -C "$wt" rev-parse HEAD^{tree})
+
+        report="$FIXTURE/report-sentinel.yaml"
+        cat > "$report" <<REPORTYAML
+task_id: task_nocode_independence_sentinel
+parent_cmd: cmd_nocode_independence_sentinel
+task_type: recon2
+verdict: PASS
+commit_hash: "no-code-change"
+files_modified: []
+no_code_change_evidence:
+  before_tree: "$tree"
+  after_tree: "$tree"
+  tree_unchanged: true
+binary_checks:
+  commit:
+    - check: "commit不要(no-commit)"
+      result: "yes"
+commit_contract:
+  required: false
+  task_type: recon2
+  repo_root: "$wt"
+REPORTYAML
+
+        source "$PROJECT_ROOT/scripts/lib/cmd_complete_gate_ci.sh"
+        state=$(report_ci_push_state "$report" "$wt" "$TASK")
+        [[ "$state" == "UNPUSHED: no-code-change tree sentinel"* ]] || { echo "unexpected_state=$state" >&2; exit 1; }
+        echo "nocode_sentinel_skip_ok=1"
+    '
+    if [ "$status" -ne 0 ]; then printf '%s\n' "$output" >&3; fi
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"nocode_sentinel_skip_ok=1"* ]]
+}
+
+# test_necessity: RC point 2 — cross_repo_commits must never be treated as an
+# ancestry source in its own right. A reference-only / fixed-base annotation
+# string in cross_repo_commits (not a resolvable 40-hex owned by the report)
+# must not let report_ci_push_state resolve an unrelated repo as PUSHED; it
+# must fall back to the same invalid/unresolvable classification as if
+# cross_repo_commits were absent.
+@test "cross_repo_commits reference-only annotation is never resolved as an ancestry commit" {
+    setup_independence_worktree_fixture_repo
+    run env PROJECT_ROOT="$BATS_TEST_DIRNAME/../.." FIXTURE="$FIXTURE/shared" FIXED_BASE="$FIXED_BASE" bash -c '
+        set -euo pipefail
+        report="$FIXTURE/../report-cross-repo.yaml"
+        # commit_hash is a well-formed 40-hex that does not exist in the
+        # primary repo (simulates the "unknown to this repo" case); the
+        # cross_repo_commits entry deliberately carries a non-hex, reference
+        # only annotation (a fixed-base note), exactly as RC warns against.
+        unresolved="bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+        cat > "$report" <<REPORTYAML
+task_id: task_cross_repo_ref
+parent_cmd: cmd_cross_repo_ref
+task_type: impl
+verdict: PASS
+commit_hash: "$unresolved"
+files_modified: [{path: scripts/deploy_task.sh}]
+cross_repo_commits:
+  - repo: "$FIXTURE"
+    commit_hash: "$FIXED_BASE (fixed base, informational only)"
+    paths: [scripts/deploy_task.sh]
+commit_contract:
+  required: true
+  task_type: impl
+  repo_root: "$FIXTURE"
+REPORTYAML
+
+        source "$PROJECT_ROOT/scripts/lib/cmd_complete_gate_ci.sh"
+        state=$(report_ci_push_state "$report" "$FIXTURE" "")
+        case "$state" in
+            PUSHED:*) echo "FALSE_POSITIVE_PUSHED: $state" >&2; exit 1 ;;
+        esac
+        [[ "$state" == BLOCK:* ]] || { echo "unexpected_state=$state" >&2; exit 1; }
+        echo "cross_repo_reference_not_resolved_ok=1"
+    '
+    if [ "$status" -ne 0 ]; then printf '%s\n' "$output" >&3; fi
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"cross_repo_reference_not_resolved_ok=1"* ]]
+}
