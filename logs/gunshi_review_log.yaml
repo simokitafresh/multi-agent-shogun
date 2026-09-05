@@ -7224,3 +7224,35 @@
       SG6_code_quality: PASS
       SG7_gate_prediction: PASS
     verdict: APPROVE
+- cmd_id: cmd_4476
+  review:
+    adversarial_review: PASS — 偵察(scout)タスクでコード・DB変更なし。readonly経路のみ使用。Guard14誤BLOCKはdecision_candidateに記録済み
+    cmd_id: cmd_4476
+    cmd_spec_summary:
+      acceptance_criteria_count: 3
+      project: dm-signal
+      scope: Core LP/Free tier/Google Auth/visibility AsIs偵察(readonly、実装なし)
+    finding_categories:
+    - assumptions
+    - numbers
+    - premortem
+    - adversarial
+    gate_prediction: CLEAR
+    gate_prediction_reason: all checks passed
+    observations:
+    - '事実1: commit 19f82bb92でdocs/research/cmd_4476_core_simple_free_asis_20260905.md(94行)とcontext/dm-signal-frontend.md
+      §Core vs Simple偵察09-05を作成、origin/mainの祖先確認済み(rc=0)'
+    - '事実2: Free tierでhide_portfolio=falseのPFは全101件中Basic-DualMomentum 1件のみ。showcase_events実発火4/10語。殿候補指標8件を3分類に整理'
+    - '事実3: Guard14がdb_capability_launcher.pyをconnection:untrustedで誤BLOCKしたためAdmin
+      API代替で同等一次情報を確保(hook_failures count=1に正直記録)。task YAML汚染はtask_contract_snapshotを正本として正しく対処'
+    reviewed_at: '2026-09-05T14:16:00+09:00'
+    reviewer: gunshi
+    sg_checklist:
+      SG1_ac_coverage: PASS
+      SG2_test_pass: PASS
+      SG3_parity: N/A
+      SG4_no_regression: PASS
+      SG5_lesson_candidate: PASS
+      SG6_code_quality: PASS
+      SG7_gate_prediction: PASS
+    verdict: APPROVE
