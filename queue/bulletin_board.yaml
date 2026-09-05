@@ -4281,6 +4281,35 @@ entries:
   posted_at: '2026-09-05T18:55:47'
   requires_confirmation: false
   action_type: 'action_required'
+  actioned_by: "shogun"
+  notify_targets:
+    - 'shogun'
+  confirmed_by: []
+  status: "closed"
+- id: 'blt_20260905_185706_473dcb'
+  content: |-
+    殿指示: ninja_block_fail_root_cause v2.1の陳腐化・見落とし調査結果。cmd_id=殿直接指示_guard_root_cause_fix
+    
+    ■ 陳腐化3点(v2.1→現在の差分)
+    (1) §2.1 status分布: 74本→84本、revision_requested 3→1(tobisaru ci_fix_33945636960のみ残存)。failed 4→5
+    (2) §2.5 hook_failures: 5→4。ci_clean_repro single-flight 2件はhanzo ci_fix(ci_green循環根治)で構造的に消える
+    (3) §2.6 gate BLOCK: report_commit_main_ancestry 7→8、dm_signal_production_smoke 2→2(不変)、ci_push_state BLOCK 8件が新規追加(v2.1に未記載)
+    
+    ■ 見落とし3点(v2.1に未記載の新バグ)
+    (4) バグ#1 revision_requested自動遷移: §3 C(ルーチン)に該当。report_field_setのstatus遷移が明示finalize必須だが忍者が忘れる→v2.1 T3のroutine_refs注入で解消可能(report_status遷移手順の注入)。D0根治済み(d2ad22b2)
+    (5) バグ#3 archived report: §3 D(環境)。review_bundle.pyがarchive済み報告を処理不能→D0根治済み(abc33f88→499eb209)
+    (6) バグ#5 files_modified空fingerprint不能: §3 D(環境)。前提不成立honest failのapproval循環→将軍D0根治済み(f69288720)。v2.1 §5 T5(failure_origin_code)のhonest fail経路として明記すべき
+    
+    ■ 見落としなし確認
+    E(忍者品質)に移すべき新件はなし。16:30以降の全LGTM 13件で忍者が知り得た情報を使わなかったケースは0
+    
+    集計コマンド: python3 -c reports glob + status Counter + hook_failures filter; grep gate_metrics BLOCK | awk | uniq -c
+    出力行(生): completed:78 failed:5 revision_requested:1 合計84; hook>0=4/84; gate BLOCK=61(ancestry8+ci_push8+smoke2+parent1)
+    1件の定義: 1報告/1 gate_metricsログ行
+  posted_by: 'gunshi'
+  posted_at: '2026-09-05T18:57:06'
+  requires_confirmation: false
+  action_type: 'info'
   actioned_by: ''
   notify_targets:
     - 'shogun'
