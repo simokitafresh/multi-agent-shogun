@@ -18324,7 +18324,9 @@ insights:
   priority: "low"
   source: "semantic_index_update"
   fix_known: false
-  status: pending
+  status: "resolved"
+  action_artifact: "semantic_map=/home/simokitafresh/multi-agent-shogun/context/semantic-map.md;semantic_index=/home/simokitafresh/multi-agent-shogun/docs/semantic-index/index.md"
+  resolved_reason: "semantic map generation verified the candidate is represented or intentionally ignored"
 - id: INS-20260905-142428383-1a54
   ts: "2026-09-05T14:24:28+09:00"
   insight: "semantic_index_update未登録cmd originノード: [[cmd_4476_AsIs偵察]] は既存aliasesに一致なし。類似概念TOP3: unread_cmd_new_deployment_guard(未読cmd_new配備漏れ防止; alias=cmd_4376層別確定; score=21.6) / gate_bypass_prevention(ゲート迂回防止; alias=cmd_4323偵察後実装; score=21.6) / dm_signal_pf_restore_guardrails(DM-Signal PF復元運用ガードレール; alias=cmd_3786復旧手順; score=20.8)。概念定義とaliases追加を検討せよ"
@@ -18340,7 +18342,9 @@ insights:
   priority: "low"
   source: "semantic_index_update"
   fix_known: false
-  status: pending
+  status: "resolved"
+  action_artifact: "semantic_map=/home/simokitafresh/multi-agent-shogun/context/semantic-map.md;semantic_index=/home/simokitafresh/multi-agent-shogun/docs/semantic-index/index.md"
+  resolved_reason: "semantic map generation verified the candidate is represented or intentionally ignored"
 - id: INS-20260905-143023501-a42a
   ts: "2026-09-05T14:30:23+09:00"
   insight: "[[全体の進捗を表形式で報告してくれ]] semantic_stress_test candidate_aliases: NO_MATCH source=lord query=全体の進捗を表形式で報告してくれ、誰が何をやっていてどこで詰まってる？"
