@@ -134,7 +134,7 @@ if [ -z "${GUNSHI_PRECHECK_ONLY:-}" ]; then
     if [ -n "${TASK_FILE:-}" ] && [ -f "$TASK_FILE" ]; then
         _cache_task_hash="$(sha256sum "$TASK_FILE" 2>/dev/null | awk '{print $1}')"
     fi
-    _cache_self_hash="$(cat "$0" "$REPO_ROOT/scripts/gates/gate_gunshi_report_precheck_engine.py" 2>/dev/null | sha256sum | awk '{print $1}')"
+    _cache_self_hash="$(cat "$0" "$REPO_ROOT/scripts/gates/gate_gunshi_report_precheck_engine.py" "$REPO_ROOT/scripts/lib/review_source_context.py" 2>/dev/null | sha256sum | awk '{print $1}')"
     _cache_sig="report=${_cache_report_hash}:task=${_cache_task_hash}:self=${_cache_self_hash}"
     _cache_key="$(printf '%s' "$_cache_sig" | sha256sum | awk '{print $1}')"
     GUNSHI_PRECHECK_CACHE_FILE="${GUNSHI_PRECHECK_CACHE_DIR}/${_cache_key}"

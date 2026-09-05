@@ -139,7 +139,14 @@ def resolve_source_root(
     except (OSError, subprocess.CalledProcessError, subprocess.TimeoutExpired) as exc:
         raise SourceContextError("report_commit_not_resolved_in_task_worktree") from exc
     if resolved_commit != head:
-        raise SourceContextError("report_commit_task_worktree_head_mismatch")
+        # After a formal RC rebase or merge, the report's commit_hash may be
+        # an ancestor of the current worktree HEAD rather than an exact match.
+        # Accept ancestry (commit is reachable from HEAD) to avoid false
+        # positives on rebased worktrees while still blocking unrelated commits.
+        try:
+            git(worktree, "merge-base", "--is-ancestor", resolved_commit, head)
+        except (OSError, subprocess.CalledProcessError, subprocess.TimeoutExpired):
+            raise SourceContextError("report_commit_task_worktree_head_mismatch")
     published_commit = str(marker_data.get("published_commit") or "").strip()
     if published_commit and published_commit != resolved_commit:
         raise SourceContextError("task_worktree_marker_commit_mismatch")
