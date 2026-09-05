@@ -2047,7 +2047,13 @@ PY
                         return 0
                     fi
                 fi
-                printf 'external-project:%s\n' "$_sf_task_root"
+                # An external project with no concrete test target still needs
+                # a task-specific single-flight key, which task-identity above
+                # already provides.  Do not return a project label here:
+                # selection_manifest_for_singleflight() is copied into the
+                # terminal receipt's test_paths, and a label is metadata, not
+                # an executable test path.  Keeping the selection empty lets
+                # the zero-test receipt satisfy its explicit empty contract.
                 return 0
             fi
             local scope
@@ -2950,7 +2956,7 @@ if [[ "${BASH_SOURCE[0]:-$0}" == "${0}" ]]; then
             # actually inside this tree; an external path has no repo-tracked
             # dirty state to compare, so it is simply excluded from the hash.
             mapfile -t _sf_dirty_scope_paths < <(
-                printf '%s\n' "$_sf_selection" | sed '/^$/d; /^readonly-probe:/d; /^task-identity:/d' \
+                printf '%s\n' "$_sf_selection" | sed '/^$/d; /^readonly-probe:/d; /^task-identity:/d; /^external-project:/d' \
                     | while IFS= read -r _sf_candidate; do
                         _sf_candidate_real="$(realpath -- "$_sf_candidate" 2>/dev/null)" || continue
                         case "$_sf_candidate_real" in
@@ -3027,7 +3033,7 @@ if [[ "${BASH_SOURCE[0]:-$0}" == "${0}" ]]; then
                 if [[ -n "$_sf_leader_tree_head" && "$_sf_tree_head" == "$_sf_leader_tree_head" \
                       && "$_sf_tree_dirty" == "$_sf_leader_tree_dirty" ]]; then
                     printf 'SINGLE_FLIGHT_ADMISSION mode=%s selection_count=%s pending=0 admission=acquired\n' \
-                        "$_mode" "$(printf '%s\n' "$_sf_selection" | sed '/^$/d' | wc -l)" >&2
+                        "$_mode" "$(printf '%s\n' "$_sf_selection" | sed '/^$/d; /^readonly-probe:/d; /^task-identity:/d; /^external-project:/d' | wc -l)" >&2
                     printf 'SINGLE_FLIGHT_JOINED mode=%s receipt=%s\n' "$_mode" "$_receipt" >&2
                     emit_run_tests_terminal_receipt "$_receipt" joined=1
                     exit $?
@@ -3055,7 +3061,7 @@ if [[ "${BASH_SOURCE[0]:-$0}" == "${0}" ]]; then
             export RUN_TESTS_SINGLEFLIGHT_LEADER_PENDING=1
             export RUN_TESTS_SINGLEFLIGHT_MODE="$_mode"
             export RUN_TESTS_SINGLEFLIGHT_SELECTION_COUNT
-            RUN_TESTS_SINGLEFLIGHT_SELECTION_COUNT="$(printf '%s\n' "$_sf_selection" | sed '/^$/d' | wc -l)"
+            RUN_TESTS_SINGLEFLIGHT_SELECTION_COUNT="$(printf '%s\n' "$_sf_selection" | sed '/^$/d; /^readonly-probe:/d; /^task-identity:/d; /^external-project:/d' | wc -l)"
             # Publish leadership before run_with_receipt captures child output.
             # Followers and monitors must observe the leader while it is live,
             # not only after the terminal artifact is flushed.
@@ -3080,7 +3086,7 @@ if [[ "${BASH_SOURCE[0]:-$0}" == "${0}" ]]; then
         # Freeze the selector result before any test process starts. Nested
         # fixture runners must not overwrite the public run's selected set.
         printf '%s\n' "${_sf_selection:-}" \
-            | sed '/^$/d; /^readonly-probe:/d; /^task-identity:/d' >"$_selected_paths"
+            | sed '/^$/d; /^readonly-probe:/d; /^task-identity:/d; /^external-project:/d' >"$_selected_paths"
         # Resolve at this public-call boundary.  RUN_TESTS_BATS_BIN may belong
         # to an enclosing bats root; inheriting it would bypass an isolated
         # fixture's PATH and execute the wrong runner.
