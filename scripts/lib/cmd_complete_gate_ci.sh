@@ -39,6 +39,14 @@ if workflow_status is None:
 if not isinstance(workflow_status, str):
     print("BLOCK: workflow_result status type invalid")
     raise SystemExit(1)
+if isinstance(reviewed_at, str) and not reviewed_at.strip():
+    # Two-phase review (gunshi LGTM + karo ACCEPT) has not completed yet, so
+    # there is no review boundary to compare CI freshness against.  This is
+    # the same "evaluation absent" state as a missing workflow run: record it
+    # as WAIT, never as a BLOCK "datetime parse failed" (2026-09-06 00:02:30
+    # cmd_karo_recon_w5_ci_state false BLOCK, gunshi blt_000512).
+    print("WAIT: review_boundary_pending=reviewed_at_empty")
+    raise SystemExit(0)
 if not isinstance(reviewed_at, str) or not isinstance(workflow_freshness_at, str):
     print("BLOCK: reviewed_at/workflow_result.started_at type invalid")
     raise SystemExit(1)
