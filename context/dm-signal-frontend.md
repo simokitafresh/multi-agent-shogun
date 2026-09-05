@@ -1,5 +1,6 @@
 # DM-signal フロントエンド コンテキスト（索引）
-<!-- last_updated: 2026-09-01 2026-09-01 将軍doc lane: DOC_LANE_ALERT 4件(偽陽性=marker d87339a4 not ancestor of local clone)。実欠落(showcase API/showcase_events/LP cmd_4431-4437/login minimal/noindex)を追記し境界をorigin/main tipへ -->
+<!-- last_updated: 2026-09-04 context_freshness reviewed source boundary -->
+<!-- source_commit:9ea93b896243 reason:context_freshness reviewed source boundary evidence:context_freshness_check context=context/dm-signal-frontend.md commit=9ea93b896243 -->
 <!-- source_commit:172b6d35e7f2 reason:2026-09-01 将軍doc lane: DOC_LANE_ALERT 4件(偽陽性=marker d87339a4 not ancestor of local clone)。実欠落(showcase API/showcase_events/LP cmd_4431-4437/login minimal/noindex)を追記し境界をorigin/main tipへ evidence:git -C /mnt/c/Python_app/DM-signal log d87339a4..origin/main = 88 commits; diff --stat backend/app = 4 files +621; grep反映 showcase_events/api\/public/cmd_4433 各>=1 -->
 <!-- source_commit:9734518397066f644bd7c7180bccc276d2bf5947 reason:2026-08-31 06:45 将軍doc lane GA-535: 境界を origin/main tip へ是正(8-hex 旧hotfix markerだと分岐外祖先が非除外で1390/789/1588件の偽ALERT) evidence:git -C /mnt/c/Python_app/DM-signal rev-list --count <tip>..origin/main=0 -->
 <!-- source_commit:9d71556d reason:2026-08-31 将軍doc lane GA-535: §29 Free tier 3是正を反映 evidence:grep -c '## 29\.' context/dm-signal-frontend.md=1(4e705dd2d) -->
@@ -474,3 +475,14 @@ L122(キャッシュ無効化), L121(API実コード確認) → `context/dm-sign
 ## §LP/login/free attribution(cmd_4474、2026-09-04)
 - 結論: LP(`lp/`)・/login・/free が `?utm_campaign=<campaign_id>&utm_content=<draft_id>` を読み、showcase event へ campaign_id を同送(9ea93b89)。static export のため build 時刻 > backend live 時刻を post_deploy_check で確認(ops §101)。
 - 境界=DM-signal origin/main 9ea93b89(frontend)。→ core §98(API/DB)。
+
+## §Core vs Simple 偵察 09-05(cmd_4476)
+- 結論1: Free tierで`hide_portfolio=false`のPFは101件中`Basic-DualMomentum`1件のみ、かつ`hide_signal=false`/`hide_components=false`のため、Rolling Returns/Drawdowns/Compare Returns(既存マスク機構なし)を含む全Performance画面がFreeで無条件公開されている(=LP heroと完全一致、`SHOWCASE_HERO_NAME`固定値)。
+- 結論2: `showcase_events`のstepは実際10語(v0.1記載の9語は誤り)、frontendで発火するのは`lp_view`/`lp_cta_click`/`login_view`/`signup_google`の4語のみ。Google Auth後のSupabase user idはbackendで検証直後に破棄され(`_fetch_supabase_user`戻り値を`_`で受ける)、`product_logins`は不在=個人の継続追跡手段が現状ゼロ。
+- 結論3: Primary Metricの計測可否は「LP→CTA/LP→Auth開始」のみ今測れる。Auth完了率・Free利用は軽微な実装追加で測定可能、Free→note以降(課金・retention・LTV)は現状の仕組みでは測定不能。
+- 参照: `docs/research/cmd_4476_core_simple_free_asis_20260905.md`(AsIs全表)、`docs/research/cmd_2596_visibility_matrix.md`(DM-Signal repo内、visibility matrix正本)、`docs/research/dm-signal-core-simple-free-proof-asis-tobe_20260905.md`(v0.1設計書)。
+
+## §LP SEO監査 09-05 (cmd_4475)
+結論: 本番Googlebot取得と`lp/`現物の突合でCritical=0、HighはJA全ページの`<html lang="en">`固定とOrganization/WebSite URLの言語依存の2件のみ。修正対象はこの2件に限定し、本文・OG画像・robots・sitemap・canonical・hreflangは維持する。
+参照: `docs/research/cmd_4475_lp_seo_audit_20260905.md`、`lp/app/layout.tsx`、`lp/components/structured-data.tsx`、本番取得 2026-09-05 07:22 JST。
+将来LPの抽象化・Analytics全量化・slashなしURL redirectは今回行わず、既存のstatic exportと単一LP母艦を維持する。
