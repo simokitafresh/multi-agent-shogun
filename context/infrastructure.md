@@ -1,5 +1,6 @@
 # インフラコンテキスト
-<!-- last_updated: 2026-09-06 2026-09-06 04:58 将軍doc lane: 09-05 17:00 以降の infra source 15 件(recon_dual 契約/publish fail-closed+patch-id/gate WAIT reviewed_at/GA-589 GROUP 保持/insight F-9)を 3 bullet で反映 -->
+<!-- last_updated: 2026-09-06 2026-09-06 05:05 将軍doc lane: 才蔵 insight explicit remediation hotfix(cmd_complete_gate.sh)の origin 収載を F-9 bullet へ反映 -->
+<!-- source_commit:e5d2e9e64781 reason:2026-09-06 05:05 将軍doc lane: 才蔵 insight explicit remediation hotfix(cmd_complete_gate.sh)の origin 収載を F-9 bullet へ反映 evidence:git show e5d2e9e64 --stat = cmd_complete_gate.sh +112/-x, test_cmd_complete_gate.bats +119; grep -c remediated_insight_ids context/infrastructure.md >=1 -->
 <!-- source_commit:d267d37766a5 reason:2026-09-06 04:58 将軍doc lane: 09-05 17:00 以降の infra source 15 件(recon_dual 契約/publish fail-closed+patch-id/gate WAIT reviewed_at/GA-589 GROUP 保持/insight F-9)を 3 bullet で反映 evidence:git log --since=2026-09-05T17:00 origin/main -- scripts skills tests CLAUDE.md = 15 non-publisher commits; grep -c recon_dual context/infrastructure.md >=1 -->
 <!-- source_commit:1eeff0b35 reason:concrete throughput daily artifact reference evidence:GA-586 abstract date placeholder recurred; concrete 2026-09-05 artifact indexed -->
 <!-- source_commit:208df246d5b25113c51aedfebb291ee64a7bbbd9 reason:parent honest-fail and CI fixture D0 evidence:parent 2/2 actual 3/3; CI 50/50 SKIP0; shogun APPROVE -->
@@ -163,7 +164,7 @@
 <!-- source_commit:e7c3beb64085 reason:2026-09-02 将軍 doc lane: ancestry 後退検出を push_lane/pre-push へ接続(efc16dcd6/e7c3beb64) evidence:CLEAR 03:02/03:09; safe_ff BLOCK 実証 02:50 -->
 <!-- source_commit:a7cb1ca59831 reason:2026-09-02 将軍 doc lane: legacy outbox envelope 移行 a7cb1ca59(T224 追補) evidence:commit a7cb1ca59; DOC_LANE_ALERT blt_022445 -->
 <!-- source_commit:64f01517a70b reason:2026-09-02 将軍 doc lane: U1 f92d1e376 + ancestry 後退 BLOCK 64f01517a evidence:commits f92d1e376/64f01517a; CLEAR 01:54/02:08; 消失 2 回目 16d831ed9 を復元 -->
-<!-- last_synced_lesson: L1759 -->
+<!-- last_synced_lesson: L1760 -->
 <!-- source_commit:593cfb27a612 reason:2026-09-02 将軍 doc lane: U9 safe_ff 既公開 ours merge 除外 593cfb27a evidence:commit 593cfb27a; CLEAR 01:20; integrate c7710efaf on origin/main -->
 <!-- source_commit:458fc4caa91a reason:2026-09-02 将軍 doc lane: U3 msg_id 限定 receipt 458fc4caa evidence:commit 458fc4caa; CLEAR 01:05; staged 11→0; watcher 9/9 restart 01:06 -->
 <!-- source_commit:4dd6898466a27f10ef7d08ed27549b3c095378de reason:2026-09-01 将軍 doc lane: CI RED #6 Integration ci_fix 59fa70e0b evidence:commit 59fa70e0b; CLEAR 22:57 -->
@@ -297,7 +298,7 @@
 <!-- source_commit:f8c49cbd7 reason:cmd_shogun_commit_reservation_ledger_phase1_20260805 evidence:reviewed -->
 <!-- source_commit:515f0214e reason:cmd_karo_hotfix_ga432_context_freshness reviewed source boundary evidence:cmd_complete_gate project=infra context=context/infrastructure.md commit=515f0214e -->
 <!-- source_commit:23a1ce61205ce4496ab11570583e8e8adcaeac4e reason:reflux backlink SSOT update reviewed evidence:incoming 0 to 1; runner69/69; target doc diff0 -->
-<!-- last_synced_lesson: L1759 -->
+<!-- last_synced_lesson: L1760 -->
 
 結論: 本ファイルは検索起点となる索引層。運用詳細・経緯・教訓本文は7つの詳細正本へ移設した。
 source boundary一致taskはregistryのowner/update_triggerからcontext_update_candidatesを自動注入し、未処理候補はcmd_complete_gateがBLOCK、明示処理済み/無関係はCLEAR。
@@ -348,7 +349,7 @@ source boundary一致taskはregistryのowner/update_triggerからcontext_update_
 結論: 詳細は `docs/research/infrastructure-lessons-reviews-operations.md` に保存。原文を省略せず移設済み。
 見出し: 前節「Infra教訓索引」の連続本文（source lines 1701-2123）。
 - L1503: 既存legacy欠損は不変multisetで隔離せよ（cmd_karo_hotfix_shared_operational_log_ownership_20260801）
-<!-- last_synced_lesson: L1759 -->
+<!-- last_synced_lesson: L1760 -->
 - L1504: appendとarchiveはreaderを含むgeneration transactionにせよ（cmd_karo_hotfix_gunshi_cs_remediation_generation_20260801）
 - L1505: 永続test宣言はtask正本に置く（cmd_4206）
 - L1506: active context DEFERはowner存在だけでなくdirty・baseline変化・fresh leaseの全ANDにせよ（cmd_karo_hotfix_active_context_gate_transient_20260801）
@@ -584,6 +585,7 @@ source boundary一致taskはregistryのowner/update_triggerからcontext_update_
 - L1757: deploy_task.sh(巨大file)とscripts/deploy_task/*.sh(分割module)は同名関数を文字列として二重定義しており、source順序でmodule側が実効定義になる。新規inject_*関数を追加する際はmodule側(context_injection.sh等)に実装すれば動作するが、test_deploy_task.batsの一部はgiant file側をsed抽出して直接検査するため、giant file側にも同文言を複製しないと当該testが空/存在しない関数を検査してしまう（cmd_karo_recon_w1_routine_contract_20260905）
 - L1758: deploy_task test scaffold(tests/helpers/deploy_task_scaffold.bash)へskills/*/SKILL.mdを新規追加すると、scripts/lib/deploy_task_semantic_context_fast.py::_default_skill_allowed()の非対称フィルタ(SKILL.md不在=許可/存在するがTRIGGER行なし=不許可)により既存test(inject_semantic_concepts系)が偽FAILする（cmd_karo_impl_w1_routine_refs_core_20260906）
 - L1759: freshness gateはcheckerのGROUP横展開証跡を捨てない（cmd_karo_hotfix_ga589_context_freshness_20260906）
+- L1760: freshness gateはcheckerのGROUP横展開証跡を捨てない（cmd_karo_hotfix_ga589_context_freshness_20260906）
 
 ## 設計標準・テスト・因果
 
@@ -860,7 +862,7 @@ source boundary一致taskはregistryのowner/update_triggerからcontext_update_
 - ninja_monitor の共有 root index.lock 根治(2026-09-05, 6ec61e00 半蔵)|monitor が /clear 前に共有 root へ `git status` を走らせ index.lock を作り、落ちると孤児 lock(12:19:31 事故、掲示板 1 件が worktree から消えた)→`GIT_OPTIONAL_LOCKS=0` を monitor 先頭で export し read-only 呼出しが lock を取らない|origin: `[[index_lock_孤児_20260905_1219]] -> [[ninja_monitor_git_status_共有root]] -> [[GIT_OPTIONAL_LOCKS_0]]`
 - recon-dual 独立性契約の構造化(2026-09-06 00:41〜01:28, fe9c6b35e/2839d5d83/9d4ca0d8c 将軍 D0、家老 ACCEPT)|2 名並行偵察(parallel_ok≥2+偵察marker)は cmd YAML の `recon_dual:{mode: independent, cross_reference: forbidden, base: fixed_origin_main, shared_context_embargo: karo_release_required}` を正本とし `scripts/lib/recon_dual_contract.py` が cmd_save Check 19.7 で fail-closed(散文のみ WARN/無し BLOCK)。skills/recon-dual Step1 はフィールド直読、cmd_skeleton にテンプレ。deploy 側の task 投影/consumer/fixed-base 配備前 BLOCK は P-4(小太郎 94/94 レビュー中)。origin=[[cmd_4480_recon_dual往復]] -> [[契約が受け手スキルにのみ存在]] -> [[recon_dual構造フィールド]]
 - publish_direct_commit の fail-closed 化と patch-id no-op(2026-09-06, 20a2cee02/3829341a1 将軍 D0)|isolated cherry-pick 衝突は `set -e` が `( ) || rc=$?` 内で失効し偽 published→rc 9 で停止し衝突 file を stderr へ。`--republish` は `git cherry` の patch-id 一致なら明示 no-op(CI shard1 case4 L170 の真因)。gate 側は空 reviewed_at(二段レビュー未完)を WAIT review_boundary_pending へ(278e93d06)。root 分岐時の将軍 publish は隔離 clone で origin 上へ再構成し gist_share も clone 内から実行
-- context_freshness gate の GROUP 証跡保持と doc 側規則(2026-09-06, d267d37766a5 影丸 GA-589)|gate は横展開 GROUP を warning 分類へ保持(fixture 未追随 2→0、32/32)。参照リンク検査は path 形 literal を全て実ファイル扱いするため、context 本文に `<date>.md` のような placeholder path を書かない(infrastructure.md:866 の偽 BLOCK を散文化で解消)。同日: cmd_complete_gate の insight 自動 resolve が report 本文の INS-id 全文スキャンで readonly triage の CLEAR に 113 件を閉じた(F-9)→家老 CAS で 37 件再 pending、才蔵 hotfix=明示 remediated_insight_ids 限定・recon/readonly 除外(走行中)
+- context_freshness gate の GROUP 証跡保持と doc 側規則(2026-09-06, d267d37766a5 影丸 GA-589)|gate は横展開 GROUP を warning 分類へ保持(fixture 未追随 2→0、32/32)。参照リンク検査は path 形 literal を全て実ファイル扱いするため、context 本文に `<date>.md` のような placeholder path を書かない(infrastructure.md:866 の偽 BLOCK を散文化で解消)。同日: cmd_complete_gate の insight 自動 resolve が report 本文の INS-id 全文スキャンで readonly triage の CLEAR に 113 件を閉じた(F-9)→家老 CAS で 37 件再 pending、才蔵 hotfix **origin 収載 e5d2e9e64**(2026-09-06 05:0x): insight 自動 resolve は report の明示 `remediated_insight_ids` のみ採用、task_type recon/recon2/scout/readonly と readonly:true・変更 scope 空の task は対象外、bats +119 行
 - shared root収束・旧report再発行D0(2026-09-05 家老)|公開済みsuperset誤BLOCK・全dirty旧snapshot復元・一時index.lock・C2a mode100644誤判定・publisher symbolic tip誤比較を根治(敵対35/35、publisher込み59/59)。worker slot上書き後の旧reportは本文の明示path+report自身task/parentを一次化し、別worker詐称をBLOCK(inbox_write 138/138)。全SKIP0、本番同期二回PASS|→ `docs/research/safe-shared-root-convergence-20260905.md`
 - X live OOS台帳の書込み境界(2026-09-05 将軍8e22e7abb→家老補正2f1b51ef9)|snapshots改行連結を修復後、全writerを同一dir atomic fsync+replace・共有flock・expected-current CASへ統一。stage2件数は変更前textを正本化。97 entry無損失、45/45、SKIP0、将軍再レビューAPPROVE|→ `scripts/x_ops/x_ledger_guard.py` / `tests/unit/test_x_kpi_snapshot_ledger.bats`
 - honest FAIL親coverage・CI fixture同期(2026-09-05 家老)|SG7 exact path+current Karo honest-fail承認だけをparent AC coverageへ算入し、stale/path不一致/未承認をBLOCK(2/2、実cmd_4477 AC 3/3、将軍APPROVE)。CI旧fixture8 FAILはproduction変更0で現publisher/SG7契約へ同期し50/50、SKIP0、将軍APPROVE|→ `scripts/lib/parent_cmd_contract.py` / `tests/unit/test_parent_cmd_contract_honest_fail.bats` / `tests/unit/test_review_gate_sg7_bridge.bats`
