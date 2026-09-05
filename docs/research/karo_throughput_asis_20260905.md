@@ -190,3 +190,18 @@
 ### §8.5 レビュー依頼(忖度なし、15:05)
 - 家老: 上記 (a)-(g) の影響範囲に漏れがないか、家老 lane の実運用(review_approval / c2a / gate 再実行)で壊れる経路がないか、cmd_4478 の AC が現場で二値判定できるか。
 - 軍師: 集計の定義(held・c2a_merge_total・agent 解決順)と後方互換(v1 行の epoch fallback、agent 欠損 '-')が SG 観点で穴なしか、(g) が既存 throughput_scan と混同されないか。
+
+### §8.6 家老レビュー(15:04、忖度なし REJECT 9 点)の反映
+| # | 指摘 | 反映(本書と cmd_4478 を更新) |
+|---|---|---|
+| ① | 『6 writer』は現物で 8 変更点(function_timing 3 箇所+b/c/d/e/f)。件数が二値でない | 「計測の穴 6 つ」と「変更点 8 箇所」を分けて書く。AC は変更点 8 箇所で二値 |
+| ② | agent の意味が混在(review_approval=実行者、watcher=配達先、c2a=daemon) | **agent=実行者に固定**。watcher は `metadata.target_agent` に配達先を持つ。家老 lane の集計は `source × target_agent`(watcher)/`source`(review_approval, c2a)で定義 |
+| ③ | c2a を push 成功後だけ記録すると失敗が母集団から消え p95 が短く歪む | EXIT trap で PASS/FAIL 両方を記録。`event_id=c2a:<task>:<commit>:<attempt>` |
+| ④ | watcher/c2a の event_id 契約が無く、既存 writer の UNIQUE event_id で 2 件目以降が抑止され得る | watcher `event_id=held:<agent>:<first_unread_seen>:<fingerprint>`、c2a は③。AC に明記 |
+| ⑤ | 『同日 2 回で同一出力』は live log が増えるので達成不能 | 固定 fixture で 2 回 exact 一致+本番は `--as-of <cutoff>` 固定時のみ一致 |
+| ⑥ | schema v1 維持と v1/v2 両対応の記述が矛盾 | 「旧行」と「observed 列付き v1 行」と記す。v2 の語を消す |
+| ⑦ | observed_at を各行で date 取得すると同一 execution が日跨ぎで分裂 | execution 開始時に UTC を 1 回取得し全 rank 行で再利用 |
+| ⑧ | defense_overhead の reserved key 集合に agent を追加し、値検証と tmux 非接続 fixture が要る | writer の reserved 集合へ `agent` 追加、値は `[a-z0-9_-]{1,32}` か '-'、tmux 無し fixture で '-' になる test |
+| ⑨ | auto-push の理由を stdout 直前行に依存すると不安定 | 関数 stdout 全体を capture し最後の `AUTO_PUSH_WAIT` から result/reason を抽出、非空でなければ `reason=unknown`。source_publication_failed / helper_missing の敵対 test |
+
+判定: 9 点すべて採用。複雑化はしていない(いずれも定義の固定と既存 UNIQUE 契約への適合)。
