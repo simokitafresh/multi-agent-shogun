@@ -7617,6 +7617,7 @@ codd:
 | causal | `cmd_4320` files_modified: [[dm_fusion_app]] |
 | causal | `cmd_karo_hotfix_ga472_context_freshness_202608170955` files_modified: [[dm_fusion_app]] |
 | causal | `cmd_4373` files_modified: [[dm_fusion_app]] |
+| discussion | `queue/lord_conversation.jsonl` 2026-09-05T09:22:40+09:00 殿 2026-09-05 09:18『identity 層を整理して設計書更新(実装なし)』→将軍が 3 repo origin/main を一次確認: DM-Signal は visitor_id(localStorage dm_visi |
 
 ## dmsignal_fe_experience_deploy — DM-Signal体感主導デプロイ
 
