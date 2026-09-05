@@ -475,7 +475,15 @@ process_request() {
             event root_sync_skipped "$task" 0 "published_sha=$published_sha reason=${SYNC_ROOT_SKIP_REASON:-unknown} paths=${SYNC_ROOT_SKIP_PATHS:-$(tracked_dirty_paths "$REPO_ROOT")}"
         fi
     fi
-    cleanup_isolated "$isolated"; trap - RETURN
+    # Push already landed: it is the terminal success boundary. A cleanup
+    # conflict here (e.g. a concurrent git gc lock on the isolated clone)
+    # must not flip a published request back into an rc/no-done-receipt
+    # failure — the publication itself already succeeded and must not be
+    # undone by a best-effort tidy-up step (cmd_karo_hotfix_publisher_postpush_cleanup).
+    trap - RETURN
+    if ! cleanup_isolated "$isolated"; then
+        echo "publisher: cleanup_isolated failed after successful publish task=$task isolated=$isolated (non-fatal, continuing)" >&2
+    fi
     move_to_done "$request"
 }
 

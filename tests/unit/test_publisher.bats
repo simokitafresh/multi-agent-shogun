@@ -259,6 +259,39 @@ EOF
     git -C "$PUBROOT" log -1 --format=%B | grep -q 'Published-By: publisher'
 }
 
+# test_necessity: a cleanup_isolated failure after the push has already
+# landed (e.g. a concurrent git gc lock on the isolated clone) must not
+# revert the request to rc/ with zero done receipts and a failure
+# notification — push is the terminal success boundary
+# (cmd_karo_hotfix_publisher_postpush_cleanup).
+@test "active publish tolerates a post-push cleanup_isolated failure" {
+    export PUBLISHER_REPO_ROOT="$PUBROOT" PUBLISHER_MODE=active
+    mkdir -p "$FIXTURE/bin"
+    cat > "$FIXTURE/bin/find" <<'EOF'
+#!/bin/bash
+case " $* " in
+    *" -delete "*)
+        case "$1" in
+            *"/.git/publisher-isolated."*)
+                echo "find: cannot delete '$1': Resource temporarily unavailable" >&2
+                exit 1
+                ;;
+        esac
+        ;;
+esac
+exec /usr/bin/find "$@"
+EOF
+    chmod +x "$FIXTURE/bin/find"
+    bash "$ROOT/scripts/publisher_queue.sh" enqueue "$FIXTURE/request.yaml" >/dev/null
+    run env PATH="$FIXTURE/bin:$PATH" SHOGUN_STATE_DIR="$STATE" PUBLISHER_REPO_ROOT="$PUBROOT" PUBLISHER_INBOX_WRITER="$FIXTURE/inbox_write.sh" PUBLISHER_MODE=active PUBLISHER_ONCE=1 bash "$ROOT/scripts/publisher.sh"
+    [ "$status" -eq 0 ]
+    [ "$(git -C "$PUBROOT" rev-parse HEAD)" = "$(git -C "$PUBROOT" rev-parse origin/main)" ]
+    [ "$(find "$STATE/publish_queue/done" -name '*.request' | wc -l)" -eq 1 ]
+    [ ! -d "$STATE/publish_queue/rc" ] || [ "$(find "$STATE/publish_queue/rc" -name '*.request' | wc -l)" -eq 0 ]
+    [ ! -s "$FIXTURE/inbox.log" ]
+    [ "$(jq -r 'select(.kind=="published") | .kind' "$STATE/publish_queue/events.jsonl")" = published ]
+}
+
 # test_necessity: a tracked dirty path with a configured .gitattributes driver
 # must be integrated against the incoming published tip and leave HEAD there.
 @test "active root sync integrates a dirty overlapping path with its merge driver" {
