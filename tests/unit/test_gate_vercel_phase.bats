@@ -1,6 +1,7 @@
 #!/usr/bin/env bats
 
 setup() { fixture_dir="$(mktemp -d)"; }
+teardown() { rm -f context/dm-signal-fixture-vp-*.md; }
 make_lines() { awk -v n="$1" 'BEGIN { for (i=1; i<=n; i++) print "line " i }' > "$2"; }
 
 @test "500 line context passes" {
@@ -195,4 +196,51 @@ SH
   [ "$status" -eq 1 ]
   [[ "$output" == *"BLOCK: dm-signal-fixture.md (source更新あり・参照リンク欠落)"* ]]
   [[ "$output" == *"docs/research/only-in-other-project.md"* ]]
+}
+
+# Same three scenarios exercised directly against gate_vercel_phase.sh's own
+# resolver (ref_exists_in_base/check_ref_record), which has the identical
+# canonical-scoping + git-tree-fallback fix applied independently since it is
+# a separate script (see external_ref_canonical_project_id and friends in
+# that file). VERCEL_PHASE_PROJECT_CONFIG lets these tests register a
+# fixture project without touching config/projects.yaml. The context file
+# must live under this repo's own context/ dir (removed in teardown) because
+# gate_vercel_phase.sh derives the file's canonical project from its path
+# relative to SCRIPT_DIR (real repo root, not overridable), unlike
+# gate_context_freshness.sh which accepts CONTEXT_FRESHNESS_ROOT.
+@test "GA-580: gate_vercel_phase resolves an external detail reference via git tree despite a stale checkout" {
+  setup_context_freshness_fixture
+  printf '<!-- fixture -->\nSee `docs/research/new-doc.md`.\n' > context/dm-signal-fixture-vp-a.md
+
+  run env VERCEL_PHASE_SKIP_CANDIDATE_SUGGESTIONS=1 \
+    VERCEL_PHASE_PROJECT_CONFIG="$fc_root/config/projects.yaml" \
+    bash scripts/gates/gate_vercel_phase.sh context/dm-signal-fixture-vp-a.md
+
+  [ "$status" -eq 0 ]
+}
+
+@test "GA-580: gate_vercel_phase still blocks a genuinely missing reference" {
+  setup_context_freshness_fixture
+  printf '<!-- fixture -->\nSee `docs/research/truly-missing.md`.\n' > context/dm-signal-fixture-vp-b.md
+
+  run env VERCEL_PHASE_SKIP_CANDIDATE_SUGGESTIONS=1 \
+    VERCEL_PHASE_PROJECT_CONFIG="$fc_root/config/projects.yaml" \
+    bash scripts/gates/gate_vercel_phase.sh context/dm-signal-fixture-vp-b.md
+
+  [ "$status" -ne 0 ]
+  [[ "$output" == *"docs/research/truly-missing.md"* ]]
+}
+
+@test "GA-580: gate_vercel_phase does not adopt a same-named file from an unrelated registered project" {
+  setup_context_freshness_fixture
+  mkdir -p "$fc_other/docs/research"
+  echo "unrelated collision" > "$fc_other/docs/research/only-in-other-project-vp.md"
+  printf '<!-- fixture -->\nSee `docs/research/only-in-other-project-vp.md`.\n' > context/dm-signal-fixture-vp-c.md
+
+  run env VERCEL_PHASE_SKIP_CANDIDATE_SUGGESTIONS=1 \
+    VERCEL_PHASE_PROJECT_CONFIG="$fc_root/config/projects.yaml" \
+    bash scripts/gates/gate_vercel_phase.sh context/dm-signal-fixture-vp-c.md
+
+  [ "$status" -ne 0 ]
+  [[ "$output" == *"docs/research/only-in-other-project-vp.md"* ]]
 }
