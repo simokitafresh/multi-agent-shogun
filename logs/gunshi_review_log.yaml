@@ -6323,7 +6323,7 @@
 - cmd_id: cmd_karo_recon2_4448_u1_revalidate
   review_type: report
   gate_result: "CLEAR"
-  gate_synced_at: "2026-09-05T12:20:00+09:00"
+  gate_synced_at: "2026-09-05T12:20:04+09:00"
   verdict: FAIL
   report_ninja: hanzo
   report_task_id: cmd_karo_recon2_4448_u1_revalidate_normal
@@ -6393,7 +6393,7 @@
 - cmd_id: cmd_karo_recon2_4448_u1_revalidate
   review_type: report
   gate_result: "CLEAR"
-  gate_synced_at: "2026-09-05T12:20:00+09:00"
+  gate_synced_at: "2026-09-05T12:20:04+09:00"
   verdict: FAIL
   report_ninja: hanzo
   report_task_id: cmd_karo_recon2_4448_u1_revalidate_normal
@@ -6461,7 +6461,7 @@
 - cmd_id: cmd_karo_recon2_4448_u1_revalidate
   review_type: report
   gate_result: "CLEAR"
-  gate_synced_at: "2026-09-05T12:20:00+09:00"
+  gate_synced_at: "2026-09-05T12:20:04+09:00"
   verdict: FAIL
   report_path: queue/reports/hanzo_report_cmd_karo_recon2_4448_u1_revalidate.yaml
   report_id: rpt-43a828b2-16bf-420c-ac55-3328709baa3e
