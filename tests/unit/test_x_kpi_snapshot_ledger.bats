@@ -108,3 +108,55 @@ PY
     [[ "$output" == *"OK"* ]]
     rm -rf "$dir"
 }
+
+# test_necessity: validate後のprocess停止でも正本をtruncateせず、並行writerの
+# newer generationを古いread結果で上書きしない。
+@test "共通 guard: atomic replace失敗とstale CASは既存ledgerを不変に保つ" {
+    local dir; dir="$(mktemp -d)"
+    run python3 - "$ROOT" "$dir" <<'PY'
+import sys
+from pathlib import Path
+root, d = sys.argv[1], sys.argv[2]
+sys.path.insert(0, f"{root}/scripts/x_ops")
+import x_ledger_guard as guard
+path = Path(d) / "ledger.yaml"
+old = "entries:\n- draft_id: A\n  snapshots: {}\n"
+new = "entries:\n- draft_id: A\n  snapshots: {t1h: {}}\n"
+path.write_text(old)
+real_replace = guard.os.replace
+guard.os.replace = lambda *_: (_ for _ in ()).throw(OSError("fixture replace failure"))
+try:
+    guard.write_ledger_text(path, new, expected_entries=1, expected_current_text=old)
+except OSError:
+    pass
+else:
+    raise SystemExit("replace failure was accepted")
+finally:
+    guard.os.replace = real_replace
+assert path.read_text() == old
+newer = "entries:\n- draft_id: A\n  snapshots: {t7d: {}}\n"
+path.write_text(newer)
+try:
+    guard.write_ledger_text(path, new, expected_entries=1, expected_current_text=old)
+except ValueError as exc:
+    assert "stale ledger generation" in str(exc)
+else:
+    raise SystemExit("stale writer was accepted")
+assert path.read_text() == newer
+print("OK atomic_fail_unchanged=1 stale_cas_block=1")
+PY
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"atomic_fail_unchanged=1 stale_cas_block=1"* ]]
+}
+
+@test "全writerがread世代CASを渡し stage2件数は変更前を正本にする" {
+    run rg -n 'expected_current_text=' \
+      "$ROOT/scripts/x_ops/x_growth_tag.py" \
+      "$ROOT/scripts/x_ops/x_kpi_snapshot.py" \
+      "$ROOT/scripts/x_ops/x_stage2_approve.py" \
+      "$ROOT/scripts/x_ops/x_slot_post.sh"
+    [ "$status" -eq 0 ]
+    [ "$(printf '%s\n' "$output" | wc -l)" -eq 4 ]
+    run rg -n 'expected_entries=original\.count' "$ROOT/scripts/x_ops/x_stage2_approve.py"
+    [ "$status" -eq 0 ]
+}
