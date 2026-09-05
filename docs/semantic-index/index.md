@@ -9332,6 +9332,7 @@ codd:
 | discussion | `queue/lord_conversation.jsonl` 2026-09-05T15:16:58+09:00 b66kyepdn Monitor event: "wait for run_tests.sh task kotaro.yaml background job to finish" [Monitor timed out — re-arm i |
 | discussion | `queue/lord_conversation.jsonl` 2026-09-05T15:40:41+09:00 b45ruby3d toolu_01R5SEHYKxRPpCsbChJsvRCy /tmp/claude-1000/-home-simokitafresh-multi-agent-shogun/f668db13-0cde-4f16-9196 |
 | discussion | `queue/lord_conversation.jsonl` 2026-09-05T16:01:51+09:00 bhll500me toolu_012dzsGcRk3r27qHkKjHJDYi /tmp/claude-1000/-home-simokitafresh-multi-agent-shogun/f668db13-0cde-4f16-9196 |
+| discussion | `queue/lord_conversation.jsonl` 2026-09-05T16:18:45+09:00 session_save_20260905_1630(復帰点、先に session_save_20260905_1618 を読め): ninja_block_fail_root_cause 設計書 v2(gist 70b946c0): 軍師 |
 
 ## visibility_tier_masking — Visibility Tier制マスク
 
