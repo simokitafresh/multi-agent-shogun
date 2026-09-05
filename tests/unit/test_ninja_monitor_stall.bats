@@ -1072,6 +1072,9 @@ wait "$maintenance_pid"
             [[ "$watcher_cmd" == *"shogun-hot-reload-watch"* ]] && break
             sleep 0.02
         done
+        watcher_alive=0
+        [ -d "/proc/$watcher_pid" ] && watcher_alive=1
+        printf "diag=watcher_detect iteration=%s pid=%s alive=%s cmd=%s\n" "$iteration" "$watcher_pid" "$watcher_alive" "$watcher_cmd"
         [[ "$watcher_cmd" == *"shogun-hot-reload-watch"* ]]
         [[ "$watcher_cmd" != *"ninja_monitor.sh"* ]]
         sleep 0.1
@@ -1094,6 +1097,11 @@ wait "$maintenance_pid"
             sleep 0.05
         done
         elapsed=$(( $(date +%s%3N) - started ))
+        capture_size=0
+        [ -e "$capture" ] && capture_size=$(stat -c %s "$capture" 2>/dev/null || echo 0)
+        watcher_alive_end=0
+        [ -d "/proc/$watcher_pid" ] && watcher_alive_end=1
+        printf "diag=capture_wait iteration=%s elapsed_ms=%s capture_size=%s watcher_alive=%s\n" "$iteration" "$elapsed" "$capture_size" "$watcher_alive_end"
 
         test -s "$capture"
         grep -q "generation=$generation" "$capture"
@@ -1104,13 +1112,17 @@ wait "$maintenance_pid"
     '
     if [ "$status" -ne 0 ]; then
         printf 'HOT_RELOAD_FAILURE_OUTPUT_BEGIN\n%s\nHOT_RELOAD_FAILURE_OUTPUT_END\n' "$output" >&3
-        log_path="$BATS_TEST_TMPDIR/hot-reload-watch/monitor.log"
-        if [ -f "$log_path" ]; then
-            printf 'HOT_RELOAD_FAILURE_LOG_BEGIN\n' >&3
+        # cmd_karo_ci_fix_33945636960: the fixed path never had the -N iteration
+        # suffix, so it could never resolve to a real per-iteration log file.
+        # Discover the most recently written iteration directory instead.
+        latest_dir="$(ls -td "$BATS_TEST_TMPDIR"/hot-reload-watch-*/ 2>/dev/null | head -1)"
+        log_path="${latest_dir}monitor.log"
+        if [ -n "$latest_dir" ] && [ -f "$log_path" ]; then
+            printf 'HOT_RELOAD_FAILURE_LOG_BEGIN path=%s\n' "$log_path" >&3
             cat "$log_path" >&3
             printf 'HOT_RELOAD_FAILURE_LOG_END\n' >&3
         else
-            printf 'HOT_RELOAD_FAILURE_LOG_MISSING path=%s\n' "$log_path" >&3
+            printf 'HOT_RELOAD_FAILURE_LOG_MISSING path=%s\n' "${log_path:-unknown}" >&3
         fi
     fi
     [ "$status" -eq 0 ]
