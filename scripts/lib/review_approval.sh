@@ -257,6 +257,30 @@ no_code_files = files_modified == [] or (
     and all(reported_path(item) == report_path for item in files_modified)
 )
 
+# 2026-09-05 将軍 D0(軍師 blt_183746 バグ#5): 前提不成立の honest FAIL 報告(ci_fix 等、
+# files_modified=[] かつ binary_checks が 1 件以上あり全て result=no、commit も主張しない)は
+# 成果物が存在しないのに commit identity を要求され SystemExit(1)→fingerprint 不能→approval
+# 記録不能→LGTM 通知不能の循環に落ちた(小太郎 inbox_priority_evidence_cycle)。
+# 「全 check が no で変更 file が無い」は報告の構造そのものが no-code を宣言している。
+# 忍者の任意マーカー(commit不要 等)に依存せず構造で判定する。1 件でも yes があれば対象外。
+def _all_checks_no(checks_obj):
+    if not isinstance(checks_obj, dict) or not checks_obj:
+        return False
+    seen = False
+    for group in checks_obj.values():
+        if not isinstance(group, list):
+            continue
+        for item in group:
+            if not isinstance(item, dict):
+                continue
+            seen = True
+            r = item.get("result")
+            if r is True or str(r).strip().lower() == "yes":
+                return False
+    return seen
+
+precondition_failed_no_code = files_modified == [] and _all_checks_no(checks) and not commit_claimed
+
 # Operational queue/log mutations are intentionally uncommitted runtime data.
 # Binding their review to the repository HEAD attributes an unrelated agent's
 # concurrent commit to this task.  Keep the allowance narrow and explicit:
@@ -314,7 +338,7 @@ typed_no_code = (
     and task_type in no_code_task_types
 )
 if (no_code_files or typed_no_code) and not commit_claimed and (
-    task_type in no_code_task_types or no_commit_asserted
+    task_type in no_code_task_types or no_commit_asserted or precondition_failed_no_code
 ):
     print("no-code-change")
     raise SystemExit(0)
