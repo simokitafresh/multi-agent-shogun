@@ -1,5 +1,5 @@
 <!-- gist-master: e2219c69d927f32dc84d53e3e7daa97d dm-signal-market-direction-breadth-exposure-asis-tobe_20260905.md -->
-# DM-Signal 体系の保有 ticker×weight を月ごとに見る — 1 表設計書 v1.3(2026-09-05 22:55 家老 R3-2 の分母定義を明記) / v1.2(2026-09-05 22:50 家老 R3 途中指摘: 分母は manifest 総数−I7 ではなく『その月に F1 CSV に行がある PF 数』。未開始 layer(L3 は 2013-12 前)は自然に 0 行) / v1.1(2026-09-05 22:50 家老 R2-7: is_mtd 列追加、contract test を AC1/AC2 の 2 本に) / v1.0(2026-09-05 22:35、殿 22:29『シンプルにデータを見たいだけだ。L0,L1,L2,L3,全体でどの ticker をどの weight で持っているかを知りたいだけだ。複雑さはすべて捨てろ』で v0.1〜v0.5 の 6 表・asset class・前月差・仮想 PF・裁定 4 点を全て撤去)
+# DM-Signal 体系の保有 ticker×weight を月ごとに見る — 1 表設計書 v1.6(2026-09-06 03:10 cmd_4481 CLEAR 02:45・is_suspect 意味確定) / v1.5(2026-09-06 00:50 cmd_4481 delegated) / v1.4(2026-09-06 00:40 進捗整合: 入力 F1 CSV は 00:19 に生成済み(23,175 行、終端 approved_honest_fail)、新四つ目 3 体は is_suspect=true で別計上(家老 blt_002416 APPROVE)、実装 cmd は家老協議後に起票、cmd_4480 根因確定で is_suspect 解除) / v1.3(2026-09-05 22:55 家老 R3-2 の分母定義を明記) / v1.2(2026-09-05 22:50 家老 R3 途中指摘: 分母は manifest 総数−I7 ではなく『その月に F1 CSV に行がある PF 数』。未開始 layer(L3 は 2013-12 前)は自然に 0 行) / v1.1(2026-09-05 22:50 家老 R2-7: is_mtd 列追加、contract test を AC1/AC2 の 2 本に) / v1.0(2026-09-05 22:35、殿 22:29『シンプルにデータを見たいだけだ。L0,L1,L2,L3,全体でどの ticker をどの weight で持っているかを知りたいだけだ。複雑さはすべて捨てろ』で v0.1〜v0.5 の 6 表・asset class・前月差・仮想 PF・裁定 4 点を全て撤去)
 
 - 発端: 殿 19:32(市場方向性の PIT 観測)→ 22:29 で目的を 1 文に固定。
 - 版履歴(歴史修正禁止のため記録のみ): v0.1 19:50 6 表設計 / v0.2〜v0.5 21:40〜22:40 weight 正本の訂正往復(display_ticker_weights 直接採用は 08-06 partial-turnover v1.10 で棄却済み→history.py L224-237 方式) / **v1.0 22:35 1 表へ縮約**。旧版本文は git 履歴(5498c0f9b 以前)にある。
@@ -24,6 +24,7 @@
 | ticker | XLU / TQQQ / GLD / TMV / TECL / Cash(基盤 F1 に現れたものだけ。手入力なし) |
 | weight | その月にその階層の PF が持つ ticker の平均 weight = Σ(PF の weight) ÷ 階層の PF 数 |
 | pf_count | 分母 = その月・その階層で F1 CSV に行がある PF 数(distinct portfolio_id)。未開始 layer は行が無いので出力しない |
+| is_suspect | true = F1 の parity 不一致 3 体(奥義-GS-新四つ目-激攻/常勝/鉄壁)。**根因確定(cmd_4480 CLEAR 03:05)**: 3 体は投票比例 weight の FoF で、F1 の 1/N 展開が本番と一致しない(102/104)。よって true 側の weight は 1/N 近似値。列を外す条件は F1 が target_weight を読むこと(D4 殿裁定)。false 側が正本(v1.6) |
 
 - 各 (year_month, layer) で weight の合計は 1.0。
 - ALL は当月 eligible(行がある)PF の単純平均(階層をまたいで 1 PF=1 票)。全 78 が揃う月のみ 78。
@@ -38,7 +39,8 @@ ALL 行 = 同じことを layer を無視して計算
 
 - pandas 数行。パラメータ 0。ハードコード 0(ticker も layer も入力 CSV から出る)。
 - 出力先: `analysis_runs/cmd_44xx_layer_holdings/layer_holdings_monthly.csv`。
-- 実行前提: cmd_4479(基盤 F1)CLEAR。F1 の manifest(78 PF・as-of)をそのまま同梱。
+- 実行前提: cmd_4479(基盤 F1)終端(00:3x approved_honest_fail、CSV 23,175 行は使用可)。F1 の manifest(78 PF・as-of)をそのまま同梱。
+- 進捗(00:50): 実装 cmd_4481 を delegated(家老協議 blt_004146 (1) yes、忍者 1 名 15 分、配備は家老の順序で次空き)。
 
 ## §3 二値 AC(実装 cmd に渡す。3 つだけ)
 

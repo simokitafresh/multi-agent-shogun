@@ -1,7 +1,7 @@
 <!-- gist-master: 70b946c022cd5f6f81195ab837b7a7eb ninja_block_fail_root_cause_asis_tobe_20260905.md -->
 # 忍者BLOCK/FAILの根因対策 — 家老配備設計 v3.1
 
-更新: 2026-09-05 23:21:40 JST。一次確認の観測時点は23:13:50 JST。殿「読み込み覚醒してアップデート。家老が忍者を配備しやすい形式にしてよい」に基づく設計更新。
+更新: 2026-09-05 23:21:40 JST(家老 v3.1)。将軍追記 2026-09-06 00:40: §5 台帳に W0/W1 CLEAR、F-6 APPROVE、K2 走行、W5 閉を反映。一次確認の観測時点は23:13:50 JST。殿「読み込み覚醒してアップデート。家老が忍者を配備しやすい形式にしてよい」に基づく設計更新。
 正本は本書。既存gist IDを維持。旧v3.0の全数値・分類・レビュー履歴は `docs/research/ninja-block-fail-root-cause-v3-evidence-20260905.md` に保存した。過去の観測日時は変更しない。
 
 ## §0 家老が最初に見る結論
@@ -183,15 +183,18 @@ flowchart LR
 | F-3 | honest FAIL approval | 実装存在確認、旧版に運用適用記録 | f69288720/d6842c066、review_approvalのapproved_honest_fail実装。新規未着手扱いに戻さない |
 | F-4 | fixture陳腐化 | 旧版で公開・CI検証報告あり | 208df246d、旧run33963211348。現在CI結果とは呼ばない |
 | F-5 | 家老計測 | v2.5修正・検証・gist同期済み | 1a9f9f3a9、contract8/8、別書§6.8。C/D根因修復の件数には入れない |
-| F-7 | recon-dual 独立性契約が受け手スキル(skills/recon-dual)の散文キーワード照合にしか無く、起票側が知らずに配備停止→追記→再配備の往復(00:41 cmd_4480) | 公開確認済み(将軍 D0、家老 REJECT 3 点対応中) | 分類 C。根治: `recon_dual:` 構造フィールド+`scripts/lib/recon_dual_contract.py` を cmd_save Check 19.7 で fail-closed、実入口 test 4、skeleton、SKILL Step1 field 正本。[[cmd_4480_recon_dual往復]] -> [[契約が受け手スキルにのみ存在]] -> [[recon_dual構造フィールド]] |
-| P-4 | 家老 blt_011411: A1 通常配備で command field 非投影→[INDEPENDENT_RECON] 自動注入なし / A2 direct の stale repo-cache base 8af986≠e7d187。家老 REJECT(2): recon_dual の task 投影+consumer field 直読+fixed base 検証の配備前 BLOCK | 家老 lane 1 task に統合(blt_012617) | 分類 D/C。W5 と同型で原因別 fix |
+| F-6 | CI gate 偽 BLOCK『reviewed_at datetime parse failed』(二段レビュー未完で reviewed_at 空文字が評価器へ) | 公開確認済み(278e93d06 origin)・**家老 APPROVE blt_001113** | 将軍 D0: 評価器で空 reviewed_at=WAIT review_boundary_pending、contract test +1(31/31)。分類 D。家老レビュー中(msg_001003) |
+| F-7 | recon-dual 独立性契約が受け手スキル(skills/recon-dual)の散文キーワード照合にしか無く、起票側が知らずに配備停止→追記→再配備の往復(00:41 cmd_4480) | 公開確認済み(将軍 D0、家老レビュー依頼中) | 分類 C(正規経路の案内なし)。根治: `recon_dual:` 構造フィールド+`scripts/lib/recon_dual_contract.py` を cmd_save Check 19.7 で fail-closed(散文のみ WARN/無し BLOCK)、cmd_skeleton テンプレ、SKILL Step1 はフィールド正本、bats 6/6。semantic alias 追加。[[cmd_4480_recon_dual往復]] -> [[契約が受け手スキルにのみ存在]] -> [[recon_dual構造フィールド]] |
+| P-4 | 家老 blt_011411: cmd_4480 A1 通常配備で command field が task へ非投影→[INDEPENDENT_RECON] 自動注入なし(setter で手当)、A2 direct は自動 worktree base 8af986 が DM-Signal 正本 e7d187 と不一致(stale repo-cache)→専用 worktree へ切替 | **配備済み 03:0x**(小太郎 cmd_karo_hotfix_recon_dual_projection_fixed_base_20260906、assigned) | 分類 D/C。deploy_task 側の 2 欠陥+recon_dual task 投影/consumer field 直読/fixed base≠worktree HEAD の配備前 BLOCK。家老 lane |
 | P-1→W5 | バグ#6 | 調査完了・既修復 | `7671bdb99`、隔離success/tamper fail-close、追加fix不要 |
 | P-2→W5 | ci_push_state | 調査完了・10/10終端接続 | WAIT10=6+3+1。9行CLEAR、1行はpurpose不一致の正式BLOCK+archive。修復対象0 |
-| P-3→W6 | honest FAIL停滞 | 未着手、既存監視あり | 既存caller/条件/fixtureを確認して変更要否を決める |
-| W0 | 一意根拠表 | 未着手 | 22eventの分類整合 |
-| W1/T3・W2/T1 | refs注入 | 未着手 | 入力契約/正本所有者確定後に並行可 |
+| P-3→W6 | honest FAIL停滞 | 未着手、既存監視あり(cmd_4479 は軍師再 review→approved_honest_fail が 15 分で回った=停滞なし 00:3x) | 既存caller/条件/fixtureを確認して変更要否を決める |
+| W0 | 一意根拠表 | **GATE CLEAR 00:12**(小太郎) | queue/reports/kotaro_report_cmd_karo_recon_w0_failure_events_20260905.yaml |
+| W1/T3 | routine_refs 契約確定 | **GATE CLEAR 00:19**(飛猿)。W1 実装(注入)は契約確定を受けて起票可 | queue/reports/tobisaru_report_cmd_karo_recon_w1_routine_contract_20260905.yaml。W2/T1 は W1 契約確定後 |
+| W1 core | routine_refs 注入 実装 | **done 報告済み**(飛猿 cmd_karo_impl_w1_routine_refs_core_20260906、家老 blt_030157『W1 ancestry 解消し CLEAR』) | 次=W2/T1 |
+| W2/T1 | environment_refs 注入 | 未着手(W1 core CLEAR で前提解放) | W1 実装と共通入口 |
 | W3/T2 | validator | 未着手 | W2 schema確定 |
-| W4/T5 | canonical構造記録 | 未着手 | W0分類契約確定 |
+| W4/T5 | canonical構造記録 | 未着手(W0 CLEAR で前提解放) | W0 の一意根拠表を分類契約として採用後に着手可 |
 | T4 | review_feedback再注入 | 保留 | 現行inject_task_modifiers経路と反復FAILの残存を観測後に判断 |
 | T6 | 個別偽陽性修復 | 継続方針 | 本書W5/W6または別throughput書へ紐付け、空の進行中taskを作らない |
 
