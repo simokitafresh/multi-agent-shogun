@@ -15492,6 +15492,7 @@ codd:
 | cmd | `cmd_karo_hotfix_review_bundle_cmd_id_unit1_20260829` (`scripts/review_bundle.py`, `tests/unit/test_review_bundle.bats`) |
 | causal | `cmd_karo_hotfix_sg7_honest_fail_verdict_20260831` files_modified: [[provisional_review_bundle]] |
 | discussion | `queue/lord_conversation.jsonl` 2026-09-02T19:52:31+09:00 bd31ixq2d toolu_01N5YJFnhbwWnQ5HSbcEmna6 /tmp/claude-1000/-home-simokitafresh-multi-agent-shogun/bea25dac-8ba9-41fb-a877 |
+| discussion | `queue/lord_conversation.jsonl` 2026-09-05T16:07:22+09:00 btdckcrov toolu_011HMqRDXeddQJxkLCmnVL9E /tmp/claude-1000/-home-simokitafresh-multi-agent-shogun/d9faccc5-127b-4b4f-bd18 |
 
 ## provisional_cmd_gate_scaffold — 仮: Cmd Gate Scaffold
 
