@@ -39,7 +39,16 @@ RG_BIN="$(resolve_vercel_phase_rg)" || {
     exit 1
 }
 
+# GA-579/580: shared with scripts/gates/gate_context_freshness.sh. See
+# scripts/lib/external_project_ref_resolver.sh for canonical-scoping and
+# git-tree-fallback rationale.
+source "$SCRIPT_DIR/scripts/lib/external_project_ref_resolver.sh"
+
 declare -A SEEN_REFS=()
+# GA-580: per-context_file canonical-project scoping cache (see check_ref_record).
+declare -A CONTEXT_CANONICAL_PROJECT=()
+declare -A CONTEXT_CANONICAL_ROOT=()
+declare -A CONTEXT_CANONICAL_COMPUTED=()
 # shellcheck disable=SC2034  # FIRST_ORIGIN: kept for debugging broken refs
 declare -A FIRST_ORIGIN=()
 declare -a BROKEN_DETAILS=()
@@ -49,6 +58,9 @@ declare -a EXTERNAL_REPO_PATHS=()
 # ANY_EXTERNAL_EXISTS: 外部リポ(docs/research/あり)が一つでも存在するか。main()で設定。
 # check_context_file()が参照: false時は外部リポ参照をスキップ（偽陽性防止）
 ANY_EXTERNAL_EXISTS=false
+# GA-580: test-only override so isolated fixtures can register a canonical
+# project (see external_ref_project_path) without touching config/projects.yaml.
+VERCEL_PHASE_PROJECT_CONFIG="${VERCEL_PHASE_PROJECT_CONFIG:-$SCRIPT_DIR/config/projects.yaml}"
 
 # cmd_1976最適化: RESOLVE_BASES配列を事前構築しprocess substitutionを排除
 declare -a RESOLVE_BASES=()
@@ -98,7 +110,7 @@ load_external_repos() {
         [[ -n "$resolved" && "$resolved" != "$SCRIPT_DIR" ]] || continue
         EXTERNAL_REPO_PATHS+=("$resolved")
     done < <(
-        grep -E '^ {4}path:' "$SCRIPT_DIR/config/projects.yaml" 2>/dev/null | \
+        grep -E '^ {4}path:' "$VERCEL_PHASE_PROJECT_CONFIG" 2>/dev/null | \
         sed 's/^[[:space:]]*path:[[:space:]]*//' | tr -d '"'
     )
 }
@@ -107,6 +119,11 @@ is_glob_ref() {
     local ref="$1"
     [[ "$ref" == *"*"* || "$ref" == *"?"* || "$ref" == *"["* ]]
 }
+
+# GA-579/580: external_ref_canonical_project_id, external_ref_project_path
+# and external_ref_exists_via_git are defined in
+# scripts/lib/external_project_ref_resolver.sh (sourced above) and shared
+# with scripts/gates/gate_context_freshness.sh.
 
 build_file_cache() {
     [ "$FILE_CACHE_READY" = true ] && return 0
@@ -200,11 +217,39 @@ check_ref_record() {
     FIRST_ORIGIN["$key"]="${file_display}:${line_no}"
     TOTAL_REFS=$((TOTAL_REFS + 1))
 
+    # GA-580: scope resolution to the file's single canonical project (when
+    # it has one) instead of every registered project, so a same-named path
+    # that coincidentally exists under an unrelated project cannot be
+    # mistaken for the intended target. Cache per context_file since this is
+    # evaluated once per distinct ref already (SEEN_REFS dedupe above).
+    local -a bases=()
+    if [[ -z "${CONTEXT_CANONICAL_COMPUTED[$context_file]:-}" ]]; then
+        local ctx_project="" ctx_root=""
+        ctx_project="$(external_ref_canonical_project_id "$file_display" 2>/dev/null || true)"
+        if [[ -n "$ctx_project" ]]; then
+            ctx_root="$(external_ref_project_path "$ctx_project" "$VERCEL_PHASE_PROJECT_CONFIG" 2>/dev/null || true)"
+        fi
+        CONTEXT_CANONICAL_PROJECT["$context_file"]="$ctx_project"
+        CONTEXT_CANONICAL_ROOT["$context_file"]="$ctx_root"
+        CONTEXT_CANONICAL_COMPUTED["$context_file"]=1
+    fi
+    if [[ -n "${CONTEXT_CANONICAL_PROJECT[$context_file]:-}" ]]; then
+        bases=("$SCRIPT_DIR")
+        [[ -n "${CONTEXT_CANONICAL_ROOT[$context_file]:-}" ]] && bases+=("${CONTEXT_CANONICAL_ROOT[$context_file]}")
+    else
+        bases=("${RESOLVE_BASES[@]}")
+    fi
+
     local found=false
     local base_dir
-    for base_dir in "${RESOLVE_BASES[@]}"; do
+    for base_dir in "${bases[@]}"; do
         [ -n "$base_dir" ] || continue
         if ref_exists_in_base "$base_dir" "$ref"; then
+            found=true
+            break
+        fi
+        if [[ "$base_dir" != "$SCRIPT_DIR" ]] \
+            && external_ref_exists_via_git "$base_dir" "$ref" "${VERCEL_PHASE_GIT_TIMEOUT:-10}"; then
             found=true
             break
         fi
