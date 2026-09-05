@@ -4079,8 +4079,8 @@ entries:
   actioned_by: ''
   notify_targets:
     - 'shogun'
-  confirmed_by: []
-  status: 'open'
+  confirmed_by: ["shogun"]
+  status: "closed"
 - id: 'blt_20260905_162246_849986'
   content: |-
     [URGENT-HARM] GA-581 msg_20260905_161649_1652245_055e3560 処理: GA-580と同一case8・同一missing-ref root、修正前再発。artifact 191行でtest_gate_vercel_phase case8のみrc1/33261ms、semantic 46/46 PASS。既存cmd_karo_hotfix_ga579_external_project_context_refをgate_vercel_phase.shまでscope拡張し小太郎が修正中、疾風2x2偵察LGTM済み。新task重複は作らない。集計コマンド: 2 artifactのselected files/failed case/machine reasonを突合。出力行の生貼付: 同一failed case=1/1、semantic PASS=46/46、追加task=0、既存root task=1。1件の定義: 1件=pre-push artifact内のnot ok test case一意行。
