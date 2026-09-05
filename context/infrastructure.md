@@ -1,5 +1,6 @@
 # インフラコンテキスト
 <!-- last_updated: 2026-09-05 context_freshness reviewed source boundary -->
+<!-- source_commit:f91b6919f497 reason:context_freshness reviewed source boundary evidence:context_freshness_check context=context/infrastructure.md commit=f91b6919f497 -->
 <!-- source_commit:bdabd918845c reason:context_freshness reviewed source boundary evidence:context_freshness_check context=context/infrastructure.md commit=bdabd918845c -->
 <!-- source_commit:a4c2e1eafbad reason:context_freshness reviewed source boundary evidence:context_freshness_check context=context/infrastructure.md commit=a4c2e1eafbad -->
 <!-- source_commit:feb6ea91e2ba reason:context_freshness reviewed source boundary evidence:context_freshness_check context=context/infrastructure.md commit=feb6ea91e2ba -->
@@ -839,3 +840,4 @@ source boundary一致taskはregistryのowner/update_triggerからcontext_update_
 - 軍師 review precheck の ancestry 許容+cache 無効化(2026-09-05, feb6ea91e 軍師 D0)|review_source_context が report commit の ancestry を許容せず、precheck cache が古い判定を返して cmd_4476 が『context 参照切れ』偽 FAIL(13:00)→将軍・家老の再実測では PASS|ancestry 許容+cache invalidation|origin: `[[cmd_4476_偵察]] -> [[precheck_cache_偽FAIL_20260905]] -> [[review_source_context_ancestry]]`
 - same-cmd 再配備の contract reset(2026-09-05, a4c2e1eaf 影丸)|同一 cmd を別忍者へ再配備した際に前世代の task contract(planned scope/lesson_set)が残り gate が矛盾する→再配備時に contract を世代ごとに reset|→ `queue/tasks/` 世代管理、deploy_task.sh|origin: `[[cmd_4448_4449_再検証]] -> [[same_cmd_redeploy_contract_reset_20260905]] -> [[double_deploy_guard]]`
 - cmd_complete gate の世代 rotation(2026-09-05, bdabd918 影丸)|同一 cmd の再 GATE で旧世代の gate_worker artifact(version/state/cmd_id/completion_generation)が残り現世代と混同→有効な旧世代のみ `queue/gates/<cmd>/gate_worker_stale/<generation>/` へ原子的に移動、破損・別 cmd・不正世代は停止|origin: `[[cmd_4476_偵察]] -> [[gate_worker_世代混同_20260905]] -> [[cmd_complete_generation_rotation]]`
+- ci_fix run 33939652526(2026-09-05, f91b6919f 才蔵)|CI RED の実失敗=ninja_monitor hot-reload watcher の owner validation が一過性で落ちる(test #15)→retry を root-cause fix、test_ninja_monitor_stall も同 lane|→ paths-ignore(780f334c0)と併せて CI GREEN 復帰の前提|origin: `[[CI_RED_20260905]] -> [[hot_reload_owner_validation_transient]] -> [[ci_fix_33939652526]]`

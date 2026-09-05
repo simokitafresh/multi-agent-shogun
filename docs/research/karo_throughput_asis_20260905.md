@@ -153,3 +153,40 @@
 1. **計測修復(殿 14:49 go)**: (a) function timing に ISO timestamp 列 (b) defense_overhead に agent 列 (c) review_approval 内訳を実測 (d) auto_push_ancestry FAIL に reason (e) publisher_c2a_merge に所要時間 (f) watcher の held を jsonl で日次集計できる形 (g) 上記を 1 本の `karo_throughput_report.sh` で毎日表にする。
 2. 配達 held の解消(順位 1): busy gating の閾値/lease 設計の見直し(計測後)。
 3. 合流の自動化(順位 2)。
+
+## §8 セルフレビュー(15:05、殿指示 14:57『影響範囲・依存関係を深く。複雑化禁止、よりシンプルに速く、既存の仕組みを最大限に』)
+
+### §8.1 変更 6 点の影響範囲(読み手・呼び手を rg で全数確認)
+| 変更 | 書き手(変更箇所) | 読み手(影響先) | 判定と簡素化 |
+|---|---|---|---|
+| (a) function_timing に時刻 | printf 3 箇所: cmd_complete_gate.sh / deploy_task.sh / ninja_monitor.sh | `scripts/lib/function_coverage.sh`(key 参照、schema 文字列は自前 function_coverage.v1 のみ)、ninja_monitor、cmd_complete_gate、deploy_task(自書き) | **schema を v2 にしない**。function_coverage.v1 が既に持つ `observed_date`/`observed_at` と同名の key を足すだけ(既存の型を複製)。読み手は key 参照なので無影響。集計側は key 不在時に execution_id の epoch へ fallback |
+| (b) defense_overhead に agent | `scripts/lib/defense_overhead_writer.sh` 1 箇所(python の dict に 1 key) | 読み手 12 file は全て **書き手**(write/write_async 呼出し)。純粋な読み手は ninja_monitor の pre_push metrics(source=pre_push を grep)と `lib/defense_overhead_event_index.py`(event_id のみ index)。`deploy_task/state.sh` L485 は writer を通さず生 JSON を追記=agent 無し行が残る | 追加 key は無害(全読み手が key 参照 or event_id のみ)。writer に `SHOGUN_AGENT_ID→tmux @agent_id→'-'` を自動付与。state.sh の生追記は今回触らず、集計側で agent 欠損='-' として扱う(壊さない) |
+| (c) review_approval 内訳 | `review_approval.sh` L821/L826 の 0 固定 | なし(defense_overhead へ書くだけ) | 既存の `REVIEW_APPROVAL_TOTAL_T0_US` と同じ `date +%s%N` 差分を 2 箇所に置くだけ。新関数を作らない |
+| (d) auto-push FAIL の理由 | `cmd_complete_gate.sh` gate_run_auto_push_ancestry_retry の FAIL printf | 読み手は cmd_complete_gate.sh 自身のみ(retry_log を読む) | 直前に既に stdout へ出している `AUTO_PUSH_WAIT ... result=SKIP reason=...` 行を変数で受けて FAIL 行の 4 列目に付ける。tab 区切りを維持(既存読み手は 3 列目まで) |
+| (e) c2a の所要 | `publisher_c2a_merge.sh`(74 行) | 呼び手=publish_direct_commit.sh と publisher daemon。stdout の `publisher_c2a_merge: pushed` 行を grep する経路あり(publish_direct_commit) | stdout の既存行は変えない。先頭で `T0=$(date +%s%N)`、push 成功後に `defense_overhead_write_async publisher_c2a c2a_merge_total <ms> PASS` の 2 行のみ。isolated clone 内で実行されても `$ROOT/scripts/lib` を絶対 path で source(既存 review_approval と同じ書き方) |
+| (f) watcher held を jsonl へ | `inbox_watcher.sh` L1591 の直後 1 行 | watcher は agent ごとに 1 親+1 子(pgrep 18 本は親子で、重複起動ではない=確認済み) | `defense_overhead_write_async inbox_watcher delivery_held <sec*1000> <PASS|WARN>`。agent は (b) で自動付与。stderr の人間向け行は残す |
+| (g) 日次表 script | 新規 `scripts/karo_throughput_report.sh`(python 1 本を bash から呼ぶ) | 既存 `throughput_scan.sh` / `throughput_growth_loop.sh` は S1/S2 insight 用で再利用不可(確認済み) | 入力は上記 5 源の **読むだけ**。書込みは docs/research/karo_throughput_daily/<date>.md のみ。cron 無し(手動 or loop から) |
+
+### §8.2 依存関係(順序)
+1. (b) agent 自動付与が先。(f)(e)(c) は (b) の後に書くと agent が付く。
+2. (a) は単独。(d) は単独。
+3. (g) は (a)-(f) の新 key を **任意**として読む(無ければ '-' / epoch fallback)。∴ (g) は (a)-(f) と並行して書け、先に (g) だけ入れても壊れない。
+4. 外部依存: なし(全て repo 内 bash/python3、新パッケージ 0)。
+
+### §8.3 リスクと二値
+| リスク | 二値で塞ぐ |
+|---|---|
+| jsonl の 1 行が壊れて既存読み手が落ちる | 各 writer の隔離 fixture で `python3 -c json.loads` が全行 PASS |
+| defense_overhead の書込み量が増える(watcher 357 行/日+c2a 83 行/日=+440 行/日、現状 26,066 行/日の 1.7%) | 増分 2% 未満を報告に数値で書く。writer の rotation(max_bytes 64MB/keep 50,000 行)は既存のまま |
+| tmux が無い環境(CI/隔離)で agent 解決が失敗 | writer は `SHOGUN_AGENT_ID` → tmux → '-' の順で **失敗しても書く**(fail-open、計測は止めない) |
+| 時刻 key 追加で function_timing の行が長くなり ninja_monitor の tail/grep が遅くなる | key 2 個(約 40 byte)。行数は増えない |
+
+### §8.4 セルフレビューで削ったもの(複雑化禁止)
+- schema v2 の導入(→ 既存 key 名の複製で足りる)。
+- 新台帳ファイル(→ 全て既存 defense_overhead.jsonl / 既存 retry_log へ)。
+- cron 登録(→ 別 cmd。まず手動で 3 日分の表を見る)。
+- watcher の held 解消や合流自動化(→ 計測後の別 cmd)。
+
+### §8.5 レビュー依頼(忖度なし、15:05)
+- 家老: 上記 (a)-(g) の影響範囲に漏れがないか、家老 lane の実運用(review_approval / c2a / gate 再実行)で壊れる経路がないか、cmd_4478 の AC が現場で二値判定できるか。
+- 軍師: 集計の定義(held・c2a_merge_total・agent 解決順)と後方互換(v1 行の epoch fallback、agent 欠損 '-')が SG 観点で穴なしか、(g) が既存 throughput_scan と混同されないか。
