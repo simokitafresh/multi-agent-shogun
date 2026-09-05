@@ -9312,6 +9312,7 @@ codd:
 | causal_chain | `[[cmd_karo_hotfix_staged_preserve_index_regression_202609021832]]` (L1704) |
 | causal_chain | `[[cmd_karo_hotfix_lesson_feedback_task_identity_202609021922]]` (L1706) |
 | discussion | `queue/lord_conversation.jsonl` 2026-09-05T13:41:32+09:00 session_save_20260905_1342(復帰点、先に session_save_20260905_1310 を読め): 殿 13:19 収束裁定→設計書 v0.4 §M+§0.0(殿 13:21 スタイル指示、doc-styl |
+| discussion | `queue/lord_conversation.jsonl` 2026-09-05T14:07:07+09:00 session_save_20260905_1406(軍師復帰点): 本セッション成果=(1)D0 3件commit済み: precheck ac_version追補差異WARN降格(bd60ace73)、inbox_mark_read t |
 
 ## visibility_tier_masking — Visibility Tier制マスク
 
