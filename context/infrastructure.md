@@ -1,5 +1,6 @@
 # インフラコンテキスト
 <!-- last_updated: 2026-09-05 context_freshness reviewed source boundary -->
+<!-- source_commit:bdabd918845c reason:context_freshness reviewed source boundary evidence:context_freshness_check context=context/infrastructure.md commit=bdabd918845c -->
 <!-- source_commit:a4c2e1eafbad reason:context_freshness reviewed source boundary evidence:context_freshness_check context=context/infrastructure.md commit=a4c2e1eafbad -->
 <!-- source_commit:feb6ea91e2ba reason:context_freshness reviewed source boundary evidence:context_freshness_check context=context/infrastructure.md commit=feb6ea91e2ba -->
 <!-- source_commit:780f334c0923 reason:context_freshness reviewed source boundary evidence:context_freshness_check context=context/infrastructure.md commit=780f334c0923 -->
@@ -837,3 +838,4 @@ source boundary一致taskはregistryのowner/update_triggerからcontext_update_
 - CI 台帳 push の paths-ignore(2026-09-05 13:09, 780f334c0 将軍 D0)|publisher の台帳 batch(bulletin/insights/review_log/workarounds/semantic-index/tasks/lessons.md/lessons yaml)が 1 分毎に push し、concurrency group の pending 上限 1 で古い run が cancel→直近 40 run 中 33 cancelled=CI 検証ゼロ(cancel-in-progress:false でも pending は 1 本しか残らない)|台帳のみの commit は run を起動しない(全 path 一致時のみ skip)|origin: `[[単一publisher_台帳ノイズ_H3]] -> [[CI_pending上限cancel_20260905]] -> [[paths-ignore]]`
 - 軍師 review precheck の ancestry 許容+cache 無効化(2026-09-05, feb6ea91e 軍師 D0)|review_source_context が report commit の ancestry を許容せず、precheck cache が古い判定を返して cmd_4476 が『context 参照切れ』偽 FAIL(13:00)→将軍・家老の再実測では PASS|ancestry 許容+cache invalidation|origin: `[[cmd_4476_偵察]] -> [[precheck_cache_偽FAIL_20260905]] -> [[review_source_context_ancestry]]`
 - same-cmd 再配備の contract reset(2026-09-05, a4c2e1eaf 影丸)|同一 cmd を別忍者へ再配備した際に前世代の task contract(planned scope/lesson_set)が残り gate が矛盾する→再配備時に contract を世代ごとに reset|→ `queue/tasks/` 世代管理、deploy_task.sh|origin: `[[cmd_4448_4449_再検証]] -> [[same_cmd_redeploy_contract_reset_20260905]] -> [[double_deploy_guard]]`
+- cmd_complete gate の世代 rotation(2026-09-05, bdabd918 影丸)|同一 cmd の再 GATE で旧世代の gate_worker artifact(version/state/cmd_id/completion_generation)が残り現世代と混同→有効な旧世代のみ `queue/gates/<cmd>/gate_worker_stale/<generation>/` へ原子的に移動、破損・別 cmd・不正世代は停止|origin: `[[cmd_4476_偵察]] -> [[gate_worker_世代混同_20260905]] -> [[cmd_complete_generation_rotation]]`
