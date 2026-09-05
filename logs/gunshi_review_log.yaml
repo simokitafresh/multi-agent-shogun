@@ -8696,3 +8696,33 @@
   verdict: LGTM
   verified_files:
   - queue/reports/hayate_report_cmd_karo_recon2_hanzo_failed_inventory.yaml:1
+- approved_failed_check_paths:
+  - binary_checks.reporting[0]
+  brainwash_check: '#1no #2no #3no #4no #5no #6no #7no #8no 分類と追跡結果の論理整合確認'
+  causal_chain: dirty ownership audit→分類→stale index lock追跡→永続証跡なし断定不能→正直報告
+  cmd_id: cmd_karo_recon2_dirty_ownership_audit
+  finding_categories:
+  - assumptions
+  - premortem
+  - ambiguity
+  - adversarial
+  findings_summary: honest FAIL LGTM。reportingのみno(recon2 no-code terminal PASS receipt不能)。監査(分類+lock追跡)は完遂。
+  observations:
+  - 既存分類保持。stale index lockの生成主体追跡完了
+  - reporting FAILはrecon2 no-codeのterminal receipt構造制約
+  operational_simulation:
+    actual: 分類完了。ninja_monitor最有力だが断定不能(PID永続証跡なし)
+    command: queue/reports/hayate_report_cmd_karo_recon2_dirty_ownership_audit.yaml
+      Read確認
+    expected: 分類+lock生成主体追跡
+    result: PASS
+  origin: '[[cmd_karo_recon2_dirty_ownership_audit]] -> [[分類+追跡完遂]] -> [[honest_FAIL_LGTM]]'
+  report_ninja: hayate
+  report_task_id: cmd_karo_recon2_dirty_ownership_audit_normal
+  report_verdict: FAIL
+  review_type: report
+  step3_5_verified: true
+  timestamp: '2026-09-05T19:56:00'
+  verdict: LGTM
+  verified_files:
+  - queue/reports/hayate_report_cmd_karo_recon2_dirty_ownership_audit.yaml:1
