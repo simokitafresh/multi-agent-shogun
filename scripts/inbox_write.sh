@@ -988,6 +988,16 @@ inbox_deliver_report_review_generation() {
     # marker単独では抑止しない。inbox消失+approval不在ならre-send(修復)
     if [ -n "$fingerprint" ] && [ -n "$parent_cmd" ]; then
         local _root="${INBOX_WRITE_ROOT_OVERRIDE:-${SELF_SCRIPT_DIR:-$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)}}"
+        local _report_id="" _report_version="" _report_ref=""
+        if [ -f "$report_path" ]; then
+            _report_id=$(inbox_yaml_field_get "$report_path" "report_id" "")
+            _report_version=$(inbox_yaml_field_get "$report_path" "report_identity_version" "")
+            if [[ "$report_path" == "$_root/"* ]]; then
+                _report_ref="${report_path#"$_root/"}"
+            else
+                _report_ref="$report_path"
+            fi
+        fi
         local dedupe_dir="${_root}/queue/gates/${parent_cmd}"
         local dedupe_file="${dedupe_dir}/gunshi_review_notify_${fingerprint}.done"
         local dedupe_lock="${dedupe_dir}/gunshi_review_notify.lock"
@@ -998,7 +1008,14 @@ inbox_deliver_report_review_generation() {
                 # marker exists: check durable record (inbox content or formal approval)
                 local _inbox_has=false _approval_has=false
                 local _gunshi_inbox="${_root}/queue/inbox/gunshi.yaml"
-                if [ -f "$_gunshi_inbox" ] && grep -q "report_fingerprint=${fingerprint}" "$_gunshi_inbox" 2>/dev/null; then
+                # A consumed review request is not terminal evidence. Reuse the
+                # shared exact identity helper so only an unread, matching
+                # review-generation handoff suppresses a retry. The old grep
+                # treated any read message containing the fingerprint as durable
+                # and lost the recovery wake-up after reviewer consumption.
+                if [ -f "$_gunshi_inbox" ] && inbox_review_handoff_duplicate_locked \
+                    "$_gunshi_inbox" "__child_review_generation__" \
+                    "$_report_id" "$_report_version" "$fingerprint" "$parent_cmd" "$_report_ref"; then
                     _inbox_has=true
                 fi
                 local _approval_base="${dedupe_dir}/review_approvals/reports"

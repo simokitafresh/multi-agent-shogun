@@ -2179,6 +2179,53 @@ YAML
     [ "$retry_count" -eq 1 ]
 }
 
+# test_necessity: a consumed child review request must be recoverable, while an
+# unread request for the same report generation remains exactly once.
+# regression_justification: the child delivery marker previously treated a
+# read fingerprint line as durable and suppressed the required recovery wake-up.
+@test "report_received child review retries after consumption and stays exactly once while unread" {
+    setup_git_test_env
+    cat >> "$TEST_TMPDIR/queue/tasks/testninja.yaml" <<'YAML'
+  report_id: rpt-review-consumed
+  report_identity_version: 2
+YAML
+    cat >> "$TEST_TMPDIR/queue/reports/testninja_report_cmd_test_001.yaml" <<'YAML'
+status: completed
+report_id: rpt-review-consumed
+report_identity_version: 2
+task_id: cmd_test_001_normal
+parent_cmd: cmd_test_001
+YAML
+    git -C "$TEST_TMPDIR" add queue/tasks/testninja.yaml queue/reports/testninja_report_cmd_test_001.yaml
+    git -C "$TEST_TMPDIR" commit -q -m child-review-consumption
+
+    run _run_inbox_write karo "report A" report_received testninja
+    [ "$status" -eq 0 ]
+    local attempt first_id retry_count
+    for attempt in $(seq 1 50); do
+        grep -q "^  type: 'report_review'" "$TEST_TMPDIR/queue/inbox/gunshi.yaml" 2>/dev/null && break
+        sleep 0.1
+    done
+    first_id="$(sed -n 's/^  id: *//p' "$TEST_TMPDIR/queue/inbox/gunshi.yaml" | head -1 | tr -d "'\"")"
+    [ -n "$first_id" ]
+    sed -i "/id: '$first_id'/,/type:/ s/read: false/read: true/" \
+        "$TEST_TMPDIR/queue/inbox/gunshi.yaml"
+
+    # Parent event is a duplicate, but the consumed child review is a valid
+    # recovery opportunity and must be delivered as one new unread request.
+    run _run_inbox_write karo "report A retry" report_received testninja
+    [ "$status" -eq 0 ]
+    retry_count="$(grep -c "^  type: 'report_review'" "$TEST_TMPDIR/queue/inbox/gunshi.yaml")"
+    [ "$retry_count" -eq 2 ]
+
+    # The recovered request is still unread, so another exact parent retry must
+    # not create a third child review.
+    run _run_inbox_write karo "report A retry again" report_received testninja
+    [ "$status" -eq 0 ]
+    retry_count="$(grep -c "^  type: 'report_review'" "$TEST_TMPDIR/queue/inbox/gunshi.yaml")"
+    [ "$retry_count" -eq 2 ]
+}
+
 @test "completion aliases converge on one review per report fingerprint across ten deliveries" {
     setup_git_test_env
     cat >> "$TEST_TMPDIR/queue/tasks/testninja.yaml" <<'YAML'
