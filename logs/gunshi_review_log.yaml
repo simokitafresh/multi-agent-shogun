@@ -6923,3 +6923,35 @@
     actual: "BLOCK"
     result: PASS
   timestamp: "2026-09-05T12:40:00+09:00"
+- cmd_id: cmd_karo_recon2_dirty_ownership_audit
+  review_type: report
+  verdict: FAIL
+  report_path: queue/reports/hayate_report_cmd_karo_recon2_dirty_ownership_audit.yaml
+  report_id: rpt-25f1f584-64bd-4afe-9efd-b3e3a398f32a
+  report_identity_version: 2
+  gate_prediction: BLOCK
+  gate_prediction_reason: "reporting bc:no"
+  finding_categories:
+  - assumptions
+  - numbers
+  - premortem
+  - adversarial
+  - ambiguity
+  observations:
+  - "事実1: RC改訂後もreporting bc:no FAIL継続"
+  - "adversarial: N/A"
+  - "ambiguity: なし"
+  fail_reasons:
+  - "reporting bc:no"
+  causal_chain: "reporting未達→FAIL継続"
+  brainwash_check: "#1no #2no #3no #4no #5no #6no #7no #8no"
+  verified_files:
+  - "queue/reports/hayate_report_cmd_karo_recon2_dirty_ownership_audit.yaml:1"
+  step3_5_verified: true
+  origin: "[[cmd_karo_recon2_dirty_ownership_audit]] -> [[FAIL_r2]]"
+  operational_simulation:
+    command: "precheck"
+    expected: "BLOCK"
+    actual: "BLOCK"
+    result: PASS
+  timestamp: "2026-09-05T12:52:00+09:00"
