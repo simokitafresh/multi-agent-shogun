@@ -1,3 +1,4 @@
+<!-- gist-master: 131e8c6545f630bedd6c3a4a9731c420 dm-signal-research-data-backlog_20260905.md -->
 # DM-Signal 研究データ基盤 — F1 以外の backlog(記録のみ。実装しない)v1.0(2026-09-05 22:45)
 
 - 出自: `dm-signal-research-data-foundation-asis-tobe_20260905.md` v0.4 の F2〜F4・A1〜A11・D2〜D4 を、殿 22:29『複雑さはすべて捨てろ』と家老 R2-6『F1 主設計書に残さない。情報は削除せず別 backlog へ』により移設。本文は v0.4(commit 5498c0f9b)から移したもので、内容の再検討はしていない。
