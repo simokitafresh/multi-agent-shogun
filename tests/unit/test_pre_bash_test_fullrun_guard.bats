@@ -59,3 +59,24 @@ assert_allowed() {
   assert_blocked "bash -c \"env FOO='a b' bats tests/unit/test_pre_bash_test_fullrun_guard.bats tests/unit/test_heavy_job_admission.bats\""
   assert_allowed "echo \"正規代替: bash scripts/run_tests.sh file tests/unit/test_pre_bash_test_fullrun_guard.bats\""
 }
+
+# test_necessity: text that shlex cannot parse (a python heredoc with triple quotes)
+# is not a bats execution; the guard must strip heredoc bodies before judging and
+# must only fall back to BLOCK when a bats invocation is textually present.
+# regression_justification: 2026-09-05 a python heredoc patch + run_tests.sh in one
+# command was blocked three times (ValueError -> unconditional block) and pushed the
+# operator into splitting '.bats' across a variable to hide it.
+@test "heredoc内の三重引用符は解析不能でも bats 実行ではないので通る" {
+  assert_allowed "python3 - <<'PY'
+p='tests/unit/test_x.bats'; s='''a'''
+PY
+bash scripts/run_tests.sh file tests/unit/test_x.bats"
+  assert_blocked "python3 - <<'PY'
+s='''a'''
+PY
+bats tests/unit/test_x.bats"
+  assert_allowed "python3 - <<'PY'
+s='''a'''
+PY
+timeout 10 bats -c tests/unit/test_x.bats"
+}

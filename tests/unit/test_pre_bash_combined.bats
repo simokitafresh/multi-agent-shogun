@@ -397,3 +397,20 @@ YAML
         [[ "$output" != *"BLOCK(broad-search-root)"* ]]
     done
 }
+
+# test_necessity: Guard 4's redirection pattern must not span statement separators.
+# regression_justification: 2026-09-05 'printf … > msgfile; publish_direct_commit.sh -- queue/shogun_to_karo.yaml'
+# (a redirect in an earlier statement, the yaml only as a commit path argument) was
+# blocked three times and pushed the operator into hiding the name behind a glob.
+@test "Guard 4: 別の文のリダイレクトは shogun_to_karo を書かないので通る" {
+    run_hook "printf '%s\n' 'msg' > /tmp/x.txt; bash scripts/publish_direct_commit.sh -m \"\$(cat /tmp/x.txt)\" -- queue/shogun_to_karo.yaml queue/session_alerts_shogun.txt"
+    [[ "$output" != *"status遷移gateの迂回"* ]]
+    run_hook "cat > /tmp/note.md <<'EOF'
+- shogun_to_karo の状態
+EOF
+echo ok"
+    [[ "$output" != *"status遷移gateの迂回"* ]]
+    # the same-statement redirect into the yaml still blocks
+    run_hook "printf 'x' > queue/shogun_to_karo.yaml"
+    [[ "$output" == *"status遷移gateの迂回"* ]]
+}

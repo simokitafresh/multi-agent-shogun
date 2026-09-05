@@ -31,14 +31,40 @@ import sys
 
 text = sys.stdin.read()
 
+def strip_heredocs(source):
+    # 2026-09-05 将軍根治: heredoc 本文(python の三重引用符や日本語の引用符)は shell 文法ではなく
+    # shlex を ValueError にする。本文は bats を「実行」できないので、判定前に本文を落とす。
+    out, lines, i = [], source.split("\n"), 0
+    while i < len(lines):
+        line = lines[i]
+        m = re.search(r"<<-?\s*[\x27\x22]?([A-Za-z_][A-Za-z0-9_]*)[\x27\x22]?", line)
+        out.append(line)
+        i += 1
+        if m:
+            tag = m.group(1)
+            while i < len(lines) and lines[i].strip() != tag:
+                i += 1
+            i += 1  # skip the terminator line itself
+    return "\n".join(out)
+
 def split_segments(source):
+    # heredoc 本文を落とし、残った <<TAG 演算子も除き、改行を文区切りとして扱う。
+    # (改行区切りの 2 文目の bats は旧実装では 1 文目の head に隠れて判定されなかった)
+    source = strip_heredocs(source)
+    source = re.sub(r"<<-?\s*[\x27\x22]?[A-Za-z_][A-Za-z0-9_]*[\x27\x22]?", " ", source)
+    source = source.replace("\n", " ; ")
     try:
         lexer = shlex.shlex(source, posix=True, punctuation_chars=";&|()<>")
         lexer.whitespace_split = True
         lexer.commenters = ""
         tokens = list(lexer)
     except ValueError:
-        return None
+        # 解析不能=BLOCK は「bats を実行していない command」まで止める偽陽性だった
+        # (2026-09-05 将軍: python heredoc patch + run_tests.sh の 1 command が 3 回 BLOCK、
+        # 変数連結で '.bats' を隠す迂回を誘発)。heredoc を落として再解析し、それでも不能なら
+        # 文字列上の実行位置に bats があるかだけを見る(run_tests.sh 経由は許可)。
+        pattern = r"(^|[;&|(]\s*|\b(?:env|command|exec|time|nice|timeout\s+\S+|bash\s+-c\s+[\x22\x27]?)\s*)(?:\S*/)?bats(\s|$)"
+        return "block-text" if re.search(pattern, source) else None
     segments, current = [], []
     operators = {";", "&&", "||", "|", "&", "(", ")"}
     for token in tokens:
@@ -135,8 +161,10 @@ def nested(tokens, depth=0):
 
 def classify(source, depth=0):
     segments = split_segments(source)
-    if segments is None:
+    if segments == "block-text":
         return "block"
+    if segments is None:
+        return "none"
     saw_allow = False
     for segment in segments:
         result = nested(segment, depth)
