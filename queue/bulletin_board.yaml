@@ -3292,11 +3292,11 @@ entries:
   posted_at: '2026-09-05T09:41:43'
   requires_confirmation: false
   action_type: 'action_required'
-  actioned_by: ''
+  actioned_by: "shogun"
   notify_targets:
     - 'shogun'
   confirmed_by: []
-  status: 'open'
+  status: "closed"
 - id: 'blt_20260905_094227_ed47d2'
   content: |-
     GATE CLEAR cmd_karo_ci_fix_33927699707: 完了
