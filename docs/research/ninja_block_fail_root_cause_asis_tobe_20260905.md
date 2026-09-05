@@ -1,7 +1,7 @@
 <!-- gist-master: 70b946c022cd5f6f81195ab837b7a7eb ninja_block_fail_root_cause_asis_tobe_20260905.md -->
 # 忍者BLOCK/FAILの根因対策 — 家老配備設計 v3.1
 
-更新: 2026-09-05 23:21:40 JST。一次確認の観測時点は23:13:50 JST。殿「読み込み覚醒してアップデート。家老が忍者を配備しやすい形式にしてよい」に基づく設計更新。
+更新: 2026-09-05 23:21:40 JST(家老 v3.1)。将軍追記 2026-09-06 00:40: §5 台帳に W0/W1 CLEAR、F-6 APPROVE、K2 走行、W5 閉を反映。一次確認の観測時点は23:13:50 JST。殿「読み込み覚醒してアップデート。家老が忍者を配備しやすい形式にしてよい」に基づく設計更新。
 正本は本書。既存gist IDを維持。旧v3.0の全数値・分類・レビュー履歴は `docs/research/ninja-block-fail-root-cause-v3-evidence-20260905.md` に保存した。過去の観測日時は変更しない。
 
 ## §0 家老が最初に見る結論
@@ -183,14 +183,15 @@ flowchart LR
 | F-3 | honest FAIL approval | 実装存在確認、旧版に運用適用記録 | f69288720/d6842c066、review_approvalのapproved_honest_fail実装。新規未着手扱いに戻さない |
 | F-4 | fixture陳腐化 | 旧版で公開・CI検証報告あり | 208df246d、旧run33963211348。現在CI結果とは呼ばない |
 | F-5 | 家老計測 | v2.5修正・検証・gist同期済み | 1a9f9f3a9、contract8/8、別書§6.8。C/D根因修復の件数には入れない |
-| F-6 | CI gate 偽 BLOCK『reviewed_at datetime parse failed』(二段レビュー未完で reviewed_at 空文字が評価器へ) | 公開確認済み(278e93d06 origin) | 将軍 D0: 評価器で空 reviewed_at=WAIT review_boundary_pending、contract test +1(31/31)。分類 D。家老レビュー中(msg_001003) |
+| F-6 | CI gate 偽 BLOCK『reviewed_at datetime parse failed』(二段レビュー未完で reviewed_at 空文字が評価器へ) | 公開確認済み(278e93d06 origin)・**家老 APPROVE blt_001113** | 将軍 D0: 評価器で空 reviewed_at=WAIT review_boundary_pending、contract test +1(31/31)。分類 D。家老レビュー中(msg_001003) |
 | P-1→W5 | バグ#6 | 調査完了・既修復 | `7671bdb99`、隔離success/tamper fail-close、追加fix不要 |
 | P-2→W5 | ci_push_state | 調査完了・10/10終端接続 | WAIT10=6+3+1。9行CLEAR、1行はpurpose不一致の正式BLOCK+archive。修復対象0 |
-| P-3→W6 | honest FAIL停滞 | 未着手、既存監視あり | 既存caller/条件/fixtureを確認して変更要否を決める |
-| W0 | 一意根拠表 | 報告済み(小太郎 done 00:0x、review 待ち) | queue/reports/kotaro_report_cmd_karo_recon_w0_failure_events_20260905.yaml |
-| W1/T3 | routine_refs 契約確定 | 調査 報告済み(飛猿、gate は ancestry WAIT) | queue/reports/tobisaru_report_cmd_karo_recon_w1_routine_contract_20260905.yaml。W2/T1 は W1 契約確定後 |
+| P-3→W6 | honest FAIL停滞 | 未着手、既存監視あり(cmd_4479 は軍師再 review→approved_honest_fail が 15 分で回った=停滞なし 00:3x) | 既存caller/条件/fixtureを確認して変更要否を決める |
+| W0 | 一意根拠表 | **GATE CLEAR 00:12**(小太郎) | queue/reports/kotaro_report_cmd_karo_recon_w0_failure_events_20260905.yaml |
+| W1/T3 | routine_refs 契約確定 | **GATE CLEAR 00:19**(飛猿)。W1 実装(注入)は契約確定を受けて起票可 | queue/reports/tobisaru_report_cmd_karo_recon_w1_routine_contract_20260905.yaml。W2/T1 は W1 契約確定後 |
+| W2/T1 | environment_refs 注入 | 未着手 | W1 実装と共通入口のため W1 実装後 |
 | W3/T2 | validator | 未着手 | W2 schema確定 |
-| W4/T5 | canonical構造記録 | 未着手 | W0分類契約確定 |
+| W4/T5 | canonical構造記録 | 未着手(W0 CLEAR で前提解放) | W0 の一意根拠表を分類契約として採用後に着手可 |
 | T4 | review_feedback再注入 | 保留 | 現行inject_task_modifiers経路と反復FAILの残存を観測後に判断 |
 | T6 | 個別偽陽性修復 | 継続方針 | 本書W5/W6または別throughput書へ紐付け、空の進行中taskを作らない |
 
