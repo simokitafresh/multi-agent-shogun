@@ -18495,3 +18495,17 @@ insights:
   source: "semantic_index_update"
   fix_known: false
   status: pending
+- id: INS-20260905-180612024-75e2
+  ts: "2026-09-05T18:06:12+09:00"
+  insight: "[[ガードのバグは迂回せずに先に根治せよ]] semantic_stress_test candidate_aliases: NO_MATCH source=lord query=ガードのバグは迂回せずに先に根治せよ。負の複利を放置す るな。バグを根治したら再発しないか検証せよ。検証したら 家老に報告して確認してもらえ"
+  priority: "low"
+  source: "semantic_stress_test"
+  fix_known: false
+  status: pending
+- id: INS-20260905-180612278-dbc5
+  ts: "2026-09-05T18:06:12+09:00"
+  insight: "[[設計書を覚醒して更新せよ]] semantic_stress_test candidate_aliases: NO_MATCH source=lord query=設計書を覚醒して更新せよ"
+  priority: "low"
+  source: "semantic_stress_test"
+  fix_known: false
+  status: pending
