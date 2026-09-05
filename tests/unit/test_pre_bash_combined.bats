@@ -364,3 +364,36 @@ YAML
         [[ "$output" != *"BLOCK(unbounded-cpu-loop)"* ]]
     done
 }
+
+# test_necessity: broad find/bfs roots and targetless hidden scans must be
+# denied before execution, while repo-scoped searches and explicit file lists
+# remain available. Quoted prose is data and must not trigger the guard.
+@test "broad search guard blocks host scans and allows scoped searches" {
+    local command
+    local -a blocked=(
+        "find / -name needle"
+        "find /home -maxdepth 2 -type f"
+        "bfs /mnt -name needle"
+        "rg --hidden needle"
+        "bash -c 'rg --hidden needle'"
+        "rg --hidden needle /tmp"
+    )
+    local -a allowed=(
+        "find . -name needle"
+        "bfs context -name '*.md'"
+        "rg --hidden needle context/infrastructure.md"
+        "rg --hidden --files .claude/hooks/pre-bash-combined.sh scripts/hooks/test_hooks.sh"
+        "printf '%s\\n' 'rg --hidden needle /'"
+    )
+
+    for command in "${blocked[@]}"; do
+        run_hook "$command"
+        [ "$status" -eq 2 ]
+        [[ "$output" == *"BLOCK(broad-search-root)"* ]]
+    done
+    for command in "${allowed[@]}"; do
+        run_hook "$command"
+        [ "$status" -eq 0 ]
+        [[ "$output" != *"BLOCK(broad-search-root)"* ]]
+    done
+}

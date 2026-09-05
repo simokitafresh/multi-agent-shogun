@@ -395,7 +395,7 @@ fi
 # unbounded CPU loops before execution while allowing timeout-bounded loops and
 # quoted fixture text. Invoke only the classifier; no loop process is started.
 expect_production_hook() {
-    local mode="$1" desc="$2" cmd="$3" payload output rc
+    local mode="$1" desc="$2" cmd="$3" expected_marker="${4:-BLOCK(unbounded-cpu-loop)}" payload output rc
     TOTAL=$((TOTAL + 1))
     payload="$(python3 - "$cmd" <<'PY'
 import json, sys
@@ -404,13 +404,13 @@ PY
 )"
     output="$(printf '%s' "$payload" | env BATS_TEST_FILENAME="${BATS_TEST_FILENAME:-test_hooks.sh}" TMUX_PANE= TMUX_AGENT_ID=hanzo bash "$REPO_ROOT/.claude/hooks/pre-bash-combined.sh" 2>/dev/null)" && rc=$? || rc=$?
     if [[ "$mode" == "block" ]]; then
-        if [[ $rc -eq 2 && "$output" == *"BLOCK(unbounded-cpu-loop)"* ]]; then
+        if [[ $rc -eq 2 && "$output" == *"$expected_marker"* ]]; then
             PASS=$((PASS + 1))
         else
             FAIL=$((FAIL + 1))
             printf "  FAIL [expected production BLOCK] %s\n    cmd: %s\n    exit=%d output=%s\n" "$desc" "$cmd" "$rc" "$output"
         fi
-    elif [[ $rc -eq 0 && "$output" != *"BLOCK(unbounded-cpu-loop)"* ]]; then
+    elif [[ $rc -eq 0 && "$output" != *"BLOCK("* ]]; then
         PASS=$((PASS + 1))
     else
         FAIL=$((FAIL + 1))
@@ -430,6 +430,16 @@ expect_production_hook allow "normal while-read" 'while IFS= read -r line; do pr
 expect_production_hook allow "daemon script file" "bash scripts/daemon.sh"
 expect_production_hook allow "single colon" ":"
 expect_production_hook allow "quoted loop fixture" "printf '%s\\n' 'while :; do :; done'"
+expect_production_hook block "find filesystem root" "find / -name needle" "BLOCK(broad-search-root)"
+expect_production_hook block "bfs filesystem root" "bfs /mnt -name needle" "BLOCK(broad-search-root)"
+expect_production_hook block "targetless hidden rg" "rg --hidden needle" "BLOCK(broad-search-root)"
+expect_production_hook block "nested targetless hidden rg" "bash -c 'rg --hidden needle'" "BLOCK(broad-search-root)"
+expect_production_hook block "hidden rg external target" "rg --hidden needle /tmp" "BLOCK(broad-search-root)"
+expect_production_hook allow "repo-scoped find" "find . -name needle"
+expect_production_hook allow "repo-scoped bfs" "bfs context -name '*.md'"
+expect_production_hook allow "hidden rg explicit file" "rg --hidden needle context/infrastructure.md"
+expect_production_hook allow "hidden rg explicit file list" "rg --hidden --files .claude/hooks/pre-bash-combined.sh scripts/hooks/test_hooks.sh"
+expect_production_hook allow "quoted broad-search fixture" "printf '%s\\n' 'rg --hidden needle /'"
 
 # ─── Safe commands (should all pass through) ───
 echo "--- Safe commands (all should ALLOW) ---"

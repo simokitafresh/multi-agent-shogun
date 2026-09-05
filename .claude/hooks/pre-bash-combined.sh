@@ -1355,6 +1355,131 @@ PY
     unset _unbounded_cpu_loop_reason
 fi
 
+# === Guard 17.6: broad filesystem search admission ===
+# The loop guard prevents one class of orphaned CPU work.  A separate class of
+# accidental host-wide scans (`find /`, `bfs /home`, or targetless
+# `rg --hidden`) can consume the same shared host and must be rejected before
+# execution.  Use argv-aware parsing so quoted prose and explicit repo targets
+# are not mistaken for scans.
+if [[ -n "${command:-}" ]]; then
+    _broad_search_reason="$({
+        COMMAND="$command" PROJECT_ROOT="$SCRIPT_DIR" PYTHONPATH="$SCRIPT_DIR/scripts/lib${PYTHONPATH:+:$PYTHONPATH}" python3 - <<'PY'
+import os
+from pathlib import Path, PurePosixPath
+
+from shell_command_segments import segment_tokens
+
+
+_SEARCHERS = {"find", "bfs"}
+_RG_OPTIONS_WITH_VALUE = {
+    "-e", "--regexp", "-g", "--glob", "--iglob", "-t", "--type",
+    "-T", "--type-not", "--glob-case-insensitive", "--max-count",
+    "-M", "--max-columns", "--sort", "--sortr", "--path-separator",
+    "--colors", "--color", "--heading", "--context", "-A", "-B", "-C",
+}
+_SHELLS = {"bash", "sh", "dash", "zsh", "ksh"}
+
+
+def _first_command(tokens):
+    index = 0
+    if index < len(tokens) and PurePosixPath(tokens[index]).name == "env":
+        index += 1
+        while index < len(tokens) and (tokens[index].startswith("-") or "=" in tokens[index]):
+            index += 1
+    while index < len(tokens) and "=" in tokens[index] and not tokens[index].startswith(("/", "./")):
+        index += 1
+    if index < len(tokens) and tokens[index] in {"command", "exec"}:
+        index += 1
+    return index
+
+
+def _in_repo(raw):
+    value = os.path.expanduser(raw)
+    base = os.path.realpath(os.getcwd())
+    resolved = os.path.realpath(value if os.path.isabs(value) else os.path.join(base, value))
+    repo = os.path.realpath(os.environ.get("PROJECT_ROOT", "."))
+    return resolved == repo or resolved.startswith(repo + os.sep)
+
+
+def _find_targets(tokens, index):
+    args = tokens[index + 1:]
+    targets = []
+    for token in args:
+        if token == "--" or token in {"!", "(", ")"} or token.startswith("-"):
+            break
+        targets.append(token)
+    return targets or [os.getcwd()]
+
+
+def _rg_targets(tokens, index):
+    args = tokens[index + 1:]
+    if "--hidden" not in args:
+        return None
+    positional = []
+    cursor = 0
+    while cursor < len(args):
+        token = args[cursor]
+        if token == "--":
+            positional.extend(args[cursor + 1:])
+            break
+        option = token.split("=", 1)[0]
+        if token.startswith("-"):
+            if option in _RG_OPTIONS_WITH_VALUE and "=" not in token:
+                cursor += 2
+            else:
+                cursor += 1
+            continue
+        positional.append(token)
+        cursor += 1
+    if "--files" in args or "--files-with-matches" in args or "--files-without-match" in args:
+        return positional or [os.getcwd()]
+    # rg's first positional is the pattern; every later positional is a
+    # target. No later positional means an implicit full cwd scan.
+    return positional[1:] if len(positional) > 1 else []
+
+
+def _classify(command, depth=0):
+    if depth > 3:
+        return ""
+    segments = segment_tokens(command)
+    if segments is None:
+        return ""
+    for tokens in segments:
+        index = _first_command(tokens)
+        if index >= len(tokens):
+            continue
+        program = PurePosixPath(tokens[index]).name
+        if program in _SEARCHERS:
+            targets = _find_targets(tokens, index)
+            if any(not _in_repo(target) for target in targets):
+                return f"BLOCK(broad-search-root): {program}のrepo外探索は禁止。repo内のtargetまたは明示ファイル一覧を指定せよ。"
+        elif program in {"rg", "ripgrep"}:
+            targets = _rg_targets(tokens, index)
+            if targets is not None:
+                if not targets:
+                    return "BLOCK(broad-search-root): targetなしのrg --hidden全走査は禁止。repo内のtargetまたは明示ファイル一覧を指定せよ。"
+                if any(not _in_repo(target) for target in targets):
+                    return "BLOCK(broad-search-root): rg --hiddenのrepo外targetは禁止。repo内のtargetまたは明示ファイル一覧を指定せよ。"
+        elif program in _SHELLS:
+            for option_index in range(index + 1, len(tokens)):
+                if tokens[option_index] == "-c" and option_index + 1 < len(tokens):
+                    nested_reason = _classify(tokens[option_index + 1], depth + 1)
+                    if nested_reason:
+                        return nested_reason
+    return ""
+
+
+reason = _classify(os.environ.get("COMMAND", ""))
+if reason:
+    print(reason)
+PY
+    } 2>/dev/null || true)"
+    if [[ -n "$_broad_search_reason" ]]; then
+        emit_deny "$_broad_search_reason"
+    fi
+    unset _broad_search_reason
+fi
+
 # === Guard 18: git stash mutation block (shared worktree protection) ===
 # cmd_karo_ci_red_remaining_unit_202607151950: このタスク系列は複数忍者が
 # 分離worktreeを持たず共有main working treeへ直接作業する。トップレベルの
