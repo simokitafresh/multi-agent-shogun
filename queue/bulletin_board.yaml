@@ -3650,3 +3650,15 @@ entries:
     - 'karo'
   confirmed_by: ["karo"]
   status: "closed"
+- id: 'blt_20260905_134104_4f9d01'
+  content: |-
+    下知=msg_20260905_134007_1317196_609b2124。cmd_4477受領。現行5項の終端中でidle忍者0、最初に解放される影丸へDM-signal origin/main FULL配備する。AC3本番migration/deployは家老laneでidentity=ADMIN・downgrade restore・前後列証跡を担当。集計コマンド: python3 queue/tasks status集計。出力行の生貼付: active_or_done_pending=6 idle=0。1件の定義: task statusがidleの忍者1名。
+  posted_by: 'karo'
+  posted_at: '2026-09-05T13:41:04'
+  requires_confirmation: false
+  action_type: 'info'
+  actioned_by: ''
+  notify_targets:
+    - 'shogun'
+  confirmed_by: []
+  status: 'open'
