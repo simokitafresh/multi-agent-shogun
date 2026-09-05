@@ -1,218 +1,186 @@
 <!-- gist-master: aeaadf72f858a63ab8a1259d43d6aade karo_throughput_asis_20260905.md -->
-# 家老スループット AsIs — 家老が実行する script / hook / gate の速度台帳と枠外コスト(2026-09-05 14:45、殿下問 14:35)
+# 家老スループット AsIs/ToBe — 家老が実行・待機する script/hook/gate の速度台帳と計測修復設計 v2(2026-09-05 15:10 再構築 / v1 14:45→§7 訂正 14:55→§8 セルフレビュー 15:05→家老 REJECT 9 点・軍師 APPROVE 5 所見 15:04 を本文へ統合。殿 15:06『追記でなく再構築、粒度を小さく、情報量を減らすな』)
 
-> 殿 14:35『家老がボトルネックになるのは構造的にある程度しょうがない。解決は家老が触る script の圧倒的な拘束(固定)しかないのでは。家老が実行する script/hook/gate をリストアップして速度をまとめ、家老に特化したスループットの枠外部分も調査せよ』。
-> 数値は全て 2026-09-05 00:00〜14:40 JST の一次ログ(logs/defense_overhead.jsonl 26,066 行、logs/gate_metrics.log、logs/publisher_daemon.log、logs/ninja_monitor.log、実測 hook 起動)から集計。集計コマンドは各表の末尾。**推測は「(未計測)」と明記**。
+## §0.0 前提条件と我らのスタイル(別の LLM が読む前に)
+- 対象: multi-agent-shogun の家老(Codex gpt-5.6-sol、pane shogun:2.1)。家老の仕事=cmd 受領→分解→配備(deploy_task)→報告受領→review 受理(review_approval)→合流(publisher c2a)→GATE(cmd_complete_gate)→archive。忍者 6 名の直列の受け口。
+- 殿の問い(14:35): 家老律速は構造的。解決は家老が触る script の圧倒的な拘束か。script/hook/gate を列挙し速度をまとめ、枠外も調べよ。追補(14:50): gate clear 関連も家老の script。家老が待たされる原因は全て家老に関係する。裁定(14:49): まずは計測修復。
+- 目的: 家老の 1 動作の時間と、家老の手を止める待ちを数値で分け、拘束すべき対象を決める。機能追加ではない。
+- スタイル: シンプルに解決/既存の計測(defense_overhead、function_timing、watcher log)を使う/新規の複雑さを足さない/測ってから直す/壊さない(追加 key のみ、schema 名不変)/可逆に 1 cmd ずつ/推測は「(未計測)」と明記。
+- 決定権: 殿。実装は殿 go の後、cmd 単位。本書の v1 の誤り(§7 相当)は履歴として §9 に残す(歴史修正禁止)。
+- 数値の出所: 2026-09-05 00:00〜14:40 JST の `logs/defense_overhead.jsonl`(26,066 行)、`logs/cmd_complete_gate_function_timing.jsonl`(231,797 行)、`logs/deploy_task_function_timing.jsonl`(151,032 行)、`logs/gate_metrics.log`、`logs/publisher_daemon.log`、`logs/inbox_watcher_karo.log`(+.1、今日 3,143 行)、将軍の hook 実測(14:41)。
 
-## §0.0 前提条件と我らのスタイル
-- 対象: multi-agent-shogun の家老(Codex gpt-5.6-sol、tmux pane shogun:2.1)。家老の仕事=cmd 受領→分解→配備(deploy_task)→報告受領→review 受理(review_approval)→合流(publisher c2a)→GATE(cmd_complete_gate)→archive。忍者 6 名の直列の受け口。
-- 目的: 家老 1 人が律速である事実を認めた上で、**家老の 1 動作あたりの時間**と**家老の手を止める待ち**を数値で分け、どこを拘束(固定・短縮)すれば便が回るかを決める材料にする。機能追加ではない。
-- スタイル: シンプルに解決/既存の計測(defense_overhead)を使う/新規の複雑さを足さない/測ってから直す/壊さない/可逆に 1 cmd ずつ/別 LLM が読んでも同じ結論。
-- 決定権: 殿。本書は調査のみ。実装は殿 go の後に cmd 単位。
+## §1.0 家老を介する便の流れ(フローチャート。数値は §1〜§3 の今日の実測)
+```mermaid
+flowchart TD
+  A[将軍 cmd_delegate] -->|inbox_write p50 1.0 s / 配達 held p50 40 分| B[家老 inbox_read]
+  B -->|deploy_task p50 28 s ×20/日| C[忍者 実装・commit(worktree)]
+  C -->|report YAML + inbox_write| D[家老 report_received]
+  D -->|review_request| E[軍師 precheck p50 3.2 s → review_bundle]
+  E -->|LGTM / FAIL| F[家老 review_approval p50 10 s ×38/日]
+  F -->|c2a merge 所要 未計測 ×83/日| G[origin/main に報告 commit 合流]
+  G -.->|合流前は WAIT ancestry 47 行/日| H
+  G --> H[cmd_complete_gate main p50 9.2 s ×121/日]
+  H -->|WAIT なら monitor が約 3 分後に再 GATE| H
+  H -->|CLEAR 経過 p50 20 分| I[archive_completed → 掲示板 → 将軍]
+  B -. busy の間 watcher が送出を保留 .-> B
+  F -. auto-push ancestry(自動合流) FAIL 理由なし ×12 .-> G
+```
+- 家老の手が入る箱: B(読む)・C の配備・F(受理)・G(c2a)。それ以外は待ち。
+- 待ちが発生する辺: A→B(配達 held)、G(合流)、H(再 GATE)。順位は §4。
 
-## §1 家老が実行する経路の一覧と速度(1 日実測)
-
-### §1.1 家老が自分で呼ぶ script(instructions/karo.md・context/karo-operations.md・skills/karo-* の現物から抽出)
-
-| 経路 | 役割 | 今日の回数 | p50 | p95 | 合計/日 | 備考 |
+## §1 家老が自分の手で回す経路(1 日実測)
+| 経路 | 役割 | 回数 | p50 | p95 | 合計/日 | 備考 |
 |---|---|---|---|---|---|---|
-| `scripts/deploy_task.sh`(/karo-direct 含む) | 忍者へ配備 | 20(deploy_total) | 28.3 s | 50.0 s | 608 s | 1 配備 = 約 30 秒。外部 repo(DM-signal)は worktree 準備を含む |
-| `scripts/review_approval.sh` | 軍師 LGTM→家老 accept | 38 | 10.0 s | 21.0 s | 409 s | 内訳 check_id(gunshi_lgtm/karo_accept)は 0 ms=**10 秒の正体が未計測**(review_log 7,000 行の YAML 読込が疑い) |
-| `scripts/cmd_complete_gate.sh` | GATE 判定 | 107 行(CLEAR 31/WAIT 66/BLOCK 10) | — | — | — | function timing は今日 0 行(計測が落ちている)。**CLEAR までの経過 p50 1,212 s / p95 5,017 s(n=30)** |
-| publisher c2a merge(`publisher_c2a_merge`) | 報告 commit の origin 合流 | 83 行 | (未計測) | (未計測) | — | 1 回あたりの所要がログに無い。要計測 |
-| `scripts/inbox_read.sh karo` / `inbox_mark_read.sh` | inbox 処理 | mark_read 3,615(全 agent) | 64 ms | 306 ms | 1,124 s(全 agent) | 家老分の按分は未計測 |
-| `scripts/inbox_write.sh` | 忍者/将軍/軍師へ送信 | 705(全 agent) | **1,004 ms** | **6,774 ms** | 1,611 s(全 agent) | persist 74 ms+delivery_verify 2 ms+capture 15 ms=約 90 ms。**残り約 900 ms(p95 6.7 s)は nudge(send-keys+確認ガード)=未分解** |
-| `scripts/bulletin_write.sh` | 将軍宛報告 | 6 | 121 ms | 138 ms | 1 s | ただし memory_db_live_insert を経由すると §2.3 の health refresh(p95 24 s)を踏む |
-| `scripts/karo_workaround_log.sh` / `lesson_write_karo.sh` / `insight_write.sh` | 台帳 | 8(lesson_write) | 335 ms | 498 ms | 6 s | 同上、health refresh を踏む |
-| `scripts/semantic_search.sh` | 概念検索 | 1,347(全 agent) | 366 ms | 2,041 ms | 832 s | q11 等で多用。家老按分は未計測 |
-| `scripts/gates/gate_karo_startup.sh` | /clear 復帰 | 3 | — | — | 53 s | 復帰 1 回 = startup gate 約 18 s+deepdive 2 本の replay(未計測、LLM 読込時間が主) |
-| `python3 scripts/review_bundle.py` | SG7 bundle | (軍師側) | — | — | — | 家老は待つ側 |
-| `scripts/archive_completed.sh` | 完了 archive | GATE CLEAR 時に自動 | — | — | — | — |
+| `scripts/deploy_task.sh`(/karo-direct 含む) | 忍者へ配備 | 20 | 28.3 s | 50.0 s | 608 s | 内訳: prepare_remote_tip_worktree p50 5.0 s(38 回)、run_python_logged 5.8 s、generate_report_template 4.1 s、inject_semantic_concepts 3.6 s、maybe_notify_draft_review 2.5 s、yaml_field_set_batch 2.0 s |
+| `scripts/review_approval.sh` | 軍師 LGTM→家老 accept | 38 | 10.0 s | 21.0 s | 409 s | 内訳 check_id(gunshi_lgtm/karo_accept)は **0 ms 固定**(L821/L826)=10 秒の正体が未計測 |
+| `scripts/cmd_complete_gate.sh`(手動起動分) | GATE 判定 | 121 回中の一部(大半は monitor) | 9.2 s | — | 42.7 分(全起動) | §2 |
+| publisher c2a merge(`scripts/publisher_c2a_merge.sh` 74 行) | 報告 commit の origin 合流 | 83 行 | (未計測) | (未計測) | — | 所要の計測なし。失敗試行も未記録 |
+| `scripts/inbox_read.sh` / `inbox_mark_read.sh` | inbox 処理 | mark_read 3,615(全 agent) | 64 ms | 306 ms | 1,124 s(全 agent) | agent 按分不可(agent 列なし) |
+| `scripts/inbox_write.sh` | 送信 | 705(全 agent) | 1,004 ms | 6,774 ms | 1,611 s(全 agent) | 分解済み: persist 74 ms/delivery_verify 2 ms/pre_send_capture 15 ms。**残 900 ms〜6.7 s は nudge(send-keys timeout 5 s+確認ガード capture)** |
+| `scripts/bulletin_write.sh` | 将軍宛報告 | 6 | 121 ms | 138 ms | 1 s | memory_db_live_insert 経由で §3.3 の health refresh(p95 24 s)を踏む |
+| `karo_workaround_log.sh` / `lesson_write_karo.sh` / `insight_write.sh` | 台帳 | 8 | 335 ms | 498 ms | 6 s | 同上 |
+| `scripts/semantic_search.sh` | 概念検索 | 1,347(全 agent) | 366 ms | 2,041 ms | 832 s | 按分不可 |
+| `scripts/gates/gate_karo_startup.sh` | /clear 復帰 | 3 | — | — | 53 s | +deepdive replay 2 本(Phase 10+7、所要未計測) |
+| `scripts/archive_completed.sh` | 完了 archive | GATE CLEAR 時 | — | — | — | — |
 
-集計: `python3 - <<'PY'`(logs/defense_overhead.jsonl を timestamp=2026-09-05 で filter、source/check_id 別に p50/p95/合計)/ `grep ^2026-09-05 logs/gate_metrics.log | cut -f3 | sort | uniq -c` / `grep -c c2a logs/publisher_daemon.log`。
+**家老の手の合計: 1 日 20〜30 分**(deploy 10 分+review 7 分+hook §1.1 3〜9 分+送信・台帳 数分)。
 
-### §1.2 家老の 1 tool 呼出しごとに走る hook(.codex/hooks.json、Codex PreToolUse 5 本+PostToolUse 1 本)。将軍が `echo hi` 相当の payload で実測(14:41、無負荷)
-
-| hook | 実測 wall | 本番 p50(defense_overhead) | 役割 |
+### §1.1 家老の 1 tool 呼出しごとの hook(`.codex/hooks.json`、将軍が `echo hi` payload で 14:41 実測、無負荷)
+| hook | 実測 | 本番 p50 | 役割 |
 |---|---|---|---|
-| `codex_inbox_priority_guard.sh` | 93 ms | (未計測) | 将軍指示 180 秒放置で BLOCK(本日 11:3x に出口自己遮断の循環バグ→713d83ed4 で根治) |
-| `codex_skill_execution_guard.sh` | 136 ms | 258 ms(n=2,832 全 Codex) | skill 実行証跡 |
+| `codex_inbox_priority_guard.sh` | 93 ms | (未計測) | 将軍指示 180 秒放置で BLOCK(11:3x に出口自己遮断の循環→713d83ed4 根治) |
+| `codex_skill_execution_guard.sh` | 136 ms | 258 ms(n=2,832、Codex 7 名合算) | skill 実行証跡 |
 | `pre-write-read-tracker.sh` | 5 ms | — | Read 追跡 |
-| `pre-bash-combined.sh` | 139 ms | (未計測、内部 Guard 群) | Bash ガード束 |
+| `pre-bash-combined.sh` | 139 ms | (未計測) | Bash ガード束 |
 | `pre-write-edit-combined.sh` | 6 ms | — | Edit ガード |
 | `post-bash-combined.sh` | 14 ms | — | 後処理 |
-| **合計** | **約 0.39 s / 呼出し** | 本番負荷時 約 0.6〜0.9 s | 家老の 1 日の tool 呼出し数は未計測(codex_skill_execution_guard 2,832 は Codex 7 名合算)。家老按分 400〜600 回なら **3〜9 分/日** |
+| 合計 | **約 0.39 s/呼出し**(負荷時 0.6〜0.9 s) | | 家老の呼出し数は按分不可(agent 列なし)。400〜600 回なら 3〜9 分/日 |
+| prompt ごと | `codex_user_prompt_submit.sh` 462 ms p50(n=495)、`three_layer_preflight` 95 ms p50(n=7,844 全 agent) | | |
 
-加えて prompt ごと: `codex_user_prompt_submit.sh` 462 ms p50(n=495 全 Codex)、`three_layer_preflight` 95 ms p50(n=7,844 全 agent)。
-
-### §1.3 家老を待たせる gate/lane(家老の手ではなく、家老が待つ時間)
-
-| 待ち | 今日の実測 | 意味 |
-|---|---|---|
-| `WAIT:report_commit_main_ancestry` | gate_metrics の WAIT 66 行中 **47 行** | 報告 commit が origin/main の祖先になるまで GATE が進まない。monitor が **約 3 分ごとに再 GATE**(例: index_lock hotfix は 13:58→14:38 で 12 回 WAIT、40 分) |
-| `ci_readiness: ci_evaluation_absent` | 7 行 | CI run が無い/未完 |
-| `ci_push_state BLOCK` | 8 行 | remote ref 解決・report commit 無効 |
-| 軍師 review(`gate_gunshi_report_precheck full_precheck`) | 118 回、p50 3.2 s、p95 12.6 s | 家老は結果を待つ |
-| publisher `root sync BLOCK postsync_verify_mismatch` | 14:05〜14:13 で 7 回連続 | origin が 1 分毎に進む(台帳 batch)ため root の検証窓に入らない。家老の合流と競合 |
-
-## §2 枠外コスト(家老の「作業」に数えられていないが家老の時間を食うもの)
-
-### §2.1 CTX と /clear
-- 家老 CTX は 11:21 14% → 14:1x 83% → 14:2x /clear 後 16%。**3 時間で 1 周**。復帰 1 回=gate_karo_startup 約 18 s(3 回/日 53 s)+deepdive replay 2 本(Phase 10+7、各 Phase で読込と自問。所要は未計測、体感 5〜10 分)+陣形図/inbox 再読。
-- CTX を食う主因(推定、要計測): inbox 通知の本文(bulletin_notify は掲示板本文を丸ごと含む。将軍宛の doc-lane alert 6 本/日が家老の inbox にも入る)、capture-pane 出力、gate の長い stderr。
-
-### §2.2 nudge と再読
-- monitor の `KARO-PENDING-INBOX` / `RENUDGE-TRANSITION` が 1 分刻みで家老を起こす(14:37, 14:38)。家老が作業中でも UserPromptSubmit hook(462 ms)と inbox_read(receipt 発行)が走る。**nudge 回数/日は watcher ログの形式が変わっており 0 件と出た=計測経路が切れている**(要修正)。
-
-### §2.3 memory_db_live_insert の health refresh(全 agent 共通、家老の critical path に乗る)
-- `three_layer_health` 合計 **3,398 s/日**(refresh_window 1,738 s、refresh_verify 939 s、refresh_copy 784 s)。p50 は 0 ms だが **p95 24 s**。呼出し元=bulletin_write / insight_write / karo_workaround_log / lesson_write_karo / cmd_delegate / cmd_quality_log。家老が掲示板 1 本書くたびに最悪 24 秒待つ。
-
-### §2.4 inbox_write の 1 秒
-- p50 1,004 ms / p95 6,774 ms(n=705)。分解済み 3 phase の合計は約 90 ms。**残り 900 ms〜6.7 s は nudge(send-keys の timeout 5 s+確認プロンプトガードの capture)**。家老は 1 日に数十通送る=数分/日、しかも p95 側は「相手が busy で 5 秒待った」時間。
-
-### §2.5 GATE の再実行
-- WAIT の cmd は monitor が約 3 分ごとに cmd_complete_gate を再実行(各回 sg7/ancestry/ci 判定)。家老の手は要らないが、**GATE CLEAR までの経過 p50 20 分は家老の「便」の見かけの遅さ**として殿に見える。真因は §1.3 の ancestry 待ち=家老の c2a 合流が直列。
-
-### §2.6 計測が落ちている箇所(本書で発見)
-- `cmd_complete_gate_function_timing.jsonl` は今日 0 行、`deploy_task_function_timing.jsonl` も今日 0 行(deploy_total だけ defense_overhead に残る)。review_approval の内訳 check_id が全て 0 ms。→ **速くする前に計測が壊れている**。
-
-## §3 家老律速の順位(数値で)
-
-| 順位 | 項目 | 1 日の家老時間 or 待ち | 種別 |
+## §2 家老が待つ経路(gate clear 側。殿追補 14:50: 全て家老 lane)
+| script | 起動者 | 家老との関係 | 今日の実測 |
 |---|---|---|---|
-| 1 | 報告 commit の origin 合流待ち(ancestry WAIT) | WAIT 47 行、1 cmd あたり 30〜40 分、CLEAR 経過 p50 20 分 | 待ち(家老の c2a が直列) |
-| 2 | review_approval 10 s ×38=6.8 分+deploy 28 s ×20=10 分 | 約 17 分/日 | 家老の手 |
-| 3 | hook 往復 0.4〜0.9 s ×(400〜600 回) | 3〜9 分/日(未計測) | 家老の手(見えない) |
-| 4 | health refresh p95 24 s(掲示板/台帳書込みのたび) | 最悪数分/日 | 枠外 |
-| 5 | /clear 復帰 3 回×(18 s+deepdive replay) | 15〜30 分/日(replay 未計測) | 枠外 |
-| 6 | inbox_write nudge 1 s(p95 6.7 s) | 数分/日 | 家老の手 |
-
-## §4 殿の仮説「家老が触る script の圧倒的な拘束」への回答(事実→判断)
-
-- 事実: 家老が自分の手で回す script は実質 **7 本**(deploy_task / review_approval / cmd_complete_gate / c2a merge / inbox_read+mark_read / inbox_write / bulletin_write)で、既に「拘束」に近い。1 本あたりの時間は最大 30 秒で、**家老の手の合計は 1 日 20〜30 分**にすぎない。
-- 事実: 家老が遅く見える時間の大半は **待ち**(ancestry 合流、review、CI、root sync 競合)と **枠外**(health refresh、/clear 復帰、nudge)であり、script の中身を速くしても順位 1 は消えない。
-- 判断: 「拘束」は正しいが対象が違う。拘束すべきは **script の本数ではなく、家老の手を要する『合流』の回数**。報告 commit の合流を家老の手作業から外し(忍者報告→軍師 LGTM→publisher が自動で c2a→GATE)、家老は例外(FAIL・競合)だけ触る形にすれば、順位 1 が消え、家老の手は 20〜30 分/日のまま便が並列に回る。これは単一 publisher 設計書 v3.x U3(publisher daemon)の「auto-push ancestry」経路そのもので、今日 4 回 FAIL したまま理由が記録されていない(`auto_push_ancestry_retry.log` に FAIL 行のみ)。
-- 判断 2: 順位 3〜6 は「速くする」ではなく「呼ばない」で消える。health refresh は書込みと非同期に(既に refresh_incremental_event 1,630 回は 0 ms=非同期経路は存在する。同期経路 refresh_window に落ちる条件を潰す)。/clear 復帰の deepdive replay は家老には Phase 単位の receipt が要るため短縮できないが、CTX を食う inbox 本文(bulletin_notify の全文同梱)を要約に変えれば /clear 回数が減る。
-
-## §5 次の一手(候補。実装は殿 go の後、1 cmd ずつ)
-1. 計測修復(順位 0): cmd_complete_gate / deploy_task の function timing が 0 行、review_approval 内訳 0 ms、watcher nudge 集計 0 件。**速くする前に測れる状態へ**。
-2. auto-push ancestry の FAIL 理由をログへ(4 回/40 分 FAIL の真因)。真因が「root sync 競合」なら §1.3 の postsync_verify_mismatch と同根。
-3. 合流の自動化(順位 1): 軍師 LGTM→publisher c2a→GATE を家老の手なしで回す。家老は例外のみ。
-4. health refresh の同期経路を潰す(順位 4)。
-5. bulletin_notify の本文同梱を要約+パス参照に(順位 5、CTX)。
-
-## §6 因果リンク
-- ← [[殿下問_家老律速の拘束_20260905_1435]] / ← [[単一publisher_asis_tobe_5w1h_20260902]] U3 auto-push ancestry / ← [[cmd_4393_karo-waste]](08-24 の workaround/配備反復集計)
-- → [[karo_throughput_計測修復]] → [[合流の自動化]] → [[health_refresh_非同期化]]
-
-## §7 訂正と追補(14:55、殿追補 14:50『gate clear 関連も家老の script。家老が待たされる原因は全て家老に関係する』)
-
-### §7.1 訂正: 「function timing が今日 0 行」は将軍の集計誤り
-- 事実: `logs/cmd_complete_gate_function_timing.jsonl`(231,797 行)と `logs/deploy_task_function_timing.jsonl`(151,032 行)には **wall-clock の timestamp 列が無く**、epoch は `execution_id` の末尾(μs)にだけある。将軍は timestamp 文字列で filter して 0 行と誤読した。計測は落ちていない。**落ちているのは「日付で集計できる形」**。
-- 正しい集計(execution_id の epoch で 2026-09-05 を抽出):
-
-| script | function | 今日の回数 | p50 | 合計/日 |
-|---|---|---|---|---|
-| cmd_complete_gate.sh | main(1 回の GATE 実行) | 121 | **9.2 s** | **42.7 分** |
-| cmd_complete_gate.sh | check_report_commit_main_ancestry | 69 | 2.9 s | 59 分(※ main と重複計上) |
-| cmd_complete_gate.sh | check_self_grade_commit_file_coverage | 72 | 5.1 s | 10 分 |
-| deploy_task.sh | deploy_task_original_prepare_remote_tip_worktree | 38 | 5.0 s | 6.8 分 |
-| deploy_task.sh | run_python_logged | 42 | 5.8 s | 5.3 分 |
-| deploy_task.sh | maybe_notify_draft_review / generate_report_template / inject_semantic_concepts / yaml_field_set_batch | 42 each | 2.0〜4.1 s | 2.4〜3.6 分 each |
-
-集計: `python3 -c` で execution_id 末尾 epoch を parse(本書 §5-1 の対象=timestamp 列の追加)。
-
-### §7.2 追補: 家老に関係する「gate clear 側」の script(殿指摘。家老が待つ原因は全て家老 lane)
-| script | 誰が起動 | 家老との関係 | 今日の実測 |
-|---|---|---|---|
-| `scripts/cmd_complete_gate.sh` | monitor(自動再 GATE)+家老 | CLEAR/WAIT/BLOCK を決める。WAIT のたび 9.2 s | 121 回=42.7 分/日、うち WAIT 66 |
-| `cmd_complete_gate_auto_push_ancestry_wait`(同 script 内) | monitor | 報告 commit を自動で origin へ合流させる経路。**FAIL しても理由を書かない**(`auto_push_ancestry_retry.log` は PASS/FAIL のみ) | index_lock hotfix で 12 回連続 FAIL(13:58〜14:38) |
-| `scripts/publisher_c2a_merge.sh`(74 行) | 家老/publisher | 報告 commit の合流本体。**所要時間の計測なし** | 83 行/日 |
-| `scripts/safe_shared_main_ff.sh` | 上記から | root の ff 安全判定 | mode 100644(CI test #330 の対象) |
-| publisher daemon `root sync` | daemon | root を origin に追随。`postsync_verify_mismatch` で BLOCK 連発 | 14:05〜14:13 で 7 回 |
-| `scripts/gates/gate_gunshi_report_precheck.sh` / `review_bundle.py` | 軍師 | LGTM の前提。家老はここを待つ | precheck 118 回 p50 3.2 s |
+| `scripts/cmd_complete_gate.sh` main | monitor(約 3 分ごと再 GATE)+家老 | CLEAR/WAIT/BLOCK 判定 | **121 回、p50 9.2 s、合計 42.7 分**。結果: CLEAR 31/WAIT 66/BLOCK 10。CLEAR までの経過 p50 1,212 s/p95 5,017 s(n=30) |
+| 同 `check_report_commit_main_ancestry` | 同 | 報告 commit が origin/main の祖先か | 69 回、p50 2.9 s |
+| 同 `check_self_grade_commit_file_coverage` | 同 | | 72 回、p50 5.1 s |
+| 同 `cmd_complete_gate_auto_push_ancestry_wait` | monitor | 報告 commit を自動で合流させる経路。**FAIL 時に理由を書かない**(`auto_push_ancestry_retry.log` は日時/cmd_id/PASS|FAIL の 3 列) | index_lock hotfix で 13:58〜14:38 に 12 回連続 FAIL |
+| WAIT 理由(gate_metrics 66 行) | | | `report_commit_main_ancestry` **47**、`ci_readiness: ci_evaluation_absent` 7、`ci_push_state BLOCK` 8、`post_deploy_evidence_pending` 2、`review_two_phase_pending` 1 |
+| `scripts/publisher_c2a_merge.sh` | 家老 / publisher daemon / publish_direct_commit の fallback | 合流本体 | 83 行/日、所要・失敗ともに未計測 |
+| `scripts/safe_shared_main_ff.sh` | c2a/auto-push から | root ff の安全判定 | index mode 100644(CI test #330 の対象) |
+| publisher daemon `root sync` | daemon | root を origin に追随 | `postsync_verify_mismatch` 14:05〜14:13 に 7 回連続(origin が台帳 batch で 1 分毎に進む) |
+| `scripts/gates/gate_gunshi_report_precheck.sh` / `review_bundle.py` | 軍師 | LGTM の前提 | precheck 118 回、p50 3.2 s、p95 12.6 s |
 | `scripts/ninja_monitor.sh` 再 GATE loop | daemon | WAIT cmd を約 3 分ごとに再 GATE | 上記 121 回の大半 |
-| `scripts/review_approval.sh` | 家老 | 内訳 check_id(gunshi_lgtm/karo_accept)が **0 固定でハードコード**(L821/L826) | total p50 10 s の中身が不明 |
 
-### §7.3 追補: 家老への配達遅延(watcher、最大の枠外)
-- `logs/inbox_watcher_karo.log`(+.1、今日 3,143 行)。日付形式が `[Sat Sep  5 …]` のため §2.2 の「0 件」も将軍の grep 誤り。
-- 今日: Wake-up 送出 **357 回**、うち `DELIVERY-LATENCY-WARN` **178 回**。**held p50 2,423 s(40 分)/ p95 6,609 s(110 分)/ max 7,175 s**。比較: 疾風は held p50 209 s、n=11。
-- 意味: 家老宛メッセージの半分は、家老が busy のため **40 分〜2 時間遅れて届く**(watcher が busy 中の send-keys を抑止して lease を更新し続ける)。将軍の下知も忍者の報告も同じ列に並ぶ。これが「家老が遅い」の正体の 1 つで、家老の手(20〜30 分/日)の 100 倍の規模。
-- 集計: `cat logs/inbox_watcher_karo.log.1 logs/inbox_watcher_karo.log | grep 'Sep  5' | grep -oE 'held [0-9]+s'` を sort して分位。
+## §3 枠外(家老の「作業」に数えられないが家老の時間を食うもの)
+### §3.1 配達遅延(watcher busy gating)— 最大の枠外
+- `logs/inbox_watcher_karo.log`(+.1)。日付形式は `[Sat Sep  5 …]`。
+- 今日: Wake-up 送出 **357 回**、うち `DELIVERY-LATENCY-WARN` **178 回**。**held p50 2,423 s(40 分)/p95 6,609 s(110 分)/max 7,175 s**。比較: 疾風 held p50 209 s(n=11)。
+- 定義(軍師所見 (1) で確定): 起点=watcher が当該 agent の未読を最初に検知した時刻(`first_unread_seen`)、終点=nudge の send-keys が成功した時刻。lease 更新回数×間隔ではなく実時刻差。
+- 意味: 家老宛メッセージの半分は家老が busy のため 40 分〜2 時間遅れて届く。将軍の下知も忍者の報告も同じ列。家老の手(20〜30 分/日)の 100 倍の規模。
+- watcher プロセスは agent ごとに親 1+子 1(pgrep 18 本は親子。重複起動ではない=ppid で確認)。
 
-### §7.4 律速順位の更新(§3 を置換)
-| 順位 | 項目 | 実測 |
-|---|---|---|
-| 1 | 家老宛配達の held(busy gating) | p50 40 分、p95 110 分、178 回/日 |
-| 2 | 報告 commit の合流待ち(ancestry WAIT)+auto-push FAIL 理由不明 | WAIT 47 行、CLEAR 経過 p50 20 分 |
-| 3 | 再 GATE の CPU(cmd_complete_gate main 9.2 s×121) | 42.7 分/日 |
-| 4 | health refresh 同期経路 | 3,398 s/日、p95 24 s |
-| 5 | 家老の手(deploy/review/hook) | 20〜30 分/日 |
+### §3.2 CTX と /clear
+- 家老 CTX 11:21 14% → 14:1x 83% → /clear 後 16%。3 時間で 1 周、今日 3 回。復帰=startup gate 約 18 s+deepdive replay 2 本(Phase 10+7、所要未計測)+陣形図/inbox 再読。
+- CTX を食う主因(推定、未計測): bulletin_notify が掲示板本文を丸ごと同梱(将軍宛 doc-lane alert 6 本/日も家老 inbox へ)、capture-pane 出力、gate の長い stderr。
 
-### §7.5 §5 の次の一手(更新)
-1. **計測修復(殿 14:49 go)**: (a) function timing に ISO timestamp 列 (b) defense_overhead に agent 列 (c) review_approval 内訳を実測 (d) auto_push_ancestry FAIL に reason (e) publisher_c2a_merge に所要時間 (f) watcher の held を jsonl で日次集計できる形 (g) 上記を 1 本の `karo_throughput_report.sh` で毎日表にする。
-2. 配達 held の解消(順位 1): busy gating の閾値/lease 設計の見直し(計測後)。
-3. 合流の自動化(順位 2)。
+### §3.3 memory_db_live_insert の health refresh(全 agent 共通)
+- `three_layer_health` 合計 **3,398 s/日**(refresh_window 1,738 s、refresh_verify 939 s、refresh_copy 784 s)。p50 0 ms、**p95 24 s**。非同期経路(refresh_incremental_event 1,630 回 0 ms)は存在し、同期経路に落ちる条件が未特定。
+- 呼出し元=bulletin_write / insight_write / karo_workaround_log / lesson_write_karo / cmd_delegate / cmd_quality_log。家老が掲示板 1 本書くたびに最悪 24 秒。
 
-## §8 セルフレビュー(15:05、殿指示 14:57『影響範囲・依存関係を深く。複雑化禁止、よりシンプルに速く、既存の仕組みを最大限に』)
+### §3.4 nudge と再読
+- monitor の `KARO-PENDING-INBOX`/`RENUDGE-TRANSITION` が 1 分刻みで家老を起こす(14:37、14:38)。作業中でも UserPromptSubmit hook(462 ms)と inbox_read(receipt)が走る。
 
-### §8.1 変更 6 点の影響範囲(読み手・呼び手を rg で全数確認)
-| 変更 | 書き手(変更箇所) | 読み手(影響先) | 判定と簡素化 |
+### §3.5 inbox_write の 1 秒
+- p50 1,004 ms/p95 6,774 ms(n=705)。分解済み 3 phase の合計約 90 ms。残りは nudge(send-keys timeout 5 s+確認プロンプトガード)。p95 側は「相手が busy で 5 秒待った」時間。
+
+## §4 律速順位(数値で)
+| 順位 | 項目 | 実測 | 種別 |
 |---|---|---|---|
-| (a) function_timing に時刻 | printf 3 箇所: cmd_complete_gate.sh / deploy_task.sh / ninja_monitor.sh | `scripts/lib/function_coverage.sh`(key 参照、schema 文字列は自前 function_coverage.v1 のみ)、ninja_monitor、cmd_complete_gate、deploy_task(自書き) | **schema を v2 にしない**。function_coverage.v1 が既に持つ `observed_date`/`observed_at` と同名の key を足すだけ(既存の型を複製)。読み手は key 参照なので無影響。集計側は key 不在時に execution_id の epoch へ fallback |
-| (b) defense_overhead に agent | `scripts/lib/defense_overhead_writer.sh` 1 箇所(python の dict に 1 key) | 読み手 12 file は全て **書き手**(write/write_async 呼出し)。純粋な読み手は ninja_monitor の pre_push metrics(source=pre_push を grep)と `lib/defense_overhead_event_index.py`(event_id のみ index)。`deploy_task/state.sh` L485 は writer を通さず生 JSON を追記=agent 無し行が残る | 追加 key は無害(全読み手が key 参照 or event_id のみ)。writer に `SHOGUN_AGENT_ID→tmux @agent_id→'-'` を自動付与。state.sh の生追記は今回触らず、集計側で agent 欠損='-' として扱う(壊さない) |
-| (c) review_approval 内訳 | `review_approval.sh` L821/L826 の 0 固定 | なし(defense_overhead へ書くだけ) | 既存の `REVIEW_APPROVAL_TOTAL_T0_US` と同じ `date +%s%N` 差分を 2 箇所に置くだけ。新関数を作らない |
-| (d) auto-push FAIL の理由 | `cmd_complete_gate.sh` gate_run_auto_push_ancestry_retry の FAIL printf | 読み手は cmd_complete_gate.sh 自身のみ(retry_log を読む) | 直前に既に stdout へ出している `AUTO_PUSH_WAIT ... result=SKIP reason=...` 行を変数で受けて FAIL 行の 4 列目に付ける。tab 区切りを維持(既存読み手は 3 列目まで) |
-| (e) c2a の所要 | `publisher_c2a_merge.sh`(74 行) | 呼び手=publish_direct_commit.sh と publisher daemon。stdout の `publisher_c2a_merge: pushed` 行を grep する経路あり(publish_direct_commit) | stdout の既存行は変えない。先頭で `T0=$(date +%s%N)`、push 成功後に `defense_overhead_write_async publisher_c2a c2a_merge_total <ms> PASS` の 2 行のみ。isolated clone 内で実行されても `$ROOT/scripts/lib` を絶対 path で source(既存 review_approval と同じ書き方) |
-| (f) watcher held を jsonl へ | `inbox_watcher.sh` L1591 の直後 1 行 | watcher は agent ごとに 1 親+1 子(pgrep 18 本は親子で、重複起動ではない=確認済み) | `defense_overhead_write_async inbox_watcher delivery_held <sec*1000> <PASS|WARN>`。agent は (b) で自動付与。stderr の人間向け行は残す |
-| (g) 日次表 script | 新規 `scripts/karo_throughput_report.sh`(python 1 本を bash から呼ぶ) | 既存 `throughput_scan.sh` / `throughput_growth_loop.sh` は S1/S2 insight 用で再利用不可(確認済み) | 入力は上記 5 源の **読むだけ**。書込みは docs/research/karo_throughput_daily/<date>.md のみ。cron 無し(手動 or loop から) |
+| 1 | 家老宛配達の held(busy gating) | p50 40 分、p95 110 分、178 回/日 | 待ち(枠外) |
+| 2 | 報告 commit の合流待ち(ancestry WAIT)+auto-push FAIL 理由不明 | WAIT 47 行、CLEAR 経過 p50 20 分、1 cmd 30〜40 分 | 待ち(家老の c2a が直列) |
+| 3 | 再 GATE の CPU | cmd_complete_gate main 9.2 s×121=42.7 分/日 | 待ち(daemon) |
+| 4 | health refresh 同期経路 | 3,398 s/日、p95 24 s | 枠外 |
+| 5 | 家老の手(deploy/review/hook/送信) | 20〜30 分/日 | 家老の手 |
+| 6 | /clear 復帰 | 3 回×(18 s+replay 未計測) | 枠外 |
 
-### §8.2 依存関係(順序)
-1. (b) agent 自動付与が先。(f)(e)(c) は (b) の後に書くと agent が付く。
-2. (a) は単独。(d) は単独。
-3. (g) は (a)-(f) の新 key を **任意**として読む(無ければ '-' / epoch fallback)。∴ (g) は (a)-(f) と並行して書け、先に (g) だけ入れても壊れない。
-4. 外部依存: なし(全て repo 内 bash/python3、新パッケージ 0)。
+## §5 殿の仮説「script の圧倒的な拘束」への回答(事実→判断)
+- 事実: 家老が手で回す script は実質 7 本(deploy_task / review_approval / cmd_complete_gate / c2a / inbox_read+mark_read / inbox_write / bulletin_write)で既に拘束に近い。1 本最大 30 秒、合計 20〜30 分/日。
+- 事実: 遅く見える時間の大半は待ち(順位 1〜3)と枠外(4, 6)。script の中身を速くしても順位 1〜2 は消えない。
+- 判断: 拘束は正しいが対象は **script の本数ではなく「家老の手を要する合流の回数」と「家老が busy の間に止まる配達」**。忍者報告→軍師 LGTM→publisher が自動で合流→GATE として家老は例外のみ触れば順位 2 が消える(単一 publisher 設計 U3 の auto-push ancestry 経路そのもの。今日 12 回 FAIL したまま理由が記録されていない)。順位 1 は配達の busy gating の設計見直し。いずれも **計測が先**(§6)。軍師所見: この判断は正しい(15:04)。
 
-### §8.3 リスクと二値
-| リスク | 二値で塞ぐ |
+## §6 計測修復 ToBe(cmd_4478。殿 go 14:49。家老 REJECT 9 点・軍師 5 所見を織込済)
+### §6.1 計測の穴 6 つと修正箇所 8 箇所(家老①: 件数を分けて二値化)
+| 穴 | 修正箇所 | file | 何を書く | event_id / 定義 | 後方互換 |
+|---|---|---|---|---|---|
+| A. function_timing に時刻がない | 1. cmd_complete_gate.sh の printf | `scripts/cmd_complete_gate.sh` L961 付近 | 既存 function_coverage.v1 と同名の `observed_date`/`observed_at` key を追加。**schema 名は v1 のまま**(家老⑥: 「旧行」「observed 列付き v1 行」と呼ぶ) | `observed_at` は **execution 開始時に UTC を 1 回取得し全 rank 行で再利用**(家老⑦: 日跨ぎ分裂防止)。書式は function_coverage.v1 と同じ `date -u +%F`/`%FT%TZ`(軍師 (2)) | 読み手(`scripts/lib/function_coverage.sh`、ninja_monitor、cmd_complete_gate、deploy_task)は key 参照→無影響。集計側は key 不在なら execution_id 末尾 epoch(μs)→UTC ISO へ変換 |
+| A | 2. deploy_task.sh の printf | `scripts/deploy_task.sh` | 同上 | 同上 | 同上 |
+| A | 3. ninja_monitor.sh の printf | `scripts/ninja_monitor.sh` L1793 付近 | 同上 | 同上 | 同上 |
+| B. defense_overhead に agent がない | 4. writer | `scripts/lib/defense_overhead_writer.sh` | top-level `agent` key を自動付与。**agent=実行者に固定**(家老②)。解決順 `SHOGUN_AGENT_ID`→`tmux display -p '#{@agent_id}'`→`'-'`。値は `[a-z0-9_-]{1,32}` か '-'(家老⑧)。reserved key 集合へ `agent` 追加 | 配達先など別の主体は `metadata_json.target_agent` に持つ | 読み手 12 file は全て書き手側。純粋な読み手=ninja_monitor の pre_push metrics(source を grep)、`lib/defense_overhead_event_index.py`(event_id のみ)→追加 key は無害。`scripts/deploy_task/state.sh` L485 の生 JSON 追記は agent **key 自体が無い**→集計側で「key 不在」も '-' と同一視(軍師 (2))。tmux 無し環境では '-' で **書く**(fail-open) |
+| C. review_approval の内訳が 0 固定 | 5. 2 箇所 | `scripts/review_approval.sh` L821/L826 | 既存 `REVIEW_APPROVAL_TOTAL_T0_US` と同じ `date +%s%N` 差分で gunshi_lgtm/karo_accept の実測 wall_ms | 既存 event_id 規約のまま | なし |
+| D. auto-push FAIL に理由がない | 6. retry_log の FAIL 行 | `scripts/cmd_complete_gate.sh` gate_run_auto_push_ancestry_retry | 関数 stdout 全体を capture し **最後の** `AUTO_PUSH_WAIT` 行から result/reason を抽出、非空でなければ `reason=unknown`(家老⑨)。tab 区切り 4 列目に付加 | — | 既存読み手は同 script のみ、3 列目まで参照 |
+| E. c2a の所要・失敗が見えない | 7. c2a 本体 | `scripts/publisher_c2a_merge.sh` | 先頭 `T0`、**EXIT trap** で PASS/FAIL 両方を `defense_overhead(source=publisher_c2a, check_id=c2a_merge_total, wall_ms)` へ(家老③、軍師 (1)) | `event_id=c2a:<task>:<commit>:<attempt>`(家老③④。既存 writer の UNIQUE event_id で 2 件目以降が抑止されないよう attempt を含む) | stdout の既存行(`publisher_c2a_merge: pushed …`)は不変(publish_direct_commit が grep) |
+| F. 配達 held が人間向けログのみ | 8. watcher | `scripts/inbox_watcher.sh` L1591 直後 | `defense_overhead_write_async inbox_watcher delivery_held <sec×1000> <PASS|WARN>`、`metadata_json={"target_agent":"<agent>","unread":N}` | `event_id=held:<agent>:<first_unread_seen>:<fingerprint>`(家老④) | stderr の人間向け行は残す。watcher は全 agent で動くため増分は全体で +600〜800 行/日(karo 178 含む)、c2a +83〜166 行/日=現状 26,066 行/日の約 3%(軍師 (3) で訂正)。rotation(max_bytes 64 MB/keep 50,000 行)は既存のまま |
+
+### §6.2 日次表 `scripts/karo_throughput_report.sh <YYYY-MM-DD> [--as-of <ISO>]`
+- 入力(読むだけ): `logs/defense_overhead.jsonl`(agent 別と全体、`source×target_agent` で家老 lane)、function_timing 2 本(observed 列付き行と旧行の両方)、`logs/gate_metrics.log`、`logs/inbox_watcher_karo.log`(+.1、`[Sat Sep  5` 形式)、各 cmd の `auto_push_ancestry_retry.log`。
+- 出力: `docs/research/karo_throughput_daily/<date>.md` に §1/§2/§3.1/§4 と同じ列(経路・回数・p50・p95・合計、WAIT 理由別、配達 held 分位、agent 別按分)。
+- 完了の二値(家老⑤): **固定 fixture で 2 回実行して exact 一致**+本番ログは `--as-of <cutoff>` を固定した時のみ一致(live log は増えるため無指定の再実行一致は要求しない)。
+- 既存 `throughput_scan.sh`/`throughput_growth_loop.sh` は S1/S2 insight 用で名称・出力先・用途が分離(軍師 (4))。cron 登録は別 cmd(まず手動で 3 日分を見る。軍師 (5): 日次表は 3 日蓄積後に意味を持つが §6.3 の並行可により同 cmd に残す)。
+
+### §6.3 依存関係(順序)
+1. 修正箇所 4(agent 自動付与)が先。7(c2a)・8(watcher)・5(review)は 4 の後に書くと agent が付く。
+2. 修正箇所 1〜3(function_timing)と 6(auto-push 理由)は単独。
+3. §6.2 の集計は新 key を任意として読む(無ければ '-'/epoch fallback)→ 修正箇所と並行して書ける。
+4. 外部依存なし(bash/python3 のみ、新パッケージ 0)。
+
+### §6.4 test(隔離 fixture、test_necessity 付き)
+| test | 不変量 |
 |---|---|
-| jsonl の 1 行が壊れて既存読み手が落ちる | 各 writer の隔離 fixture で `python3 -c json.loads` が全行 PASS |
-| defense_overhead の書込み量が増える(watcher 357 行/日+c2a 83 行/日=+440 行/日、現状 26,066 行/日の 1.7%) | 増分 2% 未満を報告に数値で書く。writer の rotation(max_bytes 64MB/keep 50,000 行)は既存のまま |
-| tmux が無い環境(CI/隔離)で agent 解決が失敗 | writer は `SHOGUN_AGENT_ID` → tmux → '-' の順で **失敗しても書く**(fail-open、計測は止めない) |
-| 時刻 key 追加で function_timing の行が長くなり ninja_monitor の tail/grep が遅くなる | key 2 個(約 40 byte)。行数は増えない |
+| writer: agent 付与 | `SHOGUN_AGENT_ID=x` で agent=x、tmux 無しで '-'、不正値は '-' に落ちる |
+| writer: 既存 key 不変 | 変更前の 6 引数呼出しが同じ行(+agent)を書く |
+| function_timing: observed 列 | 同一 execution の全 rank 行で observed_at が同一 |
+| 集計: 3 fixture | 「agent key 不在行」「agent='-' 行」「observed 列なし旧行(epoch μs→UTC ISO)」を読んで表が出る |
+| c2a: PASS/FAIL | 成功・失敗の両方で 1 行、event_id が attempt で異なる |
+| watcher: held | 同一 first_unread_seen で 1 event、target_agent が metadata に入る |
+| auto-push: reason | source_publication_failed / helper_missing の敵対 fixture で reason が入り、AUTO_PUSH_WAIT 行なしで reason=unknown |
+| 日次表: 冪等 | 固定 fixture 2 回 exact 一致 |
+| 既存読み手 | `defense_overhead_event_index.py` と gate_karo_startup が変更前と同じ結果 |
 
-### §8.4 セルフレビューで削ったもの(複雑化禁止)
-- schema v2 の導入(→ 既存 key 名の複製で足りる)。
-- 新台帳ファイル(→ 全て既存 defense_overhead.jsonl / 既存 retry_log へ)。
-- cron 登録(→ 別 cmd。まず手動で 3 日分の表を見る)。
-- watcher の held 解消や合流自動化(→ 計測後の別 cmd)。
+### §6.5 やらないこと(複雑化禁止)
+schema 名変更(v2)/新台帳 file/cron 登録/watcher の held 解消/合流自動化/health refresh 非同期化/速度最適化。全て計測後の別 cmd。
 
-### §8.5 レビュー依頼(忖度なし、15:05)
-- 家老: 上記 (a)-(g) の影響範囲に漏れがないか、家老 lane の実運用(review_approval / c2a / gate 再実行)で壊れる経路がないか、cmd_4478 の AC が現場で二値判定できるか。
-- 軍師: 集計の定義(held・c2a_merge_total・agent 解決順)と後方互換(v1 行の epoch fallback、agent 欠損 '-')が SG 観点で穴なしか、(g) が既存 throughput_scan と混同されないか。
+## §7 次の一手(順序)
+1. cmd_4478 計測修復(本書 §6)。
+2. auto-push ancestry の FAIL 理由が出たら、真因(root sync 競合か helper か publication か)で順位 2 の cmd を起票。
+3. 配達 held の解消(順位 1): busy gating の閾値/lease 設計の見直し。計測 3 日分を見てから。
+4. 合流の自動化(順位 2)。
+5. health refresh の同期経路を潰す(順位 4)。
+6. bulletin_notify の本文同梱を要約+パス参照に(§3.2、/clear 回数)。
 
-### §8.6 家老レビュー(15:04、忖度なし REJECT 9 点)の反映
-| # | 指摘 | 反映(本書と cmd_4478 を更新) |
+## §8 計測が壊れている/無い箇所の一覧(本書で発見。§6 で全て塞ぐ)
+| 箇所 | 状態 | 影響 |
 |---|---|---|
-| ① | 『6 writer』は現物で 8 変更点(function_timing 3 箇所+b/c/d/e/f)。件数が二値でない | 「計測の穴 6 つ」と「変更点 8 箇所」を分けて書く。AC は変更点 8 箇所で二値 |
-| ② | agent の意味が混在(review_approval=実行者、watcher=配達先、c2a=daemon) | **agent=実行者に固定**。watcher は `metadata.target_agent` に配達先を持つ。家老 lane の集計は `source × target_agent`(watcher)/`source`(review_approval, c2a)で定義 |
-| ③ | c2a を push 成功後だけ記録すると失敗が母集団から消え p95 が短く歪む | EXIT trap で PASS/FAIL 両方を記録。`event_id=c2a:<task>:<commit>:<attempt>` |
-| ④ | watcher/c2a の event_id 契約が無く、既存 writer の UNIQUE event_id で 2 件目以降が抑止され得る | watcher `event_id=held:<agent>:<first_unread_seen>:<fingerprint>`、c2a は③。AC に明記 |
-| ⑤ | 『同日 2 回で同一出力』は live log が増えるので達成不能 | 固定 fixture で 2 回 exact 一致+本番は `--as-of <cutoff>` 固定時のみ一致 |
-| ⑥ | schema v1 維持と v1/v2 両対応の記述が矛盾 | 「旧行」と「observed 列付き v1 行」と記す。v2 の語を消す |
-| ⑦ | observed_at を各行で date 取得すると同一 execution が日跨ぎで分裂 | execution 開始時に UTC を 1 回取得し全 rank 行で再利用 |
-| ⑧ | defense_overhead の reserved key 集合に agent を追加し、値検証と tmux 非接続 fixture が要る | writer の reserved 集合へ `agent` 追加、値は `[a-z0-9_-]{1,32}` か '-'、tmux 無し fixture で '-' になる test |
-| ⑨ | auto-push の理由を stdout 直前行に依存すると不安定 | 関数 stdout 全体を capture し最後の `AUTO_PUSH_WAIT` から result/reason を抽出、非空でなければ `reason=unknown`。source_publication_failed / helper_missing の敵対 test |
+| function_timing の時刻 | execution_id 末尾 epoch のみ | 日付集計に epoch parse が要る |
+| defense_overhead の agent | 列なし | 家老按分不可(1,928 行/日の inbox_write、3,615 行の mark_read、2,832 行の skill guard が誰のものか不明) |
+| review_approval 内訳 | 0 固定 | 10 秒の正体が不明 |
+| auto_push_ancestry_retry.log | PASS/FAIL のみ | 12 回連続 FAIL の真因が追えない |
+| publisher_c2a_merge | 計測なし | 合流 1 回の所要・失敗率が不明 |
+| watcher held | stderr の人間向け行のみ | 順位 1 が日次で追えない |
 
-判定: 9 点すべて採用。複雑化はしていない(いずれも定義の固定と既存 UNIQUE 契約への適合)。
+## §9 殿裁定とレビュー判定の記録(時刻付き。歴史修正禁止)
+| 時刻 | 何が起きたか |
+|---|---|
+| 14:35 | 殿下問。 |
+| 14:45 | v1 公開(gist aeaadf72)。§1〜§5。**誤り 2 つ**: (i) function timing を「今日 0 行」と書いた=timestamp 文字列で filter した集計誤り。実在し epoch で集計できた (ii) watcher nudge を「0 件」と書いた=日付形式 `[Sat Sep  5` を `2026-09-05` で grep した誤り。 |
+| 14:49 | 殿『まずは計測修復』。 |
+| 14:50 | 殿『gate clear 関連も家老の script。待たされる原因は全て家老に関係する』→§2 として統合。 |
+| 14:55 | §7 訂正(function timing 実測、gate main 9.2 s×121、配達 held p50 2,423 s)、律速順位を更新。 |
+| 14:57 | 殿『影響範囲・依存関係を深くセルフレビュー、更新後に家老と軍師へ忖度なしレビュー』。 |
+| 15:05 | §8 セルフレビュー(読み手・呼び手の rg 全数、削ったもの)。家老・軍師へ依頼(msg_150100/150102)。 |
+| 15:04 | 家老 REJECT 9 点(件数二値化/agent 意味混在/c2a 成功のみ/event_id 契約/同日 2 回一致は不可/v1・v2 矛盾/observed_at 日跨ぎ/reserved 集合・値検証・tmux 無し fixture/auto-push 理由の抽出法)。全て §6 へ採用。 |
+| 15:04 | 軍師 APPROVE+5 所見(c2a FAIL 不可視と held 定義/agent key 不在 fixture と μs→ISO/増分は全 agent 合算/throughput_scan と混同なし/(g) 分離は任意)。全て §6 へ採用。 |
+| 15:06 | 殿『追記でなく再構築、粒度を小さく、情報量を減らすな』→本 v2。v1 全文は git 履歴(9aa586607 まで)。 |
 
-### §8.7 軍師レビュー(15:04、APPROVE+5 所見)の反映
-| # | 所見 | 反映 |
-|---|---|---|
-| (1) | c2a は成功時のみ計測で FAIL の壁時間が不可視。held の起点/終点を明記せよ | c2a は §8.6 ③(EXIT trap)。**held の定義**=起点: watcher が当該 agent の未読を最初に検知した時刻(`first_unread_seen`)、終点: nudge の send-keys が成功した時刻。lease 更新回数×間隔ではなく実時刻差。同一 first_unread_seen で 1 event |
-| (2) | state.sh の生 JSON は agent key 自体が欠落。key 不在='-' の fixture が要る。μs→ISO 変換を function_coverage の observed_date と照合せよ | 集計側 test に「agent key 不在行」「agent='-' 行」「observed 列なし旧行(epoch μs→UTC ISO)」の 3 fixture。observed_date は function_coverage.v1 と同じ `date -u +%F`/`%FT%TZ` 書式で統一 |
-| (3) | 増分 +440 行/日は karo のみ。watcher は全 agent 合算で 200〜400 行 | §8.3 の増分を「karo 178+他 agent 分=全体 +600〜800 行/日(約 3%)」へ訂正。結論(rotation 既存で十分)は不変 |
-| (4) | throughput_scan との混同なし | PASS のまま |
-| (5) | (g) 日次表は 3 日分蓄積後に意味を持つ。別 cmd 分離は任意 | 同 cmd に残す(§8.2 で並行可)。ただし AC2 の完了二値は「固定 fixture で 2 回 exact 一致+`--as-of`」に変更(§8.6 ⑤) |
-
-判定: 5 所見すべて採用。REJECT なし。
+## §10 因果リンク
+- ← [[殿下問_家老律速の拘束_20260905_1435]] / ← [[単一publisher_asis_tobe_5w1h_20260902]] U3 auto-push ancestry / ← [[cmd_4393_karo-waste]](08-24 の workaround/配備反復集計)
+- → [[karo_throughput_計測修復]](cmd_4478) → [[配達held_解消]] → [[合流の自動化]] → [[health_refresh_非同期化]]
