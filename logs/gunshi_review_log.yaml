@@ -7288,3 +7288,33 @@
     expected: "owner再検証の一時FAIL時に次周期へ継続する修正"
     actual: "ninja_monitor.sh +15/-2行、owner record再検証のFAIL時にgraceful continue追加"
     result: "PASS(修正自体は正しいがci_fix全体は未完了)"
+- cmd_id: cmd_4477
+  review_type: report
+  verdict: FAIL
+  gate_prediction: BLOCK
+  gate_prediction_reason: "bc:no検出(AC2 full pytest 7 FAIL); status=failed"
+  reviewed_at: "2026-09-05T14:32:00+09:00"
+  report_path: queue/reports/hayate_report_cmd_4477.yaml
+  report_id: rpt-2eeb8bf0-904d-4414-94be-004105162c18
+  report_ninja: hayate
+  report_task_id: cmd_4477_full
+  report_identity_version: 2
+  report_fingerprint: ""
+  observations:
+    - "事実1: AC1(frontend)はnpm typecheck+build PASS、AC3(migration roundtrip)はlocal PostgreSQL PASS。実装自体は正しい"
+    - "事実2: AC2のscope contract 19/19 PASS(新規contract test 3本含む)だが、full pytest 7 FAIL。origin/main baseline(6f394781)も同一7 FAIL(integration cash_fallback/pipeline_exception/portfolio_restore/golden_regression)"
+    - "事実3: 7 FAILはidentity変更と無関係の既存regression。新規FAILは0件。git commitは完了、frontend package.json含む13ファイル変更"
+  finding_categories:
+    - assumptions
+    - numbers
+    - premortem
+    - adversarial
+    - ambiguity
+  ambiguity_points: "AC2のpytest全量FAIL0要件はbaseline FAILを区別しない。scope contract PASSは実質的にregression 0を証明"
+  step3_5_verified: true
+  brainwash_check: "#1no #2no #3no #4no #5no #6no #7no #8no baseline 7 FAIL一致をgit show origin/mainで独立検証。scope contract 19/19は忍者報告と突合済"
+  operational_simulation:
+    command: "git show c8b34714 --stat"
+    expected: "frontend+backend+migration+tests+docsの13ファイル変更"
+    actual: "13 files changed, +587/-31 (frontend 5, backend 5, migration 1, tests 2[拡張], docs 1)"
+    result: "PASS(commit構造は正しいが全量pytest FAIL 0未達でFAIL判定)"
