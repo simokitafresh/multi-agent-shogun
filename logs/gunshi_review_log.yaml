@@ -9608,3 +9608,25 @@
   origin: "[[cmd_4480]] -> [[SG-PRE25_R2]] -> [[FAIL]]"
   ambiguity_points: none
   timestamp: "2026-09-06T01:40:00+09:00"
+- cmd_id: cmd_4481
+  review_type: report
+  verdict: FAIL
+  verified_files:
+  - "queue/reports/kagemaru_report_cmd_4481.yaml:36"
+  step3_5_verified: true
+  fail_reasons:
+  - "内容4観点OK。SG-PRE25 run_tests.sh不在(実行のみ参照)でbundle BLOCK。家老にLGTM通知済み"
+  findings_summary: "内容OK。bundle BLOCK→家老通知"
+  observations:
+  - "事実: Σweight違反0、pf_count違反0、forbidden rg=0"
+  operational_simulation:
+    command: "grep -c \"result: 'yes'\" queue/reports/kagemaru_report_cmd_4481.yaml"
+    expected: "4"
+    actual: "4"
+    result: "PASS"
+  finding_categories: [assumptions, numbers, premortem, ambiguity, adversarial]
+  brainwash_check: "#1no #2no #3no #4no #5no #6no #7no #8no"
+  causal_chain: "run_tests.sh=実行参照→SG-PRE25→bundle BLOCK"
+  origin: "[[cmd_4481]] -> [[SG-PRE25]] -> [[FAIL_LGTM通知]]"
+  ambiguity_points: none
+  timestamp: "2026-09-06T01:41:00+09:00"
