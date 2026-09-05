@@ -17222,3 +17222,17 @@ sqlite3.Connection.backup()を使うとページ(4096byte)単位のread syscall�
 - **when**: 未設定
 - **how**: 未設定
 - 本taskの前回3回のFAIL(AC1 bc:no)は、本task対象外のcommit 81a77292e(cmd_karo_hotfix_pd142_test_state_isolation)がrun_tests.shへ追加したBASH_ENV state guardの副作用が原因だった。前回報告はdecision_candidateでこの事実を家老へ委譲していたが、その後別commit fc639aaf5(cmd_karo_hotfix_pd142_runner_fixture_alignment)が独立に是正を完了していた。今回はgit log --oneline -- scripts/run_tests.shで対象ファイルの直近コミット履歴を先に確認してから再実行したため、是正済みであることを実行前に把握でき、無駄な同一FAIL再現を避けられた。教訓: recon2/revalidate系taskでは対象外ファイルの真因が疑われる場合、再実行の前に git log --oneline -N -- <真因ファイル> で後続修正の有無を確認する一手を標準化すべき。
+
+
+### L1750: hot-reload owner再検証は一時FAILでwatcherを終了させない
+- **日付**: 2026-09-05
+- **出典**: cmd_karo_ci_fix_33939652526
+- **記録者**: saizo
+- **tags**: [infra,ninja-monitor,testing,inbox]
+- **subdomain**: infra
+- **target_files**: [scripts/ninja_monitor.sh,tests/unit/test_ninja_monitor_stall.bats]
+- **origin**: [[cmd_karo_ci_fix_33939652526]]
+- **enforcement**: 未自動化
+- **when**: 未設定
+- **how**: 未設定
+- owner record読取後の再検証が競合窓で一時FAILするとwatcherが即終了しsuccessor起動機会を失う。親世代が存続する限り次周期へ再試行する。
