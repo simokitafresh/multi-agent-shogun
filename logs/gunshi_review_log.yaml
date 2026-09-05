@@ -6454,3 +6454,35 @@
     actual: "BLOCK"
     result: PASS
   timestamp: "2026-09-05T11:03:00+09:00"
+- cmd_id: cmd_karo_recon2_4448_u1_revalidate
+  review_type: report
+  verdict: FAIL
+  report_path: queue/reports/hanzo_report_cmd_karo_recon2_4448_u1_revalidate.yaml
+  report_id: rpt-43a828b2-16bf-420c-ac55-3328709baa3e
+  report_identity_version: 2
+  gate_prediction: BLOCK
+  gate_prediction_reason: "AC1 bc:no"
+  finding_categories:
+  - assumptions
+  - numbers
+  - premortem
+  - adversarial
+  - ambiguity
+  observations:
+  - "事実1: report_id補完エントリ(RC改訂後)"
+  - "adversarial: N/A"
+  - "ambiguity: なし"
+  fail_reasons:
+  - "AC1 bc:no"
+  causal_chain: "report_id変更→補完"
+  brainwash_check: "#1no #2no #3no #4no #5no #6no #7no #8no"
+  verified_files:
+  - "queue/reports/hanzo_report_cmd_karo_recon2_4448_u1_revalidate.yaml:1"
+  step3_5_verified: true
+  origin: "[[cmd_karo_recon2_4448_u1_revalidate]] -> [[FAIL補完]]"
+  operational_simulation:
+    command: "precheck"
+    expected: "BLOCK"
+    actual: "BLOCK"
+    result: PASS
+  timestamp: "2026-09-05T11:04:00+09:00"
