@@ -1,5 +1,5 @@
 <!-- gist-master: 70b946c022cd5f6f81195ab837b7a7eb ninja_block_fail_root_cause_asis_tobe_20260905.md -->
-# 忍者の BLOCK/FAIL はインフラバグか — AsIs/ToBe 設計書 v1(2026-09-05 16:15、殿下問 16:03)
+# 忍者の BLOCK/FAIL はインフラバグか — AsIs/ToBe 設計書 v2(2026-09-05 16:25 再構築。v1 16:15 に軍師 APPROVE 5 観点+家老 REJECT 7 点を本文へ統合)
 
 ## §0.0 前提条件と我らのスタイル
 - 殿の問い(16:03): 忍者が AC の品質不備・前提情報の不足・ルーチン作業の試行錯誤で BLOCK/FAIL になるのはインフラバグではないか。修正速度が遅くなっている。調査→設計書→家老・軍師レビュー。
@@ -9,7 +9,7 @@
 - 数値の出所: 2026-09-05 00:00〜16:05 の `queue/reports`(+archive、mtime 本日 74 本)、`logs/gunshi_review_log.yaml`(本日 60 entry)、`logs/deploy_task.log`、`logs/gate_metrics.log`、`logs/karo_workarounds.yaml`。集計コマンドは §2 末尾。
 
 ## §1 結論(先に)
-- **はい、大半はインフラバグ**。本日の軍師 review 60 件中 FAIL 22 件(37%)、FAIL を経た cmd は 12/32。その FAIL 22 回を原因で分けると、忍者が知り得た情報を使わなかったものは **3 回**(LG043 保留語 3)。残り 19 回は発注(AC)・環境(前提)・ルーチン(正規コマンドの案内不在)・gate 偽陽性のいずれか=**忍者側では防げない**。
+- **はい、大半はインフラバグ**。本日の軍師 review 60 件中 FAIL 22 件(37%)、FAIL を経た cmd は 12/32。その FAIL 22 回を原因で分けると、忍者が知り得た情報を使わなかったものは **最大 3 回**(LG043 保留語。家老指摘: 『実装前後で』を『後で』と部分一致した偽 BLOCK が本日 1 件 WA 登録済みのため、真正の先送りは 2〜3 回。§3.1 で primary/secondary に分ける)。残り 19 回は発注(AC)・環境(前提)・ルーチン(正規コマンドの案内不在)・gate 偽陽性のいずれか=**忍者側では防げない**。
 - **コスト**: FAIL を経た cmd の deploy→CLEAR は p50 94 分、経なかった cmd は p50 49 分(本日 n=4/17)。1 回の FAIL ループで所要が約 2 倍。
 - **真因は 1 つ**: 忍者に届く情報が「task YAML に書かれたもの」だけなのに、AC を書く側(将軍・家老)と環境(隔離 DB・clone path・正規コマンド)が **書く前提を持たない**。Level5(事前コンテキスト提供)の欠落。
 
@@ -80,15 +80,20 @@
 集計: `python3 -c` で reports の status/verdict/hook_failures/task_clarity を集約、`gunshi_review_log` の本日 entry を cmd 別に verdict 列化、deploy_task.log の BLOCK 行を uniq -c、gate_metrics の BLOCK を 4 列目で集計、deploy→CLEAR の分差。
 
 ## §3 分類と判定(FAIL 22 回+hook 失敗 8 回+deploy/gate BLOCK 18 回を 5 種へ)
+### §3.0 分類規則(家老②: A/B は相互排他でないため primary を一意化する)
+- 1 event に **primary 原因 1 つ+secondary 原因 list** を持つ(家老①)。
+- primary の優先順: **D(検出器/環境の偽陽性・非決定) → B(環境事実が task に無い) → A(環境事実を全て与えても判定不能な未定義語・不可能条件) → C(正規経路の案内なし) → E(知り得た情報を使わなかった)**。
+- 例: 4477 AC2『全量 FAIL 0』は「baseline が赤という環境事実があれば AC を直せた」→ **primary=B**、secondary=A。4475 AC2 lint も同じく B(lint script 不在という事実)。『公開済み』『明示 deployment target』の定義なしは環境を全て与えても判定不能→ A。
+- E は LG043 の各 event で原文と検出 span を再照合し、『後で/未達』の部分一致(『実装前後で』等)は D(検出器偽陽性)へ移す。本日 4 event(3 cmd: release_idle_redone_race 03:45、agent_respawn_preserve_active 09:26/09:29、4475 11:17)のうち家老 WA 記録 1 件が偽陽性→ E は 2〜3。
 | 分類 | 定義 | 本日の件数(概算) | 判定 | 例 |
 |---|---|---|---|---|
 | A. AC 品質不備(発注側) | 忍者が満たせない/判定できない AC | FAIL 5+deploy 3 | **インフラバグ(発注の型)** | 4477 AC2『全量 FAIL 0』(baseline が赤)、4475 AC2 lint(script 不在)、飛猿『明示 deployment target』(field 未定義)、『公開済み』(基準未定義)、AC 3 本で shard BLOCK |
 | B. 前提情報不足(環境側) | 存在する環境・path・入口が task に無い | FAIL 5+suite 2 | **インフラバグ(注入の欠落)** | localpg、clone 絶対 path、artifact 実体 path、clean-repro recipe path、外部 repo worktree 時間 |
 | C. ルーチン試行錯誤 | 正規コマンド/契約を忍者が毎回探す | hook 8+FAIL 3 | **インフラバグ(案内の欠落)** | bats 直実行、db launcher 2 段、single-flight、lessons_useful 契約、receipt/marker、status setter 遷移 |
 | D. gate/環境の偽陽性・構造 | 忍者の成果と無関係に止まる | FAIL 4+gate 10+WAIT 47 | **インフラバグ(検出器)** | fixture 非決定(PD-142)、precheck cache、prod smoke 一律比較、task YAML 重複 field、ancestry 合流待ち |
-| E. 忍者品質 | 知り得た情報を使わなかった | FAIL 3 | 忍者側 | LG043 保留語(後で/未達語)残存 |
+| E. 忍者品質 | 知り得た情報を使わなかった | FAIL 2〜3(4 event 中 部分一致偽陽性 1 は D) | 忍者側 | LG043 保留語(後で/未達語)の真正残存 |
 
-- **E は 3/22=14%**。残り 86% は忍者の外にある。殿の仮説は数で裏付けられる。
+- **E は 2〜3/22=9〜14%**。残り 86% 以上は忍者の外にある。殿の仮説は数で裏付けられる。primary の一意化は T5 の構造記録(failure_origin_code)が入るまで将軍の読み=事後分類であることを明記(家老⑦)。
 - 波及: A/B は「FAIL→家老 RC→忍者再提出→軍師再 review→家老受理」の 1 ループ(本日実測 p50 +45 分)を生み、C は忍者の 1 task 内で数分〜十数分、D は家老 lane の待ち(別書 karo_throughput §2、CLEAR 経過 p50 20 分)。
 
 ## §4 なぜ起きるか(構造)
@@ -100,25 +105,25 @@
 ## §5 ToBe(最小。既存機構の拡張のみ、新 gate/hook は 0)
 | # | 何を | どこ(既存) | 何が消えるか | 大きさ |
 |---|---|---|---|---|
-| T1 | **環境カード注入**: `projects/infra.yaml` に `environments:`(localpg: path/起動/接続 URL/schema 分離の型、DM-signal clone: 絶対 path/branch 規約、artifact 保存先、clean-repro recipe の絶対 path)を 1 度書き、`inject_cmd_assumptions` が cmd の target_path/文中の環境語に一致する card を task YAML `environment:` へ複製 | deploy_task.sh の既存注入 3 種の隣に 4 つ目。projects/infra.yaml(家老管理) | B の 5〜7 件/日 | yaml 1 表+注入関数 1 本(既存の inject_semantic_concepts と同型) |
-| T2 | **AC 充足可能性 check(cmd_save)**: (a)『全量 FAIL 0』『lint』『typecheck』を AC に書く時は assumptions に『対象 repo の baseline 実行結果(コマンド+件数+日時)』の記載を必須(**cmd_save 自身は baseline を走らせない**=数十秒の遅延を持ち込まない。軍師 (4)) (b) AC 内の未定義語(field 名・『公開済み』『明示』)は定義行を要求 | cmd_save.sh の既存 check 群に 2 check 追加(文字列 check のみ、1 s 未満。止める相手は忍者ではなく cmd 作者=将軍/家老。07-21 殿裁定『超速なら問題なし』と整合) | A の 5 件/日 | check 2 本 |
-| T3 | **正規コマンド表の pre-injection**: 忍者 task YAML に `routine:` として run_tests.sh file/task、db-check 2 段、report_field_set の status 遷移順、inbox_read→mark_read、ninja_scope_commit を deploy 時に複製(1 表、テンプレート固定) | deploy_task の注入+CLAUDE.md 忍者 Recovery に 5 行 | C の 8 件/日 | template 1 表 |
+| T1 | **environment_refs(ID 参照)注入**: cmd schema に `environment_refs: [localpg, dm_signal_clone, artifact_store, clean_repro_recipe]` の **明示 ID** を持たせ(自然言語の環境語一致はしない。家老③=キーワード誤注入型)、`projects/infra.yaml environments:` の registry は **値の複製でなく canonical path / probe コマンド / verified_at / TTL への参照**(秘密値は入れない)。`inject_cmd_assumptions` が ID を解決して task YAML `environment:` に card を複製、未解決 ID は deploy BLOCK(発注側に返る) | deploy_task.sh の既存注入 3 種の隣に 4 つ目。projects/infra.yaml(家老管理) | B の 5〜7 件/日 | registry 1 表+注入関数 1 本 |
+| T2 | **preconditions 構造 schema+1 validator**: cmd に `preconditions: {baseline: {command, source_sha, executed_at, pass, fail, skip}, definitions: {<AC 内の語>: <判定式>}}` を持たせ、validator は **baseline を実行せず** source_sha の一致(対象 repo の HEAD)と executed_at の鮮度だけを 1 秒未満で検証、AC に『全量/lint/typecheck/公開済み/明示』等が出たら対応 key の存在を要求。**cmd_save と deploy_task --yaml(/karo-direct)の両入口から同じ validator を呼ぶ**(家老④: cmd_save だけでは --yaml が素通り。自由文の『未定義語』検出はせず、schema の key 有無で二値) | cmd_save.sh と deploy_task.sh が共有する `scripts/lib/cmd_preconditions_validate.sh` 1 本 | A の 5 件/日+B の一部 | validator 1 本+schema 2 key |
+| T3 | **routine_refs(最小 ID 集合)注入**: task_type(full/hotfix/scout/ci_fix)と CLI(Claude/Codex)で決まる routine ID(`tests_run`=run_tests.sh file/task、`db_readonly`=/db-check 2 段、`report_status`=report_field_set 遷移順、`inbox`=inbox_read→mark_read、`commit`=ninja_scope_commit)だけを task YAML `routine_refs:` に注入し、本文は canonical registry(`context/karo-operations.md` §routine か skills)への参照(家老⑤: 固定 5 行の全 task 複製は肥大化+CLI 差混在) | deploy_task の注入+registry 1 表 | C の 8 件/日 | registry 1 表 |
 | T4(T1-T3 の効果計測後に要否判断。軍師 (5)) | **FAIL 理由の再注入**: 軍師 FAIL の fail_reasons を、家老 RC で同 task へ `review_feedback:` として自動複製(既存 inject_task_modifiers の経路) | deploy_task/review_approval の既存経路 | ループ 2 回目以降の同じ FAIL | 既存 field の再利用 |
-| T5(cmd_4478 の日次表 scope に統合。軍師 (5)) | **計測**: karo_throughput_report(cmd_4478)に『FAIL ループ数/cmd、rework 率、deploy→CLEAR p50(FAIL 有無別)、hook_failures 件数、分類 A〜E』の列を足す | cmd_4478 の日次表 | 効果が毎日見える | 列追加 |
+| T5 | **failure_origin_code の発生時構造記録**: report(`failure_origin: {primary: A-E, secondary: [..]}`)と gunshi_review_log(FAIL entry に `failure_origin_code`)へ **発生時に**構造で書き、日次表(cmd_4478)はそれを集計する。事後の prose 分類はしない(家老⑦) | report template+review_bundle の既存 field 追加、karo_throughput_report の列 | 分類が毎日二値で出る | field 2 つ+列 |
 | T6 | D(偽陽性)は個別 hotfix 継続(本日 4 件根治済み)。合流待ちは別書(karo_throughput §7) | — | — | — |
 
 ### §5.1 やらないこと
 新 gate/hook の追加、AC の全文 LLM 判定、忍者への追加チェックリスト、レビュー回数の上限化。
 
-### §5.2 順序と二値
-1. T1+T3(注入の拡張、忍者の入力を増やす)→ 二値: 次の 20 task で unclear_points に「path/環境/正規コマンドが無い」が 0。
-2. T2(発注側 check)→ 二値: 『全量 FAIL 0』『lint』を含む cmd に baseline 行が 100%。
-3. T4→ 二値: 同一 fail_reason での 2 回目 FAIL が 0。
-4. T5→ 二値: 日次表に分類 A〜E 列。
+### §5.2 順序と二値(家老⑥: 『unclear_points=0』は空欄で達成できる Goodhart 指標のため不採用)
+1. T1+T3(注入の拡張)→ 二値: 次の 20 task で `environment_refs`/`routine_refs` の **解決率 N/N=100%**(未解決 0)、report の missing-premise 起因 RC(家老 RC 理由に『path/環境/正規コマンド不在』)=0、軍師抜取 5 件で false-negative(前提不足なのに unclear_points 空欄)=0。
+2. T2(発注側 validator)→ 二値: 『全量/lint/typecheck/公開済み/明示』を含む cmd の preconditions key 充足率 100%、cmd_save と deploy_task --yaml の両入口で同じ validator が呼ばれる test。
+3. T5→ 二値: 次の 20 FAIL event 全てに failure_origin_code(primary+secondary)がある。
+4. T4→ T1-T3 の効果計測後に要否判断(軍師 (5)・家老 賛成)。
 
 ## §6 レビュー判定の記録
 - 軍師 16:13: APPROVE。(1) bc:no 13 の A5/B5/D3 は実体と合致、才蔵 case135 は B 寄り (2) E 見落としなし、14% 妥当 (3) T3 は SG と矛盾なし (4) T2 は cmd_save で baseline を走らせると数十秒→記載義務のみに(採用) (5) T4 は T1-T3 の効果後に判断、T5 は cmd_4478 に統合(採用)。
-- 家老: (待ち)
+- 家老 16:15: REJECT 7 点。①E=3 の根拠不足(LG043 部分一致偽陽性 1 件 WA 済)→§3.0 primary/secondary+E を 2〜3 に ②A/B 非排他→優先順 D→B→A→C→E で primary 一意化 ③T1 自然言語一致は誤注入型→environment_refs ID+registry 参照(canonical path/probe/verified_at/TTL、秘密値なし) ④T2 が cmd_save のみだと --yaml 素通り、自由文検出は二値不能→preconditions 構造 schema+1 validator を両入口から ⑤T3 固定 5 行は肥大化→routine_refs 最小 ID 集合+registry 参照 ⑥『unclear_points=0』は Goodhart→解決率 N/N・missing-premise RC=0・抜取 FN=0 ⑦T5 事後 prose 分類は曖昧→failure_origin_code を発生時に構造記録。**7 点すべて採用(v2)**。将軍 grep では本日 WA に LG043 語が無く、①の WA id は家老に確認する。
 
 ## §6.1 レビュー依頼(忖度なし)
 - 家老: §3 の分類と件数は現場感と合うか(特に A と B の線引き)。T1 の environments 表を projects/infra.yaml に置くことの運用負荷。T2 が家老の /karo-direct 起票を遅くしないか。T4 の再注入で task YAML が肥大しないか。
