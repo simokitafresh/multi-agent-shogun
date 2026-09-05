@@ -7549,3 +7549,49 @@
     expected: "176/176 PASS skip=0"
     actual: "baseline a9dea0936 176/176 PASS skip=0; 候補1787eba89 176/176 PASS skip=0"
     result: "PASS(ローカル再現せず)"
+- ambiguity_points: 将軍判定でAC2全量FAIL0はAC設計誤りとして免除
+  brainwash_check: '#1no #2no #3no #4no #5no #6no #7no #8no baseline 7FAIL一致をorigin/mainで独立検証。将軍判定に従いhonest
+    FAIL APPROVE'
+  cmd_id: cmd_4477
+  cmd_spec_summary:
+    acceptance_criteria_count: 3
+    project: dm-signal
+    scope: DM-Signal identity最小実装(段1+2+3)
+  finding_categories:
+  - assumptions
+  - numbers
+  - simulation
+  - premortem
+  - adversarial
+  - ambiguity
+  gate_prediction: CLEAR
+  gate_prediction_reason: '将軍判定: AC2全量FAILはAC設計誤り。scope contract 19/19 PASSで充足'
+  observations:
+  - '将軍判定: AC2全量7 FAILはAC設計誤り。scope contract 19/19 PASS+baseline差分+3で充足'
+  - frontend typecheck+build PASS。backend scope 19/19 PASS(regression 0)。migration
+    roundtrip PASS
+  - 7 FAILはorigin/main baseline(6f394781)と完全一致。identity変更による新規FAIL=0件
+  operational_simulation:
+    actual: 13 files changed, +587/-31
+    command: git show c8b34714 --stat
+    expected: 13ファイル変更
+    result: PASS
+  report_verdict: FAIL
+  review_type: report
+  reviewed_at: '2026-09-05T14:58:00+09:00'
+  reviewer: gunshi
+  sg_checklist:
+    SG1_ac_coverage: PASS
+    SG2_test_pass: PASS
+    SG3_parity: N/A
+    SG4_no_regression: PASS
+    SG5_lesson_candidate: PASS
+    SG6_code_quality: PASS
+    SG7_gate_prediction: PASS
+  step3_5_verified: true
+  verdict: APPROVE
+  verified_files:
+  - frontend/lib/user-id.ts:3
+  - frontend/app/auth/callback/page.tsx:42
+  - backend/app/db/models.py:15
+  - backend/migrations/add_identity_columns.py:8
