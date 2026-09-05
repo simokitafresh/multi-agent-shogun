@@ -272,7 +272,8 @@ entries:
       np_user_profile_clicks: 2
       np_url_link_clicks: 26
       np_engagements: 47
-      np_impression_count: 768- draft_id: R5-L-1
+      np_impression_count: 768
+- draft_id: R5-L-1
   draft_file: queue/x_drafts/2026-09-04_R5-L-1.txt
   growth:
     format: long

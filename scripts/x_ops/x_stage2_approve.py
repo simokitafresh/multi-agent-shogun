@@ -26,7 +26,16 @@ def main():
             s, k = re.subn(rf"(- draft_id: {re.escape(sub)}\n(?:(?!- draft_id:).*\n)*?    approved: )''", rf"\g<1>{stamp}", s)
         n += 1
     if not dry:
-        led.write_text(s, encoding="utf-8"); yaml.safe_load(s)
+        # 殿 2026-09-05: 検証→書込の順(旧: 書込→safe_load は壊れた台帳を publish してから気づく)
+        import sys as _sys
+        from pathlib import Path as _P
+        _sys.path.insert(0, str(_P(__file__).resolve().parent))
+        from x_ledger_guard import write_ledger_text
+        try:
+            write_ledger_text(led, s, expected_entries=s.count("- draft_id:"))
+        except ValueError as exc:
+            print(f"x_stage2_approve: BLOCK ledger not written: {exc}", file=_sys.stderr)
+            raise SystemExit(3)
         Path(a[a.index("--plan") + 1]).write_text(Path(a[a.index("--plan") + 1]).read_text(encoding="utf-8").replace("    stage2_copy: pending", f"    stage2_copy: approved({stamp}, {n} units{', except ' + ','.join(sorted(exc)) if exc else ''})", 1), encoding="utf-8")
     print(f"{'dry ' if dry else ''}approved {n} units; except={sorted(exc)}")
 

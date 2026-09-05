@@ -88,7 +88,16 @@ def main():
         add += f"- draft_id: {did}\n  draft_file: queue/x_drafts/2026-09-04_{did}.txt\n  " + render_growth(g).replace("\n", "\n  ").rstrip() + "\n"
         add += "  post_id: ''\n  posted_at: ''\n  snapshots: {}\n"
     if not dry and add:
-        LEDGER.write_text(existing + add, encoding="utf-8")
+        # 殿 2026-09-05: 既存 text の末尾改行を保証し、書込前に構文検証(fail-close)
+        import sys as _sys
+        _sys.path.insert(0, str(Path(__file__).resolve().parent))
+        from x_ledger_guard import ensure_trailing_newline, write_ledger_text
+        new_text = ensure_trailing_newline(existing) + add
+        try:
+            write_ledger_text(LEDGER, new_text, expected_entries=existing.count("- draft_id:") + add.count("- draft_id:"))
+        except ValueError as exc:
+            print(f"x_growth_tag: BLOCK ledger not written: {exc}", file=_sys.stderr)
+            raise SystemExit(3)
     print(f"tagged={len(entries)} ledger_added={add.count('- draft_id:')} dry={dry}")
     from collections import Counter
     print("stage:", dict(Counter(g["funnel_stage"] for _, g in entries)), "audience:", dict(Counter(g["audience"] for _, g in entries)))

@@ -12,6 +12,7 @@ Usage: python3 scripts/x_ops/x_kpi_snapshot.py [--force] [--summary]
 """
 import datetime as dt
 import json
+import yaml
 import re
 import sys
 import urllib.error
@@ -20,6 +21,7 @@ import urllib.request
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[2]
+sys.path.insert(0, str(Path(__file__).resolve().parent))
 LEDGER = ROOT / "queue/x_live_oos/ledger.yaml"
 ACCOUNT = ROOT / "queue/x_live_oos/account_daily.jsonl"
 ENV = ROOT / "config/x_api.env"
@@ -173,17 +175,36 @@ def main():
             snap += f"      np_null_reason: {reason}\n"
         if errors.get(pid):
             snap += f"      api_errors: {json.dumps(errors[pid], ensure_ascii=False)}\n"
-        e = entries[i]
-        if re.search(r"^  snapshots: \{\}\s*$", e, re.M):
-            e = re.sub(r"^  snapshots: \{\}\s*$", "  snapshots:\n" + snap.rstrip("\n"), e, count=1, flags=re.M)
-        else:
-            e = re.sub(r"^  snapshots:\n", "  snapshots:\n" + snap, e, count=1, flags=re.M)
-        entries[i] = e
+        entries[i] = apply_snapshot(entries[i], snap)
         written += 1
-    LEDGER.write_text(head + "".join(entries), encoding="utf-8")
+    new_text = head + "".join(entries)
+    # 殿 2026-09-05 19:36: 書込前に構文検証し、壊れた台帳は publish しない(fail-close)。
+    try:
+        validate_ledger_text(new_text, expected_entries=len(entries))
+    except ValueError as exc:
+        print(f"x_kpi_snapshot: BLOCK ledger not written: {exc}", file=sys.stderr)
+        return 3
+    LEDGER.write_text(new_text, encoding="utf-8")
     print(f"x_kpi_snapshot: wrote {written} snapshots ({', '.join(w for _, _, w, _ in due)})")
     return 0
 
 
-if __name__ == "__main__":
-    sys.exit(main())
+def apply_snapshot(entry, snap):
+    """Insert one snapshot block into an entry text without eating the entry boundary.
+
+    2026-09-05 破損の真因: 旧実装は snapshots の空 mapping 行を「行末の空白類まで」含めて置換していた。re.M でも空白類は
+    末尾の改行を食うため、置換文字列 `snap.rstrip("\n")` の後に改行が残らず、次 entry の
+    `- draft_id:` が同じ行に連結された(ledger.yaml L275 `np_impression_count: 768- draft_id: R5-L-1`)。
+    行末は `[ \t]*` だけを許し、挿入する snap は必ず改行で終える。
+    """
+    if not snap.endswith("\n"):
+        snap += "\n"
+    if re.search(r"^  snapshots: \{\}[ \t]*$", entry, re.M):
+        return re.sub(r"^  snapshots: \{\}[ \t]*$", "  snapshots:\n" + snap.rstrip("\n"), entry, count=1, flags=re.M)
+    return re.sub(r"^  snapshots:\n", "  snapshots:\n" + snap, entry, count=1, flags=re.M)
+
+
+def validate_ledger_text(text, expected_entries=None):
+    """shared guard へ委譲(scripts/x_ops/x_ledger_guard.py)。"""
+    from x_ledger_guard import validate_ledger_text as _v
+    return _v(text, expected_entries)

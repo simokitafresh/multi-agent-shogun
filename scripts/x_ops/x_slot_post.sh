@@ -93,7 +93,16 @@ i = t.index(f"- draft_id: {did}\n"); j = t.find("\n- draft_id: ", i + 1); j = le
 e = t[i:j]
 e = re.sub(r"^  post_id: .*$", f"  post_id: '{pid}'", e, count=1, flags=re.M)
 e = re.sub(r"^  posted_at: .*$", f"  posted_at: '{ts}'", e, count=1, flags=re.M)
-open(p, "w", encoding="utf-8").write(t[:i] + e + t[j:])
+new_text = t[:i] + e + t[j:]
+# 殿 2026-09-05: 書込前に構文検証(fail-close)。投稿は済んでいるので post_id は log に残す
+import os
+sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(p)), "..", "..", "scripts", "x_ops"))
+from x_ledger_guard import write_ledger_text
+try:
+    write_ledger_text(p, new_text, expected_entries=t.count("- draft_id:"))
+except ValueError as exc:
+    print(f"x_slot_post: BLOCK ledger not written (post_id={pid} draft={did}): {exc}", file=sys.stderr)
+    raise SystemExit(3)
 PY
 fi
 log "POSTED draft=$picked id=$pid"
