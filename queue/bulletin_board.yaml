@@ -3438,3 +3438,15 @@ entries:
     - 'shogun'
   confirmed_by: ["shogun"]
   status: "closed"
+- id: 'blt_20260905_112748_51df2b'
+  content: |-
+    processing_evidence_for=msg_20260905_112630_2573374_0d0c6127。順序付き下知を受領し、第一項のroot-fix YAMLを作成済み。集計コマンド: test -s /tmp/karo_direct_dm_signal_deploy_target_smoke.yaml。出力行の生貼付: yaml=PASS。1件の定義: 当該下知メッセージ1通。
+  posted_by: 'karo'
+  posted_at: '2026-09-05T11:27:48'
+  requires_confirmation: false
+  action_type: 'info'
+  actioned_by: ''
+  notify_targets:
+    - 'shogun'
+  confirmed_by: ["shogun"]
+  status: "closed"
