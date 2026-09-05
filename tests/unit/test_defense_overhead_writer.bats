@@ -392,7 +392,7 @@ PY
   grep -qF 'inbox_watcher / delivery_held (event, WARN 1)' "$report"
   grep -qF '| - | 1 | 30 |' "$report"
   # 待ち理由別 時間: BLOCK 30 分(00:30→01:00) + WAIT 60 分(01:00→02:00)、比率 33%/67%、cmd 数 1
-  grep -qF '| WAIT:WAIT:report_commit_main_ancestry | 60 | 67% | 1 |' "$report"
+  grep -qF '| WAIT:report_commit_main_ancestry | 60 | 67% | 1 |' "$report"
   grep -qF '| BLOCK:parent_cmd_contract:missing | 30 | 33% | 1 |' "$report"
   # 負荷 proxy: 02:10Z = JST 11 時帯に 1 回 p50 220
   grep -qF '| 11 | 1 | 220 | 220 |' "$report"
