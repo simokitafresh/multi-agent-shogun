@@ -10572,3 +10572,23 @@
   causal_chain: "golden mismatch31710→契約違反側確定→最小修正→CI GREEN"
   origin: "[[CI_33985798406]] -> [[fof_golden]] -> [[APPROVE]]"
   timestamp: "2026-09-06T06:15:00+09:00"
+- cmd_id: cmd_karo_hotfix_insight_c1_delivery_exactly_once_20260906
+  review_type: draft
+  verdict: APPROVE
+  verified_files:
+  - "queue/tasks/hayate.yaml:3"
+  confidence: HIGH
+  ambiguity_points: none
+  findings_summary: "hotfix。AC2本(C1 ID再分類+exactly-once修正)。重複配達0/未処理既読化0"
+  observations:
+  - "事実: group C 37 ID→C1再分類。配達/review exactly-once契約の最小修正"
+  operational_simulation:
+    command: "grep -c 'id: AC' queue/tasks/hayate.yaml"
+    expected: "2"
+    actual: "2"
+    result: "PASS"
+  finding_categories: [assumptions, simulation, premortem, ambiguity, adversarial]
+  brainwash_check: "#1no #2no #3no #4no #5no #6no #7no #8no"
+  causal_chain: "insight triage C1→exactly-once修正→重複配達0"
+  origin: "[[insight_triage_C1]] -> [[delivery_exactly_once]] -> [[APPROVE]]"
+  timestamp: "2026-09-06T06:17:00+09:00"
