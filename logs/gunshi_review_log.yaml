@@ -8783,3 +8783,26 @@
   brainwash_check: "#1no #2no #3no #4no #5no #6no #7no #8no 設計書全文精読+§2.1一次データ照合"
   origin: "[[cmd_4479]] -> [[display_ticker_weights全量存在]] -> [[APPROVE]]"
   timestamp: "2026-09-05T22:14:00"
+- cmd_id: cmd_4479
+  review_type: draft
+  verdict: APPROVE
+  verified_files:
+    - "docs/research/dm-signal-research-data-foundation-asis-tobe_20260905.md:28"
+    - "docs/research/dm-signal-research-data-foundation-asis-tobe_20260905.md:88"
+  findings_summary: "v0.4再レビュー。家老REJECT六点の反映を全点確認。history.py方式へ再決定、棚卸し訂正、AC再構築(oracle撤回)、F3現役参照記載、I3交差実測、A2 manifest同梱。"
+  observations:
+    - "前回APPROVEで見落とし: display_ticker_weightsの非unit実測(v1.10)を三層記憶で引かなかった。semantic alias(v1.8)が古かった"
+    - "v0.4 §1結論1でhistory.py L224-237方式を正本に再決定。根拠=partial-turnover v1.12で75/75 parity"
+  operational_simulation:
+    command: "Read docs/research/dm-signal-research-data-foundation-asis-tobe_20260905.md 全文精読(v0.4)"
+    expected: "家老REJECT六点が全て反映され、一次根拠と整合"
+    actual: "六点全て反映確認。AC1-AC7再構築、I6新設、F3二択明示"
+    result: "PASS"
+  causal_chain: "v0.2 APPROVE→家老REJECT(display非unit実測見落とし+ledger現役参照)→v0.4で六点修正→re-APPROVE=正の複利(レビュー往復で品質向上)"
+  confidence: HIGH
+  finding_categories: [assumptions, numbers, simulation, premortem, ambiguity, adversarial]
+  ambiguity_points: none
+  brainwash_check: "#1no(v0.2見落としを教訓化) #2no #3no #4no #5no #6no #7no #8no 家老六点×一次根拠照合"
+  origin: "[[cmd_4479]] -> [[家老REJECT_六点]] -> [[v0.4_re-APPROVE]]"
+  lesson_candidate: "parity実測の先例を三層検索せずにdisplay列を正本とAPPROVEした。semantic aliasのタイムスタンプ確認をAPPROVE前に義務化"
+  timestamp: "2026-09-05T22:31:00"
