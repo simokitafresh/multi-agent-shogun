@@ -18628,3 +18628,38 @@ insights:
   source: "semantic_stress_test"
   fix_known: false
   status: pending
+- id: INS-20260905-184518534-26e9
+  ts: "2026-09-05T18:45:18+09:00"
+  insight: "[[ほかにバグがないか覚醒して調査せよ]] semantic_stress_test candidate_aliases: NO_MATCH source=lord query=ほかにバグがないか覚醒して調査せよ"
+  priority: "low"
+  source: "semantic_stress_test"
+  fix_known: false
+  status: pending
+- id: INS-20260905-184518767-5dad
+  ts: "2026-09-05T18:45:18+09:00"
+  insight: "[[ガードのバグは迂回せずに先に根治せよ]] semantic_stress_test candidate_aliases: NO_MATCH source=lord query=ガードのバグは迂回せずに先に根治せよ。負の複利を放置す るな。バグを根治したら再発しないか検証せよ。検証したら 将軍に報告して確認してもらえ"
+  priority: "low"
+  source: "semantic_stress_test"
+  fix_known: false
+  status: pending
+- id: INS-20260905-184518966-a364
+  ts: "2026-09-05T18:45:18+09:00"
+  insight: "[[設計書を覚醒して更新せよ]] semantic_stress_test candidate_aliases: NO_MATCH source=lord query=設計書を覚醒して更新せよ"
+  priority: "low"
+  source: "semantic_stress_test"
+  fix_known: false
+  status: pending
+- id: INS-20260905-184519183-bb75
+  ts: "2026-09-05T18:45:19+09:00"
+  insight: "[[将軍がD0で覚醒して根治できることは先にしよう]] semantic_stress_test candidate_aliases: NO_MATCH source=lord query=将軍がD0で覚醒して根治できることは先にしよう"
+  priority: "low"
+  source: "semantic_stress_test"
+  fix_known: false
+  status: pending
+- id: INS-20260905-184519419-cf78
+  ts: "2026-09-05T18:45:19+09:00"
+  insight: "[[karo throughput asis 20260905 mdの進捗と現時点での改良の成果を教えてくれ]] semantic_stress_test candidate_aliases: NO_MATCH source=lord query=karo_throughput_asis_20260905.mdの進捗と現時点での改良の成果を教えてくれ"
+  priority: "low"
+  source: "semantic_stress_test"
+  fix_known: false
+  status: pending
