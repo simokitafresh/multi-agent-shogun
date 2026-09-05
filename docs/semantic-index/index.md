@@ -15492,7 +15492,6 @@ codd:
 | cmd | `cmd_karo_hotfix_review_bundle_cmd_id_unit1_20260829` (`scripts/review_bundle.py`, `tests/unit/test_review_bundle.bats`) |
 | causal | `cmd_karo_hotfix_sg7_honest_fail_verdict_20260831` files_modified: [[provisional_review_bundle]] |
 | discussion | `queue/lord_conversation.jsonl` 2026-09-02T19:52:31+09:00 bd31ixq2d toolu_01N5YJFnhbwWnQ5HSbcEmna6 /tmp/claude-1000/-home-simokitafresh-multi-agent-shogun/bea25dac-8ba9-41fb-a877 |
-| discussion | `queue/lord_conversation.jsonl` 2026-09-05T16:07:22+09:00 btdckcrov toolu_011HMqRDXeddQJxkLCmnVL9E /tmp/claude-1000/-home-simokitafresh-multi-agent-shogun/d9faccc5-127b-4b4f-bd18 |
 
 ## provisional_cmd_gate_scaffold — 仮: Cmd Gate Scaffold
 
@@ -16307,6 +16306,7 @@ codd:
 | discussion | `queue/lord_conversation.jsonl` 2026-08-30T15:48:18+09:00 b6jwza2fk toolu_01Kn16jL4B1MhagmRPVETFV3 /tmp/claude-1000/-home-simokitafresh-multi-agent-shogun/290a263c-8050-4156-a66d |
 | cmd | `cmd_reflux_insight_202609021302_hayate` |
 | cmd | `cmd_reflux_insight_202609030920_hayate` |
+| discussion | `queue/lord_conversation.jsonl` 2026-09-05T16:07:59+09:00 b10nh25i2 toolu_01DPRGiyYPsAaozfsyd2r5aj /tmp/claude-1000/-home-simokitafresh-multi-agent-shogun/d9faccc5-127b-4b4f-bd18 |
 
 ## provisional_kotaro — 仮: Kotaro
 
