@@ -17264,3 +17264,17 @@ sqlite3.Connection.backup()を使うとページ(4096byte)単位のread syscall�
 - **when**: 未設定
 - **how**: 未設定
 - 2x2 proves mapping absent can silently return 0 refs; mapping present plus missing detail fails. Missing-ref candidate scan expands from 43464ms to 92343ms in independent runs and interacts with the 60s pre-push lane; next check must assert fail-closed mapping behavior and bounded candidate scan/child cleanup with a seven-child reparent fixture.
+
+
+### L1753: 外部project参照resolverは『どのproject rootを見るか』と『working treeが最新か』を別々に保証せよ
+- **日付**: 2026-09-05
+- **出典**: cmd_karo_hotfix_ga579_external_project_context_ref
+- **記録者**: kotaro
+- **tags**: [infra,gate,db,testing,gate]
+- **subdomain**: infra
+- **target_files**: [scripts/lib/external_project_ref_resolver.sh,scripts/gates/gate_context_freshness.sh,scripts/gates/gate_vercel_phase.sh,tests/unit/test_gate_vercel_phase.bats,tests/unit/test_gate_gunshi_report_precheck.bats]
+- **origin**: [[cmd_karo_hotfix_ga579_external_project_context_ref]]
+- **enforcement**: 未自動化
+- **when**: 未設定
+- **how**: 未設定
+- GA-579の真因は2つの独立した欠陥の重畳だった: (1)missing_context_links()/ref_exists_in_baseが単一project専用のcontext file(context/dm-signal*.md等)でも全登録project(dm-fusion/database等)を無差別に走査しており、意図しないproject同名ファイルへの誤マッチリスクを内包していた(2)いずれのresolverもdisk上のcompgen -G/[[ -e ]]直checkのみで、外部project(DM-Signal等、multi-agent-shogun外の別git repoで別エージェントがpush/pullを管理する)のローカルcheckoutがstale/dirty(origin/mainより遅れている)状態を想定していなかった。DM-Signalは複数エージェントが並行operateする別repoであり、直近commitがローカルcheckoutへ反映されるまでのタイムラグは常態化しうる。∴ 外部project参照を検証するresolverは『project-root解決の正しさ(canonical scoping)』と『内容の鮮度(disk vs git tree)』を別の軸として設計し、後者はgit cat-file -e <ref>:<path>でHEAD/origin/main/origin/masterへフォールバックさせるべき。同型の欠陥はgate_context_freshness.sh(missing_context_links)とgate_vercel_phase.sh(ref_exists_in_base)の2つの独立したgateに個別実装されていた(共通lib化はtask_worktree scope単位のため見送り、byte-identicalな関数として両ファイルへ複製し同期コメントで維持)。副次教訓: gate_context_freshness.shはbacktick引用のdocs/参照のみ検査、gate_vercel_phase.shは平文言及も含め広域regexで検査という検査範囲の非対称性があり、後者の実行で別の真正欠落(cmd_4319/4320/4321、本task scope外)が新たに発見された。origin: [[GA-579]] -> [[disk_only_existence_check]] -> [[stale_external_checkout_false_block]] -> [[canonical_project_scoping_plus_git_tree_fallback]] -> [[applied_to_two_independent_gates_gate_context_freshness_and_gate_vercel_phase]]
