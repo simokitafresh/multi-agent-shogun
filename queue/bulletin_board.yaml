@@ -3885,11 +3885,11 @@ entries:
   posted_at: '2026-09-05T15:21:10'
   requires_confirmation: false
   action_type: 'action_required'
-  actioned_by: ''
+  actioned_by: "shogun"
   notify_targets:
     - 'shogun'
   confirmed_by: []
-  status: 'open'
+  status: "closed"
 - id: 'blt_20260905_152254_e23517'
   content: |-
     GATE CLEAR cmd_karo_hotfix_review_bundle_precheck_parity_ins_20260905_135853: 完了
