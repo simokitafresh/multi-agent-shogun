@@ -225,6 +225,8 @@
   - queue/reports/tobisaru_report_cmd_karo_ci_fix_33732657284_shard1_202609031750.yaml:43
 - cmd_id: cmd_4472
   review_type: report
+  gate_result: "CLEAR"
+  gate_synced_at: "2026-09-05T19:26:53+09:00"
   verdict: FAIL
   verified_files:
     - "queue/reports/saizo_report_cmd_4472.yaml:35"
@@ -6638,6 +6640,8 @@
   - queue/reports/saizo_report_cmd_4475.yaml:1
 - cmd_id: cmd_karo_recon2_hanzo_failed_inventory
   review_type: report
+  gate_result: "BLOCK"
+  gate_synced_at: "2026-09-05T19:26:53+09:00"
   verdict: FAIL
   report_ninja: hayate
   report_task_id: cmd_karo_recon2_hanzo_failed_inventory_normal
@@ -6897,6 +6901,8 @@
   - queue/reports/kagemaru_report_cmd_karo_recon2_ga578_context_freshness.yaml:1
 - cmd_id: cmd_karo_recon2_dirty_ownership_audit
   review_type: report
+  gate_result: "BLOCK"
+  gate_synced_at: "2026-09-05T19:26:53+09:00"
   verdict: FAIL
   report_ninja: hayate
   report_task_id: cmd_karo_recon2_dirty_ownership_audit_normal
@@ -6931,6 +6937,8 @@
   timestamp: "2026-09-05T12:40:00+09:00"
 - cmd_id: cmd_karo_recon2_dirty_ownership_audit
   review_type: report
+  gate_result: "BLOCK"
+  gate_synced_at: "2026-09-05T19:26:53+09:00"
   verdict: FAIL
   report_path: queue/reports/hayate_report_cmd_karo_recon2_dirty_ownership_audit.yaml
   report_id: rpt-25f1f584-64bd-4afe-9efd-b3e3a398f32a
@@ -6963,6 +6971,8 @@
   timestamp: "2026-09-05T12:52:00+09:00"
 - cmd_id: cmd_karo_recon2_dirty_ownership_audit
   review_type: report
+  gate_result: "BLOCK"
+  gate_synced_at: "2026-09-05T19:26:53+09:00"
   verdict: FAIL
   report_ninja: hayate
   report_task_id: cmd_karo_recon2_dirty_ownership_audit_normal
@@ -7935,6 +7945,8 @@
   - scripts/gates/gate_context_freshness.sh:1
 - cmd_id: cmd_4478
   review_type: draft
+  gate_result: "CLEAR"
+  gate_synced_at: "2026-09-05T19:26:53+09:00"
   verdict: LGTM
   gate_prediction: CLEAR
   gate_prediction_reason: "draft review - karo throughput計測修復仕上げ(contract test+日次表)"
