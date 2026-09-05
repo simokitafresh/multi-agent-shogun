@@ -7811,3 +7811,33 @@
     expected: "GA-580 recon AC1-2"
     actual: "AC1 2x2隔離実験、AC2 同根判定+5要件報告"
     result: "PASS"
+- cmd_id: cmd_karo_ci_fix_33948374586_midx_lock
+  review_type: report
+  verdict: FAIL
+  gate_prediction: BLOCK
+  gate_prediction_reason: "bc:no(AC2 compatibility他task依存2件FAIL); status=failed"
+  reviewed_at: "2026-09-05T16:01:00+09:00"
+  report_path: queue/reports/saizo_report_cmd_karo_ci_fix_33948374586_midx_lock.yaml
+  report_id: rpt-4bb8ed99-54e7-447e-979c-37cfeb7c5a7e
+  report_ninja: saizo
+  report_task_id: cmd_karo_ci_fix_33948374586_midx_lock_normal
+  report_identity_version: 2
+  report_fingerprint: e7ee2ed8
+  observations:
+    - "修正有効: fixture clone 8箇所→--no-local。case7 50/50 PASS、probe 200/200 shared_lock_inode=0"
+    - "本番publish_artifact.shにclone呼出しなし(rg確認)=fixture限定の修正で十分"
+    - "AC2 no: compatibility 491/491 rc=1。case15(hot-reload race別task)とcmd_skeleton case6(別task)がFAIL"
+  finding_categories:
+    - assumptions
+    - numbers
+    - premortem
+    - adversarial
+    - ambiguity
+  ambiguity_points: "compatibility FAILは自task scope外(case15=hot-reload race、cmd_skeleton=別修正待ち)"
+  step3_5_verified: true
+  brainwash_check: "#1no #2no #3no #4no #5no #6no #7no #8no case7修正50/50+probe 200/200確認。scope外FAILは正直BLOCK"
+  operational_simulation:
+    command: "case7 repeat 50; probe 200; compatibility 17 files"
+    expected: "case7 50/50, 18/18, probe 200/200, compat 491/491 rc=0"
+    actual: "case7 50/50, 18/18, probe 200/200 PASS。compat 491/491 rc=1(case15+case6)"
+    result: "FAIL(scope外依存)"
