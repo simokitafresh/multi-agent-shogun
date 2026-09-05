@@ -7386,7 +7386,7 @@
 - cmd_id: cmd_karo_hotfix_review_bundle_precheck_parity_ins_20260905_135853
   review_type: draft
   gate_result: "CLEAR"
-  gate_synced_at: "2026-09-05T15:22:56+09:00"
+  gate_synced_at: "2026-09-05T15:23:16+09:00"
   verdict: LGTM
   gate_prediction: CLEAR
   gate_prediction_reason: "draft review - precheck parity bug修正"
