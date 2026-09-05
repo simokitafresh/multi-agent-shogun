@@ -3660,6 +3660,7 @@ codd:
 | discussion | `queue/lord_conversation.jsonl` 2026-09-05T19:00:27+09:00 session_save_20260905_1900(復帰点、先に session_save_20260905_1857 を読め): 殿 18:57『karo_throughput と ninja_block_fail も loop で更新 |
 | discussion | `queue/lord_conversation.jsonl` 2026-09-05T19:16:44+09:00 session_save_20260905_1915(復帰点、先に session_save_20260905_1900 を読め): 殿 19:09『家老を待たず将軍が D0 で FAIL close と ledger hotfix』→将軍 |
 | discussion | `queue/lord_conversation.jsonl` 2026-09-05T19:26:17+09:00 session_save_20260905_1925_gunshi_key_learnings: 【/clear後に即復帰するための要点】(1) review_bundle.py honest FAIL: review_entryにrepo |
+| discussion | `queue/lord_conversation.jsonl` 2026-09-05T19:45:02+09:00 session_save_20260905_1945(復帰点、先に session_save_20260905_1915 を読め): 殿 19:18『ガードのバグは迂回せず根治』→将軍 3 件根治(Guard4 redirect の文跨ぎ/ |
 
 ## investment_knowledge_base — 投資知識辞書
 
