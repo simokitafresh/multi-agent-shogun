@@ -18255,3 +18255,24 @@ insights:
   status: "resolved"
   action_artifact: "semantic_index=/home/simokitafresh/multi-agent-shogun/docs/semantic-index/index.md"
   resolved_reason: "semantic index candidate was absorbed into a registered concept"
+- id: INS-20260905-134214788-34fe
+  ts: "2026-09-05T13:42:14+09:00"
+  insight: "[[じゃあ未実装部分を実装しよう]] semantic_stress_test candidate_aliases: NO_MATCH source=lord query=じゃあ未実装部分を実装しよう"
+  priority: "low"
+  source: "semantic_stress_test"
+  fix_known: false
+  status: pending
+- id: INS-20260905-134215290-bf2b
+  ts: "2026-09-05T13:42:15+09:00"
+  insight: "[[DM Signal identity 最小実装 設計書 v0 4 §M 段 1 2 3 Auth 後の Supabase]] semantic_stress_test candidate_aliases: NO_MATCH source=cmds query=DM-Signal identity 最小実装(設計書 v0.4 §M 段 1+2+3): Auth 後の Supabase user.id を localStorage で保持、campaign_id を localStorage へ格上げ(prefix lp_core_/lp_simple_)、page_views に user_id・campaign_"
+  priority: "low"
+  source: "semantic_stress_test"
+  fix_known: false
+  status: pending
+- id: INS-20260905-134215695-928a
+  ts: "2026-09-05T13:42:15+09:00"
+  insight: "[[殿 13 19『v0 3 の方向で確定]] semantic_stress_test candidate_aliases: NO_MATCH source=cmds query=殿 2026-09-05 13:19『v0.3 の方向で確定。機能を増やしすぎない。優先順位は 5 つだけ: (1) Auth 後の Supabase user.id を捨てず匿名 visitor_id/password/Tier を壊さず保持 (2) 既存 campaign_id で Core/Simple 識別 (3) 既存 Tier×Page anal"
+  priority: "low"
+  source: "semantic_stress_test"
+  fix_known: false
+  status: pending
