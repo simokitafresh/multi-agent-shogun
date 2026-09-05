@@ -7731,6 +7731,8 @@
     result: "PASS"
 - cmd_id: cmd_karo_hotfix_unbounded_cpu_repro_guard
   review_type: draft
+  gate_result: "CLEAR"
+  gate_synced_at: "2026-09-05T16:35:18+09:00"
   verdict: LGTM
   gate_prediction: CLEAR
   gate_prediction_reason: "draft review - unbounded CPU loop guard"
