@@ -9427,3 +9427,23 @@
   origin: "[[cmd_karo_impl_w4_failure_origin_code_20260906]] -> [[テンプレート未記入]] -> [[FAIL]]"
   ambiguity_points: none
   timestamp: "2026-09-06T01:11:00+09:00"
+- cmd_id: cmd_karo_hotfix_run_tests_external_scope_placeholder_20260906
+  review_type: draft
+  verdict: APPROVE
+  verified_files:
+  - "queue/tasks/hayate.yaml:3"
+  confidence: HIGH
+  ambiguity_points: none
+  findings_summary: "hotfix。AC2本(前提再現+placeholder修正)。run_tests.sh external scope placeholder混入防止。SKIP0/fail-closed維持"
+  observations:
+  - "事実: external worktree+scope選択0でplaceholder文字列がtest_paths/declared countへ混入する問題"
+  operational_simulation:
+    command: "grep -c 'id: AC' queue/tasks/hayate.yaml"
+    expected: "2"
+    actual: "2"
+    result: "PASS"
+  finding_categories: [assumptions, simulation, premortem, ambiguity, adversarial]
+  brainwash_check: "#1no(AC確認) #2no(task現物読み) #3no(確認) #4no(敵対確認あり) #5no(即処理) #6no(2/2確認) #7no(scope制約) #8no(全確認)"
+  causal_chain: "external scope placeholder混入→test counts誤認→rc=2→hotfix修正=CI安定性"
+  origin: "[[W0_kotaro_recon]] -> [[external_scope_placeholder]] -> [[hotfix_APPROVE]]"
+  timestamp: "2026-09-06T01:14:00+09:00"
