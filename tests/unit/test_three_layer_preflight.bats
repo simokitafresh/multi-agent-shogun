@@ -1482,3 +1482,29 @@ PY
     [ "$status" -ne 0 ]
     [ -s "$dir/verify_fail_unknown__cache.log" ]
 }
+
+# test_necessity: a failed new-generation issue must not leave the pane without any
+# receipt; the previous valid receipt is restored so verify keeps passing until a
+# successful issue replaces it. 2026-09-05: manual issue racing the prompt hook
+# deleted the receipt and locked every tool (verify_fail reason files:evidence=0).
+@test "失敗した新generation issueは直前の有効receiptを戻しverifyを通す" {
+    run issue_with_fixtures "fixture first prompt"
+    [ "$status" -eq 0 ]
+    run verify Bash "" "echo hi"
+    [ "$status" -eq 0 ]
+    before_gen="$(cat "$EVIDENCE.generation")"
+    # second MANUAL issue: max_age=0 defeats the valid-receipt fast path so a new
+    # generation is opened, then the missing SQLite DB makes the search fail closed
+    run env MEMORY_DB_QUERY_DB="$TMP_EVIDENCE/missing.db" THREE_LAYER_PREACTION_MAX_AGE_SECONDS=0 \
+        THREE_LAYER_SEMANTIC_INDEX="$THREE_LAYER_SEMANTIC_FIXTURE" \
+        THREE_LAYER_CAUSAL_INDEX_CACHE="$THREE_LAYER_CAUSAL_FIXTURE" \
+        THREE_LAYER_CAUSAL_REFRESH_DISABLED=1 THREE_LAYER_PREACTION_EVIDENCE_DIR="$TMP_EVIDENCE" \
+        THREE_LAYER_AGENT_ID="$AGENT" TMUX_PANE="$PANE" \
+        bash "$ROOT/scripts/hooks/three_layer_preflight.sh" issue "fixture second prompt fails"
+    [ "$status" -ne 0 ]
+    [[ "$output" == *"restored previous receipt"* ]]
+    [ -s "$EVIDENCE" ]
+    [ "$(cat "$EVIDENCE.generation")" = "$before_gen" ]
+    run verify Bash "" "echo hi"
+    [ "$status" -eq 0 ]
+}

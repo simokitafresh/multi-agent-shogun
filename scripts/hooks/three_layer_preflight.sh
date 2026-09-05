@@ -679,6 +679,24 @@ else:
 ' "$text" "$byte_cap" 2>/dev/null || printf '%s' "$text" | head -c "$byte_cap"
 }
 
+# 失敗した新 generation の issue が消した直前の有効 receipt を戻す。generation がまだ自分の
+# もの(他の issue に superseded されていない)で evidence が無い場合だけ戻す。戻した receipt が
+# TTL 切れなら verify の age 判定で落ちるので、古い証跡を蘇生させることはない。
+restore_previous_receipt() {
+    local my_generation="$1"
+    (
+        flock -x 9
+        [[ "$(cat "${evidence_file}.generation" 2>/dev/null || true)" == "$my_generation" ]] || exit 0
+        [[ ! -s "$evidence_file" ]] || exit 0
+        [[ -s "${evidence_file}.prev" && -s "${nonce_file}.prev" && -s "${evidence_file}.generation.prev" ]] || exit 0
+        mv -f "${evidence_file}.prev" "$evidence_file"
+        mv -f "${nonce_file}.prev" "$nonce_file"
+        mv -f "${evidence_file}.generation.prev" "${evidence_file}.generation"
+        rm -f "${nonce_file}.pending"
+        printf 'three_layer_preflight: %s restored previous receipt after failed issue\n' "$agent_id" >&2
+    ) 9>"$publish_lock" || true
+}
+
 issue() {
     local prompt_arg="${1:-}"
     local payload prompt search_prompt prompt_hash generation generation_source issued_at tmp_file rg_cmd
@@ -775,6 +793,15 @@ PY
         flock -x 9
         current_generation="$(cat "$generation_file" 2>/dev/null || true)"
         if [[ "$current_generation" != "$generation" ]]; then
+            # 2026-09-05 将軍根治: 新 generation の issue が検索に失敗すると、ここで消した
+            # 直前の有効な receipt は戻らず、evidence=0/current=1/generation=1 の状態で
+            # 以後の全 tool が BLOCK した(19:19 verify_fail log で確定。手動 issue が
+            # UserPromptSubmit の issue と競合した時に再現)。失敗時に戻せるよう直前 3 file を退避する。
+            if [[ -s "$evidence_file" && -s "$nonce_file" && -s "$generation_file" ]]; then
+                cp -f "$evidence_file" "${evidence_file}.prev" 2>/dev/null || true
+                cp -f "$nonce_file" "${nonce_file}.prev" 2>/dev/null || true
+                cp -f "$generation_file" "${generation_file}.prev" 2>/dev/null || true
+            fi
             rm -f "$evidence_file"
             mv -f "$nonce_tmp" "$nonce_file"
             printf '%s\n' "$generation" >"${generation_file}.tmp.$$"
@@ -978,6 +1005,10 @@ PY
     fi
     if [[ "$status" != success ]]; then
         printf 'three_layer_preflight: %s evidence failed (memory=%s/%s semantic=%s/%s obsidian=%s/%s)\n' "$agent_id" "$memory_rc" "$memory_count" "$semantic_rc" "$semantic_count" "$obsidian_rc" "$obsidian_count" >&2
+        # envelope(UserPromptSubmit)経路は「新 turn は旧 receipt を無効化する」fail-closed 契約を
+        # 維持する(test: 新 generation を拒否)。復元は手動 issue(prompt_arg)が失敗した時だけ。
+        # 手動 issue は復旧/補助の手段であり、それが失敗して直前の正当な receipt まで失う理由は無い。
+        [[ -z "$prompt_arg" ]] || restore_previous_receipt "$generation"
         return 1
     fi
     # T1(結果注入・A1是正): 三層検索結果を捨てず注入する。ここから下は表示用データの整形のみで、
