@@ -67,7 +67,7 @@ required = {
     "worker_id", "report_id", "report_identity_version", "task_id",
     "parent_cmd", "task_contract_snapshot", "result", "purpose_validation",
     "files_modified", "lesson_candidate", "lessons_useful", "binary_checks",
-    "self_gate_check", "verdict",
+    "failure_origin", "self_gate_check", "verdict",
 }
 assert required <= report.keys(), required - report.keys()
 assert report["worker_id"] == "saizo"
@@ -79,6 +79,8 @@ assert report["report_id"] == task["report_id"]
 assert report["task_contract_snapshot"]["acceptance_criteria"] == task["acceptance_criteria"]
 assert isinstance(task["commit_contract"], dict)
 assert task["commit_contract"] == report["commit_contract"]
+assert set(report["failure_origin"]) == {"primary", "secondary", "evidence_strength", "root_cause_key"}
+assert report["failure_origin"]["evidence_strength"] == "missing"
 templates = task["report_contract_templates"]
 if isinstance(templates, str):
     templates = json.loads(templates)

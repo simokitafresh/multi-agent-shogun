@@ -317,6 +317,56 @@ if item.get("review_type") != "self_study" or identity_partial or len(matches) !
 PY
 fi
 
+# W4 failure-origin records are append-only canonical events.  A re-send of
+# the same report generation must be a no-op, while a changed fingerprint is
+# a distinct event.  Legacy entries without the field remain valid and are
+# classified as unclassified by the daily aggregator.
+python3 - "$ENTRY" "$LOG_FILE" "$ARCHIVE_DIR" <<'PY'
+import glob, sys, yaml
+
+try:
+    parsed = yaml.safe_load(sys.argv[1])
+except Exception as exc:
+    print(f"BLOCK: failure-origin entry YAML parse error: {exc}", file=sys.stderr)
+    raise SystemExit(2)
+if not isinstance(parsed, list) or len(parsed) != 1 or not isinstance(parsed[0], dict):
+    raise SystemExit(0)
+item = parsed[0]
+code = item.get("failure_origin_code")
+if code is not None:
+    required = {"primary", "secondary", "evidence_strength", "ninja_candidate_agreed", "correction", "root_cause_key"}
+    if not isinstance(code, dict) or set(code) != required:
+        print("BLOCK: failure_origin_code must contain exactly the six canonical fields", file=sys.stderr)
+        raise SystemExit(2)
+    if str(code.get("primary") or "").strip() not in {"A", "B", "C", "D", "E", "unclassified"}:
+        print("BLOCK: failure_origin_code.primary has an unknown W0 classification", file=sys.stderr)
+        raise SystemExit(2)
+    if str(code.get("secondary") or "").strip() not in {"", "A", "B", "C", "D", "E", "unclassified"}:
+        print("BLOCK: failure_origin_code.secondary has an unknown W0 classification", file=sys.stderr)
+        raise SystemExit(2)
+    if str(code.get("evidence_strength") or "").strip() not in {"primary", "secondary", "missing"}:
+        print("BLOCK: failure_origin_code.evidence_strength has an unknown W0 value", file=sys.stderr)
+        raise SystemExit(2)
+    if not isinstance(code["ninja_candidate_agreed"], bool):
+        print("BLOCK: failure_origin_code.ninja_candidate_agreed must be boolean", file=sys.stderr)
+        raise SystemExit(2)
+    if not str(item.get("report_id") or "").strip() or not str(item.get("report_fingerprint") or "").strip() or not str(item.get("review_event_id") or "").strip():
+        print("BLOCK: failure-origin canonical event requires report_id/report_fingerprint/review_event_id", file=sys.stderr)
+        raise SystemExit(2)
+
+event_id = str(item.get("review_event_id") or "").strip()
+if not event_id:
+    raise SystemExit(0)
+for path in [sys.argv[2], *sorted(glob.glob(sys.argv[3] + "/gunshi_review_log*.yaml"))]:
+    try:
+        rows = yaml.safe_load(open(path, encoding="utf-8")) or []
+    except (OSError, yaml.YAMLError):
+        continue
+    if isinstance(rows, list) and any(isinstance(row, dict) and str(row.get("review_event_id") or "").strip() == event_id for row in rows):
+        print(f"OK: duplicate review event skipped ({event_id})")
+        raise SystemExit(0)
+PY
+
 if [ "${GUNSHI_VALIDATE_ONLY:-0}" = "1" ]; then
     echo "OK: review entry validated"
     exit 0

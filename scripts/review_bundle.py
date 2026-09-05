@@ -187,6 +187,119 @@ SPEC_LESS_AUTOGEN_PREFIXES = ("cmd_karo_", "cmd_reflux_", "cmd_shogun_")
 _APPROVE_REPORT_STATES = {("completed", "PASS"), ("completed", "PASS_NO_IMPROVEMENT")}
 _CORRECTION_SCOPES = ("auto", "implementation", "report")
 
+# W0 (cmd_karo_recon_w0_failure_events_20260905) is the vocabulary SSOT for
+# failure-origin records.  Keep the candidate and canonical axes separate:
+# reports may suggest a classification, while only an explicit reviewer
+# mapping can publish a canonical classification.
+_FAILURE_ORIGIN_CLASSES = frozenset({"A", "B", "C", "D", "E", "unclassified"})
+_FAILURE_ORIGIN_EVIDENCE = frozenset({"primary", "secondary", "missing"})
+_FAILURE_ORIGIN_CANDIDATE_FIELDS = frozenset({"primary", "secondary", "evidence_strength", "root_cause_key"})
+_FAILURE_ORIGIN_CODE_FIELDS = (
+    "primary", "secondary", "evidence_strength", "ninja_candidate_agreed",
+    "correction", "root_cause_key",
+)
+
+
+def _failure_origin_candidate(report_data):
+    """Validate and return a report's optional ninja candidate.
+
+    An absent or untouched template is intentionally equivalent to the legacy
+    schema.  It must be counted as unclassified, never promoted by inference.
+    """
+    raw = report_data.get("failure_origin") if isinstance(report_data, dict) else None
+    if raw is None:
+        return None
+    if not isinstance(raw, dict):
+        raise ValueError("failure_origin candidate must be a mapping")
+    values = {key: raw.get(key) for key in _FAILURE_ORIGIN_CANDIDATE_FIELDS}
+    # The generated template intentionally seeds evidence_strength=missing;
+    # that sentinel alone does not constitute a candidate.
+    if (not str(raw.get("primary") or "").strip()
+            and not str(raw.get("secondary") or "").strip()
+            and not str(raw.get("root_cause_key") or "").strip()
+            and str(raw.get("evidence_strength") or "").strip() in {"", "missing"}):
+        return None
+    unknown = set(raw) - _FAILURE_ORIGIN_CANDIDATE_FIELDS
+    if unknown:
+        raise ValueError("failure_origin candidate has unknown fields: " + ",".join(sorted(unknown)))
+    primary = str(raw.get("primary") or "").strip()
+    secondary = str(raw.get("secondary") or "").strip()
+    evidence = str(raw.get("evidence_strength") or "").strip()
+    root_key = str(raw.get("root_cause_key") or "").strip()
+    if primary not in _FAILURE_ORIGIN_CLASSES:
+        raise ValueError("failure_origin.primary must be one of A/B/C/D/E/unclassified")
+    if secondary and secondary not in _FAILURE_ORIGIN_CLASSES:
+        raise ValueError("failure_origin.secondary must be one of A/B/C/D/E/unclassified")
+    if evidence not in _FAILURE_ORIGIN_EVIDENCE:
+        raise ValueError("failure_origin.evidence_strength must be primary/secondary/missing")
+    return {"primary": primary, "secondary": secondary,
+            "evidence_strength": evidence, "root_cause_key": root_key}
+
+
+def _validate_failure_origin_code(raw):
+    """Validate the six-field reviewer canonical mapping without inference."""
+    if not isinstance(raw, dict):
+        raise ValueError("failure_origin_code must be a mapping")
+    missing = [key for key in _FAILURE_ORIGIN_CODE_FIELDS if key not in raw]
+    if missing:
+        raise ValueError("failure_origin_code missing fields: " + ",".join(missing))
+    unknown = set(raw) - set(_FAILURE_ORIGIN_CODE_FIELDS)
+    if unknown:
+        raise ValueError("failure_origin_code has unknown fields: " + ",".join(sorted(unknown)))
+    primary = str(raw.get("primary") or "").strip()
+    secondary = str(raw.get("secondary") or "").strip()
+    evidence = str(raw.get("evidence_strength") or "").strip()
+    correction = str(raw.get("correction") or "").strip()
+    root_key = str(raw.get("root_cause_key") or "").strip()
+    if primary not in _FAILURE_ORIGIN_CLASSES:
+        raise ValueError("failure_origin_code.primary must be one of A/B/C/D/E/unclassified")
+    if secondary and secondary not in _FAILURE_ORIGIN_CLASSES:
+        raise ValueError("failure_origin_code.secondary must be one of A/B/C/D/E/unclassified")
+    if evidence not in _FAILURE_ORIGIN_EVIDENCE:
+        raise ValueError("failure_origin_code.evidence_strength must be primary/secondary/missing")
+    if not isinstance(raw.get("ninja_candidate_agreed"), bool):
+        raise ValueError("failure_origin_code.ninja_candidate_agreed must be boolean")
+    if raw.get("correction") is not None and not isinstance(raw.get("correction"), str):
+        raise ValueError("failure_origin_code.correction must be a string")
+    if raw.get("root_cause_key") is not None and not isinstance(raw.get("root_cause_key"), str):
+        raise ValueError("failure_origin_code.root_cause_key must be a string")
+    return {"primary": primary, "secondary": secondary,
+            "evidence_strength": evidence,
+            "ninja_candidate_agreed": bool(raw["ninja_candidate_agreed"]),
+            "correction": correction, "root_cause_key": root_key}
+
+
+def _canonical_failure_origin(report_data, raw_code=None):
+    """Bind an explicit reviewer decision to the candidate, or fail closed."""
+    candidate = _failure_origin_candidate(report_data)
+    if raw_code is None:
+        # No reviewer decision means legacy/unreviewed data, not a candidate
+        # approval.  This is the only safe default for direct CLI generation.
+        return {"primary": "unclassified", "secondary": "",
+                "evidence_strength": "missing", "ninja_candidate_agreed": False,
+                "correction": "candidate requires explicit reviewer confirmation" if candidate else "",
+                "root_cause_key": ""}
+    canonical = _validate_failure_origin_code(raw_code)
+    candidate_values = candidate or {"primary": "unclassified", "secondary": "",
+                                     "evidence_strength": "missing", "root_cause_key": ""}
+    matches = all(canonical[key] == candidate_values[key] for key in
+                  ("primary", "secondary", "evidence_strength", "root_cause_key"))
+    if canonical["ninja_candidate_agreed"] and (candidate is None or not matches):
+        raise ValueError("failure_origin_code agreement requires an identical report candidate")
+    if not matches and not canonical["correction"]:
+        raise ValueError("failure_origin_code correction is required when canonical differs from candidate")
+    if candidate is None and canonical["primary"] != "unclassified" and not canonical["correction"]:
+        raise ValueError("failure_origin_code without a candidate requires correction")
+    return canonical
+
+
+def _failure_origin_event_id(cmd_id, report_data, fingerprint, canonical):
+    """Return one stable event identity per report generation and decision."""
+    payload = {"cmd_id": str(cmd_id), "report_id": str(report_data.get("report_id") or ""),
+               "report_fingerprint": str(fingerprint), "failure_origin_code": canonical}
+    digest = hashlib.sha256(json.dumps(payload, sort_keys=True, ensure_ascii=False, separators=(",", ":")).encode()).hexdigest()
+    return "failure-origin-" + digest[:32]
+
 
 def _correction_scope(value):
     """Validate the typed correction lane used by the canonical single entry."""
@@ -287,6 +400,19 @@ def _normalize_review_item(root, item):
             item["correction_scope"] = "report"
             item["allow_honest_fail"] = True
             item["approved_failed_check_paths"] = _approved_failed_check_paths(item["review_entry"])
+    entry = item.get("review_entry")
+    if report_path.is_file() and isinstance(entry, dict) and str(entry.get("review_type") or "").strip().lower() == "report":
+        report_data = load(report_path)
+        fingerprint = _report_generation(report_path)
+        canonical = _canonical_failure_origin(report_data, entry.get("failure_origin_code"))
+        entry["failure_origin_code"] = canonical
+        # These fields are the durable binding carried into gunshi_review_log.
+        # They are derived from the exact report bytes, never supplied by the
+        # reviewer, so archive/re-send cannot attach to another generation.
+        entry["report_id"] = str(report_data.get("report_id") or "")
+        entry["report_fingerprint"] = fingerprint
+        entry["review_event_id"] = _failure_origin_event_id(str(item.get("cmd") or ""), report_data, fingerprint, canonical)
+        item["failure_origin_code"] = canonical
     return item
 
 
@@ -486,6 +612,11 @@ def validate(bundle, expected_cmd=None, expected_verdict=None):
         raise ValueError("report_generation must be a lowercase SHA-256 generation")
     if generation and generation != str(review.get("report_fingerprint") or ""):
         raise ValueError("report_generation must match report_fingerprint")
+    if "failure_origin_code" in review:
+        _validate_failure_origin_code(review["failure_origin_code"])
+        event_id = str(review.get("review_event_id") or "").strip()
+        if not event_id or not str(review.get("report_id") or "").strip() or not str(review.get("report_fingerprint") or "").strip():
+            raise ValueError("failure_origin_code requires report_id/report_fingerprint/review_event_id")
     line = str(review.get("dashboard_line") or "").strip()
     # 2026-09-04 05:35 将軍 D0(T3-S-53): dashboard_line は dashboard 表示用の 1 行であり品質判定ではない。
     # 欠落を BLOCK にすると、軍師の bundle 生成器が field を落とした瞬間に全 cmd の CLEAR が止まる
@@ -596,7 +727,8 @@ def generate(args):
             if not results or any(result != "yes" for result in results):
                 raise ValueError("APPROVE requires all binary checks resolved yes")
     generation = _report_generation(report)
-    review = {"cmd_id": args.cmd, "verdict": verdict, "report_verdict": report_state[1], "reviewer": "gunshi", "reviewed_at": datetime.now().astimezone().isoformat(timespec="seconds"), "report": str(report_ref.relative_to(root)), "report_id": str(report_data.get("report_id") or ""), "report_fingerprint": generation, "report_generation": generation, "cmd_spec_source": str(source.relative_to(root)), "cmd_spec_summary": summary(command), "dashboard_line": dashboard_line(report_data, args.cmd)}
+    canonical = _canonical_failure_origin(report_data, getattr(args, "failure_origin_code", None))
+    review = {"cmd_id": args.cmd, "verdict": verdict, "report_verdict": report_state[1], "reviewer": "gunshi", "reviewed_at": datetime.now().astimezone().isoformat(timespec="seconds"), "report": str(report_ref.relative_to(root)), "report_id": str(report_data.get("report_id") or ""), "report_fingerprint": generation, "report_generation": generation, "review_event_id": _failure_origin_event_id(args.cmd, report_data, generation, canonical), "failure_origin_code": canonical, "cmd_spec_source": str(source.relative_to(root)), "cmd_spec_summary": summary(command), "dashboard_line": dashboard_line(report_data, args.cmd)}
     if honest_fail:
         approved_paths = _approved_failed_check_paths({
             "approved_failed_check_paths": getattr(args, "approved_failed_check_paths", None),
@@ -752,7 +884,8 @@ def _batch_generate(root, item, precheck):
     argv = argparse.Namespace(root=str(root), cmd=str(item["cmd"]), verdict=str(item["verdict"]).upper(),
                               report=str(item["report"]), fail_reason=item.get("fail_reason"), allow_archived=_allow_archived,
                               allow_honest_fail=bool(item.get("allow_honest_fail", False)),
-                              approved_failed_check_paths=item.get("approved_failed_check_paths"))
+                              approved_failed_check_paths=item.get("approved_failed_check_paths"),
+                              failure_origin_code=item.get("failure_origin_code"))
     generate(argv)
     path = root / f"queue/gates/{item['cmd']}/sg7_bundle.json"
     bundle = load(path); bundle["review"]["precheck"] = precheck; atomic_json(path, bundle)

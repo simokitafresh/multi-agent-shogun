@@ -151,7 +151,7 @@ required = {
     "result", "purpose_validation", "files_modified", "lesson_candidate",
     "lessons_useful", "skill_candidate", "decision_candidate",
     "knowledge_candidate", "assumption_invalidation", "operational_simulation",
-    "binary_checks", "self_gate_check", "verdict",
+    "failure_origin", "binary_checks", "self_gate_check", "verdict",
 }
 if not required.issubset(report):
     raise SystemExit(1)
@@ -1037,6 +1037,13 @@ ${_commit_contract_block}
 ${_cross_repo_commits_block}
 ${_ac_evidence_mapping_block}
 ${_semantic_validation_block}
+# W4: ninja-provided failure origin is a candidate only.  Gunshi must publish
+# an explicit, identity-bound failure_origin_code before it becomes canonical.
+failure_origin:
+  primary: ""  # A/B/C/D/E/unclassified
+  secondary: ""  # optional A/B/C/D/E/unclassified
+  evidence_strength: "missing"  # primary/secondary/missing
+  root_cause_key: ""
 files_modified:
   - path: ""  # 変更ファイルパスを記入。説明文ではなく repo-root 相対パス
     change: ""  # 変更内容を1文で記入
@@ -2150,6 +2157,17 @@ purpose_validation:
   cmd_purpose: ""
   fit: true
   purpose_gap: ""
+EOF
+        modified=true
+    fi
+
+    if ! grep -Eq '^failure_origin:' "$report_file" 2>/dev/null; then
+        cat >> "$report_file" <<'EOF'
+failure_origin:
+  primary: ""  # A/B/C/D/E/unclassified
+  secondary: ""  # optional A/B/C/D/E/unclassified
+  evidence_strength: "missing"  # primary/secondary/missing
+  root_cause_key: ""
 EOF
         modified=true
     fi

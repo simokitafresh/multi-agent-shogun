@@ -46,6 +46,7 @@ import os
 import re
 from collections import Counter, defaultdict
 from pathlib import Path
+import yaml
 
 DATE = os.environ["KARO_THROUGHPUT_DATE"]
 AS_OF = os.environ["KARO_THROUGHPUT_AS_OF"]
@@ -108,6 +109,46 @@ def read_jsonl(path):
                 continue
             if isinstance(row, dict):
                 yield row
+
+def read_yaml_rows(path):
+    try:
+        payload = yaml.safe_load(path.read_text(encoding="utf-8")) or []
+    except (OSError, yaml.YAMLError):
+        return []
+    return payload if isinstance(payload, list) else []
+
+def failure_origin_counts():
+    """Count report FAIL events without merging generations or old rows."""
+    paths = sorted(Path(os.environ["KARO_THROUGHPUT_ROOT"]).glob("logs/archive/gunshi_review_log*.yaml"))
+    paths.append(Path(os.environ["KARO_THROUGHPUT_ROOT"]) / "logs/gunshi_review_log.yaml")
+    seen_events = set()
+    counts = Counter()
+    total = 0
+    classes = {"A", "B", "C", "D", "E"}
+    for path in paths:
+        for item in read_yaml_rows(path):
+            if not isinstance(item, dict):
+                continue
+            stamp = item.get("reviewed_at") or item.get("timestamp")
+            parsed = parse_iso(stamp, JST)
+            if parsed is None or parsed.astimezone(JST).date().isoformat() != DATE:
+                continue
+            if cutoff is not None and parsed > cutoff:
+                continue
+            verdict = str(item.get("verdict") or item.get("review_verdict") or "").strip().upper()
+            report_verdict = str(item.get("report_verdict") or "").strip().upper()
+            if verdict not in {"FAIL", "REQUEST_CHANGES"} and report_verdict != "FAIL":
+                continue
+            event_id = str(item.get("review_event_id") or "").strip()
+            if event_id:
+                if event_id in seen_events:
+                    continue
+                seen_events.add(event_id)
+            code = item.get("failure_origin_code")
+            primary = str(code.get("primary") or "").strip() if isinstance(code, dict) else ""
+            counts[primary if primary in classes else "unclassified"] += 1
+            total += 1
+    return counts, total
 
 def percentile(values, q):
     if not values:
@@ -301,6 +342,15 @@ def main():
         output.append(f"| {reason} | {waits[reason]} |")
     if not waits:
         output.append("| - | 0 |")
+
+    origin_counts, origin_total = failure_origin_counts()
+    output.append("")
+    output.append("## failure origin（canonical + unclassified）")
+    table(output, ("分類", "件数"))
+    for label in ("A", "B", "C", "D", "E", "unclassified"):
+        output.append(f"| {label} | {origin_counts[label]} |")
+    canonical_total = sum(origin_counts[label] for label in ("A", "B", "C", "D", "E"))
+    output.append(f"- canonical+unclassified={canonical_total}+{origin_counts['unclassified']}={origin_total}; 全FAIL={origin_total}")
 
     output.append("")
     output.append("## GATE 待ち理由別 時間（便の待ち。手の p50 と足せない）")

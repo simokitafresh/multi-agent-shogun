@@ -659,6 +659,47 @@ def test_honest_failed_report_normalizes_lgtm_to_approve_without_clearing(tmp_pa
     monkeypatch.setattr(review_bundle, "batch", old_batch)
 
 
+def test_failure_origin_candidate_requires_explicit_canonical_review_and_generation_identity():
+    """test_necessity: a report suggestion cannot silently become a canonical classification."""
+    report = {"report_id": "rpt-origin", "failure_origin": {
+        "primary": "B", "secondary": "", "evidence_strength": "primary",
+        "root_cause_key": "missing-context",
+    }}
+    unreviewed = review_bundle._canonical_failure_origin(report)
+    assert unreviewed["primary"] == "unclassified"
+    assert unreviewed["ninja_candidate_agreed"] is False
+
+    with pytest.raises(ValueError, match="correction is required"):
+        review_bundle._canonical_failure_origin(report, {
+            "primary": "A", "secondary": "", "evidence_strength": "primary",
+            "ninja_candidate_agreed": False, "correction": "", "root_cause_key": "other",
+        })
+    agreed = review_bundle._canonical_failure_origin(report, {
+        "primary": "B", "secondary": "", "evidence_strength": "primary",
+        "ninja_candidate_agreed": True, "correction": "", "root_cause_key": "missing-context",
+    })
+    assert agreed["primary"] == "B"
+    assert set(agreed) == set(review_bundle._FAILURE_ORIGIN_CODE_FIELDS)
+    first = review_bundle._failure_origin_event_id("cmd_origin", report, "a" * 64, agreed)
+    same = review_bundle._failure_origin_event_id("cmd_origin", report, "a" * 64, agreed)
+    revised = review_bundle._failure_origin_event_id("cmd_origin", report, "b" * 64, agreed)
+    assert first == same
+    assert first != revised
+
+
+def test_legacy_review_bundle_without_failure_origin_is_unclassified_compatible():
+    """test_necessity: old review rows remain readable without retroactive mutation."""
+    review = {
+        "cmd_id": "cmd_legacy", "verdict": "FAIL", "report_verdict": "PASS",
+        "reviewer": "gunshi", "cmd_spec_summary": {
+            "acceptance_criteria_count": 1, "scope": "scripts/review_bundle.py", "project": "infra",
+        },
+        "karo_attention": "legacy evidence",
+    }
+    validated = review_bundle.validate({"review": review}, "cmd_legacy", "FAIL")
+    assert "failure_origin_code" not in validated
+
+
 def test_approve_accepts_completed_pass_no_improvement_from_autogen_snapshot(tmp_path):
     """test_necessity: APPROVE must preserve a measured no-improvement report as a valid success state.
 
