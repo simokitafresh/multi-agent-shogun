@@ -1,3 +1,4 @@
+<!-- gist-master: 70b946c022cd5f6f81195ab837b7a7eb ninja_block_fail_root_cause_asis_tobe_20260905.md -->
 # 忍者の BLOCK/FAIL はインフラバグか — AsIs/ToBe 設計書 v1(2026-09-05 16:15、殿下問 16:03)
 
 ## §0.0 前提条件と我らのスタイル
