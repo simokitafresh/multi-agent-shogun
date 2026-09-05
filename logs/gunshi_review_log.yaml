@@ -5947,3 +5947,36 @@
     actual: "BLOCK"
     result: PASS
   timestamp: "2026-09-05T09:29:00+09:00"
+- brainwash_check: '#1no #2no #3no #4no #5no #6no #7no #8no'
+  causal_chain: LG043解消→precheck CLEAR→LGTM
+  cmd_id: cmd_karo_hotfix_agent_respawn_preserve_active
+  finding_categories:
+  - assumptions
+  - numbers
+  - premortem
+  - adversarial
+  - ambiguity
+  gate_prediction: CLEAR
+  gate_prediction_reason: all checks passed
+  observations:
+  - '事実1: LG043解消。RESPAWN_FORCE active task保全'
+  - '事実2: precheck CLEAR'
+  - 'adversarial: idle/failed task区別維持'
+  - 'ambiguity: なし'
+  operational_simulation:
+    actual: CLEAR
+    command: precheck
+    expected: CLEAR
+    result: PASS
+  origin: '[[cmd_karo_hotfix_agent_respawn_preserve_active]] -> [[LGTM]]'
+  report_id: rpt-dc37a672-03d9-40dc-9609-79b22c8368ed
+  report_identity_version: 2
+  report_ninja: hanzo
+  report_path: queue/reports/hanzo_report_cmd_karo_hotfix_agent_respawn_preserve_active.yaml
+  report_task_id: cmd_karo_hotfix_agent_respawn_preserve_active_normal
+  review_type: report
+  step3_5_verified: true
+  timestamp: '2026-09-05T09:32:00+09:00'
+  verdict: LGTM
+  verified_files:
+  - scripts/agent_respawn.sh:1
