@@ -1545,6 +1545,144 @@ PY
     log "[INJECT_READONLY_REF] injected command readonly refs"
 }
 
+# ─── routine_refs (Level5): W1 正規経路IDをtaskへ届ける ───
+# hookに止められて初めて正規経路を知る手戻りをなくす
+# (docs/research/ninja_block_fail_root_cause_asis_tobe_20260905.md §4 W1)。
+# registry本文/秘密値は複製せず、ID+canonical pathのみを注入する。CLI別実行
+# 構文(スラッシュコマンド等)は注入しない — .codex/にskillsシンボリックリンクが
+# 存在しない(実測2026-09-06)ため、常にファイルpathで表現しCodex/Claude双方
+# から読める形を保つ(6-b裁定)。db_readonlyはinject_skill_hint(/db-check判定,
+# scripts/deploy_task/modifiers.sh)と同じproject=dm-signal+DB関連語条件を
+# 再利用する(6-a裁定、既存機能の流用)。preinjected --yaml pathでは呼び出し
+# 元(gates.sh)がこの関数自体を呼ばないため、他Level5注入と同じ扱いになる
+# (6-c裁定: preinjected完全性を変更しない。統合はK2完了後の統合taskへ)。
+inject_routine_refs() {
+    local task_file="$1"
+    [ -f "$task_file" ] || return 0
+
+    local -A routine_registry=(
+        [tests_run]="scripts/run_tests.sh"
+        [db_readonly]="skills/db-check/SKILL.md"
+        [report_status]="scripts/report_field_set.sh"
+        [inbox]="scripts/inbox_write.sh"
+        [commit]="scripts/ninja_scope_commit.sh"
+    )
+
+    local project title purpose command_text commit_required haystack
+    project=$(FIELD_GET_NO_LOG=1 field_get "$task_file" "project" "" 2>/dev/null || true)
+    title=$(FIELD_GET_NO_LOG=1 field_get "$task_file" "title" "" 2>/dev/null || true)
+    purpose=$(FIELD_GET_NO_LOG=1 field_get "$task_file" "purpose" "" 2>/dev/null || true)
+    command_text=$(FIELD_GET_NO_LOG=1 field_get "$task_file" "command" "" 2>/dev/null || true)
+    haystack="${title}
+${purpose}
+${command_text}"
+
+    commit_required=$(python3 - "$task_file" <<'PY' 2>/dev/null || true
+import sys
+import yaml
+yaml.SafeLoader = getattr(yaml, 'CSafeLoader', yaml.SafeLoader)
+
+try:
+    task = (yaml.safe_load(open(sys.argv[1], encoding="utf-8")) or {}).get("task", {}) or {}
+except Exception:
+    task = {}
+contract = task.get("commit_contract")
+print("true" if isinstance(contract, dict) and contract.get("required") else "false")
+PY
+)
+
+    local -a auto_ids=(report_status inbox)
+    if [ "$commit_required" = "true" ]; then
+        auto_ids+=(tests_run commit)
+    fi
+    # 6-a裁定: db_readonlyはtask_type単独で判別できない(project=dm-signal限定の
+    # skills/db-check/SKILL.md)。既存inject_skill_hintの/db-check判定条件を
+    # そのまま再利用し、新しい判定基準を増やさない。
+    if [ "$project" = "dm-signal" ] && printf '%s\n' "$haystack" \
+        | grep -Eqi '(^|[^A-Za-z])(DB|database|SQL|PostgreSQL|SQLite)([^A-Za-z]|$)|本番DB|holding_signal|monthly_returns|portfolio_rankings|PF検索|パリティ検証'; then
+        auto_ids+=(db_readonly)
+    fi
+
+    # 明示refs: 既存task.routine_refsのidをauto_idsより先に読み込み、重複なく合成する。
+    # reset_stale_fields(resolve.sh)が前cmd世代のroutine_refsを既に除去済みのため、
+    # ここに残る値は同一世代の--yaml sourceが明示指定したものだけである。
+    local -a explicit_ids=()
+    if grep -q '^  routine_refs:' "$task_file"; then
+        while IFS= read -r id; do
+            [ -n "$id" ] && explicit_ids+=("$id")
+        done < <(awk '
+            /^  routine_refs:/ { f=1; next }
+            f && /^  [a-zA-Z_][a-zA-Z0-9_]*:/ { f=0 }
+            f && /^  - id:/ {
+                line=$0
+                sub(/^  - id:[[:space:]]*/, "", line)
+                gsub(/"/, "", line)
+                gsub(/'"'"'/, "", line)
+                print line
+            }
+        ' "$task_file")
+    fi
+
+    local -A seen_ids=()
+    local -a merged_ids=()
+    local id
+    for id in "${explicit_ids[@]}" "${auto_ids[@]}"; do
+        [ -n "${seen_ids[$id]:-}" ] && continue
+        seen_ids[$id]=1
+        merged_ids+=("$id")
+    done
+
+    [ ${#merged_ids[@]} -gt 0 ] || return 0
+
+    # 未知ID/canonical path不在は公開前BLOCK(値の推測で埋めない)。unknown-ID判定は
+    # 自動選択IDも含め全件に適用する(自動選択はregistryのkeyそのものなので必ず既知)。
+    # path不在判定は明示refsのみに適用する: 自動選択IDはこのfunction自身が持つ
+    # 静的registryの値であり、実装時にls実測済みの既知path(6-a/6-b裁定)。明示refsは
+    # 発注者が手で書いた値のため、指す先が動いていないかをここで実測検証する。
+    local -A explicit_id_set=()
+    for id in "${explicit_ids[@]}"; do
+        explicit_id_set[$id]=1
+    done
+
+    local -a inject_lines=()
+    local canonical
+    for id in "${merged_ids[@]}"; do
+        canonical="${routine_registry[$id]:-}"
+        if [ -z "$canonical" ]; then
+            log "[INJECT_ROUTINE_REFS] BLOCK: unknown routine ID '${id}' (registry未定義)"
+            return 1
+        fi
+        if [ -n "${explicit_id_set[$id]:-}" ] && [ ! -e "$SCRIPT_DIR/$canonical" ]; then
+            log "[INJECT_ROUTINE_REFS] BLOCK: canonical path missing for routine ID '${id}': ${canonical}"
+            return 1
+        fi
+        inject_lines+=("  - id: \"${id}\"")
+        inject_lines+=("    path: \"${canonical}\"")
+    done
+
+    local tmp_file
+    tmp_file=$(mktemp "${task_file}.XXXXXX")
+    awk '
+        /^  routine_refs:/ { skip=1; next }
+        skip && /^    / { next }
+        skip && /^  - / { next }
+        skip && /^  [a-zA-Z_][a-zA-Z0-9_]*:/ { skip=0 }
+        skip && /^[^ ]/ { skip=0 }
+        !skip { print }
+    ' "$task_file" > "$tmp_file"
+
+    local inject_block="  routine_refs:"
+    local line
+    for line in "${inject_lines[@]}"; do
+        inject_block="${inject_block}"$'\n'"${line}"
+    done
+
+    insert_task_block_before_description "$tmp_file" "$inject_block"
+
+    _yaml_field_set_publish_atomic "$tmp_file" "$task_file" || return 1
+    log "inject_routine_refs: ${#merged_ids[@]} routine refs injected (${merged_ids[*]})"
+}
+
 # One deploy generation owns one postcondition marker.  The old fixed
 # queue/tasks/.postcond_lesson_inject path let parallel --yaml deployments
 # overwrite and consume each other's task/project/lesson identity.
