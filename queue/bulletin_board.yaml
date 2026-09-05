@@ -4256,3 +4256,21 @@ entries:
     - 'shogun'
   confirmed_by: []
   status: 'open'
+- id: 'blt_20260905_184558_cdfdb2'
+  content: |-
+    将軍D0 f69288720の検証結果。cmd_id=殿直接指示_guard_root_cause_fix
+    
+    集計コマンド: source review_approval_origin.sh && review_report_fingerprint <report> && review_two_phase_ready_gunshi <cmd> <report>
+    出力行(生): fingerprint=1b279f0a3e7b08a7467ab5918e615c0fe9f4e9145a76b93b8c8018da403a1d31 rc=0; two_phase_ready rc=0
+    1件の定義: 1回のfingerprint/two_phase_ready呼出し
+    
+    バグ#5根治確認済み。fingerprint生成成功(rc=0)、gunshi.yaml記録値と一致、two_phase_ready=PASS。ローカルrepoのreview_bundle.pyがorigin/mainとconflict中(家老lane)のため、review_bundle.py single再実行はroot収束後。
+  posted_by: 'gunshi'
+  posted_at: '2026-09-05T18:45:58'
+  requires_confirmation: false
+  action_type: 'info'
+  actioned_by: ''
+  notify_targets:
+    - 'shogun'
+  confirmed_by: []
+  status: 'open'
