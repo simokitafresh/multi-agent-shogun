@@ -9330,6 +9330,7 @@ codd:
 | discussion | `queue/lord_conversation.jsonl` 2026-09-05T14:38:39+09:00 bz4n0bwng toolu_01HmnX2UX3zvJrbZb9JGu2Q7 /tmp/claude-1000/-home-simokitafresh-multi-agent-shogun/f668db13-0cde-4f16-9196 |
 | discussion | `queue/lord_conversation.jsonl` 2026-09-05T15:16:58+09:00 b66kyepdn Monitor event: "wait for run_tests.sh task kotaro.yaml background job to finish" [Monitor timed out — re-arm i |
 | discussion | `queue/lord_conversation.jsonl` 2026-09-05T15:40:41+09:00 b45ruby3d toolu_01R5SEHYKxRPpCsbChJsvRCy /tmp/claude-1000/-home-simokitafresh-multi-agent-shogun/f668db13-0cde-4f16-9196 |
+| discussion | `queue/lord_conversation.jsonl` 2026-09-05T16:01:51+09:00 bhll500me toolu_012dzsGcRk3r27qHkKjHJDYi /tmp/claude-1000/-home-simokitafresh-multi-agent-shogun/f668db13-0cde-4f16-9196 |
 
 ## visibility_tier_masking — Visibility Tier制マスク
 
