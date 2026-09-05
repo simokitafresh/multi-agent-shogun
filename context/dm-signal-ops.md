@@ -1,5 +1,6 @@
 # DM-signal 運用コンテキスト
-<!-- last_updated: 2026-09-05 context_freshness reviewed source boundary -->
+<!-- last_updated: 2026-09-06 2026-09-06 04:50 将軍doc lane GA-589: DTB3 as-of replay/restore parity fixture 契約を §104 へ追記 -->
+<!-- source_commit:1fe4cb1388d9 reason:2026-09-06 04:50 将軍doc lane GA-589: DTB3 as-of replay/restore parity fixture 契約を §104 へ追記 evidence:git -C /mnt/c/Python_app/DM-signal show 1fe4cb13 --stat = data_loader.py +9/-1 + integration fixture 3 path; gh run view 33985798406 = 1 failed/1935 passed -->
 <!-- source_commit:8af98631921c reason:context_freshness reviewed source boundary evidence:context_freshness_check context=context/dm-signal-ops.md commit=8af98631921c -->
 <!-- source_commit:c8b347140eee reason:context_freshness reviewed source boundary evidence:context_freshness_check context=context/dm-signal-ops.md commit=c8b347140eee -->
 <!-- source_commit:9ea93b896243 reason:context_freshness reviewed source boundary evidence:context_freshness_check context=context/dm-signal-ops.md commit=9ea93b896243 -->
@@ -1250,3 +1251,9 @@ GA-144原因: `dm-signal-ops.md`のlast_updatedは2026-06-26で、2026-06-26以�
 ## §103 identity 列の本番適用(cmd_4477、2026-09-05 15:2x)
 - 手順=Render backend の ADMIN one-off job で `python migrations/add_identity_columns.py`(冪等)。前後証跡=information_schema.columns(前 0/3→後 3/3)。restore=同 script の downgrade(新 3 列のみ drop)。deploy=backend/frontend とも Live。計測 SQL(LP→Auth 完了率 prefix 別/Auth→Free ログイン率)は `docs/research/cmd_4477_identity_metrics_sql_20260905.md`。段 4(Simple LP)は本番 SQL が 1 週間値を返してから。
 - identity 検証 SQL の PostgreSQL 隔離証跡(2026-09-05, DM-signal 30429ac0/8af98631 疾風 cmd_4477)|`docs/research/cmd_4477_identity_metrics_sql_20260905.md`(DM-signal 側)に、隔離 PostgreSQL(localpg、schema 別 search_path)での往復証跡と runbook の整合を追記。SQL 2 本(page_views.user_id/campaign_id、showcase_events.user_id)は本番適用 §103 と同じ列定義で検証済み|→ §103、`context/dm-signal-core.md` identity 3 層
+
+## §104 DTB3 as-of replay / restore parity の fixture 契約 (GA-589、2026-09-06 04:50)
+- source: `1fe4cb13`(cmd_karo_ci_fix_dm_33983396944_dtb3_asof_history)。CI run 33985798406 で DTB3 同根 6 FAIL→0、残 1=cmd_3854 golden regression(別層、半蔵 honest FAIL 再提出)。
+- 契約: recalculate / restore parity を通す integration test は DTB3 の**完全 as-of history**(target_dt−365 日〜)を `EconomicIndicator` へ seed する(`_seed_dtb3`)。`data_loader` の immutable snapshot は `date_from == date.min` を as-of prefix sentinel とし上限のみで filter する(core §Current source boundary GA-589)。history 欠落は fail-closed の `ValueError` であり、silent fallback ではない。
+- 突合の型は §98(業務列 parity+1 手)を踏襲: 修正前 run 33983396944(7 failed)→修正後 33985798406(1 failed)を CI 一次ログで差分確認。
+- 参照: `docs/research/dm-fullrecalculate-cache-reuse-asis_20260813.md` §3.1(入力固定と source identity)。歴史日付は不変、本節は 2026-09-06 04:50 追記。

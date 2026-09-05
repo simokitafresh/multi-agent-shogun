@@ -1333,7 +1333,7 @@ insights:
   priority: "low"
   source: "cmd_complete_gate:memory_phase"
   fix_known: false
-  status: "resolved"
+  status: "pending"
   resolved_reason: "GATE CLEAR: cmd_karo_recon_insight_pending_triage_20260906 completed declared remediation"
   action_artifact: "cmd=cmd_karo_recon_insight_pending_triage_20260906;gate=cmd_complete_gate;result=CLEAR"
   resolved_at: "2026-09-06T04:08:30.338520"
@@ -1563,7 +1563,7 @@ insights:
   priority: "medium"
   source: "cmd_complete_gate:l6_horizontal:cmd_reflux_backlink_202608201618_tobisaru"
   fix_known: false
-  status: "resolved"
+  status: "pending"
   resolved_reason: "GATE CLEAR: cmd_karo_recon_insight_pending_triage_20260906 completed declared remediation"
   action_artifact: "cmd=cmd_karo_recon_insight_pending_triage_20260906;gate=cmd_complete_gate;result=CLEAR"
   resolved_at: "2026-09-06T04:08:30.502094"
@@ -1573,7 +1573,7 @@ insights:
   priority: "medium"
   source: "cmd_complete_gate:l6_horizontal:cmd_reflux_insight_202608210159_hayate"
   fix_known: false
-  status: "resolved"
+  status: "pending"
   resolved_reason: "GATE CLEAR: cmd_karo_recon_insight_pending_triage_20260906 completed declared remediation"
   action_artifact: "cmd=cmd_karo_recon_insight_pending_triage_20260906;gate=cmd_complete_gate;result=CLEAR"
   resolved_at: "2026-09-06T04:08:30.654762"
@@ -1583,7 +1583,7 @@ insights:
   priority: "medium"
   source: "skill_script_refs:28cb407b97fcfc07"
   fix_known: false
-  status: "resolved"
+  status: "pending"
   resolved_reason: "GATE CLEAR: cmd_karo_recon_insight_pending_triage_20260906 completed declared remediation"
   action_artifact: "cmd=cmd_karo_recon_insight_pending_triage_20260906;gate=cmd_complete_gate;result=CLEAR"
   resolved_at: "2026-09-06T04:08:30.815560"
@@ -1613,7 +1613,7 @@ insights:
   priority: "medium"
   source: "cmd_complete_gate:l6_horizontal:cmd_reflux_insight_202608210433_hayate"
   fix_known: false
-  status: "resolved"
+  status: "pending"
   resolved_reason: "GATE CLEAR: cmd_karo_recon_insight_pending_triage_20260906 completed declared remediation"
   action_artifact: "cmd=cmd_karo_recon_insight_pending_triage_20260906;gate=cmd_complete_gate;result=CLEAR"
   resolved_at: "2026-09-06T04:08:30.963201"
@@ -2822,7 +2822,7 @@ insights:
   priority: "medium"
   source: "manual"
   fix_known: false
-  status: "resolved"
+  status: "pending"
   resolved_reason: "GATE CLEAR: cmd_karo_recon_insight_pending_triage_20260906 completed declared remediation"
   action_artifact: "cmd=cmd_karo_recon_insight_pending_triage_20260906;gate=cmd_complete_gate;result=CLEAR"
   resolved_at: "2026-09-06T04:08:31.111410"
@@ -2832,7 +2832,7 @@ insights:
   priority: "medium"
   source: "manual"
   fix_known: false
-  status: "resolved"
+  status: "pending"
   resolved_reason: "GATE CLEAR: cmd_karo_recon_insight_pending_triage_20260906 completed declared remediation"
   action_artifact: "cmd=cmd_karo_recon_insight_pending_triage_20260906;gate=cmd_complete_gate;result=CLEAR"
   resolved_at: "2026-09-06T04:08:31.262993"
@@ -2892,7 +2892,7 @@ insights:
   priority: "medium"
   source: "skill_script_refs:11fd6f77fef8c2ed"
   fix_known: false
-  status: "resolved"
+  status: "pending"
   resolved_reason: "GATE CLEAR: cmd_karo_recon_insight_pending_triage_20260906 completed declared remediation"
   action_artifact: "cmd=cmd_karo_recon_insight_pending_triage_20260906;gate=cmd_complete_gate;result=CLEAR"
   resolved_at: "2026-09-06T04:08:31.412798"
@@ -4077,7 +4077,7 @@ insights:
   priority: "medium"
   source: "manual"
   fix_known: false
-  status: "resolved"
+  status: "pending"
   resolved_reason: "GATE CLEAR: cmd_karo_recon_insight_pending_triage_20260906 completed declared remediation"
   action_artifact: "cmd=cmd_karo_recon_insight_pending_triage_20260906;gate=cmd_complete_gate;result=CLEAR"
   resolved_at: "2026-09-06T04:08:31.749857"
@@ -6339,7 +6339,7 @@ insights:
   priority: "medium"
   source: "manual"
   fix_known: false
-  status: "resolved"
+  status: "pending"
   resolved_reason: "GATE CLEAR: cmd_karo_recon_insight_pending_triage_20260906 completed declared remediation"
   action_artifact: "cmd=cmd_karo_recon_insight_pending_triage_20260906;gate=cmd_complete_gate;result=CLEAR"
   resolved_at: "2026-09-06T04:08:31.923332"
@@ -6649,7 +6649,7 @@ insights:
   priority: "medium"
   source: "manual"
   fix_known: false
-  status: "resolved"
+  status: "pending"
   resolved_reason: "GATE CLEAR: cmd_karo_recon_insight_pending_triage_20260906 completed declared remediation"
   action_artifact: "cmd=cmd_karo_recon_insight_pending_triage_20260906;gate=cmd_complete_gate;result=CLEAR"
   resolved_at: "2026-09-06T04:08:32.194770"
@@ -7075,7 +7075,7 @@ insights:
   priority: "high"
   source: "shogun_instruction_20260828_140103"
   fix_known: false
-  status: "resolved"
+  status: "pending"
   resolved_reason: "GATE CLEAR: cmd_karo_recon_insight_pending_triage_20260906 completed declared remediation"
   action_artifact: "cmd=cmd_karo_recon_insight_pending_triage_20260906;gate=cmd_complete_gate;result=CLEAR"
   resolved_at: "2026-09-06T04:08:32.343048"
@@ -7338,7 +7338,7 @@ insights:
   priority: "medium"
   source: "manual"
   fix_known: false
-  status: "resolved"
+  status: "pending"
   resolved_reason: "GATE CLEAR: cmd_karo_recon_insight_pending_triage_20260906 completed declared remediation"
   action_artifact: "cmd=cmd_karo_recon_insight_pending_triage_20260906;gate=cmd_complete_gate;result=CLEAR"
   resolved_at: "2026-09-06T04:08:32.497446"
@@ -10847,7 +10847,7 @@ insights:
   priority: "medium"
   source: "manual"
   fix_known: false
-  status: "resolved"
+  status: "pending"
   resolved_reason: "GATE CLEAR: cmd_karo_recon_insight_pending_triage_20260906 completed declared remediation"
   action_artifact: "cmd=cmd_karo_recon_insight_pending_triage_20260906;gate=cmd_complete_gate;result=CLEAR"
   resolved_at: "2026-09-06T04:08:32.649000"
@@ -12724,7 +12724,7 @@ insights:
   priority: "low"
   source: "cmd_complete_gate:memory_phase"
   fix_known: false
-  status: "resolved"
+  status: "pending"
   resolved_reason: "GATE CLEAR: cmd_karo_recon_insight_pending_triage_20260906 completed declared remediation"
   action_artifact: "cmd=cmd_karo_recon_insight_pending_triage_20260906;gate=cmd_complete_gate;result=CLEAR"
   resolved_at: "2026-09-06T04:08:32.867293"
@@ -13625,7 +13625,7 @@ insights:
   priority: "medium"
   source: "skill_script_refs:9abfd94ce2d8bec9"
   fix_known: false
-  status: "resolved"
+  status: "pending"
   resolved_reason: "GATE CLEAR: cmd_karo_recon_insight_pending_triage_20260906 completed declared remediation"
   action_artifact: "cmd=cmd_karo_recon_insight_pending_triage_20260906;gate=cmd_complete_gate;result=CLEAR"
   resolved_at: "2026-09-06T04:08:35.142501"
@@ -14016,7 +14016,7 @@ insights:
   priority: "low"
   source: "self_retro"
   fix_known: false
-  status: "resolved"
+  status: "pending"
   resolved_reason: "GATE CLEAR: cmd_karo_recon_insight_pending_triage_20260906 completed declared remediation"
   action_artifact: "cmd=cmd_karo_recon_insight_pending_triage_20260906;gate=cmd_complete_gate;result=CLEAR"
   resolved_at: "2026-09-06T04:08:35.568911"
@@ -14567,7 +14567,7 @@ insights:
   priority: "low"
   source: "manual"
   fix_known: false
-  status: "resolved"
+  status: "pending"
   resolved_reason: "GATE CLEAR: cmd_karo_recon_insight_pending_triage_20260906 completed declared remediation"
   action_artifact: "cmd=cmd_karo_recon_insight_pending_triage_20260906;gate=cmd_complete_gate;result=CLEAR"
   resolved_at: "2026-09-06T04:08:35.891355"
@@ -16459,7 +16459,7 @@ insights:
   priority: "medium"
   source: "manual"
   fix_known: false
-  status: "resolved"
+  status: "pending"
   resolved_reason: "GATE CLEAR: cmd_karo_recon_insight_pending_triage_20260906 completed declared remediation"
   action_artifact: "cmd=cmd_karo_recon_insight_pending_triage_20260906;gate=cmd_complete_gate;result=CLEAR"
   resolved_at: "2026-09-06T04:08:49.849383"
@@ -16938,7 +16938,7 @@ insights:
   priority: "medium"
   source: "manual"
   fix_known: false
-  status: "resolved"
+  status: "pending"
   resolved_reason: "GATE CLEAR: cmd_karo_recon_insight_pending_triage_20260906 completed declared remediation"
   action_artifact: "cmd=cmd_karo_recon_insight_pending_triage_20260906;gate=cmd_complete_gate;result=CLEAR"
   resolved_at: "2026-09-06T04:08:50.231722"
@@ -17129,7 +17129,7 @@ insights:
   priority: "medium"
   source: "skill_script_refs:6497bfa1b6428ade"
   fix_known: false
-  status: "resolved"
+  status: "pending"
   resolved_reason: "GATE CLEAR: cmd_karo_recon_insight_pending_triage_20260906 completed declared remediation"
   action_artifact: "cmd=cmd_karo_recon_insight_pending_triage_20260906;gate=cmd_complete_gate;result=CLEAR"
   resolved_at: "2026-09-06T04:08:50.561658"
@@ -17148,7 +17148,7 @@ insights:
   priority: "medium"
   source: "manual"
   fix_known: false
-  status: "resolved"
+  status: "pending"
   resolved_reason: "GATE CLEAR: cmd_karo_recon_insight_pending_triage_20260906 completed declared remediation"
   action_artifact: "cmd=cmd_karo_recon_insight_pending_triage_20260906;gate=cmd_complete_gate;result=CLEAR"
   resolved_at: "2026-09-06T04:08:50.729945"
@@ -17158,7 +17158,7 @@ insights:
   priority: "medium"
   source: "manual"
   fix_known: false
-  status: "resolved"
+  status: "pending"
   resolved_reason: "GATE CLEAR: cmd_karo_recon_insight_pending_triage_20260906 completed declared remediation"
   action_artifact: "cmd=cmd_karo_recon_insight_pending_triage_20260906;gate=cmd_complete_gate;result=CLEAR"
   resolved_at: "2026-09-06T04:08:50.914093"
@@ -17186,7 +17186,7 @@ insights:
   priority: "medium"
   source: "manual"
   fix_known: false
-  status: "resolved"
+  status: "pending"
   resolved_reason: "GATE CLEAR: cmd_karo_recon_insight_pending_triage_20260906 completed declared remediation"
   action_artifact: "cmd=cmd_karo_recon_insight_pending_triage_20260906;gate=cmd_complete_gate;result=CLEAR"
   resolved_at: "2026-09-06T04:08:51.066544"
@@ -17278,7 +17278,7 @@ insights:
   priority: "high"
   source: "gate_loop_health"
   fix_known: false
-  status: "resolved"
+  status: "pending"
   resolved_reason: "GATE CLEAR: cmd_karo_recon_insight_pending_triage_20260906 completed declared remediation"
   action_artifact: "cmd=cmd_karo_recon_insight_pending_triage_20260906;gate=cmd_complete_gate;result=CLEAR"
   resolved_at: "2026-09-06T04:08:51.487556"
@@ -17297,7 +17297,7 @@ insights:
   priority: "medium"
   source: "manual"
   fix_known: false
-  status: "resolved"
+  status: "pending"
   resolved_reason: "GATE CLEAR: cmd_karo_recon_insight_pending_triage_20260906 completed declared remediation"
   action_artifact: "cmd=cmd_karo_recon_insight_pending_triage_20260906;gate=cmd_complete_gate;result=CLEAR"
   resolved_at: "2026-09-06T04:08:51.653328"
@@ -17307,7 +17307,7 @@ insights:
   priority: "medium"
   source: "skill_script_refs:083a7c8db37e6e61"
   fix_known: false
-  status: "resolved"
+  status: "pending"
   resolved_reason: "GATE CLEAR: cmd_karo_recon_insight_pending_triage_20260906 completed declared remediation"
   action_artifact: "cmd=cmd_karo_recon_insight_pending_triage_20260906;gate=cmd_complete_gate;result=CLEAR"
   resolved_at: "2026-09-06T04:08:51.806482"
@@ -17317,7 +17317,7 @@ insights:
   priority: "medium"
   source: "manual"
   fix_known: false
-  status: "resolved"
+  status: "pending"
   resolved_reason: "GATE CLEAR: cmd_karo_recon_insight_pending_triage_20260906 completed declared remediation"
   action_artifact: "cmd=cmd_karo_recon_insight_pending_triage_20260906;gate=cmd_complete_gate;result=CLEAR"
   resolved_at: "2026-09-06T04:08:51.966048"
@@ -18308,7 +18308,7 @@ insights:
   priority: "medium"
   source: "skill_script_refs:112b329d751e6708"
   fix_known: false
-  status: "resolved"
+  status: "pending"
   resolved_reason: "GATE CLEAR: cmd_karo_recon_insight_pending_triage_20260906 completed declared remediation"
   action_artifact: "cmd=cmd_karo_recon_insight_pending_triage_20260906;gate=cmd_complete_gate;result=CLEAR"
   resolved_at: "2026-09-06T04:08:52.227667"
@@ -18390,7 +18390,7 @@ insights:
   priority: "medium"
   source: "manual"
   fix_known: false
-  status: "resolved"
+  status: "pending"
   resolved_reason: "GATE CLEAR: cmd_karo_recon_insight_pending_triage_20260906 completed declared remediation"
   action_artifact: "cmd=cmd_karo_recon_insight_pending_triage_20260906;gate=cmd_complete_gate;result=CLEAR"
   resolved_at: "2026-09-06T04:08:52.398498"
@@ -18481,7 +18481,7 @@ insights:
   priority: "medium"
   source: "skill_script_refs:b2d58996361d2c76"
   fix_known: false
-  status: "resolved"
+  status: "pending"
   resolved_reason: "GATE CLEAR: cmd_karo_recon_insight_pending_triage_20260906 completed declared remediation"
   action_artifact: "cmd=cmd_karo_recon_insight_pending_triage_20260906;gate=cmd_complete_gate;result=CLEAR"
   resolved_at: "2026-09-06T04:08:52.564815"
@@ -18626,7 +18626,7 @@ insights:
   priority: "medium"
   source: "manual"
   fix_known: false
-  status: "resolved"
+  status: "pending"
   resolved_reason: "GATE CLEAR: cmd_karo_recon_insight_pending_triage_20260906 completed declared remediation"
   action_artifact: "cmd=cmd_karo_recon_insight_pending_triage_20260906;gate=cmd_complete_gate;result=CLEAR"
   resolved_at: "2026-09-06T04:08:52.722864"
@@ -18861,7 +18861,7 @@ insights:
   priority: "medium"
   source: "manual"
   fix_known: false
-  status: "resolved"
+  status: "pending"
   resolved_reason: "GATE CLEAR: cmd_karo_recon_insight_pending_triage_20260906 completed declared remediation"
   action_artifact: "cmd=cmd_karo_recon_insight_pending_triage_20260906;gate=cmd_complete_gate;result=CLEAR"
   resolved_at: "2026-09-06T04:08:52.869539"
@@ -19132,7 +19132,7 @@ insights:
   priority: "medium"
   source: "manual"
   fix_known: false
-  status: "resolved"
+  status: "pending"
   resolved_reason: "GATE CLEAR: cmd_karo_recon_insight_pending_triage_20260906 completed declared remediation"
   action_artifact: "cmd=cmd_karo_recon_insight_pending_triage_20260906;gate=cmd_complete_gate;result=CLEAR"
   resolved_at: "2026-09-06T04:08:53.050220"
@@ -19142,7 +19142,7 @@ insights:
   priority: "medium"
   source: "manual"
   fix_known: false
-  status: "resolved"
+  status: "pending"
   resolved_reason: "GATE CLEAR: cmd_karo_recon_insight_pending_triage_20260906 completed declared remediation"
   action_artifact: "cmd=cmd_karo_recon_insight_pending_triage_20260906;gate=cmd_complete_gate;result=CLEAR"
   resolved_at: "2026-09-06T04:08:53.205160"
@@ -19202,7 +19202,7 @@ insights:
   priority: "medium"
   source: "skill_script_refs:bb19ebccc33be729"
   fix_known: false
-  status: "resolved"
+  status: "pending"
   resolved_reason: "GATE CLEAR: cmd_karo_recon_insight_pending_triage_20260906 completed declared remediation"
   action_artifact: "cmd=cmd_karo_recon_insight_pending_triage_20260906;gate=cmd_complete_gate;result=CLEAR"
   resolved_at: "2026-09-06T04:08:53.364543"
@@ -19552,7 +19552,7 @@ insights:
   priority: "medium"
   source: "manual"
   fix_known: false
-  status: "resolved"
+  status: "pending"
   resolved_reason: "GATE CLEAR: cmd_karo_recon_insight_pending_triage_20260906 completed declared remediation"
   action_artifact: "cmd=cmd_karo_recon_insight_pending_triage_20260906;gate=cmd_complete_gate;result=CLEAR"
   resolved_at: "2026-09-06T04:08:53.707399"
@@ -19606,3 +19606,30 @@ insights:
   resolved_reason: "semantic map generation verified the candidate is represented or intentionally ignored"
   action_artifact: "semantic_map=/home/simokitafresh/multi-agent-shogun/context/semantic-map.md;semantic_index=/home/simokitafresh/multi-agent-shogun/docs/semantic-index/index.md"
   resolved_at: "2026-09-06T03:30:50.956536"
+- id: INS-20260906-041247508-e61f
+  ts: "2026-09-06T04:12:47+09:00"
+  insight: "SKILL.md追従task[bb19ebccc33be729]: gate_skill_script_refs.sh rc=2。以下のSKILL.md×変更script対を検分し、必要な追従更新と実測を行え: skills/cdp-browse/SKILL.md <- scripts/cdp/cdp_measure.sh; skills/cdp-browse/SKILL.md <- scripts/note_draft.sh; skills/cmd-complete/SKILL.md <- scripts/archive_completed.sh; skills/cmd-complete/SKILL.md <- scripts/gates/gate_context_freshness.sh; skills/cmd-complete/SKILL.md <- scripts/lib/yaml_field_set.sh; skills/cmd-complete/SKILL.md <- scripts/review_approval.sh; skills/cmd-complete/SKILL.md <- scripts/review_bundle.py; skills/codd-fix/SKILL.md <- scripts/cmd_complete_gate.sh; skills/codd-refactor/SKILL.md <- scripts/run_tests.sh; skills/dashboard-update/SKILL.md <- scripts/gates/gate_report_format.sh; skills/dream/SKILL.md <- scripts/gates/gate_lesson_health.sh; skills/dream/SKILL.md <- scripts/insight_write.sh; skills/dream/SKILL.md <- scripts/memory_db_query.sh; skills/gate-sync/SKILL.md <- scripts/bulletin_write.sh; skills/gate-sync/SKILL.md <- scripts/gates/gate_gunshi_accuracy.sh; skills/gate-sync/SKILL.md <- scripts/gunshi_gate_reflux.sh; skills/gate-sync/SKILL.md <- scripts/lib/yaml_field_set.sh; skills/hot-script-design/SKILL.md <- scripts/ninja_scope_commit.sh; skills/idle-persist/SKILL.md <- scripts/bulletin_write.sh; skills/idle-persist/SKILL.md <- scripts/inbox_write.sh; skills/idle-persist/SKILL.md <- scripts/lib/yaml_field_set.sh; skills/karo-direct/SKILL.md <- scripts/deploy_task.sh; skills/ninja-commit/SKILL.md <- scripts/ninja_scope_commit.sh; skills/ninja-commit/SKILL.md <- scripts/report_field_set.sh; skills/note-writer/SKILL.md <- scripts/note_draft.sh; skills/recon-dual/SKILL.md <- scripts/deploy_task.sh; skills/recon-dual/SKILL.md <- scripts/lib/yaml_field_set.sh; skills/report-write/SKILL.md <- scripts/report_field_set.sh; skills/review-bundle/SKILL.md <- scripts/bulletin_write.sh; skills/review-bundle/SKILL.md <- scripts/inbox_write.sh; skills/review-bundle/SKILL.md <- scripts/lib/yaml_field_set.sh; skills/review-bundle/SKILL.md <- scripts/review_bundle.py; skills/sengoku-writer/SKILL.md <- scripts/note_draft.sh; skills/shogun-cli-switch/SKILL.md <- scripts/agent_respawn.sh; skills/shogun-cli-switch/SKILL.md <- scripts/lib/cli_lookup.sh; skills/shogun-cli-switch/SKILL.md <- scripts/lib/yaml_field_set.sh; skills/shogun-cli-switch/SKILL.md <- scripts/ninja_monitor.sh; skills/shogun-teire/SKILL.md <- scripts/gates/gate_lesson_health.sh; skills/three-layer-penetrate/SKILL.md <- scripts/memory_db_query.sh; skills/three-layer-penetrate/SKILL.md <- scripts/semantic_map_generate.sh; skills/verdict-check/SKILL.md <- scripts/gates/gate_report_format.sh; skills/weekly-report-writer/SKILL.md <- scripts/note_draft.sh"
+  priority: "medium"
+  source: "skill_script_refs:bb19ebccc33be729"
+  fix_known: false
+  status: pending
+- id: INS-20260906-044810431-7a02
+  ts: "2026-09-06T04:48:10+09:00"
+  insight: "[[ではD0修正を行え]] semantic_stress_test candidate_aliases: NO_MATCH source=lord query=ではD0修正を行え。修正後は設計書も更新せよ。更新したらでょう軍に報告せよ"
+  priority: "low"
+  source: "semantic_stress_test"
+  fix_known: false
+  status: "resolved"
+  resolved_reason: "semantic index candidate was absorbed into a registered concept"
+  action_artifact: "semantic_index=/home/simokitafresh/multi-agent-shogun/docs/semantic-index/index.md"
+  resolved_at: "2026-09-06T04:59:21.887244"
+- id: INS-20260906-045938267-66e9
+  ts: "2026-09-06T04:59:38+09:00"
+  insight: "[[GA 589のdm signal core ops source追随漏れを全件特定し]] NO_MATCH purpose pending alias: cmd_complete時にdeploy_task.logでNO_MATCHだったpurpose。類似概念TOP3: gate_quality_framework(ゲート品質統合フレームワーク; alias=GA context freshness ALERTのdm signal ops mdを一次情報で照合し; score=19.1) / dm_signal_pf_restore_guardrails(DM-Signal PF復元運用ガードレール; alias=GA_220_invalid_DM_SIGNAL_REPO; score=15.4) / dmsignal_operations(DM-Signal運用; alias=dm-signal ops; score=15.1)。既存概念aliasesへの自動昇格候補"
+  priority: "low"
+  source: "semantic_index_update"
+  fix_known: false
+  status: "resolved"
+  resolved_reason: "semantic index candidate was absorbed into a registered concept"
+  action_artifact: "semantic_index=/home/simokitafresh/multi-agent-shogun/docs/semantic-index/index.md"
+  resolved_at: "2026-09-06T05:00:03.824389"

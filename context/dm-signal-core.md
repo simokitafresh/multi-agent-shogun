@@ -1,5 +1,6 @@
 # DM-signal コアコンテキスト
-<!-- last_updated: 2026-09-05 context_freshness reviewed source boundary -->
+<!-- last_updated: 2026-09-06 2026-09-06 04:50 将軍doc lane GA-589: DTB3 date.min as-of prefix 上限 filter を §Current source boundary(GA-589) へ反映 -->
+<!-- source_commit:1fe4cb1388d9 reason:2026-09-06 04:50 将軍doc lane GA-589: DTB3 date.min as-of prefix 上限 filter を §Current source boundary(GA-589) へ反映 evidence:git -C /mnt/c/Python_app/DM-signal show 1fe4cb13 --stat = data_loader.py +9/-1 + integration fixture 3 path; gh run view 33985798406 = 1 failed/1935 passed -->
 <!-- source_commit:c8b347140eee reason:context_freshness reviewed source boundary evidence:context_freshness_check context=context/dm-signal-core.md commit=c8b347140eee -->
 <!-- source_commit:5b05427010fd reason:context_freshness reviewed source boundary evidence:context_freshness_check context=context/dm-signal-core.md commit=5b05427010fd -->
 <!-- source_commit:59b7b6794 reason:2026-09-03 将軍doc lane: cmd_4459 showcase series holding(§97) evidence:git -C /mnt/c/Python_app/DM-signal show origin/main:backend/app/api/public_showcase.py | grep -c _hero_holding_by_month = 2; grep -c §97 context/dm-signal-core.md = 1 -->
@@ -10,6 +11,12 @@
 <!-- source_commit:5a5556af reason:context_freshness reviewed source boundary evidence:context_freshness_check context=context/dm-signal-core.md commit=5a5556af -->
 <!-- source_commit:e7a6c59d reason:context_freshness reviewed source boundary evidence:context_freshness_check context=context/dm-signal-core.md commit=e7a6c59d -->
 <!-- source_commit:45760ecf reason:GA-490/491 FoF決定性tie-breakシリーズ境界反映(退行復旧再適用) evidence:git -C /mnt/c/Python_app/DM-signal log 46a1f213..45760ecf = 110 commits(source 67件)reviewed。初回=33f3dc7a2、tree退行検出(blt_20260822_144525)により再適用 -->
+
+## Current source boundary (GA-589, 2026-09-06)
+- **Current source tip:** `1fe4cb13` cmd_karo_ci_fix_dm_33983396944_dtb3_asof_history(2026-09-06 04:1x)。DM-Signal CI の pre-existing RED 7 件のうち DTB3 同根 6 件を解消(run 33985798406: 1935 passed / 1 failed=cmd_3854 golden regression のみ残)。
+- durable knowledge: `backend/app/utils/data_loader.py` の immutable snapshot 区間抽出で `date_from == date.min` は「完全 as-of prefix」の sentinel。pandas の nanosecond Timestamp 範囲外のため **上限(date_to)だけで filter** し、snapshot replay を初回 DB load と等価に保つ。下限付きの通常区間は従来どおり両側 filter。
+- fixture 契約: DTB3 を参照する integration test(cash_fallback_warning / pipeline_exception_no_cash / portfolio_restore_e2e_parity)は `_seed_dtb3` で target_dt−365 日からの完全 as-of history を EconomicIndicator へ供給する。history 欠落は `ValueError: DTB3 immutable snapshot has no as-of history` で fail-closed。
+- 詳細と cache/source identity の位置づけ → `docs/research/dm-fullrecalculate-cache-reuse-asis_20260813.md` §3.1、運用側の parity 契約 → `context/dm-signal-ops.md` §104。
 
 ## Current source boundary (GA-490/491, 2026-08-22)
 - **Current source tip:** `45760ecf` = Revert "merge: reconcile rb6 cleanup and cmd_4353/cmd_4354 into main"(reconcile mergeは一旦戻された。rb6 cleanup/cmd_4353-4354の再合流は未了として扱う)。
