@@ -10592,3 +10592,23 @@
   causal_chain: "insight triage C1→exactly-once修正→重複配達0"
   origin: "[[insight_triage_C1]] -> [[delivery_exactly_once]] -> [[APPROVE]]"
   timestamp: "2026-09-06T06:17:00+09:00"
+- cmd_id: cmd_karo_hotfix_insight_c2_contract_alignment_20260906
+  review_type: draft
+  verdict: APPROVE
+  verified_files:
+  - "queue/tasks/saizo.yaml:3"
+  confidence: HIGH
+  ambiguity_points: none
+  findings_summary: "hotfix。AC2本(C2 ID再分類+SSOT統合)。矛盾0/契約差0/自己申告通過0"
+  observations:
+  - "事実: C2=gate/report/skill契約不整合。producer/validator/consumer期待値のSSOT統合"
+  operational_simulation:
+    command: "grep -c 'id: AC' queue/tasks/saizo.yaml"
+    expected: "2"
+    actual: "2"
+    result: "PASS"
+  finding_categories: [assumptions, simulation, premortem, ambiguity, adversarial]
+  brainwash_check: "#1no #2no #3no #4no #5no #6no #7no #8no"
+  causal_chain: "insight triage C2→SSOT統合→契約矛盾0"
+  origin: "[[insight_triage_C2]] -> [[contract_alignment]] -> [[APPROVE]]"
+  timestamp: "2026-09-06T06:18:00+09:00"
