@@ -17208,3 +17208,17 @@ sqlite3.Connection.backup()を使うとページ(4096byte)単位のread syscall�
 - **when**: 未設定
 - **how**: 未設定
 - _yaml_field_set_apply_map_scalar/_yaml_field_set_apply/_yaml_field_set_apply_rootの3関数全てがfield_re一致を!replaced guardで1回だけ処理し、以降の同名field再定義は素通しで残す実装だった。運用YAMLに同一fieldが同一block(またはroot)同indentで重複して書かれる状態(stale .bak誤配備等で発生しうる)に対しsetterを実行すると、先頭occurrenceだけ新値へ書き換えるが末尾の旧occurrenceが残り、post-write検証(_yaml_field_set_verify_parsed)はyaml.safe_load後の値を見るため重複keyの「最後勝ち」解決で旧値を読み、期待値と食い違いFATALで書込みが常に失敗し続ける(ファイルは修復されないまま固まる)。1回目の実装はmap_scalar/applyの2レーンだけを直しRC(correction_scope=implementation)を受けた — L498が指す通りyaml_field_setはmap_scalar→apply→apply_rootの複数段fallbackを持つのに、fallback段の一つ(root)を見落としたまま「直した」と判断したのが敗因。教訓: 複数fallback段を持つ関数の一つを直したら、残り全段に同型のbugが無いかを機械的に(grepでfield_re一致箇所を全列挙する等)確認してから完了と判断せよ。1段だけ直して終わるのは部分修正であり、残り段は同じ実測手順(実際に重複させて壊れることを確認)で検証すべきだった
+
+
+### L1749: recon2型の再検証taskでは、前回FAILの真因が本task対象外の別commitにある場合、再実行前にgit logで後続修正の有無を確認すると無駄な重複調査を避けられる
+- **日付**: 2026-09-05
+- **出典**: cmd_karo_recon2_4449_u2_revalidate
+- **記録者**: tobisaru
+- **tags**: [infra,testing,recon,bash]
+- **subdomain**: infra
+- **target_files**: [偵察のみ]
+- **origin**: [[cmd_karo_recon2_4449_u2_revalidate]]
+- **enforcement**: 未自動化
+- **when**: 未設定
+- **how**: 未設定
+- 本taskの前回3回のFAIL(AC1 bc:no)は、本task対象外のcommit 81a77292e(cmd_karo_hotfix_pd142_test_state_isolation)がrun_tests.shへ追加したBASH_ENV state guardの副作用が原因だった。前回報告はdecision_candidateでこの事実を家老へ委譲していたが、その後別commit fc639aaf5(cmd_karo_hotfix_pd142_runner_fixture_alignment)が独立に是正を完了していた。今回はgit log --oneline -- scripts/run_tests.shで対象ファイルの直近コミット履歴を先に確認してから再実行したため、是正済みであることを実行前に把握でき、無駄な同一FAIL再現を避けられた。教訓: recon2/revalidate系taskでは対象外ファイルの真因が疑われる場合、再実行の前に git log --oneline -N -- <真因ファイル> で後続修正の有無を確認する一手を標準化すべき。
