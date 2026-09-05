@@ -17152,3 +17152,17 @@ sqlite3.Connection.backup()を使うとページ(4096byte)単位のread syscall�
 - **when**: 未設定
 - **how**: 未設定
 - AC1の指定数値はtask worktree内ログではなくcontrol rootのlogs/deploy_task.logに保存されていた。task YAMLへ証拠所在を注入し、worktreeログ不在を前提不一致と誤判定しない。
+
+
+### L1745: 正規runnerの状態隔離とpublisher fixtureのSTATE_DIR契約を一致させる
+- **日付**: 2026-09-05
+- **出典**: cmd_karo_recon2_4448_u1_revalidate
+- **記録者**: hanzo
+- **tags**: [infra,testing,bash]
+- **subdomain**: infra
+- **target_files**: [queue/reports/hanzo_report_cmd_karo_recon2_4448_u1_revalidate.yaml]
+- **origin**: [[cmd_karo_recon2_4448_u1_revalidate]]
+- **enforcement**: 未自動化
+- **when**: 未設定
+- **how**: 未設定
+- run_tests.shはBASH_ENVでpublisher_*子プロセスのSHOGUN_STATE_DIRをtask隔離領域へ上書きする。一方test_publisher_queue.batsはsetupで独自STATE_DIRを作り、その配下のrequest数を検証するため、正規runnerでは実装が正常でもfixtureがrunner状態を見ず9/10 FAILになり得る。次回はrunnerの隔離状態をfixtureが期待値にも使う契約を先に固定する。
