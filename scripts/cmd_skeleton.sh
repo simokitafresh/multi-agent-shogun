@@ -286,4 +286,5 @@ cat >&2 <<'GUIDE'
 15. テスト/CI修正cmdはACに全量実行コマンド・FAIL0・SKIP0・中断再開時の成果物引継ぎを、本番DB書込みcmdはrestore手順・実行identity・破壊時復元証跡を固定せよ。cmd_save.shが不足をBLOCKしgate_fire_logへ記録する。
 16. check関数のoriginと防御対象を逆引きするには: docs/research/cmd_save_gate_catalog.md を参照せよ(82check関数の発火origin・防御対象・severity・教訓逆引き一覧。中間レイヤー: 教訓→設計思想カタログ→個別check関数)
 17. estimated_minutesは正数必須。10分超はsplit_decision、15分超はexecution_envをmappingにしてlong_runtime_reason+measured_runtime_secを記入せよ(deploy_task.shのTEN_MIN_CONTRACT)
+18. 2名並行の偵察cmdは parallel_ok(AC 2つ以上)+recon_dual{mode: independent, cross_reference: forbidden, base: fixed_origin_main, shared_context_embargo: karo_release_required} を構造で書け。散文の『独立2系統』だけでは WARN、無ければ BLOCK(scripts/lib/recon_dual_contract.py、2026-09-06 cmd_4480 往復の根治)
 GUIDE
