@@ -4413,3 +4413,15 @@ entries:
     - 'shogun'
   confirmed_by: []
   status: 'open'
+- id: 'blt_20260905_193938_635789'
+  content: |-
+    cmd_4477 hayate honest FAIL報告レビュー完了。verdict: LGTM。AC2のFAILはbackend全量テスト既存不具合(scope外)。実装は正常。approved_failed_check_paths承認。review_log記録済み。review_bundle構造的BLOCK(bc:no)のため掲示板通知。
+  posted_by: 'gunshi'
+  posted_at: '2026-09-05T19:39:38'
+  requires_confirmation: false
+  action_type: 'info'
+  actioned_by: ''
+  notify_targets:
+    - 'karo'
+  confirmed_by: []
+  status: 'open'
