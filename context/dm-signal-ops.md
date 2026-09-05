@@ -118,7 +118,7 @@ cdp_helper.screenshot(port=port, tab_id=tab_id, path="/tmp/dm_signal_screenshot.
 - PF選択: URLパス直指定(`/portfolio/{id}`)を優先。UI操作時はサイドバーPF一覧を開いて対象名を選択
 - 保有シグナル確認: `/signals`
 - L754: WeightedMultiViewMomentumFilterBlock追加はcontext/dm-signal-core.md §4 BB種別分類の即時更新対象（cmd_karo_hotfix_context_dm_core_ga102_20260620）
-<!-- last_synced_lesson: L1606 -->
+<!-- last_synced_lesson: L1620 -->
 - L862: cmd_3771 archive payloadとsnapshotの復元正本を区別する（cmd_3826）
 - L864: LayerTimer新Layer追加時は集計ハブへ同時登録する（cmd_3831）
 - L865: L1/L2/L3 cronは固定時間差や上流ロック解放を完了とみなさず、`EtlLayerStatus.last_success_date`が当日になった後だけ次層を実行せよ。cmd_3685でL0(sync-prices)が19s→~700-850sに増大しL1の固定5分起動が409で失敗、L1だけのロック待ちではL2/L3に障害が移るため、`scripts/etl_layer_sync_wait.sh`でL1→L2→L3を同一の実成功契約に統一した（cmd_3832、`docs/research/cmd_3832_sync_tickers_recon.md`）
@@ -152,6 +152,20 @@ cdp_helper.screenshot(port=port, tab_id=tab_id, path="/tmp/dm_signal_screenshot.
 - L1590: partial-month FoFはprice clockとselection clockを別々に照合する（cmd_karo_recon2_rb6_saved_display_audit_20260813）
 - L1591: 履歴parityのactive母集団は現在visibilityでなく固定run cohortを使う（cmd_karo_recon2_rb6_reverse_parity_full_20260813）
 - L1595: ledger構築endpointのcron接続を保護有効化前に検証する（cmd_4319）
+- L1607: FoFのウェイト方式は終端ブロック型(is_ward)だけで判定するな。選択ブロックのcontext.final_weights書込みも確認せよ（cmd_4480_recon2）
+- L1608: FoFのウェイト方式は終端ブロック型(is_ward)だけで判定するな。選択ブロックのcontext.final_weights書込みも確認せよ（cmd_4480_recon2）
+- L1609: FoFのウェイト方式は終端ブロック型(is_ward)だけで判定するな。選択ブロックのcontext.final_weights書込みも確認せよ（cmd_4480_recon2）
+- L1610: FoFのウェイト方式は終端ブロック型(is_ward)だけで判定するな。選択ブロックのcontext.final_weights書込みも確認せよ（cmd_4480_recon2）
+- L1611: FoFのウェイト方式は終端ブロック型(is_ward)だけで判定するな。選択ブロックのcontext.final_weights書込みも確認せよ（cmd_4480_recon2）
+- L1612: FoFのウェイト方式は終端ブロック型(is_ward)だけで判定するな。選択ブロックのcontext.final_weights書込みも確認せよ（cmd_4480_recon2）
+- L1613: FoFのウェイト方式は終端ブロック型(is_ward)だけで判定するな。選択ブロックのcontext.final_weights書込みも確認せよ（cmd_4480_recon2）
+- L1614: FoFのウェイト方式は終端ブロック型(is_ward)だけで判定するな。選択ブロックのcontext.final_weights書込みも確認せよ（cmd_4480_recon2）
+- L1615: FoFのウェイト方式は終端ブロック型(is_ward)だけで判定するな。選択ブロックのcontext.final_weights書込みも確認せよ（cmd_4480_recon2）
+- L1616: FoFのウェイト方式は終端ブロック型(is_ward)だけで判定するな。選択ブロックのcontext.final_weights書込みも確認せよ（cmd_4480_recon2）
+- L1617: FoFのウェイト方式は終端ブロック型(is_ward)だけで判定するな。選択ブロックのcontext.final_weights書込みも確認せよ（cmd_4480_recon2）
+- L1618: FoFのウェイト方式は終端ブロック型(is_ward)だけで判定するな。選択ブロックのcontext.final_weights書込みも確認せよ（cmd_4480_recon2）
+- L1619: FoFのウェイト方式は終端ブロック型(is_ward)だけで判定するな。選択ブロックのcontext.final_weights書込みも確認せよ（cmd_4480_recon2）
+- L1620: FoFのウェイト方式は終端ブロック型(is_ward)だけで判定するな。選択ブロックのcontext.final_weights書込みも確認せよ（cmd_4480_recon2）
 
 ## §36 API認証
 - admin系API: Basic Auth(`ADMIN_API_KEY`)

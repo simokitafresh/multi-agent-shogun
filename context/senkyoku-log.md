@@ -1680,3 +1680,5 @@
 - 2026-09-05 03:07 kagemaru cmd_karo_hotfix_release_legacy_nocode_recon_normal CLEAR準備: 空commit_hash/files_modified=N/Aのlegacy reconをtree証跡・task契約・明示no-commitの積でno-code identityへ移行。baseline BLOCK再現後、4分類と既存gate suite 323/323 PASS・SKIP0、commit b2ad7ad17、report gate PASS。
 - 2026-09-05 12:35 kagemaru cmd_karo_recon2_ga578_context_freshness_normal完了: dca83523研究trigger 1/1影響あり、発火前ALERT 1件→3043ea89反映後gate OK。同型context候補6/6と外部source更新trigger欠落を特定、関連unit 15/15・67/67・9/9 PASS・SKIP0、報告gate PASS。
 - 2026-09-06 00:50 hayate cmd_karo_recon_k2_deploy_cost_20260905_normal完了: 固定snapshot 51配備/227関数、重いPython caller 3件、隔離probe128件rc不一致0、計測負荷12.991msを確定。no-code recon report gate PASS、ninja_done通知済み。
+- 2026-09-06 01:38 kagemaru cmd_4481_full完了: F1 CSV 23,175行からlayer/month/suspect別1,212群・4,493行を生成。Σweight/pf_count違反0、contract 2/2 PASS・SKIP0、commit 1deb06fe、report gate PASS。
+- 2026-09-06 02:42 kagemaru cmd_4481_full RC再提出完了: 公開cherry-pick e045d3372a7cffe7ec589a4b2a6699c1a71957beへreport/cross-repo identityを同期(base e7d保持)。公開HEAD receipt 2/2 PASS・SKIP0、成果物差分0、report gate PASS。
