@@ -1257,6 +1257,104 @@ if [[ -n "${command:-}" && "$command" != *'heavy_job_admission.sh'* && "$command
     fi
 fi
 
+# === Guard 17.5: unbounded CPU loop admission ===
+# cmd_karo_hotfix_unbounded_cpu_repro_guard: a quoted fixture describing a
+# loop is harmless, but executing an inline `while :; do ...; done` without a
+# timeout can leave background CPU consumers outside the pane after the parent
+# shell exits.  Classify shell argv/segments rather than raw substrings so
+# messages, heredocs, and script-file invocations stay allowed.
+if [[ -n "${command:-}" ]]; then
+    _unbounded_cpu_loop_reason="$({
+        COMMAND="$command" PROJECT_ROOT="$SCRIPT_DIR" PYTHONPATH="$SCRIPT_DIR/scripts/lib${PYTHONPATH:+:$PYTHONPATH}" python3 - <<'PY'
+import os
+import re
+from pathlib import PurePosixPath
+
+from shell_command_segments import segment_tokens
+
+
+_DURATION = re.compile(r"^[0-9]+(?:\.[0-9]+)?[smhd]?$")
+_SHELLS = {"bash", "sh", "dash", "zsh", "ksh"}
+
+
+def _clean(token):
+    return token.lstrip("(").rstrip(")")
+
+
+def _first_command(tokens):
+    index = 0
+    if index < len(tokens) and PurePosixPath(tokens[index]).name == "env":
+        index += 1
+        while index < len(tokens) and (tokens[index].startswith("-") or "=" in tokens[index]):
+            index += 1
+    while index < len(tokens) and "=" in tokens[index] and not tokens[index].startswith(("/", "./")):
+        index += 1
+    if index < len(tokens) and tokens[index] in {"command", "exec"}:
+        index += 1
+    return index
+
+
+def _has_timeout_bound(tokens):
+    index = _first_command(tokens)
+    if index >= len(tokens) or PurePosixPath(tokens[index]).name != "timeout":
+        return False
+    for token in tokens[index + 1:]:
+        if token.startswith("-"):
+            continue
+        return bool(_DURATION.fullmatch(token))
+    return False
+
+
+def _has_colon_loop(segments):
+    flattened = [_clean(token) for segment in segments for token in segment]
+    for index, token in enumerate(flattened[:-1]):
+        if token != "while" or flattened[index + 1] != ":":
+            continue
+        tail = flattened[index + 2:]
+        if "do" in tail and "done" in tail:
+            return True
+    return False
+
+
+def _shell_c_payload(tokens):
+    index = _first_command(tokens)
+    if index >= len(tokens) or PurePosixPath(tokens[index]).name not in _SHELLS:
+        return None
+    for option_index in range(index + 1, len(tokens)):
+        if tokens[option_index] == "-c" and option_index + 1 < len(tokens):
+            return tokens[option_index + 1]
+    return None
+
+
+def _has_unbounded_loop(command, depth=0):
+    if depth > 3:
+        return False
+    segments = segment_tokens(command)
+    if segments is None:
+        return False
+    # A real inline loop has standalone shell tokens. Quoted descriptions are
+    # kept as one argv token by segment_tokens and therefore cannot match.
+    if _has_colon_loop(segments):
+        return True
+    for segment in segments:
+        if _has_timeout_bound(segment):
+            continue
+        nested = _shell_c_payload(segment)
+        if nested is not None and _has_unbounded_loop(nested, depth + 1):
+            return True
+    return False
+
+
+if _has_unbounded_loop(os.environ.get("COMMAND", "")):
+    print("BLOCK(unbounded-cpu-loop): 有界終了条件のないinline while : loopは禁止。timeout <秒> で囲むか、daemon scriptファイルを起動せよ。")
+PY
+    } 2>/dev/null || true)"
+    if [[ -n "$_unbounded_cpu_loop_reason" ]]; then
+        emit_deny "$_unbounded_cpu_loop_reason"
+    fi
+    unset _unbounded_cpu_loop_reason
+fi
+
 # === Guard 18: git stash mutation block (shared worktree protection) ===
 # cmd_karo_ci_red_remaining_unit_202607151950: このタスク系列は複数忍者が
 # 分離worktreeを持たず共有main working treeへ直接作業する。トップレベルの

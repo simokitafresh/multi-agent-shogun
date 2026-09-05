@@ -391,6 +391,46 @@ else
     printf '  FAIL [memory row cache invalidation] before=%s after=%s\n' "$first_cache_output" "$second_cache_output"
 fi
 
+# test_necessity: the production PreToolUse entry point must deny inline
+# unbounded CPU loops before execution while allowing timeout-bounded loops and
+# quoted fixture text. Invoke only the classifier; no loop process is started.
+expect_production_hook() {
+    local mode="$1" desc="$2" cmd="$3" payload output rc
+    TOTAL=$((TOTAL + 1))
+    payload="$(python3 - "$cmd" <<'PY'
+import json, sys
+print(json.dumps({"tool_name": "Bash", "tool_input": {"command": sys.argv[1]}}))
+PY
+)"
+    output="$(printf '%s' "$payload" | env BATS_TEST_FILENAME="${BATS_TEST_FILENAME:-test_hooks.sh}" TMUX_PANE= TMUX_AGENT_ID=hanzo bash "$REPO_ROOT/.claude/hooks/pre-bash-combined.sh" 2>/dev/null)" && rc=$? || rc=$?
+    if [[ "$mode" == "block" ]]; then
+        if [[ $rc -eq 2 && "$output" == *"BLOCK(unbounded-cpu-loop)"* ]]; then
+            PASS=$((PASS + 1))
+        else
+            FAIL=$((FAIL + 1))
+            printf "  FAIL [expected production BLOCK] %s\n    cmd: %s\n    exit=%d output=%s\n" "$desc" "$cmd" "$rc" "$output"
+        fi
+    elif [[ $rc -eq 0 && "$output" != *"BLOCK(unbounded-cpu-loop)"* ]]; then
+        PASS=$((PASS + 1))
+    else
+        FAIL=$((FAIL + 1))
+        printf "  FAIL [expected production ALLOW] %s\n    cmd: %s\n    exit=%d output=%s\n" "$desc" "$cmd" "$rc" "$output"
+    fi
+}
+
+echo "--- Guard 17.5: unbounded CPU loop admission ---"
+expect_production_hook block "raw while-colon loop" "while :; do :; done"
+expect_production_hook block "for/background/while-colon loop" "for i in 1 2; do while :; do :; done & done"
+expect_production_hook block "parenthesized background loop" "(while :; do :; done) &"
+expect_production_hook block "bash -c loop" "bash -c 'while :; do :; done'"
+expect_production_hook block "env bash -c loop" "env bash -c 'for i in 1; do while :; do :; done; done'"
+expect_production_hook block "sh -c loop" "sh -c 'while :; do echo busy; done'"
+expect_production_hook allow "timeout-bounded loop" "timeout 1 bash -c 'while :; do :; done'"
+expect_production_hook allow "normal while-read" 'while IFS= read -r line; do printf "%s\\n" "$line"; done < input'
+expect_production_hook allow "daemon script file" "bash scripts/daemon.sh"
+expect_production_hook allow "single colon" ":"
+expect_production_hook allow "quoted loop fixture" "printf '%s\\n' 'while :; do :; done'"
+
 # ─── Safe commands (should all pass through) ───
 echo "--- Safe commands (all should ALLOW) ---"
 expect_allow "ls"                     "ls -la"
