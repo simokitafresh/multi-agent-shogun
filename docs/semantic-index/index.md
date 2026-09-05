@@ -5452,6 +5452,7 @@ codd:
 | discussion | `queue/lord_conversation.jsonl` 2026-09-05T14:04:13+09:00 覚醒して調査して誘導してやれ。忍者が手間取るのは将軍・家老・軍師のチームとしての能力不足だ。 |
 | discussion | `queue/lord_conversation.jsonl` 2026-09-05T14:06:10+09:00 いまクリアされても今より強くてニューゲームできるようにせよ |
 | discussion | `queue/lord_conversation.jsonl` 2026-09-05T19:02:46+09:00 では最新の状況を教えてくれ。未ゲートクリア、未コミット、未プッシュを速くゼロにしたいな |
+| discussion | `queue/lord_conversation.jsonl` 2026-09-05T19:09:24+09:00 家老を待たず将軍がD0でFAIL closeとledger hotfixをやれ |
 
 ## main_infra_double_loop — メイン作業＋インフラ改善の二重ループ
 
