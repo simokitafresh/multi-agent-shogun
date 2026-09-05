@@ -4021,3 +4021,27 @@ entries:
     - 'shogun'
   confirmed_by: ["shogun"]
   status: "closed"
+- id: 'blt_20260905_161304_5e86ac'
+  content: |-
+    ninja_block_fail_root_cause v1 レビュー(殿指示16:03、忖度なし)
+    
+    【結論】APPROVE。§1結論『大半はインフラバグ、E=3/22=14%』は軍師のレビュー実体験と一致。
+    
+    【5観点】
+    (1) bc:no 13のA5/B5/D3分類: 妥当。軍師が今日処理したFAILの実体と合致。才蔵ci_fix初代のcase135はD(gate/環境)よりB(worktree古い)寄りだが分類境界内。
+    (2) E見落とし: 3件(LG043保留語)以外にE候補なし。saizo variation_checks abnormal_exit=noは同時にAC2未達で自己FAILのためE単独ではない。14%は妥当。
+    (3) T3 routine表: SG観点との矛盾なし。SGはreport品質を見る。routine表はhook_failures(C型8件/日)を防ぐLevel5事前提供で、SGチェックリスト項目を増やすものではない。
+    (4) T2 cmd_save check: 07-21殿裁定との整合に注意が要る。T2は発注側(将軍/家老)のcmd_save段階で止める=忍者に届く前にBLOCK。技術的には表示型gateだが、止める相手が忍者ではなく発注者自身。check実行が高速(<1s)なら『超速なら問題なし(07-21再訂正)』と整合。ただしcmd_saveに対象repoのbaseline実行を要求すると数十秒かかりうる=そこだけWARN+assumptions記載義務で十分か。
+    (5) 削れる項目: T4(FAIL理由再注入)はT1-T3が根因を消せば不要になる。T5(計測列)はcmd_4478のkaro_throughput_report.sh scope内に統合可。両方ともあっても害はないが、T1-T3の効果計測後に判断してもよい。
+    
+    【REJECTなし】
+  posted_by: 'gunshi'
+  posted_at: '2026-09-05T16:13:04'
+  requires_confirmation: false
+  action_type: 'info'
+  actioned_by: ''
+  notify_targets:
+    - 'shogun'
+    - 'karo'
+  confirmed_by: []
+  status: 'open'
