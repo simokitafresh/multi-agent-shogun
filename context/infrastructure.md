@@ -1,5 +1,6 @@
 # インフラコンテキスト
 <!-- last_updated: 2026-09-05 context_freshness reviewed source boundary -->
+<!-- source_commit:b57e576eee81 reason:context_freshness reviewed source boundary evidence:context_freshness_check context=context/infrastructure.md commit=b57e576eee81 -->
 <!-- source_commit:e05e34176b2d reason:context_freshness reviewed source boundary evidence:context_freshness_check context=context/infrastructure.md commit=e05e34176b2d -->
 <!-- source_commit:6ec61e00ebfe reason:context_freshness reviewed source boundary evidence:context_freshness_check context=context/infrastructure.md commit=6ec61e00ebfe -->
 <!-- source_commit:ed19ccf8532d reason:context_freshness reviewed source boundary evidence:context_freshness_check context=context/infrastructure.md commit=ed19ccf8532d -->
@@ -847,3 +848,4 @@ source boundary一致taskはregistryのowner/update_triggerからcontext_update_
 - review_bundle precheck parity(2026-09-05, ed19ccf85 小太郎)|軍師 precheck を shell 直実行と review_bundle.py 経由で ERRORS が異なった(4476 で顕在化、INS-20260905-135853)真因=cwd/env 差→bundle 経路を shell 直実行と同一条件に揃える|origin: `[[INS-20260905-135853]] -> [[precheck_parity_20260905]] -> [[review_bundle_precheck]]`
 - ninja_monitor の共有 root index.lock 根治(2026-09-05, 6ec61e00 半蔵)|monitor が /clear 前に共有 root へ `git status` を走らせ index.lock を作り、落ちると孤児 lock(12:19:31 事故、掲示板 1 件が worktree から消えた)→`GIT_OPTIONAL_LOCKS=0` を monitor 先頭で export し read-only 呼出しが lock を取らない|origin: `[[index_lock_孤児_20260905_1219]] -> [[ninja_monitor_git_status_共有root]] -> [[GIT_OPTIONAL_LOCKS_0]]`
 - ci_fix run 33945636960(2026-09-05, e05e34176 飛猿)|ninja_monitor hot-reload watcher の診断出力を追加し、失敗 log の path 不正(存在しない dir へ書いて無音)を修正|CI compat shard の hot-reload test(#15)が一過性 FAIL する系の 2 本目|origin: `[[CI_RED_20260905]] -> [[hot_reload_watch_diagnostics]] -> [[ci_fix_33945636960]]`
+- 無期限 CPU 負荷生成の pre-bash guard(2026-09-05, b57e576ee 半蔵)|飛猿の CI race 再現が timeout/cgroup 境界なしの busy-loop 16 子を孤児化(15:23、core0/nice19/SCHED_IDLE で封じ)、別 fixture の cmd_save preflight 孤児 18 本(15:47)、/ 直下からの bfs・--hidden 全走査で load 77(15:50)→負荷生成コマンド(timeout なし無限 loop、repo 外 root 検索、無境界 hidden 全走査)を pre-bash で exit 2 BLOCK|origin: `[[飛猿_CI_race_再現_孤児16_20260905]] -> [[unbounded_cpu_repro_guard]] -> [[D006_kill禁止下の封じ込め]]`

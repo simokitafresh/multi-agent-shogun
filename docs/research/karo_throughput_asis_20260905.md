@@ -198,6 +198,7 @@ schema 名変更(v2)/新台帳 file/cron 登録/watcher の held 解消/合流�
 | 15:06 | 殿『追記でなく再構築、粒度を小さく、情報量を減らすな』→本 v2。v1 全文は git 履歴(9aa586607 まで)。 |
 | 15:07 | 殿『家老を介する流れはフローチャートが必要』→§1.0。 |
 | 15:14 | 軍師 v2 確認: 追加所見なし、配備可。 |
+| 16:25 | 配達 held の忍者側実例(家老 GA-582 報告): 小太郎への scope 承認 16:16 が配達遅延で未読のまま、16:24 に旧 scope で FAIL 報告=8 分の held が 1 FAIL ループを生んだ。§3.1 の順位 1 は家老宛だけでなく忍者宛にも効く。 |
 | 15:15 | 家老 v2 差分レビュー REJECT 継続 5 点(c2a の既存 EXIT trap 上書き/watcher の async PID 無 drain/tmux target 無指定の誤帰属/helper_missing は rc 0・SKIP で test と矛盾/--as-of 別値が同 file を上書き)。将軍が現物で 5 点とも確認(trap L20=1、ASYNC_PIDS 追記=1・watcher の drain=0、display-message target=0、SKIP rc 0=2)→§6.1 行 4/6/7/8・§6.2・§6.4 へ採用。 |
 
 ## §10 因果リンク
