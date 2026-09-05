@@ -6250,3 +6250,38 @@
   verdict: LGTM
   verified_files:
   - scripts/gates/gate_gunshi_report_precheck_engine.py:1
+- cmd_id: cmd_karo_hotfix_pd141_workaround_signature
+  review_type: report
+  verdict: FAIL
+  report_ninja: hayate
+  report_task_id: cmd_karo_hotfix_pd141_workaround_signature_normal
+  report_path: queue/reports/hayate_report_cmd_karo_hotfix_pd141_workaround_signature.yaml
+  report_id: rpt-00918724-99f8-40e0-ad14-5377342790fa
+  report_identity_version: 2
+  gate_prediction: BLOCK
+  gate_prediction_reason: "lessons_useful契約外LS-A09/LS-A11"
+  finding_categories:
+  - assumptions
+  - numbers
+  - premortem
+  - adversarial
+  - ambiguity
+  observations:
+  - "事実1: lessons_useful LS-A09/LS-A11がtask契約外(extra)"
+  - "事実2: 実装自体は妥当(4 signature分離)"
+  - "adversarial: N/A"
+  - "ambiguity: なし"
+  fail_reasons:
+  - "lessons_useful契約外→BLOCK"
+  causal_chain: "自発lesson使用→契約外extra→gate BLOCK→FAIL"
+  brainwash_check: "#1no #2no #3no #4no #5no #6no #7no #8no"
+  verified_files:
+  - "scripts/karo_workaround_log.sh:1"
+  step3_5_verified: true
+  origin: "[[cmd_karo_hotfix_pd141_workaround_signature]] -> [[lessons_useful契約外]] -> [[FAIL]]"
+  operational_simulation:
+    command: "precheck"
+    expected: "BLOCK"
+    actual: "BLOCK"
+    result: PASS
+  timestamp: "2026-09-05T10:41:00+09:00"
