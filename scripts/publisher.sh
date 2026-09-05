@@ -247,11 +247,16 @@ root_sync_attr_driver() {
 # shared checkout is never merged/rebased/cherry-picked: drivers operate on
 # explicit blobs, then the ref and index advance independently.
 sync_root() {
-    local root="$1" tip="$2" dirty collision head changed_path dirty_path overlap_path
+    local root="$1" tip dirty collision head changed_path dirty_path overlap_path
     local -a changed_paths=() dirty_paths=() overlap_paths=() merge_results=()
     local -A dirty_set=()
     SYNC_ROOT_SKIP_REASON=""
     SYNC_ROOT_SKIP_PATHS=""
+    tip="$(git -C "$root" rev-parse "${2}^{commit}" 2>/dev/null)" || {
+        SYNC_ROOT_SKIP_REASON="tip_unresolved"
+        echo "publisher: root sync BLOCK tip_unresolved tip=$2" >&2
+        return 32
+    }
     head="$(git -C "$root" rev-parse HEAD)"
     dirty="$(tracked_dirty_count "$root")"
     collision="$(root_has_untracked_collision "$root" "$tip")"
