@@ -7261,7 +7261,7 @@
 - cmd_id: cmd_karo_ci_fix_33939652526
   review_type: report
   gate_result: "CLEAR"
-  gate_synced_at: "2026-09-05T14:55:51+09:00"
+  gate_synced_at: "2026-09-05T14:57:34+09:00"
   verdict: FAIL
   gate_prediction: BLOCK
   gate_prediction_reason: "bc:no検出; status=failed"
@@ -7486,7 +7486,7 @@
     verdict: APPROVE
 - cmd_id: cmd_karo_ci_fix_33939652526
   gate_result: "CLEAR"
-  gate_synced_at: "2026-09-05T14:55:51+09:00"
+  gate_synced_at: "2026-09-05T14:57:34+09:00"
   review:
     adversarial_review: PASS — ninja_monitor.shのowner再検証継続は親世代存続確認付き。snapshot lock隔離はテスト信頼性向上。変更範囲は2ファイルのみ
     ambiguity_points: none
