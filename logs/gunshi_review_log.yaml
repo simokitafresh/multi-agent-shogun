@@ -7885,3 +7885,43 @@
   - .claude/hooks/pre-bash-combined.sh:1
   - scripts/hooks/test_hooks.sh:1
   - tests/unit/test_pre_bash_combined.bats:32
+- ambiguity_points: none
+  brainwash_check: '#1no #2no #3no #4no #5no #6no #7no #8no 偵察report。GA-579同根を二値判定'
+  cmd_id: cmd_karo_recon2_ga580_prepush_case8
+  cmd_spec_summary:
+    acceptance_criteria_count: 2
+    project: infra
+    scope: GA-580 pre-push case8偵察(GA-579同根判定)
+  finding_categories:
+  - assumptions
+  - numbers
+  - simulation
+  - premortem
+  - adversarial
+  - ambiguity
+  gate_prediction: CLEAR
+  gate_prediction_reason: all checks passed
+  observations:
+  - GA-580 case8 = GA-579と同根(外部詳細参照欠落)。候補探索43.5s膨張→pre-push 60s timeoutへ波及
+  - 2x2隔離実験で外部file有/無×project mapping有/無を確認。実装変更なし(偵察)
+  - 偵察デフォルト品質5要件(変更対象/波及先/テスト/エッジケース/依存順序)を満たす
+  operational_simulation:
+    actual: GA-579同根、外部詳細参照欠落
+    command: grep -c 'GA-579' queue/reports/hayate_report_cmd_karo_recon2_ga580_prepush_case8.yaml
+    expected: 同根判定の記載あり
+    result: PASS
+  review_type: report
+  reviewed_at: '2026-09-05T16:10:00+09:00'
+  reviewer: gunshi
+  sg_checklist:
+    SG1_ac_coverage: PASS
+    SG2_test_pass: PASS
+    SG3_parity: N/A
+    SG4_no_regression: PASS
+    SG5_lesson_candidate: PASS
+    SG6_code_quality: PASS
+    SG7_gate_prediction: PASS
+  step3_5_verified: true
+  verdict: APPROVE
+  verified_files:
+  - scripts/gates/gate_context_freshness.sh:1
