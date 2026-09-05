@@ -6252,6 +6252,8 @@
   - scripts/gates/gate_gunshi_report_precheck_engine.py:1
 - cmd_id: cmd_karo_hotfix_pd141_workaround_signature
   review_type: report
+  gate_result: "CLEAR"
+  gate_synced_at: "2026-09-05T10:48:22+09:00"
   verdict: FAIL
   report_ninja: hayate
   report_task_id: cmd_karo_hotfix_pd141_workaround_signature_normal
