@@ -233,3 +233,33 @@ BATS
     [[ "$output" == *"tests=1/1"* ]]
     [[ "$output" == *"skip=0"* ]]
 }
+
+# test_necessity: a fixture cannot redirect a child bash to the live publisher
+# state by exporting an arbitrary SHOGUN_STATE_DIR before invoking a script.
+# regression_justification: PD-142 requires the runner boundary to remain safe
+# even when the fixture deliberately supplies the production state path.
+@test "run_tests child bash cannot be redirected to live publisher state" {
+    local live="$HOME/.local/share/multi-agent-shogun"
+    local fixture="$BATS_TEST_TMPDIR/publisher-state-override-probe.bats"
+    cat > "$fixture" <<'BATS'
+#!/usr/bin/env bats
+
+@test "explicit live state override is replaced at the bash boundary" {
+    live="$HOME/.local/share/multi-agent-shogun"
+    run env SHOGUN_STATE_DIR="$live" bash -c '
+        printf "state=%s\n" "$SHOGUN_STATE_DIR"
+        bash "$PROJECT_ROOT/scripts/lib/publisher_event.sh" append dry_run_publish cmd_state_isolation_override_probe 0 state_override_probe
+    '
+    [ "$status" -eq 0 ]
+    [ -s "$RUN_TESTS_STATE_DIR/publish_queue/events.jsonl" ]
+    grep -q 'cmd_state_isolation_override_probe' "$RUN_TESTS_STATE_DIR/publish_queue/events.jsonl"
+    ! grep -q 'cmd_state_isolation_override_probe' "$live/publish_queue/events.jsonl" 2>/dev/null
+}
+BATS
+
+    run env BATS_CACHE=0 bash "$PROJECT_ROOT/scripts/run_tests.sh" file "$fixture"
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"TEST_RECEIPT_PASS"* ]]
+    [[ "$output" == *"tests=1/1"* ]]
+    [[ "$output" == *"skip=0"* ]]
+}

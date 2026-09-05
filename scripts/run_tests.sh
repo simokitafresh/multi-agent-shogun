@@ -137,6 +137,7 @@ run_tests_init_state_isolation() {
             printf 'BLOCK: isolated test inbox initialization failed: %s\n' "$inherited_inbox_root" >&2
             return 2
         }
+        run_tests_write_state_guard "$inherited_state"
         export SHOGUN_TEST_INBOX_ROOT="$inherited_inbox_root"
         export SHOGUN_TEST_MODE=1
         return 0
@@ -191,6 +192,7 @@ run_tests_init_state_isolation() {
         printf 'BLOCK: test inbox initialization failed: %s\n' "$state_dir" >&2
         return 2
     }
+    run_tests_write_state_guard "$state_dir"
     export SHOGUN_STATE_DIR="$state_dir"
     export RUN_TESTS_STATE_DIR="$state_dir"
     export RUN_TESTS_PRODUCTION_ROOT="${RUN_TESTS_PRODUCTION_ROOT:-$REPO_ROOT}"
@@ -199,6 +201,36 @@ run_tests_init_state_isolation() {
     export RUN_TESTS_STATE_ISOLATED=1
     printf 'TEST_STATE_ISOLATION mode=%s identity=%s state_dir=%s inbox_root=%s\n' \
         "$mode" "$identity" "$state_dir" "$state_dir/queue/inbox" >&2
+}
+
+# A fixture can intentionally export a different SHOGUN_STATE_DIR before
+# launching a child bash.  Environment inheritance alone cannot prevent that
+# child from returning to the live state root.  BASH_ENV is sourced by every
+# non-interactive bash child, so rewrite the canonical test state at that
+# boundary while leaving the fixture's own shell free to inspect/override its
+# local variable.  This keeps the guard effective for `bash script.sh`,
+# `bash -c`, and nested run_tests invocations alike.
+run_tests_write_state_guard() {
+    local state_dir="$1"
+    local guard="${state_dir}/run_tests_state_guard.sh"
+    local inbox_root="${state_dir}/queue/inbox"
+    umask 077
+    {
+        printf 'case "${0##*/}" in\n'
+        printf '  publisher_event.sh|publisher_queue.sh|publisher_admit.sh|publisher.sh|publish_artifact.sh)\n'
+        printf '    export SHOGUN_STATE_DIR=%q\n' "$state_dir"
+        printf '    export RUN_TESTS_STATE_DIR=%q\n' "$state_dir"
+        printf '    export SHOGUN_TEST_INBOX_ROOT=%q\n' "$inbox_root"
+        printf '    export SHOGUN_TEST_MODE=1\n'
+        printf '    export RUN_TESTS_STATE_ISOLATED=1\n'
+        printf '    ;;\n'
+        printf 'esac\n'
+    } > "$guard" || {
+        printf 'BLOCK: test state guard initialization failed: %s\n' "$guard" >&2
+        return 2
+    }
+    export RUN_TESTS_STATE_GUARD="$guard"
+    export BASH_ENV="$guard"
 }
 
 snapshot_test_tree() {
