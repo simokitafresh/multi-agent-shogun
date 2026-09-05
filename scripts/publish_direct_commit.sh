@@ -88,8 +88,18 @@ publish_isolated_cherry_pick() {
         git clone -q --reference "$root" --branch main "$url" "$work/clone"
         cd "$work/clone"
         git fetch -q "$root" "$commit_hash"
-        git -c user.name=shogun -c user.email=shogun@shogun.local cherry-pick -x "$commit_hash" >/dev/null
-        git push -q origin HEAD:main
+        before="$(git rev-parse HEAD)"
+        # `set -e` is suspended inside a `( ... ) || rc=$?` list, so every step
+        # must fail explicitly. 2026-09-06 01:20: a conflicting cherry-pick
+        # printed "error: could not apply" yet fell through to push+echo and
+        # reported a false "published" with origin/main unchanged.
+        if ! git -c user.name=shogun -c user.email=shogun@shogun.local cherry-pick -x "$commit_hash" >/dev/null 2>&1; then
+            echo "publish_direct_commit: cherry-pick conflict for ${commit_hash:0:9}: $(git diff --name-only --diff-filter=U | tr '\n' ' ')" >&2
+            git cherry-pick --abort >/dev/null 2>&1 || true
+            exit 9
+        fi
+        [ "$(git rev-parse HEAD)" != "$before" ] || { echo "publish_direct_commit: cherry-pick produced no commit for ${commit_hash:0:9}" >&2; exit 9; }
+        git push -q origin HEAD:main || exit 9
         echo "publish_direct_commit: cherry-picked ${commit_hash:0:9} -> origin/main $(git rev-parse --short HEAD)"
     ) || rc=$?
     rm -rf "$work"
