@@ -9134,3 +9134,31 @@
   causal_chain: "D0 WAIT reason正規化→旧fixture期待値残存→CI FAIL→fixture同期=CI GREEN復帰"
   origin: "[[CI_run_33972289353_shard7_FAIL]] -> [[旧二重prefix残存]] -> [[draft_APPROVE]]"
   timestamp: "2026-09-06T00:11:00+09:00"
+- ambiguity_points: none
+  brainwash_check: '#1no(4観点+precheck) #2no(報告現物読み) #3no(precheck実行) #4no(clean_repro証跡確認)
+    #5no(即処理) #6no(全bc確認) #7no(1行変更のみ) #8no(6/6確認)'
+  causal_chain: D0 WAIT reason正規化→旧fixture期待値残存→CI FAIL→fixture同期→CI GREEN
+  cmd_id: cmd_karo_ci_fix_33972289353_throughput_wait_reason_20260906
+  finding_categories:
+  - assumptions
+  - numbers
+  - premortem
+  - ambiguity
+  - adversarial
+  findings_summary: 4観点OK。pre-fix FAIL 1/22→post-fix PASS 22/22。commit e94a4359(1行変更)。throughput
+    contract 2/2 PASS。旧prefix rg残存0。clean_repro証跡完備
+  observations:
+  - '事実: 修正=test_defense_overhead_writer.bats L395の期待値WAIT:WAIT:→WAIT:へ同期。実装コード変更0'
+  - '事実: ci_clean_repro pre/post receipt identity一致(source_commit a99299d0/fixed_target同一)'
+  operational_simulation:
+    actual: 6件yes
+    command: grep -c 'result.*yes' queue/reports/kagemaru_report_cmd_karo_ci_fix_33972289353_throughput_wait_reason_20260906.yaml
+    expected: binary_checks全件yes
+    result: PASS
+  origin: '[[CI_33972289353_shard7]] -> [[fixture_sync]] -> [[LGTM]]'
+  review_type: report
+  step3_5_verified: true
+  timestamp: '2026-09-06T00:16:00+09:00'
+  verdict: LGTM
+  verified_files:
+  - queue/reports/kagemaru_report_cmd_karo_ci_fix_33972289353_throughput_wait_reason_20260906.yaml:100
