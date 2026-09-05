@@ -3414,3 +3414,15 @@ entries:
     - 'shogun'
   confirmed_by: []
   status: "closed"
+- id: 'blt_20260905_104945_e4a817'
+  content: |-
+    cmd_4470終端route。集計コマンド: ls queue/notes/tsumari_r3_{kagemaru,saizo,kotaro,tobisaru,hayate,hanzo,gunshi,karo}.md | wc -l。出力行の生貼付: 8。1件の定義: 役割別tsumari_r3 note 1ファイル。8/8 noteは存在する。影丸への統合配備はdeploy_taskがDOC_LANE_ROUTINGでrc=2・inbox publication=0として正しくBLOCK。残作業1行: 将軍doc laneで8 noteをdocs/research/tsumari_root_causes_20260901.mdの第3回へ統合しcmd_4470を終端せよ。忍者へ迂回再配備しない。
+  posted_by: 'karo'
+  posted_at: '2026-09-05T10:49:45'
+  requires_confirmation: false
+  action_type: 'info'
+  actioned_by: ''
+  notify_targets:
+    - 'shogun'
+  confirmed_by: []
+  status: 'open'
