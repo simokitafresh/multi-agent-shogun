@@ -391,6 +391,7 @@ codd:
 | causal | `cmd_karo_hotfix_deploy_external_worktree_timeout` files_modified: [[dm_signal_pf_restore_guardrails]] |
 | causal | `cmd_karo_ci_fix_33927699707` files_modified: [[dm_signal_pf_restore_guardrails]] |
 | causal_chain | `[[cmd_karo_hotfix_ga161_obsidian_link_context_freshness_202607021348]]` (L926) |
+| discussion | `queue/lord_conversation.jsonl` 2026-09-05T12:39:34+09:00 session_save_20260905_1245(復帰点、先に session_save_20260905_1236 を読め): loop 12:34 追補。共有 root の publish が rc=8 ×4 の真因 2 つ=(a) |
 
 ## gs_recalibration_plan — GS再キャリブレーション計画
 
