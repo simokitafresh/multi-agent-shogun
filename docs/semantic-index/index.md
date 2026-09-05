@@ -14190,6 +14190,7 @@ codd:
 | causal_chain | `[[cmd_4434]]` (L1688) |
 | causal_chain | `[[cmd_karo_hotfix_u1_publisher_queue_fifo_order_202609022136]]` (L1708) |
 | causal_chain | `[[cmd_karo_hotfix_run_tests_task_mode_nested_guard_202609030347]]` (L1714) |
+| discussion | `queue/lord_conversation.jsonl` 2026-09-05T13:44:48+09:00 bi36y3b81 toolu_01HNy9Wha46MgpWSR7Juqhwc /tmp/claude-1000/-home-simokitafresh-multi-agent-shogun/d9faccc5-127b-4b4f-bd18 |
 
 ## provisional_gate_hook_quality_contract — 仮: Gate Hook Quality Contract
 
