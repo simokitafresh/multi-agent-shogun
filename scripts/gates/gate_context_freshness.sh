@@ -639,23 +639,58 @@ raise SystemExit(1)
 PY
 }
 
+# GA-579: an external project's local checkout can be stale or dirty (behind
+# its own origin/main) while the referenced path is real and already tracked
+# in that project's git history (e.g. just merged by another agent's cmd).  A
+# pure filesystem existence check makes such a reference look deleted.  Try
+# the project's own remote-tracking branch and HEAD before declaring the link
+# missing.  Glob candidates keep using the filesystem-only check in the
+# caller; git cat-file has no glob support and globs are already resolved by
+# compgen there.
+reference_exists_in_git_tree() {
+    local repo="$1" candidate="$2" ref
+    candidate="${candidate%/}"
+    [[ "$candidate" == *"*"* || "$candidate" == *"?"* || "$candidate" == *"["* ]] && return 1
+    [[ -e "$repo/.git" ]] || return 1
+    for ref in HEAD origin/main origin/master; do
+        bounded_git -C "$repo" cat-file -e "${ref}:${candidate}" 2>/dev/null && return 0
+    done
+    return 1
+}
+
 # GA-314: source更新を解消する際、索引本文が参照するrepo相対リンクの欠落を
 # source_commit更新だけで隠してはならない。鮮度ALERT対象に限って参照を検査し、
 # 欠落が1件でもあれば後段でBLOCKへ倒す。
 missing_context_links() {
     local context_file="$1" rel_path="$2" token candidate reference_root found
     local -a reference_roots=("$ROOT_DIR")
+    local canonical_project="infra" canonical_root=""
 
-    # Context indexes intentionally link both to this control-plane repository
-    # and to project repositories.  A single project root therefore cannot be
-    # the resolution SSOT: GA-314 replaced ROOT_DIR with the dm-signal root and
-    # made every control-plane link in dm-signal contexts a false missing link.
-    # Resolve against every registered project root and fail only when none
-    # contains the referenced path.
-    while IFS= read -r reference_root; do
-        [[ -n "$reference_root" && "$reference_root" != "$ROOT_DIR" ]] \
-            && reference_roots+=("$reference_root")
-    done < <(python3 - "$ROOT_DIR"/projects/*.yaml <<'PY'
+    # Keep this pattern list in sync with canonical_source_repo_for_context.
+    # Only rel_paths with exactly one well-defined owning project are scoped
+    # below; everything else (including CONTROL_ROOT's own "infra" fallback)
+    # keeps the broad multi-project resolution in the else branch.
+    [[ "$rel_path" == context/dm-signal*.md ]] && canonical_project="dm-signal"
+    [[ "$rel_path" == context/rebalancer.md ]] && canonical_project="rebalancer"
+
+    if [[ "$canonical_project" != "infra" ]]; then
+        # GA-579/580: rel_path resolves to exactly one external project.
+        # Scope resolution to that project only, so a same-named file that
+        # coincidentally exists under an unrelated registered project
+        # (dm-fusion, database, ...) cannot be mistaken for the intended
+        # target.
+        canonical_root="$(canonical_source_repo_for_context "$rel_path" 2>/dev/null || true)"
+        [[ -n "$canonical_root" ]] && reference_roots+=("$canonical_root")
+    else
+        # GA-314: general/platform context files (context/infrastructure.md
+        # and anything without a single canonical project, i.e. the
+        # canonical resolver's infra fallback) intentionally cross-reference
+        # arbitrary registered project repositories. Keep the broad
+        # all-registered-project resolution for this case only.
+        while IFS= read -r reference_root; do
+            [[ -n "$reference_root" && "$reference_root" != "$ROOT_DIR" ]] \
+                && reference_roots+=("$reference_root")
+        done < <(python3 - "$ROOT_DIR"/projects/*.yaml <<'PY'
 import sys, yaml
 seen = set()
 for filename in sys.argv[1:]:
@@ -669,6 +704,7 @@ for filename in sys.argv[1:]:
         print(path)
 PY
 )
+    fi
 
     while IFS= read -r token; do
         candidate="${token#\`}"
@@ -679,6 +715,11 @@ PY
         found=0
         for reference_root in "${reference_roots[@]}"; do
             if compgen -G "$reference_root/$candidate" >/dev/null; then
+                found=1
+                break
+            fi
+            if [[ "$reference_root" != "$ROOT_DIR" ]] \
+                && reference_exists_in_git_tree "$reference_root" "$candidate"; then
                 found=1
                 break
             fi
