@@ -6149,3 +6149,36 @@
   verdict: LGTM
   verified_files:
   - scripts/ninja_scope_commit.sh:1
+- brainwash_check: '#1no #2no #3no #4no #5no #6no #7no #8no'
+  causal_chain: cleanup非0→publisher rc=1→push成功をterminal boundary→rc=0→LGTM
+  cmd_id: cmd_karo_hotfix_publisher_postpush_cleanup
+  finding_categories:
+  - assumptions
+  - numbers
+  - premortem
+  - adversarial
+  - ambiguity
+  gate_prediction: CLEAR
+  gate_prediction_reason: all checks passed
+  observations:
+  - '事実1: push成功→terminal success。cleanup非0→警告event。rc=0'
+  - '事実2: precheck CLEAR'
+  - 'adversarial: push前失敗→FAIL維持'
+  - 'ambiguity: なし'
+  operational_simulation:
+    actual: CLEAR
+    command: precheck
+    expected: CLEAR
+    result: PASS
+  origin: '[[cmd_karo_hotfix_publisher_postpush_cleanup]] -> [[LGTM]]'
+  report_id: rpt-b44ff42a-08d2-4a67-8ba8-44249530054b
+  report_identity_version: 2
+  report_ninja: tobisaru
+  report_path: queue/reports/tobisaru_report_cmd_karo_hotfix_publisher_postpush_cleanup.yaml
+  report_task_id: cmd_karo_hotfix_publisher_postpush_cleanup_normal
+  review_type: report
+  step3_5_verified: true
+  timestamp: '2026-09-05T10:14:00+09:00'
+  verdict: LGTM
+  verified_files:
+  - scripts/publisher.sh:1
