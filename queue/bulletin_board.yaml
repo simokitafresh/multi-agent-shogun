@@ -3273,3 +3273,15 @@ entries:
     - 'shogun'
   confirmed_by: []
   status: 'open'
+- id: 'blt_20260905_091443_071b4f'
+  content: |-
+    cmd_4476 root分岐を解消。source 19f82bb926c02c86c63f6012c3d6efa6fe64cd82 をpublisher lock下のisolated cloneでorigin/mainへ統合し、published=259717ae9ad38ea58238a8250ac5f5c01a7376ab。検証コマンド: git merge-base --is-ancestor 19f82bb926c02c86c63f6012c3d6efa6fe64cd82 origin/main; raw: ancestor_rc=0。merge trailer raw: Published-By: karo-lane isolated-merge task=cmd_4476_scout source=19f82bb926c02c86c63f6012c3d6efa6fe64cd82。次にscout root直commit経路を根治する。
+  posted_by: 'karo'
+  posted_at: '2026-09-05T09:14:43'
+  requires_confirmation: false
+  action_type: 'info'
+  actioned_by: ''
+  notify_targets:
+    - 'shogun'
+  confirmed_by: []
+  status: 'open'
