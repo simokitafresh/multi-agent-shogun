@@ -1884,6 +1884,7 @@ codd:
 | cmd | `cmd_4475` DM-Signal LP SEO 監査(外部意見 12 Phase の本番突合)+実在 2 件の最小修正(JA 全頁 html lang / JSON-LD Organization・WebSite の url 統一と logo) (`context/dm-signal-research.md`) |
 | causal | `cmd_4475` origin: [[殿指示_LP_SEO外部意見_20260905]] -> [[本番curl一次確認_JA_lang_en_JSONLD_url_ja]] -> [[cmd_4475_最小修正2件]] |
 | discussion | `queue/lord_conversation.jsonl` 2026-09-05T13:23:45+09:00 殿指示 2026-09-05 13:21: 設計書に『前提条件と我らのスタイル』を書け(他の LLM が意図を理解できるように。シンプルに解決/既存コードを使う/新規の複雑さを足さない)。→ 設計書 v0.4 §0.0 追加+context |
+| discussion | `queue/lord_conversation.jsonl` 2026-09-05T13:38:03+09:00 bw39b0e7g Monitor event: "cmd_4477 cmd_save 本番の判定" SAVE_DONE WARNING: q4_depth=deep/medium — 時間コスト概算: 15-30分(2-3忍者)。分割で時 |
 
 ## recalculate_pipeline — 再計算パイプライン
 
