@@ -7981,3 +7981,36 @@
     actual: "1787eba89 cmd_karo_ci_fix_33939652526_normal: isolate snapshot lock and retry monitor validation"
     result: "PASS"
   timestamp: "2026-09-05T16:56:00+09:00"
+- brainwash_check: '#1no #2no #3no #4no #5no #6no #7no #8no'
+  causal_chain: test fixture argv marker断片化→PID aliveness確認で根治
+  cmd_id: cmd_karo_ci_fix_33945636960
+  finding_categories:
+  - assumptions
+  - numbers
+  - premortem
+  - adversarial
+  - ambiguity
+  findings_summary: 4観点OK。PID+aliveness確認ベースへ移行。case15 100/100 PASS、compatibility
+    491/491 PASS
+  hole_action: none
+  observations:
+  - commit ddd9323実在確認。家老確定診断(CI 33952021900)
+  operational_simulation:
+    actual: ddd93236c3 verified
+    command: git log --oneline ddd9323 -1
+    expected: commit exists
+    result: PASS
+  origin: '[[cmd_karo_ci_fix_33945636960]] -> [[argv_marker_fragility]] -> [[pid_aliveness]]'
+  precheck_na:
+    evidence: 報告details(4)にCI 33952021900 diag出力を一次証拠として真因確定。代替検証=case15単体100/100+compatibility
+      491/491全PASS(commit ddd9323)
+    reason: 'SG-PRE1 ci_fix_clean_repro not_reproducible receipts: CI環境固有raceでローカルpre/post
+      receipt取得不可'
+  report_ninja: tobisaru
+  report_task_id: cmd_karo_ci_fix_33945636960_normal
+  review_type: report
+  step3_5_verified: true
+  timestamp: '2026-09-05T17:08:00+09:00'
+  verdict: LGTM
+  verified_files:
+  - tests/unit/test_ninja_monitor_stall.bats:NINJA_MONITOR_HOT_RELOAD_WATCH_PID
