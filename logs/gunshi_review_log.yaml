@@ -9279,3 +9279,25 @@
   causal_chain: "F1 parity 104件不一致→二面偵察で根因確定→F1正本化可否の二値判断=正の複利"
   origin: "[[cmd_4479_honest_FAIL]] -> [[新四つ目104件]] -> [[cmd_4480_二面偵察_APPROVE]]"
   timestamp: "2026-09-06T00:45:00+09:00"
+- cmd_id: cmd_karo_impl_w1_routine_refs_core_20260906
+  review_type: report
+  verdict: FAIL
+  verified_files:
+  - "queue/reports/tobisaru_report_cmd_karo_impl_w1_routine_refs_core_20260906.yaml:31"
+  step3_5_verified: true
+  fail_reasons:
+  - "報告はテンプレート状態。status:pending、binary_checks全result空、result.details空、timestamp空。忍者が記入していない"
+  findings_summary: "報告未記入。テンプレートのまま提出。全フィールド空"
+  observations:
+  - "事実: status=pending(completedではない)。binary_checks AC1/AC2全て result=''"
+  operational_simulation:
+    command: "grep -c 'result: \"\"' queue/reports/tobisaru_report_cmd_karo_impl_w1_routine_refs_core_20260906.yaml"
+    expected: "0(全記入済み)"
+    actual: "6件空"
+    result: "FAIL"
+  finding_categories: [assumptions, premortem, ambiguity, adversarial]
+  brainwash_check: "#1no(テンプレート状態を見逃さず) #2no(報告現物読み) #3no(grep確認) #4no(即FAIL) #5no(即処理) #6no(全空確認) #7no(status確認) #8no(全フィールド確認)"
+  causal_chain: "忍者が報告テンプレートを記入しないまま提出→全フィールド空→FAIL"
+  origin: "[[cmd_karo_impl_w1_routine_refs_core_20260906]] -> [[テンプレート未記入]] -> [[FAIL]]"
+  ambiguity_points: none
+  timestamp: "2026-09-06T00:48:00+09:00"
