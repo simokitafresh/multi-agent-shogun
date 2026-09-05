@@ -18523,3 +18523,24 @@ insights:
   source: "manual"
   fix_known: false
   status: pending
+- id: INS-20260905-182307617-0cb9
+  ts: "2026-09-05T18:23:07+09:00"
+  insight: "[[karo throughput asis 20260905 mdの進捗と現時点での改良の成果を教えてくれ]] semantic_stress_test candidate_aliases: NO_MATCH source=lord query=karo_throughput_asis_20260905.mdの進捗と現時点での改良の成果を教えてくれ"
+  priority: "low"
+  source: "semantic_stress_test"
+  fix_known: false
+  status: pending
+- id: INS-20260905-182308156-29f3
+  ts: "2026-09-05T18:23:08+09:00"
+  insight: "[[ガードのバグは迂回せずに先に根治せよ]] semantic_stress_test candidate_aliases: NO_MATCH source=lord query=ガードのバグは迂回せずに先に根治せよ。負の複利を放置す るな。バグを根治したら再発しないか検証せよ。検証したら 将軍に報告して確認してもらえ"
+  priority: "low"
+  source: "semantic_stress_test"
+  fix_known: false
+  status: pending
+- id: INS-20260905-182308616-e533
+  ts: "2026-09-05T18:23:08+09:00"
+  insight: "[[ほかにバグがないか覚醒して調査せよ]] semantic_stress_test candidate_aliases: NO_MATCH source=lord query=ほかにバグがないか覚醒して調査せよ"
+  priority: "low"
+  source: "semantic_stress_test"
+  fix_known: false
+  status: pending
