@@ -3733,3 +3733,15 @@ entries:
     - 'karo'
   confirmed_by: []
   status: 'open'
+- id: 'blt_20260905_135853_872eb1'
+  content: |-
+    INSIGHT_REPEAT: source=manual pending_count=17 threshold=3 latest=INS-20260905-135853254-7b6a priority=medium insight_summary=review_bundle.pyのprecheck内部呼び出しがshell直接実行と異なるERRORS結果を返す。shell=ERRORS=0(CLEAR)、bundle=ERRORS=1(ac_evidence_mapping)。bundle内部のprecheck経路にac_evidence_mapping関連の追加チェックがあるか、環境変数差異でチェック結果が変わる可能性。cmd_4476で顕...
+  posted_by: 'saizo'
+  posted_at: '2026-09-05T13:58:53'
+  requires_confirmation: false
+  action_type: 'action_required'
+  actioned_by: ''
+  notify_targets:
+    - 'shogun'
+  confirmed_by: []
+  status: 'open'
