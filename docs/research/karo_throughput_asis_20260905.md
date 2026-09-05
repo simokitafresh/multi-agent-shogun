@@ -205,3 +205,14 @@
 | ⑨ | auto-push の理由を stdout 直前行に依存すると不安定 | 関数 stdout 全体を capture し最後の `AUTO_PUSH_WAIT` から result/reason を抽出、非空でなければ `reason=unknown`。source_publication_failed / helper_missing の敵対 test |
 
 判定: 9 点すべて採用。複雑化はしていない(いずれも定義の固定と既存 UNIQUE 契約への適合)。
+
+### §8.7 軍師レビュー(15:04、APPROVE+5 所見)の反映
+| # | 所見 | 反映 |
+|---|---|---|
+| (1) | c2a は成功時のみ計測で FAIL の壁時間が不可視。held の起点/終点を明記せよ | c2a は §8.6 ③(EXIT trap)。**held の定義**=起点: watcher が当該 agent の未読を最初に検知した時刻(`first_unread_seen`)、終点: nudge の send-keys が成功した時刻。lease 更新回数×間隔ではなく実時刻差。同一 first_unread_seen で 1 event |
+| (2) | state.sh の生 JSON は agent key 自体が欠落。key 不在='-' の fixture が要る。μs→ISO 変換を function_coverage の observed_date と照合せよ | 集計側 test に「agent key 不在行」「agent='-' 行」「observed 列なし旧行(epoch μs→UTC ISO)」の 3 fixture。observed_date は function_coverage.v1 と同じ `date -u +%F`/`%FT%TZ` 書式で統一 |
+| (3) | 増分 +440 行/日は karo のみ。watcher は全 agent 合算で 200〜400 行 | §8.3 の増分を「karo 178+他 agent 分=全体 +600〜800 行/日(約 3%)」へ訂正。結論(rotation 既存で十分)は不変 |
+| (4) | throughput_scan との混同なし | PASS のまま |
+| (5) | (g) 日次表は 3 日分蓄積後に意味を持つ。別 cmd 分離は任意 | 同 cmd に残す(§8.2 で並行可)。ただし AC2 の完了二値は「固定 fixture で 2 回 exact 一致+`--as-of`」に変更(§8.6 ⑤) |
+
+判定: 5 所見すべて採用。REJECT なし。
