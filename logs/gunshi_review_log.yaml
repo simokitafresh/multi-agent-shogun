@@ -7762,6 +7762,8 @@
     result: "PASS"
 - cmd_id: cmd_karo_hotfix_ga579_external_project_context_ref
   review_type: draft
+  gate_result: "CLEAR"
+  gate_synced_at: "2026-09-05T17:46:25+09:00"
   verdict: LGTM
   gate_prediction: CLEAR
   gate_prediction_reason: "draft review - external project context ref resolver"
