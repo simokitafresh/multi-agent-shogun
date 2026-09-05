@@ -12514,9 +12514,10 @@ deploy_task_pin_independence_worktree_base() {
 
     repo=$(deploy_task_resolve_source_repo "$task_file")
     [ -n "$repo" ] || { log "BLOCK: independence worktree repo unavailable"; return 1; }
-    if ! git -C "$repo" rev-parse --is-inside-work-tree >/dev/null 2>&1 \
-        && ! git -C "$repo" rev-parse --is-bare-repository >/dev/null 2>&1; then
-        log "BLOCK: independence worktree repo_root is neither a work tree nor a bare repo (repo=${repo})"
+    local repo_is_worktree
+    repo_is_worktree=$(git -C "$repo" rev-parse --is-inside-work-tree 2>/dev/null || true)
+    if [ "$repo_is_worktree" != "true" ]; then
+        log "BLOCK: independence worktree repo_root is bare or not a git work tree (repo=${repo})"
         return 1
     fi
     if ! git -C "$repo" cat-file -e "${base_commit}^{commit}" 2>/dev/null; then
