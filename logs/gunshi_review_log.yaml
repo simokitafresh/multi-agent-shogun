@@ -6624,3 +6624,37 @@
   verdict: LGTM
   verified_files:
   - queue/reports/saizo_report_cmd_4475.yaml:1
+- cmd_id: cmd_karo_recon2_hanzo_failed_inventory
+  review_type: report
+  verdict: FAIL
+  report_ninja: hayate
+  report_task_id: cmd_karo_recon2_hanzo_failed_inventory_normal
+  report_path: queue/reports/hayate_report_cmd_karo_recon2_hanzo_failed_inventory.yaml
+  report_id: rpt-4254b661-f22f-4c14-aac2-cbac7f2a267d
+  report_identity_version: 2
+  gate_prediction: BLOCK
+  gate_prediction_reason: "task_attribution bc:no"
+  finding_categories:
+  - assumptions
+  - numbers
+  - premortem
+  - adversarial
+  - ambiguity
+  observations:
+  - "事実1: task_attribution bc:no。忍者自己判定FAIL"
+  - "adversarial: N/A"
+  - "ambiguity: なし"
+  fail_reasons:
+  - "task_attribution bc:no"
+  causal_chain: "偵察→task_attribution未達→FAIL"
+  brainwash_check: "#1no #2no #3no #4no #5no #6no #7no #8no"
+  verified_files:
+  - "queue/reports/hayate_report_cmd_karo_recon2_hanzo_failed_inventory.yaml:1"
+  step3_5_verified: true
+  origin: "[[cmd_karo_recon2_hanzo_failed_inventory]] -> [[FAIL]]"
+  operational_simulation:
+    command: "precheck"
+    expected: "BLOCK"
+    actual: "BLOCK"
+    result: PASS
+  timestamp: "2026-09-05T11:37:00+09:00"
