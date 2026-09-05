@@ -7729,3 +7729,30 @@
     expected: "midx lock ci_fix AC1-2"
     actual: "AC1再現+inode報告、AC2隔離方式根治+並列50回検証"
     result: "PASS"
+- cmd_id: cmd_karo_hotfix_unbounded_cpu_repro_guard
+  review_type: draft
+  verdict: LGTM
+  gate_prediction: CLEAR
+  gate_prediction_reason: "draft review - unbounded CPU loop guard"
+  reviewed_at: "2026-09-05T15:38:00+09:00"
+  verified_files:
+    - "scripts/hooks/test_hooks.sh:1"
+  observations:
+    - "飛猿15:17の無期限busy-loop事故を再現し、pre-bash hookでBLOCKする防御策"
+    - "AC1は再現(実loopは起動しない)、AC2はtimeout有/通常while-read/daemon/単発colon等を許可するfalse_positive=0設計"
+    - "quality gate: 警告で流さずexit2 BLOCK"
+  finding_categories:
+    - assumptions
+    - numbers
+    - simulation
+    - premortem
+    - adversarial
+    - ambiguity
+  ambiguity_points: none
+  step3_5_verified: false
+  brainwash_check: "#1no #2no #3no #4no #5no #6no #7no #8no draft review。CPU loop guard scope明確"
+  operational_simulation:
+    command: "cat queue/tasks/hanzo.yaml | head -10"
+    expected: "unbounded CPU guard AC1-2"
+    actual: "AC1再現(実loop起動しない)、AC2ガード+敵対テスト6件以上"
+    result: "PASS"
