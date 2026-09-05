@@ -1,5 +1,3 @@
-# session_alerts — generated: 2026-09-04T09:12:24+0900
-[DONE] 走行中cmd実測突合 — 09:03 自動注入 capture 8 pane+task status 5 名(半蔵/才蔵 ack、影丸 in_progress、飛猿/小太郎 assigned)で一次確認済み: busy 5名。capture-pane未確認で状況報告するな
-[DONE] monitor lifecycle 失敗行 — GATE-STALL は旧 dangling 2 cmd の WAIT cycle。所有者=家老、superseded marker 3/3 設置済み(blt_083029)。残 timeout は marker 反映前の周回 8行/60分 — 壁の所有者を一次で確認
-[DONE] Codex 上限警告 — 09:06 ntfy で殿へ事前報告済み(疾風 usage limit reset 1 回残) 1 pane(hayate) — 先送りせず殿へ前もって報告
-[DONE] deepdive追体験未完了: 全Phase実行まで作業禁止(stop hookがBLOCKする)。bash scripts/deepdive_replay.sh shogun <md> <Phase> "<自問>"
+# session_alerts — generated: 2026-09-05T09:52:52+0900
+[DONE] 追体験自動化ターゲット: WARN (自動化ターゲット未記入)
+[TODO] 走行中cmd実測突合: busy 4名。capture-pane未確認で状況報告するな

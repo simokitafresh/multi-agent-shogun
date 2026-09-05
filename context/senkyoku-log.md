@@ -1,4 +1,10 @@
 # 戦局日誌 (Campaign Log)
+<!-- last_updated: 2026-09-04 hanzo_post_deploy_publish_wait -->
+## 2026-09-04 cmd_karo_hotfix_post_deploy_publish_wait_202609041926 (hanzo)
+| cmd/action | 意図 | 結果 | 因果 |
+|-----|------|------|------|
+| cmd_karo_hotfix_post_deploy_publish_wait_202609041926_normal | 未公開実装commitによるpost-deploy証跡の循環BLOCKをWAIT+publisher follow-upへ変換 | `UNPUSHED`のみWAIT、PUSHED後の不正/欠落はBLOCKを維持。isolated 3分類+single-flight、task 1310/1310 PASS/SKIP0、commit `71decdaabd9b5c22122087e08b2d75e52101cd36`、report gate PASS | [[post_deploy_evidence_missing_before_publish]] -> [[publisher_followup_WAIT]] -> [[post_deploy_evidence_fail_closed]] |
+
 <!-- last_updated: 2026-09-03 kotaro_lp_showcase_fetch_cache_bust -->
 ## 2026-09-03 cmd_karo_hotfix_lp_showcase_fetch_cache_bust_202609030314 (kotaro)
 | cmd/action | 意図 | 結果 | 因果 |
@@ -1671,3 +1677,4 @@
 - 2026-09-03 10:47 hayate cmd_karo_hotfix_reflux_ledger_resolve_op CLEAR: reflux insight生成をresolve-only ledger opへ変更、scope0/commit optional化。resolverはpublisher-single時にoperation pathをstdoutへ出力し、現HEAD receipt 66/66 PASS・SKIP0、report gate PASS。
 - 2026-09-03 19:13 kagemaru cmd_karo_hotfix_review_registry_claimed_report_202609031855 CLEAR待ち: review_resolve_reportsがgeneration markerのclaim identityを認証し、task slot上書き後の同一parent reportをcanonical集合へ復元。対象18/18 PASS・SKIP0、report gate PASS。
 - 2026-09-04 06:13 tobisaru cmd_karo_hotfix_t3s40_post_source_full_instrumentation_202609040542 報告提出(GATE CLEAR待ち): T3-S-40系列。post_source_checks WAIT cycleの28.043s無名残差(production実測、AC1一次ログで再確認済み)の真因=cmd_complete_gate_auto_push_ancestry_wait呼出(push_task_repositories包含)が無span。同呼出+reverify/wait_block_finalize/clear_metrics_build/postclear_status_archiveの5箇所へgate_detail span追加。WAIT fixtureは実コードをverbatim抽出しsleep 3sスタブで動的coverage>=95%実証、CLEAR経路はspan対応の構造検証+regression guard sweepで代替。task-scope 511/511 PASS・SKIP0、report gate PASS(commit 01d243a9c)。
+- 2026-09-05 03:07 kagemaru cmd_karo_hotfix_release_legacy_nocode_recon_normal CLEAR準備: 空commit_hash/files_modified=N/Aのlegacy reconをtree証跡・task契約・明示no-commitの積でno-code identityへ移行。baseline BLOCK再現後、4分類と既存gate suite 323/323 PASS・SKIP0、commit b2ad7ad17、report gate PASS。

@@ -1,5 +1,6 @@
 # インフラコンテキスト
 <!-- last_updated: 2026-09-05 context_freshness reviewed source boundary -->
+<!-- source_commit:c164d8e6b reason:context_freshness reviewed source boundary evidence:context_freshness_check context=context/infrastructure.md commit=c164d8e6b -->
 <!-- source_commit:79b8feba6 reason:context_freshness reviewed source boundary evidence:context_freshness_check context=context/infrastructure.md commit=79b8feba6 -->
 <!-- source_commit:b4c2dfd82 reason:context_freshness reviewed source boundary evidence:context_freshness_check context=context/infrastructure.md commit=b4c2dfd82 -->
 <!-- source_commit:f9628c2c0 reason:context_freshness reviewed source boundary evidence:context_freshness_check context=context/infrastructure.md commit=f9628c2c0 -->
