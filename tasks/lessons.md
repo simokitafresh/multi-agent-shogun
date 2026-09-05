@@ -17166,3 +17166,17 @@ sqlite3.Connection.backup()を使うとページ(4096byte)単位のread syscall�
 - **when**: 未設定
 - **how**: 未設定
 - run_tests.shはBASH_ENVでpublisher_*子プロセスのSHOGUN_STATE_DIRをtask隔離領域へ上書きする。一方test_publisher_queue.batsはsetupで独自STATE_DIRを作り、その配下のrequest数を検証するため、正規runnerでは実装が正常でもfixtureがrunner状態を見ず9/10 FAILになり得る。次回はrunnerの隔離状態をfixtureが期待値にも使う契約を先に固定する。
+
+
+### L1746: git rev-parse <ref>(--verifyなし)は失敗時にref名をそのままstdoutへ返す。SHA捕捉には必ず--verify --quietを使え
+- **日付**: 2026-09-05
+- **出典**: cmd_karo_hotfix_dm_signal_deploy_target_smoke
+- **記録者**: tobisaru
+- **tags**: [infra,cmd-quality,gate,bash,git]
+- **subdomain**: infra
+- **target_files**: [scripts/cmd_complete_gate.sh,tests/unit/test_cmd_complete_gate.bats]
+- **origin**: [[cmd_karo_hotfix_dm_signal_deploy_target_smoke]]
+- **enforcement**: 未自動化
+- **when**: 未設定
+- **how**: 未設定
+- cmd_4475のgate_fire_log実測でorigin_sha=refs/remotes/origin/main refs/remotes/origin/masterという破損値を確認。原因はscripts/cmd_complete_gate.shのrun_dm_signal_production_smoke_checkが git rev-parse refs/remotes/origin/main 2>/dev/null || git rev-parse refs/remotes/origin/master 2>/dev/null || true という形でrefを解決しており、--verifyを付けない git rev-parse <ref> は対象refが存在しない場合、fatalメッセージはstderrに出す一方でref引数の文字列そのものをstdoutへエコーして返す(2>/dev/nullではstdout側の漏れは防げない)。command substitutionでSHAを捕捉するあらゆる箇所で同じ罠が起こりうる。修正: git rev-parse --verify --quiet <ref> を使う。--verifyは未解決時にstdoutへ何も出さず、--quietでstderrメッセージも抑制する。/tmp配下の使い捨てgit repoで main欠落/master有り・両方欠落・main有りの3状態を再現しこの挙動差を実機確認した
