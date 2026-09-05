@@ -1,7 +1,7 @@
 summary:
   total: 97
-  resolved: 94
-  pending: 2
+  resolved: 96
+  pending: 0
   shelved: 1
   unknown: 0
 decisions:
@@ -1132,13 +1132,18 @@ decisions:
   type: escalation
   summary: workaround同一カテゴリ「infra」根本原因「infra::general」が4件蓄積。構造対策cmdの起票・裁定が必要
   source_cmd: cmd_karo_ci_fix_33630722226_instructions_sync_fp_vocab_202609022153
-  status: pending
+  status: resolved
   created_at: '2026-09-02T23:08:36+09:00'
   created_by: karo
   dedup_key: wa_escalation:infra::infra::general
   occurrence: 2
   last_seen_at: '2026-09-03T03:48:32+09:00'
   last_source_cmd: cmd_4463
+  resolved_at: '2026-09-05T09:57:22+09:00'
+  resolved_content: '将軍裁定 2026-09-05 09:55: infra::general の workaround 4 件蓄積は構造対策
+    cmd を家老 hotfix lane で起票・根治する(殿裁定不要)。棚卸し msg で家老へ下知済み'
+  resolved_by: shogun
+  context_synced: false
 - id: PD-142
   type: action_required
   summary: 'tests/unit/test_review_approval_rc_*.batsがREVIEW_APPROVAL_ROOTでqueue系のみ隔離し、publisher_queue.sh(SHOGUN_STATE_DIR依存)へは伝播しないため、review_approval.sh経由で本番SHOGUN_STATE_DIR/publish_queueへfixture
@@ -1146,7 +1151,12 @@ decisions:
     quarantine後も2026-09-03に再発、構造未修正のため再発し続ける)。対象: scripts/run_tests.sh, tests/unit/test_review_approval_rc_revoke.bats,
     tests/unit/test_review_approval_rc_task_status_atomic.bats'
   source_cmd: cmd_reflux_insight_202609030410_tobisaru
-  status: pending
+  status: resolved
   created_at: '2026-09-03T04:13:21+09:00'
   created_by: tobisaru
   origin: '[[INS-20260902-232045000-ba40]]'
+  resolved_at: '2026-09-05T09:57:22+09:00'
+  resolved_content: '将軍裁定 2026-09-05 09:55: run_tests.sh が test 実行時に SHOGUN_STATE_DIR
+    を一時 dir へ強制 export する修正を家老 hotfix lane で根治(fixture request の本番 publish_queue 漏出を止める)。殿裁定不要'
+  resolved_by: shogun
+  context_synced: false
