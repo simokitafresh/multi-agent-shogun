@@ -1436,3 +1436,49 @@ PY
     run grep -c "universal selfmarker rule" "$evidence_dir/evidence_karo__selfreinforce_${BATS_TEST_NUMBER}.json"
     [ "$output" != "0" ]
 }
+
+# test_necessity: a verify BLOCK must leave a machine-readable reason line
+# (rc, agent, agent_source, pane, reason, evidence path) so a recurrence is
+# diagnosed from the log instead of guessed; silent BLOCKs were bypassed on 2026-09-05.
+@test "verify failure writes a diagnostic reason line" {
+    local dir="$TMP_EVIDENCE/verify_fail"
+    mkdir -p "$dir"
+    run env THREE_LAYER_PREACTION_EVIDENCE_DIR="$dir" THREE_LAYER_AGENT_ID=shogun TMUX_PANE=%diag \
+        bash "$ROOT/scripts/hooks/three_layer_preflight.sh" verify Bash "" "echo hi"
+    [ "$status" -ne 0 ]
+    [ -s "$dir/verify_fail_shogun__diag.log" ]
+    grep -q $'\trc=4\tagent=shogun\tagent_source=env\tpane=%diag\ttool=Bash\treason=files:evidence=0,current=0,generation=0\t' "$dir/verify_fail_shogun__diag.log"
+    # stale/mismatched receipt yields a named reason, not a bare rc
+    printf '%s\n' '{"agent_id":"shogun","pane_id":"%diag","prompt_hash":"h","generation":"g1","nonce":"n1","issued_at":"2026-09-05T00:00:00+00:00","memory_db":"0","semantic":"0","obsidian":"0","status":"success"}' > "$dir/evidence_shogun__diag.json"
+    printf 'n1\n' > "$dir/evidence_shogun__diag.json.current"
+    printf 'g2\n' > "$dir/evidence_shogun__diag.json.generation"
+    run env THREE_LAYER_PREACTION_EVIDENCE_DIR="$dir" THREE_LAYER_AGENT_ID=shogun TMUX_PANE=%diag \
+        bash "$ROOT/scripts/hooks/three_layer_preflight.sh" verify Bash "" "echo hi"
+    [ "$status" -ne 0 ]
+    grep -q $'\treason=generation_mismatch\t' "$dir/verify_fail_shogun__diag.log"
+}
+
+# test_necessity: when tmux cannot answer (busy server, timeout), the agent id
+# must resolve from the pane-local cache written on the last successful tmux
+# lookup, never degrade to "unknown" (which points verify at a foreign receipt).
+@test "agent id falls back to pane cache when tmux is unavailable" {
+    local dir="$TMP_EVIDENCE/agent_cache"
+    mkdir -p "$dir/bin"
+    printf '#!/bin/sh\nexit 1\n' > "$dir/bin/tmux"
+    chmod +x "$dir/bin/tmux"
+    printf 'kagemaru\n' > "$dir/.agent_id__cache"
+    run env -u THREE_LAYER_AGENT_ID -u PROMPT_STATE_AGENT_ID PATH="$dir/bin:$PATH" \
+        THREE_LAYER_PREACTION_EVIDENCE_DIR="$dir" TMUX_PANE=%cache \
+        bash "$ROOT/scripts/hooks/three_layer_preflight.sh" verify Bash "" "echo hi"
+    [ "$status" -ne 0 ]
+    [ -s "$dir/verify_fail_kagemaru__cache.log" ]
+    grep -q $'\tagent=kagemaru\tagent_source=cache\t' "$dir/verify_fail_kagemaru__cache.log"
+    [ ! -e "$dir/verify_fail_unknown__cache.log" ]
+    # an invalid cached value is rejected rather than trusted
+    printf 'Bad Agent!\n' > "$dir/.agent_id__cache"
+    run env -u THREE_LAYER_AGENT_ID -u PROMPT_STATE_AGENT_ID PATH="$dir/bin:$PATH" \
+        THREE_LAYER_PREACTION_EVIDENCE_DIR="$dir" TMUX_PANE=%cache \
+        bash "$ROOT/scripts/hooks/three_layer_preflight.sh" verify Bash "" "echo hi"
+    [ "$status" -ne 0 ]
+    [ -s "$dir/verify_fail_unknown__cache.log" ]
+}

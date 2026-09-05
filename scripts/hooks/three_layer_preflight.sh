@@ -36,11 +36,31 @@ _three_layer_overhead_emit() {
 trap '_three_layer_overhead_emit "$?"' EXIT
 
 agent_id="${THREE_LAYER_AGENT_ID:-${PROMPT_STATE_AGENT_ID:-}}"
+agent_id_source=env
 if [[ -z "$agent_id" ]] && command -v tmux >/dev/null 2>&1; then
-    agent_id="$(tmux display-message -t "${TMUX_PANE:-}" -p '#{@agent_id}' 2>/dev/null || true)"
+    agent_id="$(timeout 2s tmux display-message -t "${TMUX_PANE:-}" -p '#{@agent_id}' 2>/dev/null || true)"
+    agent_id_source=tmux
+fi
+pane_id="${TMUX_PANE:-default}"
+# 2026-09-05 将軍根治(殿『ガードのバグは迂回せず根治』): 高負荷時に tmux display-message が
+# 失敗/timeout すると agent_id=unknown になり、evidence_unknown_* を verify して BLOCK する。
+# 直前に tmux で解決できた agent_id を pane 別 cache に残し、tmux 不応答時はそれを使う。
+# cache は同 pane・同 evidence dir 内(pane 識別子は変わらない)。env 指定は常に優先。
+_pane_cache_safe="${pane_id//[^A-Za-z0-9_.-]/_}"
+_agent_cache_file="$EVIDENCE_DIR/.agent_id_${_pane_cache_safe}"
+if [[ "$agent_id_source" == tmux ]]; then
+    if [[ -n "$agent_id" ]]; then
+        if [[ ! -f "$_agent_cache_file" || "$(cat "$_agent_cache_file" 2>/dev/null)" != "$agent_id" ]]; then
+            mkdir -p "$EVIDENCE_DIR" 2>/dev/null || true
+            printf '%s\n' "$agent_id" >"${_agent_cache_file}.tmp.$$" 2>/dev/null && mv -f "${_agent_cache_file}.tmp.$$" "$_agent_cache_file" 2>/dev/null || true
+        fi
+    elif [[ -s "$_agent_cache_file" ]]; then
+        agent_id="$(cat "$_agent_cache_file" 2>/dev/null || true)"
+        [[ "$agent_id" =~ ^[a-z0-9_-]{1,32}$ ]] || agent_id=""
+        agent_id_source=cache
+    fi
 fi
 agent_id="${agent_id:-unknown}"
-pane_id="${TMUX_PANE:-default}"
 safe_key="${agent_id}_${pane_id}"
 safe_key="${safe_key//[^A-Za-z0-9_.-]/_}"
 evidence_file="$EVIDENCE_DIR/evidence_${safe_key}.json"
@@ -1104,32 +1124,52 @@ verify() {
         python3 - "$evidence_file" "$nonce_file" "$generation_file" "${THREE_LAYER_PREACTION_MAX_AGE_SECONDS:-14400}" <<'PY'
 import json, sys
 from datetime import datetime, timezone
+# 失敗理由は stderr に 1 語で出す(verify 側が diagnostic log へ残す)。stdout は従来どおり success のみ。
+def fail(code, reason):
+    print(reason, file=sys.stderr)
+    raise SystemExit(code)
 try:
     data = json.load(open(sys.argv[1], encoding="utf-8"))
     nonce = open(sys.argv[2], encoding="utf-8").read().strip()
     generation = open(sys.argv[3], encoding="utf-8").read().strip()
-except Exception:
-    raise SystemExit(2)
+except Exception as exc:
+    fail(2, "unreadable:" + type(exc).__name__)
 required = ("agent_id", "pane_id", "prompt_hash", "generation", "nonce", "issued_at", "memory_db", "semantic", "obsidian", "status")
-if any(not str(data.get(key, "")).strip() for key in required):
-    raise SystemExit(2)
+missing = [key for key in required if not str(data.get(key, "")).strip()]
+if missing:
+    fail(2, "missing_keys:" + ",".join(missing))
 if nonce != data.get("nonce"):
-    raise SystemExit(2)
+    fail(2, "nonce_mismatch")
 if generation != data.get("generation"):
-    raise SystemExit(2)
+    fail(2, "generation_mismatch")
 try:
     issued = datetime.fromisoformat(data["issued_at"].replace("Z", "+00:00"))
     age = (datetime.now(timezone.utc) - issued).total_seconds()
-except Exception:
-    raise SystemExit(2)
+except Exception as exc:
+    fail(2, "issued_at_unparseable:" + type(exc).__name__)
 if age < -5 or age > float(sys.argv[4]):
-    raise SystemExit(2)
+    fail(2, "age_out_of_range:%ds" % int(age))
 if data.get("status") != "success" or any(str(data.get(key)) != "0" for key in ("memory_db", "semantic", "obsidian")):
-    raise SystemExit(3)
+    fail(3, "status:%s:%s/%s/%s" % (data.get("status"), data.get("memory_db"), data.get("semantic"), data.get("obsidian")))
 print("success")
 PY
-      } 9>"$publish_lock"
+      } 9>"$publish_lock" 2>"$EVIDENCE_DIR/.verify_err.$$"
     )" || verify_rc=$?
+    if [[ "$verify_rc" -ne 0 ]]; then
+        # 2026-09-05 将軍根治: BLOCK の理由を残さないと再発時にまた推測になる(16:42-16:44 に
+        # 成功 issue 直後の verify FAIL x7 が原因不明のまま迂回された)。理由・識別子・file 存否を 1 行で残す。
+        local _verify_reason _ev_present _cur_present _gen_present
+        _verify_reason="$(tr '\n' ' ' <"$EVIDENCE_DIR/.verify_err.$$" 2>/dev/null | sed 's/[[:space:]]*$//')"
+        _ev_present=0; _cur_present=0; _gen_present=0
+        [[ -s "$evidence_file" ]] && _ev_present=1
+        [[ -s "$nonce_file" ]] && _cur_present=1
+        [[ -s "$generation_file" ]] && _gen_present=1
+        [[ -n "$_verify_reason" ]] || _verify_reason="files:evidence=${_ev_present},current=${_cur_present},generation=${_gen_present}"
+        printf '%s\trc=%s\tagent=%s\tagent_source=%s\tpane=%s\ttool=%s\treason=%s\tevidence=%s\n' \
+            "$(date -Iseconds)" "$verify_rc" "$agent_id" "${agent_id_source:-unknown}" "$pane_id" "$tool_name" "$_verify_reason" "$evidence_file" \
+            >>"${THREE_LAYER_VERIFY_FAIL_LOG:-$EVIDENCE_DIR/verify_fail_${safe_key}.log}" 2>/dev/null || true
+    fi
+    rm -f "$EVIDENCE_DIR/.verify_err.$$" 2>/dev/null || true
     if [[ "$verify_rc" -ne 0 ]]; then
         # A Recovery/initial-task action must not depend on the weak model
         # deciding to run the printed repair command. Retry once through the
