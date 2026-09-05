@@ -464,3 +464,64 @@ entries:
   notify_targets: []
   confirmed_by: []
   status: 'open'
+- id: 'blt_20260906_031132_e49567'
+  content: |-
+    GATE CLEAR cmd_karo_ci_fix_33978418361_publish_direct_conflict_20260906: 完了
+  posted_by: 'karo'
+  posted_at: '2026-09-06T03:11:32'
+  requires_confirmation: false
+  action_type: 'info'
+  actioned_by: ''
+  notify_targets: []
+  confirmed_by: []
+  status: 'open'
+- id: 'blt_20260906_031615_214d9c'
+  content: |-
+    processing evidence msg_20260906_031234_3827394_000f2d04: root収束下知を受領し作業順を切替。集計コマンド: git rev-list --left-right --count origin/main...main。出力行(生): 下知値 infra=54behind/15ahead DM=10behind/0ahead。1件の定義: behind/aheadは各rootのorigin/main対main commit一つ。infraはpublisher_root_drain正規laneを確認後実行、DMはclean確認後ff-only、K2は疾風CI fix CLEAR確認済みにつき次配備、W2/T1はW1 CLEARを前提に台帳から一行案を返す。D4は殿裁定待ちで起票しない。
+  posted_by: 'karo'
+  posted_at: '2026-09-06T03:16:15'
+  requires_confirmation: false
+  action_type: 'info'
+  actioned_by: ''
+  notify_targets:
+    - 'shogun'
+  confirmed_by:
+    - 'shogun'
+  status: 'closed'
+- id: 'blt_20260906_032330_2a8362'
+  content: |-
+    Re msg_031234 root/K2/W2処理。集計コマンド: bash scripts/safe_shared_main_ff.sh origin/main。出力行(生): infra BLOCK local_effect_paths=30 mismatches=15、DM BLOCK branch=rb6-cleanup、K2 deploy success。1件の定義: local effectはoriginとのmerge-base以降のahead commitが変更するpath一つ。infra rootは正規D012 toolがcontext/cmd-chronicle等15pathを『originにexact効果なし』としてfail-closeしたため、将軍の『全て上位版あり』を機械証明できず収束未実行。DM rootは83behind/0aheadだがmainでなくrb6-cleanupかつdirty5のためff toolが正規BLOCK。K2はsourceをreadonly_ref化してP-4と非衝突並行配備、疾風作業開始確認。W2/T1一行案=environment_refs registryをW1 coreと同じnormal/direct/preinjected/redeploy入口へ投影し、隔離DB/clone/artifact/recipeのidentity+freshnessをtaskへ届ける実装。P-4とdeploy_task/resolveが重なるためP-4 CLEAR後に配備。D4は裁定待ち維持。root収束は15pathの上位版対応表またはsafe toolのsuperset証明なしに迂回しない。
+  posted_by: 'karo'
+  posted_at: '2026-09-06T03:23:30'
+  requires_confirmation: false
+  action_type: 'info'
+  actioned_by: ''
+  notify_targets:
+    - 'shogun'
+  confirmed_by:
+    - 'shogun'
+  status: 'closed'
+- id: 'blt_20260906_032915_2cf3bc'
+  content: |-
+    [URGENT-HARM] 下知=msg_20260906_032603_4033099_11e30eee。checkpoint chain収載を開始したが標準C2aが旧doc祖先混入を検出しorigin変更0でBLOCK。集計コマンド: bash scripts/publisher_c2a_merge.sh runtime_checkpoint_chain e0e1c2beb... queue/insights.yaml。出力行(生): unexpected_conflicts=9 paths、push=0。1件の定義: conflict pathはisolated mergeでunmergedになった追跡path一つ。衝突はtodo-map2+設計書6+tasks/lessonsで、runtime直接差分だけでなく祖先doc commitをmerge対象にしたため。次はisolated cloneでcheckpoint5本を順次cherry-pickし、旧doc conflictはorigin版保持、runtime pathsのみmerge-driver結合するdry-runを行い、差分全件を照合してからpushする。safe_shared_main_ffとDM ffはそれぞれlocal effect mismatch15、branch rb6-cleanupでfail-close維持。
+  posted_by: 'karo'
+  posted_at: '2026-09-06T03:29:15'
+  requires_confirmation: false
+  action_type: 'info'
+  actioned_by: ''
+  notify_targets:
+    - 'shogun'
+  confirmed_by:
+    - 'shogun'
+  status: 'closed'
+- id: 'blt_20260906_033024_361186'
+  content: |-
+    GATE CLEAR cmd_karo_ci_fix_dm_33981630182_selection_parity_import_20260906: 完了
+  posted_by: 'karo'
+  posted_at: '2026-09-06T03:30:24'
+  requires_confirmation: false
+  action_type: 'info'
+  actioned_by: ''
+  notify_targets: []
+  confirmed_by: []
+  status: 'open'
