@@ -39,6 +39,11 @@ RG_BIN="$(resolve_vercel_phase_rg)" || {
     exit 1
 }
 
+# GA-579/580: shared with scripts/gates/gate_context_freshness.sh. See
+# scripts/lib/external_project_ref_resolver.sh for canonical-scoping and
+# git-tree-fallback rationale.
+source "$SCRIPT_DIR/scripts/lib/external_project_ref_resolver.sh"
+
 declare -A SEEN_REFS=()
 # GA-580: per-context_file canonical-project scoping cache (see check_ref_record).
 declare -A CONTEXT_CANONICAL_PROJECT=()
@@ -115,71 +120,10 @@ is_glob_ref() {
     [[ "$ref" == *"*"* || "$ref" == *"?"* || "$ref" == *"["* ]]
 }
 
-# GA-579/580: kept as an identical function body to
-# scripts/gates/gate_context_freshness.sh's copy of the same three
-# functions (a new shared lib path would need its own task_worktree scope
-# grant; each gate cmd enumerates its own target_path). Keep both copies
-# byte-identical when editing either.
-#
-# external_ref_canonical_project_id: prints the single project id a
-# rel_path canonically belongs to, or returns 1 (prints nothing) when no
-# single project owns it — general/platform context files (e.g.
-# context/infrastructure.md) legitimately cross-reference many registered
-# projects and must keep the broad all-registered-project resolution
-# (GA-314), not be scoped to one.
-external_ref_canonical_project_id() {
-    local rel_path="$1"
-    [[ "$rel_path" == context/dm-signal*.md ]] && { printf 'dm-signal\n'; return 0; }
-    [[ "$rel_path" == context/rebalancer.md ]] && { printf 'rebalancer\n'; return 0; }
-    return 1
-}
-
-# external_ref_project_path: prints the registered filesystem path for
-# project_id from a projects.yaml-style config (top-level `projects:` list
-# of `- id: ... / path: ...` entries). Returns 1 when unresolved.
-external_ref_project_path() {
-    local project_id="$1" config="$2" result=""
-    [[ -f "$config" && -r "$config" ]] || return 1
-    result="$(awk -v target="$project_id" '
-        function clean(value) {
-            gsub(/^[[:space:]"'"'"']+|[[:space:]"'"'"']+$/, "", value)
-            return value
-        }
-        /^[[:space:]]*-[[:space:]]+id:[[:space:]]*/ {
-            id=$0
-            sub(/.*id:[[:space:]]*/, "", id)
-            id=clean(id)
-            next
-        }
-        id == target && /^[[:space:]]+path:[[:space:]]*/ {
-            path=$0
-            sub(/.*path:[[:space:]]*/, "", path)
-            print clean(path)
-            exit 0
-        }
-    ' "$config")"
-    [[ -n "$result" ]] || return 1
-    printf '%s\n' "$result"
-}
-
-# external_ref_exists_via_git: an external project's local checkout can be
-# stale or dirty (behind its own origin/main) while the referenced path is
-# real and already tracked in that project's git history (e.g. just merged
-# by another agent's cmd).  A pure filesystem existence check makes such a
-# reference look deleted.  Try the project's own remote-tracking branch and
-# HEAD before declaring the link missing.  Glob candidates keep using the
-# filesystem-only check in the caller; git cat-file has no glob support and
-# globs are already resolved by compgen there.
-external_ref_exists_via_git() {
-    local repo="$1" candidate="$2" timeout_sec="${3:-10}" ref
-    candidate="${candidate%/}"
-    [[ "$candidate" == *"*"* || "$candidate" == *"?"* || "$candidate" == *"["* ]] && return 1
-    [[ -e "$repo/.git" ]] || return 1
-    for ref in HEAD origin/main origin/master; do
-        timeout --kill-after=1 "$timeout_sec" git -C "$repo" cat-file -e "${ref}:${candidate}" 2>/dev/null && return 0
-    done
-    return 1
-}
+# GA-579/580: external_ref_canonical_project_id, external_ref_project_path
+# and external_ref_exists_via_git are defined in
+# scripts/lib/external_project_ref_resolver.sh (sourced above) and shared
+# with scripts/gates/gate_context_freshness.sh.
 
 build_file_cache() {
     [ "$FILE_CACHE_READY" = true ] && return 0

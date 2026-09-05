@@ -27,6 +27,9 @@ SCRIPT_DIR="${SCRIPT_DIR%/scripts/gates}"
 CONTROL_ROOT="$SCRIPT_DIR"
 ROOT_DIR="${CONTEXT_FRESHNESS_ROOT:-$SCRIPT_DIR}"
 source "$CONTROL_ROOT/scripts/lib/yaml_field_set.sh"
+# GA-579/580: shared with scripts/gates/gate_vercel_phase.sh. See that file's
+# canonical-scoping usage for why this must not be a per-gate copy.
+source "$CONTROL_ROOT/scripts/lib/external_project_ref_resolver.sh"
 CHECK_SCRIPT="${CONTEXT_FRESHNESS_CHECK_SCRIPT:-$ROOT_DIR/scripts/context_freshness_check.sh}"
 NTFY_SCRIPT="${CONTEXT_FRESHNESS_NTFY_SCRIPT:-$ROOT_DIR/scripts/ntfy.sh}"
 BULLETIN_SCRIPT="${CONTEXT_FRESHNESS_BULLETIN_SCRIPT:-$CONTROL_ROOT/scripts/bulletin_write.sh}"
@@ -639,43 +642,9 @@ raise SystemExit(1)
 PY
 }
 
-# GA-579/580: shared with scripts/gates/gate_vercel_phase.sh (kept as
-# identical function bodies rather than a sourced file, since each gate's
-# task_worktree edit scope is enumerated per-cmd and a new shared lib path
-# would need its own scope grant). Keep both copies byte-identical when
-# editing either.
-#
-# external_ref_canonical_project_id: prints the single project id a
-# rel_path canonically belongs to, or returns 1 (prints nothing) when no
-# single project owns it — general/platform context files (e.g.
-# context/infrastructure.md) legitimately cross-reference many registered
-# projects and must keep the broad all-registered-project resolution
-# (GA-314), not be scoped to one.
-external_ref_canonical_project_id() {
-    local rel_path="$1"
-    [[ "$rel_path" == context/dm-signal*.md ]] && { printf 'dm-signal\n'; return 0; }
-    [[ "$rel_path" == context/rebalancer.md ]] && { printf 'rebalancer\n'; return 0; }
-    return 1
-}
-
-# external_ref_exists_via_git: an external project's local checkout can be
-# stale or dirty (behind its own origin/main) while the referenced path is
-# real and already tracked in that project's git history (e.g. just merged
-# by another agent's cmd).  A pure filesystem existence check makes such a
-# reference look deleted.  Try the project's own remote-tracking branch and
-# HEAD before declaring the link missing.  Glob candidates keep using the
-# filesystem-only check in the caller; git cat-file has no glob support and
-# globs are already resolved by compgen there.
-external_ref_exists_via_git() {
-    local repo="$1" candidate="$2" timeout_sec="${3:-10}" ref
-    candidate="${candidate%/}"
-    [[ "$candidate" == *"*"* || "$candidate" == *"?"* || "$candidate" == *"["* ]] && return 1
-    [[ -e "$repo/.git" ]] || return 1
-    for ref in HEAD origin/main origin/master; do
-        timeout --kill-after=1 "$timeout_sec" git -C "$repo" cat-file -e "${ref}:${candidate}" 2>/dev/null && return 0
-    done
-    return 1
-}
+# GA-579/580: external_ref_canonical_project_id and external_ref_exists_via_git
+# are defined in scripts/lib/external_project_ref_resolver.sh (sourced above)
+# and shared with scripts/gates/gate_vercel_phase.sh.
 
 # GA-314: source更新を解消する際、索引本文が参照するrepo相対リンクの欠落を
 # source_commit更新だけで隠してはならない。鮮度ALERT対象に限って参照を検査し、
