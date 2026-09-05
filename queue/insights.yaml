@@ -18809,3 +18809,10 @@ insights:
   source: "manual"
   fix_known: false
   status: pending
+- id: INS-20260905-195731946-fdd9
+  ts: "2026-09-05T19:57:31+09:00"
+  insight: "LG072偽陽性: gunshi_log_append.sh L235のregex r'0件'が'10件'の部分マッチで発火。word boundary \\b0件 or (?<\\![0-9])0件 に修正すべき。D0適用可能(1行修正)。"
+  priority: "medium"
+  source: "manual"
+  fix_known: false
+  status: pending
