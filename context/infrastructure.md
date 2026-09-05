@@ -1,5 +1,6 @@
 # インフラコンテキスト
 <!-- last_updated: 2026-09-05 context_freshness reviewed source boundary -->
+<!-- source_commit:5462c4ff4 reason:context_freshness reviewed source boundary evidence:context_freshness_check context=context/infrastructure.md commit=5462c4ff4 -->
 <!-- source_commit:493e33279 reason:context_freshness reviewed source boundary evidence:context_freshness_check context=context/infrastructure.md commit=493e33279 -->
 <!-- source_commit:c164d8e6b reason:context_freshness reviewed source boundary evidence:context_freshness_check context=context/infrastructure.md commit=c164d8e6b -->
 <!-- source_commit:79b8feba6 reason:context_freshness reviewed source boundary evidence:context_freshness_check context=context/infrastructure.md commit=79b8feba6 -->
@@ -819,3 +820,4 @@ source boundary一致taskはregistryのowner/update_triggerからcontext_update_
 - ext4 cache worktree の downstream identity(疾風 hotfix 90e83f2e2 09-05 09:47)|cache 由来 worktree でも report_commit_identity が published base と一致するよう整合。cold 81s/warm 42s 配備の後段|→ `scripts/deploy_task.sh`
 - 家老 hotfix 3 本(09-05 09:58-10:14): agent_respawn preserve active(d7599646、respawn で active task identity を保持)/cache worktree source paths(50ef9b52、cache 由来 worktree の source path を Git task tree から抽出)/ninja root commit guard(6173bdde、忍者の root main 直 commit を hook で禁止=cmd_4476 分岐の再発防止)|→ `scripts/agent_respawn.sh` / `scripts/deploy_task.sh` / `scripts/hooks/`
 - publisher post-push cleanup(飛猿 hotfix 1a2c41c30 09-05 10:20)|publish 後の task worktree/lock 後片付け。cache worktree downstream identity(疾風)は GATE CLEAR 10:20|→ `scripts/publisher_queue.sh`
+- PD-142 test state isolation(81a77292、GATE CLEAR 10:34): run_tests.sh が test 実行時に SHOGUN_STATE_DIR を一時 dir へ強制し fixture request の本番 publish_queue 漏出を止める。LG043 word boundary(影丸 0b403f7ae): 語境界判定の hotfix|→ `scripts/run_tests.sh`
