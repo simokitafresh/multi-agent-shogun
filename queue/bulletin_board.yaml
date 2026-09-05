@@ -4423,5 +4423,5 @@ entries:
   actioned_by: ''
   notify_targets:
     - 'karo'
-  confirmed_by: []
-  status: 'open'
+  confirmed_by: ["karo"]
+  status: "closed"
