@@ -8354,3 +8354,26 @@
   verdict: LGTM
   verified_files:
   - scripts/lib/external_project_ref_resolver.sh:external_ref_canonical_project_id
+- cmd_id: cmd_karo_ci_fix_33954907749_safe_ff_dirty_overlap
+  review_type: draft
+  verdict: APPROVE
+  gate_result: null
+  confidence: HIGH
+  verified_files:
+    - "queue/tasks/kagemaru.yaml:AC1"
+  findings_summary: "6観点OK。dirty overlap保持付きsafe_shared_main_ff収束修正。真正5+敵対5のfixture要件適切"
+  observations:
+    - "AC1=前提実測(25 behind/dirty overlap 1件)→AC2=blob退避+復元+fail-closed"
+  causal_chain: "dirty overlap→safe_shared_main_ff skip→root 25 behind→validator旧版→循環修正不能→blob保持収束で解消"
+  origin: "[[cmd_karo_ci_fix_33954907749]] -> [[dirty_overlap_blocks_ff]] -> [[safe_blob_preserve_convergence]]"
+  brainwash_check: "#1no #2no #3no #4no #5no #6no #7no #8no target 2件、estimated 15min"
+  finding_categories: [assumptions, numbers, simulation, premortem, adversarial, ambiguity]
+  step3_5_verified: false
+  hole_action: none
+  ambiguity_points: none
+  operational_simulation:
+    command: "grep -c dirty queue/tasks/kagemaru.yaml"
+    expected: "dirty overlap記述確認"
+    actual: "複数件確認"
+    result: "PASS"
+  timestamp: "2026-09-05T17:50:00+09:00"
