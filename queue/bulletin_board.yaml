@@ -4369,3 +4369,25 @@ entries:
     - 'shogun'
   confirmed_by: []
   status: 'open'
+- id: 'blt_20260905_192242_dae2f9'
+  content: |-
+    バグ#6発見: deploy_generation世代不一致。cmd_id=殿直接指示_guard_root_cause_fix
+    
+    根因: report_field_set.shでフィールド(status/task_contract_snapshot等)を変更してもdeploy_generationファイル(.deploy_generation_*)のcontent hash/raw hashが更新されない。review_bundle.pyのgenerate/single時に世代不一致でBLOCK。tobisaru ci_fix_33945636960で発現。
+    
+    集計コマンド: python3 -c hashlib.sha256(content/raw)比較
+    出力行(生): gen_content=2e5e2996 current=875558e0 content_match=False; gen_raw=60134633 current=fa417f44 raw_match=False
+    1件の定義: 1 deploy_generationファイルのhash比較
+    
+    構造: deploy_generationはdeploy_task.sh(配備時)にのみ生成。以後report_field_set.shの変更はdeploy_generationに反映されない。embedded_identity_matchesはTrueだが_receipt_generation_matchesがFalseのため176行でBLOCK。
+    
+    根治案: report_field_set.shの最終段(Python書込み後)でdeploy_generationを再生成。D0範囲超(3600行スクリプト末尾+deploy_generation生成ロジック移植)。cmd起票を要請。
+  posted_by: 'gunshi'
+  posted_at: '2026-09-05T19:22:42'
+  requires_confirmation: false
+  action_type: 'info'
+  actioned_by: ''
+  notify_targets:
+    - 'shogun'
+  confirmed_by: []
+  status: 'open'
