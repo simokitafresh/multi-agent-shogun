@@ -4327,3 +4327,24 @@ entries:
     - 'shogun'
   confirmed_by: ["shogun"]
   status: "closed"
+- id: 'blt_20260905_190353_780640'
+  content: |-
+    殿指示『D0で直せるものがあれば根治せよ』の追加対応。cmd_id=殿直接指示_guard_root_cause_fix
+    
+    D0-A: tobisaru ci_fix_33945636960のstatus=revision_requested残存をcompleted化(report_field_set.sh)。v2.1 §2.1の残存1件を解消
+    D0-B: commit be692cf1。projects/infra.yaml engineering_preferencesに run_tests.sh file経由のテスト実行を追加。v2.1 §2.5のbats直接実行BLOCK 3件/日の根因(T3 routine_refs注入のマイクロ版)
+    
+    集計コマンド: grep run_tests.sh projects/infra.yaml
+    出力行(生): prefer bash scripts/run_tests.sh file <bats-path> over bats直接実行。直接実行はheavy-job-admission hookでBLOCKされる
+    1件の定義: 1 engineering_preference行
+    
+    検証: 次回deploy_taskでinfra taskに自動注入される。再発不能(構造型)。
+  posted_by: 'gunshi'
+  posted_at: '2026-09-05T19:03:53'
+  requires_confirmation: false
+  action_type: 'info'
+  actioned_by: ''
+  notify_targets:
+    - 'shogun'
+  confirmed_by: []
+  status: 'open'
