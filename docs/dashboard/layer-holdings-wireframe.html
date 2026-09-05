@@ -1,0 +1,104 @@
+<title>Layer Holdings Monthly</title>
+<style>
+:root{--bg:#f6f5f2;--ink:#1f2328;--mute:#6b7076;--line:#d9d6cf;--card:#ffffff;--acc:#2f5d8a;
+ --xlu:#5b7fa6;--tqqq:#c8553d;--gld:#d9a441;--tmv:#6f8f72;--tecl:#8b5e83;--cash:#b9b6ad;}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){--bg:#15181c;--ink:#e8e6e1;--mute:#9aa0a6;--line:#343a40;--card:#1e2227;--acc:#7fa7d1;--cash:#5d6168;}}
+:root[data-theme="dark"]{--bg:#15181c;--ink:#e8e6e1;--mute:#9aa0a6;--line:#343a40;--card:#1e2227;--acc:#7fa7d1;--cash:#5d6168;}
+body{background:var(--bg);color:var(--ink);font:14px/1.5 -apple-system,"Segoe UI",Roboto,"Noto Sans JP",sans-serif;margin:0;padding:28px 20px 48px}
+main{max-width:980px;margin:0 auto;display:grid;gap:20px}
+h1{font-size:20px;margin:0;letter-spacing:.01em}
+.sub{color:var(--mute);margin:4px 0 0;font-size:13px}
+.badge{display:inline-block;border:1px dashed var(--acc);color:var(--acc);border-radius:4px;padding:1px 8px;font-size:12px;margin-left:8px;vertical-align:middle}
+.card{background:var(--card);border:1px solid var(--line);border-radius:6px;padding:16px 18px}
+.tabs{display:flex;gap:6px;flex-wrap:wrap}
+.tab{border:1px solid var(--line);background:transparent;color:var(--ink);border-radius:4px;padding:5px 12px;cursor:pointer;font:inherit}
+.tab[aria-selected="true"]{background:var(--acc);border-color:var(--acc);color:#fff}
+.tab:focus-visible{outline:2px solid var(--acc);outline-offset:2px}
+.legend{display:flex;gap:14px;flex-wrap:wrap;color:var(--mute);font-size:12px;margin-top:10px}
+.legend span::before{content:"";display:inline-block;width:10px;height:10px;border-radius:2px;margin-right:5px;vertical-align:-1px;background:var(--c)}
+.rows{display:grid;gap:6px;margin-top:14px}
+.row{display:grid;grid-template-columns:72px 1fr 36px;align-items:center;gap:10px;font-variant-numeric:tabular-nums}
+.row .ym{color:var(--mute);font-size:12px}
+.row .n{color:var(--mute);font-size:12px;text-align:right}
+.bar{display:flex;height:22px;border-radius:3px;overflow:hidden;border:1px solid var(--line)}
+.seg{display:flex;align-items:center;justify-content:center;font-size:11px;color:#fff;min-width:0;overflow:hidden;white-space:nowrap}
+.seg.cash{color:var(--ink)}
+.mtd{opacity:.65}
+.mtd .ym::after{content:" MTD";font-size:10px;color:var(--acc)}
+table{width:100%;border-collapse:collapse;font-variant-numeric:tabular-nums;font-size:13px}
+th,td{padding:6px 8px;border-bottom:1px solid var(--line);text-align:left}
+th{color:var(--mute);font-weight:600;font-size:12px;letter-spacing:.04em;text-transform:uppercase}
+td.num,th.num{text-align:right}
+.tbl{overflow-x:auto}
+.foot{color:var(--mute);font-size:12px}
+code{font-family:ui-monospace,Menlo,Consolas,monospace;font-size:12px;background:var(--bg);padding:1px 5px;border-radius:3px}
+@media (prefers-reduced-motion:no-preference){.seg{transition:width .2s}}
+</style>
+<main>
+ <header>
+  <h1>Layer Holdings Monthly <span class="badge">ワイヤーフレーム・値はサンプル</span></h1>
+  <p class="sub">出力 CSV は 1 本: <code>layer_holdings_monthly.csv</code>(year_month, is_mtd, layer, ticker, weight, pf_count)。下の 2 面はその CSV を pivot しただけの見え方。</p>
+ </header>
+
+ <section class="card">
+  <div class="tabs" role="tablist" id="tabs"></div>
+  <div class="legend">
+   <span style="--c:var(--xlu)">XLU</span><span style="--c:var(--tqqq)">TQQQ</span><span style="--c:var(--gld)">GLD</span>
+   <span style="--c:var(--tmv)">TMV</span><span style="--c:var(--tecl)">TECL</span><span style="--c:var(--cash)">Cash</span>
+   <span style="margin-left:auto">右端の数字 = pf_count(その月に展開できた PF 数)</span>
+  </div>
+  <div class="rows" id="rows"></div>
+ </section>
+
+ <section class="card">
+  <p class="sub" style="margin:0 0 10px">面 2: CSV そのまま(選択中の layer、直近 3 ヶ月)</p>
+  <div class="tbl"><table>
+   <thead><tr><th>year_month</th><th>is_mtd</th><th>layer</th><th>ticker</th><th class="num">weight</th><th class="num">pf_count</th></tr></thead>
+   <tbody id="tbody"></tbody>
+  </table></div>
+ </section>
+
+ <p class="foot">各 (year_month, layer) で weight 合計 = 1.0。ALL は 78 PF の単純平均(1 PF = 1 票)。2026-09 は is_mtd=true。入力は基盤 F1 <code>holdings_monthly.csv</code> のみで、DB 接続・展開・パラメータは持たない。</p>
+</main>
+<script>
+(function(){
+ // サンプル値。実値は F1 CSV の group-by で決まる。
+ const T=["XLU","TQQQ","GLD","TMV","TECL","Cash"];
+ const months=["2025-10","2025-11","2025-12","2026-01","2026-02","2026-03","2026-04","2026-05","2026-06","2026-07","2026-08","2026-09"];
+ const pf={L0:12,L1:21,L2:24,L3:21,ALL:78};
+ // 決定的な擬似データ(層ごとに XLU→GLD へ傾く様子)
+ function sample(layer,i){
+  const k={L0:0,L1:1,L2:2,L3:3,ALL:1.5}[layer];
+  let xlu=0.55-0.03*i+0.02*k, gld=0.20+0.03*i, tqqq=Math.max(0,0.18-0.02*i), tmv=0.04, tecl=Math.max(0,0.03-0.005*i), cash=0;
+  const s=xlu+gld+tqqq+tmv+tecl; xlu/=s;gld/=s;tqqq/=s;tmv/=s;tecl/=s;
+  return {XLU:xlu,TQQQ:tqqq,GLD:gld,TMV:tmv,TECL:tecl,Cash:cash};
+ }
+ const tabs=document.getElementById("tabs"),rows=document.getElementById("rows"),tbody=document.getElementById("tbody");
+ let cur="ALL";
+ function render(){
+  tabs.innerHTML="";
+  for(const L of ["L0","L1","L2","L3","ALL"]){
+   const b=document.createElement("button");b.className="tab";b.role="tab";b.textContent=L+(L==="ALL"?" (全体)":"");
+   b.setAttribute("aria-selected",L===cur);b.onclick=()=>{cur=L;render();};tabs.appendChild(b);
+  }
+  rows.innerHTML="";
+  months.forEach((m,i)=>{
+   const w=sample(cur,i),isM=m==="2026-09";
+   const r=document.createElement("div");r.className="row"+(isM?" mtd":"");
+   const bar=T.map(t=>w[t]>0?`<div class="seg ${t.toLowerCase()}" style="width:${(w[t]*100).toFixed(2)}%;background:var(--${t.toLowerCase()})" title="${t} ${(w[t]*100).toFixed(1)}%">${w[t]>=0.12?t+" "+Math.round(w[t]*100)+"%":""}</div>`:"").join("");
+   r.innerHTML=`<div class="ym">${m}</div><div class="bar">${bar}</div><div class="n">${pf[cur]}</div>`;
+   rows.appendChild(r);
+  });
+  tbody.innerHTML="";
+  months.slice(-3).forEach((m,j)=>{
+   const i=months.length-3+j,w=sample(cur,i);
+   T.filter(t=>w[t]>0).forEach(t=>{
+    const tr=document.createElement("tr");
+    tr.innerHTML=`<td>${m}</td><td>${m==="2026-09"}</td><td>${cur}</td><td>${t}</td><td class="num">${w[t].toFixed(4)}</td><td class="num">${pf[cur]}</td>`;
+    tbody.appendChild(tr);
+   });
+  });
+ }
+ render();
+})();
+</script>
