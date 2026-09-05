@@ -12,7 +12,7 @@
 | 今回何を行ったか | 現物再集計、旧版の矛盾訂正、配備カード化。T1/T2/T3/T5の実装・忍者配備は行っていない |
 | 本体の実装状態 | 下記4識別子はscripts/templates/tests/unitで一致0。新契約の実装は未着手。類似機能は既存であり「前提注入が一切ない」とは言わない |
 | 次の配備 | W0で原因分類の根拠を整備。W1とW2は入力契約確定後に並行実装できる。W3はW2のschema確定後。W4はW0の分類契約確定後に並行 |
-| 別に扱うもの | W5=世代/終端不整合の再現調査、W6=既存monitorのhonest FAIL通知適用確認。原因確認前のhotfix配備は禁止 |
+| 別に扱うもの | W5は調査完了・追加fix不要。W6=既存monitorのhonest FAIL通知適用確認。原因確認前のhotfix配備は禁止 |
 | 授権 | 本ターンの指示は設計更新。実装配備の指示は未受領。DM-Signal本番書込は禁止のまま。22:25/22:27の研究基盤向け裁定を全infra変更の承認待ち根拠へ拡張しない |
 | 設計の承認状態 | v2.1のレビュー承認は旧契約に対する履歴。v3.1の変更点をその承認で代替せず、実装cmdのレビュー対象にする |
 
@@ -159,6 +159,8 @@ flowchart LR
 - 既存test起点: review_bundle/report template/報告世代の既存tests。新規testは具体的不変量をtest_necessityに宣言する。
 
 ### W5 — バグ#6とci_push_stateの根因を確定（調査→原因別fix）
+- **調査結果(2026-09-05 23:58)**: 世代不一致はcommit `7671bdb99`で既修復。隔離成功rc=0、tamper後の再書込rc=1、関連contract 183件+138件ではなく、重複を除く各suite 3/3・138/138・1/1・41/41がPASS/SKIP0。追加コードfixは行わない。
+- ci_push_state WAIT 10行はinvalid/unresolvable 6、remote境界3、contract不一致1で一致。9行は後続CLEAR。残る行925は20:26:59 WAITの3秒後に`purpose_validation_fit_false`で正式BLOCK、20:27:04に`archive.done`。honest FAILの終端であり、CLEAR欠落やpublication未修復とは分類しない。従って10/10が後続終端へ接続済み。
 - 入力: P-1旧報告、terminal reportの書込前後、deploy_generationとlifecycle receipt、SG7 bundleとapprovalのfingerprint。現行report_field_setは既にterminal precheck→inbox経路を持つ。
 - 変更候補(原因確定後のみ): report_field_set/inbox/lifecycle/reviewの実際に破れている境界。deploy_generationを手で書き換える案は採らない。
 - AC: (1)同じreport世代の最小隔離再現が成功/失敗とも保存される。(2)origin側の該当差分と修正前後の同一再現結果が対応する。(3)ci_push_state10行をinvalid6/remote3/contract1の各cmdへ結び、既修復と未修復を判別。
@@ -181,8 +183,8 @@ flowchart LR
 | F-3 | honest FAIL approval | 実装存在確認、旧版に運用適用記録 | f69288720/d6842c066、review_approvalのapproved_honest_fail実装。新規未着手扱いに戻さない |
 | F-4 | fixture陳腐化 | 旧版で公開・CI検証報告あり | 208df246d、旧run33963211348。現在CI結果とは呼ばない |
 | F-5 | 家老計測 | v2.5修正・検証・gist同期済み | 1a9f9f3a9、contract8/8、別書§6.8。C/D根因修復の件数には入れない |
-| P-1→W5 | バグ#6 | 根因/公開完了未確認 | terminal publisherは既存。最小再現と対応commitの同定が必要 |
-| P-2→W5 | ci_push_state | 内訳調査済み、修復状態未確認 | WAIT10=6+3+1、各cmdの終端証跡へ接続する |
+| P-1→W5 | バグ#6 | 調査完了・既修復 | `7671bdb99`、隔離success/tamper fail-close、追加fix不要 |
+| P-2→W5 | ci_push_state | 調査完了・10/10終端接続 | WAIT10=6+3+1。9行CLEAR、1行はpurpose不一致の正式BLOCK+archive。修復対象0 |
 | P-3→W6 | honest FAIL停滞 | 未着手、既存監視あり | 既存caller/条件/fixtureを確認して変更要否を決める |
 | W0 | 一意根拠表 | 未着手 | 22eventの分類整合 |
 | W1/T3・W2/T1 | refs注入 | 未着手 | 入力契約/正本所有者確定後に並行可 |
