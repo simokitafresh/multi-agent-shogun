@@ -18551,3 +18551,10 @@ insights:
   source: "semantic_stress_test"
   fix_known: false
   status: pending
+- id: INS-20260905-183253331-9315
+  ts: "2026-09-05T18:32:53+09:00"
+  insight: "semantic_index_update新概念候補: discussion:バグはD0で自分で直せ は 既存aliasesに一致なし。概念定義とaliases追加を検討せよ"
+  priority: "low"
+  source: "semantic_index_update"
+  fix_known: false
+  status: pending
