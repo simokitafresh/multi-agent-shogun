@@ -10233,3 +10233,25 @@
   origin: "[[K2_python_callers]] -> [[cache_FAIL_BLOCK]] -> [[FAIL報告受理]]"
   ambiguity_points: none
   timestamp: "2026-09-06T03:53:00+09:00"
+- cmd_id: cmd_karo_ci_fix_dm_33983396944_dtb3_asof_history_20260906
+  review_type: report
+  verdict: FAIL
+  verified_files:
+  - "queue/reports/hanzo_report_cmd_karo_ci_fix_dm_33983396944_dtb3_asof_history_20260906.yaml:36"
+  step3_5_verified: true
+  fail_reasons:
+  - "status=revision_requestedでterminal verdict PASS不可。status=completedへ修正後に再提出"
+  findings_summary: "内容OK(6/6 PASS、bc13件全yes)。status不整合のみ"
+  observations:
+  - "事実: precheck FAIL: status revision_requested + terminal verdict PASS = 矛盾"
+  operational_simulation:
+    command: "grep '^status:' queue/reports/hanzo_report_cmd_karo_ci_fix_dm_33983396944_dtb3_asof_history_20260906.yaml"
+    expected: "completed"
+    actual: "revision_requested"
+    result: "FAIL"
+  finding_categories: [assumptions, numbers, premortem, ambiguity, adversarial]
+  brainwash_check: "#1no #2no #3no #4no #5no #6no #7no #8no"
+  causal_chain: "status=revision_requested→terminal PASS不可→FAIL差し戻し"
+  origin: "[[DTB3_ci_fix]] -> [[status不整合]] -> [[FAIL]]"
+  ambiguity_points: none
+  timestamp: "2026-09-06T04:02:00+09:00"
