@@ -7093,3 +7093,35 @@
   verdict: LGTM
   verified_files:
   - queue/reports/tobisaru_report_cmd_karo_recon2_4449_u2_revalidate.yaml:1
+- brainwash_check: '#1no #2no #3no #4no #5no #6no #7no #8no'
+  causal_chain: stale field維持→contract再投影→LGTM
+  cmd_id: cmd_karo_hotfix_same_cmd_redeploy_contract_reset
+  finding_categories:
+  - assumptions
+  - numbers
+  - premortem
+  - adversarial
+  - ambiguity
+  gate_prediction: CLEAR
+  gate_prediction_reason: all checks passed
+  observations:
+  - '事実1: same-cmd再配備contract全件再投影。precheck CLEAR'
+  - 'adversarial: 安全'
+  - 'ambiguity: なし'
+  operational_simulation:
+    actual: CLEAR
+    command: precheck
+    expected: CLEAR
+    result: PASS
+  origin: '[[cmd_karo_hotfix_same_cmd_redeploy_contract_reset]] -> [[LGTM]]'
+  report_id: rpt-4d90facb-1d67-44cb-bdc1-ab40f5367f7a
+  report_identity_version: 2
+  report_ninja: kagemaru
+  report_path: queue/reports/kagemaru_report_cmd_karo_hotfix_same_cmd_redeploy_contract_reset.yaml
+  report_task_id: cmd_karo_hotfix_same_cmd_redeploy_contract_reset_normal
+  review_type: report
+  step3_5_verified: true
+  timestamp: '2026-09-05T13:46:00+09:00'
+  verdict: LGTM
+  verified_files:
+  - scripts/deploy_task.sh:1
