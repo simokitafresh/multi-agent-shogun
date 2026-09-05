@@ -110,6 +110,39 @@ def binary_check_satisfied(item, *, allow_waiver: bool):
     )
 
 
+def approved_honest_fail_paths(root: Path, cmd_id: str, report_path: Path, report: dict):
+    """Return only failed paths authenticated by SG7 and current Karo ACCEPT."""
+    if (str(report.get("status") or "").strip(), str(report.get("verdict") or "").strip().upper()) != ("failed", "FAIL"):
+        return set()
+    bundle_path = root / f"queue/gates/{cmd_id}/sg7_bundle.json"
+    if not bundle_path.is_file():
+        return set()
+    try:
+        sys.path.insert(0, str(root))
+        from scripts import review_bundle
+        bundle = load(bundle_path)
+        review = review_bundle.validate(bundle, cmd_id, "APPROVE")
+        approved = set(review_bundle._attest_honest_fail(root, cmd_id, review, report_path))
+    except Exception:
+        return set()
+    generation = hashlib.sha256(report_path.read_bytes()).hexdigest()
+    try:
+        report_ref = str(report_path.resolve().relative_to(root.resolve()))
+    except ValueError:
+        return set()
+    approval_root = root / f"queue/gates/{cmd_id}/review_approvals/reports"
+    for approval_path in approval_root.glob("*/karo.yaml"):
+        approval = load(approval_path)
+        if (
+            str(approval.get("result") or "") == "ACCEPT"
+            and str(approval.get("approval_mode") or "") == "approved_honest_fail"
+            and str(approval.get("generation") or "") == generation
+            and str(approval.get("report") or "") == report_ref
+        ):
+            return approved
+    return set()
+
+
 def validate(root: Path, cmd_id: str):
     if not re.fullmatch(r"cmd_\d+", cmd_id):
         return True, "direct/non-numbered cmd exempt"
@@ -158,9 +191,20 @@ def validate(root: Path, cmd_id: str):
             # when every child check passes (or a PASS report explicitly waives
             # the failed check per GP-190) and the immutable mapping is bound.
             allow_waiver = str(report.get("verdict") or "").strip().upper() == "PASS"
-            if checks and all(isinstance(entries, list) and entries and all(
-                    binary_check_satisfied(x, allow_waiver=allow_waiver) for x in entries
-                ) for entries in checks.values()):
+            approved_failures = approved_honest_fail_paths(root, cmd_id, path, report)
+            checks_satisfied = bool(checks)
+            for group, entries in checks.items():
+                if not isinstance(entries, list) or not entries:
+                    checks_satisfied = False
+                    break
+                for index, item in enumerate(entries):
+                    check_path = f"binary_checks.{group}[{index}]"
+                    if not (binary_check_satisfied(item, allow_waiver=allow_waiver) or check_path in approved_failures):
+                        checks_satisfied = False
+                        break
+                if not checks_satisfied:
+                    break
+            if checks_satisfied:
                 covered.update(mapping)
     missing = sorted(expected - covered)
     if missing:
