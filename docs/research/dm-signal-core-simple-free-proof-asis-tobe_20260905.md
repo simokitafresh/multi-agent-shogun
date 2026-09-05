@@ -1,5 +1,5 @@
 <!-- gist-master: e590a96ad0b1c541b2ec266d4c6a512b dm-signal-core-simple-free-proof-asis-tobe_20260905.md -->
-# DM-Signal Core LP × Simple LP × Free Interactive Proof — AsIs/ToBe 設計書 v0.3(2026-09-05 09:30、殿指示 09:18: identity 層=Supabase user.id の保持価値・匿名 visitor_id/Tier 維持・Tier×Page analytics との最小接続・source 引継ぎ・3 サービス緩連携・PF→Rebalancer 導線。3 repo の origin/main を将軍が一次確認)/ v0.2 09:20 / v0.1 02:55
+# DM-Signal Core LP × Simple LP × Free Interactive Proof — AsIs/ToBe 設計書 v0.4(2026-09-05 13:25、殿裁定 13:19: v0.3 の方向で確定・機能を増やさない・優先 5 段=identity 最小保持→campaign_id で Core/Simple→Tier×Page と user.id を Google 連携者だけ結ぶ→測れてから Simple LP 1 本→他は将来候補の記録のみ。原則『測るために必要な最小変更→実験→データを見て次を決める』)/ v0.3 09:30(殿指示 09:18: identity 層=Supabase user.id の保持価値・匿名 visitor_id/Tier 維持・Tier×Page analytics との最小接続・source 引継ぎ・3 サービス緩連携・PF→Rebalancer 導線。3 repo の origin/main を将軍が一次確認)/ v0.2 09:20 / v0.1 02:55
 
 > 殿指示 2026-09-05 02:42。目的=(1) dm-signal.com を SEO・ブランドの Core LP として完成 (2) 商品を変えずに Simple LP 1 本だけの価値を検証 (3) Google Auth→Free tier を Interactive Proof として使えるか確認 (4) Core vs Simple の流入差を計測可能に。**この段階では実装しない**(Simple LP 新設・Free 可視性変更・Tier 変更・sitemap/canonical 変更・Google Auth 変更は殿裁定後)。
 > 優先順位=最新の殿裁定 → 最新正本 → 本番実測 → 現行コード → 古い設計書。正本: SEO v6(`dm-signal-lp-seo-plan_20260830.md`、gist 5edb5f6d)/入口 3 面 v3.2(`dm-login-showcase-asis-tobe_v3_20260830.md`、gist 901c36a5)/Free tier v3.3(`dm-free-tier-google-auth-asis-tobe_v3_20260830.md`、gist 897501e0)。
@@ -156,6 +156,37 @@
 - 4476 §F「first_touch/last_touch の保持場所なし」「Supabase user id は backend で破棄」「ShowcaseEvent に user 列なし」=本節と一致。4476 は revision_requested(家老レビュー中)だが、本節は将軍が origin/main を直接確認した行番号で書いた。
 - §I の順序は変わらない: 裁定 → attribution 最小(本節 #1-#4)→ Simple LP(noindex)→ 4 週計測。**identity 層は Simple LP より前**。
 
+## §M 収束(v0.4、殿裁定 2026-09-05 13:19)— 実装可能な最小単位
+
+**殿裁定(原文の要旨)**: v0.3 の方向性は良い。機能を増やしすぎない。優先順位は次の 5 つだけ。原則=「測るために必要な最小変更 → 実験 → データを見て次を決める」。設計をこれ以上広げず、実装可能な最小単位へ収束させる。
+
+### M-1 5 段の優先順位 → 最小変更への写像(これが実装単位。順序固定、各段は前段の計測が動いてから)
+
+| 段 | 殿の優先順位 | 最小変更(§L-3 の番号) | 触る file(origin/main 09:2x 確認) | 変えないもの | 完了の二値 |
+|---|---|---|---|---|---|
+| 1 | Google Auth 後の Supabase user.id を捨てず、匿名 visitor_id/password/Tier を壊さず保持 | L-3 #1: `/auth/callback` 成功時に `localStorage["dm_user_id"]=session.user.id`(`visitor-id.ts` と同型)+ event `auth_completed` | frontend `app/auth/callback/page.tsx`、`lib/visitor-id.ts` 隣に `lib/user-id.ts`(新規 10 行) | cookie `viewer_session`、`verify-viewer`、tier 認証、Google 任意、backend の `get_free_coupon`(user を保存しない現状のまま。保持は frontend 側) | private browsing 以外で `dm_user_id` が UUID で残る=yes/no。既存 Free 実機 e2e(殿 08-31 PASS 手順)が再 PASS=yes/no |
+| 2 | 既存 campaign_id で Core/Simple の流入を識別 | L-3 #4: `dm_signal_campaign_id` を sessionStorage→localStorage(月跨ぎ)。**source 列は作らない**。Core=`lp_core_*`、Simple=`lp_simple_*` の prefix 規約を campaign_id に持たせる(X 由来は既存 `x_*` のまま) | frontend `lib/showcase-attribution.ts`、`components/landing-page.tsx` L69 | `showcase_events` schema、campaign_id 発行(cmd_4474) | LP を `?campaign_id=lp_core_test` で開き `/free` 到達時の event payload に同値=yes/no |
+| 3 | 既存 Tier×Page analytics と、Google 連携ユーザーだけ user.id で結ぶ | L-3 #2+#3: `page_views.user_id`(uuid, nullable, index)+`page_views.campaign_id`(text, nullable)、`showcase_events.user_id`(nullable)。frontend は localStorage の 2 値を payload に同送(値が無ければ null) | backend `app/db/models.py` L629/L634-646、`app/api/analytics.py` L97-121 `PageViewPayload`、`app/api/public_showcase.py`、alembic migration 1 本(+downgrade)。frontend `lib/api-client.ts` L1449、`lib/showcase-attribution.ts` L44-52 | 既存列・既存 EP の応答・append-only。password/Tier 利用者は `user_id` null のまま計測対象 | migration up/down 往復=yes/no。Google 連携者 1 名の `page_views` に user_id が入り、password 利用者の行は null=yes/no。Primary Metric §J 第 1 候補(LP→Auth 完了率、campaign prefix 別)が SQL 1 本で出る=yes/no |
+| 4 | ここまで測れてから Simple LP を 1 本だけ試す | §D の Simple 1 本(noindex、`lp_simple_01` を campaign_id に固定)。**段 3 の SQL が本番で 1 週間値を返してから起票** | `lp/` 新 route 1 本 | Core LP、sitemap、canonical、Tier | 4 週の Core vs Simple 比較表(LP→Auth 完了率/Auth→Free ログイン率)が出る=yes/no |
+| 5 | Rebalancer/DM-Fusion 連携、Free 公開 PF 拡大、複雑な SSO 等 | **実装しない。M-3 に記録のみ** | — | — | — |
+
+### M-2 確定した設計判断(これ以上広げない)
+- source は **campaign_id の prefix 規約**で表す(`lp_core_`/`lp_simple_`/`x_`)。`source` 列・`product_logins` 表・`profiles` 表は作らない。
+- identity は **3 層の任意結合**(visitor_id ⊂ tier ⊂ user_id、後者ほど null 可)。結合は保存時ではなくクエリで行う(対応表を作らない)。
+- 保持場所は frontend localStorage(`dm_user_id`)。backend は Supabase service key を持たない方針(Free v3.3 §2-3)を維持し、Auth API の user 取得コードも変えない。
+- 変更総量の上限: frontend 4 file(callback/user-id/api-client/showcase-attribution)+landing-page 1 行、backend 3 file+migration 1 本。これを超える提案は §M-3 行き。
+- Free Interactive Proof の可視性拡大(§E の代表 PF・案 A/B)は **段 5(将来候補)**。今の Free=Basic-DualMomentum のみを維持。
+
+### M-3 将来候補(記録のみ。起票しない)
+1. PF→Rebalancer 導線(§L-2 6): DM-Signal PF 画面のリンク → Rebalancer が query を `saved_portfolios` へ upsert。
+2. 3 サービス横断 `public.profiles(user_id, first_seen_service, first_campaign_id)`(§L-2 5)。まずは段 3 の SQL で `auth.users` 集合の交差を read するだけ。
+3. Free 公開 PF の拡大・L3 mask_signal での Performance 開放(§E 案 A/B、代表 PF の選定)。
+4. SSO/個人別クーポン/Google 必須化: やらない(殿 09:18・13:19)。
+5. `product_logins`(Free v3.3 §4-5 既定案): 段 3 で代替済みとして閉じる。
+
+### M-4 次の 1 手
+- 起票単位は **段 1+2+3 を 1 cmd**(frontend+backend、migration 往復、readonly 事前確認、AC は M-1 の二値列)。段 4 は別 cmd(段 3 の本番 SQL が 1 週間値を返してから)。殿裁定 13:19 は「収束」であり実装 go ではないため、**起票は殿の go を待つ**(実装は殿の一言で開始できる状態まで設計を閉じた)。
+
 ## §K 因果リンク
 - ← [[dm-signal-lp-seo-plan_20260830]] v6(Core=母艦、分解しない) / ← [[dm-login-showcase-asis-tobe_v3_20260830]] / ← [[dm-free-tier-google-auth-asis-tobe_v3_20260830]]
-- → [[cmd_4476]] 偵察 → 本書 v0.2 / → [[rebalancer]] `saved_portfolios(user_id)` / → [[dm-fusion]] `saved_fusions(user_id)` 同一 auth.users
+- → [[cmd_4476]] 偵察 → 本書 v0.2 / → [[殿裁定_LP_identity_最小収束_20260905_1319]] → §M / → [[rebalancer]] `saved_portfolios(user_id)` / → [[dm-fusion]] `saved_fusions(user_id)` 同一 auth.users
