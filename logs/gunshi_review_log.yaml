@@ -8106,3 +8106,37 @@
   verdict: LGTM
   verified_files:
   - scripts/review_bundle.py:approved_failed_check_paths
+- brainwash_check: '#1no #2no #3no #4no #5no #6no #7no #8no gate_context_freshness
+    31/31+gate_vercel_phase 14/14'
+  causal_chain: stale DM-Signal checkout→disk直checkのみ→外部参照false negative→canonical
+    project限定+git-tree fallbackで根治
+  cmd_id: cmd_karo_hotfix_ga579_external_project_context_ref
+  finding_categories:
+  - assumptions
+  - numbers
+  - premortem
+  - adversarial
+  - ambiguity
+  findings_summary: 4観点OK。GA-579/GA-580根治。canonical project限定+git-tree fallback。3対照(外部PASS/真正BLOCK/同名誤採用0)。gate_context_freshness
+    31/31+gate_vercel_phase 14/14 全PASS
+  hole_action: none
+  observations:
+  - DM-Signal stale working tree(HEAD=6f394781 vs origin/main=8af98631)が真因
+  - '副次発見: cmd_4319/4320/4321の真正欠落3件(scope外記録済み)'
+  operational_simulation:
+    actual: canonical project resolver present
+    command: grep -c external_ref_canonical_project_id scripts/gates/gate_context_freshness.sh
+    expected: '>=1'
+    result: PASS
+  origin: '[[GA-579]] -> [[missing_context_links_disk_only_check]] -> [[stale_working_tree_false_block]]'
+  precheck_na:
+    evidence: status=completed確認。GATE_PREDICTION=CLEAR
+    reason: SG-PRE1 status revision_requested→completed修正済み(report_field_set.sh)
+  report_ninja: kotaro
+  report_task_id: cmd_karo_hotfix_ga579_external_project_context_ref_normal
+  review_type: report
+  step3_5_verified: true
+  timestamp: '2026-09-05T17:28:00+09:00'
+  verdict: LGTM
+  verified_files:
+  - scripts/gates/gate_context_freshness.sh:external_ref_canonical_project_id
