@@ -1994,7 +1994,7 @@ entries:
   actioned_by: ''
   notify_targets: []
   confirmed_by: []
-  status: 'open'
+  status: "closed"
 - id: 'blt_20260904_094646_9cf23c'
   content: |-
     DOC_LANE_ALERT: context=context/infrastructure.md raw_alert=ALERT: context/infrastructure.md source commits 1件 since last_updated=2026-09-04 repo=/home/simokitafresh/multi-agent-shogun root_fallback=no timeout=360s/360s owner=infra-platform update_trigger=.github|.githooks|config|docs/rule|docs/knowledge-base|instructions|scripts|skills|tests|AGENTS.md|CLAUDE.md|CONTRIBUTING.md|LICENSE|Makefile|SECURITY.md|first_setup.sh|install.bat|lefthook-local.yml|lefthook.yml|project_lexicon.yaml|setup.sh|shutsujin_departure.sh。更新要否を確認せよ latest: db89bd952be2 publisher: task=cmd_karo_hotfix_t3s57_postclear_root_ledger_guard_202609040713_normal action: bash scripts/context_source_commit_set.sh context/infrastructure.md db89bd952be2 'context_freshness reviewed source boundary' 'context_freshness_check context=context/infrastructure.md commit=db89bd952be2'
@@ -2054,7 +2054,7 @@ entries:
   notify_targets:
     - 'shogun'
   confirmed_by: []
-  status: 'open'
+  status: "closed"
 - id: 'blt_20260904_101818_7a3ecb'
   content: |-
     GATE CLEAR cmd_karo_ci_fix_33814810266_flaky_second_202609040832: 完了
@@ -2065,7 +2065,7 @@ entries:
   actioned_by: ''
   notify_targets: []
   confirmed_by: []
-  status: 'open'
+  status: "closed"
 - id: 'blt_20260904_102018_66548b'
   content: |-
     DOC_LANE_ALERT: context=context/infrastructure.md raw_alert=ALERT: context/infrastructure.md source commits 3件 since last_updated=2026-09-04 repo=/home/simokitafresh/multi-agent-shogun root_fallback=no timeout=360s/360s owner=infra-platform update_trigger=.github|.githooks|config|docs/rule|docs/knowledge-base|instructions|scripts|skills|tests|AGENTS.md|CLAUDE.md|CONTRIBUTING.md|LICENSE|Makefile|SECURITY.md|first_setup.sh|install.bat|lefthook-local.yml|lefthook.yml|project_lexicon.yaml|setup.sh|shutsujin_departure.sh。更新要否を確認せよ latest: 29a2e223e5d8 publisher: task=cmd_karo_ci_fix_33814810266_flaky_second_202609040832_normal | 7f1e429de582 cmd_karo_ci_fix_33814810266_flaky_second_202609040832: close await_clear cross-cmd gap, batch inbox_drain marks, align bulk-guard test defaults | db89bd952be2 publisher: task=cmd_karo_hotfix_t3s57_postclear_root_ledger_guard_202609040713_normal action: bash scripts/context_source_commit_set.sh context/infrastructure.md 29a2e223e5d8 'context_freshness reviewed source boundary' 'context_freshness_check context=context/infrastructure.md commit=29a2e223e5d8'
