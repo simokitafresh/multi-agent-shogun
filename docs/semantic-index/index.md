@@ -3654,6 +3654,7 @@ codd:
 | discussion | `queue/lord_conversation.jsonl` 2026-09-05T15:41:19+09:00 session_save_20260905_1541(復帰点、先に session_save_20260905_1520 を読め): 殿 15:19『D0 で直せるところは将軍自身で』→計測修復 8 箇所を将軍 D0 で着地 7d947ac |
 | discussion | `queue/lord_conversation.jsonl` 2026-09-05T15:48:25+09:00 bu2ei9z3v Monitor event: "cmd_4478 保存プロセス(774943)の完了と status" SAVE_PROC_DONE status: draft checks: "check_q9_prevention_ |
 | discussion | `queue/lord_conversation.jsonl` 2026-09-05T16:00:55+09:00 bhll500me Monitor event: "case15 100回逐次実行の完了待ち" DONE fail_count=0 If this event is something the user would act on now,  |
+| discussion | `queue/lord_conversation.jsonl` 2026-09-05T16:11:37+09:00 session_save_20260905_1618(復帰点、先に session_save_20260905_1541 を読め): 殿 16:03『忍者 BLOCK/FAIL はインフラバグか』→docs/research/ninja_b |
 
 ## investment_knowledge_base — 投資知識辞書
 
