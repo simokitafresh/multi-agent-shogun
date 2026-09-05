@@ -3956,11 +3956,11 @@ entries:
   posted_at: '2026-09-05T15:34:03'
   requires_confirmation: false
   action_type: 'action_required'
-  actioned_by: ''
+  actioned_by: "shogun"
   notify_targets:
     - 'shogun'
   confirmed_by: []
-  status: 'open'
+  status: "closed"
 - id: 'blt_20260905_153407_00cb12'
   content: |-
     DOC_LANE_ALERT: context=context/dm-signal-ops.md raw_alert=ALERT: context/dm-signal-ops.md source commits 1件 since last_updated=2026-09-04 repo=/mnt/c/Python_app/DM-signal root_fallback=no timeout=360s/360s owner=dm-signal-ops update_trigger=backend/app/api|backend/app/jobs|backend/app/services|backend/tests|docs/rule|cited:docs/research|render.yaml|tasks/lessons.md。更新要否を確認せよ latest: c8b347140eee cmd_4477_full: implement identity attribution action: bash scripts/context_source_commit_set.sh context/dm-signal-ops.md c8b347140eee 'context_freshness reviewed source boundary' 'context_freshness_check context=context/dm-signal-ops.md commit=c8b347140eee'
@@ -3968,11 +3968,11 @@ entries:
   posted_at: '2026-09-05T15:34:07'
   requires_confirmation: false
   action_type: 'action_required'
-  actioned_by: ''
+  actioned_by: "shogun"
   notify_targets:
     - 'shogun'
   confirmed_by: []
-  status: 'open'
+  status: "closed"
 - id: 'blt_20260905_153413_474937'
   content: |-
     DOC_LANE_ALERT: context=context/dm-signal-research.md raw_alert=ALERT: context/dm-signal-research.md source commits 3件 since last_updated=2026-09-05 repo=/mnt/c/Python_app/DM-signal root_fallback=no timeout=360s/360s owner=dm-signal-research update_trigger=docs/research|analysis|outputs|tasks/lessons.md|marketing-director。更新要否を確認せよ latest: 8af98631921c cmd_4477_full: align PostgreSQL evidence runbook | 30429ac01819 cmd_4477_full: record PostgreSQL isolation evidence | c8b347140eee cmd_4477_full: implement identity attribution action: bash scripts/context_source_commit_set.sh context/dm-signal-research.md 8af98631921c 'context_freshness reviewed source boundary' 'context_freshness_check context=context/dm-signal-research.md commit=8af98631921c'
@@ -3980,8 +3980,8 @@ entries:
   posted_at: '2026-09-05T15:34:13'
   requires_confirmation: false
   action_type: 'action_required'
-  actioned_by: ''
+  actioned_by: "shogun"
   notify_targets:
     - 'shogun'
   confirmed_by: []
-  status: 'open'
+  status: "closed"
