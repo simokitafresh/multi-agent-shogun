@@ -28,6 +28,7 @@ engineering_preferences:
   - "prefer L2 universeは各方式3目的のみ over 6目的混合。シン/ALM等の方式ごとに3目的構成を保て"
   - "prefer 全候補実装・検証 over 事前選別。計算量を理由に候補を削るな"
   - "prefer 検証日+検証方法+出典の明記 over 結論だけの記録。検証トレーサビリティを残せ"
+  - "prefer /db-check スキル(2段認証) over db_capability_launcher直接実行。直接実行はGuard14でBLOCKされる"
 
 trade_rules:
   source: "docs/rule/trade-rule.md"  # Level 0 SSOT。RULE01-11。例外なし
