@@ -24,6 +24,7 @@ engineering_preferences:
   - "prefer safe defaults / non-destructive ops over 強制reset・広域cleanup・履歴改変"
   - "prefer gateと状態遷移で強制する運用 over 口約束や人間依存の手順"
   - "prefer 実テスト実行+結果確認 over 推論だけでbinary_checksを記入。体験は抽象を校正する"
+  - "prefer bash scripts/run_tests.sh file <bats-path> over bats直接実行。直接実行はheavy-job-admission hookでBLOCKされる"
 
 # =============================================================================
 # (a) CLI種別とエージェント対応
