@@ -45,6 +45,11 @@ inbox_mark_read_total_on_exit() { local rc=$?; inbox_mark_read_record_total "$rc
 trap inbox_mark_read_total_on_exit EXIT
 
 AGENT_ID="$1"
+# 帰属: tmux 外(watcher/cron/subshell)からの呼出しは executor が解決できず agent=- になる(§8 穴 3)。
+# pane 内なら writer の tmux 解決に任せ、pane 外だけ「<owner>-inbox」として inbox 所有者へ按分する。
+if [ -z "${SHOGUN_AGENT_ID:-}" ] && [ -z "${TMUX_PANE:-}" ]; then
+    export SHOGUN_AGENT_ID="${AGENT_ID}-inbox"
+fi
 shift || true
 AUTO_INFO_MODE=false
 if [ "${1:-}" = "--auto-info" ]; then

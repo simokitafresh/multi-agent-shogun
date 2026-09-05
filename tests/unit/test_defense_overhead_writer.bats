@@ -350,11 +350,14 @@ PY
   mkdir -p "$base/gates/cmd_a" "$base/out"
   printf '%s\n' \
     '{"timestamp":"2026-09-05T00:00:00Z","source":"review_approval","check_id":"karo_accept","wall_ms":10,"verdict":"PASS","event_id":"d1","agent":"karo"}' \
-    '{"timestamp":"2026-09-05T01:00:00Z","source":"review_approval","check_id":"karo_accept","wall_ms":30,"verdict":"WARN","event_id":"d2"}' > "$base/defense.jsonl"
+    '{"timestamp":"2026-09-05T01:00:00Z","source":"review_approval","check_id":"karo_accept","wall_ms":30,"verdict":"WARN","event_id":"d2"}' \
+    '{"timestamp":"2026-09-05T01:30:00Z","source":"inbox_watcher","check_id":"delivery_held","wall_ms":139000,"verdict":"WARN","event_id":"h1","agent":"inbox_watcher","target_agent":"karo"}' \
+    '{"timestamp":"2026-09-05T02:10:00Z","source":"three_layer_preflight","check_id":"three_layer_preflight_total","wall_ms":220,"verdict":"PASS","event_id":"p1","agent":"karo"}' > "$base/defense.jsonl"
   printf '%s\n' \
     '{"schema":"function_timing.v1","observed_at":"2026-09-05T01:00:00Z","execution_id":"new-1","script":"cmd_complete_gate.sh","elapsed_us":1000}' \
     '{"schema":"function_timing.v1","execution_id":"legacy-1788570000000000","script":"deploy_task.sh","elapsed_us":2000}' > "$base/timing.jsonl"
   printf '%s\n' \
+    $'2026-09-05T00:30:00+00:00\tcmd_a\tBLOCK\tparent_cmd_contract:missing' \
     $'2026-09-05T01:00:00+00:00\tcmd_a\tWAIT\tWAIT:report_commit_main_ancestry' \
     $'2026-09-05T02:00:00+00:00\tcmd_a\tCLEAR\tall_gates_passed\tduration_sec=2.5' > "$base/gate.log"
   printf '%s\n' '[Sat Sep  5 03:00:00 JST 2026] [DELIVERY-LATENCY] karo: held 5s from first-unread' > "$base/watcher.log"
@@ -379,6 +382,24 @@ PY
   grep -qF 'function_timing / cmd_complete_gate.sh' "$report"
   grep -qF 'function_timing / deploy_task.sh' "$report"
   grep -qF 'WAIT:report_commit_main_ancestry' "$report"
-  grep -qF 'inbox_watcher_karo / delivery_held' "$report"
+  grep -qF 'inbox_watcher_karo / delivery_held (legacy stderr)' "$report"
+  grep -qF 'inbox_watcher / delivery_held (event, WARN 1)' "$report"
   grep -qF '| - | 1 | 30 |' "$report"
+  # 待ち理由別 時間: BLOCK 30 分(00:30→01:00) + WAIT 60 分(01:00→02:00)、比率 33%/67%、cmd 数 1
+  grep -qF '| WAIT:WAIT:report_commit_main_ancestry | 60 | 67% | 1 |' "$report"
+  grep -qF '| BLOCK:parent_cmd_contract:missing | 30 | 33% | 1 |' "$report"
+  # 負荷 proxy: 02:10Z = JST 11 時帯に 1 回 p50 220
+  grep -qF '| 11 | 1 | 220 | 220 |' "$report"
+}
+
+# test_necessity: executor attribution must not collapse to "-" for the two
+# largest tmux-less sources (daemon health gate, inbox_mark_read outside a pane).
+@test "tmux-less attribution falls back to daemon name and owner-inbox" {
+  local out="$TEST_TMP/attr"; mkdir -p "$out"
+  run env -u TMUX_PANE -u SHOGUN_AGENT_ID bash -c 'source scripts/lib/defense_overhead_writer.sh; export SHOGUN_AGENT_ID="${SHOGUN_AGENT_ID:-three_layer_health}"; DEFENSE_OVERHEAD_LEDGER='"$out"'/a.jsonl defense_overhead_write three_layer_health refresh_window 5 PASS attr-1'
+  [ "$status" -eq 0 ]
+  grep -q '"agent": *"three_layer_health"' "$out/a.jsonl"
+  run env -u TMUX_PANE -u SHOGUN_AGENT_ID bash -c 'AGENT_ID=karo; if [ -z "${SHOGUN_AGENT_ID:-}" ] && [ -z "${TMUX_PANE:-}" ]; then export SHOGUN_AGENT_ID="${AGENT_ID}-inbox"; fi; source scripts/lib/defense_overhead_writer.sh; DEFENSE_OVERHEAD_LEDGER='"$out"'/b.jsonl defense_overhead_write inbox_mark_read inbox_mark_read_total 5 PASS attr-2'
+  [ "$status" -eq 0 ]
+  grep -q '"agent": *"karo-inbox"' "$out/b.jsonl"
 }

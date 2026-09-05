@@ -200,6 +200,7 @@ def main():
 
     gate = []
     waits = Counter()
+    per_cmd = defaultdict(list)
     for path in [Path(os.environ["KARO_THROUGHPUT_GATE_LOG"])] :
         try:
             raw_lines = path.read_text(encoding="utf-8").splitlines()
@@ -214,9 +215,24 @@ def main():
             state, reason = fields[2], fields[3]
             if state == "WAIT":
                 waits[reason] += 1
+            stamp = parse_iso(fields[0])
+            if stamp is not None:
+                per_cmd[fields[1]].append((stamp, state, reason))
             match = re.search(r"(?:^|\s)duration_sec=([0-9]+(?:\.[0-9]+)?)", line)
             if match:
                 gate.append(float(match.group(1)) * 1000)
+    # 待ち理由別の時間: 同一 cmd の連続 gate 行の間隔を、前行の state:reason に帳付けする。
+    # 「手」の p50 と足せない「待ち」の軸(設計書 §4.2)。reason は先頭 2 要素で丸める。
+    wait_minutes = Counter()
+    wait_cmds = defaultdict(set)
+    for cmd_id, entries in per_cmd.items():
+        entries.sort(key=lambda e: e[0])
+        for (t0, state, reason), (t1, _, _) in zip(entries, entries[1:]):
+            if state not in ("WAIT", "BLOCK"):
+                continue
+            key = state + ":" + ":".join(reason.split(":")[:2])
+            wait_minutes[key] += (t1 - t0).total_seconds() / 60.0
+            wait_cmds[key].add(cmd_id)
     output.append("| " + " | ".join(row("cmd_complete_gate / CLEAR duration", gate)) + " |" if gate else "| cmd_complete_gate / CLEAR duration | 0 | - | - | 0 | ms |")
     output.append("")
     output.append("## GATE WAIT 理由")
@@ -225,6 +241,16 @@ def main():
         output.append(f"| {reason} | {waits[reason]} |")
     if not waits:
         output.append("| - | 0 |")
+
+    output.append("")
+    output.append("## GATE 待ち理由別 時間（便の待ち。手の p50 と足せない）")
+    table(output, ("state:reason", "待ち分", "比率", "cmd 数"))
+    total_wait = sum(wait_minutes.values())
+    for key, minutes in sorted(wait_minutes.items(), key=lambda kv: (-kv[1], kv[0])):
+        share = f"{minutes / total_wait * 100:.0f}%" if total_wait else "-"
+        output.append(f"| {key} | {minutes:.0f} | {share} | {len(wait_cmds[key])} |")
+    if not wait_minutes:
+        output.append("| - | 0 | - | 0 |")
 
     held = []
     for path in split_paths(os.environ["KARO_THROUGHPUT_WATCHER_LOGS"]):
@@ -238,10 +264,15 @@ def main():
             match = re.search(r"held\s+([0-9]+)s", line)
             if match:
                 held.append(int(match.group(1)) * 1000)
+    # held の正本は defense_overhead の inbox_watcher/delivery_held event(§6.1 行 8)。
+    # watcher stderr 行(旧定義: first_unread_seen→send 成功)は legacy 行として併記し、同名で混ぜない。
+    held_events = [x["_wall"] for x in defense if x.get("source") == "inbox_watcher" and x.get("check_id") == "delivery_held"]
+    held_warn = sum(1 for x in defense if x.get("source") == "inbox_watcher" and x.get("check_id") == "delivery_held" and x.get("verdict") == "WARN")
     output.append("")
     output.append("## 配達 held")
     table(output)
-    output.append("| " + " | ".join(row("inbox_watcher_karo / delivery_held", held)) + " |" if held else "| inbox_watcher_karo / delivery_held | 0 | - | - | 0 | ms |")
+    output.append("| " + " | ".join(row(f"inbox_watcher / delivery_held (event, WARN {held_warn})", held_events)) + " |" if held_events else "| inbox_watcher / delivery_held (event, WARN 0) | 0 | - | - | 0 | ms |")
+    output.append("| " + " | ".join(row("inbox_watcher_karo / delivery_held (legacy stderr)", held)) + " |" if held else "| inbox_watcher_karo / delivery_held (legacy stderr) | 0 | - | - | 0 | ms |")
 
     retry_counts = Counter()
     retry_paths = sorted(glob.glob(str(Path(os.environ["KARO_THROUGHPUT_RETRY_ROOT"]) / "*" / "auto_push_ancestry_retry.log")))
@@ -265,6 +296,23 @@ def main():
     if not retry_counts:
         output.append("| - | 0 |")
 
+    # 負荷 proxy: 全 agent の全 tool 呼出しに乗る three_layer_preflight_total の時間帯別 p50。
+    # load average の直接記録は無いため proxy と明記(§8 穴 4)。前後比較は同じ時間帯・同程度の proxy で行う。
+    hourly = defaultdict(list)
+    for item in defense:
+        if item.get("source") == "three_layer_preflight" and item.get("check_id") == "three_layer_preflight_total":
+            stamp = parse_iso(item.get("timestamp"))
+            if stamp is not None:
+                hourly[stamp.astimezone(JST).strftime("%H")].append(item["_wall"])
+    output.append("")
+    output.append("## 負荷 proxy（three_layer_preflight_total の時間帯別 p50、JST）")
+    table(output, ("時間帯", "回数", "p50 ms", "p95 ms"))
+    for hour in sorted(hourly):
+        vals = hourly[hour]
+        output.append(f"| {hour} | {len(vals)} | {fmt(percentile(vals, .5))} | {fmt(percentile(vals, .95))} |")
+    if not hourly:
+        output.append("| - | 0 | - | - |")
+
     output.append("")
     output.append("## agent 按分（defense_overhead）")
     table(output, ("agent", "回数", "wall_ms 合計"))
@@ -279,7 +327,7 @@ def main():
         output.append("| - | 0 | 0 |")
 
     OUT.write_text("\n".join(output) + "\n", encoding="utf-8")
-    print(f"karo_throughput_report: wrote {OUT} defense={len(defense)} timing={len(timing)} gate_clear={len(gate)} held={len(held)} retry={sum(retry_counts.values())}")
+    print(f"karo_throughput_report: wrote {OUT} defense={len(defense)} timing={len(timing)} gate_clear={len(gate)} held_event={len(held_events)} held_legacy={len(held)} retry={sum(retry_counts.values())}")
 
 main()
 PY

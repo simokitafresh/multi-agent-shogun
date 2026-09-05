@@ -3,6 +3,8 @@
 set -euo pipefail
 
 repo_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
+# 帰属: daemon 実行は tmux 外で agent=- になる(§8 穴 3)。daemon 名を executor として記録する。
+export SHOGUN_AGENT_ID="${SHOGUN_AGENT_ID:-three_layer_health}"
 # Round8 lane #0': complete entrypoint wall-clock telemetry.
 THREE_LAYER_HEALTH_TOTAL_T0_US="${EPOCHREALTIME/./}"
 THREE_LAYER_HEALTH_TOTAL_T0_US="${THREE_LAYER_HEALTH_TOTAL_T0_US:0:16}"
