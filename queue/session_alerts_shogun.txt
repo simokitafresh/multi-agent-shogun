@@ -1,3 +1,4 @@
-# session_alerts — generated: 2026-09-05T20:15:13+0900
-[DONE] 追体験自動化ターゲット: WARN (Q6回答未検出)
-[DONE] failed task残置: kotaro — 真因確認と再配備/クローズを確定せよ
+# session_alerts — generated: 2026-09-06T02:24:29+0900
+[DONE] 掲示板action_required未対応: 1件 — blt_20260905_185739_2d7a42 は status closed/confirmed。actioned_by を埋めた(02:38)
+[DONE] 走行中cmd実測突合: busy 2名 — capture-pane 02:37: hayate=報告文再送中(引用規則で送信失敗→平文へ)、kagemaru=cmd_4481 receipt run_tests(hooks 実行中)
+[DONE] monitor lifecycle 失敗行 7行/60分 — GATE-STALL-ITEM-TIMEOUT(cmd_complete_gate 180s 超)。所有者=ninja_monitor gate runner。家老手動 gate は完走(02:23 WAIT 行あり)。timeout 壁は次 tick で D0 候補(gate 実行時間計測)

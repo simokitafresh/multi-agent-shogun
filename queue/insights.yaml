@@ -19180,3 +19180,50 @@ insights:
   resolved_reason: "semantic index candidate was absorbed into a registered concept"
   action_artifact: "semantic_index=/home/simokitafresh/multi-agent-shogun/docs/semantic-index/index.md"
   resolved_at: "2026-09-06T00:56:32.648520"
+- id: INS-20260906-012546421-911a
+  ts: "2026-09-06T01:25:46+09:00"
+  insight: "semantic_index_update未登録[[リンク]]ターゲット: [[is_custom_weightフラグのWard限定判定]] は既存aliasesに一致なし。類似概念TOP3: production_parity(本番パリティ; alias=is_active; score=14.7) / test_quality_framework(テスト品質統合フレームワーク; alias=test_is_debt; score=14.3) / skill_routing(スキルルーティング; alias=pane is dead; score=13.8)。概念定義とaliases追加を検討せよ"
+  priority: "low"
+  source: "semantic_index_update"
+  fix_known: false
+  status: "resolved"
+  resolved_reason: "semantic map generation verified the candidate is represented or intentionally ignored"
+  action_artifact: "semantic_map=/home/simokitafresh/multi-agent-shogun/context/semantic-map.md;semantic_index=/home/simokitafresh/multi-agent-shogun/docs/semantic-index/index.md"
+  resolved_at: "2026-09-06T01:26:32.888580"
+- id: INS-20260906-012606762-3511
+  ts: "2026-09-06T01:26:06+09:00"
+  insight: "semantic_index_update未登録[[リンク]]ターゲット: [[新四つ目のvote比例weightsが月中carry-forward/weights_changed判定から漏れる経路]] は既存aliasesに一致なし。類似概念TOP3: gs_ninpo_research(GS忍法研究; alias=context.final_weights; score=11.9) / dmsignal_operations(DM-Signal運用; alias=display_ticker_weights; score=11.9) / investment_knowledge_base(投資知識辞書; alias=Ward; score=4.8)。概念定義とaliases追加を検討せよ"
+  priority: "low"
+  source: "semantic_index_update"
+  fix_known: false
+  status: "resolved"
+  resolved_reason: "semantic map generation verified the candidate is represented or intentionally ignored"
+  action_artifact: "semantic_map=/home/simokitafresh/multi-agent-shogun/context/semantic-map.md;semantic_index=/home/simokitafresh/multi-agent-shogun/docs/semantic-index/index.md"
+  resolved_at: "2026-09-06T01:26:33.071038"
+- id: INS-20260906-015430682-f971
+  ts: "2026-09-06T01:54:30+09:00"
+  insight: "semantic_index_update新概念候補: discussion:家老にゲートを通すように 伝えよう は 既存aliasesに一致なし。概念定義とaliases追加を検討せよ"
+  priority: "low"
+  source: "semantic_index_update"
+  fix_known: false
+  status: "resolved"
+  resolved_reason: "semantic map generation verified the candidate is represented or intentionally ignored"
+  action_artifact: "semantic_map=/home/simokitafresh/multi-agent-shogun/context/semantic-map.md;semantic_index=/home/simokitafresh/multi-agent-shogun/docs/semantic-index/index.md"
+  resolved_at: "2026-09-06T01:55:00.787438"
+- id: INS-20260906-021433674-8f95
+  ts: "2026-09-06T02:14:33+09:00"
+  insight: "ninja_monitorがrecon-dual分割cmdの未CLEAR報告を約2分間隔で軍師に繰り返し通知する。同一fingerprint+同一cmdの通知はdedupe(既読化済みfingerprintは再送しない)が必要。今回cmd_4480 hanzo A1で8回以上の重複通知が発生"
+  priority: "medium"
+  source: "manual"
+  fix_known: false
+  status: pending
+- id: INS-20260906-024326103-d225
+  ts: "2026-09-06T02:43:26+09:00"
+  insight: "[[CI shard1でtest publish direct commit bats case4が失敗するpublish ]] NO_MATCH purpose pending alias: cmd_complete時にdeploy_task.logでNO_MATCHだったpurpose。類似概念TOP3: skill_routing(スキルルーティング; alias=commit; score=12.8) / semantic_dictionary_design(セマンティック辞書構想; alias=bats; score=10.5) / infrastructure_ops(インフラ運用基盤; alias=CI RED残存修正 — test daemon maintenance lock bats の restart def; score=10.1)。既存概念aliasesへの自動昇格候補"
+  priority: "low"
+  source: "semantic_index_update"
+  fix_known: false
+  status: "resolved"
+  resolved_reason: "semantic map generation verified the candidate is represented or intentionally ignored"
+  action_artifact: "semantic_map=/home/simokitafresh/multi-agent-shogun/context/semantic-map.md;semantic_index=/home/simokitafresh/multi-agent-shogun/docs/semantic-index/index.md"
+  resolved_at: "2026-09-06T02:43:56.618422"

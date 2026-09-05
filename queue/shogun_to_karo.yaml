@@ -1,4 +1,123 @@
 commands:
+  cmd_4481:
+    title: "体系の保有 ticker×weight 月次 1 表 layer_holdings_monthly(F1 CSV 入力のみ、DB 接続 0)"
+    status: delegated
+    project: dm-signal
+    purpose: "殿 2026-09-05 22:29『シンプルにデータを見たいだけだ。L0,L1,L2,L3,全体でどの ticker をどの weight で持っているかを知りたいだけだ』→ 設計書 docs/research/dm-signal-market-direction-breadth-exposure-asis-tobe_20260905.md v1.4(gist e2219c69、軍師 APPROVE blt_224611/231437、家老 APPROVE blt_225346、起票=家老協議結論 blt_004146 (1) yes)。入力は cmd_4479 F1 の holdings_monthly.csv(23,175 行、weight 合計違反 0、I7 0、approved_honest_fail 終端)と universe_manifest.yaml だけ。出力は CSV 1 本。新四つ目 3 体(cmd_4480 で根因偵察中)は is_suspect=true で別計上。DB 接続 0、本番書込 0、パラメータ 0"
+    scope_mode: FULL
+    target_path:
+    - /mnt/c/Python_app/DM-signal/analysis_runs/cmd_4481_layer_holdings
+    - /mnt/c/Python_app/DM-signal/analysis_runs/cmd_4481_layer_holdings/tests
+    acceptance_criteria:
+      AC1:
+        description: "analysis_runs/cmd_4481_layer_holdings/build_layer_holdings.py を作り、入力 /mnt/c/Python_app/DM-signal/analysis_runs/cmd_4479_holdings_monthly/holdings_monthly.csv と universe_manifest.yaml だけから layer_holdings_monthly.csv(列 year_month,is_mtd,layer,ticker,weight,pf_count,is_suspect)を出力する。weight=Σ(PF の weight)÷pf_count、layer∈{L0,L1,L2,L3,ALL}、ALL は当月 eligible(行がある)PF の単純平均。全 (year_month, layer, is_suspect) で Σweight が 1.0±1e-9 であることを script 末尾で検査し違反 0 件を stdout に生貼付する"
+        binary_check: "layer_holdings_monthly.csv が存在し、(year_month, layer, is_suspect) ごとの Σweight 1.0±1e-9 違反が 0 件か"
+      AC2:
+        description: "pf_count = F1 CSV の (year_month, layer, is_suspect) ごとの distinct portfolio_id 数と全行一致し、manifest の layer 別 PF 数(L0 12/L1 21/L2 24/L3 21、ALL 78)以下であることを verify_pf_count.md に生貼付で確認する。is_suspect=true は F1 の verify_parity.md の不一致 3 PF(奥義-GS-新四つ目-激攻/常勝/鉄壁、portfolio_id は同 md から取得)だけに付き、それ以外は false。is_mtd は manifest の as-of 月の行だけ true(違反 0)"
+        binary_check: "pf_count の不一致 0、manifest 超過 0、is_suspect=true の PF が 3 体ちょうど、is_mtd=true が as-of 月の行のみか"
+      AC3:
+        description: "build_layer_holdings.py と tests/ に DB 接続・config 読取・展開コードが無いことを rg で確認する(rg -n 'create_db_engine|component_portfolios|display_ticker_weights|db_capability_launcher|psycopg' analysis_runs/cmd_4481_layer_holdings → 0 件)。contract test は AC1(Σweight=1)と AC2(pf_count 分母一致)の 2 本のみを tests/ に置き(各 test_necessity 宣言)、選択実行コマンド=bash scripts/run_tests.sh file <対象>で FAIL 0/SKIP 0。実装用 test は同一 cmd 内で削除。DM-Signal repo への commit は analysis_runs/cmd_4481_layer_holdings/ 配下のみ"
+        binary_check: "rg の該当 0 件、contract test 2 本・test_necessity 2/2・FAIL 0・SKIP 0、commit が配下のみか"
+    command: |
+      1. 設計書 v1.4 §1〜§3 と F1 成果物(holdings_monthly.csv / universe_manifest.yaml / verify_parity.md の 3 PF)を読み、pandas の group-by だけで build_layer_holdings.py を書く(パラメータ 0、ハードコード 0。ticker も layer も入力 CSV から出る)。AC1 の Σweight 検査を script 末尾に置く
+      2. verify_pf_count.md に AC2 の pf_count 一致・manifest 以下・is_suspect 3 体・is_mtd の検査結果を生貼付し、AC3 の rg 0 件と contract test 2 本の run_tests.sh file 結果を報告 YAML に数値で書く
+      3. 報告 YAML に layer_holdings_monthly.csv の行数、layer 別の月数、is_suspect=true の行数、直近確定月(is_mtd=false の最大月)の ALL 行(ticker と weight)を数値で書く。グラフ・横持ちは作らない(殿 22:29『複雑さは捨てろ』)
+    assumptions:
+      claim: "F1 成果物は /mnt/c/Python_app/DM-signal/analysis_runs/cmd_4479_holdings_monthly/ に holdings_monthly.csv(23,175 行、列 portfolio_id,layer,year_month,ticker,weight,monthly_return、weight 合計違反 0、I7 0)、universe_manifest.yaml(78 PF、as-of)、verify_parity.md(不一致 104 行=奥義-GS-新四つ目 3 体)が存在する(2026-09-06 00:19 才蔵、00:24 将軍 ls/grep 実測)。cmd_4479 は approved_honest_fail で終端済み(家老 blt_003021)、CSV は市場 1 表の入力に使える(家老 blt_002416/004146)"
+      source: "docs/research/dm-signal-market-direction-breadth-exposure-asis-tobe_20260905.md v1.4 §1-§3 / docs/research/dm-signal-research-data-foundation-asis-tobe_20260905.md v0.8 §3.1/§5 / /mnt/c/Python_app/DM-signal/analysis_runs/cmd_4479_holdings_monthly/{holdings_monthly.csv,universe_manifest.yaml,verify_parity.md} / 家老 blt_20260906_004146"
+      trust: verified
+    depends_on: none
+    timeout_minutes: 30
+    estimated_minutes: 15
+    split_decision:
+      boundary_ac_ids:
+      - AC1
+      integration_tasks: 0
+      review_round_trips: 1
+    environment_change: "type=lesson; file=docs/research/dm-signal-market-direction-breadth-exposure-asis-tobe_20260905.md; pattern=is_suspect"
+    quality_gate:
+      q1_firefighting: "消火ではない。殿 22:29 の『L0-L3/全体でどの ticker をどの weight か』を 1 表で見せる本体。F1 の CSV を初めて消費する"
+      q2_learning: "group-by の実装と 4 つの二値検査は忍者が行う。将軍は列定義と検査条件まで"
+      q3_next_quality: "この 1 表が出れば市場方向性の観測が毎月 1 CSV で読める。cmd_4480 の根因確定後は is_suspect を外すだけで完成形"
+      q4_depth: "shallow — pandas group-by 数行、パラメータ 0、DB 接続 0"
+      q5_verified_source: "production_verified — F1 成果物の存在・行数・3 PF 名を 2026-09-06 00:24 に ls/grep/python で実測。code_reading — 設計書 v1.4 §1 列定義・§3 AC(家老・軍師 APPROVE)"
+      q6_not_hiding: "入力 F1 は honest FAIL 終端(parity 104 不一致=新四つ目 3 体)であり、3 体は is_suspect で別計上して先行することを明記。根因は cmd_4480 で偵察中"
+      q7_definition_verified: "layer=L0/L1/L2/L3/ALL、weight=Σweight÷pf_count、pf_count=その月・層・is_suspect で行がある distinct PF 数、ALL=当月 eligible PF の単純平均、is_mtd=as-of 月のみ true、is_suspect=verify_parity.md 不一致 3 PF(設計書 v1.4 §1、確認日 2026-09-06)"
+      q8_why_what: "WHY: 殿が体系全体の月次保有を 1 表で見たい / WHAT: layer_holdings_monthly.csv 1 本(year_month,is_mtd,layer,ticker,weight,pf_count,is_suspect)、Σweight=1 違反 0、pf_count 不一致 0、is_suspect 3 体、DB 接続 0、contract test 2 本 / WHEN: 今セッション / WHERE: /mnt/c/Python_app/DM-signal/analysis_runs/cmd_4481_layer_holdings / WHO: 忍者 1 名 / HOW: F1 CSV の pandas group-by のみ / 複利: F1 が更新されるたび 1 コマンドで体系の向きが出る"
+      q9_firefighting_root_cause: "根本対応。個別に SQL を書いて集計する構造を、F1 CSV→1 表の固定経路に置き換える。新四つ目 3 体は隠さず is_suspect で別計上"
+      q10_knowledge_boundary: "検証済み: F1 成果物の存在・行数・3 PF、設計書 v1.4 の列定義。スコープ外: 新四つ目の根因(cmd_4480)、グラフ・横持ち・asset class・Δ・仮想 PF(設計書 §4 捨てたもの)、DB 昇格"
+      q11_not_already_done: "rg -c 'layer_holdings_monthly' context/cmd-chronicle.md docs/research/*.md → 設計書 v1.4 と backlog のみ(実装 0)。ls /mnt/c/Python_app/DM-signal/analysis_runs | grep layer_holdings → cmd_4481 dir(空、00:42 将軍作成)のみ"
+      q_ambiguity: "『eligible』= その月に F1 CSV に行がある PF。is_suspect の PF は L2 と ALL の両方で is_suspect=true 側に計上し、false 側の分母から除く"
+      q12_lord_30min_cost: "no — 殿 22:29 の目的に直結、設計書は両者 APPROVE、家老協議 (1) yes、readonly"
+      diagnosis: "BLOCK理由: 該当なし(新規起票) / 対策: なし"
+    delegated_at: "\"2026-09-06T00:50:08\""
+    origin: "[[殿指示_複雑さを捨てろ_20260905_2229]] -> [[layer_holdings_monthly_1表]] -> [[F1_CSVの初消費]]"
+  cmd_4479:
+    title: "DM-Signal 研究データ基盤 F1 holdings_monthly 第1段(readonly long table+検算3本)"
+    status: delegated
+    project: dm-signal
+    purpose: "殿 2026-09-05 21:22『あれば便利なものを先に解決しないか。他にも応用できる』→ 設計書 docs/research/dm-signal-research-data-foundation-asis-tobe_20260905.md(gist 4afbab67)§3 F1。PF×月×ticker×weight の標準 long table `holdings_monthly` を本番 readonly で materialize する。展開規則は同月 holding_signal の再帰+1/N 合算(設計書 v0.6 §1-2)で、実体は DM-Signal commit d14a4ec3ce8457ce17ef702079028dbb9c58a367 scripts/analysis/partial_turnover_phase0_lagged.py::_resolve_weights(08-06 に 75/75 parity 実証、rollback 233c2303 で現 HEAD から消失)。この blob を復元して使い新規再帰は書かない(殿 21:56『車輪の再発明禁止』)。display_ticker_weights は 08-06 v1.10 の反証(非 unit 35 行・parity 不一致 29/2,096)により正本にせず検算列(I6)。検算は α=0 parity・display 突合・signal_change_log 前方補完の 3 本。設計は家老 APPROVE(blt_225346、第 4 往復)+軍師 APPROVE(blt_224611/231437)。殿 go 23:29『lane B は 4479 起票』。第 2 段(DB 昇格)は本 cmd の検算結果を見て殿が決める。本番 DB 書込 0"
+    scope_mode: FULL
+    target_path:
+    - /mnt/c/Python_app/DM-signal/analysis_runs/cmd_4479_holdings_monthly
+    - /mnt/c/Python_app/DM-signal/analysis_runs/cmd_4479_holdings_monthly/tests
+    acceptance_criteria:
+      AC1:
+        description: "analysis_runs/cmd_4479_holdings_monthly/build_holdings_monthly.py を作り、monthly_returns.holding_signal(対象 78 PF: standard シン四神 12 / fof GSシン忍法 21・奥義- 24・秘奥義- 21、2010-04〜2026-09)を、同月の記録済み holding_signal を component へ再帰し 1/N 合算する規則で展開して列 portfolio_id,layer,year_month,ticker,weight,monthly_return の CSV holdings_monthly.csv を出力し、展開できた全 PF-月で SUM(weight) が 1.0±1e-9 であることを同 script の最後の検査で確認する(違反 0 件を stdout に生貼付)。展開コードは git show d14a4ec3ce8457ce17ef702079028dbb9c58a367:scripts/analysis/partial_turnover_phase0_lagged.py の _holding_tokens/_standard_weights/_resolve_weights を復元して使い(blob sha256 5a556df615be3c32204136fb5439b1a33320d49b68bb569587531c9a0d493487)、復元後の関数群と blob の unified diff が import/型注釈以外 0 行であることを verify_blob_diff.md に生貼付する。新規の再帰実装 0 行。PF の型判定は portfolios.type 列(config key ではない)。component 木は現在の config ではなく各月の holding_signal UUID で決める。展開不能 PF-月(component の同月 holding_signal 欠落)は行を出さず I7 として件数・一覧を報告する。display_ticker_weights は正本に使わない(08-06 v1.10 で非 unit 35 行・parity 不一致 29/2,096 により棄却済み)"
+        binary_check: "holdings_monthly.csv が存在し、weight 合計 1.0±1e-9 違反 0 件、復元コードと d14a4ec3 blob の意味差分 0 が verify_blob_diff.md にあり、I7 件数が数値で報告されているか"
+      AC2:
+        description: "検算 (a) α=0 parity: holdings_monthly.csv の ticker×weight と ticker_daily_returns から各 PF-月の月次リターンを再計算し、本番 monthly_returns.monthly_return と展開できた全 PF-月で一致(不一致 0、partial-turnover v1.12 の 75/75 と同手順)することを verify_parity.md に生貼付で確認する。展開不能 PF-月(component holding_signal 欠落)は I7 として件数を報告し parity 母数からの除外を明示する。成果物 CSV に monthly_return 列を同梱する"
+        binary_check: "展開できた全 PF-月で再計算月次リターンが monthly_returns.monthly_return と不一致 0 件、I7 件数が数値で報告され、CSV に monthly_return 列があるか"
+      AC3:
+        description: "検算 (b): signal_change_log.new_ticker_weights(2003-08〜2026-08-21、対象 78 PF 中 66 体に存在: L0 10/12・L1 17/21・L2 21/24・L3 18/21、nonce *-ro9)を PF 別に『同日最後の行』で前方補完して各月初の保有を再構成し、AC1 との一致率を PF 別に verify_change_log.md に表で出力し、不一致 PF-月の一覧(件数・最初/最後の月)を同 md に書いて確認する。閾値は置かない(件数報告のみ。設計書 §2.5 I2/I3 の解明材料)"
+        binary_check: "verify_change_log.md に change_log に現れる 66 PF 全ての一致率行、現れない 12 PF の一覧、不一致 PF-月 件数が書かれているか"
+      AC4:
+        description: "検算 (c): display_ticker_weights 月初行と holdings_monthly を突合し、PF 別一致率・weight 合計 非 unit 行数・不一致行数を I6 として verify_display_weights.md に表で報告する(閾値なし。08-06 partial-turnover v1.10 の非 unit 35 行・不一致 29/2,096 の再現確認。display 列は正本に使わない)"
+        binary_check: "verify_display_weights.md に 66 fof の一致率・非 unit 行数・不一致行数が数値で書かれているか"
+      AC5:
+        description: "本番 DB アクセスは skills/db-check の readonly launcher(scripts/db_capability_launcher.py --capability readonly_query)のみで行い、書込 0 を launcher 監査ログ(logs/db_capability/ の当該 nonce 行)で確認する。DDL/UPSERT/DELETE は実行しない"
+        binary_check: "監査ログの当該 cmd 実行が全て readonly_query で、書込系 capability の行が 0 件か"
+      AC6:
+        description: "実装用 test は同一 cmd 内で削除し、残すのは AC1(weight 合計 1.0)と AC2(α=0 parity)の contract test 2 本のみを analysis_runs/cmd_4479_holdings_monthly/tests/ に置く(target_path 内、各 test に test_necessity 宣言)。選択実行コマンド=bash scripts/run_tests.sh file <対象>で FAIL 0/SKIP 0 を確認する"
+        binary_check: "残存 test が 2 本・target_path 内・test_necessity 2/2・FAIL 0・SKIP 0 か"
+      AC7:
+        description: "成果物に universe manifest(analysis_runs/cmd_4479_holdings_monthly/universe_manifest.yaml: 対象 78 PF の id・name・layer・as-of 日時)と、各 SQL の readonly launcher nonce・as-of・query sha256 を provenance.yaml として同梱し、manifest の PF 数が L0 12/L1 21/L2 24/L3 21 であることを確認する"
+        binary_check: "universe_manifest.yaml の PF 数が 12/21/24/21=78 で、provenance.yaml に全 SQL の nonce・as-of・query hash があるか"
+    command: |
+      1. 設計書 §2〜§3 F1 と前書 dm-signal-market-direction-breadth-exposure-asis-tobe_20260905.md §2.4 を読み、基盤設計書 v0.6 §2.6 の流用元(DM-Signal commit d14a4ec3ce8457ce17ef702079028dbb9c58a367 scripts/analysis/partial_turnover_phase0_lagged.py::_resolve_weights を git show で取得。backend/app/api/history.py L211-244 は 1 段のみで流用しない)と standard helper backend/app/services/return_calculator_pure.py L15 holding_signal_to_weights を現物で確認し、blob を復元して build_holdings_monthly.py を書く。入力 SQL は monthly_returns(holding_signal, monthly_return)を対象 78 PF+component として現れる全 PF 分、portfolios.type 列(全 PF)。config は対象 78 PF の選定にだけ使う。fof_tree.py/check_pf_config.py(create_db_engine 直結)は使わない(readonly launcher 2 ステップ。credential は /tmp 直下 dm-signal-db-*.env、終了後 rm)。AC1 の weight 合計検査を script 末尾に置く
+      2. AC2〜AC4 の検算 3 本を verify_*.md に生貼付で出力する。AC3/AC4 は閾値を置かず件数と PF 別一致率の表のみ(display 列と change_log は検算用、正本にしない)
+      3. AC5 の監査ログを確認し、AC7 の universe_manifest.yaml と provenance.yaml を書き、AC6 の contract test 2 本だけを target_path 内 tests/ に残して他 test を削除、run_tests.sh file で FAIL 0/SKIP 0
+      4. 報告 YAML に holdings_monthly.csv の行数、AC2 の不一致件数と I7 件数、AC3 の非 unit/不一致件数(I6)、AC4 の不一致 PF-月 件数(PF 別上位 5)、展開コードの流用元 path を数値と path で書く。第 2 段の置き場(fof_component_weights.expanded_tickers を埋める / 新表 / monthly_returns 列追加)は decision_candidate として提案のみ、実装しない
+    assumptions:
+      claim: "対象 78 PF の monthly_returns.holding_signal は欠損 0(2026-09-05 19:5x readonly 実測、前書 §2.3)。fof の display_ticker_weights は signals 全行に存在(L1 74,167/L2 76,184/L3 58,864 行、66/66 PF、2026-09-05 22:00 readonly 実測 nonce *-ro8、基盤設計書 v0.6 §2.1。検算用であり正本ではない)。standard L0 は display_ticker_weights 0 行だが holding_signal が ticker 文字列。流用元 blob d14a4ec3 は 2026-09-05 22:40 に git show で取得し sha256 5a556df6… を実測、history.py L211-244 は 1 段のみを sed で現物確認。signal_change_log は 268,485 行・new_ticker_weights ticker keyed 267,514 行・同日往復 2 行あり(2026-09-05 21:26 実測、設計書 §2.1/§2.2)。month_start_signal_input_snapshots は standard 24 PF 3,591 行(前書 §2.6)"
+      source: "docs/research/dm-signal-research-data-foundation-asis-tobe_20260905.md v0.6 §1/§2.1-§2.6/§3/§4 / docs/research/partial-turnover-experiment-asis-tobe-5w1h_20260805.md v1.10-v1.12 / DM-Signal git show d14a4ec3ce8457ce17ef702079028dbb9c58a367:scripts/analysis/partial_turnover_phase0_lagged.py(blob sha256 5a556df6…、2026-09-05 22:40 将軍実測) / backend/app/services/return_calculator_pure.py L15 / backend/app/db/models.py L84 type=Column(String) / backend/app/api/history.py L211-244(1 段のみ、参照)"
+      trust: verified
+    depends_on: none
+    timeout_minutes: 60
+    estimated_minutes: 40
+    serial_dependency_evidence: "AC2〜AC4 の検算 3 本は全て AC1 の holdings_monthly.csv を入力にする(同一 script 内の同一 DataFrame を突合)。分割すると展開規則の版が食い違い突合が無効になるため 1 忍者 直列。AC3 の前方補完は signal_change_log 268,485 行を PF 別に 1 pass で処理し、他 AC と並列化しても短縮しない"
+    environment_change: "type=lesson; file=docs/research/dm-signal-research-data-foundation-asis-tobe_20260905.md; pattern=検算 3 本"
+    execution_env:
+      runtime_constraints: "Linux venv(/mnt/c/Python_app/DM-signal/backend/.venv)。本番 DB は readonly launcher のみ。DM-Signal repo への commit は analysis_runs/cmd_4479_holdings_monthly/ 配下と contract test 2 本のみ"
+      long_runtime_reason: "signal_change_log 268,485 行の前方補完と 78 PF×約 200 ヶ月の展開・3 ソース突合を 1 script で回すため。分割すると突合の整合が取れない"
+      measured_runtime_sec: 1200
+    quality_gate:
+      q1_firefighting: "消火ではない。市場方向性 6 表・PF 相関・集中度・turnover・X 数値・LP 実証が全て派生する基盤 1 表を先に作る(殿 21:22『先に解決、他にも応用できる』)"
+      q2_learning: "展開規則の現物確認・3 ソース突合・前方補完の規則設計は忍者が手で行う。将軍は設計と一次データまで"
+      q3_next_quality: "次の研究 cmd は §2 走査と展開実装を繰り返さず holdings_monthly.csv から始められる。前書で 4 時間かかった一次確認が 0 になる"
+      q4_depth: "medium — 既存 4 表の突合と 1 script。新アルゴリズムなし"
+      q5_verified_source: "production_verified — 2026-09-05 21:24〜21:26 readonly launcher で 4 表の行数・PF 数・期間・JSON 非 NULL 数を実測(nonce *-ro1〜ro4、exit 0、設計書 §2.1 に生貼付)。production_verified — 22:00 nonce *-ro8 で layer 別 display_ticker_weights 全行被覆を実測(exit 0、基盤設計書 §2.1 生貼付)。code_reading — fof_tree.py / verify_fof_consistency.py / monthly_return_oracle.py L51 expand_weights を ls・sed で実在確認(2026-09-05 22:02)"
+      q6_not_hiding: "前書 v0.1 が signal_change_log/fof_component_weights を走査しなかった見落とし、前書の関数名 _convert_pf_ids_to_ticker_display が実在しない誤記(実物 _resolve_pf_ids_to_tickers)、および v0.1 が display_ticker_weights を『2024-01 以降のみ』と誤認して FoF 展開を再発明しようとした点(殿 21:56 指摘)を基盤設計書 v0.2 §2.3 に明記。不整合 I1〜I4 も記録"
+      q7_definition_verified: "holding_signal=PIT 保有(リバランス月以外は前月維持、core.md L265)。展開=同月の記録済み holding_signal を component へ再帰し各段 1/N・同一 ticker 合算(d14a4ec3 _resolve_weights。現 HEAD の history.py は 1 段のみ)。type 判定=portfolios.type 列。layer=名前規則(前書 §2.1)。前方補完=同日最後の行(id 昇順)。I6=display_ticker_weights の非 unit/不一致、I7=component 同月 holding_signal 欠落で展開不能。確認日: 2026-09-05 22:40"
+      q8_why_what: "WHY: weight が DB に取り出しにくい形で分散し研究ごとに再実装している / WHAT: 78 PF × 2010-04〜2026-09 の holdings_monthly.csv 1 本+検算 3 本(α=0 parity 不一致 0 / display 突合の非 unit・不一致件数 I6 / change_log 66 体の一致率表)、復元コードと d14a4ec3 blob の意味差分 0、新規再帰 0 行、本番書込 0、manifest+provenance、contract test 2 本 / WHEN: 今セッション / WHERE: /mnt/c/Python_app/DM-signal/analysis_runs/cmd_4479_holdings_monthly / WHO: 忍者 1 名 / HOW: readonly launcher + d14a4ec3 _resolve_weights 復元 + return_calculator_pure.holding_signal_to_weights / 複利: 以後の全研究・X 数値・LP 実証がこの 1 表から派生"
+      q9_firefighting_root_cause: "根本対応。個別研究ごとに weight を探し直し展開を再発明する構造を、既存の再帰実装(d14a4ec3 _resolve_weights、75/75 parity 実証)から作る標準 long table 1 表で置き換える第 1 段。展開ロジック 5 箇所重複(history/price_ratio/trades/monthly_trade/oracle)の一元化 A10 は別 cmd"
+      q10_knowledge_boundary: "検証済み: 4 表の行数・期間・JSON 非 NULL 数、layer 別 display_ticker_weights 全行被覆(検算用)、対象 78 PF、流用元 blob d14a4ec3 の実在と sha256、portfolios.type 列(models.py L84)、display 直接採用の既存反証(08-06 v1.10)。スコープ外: DB 昇格(第 2 段)、fof_component_weights 死列の処置(I1)、change_log 二重行の原因(I2)、ledger 復活/廃止(F3)、layer_of 一元化(F4)"
+      q11_not_already_done: "rg -c 'holdings_monthly|exposure_long' context/cmd-chronicle.md → 0 件。bash scripts/semantic_search.sh 'holdings_monthly ticker weight long table' → 記憶DB match は本日の設計書のみ。analysis_runs/ に holdings 系 dir 無し(ls 2026-09-05 21:50)"
+      q_ambiguity: "『同日最後の行』の順序は signal_change_log.id 昇順で定義。『月初行』= signals の当月最初の営業日行。Cash は ticker 'Cash' weight 1.0 として 1 行。2026-09 は MTD と明記"
+      q12_lord_30min_cost: "no — 裁定 D1 の既定案(起票する)で進める。第 2 段の置き場だけ後日 1 回の裁定"
+      diagnosis: "BLOCK理由: 該当なし(新規起票) / 対策: なし"
+    delegated_at: "\"2026-09-05T23:34:57\""
+    origin: "[[殿下問_便利だったもの_20260905_2119]] -> [[weight列不在の誤認_既存表未走査]] -> [[holdings_monthly_第1段]]"
   cmd_4477:
     title: "DM-Signal identity 最小実装(設計書 v0.4 §M 段 1+2+3): Auth 後の Supabase user.id を localStorage で保持、campaign_id を localStorage へ格上げ(prefix lp_core_/lp_simple_)、page_views に user_id・campaign_id、showcase_events に user_id(全て nullable)を追加し Tier×Page analytics と Google 連携者だけを user.id で結ぶ"
     status: delegated
