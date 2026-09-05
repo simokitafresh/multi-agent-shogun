@@ -182,7 +182,7 @@ flowchart TD
 | 6 auto-push result/reason/rc | 着地 7d947ac33(関数戻り値は既存契約どおり 0、結果は retry_log 4〜5 列目) | test_cmd_complete_gate_source_publish.bats 23/23、test_cmd_complete_gate.bats 338/338 |
 | 7 c2a 単一 on_exit | 着地 7d947ac33 | 敵対 test(telemetry 失敗で rc 不変)は cmd_4478 に残す |
 | 8 watcher held event | 着地 7d947ac33。**既存 watcher は起動時に script を読むため次の respawn から有効**(kill しない。monitor の hot-reload/次回 /clear 起動で切替) | test_inbox_watcher.bats 7/7、test_ninja_monitor_stall.bats 176/176。**16:45 実測で delivery_held 36 event が本番に出ている=有効**。watcher 全 instance は 16:49 に再起動済み |
-| §6.2 日次表 script | 着地 ee4fc25ad(疾風、cmd_4478 16:3x 完了、軍師 LGTM 16:4x)。将軍が 16:45 に初回実行→`docs/research/karo_throughput_daily/2026-09-05.md` 生成 | 家老 accept/push 待ち。footer の `held=0` が表の 36 行と不一致(footer は watcher log 由来の別集計)=次 hotfix 候補 |
+| §6.2 日次表 script | 着地 ee4fc25ad(疾風、cmd_4478 16:3x 完了、軍師 LGTM 16:4x)。将軍が 16:45 に初回実行→`docs/research/karo_throughput_daily/2026-09-05.md` 生成 | **17:28 cmd_4478 GATE CLEAR済み**。footer の held 定義不一致も 17:57 の D0 で event/legacy 分離済み(§7-0(d)) |
 | §6.4 の敵対 test(c2a rc 不変/watcher bounded/agent 2 pane/auto-push 3 種) | 着地 ee4fc25ad(実装 diff 0、test のみ) | run_tests receipt 21/21・23/23(疾風報告 AC1) |
 
 ### §6.7 修復後の初回実測(15:25〜16:45 JST の 80 分、`defense_overhead.jsonl` 6,975 行。§6.1 の穴が塞がった直後に何が見えたか)
@@ -213,7 +213,7 @@ schema 名変更(v2)/新台帳 file/cron 登録/watcher の held 解消/合流�
 1. **合流待ち(66%)**: 忍者 report commit→origin 合流を家老の手を介さず自動化(単一 publisher U3 auto-push ancestry の完成)。判定=§4.2 の ancestry 行が 704 分→100 分未満/日。**18:22〜18:33 将軍 publish_direct_commit 根治**(殿『コミットをまとめるメリットは？』): root 分岐でも commit→c2a、c2a が他者の未合流 commit と衝突すれば isolated cherry-pick で自分の 1 commit のみ origin へ、--republish <sha>。将軍 commit は家老の手も root 収束も待たなくなった(7 commit を 10 分で origin へ)。忍者 report commit にも同経路を適用すれば順位 1 の本体が消える=次 cmd の候補。
 2. **parent_cmd_contract BLOCK(21%)**: 4476 型(task YAML 重複 field で 2 gate 矛盾)の真因を日次表の cmd 列で追い、契約検証を deploy 時に前倒し。判定=同行 220 分→0。
 3. **配達 held**: (d) 統一後の event で 3 日見て閾値/lease を判断。判定=WARN 件数。
-4. 家老 deploy_task p50 40 s の内訳(inject_* と外部 repo clone)を observed_at で出し重い 1 関数だけ直す。
+4. 家老 deploy_task p50 40 s の内訳(inject_* と外部 repo clone)を observed_at で出し重い 1 関数だけ直す。**21:5x 家老D0計測完了**: 9/5 の新旧schemaを含む計測有効37配備・全227関数(7,468行)を集計。最大は `run_python_logged` 合計193,325ms・p50 4,848ms・p95 9,218ms、次点の外部repo経路 `deploy_task_original_prepare_remote_tip_worktree` は140,539ms・p50 3,398ms・p95 13,146ms、続いて `maybe_notify_draft_review` 129,447ms、`generate_report_template` 115,936ms。速度変更前に `run_python_logged` 8 call site の内訳を次計測で分離する。日次表へ全227関数集計・上位20表示を追加。
 5. health refresh の同期経路(1 日 118 分 CPU)を非同期化。便の時間ではなく全員の hook を軽くする。
 6. 将軍 cmd_save の三層検索は平常 p50 2.8 s(§9 17:47 行: 121 s は孤児負荷 77 下の異常値)。負荷対策(孤児 guard は半蔵 b57e576ee で着地)で足り、専用 cmd は起票しない。
 - 判定の型: 各項目は日次表の同じ行の before/after で二値判定。表に出ない改善は改善と数えない。

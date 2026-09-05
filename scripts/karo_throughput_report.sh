@@ -189,14 +189,35 @@ def main():
                 elapsed = int(item.get("elapsed_us")) / 1000.0
             except (TypeError, ValueError):
                 continue
-            timing.append((item.get("script", path.name), elapsed))
+            timing.append((item.get("script", path.name), item.get("function", "-"), elapsed, str(item.get("execution_id", "-"))))
     timing_groups = defaultdict(list)
-    for name, elapsed in timing:
+    for name, _, elapsed, _ in timing:
         timing_groups[name].append(elapsed)
     for name in sorted(timing_groups):
         output.append("| " + " | ".join(row(f"function_timing / {name}", timing_groups[name])) + " |")
     if not timing:
         output.append("| function_timing / total | 0 | - | - | 0 | ms |")
+
+    # §7-4: deploy_task の全関数を集計してから合計時間順に上位を表示する。
+    # 表示件数は可読性の上限であり、集計対象は全関数（件数を併記）とする。
+    deploy_functions = defaultdict(list)
+    deploy_executions = set()
+    for name, function, elapsed, execution_id in timing:
+        if name == "deploy_task.sh" and function != "-":
+            deploy_functions[function].append(elapsed)
+            deploy_executions.add(execution_id)
+    output.append("")
+    output.append("## deploy_task 関数別内訳（全関数集計・合計時間上位20）")
+    output.append(f"- 実行数: {len(deploy_executions)} / 集計関数数: {len(deploy_functions)} / elapsed は関数計測値であり経路間の加算は禁止")
+    table(output, ("関数", "実行数", "p50 ms", "p95 ms", "合計 ms"))
+    ranked_functions = sorted(deploy_functions.items(), key=lambda item: (-sum(item[1]), item[0]))
+    for function, values in ranked_functions[:20]:
+        output.append(
+            f"| {function} | {len(values)} | {fmt(percentile(values, .5))} | "
+            f"{fmt(percentile(values, .95))} | {fmt(sum(values))} |"
+        )
+    if not deploy_functions:
+        output.append("| - | 0 | - | - | 0 |")
 
     gate = []
     waits = Counter()

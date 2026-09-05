@@ -354,8 +354,10 @@ PY
     '{"timestamp":"2026-09-05T01:30:00Z","source":"inbox_watcher","check_id":"delivery_held","wall_ms":139000,"verdict":"WARN","event_id":"h1","agent":"inbox_watcher","target_agent":"karo"}' \
     '{"timestamp":"2026-09-05T02:10:00Z","source":"three_layer_preflight","check_id":"three_layer_preflight_total","wall_ms":220,"verdict":"PASS","event_id":"p1","agent":"karo"}' > "$base/defense.jsonl"
   printf '%s\n' \
-    '{"schema":"function_timing.v1","observed_at":"2026-09-05T01:00:00Z","execution_id":"new-1","script":"cmd_complete_gate.sh","elapsed_us":1000}' \
-    '{"schema":"function_timing.v1","execution_id":"legacy-1788570000000000","script":"deploy_task.sh","elapsed_us":2000}' > "$base/timing.jsonl"
+    '{"schema":"function_timing.v1","observed_at":"2026-09-05T01:00:00Z","execution_id":"new-1","script":"cmd_complete_gate.sh","function":"gate_main","elapsed_us":1000}' \
+    '{"schema":"function_timing.v1","execution_id":"legacy-1788570000000000","script":"deploy_task.sh","function":"inject_semantic_concepts","elapsed_us":2000}' \
+    '{"schema":"function_timing.v1","observed_at":"2026-09-05T02:00:00Z","execution_id":"deploy-2","script":"deploy_task.sh","function":"inject_semantic_concepts","elapsed_us":4000}' \
+    '{"schema":"function_timing.v1","observed_at":"2026-09-05T02:30:00Z","execution_id":"deploy-2","script":"deploy_task.sh","function":"generate_report_template","elapsed_us":3000}' > "$base/timing.jsonl"
   printf '%s\n' \
     $'2026-09-05T00:30:00+00:00\tcmd_a\tBLOCK\tparent_cmd_contract:missing' \
     $'2026-09-05T01:00:00+00:00\tcmd_a\tWAIT\tWAIT:report_commit_main_ancestry' \
@@ -381,6 +383,10 @@ PY
   cmp "$base/first.md" "$report"
   grep -qF 'function_timing / cmd_complete_gate.sh' "$report"
   grep -qF 'function_timing / deploy_task.sh' "$report"
+  # test_necessity: deploy_task の律速判断は全関数を集計した同一日次表で再現できなければならない。
+  grep -qF '実行数: 2 / 集計関数数: 2' "$report"
+  grep -qF '| inject_semantic_concepts | 2 | 2 | 4 | 6 |' "$report"
+  grep -qF '| generate_report_template | 1 | 3 | 3 | 3 |' "$report"
   grep -qF 'WAIT:report_commit_main_ancestry' "$report"
   grep -qF 'inbox_watcher_karo / delivery_held (legacy stderr)' "$report"
   grep -qF 'inbox_watcher / delivery_held (event, WARN 1)' "$report"
