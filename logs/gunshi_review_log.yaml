@@ -7193,3 +7193,34 @@
   verdict: LGTM
   verified_files:
   - scripts/ninja_monitor.sh:1
+- cmd_id: cmd_karo_hotfix_ninja_monitor_index_lock
+  review:
+    adversarial_review: PASS — scripts/ninja_monitor.shへのexport追加は全git呼出しに影響するが、GIT_OPTIONAL_LOCKS=0はread-onlyモード(index書込み抑止)で副作用なし。git
+      diff/ls-filesの出力結果を変えないことはgit公式ドキュメントで保証
+    cmd_id: cmd_karo_hotfix_ninja_monitor_index_lock
+    cmd_spec_summary:
+      acceptance_criteria_count: 2
+      project: infra
+      scope: ninja_monitor read-only git statusのindex lock抑止(scripts/ninja_monitor.sh)
+    finding_categories:
+    - assumptions
+    - numbers
+    - premortem
+    - adversarial
+    gate_prediction: CLEAR
+    gate_prediction_reason: all checks passed
+    observations:
+    - '事実1: export GIT_OPTIONAL_LOCKS=0を冒頭1箇所で宣言し、9箇所のread-only git caller全てにprocess環境で継承。cmd_complete_gateの既存パターンと同一設計'
+    - '事実2: 隔離fixtureで通常git statusのindex mtime変化=1、GIT_OPTIONAL_LOCKS=0で変化=0を二値計測。孤児lock=0件を確認'
+    - '事実3: test_ninja_monitor.bats 50/50 PASS、task帰属 30/30 file・533/533 PASS・FAIL0/SKIP0。永続testにtest_necessity宣言あり'
+    reviewed_at: '2026-09-05T14:15:00+09:00'
+    reviewer: gunshi
+    sg_checklist:
+      SG1_ac_coverage: PASS
+      SG2_test_pass: PASS
+      SG3_parity: N/A
+      SG4_no_regression: PASS
+      SG5_lesson_candidate: PASS
+      SG6_code_quality: PASS
+      SG7_gate_prediction: PASS
+    verdict: APPROVE
