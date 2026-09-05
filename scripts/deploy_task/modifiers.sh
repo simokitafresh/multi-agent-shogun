@@ -2660,15 +2660,60 @@ inject_independent_recon_contract() {
     local ninja_name="$2"
     local title purpose command_text contract_text parent_cmd group track
     local base_commit target_path repo_path project existing_reminder
+    local recon_dual_state
 
     [ -f "$task_file" ] || return 0
-    title=$(FIELD_GET_NO_LOG=1 field_get "$task_file" "title" "")
-    purpose=$(FIELD_GET_NO_LOG=1 field_get "$task_file" "purpose" "")
-    command_text=$(FIELD_GET_NO_LOG=1 field_get "$task_file" "command" "")
-    contract_text="${title} ${purpose} ${command_text}"
-    if ! grep -Eiq '独立2系統|相互参照禁止|independent[ _-]*(track|recon)|dual[ _-]*recon' <<< "$contract_text"; then
-        return 0
-    fi
+
+    # 構造mapping(resolve_cmd_to_task/inject_cmd_recon_dualがtaskへ投影したrecon_dual:)
+    # を正本として読む。旧経路の散文grep(title/purpose/command)は構造mappingが無い場合の
+    # 後方互換としてのみ残す。散文しかない旧cmd/直接task編集の挙動は変えない。
+    # mapping不正(必須キー欠落/値不一致)はnudge前BLOCK(return 1)。
+    recon_dual_state=$(python3 - "$task_file" <<'PY'
+import sys
+import yaml
+yaml.SafeLoader = getattr(yaml, 'CSafeLoader', yaml.SafeLoader)
+
+task = (yaml.safe_load(open(sys.argv[1], encoding="utf-8")) or {}).get("task", {})
+rd = task.get("recon_dual")
+if rd is None:
+    print("absent")
+    raise SystemExit(0)
+if not isinstance(rd, dict):
+    print("malformed:recon_dual is not a mapping")
+    raise SystemExit(0)
+required = {
+    "mode": "independent",
+    "cross_reference": "forbidden",
+    "base": "fixed_origin_main",
+    "shared_context_embargo": "karo_release_required",
+}
+bad = [key for key, expected in required.items() if str(rd.get(key, "")).strip() != expected]
+if bad:
+    print("malformed:" + ",".join(bad))
+else:
+    print("structured")
+PY
+)
+    case "$recon_dual_state" in
+        malformed:*)
+            log "BLOCK: task-level recon_dual mapping is malformed (${recon_dual_state#malformed:}) ninja=${ninja_name}"
+            return 1
+            ;;
+        structured)
+            title=$(FIELD_GET_NO_LOG=1 field_get "$task_file" "title" "")
+            purpose=$(FIELD_GET_NO_LOG=1 field_get "$task_file" "purpose" "")
+            command_text=$(FIELD_GET_NO_LOG=1 field_get "$task_file" "command" "")
+            ;;
+        *)
+            title=$(FIELD_GET_NO_LOG=1 field_get "$task_file" "title" "")
+            purpose=$(FIELD_GET_NO_LOG=1 field_get "$task_file" "purpose" "")
+            command_text=$(FIELD_GET_NO_LOG=1 field_get "$task_file" "command" "")
+            contract_text="${title} ${purpose} ${command_text}"
+            if ! grep -Eiq '独立2系統|相互参照禁止|independent[ _-]*(track|recon)|dual[ _-]*recon' <<< "$contract_text"; then
+                return 0
+            fi
+            ;;
+    esac
 
     parent_cmd=$(FIELD_GET_NO_LOG=1 field_get "$task_file" "parent_cmd" "")
     group=$(FIELD_GET_NO_LOG=1 field_get "$task_file" "independence_group" "")

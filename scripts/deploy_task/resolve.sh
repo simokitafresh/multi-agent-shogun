@@ -215,7 +215,7 @@ STALE_FIELDS = [
     # 第17層: 独立偵察契約。前taskのtrack/base/embargoを次cmdへ漏らさず、
     # --yaml sourceに明示された新契約だけをpublish後に保持する。
     'independence_group', 'independence_track', 'independence_base_commit',
-    'independence_worktree_required', 'shared_context_embargo',
+    'independence_worktree_required', 'shared_context_embargo', 'recon_dual',
     # 第16層: cmdで検証済みの前提とstatus固有メタ。新cmdだけを正本にする
     'assumptions', 'cancel_reason', 'cancellation_reason', 'superseded_by',
     # 第18層: 自然境界/実行時間契約。前cmdの長時間根拠を次cmdへ漏らすと、
@@ -759,6 +759,105 @@ resolve_cmd_to_task() {
     inject_cmd_assumptions "$task_file" "$cmd_id" \
         || { log "FATAL: assumptions injection failed for ${cmd_id}"; return 1; }
 
+    # cmd_saveで検証済みのrecon_dual構造契約(mode/cross_reference/base/shared_context_embargo)
+    # を構造保持してtaskへ投影する。旧経路はtitle/purpose/commandの散文grepにしか依存せず、
+    # 構造mappingのみのcmdは通常配備taskへ非投影のままINDEPENDENT_RECONが0件になっていた
+    # (2026-09-06 cmd_4480 A行 再現)。mapping不正は配備前FATAL(nudge前BLOCK)。
+    inject_cmd_recon_dual "$task_file" "$cmd_id" \
+        || { log "FATAL: recon_dual contract injection failed for ${cmd_id}"; return 1; }
+
     log "resolve_cmd: ${cmd_id} → ninja=${ninja_name}, task_id=${task_id}, project=${project:-none}, type=${task_type}, title=${title}"
     return 0
+}
+
+# ─── recon_dual構造契約のtaskへの投影(cmd_karo_hotfix_recon_dual_projection_fixed_base_20260906) ───
+# cmd_save/recon_dual_contract.pyで検証済みのrecon_dual mapping(mode: independent,
+# cross_reference: forbidden, base: fixed_origin_main, shared_context_embargo:
+# karo_release_required)を構造のままtaskへ転記する。inject_independent_recon_contract
+# (modifiers.sh)はこのtask直下のrecon_dualを正本として読み、散文grep(旧経路・後方互換)
+# より優先してINDEPENDENT_RECONを発火させる。sourceに無ければ何もしない。
+# 必須キー欠落/値不一致はresolve_cmd_to_task全体をFATALにしてnudge前BLOCKへ落とす。
+inject_cmd_recon_dual() {
+    local task_file="$1"
+    local cmd_id="$2"
+    local source_path
+    source_path=$(resolve_cmd_source_path "$cmd_id") || return 0
+    python3 - "$task_file" "$source_path" "$cmd_id" <<'RECON_DUAL_INJECT_PY'
+import os
+import sys
+import tempfile
+import yaml
+yaml.SafeLoader = getattr(yaml, 'CSafeLoader', yaml.SafeLoader)  # cmd-lord-20260803: libyaml C loader (8x faster parse, same safe schema)
+
+task_path, source_path, cmd_id = sys.argv[1:]
+with open(source_path, encoding="utf-8") as f:
+    source = yaml.safe_load(f) or {}
+entry = (source.get("commands") or {}).get(cmd_id)
+if not isinstance(entry, dict):
+    raise SystemExit(0)
+recon_dual = entry.get("recon_dual")
+if recon_dual is None:
+    raise SystemExit(0)
+if not isinstance(recon_dual, dict):
+    print(f"BLOCK: recon_dual is not a mapping for {cmd_id}", file=sys.stderr)
+    raise SystemExit(1)
+
+REQUIRED = {
+    "mode": "independent",
+    "cross_reference": "forbidden",
+    "base": "fixed_origin_main",
+    "shared_context_embargo": "karo_release_required",
+}
+bad = [key for key, expected in REQUIRED.items() if str(recon_dual.get(key, "")).strip() != expected]
+if bad:
+    print(f"BLOCK: recon_dual mapping incomplete for {cmd_id}: " + ", ".join(bad), file=sys.stderr)
+    raise SystemExit(1)
+
+def scalar(value):
+    quote = chr(39)
+    text = str(value)
+    return quote + text.replace(quote, quote + quote) + quote
+
+with open(task_path, encoding="utf-8") as f:
+    raw = f.read()
+lines = raw.splitlines()
+
+# Replace rather than append so same-cmd redeploy cannot duplicate the key.
+cleaned = []
+skip_indent = None
+for line in lines:
+    stripped = line.lstrip(" ")
+    indent = len(line) - len(stripped)
+    if skip_indent is not None:
+        if not stripped or indent > skip_indent or (indent == skip_indent and stripped.startswith("- ")):
+            continue
+        skip_indent = None
+    if indent == 2 and stripped.split(":", 1)[0] == "recon_dual":
+        skip_indent = indent
+        continue
+    cleaned.append(line)
+
+block = ["  recon_dual:"] + [f"    {key}: {scalar(value)}" for key, value in REQUIRED.items()]
+insert_at = next((i + 1 for i, line in enumerate(cleaned) if line == "task:"), None)
+if insert_at is None:
+    raise SystemExit("task block missing")
+cleaned[insert_at:insert_at] = block
+rendered = "\n".join(cleaned) + "\n"
+parsed = yaml.safe_load(rendered) or {}
+task = parsed.get("task") or {}
+if task.get("recon_dual") != REQUIRED:
+    raise SystemExit("projection mismatch: recon_dual")
+
+fd, tmp = tempfile.mkstemp(dir=os.path.dirname(task_path), suffix=".tmp")
+try:
+    with os.fdopen(fd, "w", encoding="utf-8") as f:
+        f.write(rendered)
+    os.replace(tmp, task_path)
+except Exception:
+    try:
+        os.unlink(tmp)
+    except OSError:
+        pass
+    raise
+RECON_DUAL_INJECT_PY
 }
