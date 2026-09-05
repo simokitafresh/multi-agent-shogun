@@ -19100,3 +19100,83 @@ insights:
   resolved_reason: "semantic map generation verified the candidate is represented or intentionally ignored"
   action_artifact: "semantic_map=/home/simokitafresh/multi-agent-shogun/context/semantic-map.md;semantic_index=/home/simokitafresh/multi-agent-shogun/docs/semantic-index/index.md"
   resolved_at: "2026-09-06T00:12:46.050843"
+- id: INS-20260906-003344976-869a
+  ts: "2026-09-06T00:33:44+09:00"
+  insight: "[[当然codexに戻せ]] semantic_stress_test candidate_aliases: NO_MATCH source=lord query=当然codexに戻せ。指示違反を正当化するな"
+  priority: "low"
+  source: "semantic_stress_test"
+  fix_known: false
+  status: "resolved"
+  resolved_reason: "semantic index candidate was absorbed into a registered concept"
+  action_artifact: "semantic_index=/home/simokitafresh/multi-agent-shogun/docs/semantic-index/index.md"
+  resolved_at: "2026-09-06T00:34:46.171359"
+- id: INS-20260906-003403633-4e73
+  ts: "2026-09-06T00:34:03+09:00"
+  insight: "[[lane A は W5 から]] semantic_stress_test candidate_aliases: NO_MATCH source=lord query=lane A は W5 から、lane B は 4479 起票、go だ"
+  priority: "low"
+  source: "semantic_stress_test"
+  fix_known: false
+  status: "resolved"
+  resolved_reason: "semantic index candidate was absorbed into a registered concept"
+  action_artifact: "semantic_index=/home/simokitafresh/multi-agent-shogun/docs/semantic-index/index.md"
+  resolved_at: "2026-09-06T00:34:46.309300"
+- id: INS-20260906-003423057-411c
+  ts: "2026-09-06T00:34:23+09:00"
+  insight: "[[karo throughput asis 20260905 mdを同様にアップデートせよ]] semantic_stress_test candidate_aliases: NO_MATCH source=lord query=karo_throughput_asis_20260905.mdを同様にアップデートせよ"
+  priority: "low"
+  source: "semantic_stress_test"
+  fix_known: false
+  status: "resolved"
+  resolved_reason: "semantic index candidate was absorbed into a registered concept"
+  action_artifact: "semantic_index=/home/simokitafresh/multi-agent-shogun/docs/semantic-index/index.md"
+  resolved_at: "2026-09-06T00:34:46.433171"
+- id: INS-20260906-003443467-7362
+  ts: "2026-09-06T00:34:43+09:00"
+  insight: "[[F1 holdings monthly]] semantic_stress_test candidate_aliases: NO_MATCH source=cmds query=cmd_4479(F1 holdings_monthly、才蔵 2026-09-06 00:19 honest FAIL)の α=0 parity は 12,372 PF-月中 12,268 一致 / 104 不一致で、不一致は全て 奥義-GS-新四つ目 3 体(激攻 22 / 常勝 35 / 鉄壁 47、2014-04〜2026-09 の 75 ヶ月に散在"
+  priority: "low"
+  source: "semantic_stress_test"
+  fix_known: false
+  status: "resolved"
+  resolved_reason: "semantic index candidate was absorbed into a registered concept"
+  action_artifact: "semantic_index=/home/simokitafresh/multi-agent-shogun/docs/semantic-index/index.md"
+  resolved_at: "2026-09-06T00:35:05.513036"
+- id: INS-20260906-003454561-93f7
+  ts: "2026-09-06T00:34:54+09:00"
+  insight: "[[ninja block fail root cause asis tobe 20260905 mdは見たか？先にバグを直]] semantic_stress_test candidate_aliases: NO_MATCH source=lord query=ninja_block_fail_root_cause_asis_tobe_20260905.mdは見たか？先にバグを直したほうがトータルで早くなりそうか検討せよ"
+  priority: "low"
+  source: "semantic_stress_test"
+  fix_known: false
+  status: "resolved"
+  resolved_reason: "semantic index candidate was absorbed into a registered concept"
+  action_artifact: "semantic_index=/home/simokitafresh/multi-agent-shogun/docs/semantic-index/index.md"
+  resolved_at: "2026-09-06T00:40:32.252566"
+- id: INS-20260906-003513162-7d51
+  ts: "2026-09-06T00:35:13+09:00"
+  insight: "[[新四つ目 3 体の月次リターン再現差 104 PF 月の根因偵察 readonly]] semantic_stress_test candidate_aliases: NO_MATCH source=cmds query=新四つ目 3 体の月次リターン再現差 104 PF-月の根因偵察(readonly、A1 データ/A2 コード 2 名並行)"
+  priority: "low"
+  source: "semantic_stress_test"
+  fix_known: false
+  status: "resolved"
+  resolved_reason: "semantic index candidate was absorbed into a registered concept"
+  action_artifact: "semantic_index=/home/simokitafresh/multi-agent-shogun/docs/semantic-index/index.md"
+  resolved_at: "2026-09-06T00:40:32.491349"
+- id: INS-20260906-005415987-0841
+  ts: "2026-09-06T00:54:15+09:00"
+  insight: "[[殿 22 29『シンプルにデータを見たいだけだ]] semantic_stress_test candidate_aliases: NO_MATCH source=cmds query=殿 2026-09-05 22:29『シンプルにデータを見たいだけだ。L0,L1,L2,L3,全体でどの ticker をどの weight で持っているかを知りたいだけだ』→ 設計書 docs/research/dm-signal-market-direction-breadth-exposure-asis-tobe_20260905.md v1.4(gi"
+  priority: "low"
+  source: "semantic_stress_test"
+  fix_known: false
+  status: "resolved"
+  resolved_reason: "semantic index candidate was absorbed into a registered concept"
+  action_artifact: "semantic_index=/home/simokitafresh/multi-agent-shogun/docs/semantic-index/index.md"
+  resolved_at: "2026-09-06T00:54:42.902720"
+- id: INS-20260906-005603403-b851
+  ts: "2026-09-06T00:56:03+09:00"
+  insight: "[[殿 『シンプルにデータを見たいだけだ]] NO_MATCH purpose pending alias: cmd_complete時にdeploy_task.logでNO_MATCHだったpurpose。類似概念TOP3: semantic_dictionary_design(セマンティック辞書構想; alias=殿 22 29『シンプルにデータを見たいだけだ; score=43.9) / creator_brainwashing_defense(創造主の洗脳防御; alias=過去データを元にした推定でよい; score=2.9) / deepdive_principles(deepdive原理; alias=DMシグナルの保有ポジション問題をユーザーに丁寧に説明したい; score=2.3)。既存概念aliasesへの自動昇格候補"
+  priority: "low"
+  source: "semantic_index_update"
+  fix_known: false
+  status: "resolved"
+  resolved_reason: "semantic index candidate was absorbed into a registered concept"
+  action_artifact: "semantic_index=/home/simokitafresh/multi-agent-shogun/docs/semantic-index/index.md"
+  resolved_at: "2026-09-06T00:56:32.648520"

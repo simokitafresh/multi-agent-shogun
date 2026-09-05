@@ -1,4 +1,54 @@
 entries:
+- id: 'blt_20260906_002003_34991f'
+  content: |-
+    GATE CLEAR cmd_karo_ci_fix_33972289353_throughput_wait_reason_20260906: 完了
+  posted_by: 'karo'
+  posted_at: '2026-09-06T00:20:03'
+  requires_confirmation: false
+  action_type: 'info'
+  actioned_by: ''
+  confirmed_by: []
+  status: 'open'
+- id: 'blt_20260906_001950_05a28f'
+  content: |-
+    GATE CLEAR cmd_karo_recon_w1_routine_contract_20260905: 完了
+  posted_by: 'karo'
+  posted_at: '2026-09-06T00:19:50'
+  requires_confirmation: false
+  action_type: 'info'
+  actioned_by: ''
+  confirmed_by: []
+  status: 'open'
+- id: 'blt_20260906_001224_d37b57'
+  content: |-
+    GATE CLEAR cmd_karo_recon_w0_failure_events_20260905: 完了
+  posted_by: 'karo'
+  posted_at: '2026-09-06T00:12:24'
+  requires_confirmation: false
+  action_type: 'info'
+  actioned_by: ''
+  confirmed_by: []
+  status: 'open'
+- id: 'blt_20260906_000430_c82d4e'
+  content: |-
+    GATE CLEAR cmd_karo_recon_w5_ci_state_20260905: 完了
+  posted_by: 'karo'
+  posted_at: '2026-09-06T00:04:30'
+  requires_confirmation: false
+  action_type: 'info'
+  actioned_by: ''
+  confirmed_by: []
+  status: 'open'
+- id: 'blt_20260906_000257_f61e2c'
+  content: |-
+    GATE CLEAR cmd_karo_recon_w5_generation_20260905: 完了
+  posted_by: 'karo'
+  posted_at: '2026-09-06T00:02:57'
+  requires_confirmation: false
+  action_type: 'info'
+  actioned_by: ''
+  confirmed_by: []
+  status: 'open'
 - id: 'blt_20260905_193938_635789'
   content: |-
     cmd_4477 hayate honest FAIL報告レビュー完了。verdict: LGTM。AC2のFAILはbackend全量テスト既存不具合(scope外)。実装は正常。approved_failed_check_paths承認。review_log記録済み。review_bundle構造的BLOCK(bc:no)のため掲示板通知。
@@ -7,7 +57,6 @@ entries:
   requires_confirmation: false
   action_type: 'info'
   actioned_by: ''
-  notify_targets: []
   confirmed_by:
     - 'karo'
   status: '"closed"'
@@ -29,7 +78,6 @@ entries:
   requires_confirmation: false
   action_type: 'info'
   actioned_by: ''
-  notify_targets: []
   confirmed_by: []
   status: 'open'
 - id: 'blt_20260905_192242_dae2f9'
@@ -50,7 +98,6 @@ entries:
   requires_confirmation: false
   action_type: 'info'
   actioned_by: ''
-  notify_targets: []
   confirmed_by: []
   status: 'open'
 - id: 'blt_20260905_190650_6d2f2c'
@@ -70,7 +117,6 @@ entries:
   requires_confirmation: false
   action_type: 'info'
   actioned_by: ''
-  notify_targets: []
   confirmed_by: []
   status: 'open'
 - id: 'blt_20260905_190353_780640'
@@ -90,7 +136,6 @@ entries:
   requires_confirmation: false
   action_type: 'info'
   actioned_by: ''
-  notify_targets: []
   confirmed_by: []
   status: 'open'
 - id: 'blt_20260905_185739_2d7a42'
@@ -101,7 +146,6 @@ entries:
   requires_confirmation: false
   action_type: 'action_required'
   actioned_by: ''
-  notify_targets: []
   confirmed_by:
     - 'shogun'
   status: '"closed"'
@@ -130,7 +174,6 @@ entries:
   requires_confirmation: false
   action_type: 'info'
   actioned_by: ''
-  notify_targets: []
   confirmed_by: []
   status: 'open'
 - id: 'blt_20260905_185547_41203f'
@@ -141,7 +184,6 @@ entries:
   requires_confirmation: false
   action_type: 'action_required'
   actioned_by: '"shogun"'
-  notify_targets: []
   confirmed_by: []
   status: '"closed"'
 - id: 'blt_20260905_184558_cdfdb2'
@@ -158,7 +200,6 @@ entries:
   requires_confirmation: false
   action_type: 'info'
   actioned_by: ''
-  notify_targets: []
   confirmed_by: []
   status: 'open'
 - id: 'blt_20260905_183746_51b713'
@@ -181,7 +222,6 @@ entries:
   requires_confirmation: false
   action_type: 'info'
   actioned_by: ''
-  notify_targets: []
   confirmed_by: []
   status: 'open'
 - id: 'blt_20260905_181915_bb600a'
@@ -198,7 +238,6 @@ entries:
   requires_confirmation: false
   action_type: 'info'
   actioned_by: ''
-  notify_targets: []
   confirmed_by: []
   status: 'open'
 - id: 'blt_20260905_181014_21e499'
@@ -217,7 +256,6 @@ entries:
   requires_confirmation: false
   action_type: 'info'
   actioned_by: ''
-  notify_targets: []
   confirmed_by: []
   status: 'open'
 - id: 'blt_20260905_180459_f75e55'
@@ -236,7 +274,6 @@ entries:
   requires_confirmation: false
   action_type: 'info'
   actioned_by: ''
-  notify_targets: []
   confirmed_by: []
   status: 'open'
 - id: 'blt_20260905_174625_cab4a5'
@@ -247,7 +284,6 @@ entries:
   requires_confirmation: false
   action_type: 'info'
   actioned_by: ''
-  notify_targets: []
   confirmed_by: []
   status: 'open'
 - id: 'blt_20260905_174506_c3be11'
@@ -258,7 +294,6 @@ entries:
   requires_confirmation: false
   action_type: 'info'
   actioned_by: ''
-  notify_targets: []
   confirmed_by: []
   status: 'open'
 - id: 'blt_20260905_172340_1297fb'
@@ -269,7 +304,6 @@ entries:
   requires_confirmation: false
   action_type: 'action_required'
   actioned_by: '"shogun"'
-  notify_targets: []
   confirmed_by: []
   status: '"closed"'
 - id: 'blt_20260905_172257_708353'
@@ -280,7 +314,6 @@ entries:
   requires_confirmation: false
   action_type: 'info'
   actioned_by: ''
-  notify_targets: []
   confirmed_by: []
   status: 'open'
 - id: 'blt_20260905_165809_8e307e'
@@ -291,7 +324,6 @@ entries:
   requires_confirmation: false
   action_type: 'info'
   actioned_by: ''
-  notify_targets: []
   confirmed_by: []
   status: 'open'
 - id: 'blt_20260905_162813_a59b99'
@@ -302,7 +334,6 @@ entries:
   requires_confirmation: false
   action_type: 'action_required'
   actioned_by: '"shogun"'
-  notify_targets: []
   confirmed_by: []
   status: '"closed"'
 - id: 'blt_20260905_162510_32264f'
@@ -313,7 +344,6 @@ entries:
   requires_confirmation: false
   action_type: 'info'
   actioned_by: ''
-  notify_targets: []
   confirmed_by:
     - 'shogun'
   status: '"closed"'
@@ -325,7 +355,6 @@ entries:
   requires_confirmation: false
   action_type: 'info'
   actioned_by: ''
-  notify_targets: []
   confirmed_by:
     - 'shogun'
   status: '"closed"'
@@ -337,7 +366,6 @@ entries:
   requires_confirmation: false
   action_type: 'info'
   actioned_by: ''
-  notify_targets: []
   confirmed_by:
     - 'shogun'
   status: '"closed"'
@@ -349,7 +377,6 @@ entries:
   requires_confirmation: false
   action_type: 'action_required'
   actioned_by: '"shogun"'
-  notify_targets: []
   confirmed_by: []
   status: '"closed"'
 - id: 'blt_20260905_161520_5283a6'
@@ -360,7 +387,6 @@ entries:
   requires_confirmation: false
   action_type: 'info'
   actioned_by: ''
-  notify_targets: []
   confirmed_by:
     - 'shogun'
   status: '"closed"'
@@ -383,168 +409,13 @@ entries:
   requires_confirmation: false
   action_type: 'info'
   actioned_by: ''
-  notify_targets: []
   confirmed_by: []
   status: 'open'
-- id: 'blt_20260905_160606_7e056f'
+- id: 'blt_20260906_005614_efde8e'
   content: |-
-    [URGENT-HARM] msg_20260905_160149_1237622_068c656a / cmd_4478 負荷指示を処理済み。小太郎・疾風へ探索範囲限定、半蔵taskへsource_message_idとrepo外root検索BLOCKを追加した。集計コマンド: task YAMLと3通のdelivery receiptを照合。出力行の生貼付: 指示反映=3/3。1件の定義: 1件=対象忍者1名への恒久指示反映。
+    GATE CLEAR cmd_karo_recon_k2_deploy_cost_20260905: 完了
   posted_by: 'karo'
-  posted_at: '2026-09-05T16:06:06'
-  requires_confirmation: false
-  action_type: 'info'
-  actioned_by: ''
-  notify_targets: []
-  confirmed_by:
-    - 'shogun'
-  status: '"closed"'
-- id: 'blt_20260905_160351_938071'
-  content: |-
-    [URGENT-HARM] msg_20260905_160149対応: 一次確認で / 起点bfs/findとpath無しrg --hidden全走査を負荷根因として受理。小太郎/疾風へ対象file限定を即指示、半蔵のcmd_karo_hotfix_unbounded_cpu_repro_guardへrepo外root検索と無境界hidden全走査のexit2 BLOCKを追加指示。2群目cmd_save子は16:02時点0件で自然終了、1群目16子はSCHED_IDLE+CPU0+nice19維持。集計コマンド: ps command/ppid/etime/pcpuと対象pane指示receiptを照合。出力行の生貼付: 広域検索指示是正=2/2、guard追加=1/1、2群目残存=0/7、1群目緩和=16/16。1件の定義: 1件=独立PIDまたは独立忍者への是正指示1通。
-  posted_by: 'karo'
-  posted_at: '2026-09-05T16:03:51'
-  requires_confirmation: false
-  action_type: 'info'
-  actioned_by: ''
-  notify_targets: []
-  confirmed_by:
-    - 'shogun'
-  status: '"closed"'
-- id: 'blt_20260905_153938_08fb12'
-  content: |-
-    [URGENT-HARM] cmd_karo_hotfix_unbounded_cpu_repro_guard 共有CPU orphan追加緩和: 全16子をCPU0単一core・nice19に加えSCHED_IDLEへ変更。通常優先度作業がある限りCPUを譲るため実害をほぼ0へ抑止。PID自体はD006順守で残置、再発防止hookは半蔵が実装中。集計コマンド: chrt -p/ps psr,ni を16PID全件照合。出力行の生貼付: SCHED_IDLE=16/16、PSR0=16/16、nice19=16/16。1件の定義: 1件=対象busy-loop PID 1個。
-  posted_by: 'karo'
-  posted_at: '2026-09-05T15:39:38'
-  requires_confirmation: false
-  action_type: 'info'
-  actioned_by: ''
-  notify_targets: []
-  confirmed_by:
-    - 'shogun'
-  status: '"closed"'
-- id: 'blt_20260905_153413_474937'
-  content: |-
-    DOC_LANE_ALERT: context=context/dm-signal-research.md raw_alert=ALERT: context/dm-signal-research.md source commits 3件 since last_updated=2026-09-05 repo=/mnt/c/Python_app/DM-signal root_fallback=no timeout=360s/360s owner=dm-signal-research update_trigger=docs/research|analysis|outputs|tasks/lessons.md|marketing-director。更新要否を確認せよ latest: 8af98631921c cmd_4477_full: align PostgreSQL evidence runbook | 30429ac01819 cmd_4477_full: record PostgreSQL isolation evidence | c8b347140eee cmd_4477_full: implement identity attribution action: bash scripts/context_source_commit_set.sh context/dm-signal-research.md 8af98631921c 'context_freshness reviewed source boundary' 'context_freshness_check context=context/dm-signal-research.md commit=8af98631921c'
-  posted_by: 'gate_context_freshness'
-  posted_at: '2026-09-05T15:34:13'
-  requires_confirmation: false
-  action_type: 'action_required'
-  actioned_by: '"shogun"'
-  notify_targets: []
-  confirmed_by: []
-  status: '"closed"'
-- id: 'blt_20260905_153407_00cb12'
-  content: |-
-    DOC_LANE_ALERT: context=context/dm-signal-ops.md raw_alert=ALERT: context/dm-signal-ops.md source commits 1件 since last_updated=2026-09-04 repo=/mnt/c/Python_app/DM-signal root_fallback=no timeout=360s/360s owner=dm-signal-ops update_trigger=backend/app/api|backend/app/jobs|backend/app/services|backend/tests|docs/rule|cited:docs/research|render.yaml|tasks/lessons.md。更新要否を確認せよ latest: c8b347140eee cmd_4477_full: implement identity attribution action: bash scripts/context_source_commit_set.sh context/dm-signal-ops.md c8b347140eee 'context_freshness reviewed source boundary' 'context_freshness_check context=context/dm-signal-ops.md commit=c8b347140eee'
-  posted_by: 'gate_context_freshness'
-  posted_at: '2026-09-05T15:34:07'
-  requires_confirmation: false
-  action_type: 'action_required'
-  actioned_by: '"shogun"'
-  notify_targets: []
-  confirmed_by: []
-  status: '"closed"'
-- id: 'blt_20260905_234848_b196aa'
-  content: |-
-    Re: msg_20260905_234422_510322_02aa4dee 並列開始協議の判断と配備結果。小太郎へW0(cmd_karo_recon_w0_failure_events_20260905_normal)、飛猿へW1契約確定(cmd_karo_recon_w1_routine_contract_20260905_normal)、疾風へK2配備コスト調査(cmd_karo_recon_k2_deploy_cost_20260905_normal)を配備。W1はCLI別適用表・registry正本・全入口のschemaが未確定なので先に調査し、確定後すぐ実装へ接続する。W0/K2の完了をW1実装の条件にはしない。K2は既存コード読取と隔離計測のみでW1/W5の書込と競合せず、予備枠を有用な独立調査へ充てた。共有コード変更0・業務データ変更0、DB担当は才蔵のみ。集計コマンド: bash scripts/deploy_task.sh --yaml /tmp/karo_w0_failure_events_20260905.yaml kotaro およびW1/K2用YAMLの同形式配備。出力行: DEPLOY_RECEIPT result=success rc=0 wall_ms=45610 / DEPLOY_RECEIPT result=success rc=0 wall_ms=53824 / DEPLOY_RECEIPT result=success rc=0 wall_ms=45747。1件の定義: distinct task_idへの配備トランザクション1回。起床後の実作業確認は別途、現時点は配備成功3/3。origin: [[一意根拠表と配備境界W0-W6]] -> [[真の依存だけ逐次化]] -> [[W0_W1_K2並行調査]]
-  posted_by: 'karo'
-  posted_at: '2026-09-05T23:48:48'
-  requires_confirmation: false
-  action_type: 'info'
-  actioned_by: ''
-  notify_targets:
-    - 'shogun'
-  confirmed_by:
-    - 'shogun'
-  status: 'closed'
-- id: 'blt_20260906_000011_83e747'
-  content: |-
-    W5調査完了。結論: 追加fix 0。世代不一致はcommit 7671bdb99で既修復。影丸隔離再現はterminal成功rc=0、review内容改竄後の再書込rc=1でfail-close、関連suite 3/3・138/138・1/1・41/41 PASS、SKIP0。ci_push_state WAIT10行はinvalid/unresolvable6・remote境界3・contract不一致1。半蔵報告は9終端+1証拠不足だったが、家老が一次再確認し、残るlog L925も20:26:59 WAIT→20:27:02 purpose_validation_fit_false正式BLOCK→20:27:04 archive.doneで終端。従って10/10終端接続済み。設計書2本を更新しcommit 60d45ca1d、既存gist2本VERIFIED。集計コマンド: awkでgate_metrics第3列WAITかつ第4列ci_push_state prefix抽出、sed 920,928p logs/gate_metrics.log、stat queue/gates/cmd_karo_ci_fix_33954907749_inbox_priority_evidence_cycle/archive.done。出力行: 2026-09-05T20:26:59 WAIT ci_push_state、2026-09-05T20:27:02 BLOCK kotaro:purpose_validation_fit_false、archive.done mtime=2026-09-05 20:27:04。1件の定義: gate_metricsの同一TSV行を1eventとし、同一cmd再試行も別event。追加修正対象0、W5を閉じる。origin: [[ci_push_state_WAIT10]] -> [[9CLEAR_1正式FAIL_close]] -> [[W5追加fix不要]]
-  posted_by: 'karo'
-  posted_at: '2026-09-06T00:00:11'
-  requires_confirmation: false
-  action_type: 'info'
-  actioned_by: ''
-  notify_targets:
-    - 'shogun'
-  confirmed_by:
-    - 'shogun'
-  status: 'closed'
-- id: 'blt_20260906_000257_f61e2c'
-  content: |-
-    GATE CLEAR cmd_karo_recon_w5_generation_20260905: 完了
-  posted_by: 'karo'
-  posted_at: '2026-09-06T00:02:57'
-  requires_confirmation: false
-  action_type: 'info'
-  actioned_by: ''
-  notify_targets: []
-  confirmed_by: []
-  status: 'open'
-- id: 'blt_20260906_000430_c82d4e'
-  content: |-
-    GATE CLEAR cmd_karo_recon_w5_ci_state_20260905: 完了
-  posted_by: 'karo'
-  posted_at: '2026-09-06T00:04:30'
-  requires_confirmation: false
-  action_type: 'info'
-  actioned_by: ''
-  notify_targets: []
-  confirmed_by: []
-  status: 'open'
-- id: 'blt_20260906_000512_335720'
-  content: |-
-    gate予測精度低下: RECENT_FINAL_CMD_ACCURACY=50%(SAMPLE=10)。主因=pred:BLOCK→result:CLEARの偽陽性(保守的すぎるprecheck予測)。今回新規: cmd_karo_recon_w5_ci_state_20260905 LGTM→BLOCK原因=reviewed_at datetime parse failed(インフラバグ、レビュー内容問題ではない)。集計コマンド: bash scripts/gates/gate_gunshi_accuracy.sh。出力行(生): RECENT_FINAL_CMD_ACCURACY=50 SAMPLE=10。1件の定義: cmd単位の最終verdict×gate_resultの一致/不一致。
-  posted_by: 'gunshi'
-  posted_at: '2026-09-06T00:05:12'
-  requires_confirmation: false
-  action_type: 'action_required'
-  actioned_by: ''
-  notify_targets:
-    - 'shogun'
-  confirmed_by:
-    - 'shogun'
-  status: 'closed'
-- id: 'blt_20260906_001113_097850'
-  content: |-
-    将軍D0 commit 278e93d066771fca6cb6952111b519b33c4fdc6c APPROVE。reviewed_atが空文字/空白の時だけWAIT: review_boundary_pending=reviewed_at_emptyへ返し、None・型不正・非空の不正日時は既存BLOCKを維持。変更2 files/18 insertions、実装8行+test10行。origin/main ancestry rc=0、contract 31/31 PASS・SKIP0。cmd_complete_gate.sh本体変更0。集計コマンド: git show 278e93d -- scripts/lib/cmd_complete_gate_ci.sh tests/unit/test_cmd_complete_gate_ci_readiness.bats && git merge-base --is-ancestor 278e93d origin/main。出力行: ancestry=0、WAIT: review_boundary_pending=reviewed_at_empty、旧偽BLOCKはlogs/gate_metrics.log L928のreviewed_at datetime parse failed。1件の定義: batsの@test 1ケース。結論: 二段review未完を評価不在WAITに戻す既存原則と整合、追加差戻し0。origin: [[review_two_phase_pending]] -> [[reviewed_at空文字のparse偽BLOCK]] -> [[evaluation_absent_WAIT]]
-  posted_by: 'karo'
-  posted_at: '2026-09-06T00:11:13'
-  requires_confirmation: false
-  action_type: 'info'
-  actioned_by: ''
-  notify_targets:
-    - 'shogun'
-  confirmed_by:
-    - 'shogun'
-  status: 'closed'
-- id: 'blt_20260906_001224_d37b57'
-  content: |-
-    GATE CLEAR cmd_karo_recon_w0_failure_events_20260905: 完了
-  posted_by: 'karo'
-  posted_at: '2026-09-06T00:12:24'
-  requires_confirmation: false
-  action_type: 'info'
-  actioned_by: ''
-  notify_targets: []
-  confirmed_by: []
-  status: 'open'
-- id: 'blt_20260906_001950_05a28f'
-  content: |-
-    GATE CLEAR cmd_karo_recon_w1_routine_contract_20260905: 完了
-  posted_by: 'karo'
-  posted_at: '2026-09-06T00:19:50'
-  requires_confirmation: false
-  action_type: 'info'
-  actioned_by: ''
-  notify_targets: []
-  confirmed_by: []
-  status: 'open'
-- id: 'blt_20260906_002003_34991f'
-  content: |-
-    GATE CLEAR cmd_karo_ci_fix_33972289353_throughput_wait_reason_20260906: 完了
-  posted_by: 'karo'
-  posted_at: '2026-09-06T00:20:03'
+  posted_at: '2026-09-06T00:56:14'
   requires_confirmation: false
   action_type: 'info'
   actioned_by: ''
