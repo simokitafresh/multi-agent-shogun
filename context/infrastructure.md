@@ -1,5 +1,6 @@
 # インフラコンテキスト
 <!-- last_updated: 2026-09-05 context_freshness reviewed source boundary -->
+<!-- source_commit:a4c2e1eafbad reason:context_freshness reviewed source boundary evidence:context_freshness_check context=context/infrastructure.md commit=a4c2e1eafbad -->
 <!-- source_commit:feb6ea91e2ba reason:context_freshness reviewed source boundary evidence:context_freshness_check context=context/infrastructure.md commit=feb6ea91e2ba -->
 <!-- source_commit:780f334c0923 reason:context_freshness reviewed source boundary evidence:context_freshness_check context=context/infrastructure.md commit=780f334c0923 -->
 <!-- source_commit:d756bc14a7fd reason:context_freshness reviewed source boundary evidence:context_freshness_check context=context/infrastructure.md commit=d756bc14a7fd -->
@@ -835,3 +836,4 @@ source boundary一致taskはregistryのowner/update_triggerからcontext_update_
 - task YAML 重複 field 根治(2026-09-05, d756bc14a 小太郎)|deploy_task の related_lessons 再注入で task YAML に同名キーが二重定義(L258=[]/L294=[L097,L019])→gate_report_format(live 末尾値)と report_field_set(deploy-time snapshot)が矛盾し cmd_4476 が revision_requested で 8h 停止|重複 field を単一化し両 gate の参照元を一致|origin: `[[cmd_4476_偵察]] -> [[task_yaml_重複field_20260905]] -> [[gate参照元不一致]]`
 - CI 台帳 push の paths-ignore(2026-09-05 13:09, 780f334c0 将軍 D0)|publisher の台帳 batch(bulletin/insights/review_log/workarounds/semantic-index/tasks/lessons.md/lessons yaml)が 1 分毎に push し、concurrency group の pending 上限 1 で古い run が cancel→直近 40 run 中 33 cancelled=CI 検証ゼロ(cancel-in-progress:false でも pending は 1 本しか残らない)|台帳のみの commit は run を起動しない(全 path 一致時のみ skip)|origin: `[[単一publisher_台帳ノイズ_H3]] -> [[CI_pending上限cancel_20260905]] -> [[paths-ignore]]`
 - 軍師 review precheck の ancestry 許容+cache 無効化(2026-09-05, feb6ea91e 軍師 D0)|review_source_context が report commit の ancestry を許容せず、precheck cache が古い判定を返して cmd_4476 が『context 参照切れ』偽 FAIL(13:00)→将軍・家老の再実測では PASS|ancestry 許容+cache invalidation|origin: `[[cmd_4476_偵察]] -> [[precheck_cache_偽FAIL_20260905]] -> [[review_source_context_ancestry]]`
+- same-cmd 再配備の contract reset(2026-09-05, a4c2e1eaf 影丸)|同一 cmd を別忍者へ再配備した際に前世代の task contract(planned scope/lesson_set)が残り gate が矛盾する→再配備時に contract を世代ごとに reset|→ `queue/tasks/` 世代管理、deploy_task.sh|origin: `[[cmd_4448_4449_再検証]] -> [[same_cmd_redeploy_contract_reset_20260905]] -> [[double_deploy_guard]]`
