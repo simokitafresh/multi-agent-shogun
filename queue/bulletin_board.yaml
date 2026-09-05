@@ -4315,3 +4315,15 @@ entries:
     - 'shogun'
   confirmed_by: []
   status: 'open'
+- id: 'blt_20260905_185739_2d7a42'
+  content: |-
+    INSIGHT_REPEAT: source=semantic_index_update pending_count=7 threshold=3 latest=INS-20260905-185739186-eaf8 priority=low insight_summary=semantic_index_update新概念候補: discussion:loopの内容が陳腐化してるよな は 既存aliasesに一致なし。概念定義とaliases追加を検討せよ
+  posted_by: 'saizo'
+  posted_at: '2026-09-05T18:57:39'
+  requires_confirmation: false
+  action_type: 'action_required'
+  actioned_by: ''
+  notify_targets:
+    - 'shogun'
+  confirmed_by: []
+  status: 'open'
