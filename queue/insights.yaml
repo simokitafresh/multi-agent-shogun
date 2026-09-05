@@ -18315,7 +18315,9 @@ insights:
   priority: "low"
   source: "semantic_index_update"
   fix_known: false
-  status: pending
+  status: "resolved"
+  action_artifact: "semantic_index=/home/simokitafresh/multi-agent-shogun/docs/semantic-index/index.md"
+  resolved_reason: "semantic index candidate was absorbed into a registered concept"
 - id: INS-20260905-142427907-d871
   ts: "2026-09-05T14:24:27+09:00"
   insight: "semantic_index_update未登録cmd originノード: [[正本3本に可視性PF別現物とattribution識別手段が無い]] は既存aliasesに一致なし。類似概念TOP3: gate_quality_framework(ゲート品質統合フレームワーク; alias=startup_BLOCK_3session; score=3.0) / rebalancer_app(Rebalancerアプリ; alias=Portfolio Rebalance App; score=3.0) / investment_knowledge_base(投資知識辞書; alias=Feature Importance; score=3.0)。概念定義とaliases追加を検討せよ"
@@ -18326,6 +18328,15 @@ insights:
 - id: INS-20260905-142428383-1a54
   ts: "2026-09-05T14:24:28+09:00"
   insight: "semantic_index_update未登録cmd originノード: [[cmd_4476_AsIs偵察]] は既存aliasesに一致なし。類似概念TOP3: unread_cmd_new_deployment_guard(未読cmd_new配備漏れ防止; alias=cmd_4376層別確定; score=21.6) / gate_bypass_prevention(ゲート迂回防止; alias=cmd_4323偵察後実装; score=21.6) / dm_signal_pf_restore_guardrails(DM-Signal PF復元運用ガードレール; alias=cmd_3786復旧手順; score=20.8)。概念定義とaliases追加を検討せよ"
+  priority: "low"
+  source: "semantic_index_update"
+  fix_known: false
+  status: "resolved"
+  action_artifact: "semantic_index=/home/simokitafresh/multi-agent-shogun/docs/semantic-index/index.md"
+  resolved_reason: "semantic index candidate was absorbed into a registered concept"
+- id: INS-20260905-143015375-33f5
+  ts: "2026-09-05T14:30:15+09:00"
+  insight: "semantic_index_update新概念候補: discussion:全体の進捗を表形式で報告してくれ、誰が何をやっていてどこで詰まってる？ は 既存aliasesに一致なし。概念定義とaliases追加を検討せよ"
   priority: "low"
   source: "semantic_index_update"
   fix_known: false
