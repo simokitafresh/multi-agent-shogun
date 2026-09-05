@@ -10,7 +10,7 @@ ROOT = Path(__file__).resolve().parents[2]
 def main():
     a = sys.argv[1:]; days = int(a[a.index("--days") + 1]) if "--days" in a else 7
     L = yaml.safe_load((ROOT / "queue/x_live_oos/ledger.yaml").read_text(encoding="utf-8"))["entries"]
-    inv = collections.Counter((e.get("growth") or {}).get("format", "?") for e in L if not e.get("post_id"))
+    inv = collections.Counter((e.get("growth") or {}).get("format", "?") for e in L if not e.get("post_id") and (e.get("growth") or {}).get("approved"))  # 承認済み(growth.approved 非空)だけを在庫と数える。withdrawn/未承認は在庫ではない(2026-09-05 09:12 修正)
     C = yaml.safe_load((ROOT / "skills/x-post-pipeline/slot_calendar.yaml").read_text(encoding="utf-8"))["slots"]
     today = dt.date.today().isoformat(); horizon = (dt.date.today() + dt.timedelta(days=days)).isoformat()
     left = dict(inv); empty = []; first_empty = {}

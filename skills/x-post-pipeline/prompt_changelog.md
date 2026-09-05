@@ -18,3 +18,4 @@ system prompt 本体(v5.1)は 18:55 で変更していない。
 | 2026-09-05 01:35 | event_rules.yaml market_context / x_event_scan.py / claim_bank C35-C38 | 為替・金利を常時観測対象として記録+週次表、event context に市場環境 1 行、本人思想適用 claim 4 本(human_seed) | 殿『trigger を増やさず Market Context として常時観測。予測ではなく分解・観測・検証』 |
 | 2026-09-05 01:44 | event_rules market_context.inflation / growth_schema evergreen_themes / x_event_scan / claim C39-C41 | インフレを観測対象(CPI/コア PCE/BEI/実質利回り/日本 CPI)+常時テーマに。名目と実質を分ける claim 3 本(human_seed) | 殿『インフレも重要観測対象として明示。CPI 解説ではなく横断テーマ』 |
 | 2026-09-05 01:57 | x_event_scan.py / event_rules | 日本 CPI の正本を総務省統計局 e-Stat(000032103842)へ。総合/コア前年比 | 殿『総務省統計局の CPI を正本として直接取得』 |
+| 2026-09-05 09:12 | crontab / x_inventory_check.py | cron 4 本(inventory/event 日次/intraday/weekly)が cd なしで cwd=HOME になり無音失敗していた→cd を付与。inventory は承認済みのみを在庫に | 将軍 loop 一次確認で log 不在を検知(x_inventory_check.log/x_event_scan.log なし) |

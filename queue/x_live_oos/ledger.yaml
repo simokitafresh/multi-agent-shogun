@@ -952,10 +952,10 @@ entries:
     plan_id: plan_202609
     claim_key: C01
     claim_origin: existing_user_thesis
-    approved: ''
+    approved: lord_stage2_20260905_0915
     scheduled: '2026-09-05 08:30'
-  post_id: ''
-  posted_at: ''
+  post_id: '2096029377138164098'
+  posted_at: '2026-09-05T00:15:18Z'
   snapshots: {}
 - draft_id: P9-SE-1
   draft_file: queue/x_drafts/2026-09-04_P9-SE-1.txt
@@ -974,7 +974,7 @@ entries:
     plan_id: plan_202609
     claim_key: C07
     claim_origin: existing_user_thesis
-    approved: ''
+    approved: lord_stage2_20260905_0915
     series_id: break_point
     series_order: 1
     series_total: 8
@@ -999,7 +999,7 @@ entries:
     plan_id: plan_202609
     claim_key: C10
     claim_origin: existing_user_thesis
-    approved: ''
+    approved: lord_stage2_20260905_0915
     scheduled: '2026-09-06 08:30'
   post_id: ''
   posted_at: ''
@@ -1021,7 +1021,7 @@ entries:
     plan_id: plan_202609
     claim_key: C05
     claim_origin: existing_user_thesis
-    approved: ''
+    approved: lord_stage2_20260905_0915
     scheduled: '2026-09-06 18:30'
   post_id: ''
   posted_at: ''
@@ -1043,7 +1043,7 @@ entries:
     plan_id: plan_202609
     claim_key: C14
     claim_origin: existing_user_thesis
-    approved: ''
+    approved: lord_stage2_20260905_0915
     scheduled: '2026-09-07 08:30'
   post_id: ''
   posted_at: ''
@@ -1065,7 +1065,7 @@ entries:
     plan_id: plan_202609
     claim_key: C21
     claim_origin: existing_user_thesis
-    approved: ''
+    approved: lord_stage2_20260905_0915
     scheduled: '2026-09-08 08:30'
   post_id: ''
   posted_at: ''
@@ -1087,7 +1087,7 @@ entries:
     plan_id: plan_202609
     claim_key: C08
     claim_origin: existing_user_thesis
-    approved: ''
+    approved: lord_stage2_20260905_0915
     series_id: break_point
     series_order: 2
     series_total: 8
@@ -1112,7 +1112,7 @@ entries:
     plan_id: plan_202609
     claim_key: C27
     claim_origin: existing_user_thesis
-    approved: ''
+    approved: lord_stage2_20260905_0915
     scheduled: '2026-09-09 08:30'
   post_id: ''
   posted_at: ''
@@ -1134,7 +1134,7 @@ entries:
     plan_id: plan_202609
     claim_key: C04
     claim_origin: existing_user_thesis
-    approved: ''
+    approved: lord_stage2_20260905_0915
     thread_id: P9-T-1
     thread_position: 0
     scheduled: '2026-09-09 18:30'
@@ -1158,7 +1158,7 @@ entries:
     plan_id: plan_202609
     claim_key: C04
     claim_origin: existing_user_thesis
-    approved: ''
+    approved: lord_stage2_20260905_0915
     thread_id: P9-T-1
     thread_position: 1
     scheduled: '2026-09-09 18:30'
@@ -1182,7 +1182,7 @@ entries:
     plan_id: plan_202609
     claim_key: C04
     claim_origin: existing_user_thesis
-    approved: ''
+    approved: lord_stage2_20260905_0915
     thread_id: P9-T-1
     thread_position: 2
     scheduled: '2026-09-09 18:30'
@@ -1206,7 +1206,7 @@ entries:
     plan_id: plan_202609
     claim_key: C04
     claim_origin: existing_user_thesis
-    approved: ''
+    approved: lord_stage2_20260905_0915
     thread_id: P9-T-1
     thread_position: 3
     scheduled: '2026-09-09 18:30'
@@ -1230,7 +1230,7 @@ entries:
     plan_id: plan_202609
     claim_key: C31
     claim_origin: external_topic
-    approved: ''
+    approved: lord_stage2_20260905_0915
     scheduled: '2026-09-10 08:30'
   post_id: ''
   posted_at: ''
@@ -1252,7 +1252,7 @@ entries:
     plan_id: plan_202609
     claim_key: C03
     claim_origin: existing_user_thesis
-    approved: ''
+    approved: lord_stage2_20260905_0915
     series_id: invest_math
     series_order: 2
     series_total: 8
@@ -1277,7 +1277,7 @@ entries:
     plan_id: plan_202609
     claim_key: C06
     claim_origin: existing_user_thesis
-    approved: ''
+    approved: lord_stage2_20260905_0915
     reuse_of: C06
     reuse_reason: 'Short で問題提起した claim を long で検証まで掘る(5 日以上後)'
     scheduled: '2026-09-11 08:30'
@@ -1301,7 +1301,7 @@ entries:
     plan_id: plan_202609
     claim_key: C15
     claim_origin: existing_user_thesis
-    approved: ''
+    approved: lord_stage2_20260905_0915
     scheduled: '2026-09-11 18:30'
   post_id: ''
   posted_at: ''
@@ -1323,7 +1323,7 @@ entries:
     plan_id: plan_202609
     claim_key: C33
     claim_origin: external_topic
-    approved: ''
+    approved: lord_stage2_20260905_0915
     scheduled: '2026-09-12 08:30'
   post_id: ''
   posted_at: ''
@@ -1345,7 +1345,7 @@ entries:
     plan_id: plan_202609
     claim_key: C24
     claim_origin: existing_user_thesis
-    approved: ''
+    approved: lord_stage2_20260905_0915
     series_id: break_point
     series_order: 3
     series_total: 8
@@ -1370,7 +1370,7 @@ entries:
     plan_id: plan_202609
     claim_key: C11
     claim_origin: existing_user_thesis
-    approved: ''
+    approved: lord_stage2_20260905_0915
     reuse_of: C11
     reuse_reason: 'Short で問題提起した claim を series_entry で検証まで掘る(5 日以上後)'
     scheduled: '2026-09-13 08:30'
@@ -1394,7 +1394,7 @@ entries:
     plan_id: plan_202609
     claim_key: C23
     claim_origin: existing_user_thesis
-    approved: ''
+    approved: lord_stage2_20260905_0915
     series_id: invest_math
     series_order: 3
     series_total: 8
@@ -1419,7 +1419,7 @@ entries:
     plan_id: plan_202609
     claim_key: C34
     claim_origin: external_topic
-    approved: ''
+    approved: lord_stage2_20260905_0915
     scheduled: '2026-09-14 08:30'
   post_id: ''
   posted_at: ''
@@ -1441,7 +1441,7 @@ entries:
     plan_id: plan_202609
     claim_key: C22
     claim_origin: existing_user_thesis
-    approved: ''
+    approved: lord_stage2_20260905_0915
     scheduled: '2026-09-14 18:30'
   post_id: ''
   posted_at: ''
@@ -1463,7 +1463,7 @@ entries:
     plan_id: plan_202609
     claim_key: C13
     claim_origin: existing_user_thesis
-    approved: ''
+    approved: lord_stage2_20260905_0915
     reuse_of: C13
     reuse_reason: 'Short で問題提起した claim を series_entry で検証まで掘る(5 日以上後)'
     event: 'FOMC 1 日目'
@@ -1488,7 +1488,7 @@ entries:
     plan_id: plan_202609
     claim_key: C09
     claim_origin: existing_user_thesis
-    approved: ''
+    approved: lord_stage2_20260905_0915
     event: 'FOMC 1 日目'
     series_id: break_point
     series_order: 4
@@ -1514,7 +1514,7 @@ entries:
     plan_id: plan_202609
     claim_key: C16
     claim_origin: existing_user_thesis
-    approved: ''
+    approved: lord_stage2_20260905_0915
     reuse_of: C16
     reuse_reason: 'Short で問題提起した claim を series_entry で検証まで掘る(5 日以上後)'
     event: 'FOMC 結果'
@@ -1539,7 +1539,7 @@ entries:
     plan_id: plan_202609
     claim_key: C12
     claim_origin: existing_user_thesis
-    approved: ''
+    approved: lord_stage2_20260905_0915
     event: 'FOMC 結果'
     series_id: invest_math
     series_order: 4
@@ -1565,7 +1565,7 @@ entries:
     plan_id: plan_202609
     claim_key: C18
     claim_origin: existing_user_thesis
-    approved: ''
+    approved: lord_stage2_20260905_0915
     reuse_of: C18
     reuse_reason: 'Short で問題提起した claim を series_entry で検証まで掘る(5 日以上後)'
     scheduled: '2026-09-17 08:30'
@@ -1589,7 +1589,7 @@ entries:
     plan_id: plan_202609
     claim_key: C17
     claim_origin: existing_user_thesis
-    approved: ''
+    approved: lord_stage2_20260905_0915
     thread_id: P9-T-2
     thread_position: 0
     scheduled: '2026-09-17 18:30'
@@ -1613,7 +1613,7 @@ entries:
     plan_id: plan_202609
     claim_key: C17
     claim_origin: existing_user_thesis
-    approved: ''
+    approved: lord_stage2_20260905_0915
     thread_id: P9-T-2
     thread_position: 1
     scheduled: '2026-09-17 18:30'
@@ -1637,7 +1637,7 @@ entries:
     plan_id: plan_202609
     claim_key: C17
     claim_origin: existing_user_thesis
-    approved: ''
+    approved: lord_stage2_20260905_0915
     thread_id: P9-T-2
     thread_position: 2
     scheduled: '2026-09-17 18:30'
@@ -1661,7 +1661,7 @@ entries:
     plan_id: plan_202609
     claim_key: C17
     claim_origin: existing_user_thesis
-    approved: ''
+    approved: lord_stage2_20260905_0915
     thread_id: P9-T-2
     thread_position: 3
     scheduled: '2026-09-17 18:30'
@@ -1685,7 +1685,7 @@ entries:
     plan_id: plan_202609
     claim_key: C26
     claim_origin: existing_user_thesis
-    approved: ''
+    approved: lord_stage2_20260905_0915
     reuse_of: C26
     reuse_reason: 'Short で問題提起した claim を long で検証まで掘る(5 日以上後)'
     scheduled: '2026-09-18 08:30'
@@ -1709,7 +1709,7 @@ entries:
     plan_id: plan_202609
     claim_key: C25
     claim_origin: existing_user_thesis
-    approved: ''
+    approved: lord_stage2_20260905_0915
     series_id: break_point
     series_order: 5
     series_total: 8
@@ -1734,7 +1734,7 @@ entries:
     plan_id: plan_202609
     claim_key: C28
     claim_origin: existing_user_thesis
-    approved: ''
+    approved: lord_stage2_20260905_0915
     reuse_of: C28
     reuse_reason: 'Short で問題提起した claim を series_entry で検証まで掘る(5 日以上後)'
     scheduled: '2026-09-19 08:30'
@@ -1758,7 +1758,7 @@ entries:
     plan_id: plan_202609
     claim_key: C06
     claim_origin: existing_user_thesis
-    approved: ''
+    approved: lord_stage2_20260905_0915
     scheduled: '2026-09-19 18:30'
   post_id: ''
   posted_at: ''
@@ -1780,7 +1780,7 @@ entries:
     plan_id: plan_202609
     claim_key: C29
     claim_origin: external_topic
-    approved: ''
+    approved: lord_stage2_20260905_0915
     reuse_of: C29
     reuse_reason: 'Short で問題提起した claim を long で検証まで掘る(5 日以上後)'
     scheduled: '2026-09-20 08:30'
@@ -1804,7 +1804,7 @@ entries:
     plan_id: plan_202609
     claim_key: C11
     claim_origin: existing_user_thesis
-    approved: ''
+    approved: lord_stage2_20260905_0915
     series_id: invest_math
     series_order: 5
     series_total: 8
@@ -1829,7 +1829,7 @@ entries:
     plan_id: plan_202609
     claim_key: C19
     claim_origin: existing_user_thesis
-    approved: ''
+    approved: lord_stage2_20260905_0915
     series_id: break_point
     series_order: 6
     series_total: 8
@@ -1854,7 +1854,7 @@ entries:
     plan_id: plan_202609
     claim_key: C20
     claim_origin: existing_user_thesis
-    approved: ''
+    approved: lord_stage2_20260905_0915
     scheduled: '2026-09-22 18:30'
   post_id: ''
   posted_at: ''
@@ -1876,7 +1876,7 @@ entries:
     plan_id: plan_202609
     claim_key: C30
     claim_origin: external_topic
-    approved: ''
+    approved: lord_stage2_20260905_0915
     series_id: invest_math
     series_order: 6
     series_total: 8
@@ -1901,7 +1901,7 @@ entries:
     plan_id: plan_202609
     claim_key: C18
     claim_origin: existing_user_thesis
-    approved: ''
+    approved: lord_stage2_20260905_0915
     series_id: break_point
     series_order: 7
     series_total: 8
@@ -1926,7 +1926,7 @@ entries:
     plan_id: plan_202609
     claim_key: C32
     claim_origin: external_topic
-    approved: ''
+    approved: lord_stage2_20260905_0915
     thread_id: P9-T-3
     thread_position: 0
     scheduled: '2026-09-25 18:30'
@@ -1950,7 +1950,7 @@ entries:
     plan_id: plan_202609
     claim_key: C32
     claim_origin: external_topic
-    approved: ''
+    approved: lord_stage2_20260905_0915
     thread_id: P9-T-3
     thread_position: 1
     scheduled: '2026-09-25 18:30'
@@ -1974,7 +1974,7 @@ entries:
     plan_id: plan_202609
     claim_key: C32
     claim_origin: external_topic
-    approved: ''
+    approved: lord_stage2_20260905_0915
     thread_id: P9-T-3
     thread_position: 2
     scheduled: '2026-09-25 18:30'
@@ -1998,7 +1998,7 @@ entries:
     plan_id: plan_202609
     claim_key: C32
     claim_origin: external_topic
-    approved: ''
+    approved: lord_stage2_20260905_0915
     thread_id: P9-T-3
     thread_position: 3
     scheduled: '2026-09-25 18:30'
@@ -2022,7 +2022,7 @@ entries:
     plan_id: plan_202609
     claim_key: C26
     claim_origin: existing_user_thesis
-    approved: ''
+    approved: lord_stage2_20260905_0915
     scheduled: '2026-09-27 18:30'
   post_id: ''
   posted_at: ''
@@ -2044,7 +2044,7 @@ entries:
     plan_id: plan_202609
     claim_key: C28
     claim_origin: existing_user_thesis
-    approved: ''
+    approved: lord_stage2_20260905_0915
     series_id: break_point
     series_order: 8
     series_total: 8
@@ -2069,7 +2069,7 @@ entries:
     plan_id: plan_202609
     claim_key: C13
     claim_origin: existing_user_thesis
-    approved: ''
+    approved: lord_stage2_20260905_0915
     series_id: invest_math
     series_order: 8
     series_total: 8
@@ -2094,7 +2094,7 @@ entries:
     plan_id: plan_202609
     claim_key: C29
     claim_origin: external_topic
-    approved: ''
+    approved: lord_stage2_20260905_0915
     event: '月末=DM 判定日(本人イベント)'
     scheduled: '2026-09-30 18:30'
   post_id: ''
@@ -2117,7 +2117,7 @@ entries:
     plan_id: plan_202609
     claim_key: C02
     claim_origin: existing_user_thesis
-    approved: ''
+    approved: lord_stage2_20260905_0915
     series_id: invest_math
     series_order: 1
     series_total: 8
@@ -2142,7 +2142,7 @@ entries:
     plan_id: plan_202609
     claim_key: C16
     claim_origin: existing_user_thesis
-    approved: ''
+    approved: lord_stage2_20260905_0915
     series_id: invest_math
     series_order: 7
     series_total: 8

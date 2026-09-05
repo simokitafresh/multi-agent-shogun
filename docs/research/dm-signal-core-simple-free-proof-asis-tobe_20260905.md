@@ -1,9 +1,30 @@
 <!-- gist-master: e590a96ad0b1c541b2ec266d4c6a512b dm-signal-core-simple-free-proof-asis-tobe_20260905.md -->
-# DM-Signal Core LP × Simple LP × Free Interactive Proof — AsIs/ToBe 設計書 v0.1(2026-09-05 02:55 起草)
+# DM-Signal Core LP × Simple LP × Free Interactive Proof — AsIs/ToBe 設計書 v0.2(2026-09-05 09:20、cmd_4476 偵察の一次で §A/§E/§F/§J を事実に置換。家老レビュー中=revision_requested、確定後 v0.3)/ v0.1 02:55
 
 > 殿指示 2026-09-05 02:42。目的=(1) dm-signal.com を SEO・ブランドの Core LP として完成 (2) 商品を変えずに Simple LP 1 本だけの価値を検証 (3) Google Auth→Free tier を Interactive Proof として使えるか確認 (4) Core vs Simple の流入差を計測可能に。**この段階では実装しない**(Simple LP 新設・Free 可視性変更・Tier 変更・sitemap/canonical 変更・Google Auth 変更は殿裁定後)。
 > 優先順位=最新の殿裁定 → 最新正本 → 本番実測 → 現行コード → 古い設計書。正本: SEO v6(`dm-signal-lp-seo-plan_20260830.md`、gist 5edb5f6d)/入口 3 面 v3.2(`dm-login-showcase-asis-tobe_v3_20260830.md`、gist 901c36a5)/Free tier v3.3(`dm-free-tier-google-auth-asis-tobe_v3_20260830.md`、gist 897501e0)。
 > **v0.1 の空欄**は cmd_4476(偵察、忍者 1 名)の一次結果で埋める。将軍が正本と本番で確認できた範囲だけを書き、未確認は「(4476)」と明記。
+
+
+## §0.2 v0.2 で確定した事実(cmd_4476 小太郎、コード行+admin API 生出力。docs/research/cmd_4476_core_simple_free_asis_20260905.md)
+
+| 事実 | 現物 | 設計への影響 |
+|---|---|---|
+| Free tier は Basic-DualMomentum を **全項目無条件公開** | `GET /api/admin/tiers/free-tier/visibility`: hide_portfolio=false / hide_signal=false / hide_components=false。Current signal・holdings・Components・Trade history・Metrics・Compare・Rolling・Drawdown・Annual/Monthly 全て見える | 「Free で Performance を触らせる Interactive Proof」は **Basic-DM については既に成立**(殿裁定 08-31 16:45『Basic-DM の閲覧は Free』の帰結)。v0.1 §H『無料なら全部は禁止』は Basic-DM 以外の PF に対する禁則として読む |
+| L3(mask_signal)/L4(mask_components)の実装範囲 | `/api/signals` `/api/trades` `/api/history` `/api/metrics` `/api/performance` `/api/annual・monthly` には L3/L4 実装あり(hide フラグで有効化)。**`/api/rolling-returns` `/api/drawdowns` `/api/compare-returns` にはマスク機構が無い(L2 hide のみ or 皆無)** | 「代表 Standard/Premium PF の Performance を Free で見せてシグナルだけ隠す」は、Rolling/Drawdown/Compare Returns の 3 route に **新規のマスク実装が要る**(既存機構だけでは Tier leakage)。最小変更ではない |
+| campaign_id の持ち回りは live | LP→`/free?campaign_id=`→`/login?coupon=&campaign_id=`→showcase_events(cmd_4474) | **source は新パラメータを作らず campaign_id に載せる**(例 `lp_core_*` / `lp_simple_*`)。Google Auth・coupon の契約に触らない |
+| `from=lp` は受け取り処理なし | `free/page.tsx`・`free-experience.tsx` に処理なし(grep 0) | v0.1 §F の「from=lp を source に拡張」は誤り。campaign_id 経路に統一 |
+| Google Auth 後の identity は backend で破棄 | `get_free_coupon` が Supabase user を `_` で捨てる。`ShowcaseEvent` に user 列なし。`product_logins` 不在 | 個人単位の retention/LTV は今は測れない(§J)。first/last touch を持つなら `product_logins` 新設(Free v3.3 §4-5 既定案)が唯一の経路 |
+| 計測可否 | 今測れる=LP→CTA、LP→Auth 開始(`signup_google`)。少しの実装=Auth 完了(callback 成功分岐に event 1 行)、Auth→Free ログイン(verify-viewer 成功時 event)、Core/Simple 別(campaign 集計に prefix)。今は測れない=Free→note(href すら無い)、Paid/Plan mix(note 側)、retention/LTV | Primary Metric は **LP→Google Auth 完了率(source 別)**=event 1 行追加で取れる。第 2=Auth→Free ログイン率 |
+
+**§E の改訂(v0.2)**: Free Interactive Proof の選択肢は 2 つ。
+- **案 A(追加実装ゼロ)**: Basic-DualMomentum の全項目公開を「実物を触る Proof」としてそのまま使う。Simple LP の導線も Basic-DM へ。Standard/Premium は LP の表(CAGR/Sharpe/MDD)で示すのみ。
+- **案 B(新規実装あり)**: 代表 Standard/Premium PF を Free に `hide_signal=true, hide_components=true` で開く。ただし Rolling/Drawdown/Compare Returns の 3 route にマスクを新設しないと保有シグナルが漏れる(Tier leakage)。実装は backend 3 route+contract test。
+- 将軍の推奨=**まず案 A で Core vs Simple を走らせ、案 B は 4 週の計測結果を見てから**(殿原則『必要になるまで作らない』)。
+
+**§F の改訂(v0.2)**: source=campaign_id の prefix 規則(`lp_core_<date>_<n>` / `lp_simple_<date>_<n>`)。LP が自分の lane の campaign_id を発行(X 由来は既存 `x_<date>_<slot>_<n>` のまま)。追加 event 2 語(`auth_completed`=callback 成功、`free_login`=verify-viewer 成功)。`product_logins` は案 B と同じく後段。
+
+**§I の改訂(v0.2)**: 1 殿裁定(案 A/B、Simple LP 可否、文言方針)→ 2 attribution 最小(campaign_id prefix+event 2 語、frontend 2 file+backend 集計 1 箇所)→ 3 Simple LP 1 本(noindex)→ 4 4 週計測→ 5 案 B は結果次第。
 
 ## §A AsIs(将軍 02:16-02:50 一次: 本番 curl+正本 3 本+origin/main の file 一覧)
 
