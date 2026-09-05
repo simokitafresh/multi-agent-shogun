@@ -241,6 +241,11 @@ cat <<SKELETON
       source: "FILL_THIS: 一次情報のパス(コード現物/DB/設計書§)"
       trust: verified
     depends_on: none
+    # 2 名並行の偵察(parallel_ok に AC を 2 つ以上)なら以下 5 行を残し値を変えない(recon-dual 独立性契約、cmd_save Check 19.7 が fail-closed 検査)。単独/実装なら parallel_ok と recon_dual を行ごと削除
+    # parallel_ok:
+    # - AC1
+    # - AC2
+    # recon_dual: {mode: independent, cross_reference: forbidden, base: fixed_origin_main, shared_context_embargo: karo_release_required}
     execution_env:
       runtime_constraints: "FILL_THIS_or_DELETE: Linux venv必須/RSS計測=/usr/bin/time -v等。不要ならexecution_env全体を削除"
       long_runtime_reason: "FILL_THIS_if_estimated_minutes_gt_15: 15分超が不可分である具体的理由"
