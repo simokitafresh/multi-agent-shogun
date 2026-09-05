@@ -213,3 +213,13 @@ raw_columns() {
     # BLOCK行のカラム順: ts, cmd_id, category, reason, ...
     grep -q '"\$CMD_ID" "\$_gate_record_category" "\$block_reason"' "$GATE"
 }
+
+# test_necessity: an empty reviewed_at means the two-phase review boundary does
+# not exist yet; the evaluator must classify it as WAIT (evaluation absent),
+# never as BLOCK "datetime parse failed" (false BLOCK observed 2026-09-06 00:02:30).
+@test "empty reviewed_at is WAIT review_boundary_pending, not a parse-failed BLOCK" {
+    evaluate "{\"expected_head_sha\":\"abc\",\"reviewed_at\":\"\",\"target_result\":{\"conclusion\":\"success\",\"head_sha\":\"abc\"},\"workflow_result\":{\"status\":\"completed\",\"conclusion\":\"success\",\"head_sha\":\"abc\",\"started_at\":\"2026-08-08T03:10:00Z\"}}"
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"WAIT: review_boundary_pending=reviewed_at_empty"* ]]
+    [[ "$output" != *"parse failed"* ]]
+}
