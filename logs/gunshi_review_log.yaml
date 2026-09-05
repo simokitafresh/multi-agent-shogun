@@ -8495,3 +8495,33 @@
   verdict: LGTM
   verified_files:
   - scripts/hooks/codex_inbox_priority_guard.sh:command_is_allowed_evidence
+- brainwash_check: '#1no #2no #3no #4no #5no #6no #7no #8no safe 31/31+publisher 23/23=54
+    PASS'
+  causal_chain: dirty overlap→旧safe_ff skip→root stale→non-merge CAS同期+dirty復元で収束
+  cmd_id: cmd_karo_ci_fix_33954907749_safe_ff_dirty_overlap
+  finding_categories:
+  - assumptions
+  - numbers
+  - premortem
+  - adversarial
+  - ambiguity
+  findings_summary: 4観点OK。non-merge CAS同期+dirty blob/mode/hash完全復元。31/31+23/23=54
+    PASS SKIP0。fail-closed全敵対PASS
+  hole_action: none
+  observations:
+  - commit 8ee4468e。root 42 behind→CAS update-ref/read-tree収束
+  - staged/untracked/symlink/divergence非包含は全てfail-closed
+  operational_simulation:
+    actual: 8ee4468e confirmed
+    command: git log --oneline 8ee4468e -1
+    expected: safe_ff dirty overlap commit
+    result: PASS
+  origin: '[[cmd_karo_ci_fix_33954907749]] -> [[D012_non_merge_sync]] -> [[dirty_overlap_exact_restore]]'
+  report_ninja: kagemaru
+  report_task_id: cmd_karo_ci_fix_33954907749_safe_ff_dirty_overlap_normal
+  review_type: report
+  step3_5_verified: true
+  timestamp: '2026-09-05T18:22:00+09:00'
+  verdict: LGTM
+  verified_files:
+  - scripts/safe_shared_main_ff.sh:update-ref
