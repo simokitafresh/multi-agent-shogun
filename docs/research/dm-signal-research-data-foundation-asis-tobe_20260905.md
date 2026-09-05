@@ -1,5 +1,5 @@
 <!-- gist-master: 4afbab67cc111ff723c342aa48412ff8 dm-signal-research-data-foundation-asis-tobe_20260905.md -->
-# DM-Signal 研究データ基盤 — 「あれば便利だったもの」を先に解決する AsIs/ToBe v0.2(2026-09-05 22:05 覚醒更新: 殿 21:50『ledger は廃止しなかったか』21:51『既にあるもので』21:56『FoF 分解ツールは既にある。車輪の再発明禁止』→ weight は既に全量 DB にあり展開不要、既存ツール 7 本を棚卸し / v0.1 21:40、殿 21:22 指示、実装なし)
+# DM-Signal 研究データ基盤 — 「あれば便利だったもの」を先に解決する AsIs/ToBe v0.4(2026-09-05 22:35 家老最終 REJECT blt_221857 の 6 点を全採用: §2.1 行/非 NULL 分離、I3 交差実測 66/78、I4 表現訂正、§2.6 棚卸し訂正(producer/standard helper/precomputed consumer 追加、fof_tree・check_pf_config は create_db_engine 直結、verify_fof_consistency は HTTP+2PF 固定)、AC 再構築(oracle 撤回、contract test を target_path 内、A2 manifest+nonce/as-of/query hash 同梱)、F3 に PI-P06 SSOT / v0.3(2026-09-05 22:25 家老レビュー途中報告 blt_221512 を一次根拠で確認→2 点訂正: display_ticker_weights 直接採用は 08-06 partial-turnover v1.10 で棄却済み(非 unit 35 行・parity 不一致 29/2,096)→F1 の正本を history.py L224-237 方式(既存)に戻す / ledger は monthly_returns generator に生きた依存あり→F3 は router 撤去では廃止にならない / v0.2(2026-09-05 22:05 覚醒更新: 殿 21:50『ledger は廃止しなかったか』21:51『既にあるもので』21:56『FoF 分解ツールは既にある。車輪の再発明禁止』→ weight は既に全量 DB にあり展開不要、既存ツール 7 本を棚卸し / v0.1 21:40、殿 21:22 指示、実装なし)
 
 - 発端: 殿 21:19『市場方向性設計書をやるにあたって、あれば便利だったことは？ticker×weight はすんなり DB から取れたか？』→ 将軍『取れなかった。weight 列が無く、コードから復元規則を確定した』→ 殿 21:22『あれば便利なものを先に解決しないか。他にも応用できる。今後便利になりそうなアイデアもまとめて gist に』
 - 上流: `docs/research/dm-signal-market-direction-breadth-exposure-asis-tobe_20260905.md`(v0.1、§2.6/§7 に不便の記録)
@@ -23,11 +23,11 @@
 
 ## §1 結論(先に)
 
-1. **ticker×weight は既に全量 DB にある。FoF 展開コードは不要(殿裁定 alias『FoF 展開不要で display_ticker_weights を使え』、v0.1 は再発明だった)。** fof(L1〜L3、66 体)は `signals.momentum_data.display_ticker_weights` が **日次全行**に存在(L1 2011-04-01〜 / L2 2012-02-29〜 / L3 2013-12-02〜、計 209,215 行、66/66 PF)。standard(L0、12 体)は `holding_signal` がもともと ticker 文字列(comma split 1/N、`blocks/equal_weight.py`)。v0.1 と前書の「2024-01 以降 2,178 件のみ」は月初行 fof 66 体の中で 2024-01 以降だけを数えた誤り。
-2. **F1 `holdings_monthly` は「展開」ではなく「既存 2 列の月初 join」で作れる。** fof: 月初 `signals` 行の `display_ticker_weights` / standard: `monthly_returns.holding_signal` の split。新規の展開ロジックを 1 行も書かない。
-3. **既存ツール 7 本(§2.6)がある。** 木構造=`scripts/fof_tree.py`、整合検証=`backend/scripts/verify_fof_consistency.py`、PF 構成=`scripts/check_pf_config.py`、独立 oracle=`backend/scripts/analysis/monthly_return_oracle.py::expand_weights`、本番展開=`history.py::_resolve_pf_ids_to_tickers` / `price_ratio_impl.py::expand_portfolio_to_tickers` / `trades_impl.py` `monthly_trade_impl.py` の `_expand_fof_tickers`、cmd_3768 の再帰。F1 の検算はこれらを呼ぶ。
-4. **`signal_decision_ledger` は事実上廃止済み(殿 21:50 の記憶が正しい)。** 08-12 T7.5 で guard を detect-only 化(c13a56fe)・alert hot path 撤去(0e9d158d)、08-17 で frontend の依存(NEXT SIGNAL/過去月バッジ)を撤去、以後 0 行。ただし router は `app/main.py` L43/L426 に登録されたまま=正式廃止(router 撤去)が未完。F3 の既定案を「正式廃止」に変更。
-5. `signal_change_log.new_ticker_weights`(267,514 行、2003〜)は変化イベントの独立記録として検算に使う。`fof_component_weights` JSON 4 列は全 NULL(死列)、`signal_detail_history` 0 行。不整合 I1〜I4 は記録のみ。
+**v0.3 訂正(最上位。家老 blt_20260905_221512 の 2 点を将軍が一次根拠で確認)**
+1. **F1 の weight 正本は `display_ticker_weights` ではなく、本番表示と同じ history.py L224-237 方式(`_resolve_pf_ids_to_tickers`: holding_signal を component へ再帰し 1/N 合算・同一 ticker 合算)。** 根拠: `docs/research/partial-turnover-experiment-asis-tobe-5w1h_20260805.md` v1.10(08-06 01:00)で FoF 4 体の display_ticker_weights に **weight 合計 非 unit 35 行、α=0 parity 不一致 29/2,096** が実測され FAIL-close、v1.11 で真因=`expand_portfolio_to_tickers()` の選択後再正規化不在、v1.12 で history.py 方式に切替え **本番 monthly_returns と 75/75 一致**。v0.2 の「展開不要」はこの既存実測を三層記憶で引かずに書いた誤り(殿裁定 alias『FoF 展開不要で display_ticker_weights を使え』は 08-06 00:05 v1.8 時点の裁定で、同日 01:00 v1.10 の実測で上書きされている。alias が古い=I6)。
+2. **「展開コードを書かない」は維持する。** 既存の history.py 方式を呼ぶ(または partial-turnover が v1.12 で実装した再現コードを再利用)。自作の再帰は書かない。display_ticker_weights は「本番表示 cache」として検算列に降格し、非 unit 行・不一致行を I6 として件数報告する。
+3. **`signal_decision_ledger` は「事実上廃止」ではない。** `app/jobs/generators/monthly_returns.py` L28/L252-263 が「確定月は ledger の決定値を優先、空なら no-op」で読む生きた依存。writer は `recalculate_fof.py` `signal_flush.py` 等 8 file。0 行なので今は no-op だが、router 撤去では廃止にならない。F3 は「(a) 復活=再バックフィル」か「(b) 廃止=generator/flush/restore の依存撤去 cmd」の二択で殿裁定。
+4. 既存表の被覆(§2.1)、既存ツール 7 本(§2.6)、不整合 I1〜I5 は v0.2 のまま有効。
 
 ## §2 一次データ(2026-09-05 21:24〜21:26 readonly)
 
@@ -37,7 +37,7 @@
 |---|---|---|---|---|---|
 | `monthly_returns` | 78 PF 分 欠損 0(前書 §2.3) | 78 | 2010-04〜2026-09 | `holding_signal` 文字列のみ(fof は UUID)。weight 無し | **月次 PIT の正本**。展開が要る |
 | `signals`(日次) | L1 74,167 / L2 76,184 / L3 58,864(全行) / L0 47,879 | fof 66 / standard 12 | L1 2011-04-01〜 / L2 2012-02-29〜 / L3 2013-12-02〜 / L0 2010-03-24〜 | fof: `momentum_data.display_ticker_weights` が **全行に存在(209,215/209,215、66/66 PF)**。L0: 0 行(不要。`holding_signal` が ticker 文字列) | **fof の ticker×weight 正本**。v0.1『2024-01 以降のみ』は誤り(22:00 実測 nonce *-ro8) |
-| `signal_change_log` | 268,485 | 78(fof 56 / standard 22) | 2003-08-22〜2026-08-21 | `new_ticker_weights` 展開後 ticker keyed: fof 253,844 / standard 13,670。UUID keyed 0 | 変化イベント。前方補完すれば月次保有を再構成できる。**最良の検算材料** |
+| `signal_change_log` | 総行 268,485 / `new_ticker_weights` 非 NULL 267,514(全 101 PF 基準) / **対象 78 PF 基準: 258,480 行、非 NULL 258,344、PF 66/78**(22:30 nonce *-ro9: L0 10/12・L1 17/21・L2 21/24・L3 18/21) | 対象 66/78 | 2003-08-22〜2026-08-21 | 展開後 ticker keyed(UUID keyed 0) | 変化イベント。前方補完すれば月次保有を再構成できる。検算材料 |
 | `fof_component_weights` | 24,348 | 77 fof | 2011-04-01〜2026-09-01(月初) | `target_weight`/`actual_weight` は component 単位。`component_tickers`/`expanded_tickers`/`child_components`/`component_holding_signal` **全 NULL(0/24,348)** | 死んだ列。F1 の受け皿候補 |
 | `signal_detail_history` | **0** | 0 | — | 設計上 `holding_signal`+`composite_momentum` | 未使用 |
 | `signal_decision_ledger` | **0** | 0 | — | 18 列定義済み | 07-07 バックフィル後、08-16 PITR rollback で消失(前書 §7) |
@@ -75,41 +75,46 @@
 |---|---|---|
 | I1 | `fof_component_weights` JSON 4 列が 24,348 行 全 NULL | 設計意図(展開保存)が機能していない。列を生かすか落とすかの判断が要る |
 | I2 | `signal_change_log` に同日往復の二重行(§2.2) | イベントを「変化回数」として数える分析(turnover)が過大になる |
-| I3 | `signal_change_log` に現れる fof 56 体 / 対象 66 体 | 10 体は変化が記録されていない(作成後に一度も変化していないか、ログ経路の抜けか。未確認) |
-| I4 | `signal_detail_history` 0 行、`signal_decision_ledger` 0 行 | 「設計されたが空の表」が 2 つ。読み手が正本と誤認する |
+| I3 | `signal_change_log` に現れる対象 PF は **66/78**(交差実測 nonce *-ro9: L0 10/12・L1 17/21・L2 21/24・L3 18/21)。v0.2 の『fof 56/66』は全 fof 77 基準の総数からの推定で誤り | 12 体は変化イベント 0(理由未確認)。前方補完検算はこの 66 体に限る |
+| I4 | `signal_detail_history` 0 行、`signal_decision_ledger` 0 行 | 0 行=未使用ではない(ledger は generator/flush/restore が読む現役参照、PI-P06 で SSOT 宣言)。『空だが参照される表』を読み手が正本値ありと誤認する |
+| I5 | 月初 `signals.holding_signal` と `monthly_returns.holding_signal` の不一致(件数未計測) | F1 AC で計測 |
+| I6 | `display_ticker_weights` に weight 合計 非 unit 35 行・α=0 parity 不一致 29/2,096(08-06 partial-turnover v1.10 実測、真因=`expand_portfolio_to_tickers()` 選択後再正規化不在)。semantic alias『FoF 展開不要で display_ticker_weights を使え』(v1.8 00:05)が v1.10 01:00 の棄却で上書きされたまま索引に残る | display 列を正本にすると誤る。alias の訂正(A11)|
 
-### §2.6 既存ツール棚卸し(殿 21:56『FoF 分解は既にある。徹底的に探せ』。repo `/mnt/c/Python_app/DM-signal`)
+### §2.6 既存ツール棚卸し(殿 21:56『FoF 分解は既にある。徹底的に探せ』。v0.4 で家老指摘 6 件を訂正。repo `/mnt/c/Python_app/DM-signal`)
 
 | ツール | 種別 | 何をするか | F1 での使い方 |
 |---|---|---|---|
-| `scripts/fof_tree.py` | OPERATOR_TOOL readonly | FoF 入れ子の木を表示。子 type は portfolios JOIN で判定(`fof_component_weights.component_type` は乖離あり) | 対象 66 fof の木の確認・階層判定の検算 |
-| `backend/scripts/verify_fof_consistency.py` | 検証 script | FoF の整合検証 | AC の検算経路として呼ぶ(中身の対象範囲は実装 cmd で確認) |
-| `scripts/check_pf_config.py` | 一括確認(cmd_3378) | PF 構成を一発表示 | 対象 78 PF の config 確認 |
-| `backend/scripts/analysis/monthly_return_oracle.py::expand_weights` | 独立 oracle(本番コード非依存) | ノード木→ticker weight を再帰展開(1/N 既定) | 第三の独立検算器 |
-| `backend/app/api/history.py::_resolve_pf_ids_to_tickers`(L211) | 本番 API | UUID 列→ticker 表示 | 参照のみ(F1 は呼ばない。display_ticker_weights が正本) |
-| `backend/app/services/price_ratio_impl.py::expand_portfolio_to_tickers`(L1045)、`trades_impl.py::_expand_fof_tickers`(L1167)、`monthly_trade_impl.py::_expand_fof_tickers`(L286) | 本番 services | 同規則の別実装 3 本 | 参照のみ。**A10: 4+1 箇所の重複は一元化候補** |
-| `docs/research/cmd_3768_pf_l0_actual_selection_frequency.md` | 研究(2026-07) | monthly_returns.holding_signal から component_portfolios を再帰展開し L0 実選択頻度 | 手順の先例。F1 は display_ticker_weights を使うので再帰は不要 |
+| `backend/app/api/history.py::_resolve_pf_ids_to_tickers`(L211-244) | 本番 API(表示) | component 1/N→holding_signal comma split 1/N→同一 ticker 合算 | **F1 の展開規則の正本**(partial-turnover v1.12 が 75/75 parity を実証) |
+| `backend/app/services/return_calculator_pure.py::holding_signal_to_weights`(L15) | 本番 pure helper | standard の holding_signal→ticker weight(1/N) | F1 の standard 経路はこれを呼ぶ(自作 split 禁止) |
+| `backend/app/jobs/recalculate_fof.py::_compute_display_ticker_weights`(L149) | 本番 producer | display_ticker_weights を生成 | 参照のみ。非 unit の根因側(price_ratio_impl L1237-1317 の再正規化不在と併せ A10) |
+| `backend/app/api/signals.py::_get_precomputed_fof_display_weights`(L88)/`monthly_trade.py`(L43-45) | 本番 consumer | precomputed display 列を優先表示 | 参照のみ。display 列は検算用(I6) |
+| `backend/app/services/price_ratio_impl.py::expand_portfolio_to_tickers`(L1045、L1237-1317)、`trades_impl.py::_expand_fof_tickers`(L1167)、`monthly_trade_impl.py::_expand_fof_tickers`(L286) | 本番 services | 同規則の別実装 3 本。price_ratio は selected_pf_ids 抽出後に再正規化しない(v1.11 真因) | 参照のみ。A10 一元化候補 |
+| `scripts/fof_tree.py` | OPERATOR_TOOL | 最新日の component 木を表示。**`create_db_engine` 直結**(readonly launcher 経由ではない) | AC5(launcher 限定)と矛盾するため F1 では呼ばない。木は launcher SQL(`portfolios.config.component_portfolios`)で取る |
+| `scripts/check_pf_config.py` | 一括確認(cmd_3378) | PF 構成表示。**`create_db_engine` 直結** | 同上。手元確認のみ |
+| `backend/scripts/verify_fof_consistency.py` | 検証 script | **本番 HTTP(httpx→onrender)+PF 2 体ハードコード** | 66 体の検算器ではない。F1 では使わない |
+| `backend/scripts/analysis/monthly_return_oracle.py::expand_weights`(L51) | 独立 oracle | nodes JSON→weight 再帰。**入力は自前で組む必要あり、過去月の木は与えられない** | v0.2 AC4 は接続不能のため撤回。使わない |
+| `docs/research/partial-turnover-experiment-*_20260805/06.md` | 研究(08-05/06) | v1.10 で display 直接経路を FAIL-close、v1.12 で history.py 方式に切替え 75/75 parity | **F1 の先例。再現コードの流用元** |
+| `docs/research/cmd_3768_pf_l0_actual_selection_frequency.md` | 研究(07) | holding_signal→component_portfolios 再帰で L0 実選択頻度 | 手順の先例 |
 
 ## §3 ToBe: 先に解決する 4 件(F1〜F4)と応用
 
-### F1 `holdings_monthly` — PF × 月 × ticker × weight の標準 long table(最優先。v0.2: 展開コードなし)
+### F1 `holdings_monthly` — PF × 月 × ticker × weight の標準 long table(最優先。v0.3: history.py 方式、自作展開なし)
 
-- **何**: 列 `portfolio_id, layer, year_month, ticker, weight, source`(source ∈ {display_ticker_weights, holding_signal_split})。1 PF-月の weight 合計は 1.0(Cash 含む)。
-- **どう作る(既存 2 列の月初 join のみ)**: fof 66 体は各月の**最初の `signals` 行**の `momentum_data.display_ticker_weights` をそのまま行に展開(JSON→long)。standard 12 体は `monthly_returns.holding_signal` を comma split して 1/N。**新規展開ロジック 0 行**。readonly launcher で読み、CSV を `analysis_runs/cmd_4479_holdings_monthly/` へ。DB には書かない(第 1 段)。
-- **月初行の定義**: `signals` の当月最初の営業日行。`monthly_returns.holding_signal`(PIT)と当月最初の `signals.holding_signal` が一致することを AC で確認する(fof は UUID 列同士、standard は文字列同士)。不一致は I5 として記録。
-- **検算 3 本**(二値): (a) fof 全 PF-月で display_ticker_weights 行が存在(欠損 0)し、`signals.holding_signal` が `monthly_returns.holding_signal` と一致 (b) `signal_change_log` を「同日最後の行(id 昇順)」で前方補完した月初保有との一致率を PF 別に出力(不一致は I2/I3 の解明材料、閾値なし) (c) `monthly_return_oracle.expand_weights` に `fof_tree.py` の木を与えた独立展開と、display_ticker_weights の一致(直近 24 ヶ月・66 fof、不一致 0)。
+- **何**: 列 `portfolio_id, layer, year_month, ticker, weight, source`(source=history_l224 固定)。1 PF-月の weight 合計は 1.0(Cash 含む)。
+- **どう作る**: `monthly_returns.holding_signal`(PIT)を入力に、本番表示と同じ `backend/app/api/history.py` L224-237 の規則(component 1/N → holding_signal comma split 1/N → 同一 ticker 合算、ネストは再帰)で展開する。**実装は既存関数の再利用(standard=`holding_signal_to_weights`、FoF=history.py 規則)または partial-turnover v1.12 の再現コードの流用。新規再帰コードを書かない。** 展開に必要な component 木は launcher SQL で `portfolios.config.component_portfolios` を月ごとに取り(`portfolio_config_snapshots` は 2026-06 以降のみ)、木の版は as-of で固定して報告する。 readonly launcher で読み、CSV を `analysis_runs/cmd_4479_holdings_monthly/` へ。DB には書かない(第 1 段)。
+- **検算 3 本**(二値): (a) partial-turnover v1.12 と同じ α=0 parity: holdings_monthly から再計算した月次リターンが本番 `monthly_returns.monthly_return` と一致(75/75 の先例。対象 78 PF 全月、不一致 0。component の holding_signal 欠落で展開できない PF-月は I7 として件数報告し parity 母数から除外を明示) (b) `display_ticker_weights` 月初行との突合。一致率と、非 unit 行・不一致行を **I6 として件数報告**(閾値なし。08-06 実測 35/29 の再現確認) (c) `signal_change_log` 前方補完(同日最後の行=id 昇順)との一致率 PF 別(I3 の 66 体に限る。I2 の材料)。**成果物に A2 universe manifest(対象 78 PF の id・layer・as-of)と source nonce・as-of・query hash を同梱**(家老 (6))。
 - **第 2 段(殿 go 後)**: 検算が通ったら置き場を 1 回で決める(`fof_component_weights.expanded_tickers` を埋めて I1 を生かす / 新表 / `monthly_returns` 列追加)。fullrecalculate の末尾に 1 関数。
-- **応用**: 市場方向性 6 表(前書 §3)/ PF 間の保有相関・重複率 / 体系全体の集中度(HHI)/ turnover(月次 weight 変化の L1 距離)/ レジーム別の保有分布 / X 投稿「今月の体系は XLU に何割か」の数値 / LP の「78 PF がどう動いたか」の実証グラフ。
+- **応用**: 市場方向性 6 表(前書 §3)/ PF 間の保有相関・重複率 / 体系全体の集中度(HHI)/ turnover / レジーム別の保有分布 / X 投稿「今月の体系は XLU に何割か」/ LP の実証グラフ。
 
 ### F2 `holding_signal_expanded` — 月次正本に展開後表現を併記
 
 - **何**: `monthly_returns` に `holding_tickers`(展開後 `{"XLU":0.25,"GLD":0.75}` JSON)を 1 列追加。fof 行が UUID のままなので毎回 config を再帰で辿っている手間を消す。
 - **判断**: F1 が外部 long table として機能すれば **F2 は不要**(同じ情報)。F1 を DB 表へ昇格する第 2 段で「long table か列追加か」を 1 回だけ決める。二重に持たない。
 
-### F3 `signal_decision_ledger` — 事実上廃止済み。正式廃止(router 撤去)で閉じる
+### F3 `signal_decision_ledger` — 依存が生きている。復活か依存撤去かの二択(v0.3)
 
-- **事実(git/一次)**: 08-12 T7.5 `c13a56fe` guard を detect-only 化、`0e9d158d` signal change alert hot path 撤去(services 144 行削除)。08-17 設計書 dm-monthly-trade-pending-simplify で frontend の依存(NEXT SIGNAL/過去月バッジ)を撤去。08-16 PITR rollback 以後 0 行、再バックフィルなし。**残るのは `app/main.py` L43 import / L426 `include_router` と `app/api/signal_decision_ledger.py`、空表 1 つ。**
-- **判断(既定案を v0.1 から変更)**: **正式廃止**=router 登録解除+API file 削除+表は残置(drop は不可逆なので第 2 段で殿判断)。F1 が PIT 保有の正本になるので「決定理由の台帳」は不要。殿 21:50『廃止しなかったっけ』と整合。
+- **事実(コード一次)**: `app/jobs/generators/monthly_returns.py` L28 import、L252-263「確定済み月は ledger の決定値を優先。空の間は no-op」、L298-301 ledger の ticker_weights を all_tickers に合流。writer/reader は `recalculate_fof.py` `recalculate_fast.py` `signal_flush.py` `safe_bundle_v2.py` `writer_inventory.py` `portfolio_restore.py` `monthly_trade_impl.py` の 7 file+API router(`main.py` L43/L426)+models の append-only guard(L197-202)+`projects/dm-signal.yaml` PI-P06 の SSOT 宣言。08-12 T7.5 は guard を detect-only 化・alert hot path 撤去(c13a56fe/0e9d158d)したが読取依存は残る。08-16 PITR rollback 以後 0 行=全経路 no-op。
+- **判断**: v0.1「復活/廃止」・v0.2「正式廃止=router 撤去」はいずれも不十分。**(a) 復活**=07-07 cmd_3711 と同じ再バックフィル(ledger が generator の正本になる)/ **(b) 廃止**=generator/flush/restore/API から依存を撤去する cmd(表は残置、drop は別途)。将軍案: F1 が PIT 保有の正本になれば (b)。ただし generator の「確定月優先」ロジックは月次確定の仕組みそのものなので、撤去の影響範囲(pending 表示・確定境界)を偵察 cmd で出してから殿裁定。
 
 ### F4 階層ラベル関数 `layer_of(portfolio)` の一元化
 
@@ -128,19 +133,21 @@
 | A6 | **月次 PIT スナップショットの 1 行サマリ**(その月の体系全体 weight 合計・Breadth 上位・Cash 率)を `monthly_returns` 更新時に 1 行 log | X 投稿・Live OOS の「今月の体系」を人手で集計しない | F1 の第 2 段 |
 | A7 | **PF 相関行列の月次 materialize**(F1 から weight ベクトルの cos 類似) | 「奥義と秘奥義はどれだけ同じ賭けをしているか」を一発で | F1 派生 |
 | A8 | **fof_component_weights の `actual_weight`/`drift` を使ったリバランス乖離の観測** | 既に 24,348 行ある未活用の数値列 | 追加コード無し、SQL のみ |
+| A11 | **semantic alias の時系列訂正**: 『FoF 展開不要で display_ticker_weights を使え』(08-06 v1.8)に『→ v1.10 で棄却、history.py 方式が正』を併記 | 三層記憶が古い裁定を最新として返す事故(本書 v0.2)の再発防止 | `context/semantic-map.md` dmsignal_operations |
 | A10 | **展開ロジック 5 箇所(history/price_ratio/trades/monthly_trade/oracle)の一元化**。正本は display_ticker_weights なので、展開コードは「display_ticker_weights を作る 1 箇所」以外は読取りに置換 | 規則変更時の修正が 1 箇所。研究 script が展開を再実装しなくなる | `backend/app/services/fof/` に 1 関数 |
 | A9 | **portfolio_config_snapshots の差分ログ**(06-01 以降 6,150 行)から「定義変更が成績に効いたか」 | 設定変更の因果を PIT で追える | SQL のみ |
 
-## §5 二値 AC(F1 第 1 段の実装 cmd_4479 に渡す。v0.2)
+## §5 二値 AC(F1 第 1 段の実装 cmd_4479 に渡す。v0.4)
 
 | AC | 判定 |
 |---|---|
-| AC1 | `holdings_monthly.csv` を fof=月初 `signals.display_ticker_weights` / standard=`monthly_returns.holding_signal` split(1/N)から作り、全 PF-月で `SUM(weight)` 1.0±1e-9。違反 0。**展開コード 0 行**(`component_portfolios` 再帰の新規実装が grep 0 件) |
-| AC2 | fof 66 体の全 monthly_returns 月に display_ticker_weights 月初行が存在(欠損 0)し、月初 `signals.holding_signal` = `monthly_returns.holding_signal`。不一致は I5 として件数報告 |
-| AC3 | `signal_change_log` 前方補完(同日最後の行=id 昇順)との月初一致率を PF 別に出力、不一致 PF-月を一覧(閾値なし、I2/I3 の材料) |
-| AC4 | 独立検算: `monthly_return_oracle.expand_weights` × `fof_tree.py` の木で直近 24 ヶ月・66 fof を展開し display_ticker_weights と一致(不一致 0) |
-| AC5 | 本番 DB 書込 0(readonly launcher 監査ログ) |
-| AC6 | 実装用 test は同一 cmd 内で削除、残すのは AC1/AC2 の contract test 2 本(`test_necessity` 宣言)、FAIL 0/SKIP 0 |
+| AC1 | `holdings_monthly.csv` を history.py L224-237 規則(standard=`holding_signal_to_weights` 再利用、FoF=既存規則/partial-turnover v1.12 再現コード流用、新規再帰 0 行、流用元 path を報告)で作り、展開できた全 PF-月で `SUM(weight)` 1.0±1e-9 違反 0。展開不能 PF-月(component holding_signal 欠落)は I7 として件数報告 |
+| AC2 | α=0 parity: holdings_monthly から再計算した月次リターンが `monthly_returns.monthly_return` と展開できた全 PF-月で一致(不一致 0。v1.12 の 75/75 と同手順) |
+| AC3 | `display_ticker_weights` 月初行との突合: 一致率 PF 別+非 unit 行数+不一致行数を I6 として報告(閾値なし) |
+| AC4 | `signal_change_log` 前方補完(同日最後の行=id 昇順)との一致率 PF 別(I3 の 66 体)、不一致 PF-月一覧 |
+| AC5 | 本番 DB 書込 0(readonly launcher 監査ログ)。`create_db_engine` 直結 script(fof_tree/check_pf_config)は使わない |
+| AC6 | 成果物に universe manifest(A2: 78 PF id・layer・as-of)と source nonce・as-of・query hash を同梱 |
+| AC7 | contract test 2 本(AC1 sum=1 / AC2 parity)を `analysis_runs/cmd_4479_holdings_monthly/tests/` に置き(target_path 内)、`test_necessity` 宣言、選択実行 FAIL 0/SKIP 0。実装用 test は同一 cmd 内で削除 |
 
 ## §6 殿裁定を要する点(既定案付き)
 
@@ -148,7 +155,7 @@
 |---|---|---|
 | D1 | F1 第 1 段(readonly script + 外部 long table)を今 cmd 起票するか | **起票する**(可逆・本番無変更・忍者 1 名) |
 | D2 | 第 2 段の置き場: `fof_component_weights.expanded_tickers` を埋める / 新表 / `monthly_returns` 列追加 | 第 1 段の検算結果を見てから 1 回で決める(今は決めない) |
-| D3 | F3 ledger: 正式廃止(router 撤去+API file 削除、表は残置)| **正式廃止**(v0.2。殿 21:50 と一致)。表 drop は不可逆なので第 2 段で別途 |
+| D3 | F3 ledger: (a) 復活=再バックフィル / (b) 廃止=generator/flush/restore/API の依存撤去 cmd | **(b) 方向だが、先に依存撤去の影響範囲 偵察 cmd 1 本**(v0.3。router 撤去だけでは廃止にならない) |
 | D4 | §4 A1〜A9 の着手順 | A1・A2・A3 は F1 cmd の副産物として同時に(手入力 1 箇所化+版管理+カタログ)。A4〜A9 は F1 の後 |
 
 ## §7 因果リンク
