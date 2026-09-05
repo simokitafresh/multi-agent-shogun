@@ -313,6 +313,59 @@ exit 0"
   git -C "$FIX" merge-base --is-ancestor "$target" HEAD
 }
 
+# test_necessity: an origin-side reviewed replacement may retain a local
+# commit's effect while adding later safety changes to the same file.  Exact
+# blob equality would deadlock that legitimate superset forever; the explicit
+# source marker must advance the verified local prefix without weakening the
+# next unaccounted commit.
+@test "reviewed equivalent-source marker permits target superset convergence" {
+  printf 'local-feature\n' >> "$FIX/a.txt"
+  git -C "$FIX" add a.txt
+  git -C "$FIX" commit -qm local-feature
+  local_source="$(git -C "$FIX" rev-parse HEAD)"
+
+  printf 'local-feature\ntarget-hardening\n' > "$BATS_TEST_TMPDIR/next/a.txt"
+  git -C "$BATS_TEST_TMPDIR/next" add a.txt
+  git -C "$BATS_TEST_TMPDIR/next" commit -qm "canonical replacement
+
+Safe-Shared-Main-Equivalent-Source: $local_source"
+  target="$(git -C "$BATS_TEST_TMPDIR/next" rev-parse HEAD)"
+
+  run bash "$FIX/scripts/safe_shared_main_ff.sh" "$target"
+  [ "$status" -eq 0 ]
+  [[ "$output" == *"accounted=1"* ]]
+  [[ "$output" == *"effect_paths=0"* ]]
+  [ "$(git -C "$FIX" rev-parse HEAD)" = "$target" ]
+  [ "$(cat "$FIX/a.txt")" = $'local-feature\ntarget-hardening' ]
+}
+
+# test_necessity: a marker cannot skip an unknown object or jump over an
+# unaccounted local commit; otherwise arbitrary target text could discard work.
+@test "invalid or noncontiguous equivalent-source marker remains fail-closed" {
+  printf 'first-local\n' > "$FIX/b.txt"
+  git -C "$FIX" add b.txt
+  git -C "$FIX" commit -qm first-local
+  first_source="$(git -C "$FIX" rev-parse HEAD)"
+  printf 'second-local\n' > "$FIX/a.txt"
+  git -C "$FIX" add a.txt
+  git -C "$FIX" commit -qm second-local
+  second_source="$(git -C "$FIX" rev-parse HEAD)"
+  before="$(git -C "$FIX" rev-parse HEAD)"
+
+  git -C "$BATS_TEST_TMPDIR/next" commit --allow-empty -qm "invalid markers
+
+Safe-Shared-Main-Equivalent-Source: 0000000000000000000000000000000000000000
+Safe-Shared-Main-Equivalent-Source: $second_source"
+  target="$(git -C "$BATS_TEST_TMPDIR/next" rev-parse HEAD)"
+
+  run bash "$FIX/scripts/safe_shared_main_ff.sh" "$target"
+  [ "$status" -eq 2 ]
+  [[ "$output" == *"effect_base="* ]]
+  [[ "$output" == *"local-only tree effect is absent from target"* ]]
+  [ "$(git -C "$FIX" rev-parse HEAD)" = "$before" ]
+  [ -n "$first_source" ]
+}
+
 @test "diverged local-only effect absent from target blocks before ref move" {
   printf 'local-b-commit\n' > "$FIX/b.txt"
   git -C "$FIX" add b.txt
