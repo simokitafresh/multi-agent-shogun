@@ -17180,3 +17180,17 @@ sqlite3.Connection.backup()を使うとページ(4096byte)単位のread syscall�
 - **when**: 未設定
 - **how**: 未設定
 - cmd_4475のgate_fire_log実測でorigin_sha=refs/remotes/origin/main refs/remotes/origin/masterという破損値を確認。原因はscripts/cmd_complete_gate.shのrun_dm_signal_production_smoke_checkが git rev-parse refs/remotes/origin/main 2>/dev/null || git rev-parse refs/remotes/origin/master 2>/dev/null || true という形でrefを解決しており、--verifyを付けない git rev-parse <ref> は対象refが存在しない場合、fatalメッセージはstderrに出す一方でref引数の文字列そのものをstdoutへエコーして返す(2>/dev/nullではstdout側の漏れは防げない)。command substitutionでSHAを捕捉するあらゆる箇所で同じ罠が起こりうる。修正: git rev-parse --verify --quiet <ref> を使う。--verifyは未解決時にstdoutへ何も出さず、--quietでstderrメッセージも抑制する。/tmp配下の使い捨てgit repoで main欠落/master有り・両方欠落・main有りの3状態を再現しこの挙動差を実機確認した
+
+
+### L1747: 外部source commitをcontext更新トリガーへ自動接続する
+- **日付**: 2026-09-05
+- **出典**: cmd_karo_recon2_ga578_context_freshness
+- **記録者**: kagemaru
+- **tags**: [infra,gate,git]
+- **subdomain**: infra
+- **target_files**: [queue/reports/kagemaru_report_cmd_karo_recon2_ga578_context_freshness.yaml]
+- **origin**: [[cmd_karo_recon2_ga578_context_freshness]]
+- **enforcement**: 未自動化
+- **when**: 未設定
+- **how**: 未設定
+- cmd完了gateは外部source未反映commitを後段doc-lane警告として通知できるがsource commitからcontext索引更新を自動強制しないためGA-578 ALERTが発火した。次回二値checkはsource publish後に未反映source commit=0かつcontext update requestまたは反映証跡=1を同一完了フローで確認し未達ならBLOCKすること
