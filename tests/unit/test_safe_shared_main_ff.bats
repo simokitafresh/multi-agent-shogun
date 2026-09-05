@@ -286,6 +286,8 @@ exit 0"
   [ "$status" -eq 0 ]
   [[ "$output" == *"c2a_target="* ]]
   [[ "$output" == *"safe_shared_main_ff.sh"* ]]
+  run rg -n '\[\[ -r "\$ROOT/scripts/safe_shared_main_ff\.sh" \]\]' "$c2a"
+  [ "$status" -eq 0 ]
 }
 
 @test "explicit repo converges an external shared main with the same checks" {

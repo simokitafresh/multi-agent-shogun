@@ -96,7 +96,7 @@ c2a_target="$(git -C "$ROOT" rev-parse --verify refs/remotes/origin/main 2>/dev/
 # with dirty runtime files.  Reconcile it immediately through the non-merge
 # CAS/read-tree lane, which verifies local tree effects and restores exact
 # dirty overlap before the next validator cycle can observe stale HEAD.
-if [[ -x "$ROOT/scripts/safe_shared_main_ff.sh" ]]; then
+if [[ -r "$ROOT/scripts/safe_shared_main_ff.sh" ]]; then
     bash "$ROOT/scripts/safe_shared_main_ff.sh" --repo "$ROOT" "$c2a_target"
 else
     # Minimal publisher fixtures may intentionally omit the optional shared
