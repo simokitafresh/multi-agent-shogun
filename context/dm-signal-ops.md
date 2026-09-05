@@ -1,5 +1,6 @@
 # DM-signal 運用コンテキスト
 <!-- last_updated: 2026-09-05 context_freshness reviewed source boundary -->
+<!-- source_commit:8af98631921c reason:context_freshness reviewed source boundary evidence:context_freshness_check context=context/dm-signal-ops.md commit=8af98631921c -->
 <!-- source_commit:c8b347140eee reason:context_freshness reviewed source boundary evidence:context_freshness_check context=context/dm-signal-ops.md commit=c8b347140eee -->
 <!-- source_commit:9ea93b896243 reason:context_freshness reviewed source boundary evidence:context_freshness_check context=context/dm-signal-ops.md commit=9ea93b896243 -->
 <!-- source_commit:172b6d35e7f2 reason:2026-09-01 将軍doc lane: DOC_LANE_ALERT 4件(偽陽性=marker d87339a4 not ancestor of local clone)。実欠落(showcase API/showcase_events/LP cmd_4431-4437/login minimal/noindex)を追記し境界をorigin/main tipへ evidence:git -C /mnt/c/Python_app/DM-signal log d87339a4..origin/main = 88 commits; diff --stat backend/app = 4 files +621; grep反映 showcase_events/api\/public/cmd_4433 各>=1 -->
@@ -1234,3 +1235,4 @@ GA-144原因: `dm-signal-ops.md`のlast_updatedは2026-06-26で、2026-06-26以�
 
 ## §103 identity 列の本番適用(cmd_4477、2026-09-05 15:2x)
 - 手順=Render backend の ADMIN one-off job で `python migrations/add_identity_columns.py`(冪等)。前後証跡=information_schema.columns(前 0/3→後 3/3)。restore=同 script の downgrade(新 3 列のみ drop)。deploy=backend/frontend とも Live。計測 SQL(LP→Auth 完了率 prefix 別/Auth→Free ログイン率)は `docs/research/cmd_4477_identity_metrics_sql_20260905.md`。段 4(Simple LP)は本番 SQL が 1 週間値を返してから。
+- identity 検証 SQL の PostgreSQL 隔離証跡(2026-09-05, DM-signal 30429ac0/8af98631 疾風 cmd_4477)|`docs/research/cmd_4477_identity_metrics_sql_20260905.md`(DM-signal 側)に、隔離 PostgreSQL(localpg、schema 別 search_path)での往復証跡と runbook の整合を追記。SQL 2 本(page_views.user_id/campaign_id、showcase_events.user_id)は本番適用 §103 と同じ列定義で検証済み|→ §103、`context/dm-signal-core.md` identity 3 層
