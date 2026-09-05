@@ -8321,3 +8321,33 @@
   verdict: LGTM
   verified_files:
   - scripts/gates/gate_report_format_main.py:ci_green
+- brainwash_check: '#1no #2no #3no #4no #5no #6no #7no #8no commit不変、14/14+31/31'
+  causal_chain: RC改訂→メタ修正→新fp→内容同一確認
+  cmd_id: cmd_karo_hotfix_ga579_external_project_context_ref
+  finding_categories:
+  - assumptions
+  - numbers
+  - premortem
+  - adversarial
+  - ambiguity
+  findings_summary: 4観点OK(RC3以降と同一実装、fp差はメタのみ)。共通resolver単一source化。14/14+31/31全PASS
+  hole_action: none
+  observations:
+  - commit 2a9817d1不変。status revision_requested→completedのみ差分
+  operational_simulation:
+    actual: 2a9817d1 confirmed
+    command: grep 2a9817d1 queue/reports/kotaro_report_cmd_karo_hotfix_ga579_external_project_context_ref.yaml
+    expected: commit unchanged
+    result: PASS
+  origin: '[[GA-579]] -> [[shared_lib_single_source]] -> [[external_project_ref_resolver]]'
+  precheck_na:
+    evidence: status=completed、commit不変
+    reason: SG-PRE1 status→completed修正済み
+  report_ninja: kotaro
+  report_task_id: cmd_karo_hotfix_ga579_external_project_context_ref_normal
+  review_type: report
+  step3_5_verified: true
+  timestamp: '2026-09-05T17:45:00+09:00'
+  verdict: LGTM
+  verified_files:
+  - scripts/lib/external_project_ref_resolver.sh:external_ref_canonical_project_id
