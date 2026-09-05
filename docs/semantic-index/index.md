@@ -11949,6 +11949,7 @@ codd:
 | discussion | `queue/lord_conversation.jsonl` 2026-09-05T14:57:52+09:00 設計書をさらに深く影響範囲や依存関係なども深くセルフレビューせよ。セルフレビュー後にアップデートし、アップデートしたら家老と軍師に忖度なしのレビューを依頼せよ。複雑化は禁止、よりシンプルにより速く、既存の仕組みを最大限に使おう |
 | discussion | `queue/lord_conversation.jsonl` 2026-09-05T15:13:25+09:00 session_save_20260905_1520(復帰点、先に session_save_20260905_1500 を読め): 殿 14:57『深くセルフレビュー→更新→家老・軍師に忖度なしレビュー』、15:06『追記でなく再構築、粒 |
 | discussion | `queue/lord_conversation.jsonl` 2026-09-05T15:21:52+09:00 bzysz0wew toolu_01VYBNWJTdvTrWqvHM4LsVSD /tmp/claude-1000/-home-simokitafresh-multi-agent-shogun/c62544f1-65f7-4ec8-81cf |
+| discussion | `queue/lord_conversation.jsonl` 2026-09-05T16:03:49+09:00 忍者がACの品質不備や前提情報の不足、ルーチン作業の試行錯誤でblockやfailになるのはインフラバグではないか？これによって修正速度が遅くなっている気がする。覚醒して調査してくれ。調査したら設計書を作成。設計書を作成したら家老と軍師にレ |
 
 ## ac_merit_review_integrity — AC本旨レビュー整合性
 
