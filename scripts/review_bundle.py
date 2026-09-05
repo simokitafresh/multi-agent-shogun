@@ -745,8 +745,12 @@ def _batch_precheck(root, item):
     return {"status": "PASS", "reason": "all checks passed", "evidence": evidence, "duration_ms": round((time.monotonic() - started) * 1000)}
 
 def _batch_generate(root, item, precheck):
+    report_path = Path(str(item["report"]))
+    if not report_path.is_absolute():
+        report_path = root / report_path
+    _allow_archived = report_path.resolve().parent == (root / "queue/archive/reports").resolve()
     argv = argparse.Namespace(root=str(root), cmd=str(item["cmd"]), verdict=str(item["verdict"]).upper(),
-                              report=str(item["report"]), fail_reason=item.get("fail_reason"), allow_archived=False,
+                              report=str(item["report"]), fail_reason=item.get("fail_reason"), allow_archived=_allow_archived,
                               allow_honest_fail=bool(item.get("allow_honest_fail", False)),
                               approved_failed_check_paths=item.get("approved_failed_check_paths"))
     generate(argv)

@@ -362,6 +362,12 @@ if results:
         # unlock, apply every field, derive the verdict, then republish terminal.
         # The intermediate revision_requested state must never reach readers.
         data["status"] = "completed"
+    elif old_status == "revision_requested" and all(value == "yes" for value in results) \
+            and updates.get("status") == "completed":
+        # Explicit finalize: ninja sets status=completed in the same batch as
+        # field updates. Without the explicit status key, revision_requested is
+        # preserved so intermediate field updates don't trigger immutability.
+        data["status"] = "completed"
 
 terminal = str(data.get("status", "")).strip() in {"completed", "done", "failed"}
 if str(data.get("status", "")).strip() in {"completed", "done"}:
