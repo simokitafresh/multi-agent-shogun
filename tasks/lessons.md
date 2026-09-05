@@ -17194,3 +17194,17 @@ sqlite3.Connection.backup()を使うとページ(4096byte)単位のread syscall�
 - **when**: 未設定
 - **how**: 未設定
 - cmd完了gateは外部source未反映commitを後段doc-lane警告として通知できるがsource commitからcontext索引更新を自動強制しないためGA-578 ALERTが発火した。次回二値checkはsource publish後に未反映source commit=0かつcontext update requestまたは反映証跡=1を同一完了フローで確認し未達ならBLOCKすること
+
+
+### L1748: yaml_field_setは複数fallback段(map_scalar/apply/apply_root)を持ち、1段だけ直すと残り段に同型の重複field bugが残るため、直した後は全段を機械的に再点検する必要がある
+- **日付**: 2026-09-05
+- **出典**: cmd_karo_hotfix_yaml_duplicate_field_repair
+- **記録者**: kotaro
+- **tags**: [infra,testing,testing,process,gate]
+- **subdomain**: infra
+- **target_files**: [scripts/lib/yaml_field_set.sh,tests/unit/test_yaml_field_set_nested_list.bats]
+- **origin**: [[cmd_karo_hotfix_yaml_duplicate_field_repair]]
+- **enforcement**: 未自動化
+- **when**: 未設定
+- **how**: 未設定
+- _yaml_field_set_apply_map_scalar/_yaml_field_set_apply/_yaml_field_set_apply_rootの3関数全てがfield_re一致を!replaced guardで1回だけ処理し、以降の同名field再定義は素通しで残す実装だった。運用YAMLに同一fieldが同一block(またはroot)同indentで重複して書かれる状態(stale .bak誤配備等で発生しうる)に対しsetterを実行すると、先頭occurrenceだけ新値へ書き換えるが末尾の旧occurrenceが残り、post-write検証(_yaml_field_set_verify_parsed)はyaml.safe_load後の値を見るため重複keyの「最後勝ち」解決で旧値を読み、期待値と食い違いFATALで書込みが常に失敗し続ける(ファイルは修復されないまま固まる)。1回目の実装はmap_scalar/applyの2レーンだけを直しRC(correction_scope=implementation)を受けた — L498が指す通りyaml_field_setはmap_scalar→apply→apply_rootの複数段fallbackを持つのに、fallback段の一つ(root)を見落としたまま「直した」と判断したのが敗因。教訓: 複数fallback段を持つ関数の一つを直したら、残り全段に同型のbugが無いかを機械的に(grepでfield_re一致箇所を全列挙する等)確認してから完了と判断せよ。1段だけ直して終わるのは部分修正であり、残り段は同じ実測手順(実際に重複させて壊れることを確認)で検証すべきだった
