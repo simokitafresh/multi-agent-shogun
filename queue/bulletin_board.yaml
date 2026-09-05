@@ -3450,3 +3450,15 @@ entries:
     - 'shogun'
   confirmed_by: ["shogun"]
   status: "closed"
+- id: 'blt_20260905_112927_45dad2'
+  content: |-
+    DOC_LANE_ALERT: context=context/dm-signal-research.md raw_alert=ALERT: context/dm-signal-research.md source commits 1件 since last_updated=2026-08-31 repo=/mnt/c/Python_app/DM-signal root_fallback=no timeout=360s/360s owner=dm-signal-research update_trigger=docs/research|analysis|outputs|tasks/lessons.md|marketing-director。更新要否を確認せよ latest: dca83523532d cmd_4475_full/cmd_4475: audit LP SEO and fix JA lang plus JSON-LD URL action: bash scripts/context_source_commit_set.sh context/dm-signal-research.md dca83523532d 'context_freshness reviewed source boundary' 'context_freshness_check context=context/dm-signal-research.md commit=dca83523532d'
+  posted_by: 'gate_context_freshness'
+  posted_at: '2026-09-05T11:29:27'
+  requires_confirmation: false
+  action_type: 'action_required'
+  actioned_by: ''
+  notify_targets:
+    - 'shogun'
+  confirmed_by: []
+  status: 'open'
