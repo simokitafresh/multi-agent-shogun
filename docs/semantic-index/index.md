@@ -10348,6 +10348,7 @@ codd:
 | causal_chain | `[[cmd_4202]]` (L1500) |
 | causal_chain | `[[cmd_karo_hotfix_report_shared_provenance_fp_20260802]]` (L1521) |
 | causal_chain | `[[cmd_3665]]` (L942) |
+| discussion | `queue/lord_conversation.jsonl` 2026-09-05T13:19:26+09:00 v0.3の方向性は良いです。ここから機能を増やしすぎないでください。 優先順位は以下だけで十分です。 1. Google Auth後の "Supabase user.id" を捨てず、匿名 "visitor_id" / password / |
 
 ## alpha_6_metrics — α6指標
 
