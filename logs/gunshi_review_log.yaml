@@ -8869,3 +8869,55 @@
   causal_chain: "weight散在→研究ごとに再発明→既存blob復元で標準化=正の複利。新規再帰0行×今後N回=負の複利回避"
   origin: "[[殿下問_便利だったもの_20260905_2119]] -> [[設計書4往復APPROVE]] -> [[cmd_4479_draft_APPROVE]]"
   timestamp: "2026-09-05T23:42:00+09:00"
+- cmd_id: cmd_karo_recon_w5_generation_20260905
+  review_type: draft
+  verdict: APPROVE
+  verified_files:
+  - queue/tasks/kagemaru.yaml:3
+  confidence: HIGH
+  ambiguity_points: none
+  findings_summary: 偵察cmd。AC2本・偵察5要件完備・隔離制約・three_strike_rule・experiment_first原則あり。karo_direct配備
+  observations:
+  - '事実: AC1=W5 bug#6前提をコード一次確認+deploy_generation/fingerprint区別。AC2=同世代隔離再現+origin差分突合'
+  operational_simulation:
+    command: 'grep -c ''id: AC'' queue/tasks/kagemaru.yaml'
+    expected: 2(AC1+AC2)
+    actual: '2'
+    result: PASS
+  finding_categories:
+  - assumptions
+  - simulation
+  - premortem
+  - ambiguity
+  - adversarial
+  brainwash_check: '#1no(偵察5要件全確認) #2no(task YAML現物読み) #3no(自分で確認) #4no(隔離制約明記) #5no(即処理)
+    #6no(AC2件全確認) #7no(scope制約あり) #8no(2/2 AC確認)'
+  causal_chain: W5報告世代不一致→偵察で根因確定→家老が根因別fixへ分解=正の複利
+  origin: '[[W5_report_generation_mismatch]] -> [[recon_2名偵察]] -> [[draft_APPROVE]]'
+  timestamp: '2026-09-05T23:44:00+09:00'
+- cmd_id: cmd_karo_recon_w5_ci_state_20260905
+  review_type: draft
+  verdict: APPROVE
+  verified_files:
+  - queue/tasks/hanzo.yaml:3
+  confidence: HIGH
+  ambiguity_points: none
+  findings_summary: 偵察cmd。AC2本・ci_push_state10行全件検証+隔離再現・偵察5要件完備・隔離制約・未解消条件BLOCK報告義務あり
+  observations:
+  - '事実: AC1=gate_metrics.log state/reason列の10行全件検証。AC2=各行をreport/origin/review/receiptに接続して分類'
+  operational_simulation:
+    command: 'grep -c ''id: AC'' queue/tasks/hanzo.yaml'
+    expected: 2(AC1+AC2)
+    actual: '2'
+    result: PASS
+  finding_categories:
+  - assumptions
+  - simulation
+  - premortem
+  - ambiguity
+  - adversarial
+  brainwash_check: '#1no(偵察5要件全確認) #2no(task YAML現物読み) #3no(自分で確認) #4no(隔離制約明記) #5no(即処理)
+    #6no(AC2件全確認) #7no(scope制約あり) #8no(2/2 AC確認)'
+  causal_chain: ci_push_state10行のBLOCK原因→全件分類で未修復箇所特定=修正精度向上
+  origin: '[[W5_ci_push_state_10行]] -> [[recon_2名偵察]] -> [[draft_APPROVE]]'
+  timestamp: '2026-09-05T23:44:30+09:00'
