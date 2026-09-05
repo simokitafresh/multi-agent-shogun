@@ -3642,6 +3642,7 @@ codd:
 | discussion | `queue/lord_conversation.jsonl` 2026-09-05T13:34:51+09:00 b5nthwk44 toolu_01EswEau6pLZfjUyFqJnBPHP /tmp/claude-1000/-home-simokitafresh-multi-agent-shogun/3656d230-af06-4de8-8c58 |
 | discussion | `queue/lord_conversation.jsonl` 2026-09-05T13:36:36+09:00 bm3sv6rl5 Monitor event: "cmd_4477 preflight 2 回目の判定" PREFLIGHT2_DONE If this event is something the user would act on n |
 | discussion | `queue/lord_conversation.jsonl` 2026-09-05T14:09:32+09:00 session_save_20260905_1412(復帰点、先に session_save_20260905_1342 を読め): 殿 14:04『覚醒して調査して誘導せよ。忍者が手間取るのはチームの能力不足』→将軍が 6 pane ca |
+| discussion | `queue/lord_conversation.jsonl` 2026-09-05T14:12:31+09:00 b04spwk4f Monitor event: "origin/main baseline backend pytest(再実行)の結果" BASELINE2_DONE rc=2 If this event is something th |
 
 ## investment_knowledge_base — 投資知識辞書
 
