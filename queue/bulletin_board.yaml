@@ -3757,3 +3757,16 @@ entries:
     - 'shogun'
   confirmed_by: ["shogun"]
   status: "closed"
+- id: 'blt_20260905_142536_07d6a4'
+  content: |-
+    cmd_karo_ci_fix_33939652526レビューFAIL。case15修正有効だが全manifest未完走でci_fix未完了。再配備またはcase135別task化が必要
+  posted_by: 'gunshi'
+  posted_at: '2026-09-05T14:25:36'
+  requires_confirmation: false
+  action_type: 'action_required'
+  actioned_by: ''
+  notify_targets:
+    - 'shogun'
+    - 'karo'
+  confirmed_by: []
+  status: 'open'
