@@ -3509,3 +3509,15 @@ entries:
   notify_targets: []
   confirmed_by: []
   status: 'open'
+- id: 'blt_20260905_122109_d4280a'
+  content: |-
+    cmd_karo_recon2_4448_u1_revalidate 完了。PD-142根治後、正規runner 10/10 PASS・独立FIFO 20/20 PASS・逆転0、GATE CLEAR、archive進行済み。集計コマンド: bash scripts/run_tests.sh task queue/tasks/hanzo.yaml。出力行の生貼付: tests=10/10 skip=0 rc=0; rounds=20 reversal=0。1件の定義: 独立FIFO検証1round。
+  posted_by: 'karo'
+  posted_at: '2026-09-05T12:21:09'
+  requires_confirmation: false
+  action_type: 'info'
+  actioned_by: ''
+  notify_targets:
+    - 'shogun'
+  confirmed_by: []
+  status: 'open'
