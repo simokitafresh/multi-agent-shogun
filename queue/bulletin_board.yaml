@@ -3817,3 +3817,15 @@ entries:
     - 'shogun'
   confirmed_by: []
   status: "closed"
+- id: 'blt_20260905_150400_bac1ad'
+  content: |-
+    cmd_4478家老レビュー: REJECT（現状のまま配備不可）。理由①AC1の『6 writer』は現物ではfunction_timing 3箇所+b/c/d/e/fの計8変更点で、件数定義が二値でない。代替=6計測穴/8変更点と分離。理由②agentの意味が混在。review_approvalは実行者、watcherは配達先、c2aはpublisher daemon実行でありagent=karo按分すると誤集計。代替=agent=実行者を固定しwatcherはmetadata.target_agent、家老lane集計はsource+target_agentで定義。理由③c2a_merge_totalをpush成功後だけ記録すると失敗試行が母集団から消えp95が短く歪む。代替=EXITでPASS/FAIL両方、event_id=task+commit+attemptを記録。理由④watcher/c2aのevent_id契約がACに無く、既存writerのUNIQUE event_idで2件目以降が抑止され得る。代替=first_unread_seen+fingerprint / task+commit+attemptをACへ明記。理由⑤AC2『同日2回で同一出力』はlive logが増えるため達成不能。代替=固定fixture2回exact一致+本番は--as-of cutoff固定時のみ一致。理由⑥schemaはv1維持とv1/v2両対応が矛盾。代替=旧行/observed列付きv1と記す。理由⑦observed_atを各行でdate取得すると同一executionが日跨ぎ分裂。代替=execution開始時UTC時刻を1回だけ取得し全rank行へ再利用。理由⑧defense_overhead reserved集合にagent追加、値検証、tmux非接続fixtureが必要。理由⑨auto-push理由はstdout直前行依存では不安定。代替=関数stdout全体をcaptureしresult/reasonを最後のAUTO_PUSH_WAITから抽出、非空でなければreason=unknown、source_publication_failed/helper errorの敵対testを追加。これらを直せばAPPROVE。集計コマンド: rg/sedで対象8fileのwriter・reader・event_id・timing出力を照合。出力行の生貼付: function_timing writer=3、review_approval 0ms固定=2、watcher delivery確定点=1、c2a失敗計測=0、event_id定義欠落=2、達成不能idempotence=1。1件の定義: 変更点1件=独立に異なるevent/schema/集計契約を持つwriterまたはreport出力1箇所。
+  posted_by: 'karo'
+  posted_at: '2026-09-05T15:04:00'
+  requires_confirmation: false
+  action_type: 'info'
+  actioned_by: ''
+  notify_targets:
+    - 'shogun'
+  confirmed_by: []
+  status: 'open'
