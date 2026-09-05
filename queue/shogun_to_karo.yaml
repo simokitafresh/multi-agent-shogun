@@ -1,57 +1,4 @@
 commands:
-  cmd_4481:
-    title: "体系の保有 ticker×weight 月次 1 表 layer_holdings_monthly(F1 CSV 入力のみ、DB 接続 0)"
-    status: delegated
-    project: dm-signal
-    purpose: "殿 2026-09-05 22:29『シンプルにデータを見たいだけだ。L0,L1,L2,L3,全体でどの ticker をどの weight で持っているかを知りたいだけだ』→ 設計書 docs/research/dm-signal-market-direction-breadth-exposure-asis-tobe_20260905.md v1.4(gist e2219c69、軍師 APPROVE blt_224611/231437、家老 APPROVE blt_225346、起票=家老協議結論 blt_004146 (1) yes)。入力は cmd_4479 F1 の holdings_monthly.csv(23,175 行、weight 合計違反 0、I7 0、approved_honest_fail 終端)と universe_manifest.yaml だけ。出力は CSV 1 本。新四つ目 3 体(cmd_4480 で根因偵察中)は is_suspect=true で別計上。DB 接続 0、本番書込 0、パラメータ 0"
-    scope_mode: FULL
-    target_path:
-    - /mnt/c/Python_app/DM-signal/analysis_runs/cmd_4481_layer_holdings
-    - /mnt/c/Python_app/DM-signal/analysis_runs/cmd_4481_layer_holdings/tests
-    acceptance_criteria:
-      AC1:
-        description: "analysis_runs/cmd_4481_layer_holdings/build_layer_holdings.py を作り、入力 /mnt/c/Python_app/DM-signal/analysis_runs/cmd_4479_holdings_monthly/holdings_monthly.csv と universe_manifest.yaml だけから layer_holdings_monthly.csv(列 year_month,is_mtd,layer,ticker,weight,pf_count,is_suspect)を出力する。weight=Σ(PF の weight)÷pf_count、layer∈{L0,L1,L2,L3,ALL}、ALL は当月 eligible(行がある)PF の単純平均。全 (year_month, layer, is_suspect) で Σweight が 1.0±1e-9 であることを script 末尾で検査し違反 0 件を stdout に生貼付する"
-        binary_check: "layer_holdings_monthly.csv が存在し、(year_month, layer, is_suspect) ごとの Σweight 1.0±1e-9 違反が 0 件か"
-      AC2:
-        description: "pf_count = F1 CSV の (year_month, layer, is_suspect) ごとの distinct portfolio_id 数と全行一致し、manifest の layer 別 PF 数(L0 12/L1 21/L2 24/L3 21、ALL 78)以下であることを verify_pf_count.md に生貼付で確認する。is_suspect=true は F1 の verify_parity.md の不一致 3 PF(奥義-GS-新四つ目-激攻/常勝/鉄壁、portfolio_id は同 md から取得)だけに付き、それ以外は false。is_mtd は manifest の as-of 月の行だけ true(違反 0)"
-        binary_check: "pf_count の不一致 0、manifest 超過 0、is_suspect=true の PF が 3 体ちょうど、is_mtd=true が as-of 月の行のみか"
-      AC3:
-        description: "build_layer_holdings.py と tests/ に DB 接続・config 読取・展開コードが無いことを rg で確認する(rg -n 'create_db_engine|component_portfolios|display_ticker_weights|db_capability_launcher|psycopg' analysis_runs/cmd_4481_layer_holdings → 0 件)。contract test は AC1(Σweight=1)と AC2(pf_count 分母一致)の 2 本のみを tests/ に置き(各 test_necessity 宣言)、選択実行コマンド=bash scripts/run_tests.sh file <対象>で FAIL 0/SKIP 0。実装用 test は同一 cmd 内で削除。DM-Signal repo への commit は analysis_runs/cmd_4481_layer_holdings/ 配下のみ"
-        binary_check: "rg の該当 0 件、contract test 2 本・test_necessity 2/2・FAIL 0・SKIP 0、commit が配下のみか"
-    command: |
-      1. 設計書 v1.4 §1〜§3 と F1 成果物(holdings_monthly.csv / universe_manifest.yaml / verify_parity.md の 3 PF)を読み、pandas の group-by だけで build_layer_holdings.py を書く(パラメータ 0、ハードコード 0。ticker も layer も入力 CSV から出る)。AC1 の Σweight 検査を script 末尾に置く
-      2. verify_pf_count.md に AC2 の pf_count 一致・manifest 以下・is_suspect 3 体・is_mtd の検査結果を生貼付し、AC3 の rg 0 件と contract test 2 本の run_tests.sh file 結果を報告 YAML に数値で書く
-      3. 報告 YAML に layer_holdings_monthly.csv の行数、layer 別の月数、is_suspect=true の行数、直近確定月(is_mtd=false の最大月)の ALL 行(ticker と weight)を数値で書く。グラフ・横持ちは作らない(殿 22:29『複雑さは捨てろ』)
-    assumptions:
-      claim: "F1 成果物は /mnt/c/Python_app/DM-signal/analysis_runs/cmd_4479_holdings_monthly/ に holdings_monthly.csv(23,175 行、列 portfolio_id,layer,year_month,ticker,weight,monthly_return、weight 合計違反 0、I7 0)、universe_manifest.yaml(78 PF、as-of)、verify_parity.md(不一致 104 行=奥義-GS-新四つ目 3 体)が存在する(2026-09-06 00:19 才蔵、00:24 将軍 ls/grep 実測)。cmd_4479 は approved_honest_fail で終端済み(家老 blt_003021)、CSV は市場 1 表の入力に使える(家老 blt_002416/004146)"
-      source: "docs/research/dm-signal-market-direction-breadth-exposure-asis-tobe_20260905.md v1.4 §1-§3 / docs/research/dm-signal-research-data-foundation-asis-tobe_20260905.md v0.8 §3.1/§5 / /mnt/c/Python_app/DM-signal/analysis_runs/cmd_4479_holdings_monthly/{holdings_monthly.csv,universe_manifest.yaml,verify_parity.md} / 家老 blt_20260906_004146"
-      trust: verified
-    depends_on: none
-    timeout_minutes: 30
-    estimated_minutes: 15
-    split_decision:
-      boundary_ac_ids:
-      - AC1
-      integration_tasks: 0
-      review_round_trips: 1
-    environment_change: "type=lesson; file=docs/research/dm-signal-market-direction-breadth-exposure-asis-tobe_20260905.md; pattern=is_suspect"
-    quality_gate:
-      q1_firefighting: "消火ではない。殿 22:29 の『L0-L3/全体でどの ticker をどの weight か』を 1 表で見せる本体。F1 の CSV を初めて消費する"
-      q2_learning: "group-by の実装と 4 つの二値検査は忍者が行う。将軍は列定義と検査条件まで"
-      q3_next_quality: "この 1 表が出れば市場方向性の観測が毎月 1 CSV で読める。cmd_4480 の根因確定後は is_suspect を外すだけで完成形"
-      q4_depth: "shallow — pandas group-by 数行、パラメータ 0、DB 接続 0"
-      q5_verified_source: "production_verified — F1 成果物の存在・行数・3 PF 名を 2026-09-06 00:24 に ls/grep/python で実測。code_reading — 設計書 v1.4 §1 列定義・§3 AC(家老・軍師 APPROVE)"
-      q6_not_hiding: "入力 F1 は honest FAIL 終端(parity 104 不一致=新四つ目 3 体)であり、3 体は is_suspect で別計上して先行することを明記。根因は cmd_4480 で偵察中"
-      q7_definition_verified: "layer=L0/L1/L2/L3/ALL、weight=Σweight÷pf_count、pf_count=その月・層・is_suspect で行がある distinct PF 数、ALL=当月 eligible PF の単純平均、is_mtd=as-of 月のみ true、is_suspect=verify_parity.md 不一致 3 PF(設計書 v1.4 §1、確認日 2026-09-06)"
-      q8_why_what: "WHY: 殿が体系全体の月次保有を 1 表で見たい / WHAT: layer_holdings_monthly.csv 1 本(year_month,is_mtd,layer,ticker,weight,pf_count,is_suspect)、Σweight=1 違反 0、pf_count 不一致 0、is_suspect 3 体、DB 接続 0、contract test 2 本 / WHEN: 今セッション / WHERE: /mnt/c/Python_app/DM-signal/analysis_runs/cmd_4481_layer_holdings / WHO: 忍者 1 名 / HOW: F1 CSV の pandas group-by のみ / 複利: F1 が更新されるたび 1 コマンドで体系の向きが出る"
-      q9_firefighting_root_cause: "根本対応。個別に SQL を書いて集計する構造を、F1 CSV→1 表の固定経路に置き換える。新四つ目 3 体は隠さず is_suspect で別計上"
-      q10_knowledge_boundary: "検証済み: F1 成果物の存在・行数・3 PF、設計書 v1.4 の列定義。スコープ外: 新四つ目の根因(cmd_4480)、グラフ・横持ち・asset class・Δ・仮想 PF(設計書 §4 捨てたもの)、DB 昇格"
-      q11_not_already_done: "rg -c 'layer_holdings_monthly' context/cmd-chronicle.md docs/research/*.md → 設計書 v1.4 と backlog のみ(実装 0)。ls /mnt/c/Python_app/DM-signal/analysis_runs | grep layer_holdings → cmd_4481 dir(空、00:42 将軍作成)のみ"
-      q_ambiguity: "『eligible』= その月に F1 CSV に行がある PF。is_suspect の PF は L2 と ALL の両方で is_suspect=true 側に計上し、false 側の分母から除く"
-      q12_lord_30min_cost: "no — 殿 22:29 の目的に直結、設計書は両者 APPROVE、家老協議 (1) yes、readonly"
-      diagnosis: "BLOCK理由: 該当なし(新規起票) / 対策: なし"
-    delegated_at: "\"2026-09-06T00:50:08\""
-    origin: "[[殿指示_複雑さを捨てろ_20260905_2229]] -> [[layer_holdings_monthly_1表]] -> [[F1_CSVの初消費]]"
   cmd_4479:
     title: "DM-Signal 研究データ基盤 F1 holdings_monthly 第1段(readonly long table+検算3本)"
     status: delegated
@@ -164,58 +111,6 @@ commands:
     environment_change: "type=lesson; file=docs/research/dm-signal-core-simple-free-proof-asis-tobe_20260905.md; pattern=M-1 5 段の優先順位"
     delegated_at: "\"2026-09-05T13:40:07\""
     origin: "[[殿裁定_LP_identity_最小収束_20260905_1319]] -> [[cmd_4477_identity_最小実装]] -> [[Tier×Page_analytics_user_id結合]]"
-  cmd_4470:
-    title: "偵察(全ロール・第 3 回): PUBLISHER_SINGLE ON(09-03 04:37)以降の便を止める『つまり』を 8 分類(偽陽性/過剰 BLOCK/構造バグ/循環拘束/遅い script・test/Claude↔Codex 仕組み差/サンクコスト過剰複雑化/影響範囲・依存未解明の浅い対応)で全数リストアップし、忍者 6 名は領域分担で queue/notes/tsumari_r3_<name>.md に、軍師・家老は各節を書き、将軍が tsumari_root_causes_20260901.md 第 3 回へ統合する"
-    status: in_progress
-    project: infra
-    purpose: "殿 2026-09-03 10:46『前提とする環境が変わったはずだ。もう一度 8 分類で全員で探索。tsumari_root_causes_20260901.md を更新しよう』。第 1 回(09-01 cmd_4442、27 事例)・第 2 回(09-03 02:53 将軍単独、24 事例+T2-27)は旧 push 経路の時代。04:37 の flag ON、09:23 の daemon 入替、U9(root 直書き 0)・U10(watchdog reload/close_check)着地で、つまりの発生源が『旧経路の衝突』から『publisher/ledger 経路・root sync・gate の単一 publisher 未対応(precheck の worktree 不在 FILE NOT FOUND、fallback_gate_status 偽 BLOCK、SG-PRE35 既存 test 混入)』へ移った。close_check 初回(10:42)=trailer 45/50、root dirty 9。第 3 回は新環境の一次 log(publisher events.jsonl/ledger_inbox rc/gate_metrics/hook_artifacts/inbox_watcher/daemon_watchdog)から全数を取る"
-    scope_mode: SCOUT
-    target_path: queue/notes
-    acceptance_criteria:
-      AC1:
-        description: "忍者 6 名の領域分担(家老が配備時に名を割当): (a) publisher/ledger 経路(publish_queue/events.jsonl の c2a_rc・root_sync_skipped・ledger rc/、publisher_daemon.log) (b) gate 系(logs/gate_metrics.jsonl・queue/gates/*/cmd_complete_gate.trigger.log の BLOCK/WAIT 理由、precheck SG-PRE の ERROR) (c) monitor/watchdog/inbox_watcher(ninja_monitor.log の WAKE-DEFER/HOOK-TRUST/CLEAR-LOOP、daemon_watchdog.log、inbox_watcher_*.log) (d) reflux/insights/semantic_index(reflux task の FAIL・C2a・dirty-guard) (e) hook/CLI 摩擦(logs/hook_artifacts の pre-push reject、pre-bash BLOCK 文言、Claude と Codex の差) (f) X 運用 lane と doc lane(cmd_4467 gate・U1b ff-only 失敗・bulletin『entry not found』)。各忍者は自領域の 09-03 04:37〜配備時刻の一次 log を機械抽出(コマンドと件数を生貼付)し、事例を『ID(T3-<name>-NN)・時刻・事象・主分類(8 分類の 1 つ)・副分類・真因・根治済/未根治・次の一手』の表で queue/notes/tsumari_r3_<name>.md に書く。推測禁止、log 行の引用必須、事例 0 なら『0 件、探索したコマンドと件数』を書く。中断再開時の成果物引継ぎ: 未 commit の worktree 差分と抽出 log を報告 YAML の progress に path で残し、再開者はそこから継続する"
-        binary_check: "note 6 file が存在 ∧ 各 file に抽出コマンドと件数の生貼付 ∧ 各事例に主分類(8 分類のいずれか)と log 引用 ∧ 推測語(おそらく/と思われる)0 ∧ 未根治には次の一手 か?"
-      AC2:
-        description: "軍師節: 軍師は review/precheck 側の視点(review_feedback で出た偽陽性、SG-PRE の ERRORS、bundle 再実行、review_log の欠落・上書き)を同じ表形式で queue/notes/tsumari_r3_gunshi.md に書く(cmd_4442_gunshi_view と同型、家老が review_draft 経由で依頼)。家老節: 家老は配備・merge・checkpoint・hotfix の視点(D012 merge の回数と理由、checkpoint 回数、hotfix 列と §14.4 例外の適用、CI RED の真因)を queue/notes/tsumari_r3_karo.md に書く。両節とも 8 分類の主分類と『根治済/未根治・次の一手』必須。各 note は bash scripts/ninja_scope_commit.sh(忍者)/publish_direct_commit.sh(家老)で commit"
-        binary_check: "tsumari_r3_gunshi.md と tsumari_r3_karo.md が存在 ∧ 各事例に主分類と根治状態 ∧ 全 8 note が origin 到達(publisher/U1b)か?"
-    command: |
-      1. 家老が 6 領域を忍者へ割当(1 忍者 1 領域、同時配備)、各忍者は一次 log を機械抽出して表を書き ninja_scope_commit で commit、報告 YAML に事例数と未根治数を書く。
-      2. 軍師節・家老節を同時に書き、8 note の origin 到達を家老が確認して掲示板 1 行。将軍が第 3 回として tsumari_root_causes_20260901.md へ統合し gist 更新(将軍 doc lane)。
-    assumptions:
-      claim: "第 1 回=cmd_4442(27 事例、S/R/G/K 節)、第 2 回=将軍単独 T2-01〜T2-27(25 事例、09-03 02:53 起票+04:58 追記)。新環境の一次 log: ~/.local/share/multi-agent-shogun/publish_queue/events.jsonl(seq 78 まで、kind=c2a_rc/root_sync_skipped/ledger/already_published)、ledger_inbox/*/rc/(退避 19+)、logs/gate_metrics.jsonl、queue/gates/*/cmd_complete_gate.trigger.log、logs/ninja_monitor.log、logs/daemon_watchdog.log、logs/inbox_watcher_*.log、logs/hook_artifacts/、logs/publisher_daemon.log。close_check 10:42: trailer 45/50・root dirty 9。queue/notes は忍者 commit 可(docs/ は将軍 doc lane)"
-      source: "docs/research/tsumari_root_causes_20260901.md、ls ~/.local/share/multi-agent-shogun/publish_queue/、tail events.jsonl、ls logs/、bash scripts/single_publisher_close_check.sh 2026-09-03T09:23:18+09:00(10:42)"
-      trust: verified
-    depends_on: none
-    timeout_minutes: 60
-    estimated_minutes: 40
-    execution_env:
-      runtime_constraints: "読取りと note 作成のみ(本番 file・daemon・gate を変更しない)。log は機械抽出(grep/jq/awk)で件数付き。忍者 6 名同時配備"
-      long_runtime_reason: "6 領域×log 抽出+表化(各 20-30 分)、軍師・家老節の並走"
-      measured_runtime_sec: 2400
-    split_decision:
-      boundary_ac_ids: [AC1, AC2]
-      integration_tasks: 6
-      parallel_ok: true
-    serial_dependency_evidence: "AC1 の 6 領域は log source が互いに独立(events.jsonl/gate_metrics/monitor log/reflux/hook_artifacts/X lane)で並列可。AC2 は AC1 と独立(視点が review/配備側)。統合のみ将軍が直列"
-    quality_gate:
-      q1_firefighting: "品質向上。理由: 新環境のつまりを一次 log で全数化し、8 分類で発生源の移動(旧経路→publisher/gate)を可視化する。個別 hotfix の連打を止める"
-      q2_learning: "奪わない。理由: 判断点は『主分類 1 つを選ぶ』『根治済/未根治』で、基準は第 1・2 回の表と同じ"
-      q3_next_quality: "上がる。理由: 未根治×分類の一覧から次の hotfix 列と §15 クローズ阻害要因が直接出る"
-      q4_depth: "deep — 理由: 8 log source の機械抽出、6 領域+2 視点、全数(サンプリング禁止)"
-      q5_verified_source: "structure_verified — 対象を実行して確認(2026-09-03 10:48): grep -n '^## ' tsumari_root_causes_20260901.md → 第 1 回 4 節+第 2 回 3 節、tail events.jsonl → seq 78 root_sync_skipped root_dirty=8、close_check → trailer 45/50 root dirty 9、ls queue/notes → 書込み可"
-      q6_not_hiding: "隠していない。理由: 事例 0 の領域も探索コマンドと件数を書かせる。推測禁止、log 引用必須"
-      q7_definition_verified: "8 分類の定義は殿 09-02 20:44 の原文と tsumari 第 1 回の分類表、事例の列は第 2 回 T2 表で確認(確認日: 2026-09-03)"
-      q8_why_what: "WHY: 殿 10:46『環境が変わった、もう一度全員で』 / WHAT: 6 領域+2 視点の全数表→将軍統合 / WHEN: 即 / WHERE: queue/notes/tsumari_r3_*.md→docs/research/tsumari_root_causes_20260901.md 第 3 回 / WHO: 家老配備(忍者 6 同時、Claude/Codex 混在可)+軍師+家老 / HOW: log 機械抽出→表→commit→将軍統合→gist / 複利: つまりの発生源の移動が見え、hotfix 列が根拠付きで並ぶ"
-      q9_firefighting_root_cause: "根本対応。理由: 個別事象の消火でなく発生源の分布を測る"
-      q10_knowledge_boundary: "検証済み: 第 1・2 回の形式、新環境の log 所在、close_check 値。スコープ外: 根治の実装(別 cmd/hotfix)、U8"
-      q11_not_already_done: "ls queue/notes/tsumari_r3_* → 無し(10:48)。第 2 回は将軍単独で忍者・軍師・家老の視点なし。rg -c cmd_4470 queue/shogun_to_karo.yaml → 0(起票前)"
-      q_ambiguity: "曖昧さ: 主分類が複数に跨る事例。解消: 第 1 回と同じく主分類 1 つ+副分類列、集計は主分類のみ"
-      q12_lord_30min_cost: "no — 殿 10:46 で確定、判定は note 数・事例数・分類の有無"
-      diagnosis: "BLOCK理由: 該当なし(新規起票) / 対策: SCOUT・読取りのみ・並列 6"
-    environment_change: "type=lesson; file=projects/infra/lessons_shogun.yaml; pattern=cmdテンプレートルール"
-    delegated_at: "\"2026-09-03T10:51:46\""
-    karo_note: "recon2 6 領域配備完了(a-f)、note 8 本 origin 到達(忍者 6+家老+軍師)。将軍統合待ち 2026-09-03 13:35"
-    origin: "[[殿指示_環境変化後の再探索_20260903_1046]] -> [[tsumari_第1回_cmd_4442/第2回_T2]] -> [[cmd_4470_tsumari_第3回_全ロール]]"
   cmd_4466:
     title: "単一 publisher U8 第 2 弾: 旧 push 経路を『関数 chain+それを縛る test』の単位で batch 削除し(M10 と同型)、M7 は blocked 確定で除外、4 file 合計行数を 33,238 から減らす"
     status: void
