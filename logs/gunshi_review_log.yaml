@@ -7674,6 +7674,8 @@
   - tests/unit/test_review_bundle.bats:1
 - cmd_id: cmd_karo_hotfix_honest_fail_accept_chain
   review_type: draft
+  gate_result: "CLEAR"
+  gate_synced_at: "2026-09-05T17:22:56+09:00"
   verdict: LGTM
   gate_prediction: CLEAR
   gate_prediction_reason: "draft review - honest FAIL accept chain hotfix"
