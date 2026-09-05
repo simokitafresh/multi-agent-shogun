@@ -104,3 +104,52 @@
 ## §6 因果リンク
 - ← [[殿下問_家老律速の拘束_20260905_1435]] / ← [[単一publisher_asis_tobe_5w1h_20260902]] U3 auto-push ancestry / ← [[cmd_4393_karo-waste]](08-24 の workaround/配備反復集計)
 - → [[karo_throughput_計測修復]] → [[合流の自動化]] → [[health_refresh_非同期化]]
+
+## §7 訂正と追補(14:55、殿追補 14:50『gate clear 関連も家老の script。家老が待たされる原因は全て家老に関係する』)
+
+### §7.1 訂正: 「function timing が今日 0 行」は将軍の集計誤り
+- 事実: `logs/cmd_complete_gate_function_timing.jsonl`(231,797 行)と `logs/deploy_task_function_timing.jsonl`(151,032 行)には **wall-clock の timestamp 列が無く**、epoch は `execution_id` の末尾(μs)にだけある。将軍は timestamp 文字列で filter して 0 行と誤読した。計測は落ちていない。**落ちているのは「日付で集計できる形」**。
+- 正しい集計(execution_id の epoch で 2026-09-05 を抽出):
+
+| script | function | 今日の回数 | p50 | 合計/日 |
+|---|---|---|---|---|
+| cmd_complete_gate.sh | main(1 回の GATE 実行) | 121 | **9.2 s** | **42.7 分** |
+| cmd_complete_gate.sh | check_report_commit_main_ancestry | 69 | 2.9 s | 59 分(※ main と重複計上) |
+| cmd_complete_gate.sh | check_self_grade_commit_file_coverage | 72 | 5.1 s | 10 分 |
+| deploy_task.sh | deploy_task_original_prepare_remote_tip_worktree | 38 | 5.0 s | 6.8 分 |
+| deploy_task.sh | run_python_logged | 42 | 5.8 s | 5.3 分 |
+| deploy_task.sh | maybe_notify_draft_review / generate_report_template / inject_semantic_concepts / yaml_field_set_batch | 42 each | 2.0〜4.1 s | 2.4〜3.6 分 each |
+
+集計: `python3 -c` で execution_id 末尾 epoch を parse(本書 §5-1 の対象=timestamp 列の追加)。
+
+### §7.2 追補: 家老に関係する「gate clear 側」の script(殿指摘。家老が待つ原因は全て家老 lane)
+| script | 誰が起動 | 家老との関係 | 今日の実測 |
+|---|---|---|---|
+| `scripts/cmd_complete_gate.sh` | monitor(自動再 GATE)+家老 | CLEAR/WAIT/BLOCK を決める。WAIT のたび 9.2 s | 121 回=42.7 分/日、うち WAIT 66 |
+| `cmd_complete_gate_auto_push_ancestry_wait`(同 script 内) | monitor | 報告 commit を自動で origin へ合流させる経路。**FAIL しても理由を書かない**(`auto_push_ancestry_retry.log` は PASS/FAIL のみ) | index_lock hotfix で 12 回連続 FAIL(13:58〜14:38) |
+| `scripts/publisher_c2a_merge.sh`(74 行) | 家老/publisher | 報告 commit の合流本体。**所要時間の計測なし** | 83 行/日 |
+| `scripts/safe_shared_main_ff.sh` | 上記から | root の ff 安全判定 | mode 100644(CI test #330 の対象) |
+| publisher daemon `root sync` | daemon | root を origin に追随。`postsync_verify_mismatch` で BLOCK 連発 | 14:05〜14:13 で 7 回 |
+| `scripts/gates/gate_gunshi_report_precheck.sh` / `review_bundle.py` | 軍師 | LGTM の前提。家老はここを待つ | precheck 118 回 p50 3.2 s |
+| `scripts/ninja_monitor.sh` 再 GATE loop | daemon | WAIT cmd を約 3 分ごとに再 GATE | 上記 121 回の大半 |
+| `scripts/review_approval.sh` | 家老 | 内訳 check_id(gunshi_lgtm/karo_accept)が **0 固定でハードコード**(L821/L826) | total p50 10 s の中身が不明 |
+
+### §7.3 追補: 家老への配達遅延(watcher、最大の枠外)
+- `logs/inbox_watcher_karo.log`(+.1、今日 3,143 行)。日付形式が `[Sat Sep  5 …]` のため §2.2 の「0 件」も将軍の grep 誤り。
+- 今日: Wake-up 送出 **357 回**、うち `DELIVERY-LATENCY-WARN` **178 回**。**held p50 2,423 s(40 分)/ p95 6,609 s(110 分)/ max 7,175 s**。比較: 疾風は held p50 209 s、n=11。
+- 意味: 家老宛メッセージの半分は、家老が busy のため **40 分〜2 時間遅れて届く**(watcher が busy 中の send-keys を抑止して lease を更新し続ける)。将軍の下知も忍者の報告も同じ列に並ぶ。これが「家老が遅い」の正体の 1 つで、家老の手(20〜30 分/日)の 100 倍の規模。
+- 集計: `cat logs/inbox_watcher_karo.log.1 logs/inbox_watcher_karo.log | grep 'Sep  5' | grep -oE 'held [0-9]+s'` を sort して分位。
+
+### §7.4 律速順位の更新(§3 を置換)
+| 順位 | 項目 | 実測 |
+|---|---|---|
+| 1 | 家老宛配達の held(busy gating) | p50 40 分、p95 110 分、178 回/日 |
+| 2 | 報告 commit の合流待ち(ancestry WAIT)+auto-push FAIL 理由不明 | WAIT 47 行、CLEAR 経過 p50 20 分 |
+| 3 | 再 GATE の CPU(cmd_complete_gate main 9.2 s×121) | 42.7 分/日 |
+| 4 | health refresh 同期経路 | 3,398 s/日、p95 24 s |
+| 5 | 家老の手(deploy/review/hook) | 20〜30 分/日 |
+
+### §7.5 §5 の次の一手(更新)
+1. **計測修復(殿 14:49 go)**: (a) function timing に ISO timestamp 列 (b) defense_overhead に agent 列 (c) review_approval 内訳を実測 (d) auto_push_ancestry FAIL に reason (e) publisher_c2a_merge に所要時間 (f) watcher の held を jsonl で日次集計できる形 (g) 上記を 1 本の `karo_throughput_report.sh` で毎日表にする。
+2. 配達 held の解消(順位 1): busy gating の閾値/lease 設計の見直し(計測後)。
+3. 合流の自動化(順位 2)。
