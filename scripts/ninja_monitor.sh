@@ -11722,7 +11722,10 @@ find_deployed_task_status() {
 # A worker task is a mutable lease: after the worker receives the next cmd,
 # the old cmd no longer appears in queue/tasks/{worker}.yaml.  A terminal
 # report plus durable review evidence is nevertheless a completed deployment
-# for the old parent_cmd and must suppress stale/undeployed warnings.
+# for the old parent_cmd and must suppress stale/undeployed warnings.  A live
+# revision_requested report is the same kind of evidence even though it is
+# not terminal: the worker task can go idle (lease reassigned) while the
+# exact parent_cmd is still under active revision.
 find_closed_parent_cmd_status() {
     local target_cmd="$1"
     local report_file report_parent report_status report_verdict logical key approval
@@ -11740,6 +11743,13 @@ find_closed_parent_cmd_status() {
         report_parent=$(yaml_field_get "$report_file" "parent_cmd" "" 2>/dev/null || true)
         [ "$report_parent" = "$target_cmd" ] || continue
         report_status=$(yaml_field_get "$report_file" "status" "" 2>/dev/null || true)
+        # An exact parent_cmd match still awaiting revision is live deployment
+        # evidence: the worker task itself may already be idle (reassigned to
+        # a newer cmd), but the cmd is not undeployed.
+        if [ "$report_status" = "revision_requested" ]; then
+            printf 'revision_requested_live\n'
+            return 0
+        fi
         [[ "$report_status" =~ ^(completed|done|success|failed)$ ]] || continue
         report_verdict=$(yaml_field_get "$report_file" "verdict" "" 2>/dev/null || true)
         # A terminal FAIL report is still primary evidence that this exact

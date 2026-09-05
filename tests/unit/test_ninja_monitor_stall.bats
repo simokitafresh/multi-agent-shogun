@@ -1743,6 +1743,70 @@ run_case true_undeployed_case undeployed
     [[ "$output" == *"CASE=true_undeployed_case fixture=undeployed undeployed=1 cmd_pending=1 pending_work=1"* ]]
 }
 
+# test_necessity: ninja taskがidle化(lease再割当)しても、exact parent_cmdの
+# live reportがrevision_requestedなら配備済みとして扱い未配備通知を抑止する。
+# 別parent一致・pending report・report欠落の3対照ケースは未配備通知1件を維持する。
+@test "check_undeployed_cmds: idle化したtaskでもexact parent_cmdのlive revision_requested reportは配備済み扱い" {
+    run bash -lc '
+set -euo pipefail
+PROJECT_ROOT="'"$PROJECT_ROOT"'"
+export NINJA_MONITOR_LIB_ONLY=1
+source "$PROJECT_ROOT/scripts/ninja_monitor.sh"
+unset NINJA_MONITOR_LIB_ONLY
+
+run_case() {
+    local case_name="$1" fixture="$2" root="$NINJA_MONITOR_TEST_ROOT/$1"
+    local delegated_at
+    delegated_at=$(date -d "20 minutes ago" "+%Y-%m-%dT%H:%M:%S")
+    SCRIPT_DIR="$root"; STATE_DIR="$root/state"; LOG="$root/monitor.log"
+    mkdir -p "$root/queue/tasks" "$root/queue/reports" "$root/scripts" "$root/logs" "$STATE_DIR"
+    printf "commands:\n  cmd_case:\n    status: pending\n    timestamp: \"2026-09-05T09:00:00\"\n    delegated_at: \"%s\"\n" "$delegated_at" > "$root/queue/shogun_to_karo.yaml"
+    # ninja taskはidle化(lease再割当)済みで、exact parent_cmdを持たない。
+    printf "task:\n  parent_cmd: cmd_next\n  status: idle\n  task_id: cmd_next_full\n" > "$root/queue/tasks/kagemaru.yaml"
+    case "$fixture" in
+        revision_requested)
+            printf "status: revision_requested\nparent_cmd: cmd_case\ntask_id: cmd_case_full\n" > "$root/queue/reports/kagemaru_report_cmd_case.yaml"
+            ;;
+        other_parent)
+            printf "status: revision_requested\nparent_cmd: cmd_other\ntask_id: cmd_other_full\n" > "$root/queue/reports/kagemaru_report_cmd_other.yaml"
+            ;;
+        pending_report)
+            printf "status: pending\nparent_cmd: cmd_case\ntask_id: cmd_case_full\n" > "$root/queue/reports/kagemaru_report_cmd_case.yaml"
+            ;;
+        missing_report) ;;
+        *) return 1 ;;
+    esac
+
+    printf "#!/usr/bin/env bash\nprintf \"%s\\n\" \"\${1:-}\" >> \"\$TEST_NTFY\"\n" > "$root/scripts/ntfy.sh"
+    chmod +x "$root/scripts/ntfy.sh"
+    printf "#!/usr/bin/env bash\nexit 0\n" > "$root/scripts/inbox_write.sh"
+    chmod +x "$root/scripts/inbox_write.sh"
+
+    TEST_NTFY="$root/ntfy.log"; : > "$TEST_NTFY"
+    export TEST_NTFY
+    list_pending_cmds_cached() { printf "cmd_case|2026-09-05T09:00:00|%s||\n" "$delegated_at"; }
+    log() { printf "%s\n" "$1" >> "$LOG"; }
+    declare -gA UNDEPLOYED_CMD_NOTIFIED=()
+
+    check_undeployed_cmds
+
+    local ntfy_count
+    ntfy_count=$(wc -l < "$TEST_NTFY" | tr -d " ")
+    printf "CASE=%s fixture=%s undeployed=%s\n" "$case_name" "$fixture" "$ntfy_count"
+}
+
+run_case revision_case revision_requested
+run_case other_parent_case other_parent
+run_case pending_report_case pending_report
+run_case missing_report_case missing_report
+'
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"CASE=revision_case fixture=revision_requested undeployed=0"* ]]
+    [[ "$output" == *"CASE=other_parent_case fixture=other_parent undeployed=1"* ]]
+    [[ "$output" == *"CASE=pending_report_case fixture=pending_report undeployed=1"* ]]
+    [[ "$output" == *"CASE=missing_report_case fixture=missing_report undeployed=1"* ]]
+}
+
 @test "check_karo_pending_cmd: 新規pendingが猶予内ならcmd_pending通知しない" {
     RECENT_TS=$(date -d "10 seconds ago" "+%Y-%m-%dT%H:%M:%S")
     run bash -lc '
