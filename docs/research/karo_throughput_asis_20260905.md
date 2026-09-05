@@ -1,5 +1,5 @@
 <!-- gist-master: aeaadf72f858a63ab8a1259d43d6aade karo_throughput_asis_20260905.md -->
-# 家老スループット AsIs/ToBe — 家老が実行・待機する script/hook/gate の速度台帳と計測修復設計 v2(2026-09-05 15:10 再構築 / v1 14:45→§7 訂正 14:55→§8 セルフレビュー 15:05→家老 REJECT 9 点・軍師 APPROVE 5 所見 15:04 を本文へ統合。殿 15:06『追記でなく再構築、粒度を小さく、情報量を減らすな』)
+# 家老スループット AsIs/ToBe — 家老が実行・待機する script/hook/gate の速度台帳と計測修復設計 v2(2026-09-05 15:10 再構築 / v1 14:45→§7 訂正 14:55→§8 セルフレビュー 15:05→家老 REJECT 9 点・軍師 APPROVE 5 所見 15:04 を本文へ統合。殿 15:06『追記でなく再構築、粒度を小さく、情報量を減らすな』 / v2.1 16:55 cmd_4478 着地+修復後 80 分の初回実測を §4.1・§6.7 に統合、§7 を実測順位で書き直し) / v2.2 17:55 殿『穴はないか』→待ち理由別 GATE 時間(§4.2)で §7 を再順位、穴 5 つを §8 へ
 
 ## §0.0 前提条件と我らのスタイル(別の LLM が読む前に)
 - 対象: multi-agent-shogun の家老(Codex gpt-5.6-sol、pane shogun:2.1)。家老の仕事=cmd 受領→分解→配備(deploy_task)→報告受領→review 受理(review_approval)→合流(publisher c2a)→GATE(cmd_complete_gate)→archive。忍者 6 名の直列の受け口。
@@ -103,6 +103,29 @@ flowchart TD
 | 5 | 家老の手(deploy/review/hook/送信) | 20〜30 分/日 | 家老の手 |
 | 6 | /clear 復帰 | 3 回×(18 s+replay 未計測) | 枠外 |
 
+### §4.1 修復後の順位(16:45、§6.7 の 80 分実測。§4 は 14:40 の推定で歴史として残す)
+| 順位 | 項目 | 実測(80 分) | 1 日換算 | 種別 |
+|---|---|---|---|---|
+| 1 | 将軍 cmd_save の三層検索(three_layer_memory_ruling_overhead) | 13 回×p50 121 s=29 分 | 起票 1 本 2 分。cmd_save save_total p50 10 s のうち三層が 9 割 | 将軍の手 |
+| 2 | three_layer_health refresh(daemon、全 agent 共通) | 33 分 | 6 時間超 | 枠外(CPU 競合で全員を遅くする) |
+| 3 | 家老 deploy_task | 7 回×p50 73 s=7.6 分 | 45 回×44 s=33 分(日次表) | 家老の手 |
+| 4 | 配達 held WARN | 5 件、65〜139 s | 未確定(3 日分待ち) | 待ち |
+| 5 | 家老 hook(three_layer_preflight 532 回 3 分+skill guard) | 3〜4 分 | 日次表: codex_skill_execution_guard 6,508 回×469 ms=76 分(全 Codex agent 合算) | 家老の手 |
+| 6 | 合流 c2a | 6 回 39 s | — | 家老の手(速い) |
+
+### §4.2 便の「待ち」を理由別に積む(17:49、gate_metrics 今日 CLEAR 41 cmd。§4.1 は「手」、本表は「待ち」。両者は足せない)
+| 理由 | 待ち合計 | 比率 | 該当 cmd |
+|---|---|---|---|
+| report_commit_main_ancestry WAIT(report commit が origin に未合流) | 418 分 | 39% | 33/41 cmd で発生 |
+| report_commit_main_ancestry BLOCK(同上、BLOCK 判定) | 286 分 | 27% | 同上 |
+| parent_cmd_contract BLOCK | 220 分 | 21% | 4476 ほか |
+| dm_signal_production_smoke_failed BLOCK | 93 分 | 9% | 4475 |
+| post_deploy_evidence_pending WAIT | 36 分 | 3% | |
+| ci_readiness / ci_push_state / review_two_phase | 15 分 | 1% | |
+
+- 41 cmd の first gate→CLEAR は p50 3.6 分だが、30 分超が 8 cmd あり、その 8 cmd の待ちはほぼ全て ancestry(例: release_ci_clean_repro_level5_v2 165 分中 164 分、deploy_external_worktree_timeout 106/106、ninja_monitor_index_lock 91/89、ga580_prepush_case8 67/67)。
+- **判断**: 便の時間の 66% は「忍者の report commit が origin へ合流するまで」。家老の手(80 分で 20 分)でも hook の ms でもない。v2.1 §7 が三層検索・health refresh を先に置いたのは「手の p50」で並べた誤り(§9 17:49 行)。
+
 ## §5 殿の仮説「script の圧倒的な拘束」への回答(事実→判断)
 - 事実: 家老が手で回す script は実質 7 本(deploy_task / review_approval / cmd_complete_gate / c2a / inbox_read+mark_read / inbox_write / bulletin_write)で既に拘束に近い。1 本最大 30 秒、合計 20〜30 分/日。
 - 事実: 遅く見える時間の大半は待ち(順位 1〜3)と枠外(4, 6)。script の中身を速くしても順位 1〜2 は消えない。
@@ -158,20 +181,42 @@ flowchart TD
 | 5 review_approval 実測 | 着地 7d947ac33 | test_review_approval.bats 20/20 |
 | 6 auto-push result/reason/rc | 着地 7d947ac33(関数戻り値は既存契約どおり 0、結果は retry_log 4〜5 列目) | test_cmd_complete_gate_source_publish.bats 23/23、test_cmd_complete_gate.bats 338/338 |
 | 7 c2a 単一 on_exit | 着地 7d947ac33 | 敵対 test(telemetry 失敗で rc 不変)は cmd_4478 に残す |
-| 8 watcher held event | 着地 7d947ac33。**既存 watcher は起動時に script を読むため次の respawn から有効**(kill しない。monitor の hot-reload/次回 /clear 起動で切替) | test_inbox_watcher.bats 7/7、test_ninja_monitor_stall.bats 176/176 |
-| §6.2 日次表 script | 未(cmd_4478 の残スコープ) | — |
-| §6.4 の敵対 test(c2a rc 不変/watcher bounded/agent 2 pane/auto-push 3 種) | 未(cmd_4478 の残スコープ) | — |
+| 8 watcher held event | 着地 7d947ac33。**既存 watcher は起動時に script を読むため次の respawn から有効**(kill しない。monitor の hot-reload/次回 /clear 起動で切替) | test_inbox_watcher.bats 7/7、test_ninja_monitor_stall.bats 176/176。**16:45 実測で delivery_held 36 event が本番に出ている=有効**。watcher 全 instance は 16:49 に再起動済み |
+| §6.2 日次表 script | 着地 ee4fc25ad(疾風、cmd_4478 16:3x 完了、軍師 LGTM 16:4x)。将軍が 16:45 に初回実行→`docs/research/karo_throughput_daily/2026-09-05.md` 生成 | 家老 accept/push 待ち。footer の `held=0` が表の 36 行と不一致(footer は watcher log 由来の別集計)=次 hotfix 候補 |
+| §6.4 の敵対 test(c2a rc 不変/watcher bounded/agent 2 pane/auto-push 3 種) | 着地 ee4fc25ad(実装 diff 0、test のみ) | run_tests receipt 21/21・23/23(疾風報告 AC1) |
+
+### §6.7 修復後の初回実測(15:25〜16:45 JST の 80 分、`defense_overhead.jsonl` 6,975 行。§6.1 の穴が塞がった直後に何が見えたか)
+| 見えたもの | 実測 | 14:40 時点(修復前)の推定との差 |
+|---|---|---|
+| agent 列 | 6,975 行中 karo 1,032 / shogun 695 / hayate 680 / kagemaru 489 / gunshi 305、無帰属 1,556(three_layer_health 等の daemon)、`-` 992(tmux 外) | 按分不可→可 |
+| **agent 別の合計時間** | **shogun 59 分 / 無帰属 33 分 / karo 20 分 / hayate 11 分 / watcher 8 分 / kagemaru 8 分 / gunshi 7 分** | 「家老の手 20〜30 分/日」は正しかった。**最大消費者は将軍**(下記) |
+| 将軍 cmd_save の three_layer_memory_ruling_overhead | 13 回、p50 121 s、合計 29 分(80 分のうち) | 修復前は q11 に埋もれて不可視。将軍の起票 1 本=2 分が三層検索 |
+| 家老 deploy_task deploy_total | 7 回、p50 73 s、合計 7.6 分 | §1 の 30 s 推定より重い(外部 repo 配備を含む) |
+| 家老 three_layer_preflight | 532 回、p50 220 ms、合計 3 分 | 家老の全 tool 呼出しに乗る hook の実コスト |
+| 配達 held(watcher event) | 34 event、p50 1 s、WARN 5(shogun 131/139/91 s、kotaro 65/69 s)。宛先: shogun 9 / karo 8 / kagemaru 5 / hayate 4 | §3.1 の p50 2,423 s は watcher stderr 行(first_unread_seen→send 成功)の 00:00〜14:40 集計。event は 15:25 以降の別定義(watcher 再起動後)なので**同列比較不可**。3 日分の event を待って再判定 |
+| c2a 合流 | 6 回、PASS 5 / FAIL 1、p50 5.7 s、最大 12 s | 合流 1 回は速い。遅いのは合流が起きるまでの待ち(順位 2 のまま) |
+| review_approval 内訳 | gunshi_lgtm 33 / karo_accept 31 / total FAIL 9、p50 0 s、最大 39 s | 10 秒の正体は receipt 待ちでなく稀な最大値 |
+| health refresh(全 agent 共通) | refresh_window 164 回 16.6 分+verify 10 分+copy 6 分=**33 分/80 分** | §3.3 の 3,398 s/日を上回る速度で増えている(1 日換算 6 時間超の CPU) |
+
+- **§6.7 の判断**: 修復前の順位 1〜2(held、合流待ち)は「待ち」で、修復後の agent 列は「手」を測る。両者は足せない。手の順位は **将軍 cmd_save の三層検索 > health refresh(daemon) > 家老 deploy_task > 家老 hook**。殿の下問「家老律速は script の拘束か」への追補回答: 家老の手は 80 分で 20 分、将軍の手は 59 分。**家老より先に将軍の cmd_save と daemon の health refresh を速くする方が便全体の速度に効く。**
 
 ### §6.5 やらないこと(複雑化禁止)
 schema 名変更(v2)/新台帳 file/cron 登録/watcher の held 解消/合流自動化/health refresh 非同期化/速度最適化。全て計測後の別 cmd。
 
-## §7 次の一手(順序)
-1. cmd_4478 計測修復(本書 §6)。
-2. auto-push ancestry の FAIL 理由が出たら、真因(root sync 競合か helper か publication か)で順位 2 の cmd を起票。
-3. 配達 held の解消(順位 1): busy gating の閾値/lease 設計の見直し。計測 3 日分を見てから。
-4. 合流の自動化(順位 2)。
-5. health refresh の同期経路を潰す(順位 4)。
-6. bulletin_notify の本文同梱を要約+パス参照に(§3.2、/clear 回数)。
+## §7 次の一手(順序。v2.2 で §4.2 の「待ち」比率に再順位。v2.1 の順位は §9 16:48 行の履歴)
+0. **前提(事前にやること。これなしで速度 cmd を起票しない)**
+   - (a) 共有 root の分岐を収束(17:48 家老へ名指し msg_174648)。c2a 合流後に root ref を origin へ同期する 1 行を publisher に足す(穴 2 の再発防止)。
+   - (b) 日次表に 2 表追加: 「待ち理由別 GATE 時間」(§4.2 を毎日出す)と「負荷 proxy」(three_layer_preflight_total の時間帯別 p50。load average の直接記録は無いため proxy と明記、穴 4)。判定軸を手の p50 から便の待ち分へ移す。**将軍 D0 着地 17:57**(karo_throughput_report.sh、bats 22/22)。本日全量: ancestry BLOCK 782 分+WAIT 391 分=58%、cdp_production_check 17%、parent_cmd_contract 11%。
+   - (c) 帰属不能 42% を埋める: daemon 行は agent=daemon 名(three_layer_health 等)、tmux 外の inbox_mark_read は「<owner>-inbox」(穴 3)。**将軍 D0 着地 17:57**(gate_three_layer_health.sh / inbox_mark_read.sh に SHOGUN_AGENT_ID fallback、pane 内は writer の tmux 解決を優先。bats 22/22・8/8・29/29・1/1)。効果は明日の日次表の agent 按分で判定。
+   - (d) held の定義を watcher event 側に統一し footer を直す(**将軍 D0 着地 17:57**: 日次表は event 行を正本、stderr 行を legacy と明記、footer held_event/held_legacy に分離。本日 event 71 件 p50 1 s p95 189 s WARN 9)。defense_overhead.jsonl(1 日 25 MB/11 万行)の日次 rotation は writer に archive 機構が既にある(defense_overhead_writer.sh L103)ため発火条件を確認してから。
+   - (e) baseline 3 日(9/6〜9/8)を (b) の表で取る。
+1. **合流待ち(66%)**: 忍者 report commit→origin 合流を家老の手を介さず自動化(単一 publisher U3 auto-push ancestry の完成)。判定=§4.2 の ancestry 行が 704 分→100 分未満/日。
+2. **parent_cmd_contract BLOCK(21%)**: 4476 型(task YAML 重複 field で 2 gate 矛盾)の真因を日次表の cmd 列で追い、契約検証を deploy 時に前倒し。判定=同行 220 分→0。
+3. **配達 held**: (d) 統一後の event で 3 日見て閾値/lease を判断。判定=WARN 件数。
+4. 家老 deploy_task p50 40 s の内訳(inject_* と外部 repo clone)を observed_at で出し重い 1 関数だけ直す。
+5. health refresh の同期経路(1 日 118 分 CPU)を非同期化。便の時間ではなく全員の hook を軽くする。
+6. 将軍 cmd_save の三層検索は平常 p50 2.8 s(§9 17:47 行: 121 s は孤児負荷 77 下の異常値)。負荷対策(孤児 guard は半蔵 b57e576ee で着地)で足り、専用 cmd は起票しない。
+- 判定の型: 各項目は日次表の同じ行の before/after で二値判定。表に出ない改善は改善と数えない。
 
 ## §8 計測が壊れている/無い箇所の一覧(本書で発見。§6 で全て塞ぐ)
 | 箇所 | 状態 | 影響 |
@@ -182,6 +227,11 @@ schema 名変更(v2)/新台帳 file/cron 登録/watcher の held 解消/合流�
 | auto_push_ancestry_retry.log | PASS/FAIL のみ | 12 回連続 FAIL の真因が追えない |
 | publisher_c2a_merge | 計測なし | 合流 1 回の所要・失敗率が不明 |
 | watcher held | stderr の人間向け行のみ | 順位 1 が日次で追えない |
+| (穴 1, 17:49) §7 の順位軸 | 「手」の p50 で並べ「待ち」を見ていなかった | 便の 66% を占める合流待ちが 6 番目に置かれた→§4.2 で再順位 |
+| (穴 2) root 分岐の構造 | 忍者 commit を root に置き c2a が別 commit で合流→root 永久分岐。drain は dirty で先に止まり分岐通知が誰にも届かない | 16:3x〜 publish・掲示板 yaml・drain 全停止(本日実証) |
+| (穴 3) 帰属不能 42% | daemon(three_layer_health 2,707 行)と tmux 外 mark_read(1,544 行)が agent 無し | §6.7 の agent 別合計が過小 |
+| (穴 4) 負荷列なし | load average・孤児数が日次表にない | 三層検索 2.8 s→121 s の振れを負荷で正規化できず、3 日比較の前提欠落 |
+| (穴 5) held 定義と footer、rotation | 修復前 stderr(p50 40 分)と修復後 event(p50 1 s)が同名で別物、footer 件数が表と不一致、jsonl 25 MB/日で rotation 無し | 同じ名前で違う物を数える |
 
 ## §9 殿裁定とレビュー判定の記録(時刻付き。歴史修正禁止)
 | 時刻 | 何が起きたか |
@@ -199,8 +249,17 @@ schema 名変更(v2)/新台帳 file/cron 登録/watcher の held 解消/合流�
 | 15:07 | 殿『家老を介する流れはフローチャートが必要』→§1.0。 |
 | 15:14 | 軍師 v2 確認: 追加所見なし、配備可。 |
 | 16:25 | 配達 held の忍者側実例(家老 GA-582 報告): 小太郎への scope 承認 16:16 が配達遅延で未読のまま、16:24 に旧 scope で FAIL 報告=8 分の held が 1 FAIL ループを生んだ。§3.1 の順位 1 は家老宛だけでなく忍者宛にも効く。 |
+| 16:14 | cmd_4478 を残スコープ(敵対 test 5 群+日次表)へ書き直し、疾風へ配備。 |
+| 16:3x | 疾風 cmd_4478 完了報告(ee4fc25ad、実装 diff 0、receipt 21/21・23/23)。16:4x 軍師 LGTM。 |
+| 16:45 | 将軍が日次表を初回実行(`karo_throughput_report.sh 2026-09-05`)。§6.7 の 80 分実測を得る。最大消費者は将軍 cmd_save の三層検索(29 分/80 分)、次に health refresh daemon(33 分)。 |
+| 16:48 | 殿『設計書を覚醒して更新せよ』→v2.1(§4.1・§6.7 新設、§7 を実測順位で書き直し)。 |
+| 17:28 | cmd_4478 GATE CLEAR(publisher fe58c137a で合流。root は ee4fc25ad で分岐=穴 2 の実証)。 |
+| 17:47 | 殿『どこまで進んだ？速度で示せ』→速度改善実装 0 本、計測修復のみ着地と回答。修復前/後/直近の p50 比較で三層検索 2.8 s→121 s→計測なし=孤児負荷の異常値と判明。 |
+| 17:49 | 殿『穴はないか？事前にやるべきことは？』→一次で穴 5 つ確定(§8)。最大は §7 の順位軸の誤り(待ち 66%=合流)。 |
+| 17:50 | 殿『覚醒してアップデートせよ』→v2.2(§4.2 新設、§7 を「前提 0→合流待ち→parent_cmd_contract→held」へ再順位、§8 に穴 5 つ)。 |
+| 17:53 | 殿『将軍が D0 で覚醒して根治できることは先にしよう』→§7 前提 0 の (b)(c)(d) を将軍 D0(日次表 2 表+held 定義統一、帰属 fallback 2 源)。(a) root 収束は家老が影丸へ ci_fix safe_ff_dirty_overlap(update-ref+dirty blob 保持+c2a 後同期)配備済み。 |
 | 15:15 | 家老 v2 差分レビュー REJECT 継続 5 点(c2a の既存 EXIT trap 上書き/watcher の async PID 無 drain/tmux target 無指定の誤帰属/helper_missing は rc 0・SKIP で test と矛盾/--as-of 別値が同 file を上書き)。将軍が現物で 5 点とも確認(trap L20=1、ASYNC_PIDS 追記=1・watcher の drain=0、display-message target=0、SKIP rc 0=2)→§6.1 行 4/6/7/8・§6.2・§6.4 へ採用。 |
 
 ## §10 因果リンク
 - ← [[殿下問_家老律速の拘束_20260905_1435]] / ← [[単一publisher_asis_tobe_5w1h_20260902]] U3 auto-push ancestry / ← [[cmd_4393_karo-waste]](08-24 の workaround/配備反復集計)
-- → [[karo_throughput_計測修復]](cmd_4478) → [[配達held_解消]] → [[合流の自動化]] → [[health_refresh_非同期化]]
+- → [[karo_throughput_計測修復]](cmd_4478 CLEAR 17:28) → [[root分岐_c2a後ref同期]](穴 2) → [[合流待ち_auto_push_ancestry]](66%) → [[parent_cmd_contract_前倒し]] → [[配達held_解消]] → [[health_refresh_非同期化]] → [[合流の自動化]] → [[health_refresh_非同期化]]
