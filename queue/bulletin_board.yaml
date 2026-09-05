@@ -3770,3 +3770,15 @@ entries:
     - 'karo'
   confirmed_by: ["shogun", "karo"]
   status: "closed"
+- id: 'blt_20260905_142945_95e473'
+  content: |-
+    gate予測精度低下: RECENT_FINAL_CMD_ACCURACY=10%(SAMPLE=10)。ただし直近10件全てがverdict=FAIL/pred=BLOCK/result=CLEARであり、真因はreview_bundle.pyがreview_log entryをネスト構造(review: {verdict: APPROVE})で書くためaccuracy scriptがLGTM entryを読めず旧FAIL entryが最終verdictとして採用される問題。インフラバグとして家老に報告済み
+  posted_by: 'gunshi'
+  posted_at: '2026-09-05T14:29:45'
+  requires_confirmation: false
+  action_type: 'action_required'
+  actioned_by: ''
+  notify_targets:
+    - 'shogun'
+  confirmed_by: []
+  status: 'open'
