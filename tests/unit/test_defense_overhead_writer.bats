@@ -23,7 +23,7 @@ teardown() {
 import json, sys
 rows=[json.loads(x) for x in open(sys.argv[1])]
 assert len(rows)==1
-assert set(rows[0])=={'timestamp','source','check_id','wall_ms','verdict','event_id'}
+assert set(rows[0])=={'timestamp','source','check_id','wall_ms','verdict','event_id','agent'}
 PY
 }
 
@@ -86,7 +86,7 @@ PY
   python3 - "$DEFENSE_OVERHEAD_LEDGER" <<'PY'
 import json, sys
 rows=[json.loads(x) for x in open(sys.argv[1])]
-base={'timestamp','source','check_id','wall_ms','verdict','event_id'}
+base={'timestamp','source','check_id','wall_ms','verdict','event_id','agent'}
 assert set(rows[0]) == base
 assert base <= set(rows[1])
 assert rows[1]['cmd_id'] == 'cmd_unit'
@@ -295,4 +295,27 @@ assert sum(r['wall_ms'] == 0 for r in rows) == 2
 assert sum(r['wall_ms'] > 0 for r in rows) == 2
 PY
   [ "$status" -eq 0 ]
+}
+
+# test_necessity: agent must identify the executor, never a neighbouring tmux
+# pane, and must never block a write when it cannot be resolved (fail-open).
+@test "agent column resolves executor from SHOGUN_AGENT_ID and falls back to dash" {
+  SHOGUN_AGENT_ID=karo run defense_overhead_write review_approval karo_accept 5 PASS evt-agent-1
+  [ "$status" -eq 0 ]
+  SHOGUN_AGENT_ID='Bad Agent!' run defense_overhead_write review_approval karo_accept 5 PASS evt-agent-2
+  [ "$status" -eq 0 ]
+  SHOGUN_AGENT_ID= TMUX_PANE= run defense_overhead_write review_approval karo_accept 5 PASS evt-agent-3
+  [ "$status" -eq 0 ]
+  SHOGUN_AGENT_ID= TMUX_PANE=%999999 run defense_overhead_write review_approval karo_accept 5 PASS evt-agent-4
+  [ "$status" -eq 0 ]
+  python3 - "$DEFENSE_OVERHEAD_LEDGER" <<'PY'
+import json, sys
+rows={json.loads(x)['event_id']: json.loads(x) for x in open(sys.argv[1])}
+assert rows['evt-agent-1']['agent']=='karo'
+assert rows['evt-agent-2']['agent']=='-'
+assert rows['evt-agent-3']['agent']=='-'
+assert rows['evt-agent-4']['agent']=='-'
+PY
+  run defense_overhead_write review_approval karo_accept 5 PASS evt-agent-5 '{"agent":"spoof"}'
+  [ "$status" -eq 3 ]
 }

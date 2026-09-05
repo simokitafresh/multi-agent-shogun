@@ -1,5 +1,6 @@
 # インフラコンテキスト
 <!-- last_updated: 2026-09-05 context_freshness reviewed source boundary -->
+<!-- source_commit:6ec61e00ebfe reason:context_freshness reviewed source boundary evidence:context_freshness_check context=context/infrastructure.md commit=6ec61e00ebfe -->
 <!-- source_commit:ed19ccf8532d reason:context_freshness reviewed source boundary evidence:context_freshness_check context=context/infrastructure.md commit=ed19ccf8532d -->
 <!-- source_commit:f91b6919f497 reason:context_freshness reviewed source boundary evidence:context_freshness_check context=context/infrastructure.md commit=f91b6919f497 -->
 <!-- source_commit:bdabd918845c reason:context_freshness reviewed source boundary evidence:context_freshness_check context=context/infrastructure.md commit=bdabd918845c -->
@@ -843,3 +844,4 @@ source boundary一致taskはregistryのowner/update_triggerからcontext_update_
 - cmd_complete gate の世代 rotation(2026-09-05, bdabd918 影丸)|同一 cmd の再 GATE で旧世代の gate_worker artifact(version/state/cmd_id/completion_generation)が残り現世代と混同→有効な旧世代のみ `queue/gates/<cmd>/gate_worker_stale/<generation>/` へ原子的に移動、破損・別 cmd・不正世代は停止|origin: `[[cmd_4476_偵察]] -> [[gate_worker_世代混同_20260905]] -> [[cmd_complete_generation_rotation]]`
 - ci_fix run 33939652526(2026-09-05, f91b6919f 才蔵)|CI RED の実失敗=ninja_monitor hot-reload watcher の owner validation が一過性で落ちる(test #15)→retry を root-cause fix、test_ninja_monitor_stall も同 lane|→ paths-ignore(780f334c0)と併せて CI GREEN 復帰の前提|origin: `[[CI_RED_20260905]] -> [[hot_reload_owner_validation_transient]] -> [[ci_fix_33939652526]]`
 - review_bundle precheck parity(2026-09-05, ed19ccf85 小太郎)|軍師 precheck を shell 直実行と review_bundle.py 経由で ERRORS が異なった(4476 で顕在化、INS-20260905-135853)真因=cwd/env 差→bundle 経路を shell 直実行と同一条件に揃える|origin: `[[INS-20260905-135853]] -> [[precheck_parity_20260905]] -> [[review_bundle_precheck]]`
+- ninja_monitor の共有 root index.lock 根治(2026-09-05, 6ec61e00 半蔵)|monitor が /clear 前に共有 root へ `git status` を走らせ index.lock を作り、落ちると孤児 lock(12:19:31 事故、掲示板 1 件が worktree から消えた)→`GIT_OPTIONAL_LOCKS=0` を monitor 先頭で export し read-only 呼出しが lock を取らない|origin: `[[index_lock_孤児_20260905_1219]] -> [[ninja_monitor_git_status_共有root]] -> [[GIT_OPTIONAL_LOCKS_0]]`

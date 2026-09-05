@@ -816,14 +816,16 @@ exec 200>&- || true
 # durable decision boundary.  Reuse the shared append-only timing ledger and
 # bind the id to the report attempt (fingerprint) plus report identity (key).
 # Duplicate invocations intentionally keep the original boundary timestamp.
+_ra_now_us="${EPOCHREALTIME/./}"; _ra_now_us="${_ra_now_us:0:16}"
+_ra_wall_ms=$(( (_ra_now_us - REVIEW_APPROVAL_TOTAL_T0_US + 999) / 1000 )); [ "$_ra_wall_ms" -ge 0 ] || _ra_wall_ms=0
 case "$role:$result" in
   gunshi:LGTM)
-    defense_overhead_write review_approval gunshi_lgtm 0 PASS \
+    defense_overhead_write review_approval gunshi_lgtm "$_ra_wall_ms" PASS \
       "review-approval-gunshi-lgtm-${cmd_id}-${report_key}-${fingerprint}" \
       "{\"cmd_id\":\"${cmd_id}\",\"generation\":\"${canonical_generation}\"}" || true
     ;;
   karo:ACCEPT)
-    defense_overhead_write review_approval karo_accept 0 PASS \
+    defense_overhead_write review_approval karo_accept "$_ra_wall_ms" PASS \
       "review-approval-karo-accept-${cmd_id}-${report_key}-${fingerprint}" \
       "{\"cmd_id\":\"${cmd_id}\",\"generation\":\"${canonical_generation}\"}" || true
     # U5(単一 publisher 化、観点 22): karo:ACCEPT が publisher_queue.sh enqueue の

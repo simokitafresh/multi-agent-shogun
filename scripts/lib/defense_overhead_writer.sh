@@ -22,17 +22,24 @@ defense_overhead_write() {
     [[ "$max_bytes" =~ ^[0-9]+$ && "$keep_lines" =~ ^[0-9]+$ ]] || return 2
     [ -d "$(dirname "$ledger")" ] || return 3
     [ -n "$metadata_json" ] || metadata_json='{}'
+    # agent=実行者(cmd_4478 §6.1-4)。SHOGUN_AGENT_ID → TMUX_PANE が有効な時だけその pane の @agent_id → '-'。
+    # target 無指定の tmux display は multi-client で別 pane に誤帰属するため必ず -t を付ける。fail-open(解決不能でも書く)。
+    local agent="${SHOGUN_AGENT_ID:-}"
+    if [ -z "$agent" ] && [ -n "${TMUX_PANE:-}" ]; then
+        agent="$(tmux display-message -t "$TMUX_PANE" -p '#{@agent_id}' 2>/dev/null || true)"
+    fi
+    [[ "$agent" =~ ^[a-z0-9_-]{1,32}$ ]] || agent='-'
 
-    line="$(python3 - "$source_name" "$check_id" "$wall_ms" "$verdict" "$event_id" "$metadata_json" <<'PY'
+    line="$(python3 - "$source_name" "$check_id" "$wall_ms" "$verdict" "$event_id" "$metadata_json" "$agent" <<'PY'
 import datetime, json, sys
-source, check_id, wall_ms, verdict, event_id, metadata_raw = sys.argv[1:]
+source, check_id, wall_ms, verdict, event_id, metadata_raw, agent = sys.argv[1:]
 try:
     metadata = json.loads(metadata_raw)
 except (TypeError, ValueError):
     raise SystemExit(2)
 if not isinstance(metadata, dict):
     raise SystemExit(2)
-reserved = {"timestamp", "source", "check_id", "wall_ms", "verdict", "event_id"}
+reserved = {"timestamp", "source", "check_id", "wall_ms", "verdict", "event_id", "agent"}
 if reserved.intersection(metadata) or any(
     not isinstance(key, str) or not isinstance(value, (str, int, float, bool)) or value is None
     for key, value in metadata.items()
@@ -41,7 +48,7 @@ if reserved.intersection(metadata) or any(
 row = {
     "timestamp": datetime.datetime.now(datetime.timezone.utc).isoformat(),
     "source": source, "check_id": check_id, "wall_ms": int(wall_ms),
-    "verdict": verdict, "event_id": event_id,
+    "verdict": verdict, "event_id": event_id, "agent": agent,
 }
 row.update(metadata)
 print(json.dumps(row, ensure_ascii=False, separators=(",", ":")))

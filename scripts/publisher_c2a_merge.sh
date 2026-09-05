@@ -17,7 +17,23 @@ TASK_ID="${1:-}"; COMMIT="${2:-}"; CONFLICT_PATH="${3:-queue/insights.yaml}"
 git -C "$ROOT" cat-file -e "${COMMIT}^{commit}" 2>/dev/null || { echo "publisher_c2a_merge: commit not found in root objects: $COMMIT" >&2; exit 2; }
 ORIGIN_URL="$(git -C "$ROOT" remote get-url origin)"
 WORK="$(mktemp -d "${TMPDIR:-/tmp}/publisher_c2a_merge.XXXXXX")"
-trap 'rm -rf -- "$WORK"' EXIT
+# cmd_4478 §6.1-7: 単一 on_exit=元 rc 保存→既存 cleanup→PASS/FAIL を同期記録(fail-open)→元 rc 返却。telemetry 失敗でも本処理 rc 不変。
+_C2A_T0="${EPOCHREALTIME/./}"; _C2A_T0="${_C2A_T0:0:16}"
+_c2a_on_exit() {
+    local rc=$?
+    rm -rf -- "$WORK"
+    (
+        set +e
+        . "$ROOT/scripts/lib/defense_overhead_writer.sh" || exit 0
+        _now="${EPOCHREALTIME/./}"; _now="${_now:0:16}"
+        _ms=$(( (_now - _C2A_T0 + 999) / 1000 )); [ "$_ms" -ge 0 ] || _ms=0
+        _verdict=PASS; [ "$rc" -eq 0 ] || _verdict=FAIL
+        defense_overhead_write publisher_c2a c2a_merge_total "$_ms" "$_verdict" \
+            "c2a:${TASK_ID}:${COMMIT:0:12}:$$" "{\"task_id\":\"${TASK_ID}\",\"rc\":${rc}}"
+    ) >/dev/null 2>&1 || true
+    exit "$rc"
+}
+trap _c2a_on_exit EXIT
 RESOLVER="$WORK/resolve_blocks.py"
 cat >"$RESOLVER" <<'PY'
 import re, subprocess, sys

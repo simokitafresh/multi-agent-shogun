@@ -906,6 +906,8 @@ cmd_complete_gate_function_timing_enable() {
     _CCG_FUNCTION_TIMING_LAST_US="${raw:0:16}"
     _CCG_FUNCTION_TIMING_BUSY=0
     _CCG_FUNCTION_TIMING_ID="${CMD_ID:-cmd_unknown}-$$-${raw}"
+    # observed_at は execution 開始時に 1 回だけ取得し全 rank 行で再利用(日跨ぎ分裂防止。cmd_4478 §6.1-1)
+    _CCG_FUNCTION_TIMING_OBSERVED_AT="$(date -u +%FT%TZ)"
     _CCG_FUNCTION_TIMING_SCRIPT=cmd_complete_gate.sh
     _CCG_FUNCTION_TIMING_PREV_DEBUG_TRAP="$(trap -p DEBUG 2>/dev/null || true)"
     set -T
@@ -958,8 +960,8 @@ _ccg_function_timing_finish() {
         rank=0
         while IFS=$'\t' read -r line fn; do
             rank=$((rank + 1))
-            printf '{"schema":"function_timing.v1","execution_id":"%s","script":"%s","pid":%s,"rank":%s,"function":"%s","elapsed_us":%s,"calls":%s}\n' \
-                "${_CCG_FUNCTION_TIMING_ID:-unknown}" "${_CCG_FUNCTION_TIMING_SCRIPT:-cmd_complete_gate.sh}" "$$" "$rank" "$fn" "$line" "${_CCG_FUNCTION_TIMING_CALLS["$fn"]:-0}"
+            printf '{"schema":"function_timing.v1","observed_date":"%s","observed_at":"%s","execution_id":"%s","script":"%s","pid":%s,"rank":%s,"function":"%s","elapsed_us":%s,"calls":%s}\n' \
+                "${_CCG_FUNCTION_TIMING_OBSERVED_AT:0:10}" "${_CCG_FUNCTION_TIMING_OBSERVED_AT:-}" "${_CCG_FUNCTION_TIMING_ID:-unknown}" "${_CCG_FUNCTION_TIMING_SCRIPT:-cmd_complete_gate.sh}" "$$" "$rank" "$fn" "$line" "${_CCG_FUNCTION_TIMING_CALLS["$fn"]:-0}"
         done < <(for fn in "${!_CCG_FUNCTION_TIMING_US[@]}"; do
             printf '%s\t%s\n' "${_CCG_FUNCTION_TIMING_US[$fn]}" "$fn"
         done | sort -t $'\t' -k1,1nr -k2,2)
@@ -3774,11 +3776,21 @@ gate_run_auto_push_ancestry_retry() {
     shift
     local retry_log="$SCRIPT_DIR/queue/gates/${cmd_id}/auto_push_ancestry_retry.log"
     mkdir -p "$(dirname "$retry_log")" 2>/dev/null
-    if cmd_complete_gate_auto_push_ancestry_wait "$@"; then
-        printf '%s\t%s\tPASS\n' "$(date -Iseconds)" "$cmd_id" >> "$retry_log"
-    else
-        printf '%s\t%s\tFAIL\n' "$(date -Iseconds)" "$cmd_id" >> "$retry_log"
-    fi
+    # cmd_4478 §6.1-6: stdout 全体を capture し最後の AUTO_PUSH_WAIT 行から result/reason を抽出。
+    # PASS/FAIL 全行に 4 列目=result/reason、5 列目=outer rc(semantic SKIP は rc 0 でも result=SKIP)。抽出不能なら unknown。
+    local _ap_out _ap_rc _ap_last _ap_result _ap_reason _ap_status
+    _ap_rc=0
+    _ap_out="$(cmd_complete_gate_auto_push_ancestry_wait "$@")" || _ap_rc=$?
+    [ -n "$_ap_out" ] && printf '%s\n' "$_ap_out"
+    _ap_last="$(printf '%s\n' "$_ap_out" | grep -E '^AUTO_PUSH_WAIT ' | tail -1)"
+    _ap_result="$(sed -n 's/.*result=\([A-Za-z_]*\).*/\1/p' <<<"$_ap_last")"
+    _ap_reason="$(sed -n 's/.*reason=\([^ ]*\).*/\1/p' <<<"$_ap_last")"
+    [ -n "$_ap_result" ] || _ap_result=unknown
+    [ -n "$_ap_reason" ] || _ap_reason=unknown
+    if [ "$_ap_rc" -eq 0 ]; then _ap_status=PASS; else _ap_status=FAIL; fi
+    printf '%s\t%s\t%s\tresult=%s reason=%s\trc=%s\n' "$(date -Iseconds)" "$cmd_id" "$_ap_status" "$_ap_result" "$_ap_reason" "$_ap_rc" >> "$retry_log"
+    # 既存契約どおり関数自体は 0 を返す(結果は retry_log の 3〜5 列目で表す。呼出し元の done marker 書込みを止めない)
+    return 0
 }
 
 # karo review differentiation (msg_20260904_080633_981530_67f5467a): the

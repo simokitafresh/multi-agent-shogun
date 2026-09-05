@@ -1592,6 +1592,20 @@ send_wakeup() {
     if [ "$_delivery_latency_sec" -ge "$DELIVERY_LATENCY_WARN_SEC" ]; then
         echo "[$(date)] [DELIVERY-LATENCY-WARN] $AGENT_ID: held ${_delivery_latency_sec}s >= ${DELIVERY_LATENCY_WARN_SEC}s threshold (busy gating tail latency)" >&2
     fi
+    # cmd_4478 §6.1-8: 配達 held を defense_overhead へ(配達 send-keys の後=配達を待たせない位置、同期 write。
+    # watcher は長寿命 daemon なので drain 契約のない write_async は使わない)。agent=実行者(inbox_watcher)、配達先は metadata.target_agent。
+    if [ -f "$SCRIPT_DIR/scripts/lib/defense_overhead_writer.sh" ] && [[ "$_delivery_latency_sec" =~ ^[0-9]+$ ]]; then
+        local _held_first _held_verdict _held_fp
+        _held_first="$(cat "$FIRST_UNREAD_SEEN" 2>/dev/null || true)"; [[ "$_held_first" =~ ^[0-9]+$ ]] || _held_first="$EPOCHSECONDS"
+        _held_fp="${fingerprint:-none}"; _held_fp="${_held_fp//[^A-Za-z0-9_.-]/_}"; _held_fp="${_held_fp:0:32}"
+        _held_verdict=PASS; [ "$_delivery_latency_sec" -ge "$DELIVERY_LATENCY_WARN_SEC" ] && _held_verdict=WARN
+        (
+            set +e
+            . "$SCRIPT_DIR/scripts/lib/defense_overhead_writer.sh" || exit 0
+            SHOGUN_AGENT_ID=inbox_watcher defense_overhead_write inbox_watcher delivery_held "$(( _delivery_latency_sec * 1000 ))" "$_held_verdict" \
+                "held:${AGENT_ID}:${_held_first}:${_held_fp}" "{\"target_agent\":\"${AGENT_ID}\",\"unread\":${unread_count:-0}}"
+        ) >/dev/null 2>&1 || true
+    fi
 
     echo "[$(date)] Wake-up sent to $AGENT_ID (${unread_count} unread via paste-buffer)" >&2
     return 0

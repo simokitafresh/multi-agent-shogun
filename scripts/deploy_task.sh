@@ -12640,6 +12640,8 @@ deploy_task_function_timing_enable() {
     _DT_FUNCTION_TIMING_BUSY=0
     _DT_FUNCTION_TIMING_FINISHED=0
     _DT_FUNCTION_TIMING_ID="deploy-task-$$-${EPOCHREALTIME//./}"
+    # observed_at は execution 開始時に 1 回だけ取得し全 rank 行で再利用(日跨ぎ分裂防止。cmd_4478 §6.1-1)
+    _DT_FUNCTION_TIMING_OBSERVED_AT="$(date -u +%FT%TZ)"
     _DT_FUNCTION_TIMING_SCRIPT=deploy_task.sh
     _DT_FUNCTION_TIMING_PREV_DEBUG_TRAP="$(trap -p DEBUG 2>/dev/null || true)"
     set -T
@@ -12712,8 +12714,8 @@ deploy_task_function_timing_finish() {
         rank=0
         while IFS=$'\t' read -r line fn; do
             rank=$((rank + 1))
-            printf '{"schema":"function_timing.v1","execution_id":"%s","script":"%s","pid":%s,"rank":%s,"function":"%s","elapsed_us":%s,"calls":%s}\n' \
-                "${_DT_FUNCTION_TIMING_ID:-unknown}" "${_DT_FUNCTION_TIMING_SCRIPT:-deploy_task.sh}" "$$" "$rank" "$fn" "$line" "${_DT_FUNCTION_TIMING_CALLS["$fn"]:-0}"
+            printf '{"schema":"function_timing.v1","observed_date":"%s","observed_at":"%s","execution_id":"%s","script":"%s","pid":%s,"rank":%s,"function":"%s","elapsed_us":%s,"calls":%s}\n' \
+                "${_DT_FUNCTION_TIMING_OBSERVED_AT:0:10}" "${_DT_FUNCTION_TIMING_OBSERVED_AT:-}" "${_DT_FUNCTION_TIMING_ID:-unknown}" "${_DT_FUNCTION_TIMING_SCRIPT:-deploy_task.sh}" "$$" "$rank" "$fn" "$line" "${_DT_FUNCTION_TIMING_CALLS["$fn"]:-0}"
         done < <(for fn in "${!_DT_FUNCTION_TIMING_US[@]}"; do
             printf '%s\t%s\n' "${_DT_FUNCTION_TIMING_US[$fn]}" "$fn"
         done | sort -t $'\t' -k1,1nr -k2,2)
