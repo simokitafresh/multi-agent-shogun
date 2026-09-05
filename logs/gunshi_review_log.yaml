@@ -8613,3 +8613,25 @@
   origin: "[[cmd_karo_ci_fix_33954907749_inbox_priority_evidence_cycle]] -> [[前提消失]] -> [[honest_FAIL_LGTM]]"
   step3_5_verified: true
   timestamp: "2026-09-05T19:42:00"
+- cmd_id: cmd_karo_ci_fix_33948374586_midx_lock
+  review_type: report
+  verdict: LGTM
+  report_ninja: saizo
+  report_task_id: cmd_karo_ci_fix_33948374586_midx_lock_normal
+  verified_files:
+    - "tests/unit/test_publish_artifact.bats:100"
+  findings_summary: "honest FAIL LGTM。AC2のbc:no=compatibility他task依存2件FAIL。scope限定全PASS。approved_failed_check_paths承認。"
+  observations:
+    - "事実1: fixture clone 8箇所を--no-localへ変更しhardlink競合隔離。case7 50/50 PASS"
+    - "事実2: compatibility 2件FAILは他task依存で本cmdのscope外"
+  operational_simulation:
+    command: "bats case7 50回 + test_publish_artifact 18件 + lock probe 200回"
+    expected: "全PASS"
+    actual: "case7 50/50、18/18、200/200 PASS"
+    result: "PASS"
+  causal_chain: "CI case7 FAIL→hardlink race=fixture clone --local起因→--no-local隔離=正の複利"
+  finding_categories: [assumptions, premortem, ambiguity, adversarial]
+  brainwash_check: "#1no #2no #3no #4no #5no #6no #7no #8no scope限定全PASS確認"
+  origin: "[[cmd_karo_ci_fix_33948374586_midx_lock]] -> [[hardlink隔離]] -> [[honest_FAIL_LGTM]]"
+  step3_5_verified: true
+  timestamp: "2026-09-05T19:43:00"
