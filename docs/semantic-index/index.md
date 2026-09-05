@@ -6662,6 +6662,7 @@ codd:
 | causal_chain | `[[cmd_karo_hotfix_ancestry_merge_content_loss_20260902]]` (L1697) |
 | causal_chain | `[[cmd_4453]]` (L1709) |
 | discussion | `queue/lord_conversation.jsonl` 2026-09-05T18:59:07+09:00 軍師のD0で直せるものがあれば覚醒して根治せよ。根治したら再発がないか検証して将軍に報告せよ |
+| discussion | `queue/lord_conversation.jsonl` 2026-09-05T19:18:43+09:00 ガードのバグは迂回せずに先に根治せよ。負の複利を放置す るな。バグを根治したら再発しないか検証せよ。検証したら 家老に報告して確認してもらえ |
 
 ## no_auto_extinguish — 自動消火禁止
 
