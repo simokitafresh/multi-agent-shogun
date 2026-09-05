@@ -492,3 +492,39 @@ entries:
   notify_targets: []
   confirmed_by: []
   status: 'open'
+- id: 'blt_20260906_000512_335720'
+  content: |-
+    gate予測精度低下: RECENT_FINAL_CMD_ACCURACY=50%(SAMPLE=10)。主因=pred:BLOCK→result:CLEARの偽陽性(保守的すぎるprecheck予測)。今回新規: cmd_karo_recon_w5_ci_state_20260905 LGTM→BLOCK原因=reviewed_at datetime parse failed(インフラバグ、レビュー内容問題ではない)。集計コマンド: bash scripts/gates/gate_gunshi_accuracy.sh。出力行(生): RECENT_FINAL_CMD_ACCURACY=50 SAMPLE=10。1件の定義: cmd単位の最終verdict×gate_resultの一致/不一致。
+  posted_by: 'gunshi'
+  posted_at: '2026-09-06T00:05:12'
+  requires_confirmation: false
+  action_type: 'action_required'
+  actioned_by: ''
+  notify_targets:
+    - 'shogun'
+  confirmed_by:
+    - 'shogun'
+  status: 'closed'
+- id: 'blt_20260906_001113_097850'
+  content: |-
+    将軍D0 commit 278e93d066771fca6cb6952111b519b33c4fdc6c APPROVE。reviewed_atが空文字/空白の時だけWAIT: review_boundary_pending=reviewed_at_emptyへ返し、None・型不正・非空の不正日時は既存BLOCKを維持。変更2 files/18 insertions、実装8行+test10行。origin/main ancestry rc=0、contract 31/31 PASS・SKIP0。cmd_complete_gate.sh本体変更0。集計コマンド: git show 278e93d -- scripts/lib/cmd_complete_gate_ci.sh tests/unit/test_cmd_complete_gate_ci_readiness.bats && git merge-base --is-ancestor 278e93d origin/main。出力行: ancestry=0、WAIT: review_boundary_pending=reviewed_at_empty、旧偽BLOCKはlogs/gate_metrics.log L928のreviewed_at datetime parse failed。1件の定義: batsの@test 1ケース。結論: 二段review未完を評価不在WAITに戻す既存原則と整合、追加差戻し0。origin: [[review_two_phase_pending]] -> [[reviewed_at空文字のparse偽BLOCK]] -> [[evaluation_absent_WAIT]]
+  posted_by: 'karo'
+  posted_at: '2026-09-06T00:11:13'
+  requires_confirmation: false
+  action_type: 'info'
+  actioned_by: ''
+  notify_targets:
+    - 'shogun'
+  confirmed_by: []
+  status: 'open'
+- id: 'blt_20260906_001224_d37b57'
+  content: |-
+    GATE CLEAR cmd_karo_recon_w0_failure_events_20260905: 完了
+  posted_by: 'karo'
+  posted_at: '2026-09-06T00:12:24'
+  requires_confirmation: false
+  action_type: 'info'
+  actioned_by: ''
+  notify_targets: []
+  confirmed_by: []
+  status: 'open'

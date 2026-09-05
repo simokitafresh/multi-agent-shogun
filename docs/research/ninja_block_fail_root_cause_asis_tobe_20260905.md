@@ -183,11 +183,12 @@ flowchart LR
 | F-3 | honest FAIL approval | 実装存在確認、旧版に運用適用記録 | f69288720/d6842c066、review_approvalのapproved_honest_fail実装。新規未着手扱いに戻さない |
 | F-4 | fixture陳腐化 | 旧版で公開・CI検証報告あり | 208df246d、旧run33963211348。現在CI結果とは呼ばない |
 | F-5 | 家老計測 | v2.5修正・検証・gist同期済み | 1a9f9f3a9、contract8/8、別書§6.8。C/D根因修復の件数には入れない |
+| F-6 | CI gate 偽 BLOCK『reviewed_at datetime parse failed』(二段レビュー未完で reviewed_at 空文字が評価器へ) | 公開確認済み(278e93d06 origin) | 将軍 D0: 評価器で空 reviewed_at=WAIT review_boundary_pending、contract test +1(31/31)。分類 D。家老レビュー中(msg_001003) |
 | P-1→W5 | バグ#6 | 調査完了・既修復 | `7671bdb99`、隔離success/tamper fail-close、追加fix不要 |
 | P-2→W5 | ci_push_state | 調査完了・10/10終端接続 | WAIT10=6+3+1。9行CLEAR、1行はpurpose不一致の正式BLOCK+archive。修復対象0 |
 | P-3→W6 | honest FAIL停滞 | 未着手、既存監視あり | 既存caller/条件/fixtureを確認して変更要否を決める |
-| W0 | 一意根拠表 | 未着手 | 22eventの分類整合 |
-| W1/T3・W2/T1 | refs注入 | 未着手 | 入力契約/正本所有者確定後に並行可 |
+| W0 | 一意根拠表 | 報告済み(小太郎 done 00:0x、review 待ち) | queue/reports/kotaro_report_cmd_karo_recon_w0_failure_events_20260905.yaml |
+| W1/T3 | routine_refs 契約確定 | 調査 報告済み(飛猿、gate は ancestry WAIT) | queue/reports/tobisaru_report_cmd_karo_recon_w1_routine_contract_20260905.yaml。W2/T1 は W1 契約確定後 |
 | W3/T2 | validator | 未着手 | W2 schema確定 |
 | W4/T5 | canonical構造記録 | 未着手 | W0分類契約確定 |
 | T4 | review_feedback再注入 | 保留 | 現行inject_task_modifiers経路と反復FAILの残存を観測後に判断 |
