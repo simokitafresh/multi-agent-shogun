@@ -312,6 +312,39 @@ canonical_generation=$(sha256sum "$report" | awk '{print $1}')
 [[ "$canonical_generation" =~ ^[0-9a-f]{64}$ ]] || { echo "BLOCK: canonical report generation unavailable: $report" >&2; exit 1; }
 report_rel=${report#"$ROOT"/}; report_key=$(review_report_key "$report_logical")
 dir="$base/reports/$report_key"; mkdir -p "$dir"
+
+# A truthful failed report may enter the normal review/GATE lane only when the
+# SG7 APPROVE bundle and both fingerprint-bound approval records identify this
+# exact report generation.  A bundle is not an approval by itself: the durable
+# Gunshi LGTM and the Karo ACCEPT are still required.  Without this proof the
+# historical fail-close behavior remains unchanged (no review_gate marker and
+# no GATE trigger).
+approved_honest_fail=0
+if [ "$fail_close" = 1 ]; then
+  honest_fail_bundle="$ROOT/queue/gates/$cmd_id/sg7_bundle.json"
+  if [ -f "$honest_fail_bundle" ]; then
+    honest_fail_match=0
+    if [ -f "$ROOT/scripts/review_bundle.py" ] \
+      && python3 "$ROOT/scripts/review_bundle.py" --root "$ROOT" consume \
+        --cmd "$cmd_id" --bundle "$honest_fail_bundle" --expect-verdict APPROVE >/dev/null 2>&1; then
+      honest_fail_match=1
+    fi
+    if [ "$honest_fail_match" = 1 ]; then
+      gunshi_result=$(review_approval_value "$dir/gunshi.yaml" result 2>/dev/null || true)
+      gunshi_fp=$(review_approval_value "$dir/gunshi.yaml" fingerprint 2>/dev/null || true)
+      gunshi_report=$(review_approval_value "$dir/gunshi.yaml" report 2>/dev/null || true)
+      if [ "$gunshi_result" = LGTM ] && [ "$gunshi_fp" = "$fingerprint" ] \
+        && { [ -z "$gunshi_report" ] || [ "$gunshi_report" = "$report_rel" ]; }; then
+        approved_honest_fail=1
+        fail_close=0
+      fi
+    fi
+  fi
+fi
+if [ "$approved_honest_fail" = 1 ]; then
+  identity_exempt=1
+fi
+
 # A Karo ACCEPT is terminal only when the canonical Gunshi LGTM for this exact
 # report generation already exists.  Previously the normal ACCEPT path relied
 # on review_all_reports_ready() later in the asynchronous completion flow; that
@@ -803,7 +836,9 @@ fi
 # --migration-ack option 無しの ACCEPT(および gunshi/RC/RC_REVOKE)は書かない。
 migration_ack_line=""
 [ -z "$migration_ack" ] || migration_ack_line="migration_ack: $migration_ack"$'\n'
-printf 'timestamp: %s\nrole: %s\nresult: %s\nfingerprint: %s\ngeneration: %s\nreport: %s\ncorrection_scope: %s\n%s' "$approval_timestamp" "$role" "$result" "$fingerprint" "$canonical_generation" "$report_rel" "$correction_scope" "$migration_ack_line" > "$tmp"
+approval_mode_line=""
+[ "$approved_honest_fail" = 1 ] && approval_mode_line=$'approval_mode: approved_honest_fail\n'
+printf 'timestamp: %s\nrole: %s\nresult: %s\nfingerprint: %s\ngeneration: %s\nreport: %s\ncorrection_scope: %s\n%s%s' "$approval_timestamp" "$role" "$result" "$fingerprint" "$canonical_generation" "$report_rel" "$correction_scope" "$approval_mode_line" "$migration_ack_line" > "$tmp"
 mv -f "$tmp" "$dir/$role.yaml"
 # The durable approval record is complete.  Do not keep the report approval
 # lock across SG7 publication or any completion work: canonical LGTM used to
@@ -1202,7 +1237,22 @@ fi
 echo "review approval recorded: $cmd_id $role $result fingerprint=$fingerprint"
 
 mapfile -t reports < <(PROJECT_ROOT="$ROOT" review_resolve_reports "$cmd_id")
-mapfile -t reports < <(PROJECT_ROOT="$ROOT" review_resolve_gate_reports "$cmd_id" "${reports[@]}")
+if [ "$approved_honest_fail" != 1 ]; then
+  mapfile -t reports < <(PROJECT_ROOT="$ROOT" review_resolve_gate_reports "$cmd_id" "${reports[@]}")
+else
+  # Keep the approved honest-fail report in the GATE input.  Other formally
+  # closed failures retain the existing exclusion behavior.
+  honest_fail_reports=()
+  for candidate_report in "${reports[@]}"; do
+    if PROJECT_ROOT="$ROOT" review_formally_closed_failure "$cmd_id" "$candidate_report"; then
+      [ "$(realpath "$candidate_report")" = "$(realpath "$report")" ] \
+        && honest_fail_reports+=("$candidate_report")
+    else
+      honest_fail_reports+=("$candidate_report")
+    fi
+  done
+  reports=("${honest_fail_reports[@]}")
+fi
 if [ -n "${REVIEW_APPROVAL_TEST_READY_FILE:-}" ]; then
   : > "$REVIEW_APPROVAL_TEST_READY_FILE"
   while [ ! -e "${REVIEW_APPROVAL_TEST_RELEASE_FILE:?}" ]; do sleep 0.01; done
@@ -1243,15 +1293,38 @@ elif review_all_reports_ready "$cmd_id" "${reports[@]}"; then
     echo "BLOCK: parent cmd SSOT/purpose/AC contract incomplete; formalization withheld" >&2
     exit 1
   fi
-  manifest=$(PROJECT_ROOT="$ROOT" review_manifest_fingerprint "${reports[@]}")
-  terminal_manifest_sha=$(PROJECT_ROOT="$ROOT" review_terminal_snapshot_write "$cmd_id" "${reports[@]}") || {
-    echo "BLOCK: terminal review manifest publication failed" >&2
-    exit 1
-  }
+  if [ "$approved_honest_fail" = 1 ]; then
+    # Failed reports have no implementation commit identity by design.  Keep
+    # the marker explicit and bind it to the SG7/report generation; the gate
+    # consumes the same proof and applies only its approved bc:no override.
+    manifest=$(printf '%s:%s:approved_honest_fail\n' "$report_logical" "$canonical_generation" | sha256sum | awk '{print $1}')
+    terminal_manifest_sha=""
+  else
+    manifest=$(PROJECT_ROOT="$ROOT" review_manifest_fingerprint "${reports[@]}")
+    terminal_manifest_sha=$(PROJECT_ROOT="$ROOT" review_terminal_snapshot_write "$cmd_id" "${reports[@]}") || {
+      echo "BLOCK: terminal review manifest publication failed" >&2
+      exit 1
+    }
+  fi
   marker="$ROOT/queue/gates/$cmd_id/review_gate.done"
   marker_tmp=$(mktemp "$ROOT/queue/gates/$cmd_id/.review_gate.XXXXXX")
-  printf 'timestamp: %s\nsource: two_phase_review\nresult: LGTM\nreports: %s\nmanifest: %s\nterminal_manifest: queue/gates/%s/terminal_review_manifest.json\nterminal_manifest_sha: %s\n' \
-    "$(date -Iseconds)" "${#reports[@]}" "$manifest" "$cmd_id" "$terminal_manifest_sha" > "$marker_tmp"
+if [ "$approved_honest_fail" = 1 ]; then
+    report_id=$(python3 - "$report" <<'PY'
+import sys
+import yaml
+data = yaml.safe_load(open(sys.argv[1], encoding="utf-8")) or {}
+value = str(data.get("report_id") or "").strip()
+if not value:
+    raise SystemExit(1)
+print(value)
+PY
+) || { echo "BLOCK: report_id missing for approved honest-fail review: $report" >&2; exit 1; }
+    printf 'timestamp: %s\nsource: honest_fail_review\nresult: LGTM\nreports: %s\nmanifest: %s\nhonest_fail: approved_honest_fail\nreport: %s\nreport_id: %s\nreport_fingerprint: %s\n' \
+      "$(date -Iseconds)" "${#reports[@]}" "$manifest" "$report_rel" "$report_id" "$canonical_generation" > "$marker_tmp"
+  else
+    printf 'timestamp: %s\nsource: two_phase_review\nresult: LGTM\nreports: %s\nmanifest: %s\nterminal_manifest: queue/gates/%s/terminal_review_manifest.json\nterminal_manifest_sha: %s\n' \
+      "$(date -Iseconds)" "${#reports[@]}" "$manifest" "$cmd_id" "$terminal_manifest_sha" > "$marker_tmp"
+  fi
   mv -f "$marker_tmp" "$marker"
   # Claim the manifest while the detached worker is running, but publish the
   # gate_triggered marker only after cmd_complete_gate has returned a terminal

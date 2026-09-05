@@ -204,6 +204,54 @@ def _entry_review_verdict(entry):
     return str(entry.get("verdict") or entry.get("review_verdict") or "").strip().upper()
 
 
+def _binary_failure(value):
+    """Treat YAML ``no``/``false`` as a failed binary check."""
+    return value is False or str(value or "").strip().lower() in {"no", "false"}
+
+
+def _failed_binary_check_paths(report_data):
+    """Return canonical paths for every failed binary check in a report."""
+    checks = report_data.get("binary_checks") if isinstance(report_data, dict) else None
+    paths = []
+    if isinstance(checks, dict):
+        for group, entries in checks.items():
+            if isinstance(entries, dict):
+                entries = [entries]
+            if not isinstance(entries, list):
+                continue
+            for index, item in enumerate(entries):
+                if isinstance(item, dict) and _binary_failure(item.get("result")):
+                    paths.append(f"binary_checks.{group}[{index}]")
+    elif isinstance(checks, list):
+        for index, item in enumerate(checks):
+            if isinstance(item, dict) and _binary_failure(item.get("result")):
+                paths.append(f"binary_checks[{index}]")
+    return paths
+
+
+def _approved_failed_check_paths(entry):
+    """Normalize the SG7 reviewer's explicit failed-check path list."""
+    if not isinstance(entry, dict):
+        return None
+    raw = entry.get("approved_failed_check_paths")
+    if not isinstance(raw, list) or not raw:
+        return None
+    paths = []
+    for item in raw:
+        if isinstance(item, str):
+            value = item.strip()
+        elif isinstance(item, dict):
+            value = str(item.get("path") or "").strip()
+        else:
+            return None
+        if not value or value in paths:
+            return None
+        if not re.fullmatch(r"binary_checks(?:\.[A-Za-z0-9_-]+)?\[\d+\]", value):
+            return None
+        paths.append(value)
+    return paths
+
+
 def _is_honest_fail_review(item, report_data):
     """Recognize the narrow report-attestation lane for a truthful FAIL."""
     entry = item.get("review_entry") if isinstance(item, dict) else None
@@ -218,6 +266,8 @@ def _is_honest_fail_review(item, report_data):
         and str(entry.get("review_type") or "").strip().lower() == "report"
         and _entry_review_verdict(entry) in {"LGTM", "APPROVE"}
         and str(entry.get("report_verdict") or "").strip().upper() == "FAIL"
+        and set(_approved_failed_check_paths(entry) or ()) == set(_failed_binary_check_paths(report_data))
+        and bool(_failed_binary_check_paths(report_data))
     )
 
 
@@ -236,6 +286,7 @@ def _normalize_review_item(root, item):
         if _is_honest_fail_review(item, report_data):
             item["correction_scope"] = "report"
             item["allow_honest_fail"] = True
+            item["approved_failed_check_paths"] = _approved_failed_check_paths(item["review_entry"])
     return item
 
 
@@ -427,6 +478,9 @@ def validate(bundle, expected_cmd=None, expected_verdict=None):
     if not str(spec.get("project") or "").strip(): raise ValueError("cmd_spec_summary.project is missing")
     if verdict == "APPROVE" and "karo_attention" in review: raise ValueError("APPROVE bundle must omit karo_attention")
     if verdict == "FAIL" and not str(review.get("karo_attention") or "").strip(): raise ValueError("FAIL bundle requires karo_attention")
+    if verdict == "APPROVE" and str(review.get("report_verdict") or "").strip().upper() == "FAIL":
+        if _approved_failed_check_paths(review) is None:
+            raise ValueError("honest FAIL APPROVE bundle requires approved_failed_check_paths")
     generation = str(review.get("report_generation") or "").strip()
     if generation and not re.fullmatch(r"[0-9a-f]{64}", generation):
         raise ValueError("report_generation must be a lowercase SHA-256 generation")
@@ -439,6 +493,30 @@ def validate(bundle, expected_cmd=None, expected_verdict=None):
     # 欠落は許容し、存在する場合だけ cmd_id との矛盾を検査する。
     if line and not line.startswith(f"- **{cmd_id}**:"): raise ValueError("dashboard_line contradicts cmd_id")
     return review
+
+
+def _attest_honest_fail(root, cmd_id, review, report):
+    """Authenticate one SG7 honest-fail bundle against its live report."""
+    report_data = load(report)
+    state = (str(report_data.get("status") or "").strip(), str(report_data.get("verdict") or "").strip().upper())
+    if state != ("failed", "FAIL"):
+        raise ValueError("honest FAIL attestation requires failed/FAIL report")
+    report_path = Path(report).resolve()
+    generation = _report_generation(report_path)
+    if str(review.get("report_verdict") or "").strip().upper() != "FAIL":
+        raise ValueError("honest FAIL bundle report_verdict must be FAIL")
+    if str(review.get("report_fingerprint") or "").strip() != generation:
+        raise ValueError("honest FAIL bundle report fingerprint is stale")
+    if str(review.get("report_generation") or "").strip() != generation:
+        raise ValueError("honest FAIL bundle report generation is stale")
+    report_id = str(report_data.get("report_id") or "").strip()
+    if not report_id or str(review.get("report_id") or "").strip() != report_id:
+        raise ValueError("honest FAIL bundle report_id mismatch")
+    approved = _approved_failed_check_paths(review)
+    actual = _failed_binary_check_paths(report_data)
+    if not approved or len(approved) != len(actual) or set(approved) != set(actual):
+        raise ValueError("approved_failed_check_paths must exactly match report binary no paths")
+    return approved
 
 # hook_failures.count records how many times a hook fired; it says nothing about
 # whether those failures are still open.  Judging on the count alone kept fully
@@ -518,7 +596,14 @@ def generate(args):
             if not results or any(result != "yes" for result in results):
                 raise ValueError("APPROVE requires all binary checks resolved yes")
     generation = _report_generation(report)
-    review = {"cmd_id": args.cmd, "verdict": verdict, "report_verdict": report_state[1], "reviewer": "gunshi", "reviewed_at": datetime.now().astimezone().isoformat(timespec="seconds"), "report": str(report_ref.relative_to(root)), "report_fingerprint": generation, "report_generation": generation, "cmd_spec_source": str(source.relative_to(root)), "cmd_spec_summary": summary(command), "dashboard_line": dashboard_line(report_data, args.cmd)}
+    review = {"cmd_id": args.cmd, "verdict": verdict, "report_verdict": report_state[1], "reviewer": "gunshi", "reviewed_at": datetime.now().astimezone().isoformat(timespec="seconds"), "report": str(report_ref.relative_to(root)), "report_id": str(report_data.get("report_id") or ""), "report_fingerprint": generation, "report_generation": generation, "cmd_spec_source": str(source.relative_to(root)), "cmd_spec_summary": summary(command), "dashboard_line": dashboard_line(report_data, args.cmd)}
+    if honest_fail:
+        approved_paths = _approved_failed_check_paths({
+            "approved_failed_check_paths": getattr(args, "approved_failed_check_paths", None),
+        })
+        if set(approved_paths or ()) != set(_failed_binary_check_paths(report_data)) or not approved_paths:
+            raise ValueError("honest FAIL APPROVE requires approved_failed_check_paths exactly matching report binary no paths")
+        review["approved_failed_check_paths"] = approved_paths
     if verdict == "FAIL":
         if not args.fail_reason: raise ValueError("FAIL requires --fail-reason")
         review["karo_attention"] = args.fail_reason
@@ -556,6 +641,8 @@ def notify(args):
         review.get("report_generation") and current_generation != review.get("report_generation")
     ):
         raise ValueError("bundle report generation is stale")
+    if str(review.get("report_verdict") or "").strip().upper() == "FAIL":
+        _attest_honest_fail(root, args.cmd, review, report)
     # The canonical approval entry publishes immediately, while the legacy
     # batch caller may still invoke notify after approval returns.  Serialize
     # both callers and bind the durable marker to the report generation so a
@@ -615,7 +702,12 @@ def consume(args):
     if not path.is_absolute(): path = root / path
     path = path.resolve(); gates = (root / "queue/gates").resolve()
     if gates not in path.parents or path.name != "sg7_bundle.json": raise ValueError("bundle must be queue/gates/<cmd>/sg7_bundle.json")
-    review = validate(load(path), args.cmd, args.expect_verdict); print(json.dumps(review["cmd_spec_summary"], ensure_ascii=False, sort_keys=True)); return 0
+    review = validate(load(path), args.cmd, args.expect_verdict)
+    allow_archived = str(review.get("report") or "").startswith("queue/archive/reports/")
+    _, report = _resolve_report(root, str(review["report"]), args.cmd, allow_archived=allow_archived)
+    if str(review.get("report_verdict") or "").strip().upper() == "FAIL":
+        _attest_honest_fail(root, args.cmd, review, report)
+    print(json.dumps(review["cmd_spec_summary"], ensure_ascii=False, sort_keys=True)); return 0
 
 def _batch_precheck(root, item):
     started = time.monotonic()
@@ -655,7 +747,8 @@ def _batch_precheck(root, item):
 def _batch_generate(root, item, precheck):
     argv = argparse.Namespace(root=str(root), cmd=str(item["cmd"]), verdict=str(item["verdict"]).upper(),
                               report=str(item["report"]), fail_reason=item.get("fail_reason"), allow_archived=False,
-                              allow_honest_fail=bool(item.get("allow_honest_fail", False)))
+                              allow_honest_fail=bool(item.get("allow_honest_fail", False)),
+                              approved_failed_check_paths=item.get("approved_failed_check_paths"))
     generate(argv)
     path = root / f"queue/gates/{item['cmd']}/sg7_bundle.json"
     bundle = load(path); bundle["review"]["precheck"] = precheck; atomic_json(path, bundle)
