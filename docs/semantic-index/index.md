@@ -3637,6 +3637,7 @@ codd:
 | cmd | `cmd_karo_hotfix_yaml_duplicate_field_repair` (`scripts/lib/yaml_field_set.sh`, `tests/unit/test_yaml_field_set_nested_list.bats`) |
 | discussion | `queue/lord_conversation.jsonl` 2026-09-05T13:09:57+09:00 session_save_20260905_1310(復帰点、先に session_save_20260905_1245 を読め): 殿 13:05『進捗報告+利他』。着地: 4475 GATE CLEAR 12:57(本番 lang=ja |
 | discussion | `queue/lord_conversation.jsonl` 2026-09-05T13:21:52+09:00 殿裁定 2026-09-05 13:19(LP identity 収束): v0.3 の方向で確定。機能を増やさない。優先 5 段=(1) Google Auth 後の Supabase user.id を捨てず匿名 visitor_id/ |
+| discussion | `queue/lord_conversation.jsonl` 2026-09-05T13:33:20+09:00 bfchmjkrv Monitor event: "cmd_4477 preflight 完了(BLOCK/WARN/PASS 行)" PREFLIGHT_DONE If this event is something the user w |
 
 ## investment_knowledge_base — 投資知識辞書
 
