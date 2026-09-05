@@ -8255,3 +8255,34 @@
   verdict: LGTM
   verified_files:
   - scripts/lib/external_project_ref_resolver.sh:external_ref_canonical_project_id
+- brainwash_check: '#1no #2no #3no #4no #5no #6no #7no #8no commit 2a9817d1不変、14/14+31/31'
+  causal_chain: RC2→メタ修正(status等)→新fp発行→再レビュー(内容同一確認)
+  cmd_id: cmd_karo_hotfix_ga579_external_project_context_ref
+  finding_categories:
+  - assumptions
+  - numbers
+  - premortem
+  - adversarial
+  - ambiguity
+  findings_summary: 4観点OK(RC2と同一実装内容、fp差はメタ変更のみ)。共通resolver単一source化。14/14+31/31全PASS。commit
+    2a9817d1
+  hole_action: none
+  observations:
+  - RC2と同一commit/内容。fp差分はstatus/hook_failures等のメタフィールド更新に起因
+  operational_simulation:
+    actual: 2a9817d1257ccb3c confirmed
+    command: grep 2a9817d1 queue/reports/kotaro_report_cmd_karo_hotfix_ga579_external_project_context_ref.yaml
+    expected: commit unchanged from RC2
+    result: PASS
+  origin: '[[GA-579]] -> [[shared_lib_single_source]] -> [[external_project_ref_resolver]]'
+  precheck_na:
+    evidence: status=completed。内容はRC2と同一commit
+    reason: SG-PRE1 status revision_requested→completed修正済み(先ほど同報告に適用)
+  report_ninja: kotaro
+  report_task_id: cmd_karo_hotfix_ga579_external_project_context_ref_normal
+  review_type: report
+  step3_5_verified: true
+  timestamp: '2026-09-05T17:40:00+09:00'
+  verdict: LGTM
+  verified_files:
+  - scripts/lib/external_project_ref_resolver.sh:external_ref_canonical_project_id
