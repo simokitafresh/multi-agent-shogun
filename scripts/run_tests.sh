@@ -112,6 +112,22 @@ run_tests_init_state_isolation() {
             printf 'BLOCK: inherited test state isolation path cannot be resolved: %s\n' "$SHOGUN_STATE_DIR" >&2
             return 2
         }
+        local inherited_live_state="${RUN_TESTS_LIVE_STATE_ROOT:-}"
+        if [[ -n "$inherited_live_state" && -n "${RUN_TESTS_STATE_DIR:-}" ]]; then
+            inherited_live_state="$(realpath -m -- "$inherited_live_state")" || {
+                printf 'BLOCK: inherited live state path cannot be resolved: %s\n' "$RUN_TESTS_LIVE_STATE_ROOT" >&2
+                return 2
+            }
+            case "$inherited_state" in
+                "$inherited_live_state"|"$inherited_live_state"/*)
+                    inherited_state="$(realpath -m -- "$RUN_TESTS_STATE_DIR")" || {
+                        printf 'BLOCK: canonical test state path cannot be resolved: %s\n' "$RUN_TESTS_STATE_DIR" >&2
+                        return 2
+                    }
+                    export SHOGUN_STATE_DIR="$inherited_state"
+                    ;;
+            esac
+        fi
         case "$inherited_state" in
             /tmp|/tmp/*|"$REPO_ROOT"|"$REPO_ROOT"/*)
                 printf 'BLOCK: inherited test state isolation path is unsafe: %s\n' "$inherited_state" >&2
@@ -137,6 +153,7 @@ run_tests_init_state_isolation() {
             printf 'BLOCK: isolated test inbox initialization failed: %s\n' "$inherited_inbox_root" >&2
             return 2
         }
+        export RUN_TESTS_LIVE_STATE_ROOT="${RUN_TESTS_LIVE_STATE_ROOT:-${HOME:-}/.local/share/multi-agent-shogun}"
         run_tests_write_state_guard "$inherited_state"
         export SHOGUN_TEST_INBOX_ROOT="$inherited_inbox_root"
         export SHOGUN_TEST_MODE=1
@@ -154,6 +171,25 @@ run_tests_init_state_isolation() {
         printf 'BLOCK: test state isolation requires HOME\n' >&2
         return 2
     }
+    # clean-CI deliberately supplies HOME below /tmp.  The publisher state
+    # contract rejects /tmp, so give the test process a durable private HOME
+    # before creating its runner state.  Keep the clean-CI HOME itself
+    # untouched; only descendants of this runner see the fallback HOME.
+    local state_home_real
+    state_home_real="$(realpath -m -- "$state_home")" || {
+        printf 'BLOCK: test state isolation HOME cannot be resolved: %s\n' "$state_home" >&2
+        return 2
+    }
+    case "$state_home_real" in
+        /tmp|/tmp/*)
+            state_home="${RUN_TESTS_DURABLE_HOME:-/var/tmp/multi-agent-shogun/run-tests-home-${UID:-$(id -u)}}"
+            mkdir -p "$state_home" || {
+                printf 'BLOCK: durable test HOME initialization failed: %s\n' "$state_home" >&2
+                return 2
+            }
+            export HOME="$state_home"
+            ;;
+    esac
     state_parent="$state_home/.local/share/multi-agent-shogun/run-tests-state"
 
     mkdir -p "$state_parent" || {
@@ -193,6 +229,7 @@ run_tests_init_state_isolation() {
         return 2
     }
     run_tests_write_state_guard "$state_dir"
+    export RUN_TESTS_LIVE_STATE_ROOT="$state_home/.local/share/multi-agent-shogun"
     export SHOGUN_STATE_DIR="$state_dir"
     export RUN_TESTS_STATE_DIR="$state_dir"
     export RUN_TESTS_PRODUCTION_ROOT="${RUN_TESTS_PRODUCTION_ROOT:-$REPO_ROOT}"
@@ -206,29 +243,42 @@ run_tests_init_state_isolation() {
 # A fixture can intentionally export a different SHOGUN_STATE_DIR before
 # launching a child bash.  Environment inheritance alone cannot prevent that
 # child from returning to the live state root.  BASH_ENV is sourced by every
-# non-interactive bash child, so rewrite the canonical test state at that
-# boundary while leaving the fixture's own shell free to inspect/override its
-# local variable.  This keeps the guard effective for `bash script.sh`,
+# non-interactive bash child, so rewrite only the live production state at that
+# boundary.  Fixture-owned safe roots must remain unchanged: assertions in
+# the fixture and writes from its child publisher command then observe the
+# same verification root.  This keeps the guard effective for `bash script.sh`,
 # `bash -c`, and nested run_tests invocations alike.
 run_tests_write_state_guard() {
     local state_dir="$1"
     local guard="${state_dir}/run_tests_state_guard.sh"
     local inbox_root="${state_dir}/queue/inbox"
+    local previous_umask
+    previous_umask="$(umask)"
     umask 077
-    {
-        printf 'case "${0##*/}" in\n'
-        printf '  publisher_event.sh|publisher_queue.sh|publisher_admit.sh|publisher.sh|publish_artifact.sh)\n'
-        printf '    export SHOGUN_STATE_DIR=%q\n' "$state_dir"
-        printf '    export RUN_TESTS_STATE_DIR=%q\n' "$state_dir"
-        printf '    export SHOGUN_TEST_INBOX_ROOT=%q\n' "$inbox_root"
-        printf '    export SHOGUN_TEST_MODE=1\n'
-        printf '    export RUN_TESTS_STATE_ISOLATED=1\n'
-        printf '    ;;\n'
-        printf 'esac\n'
-    } > "$guard" || {
+    if ! {
+        printf 'if [[ "${0##*/}" == publisher_event.sh || "${0##*/}" == publisher_queue.sh || "${0##*/}" == publisher_admit.sh || "${0##*/}" == publisher.sh || "${0##*/}" == publish_artifact.sh ]]; then\n'
+        printf '  _run_tests_guard_state="${SHOGUN_STATE_DIR:-}"\n'
+        printf '  _run_tests_guard_live="${RUN_TESTS_LIVE_STATE_ROOT:-}"\n'
+        printf '  if [[ -n "$_run_tests_guard_state" && -n "$_run_tests_guard_live" ]]; then\n'
+        printf '    _run_tests_guard_state="$(realpath -m -- "$_run_tests_guard_state")"\n'
+        printf '    _run_tests_guard_live="$(realpath -m -- "$_run_tests_guard_live")"\n'
+        printf '    case "$_run_tests_guard_state" in\n'
+        printf '      "$_run_tests_guard_live"|"$_run_tests_guard_live"/*)\n'
+        printf '        export SHOGUN_STATE_DIR=%q\n' "$state_dir"
+        printf '        export RUN_TESTS_STATE_DIR=%q\n' "$state_dir"
+        printf '        export SHOGUN_TEST_INBOX_ROOT=%q\n' "$inbox_root"
+        printf '        export SHOGUN_TEST_MODE=1\n'
+        printf '        export RUN_TESTS_STATE_ISOLATED=1\n'
+        printf '        ;;\n'
+        printf '    esac\n'
+        printf '  fi\n'
+        printf 'fi\n'
+    } > "$guard"; then
+        umask "$previous_umask"
         printf 'BLOCK: test state guard initialization failed: %s\n' "$guard" >&2
         return 2
-    }
+    fi
+    umask "$previous_umask"
     export RUN_TESTS_STATE_GUARD="$guard"
     export BASH_ENV="$guard"
 }
