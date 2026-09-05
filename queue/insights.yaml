@@ -18773,3 +18773,17 @@ insights:
   source: "semantic_index_update"
   fix_known: false
   status: pending
+- id: INS-20260905-185917338-1fb8
+  ts: "2026-09-05T18:59:17+09:00"
+  insight: "[[karo throughput asis 20260905 mdとninja block fail root cause]] semantic_stress_test candidate_aliases: NO_MATCH source=lord query=karo_throughput_asis_20260905.mdとninja_block_fail_root_cause_asis_tobe_20260905.mdもloopでアップデートして"
+  priority: "low"
+  source: "semantic_stress_test"
+  fix_known: false
+  status: pending
+- id: INS-20260905-185917595-055c
+  ts: "2026-09-05T18:59:17+09:00"
+  insight: "[[ninja block fail root cause asis tobe 20260905 mdを参照に]] semantic_stress_test candidate_aliases: NO_MATCH source=lord query=ninja_block_fail_root_cause_asis_tobe_20260905.mdを参照に、陳腐化しているものがないか？見落としがないかを覚醒して調査せよ。調査結果は将軍に報告せよ"
+  priority: "low"
+  source: "semantic_stress_test"
+  fix_known: false
+  status: pending
