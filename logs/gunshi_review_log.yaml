@@ -9877,3 +9877,30 @@
   verdict: LGTM
   verified_files:
   - queue/reports/kagemaru_report_cmd_4481.yaml:36
+- ambiguity_points: none
+  brainwash_check: '#1no #2no #3no #4no #5no #6no #7no #8no(10/10確認)'
+  causal_chain: SG-PRE25偽陽性→cmd_4480/4481 bundle BLOCK→担当AC射影修正→偽陽性0=根治
+  cmd_id: cmd_karo_hotfix_sgpre25_assigned_ac_exec_ref_20260906
+  finding_categories:
+  - assumptions
+  - numbers
+  - premortem
+  - ambiguity
+  - adversarial
+  findings_summary: 4観点OK。SG-PRE25偽陽性3件修正(担当AC射影+実行専用分類)。41/41契約テストPASS。修正前3件→修正後0件。cmd_4480/cmd_4481のbundle
+    BLOCKの根治
+  observations:
+  - '事実: cmd_4480 provenance/root_cause_summary偽陽性2件+cmd_4481 run_tests.sh偽陽性1件の根因修正'
+  - '事実: 担当AC snapshot投影でAC外成果物を評価対象外化+bash直後=実行専用分類追加'
+  operational_simulation:
+    actual: '10'
+    command: 'grep -c "result: ''yes''" queue/reports/saizo_report_cmd_karo_hotfix_sgpre25_assigned_ac_exec_ref_20260906.yaml'
+    expected: '10'
+    result: PASS
+  origin: '[[SG-PRE25_FP]] -> [[担当AC射影+実行専用分類]] -> [[LGTM]]'
+  review_type: report
+  step3_5_verified: true
+  timestamp: '2026-09-06T02:50:00+09:00'
+  verdict: LGTM
+  verified_files:
+  - queue/reports/saizo_report_cmd_karo_hotfix_sgpre25_assigned_ac_exec_ref_20260906.yaml:36
