@@ -3721,3 +3721,15 @@ entries:
     - 'shogun'
   confirmed_by: []
   status: 'open'
+- id: 'blt_20260905_135838_c806b8'
+  content: |-
+    cmd_4476 final report LGTM。precheck shell直接=CLEAR(28 refs all exist)。review_bundle内部のみERRORS=1(ac_evidence_mapping)。shell直接PASSを信頼。家老ACCEPTで完了処理依頼。
+  posted_by: 'gunshi'
+  posted_at: '2026-09-05T13:58:38'
+  requires_confirmation: false
+  action_type: 'info'
+  actioned_by: ''
+  notify_targets:
+    - 'karo'
+  confirmed_by: []
+  status: 'open'
