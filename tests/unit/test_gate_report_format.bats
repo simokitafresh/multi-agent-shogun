@@ -47,6 +47,39 @@ YAML
     git -C "$DUPLICATE_FIXTURE_TEMPLATE" commit -qm baseline
 }
 
+# test_necessity: the report gate's canonical purpose/detail contract must
+# reject fit-only K2 false-CLEAR evidence and accept a matching task-bound
+# detail, preventing validator drift between report production and completion.
+# regression_justification: before this entry point existed, only
+# cmd_complete_gate carried the detector.
+@test "canonical purpose detail contract blocks false clear and passes matching evidence" {
+    local task="$BATS_TEST_TMPDIR/task.yaml"
+    local report="$BATS_TEST_TMPDIR/report.yaml"
+    cat > "$task" <<'YAML'
+task:
+  acceptance_criteria:
+    - id: AC1
+      description: "caller成果を1件以上確認し、task本文と対応する"
+YAML
+    cat > "$report" <<'YAML'
+purpose_validation:
+  fit: true
+result:
+  details: "caller成果0、別task cache A/B本文のみ"
+YAML
+
+    run bash "$REPO_ROOT/scripts/gates/gate_report_format.sh" \
+        --purpose-details-check "$task" "$report"
+    [ "$status" -eq 1 ]
+    [[ "$output" == *"BLOCK: result.details contradicts"* ]]
+
+    sed -i 's/caller成果0、別task cache A\/B本文のみ/caller成果1\/1を確認し、task本文と対応する/' "$report"
+    run bash "$REPO_ROOT/scripts/gates/gate_report_format.sh" \
+        --purpose-details-check "$task" "$report"
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"correspondence=caller"* ]]
+}
+
 run_detector() {
     run python3 - "$MAIN" "$1" "$2" <<'PY'
 import importlib.util, sys

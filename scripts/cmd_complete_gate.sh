@@ -14511,61 +14511,14 @@ fi
 
 validate_purpose_details_alignment() {
     local task_file="$1" report_file="$2"
-    python3 - "$task_file" "$report_file" <<'PY'
-import re
-import sys
-import yaml
-
-task_data = yaml.safe_load(open(sys.argv[1], encoding="utf-8")) or {}
-report_data = yaml.safe_load(open(sys.argv[2], encoding="utf-8")) or {}
-task = task_data.get("task") if isinstance(task_data.get("task"), dict) else task_data
-criteria = task.get("acceptance_criteria") if isinstance(task, dict) else None
-result = report_data.get("result") if isinstance(report_data, dict) else None
-details = result.get("details") if isinstance(result, dict) else None
-
-if not isinstance(criteria, (list, dict)) or not criteria:
-    print("SKIP: acceptance_criteria absent")
-    raise SystemExit(2)
-if not isinstance(details, str) or not details.strip():
-    print("BLOCK: result.details missing for acceptance_criteria correspondence")
-    raise SystemExit(1)
-
-common = {"acceptance", "criteria", "check", "checks", "task", "report", "result", "details", "description", "must", "true", "false", "pass", "fail"}
-
-def text(value):
-    if isinstance(value, dict):
-        return " ".join(text(v) for v in value.values())
-    if isinstance(value, list):
-        return " ".join(text(v) for v in value)
-    return str(value or "")
-
-def terms(value):
-    raw = text(value)
-    found = re.findall(r"(?<![A-Za-z0-9_])[A-Za-z][A-Za-z0-9_-]{3,}(?![A-Za-z0-9_])|[\u3040-\u30ff\u3400-\u9fff]{3,}", raw)
-    return [item for item in dict.fromkeys(found) if item.lower() not in common]
-
-details_lower = details.lower()
-for criterion in criteria.values() if isinstance(criteria, dict) else criteria:
-    criterion_terms = terms(criterion)
-    matched = [term for term in criterion_terms if term.lower() in details_lower]
-    if not matched:
-        continue
-    negative = re.search(
-        r"(?:別\s*(?:task|タスク)|other\s+task|stale\s+cache|cache\s*[a-z](/[a-z])?|"
-        r"(?:0|なし|未|欠落|不在|無).{0,24}(?:caller|成果|要件)|"
-        r"(?:caller|成果|要件).{0,24}(?:0|なし|未|欠落|不在|無))",
-        details,
-        re.IGNORECASE,
-    )
-    if negative:
-        print(f"BLOCK: result.details contradicts matched AC terms={','.join(matched)}")
-        raise SystemExit(1)
-    print(f"PASS: acceptance_criteria/result.details correspondence={matched[0]}")
-    raise SystemExit(0)
-
-print("BLOCK: no acceptance_criteria term found in result.details")
-raise SystemExit(1)
-PY
+    local contract_gate_root="$SCRIPT_DIR"
+    if [ ! -f "$contract_gate_root/scripts/gates/gate_report_format.sh" ] \
+        && [ -n "${PROJECT_ROOT:-}" ] \
+        && [ -f "$PROJECT_ROOT/scripts/gates/gate_report_format.sh" ]; then
+        contract_gate_root="$PROJECT_ROOT"
+    fi
+    bash "$contract_gate_root/scripts/gates/gate_report_format.sh" \
+        --purpose-details-check "$task_file" "$report_file"
 }
 
 # ─── purpose_validation検証（fit:falseでBLOCK、fit空欄はWARN） ───

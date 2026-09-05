@@ -503,6 +503,27 @@ try:
     with os.fdopen(fd, "w", encoding="utf-8") as handle:
         handle.write(text); handle.flush(); os.fsync(handle.fileno())
     record_phase("atomic_flush_file_fsync", flush_fsync_started)
+    if terminal:
+        purpose_task = _receipt_task_path(task_root, data)
+        if purpose_task is not None and purpose_task.is_file():
+            purpose_check = subprocess.run(
+                [
+                    "bash",
+                    str(root / "scripts" / "gates" / "gate_report_format.sh"),
+                    "--purpose-details-check",
+                    str(purpose_task),
+                    str(tmp),
+                ],
+                text=True,
+                capture_output=True,
+                check=False,
+            )
+            if purpose_check.returncode == 1:
+                detail = (purpose_check.stdout.strip() or purpose_check.stderr.strip()
+                          or "purpose/detail mismatch")
+                raise SystemExit(
+                    "BLOCK: purpose_validation/result.details mismatch: " + detail
+                )
     replace_started = time.monotonic_ns()
     os.replace(tmp, path)
     record_phase("atomic_replace_syscall", replace_started)
@@ -1167,6 +1188,51 @@ if missing or invalid:
     )
     raise SystemExit(1)
 PY
+}
+
+# Use the report gate's single purpose/detail contract before a terminal report
+# becomes visible.  This producer-side check prevents a later gate from being
+# the first place where fit=true self-reporting is rejected.
+_validate_purpose_details_completion_contract() {
+    local candidate="$1" task_file="${RFS_TASK_FILE_PATH:-}"
+    [ -f "$candidate" ] || return 0
+    local candidate_status
+    candidate_status="$(python3 - "$candidate" <<'PY'
+import sys, yaml
+try:
+    data = yaml.safe_load(open(sys.argv[1], encoding="utf-8")) or {}
+    print(str(data.get("status") or "").strip())
+except Exception:
+    print("")
+PY
+    )"
+    case "$candidate_status" in
+        completed|done) ;;
+        *) return 0 ;;
+    esac
+    if [ -z "$task_file" ]; then
+        case "$candidate" in
+            */queue/reports/*)
+                local task_root worker_id
+                task_root="${candidate%%/queue/reports/*}"
+                worker_id="$(python3 - "$candidate" <<'PY'
+import sys, yaml
+try:
+    data = yaml.safe_load(open(sys.argv[1], encoding="utf-8")) or {}
+    print(str(data.get("worker_id") or "").strip())
+except Exception:
+    print("")
+PY
+                )"
+                [ -n "$worker_id" ] || return 0
+                task_file="$task_root/queue/tasks/${worker_id}.yaml"
+                ;;
+            *) return 0 ;;
+        esac
+    fi
+    [ -f "$task_file" ] || return 0
+    bash "$SCRIPT_DIR/scripts/gates/gate_report_format.sh" \
+        --purpose-details-check "$task_file" "$candidate"
 }
 
 # The lesson ID set is owned by report_gate_contract.py and is shared with
@@ -3379,6 +3445,11 @@ for ((attempt = 1; attempt <= MAX_RETRIES; attempt++)); do
         esac
         fi
 
+        if ! _validate_purpose_details_completion_contract "$tmp_file"; then
+            rm -f "$tmp_file"
+            echo "BLOCK: terminal report purpose/detail contract failed; original report left untouched" >&2
+            exit 1
+        fi
         if ! mv "$tmp_file" "$REPORT_PATH"; then
             rm -f "$tmp_file"
             echo "FATAL: report_field_set: atomic replace failed" >&2

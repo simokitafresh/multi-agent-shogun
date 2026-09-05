@@ -9,6 +9,90 @@
 
 set -e
 
+# The terminal report contract is shared by the report producer and both
+# completion validators.  Keep this small, side-effect-free entry point in
+# the report gate so callers cannot drift into separate acceptance/detail
+# matchers (cmd_karo_hotfix_insight_c2_contract_alignment_20260906).
+_purpose_details_contract_check() {
+    local task_path="$1" report_path="$2"
+    python3 - "$task_path" "$report_path" <<'PURPOSE_DETAILS_PY'
+import re
+import sys
+import yaml
+
+task_data = yaml.safe_load(open(sys.argv[1], encoding="utf-8")) or {}
+report_data = yaml.safe_load(open(sys.argv[2], encoding="utf-8")) or {}
+task = task_data.get("task") if isinstance(task_data.get("task"), dict) else task_data
+if not isinstance(report_data, dict) or not isinstance(task, dict):
+    print("BLOCK: purpose contract requires task/report mappings")
+    raise SystemExit(1)
+
+# A truthful FAIL report is handled by its own failure contract.  The
+# self-report bypass exists only on the affirmative fit=true path.
+purpose = report_data.get("purpose_validation")
+if not isinstance(purpose, dict) or purpose.get("fit") is not True:
+    print("SKIP: purpose_validation.fit is not true")
+    raise SystemExit(2)
+
+criteria = task.get("acceptance_criteria")
+if not isinstance(criteria, (list, dict)) or not criteria:
+    print("SKIP: acceptance_criteria absent")
+    raise SystemExit(2)
+result = report_data.get("result")
+details = result.get("details") if isinstance(result, dict) else None
+if not isinstance(details, str) or not details.strip():
+    print("BLOCK: result.details missing for acceptance_criteria correspondence")
+    raise SystemExit(1)
+
+def text(value):
+    if isinstance(value, dict):
+        return " ".join(text(v) for v in value.values())
+    if isinstance(value, list):
+        return " ".join(text(v) for v in value)
+    return str(value or "")
+
+common = {"acceptance", "criteria", "check", "checks", "task", "report",
+          "result", "details", "description", "must", "true", "false",
+          "pass", "fail"}
+def terms(value):
+    raw = text(value)
+    found = re.findall(
+        r"(?<![A-Za-z0-9_])[A-Za-z][A-Za-z0-9_-]{3,}(?![A-Za-z0-9_])|"
+        r"[\u3040-\u30ff\u3400-\u9fff]{3,}", raw)
+    return [item for item in dict.fromkeys(found) if item.lower() not in common]
+
+details_lower = details.lower()
+for criterion in criteria.values() if isinstance(criteria, dict) else criteria:
+    matched = [term for term in terms(criterion) if term.lower() in details_lower]
+    if not matched:
+        continue
+    negative = re.search(
+        r"(?:別\s*(?:task|タスク)|other\s+task|stale\s+cache|cache\s*[a-z](/[a-z])?|"
+        r"(?:0|なし|未|欠落|不在|無).{0,24}(?:caller|成果|要件)|"
+        r"(?:caller|成果|要件).{0,24}(?:0|なし|未|欠落|不在|無))",
+        details,
+        re.IGNORECASE,
+    )
+    if negative:
+        print(f"BLOCK: result.details contradicts matched AC terms={','.join(matched)}")
+        raise SystemExit(1)
+    print(f"PASS: acceptance_criteria/result.details correspondence={matched[0]}")
+    raise SystemExit(0)
+
+print("BLOCK: no acceptance_criteria term found in result.details")
+raise SystemExit(1)
+PURPOSE_DETAILS_PY
+}
+
+if [ "${1:-}" = "--purpose-details-check" ]; then
+    [ "$#" -eq 3 ] || {
+        echo "Usage: gate_report_format.sh --purpose-details-check <task_yaml> <report_yaml>" >&2
+        exit 1
+    }
+    _purpose_details_contract_check "$2" "$3"
+    exit $?
+fi
+
 # --manifest-check: cmd_4446 単一publisher化 U2(docs/research/single_publisher_asis_tobe_5w1h_20260902.md
 # §9.1)。報告の commit_hash/files_modified と scripts/publish_artifact.sh capture が書いた
 # manifest.yaml の source_sha/paths が一致するか検証する。manifest が存在しない task_id
@@ -349,6 +433,31 @@ fi
 # The validator may invoke hooks that schedule their own background cache
 # refresh. Do not let those transitive descendants inherit the report lock.
 RESULT=$(python3 "$_GATE_DIR/gate_report_format_combined.py" "$REPORT_PATH" 199>&- 2>&1) || true
+PURPOSE_CONTRACT_BLOCK=0
+
+# Run the same affirmative-purpose contract used by the producer and complete
+# gate before any PASS can be published.  Missing worker task files retain the
+# legacy compatibility behavior; deployed reports always resolve this path.
+_PURPOSE_TASK_PATH="$(python3 - "$REPORT_PATH" <<'PY'
+import sys, yaml
+try:
+    report = yaml.safe_load(open(sys.argv[1], encoding="utf-8")) or {}
+    worker = str(report.get("worker_id") or "").strip()
+    print(str(__import__('pathlib').Path(sys.argv[1]).parent.parent / "tasks" / f"{worker}.yaml") if worker else "")
+except Exception:
+    print("")
+PY
+)"
+if [ -n "$_PURPOSE_TASK_PATH" ] && [ -f "$_PURPOSE_TASK_PATH" ]; then
+    _PURPOSE_RESULT=""
+    _PURPOSE_RC=0
+    _PURPOSE_RESULT=$(bash "$_GATE_DIR/gate_report_format.sh" --purpose-details-check \
+        "$_PURPOSE_TASK_PATH" "$REPORT_PATH" 2>&1) || _PURPOSE_RC=$?
+    if [ "$_PURPOSE_RC" -eq 1 ]; then
+        PURPOSE_CONTRACT_BLOCK=1
+        RESULT="${RESULT}"$'\n'"FAIL: purpose_validation/result.details mismatch: ${_PURPOSE_RESULT}"
+    fi
+fi
 
 # A truthful implementation failure has no artifact commit by definition.  Keep
 # the ordinary success lane strict, but remove the missing-hash error for the
@@ -1350,7 +1459,7 @@ while IFS= read -r _result_line; do
             ;;
     esac
 done <<< "$RESULT"
-if [ "$CONTAMINATION_BLOCK" -eq 1 ]; then
+if [ "$CONTAMINATION_BLOCK" -eq 1 ] || [ "$PURPOSE_CONTRACT_BLOCK" -eq 1 ]; then
     RESULT_IS_PASS=0
 fi
 

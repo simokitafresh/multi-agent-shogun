@@ -1557,7 +1557,9 @@ _run_self_grade_commit_file_coverage_with_state() {
 
 # test_necessity: purpose_validation.fit=true must not authorize a report whose
 # result.details contradicts the task acceptance criterion or cites another
-# task's cache; a matching positive detail remains eligible.
+# task's cache; a matching positive detail remains eligible. The completion
+# gate must consume the canonical report-gate contract rather than a duplicate
+# matcher.
 # regression_justification: the old fit-only check let the K2 false-CLEAR
 # fixture through despite caller成果0 and a separate-task cache.
 @test "purpose details alignment blocks fit-only K2 false CLEAR and passes normal report" {
@@ -1590,6 +1592,44 @@ YAML
     [[ "$output" == *"correspondence=caller"* ]]
     normal_pass=1
     echo "before_false_clear=${false_clear_before} after_block=${fixed_block} normal_pass=${normal_pass}"
+}
+
+# test_necessity: report_field_set's terminal producer path must apply the same
+# purpose/detail contract before publishing status=completed; otherwise a
+# direct setter call can create a terminal self-report that the later gate
+# rejects.
+# regression_justification: the old producer path published the invalid bytes
+# first and deferred this contract to cmd_complete_gate.
+@test "report_field_set blocks terminal fit-only self-report before publish" {
+    local task="$TEST_PROJECT/queue/tasks/sasuke.yaml"
+    local report="$TEST_PROJECT/queue/reports/sasuke_report_cmd_999.yaml"
+    ln -s "$PROJECT_ROOT/scripts/report_field_set.sh" "$TEST_PROJECT/scripts/report_field_set.sh"
+    ln -s "$PROJECT_ROOT/scripts/gates/gate_report_format.sh" "$TEST_PROJECT/scripts/gates/gate_report_format.sh"
+    cat > "$task" <<'YAML'
+task:
+  parent_cmd: cmd_999
+  acceptance_criteria:
+    - id: AC1
+      description: "caller成果を1件以上確認し、task本文と対応する"
+YAML
+    cat > "$report" <<'YAML'
+worker_id: sasuke
+parent_cmd: cmd_999
+status: in_progress
+purpose_validation:
+  fit: true
+result:
+  details: "caller成果0、別task cache A/B本文のみ"
+YAML
+
+    run bash "$TEST_PROJECT/scripts/report_field_set.sh" "$report" status completed
+    [ "$status" -ne 0 ]
+    grep -q '^status: in_progress$' "$report"
+
+    sed -i 's/caller成果0、別task cache A\/B本文のみ/caller成果1\/1を確認し、task本文と対応する/' "$report"
+    run bash "$TEST_PROJECT/scripts/report_field_set.sh" "$report" status completed
+    [ "$status" -eq 0 ]
+    grep -q '^status: completed$' "$report"
 }
 
 # test_necessity: task.ac_version must remain an immutable fingerprint of the
