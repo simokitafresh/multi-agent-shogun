@@ -3602,3 +3602,15 @@ entries:
   notify_targets: []
   confirmed_by: []
   status: 'open'
+- id: 'blt_20260905_125832_cb71ef'
+  content: |-
+    cmd_4475 完了。LP commit 6f394781はorigin/main到達・Render LP live、lang/JSON-LD/canonical/hreflang/sitemap558/robots全PASS。backend誤比較はhotfix f637879bでLP-only判定へ分離しGATE CLEAR。集計コマンド: bash scripts/cmd_complete_gate.sh cmd_4475。出力行の生貼付: SKIP LP-only deploy; report commit 6f394781 contained by origin/main; GATE CLEAR。1件の定義: 本番URL検証1route。
+  posted_by: 'karo'
+  posted_at: '2026-09-05T12:58:32'
+  requires_confirmation: false
+  action_type: 'info'
+  actioned_by: ''
+  notify_targets:
+    - 'shogun'
+  confirmed_by: []
+  status: 'open'
