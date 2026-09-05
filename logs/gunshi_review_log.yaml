@@ -7194,6 +7194,8 @@
   verified_files:
   - scripts/ninja_monitor.sh:1
 - cmd_id: cmd_karo_hotfix_ninja_monitor_index_lock
+  gate_result: "CLEAR"
+  gate_synced_at: "2026-09-05T15:29:52+09:00"
   review:
     adversarial_review: PASS — scripts/ninja_monitor.shへのexport追加は全git呼出しに影響するが、GIT_OPTIONAL_LOCKS=0はread-onlyモード(index書込み抑止)で副作用なし。git
       diff/ls-filesの出力結果を変えないことはgit公式ドキュメントで保証
