@@ -7299,6 +7299,31 @@ if ! check_universal_shard_contract; then
     [[ "$CMD_SAVE_ACCUMULATE_BLOCKS" == "1" ]] || exit 1
 fi
 
+# --- Check 19.7: recon-dual independence contract (structured, fail-closed) ---
+# 2026-09-06 cmd_4480: the 2-track recon contract lived only in
+# skills/recon-dual/SKILL.md as a prose keyword check done by Karo at deploy
+# time; the Shogun omitted the words and a deploy->ask->edit round trip
+# followed. The contract is now a `recon_dual:` mapping validated at save time.
+check_recon_dual_contract() {
+    local tmp result rc=0
+    cmd_block_has_field "parallel_ok" 2>/dev/null || { printf 'PASS(recon_dual=not_required)\n'; return 0; }
+    tmp="$(mktemp)"
+    printf '%s\n' "$CMD_BLOCK_NC" >"$tmp"
+    result="$(python3 "$PROJECT_DIR/scripts/lib/recon_dual_contract.py" "$tmp" 2>&1)" || rc=$?
+    rm -f "$tmp"
+    if [ "$rc" -ne 0 ]; then
+        record_block_reason "$result"
+        return 1
+    fi
+    case "$result" in
+        WARN:*) record_warn_reason "recon_dual_legacy_prose" "check=check_recon_dual_contract" ;;
+    esac
+    printf '%s\n' "$result"
+}
+if ! check_recon_dual_contract; then
+    [[ "$CMD_SAVE_ACCUMULATE_BLOCKS" == "1" ]] || exit 1
+fi
+
 # --- Check 20: assumptionsフィールド検査（BLOCK昇格 cmd_1906） ---
 # 起源: cmd_1905 — 暗黙前提を構造的に可視化し、未検証前提がcmdに混入するのを防ぐ
 # 目的: 全cmdにassumptionsがない/未検証前提があるcmdをBLOCKし、暗黙前提の混入を防ぐ（cmd_2157: AC≥3→全cmd）

@@ -183,6 +183,8 @@ flowchart LR
 | F-3 | honest FAIL approval | 実装存在確認、旧版に運用適用記録 | f69288720/d6842c066、review_approvalのapproved_honest_fail実装。新規未着手扱いに戻さない |
 | F-4 | fixture陳腐化 | 旧版で公開・CI検証報告あり | 208df246d、旧run33963211348。現在CI結果とは呼ばない |
 | F-5 | 家老計測 | v2.5修正・検証・gist同期済み | 1a9f9f3a9、contract8/8、別書§6.8。C/D根因修復の件数には入れない |
+| F-7 | recon-dual 独立性契約が受け手スキル(skills/recon-dual)の散文キーワード照合にしか無く、起票側が知らずに配備停止→追記→再配備の往復(00:41 cmd_4480) | 公開確認済み(将軍 D0、家老 REJECT 3 点対応中) | 分類 C。根治: `recon_dual:` 構造フィールド+`scripts/lib/recon_dual_contract.py` を cmd_save Check 19.7 で fail-closed、実入口 test 4、skeleton、SKILL Step1 field 正本。[[cmd_4480_recon_dual往復]] -> [[契約が受け手スキルにのみ存在]] -> [[recon_dual構造フィールド]] |
+| P-4 | 家老 blt_011411: A1 通常配備で command field 非投影→[INDEPENDENT_RECON] 自動注入なし / A2 direct の stale repo-cache base 8af986≠e7d187。家老 REJECT(2): recon_dual の task 投影+consumer field 直読+fixed base 検証の配備前 BLOCK | 家老 lane 1 task に統合(blt_012617) | 分類 D/C。W5 と同型で原因別 fix |
 | P-1→W5 | バグ#6 | 調査完了・既修復 | `7671bdb99`、隔離success/tamper fail-close、追加fix不要 |
 | P-2→W5 | ci_push_state | 調査完了・10/10終端接続 | WAIT10=6+3+1。9行CLEAR、1行はpurpose不一致の正式BLOCK+archive。修復対象0 |
 | P-3→W6 | honest FAIL停滞 | 未着手、既存監視あり | 既存caller/条件/fixtureを確認して変更要否を決める |
