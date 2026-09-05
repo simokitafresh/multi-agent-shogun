@@ -7446,3 +7446,37 @@
     expected: "13ファイル変更"
     actual: "13 files changed, +587/-31"
     result: "PASS"
+- cmd_id: cmd_karo_hotfix_cmd_complete_generation_rotation
+  review:
+    adversarial_review: PASS — scripts/cmd_complete.shの世代判定はcompletion_generationの一致+有効JSON構造を前提。破損JSONはfail-closed。既存checkpoint
+      lock/FD9設計はL1548で維持確認
+    ambiguity_points: none
+    cmd_id: cmd_karo_hotfix_cmd_complete_generation_rotation
+    cmd_spec_summary:
+      acceptance_criteria_count: 2
+      project: infra
+      scope: cmd_complete.shのcompletion generation rotation(旧世代stale退避)
+    finding_categories:
+    - assumptions
+    - numbers
+    - premortem
+    - adversarial
+    - ambiguity
+    gate_prediction: CLEAR
+    gate_prediction_reason: all checks passed
+    observations:
+    - '事実1: 旧世代worker artifact 4件(reserved/launch/success/failed)をgate_worker_stale/<generation>に退避、現世代CLEAR
+      1件は保持+success補完'
+    - '事実2: 破損JSONは退避せずfail-closed停止。現世代reservation競合は維持'
+    - '事実3: 604/604 PASS(FAIL0/SKIP0)、wrapper独立39/39 PASS、variation_checks全true(abnormal_exit含む)'
+    reviewed_at: '2026-09-05T14:48:00+09:00'
+    reviewer: gunshi
+    sg_checklist:
+      SG1_ac_coverage: PASS
+      SG2_test_pass: PASS
+      SG3_parity: N/A
+      SG4_no_regression: PASS
+      SG5_lesson_candidate: PASS
+      SG6_code_quality: PASS
+      SG7_gate_prediction: PASS
+    verdict: APPROVE
