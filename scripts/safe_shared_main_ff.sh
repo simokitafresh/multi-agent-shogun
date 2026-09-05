@@ -437,6 +437,10 @@ if [[ -s "$overlap_file" ]]; then
     sed -n '1,40p' "$overlap_file" >&2
     exit 2
 fi
+# From this point overlap means the allowed unstaged tracked overlap that must
+# survive targetization.  The staged overlap above is a separate fail-closed
+# set and has already been proven empty.
+comm -12 "$changed_file" "$unstaged_file" > "$overlap_file"
 if comm -12 "$changed_file" "$untracked_file" | grep -q .; then
     echo "BLOCK: untracked path would be overwritten by target convergence" >&2
     comm -12 "$changed_file" "$untracked_file" | sed -n '1,40p' >&2
@@ -450,8 +454,11 @@ while IFS= read -r path; do
     git -C "$ROOT" ls-files --stage -- "$path" >> "$index_backup_file"
 done < "$staged_file"
 
-# Save each unstaged tracked overlap as a real worktree copy plus explicit
-# mode/hash metadata.  This is the recovery source if targetization fails.
+# Save only unstaged paths that the target actually changes.  Unrelated
+# runtime-dirty files belong to their concurrent writers: snapshotting and
+# restoring every unstaged path can silently replace a newer writer value with
+# our older snapshot.  read-tree leaves paths whose old/target entries are
+# identical alone, so only the bounded overlap set needs a recovery copy.
 while IFS= read -r path; do
     [[ -n "$path" ]] || continue
     if [[ ! -f "$ROOT/$path" || -L "$ROOT/$path" ]]; then
@@ -464,7 +471,7 @@ while IFS= read -r path; do
     dirty_hash="$(git -C "$ROOT" hash-object --no-filters -- "$path")"
     dirty_mode="$(stat -c '%a' -- "$ROOT/$path")"
     printf '%s\t%s\t%s\n' "$path" "$dirty_mode" "$dirty_hash" >> "$backup_dir/manifest"
-done < "$unstaged_file"
+done < "$overlap_file"
 
 shared_state_fingerprint() {
     local path
@@ -523,6 +530,24 @@ restore_staged_index() {
     done < "$index_backup_file"
 }
 
+# Materialize only paths whose committed entry changes between old and target.
+# The index is already loaded from the requested tree. Unstaged overlaps are
+# omitted, and paths outside changed_file are never passed to checkout-index.
+materialize_changed_clean_paths() {
+    local path
+    while IFS= read -r path; do
+        [[ -n "$path" ]] || continue
+        if grep -Fxq -- "$path" "$overlap_file"; then
+            continue
+        fi
+        if git -C "$ROOT" ls-files --error-unmatch -- "$path" >/dev/null 2>&1; then
+            git -C "$ROOT" checkout-index -f -- "$path" || return 1
+        elif [[ -e "$ROOT/$path" || -L "$ROOT/$path" ]]; then
+            rm -f -- "$ROOT/$path" || return 1
+        fi
+    done < "$changed_file"
+}
+
 restore_dirty_overlap() {
     local path mode expected_hash actual_hash backup_path
     [[ -f "$backup_dir/manifest" ]] || return 0
@@ -544,15 +569,14 @@ restore_dirty_overlap() {
 root_ref="$(git -C "$ROOT" symbolic-ref --quiet HEAD)"
 before_head="$old_head"
 before_index="$(git -C "$ROOT" diff --cached --binary | sha256sum | awk '{print $1}')"
-before_dirty="$(dirty_worktree_fingerprint)"
 rollback_needed=0
 
 rollback_shared_sync() {
     local rollback_rc=0
     git -C "$ROOT" update-ref "$root_ref" "$old_head" "$target_head" || rollback_rc=1
-    git -C "$ROOT" read-tree --reset -u "$old_head" || rollback_rc=1
+    git -C "$ROOT" read-tree --reset "$old_head" || rollback_rc=1
     restore_staged_index || rollback_rc=1
-    restore_dirty_overlap || rollback_rc=1
+    materialize_changed_clean_paths || rollback_rc=1
     return "$rollback_rc"
 }
 
@@ -580,16 +604,21 @@ git -C "$ROOT" update-ref "$root_ref" "$target_head" "$old_head" || {
     exit 2
 }
 rollback_needed=1
-git -C "$ROOT" read-tree --reset -u "$target_head" || {
-    echo "BLOCK: target HEAD/index/worktree synchronization failed" >&2
+git -C "$ROOT" read-tree --reset "$target_head" || {
+    echo "BLOCK: target HEAD/index synchronization failed" >&2
     exit 1
 }
 restore_staged_index || {
     echo "BLOCK: unrelated staged index restoration failed" >&2
     exit 1
 }
+materialize_changed_clean_paths || {
+    echo "BLOCK: changed clean worktree path synchronization failed" >&2
+    exit 1
+}
 while IFS= read -r path; do
     [[ -n "$path" ]] || continue
+    grep -Fxq -- "$path" "$overlap_file" && continue
     git -C "$ROOT" diff --quiet HEAD -- "$path" || {
         echo "BLOCK: targetized worktree does not match HEAD: $path" >&2
         exit 1
@@ -599,17 +628,11 @@ while IFS= read -r path; do
         exit 1
     }
 done < "$changed_file"
-restore_dirty_overlap || {
-    echo "BLOCK: dirty overlap exact restoration failed" >&2
-    exit 1
-}
 
 after_head="$(git -C "$ROOT" rev-parse HEAD)"
 after_index="$(git -C "$ROOT" diff --cached --binary | sha256sum | awk '{print $1}')"
-after_dirty="$(dirty_worktree_fingerprint)"
 [[ "$after_head" == "$target_head" ]] || { echo "BLOCK: target ref did not become HEAD" >&2; exit 1; }
 [[ "$after_index" == "$before_index" ]] || { echo "BLOCK: staged index changed during synchronization" >&2; exit 1; }
-[[ "$after_dirty" == "$before_dirty" ]] || { echo "BLOCK: dirty content or mode changed during synchronization" >&2; exit 1; }
 git -C "$ROOT" merge-base --is-ancestor "$target_head" "$after_head" || {
     echo "BLOCK: target history is not contained after non-merge synchronization" >&2
     exit 1
