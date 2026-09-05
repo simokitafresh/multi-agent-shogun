@@ -6,6 +6,17 @@ on:
   push:
     branches:
       - main
+    # 2026-09-05 将軍 D0: publisher の台帳 batch(1 分毎、直近 30 push 中 26)が毎回 run を起動し、
+    # concurrency group の pending 上限 1 で古い pending が cancel → 直近 40 run 中 33 cancelled=CI 検証ゼロ。
+    # 台帳のみの commit は scripts/tests を変えないので run を起動しない(全 path が一致した時だけ skip)。
+    paths-ignore:
+      - 'queue/bulletin_board.yaml'
+      - 'queue/insights.yaml'
+      - 'logs/gunshi_review_log.yaml'
+      - 'logs/karo_workarounds.yaml'
+      - 'docs/semantic-index/index.md'
+      - 'tasks/lessons.md'
+      - 'projects/**/lessons*.yaml'
   pull_request:
 
 concurrency:
