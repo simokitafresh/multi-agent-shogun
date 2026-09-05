@@ -6182,3 +6182,36 @@
   verdict: LGTM
   verified_files:
   - scripts/publisher.sh:1
+- brainwash_check: '#1no #2no #3no #4no #5no #6no #7no #8no'
+  causal_chain: fixture本番STATE_DIR漏出→一時DIR強制export→漏出0→LGTM
+  cmd_id: cmd_karo_hotfix_pd142_test_state_isolation
+  finding_categories:
+  - assumptions
+  - numbers
+  - premortem
+  - adversarial
+  - ambiguity
+  gate_prediction: CLEAR
+  gate_prediction_reason: all checks passed
+  observations:
+  - '事実1: run_tests.shが一時SHOGUN_STATE_DIRを強制export。本番漏出0'
+  - '事実2: precheck CLEAR'
+  - 'adversarial: fixture値で本番stateへ戻せない構造'
+  - 'ambiguity: なし'
+  operational_simulation:
+    actual: CLEAR
+    command: precheck
+    expected: CLEAR
+    result: PASS
+  origin: '[[cmd_karo_hotfix_pd142_test_state_isolation]] -> [[LGTM]]'
+  report_id: rpt-443c873b-a8dc-4621-a208-da407621e088
+  report_identity_version: 2
+  report_ninja: hanzo
+  report_path: queue/reports/hanzo_report_cmd_karo_hotfix_pd142_test_state_isolation.yaml
+  report_task_id: cmd_karo_hotfix_pd142_test_state_isolation_normal
+  review_type: report
+  step3_5_verified: true
+  timestamp: '2026-09-05T10:30:00+09:00'
+  verdict: LGTM
+  verified_files:
+  - scripts/run_tests.sh:1
