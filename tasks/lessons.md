@@ -17236,3 +17236,17 @@ sqlite3.Connection.backup()を使うとページ(4096byte)単位のread syscall�
 - **when**: 未設定
 - **how**: 未設定
 - owner record読取後の再検証が競合窓で一時FAILするとwatcherが即終了しsuccessor起動機会を失う。親世代が存続する限り次周期へ再試行する。
+
+
+### L1751: bash配列が空の時 "${arr[@]}" をコマンド引数に渡すと引数0件になりstdin待ちで無限ハングしうる
+- **日付**: 2026-09-05
+- **出典**: cmd_karo_hotfix_review_bundle_precheck_parity_ins_20260905_135853
+- **記録者**: kotaro
+- **tags**: [infra,gate,review,gate,bash]
+- **subdomain**: infra
+- **target_files**: [scripts/gates/gate_gunshi_report_precheck.sh,tests/unit/test_review_bundle.bats]
+- **origin**: [[cmd_karo_hotfix_review_bundle_precheck_parity_ins_20260905_135853]]
+- **enforcement**: 未自動化
+- **when**: 未設定
+- **how**: 未設定
+- gate_gunshi_report_precheck.shのSG-PRE15で、REPO_ROOT配下にqueue/tasks/*.yamlが1件も存在しない実行コンテキスト(task worktree root等)では_ninja_task_files配列が空になり、awk '...' "${_ninja_task_files[@]}" がファイル引数0件でawkに渡り、awkがstdinを読みに行き非対話実行では永久にハングすることを実測(review_bundle.py subprocess.runにtimeoutが無いため呼出し元ごと停止)。次回同様のパターン(配列展開をファイル引数として渡すコマンド)を書く際は、"${#arr[@]}" -eq 0のガードを先に入れるか、コマンド自体に</dev/null等の入力遮断を付けることをチェックリスト化すべき
