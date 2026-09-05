@@ -12731,6 +12731,177 @@ deploy_task_report_scope_seed() {
     deploy_task_exact_scope_seed "$@"
 }
 
+# Same-cmd retries intentionally bypass the ordinary resolve path so a formal
+# Karo-RC can reuse the current report generation.  That shortcut must not
+# also reuse command-owned task metadata: a previous hotfix can otherwise
+# leave project/purpose/target_path/commit_contract attached to the new task
+# while only its AC is refreshed.  Reproject from the canonical command source
+# and restore only identity owned by the running task/report generation.
+deploy_task_reproject_same_cmd_contract() {
+    local task_file="$1"
+    local requested_cmd="$2"
+    local ninja_name="${3:-}"
+    local source_file snapshot_file restore_file
+
+    [ -f "$task_file" ] || return 1
+    [ -n "$requested_cmd" ] || return 1
+    source_file=$(resolve_cmd_source_path "$requested_cmd" 2>/dev/null || true)
+    [ -n "$source_file" ] && [ -f "$source_file" ] || {
+        # Direct training commands may have no shogun_to_karo source.  The
+        # pre-existing same-cmd behavior remains valid for that explicit path.
+        log "same_cmd_redeploy: no canonical source for ${requested_cmd}; preserve direct task contract"
+        return 0
+    }
+
+    snapshot_file=$(mktemp "${task_file}.same-cmd-runtime.XXXXXX") || return 1
+    restore_file=$(mktemp "${task_file}.same-cmd-restore.XXXXXX") || {
+        rm -f "$snapshot_file"
+        return 1
+    }
+
+    # JSON is only a temporary transport here; all task YAML writes below go
+    # through yaml_field_set, preserving the queue YAML write contract.
+    if ! python3 - "$task_file" "$snapshot_file" <<'SAME_CMD_SNAPSHOT_PY'
+import json
+import sys
+import yaml
+
+task_path, output_path = sys.argv[1:]
+doc = yaml.safe_load(open(task_path, encoding="utf-8")) or {}
+task = doc.get("task") if isinstance(doc.get("task"), dict) else doc
+
+# These fields are continuity/runtime identity, not command-owned contract.
+# Everything else in reset_stale_fields is deliberately regenerated.
+keep = {
+    "report_id", "report_identity_version", "report_path", "report_filename",
+    "task_worktree_required", "task_worktree_path", "task_worktree_repo",
+    "task_worktree_base", "task_worktree_generation", "task_worktree_status",
+    "task_worktree_marker", "task_worktree_workdir", "task_worktree_target_paths",
+    "task_worktree_edit_wrapper", "task_worktree_source_paths",
+}
+saved = {key: task[key] for key in keep if key in task}
+json.dump(saved, open(output_path, "w", encoding="utf-8"), ensure_ascii=False)
+SAME_CMD_SNAPSHOT_PY
+    then
+        rm -f "$snapshot_file" "$restore_file"
+        return 1
+    fi
+
+    # The regular reset owns the complete command-owned field set, including
+    # list/mapping values that yaml_field_set's scalar lane cannot clear.
+    if ! reset_stale_fields "$ninja_name"; then
+        rm -f "$snapshot_file" "$restore_file"
+        return 1
+    fi
+    if ! resolve_cmd_to_task "$requested_cmd" "$ninja_name"; then
+        rm -f "$snapshot_file" "$restore_file"
+        return 1
+    fi
+
+    # resolve_cmd_to_task projects the scalar command contract.  Its legacy
+    # extractor does not carry an explicit commit_contract mapping, so project
+    # that mapping from the same source when present; absent means the stale
+    # value stays removed and the later report planner derives the contract.
+    python3 - "$source_file" "$requested_cmd" "$restore_file" <<'SAME_CMD_SOURCE_PY'
+import json
+import sys
+import yaml
+
+source_path, command_id, output_path = sys.argv[1:]
+source = yaml.safe_load(open(source_path, encoding="utf-8")) or {}
+commands = source.get("commands") if isinstance(source, dict) else None
+entry = commands.get(command_id) if isinstance(commands, dict) else None
+if not isinstance(entry, dict):
+    entry = {}
+payload = {}
+for key in ("commit_contract",):
+    if key in entry:
+        payload[key] = entry[key]
+json.dump(payload, open(output_path, "w", encoding="utf-8"), ensure_ascii=False)
+SAME_CMD_SOURCE_PY
+
+    local field value
+    if [ -s "$restore_file" ]; then
+        while IFS=$'\t' read -r field value; do
+            [ -n "$field" ] || continue
+            yaml_field_set "$task_file" "task" "$field" "$value" || {
+                rm -f "$snapshot_file" "$restore_file"
+                return 1
+            }
+        done < <(python3 - "$restore_file" <<'SAME_CMD_COMMIT_PY'
+import json
+import sys
+
+payload = json.load(open(sys.argv[1], encoding="utf-8"))
+
+def wire(value):
+    if isinstance(value, str):
+        return value
+    if value is None:
+        return "null"
+    if isinstance(value, bool):
+        return "true" if value else "false"
+    return json.dumps(value, ensure_ascii=False, separators=(",", ":"))
+
+for key, value in payload.items():
+    print(key + "\t" + wire(value))
+SAME_CMD_COMMIT_PY
+)
+    fi
+
+    while IFS=$'\t' read -r field value; do
+        [ -n "$field" ] || continue
+        yaml_field_set "$task_file" "task" "$field" "$value" || {
+            rm -f "$snapshot_file" "$restore_file"
+            return 1
+        }
+    done < <(python3 - "$snapshot_file" <<'SAME_CMD_RESTORE_PY'
+import json
+import sys
+
+saved = json.load(open(sys.argv[1], encoding="utf-8"))
+
+def wire(value):
+    if isinstance(value, str):
+        return value
+    if value is None:
+        return "null"
+    if isinstance(value, bool):
+        return "true" if value else "false"
+    return json.dumps(value, ensure_ascii=False, separators=(",", ":"))
+
+for key, value in saved.items():
+    print(key + "\t" + wire(value))
+SAME_CMD_RESTORE_PY
+)
+
+    rm -f "$snapshot_file" "$restore_file"
+    python3 - "$task_file" "$requested_cmd" <<'SAME_CMD_VERIFY_PY'
+import sys
+import yaml
+
+task = yaml.safe_load(open(sys.argv[1], encoding="utf-8")) or {}
+task = task.get("task") if isinstance(task.get("task"), dict) else task
+if task.get("parent_cmd") != sys.argv[2]:
+    raise SystemExit("same-cmd reproject verification failed: parent_cmd")
+for key in ("project", "purpose", "target_path", "task_type"):
+    if key not in task or task[key] in (None, "", []):
+        raise SystemExit(f"same-cmd reproject verification failed: {key}")
+SAME_CMD_VERIFY_PY
+}
+
+# main.sh is an extracted module, but the legacy wrapper is the only planned
+# deployment surface.  Wrap the loaded function here so both the modular
+# runtime and library-only tests receive the same contract repair.
+if declare -F should_skip_same_cmd_resolve >/dev/null 2>&1; then
+    eval "$(declare -f should_skip_same_cmd_resolve | sed '1s/^should_skip_same_cmd_resolve /deploy_task_original_should_skip_same_cmd_resolve /')"
+    should_skip_same_cmd_resolve() {
+        deploy_task_original_should_skip_same_cmd_resolve "$@" || return $?
+        deploy_task_reproject_same_cmd_contract "$@" || return $?
+        return 0
+    }
+fi
+
 deploy_task_function_timing_enable
 
 # Function coverage reuses the existing DEBUG trap's event boundary.  This
