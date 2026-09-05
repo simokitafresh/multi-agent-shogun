@@ -12,18 +12,18 @@
 ## §1.0 家老を介する便の流れ(フローチャート。数値は §1〜§3 の今日の実測)
 ```mermaid
 flowchart TD
-  A[将軍 cmd_delegate] -->|inbox_write p50 1.0 s / 配達 held p50 40 分| B[家老 inbox_read]
-  B -->|deploy_task p50 28 s ×20/日| C[忍者 実装・commit(worktree)]
-  C -->|report YAML + inbox_write| D[家老 report_received]
-  D -->|review_request| E[軍師 precheck p50 3.2 s → review_bundle]
-  E -->|LGTM / FAIL| F[家老 review_approval p50 10 s ×38/日]
-  F -->|c2a merge 所要 未計測 ×83/日| G[origin/main に報告 commit 合流]
-  G -.->|合流前は WAIT ancestry 47 行/日| H
-  G --> H[cmd_complete_gate main p50 9.2 s ×121/日]
-  H -->|WAIT なら monitor が約 3 分後に再 GATE| H
-  H -->|CLEAR 経過 p50 20 分| I[archive_completed → 掲示板 → 将軍]
-  B -. busy の間 watcher が送出を保留 .-> B
-  F -. auto-push ancestry(自動合流) FAIL 理由なし ×12 .-> G
+  A["将軍 cmd_delegate"] -->|"inbox_write p50 1.0s / 配達 held p50 40分"| B["家老 inbox_read"]
+  B -->|"deploy_task p50 28s x20/日"| C["忍者 実装・commit (worktree)"]
+  C -->|"report YAML + inbox_write"| D["家老 report_received"]
+  D -->|"review_request"| E["軍師 precheck p50 3.2s → review_bundle"]
+  E -->|"LGTM / FAIL"| F["家老 review_approval p50 10s x38/日"]
+  F -->|"c2a merge 所要 未計測 x83/日"| G["origin/main に報告 commit 合流"]
+  G --> H["cmd_complete_gate main p50 9.2s x121/日"]
+  H -->|"WAIT なら monitor が約3分後に再GATE"| H
+  H -->|"CLEAR 経過 p50 20分"| I["archive_completed → 掲示板 → 将軍"]
+  G -.->|"合流前は WAIT ancestry 47行/日"| H
+  B -.->|"busy の間 watcher が送出を保留"| B
+  F -.->|"auto-push ancestry 自動合流 FAIL 理由なし x12"| G
 ```
 - 家老の手が入る箱: B(読む)・C の配備・F(受理)・G(c2a)。それ以外は待ち。
 - 待ちが発生する辺: A→B(配達 held)、G(合流)、H(再 GATE)。順位は §4。
