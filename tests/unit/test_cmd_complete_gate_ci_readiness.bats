@@ -28,6 +28,8 @@ block_message() {
     evaluate "{\"expected_head_sha\":\"abc\",\"reviewed_at\":\"$REVIEWED\",\"target_result\":{\"conclusion\":\"success\",\"head_sha\":\"abc\"},\"workflow_result\":{\"status\":\"completed\",\"conclusion\":\"failure\",\"head_sha\":\"abc\",\"created_at\":\"$CREATED\"}}"
     [ "$status" -eq 0 ]
     [[ "$output" == *"WAIT: ci_evaluation_external_pending=workflow_result_not_green"* ]]
+    [[ "$output" != *"READY:"* ]]
+    [[ "$output" != *"CLEAR"* ]]
 
     block_message "ci_readiness:$output"
     [ "$status" -eq 0 ]
