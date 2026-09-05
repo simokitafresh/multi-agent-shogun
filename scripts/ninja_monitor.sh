@@ -58,6 +58,13 @@ fi
 #   - ❯ プロンプト表示（Claude Code）+ BUSYパターンなし
 #   - › プロンプト表示（Codex CLI）+ BUSYパターンなし
 
+# Read-only git invocations (status/diff/etc.) opportunistically refresh and
+# rewrite the index via a transient .git/index.lock unless disabled.  The
+# monitor inspects shared roots while publisher writers may need the same
+# required lock, so every git call in this daemon inherits the read-only
+# setting (cmd_karo_hotfix_ninja_monitor_index_lock).
+export GIT_OPTIONAL_LOCKS=0
+
 _ninja_monitor_usage() {
     printf '%s\n' \
         'Usage: bash scripts/ninja_monitor.sh' \

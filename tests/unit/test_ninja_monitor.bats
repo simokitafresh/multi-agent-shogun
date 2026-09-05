@@ -5,6 +5,42 @@ setup() {
     PROJECT_ROOT="$(cd "$BATS_TEST_DIRNAME/../.." && pwd)"
 }
 
+# test_necessity: ninja_monitor's shared-root read-only git probes must not
+# refresh the index or create an optional index.lock while publisher writers
+# use the required lock for their own updates.
+@test "shared-root git probes disable optional index refresh" {
+    run bash -lc '
+set -euo pipefail
+PROJECT_ROOT="'"$PROJECT_ROOT"'"
+export NINJA_MONITOR_LIB_ONLY=1
+source "$PROJECT_ROOT/scripts/ninja_monitor.sh"
+unset NINJA_MONITOR_LIB_ONLY
+ROOT="'"$BATS_TEST_TMPDIR"'/git-optional-locks"
+mkdir -p "$ROOT"
+git -C "$ROOT" init -q
+git -C "$ROOT" config user.email probe@example.invalid
+git -C "$ROOT" config user.name probe
+printf "stable\\n" > "$ROOT/tracked.txt"
+git -C "$ROOT" add tracked.txt
+tree=$(git -C "$ROOT" write-tree)
+commit=$(printf "init\\n" | git -C "$ROOT" commit-tree "$tree")
+git -C "$ROOT" update-ref refs/heads/main "$commit"
+git -C "$ROOT" symbolic-ref HEAD refs/heads/main
+sleep 1
+touch "$ROOT/tracked.txt"
+before=$(stat -c "%Y:%s" "$ROOT/.git/index")
+status=$(git -C "$ROOT" status --porcelain=v1 --untracked-files=all)
+after=$(stat -c "%Y:%s" "$ROOT/.git/index")
+lock_count=$(find "$ROOT/.git" -maxdepth 1 -name index.lock -type f | wc -l)
+test -z "$status"
+test "$before" = "$after"
+test "$lock_count" -eq 0
+printf "export=%s status=clean index_changed=0 orphan_lock=%s\\n" "$GIT_OPTIONAL_LOCKS" "$lock_count"
+'
+    [ "$status" -eq 0 ]
+    [ "$output" = "export=0 status=clean index_changed=0 orphan_lock=0" ]
+}
+
 # test_necessity: report completed + task in_progress must release only an
 # actually idle current generation; pending reports and busy panes remain
 # unavailable so the slot accounting cannot create false idle capacity.
