@@ -1,5 +1,5 @@
 <!-- gist-master: e590a96ad0b1c541b2ec266d4c6a512b dm-signal-core-simple-free-proof-asis-tobe_20260905.md -->
-# DM-Signal Core LP × Simple LP × Free Interactive Proof — AsIs/ToBe 設計書 v0.2(2026-09-05 09:20、cmd_4476 偵察の一次で §A/§E/§F/§J を事実に置換。家老レビュー中=revision_requested、確定後 v0.3)/ v0.1 02:55
+# DM-Signal Core LP × Simple LP × Free Interactive Proof — AsIs/ToBe 設計書 v0.3(2026-09-05 09:30、殿指示 09:18: identity 層=Supabase user.id の保持価値・匿名 visitor_id/Tier 維持・Tier×Page analytics との最小接続・source 引継ぎ・3 サービス緩連携・PF→Rebalancer 導線。3 repo の origin/main を将軍が一次確認)/ v0.2 09:20 / v0.1 02:55
 
 > 殿指示 2026-09-05 02:42。目的=(1) dm-signal.com を SEO・ブランドの Core LP として完成 (2) 商品を変えずに Simple LP 1 本だけの価値を検証 (3) Google Auth→Free tier を Interactive Proof として使えるか確認 (4) Core vs Simple の流入差を計測可能に。**この段階では実装しない**(Simple LP 新設・Free 可視性変更・Tier 変更・sitemap/canonical 変更・Google Auth 変更は殿裁定後)。
 > 優先順位=最新の殿裁定 → 最新正本 → 本番実測 → 現行コード → 古い設計書。正本: SEO v6(`dm-signal-lp-seo-plan_20260830.md`、gist 5edb5f6d)/入口 3 面 v3.2(`dm-login-showcase-asis-tobe_v3_20260830.md`、gist 901c36a5)/Free tier v3.3(`dm-free-tier-google-auth-asis-tobe_v3_20260830.md`、gist 897501e0)。
@@ -106,6 +106,56 @@
 - 少しの実装で測れる: LP→Google Auth 完了(Free 系 event)、Auth→Free 利用(coupon でのログイン=product_logins)、Core/Simple 別の上記。
 - 今は測れない: Free→note、Paid conversion、Plan mix、3M/6M/12M retention、LTV(課金は note 側。DM-Signal に個人課金データが無い)。→ Primary Metric の第 1 候補=**LP→Google Auth 完了率(source 別)**、第 2=Auth→Free ログイン率。CTR 単独で勝敗を決めない。
 
+
+## §L Identity 層(v0.3、殿指示 09:18)— 「何を既に取得できているか」「何を足せばユーザー単位の分析になるか」
+
+前提=実装しない。Simple LP より先に identity の整理。Google 連携は必須にしない(匿名 visitor_id と Tier/password 利用は維持)。
+
+### L-1 既に取得できているもの(3 repo の origin/main を 09:20-09:28 に一次確認)
+
+| 層 | 現物 | 識別子 | 保存先 | 個人と結びつくか |
+|---|---|---|---|---|
+| 匿名 visitor | `frontend/lib/visitor-id.ts`: `localStorage["dm_visitor_id"]`=`crypto.randomUUID()`(private browsing では null) | visitor_id(UUID) | `page_views.visitor_id`(`backend/app/db/models.py` L629、index あり) | ブラウザ単位。端末を跨がない |
+| Tier × Page | `POST /api/analytics/pageview`(`analytics.py` L97-121): `_extract_tier_info` が **viewer_session cookie** から tier_id/tier_name を解決し、page/device/os/visitor_id と共に `page_views` へ | tier_id, tier_name | `page_views`(timestamp/page/tier_id/tier_name/device_type/os_type/visitor_id) | Tier 単位(同じ月次パスワードを使う全員が同一 tier)。**個人は無い** |
+| viewer_session | `backend/app/auth.py` L97 `generate_viewer_token(tier_id, tier_name, expires)`=`ViewerToken` 行(月末失効)。cookie `viewer_session` | token(サーバ側行) | `viewer_tokens` | tier のみ。user 列なし |
+| showcase funnel | `showcase_events`(`models.py` L634-646、append-only): step/campaign_id/ua_class/lang/occurred_at | campaign_id | `showcase_events` | 匿名。visitor_id も user も無い |
+| campaign 持ち回り | LP `dm_signal_campaign_id`(sessionStorage、`landing-page.tsx` L69)→`/free?campaign_id=`→`free-experience.tsx` L192 で `/login?coupon=&campaign_id=`→`showcase-attribution.ts` が event payload に付与(L44-52) | campaign_id | showcase_events | **Auth 後(`/free`)まで届く。`/login` の verify-viewer と `page_views` には届かない**(auth.py に campaign 0 件、page_views に列なし) |
+| Google Auth | `/free`: `signInWithOAuth(google)` → `GET /api/public/free-coupon`(Bearer)→ backend `_fetch_supabase_user`(`public_showcase.py` L181)で Supabase Auth API `GET /auth/v1/user` → **`get_free_coupon` L487 で user を `_` に捨てる** | Supabase `user.id`(UUID) | どこにも保存しない | 取得はしている。保持していない |
+| Rebalancer | `frontend/lib/portfolio-storage.ts`: `saved_portfolios` を `user_id` で upsert/select(`onConflict: user_id`) | Supabase `user.id` | Supabase `public.saved_portfolios` | 個人 |
+| DM-Fusion | `app/page.tsx` L593 `saved_fusions.eq("user_id", user.id)`、migration `20260629_create_saved_fusions.sql`: `user_id uuid references auth.users(id)`、RLS `auth.uid() = user_id` | Supabase `user.id` | Supabase `public.saved_fusions` | 個人 |
+| Supabase プロジェクト | rebalancer `.env.local` と DM-Fusion `.env` の `NEXT_PUBLIC_SUPABASE_URL` は同一 project ref(`qydgtw…`)。DM-Signal frontend は Free v3.3 §1.5 で「rebalancer 正本と hash 一致」 | — | `auth.users` 1 つ | **3 サービスは同一 `auth.users` を既に共有**。user.id は同じ人に同じ値 |
+
+**結論 L-1**: 個人単位の stable identity(Supabase user.id)は DM-Signal でも**取得済みだが未保持**。匿名(visitor_id)と Tier(cookie)の 2 層は既に動いており、これを壊さずに 3 層目として user.id を「行で」足せる状態。
+
+### L-2 殿の 6 論点への回答(事実→判断)
+
+1. **user.id を保持する価値**: あり。3 サービスが同一 `auth.users` なので、保持した瞬間に「DM-Signal の Free 登録者=Rebalancer/DM-Fusion のユーザー」が同一キーで見える。DM-Signal 内でも「Auth 完了→coupon 取得→(同じ月に)ログイン→どの page を見たか」を個人で追える唯一の鍵。**保持しなければ retention/LTV は永久に測れない**(§J)。
+2. **匿名 visitor_id と Tier/password 利用は維持、Google 必須にしない**: 維持。user.id は Free(Google)経路にだけ自然に存在し、note メンバー(月次パスワード)には無い。∴ identity は **3 層の任意結合**=`visitor_id`(ブラウザ)⊂ `tier`(cookie)⊂ `user_id`(Google 経路のみ、null 可)。既存 EP・cookie・tier 認証は変えない。
+3. **Tier × Page analytics と user.id の最小接続**(案。実装は裁定後):
+   - (a) `page_views` に `user_id`(uuid, nullable, index)を 1 列追加。値の出所は **cookie ではなく localStorage** の `dm_user_id`(`/auth/callback` 成功時に `session.user.id` を保存。`visitor-id.ts` と同型の 10 行)。`api-client.ts` L1449 の pageview payload に `user_id` を同送、backend `PageViewPayload` に optional 追加。
+   - (b) 突合は既存列で足りる: `visitor_id` が同じ行に `user_id` が付いた瞬間、その visitor の過去 page_views も遡って同一人物と見なせる(visitor_id→user_id の対応表を作らず、クエリで結合)。
+   - (c) Tier は cookie 由来のまま(月次パスワードで入った note メンバーは user_id null、tier だけ)。
+   - 変更点=frontend 2 file(callback、api-client)+backend model 1 列+migration 1 本(+reverse)。cookie・token・verify-viewer は不変。
+4. **Core/Simple の source を Auth 後まで引き継げるか**: campaign_id は `/free`(Auth 後)まで届いている(L-1)。届いていないのは `/login` の verify-viewer と `page_views`。案=(a) `dm_signal_campaign_id` を sessionStorage から localStorage へ格上げ(端末内で月を跨ぐ)、(b) `page_views` に `campaign_id`(nullable)を同送、(c) `showcase_events` に `user_id`(nullable)を同送(Auth 後の step のみ値が入る)。これで **source(campaign_id の prefix `lp_core_`/`lp_simple_`)→Auth→coupon→ログイン→page** が 1 本でつながる。first_touch=その user_id の最古の campaign_id、last_touch=最新。専用 `product_logins` は不要になる(page_views+showcase_events の 2 列追加で代替)。
+5. **3 サービスの緩連携**: 既に同一 `auth.users`。**結合キーを新設しない**のが最小。将来やるなら Supabase 側に `public.profiles(user_id pk, first_seen_service, first_campaign_id)` を 1 表(RLS `auth.uid()=user_id`)。DM-Signal backend は Supabase の service key を持たない方針(Free v3.3 §2-3)なので、DM-Signal からの書込みは frontend(anon key+RLS)経由=Rebalancer/DM-Fusion と同じ流儀。今回は記録のみ。
+6. **選択中 PF → Rebalancer 導線(将来候補)**: 現行 Rebalancer に外部からの PF 受け取り口は無い(`frontend/app`/`lib` に dm-signal/searchParams 参照 0 件)。候補=DM-Signal の PF 画面に「この配分で Rebalancer を開く」リンク(`https://<rebalancer>/?from=dm-signal&pf=<id>&weights=<url-safe json>`)、Rebalancer 側で query を読んで `saved_portfolios` に upsert(user_id が同じなので本人のもとに保存される)。**記録のみ。実装しない**。
+
+### L-3 「追加すれば個人単位の分析になる」最小差分(裁定用の一覧。優先順)
+
+| # | 変更 | 影響 file | 契約への影響 | 得られるもの |
+|---|---|---|---|---|
+| 1 | `/auth/callback` 成功時に `localStorage["dm_user_id"]=session.user.id`+event `auth_completed` | frontend `app/auth/callback/page.tsx`(1-3 行) | なし | Auth 完了率(§J の第 1 候補) |
+| 2 | `page_views.user_id` + `page_views.campaign_id`(nullable)、payload に同送 | backend `models.py`/`analytics.py`/migration、frontend `api-client.ts` | cookie/token 不変 | Tier×Page に個人と source が乗る。retention(同 user_id の月跨ぎ再訪)が測れる |
+| 3 | `showcase_events.user_id`(nullable)、Auth 後 step に同送 | backend `models.py`/`public_showcase.py`、frontend `showcase-attribution.ts` | append-only 維持 | funnel を個人で結ぶ |
+| 4 | `dm_signal_campaign_id` を localStorage へ | frontend `showcase-attribution.ts`/`landing-page.tsx` | なし | first/last touch |
+| 5 | Rebalancer/DM-Fusion との横断分析 | Supabase 側 SQL(read)のみ | なし | 3 サービスの重なり(user_id 集合の交差) |
+
+やらないこと: Google 必須化、Tier 認証の変更、個人別クーポン、`product_logins` 新設(2-3 で代替)、Supabase service key を backend に置く。
+
+### L-4 cmd_4476 との整合
+- 4476 §F「first_touch/last_touch の保持場所なし」「Supabase user id は backend で破棄」「ShowcaseEvent に user 列なし」=本節と一致。4476 は revision_requested(家老レビュー中)だが、本節は将軍が origin/main を直接確認した行番号で書いた。
+- §I の順序は変わらない: 裁定 → attribution 最小(本節 #1-#4)→ Simple LP(noindex)→ 4 週計測。**identity 層は Simple LP より前**。
+
 ## §K 因果リンク
 - ← [[dm-signal-lp-seo-plan_20260830]] v6(Core=母艦、分解しない) / ← [[dm-login-showcase-asis-tobe_v3_20260830]] / ← [[dm-free-tier-google-auth-asis-tobe_v3_20260830]]
-- → [[cmd_4476]] 偵察 → 本書 v0.2
+- → [[cmd_4476]] 偵察 → 本書 v0.2 / → [[rebalancer]] `saved_portfolios(user_id)` / → [[dm-fusion]] `saved_fusions(user_id)` 同一 auth.users
