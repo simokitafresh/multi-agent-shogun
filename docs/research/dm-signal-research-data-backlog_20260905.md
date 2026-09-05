@@ -1,5 +1,5 @@
 <!-- gist-master: 131e8c6545f630bedd6c3a4a9731c420 dm-signal-research-data-backlog_20260905.md -->
-# DM-Signal 研究データ基盤 — F1 以外の backlog(記録のみ。実装しない)v1.3(2026-09-06 00:40 I8→cmd_4480 delegated) / v1.2(2026-09-06 00:25 I7 実測 0・I8 新四つ目 parity 104 を追記) / v1.1(2026-09-05 22:55 家老 R3-3: A2 は実装予定表記へ) / v1.0(2026-09-05 22:45)
+# DM-Signal 研究データ基盤 — F1 以外の backlog(記録のみ。実装しない)v1.4(2026-09-06 03:10 I8 根因確定 102/2) / v1.3(2026-09-06 00:40 I8→cmd_4480 delegated) / v1.2(2026-09-06 00:25 I7 実測 0・I8 新四つ目 parity 104 を追記) / v1.1(2026-09-05 22:55 家老 R3-3: A2 は実装予定表記へ) / v1.0(2026-09-05 22:45)
 
 - 出自: `dm-signal-research-data-foundation-asis-tobe_20260905.md` v0.4 の F2〜F4・A1〜A11・D2〜D4 を、殿 22:29『複雑さはすべて捨てろ』と家老 R2-6『F1 主設計書に残さない。情報は削除せず別 backlog へ』により移設。本文は v0.4(commit 5498c0f9b)から移したもので、内容の再検討はしていない。
 - 着手条件: 殿が個別に指示した時だけ。本 backlog から自動的に cmd を起票しない。
@@ -40,7 +40,7 @@
 | I5 | 月初 `signals.holding_signal` と `monthly_returns.holding_signal` の不一致(F1 で計測) |
 | I6 | `display_ticker_weights` 非 unit 35 行・α=0 parity 不一致 29/2,096(08-06 v1.10) |
 | I7 | component holding_signal 欠落で展開不能な PF-月(F1 で計測。**実測 0**、00:19) |
-| I8 | cmd_4479 F1 の α=0 parity: 12,268 PF-月 一致 / 104 不一致、不一致は全て `奥義-GS-新四つ目` 3 体(00:19 才蔵 honest FAIL、verify_parity.md)。他 75 PF は再現一致。新四つ目の本番 monthly_return は同月 holding_signal の静的展開+区間複利では再現できない(component 構成・signal 有効日・生成経路の差が候補、未確認) | **cmd_4480 delegated 00:29**(A1 データ/A2 コード 2 名並行、CI GREEN 後配備)。市場 1 表では 3 体を is_suspect で別計上 |
+| I8 | cmd_4479 F1 の α=0 parity: 12,268 PF-月 一致 / 104 不一致、不一致は全て `奥義-GS-新四つ目` 3 体(00:19 才蔵 honest FAIL、verify_parity.md)。他 75 PF は再現一致。新四つ目の本番 monthly_return は同月 holding_signal の静的展開+区間複利では再現できない(component 構成・signal 有効日・生成経路の差が候補、未確認) | **cmd_4480 CLEAR 03:05**: explained 102=投票比例 FoF weight(fof_component_weights.target_weight 非1/N)を F1 が 1/N 展開しているため。**unexplained 2(残 I8)**: 015e74dc-26f3-47c5-98ea-414dc4fdf579/2014-04(常勝)、0206995c-5aef-4da5-aca7-5bef7a1f4845/2014-04(鉄壁)=初月で root signal 行・fof_component_weights 0 行。仮説=初月は signals 生成前に monthly_returns 計算(未検証)。正本 analysis_runs/cmd_4480_shin_yotsume_parity/root_cause_summary.md |
 
 ## 因果リンク
 - ← [[dm-signal-research-data-foundation-asis-tobe_20260905]] v0.4 → 本 backlog(移設)
