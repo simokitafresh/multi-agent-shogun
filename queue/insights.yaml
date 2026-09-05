@@ -18360,10 +18360,21 @@ insights:
   priority: "low"
   source: "semantic_index_update"
   fix_known: false
-  status: pending
+  status: "resolved"
+  action_artifact: "semantic_map=/home/simokitafresh/multi-agent-shogun/context/semantic-map.md;semantic_index=/home/simokitafresh/multi-agent-shogun/docs/semantic-index/index.md"
+  resolved_reason: "semantic map generation verified the candidate is represented or intentionally ignored"
 - id: INS-20260905-145054968-6356
   ts: "2026-09-05T14:50:54+09:00"
   insight: "semantic_index_update新概念候補: discussion:家老が触る（関係する）スクリプトにgateclear関連もあった気がする。家老が待たされる原因は全て家老に関係するものだよ は 既存aliasesに一致なし。概念定義とaliases追加を検討せよ"
+  priority: "low"
+  source: "semantic_index_update"
+  fix_known: false
+  status: "resolved"
+  action_artifact: "semantic_map=/home/simokitafresh/multi-agent-shogun/context/semantic-map.md;semantic_index=/home/simokitafresh/multi-agent-shogun/docs/semantic-index/index.md"
+  resolved_reason: "semantic map generation verified the candidate is represented or intentionally ignored"
+- id: INS-20260905-145629918-bb19
+  ts: "2026-09-05T14:56:29+09:00"
+  insight: "semantic_index_update新概念候補: discussion:task notification task id bnm3gkxm2 task id tool use id toolu 01WqZfuVamgVU8PmCJ は 既存aliasesに一致なし。概念定義とaliases追加を検討せよ"
   priority: "low"
   source: "semantic_index_update"
   fix_known: false
