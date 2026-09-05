@@ -8921,3 +8921,81 @@
   causal_chain: ci_push_state10行のBLOCK原因→全件分類で未修復箇所特定=修正精度向上
   origin: '[[W5_ci_push_state_10行]] -> [[recon_2名偵察]] -> [[draft_APPROVE]]'
   timestamp: '2026-09-05T23:44:30+09:00'
+- cmd_id: cmd_karo_recon_w0_failure_events_20260905
+  review_type: draft
+  verdict: APPROVE
+  verified_files:
+  - queue/tasks/kotaro.yaml:3
+  confidence: HIGH
+  ambiguity_points: none
+  findings_summary: 偵察cmd。AC2本・FAIL22件全件検証+event分類・偵察5要件完備・隔離制約(過去YAML変更0)・E候補/D保留語個別照合指示あり
+  observations:
+  - '事実: AC1=review79行中FAIL22行の前提を全件確認+旧分類小計23と22の不整合を報告。AC2=22eventに7属性付与+unclassified管理'
+  operational_simulation:
+    command: 'grep -c ''id: AC'' queue/tasks/kotaro.yaml'
+    expected: '2'
+    actual: '2'
+    result: PASS
+  finding_categories:
+  - assumptions
+  - simulation
+  - premortem
+  - ambiguity
+  - adversarial
+  brainwash_check: '#1no(AC2件全確認) #2no(task YAML現物読み) #3no(自分で確認) #4no(隔離制約明記) #5no(即処理)
+    #6no(2/2確認) #7no(scope制約あり) #8no(全件確認)'
+  causal_chain: W0 FAIL22件→全件分類で反復event/根因を区別=修正精度向上
+  origin: '[[W0_failure_events]] -> [[recon偵察]] -> [[draft_APPROVE]]'
+  timestamp: '2026-09-05T23:49:00+09:00'
+- cmd_id: cmd_karo_recon_k2_deploy_cost_20260905
+  review_type: draft
+  verdict: APPROVE
+  verified_files:
+  - queue/tasks/hayate.yaml:3
+  confidence: HIGH
+  ambiguity_points: none
+  findings_summary: 偵察cmd。AC2本・配備コスト計測(worktree/Python時間)+隔離境界特定・偵察5要件完備・隔離制約
+  observations:
+  - '事実: AC1=51配備227関数/worktree437s/Python386sの前提再確認+8fixture PASSと全caller数を区別。AC2=call_site_timing隔離計測+重い境界特定'
+  operational_simulation:
+    command: 'grep -c ''id: AC'' queue/tasks/hayate.yaml'
+    expected: '2'
+    actual: '2'
+    result: PASS
+  finding_categories:
+  - assumptions
+  - simulation
+  - premortem
+  - ambiguity
+  - adversarial
+  brainwash_check: '#1no(AC2件全確認) #2no(task YAML現物読み) #3no(自分で確認) #4no(隔離制約明記) #5no(即処理)
+    #6no(2/2確認) #7no(scope制約あり) #8no(全件確認)'
+  causal_chain: 配備コスト高→重い境界特定→targeted最適化=速度改善の正の複利
+  origin: '[[K2_deploy_cost]] -> [[recon偵察]] -> [[draft_APPROVE]]'
+  timestamp: '2026-09-05T23:49:15+09:00'
+- cmd_id: cmd_karo_recon_w1_routine_contract_20260905
+  review_type: draft
+  verdict: APPROVE
+  verified_files:
+  - queue/tasks/tobisaru.yaml:3
+  confidence: HIGH
+  ambiguity_points: none
+  findings_summary: 偵察cmd。AC2本・routine_refs前提照合+全入口同結果確認・偵察5要件完備・隔離制約(コード変更0/未確定schemaBLOCK)
+  observations:
+  - '事実: AC1=routine_refs未実装前提を一次コード照合+全有効caller列挙。AC2=canonical path/節の最小表+全入口同結果・秘密複製0確認'
+  operational_simulation:
+    command: 'grep -c ''id: AC'' queue/tasks/tobisaru.yaml'
+    expected: '2'
+    actual: '2'
+    result: PASS
+  finding_categories:
+  - assumptions
+  - simulation
+  - premortem
+  - ambiguity
+  - adversarial
+  brainwash_check: '#1no(AC2件全確認) #2no(task YAML現物読み) #3no(自分で確認) #4no(隔離制約明記) #5no(即処理)
+    #6no(2/2確認) #7no(scope制約あり) #8no(全件確認)'
+  causal_chain: routine_refs未実装→全入口照合で標準化対象確定=CLI横断の一貫性
+  origin: '[[W1_routine_contract]] -> [[recon偵察]] -> [[draft_APPROVE]]'
+  timestamp: '2026-09-05T23:49:30+09:00'
