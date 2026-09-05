@@ -32,6 +32,7 @@ export KARO_THROUGHPUT_AS_OF="$AS_OF"
 export KARO_THROUGHPUT_ROOT="$ROOT"
 export KARO_THROUGHPUT_OUT="$OUT"
 export KARO_THROUGHPUT_DEFENSE_LOG="${KARO_THROUGHPUT_DEFENSE_LOG:-$ROOT/logs/defense_overhead.jsonl}"
+export KARO_THROUGHPUT_DEFENSE_ARCHIVE="${KARO_THROUGHPUT_DEFENSE_ARCHIVE:-$(dirname "$KARO_THROUGHPUT_DEFENSE_LOG")/archive}"
 export KARO_THROUGHPUT_GATE_LOG="${KARO_THROUGHPUT_GATE_LOG:-$ROOT/logs/gate_metrics.log}"
 export KARO_THROUGHPUT_WATCHER_LOGS="${KARO_THROUGHPUT_WATCHER_LOGS:-$ROOT/logs/inbox_watcher_karo.log.1:$ROOT/logs/inbox_watcher_karo.log}"
 export KARO_THROUGHPUT_TIMING_LOGS="${KARO_THROUGHPUT_TIMING_LOGS:-$ROOT/logs/cmd_complete_gate_function_timing.jsonl:$ROOT/logs/deploy_task_function_timing.jsonl}"
@@ -53,7 +54,7 @@ OUT = Path(os.environ["KARO_THROUGHPUT_OUT"])
 UTC = dt.timezone.utc
 JST = dt.timezone(dt.timedelta(hours=9), "JST")
 
-def parse_iso(value):
+def parse_iso(value, default_timezone=UTC):
     if not value:
         return None
     raw = str(value).strip()
@@ -64,10 +65,13 @@ def parse_iso(value):
     except ValueError:
         return None
     if parsed.tzinfo is None:
-        parsed = parsed.replace(tzinfo=UTC)
+        parsed = parsed.replace(tzinfo=default_timezone)
     return parsed.astimezone(UTC)
 
 cutoff = parse_iso(AS_OF) if AS_OF else None
+day_start = dt.datetime.fromisoformat(DATE).replace(tzinfo=JST).astimezone(UTC)
+day_end = day_start + dt.timedelta(days=1)
+wait_end = min(day_end, cutoff or dt.datetime.now(UTC))
 
 def in_domain(stamp, local_date=False):
     parsed = parse_iso(stamp)
@@ -95,8 +99,7 @@ def read_jsonl(path):
     try:
         fh = open(path, encoding="utf-8")
     except OSError:
-        return []
-    rows = []
+        return
     with fh:
         for raw in fh:
             try:
@@ -104,8 +107,7 @@ def read_jsonl(path):
             except (TypeError, ValueError):
                 continue
             if isinstance(row, dict):
-                rows.append(row)
-    return rows
+                yield row
 
 def percentile(values, q):
     if not values:
@@ -142,7 +144,7 @@ def date_text(value):
     return f"{match.group(4)}-{dt.datetime.strptime(match.group(1), '%b').month:02d}-{int(match.group(2)):02d}T{match.group(3)}+09:00"
 
 def log_line_time(value):
-    return parse_iso(value.split("\t", 1)[0]) if value[:4].isdigit() else parse_iso(date_text(value))
+    return parse_iso(value.split("\t", 1)[0], JST) if value[:4].isdigit() else parse_iso(date_text(value))
 
 def keep_log_line(value, local_date=True):
     parsed = log_line_time(value)
@@ -163,7 +165,10 @@ def main():
     table(output)
 
     defense = []
-    for item in read_jsonl(os.environ["KARO_THROUGHPUT_DEFENSE_LOG"]):
+    defense_paths = sorted(Path(os.environ["KARO_THROUGHPUT_DEFENSE_ARCHIVE"]).glob("defense_overhead_*.jsonl"))
+    defense_paths.append(Path(os.environ["KARO_THROUGHPUT_DEFENSE_LOG"]))
+    seen_events = set()
+    for item in (item for path in defense_paths for item in read_jsonl(path)):
         stamp = item.get("timestamp")
         if not in_domain(stamp, local_date=True):
             continue
@@ -171,6 +176,10 @@ def main():
             wall = int(item.get("wall_ms"))
         except (TypeError, ValueError):
             continue
+        identity = item.get("event_id") or json.dumps(item, sort_keys=True, ensure_ascii=False)
+        if identity in seen_events:
+            continue
+        seen_events.add(identity)
         defense.append(item | {"_wall": wall})
     grouped = defaultdict(list)
     for item in defense:
@@ -178,16 +187,31 @@ def main():
     for key in sorted(grouped):
         output.append("| " + " | ".join(row(key, grouped[key])) + " |")
     output.append("| " + " | ".join(row("defense_overhead / total", [x["_wall"] for x in defense])) + " |") if defense else output.append("| defense_overhead / total | 0 | - | - | 0 | ms |")
+    output.append("")
+    output.append("- total・agent 合計は重なりを含むイベント加算値。拘束時間・CPU時間には使わない。")
+    output.append("## health refresh（親windowと内訳を分離、wall time）")
+    table(output)
+    for check in ("refresh_window", "refresh_copy", "refresh_verify"):
+        values = [x["_wall"] for x in defense if x.get("source") == "three_layer_health" and x.get("check_id") == check
+                  and (check != "refresh_window" or ":end:" in str(x.get("event_id", "")))]
+        output.append("| " + " | ".join(row(check, values)) + " |")
+    output.append("- refresh_window=end の完了イベントのみ。copy/verifyはwindowの内訳なので足さない。未完了windowは含まない。CPU使用時間は未計測。")
+    output.append("")
+    table(output)
 
     timing = []
+    call_sites = defaultdict(list)
     for path in split_paths(os.environ["KARO_THROUGHPUT_TIMING_LOGS"]):
         for item in read_jsonl(path):
             stamp = legacy_time(item)
-            if not in_domain(stamp):
+            if not in_domain(stamp, local_date=True):
                 continue
             try:
                 elapsed = int(item.get("elapsed_us")) / 1000.0
             except (TypeError, ValueError):
+                continue
+            if item.get("schema") == "call_site_timing.v1":
+                call_sites[str(item.get("call_site", "-"))].append(elapsed)
                 continue
             timing.append((item.get("script", path.name), item.get("function", "-"), elapsed, str(item.get("execution_id", "-"))))
     timing_groups = defaultdict(list)
@@ -219,6 +243,14 @@ def main():
     if not deploy_functions:
         output.append("| - | 0 | - | - | 0 |")
 
+    output.append("")
+    output.append("## run_python_logged 呼出し元別（関数合計の内訳、加算禁止）")
+    table(output)
+    for site, values in sorted(call_sites.items()):
+        output.append("| " + " | ".join(row(site, values)) + " |")
+    if not call_sites:
+        output.append("| 未計測（導入後の配備から記録） | 0 | - | - | 0 | ms |")
+
     gate = []
     waits = Counter()
     per_cmd = defaultdict(list)
@@ -228,31 +260,38 @@ def main():
         except OSError:
             raw_lines = []
         for line in raw_lines:
-            if not keep_log_line(line, local_date=True):
-                continue
             fields = line.split("\t")
             if len(fields) < 4:
                 continue
+            stamp = log_line_time(line)
+            if stamp is None or stamp > wait_end:
+                continue
             state, reason = fields[2], fields[3]
-            if state == "WAIT":
+            within_day = keep_log_line(line, local_date=True)
+            if state == "WAIT" and within_day:
                 waits[reason] += 1
-            stamp = parse_iso(fields[0])
-            if stamp is not None:
-                per_cmd[fields[1]].append((stamp, state, reason))
+            per_cmd[fields[1]].append((stamp, state, reason))
             match = re.search(r"(?:^|\s)duration_sec=([0-9]+(?:\.[0-9]+)?)", line)
-            if match:
+            if match and within_day and state == "CLEAR":
                 gate.append(float(match.group(1)) * 1000)
     # 待ち理由別の時間: 同一 cmd の連続 gate 行の間隔を、前行の state:reason に帳付けする。
     # 「手」の p50 と足せない「待ち」の軸(設計書 §4.2)。reason は先頭 2 要素で丸める。
     wait_minutes = Counter()
+    open_tail_minutes = 0.0
     wait_cmds = defaultdict(set)
     for cmd_id, entries in per_cmd.items():
         entries.sort(key=lambda e: e[0])
-        for (t0, state, reason), (t1, _, _) in zip(entries, entries[1:]):
+        for (t0, state, reason), (t1, next_state, _) in zip(entries, entries[1:] + [(wait_end, "", "")]):
             if state not in ("WAIT", "BLOCK"):
                 continue
-            key = state + ":" + ":".join(reason.split(":")[:2])
-            wait_minutes[key] += (t1 - t0).total_seconds() / 60.0
+            start, end = max(t0, day_start), min(t1, wait_end)
+            if end <= start:
+                continue
+            normalized = reason.removeprefix(state + ":")
+            key = state + ":" + ":".join(normalized.split(":")[:2])
+            wait_minutes[key] += (end - start).total_seconds() / 60.0
+            if not next_state:
+                open_tail_minutes += (end - start).total_seconds() / 60.0
             wait_cmds[key].add(cmd_id)
     output.append("| " + " | ".join(row("cmd_complete_gate / CLEAR duration", gate)) + " |" if gate else "| cmd_complete_gate / CLEAR duration | 0 | - | - | 0 | ms |")
     output.append("")
@@ -265,8 +304,10 @@ def main():
 
     output.append("")
     output.append("## GATE 待ち理由別 時間（便の待ち。手の p50 と足せない）")
+    output.append(f"- JST日境界で区間を切り、最終WAIT/BLOCKは締切 {wait_end.isoformat()} まで継続と推定。終端ログ欠落は過大推定となる。")
     table(output, ("state:reason", "待ち分", "比率", "cmd 数"))
     total_wait = sum(wait_minutes.values())
+    output.append(f"- 総待ち {total_wait:.3f} 分のうち、後続ログ未観測の末尾推定 {open_tail_minutes:.3f} 分。残りは連続ログ間の状態推定であり実作業時間ではない。")
     for key, minutes in sorted(wait_minutes.items(), key=lambda kv: (-kv[1], kv[0])):
         share = f"{minutes / total_wait * 100:.0f}%" if total_wait else "-"
         output.append(f"| {key} | {minutes:.0f} | {share} | {len(wait_cmds[key])} |")

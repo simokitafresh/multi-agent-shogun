@@ -12634,6 +12634,8 @@ deploy_task_function_timing_enable() {
     mkdir -p "$(dirname "$DEPLOY_TASK_FUNCTION_TIMING_LOG")" 2>/dev/null || return 0
     declare -gA _DT_FUNCTION_TIMING_US=()
     declare -gA _DT_FUNCTION_TIMING_CALLS=()
+    declare -gA _DT_CALL_SITE_TIMING_US=()
+    _DT_FUNCTION_TIMING_LAST_SITE=""
     _DT_FUNCTION_TIMING_LAST_FN=main
     _DT_FUNCTION_TIMING_LAST_US="${EPOCHREALTIME/./}"
     _DT_FUNCTION_TIMING_LAST_US="${_DT_FUNCTION_TIMING_LAST_US:0:16}"
@@ -12665,7 +12667,7 @@ _dt_function_timing_debug() {
             _FC_CALLS["$_DT_FC_COMMAND"]=$(( ${_FC_CALLS["$_DT_FC_COMMAND"]:-0} + 1 ))
         fi
     fi
-    local raw now fn delta
+    local raw now fn delta site=""
     raw="${EPOCHREALTIME/./}"
     now="${raw:0:16}"
     fn="${FUNCNAME[1]:-main}"
@@ -12684,10 +12686,17 @@ _dt_function_timing_debug() {
             _DT_FUNCTION_TIMING_US["${_DT_FUNCTION_TIMING_LAST_FN:-main}"]=$((
                 ${_DT_FUNCTION_TIMING_US["${_DT_FUNCTION_TIMING_LAST_FN:-main}"]:-0} + delta
             ))
+            if [ -n "${_DT_FUNCTION_TIMING_LAST_SITE:-}" ]; then
+                _DT_CALL_SITE_TIMING_US["$_DT_FUNCTION_TIMING_LAST_SITE"]=$(( ${_DT_CALL_SITE_TIMING_US["$_DT_FUNCTION_TIMING_LAST_SITE"]:-0} + delta ))
+            fi
             ;;
     esac
     _DT_FUNCTION_TIMING_CALLS["$fn"]=$(( ${_DT_FUNCTION_TIMING_CALLS["$fn"]:-0} + 1 ))
     _DT_FUNCTION_TIMING_LAST_FN="$fn"
+    if [ "$fn" = run_python_logged ]; then
+        site="${FUNCNAME[2]:-main}:L${BASH_LINENO[1]:-0}"
+    fi
+    _DT_FUNCTION_TIMING_LAST_SITE="$site"
     _DT_FUNCTION_TIMING_LAST_US="$now"
     _DT_FUNCTION_TIMING_BUSY=0
     return 0
@@ -12707,6 +12716,9 @@ deploy_task_function_timing_finish() {
         delta=$((now - _DT_FUNCTION_TIMING_LAST_US))
         [ "$delta" -ge 0 ] || delta=0
         _DT_FUNCTION_TIMING_US["$fn"]=$(( ${_DT_FUNCTION_TIMING_US["$fn"]:-0} + delta ))
+        if [ -n "${_DT_FUNCTION_TIMING_LAST_SITE:-}" ]; then
+            _DT_CALL_SITE_TIMING_US["$_DT_FUNCTION_TIMING_LAST_SITE"]=$(( ${_DT_CALL_SITE_TIMING_US["$_DT_FUNCTION_TIMING_LAST_SITE"]:-0} + delta ))
+        fi
     fi
     mkdir -p "$(dirname "$DEPLOY_TASK_FUNCTION_TIMING_LOG")" 2>/dev/null || return 0
     {
@@ -12719,6 +12731,10 @@ deploy_task_function_timing_finish() {
         done < <(for fn in "${!_DT_FUNCTION_TIMING_US[@]}"; do
             printf '%s\t%s\n' "${_DT_FUNCTION_TIMING_US[$fn]}" "$fn"
         done | sort -t $'\t' -k1,1nr -k2,2)
+        for fn in "${!_DT_CALL_SITE_TIMING_US[@]}"; do
+            printf '{"schema":"call_site_timing.v1","observed_at":"%s","execution_id":"%s","script":"deploy_task.sh","function":"run_python_logged","call_site":"%s","elapsed_us":%s}\n' \
+                "$_DT_FUNCTION_TIMING_OBSERVED_AT" "$_DT_FUNCTION_TIMING_ID" "$fn" "${_DT_CALL_SITE_TIMING_US[$fn]}"
+        done
     } 9>"${DEPLOY_TASK_FUNCTION_TIMING_LOG}.lock" >>"$DEPLOY_TASK_FUNCTION_TIMING_LOG" 2>/dev/null || true
     if [ -n "${_DT_FUNCTION_TIMING_PREV_DEBUG_TRAP:-}" ]; then
         eval "${_DT_FUNCTION_TIMING_PREV_DEBUG_TRAP}" 2>/dev/null || true
