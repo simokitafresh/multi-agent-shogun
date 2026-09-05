@@ -407,6 +407,35 @@ STUB
     [ -f "$(gate_notify_done_path "$cmd_id" auto_push_ancestry_retry)" ]
 }
 
+# test_necessity: retry telemetry must retain semantic result/reason separately
+# from the wrapper rc for PASS, rc=0 SKIP, and rc=1 SKIP outcomes.
+@test "auto-push retry records result reason and outer rc for all outcomes" {
+    local base="$BATS_TEST_TMPDIR/auto-push-outcomes"
+    mkdir -p "$base"
+    SCRIPT_DIR="$base"
+    source "$GATE_SOURCE_PUBLISH_HELPERS_DURABLE"
+
+    cmd_complete_gate_auto_push_ancestry_wait() {
+        case "$1" in
+            cmd_retry_pass) printf 'AUTO_PUSH_WAIT push=1 result=PASS method=source_commits\n'; return 0 ;;
+            cmd_retry_skip) printf 'AUTO_PUSH_WAIT push=0 result=SKIP reason=helper_missing\n'; return 0 ;;
+            *) printf 'AUTO_PUSH_WAIT push=0 result=SKIP reason=source_publication_failed\n'; return 1 ;;
+        esac
+    }
+    # The production helper receives task/report arguments after shifting the
+    # cmd id; the fixture selects outcomes from that real argument boundary.
+    gate_run_auto_push_ancestry_retry cmd_retry_pass cmd_retry_pass
+    gate_run_auto_push_ancestry_retry cmd_retry_skip cmd_retry_skip
+    gate_run_auto_push_ancestry_retry cmd_retry_fail cmd_retry_fail
+
+    local log="$base/queue/gates/cmd_retry_pass/auto_push_ancestry_retry.log"
+    grep -q $'\tcmd_retry_pass\tPASS\tresult=PASS reason=unknown\trc=0' "$log"
+    log="$base/queue/gates/cmd_retry_skip/auto_push_ancestry_retry.log"
+    grep -q $'\tcmd_retry_skip\tPASS\tresult=SKIP reason=helper_missing\trc=0' "$log"
+    log="$base/queue/gates/cmd_retry_fail/auto_push_ancestry_retry.log"
+    grep -q $'\tcmd_retry_fail\tFAIL\tresult=SKIP reason=source_publication_failed\trc=1' "$log"
+}
+
 # test_necessity: karo review (msg_20260904_080633_981530_67f5467a) rejected
 # a sequential-3-calls-in-one-process fixture as insufficient proof of
 # single-flight: "並行3プロセス同時start→dispatch 1... 逐次3回だけでsingleflight

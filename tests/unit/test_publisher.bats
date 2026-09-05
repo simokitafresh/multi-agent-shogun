@@ -66,6 +66,56 @@ teardown() {
     [ "$(find "$STATE/publish_queue/done" -name '*.request' | wc -l)" -eq 1 ]
 }
 
+# test_necessity: c2a telemetry is fail-open and must not replace the single
+# EXIT cleanup/rc contract. Both a clone failure and a successful merge must
+# leave exactly one source-specific telemetry attempt.
+@test "c2a telemetry failure preserves merge rc cleanup and PASS/FAIL attempts" {
+    local base="$FIXTURE/c2a-contract"
+    mkdir -p "$base/root/scripts/lib" "$base/tmp" "$base/success/tmp" "$base/failure/tmp"
+    cp "$ROOT/scripts/publisher_c2a_merge.sh" "$base/root/scripts/publisher_c2a_merge.sh"
+    chmod +x "$base/root/scripts/publisher_c2a_merge.sh"
+    cat > "$base/root/scripts/lib/defense_overhead_writer.sh" <<'EOF'
+defense_overhead_write() {
+    printf '%s|%s|%s|%s|%s\n' "$1" "$2" "$3" "$4" "$5" >> "${TEST_LEDGER:?}"
+    return "${TEST_WRITER_RC:-0}"
+}
+EOF
+
+    git init --bare -q "$base/remote.git"
+    git init -q "$base/root"
+    git -C "$base/root" config user.email test@example.invalid
+    git -C "$base/root" config user.name test
+    printf 'base\n' > "$base/root/state"
+    git -C "$base/root" add state
+    git -C "$base/root" commit -q -m base
+    git -C "$base/root" branch -M main
+    git -C "$base/root" remote add origin "$base/remote.git"
+    git -C "$base/root" push -q -u origin main
+    printf 'source\n' > "$base/root/new-file"
+    git -C "$base/root" add new-file
+    git -C "$base/root" commit -q -m source
+    local source_sha
+    source_sha="$(git -C "$base/root" rev-parse HEAD)"
+
+    # Successful merge with a writer that always fails: source rc stays zero.
+    TEST_LEDGER="$base/success/events" TEST_WRITER_RC=3 TMPDIR="$base/success/tmp" PUBLISHER_C2A_MERGE_NOLOCK=1 \
+      run bash "$base/root/scripts/publisher_c2a_merge.sh" cmd_c2a_success "$source_sha"
+    [ "$status" -eq 0 ]
+    [ "$(wc -l < "$base/success/events")" -eq 1 ]
+    grep -q '^publisher_c2a|c2a_merge_total|[0-9][0-9]*|PASS|' "$base/success/events"
+    [ "$(find "$base/success/tmp" -mindepth 1 -maxdepth 1 -type d | wc -l)" -eq 0 ]
+
+    # Failed clone with the same telemetry failure: the original nonzero rc
+    # must remain visible and cleanup must still remove the worktree.
+    git -C "$base/root" remote set-url origin "$base/missing.git"
+    TEST_LEDGER="$base/failure/events" TEST_WRITER_RC=3 TMPDIR="$base/failure/tmp" PUBLISHER_C2A_MERGE_NOLOCK=1 \
+      run bash "$base/root/scripts/publisher_c2a_merge.sh" cmd_c2a_failure "$source_sha"
+    [ "$status" -ne 0 ]
+    [ "$(wc -l < "$base/failure/events")" -eq 1 ]
+    grep -q '^publisher_c2a|c2a_merge_total|[0-9][0-9]*|FAIL|' "$base/failure/events"
+    [ "$(find "$base/failure/tmp" -mindepth 1 -maxdepth 1 -type d | wc -l)" -eq 0 ]
+}
+
 # test_necessity: isolated publication must clone from the local publisher
 # root with an object reference, then fetch only the remote delta from origin.
 @test "isolated publication uses a local reference clone before origin fetch" {

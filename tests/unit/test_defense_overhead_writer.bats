@@ -319,3 +319,66 @@ PY
   run defense_overhead_write review_approval karo_accept 5 PASS evt-agent-5 '{"agent":"spoof"}'
   [ "$status" -eq 3 ]
 }
+
+# test_necessity: executor identity must come from the current TMUX_PANE only;
+# a second pane's identity must never be attributed to the writer.
+@test "agent identity is pane-local and absent pane remains dash" {
+  tmux() {
+    case "$3" in
+      %left) printf 'left-agent\n' ;;
+      %right) printf 'right-agent\n' ;;
+      *) return 1 ;;
+    esac
+  }
+  export -f tmux
+  SHOGUN_AGENT_ID= TMUX_PANE=%left defense_overhead_write test pane 1 PASS evt-pane-left
+  SHOGUN_AGENT_ID= TMUX_PANE=%right defense_overhead_write test pane 1 PASS evt-pane-right
+  SHOGUN_AGENT_ID= TMUX_PANE= defense_overhead_write test pane 1 PASS evt-pane-none
+  python3 - "$DEFENSE_OVERHEAD_LEDGER" <<'PY'
+import json, sys
+rows = {r['event_id']: r for r in map(json.loads, open(sys.argv[1]))}
+assert rows['evt-pane-left']['agent'] == 'left-agent'
+assert rows['evt-pane-right']['agent'] == 'right-agent'
+assert rows['evt-pane-none']['agent'] == '-'
+PY
+}
+
+# test_necessity: the daily karo report must consume both current and legacy
+# ledgers, apply one as-of boundary to every source, and be byte-idempotent.
+@test "karo throughput report is deterministic across legacy and identity fixtures" {
+  local base="$TEST_TMP/karo-throughput-report"
+  mkdir -p "$base/gates/cmd_a" "$base/out"
+  printf '%s\n' \
+    '{"timestamp":"2026-09-05T00:00:00Z","source":"review_approval","check_id":"karo_accept","wall_ms":10,"verdict":"PASS","event_id":"d1","agent":"karo"}' \
+    '{"timestamp":"2026-09-05T01:00:00Z","source":"review_approval","check_id":"karo_accept","wall_ms":30,"verdict":"WARN","event_id":"d2"}' > "$base/defense.jsonl"
+  printf '%s\n' \
+    '{"schema":"function_timing.v1","observed_at":"2026-09-05T01:00:00Z","execution_id":"new-1","script":"cmd_complete_gate.sh","elapsed_us":1000}' \
+    '{"schema":"function_timing.v1","execution_id":"legacy-1788570000000000","script":"deploy_task.sh","elapsed_us":2000}' > "$base/timing.jsonl"
+  printf '%s\n' \
+    $'2026-09-05T01:00:00+00:00\tcmd_a\tWAIT\tWAIT:report_commit_main_ancestry' \
+    $'2026-09-05T02:00:00+00:00\tcmd_a\tCLEAR\tall_gates_passed\tduration_sec=2.5' > "$base/gate.log"
+  printf '%s\n' '[Sat Sep  5 03:00:00 JST 2026] [DELIVERY-LATENCY] karo: held 5s from first-unread' > "$base/watcher.log"
+  printf '%s\n' $'2026-09-05T03:00:00+09:00\tcmd_a\tPASS\tresult=PASS reason=none\trc=0' > "$base/gates/cmd_a/auto_push_ancestry_retry.log"
+
+  local -a report_env=(
+    "KARO_THROUGHPUT_OUTPUT_DIR=$base/out"
+    "KARO_THROUGHPUT_DEFENSE_LOG=$base/defense.jsonl"
+    "KARO_THROUGHPUT_TIMING_LOGS=$base/timing.jsonl"
+    "KARO_THROUGHPUT_GATE_LOG=$base/gate.log"
+    "KARO_THROUGHPUT_WATCHER_LOGS=$base/watcher.log"
+    "KARO_THROUGHPUT_RETRY_ROOT=$base/gates"
+  )
+  run env "${report_env[@]}" bash "$BATS_TEST_DIRNAME/../../scripts/karo_throughput_report.sh" 2026-09-05 --as-of 2026-09-05T04:00:00+00:00
+  [ "$status" -eq 0 ]
+  local report="$base/out/2026-09-05_2026-09-05T04:00:00+00:00.md"
+  [ -s "$report" ]
+  cp "$report" "$base/first.md"
+  run env "${report_env[@]}" bash "$BATS_TEST_DIRNAME/../../scripts/karo_throughput_report.sh" 2026-09-05 --as-of 2026-09-05T04:00:00+00:00
+  [ "$status" -eq 0 ]
+  cmp "$base/first.md" "$report"
+  grep -qF 'function_timing / cmd_complete_gate.sh' "$report"
+  grep -qF 'function_timing / deploy_task.sh' "$report"
+  grep -qF 'WAIT:report_commit_main_ancestry' "$report"
+  grep -qF 'inbox_watcher_karo / delivery_held' "$report"
+  grep -qF '| - | 1 | 30 |' "$report"
+}

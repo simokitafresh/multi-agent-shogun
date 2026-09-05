@@ -7,6 +7,28 @@ setup() {
     PROJECT_ROOT="$(cd "$BATS_TEST_DIRNAME/../.." && pwd)"
 }
 
+# test_necessity: held telemetry must be a synchronous, post-delivery,
+# fail-open write in the long-lived watcher; async PID accumulation would make
+# 1,000 repeated held events unbounded.
+@test "held delivery telemetry is post-send synchronous and bounded" {
+  local source="$PROJECT_ROOT/scripts/inbox_watcher.sh"
+  run python3 - "$source" <<'PY'
+import pathlib, sys
+text = pathlib.Path(sys.argv[1]).read_text(encoding='utf-8')
+start = text.index('    # AC1(cmd_3646): busy gating')
+end = text.index('\n\n\n# ─── Process cycle', start)
+block = text[start:end]
+assert 'defense_overhead_write inbox_watcher delivery_held' in block
+assert 'defense_overhead_write_async' not in block
+assert 'tmux send-keys' in text[:start]
+assert 'metadata_json' not in block
+assert 'target_agent' in block
+print('held_sync=1 post_send=1 async_pid_accumulation=0 target_agent=1')
+PY
+  [ "$status" -eq 0 ]
+  [ "$output" = 'held_sync=1 post_send=1 async_pid_accumulation=0 target_agent=1' ]
+}
+
 # test_necessity: f80869aの4列lease境界を、同task同fp・同task新fp・3列upgrade・
 # legacy fingerprint migration・家老非task経路の5独立fixtureで固定する。
 @test "four-column lease contract covers five delivery boundaries" {
