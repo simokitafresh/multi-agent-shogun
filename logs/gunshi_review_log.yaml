@@ -5879,6 +5879,8 @@
   - scripts/deploy_task.sh:1
 - cmd_id: cmd_karo_hotfix_agent_respawn_preserve_active
   review_type: report
+  gate_result: "CLEAR"
+  gate_synced_at: "2026-09-05T10:01:26+09:00"
   verdict: FAIL
   report_ninja: hanzo
   report_task_id: cmd_karo_hotfix_agent_respawn_preserve_active_normal
@@ -5914,6 +5916,8 @@
   timestamp: "2026-09-05T09:26:00+09:00"
 - cmd_id: cmd_karo_hotfix_agent_respawn_preserve_active
   review_type: report
+  gate_result: "CLEAR"
+  gate_synced_at: "2026-09-05T10:01:26+09:00"
   verdict: FAIL
   report_ninja: hanzo
   report_task_id: cmd_karo_hotfix_agent_respawn_preserve_active_normal
