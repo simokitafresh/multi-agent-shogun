@@ -768,3 +768,133 @@ PY
     [ "$status" -eq 0 ]
     [[ "$output" == *"dotpath=preserved explicit_relative_prefix=removed normal=preserved adversarial_dots=preserved"* ]]
 }
+
+# test_necessity: cache-backed deployments must publish the actual sparse
+# source projection and downstream commit/report identity, while author-only
+# post-deploy language must not be inferred from injected lesson text.
+@test "cache projection synchronizes identity, source paths, and author post-deploy contract" {
+    setup_fixture_repo
+    mkdir -p "$FIXTURE/shared/queue/reports"
+    printf '%s\n' \
+        'commands:' \
+        '  cmd_cache_identity:' \
+        '    command: "deploy -> post_deploy_evidence"' \
+        > "$FIXTURE/shared/queue/shogun_to_karo.yaml"
+    printf '%s\n' \
+        'worker_id: saizo' \
+        'commit_contract:' \
+        '  required: true' \
+        '  planned_paths: [src/app.py]' \
+        "  repo_root: $FIXTURE/shared" \
+        'post_deploy_evidence:' \
+        '  required: false' \
+        'status: pending' \
+        > "$FIXTURE/shared/queue/reports/report.yaml"
+    task="$FIXTURE/shared/queue/tasks.yaml"
+    printf '%s\n' \
+        'task:' \
+        '  task_id: task_cache_identity' \
+        '  parent_cmd: cmd_cache_identity' \
+        '  project: infra' \
+        '  task_worktree_required: true' \
+        '  target_path: .' \
+        '  planned_paths: [src/app.py]' \
+        "  report_path: queue/reports/report.yaml" \
+        '  commit_contract:' \
+        '    required: true' \
+        '    planned_paths: [src/app.py]' \
+        "    repo_root: $FIXTURE/shared" \
+        '  acceptance_criteria:' \
+        '    - id: AC1' \
+        '      description: "src/app.py"' \
+        '  related_lessons:' \
+        '    - detail: "post_deploy_evidence injected lesson text"' \
+        '  status: assigned' \
+        > "$task"
+
+    run env PROJECT_ROOT="$BATS_TEST_DIRNAME/../.." FIXTURE="$FIXTURE/shared" TASK="$task" \
+        DEPLOY_TASK_SOURCE_FS_TYPE_OVERRIDE=v9fs \
+        DEPLOY_TASK_REPO_CACHE_ROOT="$FIXTURE/cache" bash -c '
+        set -euo pipefail
+        export DEPLOY_TASK_LIB_ONLY=1
+        source "$PROJECT_ROOT/scripts/deploy_task.sh"
+        export DEPLOY_TASK_WORKTREE_ROOT="$FIXTURE/worktrees-cache"
+        SCRIPT_DIR="$FIXTURE"; LOG=/dev/stderr
+        cache_repo=$(deploy_task_materialize_ext4_repo_cache "$FIXTURE" 2>/dev/null)
+        mkdir -p "$FIXTURE/worktree"
+        yaml_field_set "$TASK" task task_worktree_workdir "$FIXTURE/worktree"
+        yaml_field_set "$TASK" task task_worktree_repo "$cache_repo"
+        projection=$(deploy_task_sparse_checkout_paths "$TASK" "$cache_repo")
+        export DEPLOY_TASK_SELECTED_SOURCE_JSON="$(python3 - "$projection" <<'PY'
+import json
+import sys
+print(json.dumps(json.loads(sys.argv[1])["source_paths"], ensure_ascii=False))
+PY
+)"
+        deploy_task_normalize_cached_worktree_projection "$TASK" "$FIXTURE" "$cache_repo"
+        python3 - "$TASK" "$FIXTURE/queue/reports/report.yaml" "$FIXTURE/../cache" <<'PY'
+import json
+import pathlib
+import subprocess
+import sys
+import yaml
+
+task = yaml.safe_load(pathlib.Path(sys.argv[1]).read_text())["task"]
+report = yaml.safe_load(pathlib.Path(sys.argv[2]).read_text())
+cache_root = pathlib.Path(sys.argv[3]).resolve()
+source_paths = json.loads(task["task_worktree_source_paths"])
+assert source_paths == ["src/app.py"], source_paths
+assert "." not in source_paths, source_paths
+cache_repo = pathlib.Path(task["task_worktree_repo"]).resolve()
+assert cache_repo.is_relative_to(cache_root), (cache_repo, cache_root)
+task_contract = task["commit_contract"]
+if isinstance(task_contract, str):
+    task_contract = json.loads(task_contract)
+assert task_contract["repo_root"] == str(cache_repo), task_contract
+report_contract = report["commit_contract"]
+if isinstance(report_contract, str):
+    report_contract = json.loads(report_contract)
+assert report_contract["repo_root"] == str(cache_repo), report_contract
+assert report["post_deploy_evidence"]["required"] is True, report["post_deploy_evidence"]
+assert report["status"] == "pending", report["status"]
+assert subprocess.run(["git", "-C", str(cache_repo), "cat-file", "-e", "refs/heads/main^{commit}"]).returncode == 0
+print("cache_identity=1 source_dot=0 post_deploy_required=1 nonterminal_status=1")
+PY
+    '
+    if [ "$status" -ne 0 ]; then
+        printf '%s\n' "$output" >&3
+    fi
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"cache_identity=1 source_dot=0 post_deploy_required=1 nonterminal_status=1"* ]]
+}
+
+@test "author post-deploy detector ignores injected lesson and control context text" {
+    setup_fixture_repo
+    mkdir -p "$FIXTURE/shared/queue"
+    printf '%s\n' \
+        'commands:' \
+        '  cmd_author_scope:' \
+        '    command: "ordinary local validation"' \
+        > "$FIXTURE/shared/queue/shogun_to_karo.yaml"
+    task="$FIXTURE/shared/task.yaml"
+    printf '%s\n' \
+        'task:' \
+        '  task_id: task_author_scope' \
+        '  parent_cmd: cmd_author_scope' \
+        '  acceptance_criteria:' \
+        '    - id: AC1' \
+        '      description: "control context text"' \
+        '  related_lessons:' \
+        '    - detail: "post_deploy_evidence"' \
+        > "$task"
+    run env PROJECT_ROOT="$BATS_TEST_DIRNAME/../.." FIXTURE="$FIXTURE/shared" TASK="$task" bash -c '
+        set -euo pipefail
+        export DEPLOY_TASK_LIB_ONLY=1
+        source "$PROJECT_ROOT/scripts/deploy_task.sh"
+        SCRIPT_DIR="$FIXTURE"; result=$(deploy_task_author_requires_post_deploy_evidence "$TASK")
+        [ "$result" = false ]
+        echo "false_positive=0 false_negative=0 result=$result"
+    '
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"false_positive=0 false_negative=0 result=false"* ]]
+}

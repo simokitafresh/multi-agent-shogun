@@ -11644,6 +11644,7 @@ if declare -F deploy_task_report_cold_plan >/dev/null 2>&1; then
                         python3 - "$1" <<'PY'
 import json
 import os
+import subprocess
 import sys
 import yaml
 
@@ -11934,6 +11935,7 @@ deploy_task_sparse_checkout_paths() {
     python3 - "$task_file" "$repo" "$runtime_repo" <<'PY'
 import json
 import os
+import subprocess
 import sys
 import yaml
 
@@ -11974,7 +11976,59 @@ def add_path(raw):
     if relative.startswith(("http/", "https/", "ssh/")) or "://" in raw:
         return
     candidate = os.path.join(repo, relative)
-    if not os.path.exists(candidate):
+    # A cache repo is intentionally bare, so filesystem existence checks on
+    # repo/relative always return false and incorrectly widen a file path to
+    # its parent directory (e.g. src/app.py -> src).  Ask Git's tree object
+    # for the same existence question, retaining filesystem checks for normal
+    # worktrees and untracked fixture paths.
+    source_exists = os.path.exists(candidate)
+    repo_is_bare = False
+    if not source_exists:
+        try:
+            repo_is_bare = subprocess.run(
+                ["git", "-C", repo, "rev-parse", "--is-bare-repository"],
+                stdout=subprocess.PIPE,
+                stderr=subprocess.DEVNULL,
+                text=True,
+                check=False,
+                timeout=5,
+            ).stdout.strip() == "true"
+        except (OSError, subprocess.SubprocessError):
+            repo_is_bare = False
+    if not source_exists and repo_is_bare and relative not in ("", "."):
+        try:
+            refs = ["HEAD"]
+            ref_result = subprocess.run(
+                [
+                    "git",
+                    "-C",
+                    repo,
+                    "for-each-ref",
+                    "--format=%(refname)",
+                    "refs/heads",
+                    "refs/tags",
+                ],
+                stdout=subprocess.PIPE,
+                stderr=subprocess.DEVNULL,
+                text=True,
+                check=False,
+                timeout=5,
+            )
+            refs.extend(line.strip() for line in ref_result.stdout.splitlines() if line.strip())
+            source_exists = any(
+                subprocess.run(
+                    ["git", "-C", repo, "cat-file", "-e", f"{ref}:{relative}"],
+                    stdout=subprocess.DEVNULL,
+                    stderr=subprocess.DEVNULL,
+                    check=False,
+                    timeout=5,
+                ).returncode
+                == 0
+                for ref in dict.fromkeys(refs)
+            )
+        except (OSError, subprocess.SubprocessError):
+            source_exists = False
+    if not source_exists:
         parent = os.path.dirname(relative)
         if parent and parent not in paths:
             paths.append(parent)
@@ -12024,6 +12078,19 @@ deploy_task_prepare_sparse_checkout() {
         return 1
     fi
     [ -n "$paths" ] || return 0
+    # Keep the exact sparse projection as the downstream identity SSOT.  The
+    # authored root target is only an input to projection; persisting it as
+    # `.` makes commit/report consumers lose the selected source scope.
+    DEPLOY_TASK_SELECTED_SOURCE_JSON="$(python3 - "$projection" <<'PY'
+import json
+import sys
+
+projection = json.loads(sys.argv[1])
+paths = [str(item).strip() for item in projection.get("source_paths") or [] if str(item).strip()]
+print(json.dumps(list(dict.fromkeys(paths)), ensure_ascii=False))
+PY
+)"
+    export DEPLOY_TASK_SELECTED_SOURCE_JSON
     while IFS= read -r path; do
         [ -n "$path" ] || continue
         mkdir -p -- "$worktree/$(dirname -- "$path")"
@@ -12098,10 +12165,11 @@ if declare -F deploy_task_validate_remote_tip_paths >/dev/null 2>&1 \
 fi
 
 deploy_task_normalize_cached_worktree_projection() {
-    local task_file="$1" source_repo="$2" cached_repo="$3" worktree target_json source_json
+    local task_file="$1" source_repo="$2" cached_repo="$3" worktree target_json source_json selected_json report_file
     worktree=$(FIELD_GET_NO_LOG=1 field_get "$task_file" "task_worktree_workdir" "" 2>/dev/null || true)
     [ -n "$worktree" ] || return 1
-    eval "$(python3 - "$task_file" "$source_repo" "$worktree" <<'PY'
+    selected_json="${DEPLOY_TASK_SELECTED_SOURCE_JSON:-[]}"
+    eval "$(python3 - "$task_file" "$source_repo" "$worktree" "$selected_json" <<'PY'
 import json
 import os
 import sys
@@ -12110,6 +12178,10 @@ import yaml
 task = (yaml.safe_load(open(sys.argv[1], encoding="utf-8")) or {}).get("task", {})
 source = os.path.realpath(sys.argv[2])
 worktree = os.path.realpath(sys.argv[3])
+try:
+    selected = json.loads(sys.argv[4])
+except (TypeError, ValueError):
+    selected = []
 values = []
 for key in ("target_path", "planned_paths"):
     value = task.get(key) or []
@@ -12123,15 +12195,35 @@ for key in ("target_path", "planned_paths"):
         values.extend(str(item).strip() for item in value if str(item).strip())
 
 relative = []
-for raw in values:
-    if raw.startswith("/"):
-        item = os.path.relpath(raw, source)
+for raw in selected:
+    item = str(raw).strip()
+    if not item or item in (".", "./"):
+        continue
+    if item.startswith("/"):
+        item = os.path.relpath(item, source)
         if item == ".." or item.startswith("../"):
             continue
-    else:
-        item = raw[2:] if raw.startswith("./") else raw
+    item = item[2:] if item.startswith("./") else item
     item = os.path.normpath(item)
-    relative.append("." if item in ("", ".") else item)
+    if item not in ("", "."):
+        relative.append(item)
+
+# Non-cache callers have no sparse projection.  Retain their existing
+# normalization contract, but fail closed for a cache root with no selected
+# source set rather than reintroducing `.`.
+if not relative and selected:
+    raise SystemExit("BLOCK: cached worktree sparse projection resolved to no source paths")
+if not relative and os.path.realpath(sys.argv[2]) != os.path.realpath(sys.argv[3]):
+    for raw in values:
+        if raw.startswith("/"):
+            item = os.path.relpath(raw, source)
+            if item == ".." or item.startswith("../"):
+                continue
+        else:
+            item = raw[2:] if raw.startswith("./") else raw
+        item = os.path.normpath(item)
+        if item not in ("", "."):
+            relative.append(item)
 relative = list(dict.fromkeys(relative))
 targets = [os.path.join(worktree, item) for item in relative]
 print("_DT_TARGET_JSON=%r" % json.dumps(targets, ensure_ascii=False))
@@ -12140,6 +12232,120 @@ PY
 )" || return 1
     yaml_field_set_batch "$task_file" task \
         "task_worktree_target_paths=$_DT_TARGET_JSON" "task_worktree_source_paths=$_DT_SOURCE_JSON"
+
+    # The cache is the commit identity SSOT after materialization.  Reconcile
+    # both task and still-unedited report contracts in one deployment phase so
+    # commit resolution cannot fall back to the slow v9fs/project repository.
+    report_file=$(FIELD_GET_NO_LOG=1 field_get "$task_file" "report_path" "" 2>/dev/null || true)
+    if [ -n "$report_file" ] && [[ "$report_file" != /* ]]; then
+        report_file="$SCRIPT_DIR/$report_file"
+    fi
+    deploy_task_sync_cached_commit_identity "$task_file" "$report_file" "$cached_repo" || return 1
+}
+
+deploy_task_author_requires_post_deploy_evidence() {
+    local task_file="$1"
+    python3 - "$task_file" "$SCRIPT_DIR/queue/shogun_to_karo.yaml" <<'PY'
+import sys
+import yaml
+
+task_path, parent_path = sys.argv[1:]
+task = (yaml.safe_load(open(task_path, encoding="utf-8")) or {}).get("task", {})
+texts = []
+
+def flatten(value):
+    if isinstance(value, dict):
+        for item in value.values():
+            yield from flatten(item)
+    elif isinstance(value, list):
+        for item in value:
+            yield from flatten(item)
+    elif value is not None:
+        yield str(value)
+
+texts.extend(flatten(task.get("acceptance_criteria")))
+texts.extend(flatten(task.get("command")))
+parent_cmd = str(task.get("parent_cmd") or "").strip()
+if parent_cmd:
+    parent = yaml.safe_load(open(parent_path, encoding="utf-8")) or {}
+    commands = parent.get("commands") if isinstance(parent, dict) else {}
+    authored = commands.get(parent_cmd, {}) if isinstance(commands, dict) else {}
+    if isinstance(authored, dict):
+        texts.extend(flatten(authored.get("acceptance_criteria")))
+        texts.extend(flatten(authored.get("command")))
+
+print("true" if any("post_deploy_evidence" in text for text in texts) else "false")
+PY
+}
+
+deploy_task_sync_cached_commit_identity() {
+    local task_file="$1" report_file="$2" cached_repo="$3" contract_json report_contract_json post_deploy_json required
+    [ -d "$cached_repo" ] || { log "BLOCK: cache repo missing: $cached_repo"; return 1; }
+    [ "$(git -C "$cached_repo" rev-parse --is-bare-repository 2>/dev/null || true)" = "true" ] \
+        || { log "BLOCK: cache repo is not bare: $cached_repo"; return 1; }
+    cached_repo=$(realpath "$cached_repo") || return 1
+
+    contract_json=$(python3 - "$task_file" "$cached_repo" <<'PY'
+import json
+import sys
+import yaml
+
+task = (yaml.safe_load(open(sys.argv[1], encoding="utf-8")) or {}).get("task", {})
+contract = task.get("commit_contract")
+if isinstance(contract, str):
+    try:
+        contract = json.loads(contract)
+    except (TypeError, ValueError):
+        contract = None
+if not isinstance(contract, dict):
+    contract = {}
+contract["repo_root"] = sys.argv[2]
+print(json.dumps(contract, ensure_ascii=False, separators=(",", ":")))
+PY
+) || return 1
+    yaml_field_set "$task_file" task commit_contract "$contract_json" || return 1
+
+    if [ -n "$report_file" ] && [ -f "$report_file" ]; then
+        report_contract_json=$(python3 - "$report_file" "$cached_repo" <<'PY'
+import json
+import sys
+import yaml
+
+report = yaml.safe_load(open(sys.argv[1], encoding="utf-8")) or {}
+contract = report.get("commit_contract")
+if not isinstance(contract, dict):
+    contract = {}
+contract["repo_root"] = sys.argv[2]
+print(json.dumps(contract, ensure_ascii=False, separators=(",", ":")))
+PY
+) || return 1
+        required=$(deploy_task_author_requires_post_deploy_evidence "$task_file") || return 1
+        post_deploy_json=$(python3 - "$report_file" "$required" <<'PY'
+import json
+import sys
+import yaml
+
+report = yaml.safe_load(open(sys.argv[1], encoding="utf-8")) or {}
+evidence = report.get("post_deploy_evidence")
+if not isinstance(evidence, dict):
+    evidence = {}
+evidence["required"] = sys.argv[2].lower() == "true"
+print(json.dumps(evidence, ensure_ascii=False, separators=(",", ":")))
+PY
+) || return 1
+        local report_setter="${DEPLOY_TASK_REPORT_FIELD_SETTER:-$SCRIPT_DIR/scripts/report_field_set.sh}"
+        if [ ! -f "$report_setter" ] && [ -n "${PROJECT_ROOT:-}" ]; then
+            report_setter="$PROJECT_ROOT/scripts/report_field_set.sh"
+        fi
+        if [ ! -f "$report_setter" ]; then
+            report_setter="${BASH_SOURCE[0]%/scripts/deploy_task.sh}/report_field_set.sh"
+        fi
+        [ -f "$report_setter" ] || { log "BLOCK: report field setter unavailable"; return 1; }
+        printf '%s\n' "$report_contract_json" \
+            | bash "$report_setter" "$report_file" commit_contract - || return 1
+        printf '%s\n' "$post_deploy_json" \
+            | bash "$report_setter" "$report_file" post_deploy_evidence - || return 1
+    fi
 }
 
 deploy_task_prepare_remote_tip_worktree_sparse() {
@@ -12147,6 +12353,9 @@ deploy_task_prepare_remote_tip_worktree_sparse() {
     source_repo=$(deploy_task_original_resolve_source_repo "$task_file" 2>/dev/null || true)
     repo="$source_repo"
     [ -n "$repo" ] || return 1
+    DEPLOY_TASK_SELECTED_SOURCE_JSON="[]"
+    DEPLOY_TASK_CACHE_SOURCE_ACTIVE=0
+    export DEPLOY_TASK_SELECTED_SOURCE_JSON DEPLOY_TASK_CACHE_SOURCE_ACTIVE
     deploy_task_source_repo_uses_slow_fs "$repo" || {
         deploy_task_original_prepare_remote_tip_worktree "$task_file" "$ninja_name"
         return $?
@@ -12162,6 +12371,8 @@ deploy_task_prepare_remote_tip_worktree_sparse() {
             DEPLOY_TASK_SOURCE_REPO_ORIGINAL="$repo"
             DEPLOY_TASK_SOURCE_REPO_CACHE="$cached_repo"
             export DEPLOY_TASK_SOURCE_REPO_OVERRIDE DEPLOY_TASK_SOURCE_REPO_ORIGINAL DEPLOY_TASK_SOURCE_REPO_CACHE
+            DEPLOY_TASK_CACHE_SOURCE_ACTIVE=1
+            export DEPLOY_TASK_CACHE_SOURCE_ACTIVE
             using_cache=1
         fi
     fi
