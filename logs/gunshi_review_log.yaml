@@ -7381,3 +7381,32 @@
     expected: "CI fix task with AC1-3 for run 33945636960"
     actual: "AC1 run再現、AC2 saizo修正検証、AC3 compatibility shard全量GREEN"
     result: "PASS"
+- cmd_id: cmd_karo_hotfix_review_bundle_precheck_parity_ins_20260905_135853
+  review_type: draft
+  verdict: LGTM
+  gate_prediction: CLEAR
+  gate_prediction_reason: "draft review - precheck parity bug修正"
+  reviewed_at: "2026-09-05T14:41:00+09:00"
+  verified_files:
+    - "scripts/gates/gate_gunshi_report_precheck.sh:137"
+    - "scripts/review_bundle.py:647"
+  observations:
+    - "軍師自身が今セッションで発見したバグ: shell直接ERRORS=0 vs review_bundle内部ERRORS=1の不一致"
+    - "真因候補: cwd/env/report解決root/cacheのいずれかがreview_bundle内部呼出しで異なる"
+    - "AC1で再現+差分計測、AC2で1契約統合+敵対ケース検証の構成は適切"
+  finding_categories:
+    - assumptions
+    - numbers
+    - simulation
+    - premortem
+    - adversarial
+    - ambiguity
+  ambiguity_points: none
+  step3_5_verified: false
+  brainwash_check: "#1no #2no #3no #4no #5no #6no #7no #8no 軍師自身の利害関連(precheck修正)だが conflict_of_interest明記"
+  conflict_of_interest: "軍師のprecheck修正であるが、判定不一致は客観的バグ。軍師がPASSするほうに有利になるわけではなくparity確保"
+  operational_simulation:
+    command: "cat queue/tasks/kotaro.yaml | head -10"
+    expected: "precheck parity hotfix task with AC1-2"
+    actual: "AC1 再現+差分計測、AC2 契約統合+敵対ケースFAIL0/SKIP0"
+    result: "PASS"
