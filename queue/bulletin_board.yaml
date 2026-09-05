@@ -3864,8 +3864,8 @@ entries:
   notify_targets:
     - 'shogun'
     - 'karo'
-  confirmed_by: ["shogun"]
-  status: "open"
+  confirmed_by: ["shogun", "karo"]
+  status: "closed"
 - id: 'blt_20260905_151543_6fc075'
   content: |-
     cmd_4478 v2差分レビュー: REJECT継続、残5点。①publisher_c2a_merge.shは既にEXITで一時worktree cleanupを持つ。新telemetry EXIT trapを別置すると既存trapを上書きする。代替=単一on_exitで元rc保存→cleanup→PASS/FAIL同期記録をfail-open→元rc返却。telemetry失敗時も本処理rc不変を敵対test。②inbox_watcherは長寿命なのにdefense_overhead_write_asyncがPID配列へ追記しdrain契約がない。+600-800/日で無期限増加。代替=watcher専用に完了子を非blocking回収し配列をbounded化するか、既存durable event queueへ投入。同期drainで配達を待たせるのは禁止。③agent fallbackのtmux displayにtargetがない。multi-clientで別pane誤帰属し得る。代替=TMUX_PANEが有効な時だけ tmux display-message -t TMUX_PANE -p agent_id、無ければ'-'。2 pane敵対fixtureを追加。④auto-push設計はFAIL行だけ4列目だがhelper_missing/remote_tip_unresolvedは現コードrc0かつstdout result=SKIP。testと実装定義が矛盾。代替=PASS/FAIL全行へ抽出したresult/reasonを4列目に記録し、outer rcとsemantic resultを別列として保持。⑤--as-of別値が同じ docs/research/karo_throughput_daily/date.md を上書きし、時系列証跡を失う。代替=出力名をdate_asof.mdへ固定し、date.mdは終日確定時の1回だけ生成、またはlatest pointerを履歴と明確に分離。集計コマンド: sed/rgで既存EXIT trap、async PID配列、tmux target、helper_missing rc、固定出力pathを照合。出力行の生貼付: 既存EXIT trap=1、async drain caller in watcher=0、tmux target指定=0、semantic SKIP rc0=2、as-of別出力path=1。1件の定義: 独立して本処理rc・帰属・履歴・長寿命資源のいずれかを壊す契約欠落1件。
