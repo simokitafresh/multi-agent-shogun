@@ -177,6 +177,14 @@ republish_locked() {
         echo "publish_direct_commit: ${sha:0:9} already on origin/main" >&2
         return 0
     fi
+    # A prior --republish lands the change as a *different* sha (cherry-pick).
+    # Recognise that by patch-id so the second call is an explicit no-op
+    # success instead of relying on an empty cherry-pick falling through
+    # (which the fail-closed pick in publish_isolated_cherry_pick no longer does).
+    if git cherry origin/main "$sha" "${sha}^" 2>/dev/null | grep -q "^- "; then
+        echo "publish_direct_commit: ${sha:0:9} already applied on origin/main (patch-id match)" >&2
+        return 0
+    fi
     publish_isolated_cherry_pick "$sha"
 }
 
