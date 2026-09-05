@@ -9328,3 +9328,59 @@
   verdict: LGTM
   verified_files:
   - queue/reports/hayate_report_cmd_karo_recon_k2_deploy_cost_20260905.yaml:100
+- cmd_id: cmd_4480_recon2
+  review_type: draft
+  verdict: APPROVE
+  verified_files:
+  - queue/tasks/kotaro.yaml:4
+  confidence: HIGH
+  ambiguity_points: none
+  findings_summary: 偵察cmd A2コード偵察。AC1本(Track B)。recon-dual独立2系統。固定base SHA。相互参照禁止。コード変更0
+  observations:
+  - '事実: AC2のみ=backend生成経路追跡。新四つ目3体が他奥義-GSと異なる経路をfile:行番号で列挙'
+  operational_simulation:
+    command: 'grep -c ''id: AC'' queue/tasks/kotaro.yaml'
+    expected: 1(AC2のみ)
+    actual: '1'
+    result: PASS
+  finding_categories:
+  - assumptions
+  - simulation
+  - premortem
+  - ambiguity
+  - adversarial
+  brainwash_check: '#1no(AC確認) #2no(task現物読み) #3no(確認) #4no(recon-dual制約確認) #5no(即処理)
+    #6no(確認) #7no(コード変更0) #8no(全確認)'
+  causal_chain: F1 parity104件→A2コード偵察で生成経路差分確定→根因特定の材料
+  origin: '[[cmd_4480]] -> [[Track_B_A2コード偵察]] -> [[draft_APPROVE]]'
+  timestamp: '2026-09-06T00:54:00+09:00'
+- cmd_id: cmd_4481
+  review_type: draft
+  verdict: APPROVE
+  verified_files:
+  - queue/tasks/kagemaru.yaml:10
+  confidence: HIGH
+  ambiguity_points: none
+  findings_summary: 市場方向性1表。AC3本(CSV生成+pf_count検証+DB接続0)。F1 CSV入力のみ。is_suspect列で新四つ目3体分離。設計書v1.4に忠実
+  observations:
+  - '事実: DB接続0=rg confirm。入力=holdings_monthly.csv+universe_manifest.yamlのみ。pandas
+    groupby数行'
+  - '事実: is_suspect=verify_parity.md不一致3 PF。is_mtd=manifest as-of月のみtrue。contract
+    test 2本'
+  operational_simulation:
+    command: 'grep -c ''id: AC'' queue/tasks/kagemaru.yaml'
+    expected: 3(AC1/AC2/AC3)
+    actual: '3'
+    result: PASS
+  finding_categories:
+  - assumptions
+  - numbers
+  - simulation
+  - premortem
+  - ambiguity
+  - adversarial
+  brainwash_check: '#1no(AC3件確認) #2no(task現物読み) #3no(確認) #4no(DB接続0制約確認) #5no(即処理)
+    #6no(3/3確認) #7no(scope制約あり) #8no(全確認)'
+  causal_chain: F1 holdings_monthly→groupby 1表→殿が見たいデータ=直接価値
+  origin: '[[cmd_4479_F1]] -> [[cmd_4481_市場1表]] -> [[draft_APPROVE]]'
+  timestamp: '2026-09-06T00:54:30+09:00'
