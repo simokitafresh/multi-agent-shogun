@@ -8222,3 +8222,36 @@
     actual: "AC2=no(baseline 7 FAIL一致)"
     result: "PASS"
   timestamp: "2026-09-05T17:36:00+09:00"
+- brainwash_check: '#1no #2no #3no #4no #5no #6no #7no #8no gate_vercel 14/14+gate_context
+    31/31'
+  causal_chain: 家老RC→共通lib単一source化→関数定義5→0→lib維持コスト最小化
+  cmd_id: cmd_karo_hotfix_ga579_external_project_context_ref
+  finding_categories:
+  - assumptions
+  - numbers
+  - premortem
+  - adversarial
+  - ambiguity
+  findings_summary: '4観点OK。RC改訂: 共通resolver単一source化(両gate内定義5個→0個、lib各1)。14/14+31/31全PASS。commit
+    2a9817d1'
+  hole_action: none
+  observations:
+  - karo RC 3通を完全反映。共通lib新設、関数定義の重複排除
+  - scope外FAIL 1件(test_gate_gunshi_report_precheck.bats lib未同梱)はdecision_candidate記録済み
+  operational_simulation:
+    actual: 3 definitions confirmed
+    command: grep -c external_ref_ scripts/lib/external_project_ref_resolver.sh
+    expected: 3 functions
+    result: PASS
+  origin: '[[GA-579]] -> [[shared_lib_single_source]] -> [[external_project_ref_resolver]]'
+  precheck_na:
+    evidence: status=completed。GATE_PREDICTION=CLEAR
+    reason: SG-PRE1 status revision_requested→completed修正済み(report_field_set.sh)
+  report_ninja: kotaro
+  report_task_id: cmd_karo_hotfix_ga579_external_project_context_ref_normal
+  review_type: report
+  step3_5_verified: true
+  timestamp: '2026-09-05T17:38:00+09:00'
+  verdict: LGTM
+  verified_files:
+  - scripts/lib/external_project_ref_resolver.sh:external_ref_canonical_project_id
