@@ -632,7 +632,8 @@ def test_honest_failed_report_normalizes_lgtm_to_approve_without_clearing(tmp_pa
     monkeypatch.setattr(review_bundle, "batch", capture_batch)
     entry = root / "review-entry.yaml"
     entry.write_text(
-        "cmd_id: " + cmd + "\nreview_type: report\nverdict: LGTM\nreport_verdict: FAIL\n",
+        "cmd_id: " + cmd + "\nreview_type: report\nverdict: LGTM\nreport_verdict: FAIL\n"
+        "approved_failed_check_paths: ['binary_checks.AC1[0]']\n",
         encoding="utf-8",
     )
     args = SimpleNamespace(
@@ -647,11 +648,13 @@ def test_honest_failed_report_normalizes_lgtm_to_approve_without_clearing(tmp_pa
     generated = SimpleNamespace(
         root=str(root), cmd=cmd, report=str(report), verdict="APPROVE",
         allow_archived=False, fail_reason=None, allow_honest_fail=True,
+        approved_failed_check_paths=["binary_checks.AC1[0]"],
     )
     assert review_bundle.generate(generated) == 0
     review = review_bundle.load(root / "queue/gates" / cmd / "sg7_bundle.json")["review"]
     assert review["verdict"] == "APPROVE"
     assert review["report_verdict"] == "FAIL"
+    assert review["approved_failed_check_paths"] == ["binary_checks.AC1[0]"]
     assert not (root / "queue/gates" / cmd / "review_gate.done").exists()
     monkeypatch.setattr(review_bundle, "batch", old_batch)
 

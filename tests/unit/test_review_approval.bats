@@ -504,6 +504,56 @@ pair_review() {
     [[ "$output" == *"fail-close review recorded"* ]]
 }
 
+# test_necessity: a truthful failed report may re-enter the review/GATE lane
+# only when SG7 APPROVE, report generation, and both approver records identify
+# the same report.  A matching lane must produce exactly one trigger.
+# regression_justification: failed+FAIL Karo ACCEPT previously always took the
+# fail-close path, so the verified SG7 honest-fail approval never reached GATE.
+@test "matching SG7 honest FAIL approval enters the review gate" {
+    setup_pair_fixture
+    local cmd_id=cmd_karo_honest_fail_gate worker=honestfailgate
+    make_pair_task "$worker" "$cmd_id"
+    local report
+    report="$(make_pair_report "$worker" "$cmd_id")"
+    sed -i 's/^status: completed/status: failed/; s/^verdict: PASS/verdict: FAIL/' "$report"
+    sed -i '/^binary_checks:$/a\  AC2:\n    - check: approved honest-fail check\n      result: no' "$report"
+
+    run pair_review "$cmd_id" gunshi LGTM "$report" report
+    [ "$status" -eq 0 ]
+    ln -s "$BATS_TEST_DIRNAME/../../scripts/review_bundle.py" "$PAIR_ROOT/scripts/review_bundle.py"
+
+    local raw_generation logical bundle key approval_dir
+    raw_generation="$(sha256sum "$report" | awk '{print $1}')"
+    logical="queue/reports/$(basename "$report")"
+    bundle="$PAIR_ROOT/queue/gates/$cmd_id/sg7_bundle.json"
+    mkdir -p "$(dirname "$bundle")"
+    printf '{"review":{"cmd_id":"%s","verdict":"APPROVE","report_verdict":"FAIL","approved_failed_check_paths":["binary_checks.AC2[0]"],"report":"%s","report_id":"rpt-22222222-2222-4222-8222-222222222222","report_fingerprint":"%s","report_generation":"%s","cmd_spec_source":"queue/tasks/fixture.yaml","cmd_spec_summary":{"acceptance_criteria_count":1,"scope":"scripts/review_approval.sh","project":"infra"}}}\n' \
+        "$cmd_id" "$logical" "$raw_generation" "$raw_generation" > "$bundle"
+
+    printf '#!/usr/bin/env bash\nprintf "called\\n" >> "$PAIR_ROOT/gate.calls"\n' \
+        > "$PAIR_ROOT/scripts/cmd_complete_gate.sh"
+    chmod +x "$PAIR_ROOT/scripts/cmd_complete_gate.sh"
+    honest_pair_review() {
+        REVIEW_APPROVAL_ROOT="$PAIR_ROOT" \
+        REVIEW_APPROVAL_SKIP_LEDGER_CHECK=1 \
+        REVIEW_APPROVAL_NO_NOTIFY=1 \
+        bash "$PAIR_ROOT/scripts/review_approval.sh" "$@"
+    }
+
+    run honest_pair_review "$cmd_id" karo ACCEPT "$report"
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"review gate formalized"* ]]
+    for _ in $(seq 1 140); do
+        [ -f "$PAIR_ROOT/gate.calls" ] && break
+        sleep 0.05
+    done
+    [ "$(grep -c '^called$' "$PAIR_ROOT/gate.calls" 2>/dev/null || true)" -eq 1 ]
+    key="$(PROJECT_ROOT="$PAIR_ROOT" bash -c 'source "$1/scripts/lib/review_approval.sh"; review_report_key "${2#"$1"/}"' _ "$PAIR_ROOT" "$report")"
+    approval_dir="$PAIR_ROOT/queue/gates/$cmd_id/review_approvals/reports/$key"
+    grep -qx 'approval_mode: approved_honest_fail' "$approval_dir/karo.yaml"
+    grep -qx 'honest_fail: approved_honest_fail' "$PAIR_ROOT/queue/gates/$cmd_id/review_gate.done"
+}
+
 # test_necessity: a non-failed report-only correction still requires a fresh
 # Gunshi approval bound to the corrected payload.
 # regression_justification: the fail-close exception must not weaken the
@@ -547,7 +597,6 @@ pair_review() {
     [ ! -f "$approval_dir/karo.yaml" ]
 
     run pair_review "$cmd_id" gunshi LGTM "$report"
-    echo "$output" >&3
     [ "$status" -eq 0 ]
     first="$(sed -n 's/^timestamp: //p' "$approval_dir/gunshi.yaml")"
     sleep 1

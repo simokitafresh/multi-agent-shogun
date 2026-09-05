@@ -137,6 +137,32 @@ PY
     [ "$output" = "receipt=1 before_clear=1 karo_rerun=0" ]
 }
 
+# test_necessity: the honest-fail exception must be an identity-bound SG7 lane,
+# and only explicit bc:no evidence may avoid the normal binary-check BLOCK.
+# regression_justification: a failed report previously either stopped before
+# GATE or could be mistaken for a successful implementation approval.
+@test "honest FAIL gate lane is SG7 and bc:no identity bound" {
+    run python3 - "$SRC_GATE_SCRIPT" <<'PY'
+import pathlib
+import sys
+
+text = pathlib.Path(sys.argv[1]).read_text(encoding="utf-8")
+for token in (
+    "review_approved_honest_fail_ready()",
+    'source \"$SCRIPT_DIR/scripts/lib/review_approval.sh\"',
+    'report_fingerprint',
+    'review_bundle.py',
+    '--expect-verdict APPROVE',
+):
+    assert token in text, token
+assert text.index("review_approved_honest_fail_ready()") < text.index("Binary checks validation:")
+assert "report_honest_fail_overrideable()" not in text
+print("identity=report+fingerprint sg7=approve bc_no_only=1")
+PY
+    [ "$status" -eq 0 ]
+    [ "$output" = "identity=report+fingerprint sg7=approve bc_no_only=1" ]
+}
+
 # test_necessity: Vercel link validation must use the current command's
 # report-owned context scope, so unrelated broken references cannot block it
 # while broken references in an owned context remain fail-closed.

@@ -106,7 +106,7 @@ import yaml
 root = pathlib.Path(os.environ.get("REPO_ROOT", ".")).resolve()
 try:
     report = yaml.safe_load(pathlib.Path(os.environ["REPORT_FILE"]).read_text(encoding="utf-8")) or {}
-except (OSError, yaml.YAMLError):
+except (OSError, ValueError, yaml.YAMLError):
     raise SystemExit(1)
 task = None
 task_file = os.environ.get("TASK_FILE", "")
@@ -13046,9 +13046,63 @@ fi
 # must bind to the exact same report content+commit fingerprint.
 if [ "$HAS_IMPLEMENT" = "true" ]; then
     source "$SCRIPT_DIR/scripts/lib/review_approval.sh"
+
+    # A truthful failed report is eligible for the completion lane only when
+    # the SG7 APPROVE bundle, report generation, report identity, and both
+    # durable approval records agree.  This narrow marker is independent of
+    # the legacy formally-closed-failure exclusion.
+    review_approved_honest_fail_ready() {
+        local cmd_id="$1" report="$2" root="$SCRIPT_DIR" logical key dir fingerprint marker bundle
+        marker="$root/queue/gates/$cmd_id/review_gate.done"
+        bundle="$root/queue/gates/$cmd_id/sg7_bundle.json"
+        [ -f "$marker" ] && [ -f "$bundle" ] || return 1
+        [ "$(review_approval_value "$marker" source 2>/dev/null || true)" = "honest_fail_review" ] || return 1
+        [ "$(review_approval_value "$marker" honest_fail 2>/dev/null || true)" = "approved_honest_fail" ] || return 1
+        logical=$(PROJECT_ROOT="$root" review_report_logical_path "$report") || return 1
+        fingerprint=$(REVIEW_FAIL_CLOSE_IDENTITY_EXEMPT=1 review_report_fingerprint "$report") || return 1
+        key=$(review_report_key "$logical") || return 1
+        dir="$root/queue/gates/$cmd_id/review_approvals/reports/$key"
+        [ "$(review_approval_value "$dir/gunshi.yaml" result 2>/dev/null || true)" = "LGTM" ] || return 1
+        [ "$(review_approval_value "$dir/karo.yaml" result 2>/dev/null || true)" = "ACCEPT" ] || return 1
+        [ "$(review_approval_value "$dir/karo.yaml" approval_mode 2>/dev/null || true)" = "approved_honest_fail" ] || return 1
+        [ "$(review_approval_value "$dir/gunshi.yaml" fingerprint 2>/dev/null || true)" = "$fingerprint" ] || return 1
+        [ "$(review_approval_value "$dir/karo.yaml" fingerprint 2>/dev/null || true)" = "$fingerprint" ] || return 1
+        if [ -f "$root/scripts/review_bundle.py" ] \
+            && ! python3 "$root/scripts/review_bundle.py" --root "$root" consume \
+                --cmd "$cmd_id" --bundle "$bundle" --expect-verdict APPROVE >/dev/null 2>&1; then
+            return 1
+        fi
+    }
+
     mapfile -t _two_phase_reports < <(PROJECT_ROOT="$SCRIPT_DIR" review_resolve_reports "$CMD_ID")
-    if ! review_all_reports_ready "$CMD_ID" "${_two_phase_reports[@]}" \
-        && ! review_gate_manifest_ready "$CMD_ID" "${_two_phase_reports[@]}"; then
+    _honest_fail_review_ready=false
+    _honest_fail_requires_approval=false
+    for _honest_fail_report in "${_two_phase_reports[@]}"; do
+        if review_approved_honest_fail_ready "$CMD_ID" "$_honest_fail_report"; then
+            _honest_fail_review_ready=true
+        else
+            _honest_fail_state=$(python3 - "$_honest_fail_report" <<'PY'
+import sys
+import yaml
+try:
+    data = yaml.safe_load(open(sys.argv[1], encoding="utf-8")) or {}
+except (OSError, yaml.YAMLError):
+    raise SystemExit(1)
+if str(data.get("status") or "").strip() == "failed" and str(data.get("verdict") or "").strip().upper() == "FAIL":
+    print("requires")
+PY
+            ) || _honest_fail_state=""
+            [ "$_honest_fail_state" = "requires" ] && _honest_fail_requires_approval=true
+        fi
+    done
+    if [ "$_honest_fail_requires_approval" = true ] \
+        && [ "$_honest_fail_review_ready" != true ]; then
+        echo "GATE BLOCK: honest_fail_sg7_approval_missing_or_mismatched"
+        record_block_reason "honest_fail_sg7_approval_missing_or_mismatched"
+        ALL_CLEAR=false
+    elif ! review_all_reports_ready "$CMD_ID" "${_two_phase_reports[@]}" \
+        && ! review_gate_manifest_ready "$CMD_ID" "${_two_phase_reports[@]}" \
+        && [ "$_honest_fail_review_ready" != true ]; then
         # Review is an external approval that can arrive after this gate
         # invocation. It must remain retryable and must not inflate terminal
         # BLOCK metrics or trigger repair work.
@@ -14282,7 +14336,10 @@ for task_file in "${MATCHING_TASK_FILES[@]}"; do
         fail:*)
             failed_checks="${bc_status#fail:}"
             warn_reason=$(binary_checks_warn_reason "$report_file" "$ninja_name" "$_bc_pass_ninjas" || true)
-            if [ -n "$warn_reason" ]; then
+            if [ "$_honest_fail_review_ready" = true ] \
+                && review_approved_honest_fail_ready "$CMD_ID" "$report_file"; then
+                echo "  [WARN] ${ninja_name}: binary_checks non-PASS (${failed_checks}) — approved_honest_fail override: SG7 APPROVE report attestation"
+            elif [ -n "$warn_reason" ]; then
                 echo "  [WARN] ${ninja_name}: binary_checks non-PASS (${failed_checks}) — ${warn_reason}"
             else
                 echo "  [CRITICAL] ${ninja_name}: NG ← binary_checks has non-PASS results: ${failed_checks}"

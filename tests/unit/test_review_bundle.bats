@@ -255,6 +255,47 @@ PY
   [ "$status" -eq 0 ]
 }
 
+# test_necessity: SG7 honest-fail approval must name exactly the report's
+# binary no paths; omitting an AC or naming an unrelated AC remains rejected.
+# regression_justification: a no-count-only override could authorize an
+# unreviewed failed check from another AC.
+@test "honest FAIL producer binds approved failed check paths exactly" {
+  run python3 - <<'PY'
+from scripts import review_bundle
+
+report = {
+    "status": "failed",
+    "verdict": "FAIL",
+    "binary_checks": {
+        "AC1": [{"check": "baseline", "result": "yes"}],
+        "AC2": [{"check": "approved failure", "result": "no"}],
+        "AC3": [{"check": "second failure", "result": False}],
+    },
+}
+good = {"review_entry": {
+    "review_type": "report",
+    "verdict": "LGTM",
+    "report_verdict": "FAIL",
+    "approved_failed_check_paths": ["binary_checks.AC2[0]", "binary_checks.AC3[0]"],
+}}
+bad_missing = {"review_entry": {
+    **good["review_entry"],
+    "approved_failed_check_paths": ["binary_checks.AC2[0]"],
+}}
+bad_extra = {"review_entry": {
+    **good["review_entry"],
+    "approved_failed_check_paths": ["binary_checks.AC2[0]", "binary_checks.AC3[0]", "binary_checks.AC9[0]"],
+}}
+assert review_bundle._is_honest_fail_review(good, report)
+assert not review_bundle._is_honest_fail_review(bad_missing, report)
+assert not review_bundle._is_honest_fail_review(bad_extra, report)
+assert review_bundle._approved_failed_check_paths(good["review_entry"]) == ["binary_checks.AC2[0]", "binary_checks.AC3[0]"]
+print("approved=2 actual_no=2 missing=reject extra=reject")
+PY
+  [ "$status" -eq 0 ]
+  [ "$output" = "approved=2 actual_no=2 missing=reject extra=reject" ]
+}
+
 # test_necessity: T106 review entries with valid N/A precheck evidence must
 # reach the batch precheck unchanged; malformed values must remain fail-closed.
 # regression_justification: the single path previously omitted precheck_na,
