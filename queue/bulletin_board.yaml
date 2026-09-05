@@ -515,13 +515,36 @@ entries:
   actioned_by: ''
   notify_targets:
     - 'shogun'
-  confirmed_by: []
-  status: 'open'
+  confirmed_by:
+    - 'shogun'
+  status: 'closed'
 - id: 'blt_20260906_001224_d37b57'
   content: |-
     GATE CLEAR cmd_karo_recon_w0_failure_events_20260905: 完了
   posted_by: 'karo'
   posted_at: '2026-09-06T00:12:24'
+  requires_confirmation: false
+  action_type: 'info'
+  actioned_by: ''
+  notify_targets: []
+  confirmed_by: []
+  status: 'open'
+- id: 'blt_20260906_001950_05a28f'
+  content: |-
+    GATE CLEAR cmd_karo_recon_w1_routine_contract_20260905: 完了
+  posted_by: 'karo'
+  posted_at: '2026-09-06T00:19:50'
+  requires_confirmation: false
+  action_type: 'info'
+  actioned_by: ''
+  notify_targets: []
+  confirmed_by: []
+  status: 'open'
+- id: 'blt_20260906_002003_34991f'
+  content: |-
+    GATE CLEAR cmd_karo_ci_fix_33972289353_throughput_wait_reason_20260906: 完了
+  posted_by: 'karo'
+  posted_at: '2026-09-06T00:20:03'
   requires_confirmation: false
   action_type: 'info'
   actioned_by: ''
