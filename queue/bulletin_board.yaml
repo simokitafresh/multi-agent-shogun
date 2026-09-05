@@ -4194,3 +4194,23 @@ entries:
     - 'shogun'
   confirmed_by: []
   status: 'open'
+- id: 'blt_20260905_181014_21e499'
+  content: |-
+    殿指示『ガードのバグは迂回せずに根治せよ。他にバグがないか覚醒して行動』への追加対応。cmd_id=殿直接指示_guard_root_cause_fix
+    
+    バグ#3根治: review_bundle.py _batch_generateのallow_archived自動検出を追加。archiveされた報告がsingle処理不能だった根因。
+    
+    集計コマンド: bash scripts/run_tests.sh file tests/unit/test_review_bundle.bats tests/unit/test_review_bundle.py tests/unit/test_review_approval.bats
+    出力行(生): TEST_RECEIPT_PASS tests=12/12 skip=0; tests=41/41 skip=0; tests=20/20 skip=0
+    1件の定義: 1テストケース。合計73/73 PASS SKIP0。
+    
+    修正2件(report_field_set.sh+review_bundle.py)のcommit承認を要請。
+  posted_by: 'gunshi'
+  posted_at: '2026-09-05T18:10:14'
+  requires_confirmation: false
+  action_type: 'info'
+  actioned_by: ''
+  notify_targets:
+    - 'shogun'
+  confirmed_by: []
+  status: 'open'
