@@ -8341,17 +8341,37 @@ yaml.SafeLoader = getattr(yaml, 'CSafeLoader', yaml.SafeLoader)  # cmd-lord-2026
 path = os.environ["INSIGHTS_FILE_ENV"]
 cmd_id = os.environ["CMD_ID_ENV"]
 roots = (os.environ["TASKS_DIR_ENV"], os.environ["REPORTS_DIR_ENV"])
-ins_id_re = re.compile(r"\bINS-[A-Za-z0-9][A-Za-z0-9._:-]*\b")
-
 def belongs_to_cmd(obj):
     if not isinstance(obj, dict):
         return False
     task = obj.get("task") if isinstance(obj.get("task"), dict) else obj
     return any(str(task.get(k) or "") == cmd_id for k in ("parent_cmd", "cmd_id", "id"))
 
+def task_payload(obj):
+    if not isinstance(obj, dict):
+        return {}
+    return obj.get("task") if isinstance(obj.get("task"), dict) else obj
+
+def excluded_task(obj):
+    task = task_payload(obj)
+    task_type = str(task.get("task_type") or "").strip().lower().replace("-", "_")
+    if task_type in {"recon", "recon2", "scout", "readonly", "read_only"}:
+        return True
+    if task.get("readonly") is True or task.get("read_only") is True:
+        return True
+    # A declared empty change scope is a read-only/no-change task.  Missing
+    # scope fields remain eligible so legacy task/report shapes keep working.
+    for key in ("target_path", "target_paths", "planned_paths", "files_to_modify", "files_to_change", "change_targets"):
+        if key not in task:
+            continue
+        value = task.get(key)
+        if value is None or value == "" or value == []:
+            return True
+    return False
+
 def collect_refs(value, refs):
     if isinstance(value, dict):
-        explicit = value.get("origin_insight_ids")
+        explicit = value.get("remediated_insight_ids")
         if isinstance(explicit, list):
             refs.update(str(v) for v in explicit if str(v).startswith("INS-"))
         for child in value.values():
@@ -8359,8 +8379,6 @@ def collect_refs(value, refs):
     elif isinstance(value, list):
         for child in value:
             collect_refs(child, refs)
-    elif isinstance(value, str):
-        refs.update(ins_id_re.findall(value))
 
 declared = set()
 for root in roots:
@@ -8378,7 +8396,7 @@ for root in roots:
             # Skip the broken source and keep collecting from the rest instead.
             print(f"WARN: skipping unparseable declaration source {candidate}: {exc}", file=sys.stderr)
             continue
-        if belongs_to_cmd(doc):
+        if belongs_to_cmd(doc) and not excluded_task(doc):
             collect_refs(doc, declared)
 
 try:
@@ -14491,6 +14509,65 @@ if [ "$PDE_CHECKED" = false ]; then
     echo "  (no post_deploy_evidence.required=true reports)"
 fi
 
+validate_purpose_details_alignment() {
+    local task_file="$1" report_file="$2"
+    python3 - "$task_file" "$report_file" <<'PY'
+import re
+import sys
+import yaml
+
+task_data = yaml.safe_load(open(sys.argv[1], encoding="utf-8")) or {}
+report_data = yaml.safe_load(open(sys.argv[2], encoding="utf-8")) or {}
+task = task_data.get("task") if isinstance(task_data.get("task"), dict) else task_data
+criteria = task.get("acceptance_criteria") if isinstance(task, dict) else None
+result = report_data.get("result") if isinstance(report_data, dict) else None
+details = result.get("details") if isinstance(result, dict) else None
+
+if not isinstance(criteria, (list, dict)) or not criteria:
+    print("SKIP: acceptance_criteria absent")
+    raise SystemExit(2)
+if not isinstance(details, str) or not details.strip():
+    print("BLOCK: result.details missing for acceptance_criteria correspondence")
+    raise SystemExit(1)
+
+common = {"acceptance", "criteria", "check", "checks", "task", "report", "result", "details", "description", "must", "true", "false", "pass", "fail"}
+
+def text(value):
+    if isinstance(value, dict):
+        return " ".join(text(v) for v in value.values())
+    if isinstance(value, list):
+        return " ".join(text(v) for v in value)
+    return str(value or "")
+
+def terms(value):
+    raw = text(value)
+    found = re.findall(r"(?<![A-Za-z0-9_])[A-Za-z][A-Za-z0-9_-]{3,}(?![A-Za-z0-9_])|[\u3040-\u30ff\u3400-\u9fff]{3,}", raw)
+    return [item for item in dict.fromkeys(found) if item.lower() not in common]
+
+details_lower = details.lower()
+for criterion in criteria.values() if isinstance(criteria, dict) else criteria:
+    criterion_terms = terms(criterion)
+    matched = [term for term in criterion_terms if term.lower() in details_lower]
+    if not matched:
+        continue
+    negative = re.search(
+        r"(?:別\s*(?:task|タスク)|other\s+task|stale\s+cache|cache\s*[a-z](/[a-z])?|"
+        r"(?:0|なし|未|欠落|不在|無).{0,24}(?:caller|成果|要件)|"
+        r"(?:caller|成果|要件).{0,24}(?:0|なし|未|欠落|不在|無))",
+        details,
+        re.IGNORECASE,
+    )
+    if negative:
+        print(f"BLOCK: result.details contradicts matched AC terms={','.join(matched)}")
+        raise SystemExit(1)
+    print(f"PASS: acceptance_criteria/result.details correspondence={matched[0]}")
+    raise SystemExit(0)
+
+print("BLOCK: no acceptance_criteria term found in result.details")
+raise SystemExit(1)
+PY
+}
+
 # ─── purpose_validation検証（fit:falseでBLOCK、fit空欄はWARN） ───
 level_heading "[L2]" "Purpose validation check:"
 PV_CHECKED=false
@@ -14512,6 +14589,29 @@ for task_file in "${MATCHING_TASK_FILES[@]}"; do
 
     PV_CHECKED=true
     pv_fit=$(FIELD_GET_NO_LOG=1 field_get "$report_file" "fit" "")
+
+    purpose_alignment_rc=0
+    purpose_alignment_output=$(validate_purpose_details_alignment "$task_file" "$report_file" 2>&1) || purpose_alignment_rc=$?
+    case "$purpose_alignment_rc" in
+        0)
+            echo "  ${ninja_name}: ${purpose_alignment_output}"
+            ;;
+        1)
+            echo "[CRITICAL] GATE BLOCK: purpose_validation/result.details mismatch"
+            echo "  ${ninja_name}: ${purpose_alignment_output}"
+            record_block_reason "${ninja_name}:purpose_details_mismatch"
+            ALL_CLEAR=false
+            ;;
+        2)
+            echo "  ${ninja_name}: ${purpose_alignment_output}"
+            ;;
+        *)
+            echo "[CRITICAL] GATE BLOCK: purpose correspondence checker failed"
+            echo "  ${ninja_name}: ${purpose_alignment_output}"
+            record_block_reason "${ninja_name}:purpose_details_checker_failed"
+            ALL_CLEAR=false
+            ;;
+    esac
 
     case "$pv_fit" in
         true)

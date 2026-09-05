@@ -21,7 +21,7 @@ import sys
 from pathlib import Path
 
 source = "\n\n".join(Path(path).read_text(encoding="utf-8") for path in sys.argv[1:])
-names = """record_block_reason record_wait_reason append_line_locked append_lesson_tracking dispatch_gate_notification_async send_high_notification send_info_cmd_notification log_gate_stderr_file lesson_done_satisfies_lesson_candidate_registration cmd_status_is_canceled level_heading check_context_update resolve_report_file update_lesson_impact_tsv build_clear_duration_metric build_clear_throughput_metric binary_checks_warn_reason report_has_commit_binary_check_yes collect_report_files_modified discover_reports_for_cmd collect_parent_cmd_report_files_modified has_parent_cmd_report collect_git_show_w_files collect_report_commit_hash collect_cmd_phase_git_files check_self_grade_commit_file_coverage is_lessons_useful_empty_warn_task_type handle_empty_lessons_useful_check validate_lesson_feedback_set detect_task_types _check_lc_found lesson_candidate_status preflight_gate_flags collect_report_modified_files load_validated_sg7_context collect_cmd_command_file_refs collect_report_verified_existing_deps collect_task_readonly_refs check_command_files_modified_coverage check_scope_drift check_wtf_likelihood check_script_wiring resolve_task_repo_dir cmd_requires_cdp_production_check run_cdp_production_check cmd_requires_dm_signal_production_smoke dm_signal_smoke_deploy_touches_backend dm_signal_report_deploy_sha resolve_dm_signal_render_live_sha run_dm_signal_production_smoke_check append_codd_registry_entry run_codd_propagate_update normalize_block_reason_to_workaround_categories update_karo_workaround_resolutions classify_completed_rework_event_kind capture_completed_rework_event compute_task_ac_version check_task_ac_version_integrity resolve_ci_expected_head resolve_report_commit_repo report_ci_push_state_cached report_ci_push_state_legacy_compat report_ci_push_state report_commit_main_ancestry_state report_source_only_equivalence_state check_report_commit_main_ancestry resolve_ninja_test_receipt_path validate_ninja_test_receipt check_ninja_test_receipts cmd_complete_gate_auto_push_ci_state cmd_complete_gate_auto_push_ancestry_wait mark_task_worktree_published source_publish_receipt_tip""".split()
+names = """record_block_reason record_wait_reason append_line_locked append_lesson_tracking dispatch_gate_notification_async send_high_notification send_info_cmd_notification log_gate_stderr_file lesson_done_satisfies_lesson_candidate_registration cmd_status_is_canceled level_heading check_context_update resolve_report_file update_lesson_impact_tsv build_clear_duration_metric build_clear_throughput_metric binary_checks_warn_reason report_has_commit_binary_check_yes collect_report_files_modified discover_reports_for_cmd collect_parent_cmd_report_files_modified has_parent_cmd_report collect_git_show_w_files collect_report_commit_hash collect_cmd_phase_git_files check_self_grade_commit_file_coverage is_lessons_useful_empty_warn_task_type handle_empty_lessons_useful_check validate_lesson_feedback_set detect_task_types _check_lc_found lesson_candidate_status preflight_gate_flags collect_report_modified_files load_validated_sg7_context collect_cmd_command_file_refs collect_report_verified_existing_deps collect_task_readonly_refs check_command_files_modified_coverage check_scope_drift check_wtf_likelihood check_script_wiring resolve_task_repo_dir cmd_requires_cdp_production_check run_cdp_production_check cmd_requires_dm_signal_production_smoke dm_signal_smoke_deploy_touches_backend dm_signal_report_deploy_sha resolve_dm_signal_render_live_sha run_dm_signal_production_smoke_check append_codd_registry_entry run_codd_propagate_update normalize_block_reason_to_workaround_categories update_karo_workaround_resolutions classify_completed_rework_event_kind capture_completed_rework_event compute_task_ac_version check_task_ac_version_integrity resolve_ci_expected_head resolve_report_commit_repo report_ci_push_state_cached report_ci_push_state_legacy_compat report_ci_push_state report_commit_main_ancestry_state report_source_only_equivalence_state check_report_commit_main_ancestry resolve_ninja_test_receipt_path validate_ninja_test_receipt check_ninja_test_receipts validate_purpose_details_alignment cmd_complete_gate_auto_push_ci_state cmd_complete_gate_auto_push_ancestry_wait mark_task_worktree_published source_publish_receipt_tip""".split()
 names += " post_deploy_evidence_publication_status handle_post_deploy_evidence_failure queue_post_deploy_evidence_publication_followup".split()
 for name in names:
     match = re.search(rf"(?m)^{re.escape(name)}\(\) \{{.*?^\}}", source, re.DOTALL)
@@ -1358,7 +1358,11 @@ EOF
     [[ "$output" == *"$shard"* ]]
 }
 
-@test "auto_resolve_cmd_related_insights resolves pending insights that mention cmd_id" {
+# test_necessity: only an explicitly declared remediation may consume a pending
+# insight; arbitrary INS-ID text in a report/task must remain inert.
+# regression_justification: the prior resolver recursively scanned every string
+# and falsely resolved readonly reconnaissance findings from prose.
+@test "auto_resolve_cmd_related_insights requires explicit remediation ids" {
     export INSIGHTS_FILE="$TEST_PROJECT/queue/insights.yaml"
     cat > "$INSIGHTS_FILE" <<EOF
 insights:
@@ -1374,11 +1378,17 @@ insights:
   priority: "medium"
   source: "manual"
   status: pending
+- id: INS-BODY-MATCH
+  ts: "2026-05-15T00:00:02+09:00"
+  insight: "本文に INS-CMD-MATCH と $TEST_CMD_ID を含むが明示宣言なし"
+  priority: "medium"
+  source: "manual"
+  status: pending
 EOF
     cat > "$TEST_PROJECT/queue/tasks/insight-owner.yaml" <<EOF
 task:
   parent_cmd: $TEST_CMD_ID
-  origin_insight_ids: [INS-CMD-MATCH]
+  remediated_insight_ids: [INS-CMD-MATCH]
 EOF
     cp "$PROJECT_ROOT/scripts/insight_write.sh" "$TEST_PROJECT/scripts/insight_write.sh"
     cp "$PROJECT_ROOT/scripts/insight_resolve.sh" "$TEST_PROJECT/scripts/insight_resolve.sh"
@@ -1397,7 +1407,73 @@ assert rows["INS-CMD-MATCH"]["status"] == "resolved"
 assert rows["INS-CMD-MATCH"]["resolved_reason"]
 assert rows["INS-CMD-MATCH"]["action_artifact"]
 assert rows["INS-OTHER"]["status"] == "pending"
+assert rows["INS-BODY-MATCH"]["status"] == "pending"
 PY
+}
+
+# test_necessity: recon, readonly, and zero-change task declarations must not
+# auto-resolve insights even when they carry the explicit remediation field.
+# regression_justification: group C reconnaissance findings were falsely
+# consumed as completed remediation by the previous full-body collector.
+@test "auto_resolve_cmd_related_insights excludes recon readonly and zero-change tasks" {
+    export INSIGHTS_FILE="$TEST_PROJECT/queue/insights.yaml"
+    cat > "$INSIGHTS_FILE" <<EOF
+insights:
+- id: INS-NORMAL
+  status: pending
+- id: INS-RECON
+  status: pending
+- id: INS-READONLY
+  status: pending
+- id: INS-ZERO
+  status: pending
+EOF
+    cat > "$TEST_PROJECT/queue/tasks/normal.yaml" <<EOF
+task:
+  parent_cmd: $TEST_CMD_ID
+  remediated_insight_ids: [INS-NORMAL]
+  task_type: hotfix
+  target_path: [scripts/cmd_complete_gate.sh]
+EOF
+    cat > "$TEST_PROJECT/queue/tasks/recon.yaml" <<EOF
+task:
+  parent_cmd: $TEST_CMD_ID
+  remediated_insight_ids: [INS-RECON]
+  task_type: recon2
+  target_path: [scripts/cmd_complete_gate.sh]
+EOF
+    cat > "$TEST_PROJECT/queue/tasks/readonly.yaml" <<EOF
+task:
+  parent_cmd: $TEST_CMD_ID
+  remediated_insight_ids: [INS-READONLY]
+  task_type: readonly
+  target_path: [scripts/cmd_complete_gate.sh]
+EOF
+    cat > "$TEST_PROJECT/queue/tasks/zero-change.yaml" <<EOF
+task:
+  parent_cmd: $TEST_CMD_ID
+  remediated_insight_ids: [INS-ZERO]
+  task_type: hotfix
+  target_path: []
+EOF
+    cp "$PROJECT_ROOT/scripts/insight_write.sh" "$TEST_PROJECT/scripts/insight_write.sh"
+    cp "$PROJECT_ROOT/scripts/insight_resolve.sh" "$TEST_PROJECT/scripts/insight_resolve.sh"
+    chmod +x "$TEST_PROJECT/scripts/insight_write.sh" "$TEST_PROJECT/scripts/insight_resolve.sh"
+
+    run auto_resolve_cmd_related_insights "$TEST_CMD_ID"
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"resolved: 1 cmd-related insight(s)"* ]]
+
+    python3 - <<PY
+import yaml
+rows = {e["id"]: e for e in yaml.safe_load(open("$INSIGHTS_FILE"))["insights"]}
+assert rows["INS-NORMAL"]["status"] == "resolved"
+assert rows["INS-RECON"]["status"] == "pending"
+assert rows["INS-READONLY"]["status"] == "pending"
+assert rows["INS-ZERO"]["status"] == "pending"
+print("resolved=1 excluded_recon=1 excluded_readonly=1 excluded_zero_change=1 false_positive=0")
+PY
+    [ "$status" -eq 0 ]
 }
 
 @test "auto_resolve_cmd_related_insights logs parser stderr for unreadable insights path" {
@@ -1477,6 +1553,43 @@ _run_self_grade_commit_file_coverage_with_state() {
     check_self_grade_commit_file_coverage
     echo "ALL_CLEAR=$ALL_CLEAR"
     echo "BLOCK_REASONS=${BLOCK_REASONS[*]}"
+}
+
+# test_necessity: purpose_validation.fit=true must not authorize a report whose
+# result.details contradicts the task acceptance criterion or cites another
+# task's cache; a matching positive detail remains eligible.
+# regression_justification: the old fit-only check let the K2 false-CLEAR
+# fixture through despite caller成果0 and a separate-task cache.
+@test "purpose details alignment blocks fit-only K2 false CLEAR and passes normal report" {
+    source "$GATE_HELPERS_FILE"
+    local task="$TEST_PROJECT/queue/tasks/purpose.yaml"
+    local report="$TEST_PROJECT/queue/reports/purpose.yaml"
+    cat > "$task" <<'YAML'
+task:
+  acceptance_criteria:
+    - id: AC1
+      description: "caller成果を1件以上確認し、task本文と対応する"
+YAML
+    cat > "$report" <<'YAML'
+purpose_validation:
+  fit: true
+result:
+  details: "caller成果0、別task cache A/B本文のみ"
+YAML
+
+    local false_clear_before=0 fixed_block=0 normal_pass=0
+    grep -q 'fit: true' "$report" && false_clear_before=1
+    run validate_purpose_details_alignment "$task" "$report"
+    [ "$status" -eq 1 ]
+    [[ "$output" == *"BLOCK: result.details contradicts"* ]]
+    fixed_block=1
+
+    sed -i 's/caller成果0、別task cache A\/B本文のみ/caller成果1\/1を確認し、task本文と対応する/' "$report"
+    run validate_purpose_details_alignment "$task" "$report"
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"correspondence=caller"* ]]
+    normal_pass=1
+    echo "before_false_clear=${false_clear_before} after_block=${fixed_block} normal_pass=${normal_pass}"
 }
 
 # test_necessity: task.ac_version must remain an immutable fingerprint of the
