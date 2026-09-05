@@ -317,3 +317,83 @@ YAML
     run_hook "grep -nE '^  cmd_[0-9]+:' queue/shogun_to_karo.yaml | sed -E 's/^([0-9]+):.*/\\1/' | awk '{print \$1}'"
     [[ "$output" != *"status遷移gateの迂回"* ]]
 }
+
+# test_necessity: inline unbounded CPU loops must be denied before execution,
+# while a quoted fixture describing the same historical incident remains data.
+# This preserves the AC1 reproduction without starting the real loop.
+@test "unbounded CPU loop guard blocks raw loops but allows quoted fixture" {
+    local fixture="for i in 1 2 3; do while :; do :; done & done"
+
+    run_hook "$fixture"
+    [ "$status" -eq 2 ]
+    [[ "$output" == *"BLOCK(unbounded-cpu-loop)"* ]]
+
+    run_hook "printf '%s\\n' '$fixture'"
+    [ "$status" -eq 0 ]
+    [[ "$output" != *"BLOCK(unbounded-cpu-loop)"* ]]
+}
+
+# test_necessity: classify one true positive plus five adversarial forms and
+# five intentional false-positive boundaries with FAIL=0/SKIP=0.
+@test "unbounded CPU loop guard has zero FP/FN across boundary matrix" {
+    local command
+    local -a true_positive=(
+        "while :; do :; done"
+        "for i in 1 2; do while :; do :; done & done"
+        "(while :; do :; done) &"
+        "bash -c 'while :; do :; done'"
+        "env bash -c 'for i in 1; do while :; do :; done; done'"
+        "sh -c 'while :; do echo busy; done'"
+    )
+    local -a allowed=(
+        "timeout 1 bash -c 'while :; do :; done'"
+        "while IFS= read -r line; do printf '%s\\n' \"$line\"; done < input"
+        "bash scripts/daemon.sh"
+        ":"
+        "printf '%s\\n' 'while :; do :; done'"
+    )
+
+    for command in "${true_positive[@]}"; do
+        run_hook "$command"
+        [ "$status" -eq 2 ]
+        [[ "$output" == *"BLOCK(unbounded-cpu-loop)"* ]]
+    done
+    for command in "${allowed[@]}"; do
+        run_hook "$command"
+        [ "$status" -eq 0 ]
+        [[ "$output" != *"BLOCK(unbounded-cpu-loop)"* ]]
+    done
+}
+
+# test_necessity: broad find/bfs roots and targetless hidden scans must be
+# denied before execution, while repo-scoped searches and explicit file lists
+# remain available. Quoted prose is data and must not trigger the guard.
+@test "broad search guard blocks host scans and allows scoped searches" {
+    local command
+    local -a blocked=(
+        "find / -name needle"
+        "find /home -maxdepth 2 -type f"
+        "bfs /mnt -name needle"
+        "rg --hidden needle"
+        "bash -c 'rg --hidden needle'"
+        "rg --hidden needle /tmp"
+    )
+    local -a allowed=(
+        "find . -name needle"
+        "bfs context -name '*.md'"
+        "rg --hidden needle context/infrastructure.md"
+        "rg --hidden --files .claude/hooks/pre-bash-combined.sh scripts/hooks/test_hooks.sh"
+        "printf '%s\\n' 'rg --hidden needle /'"
+    )
+
+    for command in "${blocked[@]}"; do
+        run_hook "$command"
+        [ "$status" -eq 2 ]
+        [[ "$output" == *"BLOCK(broad-search-root)"* ]]
+    done
+    for command in "${allowed[@]}"; do
+        run_hook "$command"
+        [ "$status" -eq 0 ]
+        [[ "$output" != *"BLOCK(broad-search-root)"* ]]
+    done
+}
