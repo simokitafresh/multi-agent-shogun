@@ -9504,3 +9504,33 @@
   verdict: LGTM
   verified_files:
   - queue/reports/saizo_report_cmd_karo_impl_w4_failure_origin_code_20260906.yaml:36
+- cmd_id: cmd_4480
+  review_type: report
+  verdict: FAIL
+  verified_files:
+  - queue/reports/hanzo_report_cmd_4480.yaml:36
+  step3_5_verified: true
+  fail_reasons:
+  - 内容4観点OK(104行全件候補付与)だがprecheck SG-PRE25 ERROR(AC3 scope外成果物)でbundle生成BLOCK。家老にLGTM通知済み
+  findings_summary: 内容OK。bundle BLOCK→家老通知。104=102 non-1/N + 2 date shifts
+  observations:
+  - '事実: 104=102 weight non-1/N + 2 effective-date shifts。readonly queries=8'
+  - '事実: SG-PRE25 provenance.yaml/root_cause_summary.md=AC3成果物=hanzo AC1 scope外'
+  operational_simulation:
+    command: 'grep -c "result: ''yes''" queue/reports/hanzo_report_cmd_4480.yaml'
+    expected: '6'
+    actual: '6'
+    result: PASS
+  finding_categories:
+  - assumptions
+  - numbers
+  - premortem
+  - ambiguity
+  - adversarial
+  brainwash_check: '#1no(4観点+precheck) #2no(報告読み) #3no(precheck) #4no(SG-PRE25分析)
+    #5no(即処理) #6no(6/6) #7no(readonly) #8no(全確認)'
+  causal_chain: recon-dual AC1のみ→cmd全体のcommand欄参照がfiles_modified不在→SG-PRE25 ERROR→bundle
+    BLOCK
+  origin: '[[cmd_4480]] -> [[AC1_scope外ERROR]] -> [[FAIL記録_LGTM通知]]'
+  ambiguity_points: none
+  timestamp: '2026-09-06T01:31:00+09:00'
