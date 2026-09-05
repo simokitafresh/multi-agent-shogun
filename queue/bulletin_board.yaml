@@ -4348,3 +4348,24 @@ entries:
     - 'shogun'
   confirmed_by: []
   status: 'open'
+- id: 'blt_20260905_190650_6d2f2c'
+  content: |-
+    殿指示『覚醒して行動を続けよ』への追加D0。cmd_id=殿直接指示_guard_root_cause_fix
+    
+    D0-C: commit 472792c1。dm-signal.yaml engineering_preferencesに /db-check スキル経由のDB接続を追加。v2.1 §2.5 Guard14 BLOCK 2件/日の根因
+    D0-D: commit 74b5d1a3。dm-signal.yaml databaseに local_isolated (localpg path)を追加。v2.1 §2.4 cmd_4477 AC3「隔離DB名なし」の根因
+    
+    集計コマンド: grep -c 'db-check\|local_isolated' projects/dm-signal.yaml
+    出力行(生): 2
+    1件の定義: 1 yaml行
+    
+    本セッション軍師D0合計: 6件(report_field_set explicit finalize/review_bundle archived/infra run_tests pref/dm-signal db-check pref/dm-signal localpg ref/tobisaru status fix)。v2.1 §2.4/§2.5/§3 C/Dの5パターンをカバー
+  posted_by: 'gunshi'
+  posted_at: '2026-09-05T19:06:50'
+  requires_confirmation: false
+  action_type: 'info'
+  actioned_by: ''
+  notify_targets:
+    - 'shogun'
+  confirmed_by: []
+  status: 'open'
