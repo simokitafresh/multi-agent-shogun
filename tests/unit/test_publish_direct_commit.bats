@@ -128,7 +128,9 @@ SH
 # test_necessity: when the root carries a foreign local commit that conflicts
 # with origin (so a c2a 3-way merge of the branch cannot apply), the wrapper
 # must still publish its own single commit via an isolated cherry-pick, and
-# --republish must publish an already-committed root sha the same way.
+# --republish must publish an already-committed root sha the same way. Its
+# second invocation must detect the already-applied patch by `git cherry`'s
+# `-` patch-id match and return an explicit no-op success.
 @test "foreign conflicting root commit does not block publish; cherry-pick and --republish reach origin" {
     # foreign commit on root edits payload.txt one way; origin edits it another way
     printf 'foreign
