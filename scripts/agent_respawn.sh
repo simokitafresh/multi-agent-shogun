@@ -89,7 +89,13 @@ if [[ -f "$task_file" ]]; then
     task_status=$(grep -m1 -E '^\s*status:\s*' "$task_file" 2>/dev/null \
         | sed 's/.*status:[[:space:]]*//' | tr -d "\"'[:space:]" || true)
 fi
-if [[ "$task_status" != "failed" ]]; then
+# Forced recovery must not convert an active task into an idle template: the
+# respawned pane is resuming the same task, so its identity, status, worktree,
+# and report path remain the source of truth.  Ordinary respawn still releases
+# non-failed tasks for the next assignment, while failed tasks stay terminal.
+if [[ "${RESPAWN_FORCE:-0}" == "1" ]] && [[ "$task_status" =~ ^(assigned|acknowledged|in_progress)$ ]]; then
+    echo "[agent_respawn] ${agent_name} forced recovery preserved active task (status=${task_status})"
+elif [[ "$task_status" != "failed" ]]; then
     task_lifecycle_set_idle "$task_file" "agent_respawn" 2>/dev/null || true
 fi
 
