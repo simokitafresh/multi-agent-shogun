@@ -9374,6 +9374,7 @@ codd:
 | discussion | `queue/lord_conversation.jsonl` 2026-09-06T03:33:21+09:00 bt4dghk8j toolu_01RgGnrjVZAN2oMS9swgttbG /tmp/claude-1000/-home-simokitafresh-multi-agent-shogun/3cb7e23c-7c5f-461a-910d |
 | discussion | `queue/lord_conversation.jsonl` 2026-09-06T04:10:59+09:00 bhrn4ccv3 toolu_019BToFLGmx8fUz9PLmH8f6t /tmp/claude-1000/-home-simokitafresh-multi-agent-shogun/c12eab2b-a22a-4fb9-ae14 |
 | cmd | `cmd_karo_recon_k2_deploy_python_callers_20260906` |
+| cmd | `cmd_karo_recon_k2_deploy_python_callers_truthful_redo_20260906` |
 | causal_chain | `[[cmd_karo_hotfix_deploy_task_latency_yaml_bug_20260702010845]]` (L918) |
 | causal_chain | `[[cmd_karo_hotfix_deploy_task_yaml_speed_recon_guard_202607020133]]` (L919) |
 | causal_chain | `[[cmd_karo_hotfix_ga162_hook_failure_pre_push_202607021402]]` (L930) |
@@ -17123,6 +17124,7 @@ codd:
 | discussion | `queue/lord_conversation.jsonl` 2026-09-05T17:44:08.068467+00:00 git pre-commit semantic propagation for context/projects changes |
 | discussion | `queue/lord_conversation.jsonl` 2026-09-05T18:05:25.838693+00:00 git pre-commit semantic propagation for context/projects changes |
 | discussion | `queue/lord_conversation.jsonl` 2026-09-05T18:31:01.489278+00:00 git pre-commit semantic propagation for context/projects changes |
+| discussion | `queue/lord_conversation.jsonl` 2026-09-05T20:00:21.637322+00:00 git pre-commit semantic propagation for context/projects changes |
 | causal_chain | `[[cmd_karo_hotfix_lessons_yaml_format_restore_20260727]]` (L1389) |
 
 ## infra_design_intent — インフラ設計意図カタログ
@@ -18840,6 +18842,7 @@ codd:
 | discussion | `queue/lord_conversation.jsonl` 2026-09-05T13:41:55.885467+00:00 git pre-commit semantic propagation for context/projects changes |
 | discussion | `queue/lord_conversation.jsonl` 2026-09-05T13:51:30.162784+00:00 git pre-commit semantic propagation for context/projects changes |
 | discussion | `queue/lord_conversation.jsonl` 2026-09-05T16:17:50.788034+00:00 git pre-commit semantic propagation for context/projects changes |
+| discussion | `queue/lord_conversation.jsonl` 2026-09-05T20:05:50.591539+00:00 git pre-commit semantic propagation for context/projects changes |
 | causal_chain | `[[cmd_karo_hotfix_ga161_obsidian_link_context_freshness_202607021348]]` (L926) |
 | causal_chain | `[[cmd_3648]]` (L933) |
 | causal_chain | `[[cmd_karo_ci_fix_ga191_followup_202607071752]]` (L963) |
