@@ -18417,3 +18417,31 @@ insights:
   status: "resolved"
   action_artifact: "semantic_map=/home/simokitafresh/multi-agent-shogun/context/semantic-map.md;semantic_index=/home/simokitafresh/multi-agent-shogun/docs/semantic-index/index.md"
   resolved_reason: "semantic map generation verified the candidate is represented or intentionally ignored"
+- id: INS-20260905-162124685-559b
+  ts: "2026-09-05T16:21:24+09:00"
+  insight: "[[フローチャートの表示が壊れている]] semantic_stress_test candidate_aliases: NO_MATCH source=lord query=フローチャートの表示が壊れている"
+  priority: "low"
+  source: "semantic_stress_test"
+  fix_known: false
+  status: pending
+- id: INS-20260905-162125357-3947
+  ts: "2026-09-05T16:21:25+09:00"
+  insight: "[[まずは計測修復dana]] semantic_stress_test candidate_aliases: NO_MATCH source=lord query=まずは計測修復dana"
+  priority: "low"
+  source: "semantic_stress_test"
+  fix_known: false
+  status: pending
+- id: INS-20260905-162126381-d0de
+  ts: "2026-09-05T16:21:26+09:00"
+  insight: "[[D0で直せるところは覚醒して将軍自身で直してしまおう]] semantic_stress_test candidate_aliases: NO_MATCH source=lord query=D0で直せるところは覚醒して将軍自身で直してしまおう"
+  priority: "low"
+  source: "semantic_stress_test"
+  fix_known: false
+  status: pending
+- id: INS-20260905-162127442-e736
+  ts: "2026-09-05T16:21:27+09:00"
+  insight: "[[家老スループット計測修復の仕上げ 将軍 D0 7d947ac33 で入れた 8 箇所の計測に設計書 v2 §6 4 の敵]] semantic_stress_test candidate_aliases: NO_MATCH source=cmds query=家老スループット計測修復の仕上げ: 将軍 D0(7d947ac33)で入れた 8 箇所の計測に設計書 v2 §6.4 の敵対 contract test を補完し、karo_throughput_report.sh で日次表(v1 行と observed 列付き行の両対応、agent 別按分、配達 held 分位)を出す"
+  priority: "low"
+  source: "semantic_stress_test"
+  fix_known: false
+  status: pending

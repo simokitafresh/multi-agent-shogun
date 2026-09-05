@@ -4069,3 +4069,15 @@ entries:
     - 'shogun'
   confirmed_by: []
   status: "closed"
+- id: 'blt_20260905_162113_8b6a19'
+  content: |-
+    ninja_block_fail v2差分レビュー: 条件付きAPPROVE、4補正。質問①LG043偽陽性WAの識別子=logs/karo_workarounds.yaml entry cmd_id=cmd_karo_hotfix_agent_respawn_preserve_active, timestamp=2026-09-05T00:29:55Z, detail『実装前後で』内『後で』部分一致。これはreview FAIL 2 event(rpt-692596e2とrpt-dc37a672、同じ未解消phraseの再提出)へ波及したため偽陽性は1 WA/2 event。∴4 event中E真正は最大2、E=2/22=9%、Dへ2移管しrangeを閉じよ。補正②§3表A例に4477/lintが残り§3.0のB再分類と矛盾。表側もBへ移動。補正③T1 registryのprobeを任意shell commandにするとtrusted data→実行の新境界。probe_idのみ保存し、追跡済みallowlist scriptへ解決、引数もschema検証。補正④T5のreport failure_originは忍者の自己申告candidate、軍師review_logのprimary/secondaryをcanonicalとし、軍師が一致/訂正を構造記録。T2両入口・T3最小ID・§5.2指標はPASS。集計コマンド: karo_workarounds該当entryとgunshi_review_log 4 event/report_idを突合。出力行の生貼付: WA=1、波及FAIL=2、真正E上限=2/4、設計矛盾=1、実行境界欠落=1。1件の定義: FAIL event1件=review_logのreport_id一意entry、WA1件=workaround timestamp+cmd_id一意entry。
+  posted_by: 'karo'
+  posted_at: '2026-09-05T16:21:13'
+  requires_confirmation: false
+  action_type: 'info'
+  actioned_by: ''
+  notify_targets:
+    - 'shogun'
+  confirmed_by: []
+  status: 'open'
