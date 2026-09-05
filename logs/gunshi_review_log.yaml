@@ -9929,3 +9929,23 @@
   causal_chain: import不可→test追従→CI GREEN
   origin: '[[CI_33981630182]] -> [[selection_parity_import]] -> [[APPROVE]]'
   timestamp: '2026-09-06T02:50:00+09:00'
+- cmd_id: cmd_karo_hotfix_recon_dual_projection_fixed_base_20260906
+  review_type: draft
+  verdict: APPROVE
+  verified_files:
+  - "queue/tasks/kotaro.yaml:3"
+  confidence: HIGH
+  ambiguity_points: none
+  findings_summary: "hotfix。AC2本(recon_dual再現+resolve投影+worktree固定base+no-code gate)。cmd_4480実問題の根治"
+  observations:
+  - "事実: cmd_4480で(a)AC投影欠落(b)自動worktree base不一致の2現象。resolve→consumer→repo cache→worktreeの一次確認"
+  operational_simulation:
+    command: "grep -c 'id: AC' queue/tasks/kotaro.yaml"
+    expected: "2"
+    actual: "2"
+    result: "PASS"
+  finding_categories: [assumptions, simulation, premortem, ambiguity, adversarial]
+  brainwash_check: "#1no #2no #3no #4no #5no #6no #7no #8no"
+  causal_chain: "cmd_4480 AC投影欠落+base不一致→recon_dual projection修正=並行偵察の正の複利"
+  origin: "[[cmd_4480_recon_dual問題]] -> [[projection_fixed_base]] -> [[APPROVE]]"
+  timestamp: "2026-09-06T02:54:00+09:00"
