@@ -17250,3 +17250,17 @@ sqlite3.Connection.backup()を使うとページ(4096byte)単位のread syscall�
 - **when**: 未設定
 - **how**: 未設定
 - gate_gunshi_report_precheck.shのSG-PRE15で、REPO_ROOT配下にqueue/tasks/*.yamlが1件も存在しない実行コンテキスト(task worktree root等)では_ninja_task_files配列が空になり、awk '...' "${_ninja_task_files[@]}" がファイル引数0件でawkに渡り、awkがstdinを読みに行き非対話実行では永久にハングすることを実測(review_bundle.py subprocess.runにtimeoutが無いため呼出し元ごと停止)。次回同様のパターン(配列展開をファイル引数として渡すコマンド)を書く際は、"${#arr[@]}" -eq 0のガードを先に入れるか、コマンド自体に</dev/null等の入力遮断を付けることをチェックリスト化すべき
+
+
+### L1752: 外部root未登録時の0 refs黙過を次回checkする
+- **日付**: 2026-09-05
+- **出典**: cmd_karo_recon2_ga580_prepush_case8
+- **記録者**: hayate
+- **tags**: [infra]
+- **subdomain**: infra
+- **target_files**: [queue/reports/hayate_report_cmd_karo_recon2_ga580_prepush_case8.yaml]
+- **origin**: [[cmd_karo_recon2_ga580_prepush_case8]]
+- **enforcement**: 未自動化
+- **when**: 未設定
+- **how**: 未設定
+- 2x2 proves mapping absent can silently return 0 refs; mapping present plus missing detail fails. Missing-ref candidate scan expands from 43464ms to 92343ms in independent runs and interacts with the 60s pre-push lane; next check must assert fail-closed mapping behavior and bounded candidate scan/child cleanup with a seven-child reparent fixture.
