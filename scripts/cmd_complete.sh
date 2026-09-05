@@ -541,6 +541,133 @@ raise SystemExit(0 if all(data.get(k) == v for k, v in expected.items()) else 1)
 PY
 }
 
+# Worker artifacts are generation-scoped. A retry after report resubmission
+# may find valid artifacts from the previous generation in this checkpoint
+# directory. Move only provably older artifacts to a recoverable location;
+# corrupt or ambiguous state remains a fail-closed blocker.
+rotate_stale_gate_worker_artifacts() {
+    local stale_dir="${CMD_COMPLETE_STALE_ARTIFACT_DIR:-$CHECKPOINT_DIR/gate_worker_stale}"
+    python3 - "$CHECKPOINT_DIR" "$CMD_ID" "$BUNDLE_IDENTITY" "$stale_dir" <<'PY'
+import json
+import os
+import sys
+import time
+
+checkpoint_dir, cmd_id, current_generation, stale_dir = sys.argv[1:]
+artifact_states = {
+    "gate_worker.reserved.json": "reserved",
+    "gate_worker.launch.json": "launched",
+    "gate_worker.clear.json": "clear",
+    "gate_worker.success.json": "success",
+    "gate_worker.failed.json": "failed",
+}
+
+def invalid(name, reason):
+    print(
+        f"[cmd_complete] FAILED worker artifact invalid name={name} reason={reason}",
+        file=sys.stderr,
+    )
+    raise SystemExit(2)
+
+rotated = 0
+for name, expected_state in artifact_states.items():
+    path = os.path.join(checkpoint_dir, name)
+    try:
+        os.lstat(path)
+    except FileNotFoundError:
+        continue
+    except OSError as exc:
+        invalid(name, f"stat:{exc}")
+    if not os.path.isfile(path) or os.path.islink(path):
+        invalid(name, "not_regular_file")
+    try:
+        with open(path, encoding="utf-8") as fh:
+            data = json.load(fh)
+    except (OSError, ValueError) as exc:
+        invalid(name, f"json:{exc}")
+    if not isinstance(data, dict):
+        invalid(name, "not_mapping")
+    if data.get("version") != 1:
+        invalid(name, "version")
+    if data.get("state") != expected_state:
+        invalid(name, "state")
+    if data.get("cmd_id") != cmd_id:
+        invalid(name, "cmd_id")
+    generation = data.get("completion_generation")
+    if not isinstance(generation, str) or len(generation) != 64 \
+            or any(char not in "0123456789abcdef" for char in generation):
+        invalid(name, "completion_generation")
+    if generation == current_generation:
+        continue
+
+    destination_dir = os.path.join(stale_dir, generation)
+    os.makedirs(destination_dir, mode=0o700, exist_ok=True)
+    destination = os.path.join(destination_dir, name)
+    if os.path.lexists(destination):
+        destination = os.path.join(
+            destination_dir, f"{name}.recovered.{time.time_ns()}"
+        )
+    os.replace(path, destination)
+    print(
+        f"[cmd_complete] ROTATED stale_worker_artifact name={name} "
+        f"generation={generation} path={destination}",
+        file=sys.stderr,
+    )
+    rotated += 1
+
+if rotated:
+    print(
+        f"[cmd_complete] PASS stale_worker_rotation count={rotated} "
+        f"stale_dir={stale_dir}",
+        file=sys.stderr,
+    )
+PY
+}
+
+gate_worker_write_recovered_success() {
+    local success_marker="$1"
+    python3 - "$success_marker" "$CMD_ID" "$BUNDLE_IDENTITY" <<'PY'
+import json
+import os
+import sys
+import tempfile
+import time
+
+path, cmd_id, generation = sys.argv[1:]
+expected = {
+    "version": 1,
+    "state": "success",
+    "cmd_id": cmd_id,
+    "completion_generation": generation,
+}
+try:
+    with open(path, encoding="utf-8") as fh:
+        existing = json.load(fh)
+except FileNotFoundError:
+    existing = None
+except (OSError, ValueError) as exc:
+    raise SystemExit(f"[cmd_complete] FAILED recovered success marker unreadable: {exc}")
+if existing is not None:
+    if isinstance(existing, dict) and all(existing.get(k) == v for k, v in expected.items()):
+        raise SystemExit(0)
+    raise SystemExit("[cmd_complete] FAILED recovered success marker identity invalid")
+
+data = dict(expected, rc=0, recovered_from="clear", persisted_at_ns=time.time_ns())
+os.makedirs(os.path.dirname(path), exist_ok=True)
+fd, tmp = tempfile.mkstemp(prefix=".gate_worker_recovered.", dir=os.path.dirname(path))
+try:
+    with os.fdopen(fd, "w", encoding="utf-8") as fh:
+        json.dump(data, fh, sort_keys=True)
+        fh.write("\n")
+        fh.flush()
+        os.fsync(fh.fileno())
+    os.replace(tmp, path)
+finally:
+    if os.path.exists(tmp):
+        os.unlink(tmp)
+PY
+}
+
 # Wait for each generation-bound terminal marker in one process.  Spawning a
 # fresh python3 (plus date) every 50ms made concurrent public observers contend
 # on DrvFS process startup and could push the nominally detached boundary past
@@ -656,8 +783,17 @@ launch_or_observe_durable_gate_worker() {
     local failure_marker="$CHECKPOINT_DIR/gate_worker.failed.json"
     local tmux_bin="${CMD_COMPLETE_TMUX_BIN:-tmux}"
     local launcher="" socket="" worker_cmd="" worker_log_q="" worker_target="" worker_scope=""
-    local wait_rc
+    local wait_rc reservation_current=0
+    CMD_COMPLETE_CHECKPOINT_LOCK_RELEASED=0
     CMD_COMPLETE_RECOVERED_CLEAR=0
+
+    if ! rotate_stale_gate_worker_artifacts; then
+        printf '[cmd_complete] FAILED durable gate worker artifact rotation\n' >&2
+        return 1
+    fi
+    if gate_worker_marker_matches "$reservation" reserved; then
+        reservation_current=1
+    fi
 
     if gate_worker_marker_matches "$failure_marker" failed; then
         if gate_worker_recover_newer_clear "$failure_marker" "$clear_marker" "$success_marker"; then
@@ -667,6 +803,28 @@ launch_or_observe_durable_gate_worker() {
         fi
         printf '[cmd_complete] FAILED durable gate worker marker=%s\n' "$failure_marker" >&2
         return 1
+    fi
+
+    # A prior worker may have persisted CLEAR before this caller observed its
+    # launch/success receipt. The generation-bound CLEAR is sufficient to
+    # recover the ordered tail; do not start a second worker.
+    if [[ "$reservation_current" -eq 0 ]] \
+        && gate_worker_marker_matches "$clear_marker" clear; then
+        if ! gate_worker_write_recovered_success "$success_marker"; then
+            printf '[cmd_complete] FAILED recovered CLEAR success marker\n' >&2
+            return 1
+        fi
+        printf '[cmd_complete] RECOVERED existing durable gate CLEAR generation=%s\n' \
+            "$BUNDLE_IDENTITY" >&2
+        CMD_COMPLETE_RECOVERED_CLEAR=1
+        if ! flock -u 9; then
+            printf '[cmd_complete] FAILED durable gate worker checkpoint lock release\n' >&2
+            return 1
+        fi
+        exec 9>&-
+        CMD_COMPLETE_CHECKPOINT_LOCK_RELEASED=1
+        printf '[cmd_complete] RELEASED checkpoint_lock after_existing_clear\n' >&2
+        return 0
     fi
 
     if ! gate_worker_marker_matches "$launch_receipt" launched; then
@@ -793,6 +951,7 @@ PY
         return 1
     fi
     exec 9>&-
+    CMD_COMPLETE_CHECKPOINT_LOCK_RELEASED=1
     printf '[cmd_complete] RELEASED checkpoint_lock before_clear_wait\n' >&2
     if [[ -n "${CMD_COMPLETE_TEST_HOLD_AFTER_LOCK_RELEASE:-}" ]]; then
         sleep "$CMD_COMPLETE_TEST_HOLD_AFTER_LOCK_RELEASE"
@@ -916,8 +1075,11 @@ if [[ "${CMD_COMPLETE_SYNC_TAIL:-0}" != "1" ]] \
         fi
     else
         printf '[cmd_complete] FALLBACK completion_tail mode=sync reason=tmux_unavailable log=%s\n' "$_tail_log" >&2
-        flock -u 9
-        exec 9>&-
+        if [[ "${CMD_COMPLETE_CHECKPOINT_LOCK_RELEASED:-0}" != "1" ]]; then
+            flock -u 9
+            exec 9>&-
+            CMD_COMPLETE_CHECKPOINT_LOCK_RELEASED=1
+        fi
         env CMD_COMPLETE_ASYNC_TAIL_WORKER=1 \
             CMD_COMPLETE_ROOT_DIR="$ROOT_DIR" CMD_COMPLETE_SCRIPT_DIR="$SCRIPT_DIR" \
             CMD_COMPLETE_CHECKPOINT_DIR="$CHECKPOINT_DIR" \

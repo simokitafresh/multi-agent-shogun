@@ -888,3 +888,78 @@ print("PASS: karo_direct cmds consume present SG7 or derive generation from revi
 PY
     [ "$status" -eq 0 ]
 }
+
+# test_necessity: completion artifacts from a prior report generation must be
+# recoverable without blocking the current generation's durable CLEAR, and the
+# current generation must not start a second gate worker.
+# regression_justification: report RC changed the generation while reserved,
+# launch, failed, and CLEAR artifacts from the prior worker remained together;
+# the reservation path then stopped with "reservation invalid".
+@test "old generation worker artifacts rotate while current CLEAR is recovered" {
+    export CMD_COMPLETE_TEST_LOG="$BATS_TEST_TMPDIR/old-generation.log"
+    local checkpoint="$FIXTURE/queue/gates/cmd_fixture"
+    local current="aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+    local old="bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+    python3 - "$checkpoint" "$old" "$current" <<'PY'
+import json
+import os
+import sys
+
+checkpoint, old, current = sys.argv[1:]
+states = {
+    "gate_worker.reserved.json": "reserved",
+    "gate_worker.launch.json": "launched",
+    "gate_worker.clear.json": "clear",
+    "gate_worker.success.json": "success",
+    "gate_worker.failed.json": "failed",
+}
+for name, state in states.items():
+    with open(os.path.join(checkpoint, name), "w", encoding="utf-8") as fh:
+        json.dump({"version": 1, "state": state, "cmd_id": "cmd_fixture",
+                   "completion_generation": old, "persisted_at_ns": 1}, fh)
+with open(os.path.join(checkpoint, "gate_worker.clear.json"), "w", encoding="utf-8") as fh:
+    json.dump({"version": 1, "state": "clear", "cmd_id": "cmd_fixture",
+               "completion_generation": current}, fh)
+PY
+
+    run env -u CMD_COMPLETE_SYNC_TAIL \
+        CMD_COMPLETE_ASYNC_TAIL_WORKER=1 \
+        CMD_COMPLETE_ROOT_DIR="$FIXTURE" CMD_COMPLETE_SCRIPT_DIR="$FIXTURE/scripts" \
+        bash "$FIXTURE/scripts/cmd_complete.sh" cmd_fixture
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"PASS stale_worker_rotation count=4"* ]]
+    [[ "$output" == *"RECOVERED existing durable gate CLEAR"* ]]
+    [ "$(find "$checkpoint/gate_worker_stale/$old" -maxdepth 1 -type f | wc -l)" -eq 4 ]
+    [ ! -e "$checkpoint/gate_worker.reserved.json" ]
+    [ ! -e "$checkpoint/gate_worker.launch.json" ]
+    [ ! -e "$checkpoint/gate_worker.failed.json" ]
+    run python3 - "$checkpoint/gate_worker.clear.json" "$checkpoint/gate_worker.success.json" "$current" <<'PY'
+import json
+import sys
+for path in sys.argv[1:3]:
+    data = json.load(open(path, encoding="utf-8"))
+    assert data["completion_generation"] == sys.argv[3]
+assert json.load(open(sys.argv[2], encoding="utf-8"))["recovered_from"] == "clear"
+PY
+    [ "$status" -eq 0 ]
+    [ ! -e "$CMD_COMPLETE_TEST_LOG" ] || ! grep -q '^cmd_complete_gate.sh|' "$CMD_COMPLETE_TEST_LOG"
+}
+
+# test_necessity: malformed worker state cannot be reclassified as stale or
+# silently discarded; the completion wrapper must stop before launching any
+# gate worker and preserve the forensic artifact.
+@test "corrupt worker artifact remains fail closed" {
+    export CMD_COMPLETE_TEST_LOG="$BATS_TEST_TMPDIR/corrupt-worker.log"
+    local checkpoint="$FIXTURE/queue/gates/cmd_fixture"
+    printf '%s\n' '{"version":1,"state":"reserved",' > \
+        "$checkpoint/gate_worker.reserved.json"
+
+    run env -u CMD_COMPLETE_SYNC_TAIL \
+        CMD_COMPLETE_ROOT_DIR="$FIXTURE" CMD_COMPLETE_SCRIPT_DIR="$FIXTURE/scripts" \
+        bash "$FIXTURE/scripts/cmd_complete.sh" cmd_fixture
+    [ "$status" -ne 0 ]
+    [[ "$output" == *"worker artifact invalid"* ]]
+    [ -f "$checkpoint/gate_worker.reserved.json" ]
+    [ ! -e "$checkpoint/gate_worker_stale" ]
+    [ ! -e "$CMD_COMPLETE_TEST_LOG" ] || ! grep -q '^cmd_complete_gate.sh|' "$CMD_COMPLETE_TEST_LOG"
+}
