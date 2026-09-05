@@ -8849,3 +8849,23 @@
   brainwash_check: "#1no #2no #3no #4no #5no #6no #7no #8no 三観点×一次根拠照合"
   origin: "[[cmd_4479]] -> [[R2七点採用_v0.5]] -> [[第三往復_APPROVE]]"
   timestamp: "2026-09-05T22:46:00"
+- cmd_id: cmd_4479
+  review_type: draft
+  verdict: APPROVE
+  verified_files:
+  - "queue/shogun_to_karo.yaml:13"
+  confidence: HIGH
+  findings_summary: "6観点OK。前提:全数値verified(nonce/sha256/models.py)。数値:AC7本は直列依存で分割不可。シミュレーション:順序問題なし。事前検死:FM4件全て低リスク。North Star:殿指示直結。ambiguity_points:none"
+  observations:
+  - "事実: AC7本中AC5-7は手続き/包装、実質4機能。分割不可は同一DataFrameの突合依存"
+  - "事実: blob d14a4ec3のsha256を将軍が22:40に実測。portfolios.type=Column(models.py L84)確認"
+  operational_simulation:
+    command: "bash scripts/ac_physical_verify.sh cmd_4479"
+    expected: "ALL PATHS VERIFIED、WARN(LG021 AC数/LG037 ファイル参照/LG071 閾値)のみ"
+    actual: "ALL PATHS VERIFIED、WARN3件(LG021 AC7>4/LG037 partial_turnover参照/LG071 閾値条件)"
+    result: "PASS — 全WARNは設計意図どおり(serial_dependency_evidence/流用元明記/閾値なし設計)"
+  finding_categories: [assumptions, numbers, simulation, premortem, ambiguity, adversarial]
+  brainwash_check: "#1no(AC1巨大さを疑い分割検討→serial_dependency整合で分割不可を確認) #2no(blob sha256/nonce/models.py現物確認済み) #3no(自分でac_physical_verify実行) #4no(execution_env明記・readonly only) #5no(cmd起票は殿go 23:29後) #6no(7AC全件検証) #7no(analysis_runs/隔離・本番書込0) #8no(7/7 AC確認・WARN3件全評価)"
+  causal_chain: "weight散在→研究ごとに再発明→既存blob復元で標準化=正の複利。新規再帰0行×今後N回=負の複利回避"
+  origin: "[[殿下問_便利だったもの_20260905_2119]] -> [[設計書4往復APPROVE]] -> [[cmd_4479_draft_APPROVE]]"
+  timestamp: "2026-09-05T23:42:00+09:00"
