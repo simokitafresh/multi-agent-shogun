@@ -3625,6 +3625,7 @@ codd:
 | causal_chain | `[[cmd_karo_hotfix_u3_publisher_idempotent_restore_notify_202609022337]]` (L1711) |
 | causal_chain | `[[cmd_karo_hotfix_workarounds_merge_driver_dup_cmd_id_202609030148]]` (L1712) |
 | cmd | `cmd_karo_hotfix_pd141_workaround_signature` (`scripts/karo_workaround_log.sh`, `tests/unit/test_karo_workaround_validation.bats`) |
+| discussion | `queue/lord_conversation.jsonl` 2026-09-05T10:52:34+09:00 session_save_20260905_1058(復帰点、先に session_save_20260905_1018 を読め): loop 10:49。cmd_4470(つまり偵察第 3 回)を将軍 doc lane で終端=8/8 n |
 
 ## investment_knowledge_base — 投資知識辞書
 
