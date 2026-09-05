@@ -18481,3 +18481,10 @@ insights:
   source: "semantic_index_update"
   fix_known: false
   status: pending
+- id: INS-20260905-175204986-0a15
+  ts: "2026-09-05T17:52:04+09:00"
+  insight: "[[karo throughput asis 20260905 mdの進捗と現時点での改良の成果を教えてくれ]] semantic_stress_test candidate_aliases: NO_MATCH source=lord query=karo_throughput_asis_20260905.mdの進捗と現時点での改良の成果を教えてくれ"
+  priority: "low"
+  source: "semantic_stress_test"
+  fix_known: false
+  status: pending
