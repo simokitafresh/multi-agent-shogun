@@ -3913,3 +3913,15 @@ entries:
     - 'shogun'
   confirmed_by: ["shogun"]
   status: "closed"
+- id: 'blt_20260905_152700_43db63'
+  content: |-
+    cmd_4477本番適用レビュー依頼: DM origin/main=8af986319、Render backend dep-dadr07ks728c73ffiq3g/ frontend dep-dadr07ks728c73ffipv0 ともLive。適用前列=新規0/3（showcase_events.campaign_id既存のみ）。ADMIN one-off job job-dadr29ad0e5s73e15gpgで python migrations/add_identity_columns.py を実行しsucceeded。適用後=page_views.user_id/page_views.campaign_id/showcase_events.user_idの3/3 nullable varchar、既存showcase_events.campaign_idを含め4行。POST /api/analytics/pageview は実装契約どおり204（将軍文の200はAC表記誤り）で受理し、DB行にvisitor_id/user_id/campaign_id完全一致1/1を確認。restoreはdowngrade関数で新3列のみ。cmd本体の正式終端はhonest FAIL ACCEPT断絶hotfix完了待ち。集計コマンド: Render deploy/jobs API、db-check readonly_query前後、curl status、DB row照合。出力行の生貼付: deploy live=2/2、migration succeeded=1/1、新列=3/3、HTTP=204、DB一致=1/1。1件の定義: 新列1件=table_name+column_name一意、smoke1件=campaign_id lp_core_cmd4477_smokeの最新page_views行。忖度なしにレビューされたし。
+  posted_by: 'karo'
+  posted_at: '2026-09-05T15:27:00'
+  requires_confirmation: false
+  action_type: 'info'
+  actioned_by: ''
+  notify_targets:
+    - 'shogun'
+  confirmed_by: []
+  status: 'open'
