@@ -371,6 +371,24 @@ common_dir="$(git -C "$ROOT" rev-parse --path-format=absolute --git-common-dir)"
 exec 9>"$common_dir/safe_shared_main_ff.lock"
 flock -x 9
 
+# publisher and scoped-commit lanes use Git's create/remove index.lock rather
+# than this helper's advisory lock. Retry only that exact transient collision;
+# every other index error remains fail-closed. The bound prevents a crashed
+# writer from turning convergence into an unbounded wait.
+run_git_index_write() {
+    local attempt=0 output rc
+    while (( attempt < 50 )); do
+        output="$({ "$@"; } 2>&1)" && return 0
+        rc=$?
+        printf '%s\n' "$output" >&2
+        [[ "$output" == *"index.lock"* ]] || return "$rc"
+        attempt=$((attempt + 1))
+        sleep 0.1
+    done
+    echo "BLOCK: git index lock remained busy after bounded retry" >&2
+    return 1
+}
+
 branch="$(git -C "$ROOT" symbolic-ref --quiet --short HEAD || true)"
 [[ "$branch" == "main" ]] || {
     echo "BLOCK: shared fast-forward requires branch main (got ${branch:-detached})" >&2
@@ -518,7 +536,7 @@ restore_staged_index() {
     local path entry mode blob stage metadata
     while IFS= read -r path; do
         [[ -n "$path" ]] || continue
-        git -C "$ROOT" update-index --force-remove -- "$path" >/dev/null 2>&1 || true
+        run_git_index_write git -C "$ROOT" update-index --force-remove -- "$path" >/dev/null 2>&1 || true
     done < "$staged_file"
     while IFS= read -r entry; do
         [[ -n "$entry" ]] || continue
@@ -526,7 +544,7 @@ restore_staged_index() {
         metadata="${entry%%$'\t'*}"
         read -r mode blob stage <<< "$metadata"
         [[ -n "$path" && -n "$mode" && -n "$blob" ]] || return 1
-        git -C "$ROOT" update-index --add --cacheinfo "$mode,$blob,$path"
+        run_git_index_write git -C "$ROOT" update-index --add --cacheinfo "$mode,$blob,$path"
     done < "$index_backup_file"
 }
 
@@ -541,7 +559,7 @@ materialize_changed_clean_paths() {
             continue
         fi
         if git -C "$ROOT" ls-files --error-unmatch -- "$path" >/dev/null 2>&1; then
-            git -C "$ROOT" checkout-index -f -- "$path" || return 1
+            run_git_index_write git -C "$ROOT" checkout-index -f -- "$path" || return 1
         elif [[ -e "$ROOT/$path" || -L "$ROOT/$path" ]]; then
             rm -f -- "$ROOT/$path" || return 1
         fi
@@ -574,7 +592,7 @@ rollback_needed=0
 rollback_shared_sync() {
     local rollback_rc=0
     git -C "$ROOT" update-ref "$root_ref" "$old_head" "$target_head" || rollback_rc=1
-    git -C "$ROOT" read-tree --reset "$old_head" || rollback_rc=1
+    run_git_index_write git -C "$ROOT" read-tree --reset "$old_head" || rollback_rc=1
     restore_staged_index || rollback_rc=1
     materialize_changed_clean_paths || rollback_rc=1
     return "$rollback_rc"
@@ -604,7 +622,7 @@ git -C "$ROOT" update-ref "$root_ref" "$target_head" "$old_head" || {
     exit 2
 }
 rollback_needed=1
-git -C "$ROOT" read-tree --reset "$target_head" || {
+run_git_index_write git -C "$ROOT" read-tree --reset "$target_head" || {
     echo "BLOCK: target HEAD/index synchronization failed" >&2
     exit 1
 }
