@@ -162,7 +162,7 @@
 <!-- source_commit:e7c3beb64085 reason:2026-09-02 将軍 doc lane: ancestry 後退検出を push_lane/pre-push へ接続(efc16dcd6/e7c3beb64) evidence:CLEAR 03:02/03:09; safe_ff BLOCK 実証 02:50 -->
 <!-- source_commit:a7cb1ca59831 reason:2026-09-02 将軍 doc lane: legacy outbox envelope 移行 a7cb1ca59(T224 追補) evidence:commit a7cb1ca59; DOC_LANE_ALERT blt_022445 -->
 <!-- source_commit:64f01517a70b reason:2026-09-02 将軍 doc lane: U1 f92d1e376 + ancestry 後退 BLOCK 64f01517a evidence:commits f92d1e376/64f01517a; CLEAR 01:54/02:08; 消失 2 回目 16d831ed9 を復元 -->
-<!-- last_synced_lesson: L1758 -->
+<!-- last_synced_lesson: L1759 -->
 <!-- source_commit:593cfb27a612 reason:2026-09-02 将軍 doc lane: U9 safe_ff 既公開 ours merge 除外 593cfb27a evidence:commit 593cfb27a; CLEAR 01:20; integrate c7710efaf on origin/main -->
 <!-- source_commit:458fc4caa91a reason:2026-09-02 将軍 doc lane: U3 msg_id 限定 receipt 458fc4caa evidence:commit 458fc4caa; CLEAR 01:05; staged 11→0; watcher 9/9 restart 01:06 -->
 <!-- source_commit:4dd6898466a27f10ef7d08ed27549b3c095378de reason:2026-09-01 将軍 doc lane: CI RED #6 Integration ci_fix 59fa70e0b evidence:commit 59fa70e0b; CLEAR 22:57 -->
@@ -296,7 +296,7 @@
 <!-- source_commit:f8c49cbd7 reason:cmd_shogun_commit_reservation_ledger_phase1_20260805 evidence:reviewed -->
 <!-- source_commit:515f0214e reason:cmd_karo_hotfix_ga432_context_freshness reviewed source boundary evidence:cmd_complete_gate project=infra context=context/infrastructure.md commit=515f0214e -->
 <!-- source_commit:23a1ce61205ce4496ab11570583e8e8adcaeac4e reason:reflux backlink SSOT update reviewed evidence:incoming 0 to 1; runner69/69; target doc diff0 -->
-<!-- last_synced_lesson: L1758 -->
+<!-- last_synced_lesson: L1759 -->
 
 結論: 本ファイルは検索起点となる索引層。運用詳細・経緯・教訓本文は7つの詳細正本へ移設した。
 source boundary一致taskはregistryのowner/update_triggerからcontext_update_candidatesを自動注入し、未処理候補はcmd_complete_gateがBLOCK、明示処理済み/無関係はCLEAR。
@@ -347,7 +347,7 @@ source boundary一致taskはregistryのowner/update_triggerからcontext_update_
 結論: 詳細は `docs/research/infrastructure-lessons-reviews-operations.md` に保存。原文を省略せず移設済み。
 見出し: 前節「Infra教訓索引」の連続本文（source lines 1701-2123）。
 - L1503: 既存legacy欠損は不変multisetで隔離せよ（cmd_karo_hotfix_shared_operational_log_ownership_20260801）
-<!-- last_synced_lesson: L1758 -->
+<!-- last_synced_lesson: L1759 -->
 - L1504: appendとarchiveはreaderを含むgeneration transactionにせよ（cmd_karo_hotfix_gunshi_cs_remediation_generation_20260801）
 - L1505: 永続test宣言はtask正本に置く（cmd_4206）
 - L1506: active context DEFERはowner存在だけでなくdirty・baseline変化・fresh leaseの全ANDにせよ（cmd_karo_hotfix_active_context_gate_transient_20260801）
@@ -582,6 +582,7 @@ source boundary一致taskはregistryのowner/update_triggerからcontext_update_
 - L1756: FAIL分類のカテゴリ集計は単位混在(review行FAIL数とgate/hookイベント数)で実数と乖離する（cmd_karo_recon_w0_failure_events_20260905）
 - L1757: deploy_task.sh(巨大file)とscripts/deploy_task/*.sh(分割module)は同名関数を文字列として二重定義しており、source順序でmodule側が実効定義になる。新規inject_*関数を追加する際はmodule側(context_injection.sh等)に実装すれば動作するが、test_deploy_task.batsの一部はgiant file側をsed抽出して直接検査するため、giant file側にも同文言を複製しないと当該testが空/存在しない関数を検査してしまう（cmd_karo_recon_w1_routine_contract_20260905）
 - L1758: deploy_task test scaffold(tests/helpers/deploy_task_scaffold.bash)へskills/*/SKILL.mdを新規追加すると、scripts/lib/deploy_task_semantic_context_fast.py::_default_skill_allowed()の非対称フィルタ(SKILL.md不在=許可/存在するがTRIGGER行なし=不許可)により既存test(inject_semantic_concepts系)が偽FAILする（cmd_karo_impl_w1_routine_refs_core_20260906）
+- L1759: freshness gateはcheckerのGROUP横展開証跡を捨てない（cmd_karo_hotfix_ga589_context_freshness_20260906）
 
 ## 設計標準・テスト・因果
 
@@ -862,4 +863,4 @@ source boundary一致taskはregistryのowner/update_triggerからcontext_update_
 - ci_fix run 33945636960(2026-09-05, e05e34176 飛猿)|ninja_monitor hot-reload watcher の診断出力を追加し、失敗 log の path 不正(存在しない dir へ書いて無音)を修正|CI compat shard の hot-reload test(#15)が一過性 FAIL する系の 2 本目|origin: `[[CI_RED_20260905]] -> [[hot_reload_watch_diagnostics]] -> [[ci_fix_33945636960]]`
 - 無期限 CPU 負荷生成の pre-bash guard(2026-09-05, b57e576ee 半蔵)|飛猿の CI race 再現が timeout/cgroup 境界なしの busy-loop 16 子を孤児化(15:23、core0/nice19/SCHED_IDLE で封じ)、別 fixture の cmd_save preflight 孤児 18 本(15:47)、/ 直下からの bfs・--hidden 全走査で load 77(15:50)→負荷生成コマンド(timeout なし無限 loop、repo 外 root 検索、無境界 hidden 全走査)を pre-bash で exit 2 BLOCK|origin: `[[飛猿_CI_race_再現_孤児16_20260905]] -> [[unbounded_cpu_repro_guard]] -> [[D006_kill禁止下の封じ込め]]`
 - honest FAIL accept 鎖を SG7 承認 check path に束縛(2026-09-05, 53b8b00d3 影丸)|review_bundle.py の honest FAIL lane は review_entry トップレベルの review_type: report + report_verdict: FAIL でのみ成立(ネスト構造は不成立=軍師 16:47 発見)。accept は SG7 承認済み check path に限定し、偽 honest FAIL の accept を構造で不可に。bats 3 file+py 1|→ cmd_4477 正式終端の前提|→ `scripts/review_bundle.py`, `tests/unit/test_review_bundle.bats`
-- 家老スループット敵対 contract 5 群+日次表(2026-09-05, fe58c137a publisher 合流 ← ee4fc25ad 疾風 cmd_4478)|c2a telemetry 失敗でも rc 不変/watcher held bounded/agent 2 pane 帰属/auto-push result-reason-rc 3 種を contract 化(実装 diff 0)。`bash scripts/karo_throughput_report.sh <YYYY-MM-DD> [--as-of <ISO>]` が append-only logから日次表を生成。具体的正本=`docs/research/karo_throughput_daily/2026-09-05.md`、一般生成規則=`docs/research/karo_throughput_daily/<date>.md`(初回16:45)|→ `docs/research/karo_throughput_asis_20260905.md` §6.2/§6.7
+- 家老スループット敵対 contract 5 群+日次表(2026-09-05, fe58c137a publisher 合流 ← ee4fc25ad 疾風 cmd_4478)|c2a telemetry 失敗でも rc 不変/watcher held bounded/agent 2 pane 帰属/auto-push result-reason-rc 3 種を contract 化(実装 diff 0)。`bash scripts/karo_throughput_report.sh <YYYY-MM-DD> [--as-of <ISO>]` が append-only logから日次表を生成。具体的正本=`docs/research/karo_throughput_daily/2026-09-05.md`、一般生成規則=`同ディレクトリ配下の日付名 md(YYYY-MM-DD.md、例は上記 2026-09-05)`(初回16:45)|→ `docs/research/karo_throughput_asis_20260905.md` §6.2/§6.7
