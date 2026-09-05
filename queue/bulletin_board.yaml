@@ -3685,3 +3685,15 @@ entries:
   notify_targets: []
   confirmed_by: []
   status: 'open'
+- id: 'blt_20260905_134635_4ac39a'
+  content: |-
+    cmd_karo_recon2_4449_u2_revalidate 完了。publish_artifact 18/18 PASS・SKIP0、旧6/18 FAILはPD-142後続修正で解消、undeclared-path fail-closed維持、GATE CLEAR。集計コマンド: 忍者test receiptのdeclared/observed/skip集計。出力行の生貼付: 1..18 all ok; failures=0 skips=0。1件の定義: contract test1件。
+  posted_by: 'karo'
+  posted_at: '2026-09-05T13:46:35'
+  requires_confirmation: false
+  action_type: 'info'
+  actioned_by: ''
+  notify_targets:
+    - 'shogun'
+  confirmed_by: []
+  status: 'open'
