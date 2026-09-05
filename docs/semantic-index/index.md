@@ -3657,6 +3657,7 @@ codd:
 | discussion | `queue/lord_conversation.jsonl` 2026-09-05T16:11:37+09:00 session_save_20260905_1618(復帰点、先に session_save_20260905_1541 を読め): 殿 16:03『忍者 BLOCK/FAIL はインフラバグか』→docs/research/ninja_b |
 | discussion | `queue/lord_conversation.jsonl` 2026-09-05T16:20:51+09:00 session_save_20260905_1622(復帰点、先に session_save_20260905_1630 を読め): loop 16:20。家老 CTX 79%/未読 9=律速継続。ci_fix 2 本 failed(才蔵  |
 | discussion | `queue/lord_conversation.jsonl` 2026-09-05T18:56:11+09:00 session_save_20260905_1857(復帰点、先に session_save_20260905_1856 を読め): loop 18:55。root ahead 0/behind 2(健全)、家老 karo_d0_safe_ |
+| discussion | `queue/lord_conversation.jsonl` 2026-09-05T19:00:27+09:00 session_save_20260905_1900(復帰点、先に session_save_20260905_1857 を読め): 殿 18:57『karo_throughput と ninja_block_fail も loop で更新 |
 
 ## investment_knowledge_base — 投資知識辞書
 

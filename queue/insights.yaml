@@ -18791,3 +18791,10 @@ insights:
   status: "resolved"
   action_artifact: "semantic_index=/home/simokitafresh/multi-agent-shogun/docs/semantic-index/index.md"
   resolved_reason: "semantic index candidate was absorbed into a registered concept"
+- id: INS-20260905-190040258-419c
+  ts: "2026-09-05T19:00:40+09:00"
+  insight: "semantic_index_update新概念候補: discussion:毎loop毎に内容を現状に合わせてアップデートすることをloopに取り込んでくれ。CTX70%超えたらauto vompactもしたいな は 既存aliasesに一致なし。概念定義とaliases追加を検討せよ"
+  priority: "low"
+  source: "semantic_index_update"
+  fix_known: false
+  status: pending
