@@ -170,6 +170,10 @@ content_operation_markers = (
     "add", "calculate", "quote", "extract", "summarize", "report",
 )
 debug_enabled = os.environ.get("EXTRACT_COMMAND_FILES_DEBUG", "").strip().lower() in {"1", "true", "yes"}
+exec_prefix_pattern = re.compile(
+    r"(?:^|[\s;|&=])(?:bash|python3|python|sh|bats|node)\s*$",
+    re.IGNORECASE,
+)
 
 def marker_pos(text, markers):
     positions = [text.find(marker) for marker in markers if text.find(marker) >= 0]
@@ -244,8 +248,12 @@ for idx, match in enumerate(matches):
     # An execution-prefix script is a tool invocation, not a deliverable.
     # Classify it before broad directory target matching (for example
     # target_path=scripts would otherwise claim bash scripts/run_tests.sh).
-    prefix_tokens = cmd_text[max(0, match.start() - 60):match.start()].split()
-    is_exec_prefix = bool(prefix_tokens) and prefix_tokens[-1].lower() in {"bash", "python3", "python", "sh", "bats", "node"}
+    prefix_text = cmd_text[max(0, match.start() - 60):match.start()]
+    # The command may carry a Japanese label before the shell verb, for
+    # example "選択実行コマンド=bash scripts/run_tests.sh".  The verb is
+    # still the execution prefix; tokenizing and comparing the final token
+    # misses the `=bash` form and creates an LG037 false positive.
+    is_exec_prefix = bool(exec_prefix_pattern.search(prefix_text))
     if is_exec_prefix:
         readonly_refs.append(os.path.basename(ref))
         debug(ref, "exec_prefix readonly=True")
