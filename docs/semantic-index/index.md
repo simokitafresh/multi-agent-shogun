@@ -1880,6 +1880,8 @@ codd:
 | causal_chain | `[[cmd_gunshi_d0_20260807]]` (L1569) |
 | causal_chain | `[[cmd_karo_hotfix_fail_close_worktree_cleanup_20260826]]` (L1642) |
 | causal_chain | `[[cmd_karo_hotfix_ga530_expected_pre_push_block_20260830]]` (L1674) |
+| cmd | `cmd_4475` DM-Signal LP SEO 監査(外部意見 12 Phase の本番突合)+実在 2 件の最小修正(JA 全頁 html lang / JSON-LD Organization・WebSite の url 統一と logo) (`context/dm-signal-research.md`) |
+| causal | `cmd_4475` origin: [[殿指示_LP_SEO外部意見_20260905]] -> [[本番curl一次確認_JA_lang_en_JSONLD_url_ja]] -> [[cmd_4475_最小修正2件]] |
 
 ## recalculate_pipeline — 再計算パイプライン
 
@@ -2197,6 +2199,7 @@ codd:
 | causal_chain | `[[cmd_karo_hotfix_recalculate_sync_end_date_20260729]]` (L1447) |
 | causal_chain | `[[cmd_karo_hotfix_deploy_task_yaml_speed_recon_guard_202607020133]]` (L919) |
 | causal_chain | `[[cmd_karo_ci_fix_30852904481_completion_tail_race]]` (L1548) |
+| causal | `cmd_4475` files_modified: [[recalculate_pipeline]] |
 
 ## semantic_dictionary_design — セマンティック辞書構想
 
@@ -7912,6 +7915,7 @@ codd:
 | discussion | `queue/lord_conversation.jsonl` 2026-09-01T15:13:27+09:00 DM-signalの話しをしよう。今日はリバランス日だ。本番に正しく計算された今月の保有ポジションが表示されているか？ |
 | discussion | `queue/lord_conversation.jsonl` 2026-09-04T11:22:14+09:00 殿裁定 2026-09-04 11:17/11:19(X 枠 B・C): 枠 B の抜粋元は note マガジン『中身は固いバムの投資ショートコラム』 https://note.com/tokyojibika/m/m6557263f0241 |
 | causal_chain | `[[cmd_4330]]` (L1598) |
+| causal | `cmd_4475` files_modified: [[dmsignal_operations]] |
 
 ## partial_turnover_execution_method — Partial Turnover実験実行・完了証跡方法論
 
@@ -7935,6 +7939,7 @@ codd:
 | causal | `cmd_4300` files_modified: [[partial_turnover_execution_method]] |
 | causal | `cmd_karo_hotfix_ga477_context_freshness_trigger_20260818` files_modified: [[partial_turnover_execution_method]] |
 | causal | `cmd_4373` files_modified: [[partial_turnover_execution_method]] |
+| causal | `cmd_4475` files_modified: [[partial_turnover_execution_method]] |
 
 ## admin_ui_redesign_asis_tobe — DM-Signal Admin画面一覧性改修設計書
 
