@@ -19,7 +19,8 @@
 3. まず readonly の materialize(script 1 本、出力 1 表)。効いたら DB 表へ昇格。順序を逆にしない。
 4. 測れないものは書かない。未確認は「(未確認)」。
 5. 歴史修正禁止。過去月は確定値から再計算、月末上書きなし。
-6. 本番 DB は readonly launcher のみ。DDL/UPSERT は殿 go 後の cmd で、`migrations.py` の add_if_missing 型に従う。
+6. 本番 DB は readonly launcher のみ。**本番(DB・deploy・設定)に触るのは殿が明示的に OK を出した時だけ**(殿 22:27)。DDL/UPSERT/第 2 段の昇格は殿の明示 go の後の cmd で、`migrations.py` の add_if_missing 型に従う。
+7. 設計書が家老・軍師の APPROVE に到達するまでレビュー往復を続け、慌てて実装しない(殿 22:25)。cmd_4479 は draft のまま。
 
 ## §1 結論(先に)
 
