@@ -1,5 +1,6 @@
 # DM-signal コアコンテキスト
-<!-- last_updated: 2026-09-03 2026-09-03 将軍doc lane: cmd_4459 showcase series holding(§97) -->
+<!-- last_updated: 2026-09-04 context_freshness reviewed source boundary -->
+<!-- source_commit:5b05427010fd reason:context_freshness reviewed source boundary evidence:context_freshness_check context=context/dm-signal-core.md commit=5b05427010fd -->
 <!-- source_commit:59b7b6794 reason:2026-09-03 将軍doc lane: cmd_4459 showcase series holding(§97) evidence:git -C /mnt/c/Python_app/DM-signal show origin/main:backend/app/api/public_showcase.py | grep -c _hero_holding_by_month = 2; grep -c §97 context/dm-signal-core.md = 1 -->
 <!-- source_commit:172b6d35e7f2 reason:2026-09-01 将軍doc lane: DOC_LANE_ALERT 4件(偽陽性=marker d87339a4 not ancestor of local clone)。実欠落(showcase API/showcase_events/LP cmd_4431-4437/login minimal/noindex)を追記し境界をorigin/main tipへ evidence:git -C /mnt/c/Python_app/DM-signal log d87339a4..origin/main = 88 commits; diff --stat backend/app = 4 files +621; grep反映 showcase_events/api\/public/cmd_4433 各>=1 -->
 <!-- source_commit:9734518397066f644bd7c7180bccc276d2bf5947 reason:2026-08-31 06:45 将軍doc lane GA-535: 境界を origin/main tip へ是正(8-hex 旧hotfix markerだと分岐外祖先が非除外で1390/789/1588件の偽ALERT) evidence:git -C /mnt/c/Python_app/DM-signal rev-list --count <tip>..origin/main=0 -->

@@ -1,5 +1,5 @@
 # CMD年代記
-<!-- last_updated: 2026-09-04 -->
+<!-- last_updated: 2026-09-05 -->
 
 > 完了cmdの1行索引。詳細は queue/archive/cmds/{cmd_id}.yaml 参照。
 
@@ -273,3 +273,4 @@
 | cmd_4468 | 殿 2026-09-03 09:16『追加 4 点を起票してクローズまで持っていけ』。設計書 §15(v3.19): flag ON 04:37 以降の origin 101 commit 中 Published-By trailer 67=66%(ToBe 100%)。trailer 無しの出所=insights auto-commit 7・runtime integrate 4・D012 merge 2・reflux 直 1。家老 09:13/09:19 実測: root 直書き生産者の残存=semantic_index_update(commit 直後に index.md を再追記)と bulletin 系(bulletin_write.sh:619 の archive trim が root で HEAD 66 vs worktree 30 の恒久乖離を作っていた→65f52c33a で ON 時 skip)、root の台帳 dirty が ledger batch と衝突して ff 不能(09:10 behind 1)。root が dirty を持たなければ ff は常に通り §15 の field-aware merge は不要になる=本 cmd で B(root sync)も同時に解ける | infra | 09-03 | AC1 AC2実装完了。root生産者をledgerへ移しi |
 | cmd_4469 | 殿 2026-09-03 09:16『追加 4 点を起票してクローズまで持っていけ』。設計書 §15: 稼働 daemon(pid 2581118、05:46 起動)は旧コードで stop flag/ledger 消費/root drain を持たず、家老と将軍が手動で 1 周ずつ回している。D006 により agent は kill せず、F009 により殿にも依頼しない=入替は infra(watchdog)の役目として構造化する。§11 after 計測は before snapshot(単一 publisher before snapshot 20260902、SHA256SUMS 付き)と同窓で未実施。クローズ条件 5 点(§15)は手集計のため、script 1 本で二値化して家老が周期で回せるようにする | infra | 09-03 | AC1/AC2実装完了: daemon publisher |
 | cmd_4473 | 殿指示 08-31 05:22『Level3 まで全て完了させるロードマップ』(docs/research/agent_readiness_level3_roadmap_20260831.md v1.3、gist da1b7617)。現状(将軍 curl 13:40 本番): 2-2 PRM・2-3/2-4 Agent Card+skills(cmd_4444)・2-8 DNS-AID(TXT 投入済)は done。未着手=2-5(backend /mcp、2 cmd・直列)・2-6(Web Bot Auth 鍵 directory)・2-7(LP WebMCP)。本 cmd は LP のみで完結し可逆な 2-6 と 2-7 を並走で先に閉じ、2-5 は別 cmd(backend)へ。T212 は 09-02 18:45 から起票 0 で 2 日止まっていた | dm-signal | 09-03 | WebMCP get_plansをLP共有layoutから一 |
+| cmd_4474 | 殿裁定 2026-09-04 16:07(X Growth Engine v1.3 §48): X 側 KPI は投稿単位で取れるが、DM-Signal visit/signup/paid は campaign_id attribution を実装した後で初めて直接帰属できる。既存 showcase_events(POST /api/public/showcase/event、source∈lp/login/direct/rebalancer)は live、utm は backend/frontend に 0 件(2026-09-04 16:10 grep)。X 側は campaign_id x_<YYYYMMDD>_<slot>_<nnn> を投稿作成時に発行済み(x_growth_tag.py)。note 経由は帰属しない(設計通り) | dm-signal | 09-05 | 既存9ea実装を保持し、RC補正の逆migration ar |
