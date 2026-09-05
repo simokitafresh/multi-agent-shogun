@@ -8145,7 +8145,8 @@
 - cmd_id: cmd_karo_ci_fix_33952746916_clean_repro_cycle
   review_type: draft
   verdict: APPROVE
-  gate_result: null
+  gate_result: "CLEAR"
+  gate_synced_at: "2026-09-05T17:45:08+09:00"
   confidence: HIGH
   verified_files:
     - "queue/tasks/hanzo.yaml:AC1"
