@@ -576,6 +576,34 @@ Safe-Shared-Main-Equivalent-Source: $second_source"
   [[ "$output" == *"dirty_paths=0"* ]]
 }
 
+# test_necessity: a runtime writer may update an unrelated tracked-dirty path
+# after targetization.  Convergence must neither roll back HEAD nor restore an
+# older snapshot over that newer value.
+@test "concurrent non-target dirty writer is preserved instead of rolled back" {
+  local real_git wrapper target
+  real_git="$(command -v git)"
+  mkdir -p "$BATS_TEST_TMPDIR/git-wrapper"
+  wrapper="$BATS_TEST_TMPDIR/git-wrapper/git"
+  {
+    printf '#!/usr/bin/env bash\n'
+    printf 'real_git=%q\n' "$real_git"
+    printf 'repo=%q\n' "$FIX"
+    printf '"$real_git" "$@"\n'
+    printf 'rc=$?\n'
+    printf 'if [[ "$*" == *"read-tree --reset"* ]]; then printf "writer-update\\n" > "$repo/dirty.txt"; fi\n'
+    printf 'exit "$rc"\n'
+  } > "$wrapper"
+  chmod +x "$wrapper"
+  target="$(git -C "$BATS_TEST_TMPDIR/next" rev-parse HEAD)"
+
+  run env PATH="$BATS_TEST_TMPDIR/git-wrapper:$PATH" \
+    bash "$FIX/scripts/safe_shared_main_ff.sh" "$target"
+  [ "$status" -eq 0 ]
+  [[ "$output" == *"result=PASS"* ]]
+  [ "$(git -C "$FIX" rev-parse HEAD)" = "$target" ]
+  [ "$(cat "$FIX/dirty.txt")" = "writer-update" ]
+}
+
 # test_necessity: the ancestry-WAIT recovery lane may publish only an
 # exact-descendant local main with an exact GREEN remote-tip proof, while the
 # shared worktree remains byte-for-byte unchanged.
