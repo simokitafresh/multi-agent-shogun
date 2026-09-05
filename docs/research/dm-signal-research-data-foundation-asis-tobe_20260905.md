@@ -1,5 +1,5 @@
 <!-- gist-master: 4afbab67cc111ff723c342aa48412ff8 dm-signal-research-data-foundation-asis-tobe_20260905.md -->
-# DM-Signal 研究データ基盤 F1 `holdings_monthly` — PF × 月 × ticker × weight を 1 表に固める 設計書 v0.8(2026-09-06 00:40 進捗整合: cmd_4479 approved_honest_fail 正式終端(軍師再 review AC 証拠 7/7、家老 blt_003021)、後続 cmd_4480 delegated 00:29(CI GREEN 待ち)、市場 1 表 cmd は家老協議後、§5 に進捗台帳) / v0.7(2026-09-06 00:25 cmd_4479 結果: honest FAIL、parity 104 不一致=新四つ目 3 体=I8、他は全 PASS) / v0.6(2026-09-05 22:50 家老 R3 途中指摘: portfolios.type は列) / v0.5(2026-09-05 22:55 家老 R2 REJECT blt_223658 7 点を全採用: F1 だけに絞り F2〜F4/A1〜A11/I 一覧を `dm-signal-research-data-backlog_20260905.md` へ移設、流用元を full SHA+path+関数に一本化、展開辺を記録済み holding_signal の同月再帰に定義、semantic alias 正本訂正 / v0.4 22:35 家老 REJECT 6 点採用 / v0.3 22:25 / v0.2 22:05 / v0.1 21:40 殿 21:22『便利なものを先に解決』)
+# DM-Signal 研究データ基盤 F1 `holdings_monthly` — PF × 月 × ticker × weight を 1 表に固める 設計書 v0.9(2026-09-06 00:50 D3=cmd_4481 delegated) / v0.8(2026-09-06 00:40 進捗整合: cmd_4479 approved_honest_fail 正式終端(軍師再 review AC 証拠 7/7、家老 blt_003021)、後続 cmd_4480 delegated 00:29(CI GREEN 待ち)、市場 1 表 cmd は家老協議後、§5 に進捗台帳) / v0.7(2026-09-06 00:25 cmd_4479 結果: honest FAIL、parity 104 不一致=新四つ目 3 体=I8、他は全 PASS) / v0.6(2026-09-05 22:50 家老 R3 途中指摘: portfolios.type は列) / v0.5(2026-09-05 22:55 家老 R2 REJECT blt_223658 7 点を全採用: F1 だけに絞り F2〜F4/A1〜A11/I 一覧を `dm-signal-research-data-backlog_20260905.md` へ移設、流用元を full SHA+path+関数に一本化、展開辺を記録済み holding_signal の同月再帰に定義、semantic alias 正本訂正 / v0.4 22:35 家老 REJECT 6 点採用 / v0.3 22:25 / v0.2 22:05 / v0.1 21:40 殿 21:22『便利なものを先に解決』)
 
 - 発端: 殿 21:19『ticker×weight はすんなり DB から取れたか』→取れなかった → 21:22『先に解決しないか。他にも応用できる』→ 22:29『シンプルにデータを見たいだけ。複雑さは捨てろ』。
 - 本書の範囲: **F1 `holdings_monthly.csv` の生成・検算・provenance だけ。** それ以外(ledger の扱い、階層関数、アイデア、本番不整合一覧)は `docs/research/dm-signal-research-data-backlog_20260905.md` に移した(記録のみ、実装しない)。
@@ -115,7 +115,7 @@
 |---|---|---|---|
 | D1 | F1 cmd_4479(才蔵) | **終端(approved_honest_fail、00:3x)** | delegated 23:34→00:19 honest FAIL(AC2 parity のみ no)→軍師再 review AC 証拠 7/7→家老 approved_honest_fail(blt_003021)。成果物: holdings_monthly.csv 23,175 行(Σweight 違反 0)、universe_manifest、provenance、verify_blob_diff(意味差分 0)、verify_parity(12,268/12,372、不一致 104=新四つ目 3 体)、verify_display_weights(I6)、verify_change_log、i7_unexpandable(0)、contract test 2/2。再実行 0 |
 | D2 | I8 根因偵察 cmd_4480(A1 データ/A2 コード 2 名並行、readonly) | **delegated 00:29、配備は CI GREEN 待ち**(run 33974632494 in_progress、家老 blt_003021) | 成果=104 行全件の候補表+file:行番号の差分+説明済み/未説明=104。実装 0 |
-| D3 | 市場 1 表 cmd(v1.3、入力=F1 CSV、3 体 is_suspect) | **未起票**(殿 00:34『設計書更新→家老協議』により起票前に協議) | 家老 blt_002416 で is_suspect 案 APPROVE 済み。協議後に起票 |
+| D3 | 市場 1 表 cmd_4481(v1.4、入力=F1 CSV、3 体 is_suspect) | **delegated 00:50**(家老協議 blt_004146 (1) yes) | 配備順は家老: GA-588→W1 core→W4→4480(2 名)→4481 次空き |
 | D4 | 第 2 段(DB 昇格)の置き場 | 未着手・殿裁定待ち | cmd_4480 根因確定後に 1 回で決める。本番書込は殿の明示 OK のみ |
 
 殿裁定を要する点: D3 の起票タイミング(協議結果を添えて 1 報)、D4 の置き場(4480 後)。

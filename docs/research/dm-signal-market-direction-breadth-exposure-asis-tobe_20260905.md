@@ -1,5 +1,5 @@
 <!-- gist-master: e2219c69d927f32dc84d53e3e7daa97d dm-signal-market-direction-breadth-exposure-asis-tobe_20260905.md -->
-# DM-Signal 体系の保有 ticker×weight を月ごとに見る — 1 表設計書 v1.4(2026-09-06 00:40 進捗整合: 入力 F1 CSV は 00:19 に生成済み(23,175 行、終端 approved_honest_fail)、新四つ目 3 体は is_suspect=true で別計上(家老 blt_002416 APPROVE)、実装 cmd は家老協議後に起票、cmd_4480 根因確定で is_suspect 解除) / v1.3(2026-09-05 22:55 家老 R3-2 の分母定義を明記) / v1.2(2026-09-05 22:50 家老 R3 途中指摘: 分母は manifest 総数−I7 ではなく『その月に F1 CSV に行がある PF 数』。未開始 layer(L3 は 2013-12 前)は自然に 0 行) / v1.1(2026-09-05 22:50 家老 R2-7: is_mtd 列追加、contract test を AC1/AC2 の 2 本に) / v1.0(2026-09-05 22:35、殿 22:29『シンプルにデータを見たいだけだ。L0,L1,L2,L3,全体でどの ticker をどの weight で持っているかを知りたいだけだ。複雑さはすべて捨てろ』で v0.1〜v0.5 の 6 表・asset class・前月差・仮想 PF・裁定 4 点を全て撤去)
+# DM-Signal 体系の保有 ticker×weight を月ごとに見る — 1 表設計書 v1.5(2026-09-06 00:50 cmd_4481 delegated) / v1.4(2026-09-06 00:40 進捗整合: 入力 F1 CSV は 00:19 に生成済み(23,175 行、終端 approved_honest_fail)、新四つ目 3 体は is_suspect=true で別計上(家老 blt_002416 APPROVE)、実装 cmd は家老協議後に起票、cmd_4480 根因確定で is_suspect 解除) / v1.3(2026-09-05 22:55 家老 R3-2 の分母定義を明記) / v1.2(2026-09-05 22:50 家老 R3 途中指摘: 分母は manifest 総数−I7 ではなく『その月に F1 CSV に行がある PF 数』。未開始 layer(L3 は 2013-12 前)は自然に 0 行) / v1.1(2026-09-05 22:50 家老 R2-7: is_mtd 列追加、contract test を AC1/AC2 の 2 本に) / v1.0(2026-09-05 22:35、殿 22:29『シンプルにデータを見たいだけだ。L0,L1,L2,L3,全体でどの ticker をどの weight で持っているかを知りたいだけだ。複雑さはすべて捨てろ』で v0.1〜v0.5 の 6 表・asset class・前月差・仮想 PF・裁定 4 点を全て撤去)
 
 - 発端: 殿 19:32(市場方向性の PIT 観測)→ 22:29 で目的を 1 文に固定。
 - 版履歴(歴史修正禁止のため記録のみ): v0.1 19:50 6 表設計 / v0.2〜v0.5 21:40〜22:40 weight 正本の訂正往復(display_ticker_weights 直接採用は 08-06 partial-turnover v1.10 で棄却済み→history.py L224-237 方式) / **v1.0 22:35 1 表へ縮約**。旧版本文は git 履歴(5498c0f9b 以前)にある。
@@ -40,7 +40,7 @@ ALL 行 = 同じことを layer を無視して計算
 - pandas 数行。パラメータ 0。ハードコード 0(ticker も layer も入力 CSV から出る)。
 - 出力先: `analysis_runs/cmd_44xx_layer_holdings/layer_holdings_monthly.csv`。
 - 実行前提: cmd_4479(基盤 F1)終端(00:3x approved_honest_fail、CSV 23,175 行は使用可)。F1 の manifest(78 PF・as-of)をそのまま同梱。
-- 進捗(00:40): 実装 cmd は未起票。殿 00:34『設計書更新→家老協議』の後に起票。
+- 進捗(00:50): 実装 cmd_4481 を delegated(家老協議 blt_004146 (1) yes、忍者 1 名 15 分、配備は家老の順序で次空き)。
 
 ## §3 二値 AC(実装 cmd に渡す。3 つだけ)
 
