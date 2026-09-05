@@ -10612,3 +10612,28 @@
   causal_chain: "insight triage C2→SSOT統合→契約矛盾0"
   origin: "[[insight_triage_C2]] -> [[contract_alignment]] -> [[APPROVE]]"
   timestamp: "2026-09-06T06:18:00+09:00"
+- ambiguity_points: none
+  brainwash_check: '#1no #2no #3no #4no #5no #6no #7no #8no'
+  causal_chain: no-code commit_hash空→自動投影→false BLOCK除去
+  cmd_id: cmd_karo_hotfix_p4_nocode_commit_projection_20260906
+  finding_categories:
+  - assumptions
+  - numbers
+  - premortem
+  - ambiguity
+  - adversarial
+  findings_summary: 4観点OK。no-code commit_hash自動投影。18+85テストPASS。false BLOCK除去
+  observations:
+  - '事実: required=false→commit_hash=no-code-change投影。required=true→空欄維持'
+  operational_simulation:
+    actual: '6'
+    command: 'grep -c "result: ''yes''" queue/reports/kagemaru_report_cmd_karo_hotfix_p4_nocode_commit_projection_20260906.yaml'
+    expected: '6'
+    result: PASS
+  origin: '[[P4_nocode]] -> [[commit_projection]] -> [[LGTM]]'
+  review_type: report
+  step3_5_verified: true
+  timestamp: '2026-09-06T06:30:00+09:00'
+  verdict: LGTM
+  verified_files:
+  - queue/reports/kagemaru_report_cmd_karo_hotfix_p4_nocode_commit_projection_20260906.yaml:36
