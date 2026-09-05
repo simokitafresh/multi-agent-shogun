@@ -898,3 +898,90 @@ PY
     [ "$status" -eq 0 ]
     [[ "$output" == *"false_positive=0 false_negative=0 result=false"* ]]
 }
+
+# test_necessity: report/publication retries must replace prose-derived source
+# paths with the exact Git tree change set from the task base to its worktree
+# HEAD, preventing false path ownership from entering downstream identity.
+@test "active worktree migration binds source paths to Git tree changes" {
+    setup_fixture_repo
+    base=$(git -C "$FIXTURE/shared" rev-parse HEAD)
+    mkdir -p "$FIXTURE/shared/lp/app" "$FIXTURE/shared/lp/components" "$FIXTURE/shared/docs/research"
+    for path in \
+        lp/app/layout.tsx lp/app/page.tsx lp/app/signals/page.tsx \
+        lp/app/signals/month.tsx lp/app/ja/page.tsx lp/app/ja/signals.tsx \
+        lp/components/structured-data.tsx docs/research/audit.md \
+        docs/research/notes.md docs/research/summary.md; do
+        mkdir -p "$FIXTURE/shared/$(dirname "$path")"
+        printf '%s\n' "$path" > "$FIXTURE/shared/$path"
+    done
+    git -C "$FIXTURE/shared" add lp docs/research
+    git -C "$FIXTURE/shared" commit -q -m active-worktree-migration
+    head=$(git -C "$FIXTURE/shared" rev-parse HEAD)
+    git -C "$FIXTURE/shared" worktree add -q --detach "$FIXTURE/task-wt" "$head"
+    marker="$FIXTURE/marker.json"
+    python3 - "$marker" "$base" "$FIXTURE/shared" "$FIXTURE/task-wt" "$head" <<'PY'
+import json
+import sys
+
+path, base, repo, worktree, head = sys.argv[1:]
+json.dump({
+    "version": 1,
+    "state": "active",
+    "task_id": "task_source_migration",
+    "parent_cmd": "cmd_source_migration",
+    "repo": repo,
+    "worktree": worktree,
+    "remote_tip": base,
+    "published_commit": "",
+    "generation": "g" * 64,
+}, open(path, "w"), sort_keys=True)
+PY
+    task="$FIXTURE/task-migration.yaml"
+    printf '%s\n' \
+        'task:' \
+        '  task_id: task_source_migration' \
+        '  parent_cmd: cmd_source_migration' \
+        '  project: infra' \
+        "  target_path: $FIXTURE/shared" \
+        '  task_worktree_required: true' \
+        '  task_worktree_status: active' \
+        "  task_worktree_path: $FIXTURE/task-wt" \
+        "  task_worktree_workdir: $FIXTURE/task-wt" \
+        "  task_worktree_repo: $FIXTURE/shared" \
+        "  task_worktree_base: $base" \
+        "  task_worktree_marker: $marker" \
+        "  task_worktree_source_paths: '[\"ja\", \"ja/signals\", \"origin\", \"origin/main\", \"Critical/High/Medium/Low\", \"Critical/High/Medium/Low/Already\", \"docs/research\", \"Organization\", \"Organization/WebSite\", \"0\", \"0/SKIP\", \"lp\", \"lp/package.json\", \"lp/app\", \"lp/components\", \"ja/signals/2026-08\", \"lp/app/layout.tsx\", \"lp/components/structured-data.tsx\"]'" \
+        '  status: acknowledged' > "$task"
+
+    run env PROJECT_ROOT="$BATS_TEST_DIRNAME/../.." TASK="$task" BASE="$base" HEAD="$head" bash -c '
+        set -euo pipefail
+        export DEPLOY_TASK_LIB_ONLY=1
+        source "$PROJECT_ROOT/scripts/deploy_task.sh"
+        SCRIPT_DIR="$PROJECT_ROOT"; LOG=/dev/stderr
+        deploy_task_reuse_existing_remote_tip_worktree "$TASK" hayate
+        python3 - "$TASK" "$BASE" "$HEAD" <<'PY'
+import json
+import pathlib
+import subprocess
+import sys
+import yaml
+
+task = yaml.safe_load(pathlib.Path(sys.argv[1]).read_text())["task"]
+base, head = sys.argv[2:]
+expected = subprocess.run(
+    ["git", "-C", task["task_worktree_path"], "diff", "--name-only", base, head, "--"],
+    check=True, capture_output=True, text=True,
+).stdout.splitlines()
+actual = json.loads(task["task_worktree_source_paths"])
+assert actual == expected, (actual, expected)
+assert len(actual) == 10, actual
+assert not {"ja", "origin/main", "Critical/High/Medium/Low", "Organization/WebSite", "0/SKIP"} & set(actual)
+print(f"prose_paths=18 git_paths={len(actual)} false_paths=8 reconciled=1")
+PY
+    '
+    if [ "$status" -ne 0 ]; then
+        printf '%s\n' "$output" >&3
+    fi
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"prose_paths=18 git_paths=10 false_paths=8 reconciled=1"* ]]
+}

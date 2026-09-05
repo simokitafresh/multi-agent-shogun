@@ -11809,7 +11809,7 @@ fi
 # the original creator, preserving the existing safety boundary.
 deploy_task_reuse_existing_remote_tip_worktree() {
     local task_file="$1" ninja_name="$2"
-    local required status task_id parent_cmd worktree repo marker base marker_match worktree_top repo_common worktree_common repo_common_path worktree_common_path
+    local required status task_id parent_cmd worktree repo marker base marker_match worktree_top worktree_head repo_common worktree_common repo_common_path worktree_common_path
     required=$(FIELD_GET_NO_LOG=1 field_get "$task_file" "task_worktree_required" "false" 2>/dev/null || true)
     status=$(FIELD_GET_NO_LOG=1 field_get "$task_file" "task_worktree_status" "" 2>/dev/null || true)
     [ "$required" = "true" ] && [ "$status" = "active" ] || return 1
@@ -11862,7 +11862,9 @@ PY
 
     worktree_top=$(git -C "$worktree" rev-parse --show-toplevel 2>/dev/null || true)
     [ "$(realpath -m -- "$worktree_top" 2>/dev/null || true)" = "$(realpath -m -- "$worktree" 2>/dev/null || true)" ] || return 1
-    [ "$(git -C "$worktree" rev-parse HEAD 2>/dev/null || true)" = "$base" ] || return 1
+    worktree_head=$(git -C "$worktree" rev-parse HEAD 2>/dev/null || true)
+    [ -n "$worktree_head" ] || return 1
+    git -C "$worktree" merge-base --is-ancestor "$base" "$worktree_head" 2>/dev/null || return 1
     repo_common=$(git -C "$repo" rev-parse --git-common-dir 2>/dev/null || true)
     worktree_common=$(git -C "$worktree" rev-parse --git-common-dir 2>/dev/null || true)
     if [[ "$repo_common" = /* ]]; then
@@ -11877,8 +11879,69 @@ PY
     fi
     [ "$(realpath -m -- "$repo_common_path" 2>/dev/null || true)" = \
         "$(realpath -m -- "$worktree_common_path" 2>/dev/null || true)" ] || return 1
+    deploy_task_reconcile_worktree_source_paths_from_git "$task_file" "$worktree" "$base" "$worktree_head" || return 1
     log "TASK_WORKTREE_REUSED: ninja=$ninja_name task=$task_id base=$base path=$worktree"
     return 0
+}
+
+# A completed task can be re-entered for report/publication correction while
+# its linked worktree is still active.  In that state, prose-derived paths
+# from the original root-target sparse projection are stale and may include
+# arbitrary words such as locale names or severity labels.  The task worktree
+# base and its current HEAD are the Git-tree identity boundary; use their
+# actual changed paths as the downstream source scope.
+deploy_task_reconcile_worktree_source_paths_from_git() {
+    local task_file="$1" worktree="$2" base="$3" head="$4"
+    local source_json target_json
+    source_json=$(python3 - "$worktree" "$base" "$head" <<'PY'
+import json
+import re
+import subprocess
+import sys
+
+worktree, base, head = sys.argv[1:]
+valid = r"^[0-9a-fA-F]{40}$"
+if not re.fullmatch(valid, base) or not re.fullmatch(valid, head):
+    raise SystemExit("BLOCK: task worktree source reconciliation requires commit identities")
+ancestor = subprocess.run(
+    ["git", "-C", worktree, "merge-base", "--is-ancestor", base, head],
+    stdout=subprocess.DEVNULL,
+    stderr=subprocess.DEVNULL,
+    check=False,
+    timeout=5,
+)
+if ancestor.returncode != 0:
+    raise SystemExit("BLOCK: task worktree HEAD is not descended from task base")
+if base == head:
+    print("[]")
+    raise SystemExit(0)
+result = subprocess.run(
+    ["git", "-C", worktree, "diff", "--name-only", "-z", base, head, "--"],
+    stdout=subprocess.PIPE,
+    stderr=subprocess.DEVNULL,
+    check=False,
+    timeout=10,
+)
+if result.returncode != 0:
+    raise SystemExit("BLOCK: task worktree source tree diff failed")
+paths = [item.decode("utf-8", "surrogateescape") for item in result.stdout.split(b"\0") if item]
+print(json.dumps(list(dict.fromkeys(paths)), ensure_ascii=False))
+PY
+    ) || return 1
+    [ "$source_json" != "[]" ] || return 0
+    target_json=$(python3 - "$worktree" "$source_json" <<'PY'
+import json
+import os
+import sys
+
+worktree, source_json = sys.argv[1:]
+paths = json.loads(source_json)
+print(json.dumps([os.path.join(worktree, path) for path in paths], ensure_ascii=False))
+PY
+) || return 1
+    yaml_field_set_batch "$task_file" task \
+        "task_worktree_source_paths=$source_json" "task_worktree_target_paths=$target_json" || return 1
+    log "TASK_WORKTREE_SOURCE_RECONCILED: base=$base head=$head paths=$(python3 -c 'import json,sys; print(len(json.loads(sys.argv[1])))' "$source_json")"
 }
 
 # cmd_karo_hotfix_deploy_yaml_worktree_default_202609031708: code task(hotfix/
@@ -12350,6 +12413,15 @@ PY
 
 deploy_task_prepare_remote_tip_worktree_sparse() {
     local task_file="$1" ninja_name="$2" repo="" source_repo="" cached_repo="" saved_override="" saved_original="" saved_cache="" saved_git="" using_cache=0 rc=0
+    local task_worktree_required source_path_count
+    task_worktree_required=$(FIELD_GET_NO_LOG=1 field_get "$task_file" "task_worktree_required" "false" 2>/dev/null || true)
+    source_path_count=$(python3 -c 'import os,sys,yaml; t=(yaml.safe_load(open(sys.argv[1],encoding="utf-8")) or {}).get("task",{}); v=[]; [v.extend([t.get(k)] if isinstance(t.get(k),str) else t.get(k) if isinstance(t.get(k),list) else []) for k in ("target_path","planned_paths")]; p=[os.path.normpath(str(x or "")[2:] if str(x or "").startswith("./") else str(x or "")) for x in v]; r=("queue/","logs/","context/","projects/","archive/",".cache/"); print(len({x for x in p if x and x != "dashboard.md" and not x.startswith(r)}))' "$task_file" 2>/dev/null || echo 0)
+    # Preserve the original no-source fast path before resolving a repository.
+    # The sparse wrapper must not turn runtime-only or minimal fixture tasks
+    # into a remote-tip lookup that fails after task mutation publication.
+    if [ "$task_worktree_required" != "true" ] && [ "$source_path_count" -lt 1 ]; then
+        return 0
+    fi
     source_repo=$(deploy_task_original_resolve_source_repo "$task_file" 2>/dev/null || true)
     repo="$source_repo"
     [ -n "$repo" ] || return 1
