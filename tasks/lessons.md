@@ -17362,3 +17362,17 @@ sqlite3.Connection.backup()を使うとページ(4096byte)単位のread syscall�
 - **when**: 未設定
 - **how**: 未設定
 - checkerが複数split contextへ同一source commitを検出してGROUPを生成しても、gateがWARN/ALERT以外を無視すると完了/doc laneへ共有カテゴリが届かない。gate boundaryでGROUPを保持表示し、2件→0件fixtureを固定する。
+
+
+### L1760: freshness gateはcheckerのGROUP横展開証跡を捨てない
+- **日付**: 2026-09-06
+- **出典**: cmd_karo_hotfix_ga589_context_freshness_20260906
+- **記録者**: kagemaru
+- **tags**: [infra,gate,gate,git]
+- **subdomain**: infra
+- **target_files**: [scripts/gates/gate_context_freshness.sh,tests/unit/test_gate_context_freshness.bats]
+- **origin**: [[cmd_karo_hotfix_ga589_context_freshness_20260906]]
+- **enforcement**: 未自動化
+- **when**: 未設定
+- **how**: 未設定
+- checkerが複数split contextへ同一source commitを検出してGROUPを生成しても、gateがWARN/ALERT以外を無視すると完了/doc laneへ共有カテゴリが届かない。gate boundaryでGROUPを保持表示し、2件→0件fixtureを固定する。
