@@ -409,7 +409,6 @@ base = {
  'outcome': 'not_reproducible',
  'not_reproducible': {
    'independent_receipts': [receipt('wsl2-local'), receipt('linked-worktree'), receipt('ci-container')],
-   'ci_green': {'run_id': '1234567890', 'status': 'GREEN', 'observed_at': '2026-07-26T11:00:00+09:00', 'commit': 'c'*40},
    'diagnostics': {'path': 'scripts/run_tests.sh', 'emits': ['rc', 'stderr', 'reason_code']}}}
 cases = {}
 # 陽性: 3点揃い
@@ -423,9 +422,6 @@ cases['nr_two_receipts']['not_reproducible']['independent_receipts'] = cases['nr
 # 陰性2: 診断計装が reason_code を出さない
 cases['nr_no_diag'] = copy.deepcopy(base)
 cases['nr_no_diag']['not_reproducible']['diagnostics']['emits'] = ['rc', 'stderr']
-# 陰性3: CI本番がGREENでない
-cases['nr_ci_red'] = copy.deepcopy(base)
-cases['nr_ci_red']['not_reproducible']['ci_green']['status'] = 'RED'
 for name, evidence in cases.items():
     # YAMLはJSONの上位互換。運用YAMLと同じくyaml.dump系は使わない(CLAUDE.md YAML書込み安全規則)
     (root/f'{name}.yaml').write_text(json.dumps({'task': {'task_type': 'ci_fix', 'ci_fix_clean_repro_evidence': evidence}}, ensure_ascii=False))
@@ -446,7 +442,7 @@ PY
         local invalid pid failed=0
         export DEPLOY_TASK_LIB_ONLY=1
         source "$PROJECT_ROOT/scripts/deploy_task.sh"
-        for invalid in nr_two_envs nr_two_receipts nr_no_diag nr_ci_red; do
+        for invalid in nr_two_envs nr_two_receipts nr_no_diag; do
             validate_case 1 'BLOCK: ci_fix clean repro evidence not_reproducible' "$tmpdir/${invalid}.yaml" &
             pids+=("$!")
         done
@@ -469,7 +465,6 @@ root = pathlib.Path(sys.argv[1])
 receipt = lambda env: {'path': f'logs/{env}.json', 'environment': env, 'status': 'PASS', 'started_at': '2026-07-26T10:00:00+09:00'}
 proofs = {
   'independent_receipts': [receipt('a'), receipt('b'), receipt('c')],
-  'ci_green': {'run_id': '1', 'status': 'GREEN', 'observed_at': '2026-07-26T11:00:00+09:00', 'commit': 'c'*40},
   'diagnostics': {'path': 'scripts/run_tests.sh', 'emits': ['rc', 'stderr', 'reason_code']}}
 # outcome未宣言: 3点が揃っていても従来のFAIL->PASS要求が生き、pre receiptなしはBLOCK
 evidence = {'e2_harness_command': 'bash tests/e2_clean_ci.sh', 'not_reproducible': proofs}

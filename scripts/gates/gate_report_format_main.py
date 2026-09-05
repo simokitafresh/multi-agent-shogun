@@ -1113,17 +1113,12 @@ def ci_fix_clean_repro_evidence_errors(evidence):
             environments.add(str(receipt.get("environment") or "").strip())
         if len(environments - {""}) < 3:
             add(f"not_reproducible needs 3 distinct environments, got {len(environments - {''})}")
-        ci = nr.get("ci_green")
-        if not isinstance(ci, dict):
-            add("not_reproducible ci_green missing")
-        else:
-            for key in ("run_id", "status", "observed_at", "commit"):
-                if not str(ci.get(key) or "").strip():
-                    add("not_reproducible ci_green." + key + " missing")
-            if str(ci.get("status") or "").upper() != "GREEN":
-                add("not_reproducible ci_green.status must be GREEN")
-            if not re.fullmatch(r"[0-9a-f]{40}", str(ci.get("commit") or "")):
-                add("not_reproducible ci_green.commit must be a full sha")
+        # not_reproducible is a pre-push review outcome.  Its independent
+        # local receipts and diagnostics establish that the reported failure
+        # did not reproduce; post-push CI belongs exclusively to
+        # cmd_complete_gate's published-commit readiness check.  Requiring a
+        # ci_green mapping here creates the review/publish/CI circular wait
+        # this checkpoint is designed to prevent.
         diagnostics = nr.get("diagnostics")
         if not isinstance(diagnostics, dict):
             add("not_reproducible diagnostics missing")
