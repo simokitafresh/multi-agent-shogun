@@ -204,6 +204,18 @@
 ### M-4 次の 1 手
 - 起票単位は **段 1+2+3 を 1 cmd**(frontend+backend、migration 往復、readonly 事前確認、AC は M-1 の二値列)。段 4 は別 cmd(段 3 の本番 SQL が 1 週間値を返してから)。殿裁定 13:19 は「収束」であり実装 go ではないため、**起票は殿の go を待つ**(実装は殿の一言で開始できる状態まで設計を閉じた)。
 
+### M-5 実装進捗台帳(loop ごとに更新)
+| 時刻 | 段 | 状態 | 証跡 |
+|---|---|---|---|
+| 09-05 13:27 | go | 殿『未実装部分を実装しよう』 | lord_conversation |
+| 09-05 13:40 | 1+2+3 | cmd_4477 起票・delegate(preflight 3 回: q5 表記/Optional 語/ローカル clone 69 commit 古→ff) | cmd 台帳 |
+| 09-05 13:43 | 1+2+3 | 疾風へ FULL 配備 | deploy_task.log |
+| 09-05 14:0x | 3 | AC3 search_path ずれを将軍 hint で解消(engine connect_args) | queue/notes/shogun_hayate_4477_hint_20260905_1408.md |
+| 09-05 14:19 | 1+2+3 | 疾風報告(honest FAIL: AC2 全量 7 FAIL は baseline 一致、scope 19/19、追加 contract +3)。commit c8b34714/30429ac0/8af98631 | queue/reports/hayate_report_cmd_4477.yaml |
+| 09-05 14:25 | 1+2+3 | 将軍判定=AC2 充足(将軍の AC 設計誤り)→家老 lane: review→publish→本番 migration→deploy→post_deploy_check→GATE | msg_142457 |
+| (次) | 3 | 本番 migration 前後列一覧、post_deploy 200 受理 | — |
+| (次+1 週) | 4 | 段 3 の SQL が本番で値を返してから Simple LP cmd 起票 | — |
+
 ## §K 因果リンク
 - ← [[dm-signal-lp-seo-plan_20260830]] v6(Core=母艦、分解しない) / ← [[dm-login-showcase-asis-tobe_v3_20260830]] / ← [[dm-free-tier-google-auth-asis-tobe_v3_20260830]]
 - → [[cmd_4476]] 偵察 → 本書 v0.2 / → [[殿裁定_LP_identity_最小収束_20260905_1319]] → §M / → [[rebalancer]] `saved_portfolios(user_id)` / → [[dm-fusion]] `saved_fusions(user_id)` 同一 auth.users
