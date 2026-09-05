@@ -1,3 +1,4 @@
+<!-- gist-master: e2219c69d927f32dc84d53e3e7daa97d dm-signal-market-direction-breadth-exposure-asis-tobe_20260905.md -->
 # DM-Signal 体系全体の市場方向性を PIT で観測する実験 — AsIs/ToBe 設計書 v0.1(2026-09-05 20:10、殿指示 19:32。実装なし・設計のみ)
 
 > 殿指示 2026-09-05 19:32。「全 PF の当月 ticker × weight から DM-Signal 全体の市場方向性を可視化する実験」。対象は L0 GS・真・四神 / L1 忍法 / L2 奥義 / L3 秘奥義のみ。目的は新しい売買シグナルを作ることではなく、体系全体が今月どちらを向いているかを PIT で観測・時系列化すること。既存 DB・PF 定義・ticker/weight 生成ロジックを実確認して書く。最適化や新しい恣意的パラメータは導入しない。

@@ -104,3 +104,4 @@ DM2/DM6のN=0..7×E=0..7全128セルをThird common cohortで再集計。全セ�
 
 ## cmd_4477 identity 実装の証跡(2026-09-05)
 - 隔離 PostgreSQL(localpg 専用 schema)で migration upgrade→downgrade→upgrade 往復、計測 SQL 2 本、baseline 突合(変更前 origin/main 同環境 pytest 7 FAIL と完全一致、追加 contract test +3 PASS)。commit c8b34714(実装)/30429ac0(隔離証跡)/8af98631(runbook)。→ `docs/research/cmd_4477_identity_metrics_sql_20260905.md`
+- 体系全体の市場方向性 PIT 観測 実験設計書 v0.1(2026-09-05 20:10、殿 19:32、実装なし)|`docs/research/dm-signal-market-direction-breadth-exposure-asis-tobe_20260905.md`(gist e2219c69)|対象 78 PF(L0 シン四神 12/L1 GSシン忍法 21/L2 奥義 24/L3 秘奥義 21)。正本=`monthly_returns.holding_signal`(欠損 0、2010-04〜)、weight は EqualWeight 1/N+FoF 再帰 1/N で決定的復元、保有 ticker 宇宙は XLU/TQQQ/GLD/TMV/TECL の 5 つ。6 表=Breadth/Exposure/階層別/asset class(§4 固定表)/Δ/仮想等額 PF。別件: `signal_decision_ledger` 本番 0 行
