@@ -1,46 +1,4 @@
 commands:
-  cmd_4478:
-    title: "家老スループット計測修復の仕上げ: 将軍 D0(7d947ac33)で入れた 8 箇所の計測に設計書 v2 §6.4 の敵対 contract test を補完し、karo_throughput_report.sh で日次表(v1 行と observed 列付き行の両対応、agent 別按分、配達 held 分位)を出す"
-    status: delegated
-    project: infra
-    purpose: "殿 2026-09-05 14:35『家老が実行する script/hook/gate をリストアップし速度をまとめよ。枠外も調査』→ docs/research/karo_throughput_asis_20260905.md v2(gist aeaadf72)。14:49『まずは計測修復』、14:50『gate clear 関連も家老の script』、15:19『D0 で直せるところは将軍自身で』→将軍が修正箇所 8(function_timing observed 列 3 箇所、defense_overhead agent 列、review_approval 実測、auto-push result/reason/rc、publisher_c2a_merge 単一 on_exit、inbox_watcher held event)を 7d947ac33 で着地し本番で agent 列付き行を確認した(設計書 §6.6)。残るのは (1) 家老 REJECT 9+5 点で要求された敵対 contract test のうち D0 で未着手のもの(c2a telemetry 失敗で本処理 rc と cleanup 不変、watcher 1,000 event 後も子プロセス数と配達時刻が不変、agent の 2 pane 誤帰属なし、auto-push の PASS/SKIP(rc 0)/FAIL 3 種、同一 execution で observed_at 同一) (2) 日次表 script(§6.2)。速くする変更は含めない(計測が先)"
-    scope_mode: FULL
-    target_path: /home/simokitafresh/multi-agent-shogun
-    acceptance_criteria:
-      AC1:
-        description: "敵対 contract test の補完(実装は 7d947ac33 で着地済み。実装を変えず test を足す。test_necessity 付き、隔離 fixture): (a) scripts/publisher_c2a_merge.sh: defense_overhead_writer を読めない/書けない fixture でも本処理の rc と一時 worktree cleanup が変わらず、成功と失敗の両方で source=publisher_c2a の行が 1 本ずつ出て event_id が attempt で異なる (b) scripts/inbox_watcher.sh: held event を 1,000 回書いても子プロセス数が増えず、配達 send-keys の時刻が telemetry の有無で変わらない、同一 first_unread_seen では 1 event (c) scripts/lib/defense_overhead_writer.sh: 2 pane fixture で TMUX_PANE の pane にだけ帰属し TMUX_PANE 無しは '-' (d) scripts/cmd_complete_gate.sh の gate_run_auto_push_ancestry_retry: PASS/SKIP(rc 0、helper_missing と remote_tip_unresolved)/FAIL(source_publication_failed)の 3 種で retry_log の 4 列目 result/reason と 5 列目 rc が期待どおり、AUTO_PUSH_WAIT 行無しで reason=unknown、関数戻り値は 0 (e) function_timing: 同一 execution の全 rank 行で observed_at が同一、observed_date が UTC 日付、旧行(observed 列なし)を function_coverage.sh と ninja_monitor の読み手が変更前と同じに扱う。既存 bats(test_defense_overhead_writer / test_cmd_complete_gate_source_publish / test_inbox_watcher / test_publisher 系)へ追加し bash scripts/run_tests.sh file <対象 bats> を FAIL 0/SKIP 0 で通し commit する。実装 diff は 0"
-        binary_check: "(a)〜(e) の test が存在し隔離 fixture で PASS ∧ run_tests.sh file の出力が FAIL 0/SKIP 0 ∧ scripts/ 配下の実装 diff 0 ∧ 新台帳 file 0 か?"
-      AC2:
-        description: "日次表: scripts/karo_throughput_report.sh <YYYY-MM-DD> [--as-of <ISO>] を新設し、logs/defense_overhead.jsonl(agent 別と全体。家老 lane は source と metadata.target_agent で定義)、function_timing 2 本(observed 列付き行と旧行の両方。旧行は execution_id 末尾 epoch μs→UTC ISO)、logs/gate_metrics.log、logs/inbox_watcher_karo.log(+.1、`[Sat Sep  5` 形式)、各 cmd の auto_push_ancestry_retry.log を読むだけで、設計書 v2 §1/§2/§3.1/§4 と同じ列(経路・回数・p50・p95・合計、WAIT 理由別、配達 held 分位、agent 別按分)の markdown 表を docs/research/karo_throughput_daily/<date>.md へ書く。agent key 不在行・agent='-' 行・observed 列なし旧行の 3 fixture を含む固定 fixture で 2 回実行して exact 一致することを bats で確認し、当日分を --as-of 固定で実行して出力を報告へ生貼付する。cron 登録は別 cmd"
-        binary_check: "script が存在し固定 fixture 2 回の出力が exact 一致 ∧ 3 fixture(agent key 不在/agent '-'/observed 列なし旧行)を読んで表が出る ∧ 当日分が --as-of 固定で exit 0 し md に経路別表・WAIT 理由別表・配達 held 分位・agent 別按分がある ∧ cron 変更 0・既存 throughput_scan.sh の変更 0 か?"
-    command: |
-      1. AC1: 7d947ac33 の実装は変えず、(a)〜(e) の敵対 contract test を既存 bats へ足し、run_tests.sh file で FAIL 0/SKIP 0 を確認して commit する
-      2. AC2: karo_throughput_report.sh を書き、固定 fixture 2 回 exact 一致を bats で確認し、当日分を --as-of 固定で実行して md を生成し報告へ生貼付する
-    assumptions:
-      claim: "2026-09-05 14:50-14:57 に将軍が現物確認: function_timing.v1 の printf は scripts/cmd_complete_gate.sh と scripts/deploy_task.sh と scripts/ninja_monitor.sh の 3 箇所で列は schema/execution_id/script/pid/rank/function/elapsed_us/calls のみ(wall-clock なし)。defense_overhead_writer.sh の引数は source/check_id/wall_ms/verdict/event_id/metadata_json で agent なし。review_approval.sh は gunshi_lgtm/karo_accept を wall_ms 0 で書く。cmd_complete_gate.sh の gate_run_auto_push_ancestry_retry は FAIL 時に日時と cmd_id だけを書く。publisher_c2a_merge.sh(74 行)に時間計測なし。inbox_watcher.sh は DELIVERY-LATENCY-WARN を stderr の人間向け行で出す(held 秒)。今日の実測: gate main p50 9.2 s×121=42.7 分、配達 held p50 2,423 s/p95 6,609 s(n=178)"
-      source: "docs/research/karo_throughput_asis_20260905.md §1/§7(gist aeaadf72) / scripts/cmd_complete_gate.sh / scripts/deploy_task.sh / scripts/ninja_monitor.sh / scripts/lib/defense_overhead_writer.sh / scripts/review_approval.sh / scripts/publisher_c2a_merge.sh / scripts/inbox_watcher.sh / logs/defense_overhead.jsonl / logs/inbox_watcher_karo.log"
-      trust: verified
-    depends_on: none
-    timeout_minutes: 30
-    estimated_minutes: 10
-    quality_gate:
-      q1_firefighting: "消火ではない。殿 14:49『まずは計測修復』。速くする前に測れる状態を作る。家老の手 20-30 分/日と配達 held 40 分/日の比が数値で毎日出るようになる"
-      q2_learning: "忍者は既存 writer(defense_overhead_writer)と既存 schema を拡張し、旧行との後方互換を test で守る型を経験する。新しい台帳を作らない"
-      q3_next_quality: "日次表が自動で出れば、以後の速度改善 cmd は before/after を同じ表で示せる。順位 1(配達 held)と順位 2(合流待ち)の改善効果が測れる"
-      q4_depth: "medium — 6 writer と 1 集計 script に跨るが各変更は列追加・引数追加・理由文字列追加の小さな差分。速度最適化は含めない"
-      q5_verified_source: "isolated_test — 2026-09-05 15:2x-15:35 に将軍が D0 実装 7d947ac33 を bash scripts/run_tests.sh file で検証(exit 0): test_defense_overhead_writer 19/19、test_review_approval 20/20、test_cmd_complete_gate_source_publish 23/23、test_cmd_complete_gate 338/338、test_ninja_monitor_stall 176/176、test_inbox_watcher 7/7。本番 logs/defense_overhead.jsonl の tail 200 行中 164 行に agent 列(15:38)。14:41 に将軍が `echo '{\"tool_name\":\"Bash\",\"tool_input\":{\"command\":\"echo hi\"}}' | SHOGUN_AGENT_ID=karo bash <hook>` で 6 hook を実行(exit 0、93/136/5/139/6/14 ms)。14:50-14:57 に python3 で function_timing を execution_id epoch で集計(main n=121 p50 9,202 ms)、grep で writer の printf/引数/0 固定行を確認(exit 0)。watcher log を `grep 'Sep  5' | grep -oE 'held [0-9]+s'` で分位(p50 2,423 s)"
-      q6_not_hiding: "速度改善を混ぜない(AC の binary に『速度最適化 diff 0』)。旧 v1 行を捨てない(後方互換 test)。既存読み手(event_index/gate)の結果不変を binary にした"
-      q7_definition_verified: "held=watcher が busy gating で送出を保留した秒数。function_timing.v2=v1+ts 列。agent 列=SHOGUN_AGENT_ID→tmux @agent_id→'-'。c2a_merge_total=publisher_c2a_merge 開始〜push 完了(確認日: 2026-09-05)"
-      q8_why_what: "WHY: 殿 14:49『まずは計測修復』。家老律速の真因(配達 held p50 2,423 s、ancestry WAIT、gate main 9.2 s×121)を毎日同じ表で追えないと改善が測れない / WHAT: 6 writer(function_timing ts 列 3 箇所、defense_overhead agent 列、review_approval 実測、auto-push FAIL 理由、c2a wall_ms、watcher held event)+karo_throughput_report.sh+当日 md / WHEN: 今セッション / WHERE: multi-agent-shogun scripts/ と scripts/lib/ / WHO: 忍者 1 名 / HOW: 既存 writer と schema の拡張、隔離 fixture bats、run_tests.sh file / 複利: 以後の全速度 cmd が同じ表で before/after を示せる"
-      q9_firefighting_root_cause: "root_cause: 計測 schema に時刻列と実行者列が無く、家老の待ち(配達 held・合流)と手(deploy/review)が同じ台帳で日次比較できなかった。将軍は log ごとの grep で 3 回誤集計した / prevention: 7d947ac33 で時刻・agent・理由・所要を schema に持たせ、本 cmd で敵対 test と 1 本の日次表 script に固定する。以後の速度改善 cmd は同じ表で before/after を示す"
-      q10_knowledge_boundary: "検証済み: 上記 8 file の現物と今日のログ。スコープ外: 配達 held の解消、合流の自動化、health refresh 非同期化、cron 登録、速度最適化"
-      q11_not_already_done: "rg -l 'karo_throughput_report' scripts/ → 0 件。rg -c 'function_timing.v2' scripts/ → 0 件。rg -n 'agent' scripts/lib/defense_overhead_writer.sh → 引数に agent なし。bash scripts/semantic_search.sh '計測修復 function_timing timestamp defense_overhead agent 家老スループット' → MEMORY_DB_MATCH のみ、既存 script なし(2026-09-05 14:57)"
-      q_ambiguity: "曖昧さ: watcher log の日付形式(`[Sat Sep  5`)→AC2 に明記。旧行と observed 列付き行の混在→集計側で後方互換と明記。cron→別 cmd と明記。同一パイプライン同格性(LS083): 日次表が比較する event は全て同一 writer(scripts/lib/defense_overhead_writer.sh)と同一 function_timing printf 由来の同格生成物で、旧行と新行は同じ execution_id 系列(epoch は同じ EPOCHREALTIME 起点)。別経路(deploy_task/state.sh の生 JSON 追記)は agent 欠損として同格扱いにせず '-' に分離して表に出す"
-      q12_lord_30min_cost: "no — 殿 go 済み(14:49)"
-      diagnosis: "BLOCK理由: 1 回目=q9 に root_cause:/prevention: 語なし+environment_change pattern が v2 再構築で消えた見出し(§7.5)を指していた+比較実験 WARN(集計 cmd と判定)。/ 対策: q9 を root_cause/prevention 形式に、pattern を §6.6 実装状態 に、q_ambiguity に LS083 同格性(同一 writer 由来・別経路は '-' 分離)を明記。新規 file 1 本(scripts/karo_throughput_report.sh)と新規 dir(docs/research/karo_throughput_daily/)は日次表の恒久保存先として意図的新設。実装は 7d947ac33 で着地済みで本 cmd の scripts/ 実装 diff は 0"
-    environment_change: "type=lesson; file=docs/research/karo_throughput_asis_20260905.md; pattern=§6.6 実装状態"
-    delegated_at: "\"2026-09-05T16:10:05\""
-    origin: "[[殿下問_家老律速の拘束_20260905_1435]] -> [[karo_throughput_計測修復]] -> [[cmd_4478_日次表]]"
   cmd_4477:
     title: "DM-Signal identity 最小実装(設計書 v0.4 §M 段 1+2+3): Auth 後の Supabase user.id を localStorage で保持、campaign_id を localStorage へ格上げ(prefix lp_core_/lp_simple_)、page_views に user_id・campaign_id、showcase_events に user_id(全て nullable)を追加し Tier×Page analytics と Google 連携者だけを user.id で結ぶ"
     status: delegated

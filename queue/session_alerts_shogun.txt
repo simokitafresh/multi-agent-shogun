@@ -1,6 +1,7 @@
-# session_alerts — generated: 2026-09-05T11:21:04+0900
+# session_alerts — generated: 2026-09-05T16:35:45+0900
+[DONE] 未確認GATE CLEAR: 1件
+[DONE] 掲示板action_required未対応: 2件
 [DONE] 追体験自動化ターゲット: WARN (自動化ターゲット未記入)
-[DONE] 走行中cmd実測突合: busy 3名。capture-pane未確認で状況報告するな
-[DONE] failed task残置: hanzo — 真因確認と再配備/クローズを確定せよ
+[DONE] 走行中cmd実測突合: busy 4名。capture-pane未確認で状況報告するな
+[DONE] failed task残置: saizo — 真因確認と再配備/クローズを確定せよ
 [DONE] monitor lifecycle 失敗行 1行/60分 — 壁の所有者を一次で確認
-[DONE] 三層記憶引用率0%: 殿の質問に三層記憶を使っていない
