@@ -18173,7 +18173,9 @@ insights:
   priority: "low"
   source: "semantic_index_update"
   fix_known: false
-  status: pending
+  status: "resolved"
+  action_artifact: "semantic_index=/home/simokitafresh/multi-agent-shogun/docs/semantic-index/index.md"
+  resolved_reason: "semantic index candidate was absorbed into a registered concept"
 - id: INS-20260905-125806038-0d6e
   ts: "2026-09-05T12:58:06+09:00"
   insight: "semantic_index_update未登録cmd originノード: [[本番curl一次確認_JA_lang_en_JSONLD_url_ja]] は既存aliasesに一致なし。類似概念TOP3: dm_fusion_app(DM-Fusionアプリ; alias=DMSIGNAL_API_URL; score=9.9) / semantic_dictionary_design(セマンティック辞書構想; alias=source artifact url rotate; score=9.5) / creator_brainwashing_defense(創造主の洗脳防御; alias=タスクマップartifact URL favicon🗺️; score=8.1)。概念定義とaliases追加を検討せよ"
@@ -18187,4 +18189,6 @@ insights:
   priority: "low"
   source: "semantic_index_update"
   fix_known: false
-  status: pending
+  status: "resolved"
+  action_artifact: "semantic_index=/home/simokitafresh/multi-agent-shogun/docs/semantic-index/index.md"
+  resolved_reason: "semantic index candidate was absorbed into a registered concept"
