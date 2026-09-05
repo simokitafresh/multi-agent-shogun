@@ -5912,3 +5912,38 @@
     actual: "BLOCK"
     result: PASS
   timestamp: "2026-09-05T09:26:00+09:00"
+- cmd_id: cmd_karo_hotfix_agent_respawn_preserve_active
+  review_type: report
+  verdict: FAIL
+  report_ninja: hanzo
+  report_task_id: cmd_karo_hotfix_agent_respawn_preserve_active_normal
+  report_path: queue/reports/hanzo_report_cmd_karo_hotfix_agent_respawn_preserve_active.yaml
+  report_id: rpt-dc37a672-03d9-40dc-9609-79b22c8368ed
+  report_identity_version: 2
+  gate_prediction: BLOCK
+  gate_prediction_reason: "LG043: 後で語残存"
+  finding_categories:
+  - assumptions
+  - numbers
+  - premortem
+  - adversarial
+  - ambiguity
+  observations:
+  - "事実1: 新report_idでのFAIL補完エントリ"
+  - "事実2: LG043(保留語)未解消"
+  - "adversarial: N/A"
+  - "ambiguity: なし"
+  fail_reasons:
+  - "LG043: 保留語残存"
+  causal_chain: "report_id変更→mark_read BLOCK→新IDで補完"
+  brainwash_check: "#1no #2no #3no #4no #5no #6no #7no #8no"
+  verified_files:
+  - "scripts/agent_respawn.sh:1"
+  step3_5_verified: true
+  origin: "[[cmd_karo_hotfix_agent_respawn_preserve_active]] -> [[report_id補完]]"
+  operational_simulation:
+    command: "precheck"
+    expected: "BLOCK"
+    actual: "BLOCK"
+    result: PASS
+  timestamp: "2026-09-05T09:29:00+09:00"
