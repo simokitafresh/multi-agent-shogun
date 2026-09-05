@@ -1,5 +1,5 @@
 <!-- gist-master: 70b946c022cd5f6f81195ab837b7a7eb ninja_block_fail_root_cause_asis_tobe_20260905.md -->
-# 忍者の BLOCK/FAIL はインフラバグか — AsIs/ToBe 設計書 v2.1(2026-09-05 16:30。v2 16:25 に家老 条件付き APPROVE 4 補正を統合。v1 16:15 に軍師 APPROVE 5 観点+家老 REJECT 7 点)
+# 忍者の BLOCK/FAIL はインフラバグか — AsIs/ToBe 設計書 v2.1(2026-09-05 16:30。v2 16:25 に家老 条件付き APPROVE 4 補正を統合。v1 16:15 に軍師 APPROVE 5 観点+家老 REJECT 7 点) / v2.2 19:00 loop 更新: §2 数値を 18:57 再集計(軍師 blt_185706)、§6.2 実装進捗台帳を新設
 
 ## §0.0 前提条件と我らのスタイル
 - 殿の問い(16:03): 忍者が AC の品質不備・前提情報の不足・ルーチン作業の試行錯誤で BLOCK/FAIL になるのはインフラバグではないか。修正速度が遅くなっている。調査→設計書→家老・軍師レビュー。
@@ -129,6 +129,18 @@
 ## §6.1 レビュー依頼(忖度なし)
 - 家老: §3 の分類と件数は現場感と合うか(特に A と B の線引き)。T1 の environments 表を projects/infra.yaml に置くことの運用負荷。T2 が家老の /karo-direct 起票を遅くしないか。T4 の再注入で task YAML が肥大しないか。
 - 軍師: §2.2 の fail_reasons 分類の妥当性(bc:no 13 の内訳 5/5/3 は将軍の読み)。T3 の routine 表が既存 SG 観点と矛盾しないか。E(忍者品質 3 件)の見落とし。
+
+## §6.2 実装進捗台帳(loop ごとに現在値で更新。殿指示 18:57)
+| 時刻 | 何が動いたか | 分類(§3.0) | 状態 |
+|---|---|---|---|
+| 16:30 | v2.1 確定(軍師 APPROVE、家老 条件付き APPROVE 4 補正を全採用) | — | 設計閉 |
+| 18:04 | 軍師 D0 バグ#1: report_field_set の revision_requested→completed 自動遷移(忍者が finalize を忘れる) | C ルーチン | origin 公開 499eb209(家老審査) |
+| 18:10 | 軍師 D0 バグ#3: review_bundle の allow_archived 自動検出(archive 済み報告が single 処理不能) | D 偽陽性 | 同上 |
+| 18:19 | 軍師 バグ#5 根因: files_modified 空の honest FAIL が commit identity で SystemExit(1)→approval 不能循環 | D 偽陽性(前提不成立 honest FAIL を成果物欠落と誤判定) | 将軍 D0 f4dbf1f46(review_approval 構造 no-code 判定、50/50)、軍師検証 PASS 18:45 |
+| 18:57 | 軍師 再集計(v2.1→現在): 報告 74→84 本、revision_requested 3→1(飛猿 ci_fix_33945636960 のみ)、failed 4→5、hook_failures 5→4(ci_clean_repro single-flight 2 件は半蔵 ci_fix で構造的に消える)、gate BLOCK: ancestry 7→8、dm_signal_smoke 2→2、**ci_push_state BLOCK 8 件が新規**(v2.1 未記載) | D(gate 側) | §2.6 へ反映 |
+| 18:57 | 見落とし: バグ#1 は §3 C(ルーチン)=T3 routine_refs の注入対象、バグ#5 は D=T5 failure_origin_code の記録対象 | — | v2.2 で本表に記録 |
+- 判定: 本日 FAIL/BLOCK のうち忍者品質 E は 2/22 で不変。今日の新規根治 3 件(バグ#1/#3/#5)は全て C/D=インフラ側で、殿 16:03 の仮説「BLOCK/FAIL はインフラバグ」を実装で追認。
+- 次: T1+T3(environment_refs/routine_refs 注入)の起票は殿 go 待ちのまま。ci_push_state BLOCK 8 件の内訳を日次表(karo_throughput_report.sh の待ち理由別)で追う。
 
 ## §7 因果リンク
 - ← [[殿下問_忍者BLOCK_FAILはインフラバグか_20260905_1603]] / ← [[karo_throughput_asis_20260905]](家老側の待ち) / ← [[cmd_4477_AC3_隔離DB名なし]](LS 候補) / ← [[PD-142]](fixture 非決定)
