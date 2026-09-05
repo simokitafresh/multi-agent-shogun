@@ -8827,3 +8827,25 @@
   brainwash_check: "#1no #2no #3no #4no #5no #6no #7no #8no 1表定義の数学的整合確認"
   origin: "[[cmd_4479_market_direction]] -> [[1表縮約_v1.0]] -> [[APPROVE]]"
   timestamp: "2026-09-05T22:33:00"
+- cmd_id: cmd_4479
+  review_type: draft
+  verdict: APPROVE
+  verified_files:
+    - "docs/research/dm-signal-research-data-foundation-asis-tobe_20260905.md:70"
+    - "docs/research/dm-signal-market-direction-breadth-exposure-asis-tobe_20260905.md:22"
+  findings_summary: "第三往復v0.5/v1.1/backlog。三観点OK: PIT証明穴なし(holding_signal各段PIT+config.type時不変)、blob意味差分(AST/diff+sha256)妥当、is_mtd(as-of月行true)穴なし。"
+  observations:
+    - "R2-2でconfig treeのas-of固定を撤去。展開辺=記録済みholding_signalの同月再帰のみ。PITが各段で保証される"
+    - "流用元を d14a4ec3 _resolve_weights一本化。history.py L211は1段のみと明記(v0.3/v0.4の誤りを訂正)"
+  operational_simulation:
+    command: "Read全三文書(基盤v0.5+市場v1.1+backlog v1.0)"
+    expected: "家老R2七点が反映され、三観点に穴なし"
+    actual: "七点全反映確認。三観点穴なし"
+    result: "PASS"
+  causal_chain: "R2七点REJECT→v0.5流用元一本化+展開辺定義+backlog分離→三往復で設計品質収束=正の複利(レビュー往復)"
+  confidence: HIGH
+  finding_categories: [assumptions, numbers, simulation, premortem, ambiguity, adversarial]
+  ambiguity_points: none
+  brainwash_check: "#1no #2no #3no #4no #5no #6no #7no #8no 三観点×一次根拠照合"
+  origin: "[[cmd_4479]] -> [[R2七点採用_v0.5]] -> [[第三往復_APPROVE]]"
+  timestamp: "2026-09-05T22:46:00"
