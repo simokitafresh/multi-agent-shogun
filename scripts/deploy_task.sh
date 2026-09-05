@@ -12144,6 +12144,15 @@ PY
 
 deploy_task_prepare_remote_tip_worktree_sparse() {
     local task_file="$1" ninja_name="$2" repo="" source_repo="" cached_repo="" saved_override="" saved_original="" saved_cache="" saved_git="" using_cache=0 rc=0
+    local task_worktree_required source_path_count
+    task_worktree_required=$(FIELD_GET_NO_LOG=1 field_get "$task_file" "task_worktree_required" "false" 2>/dev/null || true)
+    source_path_count=$(python3 -c 'import os,sys,yaml; t=(yaml.safe_load(open(sys.argv[1],encoding="utf-8")) or {}).get("task",{}); v=[]; [v.extend([t.get(k)] if isinstance(t.get(k),str) else t.get(k) if isinstance(t.get(k),list) else []) for k in ("target_path","planned_paths")]; p=[os.path.normpath(str(x or "")[2:] if str(x or "").startswith("./") else str(x or "")) for x in v]; r=("queue/","logs/","context/","projects/","archive/",".cache/"); print(len({x for x in p if x and x != "dashboard.md" and not x.startswith(r)}))' "$task_file" 2>/dev/null || echo 0)
+    # Preserve the original no-source fast path before resolving a repository.
+    # The sparse wrapper must not turn runtime-only or minimal fixture tasks
+    # into a remote-tip lookup that fails after task mutation publication.
+    if [ "$task_worktree_required" != "true" ] && [ "$source_path_count" -lt 1 ]; then
+        return 0
+    fi
     source_repo=$(deploy_task_original_resolve_source_repo "$task_file" 2>/dev/null || true)
     repo="$source_repo"
     [ -n "$repo" ] || return 1
