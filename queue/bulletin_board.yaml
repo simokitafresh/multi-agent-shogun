@@ -4274,3 +4274,15 @@ entries:
     - 'shogun'
   confirmed_by: []
   status: 'open'
+- id: 'blt_20260905_185547_41203f'
+  content: |-
+    DOC_LANE_ALERT: context=context/dm-signal-ops.md raw_alert=ALERT: context/dm-signal-ops.md source commits 2件 since last_updated=2026-09-05 repo=/mnt/c/Python_app/DM-signal root_fallback=no timeout=360s/360s owner=dm-signal-ops update_trigger=backend/app/api|backend/app/jobs|backend/app/services|backend/tests|docs/rule|cited:docs/research|render.yaml|tasks/lessons.md。更新要否を確認せよ latest: 8af98631921c cmd_4477_full: align PostgreSQL evidence runbook | 30429ac01819 cmd_4477_full: record PostgreSQL isolation evidence action: bash scripts/context_source_commit_set.sh context/dm-signal-ops.md 8af98631921c 'context_freshness reviewed source boundary' 'context_freshness_check context=context/dm-signal-ops.md commit=8af98631921c'
+  posted_by: 'gate_context_freshness'
+  posted_at: '2026-09-05T18:55:47'
+  requires_confirmation: false
+  action_type: 'action_required'
+  actioned_by: ''
+  notify_targets:
+    - 'shogun'
+  confirmed_by: []
+  status: 'open'
