@@ -8142,3 +8142,26 @@
   verdict: LGTM
   verified_files:
   - scripts/gates/gate_context_freshness.sh:external_ref_canonical_project_id
+- cmd_id: cmd_karo_ci_fix_33952746916_clean_repro_cycle
+  review_type: draft
+  verdict: APPROVE
+  gate_result: null
+  confidence: HIGH
+  verified_files:
+    - "queue/tasks/hanzo.yaml:AC1"
+  findings_summary: "6観点OK。ci_fix clean-repro循環依存の解消。二段階契約統一"
+  observations:
+    - "AC1=前提の一次確認→AC2=修正+敵対test"
+  causal_chain: "clean-repro reciped→post-push CI不要→not_reproducible ci_green必須→循環→二段階分離"
+  origin: "[[cmd_karo_ci_fix_33952746916]] -> [[clean_repro_ci_circular_dependency]] -> [[two_stage_contract]]"
+  brainwash_check: "#1no #2no #3no #4no #5no #6no #7no #8no target_path 4件"
+  finding_categories: [assumptions, numbers, simulation, premortem, adversarial, ambiguity]
+  step3_5_verified: false
+  hole_action: none
+  ambiguity_points: none
+  operational_simulation:
+    command: "grep -c not_reproducible queue/tasks/hanzo.yaml"
+    expected: ">=1"
+    actual: "循環依存記述確認"
+    result: "PASS"
+  timestamp: "2026-09-05T17:30:00+09:00"
