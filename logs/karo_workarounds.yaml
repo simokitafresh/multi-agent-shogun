@@ -1557,3 +1557,18 @@
   lesson_disposition: not_applicable
   lesson_reference: 'not_applicable'
   resolved_by_cmd: 'cmd_karo_hotfix_deploy_external_worktree_timeout'
+- cmd_id: cmd_karo_hotfix_agent_respawn_preserve_active
+  timestamp: '2026-09-05T00:29:55Z'
+  ninja: hanzo
+  workaround: true
+  event_kind: manual_wa
+  auto_captured: false
+  category: report
+  root_signature: 'report::general'
+  detail: '報告の「実装前後で」が禁止語「後で」に部分一致し軍師precheckが偽BLOCK'
+  root_cause: '半蔵へbaseline/current表現への正規RCを返し、検出器の語境界hotfixを別task化'
+  lesson_required: true
+  lesson_disposition: 'new_lesson_required'
+  lesson_reference: ''
+  brainwash_check: '洗脳#6出力=仕事防止: 家老report手動編集1想定→0件、正規RC 0→1件、語境界hotfix候補0→1件'
+  resolved_by_cmd: ''
