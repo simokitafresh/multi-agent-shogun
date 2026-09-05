@@ -9237,3 +9237,24 @@
   origin: "[[cmd_4479]] -> [[ac_evidence_mapping補完]] -> [[FAIL報告受理_R2]]"
   ambiguity_points: none
   timestamp: "2026-09-06T00:29:00+09:00"
+- cmd_id: cmd_karo_impl_w1_routine_refs_core_20260906
+  review_type: draft
+  verdict: APPROVE
+  verified_files:
+  - "queue/tasks/tobisaru.yaml:3"
+  confidence: HIGH
+  ambiguity_points: none
+  findings_summary: "impl cmd。AC2本(前提確認+5 ID実装)。偵察連携scout_exempt。K2統合handoff明示。制約完備(未知ID BLOCK/残留0/秘密0/CLI混入0)。全入口テスト"
+  observations:
+  - "事実: planned_paths 6ファイル(context_injection.sh/gates.sh/resolve.sh+test 3本)。偵察で確定済みの5 ID"
+  - "事実: split_decision integration_tasks=1。delivery.sh+preinjectedはK2完了後の統合task。衝突回避"
+  operational_simulation:
+    command: "grep -c 'id: AC' queue/tasks/tobisaru.yaml"
+    expected: "2"
+    actual: "2"
+    result: "PASS"
+  finding_categories: [assumptions, numbers, simulation, premortem, ambiguity, adversarial]
+  brainwash_check: "#1no(AC2件全確認+偵察連携確認) #2no(task YAML現物読み) #3no(自分で確認) #4no(K2衝突handoff確認) #5no(即処理) #6no(2/2確認) #7no(scope制約あり) #8no(全件確認)"
+  causal_chain: "W1偵察(5 ID確定+BLOCK 3件)→実装cmd(BLOCK解決+K2 handoff)=偵察→実装の正しい連鎖"
+  origin: "[[cmd_karo_recon_w1_routine_contract_20260905]] -> [[5ID確定_3BLOCK]] -> [[W1_impl_draft_APPROVE]]"
+  timestamp: "2026-09-06T00:44:00+09:00"
