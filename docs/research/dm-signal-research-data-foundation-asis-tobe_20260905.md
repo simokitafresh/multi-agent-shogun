@@ -1,5 +1,5 @@
 <!-- gist-master: 4afbab67cc111ff723c342aa48412ff8 dm-signal-research-data-foundation-asis-tobe_20260905.md -->
-# DM-Signal 研究データ基盤 F1 `holdings_monthly` — PF × 月 × ticker × weight を 1 表に固める 設計書 v0.6(2026-09-05 22:50 家老 R3 途中指摘: portfolios.type は列) / v0.5(2026-09-05 22:55 家老 R2 REJECT blt_223658 7 点を全採用: F1 だけに絞り F2〜F4/A1〜A11/I 一覧を `dm-signal-research-data-backlog_20260905.md` へ移設、流用元を full SHA+path+関数に一本化、展開辺を記録済み holding_signal の同月再帰に定義、semantic alias 正本訂正 / v0.4 22:35 家老 REJECT 6 点採用 / v0.3 22:25 / v0.2 22:05 / v0.1 21:40 殿 21:22『便利なものを先に解決』)
+# DM-Signal 研究データ基盤 F1 `holdings_monthly` — PF × 月 × ticker × weight を 1 表に固める 設計書 v0.7(2026-09-06 00:25 cmd_4479 結果: honest FAIL、parity 104 不一致=新四つ目 3 体=I8、他は全 PASS) / v0.6(2026-09-05 22:50 家老 R3 途中指摘: portfolios.type は列) / v0.5(2026-09-05 22:55 家老 R2 REJECT blt_223658 7 点を全採用: F1 だけに絞り F2〜F4/A1〜A11/I 一覧を `dm-signal-research-data-backlog_20260905.md` へ移設、流用元を full SHA+path+関数に一本化、展開辺を記録済み holding_signal の同月再帰に定義、semantic alias 正本訂正 / v0.4 22:35 家老 REJECT 6 点採用 / v0.3 22:25 / v0.2 22:05 / v0.1 21:40 殿 21:22『便利なものを先に解決』)
 
 - 発端: 殿 21:19『ticker×weight はすんなり DB から取れたか』→取れなかった → 21:22『先に解決しないか。他にも応用できる』→ 22:29『シンプルにデータを見たいだけ。複雑さは捨てろ』。
 - 本書の範囲: **F1 `holdings_monthly.csv` の生成・検算・provenance だけ。** それ以外(ledger の扱い、階層関数、アイデア、本番不整合一覧)は `docs/research/dm-signal-research-data-backlog_20260905.md` に移した(記録のみ、実装しない)。
@@ -113,7 +113,8 @@
 
 | # | 点 | 既定案 |
 |---|---|---|
-| D1 | F1(readonly script+CSV、本番無変更)の cmd_4479 を、家老・軍師 APPROVE 後に delegate してよいか | APPROVE 後に殿へ 1 報し、殿の go で delegate(殿 22:25/22:27) |
+| D1 | F1 cmd_4479 の delegate | 殿 go 23:29→delegated 23:34→才蔵 00:19 **honest FAIL**(AC2 parity 104/12,372 不一致=新四つ目 3 体、他 AC 全 yes、CSV 23,175 行・I7 0)。approved_honest_fail で終端、根因は backlog I8 の偵察 cmd へ |
+| D2 | 新四つ目 3 体の parity 不一致(I8)の根因偵察 cmd を起票するか | 起票する(readonly、忍者 1 名)。市場 1 表は 3 体を is_suspect で別計上して先行可 |
 
 ## §6 因果リンク
 - ← [[殿下問_便利だったもの_20260905_2119]] / ← [[partial-turnover-experiment-asis-tobe-5w1h_20260805]] v1.10-v1.12(既存反証と真の再帰)
