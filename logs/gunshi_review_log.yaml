@@ -7697,3 +7697,31 @@
     expected: "honest fail accept chain hotfix AC1-2"
     actual: "AC1再現fixture、AC2承認チェーン統合+敵対テスト"
     result: "PASS"
+- cmd_id: cmd_karo_ci_fix_33948374586_midx_lock
+  review_type: draft
+  verdict: LGTM
+  gate_prediction: CLEAR
+  gate_prediction_reason: "draft review - midx lock hardlink CI fix"
+  reviewed_at: "2026-09-05T15:21:00+09:00"
+  verified_files:
+    - "scripts/publish_artifact.sh:1"
+    - "tests/unit/test_publish_artifact.bats:1"
+  observations:
+    - "CI shard1 case7のmulti-pack-index.lock hardlink共有による並列clone失敗の根治"
+    - "AC1はinode/argv/呼出し元の一次再現。AC2は隔離方式+並列反復50回FAIL0検証"
+    - "質量gate: sleep延長禁止、lock inode共有を発生不能化する設計を要求"
+  finding_categories:
+    - assumptions
+    - numbers
+    - simulation
+    - premortem
+    - adversarial
+    - ambiguity
+  ambiguity_points: none
+  step3_5_verified: false
+  brainwash_check: "#1no #2no #3no #4no #5no #6no #7no #8no draft review。CI fix scope明確"
+  operational_simulation:
+    command: "cat queue/tasks/saizo.yaml | head -10"
+    expected: "midx lock ci_fix AC1-2"
+    actual: "AC1再現+inode報告、AC2隔離方式根治+並列50回検証"
+    result: "PASS"
