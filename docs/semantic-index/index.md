@@ -3624,6 +3624,7 @@ codd:
 | causal_chain | `[[cmd_karo_ci_fix_33630722226_instructions_sync_fp_vocab_202609022153]]` (L1710) |
 | causal_chain | `[[cmd_karo_hotfix_u3_publisher_idempotent_restore_notify_202609022337]]` (L1711) |
 | causal_chain | `[[cmd_karo_hotfix_workarounds_merge_driver_dup_cmd_id_202609030148]]` (L1712) |
+| cmd | `cmd_karo_hotfix_pd141_workaround_signature` (`scripts/karo_workaround_log.sh`, `tests/unit/test_karo_workaround_validation.bats`) |
 
 ## investment_knowledge_base — 投資知識辞書
 
@@ -5799,6 +5800,7 @@ codd:
 | causal_chain | `[[cmd_karo_hotfix_ga_pair_dedup_202607101643]]` (L1024) |
 | causal_chain | `[[cmd_karo_hotfix_fill_this_202607151848]]` (L1037) |
 | causal_chain | `[[cmd_karo_ci_red_remaining_unit_202607151950]]` (L1041) |
+| causal | `cmd_karo_hotfix_pd141_workaround_signature` files_modified: [[infra_throughput_outcome_design]] |
 
 ## chain_principle — 鎖の原理
 
