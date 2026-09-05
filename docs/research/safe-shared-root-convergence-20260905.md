@@ -13,12 +13,14 @@
 | publisherとsafe helperのGit index操作が一時競合 | `index.lock` 文字列に限定した最大5秒の有界再試行 | 他エラーは即BLOCK、恒久lockは有界FAIL |
 | mode 100644のhelperをpublisherが`-x`で拒否 | `bash`起動契約に合わせ`-r`で判定 | publisher 23件を含む回帰検証 |
 | `publisher.sh sync_root` がSHAと文字列`origin/main`を比較 | 入口で`${tip}^{commit}`を解決し、SHA同士でpostsync検証 | symbolic tip fixture |
+| worker slot上書き後、旧terminal reportの再発行がcurrent taskだけを見て停止 | lifecycle本文の明示report pathとreport自身のtask/parentを一次化し、senderとworker_idを照合 | inbox_write 138/138、別worker詐称BLOCK |
 
 ## 計測
 
 - safe helper敵対fixture: 35/35 PASS、SKIP 0。
 - safe helper + publisher: 59/59 PASS、SKIP 0。
 - honest FAIL no-code identity補強: 52/52 PASS、SKIP 0。欠落・空・未知resultはfail-closed。
+- old-report lifecycle再発行: inbox_write 138/138 PASS、SKIP 0。
 - 本番root: ローカルsource commitをisolated republish後、diverged同期PASS。直後の二回目は`already_contains_target` PASS。
 - dirty保全: 同期前後のstatus/worktree/index fingerprint一致を確認。並行runtime更新は旧snapshotへ戻さないfixtureを追加。
 
