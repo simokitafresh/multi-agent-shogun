@@ -178,8 +178,9 @@ YAML
 
 make_source_context_fixture() {
   local source="$1" mode="${2:-clear}" generation="${3:-aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa}"
-  mkdir -p "$source/scripts/gates" "$source/context" "$source/docs/research" "$source/config" "$source/external/docs/research"
+  mkdir -p "$source/scripts/gates" "$source/scripts/lib" "$source/context" "$source/docs/research" "$source/config" "$source/external/docs/research"
   cp "$REPO_ROOT/scripts/gates/gate_vercel_phase.sh" "$source/scripts/gates/"
+  cp "$REPO_ROOT/scripts/lib/external_project_ref_resolver.sh" "$source/scripts/lib/"
   printf 'projects:\n  - id: external\n    path: %s\n' "$source/external" > "$source/config/projects.yaml"
   local i
   for i in $(seq 1 11); do
@@ -234,8 +235,9 @@ YAML
 @test "SG-PRE23 resolves source generation and rejects mixed shared/source results" {
   local source="$TMP_DIR/source-clear" shared="$TMP_DIR/shared-broken"
   local generation="aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
-  mkdir -p "$shared/scripts/gates" "$shared/context" "$shared/docs/research" "$shared/config" "$shared/external/docs/research"
+  mkdir -p "$shared/scripts/gates" "$shared/scripts/lib" "$shared/context" "$shared/docs/research" "$shared/config" "$shared/external/docs/research"
   cp "$REPO_ROOT/scripts/gates/gate_vercel_phase.sh" "$shared/scripts/gates/"
+  cp "$REPO_ROOT/scripts/lib/external_project_ref_resolver.sh" "$shared/scripts/lib/"
   printf 'projects:\n  - id: external\n    path: %s\n' "$shared/external" > "$shared/config/projects.yaml"
   printf 'See docs/research/shared-clear.md\n' > "$shared/context/owned.md"
   printf 'ok\n' > "$shared/external/docs/research/shared-clear.md"
