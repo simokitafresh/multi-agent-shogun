@@ -6905,6 +6905,7 @@ TMP_ROOT="$NINJA_MONITOR_TEST_ROOT"; mkdir -p "$TMP_ROOT"
 trap "rm -rf \"$TMP_ROOT\"" EXIT
 SCRIPT_DIR="$TMP_ROOT"
 LOG="$TMP_ROOT/test.log"
+export KARO_SNAPSHOT_LOCK_FILE="$TMP_ROOT/karo_snapshot.lock"
 mkdir -p "$SCRIPT_DIR/config" "$SCRIPT_DIR/queue/tasks" "$SCRIPT_DIR/logs"
 
 cat > "$SCRIPT_DIR/config/settings.yaml" <<'"'"'EOF'"'"'

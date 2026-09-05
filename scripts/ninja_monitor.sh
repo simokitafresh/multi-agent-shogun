@@ -13,6 +13,10 @@ _ninja_monitor_debug_invocation() {
 
 _ninja_monitor_debug_invocation "$@"
 
+# Read-only git calls can otherwise refresh the shared index while publisher
+# writes require the same lock. Keep monitor-side inspection non-mutating.
+export GIT_OPTIONAL_LOCKS=0
+
 # Bounded lifecycle workers are short-lived handlers launched by the healthy
 # daemon owner.  They must load the same dependencies and runtime configuration
 # as the daemon, but cannot compete for the daemon's singleton lease or run its
@@ -15063,7 +15067,16 @@ _ninja_monitor_hot_reload_watch() {
     while [ -d "/proc/${parent_pid}" ]; do
         IFS=$'\t' read -r owner_pid owner_generation owner_heartbeat _legacy_mtime _legacy_fingerprint \
             < <(_ninja_monitor_read_hot_reload_owner_record "$owner_file" "$parent_pid") || return 0
-        _ninja_monitor_owner_record_matches "$owner_file" "$generation" "$parent_pid" || return 0
+        if ! _ninja_monitor_owner_record_matches "$owner_file" "$generation" "$parent_pid"; then
+            # A concurrent owner-file replacement can make the read-side
+            # compare fail after the record itself was read successfully.
+            # Keep the watcher alive while its parent generation remains
+            # alive; otherwise one transient race loses the only successor
+            # launch opportunity.
+            [ -d "/proc/${parent_pid}" ] || return 0
+            sleep "$poll_sec"
+            continue
+        fi
 
         current_identity="$(ninja_monitor_script_watch_identity "$script_path")"
         if [ -n "$current_identity" ] && [ "$current_identity" != "$start_identity" ]; then
@@ -15071,7 +15084,11 @@ _ninja_monitor_hot_reload_watch() {
             # while it was blocked, so revalidate immediately before launch.
             IFS=$'\t' read -r owner_pid owner_generation owner_heartbeat _legacy_mtime _legacy_fingerprint \
                 < <(_ninja_monitor_read_hot_reload_owner_record "$owner_file" "$parent_pid") || return 0
-            _ninja_monitor_owner_record_matches "$owner_file" "$generation" "$parent_pid" || return 0
+            if ! _ninja_monitor_owner_record_matches "$owner_file" "$generation" "$parent_pid"; then
+                [ -d "/proc/${parent_pid}" ] || return 0
+                sleep "$poll_sec"
+                continue
+            fi
             log "HOT-RELOAD-DETECTED: generation=${generation} identity ${start_identity} -> ${current_identity}"
             _ninja_monitor_launch_hot_reload_successor "$script_path" "$generation" "$current_identity"
             return 0
