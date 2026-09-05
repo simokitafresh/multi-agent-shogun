@@ -8400,3 +8400,39 @@
     actual: "8"
     result: "PASS"
   timestamp: "2026-09-05T17:56:00+09:00"
+- approved_failed_check_paths:
+  - binary_checks.AC2[0]
+  brainwash_check: '#1no #2no #3no #4no #5no #6no #7no #8no case7 50/50、18/18、probe
+    200/200'
+  causal_chain: local clone hardlink race→--no-local隔離で発生不能化
+  cmd_id: cmd_karo_ci_fix_33948374586_midx_lock
+  finding_categories:
+  - assumptions
+  - numbers
+  - premortem
+  - adversarial
+  - ambiguity
+  findings_summary: 4観点OK。honest fail。fixture clone --no-local隔離。case7 50/50+18/18+probe
+    200/200全PASS
+  hole_action: none
+  observations:
+  - commit 997336fd実在。publish_artifact.sh本番にclone呼出し0件
+  operational_simulation:
+    actual: '8'
+    command: grep -c no-local tests/unit/test_publish_artifact.bats
+    expected: '8'
+    result: PASS
+  origin: '[[cmd_karo_ci_fix_33948374586_midx_lock]] -> [[pack_lock_hardlink_race]]
+    -> [[no_local_isolation]]'
+  precheck_na:
+    evidence: case7 50/50+18/18+probe 200/200。compatibility case15+cmd_skeleton=別task
+    reason: bc:no=honest fail。対象修正は全PASS。compatibility 2件=other task依存
+  report_ninja: saizo
+  report_task_id: cmd_karo_ci_fix_33948374586_midx_lock_normal
+  report_verdict: FAIL
+  review_type: report
+  step3_5_verified: true
+  timestamp: '2026-09-05T17:57:00+09:00'
+  verdict: LGTM
+  verified_files:
+  - tests/unit/test_publish_artifact.bats:42
