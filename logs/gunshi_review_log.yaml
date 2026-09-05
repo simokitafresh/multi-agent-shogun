@@ -10657,3 +10657,25 @@
   causal_chain: "golden mismatch31710→全件attribution→正規再生成→CI GREEN"
   origin: "[[CI_33985798406]] -> [[golden_full_attribution]] -> [[APPROVE]]"
   timestamp: "2026-09-06T06:34:00+09:00"
+- cmd_id: cmd_karo_hotfix_insight_c1_delivery_exactly_once_20260906
+  review_type: report
+  verdict: FAIL
+  verified_files:
+  - "queue/reports/hayate_report_cmd_karo_hotfix_insight_c1_delivery_exactly_once_20260906.yaml:36"
+  step3_5_verified: true
+  fail_reasons:
+  - "内容OK(C1=11件、7bc全yes)。bundle BLOCK(daemon/lib-only対象外)。家老通知済み"
+  findings_summary: "内容OK。bundle BLOCK→家老通知"
+  observations:
+  - "事実: standalone precheck ERRORS=0だがbundle内でdaemon/lib-only判定BLOCK"
+  operational_simulation:
+    command: "grep -c \"result: 'yes'\" queue/reports/hayate_report_cmd_karo_hotfix_insight_c1_delivery_exactly_once_20260906.yaml"
+    expected: "7"
+    actual: "7"
+    result: "PASS"
+  finding_categories: [assumptions, numbers, premortem, ambiguity, adversarial]
+  brainwash_check: "#1no #2no #3no #4no #5no #6no #7no #8no"
+  causal_chain: "daemon/lib-only判定→bundle BLOCK→家老通知"
+  origin: "[[C1_exactly_once]] -> [[bundle_BLOCK]] -> [[FAIL記録]]"
+  ambiguity_points: none
+  timestamp: "2026-09-06T06:37:00+09:00"
