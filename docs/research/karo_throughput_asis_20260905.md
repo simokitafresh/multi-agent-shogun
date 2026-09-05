@@ -1,5 +1,5 @@
 <!-- gist-master: aeaadf72f858a63ab8a1259d43d6aade karo_throughput_asis_20260905.md -->
-# 家老スループット AsIs/ToBe — 家老が実行・待機する script/hook/gate の速度台帳と計測修復設計 v2(2026-09-05 15:10 再構築 / v1 14:45→§7 訂正 14:55→§8 セルフレビュー 15:05→家老 REJECT 9 点・軍師 APPROVE 5 所見 15:04 を本文へ統合。殿 15:06『追記でなく再構築、粒度を小さく、情報量を減らすな』 / v2.1 16:55 cmd_4478 着地+修復後 80 分の初回実測を §4.1・§6.7 に統合、§7 を実測順位で書き直し) / v2.2 17:55 殿『穴はないか』→待ち理由別 GATE 時間(§4.2)で §7 を再順位、穴 5 つを §8 へ / v2.3 19:00 loop 更新: 前提 0(a) root 収束、publish 道具根治(合流待ち順位 1 への直接効果)、§9 18:22〜18:57
+# 家老スループット AsIs/ToBe — 家老が実行・待機する script/hook/gate の速度台帳と計測修復設計 v2(2026-09-05 15:10 再構築 / v1 14:45→§7 訂正 14:55→§8 セルフレビュー 15:05→家老 REJECT 9 点・軍師 APPROVE 5 所見 15:04 を本文へ統合。殿 15:06『追記でなく再構築、粒度を小さく、情報量を減らすな』 / v2.1 16:55 cmd_4478 着地+修復後 80 分の初回実測を §4.1・§6.7 に統合、§7 を実測順位で書き直し) / v2.2 17:55 殿『穴はないか』→待ち理由別 GATE 時間(§4.2)で §7 を再順位、穴 5 つを §8 へ / v2.4 20:50 loop 更新: §9 20:15〜20:35(cmd_4477/4478/X 台帳/fixture D0 終端、kotaro honest FAIL close 8 分、CI GREEN 14/14)、§6.6 日次表 09-05 再実行 / v2.3 19:00 loop 更新: 前提 0(a) root 収束、publish 道具根治(合流待ち順位 1 への直接効果)、§9 18:22〜18:57
 
 ## §0.0 前提条件と我らのスタイル(別の LLM が読む前に)
 - 対象: multi-agent-shogun の家老(Codex gpt-5.6-sol、pane shogun:2.1)。家老の仕事=cmd 受領→分解→配備(deploy_task)→報告受領→review 受理(review_approval)→合流(publisher c2a)→GATE(cmd_complete_gate)→archive。忍者 6 名の直列の受け口。
@@ -263,6 +263,10 @@ schema 名変更(v2)/新台帳 file/cron 登録/watcher の held 解消/合流�
 | 18:37 | 軍師バグ#5(files_modified 空の honest FAIL が approval 不能)を将軍 D0(review_approval 構造 no-code 判定、50/50、f4dbf1f46)。軍師検証 PASS 18:45。 |
 | 18:49 | 殿『家老は順調か？利他で協調』→家老は safe_ff tool 単独 D0・6 忍者 idle・root behind 84。将軍が root を無損失収束 18:52(§7 前提 0(a))。家老は tool 一般修正を D0 完了(35/35・58/58)、影丸配備は殿の D0 裁定で不採用。 |
 | 15:15 | 家老 v2 差分レビュー REJECT 継続 5 点(c2a の既存 EXIT trap 上書き/watcher の async PID 無 drain/tmux target 無指定の誤帰属/helper_missing は rc 0・SKIP で test と矛盾/--as-of 別値が同 file を上書き)。将軍が現物で 5 点とも確認(trap L20=1、ASYNC_PIDS 追記=1・watcher の drain=0、display-message target=0、SKIP rc 0=2)→§6.1 行 4/6/7/8・§6.2・§6.4 へ採用。 |
+
+| 20:15 | 便の終端 4 本(cmd_4477 FAIL_CLOSE・cmd_4478 CLEAR・X 台帳 D0・CI fixture D0 208df246d)を家老報告→将軍独立再現(50/50 SKIP0、production 差分 0)で承認。root ahead 0/behind 0。 |
+| 20:23 | startup gate WARN『failed task 残置 kotaro 2h』=バグ#5 発現時点で approval 記録不能のまま止まった案件。将軍が順序付き 1 通→家老が approved_honest_fail→generation 3c35a616 archive→idle まで 8 分で終端(20:31)。元 run の failure は後続 run 33962661843 で出現 0。軍師 Q6 検証: #5 先送り+#3 他者依存(『家老 lane』分類)。 |
+| 20:35 | CI GREEN run 33963211348 job 14/14(head 75fdfcc05 on main)。日次表 09-05 再実行: gate_clear 42、held_event 122、retry 6、deploy_total p50 40.8s/p95 247s、cmd_save save_total p50 9.9s/p95 446s(quality_gate p95 349s・q11_semantic p95 346s が尾)。 |
 
 ## §10 因果リンク
 - ← [[殿下問_家老律速の拘束_20260905_1435]] / ← [[単一publisher_asis_tobe_5w1h_20260902]] U3 auto-push ancestry / ← [[cmd_4393_karo-waste]](08-24 の workaround/配備反復集計)

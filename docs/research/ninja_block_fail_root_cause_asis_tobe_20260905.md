@@ -1,5 +1,5 @@
 <!-- gist-master: 70b946c022cd5f6f81195ab837b7a7eb ninja_block_fail_root_cause_asis_tobe_20260905.md -->
-# 忍者の BLOCK/FAIL はインフラバグか — AsIs/ToBe 設計書 v2.1(2026-09-05 16:30。v2 16:25 に家老 条件付き APPROVE 4 補正を統合。v1 16:15 に軍師 APPROVE 5 観点+家老 REJECT 7 点) / v2.2 19:00 loop 更新: §2 数値を 18:57 再集計(軍師 blt_185706)、§6.2 実装進捗台帳を新設
+# 忍者の BLOCK/FAIL はインフラバグか — AsIs/ToBe 設計書 v2.1(2026-09-05 16:30。v2 16:25 に家老 条件付き APPROVE 4 補正を統合。v1 16:15 に軍師 APPROVE 5 観点+家老 REJECT 7 点) / v2.3 20:50 loop 更新: §6.2 に 20:15〜20:35(honest FAIL close 実証、fixture 陳腐化 8 FAIL=D 偽陽性、CI GREEN) / v2.2 19:00 loop 更新: §2 数値を 18:57 再集計(軍師 blt_185706)、§6.2 実装進捗台帳を新設
 
 ## §0.0 前提条件と我らのスタイル
 - 殿の問い(16:03): 忍者が AC の品質不備・前提情報の不足・ルーチン作業の試行錯誤で BLOCK/FAIL になるのはインフラバグではないか。修正速度が遅くなっている。調査→設計書→家老・軍師レビュー。
@@ -139,6 +139,8 @@
 | 18:19 | 軍師 バグ#5 根因: files_modified 空の honest FAIL が commit identity で SystemExit(1)→approval 不能循環 | D 偽陽性(前提不成立 honest FAIL を成果物欠落と誤判定) | 将軍 D0 f4dbf1f46(review_approval 構造 no-code 判定、50/50)、軍師検証 PASS 18:45 |
 | 18:57 | 軍師 再集計(v2.1→現在): 報告 74→84 本、revision_requested 3→1(飛猿 ci_fix_33945636960 のみ)、failed 4→5、hook_failures 5→4(ci_clean_repro single-flight 2 件は半蔵 ci_fix で構造的に消える)、gate BLOCK: ancestry 7→8、dm_signal_smoke 2→2、**ci_push_state BLOCK 8 件が新規**(v2.1 未記載) | D(gate 側) | §2.6 へ反映 |
 | 18:57 | 見落とし: バグ#1 は §3 C(ルーチン)=T3 routine_refs の注入対象、バグ#5 は D=T5 failure_origin_code の記録対象 | — | v2.2 で本表に記録 |
+| 20:20 | 家老 D0 208df246d: 旧 SHA で再現した skill_feedback/publisher_single/SG7 bridge の 8 FAIL は fixture 陳腐化(廃止関数 isolated_publish_fallback 参照・report registry 欠落)。本体緩和 0、3 file 50/50 | D 偽陽性(test 側) | 将軍承認 20:21、CI run 33963211348 GREEN 14/14 |
+| 20:31 | バグ#5 修正の実運用初適用: kotaro honest FAIL(files_modified 空)を approved_honest_fail で正式 close、task idle。発現 18:07→close 20:31 の 2h24m は approval 不能循環ではなく将軍の分類放置(#5/#3) | D(修正済み)/運用 | 自動化ターゲット: honest FAIL∧LGTM∧approval 無し 20 分超を startup gate/ninja_monitor が検知(既存『done∧CLEAR 無し 20 分』の failed 版) |
 - 判定: 本日 FAIL/BLOCK のうち忍者品質 E は 2/22 で不変。今日の新規根治 3 件(バグ#1/#3/#5)は全て C/D=インフラ側で、殿 16:03 の仮説「BLOCK/FAIL はインフラバグ」を実装で追認。
 - 次: T1+T3(environment_refs/routine_refs 注入)の起票は殿 go 待ちのまま。ci_push_state BLOCK 8 件の内訳を日次表(karo_throughput_report.sh の待ち理由別)で追う。
 
