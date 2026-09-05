@@ -9447,3 +9447,31 @@
   causal_chain: "external scope placeholder混入→test counts誤認→rc=2→hotfix修正=CI安定性"
   origin: "[[W0_kotaro_recon]] -> [[external_scope_placeholder]] -> [[hotfix_APPROVE]]"
   timestamp: "2026-09-06T01:14:00+09:00"
+- ambiguity_points: none
+  brainwash_check: '#1no(4観点+precheck ERRORS=0) #2no(報告全文読み) #3no(precheck実行) #4no(recon-dual遵守確認)
+    #5no(即処理) #6no(全bc確認) #7no(コード変更0) #8no(4/4確認)'
+  causal_chain: final_weights投票比例vs1/N均等→計算式乖離→104件parity不一致の根因確定=F1正本化の判断材料
+  cmd_id: cmd_4480_recon2
+  finding_categories:
+  - assumptions
+  - numbers
+  - premortem
+  - ambiguity
+  - adversarial
+  findings_summary: '4観点OK。核心発見: 新四つ目3体のWeightedMultiViewMomentumFilterがfinal_weights(投票比例)を書込み、本番はこれを使用。cmd_4479静的展開は1/N均等→計算式乖離=104件不一致の根因確定。コード変更0'
+  observations:
+  - '事実: weighted_multi_view_momentum_filter.py:230-237でfinal_weights書込み。他21体(multi_view)は書込みなし(grep
+    0件)'
+  - '事実: price_ratio_impl.py:1239-1250がmomentum_data.weightsを使用。build_holdings_monthly.py:219は常に1/N'
+  operational_simulation:
+    actual: 4件yes
+    command: grep -c 'result.*yes' queue/reports/kotaro_report_cmd_4480_recon2.yaml
+    expected: binary_checks全件yes
+    result: PASS
+  origin: '[[cmd_4480_recon2]] -> [[final_weights投票比例根因確定]] -> [[LGTM]]'
+  review_type: report
+  step3_5_verified: true
+  timestamp: '2026-09-06T01:24:00+09:00'
+  verdict: LGTM
+  verified_files:
+  - queue/reports/kotaro_report_cmd_4480_recon2.yaml:99
