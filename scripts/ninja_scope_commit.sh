@@ -198,6 +198,64 @@ if [[ "$repair_index" == false ]]; then
     [[ -n "$message" ]] || { echo "BLOCK: commit message is required" >&2; exit 2; }
 fi
 
+# Level5 task binding: an active ninja pane may invoke this helper from the
+# shared root without exporting NINJA_SCOPE_TASK_FILE.  In that shape, derive
+# the task contract from the live tmux @agent_id and the root task ledger so a
+# worktree-backed task cannot silently publish from main.  Do not infer from
+# USER (all agents share one OS account), and leave ordinary callers untouched
+# when there is no active worktree-required ninja task.
+autobind_current_ninja_task() {
+    [[ -z "${NINJA_SCOPE_TASK_FILE:-}" ]] || return 0
+
+    local agent=""
+    if [[ -n "${TMUX_PANE:-}" ]] && command -v tmux >/dev/null 2>&1; then
+        agent="$(tmux display-message -t "$TMUX_PANE" -p '#{@agent_id}' 2>/dev/null || true)"
+    fi
+    agent="${agent%%$'\n'*}"
+    if [[ -z "$agent" ]]; then
+        agent="${AGENT_ID:-}"
+    fi
+    [[ "$agent" =~ ^[A-Za-z][A-Za-z0-9_-]*$ ]] || return 0
+    case "$agent" in
+        karo|gunshi|shogun) return 0 ;;
+    esac
+
+    local caller_root task_file
+    caller_root="$(git rev-parse --show-toplevel 2>/dev/null || true)"
+    [[ -n "$caller_root" ]] || return 0
+    task_file="$caller_root/queue/tasks/$agent.yaml"
+    [[ -f "$task_file" && ! -L "$task_file" ]] || return 0
+
+    local -a fields=()
+    mapfile -t fields < <(python3 - "$task_file" <<'PY'
+import sys
+import yaml
+
+try:
+    document = yaml.safe_load(open(sys.argv[1], encoding="utf-8")) or {}
+except (OSError, yaml.YAMLError):
+    raise SystemExit(0)
+task = document.get("task", document) if isinstance(document, dict) else {}
+if not isinstance(task, dict):
+    raise SystemExit(0)
+for key in ("status", "task_worktree_status", "task_worktree_required", "task_worktree_path"):
+    value = task.get(key, "")
+    if isinstance(value, bool):
+        value = "true" if value else "false"
+    print(str(value or "").strip())
+PY
+)
+    ((${#fields[@]} == 4)) || return 0
+    [[ "${fields[0]}" =~ ^(assigned|acknowledged|in_progress)$ ]] || return 0
+    [[ "${fields[1],,}" == active ]] || return 0
+    [[ "${fields[2],,}" == true && -n "${fields[3]}" ]] || return 0
+
+    export NINJA_SCOPE_TASK_FILE="$task_file"
+    echo "INFO: auto-bound active ninja task contract from $task_file" >&2
+}
+
+autobind_current_ninja_task
+
 # The report gate requires every ninja-task commit to identify its task_id or
 # parent_cmd in the subject.  Inject that identity from the reviewed task
 # contract so callers do not need to remember a second, manually maintained
