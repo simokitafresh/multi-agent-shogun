@@ -796,7 +796,11 @@ if [[ -n "${command:-}" ]]; then
         # sed -i / --in-place、> >> tee で当該 yaml へ出力、python の write/'w' open。
         _g4_write=false
         _g4_re_sed='sed[[:space:]]+(-[A-Za-z]*i|--in-place)'
-        _g4_re_redir='(>|tee[[:space:]])[^|]*shogun_to_karo'
+        # 2026-09-05 将軍根治: 旧 '[^|]*' は ';' や '&&' を跨いで次の文まで一致し、
+        # 『printf … > msgfile; publish_direct_commit.sh -- queue/shogun_to_ka…yaml』のような
+        # 読み取り専用/正規 commit 経路まで BLOCK した(同日 3 回、glob で名を隠す迂回を誘発)。
+        # リダイレクト先は同一文の中にしか無いので、文区切り(; & 改行)を跨がせない。
+        _g4_re_redir='(>|tee[[:space:]])[^|;&'$'\n'']*shogun_to_karo'
         # python 書込みは単独で BLOCK(家老レビュー 13:05: re.sub/.replace/awk の有無に依存させない)。
         # open(path, "w"/"a"/"x"/"r+"), Path.write_text/write_bytes, .write( を書込み形とみなす。
         _g4_re_pywrite='(\.write\(|write_text\(|write_bytes\(|open\([^)]*["'"'"'][wax]|open\([^)]*["'"'"']r\+)'
