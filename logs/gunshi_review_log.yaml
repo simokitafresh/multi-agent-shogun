@@ -8666,3 +8666,33 @@
   verified_files:
   - frontend/lib/user-id.ts:30429ac0
   - backend/app/db/models.py:c8b34714
+- approved_failed_check_paths:
+  - binary_checks.task_attribution[0]
+  brainwash_check: '#1no #2no #3no #4no #5no #6no #7no #8no 全数確認。分類表整合確認'
+  causal_chain: 半蔵failed inventory→全数分類→task_attribution receipt取得不能(scope除外)→honest
+    FAIL
+  cmd_id: cmd_karo_recon2_hanzo_failed_inventory
+  finding_categories:
+  - assumptions
+  - premortem
+  - ambiguity
+  - adversarial
+  findings_summary: honest FAIL LGTM。task_attributionのみno。監査全数→A2/C8分類完遂。
+  observations:
+  - 半蔵failed全数再計数、A=2/C=8へ一意分類完了
+  - task_attribution FAILはrun_testsのscope除外でrc=1。監査内容に影響なし
+  operational_simulation:
+    actual: A=2/C=8、合計ten件。親cmd全件ユニーク
+    command: ls queue/reports/hanzo_report_* | wc -l で対象件数確認
+    expected: 全数分類完了
+    result: PASS
+  origin: '[[cmd_karo_recon2_hanzo_failed_inventory]] -> [[全数分類完遂]] -> [[honest_FAIL_LGTM]]'
+  report_ninja: hayate
+  report_task_id: cmd_karo_recon2_hanzo_failed_inventory_normal
+  report_verdict: FAIL
+  review_type: report
+  step3_5_verified: true
+  timestamp: '2026-09-05T19:55:00'
+  verdict: LGTM
+  verified_files:
+  - queue/reports/hayate_report_cmd_karo_recon2_hanzo_failed_inventory.yaml:1
