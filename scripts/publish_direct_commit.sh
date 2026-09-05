@@ -13,6 +13,7 @@ REPO_ROOT="$(cd "$SCRIPT_DIR/.." && pwd -P)"
 
 usage() {
     echo "Usage: bash scripts/publish_direct_commit.sh -m <message> -- <paths...>" >&2
+    echo "       bash scripts/publish_direct_commit.sh --republish <full-sha>   # root 上の既存 commit を isolated cherry-pick で origin へ" >&2
 }
 
 # U1bはmain checkoutのroot cwdだけを受け付ける。linked worktreeは.gitが
@@ -33,6 +34,7 @@ require_main_root || exit $?
 
 message=""
 locked=0
+republish_sha=""
 paths=()
 while (($#)); do
     case "$1" in
@@ -44,6 +46,11 @@ while (($#)); do
         --locked)
             locked=1
             shift
+            ;;
+        --republish)
+            (($# >= 2)) || { usage; exit 2; }
+            republish_sha="$2"
+            shift 2
             ;;
         --)
             shift
@@ -61,7 +68,33 @@ while (($#)); do
     esac
 done
 
-[[ -n "$message" && ${#paths[@]} -gt 0 ]] || { usage; exit 2; }
+if [[ -z "$republish_sha" ]]; then
+    [[ -n "$message" && ${#paths[@]} -gt 0 ]] || { usage; exit 2; }
+fi
+
+# 2026-09-05 将軍: c2a(3-way merge)は commit の祖先(root 上の他者の未合流 commit)まで巻き込むため、
+# 他者 commit が origin と衝突していると自分の 1 commit も出せない(18:30 実証: 軍師 D0 2 commit の
+# review_bundle.py 衝突で将軍 6 commit が全滅)。isolated clone で対象 commit だけを origin/main へ
+# cherry-pick して push する。shared root には一切触れない(D012 は root 内の merge/rebase/cherry-pick
+# を禁じる。isolated clone は c2a と同じ扱い)。root の収束は drain lane の責務。
+publish_isolated_cherry_pick() {
+    local commit_hash="$1" root url work rc=0
+    root="$(git rev-parse --show-toplevel)"
+    url="$(git config --get remote.origin.url)"
+    [[ -n "$url" ]] || { echo "publish_direct_commit: remote.origin.url missing" >&2; return 1; }
+    work="$(mktemp -d "${TMPDIR:-/tmp}/pdc-cherry.XXXXXX")"
+    (
+        set -euo pipefail
+        git clone -q --reference "$root" --branch main "$url" "$work/clone"
+        cd "$work/clone"
+        git fetch -q "$root" "$commit_hash"
+        git -c user.name=shogun -c user.email=shogun@shogun.local cherry-pick -x "$commit_hash" >/dev/null
+        git push -q origin HEAD:main
+        echo "publish_direct_commit: cherry-picked ${commit_hash:0:9} -> origin/main $(git rev-parse --short HEAD)"
+    ) || rc=$?
+    rm -rf "$work"
+    return "$rc"
+}
 
 run_locked() {
     local commit_hash
@@ -114,15 +147,42 @@ Published-By: wrapper" -- "${paths[@]}")"; then
         echo "publish_direct_commit: published via c2a; root remains diverged (converge via root drain lane)" >&2
         return 0
     fi
+    echo "publish_direct_commit: c2a merge failed (foreign root commits conflict?); retrying via isolated cherry-pick" >&2
+    if publish_isolated_cherry_pick "$commit_hash"; then
+        timeout 120 git fetch origin >/dev/null 2>&1 || true
+        git merge --ff-only origin/main >/dev/null 2>&1 || echo "publish_direct_commit: published via cherry-pick; root remains diverged (converge via root drain lane)" >&2
+        return 0
+    fi
     echo "publish_direct_commit: push retry failed (rc=9)" >&2
     return 9
 }
 
+# --republish <sha>: root 上に既にある自分の commit(以前 rc=9 で origin に出なかったもの)を
+# isolated cherry-pick で origin へ出す。新規 commit は作らない。
+republish_locked() {
+    local sha="$1"
+    [[ "$sha" =~ ^[0-9a-f]{40}$ ]] || { echo "publish_direct_commit: --republish needs a full sha" >&2; return 2; }
+    timeout 120 git fetch origin >/dev/null 2>&1 || { echo "publish_direct_commit: git fetch failed (rc=8)" >&2; return 8; }
+    if git merge-base --is-ancestor "$sha" origin/main; then
+        echo "publish_direct_commit: ${sha:0:9} already on origin/main" >&2
+        return 0
+    fi
+    publish_isolated_cherry_pick "$sha"
+}
+
 # The inner invocation is deliberately the same script so lock-run owns the
 # complete fetch→merge→commit→push sequence without a second implementation.
+if (( locked )) && [[ -n "${republish_sha:-}" ]]; then
+    republish_locked "$republish_sha"
+    exit $?
+fi
 if (( locked )); then
     run_locked
     exit $?
+fi
+if [[ -n "${republish_sha:-}" ]]; then
+    exec bash "$SCRIPT_DIR/publisher_queue.sh" lock-run --bound 300 -- \
+        bash "$SCRIPT_DIR/publish_direct_commit.sh" --locked --republish "$republish_sha"
 fi
 
 exec bash "$SCRIPT_DIR/publisher_queue.sh" lock-run --bound 300 -- \

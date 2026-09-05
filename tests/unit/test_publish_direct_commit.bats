@@ -125,6 +125,51 @@ SH
     [ "$(git -C "$ROOT" show origin/main:remote.txt)" = "remote" ]
 }
 
+# test_necessity: when the root carries a foreign local commit that conflicts
+# with origin (so a c2a 3-way merge of the branch cannot apply), the wrapper
+# must still publish its own single commit via an isolated cherry-pick, and
+# --republish must publish an already-committed root sha the same way.
+@test "foreign conflicting root commit does not block publish; cherry-pick and --republish reach origin" {
+    # foreign commit on root edits payload.txt one way; origin edits it another way
+    printf 'foreign
+' > "$ROOT/payload.txt"
+    git -C "$ROOT" add payload.txt
+    git -C "$ROOT" commit -qm 'foreign unmerged commit'
+    ADVANCE="$BATS_TEST_TMPDIR/publish_direct_advance"
+    git clone -q --branch main "$REMOTE" "$ADVANCE"
+    git -C "$ADVANCE" config user.email test@example.com
+    git -C "$ADVANCE" config user.name test
+    printf 'origin-side
+' > "$ADVANCE/payload.txt"
+    git -C "$ADVANCE" add payload.txt
+    git -C "$ADVANCE" commit -qm 'origin conflicting advance'
+    git -C "$ADVANCE" push -q origin main
+    printf 'mine
+' > "$ROOT/mine.txt"
+
+    run bash -c 'cd "$1" && bash "$1/scripts/publish_direct_commit.sh" -m "mine via cherry-pick" -- mine.txt' _ "$ROOT"
+    [ "$status" -eq 0 ]
+    git -C "$ROOT" fetch -q origin
+    [ "$(git -C "$ROOT" show origin/main:mine.txt)" = "mine" ]
+    # the foreign commit's content must NOT have been dragged onto origin
+    [ "$(git -C "$ROOT" show origin/main:payload.txt)" = "origin-side" ]
+    git -C "$ROOT" log -3 --format=%s origin/main | grep -q "mine via cherry-pick"
+
+    # --republish: an existing root commit that never reached origin
+    printf 'second
+' > "$ROOT/second.txt"
+    git -C "$ROOT" add second.txt
+    git -C "$ROOT" commit -qm 'second local only'
+    sha="$(git -C "$ROOT" rev-parse HEAD)"
+    run bash -c 'cd "$1" && bash "$1/scripts/publish_direct_commit.sh" --republish "$2"' _ "$ROOT" "$sha"
+    [ "$status" -eq 0 ]
+    git -C "$ROOT" fetch -q origin
+    [ "$(git -C "$ROOT" show origin/main:second.txt)" = "second" ]
+    # idempotent: second call is a no-op success
+    run bash -c 'cd "$1" && bash "$1/scripts/publish_direct_commit.sh" --republish "$2"' _ "$ROOT" "$sha"
+    [ "$status" -eq 0 ]
+}
+
 @test "successful wrapper commit has exactly one Published-By wrapper trailer" {
     printf 'changed\n' >> "$ROOT/payload.txt"
     started="$(date +%s)"
