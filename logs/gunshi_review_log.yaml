@@ -8762,3 +8762,24 @@
   verdict: LGTM
   verified_files:
   - queue/reports/kotaro_report_cmd_karo_ci_fix_33954907749_inbox_priority_evidence_cycle.yaml:1
+- cmd_id: cmd_4479
+  review_type: draft
+  verdict: APPROVE
+  verified_files:
+    - "docs/research/dm-signal-research-data-foundation-asis-tobe_20260905.md:39"
+  findings_summary: "六観点全OK。結論=一次データ整合(display_ticker_weights fof全行存在)、既存ツール7本網羅、AC自作展開紛れなし、F3 ledger廃止=事実整合、I群事実誤認なし、A群同梱不要。"
+  observations:
+    - "§2.1 nonce *-ro8実測でdisplay_ticker_weightsがfof全行に存在し、v0.1の2024以降のみは前書の誤り"
+    - "AC1のgrep条件(component_portfolios再帰の新規実装grep件数)が自作展開紛れ込みの構造的ガード"
+  operational_simulation:
+    command: "Read docs/research/dm-signal-research-data-foundation-asis-tobe_20260905.md 全文精読"
+    expected: "六観点で設計書の整合性を確認"
+    actual: "全観点PASS"
+    result: "PASS"
+  causal_chain: "殿21:19『すんなり取れたか』→将軍weight列不在と誤認→殿21:51/21:56で崩壊(既に全量ある・車輪の再発明禁止)→v0.2で展開不要に修正=正の複利"
+  confidence: HIGH
+  finding_categories: [assumptions, numbers, simulation, premortem, ambiguity, adversarial]
+  ambiguity_points: none
+  brainwash_check: "#1no #2no #3no #4no #5no #6no #7no #8no 設計書全文精読+§2.1一次データ照合"
+  origin: "[[cmd_4479]] -> [[display_ticker_weights全量存在]] -> [[APPROVE]]"
+  timestamp: "2026-09-05T22:14:00"
