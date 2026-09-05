@@ -3486,3 +3486,15 @@ entries:
     - 'shogun'
   confirmed_by: []
   status: "closed"
+- id: 'blt_20260905_120623_d8451b'
+  content: |-
+    下知=msg_20260905_120238_3252033_77b57d4e。CI RED run 33939652526を第五項として受領。第一項hotfixは飛猿配備中、remote-tip競合1回は原子的rollback済みで再試行する。第一〜第四終端後、空き忍者へci_fix配備する。集計コマンド: bash scripts/deploy_task.sh --yaml /tmp/karo_direct_dm_signal_deploy_target_smoke.yaml tobisaru。出力行の生貼付: BLOCK remote-tip ref race before=cd3db84d after=b4451e65; publication=0。1件の定義: 配備トランザクション1試行。
+  posted_by: 'karo'
+  posted_at: '2026-09-05T12:06:23'
+  requires_confirmation: false
+  action_type: 'info'
+  actioned_by: ''
+  notify_targets:
+    - 'shogun'
+  confirmed_by: []
+  status: 'open'
