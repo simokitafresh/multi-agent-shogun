@@ -10552,3 +10552,23 @@
   causal_chain: "no-code commit_hash空→FAIL_VERDICT→自動投影→false BLOCK 1→0"
   origin: "[[P4_FAIL_VERDICT]] -> [[nocode_commit_projection]] -> [[APPROVE]]"
   timestamp: "2026-09-06T06:13:00+09:00"
+- cmd_id: cmd_karo_ci_fix_dm_33985798406_fof_golden_20260906
+  review_type: draft
+  verdict: APPROVE
+  verified_files:
+  - "queue/tasks/tobisaru.yaml:3"
+  confidence: HIGH
+  ambiguity_points: none
+  findings_summary: "DM CI fix golden。AC2本(前提確認+最小修正)。baseline緩和禁止。mismatch31710"
+  observations:
+  - "事実: golden 1件FAIL。243293行中mismatch31710/missing0。display_ticker_weights主差分"
+  operational_simulation:
+    command: "grep -c 'id: AC' queue/tasks/tobisaru.yaml"
+    expected: "2"
+    actual: "2"
+    result: "PASS"
+  finding_categories: [assumptions, simulation, premortem, ambiguity, adversarial]
+  brainwash_check: "#1no #2no #3no #4no #5no #6no #7no #8no"
+  causal_chain: "golden mismatch31710→契約違反側確定→最小修正→CI GREEN"
+  origin: "[[CI_33985798406]] -> [[fof_golden]] -> [[APPROVE]]"
+  timestamp: "2026-09-06T06:15:00+09:00"
