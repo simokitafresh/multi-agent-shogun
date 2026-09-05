@@ -171,3 +171,74 @@ SH
   [[ "$output" == *'_cli_lookup_settings_get "$agent_name" "type"'* ]]
   [[ "$output" != *'@agent_cli "$cli"'* ]]
 }
+
+# test_necessity: forced pane recovery must preserve the active task identity
+# so a respawn cannot orphan the task from its worktree/report; ordinary idle
+# recovery and terminal failed recovery retain their existing lifecycle rules.
+@test "forced active respawn preserves task identity while idle and failed states remain stable" {
+  repo="$BATS_TEST_DIRNAME/../.."
+  cp "$repo/scripts/lib/task_lifecycle.sh" "$root/scripts/lib/"
+  cp "$repo/scripts/lib/yaml_field_set.sh" "$root/scripts/lib/"
+  cp "$repo/scripts/lib/field_get.sh" "$root/scripts/lib/"
+  mkdir -p "$root/queue/tasks"
+
+  cleanup_snippet="$root/respawn_cleanup_snippet.sh"
+  sed -n '/^# 通常respawn/,/^echo "\[agent_respawn\]/p' "$repo/scripts/agent_respawn.sh" | sed '$d' > "$cleanup_snippet"
+
+  run bash -c '
+set -euo pipefail
+fixture_root="$1"
+snippet="$2"
+source "$fixture_root/scripts/lib/task_lifecycle.sh"
+
+write_task() {
+  local state="$1"
+  cat > "$fixture_root/queue/tasks/worker.yaml" <<EOF
+task:
+  task_id: task-active-123
+  parent_cmd: cmd-parent-123
+  status: $state
+  task_worktree_workdir: /tmp/task-worktree
+  report_path: queue/reports/worker.yaml
+  report_filename: worker.yaml
+EOF
+}
+
+run_cleanup() {
+  local force="$1"
+  REPO_ROOT="$fixture_root" agent_name=worker RESPAWN_FORCE="$force" source "$snippet"
+}
+
+write_task in_progress
+run_cleanup 1
+python3 - "$fixture_root/queue/tasks/worker.yaml" <<"PY"
+import sys, yaml
+task = yaml.safe_load(open(sys.argv[1], encoding="utf-8"))["task"]
+assert task["status"] == "in_progress"
+assert task["task_id"] == "task-active-123"
+assert task["parent_cmd"] == "cmd-parent-123"
+assert task["task_worktree_workdir"] == "/tmp/task-worktree"
+assert task["report_path"] == "queue/reports/worker.yaml"
+PY
+
+write_task idle
+run_cleanup 0
+python3 - "$fixture_root/queue/tasks/worker.yaml" <<"PY"
+import sys, yaml
+task = yaml.safe_load(open(sys.argv[1], encoding="utf-8"))["task"]
+assert task["status"] == "idle"
+PY
+
+write_task failed
+run_cleanup 0
+python3 - "$fixture_root/queue/tasks/worker.yaml" <<"PY"
+import sys, yaml
+task = yaml.safe_load(open(sys.argv[1], encoding="utf-8"))["task"]
+assert task["status"] == "failed"
+assert task["task_id"] == "task-active-123"
+PY
+printf "forced_active=preserved normal_idle=idle failed=failed\n"
+' _ "$root" "$cleanup_snippet"
+  [ "$status" -eq 0 ]
+  [[ "$output" == *"forced_active=preserved normal_idle=idle failed=failed"* ]]
+}
