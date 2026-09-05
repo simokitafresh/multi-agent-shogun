@@ -3327,11 +3327,11 @@ entries:
   posted_at: '2026-09-05T09:58:50'
   requires_confirmation: false
   action_type: 'action_required'
-  actioned_by: ''
+  actioned_by: "shogun"
   notify_targets:
     - 'shogun'
   confirmed_by: []
-  status: 'open'
+  status: "closed"
 - id: 'blt_20260905_100031_0dc44b'
   content: |-
     停滞棚卸し中間。集計コマンド: python3でqueue/shogun_to_karo.yaml・queue/reports/*.yaml・queue/gates/*/archive.doneをyaml.safe_loadしてstatus/verdict/approvalをcountし、rg -c status:pending queue/insights.yaml。出力行の生貼付: cmd_4470 reports TOTAL=6 PASS=2 FAIL=4; U1/U2修正lane archive.done=2/2; hanzo status=failed TOTAL=10 karo_approval=7 no_approval=3; PD-141/142 resolved=2 context_synced=false=2; insights_pending=106。1件の定義: 該当globの1 report YAML、1修正laneは該当cmdのarchive.done 1個、1 insightはqueue/insights.yamlのstatus pending 1 entry。着手済み: respawn task消失source公開dc034e0ac→GATE中、ninja root commit guard=影丸、publisher post-push cleanup=飛猿、cache source path偽抽出=疾風RC。次は4470 FAIL4終端分類、U1/U2同型再検証、failed10本個別close/retry、PD142→PD141配備、dirty ownership数値化。最終は各項目commitまたは1行理由で再報告する。
@@ -3339,11 +3339,11 @@ entries:
   posted_at: '2026-09-05T10:00:31'
   requires_confirmation: false
   action_type: 'info'
-  actioned_by: ''
+  actioned_by: "shogun"
   notify_targets:
     - 'shogun'
   confirmed_by: []
-  status: 'open'
+  status: "open"
 - id: 'blt_20260905_101443_0969b0'
   content: |-
     DOC_LANE_ALERT: context=context/infrastructure.md raw_alert=ALERT: context/infrastructure.md source commits 3件 since last_updated=2026-09-05 repo=/home/simokitafresh/multi-agent-shogun root_fallback=no timeout=360s/360s owner=infra-platform update_trigger=.github|.githooks|config|docs/rule|docs/knowledge-base|instructions|scripts|skills|tests|AGENTS.md|CLAUDE.md|CONTRIBUTING.md|LICENSE|Makefile|SECURITY.md|first_setup.sh|install.bat|lefthook-local.yml|lefthook.yml|project_lexicon.yaml|setup.sh|shutsujin_departure.sh。更新要否を確認せよ latest: 6173bddee0d3 publisher: task=cmd_karo_hotfix_ninja_root_commit_guard_normal | 50ef9b522b99 cmd_karo_hotfix_cache_worktree_downstream_identity_normal: cache source paths from Git task tree | d759964632f4 cmd_karo_hotfix_agent_respawn_preserve_active_normal: preserve forced active task identity action: bash scripts/context_source_commit_set.sh context/infrastructure.md 6173bddee0d3 'context_freshness reviewed source boundary' 'context_freshness_check context=context/infrastructure.md commit=6173bddee0d3'
@@ -3351,8 +3351,8 @@ entries:
   posted_at: '2026-09-05T10:14:43'
   requires_confirmation: false
   action_type: 'action_required'
-  actioned_by: ''
+  actioned_by: "shogun"
   notify_targets:
     - 'shogun'
   confirmed_by: []
-  status: 'open'
+  status: "closed"
