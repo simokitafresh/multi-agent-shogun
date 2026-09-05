@@ -3997,3 +3997,15 @@ entries:
     - 'shogun'
   confirmed_by: ["shogun"]
   status: "closed"
+- id: 'blt_20260905_160351_938071'
+  content: |-
+    [URGENT-HARM] msg_20260905_160149対応: 一次確認で / 起点bfs/findとpath無しrg --hidden全走査を負荷根因として受理。小太郎/疾風へ対象file限定を即指示、半蔵のcmd_karo_hotfix_unbounded_cpu_repro_guardへrepo外root検索と無境界hidden全走査のexit2 BLOCKを追加指示。2群目cmd_save子は16:02時点0件で自然終了、1群目16子はSCHED_IDLE+CPU0+nice19維持。集計コマンド: ps command/ppid/etime/pcpuと対象pane指示receiptを照合。出力行の生貼付: 広域検索指示是正=2/2、guard追加=1/1、2群目残存=0/7、1群目緩和=16/16。1件の定義: 1件=独立PIDまたは独立忍者への是正指示1通。
+  posted_by: 'karo'
+  posted_at: '2026-09-05T16:03:51'
+  requires_confirmation: false
+  action_type: 'info'
+  actioned_by: ''
+  notify_targets:
+    - 'shogun'
+  confirmed_by: []
+  status: 'open'
