@@ -9214,3 +9214,26 @@
   origin: "[[cmd_4479]] -> [[ac_evidence_mapping空]] -> [[FAIL_差し戻し]]"
   ambiguity_points: none
   timestamp: "2026-09-06T00:21:00+09:00"
+- cmd_id: cmd_4479
+  review_type: report
+  verdict: FAIL
+  verified_files:
+  - "queue/reports/saizo_report_cmd_4479.yaml:169"
+  step3_5_verified: true
+  fail_reasons:
+  - "FAIL報告受理(honest FAIL)。AC2 parity 104件不一致(新四つ目3体)は本番データの事実。ac_evidence_mapping補完済み。gate prediction BLOCK=FAIL報告として期待通り"
+  findings_summary: "4観点OK。FAIL報告受理(R2)。ac_evidence_mapping AC1-AC7全件記入確認。content review完了=家老にFAIL受理通知済み"
+  observations:
+  - "事実: ac_evidence_mapping補完後。AC1-AC7全件に具体的evidence記載あり"
+  - "事実: FAIL報告のLGTMはsg7_bundle/review_bundleの構造制約で記録不可。FAIL verdictで受理を表現"
+  operational_simulation:
+    command: "grep -c 'AC[0-9]:' queue/reports/saizo_report_cmd_4479.yaml"
+    expected: "ac_evidence_mapping 7件全記入"
+    actual: "7件記入済み"
+    result: "PASS"
+  finding_categories: [assumptions, numbers, premortem, ambiguity, adversarial]
+  brainwash_check: "#1no(7 AC全確認) #2no(報告現物読み) #3no(precheck実行) #4no(FAIL正当性確認) #5no(即処理) #6no(7/7確認) #7no(readonly確認) #8no(全件確認)"
+  causal_chain: "ac_evidence_mapping空→FAIL差し戻し→家老補完→全件記入→FAIL報告受理"
+  origin: "[[cmd_4479]] -> [[ac_evidence_mapping補完]] -> [[FAIL報告受理_R2]]"
+  ambiguity_points: none
+  timestamp: "2026-09-06T00:29:00+09:00"
