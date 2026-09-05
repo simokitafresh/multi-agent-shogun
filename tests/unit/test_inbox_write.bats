@@ -1829,6 +1829,36 @@ YAML
     ! grep -q "cmd_test_002_redeployed" "$TEST_TMPDIR/queue/inbox/gunshi.yaml"
 }
 
+# test_necessity: after a worker slot is fully replaced, an explicit old-report
+# lifecycle notification must bind to that report's immutable task/parent,
+# never the current task slot. A different worker cannot claim the path.
+@test "report_received: explicit old report survives full task slot overwrite" {
+    setup_git_test_env
+    cat >> "$TEST_TMPDIR/queue/reports/testninja_report_cmd_test_001.yaml" <<'YAML'
+status: completed
+worker_id: testninja
+report_id: rpt-old-slot
+report_identity_version: 2
+task_id: cmd_test_001_normal
+parent_cmd: cmd_test_001
+YAML
+    sed -i 's|report_path:.*|report_path: queue/reports/testninja_report_cmd_test_002.yaml|' "$TEST_TMPDIR/queue/tasks/testninja.yaml"
+    sed -i 's/parent_cmd: cmd_test_001/parent_cmd: cmd_test_002/' "$TEST_TMPDIR/queue/tasks/testninja.yaml"
+    sed -i 's/task_id: cmd_test_001_normal/task_id: cmd_test_002_normal/' "$TEST_TMPDIR/queue/tasks/testninja.yaml"
+    git -C "$TEST_TMPDIR" add queue
+    git -C "$TEST_TMPDIR" commit -q -m full-slot-overwrite
+
+    run _run_inbox_write karo "報告完了 report=queue/reports/testninja_report_cmd_test_001.yaml" report_received testninja
+    [ "$status" -eq 0 ]
+    grep -q "task_id: 'cmd_test_001_normal'" "$TEST_TMPDIR/queue/inbox/karo.yaml"
+    grep -q "parent_cmd: 'cmd_test_001'" "$TEST_TMPDIR/queue/inbox/karo.yaml"
+    ! grep -q "cmd_test_002" "$TEST_TMPDIR/queue/inbox/karo.yaml"
+
+    run _run_inbox_write karo "報告完了 report=queue/reports/testninja_report_cmd_test_001.yaml" report_received kotaro
+    [ "$status" -ne 0 ]
+    [[ "$output" == *"worker mismatch"* || "$output" == *"task YAML"* ]]
+}
+
 @test "report_received: normal flow (no race) keeps attributing to task YAML's parent_cmd when report omits its own field" {
     setup_git_test_env
     run _run_inbox_write karo "報告完了" report_received testninja

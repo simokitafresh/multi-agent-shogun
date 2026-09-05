@@ -2879,10 +2879,34 @@ if inbox_type_triggers_report_completion "$TYPE"; then
     if [ "$is_ninja_reporter" -eq 1 ]; then
         TASK_YAML="$INBOX_CANONICAL_ROOT/queue/tasks/${FROM}.yaml"
         if [ -f "$TASK_YAML" ]; then
-            REPORT_PATH=$(inbox_yaml_field_get "$TASK_YAML" "report_path" "")
-
             FULL_REPORT=""
-            if [ -n "$REPORT_PATH" ]; then
+            EXPLICIT_REPORT_USED=0
+            # A worker slot can already contain a later assignment when an old
+            # terminal report is re-published. Prefer an explicit report path
+            # from the lifecycle message, then authenticate worker_id from the
+            # report itself. The mutable task slot is only the legacy fallback.
+            EXPLICIT_REPORT=$(inbox_extract_report_path_from_content "$CONTENT")
+            if [ -n "$EXPLICIT_REPORT" ]; then
+                [[ "$EXPLICIT_REPORT" = /* ]] || EXPLICIT_REPORT="$SCRIPT_DIR/$EXPLICIT_REPORT"
+                [ -f "$EXPLICIT_REPORT" ] || {
+                    echo "[report_format_gate] BLOCKED: explicit report path not found: $EXPLICIT_REPORT" >&2
+                    exit 1
+                }
+                REPORT_WORKER=$(inbox_yaml_field_get "$EXPLICIT_REPORT" "worker_id" "")
+                [ "$REPORT_WORKER" = "$FROM" ] || {
+                    echo "[report_format_gate] BLOCKED: explicit report worker mismatch: expected=$FROM actual=${REPORT_WORKER:-missing}" >&2
+                    exit 1
+                }
+                FULL_REPORT="$EXPLICIT_REPORT"
+                EXPLICIT_REPORT_USED=1
+                REPORT_PATH="${EXPLICIT_REPORT#"$SCRIPT_DIR/"}"
+            else
+                REPORT_PATH=$(inbox_yaml_field_get "$TASK_YAML" "report_path" "")
+            fi
+
+            if [ -n "$FULL_REPORT" ]; then
+                :
+            elif [ -n "$REPORT_PATH" ]; then
                 FULL_REPORT="$SCRIPT_DIR/$REPORT_PATH"
                 if [ ! -f "$FULL_REPORT" ]; then
                     FULL_REPORT=$(inbox_resolve_archived_report_for_task "$FULL_REPORT" "$TASK_YAML") || exit 1
@@ -2911,9 +2935,13 @@ if inbox_type_triggers_report_completion "$TYPE"; then
             fi
 
             if [ -n "${FULL_REPORT:-}" ] && [ -f "$FULL_REPORT" ]; then
-                _REPORT_IDENTITY=$(inbox_resolve_report_identity "$FULL_REPORT" "$TASK_YAML") || exit 1
+                if [ "$EXPLICIT_REPORT_USED" -eq 1 ]; then
+                    _REPORT_IDENTITY=$(inbox_resolve_report_identity "$FULL_REPORT") || exit 1
+                else
+                    _REPORT_IDENTITY=$(inbox_resolve_report_identity "$FULL_REPORT" "$TASK_YAML") || exit 1
+                fi
                 IFS=$'\t' read -r STRUCTURED_REPORT_ID STRUCTURED_REPORT_VERSION STRUCTURED_REPORT_PATH <<< "$_REPORT_IDENTITY"
-                STRUCTURED_TASK_ID=$(inbox_yaml_field_get "$TASK_YAML" "task_id" "")
+                STRUCTURED_TASK_ID=$(inbox_yaml_field_get "$FULL_REPORT" "task_id" "")
                 # cmd_4163: 報告YAML自身のparent_cmdを一次として帰属を解決する。
                 # task YAMLは配備間隔中に次cmdへ差し替わり得るため、その現在値を
                 # 一次にすると「旧cmd向け報告が新cmdへ誤帰属する」raceが起きる
@@ -2921,7 +2949,7 @@ if inbox_type_triggers_report_completion "$TYPE"; then
                 # 変化しないので、こちらを一次・task YAMLはレガシー報告
                 # (parent_cmd未記載)向けのfallbackに限定する。
                 STRUCTURED_PARENT_CMD=$(inbox_yaml_field_get "$FULL_REPORT" "parent_cmd" "")
-                [ -n "$STRUCTURED_TASK_ID" ] || STRUCTURED_TASK_ID=$(inbox_yaml_field_get "$FULL_REPORT" "task_id" "")
+                [ -n "$STRUCTURED_TASK_ID" ] || STRUCTURED_TASK_ID=$(inbox_yaml_field_get "$TASK_YAML" "task_id" "")
                 [ -n "$STRUCTURED_PARENT_CMD" ] || STRUCTURED_PARENT_CMD=$(inbox_yaml_field_get "$TASK_YAML" "parent_cmd" "")
                 STRUCTURED_REPORT_FINGERPRINT=$(inbox_report_fingerprint "$FULL_REPORT" "$STRUCTURED_REPORT_ID:$STRUCTURED_REPORT_VERSION") || exit 1
                 STRUCTURED_REVISION_FINGERPRINT=$(inbox_report_revision_fingerprint "$TYPE" "$ACTION" "$CONTENT")
@@ -3329,6 +3357,13 @@ case "$TYPE" in
                 STRUCTURED_PARENT_CMD_FROM_YAML="$STRUCTURED_PARENT_CMD"
             fi
             [ -n "$_structured_candidate" ] || { echo "BLOCK: report notification missing structured report identity" >&2; exit 1; }
+            if [ "${is_ninja_reporter:-0}" -eq 1 ]; then
+                _structured_worker=$(inbox_yaml_field_get "$_structured_candidate" "worker_id" "")
+                [ "$_structured_worker" = "$FROM" ] || {
+                    echo "BLOCK: report notification worker mismatch: expected=$FROM actual=${_structured_worker:-missing}" >&2
+                    exit 1
+                }
+            fi
             if [ -z "${STRUCTURED_REPORT_ID:-}" ]; then
                 _REPORT_IDENTITY=$(python3 "$SCRIPT_DIR/scripts/lib/report_unique_identity.py" fallback --path "$_structured_candidate" --root "$SCRIPT_DIR") || exit 1
                 IFS=$'\t' read -r STRUCTURED_REPORT_ID STRUCTURED_REPORT_VERSION STRUCTURED_REPORT_PATH <<< "$_REPORT_IDENTITY"
