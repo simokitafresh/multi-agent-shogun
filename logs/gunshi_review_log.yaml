@@ -9706,3 +9706,25 @@
   verdict: LGTM
   verified_files:
   - queue/reports/kotaro_report_cmd_4480_recon2.yaml:99
+- cmd_id: cmd_4480_recon2
+  review_type: report
+  verdict: FAIL
+  verified_files:
+  - "queue/reports/kotaro_report_cmd_4480_recon2.yaml:99"
+  step3_5_verified: true
+  fail_reasons:
+  - "R6。内容LGTM。SG-PRE29偽陽性でbundle BLOCK。前回R4/R5 bundle済み。家老通知"
+  findings_summary: "内容OK。bundle BLOCK(SG-PRE29 FP)→家老通知"
+  observations:
+  - "事実: standalone precheck ERRORS=0だがbundle内 ERRORS=1(SG-PRE29)"
+  operational_simulation:
+    command: "grep -c \"result: 'yes'\" queue/reports/kotaro_report_cmd_4480_recon2.yaml"
+    expected: "4"
+    actual: "4"
+    result: "PASS"
+  finding_categories: [assumptions, numbers, premortem, ambiguity, adversarial]
+  brainwash_check: "#1no #2no #3no #4no #5no #6no #7no #8no"
+  causal_chain: "SG-PRE29偽陽性→bundle BLOCK→家老通知"
+  origin: "[[cmd_4480_recon2]] -> [[SG-PRE29_FP]] -> [[FAIL記録]]"
+  ambiguity_points: none
+  timestamp: "2026-09-06T01:54:00+09:00"
