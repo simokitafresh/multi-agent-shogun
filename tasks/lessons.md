@@ -17292,3 +17292,17 @@ sqlite3.Connection.backup()を使うとページ(4096byte)単位のread syscall�
 - **when**: 未設定
 - **how**: 未設定
 - cmd_karo_recon_w1_routine_contract_20260905のAC1調査で、inject_readonly_refs/inject_standard_skills/resolve_cmd_to_taskの3関数についてgiant file(scripts/deploy_task.sh)とmodule file(scripts/deploy_task/context_injection.sh, resolve.sh)を実測diffした結果、現時点では完全一致(0 diff)だったが、これは自動同期の保証ではなく手動維持である。resolve_cmd_to task/deploy_task_apply_task_mutationsはさらにdeploy_task.sh L12517-12583でdeclare -fによる動的wrapperが追加されており、target_pathとして module file を直接編集するだけで足りるが、純粋な新規inject_*関数の追加はgiant file側への複製要否をtest構成から個別確認する必要がある
+
+
+### L1755: deploy_task.sh(巨大file)とscripts/deploy_task/*.sh(分割module)は同名関数を文字列として二重定義しており、source順序でmodule側が実効定義になる。新規inject_*関数を追加する際はmodule側(context_injection.sh等)に実装すれば動作するが、test_deploy_task.batsの一部はgiant file側をsed抽出して直接検査するため、giant file側にも同文言を複製しないと当該testが空/存在しない関数を検査してしまう
+- **日付**: 2026-09-06
+- **出典**: cmd_karo_recon_w1_routine_contract_20260905
+- **記録者**: tobisaru
+- **tags**: [infra,deploy,testing,recon]
+- **subdomain**: infra
+- **target_files**: [偵察のみ]
+- **origin**: [[cmd_karo_recon_w1_routine_contract_20260905]]
+- **enforcement**: 未自動化
+- **when**: 未設定
+- **how**: 未設定
+- cmd_karo_recon_w1_routine_contract_20260905のAC1調査で、inject_readonly_refs/inject_standard_skills/resolve_cmd_to_taskの3関数についてgiant file(scripts/deploy_task.sh)とmodule file(scripts/deploy_task/context_injection.sh, resolve.sh)を実測diffした結果、現時点では完全一致(0 diff)だったが、これは自動同期の保証ではなく手動維持である。resolve_cmd_to task/deploy_task_apply_task_mutationsはさらにdeploy_task.sh L12517-12583でdeclare -fによる動的wrapperが追加されており、target_pathとして module file を直接編集するだけで足りるが、純粋な新規inject_*関数の追加はgiant file側への複製要否をtest構成から個別確認する必要がある
