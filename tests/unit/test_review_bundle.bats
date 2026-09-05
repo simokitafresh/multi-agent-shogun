@@ -421,3 +421,137 @@ with tempfile.TemporaryDirectory() as tmp:
 PY
   [ "$status" -eq 0 ]
 }
+
+# test_necessity: INS-20260905-135853 — gate_gunshi_report_precheck.sh's SG-PRE28
+# (LG044/ac_evidence_mapping) used to leave the shell ERRORS counter at 0 even
+# though the engine had already fixed GATE_PREDICTION=BLOCK for the same
+# condition. A direct terminal run then showed "ERRORS=0" while exiting 1, and
+# review_bundle.py's _batch_precheck (which trusts an "ERRORS=0" match in the
+# evidence text to downgrade a nonzero exit to an advisory WARN) silently let a
+# real honest-report/AC-evidence gap through review. Both invocation paths must
+# reach the identical verdict for the identical fixture.
+setup_gunshi_precheck_parity_fixture() {
+  REPO_ROOT="$(cd "$BATS_TEST_DIRNAME/../.." && pwd)"
+  GATE="$REPO_ROOT/scripts/gates/gate_gunshi_report_precheck.sh"
+  FIX_DIR="$BATS_TEST_TMPDIR/parity_fixture"
+  mkdir -p "$FIX_DIR/tasks"
+  cat > "$FIX_DIR/tasks/kagemaru.yaml" <<'YAML'
+task:
+  binary_checks:
+    AC1:
+      - check: concrete check
+        result: yes
+YAML
+  cat > "$FIX_DIR/report.yaml" <<'YAML'
+worker_id: kagemaru
+parent_cmd: cmd_parity_fixture
+status: completed
+timestamp: "2026-09-05T00:00:00"
+origin: "[[cmd_parity_fixture]] -> [[fixture_cause]] -> [[fixture_result]]"
+assumption_check: "未確認前提なし"
+ac_version_read: fixture
+task_clarity:
+  score: 100
+  unclear_points: なし
+  discretion_fills: なし
+result:
+  summary: "fixture summary"
+files_modified:
+  - path: scripts/report_field_set.sh
+    change: fixture change
+purpose_validation:
+  cmd_purpose: fixture
+  fit: true
+  purpose_gap: ""
+lesson_candidate:
+  found: false
+  no_lesson_reason: fixture
+lessons_useful: []
+assumption_invalidation:
+  found: false
+  affected_cmds: []
+  detail: ""
+decision_candidate:
+  found: true
+  title: fixture decision (honest_report_flag trigger)
+  detail: fixture detail needing lord judgement
+ac_evidence_mapping:
+  AC1: ""
+binary_checks:
+  AC1:
+    - check: concrete check
+      result: yes
+operational_simulation:
+  command: "bash scripts/gates/gate_gunshi_report_precheck.sh fixture"
+  expected: "exit 0/1"
+  actual: "exit 1"
+  result: PASS
+verdict: PASS
+YAML
+  export GUNSHI_PRECHECK_TASKS_DIR="$FIX_DIR/tasks"
+  export GATE_NO_LOG=1
+}
+
+@test "direct shell ERRORS count matches its own BLOCK exit for ac_evidence_mapping gap" {
+  setup_gunshi_precheck_parity_fixture
+  export GUNSHI_PRECHECK_CACHE_DIR="$FIX_DIR/cache_direct"
+  run bash "$GATE" "$FIX_DIR/report.yaml"
+  [ "$status" -eq 1 ]
+  [[ "$output" == *"GATE_PREDICTION=BLOCK"* ]]
+  [[ "$output" == *"正直報告あり×AC evidence mapping欠落(LG044)"* ]]
+  # The historical bug: ERRORS stayed 0 while GATE_PREDICTION was already BLOCK.
+  # A fail-closed gate must count this condition, not just narrate it.
+  [[ "$output" == *"=== 総合: ERRORS=1 ==="* ]]
+  [[ "$output" != *"=== 総合: ERRORS=0 ==="* ]]
+}
+
+@test "review_bundle internal precheck rejects the same fixture it shell-BLOCKs on" {
+  setup_gunshi_precheck_parity_fixture
+  export GUNSHI_PRECHECK_CACHE_DIR="$FIX_DIR/cache_bundle"
+  run python3 - "$REPO_ROOT" "$FIX_DIR/report.yaml" <<'PY'
+import sys
+sys.path.insert(0, f"{sys.argv[1]}/scripts")
+import review_bundle
+from pathlib import Path
+
+root = Path(sys.argv[1]).resolve()
+item = {"report": sys.argv[2], "cmd": "cmd_parity_fixture", "verdict": "APPROVE", "review_entry": {}}
+try:
+    result = review_bundle._batch_precheck(root, item)
+except ValueError as exc:
+    print(f"BLOCKED: {exc}"[:200])
+    raise SystemExit(0)
+raise SystemExit(f"expected precheck to raise (BLOCK), got status={result['status']!r}")
+PY
+  [ "$status" -eq 0 ]
+  [[ "$output" == *"BLOCKED:"* ]]
+  # The historical bug shape: silently downgraded to an advisory warning while
+  # a real AC-evidence gap on an honest report went unreviewed.
+  [[ "$output" != *"status=\"WARN\""* ]]
+}
+
+@test "ac_evidence_mapping gap verdict is identical across cwd and cache warm/cold state" {
+  setup_gunshi_precheck_parity_fixture
+  export GUNSHI_PRECHECK_CACHE_DIR="$FIX_DIR/cache_shared"
+
+  # Different cwd, absolute report path: same repo/task resolution root either way.
+  # (docs/ is used rather than /tmp: REPO_ROOT resolves via BASH_SOURCE regardless
+  # of cwd, but an unrelated helper — scripts/lib/repo_root.sh get_repo_root, used
+  # transitively via project_path.sh — still shells out to a bare
+  # `git rev-parse --show-toplevel` with no -C anchor, so a cwd outside any git
+  # worktree breaks unrelated to this fixture. That gap is tracked separately and
+  # is out of this hotfix's target_path; this test stays inside the same repo.)
+  run bash -c 'cd "$1" && bash "$2" "$3"' _ "$REPO_ROOT/docs" "$GATE" "$FIX_DIR/report.yaml"
+  cwd_status="$status"; cwd_output="$output"
+  [ "$cwd_status" -eq 1 ]
+  [[ "$cwd_output" == *"=== 総合: ERRORS=1 ==="* ]]
+
+  # Cache cold (first call above already populated it) vs warm (this repeat call
+  # must hit the cache and still agree with the cold-path verdict). A cache hit
+  # legitimately adds a "cache応答" stderr note, so compare the substantive
+  # verdict (exit status + ERRORS tally), not the byte-for-byte merged output.
+  run bash "$GATE" "$FIX_DIR/report.yaml"
+  [ "$status" -eq "$cwd_status" ]
+  [[ "$output" == *"cache応答"* ]]
+  [[ "$output" == *"=== 総合: ERRORS=1 ==="* ]]
+}

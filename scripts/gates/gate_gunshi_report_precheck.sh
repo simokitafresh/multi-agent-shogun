@@ -1129,14 +1129,23 @@ _ninja_task_files=()
 for _nn in $(get_ninja_names 2>/dev/null); do
     [ -f "$REPO_ROOT/queue/tasks/${_nn}.yaml" ] && _ninja_task_files+=("$REPO_ROOT/queue/tasks/${_nn}.yaml")
 done
-BUSY_NINJAS=$(awk '
-    /^[[:space:]]*status:/ {
-        st=$2; gsub(/["'"'"']/, "", st)
-        if (st=="in_progress" || st=="acknowledged") busy++
-        nextfile
-    }
-    END{print busy+0}
-' "${_ninja_task_files[@]}" 2>/dev/null || echo 0)
+# INS-20260905-135853調査で判明: REPO_ROOT配下にqueue/tasks/*.yamlが1件も存在しない
+# 実行コンテキスト(例: task worktree root。queue/tasksはgitignore対象で存在しない)では
+# _ninja_task_filesが空配列になり、"${_ninja_task_files[@]}"が引数0個に展開される。
+# 引数0個のawkはファイルの代わりにstdinを読みに行き、非対話実行では入力が来ず無限ハングする
+# (review_bundle.py経由のsubprocess.runにはtimeout指定が無いため、そのまま呼出元ごと停止する)。
+if [ "${#_ninja_task_files[@]}" -eq 0 ]; then
+    BUSY_NINJAS=0
+else
+    BUSY_NINJAS=$(awk '
+        /^[[:space:]]*status:/ {
+            st=$2; gsub(/["'"'"']/, "", st)
+            if (st=="in_progress" || st=="acknowledged") busy++
+            nextfile
+        }
+        END{print busy+0}
+    ' "${_ninja_task_files[@]}" 2>/dev/null || echo 0)
+fi
 if [ "$BUSY_NINJAS" -ge 3 ]; then
     echo "  ★★★ WARN: ${BUSY_NINJAS}名の忍者が稼働中。before/after計測値がWSL2 I/O負荷で汚染されている可能性。全忍者idle後の再計測を推奨"
 elif [ "$BUSY_NINJAS" -ge 1 ]; then
@@ -1734,11 +1743,17 @@ if ! _sg_pre27_check "$REPORT_PATH"; then
 fi
 
 # ─── SG-PRE28: 正直報告×AC本旨1:1 evidence BLOCK(LG044) ───
+# INS-20260905-135853: engineは AC_EVIDENCE_MAPPING_MISSING=1 で GATE_PREDICTION=BLOCK を
+# 既に確定させる(engine.py L839-844)。ここでERRORSへ反映せず「BLOCK予測しない」とだけ
+# echoすると、ERRORS=0のまま終端がBLOCK(exit 1)になり、shell直接実行の「ERRORS=0」表示と
+# review_bundle.py内部呼出しの実際の判定(BLOCK)が乖離して見える(=parity break)。
+# ERRORSをGATE_PREDICTIONと同じ結論に固定し、単一の真実源(GATE_PREDICTION)に揃える。
 echo ""
 echo "■ SG-PRE28: 正直報告×AC本旨照合(LG044)"
 if [ "${AC_EVIDENCE_MAPPING_MISSING:-0}" = "1" ]; then
-    echo "  WARN: 正直報告フラグあり・binary_checks全yesだがac_evidence_mapping欠落: ${AC_EVIDENCE_MAPPING_MISSING_KEYS}"
-    echo "  → LG044: レビュー観点として確認せよ(gateにac_evidence_mappingチェックなし=BLOCK予測しない)"
+    echo "  ERROR: 正直報告フラグあり・binary_checks全yesだがac_evidence_mapping欠落: ${AC_EVIDENCE_MAPPING_MISSING_KEYS}"
+    echo "  → LG044: gate_prediction=BLOCK(engine確定済み)。ERRORSへ計上し直接実行/内部呼出しの結論を一致させる"
+    ERRORS=$((ERRORS + 1))
 elif [ "${HONEST_REPORT_FLAG:-0}" = "1" ]; then
     echo "  PASS: 正直報告フラグあり、全非commit ACのac_evidence_mappingを確認"
 else
