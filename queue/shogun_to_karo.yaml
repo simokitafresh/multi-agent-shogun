@@ -46,52 +46,6 @@ commands:
       environment_change: "type=lesson; file=docs/research/dm-signal-lp-seo-plan_20260830.md; pattern=外部意見に無理に従わない"
     delegated_at: "\"2026-09-05T03:20:17\""
     origin: "[[殿指示_CoreVsSimple_FreeInteractiveProof_20260905]] -> [[正本3本に可視性PF別現物とattribution識別手段が無い]] -> [[cmd_4476_AsIs偵察]]"
-  cmd_4475:
-    title: "DM-Signal LP SEO 監査(外部意見 12 Phase の本番突合)+実在 2 件の最小修正(JA 全頁 html lang / JSON-LD Organization・WebSite の url 統一と logo)"
-    status: delegated
-    project: dm-signal
-    purpose: "殿 2026-09-05 02:15『DM-signal の LP について意見が来た。全て取り入れる必要はない。先に調査確認して問題がなければ慌てて対応しない。修正の指示に無理に従う必要もない。設計書は取り入れるべきところだけ』。将軍が 02:16-02:20 本番 curl(Googlebot UA)で一次確認した結果、Critical 0、実在する High は 2 件だけ(JA 全頁 <html lang=\"en\">、Organization/WebSite url が /ja/ 言語別+logo が OG 画像)。この cmd は (1) 外部意見 12 Phase を本番現物で 5 分類に突合した監査報告 (2) 実在 2 件だけの最小修正 (3) deploy 後の本番 curl 再確認、を達成する。LP を分解・肥大化・SSR 化しない(設計書 v6 §0.1/§3)"
-    scope_mode: FULL
-    target_path: /mnt/c/Python_app/DM-signal
-    acceptance_criteria:
-      AC1:
-        description: "外部意見の Phase 1-9 を本番 https://dm-signal.com(Googlebot UA の curl: /、/ja/、/signals/、/ja/signals/、月次 2 頁、robots.txt、sitemap.xml、404、www、http)と origin/main の lp/ 現物で突合し、Critical/High/Medium/Low/Already Good の 5 分類で docs/research/cmd_4475_lp_seo_audit_20260905.md に『現状・証拠(ファイル行 or curl 出力の生貼付)・SEO 上の意味・変更案・リスク』を書き、将軍の一次確認(設計書 v6 §0.1 の 8 行)との差分を明記し、context/dm-signal-frontend.md に §『LP SEO 監査 09-05』として結論 3 行+参照パスを還流して、test -s で成果物の現物を確認する"
-        binary_check: "test -s docs/research/cmd_4475_lp_seo_audit_20260905.md が真 ∧ 5 分類全てに項目がある(該当なしは『なし』と明記) ∧ 各項目に curl 出力 or ファイル行の生貼付 ∧ 将軍 §0.1 との差分節がある ∧ context/dm-signal-frontend.md に §『LP SEO 監査 09-05』がある ∧ 推測語(おそらく/と思われる)0 か?"
-      AC2:
-        description: "AC1 で実在が確認された 2 件だけを直す: (a) lp/app/layout.tsx の <html lang=\"en\"> 固定を、/ja/ 配下では lang=\"ja\" になる構成(ja 用 layout か route segment 判定)へ (b) lp/components/structured-data.tsx の Organization/WebSite url を https://dm-signal.com/ に統一し、logo は正方形ロゴ資産があればそれへ、無ければ url 統一のみ。lp の typecheck(tsc --noEmit)と build(next build+assert-holding.mjs、静的 export を含む)を全量実行し FAIL 0/SKIP 0 で commit する(公開は配備側の lane)。lint は lp/package.json に script も eslint 依存も無い(origin/main 現物、将軍確認 09-05 07:59)ため AC 対象外。lint 基盤の追加は本 cmd の最小修正境界の外(別 cmd)"
-        binary_check: "diff が layout/structured-data(+必要なら ja layout 1 file)に限られる ∧ 静的 export 後の out/ja/index.html が lang=\"ja\" ∧ out/index.html が lang=\"en\" ∧ JSON-LD の Organization.url と WebSite.url が https://dm-signal.com/ ∧ typecheck と build が FAIL 0 SKIP 0 か?"
-      AC3:
-        description: "deploy(Render dm-signal-lp、build 時刻 > backend live 時刻の契約は ops §101)後に本番 curl で /、/ja/、/ja/signals/、/ja/signals/2026-08/ の <html lang> と JSON-LD url を再取得して生貼付し、hreflang 3 本・canonical・sitemap 558 URL・robots が変わっていないことを確認する"
-        binary_check: "本番 /ja/ 系 3 頁が lang=\"ja\" ∧ / が lang=\"en\" ∧ Organization.url=WebSite.url=https://dm-signal.com/ ∧ canonical/hreflang/sitemap loc 数/robots が修正前と同一 か?"
-    command: |
-      1. AC1: 本番 curl(-A Googlebot UA)と origin/main の lp/ 現物で 12 Phase を突合し、5 分類の監査 md を書く(実装しない。存在しない機能を提案しない)
-      2. AC2: 実在 2 件だけ修正→lp の build/lint/静的 export 全量→commit(1 commit)
-      3. AC3: deploy→本番 curl 再確認→生貼付(post_deploy_evidence)
-    assumptions:
-      claim: "本番 /ja/ は <html lang=\"en\">、Organization/WebSite url は https://dm-signal.com/ja/、logo は og-ja.png 1200×630(将軍 curl 2026-09-05 02:17-02:19)。origin/main lp/app/layout.tsx:24 が <html lang=\"en\"> 固定、lp/app/ja/ に layout.tsx なし(git show origin/main 02:22)。Critical(index/canonical/sitemap/robots/404)は問題なし"
-      source: "本番 curl 出力(設計書 v6 §0.1 表)/ DM-signal origin/main 5b054270 lp/app/layout.tsx, lp/components/structured-data.tsx / docs/research/dm-signal-lp-seo-plan_20260830.md v6 §0.1 §3"
-      trust: verified
-    depends_on: none
-    timeout_minutes: 30
-    estimated_minutes: 10
-    quality_gate:
-      q1_firefighting: "消火ではない。外部意見を鵜呑みにせず本番現物で 5 分類に突合し、実在する 2 件だけを直す品質管理。問題の無い項目は触らない"
-      q2_learning: "忍者が『外部 LLM の提案 vs 本番現物』の突合手順(Googlebot UA curl、origin/main 現物、5 分類報告)を実践する。将軍の一次確認との差分を書かせるのは第三者検証"
-      q3_next_quality: "監査 md が LP 改修(第二段階の複数 LP)時の基準線になる。lang/JSON-LD の修正は将来 LP を増やしても再利用される構成(route 別 lang)"
-      q4_depth: "medium — 12 Phase を本番現物で確認するが実装は 2 件に限る"
-      q5_verified_source: "production_verified — 将軍が 2026-09-05 02:16-02:20 に curl -A Googlebot で /、/ja、/ja/、/signals/、/ja/signals/、月次 2 頁、robots、sitemap(loc 558)、404、www、http、?utm を取得。/ja/ は lang=en、canonical /ja/、hreflang 3 本×2 回、JSON-LD Organization(url /ja/、logo og-ja.png 1200×630)/WebSite(url /ja/)/FAQPage。origin/main で lp/app/layout.tsx:24 <html lang=\"en\">、lp/app/ja/ に layout なし、structured-data.tsx に Organization"
-      q6_not_hiding: "Critical 0 と Already Good 12 項目を設計書 v6 §0.1 に明記。JP からの / 302 は Cloudflare geo 規則(殿設定)であり修正対象外と書いた"
-      q7_definition_verified: "5 分類=外部意見の Phase 10 定義(Critical=index 実害/High=改善価値大/Medium/Low/Already Good)。lang 属性=HTML の言語宣言で Google は無視するが支援技術・翻訳・Bing に影響(確認日 2026-09-05)"
-      q8_why_what: "WHY: 外部意見 12 Phase のうち本番で実在するのは JA 全頁 lang=en と JSON-LD url/logo の 2 件(Critical 0) / WHAT: 5 分類監査 md 1 本+lp/app/layout.tsx と lp/components/structured-data.tsx の修正 1 commit+deploy 後の本番 curl 生貼付(/ja/ 3 頁 lang=ja、Organization.url=https://dm-signal.com/) / WHEN: 今セッション / WHERE: /mnt/c/Python_app/DM-signal/lp、本番 dm-signal.com / WHO: 忍者1名 / HOW: Googlebot UA curl+origin/main 現物+静的 export+deploy / 複利: 監査 md が第二段階(複数 LP)の基準線になり、外部意見が来るたびに本番突合の型で処理できる"
-      q9_firefighting_root_cause: "root_cause: lp/app/layout.tsx の Root Layout が単一で <html lang=\"en\"> を固定し、/ja/ 配下に言語別 layout が無い(origin/main 5b054270 で確認)。JSON-LD は各言語ページで自身の URL を Organization/WebSite url に入れていた / prevention: route 別に lang を決める構成にし、Organization/WebSite url を定数 https://dm-signal.com/ に固定する。AC3 で本番 curl の生貼付を必須にし、監査 md を第二段階(複数 LP)の基準線として残す"
-      q10_knowledge_boundary: "検証済み=本番 HTML/HTTP(JP からの取得)、origin/main の lp/。スコープ外=title 再検討、CWV 全面計測、GA 導入、外部記事修正、複数 LP 設計、Googlebot(US)から見た / の 302 有無(Search Console URL 検査で殿が確認)"
-      q11_not_already_done: "rg -c 'html lang|Organization.*url' context/cmd-chronicle.md → 0件。semantic_search.sh 'LP SEO html lang Organization JSON-LD' → LP lang 修正 cmd なし(直近は GA-577 gate)。設計書 v5 までに lang/Organization url の項目なし"
-      q_ambiguity: "『logo』はロゴ資産の有無で分岐(無ければ url 統一のみ)と明記。/ja の non-slash は両方 200 で canonical /ja/ のため触らない"
-      q12_lord_30min_cost: "no"
-      diagnosis: "BLOCK理由: 初回 preflight で q9 の root_cause/prevention 欠落、AC の推奨語混在、LK-A10(成果物 prefix・test -s・context 還流)不足、AC の push 語、q4 medium の時間 WARN / 対策: q9 を root_cause/prevention 構造に、AC1 を cmd_4475_ prefix+test -s+context/dm-signal-frontend.md 還流に、推奨→変更案、push→公開(配備側)に書換え。新規ファイル docs/research/cmd_4475_lp_seo_audit_20260905.md は監査報告の恒久保存先として意図的新設(設計書は索引層、詳細は docs/research)。時間 WARN は AC3 が deploy 待ちを含むためで、実装は 2 file に限定済み"
-      environment_change: "type=lesson; file=docs/research/dm-signal-lp-seo-plan_20260830.md; pattern=外部意見に無理に従わない"
-    delegated_at: "\"2026-09-05T02:32:07\""
-    origin: "[[殿指示_LP_SEO外部意見_20260905]] -> [[本番curl一次確認_JA_lang_en_JSONLD_url_ja]] -> [[cmd_4475_最小修正2件]]"
   cmd_4470:
     title: "偵察(全ロール・第 3 回): PUBLISHER_SINGLE ON(09-03 04:37)以降の便を止める『つまり』を 8 分類(偽陽性/過剰 BLOCK/構造バグ/循環拘束/遅い script・test/Claude↔Codex 仕組み差/サンクコスト過剰複雑化/影響範囲・依存未解明の浅い対応)で全数リストアップし、忍者 6 名は領域分担で queue/notes/tsumari_r3_<name>.md に、軍師・家老は各節を書き、将軍が tsumari_root_causes_20260901.md 第 3 回へ統合する"
     status: in_progress
