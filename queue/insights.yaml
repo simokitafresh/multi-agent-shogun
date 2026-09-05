@@ -18182,7 +18182,9 @@ insights:
   priority: "low"
   source: "semantic_index_update"
   fix_known: false
-  status: pending
+  status: "resolved"
+  action_artifact: "semantic_map=/home/simokitafresh/multi-agent-shogun/context/semantic-map.md;semantic_index=/home/simokitafresh/multi-agent-shogun/docs/semantic-index/index.md"
+  resolved_reason: "semantic map generation verified the candidate is represented or intentionally ignored"
 - id: INS-20260905-125806338-c403
   ts: "2026-09-05T12:58:06+09:00"
   insight: "semantic_index_update未登録cmd originノード: [[cmd_4475_最小修正2件]] は既存aliasesに一致なし。類似概念TOP3: unread_cmd_new_deployment_guard(未読cmd_new配備漏れ防止; alias=cmd_3457配備漏れ; score=21.4) / strong_new_game_completion_contract(強くてニューゲーム完遂契約; alias=cmd_4200復帰点; score=21.0) / gate_bypass_prevention(ゲート迂回防止; alias=cmd_3132_L4化; score=21.0)。概念定義とaliases追加を検討せよ"
