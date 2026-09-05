@@ -17376,3 +17376,17 @@ sqlite3.Connection.backup()を使うとページ(4096byte)単位のread syscall�
 - **when**: 未設定
 - **how**: 未設定
 - checkerが複数split contextへ同一source commitを検出してGROUPを生成しても、gateがWARN/ALERT以外を無視すると完了/doc laneへ共有カテゴリが届かない。gate boundaryでGROUPを保持表示し、2件→0件fixtureを固定する。
+
+
+### L1761: deploy_task.shのif false デッドコードはgrep行番号では生死判定できない。declare -fで実行時確認せよ
+- **日付**: 2026-09-06
+- **出典**: cmd_karo_hotfix_recon_dual_projection_fixed_base_20260906
+- **記録者**: kotaro
+- **tags**: [infra,deploy-task,deploy,recon,bash]
+- **subdomain**: infra
+- **target_files**: [scripts/deploy_task/resolve.sh,scripts/deploy_task/modifiers.sh,scripts/deploy_task.sh,tests/unit/test_deploy_task_yaml_injection.bats]
+- **origin**: [[cmd_karo_hotfix_recon_dual_projection_fixed_base_20260906]]
+- **enforcement**: 未自動化
+- **when**: 未設定
+- **how**: 未設定
+- cmd_4480 A1/A2根治調査でscripts/deploy_task.sh内のresolve_cmd_to_task旧定義/ inject_independent_recon_contract旧定義/deploy_task_prepare_remote_tip_worktree旧 定義が全て`if false; then ... fi`ブロック内(コメント「Legacy static-extraction compatibility: runtime definitions come only from resolve.sh.」)にあり、後続で scripts/deploy_task/resolve.sh・modifiers.sh・preflight.shがsourceされ同名関数を 上書きするため実行時には一切実行されないと判明した。修正対象を特定する際はgrep行 番号を信じず、`export DEPLOY_TASK_LIB_ONLY=1; source scripts/deploy_task.sh; declare -f <func>`で実際に有効な定義とその出典ファイルを確認してから編集すること。 本taskではこの確認により、真の修正対象がresolve.sh/modifiers.shであり、worktree 生成の真の修正対象はcommit_contract.planned_pathsに含まれないscripts/deploy_task/preflight.sh だったことが判明した(deploy_task.sh側に独立経路を新設して対処)。
