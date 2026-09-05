@@ -290,8 +290,19 @@ function yaml_safe(v,    out,i,c,needs_quote) {
     }
     return v
 }
-BEGIN { replaced = 0; has_fields = 0; skip_children = 0 }
+BEGIN { replaced = 0; has_fields = 0; skip_children = 0; skip_duplicate_children = 0 }
 {
+    # cmd_karo_hotfix_yaml_duplicate_field_repair: a later root-level
+    # re-definition of `field` is dropped whole (header+children) — see the
+    # duplicate branch below — instead of surviving as a stale second value
+    # that yaml.safe_load would resolve to (last-wins) after this setter wrote
+    # only the first occurrence.
+    if (skip_duplicate_children) {
+        if ($0 == "" || (($0 ~ /^[[:space:]]/ || $0 ~ /^-[[:space:]]/) && $0 !~ /^[A-Za-z0-9_.-]+:/)) {
+            next
+        }
+        skip_duplicate_children = 0
+    }
     # When replacing a nested mapping header, skip its indented children
     if (skip_children) {
         if ($0 == "" || (($0 ~ /^[[:space:]]/ || $0 ~ /^-[[:space:]]/) && $0 !~ /^[A-Za-z0-9_.-]+:/)) {
@@ -300,20 +311,29 @@ BEGIN { replaced = 0; has_fields = 0; skip_children = 0 }
         skip_children = 0
     }
     field_re = "^" regex_escape(field) ":[[:space:]]*"
-    if (!replaced && $0 ~ field_re) {
+    if ($0 ~ field_re) {
         # Detect if the original line is a nested mapping header (value is empty)
         rhs = $0
         sub("^" regex_escape(field) ":[[:space:]]*", "", rhs)
         sub(/[[:space:]]+$/, "", rhs)
-        print field ": " yaml_safe(new_value)
-        replaced = 1
-        has_fields = 1
-        # A root block scalar owns the following indented physical lines just
-        # like a mapping header owns its children.  Leaving those lines behind
-        # after replacing `field: |`/`field: >-` with an inline scalar makes
-        # the candidate invalid (compact_state session_summary regression).
-        if (rhs == "" || rhs ~ /^#/ || rhs ~ /^[|>][+-]?[0-9]*([[:space:]]+#.*)?$/) {
-            skip_children = 1
+        is_block_header = (rhs == "" || rhs ~ /^#/ || rhs ~ /^[|>][+-]?[0-9]*([[:space:]]+#.*)?$/)
+        if (!replaced) {
+            print field ": " yaml_safe(new_value)
+            replaced = 1
+            has_fields = 1
+            # A root block scalar owns the following indented physical lines just
+            # like a mapping header owns its children.  Leaving those lines behind
+            # after replacing `field: |`/`field: >-` with an inline scalar makes
+            # the candidate invalid (compact_state session_summary regression).
+            if (is_block_header) {
+                skip_children = 1
+            }
+        } else {
+            # Same-name re-definition: drop it (and its children, if any) so
+            # exactly one `field` definition survives.
+            if (is_block_header) {
+                skip_duplicate_children = 1
+            }
         }
         next
     }
@@ -428,6 +448,7 @@ BEGIN {
     in_block = 0
     replaced = 0
     skip_replaced_continuation = 0
+    skip_duplicate_continuation = 0
     prev_closed_quoted_scalar = 0
     block_indent = -1
     field_indent = -1
@@ -457,6 +478,15 @@ BEGIN {
         next
     }
 
+    # cmd_karo_hotfix_yaml_duplicate_field_repair: a later re-definition of the
+    # same field at the same indent is dropped whole (header+children) instead
+    # of being left behind as stale text — see the duplicate branch below.
+    if (skip_duplicate_continuation) {
+        if (trimmed == "") next
+        if (indent > field_indent || (indent == field_indent && trimmed ~ /^-[[:space:]]/)) next
+        skip_duplicate_continuation = 0
+    }
+
     if (skip_replaced_continuation) {
         if (trimmed == "") next
         if (indent > field_indent || (indent == field_indent && trimmed ~ /^-[[:space:]]/)) next
@@ -471,10 +501,20 @@ BEGIN {
     }
 
     field_re = "^" make_indent(field_indent) regex_escape(field) ":[[:space:]]*"
-    if (!replaced && $0 ~ field_re) {
-        print make_indent(field_indent) field ": " yaml_safe(new_value)
-        replaced = 1
-        skip_replaced_continuation = 1
+    if ($0 ~ field_re) {
+        if (!replaced) {
+            print make_indent(field_indent) field ": " yaml_safe(new_value)
+            replaced = 1
+            skip_replaced_continuation = 1
+        } else {
+            # Same-block/same-indent re-definition of `field`: an operational
+            # YAML with a duplicate key resolves to the LAST occurrence under
+            # yaml.safe_load, so leaving this stale duplicate behind made the
+            # post-write candidate diverge from what was just written
+            # (candidate verification mismatch, file kept unchanged forever).
+            # Normalize atomically: keep exactly one definition.
+            skip_duplicate_continuation = 1
+        }
         next
     }
     if (indent == field_indent) {
@@ -756,16 +796,28 @@ function yaml_safe(v,    out,i,c,needs_quote) {
     }
     return v
 }
-function flush_block(    i,line,indent_str,field_re,replaced,skip_replaced_continuation,line_indent,line_trimmed,last_scalar_indent) {
+function flush_block(    i,line,indent_str,field_re,replaced,skip_replaced_continuation,skip_duplicate_continuation,line_indent,line_trimmed,last_scalar_indent) {
     indent_str = make_indent(field_indent)
     field_re = "^" indent_str regex_escape(field) ":[[:space:]]*"
     replaced = 0
     skip_replaced_continuation = 0
+    skip_duplicate_continuation = 0
     last_scalar_indent = -1
 
     last_held = ""
     for (i = 1; i <= block_len; i++) {
         line = block_lines[i]
+        # cmd_karo_hotfix_yaml_duplicate_field_repair: a later re-definition of
+        # the same field at the same indent is dropped whole (header+children)
+        # by the duplicate branch below instead of surviving as stale text.
+        if (skip_duplicate_continuation) {
+            line_indent = leading_spaces(line)
+            line_trimmed = trim(line)
+            if (line_trimmed == "" || line_indent > field_indent || (line_indent == field_indent && line_trimmed ~ /^-[[:space:]]/)) {
+                continue
+            }
+            skip_duplicate_continuation = 0
+        }
         if (skip_replaced_continuation) {
             line_indent = leading_spaces(line)
             line_trimmed = trim(line)
@@ -782,10 +834,20 @@ function flush_block(    i,line,indent_str,field_re,replaced,skip_replaced_conti
             }
             last_scalar_indent = -1
         }
-        if (i > 1 && !replaced && line ~ field_re) {
-            print indent_str field ": " yaml_safe(new_value)
-            replaced = 1
-            skip_replaced_continuation = 1
+        if (i > 1 && line ~ field_re) {
+            if (!replaced) {
+                print indent_str field ": " yaml_safe(new_value)
+                replaced = 1
+                skip_replaced_continuation = 1
+            } else {
+                # Same-block/same-indent re-definition of `field`: yaml.safe_load
+                # resolves a duplicate key to its LAST occurrence, so leaving
+                # this stale duplicate behind made the post-write candidate
+                # diverge from what was just written (candidate verification
+                # mismatch, file kept unchanged forever). Normalize atomically:
+                # keep exactly one definition.
+                skip_duplicate_continuation = 1
+            }
         } else {
             # 最終行を保持: 新フィールド追加時に最終行の前に挿入する
             # (2026-06-26: 最終ブロックのEOF追加でEdit挿入時に次cmdへ侵入するバグ根治)

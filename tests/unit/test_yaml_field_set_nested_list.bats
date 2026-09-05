@@ -35,6 +35,17 @@ print(repr(data))
 ' "$TEST_TMPDIR/task.yaml" "$1"
 }
 
+ygetf() {
+    local file="$1" path="$2"
+    python3 -c '
+import sys, yaml
+data = yaml.safe_load(open(sys.argv[1], encoding="utf-8"))["task"]
+for key in sys.argv[2].split("."):
+    data = data[key]
+print(repr(data))
+' "$file" "$path"
+}
+
 # --- (a) 小太郎事例: planned_paths が scalar の状態から要素追加 ---
 
 @test "append: scalar field はlist化され既存値を先頭に保持して追記される" {
@@ -123,4 +134,152 @@ print(repr(data))
     [ "$status" -ne 0 ]
     run grep -c '^a\.b:' "$TEST_TMPDIR/task.yaml"
     [ "$output" = "0" ]
+}
+
+# --- (e) cmd_karo_hotfix_yaml_duplicate_field_repair: 同一block同indentの重複field定義
+# --- は先頭だけ更新→末尾の旧定義が生き残り、yaml.safe_loadが重複keyを最後勝ちで
+# --- 解決するため書込み直後の候補が期待値と食い違いFATAL(candidate verification
+# --- mismatch)で失敗し、元ファイルも修復不能に固まっていた(cmd_4476 live同型)。
+# --- AC1(再現条件)とAC2(1件への正規化)を1つの回帰testで検証する。
+# Origin: [[cmd_4476]] -> [[stale .bak誤配備でrelated_lessons重複field発生]] -> [[cmd_karo_hotfix_yaml_duplicate_field_repair]]
+
+# test_necessity: 同一block同indentで重複定義されたfieldにsetterを実行すると、修正前は候補検証mismatchでexit非0となり書込みが失敗し続け元ファイルが永久に固まる。修正後は1件へ正規化されexit 0で成功する不変量を守る。
+@test "AC1/AC2: related_lessons二重定義(先頭[]・末尾[L097,L019])へ[]設定でcandidate mismatchなく1件へ正規化される" {
+    cat > "$TEST_TMPDIR/dup.yaml" <<'EOF'
+task:
+  status: assigned
+  related_lessons: []
+  filler: keep
+  related_lessons: [L097, L019]
+  tail: end
+EOF
+    run grep -c '^  related_lessons:' "$TEST_TMPDIR/dup.yaml"
+    [ "$output" = "2" ]
+
+    run bash "$YFS" "$TEST_TMPDIR/dup.yaml" task related_lessons '[]'
+    [ "$status" -eq 0 ]
+
+    run grep -c '^  related_lessons:' "$TEST_TMPDIR/dup.yaml"
+    [ "$output" = "1" ]
+    run grep -c 'related_lessons:.*\[\]' "$TEST_TMPDIR/dup.yaml"
+    [ "$output" = "1" ]
+    run ygetf "$TEST_TMPDIR/dup.yaml" filler
+    [ "$output" = "'keep'" ]
+    run ygetf "$TEST_TMPDIR/dup.yaml" status
+    [ "$output" = "'assigned'" ]
+    run ygetf "$TEST_TMPDIR/dup.yaml" tail
+    [ "$output" = "'end'" ]
+}
+
+# test_necessity: map_scalarレーン(bracket始まりでないscalar値)で同名field重複を2回目以降まとめて除去し常に1件だけ残す不変量を守る。
+@test "AC2: scalar fieldの重複定義もmap_scalarレーンで1件へ正規化される" {
+    cat > "$TEST_TMPDIR/dup_scalar.yaml" <<'EOF'
+task:
+  status: assigned
+  status: assigned
+  commit_contract:
+    required: true
+  tail: end
+EOF
+    run grep -c '^  status:' "$TEST_TMPDIR/dup_scalar.yaml"
+    [ "$output" = "2" ]
+
+    run bash "$YFS" "$TEST_TMPDIR/dup_scalar.yaml" task status done
+    [ "$status" -eq 0 ]
+
+    run grep -c '^  status:' "$TEST_TMPDIR/dup_scalar.yaml"
+    [ "$output" = "1" ]
+    run ygetf "$TEST_TMPDIR/dup_scalar.yaml" status
+    [ "$output" = "'done'" ]
+    run ygetf "$TEST_TMPDIR/dup_scalar.yaml" commit_contract.required
+    [ "$output" = "True" ]
+    run ygetf "$TEST_TMPDIR/dup_scalar.yaml" tail
+    [ "$output" = "'end'" ]
+}
+
+# test_necessity: 重複の先頭occurrenceがnested mapping(複数子行)であっても、正規化時に子行ごと正しく消費し1件だけ残す不変量を守る。
+@test "AC2: 重複定義の先頭がnested mapping(子行あり)でも子行ごと除去して1件へ正規化される" {
+    cat > "$TEST_TMPDIR/dup_mapping.yaml" <<'EOF'
+task:
+  status: assigned
+  extra:
+    a: 1
+    b: 2
+  extra: keep
+  tail: end
+EOF
+    run grep -c '^  extra:' "$TEST_TMPDIR/dup_mapping.yaml"
+    [ "$output" = "2" ]
+
+    run bash "$YFS" "$TEST_TMPDIR/dup_mapping.yaml" task extra keep2
+    [ "$status" -eq 0 ]
+
+    run grep -c '^  extra:' "$TEST_TMPDIR/dup_mapping.yaml"
+    [ "$output" = "1" ]
+    run ygetf "$TEST_TMPDIR/dup_mapping.yaml" extra
+    [ "$output" = "'keep2'" ]
+    run grep -c '    a: 1' "$TEST_TMPDIR/dup_mapping.yaml"
+    [ "$output" = "0" ]
+    run grep -c '    b: 2' "$TEST_TMPDIR/dup_mapping.yaml"
+    [ "$output" = "0" ]
+    run ygetf "$TEST_TMPDIR/dup_mapping.yaml" tail
+    [ "$output" = "'end'" ]
+}
+
+# test_necessity: 重複正規化ロジックが対象field以外の隣接field/nested listへ誤って波及しない不変量を守る。
+@test "AC2(対照): 重複していない隣接fieldとnested listは正規化の影響を受けない" {
+    cat > "$TEST_TMPDIR/dup_contrast.yaml" <<'EOF'
+task:
+  status: assigned
+  related_lessons: []
+  siblings:
+    - one
+    - two
+  related_lessons: [L097, L019]
+  tail: end
+EOF
+    run bash "$YFS" "$TEST_TMPDIR/dup_contrast.yaml" task related_lessons '[]'
+    [ "$status" -eq 0 ]
+
+    run grep -c '^  related_lessons:' "$TEST_TMPDIR/dup_contrast.yaml"
+    [ "$output" = "1" ]
+    run ygetf "$TEST_TMPDIR/dup_contrast.yaml" siblings
+    [ "$output" = "['one', 'two']" ]
+    run ygetf "$TEST_TMPDIR/dup_contrast.yaml" status
+    [ "$output" = "'assigned'" ]
+    run ygetf "$TEST_TMPDIR/dup_contrast.yaml" tail
+    [ "$output" = "'end'" ]
+}
+
+ygetroot() {
+    local file="$1" key="$2"
+    python3 -c '
+import sys, yaml
+data = yaml.safe_load(open(sys.argv[1], encoding="utf-8"))
+print(repr(data[sys.argv[2]]))
+' "$file" "$key"
+}
+
+# test_necessity: root fallbackレーン(block_id=root)でも同名field重複を2回目以降まとめて除去し常に1件だけ残す不変量を守る。
+@test "AC2: block_id=rootの重複定義もapply_rootレーンで1件へ正規化される" {
+    cat > "$TEST_TMPDIR/dup_root.yaml" <<'EOF'
+status: idle
+ninja: kagemaru
+status: idle
+tail: end
+EOF
+    run grep -c '^status:' "$TEST_TMPDIR/dup_root.yaml"
+    [ "$output" = "2" ]
+
+    run bash "$YFS" "$TEST_TMPDIR/dup_root.yaml" root status active
+    [ "$status" -eq 0 ]
+
+    run grep -c '^status:' "$TEST_TMPDIR/dup_root.yaml"
+    [ "$output" = "1" ]
+    run ygetroot "$TEST_TMPDIR/dup_root.yaml" status
+    [ "$output" = "'active'" ]
+    run ygetroot "$TEST_TMPDIR/dup_root.yaml" ninja
+    [ "$output" = "'kagemaru'" ]
+    run ygetroot "$TEST_TMPDIR/dup_root.yaml" tail
+    [ "$output" = "'end'" ]
 }
