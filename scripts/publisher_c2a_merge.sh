@@ -87,4 +87,20 @@ git push -q origin HEAD:main
 echo "publisher_c2a_merge: pushed $(git rev-parse --short HEAD) task=$(git log -1 --format=%s | cut -c1-60)"
 ' _ "$ROOT" "$ORIGIN_URL" "$WORK" "$COMMIT" "$CONFLICT_PATH" "$RESOLVER" "$MSG"
 git -C "$ROOT" fetch -q origin
+c2a_target="$(git -C "$ROOT" rev-parse --verify refs/remotes/origin/main 2>/dev/null || true)"
+[[ "$c2a_target" =~ ^[0-9a-f]{40}$ ]] || {
+    echo "publisher_c2a_merge: origin/main unresolved after c2a push" >&2
+    exit 1
+}
+# C2a publication may leave the shared root on a local-only equivalent commit
+# with dirty runtime files.  Reconcile it immediately through the non-merge
+# CAS/read-tree lane, which verifies local tree effects and restores exact
+# dirty overlap before the next validator cycle can observe stale HEAD.
+if [[ -x "$ROOT/scripts/safe_shared_main_ff.sh" ]]; then
+    bash "$ROOT/scripts/safe_shared_main_ff.sh" --repo "$ROOT" "$c2a_target"
+else
+    # Minimal publisher fixtures may intentionally omit the optional shared
+    # checkout helper; production roots always carry it and take this lane.
+    echo "publisher_c2a_merge: shared sync helper unavailable; sync=SKIP" >&2
+fi
 git -C "$ROOT" merge-base --is-ancestor "$COMMIT" origin/main && echo "publisher_c2a_merge: ancestor OK ${COMMIT:0:9} -> origin/main $(git -C "$ROOT" rev-parse --short origin/main)"

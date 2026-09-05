@@ -73,32 +73,31 @@ shared_dirty_fingerprint() {
   echo "AC1_BASELINE block_count=$block_count remote_unreached_count=$remote_unreached_count shared_dirty_preserved_count=$dirty_preserved_count"
 }
 
-# test_necessity: an overlapping dirty shared worktree must publish the target
-# from an isolated worktree while preserving shared HEAD, index, and dirt.
-@test "AC1 fixed: overlapping dirty work uses isolated fallback and reaches remote" {
+# test_necessity: an overlapping dirty shared worktree must targetize the
+# shared checkout while preserving the exact dirty worktree and index.
+@test "AC1 fixed: overlapping dirty work is restored after non-merge sync" {
   fallback_origin_init
   fallback_install_hook 'exit 0'
   printf 'local-a\n' >> "$FIX/a.txt"
   target="$(git -C "$BATS_TEST_TMPDIR/next" rev-parse HEAD)"
   before_head="$(git -C "$FIX" rev-parse HEAD)"
-  before_index="$(git -C "$FIX" ls-files --stage | sha256sum | awk '{print $1}')"
-  before_dirty="$(shared_dirty_fingerprint)"
+  before_index="$(git -C "$FIX" ls-files --stage -- b.txt | sha256sum | awk '{print $1}')"
+  before_dirty="$(git -C "$FIX" hash-object --no-filters -- a.txt)"
 
   run bash "$FIX/scripts/safe_shared_main_ff.sh" --repo "$FIX" "$target"
   [ "$status" -eq 0 ]
-  [[ "$output" == *"SAFE_SHARED_MAIN_FF_FALLBACK"* ]]
-  [[ "$output" == *"remote_contains_target=yes"* ]]
-  [[ "$output" == *"shared_head_unchanged=yes"* ]]
-  [ "$(git -C "$FIX" rev-parse HEAD)" = "$before_head" ]
-  [ "$(git -C "$FIX" ls-files --stage | sha256sum | awk '{print $1}')" = "$before_index" ]
-  [ "$(shared_dirty_fingerprint)" = "$before_dirty" ]
-  [ "$(grep -c . "$BATS_TEST_TMPDIR/hook.log")" -eq 1 ]
-  git --git-dir "$BATS_TEST_TMPDIR/origin.git" merge-base --is-ancestor "$target" refs/heads/main
+  [[ "$output" == *"SAFE_SHARED_MAIN_FF_SYNC"* ]]
+  [[ "$output" == *"dirty_overlap_restored=yes"* ]]
+  [[ "$output" == *"index_preserved=yes"* ]]
+  [ "$(git -C "$FIX" rev-parse HEAD)" = "$target" ]
+  [ "$(git -C "$FIX" ls-files --stage -- b.txt | sha256sum | awk '{print $1}')" = "$before_index" ]
+  [ "$(git -C "$FIX" hash-object --no-filters -- a.txt)" = "$before_dirty" ]
+  [ ! -e "$BATS_TEST_TMPDIR/hook.log" ] || [ "$(wc -l < "$BATS_TEST_TMPDIR/hook.log")" -eq 0 ]
 }
 
-# test_necessity: a remote ref race must rebuild the isolated merge from the
-# refreshed remote tip and stop after the configured retry bound.
-@test "AC2: remote race retries from latest origin main and converges" {
+# test_necessity: shared synchronization must not invoke a remote push hook or
+# depend on the mutable remote while restoring an overlapping dirty path.
+@test "AC2: dirty sync ignores remote push race and converges" {
   fallback_origin_init
   git clone -q -b main "$BATS_TEST_TMPDIR/origin.git" "$BATS_TEST_TMPDIR/race-remote"
   git -C "$BATS_TEST_TMPDIR/race-remote" config user.email test@example.com
@@ -116,16 +115,15 @@ exit 0"
 
   run bash "$FIX/scripts/safe_shared_main_ff.sh" --repo "$FIX" "$target"
   [ "$status" -eq 0 ]
-  [[ "$output" == *"retry=1/2"* ]]
-  [[ "$output" == *"remote_contains_target=yes"* ]]
-  [ "$(grep -c . "$BATS_TEST_TMPDIR/hook.log")" -eq 2 ]
-  [[ "$(git --git-dir "$BATS_TEST_TMPDIR/origin.git" log --format=%s refs/heads/main)" == *"remote-race"* ]]
-  git --git-dir "$BATS_TEST_TMPDIR/origin.git" merge-base --is-ancestor "$target" refs/heads/main
+  [[ "$output" == *"SAFE_SHARED_MAIN_FF_SYNC"* ]]
+  [ ! -e "$BATS_TEST_TMPDIR/hook.log" ] || [ "$(wc -l < "$BATS_TEST_TMPDIR/hook.log")" -eq 0 ]
+  [ "$(git -C "$FIX" rev-parse HEAD)" = "$target" ]
+  ! git --git-dir "$BATS_TEST_TMPDIR/origin.git" merge-base --is-ancestor "$target" refs/heads/main
 }
 
-# test_necessity: repeated remote races must exhaust the configured bound and
-# return BLOCK rather than retrying forever or claiming publication.
-@test "AC2: repeated remote races exhaust finite retry bound" {
+# test_necessity: retry configuration must not reintroduce a remote-push path
+# into shared synchronization.
+@test "AC2: retry configuration does not change non-merge sync" {
   fallback_origin_init
   git clone -q -b main "$BATS_TEST_TMPDIR/origin.git" "$BATS_TEST_TMPDIR/bound-remote"
   git -C "$BATS_TEST_TMPDIR/bound-remote" config user.email test@example.com
@@ -141,16 +139,16 @@ exit 0"
 
   run env SAFE_SHARED_MAIN_FF_MAX_RETRIES=1 \
     bash "$FIX/scripts/safe_shared_main_ff.sh" --repo "$FIX" "$target"
-  [ "$status" -eq 2 ]
-  [[ "$output" == *"retry=1/1"* ]]
-  [[ "$output" == *"isolated fallback push failed"* ]]
-  [ "$(grep -c . "$BATS_TEST_TMPDIR/hook.log")" -eq 2 ]
+  [ "$status" -eq 0 ]
+  [[ "$output" == *"SAFE_SHARED_MAIN_FF_SYNC"* ]]
+  [ ! -e "$BATS_TEST_TMPDIR/hook.log" ] || [ "$(wc -l < "$BATS_TEST_TMPDIR/hook.log")" -eq 0 ]
+  [ "$(git -C "$FIX" rev-parse HEAD)" = "$target" ]
   ! git --git-dir "$BATS_TEST_TMPDIR/origin.git" merge-base --is-ancestor "$target" refs/heads/main
 }
 
-# test_necessity: a true three-way conflict in the isolated worktree must be
-# fail-closed and must not mutate the shared checkout.
-@test "AC2: true isolated merge conflict BLOCKs without shared mutation" {
+# test_necessity: a remote conflict must not cause an isolated merge or push;
+# dirty overlap is still restored by the shared non-merge transaction.
+@test "AC2: remote conflict does not invoke isolated merge" {
   fallback_origin_init
   git clone -q -b main "$BATS_TEST_TMPDIR/origin.git" "$BATS_TEST_TMPDIR/conflict-remote"
   git -C "$BATS_TEST_TMPDIR/conflict-remote" config user.email test@example.com
@@ -163,31 +161,30 @@ exit 0"
   printf 'local-a\n' >> "$FIX/a.txt"
   target="$(git -C "$BATS_TEST_TMPDIR/next" rev-parse HEAD)"
   before_head="$(git -C "$FIX" rev-parse HEAD)"
-  before_dirty="$(shared_dirty_fingerprint)"
+  before_dirty="$(git -C "$FIX" hash-object --no-filters -- a.txt)"
 
   run bash "$FIX/scripts/safe_shared_main_ff.sh" --repo "$FIX" "$target"
-  [ "$status" -eq 2 ]
-  [[ "$output" == *"isolated fallback merge conflict"* ]]
-  [ "$(git -C "$FIX" rev-parse HEAD)" = "$before_head" ]
-  [ "$(shared_dirty_fingerprint)" = "$before_dirty" ]
+  [ "$status" -eq 0 ]
+  [[ "$output" == *"SAFE_SHARED_MAIN_FF_SYNC"* ]]
+  [ "$(git -C "$FIX" rev-parse HEAD)" = "$target" ]
+  [ "$(git -C "$FIX" hash-object --no-filters -- a.txt)" = "$before_dirty" ]
   hook_count="$(grep -c . "$BATS_TEST_TMPDIR/hook.log" 2>/dev/null || true)"
   [ "${hook_count:-0}" -eq 0 ]
   ! git --git-dir "$BATS_TEST_TMPDIR/origin.git" merge-base --is-ancestor "$target" refs/heads/main
 }
 
-# test_necessity: a normal pre-push hook failure is not mistaken for a remote
-# race and cannot trigger a retry or a publication.
-@test "AC2: pre-push hook failure BLOCKs without retry" {
+# test_necessity: a normal pre-push hook failure cannot affect the local
+# non-merge synchronization path.
+@test "AC2: pre-push hook is not invoked by non-merge sync" {
   fallback_origin_init
   fallback_install_hook 'echo HOOK_FAIL >&2; exit 17'
   printf 'local-a\n' >> "$FIX/a.txt"
   target="$(git -C "$BATS_TEST_TMPDIR/next" rev-parse HEAD)"
 
   run bash "$FIX/scripts/safe_shared_main_ff.sh" --repo "$FIX" "$target"
-  [ "$status" -eq 2 ]
-  [[ "$output" == *"HOOK_FAIL"* ]]
-  [[ "$output" == *"isolated fallback push failed"* ]]
-  [ "$(grep -c . "$BATS_TEST_TMPDIR/hook.log")" -eq 1 ]
+  [ "$status" -eq 0 ]
+  [[ "$output" == *"SAFE_SHARED_MAIN_FF_SYNC"* ]]
+  [ ! -e "$BATS_TEST_TMPDIR/hook.log" ] || [ "$(wc -l < "$BATS_TEST_TMPDIR/hook.log")" -eq 0 ]
   ! git --git-dir "$BATS_TEST_TMPDIR/origin.git" merge-base --is-ancestor "$target" refs/heads/main
 }
 
@@ -203,14 +200,92 @@ exit 0"
   [ "$(git -C "$FIX" rev-parse HEAD)" = "$target" ]
 }
 
-@test "overlap blocks before HEAD moves" {
+@test "overlap is restored while HEAD moves atomically" {
   printf 'local-a\n' >> "$FIX/a.txt"
   before="$(git -C "$FIX" rev-parse HEAD)"
   target="$(git -C "$BATS_TEST_TMPDIR/next" rev-parse HEAD)"
   run bash "$FIX/scripts/safe_shared_main_ff.sh" "$target"
+  [ "$status" -eq 0 ]
+  [[ "$output" == *"dirty_overlap_restored=yes"* ]]
+  [ "$(git -C "$FIX" rev-parse HEAD)" = "$target" ]
+}
+
+# test_necessity: staged overlap cannot be overwritten by the targetization
+# transaction and must fail before the shared ref moves.
+@test "staged overlap fails closed before ref movement" {
+  printf 'staged-local\n' >> "$FIX/a.txt"
+  git -C "$FIX" add a.txt
+  before_head="$(git -C "$FIX" rev-parse HEAD)"
+  target="$(git -C "$BATS_TEST_TMPDIR/next" rev-parse HEAD)"
+
+  run bash "$FIX/scripts/safe_shared_main_ff.sh" --repo "$FIX" "$target"
   [ "$status" -eq 2 ]
-  [[ "$output" == *"overlap"* ]]
+  [[ "$output" == *"staged changes overlap"* ]]
+  [ "$(git -C "$FIX" rev-parse HEAD)" = "$before_head" ]
+  ! git -C "$FIX" diff --cached --quiet HEAD -- a.txt
+}
+
+# test_necessity: an untracked path at a target-created path must not be
+# overwritten by read-tree.
+@test "untracked target path fails closed before ref movement" {
+  printf 'target-c\n' > "$BATS_TEST_TMPDIR/next/c.txt"
+  git -C "$BATS_TEST_TMPDIR/next" add c.txt
+  git -C "$BATS_TEST_TMPDIR/next" commit -qm next-c
+  printf 'untracked-c\n' > "$FIX/c.txt"
+  before_head="$(git -C "$FIX" rev-parse HEAD)"
+  target="$(git -C "$BATS_TEST_TMPDIR/next" rev-parse HEAD)"
+
+  run bash "$FIX/scripts/safe_shared_main_ff.sh" --repo "$FIX" "$target"
+  [ "$status" -eq 2 ]
+  [[ "$output" == *"untracked path would be overwritten"* ]]
+  [ "$(git -C "$FIX" rev-parse HEAD)" = "$before_head" ]
+  [ "$(cat "$FIX/c.txt")" = "untracked-c" ]
+}
+
+# test_necessity: multiple regular overlap files, including an executable
+# mode, must retain both exact hashes and modes after synchronization.
+@test "multiple overlap blobs and modes are restored exactly" {
+  printf 'target-b\n' > "$BATS_TEST_TMPDIR/next/b.txt"
+  git -C "$BATS_TEST_TMPDIR/next" add b.txt
+  git -C "$BATS_TEST_TMPDIR/next" commit -qm next-b
+  printf 'local-a\n' >> "$FIX/a.txt"
+  printf 'local-b\n' >> "$FIX/b.txt"
+  chmod 755 "$FIX/a.txt"
+  before_a="$(git -C "$FIX" hash-object --no-filters -- a.txt)"
+  before_b="$(git -C "$FIX" hash-object --no-filters -- b.txt)"
+  before_mode="$(stat -c '%a' "$FIX/a.txt")"
+  target="$(git -C "$BATS_TEST_TMPDIR/next" rev-parse HEAD)"
+
+  run bash "$FIX/scripts/safe_shared_main_ff.sh" --repo "$FIX" "$target"
+  [ "$status" -eq 0 ]
+  [[ "$output" == *"dirty_overlap_restored=yes"* ]]
+  [ "$(git -C "$FIX" hash-object --no-filters -- a.txt)" = "$before_a" ]
+  [ "$(git -C "$FIX" hash-object --no-filters -- b.txt)" = "$before_b" ]
+  [ "$(stat -c '%a' "$FIX/a.txt")" = "$before_mode" ]
+  [ "$(git -C "$FIX" rev-parse HEAD)" = "$target" ]
+}
+
+# test_necessity: a symlink overlap is not eligible for blind copy/restore.
+@test "symlink overlap fails closed" {
+  rm "$FIX/a.txt"
+  ln -s b.txt "$FIX/a.txt"
+  target="$(git -C "$BATS_TEST_TMPDIR/next" rev-parse HEAD)"
+  before="$(git -C "$FIX" rev-parse HEAD)"
+
+  run bash "$FIX/scripts/safe_shared_main_ff.sh" --repo "$FIX" "$target"
+  [ "$status" -eq 2 ]
+  [[ "$output" == *"must be a regular non-symlink file"* ]]
   [ "$(git -C "$FIX" rev-parse HEAD)" = "$before" ]
+}
+
+# test_necessity: c2a publication must immediately invoke the same shared-root
+# non-merge reconciliation before the next validator cycle observes stale HEAD.
+@test "c2a publication wires immediate shared sync" {
+  c2a="$BATS_TEST_DIRNAME/../../scripts/publisher_c2a_merge.sh"
+  run rg -n 'safe_shared_main_ff\.sh.*--repo|c2a_target=' "$c2a"
+  [ "$status" -eq 0 ]
+  [[ "$output" == *"c2a_target="* ]]
+  [[ "$output" == *"safe_shared_main_ff.sh"* ]]
 }
 
 @test "explicit repo converges an external shared main with the same checks" {
@@ -238,7 +313,7 @@ exit 0"
   git -C "$FIX" merge-base --is-ancestor "$target" HEAD
 }
 
-@test "diverged non-conflicting histories preserve unrelated dirty work" {
+@test "diverged local-only effect absent from target blocks before ref move" {
   printf 'local-b-commit\n' > "$FIX/b.txt"
   git -C "$FIX" add b.txt
   git -C "$FIX" commit -qm local-b
@@ -246,10 +321,11 @@ exit 0"
   target="$(git -C "$BATS_TEST_TMPDIR/next" rev-parse HEAD)"
 
   run bash "$FIX/scripts/safe_shared_main_ff.sh" "$target"
-  [ "$status" -eq 0 ]
-  [[ "$output" == *"mode=diverged"* ]]
+  [ "$status" -eq 2 ]
+  [[ "$output" == *"local-only tree effect is absent from target"* ]]
+  [ "$(git -C "$FIX" rev-parse HEAD)" != "$target" ]
   [ "$(cat "$FIX/dirty.txt")" = "dirty-local" ]
-  [ "$(cat "$FIX/a.txt")" = "new-a" ]
+  [ "$(cat "$FIX/a.txt")" = "old-a" ]
   [ "$(cat "$FIX/b.txt")" = "local-b-commit" ]
 }
 
@@ -262,7 +338,7 @@ exit 0"
 
   run bash "$FIX/scripts/safe_shared_main_ff.sh" "$target"
   [ "$status" -eq 2 ]
-  [[ "$output" == *"merge conflicts"* ]]
+  [[ "$output" == *"local-only tree effect is absent from target"* ]]
   [ "$(git -C "$FIX" rev-parse HEAD)" = "$before" ]
 }
 
