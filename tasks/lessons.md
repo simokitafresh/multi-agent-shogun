@@ -17334,3 +17334,17 @@ sqlite3.Connection.backup()を使うとページ(4096byte)単位のread syscall�
 - **when**: 未設定
 - **how**: 未設定
 - cmd_karo_recon_w1_routine_contract_20260905のAC1調査で、inject_readonly_refs/inject_standard_skills/resolve_cmd_to_taskの3関数についてgiant file(scripts/deploy_task.sh)とmodule file(scripts/deploy_task/context_injection.sh, resolve.sh)を実測diffした結果、現時点では完全一致(0 diff)だったが、これは自動同期の保証ではなく手動維持である。resolve_cmd_to task/deploy_task_apply_task_mutationsはさらにdeploy_task.sh L12517-12583でdeclare -fによる動的wrapperが追加されており、target_pathとして module file を直接編集するだけで足りるが、純粋な新規inject_*関数の追加はgiant file側への複製要否をtest構成から個別確認する必要がある
+
+
+### L1758: deploy_task test scaffold(tests/helpers/deploy_task_scaffold.bash)へskills/*/SKILL.mdを新規追加すると、scripts/lib/deploy_task_semantic_context_fast.py::_default_skill_allowed()の非対称フィルタ(SKILL.md不在=許可/存在するがTRIGGER行なし=不許可)により既存test(inject_semantic_concepts系)が偽FAILする
+- **日付**: 2026-09-06
+- **出典**: cmd_karo_impl_w1_routine_refs_core_20260906
+- **記録者**: tobisaru
+- **tags**: [infra,deploy-task,db,deploy,testing]
+- **subdomain**: infra
+- **target_files**: [scripts/deploy_task/context_injection.sh,scripts/deploy_task/gates.sh,scripts/deploy_task/resolve.sh,tests/unit/test_deploy_task.bats,tests/unit/test_deploy_task_lifecycle.bats]
+- **origin**: [[cmd_karo_impl_w1_routine_refs_core_20260906]]
+- **enforcement**: 未自動化
+- **when**: 未設定
+- **how**: 未設定
+- cmd_karo_impl_w1_routine_refs_core_20260906で、inject_routine_refsのdb_readonly canonical path(skills/db-check/SKILL.md)存在検証を通すため共有scaffoldへstub SKILL.mdを追加したところ、無関係の既存test『inject_semantic_concepts injects recommended_skills from semantic search skills rows』がAssertionErrorでFAILした。原因は_default_skill_allowed()がSKILL.md不在時はTrue(許可)、存在するがTRIGGER行を持たない場合はFalse(不許可)という非対称ロジックを持つため、テスト用purpose文字列(CDPで本番画面を確認する)とTRIGGER不一致のdb-checkが新たにフィルタされたこと。対処は共有scaffoldの変更を全revertし、canonical path存在検証を明示refs(発注者が手で書いた値)限定に設計変更して回避した。教訓: 共有test fixture(scaffold)へ実在skills/scriptsを模したファイルを追加する際は、そのファイルを参照する可能性のある他のinjector(特にキーワード/TRIGGERベースのフィルタ)への副作用を疑い、追加前後でtarget以外の既存test全体を再実行して確認すること
