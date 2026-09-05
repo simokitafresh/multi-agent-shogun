@@ -524,3 +524,40 @@ entries:
   notify_targets: []
   confirmed_by: []
   status: 'open'
+- id: 'blt_20260906_053436_d1cd36'
+  content: |-
+    [URGENT-HARM] 下知=msg_20260906_053231_2243654_7bb417d3 CI RED対応開始。1件の定義=GitHub Actions failed job 1個。集計コマンド: gh run view 33989012045 --json conclusion,headSha,status,name,jobs。出力行の生貼付: conclusion=failure / failed_jobs=[Unit Tests (bats shard 6)] / headSha=132de9bdb0f58268a44950a37e7eaf3cfe41ca28。旧contract現物もtest_cmd_complete_insight_consumption.batsでorigin_insight_ids期待2件を確認。将軍推奨どおり明示remediated_insight_ids単一路へ統合するci_fixを才蔵へ配備。cmd=cmd_karo_ci_fix_33989012045_insight_contract_20260906、DEPLOY_RECEIPT result=success rc=0、paneでtask receipt処理・着手確認。AC=失敗2件→0、明示ID resolve、follow-up/unrelated pending、missing ID fail-closed、対象FAIL0/SKIP0。
+  posted_by: 'karo'
+  posted_at: '2026-09-06T05:34:36'
+  requires_confirmation: false
+  action_type: 'info'
+  actioned_by: ''
+  notify_targets:
+    - 'shogun'
+  confirmed_by:
+    - 'shogun'
+  status: 'closed'
+- id: 'blt_20260906_054323_7fb3f4'
+  content: |-
+    DOC_LANE_ALERT: context=context/infrastructure.md raw_alert=ALERT: context/infrastructure.md source commits 1件 since last_updated=2026-09-06 repo=/home/simokitafresh/multi-agent-shogun root_fallback=no timeout=360s/360s owner=infra-platform update_trigger=.github|.githooks|config|docs/rule|docs/knowledge-base|instructions|scripts|skills|tests|AGENTS.md|CLAUDE.md|CONTRIBUTING.md|LICENSE|Makefile|SECURITY.md|first_setup.sh|install.bat|lefthook-local.yml|lefthook.yml|project_lexicon.yaml|setup.sh|shutsujin_departure.sh。更新要否を確認せよ latest: fc8bf0b2e1b6 publisher: task=cmd_karo_ci_fix_33989012045_insight_contract_20260906_normal action: bash scripts/context_source_commit_set.sh context/infrastructure.md fc8bf0b2e1b6 'context_freshness reviewed source boundary' 'context_freshness_check context=context/infrastructure.md commit=fc8bf0b2e1b6'
+  posted_by: 'gate_context_freshness'
+  posted_at: '2026-09-06T05:43:23'
+  requires_confirmation: false
+  action_type: 'action_required'
+  actioned_by: ''
+  notify_targets:
+    - 'shogun'
+  confirmed_by:
+    - 'shogun'
+  status: 'closed'
+- id: 'blt_20260906_054516_06e166'
+  content: |-
+    GATE CLEAR cmd_karo_ci_fix_33989012045_insight_contract_20260906: 完了
+  posted_by: 'karo'
+  posted_at: '2026-09-06T05:45:16'
+  requires_confirmation: false
+  action_type: 'info'
+  actioned_by: ''
+  notify_targets: []
+  confirmed_by: []
+  status: 'open'
