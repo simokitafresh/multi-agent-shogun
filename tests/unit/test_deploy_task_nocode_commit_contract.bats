@@ -160,6 +160,60 @@ PY
   [ "$status" -eq 0 ]
 }
 
+# test_necessity: the report generator must distinguish the typed no-code
+# contract from implementation work at publication time; otherwise P-4 keeps
+# producing an empty commit identity for the former and a sentinel for the latter.
+@test "report template projects no-code sentinel but preserves implementation blank" {
+  report="$(build_report decision_candidate queue/pending_decisions.yaml "decision candidate only" '[]')"
+
+  run python3 - "$report" <<'PY'
+import sys, yaml
+d = yaml.safe_load(open(sys.argv[1], encoding='utf-8'))
+assert d['commit_contract']['required'] is False, d['commit_contract']
+assert d['commit_hash'] == 'no-code-change', d.get('commit_hash')
+PY
+  if [ "$status" -ne 0 ]; then printf '%s\n' "$output" >&3; fi
+  [ "$status" -eq 0 ]
+
+  report="$(build_report impl scripts/deploy_task.sh "implementation update" '[scripts/deploy_task.sh]')"
+  run python3 - "$report" <<'PY'
+import sys, yaml
+d = yaml.safe_load(open(sys.argv[1], encoding='utf-8'))
+assert d['commit_contract']['required'] is True, d['commit_contract']
+assert d['commit_hash'] == '', d.get('commit_hash')
+PY
+  if [ "$status" -ne 0 ]; then printf '%s\n' "$output" >&3; fi
+  [ "$status" -eq 0 ]
+}
+
+# test_necessity: a projected sentinel is only safe when the existing
+# no_code_change_evidence contract remains fail-closed and accepts matching
+# before/after tree evidence.
+@test "projected no-code sentinel still requires tree evidence before identity is valid" {
+  report="$(build_report decision_candidate queue/pending_decisions.yaml "decision candidate only" '[]')"
+
+  run python3 - "$report" "$PROJECT_ROOT" <<'PY'
+import pathlib, sys, yaml
+root = pathlib.Path(sys.argv[2])
+sys.path.insert(0, str(root / 'scripts' / 'lib'))
+from report_commit_identity import valid_commit_identity
+
+d = yaml.safe_load(open(sys.argv[1], encoding='utf-8'))
+d['files_modified'] = [{'path': 'queue/reports/generated.yaml', 'change': 'fixture report only'}]
+assert not valid_commit_identity(d['commit_hash'], d, root)
+tree = 'a' * 40
+d['no_code_change_evidence'] = {
+    'before_tree': tree,
+    'after_tree': tree,
+    'tree_unchanged': True,
+}
+d['binary_checks']['commit'][0]['result'] = 'yes'
+assert valid_commit_identity(d['commit_hash'], d, root)
+PY
+  if [ "$status" -ne 0 ]; then printf '%s\n' "$output" >&3; fi
+  [ "$status" -eq 0 ]
+}
+
 @test "allowed no-code type with implementation path emits commit N/A (recon reads but does not modify)" {
   report="$(build_report decision_candidate scripts/decision_helper.py "decision helper update" '[scripts/decision_helper.py]')"
 

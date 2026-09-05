@@ -940,6 +940,14 @@ EOF
     # recon report fail only after deployment.  Use the shared structural
     # writer already used by every typed task contract.
     deploy_task_report_phase_mark commit_contract_built
+    # Publish the typed no-code identity immediately, while retaining the
+    # strict tree-proof validation in report_commit_identity.py.  This avoids
+    # the false empty-commit BLOCK without allowing a sentinel without
+    # no_code_change_evidence to pass the gate.
+    local _commit_hash_projection=""
+    if [ "$_commit_required" = false ]; then
+        _commit_hash_projection="no-code-change"
+    fi
     local _commit_contract_block
     _commit_contract_block=$(cat <<EOF
 commit_contract:
@@ -948,6 +956,7 @@ commit_contract:
   task_type: "${_commit_task_type}"
   planned_paths: ${_commit_paths_json}
   repo_root: "${_commit_repo_root}"
+commit_hash: "${_commit_hash_projection}"
 EOF
 )
     local _cross_repo_commits_block=""
