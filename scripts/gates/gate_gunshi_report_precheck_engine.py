@@ -583,6 +583,12 @@ def main():
                 start, end = occurrence.span()
                 after = lower_text[end:min(len(lower_text), end + 8)]
                 before = lower_text[max(0, start - 16):start]
+                if before.endswith('前'):
+                    # 「前後で」は前後比較の境界であり、「後で対応する」の
+                    # ような先送り副詞ではない。直前の「前」を境界として
+                    # 扱い、同一fixtureの実装前後比較などを誤検出しない。
+                    temporal_count += 1
+                    continue
                 if after.startswith(('であり', 'である', 'だった', 'あり', 'ある', 'に', 'の')):
                     temporal_count += 1
                     continue

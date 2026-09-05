@@ -726,6 +726,33 @@ YAML
   done
 }
 
+# test_necessity: 前後比較の「後で」は先送り語ではなく、all-yes completion
+# reportを誤BLOCKしない境界を永続化する。
+# regression_justification: cmd_karo_hotfix_lg043_word_boundaryの実例で
+# 「実装前後で同一fixtureを実走」がmatched_terms=後でとなり偽BLOCKした。
+@test "LG043 distinguishes before-after comparison from deferred work" {
+  run_engine "実装前後で同一fixtureを実走"
+  [ "$status" -eq 0 ]
+  [[ "$output" == *"BC_YES_CLARITY_CONTRADICTION=0"* ]]
+  [[ "$output" == *"BC_YES_CLARITY_TERMS=''"* ]]
+  [[ "$output" == *"GATE_PREDICTION=CLEAR"* ]]
+
+  for expression in "前後で" "変更前後で"; do
+    run_engine "$expression"
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"BC_YES_CLARITY_CONTRADICTION=0"* ]]
+    [[ "$output" == *"BC_YES_CLARITY_TERMS=''"* ]]
+    [[ "$output" == *"GATE_PREDICTION=CLEAR"* ]]
+  done
+
+  for expression in "後で実施" "後で確認" "残作業は家老が実施" "未完了" "保留"; do
+    run_engine "$expression"
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"BC_YES_CLARITY_CONTRADICTION=1"* ]]
+    [[ "$output" == *"GATE_PREDICTION=BLOCK"* ]]
+  done
+}
+
 @test "SG-PRE35 blocks unclassified new test and accepts necessity plus control groups" {
   gate="$REPO_ROOT/scripts/gates/gate_gunshi_report_precheck.sh"
   task="$TMP_DIR/tasks/kagemaru.yaml"
