@@ -96,3 +96,6 @@ DM2/DM6のN=0..7×E=0..7全128セルをThird common cohortで再集計。全セ�
 
 ## T188 DM-signal の GitHub 復元性 (2026-08-29)
 - 殿下問 16:37『PC 故障時に GitHub/zip で即時移行できるか』→疾風 `cmd_karo_hotfix_dm_signal_backup_push`(CLEAR 18:51): 未 push 4 commit を merge+通常 push(origin/rb6-cleanup-20260814=2854041d、origin..HEAD 0/0)、origin に同名 ref の無い local branch は force なしで `backup/<branch>` 新 ref へ退避、GitHub 100MiB 超 blob 付き 1 本のみ名指しで対象外、非 ff 131 本は origin に同名 ref 既存=退避不要。secrets(.env 系 4 本)は cmd_4411 の暗号化 Drive 退避(`context/infrastructure.md` §オフサイト退避)。origin: `[[殿下問_PC故障時の即時移行_20260829_1637]] -> [[T188_DM-signal_push退避]] -> [[T106_DM-signal_ext4移設]]`
+
+## cmd_4475 LP SEO 監査+最小修正 (2026-09-05)
+- 殿 02:15『外部 SEO 意見は全部取り入れず先に本番確認』→将軍が本番 curl(Critical 0/High 2)→cmd_4475(才蔵): `lp/` の JA ページ `<html lang="ja">` 化+JSON-LD url を `https://dm-signal.com/` へ修正、重複 locale route 削除。DM-signal commit dca83523/6f394781(origin/main 07:35 publish)、本番 `/ja/` で lang・JSON-LD 一致を将軍が確認(11:2x)。監査 5 分類と設計書 v6 §0.1 突合表は `docs/research/dm-signal-lp-seo-plan_20260830.md`(gist 5edb5f6d)。origin: `[[殿指示_LP外部SEO意見_20260905_0215]] -> [[cmd_4475_LP_SEO監査]] -> [[dm-signal-lp-seo-plan_v6]]`
