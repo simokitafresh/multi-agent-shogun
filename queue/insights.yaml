@@ -18544,3 +18544,10 @@ insights:
   source: "semantic_stress_test"
   fix_known: false
   status: pending
+- id: INS-20260905-182309006-bb57
+  ts: "2026-09-05T18:23:09+09:00"
+  insight: "[[将軍がD0で覚醒して根治できることは先にしよう]] semantic_stress_test candidate_aliases: NO_MATCH source=lord query=将軍がD0で覚醒して根治できることは先にしよう"
+  priority: "low"
+  source: "semantic_stress_test"
+  fix_known: false
+  status: pending
