@@ -12483,10 +12483,137 @@ deploy_task_prepare_remote_tip_worktree_sparse() {
     return "$rc"
 }
 
+# ─── 独立2系統偵察の固定base worktree作成(cmd_karo_hotfix_recon_dual_projection_fixed_base_20260906) ───
+# inject_independent_recon_contract(modifiers.sh)がtask正本へ書いたindependence_base_commit
+# は、remote-tip worktree生成(deploy_task_original_prepare_remote_tip_worktree, preflight.sh)
+# が常にorigin/mainを再fetchしたremote_tipで上書きしていたため無視されていた
+# (2026-09-06 cmd_4480 A2実証: task fixed base=e7d187, 実worktree base=8af986)。
+# independence_worktree_required=trueのtaskに限り、このfixed baseをworktreeの実checkout
+# 対象として使う専用経路。本cmdのcommit_contract.planned_pathsはdeploy_task.sh/resolve.sh/
+# modifiers.sh限定でpreflight.shを含まないため、既存のdeploy_task_original_prepare_remote_tip_worktree
+# (preflight.sh)は変更せず、非recon taskの経路は完全に不変のまま独立させている。
+# 検証不能な条件(mapping不正/commit不在/作成後HEAD不一致/repo_rootがbare・非git)は
+# 全てnudge前BLOCK(return 1)で、task/report/inbox公開へ進ませない。
+deploy_task_pin_independence_worktree_base() {
+    local task_file="$1" ninja_name="$2"
+    local task_id parent_cmd repo base_commit
+    local worktree_root worktree_path generation marker marker_tmp
+    local task_worktree_targets task_worktree_edit_wrapper
+    local task_worktree_projection task_worktree_source_paths
+    local worktree_head
+
+    base_commit=$(FIELD_GET_NO_LOG=1 field_get "$task_file" "independence_base_commit" "" 2>/dev/null || true)
+    if [[ ! "$base_commit" =~ ^[0-9a-f]{40}$ ]]; then
+        log "BLOCK: independence_base_commit missing/invalid for fixed-base worktree (ninja=${ninja_name}, base=${base_commit:-missing})"
+        return 1
+    fi
+
+    task_id=$(FIELD_GET_NO_LOG=1 field_get "$task_file" "task_id" "" 2>/dev/null || true)
+    parent_cmd=$(FIELD_GET_NO_LOG=1 field_get "$task_file" "parent_cmd" "" 2>/dev/null || true)
+    [ -n "$task_id" ] && [ -n "$parent_cmd" ] || { log "BLOCK: independence worktree requires task_id and parent_cmd"; return 1; }
+
+    repo=$(deploy_task_resolve_source_repo "$task_file")
+    [ -n "$repo" ] || { log "BLOCK: independence worktree repo unavailable"; return 1; }
+    if ! git -C "$repo" rev-parse --is-inside-work-tree >/dev/null 2>&1 \
+        && ! git -C "$repo" rev-parse --is-bare-repository >/dev/null 2>&1; then
+        log "BLOCK: independence worktree repo_root is neither a work tree nor a bare repo (repo=${repo})"
+        return 1
+    fi
+    if ! git -C "$repo" cat-file -e "${base_commit}^{commit}" 2>/dev/null; then
+        log "BLOCK: independence_base_commit is unavailable in repo (ninja=${ninja_name}, repo=${repo}, base=${base_commit})"
+        return 1
+    fi
+
+    worktree_root="${DEPLOY_TASK_WORKTREE_ROOT:-$HOME/shogun-task-worktrees}"
+    mkdir -p "$worktree_root"
+    generation=$(printf '%s\0%s\0%s' "$task_id" "$base_commit" "$(date +%s%N)" | sha256sum | awk '{print $1}')
+    worktree_path="$worktree_root/${ninja_name}_${generation:0:16}"
+    [ ! -e "$worktree_path" ] || { log "BLOCK: task worktree path already exists"; return 1; }
+    deploy_task_log_worktree_metadata_before_add "$repo"
+    git -C "$repo" -c maintenance.auto=false worktree add --detach --no-checkout "$worktree_path" "$base_commit" >/dev/null 2>&1 \
+        || { log "BLOCK: independence worktree add failed"; return 1; }
+    if ! git -C "$worktree_path" -c maintenance.auto=false checkout --detach "$base_commit" >/dev/null 2>&1 \
+        || ! git -C "$worktree_path" config maintenance.auto false; then
+        git -C "$repo" worktree remove --force "$worktree_path" >/dev/null 2>&1 || true
+        log "BLOCK: independence worktree checkout/config failed"
+        return 1
+    fi
+    worktree_head=$(git -C "$worktree_path" rev-parse HEAD 2>/dev/null || true)
+    if [ "$worktree_head" != "$base_commit" ]; then
+        git -C "$repo" worktree remove --force "$worktree_path" >/dev/null 2>&1 || true
+        log "BLOCK: independence worktree HEAD mismatch after fixed-base checkout (expected=${base_commit}, actual=${worktree_head:-empty})"
+        return 1
+    fi
+    if ! deploy_task_validate_remote_tip_paths "$task_file" "$repo" "$worktree_path"; then
+        git -C "$repo" worktree remove --force "$worktree_path" >/dev/null 2>&1 || true
+        log "BLOCK: independence worktree target path validation failed"
+        return 1
+    fi
+
+    marker="$SCRIPT_DIR/queue/gates/$parent_cmd/task_worktree.json"; mkdir -p "${marker%/*}"
+    marker_tmp="${marker}.tmp.${BASHPID}"
+    python3 -c 'import json,os,sys,time; p,tid,pc,repo,wt,base,gen=sys.argv[1:]; fh=open(p,"w",encoding="utf-8"); json.dump({"version":1,"state":"active","task_id":tid,"parent_cmd":pc,"repo":repo,"worktree":wt,"remote_tip":base,"published_commit":"","generation":gen,"created_at_ns":time.time_ns()},fh,sort_keys=True); fh.write("\n"); fh.flush(); os.fsync(fh.fileno()); fh.close()' \
+        "$marker_tmp" "$task_id" "$parent_cmd" "$repo" "$worktree_path" "$base_commit" "$generation"
+    mv -f -- "$marker_tmp" "$marker"
+
+    task_worktree_targets=$(python3 -c 'import json,os,sys,yaml; t=(yaml.safe_load(open(sys.argv[1],encoding="utf-8")) or {}).get("task",{}); a=t.get("target_path") or []; a=[a] if isinstance(a,str) else a; b=t.get("planned_paths") or []; b=[b] if isinstance(b,str) else b; v=a+b; projected=[os.path.join(sys.argv[2],str(x)[2:] if str(x).startswith("./") else str(x)) for x in v if str(x).strip()]; print(json.dumps(list(dict.fromkeys(projected)),ensure_ascii=False))' "$task_file" "$worktree_path")
+    task_worktree_projection=$(python3 - "$task_file" "$worktree_path" <<'PY'
+import json
+import sys
+import yaml
+
+task = (yaml.safe_load(open(sys.argv[1], encoding="utf-8")) or {}).get("task", {})
+
+def paths(value):
+    if isinstance(value, str):
+        try:
+            decoded = yaml.safe_load(value)
+        except yaml.YAMLError:
+            decoded = None
+        if isinstance(decoded, list):
+            return [str(item).strip() for item in decoded if str(item).strip()]
+        return [value.strip()] if value.strip() else []
+    if isinstance(value, list):
+        return [str(item).strip() for item in value if str(item).strip()]
+    return []
+
+target = paths(task.get("target_path"))
+planned = paths(task.get("planned_paths"))
+print(json.dumps({
+    "source_paths": list(dict.fromkeys(target + planned)),
+}, ensure_ascii=False))
+PY
+)
+    task_worktree_source_paths=$(python3 -c 'import json,sys; print(json.dumps(json.loads(sys.argv[1])["source_paths"],ensure_ascii=False))' "$task_worktree_projection")
+    task_worktree_edit_wrapper="$SCRIPT_DIR/scripts/ninja_scope_commit.sh --task-worktree-exec $task_file --"
+    local -a task_worktree_args=(
+        "task_worktree_required=true" "task_worktree_path=$worktree_path"
+        "task_worktree_repo=$repo" "task_worktree_base=$base_commit"
+        "task_worktree_generation=$generation" "task_worktree_status=active"
+        "task_worktree_marker=$marker" "task_worktree_workdir=$worktree_path"
+        "task_worktree_target_paths=$task_worktree_targets"
+        "task_worktree_edit_wrapper=$task_worktree_edit_wrapper"
+        "task_worktree_source_paths=$task_worktree_source_paths"
+    )
+    if ! yaml_field_set_batch "$task_file" task "${task_worktree_args[@]}"; then
+        git -C "$repo" worktree remove --force "$worktree_path" >/dev/null 2>&1 || true
+        rm -f -- "$marker" 2>/dev/null || true
+        log "BLOCK: independence worktree YAML publish failed; rolled back path=$worktree_path"
+        return 1
+    fi
+    log "TASK_WORKTREE_READY: ninja=$ninja_name task=$task_id base=$base_commit path=$worktree_path maintenance.auto=false (independence_fixed_base)"
+}
+
 deploy_task_prepare_remote_tip_worktree_dispatch() {
     deploy_task_inject_worktree_required_for_code_tasks "$1"
     if deploy_task_reuse_existing_remote_tip_worktree "$@"; then
         return 0
+    fi
+    local _dt_independence_required
+    _dt_independence_required=$(FIELD_GET_NO_LOG=1 field_get "$1" "independence_worktree_required" "false" 2>/dev/null || true)
+    if [ "$_dt_independence_required" = "true" ]; then
+        deploy_task_pin_independence_worktree_base "$@"
+        return $?
     fi
     deploy_task_prepare_remote_tip_worktree_sparse "$@"
 }
