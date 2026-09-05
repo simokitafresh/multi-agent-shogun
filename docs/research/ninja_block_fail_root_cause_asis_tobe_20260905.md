@@ -40,6 +40,7 @@
 |---|---|---|
 | recon2_4449_u2_revalidate | FAIL→FAIL→FAIL→LGTM→LGTM | fixture の非決定性(PD-142)が根治されるまで 3 回 FAIL |
 | recon2_4448_u1_revalidate | FAIL→FAIL→FAIL→LGTM | 同上 |
+| ci_fix 33939652526(才蔵 初代) | FAIL→… | case135 は D(gate)より B(worktree が古い)寄り(軍師 (1)) |
 | hotfix_deploy_external_worktree_timeout | FAIL→FAIL→FAIL→LGTM→LGTM | 外部 repo worktree 準備 312〜420 s の環境問題 |
 | hotfix_agent_respawn_preserve_active | FAIL→FAIL→LGTM | (未分類) |
 | cmd_4475 | FAIL→FAIL→LGTM | AC2 の lint 不可能(lint script 不在)→将軍が AC を訂正 |
@@ -100,10 +101,10 @@
 | # | 何を | どこ(既存) | 何が消えるか | 大きさ |
 |---|---|---|---|---|
 | T1 | **環境カード注入**: `projects/infra.yaml` に `environments:`(localpg: path/起動/接続 URL/schema 分離の型、DM-signal clone: 絶対 path/branch 規約、artifact 保存先、clean-repro recipe の絶対 path)を 1 度書き、`inject_cmd_assumptions` が cmd の target_path/文中の環境語に一致する card を task YAML `environment:` へ複製 | deploy_task.sh の既存注入 3 種の隣に 4 つ目。projects/infra.yaml(家老管理) | B の 5〜7 件/日 | yaml 1 表+注入関数 1 本(既存の inject_semantic_concepts と同型) |
-| T2 | **AC 充足可能性 check(cmd_save)**: (a)『全量 FAIL 0』『lint』『typecheck』を AC に書く時は対象 repo で baseline を 1 回実行した結果(赤なら『baseline 一致』条件)を assumptions に必須 (b) AC 内の未定義語(field 名・『公開済み』『明示』)は定義行を要求 | cmd_save.sh の既存 check 群に 2 check 追加(表示型だが WARN ではなく **cmd 作者=将軍/家老の側で止める**=忍者には届かない) | A の 5 件/日 | check 2 本 |
+| T2 | **AC 充足可能性 check(cmd_save)**: (a)『全量 FAIL 0』『lint』『typecheck』を AC に書く時は assumptions に『対象 repo の baseline 実行結果(コマンド+件数+日時)』の記載を必須(**cmd_save 自身は baseline を走らせない**=数十秒の遅延を持ち込まない。軍師 (4)) (b) AC 内の未定義語(field 名・『公開済み』『明示』)は定義行を要求 | cmd_save.sh の既存 check 群に 2 check 追加(文字列 check のみ、1 s 未満。止める相手は忍者ではなく cmd 作者=将軍/家老。07-21 殿裁定『超速なら問題なし』と整合) | A の 5 件/日 | check 2 本 |
 | T3 | **正規コマンド表の pre-injection**: 忍者 task YAML に `routine:` として run_tests.sh file/task、db-check 2 段、report_field_set の status 遷移順、inbox_read→mark_read、ninja_scope_commit を deploy 時に複製(1 表、テンプレート固定) | deploy_task の注入+CLAUDE.md 忍者 Recovery に 5 行 | C の 8 件/日 | template 1 表 |
-| T4 | **FAIL 理由の再注入**: 軍師 FAIL の fail_reasons を、家老 RC で同 task へ `review_feedback:` として自動複製(既存 inject_task_modifiers の経路) | deploy_task/review_approval の既存経路 | ループ 2 回目以降の同じ FAIL | 既存 field の再利用 |
-| T5 | **計測**: karo_throughput_report(cmd_4478)に『FAIL ループ数/cmd、rework 率、deploy→CLEAR p50(FAIL 有無別)、hook_failures 件数、分類 A〜E』の列を足す | cmd_4478 の日次表 | 効果が毎日見える | 列追加 |
+| T4(T1-T3 の効果計測後に要否判断。軍師 (5)) | **FAIL 理由の再注入**: 軍師 FAIL の fail_reasons を、家老 RC で同 task へ `review_feedback:` として自動複製(既存 inject_task_modifiers の経路) | deploy_task/review_approval の既存経路 | ループ 2 回目以降の同じ FAIL | 既存 field の再利用 |
+| T5(cmd_4478 の日次表 scope に統合。軍師 (5)) | **計測**: karo_throughput_report(cmd_4478)に『FAIL ループ数/cmd、rework 率、deploy→CLEAR p50(FAIL 有無別)、hook_failures 件数、分類 A〜E』の列を足す | cmd_4478 の日次表 | 効果が毎日見える | 列追加 |
 | T6 | D(偽陽性)は個別 hotfix 継続(本日 4 件根治済み)。合流待ちは別書(karo_throughput §7) | — | — | — |
 
 ### §5.1 やらないこと
@@ -115,7 +116,11 @@
 3. T4→ 二値: 同一 fail_reason での 2 回目 FAIL が 0。
 4. T5→ 二値: 日次表に分類 A〜E 列。
 
-## §6 レビュー依頼(忖度なし)
+## §6 レビュー判定の記録
+- 軍師 16:13: APPROVE。(1) bc:no 13 の A5/B5/D3 は実体と合致、才蔵 case135 は B 寄り (2) E 見落としなし、14% 妥当 (3) T3 は SG と矛盾なし (4) T2 は cmd_save で baseline を走らせると数十秒→記載義務のみに(採用) (5) T4 は T1-T3 の効果後に判断、T5 は cmd_4478 に統合(採用)。
+- 家老: (待ち)
+
+## §6.1 レビュー依頼(忖度なし)
 - 家老: §3 の分類と件数は現場感と合うか(特に A と B の線引き)。T1 の environments 表を projects/infra.yaml に置くことの運用負荷。T2 が家老の /karo-direct 起票を遅くしないか。T4 の再注入で task YAML が肥大しないか。
 - 軍師: §2.2 の fail_reasons 分類の妥当性(bc:no 13 の内訳 5/5/3 は将軍の読み)。T3 の routine 表が既存 SG 観点と矛盾しないか。E(忍者品質 3 件)の見落とし。
 
