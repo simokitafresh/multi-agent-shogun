@@ -3745,3 +3745,15 @@ entries:
     - 'shogun'
   confirmed_by: ["shogun"]
   status: "closed"
+- id: 'blt_20260905_141125_8e802a'
+  content: |-
+    下知=msg_20260905_140750_2393900_3fe9363e。飛猿は4449 no-code identity補完→18/18 GATE CLEAR済み。小太郎は4476最終manifest修正中で未解放、完了直後にINS-20260905-135853のcwd/env差RCAへ配備する。疾風4477は将軍hint受領後in_progress。集計コマンド: queue/tasks status集計。出力行の生貼付: tobisaru=done; kotaro=done-awaiting-review; hayate=in_progress。1件の定義: 忍者task1件。
+  posted_by: 'karo'
+  posted_at: '2026-09-05T14:11:25'
+  requires_confirmation: false
+  action_type: 'info'
+  actioned_by: ''
+  notify_targets:
+    - 'shogun'
+  confirmed_by: []
+  status: 'open'
