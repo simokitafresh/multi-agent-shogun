@@ -69,9 +69,19 @@ run_locked() {
         echo "publish_direct_commit: git fetch failed (rc=8)" >&2
         return 8
     fi
+    # 2026-09-05 将軍(殿『コミットをまとめるメリットは？』): root が origin と分岐している
+    # (忍者 commit を root に置き c2a が別 commit で合流した後の恒常状態)とき、ff 失敗で
+    # rc=8 終了すると commit 自体が作れず、publish が root 収束まで滞留=commit のまとめ書きを
+    # 強制していた。分岐時は ff を諦め、commit を作って c2a(isolated clone 3-way)で直接 origin へ
+    # 出す。root の収束は別 lane(publisher root drain / 家老)の責務で、ここでは待たない。
+    local diverged=0
     if ! git merge --ff-only origin/main; then
-        echo "publish_direct_commit: origin/main ff-only merge failed (rc=8)" >&2
-        return 8
+        if git merge-base --is-ancestor origin/main HEAD; then
+            echo "publish_direct_commit: origin/main ff-only merge failed (rc=8)" >&2
+            return 8
+        fi
+        diverged=1
+        echo "publish_direct_commit: root diverged from origin/main (ahead=$(git rev-list --count origin/main..HEAD) behind=$(git rev-list --count HEAD..origin/main)); commit locally and publish via c2a" >&2
     fi
 
     # ninja_scope_commit accepts the exact requested paths; append exactly one
@@ -89,15 +99,19 @@ Published-By: wrapper" -- "${paths[@]}")"; then
         echo "publish_direct_commit: scope commit returned invalid hash" >&2
         return 1
     }
-    if timeout 120 git push origin main; then
+    if (( diverged == 0 )) && timeout 120 git push origin main; then
         return 0
     fi
     # lock 外で origin が進んだ(publisher batch 等)ため non-ff で reject された場合は、
     # 同じ lock 内で isolated clone の 3-way merge(Published-By trailer 付き)を 1 回だけ試み、
     # root を origin へ ff する(将軍 2026-09-03 11:07 hotfix 列)。
     echo "publish_direct_commit: push rejected; retrying via publisher_c2a_merge (nolock)" >&2
-    if PUBLISHER_C2A_MERGE_NOLOCK=1 bash "$SCRIPT_DIR/publisher_c2a_merge.sh" "u1b_retry_$(date +%H%M%S)" "$commit_hash" \
-        && timeout 120 git fetch origin && git merge --ff-only origin/main; then
+    if PUBLISHER_C2A_MERGE_NOLOCK=1 bash "$SCRIPT_DIR/publisher_c2a_merge.sh" "u1b_retry_$(date +%H%M%S)" "$commit_hash"; then
+        if timeout 120 git fetch origin && git merge --ff-only origin/main 2>/dev/null; then
+            return 0
+        fi
+        # 分岐中の root は ff できないが、内容は c2a で origin に出ている。publish は成功。
+        echo "publish_direct_commit: published via c2a; root remains diverged (converge via root drain lane)" >&2
         return 0
     fi
     echo "publish_direct_commit: push retry failed (rc=9)" >&2

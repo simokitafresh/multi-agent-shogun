@@ -14,6 +14,8 @@ setup() {
     cp "$PROJECT_ROOT/scripts/publish_direct_commit.sh" "$BASE_ROOT/scripts/"
     cp "$PROJECT_ROOT/scripts/publisher_queue.sh" "$BASE_ROOT/scripts/"
     cp "$PROJECT_ROOT/scripts/ninja_scope_commit.sh" "$BASE_ROOT/scripts/"
+    cp "$PROJECT_ROOT/scripts/publisher_c2a_merge.sh" "$BASE_ROOT/scripts/"
+    cp "$PROJECT_ROOT/scripts/lib/defense_overhead_writer.sh" "$BASE_ROOT/scripts/lib/"
     cp "$PROJECT_ROOT/scripts/lib/lock_run_shim.sh" "$BASE_ROOT/scripts/lib/"
     cp "$PROJECT_ROOT/scripts/lib/publisher_event.sh" "$BASE_ROOT/scripts/lib/"
     cp "$PROJECT_ROOT/scripts/lib/scope_path.sh" "$BASE_ROOT/scripts/lib/"
@@ -94,7 +96,11 @@ SH
     [ "$(<"$MAX")" -eq 1 ]
 }
 
-@test "ff-only synchronization failure returns rc=8 and creates no wrapper commit" {
+# test_necessity: a diverged shared root (local commit not on origin) must not
+# block publication; the wrapper commits locally and the content reaches origin
+# via the c2a 3-way merge, while the root's own divergence is left to the drain
+# lane. Before 2026-09-05 this path returned rc=8 and forced commit batching.
+@test "diverged root still publishes via c2a and creates the wrapper commit" {
     printf 'local\n' >> "$ROOT/payload.txt"
     git -C "$ROOT" add payload.txt
     git -C "$ROOT" commit -qm 'local divergence'
@@ -109,10 +115,14 @@ SH
     before="$(git -C "$ROOT" rev-parse HEAD)"
     printf 'unpublished\n' > "$ROOT/unpublished.txt"
 
-    run bash -c 'cd "$1" && bash "$1/scripts/publish_direct_commit.sh" -m "should fail" -- unpublished.txt' _ "$ROOT"
-    [ "$status" -eq 8 ]
-    [ "$(git -C "$ROOT" rev-parse HEAD)" = "$before" ]
-    [ "$(git -C "$ROOT" log --all --format=%s | grep -c "should fail" || true)" -eq 0 ]
+    run bash -c 'cd "$1" && bash "$1/scripts/publish_direct_commit.sh" -m "diverged publish" -- unpublished.txt' _ "$ROOT"
+    [ "$status" -eq 0 ]
+    [ "$(git -C "$ROOT" rev-parse HEAD)" != "$before" ]
+    git -C "$ROOT" log -5 --format=%s | grep -qx "diverged publish"
+    # content is on origin even though root is still diverged
+    git -C "$ROOT" fetch -q origin
+    [ "$(git -C "$ROOT" show origin/main:unpublished.txt)" = "unpublished" ]
+    [ "$(git -C "$ROOT" show origin/main:remote.txt)" = "remote" ]
 }
 
 @test "successful wrapper commit has exactly one Published-By wrapper trailer" {
