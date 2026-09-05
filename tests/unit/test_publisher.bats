@@ -358,6 +358,20 @@ EOF
     [ "$(<"$PUBROOT/payload.txt")" = "published" ]
 }
 
+# test_necessity: production callers pass the symbolic ref origin/main.  The
+# post-sync check must compare two resolved commit IDs, not SHA text to a ref
+# name, or every successful sync is reported as a false BLOCK.
+@test "active root sync resolves symbolic tip before postsync verification" {
+    git -C "$WORK" push -q origin HEAD
+    git -C "$PUBROOT" fetch -q origin
+    expected="$(git -C "$PUBROOT" rev-parse origin/main)"
+
+    run bash -c 'PUBLISHER_LIB_ONLY=1 PUBLISHER_REPO_ROOT="$1" source "$2/scripts/publisher.sh"; sync_root "$1" origin/main' _ "$PUBROOT" "$ROOT"
+    [ "$status" -eq 0 ]
+    [ "$(git -C "$PUBROOT" rev-parse HEAD)" = "$expected" ]
+    [[ "$output" != *"postsync_verify_mismatch"* ]]
+}
+
 # test_necessity: a tracked dirty path outside the incoming publication must
 # retain its exact bytes while an overlapping path is merged by its driver.
 @test "active root sync preserves a dirty non-overlapping path" {
