@@ -604,6 +604,36 @@ Safe-Shared-Main-Equivalent-Source: $second_source"
   [ "$(cat "$FIX/dirty.txt")" = "writer-update" ]
 }
 
+# test_necessity: publisher activity can hold Git's index.lock after the
+# helper's own lock is acquired. Only that transient error is retried within a
+# finite bound; the ref must converge without losing dirty work.
+@test "transient git index lock collision retries and converges" {
+  local real_git wrapper target calls
+  real_git="$(command -v git)"
+  mkdir -p "$BATS_TEST_TMPDIR/git-lock-wrapper"
+  wrapper="$BATS_TEST_TMPDIR/git-lock-wrapper/git"
+  {
+    printf '#!/usr/bin/env bash\n'
+    printf 'real_git=%q\n' "$real_git"
+    printf 'state=%q\n' "$BATS_TEST_TMPDIR/index-lock-once"
+    printf 'if [[ "$*" == *"read-tree --reset"* && ! -e "$state" ]]; then touch "$state"; echo "fatal: Unable to create index.lock: File exists." >&2; exit 128; fi\n'
+    printf 'exec "$real_git" "$@"\n'
+  } > "$wrapper"
+  chmod +x "$wrapper"
+  printf 'local-b\n' >> "$FIX/b.txt"
+  target="$(git -C "$BATS_TEST_TMPDIR/next" rev-parse HEAD)"
+
+  run env PATH="$BATS_TEST_TMPDIR/git-lock-wrapper:$PATH" \
+    bash "$FIX/scripts/safe_shared_main_ff.sh" "$target"
+  [ "$status" -eq 0 ]
+  [[ "$output" == *"index.lock"* ]]
+  [[ "$output" == *"result=PASS"* ]]
+  [ "$(git -C "$FIX" rev-parse HEAD)" = "$target" ]
+  grep -q '^local-b$' "$FIX/b.txt"
+  calls="$(wc -l < "$BATS_TEST_TMPDIR/index-lock-once")"
+  [ "$calls" -eq 0 ] || true
+}
+
 # test_necessity: the ancestry-WAIT recovery lane may publish only an
 # exact-descendant local main with an exact GREEN remote-tip proof, while the
 # shared worktree remains byte-for-byte unchanged.
