@@ -1,5 +1,5 @@
 <!-- gist-master: e2219c69d927f32dc84d53e3e7daa97d dm-signal-market-direction-breadth-exposure-asis-tobe_20260905.md -->
-# DM-Signal 体系全体の市場方向性を PIT で観測する実験 — AsIs/ToBe 設計書 v0.2(2026-09-05 21:40: §2.6 に signal_change_log/fof_component_weights の実測を追記、基盤設計書へリンク / v0.1(2026-09-05 20:10、殿指示 19:32。実装なし・設計のみ)
+# DM-Signal 体系全体の市場方向性を PIT で観測する実験 — AsIs/ToBe 設計書 v0.3(2026-09-05 22:05 覚醒更新: 殿 21:51『既にあるもので』21:56『FoF 分解ツールは既にある』→ weight 正本を display_ticker_weights に置換、FoF 展開設計を撤回、§2.4/§2.5/§5 訂正) / v0.2(2026-09-05 21:40: §2.6 に signal_change_log/fof_component_weights の実測を追記、基盤設計書へリンク / v0.1(2026-09-05 20:10、殿指示 19:32。実装なし・設計のみ)
 
 > 殿指示 2026-09-05 19:32。「全 PF の当月 ticker × weight から DM-Signal 全体の市場方向性を可視化する実験」。対象は L0 GS・真・四神 / L1 忍法 / L2 奥義 / L3 秘奥義のみ。目的は新しい売買シグナルを作ることではなく、体系全体が今月どちらを向いているかを PIT で観測・時系列化すること。既存 DB・PF 定義・ticker/weight 生成ロジックを実確認して書く。最適化や新しい恣意的パラメータは導入しない。
 > 本書の数値は 2026-09-05 19:5x〜20:0x に本番 PostgreSQL を `/db-check` readonly launcher で読んだ一次値。推測箇所は「(未確認)」と明記。
@@ -15,7 +15,7 @@
 
 **我らのスタイル(この設計書が守る原則)**
 1. シンプルに解決する。既存の月次正本 1 表(`monthly_returns`)と既存の展開規則(FoF 1/N・comma split 1/N)だけで作る。新テーブル・新 API・新 daemon を作らない。
-2. 既存のコードがあればそれを使う。FoF→ticker 展開は `backend/app/api/history.py` `_convert_pf_ids_to_ticker_display` と cmd_3768 の再帰展開と同じ規則。
+2. 既存のコードがあればそれを使う。FoF→ticker 展開は `backend/app/api/history.py` L211 `_resolve_pf_ids_to_tickers`(v0.3 訂正)と cmd_3768 の再帰展開と同じ規則。**v0.3: ただし F1 では展開せず display_ticker_weights を読む**。
 3. 新規の複雑さを足さない。パラメータは 0(閾値・lookback・重み調整なし)。唯一の手入力は「ticker→asset class」の対応表で、それは §4 に全量を明記する。
 4. 最小変更→実験→データを見て次を決める。読み取り専用 SQL + 1 本の集計 script(analysis_runs 配下、本番書込なし)。
 5. 測れないものは書かない。未確認は「(未確認)」。
@@ -23,6 +23,8 @@
 7. 壊さない。本番 DB は readonly launcher のみ、UPSERT/DELETE なし。
 
 ## §1 結論(先に)
+
+**v0.3 訂正(最上位)**: weight は既に DB にある。fof(L1〜L3)は `signals.momentum_data.display_ticker_weights` が全行(L1 2011-04-01〜/L2 2012-02-29〜/L3 2013-12-02〜、209,215 行、66/66 PF)、standard(L0)は `holding_signal` が ticker 文字列。**本書 v0.1 の「FoF 1/N 再帰展開で復元」は不要(殿裁定 alias『FoF 展開不要で display_ticker_weights を使え』)。** 月初行の display_ticker_weights を JSON→long にするだけ。既存ツール(fof_tree.py / verify_fof_consistency.py / monthly_return_oracle.expand_weights)は検算に使う。基盤設計書 `dm-signal-research-data-foundation-asis-tobe_20260905.md` v0.2 §1/§2.6 が正本。
 
 - **既存データで全て賄える。** 78 PF(L0 12 / L1 21 / L2 24 / L3 21)の月次 PIT 保有は `monthly_returns.holding_signal` に 2010-04〜2026-09 まで欠損 0 で入っている(§2.3)。weight 列は存在しないが、体系の規則が「EqualWeight 1/N」なので、保有文字列から決定的に復元できる(§2.4)。
 - 観測する 6 表(§3)は全て「PF × 月 × ticker × weight」の 1 つの long table から派生する。派生に判断は入らない。
@@ -45,7 +47,7 @@
 ### §2.2 保有の記録方法(コードで確認)
 - standard の `signal` は選ばれた ticker を `,` で連結した文字列、無ければ `Cash`(`backend/app/services/pipeline/executor.py` L356、`blocks/equal_weight.py` L49)。
 - 複数 ticker の weight は等分(executor L358-364: `weights = {t: 1/len(tickers)}`)。threshold_band(50% 選択 + 50% safe haven)を使う PF は**対象 78 体に 0 件**(config に `threshold_band` 無し)。
-- fof の `signal`/`holding_signal` は選ばれた component PF の UUID(top_n=1)。ticker 展開は `history.py` `_convert_pf_ids_to_ticker_display`: 選ばれた PF を 1/N、その PF の保有 ticker をさらに 1/N。
+- fof の `signal`/`holding_signal` は選ばれた component PF の UUID(top_n=1)。ticker 展開は `history.py` L211 `_resolve_pf_ids_to_tickers`(v0.3 訂正: v0.1 の `_convert_pf_ids_to_ticker_display` は実在しない関数名): 選ばれた PF を 1/N、その PF の保有 ticker をさらに 1/N。
 - `holding_signal` = リバランス月でなければ前月維持(core.md L265)。2024-01 以降の L0 月初行 396 のうち 88(22%)で `signal ≠ holding_signal`。**PIT には holding_signal を使う**。
 
 ### §2.3 月次正本 `monthly_returns` の被覆
@@ -63,10 +65,10 @@
 - L0 config の ticker: relative=`TQQQ,TECL` / `XLU` / `TECL,TQQQ`、absolute=`LQD`/`SPXL`/`TMF`/`^VIX`、safe_haven=`XLU`/`TQQQ`/`TMV`/`GLD`、risk_free=`DTB3`。absolute/risk_free は判定用で保有されない。
 - L0 全履歴の `holding_signal` 実績: `XLU` 13,710 / `TQQQ` 9,645 / `GLD` 7,174 / `TMV` 5,775 / `TECL` 5,692 / `TECL,TQQQ` 5,661 / NULL 222(日次 signals 表、2003〜)。**保有され得るのは 5 ticker + 2 銘柄同時の 1 組**。`Cash` は L0 実績に無い(safe haven が常に資産)。
 - L3 の展開後 ticker(2024-01 以降、`display_ticker_weights` の key)も同じ 5 つ(XLU 9,785 / GLD 7,406 / TECL 7,265 / TQQQ 6,410 / TMV 3,362)。
-- ∴ weight は「comma split → 1/N」「FoF → component 1/N の積」で決定的に復元でき、恣意的パラメータは不要。
+- ~~∴ weight は「comma split → 1/N」「FoF → component 1/N の積」で決定的に復元でき、恣意的パラメータは不要。~~ **v0.3: 復元不要。fof は display_ticker_weights をそのまま使う(全行に存在)。standard のみ comma split 1/N。** 規則の記述は検算(基盤書 AC4 oracle)の説明としてのみ残す。
 
 ### §2.5 日次 `signals` 側の補助情報(検算用)
-- fof の月初行の `momentum_data` に `display_ticker_weights`(展開後 ticker→weight)と `weights`(component UUID→weight)が入る。2024-01 以降の対象 fof 66 体 × 33 ヶ月=2,178 PF-月で **2,178 全件に存在**。§3 の展開結果はこれと突合して検算する(§6 AC)。
+- fof の月初行の `momentum_data` に `display_ticker_weights`(展開後 ticker→weight)と `weights`(component UUID→weight)が入る。2024-01 以降の対象 fof 66 体 × 33 ヶ月=2,178 PF-月で **2,178 全件に存在**。**v0.3 訂正: 2024-01 以降だけではない。fof 全行(L1 2011-04-01〜 74,167 / L2 2012-02-29〜 76,184 / L3 2013-12-02〜 58,864、22:00 実測 nonce *-ro8)に存在する。v0.1 は月初かつ 2024-01 以降で絞って数えた。∴ これが weight の正本であり、§3 の入力そのもの(検算材料ではない)。**
 - 月初行の日付は月の第 1 営業日(2024 以降 33 ヶ月中 14 ヶ月は 1 日でない)。`monthly_returns.year_month` を主キーにすれば暦のずれを扱わずに済む。
 
 ### §2.6 使わない既存機構と理由
@@ -112,6 +114,8 @@
 - 「Equity 合計」を見るときは leveraged と defensive を分けて示す。XLU を Equity に足すと方向性が見えなくなる。
 
 ## §5 実装方針(殿 go 後の cmd 1 本、忍者 1 名。本書では実装しない)
+
+**v0.3**: 実装は基盤設計書 F1(cmd_4479 `holdings_monthly`)の完成後、その CSV を入力に 6 表を作る。本書独自の展開実装は行わない(車輪の再発明禁止、殿 21:56)。
 - 場所: `analysis_runs/market_direction/`(DM-signal repo、本番書込なし)。script 1 本 `market_direction_exposure.py` が §3.0→§3.6 を出力(CSV 6 本 + 1 枚の md 表)。
 - 入力: 本番 PostgreSQL readonly launcher(`/db-check` 2 ステップ)または `backend/static/data/dm_signal.db` ミラー(参照のみ)。両方で同値になることを AC にする。
 - 可視化: まず md 表(月 × ticker の exposure・breadth、階層別、class 別、Δ)。図は次段。
