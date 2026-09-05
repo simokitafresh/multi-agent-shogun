@@ -1,5 +1,5 @@
 <!-- gist-master: e2219c69d927f32dc84d53e3e7daa97d dm-signal-market-direction-breadth-exposure-asis-tobe_20260905.md -->
-# DM-Signal 体系全体の市場方向性を PIT で観測する実験 — AsIs/ToBe 設計書 v0.1(2026-09-05 20:10、殿指示 19:32。実装なし・設計のみ)
+# DM-Signal 体系全体の市場方向性を PIT で観測する実験 — AsIs/ToBe 設計書 v0.2(2026-09-05 21:40: §2.6 に signal_change_log/fof_component_weights の実測を追記、基盤設計書へリンク / v0.1(2026-09-05 20:10、殿指示 19:32。実装なし・設計のみ)
 
 > 殿指示 2026-09-05 19:32。「全 PF の当月 ticker × weight から DM-Signal 全体の市場方向性を可視化する実験」。対象は L0 GS・真・四神 / L1 忍法 / L2 奥義 / L3 秘奥義のみ。目的は新しい売買シグナルを作ることではなく、体系全体が今月どちらを向いているかを PIT で観測・時系列化すること。既存 DB・PF 定義・ticker/weight 生成ロジックを実確認して書く。最適化や新しい恣意的パラメータは導入しない。
 > 本書の数値は 2026-09-05 19:5x〜20:0x に本番 PostgreSQL を `/db-check` readonly launcher で読んだ一次値。推測箇所は「(未確認)」と明記。
@@ -74,6 +74,8 @@
 |---|---|---|
 | `signal_decision_ledger` | 本番 **0 行**(列は 18 個定義済み) | 2026-07-07 cmd_3711 でバックフィルした記録があるが、08-16 の DB PITR rollback 以後は空。正本にできない。空である事実は別件として記録に残す(§7) |
 | `month_start_signal_input_snapshots` | 3,591 行、standard 24 PF のみ、2003-09〜2026-09 | fof を含まないので体系全体には使えない。standard の検算に使える |
+| `signal_change_log` | 268,485 行、fof 56/standard 22、2003-08〜2026-08-21、`new_ticker_weights` は展開後 ticker keyed 267,514 行 | **v0.2 追記(21:26 実測)**: 変化イベントのみ・同日往復 2 行・fof 66 中 56 のため正本にしないが、2003 年からの検算材料になる(v0.1 は未走査=見落とし)。詳細 `dm-signal-research-data-foundation-asis-tobe_20260905.md` §2 |
+| `fof_component_weights` | 24,348 行、77 fof、月初 2011-04〜2026-09 | **v0.2 追記**: JSON 4 列(`expanded_tickers` 等)が全 NULL。展開保存の設計意図はあるが機能していない(同上 I1) |
 | 日次 `signals` 全走査 | fof 242,659 行 + standard 99,790 行 | 月次正本があるので不要。§2.5 の検算にのみ使う |
 
 ## §3 ToBe: 観測する 6 表(全て 1 つの long table から派生)
