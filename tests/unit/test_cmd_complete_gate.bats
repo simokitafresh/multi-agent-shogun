@@ -21,7 +21,7 @@ import sys
 from pathlib import Path
 
 source = "\n\n".join(Path(path).read_text(encoding="utf-8") for path in sys.argv[1:])
-names = """record_block_reason record_wait_reason append_line_locked append_lesson_tracking dispatch_gate_notification_async send_high_notification send_info_cmd_notification log_gate_stderr_file lesson_done_satisfies_lesson_candidate_registration cmd_status_is_canceled level_heading check_context_update resolve_report_file update_lesson_impact_tsv build_clear_duration_metric build_clear_throughput_metric binary_checks_warn_reason report_has_commit_binary_check_yes collect_report_files_modified discover_reports_for_cmd collect_parent_cmd_report_files_modified has_parent_cmd_report collect_git_show_w_files collect_report_commit_hash collect_cmd_phase_git_files check_self_grade_commit_file_coverage is_lessons_useful_empty_warn_task_type handle_empty_lessons_useful_check validate_lesson_feedback_set detect_task_types _check_lc_found lesson_candidate_status preflight_gate_flags collect_report_modified_files load_validated_sg7_context collect_cmd_command_file_refs collect_report_verified_existing_deps collect_task_readonly_refs check_command_files_modified_coverage check_scope_drift check_wtf_likelihood check_script_wiring resolve_task_repo_dir cmd_requires_cdp_production_check run_cdp_production_check cmd_requires_dm_signal_production_smoke dm_signal_report_deploy_sha resolve_dm_signal_render_live_sha run_dm_signal_production_smoke_check append_codd_registry_entry run_codd_propagate_update normalize_block_reason_to_workaround_categories update_karo_workaround_resolutions classify_completed_rework_event_kind capture_completed_rework_event compute_task_ac_version check_task_ac_version_integrity resolve_ci_expected_head resolve_report_commit_repo report_ci_push_state_cached report_ci_push_state_legacy_compat report_ci_push_state report_commit_main_ancestry_state report_source_only_equivalence_state check_report_commit_main_ancestry resolve_ninja_test_receipt_path validate_ninja_test_receipt check_ninja_test_receipts cmd_complete_gate_auto_push_ci_state cmd_complete_gate_auto_push_ancestry_wait mark_task_worktree_published source_publish_receipt_tip""".split()
+names = """record_block_reason record_wait_reason append_line_locked append_lesson_tracking dispatch_gate_notification_async send_high_notification send_info_cmd_notification log_gate_stderr_file lesson_done_satisfies_lesson_candidate_registration cmd_status_is_canceled level_heading check_context_update resolve_report_file update_lesson_impact_tsv build_clear_duration_metric build_clear_throughput_metric binary_checks_warn_reason report_has_commit_binary_check_yes collect_report_files_modified discover_reports_for_cmd collect_parent_cmd_report_files_modified has_parent_cmd_report collect_git_show_w_files collect_report_commit_hash collect_cmd_phase_git_files check_self_grade_commit_file_coverage is_lessons_useful_empty_warn_task_type handle_empty_lessons_useful_check validate_lesson_feedback_set detect_task_types _check_lc_found lesson_candidate_status preflight_gate_flags collect_report_modified_files load_validated_sg7_context collect_cmd_command_file_refs collect_report_verified_existing_deps collect_task_readonly_refs check_command_files_modified_coverage check_scope_drift check_wtf_likelihood check_script_wiring resolve_task_repo_dir cmd_requires_cdp_production_check run_cdp_production_check cmd_requires_dm_signal_production_smoke dm_signal_smoke_deploy_touches_backend dm_signal_report_deploy_sha resolve_dm_signal_render_live_sha run_dm_signal_production_smoke_check append_codd_registry_entry run_codd_propagate_update normalize_block_reason_to_workaround_categories update_karo_workaround_resolutions classify_completed_rework_event_kind capture_completed_rework_event compute_task_ac_version check_task_ac_version_integrity resolve_ci_expected_head resolve_report_commit_repo report_ci_push_state_cached report_ci_push_state_legacy_compat report_ci_push_state report_commit_main_ancestry_state report_source_only_equivalence_state check_report_commit_main_ancestry resolve_ninja_test_receipt_path validate_ninja_test_receipt check_ninja_test_receipts cmd_complete_gate_auto_push_ci_state cmd_complete_gate_auto_push_ancestry_wait mark_task_worktree_published source_publish_receipt_tip""".split()
 names += " post_deploy_evidence_publication_status handle_post_deploy_evidence_failure queue_post_deploy_evidence_publication_followup".split()
 for name in names:
     match = re.search(rf"(?m)^{re.escape(name)}\(\) \{{.*?^\}}", source, re.DOTALL)
@@ -4456,6 +4456,147 @@ EOF
     [ "$status" -eq 1 ]
     [[ "$output" == *"deploy_unreached"* ]]
     grep -q 'gate: "dm_signal_production_smoke", result: FAIL' "$TEST_PROJECT/logs/gate_fire_log.yaml"
+}
+
+# test_necessity: cmd_4475 reproduced a false BLOCK where an LP-only deploy
+# (files_modified entirely under lp/) with post_deploy_evidence.required=true
+# was routed into the backend API smoke and BLOCKed on the backend live SHA,
+# even though no backend/ path changed. Backend-touching deploys must remain
+# required; LP-only deploys must skip the backend smoke permanently.
+# regression_justification: prior to this fix cmd_requires_dm_signal_production_smoke
+# had no deploy-target classification and required backend smoke for every
+# dm-signal task/report carrying post_deploy_evidence.required=true.
+@test "dm-signal production smoke skips LP-only deploys and does not check backend SHA" {
+    source "$GATE_HELPERS_FILE"
+    export SCRIPT_DIR="$TEST_PROJECT" LOG_DIR="$TEST_PROJECT/logs" CMD_ID="$TEST_CMD_ID"
+    export CMD_PROJECT="dm-signal" TASKS_DIR="$TEST_PROJECT/queue/tasks"
+    export MATCHING_TASK_FILES=("$TEST_PROJECT/queue/tasks/sasuke.yaml")
+    unset DM_SIGNAL_SMOKE_ORIGIN_SHA DM_SIGNAL_SMOKE_LIVE_SHA DM_SIGNAL_SMOKE_AUTH_HEADER DM_SIGNAL_SMOKE_HTTP_STATUS_MAP
+    cat > "$TEST_PROJECT/queue/tasks/sasuke.yaml" <<EOF
+task:
+  parent_cmd: $TEST_CMD_ID
+  report_filename: sasuke_report_${TEST_CMD_ID}.yaml
+EOF
+    cat > "$TEST_PROJECT/queue/reports/sasuke_report_${TEST_CMD_ID}.yaml" <<'EOF'
+worker_id: sasuke
+parent_cmd: cmd_999
+files_modified:
+  - path: lp/app/(en)/page.tsx
+  - path: lp/components/structured-data.tsx
+post_deploy_evidence:
+  required: true
+EOF
+
+    run run_dm_signal_production_smoke_check
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"SKIP (LP-only deploy, backend smoke not required"* ]]
+    [[ "$output" != *"REQUIRED (basis:"* ]]
+    [ ! -f "$TEST_PROJECT/logs/gate_fire_log.yaml" ] || \
+        ! grep -q 'gate: "dm_signal_production_smoke"' "$TEST_PROJECT/logs/gate_fire_log.yaml"
+}
+
+# test_necessity: an explicit deployment_target overrides path-based
+# classification so a declared "backend" deploy is never silently skipped and
+# a declared "lp" deploy is never blocked by unrelated backend-path noise.
+@test "dm-signal production smoke honors explicit deployment_target over path guesses" {
+    source "$GATE_HELPERS_FILE"
+    export SCRIPT_DIR="$TEST_PROJECT" LOG_DIR="$TEST_PROJECT/logs" CMD_ID="$TEST_CMD_ID"
+    export CMD_PROJECT="dm-signal" TASKS_DIR="$TEST_PROJECT/queue/tasks"
+    export MATCHING_TASK_FILES=("$TEST_PROJECT/queue/tasks/sasuke.yaml")
+    unset DM_SIGNAL_SMOKE_ORIGIN_SHA DM_SIGNAL_SMOKE_LIVE_SHA DM_SIGNAL_SMOKE_AUTH_HEADER DM_SIGNAL_SMOKE_HTTP_STATUS_MAP
+    cat > "$TEST_PROJECT/queue/tasks/sasuke.yaml" <<EOF
+task:
+  parent_cmd: $TEST_CMD_ID
+  report_filename: sasuke_report_${TEST_CMD_ID}.yaml
+EOF
+    # No backend/ path anywhere, but explicit deployment_target=backend must
+    # still force the smoke requirement (fail-open would hide a real risk).
+    cat > "$TEST_PROJECT/queue/reports/sasuke_report_${TEST_CMD_ID}.yaml" <<'EOF'
+worker_id: sasuke
+parent_cmd: cmd_999
+deployment_target: backend
+files_modified:
+  - path: lp/app/(en)/page.tsx
+post_deploy_evidence:
+  required: true
+EOF
+    export DM_SIGNAL_SMOKE_ORIGIN_SHA="0123456789abcdef0123456789abcdef01234567"
+    export DM_SIGNAL_SMOKE_LIVE_SHA="$DM_SIGNAL_SMOKE_ORIGIN_SHA"
+    local health_body signals_body
+    health_body="$(printf '%s' '{"status":"ok"}' | base64 -w0)"
+    signals_body="$(printf '%s' '{"success":true,"data":{"as_of":"2026-08-14","server_date":"2026-08-14","portfolios":[]}}' | base64 -w0)"
+    export DM_SIGNAL_SMOKE_AUTH_HEADER="Authorization: Bearer test-token"
+    export DM_SIGNAL_SMOKE_HTTP_STATUS_MAP="/healthz=200|${health_body},/api/signals=200|${signals_body}"
+
+    run run_dm_signal_production_smoke_check
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"REQUIRED (basis:"* ]]
+    grep -q 'gate: "dm_signal_production_smoke", result: PASS' "$TEST_PROJECT/logs/gate_fire_log.yaml"
+}
+
+# test_necessity: cmd_4475's gate_fire_log recorded
+# "origin_sha=refs/remotes/origin/main refs/remotes/origin/master" because
+# `git rev-parse <ref>` (without --verify) echoes an unresolved ref literally
+# to stdout instead of failing silently. This must never leak a ref-name
+# string into the resolved SHA, in any of the three remote-ref states.
+# regression_justification: prior to --verify --quiet, both a missing
+# origin/main with a present origin/master, and both refs missing, corrupted
+# origin_sha with the literal unresolved ref name(s).
+@test "dm-signal production smoke never leaks missing remote ref names into origin_sha" {
+    source "$GATE_HELPERS_FILE"
+    export SCRIPT_DIR="$TEST_PROJECT" LOG_DIR="$TEST_PROJECT/logs" CMD_ID="$TEST_CMD_ID"
+    export CMD_PROJECT="dm-signal" TASKS_DIR="$TEST_PROJECT/queue/tasks"
+    export MATCHING_TASK_FILES=("$TEST_PROJECT/queue/tasks/sasuke.yaml")
+    unset DM_SIGNAL_SMOKE_ORIGIN_SHA
+
+    local fixture_repo="$TEST_TMPDIR/dm_signal_ref_fixture"
+    mkdir -p "$fixture_repo"
+    git -C "$fixture_repo" init -q
+    git -C "$fixture_repo" -c user.email=test@example.com -c user.name=test \
+        commit -q --allow-empty -m init
+    local head_sha
+    head_sha=$(git -C "$fixture_repo" rev-parse HEAD)
+
+    cat > "$TEST_PROJECT/queue/tasks/sasuke.yaml" <<EOF
+task:
+  parent_cmd: $TEST_CMD_ID
+  target_path: $fixture_repo
+  report_filename: sasuke_report_${TEST_CMD_ID}.yaml
+EOF
+    cat > "$TEST_PROJECT/queue/reports/sasuke_report_${TEST_CMD_ID}.yaml" <<'EOF'
+worker_id: sasuke
+parent_cmd: cmd_999
+files_modified:
+  - path: backend/app/main.py
+post_deploy_evidence:
+  required: true
+EOF
+    export DM_SIGNAL_SMOKE_LIVE_SHA="$head_sha"
+    local health_body signals_body
+    health_body="$(printf '%s' '{"status":"ok"}' | base64 -w0)"
+    signals_body="$(printf '%s' '{"success":true,"data":{"as_of":"2026-08-14","server_date":"2026-08-14","portfolios":[]}}' | base64 -w0)"
+    export DM_SIGNAL_SMOKE_AUTH_HEADER="Authorization: Bearer test-token"
+    export DM_SIGNAL_SMOKE_HTTP_STATUS_MAP="/healthz=200|${health_body},/api/signals=200|${signals_body}"
+
+    # Fixture A: both origin/main and origin/master missing.
+    run run_dm_signal_production_smoke_check
+    [ "$status" -eq 1 ]
+    [[ "$output" != *"refs/remotes/origin"* ]]
+    [[ "$output" == *"origin_sha=missing"* ]]
+
+    # Fixture B: origin/main missing, origin/master present and matching live.
+    git -C "$fixture_repo" update-ref refs/remotes/origin/master "$head_sha"
+    run run_dm_signal_production_smoke_check
+    [ "$status" -eq 0 ]
+    [[ "$output" != *"refs/remotes/origin"* ]]
+    [[ "$output" == *"origin_sha=${head_sha}"* ]]
+
+    # Fixture C: origin/main present (and matching live) takes priority.
+    git -C "$fixture_repo" update-ref refs/remotes/origin/main "$head_sha"
+    run run_dm_signal_production_smoke_check
+    [ "$status" -eq 0 ]
+    [[ "$output" != *"refs/remotes/origin"* ]]
+    [[ "$output" == *"origin_sha=${head_sha}"* ]]
 }
 
 # test_necessity: required post-deploy evidence must wait for publication of

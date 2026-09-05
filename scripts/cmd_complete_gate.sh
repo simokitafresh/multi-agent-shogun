@@ -12743,14 +12743,68 @@ run_cdp_production_check() {
     return 1
 }
 
+# LP専用deployはbackend production smokeの対象外とする。明示deployment_target/
+# deploy_target(task優先度はreport→task)を最優先で採用し、無ければ変更pathの
+# backend/プレフィックス有無で判定する。判定材料がbackend/lp/frontendいずれの
+# 手がかりも持たない(空/不明)場合はfail-closedでsmoke必須のまま維持し、
+# LP判定へ誤って倒さない。
+dm_signal_smoke_deploy_touches_backend() {
+    local task_file="$1" report_file="$2"
+    local target
+    target=$(TASK_FILE="$task_file" REPORT_FILE="$report_file" python3 - <<'PY' 2>/dev/null
+import os
+import yaml
+
+def load(path):
+    if not path or not os.path.isfile(path):
+        return {}
+    with open(path, encoding="utf-8") as fh:
+        data = yaml.safe_load(fh) or {}
+    return data.get("task", data) if isinstance(data, dict) else {}
+
+for data in (load(os.environ.get("REPORT_FILE", "")), load(os.environ.get("TASK_FILE", ""))):
+    value = data.get("deployment_target") or data.get("deploy_target")
+    if value:
+        print(str(value).strip().lower())
+        raise SystemExit(0)
+PY
+)
+    case "$target" in
+        backend|api|full|all)
+            return 0
+            ;;
+        lp|lp-only|lp_only|frontend-lp|marketing)
+            return 1
+            ;;
+    esac
+
+    local changed_paths
+    changed_paths=$(
+        {
+            printf '%s\n' "${CMD_CHANGED_FILES:-}"
+            collect_report_modified_files
+        } | sed '/^[[:space:]]*$/d'
+    )
+    if printf '%s\n' "$changed_paths" | grep -Eq '(^|/)backend/'; then
+        return 0
+    fi
+    if printf '%s\n' "$changed_paths" | grep -Eq '(^|/)(lp|frontend)/'; then
+        return 1
+    fi
+    return 0
+}
+
 # dm-signal deploy cmd専用の本番到達性チェック。CDPはFEの画面検分であり、
 # APIのHTTP応答とRender live revisionの一致を代替しないため、別ゲートとして
 # fail-closedにする。適用条件はtask/reportのpost_deploy_evidence.required=true
 # (またはproduction_deploy.required=true)に限定し、非deploy cmdを誤BLOCKしない。
+# さらにdm_signal_smoke_deploy_touches_backendでLP専用deployを除外し、
+# backend SHA不一致によるLP-onlyの誤BLOCKを防ぐ。
 cmd_requires_dm_signal_production_smoke() {
     [ "${CMD_PROJECT:-}" = "dm-signal" ] || return 1
 
     DM_SIGNAL_SMOKE_REQUIREMENT_REASON=""
+    DM_SIGNAL_SMOKE_SKIP_REASON=""
     local task_file report_file
     for task_file in "${MATCHING_TASK_FILES[@]}"; do
         [ -f "$task_file" ] || continue
@@ -12783,6 +12837,10 @@ for data in (task, report):
 raise SystemExit(1)
 PY
         then
+            if ! dm_signal_smoke_deploy_touches_backend "$task_file" "$report_file"; then
+                DM_SIGNAL_SMOKE_SKIP_REASON="task=$(basename "$task_file") report=${report_file:-missing} field=deploy_target_classification(lp_only_no_backend_path)"
+                return 1
+            fi
             DM_SIGNAL_SMOKE_REQUIREMENT_REASON="task=$(basename "$task_file") report=${report_file:-missing} field=post_deploy_evidence.required_or_production_deploy.required"
             return 0
         fi
@@ -12861,7 +12919,11 @@ run_dm_signal_production_smoke_check() {
     echo ""
     echo "dm-signal production smoke check:"
     if ! cmd_requires_dm_signal_production_smoke; then
-        echo "  SKIP (not a dm-signal production-deploy cmd)"
+        if [ -n "${DM_SIGNAL_SMOKE_SKIP_REASON:-}" ]; then
+            echo "  SKIP (LP-only deploy, backend smoke not required: ${DM_SIGNAL_SMOKE_SKIP_REASON})"
+        else
+            echo "  SKIP (not a dm-signal production-deploy cmd)"
+        fi
         return 0
     fi
     echo "  REQUIRED (basis: ${DM_SIGNAL_SMOKE_REQUIREMENT_REASON})"
@@ -12876,8 +12938,11 @@ run_dm_signal_production_smoke_check() {
 
     origin_sha="${DM_SIGNAL_SMOKE_ORIGIN_SHA:-}"
     if [ -z "$origin_sha" ] && [ -n "$repo" ]; then
-        origin_sha=$(git -C "$repo" rev-parse refs/remotes/origin/main 2>/dev/null \
-            || git -C "$repo" rev-parse refs/remotes/origin/master 2>/dev/null || true)
+        # --verify --quiet: 欠落refを未解決の文字列として標準出力へ漏らさない
+        # (単一SHA契約)。--verifyなしのrev-parseは失敗時にref名そのものを
+        # stdoutへエコーし、フォールバック先の値と連結してSHAを汚染する。
+        origin_sha=$(git -C "$repo" rev-parse --verify --quiet refs/remotes/origin/main 2>/dev/null \
+            || git -C "$repo" rev-parse --verify --quiet refs/remotes/origin/master 2>/dev/null || true)
     fi
 
     live_sha="${DM_SIGNAL_SMOKE_LIVE_SHA:-}"
