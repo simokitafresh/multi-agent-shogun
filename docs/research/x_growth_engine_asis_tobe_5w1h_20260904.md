@@ -6,6 +6,19 @@
 - 実装正本: `skills/x-post-pipeline/growth_schema.yaml`(定義)/`slot_calendar.yaml`(Growth 列)/`queue/x_rewrites/R4-*.yaml`(growth: ブロック)/`queue/x_live_oos/ledger.yaml`(live OOS 台帳)/`scripts/x_ops/{x_growth_tag.py,x_kpi_snapshot.py,x_slot_post.sh}`
 - 不変: A〜G 分類、author corpus、human rewrite corpus、system_prompt_v5.x、承認済み 13 本は維持(殿)。本書は「良い文章を獲得につなげる仕組み」の追加のみ。
 
+## §-1 Current Operational State / SSOT(2026-09-05 21:15 殿指示・一次確認済み)
+
+| 項目 | 現行値(一次データ) |
+|---|---|
+| 現行正本 | `skills/x-post-pipeline/plan_202609.yaml`(range 2026-09-05〜09-30) |
+| 定時投稿 | 毎日 08:30 / 18:30 JST、**2 content_units/day**(crontab `30 8,18 * * *` x_slot_post.sh) |
+| 容量 | capacity 52 / scheduled 42 / empty 10(plan stats。capacity≠quota、empty は正常) |
+| 承認 | Stage 1 editorial approved(09-04 20:39)/ Stage 2 copy approved(lord_stage2_20260905_0915、42 units) |
+| Event lane | 別枠。12:30 slot(crontab `30 12 * * *` x-slot-post-event)+ event_rules.yaml。units に数えない |
+| 台帳 | `queue/x_live_oos/ledger.yaml`。writer 4 本は x_ledger_guard(validate→flock→CAS→atomic replace、fail-close)経由のみ。維持 |
+| 過去記述 | 本書 §0 行「v1.4 毎日 08:30/12:30/18:30=3 units/日、週 21」、SKILL の「平日 08:30/18:30×5=週 10」等の v1.x 記述は **historical** であり、現行運用を上書きしない |
+| 運用方針 | 新機能追加・方針変更なし。現在の条件を固定して Live OOS を蓄積(殿 21:07) |
+
 ## §0 AsIs / ToBe(1 表)
 
 | 項目 | AsIs(09-04 14:50) | ToBe(v1.0) |

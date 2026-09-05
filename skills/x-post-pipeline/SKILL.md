@@ -2,7 +2,7 @@
 name: x-post-pipeline
 description: |
   What: X(@TokyoJibika)運用の自動化 v2(2026-09-04 殿裁定)。方針=「投資を数学・確率・検証で考える人のアカウント。その人が作っているものがDM-Signal」。
-  stock_ledger.yaml(64本、category A-G+shift)、slot_calendar.yaml(平日08:30/18:30×5=週10、2週20slotのA→G ローテ)、system_prompt_v5_1.txt(本人 author corpus 優先)、
+  stock_ledger.yaml(64本、category A-G+shift)、slot_calendar.yaml(現行=plan_202609 毎日08:30/18:30 2 units/day、本文SSOT節参照。旧: 平日×5=週10)、system_prompt_v5_1.txt(本人 author corpus 優先)、
   x_post.sh(draft→gate→approve→post、token keeper)、queue/x_rewrites/(殿の添削=最優先教師データ)、docs/research/x_corpus/(本人 X 967件+note 64記事)を使う。
   TRIGGER: /x-post-pipeline、X投稿の下書き作成、殿の添削の保存、投稿ストックの投稿、台帳・calendar の参照、X token/認可
   DO NOT TRIGGER: note記事本体の編集、dm-signal側の変更
@@ -10,6 +10,14 @@ allowed-tools:
   - Read
   - Bash
 ---
+
+## Current Operational State / SSOT(2026-09-05 21:15。本節が現行運用の正本。下記 v1.x 記述は historical)
+
+- 現行正本 = `plan_202609.yaml`(2026-09-05〜09-30)。Stage 1 editorial approved / Stage 2 copy approved(42 units)
+- 定時投稿 = 毎日 08:30 / 18:30 JST、2 content_units/day(crontab `30 8,18 * * *`)。capacity 52 / scheduled 42 / empty 10(empty は正常)
+- Event lane = 別枠。12:30 slot(crontab `30 12 * * *`)、units に数えない
+- Live OOS ledger = `queue/x_live_oos/ledger.yaml`。全 writer は x_ledger_guard.write_ledger_text(validate→flock→CAS→atomic、fail-close)経由。維持
+- 「平日 08:30/18:30×5=週 10」(v1)「毎日 3 units/日・週 21」(v1.4)は historical。現行運用を上書きしない。新機能追加・方針変更なし、条件固定で Live OOS を蓄積(殿 21:07)
 
 # X Post Pipeline (v2 — author corpus 段階)
 
