@@ -47,6 +47,10 @@ quality_metric: "report gate pass rate"
 EOF
     export TEST_SKILL_LOG="$TEST_TMPDIR/logs/skill_execution_log.yaml"
     export TEST_SKILLS_DIR="$TEST_TMPDIR/skills"
+    # The fixture must not inherit the production publisher_single flag through
+    # run_tests.sh's SHOGUN_REPO_ROOT injection.
+    export SHOGUN_REPO_ROOT="$TEST_TMPDIR"
+    export SKILL_FEEDBACK_REPO_ROOT="$TEST_TMPDIR"
 }
 
 teardown() {
@@ -693,6 +697,9 @@ commands:
 EOF
     cat > "$TEST_REPO/queue/reports/hayate_report_cmd_2473.yaml" <<'EOF'
 worker_id: hayate
+report_id: rpt-cmd-2473-fixture
+report_identity_version: 2
+task_id: cmd_2473
 parent_cmd: cmd_2473
 status: completed
 result:
@@ -710,7 +717,7 @@ d.setdefault("binary_checks", {})["commit"] = [{"check": "no-commit fixture cont
 p.write_text(yaml.safe_dump(d, sort_keys=False, allow_unicode=True))
 PY
     cat > "$TEST_REPO/queue/gates/cmd_2473/sg7_bundle.json" <<'EOF'
-{"review":{"cmd_id":"cmd_2473","report_fingerprint":"bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb","verdict":"APPROVE","cmd_spec_summary":{"acceptance_criteria_count":1,"scope":["fixture"],"project":"infra"},"dashboard_line":"- **cmd_2473**: 完了。bundle line is authoritative"}}
+{"review":{"cmd_id":"cmd_2473","report":"queue/reports/hayate_report_cmd_2473.yaml","report_id":"rpt-cmd-2473-fixture","report_verdict":"PASS","report_fingerprint":"bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb","verdict":"APPROVE","cmd_spec_summary":{"acceptance_criteria_count":1,"scope":["fixture"],"project":"infra"},"dashboard_line":"- **cmd_2473**: 完了。bundle line is authoritative"}}
 EOF
     # The reviewed bundle must remain authoritative even when a later task
     # makes legacy report revalidation fail.  This reproduces cmd_3932 where

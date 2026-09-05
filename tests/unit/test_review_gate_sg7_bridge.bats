@@ -4,9 +4,10 @@
 
 setup() {
     export ROOT="$BATS_TEST_TMPDIR/root"
-    mkdir -p "$ROOT/scripts" "$ROOT/queue/tasks" "$ROOT/queue/gates"
+    mkdir -p "$ROOT/scripts/lib" "$ROOT/queue/tasks" "$ROOT/queue/gates" "$ROOT/queue/reports"
     cp "$BATS_TEST_DIRNAME/../../scripts/review_gate.sh" "$ROOT/scripts/review_gate.sh"
     cp "$BATS_TEST_DIRNAME/../../scripts/review_bundle.py" "$ROOT/scripts/review_bundle.py"
+    cp "$BATS_TEST_DIRNAME/../../scripts/lib/review_approval.sh" "$ROOT/scripts/lib/review_approval.sh"
 }
 
 write_code_task() {
@@ -18,6 +19,16 @@ task:
   task_type: hotfix
   purpose: fix implementation
   status: done
+  report_path: queue/reports/code_report_${cmd}.yaml
+YAML
+    cat > "$ROOT/queue/reports/code_report_${cmd}.yaml" <<YAML
+worker_id: code
+report_id: rpt-${cmd}
+report_identity_version: 2
+task_id: ${cmd}_implementation
+parent_cmd: $cmd
+status: completed
+verdict: PASS
 YAML
 }
 
@@ -25,7 +36,7 @@ write_valid_bundle() {
     local cmd="$1"
     mkdir -p "$ROOT/queue/gates/$cmd"
     cat > "$ROOT/queue/gates/$cmd/sg7_bundle.json" <<JSON
-{"review":{"cmd_id":"$cmd","verdict":"APPROVE","cmd_spec_summary":{"acceptance_criteria_count":1,"scope":"scripts","project":"infra"},"dashboard_line":"- **$cmd**: done"}}
+{"review":{"cmd_id":"$cmd","verdict":"APPROVE","report_verdict":"PASS","report":"queue/reports/code_report_${cmd}.yaml","report_id":"rpt-${cmd}","cmd_spec_summary":{"acceptance_criteria_count":1,"scope":"scripts","project":"infra"},"dashboard_line":"- **$cmd**: done"}}
 JSON
 }
 

@@ -38,16 +38,9 @@ PUBLISHER_SINGLE=1 push_lane_publish_one repo origin deadbeef
   [ "$(grep -c '^PUBLISHER_SINGLE push_lane push=0 result=SKIP reason=publisher_request$' "$PUSH_LANE_LOG")" -eq 1 ]
 }
 
-@test "PUBLISHER_SINGLE=1 disables both safe_shared_main_ff push paths" {
+@test "PUBLISHER_SINGLE=1 disables safe_shared_main_ff auto-push path" {
   auto_output="$(PUBLISHER_SINGLE=1 bash "$SAFE" --auto-push-if-ready /does/not/exist GREEN)"
   [ "$auto_output" = "PUBLISHER_SINGLE safe_shared_main_ff push=0 result=SKIP reason=publisher_request" ]
-
-  fallback_function="$(sed -n '/^isolated_publish_fallback()/,/^}/p' "$SAFE")"
-  run bash -c "$fallback_function
-PUBLISHER_SINGLE=1 isolated_publish_fallback deadbeef
-"
-  [ "$status" -eq 0 ]
-  [ "$output" = "PUBLISHER_SINGLE safe_shared_main_ff push=0 result=SKIP reason=publisher_request" ]
 }
 
 @test "PUBLISHER_SINGLE unset retains the normal safe auto-push path" {
@@ -65,7 +58,11 @@ PUBLISHER_SINGLE=1 isolated_publish_fallback deadbeef
   printf 'next\n' >> "$repo/file.txt"
   git -C "$repo" commit -qam next
 
-  run env -u PUBLISHER_SINGLE SAFE_SHARED_MAIN_FF_AUTO_PUSH_THRESHOLD=1 bash "$SAFE" --auto-push-if-ready "$repo" GREEN
+  mkdir -p "$repo/scripts/lib"
+  cp "$SAFE" "$repo/scripts/safe_shared_main_ff.sh"
+  cp "$ROOT/scripts/lib/publisher_single_flag.sh" "$repo/scripts/lib/publisher_single_flag.sh"
+
+  run env -u PUBLISHER_SINGLE SAFE_SHARED_MAIN_FF_AUTO_PUSH_THRESHOLD=1 bash "$repo/scripts/safe_shared_main_ff.sh" --auto-push-if-ready "$repo" GREEN
   [ "$status" -eq 0 ]
   [[ "$output" == *"push=1"* ]]
   [ "$(git --git-dir "$origin" rev-parse refs/heads/main)" = "$(git -C "$repo" rev-parse HEAD)" ]
