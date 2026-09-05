@@ -3627,6 +3627,7 @@ codd:
 | cmd | `cmd_karo_hotfix_pd141_workaround_signature` (`scripts/karo_workaround_log.sh`, `tests/unit/test_karo_workaround_validation.bats`) |
 | discussion | `queue/lord_conversation.jsonl` 2026-09-05T10:52:34+09:00 session_save_20260905_1058(復帰点、先に session_save_20260905_1018 を読め): loop 10:49。cmd_4470(つまり偵察第 3 回)を将軍 doc lane で終端=8/8 n |
 | discussion | `queue/lord_conversation.jsonl` 2026-09-05T11:26:54+09:00 session_save_20260905_1128(復帰点、先に session_save_20260905_1058 を読め): loop 11:25。cmd_4475=publish 済(DM-signal tip 6f394781) |
+| discussion | `queue/lord_conversation.jsonl` 2026-09-05T12:02:44+09:00 session_save_20260905_1210(復帰点、先に session_save_20260905_1128 を読め): loop 11:58。家老 22 分停止の真因=codex_inbox_priority_guard.sh |
 
 ## investment_knowledge_base — 投資知識辞書
 
