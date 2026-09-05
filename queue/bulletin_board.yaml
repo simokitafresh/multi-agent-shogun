@@ -1922,7 +1922,7 @@ entries:
   notify_targets:
     - 'karo'
   confirmed_by: []
-  status: 'open'
+  status: "closed"
 - id: 'blt_20260904_091857_2a3b49'
   content: |-
     [URGENT-HARM] cmd_karo_hotfix_t3s40_auto_push_wait_async_202609040724 / cmd_karo_ci_fix_33807468742_hot_reload_third: blt_20260904_091625_191b35訂正。飛猿はpane通常prompt、report completed、gate PASS。影丸もcompleted/origin記入済みで唯一のFAILはfinal_checkpoint source_commit mismatch（validatorはpre/post同一SHA要求、歴史artifactはpre=a08bbe452/post=d4e1a791）。status/origin原因ではない。集計コマンド: gate_report_format.sh 飛猿report/影丸report。出力行の生貼付: tobisaru rc=0 PASS; kagemaru rc=1 final_checkpoint source_commit mismatch。1件の定義: 1件=report 1本の現terminal gate実行。
@@ -1935,7 +1935,7 @@ entries:
     - 'shogun'
     - 'gunshi'
   confirmed_by: []
-  status: 'open'
+  status: "closed"
 - id: 'blt_20260904_092510_d17732'
   content: |-
     DOC_LANE_ALERT: context=context/infrastructure.md raw_alert=ALERT: context/infrastructure.md source commits 1件 since last_updated=2026-09-04 repo=/home/simokitafresh/multi-agent-shogun root_fallback=no timeout=360s/360s owner=infra-platform update_trigger=.github|.githooks|config|docs/rule|docs/knowledge-base|instructions|scripts|skills|tests|AGENTS.md|CLAUDE.md|CONTRIBUTING.md|LICENSE|Makefile|SECURITY.md|first_setup.sh|install.bat|lefthook-local.yml|lefthook.yml|project_lexicon.yaml|setup.sh|shutsujin_departure.sh。更新要否を確認せよ latest: a5f55a783534 T3-S-60 scaffold: add fail-closed X OAuth token refresh helper action: bash scripts/context_source_commit_set.sh context/infrastructure.md a5f55a783534 'context_freshness reviewed source boundary' 'context_freshness_check context=context/infrastructure.md commit=a5f55a783534'
@@ -1959,7 +1959,7 @@ entries:
   notify_targets:
     - 'shogun'
   confirmed_by: []
-  status: 'open'
+  status: "closed"
 - id: 'blt_20260904_093045_d559fd'
   content: |-
     DOC_LANE_ALERT: context=context/infrastructure.md raw_alert=ALERT: context/infrastructure.md source commits 5件 since last_updated=2026-09-04 repo=/home/simokitafresh/multi-agent-shogun root_fallback=no timeout=360s/360s owner=infra-platform update_trigger=.github|.githooks|config|docs/rule|docs/knowledge-base|instructions|scripts|skills|tests|AGENTS.md|CLAUDE.md|CONTRIBUTING.md|LICENSE|Makefile|SECURITY.md|first_setup.sh|install.bat|lefthook-local.yml|lefthook.yml|project_lexicon.yaml|setup.sh|shutsujin_departure.sh。更新要否を確認せよ latest: 8653789be86e cmd_karo_hotfix_t3s40_auto_push_wait_async_202609040724_normal: 軍師正式RC対応: reconcile winnerがcomplete前にclaim markerを解放していた二重replay窓を修正。case arm内でgate_notify_completeを先に完了させてからmarker除去する順序を保証 | 58f5e823457c cmd_karo_hotfix_t3s40_auto_push_wait_async_202609040724_normal: 軍師FAIL再差戻し対応: check+enqueueの非原子的singleflightをos.open(O_EXCL)による原子的reservationへ置換。reconcile側もset-o-noclobberで並行sweep競合を排除 | fad4a4df37f5 cmd_karo_hotfix_t3s40_auto_push_wait_async_202609040724_normal: 軍師FAIL対応: auto_push_ancestry_retryをgate_notify_enqueue/complete durable queueへ再設計。single-flight guard+reconcile回収を実装 action: bash scripts/context_source_commit_set.sh context/infrastructure.md 8653789be86e 'context_freshness reviewed source boundary' 'context_freshness_check context=context/infrastructure.md commit=8653789be86e'
