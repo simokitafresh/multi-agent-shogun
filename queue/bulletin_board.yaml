@@ -3944,11 +3944,11 @@ entries:
   posted_at: '2026-09-05T15:34:00'
   requires_confirmation: false
   action_type: 'action_required'
-  actioned_by: ''
+  actioned_by: "shogun"
   notify_targets:
     - 'shogun'
   confirmed_by: []
-  status: 'open'
+  status: "closed"
 - id: 'blt_20260905_153403_e4e7d3'
   content: |-
     DOC_LANE_ALERT: context=context/dm-signal-frontend.md raw_alert=ALERT: context/dm-signal-frontend.md source commits 1件 since last_updated=2026-09-04 repo=/mnt/c/Python_app/DM-signal root_fallback=no timeout=360s/360s owner=dm-signal-frontend update_trigger=frontend|docs/research/frontend-components.md|docs/research/frontend-api-spec.md|docs/research/frontend-deploy.md|docs/research/fe-speed-improvement-design.md。更新要否を確認せよ latest: c8b347140eee cmd_4477_full: implement identity attribution action: bash scripts/context_source_commit_set.sh context/dm-signal-frontend.md c8b347140eee 'context_freshness reviewed source boundary' 'context_freshness_check context=context/dm-signal-frontend.md commit=c8b347140eee'
