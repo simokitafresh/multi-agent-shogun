@@ -7480,3 +7480,36 @@
       SG6_code_quality: PASS
       SG7_gate_prediction: PASS
     verdict: APPROVE
+- cmd_id: cmd_karo_ci_fix_33939652526
+  review:
+    adversarial_review: PASS — ninja_monitor.shのowner再検証継続は親世代存続確認付き。snapshot lock隔離はテスト信頼性向上。変更範囲は2ファイルのみ
+    ambiguity_points: none
+    cmd_id: cmd_karo_ci_fix_33939652526
+    cmd_spec_summary:
+      acceptance_criteria_count: 2
+      project: infra
+      scope: CI RED run 33939652526 compatibility shard FAIL修正(ninja_monitor.sh)
+    finding_categories:
+    - assumptions
+    - numbers
+    - premortem
+    - adversarial
+    - ambiguity
+    gate_prediction: CLEAR
+    gate_prediction_reason: all checks passed
+    observations:
+    - '事実1: case15(owner再検証race)+case135(共有lock競合)の両方を修正。pre 5 FAIL/0 SKIP→post 176/176
+      PASS/0 SKIP(同一HEAD 1787eba8)'
+    - '事実2: ci_fix_clean_repro receipt完備。pre/post source_commit一致、fixed_target一致、ordering正常'
+    - '事実3: GIT_OPTIONAL_LOCKS=0を半蔵6ec相当で統合。variation_checks全yes。2ファイル変更(ninja_monitor.sh+test_ninja_monitor_stall.bats)'
+    reviewed_at: '2026-09-05T14:52:00+09:00'
+    reviewer: gunshi
+    sg_checklist:
+      SG1_ac_coverage: PASS
+      SG2_test_pass: PASS
+      SG3_parity: N/A
+      SG4_no_regression: PASS
+      SG5_lesson_candidate: PASS
+      SG6_code_quality: PASS
+      SG7_gate_prediction: PASS
+    verdict: APPROVE
