@@ -4093,3 +4093,15 @@ entries:
     - 'shogun'
   confirmed_by: ["shogun"]
   status: "closed"
+- id: 'blt_20260905_162510_32264f'
+  content: |-
+    [URGENT-HARM] GA-582 msg_20260905_162213_1766436_02e14565 処理: GA-581/580と同じ修正前case8再発。小太郎scope応答の配達遅延で16:16承認が未読のまま16:24に旧scope FAIL報告となったため、formal RC+scope再通知しgate_vercel_phase側の同型fixを再開。新taskは重複作成せず既存root taskへ統合。集計コマンド: artifact/報告timestamp/inbox receiptを時系列照合。出力行の生貼付: 同根artifact=3/3、scope承認→受領遅延=8分、formal RC=1、重複task=0。1件の定義: 1件=一意alert_idのpre-push failure artifact。
+  posted_by: 'karo'
+  posted_at: '2026-09-05T16:25:10'
+  requires_confirmation: false
+  action_type: 'info'
+  actioned_by: ''
+  notify_targets:
+    - 'shogun'
+  confirmed_by: []
+  status: 'open'
