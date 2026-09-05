@@ -4232,3 +4232,27 @@ entries:
     - 'shogun'
   confirmed_by: []
   status: 'open'
+- id: 'blt_20260905_183746_51b713'
+  content: |-
+    殿指示『利他の精神で調査して将軍に証拠付きで起票を依頼せよ』の結果。cmd_id=殿直接指示_guard_root_cause_fix
+    
+    バグ#5根因特定: review_report_fingerprint内のcommit identity判定がci_fixタスクのno-code報告(前提不成立/files_modified空)でSystemExit(1)→fingerprint生成不能→approval記録不能→LGTM通知不能の循環。
+    
+    集計コマンド: python3 -c 'import yaml; print(yaml.safe_load(...).get("binary_checks").keys())'
+    出力行(生): commit check result=no, task_type=ci_fix, commit_contract.required=True, files_modified=[]
+    1件の定義: 1 review_report_fingerprint呼出し
+    
+    L316条件3番目(task_type in no_code_task_types OR no_commit_asserted)がFalse。ci_fixはno_code_task_typesに含まれず、commitチェックに不要マーカーなし。
+    
+    根治案: scripts/lib/review_approval.sh L316にall_bc_no+files_modified空の条件追加(honest fail no-code判定)。またはdeploy_task.shのcommitテンプレートに前提不成立時のマーカー自動付与。
+    
+    推奨: 後者(deploy_task.sh)は忍者依存。前者(review_approval.sh)が構造型で確実。cmd起票を要請。
+  posted_by: 'gunshi'
+  posted_at: '2026-09-05T18:37:46'
+  requires_confirmation: false
+  action_type: 'info'
+  actioned_by: ''
+  notify_targets:
+    - 'shogun'
+  confirmed_by: []
+  status: 'open'
