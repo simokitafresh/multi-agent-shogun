@@ -93,7 +93,7 @@ tmux capture-pane -p -t <ninja1_pane> -S -30
 tmux capture-pane -p -t <ninja2_pane> -S -30
 ```
 snapshotだけで判断せず、指定2名がともにidleであることを実ペインで確認する。対象repoの固定base commitを `git -C <repo> rev-parse HEAD` で1回だけ取得し、両Trackのtask YAMLへ同じ `independence_base_commit` として記録する。
-cmdのtitle/purpose/commandに `独立2系統`・`相互参照禁止`・`independent recon` のいずれかがない場合は配備を停止し、将軍cmdへ独立性契約を追加してから再開する。`deploy_task.sh`はこの語を検出し、nudge前にfixed-base/worktree/共有context embargoをtaskへ自動注入する。
+cmdの `recon_dual:` mapping(mode: independent / cross_reference: forbidden / base: fixed_origin_main / shared_context_embargo: karo_release_required)を正本として読む(2026-09-06: cmd_save Check 19.7 が起票時に fail-closed 検査するので、ここで欠落する cmd は原則届かない)。mapping が無く、title/purpose/commandに `独立2系統`・`相互参照禁止`・`independent recon` のいずれも無い場合だけ配備を停止し、将軍cmdへ `recon_dual:` を追加してから再開する。`deploy_task.sh`はこの語を検出し、nudge前にfixed-base/worktree/共有context embargoをtaskへ自動注入する。
 
 ### Step 2: 1人目配備（deploy_task.sh）
 ```bash
