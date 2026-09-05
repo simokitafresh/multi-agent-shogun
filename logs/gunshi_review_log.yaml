@@ -9534,3 +9534,29 @@
   origin: '[[cmd_4480]] -> [[AC1_scope外ERROR]] -> [[FAIL記録_LGTM通知]]'
   ambiguity_points: none
   timestamp: '2026-09-06T01:31:00+09:00'
+- ambiguity_points: none
+  brainwash_check: '#1no #2no #3no #4no #5no #6no #7no #8no(8/8確認)'
+  causal_chain: placeholder混入→test counts誤認→修正→zero-selection正常化
+  cmd_id: cmd_karo_hotfix_run_tests_external_scope_placeholder_20260906
+  finding_categories:
+  - assumptions
+  - numbers
+  - premortem
+  - ambiguity
+  - adversarial
+  findings_summary: 4観点OK。placeholder再現2/2→修正後focused 3/3+related 79/79 PASS SKIP0。zero-selection
+    rc=0収束
+  observations:
+  - '事実: external task selection 0件時のplaceholderラベルを選択集合から除去。receipt test_paths=[]/rc=0'
+  operational_simulation:
+    actual: 8件yes
+    command: 'grep -c "result: ''yes''" queue/reports/hayate_report_cmd_karo_hotfix_run_tests_external_scope_placeholder_20260906.yaml'
+    expected: 全bc yes
+    result: PASS
+  origin: '[[hotfix_run_tests_placeholder]] -> [[focused+related PASS]] -> [[LGTM]]'
+  review_type: report
+  step3_5_verified: true
+  timestamp: '2026-09-06T01:35:00+09:00'
+  verdict: LGTM
+  verified_files:
+  - queue/reports/hayate_report_cmd_karo_hotfix_run_tests_external_scope_placeholder_20260906.yaml:36
