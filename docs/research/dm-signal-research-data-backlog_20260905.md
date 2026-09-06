@@ -1,5 +1,5 @@
 <!-- gist-master: 131e8c6545f630bedd6c3a4a9731c420 dm-signal-research-data-backlog_20260905.md -->
-# DM-Signal 研究データ基盤 — F1 以外の backlog(記録のみ。実装しない)v1.5(2026-09-06 12:15 殿裁定 11:46 母集団 75 PF=新四つ目 3 体除外、I8 は除外で決着・I3 分母 75、D4/cmd_4482 は cancelled 記録のみ) / v1.4(2026-09-06 03:10 I8 根因確定 102/2) / v1.3(2026-09-06 00:40 I8→cmd_4480 delegated) / v1.2(2026-09-06 00:25 I7 実測 0・I8 新四つ目 parity 104 を追記) / v1.1(2026-09-05 22:55 家老 R3-3: A2 は実装予定表記へ) / v1.0(2026-09-05 22:45)
+# DM-Signal 研究データ基盤 — F1 以外の backlog(記録のみ。実装しない)v1.6(2026-09-06 14:35 B2 訂正: T7.5 は rollback で現本番未適用=I9、本番不整合設計書 v0.4 を親に追加) / v1.5(2026-09-06 12:15 殿裁定 11:46 母集団 75 PF=新四つ目 3 体除外、I8 は除外で決着・I3 分母 75、D4/cmd_4482 は cancelled 記録のみ) / v1.4(2026-09-06 03:10 I8 根因確定 102/2) / v1.3(2026-09-06 00:40 I8→cmd_4480 delegated) / v1.2(2026-09-06 00:25 I7 実測 0・I8 新四つ目 parity 104 を追記) / v1.1(2026-09-05 22:55 家老 R3-3: A2 は実装予定表記へ) / v1.0(2026-09-05 22:45)
 
 - 出自: `dm-signal-research-data-foundation-asis-tobe_20260905.md` v0.4 の F2〜F4・A1〜A11・D2〜D4 を、殿 22:29『複雑さはすべて捨てろ』と家老 R2-6『F1 主設計書に残さない。情報は削除せず別 backlog へ』により移設。本文は v0.4(commit 5498c0f9b)から移したもので、内容の再検討はしていない。
 - 着手条件: 殿が個別に指示した時だけ。本 backlog から自動的に cmd を起票しない。
@@ -23,7 +23,7 @@
 - F1 が外部 long table として機能すれば不要(同じ情報)。F1 を DB 表へ昇格する第 2 段で「long table か列追加か」を 1 回だけ決める。二重に持たない。
 
 ## B2 F3 `signal_decision_ledger` の扱い(中立。家老 R2-5)
-- 事実: `app/jobs/generators/monthly_returns.py` L28/L252-263 が「確定月は ledger の決定値を優先、空なら no-op」で読む現役参照。writer/reader は recalculate_fof / recalculate_fast / signal_flush / safe_bundle_v2 / writer_inventory / portfolio_restore / monthly_trade_impl の 7 file+API router(main.py L43/L426)+models の append-only guard+`projects/dm-signal.yaml` PI-P06 SSOT 宣言。08-12 T7.5(c13a56fe/0e9d158d)は guard detect-only 化と alert 撤去。08-16 PITR rollback 以後 0 行=全経路 no-op。
+- 事実: `app/jobs/generators/monthly_returns.py` L28/L252-263 が「確定月は ledger の決定値を優先、空なら no-op」で読む現役参照。writer/reader は recalculate_fof / recalculate_fast / signal_flush / safe_bundle_v2 / writer_inventory / portfolio_restore / monthly_trade_impl の 7 file+API router(main.py L43/L426)+models の append-only guard+`projects/dm-signal.yaml` PI-P06 SSOT 宣言。08-12 T7.5(c13a56fe/0e9d158d)は guard detect-only 化と alert 撤去**だったが、08-13 rollback 233c2303 で本番 tree が 21e80e30(08-04)へ戻り現本番には未適用**(2026-09-06 14:2x 将軍・家老確認: origin/main の signal_decision_ledger.py blob=21e80e30 と同一。設計書 dm-signal-production-inconsistency-asis-tobe_20260906 I9)。cmd_3704 の挿入実績は歴史として残す。08-16 PITR rollback 以後 0 行=全経路 no-op。
 - 選択肢: (a) 復活=07-07 cmd_3711 と同じ再バックフィル / (b) 廃止=依存撤去 cmd。**F1 は分析 materialization であり、runtime の確定月上書き防止を担う ledger の代替ではない(家老 R2-5)。∴ 既定方向を置かず (a)/(b) 中立。** 着手時はまず影響範囲(pending 表示・確定境界)の偵察 cmd。
 
 ## B3 F4 階層ラベル関数 `layer_of(portfolio)` の一元化
@@ -59,4 +59,5 @@
 
 ## 因果リンク
 - ← [[dm-signal-research-data-foundation-asis-tobe_20260905]] v0.4 → 本 backlog(移設)
+- → [[dm-signal-production-inconsistency-asis-tobe_20260906]] I1〜I9 の深掘り(殿 14:11)
 - origin: "[[殿指示_複雑さを捨てろ_20260905_2229]] -> [[家老R2-6_F1以外を別文書へ]] -> [[research-data-backlog]]"
