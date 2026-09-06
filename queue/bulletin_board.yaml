@@ -1,4 +1,49 @@
 entries:
+- id: 'blt_20260906_120256_0d250e'
+  content: |-
+    下知=msg_20260906_120139_144709_315922f4 受領。代替は可: 既存CMD_COMPLETE_GATE_CANONICAL_SOURCEで共有正本の運用queueを維持し、最新origin隔離worktreeのゲートコードを実行する。免除なしでP4停滞解消を先に試行。root差分分類と安全収束は継続。集計コマンド: rg -n CMD_COMPLETE_GATE_CANONICAL_SOURCE scripts/cmd_complete_gate.sh。出力行の生貼付: 861:_cmd_complete_script="${CMD_COMPLETE_GATE_CANONICAL_SOURCE:-${BASH_SOURCE[0]}}"。1件の定義: canonical source設定箇所。
+  posted_by: 'karo'
+  posted_at: '2026-09-06T12:02:56'
+  requires_confirmation: false
+  action_type: 'info'
+  actioned_by: ''
+  notify_targets: []
+  confirmed_by:
+    - 'shogun'
+  status: 'open'
+- id: 'blt_20260906_105142_948149'
+  content: |-
+    GATE CLEAR cmd_karo_recon2_p4_root_ancestry_drain_20260906: 完了
+  posted_by: 'karo'
+  posted_at: '2026-09-06T10:51:42'
+  requires_confirmation: false
+  action_type: 'info'
+  actioned_by: ''
+  notify_targets: []
+  confirmed_by: []
+  status: 'open'
+- id: 'blt_20260906_095510_457a77'
+  content: |-
+    GATE CLEAR cmd_karo_hotfix_k2_external_worktree_speed_20260906: 完了
+  posted_by: 'karo'
+  posted_at: '2026-09-06T09:55:10'
+  requires_confirmation: false
+  action_type: 'info'
+  actioned_by: ''
+  notify_targets: []
+  confirmed_by: []
+  status: 'open'
+- id: 'blt_20260906_094712_2841cf'
+  content: |-
+    GATE CLEAR cmd_karo_ci_fix_33995101543_c2_contract_regression_20260906: 完了
+  posted_by: 'karo'
+  posted_at: '2026-09-06T09:47:12'
+  requires_confirmation: false
+  action_type: 'info'
+  actioned_by: ''
+  notify_targets: []
+  confirmed_by: []
+  status: 'open'
 - id: 'blt_20260906_070812_c775a6'
   content: |-
     GATE CLEAR cmd_karo_hotfix_insight_c2_contract_alignment_20260906: 完了
@@ -325,90 +370,11 @@ entries:
   confirmed_by:
     - 'shogun'
   status: '"closed"'
-- id: 'blt_20260905_185706_473dcb'
+- id: 'blt_20260906_132204_7eea3e'
   content: |-
-    殿指示: ninja_block_fail_root_cause v2.1の陳腐化・見落とし調査結果。cmd_id=殿直接指示_guard_root_cause_fix
-    
-    ■ 陳腐化3点(v2.1→現在の差分)
-    (1) §2.1 status分布: 74本→84本、revision_requested 3→1(tobisaru ci_fix_33945636960のみ残存)。failed 4→5
-    (2) §2.5 hook_failures: 5→4。ci_clean_repro single-flight 2件はhanzo ci_fix(ci_green循環根治)で構造的に消える
-    (3) §2.6 gate BLOCK: report_commit_main_ancestry 7→8、dm_signal_production_smoke 2→2(不変)、ci_push_state BLOCK 8件が新規追加(v2.1に未記載)
-    
-    ■ 見落とし3点(v2.1に未記載の新バグ)
-    (4) バグ#1 revision_requested自動遷移: §3 C(ルーチン)に該当。report_field_setのstatus遷移が明示finalize必須だが忍者が忘れる→v2.1 T3のroutine_refs注入で解消可能(report_status遷移手順の注入)。D0根治済み(d2ad22b2)
-    (5) バグ#3 archived report: §3 D(環境)。review_bundle.pyがarchive済み報告を処理不能→D0根治済み(abc33f88→499eb209)
-    (6) バグ#5 files_modified空fingerprint不能: §3 D(環境)。前提不成立honest failのapproval循環→将軍D0根治済み(f69288720)。v2.1 §5 T5(failure_origin_code)のhonest fail経路として明記すべき
-    
-    ■ 見落としなし確認
-    E(忍者品質)に移すべき新件はなし。16:30以降の全LGTM 13件で忍者が知り得た情報を使わなかったケースは0
-    
-    集計コマンド: python3 -c reports glob + status Counter + hook_failures filter; grep gate_metrics BLOCK | awk | uniq -c
-    出力行(生): completed:78 failed:5 revision_requested:1 合計84; hook>0=4/84; gate BLOCK=61(ancestry8+ci_push8+smoke2+parent1)
-    1件の定義: 1報告/1 gate_metricsログ行
-  posted_by: 'gunshi'
-  posted_at: '2026-09-05T18:57:06'
-  requires_confirmation: false
-  action_type: 'info'
-  actioned_by: ''
-  notify_targets: []
-  confirmed_by: []
-  status: 'open'
-- id: 'blt_20260905_185547_41203f'
-  content: |-
-    DOC_LANE_ALERT: context=context/dm-signal-ops.md raw_alert=ALERT: context/dm-signal-ops.md source commits 2件 since last_updated=2026-09-05 repo=/mnt/c/Python_app/DM-signal root_fallback=no timeout=360s/360s owner=dm-signal-ops update_trigger=backend/app/api|backend/app/jobs|backend/app/services|backend/tests|docs/rule|cited:docs/research|render.yaml|tasks/lessons.md。更新要否を確認せよ latest: 8af98631921c cmd_4477_full: align PostgreSQL evidence runbook | 30429ac01819 cmd_4477_full: record PostgreSQL isolation evidence action: bash scripts/context_source_commit_set.sh context/dm-signal-ops.md 8af98631921c 'context_freshness reviewed source boundary' 'context_freshness_check context=context/dm-signal-ops.md commit=8af98631921c'
-  posted_by: 'gate_context_freshness'
-  posted_at: '2026-09-05T18:55:47'
-  requires_confirmation: false
-  action_type: 'action_required'
-  actioned_by: '"shogun"'
-  notify_targets: []
-  confirmed_by: []
-  status: '"closed"'
-- id: 'blt_20260905_184558_cdfdb2'
-  content: |-
-    将軍D0 f69288720の検証結果。cmd_id=殿直接指示_guard_root_cause_fix
-    
-    集計コマンド: source review_approval_origin.sh && review_report_fingerprint <report> && review_two_phase_ready_gunshi <cmd> <report>
-    出力行(生): fingerprint=1b279f0a3e7b08a7467ab5918e615c0fe9f4e9145a76b93b8c8018da403a1d31 rc=0; two_phase_ready rc=0
-    1件の定義: 1回のfingerprint/two_phase_ready呼出し
-    
-    バグ#5根治確認済み。fingerprint生成成功(rc=0)、gunshi.yaml記録値と一致、two_phase_ready=PASS。ローカルrepoのreview_bundle.pyがorigin/mainとconflict中(家老lane)のため、review_bundle.py single再実行はroot収束後。
-  posted_by: 'gunshi'
-  posted_at: '2026-09-05T18:45:58'
-  requires_confirmation: false
-  action_type: 'info'
-  actioned_by: ''
-  notify_targets: []
-  confirmed_by: []
-  status: 'open'
-- id: 'blt_20260905_183746_51b713'
-  content: |-
-    殿指示『利他の精神で調査して将軍に証拠付きで起票を依頼せよ』の結果。cmd_id=殿直接指示_guard_root_cause_fix
-    
-    バグ#5根因特定: review_report_fingerprint内のcommit identity判定がci_fixタスクのno-code報告(前提不成立/files_modified空)でSystemExit(1)→fingerprint生成不能→approval記録不能→LGTM通知不能の循環。
-    
-    集計コマンド: python3 -c 'import yaml; print(yaml.safe_load(...).get("binary_checks").keys())'
-    出力行(生): commit check result=no, task_type=ci_fix, commit_contract.required=True, files_modified=[]
-    1件の定義: 1 review_report_fingerprint呼出し
-    
-    L316条件3番目(task_type in no_code_task_types OR no_commit_asserted)がFalse。ci_fixはno_code_task_typesに含まれず、commitチェックに不要マーカーなし。
-    
-    根治案: scripts/lib/review_approval.sh L316にall_bc_no+files_modified空の条件追加(honest fail no-code判定)。またはdeploy_task.shのcommitテンプレートに前提不成立時のマーカー自動付与。
-    
-    推奨: 後者(deploy_task.sh)は忍者依存。前者(review_approval.sh)が構造型で確実。cmd起票を要請。
-  posted_by: 'gunshi'
-  posted_at: '2026-09-05T18:37:46'
-  requires_confirmation: false
-  action_type: 'info'
-  actioned_by: ''
-  notify_targets: []
-  confirmed_by: []
-  status: 'open'
-- id: 'blt_20260906_091723_1e8e06'
-  content: |-
-    [URGENT-HARM] 下知=msg_20260906_091531_797009_48e67a9f 便再開。1件の定義=queue/tasksのtask YAML 1個。集計コマンド: awk task status queue/tasks/*.yaml＋tmux capture-pane -S -30＋gate_metrics抽出。出力行の生貼付: 才蔵CI=in_progress / K2=RC3 in_progress / C3=RC task identity復元assigned / golden=RC in_progress / 半蔵DTB3 archive.done=yes→idle同期 / P-4 WAIT report_commit_main_ancestry。才蔵へ層B9→0＋全参照bats＋層A4残存数を再nudge。K2は速度4553→1579.5ms(65.3%短縮)成果を維持し非追跡secret fixtureで0/16再測定。goldenは31,710全件分類済み、bare repo_rootを実worktreeへ補正し全commit batch replay→clean-room正規再生成を裁可。C3はclassified37誤りを正本8へRC再開。
+    下知=msg_20260906_132103_1003687_06bd20a2 実行開始。cmd4483最新承認済みsourceは6ed0cf7d、f6875585は差戻し前なので旧版は公開しない。DM-Signal隔離worktreeで現originと最新report files_modifiedを照合して公開する。safe_shared_main_ffは二分類だけでは除外不可: 同値patchまたはtarget履歴の明示review済みEquivalent-Source markerでfirst-parent連鎖をaccountし、その後の全tree effect一致が必要。集計コマンド: report commit_hash読取。出力行の生貼付: commit_hash:6ed0cf7d2bb1f01db199c037ce73e4fc4f61a9fe。1件の定義: 承認済みreport source。
   posted_by: 'karo'
-  posted_at: '2026-09-06T09:17:23'
+  posted_at: '2026-09-06T13:22:04'
   requires_confirmation: false
   action_type: 'info'
   actioned_by: ''
@@ -417,24 +383,11 @@ entries:
   confirmed_by:
     - 'shogun'
   status: 'closed'
-- id: 'blt_20260906_092017_3d4c5f'
+- id: 'blt_20260906_132447_fe7f00'
   content: |-
-    DOC_LANE_ALERT: context=context/infrastructure.md raw_alert=ALERT: context/infrastructure.md source commits 1件 since last_updated=2026-09-06 repo=/home/simokitafresh/multi-agent-shogun root_fallback=no timeout=360s/360s owner=infra-platform update_trigger=.github|.githooks|config|docs/rule|docs/knowledge-base|instructions|scripts|skills|tests|AGENTS.md|CLAUDE.md|CONTRIBUTING.md|LICENSE|Makefile|SECURITY.md|first_setup.sh|install.bat|lefthook-local.yml|lefthook.yml|project_lexicon.yaml|setup.sh|shutsujin_departure.sh。更新要否を確認せよ latest: e17f8077ddb1 publisher: task=cmd_karo_hotfix_k2_external_worktree_speed_20260906_normal action: bash scripts/context_source_commit_set.sh context/infrastructure.md e17f8077ddb1 'context_freshness reviewed source boundary' 'context_freshness_check context=context/infrastructure.md commit=e17f8077ddb1'
-  posted_by: 'gate_context_freshness'
-  posted_at: '2026-09-06T09:20:17'
-  requires_confirmation: false
-  action_type: 'action_required'
-  actioned_by: ''
-  notify_targets:
-    - 'shogun'
-  confirmed_by:
-    - 'shogun'
-  status: 'closed'
-- id: 'blt_20260906_093809_b1c52f'
-  content: |-
-    下知=msg_20260906_093548_1353532_2add1a67 対応報告。1件の定義=publish request。集計コマンド: rg 33995101543_c2_contract ~/.local/share/multi-agent-shogun/publish_queue/events.jsonl。出力行の生貼付: kind=published rc=0 published_sha=0cfc963114d35fc2fa4beec1fa37b01badc0b26b。gh run list --commit同SHAの結果: run34001716558 in_progress。層Bは09:36公開済み。層C ci_fix34001119559はqueue/notes/karo_direct_ci34001119559_deploy_contract_20260906.yamlへ保存し小太郎配備を実行、GA-257 active P-4 taskで公開0件BLOCK。P-4/K2 ancestry解放を半蔵drain偵察と接続する。C3はcase22変更前後各3回比較RC中。hotfix参照bats全列挙の恒久契約は未導入、現CI task ACには必須記入済み。
+    下知=msg_20260906_132103_1003687_06bd20a2 段1は13:25時点で公開前commit入口BLOCK。隔離worktree .dm4483-publish.7bFSMB(origin b52588a7)へ最新6ed0cf7dを通常merge --no-commit、競合0・変更15fileは指定2dir内・承認sourceとの成果物差分0。集計コマンド: heavy_job_admission.sh -- python3 -m pytest --import-mode=importlib 指定4契約。出力行の生貼付: 4 passed in 0.95s。1件の定義: 契約test。commit試行の生BLOCK: BLOCK(GA-231c): 指揮官のgit commit直書きは禁止。代替指示ninja_scope_commit.shは現物line483-486でMERGE_HEADを拒否する。隔離mergeは保全、main未変更・未公開。合意済みsource ancestryを保つ正規merge commit入口が必要、別綴りでガード迂回しない。
   posted_by: 'karo'
-  posted_at: '2026-09-06T09:38:09'
+  posted_at: '2026-09-06T13:24:47'
   requires_confirmation: false
   action_type: 'info'
   actioned_by: ''
@@ -443,11 +396,11 @@ entries:
   confirmed_by:
     - 'shogun'
   status: 'closed'
-- id: 'blt_20260906_094246_eecff8'
+- id: 'blt_20260906_133117_8643be'
   content: |-
-    cmd_id=cmd_karo_hotfix_insight_c3_publisher_deploy_ledger_20260906 正式FAIL_CLOSE。集計コマンド: archive_completed.sh 3 当該cmd。出力行の生貼付: reports: archived=1 kept=0 skipped=0、archive.done成立。1件の定義=報告YAML。軍師FAIL受理後に家老ACCEPT、影丸解放。C3関連case22は変更前後各3回すべてFAILで既存未命名span欠落、coverage閾値0.95未達。scripts/cmd_complete_gate.shとtests/unit/test_cmd_complete_gate_source_publish.batsの修正が残る。C3のinsight解決は未承認、残存を閉じない。元worktreeのignored artifacts171件はqueue/archive/task-worktree-artifacts内に保全。
+    下知=msg_20260906_132839_1086241_77cb1f83 段1公開成功。13:30 DM origin/main=0f2bfbcd1e34ea2fd5d794ba4da5332a09ba7d69、report source6ed0cf7d ancestor確認rc0、Published-Byあり、DM共有root未変更。集計コマンド: C2A_REPO_ROOT=/mnt/c/Python_app/DM-signal bash scripts/publisher_c2a_merge.sh cmd_4483_full 6ed0cf7d2bb1f01db199c037ce73e4fc4f61a9fe。出力行の生貼付: publisher_c2a_merge: ancestor OK 6ed0cf7d2 -> origin/main 0f2bfbcd。1件の定義: 正規公開試行、rc0。cmd4483 GATE再実行中、まだCLEAR未宣言。raw snapshot95.28MBについてGitHub推奨サイズ超WARNあり(push成功)。artifact27c1995dとのCSV hash再照合を依頼。
   posted_by: 'karo'
-  posted_at: '2026-09-06T09:42:46'
+  posted_at: '2026-09-06T13:31:17'
   requires_confirmation: false
   action_type: 'info'
   actioned_by: ''
@@ -456,35 +409,50 @@ entries:
   confirmed_by:
     - 'shogun'
   status: 'closed'
-- id: 'blt_20260906_094255_7e3d9a'
+- id: 'blt_20260906_133225_86723b'
   content: |-
-    DOC_LANE_ALERT: context=context/infrastructure.md raw_alert=ALERT: context/infrastructure.md source commits 1件 since last_updated=2026-09-06 repo=/home/simokitafresh/multi-agent-shogun root_fallback=no timeout=360s/360s owner=infra-platform update_trigger=.github|.githooks|config|docs/rule|docs/knowledge-base|instructions|scripts|skills|tests|AGENTS.md|CLAUDE.md|CONTRIBUTING.md|LICENSE|Makefile|SECURITY.md|first_setup.sh|install.bat|lefthook-local.yml|lefthook.yml|project_lexicon.yaml|setup.sh|shutsujin_departure.sh。更新要否を確認せよ latest: 0cfc963114d3 publisher: task=cmd_karo_ci_fix_33995101543_c2_contract_regression_20260906_normal action: bash scripts/context_source_commit_set.sh context/infrastructure.md 0cfc963114d3 'context_freshness reviewed source boundary' 'context_freshness_check context=context/infrastructure.md commit=0cfc963114d3'
-  posted_by: 'gate_context_freshness'
-  posted_at: '2026-09-06T09:42:55'
+    cmd_4483 GATE CLEAR実確認。公開0f2bfbcd/report6ed0cf7d ancestor、最終gate rc0。集計コマンド: cat queue/gates/cmd_4483/gate_worker.clear.json。出力行の生貼付: state=clear completion_generation=280d403c07a00cd105f56adb52df09d18adda3b877d57de4257d227ef3e3e9c9。1件の定義: 世代一致CLEAR receipt。13:31:55確認。CI34011666117は後追い。cmd-complete wrapperは後続consumeでreport identity is not in canonical report registryとBLOCK(自動archiveとの関係確認要)、CLEAR自体は取消さず主処理/後処理を分ける。殿向け可視表docs/research/karo-live-progress.md更新済み。
+  posted_by: 'karo'
+  posted_at: '2026-09-06T13:32:25'
   requires_confirmation: false
-  action_type: 'action_required'
+  action_type: 'info'
   actioned_by: ''
   notify_targets:
     - 'shogun'
   confirmed_by:
     - 'shogun'
   status: 'closed'
-- id: 'blt_20260906_094712_2841cf'
+- id: 'blt_20260906_133440_0b0619'
   content: |-
-    GATE CLEAR cmd_karo_ci_fix_33995101543_c2_contract_regression_20260906: 完了
+    下知=msg_20260906_133400_1151783_66a36e85 受領。cmd4483再照合完了を確認、raw snapshot追跡解除は次回DM laneの残件としてqueue/notes/dm_raw_snapshot_followup_20260906.mdへ保存。ローカル原本とhash保全後にtreeから外しignore、履歴改変なし。現時点では変更せずroot drain/P4を優先する。集計コマンド: 下知本文の対象照合。出力行の生貼付: input_snapshot_raw.json 99,913,389 byte。1件の定義: 後続対象raw file。
   posted_by: 'karo'
-  posted_at: '2026-09-06T09:47:12'
+  posted_at: '2026-09-06T13:34:40'
   requires_confirmation: false
   action_type: 'info'
   actioned_by: ''
-  notify_targets: []
-  confirmed_by: []
-  status: 'open'
-- id: 'blt_20260906_095510_457a77'
+  notify_targets:
+    - 'shogun'
+  confirmed_by:
+    - 'shogun'
+  status: 'closed'
+- id: 'blt_20260906_133943_c16f2d'
   content: |-
-    GATE CLEAR cmd_karo_hotfix_k2_external_worktree_speed_20260906: 完了
+    殿直接指示hayate/kotaro確認対応。両paneは実装済みの家老GATE待ち。根治迂回ではなく通常source mergeをmerge-treeで事前検証し正規publisher_c2a_merge実行。集計コマンド: git merge-tree --write-tree origin/main source とgit diff --stat、publish後merge-base --is-ancestor。出力行の生貼付: P4 pushed7e3638632(変更lifecycle1行)、F14 pushed9a89322c7(内容差0)、source606f8efe4/7f1fc925のancestor検証rc0/0。1件の定義: 承認済みsourceの祖先判定。shared ffはmismatch18でBLOCKのままだが公開は両件成功。これで旧root gateでもsource ancestry条件は成立。P4既存gate稼働中、F14手動gate再実行中。CLEAR未宣言。
   posted_by: 'karo'
-  posted_at: '2026-09-06T09:55:10'
+  posted_at: '2026-09-06T13:39:43'
+  requires_confirmation: false
+  action_type: 'info'
+  actioned_by: ''
+  notify_targets:
+    - 'shogun'
+  confirmed_by:
+    - 'shogun'
+  status: 'closed'
+- id: 'blt_20260906_134006_97e4e9'
+  content: |-
+    GATE CLEAR cmd_karo_hotfix_f14_content_equivalent_ancestry_20260906: 完了
+  posted_by: 'karo'
+  posted_at: '2026-09-06T13:40:06'
   requires_confirmation: false
   action_type: 'info'
   actioned_by: ''
