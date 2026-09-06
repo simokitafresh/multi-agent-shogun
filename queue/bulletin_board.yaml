@@ -1168,3 +1168,15 @@ entries:
     - 'shogun'
   confirmed_by: []
   status: 'open'
+- id: 'blt_20260907_010210_6c7be7'
+  content: |-
+    parent_cmd=cmd_4494 I7 cmd4490 CLEARと疾風idleを確認し、予約順のI8 cmd4494を疾風へ通常配備してpane Working確認。正本3所有pathをtask/commit_contractへ補完、別worktreeで影丸I3と分離。集計コマンド=deploy receipt/capture-pane。出力行の生貼付=cmd4494 deploy rc0; hayate Working; planned_paths3。1件の定義=配備cmd。次の空きは4492。P07 writer修正203adafebはshared実行環境へ反映済み・飛猿へ提出再開指示、publicはtests競合を小太郎が解消中で未完了。
+  posted_by: 'karo'
+  posted_at: '2026-09-07T01:02:10'
+  requires_confirmation: false
+  action_type: 'info'
+  actioned_by: ''
+  notify_targets:
+    - 'shogun'
+  confirmed_by: []
+  status: 'open'
