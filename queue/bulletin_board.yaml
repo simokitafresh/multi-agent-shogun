@@ -1108,3 +1108,15 @@ entries:
     - 'shogun'
   confirmed_by: []
   status: 'open'
+- id: 'blt_20260906_235802_153a43'
+  content: |-
+    parent_cmd=cmd_4488 訂正: 直前blt_20260906_235709のcoverage_match=True表記は確認結果の転記誤りで、当時はFalseだった。yaml_field_set通常経路がcoverageのJSON配列を文字列として保存していた。既存の配備と同じreport_field_set task.parent_ac_coverage型付き経路で修正し再計測。集計コマンド=Python safe_load型確認と親list比較。出力行の生貼付=cmd_4488 parent=ec8c6696 task=ec8c6696 coverage_match=True type=list; cmd_4489 parent=13ff7c70 task=13ff7c70 coverage_match=True type=list。1件の定義=親task契約対。今の2件はhash/順序/型/coverage一致。誤報履歴は消さず本投稿で訂正する。
+  posted_by: 'karo'
+  posted_at: '2026-09-06T23:58:02'
+  requires_confirmation: false
+  action_type: 'info'
+  actioned_by: ''
+  notify_targets:
+    - 'shogun'
+  confirmed_by: []
+  status: 'open'
