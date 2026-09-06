@@ -23,6 +23,7 @@ from pathlib import Path
 source = "\n\n".join(Path(path).read_text(encoding="utf-8") for path in sys.argv[1:])
 names = """record_block_reason record_wait_reason append_line_locked append_lesson_tracking dispatch_gate_notification_async send_high_notification send_info_cmd_notification log_gate_stderr_file lesson_done_satisfies_lesson_candidate_registration cmd_status_is_canceled level_heading check_context_update resolve_report_file update_lesson_impact_tsv build_clear_duration_metric build_clear_throughput_metric binary_checks_warn_reason report_has_commit_binary_check_yes collect_report_files_modified discover_reports_for_cmd collect_parent_cmd_report_files_modified has_parent_cmd_report collect_git_show_w_files collect_report_commit_hash collect_cmd_phase_git_files check_self_grade_commit_file_coverage is_lessons_useful_empty_warn_task_type handle_empty_lessons_useful_check validate_lesson_feedback_set detect_task_types _check_lc_found lesson_candidate_status preflight_gate_flags collect_report_modified_files load_validated_sg7_context collect_cmd_command_file_refs collect_report_verified_existing_deps collect_task_readonly_refs check_command_files_modified_coverage check_scope_drift check_wtf_likelihood check_script_wiring resolve_task_repo_dir cmd_requires_cdp_production_check run_cdp_production_check cmd_requires_dm_signal_production_smoke run_dm_signal_production_smoke_check dm_signal_smoke_deploy_touches_backend dm_signal_report_deploy_sha resolve_dm_signal_render_live_sha append_codd_registry_entry run_codd_propagate_update normalize_block_reason_to_workaround_categories update_karo_workaround_resolutions classify_completed_rework_event_kind capture_completed_rework_event compute_task_ac_version check_task_ac_version_integrity resolve_ci_expected_head resolve_report_commit_repo report_ci_push_state_cached report_ci_push_state_legacy_compat report_ci_push_state report_commit_main_ancestry_state source_snapshot_matches_tip report_source_only_equivalence_state check_report_commit_main_ancestry resolve_ninja_test_receipt_path validate_ninja_test_receipt check_ninja_test_receipts validate_purpose_details_alignment cmd_complete_gate_auto_push_ci_state cmd_complete_gate_auto_push_ancestry_wait mark_task_worktree_published source_publish_receipt_tip""".split()
 names += " post_deploy_evidence_publication_status handle_post_deploy_evidence_failure queue_post_deploy_evidence_publication_followup".split()
+names += " resolve_isolated_cross_repo_state".split()
 for name in names:
     match = re.search(rf"(?m)^{re.escape(name)}\(\) \{{.*?^\}}", source, re.DOTALL)
     if match is None:
@@ -8847,6 +8848,160 @@ run_commit_repo_resolution() {
     [[ "$output" == "BLOCK: report commit"* ]]
 }
 
+# F19: a cross_repo_commits entry typed deploy_forbidden:true must never wait
+# on origin/main inclusion; it proves completion by being contained in its
+# own declared non-main remote branch instead.
+make_isolated_cross_repo_fixture() {
+    local base="$1"
+    mkdir -p "$base"
+    git init -q --bare "$base/origin.git"
+    git init -q -b main "$base/repo"
+    git -C "$base/repo" config user.email test@example.com
+    git -C "$base/repo" config user.name test
+    printf 'base\n' > "$base/repo/state"
+    git -C "$base/repo" add state
+    git -C "$base/repo" commit -qm base
+    git -C "$base/repo" remote add origin "$base/origin.git"
+    git -C "$base/repo" push -q -u origin main
+}
+
+# test_necessity: a deploy_forbidden isolated cross-repo commit must be
+# accepted from its own published branch, never demanding origin/main
+# inclusion which would WAIT forever by design.
+# regression_justification: cmd_karo_hotfix_p08_i7_monitor_20260906's report
+# perpetually WAITed on main ancestry for a commit typed deploy_forbidden:true
+# because the gate only recognized origin/main as a publication proof.
+@test "CI push detection accepts a deploy_forbidden commit verified on its own remote branch" {
+    local base="$BATS_TEST_TMPDIR/isolated-verified" report="$BATS_TEST_TMPDIR/isolated-verified.yaml"
+    make_isolated_cross_repo_fixture "$base"
+    git -C "$base/repo" checkout -qb isolated/verified-branch
+    printf 'isolated change\n' > "$base/repo/isolated.txt"
+    git -C "$base/repo" add isolated.txt
+    git -C "$base/repo" commit -qm "isolated change"
+    local isolated_commit
+    isolated_commit="$(git -C "$base/repo" rev-parse HEAD)"
+    git -C "$base/repo" push -q origin isolated/verified-branch
+    git -C "$base/repo" checkout -q main
+
+    printf 'commit_hash: %s\ncross_repo_commits:\n- repo: %s\n  commit_hash: %s\n  paths:\n  - isolated.txt\n  branch: isolated/verified-branch\n  deploy_forbidden: true\n' \
+        "$isolated_commit" "$base/repo" "$isolated_commit" > "$report"
+
+    run_ci_push_state "$base/repo" "$report"
+    [ "$status" -eq 0 ]
+    [ "$output" = "PUSHED: report commit $isolated_commit isolated_branch_verified branch=isolated/verified-branch" ]
+}
+
+# test_necessity: an isolated entry whose declared branch was never pushed to
+# origin must BLOCK, not WAIT — an unpublished isolation branch is not a
+# retryable publication state.
+@test "CI push detection blocks a deploy_forbidden commit whose declared branch is unpublished" {
+    local base="$BATS_TEST_TMPDIR/isolated-unpublished" report="$BATS_TEST_TMPDIR/isolated-unpublished.yaml"
+    make_isolated_cross_repo_fixture "$base"
+    git -C "$base/repo" checkout -qb isolated/unpublished-branch
+    printf 'isolated change\n' > "$base/repo/isolated.txt"
+    git -C "$base/repo" add isolated.txt
+    git -C "$base/repo" commit -qm "isolated change"
+    local isolated_commit
+    isolated_commit="$(git -C "$base/repo" rev-parse HEAD)"
+    git -C "$base/repo" checkout -q main
+
+    printf 'commit_hash: %s\ncross_repo_commits:\n- repo: %s\n  commit_hash: %s\n  paths:\n  - isolated.txt\n  branch: isolated/unpublished-branch\n  deploy_forbidden: true\n' \
+        "$isolated_commit" "$base/repo" "$isolated_commit" > "$report"
+
+    run_ci_push_state "$base/repo" "$report"
+    [ "$status" -eq 0 ]
+    [[ "$output" == "BLOCK: isolated cross-repo entry branch not published"* ]]
+}
+
+# test_necessity: an isolated entry's declared commit must actually be
+# contained by the declared branch's remote tip — a stale/mismatched commit
+# claim must BLOCK rather than pass on branch existence alone.
+@test "CI push detection blocks a deploy_forbidden commit not contained by its declared branch" {
+    local base="$BATS_TEST_TMPDIR/isolated-mismatch" report="$BATS_TEST_TMPDIR/isolated-mismatch.yaml"
+    make_isolated_cross_repo_fixture "$base"
+    git -C "$base/repo" checkout -qb isolated/mismatch-branch
+    git -C "$base/repo" push -q origin isolated/mismatch-branch
+    printf 'local only\n' > "$base/repo/isolated.txt"
+    git -C "$base/repo" add isolated.txt
+    git -C "$base/repo" commit -qm "local only change"
+    local isolated_commit
+    isolated_commit="$(git -C "$base/repo" rev-parse HEAD)"
+    git -C "$base/repo" checkout -q main
+
+    printf 'commit_hash: %s\ncross_repo_commits:\n- repo: %s\n  commit_hash: %s\n  paths:\n  - isolated.txt\n  branch: isolated/mismatch-branch\n  deploy_forbidden: true\n' \
+        "$isolated_commit" "$base/repo" "$isolated_commit" > "$report"
+
+    run_ci_push_state "$base/repo" "$report"
+    [ "$status" -eq 0 ]
+    [[ "$output" == "BLOCK: isolated cross-repo entry commit not contained by branch"* ]]
+}
+
+# test_necessity: a typed deploy_forbidden field that is not exactly the
+# boolean true/false is an ambiguous isolation claim and must BLOCK rather
+# than silently fall back to either contract.
+@test "CI push detection blocks an ambiguous deploy_forbidden type" {
+    local base="$BATS_TEST_TMPDIR/isolated-ambiguous" report="$BATS_TEST_TMPDIR/isolated-ambiguous.yaml"
+    make_isolated_cross_repo_fixture "$base"
+    local isolated_commit
+    isolated_commit="$(git -C "$base/repo" rev-parse HEAD)"
+
+    printf 'commit_hash: %s\ncross_repo_commits:\n- repo: %s\n  commit_hash: %s\n  paths:\n  - state\n  branch: isolated/ambiguous-branch\n  deploy_forbidden: "yes"\n' \
+        "$isolated_commit" "$base/repo" "$isolated_commit" > "$report"
+
+    run_ci_push_state "$base/repo" "$report"
+    [ "$status" -eq 0 ]
+    [[ "$output" == "BLOCK: isolated cross-repo entry has ambiguous deploy_forbidden type"* ]]
+}
+
+# test_necessity: an isolated entry declaring branch=main defeats the entire
+# purpose of isolation (main was the thing being avoided) and must BLOCK.
+@test "CI push detection blocks a deploy_forbidden entry that declares the main branch" {
+    local base="$BATS_TEST_TMPDIR/isolated-main-declared" report="$BATS_TEST_TMPDIR/isolated-main-declared.yaml"
+    make_isolated_cross_repo_fixture "$base"
+    local isolated_commit
+    isolated_commit="$(git -C "$base/repo" rev-parse HEAD)"
+
+    printf 'commit_hash: %s\ncross_repo_commits:\n- repo: %s\n  commit_hash: %s\n  paths:\n  - state\n  branch: main\n  deploy_forbidden: true\n' \
+        "$isolated_commit" "$base/repo" "$isolated_commit" > "$report"
+
+    run_ci_push_state "$base/repo" "$report"
+    [ "$status" -eq 0 ]
+    [[ "$output" == "BLOCK: isolated cross-repo entry declares main/empty branch"* ]]
+}
+
+# test_necessity: with multiple cross_repo_commits entries, one verified
+# isolated entry must not mask another entry's unpublished isolation branch —
+# every declared isolated entry is checked, not only the one matching the
+# report's own commit_hash.
+@test "CI push detection blocks when a sibling deploy_forbidden entry is unpublished, even if the target entry verifies" {
+    local base="$BATS_TEST_TMPDIR/isolated-sibling-unpublished" report="$BATS_TEST_TMPDIR/isolated-sibling-unpublished.yaml"
+    make_isolated_cross_repo_fixture "$base"
+    git -C "$base/repo" checkout -qb isolated/target-branch
+    printf 'target change\n' > "$base/repo/target.txt"
+    git -C "$base/repo" add target.txt
+    git -C "$base/repo" commit -qm "target change"
+    local target_commit
+    target_commit="$(git -C "$base/repo" rev-parse HEAD)"
+    git -C "$base/repo" push -q origin isolated/target-branch
+    git -C "$base/repo" checkout -q main
+
+    git -C "$base/repo" checkout -qb isolated/sibling-branch
+    printf 'sibling change\n' > "$base/repo/sibling.txt"
+    git -C "$base/repo" add sibling.txt
+    git -C "$base/repo" commit -qm "sibling change"
+    local sibling_commit
+    sibling_commit="$(git -C "$base/repo" rev-parse HEAD)"
+    # Deliberately not pushed: sibling isolation branch remains unpublished.
+    git -C "$base/repo" checkout -q main
+
+    printf 'commit_hash: %s\ncross_repo_commits:\n- repo: %s\n  commit_hash: %s\n  paths:\n  - target.txt\n  branch: isolated/target-branch\n  deploy_forbidden: true\n- repo: %s\n  commit_hash: %s\n  paths:\n  - sibling.txt\n  branch: isolated/sibling-branch\n  deploy_forbidden: true\n' \
+        "$target_commit" "$base/repo" "$target_commit" "$base/repo" "$sibling_commit" > "$report"
+
+    run_ci_push_state "$base/repo" "$report"
+    [ "$status" -eq 0 ]
+    [[ "$output" == "BLOCK: isolated cross-repo entry branch not published"* ]]
+}
+
 # test_necessity: terminal CLEAR must require a PASS report commit to be an
 # ancestor of the canonical shared main/master boundary.
 # regression_justification: cmd_4358 and cmd_4360 both recorded CLEAR while
@@ -8860,6 +9015,51 @@ run_commit_repo_resolution() {
     run_report_main_ancestry_state "$repo" "$report"
     [ "$status" -eq 0 ]
     [[ "$output" == "PASS: PUSHED:"* ]]
+}
+
+# test_necessity: the terminal main-ancestry GATE check (the one that actually
+# emitted the perpetual WAIT for cmd_karo_hotfix_p08_i7_monitor_20260906) must
+# resolve to PASS for a verdict PASS report whose commit is a typed
+# deploy_forbidden:true isolated-branch deliverable, without ever requiring
+# origin/main inclusion.
+@test "terminal report ancestry PASSes a verdict PASS report typed deploy_forbidden and verified on its branch" {
+    local base="$BATS_TEST_TMPDIR/report-ancestry-isolated-pass"
+    local report="$BATS_TEST_TMPDIR/report-ancestry-isolated-pass.yaml"
+    make_isolated_cross_repo_fixture "$base"
+    git -C "$base/repo" checkout -qb isolated/ancestry-pass-branch
+    printf 'isolated change\n' > "$base/repo/isolated.txt"
+    git -C "$base/repo" add isolated.txt
+    git -C "$base/repo" commit -qm "isolated change"
+    local isolated_commit
+    isolated_commit="$(git -C "$base/repo" rev-parse HEAD)"
+    git -C "$base/repo" push -q origin isolated/ancestry-pass-branch
+    git -C "$base/repo" checkout -q main
+
+    printf 'verdict: PASS\ncommit_hash: %s\ncross_repo_commits:\n- repo: %s\n  commit_hash: %s\n  paths:\n  - isolated.txt\n  branch: isolated/ancestry-pass-branch\n  deploy_forbidden: true\n' \
+        "$isolated_commit" "$base/repo" "$isolated_commit" > "$report"
+
+    run_report_main_ancestry_state "$base/repo" "$report"
+    [ "$status" -eq 0 ]
+    [ "$output" = "PASS: PUSHED: report commit $isolated_commit isolated_branch_verified branch=isolated/ancestry-pass-branch" ]
+}
+
+# test_necessity: an ambiguous/invalid isolation claim must terminally BLOCK
+# the gate rather than fall back to the ordinary WAIT-on-main path — a
+# deploy_forbidden entry declaring the main branch must never be treated as
+# an eventually-retryable publication state.
+@test "terminal report ancestry BLOCKs a deploy_forbidden entry that declares the main branch" {
+    local base="$BATS_TEST_TMPDIR/report-ancestry-isolated-block"
+    local report="$BATS_TEST_TMPDIR/report-ancestry-isolated-block.yaml"
+    make_isolated_cross_repo_fixture "$base"
+    local isolated_commit
+    isolated_commit="$(git -C "$base/repo" rev-parse HEAD)"
+
+    printf 'verdict: PASS\ncommit_hash: %s\ncross_repo_commits:\n- repo: %s\n  commit_hash: %s\n  paths:\n  - state\n  branch: main\n  deploy_forbidden: true\n' \
+        "$isolated_commit" "$base/repo" "$isolated_commit" > "$report"
+
+    run_report_main_ancestry_state "$base/repo" "$report"
+    [ "$status" -eq 1 ]
+    [[ "$output" == "BLOCK: report commit main ancestry: BLOCK: isolated cross-repo entry declares main/empty branch"* ]]
 }
 
 # test_necessity: a remote-contained source commit is not sufficient when a
