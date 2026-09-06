@@ -1556,6 +1556,112 @@ mark_task_worktree_published() {
     python3 -c 'import json,os,re,sys,tempfile,time; p,pub,tip=sys.argv[1:]; d=json.load(open(p,encoding="utf-8")); assert d.get("version")==1 and d.get("state")=="active"; current=str(d.get("published_commit") or "").strip().lower(); target=str(tip or pub).strip().lower(); assert not current or re.fullmatch(r"[0-9a-f]{40}",current); assert re.fullmatch(r"[0-9a-f]{40}",target); (sys.exit(0) if current and not tip else None); (sys.exit(0) if current == target else None); d["published_commit"]=target; d["published_at_ns"]=time.time_ns(); fd,t=tempfile.mkstemp(prefix=".task_worktree_published.",dir=os.path.dirname(p)); f=os.fdopen(fd,"w",encoding="utf-8"); json.dump(d,f,sort_keys=True); f.write("\n"); f.flush(); os.fsync(f.fileno()); f.close(); os.replace(t,p)' "$marker" "$published_commit" "$receipt_tip"
 }
 
+source_publish_receipt_restore() {
+    local receipt="$1" backup="$2" had_receipt="$3"
+    if [ "$had_receipt" -eq 1 ]; then
+        mv -f -- "$backup" "$receipt"
+    else
+        unlink "$receipt" 2>/dev/null || true
+        rm -f -- "$backup"
+    fi
+}
+
+source_publish_receipt_finish() {
+    local backup="$1" lock_fd="$2"
+    rm -f -- "$backup"
+    exec {lock_fd}>&-
+}
+
+# Receipt and task-worktree marker are one publication identity.  Serialize
+# their update per receipt and re-check the canonical remote around the write.
+# A remote advance during the transaction must not leave the pre-race tip in
+# either artifact; return rc=2 so the caller refreshes and retries.
+publish_source_receipt_and_markers() {
+    local receipt="$1" cmd_id="$2" completion_generation="$3" repo="$4"
+    local published_tip="$5" remote="$6" push_ref="$7" strict_remote_tip="$8"
+    local publication_commit="$9"
+    shift 9
+    local -a marker_tasks=() receipt_pairs=()
+    while [ "$#" -gt 0 ] && [ "$1" != "--" ]; do
+        marker_tasks+=("$1")
+        shift
+    done
+    [ "$#" -gt 0 ] && [ "$1" = "--" ] || return 1
+    shift
+    [ "$#" -gt 0 ] && [ $(( $# % 2 )) -eq 0 ] || return 1
+    receipt_pairs=("$@")
+    [ "$strict_remote_tip" = 0 ] || [ "$strict_remote_tip" = 1 ] || return 1
+    mkdir -p "$(dirname "$receipt")" || return 1
+
+    local lock_file="${receipt}.lock" lock_fd
+    exec {lock_fd}>"$lock_file" || return 1
+    if ! flock -x "$lock_fd"; then
+        exec {lock_fd}>&-
+        return 1
+    fi
+
+    local backup="" had_receipt=0 current_tip confirmed_tip target_tip
+    backup=$(mktemp "${TMPDIR:-/tmp}/source-publish-receipt-backup.XXXXXX") || {
+        exec {lock_fd}>&-
+        return 1
+    }
+    if [ -f "$receipt" ]; then
+        cp -- "$receipt" "$backup" || {
+            rm -f -- "$backup"
+            exec {lock_fd}>&-
+            return 1
+        }
+        had_receipt=1
+    fi
+    target_tip="$published_tip"
+    if [ "$strict_remote_tip" -eq 1 ]; then
+        current_tip=$(git -C "$repo" ls-remote "$remote" "$push_ref" 2>/dev/null | awk 'NR==1 {print $1}')
+        if ! [[ "$current_tip" =~ ^[0-9a-f]{40}$ ]]; then
+            source_publish_receipt_restore "$receipt" "$backup" "$had_receipt"
+            source_publish_receipt_finish "$backup" "$lock_fd"
+            return 1
+        fi
+        if [ "$current_tip" != "$target_tip" ]; then
+            if ! [[ "$publication_commit" =~ ^[0-9a-f]{40}$ ]] \
+                || ! git -C "$repo" cat-file -e "${publication_commit}^{commit}" 2>/dev/null \
+                || ! git -C "$repo" merge-base --is-ancestor "$publication_commit" "$current_tip" 2>/dev/null; then
+                source_publish_receipt_restore "$receipt" "$backup" "$had_receipt"
+                source_publish_receipt_finish "$backup" "$lock_fd"
+                return 2
+            fi
+            target_tip="$current_tip"
+        fi
+    fi
+
+    if ! write_source_publish_receipt "$receipt" "$cmd_id" \
+        "$completion_generation" "$repo" "$target_tip" "${receipt_pairs[@]}"; then
+        source_publish_receipt_restore "$receipt" "$backup" "$had_receipt"
+        source_publish_receipt_finish "$backup" "$lock_fd"
+        return 1
+    fi
+
+    if [ "$strict_remote_tip" -eq 1 ]; then
+        confirmed_tip=$(git -C "$repo" ls-remote "$remote" "$push_ref" 2>/dev/null | awk 'NR==1 {print $1}')
+        if [ "$confirmed_tip" != "$target_tip" ]; then
+            source_publish_receipt_restore "$receipt" "$backup" "$had_receipt"
+            source_publish_receipt_finish "$backup" "$lock_fd"
+            return 2
+        fi
+    fi
+
+    local task_file
+    for task_file in "${marker_tasks[@]}"; do
+        [ "$(resolve_task_publish_repo_dir "$task_file" 2>/dev/null || true)" = "$repo" ] || continue
+        if ! mark_task_worktree_published "$task_file" "$target_tip" "$target_tip"; then
+            source_publish_receipt_restore "$receipt" "$backup" "$had_receipt"
+            source_publish_receipt_finish "$backup" "$lock_fd"
+            return 1
+        fi
+    done
+    source_publish_receipt_finish "$backup" "$lock_fd"
+    return 0
+}
+
 # A successful source-only push must survive a later retry of the same gate.
 # The task-worktree marker above is intentionally not sufficient: it has no
 # cmd/report-generation or repository identity and cannot distinguish a stale
@@ -3648,6 +3754,7 @@ PY
 
 push_from_clean_worktree() {
     publisher_single_enabled && { echo "PUBLISHER_SINGLE cmd_complete_gate push=0 result=SKIP reason=publisher_request"; return 0; }
+    PUSHED_SOURCE_COMMIT=""
     local repo="$1" upstream_ref="$2" remote="$3" push_ref="$4" remote_tip="$5"
     shift 5
     local source_sha temp_parent clean_repo rc cleanup_rc published_sha remote_sha push_output fallback_used
@@ -3748,6 +3855,10 @@ push_from_clean_worktree() {
                 break
             fi
         done
+    fi
+
+    if [ "$rc" -eq 0 ] && [[ "$published_sha" =~ ^[0-9a-f]{40}$ ]]; then
+        PUSHED_SOURCE_COMMIT="$published_sha"
     fi
 
     push_output=$(mktemp "${TMPDIR:-/tmp}/shogun-gate-push-output.XXXXXX") || rc=1
@@ -4275,10 +4386,10 @@ PY
                     "${source_commits[@]}"; then
                     receipt_published_tip=$(source_publish_receipt_tip "$receipt" "$CMD_ID" \
                         "$SHOGUN_COMPLETION_GENERATION" "$repo" "${receipt_pairs[@]}") || return 1
-                    for task_file in "${eligible_task_files[@]}"; do
-                        [ "$(resolve_task_publish_repo_dir "$task_file")" = "$repo" ] || continue
-                        mark_task_worktree_published "$task_file" "$remote_tip" "$receipt_published_tip" || return 1
-                    done
+                    publish_source_receipt_and_markers "$receipt" "$CMD_ID" \
+                        "$SHOGUN_COMPLETION_GENERATION" "$repo" "$receipt_published_tip" \
+                        "$remote" "$push_ref" 0 "$receipt_published_tip" \
+                        "${eligible_task_files[@]}" -- "${receipt_pairs[@]}" || return 1
                     if [ "$legacy_receipt_migrated" = true ]; then
                         echo "  git push: SKIP ($repo migrated legacy source-only publication evidence exact-match+ancestry)"
                     else
@@ -4303,10 +4414,10 @@ PY
                         "${source_commits[@]}"; then
                     receipt_published_tip=$(source_publish_receipt_tip "$receipt" "$CMD_ID" \
                         "$SHOGUN_COMPLETION_GENERATION" "$repo" "${receipt_pairs[@]}") || return 1
-                    for task_file in "${eligible_task_files[@]}"; do
-                        [ "$(resolve_task_publish_repo_dir "$task_file")" = "$repo" ] || continue
-                        mark_task_worktree_published "$task_file" "$remote_tip" "$receipt_published_tip" || return 1
-                    done
+                    publish_source_receipt_and_markers "$receipt" "$CMD_ID" \
+                        "$SHOGUN_COMPLETION_GENERATION" "$repo" "$receipt_published_tip" \
+                        "$remote" "$push_ref" 0 "$receipt_published_tip" \
+                        "${eligible_task_files[@]}" -- "${receipt_pairs[@]}" || return 1
                     echo "  git push: SKIP ($repo durable source-only publication receipt exact-match+ancestry after fetch)"
                     break
                 fi
@@ -4393,17 +4504,19 @@ PY
             fi
             if [ "$all_remote" = true ]; then
                 if [ "$receipt_expected" = true ]; then
-                    write_source_publish_receipt "$receipt" "$CMD_ID" \
+                    publish_source_receipt_and_markers "$receipt" "$CMD_ID" \
                         "$SHOGUN_COMPLETION_GENERATION" "$repo" "$remote_tip" \
-                        "${receipt_pairs[@]}" || {
-                        echo "  git push: BLOCK ($repo durable source-only receipt write failed)"
+                        "$remote" "$push_ref" 0 "$remote_tip" \
+                        "${eligible_task_files[@]}" -- "${receipt_pairs[@]}" || {
+                        echo "  git push: BLOCK ($repo durable source-only receipt/marker publication failed)"
                         return 1
                     }
+                else
+                    for task_file in "${eligible_task_files[@]}"; do
+                        [ "$(resolve_task_publish_repo_dir "$task_file")" = "$repo" ] || continue
+                        mark_task_worktree_published "$task_file" "$remote_tip" "${publisher_commit:-$remote_tip}" || return 1
+                    done
                 fi
-                for task_file in "${eligible_task_files[@]}"; do
-                    [ "$(resolve_task_publish_repo_dir "$task_file")" = "$repo" ] || continue
-                    mark_task_worktree_published "$task_file" "$remote_tip" "${publisher_commit:-$remote_tip}" || return 1
-                done
                 if [ "$source_equivalent_used" = true ]; then
                     echo "  git push: SKIP ($repo report source commits source-equivalent to remote tip)"
                 else
@@ -4435,17 +4548,35 @@ PY
                 published_remote_sha=$(git -C "$repo" ls-remote "$remote" "$push_ref" 2>/dev/null | awk 'NR==1 {print $1}')
                 [[ "$published_remote_sha" =~ ^[0-9a-f]{40}$ ]] || { echo "  git push: BLOCK ($repo published tip verification failed)"; return 1; }
                 if [ "$receipt_expected" = true ]; then
-                    write_source_publish_receipt "$receipt" "$CMD_ID" \
+                    local identity_publish_rc=0
+                    publish_source_receipt_and_markers "$receipt" "$CMD_ID" \
                         "$SHOGUN_COMPLETION_GENERATION" "$repo" "$published_remote_sha" \
-                        "${receipt_pairs[@]}" || {
-                        echo "  git push: BLOCK ($repo durable source-only receipt write failed)"
+                        "$remote" "$push_ref" 1 "${PUSHED_SOURCE_COMMIT:-$published_remote_sha}" \
+                        "${eligible_task_files[@]}" -- "${receipt_pairs[@]}" || identity_publish_rc=$?
+                    if [ "$identity_publish_rc" -eq 2 ] && [ "$attempt" -lt "$max_retries" ]; then
+                        refreshed_tip=$(git -C "$repo" ls-remote "$remote" "$push_ref" 2>/dev/null | awk 'NR==1 {print $1}')
+                        if ! [[ "$refreshed_tip" =~ ^[0-9a-f]{40}$ ]]; then
+                            echo "  git push: BLOCK ($repo remote tip refresh after receipt race failed)"
+                            return 1
+                        fi
+                        echo "  git push: retry $((attempt + 1))/$max_retries (receipt/marker identity race; remote tip refreshed $published_remote_sha -> $refreshed_tip)"
+                        remote_tip="$refreshed_tip"
+                        git -C "$repo" fetch -q "$remote" "$push_ref" >/dev/null 2>&1 || {
+                            echo "  git push: BLOCK ($repo remote tip fetch after receipt race failed)"
+                            return 1
+                        }
+                        continue
+                    fi
+                    if [ "$identity_publish_rc" -ne 0 ]; then
+                        echo "  git push: BLOCK ($repo durable source-only receipt/marker publication failed)"
                         return 1
-                    }
+                    fi
+                else
+                    for task_file in "${eligible_task_files[@]}"; do
+                        [ "$(resolve_task_publish_repo_dir "$task_file")" = "$repo" ] || continue
+                        mark_task_worktree_published "$task_file" "$published_remote_sha" "$published_remote_sha" || return 1
+                    done
                 fi
-                for task_file in "${eligible_task_files[@]}"; do
-                    [ "$(resolve_task_publish_repo_dir "$task_file")" = "$repo" ] || continue
-                    mark_task_worktree_published "$task_file" "$published_remote_sha" "$published_remote_sha" || return 1
-                done
                 echo "  git push: OK ($repo; source-only fast-forward; remote_contains_source_rc=0)"
                 break
             fi
