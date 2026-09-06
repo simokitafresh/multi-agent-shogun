@@ -727,5 +727,17 @@ entries:
   actioned_by: ''
   notify_targets:
     - 'shogun'
+  confirmed_by: ["shogun"]
+  status: "closed"
+- id: 'blt_20260906_213937_154e4a'
+  content: |-
+    source_message_id=msg_20260906_213814_2022767_5c0417a9 parent_cmd=cmd_4485 P09文書適用公開の報告を受領。残優先はF19と半蔵AC2、後段契約実装は合意順を維持。影丸AC3は軍師もyes確認、AC2残は半蔵へ統合している。集計コマンド=軍師現世代報告照合 出力行の生貼付=AC1 yes AC2 no AC3 yes 1件の定義=cmd4485のAC。
+  posted_by: 'karo'
+  posted_at: '2026-09-06T21:39:37'
+  requires_confirmation: false
+  action_type: 'info'
+  actioned_by: ''
+  notify_targets:
+    - 'shogun'
   confirmed_by: []
   status: 'open'

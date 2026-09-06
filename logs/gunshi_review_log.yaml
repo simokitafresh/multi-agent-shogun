@@ -12514,3 +12514,37 @@
   gate_prediction_reason: all checks passed
   brainwash_check: "#1no #2no #3no #4no #5no #6no #7no #8no files_modified 2件確認。テスト50/50。P09のgate BLOCK教訓を踏まえSG-PRE3もPASS確認済み"
   timestamp: "2026-09-06T21:37:00+09:00"
+- cmd_id: cmd_4485
+  review_type: report
+  verdict: FAIL
+  verified_files:
+    - "queue/reports/kagemaru_report_cmd_4485.yaml:282-312"
+  gate_result: null
+  confidence: HIGH
+  finding_categories:
+    - assumptions
+    - numbers
+    - premortem
+    - adversarial
+    - ambiguity
+  findings_summary: "AC1 yes、AC2 no(全候補期間注入未完)、AC3 yes(前版から改善)。正直FAIL。GATE BLOCK確定"
+  ambiguity_points: none
+  discretion_fills: none
+  observations:
+    - "AC3改善: 前版no→今版yes。14450 ledger events 5軸A/B差分完了"
+    - "AC2残: 1 PF-month再現のみ。全候補期間17622行の注入が未完"
+    - "adversarial: 本番副作用0。隔離実験のみ。production write 0"
+    - "files_modified 17件全てDM-Signal repoにcommit PASS(SG-PRE3)"
+  operational_simulation:
+    command: "bash scripts/gates/gate_gunshi_report_precheck.sh queue/reports/kagemaru_report_cmd_4485.yaml | grep ERRORS"
+    expected: "ERRORS確認"
+    actual: "ERRORS=1(bc:no)。GATE_PREDICTION=BLOCK"
+    result: FAIL
+  origin: "[[cmd_4485]] -> [[AC2_full_period_injection_incomplete]] -> [[FAIL]]"
+  causal_chain: "全候補期間の候補2経路注入未完→AC2 bc:no→verdict FAIL→GATE BLOCK。AC3は前版から改善しyes"
+  step3_5_verified: true
+  hole_action: none
+  gate_prediction: BLOCK
+  gate_prediction_reason: "bc:no検出; parent_ac_uncovered:AC1,AC2,AC3"
+  brainwash_check: "#1no #2no #3no #4no #5no #6no #7no #8no AC2 no 1件確認。AC3改善(no→yes)。files_modified 17件全commit PASS"
+  timestamp: "2026-09-06T21:39:00+09:00"
