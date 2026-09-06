@@ -3453,11 +3453,29 @@ import yaml
 
 report_path, task_path, gate_path = map(pathlib.Path, sys.argv[1:])
 task = (yaml.safe_load(task_path.read_text(encoding="utf-8")) or {}).get("task", {})
+report = yaml.safe_load(report_path.read_text(encoding="utf-8")) or {}
 contract_keys = (
     "task_id", "parent_cmd", "ac_version", "deployed_at", "target_path",
     "planned_paths", "acceptance_criteria", "not_in_scope", "commit_contract",
 )
 contract = {key: task.get(key) for key in contract_keys}
+# cmd_karo_hotfix_contract_schema_20260907 (AC1 finding): a worker redeploy
+# after this report's own generation was written must not change this
+# report's cache bucket. Prefer the report's own immutable
+# task_contract_snapshot for the identity/AC fields it carries; the task
+# fields it does not carry (deployed_at/target_path/planned_paths/
+# not_in_scope/commit_contract) still come from the live task, since no
+# snapshot equivalent exists for them yet.
+snapshot = report.get("task_contract_snapshot") if isinstance(report, dict) else None
+if isinstance(snapshot, dict):
+    if snapshot.get("task_id") is not None:
+        contract["task_id"] = snapshot["task_id"]
+    if snapshot.get("parent_cmd") is not None:
+        contract["parent_cmd"] = snapshot["parent_cmd"]
+    if snapshot.get("ac_fingerprint") is not None:
+        contract["ac_version"] = snapshot["ac_fingerprint"]
+    if snapshot.get("acceptance_criteria") is not None:
+        contract["acceptance_criteria"] = snapshot["acceptance_criteria"]
 digest = hashlib.sha256()
 digest.update(report_path.read_bytes())
 digest.update(json.dumps(contract, ensure_ascii=False, sort_keys=True, separators=(",", ":")).encode())

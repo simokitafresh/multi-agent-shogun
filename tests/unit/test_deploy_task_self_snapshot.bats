@@ -315,3 +315,86 @@ EOF
     [ "$status" -ne 0 ]
     [[ "$output" == *"terminal no-code receipt repo"* ]]
 }
+
+# test_necessity(AC1, cmd_karo_hotfix_contract_schema_20260907): ninja_monitor.sh's
+# report_gate_generation_key binds its completion-gate dedupe cache to the
+# report's own identity/AC when a task_contract_snapshot is present, so
+# redeploying the worker's task file to a new generation cannot silently
+# change a still-unarchived past report's cache bucket. A snapshot-free
+# (legacy) report must keep reading the live task exactly as before, and an
+# actual report content change must still change the key regardless.
+@test "ninja_monitor report_gate_generation_key is stable across task redeploy once a snapshot exists" {
+    awk '/^report_gate_generation_key\(\) \{/{flag=1} flag{print} flag && /^}$/{exit}' \
+        "$PROJECT_ROOT/scripts/ninja_monitor.sh" > "$WORK_DIR/rgk_fn.sh"
+    [ -s "$WORK_DIR/rgk_fn.sh" ]
+
+    cat > "$WORK_DIR/task_gen1.yaml" <<'YAML'
+task:
+  task_id: cmd_x_full
+  parent_cmd: cmd_x
+  ac_version: old_ac_111
+  deployed_at: "2026-09-01T00:00:00"
+  target_path: [a.py]
+  planned_paths: [a.py]
+  acceptance_criteria: [{id: AC1, description: old}]
+  not_in_scope: []
+  commit_contract: {required: true}
+YAML
+    cat > "$WORK_DIR/task_gen2_redeployed.yaml" <<'YAML'
+task:
+  task_id: cmd_y_full
+  parent_cmd: cmd_y
+  ac_version: new_ac_222
+  deployed_at: "2026-09-01T00:00:00"
+  target_path: [a.py]
+  planned_paths: [a.py]
+  acceptance_criteria: [{id: AC1, description: new}]
+  not_in_scope: []
+  commit_contract: {required: true}
+YAML
+    cat > "$WORK_DIR/report_no_snapshot.yaml" <<'YAML'
+worker_id: kotaro
+parent_cmd: cmd_x
+task_id: cmd_x_full
+ac_version_read: old_ac_111
+YAML
+    cat > "$WORK_DIR/report_with_snapshot.yaml" <<'YAML'
+worker_id: kotaro
+parent_cmd: cmd_x
+task_id: cmd_x_full
+ac_version_read: old_ac_111
+task_contract_snapshot:
+  parent_cmd: cmd_x
+  task_id: cmd_x_full
+  ac_fingerprint: old_ac_111
+  acceptance_criteria: [{id: AC1, description: old}]
+YAML
+
+    key() {
+        SCRIPT_DIR="$PROJECT_ROOT" bash -c '
+            source "$1"
+            report_gate_generation_key "$2" "$3"
+        ' _ "$WORK_DIR/rgk_fn.sh" "$1" "$2"
+    }
+
+    # Negative (legacy compatibility): no snapshot -> redeploy still changes
+    # the key, exactly as before this fix.
+    before_legacy="$(key "$WORK_DIR/report_no_snapshot.yaml" "$WORK_DIR/task_gen1.yaml")"
+    after_legacy="$(key "$WORK_DIR/report_no_snapshot.yaml" "$WORK_DIR/task_gen2_redeployed.yaml")"
+    [ -n "$before_legacy" ]
+    [ "$before_legacy" != "$after_legacy" ]
+
+    # Positive (the fix): a snapshot is present -> redeploying the task's
+    # identity/AC fields the snapshot carries no longer changes the key.
+    before_snapshot="$(key "$WORK_DIR/report_with_snapshot.yaml" "$WORK_DIR/task_gen1.yaml")"
+    after_snapshot="$(key "$WORK_DIR/report_with_snapshot.yaml" "$WORK_DIR/task_gen2_redeployed.yaml")"
+    [ -n "$before_snapshot" ]
+    [ "$before_snapshot" = "$after_snapshot" ]
+
+    # Negative (still correctness-preserving): an actual report content
+    # change must still change the key even with a snapshot present.
+    cp "$WORK_DIR/report_with_snapshot.yaml" "$WORK_DIR/report_with_snapshot_changed.yaml"
+    printf 'extra_field: changed\n' >> "$WORK_DIR/report_with_snapshot_changed.yaml"
+    changed="$(key "$WORK_DIR/report_with_snapshot_changed.yaml" "$WORK_DIR/task_gen1.yaml")"
+    [ "$before_snapshot" != "$changed" ]
+}
