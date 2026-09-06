@@ -11817,3 +11817,23 @@
       SG6_code_quality: PASS
       SG7_gate_prediction: PASS
     verdict: APPROVE
+- cmd_id: cmd_4484
+  review:
+    cmd_id: cmd_4484
+    cmd_spec_summary:
+      acceptance_criteria_count: 3
+      project: dm-signal
+      scope: 本番不整合I2/I3/I5/I8/I6 readonly偵察世代2。signals全日次+display_ticker_weights取得
+    gate_prediction: CLEAR
+    gate_prediction_reason: all checks passed
+    reviewed_at: '2026-09-06T15:39:00+09:00'
+    reviewer: gunshi
+    sg_checklist:
+      SG1_ac_coverage: PASS
+      SG2_test_pass: PASS
+      SG3_parity: N/A
+      SG4_no_regression: PASS
+      SG5_lesson_candidate: PASS
+      SG6_code_quality: PASS
+      SG7_gate_prediction: PASS
+    verdict: APPROVE
