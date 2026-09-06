@@ -287,7 +287,7 @@ verify_local_effects_in_target() {
     local repo="$1" old_head="$2" target_head="$3" base effect_base path old_entry target_entry
     local effect_count=0 mismatch_count=0
     local effects_file="${4:-}"
-    local commit cherry_line marker
+    local commit cherry_line marker proof validation_base
     local -A equivalent_commits=()
     base="$(git -C "$repo" merge-base "$old_head" "$target_head" 2>/dev/null || true)"
     [[ -n "$base" ]] || {
@@ -315,11 +315,32 @@ verify_local_effects_in_target() {
     done < <(git -C "$repo" log --format=%B "$base..$target_head" 2>/dev/null || true)
 
     effect_base="$base"
+    validation_base="$base"
     while IFS= read -r commit; do
         [[ -n "$commit" ]] || continue
-        [[ -n "${equivalent_commits[$commit]+yes}" ]] || break
+        proof="${equivalent_commits[$commit]-}"
+        [[ -n "$proof" ]] || break
         effect_base="$commit"
+        [[ "$proof" == marker ]] && validation_base="$commit"
     done < <(git -C "$repo" rev-list --reverse --first-parent "$base..$old_head")
+
+    # A patch-id proves that a matching change existed somewhere in target
+    # history, not that the target tip still retains the local prefix.  A
+    # later target commit can replace or revert that change.  Compare the
+    # complete mode+blob tree entries for every unmarked suffix at the target
+    # tip before discarding it; an explicit marker is the reviewed boundary.
+    if [[ "$effect_base" != "$validation_base" ]]; then
+        while IFS= read -r path; do
+            [[ -n "$path" ]] || continue
+            old_entry="$(git -C "$repo" ls-tree -r "$effect_base" -- "$path")"
+            target_entry="$(git -C "$repo" ls-tree -r "$target_head" -- "$path")"
+            if [[ "$old_entry" != "$target_entry" ]]; then
+                printf 'BLOCK: patch-equivalent local effect is absent from target path=%s source=%s old=%s target=%s\n' \
+                    "$path" "$effect_base" "${old_entry:-ABSENT}" "${target_entry:-ABSENT}" >&2
+                return 2
+            fi
+        done < <(git -C "$repo" diff-tree --no-commit-id --name-only -r "$base" "$effect_base" | sort -u)
+    fi
     printf 'SAFE_SHARED_MAIN_FF_EQUIVALENCE base=%s effect_base=%s accounted=%s result=PASS\n' \
         "$base" "$effect_base" "$(git -C "$repo" rev-list --count "$base..$effect_base")"
     if [[ -n "$effects_file" ]]; then
