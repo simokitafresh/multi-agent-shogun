@@ -11313,8 +11313,9 @@ PY
     esac
 }
 
-# 歯止め(b) 殿裁可2026-07-25: 同一のCI REDに対する追いpushは2回まで。3回目からは
-# 新規配備を止め、RED修正へリソースを寄せる。一次情報は2つだけを使う:
+# 殿裁定2026-09-06: CI REDだけで独立した配備・公開を止めない。
+# 追いpush回数はCI修正を促す通知に限り、既存のtask固有検証を置換しない。
+# 一次情報は2つだけを使う:
 #   (1) CI REDの実態   = gh run list の最新完了run (conclusion/headSha)
 #   (2) 追いpush回数   = git rev-list --count <red_head_sha>..origin/main
 # gate_metrics.logはrun_idを持たずcmd単位の記録しか残らないため、RED起点からの
@@ -11355,9 +11356,8 @@ deploy_task_ci_red_followup_push_guard() {
     [[ "$followups" =~ ^[0-9]+$ ]] || return 0
 
     if [ "$followups" -gt "$limit" ]; then
-        log "BLOCK(ci_red_followup): red_sha=${red_sha:0:9} followup_pushes=${followups} limit=${limit}"
-        echo "BLOCK: CI RED(sha=${red_sha:0:9})に対する追いpushが${followups}回(上限${limit}回)。新規配備を停止し、task_type=ci_fixでRED修正へ全リソースを寄せよ。" >&2
-        return 1
+        log "WARN(ci_red_followup): red_sha=${red_sha:0:9} followup_pushes=${followups} limit=${limit}"
+        echo "WARN: CI RED(sha=${red_sha:0:9})後の追加commitが${followups}件。CI修正を専任で継続し、独立した新規配備は通常のtask検証を通して続行する。" >&2
     fi
     return 0
 }

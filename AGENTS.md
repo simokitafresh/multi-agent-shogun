@@ -321,6 +321,15 @@ Session Start / Recovery の手順に従う（本ファイル冒頭参照）。�
 
 # Communication Protocol
 
+<!-- ci-independent-work:start -->
+## CI REDと独立作業（全CLI・model・effort共通、殿裁定2026-09-06）
+
+- positive_rule: CI REDだけを理由に配備・commit・検証済み独立変更の公開を止めない。CI修正は専任の並行作業とし、停止判断は当該変更の未達検証・具体的依存・対象固有の承認条件で行う。発火していない公開制限を推測しない。
+- reason: 配備guardのBLOCKを独立変更の公開禁止へ一般化し、検証済み権限同期をCI待ちにしたため。復帰後も同じ判断を再発させない。
+- 実装: scripts/deploy_task.shのCI RED追随判定は警告のみで通常配備を通す。対象固有の検証・本番承認・保護対象は維持する。CLI固有のhook・実行方式は統合せず、成果基準のみ同期する。
+<!-- ci-independent-work:end -->
+
+
 <!-- ninja-authority-20260906:start -->
 ## 忍者の権限とAC境界（殿裁定2026-09-06 21:23）
 
@@ -550,7 +559,7 @@ Reason: 80行で日本語YAML ≈ 2,400トークン、英語YAML ≈ 960トー�
 - **防御階層原則(Level1-6)**|Level5=事前コンテキスト提供、Level6=学習速度最大化。ゲート発火=未熟さの証拠|`context/growth-loop.md` §11
 - CI緑維持|pre-pushフック+CI赤検知(cmd_complete_gate.sh)+GATE WARN|push済みcmd対象|BLOCKではなくWARN
 - **CI RED忍者修正(殿裁定2026-07-16)**|家老がCI RED検知→idle忍者に即修正配備。**家老D0修正禁止・将軍cmd不要**|`gh run view <run_id> --log-failed`→`/karo-direct`で`task_type: ci_fix`+`ci_run_id`付きタスクを忍者へ配備→家老がレビュー/push/GREEN確認。`gate_karo_startup.sh`が配備証跡なしをALERT強制|理由: 実装を忍者へ一元化し、家老は診断・分解・検証に専念する
-- **CI RED中の他作業(殿裁定2026-05-03)**|GATE処理(commit/レビュー/CLEAR)は続行。pushのみ保留(GREEN復帰後一括push)。新cmd配備も続行|CI REDで全停止するな。修正は1名担当、残りは通常作業継続|→ `instructions/generated/codex-karo.md` §CI RED中の他作業
+- **CI RED中の独立作業(殿裁定2026-09-06)**|CI REDだけを理由に配備・commit・検証済み独立変更の公開を保留しない。CI修正は専任で並行|停止は当該変更の未達検証・具体的依存・対象固有の承認条件で判断し、発火していない公開制限を推測しない。CI待ちで権限同期公開を止めた誤りの再発防止|→ `instructions/generated/codex-karo.md` §CI RED中の他作業
 - CLI起動|**手動起動は`~/bin/claude --effort high`**(pinned 版の固定パス必須。`claude`だけだとauto-update版が起動する)。`--model opus`=200K厳禁|自動起動(reset_layout/ninja_monitor)はcli_profiles.yamlが`~/bin/claude`を参照→2.1.87保証|codex: config.toml 1M設定必要|→ `context/infrastructure.md` §CLIモデル指定
 - **Codex multi-CLI統合**|hooks=`.codex/hooks.json`(Codex hookスクリプト共有)。skills=プロジェクト正本symlink。hook BLOCK=**exit 2**(exit 1はCLIクラッシュ)。doc制限=`project_doc_max_bytes=131072`|→ `context/infrastructure.md` §Codex multi-CLI統合
 - ローカル記憶DB|SQLite検索層=`data/multi_agent_shogun_memory.db`、schema=`context/memory-db-schema.md`、query集=`context/memory-db-queries.md`、runner=`scripts/memory_db_query.sh`|→ `context/infrastructure.md` §lord_conversation / 記憶DBデータフロー
