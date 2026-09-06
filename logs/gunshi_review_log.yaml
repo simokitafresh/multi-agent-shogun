@@ -13746,3 +13746,38 @@
   verdict: LGTM
   verified_files:
   - scripts/inbox_write.sh:1
+- adversarial_review:
+    reason: DDL DROP 8列 隔離DB 3cycle down=nullable+defaults deploy0
+    required: true
+    verdict: PASS
+  brainwash_check: '704e99c7確認 24348行hash一致 3cycle receipt再生成 #1no#2no#3no#4no#5no#6no#7no#8no'
+  cmd_id: cmd_4495
+  confidence: HIGH
+  finding_categories:
+  - assumptions
+  - numbers
+  - simulation
+  - premortem
+  - north_star
+  - ambiguity
+  - adversarial
+  gate_prediction: CLEAR
+  gate_prediction_reason: all checks passed
+  ninja: saizo
+  observations:
+  - fp=1f94cd11不変。receipt再生成+status=completedへ是正
+  - 隔離DB 3cycle retained_hash一致 down standard/0=24348
+  - gate_report_format PASS。precheck ERRORS=0
+  - GATE BLOCK(receipt invalid)→receipt再生成後の正規再提出
+  operational_simulation:
+    actual: 704e99c7 cmd_4495_full confirmed
+    command: git -C /mnt/c/Python_app/DM-signal log --oneline 704e99c7 -1
+    expected: cmd_4495 remove unused FoF weight columns
+    result: PASS
+  report_fingerprint: 1f94cd11d8b10679733cc601682f4b3ea7eea72c4f09d1cae61c3dd6e60927b5
+  review_type: report
+  step3_5_verified: true
+  timestamp: '2026-09-07T03:11:00+09:00'
+  verdict: LGTM
+  verified_files:
+  - backend/alembic/versions/drop_fof_component_weights_unused_columns.py:1
