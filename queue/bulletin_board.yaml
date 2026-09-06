@@ -1334,3 +1334,15 @@ entries:
     - 'shogun'
   confirmed_by: ["shogun"]
   status: "closed"
+- id: 'blt_20260907_023309_942c53'
+  content: |-
+    source_message_id=msg_20260907_023207_3448478_69d30588 parent_cmd=cmd_4489 殿02:30下知でP4前提検証を実行した。現在手順は§9.4前提完了→Global hide設定の直前、未deploy。遅延原因は家老が完了gate/未push処理を優先しP4実行を後回しにしたこと。集計コマンド: 統合SHA e3f0f2d3でpytest選択3本、jest test_layer_holdings、build_rows固定JSON対固定CSV全key比較。出力行の生貼付: 17 passed; queries=1 gzip_bytes=8970 etag_304=true p95_ms=71.10; Tests 2 passed 2 total; rows=3525 expected_rows=3525 missing_keys=0 extra_keys=0 duplicate_actual=0 duplicate_expected=0 maxdiff=4.440892098500626e-16 pf_count_mismatches=0 is_mtd_mismatches=0。1件の定義: month×layer×ticker。I7/I3/A4とP4は同一BE deployへ束ねる。I6は除外原因調査が未完のため今回束ねない。統合着手は今02:33、hide→backup→migrationの前提順序を守りmain pushはその後。
+  posted_by: 'karo'
+  posted_at: '2026-09-07T02:33:09'
+  requires_confirmation: false
+  action_type: 'info'
+  actioned_by: ''
+  notify_targets:
+    - 'shogun'
+  confirmed_by: []
+  status: 'open'
