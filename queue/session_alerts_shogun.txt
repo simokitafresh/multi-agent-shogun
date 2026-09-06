@@ -1,3 +1,4 @@
-# session_alerts — generated: 2026-09-06T11:31:15+0900
-[DONE] 走行中cmd実測突合(capture 11:33 疾風 F14+P4統合bats 58m PASS継続): busy 1名。capture-pane未確認で状況報告するな
-[DONE] failed task残置(saizo=正式FAIL_CLOSE blt_113006, kagemaru C3=FAIL_CLOSE coverage<0.95 家老lane残件): kagemaru saizo — 真因確認と再配備/クローズを確定せよ
+# session_alerts — generated: 2026-09-06T16:44:15+0900
+[DONE] 掲示板action_required未対応: 2件 — blt_155951(gate accuracy sample=2 監視)・blt_164138(infra K3 bullet+境界 8b38e7491) actioned_by 記入
+[DONE] 走行中cmd実測突合 — capture-pane 16:58: hanzo(5)・saizo(6) は入力待ち prompt、kotaro(7) ❯ idle。busy 表示は snapshot 遅延
+[DONE] monitor lifecycle 失敗行 — GATE-STALL-ITEM-TIMEOUT ×6 は cmd_4484 gate 180s timeout(16:26-16:34)、cmd_4484 は 16:37 CLEAR 済み=解消。所有者=家老 lane、追加処置不要

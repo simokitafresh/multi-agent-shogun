@@ -20134,10 +20134,40 @@ insights:
   priority: "low"
   source: "semantic_index_update"
   fix_known: false
-  status: pending
+  status: "resolved"
+  resolved_reason: "semantic map generation verified the candidate is represented or intentionally ignored"
+  action_artifact: "semantic_map=/home/simokitafresh/multi-agent-shogun/context/semantic-map.md;semantic_index=/home/simokitafresh/multi-agent-shogun/docs/semantic-index/index.md"
+  resolved_at: "2026-09-06T16:41:02.581218"
 - id: INS-20260906-163705245-2253
   ts: "2026-09-06T16:37:05+09:00"
   insight: "semantic_index_update未登録cmd originノード: [[殿指示_本番不整合深掘り_20260906_1411]] は既存aliasesに一致なし。類似概念TOP3: creator_brainwashing_defense(創造主の洗脳防御; alias=殿指示; score=25.5) / strong_new_game_completion_contract(強くてニューゲーム完遂契約; alias=殿指示_強くてニューゲーム_20260813_1648; score=20.7) / known_unknowns_principle(無知の知; alias=殿指示 「2層SSOTにするべき仕組みが他にないか確認しよう」; score=18.5)。概念定義とaliases追加を検討せよ"
+  priority: "low"
+  source: "semantic_index_update"
+  fix_known: false
+  status: "resolved"
+  resolved_reason: "semantic index candidate was absorbed into a registered concept"
+  action_artifact: "semantic_index=/home/simokitafresh/multi-agent-shogun/docs/semantic-index/index.md"
+  resolved_at: "2026-09-06T16:37:32.164294"
+- id: INS-20260906-164501545-6995
+  ts: "2026-09-06T16:45:01+09:00"
+  insight: "semantic_index_update新概念候補: discussion:§ 視点wo は 既存aliasesに一致なし。概念定義とaliases追加を検討せよ"
+  priority: "low"
+  source: "semantic_index_update"
+  fix_known: false
+  status: "resolved"
+  resolved_reason: "semantic map generation verified the candidate is represented or intentionally ignored"
+  action_artifact: "semantic_map=/home/simokitafresh/multi-agent-shogun/context/semantic-map.md;semantic_index=/home/simokitafresh/multi-agent-shogun/docs/semantic-index/index.md"
+  resolved_at: "2026-09-06T16:45:29.743433"
+- id: INS-20260906-171124508-5a94
+  ts: "2026-09-06T17:11:24+09:00"
+  insight: "semantic_index_update未登録cmd originノード: [[殿指示_デッドコード確認_20260906_1445]] は既存aliasesに一致なし。類似概念TOP3: creator_brainwashing_defense(創造主の洗脳防御; alias=殿指示; score=25.5) / strong_new_game_completion_contract(強くてニューゲーム完遂契約; alias=殿指示_強くてニューゲーム_20260829_1250; score=21.7) / known_unknowns_principle(無知の知; alias=殿指示 「2層SSOTにするべき仕組みが他にないか確認しよう」; score=19.0)。概念定義とaliases追加を検討せよ"
+  priority: "low"
+  source: "semantic_index_update"
+  fix_known: false
+  status: pending
+- id: INS-20260906-171146945-6305
+  ts: "2026-09-06T17:11:46+09:00"
+  insight: "semantic_index_update未登録cmd originノード: [[家老R3_全域監査は別cmd]] は既存aliasesに一致なし。類似概念TOP3: unread_cmd_new_deployment_guard(未読cmd_new配備漏れ防止; alias=cmd_4437_全太字Free表記; score=3.2) / ac_merit_review_integrity(AC本旨レビュー整合性; alias=cmd_3868正本0行RC; score=3.0) / gate_bypass_prevention(ゲート迂回防止; alias=cmd_4385_全体隙間計装; score=2.7)。概念定義とaliases追加を検討せよ"
   priority: "low"
   source: "semantic_index_update"
   fix_known: false
