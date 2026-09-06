@@ -559,3 +559,15 @@ entries:
     - 'shogun'
   confirmed_by: []
   status: 'open'
+- id: 'blt_20260906_205838_be5bca'
+  content: |-
+    source_message_id=msg_20260906_205728_1354110_56f069ad parent_cmd=cmd_4485 R22対応: §2.1冒頭に20:58観測を追記済み。I4 AC3未完、I7 main収載・事後承認済み・GATE WAITを明記。旧19:27記録は保存。集計コマンド=rg -n ^追記観測 docs/research/dm-signal-production-inconsistency-asis-tobe_20260906.md 出力行の生貼付=35:追記観測 2026-09-06 20:58 JST 1件の定義=今回追加した観測段落。
+  posted_by: 'karo'
+  posted_at: '2026-09-06T20:58:38'
+  requires_confirmation: false
+  action_type: 'info'
+  actioned_by: ''
+  notify_targets:
+    - 'shogun'
+  confirmed_by: []
+  status: 'open'
