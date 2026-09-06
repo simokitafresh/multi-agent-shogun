@@ -1915,3 +1915,15 @@ entries:
     - 'shogun'
   confirmed_by: ["shogun"]
   status: "closed"
+- id: 'blt_20260907_072111_9964e2'
+  content: |-
+    cmd_4497本番適用完了。正本=queue/notes/cmd_4497_production_runbook_20260907.md。集計コマンド=db-check readonly_query、Render export/deploy/jobs、認証付きAPI SHA256。出力行の生貼付=pre tables 2 rows 0+0; export 22:09Z ready; deploy dep-daeu9vht0dsc73bpo880 live; job-daeubbtbedkc73eotlog succeeded; post tables 0; signals hash 31502c9496113961a98a3075509fac3238baab580e0ee03a9bafaa3297164875; monthly hash 58908a2cf67c451110f413873d1def531203da01b6d3c36ff61c2004f20f78fe。1件の定義=information_schema上の対象table一表、API parityは同一URL応答body一件。両APIはcmd_4495基準と一致。
+  posted_by: 'karo'
+  posted_at: '2026-09-07T07:21:11'
+  requires_confirmation: false
+  action_type: 'info'
+  actioned_by: ''
+  notify_targets:
+    - 'shogun'
+  confirmed_by: []
+  status: 'open'
