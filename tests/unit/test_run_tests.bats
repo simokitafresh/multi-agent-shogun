@@ -2222,6 +2222,144 @@ PY
   [ "$status" -eq 0 ]
 }
 
+# test_necessity: canonical singular readonly_ref and compatibility plural
+# readonly_refs must both reach the public task/single-flight entry as empty
+# source-test probes, while malformed reference types must not gain exemption.
+# regression_justification: overlaps_existing=true; existing coverage only
+# exercised inspection_path plus readonly_refs and bypassed single-flight with
+# SHOGUN_HEAVY_JOB_LOCK_HELD=1, leaving deploy_task's readonly_ref contract
+# untested at the public entry.
+@test "canonical and compatibility readonly refs classify only valid pure probes" {
+  mkdir -p "$TMPROOT/queue/tasks" "$TMPROOT/receipts-singular" "$TMPROOT/receipts-plural" \
+    "$TMPROOT/receipts-invalid" "$TMPROOT/receipts-owned" "$TMPROOT/sf-singular" \
+    "$TMPROOT/sf-plural" "$TMPROOT/sf-invalid" "$TMPROOT/sf-owned"
+  cat >"$TMPROOT/queue/tasks/singular.yaml" <<'YAML'
+task:
+  task_id: singular-readonly
+  task_type: recon2
+  commit_contract:
+    required: false
+  readonly_ref:
+  - path: scripts/inspected.sh
+    reason: reference only
+YAML
+  cat >"$TMPROOT/queue/tasks/plural.yaml" <<'YAML'
+task:
+  task_id: plural-readonly
+  task_type: recon2
+  commit_contract:
+    required: false
+  readonly_refs: [scripts/inspected.sh]
+YAML
+  for invalid_kind in number mapping list bool mixed; do
+    mkdir -p "$TMPROOT/receipts-invalid-$invalid_kind" "$TMPROOT/sf-invalid-$invalid_kind"
+  done
+  cat >"$TMPROOT/queue/tasks/invalid-number.yaml" <<'YAML'
+task:
+  task_id: invalid-readonly-number
+  task_type: recon2
+  commit_contract:
+    required: false
+  readonly_ref:
+  - path: 123
+YAML
+  cat >"$TMPROOT/queue/tasks/invalid-mapping.yaml" <<'YAML'
+task:
+  task_id: invalid-readonly-mapping
+  task_type: recon2
+  commit_contract:
+    required: false
+  readonly_ref:
+  - path:
+      x: y
+YAML
+  cat >"$TMPROOT/queue/tasks/invalid-list.yaml" <<'YAML'
+task:
+  task_id: invalid-readonly-list
+  task_type: recon2
+  commit_contract:
+    required: false
+  readonly_ref:
+  - path: [scripts/inspected.sh]
+YAML
+  cat >"$TMPROOT/queue/tasks/invalid-bool.yaml" <<'YAML'
+task:
+  task_id: invalid-readonly-bool
+  task_type: recon2
+  commit_contract:
+    required: false
+  readonly_ref:
+  - path: true
+YAML
+  cat >"$TMPROOT/queue/tasks/invalid-mixed.yaml" <<'YAML'
+task:
+  task_id: invalid-readonly-mixed
+  task_type: recon2
+  commit_contract:
+    required: false
+  readonly_ref:
+  - path: scripts/inspected.sh
+  readonly_refs:
+  - path: 123
+YAML
+  cat >"$TMPROOT/queue/tasks/owned.yaml" <<'YAML'
+task:
+  task_id: owned-readonly-reference
+  task_type: recon2
+  commit_contract:
+    required: true
+  target_path: scripts/run_tests.sh
+  test_path: tests/unit/sample.bats
+  readonly_ref:
+  - path: scripts/inspected.sh
+    reason: reference only
+YAML
+
+  run env PATH="$TMPROOT/bin:$PATH" REPO_ROOT="$TMPROOT" \
+    RUN_TESTS_RECEIPT_DIR="$TMPROOT/receipts-singular" RUN_TESTS_SINGLEFLIGHT_DIR="$TMPROOT/sf-singular" \
+    BATS_CACHE=0 BATS_INNER_JOBS=1 \
+    bash "$TMPROOT/scripts/run_tests.sh" task "$TMPROOT/queue/tasks/singular.yaml"
+  [ "$status" -eq 0 ]
+  [[ "$output" == *"TEST_SCOPE result=readonly_probe files=0"* ]]
+  [[ "$output" == *"TEST_SELECTION result=selected reason=readonly_probe_no_source_tests files=0"* ]]
+  singular_receipt="$(find "$TMPROOT/receipts-singular" -name '*.json' -type f | head -1)"
+  [ -n "$singular_receipt" ]
+  [ "$(python3 -c 'import json,sys; d=json.load(open(sys.argv[1])); print(d["rc"], d["declared_test_count"], d["observed_test_count"], d["skip_count"], d["test_paths"])' "$singular_receipt")" = "0 0 0 0 []" ]
+
+  run env PATH="$TMPROOT/bin:$PATH" REPO_ROOT="$TMPROOT" \
+    RUN_TESTS_RECEIPT_DIR="$TMPROOT/receipts-plural" RUN_TESTS_SINGLEFLIGHT_DIR="$TMPROOT/sf-plural" \
+    BATS_CACHE=0 BATS_INNER_JOBS=1 \
+    bash "$TMPROOT/scripts/run_tests.sh" task "$TMPROOT/queue/tasks/plural.yaml"
+  [ "$status" -eq 0 ]
+  [[ "$output" == *"TEST_SCOPE result=readonly_probe files=0"* ]]
+  [[ "$output" == *"TEST_SELECTION result=selected reason=readonly_probe_no_source_tests files=0"* ]]
+  plural_receipt="$(find "$TMPROOT/receipts-plural" -name '*.json' -type f | head -1)"
+  [ -n "$plural_receipt" ]
+  [ "$(python3 -c 'import json,sys; d=json.load(open(sys.argv[1])); print(d["rc"], d["declared_test_count"], d["observed_test_count"], d["skip_count"], d["test_paths"])' "$plural_receipt")" = "0 0 0 0 []" ]
+
+  for invalid_kind in number mapping list bool mixed; do
+    run env PATH="$TMPROOT/bin:$PATH" REPO_ROOT="$TMPROOT" \
+      RUN_TESTS_RECEIPT_DIR="$TMPROOT/receipts-invalid-$invalid_kind" \
+      RUN_TESTS_SINGLEFLIGHT_DIR="$TMPROOT/sf-invalid-$invalid_kind" \
+      BATS_CACHE=0 BATS_INNER_JOBS=1 \
+      bash "$TMPROOT/scripts/run_tests.sh" task "$TMPROOT/queue/tasks/invalid-$invalid_kind.yaml"
+    [ "$status" -eq 2 ]
+    [[ "$output" != *"TEST_SCOPE result=readonly_probe"* ]]
+    [[ "$output" == *"BLOCK: single-flight selection could not be resolved"* ]]
+  done
+
+  run env PATH="$TMPROOT/bin:$PATH" REPO_ROOT="$TMPROOT" \
+    RUN_TESTS_RECEIPT_DIR="$TMPROOT/receipts-owned" RUN_TESTS_SINGLEFLIGHT_DIR="$TMPROOT/sf-owned" \
+    BATS_CACHE=0 BATS_INNER_JOBS=1 \
+    bash "$TMPROOT/scripts/run_tests.sh" task "$TMPROOT/queue/tasks/owned.yaml"
+  [ "$status" -eq 0 ]
+  [[ "$output" == *"TEST_SCOPE result=task files=2"* ]]
+  [[ "$output" != *"readonly_probe"* ]]
+  owned_receipt="$(find "$TMPROOT/receipts-owned" -name '*.json' -type f | head -1)"
+  [ -n "$owned_receipt" ]
+  [ "$(python3 -c 'import json,sys; d=json.load(open(sys.argv[1])); print(d["rc"], d["declared_test_count"], d["observed_test_count"], d["skip_count"])' "$owned_receipt")" = "0 1 1 0" ]
+}
+
 # test_necessity: an inspection-only task may target another project without
 # leaking the external-project selection sentinel into its zero-test receipt;
 # the same external scope remains fail-closed for implementation ownership.
