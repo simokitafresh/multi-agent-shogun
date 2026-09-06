@@ -9,5 +9,5 @@
 5. D0: 道具バグは将軍が先に直す(参照 bats を rg -l で全列挙→run_tests.sh file 全 PASS→publish。not ok は単独再実行で負荷由来か判定)。insights.yaml 直接編集禁止。
 6. publish=$scratchpad/pubdocs.sh(隔離 clone、新規 file は先に list へ、root の stale copy を clone へ入れない)、gist_share は 1 Bash 1 本。DOC_LANE_ALERT は context_source_commit_set.sh(root に無い commit は git fetch 後に origin hash)。
 7. todo map T242(anchor=直前更新時刻)→todo_map_render.py→artifact 4f5e79a2 再公開(変化時)。復帰点 session_save_YYYYMMDD_HHMM を記憶DB へ。CTX>70% なら復帰点を書いて /compact。
-8. 禁則: 本番 DB/deploy 書込は殿の明示 OK のみ。DM-Signal main push=本番 deploy 相当=禁止(成果は非 main branch)。cmd 起票は LS110/LS-A13/LS-A22 の自己チェック(q1〜q12、q8 5W1H+複利、planned_paths、教訓 ack、cmd_delegate は INBOX_MESSAGE_ID で配備確認)。 **AC に必要 coverage(期間・表・ticker)と取得権限を明記し、追加取得や裁定が要る段は AC 境界に置く(三者協議 09-06 21:25、同じ根因の再提出増幅を防ぐ)。**
+8. 禁則: 本番 DB/deploy 書込は殿の明示 OK のみ。DM-Signal main push=本番 deploy 相当=禁止(成果は非 main branch)。cmd 起票は LS110/LS-A13/LS-A22 の自己チェック(q1〜q12、q8 5W1H+複利、planned_paths、教訓 ack、cmd_delegate は INBOX_MESSAGE_ID で配備確認)。 **AC は忍者の権限内で閉じる(殿 09-06 21:23): 権限外の段(本番書込/DDL/deploy/共有 root 適用)は AC に入れず別 cmd か殿 OK 後の段に置く。可逆で本番に触れない操作(本番 DB readonly 取得=launcher+nonce、隔離 DB/worktree/非 main branch、隔離実験の反復)に『1 回だけ』等の人工制限を作らない。外部待ち状態を主経路にしない(家老がボトルネックになる)。**
 9. tick の最後: 焦点 3 行を現状に合わせて改訂し ScheduleWakeup(25 分)。殿へは変化があった時だけ 1 報。
