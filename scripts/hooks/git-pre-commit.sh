@@ -747,6 +747,57 @@ run_reference_test_contract_check() {
     return 0
 }
 
+# AC2(参照増減, cmd_karo_hotfix_reference_test_contract_20260906 RC是正2): materialize
+# tests/unit as it existed at HEAD into a throwaway directory and re-run the
+# exact same literal-reference derivation against it, so "the required set
+# before this commit" is computed fresh from git every time -- never from a
+# persisted manifest or a task-YAML field that could go stale or need a
+# risky mutation to a file this hook doesn't own.
+reference_test_contract_head_matches() {
+    local script_path="${1:-}"
+    [[ -n "$script_path" ]] || return 0
+    local tmp_root
+    tmp_root="$(mktemp -d 2>/dev/null)" || return 0
+    if git -C "$REPO_ROOT" archive HEAD -- tests/unit 2>/dev/null | tar -x -C "$tmp_root" 2>/dev/null; then
+        gate_hook_quality_contract_reference_test_matches "$script_path" "$tmp_root"
+    fi
+    rm -rf -- "$tmp_root" 2>/dev/null
+    return 0
+}
+
+# AC2(参照増減を検証し未達BLOCK): compare that HEAD-tree derivation against the
+# same derivation over the current working tree, for every staged script
+# that already existed at HEAD (a modification, not a brand-new file, which
+# has no "before" to compare against). A reference set that shrank across
+# this commit -- some bats file referenced the script at HEAD and no longer
+# does -- is exactly the F-11/F-12/F-13/F-16 shape (a contract test silently
+# lost its coverage) and is worth a human look before it merges, so this
+# BLOCKs rather than letting coverage quietly drop. Growing or unchanged
+# sets are never blocked; only a strict decrease is a red flag.
+check_reference_test_drift() {
+    local staged before after before_count after_count missing has_drift=0
+    while IFS= read -r staged; do
+        [[ -n "$staged" ]] || continue
+        case "$staged" in
+            *.sh|*.py) ;;
+            *) continue ;;
+        esac
+        git -C "$REPO_ROOT" cat-file -e "HEAD:${staged}" 2>/dev/null || continue
+        before="$(reference_test_contract_head_matches "$staged")"
+        after="$(gate_hook_quality_contract_reference_test_matches "$staged" "$REPO_ROOT")"
+        before_count=0
+        [[ -z "$before" ]] || before_count="$(printf '%s\n' "$before" | grep -c .)"
+        after_count=0
+        [[ -z "$after" ]] || after_count="$(printf '%s\n' "$after" | grep -c .)"
+        if [[ "$after_count" -lt "$before_count" ]]; then
+            missing="$(comm -23 <(printf '%s\n' "$before" | sort) <(printf '%s\n' "$after" | sort) | tr '\n' ',' | sed 's/,$//')"
+            echo "BLOCK(GA-PRECOMMIT1): reference-test contract drift for ${staged}: ${before_count} -> ${after_count} referencing bats (lost: ${missing})" >&2
+            has_drift=1
+        fi
+    done < <(list_staged_files)
+    [[ "$has_drift" -eq 0 ]]
+}
+
 # AC3 threshold decision (n=10 direct measurement, this repo's current scale,
 # real shared-worktree contention): a single non-lib code file staged →
 # median 1844ms / max 3262ms added latency, dominated by test_select.sh's
@@ -895,6 +946,9 @@ check_precommit_affected_tests() {
         if declare -f run_reference_test_contract_check >/dev/null 2>&1; then
             run_reference_test_contract_check "$run_tests" || return 1
         fi
+        if declare -f check_reference_test_drift >/dev/null 2>&1; then
+            check_reference_test_drift || return 1
+        fi
         if precommit_receipt_matches "$task_file"; then
             echo "[pre-commit] affected-test exact PASS receipt reused; test process launches=0" >&2
             return 0
@@ -942,6 +996,9 @@ check_precommit_affected_tests() {
 
     if declare -f run_reference_test_contract_check >/dev/null 2>&1; then
         run_reference_test_contract_check "$run_tests" || return 1
+    fi
+    if declare -f check_reference_test_drift >/dev/null 2>&1; then
+        check_reference_test_drift || return 1
     fi
 
     # Accept both new (PRECOMMIT_TIMEOUT_OVERRIDE) and legacy name for backward compat
