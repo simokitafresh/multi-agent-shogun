@@ -19276,3 +19276,10 @@ insights:
   source: "semantic_index_update"
   fix_known: false
   status: pending
+- id: INS-20260906-204955510-1d2f
+  ts: "2026-09-06T20:49:55+09:00"
+  insight: "semantic_index_update新概念候補: discussion:今すぐ投稿せよ は 既存aliasesに一致なし。概念定義とaliases追加を検討せよ"
+  priority: "low"
+  source: "semantic_index_update"
+  fix_known: false
+  status: pending
