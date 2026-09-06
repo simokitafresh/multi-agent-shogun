@@ -359,6 +359,21 @@ PY
             return 0
             ;;
         UNPUSHED:*)
+            # A publisher may reconstruct the same changed paths with a new
+            # commit hash.  This proof is independent of the source-only
+            # marker/receipt lane below and therefore applies to ordinary
+            # report commits as well.
+            if [ -n "$report_commit" ] && [ "$report_commit" != "no-code-change" ]; then
+                local expected_head
+                expected_head="$(resolve_ci_expected_head "$repo_dir")"
+                if [ -n "$expected_head" ] \
+                    && source_snapshot_matches_tip \
+                        "$repo_dir" "$report_commit" "$expected_head"; then
+                    printf 'PASS: report commit %s content_equivalent to %s paths=%s\n' \
+                        "$report_commit" "$expected_head" "$SOURCE_SNAPSHOT_MATCH_PATH_COUNT"
+                    return 0
+                fi
+            fi
             # A source-only publisher may have rebuilt the report paths on a
             # newer canonical tip, leaving the original commit non-ancestral.
             # Promote that result only with the complete marker/receipt/path
@@ -2062,23 +2077,74 @@ PY
 # source commit, including deletions; an empty commit is not accepted as an
 # equivalence witness.
 source_snapshot_matches_tip() {
-    local repo="$1" source_sha="$2" tip_sha="$3" path source_blob tip_blob
-    local changed_count=0
+    local repo="$1" source_sha="$2" tip_sha="$3"
+    local path_file status path old_path new_path
+    local changed_count=0 record_index=0
+    local -a records=() changed_paths=()
+    local -A seen_paths=()
+    SOURCE_SNAPSHOT_MATCH_PATH_COUNT=0
 
     git -C "$repo" cat-file -e "${source_sha}^{commit}" 2>/dev/null || return 1
     git -C "$repo" cat-file -e "${tip_sha}^{commit}" 2>/dev/null || return 1
-    while IFS= read -r -d '' path; do
-        changed_count=$((changed_count + 1))
-        if git -C "$repo" cat-file -e "$source_sha:$path" 2>/dev/null; then
-            git -C "$repo" cat-file -e "$tip_sha:$path" 2>/dev/null || return 1
-            source_blob="$(git -C "$repo" rev-parse "$source_sha:$path")" || return 1
-            tip_blob="$(git -C "$repo" rev-parse "$tip_sha:$path")" || return 1
-            [ "$source_blob" = "$tip_blob" ] || return 1
-        else
-            ! git -C "$repo" cat-file -e "$tip_sha:$path" 2>/dev/null || return 1
-        fi
-    done < <(git -C "$repo" diff-tree --root --no-commit-id --name-only -r -z "$source_sha" 2>/dev/null)
-    [ "$changed_count" -gt 0 ]
+
+    path_file="$(mktemp "${TMPDIR:-/tmp}/cmd-gate-source-paths.XXXXXX")" || return 1
+    # NUL framing preserves spaces, tabs, and unusual path bytes.  The
+    # rename-aware status stream carries both old and new names; -m compares
+    # every parent of a merge and --root includes root-commit paths.
+    if ! git -C "$repo" diff-tree --root --no-commit-id --name-status \
+        -M -r -m -z "$source_sha" > "$path_file" 2>/dev/null; then
+        rm -f -- "$path_file"
+        return 1
+    fi
+    mapfile -d '' -t records < "$path_file"
+    rm -f -- "$path_file"
+
+    while [ "$record_index" -lt "${#records[@]}" ]; do
+        status="${records[$record_index]}"
+        record_index=$((record_index + 1))
+        case "$status" in
+            R*|C*)
+                [ "$record_index" -lt "${#records[@]}" ] || return 1
+                old_path="${records[$record_index]}"
+                record_index=$((record_index + 1))
+                [ "$record_index" -lt "${#records[@]}" ] || return 1
+                new_path="${records[$record_index]}"
+                record_index=$((record_index + 1))
+                for path in "$old_path" "$new_path"; do
+                    [ -n "$path" ] || return 1
+                    if [[ "${seen_paths[$path]+yes}" != yes ]]; then
+                        seen_paths["$path"]=1
+                        changed_paths+=("$path")
+                        changed_count=$((changed_count + 1))
+                    fi
+                done
+                ;;
+            A*|D*|M*|T*|U*)
+                [ "$record_index" -lt "${#records[@]}" ] || return 1
+                path="${records[$record_index]}"
+                record_index=$((record_index + 1))
+                [ -n "$path" ] || return 1
+                if [[ "${seen_paths[$path]+yes}" != yes ]]; then
+                    seen_paths["$path"]=1
+                    changed_paths+=("$path")
+                    changed_count=$((changed_count + 1))
+                fi
+                ;;
+            *)
+                return 1
+                ;;
+        esac
+    done
+    [ "$changed_count" -gt 0 ] || return 1
+
+    # git diff --quiet compares blobs and modes.  Restricting it to the source
+    # path set ignores unrelated canonical-main evolution without weakening
+    # the no-content-difference proof for the source change itself.
+    if git -C "$repo" diff --quiet "$source_sha" "$tip_sha" -- "${changed_paths[@]}"; then
+        SOURCE_SNAPSHOT_MATCH_PATH_COUNT="$changed_count"
+        return 0
+    fi
+    return 1
 }
 
 # Task-path equivalence for a source commit that may be a merge commit (diff-tree --root of a
