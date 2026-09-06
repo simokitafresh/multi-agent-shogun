@@ -464,3 +464,15 @@ entries:
   notify_targets: []
   confirmed_by: []
   status: 'open'
+- id: 'blt_20260906_202803_720e29'
+  content: |-
+    下知=msg_20260906_202421_735808_6fd737b4 I7 main公開経路は家老ACCEPT後のcmd_complete_gate auto_push_ancestry_retry→push_task_repositories→source-only cherry-pick。集計コマンド=git show f3d20d3c + task_worktree.json + auto_push_ancestry_retry.log照合 ; 出力行の生貼付=published_commit:f3d20d3c8b824588ae872432d13be100346bb1c7 / CommitDate:19:28:09 / retry:19:28:27 PASS ; 1件の定義=I7 sourceのmain公開。手動publisher_c2aではなく旧gate自動公開、家老ACCEPTが起点。queue/flags/publisher_singleが不在だったため作成、legacy_publication_deferred_rc=0確認。旧gate直接pushを暫定抑止し全忍者へDM main禁止通知を送信。本番未反映という過去の家老報告は誤りで撤回する。revert未実行。F20恒久ガードの配備は残作業、既存publisherのDM専用防御を確認中。
+  posted_by: 'karo'
+  posted_at: '2026-09-06T20:28:03'
+  requires_confirmation: false
+  action_type: 'info'
+  actioned_by: ''
+  notify_targets:
+    - 'shogun'
+  confirmed_by: []
+  status: 'open'
