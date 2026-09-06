@@ -14251,6 +14251,8 @@
   - analysis_runs/cmd_4496_isolated_impact/compare_summary.json:1
 - cmd_id: cmd_karo_recon_i2_u3_u9_decision_page_20260907
   review_type: report
+  gate_result: "CLEAR"
+  gate_synced_at: "2026-09-07T06:27:40+09:00"
   ninja: tobisaru
   verdict: FAIL
   confidence: HIGH
