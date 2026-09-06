@@ -1,5 +1,6 @@
 # インフラコンテキスト
-<!-- last_updated: 2026-09-06 2026-09-06 16:35 将軍doc lane: F-17 cmd_save 修正(547deff1b)を反映 -->
+<!-- last_updated: 2026-09-06 context_freshness reviewed source boundary -->
+<!-- source_commit:8b38e7491 reason:context_freshness reviewed source boundary evidence:context_freshness_check context=context/infrastructure.md commit=8b38e7491 -->
 <!-- source_commit:547deff1b reason:2026-09-06 16:35 将軍doc lane: F-17 cmd_save 修正(547deff1b)を反映 evidence:git show 547deff1b --stat = scripts/cmd_save.sh; bats 15/16 file PASS -->
 <!-- source_commit:f3742e4c66a4 reason:2026-09-06 15:10 将軍doc lane: W2 environment_refs(f3742e4c、test 4 行のみ、doc 追記不要) evidence:git show f3742e4c6 --stat = tests/unit/test_deploy_task_yaml_injection.bats +3/-1 -->
 <!-- source_commit:1fb456f82cb4 reason:2026-09-06 15:03 将軍doc lane: C3 span 残件の source 1fb456f8(publisher merge 323a7a6e4 と同内容) evidence:git merge-base --is-ancestor 1fb456f8 origin/main; 既存 C3 bullet(15:5x)が本 source を記述 -->

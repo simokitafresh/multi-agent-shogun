@@ -1,5 +1,5 @@
 <!-- gist-master: 2f1a3daa07c336c90958b1287245318b dm-signal-production-inconsistency-asis-tobe_20260906.md -->
-# DM-Signal 本番不整合 I1〜I9 — 現況・配備カード・データフロー・カタログ・因果・改善影響・ledger 判断 統合設計書 v1.1(2026-09-06 16:5x)
+# DM-Signal 本番不整合 I1〜I9 — 現況・配備カード・データフロー・カタログ・因果・改善影響・ledger 判断 統合設計書 v1.2(2026-09-06 17:0x)
 
 - 発端: 殿 2026-09-06 14:11『dm-signal-research-data-backlog_20260905.md を参考に DM-signal の本番の不整合について深く調査しよう。家老と繰り返しレビュー交換をせよ。本番の不整合、それによる影響、改善時にどのような変化が本番に起きるか、改善の影響範囲・依存関係なども明確にせよ』。以後の殿指示: 14:44 データフロー、14:45 ユーザー可視/内部/デッドコード、14:47 設計の因果、14:59 ledger 協議、15:06 時系列、15:15 可視変化の定量化、15:33 3 設計書並列、15:56 配備・進捗運用版(家老)、16:33 単一スタイルへ再構築。
 - 読む順: §2(現況)→§3(配備カード)→§5(カタログ)→§9(改善影響)→§10(ledger)。図は §4、根拠は §5〜§7、順序と契約は §8、裁定は §11、往復は §12、版は §13。
@@ -16,10 +16,10 @@
 
 | 読む人・目的 | 入口 | 詳細を省略しない受渡し |
 |---|---|---|
-| 家老: 配備する | 運用§C のカード ID→依存→許可境界 | カードだけを要約して渡さず、列挙した詳細§・AC・対象パスを task に注入 |
+| 家老: 配備する | §3 のカード ID→依存→許可境界 | カードだけを要約して渡さず、列挙した詳細§・AC・対象パスを task に注入 |
 | 忍者: 任務を遂げる | 自分の task YAML→カード→参照§ | 現 task の AC/版/hash が命令正本。本書だけで別カードを自発実装しない |
-| 家老・殿: 進捗を見る | 運用§B→現在段階・阻害要因・次の行動 | 報告完了、レビュー、publish、GATE CLEAR、解放を別々に確認 |
-| レビュー: 根拠をたどる | I番号→詳細§2(a)〜(h)、§6、§9.2、§5 | 旧観測と新観測を snapshot/時刻で分離。異なる分母を差分比較しない |
+| 家老・殿: 進捗を見る | §2.1/§2.2→現在段階・阻害要因・次の行動 | 報告完了、レビュー、publish、GATE CLEAR、解放を別々に確認 |
+| レビュー: 根拠をたどる | I番号→§5 (a)〜(h)、§6、§9.2、§9.1.4 | 旧観測と新観測を snapshot/時刻で分離。異なる分母を差分比較しない |
 
 - 状態正本は task/report/同一世代の gate receipt、コード正本は固定 SHA、データ正本は snapshot manifest と原行。表は**手動更新の観測記録**であり、自動追随とは称さない。
 - 調査完了 ≠ 不整合解消 ≠ 本番変更完了。未再現・仕様どおり・未判定も有効な調査結果だが、修正済みに数えない。
@@ -69,7 +69,7 @@ cmd_4484 世代2の**報告値**。オフライン検証出力は確認済みだ
 | I2 | signal_change_log 同日往復の二重行 | 🟡 | cmd_4484 世代 2 報告値(家老 review 中): 重複 group 81,102 / 対象行 235,750。分類は A 成果物、原因確定ではない |
 | I3 | signal_change_log 未出現 PF | 🟡 | 世代 2 報告値: 未出現 12 PF(A=75)。manifest で除外 3 体との差を照合 |
 | I4 | signal_detail_history 0 行 / signal_decision_ledger 0 行 | 🔴 殿裁定 | 前者=writer 実装あり・caller 0(廃止は契約確認後)、後者=PITR 後の再バックフィル未実施・API は today 固定(復活/廃止) |
-| I5 | 月初 signals.holding_signal ≠ monthly_returns.holding_signal | ✅ 世代 2 で 0 | 将軍再集計(16:5x、a_i5_rows.csv 原行): 一致 11,445 / raw・holding 差 477、477 行すべて signal 表と monthly_returns 表の holding_signal が一致=表間不整合 0。477 は raw≠holding の設計差。§9.1.4 |
+| I5 | 月初 signals.holding_signal ≠ monthly_returns.holding_signal | ✅ 保存された比較対象 11,922 で差 0(R9 限定) | 将軍再集計(16:5x)+家老 R9 再現: holding 差 0、raw・holding 差 477 は 477/477 で 2 表の holding が一致。ただし recon.py の月初営業日=保存月内最初の行(独立暦なし)ゆえ、未観測月初・有効日条件は unknown。『改善対象なし』とは断定しない。§9.1.4 |
 | I6 | display_ticker_weights 非 unit 35 行・parity 不一致 29/2,096 | 🟡 | 世代 2 報告値: display/pending_display 各 242,659 key で**非 unit 0**、静的 consumer 12。08-06 の 35 行は別時点(その後の full recalc で消えた可能性)。恒久解消と解釈せず、cmd_4485 で候補経路(選択外/欠損 child)の再現条件を確認 |
 | I7 | component holding_signal 欠落で展開不能 | ⏳ | 実測 0(cmd_4479/4483)。監視化のみ |
 | I8 | 新四つ目 3 体 parity 不一致(102+2) | 🟡 | 世代 2 報告値: B=全 FoF 77、signal 無し・return 有り 0。旧 2 件の 2014-04 は現在 signal/return あり(cmd_4480 時点との差=再計算で埋まった候補)。valid_start_date 欠落 77/77 は unknown |
@@ -368,9 +368,9 @@ I7: 監視 1 行(独立)
 | ① ユーザー可視 | 顧客・殿・研究が見る値が変わる | 顧客画面(/api/signals・/api/monthly-trade・/api/history)、LP・X・Live OOS の数値(monthly_return/cumulative)、admin 画面(WeightBreakdown)、API 直叩き | **PF-月**(値が変わる月)。日次行や log 行は PF-月へ換算してから比べる |
 | ② 内部のみ | 表・job・ログ・ALERT・研究集計が変わるが上の面は不変 | signal_change_log、fof_component_weights の列、ledger 2 表、ALERT 文面、研究 A4 | 行・列・file |
 | ③ デッドコード | 改善で到達しなくなる、または契約から外れるコード | §7 の候補 | file・関数・列 |
-| 持続性(追加) | 改善が日常 cron(F-A: L2 sync-standard 日次、L3 sync-fof、月初 `0 9 1 * *`、L5 precompute)を越えて残るか | — | **code 修正+recalc**=残る / **データ patch のみ**=次の再計算で再生成されうる(F-B/F-C の書込は UPSERT。消えるか戻るかは経路ごとに P10 で確認) |
+| 持続性(追加) | 改善が日常 cron(F-A: L2 sync-standard 日次、L3 sync-fof、月初 `0 9 1 * *`、L5 precompute)を越えて残るか | — | UPSERT 対象(Signal/MonthlyReturn/cache)は**当該 key が当該経路で再計算された時**に再生成される(R9)。全期間が次の日次 cron で必ず戻るわけではない。code 修正も適用版・対象範囲・入口・cache 更新が揃って初めて残る。ledger append-only・既存 change_log 保存・schema migration は別種(再計算で戻らない)。経路ごとに P10 で確認 |
 
-- 「現在値」= cmd_4484 世代 2 snapshot(2026-09-06 06:24〜06:28Z、A=75 PF/B=全 FoF 77)を将軍が原 CSV で再集計した数。「上限」= その改善で動き得る最大の PF-月(母集団)。直近 12 ヶ月= year_month ≥ 2025-09。
+- 「現在値」= cmd_4484 世代 2 snapshot(2026-09-06 06:24〜06:28Z、A=75 PF/B=全 FoF 77)を将軍が原 CSV で再集計した数。「上限」= その改善で動き得る最大の PF-月(母集団)。直近 12 ヶ月= **直近完了 12 ヶ月 2025-09〜2026-08**(R9: 2025-09〜2026-09 は 13 ヶ月。I2/I4/I5 を同じ上下限で再計数済み)。
 - 改善の実行は殿の明示 OK のみ。本節は「動くもの」の予測であり実証ではない。実証は §9.2 の隔離実験(cmd_4485)。
 
 #### §9.1.2 改善別の 3 視点(本表)
@@ -378,19 +378,19 @@ I7: 監視 1 行(独立)
 | 改善 | ① ユーザー可視: 面・何が・何件(現在値 / 上限 / 直近 12 ヶ月) | ② 内部のみ | ③ 消えるデッドコード | 持続性 | 可逆性 | 前提(カード / 裁定) |
 |---|---|---|---|---|---|---|
 | I1 DROP(8 列) | **顧客 0**。admin WeightBreakdown 1 画面: 8 列のどれかを表示していれば表示項目が減る(列ごとに未確認)。全 24,348 行が NULL なので**表示されていても値は「空」から「無」へ**=数値は動かない | schema 8 列、`GET /fof-weights` の応答 key 最大 8、migrations.py 10 箇所 | fof_flush の actual/drift 組立(常に None)、API の 8 key 組立 | code+migration=残る | migration down+frontend revert | P07 列契約表(8/8 列)→P10 |
-| I2 抑止(分類確定経路のみ) | **0**。change_log は API から読まれない(F-F: 読者は recalculate_fast buffer・研究 A4・cmd_4337) | 以後の run の change_log 行数が減る。母集団: 重複 group 81,102(直近 12 ヶ月 5,531)、行 235,750=正当な往復 202,053+**unknown 33,697(43 PF、20,877 group、直近 12 ヶ月 2,583 行)**。ALERT は filter L364-383 の外側の経路のみ条件付き。研究 A4 turnover の過大分が消える | なし | code=残る。過去行は不変(削除しない) | revert | P02 分類(unknown を run/job 識別子で割る)→P08 |
+| I2 抑止(分類確定経路のみ) | **0**。change_log は API から読まれない(F-F: 読者は recalculate_fast buffer・研究 A4・cmd_4337) | 以後の run の change_log 行数が減る。母集団: 重複 group 81,102(直近 12 ヶ月 5,531)、行 235,750=逆向きペアあり 202,053(**正当性は未判定**: recon.py は同 PF/date 群に old/new の逆向き対があれば『正当な往復』と付けるだけで run/job/transaction を見ていない、R9)+unknown 33,697(43 PF、20,877 group、直近完了 12 ヶ月 2,583 行)。抑止候補は unknown だけに限定しない(ペア側にも異常 run があり得る)。ALERT は filter L364-383 の外側の経路のみ条件付き。研究 A4 turnover の過大分が消える | なし | code=残る。過去行は不変(削除しない) | revert | P02 分類(unknown を run/job 識別子で割る)→P08 |
 | I3 監視追加 | **0** | ALERT 種別 +1。現在の未出現 12 PF=変化なし 10(snapshot 内 holding_signal が単一、`GS系`分身 6・玄武除く)+履歴不足 2(シン玄武-常勝/鉄壁: holding_signal 2 種あるのに change_log 0 行=INSERT 除外 or cleanup、断定不可) | なし | code=残る | revert | P08(I7 と同居) |
-| I4 復活(A) | **あり得るが現在値は 0 に近い**: 世代 2 で `signals.holding_signal` = `monthly_returns.holding_signal` は **11,922/11,922 一致**(§9.1.4)。∴ ledger を今の値で backfill しても確定月ラベルは動かない見込み。動くのは backfill script が**今の値と違う値**を投入する PF-月だけで、その件数は cmd_4485 A/B(dry-run plan)まで unknown。上限=確定月 PF-月 11,922(直近 12 ヶ月 975)。面=/api/history・LP・X・Monthly Trade の position/weights(backend L654-705/L768-804 置換) | ledger 行(0→N)、cache 無効化、ledger ALERT、signal_flush reconcile L409-449 が実効化 | なし(逆に休眠 guard が生きる) | データ=残る(append-only)。ただし 08-04 版 signal_flush(T7.5 未適用 ★I9)のまま動かすと日次 cron ごとに reconcile が走る=先に I9 を解く | 未確定(訂正 event は上書きでなく追記) | P06+保護要件の殿裁定(§11)+I9 先行 |
-| I4 廃止(B)/休眠(C) | **0**(0 行を読まなくなるだけ) | B: コード 15 file・表 2 本・API 1 本、C: 変更 0 | B: ledger 依存の runtime 分岐 15 file、detail_history writer(L264/L388)、`insert_initial_ledger_events`。C: なし | code=残る | B: revert(表は段階 ①無効化②保持③DROP) | P06→§10 の 3 案→殿裁定 |
-| I5(世代 2 で不整合 0) | **0**。477 行の「raw・holding 差」は raw_signal ≠ holding_signal であり、signal 表と monthly_returns 表の holding_signal は 477/477 一致=**表間の不整合ではない**(§9.1.4)。改善対象なし | 六分類の定義を「表間差」と「raw/holding 差」で分ける(P02 成果物の見出し訂正) | なし | — | — | P02 完(将軍再集計)。§5 I5 (a) の事象定義を v1.2 で訂正 |
-| I6 再正規化 | **現在値 0**: display/pending_display 各 242,659 key で非 unit 0。旧 35 行(08-06)は再現せず(その後の full recalc で消えた候補)。**発生時の上限**=該当 PF-月 × 面 3(/api/signals の weight、/api/monthly-trade の weight、/api/history と LP・X の monthly_return/cumulative が同関数 price_ratio_impl で動く)。再現条件 2 候補(選択外 weight の非再正規化 / 欠損 child skip、b_i6_rows)は unknown | signals.momentum_data 再生成、full recalc 1 回 | なし | code=残る。データ patch のみなら次の L2/L3 recalc で再生成 | revert+full recalc | P05(旧 35 行が再現しなければ**本番修正へ進まない**) |
+| I4 復活(A) | **あり得る。件数は unknown(面ごと)**: 世代 2 で 2 表の holding_signal **ラベル**は 11,922/11,922 一致(§9.1.4)だが、それは現在のラベル一致だけ。ledger 投入で動き得る量は ①ラベル(backfill 投入値≠現在値の PF-月) ②decision_ticker_weights による weights/return ③境界日 ④MonthlyTrade 置換(backend L654-705/L768-804)⑤将来再計算 の 5 種それぞれ unknown(U1)。比較母集団=A 75 PF の 11,922 PF-月(直近完了 12 ヶ月 900)であり、ledger 全対象・他 PF・累積波及を含む**上限ではない**(dry-run plan の対象 manifest で確定)。面=/api/history・LP・X・Monthly Trade | ledger 行(0→N)、cache 無効化、ledger ALERT、signal_flush reconcile L409-449 が実効化 | なし(逆に休眠 guard が生きる) | ledger 行=append-only で残る。reconcile は 08-04 版 signal_flush(★I9)が日次 cron で走る。T7.5 の再適用は**別の変更案**であり承認済み前提ではない | 未確定(訂正 event は上書きでなく追記) | P06+保護要件の殿裁定(§11)。I9 は照合のみ、T7.5 は別案 |
+| I4 廃止(B)/休眠(C) | C: 0。B: 顧客画面 0 だが **API 契約が変わる**(ledger API 応答消滅=API 直叩き利用者には可視)。detail_history と ledger の廃止は一括しない | B: コード 15 file・表 2 本・API 1 本、C: 変更 0 | B: ledger 依存の runtime 分岐 15 file、detail_history writer(L264/L388)、`insert_initial_ledger_events`。C: なし | code=残る | B: revert(表は段階 ①無効化②保持③DROP) | P06→§10 の 3 案→殿裁定 |
+| I5(保存された比較対象で差 0) | **0(比較対象 11,922 に限る)**。477 行の「raw・holding 差」は raw_signal ≠ holding_signal であり、2 表の holding_signal は 477/477 一致=表間の不整合ではない(§9.1.4)。ただし recon.py の月初営業日は保存月内最初の行(独立暦なし、R9)ゆえ未観測月初・有効日条件は unknown(U8) | 六分類の定義を「表間差」と「raw/holding 差」で分ける(P02 成果物の見出し訂正) | なし | — | — | P02 完(将軍再集計)。§5 I5 (a) の事象定義を v1.2 で訂正 |
+| I6 再正規化 | **現在値 0**: display/pending_display 各 242,659 key で非 unit 0。旧 35 行(08-06)は再現せず(その後の full recalc で消えた候補)。**発生時の上限**=該当 PF-月 × 面 3(/api/signals の weight、/api/monthly-trade の weight、/api/history と LP・X の monthly_return/cumulative が同関数 price_ratio_impl で動く)。再現条件 2 候補(選択外 weight の非再正規化 / 欠損 child skip、b_i6_rows)は unknown | signals.momentum_data 再生成、full recalc 1 回 | なし | 該当 key が L2/L3 で再計算された時に再生成(全期間が戻るのではない) | revert+full recalc | P05(旧 35 行が再現しなければ**本番修正へ進まない**) |
 | I7 監視 | **0**(実測 0、cmd_4479/4483) | ALERT +1 | なし | code=残る | revert | P08 |
 | I8 初月修正 | **現在値 0**: 全 FoF 77 × 3 定義で signal 無し・return 有り 0。旧 2 件(2014-04)は現在 signal/return あり。valid_start_date 欠落 77/77 は snapshot config から取得不能=unknown | recalculate_fof の初月処理(変更不要の可能性) | なし | — | — | P03 完。P05 で valid_start_date 定義の取得元を確定してから閉じる |
 | I9 文書訂正 | **0** | 文書(backlog B2・PI-P06・ops)。ただし I4 復活を選ぶなら**T7.5 を本番へ再適用するか**が実装項目になる(可視影響は I4 行に含める) | なし | — | — | P09。I4 A を選ぶ場合のみ P10 の前提 |
 
 #### §9.1.3 面 × 改善の対応(誰の画面が動くか)
 
-| 面 | I1 | I2 | I3 | I4 A | I4 B/C | I5 | I6 | I7 | I8 | I9 |
+| 面(スコア用。PF-月×面数は上限件数ではなく影響評価スコア、R9) | I1 | I2 | I3 | I4 A | I4 B/C | I5 | I6 | I7 | I8 | I9 |
 |---|---|---|---|---|---|---|---|---|---|---|
 | 顧客: /api/signals(FoF weight) | – | – | – | – | – | – | 発生時 | – | – | – |
 | 顧客: /api/monthly-trade | – | – | – | 条件付き | – | – | 発生時 | – | – | – |
@@ -398,29 +398,29 @@ I7: 監視 1 行(独立)
 | LP・X・Live OOS の数値 | – | – | – | 条件付き | – | – | 発生時 | – | 0 | – |
 | admin: WeightBreakdown | 表示項目 | – | – | – | – | – | – | – | – | – |
 | API 直叩き(/fof-weights・ledger API) | key 減 | – | – | 応答 0→N | 応答消滅(B) | – | – | – | – | – |
-- 「条件付き」= backfill 値が現在値と異なる PF-月のみ(件数 unknown、cmd_4485 A/B で確定)。「発生時」= 非 unit 行が再現した場合のみ(現在 0)。「0」= 世代 2 で対象 0。
+- 「条件付き」= ラベル/weights/return/境界日/API 応答の 5 種それぞれ unknown(cmd_4485 A/B で面ごとに確定)。「発生時」= 非 unit 行が再現した場合のみ(現在 0)。「0」= 世代 2 で対象 0。
 
 #### §9.1.4 世代 2 の原 CSV 再集計で確定・崩れた前提(将軍 16:5x、成果物基点 §2.2)
 
 | 対象 | 再集計(原行) | 何が確定したか / 崩れた前提 |
 |---|---|---|
-| I5 `a_i5_rows.csv` 11,922 行 | 一致 11,445 / raw・holding 差 477(12 PF: シン白虎 3 体 245・シン朱雀 3 体 169・他)。477 行すべてで `signal_holding_signal == monthly_holding_signal`、`raw_signal == monthly_holding_signal` は 0。signal_date = 月初営業日 = 最初の Signal 日が 477/477 | **表間の不整合 I5 は世代 2 で 0**。477 は raw と holding の差(規則適用後の値が raw と違う)=設計上の 2 概念。v1.0 §2.3 の『対象 11,922 行』は不整合数ではなく母集団。**I4 復活が I5 を直す、という前提は崩れた**(直すものが無い) |
-| I2 `a_i2_rows.csv` 235,750 行 | 正当な往復 202,053 / unknown 33,697。group_count 2=95,094 行、3=53,517、5=24,610、6=17,934、4=16,620、7〜13=28,000 弱。全 63 PF、直近 12 ヶ月 15,290 行 | 「同日往復」は多数が正当(A→B→A を実値で確認)。**抑止対象は unknown 33,697 行(43 PF)の分類次第**であり、行数 235,750 を減る件数と呼ばない |
+| I5 `a_i5_rows.csv` 11,922 行 | 一致 11,445 / raw・holding 差 477(12 PF: シン白虎 3 体 245・シン朱雀 3 体 169・他)。477 行すべてで `signal_holding_signal == monthly_holding_signal`、`raw_signal == monthly_holding_signal` は 0。signal_date = 月初営業日 = 最初の Signal 日が 477/477 | **保存された比較対象 11,922 で 2 表の holding 差 0**(家老 R9 が独立再現)。477 は raw と holding の差=設計上の 2 概念。v1.0 §2.3 の『対象 11,922 行』は不整合数ではなく母集団。限定: recon.py は `signal_row=candidates[0]`、月初営業日=保存月内最初の日付(2013-04 は 04-30)で独立暦を使わない→未観測月初は unknown。**I4 復活の効果を I5 一致から決めない**(ラベル一致は復活効果 5 種のうち 1 種の現在値) |
+| I2 `a_i2_rows.csv` 235,750 行 | 正当な往復 202,053 / unknown 33,697。group_count 2=95,094 行、3=53,517、5=24,610、6=17,934、4=16,620、7〜13=28,000 弱。全 63 PF、直近 12 ヶ月 15,290 行 | 202,053 は『逆向きペアあり』であり正当性は未判定(run/job/transaction 識別子なし)。**抑止対象は分類次第**で、unknown 33,697 行(43 PF)だけに限定せず、行数 235,750 を減る件数と呼ばない |
 | I3 `a_i3_rows.csv` 12 PF | 変化なし 10 / 履歴不足 2 | 未出現 12 のうち 10 は「変化が無いから出ない」=正常。監視対象は履歴不足 2 の型のみ |
-| I6 `b_i6_rows.csv` 14 行 | static consumer 12(monthly_returns.py 4・signals.py 2・return_calculator 2・price_ratio_impl 2・trade_performance/monthly_trade_impl/trades_impl/recalculate_fof 各 1)+Σ<1 候補 2(選択外 weight 非再正規化 / 欠損 child skip、return 差の計算なし) | 消費側は 12 file に静的到達。非 unit 行が 0 のため**可視影響は「発生時」に限る**。旧 35 行の再現条件が P05 の主題 |
+| I6 `b_i6_rows.csv` 14 行 | static consumer **12 参照行**(14 行全体の source_path は 8 種類。monthly_returns.py 4 行等の内訳には原因候補 2 行が混在するため consumer 行だけで再計数、R9)+Σ<1 候補 2(選択外 weight 非再正規化 / 欠損 child skip、return 差の計算なし) | 消費側は 12 参照行(file 数ではない)に静的到達。非 unit 行が 0 のため**可視影響は「発生時」に限る**。旧 35 行の再現条件が P05 の主題 |
 | I8 `b_i8_rows.csv` 231 行 | first_monthly_return_month 77 / first_signal_month 77 / valid_start_date_month 77(unknown)。全て その他=signal・component・return がそろう。年月 2011-04〜2017-11 | 初月の欠落は現在 0。valid_start_date の取得元だけ未確定 |
 
 #### §9.1.5 重み順位(件数 × 面の数 × 直近 12 ヶ月の比率。殿 15:15『1000 件と 1 件では重みが違う』)
 
 | 順位 | 改善 | 可視 PF-月(現在値 / 上限) | 面の数 | 直近 12 ヶ月 | 判定 |
 |---|---|---|---|---|---|
-| 1 | I4 復活(A) | 0 見込み / 11,922 | 3〜4 | 975 が母集団 | 上限が最大、現在値は backfill 差分次第=**cmd_4485 A/B で件数を出すまで実行不可**。保護要件の殿裁定と I9 先行が前提 |
+| 1 | I4 復活(A) | unknown(5 種) / 比較母集団 11,922(上限ではない) | 3〜4 | 900 が比較母集団 | 母集団が最大、件数は 5 種とも unknown=**cmd_4485 A/B で面ごとに出すまで実行不可**。保護要件の殿裁定が前提。T7.5 は別案 |
 | 2 | I6 再正規化 | 0 / 発生時の該当 PF-月 | 3 | 0 | 現在 0 だが**発生すれば顧客 3 面が同時に動く**=再現条件の特定(P05)を優先 |
 | 3 | I1 DROP | 0(admin 表示項目のみ) / — | 1(admin) | — | 顧客影響 0。列契約表の後に可 |
 | 4 | I8 初月修正 | 0 / 0 | — | — | 修正対象なし。valid_start_date 定義の確定で閉じる |
 | 5 | I2 抑止 / I3・I7 監視 / I9 文書 / I4 B・C / I5 | 0 | 0 | — | 内部のみ。I2 は unknown 33,697 行の分類が先 |
-- ①「あり得る」が残るのは **I4 A と I6 の 2 つだけ**。どちらも現在値 0 で、動くとしたら「backfill 差分」「非 unit 再現」の 2 条件。この 2 条件の件数を隔離実験(§9.2)で出してから殿裁定。
-- 1 件でも「取引根拠として提示済みの月」が動くなら別枠で明示(家老 R6 保護要件)。世代 2 では該当 0。
+- ①「あり得る」が残るのは **I4 A と I6 の 2 つだけ**。I6 は現在値 0、I4 A は 5 種 unknown。動くとしたら「backfill 差分(面ごと)」「非 unit 再現」の 2 条件。この 2 条件の件数を隔離実験(§9.2)で出してから殿裁定。
+- 1 件でも「取引根拠として提示済みの月」が動くなら別枠で明示(家老 R6 保護要件)。提示履歴と反実仮想は未計測のため該当数は **unknown**(0 ではない、R9)。
 
 #### §9.1.6 未確定(unknown)一覧
 
@@ -432,7 +432,9 @@ I7: 監視 1 行(独立)
 | U4 | I1 の 8 列を WeightBreakdown が表示しているか(列ごと) | P07 静的 grep |
 | U5 | I8 valid_start_date の取得元(snapshot config に無い) | P03/P05 |
 | U6 | I3 履歴不足 2 PF(シン玄武-常勝/鉄壁)の change_log 0 行の原因(INSERT 除外 / cleanup) | P08 |
-| U7 | I4 A を選ぶ場合の T7.5 再適用の要否と可視影響 | P09+P06 |
+| U7 | I4 A を選ぶ場合の T7.5 再適用の要否と可視影響(別変更案として) | P09+P06 |
+| U8 | I5 の月初営業日: recon.py は保存月内最初の行を使う。独立営業日暦での月初と有効日条件で比較した場合の差 | P02 追補(暦は既存 code の営業日関数を使う) |
+| U9 | I2 逆向きペア 202,053 行の run/job/transaction 正当性(識別子なし) | U3 と同じ入力 |
 
 #### §9.1.7 v1.0 の表(原文保存。v1.1 で置換した前提: I4 復活の①『あり得る』は I5=0 により件数 unknown へ、I6/I8 の①『あり』は現在値 0 へ)
 
@@ -522,6 +524,7 @@ I7: 監視 1 行(独立)
 | R7 | 16:2x | 家老が殿直接指示 15:56 で運用版 v0.13(運用§A〜D+P01〜P10 カード)へ再構築、旧本文は履歴層。cmd_4484 世代 2 の報告値を §B に併記 | 将軍は履歴層の進捗表を報告値で更新 | v0.13 |
 | R8 | 16:4x | 殿 16:33『二つのスタイルが混ざって分かりづらい。粒度と情報量を減らさず再構築』→将軍が運用層(v0.13 §A〜D)と履歴層(v0.12 §0〜§10)を単一構造 §0〜§13 へ統合(全行保全を機械照合) | 反映 | v1.0 |
 | R9 | 16:5x | 殿 16:44『§9.1 3 視点を覚醒アップデートせよ。家老にレビューしてもらえ』→将軍が世代 2 原 CSV を再集計し §9.1 を 7 小節へ(定義/本表/面×改善/再集計で崩れた前提/重み順位/unknown/v1.0 原文)。I5 表間不整合 0、I4 A の可視件数は backfill 差分次第=unknown | 家老 review 依頼 | v1.1 |
+| R10 | 17:0x | 家老 R9 REQUEST_CHANGES(review-r9_20260906.md): I5 差 0 と 477 概念差は採用、限定 7 点(月初営業日=保存行/13 ヶ月→完了 12 ヶ月/I2 正当性未判定/I4 A 件数と上限は unknown/I6 12 参照行/持続性は key 単位/提示済み月 unknown)+整合 3 点(T7.5 別案/B の API 可視/§1 旧参照)を全採用 | 反映 | v1.2 |
 
 ## §13 版の保全と改訂履歴
 
@@ -538,6 +541,7 @@ I7: 監視 1 行(独立)
 - v0.13(2026-09-06 15:57 家老、殿直接指示 15:56『粒度や情報量を減らさず、忍者に配備しやすく進捗を確認しやすいように再構築』): 運用索引・配備カード P01〜P10・§B 新観測を先頭に置き、v0.12 本文を履歴層として原文保存。
 - v1.0(2026-09-06 16:4x 将軍、殿 16:33『二つのスタイルが混ざって分かりづらい。覚醒して再構築、粒度と情報量を減らすな』): 運用層と履歴層を単一構造へ統合。
 - v1.1(2026-09-06 16:5x 将軍、殿 16:44『§9.1 3 視点を覚醒アップデート、家老レビュー』): §9.1 を再集計付き 7 小節へ。§2.3 I5 を ✅(表間 0)へ。
+- v1.2(2026-09-06 17:0x 将軍、家老 R9 全採用): 未知を 0 と書かない・観測母集団を上限と書かない・逆向きペアを正当と書かない。直近完了 12 ヶ月 2025-09〜2026-08 へ統一(I5 900/差 29、I2 15,290 行/5,531 group/unknown 2,583)。U8/U9 追加。
 ## 因果リンク
 - ← [[dm-signal-research-data-backlog_20260905]] §B5 I1〜I8 / ← [[dm-signal-research-data-foundation-asis-tobe_20260905]] §2 / ← [[cmd_4480_shin_yotsume_parity]] / ← [[partial-turnover-experiment-asis-tobe-5w1h_20260805]] v1.10-v1.12
 - origin: "[[殿指示_本番不整合深掘り_20260906_1411]] -> [[backlog_B5_I1-I8]] -> [[production-inconsistency-asis-tobe]]"
