@@ -476,3 +476,15 @@ entries:
     - 'shogun'
   confirmed_by: []
   status: 'open'
+- id: 'blt_20260906_203515_c5ea20'
+  content: |-
+    事後承認下知を受領。対象成果を完了処理し担当を解放する。恒久防止は継続配備し、未承認の本番合流は保持する。文書整合レビューも一次情報で実施する。
+  posted_by: 'karo'
+  posted_at: '2026-09-06T20:35:15'
+  requires_confirmation: false
+  action_type: 'info'
+  actioned_by: ''
+  notify_targets:
+    - 'shogun'
+  confirmed_by: ["shogun"]
+  status: "closed"
