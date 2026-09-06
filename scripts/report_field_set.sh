@@ -277,7 +277,11 @@ def _autolink_terminal_test_receipt(data, task_root):
     if report_task_id != task_id:
         raise SystemExit("BLOCK: terminal test receipt task_id mismatch")
     commit = str(data.get("commit_hash") or "").strip().lower()
-    if not re.fullmatch(r"[0-9a-f]{40}", commit):
+    no_code = False
+    if commit == "no-code-change":
+        from scripts.lib.report_commit_identity import permits_no_code_identity
+        no_code = permits_no_code_identity(data, root)
+    if not re.fullmatch(r"[0-9a-f]{40}", commit) and not no_code:
         raise SystemExit("BLOCK: terminal test receipt commit identity missing")
     owned = _receipt_owned_test_paths(task)
     # A terminal report must carry one explicit receipt identity. Directory
@@ -318,7 +322,22 @@ def _autolink_terminal_test_receipt(data, task_root):
             for candidate in receipt_paths for owned_path in owned)):
         raise SystemExit("BLOCK: terminal test receipt test path is not owned by task")
     receipt_commit = str(receipt.get("commit_sha") or receipt.get("source_head") or "").strip().lower()
-    if receipt_commit != commit:
+    if no_code:
+        # Read-only tasks have a tree identity, not an implementation commit.
+        # Bind the authenticated receipt to that exact historical tree while
+        # retaining the task, output hash, completion and ownership checks.
+        if not re.fullmatch(r"[0-9a-f]{40}", receipt_commit):
+            raise SystemExit("BLOCK: terminal no-code receipt commit identity missing")
+        try:
+            receipt_tree = subprocess.run(
+                ["git", "-C", str(root), "rev-parse", "--verify", receipt_commit + "^{tree}"],
+                check=True, capture_output=True, text=True, timeout=5,
+            ).stdout.strip()
+        except (OSError, subprocess.SubprocessError):
+            raise SystemExit("BLOCK: terminal no-code receipt tree unavailable")
+        if receipt_tree != str(data["no_code_change_evidence"]["before_tree"]).strip().lower():
+            raise SystemExit("BLOCK: terminal no-code receipt tree mismatch")
+    elif receipt_commit != commit:
         raise SystemExit("BLOCK: terminal test receipt is stale for report commit")
     data["test_receipt_path"] = str(path)
 
