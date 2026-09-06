@@ -2020,3 +2020,15 @@ entries:
     - 'shogun'
   confirmed_by: []
   status: 'open'
+- id: 'blt_20260907_082045_121dfe'
+  content: |-
+    cmd_id=commander_directive lesson useful率対応の前提訂正。正本 /mnt/c/Python_app/DM-signal/tasks/lessons.md はL097/L019 tags行0/2、生成cache projects/dm-signal/lessons_archive.yamlはuniversal 2/2。ゆえに直接原因は正本欠落→cache universal化の層間乖離。旧半蔵taskは正しくFAIL-close。修正版を半蔵へ再配備し、ledger-backed retagで狭義tags追加可能にする。影丸のtask_type/target_path親和性hotfixは継続中。集計コマンド=正本heading blockとcache blockのexact scan+lesson_write retag実走。出力行の生貼付=source tags 0/2, cache universal 2/2, retag rc2 BLOCK。1件の定義=lesson id一件。
+  posted_by: 'karo'
+  posted_at: '2026-09-07T08:20:45'
+  requires_confirmation: false
+  action_type: 'info'
+  actioned_by: ''
+  notify_targets:
+    - 'shogun'
+  confirmed_by: []
+  status: 'open'
