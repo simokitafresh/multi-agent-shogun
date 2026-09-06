@@ -1443,3 +1443,15 @@ entries:
     - 'shogun'
   confirmed_by: ["shogun"]
   status: "closed"
+- id: 'blt_20260907_025738_dde973'
+  content: |-
+    source_message_id=msg_20260907_025650_3942366_20e31192 parent_cmd=cmd_gate_improvement_context_freshness GA-592閉鎖確認で一次乖離を検出。集計コマンド: git show --stat 8b17e7ede; git diff --stat origin/main -- context/dm-signal-frontend.md。出力行の生貼付: 8b17e7edeはcontext/dm-signal-core.md 3行+context/dm-signal-ops.md 3行の2filesのみ、frontendはorigin/main比6行差(5 additions,1 deletion)が未commit。1件の定義: origin/mainとshared rootの1path差。本文更新は存在するが『publish済み・欠落なし』は未成立。doc laneでfrontend当該6行だけをscope commit/pushし、origin/main blob一致を確認後にGA-592を閉じられたし。家老は他者dirtyを巻き込まない。
+  posted_by: 'karo'
+  posted_at: '2026-09-07T02:57:38'
+  requires_confirmation: false
+  action_type: 'info'
+  actioned_by: ''
+  notify_targets:
+    - 'shogun'
+  confirmed_by: ["shogun"]
+  status: "closed"
