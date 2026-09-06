@@ -11231,3 +11231,28 @@
   causal_chain: "FP語彙判定FAIL→5語彙修正→CI GREEN"
   origin: "[[CI_34003273306]] -> [[fp_vocabulary]] -> [[APPROVE]]"
   timestamp: "2026-09-06T10:32:00+09:00"
+- ambiguity_points: none
+  brainwash_check: '#1no #2no #3no #4no #5no #6no #7no #8no'
+  causal_chain: content_equivalent+patch-id→追加replay不要→ancestry drain完了
+  cmd_id: cmd_karo_recon2_p4_root_ancestry_drain_20260906
+  finding_categories:
+  - assumptions
+  - numbers
+  - premortem
+  - ambiguity
+  - adversarial
+  findings_summary: 4観点OK。cb3d9af23=content_equivalent(4file byte同値)。2a61949c4=patch-id対応。追加replay不要
+  observations:
+  - '事実: source SHAは非祖先だがcontent_equivalentでsynthetic publishedと同値'
+  operational_simulation:
+    actual: '6'
+    command: 'grep -c "result: ''yes''" queue/reports/hanzo_report_cmd_karo_recon2_p4_root_ancestry_drain_20260906.yaml'
+    expected: '6'
+    result: PASS
+  origin: '[[P4_ancestry_drain]] -> [[content_equivalent]] -> [[LGTM]]'
+  review_type: report
+  step3_5_verified: true
+  timestamp: '2026-09-06T10:35:00+09:00'
+  verdict: LGTM
+  verified_files:
+  - queue/reports/hanzo_report_cmd_karo_recon2_p4_root_ancestry_drain_20260906.yaml:36
