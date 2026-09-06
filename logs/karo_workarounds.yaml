@@ -1,55 +1,3 @@
-- cmd_id: cmd_karo_hotfix_ancestry_diagnostic_20260902
-  timestamp: '2026-09-01T19:13:35Z'
-  ninja: system
-  workaround: false
-  event_kind: hotfix
-  auto_captured: true
-  category: rework_auto_capture
-  detail: 'cmd_complete_gate completed rework event'
-  root_cause: 'automatic completion observation'
-  lesson_required: false
-  lesson_disposition: not_applicable
-  lesson_reference: 'not_applicable'
-  resolved_by_cmd: 'cmd_karo_hotfix_ancestry_diagnostic_20260902'
-- cmd_id: cmd_karo_hotfix_backup_cron_node_path_20260902
-  timestamp: '2026-09-01T19:14:08Z'
-  ninja: system
-  workaround: false
-  event_kind: hotfix
-  auto_captured: true
-  category: rework_auto_capture
-  detail: 'cmd_complete_gate completed rework event'
-  root_cause: 'automatic completion observation'
-  lesson_required: false
-  lesson_disposition: not_applicable
-  lesson_reference: 'not_applicable'
-  resolved_by_cmd: 'cmd_karo_hotfix_backup_cron_node_path_20260902'
-- cmd_id: cmd_karo_hotfix_review_epoch_refresh_20260902
-  timestamp: '2026-09-02T03:43:57Z'
-  ninja: kagemaru
-  workaround: false
-  event_kind: manual_wa
-  auto_captured: false
-  category: clean
-  detail: ''
-  root_cause: ''
-  lesson_required: false
-  lesson_disposition: not_applicable
-  lesson_reference: 'not_applicable'
-  resolved_by_cmd: ''
-- cmd_id: cmd_karo_hotfix_review_epoch_refresh_20260902
-  timestamp: '2026-09-02T03:48:46Z'
-  ninja: system
-  workaround: false
-  event_kind: hotfix
-  auto_captured: true
-  category: rework_auto_capture
-  detail: 'cmd_complete_gate completed rework event'
-  root_cause: 'automatic completion observation'
-  lesson_required: false
-  lesson_disposition: not_applicable
-  lesson_reference: 'not_applicable'
-  resolved_by_cmd: 'cmd_karo_hotfix_review_epoch_refresh_20260902'
 - cmd_id: cmd_reflux_insight_202609021244_saizo
   timestamp: '2026-09-02T04:05:04Z'
   ninja: saizo
@@ -1338,3 +1286,42 @@
   lesson_disposition: not_applicable
   lesson_reference: 'not_applicable'
   resolved_by_cmd: 'cmd_karo_hotfix_recon_dual_projection_fixed_base_20260906'
+- cmd_id: cmd_karo_hotfix_c3_completion_span_20260906
+  timestamp: '2026-09-06T05:53:37Z'
+  ninja: system
+  workaround: false
+  event_kind: hotfix
+  auto_captured: true
+  category: rework_auto_capture
+  detail: 'cmd_complete_gate completed rework event'
+  root_cause: 'automatic completion observation'
+  lesson_required: false
+  lesson_disposition: not_applicable
+  lesson_reference: 'not_applicable'
+  resolved_by_cmd: 'cmd_karo_hotfix_c3_completion_span_20260906'
+- cmd_id: cmd_karo_hotfix_w2_environment_refs_20260906
+  timestamp: '2026-09-06T06:34:40Z'
+  ninja: system
+  workaround: false
+  event_kind: hotfix
+  auto_captured: true
+  category: rework_auto_capture
+  detail: 'cmd_complete_gate completed rework event'
+  root_cause: 'automatic completion observation'
+  lesson_required: false
+  lesson_disposition: not_applicable
+  lesson_reference: 'not_applicable'
+  resolved_by_cmd: 'cmd_karo_hotfix_w2_environment_refs_20260906'
+- cmd_id: cmd_karo_hotfix_k3_equivalence_account_20260906
+  timestamp: '2026-09-06T07:36:19Z'
+  ninja: system
+  workaround: false
+  event_kind: hotfix
+  auto_captured: true
+  category: rework_auto_capture
+  detail: 'cmd_complete_gate completed rework event'
+  root_cause: 'automatic completion observation'
+  lesson_required: false
+  lesson_disposition: not_applicable
+  lesson_reference: 'not_applicable'
+  resolved_by_cmd: 'cmd_karo_hotfix_k3_equivalence_account_20260906'

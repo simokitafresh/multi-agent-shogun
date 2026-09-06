@@ -1683,3 +1683,5 @@
 - 2026-09-06 01:38 kagemaru cmd_4481_full完了: F1 CSV 23,175行からlayer/month/suspect別1,212群・4,493行を生成。Σweight/pf_count違反0、contract 2/2 PASS・SKIP0、commit 1deb06fe、report gate PASS。
 - 2026-09-06 02:42 kagemaru cmd_4481_full RC再提出完了: 公開cherry-pick e045d3372a7cffe7ec589a4b2a6699c1a71957beへreport/cross-repo identityを同期(base e7d保持)。公開HEAD receipt 2/2 PASS・SKIP0、成果物差分0、report gate PASS。
 - 2026-09-06 04:06 saizo cmd_karo_recon_insight_pending_triage_20260906: queue/insights.yamlを一次集計しpending 113（前提116との差-3、oldest日付一致）を重複0・欠落0で吸収2/close候補74/未解決37へ分類、未解決を3 task候補へ圧縮。台帳変更0、report gate PASS。
+- 2026-09-06 14:19 saizo cmd_karo_hotfix_c3_completion_span_20260906_normal: case22の未命名逐次gapをpreflight/wait_transition spanとfinish時刻連結で修復。修正前base/current 6/6 FAIL（coverage 0.8932〜0.9434）から固定tip 24/24 PASS・SKIP0、case22 coverage 0.994532へ改善。commits f9327686/1fb456f8、report gate PASS。
+- 2026-09-06 14:46 saizo cmd_karo_hotfix_c3_completion_span_20260906_normal report-only RC完了: 固定base/finalの参照BATS集合47ファイルをmanifest化し、最終tipで1851/1851 tests・47/47 files PASS、SKIP0、rc=0、source_head=1fb456f8を確認。F14比36→47 files、1392→1851 tests。report gate再PASS。

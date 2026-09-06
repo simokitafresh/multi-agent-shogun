@@ -19897,3 +19897,248 @@ insights:
   resolved_reason: "semantic map generation verified the candidate is represented or intentionally ignored"
   action_artifact: "semantic_map=/home/simokitafresh/multi-agent-shogun/context/semantic-map.md;semantic_index=/home/simokitafresh/multi-agent-shogun/docs/semantic-index/index.md"
   resolved_at: "2026-09-06T13:37:27.904810"
+- id: INS-20260906-141140296-1f7c
+  ts: "2026-09-06T14:11:40+09:00"
+  insight: "lord_conversation教訓候補: target=shogun trigger=inbound_lord detail=dm-signal-research-data-backlog_20260905.mdを参考にDM-signalの本番の不整合について深く調査しよう。家老と繰り返しレビュー交換をせよ。本番の不整合、それによる影響、改善時にどのような変化が本番に起きるか、改善の影響範囲・依存関係なども明確にせよ"
+  priority: "medium"
+  source: "lord_conversation:lesson_candidate"
+  fix_known: false
+  status: pending
+- id: INS-20260906-141212311-9bc8
+  ts: "2026-09-06T14:12:12+09:00"
+  insight: "[[各設計書に進捗としてわかりやすいビジュアルもアップデートして]] semantic_stress_test candidate_aliases: NO_MATCH source=lord query=各設計書に進捗としてわかりやすいビジュアルもアップデートして"
+  priority: "low"
+  source: "semantic_stress_test"
+  fix_known: false
+  status: "resolved"
+  resolved_reason: "semantic index candidate was absorbed into a registered concept"
+  action_artifact: "semantic_index=/home/simokitafresh/multi-agent-shogun/docs/semantic-index/index.md"
+  resolved_at: "2026-09-06T14:13:17.374801"
+- id: INS-20260906-142130086-5cd7
+  ts: "2026-09-06T14:21:30+09:00"
+  insight: "semantic_index_update新概念候補: discussion:task notification task id bqa6njij7 task id tool use id toolu 01QjdyfA48KCtGfYyS は 既存aliasesに一致なし。概念定義とaliases追加を検討せよ"
+  priority: "low"
+  source: "semantic_index_update"
+  fix_known: false
+  status: "resolved"
+  resolved_reason: "semantic map generation verified the candidate is represented or intentionally ignored"
+  action_artifact: "semantic_map=/home/simokitafresh/multi-agent-shogun/context/semantic-map.md;semantic_index=/home/simokitafresh/multi-agent-shogun/docs/semantic-index/index.md"
+  resolved_at: "2026-09-06T14:22:07.439443"
+- id: INS-20260906-144450356-cc01
+  ts: "2026-09-06T14:44:50+09:00"
+  insight: "semantic_index_update新概念候補: discussion:dm signal production inconsistency asis tobe mdにデーターの流れのフローチャートを記入しよう。粒度を小さく、無理に は 既存aliasesに一致なし。概念定義とaliases追加を検討せよ"
+  priority: "low"
+  source: "semantic_index_update"
+  fix_known: false
+  status: "resolved"
+  resolved_reason: "semantic map generation verified the candidate is represented or intentionally ignored"
+  action_artifact: "semantic_map=/home/simokitafresh/multi-agent-shogun/context/semantic-map.md;semantic_index=/home/simokitafresh/multi-agent-shogun/docs/semantic-index/index.md"
+  resolved_at: "2026-09-06T14:49:59.531670"
+- id: INS-20260906-144618991-996d
+  ts: "2026-09-06T14:46:18+09:00"
+  insight: "semantic_index_update新概念候補: discussion:何が変わるかは2つの視点が重要だ。本番をユーザーが見たときのデータに変わりが出るか？、内部的に表に出ない部分だけの変化か？あとはデッドコードなどもチェックしたほ は 既存aliasesに一致なし。概念定義とaliases追加を検討せよ"
+  priority: "low"
+  source: "semantic_index_update"
+  fix_known: false
+  status: "resolved"
+  resolved_reason: "semantic map generation verified the candidate is represented or intentionally ignored"
+  action_artifact: "semantic_map=/home/simokitafresh/multi-agent-shogun/context/semantic-map.md;semantic_index=/home/simokitafresh/multi-agent-shogun/docs/semantic-index/index.md"
+  resolved_at: "2026-09-06T14:49:59.695857"
+- id: INS-20260906-144704599-2dfe
+  ts: "2026-09-06T14:47:04+09:00"
+  insight: "semantic_index_update新概念候補: discussion:本番は過去の様々な因果によって現在の形になっている。何かしらの意味があることが多い。明らかなバグなどは別だが、なぜそのような設計になっているかの因果もたどろう は 既存aliasesに一致なし。概念定義とaliases追加を検討せよ"
+  priority: "low"
+  source: "semantic_index_update"
+  fix_known: false
+  status: "resolved"
+  resolved_reason: "semantic map generation verified the candidate is represented or intentionally ignored"
+  action_artifact: "semantic_map=/home/simokitafresh/multi-agent-shogun/context/semantic-map.md;semantic_index=/home/simokitafresh/multi-agent-shogun/docs/semantic-index/index.md"
+  resolved_at: "2026-09-06T14:49:59.914536"
+- id: INS-20260906-145028939-aa70
+  ts: "2026-09-06T14:50:28+09:00"
+  insight: "report_review fingerprint guardが正当に旧版の既読化をBLOCKするが、新版でLGTM/RC完了後も旧版メッセージが永続的にunreadとして残り、stop_check_inbox.shが毎回発火する。superseded report_reviewのクリーンアップ機構(新版approval記録後に旧版を自動既読化、またはstop hookが新版approval済みの旧版を除外)が必要。"
+  priority: "medium"
+  source: "manual"
+  fix_known: false
+  status: pending
+- id: INS-20260906-150655439-9751
+  ts: "2026-09-06T15:06:55+09:00"
+  insight: "[[dm signal production inconsistency asis tobe 20260906 mdにデータ]] semantic_stress_test candidate_aliases: NO_MATCH source=lord query=dm-signal-production-inconsistency-asis-tobe_20260906.mdにデーターの流れのフローチャートを記入しよう。粒度を小さく、無理に一つのチャートにまとめず分割しても良い。cronなどの日常での再計算も意識せよ"
+  priority: "low"
+  source: "semantic_stress_test"
+  fix_known: false
+  status: "resolved"
+  resolved_reason: "semantic index candidate was absorbed into a registered concept"
+  action_artifact: "semantic_index=/home/simokitafresh/multi-agent-shogun/docs/semantic-index/index.md"
+  resolved_at: "2026-09-06T15:07:10.250442"
+- id: INS-20260906-150714172-4045
+  ts: "2026-09-06T15:07:14+09:00"
+  insight: "[[殿 14 11『backlog を参考に本番の不整合を深く調査]] semantic_stress_test candidate_aliases: NO_MATCH source=cmds query=殿 2026-09-06 14:11『backlog を参考に本番の不整合を深く調査、家老と繰り返しレビュー交換』→設計書 docs/research/dm-signal-production-inconsistency-asis-tobe_20260906.md v0.4(gist 2f1a3daa)。家老 R2(review-r2 md)で読取偵察の親"
+  priority: "low"
+  source: "semantic_stress_test"
+  fix_known: false
+  status: "resolved"
+  resolved_reason: "semantic index candidate was absorbed into a registered concept"
+  action_artifact: "semantic_index=/home/simokitafresh/multi-agent-shogun/docs/semantic-index/index.md"
+  resolved_at: "2026-09-06T15:16:35.664250"
+- id: INS-20260906-150721724-9c56
+  ts: "2026-09-06T15:07:21+09:00"
+  insight: "[[task bk8k1127iの出力 1fe4cb13の結果 を確認し]] semantic_stress_test candidate_aliases: NO_MATCH source=lord query=cmd_karo_ci_fix_dm_33985798406_fof_golden_full_attribution_20260906: task bk8k1127iの出力(1fe4cb13の結果)を確認し、続きの分析・報告作成を進めよ"
+  priority: "low"
+  source: "semantic_stress_test"
+  fix_known: false
+  status: "resolved"
+  resolved_reason: "semantic index candidate was absorbed into a registered concept"
+  action_artifact: "semantic_index=/home/simokitafresh/multi-agent-shogun/docs/semantic-index/index.md"
+  resolved_at: "2026-09-06T15:16:35.817807"
+- id: INS-20260906-150735781-4654
+  ts: "2026-09-06T15:07:35+09:00"
+  insight: "[[本番不整合 I2 I3 I5 I8 I6 の読取偵察 readonly]] semantic_stress_test candidate_aliases: NO_MATCH source=cmds query=本番不整合 I2/I3/I5/I8/I6 の読取偵察(readonly、共通 snapshot、成果物 A=75 PF/B=全 FoF、設計書 v0.4 §3.5 契約、家老 R2 APPROVE)"
+  priority: "low"
+  source: "semantic_stress_test"
+  fix_known: false
+  status: "resolved"
+  resolved_reason: "semantic index candidate was absorbed into a registered concept"
+  action_artifact: "semantic_index=/home/simokitafresh/multi-agent-shogun/docs/semantic-index/index.md"
+  resolved_at: "2026-09-06T15:16:35.944100"
+- id: INS-20260906-151646467-6b87
+  ts: "2026-09-06T15:16:46+09:00"
+  insight: "semantic_index_update新概念候補: discussion:task notification task id bq9mm3cua task id tool use id toolu 01QRTTi4wBny1ECR1T は 既存aliasesに一致なし。概念定義とaliases追加を検討せよ"
+  priority: "low"
+  source: "semantic_index_update"
+  fix_known: false
+  status: "resolved"
+  resolved_reason: "semantic map generation verified the candidate is represented or intentionally ignored"
+  action_artifact: "semantic_map=/home/simokitafresh/multi-agent-shogun/context/semantic-map.md;semantic_index=/home/simokitafresh/multi-agent-shogun/docs/semantic-index/index.md"
+  resolved_at: "2026-09-06T15:26:00.835110"
+- id: INS-20260906-152446114-7e08
+  ts: "2026-09-06T15:24:46+09:00"
+  insight: "revision_requested=gate FAILの副作用と推測してstatusだけ直せばCLEARと判断する誤りを本セッションで2回(c3+cmd_4484)犯した。根因: 一次情報(家老のRC理由)を確認せず二次情報(status値)だけで結論するPhase1の構造。対策: status=revision_requestedを検出したら家老のinbox/掲示板でRC理由を先に確認してからレビュー判定する。revision_requestedの原因は(1)gate FAIL自動設定 (2)家老の正当なRC の2種あり、(2)の場合はstatusだけ直しても中身が未達。"
+  priority: "medium"
+  source: "manual"
+  fix_known: false
+  status: pending
+- id: INS-20260906-153346701-b66a
+  ts: "2026-09-06T15:33:46+09:00"
+  insight: "semantic_index_update新概念候補: discussion:dm signal production inconsistency asis tobe md、ninja block fail root cause asis は 既存aliasesに一致なし。概念定義とaliases追加を検討せよ"
+  priority: "low"
+  source: "semantic_index_update"
+  fix_known: false
+  status: "resolved"
+  resolved_reason: "semantic map generation verified the candidate is represented or intentionally ignored"
+  action_artifact: "semantic_map=/home/simokitafresh/multi-agent-shogun/context/semantic-map.md;semantic_index=/home/simokitafresh/multi-agent-shogun/docs/semantic-index/index.md"
+  resolved_at: "2026-09-06T15:37:30.272866"
+- id: INS-20260906-153559997-d089
+  ts: "2026-09-06T15:35:59+09:00"
+  insight: "semantic_index_update新概念候補: discussion:忍者が解放されておらず、一見してidle忍者が少なくなっている可能性は？ は 既存aliasesに一致なし。概念定義とaliases追加を検討せよ"
+  priority: "low"
+  source: "semantic_index_update"
+  fix_known: false
+  status: "resolved"
+  resolved_reason: "semantic map generation verified the candidate is represented or intentionally ignored"
+  action_artifact: "semantic_map=/home/simokitafresh/multi-agent-shogun/context/semantic-map.md;semantic_index=/home/simokitafresh/multi-agent-shogun/docs/semantic-index/index.md"
+  resolved_at: "2026-09-06T15:37:30.515393"
+- id: INS-20260906-153816455-04aa
+  ts: "2026-09-06T15:38:16+09:00"
+  insight: "[[dm signal production inconsistency asis tobe 20260906 md]] semantic_stress_test candidate_aliases: NO_MATCH source=lord query=dm-signal-production-inconsistency-asis-tobe_20260906.md、ninja_block_fail_root_cause_asis_tobe_20260905.md、karo_throughput_asis_20260905.md…"
+  priority: "low"
+  source: "semantic_stress_test"
+  fix_known: false
+  status: "resolved"
+  resolved_reason: "semantic index candidate was absorbed into a registered concept"
+  action_artifact: "semantic_index=/home/simokitafresh/multi-agent-shogun/docs/semantic-index/index.md"
+  resolved_at: "2026-09-06T15:39:50.176342"
+- id: INS-20260906-153839574-cefa
+  ts: "2026-09-06T15:38:39+09:00"
+  insight: "[[ユーザー可視の変化があり]] semantic_stress_test candidate_aliases: NO_MATCH source=lord query=ユーザー可視の変化があり、またはあり得る場合には具体的にどのような変化があるかまで調査してほしいな。1000件の変化と1件の変化では重みが違う"
+  priority: "low"
+  source: "semantic_stress_test"
+  fix_known: false
+  status: "resolved"
+  resolved_reason: "semantic index candidate was absorbed into a registered concept"
+  action_artifact: "semantic_index=/home/simokitafresh/multi-agent-shogun/docs/semantic-index/index.md"
+  resolved_at: "2026-09-06T15:41:53.450140"
+- id: INS-20260906-153859839-480c
+  ts: "2026-09-06T15:38:59+09:00"
+  insight: "[[殿 14 45『デッドコードもチェック』 15 33『設計書 3 本を並列で回す』]] semantic_stress_test candidate_aliases: NO_MATCH source=cmds query=殿 2026-09-06 14:45『デッドコードもチェック』+15:33『設計書 3 本を並列で回す』。家老 R3 で『全 backend の vulture/import graph 監査は別 cmd』と合意。本 cmd は DM-Signal origin/main 0f2bfbcd の backend/app(python 160 file、算出元は"
+  priority: "low"
+  source: "semantic_stress_test"
+  fix_known: false
+  status: "resolved"
+  resolved_reason: "semantic index candidate was absorbed into a registered concept"
+  action_artifact: "semantic_index=/home/simokitafresh/multi-agent-shogun/docs/semantic-index/index.md"
+  resolved_at: "2026-09-06T15:39:50.305529"
+- id: INS-20260906-153923786-ac20
+  ts: "2026-09-06T15:39:23+09:00"
+  insight: "[[DM Signal backend の静的デッドコード監査 本番不整合設計書 §2 6]] semantic_stress_test candidate_aliases: NO_MATCH source=cmds query=DM-Signal backend の静的デッドコード監査(本番不整合設計書 §2.6、DB 無接触・削除なし、固定 commit 0f2bfbcd)"
+  priority: "low"
+  source: "semantic_stress_test"
+  fix_known: false
+  status: "resolved"
+  resolved_reason: "semantic index candidate was absorbed into a registered concept"
+  action_artifact: "semantic_index=/home/simokitafresh/multi-agent-shogun/docs/semantic-index/index.md"
+  resolved_at: "2026-09-06T15:39:50.439569"
+- id: INS-20260906-155120581-0fa4
+  ts: "2026-09-06T15:51:20+09:00"
+  insight: "semantic_index_update新概念候補: discussion:dm signal production inconsistency asis tobe mdを読み込み、粒度や情報量を減らさずに、inbox1 は 既存aliasesに一致なし。概念定義とaliases追加を検討せよ"
+  priority: "low"
+  source: "semantic_index_update"
+  fix_known: false
+  status: "resolved"
+  resolved_reason: "semantic map generation verified the candidate is represented or intentionally ignored"
+  action_artifact: "semantic_map=/home/simokitafresh/multi-agent-shogun/context/semantic-map.md;semantic_index=/home/simokitafresh/multi-agent-shogun/docs/semantic-index/index.md"
+  resolved_at: "2026-09-06T15:53:06.736770"
+- id: INS-20260906-155231219-b8bc
+  ts: "2026-09-06T15:52:31+09:00"
+  insight: "[[dm signal production inconsistency asis tobe 20260906 mdを読み込]] semantic_stress_test candidate_aliases: NO_MATCH source=lord query=dm-signal-production-inconsistency-asis-tobe_20260906.mdを読み込み、粒度や情報量を減らさずに、inbox1"
+  priority: "low"
+  source: "semantic_stress_test"
+  fix_known: false
+  status: "resolved"
+  resolved_reason: "semantic index candidate was absorbed into a registered concept"
+  action_artifact: "semantic_index=/home/simokitafresh/multi-agent-shogun/docs/semantic-index/index.md"
+  resolved_at: "2026-09-06T15:53:00.598291"
+- id: INS-20260906-155433002-67dd
+  ts: "2026-09-06T15:54:33+09:00"
+  insight: "[[golden fixture再生成 cmd3854 regen golden py の結果を確認し]] semantic_stress_test candidate_aliases: NO_MATCH source=lord query=cmd_karo_ci_fix_dm_33985798406_fof_golden_full_attribution_20260906: golden fixture再生成(cmd3854_regen_golden.py)の結果を確認し、新golden_baseline.jso…"
+  priority: "low"
+  source: "semantic_stress_test"
+  fix_known: false
+  status: "resolved"
+  resolved_reason: "semantic index candidate was absorbed into a registered concept"
+  action_artifact: "semantic_index=/home/simokitafresh/multi-agent-shogun/docs/semantic-index/index.md"
+  resolved_at: "2026-09-06T16:28:46.154163"
+- id: INS-20260906-162046936-d9e2
+  ts: "2026-09-06T16:20:46+09:00"
+  insight: "[[HEAD after regenの結果を確認し]] semantic_stress_test candidate_aliases: NO_MATCH source=lord query=cmd_karo_ci_fix_dm_33985798406_fof_golden_full_attribution_20260906: HEAD_after_regenの結果を確認し、mismatch=0を確認できたらpytest実行→ci_fix_clean_repro_e…"
+  priority: "low"
+  source: "semantic_stress_test"
+  fix_known: false
+  status: "resolved"
+  resolved_reason: "semantic index candidate was absorbed into a registered concept"
+  action_artifact: "semantic_index=/home/simokitafresh/multi-agent-shogun/docs/semantic-index/index.md"
+  resolved_at: "2026-09-06T16:22:08.164760"
+- id: INS-20260906-163452005-7401
+  ts: "2026-09-06T16:34:52+09:00"
+  insight: "semantic_index_update新概念候補: discussion:dm signal production inconsistency asis tobe mdが二つのスタイルが混ざってわかりづらいな。覚醒して再構築アップデー は 既存aliasesに一致なし。概念定義とaliases追加を検討せよ"
+  priority: "low"
+  source: "semantic_index_update"
+  fix_known: false
+  status: "resolved"
+  resolved_reason: "semantic map generation verified the candidate is represented or intentionally ignored"
+  action_artifact: "semantic_map=/home/simokitafresh/multi-agent-shogun/context/semantic-map.md;semantic_index=/home/simokitafresh/multi-agent-shogun/docs/semantic-index/index.md"
+  resolved_at: "2026-09-06T16:35:25.315840"
+- id: INS-20260906-163633169-7a18
+  ts: "2026-09-06T16:36:33+09:00"
+  insight: "[[F15 root不一致pathを一次分類しK3の安全accountへ渡す]] NO_MATCH purpose pending alias: cmd_complete時にdeploy_task.logでNO_MATCHだったpurpose。類似概念TOP3: gate_quality_framework(ゲート品質統合フレームワーク; alias=GA context freshness ALERTのdm signal ops mdを一次情報で照合し; score=3.4) / strong_new_game_completion_contract(強くてニューゲーム完遂契約; alias=karo_checkpoint_20260831_1752; score=3.3) / skill_routing(スキルルーティング; alias=kagemaruの commit helperが安全弁で停止した; score=3.3)。既存概念aliasesへの自動昇格候補"
+  priority: "low"
+  source: "semantic_index_update"
+  fix_known: false
+  status: pending
+- id: INS-20260906-163705245-2253
+  ts: "2026-09-06T16:37:05+09:00"
+  insight: "semantic_index_update未登録cmd originノード: [[殿指示_本番不整合深掘り_20260906_1411]] は既存aliasesに一致なし。類似概念TOP3: creator_brainwashing_defense(創造主の洗脳防御; alias=殿指示; score=25.5) / strong_new_game_completion_contract(強くてニューゲーム完遂契約; alias=殿指示_強くてニューゲーム_20260813_1648; score=20.7) / known_unknowns_principle(無知の知; alias=殿指示 「2層SSOTにするべき仕組みが他にないか確認しよう」; score=18.5)。概念定義とaliases追加を検討せよ"
+  priority: "low"
+  source: "semantic_index_update"
+  fix_known: false
+  status: pending

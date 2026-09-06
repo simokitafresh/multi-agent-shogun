@@ -119,7 +119,7 @@ cdp_helper.screenshot(port=port, tab_id=tab_id, path="/tmp/dm_signal_screenshot.
 - PF選択: URLパス直指定(`/portfolio/{id}`)を優先。UI操作時はサイドバーPF一覧を開いて対象名を選択
 - 保有シグナル確認: `/signals`
 - L754: WeightedMultiViewMomentumFilterBlock追加はcontext/dm-signal-core.md §4 BB種別分類の即時更新対象（cmd_karo_hotfix_context_dm_core_ga102_20260620）
-<!-- last_synced_lesson: L1620 -->
+<!-- last_synced_lesson: L1629 -->
 - L862: cmd_3771 archive payloadとsnapshotの復元正本を区別する（cmd_3826）
 - L864: LayerTimer新Layer追加時は集計ハブへ同時登録する（cmd_3831）
 - L865: L1/L2/L3 cronは固定時間差や上流ロック解放を完了とみなさず、`EtlLayerStatus.last_success_date`が当日になった後だけ次層を実行せよ。cmd_3685でL0(sync-prices)が19s→~700-850sに増大しL1の固定5分起動が409で失敗、L1だけのロック待ちではL2/L3に障害が移るため、`scripts/etl_layer_sync_wait.sh`でL1→L2→L3を同一の実成功契約に統一した（cmd_3832、`docs/research/cmd_3832_sync_tickers_recon.md`）
@@ -167,6 +167,15 @@ cdp_helper.screenshot(port=port, tab_id=tab_id, path="/tmp/dm_signal_screenshot.
 - L1618: FoFのウェイト方式は終端ブロック型(is_ward)だけで判定するな。選択ブロックのcontext.final_weights書込みも確認せよ（cmd_4480_recon2）
 - L1619: FoFのウェイト方式は終端ブロック型(is_ward)だけで判定するな。選択ブロックのcontext.final_weights書込みも確認せよ（cmd_4480_recon2）
 - L1620: FoFのウェイト方式は終端ブロック型(is_ward)だけで判定するな。選択ブロックのcontext.final_weights書込みも確認せよ（cmd_4480_recon2）
+- L1621: DB snapshot projection must preserve downstream evidence keys（cmd_4484）
+- L1622: DB snapshot projection must preserve downstream evidence keys（cmd_4484）
+- L1623: DB snapshot projection must preserve downstream evidence keys（cmd_4484）
+- L1624: DB snapshot projection must preserve downstream evidence keys（cmd_4484）
+- L1625: DB snapshot projection must preserve downstream evidence keys（cmd_4484）
+- L1626: DB snapshot projection must preserve downstream evidence keys（cmd_4484）
+- L1627: DB snapshot projection must preserve downstream evidence keys（cmd_4484）
+- L1628: DB snapshot projection must preserve downstream evidence keys（cmd_4484）
+- L1629: DB snapshot projection must preserve downstream evidence keys（cmd_4484）
 
 ## §36 API認証
 - admin系API: Basic Auth(`ADMIN_API_KEY`)
