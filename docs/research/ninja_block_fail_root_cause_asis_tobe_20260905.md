@@ -1,14 +1,14 @@
 <!-- gist-master: 70b946c022cd5f6f81195ab837b7a7eb ninja_block_fail_root_cause_asis_tobe_20260905.md -->
-# 忍者BLOCK/FAILの根因対策 — 家老配備設計 v3.6(2026-09-06 19:32 F-15 統合段 CLEAR・衝突 118 が残壁。v3.5=18:30 家老 R13: 別 task 証跡の転記誤り訂正・C3 後続 COMPLETE。v3.4=18:25 家老 R12 全採用: 一意 ID 表・時点付き経緯・failed=実体未達+形式不備・CI は run ID で別記。v3.3=18:10 F-13 golden CLEAR・F-15 疾風保全統合案・W6 4 例目・F-18 候補=報告契約の型不足。v3.2=12:15 F-15 root drain 追加: origin 収載済み hotfix が共有 root runtime に載らない構造、家老 18 path 監査 queue/notes/root_convergence_audit_20260906_1206.md) / v3.1
+# 忍者BLOCK/FAILの根因対策 — 家老配備設計 v3.7(2026-09-06 20:32 F-20 重大: DM main push が本番 deploy。v3.6=19:32 F-15 統合段 CLEAR・衝突 118 が残壁。v3.5=18:30 家老 R13: 別 task 証跡の転記誤り訂正・C3 後続 COMPLETE。v3.4=18:25 家老 R12 全採用: 一意 ID 表・時点付き経緯・failed=実体未達+形式不備・CI は run ID で別記。v3.3=18:10 F-13 golden CLEAR・F-15 疾風保全統合案・W6 4 例目・F-18 候補=報告契約の型不足。v3.2=12:15 F-15 root drain 追加: origin 収載済み hotfix が共有 root runtime に載らない構造、家老 18 path 監査 queue/notes/root_convergence_audit_20260906_1206.md) / v3.1
 
 更新: 2026-09-05 23:21:40 JST(家老 v3.1)。将軍追記 2026-09-06 00:40: §5 台帳に W0/W1 CLEAR、F-6 APPROVE、K2 走行、W5 閉を反映。一次確認の観測時点は23:13:50 JST。殿「読み込み覚醒してアップデート。家老が忍者を配備しやすい形式にしてよい」に基づく設計更新。
 正本は本書。既存gist IDを維持。旧v3.0の全数値・分類・レビュー履歴は `docs/research/ninja-block-fail-root-cause-v3-evidence-20260905.md` に保存した。過去の観測日時は変更しない。
 
 ## 進捗ビジュアル(将軍 loop 更新 2026-09-06 19:32。観測時刻を揃えた現在欄。1 行=一意案件 ID、履歴は同行の「経緯」欄に時点付きで残す)
 
-**一意案件 14 件** `████████░░ 11/14` ✅完了 🟡走行中 ⏳待ち 🔴要判断
-状態集計: ✅ 11 / 🟡 2 / ⏳ 0 / 🔴 1(表の物理行 14=一意 ID 14、18:30 機械計数。「続」行は廃止し経緯欄へ統合。家老 R12-1)
-次の一手: F-15(疾風 保全統合案。18:01 failed は finding 欄欠落**と**target 保全統合案未達の両方=家老 18:06 RC)→root drain 実行→root runtime へ F-14 反映。F-18 は観測案件として採番のみ(新根因・新契約と確定しない、W0/W1 との対応を先に置く)
+**一意案件 14 件** `███████░░░ 11/15` ✅完了 🟡走行中 ⏳待ち 🔴要判断
+状態集計: ✅ 11 / 🟡 2 / ⏳ 0 / 🔴 2(表の物理行 15=一意 ID 15、20:32 機械計数。F-20 追加。「続」行は廃止し経緯欄へ統合。家老 R12-1)
+次の一手: **F-20(DM main push→本番 deploy の禁則違反)の経路特定と構造防止を最優先**。F-15(疾風 保全統合案。18:01 failed は finding 欄欠落**と**target 保全統合案未達の両方=家老 18:06 RC)→root drain 実行→root runtime へ F-14 反映。F-18 は観測案件として採番のみ(新根因・新契約と確定しない、W0/W1 との対応を先に置く)
 
 | ID | 状態(18:25) | 現在値 | 経緯(時点付き) |
 |---|---|---|---|
@@ -26,6 +26,7 @@
 | C3 publisher-deploy-ledger | ✅ 後続 COMPLETE | 旧 cmd は coverage 0.95 未達・未命名 span 欠落で FAIL_CLOSE。後続 cmd_karo_hotfix_c3_completion_span_20260906(source 1fb456f8、47 file 1,851 test)が CLEAR/COMPLETE(queue/gates/…/completion_tail.log、家老 R13-2) | 旧 FAIL_CLOSE→後続 COMPLETE |
 | E-1 Codex 上限 | ✅ | 解除 09:14 | 停止 07:5x〜09:14 |
 | 恒久契約『変更 script を参照する既存 bats 全列挙』 | ✅ 導入済み 17:32 | 小太郎 cmd_karo_hotfix_reference_test_contract CLEAR 17:32(最終 be8b2ce30、38 file 538 test 相当、timeout 1 file は単独 7 PASS で解消、公開 f0ae04578)。※『5 file 567』は才蔵 readonly_probe_contract(80+487)の別 task 証跡=転記誤り(家老 R13-1)。F-16 で将軍 D0 にも適用 | 未導入 13:5x→CLEAR 17:32 |
+| F-20(重大) DM-Signal main への push が本番 deploy になった | 🔴 発生 19:28、経路特定中 | 疾風 P08-I7 の code f3d20d3c(verification_service.py +184/test +74)が DM-Signal main へ push→Render backend autoDeploy(branch=main)が dep-daek0gks728c738385j0 を 19:28 JST に live 化=殿の明示 OK なしの本番 deploy。code は新規関数 check_i7_* のみで runtime 呼出 0(将軍 grep)=挙動不変だが禁則違反。golden 36420100 も 17:53 に自動 deploy されていた。家老 19:31 の『非 main 保全完了』は branch 92e85d7c を指し main 混入を見落とし。20:30 家老へ: 経路特定・main push 即停止・構造防止(main push は殿 OK marker 必須の pre-push/commit_contract)・revert は殿裁定まで禁止 | 一次: git merge-base f3d20d3c origin/main=yes、Render API deploys、CI run 34027511358 |
 
 
 CI(取得 18:19 JST): shogun run 34024048028(6ea0c115f)in_progress、直前 34023932054 cancelled(6d936fd47、連続 push による自動 cancel) / DM-Signal run 34023047561 success(ca5dbbc5)。
