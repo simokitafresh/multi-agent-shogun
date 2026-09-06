@@ -1276,3 +1276,6 @@ GA-144原因: `dm-signal-ops.md`のlast_updatedは2026-06-26で、2026-06-26以�
 - 契約: recalculate / restore parity を通す integration test は DTB3 の**完全 as-of history**(target_dt−365 日〜)を `EconomicIndicator` へ seed する(`_seed_dtb3`)。`data_loader` の immutable snapshot は `date_from == date.min` を as-of prefix sentinel とし上限のみで filter する(core §Current source boundary GA-589)。history 欠落は fail-closed の `ValueError` であり、silent fallback ではない。
 - 突合の型は §98(業務列 parity+1 手)を踏襲: 修正前 run 33983396944(7 failed)→修正後 33985798406(1 failed)を CI 一次ログで差分確認。
 - 参照: `docs/research/dm-fullrecalculate-cache-reuse-asis_20260813.md` §3.1(入力固定と source identity)。歴史日付は不変、本節は 2026-09-06 04:50 追記。
+
+## §105 Layer Holdings P4 本番投入と第 1 deploy 障害(2026-09-07 02:42〜02:52)
+- 順序=Global hidden_pages に `layer-holdings` 登録(Settings+GlobalVisibilitySettings)→P1 migration→main 合流 b8741168(LH 4 commit+A4 配線)→Render autoDeploy。**第 1 deploy は `ModuleNotFoundError: No module named yaml`(A4 etl_trigger.py の追跡 artifact 書出しで PyYAML を import、production requirements に不在)で起動不能=本番 502 約 10 分**。家老が Render logs で検出→c872b366(json 置換)→置換 deploy live 02:52:44。教訓: dev venv に入っていて requirements に無い import はローカル test 58 PASS でも本番で落ちる。**deploy 前に production requirements の隔離 venv で `python -c "import app.main"` を通すこと**(次の自動化ターゲット)。cron `dm-signal-layer-holdings`(35 9 1 * *)は停止維持、公開(hide 解除)は殿別裁定。runbook=LH 設計書 §9.4
