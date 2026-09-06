@@ -1,5 +1,6 @@
 # DM-signal フロントエンド コンテキスト（索引）
 <!-- last_updated: 2026-09-07 context_freshness reviewed source boundary -->
+<!-- source_commit:e9b233ed1770 reason:context_freshness reviewed source boundary evidence:context_freshness_check context=context/dm-signal-frontend.md commit=e9b233ed1770 -->
 <!-- source_commit:08398a1f72b9 reason:context_freshness reviewed source boundary evidence:context_freshness_check context=context/dm-signal-frontend.md commit=08398a1f72b9 -->
 <!-- source_commit:992eb7571d04 reason:context_freshness reviewed source boundary evidence:context_freshness_check context=context/dm-signal-frontend.md commit=992eb7571d04 -->
 <!-- source_commit:c8b347140eee reason:context_freshness reviewed source boundary evidence:context_freshness_check context=context/dm-signal-frontend.md commit=c8b347140eee -->
