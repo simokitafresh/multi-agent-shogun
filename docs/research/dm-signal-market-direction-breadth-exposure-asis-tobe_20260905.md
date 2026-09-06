@@ -5,13 +5,13 @@
 - 版履歴(歴史修正禁止のため記録のみ): v0.1 19:50 6 表設計 / v0.2〜v0.5 21:40〜22:40 weight 正本の訂正往復(display_ticker_weights 直接採用は 08-06 partial-turnover v1.10 で棄却済み→history.py L224-237 方式) / **v1.0 22:35 1 表へ縮約**。旧版本文は git 履歴(5498c0f9b 以前)にある。
 - 入力の正本: 基盤設計書 `docs/research/dm-signal-research-data-foundation-asis-tobe_20260905.md` v0.6 F1 `holdings_monthly.csv`(PF × 月 × ticker × weight。展開規則・検算・対象 78 PF・manifest は全てそこにある)。本書は展開しない、DB を読まない、パラメータを持たない。
 
-## 進捗ビジュアル(将軍 loop 更新 2026-09-06 12:15)
+## 進捗ビジュアル(将軍 loop 更新 2026-09-06 13:25)
 
 **AC1〜AC3** `██████████ 3/3` ✅完了 🟡走行中 ⏳待ち 🔴要判断
 
 | 項目 | 状態 | 現在値 |
 |---|---|---|
-| 単一表 layer_holdings_monthly | 🟡 75 PF 版へ再生成中(cmd_4483 AC3) | v1.6 版=4,493 行(78 PF、is_suspect 列付き、02:45 CLEAR)。75 PF 版は is_suspect 列なし・L2 分母 ≤21 |
+| 単一表 layer_holdings_monthly | 🟡 75 PF 版 生成済み(半蔵 f6875585、家老 ACCEPT、GATE は DM origin 合流待ち) | 3,525 行、198 ヶ月、is_suspect 列なし、L2 分母 ≤21。**artifact 27c1995d に 13:16 実値公開**(docs/dashboard/layer-holdings-monthly.html、scripts/layer_holdings_render.py)。origin 収載後に hash 再照合 |
 | is_suspect 3 体(新四つ目) → 母集団から除外・列撤去 | 🟡 cmd_4483 走行中(殿 11:46『L2から新四つ目抜きの21体』、delegated 11:53) | 新四つ目 3 体は本表から除外し、is_suspect=false 側(75 PF)を正本として読む。列の物理削除は不要(false 側の行を使う) |
 | 契約 test AC1/AC2(weight 和・pf_count) | ✅ | CI 上で PASS(DM-Signal origin e045d337) |
 
