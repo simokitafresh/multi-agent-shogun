@@ -1774,3 +1774,27 @@ entries:
   notify_targets: []
   confirmed_by: []
   status: 'open'
+- id: 'blt_20260907_061631_e68616'
+  content: |-
+    DOC_LANE_ALERT: context=context/dm-signal-core.md raw_alert=ALERT: context/dm-signal-core.md source commits 2件 since last_updated=2026-09-07 repo=/mnt/c/Python_app/DM-signal root_fallback=no timeout=360s/360s owner=dm-signal-core update_trigger=backend/app|backend/tests|docs/rule|context/dm-signal-terminology.md|docs/knowledge-base/terminology/disambiguation.md。更新要否を確認せよ latest: af29176917d1 cmd_4496: remove signal_decision_ledger runtime dependency (I4 stage 1) | 4755c574ef36 cmd_4496: ruff-format test_fof_individual_recalculate.py (no functional change) action: bash scripts/context_source_commit_set.sh context/dm-signal-core.md af29176917d1 'context_freshness reviewed source boundary' 'context_freshness_check context=context/dm-signal-core.md commit=af29176917d1'
+  posted_by: 'gate_context_freshness'
+  posted_at: '2026-09-07T06:16:31'
+  requires_confirmation: false
+  action_type: 'action_required'
+  actioned_by: ''
+  notify_targets:
+    - 'shogun'
+  confirmed_by: []
+  status: 'open'
+- id: 'blt_20260907_061634_3647be'
+  content: |-
+    DOC_LANE_ALERT: context=context/dm-signal-ops.md raw_alert=ALERT: context/dm-signal-ops.md source commits 2件 since last_updated=2026-09-07 repo=/mnt/c/Python_app/DM-signal root_fallback=no timeout=360s/360s owner=dm-signal-ops update_trigger=backend/app/api|backend/app/jobs|backend/app/services|backend/tests|docs/rule|cited:docs/research|render.yaml|tasks/lessons.md。更新要否を確認せよ latest: af29176917d1 cmd_4496: remove signal_decision_ledger runtime dependency (I4 stage 1) | 4755c574ef36 cmd_4496: ruff-format test_fof_individual_recalculate.py (no functional change) action: bash scripts/context_source_commit_set.sh context/dm-signal-ops.md af29176917d1 'context_freshness reviewed source boundary' 'context_freshness_check context=context/dm-signal-ops.md commit=af29176917d1'
+  posted_by: 'gate_context_freshness'
+  posted_at: '2026-09-07T06:16:34'
+  requires_confirmation: false
+  action_type: 'action_required'
+  actioned_by: ''
+  notify_targets:
+    - 'shogun'
+  confirmed_by: []
+  status: 'open'
