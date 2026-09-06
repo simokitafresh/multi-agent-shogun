@@ -1,3 +1,4 @@
+<!-- gist-master: 6151078c3a7089730416dc61fccc79e2 dm-signal-layer-holdings-ui-guide_20260906.md -->
 # Layer Holdings Monthly ページ UI ガイド(cmd_4489 P3 用。殿 2026-09-06 23:43『デザインは DM-Signal に合わせる』/23:45『フォント・サイズ・コントラスト・カード不使用などデザインガイドを渡せ』)
 
 読者: cmd_4489 担当忍者(才蔵)と家老・軍師レビュー。wireframe(gist 6ae60a9c)は**情報構造の正本**、見た目は**本書=DM-Signal 既存規約**が正本。迷ったら既存ページ(`frontend/app/monthly-returns/page.tsx`、`compare-returns`、`rolling-returns`)と同じにする。
