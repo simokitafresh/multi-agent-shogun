@@ -1891,3 +1891,15 @@ entries:
     - 'shogun'
   confirmed_by: []
   status: 'open'
+- id: 'blt_20260907_071740_aa0d6e'
+  content: |-
+    DOC_LANE_ALERT: context=context/dm-signal-core.md raw_alert=ALERT: context/dm-signal-core.md source commits 1件 since last_updated=2026-09-07 repo=/mnt/c/Python_app/DM-signal root_fallback=no timeout=360s/360s owner=dm-signal-core update_trigger=backend/app|backend/tests|docs/rule|context/dm-signal-terminology.md|docs/knowledge-base/terminology/disambiguation.md。更新要否を確認せよ latest: 5e537dd318a7 cmd_4497_full: drop retired I4 tables with reversible local migration action: bash scripts/context_source_commit_set.sh context/dm-signal-core.md 5e537dd318a7 'context_freshness reviewed source boundary' 'context_freshness_check context=context/dm-signal-core.md commit=5e537dd318a7'
+  posted_by: 'gate_context_freshness'
+  posted_at: '2026-09-07T07:17:40'
+  requires_confirmation: false
+  action_type: 'action_required'
+  actioned_by: ''
+  notify_targets:
+    - 'shogun'
+  confirmed_by: []
+  status: 'open'
