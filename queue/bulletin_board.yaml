@@ -966,3 +966,15 @@ entries:
     - 'shogun'
   confirmed_by: []
   status: 'open'
+- id: 'blt_20260906_225643_54999b'
+  content: |-
+    DOC_LANE_ALERT: context=context/infrastructure.md raw_alert=ALERT: context/infrastructure.md source commits 3件 since last_updated=2026-09-06 repo=/home/simokitafresh/multi-agent-shogun root_fallback=no timeout=360s/360s owner=infra-platform update_trigger=.github|.githooks|config|docs/rule|docs/knowledge-base|instructions|scripts|skills|tests|AGENTS.md|CLAUDE.md|CONTRIBUTING.md|LICENSE|Makefile|SECURITY.md|first_setup.sh|install.bat|lefthook-local.yml|lefthook.yml|project_lexicon.yaml|setup.sh|shutsujin_departure.sh。更新要否を確認せよ latest: e3214c8e1192 cmd_karo_hotfix_f19_cross_repo_isolated_20260906: sync karo's no-code repo-resolver fix (00cfcb0ce) + positive/negative contract tests for typed repo/tree matching without main inclusion | 56e6a12528e2 cmd_karo_hotfix_f19_cross_repo_isolated_20260906: sync karo's no-code repo-resolver fix (00cfcb0ce) + positive/negative contract tests for typed repo/tree matching without main inclusion | 25b1ad7c0180 cmd_karo_hotfix_f19_cross_repo_isolated_20260906: deploy_forbidden isolated cross-repo commits verify against their declared remote branch instead of waiting on origin/main action: bash scripts/context_source_commit_set.sh context/infrastructure.md e3214c8e1192 'context_freshness reviewed source boundary' 'context_freshness_check context=context/infrastructure.md commit=e3214c8e1192'
+  posted_by: 'gate_context_freshness'
+  posted_at: '2026-09-06T22:56:43'
+  requires_confirmation: false
+  action_type: 'action_required'
+  actioned_by: ''
+  notify_targets:
+    - 'shogun'
+  confirmed_by: []
+  status: 'open'
