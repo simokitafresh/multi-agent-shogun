@@ -17432,3 +17432,17 @@ sqlite3.Connection.backup()を使うとページ(4096byte)単位のread syscall�
 - **when**: 未設定
 - **how**: 未設定
 - cmd_4480根治でresolve_cmd_to_task内にinject_cmd_recon_dual()呼出しを新設したところ、tests/unit/test_deploy_task_lifecycle.batsのsetup_file(585-592行)がresolve_cmd_to_taskをextract_functionで単体抽出しRESOLVE_FUNCTIONS_FILEへ書き出す既存fixtureに新関数が未登録のまま残り、隔離実行(bats)時に"inject_cmd_recon_dual: command not found"でsetup_fileごと失敗、依存する8テスト(2,3,4,5,55-58)が連鎖FAILした。本番のdeploy_task.sh一括source経路では無関係(resolve.sh全体をsourceするため問題なし)なため、自分のtask worktreeでplanned_paths内3ファイルのテストだけを実行した際は検出できず、GitHub Actions CI(shard1)でのみ顕在化した。修正対象を特定する際はdeclare -fでの実行時確認(既報のif falseデッドコード教訓)に加え、grep -rln "extract_function <対象関数名>" tests/unit/*.batsで単体抽出fixtureの有無も確認し、新規呼出し先関数があれば同じ抽出リストへ追加する必要がある。
+
+
+### L1765: shared関数の末尾に裸grep(no-match時exit1)を置くと、set -e -o pipefail下の呼出元でreturnより先にpipefail abortする
+- **日付**: 2026-09-06
+- **出典**: cmd_karo_hotfix_reference_test_contract_20260906
+- **記録者**: kotaro
+- **tags**: [infra,cmd-quality,testing,gate,bash]
+- **subdomain**: infra
+- **target_files**: [scripts/lib/gate_hook_quality_contract.sh,scripts/hooks/git-pre-commit.sh,scripts/cmd_save.sh,scripts/deploy_task/gates.sh,tests/unit/test_gate_hook_quality_contract.bats]
+- **origin**: [[cmd_karo_hotfix_reference_test_contract_20260906]]
+- **enforcement**: 未自動化
+- **when**: 未設定
+- **how**: 未設定
+- gate_hook_quality_contract_reference_test_matches()の実装で、{ grep1; grep2; } | sed | sort -u という関数末尾のパイプラインの後に return 0 を書いても、pipefail下でこのパイプラインがnonzeroを返すと set -e は直後の return 0 を待たずに即abortする(returnは実行されない)。手動repro(bash -euo pipefail)でexit code 2を確認、原因はgrepのno-match(exit 1)がpipefail経由でパイプライン全体のexit statusに伝播したこと。修正は各grepに || true を付与し、パイプライン自体を常にexit 0にすること。『関数の最後にreturn 0を書けば呼出元の失敗から守れる』という思い込みは誤りで、pipefail下ではパイプライン内の各コマンドを個別に無害化する必要がある
