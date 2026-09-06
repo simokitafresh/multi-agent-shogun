@@ -550,68 +550,101 @@ find_active_peer_deployments() {
 
     [ -d "$tasks_dir" ] || return 0
 
-    python3 - "$tasks_dir" "$target" <<'PY' 2>/dev/null || true
-import glob
-import os
-import sys
-
-import yaml
-
-tasks_dir = sys.argv[1]
-target = sys.argv[2]
-active_statuses = {"assigned", "acknowledged", "in_progress"}
-
-
-def task_payload(path):
-    with open(path, encoding="utf-8") as f:
-        data = yaml.safe_load(f) or {}
-    task = data.get("task")
-    if isinstance(task, dict):
-        return task
-    return data if isinstance(data, dict) else {}
-
-
-target_path = os.path.join(tasks_dir, f"{target}.yaml")
-if not os.path.exists(target_path):
-    raise SystemExit(0)
-
-try:
-    target_task = task_payload(target_path)
-except Exception:
-    raise SystemExit(0)
-
-parent_cmd = str(target_task.get("parent_cmd") or "").strip()
-if not parent_cmd:
-    raise SystemExit(0)
-target_task_id = str(
-    target_task.get("_ac_task_id")
-    or target_task.get("subtask_id")
-    or target_task.get("task_id")
-    or ""
-).strip()
-
-for path in sorted(glob.glob(os.path.join(tasks_dir, "*.yaml"))):
-    ninja = os.path.splitext(os.path.basename(path))[0]
-    if ninja == target:
-        continue
-    try:
-        task = task_payload(path)
-    except Exception:
-        continue
-    if str(task.get("parent_cmd") or "").strip() != parent_cmd:
-        continue
-    status = str(task.get("status") or "").strip()
-    peer_task_id = str(
-        task.get("_ac_task_id")
-        or task.get("subtask_id")
-        or task.get("task_id")
-        or ""
-    ).strip()
-    if target_task_id and peer_task_id and target_task_id != peer_task_id:
-        continue
-    if status in active_statuses:
-        print(f"{ninja}\t{status}")
-PY
+    # This check runs before the mailbox append on every task assignment.  The
+    # old PyYAML subprocess parsed one tiny, writer-owned mapping and was the
+    # remaining pre-send Python process after pending dedupe moved to awk.
+    # Parse the task-shaped fields in one awk pass over the task files.  The
+    # task writer emits these scalar fields under `task:`; the root-field
+    # fallback preserves compatibility with legacy task fixtures.
+    awk -v target="$target" '
+        function trim(value) {
+            sub(/^[[:space:]]+/, "", value)
+            sub(/[[:space:]]+$/, "", value)
+            return value
+        }
+        function scalar(value) {
+            value = trim(value)
+            if (value ~ /^'"'"'.*'"'"'$/) {
+                sub(/^'"'"'/, "", value)
+                sub(/'"'"'$/, "", value)
+                gsub(/'"'"''"'"'/, "'"'"'", value)
+            } else if (value ~ /^".*"$/) {
+                sub(/^"/, "", value)
+                sub(/"$/, "", value)
+            }
+            return value
+        }
+        function save_field(name, value) {
+            value = scalar(value)
+            if (name == "parent_cmd") current_parent = value
+            else if (name == "status") current_status = value
+            else if (name == "_ac_task_id" && current_id == "") current_id = value
+            else if (name == "subtask_id" && current_id == "") current_id = value
+            else if (name == "task_id" && current_id == "") current_id = value
+        }
+        function parse_line(line, prefix, value) {
+            for (prefix in field_names) {
+                if (line ~ field_names[prefix]) {
+                    value = line
+                    sub(field_names[prefix], "", value)
+                    save_field(prefix, value)
+                    return
+                }
+            }
+        }
+        function flush_file() {
+            if (filename == "") return
+            file_names[++file_count] = filename
+            file_parent[filename] = current_parent
+            file_status[filename] = current_status
+            file_id[filename] = current_id
+        }
+        BEGIN {
+            field_names["parent_cmd"] = "^  parent_cmd:[[:space:]]*"
+            field_names["status"] = "^  status:[[:space:]]*"
+            field_names["_ac_task_id"] = "^  _ac_task_id:[[:space:]]*"
+            field_names["subtask_id"] = "^  subtask_id:[[:space:]]*"
+            field_names["task_id"] = "^  task_id:[[:space:]]*"
+            file_count = 0
+            wanted_parent = ""
+            wanted_id = ""
+        }
+        FNR == 1 {
+            flush_file()
+            filename = FILENAME
+            sub(/^.*\//, "", filename)
+            sub(/\.yaml$/, "", filename)
+            current_parent = ""
+            current_status = ""
+            current_id = ""
+            task_block = 0
+        }
+        /^task:[[:space:]]*$/ { task_block = 1; next }
+        {
+            line = $0
+            if (task_block) {
+                if (line !~ /^  /) task_block = 0
+                else parse_line(line)
+            } else if (line ~ /^(parent_cmd|status|_ac_task_id|subtask_id|task_id):[[:space:]]*/) {
+                sub(/^/, "  ", line)
+                parse_line(line)
+            }
+        }
+        END {
+            flush_file()
+            wanted_parent = file_parent[target]
+            wanted_id = file_id[target]
+            if (wanted_parent == "") exit
+            for (i = 1; i <= file_count; i++) {
+                filename = file_names[i]
+                if (filename == target || file_parent[filename] != wanted_parent) continue
+                if (wanted_id != "" && file_id[filename] != "" && wanted_id != file_id[filename]) continue
+                if (file_status[filename] == "assigned" || file_status[filename] == "acknowledged" || file_status[filename] == "in_progress") {
+                    print filename "\t" file_status[filename]
+                }
+            }
+        }
+    ' "$tasks_dir"/*.yaml 2>/dev/null || true
 }
 
 notify_karo_duplicate_deploy_block() {
@@ -1798,20 +1831,109 @@ inbox_pending_duplicate_locked() {
     local sender="$2"
     local content="$3"
     [ -s "$inbox_file" ] || return 1
-    INBOX_DEDUPE_FILE="$inbox_file" INBOX_DEDUPE_FROM="$sender" \
-        INBOX_DEDUPE_CONTENT="$content" python3 - <<'PY'
-import os, sys, yaml
-try:
-    data = yaml.safe_load(open(os.environ["INBOX_DEDUPE_FILE"], encoding="utf-8")) or {}
-except (OSError, yaml.YAMLError):
-    sys.exit(1)
-for message in data.get("messages") or []:
-    if not isinstance(message, dict) or message.get("read") is not False:
-        continue
-    if str(message.get("from", "")) == os.environ["INBOX_DEDUPE_FROM"] and str(message.get("content", "")) == os.environ["INBOX_DEDUPE_CONTENT"]:
-        sys.exit(0)
-sys.exit(1)
-PY
+
+    # Normal sends reach this check while holding the mailbox flock.  Keep the
+    # comparison in one awk process: PyYAML startup was the only pre-append
+    # Python process on the generic delivery path.  inbox_build_message_block
+    # emits either a single-quoted scalar or a `|-` block scalar, so this
+    # parser handles exactly those two writer-owned encodings and fails closed
+    # for any other record shape.
+    INBOX_DEDUPE_FROM="$sender" INBOX_DEDUPE_CONTENT="$content" \
+        awk '
+        function trim(value) {
+            sub(/^[[:space:]]+/, "", value)
+            sub(/[[:space:]]+$/, "", value)
+            return value
+        }
+        function scalar(value) {
+            value = trim(value)
+            if (value ~ /^'"'"'.*'"'"'$/) {
+                sub(/^'"'"'/, "", value)
+                sub(/'"'"'$/, "", value)
+                gsub(/'"'"''"'"'/, "'"'"'", value)
+            }
+            return value
+        }
+        function field(line, key, value) {
+            value = line
+            sub("^  " key ":[[:space:]]*", "", value)
+            return scalar(value)
+        }
+        function flush_record() {
+            if (started && read_state == "false" && record_from == wanted_from && record_content == wanted_content) {
+                found = 1
+            }
+        }
+        BEGIN {
+            wanted_from = ENVIRON["INBOX_DEDUPE_FROM"]
+            wanted_content = ENVIRON["INBOX_DEDUPE_CONTENT"]
+            started = 0
+            in_block_content = 0
+            record_from = ""
+            record_content = ""
+            content_seen = 0
+            read_state = ""
+        }
+        /^messages:[[:space:]]*(\[\])?[[:space:]]*$/ { next }
+        /^- / {
+            flush_record()
+            started = 1
+            in_block_content = 0
+            record_from = ""
+            record_content = ""
+            content_seen = 0
+            read_state = "false"
+            line = substr($0, 3)
+            if (line ~ /^content:[[:space:]]*\|[-+]?[[:space:]]*$/) {
+                in_block_content = 1
+            } else if (line ~ /^content:[[:space:]]*/) {
+                sub(/^content:[[:space:]]*/, "", line)
+                record_content = scalar(line)
+            } else if (line ~ /^from:[[:space:]]*/) {
+                sub(/^from:[[:space:]]*/, "", line)
+                record_from = scalar(line)
+            } else if (line ~ /^read:[[:space:]]*/) {
+                sub(/^read:[[:space:]]*/, "", line)
+                read_state = tolower(scalar(line))
+            }
+            next
+        }
+        started {
+            if (in_block_content) {
+                if ($0 ~ /^    /) {
+                    line = $0
+                    sub(/^    /, "", line)
+                    if (content_seen) record_content = record_content "\n"
+                    record_content = record_content line
+                    content_seen = 1
+                    next
+                }
+                in_block_content = 0
+            }
+            if ($0 ~ /^  content:[[:space:]]*\|[-+]?[[:space:]]*$/) {
+                in_block_content = 1
+                record_content = ""
+                content_seen = 0
+                next
+            }
+            if ($0 ~ /^  from:[[:space:]]*/) {
+                record_from = field($0, "from")
+                next
+            }
+            if ($0 ~ /^  content:[[:space:]]*/) {
+                record_content = field($0, "content")
+                next
+            }
+            if ($0 ~ /^  read:[[:space:]]*/) {
+                read_state = tolower(trim(field($0, "read")))
+                next
+            }
+        }
+        END {
+            flush_record()
+            exit(found ? 0 : 1)
+        }
+        ' "$inbox_file"
 }
 
 # Review-pending nudges are actionable work.  An unread matching event is an
