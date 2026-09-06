@@ -208,3 +208,7 @@ def validate_ledger_text(text, expected_entries=None):
     """shared guard へ委譲(scripts/x_ops/x_ledger_guard.py)。"""
     from x_ledger_guard import validate_ledger_text as _v
     return _v(text, expected_entries)
+
+
+if __name__ == "__main__":
+    sys.exit(main())
