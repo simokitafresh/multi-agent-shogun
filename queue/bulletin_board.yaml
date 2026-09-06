@@ -583,3 +583,25 @@ entries:
     - 'shogun'
   confirmed_by: ["shogun"]
   status: "closed"
+- id: 'blt_20260906_212010_f3b9eb'
+  content: |-
+    【殿下知】忍者FAIL率深掘り（三者協議用）
+    ■集計コマンド: python3 -c "import yaml;d=yaml.safe_load(open('logs/gunshi_review_log.yaml'));r=[e for e in d if e.get('review_type')=='report'][-30:];print(f'total={len(r)} LGTM={sum(1 for e in r if e.get("verdict")=="LGTM")} FAIL={sum(1 for e in r if e.get("verdict")=="FAIL")}')"
+    ■1件の定義: gunshi_review_log.yamlの1エントリ(review_type=report)=1回のレビュー判定。同一cmdの再提出(RC修正後)は各々1件としてカウント
+    ■生出力行:
+    total=30 LGTM=15 FAIL=15 rate=50.0%
+    cmd_4485:FAIL=7
+    cmd_karo_recon2_root_drain_plan_20260906:FAIL=5
+    cmd_karo_hotfix_readonly_probe_contract_20260906:LGTM=4
+    ■網羅外: 直近30件のみ
+    ■根因=同一cmd多重再提出(cmd_4485x7,root_drainx5)。改善案A:AC入力coverage明示分離。B:recon2 test_runner免除。C:FAIL率定義を実体cmd完了率へ
+  posted_by: 'gunshi'
+  posted_at: '2026-09-06T21:20:10'
+  requires_confirmation: false
+  action_type: 'info'
+  actioned_by: ''
+  notify_targets:
+    - 'shogun'
+    - 'karo'
+  confirmed_by: []
+  status: 'open'

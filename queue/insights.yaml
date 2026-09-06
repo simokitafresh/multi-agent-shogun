@@ -19339,3 +19339,45 @@ insights:
   source: "semantic_stress_test"
   fix_known: false
   status: pending
+- id: INS-20260906-212010509-b11b
+  ts: "2026-09-06T21:20:10+09:00"
+  insight: "[[iinbox3]] semantic_stress_test candidate_aliases: NO_MATCH source=lord query=iinbox3"
+  priority: "low"
+  source: "semantic_stress_test"
+  fix_known: false
+  status: pending
+- id: INS-20260906-212010982-5f8d
+  ts: "2026-09-06T21:20:10+09:00"
+  insight: "[[§2 3 不整合 I 別の状態は更新されているか？]] semantic_stress_test candidate_aliases: NO_MATCH source=lord query=§2.3 不整合 I 別の状態は更新されているか？"
+  priority: "low"
+  source: "semantic_stress_test"
+  fix_known: false
+  status: pending
+- id: INS-20260906-212011593-e357
+  ts: "2026-09-06T21:20:11+09:00"
+  insight: "[[忍者のfail率が高いな]] semantic_stress_test candidate_aliases: NO_MATCH source=lord query=忍者のfail率が高いな。何か原因があるはずだ。家老と協議して対策をしよう"
+  priority: "low"
+  source: "semantic_stress_test"
+  fix_known: false
+  status: pending
+- id: INS-20260906-212012338-cced
+  ts: "2026-09-06T21:20:12+09:00"
+  insight: "[[ない]] semantic_stress_test candidate_aliases: NO_MATCH source=lord query=１．ない。あくまで俺の個人プロジェクトであり、部分的に閲覧することを俺が許可してる仕組みだ。2.gistに下書きがあった気がする"
+  priority: "low"
+  source: "semantic_stress_test"
+  fix_known: false
+  status: pending
+- id: INS-20260906-212013371-24b2
+  ts: "2026-09-06T21:20:13+09:00"
+  insight: "[[X投稿は順調か？夕方の投稿がされていないようだ]] semantic_stress_test candidate_aliases: NO_MATCH source=lord query=X投稿は順調か？夕方の投稿がされていないようだ"
+  priority: "low"
+  source: "semantic_stress_test"
+  fix_known: false
+  status: pending
+- id: INS-20260906-212014633-1f2d
+  ts: "2026-09-06T21:20:14+09:00"
+  insight: "[[30分ごとのloop指示がどんどん肥大化していないか？]] semantic_stress_test candidate_aliases: NO_MATCH source=lord query=30分ごとのloop指示がどんどん肥大化していないか？"
+  priority: "low"
+  source: "semantic_stress_test"
+  fix_known: false
+  status: pending
