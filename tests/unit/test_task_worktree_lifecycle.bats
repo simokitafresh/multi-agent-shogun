@@ -521,7 +521,9 @@ PY
     git -C "$FIXTURE/shared" switch -q main
     mkdir -p "$FIXTURE/shared/lp"
     printf 'CANONICAL_MAIN=1\n' > "$FIXTURE/shared/lp/index.ts"
-    git -C "$FIXTURE/shared" add lp/index.ts
+    mkdir -p "$FIXTURE/shared/extra"
+    printf 'UNSELECTED=1\n' > "$FIXTURE/shared/extra/unselected.txt"
+    git -C "$FIXTURE/shared" add lp/index.ts extra/unselected.txt
     git -C "$FIXTURE/shared" commit -q -m canonical-main-target
     git -C "$FIXTURE/shared" push -q origin main
     canonical_tip=$(git -C "$FIXTURE/shared" rev-parse origin/main)
@@ -569,21 +571,25 @@ PY
 
     run env PROJECT_ROOT="$BATS_TEST_DIRNAME/../.." FIXTURE="$FIXTURE/shared" TASK="$task" EXPECTED_REMOTE="$canonical_tip" EXPECTED_SHARED="$maintenance_tip" bash -c '
         set -euo pipefail
-        export DEPLOY_TASK_LIB_ONLY=1 DEPLOY_TASK_WORKTREE_ROOT="$FIXTURE/worktrees-modular-canonical"
+        export DEPLOY_TASK_LIB_ONLY=1 DEPLOY_TASK_WORKTREE_ROOT="$FIXTURE/worktrees-modular-canonical" DEPLOY_TASK_SOURCE_FS_TYPE_OVERRIDE=v9fs
         source "$PROJECT_ROOT/scripts/deploy_task.sh"
-        SCRIPT_DIR="$FIXTURE"; LOG=/dev/null; STATE_DIR="$FIXTURE/state-modular-canonical"; mkdir -p "$STATE_DIR"
+        SCRIPT_DIR="$FIXTURE"; LOG="$FIXTURE/modular-preflight.log"; STATE_DIR="$FIXTURE/state-modular-canonical"; mkdir -p "$STATE_DIR"
         source "$PROJECT_ROOT/scripts/deploy_task/preflight.sh"
         deploy_task_prepare_remote_tip_worktree "$TASK" kagemaru
         wt=$(FIELD_GET_NO_LOG=1 field_get "$TASK" task_worktree_path)
         [ "$(git -C "$wt" rev-parse HEAD)" = "$EXPECTED_REMOTE" ]
         [ -d "$wt/lp" ]
         [ -f "$wt/lp/index.ts" ]
+        [ ! -e "$wt/extra/unselected.txt" ]
         [ "$(git -C "$FIXTURE" rev-parse HEAD)" = "$EXPECTED_SHARED" ]
-        printf "modular_preflight=1 canonical_tip=1 target_directory=1 shared_unchanged=1\\n"
+        grep -Eq "TASK_WORKTREE_PHASE phase=fetch wall_ms=[0-9]+" "$LOG"
+        grep -Eq "TASK_WORKTREE_PHASE phase=worktree_add wall_ms=[0-9]+" "$LOG"
+        grep -Eq "TASK_WORKTREE_PHASE phase=sparse_materialize wall_ms=[0-9]+" "$LOG"
+        printf "modular_preflight=1 canonical_tip=1 sparse_declared=1 target_directory=1 shared_unchanged=1\\n"
         deploy_task_rollback_remote_tip_worktree "$FIXTURE" "$wt" "$(FIELD_GET_NO_LOG=1 field_get "$TASK" task_worktree_marker)"
     '
     [ "$status" -eq 0 ]
-    [[ "$output" == *"modular_preflight=1 canonical_tip=1 target_directory=1 shared_unchanged=1"* ]]
+    [[ "$output" == *"modular_preflight=1 canonical_tip=1 sparse_declared=1 target_directory=1 shared_unchanged=1"* ]]
 }
 
 @test "archive recovers exact source publication receipt and rejects three mismatches" {

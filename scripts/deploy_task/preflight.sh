@@ -121,6 +121,12 @@ deploy_task_worktree_metadata_entry_count() {
         | awk 'NF {count++} END {print count+0}'
 }
 
+deploy_task_preflight_elapsed_ms() {
+    local started_us="$1" now_us="${EPOCHREALTIME/./}"
+    now_us="${now_us:0:16}"
+    printf '%s\n' "$(( (now_us - started_us + 999) / 1000 ))"
+}
+
 deploy_task_log_worktree_metadata_before_add() {
     local repo="${1:-$SCRIPT_DIR}" entries
     entries="$(deploy_task_worktree_metadata_entry_count "$repo")"
@@ -174,7 +180,9 @@ PY
 }
 
 deploy_task_fetch_stable_remote_tip() {
-    local repo="$1" remote="$2" push_ref="$3" first_tip second_tip
+    local repo="$1" remote="$2" push_ref="$3" first_tip second_tip phase_started_us
+    phase_started_us="${EPOCHREALTIME/./}"
+    phase_started_us="${phase_started_us:0:16}"
     first_tip=$(git -C "$repo" ls-remote "$remote" "$push_ref" 2>/dev/null | awk 'NR==1 {print $1}')
     [[ "$first_tip" =~ ^[0-9a-f]{40}$ ]] || { log "BLOCK: remote-tip worktree remote tip unavailable"; return 1; }
     git -C "$repo" fetch -q --no-write-fetch-head "$remote" "$push_ref" \
@@ -185,6 +193,7 @@ deploy_task_fetch_stable_remote_tip() {
         || { log "BLOCK: remote-tip ref race detected before worktree creation (before=$first_tip after=$second_tip)"; return 1; }
     git -C "$repo" cat-file -e "${first_tip}^{commit}" 2>/dev/null \
         || { log "BLOCK: remote-tip object unavailable"; return 1; }
+    log "TASK_WORKTREE_PHASE phase=fetch wall_ms=$(deploy_task_preflight_elapsed_ms "$phase_started_us")"
     printf '%s\n' "$first_tip"
 }
 
@@ -242,6 +251,76 @@ if invalid or missing:
 PY
 }
 
+# A source checkout on WSL's v9fs mount pays a per-file cost during checkout.
+# Keep the remote-tip and linked-worktree contracts unchanged, but materialize
+# only the declared source paths before checkout.  This is deliberately in the
+# canonical preflight module because main.sh sources this file directly.
+deploy_task_preflight_source_repo_uses_slow_fs() {
+    local repo="$1" fs_type slow_types
+    fs_type="${DEPLOY_TASK_SOURCE_FS_TYPE_OVERRIDE:-$(stat -f -c '%T' "$repo" 2>/dev/null || true)}"
+    slow_types="${DEPLOY_TASK_SLOW_FS_TYPES:-v9fs}"
+    case ",$slow_types," in
+        *,"$fs_type",*) return 0 ;;
+        *) return 1 ;;
+    esac
+}
+
+deploy_task_preflight_sparse_checkout_paths() {
+    local task_file="$1" repo="$2"
+    python3 - "$task_file" "$repo" <<'PY'
+import os
+import sys
+import yaml
+
+task = (yaml.safe_load(open(sys.argv[1], encoding="utf-8")) or {}).get("task", {})
+repo = os.path.realpath(sys.argv[2])
+values = []
+for key in ("target_path", "planned_paths"):
+    value = task.get(key) or []
+    if isinstance(value, str):
+        try:
+            decoded = yaml.safe_load(value)
+        except yaml.YAMLError:
+            decoded = None
+        value = decoded if isinstance(decoded, list) else [value]
+    if isinstance(value, list):
+        values.extend(str(item).strip() for item in value if str(item).strip())
+
+paths = []
+for raw in values:
+    if raw == "dashboard.md" or raw.startswith(("queue/", "logs/", "projects/", "archive/", ".cache/")):
+        continue
+    if raw.startswith("/"):
+        relative = os.path.relpath(raw, repo)
+        if relative == ".." or relative.startswith("../"):
+            continue
+    else:
+        relative = raw[2:] if raw.startswith("./") else raw
+    relative = os.path.normpath(relative)
+    if relative in ("", ".") or relative.startswith("../"):
+        continue
+    if relative not in paths:
+        paths.append(relative)
+print("\n".join(paths))
+PY
+}
+
+deploy_task_preflight_prepare_sparse_checkout() {
+    local task_file="$1" repo="$2" worktree="$3" paths phase_started_us
+    deploy_task_preflight_source_repo_uses_slow_fs "$repo" || return 0
+    paths="$(deploy_task_preflight_sparse_checkout_paths "$task_file" "$repo")" || return 1
+    [ -n "$paths" ] || return 0
+    phase_started_us="${EPOCHREALTIME/./}"
+    phase_started_us="${phase_started_us:0:16}"
+    mkdir -p -- "$worktree/$(dirname -- "${paths%%$'\n'*}")"
+    command git -C "$worktree" sparse-checkout init --no-cone >/dev/null 2>&1 \
+        || { log "BLOCK: sparse checkout init failed"; return 1; }
+    printf '%s\n' "$paths" | command git -C "$worktree" sparse-checkout set --no-cone --stdin >/dev/null 2>&1 \
+        || { log "BLOCK: sparse checkout projection failed"; return 1; }
+    log "TASK_WORKTREE_SPARSE_CHECKOUT: repo=$repo path=$worktree paths=$(printf '%s\n' "$paths" | awk 'NF {count++} END {print count+0}')"
+    log "TASK_WORKTREE_PHASE phase=sparse_materialize wall_ms=$(deploy_task_preflight_elapsed_ms "$phase_started_us")"
+}
+
 deploy_task_prepare_remote_tip_worktree() {
     local task_file="$1" ninja_name="$2"
     local task_worktree_required source_path_count task_id parent_cmd project target repo upstream_ref remote push_ref remote_tip
@@ -283,14 +362,21 @@ deploy_task_prepare_remote_tip_worktree() {
     generation=$(printf '%s\0%s\0%s' "$task_id" "$remote_tip" "$(date +%s%N)" | sha256sum | awk '{print $1}')
     worktree_path="$worktree_root/${ninja_name}_${generation:0:16}"
     [ ! -e "$worktree_path" ] || { log "BLOCK: task worktree path already exists"; return 1; }
+    local worktree_add_started_us="${EPOCHREALTIME/./}"
+    worktree_add_started_us="${worktree_add_started_us:0:16}"
     deploy_task_log_worktree_metadata_before_add "$repo"
     git -C "$repo" -c maintenance.auto=false worktree add --detach --no-checkout "$worktree_path" "$remote_tip" >/dev/null 2>&1 || { log "BLOCK: task worktree add failed"; return 1; }
-    if ! git -C "$worktree_path" -c maintenance.auto=false checkout --detach "$remote_tip" >/dev/null 2>&1 \
+    log "TASK_WORKTREE_PHASE phase=worktree_add wall_ms=$(deploy_task_preflight_elapsed_ms "$worktree_add_started_us")"
+    local checkout_started_us="${EPOCHREALTIME/./}"
+    checkout_started_us="${checkout_started_us:0:16}"
+    if ! deploy_task_preflight_prepare_sparse_checkout "$task_file" "$repo" "$worktree_path" \
+        || ! git -C "$worktree_path" -c maintenance.auto=false checkout --detach "$remote_tip" >/dev/null 2>&1 \
         || ! git -C "$worktree_path" config maintenance.auto false; then
         git -C "$repo" worktree remove --force "$worktree_path" >/dev/null 2>&1 || true
         log "BLOCK: task worktree checkout/config failed"
         return 1
     fi
+    log "TASK_WORKTREE_PHASE phase=checkout_config wall_ms=$(deploy_task_preflight_elapsed_ms "$checkout_started_us")"
     if ! deploy_task_validate_remote_tip_paths "$task_file" "$repo" "$worktree_path"; then
         git -C "$repo" worktree remove --force "$worktree_path" >/dev/null 2>&1 || true
         log "BLOCK: remote-tip target path validation failed"
