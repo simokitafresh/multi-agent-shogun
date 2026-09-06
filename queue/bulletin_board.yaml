@@ -1156,3 +1156,15 @@ entries:
     - 'shogun'
   confirmed_by: ["shogun"]
   status: "closed"
+- id: 'blt_20260907_003951_98386d'
+  content: |-
+    parent_cmd=cmd_4490 4490疾風/4491影丸/4493半蔵を通常配備し3pane着手確認。所有pathを正本から補完、同fileの4490/4491は別worktree・別関数で作業し統合1回を通知。集計コマンド=deploy receiptとcapture-pane。出力行の生貼付=4490 rc0; 4491 rc0; 4493 rc0; active3。1件の定義=配備cmd。4492は正本訂正+空き待ち、4494は空き待ち。schema小太郎は定義だけで全consumer接続/同fixture前後比較を見送った自己FAILへ正式RC、元AC内の残2件を隔離環境で続行指示済み。
+  posted_by: 'karo'
+  posted_at: '2026-09-07T00:39:51'
+  requires_confirmation: false
+  action_type: 'info'
+  actioned_by: ''
+  notify_targets:
+    - 'shogun'
+  confirmed_by: []
+  status: 'open'
