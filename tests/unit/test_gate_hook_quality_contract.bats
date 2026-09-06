@@ -1,8 +1,30 @@
 #!/usr/bin/env bats
 
+bats_require_minimum_version 1.5.0
+
 # test_necessity: 品質契約のFP計測語彙が日本語の同義表現を受理し、表現差だけの誤BLOCKを防ぐ不変量を守る。
+#
+# CI run 33152966157/33334577571/33337094964/34003273306/34033921264: this test
+# intermittently reported "not ok ... line 20" (the final `$output` equality)
+# while `$status` was 0 and the loop's own internal
+# `[[ "$result" == $'yes\tpass\tpass' ]] || { ...; exit 1; }` guard never fired
+# (no "repetition=/term=/actual=" line ever appeared in any failing shard's
+# artifact — confirmed by downloading and inspecting the raw shard-1 TAP
+# output/log for run 34033921264). That combination is only possible when the
+# vocabulary matcher itself is correct on every one of the 50 evaluations, and
+# something unrelated is appended to the combined stdout+stderr stream that
+# `run` folds into `$output` by default. This file forks the loop body's own
+# `source`d function twice per iteration via awk pipelines (~50 iterations),
+# making it the heaviest forker in the suite; under this shard's
+# BATS_FILE_JOBS=32 concurrency any transient stderr byte written anywhere in
+# the subprocess tree (by bash itself, by a coreutil, or by the runner) lands
+# in `$output` and breaks the exact-string comparison without ever touching
+# `$result`. `run --separate-stderr` (bats-core >=1.5) keeps stdout and
+# stderr apart so the assertion below can no longer be corrupted by stray
+# stderr noise; `$stderr` is still surfaced on failure for genuine
+# diagnosis.
 @test "FP measurement accepts all five vocabulary families" {
-  run bash -c '
+  run --separate-stderr bash -c '
     source "$1/scripts/lib/gate_hook_quality_contract.sh"
     for repetition in $(seq 1 10); do
       for term in false_positive 偽陽性 誤発報 誤BLOCK 誤遮断; do
@@ -16,6 +38,14 @@
     done
     printf "positive_terms=5 measurement_pass=5\n"
   ' _ "$BATS_TEST_DIRNAME/../.."
+  if [ "$status" -ne 0 ] || [ "$output" != "positive_terms=5 measurement_pass=5" ]; then
+    local reason_code=output_mismatch
+    [ "$status" -eq 0 ] || reason_code=nonzero_status
+    printf 'rc=%s\n' "$status" >&2
+    printf 'stderr=%s\n' "${stderr-}" >&2
+    printf 'reason_code=%s\n' "$reason_code" >&2
+    printf 'diagnostic_output=%s\n' "$output" >&2
+  fi
   [ "$status" -eq 0 ]
   [ "$output" = "positive_terms=5 measurement_pass=5" ]
 }
