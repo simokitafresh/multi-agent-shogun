@@ -1,5 +1,5 @@
 <!-- gist-master: 2f1a3daa07c336c90958b1287245318b dm-signal-production-inconsistency-asis-tobe_20260906.md -->
-# DM-Signal 本番不整合 I1〜I9 — 現況・配備カード・データフロー・カタログ・因果・改善影響・ledger 判断 統合設計書 v1.3(2026-09-06 17:0x)
+# DM-Signal 本番不整合 I1〜I9 — 現況・配備カード・データフロー・カタログ・因果・改善影響・ledger 判断 統合設計書 v1.4(2026-09-06 17:1x)
 
 - 発端: 殿 2026-09-06 14:11『dm-signal-research-data-backlog_20260905.md を参考に DM-signal の本番の不整合について深く調査しよう。家老と繰り返しレビュー交換をせよ。本番の不整合、それによる影響、改善時にどのような変化が本番に起きるか、改善の影響範囲・依存関係なども明確にせよ』。以後の殿指示: 14:44 データフロー、14:45 ユーザー可視/内部/デッドコード、14:47 設計の因果、14:59 ledger 協議、15:06 時系列、15:15 可視変化の定量化、15:33 3 設計書並列、15:56 配備・進捗運用版(家老)、16:33 単一スタイルへ再構築。
 - 読む順: §2(現況)→§3(配備カード)→§5(カタログ)→§9(改善影響)→§10(ledger)。図は §4、根拠は §5〜§7、順序と契約は §8、裁定は §11、往復は §12、版は §13。
@@ -39,7 +39,7 @@
 | 配備 ID / 担当 | 実行・成果物 | レビュー | 完了ゲート・解放 | 阻害要因 / 次の行動 / 担当 |
 |---|---|---|---|---|
 | P01〜P03 / cmd_4484 / 影丸 | 世代2解析受入。source `aa96ac78133919876e86733106209943b9469cc9`、公開main `22668f54000829ed37712bf4e9f9d7c68bfc3ffe`へ包含確認 | 軍師LGTM・家老ACCEPT。v2 receipt/原出力hash検証済み | 16:36 GATE CLEAR、16:37 archive.doneとtask idleを実確認 | source未公開WAITは解消。証跡=`queue/gates/cmd_4484/completion_tail.log`・`archive.done`・`queue/tasks/kagemaru.yaml`。次=P05以降の入力確認。調査完了であり本番不整合修正済みとは数えない |
-| P04 / cmd_4486 / 半蔵 | 初回`8458b5d9`は172候補。16:37再提出`e9c20277`は88候補との報告 | 16:41家老implementation RC再指示。旧172行の検証原出力再利用、app登録入口等の反証漏れ、finalizeの60日条件欠落を現物確認 | CLEARなし、解放なし | 半蔵が新版原出力・全候補の動的入口反証・判定共用と59/60/61日境界を再検証。report_id=`rpt-f4ceba66-109e-45bf-864e-87c29254b134`。初回RC16:12の履歴は旧版に保存 |
+| P04 / cmd_4486 / 半蔵 | 最終`2ece0652387fce4639c6ac4fd754bc7be0fdb925`をmain `694ab6210851126db9462ab2b40cacdb53be15a0`へ公開。84候補(79/3/2)、個別登録対応の除外149、原出力rc5/hash一致。初回172→88→76の過剰除外是正→84 | 軍師LGTM・家老ACCEPT。登録関数単位へ限定、未登録helper保持、60日境界と新版原出力を確認 | 17:11 GATE CLEAR確認、17:12 archive.done/active_reports0/半蔵idleを確認 | 監査artifact8file、DB/本番/application変更0。証跡=`queue/gates/cmd_4486/completion_tail.log`。P06/P07へ監査結果を入力可。静的候補の受入であり撤去承認ではない |
 | P05〜P10 / 未配備 | 下表の準備・依存条件で区分 | 未実行 | 未実行 | 家老が既存cmdと重複確認し、入力・許可範囲の揃ったカードだけ配備 |
 
 ### §2.2 cmd_4484 世代 2 の新観測(旧観測を消さず併記)
@@ -327,6 +327,7 @@ flowchart LR
 | daily_etl.py | 未確認 | ops.md『冗長、廃止予定』 | cron/手順書/startCommand からの参照 |
 | (陰性対照) is_pending_fill_transition の消費側 | 使用中 | ALERT filter L364-383 | — |
 - 候補 6+陰性対照 1。vulture 等の警告は候補抽出であり到達不能の確定ではない。
+- **cmd_4486(P04)結果 09-06 17:11 CLEAR(半蔵、DM-Signal origin 694ab621、source 2ece0652、固定 SHA 0f2bfbcd)**: backend/app 160 file を AST import/name graph+動的入口 allowlist(router decorator・event.listen・render cron・facade re-export・Depends、193 行)で監査。**候補 84=未到達関数 79 / 未充足の拡張 schema 3 / 動作中の guard 2 / 到達するがデータ 0=0(DB 接続禁止ゆえ静的証拠なし)**、allowlist 除外 149。将軍が origin の candidates.csv を再集計し 84/79/3/2/149 一致。上表 6 候補の判定: save_signal_detail/build_signal_detail_record/flush_signal_details_batch=未到達(caller 0)、SignalDetailHistory・fof_component_weights=拡張 schema(DB 件数未観測)、ledger 分岐=動作中の guard(caller 14)、is_pending_fill_transition=guard(陰性対照、caller 1)、daily_etl.py=**固定 tree に存在せず**(候補行にしない)。『次段で撤去検討してよい』行(未到達∧反証 0∧導入 60 日超)= 63 件(folders/monthly_trade/performance/trades/auth の Pydantic Config・Response 型・helper 等、不整合 I とは無関係のものが大半)。撤去承認なし=P06/P07 の入力。artifact: analysis_runs/cmd_4486_dead_code_audit/{candidates.csv,allowlist.yaml,allowlist_excluded.csv,audit_result.md,import_graph.csv}
 - 静的監査の偽陽性源(allowlist に入れる): facade/re-export(price_ratio_calculator・monthly_trade_calculator 等)、FastAPI router 登録、SQLAlchemy event.listen、cron startCommand と shell 経由の入口。
 - **全 backend の vulture/import graph 監査は別 cmd**(家老 R3): 固定 code/deploy identity・動的入口 allowlist・候補ごとの caller/反証/除去履歴を提出、削除は別承認。走行中の cmd_4484 B は既存の I6 静的範囲で見つかった未到達候補の補足記録のみ(DB 再取得なし)。
 
@@ -544,6 +545,7 @@ I7: 監視 1 行(独立)
 - v1.1(2026-09-06 16:5x 将軍、殿 16:44『§9.1 3 視点を覚醒アップデート、家老レビュー』): §9.1 を再集計付き 7 小節へ。§2.3 I5 を ✅(表間 0)へ。
 - v1.2(2026-09-06 17:0x 将軍、家老 R9 全採用): 未知を 0 と書かない・観測母集団を上限と書かない・逆向きペアを正当と書かない。直近完了 12 ヶ月 2025-09〜2026-08 へ統一(I5 900/差 29、I2 15,290 行/5,531 group/unknown 2,583)。U8/U9 追加。
 - v1.3(2026-09-06 17:0x 将軍、家老 R10 APPROVE): 残表現 5 点反映。P05(cmd_4485)入力固定へ進む。
+- v1.4(2026-09-06 17:1x 将軍): cmd_4486 P04 CLEAR の結果を §7 へ(候補 84=79/3/2、除外 149、撤去検討 63、daily_etl 不在)。
 ## 因果リンク
 - ← [[dm-signal-research-data-backlog_20260905]] §B5 I1〜I8 / ← [[dm-signal-research-data-foundation-asis-tobe_20260905]] §2 / ← [[cmd_4480_shin_yotsume_parity]] / ← [[partial-turnover-experiment-asis-tobe-5w1h_20260805]] v1.10-v1.12
 - origin: "[[殿指示_本番不整合深掘り_20260906_1411]] -> [[backlog_B5_I1-I8]] -> [[production-inconsistency-asis-tobe]]"
