@@ -4,7 +4,7 @@
 一次確認: 2026-09-05 23:26:06 JST。殿「同様にアップデートせよ」に基づく配備設計。
 旧v2.5全文は `docs/research/karo-throughput-v2-5-evidence-20260905.md` に保存。既存gist IDと過去の観測時刻を保持する。
 
-## 進捗ビジュアル(将軍 loop 更新 2026-09-06 13:40)
+## 進捗ビジュアル(将軍 loop 更新 2026-09-06 15:15)
 
 **全項目(K+日次表)** `██░░░░░░░░ 1/4` ✅完了 🟡走行中 ⏳待ち 🔴要判断
 状態集計: ✅ 1 / 🟡 1 / ⏳ 1 / 🔴 1(表の 4 行)
@@ -14,7 +14,7 @@
 |---|---|---|
 | K2 deploy 準備・Python wrapper | ✅ 結論+fix CLEAR 09:54 | wrapper noop p50 5ms=律速でない。external worktree 準備が約 2 倍→preflight.sh の v9fs materialize で **p50 4553→1579ms(65% 短縮)** |
 | K0/K1/K3〜K7 | ⏳ 未配備 | K2 の結果を受け家老が次カードを選ぶ |
-| 日次表 karo_throughput_daily/2026-09-06.md | 🟡 毎 tick 更新 | 13:40: gate_clear=27、held_event 413、retry 112(12:05 比 +1/+37/+34=root drain 待ちの retry 増) |
+| 日次表 karo_throughput_daily/2026-09-06.md | 🟡 毎 tick 更新 | 15:15: 日次表を再生成(数値は同 md)。root drain 待ちの retry 増が継続 |
 | K3 候補: root 合流(safe_shared_main_ff)の自動化 | 🔴 要起票 | 本日 F-15 で 18 path を家老が手動監査(12:01〜)。合流待ちが便の壁になる構造は §4.2 と同型 |
 
 ## §0 家老が最初に見る結論
