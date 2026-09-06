@@ -1,5 +1,5 @@
 <!-- gist-master: 2f1a3daa07c336c90958b1287245318b dm-signal-production-inconsistency-asis-tobe_20260906.md -->
-# DM-Signal 本番不整合 I1〜I9 — 現況・配備カード・データフロー・カタログ・因果・改善影響・ledger 判断 統合設計書 v1.16(2026-09-06 20:58)
+# DM-Signal 本番不整合 I1〜I9 — 現況・配備カード・データフロー・カタログ・因果・改善影響・ledger 判断 統合設計書 v1.17(2026-09-06 21:35)
 
 - 発端: 殿 2026-09-06 14:11『dm-signal-research-data-backlog_20260905.md を参考に DM-signal の本番の不整合について深く調査しよう。家老と繰り返しレビュー交換をせよ。本番の不整合、それによる影響、改善時にどのような変化が本番に起きるか、改善の影響範囲・依存関係なども明確にせよ』。以後の殿指示: 14:44 データフロー、14:45 ユーザー可視/内部/デッドコード、14:47 設計の因果、14:59 ledger 協議、15:06 時系列、15:15 可視変化の定量化、15:33 3 設計書並列、15:56 配備・進捗運用版(家老)、16:33 単一スタイルへ再構築。
 - 読む順: §2(現況)→§3(配備カード)→§5(カタログ)→§9(改善影響)→§10(ledger)。図は §4、根拠は §5〜§7、順序と契約は §8、裁定は §11、往復は §12、版は §13。
@@ -83,7 +83,7 @@ cmd_4484 世代2の**報告値**。オフライン検証出力は確認済みだ
 | I6 | display_ticker_weights 非 unit 35 行・parity 不一致 29/2,096 | 🟡 cmd_4485 AC2 全期間 unknown→再配備 | 世代 2 報告値: display/pending_display 各 242,659 key で**非 unit 0**、静的 consumer 12。08-06 の 35 行は別時点(その後の full recalc で消えた可能性)。恒久解消と解釈せず、cmd_4485 で候補経路(選択外/欠損 child)の再現条件を確認 |
 | I7 | component holding_signal 欠落で展開不能 | 🟡 checker main 収載(f3d20d3c、殿 事後承認 20:29。§2.1 の『本番反映なし』は 19:2x 時点の記述=時点差) | 実測 0(cmd_4479/4483)。P08-I7 疾風: check_i7_* 関数+契約 test を main へ(呼出 0=挙動不変)。監視 ALERT への配線は殿 OK 後 |
 | I8 | 新四つ目 3 体 parity 不一致(102+2) | 🟡 valid_start_date 定義の取得元のみ未確定(U5) | 世代 2 報告値: B=全 FoF 77、signal 無し・return 有り 0。旧 2 件の 2014-04 は現在 signal/return あり(cmd_4480 時点との差=再計算で埋まった候補)。valid_start_date 欠落 77/77 は unknown |
-| I9 | 本番 tree と文書の乖離(ledger/signal_flush は 08-04 版) | 🟡 P09 才蔵 done(19:10、gate 待ち) | backlog B2 訂正済み(v1.6)。P09: 4 文書と固定 code の適用/撤回/未検証の対応表を報告済み(gate は source_publication_failed で停止中→家老が壁を特定中)。PI-P06 は規範保持+現在適用状態を別記。 rollback 233c2303 後、ledger file は 21e80e30 と同値・T7.5 未適用。backend 全体の 08-04 版断定はしない(38 files 再変更あり) |
+| I9 | 本番 tree と文書の乖離(ledger/signal_flush は 08-04 版) | 🟡 P09 CLEAR 21:32、patch 適用は次段 | backlog B2 訂正済み(v1.6)。P09: 4 文書と固定 code の適用/撤回/未検証の対応表を報告済み(gate は source_publication_failed で停止中→家老が壁を特定中)。PI-P06 は規範保持+現在適用状態を別記。 rollback 233c2303 後、ledger file は 21e80e30 と同値・T7.5 未適用。backend 全体の 08-04 版断定はしない(38 files 再変更あり) |
 
 #### §2.3.1 時点付き続報(集計対象外。cmd_4485 前 flight、影丸 18:04 報告、家老 18:06 RC、将軍裁定 18:07)
 
@@ -110,7 +110,7 @@ cmd_4484 世代2の**報告値**。オフライン検証出力は確認済みだ
 | P06 I4 ledger判断資料 / cmd_4485 AC3(影丸、半蔵準備)で U1 5 種別を取得中 | P02分類・P04役割manifest、保護要件の確認。A実験は§10再導入条件と整合させる | ledger依存15fileの役割、MonthlyTrade置換、歴史builder、代替snapshot、B①無効化②表保持③DROPの段階表 | 保護対象/期間/出典・代替可否・真正性・冪等性・復元を判定可能にする。I5=0だけで廃止しない。今C/B調査第一候補を維持。§5 I4、§9.2、§10全文 |
 | P07 I1/detail_history契約調査 / **飛猿 配備 18:56**(cmd_karo_recon2_p07_column_contract_20260906) | P04と同一ファイル調査は分担を先に固定。DDLは別段階 | 8列のDTO/API/admin/外部利用、verification writer/caller/過去入口。列別契約表 | 8/8列とreader/writer/runtime/行数の4軸を区別。外部利用未確認はunknown。将来契約と復元を評価。§5 I1/I4、§7、§9.1 |
 | P08 I2抑止・I3/I7監視設計 / **I7 checker=疾風、main 収載 f3d20d3c・本番 deploy 19:28(殿 事後承認 20:29、呼出 0=挙動不変)**。呼出配線(ALERT 化)は殿 OK 後。I2 抑止は分類待ち、I3 監視は次カード(非 main branch で code+test) | P02分類確定。I7部分は独立に準備可 | signal_flush/collector/ALERT/A4。変更候補と契約test計画 | 正当往復を消さず、分類確定経路のみ。INSERT監査目的との整合、I7欠落検出の二値条件、過去行保存を明示。§5 I2/I3/I7 |
-| P09 I9文書整合 / **才蔵 配備 18:56**(cmd_karo_recon2_p09_document_alignment_20260906) | 固定blob/差分一次証拠、P04と履歴調査を共有可 | backlog B2・PI-P06・ops・本書。適用/撤回/未検証の対応表 | 2file同値とbackend139履歴commitを一般化しない。規範PIと過去実施記録を消さず現行注記を追加。§5 I9、§6、§5 |
+| P09 I9文書整合 / **✅ CLEAR 21:32**(才蔵、no-code。固定 SHA 0f2bfbcd の ledger/signal_flush 2 blob・21e80e30・T7.5 c13a56fe/0e9d158d・rollback 233c2303・139 件を一次照合、4 文書の訂正 patch と照合表を queue/notes/p09_document_alignment_20260906 へ保存。**文書への適用は未実施=次段**) | 固定blob/差分一次証拠、P04と履歴調査を共有可 | backlog B2・PI-P06・ops・本書。適用/撤回/未検証の対応表 | 2file同値とbackend139履歴commitを一般化しない。規範PIと過去実施記録を消さず現行注記を追加。§5 I9、§6、§5 |
 | P10 採否・本番実行計画 / 裁定待ち | P05〜P09の該当成果物受入、個別承認・backup/restore証拠 | §4可視差分、採用案、対象集合、実行・復元手順 | 何が何件どれだけ動くか、未確定、許可境界が揃うまで本番実行しない。ledger訂正eventをcoverage無し復元と同一視しない。§8.1/§9.1/§9.2/§10 |
 
 ### §3.1 全カード共通の受渡し欄
@@ -562,6 +562,7 @@ I7: 監視 1 行(独立)
 | R21 | 20:29 | 殿『確認して問題がなければ承認する。重要なのはどんな変化が起きるのか』→将軍の一次確認(diff 2 file・呼出 0・副作用なし・golden は test のみ)→殿『事後承認する』 | §8.1/§3 P08 に反映 | v1.14 |
 | R22 | 20:35 | 殿『§2.3 は更新されているか』→18:10 のまま放置(I4 の 🔴 が裁定後も残存、I1/I7/I9 の第 0 弾配備が未反映)=将軍の全体整合違反(恒久則 18:11)。9 行を 20:35 観測へ更新、集計 ✅1/🟡8 | 家老レビュー依頼 | v1.15 |
 | R23 | 20:56 | 家老 R22 WITH_CONCERNS: §2.1 と §2.3 で I4(AC3 未完/確認済み)・I7(本番反映なし/main 収載)が逆。→§2.3 を『§2.1 より新しい時点』と明記し I4 を『部分確認・AC3 未完』へ、I7 に時点差注記。§2.1 の最新観測更新は家老へ依頼 | v1.16 | v1.16 |
+| R24 | 21:32 | P09 CLEAR(才蔵、no-code。gate は 02aabc7d の evidenced tree 束縛で通過)。4 文書 patch は保存のみ=適用を家老 doc lane へ | §3 P09 ✅、§2.3 I9 | v1.17 |
 
 ## §13 版の保全と改訂履歴
 
@@ -593,6 +594,7 @@ I7: 監視 1 行(独立)
 - v1.14(2026-09-06 20:31 将軍、殿 20:29 事後承認): §8.1 事故注記に承認と変化確認、§3 P08 を main 収載済みへ、R21。
 - v1.15(2026-09-06 20:35 将軍、殿 20:32 指摘): §2.3 を 18:10 観測から 20:35 観測へ(I1/I4/I6/I7/I9/I3/I8 の状態と現在値、次の一手)、R22。
 - v1.16(2026-09-06 20:58 将軍、家老 R22): §2.3 見出しに時点差を明記、I4 を AC3 未完へ、I7 に時点差注記、R23。
+- v1.17(2026-09-06 21:35 将軍): P09 CLEAR を §3/§2.3/§12 へ。
 ## 因果リンク
 - ← [[dm-signal-research-data-backlog_20260905]] §B5 I1〜I8 / ← [[dm-signal-research-data-foundation-asis-tobe_20260905]] §2 / ← [[cmd_4480_shin_yotsume_parity]] / ← [[partial-turnover-experiment-asis-tobe-5w1h_20260805]] v1.10-v1.12
 - origin: "[[殿指示_本番不整合深掘り_20260906_1411]] -> [[backlog_B5_I1-I8]] -> [[production-inconsistency-asis-tobe]]"
