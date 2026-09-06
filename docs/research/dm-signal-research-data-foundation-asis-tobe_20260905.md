@@ -14,7 +14,7 @@
 | D1 F1 holdings_monthly(cmd_4479) | ✅ | approved_honest_fail 終端。CSV 23,175 行、parity 104 不一致(I8) |
 | D2 I8 根因偵察(cmd_4480 A1/A2/AC3) | ✅ 03:04 | explained 102(投票比例 FoF weight vs 1/N)+unexplained 2(2014-04 初月)=104 |
 | D3 市場 1 表(cmd_4481) | ✅ 02:45 | layer_holdings_monthly.csv 4,493 行。2026-08 ALL: GLD .439/XLU .386/TMV .174 |
-| D4 第 2 段の置き場 → 母集団 75 PF 確定(cmd_4483) | 🟡 半蔵 実装 RC(12:41 家老コード検査: 再提出 84f56b2 は parity 検証欄を固定出力(mismatches 0 / I7 [])していたため差戻し=生入力 snapshot から再計算へ。将軍 AC2 の期待値『比較 12268 行』は誤りで正しくは 12372−450=11922(除外 3 体の行 450=不一致 104+一致 346)) | 10:41『拡張』の cmd_4482 は cancelled(未配備)。市場 1 表は 3 体除外の 75 PF を正本に。拡張は必要になった時に再起票 |
+| D4 第 2 段の置き場 → 母集団 75 PF 確定(cmd_4483) | 🟡 AC1/AC2 達成・AC3 へ(13:03 将軍裁定: 半蔵 23a1fdd8 は key 22206/22206・weight 差分 0・parity 11922/11922・I7 0。monthly_return 列のみ max_abs_diff 9.1e-07 の差=DB 参照値の再計算と推定、AC1 は本体列に適用し採用。verify_blob_diff/provenance へ両 as-of を生貼付、固定 0 経路撤去後に公開)。経緯: 12:41 家老コード検査: 再提出 84f56b2 は parity 検証欄を固定出力(mismatches 0 / I7 [])していたため差戻し=生入力 snapshot から再計算へ。将軍 AC2 の期待値『比較 12268 行』は誤りで正しくは 12372−450=11922(除外 3 体の行 450=不一致 104+一致 346)) | 10:41『拡張』の cmd_4482 は cancelled(未配備)。市場 1 表は 3 体除外の 75 PF を正本に。拡張は必要になった時に再起票 |
 
 ## §0.0 前提とスタイル
 
