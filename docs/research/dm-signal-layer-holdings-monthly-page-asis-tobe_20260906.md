@@ -4,7 +4,7 @@
 - 殿指示 2026-09-06 22:07『今後本番に Layer Holdings Monthly ページを新規で作りたい。まずは asis/tobe 5W1H の設計書を作ろう。家老にレビューして更新してもらい、将軍がレビューしてさらに更新する。更新するべき点がなくなるまで続ける』。
 - 版履歴(歴史修正禁止のため記録のみ): v0.1 22:20 将軍起草(一次情報=DM-Signal repo 現物+研究 lane の成果物)。v0.1.1 22:22 殿指示『gist 共有、軍師には artifact も共有(前提情報のずれ防止)』→前提 artifact URL を本文に明記。
 - v0.2 2026-09-06 22:24 家老R1。DM作業tree HEAD `6c61321277639354c5d9f95cdfd15d676462fdaf`と研究正本`0f2bfbcd`を区別して検分。以下のfile:行は特記なき限り作業tree。v0.1/v0.1.1の記録・artifact URLは保持。公開artifact取得は失敗したため同名ローカルHTMLと生成器を検分した（公開画面一致はU7）。
-- **前提 artifact(全レビュアー必読。設計書と対で読め)**: 研究 lane 実値 wireframe https://claude.ai/code/artifact/27c1995d-4797-4842-a582-949bcc4dab5a(75 PF 版 layer_holdings_monthly.csv を埋込んだ HTML。本書 §1「画面」と §4.3 P3 はこの見え方をそのまま本番へ移植する)。gist 正本: https://gist.github.com/b733364ac7dc058a20e7bd635e34ae73
+- **前提wireframe HTML**: https://gist.github.com/6ae60a9c0f84efcb8c15bb503951f9fa 。表示用 https://htmlpreview.github.io/?https://gist.githubusercontent.com/simokitafresh/6ae60a9c0f84efcb8c15bb503951f9fa/raw/layer-holdings-monthly.html 。repo正本docs/dashboard/layer-holdings-monthly.htmlと設計書gist b733364ac7dc058a20e7bd635e34ae73を対で読む。旧artifact URLは来歴に限り保持し、以後のレビュー入口にしない。
 - 前書: 研究 lane の 1 表 `layer_holdings_monthly.csv` は `docs/research/dm-signal-market-direction-breadth-exposure-asis-tobe_20260905.md` v1.1、その入力 F1 は `docs/research/dm-signal-research-data-foundation-asis-tobe_20260905.md` v0.10。本書はそれを**本番ページ**にする設計だけを扱う。
 - 実装は本書が家老・将軍の往復で「更新点なし」に到達し、殿の go が出てから cmd 単位で行う。**本番 DB 書込・DDL・deploy は殿の明示 OK のみ**(殿 09-05 22:25)。
 
@@ -33,7 +33,7 @@
 | どこから計算するか | 本番 Postgres の `monthly_returns.holding_signal`(`backend/app/db/models.py:284`、PIT)を F1 と同じ規則で展開し、階層ごとに平均。CSV は本番に持ち込まない(CSV は検算の正本として使う) |
 | どこに置くか | 新結果表 `layer_holdings_monthly`(1 表、6 列+`calculated_at`)。`p_average_results` と同じ「batch job が書き、API が読むだけ」の型 |
 | いつ更新するか | 別cron案を採る。ただし固定時刻差でなく対象回の全体再計算成功を確認して集計する（U5の成功証跡接続をP4前に確定）。月次集計であり日次ライブ値ではない |
-| 誰が見るか | require_viewer+既存hidden_pages。Free既定非表示を提案するが未裁定(U3)。PF非表示・symbolマスクを集約値から漏らさないTier方針を確定するまでviewer公開を有効化しない。admin確認は可能 |
+| 誰が見るか | 初期はGlobal hidden_pagesにlayer-holdingsを入れ全Tier+Free viewerを403/nav非表示、adminは既存規則で閲覧可。後日の殿裁定でGlobalから外す1運用操作により公開 |
 | 画面 | `/layer-holdings`。artifact 27c1995d(`docs/dashboard/layer-holdings-monthly.html`、`scripts/layer_holdings_render.py`)のレイアウトを Next.js に移植: layer タブ 5+期間 3(12/36/全)+積み上げ横棒+直近 3 ヶ月の生表 |
 | 段 | P1 結果表+job(readonly 検算付き) → P2 API → P3 ページ+nav+visibility id → P4 本番 deploy(殿 OK)+post_deploy_check。各段 1 cmd |
 
@@ -112,7 +112,7 @@
 | AC1 | P1 | 固定commitのCSVと同一入力snapshot/as-ofで3,525行・全key集合・pf_count・is_mtd一致、weight差max≤1e-9。更新済み本番入力に古いCSV値を強制しない |
 | AC2 | P1 | 各 (year_month, layer) で Σweight = 1.0 ± 1e-9 違反 0。pf_count ≤ 層の母集団(12/21/21/21、ALL 75) |
 | AC3 | P1 | 他表DML0。再実行は同入力ならcalculated_at以外一致。失敗/child欠損/並行実行で空・部分世代を公開しない。downは参照process停止後に新表だけを対象とする |
-| AC4 | P2 | 許可viewer200、global/Tier非表示viewer403、未認証は既存認証エラー、adminはページ認可通過。If-None-Match付きでも非表示403。payloadが一世代の新表と一致。初回空表503 |
+| AC4 | P2 | 初期Global非表示で全Tier+Free viewer403/nav非表示、adminは認可通過、未認証は既存認証エラー。If-None-Matchでもviewer403。Global解除後は既存Tier設定に従う。payloadは一世代の新表と一致、初回空表503 |
 | AC5 | P3 | `/layer-holdings` が SSR/CSR でエラー 0、nav に出る、hidden Tier では nav から消える。表示 weight の合計が各行 100%±0.1 |
 | AC6 | 全 | test_necessity付き契約testでAC1-5の不変量を覆う。件数を2本に固定して再帰/欠損/原子的更新/認可を省略しない。共通code同士の自己比較だけでなく独立正負fixtureを持つ。FAIL0/SKIP0 |
 | AC7 | P4 | 同一入力世代で本番結果と独立計算を全key突合、weight差≤1e-9。固定研究例2026-08 ALLはGLD=0.43944444444444436、XLU=0.38611111111111107、TMV=0.17444444444444446、pf_count75。丸めた.439/.386/.174を1e-6基準にしない。本番入力更新時は同世代で再検算 |
@@ -123,11 +123,11 @@
 |---|---|---|
 | U1 | 解消: 0f2bfbcdのcmd_4481_layer_holdings配下、3,525行・6列・全hashを§2.1に記録 | git show bytesで再計数済み |
 | U2 | 解消: folder代替案不採用。固定研究75 PFの名前集合/prefixを正本とする | folder一致は設計依存から外し、不要な本番取得を追加しない |
-| U3 | Free tier(hide_portfolio/hide_signal)に本ページを見せるか。PF 単位の値ではないので既存マスクは掛からない。既定=`hidden_pages` で Free から隠す | 殿裁定。既定案を §1 に置く |
+| U3 | 解消: 殿22:30裁定で初期はGlobal hidden_pagesにより全Tier+Free非表示。adminのみ閲覧可 | 後日の殿裁定でGlobalから解除する |
 | U4 | 解消: 共通layout配下でselectedId非依存のページを構成できる | §4.3とAC5で未選択/選択変更を試験 |
 | U5 | 別cron案は採用、対象回の全体再計算成功を示す永続証跡の取得方法は未確定 | accepted≠完了。statusの永続性・scope・失敗判定と接続箇所をR2で確定 |
 | U6 | 解消: 同月MonthlyReturn再帰。対象月行のない開始前PFは通常分母外、存在する親のchild欠損/循環/型不明は集計失敗 | 研究CLIのi7記録→continueと区別し、本番は欠損を正常な分母縮小に見せず旧結果保持。PF/月/理由をlogへ |
-| U7 | 公開artifactの表示一致は未確認（URL取得失敗）。ローカル同名HTML/生成器の構造は確認 | 将軍R2で公開artifactと同名HTMLの表示・世代一致を確認。本R1は見たと主張しない |
+| U7 | 解消: ローカルHTMLがそのまま発行された来歴を将軍確認。第三者向けHTML gistを新前提に採用 | 旧artifactのURL直接取得をレビュー依存にしない |
 
 **捨てたもの(再導入しない)**: Breadth/Aggregate Exposure の別表、asset class 集約、前月差 Δ、ticker 別の別ページ、グラフ library 追加、CSV を本番に同梱、管理画面からの手動再計算ボタン(recalculate-sync 既存で足りる)。
 
@@ -136,9 +136,14 @@
 | 版 | 時刻 | 誰 | 内容 | 残 |
 |---|---|---|---|---|
 | v0.1 | 22:20 | 将軍 | 起草。U1〜U6 | 家老 R1 待ち |
-| v0.2 | 22:24 | 家老 | 更新10点: 正本固定、同月再帰、job流用境界、cron完了判定、Tier漏洩境界、payload/ETag、原子的更新、PF非依存UI、rollback/変更量、全精度AC | U1/U2/U4/U6解消。残3件=U3/U5/U7 |
+| v0.2 | 22:24（22:40追補） | 家老 | 更新10点: 正本固定、同月再帰、job流用境界、cron完了判定、Tier境界、payload/ETag、原子的更新、PF非依存UI、rollback/変更量、全精度AC。Global hide裁定とHTML gistを追補 | U1/U2/U3/U4/U6/U7解消、残U5 |
 
 ## §8 因果リンク
+
+## §10 殿裁定（22:40記録）
+
+- 2026-09-06 22:30: 初期はL1 Global Page Visibilityで全Tier+Freeをhide。Settings/GlobalVisibilitySettingsのhidden_pages unionにlayer-holdingsを登録、admin閲覧可、viewer403/nav非表示。公開は殿裁定後、Globalの両保存元に当該idが残らないよう1運用操作で解除する。Tier設定は維持する。
+- 2026-09-06 22:34受領: wireframeはHTML gistを前提とする。冒頭の旧artifact取得失敗の留保は、発行者のローカルHTML来歴確認とU7解消により更新する。
 
 - ← [[殿指示_LayerHoldingsMonthly本番ページ_20260906_2207]]
 - ← [[dm-signal-market-direction-breadth-exposure-asis-tobe_20260905]] v1.1(1 表) ← [[dm-signal-research-data-foundation-asis-tobe_20260905]] F1
