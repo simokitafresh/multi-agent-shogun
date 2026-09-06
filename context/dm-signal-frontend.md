@@ -1,5 +1,6 @@
 # DM-signal フロントエンド コンテキスト（索引）
-<!-- last_updated: 2026-09-05 context_freshness reviewed source boundary -->
+<!-- last_updated: 2026-09-07 context_freshness reviewed source boundary -->
+<!-- source_commit:992eb7571d04 reason:context_freshness reviewed source boundary evidence:context_freshness_check context=context/dm-signal-frontend.md commit=992eb7571d04 -->
 <!-- source_commit:c8b347140eee reason:context_freshness reviewed source boundary evidence:context_freshness_check context=context/dm-signal-frontend.md commit=c8b347140eee -->
 <!-- source_commit:9ea93b896243 reason:context_freshness reviewed source boundary evidence:context_freshness_check context=context/dm-signal-frontend.md commit=9ea93b896243 -->
 <!-- source_commit:172b6d35e7f2 reason:2026-09-01 将軍doc lane: DOC_LANE_ALERT 4件(偽陽性=marker d87339a4 not ancestor of local clone)。実欠落(showcase API/showcase_events/LP cmd_4431-4437/login minimal/noindex)を追記し境界をorigin/main tipへ evidence:git -C /mnt/c/Python_app/DM-signal log d87339a4..origin/main = 88 commits; diff --stat backend/app = 4 files +621; grep反映 showcase_events/api\/public/cmd_4433 各>=1 -->
@@ -490,3 +491,6 @@ L122(キャッシュ無効化), L121(API実コード確認) → `context/dm-sign
 
 ## identity 保持(cmd_4477、2026-09-05)
 - `frontend/lib/user-id.ts`(visitor-id.ts と同型、key `dm_user_id`)、`/auth/callback` 成功時に session.user.id を保存し step `auth_completed`、`showcase-attribution.ts` の campaign_id を localStorage 優先(sessionStorage 後方互換)、pageview/showcase payload に user_id・campaign_id を値がある時だけ同送。cookie/Tier/verify-viewer は不変。source=campaign_id prefix(lp_core_/lp_simple_/x_)。→ `docs/research/dm-signal-core-simple-free-proof-asis-tobe_20260905.md` §M-1
+
+## §Layer Holdings ページ(cmd_4489、2026-09-07 本番 main 992eb757→b8741168)
+- `/layer-holdings`=monthly-returns page 型、PF 非依存、UI ガイド準拠(Inter/mono tabular/表 14px/カード不使用/新規 CSS 0)、SWR allowlist+PAGE_APIS prefetch、client pivot 0。Global hidden_pages で全 tier+free hide(admin のみ閲覧、viewer 403/nav 非表示)。ガイド=`docs/research/dm-signal-layer-holdings-ui-guide_20260906.md`(gist 6151078c)、wireframe gist 6ae60a9c
