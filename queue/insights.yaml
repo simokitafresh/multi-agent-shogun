@@ -20760,3 +20760,10 @@ insights:
   source: "semantic_index_update"
   fix_known: false
   status: pending
+- id: INS-20260907-000851884-f4bf
+  ts: "2026-09-07T00:08:51+09:00"
+  insight: "semantic_index_update新概念候補: discussion:task notification task id bwx112gro task id tool use id toolu 01Ab4gwoi2aa8dFQgb は 既存aliasesに一致なし。概念定義とaliases追加を検討せよ"
+  priority: "low"
+  source: "semantic_index_update"
+  fix_known: false
+  status: pending
