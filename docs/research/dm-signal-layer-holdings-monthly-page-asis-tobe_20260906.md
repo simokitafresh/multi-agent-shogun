@@ -1,5 +1,5 @@
 <!-- gist-master: b733364ac7dc058a20e7bd635e34ae73 dm-signal-layer-holdings-monthly-page-asis-tobe_20260906.md -->
-# DM-Signal 本番「Layer Holdings Monthly」ページ 新設 AsIs/ToBe 5W1H 設計書 v0.7(将軍 23:50 UI ガイド+表示速度。v0.6=家老R5)
+# DM-Signal 本番「Layer Holdings Monthly」ページ 新設 AsIs/ToBe 5W1H 設計書 v0.8(将軍 02:05 殿 P4 go。v0.7=UI ガイド+表示速度)
 
 - 殿指示 2026-09-06 22:07『今後本番に Layer Holdings Monthly ページを新規で作りたい。まずは asis/tobe 5W1H の設計書を作ろう。家老にレビューして更新してもらい、将軍がレビューしてさらに更新する。更新するべき点がなくなるまで続ける』。
 - 版履歴(歴史修正禁止のため記録のみ): v0.1 22:20 将軍起草(一次情報=DM-Signal repo 現物+研究 lane の成果物)。v0.1.1 22:22 殿指示『gist 共有、軍師には artifact も共有(前提情報のずれ防止)』→前提 artifact URL を本文に明記。
@@ -166,10 +166,12 @@ R3追加の月次接続契約（§4.4の続き）:
 | go | 23:19→23:33 | 殿→将軍 | 殿 23:19『Layer Holdings は go だ』。将軍が §9.1/§9.2/§9.3 を cmd_4487(P1 結果表+job)/cmd_4488(P2 API+readiness)/cmd_4489(P3 ページ)として起票・委任(23:29/23:33/23:33)。P1 は疾風へ配備済み(家老 23:31)。P4 は殿 OK 後の §9.4 runbook | 以後の本書更新は実装結果の反映のみ |
 | P1 ✅ | 00:23 | 疾風 cmd_4487 | GATE CLEAR。branch feat/layer-holdings-P1 932d926d(main 反映なし、deploy_forbidden 登録)。AC1: 固定 JSON dry-run rows=3525 groups=912 db_reads=0、研究 CSV 全 key 一致、max_weight_diff=4.44e-16 / AC2: violations=0 / AC3: 契約 test 4 passed。gate WAIT 1 回=cross_repo_commits に非 main 公開 branch と deploy_forbidden を宣言していなかった(F-19 後の契約)→是正 | P2 影丸 done(軍師 review)、P3 才蔵 走行。統合段は 3 本揃ってから |
 | P2 ✅ | 00:31 | 影丸 cmd_4488 | GATE CLEAR。branch feat/layer-holdings-P2 43dffc22(main 反映なし)。AC4 認可 7 通り/AC5 readiness 正負 8 通り+409/200/AC6 契約 test: task runner 13/13 PASS SKIP 0。AC4c 表示速度: queries=1 gzip_bytes=8970 etag_304=true p95_ms=82.64(目安 ≤200KB・≤100ms を満たす) | 残=P3 才蔵(AC5/AC5b/AC6)。統合段は P3 後に家老 1 回 |
+| P4 go | 02:02 | 殿→将軍 | 殿 02:02『Layer Holdings P4 は go だ』。§9.4 runbook を家老 lane で着手(将軍下知 02:05)。前提=統合段 AC4c p95 是正(閾値 100ms 不変)+frontend test PASS を先に閉じる | 以後は §9.4 の順序 2〜9 の二値結果を §7 へ追記 |
 | P3 ✅ | 01:39 | 才蔵 cmd_4489 | GATE CLEAR。branch feat/layer-holdings-P3-saizo 08f68e39(main 反映なし)。UI ガイド(gist 6151078c)+AC5b(SWR allowlist/PAGE_APIS/client pivot 0)適用。gate BLOCK 2 回=receipt 形式と親 command の『docs/faq』表記(家老が『既存ドキュメントページと FAQ ページの型』へ訂正) | 統合段(家老、3 branch→feat/layer-holdings-integrated、契約 test 全本+固定 JSON dry-run 再実行)を 01:44 指示。P4 は殿 OK 待ち |
 
 ## §8 因果リンク
 
+- v0.8 2026-09-07 02:05 将軍。殿 02:02『Layer Holdings P4 は go だ』→§7 P4 go 行、§10 裁定追記、§9.4 手順 1 を充足扱い。
 - v0.7 2026-09-06 23:50 将軍。殿 23:43/23:45/23:48『デザインは DM-Signal に合わせる。フォント・サイズ・コントラスト・カード不使用のガイドを渡せ。設計書も更新。表示速度も他ページ同様パッと出るように』→§4.3 に UI ガイド参照と表示速度の設計(§4.5 新設)、§9.2 AC4c/§9.3 AC5b/§9.4 手順 7b を追加。
 R5履歴（v0.6、2026-09-06 23:08家老）: 更新3点=固定JSONの実キー/列/件数確定、mode=portfolio負例の矛盾是正、解消済み配備懸念の文言更新。固定入力はhash一致・parse成功。残る設計上の未確定事項なしと判断するが、更新ありのため将軍R6で再確認する。
 
@@ -251,6 +253,7 @@ R3履歴（v0.4、2026-09-06 22:50家老）: 更新6点=modeとscope分離、sum
 ## §10 殿裁定（22:40記録）
 
 - 2026-09-06 22:30: 初期はL1 Global Page Visibilityで全Tier+Freeをhide。Settings/GlobalVisibilitySettingsのhidden_pages unionにlayer-holdingsを登録、admin閲覧可、viewer403/nav非表示。公開は殿裁定後、Globalの両保存元に当該idが残らないよう1運用操作で解除する。Tier設定は維持する。
+- 2026-09-07 02:02: 『Layer Holdings P4 は go だ』。§9.4 手順 1(殿 OK)充足。本番 DDL(P1 migration)+BE/FE deploy+admin batch 実行を許可。Global hide は維持し公開は別裁定。
 - 2026-09-06 22:34受領: wireframeはHTML gistを前提とする。冒頭の旧artifact取得失敗の留保は、発行者のローカルHTML来歴確認とU7解消により更新する。
 
 - ← [[殿指示_LayerHoldingsMonthly本番ページ_20260906_2207]]
