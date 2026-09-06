@@ -17502,3 +17502,17 @@ sqlite3.Connection.backup()を使うとページ(4096byte)単位のread syscall�
 - **when**: 未設定
 - **how**: 未設定
 - chronicle/senkyoku由来の「^- <key>: で始まる行をブロック境界とする」正規表現union手法を8ファイルへ拡張適用した際、7ファイルは正しく機能したがlogs/gunshi_review_log.yamlだけ232ブロック検出(実体はyaml.safe_load基準で398エントリ)という46%の過小カウントを起こした。原因はこのファイルのみ一部エントリが1行目にcmd_id以外のkeyで始まる/コンパクト書式が混在し、正規表現の暗黙の一様フォーマット仮定が崩れたため。対策: 複数エントリ形式が混在しうるYAMLファイルのブロック分割は最初からyaml.safe_load(構造比較用)+yaml.compose(start_mark/end_mark line番号取得、原文バイト保持用)の併用を既定手法にし、正規表現ブロック分割は結果をyaml.safe_loadのトップレベル長(または該当キー配下のlist長)と必ず突合してから信頼する。突合せずに正規表現の出力件数を報告に使うと、無言の過小/過大カウントがそのまま報告書へ混入する。origin: [[cmd_karo_recon2_f15_integration_stage_20260906]] -> [[gunshi_review_log_block分割過小カウント]] -> [[yaml構造比較への切替]]
+
+
+### L1770: terminal readinessの空lessons_useful許可判定は、必ずlesson_feedback_set_statusと同じdeploy-time snapshot優先契約を使え。live task file直読みは worker lease再配備で矛盾する
+- **日付**: 2026-09-06
+- **出典**: cmd_karo_hotfix_report_lesson_boundary_20260906
+- **記録者**: kotaro
+- **tags**: [infra,testing,db,deploy,gate]
+- **subdomain**: infra
+- **target_files**: [scripts/lib/report_gate_contract.py,scripts/report_field_set.sh,tests/unit/test_report_field_set_batch.bats]
+- **origin**: [[cmd_karo_hotfix_report_lesson_boundary_20260906]]
+- **enforcement**: 未自動化
+- **when**: 未設定
+- **how**: 未設定
+- report_field_set.sh --batchのtask_allows_empty_lessonsは、同じ「空lessons_useful妥当性」を判定するreport_gate_contract.lesson_feedback_set_statusとは別のロジック(現行worker task fileのrelated_lessons直読み、RFS_TASK_FILE_PATH/snapshot無視)を持っていた。worker lease再配備(同workerへ新task deploy)後にterminalとfeedbackの判定が矛盾する構造的バグとなり、飛猿P07のような正当な完了が誤ってBLOCKされる原因になった。同一目的の判定ロジックを複数箇所に持つ場合、一方をsnapshot優先で修正する際は他方も横展開して確認せよ。また、identity一致判定を新用途に流用する際は、既存の全量テストで回帰(legacy fixtureの誤BLOCK)がないか必ず実測せよ(narrow化が必要な場合がある)。
