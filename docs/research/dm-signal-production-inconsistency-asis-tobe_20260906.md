@@ -13,8 +13,8 @@
 
 ## 進捗ビジュアル(将軍 loop 更新 2026-09-06 14:45)
 
-**全項目(I1〜I8)** `░░░░░░░░░░ 0/8` ✅完了 🟡走行中 ⏳待ち 🔴要判断
-状態集計: ✅ 0 / 🟡 0 / ⏳ 6 / 🔴 2(表の 8 行)
+**全項目(I1〜I9)** `░░░░░░░░░░ 0/9` ✅完了 🟡走行中 ⏳待ち 🔴要判断
+状態集計: ✅ 0 / 🟡 0 / ⏳ 6 / 🔴 3(表の 9 行)
 次の一手: 家老 R2(v0.3)→読取偵察 親 cmd(成果物 A/B、readonly、共通 snapshot)起票→I6 隔離実験・I4 dry-run→殿裁定 2 点
 
 | # | 不整合 | 状態 | 現在値 |
@@ -27,6 +27,7 @@
 | I6 | display_ticker_weights 非 unit 35 行・parity 不一致 29/2,096 | 🔴 殿裁定 | 根因=price_ratio_impl L1237-1250 の選択後再正規化不在。正本を F1 再帰規則にする(A10)か display を直すか |
 | I7 | component holding_signal 欠落で展開不能 | ⏳ | 実測 0(cmd_4479/4483)。監視化のみ |
 | I8 | 新四つ目 3 体 parity 不一致(102+2) | ⏳ | 母集団除外で決着(殿 11:46)。残 2=2014-04 初月の root signal 不在=偵察 |
+| I9 | 本番 tree(08-04 版)と文書の乖離 | 🔴 文書訂正 | 08-13 rollback で backend 139 commit(T7.5 含む)が現本番に無い。backlog B2/PI-P06 を訂正 |
 
 ## §1 読み方
 各 I について (a) 事象と証拠 (b) 本番での影響(誰が何を見るか) (c) 改善案 (d) 改善時に本番で起きる変化 (e) 影響範囲(table/file/API/UI) (f) 依存関係 (g) 検証方法 (h) 未検証事項 を書く。証拠の行番号は origin/main 0f2bfbcd。
@@ -108,6 +109,15 @@
 - (e) 影響範囲: `recalculate_fof.py` の初月処理、monthly_returns generator。
 - (f) 依存: 独立。I1 の DROP より先。
 - (h) 未検証: 一般化件数(2 件が新四つ目固有か全 FoF 共通か)。
+
+### I9(v0.3 追加) 本番 tree と設計文書の乖離: 08-13 rollback で 08-05〜08-12 の backend 変更 139 commit が現本番に無い
+- (a) 事象: DM-Signal origin/main の `backend/app/services/signal_decision_ledger.py` は 21e80e30(2026-08-04)と**同一**、T7.5 c13a56fe(08-12『downgrade ledger guard to detect-only』)とは**不一致**(14:2x 将軍 `git diff --quiet` 確認)。`233c2303`(08-13『rollback: restore production tree to 21e80e30』)が本番 tree を 08-04 へ戻したため、`21e80e30..233c2303^` で backend/app を触った **139 commit**(T7.5 の 2 本、T3.6、run297『normalize signal change log insert rows』、l2_expansion_reuse、run302/303 hotfix 等)は現本番コードに存在しない。rollback 後に同 2 file を再適用した commit は 0。
+- (b) 本番影響: 挙動としては 08-04 版が本番の正=殿裁定 08-16『バグを直さず復帰点へ戻す』の結果であり、コード自体は不整合ではない。**不整合は文書側**: backlog B2『08-12 T7.5 は guard detect-only 化と alert 撤去』、本書 v0.1 の I2/I4 記述、`projects/dm-signal.yaml` PI-P06 周辺は、現本番に無いコードを前提にしている可能性がある。I2 の『run297 normalize change log insert rows』も現本番に無いため、change_log の重複挙動は 08-04 版のもの。
+- (c) 改善案: 本書と backlog・PI の該当記述に「現本番=08-04 版(233c2303)」の注記を付け、T7.5 等は『適用済み』ではなく『rollback で未適用(再適用は別裁定)』へ訂正。139 commit の再適用可否は本書の範囲外(別設計書、殿裁定)。
+- (d) 改善時の本番変化: 文書訂正のみ=なし。
+- (e) 影響範囲: `docs/research/dm-signal-research-data-backlog_20260905.md` B2、本書 I2/I4、`projects/dm-signal.yaml` PI-P06、`context/dm-signal-ops.md` の該当 §。
+- (f) 依存: I2/I4 の全記述の前提。偵察 cmd の担当忍者へ「本番コードは 21e80e30 相当」を明示する。
+- (h) 未検証: 139 commit のうち docs/PI が『適用済み』として参照しているものの一覧。
 
 ## §3 依存関係と順序(v0.3、家老 R1-6 採用)
 
