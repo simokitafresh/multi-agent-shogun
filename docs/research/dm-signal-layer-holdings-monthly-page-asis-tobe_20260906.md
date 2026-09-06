@@ -198,7 +198,7 @@ R3履歴（v0.4、2026-09-06 22:50家老）: 更新6点=modeとscope分離、sum
 
 ### §9.3 cmd P3: ページ+nav+visibility(frontend) — **cmd_4489(委任 23:33)**
 
-- **UI デザイン(殿 23:43『DM-Signal に合わせる』→将軍判断: 今やる。P3 は 23:35 着手直後で手戻り最小)**: wireframe(gist 6ae60a9c)は**情報構造の正本**(layer タブ 5/期間 3/積み上げ横棒/pf_count/直近 3 ヶ月表/MTD)であり、**見た目は DM-Signal 既存 UI が正本**。`frontend/components/ui/`(glass-card / page-header / button / folder-filter-chip / skeleton / loading / message-banner / select)と `frontend/app/monthly-returns/page.tsx` の layout(`mx-auto min-h-[400px] w-full max-w-[1100px]`)・Tailwind トークン・既存 ticker 色を使い、wireframe 固有の CSS(`PALETTE`、独自 .tab/.bar クラス)は持ち込まない。新規 CSS/色トークン 0。契約 AC5 の 6 要素は不変。
+- **UI デザイン(殿 23:43『DM-Signal に合わせる』→将軍判断: 今やる。P3 は 23:35 着手直後で手戻り最小)**: wireframe(gist 6ae60a9c)は**情報構造の正本**(layer タブ 5/期間 3/積み上げ横棒/pf_count/直近 3 ヶ月表/MTD)であり、**見た目は DM-Signal 既存 UI が正本**。`frontend/components/ui/`(page-header / button / folder-filter-chip / skeleton / loading / message-banner / select。**カードは使わない=glass-card 不使用**、余白で区切る)と `frontend/app/monthly-returns/page.tsx` の layout(`mx-auto min-h-[400px] w-full max-w-[1100px]`)・Tailwind トークン・既存 ticker 色を使い、wireframe 固有の CSS(`PALETTE`、独自 .tab/.bar クラス)は持ち込まない。新規 CSS/色トークン 0。契約 AC5 の 6 要素は不変。**UI ガイド(殿 23:45、フォント/サイズ/コントラスト/カード不使用/レイアウト/やらないこと)=`docs/research/dm-signal-layer-holdings-ui-guide_20260906.md`**(才蔵は §5 の順で読む)。
 | 項目 | 値 |
 |---|---|
 | task_type | implement(DM-Signal frontend) |
