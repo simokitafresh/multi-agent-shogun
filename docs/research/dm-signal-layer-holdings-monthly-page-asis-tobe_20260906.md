@@ -1,5 +1,5 @@
 <!-- gist-master: b733364ac7dc058a20e7bd635e34ae73 dm-signal-layer-holdings-monthly-page-asis-tobe_20260906.md -->
-# DM-Signal 本番「Layer Holdings Monthly」ページ 新設 AsIs/ToBe 5W1H 設計書 v0.6(家老R5)
+# DM-Signal 本番「Layer Holdings Monthly」ページ 新設 AsIs/ToBe 5W1H 設計書 v0.7(将軍 23:50 UI ガイド+表示速度。v0.6=家老R5)
 
 - 殿指示 2026-09-06 22:07『今後本番に Layer Holdings Monthly ページを新規で作りたい。まずは asis/tobe 5W1H の設計書を作ろう。家老にレビューして更新してもらい、将軍がレビューしてさらに更新する。更新するべき点がなくなるまで続ける』。
 - 版履歴(歴史修正禁止のため記録のみ): v0.1 22:20 将軍起草(一次情報=DM-Signal repo 現物+研究 lane の成果物)。v0.1.1 22:22 殿指示『gist 共有、軍師には artifact も共有(前提情報のずれ防止)』→前提 artifact URL を本文に明記。
@@ -102,6 +102,17 @@
 - 変更境界: 新ページ1つと既存nav/admin/clientの登録、300行/各15行は見積。frontend/app/layout.tsx:70-82の共通provider内でページ自身はselectedIdを参照しない。未選択/選択変更でも同じ表。401/403/未集計/取得失敗/古い集計日時を区別する(U4解消)。
 - グラフ library は足さない(横棒は div の width で描く。artifact と同じ)。
 
+### §4.5 表示速度(殿 23:48『他のページと同様にパッと表示』。既存機構の流用のみ、新規機構 0)
+
+| 層 | 既存機構(現物) | 本ページでの使い方 |
+|---|---|---|
+| サーバ | 結果表は集計済み(job が月 1 回書く)。GET は 1 表の SELECT のみ、計算なし。`make_response_with_etag`(ETag/304) | 1 query(ORDER BY year_month, layer, ticker)→pivot は Python で 1 pass。payload は丸めなし JSON ≈150KB(gzip 後 ≈30KB 見込み、AC4c で実測)。304 で本文 0。DB の同表を読むだけなので p95 ≤100ms(TestClient、4k 行)を AC |
+| クライアント cache | `frontend/lib/api-client.ts` `isSWRTarget()`(L342-355: 対象 path は stale-while-revalidate=cache を即返し裏で再取得) | `/api/layer-holdings` を allowlist に 1 行追加。2 回目以降は cache 即描画 |
+| prefetch | `frontend/hooks/usePrefetch.ts` `PAGE_APIS`(page 単位で低優先度 prefetch) | `app/layer-holdings/page.tsx` に `PAGE_APIS=[{GET /api/layer-holdings}]` を定義し、nav hover/前ページ滞在中に温める(monthly-returns と同型) |
+| 描画 | `useDelayedLoading(300ms)` skeleton、client pivot なし(API が pivot 済み) | 初回描画は JSON→DOM のみ。棒は ≤ 200 行(12/36 ヶ月)を描き、全期間(198 ヶ月)も仮想化なしで可(DOM 行 ≈ 200×8 seg) |
+| 静的 | render.yaml FE: 静的 asset immutable、HTML must-revalidate | 追加なし |
+| 計測 | CDP(`scripts/cdp/cdp_measure.sh`、cmd_4416 post_deploy_check の型) | P4 手順 7b: `/layer-holdings` と `/monthly-returns` の LCP/TTFB を同一 CDP run で計測し、layer-holdings が monthly-returns の +20% 以内。超えたら公開せず原因(payload/pivot/描画)を特定 |
+
 ### §4.4 P4 本番
 
 - 順序: 殿OK→DDL up→新BE/API/job配備→初回job→認可を含むAPI確認→FE配備→承認済みTier設定→post_deploy_check。失敗時は公開停止・cron停止→FE/BEを旧版へ→新表を参照するprocessが無いことを確認→必要時だけdown。表を先に落とさない。
@@ -151,10 +162,12 @@ R3追加の月次接続契約（§4.4の続き）:
 | v0.5 | 23:08 | 将軍 R4 | 配備懸念 2 点を確定: 固定入力=0f2bfbcd input_snapshot_raw.json(`--input-json`)、readiness=services/layer_holdings_readiness.py(+契約 test 6 通り)。公開 c39d171ae | 残 U 0・配備懸念 0 |
 | v0.6 | 23:08 | 家老 R5 | 固定 JSON を実測(portfolios 101/monthly 16,298/欠落列 0/対象 75 不足 0/重複 0)。更新 3 点: 実キー monthly と列・件数確定、mode=portfolio 負例の是正、配備懸念文言更新。公開 227526668 | 設計上の未確定なし。将軍 R6 へ |
 | R6 | 23:14 | 将軍 | v0.6 の 3 点を diff で確認、いずれも現物実測に基づく訂正で採用。本 R6 で追記したのは §7 台帳の v0.4〜v0.6 行(家老版で欠けていた記録の補完)のみで設計本文の変更 0。**更新点なし=往復終了(殿指示 22:07 の終了条件)**。v0.6 本文を最終版とする | 次=殿の go。go 後に §9.5 の順で家老が P1/P2/P3 を 3 名並行配備 |
+| v0.7 | 23:50 | 将軍 | 殿 23:43/45/48: UI は DM-Signal 既存規約(ガイド gist 6151078c)、表示速度は既存 SWR allowlist+PAGE_APIS prefetch+ETag+集計済み表の流用で「パッと表示」(§4.5 新設、AC4c/AC5b/手順 7b 追加)。新規機構 0 | 家老へ task 4488/4489 の AC 追記を依頼 |
 | go | 23:19→23:33 | 殿→将軍 | 殿 23:19『Layer Holdings は go だ』。将軍が §9.1/§9.2/§9.3 を cmd_4487(P1 結果表+job)/cmd_4488(P2 API+readiness)/cmd_4489(P3 ページ)として起票・委任(23:29/23:33/23:33)。P1 は疾風へ配備済み(家老 23:31)。P4 は殿 OK 後の §9.4 runbook | 以後の本書更新は実装結果の反映のみ |
 
 ## §8 因果リンク
 
+- v0.7 2026-09-06 23:50 将軍。殿 23:43/23:45/23:48『デザインは DM-Signal に合わせる。フォント・サイズ・コントラスト・カード不使用のガイドを渡せ。設計書も更新。表示速度も他ページ同様パッと出るように』→§4.3 に UI ガイド参照と表示速度の設計(§4.5 新設)、§9.2 AC4c/§9.3 AC5b/§9.4 手順 7b を追加。
 R5履歴（v0.6、2026-09-06 23:08家老）: 更新3点=固定JSONの実キー/列/件数確定、mode=portfolio負例の矛盾是正、解消済み配備懸念の文言更新。固定入力はhash一致・parse成功。残る設計上の未確定事項なしと判断するが、更新ありのため将軍R6で再確認する。
 
 R3履歴（v0.4、2026-09-06 22:50家老）: 更新6点=modeとscope分離、summary成功根拠、interrupted/正常returnの失敗区別、古い成功へのfallback防止、UTC日付整合、再計算との排他。R2の「mode full+completedなら十分」「+6行」「JSTのままwait流用」は本仕様で訂正。将軍R4へ、未実装の受入検証は上記6項目。
@@ -194,7 +207,7 @@ R3履歴（v0.4、2026-09-06 22:50家老）: 更新6点=modeとscope分離、sum
 | GET の順序(固定) | `limiter` decorator → `require_viewer`(Depends) → `enforce_page_visible(db, "layer-holdings", is_admin, tier_id)` → 読取 → `make_response_with_etag`。If-None-Match でも認可を先に通す(viewer hidden なら 304 ではなく 403) |
 | POST /admin/layer-holdings(固定) | require_admin。§4.4/R3共通readinessを使う。対象月初runのsummary.scope=all、必要coverage、completed、cancelled=false、errors=0、start/end時刻と後続未完了runなしを検証。mode fullで全PFと推測せず全PF portfolioを許可。同じ再計算advisory lockを保持して判定・snapshot読取・job commitまで行い、未適格409。成功はrows/calculated_at/source_recalc_idを返す |
 | sync-status `L4_recalc`(固定) | 同じreadinessを使用し適格時だけend_timeのUTC日付をlast_success_dateへ。不適格はnull、runningをlockedへ。既存wait scriptのUTC TODAYと一致させる。過去成功だけを検索して後続失敗を隠さない |
-| AC(二値) | AC4は§5の認証/global hide/ETag/空表。AC4bは全PF portfolio成功を許可、特定PF full・summary欠落・cancelled/errorsあり・古い成功後の新失敗・runningを409。UTC/JST境界とロック競合も検証。成功時source_recalc_id一致。FAIL0/SKIP0 |
+| AC(二値) | **AC4c(表示速度、殿 23:48)**: GET は結果表 1 query のみ(SQL log で 1 文)、pivot 済み payload、gzip 後サイズを実測記録(目安 ≤200KB)、ETag 一致で 304 本文 0、TestClient で 4k 行の p95 ≤100ms(生出力 `queries=1 gzip_bytes=<n> etag_304=true p95_ms=<n>`)。AC4は§5の認証/global hide/ETag/空表。AC4bは全PF portfolio成功を許可、特定PF full・summary欠落・cancelled/errorsあり・古い成功後の新失敗・runningを409。UTC/JST境界とロック競合も検証。成功時source_recalc_id一致。FAIL0/SKIP0 |
 
 ### §9.3 cmd P3: ページ+nav+visibility(frontend) — **cmd_4489(委任 23:33)**
 
@@ -205,7 +218,7 @@ R3履歴（v0.4、2026-09-06 22:50家老）: 更新6点=modeとscope分離、sum
 | 依存 | §9.2 の payload 形(固定なので **P1/P2 と並行可**。開発中は fixture JSON=`0f2bfbcd` CSV を `scripts/layer_holdings_render.py:48-69` と同じ pivot で作ったもの) |
 | planned_paths | `frontend/app/layer-holdings/page.tsx`(新規)、`frontend/components/sidebar.tsx`・`frontend/components/mobile-menu.tsx`(Monthly Returns の直後に id `layer-holdings` label `Layer Holdings` href `/layer-holdings` 各 1 項目)、`frontend/app/admin/visibility/page.tsx:46` 付近に `{ id: "layer-holdings", label: "Layer Holdings", group: "Core" }`、`frontend/lib/api-client.ts`(`getLayerHoldings()` 1 関数、`/api/layer-holdings`)、`frontend/app/__tests__/layer-holdings.test.tsx`(契約 test) |
 | 画面(固定) | wireframe gist 6ae60a9c(`docs/dashboard/layer-holdings-monthly.html`、multi-agent-shogun repo)と同じ: layer タブ 5(既定 ALL)+期間 3(12/36/全、既定 12)+積み上げ横棒(ticker 色は既存 palette があればそれ、無ければ HTML の `PALETTE`)+右端 pf_count+直近 3 ヶ月の生表+`is_mtd` 月は薄く MTD バッジ。PF 選択(`useSignals().selectedId`)を参照しない。状態 4 種を区別: 401/403(既存 error 表示)、503(『集計待ち』)、取得失敗(retry)、正常 |
-| AC(二値) | AC5: `next build` エラー 0、fixture で描画し各行の weight 合計 100%±0.1(生出力: `rows=<n> sum_violations=0`)、hidden Tier の `hiddenPages` に `layer-holdings` があれば nav に出ない、admin では出る、未選択/選択変更でも表が同じ / AC6: 契約 test = 合計 100% と nav 非表示の 2 本、FAIL 0 SKIP 0 |
+| AC(二値) | **AC5b(表示速度+UI ガイド、殿 23:45/23:48)**: `api-client.ts isSWRTarget()` に `/api/layer-holdings` を追加、`PAGE_APIS` に GET /api/layer-holdings を定義(monthly-returns と同型)、client 側 pivot 0、skeleton は `useDelayedLoading(300)`、UI ガイド(`docs/research/dm-signal-layer-holdings-ui-guide_20260906.md` §1-§4)準拠=新規 CSS/色トークン/フォント/カード 0(生出力 `swr_allowlist=true page_apis=1 client_pivot=0 new_css_files=0 glass_card_refs=0`)。AC5: `next build` エラー 0、fixture で描画し各行の weight 合計 100%±0.1(生出力: `rows=<n> sum_violations=0`)、hidden Tier の `hiddenPages` に `layer-holdings` があれば nav に出ない、admin では出る、未選択/選択変更でも表が同じ / AC6: 契約 test = 合計 100% と nav 非表示の 2 本、FAIL 0 SKIP 0 |
 
 ### §9.4 cmd P4: 本番投入(家老 lane、殿の明示 OK 後)
 | 順序 | 操作 | 確認(二値) |
@@ -217,6 +230,7 @@ R3履歴（v0.4、2026-09-06 22:50家老）: 更新6点=modeとscope分離、sum
 | 5 | `POST /admin/layer-holdings`(admin) | 200、同世代入力から導出した期待rows、`source_recalc_id` あり。409ならreadiness理由を返し旧結果保持 |
 | 6 | `GET /api/layer-holdings`: admin 200 / viewer 403 | AC4 |
 | 7 | AC7: 本番 payload と `0f2bfbcd` CSV を同世代で全 key 突合(weight 差 ≤1e-9、2026-08 ALL GLD=0.43944444444444436 / XLU=0.38611111111111107 / TMV=0.17444444444444446 / pf_count 75) | 不一致 0 |
+| 7b | CDP で `/layer-holdings` と `/monthly-returns` の LCP/TTFB を同一 run で計測(`scripts/cdp/cdp_measure.sh <cmd> --pages /layer-holdings /monthly-returns`) | layer-holdings の LCP ≤ monthly-returns ×1.2。超過なら公開せず原因特定 |
 | 8 | render.yaml cron `dm-signal-layer-holdings`(`35 9 1 * *`、`bash scripts/etl_layer_sync_wait.sh L4_recalc layer-holdings`)を有効化 | Render に cron が見える |
 | 9 | post_deploy_check を `docs/research/cmd_4416_post_deploy_check.md` の型で記録 | 記録 commit |
 | 失敗時 | 公開停止(Global hidden 維持)・cron 停止→FE/BE 旧版へ→新表参照 process 0 を確認→必要時のみ `alembic downgrade -1` | 表を先に落とさない |
