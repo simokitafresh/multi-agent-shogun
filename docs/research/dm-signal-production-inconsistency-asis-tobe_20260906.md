@@ -1,5 +1,5 @@
 <!-- gist-master: 2f1a3daa07c336c90958b1287245318b dm-signal-production-inconsistency-asis-tobe_20260906.md -->
-# DM-Signal 本番不整合 I1〜I9 — 現況・配備カード・データフロー・カタログ・因果・改善影響・ledger 判断 統合設計書 v1.11(2026-09-06 19:38)
+# DM-Signal 本番不整合 I1〜I9 — 現況・配備カード・データフロー・カタログ・因果・改善影響・ledger 判断 統合設計書 v1.12(2026-09-06 20:24)
 
 - 発端: 殿 2026-09-06 14:11『dm-signal-research-data-backlog_20260905.md を参考に DM-signal の本番の不整合について深く調査しよう。家老と繰り返しレビュー交換をせよ。本番の不整合、それによる影響、改善時にどのような変化が本番に起きるか、改善の影響範囲・依存関係なども明確にせよ』。以後の殿指示: 14:44 データフロー、14:45 ユーザー可視/内部/デッドコード、14:47 設計の因果、14:59 ledger 協議、15:06 時系列、15:15 可視変化の定量化、15:33 3 設計書並列、15:56 配備・進捗運用版(家老)、16:33 単一スタイルへ再構築。
 - 読む順: §2(現況)→§3(配備カード)→§5(カタログ)→§9(改善影響)→§10(ledger)。図は §4、根拠は §5〜§7、順序と契約は §8、裁定は §11、往復は §12、版は §13。
@@ -91,6 +91,8 @@ cmd_4484 世代2の**報告値**。オフライン検証出力は確認済みだ
 | I4 | 18:04 | backfill plan を B 系へ投入=258 行、同一 plan の 2 回目投入で追加 0 行 | 同一部分集合・同一 plan での追加行 0 の観測に限定。全 ledger 対象・値不変・訂正 event・他期間の冪等性は未承認。対象 DB/plan hash/対象 PF-月は AC3 再走で添える |
 | 追加 readonly | 18:07 | 将軍裁定: 全期間 price/calendar 等の追加 readonly 取得を 1 回許可 | 条件: 不足 manifest 先行、既存 5 表と 215 行 prices は再取得禁止、nonce 付き readonly_query のみ、本番書込 0。§2.1 の『裁定依頼済み(18:06)』はこの裁定で解消、AC1『1 回だけ』は前 flight 用+全期間用の 2 回へ改訂 |
 | 追加 readonly(続) | 18:22 | 影丸の 2 回目取得が全期間でなく直近 12 ヶ月(2025-09〜2026-08、1,020 PF-月、API 1,194 行・error 48)に限定されていた=パラメータ空間縮小。家老が追加取得を停止、実全期間の不足 manifest と error 原因を指示 | 将軍 18:25: 12 ヶ月取得は許可 1 回に数えない。再開は manifest を家老が確認してから 1 回。12 ヶ月分は『部分集合 2』として保存 |
+| I4(全履歴 B) | 20:0x | cmd_4485 commit a638572d `i4_deprecation_no_loss.md`: 全履歴で B 系 backfill 14,450 行投入、2 回目 0(同一 plan の追加 0)、本番書込/再計算/deploy 0。A/B 差分は `full_i4_ab_diff.csv` | 殿裁定 19:35(保護要件なし)の下で『休眠 lane を廃止しても保護対象を失わない』確認。復活/DROP 提案なし。A/B 差分は隔離観測であり本番の可視変化ではない |
+| I6(全期間) | 20:0x | `i6_result.md`: AC1 の single readonly input が 1 PF-月(015e74dc、2025-09)しか materialize せず、全期間の PF-月数・分布・return 差は **unknown のまま**。非 unit B 経路 2/2 は同 PF-月で発生 | 08-06 旧 35 行の再現/反証は未宣言。家老 RC(WITH_CONCERNS)→AC2 全期間再走を再配備(将軍 20:22 ナッジ) |
 
 ## §3 配備カード P01〜P10(本表+参照§ が一組)
 
@@ -446,7 +448,7 @@ I7: 監視 1 行(独立)
 
 | # | 未確定 | 誰が埋めるか |
 |---|---|---|
-| U1 | I4 backfill script(dry-run plan)投入で動く量を 5 種別に: ①ラベル ②decision_ticker_weights の weights/return ③境界日 ④MonthlyTrade 置換 ⑤API 応答 | cmd_4485 A/B(P06 の入力) |
+| U1 | I4 backfill script(dry-run plan)投入で動く量を 5 種別に: ①ラベル ②decision_ticker_weights の weights/return ③境界日 ④MonthlyTrade 置換 ⑤API 応答 | cmd_4485 A/B(P06 の入力)。20:0x: 全履歴 B 14,450 行の `full_i4_ab_diff.csv` あり(⑤API 軸は unknown_api_not_started)。B 方向確定後は『廃止で失うものが無い』確認として扱う |
 | U2 | I6 非 unit 行の再現条件(選択外 weight / 欠損 child)と発生時の return 差 | cmd_4485(P05)。前 flight で『候補経路の発生可能性』を実証(意図的入力変形、Σ=0.75/0.833)。本番での自然発生条件と return 差は全期間入力後も unknown のまま数える |
 | U3 | I2 unknown 33,697 行の run/job/cache 世代識別(識別子が無い) | P02 追補(snapshot に無い列=本番 log か次世代 snapshot が要る) |
 | U4 | I1 の 8 列を WeightBreakdown が表示しているか(列ごと) | P07 静的 grep |
@@ -553,6 +555,7 @@ I7: 監視 1 行(独立)
 | R16 | 19:04 | 殿 18:51『目的は何か。調査に集中しすぎて先延ばししていないか。家老と協議』→将軍点検(P07/P09/P08-I7 が 15:57 から未配備=先延ばし)→家老同意・3 カード配備(飛猿/才蔵/疾風)。影丸 4485 failed 再発の理由=snapshot UUID と manifest の不一致を件数一致で通したため→家老 D0 修正・固定 query 1 回の readonly を家老が明示 OK | §3/§8.1 第 0 弾を v1.9 で反映、家老 R16 レビュー依頼 | v1.9 |
 | R17 | 19:28 | 家老 R16: 第 0 弾の配備整合 APPROVE。§8.1 の I2 前提に逆向きペア正当性未判定(U9)を含める。影丸は取得済みで停止していたため全期間計測へ再開、小太郎 F-15 統合段 CLEAR(19:24)、疾風 I7 は隔離実装のみ=main 公開しない。家老から『I7 成果受入 gate が main 包含を要求する場合の完了経路』の協議依頼→将軍 19:31 回答: 非 main branch 保全+gate 側修正(§8.1) | v1.10 | v1.10 |
 | R18 | 19:38 | 殿裁定 19:35: ①保護要件は無い(個人 PJ、部分閲覧を許可する仕組み)→I4 は今 C・方向 B で確定、A は候補から外す ②note 下書きは gist 95e8ccce→repo へ取込(docs/research/notes/)。§10 推奨・§11 を更新 | 家老へ P06 主題を B 段階設計へ変更する下知 | v1.11 |
+| R19 | 20:24 | cmd_4485 影丸 全期間報告(commit a638572d)→家老 RC(WITH_CONCERNS): AC3 は全履歴 B 14,450 行で B 前提の no-loss 確認、AC2 I6 は input 1 PF-月のみで unknown 継続。§2.3.1 に 2 行追記、U1 更新 | AC2 再配備ナッジ 20:22 | v1.12 |
 
 ## §13 版の保全と改訂履歴
 
@@ -579,6 +582,7 @@ I7: 監視 1 行(独立)
 - v1.9(2026-09-06 19:06 将軍、殿 18:51+家老同意 19:04): §8.1 に第 0 弾(可視影響 0 の先行改善)を追加、§3 P07/P08/P09 を配備済みへ、§2.3 次の一手を更新。
 - v1.10(2026-09-06 19:32 将軍、家老 R16): §8.1 第 0 弾に I2 前提 U9 と『非 main branch 保全・gate 側修正』を追記、R17。
 - v1.11(2026-09-06 19:38 将軍、殿裁定 19:35): §11-1 保護要件なし→I4 方向 B 確定、note 下書きの所在確定と取込、R18。
+- v1.12(2026-09-06 20:24 将軍): cmd_4485 全期間報告(a638572d)の §2.3.1 反映(I4 全履歴 B 14,450/I6 全期間 unknown 継続)、U1、R19。
 ## 因果リンク
 - ← [[dm-signal-research-data-backlog_20260905]] §B5 I1〜I8 / ← [[dm-signal-research-data-foundation-asis-tobe_20260905]] §2 / ← [[cmd_4480_shin_yotsume_parity]] / ← [[partial-turnover-experiment-asis-tobe-5w1h_20260805]] v1.10-v1.12
 - origin: "[[殿指示_本番不整合深掘り_20260906_1411]] -> [[backlog_B5_I1-I8]] -> [[production-inconsistency-asis-tobe]]"
