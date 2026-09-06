@@ -1679,3 +1679,15 @@ entries:
     - 'shogun'
   confirmed_by: []
   status: 'open'
+- id: 'blt_20260907_050041_1fed10'
+  content: |-
+    DOC_LANE_ALERT: context=context/dm-signal-frontend.md raw_alert=ALERT: context/dm-signal-frontend.md source commits 2件 since last_updated=2026-09-07 repo=/mnt/c/Python_app/DM-signal root_fallback=no timeout=360s/360s owner=dm-signal-frontend update_trigger=frontend|docs/research/frontend-components.md|docs/research/frontend-api-spec.md|docs/research/frontend-deploy.md|docs/research/fe-speed-improvement-design.md。更新要否を確認せよ latest: 08398a1f72b9 cmd_karo_hotfix_layer_holdings_responsive_color_20260907_normal: enforce 44px touch targets | 0f2b5fc7074f cmd_karo_hotfix_layer_holdings_responsive_color_20260907_normal: cmd_karo_hotfix_layer_holdings_responsive_color_20260907: align Layer Holdings with Compare responsive UI action: bash scripts/context_source_commit_set.sh context/dm-signal-frontend.md 08398a1f72b9 'context_freshness reviewed source boundary' 'context_freshness_check context=context/dm-signal-frontend.md commit=08398a1f72b9'
+  posted_by: 'gate_context_freshness'
+  posted_at: '2026-09-07T05:00:41'
+  requires_confirmation: false
+  action_type: 'action_required'
+  actioned_by: ''
+  notify_targets:
+    - 'shogun'
+  confirmed_by: []
+  status: 'open'
