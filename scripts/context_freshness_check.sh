@@ -973,6 +973,15 @@ def commit_is_reflected_or_lesson_only(
     return any(token and token in text for token in tokens)
 
 
+def format_source_detail(
+    commit_hash: str, subject: str, changed_paths: list[str]
+) -> str:
+    """Expose deterministic changed paths with each freshness alert."""
+    paths = sorted({path.strip().lstrip("./") for path in changed_paths if path.strip()})
+    path_suffix = f" paths={','.join(paths[:20])}" if paths else ""
+    return f"{commit_hash} {subject}{path_suffix}".strip()
+
+
 def _root_fallback_commit_count_since(
     updated_at: date, source_commits: tuple[str, ...] | None = None
 ) -> tuple[int, list[str]]:
@@ -1000,7 +1009,7 @@ def _root_fallback_commit_count_since(
         ):
             count += 1
             if len(details) < 3:
-                details.append(f"{current_hash} {subject}".strip())
+                details.append(format_source_detail(current_hash, subject, changed_paths))
     return count, details
 
 
@@ -1126,7 +1135,7 @@ def source_commit_summary_since(
             return
         count += 1
         if len(details) < max_details:
-            details.append(f"{current_hash} {subject}".strip())
+            details.append(format_source_detail(current_hash, subject, changed_paths))
 
     for line in result.stdout.splitlines():
         if line.startswith("__CFC_C__\x00"):
@@ -1567,7 +1576,7 @@ def _compute_direct_group(
                 continue
             count += 1
             if len(details) < 3:
-                details.append(f"{commit_hash} {subject}".strip())
+                details.append(format_source_detail(commit_hash, subject, changed_paths))
         results[(project_id, rel_path)] = (count, details)
     return results
 
@@ -1951,7 +1960,8 @@ def batch_source_commit_summaries(
                     ):
                         continue
                     count += 1
-                    if len(details) < 3: details.append(f"{short_hash} {subject}".strip())
+                    if len(details) < 3:
+                        details.append(format_source_detail(short_hash, subject, changed_paths))
                 if source_commits and found_boundaries != boundaries:
                     summaries[(project_id, rel_path)] = (-1, [])
                 else:

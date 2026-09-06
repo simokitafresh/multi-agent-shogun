@@ -1525,6 +1525,56 @@ PROJ
     [[ "$output" == *"L1089"* ]]
 }
 
+# test_necessity: a mixed source commit must be attributable to every matching
+# consumer context before reflection and disappear only after both contexts
+# record the same command evidence; path details make the classification
+# independently auditable from the alert itself.
+@test "GA-593 mixed core/ops commit is classified before reflection and clears after" {
+    local source_repo="$TEST_TMPDIR/source/dm-signal"
+    mkdir -p "$TEST_TMPDIR/projects" "$source_repo/backend/app/api"
+    cat > "$TEST_TMPDIR/projects/dm-signal.yaml" <<PROJ
+project:
+  id: dm-signal
+path: $source_repo
+PROJ
+
+    git -C "$source_repo" init -q
+    git -C "$source_repo" config user.email "test@example.invalid"
+    git -C "$source_repo" config user.name "Test User"
+    printf 'reviewed source boundary\n' > "$source_repo/.context-boundary"
+    git -C "$source_repo" add .context-boundary
+    git -C "$source_repo" commit -q -m "fixture: reviewed source boundary"
+    local boundary
+    boundary="$(git -C "$source_repo" rev-parse --short HEAD)"
+
+    _create_context "context/dm-signal-core.md" "$STALE_DATE"
+    _create_context "context/dm-signal-ops.md" "$STALE_DATE"
+    sed -i "1s/ -->/ source_commit:${boundary} -->/" "$TEST_TMPDIR/context/dm-signal-core.md"
+    sed -i "1s/ -->/ source_commit:${boundary} -->/" "$TEST_TMPDIR/context/dm-signal-ops.md"
+    _create_archive_cmd "cmd_ga593_fixture" "dm-signal" "completed" "$TODAY"
+
+    printf 'mixed scope source change\n' > "$source_repo/backend/app/api/ga593.py"
+    git -C "$source_repo" add backend/app/api/ga593.py
+    GIT_AUTHOR_DATE="${TODAY}T00:00:00+09:00" \
+    GIT_COMMITTER_DATE="${TODAY}T00:00:00+09:00" \
+        git -C "$source_repo" commit -q -m "cmd_ga593_fixture: mixed core and ops source change"
+
+    run bash "$TEST_SCRIPT" --cmd-warnings cmd_ga593_fixture
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"ALERT: context/dm-signal-core.md source commits 1件"* ]]
+    [[ "$output" == *"ALERT: context/dm-signal-ops.md source commits 1件"* ]]
+    [[ "$output" == *"paths=backend/app/api/ga593.py"* ]]
+    [[ "$output" == *"GROUP: context/dm-signal-core.md,context/dm-signal-ops.md"* ]]
+
+    printf '\n- reflected source: cmd_ga593_fixture\n' >> "$TEST_TMPDIR/context/dm-signal-core.md"
+    printf '\n- reflected source: cmd_ga593_fixture\n' >> "$TEST_TMPDIR/context/dm-signal-ops.md"
+    run bash "$TEST_SCRIPT" --cmd-warnings cmd_ga593_fixture
+    [ "$status" -eq 0 ]
+    [[ "$output" != *"ALERT: context/dm-signal-core.md source commits"* ]]
+    [[ "$output" != *"ALERT: context/dm-signal-ops.md source commits"* ]]
+    [[ "$output" != *"GROUP:"* ]]
+}
+
 @test "different source commits across sibling contexts do not emit GROUP hint" {
     local source_repo="$TEST_TMPDIR/source/dm-signal"
     mkdir -p "$TEST_TMPDIR/projects" "$source_repo/backend/app/jobs" "$source_repo/frontend"
