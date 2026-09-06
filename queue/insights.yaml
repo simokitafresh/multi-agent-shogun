@@ -22391,3 +22391,38 @@ insights:
   source: "skill_script_refs:d22a7a708a34177e"
   fix_known: false
   status: pending
+- id: INS-20260907-062043430-5170
+  ts: "2026-09-07T06:20:43+09:00"
+  insight: "[[cmd 4492のI2分類からU3 U9裁定に必要な事実・選択肢・影響を1頁へ圧縮する]] NO_MATCH purpose pending alias: cmd_complete時にdeploy_task.logでNO_MATCHだったpurpose。類似概念TOP3: gate_quality_framework(ゲート品質統合フレームワーク; alias=cmd 4296の将軍裁定後APPROVEを; score=13.8) / gate_bypass_prevention(ゲート迂回防止; alias=cmd 4393統合正本のP1第一弾; score=13.5) / semantic_dictionary_design(セマンティック辞書構想; alias=cmd 3294は探索前skipが原因; score=13.4)。既存概念aliasesへの自動昇格候補"
+  priority: "low"
+  source: "semantic_index_update"
+  fix_known: false
+  status: pending
+- id: INS-20260907-062044105-52e1
+  ts: "2026-09-07T06:20:44+09:00"
+  insight: "[[GA 593のcontext freshness再発原因を特定し]] NO_MATCH purpose pending alias: cmd_complete時にdeploy_task.logでNO_MATCHだったpurpose。類似概念TOP3: scope_integrity_lifecycle(スコープ鮮度ライフサイクル; alias=GA-295_context_stale; score=15.6) / yaml_safe_write(YAML安全書込み; alias=GA-239 stash guard; score=14.5) / gate_quality_framework(ゲート品質統合フレームワーク; alias=GA context freshness ALERTの根因を; score=14.5)。既存概念aliasesへの自動昇格候補"
+  priority: "low"
+  source: "semantic_index_update"
+  fix_known: false
+  status: pending
+- id: INS-20260907-062046884-c99b
+  ts: "2026-09-07T06:20:46+09:00"
+  insight: "semantic_index_update未登録cmd originノード: [[殿裁定_I1_I4_DROP許可_20260907_0136]] は既存aliasesに一致なし。類似概念TOP3: semantic_dictionary_design(セマンティック辞書構想; alias=殿裁定_KPI実取得のみ_20260904_1607; score=13.9) / creator_brainwashing_defense(創造主の洗脳防御; alias=殿裁定_LP_hero_chart_20260831_1406; score=13.8) / known_unknowns_principle(無知の知; alias=殿裁定 17 04 『 admin fofが縦に長くスクロールが大変だ; score=11.5)。概念定義とaliases追加を検討せよ"
+  priority: "low"
+  source: "semantic_index_update"
+  fix_known: false
+  status: pending
+- id: INS-20260907-062047841-42d5
+  ts: "2026-09-07T06:20:47+09:00"
+  insight: "semantic_index_update未登録cmd originノード: [[dm-signal-production-inconsistency-asis-tobe_20260906_v1.27_§5_I4_§10]] は既存aliasesに一致なし。類似概念TOP3: growth_loop(学習ループ; alias=dm signal production inconsistency asis tobe 20260906 mdにデータ; score=29.5) / provisional_dm-login-boundary-asis-tobe_20260817(仮: Dm Login Boundary Asis Tobe 20260817; alias=dm signal market direction breadth exposure asis tobe 202609; score=21.6) / admin_ui_redesign_asis_tobe(DM-Signal Admin画面一覧性改修設計書; alias=admin ui redesign asis tobe 5w1h 20260724 mdを確認せよ; score=13.2)。概念定義とaliases追加を検討せよ"
+  priority: "low"
+  source: "semantic_index_update"
+  fix_known: false
+  status: pending
+- id: INS-20260907-062048190-46d2
+  ts: "2026-09-07T06:20:48+09:00"
+  insight: "semantic_index_update新概念候補: cmd_complete:cmd_4496 は 既存aliasesに一致なし。概念定義とaliases追加を検討せよ"
+  priority: "low"
+  source: "semantic_index_update"
+  fix_known: false
+  status: pending
