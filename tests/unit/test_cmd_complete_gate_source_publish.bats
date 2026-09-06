@@ -19,6 +19,9 @@ from pathlib import Path
 text = Path(sys.argv[1]).read_text(encoding="utf-8")
 names = (
     "source_publish_receipt_matches",
+    "source_publish_receipt_restore",
+    "source_publish_receipt_finish",
+    "publish_source_receipt_and_markers",
     "cmd_complete_gate_publisher_origin_ready",
     "queue_postclear_publication_followup",
 )
@@ -148,6 +151,72 @@ chunks.append(
 print("\n\n".join(chunks))
 PY
     bash -n "$GATE_DETAIL_SPAN_HELPERS"
+}
+
+# test_necessity: receipt and task-worktree marker publication is a single
+# identity transaction; if the canonical remote advances after the receipt
+# write, the old receipt is restored and no marker is published.
+@test "receipt/marker publication rolls back when remote tip races the write" {
+    local base="$BATS_TEST_TMPDIR/receipt-marker-race"
+    local repo="$base/repo" origin="$base/origin.git" updater="$base/updater"
+    local receipt="$base/source_only_publish.receipt.json" marker="$base/task_worktree.json"
+    local task="$base/task.yaml" source_sha generation
+    mkdir -p "$base"
+    git init --bare -q "$origin"
+    git init -q -b main "$repo"
+    git -C "$repo" config user.email test@example.invalid
+    git -C "$repo" config user.name fixture
+    printf 'base\n' > "$repo/source.txt"
+    git -C "$repo" add source.txt
+    git -C "$repo" commit -q -m base
+    git -C "$repo" remote add origin "$origin"
+    git -C "$repo" push -q -u origin main
+    git --git-dir "$origin" symbolic-ref HEAD refs/heads/main
+    source_sha="$(git -C "$repo" rev-parse HEAD)"
+    generation="aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+
+    git clone -q "$origin" "$updater"
+    git -C "$updater" config user.email test@example.invalid
+    git -C "$updater" config user.name fixture
+    printf 'remote evolution\n' > "$updater/remote.txt"
+    git -C "$updater" add remote.txt
+    git -C "$updater" commit -q -m remote-evolution
+
+    printf '{"before":true}\n' > "$receipt"
+    printf 'task_worktree_marker: %s\n' "$marker" > "$task"
+    mkdir -p "$base/bin"
+    local real_git
+    real_git="$(command -v git)"
+    cat > "$base/bin/git" <<EOF
+#!/usr/bin/env bash
+if [ "\$1" = "-C" ] && [ "\$3" = "ls-remote" ]; then
+    count=\$(wc -l < "$base/ls_remote.calls")
+    echo call >> "$base/ls_remote.calls"
+    if [ "\$count" -eq 1 ]; then
+        "$real_git" -C "$updater" push -q origin main
+    fi
+fi
+exec "$real_git" "\$@"
+EOF
+    : > "$base/ls_remote.calls"
+    chmod +x "$base/bin/git"
+
+    run env PATH="$base/bin:$PATH" TEST_REPO="$repo" RECEIPT="$receipt" \
+        MARKER_CALLS="$base/marker.calls" TASK="$task" SOURCE_SHA="$source_sha" \
+        GENERATION="$generation" HELPERS="$GATE_SOURCE_PUBLISH_HELPERS" bash -c '
+        set -u
+        source "$HELPERS"
+        resolve_task_publish_repo_dir() { printf "%s\\n" "$TEST_REPO"; }
+        write_source_publish_receipt() { printf "{\\"after\\":true}\\n" > "$1"; }
+        mark_task_worktree_published() { printf "marked\\n" >> "$MARKER_CALLS"; }
+        publish_source_receipt_and_markers "$RECEIPT" cmd_receipt_marker_race "$GENERATION" \
+            "$TEST_REPO" "$(git -C "$TEST_REPO" rev-parse HEAD)" origin refs/heads/main 1 \
+            "$(git -C "$TEST_REPO" rev-parse HEAD)" "$TASK" -- "$SOURCE_SHA" rpt-race
+    '
+    [ "$status" -eq 2 ]
+    [ "$(cat "$receipt")" = '{"before":true}' ]
+    [ ! -e "$base/marker.calls" ]
+    [ "$(wc -l < "$base/ls_remote.calls")" -eq 2 ]
 }
 
 @test "stale receipt cannot mark current non-equivalent remote tip published" {
