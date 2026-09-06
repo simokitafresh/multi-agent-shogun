@@ -1294,6 +1294,32 @@ PY
     [[ "$output" == *"latest: ${second_sha} fix: second infra source change"* ]]
 }
 
+# test_necessity: GA-594のinfra root-fallback alertは、publisher commitの全変更pathを
+# 自己完結した証跡として示し、context本文へcommand evidenceを反映した後だけ消える必要がある。
+@test "GA-594 infra publisher source alert preserves changed paths and clears after reflection" {
+    _create_context_with_source_boundary "context/infrastructure.md" "$TODAY" "$TEST_TMPDIR"
+    _create_archive_cmd "cmd_karo_hotfix_ga593_context_freshness_20260907_normal" "infra" "completed" "$TODAY"
+
+    mkdir -p "$TEST_TMPDIR/scripts" "$TEST_TMPDIR/tests/unit"
+    printf '\n# publisher source change fixture\n' >> "$TEST_TMPDIR/scripts/context_freshness_check.sh"
+    printf 'regression fixture\n' > "$TEST_TMPDIR/tests/unit/test_context_freshness_check.bats"
+    git -C "$TEST_TMPDIR" add scripts/context_freshness_check.sh tests/unit/test_context_freshness_check.bats
+    GIT_AUTHOR_DATE="${TODAY}T00:00:00+09:00" \
+    GIT_COMMITTER_DATE="${TODAY}T00:00:00+09:00" \
+        git -C "$TEST_TMPDIR" commit -q -m "publisher: task=cmd_karo_hotfix_ga593_context_freshness_20260907_normal"
+
+    run bash "$TEST_SCRIPT" --cmd-warnings cmd_karo_hotfix_ga593_context_freshness_20260907_normal
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"ALERT: context/infrastructure.md source commits 1件"* ]]
+    [[ "$output" == *"paths=scripts/context_freshness_check.sh,tests/unit/test_context_freshness_check.bats"* ]]
+
+    printf '\n- reflected source: cmd_karo_hotfix_ga593_context_freshness_20260907_normal\n' \
+        >> "$TEST_TMPDIR/context/infrastructure.md"
+    run bash "$TEST_SCRIPT" --cmd-warnings cmd_karo_hotfix_ga593_context_freshness_20260907_normal
+    [ "$status" -eq 0 ]
+    [[ "$output" != *"ALERT: context/infrastructure.md source commits"* ]]
+}
+
 @test "GA-295 reflected, lesson-only, stale, and missing-source fixtures stay exact" {
     _create_context "context/infrastructure.md" "$TODAY"
     _create_source_commit "scripts/reflected.sh" "cmd_995_reflected: implementation"
