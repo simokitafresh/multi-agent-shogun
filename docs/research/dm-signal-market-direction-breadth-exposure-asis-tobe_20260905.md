@@ -12,7 +12,7 @@
 | 項目 | 状態 | 現在値 |
 |---|---|---|
 | 単一表 layer_holdings_monthly | ✅ 02:45 | 4,493 行、pf_count/is_mtd/is_suspect 列付き |
-| is_suspect 3 体(新四つ目) | ✅ 意味確定 | vote-weighted FoF。列を外す条件は foundation D4(殿裁定) |
+| is_suspect 3 体(新四つ目) | 🟡 解除へ | 殿 D4 裁定 10:41『拡張』→cmd_4482 で F1 が target_weight を読む→CLEAR 後に本表を再生成し is_suspect 列を外す(次 cmd) |
 | 契約 test AC1/AC2(weight 和・pf_count) | ✅ | CI 上で PASS(DM-Signal origin e045d337) |
 
 ## §0.0 前提とスタイル

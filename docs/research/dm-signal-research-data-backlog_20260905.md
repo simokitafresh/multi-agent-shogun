@@ -11,7 +11,7 @@
 | 項目 | 状態 | 現在値 |
 |---|---|---|
 | I8 新四つ目 parity 104 | ✅ 根因確定 | 102=投票比例 weight、残 2=015e74dc/0206995c の 2014-04(root signal 不在) |
-| B1 F2 holding_signal_expanded | ⏳ 記録のみ | D4 裁定後 |
+| B1 F2 holding_signal_expanded | ⏳ 記録のみ | D4 裁定済み(拡張=cmd_4482)。DB 昇格は cmd_4482 の結果後 |
 | B2 F3 signal_decision_ledger | ⏳ 中立 | 変更なし |
 | B3 F4 layer_of 一元化 | ⏳ 記録のみ | |
 | B4 A1〜A11 | ⏳ 記録のみ | |
