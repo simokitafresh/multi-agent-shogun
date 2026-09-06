@@ -21,7 +21,7 @@ import sys
 from pathlib import Path
 
 source = "\n\n".join(Path(path).read_text(encoding="utf-8") for path in sys.argv[1:])
-names = """record_block_reason record_wait_reason append_line_locked append_lesson_tracking dispatch_gate_notification_async send_high_notification send_info_cmd_notification log_gate_stderr_file lesson_done_satisfies_lesson_candidate_registration cmd_status_is_canceled level_heading check_context_update resolve_report_file update_lesson_impact_tsv build_clear_duration_metric build_clear_throughput_metric binary_checks_warn_reason report_has_commit_binary_check_yes collect_report_files_modified discover_reports_for_cmd collect_parent_cmd_report_files_modified has_parent_cmd_report collect_git_show_w_files collect_report_commit_hash collect_cmd_phase_git_files check_self_grade_commit_file_coverage is_lessons_useful_empty_warn_task_type handle_empty_lessons_useful_check validate_lesson_feedback_set detect_task_types _check_lc_found lesson_candidate_status preflight_gate_flags collect_report_modified_files load_validated_sg7_context collect_cmd_command_file_refs collect_report_verified_existing_deps collect_task_readonly_refs check_command_files_modified_coverage check_scope_drift check_wtf_likelihood check_script_wiring resolve_task_repo_dir cmd_requires_cdp_production_check run_cdp_production_check cmd_requires_dm_signal_production_smoke dm_signal_smoke_deploy_touches_backend dm_signal_report_deploy_sha resolve_dm_signal_render_live_sha run_dm_signal_production_smoke_check append_codd_registry_entry run_codd_propagate_update normalize_block_reason_to_workaround_categories update_karo_workaround_resolutions classify_completed_rework_event_kind capture_completed_rework_event compute_task_ac_version check_task_ac_version_integrity resolve_ci_expected_head resolve_report_commit_repo report_ci_push_state_cached report_ci_push_state_legacy_compat report_ci_push_state report_commit_main_ancestry_state report_source_only_equivalence_state check_report_commit_main_ancestry resolve_ninja_test_receipt_path validate_ninja_test_receipt check_ninja_test_receipts validate_purpose_details_alignment cmd_complete_gate_auto_push_ci_state cmd_complete_gate_auto_push_ancestry_wait mark_task_worktree_published source_publish_receipt_tip""".split()
+names = """record_block_reason record_wait_reason append_line_locked append_lesson_tracking dispatch_gate_notification_async send_high_notification send_info_cmd_notification log_gate_stderr_file lesson_done_satisfies_lesson_candidate_registration cmd_status_is_canceled level_heading check_context_update resolve_report_file update_lesson_impact_tsv build_clear_duration_metric build_clear_throughput_metric binary_checks_warn_reason report_has_commit_binary_check_yes collect_report_files_modified discover_reports_for_cmd collect_parent_cmd_report_files_modified has_parent_cmd_report collect_git_show_w_files collect_report_commit_hash collect_cmd_phase_git_files check_self_grade_commit_file_coverage is_lessons_useful_empty_warn_task_type handle_empty_lessons_useful_check validate_lesson_feedback_set detect_task_types _check_lc_found lesson_candidate_status preflight_gate_flags collect_report_modified_files load_validated_sg7_context collect_cmd_command_file_refs collect_report_verified_existing_deps collect_task_readonly_refs check_command_files_modified_coverage check_scope_drift check_wtf_likelihood check_script_wiring resolve_task_repo_dir cmd_requires_cdp_production_check run_cdp_production_check cmd_requires_dm_signal_production_smoke run_dm_signal_production_smoke_check dm_signal_smoke_deploy_touches_backend dm_signal_report_deploy_sha resolve_dm_signal_render_live_sha append_codd_registry_entry run_codd_propagate_update normalize_block_reason_to_workaround_categories update_karo_workaround_resolutions classify_completed_rework_event_kind capture_completed_rework_event compute_task_ac_version check_task_ac_version_integrity resolve_ci_expected_head resolve_report_commit_repo report_ci_push_state_cached report_ci_push_state_legacy_compat report_ci_push_state report_commit_main_ancestry_state source_snapshot_matches_tip report_source_only_equivalence_state check_report_commit_main_ancestry resolve_ninja_test_receipt_path validate_ninja_test_receipt check_ninja_test_receipts validate_purpose_details_alignment cmd_complete_gate_auto_push_ci_state cmd_complete_gate_auto_push_ancestry_wait mark_task_worktree_published source_publish_receipt_tip""".split()
 names += " post_deploy_evidence_publication_status handle_post_deploy_evidence_failure queue_post_deploy_evidence_publication_followup".split()
 for name in names:
     match = re.search(rf"(?m)^{re.escape(name)}\(\) \{{.*?^\}}", source, re.DOTALL)
@@ -8925,6 +8925,166 @@ run_commit_repo_resolution() {
     run_report_main_ancestry_state "$repo" "$report"
     [ "$status" -eq 0 ]
     [[ "$output" == *"WAIT: UNPUSHED:"* ]]
+}
+
+# test_necessity: a non-ancestor report commit is accepted only when every
+# path changed by that commit has the same content and mode at origin/main.
+# regression_justification: publisher reconstruction changes the commit SHA,
+# so ancestry-only terminal checking left equivalent reports in WAIT forever.
+@test "terminal report ancestry accepts content-equivalent non-ancestor commit" {
+    local repo="$BATS_TEST_TMPDIR/report-ancestry-content-equivalent"
+    local remote="$BATS_TEST_TMPDIR/report-ancestry-content-equivalent-remote"
+    local report="$BATS_TEST_TMPDIR/report-ancestry-content-equivalent.yaml"
+    make_ci_push_repo "$repo"
+    git clone -q "$repo" "$remote"
+    git -C "$remote" config user.email test@example.com
+    git -C "$remote" config user.name test
+
+    printf 'reconstructed final\n' > "$repo/state"
+    git -C "$repo" add state
+    git -C "$repo" commit -qm "source identity"
+    local source_sha
+    source_sha="$(git -C "$repo" rev-parse HEAD)"
+
+    printf 'reconstructed final\n' > "$remote/state"
+    git -C "$remote" add state
+    git -C "$remote" commit -qm "publisher reconstruction"
+    local published_sha
+    published_sha="$(git -C "$remote" rev-parse HEAD)"
+    git -C "$repo" fetch -q "$remote" HEAD:refs/remotes/origin/main
+
+    printf 'verdict: PASS\ncommit_hash: %s\nfiles_modified:\n- path: state\n' \
+        "$source_sha" > "$report"
+    run_report_main_ancestry_state "$repo" "$report"
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"content_equivalent"* ]]
+    [[ "$output" == *"paths=1"* ]]
+}
+
+# test_necessity: content differences on a source-changed path remain WAIT;
+# matching path names alone must never turn an unpublished commit into PASS.
+@test "terminal report ancestry keeps divergent non-ancestor commit in WAIT" {
+    local repo="$BATS_TEST_TMPDIR/report-ancestry-content-divergent"
+    local remote="$BATS_TEST_TMPDIR/report-ancestry-content-divergent-remote"
+    local report="$BATS_TEST_TMPDIR/report-ancestry-content-divergent.yaml"
+    make_ci_push_repo "$repo"
+    git clone -q "$repo" "$remote"
+    git -C "$remote" config user.email test@example.com
+    git -C "$remote" config user.name test
+
+    printf 'source final\n' > "$repo/state"
+    git -C "$repo" add state
+    git -C "$repo" commit -qm "source identity"
+    local source_sha
+    source_sha="$(git -C "$repo" rev-parse HEAD)"
+
+    printf 'different publication\n' > "$remote/state"
+    git -C "$remote" add state
+    git -C "$remote" commit -qm "different publication"
+    local published_sha
+    published_sha="$(git -C "$remote" rev-parse HEAD)"
+    git -C "$repo" fetch -q "$remote" HEAD:refs/remotes/origin/main
+
+    printf 'verdict: PASS\ncommit_hash: %s\nfiles_modified:\n- path: state\n' \
+        "$source_sha" > "$report"
+    run_report_main_ancestry_state "$repo" "$report"
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"WAIT: UNPUSHED:"* ]]
+    [[ "$output" != *"content_equivalent"* ]]
+}
+
+# test_necessity: rename source commits must compare both old and new paths,
+# while an empty commit remains WAIT because it has no equivalence scope.
+@test "terminal report ancestry handles rename paths and rejects empty commit" {
+    local repo="$BATS_TEST_TMPDIR/report-ancestry-rename"
+    local remote="$BATS_TEST_TMPDIR/report-ancestry-rename-remote"
+    local report="$BATS_TEST_TMPDIR/report-ancestry-rename.yaml"
+    make_ci_push_repo "$repo"
+    printf 'rename source\n' > "$repo/old-name"
+    git -C "$repo" add old-name
+    git -C "$repo" commit -qm "add rename fixture"
+    git clone -q "$repo" "$remote"
+    git -C "$remote" config user.email test@example.com
+    git -C "$remote" config user.name test
+
+    mv "$repo/old-name" "$repo/new-name"
+    git -C "$repo" add -A
+    git -C "$repo" commit -qm "source rename"
+    local source_sha
+    source_sha="$(git -C "$repo" rev-parse HEAD)"
+    mv "$remote/old-name" "$remote/new-name"
+    git -C "$remote" add -A
+    git -C "$remote" commit -qm "publisher rename"
+    local published_sha
+    published_sha="$(git -C "$remote" rev-parse HEAD)"
+    git -C "$repo" fetch -q "$remote" HEAD:refs/remotes/origin/main
+
+    printf 'verdict: PASS\ncommit_hash: %s\nfiles_modified:\n- path: old-name\n- path: new-name\n' \
+        "$source_sha" > "$report"
+    run_report_main_ancestry_state "$repo" "$report"
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"content_equivalent"* ]]
+    [[ "$output" == *"paths=2"* ]]
+
+    git -C "$repo" commit --allow-empty -qm "source empty"
+    local empty_sha
+    empty_sha="$(git -C "$repo" rev-parse HEAD)"
+    printf 'verdict: PASS\ncommit_hash: %s\nfiles_modified:\n- path: new-name\n' \
+        "$empty_sha" > "$report"
+    run_report_main_ancestry_state "$repo" "$report"
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"WAIT: UNPUSHED:"* ]]
+}
+
+# test_necessity: mode-only differences must remain WAIT, while root and merge
+# commits must enumerate their source paths before content-equivalence PASS.
+@test "terminal report ancestry handles mode differences and root/merge paths" {
+    local mode_repo="$BATS_TEST_TMPDIR/report-ancestry-mode"
+    local mode_report="$BATS_TEST_TMPDIR/report-ancestry-mode.yaml"
+    make_ci_push_repo "$mode_repo"
+    chmod +x "$mode_repo/state"
+    git -C "$mode_repo" add state
+    git -C "$mode_repo" commit -qm "source mode change"
+    local mode_source
+    mode_source="$(git -C "$mode_repo" rev-parse HEAD)"
+    printf 'verdict: PASS\ncommit_hash: %s\nfiles_modified:\n- path: state\n' \
+        "$mode_source" > "$mode_report"
+    run_report_main_ancestry_state "$mode_repo" "$mode_report"
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"WAIT: UNPUSHED:"* ]]
+
+    local root_repo="$BATS_TEST_TMPDIR/report-ancestry-root"
+    local root_report="$BATS_TEST_TMPDIR/report-ancestry-root.yaml"
+    make_ci_push_repo "$root_repo"
+    local root_tree root_source root_published
+    root_tree="$(git -C "$root_repo" rev-parse HEAD^{tree})"
+    root_source="$(git -C "$root_repo" commit-tree "$root_tree" -m "source root")"
+    root_published="$(git -C "$root_repo" commit-tree "$root_tree" -m "publisher root")"
+    git -C "$root_repo" update-ref refs/remotes/origin/main "$root_published"
+    printf 'verdict: PASS\ncommit_hash: %s\nfiles_modified:\n- path: state\n' \
+        "$root_source" > "$root_report"
+    run_report_main_ancestry_state "$root_repo" "$root_report"
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"content_equivalent"* && "$output" == *"paths=1"* ]]
+
+    local merge_repo="$BATS_TEST_TMPDIR/report-ancestry-merge"
+    local merge_report="$BATS_TEST_TMPDIR/report-ancestry-merge.yaml"
+    make_ci_push_repo "$merge_repo"
+    local merge_base side_commit merge_tree merge_source merge_published
+    merge_base="$(git -C "$merge_repo" rev-parse HEAD)"
+    printf 'merge path\n' > "$merge_repo/merge-path"
+    git -C "$merge_repo" add merge-path
+    git -C "$merge_repo" commit -qm "merge side"
+    side_commit="$(git -C "$merge_repo" rev-parse HEAD)"
+    merge_tree="$(git -C "$merge_repo" rev-parse HEAD^{tree})"
+    merge_source="$(git -C "$merge_repo" commit-tree "$merge_tree" -p "$merge_base" -p "$side_commit" -m "source merge")"
+    merge_published="$(git -C "$merge_repo" commit-tree "$merge_tree" -p "$merge_base" -m "publisher merge")"
+    git -C "$merge_repo" update-ref refs/remotes/origin/main "$merge_published"
+    printf 'verdict: PASS\ncommit_hash: %s\nfiles_modified:\n- path: merge-path\n' \
+        "$merge_source" > "$merge_report"
+    run_report_main_ancestry_state "$merge_repo" "$merge_report"
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"content_equivalent"* && "$output" == *"paths=1"* ]]
 }
 
 # test_necessity: a non-ancestor report commit may pass terminal ancestry only
