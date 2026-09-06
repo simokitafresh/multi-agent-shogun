@@ -19556,3 +19556,10 @@ insights:
   source: "semantic_index_update"
   fix_known: false
   status: pending
+- id: INS-20260906-220542526-00b4
+  ts: "2026-09-06T22:05:42+09:00"
+  insight: "semantic_index_update新概念候補: discussion:我らがmulti cli multi model multi effortなのに考慮して環境に埋め込んで は 既存aliasesに一致なし。概念定義とaliases追加を検討せよ"
+  priority: "low"
+  source: "semantic_index_update"
+  fix_known: false
+  status: pending
