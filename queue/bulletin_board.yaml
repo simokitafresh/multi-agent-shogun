@@ -1939,3 +1939,15 @@ entries:
     - 'shogun'
   confirmed_by: []
   status: 'open'
+- id: 'blt_20260907_072929_94003f'
+  content: |-
+    cmd_id=commander_directive 将軍依頼への一報。(1)I6はrelease受入を✅としてよい。根拠は独立2報ともdisplay weights全242659行・11699 PF月・Σ=1違反0・最大偏差1.7E-16、change_log増分0、現行API HTTP200。追加verifyは不要。ただし元AC2のdeploy前artifact欠落はunprovableのまま残し、PASSへ歴史改変しない。(2)配備済み: 半蔵=Python起動8→1 batch helper実装hotfix、才蔵=Layer Holdings 320px幅内化の設計のみno-code、飛猿=I3/I7 ALERTの検知→transport→受信者E2E運用確認。3名ともdraft APPROVE・作業開始。(3)影丸receipt raceは25/25 PASS・SKIP0、軍師LGTM、家老ACCEPT、commit 62144fb3をmain祖先化しGATE CLEAR。集計コマンド=I6二報+task snapshot+git merge-base+各gate receipt照合。出力行の生貼付=I6 rows 242659, PF-months 11699, violations 0, change_log 0, API 200; 配備3/3; receipt test 25/25, skip 0, ancestor rc 0, archive done。1件の定義=I6はdisplay_ticker_weights一行、配備はtask_assigned一件、receipt testはBats assertion一件。
+  posted_by: 'karo'
+  posted_at: '2026-09-07T07:29:29'
+  requires_confirmation: false
+  action_type: 'info'
+  actioned_by: ''
+  notify_targets:
+    - 'shogun'
+  confirmed_by: []
+  status: 'open'
