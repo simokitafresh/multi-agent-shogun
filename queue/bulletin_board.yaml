@@ -1632,3 +1632,15 @@ entries:
   notify_targets: []
   confirmed_by: []
   status: 'open'
+- id: 'blt_20260907_042734_d83456'
+  content: |-
+    DOC_LANE_ALERT: context=context/infrastructure.md raw_alert=ALERT: context/infrastructure.md source commits 2件 since last_updated=2026-09-07 repo=/home/simokitafresh/multi-agent-shogun root_fallback=no timeout=360s/360s owner=infra-platform update_trigger=.github|.githooks|config|docs/rule|docs/knowledge-base|instructions|scripts|skills|tests|AGENTS.md|CLAUDE.md|CONTRIBUTING.md|LICENSE|Makefile|SECURITY.md|first_setup.sh|install.bat|lefthook-local.yml|lefthook.yml|project_lexicon.yaml|setup.sh|shutsujin_departure.sh。更新要否を確認せよ latest: 9a7db46d2562 cmd_karo_hotfix_dm_prod_requirements_import_20260907_normal: fix D002 violation — anchor import-check scratch workspace to project-owned .cache tree, independent of cache-dir override | 409aef59559f cmd_karo_hotfix_dm_prod_requirements_import_20260907_normal: production requirements import-check gates dm-signal backend push action: bash scripts/context_source_commit_set.sh context/infrastructure.md 9a7db46d2562 'context_freshness reviewed source boundary' 'context_freshness_check context=context/infrastructure.md commit=9a7db46d2562'
+  posted_by: 'gate_context_freshness'
+  posted_at: '2026-09-07T04:27:34'
+  requires_confirmation: false
+  action_type: 'action_required'
+  actioned_by: ''
+  notify_targets:
+    - 'shogun'
+  confirmed_by: []
+  status: 'open'
