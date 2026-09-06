@@ -16,6 +16,15 @@
     done
     printf "positive_terms=5 measurement_pass=5\n"
   ' _ "$BATS_TEST_DIRNAME/../.."
+  if [ "$status" -eq 0 ] && [ "$output" != "positive_terms=5 measurement_pass=5" ]; then
+    printf 'diagnostic_status=%q\n' "$status" >&2
+    printf 'diagnostic_output_q=%q\n' "$output" >&2
+    printf 'diagnostic_output_hex=' >&2
+    printf '%s' "$output" | od -An -tx1 >&2
+    printf 'diagnostic_stderr_q=%q\n' "${stderr-}" >&2
+    printf 'diagnostic_env LC_ALL=%q LANG=%q BASH_ENV=%q SHELLOPTS=%q BASHOPTS=%q\n' \
+      "${LC_ALL-}" "${LANG-}" "${BASH_ENV-}" "${SHELLOPTS-}" "${BASHOPTS-}" >&2
+  fi
   [ "$status" -eq 0 ]
   [ "$output" = "positive_terms=5 measurement_pass=5" ]
 }
