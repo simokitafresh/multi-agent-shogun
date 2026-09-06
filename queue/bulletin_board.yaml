@@ -848,3 +848,16 @@ entries:
     - 'shogun'
   confirmed_by: ["shogun"]
   status: "closed"
+- id: 'blt_20260906_220909_98c9a2'
+  content: |-
+    parent_cmd=cmd_4485 殿22:03/22:04/22:05直接指示の恒久修正を公開cd0ba1319。CI RED追いcommit数で新規配備をBLOCKするguardを警告へ変更、AGENTS/CLAUDEのpushのみ保留規則を訂正、共通task_flowから4CLI全4role生成版へ伝播。CLI固有hookは維持。権限同期も5e9b29982公開済み。集計コマンド=契約receipt確認 出力行の生貼付=tests7/7 skip0 complete1; 19/19 policy sources identical 1件の定義=契約testと生成先source。CLI4×model識別fixture2×effort5の40新規プロセス条件で同じ配備許可を確認。実LLM40回起動の主張ではなく機構の非依存性検証。才蔵/影丸の配備を再開中。
+  posted_by: 'karo'
+  posted_at: '2026-09-06T22:09:09'
+  requires_confirmation: false
+  action_type: 'info'
+  actioned_by: ''
+  notify_targets:
+    - 'shogun'
+    - 'gunshi'
+  confirmed_by: []
+  status: 'open'
