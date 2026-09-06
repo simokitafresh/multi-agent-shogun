@@ -18,6 +18,8 @@ fi
 # synchronous allow/BLOCK decision.
 # shellcheck source=scripts/lib/defense_overhead_writer.sh
 source "$REPO_ROOT/scripts/lib/defense_overhead_writer.sh"
+# shellcheck source=scripts/lib/gate_hook_quality_contract.sh
+source "$REPO_ROOT/scripts/lib/gate_hook_quality_contract.sh"
 
 # One monotonic-in-process clock and one terminal receipt make every commit
 # diagnosable without adding external telemetry I/O to this hot path.
@@ -695,6 +697,107 @@ reverse_lib_dep_scan_scope() {
     git -C "$REPO_ROOT" ls-files -- 'scripts' '.githooks' '.claude/hooks' 2>/dev/null | wc -l | tr -d ' '
 }
 
+# F-11/F-12/F-13/F-16 (cmd_karo_hotfix_reference_test_contract_20260906):
+# resolve_reverse_lib_deps only follows source/bash-invocation edges and only
+# for scripts/lib/*.sh. It cannot see a bats test that references a staged
+# *.sh/*.py by literal path string (a content-contract assertion, not an
+# invocation). Independently enumerate those referencing bats files here via
+# gate_hook_quality_contract_reference_test_matches so they ride along into
+# the affected-test run below, closing the D0 (no task) gap without touching
+# scripts/test_select.sh's own mapping.
+resolve_reference_test_contract_matches() {
+    local staged
+    while IFS= read -r staged; do
+        [[ -n "$staged" ]] || continue
+        case "$staged" in
+            *.sh|*.py) ;;
+            *) continue ;;
+        esac
+        staged_file_exists "$staged" || continue
+        gate_hook_quality_contract_reference_test_matches "$staged" "$REPO_ROOT"
+    done < <(list_staged_files) | sort -u
+    return 0
+}
+
+# AC2(全ロール共通、cmd_karo_hotfix_reference_test_contract_20260906 RC是正): the
+# literal-reference gap closed above must not be limited to the D0 (no task)
+# branch. A ninja task commit (NINJA_SCOPE_TASK_FILE set) takes a completely
+# separate branch in check_precommit_affected_tests() that never reaches
+# resolve_reference_test_contract_matches(), and its receipt-reuse fast path
+# (precommit_receipt_matches) can skip test execution entirely. Run this
+# check unconditionally, before receipt reuse, for BOTH branches so a
+# literal-path-referenced bats file is caught regardless of who committed
+# and whether an exact receipt would otherwise short-circuit execution. The
+# check is additive: it never replaces or narrows the existing task/affected
+# selection, it only adds a coverage floor those selections can miss.
+run_reference_test_contract_check() {
+    local run_tests="$1"
+    local -a matches=()
+    local match
+    while IFS= read -r match; do
+        [[ -n "$match" ]] || continue
+        matches+=("$match")
+    done < <(resolve_reference_test_contract_matches)
+    ((${#matches[@]} > 0)) || return 0
+    echo "[pre-commit] reference-test contract: literal path/basename matches=${#matches[@]}" >&2
+    if ! run_precommit_tests_bounded "$run_tests" file "${matches[@]}"; then
+        echo "BLOCK(GA-PRECOMMIT1): a literal-path-referenced bats contract failed (F-11/F-12/F-13/F-16 class)." >&2
+        return 1
+    fi
+    return 0
+}
+
+# AC2(参照増減, cmd_karo_hotfix_reference_test_contract_20260906 RC是正2): materialize
+# tests/unit as it existed at HEAD into a throwaway directory and re-run the
+# exact same literal-reference derivation against it, so "the required set
+# before this commit" is computed fresh from git every time -- never from a
+# persisted manifest or a task-YAML field that could go stale or need a
+# risky mutation to a file this hook doesn't own.
+reference_test_contract_head_matches() {
+    local script_path="${1:-}"
+    [[ -n "$script_path" ]] || return 0
+    local tmp_root
+    tmp_root="$(mktemp -d 2>/dev/null)" || return 0
+    if git -C "$REPO_ROOT" archive HEAD -- tests/unit 2>/dev/null | tar -x -C "$tmp_root" 2>/dev/null; then
+        gate_hook_quality_contract_reference_test_matches "$script_path" "$tmp_root"
+    fi
+    rm -rf -- "$tmp_root" 2>/dev/null
+    return 0
+}
+
+# AC2(参照増減を検証し未達BLOCK): compare that HEAD-tree derivation against the
+# same derivation over the current working tree, for every staged script
+# that already existed at HEAD (a modification, not a brand-new file, which
+# has no "before" to compare against). A reference set that shrank across
+# this commit -- some bats file referenced the script at HEAD and no longer
+# does -- is exactly the F-11/F-12/F-13/F-16 shape (a contract test silently
+# lost its coverage) and is worth a human look before it merges, so this
+# BLOCKs rather than letting coverage quietly drop. Growing or unchanged
+# sets are never blocked; only a strict decrease is a red flag.
+check_reference_test_drift() {
+    local staged before after before_count after_count missing has_drift=0
+    while IFS= read -r staged; do
+        [[ -n "$staged" ]] || continue
+        case "$staged" in
+            *.sh|*.py) ;;
+            *) continue ;;
+        esac
+        git -C "$REPO_ROOT" cat-file -e "HEAD:${staged}" 2>/dev/null || continue
+        before="$(reference_test_contract_head_matches "$staged")"
+        after="$(gate_hook_quality_contract_reference_test_matches "$staged" "$REPO_ROOT")"
+        before_count=0
+        [[ -z "$before" ]] || before_count="$(printf '%s\n' "$before" | grep -c .)"
+        after_count=0
+        [[ -z "$after" ]] || after_count="$(printf '%s\n' "$after" | grep -c .)"
+        if [[ "$after_count" -lt "$before_count" ]]; then
+            missing="$(comm -23 <(printf '%s\n' "$before" | sort) <(printf '%s\n' "$after" | sort) | tr '\n' ',' | sed 's/,$//')"
+            echo "BLOCK(GA-PRECOMMIT1): reference-test contract drift for ${staged}: ${before_count} -> ${after_count} referencing bats (lost: ${missing})" >&2
+            has_drift=1
+        fi
+    done < <(list_staged_files)
+    [[ "$has_drift" -eq 0 ]]
+}
+
 # AC3 threshold decision (n=10 direct measurement, this repo's current scale,
 # real shared-worktree contention): a single non-lib code file staged →
 # median 1844ms / max 3262ms added latency, dominated by test_select.sh's
@@ -831,6 +934,21 @@ check_precommit_affected_tests() {
     task_rc=$?
     if [[ "$task_rc" -eq 0 ]]; then
         echo "[pre-commit] affected-test mode=task task_file=${task_file#"$REPO_ROOT"/}" >&2
+        # Run ahead of receipt reuse: an exact-PASS receipt only proves the
+        # task's own declared/scoped test set passed on this tree, it says
+        # nothing about a literal-path reference this check independently
+        # derives, so reuse must not bypass it. Guarded by `declare -f`: a
+        # sibling test harness (test_git_pre_commit_affected_deps.bats)
+        # extracts check_precommit_affected_tests by name into an isolated
+        # script with an explicit, narrower function whitelist that predates
+        # this check; an unguarded call there is "command not found", not a
+        # no-op, and would turn a missing helper into a false BLOCK.
+        if declare -f run_reference_test_contract_check >/dev/null 2>&1; then
+            run_reference_test_contract_check "$run_tests" || return 1
+        fi
+        if declare -f check_reference_test_drift >/dev/null 2>&1; then
+            check_reference_test_drift || return 1
+        fi
         if precommit_receipt_matches "$task_file"; then
             echo "[pre-commit] affected-test exact PASS receipt reused; test process launches=0" >&2
             return 0
@@ -874,6 +992,13 @@ check_precommit_affected_tests() {
         scope_count="$(reverse_lib_dep_scan_scope)"
         echo "[pre-commit] AC2 reverse-dep scan: scope=${scope_count} tracked scripts/.githooks/.claude-hooks files, caller_matches=${#reverse_deps[@]}" >&2
         target_files+=("${reverse_deps[@]}")
+    fi
+
+    if declare -f run_reference_test_contract_check >/dev/null 2>&1; then
+        run_reference_test_contract_check "$run_tests" || return 1
+    fi
+    if declare -f check_reference_test_drift >/dev/null 2>&1; then
+        check_reference_test_drift || return 1
     fi
 
     # Accept both new (PRECOMMIT_TIMEOUT_OVERRIDE) and legacy name for backward compat
