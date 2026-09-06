@@ -18,6 +18,8 @@ fi
 # synchronous allow/BLOCK decision.
 # shellcheck source=scripts/lib/defense_overhead_writer.sh
 source "$REPO_ROOT/scripts/lib/defense_overhead_writer.sh"
+# shellcheck source=scripts/lib/gate_hook_quality_contract.sh
+source "$REPO_ROOT/scripts/lib/gate_hook_quality_contract.sh"
 
 # One monotonic-in-process clock and one terminal receipt make every commit
 # diagnosable without adding external telemetry I/O to this hot path.
@@ -695,6 +697,28 @@ reverse_lib_dep_scan_scope() {
     git -C "$REPO_ROOT" ls-files -- 'scripts' '.githooks' '.claude/hooks' 2>/dev/null | wc -l | tr -d ' '
 }
 
+# F-11/F-12/F-13/F-16 (cmd_karo_hotfix_reference_test_contract_20260906):
+# resolve_reverse_lib_deps only follows source/bash-invocation edges and only
+# for scripts/lib/*.sh. It cannot see a bats test that references a staged
+# *.sh/*.py by literal path string (a content-contract assertion, not an
+# invocation). Independently enumerate those referencing bats files here via
+# gate_hook_quality_contract_reference_test_matches so they ride along into
+# the affected-test run below, closing the D0 (no task) gap without touching
+# scripts/test_select.sh's own mapping.
+resolve_reference_test_contract_matches() {
+    local staged
+    while IFS= read -r staged; do
+        [[ -n "$staged" ]] || continue
+        case "$staged" in
+            *.sh|*.py) ;;
+            *) continue ;;
+        esac
+        staged_file_exists "$staged" || continue
+        gate_hook_quality_contract_reference_test_matches "$staged" "$REPO_ROOT"
+    done < <(list_staged_files) | sort -u
+    return 0
+}
+
 # AC3 threshold decision (n=10 direct measurement, this repo's current scale,
 # real shared-worktree contention): a single non-lib code file staged →
 # median 1844ms / max 3262ms added latency, dominated by test_select.sh's
@@ -874,6 +898,17 @@ check_precommit_affected_tests() {
         scope_count="$(reverse_lib_dep_scan_scope)"
         echo "[pre-commit] AC2 reverse-dep scan: scope=${scope_count} tracked scripts/.githooks/.claude-hooks files, caller_matches=${#reverse_deps[@]}" >&2
         target_files+=("${reverse_deps[@]}")
+    fi
+
+    local -a reference_test_matches=()
+    local reference_match
+    while IFS= read -r reference_match; do
+        [[ -n "$reference_match" ]] || continue
+        reference_test_matches+=("$reference_match")
+    done < <(resolve_reference_test_contract_matches)
+    if ((${#reference_test_matches[@]} > 0)); then
+        echo "[pre-commit] reference-test contract: literal path/basename matches=${#reference_test_matches[@]}" >&2
+        target_files+=("${reference_test_matches[@]}")
     fi
 
     # Accept both new (PRECOMMIT_TIMEOUT_OVERRIDE) and legacy name for backward compat
