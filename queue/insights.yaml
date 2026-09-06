@@ -20634,3 +20634,10 @@ insights:
   source: "semantic_stress_test"
   fix_known: false
   status: pending
+- id: INS-20260906-235957230-ac6f
+  ts: "2026-09-06T23:59:57+09:00"
+  insight: "precheck ERRORS>0でLGTMを出してGATE BLOCKされた事故2件目(P09+P1)。GATE_PREDICTION=CLEARでもERRORS>0ならLGTM禁止。ERRORS=0を必須条件に追加すべき。origin: [[cmd_4487_P1_BLOCK]] -> [[precheck_ERRORS_ignored]] -> [[LGTM_BLOCK事故]]"
+  priority: "medium"
+  source: "manual"
+  fix_known: false
+  status: pending
