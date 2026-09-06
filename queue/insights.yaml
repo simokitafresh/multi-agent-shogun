@@ -19703,3 +19703,59 @@ insights:
   source: "semantic_stress_test"
   fix_known: false
   status: pending
+- id: INS-20260906-223231258-e689
+  ts: "2026-09-06T22:32:31+09:00"
+  insight: "[[三者協議の結果を教えてくれ]] semantic_stress_test candidate_aliases: NO_MATCH source=lord query=三者協議の結果を教えてくれ"
+  priority: "low"
+  source: "semantic_stress_test"
+  fix_known: false
+  status: pending
+- id: INS-20260906-223231610-c9e6
+  ts: "2026-09-06T22:32:31+09:00"
+  insight: "[[iinbox3]] semantic_stress_test candidate_aliases: NO_MATCH source=lord query=iinbox3"
+  priority: "low"
+  source: "semantic_stress_test"
+  fix_known: false
+  status: pending
+- id: INS-20260906-223235214-984d
+  ts: "2026-09-06T22:32:35+09:00"
+  insight: "[[では修正して]] semantic_stress_test candidate_aliases: NO_MATCH source=lord query=では修正して、inbox1"
+  priority: "low"
+  source: "semantic_stress_test"
+  fix_known: false
+  status: pending
+- id: INS-20260906-223235584-7d29
+  ts: "2026-09-06T22:32:35+09:00"
+  insight: "[[入力待ちにすると家老がボトルネックになるのでは？素直に忍者の権限で出来ることだけを要求すればいい]] semantic_stress_test candidate_aliases: NO_MATCH source=lord query=入力待ちにすると家老がボトルネックになるのでは？素直に忍者の権限で出来ることだけを要求すればいい。もしくはニンジャの権限を拡大するかだ"
+  priority: "low"
+  source: "semantic_stress_test"
+  fix_known: false
+  status: pending
+- id: INS-20260906-223235943-c9e0
+  ts: "2026-09-06T22:32:35+09:00"
+  insight: "[[忍者のfail率が高いな]] semantic_stress_test candidate_aliases: NO_MATCH source=lord query=忍者のfail率が高いな。何か原因があるはずだ。家老と協議して対策をしよう"
+  priority: "low"
+  source: "semantic_stress_test"
+  fix_known: false
+  status: pending
+- id: INS-20260906-223236265-dfbd
+  ts: "2026-09-06T22:32:36+09:00"
+  insight: "[[CI復旧を待つ合理的な理由はなにか教えて]] semantic_stress_test candidate_aliases: NO_MATCH source=lord query=CI復旧を待つ合理的な理由はなにか教えて"
+  priority: "low"
+  source: "semantic_stress_test"
+  fix_known: false
+  status: pending
+- id: INS-20260906-223236638-e2b5
+  ts: "2026-09-06T22:32:36+09:00"
+  insight: "[[ない]] semantic_stress_test candidate_aliases: NO_MATCH source=lord query=１．ない。あくまで俺の個人プロジェクトであり、部分的に閲覧することを俺が許可してる仕組みだ。2.gistに下書きがあった気がする"
+  priority: "low"
+  source: "semantic_stress_test"
+  fix_known: false
+  status: pending
+- id: INS-20260906-223236995-0d54
+  ts: "2026-09-06T22:32:36+09:00"
+  insight: "[[§2 3 不整合 I 別の状態は更新されているか？]] semantic_stress_test candidate_aliases: NO_MATCH source=lord query=§2.3 不整合 I 別の状態は更新されているか？"
+  priority: "low"
+  source: "semantic_stress_test"
+  fix_known: false
+  status: pending
