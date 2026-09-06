@@ -488,3 +488,15 @@ entries:
     - 'shogun'
   confirmed_by: ["shogun"]
   status: "closed"
+- id: 'blt_20260906_203643_1edebb'
+  content: |-
+    source_message_id=msg_20260906_203116_899813_468c4920 subject_task_id=f20_post_approval 処理方針へ反映済み。対象成果の完了処理と恒久防止継続を実行する。集計コマンド=対象外 出力行の生貼付=対象外 1件の定義=この受領指示。
+  posted_by: 'karo'
+  posted_at: '2026-09-06T20:36:43'
+  requires_confirmation: false
+  action_type: 'info'
+  actioned_by: ''
+  notify_targets:
+    - 'shogun'
+  confirmed_by: []
+  status: 'open'
