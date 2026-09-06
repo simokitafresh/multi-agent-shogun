@@ -398,3 +398,122 @@ YAML
     changed="$(key "$WORK_DIR/report_with_snapshot_changed.yaml" "$WORK_DIR/task_gen1.yaml")"
     [ "$before_snapshot" != "$changed" ]
 }
+
+# test_necessity(cmd_karo_hotfix_contract_schema_20260907, karo 01:09): a real
+# deployed report (it declares its own task_id) whose LIVE task file's
+# task_id later reads empty (e.g. a stage timeout / idle reset nulled it)
+# must not take the minimal-fixture compatibility skip in
+# _autolink_terminal_test_receipt -- that let a real report reach
+# status=completed with its receipt/commit checks silently unexecuted. It
+# must resolve identity from the report's own frozen task_contract_snapshot,
+# or fail closed when even that is absent. A genuine minimal fixture (no
+# task_id anywhere) must keep the existing compatibility skip.
+@test "report_field_set does not skip receipt validation for a real report when the live task_id is empty" {
+    FIXTURE_ROOT="$WORK_DIR/identity_fixture_root"
+    mkdir -p "$FIXTURE_ROOT/tasks_dir"
+
+    # Live task file with task_id/parent_cmd nulled out (simulated stage
+    # timeout / idle reset), matching karo's P07 observation.
+    cat > "$FIXTURE_ROOT/tasks_dir/idleworker.yaml" <<'TASKYAML'
+task:
+  task_id: ""
+  parent_cmd: ""
+  project: infra
+TASKYAML
+
+    # Case A (fail closed): the report declares a real task_id but has no
+    # task_contract_snapshot to recover identity from -> must BLOCK, not
+    # silently finish terminal.
+    cat > "$FIXTURE_ROOT/report_no_snapshot.yaml" <<'REPORTYAML'
+worker_id: idleworker
+task_id: cmd_z_full
+parent_cmd: cmd_z
+ac_version_read: dummyac01
+status: in_progress
+commit_contract: {required: true}
+commit_hash: aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa
+binary_checks:
+  AC1:
+  - check: dummy check
+    result: 'yes'
+files_modified:
+  - path: queue/notes/dummy_fixture.md
+lessons_useful: []
+lesson_candidate:
+  found: false
+  no_lesson_reason: n/a
+REPORTYAML
+    run env RFS_TASK_FILE_PATH="$FIXTURE_ROOT/tasks_dir/idleworker.yaml" \
+        REPORT_FIELD_SET_TASK_ROOT="$FIXTURE_ROOT" \
+        bash "$PROJECT_ROOT/scripts/report_field_set.sh" --batch \
+        "$FIXTURE_ROOT/report_no_snapshot.yaml" <<'EOF'
+status: completed
+EOF
+    [ "$status" -ne 0 ]
+    [[ "$output" == *"task identity unresolved"* ]]
+    grep -q '^status: in_progress$' "$FIXTURE_ROOT/report_no_snapshot.yaml"
+
+    # Case B (resolve from snapshot): same nulled live task, but the report
+    # carries its own deploy-time snapshot with the real task_id -> identity
+    # must resolve from the snapshot, not silently skip and not fail-closed
+    # on identity. (It may still fail later on an unrelated field this
+    # minimal fixture omits; the point under test is that it does not stop
+    # at "task identity unresolved" nor silently accept the write.)
+    cat > "$FIXTURE_ROOT/report_with_snapshot.yaml" <<'REPORTYAML'
+worker_id: idleworker
+task_id: cmd_z_full
+parent_cmd: cmd_z
+ac_version_read: dummyac01
+status: in_progress
+commit_contract: {required: true}
+commit_hash: aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa
+task_contract_snapshot:
+  task_id: cmd_z_full
+  parent_cmd: cmd_z
+binary_checks:
+  AC1:
+  - check: dummy check
+    result: 'yes'
+files_modified:
+  - path: queue/notes/dummy_fixture.md
+lessons_useful: []
+lesson_candidate:
+  found: false
+  no_lesson_reason: n/a
+REPORTYAML
+    run env RFS_TASK_FILE_PATH="$FIXTURE_ROOT/tasks_dir/idleworker.yaml" \
+        REPORT_FIELD_SET_TASK_ROOT="$FIXTURE_ROOT" \
+        bash "$PROJECT_ROOT/scripts/report_field_set.sh" --batch \
+        "$FIXTURE_ROOT/report_with_snapshot.yaml" <<'EOF'
+status: completed
+EOF
+    [[ "$output" != *"task identity unresolved"* ]]
+    [[ "$output" != *"task_id mismatch"* ]]
+
+    # Case C (legacy compatibility preserved): neither the live task nor the
+    # report itself declares any task_id -> a genuine minimal fixture, keep
+    # the existing compatibility skip (no BLOCK from this function at all).
+    cat > "$FIXTURE_ROOT/report_minimal_fixture.yaml" <<'REPORTYAML'
+worker_id: idleworker
+status: in_progress
+commit_contract: {required: false, reason: "fixture"}
+commit_hash: no-code-change
+binary_checks:
+  AC1:
+  - check: dummy check
+    result: 'yes'
+files_modified: []
+lessons_useful: []
+lesson_candidate:
+  found: false
+  no_lesson_reason: n/a
+REPORTYAML
+    run env RFS_TASK_FILE_PATH="$FIXTURE_ROOT/tasks_dir/idleworker.yaml" \
+        REPORT_FIELD_SET_TASK_ROOT="$FIXTURE_ROOT" \
+        bash "$PROJECT_ROOT/scripts/report_field_set.sh" --batch \
+        "$FIXTURE_ROOT/report_minimal_fixture.yaml" <<'EOF'
+status: completed
+EOF
+    [[ "$output" != *"task identity unresolved"* ]]
+    [[ "$output" != *"terminal test receipt"* ]]
+}
