@@ -23,7 +23,6 @@ SH
 worker_id: hanzo
 parent_cmd: cmd_test
 report_id: rpt-test
-task_id: task-test
 ac_version_read: abc
 status: pending
 commit_hash: '0000000000000000000000000000000000000000'
@@ -433,8 +432,10 @@ PY
   second="$TMPDIR_CASE/flow_b.yaml"
   cp "$REPORT" "$first"
   cp "$REPORT" "$second"
-  sed -i 's/^report_id: .*/report_id: rpt-flow-a/; s/^task_id: .*/task_id: task-flow-a/' "$first"
-  sed -i 's/^report_id: .*/report_id: rpt-flow-b/; s/^task_id: .*/task_id: task-flow-b/' "$second"
+  sed -i 's/^report_id: .*/report_id: rpt-flow-a/' "$first"
+  sed -i 's/^report_id: .*/report_id: rpt-flow-b/' "$second"
+  printf '%s\n' 'task_id: task-flow-a' >>"$first"
+  printf '%s\n' 'task_id: task-flow-b' >>"$second"
 
   run bash "$ROOT/scripts/report_field_set.sh" "$first" commit_hash 0000000000000000000000000000000000000000
   [ "$status" -eq 0 ]

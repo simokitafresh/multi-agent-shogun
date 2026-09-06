@@ -1202,11 +1202,29 @@ run_bats_files_parallel() {
     # ("unknown test name" / executed-count mismatch).  Keep ordinary test
     # environment variables intact; scrub only bats-core's private runtime
     # state and close its reserved formatter fd at the process boundary.
+    run_bats_file_timeout_seconds() {
+        local test_file="$1"
+        case "${test_file##*/}" in
+            test_three_layer_knowledge_chain.bats)
+                # This suite contains a deliberate 270s bounded async
+                # knowledge probe. The CI compatibility shard fixes the
+                # common timeout at 300s, leaving no scheduling margin for
+                # same-file cleanup and receipt publication.
+                printf '%s\n' "${BATS_THREE_LAYER_KNOWLEDGE_CHAIN_TIMEOUT_SECONDS:-900}"
+                ;;
+            *)
+                printf '%s\n' "$BATS_FILE_TIMEOUT_SECONDS"
+                ;;
+        esac
+    }
+
     run_bats_file_isolated() {
         local test_file="$1"
         local test_jobs="$2"
         local rc=0
-        timeout --foreground --kill-after=10s "${BATS_FILE_TIMEOUT_SECONDS}s" env \
+        local file_timeout_seconds
+        file_timeout_seconds="$(run_bats_file_timeout_seconds "$test_file")"
+        timeout --foreground --kill-after=10s "${file_timeout_seconds}s" env \
             -u BATS_ROOT_PID \
             -u BATS_RUN_TMPDIR \
             -u BATS_SUITE_TMPDIR \
@@ -1235,7 +1253,7 @@ run_bats_files_parallel() {
             "${RUN_TESTS_BATS_BIN:-bats}" "$test_file" --jobs "$test_jobs" --timing 3>&- || rc=$?
         if [ "$rc" -eq 124 ] || [ "$rc" -eq 137 ]; then
             printf 'TIMEOUT: %s exceeded %ss (rc=%s)\n' \
-                "${test_file##*/}" "$BATS_FILE_TIMEOUT_SECONDS" "$rc" >&2
+                "${test_file##*/}" "$file_timeout_seconds" "$rc" >&2
         fi
         return "$rc"
     }
@@ -1436,8 +1454,9 @@ run_bats_files_parallel() {
         pid_weight["$pid"]="$file_weight"
         pid_cache_path["$pid"]="$cache_path"
         pid_time["$pid"]="$timing_path"
+        file_timeout_seconds="$(run_bats_file_timeout_seconds "$file_base")"
         printf 'START: %s pid=%s weight=%s timeout=%ss\n' \
-            "$file_base" "$pid" "$file_weight" "$BATS_FILE_TIMEOUT_SECONDS" >&2
+            "$file_base" "$pid" "$file_weight" "$file_timeout_seconds" >&2
     done
 
     for pid in "${pids[@]}"; do
