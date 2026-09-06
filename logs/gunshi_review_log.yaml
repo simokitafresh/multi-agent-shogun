@@ -13622,3 +13622,39 @@
   verdict: FAIL
   verified_files:
   - queue/reports/saizo_report_cmd_4495.yaml:109
+- adversarial_review:
+    reason: DDL変更(DROP 8列)。隔離DB往復3回。down=nullable+defaults。本番DDL/deploy 0
+    required: true
+    verdict: PASS
+  brainwash_check: '704e99c7確認 24348行hash一致 3cycle往復 #1no#2no#3no#4no#5no#6no#7no#8no'
+  cmd_id: cmd_4495
+  confidence: HIGH
+  finding_categories:
+  - assumptions
+  - numbers
+  - simulation
+  - premortem
+  - north_star
+  - ambiguity
+  - adversarial
+  gate_prediction: CLEAR
+  gate_prediction_reason: all checks passed
+  ninja: saizo
+  observations:
+  - commit 704e99c7実在。8列DROP migration+API/FE/flush撤去
+  - '隔離DB 3cycle往復: retained_hash一致、down standard/0=24348、other_schema unchanged'
+  - cross_repo_commits修正済み(前版FAIL→本版precheck PASS)
+  - 'decision_candidate: component_type/nested_depth撤去対象再裁定あり'
+  operational_simulation:
+    actual: '704e99c7 cmd_4495_full: remove unused FoF weight columns with reversible
+      defaults'
+    command: git -C /mnt/c/Python_app/DM-signal log --oneline 704e99c7 -1
+    expected: cmd_4495 remove unused FoF weight columns
+    result: PASS
+  report_fingerprint: 1f94cd11d8b10679733cc601682f4b3ea7eea72c4f09d1cae61c3dd6e60927b5
+  review_type: report
+  step3_5_verified: true
+  timestamp: '2026-09-07T02:41:00+09:00'
+  verdict: LGTM
+  verified_files:
+  - backend/alembic/versions/drop_fof_component_weights_unused_columns.py:1
