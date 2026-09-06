@@ -14247,3 +14247,29 @@
   verdict: LGTM
   verified_files:
   - analysis_runs/cmd_4496_isolated_impact/compare_summary.json:1
+- cmd_id: cmd_karo_recon_i2_u3_u9_decision_page_20260907
+  review_type: report
+  ninja: tobisaru
+  verdict: FAIL
+  confidence: HIGH
+  finding_categories: [assumptions, numbers, simulation, premortem, north_star, ambiguity, adversarial]
+  brainwash_check: 'precheck ERRORS=2 finding欠落+lessons_useful契約外 #1no#2no#3no#4no#5no#6no#7no#8no'
+  gate_prediction: BLOCK
+  gate_prediction_reason: 'finding required欠落+lessons_useful契約外(L019,L097)'
+  report_fingerprint: 834c61c8c5cd3b34954499753b2b0356bfcde8bd4d757177af7d8898d47b5340
+  verified_files: ['queue/reports/tobisaru_report_cmd_karo_recon_i2_u3_u9_decision_page_20260907.yaml:1']
+  timestamp: '2026-09-07T06:13:00+09:00'
+  step3_5_verified: true
+  adversarial_review:
+    required: false
+    verdict: N/A
+    reason: 'precheck FAIL段階'
+  operational_simulation:
+    command: 'gate_gunshi_report_precheck.sh tobisaru_report'
+    expected: 'ERRORS=0'
+    actual: 'ERRORS=2: finding required欠落+lessons_useful L019/L097契約外'
+    result: FAIL
+  observations:
+    - 'ERRORS=2: (1)finding必須フィールド欠落 (2)lessons_useful契約外(L019,L097)'
+    - 'gate_report_format FAIL'
+    - '忍者修正して再提出が必要'
