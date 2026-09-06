@@ -11,7 +11,12 @@
 # 手順で回収したが、手書き merge message に Published-By trailer が無く §15 条件(1)の
 # trailer 率を 45/50 に落とした(将軍 msg_20260903_104037)。手順を script 化して trailer を固定する。
 set -euo pipefail
-ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+SCRIPT_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+# C2A_REPO_ROOT: 外部 repo(例 DM-Signal)の task commit を同じ merge 入口で公開する時に
+# その repo の root を指定する(2026-09-06 cmd_4483: 家老が GA-231c と ninja_scope_commit の
+# MERGE_HEAD 拒否で公開前 commit 入口を失った)。未指定は従来どおり本 repo。
+ROOT="${C2A_REPO_ROOT:-$SCRIPT_ROOT}"
+[[ -d "$ROOT/.git" || -f "$ROOT/.git" ]] || { echo "publisher_c2a_merge: C2A_REPO_ROOT is not a git repo: $ROOT" >&2; exit 2; }
 TASK_ID="${1:-}"; COMMIT="${2:-}"; CONFLICT_PATH="${3:-queue/insights.yaml}"
 [[ -n "$TASK_ID" && -n "$COMMIT" ]] || { echo "usage: publisher_c2a_merge.sh <task_id> <commit_sha> [<conflict_path>]" >&2; exit 2; }
 git -C "$ROOT" cat-file -e "${COMMIT}^{commit}" 2>/dev/null || { echo "publisher_c2a_merge: commit not found in root objects: $COMMIT" >&2; exit 2; }
@@ -24,7 +29,7 @@ _c2a_on_exit() {
     rm -rf -- "$WORK"
     (
         set +e
-        . "$ROOT/scripts/lib/defense_overhead_writer.sh" || exit 0
+        . "$SCRIPT_ROOT/scripts/lib/defense_overhead_writer.sh" || exit 0
         _now="${EPOCHREALTIME/./}"; _now="${_now:0:16}"
         _ms=$(( (_now - _C2A_T0 + 999) / 1000 )); [ "$_ms" -ge 0 ] || _ms=0
         _verdict=PASS; [ "$rc" -eq 0 ] || _verdict=FAIL
@@ -64,7 +69,7 @@ Published-By: karo-lane c2a-merge task=${TASK_ID} source=${COMMIT}"
 if [[ "${PUBLISHER_C2A_MERGE_NOLOCK:-0}" = 1 ]]; then
     _c2a_runner=(bash -c)
 else
-    _c2a_runner=(bash "$ROOT/scripts/publisher_queue.sh" lock-run --bound 300 -- bash -c)
+    _c2a_runner=(bash "$SCRIPT_ROOT/scripts/publisher_queue.sh" lock-run --bound 300 -- bash -c)
 fi
 "${_c2a_runner[@]}" '
 set -euo pipefail
@@ -96,8 +101,10 @@ c2a_target="$(git -C "$ROOT" rev-parse --verify refs/remotes/origin/main 2>/dev/
 # with dirty runtime files.  Reconcile it immediately through the non-merge
 # CAS/read-tree lane, which verifies local tree effects and restores exact
 # dirty overlap before the next validator cycle can observe stale HEAD.
-if [[ -r "$ROOT/scripts/safe_shared_main_ff.sh" ]]; then
-    bash "$ROOT/scripts/safe_shared_main_ff.sh" --repo "$ROOT" "$c2a_target"
+if [[ "$ROOT" != "$SCRIPT_ROOT" ]]; then
+    echo "publisher_c2a_merge: external repo ($ROOT) — shared root ff は行わない(外部 root は所有者 lane)"
+elif [[ -r "$SCRIPT_ROOT/scripts/safe_shared_main_ff.sh" ]]; then
+    bash "$SCRIPT_ROOT/scripts/safe_shared_main_ff.sh" --repo "$ROOT" "$c2a_target"
 else
     # Minimal publisher fixtures may intentionally omit the optional shared
     # checkout helper; production roots always carry it and take this lane.
