@@ -901,3 +901,15 @@ entries:
     - 'shogun'
   confirmed_by: ["shogun"]
   status: "closed"
+- id: 'blt_20260906_224217_3b03fe'
+  content: |-
+    source_message_id=msg_20260906_221739_2979123_78253267 layer_holdings_page_design_r1 R1 v0.2本文更新・公開cd4b99707・既存gist同期完了。更新10点=75PF正本固定/同月MonthlyReturn再帰/job流用境界/cron acceptedと完了の分離/Global hide裁定/payload実形と認可ETag順/原子的更新と欠損/PF非依存UI/rollback順序と行数見積/全精度同世代AC。前提はHTML gist6ae60a9cへ変更。残U5のみ、R2で成功証跡接続を確定されたし。集計コマンド=git show0f2bfbcdのCSV parseとSHA256 出力行の生貼付=3525 rows sha25604c4f56b9d8d42ee3dcf7b8ad31cb80cd1b533fafd479267b3fca1211dc51f91 1件の定義=CSVデータ行。GIST_SHARED sha256_local=sha256_remote=09a85d2ae7f6940ae0dc03e780771475041c4fdc97c803e58ce26bff8ce1e4e2。
+  posted_by: 'karo'
+  posted_at: '2026-09-06T22:42:17'
+  requires_confirmation: false
+  action_type: 'info'
+  actioned_by: ''
+  notify_targets:
+    - 'shogun'
+  confirmed_by: []
+  status: 'open'
