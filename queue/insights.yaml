@@ -22608,3 +22608,73 @@ insights:
   source: "skill_script_refs:d22a7a708a34177e"
   fix_known: false
   status: pending
+- id: INS-20260907-075819573-0746
+  ts: "2026-09-07T07:58:19+09:00"
+  insight: "[[なぜCI redが関係あるんだ？]] semantic_stress_test candidate_aliases: NO_MATCH source=lord query=なぜCI redが関係あるんだ？"
+  priority: "low"
+  source: "semantic_stress_test"
+  fix_known: false
+  status: pending
+- id: INS-20260907-075819832-9e5e
+  ts: "2026-09-07T07:58:19+09:00"
+  insight: "[[Layer Holdings Monthlyが正常に表示されるようにせよ]] semantic_stress_test candidate_aliases: NO_MATCH source=lord query=Layer Holdings Monthlyが正常に表示されるようにせよ"
+  priority: "low"
+  source: "semantic_stress_test"
+  fix_known: false
+  status: pending
+- id: INS-20260907-075820096-06db
+  ts: "2026-09-07T07:58:20+09:00"
+  insight: "[[進捗を表形式で見せてくれ]] semantic_stress_test candidate_aliases: NO_MATCH source=lord query=進捗を表形式で見せてくれ"
+  priority: "low"
+  source: "semantic_stress_test"
+  fix_known: false
+  status: pending
+- id: INS-20260907-075820310-3374
+  ts: "2026-09-07T07:58:20+09:00"
+  insight: "[[第 0 弾配線 I7 I3 の deploは許可]] semantic_stress_test candidate_aliases: NO_MATCH source=lord query=第 0 弾配線=I7/I3 の deploは許可"
+  priority: "low"
+  source: "semantic_stress_test"
+  fix_known: false
+  status: pending
+- id: INS-20260907-075820499-74bf
+  ts: "2026-09-07T07:58:20+09:00"
+  insight: "[[Layer Holdings P4 は go だ]] semantic_stress_test candidate_aliases: NO_MATCH source=lord query=Layer Holdings P4 は go だ"
+  priority: "low"
+  source: "semantic_stress_test"
+  fix_known: false
+  status: pending
+- id: INS-20260907-075820705-6cdc
+  ts: "2026-09-07T07:58:20+09:00"
+  insight: "[[dm signal layer holdings monthly page asis tobe 20260906 mdは]] semantic_stress_test candidate_aliases: NO_MATCH source=lord query=dm-signal-layer-holdings-monthly-page-asis-tobe_20260906.mdは本番デプロイ完了したか？"
+  priority: "low"
+  source: "semantic_stress_test"
+  fix_known: false
+  status: pending
+- id: INS-20260907-075821669-d95c
+  ts: "2026-09-07T07:58:21+09:00"
+  insight: "[[設計書も全てアップデートせよ]] semantic_stress_test candidate_aliases: NO_MATCH source=lord query=設計書も全てアップデートせよ"
+  priority: "low"
+  source: "semantic_stress_test"
+  fix_known: false
+  status: pending
+- id: INS-20260907-075828980-c843
+  ts: "2026-09-07T07:58:28+09:00"
+  insight: "[[cmd 4496のfull recalculate比較検証を継続する]] semantic_stress_test candidate_aliases: NO_MATCH source=lord query=cmd_4496のfull recalculate比較検証を継続する"
+  priority: "low"
+  source: "semantic_stress_test"
+  fix_known: false
+  status: pending
+- id: INS-20260907-075835221-6c62
+  ts: "2026-09-07T07:58:35+09:00"
+  insight: "[[I4 DROP と I1 DROPも許可]] semantic_stress_test candidate_aliases: NO_MATCH source=lord query=I4 DROP と I1 DROPも許可"
+  priority: "low"
+  source: "semantic_stress_test"
+  fix_known: false
+  status: pending
+- id: INS-20260907-075835497-2bcf
+  ts: "2026-09-07T07:58:35+09:00"
+  insight: "[[将軍側はD0で修正しよう]] semantic_stress_test candidate_aliases: NO_MATCH source=lord query=将軍側はD0で修正しよう"
+  priority: "low"
+  source: "semantic_stress_test"
+  fix_known: false
+  status: pending
