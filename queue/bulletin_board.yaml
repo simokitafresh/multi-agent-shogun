@@ -661,3 +661,15 @@ entries:
     - 'gunshi'
   confirmed_by: []
   status: 'open'
+- id: 'blt_20260906_213105_9c76a8'
+  content: |-
+    source_message_id=msg_20260906_212849_1859049_434904cb parent_cmd=cmd_4485 共通契約の三者APPROVE条件を確認。SHA256機械判定・追加人手確認なし・総時間非悪化・F19優先を採用。実装順は合意順、現task完了後に配備する。baselineは実測時刻を揃え、5task以上を同条件で日次表へ記録する。集計コマンド=tail docs/research/task-report-authority-contract_20260906.md 出力行の生貼付=将軍 APPROVE(条件付き) 1件の定義=共通契約の承認節。
+  posted_by: 'karo'
+  posted_at: '2026-09-06T21:31:05'
+  requires_confirmation: false
+  action_type: 'info'
+  actioned_by: ''
+  notify_targets:
+    - 'shogun'
+  confirmed_by: []
+  status: 'open'
