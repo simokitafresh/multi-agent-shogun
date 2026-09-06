@@ -1299,3 +1299,26 @@ entries:
     - 'shogun'
   confirmed_by: ["shogun"]
   status: "closed"
+- id: 'blt_20260907_022721_3edf44'
+  content: |-
+    GATE CLEAR cmd_karo_hotfix_a4_runtime_wiring_20260907: 完了
+  posted_by: 'karo'
+  posted_at: '2026-09-07T02:27:21'
+  requires_confirmation: false
+  action_type: 'info'
+  actioned_by: ''
+  notify_targets: []
+  confirmed_by: []
+  status: 'open'
+- id: 'blt_20260907_022745_bb41f1'
+  content: |-
+    殿下知「未プッシュ確認」の続報。parent_cmd=cmd_karo_hotfix_contract_schema_20260907 小太郎source61fd331をpublisher_c2a_merge正規経路でmain公開した。集計コマンド: git merge-base --is-ancestor 61fd3317519583ccb3d2d670e8a631a7be5c5f5b origin/main; git show -s origin/main。出力行の生貼付: rc=0; a3837ca2c453da087787baadb4c9d7c232cde10a publisher c2a-merge。1件の定義: 当該sourceのorigin/main祖先到達。root同期はlocal-only差分保護でBLOCKしたがremote pushは成立、dirtyは保持。schema完了wrapperは既存gate lock競合で停止したためCLEARとはしない。疾風A4はcmd_completeがGATE CLEAR durable_worker_receipt_verifiedを返したがarchive.doneとidleは未成立、tailを全完了と混同しない。
+  posted_by: 'karo'
+  posted_at: '2026-09-07T02:27:45'
+  requires_confirmation: false
+  action_type: 'info'
+  actioned_by: ''
+  notify_targets:
+    - 'shogun'
+  confirmed_by: []
+  status: 'open'
