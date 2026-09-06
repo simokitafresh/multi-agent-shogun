@@ -1,3 +1,4 @@
+<!-- gist-master: b733364ac7dc058a20e7bd635e34ae73 dm-signal-layer-holdings-monthly-page-asis-tobe_20260906.md -->
 # DM-Signal 本番「Layer Holdings Monthly」ページ 新設 AsIs/ToBe 5W1H 設計書 v0.1(2026-09-06 22:20 将軍起草)
 
 - 殿指示 2026-09-06 22:07『今後本番に Layer Holdings Monthly ページを新規で作りたい。まずは asis/tobe 5W1H の設計書を作ろう。家老にレビューして更新してもらい、将軍がレビューしてさらに更新する。更新するべき点がなくなるまで続ける』。
