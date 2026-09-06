@@ -1,13 +1,13 @@
 <!-- gist-master: 70b946c022cd5f6f81195ab837b7a7eb ninja_block_fail_root_cause_asis_tobe_20260905.md -->
-# 忍者BLOCK/FAILの根因対策 — 家老配備設計 v3.2(2026-09-06 12:15 F-15 root drain 追加: origin 収載済み hotfix が共有 root runtime に載らない構造、家老 18 path 監査 queue/notes/root_convergence_audit_20260906_1206.md) / v3.1
+# 忍者BLOCK/FAILの根因対策 — 家老配備設計 v3.3(2026-09-06 18:10 F-13 golden CLEAR・F-15 疾風保全統合案・W6 4 例目・F-18 候補=報告契約の型不足。v3.2=12:15 F-15 root drain 追加: origin 収載済み hotfix が共有 root runtime に載らない構造、家老 18 path 監査 queue/notes/root_convergence_audit_20260906_1206.md) / v3.1
 
 更新: 2026-09-05 23:21:40 JST(家老 v3.1)。将軍追記 2026-09-06 00:40: §5 台帳に W0/W1 CLEAR、F-6 APPROVE、K2 走行、W5 閉を反映。一次確認の観測時点は23:13:50 JST。殿「読み込み覚醒してアップデート。家老が忍者を配備しやすい形式にしてよい」に基づく設計更新。
 正本は本書。既存gist IDを維持。旧v3.0の全数値・分類・レビュー履歴は `docs/research/ninja-block-fail-root-cause-v3-evidence-20260905.md` に保存した。過去の観測日時は変更しない。
 
 ## 進捗ビジュアル(将軍 loop 更新 2026-09-06 18:10)
 
-**全項目(W/F/P/C/E)** `██████░░░░ 6/11` ✅完了 🟡走行中 ⏳待ち 🔴要判断
-状態集計: ✅ 6 / 🟡 2 / ⏳ 1 / 🔴 2(表の 11 行、18:10)
+**全項目(W/F/P/C/E)** `█████░░░░░ 7/14` ✅完了 🟡走行中 ⏳待ち 🔴要判断
+状態集計: ✅ 7 / 🟡 3 / ⏳ 0 / 🔴 3(表の 14 行、18:10。W6 続=✅、F-15 続=🟡、F-13 golden=✅、恒久契約=🔴、F-18 候補=🔴 未起票)
 次の一手: F-15 保全統合案(疾風、報告契約不足で failed→再提出中)→root drain 実行→P-4 CLEAR。DM CI は golden 全帰属(飛猿 18:01 CLEAR)で GREEN 化済み。本日の failed 2 件(疾風 finding 欄欠落/影丸 commit_hash 形式+binary_checks 空)は**報告契約の型不足**=F-18 候補(deploy 時に report テンプレへ必須欄を空でなく placeholder 付きで注入)
 
 | 群 | 状態 | 現在値 |
@@ -222,6 +222,9 @@ flowchart LR
 | E-1 解除 | Codex 上限 09:14 解除(殿 09:14)。家老 inbox 7 件を将軍の再開順序 1 通で消化開始、便再開 09:17 | 完了 | 停止 07:5x〜09:14 の約 80 分 |
 | F-14 | cmd_complete_gate の report_commit_main_ancestry が sha 祖先のみを見て content-equivalent(publisher の squash/再構成で sha・patch-id が変わるが tree は一致)を認めず、P-4/K2/C1 が WAIT を反復(P-4 は 10:00 以降 5 回) | 検出 10:22(家老訂正 blt_102217)。疾風 hotfix: 参照 bats 36 file 1392 PASS、軍師 LGTM、家老 ACCEPT、origin c4b0989d3 収載(11:4x)。**残壁=共有 root への同期**(root_sync_skipped not_descendant、root gate 旧版)→F-15 として root drain へ帰属 | 分類 D(偽 WAIT)。将軍の誤前提『git cherry + = 未収載』も同時に訂正。教訓=hotfix が origin に載っても runtime(root)に載るまで効かない |
 | F-15 | 共有 root が origin へ収束できず(171 behind/23 ahead、safe_shared_main_ff mismatch 18=root 側 HEAD の台帳/doc effect が origin blob と不一致)、origin 収載済み hotfix(F-14)が root runtime に載らない。P-4 WAIT 継続、deploy 8 件 CI 再判定も待ち | 12:00 将軍一次確認(root gate に content_equivalent 0 件)。家老へ順序付き 1 通 12:01 | 分類 C(合流待ち)。才蔵 FP vocabulary は診断 run 34005978406 で PASS=flaky 確定、正式 FAIL_CLOSE(11:30) |
+| F-15 続 | 才蔵 root_drain_recon(15:40)は artifact 完成も preflight 字段名不一致で FAIL→17:35 FAIL_CLOSE。疾風 cmd_karo_recon2_root_drain_plan(17:34)が保全統合案を継続、18:01 failed=報告 finding 欄(observation_target/result/evidence_path)欠落→再提出中。mismatch 23。共有 root 適用 0 | 🟡 | task yaml hayate.yaml、blt_173515 |
+| F-13 golden | DM-Signal CI RED(cmd_3854 golden regression)を飛猿が全帰属再生成で解消: rb6 5,535+決定性 26,175=31,710、dup 0、243,293 行 exact。DM main 36420100、CI success ca5dbbc5。context/dm-signal-core.md GA-590 | ✅ 18:01 | blt_180258、gh run |
+| F-18 候補 | 本日の failed 2 件(疾風 finding 欄欠落、影丸 commit_hash 非 40-hex+binary_checks result 空)は作業失敗ではなく**報告 YAML の契約不足**。deploy 時の report テンプレが必須欄を空で置くため、忍者が埋め忘れると report gate で failed 扱い→解放遅延の新型。対策候補: テンプレ必須欄に placeholder(`<必須: yes/no>`)と gate 前の self-check 行を注入 | 🔴 未起票(家老 lane) | task yaml kagemaru.yaml last_block_reason、hayate.yaml block_reason |
 | P-1→W5 | バグ#6 | 調査完了・既修復 | `7671bdb99`、隔離success/tamper fail-close、追加fix不要 |
 | P-2→W5 | ci_push_state | 調査完了・10/10終端接続 | WAIT10=6+3+1。9行CLEAR、1行はpurpose不一致の正式BLOCK+archive。修復対象0 |
 | P-3→W6 | honest FAIL停滞 | 未着手、既存監視あり(cmd_4479 は軍師再 review→approved_honest_fail が 15 分で回った=停滞なし 00:3x) | 既存caller/条件/fixtureを確認して変更要否を決める |
