@@ -21236,3 +21236,10 @@ insights:
   source: "semantic_index_update"
   fix_known: false
   status: pending
+- id: INS-20260907-012333000-b4f8
+  ts: "2026-09-07T01:23:33+09:00"
+  insight: "semantic_index_update新概念候補: discussion:第 弾配線 I7 I3 の deploは許可 は 既存aliasesに一致なし。概念定義とaliases追加を検討せよ"
+  priority: "low"
+  source: "semantic_index_update"
+  fix_known: false
+  status: pending
