@@ -19570,3 +19570,52 @@ insights:
   source: "semantic_index_update"
   fix_known: false
   status: pending
+- id: INS-20260906-222004036-0141
+  ts: "2026-09-06T22:20:04+09:00"
+  insight: "[[iinbox3]] semantic_stress_test candidate_aliases: NO_MATCH source=lord query=iinbox3"
+  priority: "low"
+  source: "semantic_stress_test"
+  fix_known: false
+  status: pending
+- id: INS-20260906-222004417-3526
+  ts: "2026-09-06T22:20:04+09:00"
+  insight: "[[§2 3 不整合 I 別の状態は更新されているか？]] semantic_stress_test candidate_aliases: NO_MATCH source=lord query=§2.3 不整合 I 別の状態は更新されているか？"
+  priority: "low"
+  source: "semantic_stress_test"
+  fix_known: false
+  status: pending
+- id: INS-20260906-222008387-04e1
+  ts: "2026-09-06T22:20:08+09:00"
+  insight: "[[入力待ちにすると家老がボトルネックになるのでは？素直に忍者の権限で出来ることだけを要求すればいい]] semantic_stress_test candidate_aliases: NO_MATCH source=lord query=入力待ちにすると家老がボトルネックになるのでは？素直に忍者の権限で出来ることだけを要求すればいい。もしくはニンジャの権限を拡大するかだ"
+  priority: "low"
+  source: "semantic_stress_test"
+  fix_known: false
+  status: pending
+- id: INS-20260906-222008692-7c52
+  ts: "2026-09-06T22:20:08+09:00"
+  insight: "[[CI復旧を待つ合理的な理由はなにか教えて]] semantic_stress_test candidate_aliases: NO_MATCH source=lord query=CI復旧を待つ合理的な理由はなにか教えて"
+  priority: "low"
+  source: "semantic_stress_test"
+  fix_known: false
+  status: pending
+- id: INS-20260906-222009087-5dce
+  ts: "2026-09-06T22:20:09+09:00"
+  insight: "[[X投稿は順調か？夕方の投稿がされていないようだ]] semantic_stress_test candidate_aliases: NO_MATCH source=lord query=X投稿は順調か？夕方の投稿がされていないようだ"
+  priority: "low"
+  source: "semantic_stress_test"
+  fix_known: false
+  status: pending
+- id: INS-20260906-222009495-05c3
+  ts: "2026-09-06T22:20:09+09:00"
+  insight: "[[30分ごとのloop指示がどんどん肥大化していないか？]] semantic_stress_test candidate_aliases: NO_MATCH source=lord query=30分ごとのloop指示がどんどん肥大化していないか？"
+  priority: "low"
+  source: "semantic_stress_test"
+  fix_known: false
+  status: pending
+- id: INS-20260906-222009812-99b6
+  ts: "2026-09-06T22:20:09+09:00"
+  insight: "[[では修正して]] semantic_stress_test candidate_aliases: NO_MATCH source=lord query=では修正して、inbox1"
+  priority: "low"
+  source: "semantic_stress_test"
+  fix_known: false
+  status: pending
