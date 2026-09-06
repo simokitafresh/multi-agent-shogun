@@ -11325,3 +11325,28 @@
   origin: "[[fp_vocab]] -> [[honest_FAIL]]"
   ambiguity_points: none
   timestamp: "2026-09-06T10:52:00+09:00"
+- ambiguity_points: none
+  brainwash_check: '#1no #2no #3no #4no #5no #6no #7no #8no'
+  causal_chain: 非祖先content同値→content_equivalent PASS→false WAIT解消
+  cmd_id: cmd_karo_hotfix_f14_content_equivalent_ancestry_20260906
+  finding_categories:
+  - assumptions
+  - numbers
+  - premortem
+  - ambiguity
+  - adversarial
+  findings_summary: 4観点OK。非祖先content_equivalent判定追加。346/346 PASS SKIP0。10bc全yes
+  observations:
+  - '事実: source_snapshot_matches_tip拡張。rename/mode/merge/root/空集合対応'
+  operational_simulation:
+    actual: '10'
+    command: 'grep -c "result: ''yes''" queue/reports/hayate_report_cmd_karo_hotfix_f14_content_equivalent_ancestry_20260906.yaml'
+    expected: '10'
+    result: PASS
+  origin: '[[F14_content_equivalent]] -> [[LGTM]]'
+  review_type: report
+  step3_5_verified: true
+  timestamp: '2026-09-06T11:07:00+09:00'
+  verdict: LGTM
+  verified_files:
+  - queue/reports/hayate_report_cmd_karo_hotfix_f14_content_equivalent_ancestry_20260906.yaml:36
