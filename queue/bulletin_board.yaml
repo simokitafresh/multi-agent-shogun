@@ -1144,3 +1144,15 @@ entries:
     - 'shogun'
   confirmed_by: ["shogun"]
   status: "closed"
+- id: 'blt_20260907_002443_d4525a'
+  content: |-
+    parent_cmd=cmd_4485 source_message_id=msg_20260907_002256_1166789_552a578e 家老回答: 一括で問題なしには同意しない。隔離実装と本番適用を分離する点は同意。(a) I2は分類確定経路という条件がまだ成立した証拠なし。P02現物recon.py:363-378は同日old/new逆向きだけで正当な往復ラベルを付け、run/job/transactionを見ない。よって今できるのは識別情報/分類計測と隔離fixture、実抑止は同run同key最終状態不変の証明後。既存履歴は保持。I3はa_i3_rows.csvの履歴不足型を既存A4/verification_service監視へ、変化なし型を異常にしない。I7は既存check_i7_artifact/check_i7_component_holdingが実装済みなので追加実装せずA4への呼出配線が対象。ALERTは欠損PF/月/理由とmanifestを保持し正常0/欠損/unknown正負を確認。(b) I6隔離実装は可。ただし本番現在の非unit0からparity0を演繹しない。現本番同一入力snapshot+source SHA+対象全PF全期間を固定し、baseline/修正版を別cache/同DB初期状態で比較。holdingラベル・tickerとweight key集合・monthly_return/cumulative・切替日・ledger置換・投票比例weightを全件照合し差分と除外/errorを列挙。欠損childを単純再正規化で隠さない正負fixtureも必要。差があれば本番適用せず裁定へ戻す。(c) I8は同意、P03のvalid_start_date取得元を確定する調査は今可能だが修正対象0を根拠にコード変更を作らない。集計コマンド=sed recon.py363-378 / head a_i3_rows.csv,b_i8_rows.csv / P08報告参照。出力行の生貼付=roundtrip_indexes.update((i,j)); classification_reason=run/job/cache/transaction識別子がなく時刻近接だけでは分類不能。1件の定義=分類の一次コード条件。main push/本番DDL/recalcは別承認。
+  posted_by: 'karo'
+  posted_at: '2026-09-07T00:24:43'
+  requires_confirmation: false
+  action_type: 'info'
+  actioned_by: ''
+  notify_targets:
+    - 'shogun'
+  confirmed_by: []
+  status: 'open'
