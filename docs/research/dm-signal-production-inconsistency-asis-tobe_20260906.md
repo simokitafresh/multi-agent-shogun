@@ -1,5 +1,5 @@
 <!-- gist-master: 2f1a3daa07c336c90958b1287245318b dm-signal-production-inconsistency-asis-tobe_20260906.md -->
-# DM-Signal 本番の不整合 I1〜I8 — 事象・影響・改善時の本番変化・影響範囲・依存関係 設計書 v0.4(2026-09-06 14:32 家老 R2 APPROVE(読取偵察のみ)・残訂正 6 点採用: I6 の Σ<1 断定撤回、I2/I3 の二重計上と直列依存を撤去、I5 六分類へ統一、I4 の実行 0 断定撤回、訂正 event で可逆性確定しない) / v0.3(14:40 家老 R1 REQUEST_CHANGES 6 点を全採用: I4 は writer 実装あり caller 0/ledger API は today 固定・append-only guard/I1 admin caller 実在・8 key/I2 ALERT filter 既存・相殺しない/I6 切替日検出と欠損 child skip も波及/偵察は親 1 本+成果物 A/B) / v0.2(14:35 将軍自己検証 3 点: I1 の frontend 参照あり・I6 は monthly_return 経路と同一関数・change_log 前方補完の一致率 26〜79%=change_log は履歴として再構成不能) / v0.1(14:25 起草、家老 R1 依頼)
+# DM-Signal 本番の不整合 I1〜I8 — 事象・影響・改善時の本番変化・影響範囲・依存関係 設計書 v0.5(2026-09-06 14:55 殿 14:44『データの流れのフローチャート、粒度小・分割可・cron の日常再計算も』→§1.5 に F-A〜F-F 6 枚、★で I1〜I9 の発生点を明示) / v0.4(14:32 家老 R2 APPROVE(読取偵察のみ)・残訂正 6 点採用: I6 の Σ<1 断定撤回、I2/I3 の二重計上と直列依存を撤去、I5 六分類へ統一、I4 の実行 0 断定撤回、訂正 event で可逆性確定しない) / v0.3(14:40 家老 R1 REQUEST_CHANGES 6 点を全採用: I4 は writer 実装あり caller 0/ledger API は today 固定・append-only guard/I1 admin caller 実在・8 key/I2 ALERT filter 既存・相殺しない/I6 切替日検出と欠損 child skip も波及/偵察は親 1 本+成果物 A/B) / v0.2(14:35 将軍自己検証 3 点: I1 の frontend 参照あり・I6 は monthly_return 経路と同一関数・change_log 前方補完の一致率 26〜79%=change_log は履歴として再構成不能) / v0.1(14:25 起草、家老 R1 依頼)
 
 - 発端: 殿 2026-09-06 14:11『dm-signal-research-data-backlog_20260905.md を参考に DM-signal の本番の不整合について深く調査しよう。家老と繰り返しレビュー交換をせよ。本番の不整合、それによる影響、改善時にどのような変化が本番に起きるか、改善の影響範囲・依存関係なども明確にせよ』
 - 親: `docs/research/dm-signal-research-data-backlog_20260905.md` v1.5 §B5(I1〜I8)、`dm-signal-research-data-foundation-asis-tobe_20260905.md` v0.10 §2、`analysis_runs/cmd_4480_shin_yotsume_parity/root_cause_summary.md`(DM-Signal origin 07632b14)
@@ -11,7 +11,7 @@
 - 数値は一次情報(readonly launcher nonce、cmd 報告、CI 上の verify_*.md)に限る。本書で新規に測っていない数値は「未検証」と明記し、偵察 cmd の対象にする。
 - 改善時の本番変化は「誰が何を見る/どの job が何を書く」で書く。抽象語(整合性向上)は禁止。
 
-## 進捗ビジュアル(将軍 loop 更新 2026-09-06 14:50)
+## 進捗ビジュアル(将軍 loop 更新 2026-09-06 14:55)
 
 **全項目(I1〜I9)** `░░░░░░░░░░ 0/9` ✅完了 🟡走行中 ⏳待ち 🔴要判断
 状態集計: ✅ 0 / 🟡 0 / ⏳ 6 / 🔴 3(表の 9 行)
@@ -31,6 +31,108 @@
 
 ## §1 読み方
 各 I について (a) 事象と証拠 (b) 本番での影響(誰が何を見るか) (c) 改善案 (d) 改善時に本番で起きる変化 (e) 影響範囲(table/file/API/UI) (f) 依存関係 (g) 検証方法 (h) 未検証事項 を書く。証拠の行番号は origin/main 0f2bfbcd。
+
+## §1.5 データの流れ(殿 14:44『粒度を小さく、分割してよい、cron の日常再計算も意識』。6 枚に分割。★印=不整合 I の発生点。行番号は origin/main 0f2bfbcd)
+
+### F-A 日常の再計算: Render cron 4 本+月次 1 本+手動(context/dm-signal-ops.md §cron 表、scripts/etl_layer_sync_wait.sh)
+
+```mermaid
+flowchart LR
+  subgraph cron["Render cron(oregon)・毎日 UTC 01:xx"]
+    L0["L0 sync-prices<br/>POST /admin/sync-prices<br/>jobs/sync_layers.sync_prices<br/>→ data_fetcher.DataFetcherJob"]
+    L1["L1 sync-tickers<br/>POST /admin/sync-tickers<br/>generate_ticker_daily/monthly_returns"]
+    L2["L2 sync-standard<br/>POST /admin/sync-standard<br/>recalculate_history_fast(standard)"]
+    L3["L3 sync-fof<br/>POST /admin/sync-fof<br/>recalculate_history_fast(FoF 経路)"]
+  end
+  L0 -->|"EtlLayerStatus.last_success_date=当日<br/>(/admin/sync-status を待つ、固定オフセット禁止 cmd_3832)"| L1 --> L2 --> L3
+  M["月次 cron dm-signal-deterioration-batch<br/>jobs/deterioration_batch.run_deterioration_batch<br/>(現在月 1 点 UPSERT、cmd_4140)"]
+  H["手動 POST /admin/recalculate-sync?mode=full<br/>(pg_advisory_lock 排他、409=実行中)"]
+  H -.->|"同じ recalculate_history_fast を全 PF で"| L2
+  L3 --> DB[("本番 Postgres<br/>signals / monthly_returns / signal_change_log /<br/>fof_component_weights / ledger(0 行) / trade_performance …")]
+  M --> DB
+```
+- 毎日の流れは L0→L1→L2→L3 の直列。**I2/I3/I5/I6 は L2/L3 の毎日の再計算で毎回書き直される**(過去行も再計算対象。cleanup モードでは change_log を作らない=signal_flush.py L324)。
+- 手動 full recalc は同じ関数を全 PF で回す(所要 ~480s、cmd 履歴)。改善後の「変わる/変わらない」は、この日次 run の次回実行で本番に現れる。
+
+### F-B 標準 PF の再計算 1 run(jobs/recalculate_fast.py `recalculate_history_fast` L1526〜)
+
+```mermaid
+flowchart TD
+  P0["Phase 0 cleanup<br/>(cleanup_mode: 対象 Signal 削除。change_log は作らない L324)"] --> P1["Phase 1 データロード<br/>prices・portfolios・既存 signals"]
+  P1 --> P2["Phase 2/3.5/3.7 前処理<br/>日次リターン・PriceCache・momentum 事前計算"]
+  P2 --> P4["Phase 4 日次ループ(standard)<br/>raw_signal → holding_signal(rebalance 考慮)<br/>momentum_data"]
+  P4 --> FB["_flush_batch(signal_flush.py L299〜)"]
+  FB --> S[("signals UPSERT")]
+  FB --> CL["_collect_signal_change_logs L98-153<br/>★I2/I3: 既存行の holding_signal と比較、<br/>INSERT は除外(L131)、pending fill 遷移は marker 付き"]
+  CL --> CLT[("signal_change_log INSERT<br/>★I2 同日複数行・★I3 未出現 PF")]
+  FB --> LR["ledger reconcile(L236-262 署名 dedupe、<br/>services/signal_decision_ledger.reconcile L409-449)<br/>★I4: ledger 0 行=no-op"]
+  P4 --> P41["Phase 4.1 月初 signal 行の自動作成<br/>(pending 前方補完 PENDING_MONTH_START_FILL_MARKER)"]
+  P41 --> FB
+  P41 --> P45["Phase 4.5 _generate_monthly_returns(standard)<br/>generators/monthly_returns.py"]
+  P45 --> MR[("monthly_returns UPSERT<br/>holding_signal・monthly_return・cumulative<br/>★I5: signals 月初との差")]
+  P45 --> P46["Phase 4.6 ALM second pass"]
+  P46 --> P5["Phase 5 FoF 再計算(全 standard 完了後)<br/>→ F-C"]
+  P5 --> BB["Phase 5 積み木: ticker_monthly_returns 等"]
+  FB --> AL["SIGNAL CHANGE ALERT<br/>_confirmed_signal_change_alerts L364-383<br/>(pending fill・repeated ledger correction は除外)"]
+```
+
+### F-C FoF の再計算(jobs/recalculate_fof.py `_recalculate_fof_history` L438〜)
+
+```mermaid
+flowchart TD
+  S1["Step 1 全構成 PF の signal が揃う最古日"] --> S2["Step 2 MonthlyReturn 履歴で lookback 充足日<br/>(有効開始日=★I8 初月の定義 3 種のうち 1 つ)"]
+  S2 --> DL["日次ループ: filter(例 weighted_multi_view_momentum)<br/>results['weights']=投票比例 raw weights"]
+  DL --> CW["component_weights_batch<br/>target_weight のみ、actual_weight=None(L1270-1284)"]
+  CW --> FCW["_flush_fof_component_weights(fof_flush.py L95-165)<br/>DELETE 期間内 → UPSERT(target/actual/drift)"]
+  FCW --> FCWT[("fof_component_weights<br/>★I1: 残り 8 列は writer が書かず NULL")]
+  DL --> DW["_compute_display_ticker_weights L149-170<br/>→ expand_portfolio_to_tickers"]
+  DW --> EX["services/price_ratio_impl.expand_portfolio_to_tickers L1045/L1237-1317<br/>raw_weights→_normalize_weights→selected_pf_ids 絞込<br/>★I6: 絞込後に再正規化しない(L1243-1247)・欠損 child skip(L1295)"]
+  EX --> SIG[("signals.momentum_data<br/>display_ticker_weights / pending_display_ticker_weights<br/>★I6 非 unit 行")]
+  DL --> FS["_flush_deferred_fof_signals L189 → _flush_batch(F-B と同じ change_log/ledger 経路)"]
+  FS --> MRG["_generate_monthly_returns(FoF)<br/>monthly_returns.py L387-399 expanded_weights_on → 同じ expand 関数<br/>L554-558 ledger weights 置換(0 行=不発)<br/>L409-418/L444-450 切替日検出<br/>L552-572 calculate_weighted_return"]
+  MRG --> MRT[("monthly_returns(FoF)<br/>★I6 が数値へ届く候補経路(未実測)<br/>★I8 初月: signal 無しで return 有り(2 件、全 FoF は偵察)")]
+```
+
+### F-D signal_change_log の 1 行ができるまで(signal_flush.py)
+
+```mermaid
+flowchart LR
+  B["flush バッチ(portfolio_id,date)×N"] --> Q["Signal を (pf, date 範囲) で 1 回 query<br/>existing_by_key"]
+  Q --> D{"既存行あり?"}
+  D -->|"なし(INSERT)"| X["行を作らない(L131)<br/>★I3 の候補: 初回確定・pending fill 新規行は履歴に残らない"]
+  D -->|"あり"| C{"old_holding == new_holding?"}
+  C -->|"同じ"| X2["行を作らない"]
+  C -->|"違う"| W["1 行: old/new holding・old/new ticker_weights・changed_at・<br/>is_pending_fill_transition(L141-143)"]
+  W --> LD["ledger drift 署名の既出判定(L236-262)<br/>ledger 0 行なら素通り"]
+  LD --> INS[("signal_change_log INSERT(L350)")]
+  W -.->|"同 run 内で A→B の後 B→A が別バッチで来ても相殺しない<br/>★I2 同日複数行(経路は偵察で分類)"| INS
+```
+
+### F-E signal_decision_ledger(0 行)の書き手と読み手
+
+```mermaid
+flowchart LR
+  API["POST /api/signal_decision_ledger(初期投入)<br/>api/signal_decision_ledger.py L38-54<br/>insert_initial_ledger_events(db, date.today()) ★today 固定"] --> LT[("signal_decision_ledger<br/>append-only guard models.py L197-202<br/>★I4: PITR 後 0 行、再バックフィル未実施")]
+  COR["訂正 event(services L326)"] --> LT
+  LT -->|"読む"| R1["monthly_returns.py L248-263<br/>確定月は ledger 優先、空なら no-op"]
+  LT -->|"読む"| R2["signal_flush reconcile L409-449<br/>holding_signal を ledger 値へ置換(08-04 版=T7.5 未適用 ★I9)"]
+  LT -->|"読む"| R3["monthly_trade_impl.py L35-78<br/>safe_bundle_v2 / portfolio_restore / writer_inventory"]
+  SDH[("signal_detail_history<br/>writer 実装 verification_service.py L264/L388<br/>runtime caller 0(静的) ★I4")]
+```
+
+### F-F 読取側(誰が何を見るか)
+
+```mermaid
+flowchart LR
+  SIG[("signals.momentum_data")] --> A1["GET /api/signals(signals.py L280)<br/>_get_precomputed_fof_display_weights L90-112<br/>pending なら pending_display を優先<br/>★I6 非 unit の weight をそのまま表示"]
+  SIG --> A2["GET /api/monthly-trade/{pf}(monthly_trade.py L261、L43-45 同 key)"]
+  MR[("monthly_returns")] --> A3["GET /api/history/{pf}(history.py L28)<br/>_resolve_pf_ids_to_tickers 1 段展開(L211-244)"]
+  MR --> LP["LP・X 投稿・Live OOS の数値(研究 F1 の parity 対象)"]
+  FCW[("fof_component_weights")] --> A4["GET /fof-weights/{pf}(portfolios.py L597)<br/>→ frontend admin WeightBreakdown.tsx L37<br/>★I1: 8 列 NULL を含む応答"]
+  CLT[("signal_change_log")] --> A5["ALERT 集計(recalculate_fast L1583 buffer)・研究 A4・cmd_4337"]
+  LT[("ledger 0 行")] -.->|"読まれるが空"| A3
+```
+- F-F の左列が「改善で書き換わる表」、右列が「殿・顧客・研究が見る面」。§4 の『変わるもの』はこの対応で決めている。
 
 ## §2 不整合カタログ
 
