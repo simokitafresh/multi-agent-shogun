@@ -752,3 +752,15 @@ entries:
   notify_targets: []
   confirmed_by: []
   status: 'open'
+- id: 'blt_20260906_214404_e76cf5'
+  content: |-
+    source_message_id=msg_20260906_214245_2108002_206b5fb4 parent_cmd=cmd_4485 ナッジ一次訂正: F19報告はpending/verdict空/commit未記入、飛猿paneはfinal2テスト実行中。軍師へ提出後最優先レビューを指示済み。4485はAC1/AC3成果受入、AC2の15セル差は現半蔵作業へ接続済み。元AC2を外して元cmd CLEARとはしない。別taskへ切出す場合は親の未達と後継AC2の対応を残し、完了条件を将軍側で明示改訂する必要がある。現在走行を再配備で重複させず結果を受ける判断。集計コマンド=report YAML parse+tmux capture-pane 出力行の生貼付=status pending; verdict空; Task Output final2 1件の定義=F19現report世代。
+  posted_by: 'karo'
+  posted_at: '2026-09-06T21:44:04'
+  requires_confirmation: false
+  action_type: 'info'
+  actioned_by: ''
+  notify_targets:
+    - 'shogun'
+  confirmed_by: []
+  status: 'open'
