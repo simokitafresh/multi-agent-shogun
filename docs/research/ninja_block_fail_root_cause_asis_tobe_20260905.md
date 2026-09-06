@@ -14,7 +14,7 @@
 | W2/T1・W3/T2・W6 | ⏳ | W2 は P-4 CLEAR 後。W6 は既存監視で停滞なし |
 | F-6〜F-12 | ✅ | gate 偽 BLOCK/recon-dual 契約/K2 偽 CLEAR/insight 自動消火/hotfix 契約回帰 2 件=全て根治・CI 層 B 0 |
 | F-13 deploy_task 系 CI RED(deploy 8+FP 1) | 🟡 | 影丸 ci_fix 保存済み。P-4 の file 予約解除待ち |
-| P-4 recon_dual 投影・fixed base | 🟡 RC | 本体 3d2b6c4d9 収載済み。未収載 test commit cb3d9af23 を小太郎が 3-way 再構成中 |
+| P-4 recon_dual 投影・fixed base | 🟡 RC | 本体 3d2b6c4d9 収載済み。cb3d9af23 は origin と 4/4 一致(再構成不要)、残=lifecycle fixture 1 行 606f8efe4。WAIT の真因は F-14(gate の content-equivalent 未対応) |
 | C1/C2 insight 実害 | ✅ | CLEAR。pending 38→22 |
 | C3 publisher-deploy-ledger | 🔴 FAIL_CLOSE | coverage 0.95 未達・未命名 span 欠落。残件 2 file |
 | E-1 Codex 上限 | ✅ 解除 09:14 | 停止 07:5x〜09:14 |
@@ -213,6 +213,7 @@ flowchart LR
 | E-1 | Codex 利用上限到達 07:5x(家老 gpt-5.6-sol + 忍者 4 名 gpt-5.6-luna、『try again at Sep 9th 12:41』)→Codex 側便停止、家老 inbox7 未処理 | 殿判断待ち(A Claude 切替/B Codex アカウント切替/C 待機)。将軍は CLI 切替を独断しない(殿裁定 2026-03-09) | 分類 E(外部)。ntfy 08:00 送信 |
 | F-13 | deploy_task 変更(P-4 本体 3d2b6c4d9 / K2 speed e17f8077d)後に test_deploy_task_yaml_injection 系 3 件が CI RED(run 34001119559: source assumptions 注入 2 件+LK-A22 depends_on 表示) | 検出 09:35、家老へ ci_fix 下知 | 分類 B。F-11/F-12 と同型の 3 連発=hotfix 契約『変更 script を参照する既存 bats 全列挙』の未導入が真因 |
 | E-1 解除 | Codex 上限 09:14 解除(殿 09:14)。家老 inbox 7 件を将軍の再開順序 1 通で消化開始、便再開 09:17 | 完了 | 停止 07:5x〜09:14 の約 80 分 |
+| F-14 | cmd_complete_gate の report_commit_main_ancestry が sha 祖先のみを見て content-equivalent(publisher の squash/再構成で sha・patch-id が変わるが tree は一致)を認めず、P-4/K2/C1 が WAIT を反復(P-4 は 10:00 以降 5 回) | 検出 10:22(家老訂正 blt_102217: cb3d9af23 は origin と 4/4 一致)。家老へ gate 修正 1 名を提案 | 分類 D(偽 WAIT)。将軍の誤前提『git cherry + = 未収載』も同時に訂正 |
 | P-1→W5 | バグ#6 | 調査完了・既修復 | `7671bdb99`、隔離success/tamper fail-close、追加fix不要 |
 | P-2→W5 | ci_push_state | 調査完了・10/10終端接続 | WAIT10=6+3+1。9行CLEAR、1行はpurpose不一致の正式BLOCK+archive。修復対象0 |
 | P-3→W6 | honest FAIL停滞 | 未着手、既存監視あり(cmd_4479 は軍師再 review→approved_honest_fail が 15 分で回った=停滞なし 00:3x) | 既存caller/条件/fixtureを確認して変更要否を決める |
