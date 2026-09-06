@@ -292,6 +292,55 @@ def lesson_feedback_set_status(
     )
 
 
+def _task_identity_conflicts_with_report(
+    report: dict[str, Any], task: dict[str, Any]
+) -> bool:
+    """True only when report and task each declare an identity field and disagree.
+
+    Deliberately narrower than :func:`_report_identity_matches_task`: this
+    powers the empty-lessons-allowed decision, which must stay permissive for
+    legacy/minimal task fixtures that omit ``parent_cmd`` or ``task_id``
+    entirely (a long-standing fixture pattern elsewhere in this codebase)
+    while still closing the worker-lease-reassignment gap — a live task that
+    explicitly names a *different* parent_cmd or task_id than the report is a
+    different lease, not a silent match.
+    """
+    report_parent = str(report.get("parent_cmd") or "").strip()
+    task_parent = str(task.get("parent_cmd") or "").strip()
+    if report_parent and task_parent and report_parent != task_parent:
+        return True
+    report_task_id = str(report.get("task_id") or "").strip()
+    task_task_id = str(task.get("task_id") or "").strip()
+    if report_task_id and task_task_id and report_task_id != task_task_id:
+        return True
+    return False
+
+
+def lesson_empty_allowed(task_path: str | pathlib.Path, report: dict[str, Any]) -> bool:
+    """Whether terminal readiness may accept an empty ``lessons_useful``.
+
+    Mirrors :func:`lesson_feedback_set_status`'s snapshot precedence: the
+    immutable deploy-time lesson snapshot embedded in the report is
+    authoritative when present, so a worker lease reassignment (the live
+    task file overwritten by a later deployment) cannot silently change
+    what an already-published report was allowed to omit. A legacy report
+    without a snapshot falls back to the live task unless it explicitly
+    conflicts with the report's identity. A malformed snapshot or an
+    explicit identity conflict fails closed: empty is not allowed.
+    """
+    snapshot_contract = _snapshot_lesson_contract(report)
+    if snapshot_contract is not None:
+        mode, allowed, _source = snapshot_contract
+        if mode == "snapshot-invalid":
+            return False
+        return not allowed
+    task = _task_node(_load_yaml(task_path))
+    if _task_identity_conflicts_with_report(report, task):
+        return False
+    _mode, allowed = _lesson_contract(task)
+    return not allowed
+
+
 if __name__ == "__main__":
     import argparse
     import sys

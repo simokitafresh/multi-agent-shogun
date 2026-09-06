@@ -437,19 +437,19 @@ def validate_lesson_feedback_set(report: dict[str, Any]) -> None:
         detail = (result.stdout.strip() or result.stderr.strip() or "unknown mismatch")
         raise SystemExit(f"BLOCK: lesson_feedback_set: {detail}")
 
-def task_allows_empty_lessons(report, root):
-    if root is None:
+def task_allows_empty_lessons(report):
+    """Whether terminal readiness may accept an empty ``lessons_useful``.
+
+    Delegates to report_gate_contract's snapshot-first lesson contract so a
+    worker lease reassignment (the live task file overwritten by a later
+    deployment) cannot silently loosen or tighten what an already-published
+    report's immutable deploy-time snapshot allowed it to omit.
+    """
+    from scripts.lib.report_gate_contract import lesson_empty_allowed
+    task_path = lesson_feedback_task_path(report)
+    if task_path is None or not task_path.is_file():
         return False
-    worker = str(report.get("worker_id") or "").strip()
-    if not worker:
-        return False
-    task_path = root / "queue" / "tasks" / f"{worker}.yaml"
-    try:
-        task_doc = yaml.safe_load(task_path.read_text(encoding="utf-8")) or {}
-    except (OSError, yaml.YAMLError):
-        return False
-    task = task_doc.get("task", task_doc) if isinstance(task_doc, dict) else {}
-    return isinstance(task, dict) and task.get("related_lessons") == []
+    return lesson_empty_allowed(task_path, report)
 
 def expected_failed_commit_absence(report):
     """Permit only the truthful terminal FAIL lane to omit a required commit."""
@@ -479,7 +479,7 @@ if terminal:
     required = ("worker_id", "parent_cmd", "ac_version_read", "binary_checks", "files_modified", "lessons_useful", "lesson_candidate")
     missing = [key for key in required if data.get(key) in (None, "", [], {})
                and not (key == "lessons_useful" and data.get(key) == []
-                        and task_allows_empty_lessons(data, task_root))]
+                        and task_allows_empty_lessons(data))]
     if missing:
         raise SystemExit("BLOCK: terminal readiness missing: " + ",".join(missing))
     commit = str(data.get("commit_hash", "")).strip()
