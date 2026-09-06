@@ -1,5 +1,6 @@
 # DM-signal 運用コンテキスト
 <!-- last_updated: 2026-09-07 context_freshness reviewed source boundary -->
+<!-- source_commit:ad6975ef7850 reason:context_freshness reviewed source boundary evidence:context_freshness_check context=context/dm-signal-ops.md commit=ad6975ef7850 -->
 <!-- source_commit:c872b3666703 reason:context_freshness reviewed source boundary evidence:context_freshness_check context=context/dm-signal-ops.md commit=c872b3666703 -->
 <!-- source_commit:b8741168bda7 reason:context_freshness reviewed source boundary evidence:context_freshness_check context=context/dm-signal-ops.md commit=b8741168bda7 -->
 <!-- source_commit:f3d20d3c8b82 reason:2026-09-06 20:27 将軍doc lane: I7 checker は隔離 branch isolated/p08-i7-monitor-20260906 のみ(main 未合流・本番未反映)。core に隔離 branch 注記、ops は本番挙動不変ゆえ本文変更なし evidence:git -C /mnt/c/Python_app/DM-signal branch -r --contains f3d20d3c = origin/isolated/p08-i7-monitor-20260906 のみ -->
@@ -211,7 +212,8 @@ cdp_helper.screenshot(port=port, tab_id=tab_id, path="/tmp/dm_signal_screenshot.
 |------|------|-----|------|--------|
 | **Backend** | dm-signal-backend | `srv-d4ja7q15pdvs739a4q1g` | web | singapore |
 | Frontend | dm-signal-frontend | `srv-d4ja8pp5pdvs739a5fsg` | static | — |
-| **DB** | dm-signal-db | `dpg-d542chchg0os73979vg0-a` | postgres | singapore |
+| **DB(本番、08-16 PITR 復元先)** | 08-16 rollback で復元した instance | `dpg-da0qttc9v7es73a0cig0-a`(db `dm_signal_4xdu`) | postgres | singapore |
+| DB(旧、残置物) | dm-signal-db | `dpg-d542chchg0os73979vg0-a`(db `dm_signal`) | postgres | singapore | ← **08-16 以前の旧 DB。render.yaml の `fromDatabase: dm-signal-db` はこれを指す=Blueprint 同期で backend が旧 DB へ巻き戻る地雷(2026-09-07 03:15 実発火、§106)** |
 | TEST Backend | TEST-dm-signal-backend-lyk3 | `srv-d5ahs0ali9vc73b6tprg` | web | singapore |
 | sync-prices | dm-signal-sync-prices | `crn-d5e8rabe5dus73fhlkj0` | cron | oregon |
 | sync-tickers | dm-signal-sync-tickers | `crn-d5e8rabe5dus73fhlkkg` | cron | oregon |
@@ -1282,3 +1284,7 @@ GA-144原因: `dm-signal-ops.md`のlast_updatedは2026-06-26で、2026-06-26以�
 ## §105 Layer Holdings P4 本番投入と第 1 deploy 障害(2026-09-07 02:42〜02:52)
 - 順序=Global hidden_pages に `layer-holdings` 登録(Settings+GlobalVisibilitySettings)→P1 migration→main 合流 b8741168(LH 4 commit+A4 配線)→Render autoDeploy。**第 1 deploy は `ModuleNotFoundError: No module named yaml`(A4 etl_trigger.py の追跡 artifact 書出しで PyYAML を import、production requirements に不在)で起動不能=本番 502 約 10 分**。家老が Render logs で検出→c872b366(json 置換)→置換 deploy live 02:52:44。教訓: dev venv に入っていて requirements に無い import はローカル test 58 PASS でも本番で落ちる。**deploy 前に production requirements の隔離 venv で `python -c "import app.main"` を通すこと**(次の自動化ターゲット)。cron `dm-signal-layer-holdings`(35 9 1 * *)は停止維持、公開(hide 解除)は殿別裁定。runbook=LH 設計書 §9.4
 - **I6 full recalc 運用記録(2026-09-07 03:02〜)**: deploy dep-daeqjaks(ad6975ef)live 18:00:12Z→pre-full readonly checkpoint 18:00:45Z(run 420 completed、portfolios 101、signals 342,449、monthly_returns 16,460、layer_holdings 0)→run 421(request 20260906180200488DDE)開始 18:02:00Z。復元=PITR で 18:02 直前(window は plan 未取得で最低 3 日、直近 10 分は対象外)。教訓: 本番書込 runbook は named snapshot 作成を実行前の二値チェックに含める(今回未作成)
+
+## §106 Blueprint 同期による本番 DB 差替え事故(2026-09-07 03:15〜)
+- 家老が Layer Holdings cron 有効化で render.yaml を push(05204aa2)→Render Blueprint 同期が backend `DATABASE_URL` を `fromDatabase: dm-signal-db`=**旧 DB dpg-d542**(08-16 rollback 前)へ書き換え。真の本番は dpg-da0qtt(08-17 復帰点 v2.1 以降)。家老は逆判定し旧 DB で run 442 を開始、run 421/batch 3525 を誤撤回→将軍が記憶DBで訂正、DATABASE_URL 復旧+render.yaml 是正+run 442 cancel を下知(03:40)。
+- 教訓: render.yaml の DB 参照は rollback 後に更新されておらず、**render.yaml を触る全 push は Blueprint 同期で env を差し替えうる**。本番 runbook は push 前に `render.yaml` の env 影響(fromDatabase/envVars)を diff で列挙し、deploy 後に `DATABASE_URL` host を一次確認する二値を持つこと。上表の旧 DB 行が「DB=dpg-d542」と読める形で残っていたことも誤判定の一因(本版で訂正)
