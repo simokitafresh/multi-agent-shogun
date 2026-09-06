@@ -1333,10 +1333,10 @@ insights:
   priority: "low"
   source: "cmd_complete_gate:memory_phase"
   fix_known: false
-  status: "pending"
-  resolved_reason: "GATE CLEAR: cmd_karo_recon_insight_pending_triage_20260906 completed declared remediation"
-  action_artifact: "cmd=cmd_karo_recon_insight_pending_triage_20260906;gate=cmd_complete_gate;result=CLEAR"
-  resolved_at: "2026-09-06T04:08:30.338520"
+  status: "resolved"
+  resolved_reason: "GATE CLEAR: cmd_karo_hotfix_insight_c2_contract_alignment_20260906 completed declared remediation"
+  action_artifact: "cmd=cmd_karo_hotfix_insight_c2_contract_alignment_20260906;gate=cmd_complete_gate;result=CLEAR"
+  resolved_at: "2026-09-06T07:08:06.341909"
 - id: INS-20260819-142139209-704e
   ts: "2026-08-19T14:21:39+09:00"
   insight: "同パターンLevel5未満候補: source_cmd=cmd_karo_hotfix_runtime_writer_singleflight_202608191225; matched=lessons,yaml; current_pattern=; candidate_level=4; candidate=cmd_1921 report_yaml_format WA(影丸lessons_useful dict/list混在)。GP-107撤去再評価: numbered dict({0:{id:X},1:{id:Y}})→list変換は内容不変。単一dict/ID-keyed dictは条件外(全キーint+全値dict)。家老workaround削減=利他; source=gunshi_gp_tracker.yaml"
@@ -1563,10 +1563,10 @@ insights:
   priority: "medium"
   source: "cmd_complete_gate:l6_horizontal:cmd_reflux_backlink_202608201618_tobisaru"
   fix_known: false
-  status: "pending"
-  resolved_reason: "GATE CLEAR: cmd_karo_recon_insight_pending_triage_20260906 completed declared remediation"
-  action_artifact: "cmd=cmd_karo_recon_insight_pending_triage_20260906;gate=cmd_complete_gate;result=CLEAR"
-  resolved_at: "2026-09-06T04:08:30.502094"
+  status: "resolved"
+  resolved_reason: "GATE CLEAR: cmd_karo_hotfix_insight_c2_contract_alignment_20260906 completed declared remediation"
+  action_artifact: "cmd=cmd_karo_hotfix_insight_c2_contract_alignment_20260906;gate=cmd_complete_gate;result=CLEAR"
+  resolved_at: "2026-09-06T07:08:06.474905"
 - id: INS-20260821-021525116-8698
   ts: "2026-08-21T02:15:25+09:00"
   insight: "同パターンLevel5未満候補: source_cmd=cmd_reflux_insight_202608210159_hayate; matched=yaml; current_pattern=; candidate_level=3; candidate=家老がdeploy_task.shを実行→30秒timeout→配備不完了。3回連続発生。根因=WSL2 NTFSのflock+stat+write蓄積; source=gunshi_gp_tracker.yaml"
@@ -1583,10 +1583,10 @@ insights:
   priority: "medium"
   source: "skill_script_refs:28cb407b97fcfc07"
   fix_known: false
-  status: "pending"
-  resolved_reason: "GATE CLEAR: cmd_karo_recon_insight_pending_triage_20260906 completed declared remediation"
-  action_artifact: "cmd=cmd_karo_recon_insight_pending_triage_20260906;gate=cmd_complete_gate;result=CLEAR"
-  resolved_at: "2026-09-06T04:08:30.815560"
+  status: "resolved"
+  resolved_reason: "GATE CLEAR: cmd_karo_hotfix_insight_c2_contract_alignment_20260906 completed declared remediation"
+  action_artifact: "cmd=cmd_karo_hotfix_insight_c2_contract_alignment_20260906;gate=cmd_complete_gate;result=CLEAR"
+  resolved_at: "2026-09-06T07:08:06.619456"
 - id: INS-20260821-033532218-4254
   ts: "2026-08-21T03:35:32+09:00"
   insight: "同パターンLevel5未満候補: source_cmd=cmd_reflux_insight_202608210318_hayate; matched=yaml; current_pattern=; candidate_level=3; candidate=家老がshogun_to_karoにないcmd(再配備cmd等)を配備できない。deploy_task.sh→ERROR、Write→hookブロック。殿指示案件; source=gunshi_gp_tracker.yaml"
@@ -1613,10 +1613,10 @@ insights:
   priority: "medium"
   source: "cmd_complete_gate:l6_horizontal:cmd_reflux_insight_202608210433_hayate"
   fix_known: false
-  status: "pending"
-  resolved_reason: "GATE CLEAR: cmd_karo_recon_insight_pending_triage_20260906 completed declared remediation"
-  action_artifact: "cmd=cmd_karo_recon_insight_pending_triage_20260906;gate=cmd_complete_gate;result=CLEAR"
-  resolved_at: "2026-09-06T04:08:30.963201"
+  status: "resolved"
+  resolved_reason: "GATE CLEAR: cmd_karo_hotfix_insight_c2_contract_alignment_20260906 completed declared remediation"
+  action_artifact: "cmd=cmd_karo_hotfix_insight_c2_contract_alignment_20260906;gate=cmd_complete_gate;result=CLEAR"
+  resolved_at: "2026-09-06T07:08:06.779447"
 - id: INS-20260821-055638139-5f7c
   ts: "2026-08-21T05:56:38+09:00"
   insight: "semantic_index_update新概念候補: discussion:task notification task id byymqv7bw task id tool use id toolu 01GjZZG81rrNjY161q は 既存aliasesに一致なし。概念定義とaliases追加を検討せよ"
@@ -2822,20 +2822,20 @@ insights:
   priority: "medium"
   source: "manual"
   fix_known: false
-  status: "pending"
-  resolved_reason: "GATE CLEAR: cmd_karo_recon_insight_pending_triage_20260906 completed declared remediation"
-  action_artifact: "cmd=cmd_karo_recon_insight_pending_triage_20260906;gate=cmd_complete_gate;result=CLEAR"
-  resolved_at: "2026-09-06T04:08:31.111410"
+  status: "resolved"
+  resolved_reason: "GATE CLEAR: cmd_karo_hotfix_insight_c2_contract_alignment_20260906 completed declared remediation"
+  action_artifact: "cmd=cmd_karo_hotfix_insight_c2_contract_alignment_20260906;gate=cmd_complete_gate;result=CLEAR"
+  resolved_at: "2026-09-06T07:08:06.940305"
 - id: INS-20260824-031619025-64be
   ts: "2026-08-24T03:16:19+09:00"
   insight: "cmd_4380 LG051連続BLOCK: saizo/hayateともに非test caller count証跡の書き方を学習できず同じアプローチを繰り返している(DIVERGENT v2)。gate FIXメッセージは明確だがGPT忍者が解釈できていない。対策=task YAMLにLG051証跡の具体例(rgコマンド+non-test caller count: N)を注入、またはreport_field_setにcausal_verification.evidenceテンプレートを追加"
   priority: "medium"
   source: "manual"
   fix_known: false
-  status: "pending"
-  resolved_reason: "GATE CLEAR: cmd_karo_recon_insight_pending_triage_20260906 completed declared remediation"
-  action_artifact: "cmd=cmd_karo_recon_insight_pending_triage_20260906;gate=cmd_complete_gate;result=CLEAR"
-  resolved_at: "2026-09-06T04:08:31.262993"
+  status: "resolved"
+  resolved_reason: "GATE CLEAR: cmd_karo_hotfix_insight_c2_contract_alignment_20260906 completed declared remediation"
+  action_artifact: "cmd=cmd_karo_hotfix_insight_c2_contract_alignment_20260906;gate=cmd_complete_gate;result=CLEAR"
+  resolved_at: "2026-09-06T07:08:07.103962"
 - id: INS-20260824-054737158-9351
   ts: "2026-08-24T05:47:37+09:00"
   insight: "同パターンLevel5未満候補: source_cmd=cmd_4381; matched=実行; current_pattern=cmd_complete_gate.sh速度改善第三弾 — 本番実行の常時フェーズ記録化でgateが自分自身を計測する構造へ; candidate_level=4; candidate=LG025(WF並列禁止)がautomated:false(Level 2文書のみ)。Guard 8でLevel 4(フロー内BLOCK)に昇格。4テストPASS+既存9テストPASS(副作用なし); source=gunshi_gp_tracker.yaml"
@@ -2892,10 +2892,10 @@ insights:
   priority: "medium"
   source: "skill_script_refs:11fd6f77fef8c2ed"
   fix_known: false
-  status: "pending"
-  resolved_reason: "GATE CLEAR: cmd_karo_recon_insight_pending_triage_20260906 completed declared remediation"
-  action_artifact: "cmd=cmd_karo_recon_insight_pending_triage_20260906;gate=cmd_complete_gate;result=CLEAR"
-  resolved_at: "2026-09-06T04:08:31.412798"
+  status: "resolved"
+  resolved_reason: "GATE CLEAR: cmd_karo_hotfix_insight_c2_contract_alignment_20260906 completed declared remediation"
+  action_artifact: "cmd=cmd_karo_hotfix_insight_c2_contract_alignment_20260906;gate=cmd_complete_gate;result=CLEAR"
+  resolved_at: "2026-09-06T07:08:07.260948"
 - id: INS-20260824-055435794-1ba8
   ts: "2026-08-24T05:54:35+09:00"
   insight: "semantic_index_update新概念候補: discussion:task notification task id bc0ovpf3v task id tool use id toolu 01UVsWkrbbFc6J5WxW は 既存aliasesに一致なし。概念定義とaliases追加を検討せよ"
@@ -12724,10 +12724,10 @@ insights:
   priority: "low"
   source: "cmd_complete_gate:memory_phase"
   fix_known: false
-  status: "pending"
-  resolved_reason: "GATE CLEAR: cmd_karo_recon_insight_pending_triage_20260906 completed declared remediation"
-  action_artifact: "cmd=cmd_karo_recon_insight_pending_triage_20260906;gate=cmd_complete_gate;result=CLEAR"
-  resolved_at: "2026-09-06T04:08:32.867293"
+  status: "resolved"
+  resolved_reason: "GATE CLEAR: cmd_karo_hotfix_insight_c1_delivery_exactly_once_20260906 completed declared remediation"
+  action_artifact: "cmd=cmd_karo_hotfix_insight_c1_delivery_exactly_once_20260906;gate=cmd_complete_gate;result=CLEAR"
+  resolved_at: "2026-09-06T06:47:51.013732"
 - id: INS-20260901-200345140-69f1
   ts: "2026-09-01T20:03:45+09:00"
   insight: "SKILL.md追従task[9abfd94ce2d8bec9]: gate_skill_script_refs.sh rc=2。以下のSKILL.md×変更script対を検分し、必要な追従更新と実測を行え: skills/cdp-browse/SKILL.md <- scripts/cdp/cdp_measure.sh; skills/cdp-browse/SKILL.md <- scripts/note_draft.sh; skills/cmd-complete/SKILL.md <- scripts/archive_completed.sh; skills/cmd-complete/SKILL.md <- scripts/gates/gate_context_freshness.sh; skills/cmd-complete/SKILL.md <- scripts/review_approval.sh; skills/cmd-complete/SKILL.md <- scripts/review_bundle.py; skills/codd-fix/SKILL.md <- scripts/cmd_complete_gate.sh; skills/codd-refactor/SKILL.md <- scripts/run_tests.sh; skills/dashboard-update/SKILL.md <- scripts/gates/gate_report_format.sh; skills/dream/SKILL.md <- scripts/gates/gate_lesson_health.sh; skills/dream/SKILL.md <- scripts/insight_write.sh; skills/dream/SKILL.md <- scripts/memory_db_query.sh; skills/gate-sync/SKILL.md <- scripts/bulletin_write.sh; skills/gate-sync/SKILL.md <- scripts/gates/gate_gunshi_accuracy.sh; skills/hot-script-design/SKILL.md <- scripts/ninja_scope_commit.sh; skills/idle-persist/SKILL.md <- scripts/bulletin_write.sh; skills/idle-persist/SKILL.md <- scripts/inbox_write.sh; skills/karo-direct/SKILL.md <- scripts/deploy_task.sh; skills/ninja-commit/SKILL.md <- scripts/ninja_scope_commit.sh; skills/ninja-commit/SKILL.md <- scripts/report_field_set.sh; skills/note-writer/SKILL.md <- scripts/note_draft.sh; skills/recon-dual/SKILL.md <- scripts/deploy_task.sh; skills/report-write/SKILL.md <- scripts/report_field_set.sh; skills/review-bundle/SKILL.md <- scripts/bulletin_write.sh; skills/review-bundle/SKILL.md <- scripts/inbox_write.sh; skills/review-bundle/SKILL.md <- scripts/review_bundle.py; skills/sengoku-writer/SKILL.md <- scripts/note_draft.sh; skills/shogun-cli-switch/SKILL.md <- scripts/agent_respawn.sh; skills/shogun-cli-switch/SKILL.md <- scripts/lib/cli_lookup.sh; skills/shogun-cli-switch/SKILL.md <- scripts/ninja_monitor.sh; skills/shogun-teire/SKILL.md <- scripts/gates/gate_lesson_health.sh; skills/three-layer-penetrate/SKILL.md <- scripts/memory_db_query.sh; skills/verdict-check/SKILL.md <- scripts/gates/gate_report_format.sh; skills/weekly-report-writer/SKILL.md <- scripts/note_draft.sh"
@@ -13625,10 +13625,10 @@ insights:
   priority: "medium"
   source: "skill_script_refs:9abfd94ce2d8bec9"
   fix_known: false
-  status: "pending"
-  resolved_reason: "GATE CLEAR: cmd_karo_recon_insight_pending_triage_20260906 completed declared remediation"
-  action_artifact: "cmd=cmd_karo_recon_insight_pending_triage_20260906;gate=cmd_complete_gate;result=CLEAR"
-  resolved_at: "2026-09-06T04:08:35.142501"
+  status: "resolved"
+  resolved_reason: "GATE CLEAR: cmd_karo_hotfix_insight_c2_contract_alignment_20260906 completed declared remediation"
+  action_artifact: "cmd=cmd_karo_hotfix_insight_c2_contract_alignment_20260906;gate=cmd_complete_gate;result=CLEAR"
+  resolved_at: "2026-09-06T07:08:07.446569"
 - id: INS-20260902-171234556-9649
   ts: "2026-09-02T17:12:34+09:00"
   insight: "semantic_index_update新概念候補: discussion:忍者が放置されていないか？ は 既存aliasesに一致なし。概念定義とaliases追加を検討せよ"
@@ -14016,10 +14016,10 @@ insights:
   priority: "low"
   source: "self_retro"
   fix_known: false
-  status: "pending"
-  resolved_reason: "GATE CLEAR: cmd_karo_recon_insight_pending_triage_20260906 completed declared remediation"
-  action_artifact: "cmd=cmd_karo_recon_insight_pending_triage_20260906;gate=cmd_complete_gate;result=CLEAR"
-  resolved_at: "2026-09-06T04:08:35.568911"
+  status: "resolved"
+  resolved_reason: "GATE CLEAR: cmd_karo_hotfix_insight_c2_contract_alignment_20260906 completed declared remediation"
+  action_artifact: "cmd=cmd_karo_hotfix_insight_c2_contract_alignment_20260906;gate=cmd_complete_gate;result=CLEAR"
+  resolved_at: "2026-09-06T07:08:07.641765"
 - id: INS-20260902-204812779-def0
   ts: "2026-09-02T20:48:12+09:00"
   insight: "[[捨てる壁に時間をかけるのは原理原則に反していないか？]] semantic_stress_test candidate_aliases: NO_MATCH source=lord query=捨てる壁に時間をかけるのは原理原則に反していないか？"
@@ -17129,10 +17129,10 @@ insights:
   priority: "medium"
   source: "skill_script_refs:6497bfa1b6428ade"
   fix_known: false
-  status: "pending"
-  resolved_reason: "GATE CLEAR: cmd_karo_recon_insight_pending_triage_20260906 completed declared remediation"
-  action_artifact: "cmd=cmd_karo_recon_insight_pending_triage_20260906;gate=cmd_complete_gate;result=CLEAR"
-  resolved_at: "2026-09-06T04:08:50.561658"
+  status: "resolved"
+  resolved_reason: "GATE CLEAR: cmd_karo_hotfix_insight_c2_contract_alignment_20260906 completed declared remediation"
+  action_artifact: "cmd=cmd_karo_hotfix_insight_c2_contract_alignment_20260906;gate=cmd_complete_gate;result=CLEAR"
+  resolved_at: "2026-09-06T07:08:07.832744"
 - id: INS-20260904-013203973-39f1
   ts: "2026-09-04T01:32:03+09:00"
   insight: "semantic_index_update新概念候補: discussion:task notification task id bslzd3q3d task id tool use id toolu 0136BAYFfc3TyXcibu は 既存aliasesに一致なし。概念定義とaliases追加を検討せよ"
@@ -17148,10 +17148,10 @@ insights:
   priority: "medium"
   source: "manual"
   fix_known: false
-  status: "pending"
-  resolved_reason: "GATE CLEAR: cmd_karo_recon_insight_pending_triage_20260906 completed declared remediation"
-  action_artifact: "cmd=cmd_karo_recon_insight_pending_triage_20260906;gate=cmd_complete_gate;result=CLEAR"
-  resolved_at: "2026-09-06T04:08:50.729945"
+  status: "resolved"
+  resolved_reason: "GATE CLEAR: cmd_karo_hotfix_insight_c2_contract_alignment_20260906 completed declared remediation"
+  action_artifact: "cmd=cmd_karo_hotfix_insight_c2_contract_alignment_20260906;gate=cmd_complete_gate;result=CLEAR"
+  resolved_at: "2026-09-06T07:08:08.024033"
 - id: INS-20260904-071834390-e3ce
   ts: "2026-09-04T07:18:34+09:00"
   insight: "gunshi_gate_reflux.sh と yaml_field_set.sh(--append含む)は PUBLISHER_SINGLE 中も root の logs/gunshi_review_log.yaml を直接書く root-dirty writer(T3-S-34 残)。2026-09-04 07:05-07:15 の gate-sync(reflux 35cmd)+観測追記で root review_log が dirty(59+/30-)になり root drain BLOCK の dirty path に加わった(既存 dirty: context/cmd-chronicle.md 等)。gate_result 更新も ledger update op へ寄せる必要。source gunshi 2026-09-04 07:20"
@@ -17278,10 +17278,10 @@ insights:
   priority: "high"
   source: "gate_loop_health"
   fix_known: false
-  status: "pending"
-  resolved_reason: "GATE CLEAR: cmd_karo_recon_insight_pending_triage_20260906 completed declared remediation"
-  action_artifact: "cmd=cmd_karo_recon_insight_pending_triage_20260906;gate=cmd_complete_gate;result=CLEAR"
-  resolved_at: "2026-09-06T04:08:51.487556"
+  status: "resolved"
+  resolved_reason: "GATE CLEAR: cmd_karo_hotfix_insight_c2_contract_alignment_20260906 completed declared remediation"
+  action_artifact: "cmd=cmd_karo_hotfix_insight_c2_contract_alignment_20260906;gate=cmd_complete_gate;result=CLEAR"
+  resolved_at: "2026-09-06T07:08:08.198566"
 - id: INS-20260904-094835866-03c7
   ts: "2026-09-04T09:48:35+09:00"
   insight: "semantic_index_update新概念候補: discussion:task notification task id bsqslatw1 task id tool use id toolu 01FmenC6wHUxKN84fa は 既存aliasesに一致なし。概念定義とaliases追加を検討せよ"
@@ -17317,10 +17317,10 @@ insights:
   priority: "medium"
   source: "manual"
   fix_known: false
-  status: "pending"
-  resolved_reason: "GATE CLEAR: cmd_karo_recon_insight_pending_triage_20260906 completed declared remediation"
-  action_artifact: "cmd=cmd_karo_recon_insight_pending_triage_20260906;gate=cmd_complete_gate;result=CLEAR"
-  resolved_at: "2026-09-06T04:08:51.966048"
+  status: "resolved"
+  resolved_reason: "GATE CLEAR: cmd_karo_hotfix_insight_c2_contract_alignment_20260906 completed declared remediation"
+  action_artifact: "cmd=cmd_karo_hotfix_insight_c2_contract_alignment_20260906;gate=cmd_complete_gate;result=CLEAR"
+  resolved_at: "2026-09-06T07:08:08.383054"
 - id: INS-20260904-102154331-b810
   ts: "2026-09-04T10:21:54+09:00"
   insight: "semantic_index_update新概念候補: discussion:task notification task id bexixglq4 task id tool use id toolu 012M7BQbdRKqqWRVH5 は 既存aliasesに一致なし。概念定義とaliases追加を検討せよ"
@@ -18308,10 +18308,10 @@ insights:
   priority: "medium"
   source: "skill_script_refs:112b329d751e6708"
   fix_known: false
-  status: "pending"
-  resolved_reason: "GATE CLEAR: cmd_karo_recon_insight_pending_triage_20260906 completed declared remediation"
-  action_artifact: "cmd=cmd_karo_recon_insight_pending_triage_20260906;gate=cmd_complete_gate;result=CLEAR"
-  resolved_at: "2026-09-06T04:08:52.227667"
+  status: "resolved"
+  resolved_reason: "GATE CLEAR: cmd_karo_hotfix_insight_c2_contract_alignment_20260906 completed declared remediation"
+  action_artifact: "cmd=cmd_karo_hotfix_insight_c2_contract_alignment_20260906;gate=cmd_complete_gate;result=CLEAR"
+  resolved_at: "2026-09-06T07:08:11.081694"
 - id: INS-20260905-031312793-289b
   ts: "2026-09-05T03:13:12+09:00"
   insight: "[[ではT240について詳しく教えて]] semantic_stress_test candidate_aliases: NO_MATCH source=lord query=ではT240について詳しく教えて"
@@ -18481,10 +18481,10 @@ insights:
   priority: "medium"
   source: "skill_script_refs:b2d58996361d2c76"
   fix_known: false
-  status: "pending"
-  resolved_reason: "GATE CLEAR: cmd_karo_recon_insight_pending_triage_20260906 completed declared remediation"
-  action_artifact: "cmd=cmd_karo_recon_insight_pending_triage_20260906;gate=cmd_complete_gate;result=CLEAR"
-  resolved_at: "2026-09-06T04:08:52.564815"
+  status: "resolved"
+  resolved_reason: "GATE CLEAR: cmd_karo_hotfix_insight_c2_contract_alignment_20260906 completed declared remediation"
+  action_artifact: "cmd=cmd_karo_hotfix_insight_c2_contract_alignment_20260906;gate=cmd_complete_gate;result=CLEAR"
+  resolved_at: "2026-09-06T07:08:11.282144"
 - id: INS-20260905-125805644-e24e
   ts: "2026-09-05T12:58:05+09:00"
   insight: "semantic_index_update未登録cmd originノード: [[殿指示_LP_SEO外部意見_20260905]] は既存aliasesに一致なし。類似概念TOP3: creator_brainwashing_defense(創造主の洗脳防御; alias=殿指示; score=20.5) / strong_new_game_completion_contract(強くてニューゲーム完遂契約; alias=殿指示_強くてニューゲーム_20260829_1250; score=14.9) / loop_engineering(Loop Engineering論文; alias=殿指示 Loop Engineering論文知見の環境埋込み; score=14.2)。概念定義とaliases追加を検討せよ"
@@ -19142,10 +19142,10 @@ insights:
   priority: "medium"
   source: "manual"
   fix_known: false
-  status: "pending"
-  resolved_reason: "GATE CLEAR: cmd_karo_recon_insight_pending_triage_20260906 completed declared remediation"
-  action_artifact: "cmd=cmd_karo_recon_insight_pending_triage_20260906;gate=cmd_complete_gate;result=CLEAR"
-  resolved_at: "2026-09-06T04:08:53.205160"
+  status: "resolved"
+  resolved_reason: "GATE CLEAR: cmd_karo_hotfix_insight_c2_contract_alignment_20260906 completed declared remediation"
+  action_artifact: "cmd=cmd_karo_hotfix_insight_c2_contract_alignment_20260906;gate=cmd_complete_gate;result=CLEAR"
+  resolved_at: "2026-09-06T07:08:11.501101"
 - id: INS-20260905-210813795-06b9
   ts: "2026-09-05T21:08:13+09:00"
   insight: "[[X Growth Engineは現状かなり完成しています]] semantic_stress_test candidate_aliases: NO_MATCH source=lord query=X Growth Engineは現状かなり完成しています。新機能追加や方針変更は不要です。 一点だけ整理してください。 設計書・SKILLに過去の - 平日2回 - 3 units/day - 現行2 units/day が履歴として混在し、LLMが現行運用を誤認する余地があり…"
@@ -19202,10 +19202,10 @@ insights:
   priority: "medium"
   source: "skill_script_refs:bb19ebccc33be729"
   fix_known: false
-  status: "pending"
-  resolved_reason: "GATE CLEAR: cmd_karo_recon_insight_pending_triage_20260906 completed declared remediation"
-  action_artifact: "cmd=cmd_karo_recon_insight_pending_triage_20260906;gate=cmd_complete_gate;result=CLEAR"
-  resolved_at: "2026-09-06T04:08:53.364543"
+  status: "resolved"
+  resolved_reason: "GATE CLEAR: cmd_karo_hotfix_insight_c2_contract_alignment_20260906 completed declared remediation"
+  action_artifact: "cmd=cmd_karo_hotfix_insight_c2_contract_alignment_20260906;gate=cmd_complete_gate;result=CLEAR"
+  resolved_at: "2026-09-06T07:08:11.722174"
 - id: INS-20260905-214850784-0191
   ts: "2026-09-05T21:48:50+09:00"
   insight: "[[DM Signal 研究データ基盤 F1 holdings monthly 第1段 readonly long tabl]] semantic_stress_test candidate_aliases: NO_MATCH source=cmds query=DM-Signal 研究データ基盤 F1 holdings_monthly 第1段(readonly long table+検算3本)"
@@ -19633,3 +19633,33 @@ insights:
   resolved_reason: "semantic index candidate was absorbed into a registered concept"
   action_artifact: "semantic_index=/home/simokitafresh/multi-agent-shogun/docs/semantic-index/index.md"
   resolved_at: "2026-09-06T05:00:03.824389"
+- id: INS-20260906-071007425-409b
+  ts: "2026-09-06T07:10:07+09:00"
+  insight: "semantic_index_update新概念候補: discussion:task notification task id bmscajead task id tool use id toolu 01AUJAZGMAAWKXxQFh は 既存aliasesに一致なし。概念定義とaliases追加を検討せよ"
+  priority: "low"
+  source: "semantic_index_update"
+  fix_known: false
+  status: "resolved"
+  resolved_reason: "semantic map generation verified the candidate is represented or intentionally ignored"
+  action_artifact: "semantic_map=/home/simokitafresh/multi-agent-shogun/context/semantic-map.md;semantic_index=/home/simokitafresh/multi-agent-shogun/docs/semantic-index/index.md"
+  resolved_at: "2026-09-06T07:19:45.651146"
+- id: INS-20260906-073132217-fd3a
+  ts: "2026-09-06T07:31:32+09:00"
+  insight: "semantic_index_update新概念候補: discussion:task notification task id bi6fu13lh task id tool use id toolu 01YSyP8YRQayScqzQM は 既存aliasesに一致なし。概念定義とaliases追加を検討せよ"
+  priority: "low"
+  source: "semantic_index_update"
+  fix_known: false
+  status: "resolved"
+  resolved_reason: "semantic map generation verified the candidate is represented or intentionally ignored"
+  action_artifact: "semantic_map=/home/simokitafresh/multi-agent-shogun/context/semantic-map.md;semantic_index=/home/simokitafresh/multi-agent-shogun/docs/semantic-index/index.md"
+  resolved_at: "2026-09-06T07:57:51.896973"
+- id: INS-20260906-091440280-2092
+  ts: "2026-09-06T09:14:40+09:00"
+  insight: "semantic_index_update新概念候補: discussion:レートリミットは解除された は 既存aliasesに一致なし。概念定義とaliases追加を検討せよ"
+  priority: "low"
+  source: "semantic_index_update"
+  fix_known: false
+  status: "resolved"
+  resolved_reason: "semantic index candidate was absorbed into a registered concept"
+  action_artifact: "semantic_index=/home/simokitafresh/multi-agent-shogun/docs/semantic-index/index.md"
+  resolved_at: "2026-09-06T09:15:46.117459"
