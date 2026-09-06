@@ -25,6 +25,7 @@ if [ "${1:-}" = "--batch" ]; then
     _rfs_batch_payload="$(cat)"
     _rfs_batch_self="${BASH_SOURCE[0]:-$0}"
     [[ "$_rfs_batch_self" != /* ]] && _rfs_batch_self="$PWD/$_rfs_batch_self"
+    _rfs_batch_self="$(readlink -f -- "$_rfs_batch_self")"
     _rfs_batch_root="${_rfs_batch_self%/scripts/report_field_set.sh}"
     [[ "$_rfs_batch_report" = /* ]] || _rfs_batch_report="$PWD/$_rfs_batch_report"
     _rfs_batch_task_root="${REPORT_FIELD_SET_TASK_ROOT:-}"
@@ -768,6 +769,7 @@ fi
 # SCRIPT_DIR: string ops instead of $(cd) subshells (~1.2ms savings on WSL2)
 _rfs_self="${BASH_SOURCE[0]:-$0}"
 [[ "$_rfs_self" != /* ]] && _rfs_self="$PWD/$_rfs_self"
+_rfs_self="$(readlink -f -- "$_rfs_self")"
 SCRIPT_DIR="${_rfs_self%/scripts/report_field_set.sh}"
 YAML_FIELD_SET_LOADED=0
 
@@ -1231,8 +1233,17 @@ PY
         esac
     fi
     [ -f "$task_file" ] || return 0
+    local purpose_check_rc=0
     bash "$SCRIPT_DIR/scripts/gates/gate_report_format.sh" \
-        --purpose-details-check "$task_file" "$candidate"
+        --purpose-details-check "$task_file" "$candidate" || purpose_check_rc=$?
+    case "$purpose_check_rc" in
+        0|2) return 0 ;;
+        1) return 1 ;;
+        *)
+            echo "BLOCK: purpose/detail contract invocation failed (rc=$purpose_check_rc)" >&2
+            return 1
+            ;;
+    esac
 }
 
 # The lesson ID set is owned by report_gate_contract.py and is shared with
