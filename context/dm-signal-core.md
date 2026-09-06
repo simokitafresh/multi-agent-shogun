@@ -1,5 +1,6 @@
 # DM-signal コアコンテキスト
 <!-- last_updated: 2026-09-07 context_freshness reviewed source boundary -->
+<!-- source_commit:c872b3666703 reason:context_freshness reviewed source boundary evidence:context_freshness_check context=context/dm-signal-core.md commit=c872b3666703 -->
 <!-- source_commit:b8741168bda7 reason:context_freshness reviewed source boundary evidence:context_freshness_check context=context/dm-signal-core.md commit=b8741168bda7 -->
 <!-- source_commit:f3d20d3c8b82 reason:2026-09-06 20:27 将軍doc lane: I7 checker は隔離 branch isolated/p08-i7-monitor-20260906 のみ(main 未合流・本番未反映)。core に隔離 branch 注記、ops は本番挙動不変ゆえ本文変更なし evidence:git -C /mnt/c/Python_app/DM-signal branch -r --contains f3d20d3c = origin/isolated/p08-i7-monitor-20260906 のみ -->
 <!-- source_commit:c1b3719caef7 reason:2026-09-06 18:05 将軍doc lane GA-590 同系列: golden AC1/AC2 commit(帰属 3efd01e0 真 baseline、rb6 5535+決定性 26175)。内容は 087231e1 の記述に包含 evidence:git -C /mnt/c/Python_app/DM-signal log -1 c1b3719c -->

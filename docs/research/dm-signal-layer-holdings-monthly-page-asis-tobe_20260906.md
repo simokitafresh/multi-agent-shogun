@@ -1,5 +1,5 @@
 <!-- gist-master: b733364ac7dc058a20e7bd635e34ae73 dm-signal-layer-holdings-monthly-page-asis-tobe_20260906.md -->
-# DM-Signal 本番「Layer Holdings Monthly」ページ 新設 AsIs/ToBe 5W1H 設計書 v0.10(将軍 02:56 手順 4 deploy=第 1 deploy 障害(PyYAML)→c872b366 で live 02:52。v0.9=手順 1b 完了)
+# DM-Signal 本番「Layer Holdings Monthly」ページ 新設 AsIs/ToBe 5W1H 設計書 v0.11(将軍 03:05 手順 2/3 完了・5 は 409=I6 full recalc 完了待ち。v0.10=手順 4 障害と復旧)
 
 - 殿指示 2026-09-06 22:07『今後本番に Layer Holdings Monthly ページを新規で作りたい。まずは asis/tobe 5W1H の設計書を作ろう。家老にレビューして更新してもらい、将軍がレビューしてさらに更新する。更新するべき点がなくなるまで続ける』。
 - 版履歴(歴史修正禁止のため記録のみ): v0.1 22:20 将軍起草(一次情報=DM-Signal repo 現物+研究 lane の成果物)。v0.1.1 22:22 殿指示『gist 共有、軍師には artifact も共有(前提情報のずれ防止)』→前提 artifact URL を本文に明記。
@@ -167,12 +167,14 @@ R3追加の月次接続契約（§4.4の続き）:
 | P1 ✅ | 00:23 | 疾風 cmd_4487 | GATE CLEAR。branch feat/layer-holdings-P1 932d926d(main 反映なし、deploy_forbidden 登録)。AC1: 固定 JSON dry-run rows=3525 groups=912 db_reads=0、研究 CSV 全 key 一致、max_weight_diff=4.44e-16 / AC2: violations=0 / AC3: 契約 test 4 passed。gate WAIT 1 回=cross_repo_commits に非 main 公開 branch と deploy_forbidden を宣言していなかった(F-19 後の契約)→是正 | P2 影丸 done(軍師 review)、P3 才蔵 走行。統合段は 3 本揃ってから |
 | P2 ✅ | 00:31 | 影丸 cmd_4488 | GATE CLEAR。branch feat/layer-holdings-P2 43dffc22(main 反映なし)。AC4 認可 7 通り/AC5 readiness 正負 8 通り+409/200/AC6 契約 test: task runner 13/13 PASS SKIP 0。AC4c 表示速度: queries=1 gzip_bytes=8970 etag_304=true p95_ms=82.64(目安 ≤200KB・≤100ms を満たす) | 残=P3 才蔵(AC5/AC5b/AC6)。統合段は P3 後に家老 1 回 |
 | P4 go | 02:02 | 殿→将軍 | 殿 02:02『Layer Holdings P4 は go だ』。§9.4 runbook を家老 lane で着手(将軍下知 02:05)。前提=統合段 AC4c p95 是正(閾値 100ms 不変)+frontend test PASS を先に閉じる | 以後は §9.4 の順序 2〜9 の二値結果を §7 へ追記 |
+| 2✅/3✅/5 409 | 03:03 | 家老 | 手順 2: Settings/GlobalVisibilitySettings 両方の hidden_pages=[admin,layer-holdings]。手順 3: layer_table=True rows=0(migration 適用済み)。health 200。手順 5: POST /admin/layer-holdings=409『summary lacks validated all-portfolio coverage』(source_recalc_id=420=直近 run が全 PF 対象でない)=readiness 設計通りの拒否・旧結果保持 | I6 full recalc(run 421、03:02 開始、~480s)完了後に batch 再実行→6 admin/viewer→7 全 3,525 key→7b CDP→8 cron→9 post_deploy_check(queue/notes/layer_holdings_p4_20260907.md) |
 | 4 🟡→障害→復旧 | 02:42〜02:52 | 家老 | 手順 2(Global hide 登録)→main 合流 b8741168(LH 4 commit+A4 配線 756c69c0)→Render autoDeploy。**第 1 deploy 起動障害**: A4 etl_trigger.py が PyYAML を import(production requirements に不在)→ModuleNotFoundError、本番 BE 502 約 10 分(将軍観測 02:48〜02:52)。家老が Render logs で検出→c872b366(json 置換)→置換 deploy live 02:52:44(将軍 Render API 確認、/api/layer-holdings 401=認可経路生存)。手順 3(migration)の実施証跡は家老報告待ち | 手順 5〜9 の二値、post_deploy_check に障害記録。再発防止=deploy 前 import smoke(production venv)gate を hotfix 配備依頼(msg_025512) |
 | 1b ✅ | 02:33 | 家老 | 統合 SHA e3f0f2d3 で最終検証: backend 17 passed(AC4c p95 71.10ms<100、queries 1、gzip 8,970、304 true)、frontend 2 passed、固定 JSON rows 3525/expected 3525/missing 0/extra 0/dup 0/maxdiff 4.44e-16/pf_count・is_mtd mismatch 0。遅延原因=家老が完了 gate/未 push 処理を優先(殿 02:30 下知で是正) | 手順 2 Global hide→3 migration(backup 後)→4 統合 deploy(I7/I3/A4 と同一 BE deploy、I6 は除外 708 未確定で束ねない)。着手 02:33 |
 | P3 ✅ | 01:39 | 才蔵 cmd_4489 | GATE CLEAR。branch feat/layer-holdings-P3-saizo 08f68e39(main 反映なし)。UI ガイド(gist 6151078c)+AC5b(SWR allowlist/PAGE_APIS/client pivot 0)適用。gate BLOCK 2 回=receipt 形式と親 command の『docs/faq』表記(家老が『既存ドキュメントページと FAQ ページの型』へ訂正) | 統合段(家老、3 branch→feat/layer-holdings-integrated、契約 test 全本+固定 JSON dry-run 再実行)を 01:44 指示。01:51 家老: SHA 992eb757 conflict 0、backend 16 PASS/1 FAIL(AC4c p95 146.48ms>100ms、単体 82.64ms)、queries 1/gzip 8,970/304 PASS、固定 JSON rows 3525/違反 0、frontend 実行中。Row 反復を 1 pass へ最小変更中(閾値不変) |
 
 ## §8 因果リンク
 
+- v0.11 2026-09-07 03:05 将軍。家老 03:03: hide 両保存元登録、migration 適用(rows 0)、batch 409(全 PF coverage 無し)→I6 full recalc 後に再実行。
 - v0.10 2026-09-07 02:56 将軍。手順 4: main 合流 b8741168→起動障害(A4 の PyYAML import)→c872b366 live 02:52:44。§7 行 4、§9.4 に import smoke 前提を追記予定(家老 hotfix 後)。
 - v0.9 2026-09-07 02:35 将軍。家老 02:33: 手順 1b 完了(SHA e3f0f2d3、17 passed、p95 71.10ms、frontend 2 passed、固定 JSON 全一致)→§7 1b 行。deploy は I7/I3/A4 と同一 BE deploy、I6 は含めない。
 - v0.8 2026-09-07 02:05 将軍。殿 02:02『Layer Holdings P4 は go だ』→§7 P4 go 行、§10 裁定追記、§9.4 手順 1 を充足扱い。
