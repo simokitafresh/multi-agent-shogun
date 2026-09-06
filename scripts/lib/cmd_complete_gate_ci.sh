@@ -383,16 +383,55 @@ for entry in isolated_entries:
     repo = os.path.realpath(repo)
     if not os.path.isdir(repo):
         emit("BLOCK", f"isolated cross-repo entry repository unavailable (commit={sha})")
+    # 2026-09-07 speed D0 (将軍): `git ls-remote origin` to GitHub takes ~9s
+    # per call from the /mnt/c repo and the gate evaluates it once per report
+    # x entry x cycle (P08-I7: 118-146s per gate run, GATE-STALL 180s x4).
+    # Cache the successful remote tip per (repo, branch) for a short TTL so a
+    # single gate execution (and the monitor cycles right after it) reuse one
+    # lookup. Only 40-hex successes are cached; failures are never cached, so
+    # BLOCK semantics on missing/unpublished branches are unchanged.
+    import hashlib
+    import time
+    ttl_raw = os.environ.get("CMD_COMPLETE_GATE_LSREMOTE_TTL_SEC", "120")
     try:
-        remote = subprocess.run(
-            ["git", "-C", repo, "ls-remote", "origin", f"refs/heads/{branch}"],
-            stdout=subprocess.PIPE, stderr=subprocess.DEVNULL, timeout=10, text=True,
-        )
-    except (OSError, subprocess.TimeoutExpired):
-        emit("BLOCK", f"isolated cross-repo entry remote branch lookup failed (commit={sha} branch={branch})")
-    remote_tip = (remote.stdout.split() or [""])[0].strip().lower()
-    if remote.returncode != 0 or not re.fullmatch(r"[0-9a-f]{40}", remote_tip):
-        emit("BLOCK", f"isolated cross-repo entry branch not published (commit={sha} branch={branch})")
+        ttl = float(ttl_raw)
+    except ValueError:
+        ttl = 120.0
+    cache_dir = os.environ.get("CMD_COMPLETE_GATE_LSREMOTE_CACHE_DIR") or os.path.join(
+        os.environ.get("TMPDIR", "/tmp"), "cmd-complete-gate-lsremote-cache"
+    )
+    cache_key = hashlib.sha1(f"{repo}\n{branch}".encode("utf-8")).hexdigest()
+    cache_path = os.path.join(cache_dir, cache_key)
+    remote_tip = ""
+    if ttl > 0:
+        try:
+            age = time.time() - os.path.getmtime(cache_path)
+            if age <= ttl:
+                cached = open(cache_path, encoding="utf-8").read().strip().lower()
+                if re.fullmatch(r"[0-9a-f]{40}", cached):
+                    remote_tip = cached
+        except OSError:
+            remote_tip = ""
+    if not remote_tip:
+        try:
+            remote = subprocess.run(
+                ["git", "-C", repo, "ls-remote", "origin", f"refs/heads/{branch}"],
+                stdout=subprocess.PIPE, stderr=subprocess.DEVNULL, timeout=20, text=True,
+            )
+        except (OSError, subprocess.TimeoutExpired):
+            emit("BLOCK", f"isolated cross-repo entry remote branch lookup failed (commit={sha} branch={branch})")
+        remote_tip = (remote.stdout.split() or [""])[0].strip().lower()
+        if remote.returncode != 0 or not re.fullmatch(r"[0-9a-f]{40}", remote_tip):
+            emit("BLOCK", f"isolated cross-repo entry branch not published (commit={sha} branch={branch})")
+        if ttl > 0:
+            try:
+                os.makedirs(cache_dir, exist_ok=True)
+                tmp_path = f"{cache_path}.{os.getpid()}.tmp"
+                with open(tmp_path, "w", encoding="utf-8") as fh:
+                    fh.write(remote_tip + "\n")
+                os.replace(tmp_path, cache_path)
+            except OSError:
+                pass
     try:
         ancestor = subprocess.run(
             ["git", "-C", repo, "merge-base", "--is-ancestor", sha, remote_tip],
