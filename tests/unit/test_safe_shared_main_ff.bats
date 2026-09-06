@@ -341,6 +341,54 @@ Safe-Shared-Main-Equivalent-Source: $local_source"
   [ "$(cat "$FIX/a.txt")" = $'local-feature\ntarget-hardening' ]
 }
 
+# test_necessity: patch-id equivalence is not durable evidence when the
+# canonical target later reverts the equivalent change.  The final target
+# tree must still retain the local effect before it may be accounted.
+@test "patch-equivalent effect reverted from target remains fail-closed" {
+  printf 'local-equivalent\n' >> "$FIX/a.txt"
+  git -C "$FIX" add a.txt
+  git -C "$FIX" commit -qm local-equivalent
+  before="$(git -C "$FIX" rev-parse HEAD)"
+
+  base="$(git -C "$FIX" rev-parse HEAD^)"
+  git -C "$BATS_TEST_TMPDIR/next" checkout -q "$base"
+  printf 'old-a\nlocal-equivalent\n' > "$BATS_TEST_TMPDIR/next/a.txt"
+  git -C "$BATS_TEST_TMPDIR/next" add a.txt
+  git -C "$BATS_TEST_TMPDIR/next" commit -qm canonical-equivalent
+  git -C "$BATS_TEST_TMPDIR/next" revert --no-edit HEAD
+  target="$(git -C "$BATS_TEST_TMPDIR/next" rev-parse HEAD)"
+
+  run bash "$FIX/scripts/safe_shared_main_ff.sh" "$target"
+  [ "$status" -eq 2 ]
+  [[ "$output" == *"patch-equivalent local effect is absent from target path=a.txt"* ]]
+  [ "$(git -C "$FIX" rev-parse HEAD)" = "$before" ]
+}
+
+# test_necessity: a patch-equivalent commit may be present in target history
+# while a later target commit removes its effect.  History-only accounting
+# must not discard the local tree effect in that case.
+@test "patch-equivalent effect removed by later target commit remains fail-closed" {
+  printf 'local-equivalent\n' >> "$FIX/a.txt"
+  git -C "$FIX" add a.txt
+  git -C "$FIX" commit -qm local-equivalent
+  before="$(git -C "$FIX" rev-parse HEAD)"
+
+  base="$(git -C "$FIX" rev-parse HEAD^)"
+  git -C "$BATS_TEST_TMPDIR/next" checkout -q "$base"
+  printf 'old-a\nlocal-equivalent\n' > "$BATS_TEST_TMPDIR/next/a.txt"
+  git -C "$BATS_TEST_TMPDIR/next" add a.txt
+  git -C "$BATS_TEST_TMPDIR/next" commit -qm canonical-equivalent
+  printf 'old-a\ntarget-replacement\n' > "$BATS_TEST_TMPDIR/next/a.txt"
+  git -C "$BATS_TEST_TMPDIR/next" add a.txt
+  git -C "$BATS_TEST_TMPDIR/next" commit -qm target-replacement
+  target="$(git -C "$BATS_TEST_TMPDIR/next" rev-parse HEAD)"
+
+  run bash "$FIX/scripts/safe_shared_main_ff.sh" "$target"
+  [ "$status" -eq 2 ]
+  [[ "$output" == *"patch-equivalent local effect is absent from target path=a.txt"* ]]
+  [ "$(git -C "$FIX" rev-parse HEAD)" = "$before" ]
+}
+
 # test_necessity: a marker cannot skip an unknown object or jump over an
 # unaccounted local commit; otherwise arbitrary target text could discard work.
 @test "invalid or noncontiguous equivalent-source marker remains fail-closed" {
