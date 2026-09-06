@@ -1,5 +1,5 @@
 #!/usr/bin/env bats
-# test_necessity: 同一のCI REDに対する追いpushが上限(既定2回)を超えたら新規配備はBLOCKされ、REDを消すためのtask_type=ci_fixだけは常に通る。
+# test_necessity: CI REDと追加commit数だけでは通常配備を止めず、修正を促す警告とtask固有検証を分離する。
 
 setup() {
     REPO_ROOT="$BATS_TEST_DIRNAME/../.."
@@ -32,11 +32,47 @@ guard() {
     [ "$status" -eq 0 ]
 }
 
-@test "CI RED beyond the follow-up push limit blocks new deployment" {
+@test "CI RED beyond the follow-up push limit warns without blocking deployment" {
     SOURCE_YAML="$BATS_TEST_TMPDIR/hotfix.yaml"
     guard DEPLOY_TASK_CI_RED_JSON="$RED" DEPLOY_TASK_CI_FOLLOWUP_PUSHES=3
-    [ "$status" -eq 1 ]
-    [[ "$output" == *"追いpushが3回"* ]]
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"WARN: CI RED"* ]]
+    [[ "$output" != *"BLOCK"* ]]
+}
+
+@test "CI RED does not block a fresh CLI process regardless of model" {
+    SOURCE_YAML="$BATS_TEST_TMPDIR/hotfix.yaml"
+    for cli in claude codex copilot kimi; do
+      for model in fixture_model_a fixture_model_b; do
+       for effort in low medium high xhigh max; do
+        guard -u TMUX -u TMUX_PANE DEPLOY_TASK_CI_RED_JSON="$RED" DEPLOY_TASK_CI_FOLLOWUP_PUSHES=100 CLI_TYPE="$cli" MODEL="$model" MODEL_REASONING_EFFORT="$effort"
+        [ "$status" -eq 0 ]
+        [[ "$output" == *"WARN: CI RED"* ]]
+       done
+      done
+    done
+}
+
+@test "all generated CLI role instructions preserve the independent work policy" {
+    run python3 - "$REPO_ROOT" <<'PY'
+import pathlib, sys
+root=pathlib.Path(sys.argv[1])
+start='<!-- ci-independent-work:start -->'
+end='<!-- ci-independent-work:end -->'
+paths=[root/'AGENTS.md', root/'CLAUDE.md', root/'instructions/common/task_flow.md']
+for prefix in ('', 'codex-', 'copilot-', 'kimi-'):
+    paths.extend(root/f'instructions/generated/{prefix}{role}.md' for role in ('shogun','karo','gunshi','ashigaru'))
+blocks=[]
+for path in paths:
+    text=path.read_text()
+    assert text.count(start)==text.count(end)==1, str(path)
+    blocks.append(text.split(start)[1].split(end)[0])
+assert len(set(blocks))==1
+assert 'pushのみ保留' not in (root/'AGENTS.md').read_text()
+assert 'pushのみ保留' not in (root/'CLAUDE.md').read_text()
+print('19/19 policy sources identical')
+PY
+    [ "$status" -eq 0 ]
 }
 
 @test "ci_fix deployment is always allowed so RED can be repaired" {

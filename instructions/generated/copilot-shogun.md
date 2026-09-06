@@ -467,6 +467,15 @@ done通知で `inbox_write.sh` を直接呼ぶのは禁止。`recovery` や `tas
 
 # Task Flow
 
+<!-- ci-independent-work:start -->
+## CI REDと独立作業（全CLI・model・effort共通、殿裁定2026-09-06）
+
+- positive_rule: CI REDだけを理由に配備・commit・検証済み独立変更の公開を止めない。CI修正は専任の並行作業とし、停止判断は当該変更の未達検証・具体的依存・対象固有の承認条件で行う。発火していない公開制限を推測しない。
+- reason: 配備guardのBLOCKを独立変更の公開禁止へ一般化し、検証済み権限同期をCI待ちにしたため。復帰後も同じ判断を再発させない。
+- 実装: scripts/deploy_task.shのCI RED追随判定は警告のみで通常配備を通す。対象固有の検証・本番承認・保護対象は維持する。CLI固有のhook・実行方式は統合せず、成果基準のみ同期する。
+<!-- ci-independent-work:end -->
+
+
 ## Workflow: Shogun → Karo → Ninja
 
 ```
