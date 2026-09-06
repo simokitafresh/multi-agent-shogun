@@ -40,7 +40,8 @@
 |---|---|---|---|---|
 | P01〜P03 / cmd_4484 / 影丸 | 世代2解析受入。source `aa96ac78133919876e86733106209943b9469cc9`、公開main `22668f54000829ed37712bf4e9f9d7c68bfc3ffe`へ包含確認 | 軍師LGTM・家老ACCEPT。v2 receipt/原出力hash検証済み | 16:36 GATE CLEAR、16:37 archive.doneとtask idleを実確認 | source未公開WAITは解消。証跡=`queue/gates/cmd_4484/completion_tail.log`・`archive.done`・`queue/tasks/kagemaru.yaml`。次=P05以降の入力確認。調査完了であり本番不整合修正済みとは数えない |
 | P04 / cmd_4486 / 半蔵 | 最終`2ece0652387fce4639c6ac4fd754bc7be0fdb925`をmain `694ab6210851126db9462ab2b40cacdb53be15a0`へ公開。84候補(79/3/2)、個別登録対応の除外149、原出力rc5/hash一致。初回172→88→76の過剰除外是正→84 | 軍師LGTM・家老ACCEPT。登録関数単位へ限定、未登録helper保持、60日境界と新版原出力を確認 | 17:11 GATE CLEAR確認、17:12 archive.done/active_reports0/半蔵idleを確認 | 監査artifact8file、DB/本番/application変更0。証跡=`queue/gates/cmd_4486/completion_tail.log`。P06/P07へ監査結果を入力可。静的候補の受入であり撤去承認ではない |
-| P05〜P10 / 未配備 | 下表の準備・依存条件で区分 | 未実行 | 未実行 | 家老が既存cmdと重複確認し、入力・許可範囲の揃ったカードだけ配備 |
+| P05/P06 / cmd_4485 / 影丸 | 2026-09-06 17:33:38配備、17:34着手確認。AC1復元前flightを先行 | draft APPROVE。成果物レビューは未実行 | 未実行 | 影丸がsnapshot/不足入力manifest・local接続隔離・3wallを確認し家老へ共有。その後I6/I4実験を別B系へ分離。DB本番書込0 |
+| P07〜P10 / 未配備 | 下表の準備・依存条件で区分 | 未実行 | 未実行 | 家老が入力・許可範囲の揃ったカードだけ配備 |
 
 ### §2.2 cmd_4484 世代 2 の新観測(旧観測を消さず併記)
 

@@ -13,7 +13,7 @@
 | 群 | 状態 | 現在値 |
 |---|---|---|
 | W0/W1 契約/W1 core/W4/W5 | ✅ | 一意根拠表・routine_refs 注入・canonical 記録・バグ#6 は全て CLEAR |
-| W2/T1・W3/T2・W6 | 🟡 | W2 疾風 done→CLEAR 待ち(await_clear 14:29〜、その後 K3 へ再配備で解放済み)。**W6 解放遅延の実測(殿 15:35)**: P-4 提出後 CLEAR まで約 193 分、F-14 約 117 分、半蔵 完了後未配備 約 122 分、影丸/才蔵 failed 残置 約 190/150 分(家老 karo-parallel-utilization_20260906.md と一致)→将軍 loop に解放遅延/idle/failed のナッジ 3 判定(殿 15:36『自動化でなく監視とナッジ』) |
+| W2/T1・W3/T2・W6 | 🟡 | W2 疾風 done→CLEAR 待ち(await_clear 14:29〜、その後 K3 へ再配備で解放済み)。**W6 解放遅延の実測(殿 15:35)**: P-4 提出後 CLEAR まで約 193 分、F-14 約 117 分、半蔵 完了後未配備 約 122 分、**小太郎 契約 task done 16:06→GATE CLEAR 17:32 約 86 分(将軍ナッジ 17:27 後 5 分で解消。ナッジ無しでは放置=loop ナッジの効果 1 例)**、17:55 時点 idle 30 分超=半蔵 45 分/才蔵 34 分→ナッジ、影丸/才蔵 failed 残置 約 190/150 分(家老 karo-parallel-utilization_20260906.md と一致)→将軍 loop に解放遅延/idle/failed のナッジ 3 判定(殿 15:36『自動化でなく監視とナッジ』) |
 | F-6〜F-12 | ✅ | gate 偽 BLOCK/recon-dual 契約/K2 偽 CLEAR/insight 自動消火/hotfix 契約回帰 2 件=全て根治・CI 層 B 0 |
 | F-13 deploy_task 系 CI RED(deploy 8+FP 1) | ✅ deploy 8 解消。FP flaky は再発計数 2/日(05:55 run 34015169693 で再発、次 run 05:48 は success) | deploy 8 は P-4 CLEAR 後に再走行で判定。FP 1 は診断 run 34005978406 で PASS=flaky 確定、才蔵 ci_fix は正式 FAIL_CLOSE(11:30) |
 | P-4 recon_dual 投影・fixed base | 🟡 WAIT(F-15 root 同期待ち、13:18 も external_wait) | 本体 3d2b6c4d9 収載済み。cb3d9af23 は origin と 4/4 一致、残=lifecycle 1 行 606f8efe4。F-14 gate は origin c4b0989d3 へ収載済みだが共有 root への同期が not_descendant で skip(root 171 behind/23 ahead、safe_ff mismatch 18)=root の gate が旧版のまま→11:53 も external_wait。将軍 12:01 家老へ順序付き 1 通(mismatch 18 の二分→収束→P-4 再 GATE→deploy 8 再判定) |
