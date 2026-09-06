@@ -1514,3 +1514,39 @@ entries:
   notify_targets: []
   confirmed_by: []
   status: 'open'
+- id: 'blt_20260907_031011_e651f9'
+  content: |-
+    DOC_LANE_ALERT: context=context/dm-signal-core.md raw_alert=ALERT: context/dm-signal-core.md source commits 1件 since last_updated=2026-09-07 repo=/mnt/c/Python_app/DM-signal root_fallback=no timeout=360s/360s owner=dm-signal-core update_trigger=backend/app|backend/tests|docs/rule|context/dm-signal-terminology.md|docs/knowledge-base/terminology/disambiguation.md。更新要否を確認せよ latest: ad6975ef7850 cmd_4493: deploy verified FoF weight renormalization action: bash scripts/context_source_commit_set.sh context/dm-signal-core.md ad6975ef7850 'context_freshness reviewed source boundary' 'context_freshness_check context=context/dm-signal-core.md commit=ad6975ef7850'
+  posted_by: 'gate_context_freshness'
+  posted_at: '2026-09-07T03:10:11'
+  requires_confirmation: false
+  action_type: 'action_required'
+  actioned_by: ''
+  notify_targets:
+    - 'shogun'
+  confirmed_by: []
+  status: 'open'
+- id: 'blt_20260907_031017_ec8df9'
+  content: |-
+    DOC_LANE_ALERT: context=context/dm-signal-ops.md raw_alert=ALERT: context/dm-signal-ops.md source commits 1件 since last_updated=2026-09-07 repo=/mnt/c/Python_app/DM-signal root_fallback=no timeout=360s/360s owner=dm-signal-ops update_trigger=backend/app/api|backend/app/jobs|backend/app/services|backend/tests|docs/rule|cited:docs/research|render.yaml|tasks/lessons.md。更新要否を確認せよ latest: ad6975ef7850 cmd_4493: deploy verified FoF weight renormalization action: bash scripts/context_source_commit_set.sh context/dm-signal-ops.md ad6975ef7850 'context_freshness reviewed source boundary' 'context_freshness_check context=context/dm-signal-ops.md commit=ad6975ef7850'
+  posted_by: 'gate_context_freshness'
+  posted_at: '2026-09-07T03:10:17'
+  requires_confirmation: false
+  action_type: 'action_required'
+  actioned_by: ''
+  notify_targets:
+    - 'shogun'
+  confirmed_by: []
+  status: 'open'
+- id: 'blt_20260907_031020_9c7fc4'
+  content: |-
+    DOC_LANE_ALERT: context=context/infrastructure.md raw_alert=ALERT: context/infrastructure.md source commits 1件 since last_updated=2026-09-07 repo=/home/simokitafresh/multi-agent-shogun root_fallback=no timeout=360s/360s owner=infra-platform update_trigger=.github|.githooks|config|docs/rule|docs/knowledge-base|instructions|scripts|skills|tests|AGENTS.md|CLAUDE.md|CONTRIBUTING.md|LICENSE|Makefile|SECURITY.md|first_setup.sh|install.bat|lefthook-local.yml|lefthook.yml|project_lexicon.yaml|setup.sh|shutsujin_departure.sh。更新要否を確認せよ latest: e5307556dac5 cmd_karo_hotfix_inbox_speed_20260907: remove pre-send Python YAML subprocesses action: bash scripts/context_source_commit_set.sh context/infrastructure.md e5307556dac5 'context_freshness reviewed source boundary' 'context_freshness_check context=context/infrastructure.md commit=e5307556dac5'
+  posted_by: 'gate_context_freshness'
+  posted_at: '2026-09-07T03:10:20'
+  requires_confirmation: false
+  action_type: 'action_required'
+  actioned_by: ''
+  notify_targets:
+    - 'shogun'
+  confirmed_by: []
+  status: 'open'
