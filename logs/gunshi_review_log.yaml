@@ -11678,3 +11678,23 @@
   causal_chain: case22 coverage修復→C3 FAIL根治
   origin: '[[C3_completion_span]] -> [[APPROVE]]'
   timestamp: '2026-09-06T14:00:30+09:00'
+- cmd_id: cmd_karo_hotfix_reference_test_contract_20260906
+  review_type: draft
+  verdict: APPROVE
+  verified_files:
+  - "queue/tasks/kotaro.yaml:3"
+  confidence: HIGH
+  ambiguity_points: none
+  findings_summary: "reference test contract。AC2本(参照bats自動導出+穴防止)。F14指摘の根治"
+  observations:
+  - "事実: F11/F12/F13/F16と既存入口照合。変更script参照bats自動導出"
+  operational_simulation:
+    command: "grep -c 'id: AC' queue/tasks/kotaro.yaml"
+    expected: "2"
+    actual: "2"
+    result: "PASS"
+  finding_categories: [assumptions, simulation, premortem, ambiguity, adversarial]
+  brainwash_check: "#1no #2no #3no #4no #5no #6no #7no #8no"
+  causal_chain: "参照bats全列挙不足→自動導出+穴防止=構造的根治"
+  origin: "[[F14_参照bats不足]] -> [[reference_test_contract]] -> [[APPROVE]]"
+  timestamp: "2026-09-06T14:01:00+09:00"
