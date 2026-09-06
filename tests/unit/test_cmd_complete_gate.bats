@@ -6812,6 +6812,204 @@ YAML
     [ "$(git --git-dir "$base/origin.git" show refs/heads/main:shared.txt)" = "remote newer valid state" ]
 }
 
+# cmd_karo_hotfix_dm_prod_requirements_import_20260907
+# b8741168: dev venv had a dependency (PyYAML) that backend/requirements.txt
+# did not declare, so Render's production install succeeded 58 local tests
+# but ModuleNotFoundError'd on `import app.main`, causing a 10-minute outage.
+_prod_import_repo_init() {
+    local base="$1" main_body="$2" requirements_content="${3:-}"
+    mkdir -p "$base/repo/backend/app"
+    git init -q -b main "$base/repo"
+    git -C "$base/repo" config user.email test@example.com
+    git -C "$base/repo" config user.name test
+    printf '%s' "$requirements_content" > "$base/repo/backend/requirements.txt"
+    : > "$base/repo/backend/app/__init__.py"
+    printf '%s\n' "$main_body" > "$base/repo/backend/app/main.py"
+    git -C "$base/repo" add -A
+    git -C "$base/repo" commit -q -m "backend snapshot"
+    git -C "$base/repo" rev-parse HEAD > "$base/source.sha"
+}
+
+# test_necessity: the isolated venv precheck must reproduce the b8741168
+# ModuleNotFoundError precondition and PASS whenever `import app.main`
+# actually succeeds from requirements.txt-only dependencies.
+# regression_justification: without a real venv/import attempt, a package
+# present only in the ambient dev environment could silently pass.
+@test "AC1/AC2: production requirements import-check PASSes when isolated import succeeds" {
+    local base="$BATS_TEST_TMPDIR/prod-import-pass"
+    _prod_import_repo_init "$base" "import sys" ""
+    local sha
+    sha="$(cat "$base/source.sha")"
+    run env DM_SIGNAL_PROD_IMPORT_CACHE_DIR="$base/cache" \
+        bash "$PROJECT_ROOT/scripts/gates/gate_dm_signal_production_smoke.sh" \
+        import-check --repo "$base/repo" --source-sha "$sha"
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"PASS: production_requirements_import"* ]]
+}
+
+# test_necessity: a dependency present in dev but missing from production
+# requirements must BLOCK push/deploy, not silently PASS (the exact failure
+# mode of b8741168).
+@test "AC2: production requirements import-check BLOCKs on ModuleNotFoundError" {
+    local base="$BATS_TEST_TMPDIR/prod-import-block"
+    _prod_import_repo_init "$base" "import definitely_missing_pkg_xyz123" ""
+    local sha
+    sha="$(cat "$base/source.sha")"
+    run env DM_SIGNAL_PROD_IMPORT_CACHE_DIR="$base/cache" \
+        bash "$PROJECT_ROOT/scripts/gates/gate_dm_signal_production_smoke.sh" \
+        import-check --repo "$base/repo" --source-sha "$sha"
+    [ "$status" -ne 0 ]
+    [[ "$output" == *"BLOCK: import_check_module_import_failed"* ]]
+}
+
+# test_necessity: repeated invocations for the same requirements
+# hash+python version+source SHA must reuse the cached PASS instead of
+# rebuilding an isolated venv every time (AC2 "実行重複は安全なcacheで除去").
+@test "AC2: production requirements import-check reuses cache for unchanged requirements/sha" {
+    local base="$BATS_TEST_TMPDIR/prod-import-cache"
+    _prod_import_repo_init "$base" "import sys" ""
+    local sha
+    sha="$(cat "$base/source.sha")"
+    DM_SIGNAL_PROD_IMPORT_CACHE_DIR="$base/cache" \
+        bash "$PROJECT_ROOT/scripts/gates/gate_dm_signal_production_smoke.sh" \
+        import-check --repo "$base/repo" --source-sha "$sha" >/dev/null
+
+    run env DM_SIGNAL_PROD_IMPORT_CACHE_DIR="$base/cache" \
+        bash "$PROJECT_ROOT/scripts/gates/gate_dm_signal_production_smoke.sh" \
+        import-check --repo "$base/repo" --source-sha "$sha"
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"cache_hit=1"* ]]
+}
+
+# test_necessity: a stale cached PASS must never survive a requirements
+# content change; the cache key binds requirements hash so a dependency-set
+# change forces a fresh check instead of a stale reuse.
+@test "AC2: production requirements import-check cache key changes when requirements content changes" {
+    local base="$BATS_TEST_TMPDIR/prod-import-cache-bust"
+    _prod_import_repo_init "$base" "import sys" ""
+    local sha1
+    sha1="$(cat "$base/source.sha")"
+    printf '\n' > "$base/repo/backend/requirements.txt"
+    git -C "$base/repo" add -A
+    git -C "$base/repo" commit -q -m "requirements content change"
+    local sha2
+    sha2="$(git -C "$base/repo" rev-parse HEAD)"
+
+    DM_SIGNAL_PROD_IMPORT_CACHE_DIR="$base/cache" \
+        bash "$PROJECT_ROOT/scripts/gates/gate_dm_signal_production_smoke.sh" \
+        import-check --repo "$base/repo" --source-sha "$sha1" >/dev/null
+
+    run env DM_SIGNAL_PROD_IMPORT_CACHE_DIR="$base/cache" \
+        bash "$PROJECT_ROOT/scripts/gates/gate_dm_signal_production_smoke.sh" \
+        import-check --repo "$base/repo" --source-sha "$sha2"
+    [ "$status" -eq 0 ]
+    [[ "$output" != *"cache_hit=1"* ]]
+}
+
+# test_necessity: D002 forbids rm -rf outside the current project working
+# tree. DM_SIGNAL_PROD_IMPORT_CACHE_DIR is deliberately overrideable (tests
+# point it away from the real repo to keep result markers out of it), so the
+# destructive scratch/venv workspace that the EXIT trap rm -rf's must be
+# anchored independently of that override -- never derived from it -- or an
+# override pointed outside the tree would relocate the cleanup target there.
+@test "AC2: a cache-dir override cannot relocate the cleanup workspace outside the project tree" {
+    local base="$BATS_TEST_TMPDIR/prod-import-workroot-anchor"
+    _prod_import_repo_init "$base" "import sys" ""
+    local sha
+    sha="$(cat "$base/source.sha")"
+    local external_cache="$base/external-cache-outside-project"
+    local project_work_root="$PROJECT_ROOT/.cache/dm_signal_prod_import/tmp"
+
+    run env DM_SIGNAL_PROD_IMPORT_CACHE_DIR="$external_cache" \
+        bash "$PROJECT_ROOT/scripts/gates/gate_dm_signal_production_smoke.sh" \
+        import-check --repo "$base/repo" --source-sha "$sha"
+    [ "$status" -eq 0 ]
+    [ -d "$external_cache" ]
+    [ "$(ls "$external_cache"/*.result 2>/dev/null | wc -l)" -ge 1 ]
+    # the overridden dir must carry only the result marker, never the
+    # scratch workspace root the cleanup trap rm -rf's
+    [ ! -d "$external_cache/tmp" ]
+    # the project-owned root is where the workspace was actually anchored
+    [ -d "$project_work_root" ]
+}
+
+# test_necessity: backend/requirements.txt absent at the checked commit must
+# fail closed (BLOCK), never a silent SKIP that could mask an unreviewable
+# dependency manifest.
+@test "AC2: production requirements import-check BLOCKs when requirements.txt is absent" {
+    local base="$BATS_TEST_TMPDIR/prod-import-missing-reqs"
+    mkdir -p "$base/repo/backend/app"
+    git init -q -b main "$base/repo"
+    git -C "$base/repo" config user.email test@example.com
+    git -C "$base/repo" config user.name test
+    printf 'import sys\n' > "$base/repo/backend/app/main.py"
+    git -C "$base/repo" add -A
+    git -C "$base/repo" commit -q -m "no requirements file"
+    local sha
+    sha="$(git -C "$base/repo" rev-parse HEAD)"
+
+    run env DM_SIGNAL_PROD_IMPORT_CACHE_DIR="$base/cache" \
+        bash "$PROJECT_ROOT/scripts/gates/gate_dm_signal_production_smoke.sh" \
+        import-check --repo "$base/repo" --source-sha "$sha"
+    [ "$status" -ne 0 ]
+    [[ "$output" == *"BLOCK: import_check_requirements_missing"* ]]
+}
+
+# test_necessity: the push/deploy final checkpoint must actually invoke the
+# precheck and BLOCK the git push for a dm-signal backend change whose
+# isolated import fails, so a b8741168-style outage cannot reach Render.
+@test "AC2: push is BLOCKed before publication when isolated import fails for a dm-signal backend change" {
+    local base="$BATS_TEST_TMPDIR/prod-import-push-block"
+    _push_overlap_repo_init "$base"
+    mkdir -p "$base/repo/backend/app"
+    : > "$base/repo/backend/requirements.txt"
+    : > "$base/repo/backend/app/__init__.py"
+    printf 'import definitely_missing_pkg_xyz123\n' > "$base/repo/backend/app/main.py"
+    git -C "$base/repo" add -A
+    git -C "$base/repo" commit -q -m "add broken backend import"
+    _push_overlap_task_yaml "$base"
+    _push_overlap_install_git_call_counter "$base"
+    # SCRIPT_DIR inside push_task_repositories doubles as this test's fixture
+    # root (matching the harness's own `repos=("$SCRIPT_DIR")` fallback
+    # convention), so the infra-repo gate helper must be reachable at the
+    # same relative path the real cmd_complete_gate.sh resolves it from.
+    mkdir -p "$base/scripts/gates"
+    ln -s "$PROJECT_ROOT/scripts/gates/gate_dm_signal_production_smoke.sh" \
+        "$base/scripts/gates/gate_dm_signal_production_smoke.sh"
+
+    run env PATH="$base/bin:$PATH" CMD_PROJECT=dm-signal \
+        DM_SIGNAL_PROD_IMPORT_CACHE_DIR="$base/import_cache" \
+        CMD_COMPLETE_GATE_PUSH_REPOS_REAL=1 CMD_COMPLETE_GATE_TASK_FILE="$base/task.yaml" \
+        bash "$PUSH_RUNNER" "$base" "$PUSH_HELPERS_FILE" "$base/task.yaml" "cmd_ac2_prod_import_block_probe"
+    [ "$status" -ne 0 ]
+    [[ "$output" == *"import_check_module_import_failed"* ]]
+    [[ "$output" == *"git push: BLOCK ($base/repo production_requirements_import_failed)"* ]]
+    [ ! -s "$base/git_push_calls.log" ]
+}
+
+# test_necessity: non-dm-signal projects and dm-signal changes that never
+# touch backend/requirements.txt must keep the pre-existing push behavior
+# unchanged (AC2 "既存...通常cmdの挙動不変").
+@test "AC2: non-dm-signal project push is unaffected by the new production import precheck" {
+    local base="$BATS_TEST_TMPDIR/prod-import-skip-nondm"
+    _push_overlap_repo_init "$base"
+    mkdir -p "$base/repo/backend/app"
+    : > "$base/repo/backend/requirements.txt"
+    : > "$base/repo/backend/app/__init__.py"
+    printf 'import definitely_missing_pkg_xyz123\n' > "$base/repo/backend/app/main.py"
+    git -C "$base/repo" add -A
+    git -C "$base/repo" commit -q -m "add broken backend import (non dm-signal)"
+    _push_overlap_task_yaml "$base"
+    _push_overlap_install_git_call_counter "$base"
+
+    run env PATH="$base/bin:$PATH" \
+        CMD_COMPLETE_GATE_PUSH_REPOS_REAL=1 CMD_COMPLETE_GATE_TASK_FILE="$base/task.yaml" \
+        bash "$PUSH_RUNNER" "$base" "$PUSH_HELPERS_FILE" "$base/task.yaml" "cmd_ac2_prod_import_skip_probe"
+    [ "$status" -eq 0 ]
+    [[ "$output" != *"production_requirements_import_failed"* ]]
+    [ "$(grep -c . "$base/git_push_calls.log" 2>/dev/null || true)" -ge 1 ]
+}
+
 # test_necessity: the no-op proof is verdict-bound; an ordinary PASS must keep
 # the existing fail-closed source-only publication behavior.
 @test "AC2: ordinary PASS cannot use PASS_NO_IMPROVEMENT base-tree no-op" {

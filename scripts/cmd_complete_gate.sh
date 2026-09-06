@@ -3965,6 +3965,45 @@ cmd_complete_gate_auto_push_ancestry_wait() {
     [[ "$push_output" == *"result=PASS"* ]]
 }
 
+# dm-signal専用: backend/requirements.txtを持つ変更(=Render本番backendへ
+# 波及しうる)をこの回でrepoへpushするなら、push直前にproduction requirements
+# importチェックを要求する。CMD_PROJECTがdm-signal以外、backend/requirements.txt
+# が対象repoに無い、またはbackend配下に実差分が無い場合はfalseを返し、
+# 既存の非dm-signal repo・LP-only等の挙動を変えない。
+dm_signal_repo_requires_production_import_check() {
+    local repo="$1" remote_tip="$2"
+    shift 2
+    [ "${CMD_PROJECT:-}" = "dm-signal" ] || return 1
+    local backend_rel="${DM_SIGNAL_PROD_IMPORT_BACKEND_REL:-backend}"
+    local sha changed
+    for sha in "$@"; do
+        [[ "$sha" =~ ^[0-9a-f]{40}$ ]] || continue
+        git -C "$repo" cat-file -e "${sha}:${backend_rel}/requirements.txt" 2>/dev/null || continue
+        if ! [[ "$remote_tip" =~ ^[0-9a-f]{40}$ ]]; then
+            return 0
+        fi
+        changed="$(git -C "$repo" diff --name-only "$remote_tip" "$sha" -- "$backend_rel" 2>/dev/null || true)"
+        [ -n "$changed" ] && return 0
+    done
+    return 1
+}
+
+# gate_dm_signal_production_smoke.sh import-checkへ委譲する薄いwrapper。
+# 隔離venv構築/pip install/importの実処理は当該スクリプトに閉じ、ここは
+# push経路への配線とBLOCK文言の統一だけを担う。
+run_dm_signal_production_requirements_import_check() {
+    local repo="$1" source_sha="$2"
+    local smoke_script="$SCRIPT_DIR/scripts/gates/gate_dm_signal_production_smoke.sh"
+    if [ ! -x "$smoke_script" ]; then
+        echo "  production requirements import check: [CRITICAL] helper missing: $smoke_script"
+        return 1
+    fi
+    local output rc=0
+    output=$(bash "$smoke_script" import-check --repo "$repo" --source-sha "$source_sha" 2>&1) || rc=$?
+    printf '%s\n' "$output" | sed 's/^/  production requirements import check: /'
+    return "$rc"
+}
+
 push_task_repositories() {
     # PUBLISHER_SINGLE: never push from the gate, but still run the publication-proof lanes below
     # (publisher-commit equivalence writes the receipt). The real push is guarded at the push site.
@@ -4377,6 +4416,13 @@ PY
             if [ "$publisher_proof_only" -eq 1 ]; then
                 echo "  git push: PUBLISHER_SINGLE awaiting publisher publication ($repo; no gate push)"
                 return 1
+            fi
+            if dm_signal_repo_requires_production_import_check "$repo" "$remote_tip" "${source_commits[@]}"; then
+                if ! run_dm_signal_production_requirements_import_check "$repo" \
+                    "${source_commits[$((${#source_commits[@]}-1))]}"; then
+                    echo "  git push: BLOCK ($repo production_requirements_import_failed)"
+                    return 1
+                fi
             fi
             echo "  git push: isolated clean snapshot ($repo remote-tip source-only push)"
             [ -n "$overlap_blocking" ] && printf '%s\n' "$overlap_blocking" | sed 's/^/    /'

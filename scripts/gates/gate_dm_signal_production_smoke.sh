@@ -13,6 +13,147 @@
 # Contract: this gate is invoked through executable-path checks and must stay 100755.
 set -euo pipefail
 
+# import-check: push/deploy前の最終経路で、production requirementsだけから
+# 作る隔離venvで `import <module>` を強制する。b8741168(dev venvにあった依存が
+# production requirementsに無くRender本番でModuleNotFoundError)の再発防止。
+# 判定はrequirements内容hash+pythonバージョン+source SHAで束縛し、依存変更後の
+# stale PASSキャッシュ再利用を許さない。
+if [ "${1:-}" = "import-check" ]; then
+    shift
+    IC_REPO=""
+    IC_SOURCE_SHA=""
+    IC_BACKEND_REL="${DM_SIGNAL_PROD_IMPORT_BACKEND_REL:-backend}"
+    IC_MODULE="${DM_SIGNAL_PROD_IMPORT_MODULE:-app.main}"
+    while [ "$#" -gt 0 ]; do
+        case "$1" in
+            --repo)
+                IC_REPO="${2:-}"
+                shift 2
+                ;;
+            --source-sha)
+                IC_SOURCE_SHA="${2:-}"
+                shift 2
+                ;;
+            --backend-rel)
+                IC_BACKEND_REL="${2:-}"
+                shift 2
+                ;;
+            --module)
+                IC_MODULE="${2:-}"
+                shift 2
+                ;;
+            *)
+                echo "BLOCK: import_check_unknown_argument: $1" >&2
+                exit 1
+                ;;
+        esac
+    done
+
+    if [ -z "$IC_REPO" ] || [ ! -d "$IC_REPO" ]; then
+        echo "BLOCK: import_check_repo_missing repo=${IC_REPO:-unset}"
+        exit 1
+    fi
+    if ! [[ "$IC_SOURCE_SHA" =~ ^[0-9a-fA-F]{7,40}$ ]]; then
+        echo "BLOCK: import_check_source_sha_invalid sha=${IC_SOURCE_SHA:-unset}"
+        exit 1
+    fi
+
+    IC_REQUIREMENTS_REL="${IC_BACKEND_REL}/requirements.txt"
+    if ! git -C "$IC_REPO" cat-file -e "${IC_SOURCE_SHA}:${IC_REQUIREMENTS_REL}" 2>/dev/null; then
+        echo "BLOCK: import_check_requirements_missing path=${IC_REQUIREMENTS_REL} sha=${IC_SOURCE_SHA:0:12}"
+        exit 1
+    fi
+
+    IC_REQ_CONTENT="$(git -C "$IC_REPO" show "${IC_SOURCE_SHA}:${IC_REQUIREMENTS_REL}" 2>/dev/null)" || {
+        echo "BLOCK: import_check_requirements_unreadable path=${IC_REQUIREMENTS_REL} sha=${IC_SOURCE_SHA:0:12}"
+        exit 1
+    }
+    IC_REQ_HASH="$(printf '%s' "$IC_REQ_CONTENT" | sha256sum | awk '{print $1}')"
+    IC_PYTHON_BIN="${DM_SIGNAL_PROD_IMPORT_PYTHON_BIN:-python3}"
+    IC_PY_VERSION="$("$IC_PYTHON_BIN" -c 'import sys; print("%d.%d.%d" % sys.version_info[:3])' 2>/dev/null || echo unknown)"
+    IC_CACHE_KEY="$(printf '%s|%s|%s' "$IC_REQ_HASH" "$IC_PY_VERSION" "$IC_SOURCE_SHA" | sha256sum | awk '{print $1}')"
+    IC_PROJECT_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
+    IC_DEFAULT_CACHE_DIR="$IC_PROJECT_ROOT/.cache/dm_signal_prod_import"
+    IC_CACHE_DIR="${DM_SIGNAL_PROD_IMPORT_CACHE_DIR:-$IC_DEFAULT_CACHE_DIR}"
+    mkdir -p "$IC_CACHE_DIR" 2>/dev/null || true
+    IC_CACHE_MARKER="$IC_CACHE_DIR/${IC_CACHE_KEY}.result"
+
+    if [ "${DM_SIGNAL_PROD_IMPORT_FORCE:-0}" != "1" ] && [ -f "$IC_CACHE_MARKER" ] \
+        && [ "$(cat "$IC_CACHE_MARKER" 2>/dev/null)" = "PASS" ]; then
+        echo "PASS: production_requirements_import cache_hit=1 key=${IC_CACHE_KEY:0:12} req_hash=${IC_REQ_HASH:0:12} python=${IC_PY_VERSION} sha=${IC_SOURCE_SHA:0:12} module=${IC_MODULE}"
+        exit 0
+    fi
+
+    # D002 (project-tree-only rm -rf): the scratch workspace must live under
+    # this project's owned cache tree, never bare TMPDIR/tmp. It is anchored
+    # to IC_PROJECT_ROOT (derived from this script's own resolved location),
+    # never to the overrideable DM_SIGNAL_PROD_IMPORT_CACHE_DIR -- a caller
+    # pointing that variable outside the project tree (as tests deliberately
+    # do, to keep result markers out of the real repo) must not be able to
+    # relocate the destructive scratch/cleanup workspace along with it. The
+    # cleanup trap re-resolves both paths with realpath and refuses to remove
+    # anything that does not resolve inside the owned root, so a symlink or
+    # a future edit that widens IC_WORK_ROOT cannot turn this into an
+    # out-of-tree rm -rf.
+    IC_WORK_ROOT="$IC_PROJECT_ROOT/.cache/dm_signal_prod_import/tmp"
+    mkdir -p "$IC_WORK_ROOT" 2>/dev/null || true
+    IC_WORK_DIR="$(mktemp -d "$IC_WORK_ROOT/import.XXXXXX")" || exit 1
+    ic_cleanup() {
+        local resolved_root resolved_work
+        resolved_root="$(cd "$IC_WORK_ROOT" 2>/dev/null && pwd -P)" || return 0
+        resolved_work="$(cd "$IC_WORK_DIR" 2>/dev/null && pwd -P)" || return 0
+        case "$resolved_work" in
+            "$resolved_root"/*) rm -rf -- "$resolved_work" ;;
+            *) echo "BLOCK: import_check_cleanup_refused path outside owned tmp root: $resolved_work" >&2 ;;
+        esac
+    }
+    trap ic_cleanup EXIT
+
+    IC_PIP_BIN="${DM_SIGNAL_PROD_IMPORT_PIP_BIN:-}"
+    IC_RUN_PYTHON_BIN="${DM_SIGNAL_PROD_IMPORT_RUN_PYTHON_BIN:-}"
+    if [ -z "$IC_PIP_BIN" ] || [ -z "$IC_RUN_PYTHON_BIN" ]; then
+        if ! "$IC_PYTHON_BIN" -m venv "$IC_WORK_DIR/venv" >"$IC_WORK_DIR/venv_create.log" 2>&1; then
+            echo "BLOCK: import_check_venv_create_failed"
+            sed 's/^/  /' "$IC_WORK_DIR/venv_create.log" >&2
+            exit 1
+        fi
+        IC_PIP_BIN="$IC_WORK_DIR/venv/bin/pip"
+        IC_RUN_PYTHON_BIN="$IC_WORK_DIR/venv/bin/python"
+    fi
+
+    printf '%s' "$IC_REQ_CONTENT" > "$IC_WORK_DIR/requirements.txt"
+    if ! "$IC_PIP_BIN" install --quiet --no-input --disable-pip-version-check \
+        -r "$IC_WORK_DIR/requirements.txt" >"$IC_WORK_DIR/pip_install.log" 2>&1; then
+        echo "BLOCK: import_check_dependency_missing"
+        tail -n 30 "$IC_WORK_DIR/pip_install.log" >&2
+        printf 'FAIL\n' > "$IC_CACHE_MARKER"
+        exit 1
+    fi
+
+    mkdir -p "$IC_WORK_DIR/src"
+    if ! git -C "$IC_REPO" archive "$IC_SOURCE_SHA" -- "$IC_BACKEND_REL" 2>"$IC_WORK_DIR/archive.log" \
+        | tar -x -C "$IC_WORK_DIR/src" 2>>"$IC_WORK_DIR/archive.log"; then
+        echo "BLOCK: import_check_source_archive_failed"
+        sed 's/^/  /' "$IC_WORK_DIR/archive.log" >&2
+        exit 1
+    fi
+    if [ ! -d "$IC_WORK_DIR/src/$IC_BACKEND_REL" ]; then
+        echo "BLOCK: import_check_source_archive_empty path=$IC_BACKEND_REL"
+        exit 1
+    fi
+
+    if ! ( cd "$IC_WORK_DIR/src/$IC_BACKEND_REL" && "$IC_RUN_PYTHON_BIN" -c "import ${IC_MODULE}" ) >"$IC_WORK_DIR/import.log" 2>&1; then
+        echo "BLOCK: import_check_module_import_failed module=${IC_MODULE}"
+        tail -n 30 "$IC_WORK_DIR/import.log" >&2
+        printf 'FAIL\n' > "$IC_CACHE_MARKER"
+        exit 1
+    fi
+
+    printf 'PASS\n' > "$IC_CACHE_MARKER"
+    echo "PASS: production_requirements_import key=${IC_CACHE_KEY:0:12} req_hash=${IC_REQ_HASH:0:12} python=${IC_PY_VERSION} sha=${IC_SOURCE_SHA:0:12} module=${IC_MODULE}"
+    exit 0
+fi
+
 CMD_ID="${1:-}"
 shift || true
 ORIGIN_SHA="${DM_SIGNAL_SMOKE_ORIGIN_SHA:-}"
