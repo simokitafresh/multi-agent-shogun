@@ -1,5 +1,5 @@
 <!-- gist-master: 2f1a3daa07c336c90958b1287245318b dm-signal-production-inconsistency-asis-tobe_20260906.md -->
-# DM-Signal 本番不整合 I1〜I9 — 現況・配備カード・データフロー・カタログ・因果・改善影響・ledger 判断 統合設計書 v1.4(2026-09-06 17:1x)
+# DM-Signal 本番不整合 I1〜I9 — 現況・配備カード・データフロー・カタログ・因果・改善影響・ledger 判断 統合設計書 v1.5(2026-09-06 17:2x)
 
 - 発端: 殿 2026-09-06 14:11『dm-signal-research-data-backlog_20260905.md を参考に DM-signal の本番の不整合について深く調査しよう。家老と繰り返しレビュー交換をせよ。本番の不整合、それによる影響、改善時にどのような変化が本番に起きるか、改善の影響範囲・依存関係なども明確にせよ』。以後の殿指示: 14:44 データフロー、14:45 ユーザー可視/内部/デッドコード、14:47 設計の因果、14:59 ledger 協議、15:06 時系列、15:15 可視変化の定量化、15:33 3 設計書並列、15:56 配備・進捗運用版(家老)、16:33 単一スタイルへ再構築。
 - 読む順: §2(現況)→§3(配備カード)→§5(カタログ)→§9(改善影響)→§10(ledger)。図は §4、根拠は §5〜§7、順序と契約は §8、裁定は §11、往復は §12、版は §13。
@@ -84,9 +84,9 @@ cmd_4484 世代2の**報告値**。オフライン検証出力は確認済みだ
 | P01 共通snapshot / 配備済み | cmd_4484 AC1。DB取得1系統、世代固定 | 5表全行、A75/B全FoF manifest、nonce/期間/件数/hash、取得限界 | 必須列・全日次・3つの初月定義が記録され欠落を隠さない。§8.2全7項目 |
 | P02 I2/I3/I5解析A / 配備済み | P01固定後、P03と解析並列可。DB再取得不可 | signal_change_log / signals / monthly_returns。全行分類CSV・原行参照・再実行手順 | I2の5候補+unknown、I3全75、I5六分類+照合不能を全て計上。§5 I2/I3/I5 の(a)〜(h)、§8.2 |
 | P03 I6/I8解析B / 配備済み | P01固定後、P02と並列可。A75にBを縮小しない | 全FoF初月表、旧対象対応表、consumer/境界/欠損分岐manifest | B全件と3初月定義、未確定理由、静的集合と実影響を分離。§5 I6/I8、F-F、§8.2 |
-| P04 デッドコード監査 / 配備済み | cmd_4486。固定codeのみ、P01不要で並列可 | backend/app、main/router、models/event、render/cron、facade/Depends。allowlist・候補CSV・反証・導入/除去履歴 | §7の6候補+陰性対照1と全域候補を漏れなく4分類。警告だけで到達不能としない。コード撤去・DB接触0。§6/§7 |
-| P05 I6/I8可視影響実験 / 入力待ち | P03受入、cmd_4485詳細・隔離復元前flight確認。I4とは分割可 | 専用local PostgreSQL、price_ratio_impl / monthly_returns / recalculate_fof。現行対候補の全差分 | §9.2全計測量（PF-月/直近12月/weight/return/cumulative/境界日）と復元・計算・比較wallを提出。旧35行が再現しなければその証拠を残し、本番修正へ進まない |
-| P06 I4 ledger判断資料 / 準備可 | P02分類・P04役割manifest、保護要件の確認。A実験は§10再導入条件と整合させる | ledger依存15fileの役割、MonthlyTrade置換、歴史builder、代替snapshot、B①無効化②表保持③DROPの段階表 | 保護対象/期間/出典・代替可否・真正性・冪等性・復元を判定可能にする。I5=0だけで廃止しない。今C/B調査第一候補を維持。§5 I4、§9.2、§10全文 |
+| P04 デッドコード監査 / ✅ CLEAR 17:11(候補 84/除外 149/撤去検討 63、§7) | cmd_4486。固定codeのみ、P01不要で並列可 | backend/app、main/router、models/event、render/cron、facade/Depends。allowlist・候補CSV・反証・導入/除去履歴 | §7の6候補+陰性対照1と全域候補を漏れなく4分類。警告だけで到達不能としない。コード撤去・DB接触0。§6/§7 |
+| P05 I6/I8可視影響実験 / **cmd_4485 起票・配備下知 17:27**(AC1 前 flight→AC2 I6‖AC3 I4 5 種別) | P03受入、cmd_4485詳細・隔離復元前flight確認。I4とは分割可 | 専用local PostgreSQL、price_ratio_impl / monthly_returns / recalculate_fof。現行対候補の全差分 | §9.2全計測量（PF-月/直近12月/weight/return/cumulative/境界日）と復元・計算・比較wallを提出。旧35行が再現しなければその証拠を残し、本番修正へ進まない |
+| P06 I4 ledger判断資料 / cmd_4485 AC3 で U1 5 種別を取得中(17:27) | P02分類・P04役割manifest、保護要件の確認。A実験は§10再導入条件と整合させる | ledger依存15fileの役割、MonthlyTrade置換、歴史builder、代替snapshot、B①無効化②表保持③DROPの段階表 | 保護対象/期間/出典・代替可否・真正性・冪等性・復元を判定可能にする。I5=0だけで廃止しない。今C/B調査第一候補を維持。§5 I4、§9.2、§10全文 |
 | P07 I1/detail_history契約調査 / 準備可 | P04と同一ファイル調査は分担を先に固定。DDLは別段階 | 8列のDTO/API/admin/外部利用、verification writer/caller/過去入口。列別契約表 | 8/8列とreader/writer/runtime/行数の4軸を区別。外部利用未確認はunknown。将来契約と復元を評価。§5 I1/I4、§7、§9.1 |
 | P08 I2抑止・I3/I7監視設計 / 分類待ち | P02分類確定。I7部分は独立に準備可 | signal_flush/collector/ALERT/A4。変更候補と契約test計画 | 正当往復を消さず、分類確定経路のみ。INSERT監査目的との整合、I7欠落検出の二値条件、過去行保存を明示。§5 I2/I3/I7 |
 | P09 I9文書整合 / 準備可 | 固定blob/差分一次証拠、P04と履歴調査を共有可 | backlog B2・PI-P06・ops・本書。適用/撤回/未検証の対応表 | 2file同値とbackend139履歴commitを一般化しない。規範PIと過去実施記録を消さず現行注記を追加。§5 I9、§6、§5 |
@@ -546,6 +546,7 @@ I7: 監視 1 行(独立)
 - v1.2(2026-09-06 17:0x 将軍、家老 R9 全採用): 未知を 0 と書かない・観測母集団を上限と書かない・逆向きペアを正当と書かない。直近完了 12 ヶ月 2025-09〜2026-08 へ統一(I5 900/差 29、I2 15,290 行/5,531 group/unknown 2,583)。U8/U9 追加。
 - v1.3(2026-09-06 17:0x 将軍、家老 R10 APPROVE): 残表現 5 点反映。P05(cmd_4485)入力固定へ進む。
 - v1.4(2026-09-06 17:1x 将軍): cmd_4486 P04 CLEAR の結果を §7 へ(候補 84=79/3/2、除外 149、撤去検討 63、daily_etl 不在)。
+- v1.5(2026-09-06 17:2x 将軍): cmd_4485 起票・配備(P05/P06)。§3 P04/P05/P06 の状態更新。
 ## 因果リンク
 - ← [[dm-signal-research-data-backlog_20260905]] §B5 I1〜I8 / ← [[dm-signal-research-data-foundation-asis-tobe_20260905]] §2 / ← [[cmd_4480_shin_yotsume_parity]] / ← [[partial-turnover-experiment-asis-tobe-5w1h_20260805]] v1.10-v1.12
 - origin: "[[殿指示_本番不整合深掘り_20260906_1411]] -> [[backlog_B5_I1-I8]] -> [[production-inconsistency-asis-tobe]]"
