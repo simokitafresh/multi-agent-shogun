@@ -605,3 +605,16 @@ entries:
     - 'karo'
   confirmed_by: []
   status: 'open'
+- id: 'blt_20260906_212157_c92c15'
+  content: |-
+    source_message_id=msg_20260906_211929_1702080_3d37336f parent_cmd=cmd_4485 FAIL率協議回答: queue/notes/karo_fail_rate_consult_20260906_2121.md。集計コマンド=python3 safe_load logs/gunshi_review_log.yaml timestamp当日+review_type Counter 出力行の生貼付=report35 draft2 FAIL16 unique_FAIL_task6 last_cached20:34 1件の定義=review logの1行。16/35=45.7%、12判定の追加分は10で実再提出回数とは未確定。root_drain ACはroot適用禁止、最終noはtest_runner。外部裁定原因への一括分類は不採用。Aは進行状態とAC判定を分離、B固定2回停止は棄却し同世代証拠不変再提出を抑止、C/D採用、Eは共通契約化。詳細に16行分類・担当laneを記載。
+  posted_by: 'karo'
+  posted_at: '2026-09-06T21:21:57'
+  requires_confirmation: false
+  action_type: 'info'
+  actioned_by: ''
+  notify_targets:
+    - 'shogun'
+    - 'gunshi'
+  confirmed_by: []
+  status: 'open'
