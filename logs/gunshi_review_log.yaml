@@ -12157,7 +12157,8 @@
   verdict: FAIL
   verified_files:
     - "queue/reports/kagemaru_report_cmd_4485.yaml:282-312"
-  gate_result: null
+  gate_result: "CLEAR"
+  gate_synced_at: "2026-09-06T23:46:51+09:00"
   confidence: MEDIUM
   finding_categories:
     - assumptions
@@ -12281,7 +12282,8 @@
   verdict: FAIL
   verified_files:
   - queue/reports/kagemaru_report_cmd_4485.yaml:1
-  gate_result: null
+  gate_result: "CLEAR"
+  gate_synced_at: "2026-09-06T23:46:51+09:00"
   confidence: LOW
   finding_categories:
   - assumptions
@@ -12529,7 +12531,8 @@
   verdict: FAIL
   verified_files:
     - "queue/reports/kagemaru_report_cmd_4485.yaml:282-312"
-  gate_result: null
+  gate_result: "CLEAR"
+  gate_synced_at: "2026-09-06T23:46:51+09:00"
   confidence: HIGH
   finding_categories:
     - assumptions
@@ -12563,7 +12566,8 @@
   verdict: FAIL
   verified_files:
     - "queue/reports/hanzo_report_cmd_4485.yaml:1"
-  gate_result: null
+  gate_result: "CLEAR"
+  gate_synced_at: "2026-09-06T23:46:51+09:00"
   confidence: HIGH
   finding_categories:
     - assumptions
@@ -12813,6 +12817,8 @@
   brainwash_check: "#1no #2no #3no #4no #5no #6no #7no #8no bc 7/7"
   timestamp: "2026-09-06T23:03:00+09:00"
 - cmd_id: cmd_4485
+  gate_result: "CLEAR"
+  gate_synced_at: "2026-09-06T23:46:51+09:00"
   review:
     cmd_id: cmd_4485
     cmd_spec_summary:
@@ -12837,7 +12843,8 @@
   verdict: LGTM
   verified_files:
     - "queue/reports/hanzo_report_cmd_4485.yaml:1"
-  gate_result: null
+  gate_result: "CLEAR"
+  gate_synced_at: "2026-09-06T23:46:51+09:00"
   confidence: HIGH
   finding_categories: [assumptions, numbers, premortem, adversarial, ambiguity]
   findings_summary: "hanzo最終。全yes。semantic fix済。CLEAR"

@@ -20326,3 +20326,129 @@ insights:
   source: "semantic_index_update"
   fix_known: false
   status: pending
+- id: INS-20260906-234644641-b662
+  ts: "2026-09-06T23:46:44+09:00"
+  insight: "semantic_index_update未登録cmd originノード: [[殿指示_可視変化定量化_20260906_1515]] は既存aliasesに一致なし。類似概念TOP3: creator_brainwashing_defense(創造主の洗脳防御; alias=殿指示; score=26.0) / strong_new_game_completion_contract(強くてニューゲーム完遂契約; alias=殿指示_強くてニューゲーム_20260829_1250; score=21.5) / known_unknowns_principle(無知の知; alias=殿指示 「2層SSOTにするべき仕組みが他にないか確認しよう」; score=18.5)。概念定義とaliases追加を検討せよ"
+  priority: "low"
+  source: "semantic_index_update"
+  fix_known: false
+  status: pending
+- id: INS-20260906-234644932-121a
+  ts: "2026-09-06T23:46:44+09:00"
+  insight: "SKILL.md追従task[d22a7a708a34177e]: gate_skill_script_refs.sh rc=2。以下のSKILL.md×変更script対を検分し、必要な追従更新と実測を行え: skills/cdp-browse/SKILL.md <- scripts/cdp/cdp_measure.sh; skills/cdp-browse/SKILL.md <- scripts/note_draft.sh; skills/cmd-complete/SKILL.md <- scripts/archive_completed.sh; skills/cmd-complete/SKILL.md <- scripts/gates/gate_context_freshness.sh; skills/cmd-complete/SKILL.md <- scripts/lib/yaml_field_set.sh; skills/cmd-complete/SKILL.md <- scripts/review_approval.sh; skills/cmd-complete/SKILL.md <- scripts/review_bundle.py; skills/codd-fix/SKILL.md <- scripts/cmd_complete_gate.sh; skills/codd-refactor/SKILL.md <- scripts/run_tests.sh; skills/dashboard-update/SKILL.md <- scripts/gates/gate_report_format.sh; skills/dream/SKILL.md <- scripts/gates/gate_lesson_health.sh; skills/dream/SKILL.md <- scripts/insight_write.sh; skills/dream/SKILL.md <- scripts/memory_db_query.sh; skills/gate-sync/SKILL.md <- scripts/bulletin_write.sh; skills/gate-sync/SKILL.md <- scripts/gates/gate_gunshi_accuracy.sh; skills/gate-sync/SKILL.md <- scripts/gunshi_gate_reflux.sh; skills/gate-sync/SKILL.md <- scripts/lib/yaml_field_set.sh; skills/hot-script-design/SKILL.md <- scripts/ninja_scope_commit.sh; skills/idle-persist/SKILL.md <- scripts/bulletin_write.sh; skills/idle-persist/SKILL.md <- scripts/inbox_write.sh; skills/idle-persist/SKILL.md <- scripts/lib/yaml_field_set.sh; skills/karo-direct/SKILL.md <- scripts/deploy_task.sh; skills/ninja-commit/SKILL.md <- scripts/ninja_scope_commit.sh; skills/ninja-commit/SKILL.md <- scripts/report_field_set.sh; skills/note-writer/SKILL.md <- scripts/note_draft.sh; skills/recon-dual/SKILL.md <- scripts/deploy_task.sh; skills/recon-dual/SKILL.md <- scripts/lib/yaml_field_set.sh; skills/report-write/SKILL.md <- scripts/report_field_set.sh; skills/review-bundle/SKILL.md <- scripts/bulletin_write.sh; skills/review-bundle/SKILL.md <- scripts/inbox_write.sh; skills/review-bundle/SKILL.md <- scripts/lib/yaml_field_set.sh; skills/review-bundle/SKILL.md <- scripts/review_bundle.py; skills/sengoku-writer/SKILL.md <- scripts/note_draft.sh; skills/shogun-cli-switch/SKILL.md <- scripts/agent_respawn.sh; skills/shogun-cli-switch/SKILL.md <- scripts/lib/cli_lookup.sh; skills/shogun-cli-switch/SKILL.md <- scripts/lib/yaml_field_set.sh; skills/shogun-cli-switch/SKILL.md <- scripts/ninja_monitor.sh; skills/shogun-teire/SKILL.md <- scripts/gates/gate_lesson_health.sh; skills/three-layer-penetrate/SKILL.md <- scripts/memory_db_query.sh; skills/three-layer-penetrate/SKILL.md <- scripts/semantic_map_generate.sh; skills/verdict-check/SKILL.md <- scripts/gates/gate_report_format.sh; skills/weekly-report-writer/SKILL.md <- scripts/note_draft.sh; skills/x-post-pipeline/SKILL.md <- scripts/x_ops/x_kpi_snapshot.py"
+  priority: "medium"
+  source: "skill_script_refs:d22a7a708a34177e"
+  fix_known: false
+  status: pending
+- id: INS-20260906-234645487-bb25
+  ts: "2026-09-06T23:46:45+09:00"
+  insight: "semantic_index_update未登録cmd originノード: [[production-inconsistency-asis-tobe_v1.4_§9.2]] は既存aliasesに一致なし。類似概念TOP3: growth_loop(学習ループ; alias=dm signal production inconsistency asis tobe 20260906 mdにデータ; score=25.0) / provisional_dm-login-boundary-asis-tobe_20260817(仮: Dm Login Boundary Asis Tobe 20260817; alias=provisional_dm-login-boundary-asis-tobe_20260817; score=17.7) / tier_plan_mapping(Tier-プラン対応; alias=asis tobe 5W1Hでプランを作成; score=14.1)。概念定義とaliases追加を検討せよ"
+  priority: "low"
+  source: "semantic_index_update"
+  fix_known: false
+  status: pending
+- id: INS-20260906-234654062-1ca3
+  ts: "2026-09-06T23:46:54+09:00"
+  insight: "[[Layer Holdings MonthlyページのデザインはDM signalに合わせないといけないな]] semantic_stress_test candidate_aliases: NO_MATCH source=lord query=Layer Holdings MonthlyページのデザインはDM-signalに合わせないといけないな。基本構造は同じだが後でやるか？現時点でやるか？UIのデザインの話だ"
+  priority: "low"
+  source: "semantic_stress_test"
+  fix_known: false
+  status: pending
+- id: INS-20260906-234654313-8078
+  ts: "2026-09-06T23:46:54+09:00"
+  insight: "[[hanzoinbox1]] semantic_stress_test candidate_aliases: NO_MATCH source=lord query=hanzoinbox1"
+  priority: "low"
+  source: "semantic_stress_test"
+  fix_known: false
+  status: pending
+- id: INS-20260906-234654623-56b5
+  ts: "2026-09-06T23:46:54+09:00"
+  insight: "[[X投稿は順調か？夕方の投稿がされていないようだ]] semantic_stress_test candidate_aliases: NO_MATCH source=lord query=X投稿は順調か？夕方の投稿がされていないようだ"
+  priority: "low"
+  source: "semantic_stress_test"
+  fix_known: false
+  status: pending
+- id: INS-20260906-234654893-2d7e
+  ts: "2026-09-06T23:46:54+09:00"
+  insight: "[[では修正して]] semantic_stress_test candidate_aliases: NO_MATCH source=lord query=では修正して、inbox1"
+  priority: "low"
+  source: "semantic_stress_test"
+  fix_known: false
+  status: pending
+- id: INS-20260906-234655129-9367
+  ts: "2026-09-06T23:46:55+09:00"
+  insight: "[[違うハナシをしよう]] semantic_stress_test candidate_aliases: NO_MATCH source=lord query=違うハナシをしよう。今後本番にLayer Holdings Monthlyページを新規で作りたい。まずはasis/tobe 5W1Hの設計書を作ろう。設計書を作ったら家老にレビューして更新してもらえ。それを将軍がレビューしてさらに更新する。そのやり取りを更新するべき点がなくなる…"
+  priority: "low"
+  source: "semantic_stress_test"
+  fix_known: false
+  status: pending
+- id: INS-20260906-234655386-b75e
+  ts: "2026-09-06T23:46:55+09:00"
+  insight: "[[いつも気にするがauto compactするからちゃんとナッジせよ]] semantic_stress_test candidate_aliases: NO_MATCH source=lord query=いつも気にするがauto compactするからちゃんとナッジせよ"
+  priority: "low"
+  source: "semantic_stress_test"
+  fix_known: false
+  status: pending
+- id: INS-20260906-234655640-abb9
+  ts: "2026-09-06T23:46:55+09:00"
+  insight: "[[時間がかかりすぎでは？家老に助けを求めろ]] semantic_stress_test candidate_aliases: NO_MATCH source=lord query=時間がかかりすぎでは？家老に助けを求めろ"
+  priority: "low"
+  source: "semantic_stress_test"
+  fix_known: false
+  status: pending
+- id: INS-20260906-234655913-f322
+  ts: "2026-09-06T23:46:55+09:00"
+  insight: "[[CI復旧を待つ合理的な理由はなにか教えて]] semantic_stress_test candidate_aliases: NO_MATCH source=lord query=CI復旧を待つ合理的な理由はなにか教えて"
+  priority: "low"
+  source: "semantic_stress_test"
+  fix_known: false
+  status: pending
+- id: INS-20260906-234656292-33ec
+  ts: "2026-09-06T23:46:56+09:00"
+  insight: "[[Layer Holdingsはgoだ]] semantic_stress_test candidate_aliases: NO_MATCH source=lord query=Layer Holdingsはgoだ"
+  priority: "low"
+  source: "semantic_stress_test"
+  fix_known: false
+  status: pending
+- id: INS-20260906-234656581-bf3b
+  ts: "2026-09-06T23:46:56+09:00"
+  insight: "[[忍者のfail率が高いな]] semantic_stress_test candidate_aliases: NO_MATCH source=lord query=忍者のfail率が高いな。何か原因があるはずだ。家老と協議して対策をしよう"
+  priority: "low"
+  source: "semantic_stress_test"
+  fix_known: false
+  status: pending
+- id: INS-20260906-234656994-747b
+  ts: "2026-09-06T23:46:56+09:00"
+  insight: "[[§2 3 不整合 I 別の状態は更新されているか？]] semantic_stress_test candidate_aliases: NO_MATCH source=lord query=§2.3 不整合 I 別の状態は更新されているか？"
+  priority: "low"
+  source: "semantic_stress_test"
+  fix_known: false
+  status: pending
+- id: INS-20260906-234657357-9b79
+  ts: "2026-09-06T23:46:57+09:00"
+  insight: "[[初期段階ではhideだ]] semantic_stress_test candidate_aliases: NO_MATCH source=lord query=初期段階ではhideだ。L1: Global Page Visibilityで全tier+freeでhideにする"
+  priority: "low"
+  source: "semantic_stress_test"
+  fix_known: false
+  status: pending
+- id: INS-20260906-234657720-333e
+  ts: "2026-09-06T23:46:57+09:00"
+  insight: "[[Layer Holdings Monthly P2 GET api layer holdings 完了証跡の接続 rea]] semantic_stress_test candidate_aliases: NO_MATCH source=cmds query=Layer Holdings Monthly P2: GET /api/layer-holdings+完了証跡の接続(readiness 共通関数、sync-status L4_recalc、POST /admin/layer-holdings、DM-Signal backend、隔離 branch、本番書込 0)"
+  priority: "low"
+  source: "semantic_stress_test"
+  fix_known: false
+  status: pending
+- id: INS-20260906-234658089-9fd6
+  ts: "2026-09-06T23:46:58+09:00"
+  insight: "[[殿 22 07 23 19 go]] semantic_stress_test candidate_aliases: NO_MATCH source=cmds query=殿 2026-09-06 22:07/23:19 go。設計書 v0.6 §9.3 の cmd P3。wireframe(docs/dashboard/layer-holdings-monthly.html=gist 6ae60a9c、scripts/layer_holdings_render.py:126-163 の JS)を Next.js ページに移植"
+  priority: "low"
+  source: "semantic_stress_test"
+  fix_known: false
+  status: pending
+- id: INS-20260906-234658417-ca14
+  ts: "2026-09-06T23:46:58+09:00"
+  insight: "[[Layer Holdings Monthly P1 結果表 layer holdings monthly batch j]] semantic_stress_test candidate_aliases: NO_MATCH source=cmds query=Layer Holdings Monthly P1: 結果表 layer_holdings_monthly+batch job(DM-Signal backend、隔離 branch、固定入力 0f2bfbcd で研究 CSV 3,525 行と全 key 突合、本番書込 0)"
+  priority: "low"
+  source: "semantic_stress_test"
+  fix_known: false
+  status: pending
