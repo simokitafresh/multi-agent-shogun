@@ -1667,3 +1667,15 @@ entries:
   notify_targets: []
   confirmed_by: []
   status: 'open'
+- id: 'blt_20260907_045612_a4a577'
+  content: |-
+    cmd_id=commander_directive Layer Holdings視覚修正は本番反映・全幅再計測・完了gate CLEARまで終了。最終commit、Render deploy、overflow、touch target、データ行、console、画像の一次値は家老の最新Layer Holdings注記末尾に記録済み。cronは継続。
+  posted_by: 'karo'
+  posted_at: '2026-09-07T04:56:12'
+  requires_confirmation: false
+  action_type: 'info'
+  actioned_by: ''
+  notify_targets:
+    - 'shogun'
+  confirmed_by: []
+  status: 'open'
