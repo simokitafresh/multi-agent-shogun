@@ -1770,6 +1770,10 @@ if not ac_version:
     ac_version = hashlib.sha256(payload.encode()).hexdigest()[:16]
 
 snapshot = {
+    # cmd_karo_hotfix_contract_schema_20260907: kept in sync with the
+    # canonical scripts/deploy_task/report.sh copy of this function, which
+    # normally overrides this static fallback bundle at runtime.
+    "contract_version": 1,
     "parent_cmd": resolved_parent,
     "task_id": resolved_task,
     "issued_cmd_id": issued_cmd,

@@ -54,3 +54,74 @@ teardown() {
 
     [ "$status" -ne 0 ]
 }
+
+# test_necessity: a task_contract_snapshot with no contract_version key predates
+# the versioned schema and must read as compatible forever, so redeploying a
+# schema-unaware old task can never newly BLOCK it under the new reader.
+@test "contract-status reads a legacy snapshot with no contract_version as compatible" {
+    cat > "$WORK_DIR/task.yaml" <<'YAML'
+task:
+  task_id: cmd_legacy_full
+  parent_cmd: cmd_legacy
+  target_path: [scripts/example.py]
+YAML
+    cat > "$WORK_DIR/report.yaml" <<'YAML'
+worker_id: kotaro
+parent_cmd: cmd_legacy
+task_id: cmd_legacy_full
+task_contract_snapshot:
+  parent_cmd: cmd_legacy
+  task_id: cmd_legacy_full
+  ac_fingerprint: abc12345
+YAML
+
+    run python3 "$PROJECT_ROOT/scripts/lib/report_gate_contract.py" contract-status \
+        "$WORK_DIR/task.yaml" "$WORK_DIR/report.yaml"
+
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"legacy snapshot (no contract_version)"* ]]
+}
+
+# test_necessity: a snapshot tagged with a contract_version this reader does
+# not recognize must fail explicitly (never silently pass, never silently
+# reinterpreted), while an ordinary same-generation current-version snapshot
+# must still pass — an unrecognized future version cannot become the default
+# way normal deploys start failing.
+@test "contract-status rejects an unrecognized contract_version but accepts the current one" {
+    cat > "$WORK_DIR/task.yaml" <<'YAML'
+task:
+  task_id: cmd_current_full
+  parent_cmd: cmd_current
+  target_path: [scripts/example.py]
+YAML
+    cat > "$WORK_DIR/report_future.yaml" <<'YAML'
+worker_id: kotaro
+parent_cmd: cmd_current
+task_id: cmd_current_full
+task_contract_snapshot:
+  contract_version: 99
+  parent_cmd: cmd_current
+  task_id: cmd_current_full
+  ac_fingerprint: abc12345
+YAML
+    cat > "$WORK_DIR/report_current.yaml" <<'YAML'
+worker_id: kotaro
+parent_cmd: cmd_current
+task_id: cmd_current_full
+task_contract_snapshot:
+  contract_version: 1
+  parent_cmd: cmd_current
+  task_id: cmd_current_full
+  ac_fingerprint: abc12345
+YAML
+
+    run python3 "$PROJECT_ROOT/scripts/lib/report_gate_contract.py" contract-status \
+        "$WORK_DIR/task.yaml" "$WORK_DIR/report_future.yaml"
+    [ "$status" -eq 1 ]
+    [[ "$output" == *"CONTRACT_INVALID contract_version unsupported: 99"* ]]
+
+    run python3 "$PROJECT_ROOT/scripts/lib/report_gate_contract.py" contract-status \
+        "$WORK_DIR/task.yaml" "$WORK_DIR/report_current.yaml"
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"OK contract_version=1"* ]]
+}

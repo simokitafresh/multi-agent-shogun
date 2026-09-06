@@ -9,10 +9,19 @@ side-effecting main flow).
 from __future__ import annotations
 
 import hashlib
+import json
 import pathlib
 from typing import Any
 
 import yaml
+
+# cmd_karo_hotfix_contract_schema_20260907: the deploy-time snapshot embedded
+# in ``task_contract_snapshot`` predates any explicit version tag.  A missing
+# ``contract_version`` key is legacy (version 0) and must keep reading as
+# compatible forever; only a value this reader does not recognize is an
+# explicit error.  Bump this constant when the snapshot shape gains a field
+# that changes how an existing reader must interpret it.
+CONTRACT_SCHEMA_VERSION = 1
 
 
 def _load_yaml(path: str | pathlib.Path) -> dict[str, Any]:
@@ -341,6 +350,114 @@ def lesson_empty_allowed(task_path: str | pathlib.Path, report: dict[str, Any]) 
     return not allowed
 
 
+def contract_snapshot_version(snapshot: dict[str, Any]) -> tuple[int | None, str]:
+    """Resolve the deploy-time snapshot's schema version.
+
+    A snapshot with no ``contract_version`` key predates this schema and
+    reads as legacy version 0 forever, so a normal old task is never newly
+    blocked by this reader.  Only an explicit, unrecognized version value
+    (wrong type, negative, or newer than this reader knows) is an error.
+    """
+    if not isinstance(snapshot, dict) or "contract_version" not in snapshot:
+        return 0, "legacy snapshot (no contract_version)"
+    raw = snapshot.get("contract_version")
+    try:
+        version = int(raw)
+    except (TypeError, ValueError):
+        return None, f"contract_version invalid type: {raw!r}"
+    if version < 0 or version > CONTRACT_SCHEMA_VERSION:
+        return None, f"contract_version unsupported: {version}"
+    return version, f"contract_version={version}"
+
+
+def _string_list(value: Any) -> list[str]:
+    """Normalize a task field that may be a bare string, JSON-string, or list."""
+    if isinstance(value, str):
+        try:
+            decoded = json.loads(value)
+        except (TypeError, ValueError):
+            decoded = None
+        value = decoded if decoded is not None else [value]
+    if not isinstance(value, list):
+        return []
+    return [str(item).strip() for item in value if str(item or "").strip()]
+
+
+def task_contract_ownership(task: dict[str, Any]) -> dict[str, list[str]]:
+    """Canonical owned/forbidden path sets read from the deploy-time task.
+
+    Writer/receipt/precheck/monitor/archive each used to re-derive ownership
+    from whichever field happened to be populated for a given task shape
+    (``task_worktree_source_paths``, ``planned_paths``, ``target_path``).
+    This is the one accessor all of them can share instead.
+    """
+    source = (
+        _string_list(task.get("task_worktree_source_paths"))
+        or _string_list(task.get("planned_paths"))
+        or _string_list(task.get("target_path"))
+    )
+    return {
+        "source": source,
+        "forbidden": _string_list(task.get("not_in_scope")),
+    }
+
+
+def task_contract_evidence(report: dict[str, Any], root: str | pathlib.Path) -> dict[str, Any]:
+    """Canonical evidence accessor: commit identity plus no-code tree proof.
+
+    Delegates to ``report_commit_identity``'s existing predicates rather than
+    re-deriving commit/no-code validity here, per the reuse-not-reimplement
+    contract for this schema.
+    """
+    import report_commit_identity as _rci
+
+    commit_hash = str(report.get("commit_hash") or "").strip()
+    root_path = pathlib.Path(root)
+    return {
+        "commit_hash": commit_hash,
+        "commit_identity_valid": _rci.valid_commit_identity(commit_hash, report, root_path),
+        "no_commit_declared": _rci.explicit_no_commit(report),
+        "no_code_change_evidence": report.get("no_code_change_evidence"),
+    }
+
+
+def contract_snapshot_status(
+    task_path: str | pathlib.Path, report_path: str | pathlib.Path
+) -> tuple[bool, str]:
+    """Version-aware read of identity/AC/ownership/lesson_set together.
+
+    A report with no ``task_contract_snapshot`` at all is pre-contract
+    legacy and reads as compatible.  Inside a present snapshot, a missing
+    ``contract_version`` is legacy (version 0) and also compatible; only an
+    explicit unrecognized version is a hard error, so this can never newly
+    BLOCK a normal old task that simply predates the field.  Ownership and
+    lesson-set are read from the live task only after confirming the report's
+    lease identity still matches it (see ``_report_identity_matches_task``);
+    a lease handoff after redeploy is reported, not silently reinterpreted
+    against the new live task.
+    """
+    task = _task_node(_load_yaml(task_path))
+    report = _load_yaml(report_path)
+    snapshot = report.get("task_contract_snapshot")
+    if not isinstance(snapshot, dict):
+        return True, "legacy report (no task_contract_snapshot)"
+
+    version, version_message = contract_snapshot_version(snapshot)
+    if version is None:
+        return False, f"CONTRACT_INVALID {version_message}"
+
+    if not _report_identity_matches_task(report, task):
+        return True, f"identity=lease-handoff snapshot-authoritative {version_message}"
+
+    ownership = task_contract_ownership(task)
+    lesson_mode, lesson_ids = _lesson_contract(task)
+    return True, (
+        f"OK {version_message} owned_source={len(ownership['source'])} "
+        f"forbidden={len(ownership['forbidden'])} lesson_mode={lesson_mode} "
+        f"lesson_ids={len(lesson_ids)}"
+    )
+
+
 if __name__ == "__main__":
     import argparse
     import sys
@@ -358,12 +475,20 @@ if __name__ == "__main__":
     lesson_parser.add_argument("task_path")
     lesson_parser.add_argument("report_path")
 
+    contract_parser = subparsers.add_parser("contract-status")
+    contract_parser.add_argument("task_path")
+    contract_parser.add_argument("report_path")
+
     args = parser.parse_args()
     if args.command == "ac-version":
         print(compute_task_ac_version(args.task_path))
         raise SystemExit(0)
     if args.command == "task-ac-version":
         ok, message = task_ac_version_status(args.task_path)
+        print(message)
+        raise SystemExit(0 if ok else 1)
+    if args.command == "contract-status":
+        ok, message = contract_snapshot_status(args.task_path, args.report_path)
         print(message)
         raise SystemExit(0 if ok else 1)
     ok, message = lesson_feedback_set_status(args.task_path, args.report_path)
