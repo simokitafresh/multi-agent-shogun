@@ -975,90 +975,6 @@ deploy_task_source_contract_precheck() {
         return 2
     fi
     log "universal_shard: ${shard_result}"
-
-    # Level5(cmd_karo_hotfix_reference_test_contract_20260906 AC2): pre-supply
-    # the reference-test manifest for this task's own target scripts at the
-    # same common deployment entrance as the shard manifest above, tying
-    # together (script, its current blob SHA, the bats set that
-    # independently references it) so a ninja/家老 sees the required bats
-    # set before starting work. Reuses the same literal-reference derivation
-    # git-pre-commit.sh's D0/task layers use (no duplicate detection logic).
-    #
-    # This step deliberately WRITES ONLY the sidecar JSON below and does not
-    # register its path into the task YAML (e.g. via yaml_field_set.sh),
-    # unlike test_receipt_path's pattern in scripts/run_tests.sh. Two
-    # concrete blockers found during this task, both requiring a file
-    # outside planned_paths to resolve safely (reported per role_reminder
-    # rather than implemented speculatively):
-    #   1. This function's own header contract: "A rejected deployment must
-    #      leave the worker's existing task byte-identical." A YAML mutation
-    #      here would violate that guarantee if a later precheck in the same
-    #      deployment attempt fails and the deployment is rejected.
-    #   2. scripts/deploy_task.sh (the pre-modularization monolith, not in
-    #      planned_paths) defines its OWN separate
-    #      deploy_task_source_contract_precheck() and scripts/deploy_task.sh
-    #      calls that local copy, not this scripts/deploy_task/gates.sh one
-    #      (scripts/deploy_task/main.sh calls this one). Which copy actually
-    #      executes for a given deployment path was not verified in this
-    #      task; writing a manifest pointer field from only one of the two
-    #      copies risks the field being silently absent depending on which
-    #      entrypoint ran, which is a worse outcome than not registering it.
-    # Best-effort/non-blocking either way: a manifest write failure never
-    # blocks deployment, and this step no-ops (not an error) if the shared
-    # function is not loaded in this shell (a narrow test harness that
-    # extracts gates.sh functions without bootstrap.sh's source).
-    if declare -F gate_hook_quality_contract_reference_test_matches >/dev/null 2>&1; then
-        (
-            local ref_manifest_dir="$SCRIPT_DIR/queue/reference_test_manifests"
-            local ref_manifest_out="$ref_manifest_dir/${shard_id}.json"
-            mkdir -p "$ref_manifest_dir"
-            local ref_target ref_match ref_sha
-            local -a ref_rows=()
-            while IFS= read -r ref_target; do
-                [ -n "$ref_target" ] || continue
-                case "$ref_target" in
-                    *.sh|*.py) ;;
-                    *) continue ;;
-                esac
-                ref_sha="$(git -C "$SCRIPT_DIR" rev-parse "HEAD:${ref_target}" 2>/dev/null || printf 'untracked')"
-                local -a ref_tests=()
-                while IFS= read -r ref_match; do
-                    [ -n "$ref_match" ] || continue
-                    ref_tests+=("$ref_match")
-                done < <(gate_hook_quality_contract_reference_test_matches "$ref_target" "$SCRIPT_DIR")
-                ref_rows+=("$(printf '%s\t%s\t%s' "$ref_target" "$ref_sha" "$(IFS=,; echo "${ref_tests[*]}")")")
-            done < <(python3 - "$source_file" <<'PY' 2>/dev/null
-import sys, yaml
-data = yaml.safe_load(open(sys.argv[1], encoding="utf-8")) or {}
-task = data.get("task", data)
-paths = task.get("target_path") or task.get("planned_paths") or []
-if isinstance(paths, str):
-    paths = [paths]
-for p in paths:
-    print(p)
-PY
-)
-            if [ "${#ref_rows[@]}" -gt 0 ]; then
-                printf '%s\n' "${ref_rows[@]}" | python3 -c '
-import json, sys, datetime
-entries = []
-for line in sys.stdin:
-    line = line.rstrip("\n")
-    if not line:
-        continue
-    parts = line.split("\t")
-    script = parts[0] if len(parts) > 0 else ""
-    source_sha = parts[1] if len(parts) > 1 else ""
-    tests_raw = parts[2] if len(parts) > 2 else ""
-    tests = [t for t in tests_raw.split(",") if t]
-    entries.append({"script": script, "source_sha": source_sha, "required_tests": tests})
-manifest = {"generated_at": datetime.datetime.now(datetime.timezone.utc).isoformat(), "entries": entries}
-json.dump(manifest, sys.stdout, ensure_ascii=False, indent=2)
-' > "$ref_manifest_out"
-                log "reference_test_manifest: written to ${ref_manifest_out#"$SCRIPT_DIR"/}"
-            fi
-        ) 2>/dev/null || true
-    fi
 }
 
 capture_done_redeploy_context() {
@@ -1732,7 +1648,6 @@ deploy_task_apply_task_mutations() {
         inject_independent_recon_contract "$task_file" "$ninja_name" || return 1
         inject_role_reminder "$task_file" "$ninja_name" || true
         inject_report_template "$task_file" || true
-        inject_routine_refs "$task_file" || return 1  # Level5: W1正規経路ID注入(commit_contract確定後に判定)
     fi
 
     if [ "${DEPLOY_TASK_DIRECT_YAML_PREINJECTED:-0}" != "1" ]; then
@@ -1822,9 +1737,11 @@ deploy_task_ci_red_followup_push_guard() {
     [[ "$followups" =~ ^[0-9]+$ ]] || return 0
 
     if [ "$followups" -gt "$limit" ]; then
-        log "BLOCK(ci_red_followup): red_sha=${red_sha:0:9} followup_pushes=${followups} limit=${limit}"
-        echo "BLOCK: CI RED(sha=${red_sha:0:9})に対する追いpushが${followups}回(上限${limit}回)。新規配備を停止し、task_type=ci_fixでRED修正へ全リソースを寄せよ。" >&2
-        return 1
+        # 殿裁定2026-09-06(+2026-09-07 03:52『guardの品質バグでは？』): CI REDだけで
+        # 独立配備を止めない。deploy_task.sh 本体(cd0ba1319)は警告化済みだったが本
+        # モジュール側に BLOCK 版が残り 03:26 に UI hotfix 配備を止めた。二重定義の同期。
+        log "WARN(ci_red_followup): red_sha=${red_sha:0:9} followup_pushes=${followups} limit=${limit}"
+        echo "WARN: CI RED(sha=${red_sha:0:9})後の追加commitが${followups}件。CI修正を専任で継続し、独立した新規配備は通常のtask検証を通して続行する。" >&2
     fi
     return 0
 }

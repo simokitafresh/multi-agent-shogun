@@ -20,6 +20,33 @@ guard() {
     ' _ "$SOURCE_YAML"
 }
 
+guard_module() {
+    run env "$@" bash -c '
+        SCRIPT_DIR="'"$REPO_ROOT"'"
+        source "$SCRIPT_DIR/scripts/lib/field_get.sh"
+        log() { :; }
+        eval "$(sed -n "/^deploy_task_ci_red_followup_push_guard() {/,/^}$/p" "$SCRIPT_DIR/scripts/deploy_task/gates.sh")"
+        deploy_task_ci_red_followup_push_guard "$1"
+    ' _ "$SOURCE_YAML"
+}
+
+# 2026-09-07 03:26 実発火: deploy_task.sh 本体は警告化(cd0ba1319)済みだったが
+# scripts/deploy_task/gates.sh の同名定義に BLOCK 版が残り UI hotfix 配備を止めた。
+# 本体と module の二重定義が乖離しないことを不変量として固定する。
+@test "module copy (deploy_task/gates.sh) warns without blocking beyond the limit" {
+    SOURCE_YAML="$BATS_TEST_TMPDIR/hotfix.yaml"
+    guard_module DEPLOY_TASK_CI_RED_JSON="$RED" DEPLOY_TASK_CI_FOLLOWUP_PUSHES=6
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"WARN: CI RED"* ]]
+    [[ "$output" != *"BLOCK"* ]]
+}
+
+@test "module copy and main definition of the guard are byte-identical" {
+    main_def=$(sed -n "/^deploy_task_ci_red_followup_push_guard() {/,/^}$/p" "$REPO_ROOT/scripts/deploy_task.sh" | grep -v '^\s*#')
+    mod_def=$(sed -n "/^deploy_task_ci_red_followup_push_guard() {/,/^}$/p" "$REPO_ROOT/scripts/deploy_task/gates.sh" | grep -v '^\s*#')
+    [ "$main_def" = "$mod_def" ]
+}
+
 @test "CI GREEN never blocks deployment regardless of push count" {
     SOURCE_YAML="$BATS_TEST_TMPDIR/hotfix.yaml"
     guard DEPLOY_TASK_CI_RED_JSON="$GREEN" DEPLOY_TASK_CI_FOLLOWUP_PUSHES=9
