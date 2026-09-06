@@ -16075,6 +16075,11 @@ if [ "$ALL_CLEAR" = true ] \
     gate_subphase_tick "source_publication_wait"
     gate_subphase_tick "runtime_publish_wait"
     gate_subphase_tick "post_source_checks"
+    # The subphase clock starts when the tick returns.  Keep the small
+    # heading/branch-dispatch interval before the first L4 span named too;
+    # under a short WAIT fixture this otherwise becomes a measurable gap and
+    # drives named coverage below the 95% floor.
+    gate_detail_begin "post_source_checks.preflight" pure_processing
 fi
 
 # The exact report commit is the immutable completion artifact. Later commits
@@ -16106,6 +16111,14 @@ if [ "$ALL_CLEAR" = true ]; then
     else
         gate_detail_finish
     fi
+fi
+
+# Keep the synchronous verdict-reconciliation interval between the L4 ancestry
+# decision and the WAIT/BLOCK finalizer inside a named span.  This is a
+# separate sequential span (never a parent of another detail span), so the
+# total remains comparable to the sum without double-counting child work.
+if [ "$ALL_CLEAR" != true ] && [ "${GATE_SUBPHASE_CURRENT:-}" = "post_source_checks" ]; then
+    gate_detail_begin "post_source_checks.wait_transition" pure_processing
 fi
 
 # ─── 判定結果 ───

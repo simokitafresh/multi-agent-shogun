@@ -1014,7 +1014,11 @@ STUB
     format_ci_raw_columns() { printf 'stub'; }
 
     gate_subphase_tick "post_source_checks"
+    gate_detail_begin "post_source_checks.preflight" pure_processing
     run_wait_l4_block
+    if [ "$ALL_CLEAR" != true ] && [ "${GATE_SUBPHASE_CURRENT:-}" = "post_source_checks" ]; then
+        gate_detail_begin "post_source_checks.wait_transition" pure_processing
+    fi
     run run_wait_tail_block
     [ "$status" -eq 1 ]
 
@@ -1026,13 +1030,13 @@ STUB
     [ -n "$total" ]
     named_sum=$(awk -F'\t' '{sum+=$5} END{printf "%.6f", sum+0}' "$GATE_DETAIL_LOG")
 
-    # false_positive check: exactly the 3 expected labels, each exactly once
+    # false_positive check: exactly the 5 expected labels, each exactly once
     # (a duplicate would mean a span re-opened without its own begin, i.e.
     # double-counted/overlapping time). No .reverify span exists any more --
     # the synchronous reverify-after-inline-push step was removed along with
     # the blocking push itself.
     local expected_labels actual_labels
-    expected_labels=$'post_source_checks.report_commit_main_ancestry\npost_source_checks.report_commit_main_ancestry.auto_push_wait\npost_source_checks.wait_block_finalize'
+    expected_labels=$'post_source_checks.preflight\npost_source_checks.report_commit_main_ancestry\npost_source_checks.report_commit_main_ancestry.auto_push_wait\npost_source_checks.wait_transition\npost_source_checks.wait_block_finalize'
     actual_labels=$(awk -F'\t' '{print $4}' "$GATE_DETAIL_LOG" | sort)
     [ "$actual_labels" = "$(printf '%s\n' "$expected_labels" | sort)" ]
 
@@ -1045,6 +1049,15 @@ assert named_sum <= total + 0.01, f"named_sum {named_sum} exceeds total {total} 
 coverage = named_sum / total
 assert coverage >= 0.95, f"coverage {coverage:.4f} under the 95% floor (total={total}, named_sum={named_sum})"
 PY
+    local coverage
+    coverage=$(python3 - "$total" "$named_sum" <<'PY'
+import sys
+total, named_sum = map(float, sys.argv[1:])
+print(f"{named_sum / total:.6f}")
+PY
+    )
+    printf '# CASE22_METRIC total=%s named_sum=%s coverage=%s\n' \
+        "$total" "$named_sum" "$coverage" >&3
 }
 
 # test_necessity: cmd_karo_hotfix_t3s40_post_source_full_instrumentation AC2
