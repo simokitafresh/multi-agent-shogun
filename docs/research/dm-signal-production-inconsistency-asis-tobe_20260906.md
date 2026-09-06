@@ -1,5 +1,5 @@
 <!-- gist-master: 2f1a3daa07c336c90958b1287245318b dm-signal-production-inconsistency-asis-tobe_20260906.md -->
-# DM-Signal 本番不整合 I1〜I9 — 現況・配備カード・データフロー・カタログ・因果・改善影響・ledger 判断 統合設計書 v1.26(2026-09-07 01:24 I8 cmd_4494 CLEAR=U5 取得元確定+初月不変量 test。v1.25=01:18 P07 CLEAR=I1 admin 表示 0/8 確定→§9.1.3 I1 を不変集合へ。v1.24=01:12 殿 go 分の CLEAR 反映: I7 配線 cmd_4490 00:59・I3 監視 cmd_4491 01:08、走行=I6 cmd_4493・I8 cmd_4494・I2 cmd_4492・P07。v1.23=00:15 家老R26: I1表示の未確定・I4 Aの条件性・本番観測と隔離実験の分離。v1.22=2026-09-07 00:13 §9.1.3 を表示/保有の 2 軸へ更新=殿 00:08/00:10 基準。v1.21=00:02 §2.3 I 別状態を 00:02 時点へ更新=✅2/🟡7。v1.20=23:58 cmd_4485 GATE CLEAR 23:46=P05/P06 終端、P07 は task 差替えで中断中。v1.19=23:02 P08-I7 GATE CLEAR 23:00=F-19 gate 修正 e3214c8e1 で WAIT 解消。v1.18=21:45)
+# DM-Signal 本番不整合 I1〜I9 — 現況・配備カード・データフロー・カタログ・因果・改善影響・ledger 判断 統合設計書 v1.27(2026-09-07 01:27 殿裁定 01:23 第 0 弾配線 deploy 許可・01:24 I6 full recalc 許可→§10.5、家老 runbook 発令。v1.26=01:24 I8 cmd_4494 CLEAR=U5 取得元確定+初月不変量 test。v1.25=01:18 P07 CLEAR=I1 admin 表示 0/8 確定→§9.1.3 I1 を不変集合へ。v1.24=01:12 殿 go 分の CLEAR 反映: I7 配線 cmd_4490 00:59・I3 監視 cmd_4491 01:08、走行=I6 cmd_4493・I8 cmd_4494・I2 cmd_4492・P07。v1.23=00:15 家老R26: I1表示の未確定・I4 Aの条件性・本番観測と隔離実験の分離。v1.22=2026-09-07 00:13 §9.1.3 を表示/保有の 2 軸へ更新=殿 00:08/00:10 基準。v1.21=00:02 §2.3 I 別状態を 00:02 時点へ更新=✅2/🟡7。v1.20=23:58 cmd_4485 GATE CLEAR 23:46=P05/P06 終端、P07 は task 差替えで中断中。v1.19=23:02 P08-I7 GATE CLEAR 23:00=F-19 gate 修正 e3214c8e1 で WAIT 解消。v1.18=21:45)
 
 - 発端: 殿 2026-09-06 14:11『dm-signal-research-data-backlog_20260905.md を参考に DM-signal の本番の不整合について深く調査しよう。家老と繰り返しレビュー交換をせよ。本番の不整合、それによる影響、改善時にどのような変化が本番に起きるか、改善の影響範囲・依存関係なども明確にせよ』。以後の殿指示: 14:44 データフロー、14:45 ユーザー可視/内部/デッドコード、14:47 設計の因果、14:59 ledger 協議、15:06 時系列、15:15 可視変化の定量化、15:33 3 設計書並列、15:56 配備・進捗運用版(家老)、16:33 単一スタイルへ再構築。
 - 読む順: §2(現況)→§3(配備カード)→§5(カタログ)→§9(改善影響)→§10(ledger)。図は §4、根拠は §5〜§7、順序と契約は §8、裁定は §11、往復は §12、版は §13。
@@ -540,6 +540,12 @@ I7: 監視 1 行(独立)
 - 判断規則(修正): 「I5 が小さいから保護不要」とは言わない。**保護要件(誰が・何を・どの期間・何から守るか)を先に定義**し、それを ledger で満たす必要があるか、08-23 の『新規月のみ』原則+snapshot で満たせるかで A/B を決める。
 - **将軍・家老合意(R6、15:13)**: 今 C、B を調査上の第一候補。A を比較候補に戻す条件(家老 1 行)=『当時利用者へ提示して取引根拠となった確定保有を、後日の価格訂正/規則変更から分離し訂正履歴付きで再提示する要件が明示され、規則版+入出力 snapshot では満たせず、真正性/性能/冪等性/復元を隔離実験で保証できる場合』。∴ 殿への問いは「この要件(顧客への再提示義務)があるか」の 1 点。
 - 所在確定(殿 19:35『gist に下書きがあった気がする』→gist 95e8ccce071e0b394bcc5daf7a3f33ca、2026-08-18T01:44Z、109 行): repo へ `docs/research/notes/note-fof-tiebreak-determinism_20260818.md` として取り込んだ。要旨=ledger は『最初の対処(確定出力を台帳に凍結)』で症状は止めたが、再計算と台帳の二重管理・整合の問題を連れてきた。原因(比較がノイズに依存)は残るため、同値帯 ε+根拠ある tie-break で原因側を閉じた。導入時に一度だけ履歴が組み替わる。∴ 時系列は『ledger(08-04〜)→決定性(08-17)→ledger 休眠』で、B(廃止)方向と整合する。(旧記述: `note-fof-tiebreak-determinism.md` は shogun repo・DM-Signal repo のいずれにも無い(docs/notes は apartment/clinic の下書きのみ)。殿の手元の note 下書きなら所在を伺う。
+
+## §10.5 殿裁定(2026-09-07 01:23〜01:24 追記)
+
+- **01:23 第 0 弾配線=I7/I3 の本番 deploy を許可**。範囲=cmd_4490(feat/prod-i7-wiring)+cmd_4491(feat/prod-i3-monitor)の DM-Signal main 統合→Render backend autoDeploy。家老 runbook(msg 01:25): 直前 SHA 記録→I7→I3 統合(統合段で test_verification_tables 選択 pytest 再確認)→push=deploy(deploy ID/live 時刻)→post_deploy_check(A4 出力生貼付、/api/signals・/api/monthly-trade の deploy 前後 byte 一致=保有不変)→掲示板 1 報。失敗時は直前 SHA へ戻す。
+- **01:24 I6 の本番 full recalc を許可**。前提順序(家老 runbook): cmd_4493(半蔵、done 01:2x)の 6 軸 parity 結果を軍師 review→CLEAR→diff_rows を確認→feat/prod-i6-renormalize を main 統合→deploy→本番 DB の復元点(PITR 時刻+snapshot)を記録→`POST /admin/recalculate-sync?mode=full`(~480s)→post_check=全 PF-月で display_ticker_weights Σ=1、/api/signals・/api/monthly-trade・/api/history の deploy 前後差分(本番現在 非 unit 0 のため差分 0 が期待値。差分が出た PF-月は全件列挙して報告)。失敗時は復元点へ戻す。
+- **未許可のまま**: I1 DROP・I4 廃止(B)の本番 DDL、Layer Holdings P4、I8 invariant の deploy。
 
 ## §11 殿裁定を要する点
 1. I4: signal_decision_ledger(§10)。**殿裁定 2026-09-06 19:35『保護要件は無い。あくまで個人プロジェクトであり、部分的に閲覧することを俺が許可している仕組みだ』**→A(復活)を比較候補へ戻す条件(家老 R6 の 1 行)は成立しない。∴ 今 C 休眠、方向 B 段階的廃止で確定。P06 は『B の段階設計(①コード無効化→②表保持→③DROP の可逆性と代替 snapshot)』を主題にし、cmd_4485 AC3 の A/B 差分は『廃止しても失うものが無いことの確認』として使う。DROP(③)の実行は本番 DDL ゆえ別途殿 OK。
