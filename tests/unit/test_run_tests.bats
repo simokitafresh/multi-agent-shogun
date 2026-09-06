@@ -2251,13 +2251,56 @@ task:
     required: false
   readonly_refs: [scripts/inspected.sh]
 YAML
-  cat >"$TMPROOT/queue/tasks/invalid.yaml" <<'YAML'
+  for invalid_kind in number mapping list bool mixed; do
+    mkdir -p "$TMPROOT/receipts-invalid-$invalid_kind" "$TMPROOT/sf-invalid-$invalid_kind"
+  done
+  cat >"$TMPROOT/queue/tasks/invalid-number.yaml" <<'YAML'
 task:
-  task_id: invalid-readonly
+  task_id: invalid-readonly-number
   task_type: recon2
   commit_contract:
     required: false
-  readonly_ref: scripts/inspected.sh
+  readonly_ref:
+  - path: 123
+YAML
+  cat >"$TMPROOT/queue/tasks/invalid-mapping.yaml" <<'YAML'
+task:
+  task_id: invalid-readonly-mapping
+  task_type: recon2
+  commit_contract:
+    required: false
+  readonly_ref:
+  - path:
+      x: y
+YAML
+  cat >"$TMPROOT/queue/tasks/invalid-list.yaml" <<'YAML'
+task:
+  task_id: invalid-readonly-list
+  task_type: recon2
+  commit_contract:
+    required: false
+  readonly_ref:
+  - path: [scripts/inspected.sh]
+YAML
+  cat >"$TMPROOT/queue/tasks/invalid-bool.yaml" <<'YAML'
+task:
+  task_id: invalid-readonly-bool
+  task_type: recon2
+  commit_contract:
+    required: false
+  readonly_ref:
+  - path: true
+YAML
+  cat >"$TMPROOT/queue/tasks/invalid-mixed.yaml" <<'YAML'
+task:
+  task_id: invalid-readonly-mixed
+  task_type: recon2
+  commit_contract:
+    required: false
+  readonly_ref:
+  - path: scripts/inspected.sh
+  readonly_refs:
+  - path: 123
 YAML
   cat >"$TMPROOT/queue/tasks/owned.yaml" <<'YAML'
 task:
@@ -2294,13 +2337,16 @@ YAML
   [ -n "$plural_receipt" ]
   [ "$(python3 -c 'import json,sys; d=json.load(open(sys.argv[1])); print(d["rc"], d["declared_test_count"], d["observed_test_count"], d["skip_count"], d["test_paths"])' "$plural_receipt")" = "0 0 0 0 []" ]
 
-  run env PATH="$TMPROOT/bin:$PATH" REPO_ROOT="$TMPROOT" \
-    RUN_TESTS_RECEIPT_DIR="$TMPROOT/receipts-invalid" RUN_TESTS_SINGLEFLIGHT_DIR="$TMPROOT/sf-invalid" \
-    BATS_CACHE=0 BATS_INNER_JOBS=1 \
-    bash "$TMPROOT/scripts/run_tests.sh" task "$TMPROOT/queue/tasks/invalid.yaml"
-  [ "$status" -eq 2 ]
-  [[ "$output" != *"TEST_SCOPE result=readonly_probe"* ]]
-  [[ "$output" == *"BLOCK: single-flight selection could not be resolved"* ]]
+  for invalid_kind in number mapping list bool mixed; do
+    run env PATH="$TMPROOT/bin:$PATH" REPO_ROOT="$TMPROOT" \
+      RUN_TESTS_RECEIPT_DIR="$TMPROOT/receipts-invalid-$invalid_kind" \
+      RUN_TESTS_SINGLEFLIGHT_DIR="$TMPROOT/sf-invalid-$invalid_kind" \
+      BATS_CACHE=0 BATS_INNER_JOBS=1 \
+      bash "$TMPROOT/scripts/run_tests.sh" task "$TMPROOT/queue/tasks/invalid-$invalid_kind.yaml"
+    [ "$status" -eq 2 ]
+    [[ "$output" != *"TEST_SCOPE result=readonly_probe"* ]]
+    [[ "$output" == *"BLOCK: single-flight selection could not be resolved"* ]]
+  done
 
   run env PATH="$TMPROOT/bin:$PATH" REPO_ROOT="$TMPROOT" \
     RUN_TESTS_RECEIPT_DIR="$TMPROOT/receipts-owned" RUN_TESTS_SINGLEFLIGHT_DIR="$TMPROOT/sf-owned" \

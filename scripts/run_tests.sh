@@ -835,7 +835,13 @@ def valid_readonly_ref_item(value):
     if isinstance(value, str):
         return bool(value.strip())
     if isinstance(value, dict):
-        return bool(str(value.get("path") or value.get("file") or "").strip())
+        if "path" in value:
+            candidate = value["path"]
+        elif "file" in value:
+            candidate = value["file"]
+        else:
+            return False
+        return isinstance(candidate, str) and bool(candidate.strip())
     return False
 
 def valid_readonly_ref_field(value):
@@ -848,11 +854,13 @@ def valid_readonly_ref_field(value):
 commit = task.get("commit_contract")
 is_no_commit = isinstance(commit, dict) and commit.get("required") is False
 is_recon = task.get("task_type") in {"recon", "recon2", "scout"}
-has_inspection = bool(task.get("inspection_path"))
-has_inspection = has_inspection or any(
-    valid_readonly_ref_field(task.get(field))
+readonly_values = [
+    task[field]
     for field in ("readonly_ref", "readonly_refs")
-)
+    if field in task and task[field] not in (None, "", [], {})
+]
+readonly_fields_valid = all(valid_readonly_ref_field(value) for value in readonly_values)
+has_inspection = bool(task.get("inspection_path") or readonly_values) and readonly_fields_valid
 
 owned = []
 for key in ("target_path", "test_path", "files_to_modify", "files_modified", "owned_paths"):
