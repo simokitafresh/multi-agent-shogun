@@ -12099,7 +12099,7 @@
     verdict: APPROVE
 - cmd_id: cmd_karo_hotfix_report_lesson_boundary_20260906
   gate_result: "CLEAR"
-  gate_synced_at: "2026-09-06T20:41:46+09:00"
+  gate_synced_at: "2026-09-06T20:42:09+09:00"
   review:
     cmd_id: cmd_karo_hotfix_report_lesson_boundary_20260906
     cmd_spec_summary:
