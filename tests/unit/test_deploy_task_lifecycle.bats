@@ -588,6 +588,7 @@ setup_file() {
         extract_function resolve_cmd_source_path
         extract_function emit_depends_on_ac_context
         extract_function _overwrite_ac_from_cmd
+        extract_function inject_cmd_recon_dual
         extract_function resolve_cmd_to_task
         extract_function inject_cmd_time_contract
         extract_function inject_cmd_assumptions
