@@ -14308,3 +14308,30 @@
   verdict: LGTM
   verified_files:
   - analysis_runs/cmd_4496_isolated_impact/compare_summary.json:1
+- cmd_id: cmd_karo_verify_i6_run421_20260907
+  review_type: report
+  ninja: saizo
+  verdict: FAIL
+  confidence: HIGH
+  finding_categories: [assumptions, numbers, simulation, premortem, north_star, ambiguity, adversarial]
+  brainwash_check: 'AC1 PASS 242659行違反0 AC2代理yesを家老がno判定 #1no#2no#3no#4no#5no#6no#7no#8no'
+  gate_prediction: CLEAR
+  gate_prediction_reason: 'precheck PASS but AC2 substantively FAIL per karo'
+  report_fingerprint: 4399cb06f4026af073e7095dfb97136fb7405f815b49c4b854c87b97bcd96a2d
+  verified_files: ['queue/reports/saizo_report_cmd_karo_verify_i6_run421_20260907.yaml:138']
+  timestamp: '2026-09-07T06:18:00+09:00'
+  step3_5_verified: true
+  adversarial_review:
+    required: false
+    verdict: N/A
+    reason: 'verify postcheck readonly'
+  operational_simulation:
+    command: 'grep -n blind_spots queue/reports/saizo_report_cmd_karo_verify_i6_run421_20260907.yaml'
+    expected: 'pre-run artifact欠落の記載'
+    actual: 'blind_spotsフィールドにpre-run artifact欠落を記載(L145付近)'
+    result: FAIL
+  observations:
+    - 'AC1 PASS: 独立再計算11699PF月 242659行 違反0(report L138)'
+    - 'AC2 bc=yes but blind_spotsでpre-run artifact欠落を認めている'
+    - '家老msg_061623: AC2は代理検証であり task要求のdeploy前後比較ではない→no'
+    - 'AC1の独立検証結果は有価値'
