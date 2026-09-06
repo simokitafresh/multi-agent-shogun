@@ -21551,3 +21551,129 @@ insights:
   source: "semantic_index_update"
   fix_known: false
   status: pending
+- id: INS-20260907-014153037-5a4f
+  ts: "2026-09-07T01:41:53+09:00"
+  insight: "[[殿 00 26 go]] semantic_stress_test candidate_aliases: NO_MATCH source=cmds query=殿 2026-09-07 00:26 go。家老回答 00:24: I2 は分類確定の証拠なし(cmd_4484 recon.py:363-378 は同日 old/new 逆向きだけで正当往復ラベルを付け run/job/transaction を見ない)→今できるのは識別情報/分類計測と隔離 fixture、実抑止は『同 run・同 key・最終状態不変』"
+  priority: "low"
+  source: "semantic_stress_test"
+  fix_known: false
+  status: pending
+- id: INS-20260907-014153585-0a3f
+  ts: "2026-09-07T01:41:53+09:00"
+  insight: "[[hanzoinbox1]] semantic_stress_test candidate_aliases: NO_MATCH source=lord query=hanzoinbox1"
+  priority: "low"
+  source: "semantic_stress_test"
+  fix_known: false
+  status: pending
+- id: INS-20260907-014154394-791f
+  ts: "2026-09-07T01:41:54+09:00"
+  insight: "[[初期段階ではhideだ]] semantic_stress_test candidate_aliases: NO_MATCH source=lord query=初期段階ではhideだ。L1: Global Page Visibilityで全tier+freeでhideにする"
+  priority: "low"
+  source: "semantic_stress_test"
+  fix_known: false
+  status: pending
+- id: INS-20260907-014154894-8e3f
+  ts: "2026-09-07T01:41:54+09:00"
+  insight: "[[将軍側はD0で修正しよう]] semantic_stress_test candidate_aliases: NO_MATCH source=lord query=将軍側はD0で修正しよう"
+  priority: "low"
+  source: "semantic_stress_test"
+  fix_known: false
+  status: pending
+- id: INS-20260907-014155428-d43e
+  ts: "2026-09-07T01:41:55+09:00"
+  insight: "[[Layer Holdingsはgoだ]] semantic_stress_test candidate_aliases: NO_MATCH source=lord query=Layer Holdingsはgoだ"
+  priority: "low"
+  source: "semantic_stress_test"
+  fix_known: false
+  status: pending
+- id: INS-20260907-014155878-b568
+  ts: "2026-09-07T01:41:55+09:00"
+  insight: "[[入力待ちにすると家老がボトルネックになるのでは？素直に忍者の権限で出来ることだけを要求すればいい]] semantic_stress_test candidate_aliases: NO_MATCH source=lord query=入力待ちにすると家老がボトルネックになるのでは？素直に忍者の権限で出来ることだけを要求すればいい。もしくはニンジャの権限を拡大するかだ"
+  priority: "low"
+  source: "semantic_stress_test"
+  fix_known: false
+  status: pending
+- id: INS-20260907-014156313-ea5a
+  ts: "2026-09-07T01:41:56+09:00"
+  insight: "[[第 0 弾配線 I7 I3 の deploは許可]] semantic_stress_test candidate_aliases: NO_MATCH source=lord query=第 0 弾配線=I7/I3 の deploは許可"
+  priority: "low"
+  source: "semantic_stress_test"
+  fix_known: false
+  status: pending
+- id: INS-20260907-014156745-4137
+  ts: "2026-09-07T01:41:56+09:00"
+  insight: "[[§2 3 不整合 I 別の状態も更新せよ]] semantic_stress_test candidate_aliases: NO_MATCH source=lord query=§2.3 不整合 I 別の状態も更新せよ"
+  priority: "low"
+  source: "semantic_stress_test"
+  fix_known: false
+  status: pending
+- id: INS-20260907-014157128-844a
+  ts: "2026-09-07T01:41:57+09:00"
+  insight: "[[進捗を表形式で見せてくれ]] semantic_stress_test candidate_aliases: NO_MATCH source=lord query=進捗を表形式で見せてくれ"
+  priority: "low"
+  source: "semantic_stress_test"
+  fix_known: false
+  status: pending
+- id: INS-20260907-014157454-6ab5
+  ts: "2026-09-07T01:41:57+09:00"
+  insight: "[[CI復旧を待つ合理的な理由はなにか教えて]] semantic_stress_test candidate_aliases: NO_MATCH source=lord query=CI復旧を待つ合理的な理由はなにか教えて"
+  priority: "low"
+  source: "semantic_stress_test"
+  fix_known: false
+  status: pending
+- id: INS-20260907-014157966-b634
+  ts: "2026-09-07T01:41:57+09:00"
+  insight: "[[ユーザーからの見た目が変わらず]] semantic_stress_test candidate_aliases: NO_MATCH source=lord query=ユーザーからの見た目が変わらず、かつ計算結果も変わらないものはなんだ？"
+  priority: "low"
+  source: "semantic_stress_test"
+  fix_known: false
+  status: pending
+- id: INS-20260907-014158446-3792
+  ts: "2026-09-07T01:41:58+09:00"
+  insight: "[[I4 DROP と I1 DROPも許可]] semantic_stress_test candidate_aliases: NO_MATCH source=lord query=I4 DROP と I1 DROPも許可"
+  priority: "low"
+  source: "semantic_stress_test"
+  fix_known: false
+  status: pending
+- id: INS-20260907-014159109-696d
+  ts: "2026-09-07T01:41:59+09:00"
+  insight: "[[すぐに開始しない理由を教えてくれ]] semantic_stress_test candidate_aliases: NO_MATCH source=lord query=すぐに開始しない理由を教えてくれ"
+  priority: "low"
+  source: "semantic_stress_test"
+  fix_known: false
+  status: pending
+- id: INS-20260907-014159838-7134
+  ts: "2026-09-07T01:41:59+09:00"
+  insight: "[[いつも気にするがauto compactするからちゃんとナッジせよ]] semantic_stress_test candidate_aliases: NO_MATCH source=lord query=いつも気にするがauto compactするからちゃんとナッジせよ"
+  priority: "low"
+  source: "semantic_stress_test"
+  fix_known: false
+  status: pending
+- id: INS-20260907-014200261-c544
+  ts: "2026-09-07T01:42:00+09:00"
+  insight: "[[三者協議の結果を教えてくれ]] semantic_stress_test candidate_aliases: NO_MATCH source=lord query=三者協議の結果を教えてくれ"
+  priority: "low"
+  source: "semantic_stress_test"
+  fix_known: false
+  status: pending
+- id: INS-20260907-014200818-7066
+  ts: "2026-09-07T01:42:00+09:00"
+  insight: "[[本番不整合 I2 段 1 signal change log 同日往復の分類計測 run job cache 世代・tr]] semantic_stress_test candidate_aliases: NO_MATCH source=cmds query=本番不整合 I2 段 1: signal_change_log 同日往復の分類計測(run/job/cache 世代・transaction 境界の識別情報付与、抑止なし、readonly、成果物 cmd_4492_*)"
+  priority: "low"
+  source: "semantic_stress_test"
+  fix_known: false
+  status: pending
+- id: INS-20260907-014201325-4220
+  ts: "2026-09-07T01:42:01+09:00"
+  insight: "[[本番不整合 I6 展開関数の絞込み後 Σ 1 再正規化を隔離 branch で実装し]] semantic_stress_test candidate_aliases: NO_MATCH source=cmds query=本番不整合 I6: 展開関数の絞込み後 Σ=1 再正規化を隔離 branch で実装し、同一入力 snapshot で baseline/修正版の全件 parity を証明(本番適用なし)"
+  priority: "low"
+  source: "semantic_stress_test"
+  fix_known: false
+  status: pending
+- id: INS-20260907-014201904-712a
+  ts: "2026-09-07T01:42:01+09:00"
+  insight: "[[殿 00 26 go]] semantic_stress_test test_set_candidate: high_frequency_NO_MATCH count=2 source=cmds query=殿 2026-09-07 00:26 go。家老回答 00:24: I2 は分類確定の証拠なし(cmd_4484 recon.py:363-378 は同日 old/new 逆向きだけで正当往復ラベルを付け run/job/transaction を見ない)→今できるのは識別情報/分類計測と隔離 fixture、実抑止は『同 run・同 key・最終状態不変』 quality_gate=blind_hit_rate_non_regression fixed_50_role=regression_detection_only"
+  priority: "medium"
+  source: "semantic_stress_test"
+  fix_known: false
+  status: pending
