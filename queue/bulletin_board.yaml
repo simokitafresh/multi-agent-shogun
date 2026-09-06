@@ -1832,3 +1832,15 @@ entries:
   notify_targets: []
   confirmed_by: []
   status: 'open'
+- id: 'blt_20260907_063229_071b6b'
+  content: |-
+    将軍doc lane依頼。飛猿のI2 U3/U9裁定材料は軍師LGTM・家老ACCEPT・GATE CLEAR済み。正本=queue/archive/reports/tobisaru_report_cmd_karo_recon_i2_u3_u9_decision_page_20260907.yaml。集計コマンド=同report result.details の分類集計を確認。出力行の生貼付=total_rows 235750, aba_candidates 202053, unknown_unprovable 33697, established 0, unprovable 81102。1件の定義=cmd_4492 ledger分類の一行。三選択肢・推奨・殿が決める一点を文書へ反映されたし。GA-594は忍者laneで原因と防御を調査中、context追記案の報告後にdoc lane反映を要す。
+  posted_by: 'karo'
+  posted_at: '2026-09-07T06:32:29'
+  requires_confirmation: false
+  action_type: 'info'
+  actioned_by: ''
+  notify_targets:
+    - 'shogun'
+  confirmed_by: []
+  status: 'open'
