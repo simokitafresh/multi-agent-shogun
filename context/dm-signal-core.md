@@ -1,5 +1,6 @@
 # DM-signal コアコンテキスト
-<!-- last_updated: 2026-09-06 2026-09-06 18:00 将軍doc lane GA-590: FoF golden 全帰属再生成(rb6 5535+決定性 26175=31710、dup 0)を §Current source boundary へ反映 -->
+<!-- last_updated: 2026-09-06 2026-09-06 18:05 将軍doc lane GA-590 同系列: golden AC1/AC2 commit(帰属 3efd01e0 真 baseline、rb6 5535+決定性 26175)。内容は 087231e1 の記述に包含 -->
+<!-- source_commit:c1b3719caef7 reason:2026-09-06 18:05 将軍doc lane GA-590 同系列: golden AC1/AC2 commit(帰属 3efd01e0 真 baseline、rb6 5535+決定性 26175)。内容は 087231e1 の記述に包含 evidence:git -C /mnt/c/Python_app/DM-signal log -1 c1b3719c -->
 <!-- source_commit:087231e1590e reason:2026-09-06 18:00 将軍doc lane GA-590: FoF golden 全帰属再生成(rb6 5535+決定性 26175=31710、dup 0)を §Current source boundary へ反映 evidence:git -C /mnt/c/Python_app/DM-signal show 087231e1 --stat = golden_baseline.json/rows.json.gz/test_cmd_3854 +36 -->
 <!-- source_commit:1fe4cb1388d9 reason:2026-09-06 04:50 将軍doc lane GA-589: DTB3 date.min as-of prefix 上限 filter を §Current source boundary(GA-589) へ反映 evidence:git -C /mnt/c/Python_app/DM-signal show 1fe4cb13 --stat = data_loader.py +9/-1 + integration fixture 3 path; gh run view 33985798406 = 1 failed/1935 passed -->
 <!-- source_commit:c8b347140eee reason:context_freshness reviewed source boundary evidence:context_freshness_check context=context/dm-signal-core.md commit=c8b347140eee -->

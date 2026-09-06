@@ -4,11 +4,11 @@
 更新: 2026-09-05 23:21:40 JST(家老 v3.1)。将軍追記 2026-09-06 00:40: §5 台帳に W0/W1 CLEAR、F-6 APPROVE、K2 走行、W5 閉を反映。一次確認の観測時点は23:13:50 JST。殿「読み込み覚醒してアップデート。家老が忍者を配備しやすい形式にしてよい」に基づく設計更新。
 正本は本書。既存gist IDを維持。旧v3.0の全数値・分類・レビュー履歴は `docs/research/ninja-block-fail-root-cause-v3-evidence-20260905.md` に保存した。過去の観測日時は変更しない。
 
-## 進捗ビジュアル(将軍 loop 更新 2026-09-06 16:25)
+## 進捗ビジュアル(将軍 loop 更新 2026-09-06 18:10)
 
-**全項目(W/F/P/C/E)** `████░░░░░░ 4/10` ✅完了 🟡走行中 ⏳待ち 🔴要判断
-状態集計: ✅ 4 / 🟡 1 / ⏳ 2 / 🔴 3(表の 10 行)
-次の一手: F-15 root drain(家老 18 path 合流)→P-4 CLEAR→deploy 8 CI 再判定→W2/T1
+**全項目(W/F/P/C/E)** `██████░░░░ 6/11` ✅完了 🟡走行中 ⏳待ち 🔴要判断
+状態集計: ✅ 6 / 🟡 2 / ⏳ 1 / 🔴 2(表の 11 行、18:10)
+次の一手: F-15 保全統合案(疾風、報告契約不足で failed→再提出中)→root drain 実行→P-4 CLEAR。DM CI は golden 全帰属(飛猿 18:01 CLEAR)で GREEN 化済み。本日の failed 2 件(疾風 finding 欄欠落/影丸 commit_hash 形式+binary_checks 空)は**報告契約の型不足**=F-18 候補(deploy 時に report テンプレへ必須欄を空でなく placeholder 付きで注入)
 
 | 群 | 状態 | 現在値 |
 |---|---|---|
@@ -18,6 +18,9 @@
 | F-13 deploy_task 系 CI RED(deploy 8+FP 1) | ✅ deploy 8 解消。FP flaky は再発計数 2/日(05:55 run 34015169693 で再発、次 run 05:48 は success) | deploy 8 は P-4 CLEAR 後に再走行で判定。FP 1 は診断 run 34005978406 で PASS=flaky 確定、才蔵 ci_fix は正式 FAIL_CLOSE(11:30) |
 | P-4 recon_dual 投影・fixed base | 🟡 WAIT(F-15 root 同期待ち、13:18 も external_wait) | 本体 3d2b6c4d9 収載済み。cb3d9af23 は origin と 4/4 一致、残=lifecycle 1 行 606f8efe4。F-14 gate は origin c4b0989d3 へ収載済みだが共有 root への同期が not_descendant で skip(root 171 behind/23 ahead、safe_ff mismatch 18)=root の gate が旧版のまま→11:53 も external_wait。将軍 12:01 家老へ順序付き 1 通(mismatch 18 の二分→収束→P-4 再 GATE→deploy 8 再判定) |
 | F-15 root drain(F-14 の runtime 未反映) | 🟡 才蔵へ委譲(15:40 root 差分 20 path 分類、家老の手作業を忍者へ。16:11 root 239 behind/25 ahead、mismatch 20) | 13:20 順序付き 1 通 #2。cmd_4483 は DM 側 publish を分離して CLEAR 13:31(壁=merge commit 入口不在→将軍 D0 publisher_c2a_merge.sh C2A_REPO_ROOT 200fb1dba)。家老監査 12:07: origin 上位 10 path/履歴 metadata 合流 8 path、insights は root resolved↔origin pending 96 件=F-9 同型ゆえ一括採用せず。gate 隔離実行の代替は補助 script 旧版で不可 |
+| F-15(続) 18:10 | 🟡 疾風 保全統合案 | 才蔵 root_drain_recon は preflight 字段名不一致で FAIL_CLOSE(17:35 正式)。後続=疾風 cmd_karo_recon2_root_drain_plan(17:34 配備)→18:01 failed(報告 finding 欄欠落=契約不足、作業は継続)→18:07 再走行。mismatch 22→23(root 側に新 commit)。共有 root への適用は 0 のまま |
+| F-13 DM CI RED(golden) | ✅ 18:01 CLEAR | 飛猿 golden 全帰属再生成(rb6 5,535+決定性 26,175=31,710、dup 0)→DM main 36420100→CI success(ca5dbbc5)。context/dm-signal-core.md GA-590 |
+| W6(続) 解放遅延 | ✅ 実測 4 例目 | 小太郎 done 16:06→CLEAR 17:32=86 分、将軍ナッジ 17:27 の 5 分後に解消。18:10 時点 idle 30 分超 0(半蔵→4485 AC3 準備、才蔵→K3 採否、飛猿 18:01 解放) |
 | C1/C2 insight 実害 | ✅ | CLEAR。pending 38→22 |
 | C3 publisher-deploy-ledger | 🔴 FAIL_CLOSE | coverage 0.95 未達・未命名 span 欠落。残件 2 file |
 | E-1 Codex 上限 | ✅ 解除 09:14 | 停止 07:5x〜09:14 |

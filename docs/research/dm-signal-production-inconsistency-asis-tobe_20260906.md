@@ -1,5 +1,5 @@
 <!-- gist-master: 2f1a3daa07c336c90958b1287245318b dm-signal-production-inconsistency-asis-tobe_20260906.md -->
-# DM-Signal 本番不整合 I1〜I9 — 現況・配備カード・データフロー・カタログ・因果・改善影響・ledger 判断 統合設計書 v1.5(2026-09-06 17:2x)
+# DM-Signal 本番不整合 I1〜I9 — 現況・配備カード・データフロー・カタログ・因果・改善影響・ledger 判断 統合設計書 v1.6(2026-09-06 18:10)
 
 - 発端: 殿 2026-09-06 14:11『dm-signal-research-data-backlog_20260905.md を参考に DM-signal の本番の不整合について深く調査しよう。家老と繰り返しレビュー交換をせよ。本番の不整合、それによる影響、改善時にどのような変化が本番に起きるか、改善の影響範囲・依存関係なども明確にせよ』。以後の殿指示: 14:44 データフロー、14:45 ユーザー可視/内部/デッドコード、14:47 設計の因果、14:59 ledger 協議、15:06 時系列、15:15 可視変化の定量化、15:33 3 設計書並列、15:56 配備・進捗運用版(家老)、16:33 単一スタイルへ再構築。
 - 読む順: §2(現況)→§3(配備カード)→§5(カタログ)→§9(改善影響)→§10(ledger)。図は §4、根拠は §5〜§7、順序と契約は §8、裁定は §11、往復は §12、版は §13。
@@ -40,7 +40,7 @@
 |---|---|---|---|---|
 | P01〜P03 / cmd_4484 / 影丸 | 世代2解析受入。source `aa96ac78133919876e86733106209943b9469cc9`、公開main `22668f54000829ed37712bf4e9f9d7c68bfc3ffe`へ包含確認 | 軍師LGTM・家老ACCEPT。v2 receipt/原出力hash検証済み | 16:36 GATE CLEAR、16:37 archive.doneとtask idleを実確認 | source未公開WAITは解消。証跡=`queue/gates/cmd_4484/completion_tail.log`・`archive.done`・`queue/tasks/kagemaru.yaml`。次=P05以降の入力確認。調査完了であり本番不整合修正済みとは数えない |
 | P04 / cmd_4486 / 半蔵 | 最終`2ece0652387fce4639c6ac4fd754bc7be0fdb925`をmain `694ab6210851126db9462ab2b40cacdb53be15a0`へ公開。84候補(79/3/2)、個別登録対応の除外149、原出力rc5/hash一致。初回172→88→76の過剰除外是正→84 | 軍師LGTM・家老ACCEPT。登録関数単位へ限定、未登録helper保持、60日境界と新版原出力を確認 | 17:11 GATE CLEAR確認、17:12 archive.done/active_reports0/半蔵idleを確認 | 監査artifact8file、DB/本番/application変更0。証跡=`queue/gates/cmd_4486/completion_tail.log`。P06/P07へ監査結果を入力可。静的候補の受入であり撤去承認ではない |
-| P05/P06 / cmd_4485 / 影丸 | 2026-09-06 17:33:38配備、17:34着手確認。AC1復元前flightを先行 | draft APPROVE。成果物レビューは未実行 | 未実行 | 影丸がsnapshot/不足入力manifest・local接続隔離・3wallを確認し家老へ共有。その後I6/I4実験を別B系へ分離。DB本番書込0 |
+| P05/P06 / cmd_4485 / 影丸（半蔵がAC3比較準備） | 18:04未達報告。復元39.026402秒、候補2経路の部分実験、B ledger258行/2回目追加0。source `82a70df1610b035557cc08f25c7407d195cb2b27` | 18:06家老RC。全期間価格/暦入力とAPI JSON軸が未達。前flight価格取得215行を全期間入力と混同しない | CLEARなし | 不足表/列/期間/ticker集合manifestを影丸が作成、追加readonly取得可否を将軍へ裁定依頼済み。既存保存データ優先、許可前の追加本番取得0。半蔵の比較計画を合流 |
 | P07〜P10 / 未配備 | 下表の準備・依存条件で区分 | 未実行 | 未実行 | 家老が入力・許可範囲の揃ったカードだけ配備 |
 
 ### §2.2 cmd_4484 世代 2 の新観測(旧観測を消さず併記)
@@ -58,11 +58,11 @@ cmd_4484 世代2の**報告値**。オフライン検証出力は確認済みだ
 
 証跡入口: `queue/reports/kagemaru_report_cmd_4484.yaml`、`logs/test_receipts/cmd_4484_offline_validation_v2.json`、同名 `.output`。原出力SHA256=`72ae9e7834100775cd00e0a74654df5fce6277e14af197fdc144b2afa70360f7`。snapshot SHA256=`6ce8e54988654fe99205bd527cb062a422108a0e07751a04cac7aeddeccc2488`。成果物基点=`/home/simokitafresh/shogun-task-worktrees/kagemaru_cmd4484/analysis_runs/cmd_4484_prod_inconsistency_recon`。世代1は保存し、新解析へ混用しない。
 
-### §2.3 不整合 I 別の状態(将軍 loop 更新 2026-09-06 16:25。§2.1/§2.2 と同じ観測を I 単位で並べ直したもの)
+### §2.3 不整合 I 別の状態(将軍 loop 更新 2026-09-06 18:10。§2.1/§2.2 と同じ観測を I 単位で並べ直したもの)
 
 **全項目(I1〜I9)** `█░░░░░░░░░ 1/9` ✅完了 🟡走行中 ⏳待ち 🔴要判断
-状態集計: ✅ 1 / 🟡 5 / ⏳ 2 / 🔴 1(表の 9 行、16:5x)
-次の一手: cmd_4484(影丸、AC1 取得中)→cmd_4485 隔離実験(§9.2 の数値: I6/I4/I8 で何が何件どれだけ動くか)→§9.1 ①を数値付きに→殿裁定(I6、保護要件の有無)
+状態集計: ✅ 1 / 🟡 5 / ⏳ 2 / 🔴 1(表の 9 行、18:10)
+次の一手: cmd_4485(影丸 AC1 前 flight 済み: 復元 39.0 秒、隔離 B 系で Σ=0.75/0.833 の非 unit を再現、ledger backfill B 258 行・2 回目 0=冪等。全期間 price/calendar 未取得で AC2/AC3 は部分集合→将軍裁定 18:07 で追加 readonly 1 回を許可、manifest 先行)→全期間再走→§9.1.2 ①を数値付きに→殿裁定(I6、保護要件の有無)。半蔵は AC3 の SQL/API 差分計画を並行準備(17:59)
 
 | # | 不整合 | 状態 | 現在値 |
 |---|---|---|---|
@@ -72,6 +72,8 @@ cmd_4484 世代2の**報告値**。オフライン検証出力は確認済みだ
 | I4 | signal_detail_history 0 行 / signal_decision_ledger 0 行 | 🔴 殿裁定 | 前者=writer 実装あり・caller 0(廃止は契約確認後)、後者=PITR 後の再バックフィル未実施・API は today 固定(復活/廃止) |
 | I5 | 月初 signals.holding_signal ≠ monthly_returns.holding_signal | ✅ 保存された比較対象 11,922 で差 0(R9 限定) | 将軍再集計(16:5x)+家老 R9 再現: holding 差 0、raw・holding 差 477 は 477/477 で 2 表の holding が一致。ただし recon.py の月初営業日=保存月内最初の行(独立暦なし)ゆえ、未観測月初・有効日条件は unknown。『改善対象なし』とは断定しない。§9.1.4 |
 | I6 | display_ticker_weights 非 unit 35 行・parity 不一致 29/2,096 | 🟡 | 世代 2 報告値: display/pending_display 各 242,659 key で**非 unit 0**、静的 consumer 12。08-06 の 35 行は別時点(その後の full recalc で消えた可能性)。恒久解消と解釈せず、cmd_4485 で候補経路(選択外/欠損 child)の再現条件を確認 |
+| I6(続) 18:10 | cmd_4485 AC1 前 flight | 隔離 B 系で候補経路を作ると Σ=0.75 / 0.833 の非 unit weight が**再現**(部分集合、全期間は追加 readonly 後)。旧 35 行の本番再現ではなく『経路を作れば出る』の証明=U2 の半分 |
+| I4(続) 18:10 | cmd_4485 AC1 前 flight | backfill plan を B 系へ投入=258 行、2 回目投入 0 行(冪等 yes)。5 種別差分は全期間入力後(U1) |
 | I7 | component holding_signal 欠落で展開不能 | ⏳ | 実測 0(cmd_4479/4483)。監視化のみ |
 | I8 | 新四つ目 3 体 parity 不一致(102+2) | 🟡 | 世代 2 報告値: B=全 FoF 77、signal 無し・return 有り 0。旧 2 件の 2014-04 は現在 signal/return あり(cmd_4480 時点との差=再計算で埋まった候補)。valid_start_date 欠落 77/77 は unknown |
 | I9 | 本番 tree と文書の乖離(ledger/signal_flush は 08-04 版) | 🟡 backlog B2 訂正済み(v1.6)。PI-P06 は規範保持+現在適用状態を別記 | rollback 233c2303 後、ledger file は 21e80e30 と同値・T7.5 未適用。backend 全体の 08-04 版断定はしない(38 files 再変更あり) |
@@ -548,6 +550,7 @@ I7: 監視 1 行(独立)
 - v1.3(2026-09-06 17:0x 将軍、家老 R10 APPROVE): 残表現 5 点反映。P05(cmd_4485)入力固定へ進む。
 - v1.4(2026-09-06 17:1x 将軍): cmd_4486 P04 CLEAR の結果を §7 へ(候補 84=79/3/2、除外 149、撤去検討 63、daily_etl 不在)。
 - v1.5(2026-09-06 17:2x 将軍): cmd_4485 起票・配備(P05/P06)。§3 P04/P05/P06 の状態更新。
+- v1.6(2026-09-06 18:10 将軍、殿 18:08『設計書三つが 1 時間更新されていない』): §2.3 に cmd_4485 前 flight 結果(復元 39 秒、I6 再現 Σ=0.75/0.833、ledger 258 行冪等)と将軍裁定 18:07(追加 readonly 1 回)を反映。
 ## 因果リンク
 - ← [[dm-signal-research-data-backlog_20260905]] §B5 I1〜I8 / ← [[dm-signal-research-data-foundation-asis-tobe_20260905]] §2 / ← [[cmd_4480_shin_yotsume_parity]] / ← [[partial-turnover-experiment-asis-tobe-5w1h_20260805]] v1.10-v1.12
 - origin: "[[殿指示_本番不整合深掘り_20260906_1411]] -> [[backlog_B5_I1-I8]] -> [[production-inconsistency-asis-tobe]]"
