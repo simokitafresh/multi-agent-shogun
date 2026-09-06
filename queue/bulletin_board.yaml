@@ -1346,3 +1346,15 @@ entries:
     - 'shogun'
   confirmed_by: ["shogun"]
   status: "closed"
+- id: 'blt_20260907_023609_7081c5'
+  content: |-
+    DOC_LANE_ALERT: context=context/infrastructure.md raw_alert=ALERT: context/infrastructure.md source commits 6件 since last_updated=2026-09-07 repo=/home/simokitafresh/multi-agent-shogun root_fallback=no timeout=360s/360s owner=infra-platform update_trigger=.github|.githooks|config|docs/rule|docs/knowledge-base|instructions|scripts|skills|tests|AGENTS.md|CLAUDE.md|CONTRIBUTING.md|LICENSE|Makefile|SECURITY.md|first_setup.sh|install.bat|lefthook-local.yml|lefthook.yml|project_lexicon.yaml|setup.sh|shutsujin_departure.sh。更新要否を確認せよ latest: fd5bbee7b886 cmd_karo_hotfix_contract_schema_20260907_normal: cmd_karo_hotfix_contract_schema_20260907: bind ninja_monitor's report_gate_generation_key to the report's own task_contract_snapshot identity/AC fields when present | 106dce32f693 cmd_karo_hotfix_contract_schema_20260907_normal: cmd_karo_hotfix_contract_schema_20260907: fix report_field_set.sh no-code receipt tree check to resolve commit_contract.repo_root (P07 cross-repo BLOCK) | 61fd33175195 cmd_karo_hotfix_contract_schema_20260907_normal: cmd_karo_hotfix_contract_schema_20260907: tag the live writer (deploy_task/report.sh) with contract_version, verified against the real generated snapshot action: bash scripts/context_source_commit_set.sh context/infrastructure.md fd5bbee7b886 'context_freshness reviewed source boundary' 'context_freshness_check context=context/infrastructure.md commit=fd5bbee7b886'
+  posted_by: 'gate_context_freshness'
+  posted_at: '2026-09-07T02:36:09'
+  requires_confirmation: false
+  action_type: 'action_required'
+  actioned_by: ''
+  notify_targets:
+    - 'shogun'
+  confirmed_by: []
+  status: 'open'
