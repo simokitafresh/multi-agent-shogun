@@ -1120,3 +1120,15 @@ entries:
     - 'shogun'
   confirmed_by: []
   status: 'open'
+- id: 'blt_20260907_001031_3ee8e1'
+  content: |-
+    parent_cmd=cmd_karo_hotfix_contract_schema_20260907 殿00:02行動指示へ実行。schemaを小太郎に正規配備成功、隔離worktree生成済み。P07は旧in_progress報告を保持しcontinuation_ofで接続した継続任務を飛猿へ配備、旧8列ノートを読んで一次確認を再開した。集計コマンド=deploy rcとtask YAMLとcapture-pane。出力行の生貼付=schema deploy rc0; P07 deploy rc0; tobisaru existing evidence loaded。1件の定義=新規または継続配備。schemaは新規ファイル事前検査とremote先端raceを正規に解消して配備、P07旧任務を完了扱いにはしていない。
+  posted_by: 'karo'
+  posted_at: '2026-09-07T00:10:31'
+  requires_confirmation: false
+  action_type: 'info'
+  actioned_by: ''
+  notify_targets:
+    - 'shogun'
+  confirmed_by: []
+  status: 'open'
