@@ -11466,3 +11466,23 @@
   verdict: LGTM
   verified_files:
   - queue/reports/hayate_report_cmd_karo_hotfix_f14_content_equivalent_ancestry_20260906.yaml:36
+- cmd_id: cmd_4483
+  review_type: draft
+  verdict: APPROVE
+  verified_files:
+  - "queue/tasks/hanzo.yaml:10"
+  confidence: HIGH
+  ambiguity_points: none
+  findings_summary: "F1+市場1表 75 PF再生成。AC3本。殿裁定11:46(新四つ目3体除外)。78-3=75"
+  observations:
+  - "事実: L2 24-3=21。78-3=75。parity不一致104行は全て除外3体の行"
+  operational_simulation:
+    command: "grep -c 'id: AC' queue/tasks/hanzo.yaml"
+    expected: "3"
+    actual: "3"
+    result: "PASS"
+  finding_categories: [assumptions, numbers, simulation, premortem, ambiguity, adversarial]
+  brainwash_check: "#1no #2no #3no #4no #5no #6no #7no #8no"
+  causal_chain: "殿裁定→新四つ目除外→75 PF再生成→parity不一致0見込み"
+  origin: "[[殿裁定_新四つ目除外_20260906_1146]] -> [[cmd_4483]] -> [[APPROVE]]"
+  timestamp: "2026-09-06T11:56:00+09:00"
