@@ -313,6 +313,102 @@ else:
 PY
 }
 
+# F19: a cross_repo_commits entry typed deploy_forbidden:true is a
+# permanently isolated deliverable — by design it must never reach
+# origin/main, so waiting on main ancestry for it would WAIT forever.
+# Its proof is instead inclusion in its own declared non-main remote branch.
+# Every isolated entry in the report is checked (not only the one matching
+# the caller's target commit) so one verified entry cannot mask another
+# entry's unpublished/ambiguous isolation branch.  Prints "KIND\tmessage" on
+# stdout: KIND is PUSHED (verified; caller should treat as PASS), BLOCK
+# (unpublished branch/branch missing/commit mismatch/ambiguous type/main
+# specified), or NA (report has no isolated entry matching target_commit —
+# caller falls back to the existing main-ancestry path unchanged).
+resolve_isolated_cross_repo_state() {
+    local report_file="$1" repo_dir="$2" target_commit="$3"
+    python3 - "$report_file" "$repo_dir" "$target_commit" <<'PY'
+import os
+import re
+import subprocess
+import sys
+import yaml
+
+report_path, repo_dir, target_commit = sys.argv[1:]
+target_commit = target_commit.strip().lower()
+
+
+def emit(kind, message):
+    print(f"{kind}\t{message}")
+    raise SystemExit(0)
+
+
+try:
+    report = yaml.safe_load(open(report_path, encoding="utf-8")) or {}
+except (OSError, yaml.YAMLError):
+    emit("NA", "")
+
+entries = report.get("cross_repo_commits")
+if not isinstance(entries, list):
+    entries = []
+
+isolated_entries = [
+    entry for entry in entries
+    if isinstance(entry, dict) and "deploy_forbidden" in entry
+]
+target_is_isolated = any(
+    str(entry.get("commit_hash") or "").strip().lower() == target_commit
+    for entry in isolated_entries
+)
+if not target_is_isolated:
+    emit("NA", "")
+
+target_branch = ""
+for entry in isolated_entries:
+    flag = entry.get("deploy_forbidden")
+    sha = str(entry.get("commit_hash") or "").strip().lower()
+    branch = str(entry.get("branch") or "").strip()
+    repo = str(entry.get("repo") or "").strip() or repo_dir
+    if flag is False:
+        # Explicit non-isolation: this entry follows the ordinary
+        # main-inclusion contract and is out of scope here.
+        continue
+    if flag is not True:
+        emit("BLOCK", f"isolated cross-repo entry has ambiguous deploy_forbidden type (commit={sha or 'unknown'})")
+    if not re.fullmatch(r"[0-9a-f]{40}", sha):
+        emit("BLOCK", "isolated cross-repo entry commit_hash invalid")
+    if not branch or branch.lower() in ("main", "master", "refs/heads/main", "refs/heads/master"):
+        emit("BLOCK", f"isolated cross-repo entry declares main/empty branch (commit={sha})")
+    if not os.path.isabs(repo):
+        repo = os.path.join(repo_dir, repo)
+    repo = os.path.realpath(repo)
+    if not os.path.isdir(repo):
+        emit("BLOCK", f"isolated cross-repo entry repository unavailable (commit={sha})")
+    try:
+        remote = subprocess.run(
+            ["git", "-C", repo, "ls-remote", "origin", f"refs/heads/{branch}"],
+            stdout=subprocess.PIPE, stderr=subprocess.DEVNULL, timeout=10, text=True,
+        )
+    except (OSError, subprocess.TimeoutExpired):
+        emit("BLOCK", f"isolated cross-repo entry remote branch lookup failed (commit={sha} branch={branch})")
+    remote_tip = (remote.stdout.split() or [""])[0].strip().lower()
+    if remote.returncode != 0 or not re.fullmatch(r"[0-9a-f]{40}", remote_tip):
+        emit("BLOCK", f"isolated cross-repo entry branch not published (commit={sha} branch={branch})")
+    try:
+        ancestor = subprocess.run(
+            ["git", "-C", repo, "merge-base", "--is-ancestor", sha, remote_tip],
+            stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, timeout=10,
+        )
+    except (OSError, subprocess.TimeoutExpired):
+        emit("BLOCK", f"isolated cross-repo entry ancestry check failed (commit={sha} branch={branch})")
+    if ancestor.returncode != 0:
+        emit("BLOCK", f"isolated cross-repo entry commit not contained by branch (commit={sha} branch={branch} remote_tip={remote_tip})")
+    if sha == target_commit:
+        target_branch = branch
+
+emit("PUSHED", f"report commit {target_commit} isolated_branch_verified branch={target_branch}")
+PY
+}
+
 # Decide whether a report crossed the shared remote completion boundary.
 # Free text and files_modified describe work, not publication.  The only
 # publication proof is a valid report commit contained by origin/main|master.
@@ -492,26 +588,33 @@ PY
         echo "BLOCK: no-code-change evidence invalid"
     elif [ "$report_kind" != "commit" ]; then
         echo "BLOCK: report commit invalid or unresolvable${report_commit:+ ($report_commit)}"
-    elif git -C "$repo_dir" cat-file -e "${report_commit}^{commit}" 2>/dev/null; then
-        # check_report_commit_main_ancestry may provide a snapshot containing
-        # every commit reachable from expected_head. Reusing that one walk
-        # preserves the exact ancestor predicate while avoiding one expensive
-        # merge-base traversal per PASS report in the same repository.
-        if [ -n "$ancestry_snapshot_file" ] && [ -f "$ancestry_snapshot_file" ]; then
-            if grep -Fqx -- "$report_commit" "$ancestry_snapshot_file"; then
+    else
+        local isolated_result isolated_kind isolated_message
+        isolated_result=$(resolve_isolated_cross_repo_state "$report_file" "$repo_dir" "$report_commit")
+        isolated_kind="${isolated_result%%$'\t'*}"
+        isolated_message="${isolated_result#*$'\t'}"
+        if [ "$isolated_kind" = "PUSHED" ] || [ "$isolated_kind" = "BLOCK" ]; then
+            echo "$isolated_kind: $isolated_message"
+        elif git -C "$repo_dir" cat-file -e "${report_commit}^{commit}" 2>/dev/null; then
+            # check_report_commit_main_ancestry may provide a snapshot containing
+            # every commit reachable from expected_head. Reusing that one walk
+            # preserves the exact ancestor predicate while avoiding one expensive
+            # merge-base traversal per PASS report in the same repository.
+            if [ -n "$ancestry_snapshot_file" ] && [ -f "$ancestry_snapshot_file" ]; then
+                if grep -Fqx -- "$report_commit" "$ancestry_snapshot_file"; then
+                    echo "PUSHED: report commit $report_commit contained by $expected_head"
+                else
+                    echo "UNPUSHED: report commit $report_commit not contained by $expected_head"
+                fi
+            elif git -C "$repo_dir" merge-base --is-ancestor "$report_commit" "$expected_head" 2>/dev/null; then
                 echo "PUSHED: report commit $report_commit contained by $expected_head"
             else
                 echo "UNPUSHED: report commit $report_commit not contained by $expected_head"
             fi
-        elif git -C "$repo_dir" merge-base --is-ancestor "$report_commit" "$expected_head" 2>/dev/null; then
-            echo "PUSHED: report commit $report_commit contained by $expected_head"
         else
-            echo "UNPUSHED: report commit $report_commit not contained by $expected_head"
-        fi
-    else
-        # Primary repo cannot resolve commit; try cross_repo_commits for an alternate repo.
-        local cross_repo_dir cross_repo_head
-        cross_repo_dir=$(REPORT_FILE="$report_file" COMMIT="$report_commit" python3 - <<'PY'
+            # Primary repo cannot resolve commit; try cross_repo_commits for an alternate repo.
+            local cross_repo_dir cross_repo_head
+            cross_repo_dir=$(REPORT_FILE="$report_file" COMMIT="$report_commit" python3 - <<'PY'
 import os, yaml
 try:
     with open(os.environ["REPORT_FILE"], encoding="utf-8") as f:
@@ -528,18 +631,19 @@ for entry in report.get("cross_repo_commits") or []:
         raise SystemExit
 PY
 )
-        if [ -n "$cross_repo_dir" ] \
-            && git -C "$cross_repo_dir" cat-file -e "${report_commit}^{commit}" 2>/dev/null; then
-            cross_repo_head=$(resolve_ci_expected_head "$cross_repo_dir")
-            if [ -z "$cross_repo_head" ]; then
-                echo "BLOCK: cross-repo remote main/master boundary missing ($cross_repo_dir)"
-            elif git -C "$cross_repo_dir" merge-base --is-ancestor "$report_commit" "$cross_repo_head" 2>/dev/null; then
-                echo "PUSHED: report commit $report_commit contained by $cross_repo_head"
+            if [ -n "$cross_repo_dir" ] \
+                && git -C "$cross_repo_dir" cat-file -e "${report_commit}^{commit}" 2>/dev/null; then
+                cross_repo_head=$(resolve_ci_expected_head "$cross_repo_dir")
+                if [ -z "$cross_repo_head" ]; then
+                    echo "BLOCK: cross-repo remote main/master boundary missing ($cross_repo_dir)"
+                elif git -C "$cross_repo_dir" merge-base --is-ancestor "$report_commit" "$cross_repo_head" 2>/dev/null; then
+                    echo "PUSHED: report commit $report_commit contained by $cross_repo_head"
+                else
+                    echo "UNPUSHED: report commit $report_commit not contained by $cross_repo_head"
+                fi
             else
-                echo "UNPUSHED: report commit $report_commit not contained by $cross_repo_head"
+                echo "BLOCK: report commit invalid or unresolvable${report_commit:+ ($report_commit)}"
             fi
-        else
-            echo "BLOCK: report commit invalid or unresolvable${report_commit:+ ($report_commit)}"
         fi
     fi
 }
