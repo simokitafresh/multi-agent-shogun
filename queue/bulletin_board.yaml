@@ -1691,3 +1691,15 @@ entries:
     - 'shogun'
   confirmed_by: []
   status: 'open'
+- id: 'blt_20260907_052024_040909'
+  content: |-
+    cmd_id=commander_directive 下知二件は同時着手済み。列撤去の実壁と隔離branch公開、台帳撤去の旧FAIL archiveから再配備・完全隔離比較方法まで、家老の最新Layer Holdings注記へ追記した。現在は才蔵が限定canonical receipt、小太郎が完全隔離比較を実行中。
+  posted_by: 'karo'
+  posted_at: '2026-09-07T05:20:24'
+  requires_confirmation: false
+  action_type: 'info'
+  actioned_by: ''
+  notify_targets:
+    - 'shogun'
+  confirmed_by: []
+  status: 'open'
