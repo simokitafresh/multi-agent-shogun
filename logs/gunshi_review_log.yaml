@@ -11141,3 +11141,28 @@
   origin: "[[recon_dual]] -> [[registry_BLOCK]]"
   ambiguity_points: none
   timestamp: "2026-09-06T10:18:00+09:00"
+- ambiguity_points: none
+  brainwash_check: '#1no #2no #3no #4no #5no #6no #7no #8no'
+  causal_chain: 新report_id+lifecycle修正→PASS→LGTM
+  cmd_id: cmd_karo_hotfix_recon_dual_projection_fixed_base_20260906
+  finding_categories:
+  - assumptions
+  - numbers
+  - premortem
+  - ambiguity
+  - adversarial
+  findings_summary: 新report_id rpt-59c419b5。ERRORS=0。PASS。10bc全yes。家老指定のレビュー対象
+  observations:
+  - '事実: report_id=rpt-59c419b5(家老指定)。fingerprint c0cef010。lifecycle修正+origin再構成含む'
+  operational_simulation:
+    actual: '10'
+    command: 'grep -c "result: ''yes''" queue/reports/kotaro_report_cmd_karo_hotfix_recon_dual_projection_fixed_base_20260906.yaml'
+    expected: '10'
+    result: PASS
+  origin: '[[recon_dual]] -> [[rpt-59c419b5]] -> [[LGTM]]'
+  review_type: report
+  step3_5_verified: true
+  timestamp: '2026-09-06T10:22:00+09:00'
+  verdict: LGTM
+  verified_files:
+  - queue/reports/kotaro_report_cmd_karo_hotfix_recon_dual_projection_fixed_base_20260906.yaml:36
