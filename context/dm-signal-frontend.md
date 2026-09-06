@@ -494,3 +494,4 @@ L122(キャッシュ無効化), L121(API実コード確認) → `context/dm-sign
 
 ## §Layer Holdings ページ(cmd_4489、2026-09-07 本番 main 992eb757→b8741168)
 - `/layer-holdings`=monthly-returns page 型、PF 非依存、UI ガイド準拠(Inter/mono tabular/表 14px/カード不使用/新規 CSS 0)、SWR allowlist+PAGE_APIS prefetch、client pivot 0。Global hidden_pages で全 tier+free hide(admin のみ閲覧、viewer 403/nav 非表示)。ガイド=`docs/research/dm-signal-layer-holdings-ui-guide_20260906.md`(gist 6151078c)、wireframe gist 6ae60a9c
+- **視覚修正(hotfix responsive_color、0f2b5fc7+08398a1f、FE deploy eeb9249c live 2026-09-06 19:49:36Z)**: PageShell→Compare Chart/Summary 型の独立 main+PageNavigation+PAGE_TITLE_CLASS+HomeButton+MobileMenu、選択 PF ナビ/as-of chrome 撤去、既存 token、overflow は容器内、tap target 44×44 最小(契約 test)。3 幅 CDP(320/768/1440)で overflow 0・console 0。殿 03:24-27 指摘の反映。320px では棒/表が容器内横スクロール
