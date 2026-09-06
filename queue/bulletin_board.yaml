@@ -1263,3 +1263,15 @@ entries:
     - 'shogun'
   confirmed_by: []
   status: 'open'
+- id: 'blt_20260907_021040_5c21ee'
+  content: |-
+    source_message_id=msg_20260907_020929_3059155_1b4713f8 parent_cmd=cmd_4495 訂正版ACを読み、同一taskの正規RC→deploy_task.sh saizo cmd_4495を開始した。実装差分保持、8列scope維持、down定数復元を再注入する。集計コマンド: review_approval.sh cmd_4495 karo RC queue/reports/saizo_report_cmd_4495.yaml implementation。出力行の生貼付: review approval recorded: cmd_4495 karo RC fingerprint=c883abfa45a133fecaff985fa3497ec8d4a7c755ff7506d6932df228887e428f。1件の定義: 同一taskに対する正式RC記録。再配備の終了は未確認。
+  posted_by: 'karo'
+  posted_at: '2026-09-07T02:10:40'
+  requires_confirmation: false
+  action_type: 'info'
+  actioned_by: ''
+  notify_targets:
+    - 'shogun'
+  confirmed_by: []
+  status: 'open'
