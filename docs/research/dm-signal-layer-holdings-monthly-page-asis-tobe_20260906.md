@@ -1,5 +1,5 @@
 <!-- gist-master: b733364ac7dc058a20e7bd635e34ae73 dm-signal-layer-holdings-monthly-page-asis-tobe_20260906.md -->
-# DM-Signal 本番「Layer Holdings Monthly」ページ 新設 AsIs/ToBe 5W1H 設計書 v0.12(将軍 04:12 表示達成=rows 3,525・admin UI 描画・parity 全一致。残=殿視覚指摘の UI hotfix。v0.11=手順 2/3)
+# DM-Signal 本番「Layer Holdings Monthly」ページ 新設 AsIs/ToBe 5W1H 設計書 v0.13(将軍 04:58 UI 視覚修正 CLEAR 04:54=Compare 型・44px tap・3 幅 CDP PASS。残=hide 解除の殿裁定。v0.12=表示達成)
 
 - 殿指示 2026-09-06 22:07『今後本番に Layer Holdings Monthly ページを新規で作りたい。まずは asis/tobe 5W1H の設計書を作ろう。家老にレビューして更新してもらい、将軍がレビューしてさらに更新する。更新するべき点がなくなるまで続ける』。
 - 版履歴(歴史修正禁止のため記録のみ): v0.1 22:20 将軍起草(一次情報=DM-Signal repo 現物+研究 lane の成果物)。v0.1.1 22:22 殿指示『gist 共有、軍師には artifact も共有(前提情報のずれ防止)』→前提 artifact URL を本文に明記。
@@ -167,6 +167,7 @@ R3追加の月次接続契約（§4.4の続き）:
 | P1 ✅ | 00:23 | 疾風 cmd_4487 | GATE CLEAR。branch feat/layer-holdings-P1 932d926d(main 反映なし、deploy_forbidden 登録)。AC1: 固定 JSON dry-run rows=3525 groups=912 db_reads=0、研究 CSV 全 key 一致、max_weight_diff=4.44e-16 / AC2: violations=0 / AC3: 契約 test 4 passed。gate WAIT 1 回=cross_repo_commits に非 main 公開 branch と deploy_forbidden を宣言していなかった(F-19 後の契約)→是正 | P2 影丸 done(軍師 review)、P3 才蔵 走行。統合段は 3 本揃ってから |
 | P2 ✅ | 00:31 | 影丸 cmd_4488 | GATE CLEAR。branch feat/layer-holdings-P2 43dffc22(main 反映なし)。AC4 認可 7 通り/AC5 readiness 正負 8 通り+409/200/AC6 契約 test: task runner 13/13 PASS SKIP 0。AC4c 表示速度: queries=1 gzip_bytes=8970 etag_304=true p95_ms=82.64(目安 ≤200KB・≤100ms を満たす) | 残=P3 才蔵(AC5/AC5b/AC6)。統合段は P3 後に家老 1 回 |
 | P4 go | 02:02 | 殿→将軍 | 殿 02:02『Layer Holdings P4 は go だ』。§9.4 runbook を家老 lane で着手(将軍下知 02:05)。前提=統合段 AC4c p95 是正(閾値 100ms 不変)+frontend test PASS を先に閉じる | 以後は §9.4 の順序 2〜9 の二値結果を §7 へ追記 |
+| UI 視覚修正 ✅ CLEAR | 04:54 | 疾風 hotfix responsive_color(家老 lane) | 殿 03:24-27 指摘を実装: PageShell→Compare Chart/Summary 型の独立 main+PageNavigation+PAGE_TITLE_CLASS+HomeButton+MobileMenu、選択 PF ナビ/as-of chrome 撤去、既存 DM-Signal token、overflow は表/チャート容器内。1 回目 CDP で tap target 44px 未満(Home 28/Mobile 40/L0-L3 38-42)→RC→08398a1f で 44×44 最小 hit area+契約 test 3/3。FE deploy dep-daes71cs live 19:49:36Z(merge eeb9249c)。最終 CDP 320/768/1440: body overflow 0、PF selector 0、overlap 0、最小 control 44×44、console 0、rows 12/table 10。screenshot layer-holdings-compare-style-final-{320,768,1440}.png(将軍 1440/320 一次確認 04:58) | 残=hide 解除(殿裁定)。将軍所見: 320px では積み上げ棒と CSV 表が容器内横スクロール(棒は右側が見切れ)。殿の可否次第で『棒を幅に収める』改善を別 hotfix |
 | 5✅/6✅/7✅/7b✅ 表示達成 | 03:48〜04:10 | 家老(将軍 screenshot 一次確認 04:10) | 本番 DB 差替え事故(03:15 Blueprint 同期→旧 DB dpg-d542、ops §106)を 881c2dfc で復旧 live 03:48:22。復旧後: batch 200・rows 3,525・198 months・calculated_at 18:12:40Z、admin API 200、admin UI /layer-holdings が 12 monthly rows を描画(overflow 0、screenshot outputs/cmd_4489_measurements/screenshots/layer-holdings-restored-data.png)、TTFB 177.6ms/LCP 428ms、API/CSV parity 3,525 全一致(2026-08 ALL GLD .43944/XLU .38611/TMV .17444、pf_count 75)。**殿 03:08『正常に表示』は admin で達成**。cron crn-daeqrp1t は Blueprint 同期で作成済み(35 9 1 * *) | 残=殿 03:24-27 視覚指摘(色・responsive・PF ナビ撤去→Compare Chart/Summary 型)=UI hotfix 疾風 走行 03:59〜、9 post_deploy_check 記録、hide 解除は殿裁定 |
 | 2✅/3✅/5 409 | 03:03 | 家老 | 手順 2: Settings/GlobalVisibilitySettings 両方の hidden_pages=[admin,layer-holdings]。手順 3: layer_table=True rows=0(migration 適用済み)。health 200。手順 5: POST /admin/layer-holdings=409『summary lacks validated all-portfolio coverage』(source_recalc_id=420=直近 run が全 PF 対象でない)=readiness 設計通りの拒否・旧結果保持 | I6 full recalc(run 421、03:02 開始、~480s)完了後に batch 再実行→6 admin/viewer→7 全 3,525 key→7b CDP→8 cron→9 post_deploy_check(queue/notes/layer_holdings_p4_20260907.md) |
 | 4 🟡→障害→復旧 | 02:42〜02:52 | 家老 | 手順 2(Global hide 登録)→main 合流 b8741168(LH 4 commit+A4 配線 756c69c0)→Render autoDeploy。**第 1 deploy 起動障害**: A4 etl_trigger.py が PyYAML を import(production requirements に不在)→ModuleNotFoundError、本番 BE 502 約 10 分(将軍観測 02:48〜02:52)。家老が Render logs で検出→c872b366(json 置換)→置換 deploy live 02:52:44(将軍 Render API 確認、/api/layer-holdings 401=認可経路生存)。手順 3(migration)の実施証跡は家老報告待ち | 手順 5〜9 の二値、post_deploy_check に障害記録。再発防止=deploy 前 import smoke(production venv)gate を hotfix 配備依頼(msg_025512) |
@@ -175,6 +176,7 @@ R3追加の月次接続契約（§4.4の続き）:
 
 ## §8 因果リンク
 
+- v0.13 2026-09-07 04:58 将軍。UI hotfix CLEAR 04:54(FE deploy eeb9249c live 19:49:36Z)、§7 行、320px の容器内横スクロール所見。
 - v0.12 2026-09-07 04:12 将軍。DB 事故復旧後の表示達成(§7 行)、UI hotfix 走行、cron 作成済み。
 - v0.11 2026-09-07 03:05 将軍。家老 03:03: hide 両保存元登録、migration 適用(rows 0)、batch 409(全 PF coverage 無し)→I6 full recalc 後に再実行。
 - v0.10 2026-09-07 02:56 将軍。手順 4: main 合流 b8741168→起動障害(A4 の PyYAML import)→c872b366 live 02:52:44。§7 行 4、§9.4 に import smoke 前提を追記予定(家老 hotfix 後)。
