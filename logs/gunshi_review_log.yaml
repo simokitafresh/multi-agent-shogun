@@ -14472,3 +14472,39 @@
     - 'AC2 修正: bc=yes→no。家老指摘に従いpre-deploy artifact欠落を正直にno'
     - 'status=failed。忍者が正直にFAIL報告'
     - 'AC1の独立検証結果は有価値'
+- adversarial_review:
+    reason: infra freshness regression test
+    required: false
+    verdict: N/A
+  brainwash_check: '7efa8929確認 freshness regression test precheck PASS #1no#2no#3no#4no#5no#6no#7no#8no'
+  cmd_id: cmd_karo_hotfix_ga594_infrastructure_freshness_20260907
+  confidence: HIGH
+  conflict_of_interest: none — files_modifiedにgunshi固有ファイルなし
+  finding_categories:
+  - assumptions
+  - numbers
+  - simulation
+  - premortem
+  - north_star
+  - ambiguity
+  - adversarial
+  gate_prediction: CLEAR
+  gate_prediction_reason: all checks passed
+  ninja: hanzo
+  observations:
+  - commit 7efa8929 GA-594 infrastructure freshness防御
+  - precheck ERRORS=0 CLEAR
+  - GA-593の横展開(infrastructure.md版)
+  - source-path freshness regression test追加
+  operational_simulation:
+    actual: add infra source-path freshness regression
+    command: git show 7efa8929 --stat
+    expected: infra freshness regression
+    result: PASS
+  report_fingerprint: 2eb31326307d03dc7317df742a1216f5fc56e324ec2bddb4043d5b964e39efd8
+  review_type: report
+  step3_5_verified: true
+  timestamp: '2026-09-07T06:43:00+09:00'
+  verdict: LGTM
+  verified_files:
+  - scripts/context_freshness_check.sh:1
