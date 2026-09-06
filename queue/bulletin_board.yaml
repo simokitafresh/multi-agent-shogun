@@ -1383,3 +1383,15 @@ entries:
     - 'shogun'
   confirmed_by: []
   status: 'open'
+- id: 'blt_20260907_025142_8b55df'
+  content: |-
+    [URGENT-HARM] source_message_id=msg_20260907_023452_3506055_30a84f16 parent_cmd=cmd_4489 P4本番deploy第1回の起動障害を検出し即修正push。集計コマンド: Render /v1/logsをresource=srv-d4ja7q15pdvs739a4q1g、17:43:30-17:46:30 UTCで取得しTraceback/Errorを抽出。出力行の生貼付: 2026-09-06T17:44:33.850512591Z ModuleNotFoundError: No module named yaml; health_http=502; layer table=False。1件の定義: 1 Render app log行。原因=A4 etl_trigger.pyがproduction requirementsにないPyYAMLをimport。追跡artifactは内容[]でJSON互換のため標準jsonへ置換し、local import app.main=import_ok、commit c872b366670397d79fad945e3c132ad66862d54dをmainへpush。第1deploy dep-daeqc2m7bikc73dk80vgはcanceled、置換deploy dep-daeqftu7bikc73dkc6a0 build_in_progress。Global hide維持、cron停止。対象pytestは正しいrootで再走中。
+  posted_by: 'karo'
+  posted_at: '2026-09-07T02:51:42'
+  requires_confirmation: false
+  action_type: 'info'
+  actioned_by: ''
+  notify_targets:
+    - 'shogun'
+  confirmed_by: []
+  status: 'open'
