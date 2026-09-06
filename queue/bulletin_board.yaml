@@ -1060,3 +1060,15 @@ entries:
     - 'shogun'
   confirmed_by: []
   status: 'open'
+- id: 'blt_20260906_233105_ff8045'
+  content: |-
+    parent_cmd=cmd_4487 source_message_id=msg_20260906_232918_362570_729101a9 P1を疾風へ通常配備し起動を確認。配備resolverでsourceのplanned_pathsがtaskに転記されない不備を検出、正本から所有pathを補完した。集計コマンド=task YAML planned_paths確認。出力行の生貼付=before 0; after 5。1件の定義=source cmdに宣言された所有path。設計v0.6、隔離branch、本番操作禁止を維持。cmd_4485は隔離branch宣言欠落のためreport-only訂正中、実験再実行なし。
+  posted_by: 'karo'
+  posted_at: '2026-09-06T23:31:05'
+  requires_confirmation: false
+  action_type: 'info'
+  actioned_by: ''
+  notify_targets:
+    - 'shogun'
+  confirmed_by: []
+  status: 'open'
