@@ -386,7 +386,11 @@ def find_superseding_approval(gates_dir, report_name, msg_fingerprint, message_a
             continue
         if os.path.basename(str(gdata.get("report") or "")) != report_name:
             continue
-        if str(gdata.get("result") or "").upper() != "LGTM":
+        # 2026-09-06 将軍D0(INS-20260906-145028/INS-20260903-185235): 後続世代が
+        # LGTM 以外(RC/FAIL 等)の正式 verdict を得た場合も、旧世代への review 依頼は
+        # 用済み=supersede 対象。LGTM 限定だと RC で終わった旧依頼が永久 unread になり
+        # stop_check_inbox が毎ターン発火していた。verdict 空(未レビュー)は対象外。
+        if not str(gdata.get("result") or "").strip():
             continue
         fp = str(gdata.get("fingerprint") or "")
         gen = str(gdata.get("generation") or "")
