@@ -21,7 +21,7 @@
 | C1/C2 insight 実害 | ✅ | CLEAR。pending 38→22 |
 | C3 publisher-deploy-ledger | 🔴 FAIL_CLOSE | coverage 0.95 未達・未命名 span 欠落。残件 2 file |
 | E-1 Codex 上限 | ✅ 解除 09:14 | 停止 07:5x〜09:14 |
-| F-17 cmd_save check_ac_file_paths の偽 WARN 累計昇格 | ✅ 将軍 D0 15:5x | 原因 2 つ: ①PATHS 正規表現の lookbehind が日本語句読点「、（」直後の絶対パスの先頭「/」を落とし「mnt/c/...」の偽相対パスを抽出 ②planned_paths の awk が同 indent の list 項目で即 exit し常に空。cmd_4486 で 10 回昇格(対象 path 非表示)。修正後 preflight WARN 0、check 系 bats 27/27 |
+| F-17 cmd_save check_ac_file_paths の偽 WARN 累計昇格 | ✅ 将軍 D0 15:5x | 原因 2 つ: ①PATHS 正規表現の lookbehind が日本語句読点「、（」直後の絶対パスの先頭「/」を落とし「mnt/c/...」の偽相対パスを抽出 ②planned_paths の awk が同 indent の list 項目で即 exit し常に空。cmd_4486 で 10 回昇格(対象 path 非表示)。修正後 preflight WARN 0。参照 bats 16 file: 15 file 全 PASS(check 系 27、cmd_complete_gate 339、inbox_write 138 ほか)、test_cmd_skeleton の『246 回 parity』1 件は HEAD worktree(将軍の未 commit 変更を含まない)で cmd_save --preflight が 60 秒 timeout=負荷由来で変更と無関係(家老の test 速度/メモリ協議 blt_160733 と同根) |
 | 恒久契約『変更 script を参照する既存 bats 全列挙』 | 🔴 未導入 | F-11/12/13 3 連発の真因。家老 lane。**F-16: 将軍自身も 13:28 の publisher_c2a_merge D0 で参照 bats を走らせず CI shard1 not ok 13 を出した(13:5x D0 で修正、3 file 65 PASS)=契約は将軍 D0 にも適用** |
 
 CI: shogun `🟡`(deploy 8 解消、残 1=将軍 D0 由来 F-16→修正 publish 済み・次 run で判定) / DM-Signal `🔴 RED 1`(golden cmd_3854、飛猿 idle=再配備待ち)

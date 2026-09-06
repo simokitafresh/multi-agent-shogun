@@ -409,7 +409,12 @@ cmd_source_path_is_planned() {
             in_paths {
                 current=$0
                 sub(/[^ ].*/, "", current)
-                if ($0 !~ /^[[:space:]]*$/ && length(current) <= length(indent)) exit
+                # 2026-09-06 将軍D0(F-17): 本 repo の YAML は list 項目を key と同じ indent に置く
+                # ("    planned_paths:" の直下が "    - path")。旧条件 length(current) <= length(indent)
+                # は同 indent の項目で即 exit し planned_paths が常に空=偽 WARN の一因だった。
+                # 同 indent でも "- " で始まる行は項目として読む。
+                if ($0 !~ /^[[:space:]]*$/ && length(current) <= length(indent) && $0 !~ /^[[:space:]]*-[[:space:]]+/) exit
+                if ($0 !~ /^[[:space:]]*$/ && length(current) < length(indent)) exit
                 if ($0 ~ /^[[:space:]]*-[[:space:]]+/) {
                     sub(/^[[:space:]]*-[[:space:]]+/, "")
                     print
@@ -5249,7 +5254,11 @@ check_ac_file_paths() {
     # 次のパスの先頭に誤結合し「/scripts/foo.sh」のような偽の絶対パスを生成していた
     # (path_exists_for_cmd_sourceがOS root直下を探索し実在ファイルを「不在」と誤判定)。
     # 先頭"/"は空白/行頭直後にのみ許可し、区切り文字直後の吸収を止める
-    PATHS=$(grep -oP '(?<![^\s("'\''\[])/[A-Za-z0-9_.-]+(/[A-Za-z0-9_.+-]+)+\.(py|tsx|ts|jsx|js|sh|bash|yaml|yml|json|sql|html|css|toml|cfg|env)|[A-Za-z0-9_.-]+(/[A-Za-z0-9_.+-]+)+\.(py|tsx|ts|jsx|js|sh|bash|yaml|yml|json|sql|html|css|toml|cfg|env)' <<< "$AC_BLOCK" | sort -u || true)
+    # 2026-09-06 将軍D0(F-17): 先頭"/"の直前を「ASCII英数・._)]」以外なら許可へ変更。旧規則は
+    # 空白/( " ' [ 以外を全て禁止していたため、日本語句読点「、（」直後の絶対パスが
+    # 先頭"/"を失い「mnt/c/...」の偽相対パスとして抽出され、親不在WARNが累計昇格していた
+    # (cmd_4486で10回)。誤吸収防止(注記)/B の意図はASCII英数・)・]直後の禁止で維持する。
+    PATHS=$(grep -oP '(?<![A-Za-z0-9_.)\]])/[A-Za-z0-9_.-]+(/[A-Za-z0-9_.+-]+)+\.(py|tsx|ts|jsx|js|sh|bash|yaml|yml|json|sql|html|css|toml|cfg|env)|(?<![/A-Za-z0-9_.-])[A-Za-z0-9_.-]+(/[A-Za-z0-9_.+-]+)+\.(py|tsx|ts|jsx|js|sh|bash|yaml|yml|json|sql|html|css|toml|cfg|env)' <<< "$AC_BLOCK" | sort -u || true)
     [[ -z "$PATHS" ]] && return 0
 
     # プロジェクトWDを取得: cmdブロックのproject → current_project → fallback
