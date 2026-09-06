@@ -1,10 +1,11 @@
 <!-- gist-master: b733364ac7dc058a20e7bd635e34ae73 dm-signal-layer-holdings-monthly-page-asis-tobe_20260906.md -->
-# DM-Signal 本番「Layer Holdings Monthly」ページ 新設 AsIs/ToBe 5W1H 設計書 v0.4(家老R3)
+# DM-Signal 本番「Layer Holdings Monthly」ページ 新設 AsIs/ToBe 5W1H 設計書 v0.6(家老R5)
 
 - 殿指示 2026-09-06 22:07『今後本番に Layer Holdings Monthly ページを新規で作りたい。まずは asis/tobe 5W1H の設計書を作ろう。家老にレビューして更新してもらい、将軍がレビューしてさらに更新する。更新するべき点がなくなるまで続ける』。
 - 版履歴(歴史修正禁止のため記録のみ): v0.1 22:20 将軍起草(一次情報=DM-Signal repo 現物+研究 lane の成果物)。v0.1.1 22:22 殿指示『gist 共有、軍師には artifact も共有(前提情報のずれ防止)』→前提 artifact URL を本文に明記。
 - v0.2 2026-09-06 22:24 家老R1。DM作業tree HEAD `6c61321277639354c5d9f95cdfd15d676462fdaf`と研究正本`0f2bfbcd`を区別して検分。以下のfile:行は特記なき限り作業tree。v0.1/v0.1.1の記録・artifact URLは保持。公開artifact取得は失敗したため同名ローカルHTMLと生成器を検分した（公開画面一致はU7）。
 - v0.3 2026-09-06 22:50 将軍R2。U5 を既存機構(recalculation_status 表・sync-status・etl_layer_sync_wait.sh)の接続で確定。新規の状態管理を足さない。
+- v0.5 2026-09-06 23:08 将軍R4。家老の配備懸念 2 点を確定: (1) P1 固定入力=`0f2bfbcd:analysis_runs/cmd_4479_holdings_monthly/input_snapshot_raw.json`(99.9MB、sha256 729ec9a6…)を job の `--input-json` で読む (2) 共通 readiness=`backend/app/services/layer_holdings_readiness.py`。
 - **前提wireframe HTML**: https://gist.github.com/6ae60a9c0f84efcb8c15bb503951f9fa 。表示用 https://htmlpreview.github.io/?https://gist.githubusercontent.com/simokitafresh/6ae60a9c0f84efcb8c15bb503951f9fa/raw/layer-holdings-monthly.html 。repo正本docs/dashboard/layer-holdings-monthly.htmlと設計書gist b733364ac7dc058a20e7bd635e34ae73を対で読む。旧artifact URLは来歴に限り保持し、以後のレビュー入口にしない。
 - 前書: 研究 lane の 1 表 `layer_holdings_monthly.csv` は `docs/research/dm-signal-market-direction-breadth-exposure-asis-tobe_20260905.md` v1.1、その入力 F1 は `docs/research/dm-signal-research-data-foundation-asis-tobe_20260905.md` v0.10。本書はそれを**本番ページ**にする設計だけを扱う。
 - 実装は本書が家老・将軍の往復で「更新点なし」に到達し、殿の go が出てから cmd 単位で行う。**本番 DB 書込・DDL・deploy は殿の明示 OK のみ**(殿 09-05 22:25)。
@@ -149,6 +150,8 @@ R3追加の月次接続契約（§4.4の続き）:
 
 ## §8 因果リンク
 
+R5履歴（v0.6、2026-09-06 23:08家老）: 更新3点=固定JSONの実キー/列/件数確定、mode=portfolio負例の矛盾是正、解消済み配備懸念の文言更新。固定入力はhash一致・parse成功。残る設計上の未確定事項なしと判断するが、更新ありのため将軍R6で再確認する。
+
 R3履歴（v0.4、2026-09-06 22:50家老）: 更新6点=modeとscope分離、summary成功根拠、interrupted/正常returnの失敗区別、古い成功へのfallback防止、UTC日付整合、再計算との排他。R2の「mode full+completedなら十分」「+6行」「JSTのままwait流用」は本仕様で訂正。将軍R4へ、未実装の受入検証は上記6項目。
 
 
@@ -171,8 +174,8 @@ R3履歴（v0.4、2026-09-06 22:50家老）: 更新6点=modeとscope分離、sum
 | planned_paths | `backend/app/db/models.py`(+`LayerHoldingsMonthly` 1 class)、`backend/alembic/versions/<rev>_layer_holdings_monthly.py`(新規、up/down)、`backend/app/jobs/layer_holdings_batch.py`(新規)、`backend/tests/test_layer_holdings_batch.py`(契約 test、新規) |
 | 表定義(固定) | `layer_holdings_monthly`: PK(`year_month` String, `layer` String, `ticker` String)、`weight` Float、`pf_count` Integer、`is_mtd` Boolean、`calculated_at` UTCDateTime(全行同一)、`source_recalc_id` Integer nullable(参照した `recalculation_status.id`、P4 の AC7 証跡) |
 | job の入出力(固定) | 入力: `portfolios(id,name,type)`、`monthly_returns(portfolio_id,year_month,holding_signal,monthly_return)`。母集団=`expected_names()` の 75 名と一致する PF のみ。展開=`_resolve_weights` と同じ同月 MonthlyReturn 再帰(monthly_return 非 NULL 行のみ、child 欠損/循環は集計失敗=旧結果保持)。出力=(year_month, layer∈L0..L3+ALL, ticker)→weight=Σweight÷pf_count、pf_count=distinct portfolio_id。`is_mtd`=as-of 月(Asia/Tokyo 今日の月)のみ true。書込=新表のみ、同一 transaction で DELETE 全行→INSERT |
-| 起動 I/F(固定) | `python -m app.jobs.layer_holdings_batch [--as-of YYYY-MM-DD] [--dry-run]`。`--dry-run` は書かず件数と検証結果を stdout(JSON 1 行) |
-| 検算(cmd内) | U1固定CSVと同一の入力世代を示すfixture/保存データを使う。現在DBのdumpにas-of指定だけで固定CSV一致を要求しない。固定入力が保存されていなければP1着手時に不足を特定し、入力・出力の新しい一致基準をレビューへ返す。丸め表示値で代用しない |
+| 起動 I/F(固定) | `python -m app.jobs.layer_holdings_batch [--as-of YYYY-MM-DD] [--dry-run] [--input-json <path>]`。`--dry-run` は書かず件数と検証結果を stdout(JSON 1 行)。`--input-json` は DB を読まず固定 JSON(§検算)を入力にする(検算専用。本番 cron/endpoint は使わない) |
+| 検算(cmd内) | 固定入力=0f2bfbcd:analysis_runs/cmd_4479_holdings_monthly/input_snapshot_raw.json。99,913,389 bytes、SHA256 729ec9a6117a894ee9f30ea03d77dca8485a43893d89cba420996e9c6827ca2a。R5で全JSON parseとhash一致を確認。トップレベルはportfolios(101行、id/name/type)、monthly(16,298行、portfolio_id/year_month/holding_signal/monthly_return)、signals/display/changes/daily。job入力adapterはportfoliosとmonthlyのみを共通内部形へ渡し、monthly_returnsというJSONキーを期待しない。--input-json時はDB接続0、--dry-run --as-of 2026-09-06で同世代CSV3,525行と全key突合。testsへ巨大JSONを複製せず、常設契約は小さな合成fixture(正/child欠損/循環)を使う |
 | AC(二値) | AC1: 突合 3,525 行・key 集合一致・pf_count 一致・is_mtd 一致・weight 差 max ≤1e-9(生出力: `rows=3525 keys_match=true maxdiff=<値>`) / AC2: 各 (year_month, layer) Σweight=1±1e-9 違反 0、pf_count ≤12/21/21/21/75 / AC3: job の SQL log で新表以外への DML 0、同入力で再実行=calculated_at 以外一致、child 欠損 fixture で例外→rollback→旧行残存 / AC6: 契約 test = AC2 と AC3(欠損時 rollback)の 2 本以上、FAIL 0 SKIP 0 / migration: `alembic upgrade head`→`downgrade -1` で新表のみ作成・削除、他表の DDL 差分 0 |
 | 見積 | job ≤250 行、migration ≤60 行、models +20 行(上限ではなく見積) |
 
@@ -181,7 +184,7 @@ R3履歴（v0.4、2026-09-06 22:50家老）: 更新6点=modeとscope分離、sum
 |---|---|
 | task_type | implement(DM-Signal backend) |
 | 依存 | P1 の表定義(§9.1 は固定なので **P1 と並行可**。P1 branch を base にせず、同じ表定義を前提に書く) |
-| planned_paths | backend/app/api/layer_holdings.py、backend/app/main.py、backend/app/api/etl_trigger.py、backend/app/utils/recalc_status.py、backend/tests/test_layer_holdings_api.py。既存summaryのscope/result記録と共通readiness、既存advisory lockの安全な利用を実装する（辞書+6行だけとはしない） |
+| planned_paths | backend/app/api/layer_holdings.py、backend/app/main.py、backend/app/api/etl_trigger.py、backend/app/utils/recalc_status.py、backend/app/services/layer_holdings_readiness.py（新規共通関数）、backend/tests/test_layer_holdings_api.py、backend/tests/test_layer_holdings_readiness.py。readiness試験は全PF portfolio/full成功を適格、特定PF full・scope欠落・古いrun・running・後続interruptedを不適格とする。§4.4のcancelled/errors/日付境界/排他も保持。modeだけで拒否しない。sync-statusとPOSTが同じ関数を呼ぶ |
 | GET payload(固定) | `ApiResponse.data = {layers:[L0,L1,L2,L3,ALL], months:[...], data:{layer:{ym:{ticker:weight}}}, pf:{layer:{ym:count}}, mtd:[ym...], calculated_at}`。丸めない。表が空なら 503 `{"message":"layer holdings not calculated yet"}` |
 | GET の順序(固定) | `limiter` decorator → `require_viewer`(Depends) → `enforce_page_visible(db, "layer-holdings", is_admin, tier_id)` → 読取 → `make_response_with_etag`。If-None-Match でも認可を先に通す(viewer hidden なら 304 ではなく 403) |
 | POST /admin/layer-holdings(固定) | require_admin。§4.4/R3共通readinessを使う。対象月初runのsummary.scope=all、必要coverage、completed、cancelled=false、errors=0、start/end時刻と後続未完了runなしを検証。mode fullで全PFと推測せず全PF portfolioを許可。同じ再計算advisory lockを保持して判定・snapshot読取・job commitまで行い、未適格409。成功はrows/calculated_at/source_recalc_idを返す |
@@ -217,7 +220,7 @@ R3履歴（v0.4、2026-09-06 22:50家老）: 更新6点=modeとscope分離、sum
 - レビュー: 軍師一次→家老。AC の生出力行がない報告は差戻し(1 回で通す型)。
 - P4 は cmd ではなく家老 lane の runbook(§9.4)。殿 OK が無い間は着手しない。
 
-§9取り込み時の家老補正: R3のscope/result/UTC/排他条件をP2へ反映。source_recalc_idは新結果表の監査列として§1/§4.1も更新する。P1の固定入力fixtureの所在、P2のreadiness関数配置は配備時に明示する必要がある。並行実装では各branchの所有pathを分け、統合検証はP1/P2/P3の統合時に1回行う。
+§9配備条件（R5確認）: 固定入力の所在・hash・実キーは§9.1で実測済み、共通readiness配置は§9.2で確定。P1/P2/P3は所有pathを分けて並行実装し、統合検証は統合時に1回行う。source_recalc_idは新結果表の監査列で§1/§4.1と一致。input-jsonの巨大fixtureは同世代検算専用、通常の契約テストは合成fixtureで回す。
 
 
 
