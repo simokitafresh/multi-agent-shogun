@@ -19388,3 +19388,59 @@ insights:
   source: "semantic_index_update"
   fix_known: false
   status: pending
+- id: INS-20260906-212425836-25d5
+  ts: "2026-09-06T21:24:25+09:00"
+  insight: "semantic_index_update新概念候補: discussion:もう一度その前提で三者協議せよ は 既存aliasesに一致なし。概念定義とaliases追加を検討せよ"
+  priority: "low"
+  source: "semantic_index_update"
+  fix_known: false
+  status: pending
+- id: INS-20260906-212427768-29ae
+  ts: "2026-09-06T21:24:27+09:00"
+  insight: "[[30分ごとのloop指示がどんどん肥大化していないか？]] semantic_stress_test candidate_aliases: NO_MATCH source=lord query=30分ごとのloop指示がどんどん肥大化していないか？"
+  priority: "low"
+  source: "semantic_stress_test"
+  fix_known: false
+  status: pending
+- id: INS-20260906-212428994-603f
+  ts: "2026-09-06T21:24:28+09:00"
+  insight: "[[忍者のfail率が高いな]] semantic_stress_test candidate_aliases: NO_MATCH source=lord query=忍者のfail率が高いな。何か原因があるはずだ。家老と協議して対策をしよう"
+  priority: "low"
+  source: "semantic_stress_test"
+  fix_known: false
+  status: pending
+- id: INS-20260906-212430119-18a4
+  ts: "2026-09-06T21:24:30+09:00"
+  insight: "[[iinbox3]] semantic_stress_test candidate_aliases: NO_MATCH source=lord query=iinbox3"
+  priority: "low"
+  source: "semantic_stress_test"
+  fix_known: false
+  status: pending
+- id: INS-20260906-212430940-452e
+  ts: "2026-09-06T21:24:30+09:00"
+  insight: "[[入力待ちにすると家老がボトルネックになるのでは？素直に忍者の権限で出来ることだけを要求すればいい]] semantic_stress_test candidate_aliases: NO_MATCH source=lord query=入力待ちにすると家老がボトルネックになるのでは？素直に忍者の権限で出来ることだけを要求すればいい。もしくはニンジャの権限を拡大するかだ"
+  priority: "low"
+  source: "semantic_stress_test"
+  fix_known: false
+  status: pending
+- id: INS-20260906-212431688-e61e
+  ts: "2026-09-06T21:24:31+09:00"
+  insight: "[[§2 3 不整合 I 別の状態は更新されているか？]] semantic_stress_test candidate_aliases: NO_MATCH source=lord query=§2.3 不整合 I 別の状態は更新されているか？"
+  priority: "low"
+  source: "semantic_stress_test"
+  fix_known: false
+  status: pending
+- id: INS-20260906-212432339-e1a0
+  ts: "2026-09-06T21:24:32+09:00"
+  insight: "[[X投稿は順調か？夕方の投稿がされていないようだ]] semantic_stress_test candidate_aliases: NO_MATCH source=lord query=X投稿は順調か？夕方の投稿がされていないようだ"
+  priority: "low"
+  source: "semantic_stress_test"
+  fix_known: false
+  status: pending
+- id: INS-20260906-212432924-7717
+  ts: "2026-09-06T21:24:32+09:00"
+  insight: "[[ない]] semantic_stress_test candidate_aliases: NO_MATCH source=lord query=１．ない。あくまで俺の個人プロジェクトであり、部分的に閲覧することを俺が許可してる仕組みだ。2.gistに下書きがあった気がする"
+  priority: "low"
+  source: "semantic_stress_test"
+  fix_known: false
+  status: pending
