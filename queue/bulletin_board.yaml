@@ -7,6 +7,7 @@ entries:
   requires_confirmation: false
   action_type: 'info'
   actioned_by: ''
+  notify_targets: []
   confirmed_by: []
   status: 'open'
 - id: 'blt_20260906_163700_3d319c'
@@ -17,6 +18,7 @@ entries:
   requires_confirmation: false
   action_type: 'info'
   actioned_by: ''
+  notify_targets: []
   confirmed_by: []
   status: 'open'
 - id: 'blt_20260906_163639_a44d40'
@@ -27,6 +29,7 @@ entries:
   requires_confirmation: false
   action_type: 'info'
   actioned_by: ''
+  notify_targets: []
   confirmed_by: []
   status: 'open'
 - id: 'blt_20260906_155951_07f376'
@@ -41,6 +44,7 @@ entries:
   requires_confirmation: false
   action_type: 'action_required'
   actioned_by: 'shogun D0 8b38e7491 / gate accuracy sample=2 監視のみ'
+  notify_targets: []
   confirmed_by: []
   status: 'open'
 - id: 'blt_20260906_150648_9c6811'
@@ -51,6 +55,7 @@ entries:
   requires_confirmation: false
   action_type: 'info'
   actioned_by: ''
+  notify_targets: []
   confirmed_by:
     - 'shogun'
   status: 'open'
@@ -62,6 +67,7 @@ entries:
   requires_confirmation: false
   action_type: 'info'
   actioned_by: ''
+  notify_targets: []
   confirmed_by: []
   status: 'open'
 - id: 'blt_20260906_134006_97e4e9'
@@ -72,6 +78,7 @@ entries:
   requires_confirmation: false
   action_type: 'info'
   actioned_by: ''
+  notify_targets: []
   confirmed_by: []
   status: 'open'
 - id: 'blt_20260906_120256_0d250e'
@@ -82,6 +89,7 @@ entries:
   requires_confirmation: false
   action_type: 'info'
   actioned_by: ''
+  notify_targets: []
   confirmed_by:
     - 'shogun'
   status: 'open'
@@ -93,6 +101,7 @@ entries:
   requires_confirmation: false
   action_type: 'info'
   actioned_by: ''
+  notify_targets: []
   confirmed_by: []
   status: 'open'
 - id: 'blt_20260906_095510_457a77'
@@ -103,6 +112,7 @@ entries:
   requires_confirmation: false
   action_type: 'info'
   actioned_by: ''
+  notify_targets: []
   confirmed_by: []
   status: 'open'
 - id: 'blt_20260906_094712_2841cf'
@@ -113,6 +123,7 @@ entries:
   requires_confirmation: false
   action_type: 'info'
   actioned_by: ''
+  notify_targets: []
   confirmed_by: []
   status: 'open'
 - id: 'blt_20260906_070812_c775a6'
@@ -123,6 +134,7 @@ entries:
   requires_confirmation: false
   action_type: 'info'
   actioned_by: ''
+  notify_targets: []
   confirmed_by: []
   status: 'open'
 - id: 'blt_20260906_064751_90189b'
@@ -133,6 +145,7 @@ entries:
   requires_confirmation: false
   action_type: 'info'
   actioned_by: ''
+  notify_targets: []
   confirmed_by: []
   status: 'open'
 - id: 'blt_20260906_064435_0c4745'
@@ -143,6 +156,7 @@ entries:
   requires_confirmation: false
   action_type: 'info'
   actioned_by: ''
+  notify_targets: []
   confirmed_by: []
   status: 'open'
 - id: 'blt_20260906_054516_06e166'
@@ -153,6 +167,7 @@ entries:
   requires_confirmation: false
   action_type: 'info'
   actioned_by: ''
+  notify_targets: []
   confirmed_by: []
   status: 'open'
 - id: 'blt_20260906_050654_dbb162'
@@ -163,6 +178,7 @@ entries:
   requires_confirmation: false
   action_type: 'info'
   actioned_by: ''
+  notify_targets: []
   confirmed_by: []
   status: 'open'
 - id: 'blt_20260906_050523_937867'
@@ -173,6 +189,7 @@ entries:
   requires_confirmation: false
   action_type: 'info'
   actioned_by: ''
+  notify_targets: []
   confirmed_by: []
   status: 'open'
 - id: 'blt_20260906_045944_68f99c'
@@ -183,6 +200,7 @@ entries:
   requires_confirmation: false
   action_type: 'info'
   actioned_by: ''
+  notify_targets: []
   confirmed_by: []
   status: 'open'
 - id: 'blt_20260906_042630_95e5d9'
@@ -193,6 +211,7 @@ entries:
   requires_confirmation: false
   action_type: 'info'
   actioned_by: ''
+  notify_targets: []
   confirmed_by: []
   status: 'open'
 - id: 'blt_20260906_040854_412c0b'
@@ -203,6 +222,7 @@ entries:
   requires_confirmation: false
   action_type: 'info'
   actioned_by: ''
+  notify_targets: []
   confirmed_by: []
   status: 'open'
 - id: 'blt_20260906_033024_361186'
@@ -213,6 +233,7 @@ entries:
   requires_confirmation: false
   action_type: 'info'
   actioned_by: ''
+  notify_targets: []
   confirmed_by: []
   status: 'open'
 - id: 'blt_20260906_031132_e49567'
@@ -223,6 +244,7 @@ entries:
   requires_confirmation: false
   action_type: 'info'
   actioned_by: ''
+  notify_targets: []
   confirmed_by: []
   status: 'open'
 - id: 'blt_20260906_030455_5093d5'
@@ -233,6 +255,7 @@ entries:
   requires_confirmation: false
   action_type: 'info'
   actioned_by: ''
+  notify_targets: []
   confirmed_by: []
   status: 'open'
 - id: 'blt_20260906_025845_8ab0cb'
@@ -243,6 +266,7 @@ entries:
   requires_confirmation: false
   action_type: 'info'
   actioned_by: ''
+  notify_targets: []
   confirmed_by: []
   status: 'open'
 - id: 'blt_20260906_024333_3f7771'
@@ -253,6 +277,7 @@ entries:
   requires_confirmation: false
   action_type: 'info'
   actioned_by: ''
+  notify_targets: []
   confirmed_by: []
   status: 'open'
 - id: 'blt_20260906_005614_efde8e'
@@ -263,6 +288,7 @@ entries:
   requires_confirmation: false
   action_type: 'info'
   actioned_by: ''
+  notify_targets: []
   confirmed_by: []
   status: 'open'
 - id: 'blt_20260906_002003_34991f'
@@ -273,6 +299,7 @@ entries:
   requires_confirmation: false
   action_type: 'info'
   actioned_by: ''
+  notify_targets: []
   confirmed_by: []
   status: 'open'
 - id: 'blt_20260906_001950_05a28f'
@@ -283,6 +310,7 @@ entries:
   requires_confirmation: false
   action_type: 'info'
   actioned_by: ''
+  notify_targets: []
   confirmed_by: []
   status: 'open'
 - id: 'blt_20260906_001224_d37b57'
@@ -293,6 +321,7 @@ entries:
   requires_confirmation: false
   action_type: 'info'
   actioned_by: ''
+  notify_targets: []
   confirmed_by: []
   status: 'open'
 - id: 'blt_20260906_000430_c82d4e'
@@ -303,5 +332,30 @@ entries:
   requires_confirmation: false
   action_type: 'info'
   actioned_by: ''
+  notify_targets: []
+  confirmed_by: []
+  status: 'open'
+- id: 'blt_20260906_171234_c7b7b2'
+  content: |-
+    cmd_4486 P04完了。最終source2ece0652をmain694ab621へ正規C2A公開し包含確認。集計コマンド=completion_tail.log末尾+archive.done.exists+task.status。出力行の生貼付=GATE CLEAR durable_worker_receipt_verified; archive_done True; hanzo_status idle; archive_terminal marker=present active_reports=0。1件の定義=cmd_4486現世代のゲート/退避/解放1件、全て成立。設計書§2.1更新済み。84候補/除外149は静的監査結果であり撤去承認なし、P06/P07入力へ。
+  posted_by: 'karo'
+  posted_at: '2026-09-06T17:12:34'
+  requires_confirmation: false
+  action_type: 'info'
+  actioned_by: ''
+  notify_targets:
+    - 'shogun'
+  confirmed_by:
+    - 'shogun'
+  status: 'closed'
+- id: 'blt_20260906_172101_f8628c'
+  content: |-
+    GATE CLEAR cmd_karo_hotfix_readonly_probe_contract_20260906: 完了
+  posted_by: 'karo'
+  posted_at: '2026-09-06T17:21:01'
+  requires_confirmation: false
+  action_type: 'info'
+  actioned_by: ''
+  notify_targets: []
   confirmed_by: []
   status: 'open'
