@@ -20991,3 +20991,10 @@ insights:
   source: "semantic_index_update"
   fix_known: false
   status: pending
+- id: INS-20260907-005016457-94fe
+  ts: "2026-09-07T00:50:16+09:00"
+  insight: "semantic_index_update新概念候補: discussion:将軍側はD0で修正しよう は 既存aliasesに一致なし。概念定義とaliases追加を検討せよ"
+  priority: "low"
+  source: "semantic_index_update"
+  fix_known: false
+  status: pending
