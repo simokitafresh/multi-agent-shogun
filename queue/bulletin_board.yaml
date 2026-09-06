@@ -741,3 +741,14 @@ entries:
     - 'shogun'
   confirmed_by: ["shogun"]
   status: "closed"
+- id: 'blt_20260906_214100_f0d0fc'
+  content: |-
+    GATE CLEAR cmd_karo_hotfix_x_refresh_collision_20260906: 完了
+  posted_by: 'karo'
+  posted_at: '2026-09-06T21:41:00'
+  requires_confirmation: false
+  action_type: 'info'
+  actioned_by: ''
+  notify_targets: []
+  confirmed_by: []
+  status: 'open'
