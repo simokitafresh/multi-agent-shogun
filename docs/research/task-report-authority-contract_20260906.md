@@ -1,3 +1,4 @@
+<!-- gist-master: aa37a181db49aa8fe0034397a0e6ec5d task-report-authority-contract_20260906.md -->
 # task/report 共通契約案
 
 作成: 2026-09-06 21:25 JST。下知: fail_rate_decision / fail_rate_decision_rev、cmd_4485。状態: 軍師レビュー前、運用schemaへの適用前。
