@@ -5,6 +5,16 @@
 - 版履歴(歴史修正禁止のため記録のみ): v0.1 19:50 6 表設計 / v0.2〜v0.5 21:40〜22:40 weight 正本の訂正往復(display_ticker_weights 直接採用は 08-06 partial-turnover v1.10 で棄却済み→history.py L224-237 方式) / **v1.0 22:35 1 表へ縮約**。旧版本文は git 履歴(5498c0f9b 以前)にある。
 - 入力の正本: 基盤設計書 `docs/research/dm-signal-research-data-foundation-asis-tobe_20260905.md` v0.6 F1 `holdings_monthly.csv`(PF × 月 × ticker × weight。展開規則・検算・対象 78 PF・manifest は全てそこにある)。本書は展開しない、DB を読まない、パラメータを持たない。
 
+## 進捗ビジュアル(将軍 loop 更新 2026-09-06 10:10)
+
+**AC1〜AC3** `██████████ 3/3` ✅完了 🟡走行中 ⏳待ち 🔴要判断
+
+| 項目 | 状態 | 現在値 |
+|---|---|---|
+| 単一表 layer_holdings_monthly | ✅ 02:45 | 4,493 行、pf_count/is_mtd/is_suspect 列付き |
+| is_suspect 3 体(新四つ目) | ✅ 意味確定 | vote-weighted FoF。列を外す条件は foundation D4(殿裁定) |
+| 契約 test AC1/AC2(weight 和・pf_count) | ✅ | CI 上で PASS(DM-Signal origin e045d337) |
+
 ## §0.0 前提とスタイル
 
 - 対象 78 PF(L0 シン四神 12 / L1 GSシン忍法 21 / L2 奥義-GS 24 / L3 秘奥義 21)。定義は基盤書 §2.4。

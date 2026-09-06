@@ -4,6 +4,16 @@
 一次確認: 2026-09-05 23:26:06 JST。殿「同様にアップデートせよ」に基づく配備設計。
 旧v2.5全文は `docs/research/karo-throughput-v2-5-evidence-20260905.md` に保存。既存gist IDと過去の観測時刻を保持する。
 
+## 進捗ビジュアル(将軍 loop 更新 2026-09-06 10:10)
+
+**K カード** `█░░░░░░░░░ 1/8` ✅完了 🟡走行中 ⏳待ち 🔴要判断
+
+| 項目 | 状態 | 現在値 |
+|---|---|---|
+| K2 deploy 準備・Python wrapper | ✅ 結論+fix CLEAR 09:54 | wrapper noop p50 5ms=律速でない。external worktree 準備が約 2 倍→preflight.sh の v9fs materialize で **p50 4553→1579ms(65% 短縮)** |
+| K0/K1/K3〜K7 | ⏳ 未配備 | K2 の結果を受け家老が次カードを選ぶ |
+| 日次表 karo_throughput_daily/2026-09-06.md | 🟡 毎 tick 更新 | gate_clear=23、held_event 242 |
+
 ## §0 家老が最初に見る結論
 
 | 判断 | 現在の結論 |

@@ -4,6 +4,19 @@
 - 出自: `dm-signal-research-data-foundation-asis-tobe_20260905.md` v0.4 の F2〜F4・A1〜A11・D2〜D4 を、殿 22:29『複雑さはすべて捨てろ』と家老 R2-6『F1 主設計書に残さない。情報は削除せず別 backlog へ』により移設。本文は v0.4(commit 5498c0f9b)から移したもので、内容の再検討はしていない。
 - 着手条件: 殿が個別に指示した時だけ。本 backlog から自動的に cmd を起票しない。
 
+## 進捗ビジュアル(将軍 loop 更新 2026-09-06 10:10)
+
+**I8 根因/B1〜B5** `██░░░░░░░░ 1/6` ✅完了 🟡走行中 ⏳待ち 🔴要判断
+
+| 項目 | 状態 | 現在値 |
+|---|---|---|
+| I8 新四つ目 parity 104 | ✅ 根因確定 | 102=投票比例 weight、残 2=015e74dc/0206995c の 2014-04(root signal 不在) |
+| B1 F2 holding_signal_expanded | ⏳ 記録のみ | D4 裁定後 |
+| B2 F3 signal_decision_ledger | ⏳ 中立 | 変更なし |
+| B3 F4 layer_of 一元化 | ⏳ 記録のみ | |
+| B4 A1〜A11 | ⏳ 記録のみ | |
+| B5 I1〜I8 | 🟡 | I8 のみ動いた。I1〜I7 は据え置き |
+
 ## B1 F2 `holding_signal_expanded`(monthly_returns に展開後 JSON 列を併記)
 - F1 が外部 long table として機能すれば不要(同じ情報)。F1 を DB 表へ昇格する第 2 段で「long table か列追加か」を 1 回だけ決める。二重に持たない。
 

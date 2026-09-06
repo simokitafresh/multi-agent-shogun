@@ -4,6 +4,24 @@
 更新: 2026-09-05 23:21:40 JST(家老 v3.1)。将軍追記 2026-09-06 00:40: §5 台帳に W0/W1 CLEAR、F-6 APPROVE、K2 走行、W5 閉を反映。一次確認の観測時点は23:13:50 JST。殿「読み込み覚醒してアップデート。家老が忍者を配備しやすい形式にしてよい」に基づく設計更新。
 正本は本書。既存gist IDを維持。旧v3.0の全数値・分類・レビュー履歴は `docs/research/ninja-block-fail-root-cause-v3-evidence-20260905.md` に保存した。過去の観測日時は変更しない。
 
+## 進捗ビジュアル(将軍 loop 更新 2026-09-06 10:10)
+
+**W カード** `██████░░░░ 4/7` ✅完了 🟡走行中 ⏳待ち 🔴要判断
+
+| 群 | 状態 | 現在値 |
+|---|---|---|
+| W0/W1 契約/W1 core/W4/W5 | ✅ | 一意根拠表・routine_refs 注入・canonical 記録・バグ#6 は全て CLEAR |
+| W2/T1・W3/T2・W6 | ⏳ | W2 は P-4 CLEAR 後。W6 は既存監視で停滞なし |
+| F-6〜F-12 | ✅ | gate 偽 BLOCK/recon-dual 契約/K2 偽 CLEAR/insight 自動消火/hotfix 契約回帰 2 件=全て根治・CI 層 B 0 |
+| F-13 deploy_task 系 CI RED(deploy 8+FP 1) | 🟡 | 影丸 ci_fix 保存済み。P-4 の file 予約解除待ち |
+| P-4 recon_dual 投影・fixed base | 🟡 RC | 本体 3d2b6c4d9 収載済み。未収載 test commit cb3d9af23 を小太郎が 3-way 再構成中 |
+| C1/C2 insight 実害 | ✅ | CLEAR。pending 38→22 |
+| C3 publisher-deploy-ledger | 🔴 FAIL_CLOSE | coverage 0.95 未達・未命名 span 欠落。残件 2 file |
+| E-1 Codex 上限 | ✅ 解除 09:14 | 停止 07:5x〜09:14 |
+| 恒久契約『変更 script を参照する既存 bats 全列挙』 | 🔴 未導入 | F-11/12/13 3 連発の真因。家老 lane |
+
+CI: shogun `🔴 RED`(deploy 8+FP 1+flaky 3、層 B 9 は解消) / DM-Signal `🔴 RED 1`(golden cmd_3854、飛猿 ci_fix)
+
 ## §0 家老が最初に見る結論
 
 | 判断 | 現在の結論 |

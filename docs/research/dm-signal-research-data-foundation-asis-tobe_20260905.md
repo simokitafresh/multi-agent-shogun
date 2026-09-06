@@ -5,6 +5,17 @@
 - 本書の範囲: **F1 `holdings_monthly.csv` の生成・検算・provenance だけ。** それ以外(ledger の扱い、階層関数、アイデア、本番不整合一覧)は `docs/research/dm-signal-research-data-backlog_20260905.md` に移した(記録のみ、実装しない)。
 - 消費者: `dm-signal-market-direction-breadth-exposure-asis-tobe_20260905.md` v1.1(1 表 layer_holdings_monthly)。
 
+## 進捗ビジュアル(将軍 loop 更新 2026-09-06 10:10)
+
+**D1〜D4** `████████░░ 3/4` ✅完了 🟡走行中 ⏳待ち 🔴要判断
+
+| 項目 | 状態 | 現在値 |
+|---|---|---|
+| D1 F1 holdings_monthly(cmd_4479) | ✅ | approved_honest_fail 終端。CSV 23,175 行、parity 104 不一致(I8) |
+| D2 I8 根因偵察(cmd_4480 A1/A2/AC3) | ✅ 03:04 | explained 102(投票比例 FoF weight vs 1/N)+unexplained 2(2014-04 初月)=104 |
+| D3 市場 1 表(cmd_4481) | ✅ 02:45 | layer_holdings_monthly.csv 4,493 行。2026-08 ALL: GLD .439/XLU .386/TMV .174 |
+| D4 第 2 段の置き場(F1 を fof_component_weights.target_weight 読取へ拡張) | 🔴 殿裁定待ち | 拡張すれば 102 件が再現可。本番書込なし |
+
 ## §0.0 前提とスタイル
 
 - 対象は DM-Signal 本番 Postgres(Render)。数値は 2026-09-05 21:24〜22:30 に readonly launcher で実測(nonce *-ro1〜ro9)。
