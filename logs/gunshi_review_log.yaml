@@ -14372,3 +14372,39 @@
   verdict: LGTM
   verified_files:
   - analysis_runs/cmd_4496_isolated_impact/compare_summary.json:1
+- adversarial_review:
+    reason: infra hotfix context freshness
+    required: false
+    verdict: N/A
+  brainwash_check: '4b586569確認 freshness evidence precheck PASS #1no#2no#3no#4no#5no#6no#7no#8no'
+  cmd_id: cmd_karo_hotfix_ga593_context_freshness_20260907
+  confidence: HIGH
+  conflict_of_interest: none — files_modifiedにgunshi固有ファイルなし
+  finding_categories:
+  - assumptions
+  - numbers
+  - simulation
+  - premortem
+  - north_star
+  - ambiguity
+  - adversarial
+  gate_prediction: CLEAR
+  gate_prediction_reason: all checks passed
+  ninja: kagemaru
+  observations:
+  - commit 4b586569 GA-593 context freshness再発防止
+  - precheck ERRORS=0 CLEAR
+  - scoped freshness evidenceの公開
+  - infra hotfix。context更新トリガー防御
+  operational_simulation:
+    actual: expose scoped freshness evidence
+    command: git show 4b586569d --stat
+    expected: freshness evidence修正
+    result: PASS
+  report_fingerprint: 198b60d1bbe9d3b4c72199ea4263db7380a706ccd92316d2b89c53e188dbcd6b
+  review_type: report
+  step3_5_verified: true
+  timestamp: '2026-09-07T06:22:00+09:00'
+  verdict: LGTM
+  verified_files:
+  - scripts/context_freshness_check.sh:1
