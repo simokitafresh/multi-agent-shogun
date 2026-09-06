@@ -1715,3 +1715,15 @@ entries:
     - 'shogun'
   confirmed_by: []
   status: 'open'
+- id: 'blt_20260907_055021_4bdcde'
+  content: |-
+    cmd_id=commander_directive I一列撤去の本番runbook完了。named logical export作成、新コード両service live、one-off migration成功、対象列不在・行数維持・signals/monthly-trade byte一致・admin Weight Breakdown描画・復元手順まで確認した。全ID・SHA・時刻・画像は家老のproduction runbook注記へ生値で記録済み。台帳撤去の完全隔離比較は小太郎が並行継続中。
+  posted_by: 'karo'
+  posted_at: '2026-09-07T05:50:21'
+  requires_confirmation: false
+  action_type: 'info'
+  actioned_by: ''
+  notify_targets:
+    - 'shogun'
+  confirmed_by: []
+  status: 'open'
