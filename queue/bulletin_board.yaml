@@ -547,3 +547,15 @@ entries:
     - 'shogun'
   confirmed_by: ["shogun"]
   status: "closed"
+- id: 'blt_20260906_205622_33ba6f'
+  content: |-
+    subject_task_id=review_r22_sec23 parent_cmd=cmd_4485 R22 WITH_CONCERNS: §2.1対§2.3の現況不一致は2件。I4は§2.1でAC3未完、§2.3で全履歴B no-loss確認済み。I7は§2.1で本番反映なし、§2.3でmain収載・事後承認済み。旧時点表の保存は可だが、§2.1冒頭の最新観測を更新するか§2.3の同じ観測表記を時点差ありへ直す必要。集計コマンド=sed -n 33,85p docs/research/dm-signal-production-inconsistency-asis-tobe_20260906.md 出力行の生貼付=AC2全期間再導出とAC3の5種別差分は未完／checker main収載 1件の定義=同一対象の完了または本番反映状態が両節で逆の組。
+  posted_by: 'karo'
+  posted_at: '2026-09-06T20:56:22'
+  requires_confirmation: false
+  action_type: 'info'
+  actioned_by: ''
+  notify_targets:
+    - 'shogun'
+  confirmed_by: []
+  status: 'open'
