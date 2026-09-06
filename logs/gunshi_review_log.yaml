@@ -11050,3 +11050,25 @@
   verdict: LGTM
   verified_files:
   - queue/reports/saizo_report_cmd_karo_ci_fix_33995101543_c2_contract_regression_20260906.yaml:36
+- cmd_id: cmd_karo_hotfix_insight_c3_publisher_deploy_ledger_20260906
+  review_type: report
+  verdict: FAIL
+  verified_files:
+  - "queue/reports/kagemaru_report_cmd_karo_hotfix_insight_c3_publisher_deploy_ledger_20260906.yaml:36"
+  step3_5_verified: true
+  fail_reasons:
+  - "R3 honest FAIL。C3=8件OK。publisher_queue case6/source_publish case22 FAIL未解消"
+  findings_summary: "C3集合8=remediated1+residual7 OK。2本FAIL未解消=honest"
+  observations:
+  - "事実: 24/24所有テストPASS。参照15本中2本FAIL"
+  operational_simulation:
+    command: "grep '^verdict:' queue/reports/kagemaru_report_cmd_karo_hotfix_insight_c3_publisher_deploy_ledger_20260906.yaml"
+    expected: "FAIL"
+    actual: "FAIL"
+    result: "PASS(honest FAIL)"
+  finding_categories: [assumptions, numbers, premortem, ambiguity, adversarial]
+  brainwash_check: "#1no #2no #3no #4no #5no #6no #7no #8no"
+  causal_chain: "参照2本FAIL→honest FAIL"
+  origin: "[[C3_ledger_R3]] -> [[honest_FAIL]]"
+  ambiguity_points: none
+  timestamp: "2026-09-06T09:35:00+09:00"
