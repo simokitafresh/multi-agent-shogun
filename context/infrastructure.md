@@ -1,5 +1,6 @@
 # インフラコンテキスト
-<!-- last_updated: 2026-09-06 2026-09-06 12:48 将軍doc lane: layer_holdings_render.py(7931ccdc4)を反映 -->
+<!-- last_updated: 2026-09-06 2026-09-06 13:42 将軍doc lane: F-14 source 7f1fc925(9a89322c7 merge、GATE CLEAR 13:40)を既存 F-14 行へ追記 -->
+<!-- source_commit:7f1fc925fce7 reason:2026-09-06 13:42 将軍doc lane: F-14 source 7f1fc925(9a89322c7 merge、GATE CLEAR 13:40)を既存 F-14 行へ追記 evidence:git merge-base --is-ancestor 7f1fc925 origin/main = yes; git show 7f1fc925 --stat = cmd_complete_gate.sh + test_cmd_complete_gate.bats -->
 <!-- source_commit:7931ccdc49bf reason:2026-09-06 12:48 将軍doc lane: layer_holdings_render.py(7931ccdc4)を反映 evidence:git show 7931ccdc4 --stat = scripts/layer_holdings_render.py +1 file -->
 <!-- source_commit:c4b0989d3dd9 reason:2026-09-06 11:47 将軍doc lane: F-14 content-equivalent ancestry gate(c4b0989d3)を反映 evidence:git show c4b0989d3 --stat = cmd_complete_gate.sh +94, test_cmd_complete_gate.bats +162 -->
 <!-- source_commit:0cfc963114d3 reason:2026-09-06 09:45 将軍doc lane: C2 契約回帰 ci_fix(report_field_set.sh +12)を C2 bullet へ反映 evidence:git show 0cfc96311 --stat = report_field_set.sh +12/-1 -->
@@ -173,7 +174,7 @@
 <!-- source_commit:e7c3beb64085 reason:2026-09-02 将軍 doc lane: ancestry 後退検出を push_lane/pre-push へ接続(efc16dcd6/e7c3beb64) evidence:CLEAR 03:02/03:09; safe_ff BLOCK 実証 02:50 -->
 <!-- source_commit:a7cb1ca59831 reason:2026-09-02 将軍 doc lane: legacy outbox envelope 移行 a7cb1ca59(T224 追補) evidence:commit a7cb1ca59; DOC_LANE_ALERT blt_022445 -->
 <!-- source_commit:64f01517a70b reason:2026-09-02 将軍 doc lane: U1 f92d1e376 + ancestry 後退 BLOCK 64f01517a evidence:commits f92d1e376/64f01517a; CLEAR 01:54/02:08; 消失 2 回目 16d831ed9 を復元 -->
-<!-- last_synced_lesson: L1763 -->
+<!-- last_synced_lesson: L1764 -->
 <!-- source_commit:593cfb27a612 reason:2026-09-02 将軍 doc lane: U9 safe_ff 既公開 ours merge 除外 593cfb27a evidence:commit 593cfb27a; CLEAR 01:20; integrate c7710efaf on origin/main -->
 <!-- source_commit:458fc4caa91a reason:2026-09-02 将軍 doc lane: U3 msg_id 限定 receipt 458fc4caa evidence:commit 458fc4caa; CLEAR 01:05; staged 11→0; watcher 9/9 restart 01:06 -->
 <!-- source_commit:4dd6898466a27f10ef7d08ed27549b3c095378de reason:2026-09-01 将軍 doc lane: CI RED #6 Integration ci_fix 59fa70e0b evidence:commit 59fa70e0b; CLEAR 22:57 -->
@@ -307,7 +308,7 @@
 <!-- source_commit:f8c49cbd7 reason:cmd_shogun_commit_reservation_ledger_phase1_20260805 evidence:reviewed -->
 <!-- source_commit:515f0214e reason:cmd_karo_hotfix_ga432_context_freshness reviewed source boundary evidence:cmd_complete_gate project=infra context=context/infrastructure.md commit=515f0214e -->
 <!-- source_commit:23a1ce61205ce4496ab11570583e8e8adcaeac4e reason:reflux backlink SSOT update reviewed evidence:incoming 0 to 1; runner69/69; target doc diff0 -->
-<!-- last_synced_lesson: L1763 -->
+<!-- last_synced_lesson: L1764 -->
 
 結論: 本ファイルは検索起点となる索引層。運用詳細・経緯・教訓本文は7つの詳細正本へ移設した。
 source boundary一致taskはregistryのowner/update_triggerからcontext_update_candidatesを自動注入し、未処理候補はcmd_complete_gateがBLOCK、明示処理済み/無関係はCLEAR。
@@ -358,7 +359,7 @@ source boundary一致taskはregistryのowner/update_triggerからcontext_update_
 結論: 詳細は `docs/research/infrastructure-lessons-reviews-operations.md` に保存。原文を省略せず移設済み。
 見出し: 前節「Infra教訓索引」の連続本文（source lines 1701-2123）。
 - L1503: 既存legacy欠損は不変multisetで隔離せよ（cmd_karo_hotfix_shared_operational_log_ownership_20260801）
-<!-- last_synced_lesson: L1763 -->
+<!-- last_synced_lesson: L1764 -->
 - L1504: appendとarchiveはreaderを含むgeneration transactionにせよ（cmd_karo_hotfix_gunshi_cs_remediation_generation_20260801）
 - L1505: 永続test宣言はtask正本に置く（cmd_4206）
 - L1506: active context DEFERはowner存在だけでなくdirty・baseline変化・fresh leaseの全ANDにせよ（cmd_karo_hotfix_active_context_gate_transient_20260801）
@@ -598,6 +599,7 @@ source boundary一致taskはregistryのowner/update_triggerからcontext_update_
 - L1761: deploy_task.shのif false デッドコードはgrep行番号では生死判定できない。declare -fで実行時確認せよ（cmd_karo_hotfix_recon_dual_projection_fixed_base_20260906）
 - L1762: canonical preflightとmonolith helperの同名定義を分離する（cmd_karo_hotfix_k2_external_worktree_speed_20260906）
 - L1763: resolve.sh等の既存extract済み関数へ新規呼出しを足す時は、その関数を単体抽出するtest fixture(extract_function一覧)にも新規関数を追加せよ。CIでのみ顕在化しローカルplanned_pathsテストでは検知できない（cmd_karo_hotfix_recon_dual_projection_fixed_base_20260906）
+- L1764: resolve.sh等の既存extract済み関数へ新規呼出しを足す時は、その関数を単体抽出するtest fixture(extract_function一覧)にも新規関数を追加せよ。CIでのみ顕在化しローカルplanned_pathsテストでは検知できない（cmd_karo_hotfix_recon_dual_projection_fixed_base_20260906）
 
 ## 設計標準・テスト・因果
 
@@ -873,7 +875,7 @@ source boundary一致taskはregistryのowner/update_triggerからcontext_update_
 - review_bundle precheck parity(2026-09-05, ed19ccf85 小太郎)|軍師 precheck を shell 直実行と review_bundle.py 経由で ERRORS が異なった(4476 で顕在化、INS-20260905-135853)真因=cwd/env 差→bundle 経路を shell 直実行と同一条件に揃える|origin: `[[INS-20260905-135853]] -> [[precheck_parity_20260905]] -> [[review_bundle_precheck]]`
 - ninja_monitor の共有 root index.lock 根治(2026-09-05, 6ec61e00 半蔵)|monitor が /clear 前に共有 root へ `git status` を走らせ index.lock を作り、落ちると孤児 lock(12:19:31 事故、掲示板 1 件が worktree から消えた)→`GIT_OPTIONAL_LOCKS=0` を monitor 先頭で export し read-only 呼出しが lock を取らない|origin: `[[index_lock_孤児_20260905_1219]] -> [[ninja_monitor_git_status_共有root]] -> [[GIT_OPTIONAL_LOCKS_0]]`
 - K2 external worktree 準備の速度 fix(2026-09-06 09:2x, e17f8077d 疾風)|K2 recon(truthful_redo 05:06)で external repo 配備が local の約 2 倍(4.2〜4.9s)と確定→真因は WSL v9fs mount 上の source checkout の per-file コスト。deploy_task/preflight.sh で remote-tip/linked-worktree 契約を変えず、宣言 source path のみ checkout 前に materialize。external new/normal p50 4553→1579.5ms(65.3% 短縮)、secret 0/16。Python wrapper(noop p50 5ms)は律速でなかった
-- F-14 report commit ancestry の content-equivalent 判定(2026-09-06 11:4x, c4b0989d3 疾風)|`cmd_complete_gate.sh` の `report_commit_main_ancestry` は sha 祖先だけを見ていたため、家老が同内容を別 commit で main に載せると(tree 同一・patch-id 不一致)報告 commit が dangling 扱いになり P-4/K2/C1 が WAIT ancestry を繰返した。修正=sha 祖先でなければ `git diff --quiet <source_sha> <origin/main tip> -- <changed_paths>` で変更 path の blob/mode 同一を確認し `PASS: content_equivalent` を出す。参照 bats 36 file+P-4 統合で PASS、test_cmd_complete_gate.bats +162。教訓=`git cherry +`(patch-id 不一致)は未収載の証拠ではない
+- F-14 report commit ancestry の content-equivalent 判定(2026-09-06 11:4x, c4b0989d3 疾風)|`cmd_complete_gate.sh` の `report_commit_main_ancestry` は sha 祖先だけを見ていたため、家老が同内容を別 commit で main に載せると(tree 同一・patch-id 不一致)報告 commit が dangling 扱いになり P-4/K2/C1 が WAIT ancestry を繰返した。修正=sha 祖先でなければ `git diff --quiet <source_sha> <origin/main tip> -- <changed_paths>` で変更 path の blob/mode 同一を確認し `PASS: content_equivalent` を出す。参照 bats 36 file+P-4 統合で PASS、test_cmd_complete_gate.bats +162。origin 収載は c4b0989d3(publisher)→source 7f1fc925 を家老が publisher_c2a_merge で 9a89322c7 として merge(13:39)、GATE CLEAR 13:40。教訓=`git cherry +`(patch-id 不一致)は未収載の証拠ではない
 - Layer Holdings Monthly artifact レンダラ(2026-09-06 12:3x, 7931ccdc4 将軍 D0、殿 12:22『市場表ができたらアーティファクトで以前出した形式で見せて』)|`scripts/layer_holdings_render.py <layer_holdings_monthly.csv> <out.html> --source --universe --updated` が cmd_4481/4483 の市場 1 表 CSV を昨夜のワイヤーフレーム(docs/dashboard/layer-holdings-wireframe.html、artifact 27c1995d)と同じ layout(layer タブ・月次 weight 積み上げバー・pf_count・面 2 CSV 直近 3 ヶ月)へ埋め込む。is_suspect=true 行は除外、期間 12/36/全。公開は artifact url=27c1995d へ上書き。78 PF 版は公開せず 75 PF 版(cmd_4483 CLEAR 後)のみ
 - insight C2 gate-report-skill 契約整合の hotfix(2026-09-06 07:0x, 1aa87a205 才蔵)|purpose-detail 契約を単一 SSOT へ統合: gate_report_format.sh に side-effect-free の共有 entry point を置き、report 生成側(report_field_set.sh)と完了検証側(cmd_complete_gate.sh、−57 行)が同じ affirmative-purpose 契約を通る。purpose_validation.fit=true の自己申告だけでは PASS を公開できず、report 本文と AC の照合が必須(K2 偽 CLEAR=F-10 の根治)。truthful FAIL は別の failure 契約で扱う。fixture: false-clear 1/1 BLOCK・正常 1/1 PASS、bats +75。同 hotfix が report_field_set の verdict→status 自動完了と review_approval の RC 契約 test 9 件を未更新で CI RED(run 33995101543)→ci_fix 0cfc96311(report_field_set.sh +12、才蔵)で単一 SSOT を維持したまま復元、CI 再走行中
 - insight C1 配達 exactly-once の hotfix(2026-09-06 06:3x, a27ea00d0 疾風)|才蔵 triage の未解決実害 37 件のうち C1=11 件を一次台帳・現行 code/test へ照合(未分類 0・重複 0)。真因=inbox_write.sh の report_review_generation 配達が『fingerprint を含む既読 message』を恒久証跡と誤認し再送 wake-up を失っていた→共有 exact identity helper で『未読かつ一致する review 世代 handoff』のみ再送抑止に限定(bats +47)。C2 契約整合/C3 publisher-deploy-ledger は続く lane

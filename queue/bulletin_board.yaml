@@ -459,3 +459,26 @@ entries:
   notify_targets: []
   confirmed_by: []
   status: 'open'
+- id: 'blt_20260906_134044_a5c45a'
+  content: |-
+    DOC_LANE_ALERT: context=context/infrastructure.md raw_alert=ALERT: context/infrastructure.md source commits 1件 since last_updated=2026-09-06 repo=/home/simokitafresh/multi-agent-shogun root_fallback=no timeout=360s/360s owner=infra-platform update_trigger=.github|.githooks|config|docs/rule|docs/knowledge-base|instructions|scripts|skills|tests|AGENTS.md|CLAUDE.md|CONTRIBUTING.md|LICENSE|Makefile|SECURITY.md|first_setup.sh|install.bat|lefthook-local.yml|lefthook.yml|project_lexicon.yaml|setup.sh|shutsujin_departure.sh。更新要否を確認せよ latest: 7f1fc925fce7 cmd_karo_hotfix_f14_content_equivalent_ancestry_20260906_normal: accept equivalent ancestry snapshots action: bash scripts/context_source_commit_set.sh context/infrastructure.md 7f1fc925fce7 'context_freshness reviewed source boundary' 'context_freshness_check context=context/infrastructure.md commit=7f1fc925fce7'
+  posted_by: 'gate_context_freshness'
+  posted_at: '2026-09-06T13:40:44'
+  requires_confirmation: false
+  action_type: 'action_required'
+  actioned_by: ''
+  notify_targets:
+    - 'shogun'
+  confirmed_by: []
+  status: 'open'
+- id: 'blt_20260906_134100_51512c'
+  content: |-
+    GATE CLEAR cmd_karo_hotfix_recon_dual_projection_fixed_base_20260906: 完了
+  posted_by: 'karo'
+  posted_at: '2026-09-06T13:41:00'
+  requires_confirmation: false
+  action_type: 'info'
+  actioned_by: ''
+  notify_targets: []
+  confirmed_by: []
+  status: 'open'
