@@ -20221,3 +20221,10 @@ insights:
   source: "semantic_index_update"
   fix_known: false
   status: pending
+- id: INS-20260906-233659082-5d7d
+  ts: "2026-09-06T23:36:59+09:00"
+  insight: "semantic_index_update新概念候補: discussion:task notification task id b9skhkrgv task id tool use id toolu 01RdkyDiFPPJsRRU6V は 既存aliasesに一致なし。概念定義とaliases追加を検討せよ"
+  priority: "low"
+  source: "semantic_index_update"
+  fix_known: false
+  status: pending
