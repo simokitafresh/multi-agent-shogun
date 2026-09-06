@@ -75,7 +75,7 @@ cmd_4484 世代2の**報告値**。オフライン検証出力は確認済みだ
 
 | # | 不整合 | 状態 | 現在値 |
 |---|---|---|---|
-| I1 | fof_component_weights の未使用 8 列 | 🟡 **DROP 実装 走行 02:07**(殿許可 01:36→cmd_4495 才蔵 acknowledged 01:59、隔離 branch+隔離 DB 往復、本番書込・DDL 0)。**P07 完了 01:16**(cmd_karo_recon2_p07_resume 飛猿 GATE CLEAR: 8 列全て writer 未設定・frontend WeightBreakdown.tsx は component_id+target_weight のみ参照=**admin 表示 0/8**、signal_detail_history writer 呼出 0(現在・過去)、陰性対照 test 2 件。残 unknown=admin 認証保有者の /fof-weights 外部直アクセス有無)。残=DROP の本番 DDL=殿 OK のみ | 事象確定(24,348 行 NULL)。admin WeightBreakdown が API を使用中→P07 で 8 列の DTO/API/admin/外部利用の契約表を作成中。DROP は本番 DDL=殿 OK |
+| I1 | fof_component_weights の未使用 8 列 | 🟡 **DROP 実装 走行、前提訂正 02:12**(殿許可 01:36→cmd_4495 才蔵。02:07 才蔵 readonly 実測: 6 列=全行 NULL 24,348、component_type/nested_depth=全行定数 (standard,0)。『8 列全行 NULL』は writer 未設定を全 NULL へ取り違えた将軍の誤記→cmd AC1 down を server_default 復元へ訂正、8 列 DROP は不変)。**P07 完了 01:16**(cmd_karo_recon2_p07_resume 飛猿 GATE CLEAR: 8 列全て writer 未設定・frontend WeightBreakdown.tsx は component_id+target_weight のみ参照=**admin 表示 0/8**、signal_detail_history writer 呼出 0(現在・過去)、陰性対照 test 2 件。残 unknown=admin 認証保有者の /fof-weights 外部直アクセス有無)。残=DROP の本番 DDL=殿 OK のみ | 事象確定(24,348 行 NULL)。admin WeightBreakdown が API を使用中→P07 で 8 列の DTO/API/admin/外部利用の契約表を作成中。DROP は本番 DDL=殿 OK |
 | I2 | signal_change_log 同日往復の二重行 | 🟡 **cmd_4492 report done 01:38(影丸)、軍師 review 中** | cmd_4484 世代 2(CLEAR 16:37、将軍+家老 R9 再集計): 重複 group 81,102 / 対象行 235,750=逆向きペアあり 202,053(正当性未判定)+unknown 33,697(43 PF)。抑止候補は分類次第(P02 追補 U3/U9) |
 | I3 | signal_change_log 未出現 PF | 🟡 **deploy 許可 01:23、A4 配線 hotfix 疾風 completed 01:45(gate 中)→I7 と統合 deploy 待ち**。**監視 code 完了 01:08**(cmd_4491 影丸 GATE CLEAR: 履歴不足 2 件 ALERT・変化なし 10 件 無警報を fixture 再現、branch feat/prod-i3-monitor、main 反映なし)。本番投入は殿 OK。原因分類は未着手 | 世代 2 再集計(将軍 16:5x): 変化なし 10 / 履歴不足 2(シン玄武-常勝/鉄壁)。旧記述=世代 2 報告値: 未出現 12 PF(A=75)。manifest で除外 3 体との差を照合 |
 | I4 | signal_detail_history 0 行 / signal_decision_ledger 0 行 | 🟡 **段 1 code 撤去 走行 02:07**(殿許可 01:36→cmd_4496 飛猿 acknowledged、段 2 DROP TABLE=cmd_4497 は 4496 CLEAR 後)。方向 B 確定(殿裁定 19:35)。**AC3 完了 23:46**(cmd_4485 CLEAR: 全履歴 B backfill 14,450 行・2 回目 0・本番 0)。残=DROP/段階的廃止の本番 DDL=殿 OK のみ | ledger=今 C 休眠・方向 B 段階的廃止、A は候補外。cmd_4485 AC3(a638572d、20:0x): 全履歴 B backfill 14,450 行・2 回目 0・本番 0=『廃止で失うものが無い』の**部分確認**。5 種別差分の全期間集計と API 軸は未完(家老 RC、§2.1 と同じ)。次=AC2/AC3 全期間再走(半蔵)→P06 で B の段階設計(①無効化②表保持③DROP、③は殿 OK)。detail_history writer(caller 0)は P07 で契約確認中 |
@@ -238,6 +238,8 @@ flowchart LR
 ## §5 不整合カタログ I1〜I9(各 (a)〜(h)。世代 2 の新観測は §2.2 を正とし、本節の数値は当時の観測)
 
 ### I1 `fof_component_weights` の未使用列(JSON 4 列を含む 8 列が全 NULL)
+
+> **訂正 2026-09-07 02:12(才蔵 readonly 実測、cmd_4495 report)**: 全行 NULL は 6 列(actual_weight/drift/asset_value/daily_return/component_holding_signal/component_tickers)。component_type/nested_depth は NULL 0、全 24,348 行が定数 (standard, 0)。writer 未設定 8/8・表示 0/8・DROP 対象 8 列は不変。down は 2 列を server_default で復元する。
 - (a) 事象: 24,348 行で `component_type / nested_depth / asset_value / daily_return / component_holding_signal / component_tickers` が NULL、`actual_weight` も NULL(∴ `drift` も NULL)。証拠: 09-05 readonly 実測(基盤書 §2.1)+ writer の現物: `backend/app/jobs/flush/fof_flush.py` L139-152 は `target_weight / actual_weight(None) / drift` しか values に入れない。生成側 `backend/app/jobs/recalculate_fof.py` L1270-1284 も `target_weight` と `actual_weight: None` のみ。fof_flush.py L107 に「モデルには追加カラムがあるが…」と自認コメントあり。models.py L768-781 の定義(cmd_1101)がスキーマだけ先行した。
 - (b) 本番影響: 読者=`backend/app/api/portfolios.py` L597 `GET /fof-weights/{portfolio_id}`(L681-690 で component_type/nested_depth/actual_weight/drift/asset_value/daily_return/holding_signal/component_tickers の **8 key** を返す)。frontend の実 caller は `frontend/app/admin/fof/components/WeightBreakdown.tsx` L37(`api.getFoFWeights(portfolioId, 1)`、保存済み PF の accordion 展開時 L68 付近)=**admin 画面で使用中**(家老 R1-2。将軍 v0.2 の『caller 0』は grep 語の取り違え=訂正)。同 UI が表示に使うのは主に component_id/target_weight(L149-150/L192-204)で、NULL 8 列を表示しているかは列ごとに未確認。**runtime 計算(monthly_return・/api/signals)への影響 0**: 計算は `target_weight` のみ使う(cmd_4480 A2: price_ratio_impl.py:1239-1250)。
 - (c) 改善案: 廃止候補だが**列ごとの契約表(DTO・admin 表示・外部 API 利用)を作ってから**判断(家老 R1-2)。全 NULL の観測には期間と DB snapshot を添える(未使用の証明ではない)。writer 補完(actual_weight/daily_return/component_tickers を recalc で書く)は列の維持義務が増えるため非推奨のまま。
@@ -615,7 +617,7 @@ I7: 監視 1 行(独立)
 - v1.15(2026-09-06 20:35 将軍、殿 20:32 指摘): §2.3 を 18:10 観測から 20:35 観測へ(I1/I4/I6/I7/I9/I3/I8 の状態と現在値、次の一手)、R22。
 - v1.16(2026-09-06 20:58 将軍、家老 R22): §2.3 見出しに時点差を明記、I4 を AC3 未完へ、I7 に時点差注記、R23。
 - v1.17(2026-09-06 21:35 将軍): P09 CLEAR を §3/§2.3/§12 へ。
-- v1.29(2026-09-07 02:10 将軍): 殿裁定 02:02 Layer Holdings P4 go→§10.5 未許可行を更新、§2.3 I1/I2/I3/I4/I6/I7 を 02:07 観測へ、次の一手(02:07)、§3 P10 を裁定済みへ。
+- v1.29(2026-09-07 02:10→02:12 将軍): I1 前提訂正(6 列 NULL+2 列定数、§5 I1 注記+§2.3)。殿裁定 02:02 Layer Holdings P4 go→§10.5 未許可行を更新、§2.3 I1/I2/I3/I4/I6/I7 を 02:07 観測へ、次の一手(02:07)、§3 P10 を裁定済みへ。
 - v1.18(2026-09-06 21:45 将軍): 半蔵 AC2 全期間 sweep の暫定値を §2.3.1/§9.1.2/§9.1.6/§2.3 へ(隔離・意図的経路・要再現の限定付き)。
 ## 因果リンク
 - ← [[dm-signal-research-data-backlog_20260905]] §B5 I1〜I8 / ← [[dm-signal-research-data-foundation-asis-tobe_20260905]] §2 / ← [[cmd_4480_shin_yotsume_parity]] / ← [[partial-turnover-experiment-asis-tobe-5w1h_20260805]] v1.10-v1.12
