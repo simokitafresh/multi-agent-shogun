@@ -3760,7 +3760,7 @@ task:
     canonical_path: /stale
 YAML
 
-    for case_name in expired future unknown unsafe_probe source_mismatch; do
+    for case_name in expired future unknown unsafe_probe secret source_mismatch; do
         cp "$tmpdir/task.yaml" "$tmpdir/task-$case_name.yaml"
         case "$case_name" in
             expired)
@@ -3772,6 +3772,8 @@ YAML
                 sed -i 's/- localpg/- missing/' "$tmpdir/task-$case_name.yaml" ;;
             unsafe_probe)
                 verified="2026-09-06T00:00:00+00:00"; ttl=10; probe="../localpg"; sha="$source_sha"; extra="" ;;
+            secret)
+                verified="2026-09-06T00:00:00+00:00"; ttl=10; probe="localpg"; sha="$source_sha"; extra="    token: leaked" ;;
             source_mismatch)
                 verified="2026-09-06T00:00:00+00:00"; ttl=10; probe="localpg"; sha="$(printf '0%.0s' {1..64})"; extra="" ;;
         esac
