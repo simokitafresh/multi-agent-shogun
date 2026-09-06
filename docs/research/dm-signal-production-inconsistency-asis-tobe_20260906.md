@@ -1,4 +1,85 @@
 <!-- gist-master: 2f1a3daa07c336c90958b1287245318b dm-signal-production-inconsistency-asis-tobe_20260906.md -->
+<!-- deployment-view-v013:start -->
+# DM-Signal 本番不整合 — 配備・進捗運用版 v0.13
+
+更新: 2026-09-06 15:57 JST。殿「粒度や情報量を減らさず、忍者に配備しやすく進捗を確認しやすいように再構築」。**運用索引→配備カード→詳細根拠**の順で読む。下段の v0.12 本文・図・数値・レビュー履歴は一字も落とさず保存する。旧版の進捗は当時の観測であり、現在状態として用いない。
+
+## 運用§A 読み分け・正本・完了の意味
+
+| 読む人・目的 | 入口 | 詳細を省略しない受渡し |
+|---|---|---|
+| 家老: 配備する | 運用§C のカード ID→依存→許可境界 | カードだけを要約して渡さず、列挙した詳細§・AC・対象パスを task に注入 |
+| 忍者: 任務を遂げる | 自分の task YAML→カード→参照§ | 現 task の AC/版/hash が命令正本。本書だけで別カードを自発実装しない |
+| 家老・殿: 進捗を見る | 運用§B→現在段階・阻害要因・次の行動 | 報告完了、レビュー、publish、GATE CLEAR、解放を別々に確認 |
+| レビュー: 根拠をたどる | I番号→詳細§2(a)〜(h)、§2.5、§4.1、§5 | 旧観測と新観測を snapshot/時刻で分離。異なる分母を差分比較しない |
+
+- 状態正本は task/report/同一世代の gate receipt、コード正本は固定 SHA、データ正本は snapshot manifest と原行。表は**手動更新の観測記録**であり、自動追随とは称さない。
+- 調査完了 ≠ 不整合解消 ≠ 本番変更完了。未再現・仕様どおり・未判定も有効な調査結果だが、修正済みに数えない。
+- 本番書込・DDL・再計算・deploy の承認を本改訂は追加しない。既存 cmd の境界を優先し、将来カードを配備済みと見なさない。
+
+## 運用§B 現在の進捗と次の行動
+
+観測基準: 2026-09-06 15:57 JST。調査 lane は cmd_4484 / cmd_4486。全 I の解消率は未集計（調査の件数と修正の件数を混ぜない）。
+
+追記観測 2026-09-06 16:00 JST: cmd_4484 のゲート結果は15:57:46に `WAIT:report_commit_main_ancestry`。source `aa96ac78133919876e86733106209943b9469cc9` がmain `0f2bfbcd1e34ea2fd5d794ba4da5332a09ba7d69` に未包含のため、CLEARではない。次の担当=家老、行動=安全なsource公開・包含証明後に再ゲート。ログ=`queue/gates/cmd_4484/cmd_complete_gate.trigger.log`。下表の15:57「再実行中」をこの結果で更新する。
+
+| 配備 ID / 担当 | 実行・成果物 | レビュー | 完了ゲート・解放 | 阻害要因 / 次の行動 / 担当 |
+|---|---|---|---|---|
+| P01〜P03 / cmd_4484 / 影丸 | 世代2報告再提出。source `aa96ac78133919876e86733106209943b9469cc9`。取得→解析済みとの報告 | 軍師15:50 LGTM、fingerprint `b76f6ded84a80b14f8c2227875582b12865445d65e5a0d6514cf00494b2bedad` | CLEAR未確認。家老ACCEPT再実行中。忍者解放未確認 | 旧receiptのfail_count欠落でBLOCK→実走v2 receiptと原出力hashを確認。家老が同一世代ゲート結果・後処理を確認 |
+| P04 / cmd_4486 / 半蔵 | 16:10報告受領、source `8458b5d9`。160file/候補172行との報告 | 16:12家老implementation RC。一般候補の導入履歴未調査・撤去履歴固定値、関数/schema/guard分類混同、動的入口との接続不足 | CLEARなし、解放なし | 半蔵が全候補の履歴/反証/分類を是正し全件再生成。receiptも実検証から再発行。report_id=`rpt-416a856d-4107-4b6c-8372-d98afe87562b`。旧「結果未受領」は15:57観測 |
+| P05〜P10 / 未配備 | 下表の準備・依存条件で区分 | 未実行 | 未実行 | 家老が既存cmdと重複確認し、入力・許可範囲の揃ったカードだけ配備 |
+
+### 新観測の所在（旧観測を消さず併記）
+
+cmd_4484 世代2の**報告値**。オフライン検証出力は確認済みだが、下表は本番再取得や修正効果の実証ではない。
+
+| 対象 | 新観測 / 分母 | 旧記述との扱い / 残る確認 |
+|---|---|---|
+| 共通入力 | signals 290,538日次行、A=75 PF、B=全FoF77 | 取得は5表個別readonly transaction。開始06:24:33Z〜終了06:28:25Z。単一transactionの同時点性は保証しない |
+| I2 | 重複group 81,102 / 対象行235,750 | 「重複」は異常原因の確定ではない。5候補+unknown、原行対応を維持 |
+| I3 | 未出現12 PF（A=75） | 旧66/78や除外3体との差はmanifestで照合。単純減算で原因を作らない |
+| I5 | 対象11,922行 | 月初日と最初のSignal日を分離。対象行数を不一致数と呼ばない。六分類・照合不能数はA成果物を参照 |
+| I6 | display/pending_display各242,659 key、非unit報告0、静的consumer12 | 旧35行/29件は別時点。0を恒久解消や全consumer無影響と解釈しない。旧対象再現性・欠損child・日付/cache/ledger条件をP05へ |
+| I8 | B=77、signal無し・return有り報告0 | 旧2件の2014-04は現在signal/returnあり。valid_start_date欠落77/77はunknownとして残す。旧事象の原因解消とは断定しない |
+
+証跡入口: `queue/reports/kagemaru_report_cmd_4484.yaml`、`logs/test_receipts/cmd_4484_offline_validation_v2.json`、同名 `.output`。原出力SHA256=`72ae9e7834100775cd00e0a74654df5fce6277e14af197fdc144b2afa70360f7`。snapshot SHA256=`6ce8e54988654fe99205bd527cb062a422108a0e07751a04cac7aeddeccc2488`。成果物基点=`/home/simokitafresh/shogun-task-worktrees/kagemaru_cmd4484/analysis_runs/cmd_4484_prod_inconsistency_recon`。世代1は保存し、新解析へ混用しない。
+
+## 運用§C 配備カード（本表 + 参照詳細§ が一組）
+
+「準備可」は起票・入力確認が可能の意であり、実装や本番操作の許可ではない。担当は家老が空きと依存で決め、将来カードで固定しない。
+
+| ID / 対象・段階 | 入力・開始条件 / 並列性 | 変更・調査対象 / 必須成果物 | 二値完了条件 / 詳細参照 |
+|---|---|---|---|
+| P01 共通snapshot / 配備済み | cmd_4484 AC1。DB取得1系統、世代固定 | 5表全行、A75/B全FoF manifest、nonce/期間/件数/hash、取得限界 | 必須列・全日次・3つの初月定義が記録され欠落を隠さない。§3.5全7項目 |
+| P02 I2/I3/I5解析A / 配備済み | P01固定後、P03と解析並列可。DB再取得不可 | signal_change_log / signals / monthly_returns。全行分類CSV・原行参照・再実行手順 | I2の5候補+unknown、I3全75、I5六分類+照合不能を全て計上。§2 I2/I3/I5の(a)〜(h)、§3.5 |
+| P03 I6/I8解析B / 配備済み | P01固定後、P02と並列可。A75にBを縮小しない | 全FoF初月表、旧対象対応表、consumer/境界/欠損分岐manifest | B全件と3初月定義、未確定理由、静的集合と実影響を分離。§2 I6/I8、F-F、§3.5 |
+| P04 デッドコード監査 / 配備済み | cmd_4486。固定codeのみ、P01不要で並列可 | backend/app、main/router、models/event、render/cron、facade/Depends。allowlist・候補CSV・反証・導入/除去履歴 | §2.6の6候補+陰性対照1と全域候補を漏れなく4分類。警告だけで到達不能としない。コード撤去・DB接触0。§2.5/§2.6 |
+| P05 I6/I8可視影響実験 / 入力待ち | P03受入、cmd_4485詳細・隔離復元前flight確認。I4とは分割可 | 専用local PostgreSQL、price_ratio_impl / monthly_returns / recalculate_fof。現行対候補の全差分 | §4.1全計測量（PF-月/直近12月/weight/return/cumulative/境界日）と復元・計算・比較wallを提出。旧35行が再現しなければその証拠を残し、本番修正へ進まない |
+| P06 I4 ledger判断資料 / 準備可 | P02分類・P04役割manifest、保護要件の確認。A実験は§6.1再導入条件と整合させる | ledger依存15fileの役割、MonthlyTrade置換、歴史builder、代替snapshot、B①無効化②表保持③DROPの段階表 | 保護対象/期間/出典・代替可否・真正性・冪等性・復元を判定可能にする。I5=0だけで廃止しない。今C/B調査第一候補を維持。§2 I4、§4.1、§6.1全文 |
+| P07 I1/detail_history契約調査 / 準備可 | P04と同一ファイル調査は分担を先に固定。DDLは別段階 | 8列のDTO/API/admin/外部利用、verification writer/caller/過去入口。列別契約表 | 8/8列とreader/writer/runtime/行数の4軸を区別。外部利用未確認はunknown。将来契約と復元を評価。§2 I1/I4、§2.6、§4 |
+| P08 I2抑止・I3/I7監視設計 / 分類待ち | P02分類確定。I7部分は独立に準備可 | signal_flush/collector/ALERT/A4。変更候補と契約test計画 | 正当往復を消さず、分類確定経路のみ。INSERT監査目的との整合、I7欠落検出の二値条件、過去行保存を明示。§2 I2/I3/I7 |
+| P09 I9文書整合 / 準備可 | 固定blob/差分一次証拠、P04と履歴調査を共有可 | backlog B2・PI-P06・ops・本書。適用/撤回/未検証の対応表 | 2file同値とbackend139履歴commitを一般化しない。規範PIと過去実施記録を消さず現行注記を追加。§2 I9、§2.5、§5 |
+| P10 採否・本番実行計画 / 裁定待ち | P05〜P09の該当成果物受入、個別承認・backup/restore証拠 | §4可視差分、採用案、対象集合、実行・復元手順 | 何が何件どれだけ動くか、未確定、許可境界が揃うまで本番実行しない。ledger訂正eventをcoverage無し復元と同一視しない。§3/§4/§4.1/§6.1 |
+
+### 全カード共通の受渡し欄
+
+- `card_id / parent_cmd / task_id / ac_version / source_sha / input_manifest_sha / output_path / owner / dependency / allowed_operations` をtaskへ記録。未確定値を架空の値で埋めない。
+- 進捗1行: `観測時刻 | card | AC済数/総数 | 実行状態 | review | publish(不要なら理由) | gate receipt | blocker | 次の行動/担当/開始条件 | 証跡パス`。
+- AC完了・BLOCK・再提出・CLEAR・解放時に更新。待機は「何を誰から待つか」を必須とし、同じ待機のナッジだけで最終進捗時刻を更新しない。新しい複雑な監視機構は作らず、既存loopで古い観測を確認する。
+- ゲート起動時刻/終了時刻/経過秒/現在段階を残す。長時間実行と論理BLOCKを分け、終了ログと同一世代receiptが無い限りCLEARと表示しない。CLEAR後もarchive/解放確認まで別欄で追う。
+- 参照§の省略0、対象漏れ0、未分類の黙示除外0、SKIP0を検証する。途中の軽量実験は一次結果1行を残し、正式な全契約検証は方式採用時の最終checkpointへ集約する。
+
+## 運用§D 旧本文との優先関係・変更保全
+
+- 以下は v0.12 時点の詳細正本をそのまま保存した層。上の新観測は旧数値の上書きではなく時点付き追記。旧「進捗ビジュアル」は15:20の履歴で、現在の配備判断は運用§B/Cを使う。
+- 旧§3.5(7)の「backend全体139commit未適用」は一般化不可。配備時は旧I9(f)の限定形（ledger/signal_flushの2fileと固定SHA）を採用し、稼働deploy SHAを別途確認する。
+- 旧I4の二択は§6.1の三案・R6合意で更新済み。旧§6のI6二択も、再現・影響実験前の即修正指示として使わない。旧35行/2件と新観測0は時点・母集団を分離する。
+- 保全検証: 追加ブロックを除いた全文が改訂前SHA256 `cdb95c542f5d86be18aa8dc0186a01b0da0ede2a469d74b4cf6c5357a25a3a25` と一致すること。図F-A〜F-F・I1〜I9・詳細§・R1〜R6・年表・因果リンクを削らない。
+
+---
+
+## 詳細・履歴層（v0.12 原文保存）
+<!-- deployment-view-v013:end -->
 # DM-Signal 本番の不整合 I1〜I8 — 事象・影響・改善時の本番変化・影響範囲・依存関係 設計書 v0.12(2026-09-06 15:22 殿 15:15『ユーザー可視変化は具体的に何が何件動くかまで』→§4.1 定量化契約(I6/I4/I8 の計測量と出し方、隔離実験 cmd_4485 を cmd_4484 の後に) / v0.11(15:17 家老 R6: 今 C・方向 B に合意、A 再導入条件を保護要件 1 行で確定) / v0.10(15:20 殿 15:06『時系列が重要』+家老 R5/独立見解: §6.1 を時系列(07-06→08-23)で書換え、推奨=今 C・方向 B・A 非推奨、判断規則を保護要件先行へ) / v0.9(15:15 家老 R4 全採用: F-D を実順序 ①〜⑦へ、既存なし/同値の枝も UPSERT へ合流、小訂正 3) / v0.8(15:12 殿 14:59 ledger 復活/廃止の協議→§6.1 に 3 案比較(A 復活/B 廃止/C 休眠)・事実年表・トレードオフ・暫定推奨 C+追加調査 3 本、家老見解待ち) / v0.7(15:08 家老 R3 REQUEST_CHANGES 全採用: F-A/F-B/F-D/F-E/F-F 訂正、§2.5 の断定を候補/仮説へ、§2.6 を 4 分類+偽陽性源、I9 限定を再徹底) / v0.6(15:00 殿 14:45/14:47: §4 を『ユーザー可視/内部のみ/デッドコード』の 3 列へ、§2.5 設計の因果(導入 commit と意図、バグ/意図あり/失効の判定)、§2.6 デッドコード候補) / v0.5(14:55 殿 14:44『データの流れのフローチャート、粒度小・分割可・cron の日常再計算も』→§1.5 に F-A〜F-F 6 枚、★で I1〜I9 の発生点を明示) / v0.4(14:32 家老 R2 APPROVE(読取偵察のみ)・残訂正 6 点採用: I6 の Σ<1 断定撤回、I2/I3 の二重計上と直列依存を撤去、I5 六分類へ統一、I4 の実行 0 断定撤回、訂正 event で可逆性確定しない) / v0.3(14:40 家老 R1 REQUEST_CHANGES 6 点を全採用: I4 は writer 実装あり caller 0/ledger API は today 固定・append-only guard/I1 admin caller 実在・8 key/I2 ALERT filter 既存・相殺しない/I6 切替日検出と欠損 child skip も波及/偵察は親 1 本+成果物 A/B) / v0.2(14:35 将軍自己検証 3 点: I1 の frontend 参照あり・I6 は monthly_return 経路と同一関数・change_log 前方補完の一致率 26〜79%=change_log は履歴として再構成不能) / v0.1(14:25 起草、家老 R1 依頼)
 
 - 発端: 殿 2026-09-06 14:11『dm-signal-research-data-backlog_20260905.md を参考に DM-signal の本番の不整合について深く調査しよう。家老と繰り返しレビュー交換をせよ。本番の不整合、それによる影響、改善時にどのような変化が本番に起きるか、改善の影響範囲・依存関係なども明確にせよ』
@@ -11,7 +92,7 @@
 - 数値は一次情報(readonly launcher nonce、cmd 報告、CI 上の verify_*.md)に限る。本書で新規に測っていない数値は「未検証」と明記し、偵察 cmd の対象にする。
 - 改善時の本番変化は「誰が何を見る/どの job が何を書く」で書く。抽象語(整合性向上)は禁止。
 
-## 進捗ビジュアル(将軍 loop 更新 2026-09-06 15:20)
+## 進捗ビジュアル(将軍 loop 更新 2026-09-06 16:25。運用版 v0.13 §B が現在の正、本節は履歴層)
 
 **全項目(I1〜I9)** `░░░░░░░░░░ 0/9` ✅完了 🟡走行中 ⏳待ち 🔴要判断
 状態集計: ✅ 0 / 🟡 0 / ⏳ 6 / 🔴 3(表の 9 行)
@@ -20,13 +101,13 @@
 | # | 不整合 | 状態 | 現在値 |
 |---|---|---|---|
 | I1 | fof_component_weights の未使用 8 列 | ⏳ | 事象確定(24,348 行 NULL)。admin WeightBreakdown が API を使用中→列ごとの契約表の後に DROP 可否 |
-| I2 | signal_change_log 同日往復の二重行 | ⏳ | 事象確定、発生経路 2 候補=未検証(偵察) |
-| I3 | signal_change_log 未出現 PF | ⏳ | 66/78→75 母集団で再計上要(偵察) |
+| I2 | signal_change_log 同日往復の二重行 | 🟡 | cmd_4484 世代 2 報告値(家老 review 中): 重複 group 81,102 / 対象行 235,750。分類は A 成果物、原因確定ではない |
+| I3 | signal_change_log 未出現 PF | 🟡 | 世代 2 報告値: 未出現 12 PF(A=75)。manifest で除外 3 体との差を照合 |
 | I4 | signal_detail_history 0 行 / signal_decision_ledger 0 行 | 🔴 殿裁定 | 前者=writer 実装あり・caller 0(廃止は契約確認後)、後者=PITR 後の再バックフィル未実施・API は today 固定(復活/廃止) |
-| I5 | 月初 signals.holding_signal ≠ monthly_returns.holding_signal | ⏳ | 直接突合は未実施(偵察 A で 6 区分に分類) |
-| I6 | display_ticker_weights 非 unit 35 行・parity 不一致 29/2,096 | 🔴 殿裁定 | 根因=price_ratio_impl L1237-1250 の選択後再正規化不在。正本を F1 再帰規則にする(A10)か display を直すか |
+| I5 | 月初 signals.holding_signal ≠ monthly_returns.holding_signal | 🟡 | 世代 2 報告値: 対象 11,922 行(月初日と最初の Signal 日を分離)。六分類・照合不能数は A 成果物 |
+| I6 | display_ticker_weights 非 unit 35 行・parity 不一致 29/2,096 | 🟡 | 世代 2 報告値: display/pending_display 各 242,659 key で**非 unit 0**、静的 consumer 12。08-06 の 35 行は別時点(その後の full recalc で消えた可能性)。恒久解消と解釈せず、cmd_4485 で候補経路(選択外/欠損 child)の再現条件を確認 |
 | I7 | component holding_signal 欠落で展開不能 | ⏳ | 実測 0(cmd_4479/4483)。監視化のみ |
-| I8 | 新四つ目 3 体 parity 不一致(102+2) | ⏳ | 母集団除外で決着(殿 11:46)。残 2=2014-04 初月の root signal 不在=偵察 |
+| I8 | 新四つ目 3 体 parity 不一致(102+2) | 🟡 | 世代 2 報告値: B=全 FoF 77、signal 無し・return 有り 0。旧 2 件の 2014-04 は現在 signal/return あり(cmd_4480 時点との差=再計算で埋まった候補)。valid_start_date 欠落 77/77 は unknown |
 | I9 | 本番 tree と文書の乖離(ledger/signal_flush は 08-04 版) | 🟡 backlog B2 訂正済み(v1.6)。PI-P06 は規範保持+現在適用状態を別記 | rollback 233c2303 後、ledger file は 21e80e30 と同値・T7.5 未適用。backend 全体の 08-04 版断定はしない(38 files 再変更あり) |
 
 ## §1 読み方
@@ -326,6 +407,7 @@ I7: 監視 1 行(独立)
 | R4 | 15:03 | REQUEST_CHANGES(F-D の実順序と条件のみ): ①reconcile→②既存比較→③新規 INSERT drift(条件付き)→④repeated 分類→⑤Signal UPSERT→⑥7 列投影 INSERT→⑦collector/commit、既存なし/同値の枝も UPSERT へ合流。小訂正 3(§2.6 detail_history 表現、I9(f) 2 file 限定、§3 revert 未確定)。R3 対応は採用 | 全採用 | v0.9 |
 | R5 | 15:08 | R4 修正は APPROVE、§6.1 のみ REQUEST_CHANGES 6 点(backfill script 実在、0 行 no-op≠detect-only、I5 小→保護不要は不可、backend 置換残存、15,160 を目標にしない、廃止の表保持/DROP 段階化)+家老独立見解(判断保留・調査先行) | 全採用 | v0.10 §6.1 書換え |
 | R6 | 15:13 | §6.1 v0.10 突合: 今 C・B を調査上の第一候補とする方向に同意(実行確定/DROP 承認ではない)。復活余地の保護要件 1 行=『当時利用者へ提示して取引根拠となった確定保有を、後日の価格訂正/規則変更から分離し訂正履歴付きで再提示する要件が明示され、規則版+入出力 snapshot では満たせず、真正性/性能/冪等性/復元を隔離実験で保証できる場合のみ再導入を比較候補へ戻す』。家老 position md に時系列追補(08-17→08-18→08-23) | 採用 | v0.11 §6.1 推奨に転記 |
+| R7 | 16:2x | 家老が殿直接指示 15:56 で運用版 v0.13(運用§A〜D+P01〜P10 カード)へ再構築、旧本文は履歴層。cmd_4484 世代 2 の報告値を §B に併記 | 将軍は履歴層の進捗表を報告値で更新 | v0.13 |
 
 ## §6.1 signal_decision_ledger: 復活 / 廃止 / 休眠(殿 14:59『家老と協議して推奨・メリット・デメリット・トレードオフ。無理に結論を出さず調査優先でもよい』。殿 15:06『時系列が重要。dm-fof-tiebreak-determinism-asis-tobe_20260817.md と note-fof-tiebreak-determinism.md を参考に』。v0.10=将軍案+家老独立見解(signal-decision-ledger-karo-position_20260906.md)+R5 突合)
 
