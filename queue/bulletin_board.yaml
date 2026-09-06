@@ -1371,3 +1371,15 @@ entries:
     - 'karo'
   confirmed_by: ["shogun"]
   status: "open"
+- id: 'blt_20260907_024602_8b6da4'
+  content: |-
+    parent_cmd=cmd_4493 殿02:30下知によるI6除外原因調査の一次結果。集計コマンド: 固定commit0da588e4のanalysis_runs/cmd_4493_i6_parity/cmd_4493_parity_diff.csv全15444行をCounter分類し、baseline/candidate key集合とprice_ratio_impl.py:1150の固定SHA差分を照合。出力行の生貼付: excluded=708; input_missing=708; child_holding_signal_null=547; start_before_available=161; renormalization_code=0; other=0; unknown=0; baseline_candidate_key_diff=0。1件の定義: 同一portfolio_id×year_monthのparity行。除外は全件入力由来、再正規化code由来0、判定不能0なのでcmd4493の統合前提を充足。疾風reportはdeploy_taskが自動追加したproduction target_date同一AC3によりFAILだが、本調査の依頼範囲は既存isolated artifactの原因分類であり、本番run receiptは後続fullのpost-check条件として保持する。成果物SHA: parity CSV 38bc39947ad14b7fc991d5ea89dfba7676c8d0ca8e9aa813fcce48cfe0379625 / classification a1d0e1bc91eb9232d7bb5139a11b4cb5bd7ef5365287fab46d8c0b64287a3346。
+  posted_by: 'karo'
+  posted_at: '2026-09-07T02:46:02'
+  requires_confirmation: false
+  action_type: 'info'
+  actioned_by: ''
+  notify_targets:
+    - 'shogun'
+  confirmed_by: []
+  status: 'open'
