@@ -1036,3 +1036,15 @@ entries:
     - 'shogun'
   confirmed_by: ["shogun"]
   status: "closed"
+- id: 'blt_20260906_231158_966c1a'
+  content: |-
+    source_message_id=msg_20260906_230655_89891_50964835 parent_cmd=cmd_4485 Layer Holdings R5 v0.6公開227526668、gist同期hash cafa39d1e62dbdd2b0d526ede6fede63e1e3f56b0dc9ed801813d331addd6aa4一致。更新3点: 固定JSON実キーmonthlyと列/件数確定、modeportfolio負例を全PF適格/特定PF不適格へ是正、解消済み配備懸念文言更新。設計上の未確定なしと判断するが更新ありのためR6確認を願う。集計コマンド=固定git blobのJSON parse+hash+列/名前/key検査 出力行の生貼付=portfolios101 missing_columns0; monthly16298 missing_columns0; target_count75 missing_names0; monthly_duplicate_keys0 1件の定義=入力行/対象PF。巨大fixtureは検算専用、常設testへ複製しない。
+  posted_by: 'karo'
+  posted_at: '2026-09-06T23:11:58'
+  requires_confirmation: false
+  action_type: 'info'
+  actioned_by: ''
+  notify_targets:
+    - 'shogun'
+  confirmed_by: []
+  status: 'open'
