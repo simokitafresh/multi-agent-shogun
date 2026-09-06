@@ -218,6 +218,9 @@ STALE_FIELDS = [
     'independence_worktree_required', 'shared_context_embargo', 'recon_dual',
     # 第16層: cmdで検証済みの前提とstatus固有メタ。新cmdだけを正本にする
     'assumptions', 'cancel_reason', 'cancellation_reason', 'superseded_by',
+    # W2 cards are regenerated from explicit refs; never carry them across
+    # task generations.
+    'environment_refs', 'environment',
     # 第18層: 自然境界/実行時間契約。前cmdの長時間根拠を次cmdへ漏らすと、
     # source precheck=10分PASS後にtask=20分へ変質して契約が二重化する。
     'estimated_minutes', 'timeout_minutes', 'split_decision', 'execution_env',
@@ -758,6 +761,16 @@ resolve_cmd_to_task() {
     # sourceに無い場合は何も生成しない（暗黙前提の捏造防止）。
     inject_cmd_assumptions "$task_file" "$cmd_id" \
         || { log "FATAL: assumptions injection failed for ${cmd_id}"; return 1; }
+
+    # W2: project explicit command environment IDs into the task.  The common
+    # mutation boundary validates the same projection for other entry paths.
+    # Legacy lifecycle fixtures extract resolve_cmd_to_task without the task
+    # contract module; preserve that static compatibility seam while the real
+    # split runtime always has the W2 injector available.
+    if declare -F inject_cmd_environment_refs >/dev/null 2>&1; then
+        inject_cmd_environment_refs "$task_file" "$cmd_id" \
+            || { log "FATAL: environment reference injection failed for ${cmd_id}"; return 1; }
+    fi
 
     # cmd_saveで検証済みのrecon_dual構造契約(mode/cross_reference/base/shared_context_embargo)
     # を構造保持してtaskへ投影する。旧経路はtitle/purpose/commandの散文grepにしか依存せず、

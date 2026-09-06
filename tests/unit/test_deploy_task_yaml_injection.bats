@@ -3695,3 +3695,105 @@ REPORTYAML
     [ "$status" -eq 0 ]
     [[ "$output" == *"cross_repo_reference_not_resolved_ok=1"* ]]
 }
+
+# test_necessity: W2 environment cards are the explicit deployment contract;
+# this preserves freshness/source/probe safety and prevents stale card reuse.
+@test "W2 projects valid environment cards at the freshness boundary without running probes" {
+    local tmpdir="$BATS_TEST_TMPDIR/w2-environment-valid"
+    mkdir -p "$tmpdir/projects" "$tmpdir/scripts/probes"
+    printf 'canonical environment\n' > "$tmpdir/canonical.txt"
+    printf '#!/bin/sh\nprintf probe-ran > %s\n' "$tmpdir/probe.marker" > "$tmpdir/scripts/probes/localpg.sh"
+    chmod +x "$tmpdir/scripts/probes/localpg.sh"
+    local source_sha
+    source_sha="$(sha256sum "$tmpdir/canonical.txt" | awk '{print $1}')"
+    cat > "$tmpdir/projects/infra.yaml" <<YAML
+environments:
+  localpg:
+    canonical_path: "$tmpdir/canonical.txt"
+    probe_id: localpg
+    verified_at: "2026-09-06T00:00:00+00:00"
+    ttl_seconds: 10
+    source_sha: "$source_sha"
+YAML
+    cat > "$tmpdir/task.yaml" <<'YAML'
+task:
+  environment_refs:
+  - localpg
+  environment:
+  - id: stale
+    canonical_path: /stale
+YAML
+
+    run bash -lc "export SCRIPT_DIR='$tmpdir' DEPLOY_TASK_ENV_NOW='2026-09-06T00:00:10+00:00'; source '$PROJECT_ROOT/scripts/deploy_task/task_contract.sh'; inject_cmd_environment_refs '$tmpdir/task.yaml'"
+    [ "$status" -eq 0 ]
+    run python3 - "$tmpdir/task.yaml" "$tmpdir/probe.marker" <<'PY'
+import os
+import sys
+import yaml
+task = yaml.safe_load(open(sys.argv[1], encoding='utf-8'))['task']
+assert task['environment_refs'] == ['localpg']
+assert task['environment'][0]['id'] == 'localpg'
+assert task['environment'][0]['ttl_seconds'] == 10
+assert not os.path.exists(sys.argv[2]), 'deployment must not execute the probe'
+print('W2_VALID_BOUNDARY_NO_PROBE')
+PY
+    [ "$status" -eq 0 ]
+    [ "$output" = "W2_VALID_BOUNDARY_NO_PROBE" ]
+}
+
+# test_necessity: invalid W2 cards must fail closed before task publication;
+# the matrix covers stale/future/unknown/unsafe probe/source drift.
+@test "W2 rejects invalid environment cards before publication" {
+    local tmpdir="$BATS_TEST_TMPDIR/w2-environment-invalid"
+    mkdir -p "$tmpdir/projects" "$tmpdir/scripts/probes"
+    printf 'canonical environment\n' > "$tmpdir/canonical.txt"
+    printf '#!/bin/sh\n' > "$tmpdir/scripts/probes/localpg.sh"
+    chmod +x "$tmpdir/scripts/probes/localpg.sh"
+    local source_sha
+    source_sha="$(sha256sum "$tmpdir/canonical.txt" | awk '{print $1}')"
+    cat > "$tmpdir/task.yaml" <<'YAML'
+task:
+  environment_refs:
+  - localpg
+  environment:
+  - id: stale
+    canonical_path: /stale
+YAML
+
+    for case_name in expired future unknown unsafe_probe source_mismatch; do
+        cp "$tmpdir/task.yaml" "$tmpdir/task-$case_name.yaml"
+        case "$case_name" in
+            expired)
+                verified="2026-09-05T23:59:00+00:00"; ttl=10; probe="localpg"; sha="$source_sha"; extra="" ;;
+            future)
+                verified="2026-09-06T00:00:20+00:00"; ttl=10; probe="localpg"; sha="$source_sha"; extra="" ;;
+            unknown)
+                verified="2026-09-06T00:00:00+00:00"; ttl=10; probe="localpg"; sha="$source_sha"; extra="" ;
+                sed -i 's/- localpg/- missing/' "$tmpdir/task-$case_name.yaml" ;;
+            unsafe_probe)
+                verified="2026-09-06T00:00:00+00:00"; ttl=10; probe="../localpg"; sha="$source_sha"; extra="" ;;
+            source_mismatch)
+                verified="2026-09-06T00:00:00+00:00"; ttl=10; probe="localpg"; sha="$(printf '0%.0s' {1..64})"; extra="" ;;
+        esac
+        cat > "$tmpdir/projects/infra.yaml" <<YAML
+environments:
+  localpg:
+    canonical_path: "$tmpdir/canonical.txt"
+    probe_id: "$probe"
+    verified_at: "$verified"
+    ttl_seconds: $ttl
+    source_sha: "$sha"
+${extra}
+YAML
+        run bash -lc "export SCRIPT_DIR='$tmpdir' DEPLOY_TASK_ENV_NOW='2026-09-06T00:00:10+00:00'; source '$PROJECT_ROOT/scripts/deploy_task/task_contract.sh'; inject_cmd_environment_refs '$tmpdir/task-$case_name.yaml'"
+        [ "$status" -ne 0 ]
+        run python3 - "$tmpdir/task-$case_name.yaml" <<'PY'
+import sys
+import yaml
+task = yaml.safe_load(open(sys.argv[1], encoding='utf-8'))['task']
+assert task['environment'][0]['id'] == 'stale'
+print('UNCHANGED')
+PY
+        [ "$status" -eq 0 ]
+    done
+}
