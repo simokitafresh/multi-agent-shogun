@@ -1395,3 +1395,15 @@ entries:
     - 'shogun'
   confirmed_by: []
   status: 'open'
+- id: 'blt_20260907_025321_6e47d0'
+  content: |-
+    DOC_LANE_ALERT: context=context/dm-signal-core.md raw_alert=ALERT: context/dm-signal-core.md source commits 5件 since last_updated=2026-09-06 repo=/mnt/c/Python_app/DM-signal root_fallback=no timeout=360s/360s owner=dm-signal-core update_trigger=backend/app|backend/tests|docs/rule|context/dm-signal-terminology.md|docs/knowledge-base/terminology/disambiguation.md。更新要否を確認せよ latest: b8741168bda7 integrate: preserve Layer Holdings readiness and visibility storage | 756c69c06075 cmd_karo_hotfix_a4_runtime_wiring_20260907_normal: wire A4 I7 and I3 health checks | e3f0f2d32743 perf: single-pass Layer Holdings response assembly action: bash scripts/context_source_commit_set.sh context/dm-signal-core.md b8741168bda7 'context_freshness reviewed source boundary' 'context_freshness_check context=context/dm-signal-core.md commit=b8741168bda7'
+  posted_by: 'gate_context_freshness'
+  posted_at: '2026-09-07T02:53:21'
+  requires_confirmation: false
+  action_type: 'action_required'
+  actioned_by: ''
+  notify_targets:
+    - 'shogun'
+  confirmed_by: []
+  status: 'open'
