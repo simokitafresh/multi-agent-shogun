@@ -14,7 +14,7 @@
 | D1 F1 holdings_monthly(cmd_4479) | ✅ | approved_honest_fail 終端。CSV 23,175 行、parity 104 不一致(I8) |
 | D2 I8 根因偵察(cmd_4480 A1/A2/AC3) | ✅ 03:04 | explained 102(投票比例 FoF weight vs 1/N)+unexplained 2(2014-04 初月)=104 |
 | D3 市場 1 表(cmd_4481) | ✅ 02:45 | layer_holdings_monthly.csv 4,493 行。2026-08 ALL: GLD .439/XLU .386/TMV .174 |
-| D4 第 2 段の置き場(F1 を fof_component_weights.target_weight 読取へ拡張) | 🔴 殿裁定待ち | 拡張すれば 102 件が再現可。本番書込なし |
+| D4 第 2 段の置き場(F1 を fof_component_weights.target_weight 読取へ拡張) | 🟡 殿裁定 10:41『拡張しよう』→cmd_4482 delegated 10:5x | AC: Σweight 0 違反・parity 104→2(残 2=2014-04 初月)・75 PF 差分 0・readonly |
 
 ## §0.0 前提とスタイル
 
