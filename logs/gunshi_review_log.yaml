@@ -12218,7 +12218,8 @@
   verdict: FAIL
   verified_files:
     - "queue/reports/saizo_report_cmd_karo_recon2_p09_document_alignment_20260906.yaml:1"
-  gate_result: null
+  gate_result: "CLEAR"
+  gate_synced_at: "2026-09-06T21:32:23+09:00"
   confidence: LOW
   finding_categories:
     - assumptions
@@ -12301,7 +12302,8 @@
   verdict: FAIL
   verified_files:
     - "queue/reports/saizo_report_cmd_karo_recon2_p09_document_alignment_20260906.yaml:105-106"
-  gate_result: null
+  gate_result: "CLEAR"
+  gate_synced_at: "2026-09-06T21:32:23+09:00"
   confidence: MEDIUM
   finding_categories:
     - assumptions
@@ -12385,6 +12387,8 @@
     - 'adversarial: DB/本番操作0。提案patchのみ'
     - 'assumption_check修正: 前版の未確認語をscope外分離表現に書換え→SG-PRE9c PASS'
     review_type: report
+  gate_result: "CLEAR"
+  gate_synced_at: "2026-09-06T21:32:23+09:00"
     reviewed_at: '2026-09-06T21:22:00+09:00'
     reviewer: gunshi
     sg_checklist:
@@ -12404,7 +12408,8 @@
   verified_files:
     - "queue/reports/saizo_report_cmd_karo_recon2_p09_document_alignment_20260906.yaml:105"
     - "queue/notes/p09_document_alignment_20260906:1-26"
-  gate_result: null
+  gate_result: "CLEAR"
+  gate_synced_at: "2026-09-06T21:32:23+09:00"
   confidence: HIGH
   finding_categories:
     - assumptions
