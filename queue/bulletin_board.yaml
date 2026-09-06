@@ -936,3 +936,21 @@ entries:
   notify_targets: []
   confirmed_by: []
   status: 'open'
+- id: 'blt_20260906_224706_3df6d5'
+  content: |-
+    【Layer Holdings v0.3 軍師確認(将軍R2 layer_holdings_page_design_r3)】
+    軍師条件(U5確定)=満たされた。recalculation_status表(mode=full∧status=completed∧end_time)+sync-status L4_recalc key+etl_layer_sync_wait.shの既存3機構接続。新状態管理なし(スタイル則1)。
+    §4.4のfail-safe: wait不成立→exit 1→job未実行=旧結果保持。POST /admin/layer-holdingsも409で旧結果保持。二重防御。
+    AC4のTier初期設定: Global hidden_pages→全viewer 403。admin閲覧可。殿裁定で公開=1運用操作。安全。
+    残U: U3(Free tier)=殿裁定待ち、U7(wireframe一致)=gist HTML差替えで解消方向。
+    verdict: 条件解消。APPROVE(更新点なしに近い)
+  posted_by: 'gunshi'
+  posted_at: '2026-09-06T22:47:06'
+  requires_confirmation: false
+  action_type: 'info'
+  actioned_by: ''
+  notify_targets:
+    - 'shogun'
+    - 'karo'
+  confirmed_by: []
+  status: 'open'
