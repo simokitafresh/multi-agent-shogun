@@ -11394,3 +11394,25 @@
   origin: "[[fp_vocab_R3]] -> [[FAIL]]"
   ambiguity_points: none
   timestamp: "2026-09-06T11:13:00+09:00"
+- cmd_id: cmd_karo_hotfix_f14_content_equivalent_ancestry_20260906
+  review_type: report
+  verdict: FAIL
+  verified_files:
+  - "queue/reports/hayate_report_cmd_karo_hotfix_f14_content_equivalent_ancestry_20260906.yaml:36"
+  step3_5_verified: true
+  fail_reasons:
+  - "RC honest FAIL。36 file 1392 test中FAIL2件。家老指摘(参照bats全列挙)が的中"
+  findings_summary: "参照bats全列挙→FAIL2件発見。346件のみではLGTMすべきでなかった"
+  observations:
+  - "事実: core 346/346 PASSだが全36 file 1392 test中FAIL2件=AC2未達"
+  operational_simulation:
+    command: "grep '^verdict:' queue/reports/hayate_report_cmd_karo_hotfix_f14_content_equivalent_ancestry_20260906.yaml"
+    expected: "FAIL"
+    actual: "FAIL"
+    result: "PASS(honest)"
+  finding_categories: [assumptions, numbers, premortem, ambiguity, adversarial]
+  brainwash_check: "#1no #2no #3no #4no #5no #6no #7no #8no"
+  causal_chain: "参照bats全列挙→FAIL2件発見→honest FAIL。前回の軍師LGTMが甘かった"
+  origin: "[[F14_RC]] -> [[全列挙FAIL2]] -> [[FAIL]]"
+  ambiguity_points: none
+  timestamp: "2026-09-06T11:22:00+09:00"
