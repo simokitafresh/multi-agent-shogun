@@ -12119,3 +12119,64 @@
       SG6_code_quality: PASS
       SG7_gate_prediction: PASS
     verdict: APPROVE
+- cmd_id: cmd_karo_recon2_root_drain_plan_20260906
+  review_type: report
+  verdict: FAIL
+  verified_files:
+    - "queue/notes/root_drain_plan_20260906/context_causal_union.md:1-26"
+  gate_result: null
+  confidence: MEDIUM
+  finding_categories:
+    - assumptions
+    - premortem
+    - adversarial
+    - ambiguity
+  findings_summary: "AC1/AC2実作業は高品質。test_runner bc=no(recon2外部scope mapping不在)でGATE BLOCK確定→FAIL。"
+  observations:
+    - "AC2の隔離worktree causal union: target/local missing=0, dup=0, conflict=0, git apply PASS"
+    - "commit_contract.required=false(recon2)。共有root変更0。tree_unchanged=true"
+    - "adversarial: 隔離worktreeで共有rootに変更なし、dirty overlay保全済み"
+    - "ambiguity: AC条件が明確。曖昧箇所なし"
+  operational_simulation:
+    command: "git apply --check queue/notes/root_drain_plan_20260906/patch/context_causal_union.patch"
+    expected: "frozen targetへのpatch適用がPASSすること"
+    actual: "apply check/apply PASS。target/local missing=0、dup=0、conflict=0"
+    result: PASS
+  origin: "[[cmd_karo_recon2_root_drain_plan_20260906]] -> [[test_runner_rc2_recon2]] -> [[FAIL]]"
+  causal_chain: "recon2タスク→外部scope mapping不在→run_tests RC=2→test_runner bc:no→verdict FAIL→GATE BLOCK。AC作業はインフラ制約外で正常完結"
+  step3_5_verified: true
+  hole_action: none
+  brainwash_check: "#1no #2no #3no #4no #5no #6no #7no #8no test_runner FAIL=インフラ制約を一次確認。bc:no 1/1件確認"
+  timestamp: "2026-09-06T20:55:00+09:00"
+- cmd_id: cmd_4485
+  review_type: report
+  verdict: FAIL
+  verified_files:
+    - "queue/reports/kagemaru_report_cmd_4485.yaml:282-312"
+  gate_result: null
+  confidence: MEDIUM
+  finding_categories:
+    - assumptions
+    - numbers
+    - premortem
+    - adversarial
+    - ambiguity
+  findings_summary: "AC1 yes(隔離DB復元完了)。AC2 no(I6全期間unknown)。AC3 no(I4全期間unknown)。正直FAIL報告。GATE BLOCK確定。"
+  observations:
+    - "AC1: 隔離DB cmd4485_a/cmd4485_b復元、preflight 3 wall計測、本番credential非継承"
+    - "AC2: I6再現2経路(weight omission Σ=0.75、child signal削除Σ=0.833)。全期間はunknown"
+    - "AC3: I4 C休眠/B段階的廃止確認。A=0/B=14450、再実行0、production write 0"
+    - "adversarial: 本番DB書込/deploy/full recalc=0。隔離実験のみ。安全"
+    - "ambiguity: AC1最小入力とAC2/3全期間入力の境界が曖昧。decision_candidate提出済み"
+    - "10 cross-repo commits全てDM-Signal repoに実在(SG-PRE3b 10/10 PASS)"
+  operational_simulation:
+    command: "git -C /mnt/c/Python_app/DM-signal show a638572dc8:analysis_runs/cmd_4485_isolated_impact/i4_deprecation_no_loss.md | head -5"
+    expected: "I4廃止確認の成果物が最終commit a638572dcに存在"
+    actual: "commit実在確認済み(SG-PRE3b PASS)"
+    result: PASS
+  origin: "[[cmd_4485]] -> [[input_coverage_gap]] -> [[honest_unknown_AC2_AC3_FAIL]]"
+  causal_chain: "AC1最小入力取得→AC2/3全期間要求との乖離→unknownをPASS補完せず正直FAIL→GATE BLOCK。decision_candidate提出済み"
+  step3_5_verified: true
+  hole_action: none
+  brainwash_check: "#1no #2no #3no #4no #5no #6no #7no #8no AC2/AC3 bc:no 2件を確認。unknown→yesの虚偽補完なし(LG043 PASS)。SG-PRE9c PASS"
+  timestamp: "2026-09-06T20:57:00+09:00"
