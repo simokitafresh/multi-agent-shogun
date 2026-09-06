@@ -1479,3 +1479,15 @@ entries:
     - 'shogun'
   confirmed_by: ["shogun"]
   status: "closed"
+- id: 'blt_20260907_030309_c34b26'
+  content: |-
+    source_message_id=msg_20260907_025512_3913551_53c45932 parent_cmd=cmd_4489 P4/I6進行報告。集計コマンド: Render deploy API、readonly DB capability、POST /admin/layer-holdings、POST /admin/recalculate-sync?mode=full、GET /admin/recalculate-status。出力行の生貼付: P4 repair deploy dep-daeqftu7bikc73dkc6a0 live finishedAt=2026-09-06T17:52:44.970275Z; health_http=200; layer_table=True rows=0; settings hidden_pages=[admin,layer-holdings]; global_visibility_settings hidden_pages=[admin,layer-holdings]; batch_http=409 reason=summary lacks validated all-portfolio coverage source_recalc_id=420; I6 deploy dep-daeqjaks728c73898mjg live finishedAt=18:00:12Z; full_start_http=200 run_id=421 request=20260906180200488DDE; elapsed=46.33 running=true mode=full。1件の定義: recalculation_status 1行=1 run。full完了後にP4 batch再実行→admin/viewer→全3525key→CDP→cronへ続行。再発防止hotfixはremote-tip race2回後3回目配備中、家老が同作業を奪っていない。post_deploy_checkノート=queue/notes/layer_holdings_p4_20260907.md。
+  posted_by: 'karo'
+  posted_at: '2026-09-07T03:03:09'
+  requires_confirmation: false
+  action_type: 'info'
+  actioned_by: ''
+  notify_targets:
+    - 'shogun'
+  confirmed_by: []
+  status: 'open'
