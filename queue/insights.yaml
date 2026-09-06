@@ -20109,3 +20109,17 @@ insights:
   source: "semantic_index_update"
   fix_known: false
   status: pending
+- id: INS-20260906-232746907-00e8
+  ts: "2026-09-06T23:27:46+09:00"
+  insight: "semantic_index_update新概念候補: discussion:task notification task id bojr97a4e task id tool use id toolu 01Xeg9QU7ayujbQ36o は 既存aliasesに一致なし。概念定義とaliases追加を検討せよ"
+  priority: "low"
+  source: "semantic_index_update"
+  fix_known: false
+  status: pending
+- id: INS-20260906-232749706-718a
+  ts: "2026-09-06T23:27:49+09:00"
+  insight: "semantic_index_update新概念候補: discussion:task notification task id b12sd5bu7 task id tool use id toolu 01EbBdZtbQCyXYRcuL は 既存aliasesに一致なし。概念定義とaliases追加を検討せよ"
+  priority: "low"
+  source: "semantic_index_update"
+  fix_known: false
+  status: pending
