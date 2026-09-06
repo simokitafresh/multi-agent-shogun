@@ -1,5 +1,5 @@
 <!-- gist-master: 2f1a3daa07c336c90958b1287245318b dm-signal-production-inconsistency-asis-tobe_20260906.md -->
-# DM-Signal 本番不整合 I1〜I9 — 現況・配備カード・データフロー・カタログ・因果・改善影響・ledger 判断 統合設計書 v1.18(2026-09-06 21:45)
+# DM-Signal 本番不整合 I1〜I9 — 現況・配備カード・データフロー・カタログ・因果・改善影響・ledger 判断 統合設計書 v1.19(2026-09-06 23:02 P08-I7 GATE CLEAR 23:00=F-19 gate 修正 e3214c8e1 で WAIT 解消。v1.18=21:45)
 
 - 発端: 殿 2026-09-06 14:11『dm-signal-research-data-backlog_20260905.md を参考に DM-signal の本番の不整合について深く調査しよう。家老と繰り返しレビュー交換をせよ。本番の不整合、それによる影響、改善時にどのような変化が本番に起きるか、改善の影響範囲・依存関係なども明確にせよ』。以後の殿指示: 14:44 データフロー、14:45 ユーザー可視/内部/デッドコード、14:47 設計の因果、14:59 ledger 協議、15:06 時系列、15:15 可視変化の定量化、15:33 3 設計書並列、15:56 配備・進捗運用版(家老)、16:33 単一スタイルへ再構築。
 - 読む順: §2(現況)→§3(配備カード)→§5(カタログ)→§9(改善影響)→§10(ledger)。図は §4、根拠は §5〜§7、順序と契約は §8、裁定は §11、往復は §12、版は §13。
@@ -49,7 +49,7 @@
 | (18:22/18:25 追記) P05 取得停止 / 家老・将軍 | 18:20 観測: 2 回目取得も直近 12 ヶ月のみ(1,020 PF-月、API 1,194 行・error 48)。家老が追加取得を停止 | — | — | 将軍裁定追補 18:25: 12 ヶ月分は許可 1 回に数えない。実全期間の不足 manifest を**家老が事前確認するまで取得停止を維持**。R13 の APPROVE は設計記述に限り、全期間実験完了や追加取得確認済みを意味しない |
 | P07 / 飛猿 | 2026-09-06 18:56配備・着手確認。列8件とdetail_historyの利用契約調査 | draft APPROVE | 未実行 | `cmd_karo_recon2_p07_column_contract_20260906`。DB/DDL/deploy0、列別契約をP05待ちにしない |
 | P09 / 才蔵 | 18:56配備・着手確認。4文書と固定codeの適用履歴対応 | draft APPROVE | 未実行 | `cmd_karo_recon2_p09_document_alignment_20260906`。時点付き訂正案を作成、共有文書の直接変更0 |
-| P08-I7 / 疾風 | 19:00配備。既存verification_service.py/test_verification_tables.py拡張 | draft再通知済み（初回通知lock失敗） | 未実行 | `cmd_karo_hotfix_p08_i7_monitor_20260906`。隔離code/test・commitまで。本番起動/deploy0。I2抑止は別扱い |
+| P08-I7 / 疾風 | 19:00配備。既存verification_service.py/test_verification_tables.py拡張 | LGTM→**GATE CLEAR 23:00**(F-19 gate 修正 e3214c8e1 後の初周期。WAIT ancestry 19:2x〜23:00=約 3.5h) | 未実行(呼出 0=挙動不変、配線は殿 OK 後) | `cmd_karo_hotfix_p08_i7_monitor_20260906`。隔離code/test・commitまで。本番起動/deploy0。I2抑止は別扱い |
 | P10 / 未配備 | 裁定と採用対象の確定待ち | 未実行 | 未実行 | 本番変更の許可を上記の調査/実装準備から推定しない |
 
 ### §2.2 cmd_4484 世代 2 の新観測(旧観測を消さず併記)
@@ -110,7 +110,7 @@ cmd_4484 世代2の**報告値**。オフライン検証出力は確認済みだ
 | P05 I6/I8可視影響実験 / **cmd_4485 影丸 走行中**(17:34 着手。AC1 前 flight 済み: 復元 39 秒・I6 再現 Σ=0.75/0.833・ledger 258 行冪等。全期間入力の追加 readonly を将軍裁定 18:07 で許可→AC2‖AC3 全期間再走。半蔵が AC3 の SQL/API 差分計画を並行準備 17:59) | P03受入、cmd_4485詳細・隔離復元前flight確認。I4とは分割可 | 専用local PostgreSQL、price_ratio_impl / monthly_returns / recalculate_fof。現行対候補の全差分 | §9.2全計測量（PF-月/直近12月/weight/return/cumulative/境界日）と復元・計算・比較wallを提出。旧35行が再現しなければその証拠を残し、本番修正へ進まない |
 | P06 I4 ledger判断資料 / cmd_4485 AC3(影丸、半蔵準備)で U1 5 種別を取得中 | P02分類・P04役割manifest、保護要件の確認。A実験は§10再導入条件と整合させる | ledger依存15fileの役割、MonthlyTrade置換、歴史builder、代替snapshot、B①無効化②表保持③DROPの段階表 | 保護対象/期間/出典・代替可否・真正性・冪等性・復元を判定可能にする。I5=0だけで廃止しない。今C/B調査第一候補を維持。§5 I4、§9.2、§10全文 |
 | P07 I1/detail_history契約調査 / **飛猿 配備 18:56**(cmd_karo_recon2_p07_column_contract_20260906) | P04と同一ファイル調査は分担を先に固定。DDLは別段階 | 8列のDTO/API/admin/外部利用、verification writer/caller/過去入口。列別契約表 | 8/8列とreader/writer/runtime/行数の4軸を区別。外部利用未確認はunknown。将来契約と復元を評価。§5 I1/I4、§7、§9.1 |
-| P08 I2抑止・I3/I7監視設計 / **I7 checker=疾風、main 収載 f3d20d3c・本番 deploy 19:28(殿 事後承認 20:29、呼出 0=挙動不変)**。呼出配線(ALERT 化)は殿 OK 後。I2 抑止は分類待ち、I3 監視は次カード(非 main branch で code+test) | P02分類確定。I7部分は独立に準備可 | signal_flush/collector/ALERT/A4。変更候補と契約test計画 | 正当往復を消さず、分類確定経路のみ。INSERT監査目的との整合、I7欠落検出の二値条件、過去行保存を明示。§5 I2/I3/I7 |
+| P08 I2抑止・I3/I7監視設計 / **I7 checker=疾風、main 収載 f3d20d3c・本番 deploy 19:28(殿 事後承認 20:29、呼出 0=挙動不変)**。呼出配線(ALERT 化)は殿 OK 後。**cmd は GATE CLEAR 23:00**(F-19 で gate WAIT 解消)。I2 抑止は分類待ち、I3 監視は次カード(非 main branch で code+test) | P02分類確定。I7部分は独立に準備可 | signal_flush/collector/ALERT/A4。変更候補と契約test計画 | 正当往復を消さず、分類確定経路のみ。INSERT監査目的との整合、I7欠落検出の二値条件、過去行保存を明示。§5 I2/I3/I7 |
 | P09 I9文書整合 / **✅ CLEAR 21:32**(才蔵、no-code。固定 SHA 0f2bfbcd の ledger/signal_flush 2 blob・21e80e30・T7.5 c13a56fe/0e9d158d・rollback 233c2303・139 件を一次照合、4 文書の訂正 patch と照合表を queue/notes/p09_document_alignment_20260906 へ保存。**文書への適用は未実施=次段**) | 固定blob/差分一次証拠、P04と履歴調査を共有可 | backlog B2・PI-P06・ops・本書。適用/撤回/未検証の対応表 | 2file同値とbackend139履歴commitを一般化しない。規範PIと過去実施記録を消さず現行注記を追加。§5 I9、§6、§5 |
 | P10 採否・本番実行計画 / 裁定待ち | P05〜P09の該当成果物受入、個別承認・backup/restore証拠 | §4可視差分、採用案、対象集合、実行・復元手順 | 何が何件どれだけ動くか、未確定、許可境界が揃うまで本番実行しない。ledger訂正eventをcoverage無し復元と同一視しない。§8.1/§9.1/§9.2/§10 |
 
