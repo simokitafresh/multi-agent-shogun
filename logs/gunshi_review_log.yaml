@@ -11534,3 +11534,25 @@
   origin: "[[cmd_4483]] -> [[status不整合]]"
   ambiguity_points: none
   timestamp: "2026-09-06T12:24:00+09:00"
+- cmd_id: cmd_4483
+  review_type: report
+  verdict: FAIL
+  verified_files:
+  - "queue/reports/hanzo_report_cmd_4483.yaml:36"
+  step3_5_verified: true
+  fail_reasons:
+  - "内容OK(除外450内訳確認/parity0)。bundle BLOCK(ac_evidence_mapping)。家老通知済み"
+  findings_summary: "RC内容OK。bundle BLOCK"
+  observations:
+  - "事実: 35+22+47=104/115+128+103=346/450=12372-11922。UUID撤去。正規receipt"
+  operational_simulation:
+    command: "python3 -c 'print(35+22+47, 115+128+103)'"
+    expected: "104 346"
+    actual: "104 346"
+    result: "PASS"
+  finding_categories: [assumptions, numbers, premortem, ambiguity, adversarial]
+  brainwash_check: "#1no(除外450独立再計算) #2no #3no #4no #5no #6no #7no #8no"
+  causal_chain: "ac_evidence_mapping→bundle BLOCK→家老通知"
+  origin: "[[cmd_4483_RC]] -> [[bundle_BLOCK]]"
+  ambiguity_points: none
+  timestamp: "2026-09-06T12:42:00+09:00"
