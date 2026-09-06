@@ -1,5 +1,5 @@
 <!-- gist-master: 2f1a3daa07c336c90958b1287245318b dm-signal-production-inconsistency-asis-tobe_20260906.md -->
-# DM-Signal 本番の不整合 I1〜I8 — 事象・影響・改善時の本番変化・影響範囲・依存関係 設計書 v0.7(2026-09-06 15:08 家老 R3 REQUEST_CHANGES 全採用: F-A/F-B/F-D/F-E/F-F 訂正、§2.5 の断定を候補/仮説へ、§2.6 を 4 分類+偽陽性源、I9 限定を再徹底) / v0.6(15:00 殿 14:45/14:47: §4 を『ユーザー可視/内部のみ/デッドコード』の 3 列へ、§2.5 設計の因果(導入 commit と意図、バグ/意図あり/失効の判定)、§2.6 デッドコード候補) / v0.5(14:55 殿 14:44『データの流れのフローチャート、粒度小・分割可・cron の日常再計算も』→§1.5 に F-A〜F-F 6 枚、★で I1〜I9 の発生点を明示) / v0.4(14:32 家老 R2 APPROVE(読取偵察のみ)・残訂正 6 点採用: I6 の Σ<1 断定撤回、I2/I3 の二重計上と直列依存を撤去、I5 六分類へ統一、I4 の実行 0 断定撤回、訂正 event で可逆性確定しない) / v0.3(14:40 家老 R1 REQUEST_CHANGES 6 点を全採用: I4 は writer 実装あり caller 0/ledger API は today 固定・append-only guard/I1 admin caller 実在・8 key/I2 ALERT filter 既存・相殺しない/I6 切替日検出と欠損 child skip も波及/偵察は親 1 本+成果物 A/B) / v0.2(14:35 将軍自己検証 3 点: I1 の frontend 参照あり・I6 は monthly_return 経路と同一関数・change_log 前方補完の一致率 26〜79%=change_log は履歴として再構成不能) / v0.1(14:25 起草、家老 R1 依頼)
+# DM-Signal 本番の不整合 I1〜I8 — 事象・影響・改善時の本番変化・影響範囲・依存関係 設計書 v0.8(2026-09-06 15:12 殿 14:59 ledger 復活/廃止の協議→§6.1 に 3 案比較(A 復活/B 廃止/C 休眠)・事実年表・トレードオフ・暫定推奨 C+追加調査 3 本、家老見解待ち) / v0.7(15:08 家老 R3 REQUEST_CHANGES 全採用: F-A/F-B/F-D/F-E/F-F 訂正、§2.5 の断定を候補/仮説へ、§2.6 を 4 分類+偽陽性源、I9 限定を再徹底) / v0.6(15:00 殿 14:45/14:47: §4 を『ユーザー可視/内部のみ/デッドコード』の 3 列へ、§2.5 設計の因果(導入 commit と意図、バグ/意図あり/失効の判定)、§2.6 デッドコード候補) / v0.5(14:55 殿 14:44『データの流れのフローチャート、粒度小・分割可・cron の日常再計算も』→§1.5 に F-A〜F-F 6 枚、★で I1〜I9 の発生点を明示) / v0.4(14:32 家老 R2 APPROVE(読取偵察のみ)・残訂正 6 点採用: I6 の Σ<1 断定撤回、I2/I3 の二重計上と直列依存を撤去、I5 六分類へ統一、I4 の実行 0 断定撤回、訂正 event で可逆性確定しない) / v0.3(14:40 家老 R1 REQUEST_CHANGES 6 点を全採用: I4 は writer 実装あり caller 0/ledger API は today 固定・append-only guard/I1 admin caller 実在・8 key/I2 ALERT filter 既存・相殺しない/I6 切替日検出と欠損 child skip も波及/偵察は親 1 本+成果物 A/B) / v0.2(14:35 将軍自己検証 3 点: I1 の frontend 参照あり・I6 は monthly_return 経路と同一関数・change_log 前方補完の一致率 26〜79%=change_log は履歴として再構成不能) / v0.1(14:25 起草、家老 R1 依頼)
 
 - 発端: 殿 2026-09-06 14:11『dm-signal-research-data-backlog_20260905.md を参考に DM-signal の本番の不整合について深く調査しよう。家老と繰り返しレビュー交換をせよ。本番の不整合、それによる影響、改善時にどのような変化が本番に起きるか、改善の影響範囲・依存関係なども明確にせよ』
 - 親: `docs/research/dm-signal-research-data-backlog_20260905.md` v1.5 §B5(I1〜I8)、`dm-signal-research-data-foundation-asis-tobe_20260905.md` v0.10 §2、`analysis_runs/cmd_4480_shin_yotsume_parity/root_cause_summary.md`(DM-Signal origin 07632b14)
@@ -307,8 +307,41 @@ I7: 監視 1 行(独立)
 | R3 | 14:56 | 図と因果判定は REQUEST_CHANGES(review-r3 md): F-A に月初 cron/L5 precompute/キャッシュ境界・L2 は FoF へ波及しない、F-B Phase 0 は delete_signals=False、F-D は reconcile→比較→UPSERT→log→commit で pending flag は DB 列に無い、F-E URL、§2.5 は仮説と確定を分ける・I9 一般化再発、§2.6 の分類 4 種と偽陽性源、デッドコード全域監査は別 cmd | 全採用 | v0.7 |
 | R4 | (家老待ち) | | | |
 
+## §6.1 signal_decision_ledger: 復活 / 廃止 / 休眠の比較(殿 14:59『家老と協議して推奨・メリット・デメリット・トレードオフ。無理に結論を出さず調査優先でもよい』。将軍案 v0.8、家老見解は §5 R4 で突合)
+
+### 事実(一次)
+| 時期 | 事実 | 出所 |
+|---|---|---|
+| 07-06 | cmd_3700/3703 で導入。目的=確定月の holding_signal を再計算で上書きさせない(PI-P06『確定月 ledger 優先』)。write guard+daily insertion flow | 5e9ea355 / c449c35d |
+| 07-06 | cmd_3711 historical_backfill 2003〜2026 **15,160 行** | dm-monthly-trade-pending-simplify §AsIs |
+| 07-09/10 | cmd_3771 threshold_band 導入後、**ledger が band 前の値で全期間凍結**され GS と 20% 乖離(cmd_3803→3805 根因確定)。PI-P06 の意図的仕様と band の遡及が衝突 | 軍師 blt_20260710_000919 |
+| 07-03/07-14 | 確定保有の書換え ALERT(cmd_3679)、新規 INSERT の ledger drift ALERT(hotfix 05a45d83) | signal_flush.py L364-383/L155-166 |
+| 08-10〜12 | `[SIGNAL DECISION DRIFT] confirmed decision blocked` の CRITICAL 連発(殿 08-10 20:44『ずっと critical が出ているが問題ではないか』)→T7.5 で guard detect-only 化+alert hot path 撤去(08-12) | semantic 08-10 20:44 / c13a56fe・0e9d158d |
+| 08-13/16 | rollback 233c2303(T7.5 未適用)→PITR 復旧で **ledger 0 行**(バックフィル未再実行) | I9 / knowledge c028b9c0 |
+| 08-17 | Monthly Trade が全期間 Pending 表示(ledger 行なし=⏳)→殿裁定で **UI から decision_source バッジと NEXT SIGNAL を撤去**(cmd_4324)=UI の ledger 依存を縮小 | knowledge dc7afec9 |
+| 現在 | runtime は読むだけ・0 行で no-op。writer は初期投入 API(today 固定)と訂正 event のみ。append-only guard 有効。読者は monthly_returns 生成・reconcile・monthly_trade・safe_bundle・restore 等 15 file | §2 I4、F-E |
+
+### 3 案の比較
+| | A 復活(再バックフィル+保護 ON) | B 廃止(依存 15 file を撤去) | C 休眠維持(現状を正式化: 0 行・検知のみ・F1 を確定 snapshot の正本に) |
+|---|---|---|---|
+| 得るもの | 確定月の holding_signal と decision_ticker_weights が再計算で**黙って変わらない**(cmd_3703 の目的)。ledger drift ALERT 復活 | コード 15 file・表 2 本・append-only guard・today 固定 API の保守負債が消える。再計算=真実の 1 経路に単純化 | 本番変更 0。change_log+ALERT(既存、ledger 不要)で書換えは**検知**できる。F1(cmd_4483、月次 CSV)が外部の確定 snapshot として機能し、差分は研究側で追える |
+| 失うもの/リスク | ①cmd_3805 型の再発: バグ修正や規則変更(band 等)が凍結値に遡及しない→GS/研究との乖離が固定化 ②08-10 型: 再計算が確定値を変えようとするたび CRITICAL(原因は「再計算の方が正しい」場合も多い) ③I5 の差がそのまま凍結される ④復元は append-only で困難(R2-6) ⑤バックフィル入口が today 固定=cmd_3711 手順の現 schema 再実行と dry-run が必要 ⑥①ユーザー可視: 差がある月の表示・return が変わる | ①保護が無い状態が恒久化: 価格訂正・コード変更で過去の確定保有が黙って変わり得る(現状と同じだが「仕様」になる) ②撤去の変更量が大きい(15 file+UI 型) ③将来「確定値の証跡」が要る時に作り直し | ①保護は無い(B と同じ、現状と同じ) ②休眠コードが残る(0 行 no-op、§2.6 分類「動作中の guard」) ③「いつまで休眠か」を決めないと B/A の判断が先送りになる |
+| 本番変化(ユーザー可視) | あり(I5 分類で件数提示後) | なし | なし |
+| 可逆性 | 低(append-only、別 dry-run) | 中(revert 可、表は残す) | 高 |
+| 前提となる未検証 | I5 分類(何月が変わるか)、cmd_3711 手順の dry-run、T7.5 相当の再適用要否 | 15 file の役割 manifest、safe_bundle/restore の ledger 前提 | F1 を確定 snapshot として運用する手順(月次 CSV の保管先と突合頻度) |
+
+### トレードオフの本体
+- 「**確定値を凍結する**(ledger)」と「**再計算を常に真実とする**(現行の日次 cron 設計)」は両立しない。07-09 の threshold_band 乖離と 08-10 の CRITICAL 連発は、この二つが同居した結果。復活するなら「凍結するのは holding_signal だけで数値は再計算に従う」等の**凍結範囲の再定義**が要る(cmd_3703 の設計をそのまま戻すのは同じ衝突を戻す)。
+- 廃止しても「黙って変わる」問題は残る。ただし検知(change_log+ALERT)は ledger 無しで動いており、cmd_4324 で UI の依存も外れているため、**失うのは「阻止」だけ**。
+
+### 将軍の暫定推奨(家老見解と突合前)
+- **今は C(休眠維持)。A/B は cmd_4484 の I5 分類と追加調査 2 本の後に決める。**
+- 理由: (1) 本番変更 0 で殿の時間を奪わない (2) A の価値は「確定月が実際に黙って変わっているか」(I5 分類の (2) の件数)で決まり、まだ測っていない (3) B は変更量が大きく、A の可能性を潰す不可逆性がある。
+- 追加調査(cmd_4484 の後、readonly/隔離): ①I5 分類で「ledger 不在で再計算上書き」と判定された PF-月の件数と、そのうちユーザー可視の月(直近 12 ヶ月)の件数 ②cmd_3711 手順の隔離 DB dry-run(現 schema で 15,160 行相当が再現できるか、所要時間、today 固定 API の回避法) ③凍結範囲を holding_signal のみに限定した場合に cmd_3805 型の乖離が起きないかの静的確認。
+- 判断規則(提案): ①が 0 か極小なら B(保護は不要だった)。①が無視できず②が可能なら A を凍結範囲再定義付きで。②が不可能なら B+F1 snapshot 運用。
+
 ## §6 殿裁定を要する点(v0.1 時点)
-1. I4: signal_decision_ledger を復活(再バックフィル)するか廃止するか。判断材料=I5 分類の結果(復活で表示が変わる月の件数)。
+1. I4: signal_decision_ledger を復活/廃止/休眠(§6.1)。将軍暫定=C 休眠、判断材料=I5 分類+dry-run+凍結範囲の静的確認。家老見解を §5 R4 で突合。
 2. I6: display の再正規化 1 行修正を先行するか、A10 一元化まで待つか。判断材料=非 unit 35 行の月の monthly_return 影響有無(偵察)。
 (I1 DROP・I2 抑止・I7 監視・I8 偵察は裁定不要、順序は §3。本番書込は全て個別に殿 OK を取る)
 

@@ -1,5 +1,6 @@
 # インフラコンテキスト
-<!-- last_updated: 2026-09-06 2026-09-06 14:56 将軍doc lane: C3 completion span 残件(323a7a6e4)を反映 -->
+<!-- last_updated: 2026-09-06 2026-09-06 15:03 将軍doc lane: C3 span 残件の source 1fb456f8(publisher merge 323a7a6e4 と同内容) -->
+<!-- source_commit:1fb456f82cb4 reason:2026-09-06 15:03 将軍doc lane: C3 span 残件の source 1fb456f8(publisher merge 323a7a6e4 と同内容) evidence:git merge-base --is-ancestor 1fb456f8 origin/main; 既存 C3 bullet(15:5x)が本 source を記述 -->
 <!-- source_commit:323a7a6e48e2 reason:2026-09-06 14:56 将軍doc lane: C3 completion span 残件(323a7a6e4)を反映 evidence:git show 323a7a6e4 --stat = cmd_complete_gate.sh +26, test_cmd_complete_gate_source_publish.bats +17 -->
 <!-- source_commit:cfbc6a73607c reason:2026-09-06 14:02 将軍doc lane: publisher_c2a_merge C2A_REPO_ROOT(200fb1dba)+F-16 修正(cfbc6a736)を反映 evidence:git show cfbc6a736 --stat = scripts/publisher_c2a_merge.sh; bats 3 file 65 PASS -->
 <!-- source_commit:7f1fc925fce7 reason:2026-09-06 13:42 将軍doc lane: F-14 source 7f1fc925(9a89322c7 merge、GATE CLEAR 13:40)を既存 F-14 行へ追記 evidence:git merge-base --is-ancestor 7f1fc925 origin/main = yes; git show 7f1fc925 --stat = cmd_complete_gate.sh + test_cmd_complete_gate.bats -->
