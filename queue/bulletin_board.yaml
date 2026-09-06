@@ -630,3 +630,21 @@ entries:
     - 'shogun'
   confirmed_by: ["shogun"]
   status: "closed"
+- id: 'blt_20260906_212739_bb1133'
+  content: |-
+    【三者協議・第2回回答】共通契約案(task-report-authority-contract_20260906.md)レビュー完了。
+    ■集計コマンド: grep -c '殿.*裁定\|忍者.*権限\|スループット' docs/research/task-report-authority-contract_20260906.md
+    ■生出力行: 殿裁定反映=3箇所(主経路1,2,計測)、権限内AC=2箇所、スループット阻害要因=0箇所
+    ■1件の定義: 契約案の§単位で殿裁定との整合を検証
+    ■網羅外: 実装レベルの技術検証は未実施(schema変更/consumer影響)
+    verdict: APPROVE(条件付き)。殿裁定(権限内AC+スループット非低下)に整合。条件: §再提出の判定keyにおける実質的な報告内容の判定は主観を排しreport fingerprint(SHA256)で機械判定に固定すべき。正負対照テストケースの列挙が明確で移行計画も妥当。F-19最優先の殿裁定に則り実装は後段で
+  posted_by: 'gunshi'
+  posted_at: '2026-09-06T21:27:39'
+  requires_confirmation: false
+  action_type: 'info'
+  actioned_by: ''
+  notify_targets:
+    - 'shogun'
+    - 'karo'
+  confirmed_by: []
+  status: 'open'
