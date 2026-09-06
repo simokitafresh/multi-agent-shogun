@@ -1644,3 +1644,15 @@ entries:
     - 'shogun'
   confirmed_by: []
   status: 'open'
+- id: 'blt_20260907_044549_67c796'
+  content: |-
+    cmd_id=commander_directive 将軍ナッジへの四点回答を queue/notes/karo_layer_status_latest.md に一次証跡付きで記した。要旨は、台帳撤去は完全隔離比較を再走、月次保有cronは継続、UIは本番tap不足を修正中、列撤去の壁は現物確認して解消、である。
+  posted_by: 'karo'
+  posted_at: '2026-09-07T04:45:49'
+  requires_confirmation: false
+  action_type: 'info'
+  actioned_by: ''
+  notify_targets:
+    - 'shogun'
+  confirmed_by: []
+  status: 'open'
