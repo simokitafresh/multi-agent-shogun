@@ -17418,3 +17418,17 @@ sqlite3.Connection.backup()を使うとページ(4096byte)単位のread syscall�
 - **when**: 未設定
 - **how**: 未設定
 - cmd_4480根治でresolve_cmd_to_task内にinject_cmd_recon_dual()呼出しを新設したところ、tests/unit/test_deploy_task_lifecycle.batsのsetup_file(585-592行)がresolve_cmd_to_taskをextract_functionで単体抽出しRESOLVE_FUNCTIONS_FILEへ書き出す既存fixtureに新関数が未登録のまま残り、隔離実行(bats)時に"inject_cmd_recon_dual: command not found"でsetup_fileごと失敗、依存する8テスト(2,3,4,5,55-58)が連鎖FAILした。本番のdeploy_task.sh一括source経路では無関係(resolve.sh全体をsourceするため問題なし)なため、自分のtask worktreeでplanned_paths内3ファイルのテストだけを実行した際は検出できず、GitHub Actions CI(shard1)でのみ顕在化した。修正対象を特定する際はdeclare -fでの実行時確認(既報のif falseデッドコード教訓)に加え、grep -rln "extract_function <対象関数名>" tests/unit/*.batsで単体抽出fixtureの有無も確認し、新規呼出し先関数があれば同じ抽出リストへ追加する必要がある。
+
+
+### L1764: resolve.sh等の既存extract済み関数へ新規呼出しを足す時は、その関数を単体抽出するtest fixture(extract_function一覧)にも新規関数を追加せよ。CIでのみ顕在化しローカルplanned_pathsテストでは検知できない
+- **日付**: 2026-09-06
+- **出典**: cmd_karo_hotfix_recon_dual_projection_fixed_base_20260906
+- **記録者**: kotaro
+- **tags**: [infra,deploy-task,deploy,testing,recon]
+- **subdomain**: infra
+- **target_files**: [scripts/deploy_task/resolve.sh,scripts/deploy_task/modifiers.sh,scripts/deploy_task.sh,tests/unit/test_deploy_task_yaml_injection.bats,tests/unit/test_deploy_task_lifecycle.bats]
+- **origin**: [[cmd_karo_hotfix_recon_dual_projection_fixed_base_20260906]]
+- **enforcement**: 未自動化
+- **when**: 未設定
+- **how**: 未設定
+- cmd_4480根治でresolve_cmd_to_task内にinject_cmd_recon_dual()呼出しを新設したところ、tests/unit/test_deploy_task_lifecycle.batsのsetup_file(585-592行)がresolve_cmd_to_taskをextract_functionで単体抽出しRESOLVE_FUNCTIONS_FILEへ書き出す既存fixtureに新関数が未登録のまま残り、隔離実行(bats)時に"inject_cmd_recon_dual: command not found"でsetup_fileごと失敗、依存する8テスト(2,3,4,5,55-58)が連鎖FAILした。本番のdeploy_task.sh一括source経路では無関係(resolve.sh全体をsourceするため問題なし)なため、自分のtask worktreeでplanned_paths内3ファイルのテストだけを実行した際は検出できず、GitHub Actions CI(shard1)でのみ顕在化した。修正対象を特定する際はdeclare -fでの実行時確認(既報のif falseデッドコード教訓)に加え、grep -rln "extract_function <対象関数名>" tests/unit/*.batsで単体抽出fixtureの有無も確認し、新規呼出し先関数があれば同じ抽出リストへ追加する必要がある。
