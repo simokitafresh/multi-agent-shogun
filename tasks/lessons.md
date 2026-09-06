@@ -17446,3 +17446,17 @@ sqlite3.Connection.backup()を使うとページ(4096byte)単位のread syscall�
 - **when**: 未設定
 - **how**: 未設定
 - gate_hook_quality_contract_reference_test_matches()の実装で、{ grep1; grep2; } | sed | sort -u という関数末尾のパイプラインの後に return 0 を書いても、pipefail下でこのパイプラインがnonzeroを返すと set -e は直後の return 0 を待たずに即abortする(returnは実行されない)。手動repro(bash -euo pipefail)でexit code 2を確認、原因はgrepのno-match(exit 1)がpipefail経由でパイプライン全体のexit statusに伝播したこと。修正は各grepに || true を付与し、パイプライン自体を常にexit 0にすること。『関数の最後にreturn 0を書けば呼出元の失敗から守れる』という思い込みは誤りで、pipefail下ではパイプライン内の各コマンドを個別に無害化する必要がある
+
+
+### L1766: shared関数の末尾に裸grep(no-match時exit1)を置くと、set -e -o pipefail下の呼出元でreturnより先にpipefail abortする
+- **日付**: 2026-09-06
+- **出典**: cmd_karo_hotfix_reference_test_contract_20260906
+- **記録者**: kotaro
+- **tags**: [infra,cmd-quality,testing,gate,bash]
+- **subdomain**: infra
+- **target_files**: [scripts/lib/gate_hook_quality_contract.sh,scripts/hooks/git-pre-commit.sh,scripts/cmd_save.sh,scripts/deploy_task/gates.sh,tests/unit/test_gate_hook_quality_contract.bats]
+- **origin**: [[cmd_karo_hotfix_reference_test_contract_20260906]]
+- **enforcement**: 未自動化
+- **when**: 未設定
+- **how**: 未設定
+- gate_hook_quality_contract_reference_test_matches()の実装で、{ grep1; grep2; } | sed | sort -u という関数末尾のパイプラインの後に return 0 を書いても、pipefail下でこのパイプラインがnonzeroを返すと set -e は直後の return 0 を待たずに即abortする(returnは実行されない)。手動repro(bash -euo pipefail)でexit code 2を確認、原因はgrepのno-match(exit 1)がpipefail経由でパイプライン全体のexit statusに伝播したこと。修正は各grepに || true を付与し、パイプライン自体を常にexit 0にすること。『関数の最後にreturn 0を書けば呼出元の失敗から守れる』という思い込みは誤りで、pipefail下ではパイプライン内の各コマンドを個別に無害化する必要がある
