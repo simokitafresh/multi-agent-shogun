@@ -12180,3 +12180,36 @@
   hole_action: none
   brainwash_check: "#1no #2no #3no #4no #5no #6no #7no #8no AC2/AC3 bc:no 2件を確認。unknown→yesの虚偽補完なし(LG043 PASS)。SG-PRE9c PASS"
   timestamp: "2026-09-06T20:57:00+09:00"
+- cmd_id: cmd_karo_hotfix_x_refresh_collision_20260906
+  review_type: draft
+  verdict: APPROVE
+  verified_files:
+    - "scripts/x_ops/x_post.sh:312"
+  gate_result: null
+  confidence: HIGH
+  finding_categories:
+    - assumptions
+    - numbers
+    - simulation
+    - premortem
+    - north_star
+    - ambiguity
+    - adversarial
+  findings_summary: "6観点全OK。AC1で前提一次確認→AC2 fail-closed+契約test。90分=keeper 3回分バッファ。3FM対処済み"
+  ambiguity_points: none
+  discretion_fills: none
+  observations:
+    - "x_post.sh L312: token refresh失敗→exit 1(fail-closed)。keeper */30成功→90分以内ならskip安全"
+    - "障害ログ[MEM:20:46:31]とcmd前提一致。keeper cron :10/:40移動済み(D0)"
+    - "adversarial: 共有lock競合→AC2で契約test要求。未解消条件はBLOCK報告"
+    - "ambiguity: AC条件明確。90分閾値・fail-closed・契約test要求の3要素で曖昧さなし"
+  operational_simulation:
+    command: "grep -n 'token refresh' scripts/x_ops/x_post.sh"
+    expected: "fail-closed(exit 1)の確認"
+    actual: "L312-314: token refresh failed→exit 1。fail-closed確認"
+    result: PASS
+  origin: "[[cmd_karo_hotfix_x_refresh_collision_20260906]] -> [[keeper_cron_collision]] -> [[skip_within_90min]]"
+  causal_chain: "keeper */30とslot 18:30同時実行→rotation衝突→token失効。keeper成功90分以内ならpost側refreshスキップ→衝突構造的排除"
+  hole_action: none
+  brainwash_check: "#1no #2no #3no #4no #5no #6no #7no #8no fail-closed維持を一次確認(L312)。閾値90分=3回分を再計算"
+  timestamp: "2026-09-06T21:03:00+09:00"
