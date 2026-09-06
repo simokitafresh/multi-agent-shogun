@@ -8657,14 +8657,29 @@ handle_empty_lessons_useful_check() {
     local ninja_name="$1"
     local task_type="$2"
     local rl_ids="$3"
+    local task_file="${4:-}"
+    local report_file="${5:-}"
 
     if is_lessons_useful_empty_warn_task_type "$task_type"; then
         echo "  [WARN] ${ninja_name}: lessons_useful空。task_type=${task_type:-unknown} のためBLOCK対象外。related_lessons [${rl_ids}]"
-    else
-        echo "  [CRITICAL] ${ninja_name}: NG ← lessons_useful空。related_lessons [${rl_ids}] のうち実際に役立った教訓を報告に記載せよ"
-        record_block_reason "${ninja_name}:empty_lessons_useful:related=[${rl_ids}]"
-        ALL_CLEAR=false
+        return 0
     fi
+    # cmd_karo_hotfix_contract_schema_20260907 (P07): inbox_write.sh's
+    # lesson_safety_net can inject related_lessons into the LIVE task file
+    # after this report's own deploy-time task_contract_snapshot already
+    # froze an empty lesson set. related_lessons [${rl_ids}] above reflects
+    # that live (possibly post-injection) task, not the report's own
+    # generation. Consult the snapshot-authoritative rule shared with
+    # report_field_set.sh instead of a blanket "empty is always CRITICAL".
+    if [ -n "$task_file" ] && [ -n "$report_file" ] && [ -f "$task_file" ] && [ -f "$report_file" ] \
+        && python3 "$SCRIPT_DIR/scripts/lib/report_gate_contract.py" \
+            lesson-empty-allowed "$task_file" "$report_file" >/dev/null 2>&1; then
+        echo "  [WARN] ${ninja_name}: lessons_useful空。deploy-time snapshotが空lesson_setを許可(post-deploy injection起因のrelated_lessons [${rl_ids}] は対象外)"
+        return 0
+    fi
+    echo "  [CRITICAL] ${ninja_name}: NG ← lessons_useful空。related_lessons [${rl_ids}] のうち実際に役立った教訓を報告に記載せよ"
+    record_block_reason "${ninja_name}:empty_lessons_useful:related=[${rl_ids}]"
+    ALL_CLEAR=false
 }
 
 validate_lesson_feedback_set() {
@@ -14085,7 +14100,7 @@ for task_file in "${MATCHING_TASK_FILES[@]}"; do
                     }
                 ' "$task_file" 2>/dev/null)
                 [ -z "$rl_ids" ] && rl_ids="(parse_error)"
-                handle_empty_lessons_useful_check "$ninja_name" "$task_type" "$rl_ids"
+                handle_empty_lessons_useful_check "$ninja_name" "$task_type" "$rl_ids" "$task_file" "$report_file"
             fi
         else
             echo "  ${ninja_name}: SKIP (report not found)"

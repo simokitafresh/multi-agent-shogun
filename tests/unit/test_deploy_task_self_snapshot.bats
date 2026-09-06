@@ -517,3 +517,103 @@ EOF
     [[ "$output" != *"task identity unresolved"* ]]
     [[ "$output" != *"terminal test receipt"* ]]
 }
+
+# test_necessity(cmd_karo_hotfix_contract_schema_20260907, karo 01:19/01:09): the
+# completion gate's handle_empty_lessons_useful_check (scripts/cmd_complete_gate.sh)
+# is the second half of the P07 lesson_safety_net bug: it judged an empty
+# lessons_useful purely on the LIVE task's related_lessons, with no
+# snapshot-authoritative escape hatch, so a report that correctly stayed
+# faithful to an empty deploy-time lesson_set was CRITICAL-blocked once
+# post-deploy injection later populated the live task. It must now consult
+# the shared lesson-empty-allowed rule and only WARN when the snapshot
+# genuinely permits empty; a report with no snapshot (or one that
+# genuinely owed lessons) must keep the pre-existing CRITICAL BLOCK.
+@test "cmd_complete_gate handle_empty_lessons_useful_check consults the snapshot before CRITICAL-blocking an empty report" {
+    HELPERS_FILE="$WORK_DIR/gate_helpers.sh"
+    python3 - "$PROJECT_ROOT/scripts/cmd_complete_gate.sh" > "$HELPERS_FILE" <<'PY'
+import re
+import sys
+from pathlib import Path
+
+source = Path(sys.argv[1]).read_text(encoding="utf-8")
+for name in ("record_block_reason", "is_lessons_useful_empty_warn_task_type", "handle_empty_lessons_useful_check"):
+    match = re.search(rf"(?m)^{re.escape(name)}\(\) \{{.*?^\}}", source, re.DOTALL)
+    if match is None:
+        raise SystemExit(f"missing helper: {name}")
+    print(match.group(0), end="\n\n")
+PY
+    [ -s "$HELPERS_FILE" ]
+
+    cat > "$WORK_DIR/task_injected.yaml" <<'TASKYAML'
+task:
+  task_id: cmd_p07_full
+  parent_cmd: cmd_p07
+  task_type: hotfix
+  related_lessons:
+  - id: L097
+  - id: L019
+TASKYAML
+    cat > "$WORK_DIR/report_empty_with_snapshot.yaml" <<'REPORTYAML'
+worker_id: kotaro
+parent_cmd: cmd_p07
+task_id: cmd_p07_full
+task_contract_snapshot:
+  parent_cmd: cmd_p07
+  task_id: cmd_p07_full
+  lesson_set:
+    mode: subset
+    ids: []
+lessons_useful: []
+REPORTYAML
+    cat > "$WORK_DIR/report_empty_no_snapshot.yaml" <<'REPORTYAML'
+worker_id: kotaro
+parent_cmd: cmd_p07
+task_id: cmd_p07_full
+lessons_useful: []
+REPORTYAML
+
+    # Positive (the fix): snapshot legitimately permits empty -> WARN, not
+    # CRITICAL; ALL_CLEAR stays true; no block reason recorded.
+    run bash -c '
+        source "$1"
+        SCRIPT_DIR="$2"
+        ALL_CLEAR=true
+        BLOCK_REASONS=()
+        handle_empty_lessons_useful_check "kotaro" "hotfix" "L097,L019" "$3" "$4"
+        echo "ALL_CLEAR=$ALL_CLEAR"
+        echo "BLOCK_REASONS_COUNT=${#BLOCK_REASONS[@]}"
+    ' _ "$HELPERS_FILE" "$PROJECT_ROOT" "$WORK_DIR/task_injected.yaml" "$WORK_DIR/report_empty_with_snapshot.yaml"
+    [[ "$output" == *"[WARN]"* ]]
+    [[ "$output" != *"[CRITICAL]"* ]]
+    [[ "$output" == *"ALL_CLEAR=true"* ]]
+    [[ "$output" == *"BLOCK_REASONS_COUNT=0"* ]]
+
+    # Negative (preserve correctness): the report has no snapshot at all, so
+    # there is nothing establishing that empty was ever allowed -> keep the
+    # existing CRITICAL BLOCK behavior unchanged.
+    run bash -c '
+        source "$1"
+        SCRIPT_DIR="$2"
+        ALL_CLEAR=true
+        BLOCK_REASONS=()
+        handle_empty_lessons_useful_check "kotaro" "hotfix" "L097,L019" "$3" "$4"
+        echo "ALL_CLEAR=$ALL_CLEAR"
+        echo "BLOCK_REASONS_COUNT=${#BLOCK_REASONS[@]}"
+    ' _ "$HELPERS_FILE" "$PROJECT_ROOT" "$WORK_DIR/task_injected.yaml" "$WORK_DIR/report_empty_no_snapshot.yaml"
+    [[ "$output" == *"[CRITICAL]"* ]]
+    [[ "$output" == *"ALL_CLEAR=false"* ]]
+    [[ "$output" == *"BLOCK_REASONS_COUNT=1"* ]]
+
+    # Negative (backward compatibility): calling with the original 3-arg
+    # form (no task_file/report_file) must behave exactly as before -
+    # CRITICAL BLOCK for a non-exempt task_type.
+    run bash -c '
+        source "$1"
+        ALL_CLEAR=true
+        BLOCK_REASONS=()
+        handle_empty_lessons_useful_check "sasuke" "exact" "L001,L002"
+        echo "ALL_CLEAR=$ALL_CLEAR"
+    ' _ "$HELPERS_FILE"
+    [[ "$output" == *"[CRITICAL]"* ]]
+    [[ "$output" == *"ALL_CLEAR=false"* ]]
+}
