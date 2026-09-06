@@ -151,6 +151,7 @@ R3追加の月次接続契約（§4.4の続き）:
 | v0.5 | 23:08 | 将軍 R4 | 配備懸念 2 点を確定: 固定入力=0f2bfbcd input_snapshot_raw.json(`--input-json`)、readiness=services/layer_holdings_readiness.py(+契約 test 6 通り)。公開 c39d171ae | 残 U 0・配備懸念 0 |
 | v0.6 | 23:08 | 家老 R5 | 固定 JSON を実測(portfolios 101/monthly 16,298/欠落列 0/対象 75 不足 0/重複 0)。更新 3 点: 実キー monthly と列・件数確定、mode=portfolio 負例の是正、配備懸念文言更新。公開 227526668 | 設計上の未確定なし。将軍 R6 へ |
 | R6 | 23:14 | 将軍 | v0.6 の 3 点を diff で確認、いずれも現物実測に基づく訂正で採用。本 R6 で追記したのは §7 台帳の v0.4〜v0.6 行(家老版で欠けていた記録の補完)のみで設計本文の変更 0。**更新点なし=往復終了(殿指示 22:07 の終了条件)**。v0.6 本文を最終版とする | 次=殿の go。go 後に §9.5 の順で家老が P1/P2/P3 を 3 名並行配備 |
+| go | 23:19→23:33 | 殿→将軍 | 殿 23:19『Layer Holdings は go だ』。将軍が §9.1/§9.2/§9.3 を cmd_4487(P1 結果表+job)/cmd_4488(P2 API+readiness)/cmd_4489(P3 ページ)として起票・委任(23:29/23:33/23:33)。P1 は疾風へ配備済み(家老 23:31)。P4 は殿 OK 後の §9.4 runbook | 以後の本書更新は実装結果の反映のみ |
 
 ## §8 因果リンク
 
@@ -170,7 +171,7 @@ R3履歴（v0.4、2026-09-06 22:50家老）: 更新6点=modeとscope分離、sum
 - 報告 YAML: `binary_checks` は下記 AC 番号ごとに yes/no+生出力 1 行。`files_modified` は path 形式。
 - 忍者が自分で決めてよいこと: 変数名・関数分割・test fixture の形・SQL の書き方。決めてはいけないこと: 表の列名/PK、API path と payload key、page id、cron 名、AC の閾値(全て本書が固定)。
 
-### §9.1 cmd P1: 結果表+batch job(backend)
+### §9.1 cmd P1: 結果表+batch job(backend) — **cmd_4487(委任 23:29、疾風)**
 | 項目 | 値 |
 |---|---|
 | task_type | implement(DM-Signal backend) |
@@ -183,7 +184,7 @@ R3履歴（v0.4、2026-09-06 22:50家老）: 更新6点=modeとscope分離、sum
 | AC(二値) | AC1: 突合 3,525 行・key 集合一致・pf_count 一致・is_mtd 一致・weight 差 max ≤1e-9(生出力: `rows=3525 keys_match=true maxdiff=<値>`) / AC2: 各 (year_month, layer) Σweight=1±1e-9 違反 0、pf_count ≤12/21/21/21/75 / AC3: job の SQL log で新表以外への DML 0、同入力で再実行=calculated_at 以外一致、child 欠損 fixture で例外→rollback→旧行残存 / AC6: 契約 test = AC2 と AC3(欠損時 rollback)の 2 本以上、FAIL 0 SKIP 0 / migration: `alembic upgrade head`→`downgrade -1` で新表のみ作成・削除、他表の DDL 差分 0 |
 | 見積 | job ≤250 行、migration ≤60 行、models +20 行(上限ではなく見積) |
 
-### §9.2 cmd P2: API+完了証跡の接続(backend)
+### §9.2 cmd P2: API+完了証跡の接続(backend) — **cmd_4488(委任 23:33)**
 | 項目 | 値 |
 |---|---|
 | task_type | implement(DM-Signal backend) |
@@ -195,7 +196,7 @@ R3履歴（v0.4、2026-09-06 22:50家老）: 更新6点=modeとscope分離、sum
 | sync-status `L4_recalc`(固定) | 同じreadinessを使用し適格時だけend_timeのUTC日付をlast_success_dateへ。不適格はnull、runningをlockedへ。既存wait scriptのUTC TODAYと一致させる。過去成功だけを検索して後続失敗を隠さない |
 | AC(二値) | AC4は§5の認証/global hide/ETag/空表。AC4bは全PF portfolio成功を許可、特定PF full・summary欠落・cancelled/errorsあり・古い成功後の新失敗・runningを409。UTC/JST境界とロック競合も検証。成功時source_recalc_id一致。FAIL0/SKIP0 |
 
-### §9.3 cmd P3: ページ+nav+visibility(frontend)
+### §9.3 cmd P3: ページ+nav+visibility(frontend) — **cmd_4489(委任 23:33)**
 | 項目 | 値 |
 |---|---|
 | task_type | implement(DM-Signal frontend) |
