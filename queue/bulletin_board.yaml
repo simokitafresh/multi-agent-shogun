@@ -616,5 +616,5 @@ entries:
   notify_targets:
     - 'shogun'
     - 'gunshi'
-  confirmed_by: []
-  status: 'open'
+  confirmed_by: ["shogun"]
+  status: "open"
