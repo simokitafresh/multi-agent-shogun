@@ -480,3 +480,14 @@ entries:
   notify_targets: []
   confirmed_by: []
   status: 'open'
+- id: 'blt_20260906_095510_457a77'
+  content: |-
+    GATE CLEAR cmd_karo_hotfix_k2_external_worktree_speed_20260906: 完了
+  posted_by: 'karo'
+  posted_at: '2026-09-06T09:55:10'
+  requires_confirmation: false
+  action_type: 'info'
+  actioned_by: ''
+  notify_targets: []
+  confirmed_by: []
+  status: 'open'
