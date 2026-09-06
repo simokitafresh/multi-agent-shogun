@@ -32,6 +32,8 @@
 
 ### §2.1 配備別(家老観測)
 
+追記観測 2026-09-06 20:58 JST（R22対応。以下の19:27以前の記録は当時の観測として保持）: I4 / cmd_4485 AC3は未完。B backfill 14,450行・再投入0は部分確認であり、5種別差分の全期間集計とAPI応答軸の完了証明ではない。影丸報告は`revision_requested`・`verdict: FAIL`を維持し、全期間再走の結果を待つ。I7 / P08-I7 checkerはmain `f3d20d3c8b824588ae872432d13be100346bb1c7`収載済み（20:52の`git ls-remote origin refs/heads/main`で確認）、殿20:29事後承認は将軍20:31指示で受領。家老ACCEPT済みだが20:54再GATEは`WAIT:report_commit_main_ancestry`であり、CLEAR・疾風解放は未完。監視ALERTへの呼出配線は別途殿OKが必要。証拠: `queue/reports/kagemaru_report_cmd_4485.yaml`、`queue/gates/cmd_karo_hotfix_p08_i7_monitor_20260906/source_only_publish.receipt.json`、同`review_gate.done`。下の「本番反映なし」は19:27時点の旧記述であり、現在値はこの追記を参照する。
+
 最新観測 2026-09-06 19:27 JST（以下の旧時点を保持）: P05/P06は19:05の承認済み全期間入力取得済み。ledger計画/初回/再実行14,450/14,450/0は投入・冪等性のみで、AC2全期間再導出とAC3の5種別差分は未完。19:23家老RCで影丸が再開。P07は成果提出・教訓snapshot検証の不整合待ち（小太郎に修正配備、47.649秒で配備成功）。P09は内容LGTM・LG043偽陽性の正規是正待ち。P08-I7は隔離source `92e85d7c1e43ff3929b46770cc0ae2d6f2bf67b2`、53/53 PASS・skip0・原出力hash一致、家老ACCEPT。本番反映なし、CLEAR未確認。各停止原因・担当・証拠 → `docs/research/dm-signal-production-inconsistency-review-r16_20260906.md`。現在の行動は下表の18時台の取得許可待ちではなく、取得済み入力の全期間計測である。
 
 観測基準: 2026-09-06 15:57 JST。調査 lane は cmd_4484 / cmd_4486。全 I の解消率は未集計（調査の件数と修正の件数を混ぜない）。
