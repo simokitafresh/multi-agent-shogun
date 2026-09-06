@@ -11579,3 +11579,25 @@
   origin: "[[cmd_4483_RC2]] -> [[input_drift_honest_FAIL]]"
   ambiguity_points: none
   timestamp: "2026-09-06T12:59:00+09:00"
+- cmd_id: cmd_4483
+  review_type: report
+  verdict: FAIL
+  verified_files:
+  - "queue/reports/hanzo_report_cmd_4483.yaml:36"
+  step3_5_verified: true
+  fail_reasons:
+  - "RC3。diff19869=monthly_return列のみ(weight0)。DB再計算による外部入力変動。honest FAIL"
+  findings_summary: "除外ロジック正(weight0/key全一致)。monthly_return微小差=外部入力"
+  observations:
+  - "事実: key22206全一致/weight差0/monthly_return差19869(max abs 9.1e-7)"
+  operational_simulation:
+    command: "grep '^verdict:' queue/reports/hanzo_report_cmd_4483.yaml"
+    expected: "FAIL"
+    actual: "FAIL"
+    result: "PASS"
+  finding_categories: [assumptions, numbers, premortem, ambiguity, adversarial]
+  brainwash_check: "#1no #2no #3no #4no #5no #6no #7no #8no"
+  causal_chain: "monthly_return微小差→byte diff→honest FAIL"
+  origin: "[[cmd_4483_RC3]] -> [[input_drift]]"
+  ambiguity_points: none
+  timestamp: "2026-09-06T13:01:00+09:00"
