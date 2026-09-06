@@ -19255,3 +19255,10 @@ insights:
   source: "semantic_index_update"
   fix_known: false
   status: pending
+- id: INS-20260906-203242142-6f89
+  ts: "2026-09-06T20:32:42+09:00"
+  insight: "semantic_index_update新概念候補: discussion:§ 不整合 I 別の状態は更新されているか？ は 既存aliasesに一致なし。概念定義とaliases追加を検討せよ"
+  priority: "low"
+  source: "semantic_index_update"
+  fix_known: false
+  status: pending
