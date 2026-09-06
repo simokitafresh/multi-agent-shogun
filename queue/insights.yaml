@@ -20655,3 +20655,94 @@ insights:
   source: "semantic_index_update"
   fix_known: false
   status: pending
+- id: INS-20260907-000419302-afcb
+  ts: "2026-09-07T00:04:19+09:00"
+  insight: "[[Layer Holdingsはgoだ]] semantic_stress_test candidate_aliases: NO_MATCH source=lord query=Layer Holdingsはgoだ"
+  priority: "low"
+  source: "semantic_stress_test"
+  fix_known: false
+  status: pending
+- id: INS-20260907-000419711-236f
+  ts: "2026-09-07T00:04:19+09:00"
+  insight: "[[hanzoinbox1]] semantic_stress_test candidate_aliases: NO_MATCH source=lord query=hanzoinbox1"
+  priority: "low"
+  source: "semantic_stress_test"
+  fix_known: false
+  status: pending
+- id: INS-20260907-000420139-1f7b
+  ts: "2026-09-07T00:04:20+09:00"
+  insight: "[[三者協議の結果を教えてくれ]] semantic_stress_test candidate_aliases: NO_MATCH source=lord query=三者協議の結果を教えてくれ"
+  priority: "low"
+  source: "semantic_stress_test"
+  fix_known: false
+  status: pending
+- id: INS-20260907-000420533-644a
+  ts: "2026-09-07T00:04:20+09:00"
+  insight: "[[Layer Holdings MonthlyページのデザインはDM signalに合わせないといけないな]] semantic_stress_test candidate_aliases: NO_MATCH source=lord query=Layer Holdings MonthlyページのデザインはDM-signalに合わせないといけないな。基本構造は同じだが後でやるか？現時点でやるか？UIのデザインの話だ"
+  priority: "low"
+  source: "semantic_stress_test"
+  fix_known: false
+  status: pending
+- id: INS-20260907-000424446-240a
+  ts: "2026-09-07T00:04:24+09:00"
+  insight: "[[§2 3 不整合 I 別の状態は更新されているか？]] semantic_stress_test candidate_aliases: NO_MATCH source=lord query=§2.3 不整合 I 別の状態は更新されているか？"
+  priority: "low"
+  source: "semantic_stress_test"
+  fix_known: false
+  status: pending
+- id: INS-20260907-000424920-fd01
+  ts: "2026-09-07T00:04:24+09:00"
+  insight: "[[いつも気にするがauto compactするからちゃんとナッジせよ]] semantic_stress_test candidate_aliases: NO_MATCH source=lord query=いつも気にするがauto compactするからちゃんとナッジせよ"
+  priority: "low"
+  source: "semantic_stress_test"
+  fix_known: false
+  status: pending
+- id: INS-20260907-000425481-fed0
+  ts: "2026-09-07T00:04:25+09:00"
+  insight: "[[iinbox3]] semantic_stress_test candidate_aliases: NO_MATCH source=lord query=iinbox3"
+  priority: "low"
+  source: "semantic_stress_test"
+  fix_known: false
+  status: pending
+- id: INS-20260907-000425916-9672
+  ts: "2026-09-07T00:04:25+09:00"
+  insight: "[[CI復旧を待つ合理的な理由はなにか教えて]] semantic_stress_test candidate_aliases: NO_MATCH source=lord query=CI復旧を待つ合理的な理由はなにか教えて"
+  priority: "low"
+  source: "semantic_stress_test"
+  fix_known: false
+  status: pending
+- id: INS-20260907-000426391-cf88
+  ts: "2026-09-07T00:04:26+09:00"
+  insight: "[[入力待ちにすると家老がボトルネックになるのでは？素直に忍者の権限で出来ることだけを要求すればいい]] semantic_stress_test candidate_aliases: NO_MATCH source=lord query=入力待ちにすると家老がボトルネックになるのでは？素直に忍者の権限で出来ることだけを要求すればいい。もしくはニンジャの権限を拡大するかだ"
+  priority: "low"
+  source: "semantic_stress_test"
+  fix_known: false
+  status: pending
+- id: INS-20260907-000427015-715e
+  ts: "2026-09-07T00:04:27+09:00"
+  insight: "[[Layer Holdings Monthly P3 layer holdings ページ nav admin visib]] semantic_stress_test candidate_aliases: NO_MATCH source=cmds query=Layer Holdings Monthly P3: /layer-holdings ページ+nav+admin visibility id+api-client(DM-Signal frontend、隔離 branch、wireframe gist 6ae60a9c と同じ見え方、PF 非依存)"
+  priority: "low"
+  source: "semantic_stress_test"
+  fix_known: false
+  status: pending
+- id: INS-20260907-000427876-78a5
+  ts: "2026-09-07T00:04:27+09:00"
+  insight: "[[殿 22 07『本番に Layer Holdings Monthly ページを新設』 23 19『Layer Holdi]] semantic_stress_test candidate_aliases: NO_MATCH source=cmds query=殿 2026-09-06 22:07『本番に Layer Holdings Monthly ページを新設』+23:19『Layer Holdings は go だ』。設計書 v0.6(docs/research/dm-signal-layer-holdings-monthly-page-asis-tobe_20260906.md、gist b733364a)"
+  priority: "low"
+  source: "semantic_stress_test"
+  fix_known: false
+  status: pending
+- id: INS-20260907-000428679-65ae
+  ts: "2026-09-07T00:04:28+09:00"
+  insight: "[[殿 22 07 23 19 go]] semantic_stress_test candidate_aliases: NO_MATCH source=cmds query=殿 2026-09-06 22:07/23:19 go。設計書 v0.6 §9.3 の cmd P3。wireframe(docs/dashboard/layer-holdings-monthly.html=gist 6ae60a9c、scripts/layer_holdings_render.py:126-163 の JS)を Next.js ページに移植"
+  priority: "low"
+  source: "semantic_stress_test"
+  fix_known: false
+  status: pending
+- id: INS-20260907-000429567-2c63
+  ts: "2026-09-07T00:04:29+09:00"
+  insight: "[[Layer Holdings Monthly P2 GET api layer holdings 完了証跡の接続 rea]] semantic_stress_test candidate_aliases: NO_MATCH source=cmds query=Layer Holdings Monthly P2: GET /api/layer-holdings+完了証跡の接続(readiness 共通関数、sync-status L4_recalc、POST /admin/layer-holdings、DM-Signal backend、隔離 branch、本番書込 0)"
+  priority: "low"
+  source: "semantic_stress_test"
+  fix_known: false
+  status: pending
