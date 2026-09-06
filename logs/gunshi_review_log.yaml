@@ -11211,3 +11211,23 @@
   causal_chain: "非祖先+内容同値→content_equivalent PASS→false WAIT解消"
   origin: "[[P4_ancestry]] -> [[content_equivalent]] -> [[APPROVE]]"
   timestamp: "2026-09-06T10:30:00+09:00"
+- cmd_id: cmd_karo_ci_fix_34003273306_fp_vocabulary_20260906
+  review_type: draft
+  verdict: APPROVE
+  verified_files:
+  - "queue/tasks/saizo.yaml:3"
+  confidence: HIGH
+  ambiguity_points: none
+  findings_summary: "CI fix FP vocabulary。AC2本(1件FAIL再現+5語彙修正)。LC_ALL=C対応"
+  observations:
+  - "事実: false_positive/偽陽性/誤発報/誤BLOCK/誤遮断の5語彙認識"
+  operational_simulation:
+    command: "grep -c 'id: AC' queue/tasks/saizo.yaml"
+    expected: "2"
+    actual: "2"
+    result: "PASS"
+  finding_categories: [assumptions, simulation, premortem, ambiguity, adversarial]
+  brainwash_check: "#1no #2no #3no #4no #5no #6no #7no #8no"
+  causal_chain: "FP語彙判定FAIL→5語彙修正→CI GREEN"
+  origin: "[[CI_34003273306]] -> [[fp_vocabulary]] -> [[APPROVE]]"
+  timestamp: "2026-09-06T10:32:00+09:00"
