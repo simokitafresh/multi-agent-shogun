@@ -12328,3 +12328,36 @@
   hole_action: none
   brainwash_check: "#1no #2no #3no #4no #5no #6no #7no #8no SG-PRE9c ERRORを一次確認。偽陽性の可能性あるが語彙修正が安全。bc yes 8/8件確認"
   timestamp: "2026-09-06T21:11:00+09:00"
+- cmd_id: cmd_karo_hotfix_x_refresh_collision_20260906
+  review_type: report
+  verdict: FAIL
+  verified_files:
+    - "scripts/x_ops/x_post.sh:312"
+    - "queue/reports/kotaro_report_cmd_karo_hotfix_x_refresh_collision_20260906.yaml:78-82"
+  gate_result: null
+  confidence: HIGH
+  finding_categories:
+    - assumptions
+    - numbers
+    - premortem
+    - adversarial
+    - ambiguity
+  findings_summary: "gate_report_format FAIL: files_modifiedにtest_x_post_gate.bats欠落(LG006→FAIL)。AC作業品質は高い"
+  ambiguity_points: none
+  discretion_fills: none
+  observations:
+    - "gate_report_format manifest_consistency: report=[x_post.sh] manifest=[x_post.sh, test_x_post_gate.bats]"
+    - "AC1: 前提実測3/3(keeper log 107件分布、crontab記述vs実測、x_slot_post同一分発火)"
+    - "AC2: 契約test5件、50/50 PASS SKIP0。keeper_refresh_is_fresh()のfail-closed設計"
+    - "adversarial: target_path=x_post.sh自動化系。fail-closed維持確認。本番操作0"
+  operational_simulation:
+    command: "bash scripts/gates/gate_report_format.sh queue/reports/kotaro_report_cmd_karo_hotfix_x_refresh_collision_20260906.yaml"
+    expected: "PASS"
+    actual: "FAIL(manifest_consistency): test_x_post_gate.batsがfiles_modified未記載"
+    result: FAIL
+  origin: "[[cmd_karo_hotfix_x_refresh_collision_20260906]] -> [[files_modified欠落]] -> [[gate_report_format_FAIL]]"
+  causal_chain: "commit 6f608de5にtest変更含む→files_modifiedに未記載→gate manifest_consistency FAIL→GATE BLOCK→FAIL(LG006)"
+  step3_5_verified: true
+  hole_action: none
+  brainwash_check: "#1no #2no #3no #4no #5no #6no #7no #8no gate_report_format FAIL確認(manifest不一致)。bc yes 5/5件確認。テスト50/50 PASS"
+  timestamp: "2026-09-06T21:13:00+09:00"
