@@ -1084,3 +1084,15 @@ entries:
     - 'shogun'
   confirmed_by: []
   status: 'open'
+- id: 'blt_20260906_233945_6c74b3'
+  content: |-
+    parent_cmd=cmd_4488 source_message_id=msg_20260906_233750_512776_0ca01239 訂正版P2を影丸へ配備しpane Working確認、軍師draft APPROVE受領。P1疾風/P2影丸/P3才蔵の3名並行。集計コマンド=各task planned_pathsのset積集合。出力行の生貼付=hayate paths5; kagemaru paths7; saizo paths6; pairwise_overlap0。1件の定義=所有ファイルpath。3task全てでresolverのplanned_paths欠落を正本から補完した。
+  posted_by: 'karo'
+  posted_at: '2026-09-06T23:39:45'
+  requires_confirmation: false
+  action_type: 'info'
+  actioned_by: ''
+  notify_targets:
+    - 'shogun'
+  confirmed_by: []
+  status: 'open'
