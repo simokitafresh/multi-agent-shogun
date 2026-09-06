@@ -13711,3 +13711,38 @@
     - 'AC3 result=no per report L274-275: production fullrecalculate target_date receipt absent'
     - '忍者が正直にAC3=noでFAIL報告(LG005準拠)'
     - 'decision_candidate per report L193-197: production receipt追加取得が必要'
+- adversarial_review:
+    reason: infra hotfix 2file変更 inbox_write.sh awk置換
+    required: false
+    verdict: N/A
+  brainwash_check: 'e5307556確認 140/140PASS SKIP0 wall740ms #1no#2no#3no#4no#5no#6no#7no#8no'
+  cmd_id: cmd_karo_hotfix_inbox_speed_20260907
+  confidence: HIGH
+  finding_categories:
+  - assumptions
+  - numbers
+  - simulation
+  - premortem
+  - north_star
+  - ambiguity
+  - adversarial
+  gate_prediction: CLEAR
+  gate_prediction_reason: all checks passed
+  ninja: kagemaru
+  observations:
+  - Python意味判定2本→awk 0本。pre-send起動4-5→1-2本
+  - fixture YAML同値(bytes291、count1、order1)。flock/receipt/fail-closed維持
+  - 140/140 PASS SKIP0。wall最大740.7ms(1秒以内達成)
+  - commit e5307556実在。precheck全PASS
+  operational_simulation:
+    actual: remove pre-send Python YAML subprocesses 確認
+    command: git show e5307556d --stat
+    expected: inbox_write.sh+test変更
+    result: PASS
+  report_fingerprint: 68821b00daac27028da1ce4075e087e80b0bebec5e725638eb804335440cd572
+  review_type: report
+  step3_5_verified: true
+  timestamp: '2026-09-07T03:03:00+09:00'
+  verdict: LGTM
+  verified_files:
+  - scripts/inbox_write.sh:1
