@@ -2163,6 +2163,37 @@ show_target_path_git_history() {
     done <<< "$targets"
 }
 
+# --- Check 11.11b: target_path 参照テスト先供給(cmd_karo_hotfix_reference_test_contract_20260906 AC2) ---
+# 目的: cmdのtarget_pathにscript(.sh/.py)が含まれる場合、そのscriptを既に参照している
+# bats契約testを起票時点で先供給INFO表示する。deploy_task_source_contract_precheckの
+# Level5同様、後段(precommit/task実行)でBLOCKされる前に、必要集合を将軍/家老へ事前提示する。
+# git-pre-commit.shのD0検出層(gate_hook_quality_contract_reference_test_matches)と同一の
+# 独立導出関数を再利用し、別の検出ロジックを重複構築しない。informational専用でWARN_COUNTに
+# 加算しない(show_target_path_git_historyと同じ非block設計)。
+show_target_path_reference_test_manifest() {
+    [[ -n "${CMD_BLOCK_NC:-}" ]] || return 0
+    declare -F gate_hook_quality_contract_reference_test_matches >/dev/null 2>&1 || return 0
+
+    local targets target_path matches
+    targets="$(collect_primary_cmd_targets || true)"
+    [[ -n "${targets//[[:space:]]/}" ]] || return 0
+
+    while IFS= read -r target_path; do
+        [[ -n "${target_path//[[:space:]]/}" ]] || continue
+        case "$target_path" in
+            *.sh|*.py) ;;
+            *) continue ;;
+        esac
+        matches="$(gate_hook_quality_contract_reference_test_matches "$target_path" "$PROJECT_DIR")"
+        if [[ -n "$matches" ]]; then
+            echo "INFO: [TARGET_PATH_REFERENCE_TEST] ${target_path} を参照する既存bats(先供給・必要集合):" >&2
+            printf '%s\n' "$matches" | sed 's/^/  - /' >&2
+        else
+            echo "INFO: [TARGET_PATH_REFERENCE_TEST] ${target_path} を参照する既存batsなし(空集合)" >&2
+        fi
+    done <<< "$targets"
+}
+
 cmd_save_is_causal_verification_scope() {
     [[ -n "${CMD_BLOCK_NC:-}" ]] || return 1
     local search_text
@@ -5859,6 +5890,7 @@ fi
 # WSL2最適化: 全出力が >&2 のみ（判定に影響しない）のでバックグラウンド化。
 if [[ "${CMD_QUALITY_FAST_METADATA:-0}" != "1" ]]; then
     show_target_path_git_history &
+    show_target_path_reference_test_manifest &
 fi
 check_causal_verification_requirement
 

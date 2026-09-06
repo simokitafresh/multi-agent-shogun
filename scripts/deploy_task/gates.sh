@@ -975,6 +975,90 @@ deploy_task_source_contract_precheck() {
         return 2
     fi
     log "universal_shard: ${shard_result}"
+
+    # Level5(cmd_karo_hotfix_reference_test_contract_20260906 AC2): pre-supply
+    # the reference-test manifest for this task's own target scripts at the
+    # same common deployment entrance as the shard manifest above, tying
+    # together (script, its current blob SHA, the bats set that
+    # independently references it) so a ninja/家老 sees the required bats
+    # set before starting work. Reuses the same literal-reference derivation
+    # git-pre-commit.sh's D0/task layers use (no duplicate detection logic).
+    #
+    # This step deliberately WRITES ONLY the sidecar JSON below and does not
+    # register its path into the task YAML (e.g. via yaml_field_set.sh),
+    # unlike test_receipt_path's pattern in scripts/run_tests.sh. Two
+    # concrete blockers found during this task, both requiring a file
+    # outside planned_paths to resolve safely (reported per role_reminder
+    # rather than implemented speculatively):
+    #   1. This function's own header contract: "A rejected deployment must
+    #      leave the worker's existing task byte-identical." A YAML mutation
+    #      here would violate that guarantee if a later precheck in the same
+    #      deployment attempt fails and the deployment is rejected.
+    #   2. scripts/deploy_task.sh (the pre-modularization monolith, not in
+    #      planned_paths) defines its OWN separate
+    #      deploy_task_source_contract_precheck() and scripts/deploy_task.sh
+    #      calls that local copy, not this scripts/deploy_task/gates.sh one
+    #      (scripts/deploy_task/main.sh calls this one). Which copy actually
+    #      executes for a given deployment path was not verified in this
+    #      task; writing a manifest pointer field from only one of the two
+    #      copies risks the field being silently absent depending on which
+    #      entrypoint ran, which is a worse outcome than not registering it.
+    # Best-effort/non-blocking either way: a manifest write failure never
+    # blocks deployment, and this step no-ops (not an error) if the shared
+    # function is not loaded in this shell (a narrow test harness that
+    # extracts gates.sh functions without bootstrap.sh's source).
+    if declare -F gate_hook_quality_contract_reference_test_matches >/dev/null 2>&1; then
+        (
+            local ref_manifest_dir="$SCRIPT_DIR/queue/reference_test_manifests"
+            local ref_manifest_out="$ref_manifest_dir/${shard_id}.json"
+            mkdir -p "$ref_manifest_dir"
+            local ref_target ref_match ref_sha
+            local -a ref_rows=()
+            while IFS= read -r ref_target; do
+                [ -n "$ref_target" ] || continue
+                case "$ref_target" in
+                    *.sh|*.py) ;;
+                    *) continue ;;
+                esac
+                ref_sha="$(git -C "$SCRIPT_DIR" rev-parse "HEAD:${ref_target}" 2>/dev/null || printf 'untracked')"
+                local -a ref_tests=()
+                while IFS= read -r ref_match; do
+                    [ -n "$ref_match" ] || continue
+                    ref_tests+=("$ref_match")
+                done < <(gate_hook_quality_contract_reference_test_matches "$ref_target" "$SCRIPT_DIR")
+                ref_rows+=("$(printf '%s\t%s\t%s' "$ref_target" "$ref_sha" "$(IFS=,; echo "${ref_tests[*]}")")")
+            done < <(python3 - "$source_file" <<'PY' 2>/dev/null
+import sys, yaml
+data = yaml.safe_load(open(sys.argv[1], encoding="utf-8")) or {}
+task = data.get("task", data)
+paths = task.get("target_path") or task.get("planned_paths") or []
+if isinstance(paths, str):
+    paths = [paths]
+for p in paths:
+    print(p)
+PY
+)
+            if [ "${#ref_rows[@]}" -gt 0 ]; then
+                printf '%s\n' "${ref_rows[@]}" | python3 -c '
+import json, sys, datetime
+entries = []
+for line in sys.stdin:
+    line = line.rstrip("\n")
+    if not line:
+        continue
+    parts = line.split("\t")
+    script = parts[0] if len(parts) > 0 else ""
+    source_sha = parts[1] if len(parts) > 1 else ""
+    tests_raw = parts[2] if len(parts) > 2 else ""
+    tests = [t for t in tests_raw.split(",") if t]
+    entries.append({"script": script, "source_sha": source_sha, "required_tests": tests})
+manifest = {"generated_at": datetime.datetime.now(datetime.timezone.utc).isoformat(), "entries": entries}
+json.dump(manifest, sys.stdout, ensure_ascii=False, indent=2)
+' > "$ref_manifest_out"
+                log "reference_test_manifest: written to ${ref_manifest_out#"$SCRIPT_DIR"/}"
+            fi
+        ) 2>/dev/null || true
+    fi
 }
 
 capture_done_redeploy_context() {

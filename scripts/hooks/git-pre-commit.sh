@@ -719,6 +719,34 @@ resolve_reference_test_contract_matches() {
     return 0
 }
 
+# AC2(全ロール共通、cmd_karo_hotfix_reference_test_contract_20260906 RC是正): the
+# literal-reference gap closed above must not be limited to the D0 (no task)
+# branch. A ninja task commit (NINJA_SCOPE_TASK_FILE set) takes a completely
+# separate branch in check_precommit_affected_tests() that never reaches
+# resolve_reference_test_contract_matches(), and its receipt-reuse fast path
+# (precommit_receipt_matches) can skip test execution entirely. Run this
+# check unconditionally, before receipt reuse, for BOTH branches so a
+# literal-path-referenced bats file is caught regardless of who committed
+# and whether an exact receipt would otherwise short-circuit execution. The
+# check is additive: it never replaces or narrows the existing task/affected
+# selection, it only adds a coverage floor those selections can miss.
+run_reference_test_contract_check() {
+    local run_tests="$1"
+    local -a matches=()
+    local match
+    while IFS= read -r match; do
+        [[ -n "$match" ]] || continue
+        matches+=("$match")
+    done < <(resolve_reference_test_contract_matches)
+    ((${#matches[@]} > 0)) || return 0
+    echo "[pre-commit] reference-test contract: literal path/basename matches=${#matches[@]}" >&2
+    if ! run_precommit_tests_bounded "$run_tests" file "${matches[@]}"; then
+        echo "BLOCK(GA-PRECOMMIT1): a literal-path-referenced bats contract failed (F-11/F-12/F-13/F-16 class)." >&2
+        return 1
+    fi
+    return 0
+}
+
 # AC3 threshold decision (n=10 direct measurement, this repo's current scale,
 # real shared-worktree contention): a single non-lib code file staged →
 # median 1844ms / max 3262ms added latency, dominated by test_select.sh's
@@ -855,6 +883,18 @@ check_precommit_affected_tests() {
     task_rc=$?
     if [[ "$task_rc" -eq 0 ]]; then
         echo "[pre-commit] affected-test mode=task task_file=${task_file#"$REPO_ROOT"/}" >&2
+        # Run ahead of receipt reuse: an exact-PASS receipt only proves the
+        # task's own declared/scoped test set passed on this tree, it says
+        # nothing about a literal-path reference this check independently
+        # derives, so reuse must not bypass it. Guarded by `declare -f`: a
+        # sibling test harness (test_git_pre_commit_affected_deps.bats)
+        # extracts check_precommit_affected_tests by name into an isolated
+        # script with an explicit, narrower function whitelist that predates
+        # this check; an unguarded call there is "command not found", not a
+        # no-op, and would turn a missing helper into a false BLOCK.
+        if declare -f run_reference_test_contract_check >/dev/null 2>&1; then
+            run_reference_test_contract_check "$run_tests" || return 1
+        fi
         if precommit_receipt_matches "$task_file"; then
             echo "[pre-commit] affected-test exact PASS receipt reused; test process launches=0" >&2
             return 0
@@ -900,15 +940,8 @@ check_precommit_affected_tests() {
         target_files+=("${reverse_deps[@]}")
     fi
 
-    local -a reference_test_matches=()
-    local reference_match
-    while IFS= read -r reference_match; do
-        [[ -n "$reference_match" ]] || continue
-        reference_test_matches+=("$reference_match")
-    done < <(resolve_reference_test_contract_matches)
-    if ((${#reference_test_matches[@]} > 0)); then
-        echo "[pre-commit] reference-test contract: literal path/basename matches=${#reference_test_matches[@]}" >&2
-        target_files+=("${reference_test_matches[@]}")
+    if declare -f run_reference_test_contract_check >/dev/null 2>&1; then
+        run_reference_test_contract_check "$run_tests" || return 1
     fi
 
     # Accept both new (PRECOMMIT_TIMEOUT_OVERRIDE) and legacy name for backward compat
