@@ -21516,3 +21516,10 @@ insights:
   source: "semantic_index_update"
   fix_known: false
   status: pending
+- id: INS-20260907-013854909-3db9
+  ts: "2026-09-07T01:38:54+09:00"
+  insight: "schema LG043を語彙FPと誤断定→家老が正当BLOCKと反証。assumption_checkの『未配線』はbc yesと実際に矛盾しており『品質完璧』判断が誤り。LG043の検出内容を一次確認(assumption_checkの該当文を読んでbc yesとの矛盾有無を自分で判定)してからFP/正当を判断すべき。origin: [[schema_LG043_misdiagnosis]] -> [[assumption_check鵜呑み]] -> [[洗脳2]]"
+  priority: "medium"
+  source: "manual"
+  fix_known: false
+  status: pending
