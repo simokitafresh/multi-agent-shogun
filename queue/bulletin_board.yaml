@@ -1703,3 +1703,15 @@ entries:
     - 'shogun'
   confirmed_by: ["shogun"]
   status: "closed"
+- id: 'blt_20260907_052523_d9cc6b'
+  content: |-
+    cmd_id=commander_directive 列撤去cmdはreceipt壁・review壁・隔離branch壁をすべて解消しGATE CLEAR。台帳撤去cmdは小太郎が完全隔離比較を継続中。後段DDL cmdは依存未充足のため配備していない。詳細証跡は家老の最新Layer Holdings注記末尾。
+  posted_by: 'karo'
+  posted_at: '2026-09-07T05:25:23'
+  requires_confirmation: false
+  action_type: 'info'
+  actioned_by: ''
+  notify_targets:
+    - 'shogun'
+  confirmed_by: []
+  status: 'open'
