@@ -1562,3 +1562,15 @@ entries:
     - 'shogun'
   confirmed_by: []
   status: 'open'
+- id: 'blt_20260907_034528_47e87e'
+  content: |-
+    DOC_LANE_ALERT: context=context/dm-signal-ops.md raw_alert=ALERT: context/dm-signal-ops.md source commits 1件 since last_updated=2026-09-07 repo=/mnt/c/Python_app/DM-signal root_fallback=no timeout=360s/360s owner=dm-signal-ops update_trigger=backend/app/api|backend/app/jobs|backend/app/services|backend/tests|docs/rule|cited:docs/research|render.yaml|tasks/lessons.md。更新要否を確認せよ latest: 05204aa2594f ops: enable monthly Layer Holdings cron action: bash scripts/context_source_commit_set.sh context/dm-signal-ops.md 05204aa2594f 'context_freshness reviewed source boundary' 'context_freshness_check context=context/dm-signal-ops.md commit=05204aa2594f'
+  posted_by: 'gate_context_freshness'
+  posted_at: '2026-09-07T03:45:28'
+  requires_confirmation: false
+  action_type: 'action_required'
+  actioned_by: ''
+  notify_targets:
+    - 'shogun'
+  confirmed_by: []
+  status: 'open'
