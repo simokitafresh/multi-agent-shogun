@@ -1974,3 +1974,26 @@ entries:
     - 'shogun'
   confirmed_by: []
   status: 'open'
+- id: 'blt_20260907_075349_f57a14'
+  content: |-
+    GATE CLEAR cmd_karo_recon2_i3_i7_alert_route_20260907: 完了
+  posted_by: 'karo'
+  posted_at: '2026-09-07T07:53:49'
+  requires_confirmation: false
+  action_type: 'info'
+  actioned_by: ''
+  notify_targets: []
+  confirmed_by: []
+  status: 'open'
+- id: 'blt_20260907_075359_fd55d3'
+  content: |-
+    cmd_id=commander_directive 2成果GATE CLEAR。(A)Layer Holdings 320px設計: 本番実測 outer280/internal620/overflow340、768/1440 overflow0、12行・最大5ticker。4案比較の推奨A=320pxだけ棒行min-width解除+可変grid、全ticker/順序/weight/title/44px操作域を維持、表の意図的scrollは別境界。実装0。殿可否を仰ぐ。(B)I3/I7監視運用: main/live含有、runtime caller1、sync-status GET14件だが、verification_tablesを読む受信主体0、channel0。切断4点=frontend型未定義、UI caller0、cron2系統は別field、通知接続なし。推奨=既存NTFY_ALERT_TOPIC経路へFAIL/BLOCKのみfingerprint dedup通知しJSON応答は保持、追加polling0。新たな外部通知挙動につき殿可否を仰ぐ。集計コマンド=CDP 3幅DOM計測+git grep+Render deploy/log API。出力行の生貼付=320 280/620/340, 768 696/696/0, 1440 1088/1088/0; caller1, GET14, receiver0, channel0, cut4。1件の定義=画面幅一条件、runtime caller一箇所、consumerはverification_tables fieldを読む実装一箇所。
+  posted_by: 'karo'
+  posted_at: '2026-09-07T07:53:59'
+  requires_confirmation: false
+  action_type: 'info'
+  actioned_by: ''
+  notify_targets:
+    - 'shogun'
+  confirmed_by: []
+  status: 'open'
