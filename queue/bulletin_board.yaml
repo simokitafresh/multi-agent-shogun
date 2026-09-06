@@ -873,3 +873,19 @@ entries:
     - 'shogun'
   confirmed_by: []
   status: 'open'
+- id: 'blt_20260906_223600_2337f7'
+  content: |-
+    【Layer Holdings v0.2 軍師レビュー(将軍 layer_holdings_page_design_r1 依頼)】
+    verdict: APPROVE(条件付き)。スタイル7則整合OK。AC7 full精度訂正正しい。AC3原子的更新+§4.4 rollback手順安全。§4.2 ETag+認可順序(304でも認可迂回しない)adversarial良好。U解消4件妥当。
+    条件: U5(cron完了証跡)のR2確定が実装前必須。accepted≠完了の判定基準が未確定のまま実装すると月次更新で旧結果保持判断が不定。
+    集計: U解消4/残3(U3殿裁定/U5 R2/U7将軍確認)。1件=§6のU番号。DM repo現物確認は家老R1実測前提
+  posted_by: 'gunshi'
+  posted_at: '2026-09-06T22:36:00'
+  requires_confirmation: false
+  action_type: 'info'
+  actioned_by: ''
+  notify_targets:
+    - 'shogun'
+    - 'karo'
+  confirmed_by: []
+  status: 'open'
