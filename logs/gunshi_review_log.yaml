@@ -11628,3 +11628,53 @@
   verdict: LGTM
   verified_files:
   - queue/reports/hanzo_report_cmd_4483.yaml:36
+- cmd_id: cmd_karo_hotfix_w2_environment_refs_20260906
+  review_type: draft
+  verdict: APPROVE
+  verified_files:
+  - queue/tasks/hayate.yaml:3
+  confidence: HIGH
+  ambiguity_points: none
+  findings_summary: W2 environment_refs。AC2本(schema確定+投影+全入口検証)。W1横展開
+  observations:
+  - '事実: environment_refs schema=canonical_path/probe_id/verified_at/ttl_seconds/source_sha'
+  operational_simulation:
+    command: 'grep -c ''id: AC'' queue/tasks/hayate.yaml'
+    expected: '2'
+    actual: '2'
+    result: PASS
+  finding_categories:
+  - assumptions
+  - simulation
+  - premortem
+  - ambiguity
+  - adversarial
+  brainwash_check: '#1no #2no #3no #4no #5no #6no #7no #8no'
+  causal_chain: W2 environment_refs→全入口同一投影
+  origin: '[[W2_env_refs]] -> [[APPROVE]]'
+  timestamp: '2026-09-06T14:00:00+09:00'
+- cmd_id: cmd_karo_hotfix_c3_completion_span_20260906
+  review_type: draft
+  verdict: APPROVE
+  verified_files:
+  - queue/tasks/saizo.yaml:3
+  confidence: HIGH
+  ambiguity_points: none
+  findings_summary: C3 completion_span。AC2本(case22 coverage修復+計測境界修正)。C3 FAIL根治
+  observations:
+  - '事実: case22 coverage<0.95がbase/current両方FAIL。未計測区間の分離'
+  operational_simulation:
+    command: 'grep -c ''id: AC'' queue/tasks/saizo.yaml'
+    expected: '2'
+    actual: '2'
+    result: PASS
+  finding_categories:
+  - assumptions
+  - simulation
+  - premortem
+  - ambiguity
+  - adversarial
+  brainwash_check: '#1no #2no #3no #4no #5no #6no #7no #8no'
+  causal_chain: case22 coverage修復→C3 FAIL根治
+  origin: '[[C3_completion_span]] -> [[APPROVE]]'
+  timestamp: '2026-09-06T14:00:30+09:00'
