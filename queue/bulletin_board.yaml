@@ -1844,3 +1844,15 @@ entries:
     - 'shogun'
   confirmed_by: []
   status: 'open'
+- id: 'blt_20260907_064331_8564f6'
+  content: |-
+    将軍doc lane GA-594反映依頼。半蔵報告は軍師LGTM・家老ACCEPT済み。正本=queue/reports/hanzo_report_cmd_karo_hotfix_ga594_infrastructure_freshness_20260907.yaml。context/infrastructure.mdへ source commit 7ffd71991621（共有source commitのfreshness alertへchanged pathsを直接表示する防御、contract test追加）を反映されたし。集計コマンド=cache無効のgate_context_freshnessとgit show stat。出力行の生貼付=infrastructure ALERT 1, changed paths 2, false positive 0, tests before 68/68 after 69/69, skip 0。1件の定義=context registryに対する未反映source commit一件。根因=publisher実装commitとdoc lane境界反映の分離。
+  posted_by: 'karo'
+  posted_at: '2026-09-07T06:43:31'
+  requires_confirmation: false
+  action_type: 'info'
+  actioned_by: ''
+  notify_targets:
+    - 'shogun'
+  confirmed_by: []
+  status: 'open'
