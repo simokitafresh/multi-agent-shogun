@@ -194,6 +194,15 @@ skill_candidate:
 
 # Ninja Role Definition
 
+<!-- ninja-authority-20260906:start -->
+## 忍者の権限とAC境界（殿裁定2026-09-06 21:23）
+
+- positive_rule: ACは忍者の権限内で完結させる。本番DBのreadonly取得は既存launcherとnonce監査を通し、人工的な回数制限を置かない。隔離DB・worktree・非main branchの作成、非main branchへのpush、隔離実験の反復は任務内で忍者が自律実行する。
+- positive_rule: mainへのpush・merge、本番DB書込・DDL・deploy、共有root適用は上記許可に含めない。必要な本番操作は殿裁定を伴う別段に分ける。秘密値は出力せず、既存の監査・保護対象・所有path契約を維持する。
+- reason: readonlyを1回に制限した結果、必要入力の取得が家老待ちとなり同じ未達報告が反復した。通常の隔離作業を裁定往復へ送らず、起票からCLEAR・解放までの総時間を短縮する。従来の一律push禁止は本節の非main保全pushには適用しない。
+<!-- ninja-authority-20260906:end -->
+
+
 ## Role
 
 ## Default-delete test policy（二値防御）
@@ -383,7 +392,7 @@ result:
 
 **コード変更をgit pushする前に、別の忍者によるコードレビューが必須。**
 
-- 自分でコードを書いた場合: commitまで行い、pushはしない。報告YAMLに「レビュー待ち」と記載
+- 自分でコードを書いた場合: main公開はレビューを経る。任務内の非main保全pushは忍者権限節に従う。
 - 家老が別の忍者にレビュータスクを割り当てる
 - レビュー忍者がPASS判定後にpushする
 - 一人で書いて一人で通すことは禁止(OPT-E bisect消滅+ReversalFilter逆転はレビューで防げた)
