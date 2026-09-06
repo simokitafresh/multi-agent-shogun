@@ -9677,6 +9677,72 @@ JSON
     [[ "$output" == *"BLOCK: report commit main ancestry: BLOCK: explicit commit repository is unreadable"* ]]
 }
 
+# F19追補(殿指示2026-09-06 21:34): no-code-change報告もtyped commit_contract.repo_root
+# を解決してからtree-sentinelを検証すべきで、main包含は要求しない。resolve前の旧コードは
+# no-code-changeだけ解決をスキップしstale project.pathを直接使っていたため、
+# task_worktree.json.repoがbare cache、実tree所有repoがworktree、のような同一git成果物の
+# 別パス表現でBLOCK/誤判定が発生した(cmd_karo_hotfix_p08_i7_monitor_20260906のI7報告と同型の構造)。
+# test_necessity: no-code-change報告のtree-sentinel解決も、通常commitと同じtyped
+# commit_contract.repo_rootを優先し、stale project.pathへフォールバックしてはならない。
+@test "terminal report ancestry resolves typed commit repo for a no-code-change tree sentinel before stale project path" {
+    local project_repo="$BATS_TEST_TMPDIR/report-ancestry-nocode-typed-project"
+    local commit_repo="$BATS_TEST_TMPDIR/report-ancestry-nocode-typed-source"
+    local report="$BATS_TEST_TMPDIR/report-ancestry-nocode-typed.yaml"
+    local task="$BATS_TEST_TMPDIR/report-ancestry-nocode-typed-task.yaml"
+    make_ci_push_repo "$project_repo"
+    git init -q "$commit_repo"
+    git -C "$commit_repo" config user.email test@example.com
+    git -C "$commit_repo" config user.name test
+    printf 'typed-source-unique-content\n' > "$commit_repo/typed.txt"
+    git -C "$commit_repo" add typed.txt
+    git -C "$commit_repo" commit -qm typed
+    git -C "$commit_repo" update-ref refs/remotes/origin/main "$(git -C "$commit_repo" rev-parse HEAD)"
+    local tree
+    tree="$(git -C "$commit_repo" rev-parse HEAD^{tree})"
+    # project_repo (the stale task.project path) never held this tree object.
+    run git -C "$project_repo" cat-file -e "${tree}^{tree}"
+    [ "$status" -ne 0 ]
+
+    printf 'verdict: PASS\ncommit_hash: no-code-change\nno_code_change_evidence: {before_tree: %s, after_tree: %s, tree_unchanged: true}\ncommit_contract: {repo_root: %s}\n' \
+        "$tree" "$tree" "$commit_repo" > "$report"
+    printf 'task:\n  project: infra\n  commit_contract: {repo_root: %s}\n' "$commit_repo" > "$task"
+
+    run_report_main_ancestry_state "$project_repo" "$report" "$task"
+    [ "$status" -eq 0 ]
+    [ "$output" = "SKIP: UNPUSHED: no-code-change tree sentinel ($tree)" ]
+}
+
+# test_necessity: a no-code-change tree sentinel whose typed repo_root does not
+# actually own the declared tree must BLOCK fail-closed, never silently pass by
+# falling back to an unrelated repository.
+@test "terminal report ancestry blocks a no-code-change tree sentinel whose typed repo lacks the declared tree" {
+    local project_repo="$BATS_TEST_TMPDIR/report-ancestry-nocode-mismatch-project"
+    local source_repo="$BATS_TEST_TMPDIR/report-ancestry-nocode-mismatch-source"
+    local wrong_repo="$BATS_TEST_TMPDIR/report-ancestry-nocode-mismatch-wrong"
+    local report="$BATS_TEST_TMPDIR/report-ancestry-nocode-mismatch.yaml"
+    local task="$BATS_TEST_TMPDIR/report-ancestry-nocode-mismatch-task.yaml"
+    make_ci_push_repo "$project_repo"
+    git init -q "$source_repo"
+    git -C "$source_repo" config user.email test@example.com
+    git -C "$source_repo" config user.name test
+    printf 'only-in-source-repo\n' > "$source_repo/typed.txt"
+    git -C "$source_repo" add typed.txt
+    git -C "$source_repo" commit -qm typed
+    local tree
+    tree="$(git -C "$source_repo" rev-parse HEAD^{tree})"
+    make_ci_push_repo "$wrong_repo"
+    run git -C "$wrong_repo" cat-file -e "${tree}^{tree}"
+    [ "$status" -ne 0 ]
+
+    printf 'verdict: PASS\ncommit_hash: no-code-change\nno_code_change_evidence: {before_tree: %s, after_tree: %s, tree_unchanged: true}\ncommit_contract: {repo_root: %s}\n' \
+        "$tree" "$tree" "$wrong_repo" > "$report"
+    printf 'task:\n  project: infra\n  commit_contract: {repo_root: %s}\n' "$wrong_repo" > "$task"
+
+    run_report_main_ancestry_state "$project_repo" "$report" "$task"
+    [ "$status" -eq 1 ]
+    [[ "$output" == "BLOCK: report commit main ancestry: BLOCK: no-code-change tree unresolvable"* ]]
+}
+
 # test_necessity: readonly/no-code reports retain their sentinel contract and
 # are not forced to invent a project commit identity.
 # regression_justification: no-code recon/scout reports already use the
