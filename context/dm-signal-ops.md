@@ -1,5 +1,6 @@
 # DM-signal 運用コンテキスト
 <!-- last_updated: 2026-09-07 context_freshness reviewed source boundary -->
+<!-- source_commit:af29176917d1 reason:context_freshness reviewed source boundary evidence:context_freshness_check context=context/dm-signal-ops.md commit=af29176917d1 -->
 <!-- source_commit:e9b233ed1770 reason:context_freshness reviewed source boundary evidence:context_freshness_check context=context/dm-signal-ops.md commit=e9b233ed1770 -->
 <!-- source_commit:881c2dfcfb84 reason:context_freshness reviewed source boundary evidence:context_freshness_check context=context/dm-signal-ops.md commit=881c2dfcfb84 -->
 <!-- source_commit:05204aa2594f reason:context_freshness reviewed source boundary evidence:context_freshness_check context=context/dm-signal-ops.md commit=05204aa2594f -->

@@ -1,5 +1,6 @@
 # DM-signal コアコンテキスト
 <!-- last_updated: 2026-09-07 context_freshness reviewed source boundary -->
+<!-- source_commit:af29176917d1 reason:context_freshness reviewed source boundary evidence:context_freshness_check context=context/dm-signal-core.md commit=af29176917d1 -->
 <!-- source_commit:e9b233ed1770 reason:context_freshness reviewed source boundary evidence:context_freshness_check context=context/dm-signal-core.md commit=e9b233ed1770 -->
 <!-- source_commit:ad6975ef7850 reason:context_freshness reviewed source boundary evidence:context_freshness_check context=context/dm-signal-core.md commit=ad6975ef7850 -->
 <!-- source_commit:c872b3666703 reason:context_freshness reviewed source boundary evidence:context_freshness_check context=context/dm-signal-core.md commit=c872b3666703 -->
