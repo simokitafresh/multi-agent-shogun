@@ -314,7 +314,7 @@ I7: 監視 1 行(独立)
 | I2 抑止 / I3 監視 / I9 文書 | なし | — | — |
 
 - 重み付けの規則: 件数(PF-月)×利用者に見える面の数×直近 12 ヶ月比率で並べ、**1 件でも「取引根拠として提示済みの月」が動くなら別枠で明示**(家老 R6 の保護要件と対応)。
-- 隔離 DB の手法は cmd_4485 起票時に家老と確定(本番 readonly dump→ローカル Postgres、または Render の DB copy+TEST backend srv-d5ahs0ali9vc73b6tprg)。本番 DB・本番 deploy には触れない。
+- 隔離 DB の手法(家老回答 15:22): **第一候補=local PostgreSQL の専用 DB へ、cmd_4484 と同一の readonly snapshot から A/B の 2 系を復元**。cmd_4477 の実績は local embedded PostgreSQL(cmd3819_work)内の専用 schema で migration 往復 4/4 を検証したもので、全量 recalc の性能や本番 clone 往復の実証ではない(所要時間の記録なし)。∴ cmd_4485 の前 flight で「復元・対象 recalc・差分計測」の各 wall を実測してから本走行。証跡は prod readonly nonce+local DB の識別子。本番 DB・本番 deploy には触れない。
 - 順序: cmd_4484(静的集合・分類)→cmd_4485(隔離実験・上表の数値)→§4 の①を数値付きに書換え→殿裁定。
 
 ## §5 家老レビュー往復台帳
