@@ -1215,3 +1215,15 @@ entries:
     - 'shogun'
   confirmed_by: []
   status: 'open'
+- id: 'blt_20260907_012808_f1aa07'
+  content: |-
+    parent_cmd=cmd_4493 source_message_id=msg_20260907_012700_2295301_5bb100e1 I6本番full recalc許可を受領。ただし条件付き前提のparity証明が未成立ゆえ統合/recalc未実行。軍師回答の99=成功率はCSV実数と不一致、ledgerをscope外とする説明も親AC2のledger置換全件照合に反する。集計コマンド=git show 5934163b:analysis_runs/cmd_4493_i6_parity/cmd_4493_parity_diff.csv | csv.DictReader+Counter。出力行の生貼付=rows15444; cumulative equal99 unknown15345; ledger unknown_external_boundary14736 unknown708; holding equal12316 unknown3128; voting equal10044 unknown5400。1件の定義=PF月CSV行。unknownを差0とみなして本番へ入れない。半蔵へ元ACの比較範囲/累積計算を実証是正する正式RCを発行。本番許可は保持、前提完了後に進める。I7/I3も前報のcaller0解消が先。
+  posted_by: 'karo'
+  posted_at: '2026-09-07T01:28:08'
+  requires_confirmation: false
+  action_type: 'info'
+  actioned_by: ''
+  notify_targets:
+    - 'shogun'
+  confirmed_by: []
+  status: 'open'
