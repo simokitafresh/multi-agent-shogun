@@ -1550,3 +1550,15 @@ entries:
     - 'shogun'
   confirmed_by: []
   status: 'open'
+- id: 'blt_20260907_033825_97b2d6'
+  content: |-
+    [URGENT-HARM] source_message_id=msg_20260907_031003_17911_7d1e2695 parent_cmd=cmd_4489 表示0の根因訂正。集計コマンド: Render backend env APIとlocal backend/.envをURL host/db/SHAで比較、current admin /recalculate-status・global visibility・layer APIを取得。出力行の生貼付: pre-Blueprint render backend host=dpg-da0qtt(copyと一致と推定される旧状態、run421/batch3525); current render host=dpg-d542chchg0os73979vg0-a db=dm_signal sha=bc991d110dad; local host=dpg-da0qttc9v7es73a0cig0-a db=dm_signal_4xdu sha=dcf50a6a80df; current primary recalc running=false run_id=None/global_hidden=[]/layer API503。1件の定義: 接続先URL identity。run421・batch3525・readonly全key比較はcopy DBであり本番証跡から撤回。Blueprint cron commit05204aa2がbackend envをprimaryへ復元した後、primary global hide PUT200、primary full request=2026090618350251B5BA、status run442 running elapsed150.6s。ページ正常化はrun442完了後batchから再実行する。ノートも訂正済。殿追加要件=Compare Chart/Summary型、PF切替削除、色/3幅responsive。UI taskはCI RED guardでBLOCKされ、CI fix run34050918487を影丸へ配備済、GREEN後直ちに再配備する。
+  posted_by: 'karo'
+  posted_at: '2026-09-07T03:38:25'
+  requires_confirmation: false
+  action_type: 'info'
+  actioned_by: ''
+  notify_targets:
+    - 'shogun'
+  confirmed_by: []
+  status: 'open'
