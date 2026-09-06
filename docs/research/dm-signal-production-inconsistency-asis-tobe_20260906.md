@@ -1,5 +1,5 @@
 <!-- gist-master: 2f1a3daa07c336c90958b1287245318b dm-signal-production-inconsistency-asis-tobe_20260906.md -->
-# DM-Signal 本番不整合 I1〜I9 — 現況・配備カード・データフロー・カタログ・因果・改善影響・ledger 判断 統合設計書 v1.24(2026-09-07 01:12 殿 go 分の CLEAR 反映: I7 配線 cmd_4490 00:59・I3 監視 cmd_4491 01:08、走行=I6 cmd_4493・I8 cmd_4494・I2 cmd_4492・P07。v1.23=00:15 家老R26: I1表示の未確定・I4 Aの条件性・本番観測と隔離実験の分離。v1.22=2026-09-07 00:13 §9.1.3 を表示/保有の 2 軸へ更新=殿 00:08/00:10 基準。v1.21=00:02 §2.3 I 別状態を 00:02 時点へ更新=✅2/🟡7。v1.20=23:58 cmd_4485 GATE CLEAR 23:46=P05/P06 終端、P07 は task 差替えで中断中。v1.19=23:02 P08-I7 GATE CLEAR 23:00=F-19 gate 修正 e3214c8e1 で WAIT 解消。v1.18=21:45)
+# DM-Signal 本番不整合 I1〜I9 — 現況・配備カード・データフロー・カタログ・因果・改善影響・ledger 判断 統合設計書 v1.25(2026-09-07 01:18 P07 CLEAR=I1 admin 表示 0/8 確定→§9.1.3 I1 を不変集合へ。v1.24=01:12 殿 go 分の CLEAR 反映: I7 配線 cmd_4490 00:59・I3 監視 cmd_4491 01:08、走行=I6 cmd_4493・I8 cmd_4494・I2 cmd_4492・P07。v1.23=00:15 家老R26: I1表示の未確定・I4 Aの条件性・本番観測と隔離実験の分離。v1.22=2026-09-07 00:13 §9.1.3 を表示/保有の 2 軸へ更新=殿 00:08/00:10 基準。v1.21=00:02 §2.3 I 別状態を 00:02 時点へ更新=✅2/🟡7。v1.20=23:58 cmd_4485 GATE CLEAR 23:46=P05/P06 終端、P07 は task 差替えで中断中。v1.19=23:02 P08-I7 GATE CLEAR 23:00=F-19 gate 修正 e3214c8e1 で WAIT 解消。v1.18=21:45)
 
 - 発端: 殿 2026-09-06 14:11『dm-signal-research-data-backlog_20260905.md を参考に DM-signal の本番の不整合について深く調査しよう。家老と繰り返しレビュー交換をせよ。本番の不整合、それによる影響、改善時にどのような変化が本番に起きるか、改善の影響範囲・依存関係なども明確にせよ』。以後の殿指示: 14:44 データフロー、14:45 ユーザー可視/内部/デッドコード、14:47 設計の因果、14:59 ledger 協議、15:06 時系列、15:15 可視変化の定量化、15:33 3 設計書並列、15:56 配備・進捗運用版(家老)、16:33 単一スタイルへ再構築。
 - 読む順: §2(現況)→§3(配備カード)→§5(カタログ)→§9(改善影響)→§10(ledger)。図は §4、根拠は §5〜§7、順序と契約は §8、裁定は §11、往復は §12、版は §13。
@@ -47,7 +47,7 @@
 | P05/P06 / cmd_4485 / 影丸（半蔵がAC3比較準備） | 18:04未達報告。復元39.026402秒、候補2経路の部分実験、B ledger258行/2回目追加0。source `82a70df1610b035557cc08f25c7407d195cb2b27` | 18:06家老RC。全期間価格/暦入力とAPI JSON軸が未達。前flight価格取得215行を全期間入力と混同しない | CLEARなし | 不足表/列/期間/ticker集合manifestを影丸が作成、追加readonly取得可否を将軍へ裁定依頼済み。既存保存データ優先、許可前の追加本番取得0。半蔵の比較計画を合流 **→ GATE CLEAR 23:46**(AC1/AC2/AC3 全 yes、AC2 15 セル差は 15/15 一致で解消=cache 跨ぎ汚染、残っていたのは所有契約不一致のみ→9 path 訂正で通過) |
 | (18:07 追記) P05 追加取得 / 将軍 | 将軍裁定 18:07: 全期間入力の追加 readonly 1 回を許可(条件は §2.3.1)。家老 18:08 影丸へ伝達、同 task 継続 | — | — | 影丸: 不足 manifest→取得→AC2/AC3 全期間再走 |
 | (18:22/18:25 追記) P05 取得停止 / 家老・将軍 | 18:20 観測: 2 回目取得も直近 12 ヶ月のみ(1,020 PF-月、API 1,194 行・error 48)。家老が追加取得を停止 | — | — | 将軍裁定追補 18:25: 12 ヶ月分は許可 1 回に数えない。実全期間の不足 manifest を**家老が事前確認するまで取得停止を維持**。R13 の APPROVE は設計記述に限り、全期間実験完了や追加取得確認済みを意味しない |
-| P07 / 飛猿 | 2026-09-06 18:56配備・着手確認。列8件とdetail_historyの利用契約調査 | draft APPROVE | 未実行。**23:5x 現況: report は in_progress のまま、飛猿の task は F-19 hotfix に差し替わり(22:1x)P07 は中断。再配備要(家老)** | `cmd_karo_recon2_p07_column_contract_20260906`。DB/DDL/deploy0、列別契約をP05待ちにしない |
+| P07 / 飛猿 | 2026-09-06 18:56配備・着手確認。列8件とdetail_historyの利用契約調査 | draft APPROVE | **✅ GATE CLEAR 01:16**(resume task cmd_karo_recon2_p07_resume_20260907、旧 note queue/notes/p07_column_contract_20260906.md 表 1 を固定 SHA で独立再確認、完全一致) | `cmd_karo_recon2_p07_column_contract_20260906`。DB/DDL/deploy0、列別契約をP05待ちにしない |
 | P09 / 才蔵 | 18:56配備・着手確認。4文書と固定codeの適用履歴対応 | draft APPROVE | 未実行 | `cmd_karo_recon2_p09_document_alignment_20260906`。時点付き訂正案を作成、共有文書の直接変更0 |
 | P08-I7 / 疾風 | 19:00配備。既存verification_service.py/test_verification_tables.py拡張 | LGTM→**GATE CLEAR 23:00**(F-19 gate 修正 e3214c8e1 後の初周期。WAIT ancestry 19:2x〜23:00=約 3.5h) | 未実行(呼出 0=挙動不変、配線は殿 OK 後) | `cmd_karo_hotfix_p08_i7_monitor_20260906`。隔離code/test・commitまで。本番起動/deploy0。I2抑止は別扱い |
 | P10 / 未配備 | 裁定と採用対象の確定待ち | 未実行 | 未実行 | 本番変更の許可を上記の調査/実装準備から推定しない |
@@ -75,7 +75,7 @@ cmd_4484 世代2の**報告値**。オフライン検証出力は確認済みだ
 
 | # | 不整合 | 状態 | 現在値 |
 |---|---|---|---|
-| I1 | fof_component_weights の未使用 8 列 | 🟡 P07 中断(飛猿 task が 22:1x F-19 hotfix へ差替え、report in_progress)→再配備待ち(家老、schema 配備後) | 事象確定(24,348 行 NULL)。admin WeightBreakdown が API を使用中→P07 で 8 列の DTO/API/admin/外部利用の契約表を作成中。DROP は本番 DDL=殿 OK |
+| I1 | fof_component_weights の未使用 8 列 | 🟡 **P07 完了 01:16**(cmd_karo_recon2_p07_resume 飛猿 GATE CLEAR: 8 列全て writer 未設定・frontend WeightBreakdown.tsx は component_id+target_weight のみ参照=**admin 表示 0/8**、signal_detail_history writer 呼出 0(現在・過去)、陰性対照 test 2 件。残 unknown=admin 認証保有者の /fof-weights 外部直アクセス有無)。残=DROP の本番 DDL=殿 OK のみ | 事象確定(24,348 行 NULL)。admin WeightBreakdown が API を使用中→P07 で 8 列の DTO/API/admin/外部利用の契約表を作成中。DROP は本番 DDL=殿 OK |
 | I2 | signal_change_log 同日往復の二重行 | 🟡 | cmd_4484 世代 2(CLEAR 16:37、将軍+家老 R9 再集計): 重複 group 81,102 / 対象行 235,750=逆向きペアあり 202,053(正当性未判定)+unknown 33,697(43 PF)。抑止候補は分類次第(P02 追補 U3/U9) |
 | I3 | signal_change_log 未出現 PF | 🟡 **監視 code 完了 01:08**(cmd_4491 影丸 GATE CLEAR: 履歴不足 2 件 ALERT・変化なし 10 件 無警報を fixture 再現、branch feat/prod-i3-monitor、main 反映なし)。本番投入は殿 OK。原因分類は未着手 | 世代 2 再集計(将軍 16:5x): 変化なし 10 / 履歴不足 2(シン玄武-常勝/鉄壁)。旧記述=世代 2 報告値: 未出現 12 PF(A=75)。manifest で除外 3 体との差を照合 |
 | I4 | signal_detail_history 0 行 / signal_decision_ledger 0 行 | 🟡 方向 B 確定(殿裁定 19:35)。**AC3 完了 23:46**(cmd_4485 CLEAR: 全履歴 B backfill 14,450 行・2 回目 0・本番 0)。残=DROP/段階的廃止の本番 DDL=殿 OK のみ | ledger=今 C 休眠・方向 B 段階的廃止、A は候補外。cmd_4485 AC3(a638572d、20:0x): 全履歴 B backfill 14,450 行・2 回目 0・本番 0=『廃止で失うものが無い』の**部分確認**。5 種別差分の全期間集計と API 軸は未完(家老 RC、§2.1 と同じ)。次=AC2/AC3 全期間再走(半蔵)→P06 で B の段階設計(①無効化②表保持③DROP、③は殿 OK)。detail_history writer(caller 0)は P07 で契約確認中 |
@@ -423,12 +423,12 @@ I7: 監視 1 行(独立)
 | 顧客: /api/monthly-trade(position/weights) | – | – | – | 動く可能性(置換 L654-705/L768-804、件数unknown) | – | – | 発生時のみ | – | – | – |
 | 顧客: /api/history(monthly_return/cumulative) | – | – | – | 動く可能性(return、件数unknown) | – | – | 発生時のみ(return は保有の帰結) | – | 0 件(世代 2 で対象 0) | – |
 | LP・X・Live OOS の数値 | – | – | – | 動く可能性(面ごとの件数unknown) | – | – | 発生時のみ | – | 0 件 | – |
-| admin: WeightBreakdown | admin表示は列別未確認(P07で確定) / 保有不変(8列NULLの観測と計算非参照) | – | – | – | – | – | – | – | – | – |
+| admin: WeightBreakdown | **admin 表示 0/8 列(P07 確定 01:16: WeightBreakdown.tsx は component_id+target_weight のみ参照)** / 保有不変(8 列 NULL・計算非参照) | – | – | – | – | – | – | – | – | – |
 | API 直叩き(/fof-weights・ledger API) | 応答 key −8 / 保有不変 | – | – | 応答 0→N | B: ledger API 応答消滅 / 保有不変(ledger 0 行) | – | – | – | – | – |
 | 内部のみ(表・log・ALERT) | schema 8 列 | change_log 行数 減 | ALERT +1 | ledger 行 0→N | B: 15 file・表 2・API 1 撤去 / C: 0 | 差 0 | 隔離 B 系でのみ Σ≠1 再現 | ALERT +1(呼出 0) | 変更不要の可能性 | 文書のみ |
 
 **結論(殿 00:10 の基準=保有ポジション)**:
-- **顧客画面も保有も変わらない**: I2抑止、I3監視、I4 B廃止/C休眠、I7監視、I9文書。I4 BはAPI直叩き利用者には応答消滅が可視。**I1は保有不変・admin表示はP07待ち**であり、この不変集合へ無条件には含めない。第0弾配線(I7)は顧客画面・保有不変。I1 DROPはP07後の別裁定。
+- **顧客画面も保有も変わらない**: **I1 DROP(P07 01:16 で admin 表示 0/8 確定。API 直叩きの応答 key −8 のみ可視。残 unknown=外部ツールの /fof-weights 直アクセス有無)**、I2 抑止、I3 監視、I4 B 廃止/C 休眠(顧客 0。B は API 直叩き利用者にだけ応答消滅が可視)、I7 監視、I9 文書。=殿 OK が要る本番 3 段のうち **第 0 弾配線(I7/I3 deploy)と I1 DROP** はこちら。
 - **保有に触れる**: I6 再正規化(非 unit 行が出た月の ticker×weight が動く。本番現在は 0 行なので今動く値はない)、I4 A 復活(ラベルとweightsが動く可能性、面ごとの件数unknown。殿裁定19:35で候補外)。=本番 3 段のうち **I6 full recalc** はこちら。
 - **対象なし**: I5(差 0)、I8(現在値 0 件)。
 
