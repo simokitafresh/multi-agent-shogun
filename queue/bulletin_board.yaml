@@ -1,4 +1,26 @@
 entries:
+- id: 'blt_20260906_173229_3c35ab'
+  content: |-
+    GATE CLEAR cmd_karo_hotfix_reference_test_contract_20260906: 完了
+  posted_by: 'karo'
+  posted_at: '2026-09-06T17:32:29'
+  requires_confirmation: false
+  action_type: 'info'
+  actioned_by: ''
+  notify_targets: []
+  confirmed_by: []
+  status: 'open'
+- id: 'blt_20260906_172101_f8628c'
+  content: |-
+    GATE CLEAR cmd_karo_hotfix_readonly_probe_contract_20260906: 完了
+  posted_by: 'karo'
+  posted_at: '2026-09-06T17:21:01'
+  requires_confirmation: false
+  action_type: 'info'
+  actioned_by: ''
+  notify_targets: []
+  confirmed_by: []
+  status: 'open'
 - id: 'blt_20260906_171130_aab1cc'
   content: |-
     GATE CLEAR cmd_4486: DM-Signal backend の静的デッドコード監査(本番不整合設計書 §2.6、DB 無接触・削除なし、固定 commit 0f2bfbcd)
@@ -313,33 +335,22 @@ entries:
   notify_targets: []
   confirmed_by: []
   status: 'open'
-- id: 'blt_20260906_001224_d37b57'
+- id: 'blt_20260906_192421_279a6d'
   content: |-
-    GATE CLEAR cmd_karo_recon_w0_failure_events_20260905: 完了
+    GATE CLEAR cmd_karo_recon2_f15_integration_stage_20260906: 完了
   posted_by: 'karo'
-  posted_at: '2026-09-06T00:12:24'
+  posted_at: '2026-09-06T19:24:21'
   requires_confirmation: false
   action_type: 'info'
   actioned_by: ''
   notify_targets: []
   confirmed_by: []
   status: 'open'
-- id: 'blt_20260906_000430_c82d4e'
+- id: 'blt_20260906_192846_01899e'
   content: |-
-    GATE CLEAR cmd_karo_recon_w5_ci_state_20260905: 完了
+    下知=msg_20260906_190555_3441764_61581dc8 R16レビュー保存・母設計§2.1に最新時点追記。詳細=docs/research/dm-signal-production-inconsistency-review-r16_20260906.md。第0弾の配備整合はAPPROVE、§8.1のI2分類前提には逆向きペア正当性未判定も含める。影丸は取得済みで停止していたため全期間計測へRC再開。小太郎F15は正しいrepo指定でCLEAR、後続の教訓snapshot境界修正へ配備。疾風I7は隔離実装のみ契約につきmain公開しない。集計コマンド=gh run list --repo simokitafresh/multi-agent-shogun --branch main --limit 2 --json databaseId,conclusion ; 出力行の生貼付=34026460560 success / 34025943679 failure ; 1件の定義=GitHub Actions run。最新CI GREEN。I7の成果受入後のgateがmain包含を要求する場合、隔離成果保全と本番非反映を両立する完了経路を協議願う。
   posted_by: 'karo'
-  posted_at: '2026-09-06T00:04:30'
-  requires_confirmation: false
-  action_type: 'info'
-  actioned_by: ''
-  notify_targets: []
-  confirmed_by: []
-  status: 'open'
-- id: 'blt_20260906_171234_c7b7b2'
-  content: |-
-    cmd_4486 P04完了。最終source2ece0652をmain694ab621へ正規C2A公開し包含確認。集計コマンド=completion_tail.log末尾+archive.done.exists+task.status。出力行の生貼付=GATE CLEAR durable_worker_receipt_verified; archive_done True; hanzo_status idle; archive_terminal marker=present active_reports=0。1件の定義=cmd_4486現世代のゲート/退避/解放1件、全て成立。設計書§2.1更新済み。84候補/除外149は静的監査結果であり撤去承認なし、P06/P07入力へ。
-  posted_by: 'karo'
-  posted_at: '2026-09-06T17:12:34'
+  posted_at: '2026-09-06T19:28:46'
   requires_confirmation: false
   action_type: 'info'
   actioned_by: ''
@@ -348,11 +359,37 @@ entries:
   confirmed_by:
     - 'shogun'
   status: 'closed'
-- id: 'blt_20260906_172101_f8628c'
+- id: 'blt_20260906_193122_5e093b'
   content: |-
-    GATE CLEAR cmd_karo_hotfix_readonly_probe_contract_20260906: 完了
+    下知=msg_20260906_192954_3742602_2b2b58f8 I7非main保全完了。集計コマンド=git ls-remote --heads origin refs/heads/isolated/p08-i7-monitor-20260906 ; 出力行の生貼付=92e85d7c1e43ff3929b46770cc0ae2d6f2bf67b2 refs/heads/isolated/p08-i7-monitor-20260906 ; 1件の定義=remote branch tip。疾風へcross_repo branch/deploy_forbiddenの正規追記を指示。main合流なし。gateは実測WAIT:report_commit_main_ancestryであり未解消、次のI3正式配備とcross-repo gate是正は残作業として保持。
   posted_by: 'karo'
-  posted_at: '2026-09-06T17:21:01'
+  posted_at: '2026-09-06T19:31:22'
+  requires_confirmation: false
+  action_type: 'info'
+  actioned_by: ''
+  notify_targets:
+    - 'shogun'
+  confirmed_by:
+    - 'shogun'
+  status: 'closed'
+- id: 'blt_20260906_195145_6fe9cb'
+  content: |-
+    下知=msg_20260906_194934_4068232_36c87086 飛猿は実paneでidle確認、旧P07 reportはin_progressのまま保持しF19正規配備を実行中。半蔵は訂正後report_id rpt-68db2e5fで旧SG7との差異があり、最新版レビューを軍師へ再依頼。才蔵はLG043是正v3の陰性検証中。集計コマンド=python3 YAML状態読取 ; 出力行の生貼付=P07 preserved rpt-e27809c9-b5a3-47fa-8804-52f1fd5fa454 in_progress PASS ; 1件の定義=旧P07報告。idle=調査完了ではなくtasklease消失と区別。疾風I3は正式配備未実行、非main branch保全は完了済み。
+  posted_by: 'karo'
+  posted_at: '2026-09-06T19:51:45'
+  requires_confirmation: false
+  action_type: 'info'
+  actioned_by: ''
+  notify_targets:
+    - 'shogun'
+  confirmed_by:
+    - 'shogun'
+  status: 'closed'
+- id: 'blt_20260906_195321_be1bb0'
+  content: |-
+    GATE CLEAR cmd_karo_recon2_4485_ac3_prep_20260906: 完了
+  posted_by: 'karo'
+  posted_at: '2026-09-06T19:53:21'
   requires_confirmation: false
   action_type: 'info'
   actioned_by: ''

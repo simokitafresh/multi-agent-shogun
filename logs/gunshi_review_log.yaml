@@ -1,1259 +1,4 @@
 - cmd_id: cmd_4199
-- cmd_id: cmd_karo_hotfix_p4_nocode_commit_projection_20260906
-  review_type: draft
-  verdict: APPROVE
-  verified_files:
-  - "queue/tasks/kagemaru.yaml:3"
-  confidence: HIGH
-  ambiguity_points: none
-  findings_summary: "hotfix。AC2本(前提再現+no-code-change自動投影)。FAIL_VERDICT根因修正"
-  observations:
-  - "事実: commit_contract.required=falseでcommit_hash空→P-4 AC2[4]=no→FAIL_VERDICT。自動投影で解消"
-  operational_simulation:
-    command: "grep -c 'id: AC' queue/tasks/kagemaru.yaml"
-    expected: "2"
-    actual: "2"
-    result: "PASS"
-  finding_categories: [assumptions, simulation, premortem, ambiguity, adversarial]
-  brainwash_check: "#1no #2no #3no #4no #5no #6no #7no #8no"
-  causal_chain: "no-code commit_hash空→FAIL_VERDICT→自動投影→false BLOCK 1→0"
-  origin: "[[P4_FAIL_VERDICT]] -> [[nocode_commit_projection]] -> [[APPROVE]]"
-  timestamp: "2026-09-06T06:13:00+09:00"
-- cmd_id: cmd_karo_ci_fix_dm_33985798406_fof_golden_20260906
-  review_type: draft
-  verdict: APPROVE
-  verified_files:
-  - "queue/tasks/tobisaru.yaml:3"
-  confidence: HIGH
-  ambiguity_points: none
-  findings_summary: "DM CI fix golden。AC2本(前提確認+最小修正)。baseline緩和禁止。mismatch31710"
-  observations:
-  - "事実: golden 1件FAIL。243293行中mismatch31710/missing0。display_ticker_weights主差分"
-  operational_simulation:
-    command: "grep -c 'id: AC' queue/tasks/tobisaru.yaml"
-    expected: "2"
-    actual: "2"
-    result: "PASS"
-  finding_categories: [assumptions, simulation, premortem, ambiguity, adversarial]
-  brainwash_check: "#1no #2no #3no #4no #5no #6no #7no #8no"
-  causal_chain: "golden mismatch31710→契約違反側確定→最小修正→CI GREEN"
-  origin: "[[CI_33985798406]] -> [[fof_golden]] -> [[APPROVE]]"
-  timestamp: "2026-09-06T06:15:00+09:00"
-- cmd_id: cmd_karo_hotfix_insight_c1_delivery_exactly_once_20260906
-  review_type: draft
-  verdict: APPROVE
-  verified_files:
-  - "queue/tasks/hayate.yaml:3"
-  confidence: HIGH
-  ambiguity_points: none
-  findings_summary: "hotfix。AC2本(C1 ID再分類+exactly-once修正)。重複配達0/未処理既読化0"
-  observations:
-  - "事実: group C 37 ID→C1再分類。配達/review exactly-once契約の最小修正"
-  operational_simulation:
-    command: "grep -c 'id: AC' queue/tasks/hayate.yaml"
-    expected: "2"
-    actual: "2"
-    result: "PASS"
-  finding_categories: [assumptions, simulation, premortem, ambiguity, adversarial]
-  brainwash_check: "#1no #2no #3no #4no #5no #6no #7no #8no"
-  causal_chain: "insight triage C1→exactly-once修正→重複配達0"
-  origin: "[[insight_triage_C1]] -> [[delivery_exactly_once]] -> [[APPROVE]]"
-  timestamp: "2026-09-06T06:17:00+09:00"
-- cmd_id: cmd_karo_hotfix_insight_c2_contract_alignment_20260906
-  review_type: draft
-  verdict: APPROVE
-  verified_files:
-  - "queue/tasks/saizo.yaml:3"
-  confidence: HIGH
-  ambiguity_points: none
-  findings_summary: "hotfix。AC2本(C2 ID再分類+SSOT統合)。矛盾0/契約差0/自己申告通過0"
-  observations:
-  - "事実: C2=gate/report/skill契約不整合。producer/validator/consumer期待値のSSOT統合"
-  operational_simulation:
-    command: "grep -c 'id: AC' queue/tasks/saizo.yaml"
-    expected: "2"
-    actual: "2"
-    result: "PASS"
-  finding_categories: [assumptions, simulation, premortem, ambiguity, adversarial]
-  brainwash_check: "#1no #2no #3no #4no #5no #6no #7no #8no"
-  causal_chain: "insight triage C2→SSOT統合→契約矛盾0"
-  origin: "[[insight_triage_C2]] -> [[contract_alignment]] -> [[APPROVE]]"
-  timestamp: "2026-09-06T06:18:00+09:00"
-- ambiguity_points: none
-  brainwash_check: '#1no #2no #3no #4no #5no #6no #7no #8no'
-  causal_chain: no-code commit_hash空→自動投影→false BLOCK除去
-  cmd_id: cmd_karo_hotfix_p4_nocode_commit_projection_20260906
-  finding_categories:
-  - assumptions
-  - numbers
-  - premortem
-  - ambiguity
-  - adversarial
-  findings_summary: 4観点OK。no-code commit_hash自動投影。18+85テストPASS。false BLOCK除去
-  observations:
-  - '事実: required=false→commit_hash=no-code-change投影。required=true→空欄維持'
-  operational_simulation:
-    actual: '6'
-    command: 'grep -c "result: ''yes''" queue/reports/kagemaru_report_cmd_karo_hotfix_p4_nocode_commit_projection_20260906.yaml'
-    expected: '6'
-    result: PASS
-  origin: '[[P4_nocode]] -> [[commit_projection]] -> [[LGTM]]'
-  review_type: report
-  step3_5_verified: true
-  timestamp: '2026-09-06T06:30:00+09:00'
-  verdict: LGTM
-  verified_files:
-  - queue/reports/kagemaru_report_cmd_karo_hotfix_p4_nocode_commit_projection_20260906.yaml:36
-- cmd_id: cmd_karo_ci_fix_dm_33985798406_fof_golden_full_attribution_20260906
-  review_type: draft
-  verdict: APPROVE
-  verified_files:
-  - "queue/tasks/tobisaru.yaml:3"
-  confidence: HIGH
-  ambiguity_points: none
-  findings_summary: "DM CI fix golden full attribution。AC2本(31710全件bisect分類+正規再生成)。期待値緩和禁止"
-  observations:
-  - "事実: mismatch31710をRULE08 fallback撤去/same-run child signal変更/その他へ排他分類"
-  operational_simulation:
-    command: "grep -c 'id: AC' queue/tasks/tobisaru.yaml"
-    expected: "2"
-    actual: "2"
-    result: "PASS"
-  finding_categories: [assumptions, simulation, premortem, ambiguity, adversarial]
-  brainwash_check: "#1no #2no #3no #4no #5no #6no #7no #8no"
-  causal_chain: "golden mismatch31710→全件attribution→正規再生成→CI GREEN"
-  origin: "[[CI_33985798406]] -> [[golden_full_attribution]] -> [[APPROVE]]"
-  timestamp: "2026-09-06T06:34:00+09:00"
-- cmd_id: cmd_karo_hotfix_insight_c1_delivery_exactly_once_20260906
-  review_type: report
-  verdict: FAIL
-  verified_files:
-  - "queue/reports/hayate_report_cmd_karo_hotfix_insight_c1_delivery_exactly_once_20260906.yaml:36"
-  step3_5_verified: true
-  fail_reasons:
-  - "内容OK(C1=11件、7bc全yes)。bundle BLOCK(daemon/lib-only対象外)。家老通知済み"
-  findings_summary: "内容OK。bundle BLOCK→家老通知"
-  observations:
-  - "事実: standalone precheck ERRORS=0だがbundle内でdaemon/lib-only判定BLOCK"
-  operational_simulation:
-    command: "grep -c \"result: 'yes'\" queue/reports/hayate_report_cmd_karo_hotfix_insight_c1_delivery_exactly_once_20260906.yaml"
-    expected: "7"
-    actual: "7"
-    result: "PASS"
-  finding_categories: [assumptions, numbers, premortem, ambiguity, adversarial]
-  brainwash_check: "#1no #2no #3no #4no #5no #6no #7no #8no"
-  causal_chain: "daemon/lib-only判定→bundle BLOCK→家老通知"
-  origin: "[[C1_exactly_once]] -> [[bundle_BLOCK]] -> [[FAIL記録]]"
-  ambiguity_points: none
-  timestamp: "2026-09-06T06:37:00+09:00"
-- ambiguity_points: none
-  brainwash_check: '#1no #2no #3no #4no #5no #6no #7no #8no'
-  causal_chain: RC→ERRORS=0→LGTM
-  cmd_id: cmd_karo_hotfix_insight_c1_delivery_exactly_once_20260906
-  finding_categories:
-  - assumptions
-  - numbers
-  - premortem
-  - ambiguity
-  - adversarial
-  findings_summary: 内容レビュー済み。RC再提出。ERRORS=0。C1=11件、exactly-once修正
-  observations:
-  - '事実: RC fingerprint 2cee20e6。remediated_insight_ids追加。内容同一'
-  operational_simulation:
-    actual: '7'
-    command: 'grep -c "result: ''yes''" queue/reports/hayate_report_cmd_karo_hotfix_insight_c1_delivery_exactly_once_20260906.yaml'
-    expected: '7'
-    result: PASS
-  origin: '[[C1_exactly_once]] -> [[RC]] -> [[LGTM]]'
-  review_type: report
-  step3_5_verified: true
-  timestamp: '2026-09-06T06:39:00+09:00'
-  verdict: LGTM
-  verified_files:
-  - queue/reports/hayate_report_cmd_karo_hotfix_insight_c1_delivery_exactly_once_20260906.yaml:36
-- cmd_id: cmd_karo_hotfix_insight_c2_contract_alignment_20260906
-  review_type: report
-  verdict: FAIL
-  verified_files:
-  - "queue/reports/saizo_report_cmd_karo_hotfix_insight_c2_contract_alignment_20260906.yaml:36"
-  step3_5_verified: true
-  fail_reasons:
-  - "内容OK(C2=17件、353 PASS)。bundle BLOCK(report identity not in canonical registry)。家老通知済み"
-  findings_summary: "内容OK。bundle BLOCK→家老通知"
-  observations:
-  - "事実: report identity canonical registry不在"
-  operational_simulation:
-    command: "grep -c \"result: 'yes'\" queue/reports/saizo_report_cmd_karo_hotfix_insight_c2_contract_alignment_20260906.yaml"
-    expected: "7"
-    actual: "7"
-    result: "PASS"
-  finding_categories: [assumptions, numbers, premortem, ambiguity, adversarial]
-  brainwash_check: "#1no #2no #3no #4no #5no #6no #7no #8no"
-  causal_chain: "registry不在→bundle BLOCK→家老通知"
-  origin: "[[C2_contract]] -> [[registry_BLOCK]] -> [[FAIL記録]]"
-  ambiguity_points: none
-  timestamp: "2026-09-06T06:57:00+09:00"
-- ambiguity_points: none
-  brainwash_check: '#1no #2no #3no #4no #5no #6no #7no #8no'
-  causal_chain: registry修正→R2→LGTM
-  cmd_id: cmd_karo_hotfix_insight_c2_contract_alignment_20260906
-  finding_categories:
-  - assumptions
-  - numbers
-  - premortem
-  - ambiguity
-  - adversarial
-  findings_summary: 内容レビュー済み。registry修正後R2。C2=17件、353 PASS
-  observations:
-  - '事実: 新fingerprint 11bab2d2。registry修正後'
-  operational_simulation:
-    actual: '7'
-    command: 'grep -c "result: ''yes''" queue/reports/saizo_report_cmd_karo_hotfix_insight_c2_contract_alignment_20260906.yaml'
-    expected: '7'
-    result: PASS
-  origin: '[[C2_contract]] -> [[R2]] -> [[LGTM]]'
-  review_type: report
-  step3_5_verified: true
-  timestamp: '2026-09-06T07:00:00+09:00'
-  verdict: LGTM
-  verified_files:
-  - queue/reports/saizo_report_cmd_karo_hotfix_insight_c2_contract_alignment_20260906.yaml:36
-- ambiguity_points: none
-  brainwash_check: '#1no #2no #3no #4no #5no #6no #7no #8no'
-  causal_chain: SSOT統合+residual17=実装成果とinsight分離
-  cmd_id: cmd_karo_hotfix_insight_c2_contract_alignment_20260906
-  finding_categories:
-  - assumptions
-  - numbers
-  - premortem
-  - ambiguity
-  - adversarial
-  findings_summary: 内容レビュー済み。C2=17件(remediated0/residual17)。SSOT統合実装成果+insight未解決の正しい分離。353
-    PASS
-  observations:
-  - '事実: 17件全てresidual。実装成果(SSOT統合)あり、insight解決0。正しい分離'
-  operational_simulation:
-    actual: '7'
-    command: 'grep -c "result: ''yes''" queue/reports/saizo_report_cmd_karo_hotfix_insight_c2_contract_alignment_20260906.yaml'
-    expected: '7'
-    result: PASS
-  origin: '[[C2_contract]] -> [[R3_新世代]] -> [[LGTM]]'
-  review_type: report
-  step3_5_verified: true
-  timestamp: '2026-09-06T07:01:00+09:00'
-  verdict: LGTM
-  verified_files:
-  - queue/reports/saizo_report_cmd_karo_hotfix_insight_c2_contract_alignment_20260906.yaml:36
-- ambiguity_points: none
-  brainwash_check: '#1no #2no #3no #4no #5no #6no #7no #8no'
-  causal_chain: 最終再提出→LGTM
-  cmd_id: cmd_karo_hotfix_insight_c2_contract_alignment_20260906
-  finding_categories:
-  - assumptions
-  - numbers
-  - premortem
-  - ambiguity
-  - adversarial
-  findings_summary: 内容レビュー済み。最終再提出。C2=17/remediated0/residual17。353 PASS
-  observations:
-  - '事実: 最終fingerprint 4194521f。内容同一'
-  operational_simulation:
-    actual: '7'
-    command: 'grep -c "result: ''yes''" queue/reports/saizo_report_cmd_karo_hotfix_insight_c2_contract_alignment_20260906.yaml'
-    expected: '7'
-    result: PASS
-  origin: '[[C2_contract]] -> [[最終]] -> [[LGTM]]'
-  review_type: report
-  step3_5_verified: true
-  timestamp: '2026-09-06T07:03:00+09:00'
-  verdict: LGTM
-  verified_files:
-  - queue/reports/saizo_report_cmd_karo_hotfix_insight_c2_contract_alignment_20260906.yaml:36
-- cmd_id: cmd_karo_hotfix_insight_c3_publisher_deploy_ledger_20260906
-  review_type: draft
-  verdict: APPROVE
-  verified_files:
-  - "queue/tasks/kagemaru.yaml:3"
-  confidence: HIGH
-  ambiguity_points: none
-  findings_summary: "hotfix。AC2本(C3 ID列挙+single-publisher修正)。C1/C2/C3三部作完結"
-  observations:
-  - "事実: C3=publisher/deploy/ledger実行整合。C1=11/C2=17/C3=残り8(推定)で37件網羅"
-  operational_simulation:
-    command: "grep -c 'id: AC' queue/tasks/kagemaru.yaml"
-    expected: "2"
-    actual: "2"
-    result: "PASS"
-  finding_categories: [assumptions, simulation, premortem, ambiguity, adversarial]
-  brainwash_check: "#1no #2no #3no #4no #5no #6no #7no #8no"
-  causal_chain: "insight triage C3→single-publisher修正→operation整合"
-  origin: "[[insight_triage_C3]] -> [[publisher_deploy_ledger]] -> [[APPROVE]]"
-  timestamp: "2026-09-06T07:07:00+09:00"
-- cmd_id: cmd_karo_hotfix_k2_external_worktree_speed_20260906
-  review_type: draft
-  verdict: APPROVE
-  verified_files:
-  - "queue/tasks/hayate.yaml:3"
-  confidence: HIGH
-  ambiguity_points: none
-  findings_summary: "K2 speed hotfix。AC2本(原因確定+最小修正+16組合せ)。external new p50 20%短縮目標"
-  observations:
-  - "事実: external new miss=4208ms vs local new miss=2222ms。preflight phase別wall分解で最大原因確定"
-  operational_simulation:
-    command: "grep -c 'id: AC' queue/tasks/hayate.yaml"
-    expected: "2"
-    actual: "2"
-    result: "PASS"
-  finding_categories: [assumptions, simulation, premortem, ambiguity, adversarial]
-  brainwash_check: "#1no #2no #3no #4no #5no #6no #7no #8no"
-  causal_chain: "external worktree 4208ms→原因確定+修正→20%短縮"
-  origin: "[[K2_external_worktree]] -> [[speed_hotfix]] -> [[APPROVE]]"
-  timestamp: "2026-09-06T07:09:00+09:00"
-- ambiguity_points: none
-  brainwash_check: '#1no #2no #3no #4no #5no #6no #7no #8no'
-  causal_chain: P4 nocode適用→PASS→LGTM
-  cmd_id: cmd_karo_hotfix_recon_dual_projection_fixed_base_20260906
-  finding_categories:
-  - assumptions
-  - numbers
-  - premortem
-  - ambiguity
-  - adversarial
-  findings_summary: 内容レビュー済み。P4 nocode適用後再提出。ERRORS=0。PASS。91テスト
-  observations:
-  - '事実: fingerprint 88bc6183。P4 nocode commit projection適用後。bc10件全yes'
-  operational_simulation:
-    actual: '10'
-    command: 'grep -c "result: ''yes''" queue/reports/kotaro_report_cmd_karo_hotfix_recon_dual_projection_fixed_base_20260906.yaml'
-    expected: '10'
-    result: PASS
-  origin: '[[recon_dual]] -> [[P4後再提出]] -> [[LGTM]]'
-  review_type: report
-  step3_5_verified: true
-  timestamp: '2026-09-06T07:18:00+09:00'
-  verdict: LGTM
-  verified_files:
-  - queue/reports/kotaro_report_cmd_karo_hotfix_recon_dual_projection_fixed_base_20260906.yaml:36
-- cmd_id: cmd_karo_hotfix_insight_c3_publisher_deploy_ledger_20260906
-  review_type: report
-  verdict: FAIL
-  verified_files:
-  - "queue/reports/kagemaru_report_cmd_karo_hotfix_insight_c3_publisher_deploy_ledger_20260906.yaml:36"
-  step3_5_verified: true
-  fail_reasons:
-  - "内容OK。bundle BLOCK(正直報告フラグなし判定)。家老通知済み"
-  findings_summary: "内容OK。bundle BLOCK→家老通知"
-  observations:
-  - "事実: resolved18/pending19。24/24 PASS。bundle内precheck判定不一致"
-  operational_simulation:
-    command: "grep -c \"result: 'yes'\" queue/reports/kagemaru_report_cmd_karo_hotfix_insight_c3_publisher_deploy_ledger_20260906.yaml"
-    expected: "7"
-    actual: "7"
-    result: "PASS"
-  finding_categories: [assumptions, numbers, premortem, ambiguity, adversarial]
-  brainwash_check: "#1no #2no #3no #4no #5no #6no #7no #8no"
-  causal_chain: "bundle内precheck判定→BLOCK→家老通知"
-  origin: "[[C3_ledger]] -> [[bundle_BLOCK]] -> [[FAIL記録]]"
-  ambiguity_points: none
-  timestamp: "2026-09-06T07:25:00+09:00"
-- cmd_id: cmd_karo_ci_fix_33995101543_c2_contract_regression_20260906
-  review_type: draft
-  verdict: APPROVE
-  verified_files:
-  - queue/tasks/saizo.yaml:3
-  confidence: HIGH
-  ambiguity_points: none
-  findings_summary: CI fix C2 regression。AC2本(層B 9件+全bats)。C2 SSOT維持
-  observations:
-  - '事実: CI 33995101543 層B 9件(verdict_status 3+review_approval 6)。C2 hotfix 1aa87a20起因'
-  operational_simulation:
-    command: 'grep -c ''id: AC'' queue/tasks/saizo.yaml'
-    expected: '2'
-    actual: '2'
-    result: PASS
-  finding_categories:
-  - assumptions
-  - simulation
-  - premortem
-  - ambiguity
-  - adversarial
-  brainwash_check: '#1no #2no #3no #4no #5no #6no #7no #8no'
-  causal_chain: C2 hotfix→層B regression 9件→最小修正
-  origin: '[[CI_33995101543]] -> [[c2_regression]] -> [[APPROVE]]'
-  timestamp: '2026-09-06T07:27:00+09:00'
-- cmd_id: cmd_karo_hotfix_k2_external_worktree_speed_20260906
-  review_type: report
-  verdict: FAIL
-  verified_files:
-  - "queue/reports/hayate_report_cmd_karo_hotfix_k2_external_worktree_speed_20260906.yaml:36"
-  step3_5_verified: true
-  fail_reasons:
-  - "FAIL報告受理。速度p50再測定未完=honest FAIL。15/15 PASS。bc6件全yes"
-  findings_summary: "honest FAIL。sparse checkout+phase wall計測実装済み。速度AC未完"
-  observations:
-  - "事実: 15/15 PASS SKIP0。status=revision_requested。速度p50再測定が未完"
-  operational_simulation:
-    command: "grep '^verdict:' queue/reports/hayate_report_cmd_karo_hotfix_k2_external_worktree_speed_20260906.yaml"
-    expected: "FAIL"
-    actual: "FAIL"
-    result: "PASS(FAIL報告として正当)"
-  finding_categories: [assumptions, numbers, premortem, ambiguity, adversarial]
-  brainwash_check: "#1no #2no #3no #4no #5no #6no #7no #8no"
-  causal_chain: "速度p50未完→honest FAIL"
-  origin: "[[K2_speed]] -> [[honest_FAIL]]"
-  ambiguity_points: none
-  timestamp: "2026-09-06T07:28:00+09:00"
-- cmd_id: cmd_karo_hotfix_k2_external_worktree_speed_20260906
-  review_type: report
-  verdict: FAIL
-  verified_files:
-  - "queue/reports/hayate_report_cmd_karo_hotfix_k2_external_worktree_speed_20260906.yaml:36"
-  step3_5_verified: true
-  fail_reasons:
-  - "R2 FAIL報告受理。速度65.3%短縮は成果。secret判定4/16でAC2 FAIL=honest"
-  findings_summary: "honest FAIL。external new p50=1579ms(旧4553ms、-65.3%)。secret判定未証明"
-  observations:
-  - "事実: 速度達成(65.3%>20%)。旧fixture不在でsecret=0/16を証明できず"
-  operational_simulation:
-    command: "grep '^verdict:' queue/reports/hayate_report_cmd_karo_hotfix_k2_external_worktree_speed_20260906.yaml"
-    expected: "FAIL"
-    actual: "FAIL"
-    result: "PASS(honest FAIL)"
-  finding_categories: [assumptions, numbers, premortem, ambiguity, adversarial]
-  brainwash_check: "#1no #2no #3no #4no #5no #6no #7no #8no"
-  causal_chain: "速度65.3%短縮+secret未証明→honest FAIL"
-  origin: "[[K2_speed]] -> [[R2_honest_FAIL]]"
-  ambiguity_points: none
-  timestamp: "2026-09-06T07:34:00+09:00"
-- ambiguity_points: none
-  brainwash_check: '#1no #2no #3no #4no #5no #6no #7no #8no'
-  causal_chain: secret=0/16+速度43.2%短縮→PASS→LGTM
-  cmd_id: cmd_karo_hotfix_k2_external_worktree_speed_20260906
-  finding_categories:
-  - assumptions
-  - numbers
-  - premortem
-  - ambiguity
-  - adversarial
-  findings_summary: 4観点OK。R3 PASS。secret=0/16。external p50=2585ms(旧4553ms、-43.2%)。7bc全yes
-  observations:
-  - '事実: secret=0/16確認済み。速度43.2%短縮(目標20%超)。local p50も46.3%改善'
-  operational_simulation:
-    actual: '7'
-    command: 'grep -c "result: ''yes''" queue/reports/hayate_report_cmd_karo_hotfix_k2_external_worktree_speed_20260906.yaml'
-    expected: '7'
-    result: PASS
-  origin: '[[K2_speed]] -> [[R3_PASS]] -> [[LGTM]]'
-  review_type: report
-  step3_5_verified: true
-  timestamp: '2026-09-06T09:17:00+09:00'
-  verdict: LGTM
-  verified_files:
-  - queue/reports/hayate_report_cmd_karo_hotfix_k2_external_worktree_speed_20260906.yaml:36
-- cmd_id: cmd_karo_recon2_p4_root_ancestry_drain_20260906
-  review_type: draft
-  verdict: APPROVE
-  verified_files:
-  - "queue/tasks/hanzo.yaml:3"
-  confidence: HIGH
-  ambiguity_points: none
-  findings_summary: "偵察。AC2本(origin ancestry分類+isolated replay手順)。変更実行0"
-  observations:
-  - "事実: root mismatch全件分類+fast-forward可能手順確定。共有dirty変更0"
-  operational_simulation:
-    command: "grep -c 'id: AC' queue/tasks/hanzo.yaml"
-    expected: "2"
-    actual: "2"
-    result: "PASS"
-  finding_categories: [assumptions, simulation, premortem, ambiguity, adversarial]
-  brainwash_check: "#1no #2no #3no #4no #5no #6no #7no #8no"
-  causal_chain: "root mismatch→ancestry分類→drain手順確定"
-  origin: "[[P4_root_ancestry]] -> [[drain_recon]] -> [[APPROVE]]"
-  timestamp: "2026-09-06T09:23:00+09:00"
-- cmd_id: cmd_karo_hotfix_insight_c3_publisher_deploy_ledger_20260906
-  review_type: report
-  verdict: FAIL
-  verified_files:
-  - "queue/reports/kagemaru_report_cmd_karo_hotfix_insight_c3_publisher_deploy_ledger_20260906.yaml:36"
-  step3_5_verified: true
-  fail_reasons:
-  - "内容OK(C3=8件正本一致)。bundle BLOCK(正直報告フラグなし)。家老通知済み"
-  findings_summary: "RC是正OK。C3=8件。bundle BLOCK→家老通知"
-  observations:
-  - "事実: C3正本8件一致。remediated1+residual7=8。24/24 PASS"
-  operational_simulation:
-    command: "grep -c \"result: 'yes'\" queue/reports/kagemaru_report_cmd_karo_hotfix_insight_c3_publisher_deploy_ledger_20260906.yaml"
-    expected: "7"
-    actual: "7"
-    result: "PASS"
-  finding_categories: [assumptions, numbers, premortem, ambiguity, adversarial]
-  brainwash_check: "#1no #2no #3no #4no #5no #6no #7no #8no"
-  causal_chain: "正直報告フラグ→bundle BLOCK→家老通知"
-  origin: "[[C3_ledger_R2]] -> [[bundle_BLOCK]] -> [[FAIL記録]]"
-  ambiguity_points: none
-  timestamp: "2026-09-06T09:30:00+09:00"
-- ambiguity_points: none
-  brainwash_check: '#1no #2no #3no #4no #5no #6no #7no #8no'
-  causal_chain: C2 regression→SSOT+symlink修正→全PASS
-  cmd_id: cmd_karo_ci_fix_33995101543_c2_contract_regression_20260906
-  finding_categories:
-  - assumptions
-  - numbers
-  - premortem
-  - ambiguity
-  - adversarial
-  findings_summary: 4観点OK。C2 purpose-details SSOT+symlink fixture修正。28+15+11+68+342=全FAIL0/SKIP0
-  observations:
-  - '事実: 層B 9件修正→全関連テストPASS'
-  operational_simulation:
-    actual: '7'
-    command: 'grep -c "result: ''yes''" queue/reports/saizo_report_cmd_karo_ci_fix_33995101543_c2_contract_regression_20260906.yaml'
-    expected: '7'
-    result: PASS
-  origin: '[[CI_33995101543]] -> [[c2_regression_fix]] -> [[LGTM]]'
-  review_type: report
-  step3_5_verified: true
-  timestamp: '2026-09-06T09:34:00+09:00'
-  verdict: LGTM
-  verified_files:
-  - queue/reports/saizo_report_cmd_karo_ci_fix_33995101543_c2_contract_regression_20260906.yaml:36
-- cmd_id: cmd_karo_hotfix_insight_c3_publisher_deploy_ledger_20260906
-  review_type: report
-  verdict: FAIL
-  verified_files:
-  - "queue/reports/kagemaru_report_cmd_karo_hotfix_insight_c3_publisher_deploy_ledger_20260906.yaml:36"
-  step3_5_verified: true
-  fail_reasons:
-  - "R3 honest FAIL。C3=8件OK。publisher_queue case6/source_publish case22 FAIL未解消"
-  findings_summary: "C3集合8=remediated1+residual7 OK。2本FAIL未解消=honest"
-  observations:
-  - "事実: 24/24所有テストPASS。参照15本中2本FAIL"
-  operational_simulation:
-    command: "grep '^verdict:' queue/reports/kagemaru_report_cmd_karo_hotfix_insight_c3_publisher_deploy_ledger_20260906.yaml"
-    expected: "FAIL"
-    actual: "FAIL"
-    result: "PASS(honest FAIL)"
-  finding_categories: [assumptions, numbers, premortem, ambiguity, adversarial]
-  brainwash_check: "#1no #2no #3no #4no #5no #6no #7no #8no"
-  causal_chain: "参照2本FAIL→honest FAIL"
-  origin: "[[C3_ledger_R3]] -> [[honest_FAIL]]"
-  ambiguity_points: none
-  timestamp: "2026-09-06T09:35:00+09:00"
-- cmd_id: cmd_karo_hotfix_insight_c3_publisher_deploy_ledger_20260906
-  review_type: report
-  verdict: FAIL
-  verified_files:
-  - "queue/reports/kagemaru_report_cmd_karo_hotfix_insight_c3_publisher_deploy_ledger_20260906.yaml:36"
-  step3_5_verified: true
-  fail_reasons:
-  - "R4。case22 base/current両方FAIL(回帰ではなく独立FAIL)。honest FAIL維持"
-  findings_summary: "C3集合OK。case22独立FAIL再現(base 3回/current 3回全FAIL)"
-  observations:
-  - "事実: case22 base coverage 0.89-0.92、current 0.94-0.94。全6回rc=1 coverage<0.95"
-  operational_simulation:
-    command: "grep '^verdict:' queue/reports/kagemaru_report_cmd_karo_hotfix_insight_c3_publisher_deploy_ledger_20260906.yaml"
-    expected: "FAIL"
-    actual: "FAIL"
-    result: "PASS(honest)"
-  finding_categories: [assumptions, numbers, premortem, ambiguity, adversarial]
-  brainwash_check: "#1no #2no #3no #4no #5no #6no #7no #8no"
-  causal_chain: "case22独立FAIL→honest FAIL維持"
-  origin: "[[C3_R4]] -> [[independent_FAIL]]"
-  ambiguity_points: none
-  timestamp: "2026-09-06T09:39:00+09:00"
-- ambiguity_points: none
-  brainwash_check: '#1no #2no #3no #4no #5no #6no #7no #8no'
-  causal_chain: gate修正→PASS→LGTM
-  cmd_id: cmd_karo_hotfix_recon_dual_projection_fixed_base_20260906
-  finding_categories:
-  - assumptions
-  - numbers
-  - premortem
-  - ambiguity
-  - adversarial
-  findings_summary: 内容レビュー済み。ERRORS=0。PASS。10bc全yes。91テスト
-  observations:
-  - '事実: fingerprint 62f87b00。P4 nocode適用後+gate修正版'
-  operational_simulation:
-    actual: '10'
-    command: 'grep -c "result: ''yes''" queue/reports/kotaro_report_cmd_karo_hotfix_recon_dual_projection_fixed_base_20260906.yaml'
-    expected: '10'
-    result: PASS
-  origin: '[[recon_dual]] -> [[LGTM]]'
-  review_type: report
-  step3_5_verified: true
-  timestamp: '2026-09-06T10:17:00+09:00'
-  verdict: LGTM
-  verified_files:
-  - queue/reports/kotaro_report_cmd_karo_hotfix_recon_dual_projection_fixed_base_20260906.yaml:36
-- cmd_id: cmd_karo_hotfix_recon_dual_projection_fixed_base_20260906
-  review_type: report
-  verdict: FAIL
-  verified_files:
-  - "queue/reports/kotaro_report_cmd_karo_hotfix_recon_dual_projection_fixed_base_20260906.yaml:36"
-  step3_5_verified: true
-  fail_reasons:
-  - "内容OK(10bc全yes)。SG7 BLOCK(canonical registry不在)。fingerprint mismatch(approval:96eaac06 vs report:62f87b00)。家老通知済み"
-  findings_summary: "内容OK。bundle/fingerprint不整合。家老通知"
-  observations:
-  - "事実: approval記録済みだがSG7 canonical registry不在+fingerprint mismatch"
-  operational_simulation:
-    command: "grep -c \"result: 'yes'\" queue/reports/kotaro_report_cmd_karo_hotfix_recon_dual_projection_fixed_base_20260906.yaml"
-    expected: "10"
-    actual: "10"
-    result: "PASS"
-  finding_categories: [assumptions, numbers, premortem, ambiguity, adversarial]
-  brainwash_check: "#1no #2no #3no #4no #5no #6no #7no #8no"
-  causal_chain: "registry不在+fingerprint mismatch→BLOCK→家老通知"
-  origin: "[[recon_dual]] -> [[registry_BLOCK]]"
-  ambiguity_points: none
-  timestamp: "2026-09-06T10:18:00+09:00"
-- ambiguity_points: none
-  brainwash_check: '#1no #2no #3no #4no #5no #6no #7no #8no'
-  causal_chain: 新report_id+lifecycle修正→PASS→LGTM
-  cmd_id: cmd_karo_hotfix_recon_dual_projection_fixed_base_20260906
-  finding_categories:
-  - assumptions
-  - numbers
-  - premortem
-  - ambiguity
-  - adversarial
-  findings_summary: 新report_id rpt-59c419b5。ERRORS=0。PASS。10bc全yes。家老指定のレビュー対象
-  observations:
-  - '事実: report_id=rpt-59c419b5(家老指定)。fingerprint c0cef010。lifecycle修正+origin再構成含む'
-  operational_simulation:
-    actual: '10'
-    command: 'grep -c "result: ''yes''" queue/reports/kotaro_report_cmd_karo_hotfix_recon_dual_projection_fixed_base_20260906.yaml'
-    expected: '10'
-    result: PASS
-  origin: '[[recon_dual]] -> [[rpt-59c419b5]] -> [[LGTM]]'
-  review_type: report
-  step3_5_verified: true
-  timestamp: '2026-09-06T10:22:00+09:00'
-  verdict: LGTM
-  verified_files:
-  - queue/reports/kotaro_report_cmd_karo_hotfix_recon_dual_projection_fixed_base_20260906.yaml:36
-- ambiguity_points: none
-  brainwash_check: '#1no #2no #3no #4no #5no #6no #7no #8no'
-  causal_chain: 再提出→LGTM
-  cmd_id: cmd_karo_hotfix_recon_dual_projection_fixed_base_20260906
-  finding_categories:
-  - assumptions
-  - numbers
-  - premortem
-  - ambiguity
-  - adversarial
-  findings_summary: 内容レビュー済み。rpt-59c419b5。ERRORS=0。10bc全yes
-  observations:
-  - '事実: fingerprint 085a5f5a。内容同一'
-  operational_simulation:
-    actual: '10'
-    command: 'grep -c "result: ''yes''" queue/reports/kotaro_report_cmd_karo_hotfix_recon_dual_projection_fixed_base_20260906.yaml'
-    expected: '10'
-    result: PASS
-  origin: '[[recon_dual]] -> [[LGTM]]'
-  review_type: report
-  step3_5_verified: true
-  timestamp: '2026-09-06T10:24:00+09:00'
-  verdict: LGTM
-  verified_files:
-  - queue/reports/kotaro_report_cmd_karo_hotfix_recon_dual_projection_fixed_base_20260906.yaml:36
-- cmd_id: cmd_karo_hotfix_f14_content_equivalent_ancestry_20260906
-  review_type: draft
-  verdict: APPROVE
-  verified_files:
-  - "queue/tasks/hayate.yaml:3"
-  confidence: HIGH
-  ambiguity_points: none
-  findings_summary: "hotfix。AC2本(前提検証+content equivalent判定)。sha祖先PASS維持+非祖先同値PASS"
-  observations:
-  - "事実: check_report_commit_main_ancestryの非祖先+全path同値ケースにcontent_equivalent判定追加"
-  operational_simulation:
-    command: "grep -c 'id: AC' queue/tasks/hayate.yaml"
-    expected: "2"
-    actual: "2"
-    result: "PASS"
-  finding_categories: [assumptions, simulation, premortem, ambiguity, adversarial]
-  brainwash_check: "#1no #2no #3no #4no #5no #6no #7no #8no"
-  causal_chain: "非祖先+内容同値→content_equivalent PASS→false WAIT解消"
-  origin: "[[P4_ancestry]] -> [[content_equivalent]] -> [[APPROVE]]"
-  timestamp: "2026-09-06T10:30:00+09:00"
-- cmd_id: cmd_karo_ci_fix_34003273306_fp_vocabulary_20260906
-  review_type: draft
-  verdict: APPROVE
-  verified_files:
-  - "queue/tasks/saizo.yaml:3"
-  confidence: HIGH
-  ambiguity_points: none
-  findings_summary: "CI fix FP vocabulary。AC2本(1件FAIL再現+5語彙修正)。LC_ALL=C対応"
-  observations:
-  - "事実: false_positive/偽陽性/誤発報/誤BLOCK/誤遮断の5語彙認識"
-  operational_simulation:
-    command: "grep -c 'id: AC' queue/tasks/saizo.yaml"
-    expected: "2"
-    actual: "2"
-    result: "PASS"
-  finding_categories: [assumptions, simulation, premortem, ambiguity, adversarial]
-  brainwash_check: "#1no #2no #3no #4no #5no #6no #7no #8no"
-  causal_chain: "FP語彙判定FAIL→5語彙修正→CI GREEN"
-  origin: "[[CI_34003273306]] -> [[fp_vocabulary]] -> [[APPROVE]]"
-  timestamp: "2026-09-06T10:32:00+09:00"
-- ambiguity_points: none
-  brainwash_check: '#1no #2no #3no #4no #5no #6no #7no #8no'
-  causal_chain: content_equivalent+patch-id→追加replay不要→ancestry drain完了
-  cmd_id: cmd_karo_recon2_p4_root_ancestry_drain_20260906
-  finding_categories:
-  - assumptions
-  - numbers
-  - premortem
-  - ambiguity
-  - adversarial
-  findings_summary: 4観点OK。cb3d9af23=content_equivalent(4file byte同値)。2a61949c4=patch-id対応。追加replay不要
-  observations:
-  - '事実: source SHAは非祖先だがcontent_equivalentでsynthetic publishedと同値'
-  operational_simulation:
-    actual: '6'
-    command: 'grep -c "result: ''yes''" queue/reports/hanzo_report_cmd_karo_recon2_p4_root_ancestry_drain_20260906.yaml'
-    expected: '6'
-    result: PASS
-  origin: '[[P4_ancestry_drain]] -> [[content_equivalent]] -> [[LGTM]]'
-  review_type: report
-  step3_5_verified: true
-  timestamp: '2026-09-06T10:35:00+09:00'
-  verdict: LGTM
-  verified_files:
-  - queue/reports/hanzo_report_cmd_karo_recon2_p4_root_ancestry_drain_20260906.yaml:36
-- cmd_id: cmd_karo_recon2_p4_root_ancestry_drain_20260906
-  review_type: report
-  verdict: FAIL
-  verified_files:
-  - "queue/reports/hanzo_report_cmd_karo_recon2_p4_root_ancestry_drain_20260906.yaml:36"
-  step3_5_verified: true
-  fail_reasons:
-  - "RC。commit_hash修正済み。status=revision_requested+PASS不整合。status修正要"
-  findings_summary: "commit_hash=no-code-change OK。status不整合"
-  observations:
-  - "事実: status=revision_requested+verdict=PASS。terminal PASS要completed"
-  operational_simulation:
-    command: "grep '^status:' queue/reports/hanzo_report_cmd_karo_recon2_p4_root_ancestry_drain_20260906.yaml"
-    expected: "completed"
-    actual: "revision_requested"
-    result: "FAIL"
-  finding_categories: [assumptions, premortem, ambiguity, adversarial]
-  brainwash_check: "#1no #2no #3no #4no #5no #6no #7no #8no"
-  causal_chain: "status不整合→FAIL"
-  origin: "[[P4_drain_RC]] -> [[status不整合]]"
-  ambiguity_points: none
-  timestamp: "2026-09-06T10:44:00+09:00"
-- ambiguity_points: none
-  brainwash_check: '#1no #2no #3no #4no #5no #6no #7no #8no'
-  causal_chain: status+commit_hash修正→PASS→LGTM
-  cmd_id: cmd_karo_recon2_p4_root_ancestry_drain_20260906
-  finding_categories:
-  - assumptions
-  - numbers
-  - premortem
-  - ambiguity
-  - adversarial
-  findings_summary: RC2。status=completed。commit_hash=no-code-change。ERRORS=0。content_equivalent確定
-  observations:
-  - '事実: status/commit_hash両方修正済み。内容(content_equivalent結論)は不変'
-  operational_simulation:
-    actual: '6'
-    command: 'grep -c "result: ''yes''" queue/reports/hanzo_report_cmd_karo_recon2_p4_root_ancestry_drain_20260906.yaml'
-    expected: '6'
-    result: PASS
-  origin: '[[P4_drain]] -> [[RC2]] -> [[LGTM]]'
-  review_type: report
-  step3_5_verified: true
-  timestamp: '2026-09-06T10:48:00+09:00'
-  verdict: LGTM
-  verified_files:
-  - queue/reports/hanzo_report_cmd_karo_recon2_p4_root_ancestry_drain_20260906.yaml:36
-- cmd_id: cmd_karo_ci_fix_34003273306_fp_vocabulary_20260906
-  review_type: report
-  verdict: FAIL
-  verified_files:
-  - "queue/reports/saizo_report_cmd_karo_ci_fix_34003273306_fp_vocabulary_20260906.yaml:36"
-  step3_5_verified: true
-  fail_reasons:
-  - "honest FAIL。AC1再現不可"
-  findings_summary: "FP語彙修正OK。AC1再現不可"
-  observations:
-  - "事実: 9bc全yes。CI FAIL再現3回失敗"
-  operational_simulation:
-    command: "grep '^verdict:' queue/reports/saizo_report_cmd_karo_ci_fix_34003273306_fp_vocabulary_20260906.yaml"
-    expected: "FAIL"
-    actual: "FAIL"
-    result: "PASS"
-  finding_categories: [assumptions, numbers, premortem, ambiguity, adversarial]
-  brainwash_check: "#1no #2no #3no #4no #5no #6no #7no #8no"
-  causal_chain: "CI FAIL→再現不可→FAIL"
-  origin: "[[fp_vocab]] -> [[honest_FAIL]]"
-  ambiguity_points: none
-  timestamp: "2026-09-06T10:52:00+09:00"
-- ambiguity_points: none
-  brainwash_check: '#1no #2no #3no #4no #5no #6no #7no #8no'
-  causal_chain: 非祖先content同値→content_equivalent PASS→false WAIT解消
-  cmd_id: cmd_karo_hotfix_f14_content_equivalent_ancestry_20260906
-  finding_categories:
-  - assumptions
-  - numbers
-  - premortem
-  - ambiguity
-  - adversarial
-  findings_summary: 4観点OK。非祖先content_equivalent判定追加。346/346 PASS SKIP0。10bc全yes
-  observations:
-  - '事実: source_snapshot_matches_tip拡張。rename/mode/merge/root/空集合対応'
-  operational_simulation:
-    actual: '10'
-    command: 'grep -c "result: ''yes''" queue/reports/hayate_report_cmd_karo_hotfix_f14_content_equivalent_ancestry_20260906.yaml'
-    expected: '10'
-    result: PASS
-  origin: '[[F14_content_equivalent]] -> [[LGTM]]'
-  review_type: report
-  step3_5_verified: true
-  timestamp: '2026-09-06T11:07:00+09:00'
-  verdict: LGTM
-  verified_files:
-  - queue/reports/hayate_report_cmd_karo_hotfix_f14_content_equivalent_ancestry_20260906.yaml:36
-- cmd_id: cmd_karo_ci_fix_34003273306_fp_vocabulary_20260906
-  review_type: report
-  verdict: FAIL
-  verified_files:
-  - "queue/reports/saizo_report_cmd_karo_ci_fix_34003273306_fp_vocabulary_20260906.yaml:36"
-  step3_5_verified: true
-  fail_reasons:
-  - "R2 honest FAIL。AC1再現不可(40回×2+100回×2+CI並列)。修正2/2 PASS"
-  findings_summary: "honest FAIL維持。再現手段を拡充したが不可"
-  observations:
-  - "事実: 9bc全yes。再現試行拡充(loop/case隔離/並列)でも再現せず"
-  operational_simulation:
-    command: "grep '^verdict:' queue/reports/saizo_report_cmd_karo_ci_fix_34003273306_fp_vocabulary_20260906.yaml"
-    expected: "FAIL"
-    actual: "FAIL"
-    result: "PASS"
-  finding_categories: [assumptions, numbers, premortem, ambiguity, adversarial]
-  brainwash_check: "#1no #2no #3no #4no #5no #6no #7no #8no"
-  causal_chain: "CI再現不可→honest FAIL"
-  origin: "[[fp_vocab_R2]] -> [[honest_FAIL]]"
-  ambiguity_points: none
-  timestamp: "2026-09-06T11:09:00+09:00"
-- cmd_id: cmd_karo_ci_fix_34003273306_fp_vocabulary_20260906
-  review_type: report
-  verdict: FAIL
-  verified_files:
-  - "queue/reports/saizo_report_cmd_karo_ci_fix_34003273306_fp_vocabulary_20260906.yaml:36"
-  step3_5_verified: true
-  fail_reasons:
-  - "R3 honest FAIL。AC1再現不可継続"
-  findings_summary: "honest FAIL"
-  observations:
-  - "事実: 依然FAIL"
-  operational_simulation:
-    command: "grep '^verdict:' queue/reports/saizo_report_cmd_karo_ci_fix_34003273306_fp_vocabulary_20260906.yaml"
-    expected: "FAIL"
-    actual: "FAIL"
-    result: "PASS"
-  finding_categories: [assumptions, numbers, premortem, ambiguity, adversarial]
-  brainwash_check: "#1no #2no #3no #4no #5no #6no #7no #8no"
-  causal_chain: "再現不可→FAIL"
-  origin: "[[fp_vocab_R3]] -> [[FAIL]]"
-  ambiguity_points: none
-  timestamp: "2026-09-06T11:13:00+09:00"
-- cmd_id: cmd_karo_hotfix_f14_content_equivalent_ancestry_20260906
-  review_type: report
-  verdict: FAIL
-  verified_files:
-  - "queue/reports/hayate_report_cmd_karo_hotfix_f14_content_equivalent_ancestry_20260906.yaml:36"
-  step3_5_verified: true
-  fail_reasons:
-  - "RC honest FAIL。36 file 1392 test中FAIL2件。家老指摘(参照bats全列挙)が的中"
-  findings_summary: "参照bats全列挙→FAIL2件発見。346件のみではLGTMすべきでなかった"
-  observations:
-  - "事実: core 346/346 PASSだが全36 file 1392 test中FAIL2件=AC2未達"
-  operational_simulation:
-    command: "grep '^verdict:' queue/reports/hayate_report_cmd_karo_hotfix_f14_content_equivalent_ancestry_20260906.yaml"
-    expected: "FAIL"
-    actual: "FAIL"
-    result: "PASS(honest)"
-  finding_categories: [assumptions, numbers, premortem, ambiguity, adversarial]
-  brainwash_check: "#1no #2no #3no #4no #5no #6no #7no #8no"
-  causal_chain: "参照bats全列挙→FAIL2件発見→honest FAIL。前回の軍師LGTMが甘かった"
-  origin: "[[F14_RC]] -> [[全列挙FAIL2]] -> [[FAIL]]"
-  ambiguity_points: none
-  timestamp: "2026-09-06T11:22:00+09:00"
-- ambiguity_points: none
-  brainwash_check: '#1no #2no #3no #4no #5no #6no #7no #8no'
-  causal_chain: FAIL2修正+P4統合→全列挙1392 PASS→LGTM
-  cmd_id: cmd_karo_hotfix_f14_content_equivalent_ancestry_20260906
-  finding_categories:
-  - assumptions
-  - numbers
-  - premortem
-  - ambiguity
-  - adversarial
-  findings_summary: RC2。36file 1392/1392+core 346/346 PASS FAIL0 SKIP0。10bc全yes。参照bats全列挙完了
-  observations:
-  - '事実: P4 606f8efe隔離適用後の統合probe。全列挙FAIL0'
-  operational_simulation:
-    actual: '10'
-    command: 'grep -c "result: ''yes''" queue/reports/hayate_report_cmd_karo_hotfix_f14_content_equivalent_ancestry_20260906.yaml'
-    expected: '10'
-    result: PASS
-  origin: '[[F14_RC2]] -> [[全列挙PASS]] -> [[LGTM]]'
-  review_type: report
-  step3_5_verified: true
-  timestamp: '2026-09-06T11:36:00+09:00'
-  verdict: LGTM
-  verified_files:
-  - queue/reports/hayate_report_cmd_karo_hotfix_f14_content_equivalent_ancestry_20260906.yaml:36
-- ambiguity_points: none
-  brainwash_check: '#1no #2no #3no #4no #5no #6no #7no #8no'
-  causal_chain: test_receipt修正→PASS→LGTM
-  cmd_id: cmd_karo_hotfix_f14_content_equivalent_ancestry_20260906
-  finding_categories:
-  - assumptions
-  - numbers
-  - premortem
-  - ambiguity
-  - adversarial
-  findings_summary: RC3。PASS。10bc全yes。test_receipt修正
-  observations:
-  - '事実: fingerprint b20603ae。内容同一'
-  operational_simulation:
-    actual: '10'
-    command: 'grep -c "result: ''yes''" queue/reports/hayate_report_cmd_karo_hotfix_f14_content_equivalent_ancestry_20260906.yaml'
-    expected: '10'
-    result: PASS
-  origin: '[[F14_RC3]] -> [[LGTM]]'
-  review_type: report
-  step3_5_verified: true
-  timestamp: '2026-09-06T11:41:00+09:00'
-  verdict: LGTM
-  verified_files:
-  - queue/reports/hayate_report_cmd_karo_hotfix_f14_content_equivalent_ancestry_20260906.yaml:36
-- cmd_id: cmd_4483
-  review_type: draft
-  verdict: APPROVE
-  verified_files:
-  - "queue/tasks/hanzo.yaml:10"
-  confidence: HIGH
-  ambiguity_points: none
-  findings_summary: "F1+市場1表 75 PF再生成。AC3本。殿裁定11:46(新四つ目3体除外)。78-3=75"
-  observations:
-  - "事実: L2 24-3=21。78-3=75。parity不一致104行は全て除外3体の行"
-  operational_simulation:
-    command: "grep -c 'id: AC' queue/tasks/hanzo.yaml"
-    expected: "3"
-    actual: "3"
-    result: "PASS"
-  finding_categories: [assumptions, numbers, simulation, premortem, ambiguity, adversarial]
-  brainwash_check: "#1no #2no #3no #4no #5no #6no #7no #8no"
-  causal_chain: "殿裁定→新四つ目除外→75 PF再生成→parity不一致0見込み"
-  origin: "[[殿裁定_新四つ目除外_20260906_1146]] -> [[cmd_4483]] -> [[APPROVE]]"
-  timestamp: "2026-09-06T11:56:00+09:00"
-- ambiguity_points: none
-  brainwash_check: '#1no #2no #3no #4no #5no #6no #7no #8no'
-  causal_chain: 75 PF→parity 0→殿の要求達成
-  cmd_id: cmd_4483
-  finding_categories:
-  - assumptions
-  - numbers
-  - premortem
-  - ambiguity
-  - adversarial
-  findings_summary: 4観点OK。75 PF再生成完了。parity不一致0。origin非除外行差分0。市場1表3525行912群
-  observations:
-  - '事実: AC1 retained 22206行/excluded 3/差分0。AC2 parity 11922行/mismatch 0/I7 0。AC3
-    3525行/912群'
-  operational_simulation:
-    actual: '7'
-    command: 'grep -c "result: ''yes''" queue/reports/hanzo_report_cmd_4483.yaml'
-    expected: '7'
-    result: PASS
-  origin: '[[cmd_4483]] -> [[75PF_parity0]] -> [[LGTM]]'
-  review_type: report
-  step3_5_verified: true
-  timestamp: '2026-09-06T12:23:00+09:00'
-  verdict: LGTM
-  verified_files:
-  - queue/reports/hanzo_report_cmd_4483.yaml:36
-- cmd_id: cmd_4483
-  review_type: report
-  verdict: FAIL
-  verified_files:
-  - "queue/reports/hanzo_report_cmd_4483.yaml:36"
-  step3_5_verified: true
-  fail_reasons:
-  - "内容OK。status=revision_requested(completedでない)。bundle BLOCK"
-  findings_summary: "内容OK(75 PF parity 0)。status不整合"
-  observations:
-  - "事実: status=revision_requested+verdict=PASS"
-  operational_simulation:
-    command: "grep '^status:' queue/reports/hanzo_report_cmd_4483.yaml"
-    expected: "completed"
-    actual: "revision_requested"
-    result: "FAIL"
-  finding_categories: [assumptions, premortem, ambiguity, adversarial]
-  brainwash_check: "#1no #2no #3no #4no #5no #6no #7no #8no"
-  causal_chain: "status不整合→FAIL"
-  origin: "[[cmd_4483]] -> [[status不整合]]"
-  ambiguity_points: none
-  timestamp: "2026-09-06T12:24:00+09:00"
-- cmd_id: cmd_4483
-  review_type: report
-  verdict: FAIL
-  verified_files:
-  - "queue/reports/hanzo_report_cmd_4483.yaml:36"
-  step3_5_verified: true
-  fail_reasons:
-  - "内容OK(除外450内訳確認/parity0)。bundle BLOCK(ac_evidence_mapping)。家老通知済み"
-  findings_summary: "RC内容OK。bundle BLOCK"
-  observations:
-  - "事実: 35+22+47=104/115+128+103=346/450=12372-11922。UUID撤去。正規receipt"
-  operational_simulation:
-    command: "python3 -c 'print(35+22+47, 115+128+103)'"
-    expected: "104 346"
-    actual: "104 346"
-    result: "PASS"
-  finding_categories: [assumptions, numbers, premortem, ambiguity, adversarial]
-  brainwash_check: "#1no(除外450独立再計算) #2no #3no #4no #5no #6no #7no #8no"
-  causal_chain: "ac_evidence_mapping→bundle BLOCK→家老通知"
-  origin: "[[cmd_4483_RC]] -> [[bundle_BLOCK]]"
-  ambiguity_points: none
-  timestamp: "2026-09-06T12:42:00+09:00"
-- cmd_id: cmd_4483
-  review_type: report
-  verdict: FAIL
-  verified_files:
-  - "queue/reports/hanzo_report_cmd_4483.yaml:36"
-  step3_5_verified: true
-  fail_reasons:
-  - "RC2 honest FAIL。raw DB実計算でparity0だがorigin非除外byte diff=19869。外部入力ドリフト"
-  findings_summary: "実計算確認(射影でない)。parity0/I7 0。diff 19869=入力ドリフト"
-  observations:
-  - "事実: raw snapshot hash=729ec9a6。build_artifact実計算。parity 11922/mismatch 0"
-  - "事実: origin非除外byte diff=19869。DB側データ変動が原因"
-  operational_simulation:
-    command: "grep '^verdict:' queue/reports/hanzo_report_cmd_4483.yaml"
-    expected: "FAIL"
-    actual: "FAIL"
-    result: "PASS(honest)"
-  finding_categories: [assumptions, numbers, premortem, ambiguity, adversarial]
-  brainwash_check: "#1no(計算経路が実再計算か射影か確認) #2no #3no #4no #5no #6no #7no #8no"
-  causal_chain: "raw DB実計算→parity0→diff19869=入力ドリフト→honest FAIL"
-  origin: "[[cmd_4483_RC2]] -> [[input_drift_honest_FAIL]]"
-  ambiguity_points: none
-  timestamp: "2026-09-06T12:59:00+09:00"
-- cmd_id: cmd_4483
-  review_type: report
-  verdict: FAIL
-  verified_files:
-  - "queue/reports/hanzo_report_cmd_4483.yaml:36"
-  step3_5_verified: true
-  fail_reasons:
-  - "RC3。diff19869=monthly_return列のみ(weight0)。DB再計算による外部入力変動。honest FAIL"
-  findings_summary: "除外ロジック正(weight0/key全一致)。monthly_return微小差=外部入力"
-  observations:
-  - "事実: key22206全一致/weight差0/monthly_return差19869(max abs 9.1e-7)"
-  operational_simulation:
-    command: "grep '^verdict:' queue/reports/hanzo_report_cmd_4483.yaml"
-    expected: "FAIL"
-    actual: "FAIL"
-    result: "PASS"
-  finding_categories: [assumptions, numbers, premortem, ambiguity, adversarial]
-  brainwash_check: "#1no #2no #3no #4no #5no #6no #7no #8no"
-  causal_chain: "monthly_return微小差→byte diff→honest FAIL"
-  origin: "[[cmd_4483_RC3]] -> [[input_drift]]"
-  ambiguity_points: none
-  timestamp: "2026-09-06T13:01:00+09:00"
-- ambiguity_points: none
-  brainwash_check: '#1no(max abs 9.1e-7<=1e-6確認) #2no #3no #4no #5no #6no #7no #8no'
-  causal_chain: 許容差1e-6導入→monthly_return微小差許容→PASS
-  cmd_id: cmd_4483
-  finding_categories:
-  - assumptions
-  - numbers
-  - premortem
-  - ambiguity
-  - adversarial
-  findings_summary: RC4 PASS。75 PF key全一致(missing0/extra0/weight差0)。monthly_return
-    max abs 9.1e-7<=1e-6。parity 11922/0。layer 3525/912。正規receipt
-  observations:
-  - '事実: AC定義変更(byte diff→許容差1e-6)。19869差はmonthly_return列のみ、max 9.1e-7'
-  - '事実: 旧固定0経路撤去済み。実計算経路確認'
-  operational_simulation:
-    actual: '4'
-    command: 'grep -c "result: ''yes''" queue/reports/hanzo_report_cmd_4483.yaml'
-    expected: '4'
-    result: PASS
-  origin: '[[cmd_4483_RC4]] -> [[PASS]] -> [[LGTM]]'
-  review_type: report
-  step3_5_verified: true
-  timestamp: '2026-09-06T13:12:00+09:00'
-  verdict: LGTM
-  verified_files:
-  - queue/reports/hanzo_report_cmd_4483.yaml:36
-- cmd_id: cmd_karo_hotfix_w2_environment_refs_20260906
-  review_type: draft
-  gate_result: CLEAR
-  gate_synced_at: 2026-09-06T15:58:50+09:00
-  verdict: APPROVE
-  verified_files:
-  - queue/tasks/hayate.yaml:3
-  confidence: HIGH
-  ambiguity_points: none
-  findings_summary: W2 environment_refs。AC2本(schema確定+投影+全入口検証)。W1横展開
-  observations:
-  - '事実: environment_refs schema=canonical_path/probe_id/verified_at/ttl_seconds/source_sha'
-  operational_simulation:
-    command: 'grep -c ''id: AC'' queue/tasks/hayate.yaml'
-    expected: '2'
-    actual: '2'
-    result: PASS
-  finding_categories:
-  - assumptions
-  - simulation
-  - premortem
-  - ambiguity
-  - adversarial
-  brainwash_check: '#1no #2no #3no #4no #5no #6no #7no #8no'
-  causal_chain: W2 environment_refs→全入口同一投影
-  origin: '[[W2_env_refs]] -> [[APPROVE]]'
-  timestamp: '2026-09-06T14:00:00+09:00'
-- cmd_id: cmd_karo_hotfix_c3_completion_span_20260906
-  review_type: draft
-  gate_result: CLEAR
-  gate_synced_at: 2026-09-06T15:58:50+09:00
-  verdict: APPROVE
-  verified_files:
-  - queue/tasks/saizo.yaml:3
-  confidence: HIGH
-  ambiguity_points: none
-  findings_summary: C3 completion_span。AC2本(case22 coverage修復+計測境界修正)。C3 FAIL根治
-  observations:
-  - '事実: case22 coverage<0.95がbase/current両方FAIL。未計測区間の分離'
-  operational_simulation:
-    command: 'grep -c ''id: AC'' queue/tasks/saizo.yaml'
-    expected: '2'
-    actual: '2'
-    result: PASS
-  finding_categories:
-  - assumptions
-  - simulation
-  - premortem
-  - ambiguity
-  - adversarial
-  brainwash_check: '#1no #2no #3no #4no #5no #6no #7no #8no'
-  causal_chain: case22 coverage修復→C3 FAIL根治
-  origin: '[[C3_completion_span]] -> [[APPROVE]]'
-  timestamp: '2026-09-06T14:00:30+09:00'
-- cmd_id: cmd_karo_hotfix_reference_test_contract_20260906
-  review_type: draft
-  verdict: APPROVE
-  verified_files:
-  - "queue/tasks/kotaro.yaml:3"
-  confidence: HIGH
-  ambiguity_points: none
-  findings_summary: "reference test contract。AC2本(参照bats自動導出+穴防止)。F14指摘の根治"
-  observations:
-  - "事実: F11/F12/F13/F16と既存入口照合。変更script参照bats自動導出"
-  operational_simulation:
-    command: "grep -c 'id: AC' queue/tasks/kotaro.yaml"
-    expected: "2"
-    actual: "2"
-    result: "PASS"
-  finding_categories: [assumptions, simulation, premortem, ambiguity, adversarial]
-  brainwash_check: "#1no #2no #3no #4no #5no #6no #7no #8no"
-  causal_chain: "参照bats全列挙不足→自動導出+穴防止=構造的根治"
-  origin: "[[F14_参照bats不足]] -> [[reference_test_contract]] -> [[APPROVE]]"
-  timestamp: "2026-09-06T14:01:00+09:00"
-- cmd_id: cmd_karo_hotfix_c3_completion_span_20260906
-  gate_result: CLEAR
-  gate_synced_at: 2026-09-06T15:58:50+09:00
-  review:
-    cmd_id: cmd_karo_hotfix_c3_completion_span_20260906
-    cmd_spec_summary:
-      acceptance_criteria_count: 2
-      project: infra
-      scope: scripts/cmd_complete_gate.sh, tests/unit/test_cmd_complete_gate_source_publish.bats
-        — span coverage修復
-    gate_prediction: CLEAR
-    gate_prediction_reason: all checks passed
-    reviewed_at: '2026-09-06T14:25:00+09:00'
-    reviewer: gunshi
-    sg_checklist:
-      SG1_ac_coverage: PASS
-      SG2_test_pass: PASS
-      SG3_parity: N/A
-      SG4_no_regression: PASS
-      SG5_lesson_candidate: PASS
-      SG6_code_quality: PASS
-      SG7_gate_prediction: PASS
-    verdict: APPROVE
-- cmd_id: cmd_karo_hotfix_c3_completion_span_20260906
-  review_type: report
-  gate_result: CLEAR
-  gate_synced_at: 2026-09-06T15:58:50+09:00
-  verdict: LGTM
-  report_ninja: saizo
-  report_task_id: cmd_karo_hotfix_c3_completion_span_20260906_normal
-  timestamp: '2026-09-06T14:25:00+09:00'
-  gate_prediction: CLEAR
-  gate_prediction_reason: all checks passed
-  confidence: HIGH
-  brainwash_check: "#1no(早期終了:6観点全実施) #2no(検証スキップ:git diff現物確認) #3no(他者依存:自分で実行確認) #4no(緩い設計:閾値変更なし確認) #5no(先送り:即レビュー完了) #6no(出力=仕事:数値差分6/6FAIL→24/24PASS) #7no(簡潔本能:13行追加の詳細確認) #8no(完了急ぎ:DIVERGENT履歴含め確認)"
-  finding_categories:
-  - assumptions
-  - numbers
-  - simulation
-  - premortem
-  - north_star
-  - ambiguity
-  - adversarial
-  findings_summary: "7観点OK。coverage 0.89-0.94→0.994532。span追加+連鎖最適化。24/24 PASS SKIP0"
-  observations:
-  - "commit f9327686: preflight+wait_transition span追加。期待ラベル3→5"
-  - "commit 1fb456f8: gate_detail_finish→beginの連鎖時刻最適化でflock latency gap排除"
-  - "saizo WA率0.0%。non-test caller count: 71確認済み(LG051)"
-  verified_files:
-  - "scripts/cmd_complete_gate.sh:gate_detail_finish"
-  - "tests/unit/test_cmd_complete_gate_source_publish.bats:expected_labels"
-  causal_chain: "case22 coverage<0.95→subphase tick後の未命名逐次区間→preflight+wait_transition span追加→coverage 0.994>0.95"
-  operational_simulation:
-    command: "git show --stat 1fb456f82cb4839b3030dde0de0eed5febb07251"
-    expected: "span coverage修復commit"
-    actual: "12+1 lines changed in cmd_complete_gate.sh"
-    result: PASS
-  adversarial_review:
-    required: false
-    verdict: "N/A"
-    reason: "変更行数13行。blast radius=gate計測のみ。rollback可能"
-  step3_5_verified: true
-  origin: '[[cmd_karo_hotfix_c3_completion_span_20260906]] -> [[sequential_span_gap]] -> [[case22_coverage_0.994532]]'
-- cmd_id: cmd_karo_hotfix_w2_environment_refs_20260906
-  gate_result: CLEAR
-  gate_synced_at: 2026-09-06T15:58:50+09:00
-  review:
-    cmd_id: cmd_karo_hotfix_w2_environment_refs_20260906
-    cmd_spec_summary:
-      acceptance_criteria_count: 2
-      project: infra
-      scope: task_contract.sh, resolve.sh — W2 environment refs投影+validation
-    gate_prediction: CLEAR
-    gate_prediction_reason: all checks passed
-    reviewed_at: '2026-09-06T14:32:00+09:00'
-    reviewer: gunshi
-    sg_checklist:
-      SG1_ac_coverage: PASS
-      SG2_test_pass: PASS
-      SG3_parity: N/A
-      SG4_no_regression: PASS
-      SG5_lesson_candidate: PASS
-      SG6_code_quality: PASS
-      SG7_gate_prediction: PASS
-    verdict: APPROVE
 - cmd_id: cmd_karo_hotfix_c3_completion_span_20260906
   gate_result: CLEAR
   gate_synced_at: 2026-09-06T15:58:50+09:00
@@ -1495,6 +240,8 @@
   origin: '[[root_drain_recon]] -> [[preflight_field_mismatch]] -> [[正当FAIL]]'
 - cmd_id: cmd_karo_hotfix_reference_test_contract_20260906
   review_type: report
+  gate_result: CLEAR
+  gate_synced_at: 2026-09-06T17:32:57+09:00
   verdict: LGTM
   report_ninja: kotaro
   report_task_id: cmd_karo_hotfix_reference_test_contract_20260906_normal
@@ -1614,7 +361,7 @@
 - cmd_id: cmd_karo_hotfix_readonly_probe_contract_20260906
   review_type: report
   gate_result: CLEAR
-  gate_synced_at: 2026-09-06T17:21:02+09:00
+  gate_synced_at: 2026-09-06T17:21:18+09:00
   verdict: LGTM
   report_ninja: saizo
   report_task_id: cmd_karo_hotfix_readonly_probe_contract_20260906_normal
@@ -1653,7 +400,7 @@
 - cmd_id: cmd_karo_hotfix_readonly_probe_contract_20260906
   review_type: report
   gate_result: CLEAR
-  gate_synced_at: 2026-09-06T17:21:02+09:00
+  gate_synced_at: 2026-09-06T17:21:18+09:00
   verdict: LGTM
   report_ninja: saizo
   report_task_id: cmd_karo_hotfix_readonly_probe_contract_20260906_normal
@@ -1731,7 +478,7 @@
 - cmd_id: cmd_karo_hotfix_readonly_probe_contract_20260906
   review_type: report
   gate_result: CLEAR
-  gate_synced_at: 2026-09-06T17:21:02+09:00
+  gate_synced_at: 2026-09-06T17:21:18+09:00
   verdict: LGTM
   report_ninja: saizo
   report_task_id: cmd_karo_hotfix_readonly_probe_contract_20260906_normal
@@ -1769,7 +516,7 @@
 - cmd_id: cmd_karo_hotfix_readonly_probe_contract_20260906
   review_type: report
   gate_result: CLEAR
-  gate_synced_at: 2026-09-06T17:21:02+09:00
+  gate_synced_at: 2026-09-06T17:21:18+09:00
   verdict: LGTM
   report_ninja: saizo
   report_task_id: cmd_karo_hotfix_readonly_probe_contract_20260906_normal
@@ -1805,3 +552,773 @@
     reason: "run_tests入口修正"
   step3_5_verified: true
   origin: '[[readonly_probe_v4]] -> [[2receipt合算]] -> [[5file_567tests]]'
+- cmd_id: cmd_karo_ci_fix_dm_33985798406_fof_golden_full_attribution_20260906
+  review_type: report
+  verdict: LGTM
+  report_ninja: tobisaru
+  report_task_id: cmd_karo_ci_fix_dm_33985798406_fof_golden_full_attribution_20260906_normal
+  timestamp: '2026-09-06T17:49:00+09:00'
+  gate_prediction: CLEAR
+  gate_prediction_reason: all checks passed
+  confidence: HIGH
+  brainwash_check: "#1no #2no #3no #4no #5no #6no(bc10/10) #7no #8no"
+  finding_categories:
+    - assumptions
+    - numbers
+    - simulation
+    - premortem
+    - north_star
+    - ambiguity
+    - adversarial
+  findings_summary: "golden v3 CLEAR bc10/10"
+  observations:
+    - "参照是正完了"
+    - "bc 10/10 yes"
+    - "家老確認済み"
+  verified_files:
+    - "queue/reports/tobisaru_report_cmd_karo_ci_fix_dm_33985798406_fof_golden_full_attribution_20260906.yaml:status"
+  causal_chain: "参照是正→CLEAR"
+  operational_simulation:
+    command: "precheck"
+    expected: "CLEAR"
+    actual: "CLEAR"
+    result: PASS
+  adversarial_review:
+    required: false
+    verdict: "N/A"
+    reason: "golden"
+  step3_5_verified: true
+  origin: '[[golden_v3]] -> [[CLEAR]]'
+- cmd_id: cmd_karo_recon2_root_drain_plan_20260906
+  review_type: report
+  verdict: FAIL
+  report_ninja: hayate
+  report_task_id: cmd_karo_recon2_root_drain_plan_20260906_normal
+  report_verdict: FAIL
+  timestamp: '2026-09-06T17:51:00+09:00'
+  gate_prediction: BLOCK
+  gate_prediction_reason: bc:no(commit契約検証)
+  confidence: HIGH
+  brainwash_check: "#1no #2no #3no #4no #5no #6no(32paths) #7no #8no"
+  finding_categories:
+    - assumptions
+    - numbers
+    - simulation
+    - premortem
+    - north_star
+    - ambiguity
+    - adversarial
+  findings_summary: "FAIL正当。recon完了(32paths/equal9/mismatch23)だがbc:no(commit契約)。root drain BLOCKED"
+  observations:
+    - "32 effect paths, equal 9, mismatch 23, tracked dirty 31, overlap 18"
+    - "bc:no: commit N/A証跡の検証でno"
+    - "safe prefix 0 → root drain BLOCKED"
+  verified_files:
+    - "queue/reports/hayate_report_cmd_karo_recon2_root_drain_plan_20260906.yaml:result"
+  causal_chain: "recon完了→safe prefix 0→root drain BLOCKED→FAIL"
+  operational_simulation:
+    command: "precheck"
+    expected: "BLOCK"
+    actual: "BLOCK"
+    result: PASS
+  adversarial_review:
+    required: false
+    verdict: "N/A"
+    reason: "readonly recon"
+  step3_5_verified: true
+  origin: '[[root_drain_plan]] -> [[safe_prefix_0]] -> [[BLOCKED]]'
+- cmd_id: cmd_karo_recon2_root_drain_plan_20260906
+  review_type: report
+  verdict: FAIL
+  report_ninja: hayate
+  report_task_id: cmd_karo_recon2_root_drain_plan_20260906_normal
+  report_verdict: FAIL
+  timestamp: '2026-09-06T18:02:00+09:00'
+  gate_prediction: BLOCK
+  gate_prediction_reason: bc:no
+  confidence: HIGH
+  brainwash_check: "#1no #2no #3no #4no #5no #6no #7no #8no"
+  finding_categories:
+    - assumptions
+    - numbers
+    - simulation
+    - premortem
+    - north_star
+    - ambiguity
+    - adversarial
+  findings_summary: "FAIL継続。bc:no。AC2修正中"
+  observations:
+    - "FAIL/bc:no/BLOCK継続"
+  verified_files:
+    - "queue/reports/hayate_report_cmd_karo_recon2_root_drain_plan_20260906.yaml:status"
+  causal_chain: "AC2修正中→bc:no→FAIL"
+  operational_simulation:
+    command: "precheck"
+    expected: "BLOCK"
+    actual: "BLOCK"
+    result: PASS
+  adversarial_review:
+    required: false
+    verdict: "N/A"
+    reason: "recon"
+  step3_5_verified: true
+  origin: '[[root_drain_plan_v2]] -> [[FAIL継続]]'
+- cmd_id: cmd_4485
+  review_type: report
+  verdict: FAIL
+  report_ninja: kagemaru
+  report_task_id: cmd_4485_full
+  report_verdict: FAIL
+  timestamp: '2026-09-06T18:05:00+09:00'
+  gate_prediction: BLOCK
+  gate_prediction_reason: bc:no+parent_ac_uncovered
+  confidence: HIGH
+  brainwash_check: "#1no #2no #3no #4no #5no #6no(restore39s) #7no #8no"
+  finding_categories:
+    - assumptions
+    - numbers
+    - simulation
+    - premortem
+    - north_star
+    - ambiguity
+    - adversarial
+  findings_summary: "FAIL正当。AC1復元OK。AC2/AC3 bc:no(全期間入力未取得=unknown)"
+  observations:
+    - "AC1 restore 39s, recalc A/B 0.13/0.08s"
+    - "AC2 ΣB=0.75/0.833 return差確認"
+    - "全期間入力未取得→AC2/AC3=no→FAIL"
+  verified_files:
+    - "queue/reports/kagemaru_report_cmd_4485.yaml:result"
+  causal_chain: "隔離実験→全期間入力不足→AC2/AC3 unknown→FAIL"
+  operational_simulation:
+    command: "precheck"
+    expected: "BLOCK"
+    actual: "BLOCK"
+    result: PASS
+  adversarial_review:
+    required: false
+    verdict: "N/A"
+    reason: "隔離実験"
+  step3_5_verified: true
+  origin: '[[cmd_4485]] -> [[全期間入力未取得]] -> [[FAIL]]'
+- cmd_id: cmd_karo_recon2_root_drain_plan_20260906
+  review_type: report
+  verdict: FAIL
+  report_ninja: hayate
+  report_task_id: cmd_karo_recon2_root_drain_plan_20260906_normal
+  report_verdict: FAIL
+  timestamp: '2026-09-06T18:09:00+09:00'
+  gate_prediction: BLOCK
+  gate_prediction_reason: bc:no
+  confidence: HIGH
+  brainwash_check: "#1no #2no #3no #4no #5no #6no #7no #8no"
+  finding_categories:
+    - assumptions
+    - numbers
+    - simulation
+    - premortem
+    - north_star
+    - ambiguity
+    - adversarial
+  findings_summary: "FAIL継続v3。bc:no。AC2修正中"
+  observations:
+    - "FAIL/bc:no/BLOCK v3"
+  verified_files:
+    - "queue/reports/hayate_report_cmd_karo_recon2_root_drain_plan_20260906.yaml:status"
+  causal_chain: "AC2修正中→FAIL"
+  operational_simulation:
+    command: "precheck"
+    expected: "BLOCK"
+    actual: "BLOCK"
+    result: PASS
+  adversarial_review:
+    required: false
+    verdict: "N/A"
+    reason: "recon"
+  step3_5_verified: true
+  origin: '[[root_drain_plan_v3]] -> [[FAIL]]'
+- cmd_id: cmd_karo_recon2_k3_adoption_20260906
+  review_type: report
+  verdict: FAIL
+  report_ninja: saizo
+  report_task_id: cmd_karo_recon2_k3_adoption_20260906_normal
+  report_verdict: FAIL
+  timestamp: '2026-09-06T18:14:00+09:00'
+  gate_prediction: BLOCK
+  gate_prediction_reason: bc:no
+  confidence: HIGH
+  brainwash_check: "#1no #2no #3no #4no #5no #6no #7no #8no"
+  finding_categories:
+    - assumptions
+    - numbers
+    - simulation
+    - premortem
+    - north_star
+    - ambiguity
+    - adversarial
+  findings_summary: "FAIL正当。K3 source採用確認、runtime反映no/root安全適用no"
+  observations:
+    - "source採用確認、runtime反映no、root安全適用no"
+    - "task runner rc=2(test選択空)"
+    - "根拠 queue/notes/k3_adoption_20260906.md"
+  verified_files:
+    - "queue/reports/saizo_report_cmd_karo_recon2_k3_adoption_20260906.yaml:result"
+  causal_chain: "K3採否3軸確認→runtime/root=no→FAIL"
+  operational_simulation:
+    command: "precheck"
+    expected: "BLOCK"
+    actual: "BLOCK"
+    result: PASS
+  adversarial_review:
+    required: false
+    verdict: "N/A"
+    reason: "recon"
+  step3_5_verified: true
+  origin: '[[k3_adoption]] -> [[runtime_root_no]] -> [[FAIL]]'
+- cmd_id: cmd_karo_recon2_root_drain_plan_20260906
+  review_type: report
+  verdict: FAIL
+  report_ninja: hayate
+  report_task_id: cmd_karo_recon2_root_drain_plan_20260906_normal
+  report_verdict: FAIL
+  timestamp: '2026-09-06T18:16:00+09:00'
+  gate_prediction: BLOCK
+  gate_prediction_reason: bc:no
+  confidence: HIGH
+  brainwash_check: "#1no #2no #3no #4no #5no #6no #7no #8no"
+  finding_categories:
+    - assumptions
+    - numbers
+    - simulation
+    - premortem
+    - north_star
+    - ambiguity
+    - adversarial
+  findings_summary: "FAIL v4。AC2修正中"
+  observations:
+    - "FAIL/bc:no/BLOCK v4"
+  verified_files:
+    - "queue/reports/hayate_report_cmd_karo_recon2_root_drain_plan_20260906.yaml:status"
+  causal_chain: "AC2修正中→FAIL"
+  operational_simulation:
+    command: "precheck"
+    expected: "BLOCK"
+    actual: "BLOCK"
+    result: PASS
+  adversarial_review:
+    required: false
+    verdict: "N/A"
+    reason: "recon"
+  step3_5_verified: true
+  origin: '[[root_drain_plan_v4]] -> [[FAIL]]'
+- cmd_id: cmd_4485
+  review_type: report
+  verdict: FAIL
+  report_ninja: kagemaru
+  report_task_id: cmd_4485_full
+  report_verdict: FAIL
+  timestamp: '2026-09-06T18:21:00+09:00'
+  gate_prediction: BLOCK
+  gate_prediction_reason: bc:no+parent_ac_uncovered
+  confidence: HIGH
+  brainwash_check: "#1no #2no #3no #4no #5no #6no(1020PF-月/1195行) #7no #8no"
+  finding_categories:
+    - assumptions
+    - numbers
+    - simulation
+    - premortem
+    - north_star
+    - ambiguity
+    - adversarial
+  findings_summary: "FAIL v2。全期間取得完了。AC2/AC3 unknown保持→FAIL"
+  observations:
+    - "AC2 baseline 1020PF-月/85PF"
+    - "AC3 B-only 1195行、2回目0"
+    - "未達セルunknown保持→FAIL"
+  verified_files:
+    - "queue/reports/kagemaru_report_cmd_4485.yaml:result"
+  causal_chain: "全期間取得→AC2/AC3再計算→unknown保持→FAIL"
+  operational_simulation:
+    command: "precheck"
+    expected: "BLOCK"
+    actual: "BLOCK"
+    result: PASS
+  adversarial_review:
+    required: false
+    verdict: "N/A"
+    reason: "隔離実験"
+  step3_5_verified: true
+  origin: '[[cmd_4485_v2]] -> [[unknown保持]] -> [[FAIL]]'
+- cmd_id: cmd_karo_recon2_root_drain_plan_20260906
+  review_type: report
+  verdict: FAIL
+  report_ninja: hayate
+  report_task_id: cmd_karo_recon2_root_drain_plan_20260906_normal
+  report_verdict: FAIL
+  timestamp: '2026-09-06T18:23:00+09:00'
+  gate_prediction: BLOCK
+  gate_prediction_reason: bc:no
+  confidence: HIGH
+  brainwash_check: "#1no #2no #3no #4no #5no #6no #7no #8no"
+  finding_categories:
+    - assumptions
+    - numbers
+    - simulation
+    - premortem
+    - north_star
+    - ambiguity
+    - adversarial
+  findings_summary: "FAIL v5"
+  observations:
+    - "FAIL/bc:no v5"
+  verified_files:
+    - "queue/reports/hayate_report_cmd_karo_recon2_root_drain_plan_20260906.yaml:status"
+  causal_chain: "AC2→FAIL"
+  operational_simulation:
+    command: "precheck"
+    expected: "BLOCK"
+    actual: "BLOCK"
+    result: PASS
+  adversarial_review:
+    required: false
+    verdict: "N/A"
+    reason: "recon"
+  step3_5_verified: true
+  origin: '[[root_drain_plan_v5]] -> [[FAIL]]'
+- cmd_id: cmd_4485
+  review_type: report
+  verdict: FAIL
+  report_ninja: kagemaru
+  report_task_id: cmd_4485_full
+  report_verdict: FAIL
+  timestamp: '2026-09-06T18:32:00+09:00'
+  gate_prediction: BLOCK
+  gate_prediction_reason: bc:no+parent_ac_uncovered
+  confidence: HIGH
+  brainwash_check: "#1no(日付範囲現物確認2010-03→2026-09) #2no #3no #4no #5no #6no(1020PF-月) #7no #8no"
+  finding_categories:
+    - assumptions
+    - numbers
+    - simulation
+    - premortem
+    - north_star
+    - ambiguity
+    - adversarial
+  findings_summary: "FAIL v3。scope訂正(全期間2010-03→2026-09)確認。AC2/AC3 unknown→FAIL"
+  observations:
+    - "scope訂正: full history 2010-03-24..2026-09-04(前回12か月→全期間)"
+    - "AC2/AC3未達セルunknown保持→FAIL継続"
+  verified_files:
+    - "queue/reports/kagemaru_report_cmd_4485.yaml:result.details"
+  causal_chain: "12か月→全期間訂正→AC2/AC3 unknown→FAIL"
+  operational_simulation:
+    command: "precheck"
+    expected: "BLOCK"
+    actual: "BLOCK"
+    result: PASS
+  adversarial_review:
+    required: false
+    verdict: "N/A"
+    reason: "隔離実験"
+  step3_5_verified: true
+  origin: '[[cmd_4485_v3]] -> [[scope訂正]] -> [[FAIL]]'
+- cmd_id: cmd_4485
+  review_type: report
+  verdict: FAIL
+  report_ninja: kagemaru
+  report_task_id: cmd_4485_full
+  report_verdict: FAIL
+  timestamp: '2026-09-06T18:38:00+09:00'
+  gate_prediction: BLOCK
+  gate_prediction_reason: bc:no+parent_ac_uncovered
+  confidence: HIGH
+  brainwash_check: "#1no #2no #3no #4no #5no #6no #7no #8no"
+  finding_categories:
+    - assumptions
+    - numbers
+    - simulation
+    - premortem
+    - north_star
+    - ambiguity
+    - adversarial
+  findings_summary: "FAIL v4。AC2/AC3 unknown→FAIL"
+  observations:
+    - "FAIL v4 同一summary"
+  verified_files:
+    - "queue/reports/kagemaru_report_cmd_4485.yaml:status"
+  causal_chain: "AC2/AC3→FAIL"
+  operational_simulation:
+    command: "precheck"
+    expected: "BLOCK"
+    actual: "BLOCK"
+    result: PASS
+  adversarial_review:
+    required: false
+    verdict: "N/A"
+    reason: "隔離"
+  step3_5_verified: true
+  origin: '[[cmd_4485_v4]] -> [[FAIL]]'
+- cmd_id: cmd_karo_recon2_f15_integration_stage_20260906
+  review_type: report
+  gate_result: BLOCK
+  gate_synced_at: 2026-09-06T18:54:33+09:00
+  verdict: LGTM
+  report_ninja: kotaro
+  report_task_id: cmd_karo_recon2_f15_integration_stage_20260906_normal
+  timestamp: '2026-09-06T18:50:00+09:00'
+  gate_prediction: CLEAR
+  gate_prediction_reason: all checks passed
+  confidence: HIGH
+  brainwash_check: "#1no #2no #3no #4no #5no #6no #7no #8no"
+  finding_categories:
+    - assumptions
+    - numbers
+    - simulation
+    - premortem
+    - north_star
+    - ambiguity
+    - adversarial
+  findings_summary: "F15 CLEAR"
+  observations:
+    - "PASS/CLEAR/ERRORS=0"
+  verified_files:
+    - "queue/reports/kotaro_report_cmd_karo_recon2_f15_integration_stage_20260906.yaml:status"
+  causal_chain: "F15→CLEAR"
+  operational_simulation:
+    command: "precheck"
+    expected: "CLEAR"
+    actual: "CLEAR"
+    result: PASS
+  adversarial_review:
+    required: false
+    verdict: "N/A"
+    reason: "隔離"
+  step3_5_verified: true
+  origin: '[[f15]] -> [[CLEAR]]'
+- cmd_id: cmd_4485
+  review_type: report
+  verdict: FAIL
+  report_ninja: kagemaru
+  report_task_id: cmd_4485_full
+  report_verdict: FAIL
+  timestamp: '2026-09-06T18:51:00+09:00'
+  gate_prediction: BLOCK
+  gate_prediction_reason: bc:no
+  confidence: HIGH
+  brainwash_check: "#1no #2no #3no #4no #5no #6no #7no #8no"
+  finding_categories:
+    - assumptions
+    - numbers
+    - simulation
+    - premortem
+    - north_star
+    - ambiguity
+    - adversarial
+  findings_summary: "FAIL v5"
+  observations:
+    - "FAIL継続"
+  verified_files:
+    - "queue/reports/kagemaru_report_cmd_4485.yaml:status"
+  causal_chain: "FAIL"
+  operational_simulation:
+    command: "precheck"
+    expected: "BLOCK"
+    actual: "BLOCK"
+    result: PASS
+  adversarial_review:
+    required: false
+    verdict: "N/A"
+    reason: "隔離"
+  step3_5_verified: true
+  origin: '[[cmd_4485_v5]] -> [[FAIL]]'
+- cmd_id: cmd_karo_recon2_f15_integration_stage_20260906
+  review_type: report
+  gate_result: CLEAR
+  gate_synced_at: 2026-09-06T19:24:22+09:00
+  verdict: LGTM
+  report_ninja: kotaro
+  report_task_id: cmd_karo_recon2_f15_integration_stage_20260906_normal
+  timestamp: '2026-09-06T18:55:00+09:00'
+  gate_prediction: CLEAR
+  gate_prediction_reason: all checks passed
+  confidence: HIGH
+  brainwash_check: "#1no #2no #3no #4no #5no #6no #7no #8no"
+  finding_categories:
+    - assumptions
+    - numbers
+    - simulation
+    - premortem
+    - north_star
+    - ambiguity
+    - adversarial
+  findings_summary: "F15 v2 CLEAR"
+  observations:
+    - "GATE BLOCK(commit_main_ancestry)後の修正→CLEAR"
+  verified_files:
+    - "queue/reports/kotaro_report_cmd_karo_recon2_f15_integration_stage_20260906.yaml:status"
+  causal_chain: "GATE BLOCK→修正→CLEAR"
+  operational_simulation:
+    command: "precheck"
+    expected: "CLEAR"
+    actual: "CLEAR"
+    result: PASS
+  adversarial_review:
+    required: false
+    verdict: "N/A"
+    reason: "隔離"
+  step3_5_verified: true
+  origin: '[[f15_v2]] -> [[CLEAR]]'
+- cmd_id: cmd_4485
+  review_type: report
+  verdict: FAIL
+  report_ninja: kagemaru
+  report_task_id: cmd_4485_full
+  report_verdict: FAIL
+  timestamp: '2026-09-06T18:57:00+09:00'
+  gate_prediction: BLOCK
+  gate_prediction_reason: bc:no
+  confidence: HIGH
+  brainwash_check: "#1no #2no #3no #4no #5no #6no #7no #8no"
+  finding_categories:
+    - assumptions
+    - numbers
+    - simulation
+    - premortem
+    - north_star
+    - ambiguity
+    - adversarial
+  findings_summary: "FAIL v6"
+  observations:
+    - "FAIL継続"
+  verified_files:
+    - "queue/reports/kagemaru_report_cmd_4485.yaml:status"
+  causal_chain: "FAIL"
+  operational_simulation:
+    command: "precheck"
+    expected: "BLOCK"
+    actual: "BLOCK"
+    result: PASS
+  adversarial_review:
+    required: false
+    verdict: "N/A"
+    reason: "隔離"
+  step3_5_verified: true
+  origin: '[[cmd_4485_v6]] -> [[FAIL]]'
+- cmd_id: cmd_karo_recon2_f15_integration_stage_20260906
+  review_type: report
+  gate_result: CLEAR
+  gate_synced_at: 2026-09-06T19:24:22+09:00
+  verdict: LGTM
+  report_ninja: kotaro
+  report_task_id: cmd_karo_recon2_f15_integration_stage_20260906_normal
+  timestamp: '2026-09-06T18:59:00+09:00'
+  gate_prediction: CLEAR
+  gate_prediction_reason: all checks passed
+  confidence: HIGH
+  brainwash_check: "#1no #2no #3no #4no #5no #6no #7no #8no"
+  finding_categories:
+    - assumptions
+    - numbers
+    - simulation
+    - premortem
+    - north_star
+    - ambiguity
+    - adversarial
+  findings_summary: "F15 v3 CLEAR"
+  observations:
+    - "GATE BLOCK後修正→CLEAR"
+  verified_files:
+    - "queue/reports/kotaro_report_cmd_karo_recon2_f15_integration_stage_20260906.yaml:status"
+  causal_chain: "BLOCK→修正→CLEAR"
+  operational_simulation:
+    command: "precheck"
+    expected: "CLEAR"
+    actual: "CLEAR"
+    result: PASS
+  adversarial_review:
+    required: false
+    verdict: "N/A"
+    reason: "隔離"
+  step3_5_verified: true
+  origin: '[[f15_v3]] -> [[CLEAR]]'
+- cmd_id: cmd_4485
+  review_type: report
+  verdict: FAIL
+  report_ninja: kagemaru
+  report_task_id: cmd_4485_full
+  report_verdict: FAIL
+  timestamp: '2026-09-06T19:09:00+09:00'
+  gate_prediction: BLOCK
+  gate_prediction_reason: bc:no
+  confidence: HIGH
+  brainwash_check: "#1no #2no #3no #4no #5no #6no #7no #8no"
+  finding_categories:
+    - assumptions
+    - numbers
+    - simulation
+    - premortem
+    - north_star
+    - ambiguity
+    - adversarial
+  findings_summary: "FAIL v7"
+  observations:
+    - "FAIL継続"
+  verified_files:
+    - "queue/reports/kagemaru_report_cmd_4485.yaml:status"
+  causal_chain: "FAIL"
+  operational_simulation:
+    command: "precheck"
+    expected: "BLOCK"
+    actual: "BLOCK"
+    result: PASS
+  adversarial_review:
+    required: false
+    verdict: "N/A"
+    reason: "隔離"
+  step3_5_verified: true
+  origin: '[[cmd_4485_v7]] -> [[FAIL]]'
+- cmd_id: cmd_karo_recon2_p09_document_alignment_20260906
+  review_type: report
+  verdict: FAIL
+  report_ninja: saizo
+  report_task_id: cmd_karo_recon2_p09_document_alignment_20260906_normal
+  report_verdict: PASS
+  timestamp: '2026-09-06T19:11:00+09:00'
+  gate_prediction: BLOCK
+  gate_prediction_reason: LG043 bc×task_clarity矛盾
+  confidence: HIGH
+  brainwash_check: "#1no(BLOCK理由現物確認) #2no #3no #4no #5no #6no #7no #8no"
+  finding_categories:
+    - assumptions
+    - numbers
+    - simulation
+    - premortem
+    - north_star
+    - ambiguity
+    - adversarial
+  findings_summary: "GATE BLOCK(LG043)。bc全yes×task_clarity未確認語矛盾"
+  observations:
+    - "SG-PRE9c: bc全yesだがtask_clarity/assumption/purpose_gapに未確認語"
+  verified_files:
+    - "queue/reports/saizo_report_cmd_karo_recon2_p09_document_alignment_20260906.yaml:task_clarity"
+  causal_chain: "bc全yes×未確認語→LG043→BLOCK"
+  operational_simulation:
+    command: "precheck"
+    expected: "BLOCK or CLEAR"
+    actual: "BLOCK LG043"
+    result: PASS
+  adversarial_review:
+    required: false
+    verdict: "N/A"
+    reason: "偵察"
+  step3_5_verified: true
+  origin: '[[p09]] -> [[LG043]] -> [[BLOCK]]'
+- cmd_id: cmd_karo_recon2_4485_ac3_prep_20260906
+  review_type: report
+  gate_result: CLEAR
+  gate_synced_at: 2026-09-06T19:53:22+09:00
+  verdict: LGTM
+  report_ninja: hanzo
+  report_task_id: cmd_karo_recon2_4485_ac3_prep_20260906_normal
+  timestamp: '2026-09-06T19:13:00+09:00'
+  gate_prediction: CLEAR
+  gate_prediction_reason: all checks passed
+  confidence: HIGH
+  brainwash_check: "#1no #2no #3no #4no #5no #6no #7no #8no"
+  finding_categories:
+    - assumptions
+    - numbers
+    - simulation
+    - premortem
+    - north_star
+    - ambiguity
+    - adversarial
+  findings_summary: "AC3 prep CLEAR"
+  observations:
+    - "CLEAR"
+  verified_files:
+    - "queue/reports/hanzo_report_cmd_karo_recon2_4485_ac3_prep_20260906.yaml:status"
+  causal_chain: "CLEAR"
+  operational_simulation:
+    command: "precheck"
+    expected: "CLEAR"
+    actual: "CLEAR"
+    result: PASS
+  adversarial_review:
+    required: false
+    verdict: "N/A"
+    reason: "prep"
+  step3_5_verified: true
+  origin: '[[ac3_prep]] -> [[CLEAR]]'
+- cmd_id: cmd_karo_hotfix_p08_i7_monitor_20260906
+  review_type: report
+  verdict: LGTM
+  report_ninja: hayate
+  report_task_id: cmd_karo_hotfix_p08_i7_monitor_20260906_normal
+  timestamp: '2026-09-06T19:15:00+09:00'
+  gate_prediction: CLEAR
+  gate_prediction_reason: all checks passed
+  confidence: HIGH
+  brainwash_check: "#1no #2no #3no #4no #5no #6no #7no #8no"
+  finding_categories:
+    - assumptions
+    - numbers
+    - simulation
+    - premortem
+    - north_star
+    - ambiguity
+    - adversarial
+  findings_summary: "P08 CLEAR"
+  observations:
+    - "CLEAR"
+  verified_files:
+    - "queue/reports/hayate_report_cmd_karo_hotfix_p08_i7_monitor_20260906.yaml:status"
+  causal_chain: "CLEAR"
+  operational_simulation:
+    command: "precheck"
+    expected: "CLEAR"
+    actual: "CLEAR"
+    result: PASS
+  adversarial_review:
+    required: false
+    verdict: "N/A"
+    reason: "checker"
+  step3_5_verified: true
+  origin: '[[P08]] -> [[CLEAR]]'
+- cmd_id: cmd_karo_recon2_4485_ac3_prep_20260906
+  review_type: report
+  gate_result: CLEAR
+  gate_synced_at: 2026-09-06T19:53:22+09:00
+  verdict: LGTM
+  report_ninja: hanzo
+  report_task_id: cmd_karo_recon2_4485_ac3_prep_20260906_normal
+  timestamp: '2026-09-06T19:51:00+09:00'
+  gate_prediction: CLEAR
+  gate_prediction_reason: all checks passed
+  confidence: HIGH
+  brainwash_check: "#1no #2no #3no #4no #5no #6no #7no #8no"
+  finding_categories:
+    - assumptions
+    - numbers
+    - simulation
+    - premortem
+    - north_star
+    - ambiguity
+    - adversarial
+  findings_summary: "AC3 prep v2 rpt-68db2e5f CLEAR"
+  observations:
+    - "新版rpt-68db2e5f CLEAR"
+  verified_files:
+    - "queue/reports/hanzo_report_cmd_karo_recon2_4485_ac3_prep_20260906.yaml:report_id"
+  causal_chain: "新版→CLEAR"
+  operational_simulation:
+    command: "precheck"
+    expected: "CLEAR"
+    actual: "CLEAR"
+    result: PASS
+  adversarial_review:
+    required: false
+    verdict: "N/A"
+    reason: "prep"
+  step3_5_verified: true
+  origin: '[[ac3_prep_v2]] -> [[CLEAR]]'

@@ -1,5 +1,7 @@
 # DM-signal コアコンテキスト
-<!-- last_updated: 2026-09-06 2026-09-06 04:50 将軍doc lane GA-589: DTB3 date.min as-of prefix 上限 filter を §Current source boundary(GA-589) へ反映 -->
+<!-- last_updated: 2026-09-06 2026-09-06 18:05 将軍doc lane GA-590 同系列: golden AC1/AC2 commit(帰属 3efd01e0 真 baseline、rb6 5535+決定性 26175)。内容は 087231e1 の記述に包含 -->
+<!-- source_commit:c1b3719caef7 reason:2026-09-06 18:05 将軍doc lane GA-590 同系列: golden AC1/AC2 commit(帰属 3efd01e0 真 baseline、rb6 5535+決定性 26175)。内容は 087231e1 の記述に包含 evidence:git -C /mnt/c/Python_app/DM-signal log -1 c1b3719c -->
+<!-- source_commit:087231e1590e reason:2026-09-06 18:00 将軍doc lane GA-590: FoF golden 全帰属再生成(rb6 5535+決定性 26175=31710、dup 0)を §Current source boundary へ反映 evidence:git -C /mnt/c/Python_app/DM-signal show 087231e1 --stat = golden_baseline.json/rows.json.gz/test_cmd_3854 +36 -->
 <!-- source_commit:1fe4cb1388d9 reason:2026-09-06 04:50 将軍doc lane GA-589: DTB3 date.min as-of prefix 上限 filter を §Current source boundary(GA-589) へ反映 evidence:git -C /mnt/c/Python_app/DM-signal show 1fe4cb13 --stat = data_loader.py +9/-1 + integration fixture 3 path; gh run view 33985798406 = 1 failed/1935 passed -->
 <!-- source_commit:c8b347140eee reason:context_freshness reviewed source boundary evidence:context_freshness_check context=context/dm-signal-core.md commit=c8b347140eee -->
 <!-- source_commit:5b05427010fd reason:context_freshness reviewed source boundary evidence:context_freshness_check context=context/dm-signal-core.md commit=5b05427010fd -->
@@ -12,7 +14,10 @@
 <!-- source_commit:e7a6c59d reason:context_freshness reviewed source boundary evidence:context_freshness_check context=context/dm-signal-core.md commit=e7a6c59d -->
 <!-- source_commit:45760ecf reason:GA-490/491 FoF決定性tie-breakシリーズ境界反映(退行復旧再適用) evidence:git -C /mnt/c/Python_app/DM-signal log 46a1f213..45760ecf = 110 commits(source 67件)reviewed。初回=33f3dc7a2、tree退行検出(blt_20260822_144525)により再適用 -->
 
-## Current source boundary (GA-589, 2026-09-06)
+## Current source boundary (GA-590, 2026-09-06)
+- **Current source tip:** `087231e1` cmd_karo_ci_fix_dm_33985798406_fof_golden_full_attribution(2026-09-06 17:5x、飛猿)。cmd_3854 FoF golden baseline を ci_baseline clean-room で HEAD から再生成。差分は全帰属済み: rb6 由来 5,535 行が残存+tie-break 決定性リファクタで 26,175 行が新規=合計 31,710、重複 0・残余 0(旧 3efd01e0 世代 golden との突合)。regression test に帰属検証 36 行追加。これで DM-Signal CI の pre-existing RED は 0 見込み(run 結果で確定)。
+- durable knowledge: golden 更新は「差分を rb6 / 決定性リファクタ / 未帰属」の 3 分類で全行帰属し、未帰属 0 を示してから baseline を差し替える(帰属なしの再生成は禁止)。clean-room 生成は git 管理の ci_baseline を正本にし、作業 worktree の生成物と mismatch 0 を確認する。
+- 旧 tip `1fe4cb13`(GA-589、DTB3 as-of prefix)の知識は下記のまま有効。
 - **Current source tip:** `1fe4cb13` cmd_karo_ci_fix_dm_33983396944_dtb3_asof_history(2026-09-06 04:1x)。DM-Signal CI の pre-existing RED 7 件のうち DTB3 同根 6 件を解消(run 33985798406: 1935 passed / 1 failed=cmd_3854 golden regression のみ残)。
 - durable knowledge: `backend/app/utils/data_loader.py` の immutable snapshot 区間抽出で `date_from == date.min` は「完全 as-of prefix」の sentinel。pandas の nanosecond Timestamp 範囲外のため **上限(date_to)だけで filter** し、snapshot replay を初回 DB load と等価に保つ。下限付きの通常区間は従来どおり両側 filter。
 - fixture 契約: DTB3 を参照する integration test(cash_fallback_warning / pipeline_exception_no_cash / portfolio_restore_e2e_parity)は `_seed_dtb3` で target_dt−365 日からの完全 as-of history を EconomicIndicator へ供給する。history 欠落は `ValueError: DTB3 immutable snapshot has no as-of history` で fail-closed。
