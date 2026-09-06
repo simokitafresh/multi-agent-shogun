@@ -308,9 +308,31 @@ def _autolink_terminal_test_receipt(data, task_root):
     # task identity.  Real deployed tasks always carry task_id; do not make
     # those compatibility fixtures claim a receipt they cannot own.
     task_id = str(task.get("task_id") or "").strip()
+    report_declared_task_id = str(data.get("task_id") or "").strip()
     if not task_id:
-        return
-    report_task_id = str(data.get("task_id") or task_id).strip()
+        if not report_declared_task_id:
+            # No identity anywhere: a genuine minimal fixture. Compatible skip.
+            return
+        # cmd_karo_hotfix_contract_schema_20260907: a report that itself
+        # declares a task_id is never a minimal fixture, even when the live
+        # task file's task_id later reads empty (e.g. cleared by a stage
+        # timeout / idle reset). Treating that as the fixture-compatible
+        # skip let a real report finish terminal with its receipt/commit
+        # checks silently unexecuted. Resolve identity from the report's own
+        # frozen deploy-time snapshot instead; if even that is absent, fail
+        # closed rather than silently skip.
+        snapshot = data.get("task_contract_snapshot")
+        snapshot_task_id = (
+            str(snapshot.get("task_id") or "").strip()
+            if isinstance(snapshot, dict) else ""
+        )
+        if not snapshot_task_id:
+            raise SystemExit(
+                "BLOCK: terminal test receipt task identity unresolved "
+                "(live task empty and no task_contract_snapshot)"
+            )
+        task_id = snapshot_task_id
+    report_task_id = report_declared_task_id or task_id
     if report_task_id != task_id:
         raise SystemExit("BLOCK: terminal test receipt task_id mismatch")
     commit = str(data.get("commit_hash") or "").strip().lower()
