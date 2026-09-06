@@ -21845,3 +21845,136 @@ insights:
   source: "semantic_index_update"
   fix_known: false
   status: pending
+- id: INS-20260907-015250836-8ced
+  ts: "2026-09-07T01:52:50+09:00"
+  insight: "[[Layer Holdingsはgoだ]] semantic_stress_test candidate_aliases: NO_MATCH source=lord query=Layer Holdingsはgoだ"
+  priority: "low"
+  source: "semantic_stress_test"
+  fix_known: false
+  status: pending
+- id: INS-20260907-015251153-fd97
+  ts: "2026-09-07T01:52:51+09:00"
+  insight: "[[hanzoinbox1]] semantic_stress_test candidate_aliases: NO_MATCH source=lord query=hanzoinbox1"
+  priority: "low"
+  source: "semantic_stress_test"
+  fix_known: false
+  status: pending
+- id: INS-20260907-015251630-c2af
+  ts: "2026-09-07T01:52:51+09:00"
+  insight: "[[将軍側はD0で修正しよう]] semantic_stress_test candidate_aliases: NO_MATCH source=lord query=将軍側はD0で修正しよう"
+  priority: "low"
+  source: "semantic_stress_test"
+  fix_known: false
+  status: pending
+- id: INS-20260907-015252064-f2ae
+  ts: "2026-09-07T01:52:52+09:00"
+  insight: "[[では修正して]] semantic_stress_test candidate_aliases: NO_MATCH source=lord query=では修正して、inbox1"
+  priority: "low"
+  source: "semantic_stress_test"
+  fix_known: false
+  status: pending
+- id: INS-20260907-015252602-5846
+  ts: "2026-09-07T01:52:52+09:00"
+  insight: "[[いつも気にするがauto compactするからちゃんとナッジせよ]] semantic_stress_test candidate_aliases: NO_MATCH source=lord query=いつも気にするがauto compactするからちゃんとナッジせよ"
+  priority: "low"
+  source: "semantic_stress_test"
+  fix_known: false
+  status: pending
+- id: INS-20260907-015252988-c886
+  ts: "2026-09-07T01:52:52+09:00"
+  insight: "[[I4 DROP と I1 DROPも許可]] semantic_stress_test candidate_aliases: NO_MATCH source=lord query=I4 DROP と I1 DROPも許可"
+  priority: "low"
+  source: "semantic_stress_test"
+  fix_known: false
+  status: pending
+- id: INS-20260907-015253294-5fcf
+  ts: "2026-09-07T01:52:53+09:00"
+  insight: "[[すぐに開始しない理由を教えてくれ]] semantic_stress_test candidate_aliases: NO_MATCH source=lord query=すぐに開始しない理由を教えてくれ"
+  priority: "low"
+  source: "semantic_stress_test"
+  fix_known: false
+  status: pending
+- id: INS-20260907-015253640-d433
+  ts: "2026-09-07T01:52:53+09:00"
+  insight: "[[ユーザーからの見た目が変わらず]] semantic_stress_test candidate_aliases: NO_MATCH source=lord query=ユーザーからの見た目が変わらず、かつ計算結果も変わらないものはなんだ？"
+  priority: "low"
+  source: "semantic_stress_test"
+  fix_known: false
+  status: pending
+- id: INS-20260907-015254028-6a35
+  ts: "2026-09-07T01:52:54+09:00"
+  insight: "[[計算結果とは保有ポジションのことだ]] semantic_stress_test candidate_aliases: NO_MATCH source=lord query=計算結果とは保有ポジションのことだ"
+  priority: "low"
+  source: "semantic_stress_test"
+  fix_known: false
+  status: pending
+- id: INS-20260907-015254384-f8a6
+  ts: "2026-09-07T01:52:54+09:00"
+  insight: "[[初期段階ではhideだ]] semantic_stress_test candidate_aliases: NO_MATCH source=lord query=初期段階ではhideだ。L1: Global Page Visibilityで全tier+freeでhideにする"
+  priority: "low"
+  source: "semantic_stress_test"
+  fix_known: false
+  status: pending
+- id: INS-20260907-015254750-670c
+  ts: "2026-09-07T01:52:54+09:00"
+  insight: "[[Layer Holdings MonthlyページのデザインはDM signalに合わせないといけないな]] semantic_stress_test candidate_aliases: NO_MATCH source=lord query=Layer Holdings MonthlyページのデザインはDM-signalに合わせないといけないな。基本構造は同じだが後でやるか？現時点でやるか？UIのデザインの話だ"
+  priority: "low"
+  source: "semantic_stress_test"
+  fix_known: false
+  status: pending
+- id: INS-20260907-015255044-b39b
+  ts: "2026-09-07T01:52:55+09:00"
+  insight: "[[進捗を表形式で見せてくれ]] semantic_stress_test candidate_aliases: NO_MATCH source=lord query=進捗を表形式で見せてくれ"
+  priority: "low"
+  source: "semantic_stress_test"
+  fix_known: false
+  status: pending
+- id: INS-20260907-015255335-4694
+  ts: "2026-09-07T01:52:55+09:00"
+  insight: "[[第 0 弾配線 I7 I3 の deploは許可]] semantic_stress_test candidate_aliases: NO_MATCH source=lord query=第 0 弾配線=I7/I3 の deploは許可"
+  priority: "low"
+  source: "semantic_stress_test"
+  fix_known: false
+  status: pending
+- id: INS-20260907-015255618-5030
+  ts: "2026-09-07T01:52:55+09:00"
+  insight: "[[殿裁定 01 36『I4 DROP も許可』 方向 B 段階的廃止は 19 35 で確定]] semantic_stress_test candidate_aliases: NO_MATCH source=cmds query=殿裁定 2026-09-07 01:36『I4 DROP も許可』(方向 B=段階的廃止は 19:35 で確定)。設計書 v1.27 §5 I4 (c)(b)/(e)(b)/§10。段 1=code 撤去(表は残す=段 2 cmd_4497 で DROP)。ledger は 0 行で保有を上書きしていないため顧客画面・保有は不変、ledger API の応答"
+  priority: "low"
+  source: "semantic_stress_test"
+  fix_known: false
+  status: pending
+- id: INS-20260907-015256187-cc1d
+  ts: "2026-09-07T01:52:56+09:00"
+  insight: "[[本番不整合 I4 段 2 signal decision ledger signal detail history 2 ]] semantic_stress_test candidate_aliases: NO_MATCH source=cmds query=本番不整合 I4 段 2: signal_decision_ledger/signal_detail_history 2 表の DROP migration(up/down、隔離 DB 往復、models/migrations 参照撤去、depends_on cmd_4496)"
+  priority: "low"
+  source: "semantic_stress_test"
+  fix_known: false
+  status: pending
+- id: INS-20260907-015300511-320c
+  ts: "2026-09-07T01:53:00+09:00"
+  insight: "[[本番不整合 I1 fof component weights 未使用 8 列の DROP migration up do]] semantic_stress_test candidate_aliases: NO_MATCH source=cmds query=本番不整合 I1: fof_component_weights 未使用 8 列の DROP(migration up/down+API 8 key 撤去+admin 型修正、隔離 branch、隔離 DB 往復検証。本番 DDL 適用は殿許可 01:36 に基づく家老 runbook 別段)"
+  priority: "low"
+  source: "semantic_stress_test"
+  fix_known: false
+  status: pending
+- id: INS-20260907-015301764-86ba
+  ts: "2026-09-07T01:53:01+09:00"
+  insight: "[[本番不整合 I4 段 1 signal decision ledger signal detail history 依存]] semantic_stress_test candidate_aliases: NO_MATCH source=cmds query=本番不整合 I4 段 1: signal_decision_ledger/signal_detail_history 依存 code の撤去(15 file の runtime 分岐・writer・API・PI-P06、隔離 branch、表は残す、本番書込 0)"
+  priority: "low"
+  source: "semantic_stress_test"
+  fix_known: false
+  status: pending
+- id: INS-20260907-015302641-b78c
+  ts: "2026-09-07T01:53:02+09:00"
+  insight: "[[本番不整合 I2 段 1 signal change log 同日往復の分類計測 run job cache 世代・tr]] semantic_stress_test candidate_aliases: NO_MATCH source=cmds query=本番不整合 I2 段 1: signal_change_log 同日往復の分類計測(run/job/cache 世代・transaction 境界の識別情報付与、抑止なし、readonly、成果物 cmd_4492_*)"
+  priority: "low"
+  source: "semantic_stress_test"
+  fix_known: false
+  status: pending
+- id: INS-20260907-015303584-97ca
+  ts: "2026-09-07T01:53:03+09:00"
+  insight: "[[殿裁定 01 36『I4 DROP も許可』の段 2]] semantic_stress_test candidate_aliases: NO_MATCH source=cmds query=殿裁定 2026-09-07 01:36『I4 DROP も許可』の段 2。cmd_4496(code 撤去)の CLEAR 後に、表 2 本(models.py L942-953 signal_detail_history、signal_decision_ledger)の DROP TABLE migration と models/migrations の"
+  priority: "low"
+  source: "semantic_stress_test"
+  fix_known: false
+  status: pending
