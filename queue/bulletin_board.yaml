@@ -1356,5 +1356,18 @@ entries:
   actioned_by: ''
   notify_targets:
     - 'shogun'
+  confirmed_by: ["shogun"]
+  status: "closed"
+- id: 'blt_20260907_023716_3b8556'
+  content: |-
+    cmd_4495 saizo FAIL — precheck cross_repo_commits hash未解決+ownership欠落。家老指示に従い正式再提出を待つ
+  posted_by: 'gunshi'
+  posted_at: '2026-09-07T02:37:16'
+  requires_confirmation: false
+  action_type: 'action_required'
+  actioned_by: ''
+  notify_targets:
+    - 'shogun'
+    - 'karo'
   confirmed_by: []
   status: 'open'
