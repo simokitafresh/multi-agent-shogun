@@ -362,6 +362,72 @@ PY
     [ "$(grep -c '^post ' "$X_API_CALL_LOG")" -eq 1 ]
 }
 
+# x_token_keeper.sh(cron)へX_TOKEN_OBTAINED_ATを指定秒数前に見せかける。
+set_token_obtained_age() {
+    local env_file="$1" age_sec="$2" ts
+    ts="$(date -u -d "@$(( $(date -u +%s) - age_sec ))" +%Y-%m-%dT%H:%M:%S%z)"
+    if grep -q '^X_TOKEN_OBTAINED_AT=' "$env_file"; then
+        sed -i "s/^X_TOKEN_OBTAINED_AT=.*/X_TOKEN_OBTAINED_AT=${ts}/" "$env_file"
+    else
+        printf 'X_TOKEN_OBTAINED_AT=%s\n' "$ts" >> "$env_file"
+    fi
+}
+
+# test_necessity: x_token_keeper.sh(cron、90分閾値で成功時にX_TOKEN_OBTAINED_ATを更新)と
+# x_post.shの投稿直前refreshが同時にrefresh_tokenをrotateすると、Xの再利用検知が後着の
+# refreshでgrantをrevokeしうる(実測: keeper cronの実発火分がx_slot_post cronの分と一致する
+# 時間帯を確認、cmd_karo_hotfix_x_refresh_collision_20260906 AC1)。keeperの直近refresh成功が
+# 閾値内ならx_post.sh側refreshをskipする契約(AC2)の回帰を防ぐ。
+@test "x_post post: keeperのrefresh成功が閾値内(90分)なら投稿直前refreshをskipする" {
+    setup_x_post
+    set_token_obtained_age "$X_POST_API_ENV_FILE" 600
+    run env PYTHONPATH="$FIXTURE_DIR/fake_api" bash "$X_POST" post 2026-09-03_A
+    [ "$status" -eq 0 ]
+    grep -q '^X_ACCESS_TOKEN=initial-access-token$' "$X_POST_API_ENV_FILE"
+    grep -q '/2/tweets' "$X_API_CALL_LOG"
+}
+
+# test_necessity: skipの誤爆が実際の同時rotation競合を再現する最悪ケース――keeperの
+# refreshが(ロック等で)失敗しうる状況でも、fresh判定によりx_post.sh側は再度refresh
+# helperを呼ばないことを固定する。呼んでいたらhelper失敗のfail-closeでexit 1になるはず。
+@test "x_post post: 同時rotation競合re現時もfresh判定はrefresh helperを再度呼ばない" {
+    setup_x_post
+    set_token_obtained_age "$X_POST_API_ENV_FILE" 300
+    export X_REFRESH_FAIL=1
+    run env PYTHONPATH="$FIXTURE_DIR/fake_api" bash "$X_POST" post 2026-09-03_A
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"post-1"* ]]
+}
+
+# test_necessity: keeperの成功記録が閾値(90分)を超えている場合はfail-closeし、
+# 既存の必須refresh動作(AC2「90分超はfail closed」)を維持する回帰テスト。
+@test "x_post post: keeper成功記録が閾値超過(90分超)なら投稿直前refreshをfail-closeで実行" {
+    setup_x_post
+    set_token_obtained_age "$X_POST_API_ENV_FILE" 5500
+    run env PYTHONPATH="$FIXTURE_DIR/fake_api" bash "$X_POST" post 2026-09-03_A
+    [ "$status" -eq 0 ]
+    grep -q '^X_ACCESS_TOKEN=refreshed-access-token$' "$X_POST_API_ENV_FILE"
+}
+
+# test_necessity: X_TOKEN_OBTAINED_AT欠落はkeeper成功記録なしと同義であり、
+# fail-closeで既存の必須refresh動作を維持する回帰テスト(AC2「成功記録欠落はfail closed」)。
+@test "x_post post: X_TOKEN_OBTAINED_AT欠落は投稿直前refreshをfail-closeで実行" {
+    setup_x_post
+    run env PYTHONPATH="$FIXTURE_DIR/fake_api" bash "$X_POST" post 2026-09-03_A
+    [ "$status" -eq 0 ]
+    grep -q '^X_ACCESS_TOKEN=refreshed-access-token$' "$X_POST_API_ENV_FILE"
+}
+
+# test_necessity: X_TOKEN_OBTAINED_ATがparse不能(malformed)な場合もfail-closeし、
+# 既存の必須refresh動作を維持する回帰テスト(AC2「malformedはfail closed」)。
+@test "x_post post: X_TOKEN_OBTAINED_ATがmalformedなら投稿直前refreshをfail-closeで実行" {
+    setup_x_post
+    printf 'X_TOKEN_OBTAINED_AT=not-a-timestamp\n' >> "$X_POST_API_ENV_FILE"
+    run env PYTHONPATH="$FIXTURE_DIR/fake_api" bash "$X_POST" post 2026-09-03_A
+    [ "$status" -eq 0 ]
+    grep -q '^X_ACCESS_TOKEN=refreshed-access-token$' "$X_POST_API_ENV_FILE"
+}
+
 # draft生成テスト専用の軽量setup。setup_x_postはdate依存の固定ファイル名
 # (2026-09-03_A.txt)を事前生成するため、当日日付での衝突を避けて分離する。
 setup_x_post_minimal() {

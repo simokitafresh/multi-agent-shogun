@@ -55,6 +55,34 @@ draft_file() { printf '%s/%s.txt' "$DRAFTS_DIR" "$1"; }
 approved_file() { printf '%s/%s.approved' "$DRAFTS_DIR" "$1"; }
 posted_file() { printf '%s/%s.posted' "$DRAFTS_DIR" "$1"; }
 
+# x_token_keeper.sh(cron)と投稿直前refreshが同時にrefresh_tokenをrotateすると、
+# Xの再利用検知が後着のrefreshでgrantをrevokeしうる(実測: keeper cronとx_slot_post cronの
+# 発火分が一致する時間帯がある)。keeperの直近refresh成功(X_TOKEN_OBTAINED_AT)が閾値内なら
+# 投稿直前refreshをskipし、記録欠落・parse不能・閾値超過はfail-close(既存の必須refreshを維持)する。
+# 閾値はkeeper(x_token_keeper.sh)のMAX_AGE_SECと同じ環境変数X_TOKEN_MAX_AGE_SECを共有する。
+KEEPER_FRESH_MAX_AGE_SEC="${X_TOKEN_MAX_AGE_SEC:-5400}"
+
+token_obtained_age_sec() {
+    local env_file="$1" obtained obtained_epoch now
+    obtained="$(grep -E '^X_TOKEN_OBTAINED_AT=' "$env_file" 2>/dev/null | tail -1 | cut -d= -f2- | tr -d "'\"")"
+    [[ -n "$obtained" ]] || return 1
+    if [[ "$obtained" =~ ^[0-9]{9,}$ ]]; then
+        obtained_epoch="$obtained"
+    else
+        obtained_epoch="$(date -d "$obtained" +%s 2>/dev/null)" || return 1
+    fi
+    [[ "$obtained_epoch" =~ ^[0-9]+$ ]] || return 1
+    now="$(date +%s)"
+    printf '%s\n' "$(( now - obtained_epoch ))"
+}
+
+keeper_refresh_is_fresh() {
+    local env_file="$1" age
+    age="$(token_obtained_age_sec "$env_file")" || return 1
+    [[ "$age" =~ ^[0-9]+$ ]] || return 1
+    (( age >= 0 && age < KEEPER_FRESH_MAX_AGE_SEC ))
+}
+
 # 失敗理由(パターン名・安全な要約のみ)を永続ログへ残す。秘密値(トークン等)は一切含めない。
 log_draft_failure() {
     local draft_id="$1" slot="$2" key="$3" reasons="$4"
@@ -309,7 +337,9 @@ cmd_post() {
     fi
     [[ -f "$API_ENV_FILE" ]] || { echo "x_post.sh post: credentials file not found: $API_ENV_FILE" >&2; exit 2; }
     [[ -f "$TOKEN_REFRESH_SCRIPT" ]] || { echo "x_post.sh post: token refresh helper not found: $TOKEN_REFRESH_SCRIPT" >&2; exit 2; }
-    if ! python3 "$TOKEN_REFRESH_SCRIPT" "$API_ENV_FILE" >/dev/null 2>&1; then
+    if keeper_refresh_is_fresh "$API_ENV_FILE"; then
+        : # keeperのrefresh成功が閾値内 → 投稿直前refreshをskip(同時rotation競合回避)
+    elif ! python3 "$TOKEN_REFRESH_SCRIPT" "$API_ENV_FILE" >/dev/null 2>&1; then
         echo "x_post.sh post: token refresh failed" >&2
         exit 1
     fi
