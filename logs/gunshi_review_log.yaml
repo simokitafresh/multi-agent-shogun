@@ -13684,3 +13684,30 @@
     - '家老RC(msg_023310): 実配備wall証明不足。再提出まで承認しない'
     - 'binary_checks全yes test3/3だがstatus未是正'
     - 'commit db902471実在。再提出版を待つ'
+- cmd_id: cmd_karo_recon2_i6_exclusions_20260907
+  review_type: report
+  ninja: hayate
+  verdict: FAIL
+  confidence: HIGH
+  finding_categories: [assumptions, numbers, simulation, premortem, north_star, ambiguity, adversarial]
+  brainwash_check: 'AC3=no receipt absent 708=547+161 per report L274 #1no#2no#3no#4no#5no#6no#7no#8no'
+  gate_prediction: CLEAR
+  gate_prediction_reason: 'status=failed report precheck skip'
+  report_fingerprint: 51706a1abd3a6d979f937e5c023031705076b5d69caf23f38325c8ea07c4a25d
+  verified_files: ['queue/reports/hayate_report_cmd_karo_recon2_i6_exclusions_20260907.yaml:274']
+  timestamp: '2026-09-07T02:50:00+09:00'
+  step3_5_verified: true
+  adversarial_review:
+    required: false
+    verdict: N/A
+    reason: 'recon2 readonly status=failed'
+  operational_simulation:
+    command: 'grep -n "result:" queue/reports/hayate_report_cmd_karo_recon2_i6_exclusions_20260907.yaml | grep AC3'
+    expected: 'AC3 result no を確認'
+    actual: 'L275 result no (report L274 AC3 check target_date同一性未証明)'
+    result: FAIL
+  observations:
+    - 'AC1/AC2完了: 708除外=547 child_null+161 start_before_available per report L258-268'
+    - 'AC3 result=no per report L274-275: production fullrecalculate target_date receipt absent'
+    - '忍者が正直にAC3=noでFAIL報告(LG005準拠)'
+    - 'decision_candidate per report L193-197: production receipt追加取得が必要'
