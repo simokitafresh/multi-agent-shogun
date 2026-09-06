@@ -21705,3 +21705,10 @@ insights:
   source: "semantic_index_update"
   fix_known: false
   status: pending
+- id: INS-20260907-014334548-4d89
+  ts: "2026-09-07T01:43:34+09:00"
+  insight: "semantic_index_update新概念候補: cmd_complete:cmd_4493 は 既存aliasesに一致なし。概念定義とaliases追加を検討せよ"
+  priority: "low"
+  source: "semantic_index_update"
+  fix_known: false
+  status: pending
