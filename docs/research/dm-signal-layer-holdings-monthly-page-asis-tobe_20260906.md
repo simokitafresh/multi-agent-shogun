@@ -153,6 +153,75 @@ R3履歴（v0.4、2026-09-06 22:50家老）: 更新6点=modeとscope分離、sum
 
 ## §10 殿裁定（22:40記録）
 
+## §9 実装パック(cmd 単位。忍者がそのまま着手でき、家老が配備で悩まない形。殿 22:50『利他の精神で実際に忍者が実装することをイメージして設計書は作れ。家老は配備するときに悩まないように』)
+
+
+### §9.0 共通(全 cmd)
+- repo: DM-Signal(`/mnt/c/Python_app/DM-signal`)。作業は隔離 worktree+非 main branch `feat/layer-holdings-P<n>`。**main への push は本番 deploy 相当=禁止**。成果は branch push+報告 YAML。
+- 母集団・規則の正本: `0f2bfbcd:analysis_runs/cmd_4479_holdings_monthly/build_holdings_monthly.py`(`expected_names()` L48-55、`layer_for()` L57-66、`_resolve_weights()` L187-236)と `0f2bfbcd:analysis_runs/cmd_4481_layer_holdings/layer_holdings_monthly.csv`(3,525 行、sha256 04c4f56b…)。忍者は `git show 0f2bfbcd:<path>` で取り、作業 tree の 78 PF 版(4,493 行)を使わない。
+- 本番 DB: readonly 取得は 既存db-checkのreadonly capability発行→launcher→nonce監査の経路(既存 launcher、回数制限なし)。書込・DDL・deploy は行わない(P4 は殿 OK 後の家老 lane)。
+- テスト: 契約 test は `test_necessity` 宣言付きで永続、実装用 test は同 cmd 内で削除。`pytest` は `backend/tests/` の既存 conftest に乗せる。SKIP 0。
+- 報告 YAML: `binary_checks` は下記 AC 番号ごとに yes/no+生出力 1 行。`files_modified` は path 形式。
+- 忍者が自分で決めてよいこと: 変数名・関数分割・test fixture の形・SQL の書き方。決めてはいけないこと: 表の列名/PK、API path と payload key、page id、cron 名、AC の閾値(全て本書が固定)。
+
+### §9.1 cmd P1: 結果表+batch job(backend)
+| 項目 | 値 |
+|---|---|
+| task_type | implement(DM-Signal backend) |
+| 依存 | なし(先頭) |
+| planned_paths | `backend/app/db/models.py`(+`LayerHoldingsMonthly` 1 class)、`backend/alembic/versions/<rev>_layer_holdings_monthly.py`(新規、up/down)、`backend/app/jobs/layer_holdings_batch.py`(新規)、`backend/tests/test_layer_holdings_batch.py`(契約 test、新規) |
+| 表定義(固定) | `layer_holdings_monthly`: PK(`year_month` String, `layer` String, `ticker` String)、`weight` Float、`pf_count` Integer、`is_mtd` Boolean、`calculated_at` UTCDateTime(全行同一)、`source_recalc_id` Integer nullable(参照した `recalculation_status.id`、P4 の AC7 証跡) |
+| job の入出力(固定) | 入力: `portfolios(id,name,type)`、`monthly_returns(portfolio_id,year_month,holding_signal,monthly_return)`。母集団=`expected_names()` の 75 名と一致する PF のみ。展開=`_resolve_weights` と同じ同月 MonthlyReturn 再帰(monthly_return 非 NULL 行のみ、child 欠損/循環は集計失敗=旧結果保持)。出力=(year_month, layer∈L0..L3+ALL, ticker)→weight=Σweight÷pf_count、pf_count=distinct portfolio_id。`is_mtd`=as-of 月(Asia/Tokyo 今日の月)のみ true。書込=新表のみ、同一 transaction で DELETE 全行→INSERT |
+| 起動 I/F(固定) | `python -m app.jobs.layer_holdings_batch [--as-of YYYY-MM-DD] [--dry-run]`。`--dry-run` は書かず件数と検証結果を stdout(JSON 1 行) |
+| 検算(cmd内) | U1固定CSVと同一の入力世代を示すfixture/保存データを使う。現在DBのdumpにas-of指定だけで固定CSV一致を要求しない。固定入力が保存されていなければP1着手時に不足を特定し、入力・出力の新しい一致基準をレビューへ返す。丸め表示値で代用しない |
+| AC(二値) | AC1: 突合 3,525 行・key 集合一致・pf_count 一致・is_mtd 一致・weight 差 max ≤1e-9(生出力: `rows=3525 keys_match=true maxdiff=<値>`) / AC2: 各 (year_month, layer) Σweight=1±1e-9 違反 0、pf_count ≤12/21/21/21/75 / AC3: job の SQL log で新表以外への DML 0、同入力で再実行=calculated_at 以外一致、child 欠損 fixture で例外→rollback→旧行残存 / AC6: 契約 test = AC2 と AC3(欠損時 rollback)の 2 本以上、FAIL 0 SKIP 0 / migration: `alembic upgrade head`→`downgrade -1` で新表のみ作成・削除、他表の DDL 差分 0 |
+| 見積 | job ≤250 行、migration ≤60 行、models +20 行(上限ではなく見積) |
+
+### §9.2 cmd P2: API+完了証跡の接続(backend)
+| 項目 | 値 |
+|---|---|
+| task_type | implement(DM-Signal backend) |
+| 依存 | P1 の表定義(§9.1 は固定なので **P1 と並行可**。P1 branch を base にせず、同じ表定義を前提に書く) |
+| planned_paths | backend/app/api/layer_holdings.py、backend/app/main.py、backend/app/api/etl_trigger.py、backend/app/utils/recalc_status.py、backend/tests/test_layer_holdings_api.py。既存summaryのscope/result記録と共通readiness、既存advisory lockの安全な利用を実装する（辞書+6行だけとはしない） |
+| GET payload(固定) | `ApiResponse.data = {layers:[L0,L1,L2,L3,ALL], months:[...], data:{layer:{ym:{ticker:weight}}}, pf:{layer:{ym:count}}, mtd:[ym...], calculated_at}`。丸めない。表が空なら 503 `{"message":"layer holdings not calculated yet"}` |
+| GET の順序(固定) | `limiter` decorator → `require_viewer`(Depends) → `enforce_page_visible(db, "layer-holdings", is_admin, tier_id)` → 読取 → `make_response_with_etag`。If-None-Match でも認可を先に通す(viewer hidden なら 304 ではなく 403) |
+| POST /admin/layer-holdings(固定) | require_admin。§4.4/R3共通readinessを使う。対象月初runのsummary.scope=all、必要coverage、completed、cancelled=false、errors=0、start/end時刻と後続未完了runなしを検証。mode fullで全PFと推測せず全PF portfolioを許可。同じ再計算advisory lockを保持して判定・snapshot読取・job commitまで行い、未適格409。成功はrows/calculated_at/source_recalc_idを返す |
+| sync-status `L4_recalc`(固定) | 同じreadinessを使用し適格時だけend_timeのUTC日付をlast_success_dateへ。不適格はnull、runningをlockedへ。既存wait scriptのUTC TODAYと一致させる。過去成功だけを検索して後続失敗を隠さない |
+| AC(二値) | AC4は§5の認証/global hide/ETag/空表。AC4bは全PF portfolio成功を許可、特定PF full・summary欠落・cancelled/errorsあり・古い成功後の新失敗・runningを409。UTC/JST境界とロック競合も検証。成功時source_recalc_id一致。FAIL0/SKIP0 |
+
+### §9.3 cmd P3: ページ+nav+visibility(frontend)
+| 項目 | 値 |
+|---|---|
+| task_type | implement(DM-Signal frontend) |
+| 依存 | §9.2 の payload 形(固定なので **P1/P2 と並行可**。開発中は fixture JSON=`0f2bfbcd` CSV を `scripts/layer_holdings_render.py:48-69` と同じ pivot で作ったもの) |
+| planned_paths | `frontend/app/layer-holdings/page.tsx`(新規)、`frontend/components/sidebar.tsx`・`frontend/components/mobile-menu.tsx`(Monthly Returns の直後に id `layer-holdings` label `Layer Holdings` href `/layer-holdings` 各 1 項目)、`frontend/app/admin/visibility/page.tsx:46` 付近に `{ id: "layer-holdings", label: "Layer Holdings", group: "Core" }`、`frontend/lib/api-client.ts`(`getLayerHoldings()` 1 関数、`/api/layer-holdings`)、`frontend/app/__tests__/layer-holdings.test.tsx`(契約 test) |
+| 画面(固定) | wireframe gist 6ae60a9c(`docs/dashboard/layer-holdings-monthly.html`、multi-agent-shogun repo)と同じ: layer タブ 5(既定 ALL)+期間 3(12/36/全、既定 12)+積み上げ横棒(ticker 色は既存 palette があればそれ、無ければ HTML の `PALETTE`)+右端 pf_count+直近 3 ヶ月の生表+`is_mtd` 月は薄く MTD バッジ。PF 選択(`useSignals().selectedId`)を参照しない。状態 4 種を区別: 401/403(既存 error 表示)、503(『集計待ち』)、取得失敗(retry)、正常 |
+| AC(二値) | AC5: `next build` エラー 0、fixture で描画し各行の weight 合計 100%±0.1(生出力: `rows=<n> sum_violations=0`)、hidden Tier の `hiddenPages` に `layer-holdings` があれば nav に出ない、admin では出る、未選択/選択変更でも表が同じ / AC6: 契約 test = 合計 100% と nav 非表示の 2 本、FAIL 0 SKIP 0 |
+
+### §9.4 cmd P4: 本番投入(家老 lane、殿の明示 OK 後)
+| 順序 | 操作 | 確認(二値) |
+|---|---|---|
+| 1 | 殿 OK(本番 DDL+deploy) | lord_conversation に時刻付き OK |
+| 2 | Global hidden_pages に `layer-holdings` を追加(admin visibility UI、Settings と GlobalVisibilitySettings の両方) | `GET /api/admin/...visibility` に id が両保存元で出る |
+| 3 | 承認済みP1 migrationを本番へ適用（新BE/FE公開より先） | 新表あり、他表DDL差分0 |
+| 4 | 承認済みP1/P2/P3をmain合流しBE/FE配備。Global hideとcron停止を維持 | BE/FE deploy success、参照tableあり |
+| 5 | `POST /admin/layer-holdings`(admin) | 200、同世代入力から導出した期待rows、`source_recalc_id` あり。409ならreadiness理由を返し旧結果保持 |
+| 6 | `GET /api/layer-holdings`: admin 200 / viewer 403 | AC4 |
+| 7 | AC7: 本番 payload と `0f2bfbcd` CSV を同世代で全 key 突合(weight 差 ≤1e-9、2026-08 ALL GLD=0.43944444444444436 / XLU=0.38611111111111107 / TMV=0.17444444444444446 / pf_count 75) | 不一致 0 |
+| 8 | render.yaml cron `dm-signal-layer-holdings`(`35 9 1 * *`、`bash scripts/etl_layer_sync_wait.sh L4_recalc layer-holdings`)を有効化 | Render に cron が見える |
+| 9 | post_deploy_check を `docs/research/cmd_4416_post_deploy_check.md` の型で記録 | 記録 commit |
+| 失敗時 | 公開停止(Global hidden 維持)・cron 停止→FE/BE 旧版へ→新表参照 process 0 を確認→必要時のみ `alembic downgrade -1` | 表を先に落とさない |
+
+### §9.5 家老の配備順(悩まないための固定)
+- P1・P2・P3 は **同時に 3 名へ配備可**(依存は本書の固定仕様で切ってある)。空き忍者が 1 名なら P1→P2→P3 の順。
+- 各 cmd の `related_lessons`: 契約 test の default-delete、cross_repo deploy_forbidden(F-19 後の gate)、readonly launcher 契約。
+- レビュー: 軍師一次→家老。AC の生出力行がない報告は差戻し(1 回で通す型)。
+- P4 は cmd ではなく家老 lane の runbook(§9.4)。殿 OK が無い間は着手しない。
+
+§9取り込み時の家老補正: R3のscope/result/UTC/排他条件をP2へ反映。source_recalc_idは新結果表の監査列として§1/§4.1も更新する。P1の固定入力fixtureの所在、P2のreadiness関数配置は配備時に明示する必要がある。並行実装では各branchの所有pathを分け、統合検証はP1/P2/P3の統合時に1回行う。
+
+
+
 - 2026-09-06 22:30: 初期はL1 Global Page Visibilityで全Tier+Freeをhide。Settings/GlobalVisibilitySettingsのhidden_pages unionにlayer-holdingsを登録、admin閲覧可、viewer403/nav非表示。公開は殿裁定後、Globalの両保存元に当該idが残らないよう1運用操作で解除する。Tier設定は維持する。
 - 2026-09-06 22:34受領: wireframeはHTML gistを前提とする。冒頭の旧artifact取得失敗の留保は、発行者のローカルHTML来歴確認とU7解消により更新する。
 
