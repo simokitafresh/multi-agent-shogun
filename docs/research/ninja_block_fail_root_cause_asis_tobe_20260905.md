@@ -1,33 +1,36 @@
 <!-- gist-master: 70b946c022cd5f6f81195ab837b7a7eb ninja_block_fail_root_cause_asis_tobe_20260905.md -->
-# 忍者BLOCK/FAILの根因対策 — 家老配備設計 v3.3(2026-09-06 18:10 F-13 golden CLEAR・F-15 疾風保全統合案・W6 4 例目・F-18 候補=報告契約の型不足。v3.2=12:15 F-15 root drain 追加: origin 収載済み hotfix が共有 root runtime に載らない構造、家老 18 path 監査 queue/notes/root_convergence_audit_20260906_1206.md) / v3.1
+# 忍者BLOCK/FAILの根因対策 — 家老配備設計 v3.4(2026-09-06 18:25 家老 R12 全採用: 一意 ID 表・時点付き経緯・failed=実体未達+形式不備・CI は run ID で別記。v3.3=18:10 F-13 golden CLEAR・F-15 疾風保全統合案・W6 4 例目・F-18 候補=報告契約の型不足。v3.2=12:15 F-15 root drain 追加: origin 収載済み hotfix が共有 root runtime に載らない構造、家老 18 path 監査 queue/notes/root_convergence_audit_20260906_1206.md) / v3.1
 
 更新: 2026-09-05 23:21:40 JST(家老 v3.1)。将軍追記 2026-09-06 00:40: §5 台帳に W0/W1 CLEAR、F-6 APPROVE、K2 走行、W5 閉を反映。一次確認の観測時点は23:13:50 JST。殿「読み込み覚醒してアップデート。家老が忍者を配備しやすい形式にしてよい」に基づく設計更新。
 正本は本書。既存gist IDを維持。旧v3.0の全数値・分類・レビュー履歴は `docs/research/ninja-block-fail-root-cause-v3-evidence-20260905.md` に保存した。過去の観測日時は変更しない。
 
-## 進捗ビジュアル(将軍 loop 更新 2026-09-06 18:10)
+## 進捗ビジュアル(将軍 loop 更新 2026-09-06 18:25。観測時刻を揃えた現在欄。1 行=一意案件 ID、履歴は同行の「経緯」欄に時点付きで残す)
 
-**全項目(W/F/P/C/E)** `█████░░░░░ 7/14` ✅完了 🟡走行中 ⏳待ち 🔴要判断
-状態集計: ✅ 7 / 🟡 3 / ⏳ 0 / 🔴 3(表の 14 行、18:10。W6 続=✅、F-15 続=🟡、F-13 golden=✅、恒久契約=🔴、F-18 候補=🔴 未起票)
-次の一手: F-15 保全統合案(疾風、報告契約不足で failed→再提出中)→root drain 実行→P-4 CLEAR。DM CI は golden 全帰属(飛猿 18:01 CLEAR)で GREEN 化済み。本日の failed 2 件(疾風 finding 欄欠落/影丸 commit_hash 形式+binary_checks 空)は**報告契約の型不足**=F-18 候補(deploy 時に report テンプレへ必須欄を空でなく placeholder 付きで注入)
+**一意案件 14 件** `███████░░░ 10/14` ✅完了 🟡走行中 ⏳待ち 🔴要判断
+状態集計: ✅ 10 / 🟡 2 / ⏳ 0 / 🔴 2(表の物理行 14=一意 ID 14。「続」行は廃止し経緯欄へ統合。家老 R12-1)
+次の一手: F-15(疾風 保全統合案。18:01 failed は finding 欄欠落**と**target 保全統合案未達の両方=家老 18:06 RC)→root drain 実行→root runtime へ F-14 反映。F-18 は観測案件として採番のみ(新根因・新契約と確定しない、W0/W1 との対応を先に置く)
 
-| 群 | 状態 | 現在値 |
-|---|---|---|
-| W0/W1 契約/W1 core/W4/W5 | ✅ | 一意根拠表・routine_refs 注入・canonical 記録・バグ#6 は全て CLEAR |
-| W2/T1・W3/T2・W6 | 🟡 | W2 疾風 done→CLEAR 待ち(await_clear 14:29〜、その後 K3 へ再配備で解放済み)。**W6 解放遅延の実測(殿 15:35)**: P-4 提出後 CLEAR まで約 193 分、F-14 約 117 分、半蔵 完了後未配備 約 122 分、**小太郎 契約 task done 16:06→GATE CLEAR 17:32 約 86 分(将軍ナッジ 17:27 後 5 分で解消。ナッジ無しでは放置=loop ナッジの効果 1 例)**、17:55 時点 idle 30 分超=半蔵 45 分/才蔵 34 分→ナッジ、影丸/才蔵 failed 残置 約 190/150 分(家老 karo-parallel-utilization_20260906.md と一致)→将軍 loop に解放遅延/idle/failed のナッジ 3 判定(殿 15:36『自動化でなく監視とナッジ』) |
-| F-6〜F-12 | ✅ | gate 偽 BLOCK/recon-dual 契約/K2 偽 CLEAR/insight 自動消火/hotfix 契約回帰 2 件=全て根治・CI 層 B 0 |
-| F-13 deploy_task 系 CI RED(deploy 8+FP 1) | ✅ deploy 8 解消。FP flaky は再発計数 2/日(05:55 run 34015169693 で再発、次 run 05:48 は success) | deploy 8 は P-4 CLEAR 後に再走行で判定。FP 1 は診断 run 34005978406 で PASS=flaky 確定、才蔵 ci_fix は正式 FAIL_CLOSE(11:30) |
-| P-4 recon_dual 投影・fixed base | 🟡 WAIT(F-15 root 同期待ち、13:18 も external_wait) | 本体 3d2b6c4d9 収載済み。cb3d9af23 は origin と 4/4 一致、残=lifecycle 1 行 606f8efe4。F-14 gate は origin c4b0989d3 へ収載済みだが共有 root への同期が not_descendant で skip(root 171 behind/23 ahead、safe_ff mismatch 18)=root の gate が旧版のまま→11:53 も external_wait。将軍 12:01 家老へ順序付き 1 通(mismatch 18 の二分→収束→P-4 再 GATE→deploy 8 再判定) |
-| F-15 root drain(F-14 の runtime 未反映) | 🟡 才蔵へ委譲(15:40 root 差分 20 path 分類、家老の手作業を忍者へ。16:11 root 239 behind/25 ahead、mismatch 20) | 13:20 順序付き 1 通 #2。cmd_4483 は DM 側 publish を分離して CLEAR 13:31(壁=merge commit 入口不在→将軍 D0 publisher_c2a_merge.sh C2A_REPO_ROOT 200fb1dba)。家老監査 12:07: origin 上位 10 path/履歴 metadata 合流 8 path、insights は root resolved↔origin pending 96 件=F-9 同型ゆえ一括採用せず。gate 隔離実行の代替は補助 script 旧版で不可 |
-| F-15(続) 18:10 | 🟡 疾風 保全統合案 | 才蔵 root_drain_recon は preflight 字段名不一致で FAIL_CLOSE(17:35 正式)。後続=疾風 cmd_karo_recon2_root_drain_plan(17:34 配備)→18:01 failed(報告 finding 欄欠落=契約不足、作業は継続)→18:07 再走行。mismatch 22→23(root 側に新 commit)。共有 root への適用は 0 のまま |
-| F-13 DM CI RED(golden) | ✅ 18:01 CLEAR | 飛猿 golden 全帰属再生成(rb6 5,535+決定性 26,175=31,710、dup 0)→DM main 36420100→CI success(ca5dbbc5)。context/dm-signal-core.md GA-590 |
-| W6(続) 解放遅延 | ✅ 実測 4 例目 | 小太郎 done 16:06→CLEAR 17:32=86 分、将軍ナッジ 17:27 の 5 分後に解消。18:10 時点 idle 30 分超 0(半蔵→4485 AC3 準備、才蔵→K3 採否、飛猿 18:01 解放) |
-| C1/C2 insight 実害 | ✅ | CLEAR。pending 38→22 |
-| C3 publisher-deploy-ledger | 🔴 FAIL_CLOSE | coverage 0.95 未達・未命名 span 欠落。残件 2 file |
-| E-1 Codex 上限 | ✅ 解除 09:14 | 停止 07:5x〜09:14 |
-| F-17 cmd_save check_ac_file_paths の偽 WARN 累計昇格 | ✅ 将軍 D0 15:5x | 原因 2 つ: ①PATHS 正規表現の lookbehind が日本語句読点「、（」直後の絶対パスの先頭「/」を落とし「mnt/c/...」の偽相対パスを抽出 ②planned_paths の awk が同 indent の list 項目で即 exit し常に空。cmd_4486 で 10 回昇格(対象 path 非表示)。修正後 preflight WARN 0。参照 bats 16 file: 15 file 全 PASS(check 系 27、cmd_complete_gate 339、inbox_write 138 ほか)、test_cmd_skeleton の『246 回 parity』1 件は HEAD worktree(将軍の未 commit 変更を含まない)で cmd_save --preflight が 60 秒 timeout=負荷由来で変更と無関係(家老の test 速度/メモリ協議 blt_160733 と同根) |
-| 恒久契約『変更 script を参照する既存 bats 全列挙』 | 🔴 未導入 | F-11/12/13 3 連発の真因。家老 lane。**F-16: 将軍自身も 13:28 の publisher_c2a_merge D0 で参照 bats を走らせず CI shard1 not ok 13 を出した(13:5x D0 で修正、3 file 65 PASS)=契約は将軍 D0 にも適用** |
+| ID | 状態(18:25) | 現在値 | 経緯(時点付き) |
+|---|---|---|---|
+| W0/W1 契約・W1 core・W4・W5 | ✅ | 一意根拠表・routine_refs 注入・canonical 記録・バグ#6 CLEAR | 09-05〜06 午前 |
+| W2/T1・W3/T2 | ✅ | W2 疾風 CLEAR、K3 へ再配備で解放 | await_clear 14:29→解放 15:41 |
+| W6 解放遅延(monitor の honest FAIL 通知適用確認) | 🟡 観測継続 | 実測 4 例: P-4 約 193 分 / F-14 約 117 分 / 半蔵 未配備 約 122 分 / 小太郎 done 16:06→CLEAR 17:32=86 分。**ナッジ 17:27 の後 5 分で CLEAR を観測**(ナッジが短縮したという因果は未測定、家老 R12) | 殿 15:35 指摘→loop ナッジ 3 判定 15:50〜 |
+| F-6〜F-12 | ✅ | gate 偽 BLOCK/recon-dual 契約/K2 偽 CLEAR/insight 自動消火/hotfix 契約回帰 2 件=根治、CI 層 B 0 | 09-06 午前 |
+| F-13 CI RED(shogun deploy_task 系 8+FP flaky 1 / DM golden 1) | ✅ | shogun: deploy 8 解消、FP flaky は再発計数 2/日(才蔵 ci_fix は FAIL_CLOSE 11:30)。DM: golden 全帰属再生成(飛猿、rb6 5,535+決定性 26,175=31,710、dup 0、243,293 行 exact)→DM main 36420100→**run 34023047561 success(ca5dbbc5、09:01Z 取得)**。CLEAR と CI GREEN は別証跡(家老 R12-5) | DM RED 07:xx〜18:01 CLEAR |
+| P-4 recon_dual 投影・fixed base | ✅ CLEAR 13:40 | 本体 3d2b6c4d9 収載。F-14 gate は origin c4b0989d3 収載済み。**root runtime 未反映は F-15 の軸**(source 公開/CLEAR と runtime 適用を分ける、家老 R12-2) | WAIT 13:18(external_wait)→CLEAR 13:40 |
+| F-15 root drain(F-14 の runtime 未反映、共有 root mismatch) | 🟡 疾風 | mismatch 23(18:10 dry-run)。共有 root 適用 0。疾風 cmd_karo_recon2_root_drain_plan: 18:01 failed=**実体未達(dirty 複製のみで target 保全統合案なし)+報告 finding 欄欠落**の両方、18:07 再走行→18:16 再 failed(家老 RC 継続)。18:20 家老確認: 疾風の 2 文書実統合 patch 5,173 byte は実在、残 path 未統合。K3 採否は runtime no/root no(18:20)=同じ壁 | 家老手動 18 path 12:01→才蔵 root_drain_recon 15:40(artifact 完成、preflight 字段名不一致で FAIL→FAIL_CLOSE 17:35)→疾風 17:34 |
+| F-16 将軍 D0 の参照 bats 未走行 | ✅ | publisher_c2a_merge D0 が test_safe_shared_main_ff 契約を破り CI shard1 not ok 13→13:5x 修正、3 file 65 PASS | 13:28 発生 |
+| F-17 cmd_save check_ac_file_paths 偽 WARN 累計昇格 | ✅ 将軍 D0 | PATHS lookbehind(日本語句読点直後の絶対パス)+planned_paths awk 即 exit の 2 バグ、547deff1b、参照 bats 15/16 PASS | 15:5x |
+| F-18(観測案件) failed 2 件の報告契約不備 | 🔴 採番のみ・根因未確定 | 18:01 疾風=finding 欄(observation_target/result/evidence_path)欠落、18:04 影丸=commit_hash 非 40-hex+binary_checks result 空。**両者とも AC 実体未達が併存**(影丸: 全期間 price/calendar・API JSON 未達)。既存 W0 原因分類/W1 報告契約/report_field_set・テンプレ placeholder の有無を調べてから対応を決める(再実装しない、家老 R12-4) | 18:01/18:04 |
+| C1/C2 insight 実害 | ✅ | CLEAR、pending 38→22 | 午前 |
+| C3 publisher-deploy-ledger | 🔴 FAIL_CLOSE(旧 cmd) | coverage 0.95 未達・未命名 span 欠落、残 2 file。後続 cmd 未起票(旧 cmd の失敗と後続を区別) | 旧 cmd FAIL_CLOSE |
+| E-1 Codex 上限 | ✅ | 解除 09:14 | 停止 07:5x〜09:14 |
+| 恒久契約『変更 script を参照する既存 bats 全列挙』 | ✅ 導入済み 17:32 | 小太郎 cmd_karo_hotfix_reference_test_contract CLEAR 17:32(5 file 567 test 分割証跡、main f0ae04578)。F-16 で将軍 D0 にも適用 | 未導入 13:5x→CLEAR 17:32 |
 
-CI: shogun `🟡`(deploy 8 解消、残 1=将軍 D0 由来 F-16→修正 publish 済み・次 run で判定) / DM-Signal `🔴 RED 1`(golden cmd_3854、飛猿 idle=再配備待ち)
+
+CI(取得 18:19 JST): shogun run 34024048028(6ea0c115f)in_progress、直前 34023932054 cancelled(6d936fd47、連続 push による自動 cancel) / DM-Signal run 34023047561 success(ca5dbbc5)。
+
+§0 の結論表は 09-05 版の AsIs(新契約未着手)を保存した履歴であり、現況は本節を正とする。
 
 ## §0 家老が最初に見る結論
 
@@ -222,9 +225,9 @@ flowchart LR
 | E-1 解除 | Codex 上限 09:14 解除(殿 09:14)。家老 inbox 7 件を将軍の再開順序 1 通で消化開始、便再開 09:17 | 完了 | 停止 07:5x〜09:14 の約 80 分 |
 | F-14 | cmd_complete_gate の report_commit_main_ancestry が sha 祖先のみを見て content-equivalent(publisher の squash/再構成で sha・patch-id が変わるが tree は一致)を認めず、P-4/K2/C1 が WAIT を反復(P-4 は 10:00 以降 5 回) | 検出 10:22(家老訂正 blt_102217)。疾風 hotfix: 参照 bats 36 file 1392 PASS、軍師 LGTM、家老 ACCEPT、origin c4b0989d3 収載(11:4x)。**残壁=共有 root への同期**(root_sync_skipped not_descendant、root gate 旧版)→F-15 として root drain へ帰属 | 分類 D(偽 WAIT)。将軍の誤前提『git cherry + = 未収載』も同時に訂正。教訓=hotfix が origin に載っても runtime(root)に載るまで効かない |
 | F-15 | 共有 root が origin へ収束できず(171 behind/23 ahead、safe_shared_main_ff mismatch 18=root 側 HEAD の台帳/doc effect が origin blob と不一致)、origin 収載済み hotfix(F-14)が root runtime に載らない。P-4 WAIT 継続、deploy 8 件 CI 再判定も待ち | 12:00 将軍一次確認(root gate に content_equivalent 0 件)。家老へ順序付き 1 通 12:01 | 分類 C(合流待ち)。才蔵 FP vocabulary は診断 run 34005978406 で PASS=flaky 確定、正式 FAIL_CLOSE(11:30) |
-| F-15 続 | 才蔵 root_drain_recon(15:40)は artifact 完成も preflight 字段名不一致で FAIL→17:35 FAIL_CLOSE。疾風 cmd_karo_recon2_root_drain_plan(17:34)が保全統合案を継続、18:01 failed=報告 finding 欄(observation_target/result/evidence_path)欠落→再提出中。mismatch 23。共有 root 適用 0 | 🟡 | task yaml hayate.yaml、blt_173515 |
+| F-15 続 | 才蔵 root_drain_recon(15:40)は artifact 完成も preflight 字段名不一致で FAIL→17:35 FAIL_CLOSE。疾風 cmd_karo_recon2_root_drain_plan(17:34)が保全統合案を継続、18:01 failed=実体未達(dirty 複製のみ、target 保全統合案なし、家老 18:06 RC)+報告 finding 欄欠落→18:07 再走行→18:16 再 failed。mismatch 23。共有 root 適用 0 | 🟡 | task yaml hayate.yaml、blt_173515 |
 | F-13 golden | DM-Signal CI RED(cmd_3854 golden regression)を飛猿が全帰属再生成で解消: rb6 5,535+決定性 26,175=31,710、dup 0、243,293 行 exact。DM main 36420100、CI success ca5dbbc5。context/dm-signal-core.md GA-590 | ✅ 18:01 | blt_180258、gh run |
-| F-18 候補 | 本日の failed 2 件(疾風 finding 欄欠落、影丸 commit_hash 非 40-hex+binary_checks result 空)は作業失敗ではなく**報告 YAML の契約不足**。deploy 時の report テンプレが必須欄を空で置くため、忍者が埋め忘れると report gate で failed 扱い→解放遅延の新型。対策候補: テンプレ必須欄に placeholder(`<必須: yes/no>`)と gate 前の self-check 行を注入 | 🔴 未起票(家老 lane) | task yaml kagemaru.yaml last_block_reason、hayate.yaml block_reason |
+| F-18(観測案件) | 本日の failed 2 件(疾風 finding 欄欠落、影丸 commit_hash 非 40-hex+binary_checks result 空)は**報告 YAML の形式不備と AC 実体未達が併存**(家老 R12-3)。形式不備だけを直しても実体未達は残る。新根因・新契約とは確定せず、既存 W0 原因分類/W1 報告契約/report_field_set/テンプレ placeholder の有無と再現証拠を先に置く | 🔴 採番のみ | task yaml kagemaru.yaml last_block_reason、hayate.yaml block_reason |
 | P-1→W5 | バグ#6 | 調査完了・既修復 | `7671bdb99`、隔離success/tamper fail-close、追加fix不要 |
 | P-2→W5 | ci_push_state | 調査完了・10/10終端接続 | WAIT10=6+3+1。9行CLEAR、1行はpurpose不一致の正式BLOCK+archive。修復対象0 |
 | P-3→W6 | honest FAIL停滞 | 未着手、既存監視あり(cmd_4479 は軍師再 review→approved_honest_fail が 15 分で回った=停滞なし 00:3x) | 既存caller/条件/fixtureを確認して変更要否を決める |

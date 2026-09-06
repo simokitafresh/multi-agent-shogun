@@ -1,5 +1,5 @@
 <!-- gist-master: 2f1a3daa07c336c90958b1287245318b dm-signal-production-inconsistency-asis-tobe_20260906.md -->
-# DM-Signal 本番不整合 I1〜I9 — 現況・配備カード・データフロー・カタログ・因果・改善影響・ledger 判断 統合設計書 v1.6(2026-09-06 18:10)
+# DM-Signal 本番不整合 I1〜I9 — 現況・配備カード・データフロー・カタログ・因果・改善影響・ledger 判断 統合設計書 v1.7(2026-09-06 18:25)
 
 - 発端: 殿 2026-09-06 14:11『dm-signal-research-data-backlog_20260905.md を参考に DM-signal の本番の不整合について深く調査しよう。家老と繰り返しレビュー交換をせよ。本番の不整合、それによる影響、改善時にどのような変化が本番に起きるか、改善の影響範囲・依存関係なども明確にせよ』。以後の殿指示: 14:44 データフロー、14:45 ユーザー可視/内部/デッドコード、14:47 設計の因果、14:59 ledger 協議、15:06 時系列、15:15 可視変化の定量化、15:33 3 設計書並列、15:56 配備・進捗運用版(家老)、16:33 単一スタイルへ再構築。
 - 読む順: §2(現況)→§3(配備カード)→§5(カタログ)→§9(改善影響)→§10(ledger)。図は §4、根拠は §5〜§7、順序と契約は §8、裁定は §11、往復は §12、版は §13。
@@ -41,6 +41,7 @@
 | P01〜P03 / cmd_4484 / 影丸 | 世代2解析受入。source `aa96ac78133919876e86733106209943b9469cc9`、公開main `22668f54000829ed37712bf4e9f9d7c68bfc3ffe`へ包含確認 | 軍師LGTM・家老ACCEPT。v2 receipt/原出力hash検証済み | 16:36 GATE CLEAR、16:37 archive.doneとtask idleを実確認 | source未公開WAITは解消。証跡=`queue/gates/cmd_4484/completion_tail.log`・`archive.done`・`queue/tasks/kagemaru.yaml`。次=P05以降の入力確認。調査完了であり本番不整合修正済みとは数えない |
 | P04 / cmd_4486 / 半蔵 | 最終`2ece0652387fce4639c6ac4fd754bc7be0fdb925`をmain `694ab6210851126db9462ab2b40cacdb53be15a0`へ公開。84候補(79/3/2)、個別登録対応の除外149、原出力rc5/hash一致。初回172→88→76の過剰除外是正→84 | 軍師LGTM・家老ACCEPT。登録関数単位へ限定、未登録helper保持、60日境界と新版原出力を確認 | 17:11 GATE CLEAR確認、17:12 archive.done/active_reports0/半蔵idleを確認 | 監査artifact8file、DB/本番/application変更0。証跡=`queue/gates/cmd_4486/completion_tail.log`。P06/P07へ監査結果を入力可。静的候補の受入であり撤去承認ではない |
 | P05/P06 / cmd_4485 / 影丸（半蔵がAC3比較準備） | 18:04未達報告。復元39.026402秒、候補2経路の部分実験、B ledger258行/2回目追加0。source `82a70df1610b035557cc08f25c7407d195cb2b27` | 18:06家老RC。全期間価格/暦入力とAPI JSON軸が未達。前flight価格取得215行を全期間入力と混同しない | CLEARなし | 不足表/列/期間/ticker集合manifestを影丸が作成、追加readonly取得可否を将軍へ裁定依頼済み。既存保存データ優先、許可前の追加本番取得0。半蔵の比較計画を合流 |
+| (18:07 追記) P05 追加取得 / 将軍 | 将軍裁定 18:07: 全期間入力の追加 readonly 1 回を許可(条件は §2.3.1)。家老 18:08 影丸へ伝達、同 task 継続 | — | — | 影丸: 不足 manifest→取得→AC2/AC3 全期間再走 |
 | P07〜P10 / 未配備 | 下表の準備・依存条件で区分 | 未実行 | 未実行 | 家老が入力・許可範囲の揃ったカードだけ配備 |
 
 ### §2.2 cmd_4484 世代 2 の新観測(旧観測を消さず併記)
@@ -61,7 +62,7 @@ cmd_4484 世代2の**報告値**。オフライン検証出力は確認済みだ
 ### §2.3 不整合 I 別の状態(将軍 loop 更新 2026-09-06 18:10。§2.1/§2.2 と同じ観測を I 単位で並べ直したもの)
 
 **全項目(I1〜I9)** `█░░░░░░░░░ 1/9` ✅完了 🟡走行中 ⏳待ち 🔴要判断
-状態集計: ✅ 1 / 🟡 5 / ⏳ 2 / 🔴 1(I 9 行+続報 2 行、18:10)
+状態集計: ✅ 1 / 🟡 5 / ⏳ 2 / 🔴 1(I1〜I9 の 9 行、分母 9。続報は下の時点付き表、家老 R12-3)
 次の一手: cmd_4485(影丸 AC1 前 flight 済み: 復元 39.0 秒、隔離 B 系で Σ=0.75/0.833 の非 unit を再現、ledger backfill B 258 行・2 回目 0=冪等。全期間 price/calendar 未取得で AC2/AC3 は部分集合→将軍裁定 18:07 で追加 readonly 1 回を許可、manifest 先行)→全期間再走→§9.1.2 ①を数値付きに→殿裁定(I6、保護要件の有無)。半蔵は AC3 の SQL/API 差分計画を並行準備(17:59)
 
 | # | 不整合 | 状態 | 現在値 |
@@ -72,11 +73,17 @@ cmd_4484 世代2の**報告値**。オフライン検証出力は確認済みだ
 | I4 | signal_detail_history 0 行 / signal_decision_ledger 0 行 | 🔴 殿裁定 | 前者=writer 実装あり・caller 0(廃止は契約確認後)、後者=PITR 後の再バックフィル未実施・API は today 固定(復活/廃止) |
 | I5 | 月初 signals.holding_signal ≠ monthly_returns.holding_signal | ✅ 保存された比較対象 11,922 で差 0(R9 限定) | 将軍再集計(16:5x)+家老 R9 再現: holding 差 0、raw・holding 差 477 は 477/477 で 2 表の holding が一致。ただし recon.py の月初営業日=保存月内最初の行(独立暦なし)ゆえ、未観測月初・有効日条件は unknown。『改善対象なし』とは断定しない。§9.1.4 |
 | I6 | display_ticker_weights 非 unit 35 行・parity 不一致 29/2,096 | 🟡 | 世代 2 報告値: display/pending_display 各 242,659 key で**非 unit 0**、静的 consumer 12。08-06 の 35 行は別時点(その後の full recalc で消えた可能性)。恒久解消と解釈せず、cmd_4485 で候補経路(選択外/欠損 child)の再現条件を確認 |
-| I6(続) 18:10 | cmd_4485 AC1 前 flight | 隔離 B 系で候補経路を作ると Σ=0.75 / 0.833 の非 unit weight が**再現**(部分集合、全期間は追加 readonly 後)。旧 35 行の本番再現ではなく『経路を作れば出る』の証明=U2 の半分 |
-| I4(続) 18:10 | cmd_4485 AC1 前 flight | backfill plan を B 系へ投入=258 行、2 回目投入 0 行(冪等 yes)。5 種別差分は全期間入力後(U1) |
 | I7 | component holding_signal 欠落で展開不能 | ⏳ | 実測 0(cmd_4479/4483)。監視化のみ |
 | I8 | 新四つ目 3 体 parity 不一致(102+2) | 🟡 | 世代 2 報告値: B=全 FoF 77、signal 無し・return 有り 0。旧 2 件の 2014-04 は現在 signal/return あり(cmd_4480 時点との差=再計算で埋まった候補)。valid_start_date 欠落 77/77 は unknown |
 | I9 | 本番 tree と文書の乖離(ledger/signal_flush は 08-04 版) | 🟡 backlog B2 訂正済み(v1.6)。PI-P06 は規範保持+現在適用状態を別記 | rollback 233c2303 後、ledger file は 21e80e30 と同値・T7.5 未適用。backend 全体の 08-04 版断定はしない(38 files 再変更あり) |
+
+#### §2.3.1 時点付き続報(集計対象外。cmd_4485 前 flight、影丸 18:04 報告、家老 18:06 RC、将軍裁定 18:07)
+
+| 対象 | 時点 | 観測 | 限定(家老 R12-1/2) |
+|---|---|---|---|
+| I6 | 18:04 | 隔離 B 系で候補経路を**意図的に入力変形**して作ると Σ=0.75 / 0.833 の非 unit weight が発生 | 『候補経路が生きていれば発生し得る』の実証。本番自然発生・08-06 旧 35 行の再現とは別。全期間の再現条件確定ではない(部分集合) |
+| I4 | 18:04 | backfill plan を B 系へ投入=258 行、同一 plan の 2 回目投入で追加 0 行 | 同一部分集合・同一 plan での追加行 0 の観測に限定。全 ledger 対象・値不変・訂正 event・他期間の冪等性は未承認。対象 DB/plan hash/対象 PF-月は AC3 再走で添える |
+| 追加 readonly | 18:07 | 将軍裁定: 全期間 price/calendar 等の追加 readonly 取得を 1 回許可 | 条件: 不足 manifest 先行、既存 5 表と 215 行 prices は再取得禁止、nonce 付き readonly_query のみ、本番書込 0。§2.1 の『裁定依頼済み(18:06)』はこの裁定で解消、AC1『1 回だけ』は前 flight 用+全期間用の 2 回へ改訂 |
 
 ## §3 配備カード P01〜P10(本表+参照§ が一組)
 
@@ -387,7 +394,7 @@ I7: 監視 1 行(独立)
 | I4 復活(A) | **あり得る。件数は unknown(面ごと)**: 世代 2 で 2 表の holding_signal **ラベル**は 11,922/11,922 一致(§9.1.4)だが、それは現在のラベル一致だけ。ledger 投入で動き得る量は ①ラベル(backfill 投入値≠現在値の PF-月) ②decision_ticker_weights による weights/return ③境界日 ④MonthlyTrade 置換(backend L654-705/L768-804)⑤将来再計算 の 5 種それぞれ unknown(U1)。比較母集団=A 75 PF の 11,922 PF-月(直近完了 12 ヶ月 900)であり、ledger 全対象・他 PF・累積波及を含む**上限ではない**(dry-run plan の対象 manifest で確定)。面=/api/history・LP・X・Monthly Trade | ledger 行(0→N)、cache 無効化、ledger ALERT、signal_flush reconcile L409-449 が実効化 | なし(逆に休眠 guard が生きる) | ledger 行=append-only で残る。reconcile は 08-04 版 signal_flush(★I9)が日次 cron で走る。T7.5 の再適用は**別の変更案**であり承認済み前提ではない | 未確定(訂正 event は上書きでなく追記) | P06+保護要件の殿裁定(§11)。I9 は照合のみ、T7.5 は別案 |
 | I4 廃止(B)/休眠(C) | C: 0。B: 顧客画面 0 だが **API 契約が変わる**(ledger API 応答消滅=API 直叩き利用者には可視)。detail_history と ledger の廃止は一括しない | B: コード 15 file・表 2 本・API 1 本、C: 変更 0 | B: ledger 依存の runtime 分岐 15 file、detail_history writer(L264/L388)、`insert_initial_ledger_events`。C: なし | code=残る | B: revert(表は段階 ①無効化②保持③DROP) | P06→§10 の 3 案→殿裁定 |
 | I5(保存された比較対象で差 0) | **0(比較対象 11,922 に限る)**。477 行の「raw・holding 差」は raw_signal ≠ holding_signal であり、2 表の holding_signal は 477/477 一致=表間の不整合ではない(§9.1.4)。ただし recon.py の月初営業日は保存月内最初の行(独立暦なし、R9)ゆえ未観測月初・有効日条件は unknown(U8) | 六分類の定義を「表間差」と「raw/holding 差」で分ける(P02 成果物の見出し訂正) | なし | — | — | P02 完(将軍再集計)。§5 I5 (a) の事象定義を v1.2 で訂正 |
-| I6 再正規化 | **本番現在値 0**: display/pending_display 各 242,659 key で非 unit 0。旧 35 行(08-06)は本番では再現せず(その後の full recalc で消えた候補)。**隔離 B 系では候補経路を作ると Σ=0.75/0.833 が再現**(cmd_4485 前 flight 18:0x、部分集合)=『経路が生きていれば発生し得る』。**発生時の影響スコア**(上限件数ではない)=該当 PF-月 × 面 3(/api/signals の weight、/api/monthly-trade の weight、/api/history と LP・X の monthly_return/cumulative が同関数 price_ratio_impl で動く)。再現条件 2 候補(選択外 weight の非再正規化 / 欠損 child skip、b_i6_rows)は unknown | signals.momentum_data 再生成、full recalc 1 回 | なし | 該当 key が L2/L3 で再計算された時に再生成(全期間が戻るのではない) | revert+full recalc | P05(旧 35 行が再現しなければ**本番修正へ進まない**) |
+| I6 再正規化 | **本番現在値 0**(隔離実証は §2.3.1): display/pending_display 各 242,659 key で非 unit 0。旧 35 行(08-06)は本番では再現せず(その後の full recalc で消えた候補)。**隔離 B 系で候補経路を意図的に作ると Σ=0.75/0.833 が発生**(cmd_4485 前 flight 18:04、入力変形、部分集合)=『経路が生きていれば発生し得る』の実証であり本番再現ではない。**発生時の影響スコア**(上限件数ではない)=該当 PF-月 × 面 3(/api/signals の weight、/api/monthly-trade の weight、/api/history と LP・X の monthly_return/cumulative が同関数 price_ratio_impl で動く)。再現条件 2 候補(選択外 weight の非再正規化 / 欠損 child skip、b_i6_rows)は unknown | signals.momentum_data 再生成、full recalc 1 回 | なし | 該当 key が L2/L3 で再計算された時に再生成(全期間が戻るのではない) | revert+full recalc | P05(旧 35 行が再現しなければ**本番修正へ進まない**) |
 | I7 監視 | **0**(実測 0、cmd_4479/4483) | ALERT +1 | なし | code=残る | revert | P08 |
 | I8 初月修正 | **現在値 0**: 全 FoF 77 × 3 定義で signal 無し・return 有り 0。旧 2 件(2014-04)は現在 signal/return あり。valid_start_date 欠落 77/77 は snapshot config から取得不能=unknown | recalculate_fof の初月処理(変更不要の可能性) | なし | — | — | P03 完。P05 で valid_start_date 定義の取得元を確定してから閉じる |
 | I9 文書訂正 | **0** | 文書(backlog B2・PI-P06・ops)。ただし I4 復活を選ぶなら**T7.5 を本番へ再適用するか**が実装項目になる(可視影響は I4 行に含める) | なし | — | — | P09。I4 A を選ぶ場合のみ P10 の前提 |
@@ -431,7 +438,7 @@ I7: 監視 1 行(独立)
 | # | 未確定 | 誰が埋めるか |
 |---|---|---|
 | U1 | I4 backfill script(dry-run plan)投入で動く量を 5 種別に: ①ラベル ②decision_ticker_weights の weights/return ③境界日 ④MonthlyTrade 置換 ⑤API 応答 | cmd_4485 A/B(P06 の入力) |
-| U2 | I6 非 unit 行の再現条件(選択外 weight / 欠損 child)と発生時の return 差 | cmd_4485(P05)。前 flight で再現条件は確認(Σ=0.75/0.833)、return 差は全期間入力後 |
+| U2 | I6 非 unit 行の再現条件(選択外 weight / 欠損 child)と発生時の return 差 | cmd_4485(P05)。前 flight で『候補経路の発生可能性』を実証(意図的入力変形、Σ=0.75/0.833)。本番での自然発生条件と return 差は全期間入力後も unknown のまま数える |
 | U3 | I2 unknown 33,697 行の run/job/cache 世代識別(識別子が無い) | P02 追補(snapshot に無い列=本番 log か次世代 snapshot が要る) |
 | U4 | I1 の 8 列を WeightBreakdown が表示しているか(列ごと) | P07 静的 grep |
 | U5 | I8 valid_start_date の取得元(snapshot config に無い) | P03/P05 |
@@ -504,7 +511,7 @@ I7: 監視 1 行(独立)
 - **今: C(休眠維持)。方向: B(段階的廃止)を本命として調査で確定する。A は 08-16/08-17 の殿原則と衝突するため、新たな保護要件が示されない限り推奨しない。**
 - 調査(全て readonly/隔離、本番書込 0):
   1. cmd_4484 A の I5 分類(CLEAR 16:37。保存比較対象で 2 表 holding 差 0、R9/R10 限定付き。§9.1.4)。
-  2. 隔離 DB で A/B 比較(cmd_4485 走行中、前 flight: B 258 行・冪等 yes): ledger 空 vs backfill script の dry-run plan を投入した場合の、保有・weights・境界日・return・Monthly Trade 応答・DRIFT 件数・実行時間・冪等性・復元可否の差分(家老提案)。
+  2. 隔離 DB で A/B 比較(cmd_4485 走行中、前 flight: 同一部分集合・同一 plan で B 258 行・2 回目追加 0。全対象の冪等性は未承認): ledger 空 vs backfill script の dry-run plan を投入した場合の、保有・weights・境界日・return・Monthly Trade 応答・DRIFT 件数・実行時間・冪等性・復元可否の差分(家老提案)。
   3. 廃止の段階設計: ①コード無効化(feature flag or 依存の no-op 化)→②表保持→③DROP の各段の可逆性と、決定出典/訂正情報の代替(F1 月次 CSV or 入出力 snapshot)の設計。
   4. backend monthly_trade_impl L654-705/L768-804 の置換分岐を含む依存 15 file の役割別 manifest。
 - 判断規則(修正): 「I5 が小さいから保護不要」とは言わない。**保護要件(誰が・何を・どの期間・何から守るか)を先に定義**し、それを ledger で満たす必要があるか、08-23 の『新規月のみ』原則+snapshot で満たせるかで A/B を決める。
@@ -531,6 +538,7 @@ I7: 監視 1 行(独立)
 | R10 | 17:0x | 家老 R9 REQUEST_CHANGES(review-r9_20260906.md): I5 差 0 と 477 概念差は採用、限定 7 点(月初営業日=保存行/13 ヶ月→完了 12 ヶ月/I2 正当性未判定/I4 A 件数と上限は unknown/I6 12 参照行/持続性は key 単位/提示済み月 unknown)+整合 3 点(T7.5 別案/B の API 可視/§1 旧参照)を全採用 | 反映 | v1.2 |
 | R11 | 17:02 | 家老 R10 APPROVE(P05 入力固定・隔離準備に限定、本番/DDL/ledger 復活/T7.5 は非承認。完了 12 ヶ月を独立再現: I5 900/差 29、I2 15,290/5,531/2,583、consumer 12 行/7 file)。残表現 5 点(I6 スコア/U1 5 種/I2 ペア側未判定/I4 B API 可視/§13 旧参照)を v1.3 で反映 | 反映→P05 入力固定へ | v1.3 |
 | R12 | 18:1x | 殿 18:08『設計書 3 本が 1 時間更新されていない』+18:11『一部だけ直すと整合が崩れる。全体の整合を毎回確認』+18:11『MECE 更新後に家老へ 3 本レビュー』→v1.6 で §2.3/§3 P05・P06/§9.1.2 I6/§9.1.6 U2/§10 調査 1・2 を同じ観測(cmd_4485 前 flight 18:0x、裁定 18:07)へ揃えた | 家老 R12 レビュー依頼(3 本同時) | v1.6 |
+| R13 | 18:25 | 家老 R12 REQUEST_CHANGES(three-designs-review-r12_20260906.md、本書 5 点): 『再現』→意図的入力変形の発生可能性、『冪等 yes』→同一部分集合の追加行 0 に限定、続報 2 行を §2.3.1 時点付き表へ(分母 9 維持)、§2.1 と裁定 18:07 の同期、整合指標を『単語 0』から『対象 ID×状態×時刻の矛盾 0』へ | 全採用 | v1.7 |
 
 ## §13 版の保全と改訂履歴
 
@@ -551,7 +559,8 @@ I7: 監視 1 行(独立)
 - v1.3(2026-09-06 17:0x 将軍、家老 R10 APPROVE): 残表現 5 点反映。P05(cmd_4485)入力固定へ進む。
 - v1.4(2026-09-06 17:1x 将軍): cmd_4486 P04 CLEAR の結果を §7 へ(候補 84=79/3/2、除外 149、撤去検討 63、daily_etl 不在)。
 - v1.5(2026-09-06 17:2x 将軍): cmd_4485 起票・配備(P05/P06)。§3 P04/P05/P06 の状態更新。
-- v1.6(2026-09-06 18:10 将軍、殿 18:08『設計書三つが 1 時間更新されていない』/18:11『全体の整合を毎回確認』): cmd_4485 前 flight 結果(復元 39 秒、I6 再現 Σ=0.75/0.833、ledger 258 行冪等)と将軍裁定 18:07(追加 readonly 1 回)を §2.3/§3/§9.1.2/§9.1.6/§10/§12 の全該当箇所へ同時反映。整合確認: 『走行中』『review 中』『入力待ち』の旧状態語を grep で 0 に。
+- v1.6(2026-09-06 18:10 将軍、殿 18:08『設計書三つが 1 時間更新されていない』/18:11『全体の整合を毎回確認』): cmd_4485 前 flight 結果(復元 39 秒、I6 再現 Σ=0.75/0.833、ledger 258 行冪等)と将軍裁定 18:07(追加 readonly 1 回)を §2.3/§3/§9.1.2/§9.1.6/§10/§12 の全該当箇所へ同時反映。整合確認: 対象 ID×状態×観測時刻で矛盾 0(単語の有無ではない、R12-5)。
+- v1.7(2026-09-06 18:25 将軍、家老 R12 全採用): §2.3.1 時点付き続報表を新設(分母 9 維持)、『再現』『冪等』を限定形へ、§2.1 に裁定 18:07 追記、U2/§10 調査 2 の限定。
 ## 因果リンク
 - ← [[dm-signal-research-data-backlog_20260905]] §B5 I1〜I8 / ← [[dm-signal-research-data-foundation-asis-tobe_20260905]] §2 / ← [[cmd_4480_shin_yotsume_parity]] / ← [[partial-turnover-experiment-asis-tobe-5w1h_20260805]] v1.10-v1.12
 - origin: "[[殿指示_本番不整合深掘り_20260906_1411]] -> [[backlog_B5_I1-I8]] -> [[production-inconsistency-asis-tobe]]"
