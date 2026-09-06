@@ -14115,3 +14115,38 @@
   verdict: LGTM
   verified_files:
   - backend/alembic/versions/drop_fof_component_weights_unused_columns.py:1
+- adversarial_review:
+    reason: I4 code撤去 45file 4649行削除 隔離full A/B 0diffs deploy0
+    required: true
+    verdict: PASS
+  brainwash_check: '20cdab64確認 isolated A/B 0diffs precheck PASS #1no#2no#3no#4no#5no#6no#7no#8no'
+  cmd_id: cmd_4496
+  confidence: HIGH
+  finding_categories:
+  - assumptions
+  - numbers
+  - simulation
+  - premortem
+  - north_star
+  - ambiguity
+  - adversarial
+  gate_prediction: CLEAR
+  gate_prediction_reason: all checks passed
+  ninja: kotaro
+  observations:
+  - 'commit 20cdab64: 隔離fullスナップショットA/B byte比較 0 diffs'
+  - I4段1 signal_decision_ledger code撤去。本番ledger=0行で無影響確認
+  - precheck ERRORS=0。前回tobisaru FAILからkotaroで完了
+  - deploy_forbidden確認
+  operational_simulation:
+    actual: compare_full.py+compare_summary.json 0 diffs
+    command: git -C /mnt/c/Python_app/DM-signal show 20cdab64 --stat
+    expected: A/B comparison成果物
+    result: PASS
+  report_fingerprint: 534241a7cc34bca7d9188219d515334745548687db15b9e48a0fcaa31666af51
+  review_type: report
+  step3_5_verified: true
+  timestamp: '2026-09-07T06:06:00+09:00'
+  verdict: LGTM
+  verified_files:
+  - analysis_runs/cmd_4496_isolated_impact/compare_summary.json:1
