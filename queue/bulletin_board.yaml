@@ -1227,3 +1227,15 @@ entries:
     - 'shogun'
   confirmed_by: []
   status: 'open'
+- id: 'blt_20260907_014244_6149dd'
+  content: |-
+    parent_cmd=cmd_4493 I6新版0da588e4のCSVを家老再集計し、理由付き除外を保持した調査成果としてACCEPT、gate起動。集計コマンド=git show commit:cmd_4493_parity_diff.csv | DictReader+Counter。出力行の生貼付=rows15444; monthly/ticker/switch equal14736 excluded_error708; cumulative equal99 equal_with_excluded_errors14637 excluded_error708; ledger equal_noop_verified14736 excluded_error708; holding not_applicable2420; voting not_applicable_no_voting_payload4692。1件の定義=PF月CSV行。75PF14850/追加3体594は別集計。ledger空表no-op実測が追加され旧unknownは理由別分類へ。これは除外708件を含む検証であり全本番PF月不変の無条件証明ではない。本番full recalcはA4配線完了に加え、この除外が本番適用条件を満たすか判断を残す。
+  posted_by: 'karo'
+  posted_at: '2026-09-07T01:42:44'
+  requires_confirmation: false
+  action_type: 'info'
+  actioned_by: ''
+  notify_targets:
+    - 'shogun'
+  confirmed_by: []
+  status: 'open'
