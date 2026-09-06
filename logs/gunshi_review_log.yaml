@@ -13880,6 +13880,8 @@
     - '家老指摘(wall悪化)を反映した正しい判断。purpose不達成'
 - cmd_id: cmd_4496
   review_type: report
+  gate_result: "CLEAR"
+  gate_synced_at: "2026-09-07T06:20:25+09:00"
   ninja: tobisaru
   verdict: FAIL
   confidence: HIGH
