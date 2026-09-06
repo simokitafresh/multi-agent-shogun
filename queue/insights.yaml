@@ -21250,3 +21250,129 @@ insights:
   source: "semantic_index_update"
   fix_known: false
   status: pending
+- id: INS-20260907-012434398-6f66
+  ts: "2026-09-07T01:24:34+09:00"
+  insight: "[[忍者のfail率が高いな]] semantic_stress_test candidate_aliases: NO_MATCH source=lord query=忍者のfail率が高いな。何か原因があるはずだ。家老と協議して対策をしよう"
+  priority: "low"
+  source: "semantic_stress_test"
+  fix_known: false
+  status: pending
+- id: INS-20260907-012434672-8fcb
+  ts: "2026-09-07T01:24:34+09:00"
+  insight: "[[hanzoinbox1]] semantic_stress_test candidate_aliases: NO_MATCH source=lord query=hanzoinbox1"
+  priority: "low"
+  source: "semantic_stress_test"
+  fix_known: false
+  status: pending
+- id: INS-20260907-012434948-657a
+  ts: "2026-09-07T01:24:34+09:00"
+  insight: "[[計算結果とは保有ポジションのことだ]] semantic_stress_test candidate_aliases: NO_MATCH source=lord query=計算結果とは保有ポジションのことだ"
+  priority: "low"
+  source: "semantic_stress_test"
+  fix_known: false
+  status: pending
+- id: INS-20260907-012435202-41fd
+  ts: "2026-09-07T01:24:35+09:00"
+  insight: "[[ユーザーからの見た目が変わらず]] semantic_stress_test candidate_aliases: NO_MATCH source=lord query=ユーザーからの見た目が変わらず、かつ計算結果も変わらないものはなんだ？"
+  priority: "low"
+  source: "semantic_stress_test"
+  fix_known: false
+  status: pending
+- id: INS-20260907-012435432-29aa
+  ts: "2026-09-07T01:24:35+09:00"
+  insight: "[[CI復旧を待つ合理的な理由はなにか教えて]] semantic_stress_test candidate_aliases: NO_MATCH source=lord query=CI復旧を待つ合理的な理由はなにか教えて"
+  priority: "low"
+  source: "semantic_stress_test"
+  fix_known: false
+  status: pending
+- id: INS-20260907-012435647-c129
+  ts: "2026-09-07T01:24:35+09:00"
+  insight: "[[Layer Holdings MonthlyページのデザインはDM signalに合わせないといけないな]] semantic_stress_test candidate_aliases: NO_MATCH source=lord query=Layer Holdings MonthlyページのデザインはDM-signalに合わせないといけないな。基本構造は同じだが後でやるか？現時点でやるか？UIのデザインの話だ"
+  priority: "low"
+  source: "semantic_stress_test"
+  fix_known: false
+  status: pending
+- id: INS-20260907-012435896-4a34
+  ts: "2026-09-07T01:24:35+09:00"
+  insight: "[[§2 3 不整合 I 別の状態も更新せよ]] semantic_stress_test candidate_aliases: NO_MATCH source=lord query=§2.3 不整合 I 別の状態も更新せよ"
+  priority: "low"
+  source: "semantic_stress_test"
+  fix_known: false
+  status: pending
+- id: INS-20260907-012436143-2d41
+  ts: "2026-09-07T01:24:36+09:00"
+  insight: "[[進捗を表形式で見せてくれ]] semantic_stress_test candidate_aliases: NO_MATCH source=lord query=進捗を表形式で見せてくれ"
+  priority: "low"
+  source: "semantic_stress_test"
+  fix_known: false
+  status: pending
+- id: INS-20260907-012436401-8777
+  ts: "2026-09-07T01:24:36+09:00"
+  insight: "[[すぐに開始しない理由を教えてくれ]] semantic_stress_test candidate_aliases: NO_MATCH source=lord query=すぐに開始しない理由を教えてくれ"
+  priority: "low"
+  source: "semantic_stress_test"
+  fix_known: false
+  status: pending
+- id: INS-20260907-012436759-74e2
+  ts: "2026-09-07T01:24:36+09:00"
+  insight: "[[初期段階ではhideだ]] semantic_stress_test candidate_aliases: NO_MATCH source=lord query=初期段階ではhideだ。L1: Global Page Visibilityで全tier+freeでhideにする"
+  priority: "low"
+  source: "semantic_stress_test"
+  fix_known: false
+  status: pending
+- id: INS-20260907-012437234-20db
+  ts: "2026-09-07T01:24:37+09:00"
+  insight: "[[第 0 弾配線 I7 I3 の deploは許可]] semantic_stress_test candidate_aliases: NO_MATCH source=lord query=第 0 弾配線=I7/I3 の deploは許可"
+  priority: "low"
+  source: "semantic_stress_test"
+  fix_known: false
+  status: pending
+- id: INS-20260907-012437660-c7f8
+  ts: "2026-09-07T01:24:37+09:00"
+  insight: "[[違うハナシをしよう]] semantic_stress_test candidate_aliases: NO_MATCH source=lord query=違うハナシをしよう。今後本番にLayer Holdings Monthlyページを新規で作りたい。まずはasis/tobe 5W1Hの設計書を作ろう。設計書を作ったら家老にレビューして更新してもらえ。それを将軍がレビューしてさらに更新する。そのやり取りを更新するべき点がなくなる…"
+  priority: "low"
+  source: "semantic_stress_test"
+  fix_known: false
+  status: pending
+- id: INS-20260907-012438044-0fa3
+  ts: "2026-09-07T01:24:38+09:00"
+  insight: "[[将軍側はD0で修正しよう]] semantic_stress_test candidate_aliases: NO_MATCH source=lord query=将軍側はD0で修正しよう"
+  priority: "low"
+  source: "semantic_stress_test"
+  fix_known: false
+  status: pending
+- id: INS-20260907-012438352-66f5
+  ts: "2026-09-07T01:24:38+09:00"
+  insight: "[[時間がかかりすぎでは？家老に助けを求めろ]] semantic_stress_test candidate_aliases: NO_MATCH source=lord query=時間がかかりすぎでは？家老に助けを求めろ"
+  priority: "low"
+  source: "semantic_stress_test"
+  fix_known: false
+  status: pending
+- id: INS-20260907-012438714-55bc
+  ts: "2026-09-07T01:24:38+09:00"
+  insight: "[[Layer Holdings Monthly P3 layer holdings ページ nav admin visib]] semantic_stress_test candidate_aliases: NO_MATCH source=cmds query=Layer Holdings Monthly P3: /layer-holdings ページ+nav+admin visibility id+api-client(DM-Signal frontend、隔離 branch、wireframe gist 6ae60a9c と同じ見え方、PF 非依存)"
+  priority: "low"
+  source: "semantic_stress_test"
+  fix_known: false
+  status: pending
+- id: INS-20260907-012438960-48c8
+  ts: "2026-09-07T01:24:38+09:00"
+  insight: "[[殿 22 07 23 19 go]] semantic_stress_test candidate_aliases: NO_MATCH source=cmds query=殿 2026-09-06 22:07/23:19 go。設計書 v0.6 §9.3 の cmd P3。wireframe(docs/dashboard/layer-holdings-monthly.html=gist 6ae60a9c、scripts/layer_holdings_render.py:126-163 の JS)を Next.js ページに移植"
+  priority: "low"
+  source: "semantic_stress_test"
+  fix_known: false
+  status: pending
+- id: INS-20260907-012439228-f07b
+  ts: "2026-09-07T01:24:39+09:00"
+  insight: "[[殿 00 26 go]] semantic_stress_test candidate_aliases: NO_MATCH source=cmds query=殿 2026-09-07 00:26 go。家老回答 00:24: I6 隔離実装は可、ただし本番現在の非 unit 0 から parity 0 を演繹しない。同一入力 snapshot+source SHA+全 PF 全期間を固定し、baseline/修正版を別 cache・同 DB 初期状態で比較し、holding ラベル・ticker と weight"
+  priority: "low"
+  source: "semantic_stress_test"
+  fix_known: false
+  status: pending
+- id: INS-20260907-012439550-b5ae
+  ts: "2026-09-07T01:24:39+09:00"
+  insight: "[[本番不整合 I6 展開関数の絞込み後 Σ 1 再正規化を隔離 branch で実装し]] semantic_stress_test candidate_aliases: NO_MATCH source=cmds query=本番不整合 I6: 展開関数の絞込み後 Σ=1 再正規化を隔離 branch で実装し、同一入力 snapshot で baseline/修正版の全件 parity を証明(本番適用なし)"
+  priority: "low"
+  source: "semantic_stress_test"
+  fix_known: false
+  status: pending
