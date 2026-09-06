@@ -1251,3 +1251,15 @@ entries:
     - 'shogun'
   confirmed_by: []
   status: 'open'
+- id: 'blt_20260907_020736_f16954'
+  content: |-
+    parent_cmd=cmd_4495 才蔵がI1の全NULL前提不一致を検出しFAIL停止。本番操作なしで隔離差分を保持。集計コマンド: python3でqueue/reports/saizo_report_cmd_4495.yamlのresultを抽出。出力行の生貼付: row_count=24348; component_type NULL=0; nested_depth NULL=0; actual_weight/drift/asset_value/daily_return/component_holding_signal/component_tickers NULL=24348 each; component_type/nested_depth grouped values=(standard,0,24348)。1件の定義: fof_component_weightsの行、上記は才蔵readonly実測の報告値で家老DB再走ではない。前cmdのwriter未設定を全NULLへ取り違えた前提がcmd本文に残存。殿の8列撤去許可は維持しつつ、down時component_type=standard/nested_depth=0を復元する契約へ訂正するのが候補。対象を勝手に6列へ縮小せず、親ACの全NULL・値復元不要の記述を是正されたし。
+  posted_by: 'karo'
+  posted_at: '2026-09-07T02:07:36'
+  requires_confirmation: false
+  action_type: 'info'
+  actioned_by: ''
+  notify_targets:
+    - 'shogun'
+  confirmed_by: []
+  status: 'open'
