@@ -17460,3 +17460,17 @@ sqlite3.Connection.backup()を使うとページ(4096byte)単位のread syscall�
 - **when**: 未設定
 - **how**: 未設定
 - gate_hook_quality_contract_reference_test_matches()の実装で、{ grep1; grep2; } | sed | sort -u という関数末尾のパイプラインの後に return 0 を書いても、pipefail下でこのパイプラインがnonzeroを返すと set -e は直後の return 0 を待たずに即abortする(returnは実行されない)。手動repro(bash -euo pipefail)でexit code 2を確認、原因はgrepのno-match(exit 1)がpipefail経由でパイプライン全体のexit statusに伝播したこと。修正は各grepに || true を付与し、パイプライン自体を常にexit 0にすること。『関数の最後にreturn 0を書けば呼出元の失敗から守れる』という思い込みは誤りで、pipefail下ではパイプライン内の各コマンドを個別に無害化する必要がある
+
+
+### L1767: append-onlyログのブロック分割はテキスト正規表現ではなくyaml.safe_load構造比較を既定手法にせよ
+- **日付**: 2026-09-06
+- **出典**: cmd_karo_recon2_f15_integration_stage_20260906
+- **記録者**: kotaro
+- **tags**: [infra,review,recon,gate]
+- **subdomain**: infra
+- **target_files**: [queue/notes/f15_integration_stage_20260906/manifest.md,queue/notes/f15_integration_stage_20260906/block_union_analysis.md,queue/notes/f15_integration_stage_20260906/apply_dry_run.md,queue/notes/f15_integration_stage_20260906/revert_procedure.md,queue/notes/f15_integration_stage_20260906/publish_units.md]
+- **origin**: [[cmd_karo_recon2_f15_integration_stage_20260906]]
+- **enforcement**: 未自動化
+- **when**: 未設定
+- **how**: 未設定
+- chronicle/senkyoku由来の「^- <key>: で始まる行をブロック境界とする」正規表現union手法を8ファイルへ拡張適用した際、7ファイルは正しく機能したがlogs/gunshi_review_log.yamlだけ232ブロック検出(実体はyaml.safe_load基準で398エントリ)という46%の過小カウントを起こした。原因はこのファイルのみ一部エントリが1行目にcmd_id以外のkeyで始まる/コンパクト書式が混在し、正規表現の暗黙の一様フォーマット仮定が崩れたため。対策: 複数エントリ形式が混在しうるYAMLファイルのブロック分割は最初からyaml.safe_load(構造比較用)+yaml.compose(start_mark/end_mark line番号取得、原文バイト保持用)の併用を既定手法にし、正規表現ブロック分割は結果をyaml.safe_loadのトップレベル長(または該当キー配下のlist長)と必ず突合してから信頼する。突合せずに正規表現の出力件数を報告に使うと、無言の過小/過大カウントがそのまま報告書へ混入する。origin: [[cmd_karo_recon2_f15_integration_stage_20260906]] -> [[gunshi_review_log_block分割過小カウント]] -> [[yaml構造比較への切替]]
