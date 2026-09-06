@@ -1,5 +1,5 @@
 <!-- gist-master: 2f1a3daa07c336c90958b1287245318b dm-signal-production-inconsistency-asis-tobe_20260906.md -->
-# DM-Signal 本番不整合 I1〜I9 — 現況・配備カード・データフロー・カタログ・因果・改善影響・ledger 判断 統合設計書 v1.20(2026-09-06 23:58 cmd_4485 GATE CLEAR 23:46=P05/P06 終端、P07 は task 差替えで中断中。v1.19=23:02 P08-I7 GATE CLEAR 23:00=F-19 gate 修正 e3214c8e1 で WAIT 解消。v1.18=21:45)
+# DM-Signal 本番不整合 I1〜I9 — 現況・配備カード・データフロー・カタログ・因果・改善影響・ledger 判断 統合設計書 v1.21(2026-09-07 00:02 §2.3 I 別状態を 00:02 時点へ更新=✅2/🟡7。v1.20=23:58 cmd_4485 GATE CLEAR 23:46=P05/P06 終端、P07 は task 差替えで中断中。v1.19=23:02 P08-I7 GATE CLEAR 23:00=F-19 gate 修正 e3214c8e1 で WAIT 解消。v1.18=21:45)
 
 - 発端: 殿 2026-09-06 14:11『dm-signal-research-data-backlog_20260905.md を参考に DM-signal の本番の不整合について深く調査しよう。家老と繰り返しレビュー交換をせよ。本番の不整合、それによる影響、改善時にどのような変化が本番に起きるか、改善の影響範囲・依存関係なども明確にせよ』。以後の殿指示: 14:44 データフロー、14:45 ユーザー可視/内部/デッドコード、14:47 設計の因果、14:59 ledger 協議、15:06 時系列、15:15 可視変化の定量化、15:33 3 設計書並列、15:56 配備・進捗運用版(家老)、16:33 単一スタイルへ再構築。
 - 読む順: §2(現況)→§3(配備カード)→§5(カタログ)→§9(改善影響)→§10(ledger)。図は §4、根拠は §5〜§7、順序と契約は §8、裁定は §11、往復は §12、版は §13。
@@ -67,23 +67,23 @@ cmd_4484 世代2の**報告値**。オフライン検証出力は確認済みだ
 
 証跡入口: `queue/reports/kagemaru_report_cmd_4484.yaml`、`logs/test_receipts/cmd_4484_offline_validation_v2.json`、同名 `.output`。原出力SHA256=`72ae9e7834100775cd00e0a74654df5fce6277e14af197fdc144b2afa70360f7`。snapshot SHA256=`6ce8e54988654fe99205bd527cb062a422108a0e07751a04cac7aeddeccc2488`。成果物基点=`/home/simokitafresh/shogun-task-worktrees/kagemaru_cmd4484/analysis_runs/cmd_4484_prod_inconsistency_recon`。世代1は保存し、新解析へ混用しない。
 
-### §2.3 不整合 I 別の状態(将軍 loop 更新 2026-09-06 20:58。**§2.1(家老観測 18:0x)より新しい時点**の観測を I 単位で並べたもの。§2.1 と状態が違う行は時点差であり、§2.1 の最新観測は家老が更新する(R22))
+### §2.3 不整合 I 別の状態(将軍更新 2026-09-07 00:02(殿指示 00:01。v1.20 まで 20:58 のまま=時点差)。旧=2026-09-06 20:58。**§2.1(家老観測 18:0x)より新しい時点**の観測を I 単位で並べたもの。§2.1 と状態が違う行は時点差であり、§2.1 の最新観測は家老が更新する(R22))
 
-**全項目(I1〜I9)** `█░░░░░░░░░ 1/9` ✅完了 🟡走行中 ⏳待ち 🔴要判断
-状態集計: ✅ 1 / 🟡 8 / ⏳ 0 / 🔴 0(I1〜I9 の 9 行、分母 9、20:35 先頭記号計数。殿裁定 19:35 で I4 の 🔴 解消。続報は下の時点付き表、家老 R12-3)
-次の一手: 第 0 弾=P07 飛猿(I1 列契約、走行中)/P09 才蔵(I9、done・gate 待ち)/P08-I7 疾風(checker は main 収載・殿 事後承認 20:29、呼出配線は殿 OK 後)→各 CLEAR で行を ✅ へ。cmd_4485=AC3(I4)は全履歴 B 14,450 行で B 前提の no-loss 確認済み、AC2(I6)は全期間 unknown 継続→再配備(将軍 20:22 ナッジ)。I2 は分類(U3/U9)待ち。殿へ伺う残=本番 3 件(第 0 弾 code の呼出配線/合流、I6 full recalc、I1 DROP と撤去)。
+**全項目(I1〜I9)** `██░░░░░░░░ 2/9` ✅完了 🟡走行中 ⏳待ち 🔴要判断
+状態集計: ✅ 2 / 🟡 7 / ⏳ 0 / 🔴 0(I1〜I9 の 9 行、分母 9、00:02 先頭記号計数。I9 が ✅ へ(P09 CLEAR 21:32+patch 適用 0ae0c9cae)。旧 20:35=✅1/🟡8。殿裁定 19:35 で I4 の 🔴 解消。続報は下の時点付き表、家老 R12-3)
+次の一手(00:02): cmd_4485 CLEAR 23:46 で I4/I6 の調査段は終端、残は殿 OK の本番段のみ(I4 DROP・I6 full recalc・第 0 弾配線)。P07(I1)は F-19 差替えで中断→schema 配備後に再配備(家老)。旧(20:58): 第 0 弾=P07 飛猿(I1 列契約、走行中)/P09 才蔵(I9、done・gate 待ち)/P08-I7 疾風(checker は main 収載・殿 事後承認 20:29、呼出配線は殿 OK 後)→各 CLEAR で行を ✅ へ。cmd_4485=AC3(I4)は全履歴 B 14,450 行で B 前提の no-loss 確認済み、AC2(I6)は全期間 unknown 継続→再配備(将軍 20:22 ナッジ)。I2 は分類(U3/U9)待ち。殿へ伺う残=本番 3 件(第 0 弾 code の呼出配線/合流、I6 full recalc、I1 DROP と撤去)。
 
 | # | 不整合 | 状態 | 現在値 |
 |---|---|---|---|
-| I1 | fof_component_weights の未使用 8 列 | 🟡 P07 飛猿 走行中(18:56〜) | 事象確定(24,348 行 NULL)。admin WeightBreakdown が API を使用中→P07 で 8 列の DTO/API/admin/外部利用の契約表を作成中。DROP は本番 DDL=殿 OK |
+| I1 | fof_component_weights の未使用 8 列 | 🟡 P07 中断(飛猿 task が 22:1x F-19 hotfix へ差替え、report in_progress)→再配備待ち(家老、schema 配備後) | 事象確定(24,348 行 NULL)。admin WeightBreakdown が API を使用中→P07 で 8 列の DTO/API/admin/外部利用の契約表を作成中。DROP は本番 DDL=殿 OK |
 | I2 | signal_change_log 同日往復の二重行 | 🟡 | cmd_4484 世代 2(CLEAR 16:37、将軍+家老 R9 再集計): 重複 group 81,102 / 対象行 235,750=逆向きペアあり 202,053(正当性未判定)+unknown 33,697(43 PF)。抑止候補は分類次第(P02 追補 U3/U9) |
 | I3 | signal_change_log 未出現 PF | 🟡 監視設計は P08 次カード | 世代 2 再集計(将軍 16:5x): 変化なし 10 / 履歴不足 2(シン玄武-常勝/鉄壁)。旧記述=世代 2 報告値: 未出現 12 PF(A=75)。manifest で除外 3 体との差を照合 |
-| I4 | signal_detail_history 0 行 / signal_decision_ledger 0 行 | 🟡 方向 B 確定(殿裁定 19:35 保護要件なし)。AC3 は**未完** | ledger=今 C 休眠・方向 B 段階的廃止、A は候補外。cmd_4485 AC3(a638572d、20:0x): 全履歴 B backfill 14,450 行・2 回目 0・本番 0=『廃止で失うものが無い』の**部分確認**。5 種別差分の全期間集計と API 軸は未完(家老 RC、§2.1 と同じ)。次=AC2/AC3 全期間再走(半蔵)→P06 で B の段階設計(①無効化②表保持③DROP、③は殿 OK)。detail_history writer(caller 0)は P07 で契約確認中 |
+| I4 | signal_detail_history 0 行 / signal_decision_ledger 0 行 | 🟡 方向 B 確定(殿裁定 19:35)。**AC3 完了 23:46**(cmd_4485 CLEAR: 全履歴 B backfill 14,450 行・2 回目 0・本番 0)。残=DROP/段階的廃止の本番 DDL=殿 OK のみ | ledger=今 C 休眠・方向 B 段階的廃止、A は候補外。cmd_4485 AC3(a638572d、20:0x): 全履歴 B backfill 14,450 行・2 回目 0・本番 0=『廃止で失うものが無い』の**部分確認**。5 種別差分の全期間集計と API 軸は未完(家老 RC、§2.1 と同じ)。次=AC2/AC3 全期間再走(半蔵)→P06 で B の段階設計(①無効化②表保持③DROP、③は殿 OK)。detail_history writer(caller 0)は P07 で契約確認中 |
 | I5 | 月初 signals.holding_signal ≠ monthly_returns.holding_signal | ✅ 保存された比較対象 11,922 で差 0(R9 限定) | 将軍再集計(16:5x)+家老 R9 再現: holding 差 0、raw・holding 差 477 は 477/477 で 2 表の holding が一致。ただし recon.py の月初営業日=保存月内最初の行(独立暦なし)ゆえ、未観測月初・有効日条件は unknown。『改善対象なし』とは断定しない。§9.1.4 |
-| I6 | display_ticker_weights 非 unit 35 行・parity 不一致 29/2,096 | 🟡 AC2 全期間 sweep 暫定値あり(半蔵 21:3x、厳密受入 FAIL) | 世代 2 報告値: display/pending_display 各 242,659 key で**非 unit 0**、静的 consumer 12。08-06 の 35 行は別時点(その後の full recalc で消えた可能性)。恒久解消と解釈せず、cmd_4485 で候補経路(選択外/欠損 child)の再現条件を確認 |
+| I6 | display_ticker_weights 非 unit 35 行・parity 不一致 29/2,096 | 🟡 **AC2 確定 23:46**(cmd_4485 CLEAR: 15 キー同条件比較 15/15 一致=前回の 15 セル差は cache 跨ぎ汚染、候補①非 unit 115 PF-月/②境界 4,357 行は隔離 B 系の意図的変形でのみ発生、本番 非 unit 0。残=本番 full recalc 要否=殿 OK)。旧: AC2 全期間 sweep 暫定値あり(半蔵 21:3x、厳密受入 FAIL) | 世代 2 報告値: display/pending_display 各 242,659 key で**非 unit 0**、静的 consumer 12。08-06 の 35 行は別時点(その後の full recalc で消えた可能性)。恒久解消と解釈せず、cmd_4485 で候補経路(選択外/欠損 child)の再現条件を確認 |
 | I7 | component holding_signal 欠落で展開不能 | 🟡 checker main 収載(f3d20d3c、殿 事後承認 20:29。§2.1 の『本番反映なし』は 19:2x 時点の記述=時点差) | 実測 0(cmd_4479/4483)。P08-I7 疾風: check_i7_* 関数+契約 test を main へ(呼出 0=挙動不変)。監視 ALERT への配線は殿 OK 後 |
 | I8 | 新四つ目 3 体 parity 不一致(102+2) | 🟡 valid_start_date 定義の取得元のみ未確定(U5) | 世代 2 報告値: B=全 FoF 77、signal 無し・return 有り 0。旧 2 件の 2014-04 は現在 signal/return あり(cmd_4480 時点との差=再計算で埋まった候補)。valid_start_date 欠落 77/77 は unknown |
-| I9 | 本番 tree と文書の乖離(ledger/signal_flush は 08-04 版) | 🟡 P09 CLEAR 21:32、patch 適用は次段 | backlog B2 訂正済み(v1.6)。P09: 4 文書と固定 code の適用/撤回/未検証の対応表を報告済み(gate は source_publication_failed で停止中→家老が壁を特定中)。PI-P06 は規範保持+現在適用状態を別記。 rollback 233c2303 後、ledger file は 21e80e30 と同値・T7.5 未適用。backend 全体の 08-04 版断定はしない(38 files 再変更あり) |
+| I9 | 本番 tree と文書の乖離(ledger/signal_flush は 08-04 版) | ✅ P09 CLEAR 21:32+4 文書 patch 適用済み(将軍 doc lane 0ae0c9cae 21:4x、gist 同期) | backlog B2 訂正済み(v1.6)。P09: 4 文書と固定 code の適用/撤回/未検証の対応表を報告済み(gate は source_publication_failed で停止中→家老が壁を特定中)。PI-P06 は規範保持+現在適用状態を別記。 rollback 233c2303 後、ledger file は 21e80e30 と同値・T7.5 未適用。backend 全体の 08-04 版断定はしない(38 files 再変更あり) |
 
 #### §2.3.1 時点付き続報(集計対象外。cmd_4485 前 flight、影丸 18:04 報告、家老 18:06 RC、将軍裁定 18:07)
 
