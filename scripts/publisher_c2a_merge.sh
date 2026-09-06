@@ -103,8 +103,8 @@ c2a_target="$(git -C "$ROOT" rev-parse --verify refs/remotes/origin/main 2>/dev/
 # dirty overlap before the next validator cycle can observe stale HEAD.
 if [[ "$ROOT" != "$SCRIPT_ROOT" ]]; then
     echo "publisher_c2a_merge: external repo ($ROOT) — shared root ff は行わない(外部 root は所有者 lane)"
-elif [[ -r "$SCRIPT_ROOT/scripts/safe_shared_main_ff.sh" ]]; then
-    bash "$SCRIPT_ROOT/scripts/safe_shared_main_ff.sh" --repo "$ROOT" "$c2a_target"
+elif [[ -r "$ROOT/scripts/safe_shared_main_ff.sh" ]]; then
+    bash "$ROOT/scripts/safe_shared_main_ff.sh" --repo "$ROOT" "$c2a_target"
 else
     # Minimal publisher fixtures may intentionally omit the optional shared
     # checkout helper; production roots always carry it and take this lane.
