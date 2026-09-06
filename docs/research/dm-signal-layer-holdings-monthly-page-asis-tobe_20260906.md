@@ -2,7 +2,8 @@
 # DM-Signal 本番「Layer Holdings Monthly」ページ 新設 AsIs/ToBe 5W1H 設計書 v0.1(2026-09-06 22:20 将軍起草)
 
 - 殿指示 2026-09-06 22:07『今後本番に Layer Holdings Monthly ページを新規で作りたい。まずは asis/tobe 5W1H の設計書を作ろう。家老にレビューして更新してもらい、将軍がレビューしてさらに更新する。更新するべき点がなくなるまで続ける』。
-- 版履歴(歴史修正禁止のため記録のみ): v0.1 22:20 将軍起草(一次情報=DM-Signal repo 現物+研究 lane の成果物)。
+- 版履歴(歴史修正禁止のため記録のみ): v0.1 22:20 将軍起草(一次情報=DM-Signal repo 現物+研究 lane の成果物)。v0.1.1 22:22 殿指示『gist 共有、軍師には artifact も共有(前提情報のずれ防止)』→前提 artifact URL を本文に明記。
+- **前提 artifact(全レビュアー必読。設計書と対で読め)**: 研究 lane 実値 wireframe https://claude.ai/code/artifact/27c1995d-4797-4842-a582-949bcc4dab5a(75 PF 版 layer_holdings_monthly.csv を埋込んだ HTML。本書 §1「画面」と §4.3 P3 はこの見え方をそのまま本番へ移植する)。gist 正本: https://gist.github.com/b733364ac7dc058a20e7bd635e34ae73
 - 前書: 研究 lane の 1 表 `layer_holdings_monthly.csv` は `docs/research/dm-signal-market-direction-breadth-exposure-asis-tobe_20260905.md` v1.1、その入力 F1 は `docs/research/dm-signal-research-data-foundation-asis-tobe_20260905.md` v0.10。本書はそれを**本番ページ**にする設計だけを扱う。
 - 実装は本書が家老・将軍の往復で「更新点なし」に到達し、殿の go が出てから cmd 単位で行う。**本番 DB 書込・DDL・deploy は殿の明示 OK のみ**(殿 09-05 22:25)。
 
