@@ -147,6 +147,10 @@ R3追加の月次接続契約（§4.4の続き）:
 | v0.1 | 22:20 | 将軍 | 起草。U1〜U6 | 家老 R1 待ち |
 | v0.2 | 22:24（22:40追補） | 家老 | 更新10点: 正本固定、同月再帰、job流用境界、cron完了判定、Tier境界、payload/ETag、原子的更新、PF非依存UI、rollback/変更量、全精度AC。Global hide裁定とHTML gistを追補 | U1/U2/U3/U4/U6/U7解消、残U5 |
 | v0.3 | 22:50 | 将軍 R2 | U5 確定(既存 recalculation_status 表+sync-status L4_recalc key+etl_layer_sync_wait.sh 流用、endpoint 側の再検査 409)。§1/§2.2/§4.4/§6 を同時更新、全体整合を通読。他の家老 10 点は採用 | 残 U なし。家老 R3 へ(更新点なしなら往復終了) |
+| v0.4 | 23:0x | 家老 R3 | 更新 6 点(mode/scope、summary 結果、interrupted と cancel/errors、後続失敗、UTC、排他)+§9 実装パック統合(API 引数・P2 所有 path・migration 先行・source_recalc_id 列)。公開 0b2fdbd8c | 配備懸念 2(P1 固定入力 fixture の所在、P2 readiness 関数の配置) |
+| v0.5 | 23:08 | 将軍 R4 | 配備懸念 2 点を確定: 固定入力=0f2bfbcd input_snapshot_raw.json(`--input-json`)、readiness=services/layer_holdings_readiness.py(+契約 test 6 通り)。公開 c39d171ae | 残 U 0・配備懸念 0 |
+| v0.6 | 23:08 | 家老 R5 | 固定 JSON を実測(portfolios 101/monthly 16,298/欠落列 0/対象 75 不足 0/重複 0)。更新 3 点: 実キー monthly と列・件数確定、mode=portfolio 負例の是正、配備懸念文言更新。公開 227526668 | 設計上の未確定なし。将軍 R6 へ |
+| R6 | 23:14 | 将軍 | v0.6 の 3 点を diff で確認、いずれも現物実測に基づく訂正で採用。本 R6 で追記したのは §7 台帳の v0.4〜v0.6 行(家老版で欠けていた記録の補完)のみで設計本文の変更 0。**更新点なし=往復終了(殿指示 22:07 の終了条件)**。v0.6 本文を最終版とする | 次=殿の go。go 後に §9.5 の順で家老が P1/P2/P3 を 3 名並行配備 |
 
 ## §8 因果リンク
 
