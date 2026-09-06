@@ -1,0 +1,317 @@
+worker_id: kagemaru
+report_id: rpt-8432f1e3-7a84-40d6-b03f-32a928dda6f1
+report_identity_version: 2
+task_id: cmd_4485_full
+parent_cmd: cmd_4485
+task_type: full
+timestamp: '2026-09-06T21:23:28+09:00'
+status: failed
+ac_version_read: 0b34c4b1
+task_contract_snapshot:
+  ac_fingerprint: 0b34c4b1
+  acceptance_criteria:
+  - checks:
+    - check: 前 flight(家老 15:22 隔離 DB 方式)。local PostgreSQL に本 cmd 専用 DB(名前に cmd4485
+        を含む)を作り、cmd_4484 の snapshot.json.gz(sha256 6ce8e54988654fe99205bd527cb062a422108a0e07751a04cac7aeddeccc2488、5
+        表)を A/B 2 系へ復元する。recalc に必要で snapshot に無い入力表(価格・ticker・portfolio 設定等)は、必要最小の表だけを
+        scripts/db_capability_launcher.py --capability readonly_query(nonce 付き)で 1
+        回だけ取得して restore_manifest.yaml に nonce・行数・sha256・取得時刻を残す(取得済み snapshot を優先し、既存表を再取得しない)。preflight.md
+        に『復元 wall』『対象 recalc 1 PF-月の wall』『差分計測 wall』の 3 実測値(秒)と、local host/port/db/user
+        の識別子(DSN 秘密値は非出力)、本番 credential を継承しない write 専用 local 接続の証拠、通知/cron/network
+        副作用を無効化した設定を書く
+    description: 前 flight(家老 15:22 隔離 DB 方式)。local PostgreSQL に本 cmd 専用 DB(名前に cmd4485
+      を含む)を作り、cmd_4484 の snapshot.json.gz(sha256 6ce8e54988654fe99205bd527cb062a422108a0e07751a04cac7aeddeccc2488、5
+      表)を A/B 2 系へ復元する。recalc に必要で snapshot に無い入力表(価格・ticker・portfolio 設定等)は、必要最小の表だけを
+      scripts/db_capability_launcher.py --capability readonly_query(nonce 付き)で 1 回だけ取得して
+      restore_manifest.yaml に nonce・行数・sha256・取得時刻を残す(取得済み snapshot を優先し、既存表を再取得しない)。preflight.md
+      に『復元 wall』『対象 recalc 1 PF-月の wall』『差分計測 wall』の 3 実測値(秒)と、local host/port/db/user
+      の識別子(DSN 秘密値は非出力)、本番 credential を継承しない write 専用 local 接続の証拠、通知/cron/network
+      副作用を無効化した設定を書く
+    id: AC1
+  - checks:
+    - check: 'P05 I6 再現条件(U2)。cmd_4484 b_i6_rows.csv の候補 2 経路(選択外 weight の非再正規化 /
+        欠損 child skip)を、隔離 DB の B 系で意図的に作る(例: FoF の child 1 体を選択外にする / child の holding_signal
+        を欠損させる)→ price_ratio_impl・monthly_returns・recalculate_fof の現行 code で display_ticker_weights
+        と monthly_return を再導出→ A 系(そのまま)と key 単位で突合し i6_repro.csv へ(PF-月, 経路, Σweight,
+        monthly_return A/B, 差, 切替日 A/B)。§9.2 I6 行の計測量 ①〜⑤(PF-月数と PF 数/全期間と直近完了 12
+        ヶ月 2025-09〜2026-08、weight 不足分の分布 max/p50/p95、return 差の絶対・相対・符号反転数、cumulative
+        末尾差、切替日が動く PF-月数)を i6_result.md へ。08-06 の旧 35 行(basis: backlog v1.6 §B5)が現行
+        code+世代 2 snapshot で再現しない場合は『再現せず』の証拠(再導出の Σ=1 の行数/全行数)を残し、本番修正案を書かない'
+    description: 'P05 I6 再現条件(U2)。cmd_4484 b_i6_rows.csv の候補 2 経路(選択外 weight の非再正規化
+      / 欠損 child skip)を、隔離 DB の B 系で意図的に作る(例: FoF の child 1 体を選択外にする / child の holding_signal
+      を欠損させる)→ price_ratio_impl・monthly_returns・recalculate_fof の現行 code で display_ticker_weights
+      と monthly_return を再導出→ A 系(そのまま)と key 単位で突合し i6_repro.csv へ(PF-月, 経路, Σweight,
+      monthly_return A/B, 差, 切替日 A/B)。§9.2 I6 行の計測量 ①〜⑤(PF-月数と PF 数/全期間と直近完了 12 ヶ月
+      2025-09〜2026-08、weight 不足分の分布 max/p50/p95、return 差の絶対・相対・符号反転数、cumulative 末尾差、切替日が動く
+      PF-月数)を i6_result.md へ。08-06 の旧 35 行(basis: backlog v1.6 §B5)が現行 code+世代 2 snapshot
+      で再現しない場合は『再現せず』の証拠(再導出の Σ=1 の行数/全行数)を残し、本番修正案を書かない'
+    id: AC2
+  - checks:
+    - check: P06 I4 backfill 差分(U1、5 種別)。B 系だけに backend/scripts/build_signal_decision_ledger_historical_backfill.py
+        の dry-run plan(既定 dry-run。--execute は隔離 DB の B 系に限り可、本番 DSN では絶対に実行しない)を投入し、A
+        系(ledger 0 行)と比較して i4_ab_diff.csv へ PF-月単位で 5 種別(①holding_signal ラベル ②decision_ticker_weights
+        による weights/return ③境界日 ④MonthlyTrade 置換 L654-705/L768-804 の position/weights
+        ⑤API 応答 /api/history・/api/monthly-trade の JSON 差)の差の有無と値を記録。投入で動いた PF-月数を種別ごと、全期間と直近完了
+        12 ヶ月で数え、return 差の分布と DRIFT 件数、実行時間・冪等性(2 回投入で行数不変)・復元可否(B 系を A 系へ戻せるか)を i4_result.md
+        へ。対象は snapshot の A=75 PF+B=全 FoF 77 で、ledger 全対象の manifest(plan が対象にした PF
+        集合)を別記し 11,922 を上限と呼ばない
+    description: P06 I4 backfill 差分(U1、5 種別)。B 系だけに backend/scripts/build_signal_decision_ledger_historical_backfill.py
+      の dry-run plan(既定 dry-run。--execute は隔離 DB の B 系に限り可、本番 DSN では絶対に実行しない)を投入し、A
+      系(ledger 0 行)と比較して i4_ab_diff.csv へ PF-月単位で 5 種別(①holding_signal ラベル ②decision_ticker_weights
+      による weights/return ③境界日 ④MonthlyTrade 置換 L654-705/L768-804 の position/weights
+      ⑤API 応答 /api/history・/api/monthly-trade の JSON 差)の差の有無と値を記録。投入で動いた PF-月数を種別ごと、全期間と直近完了
+      12 ヶ月で数え、return 差の分布と DRIFT 件数、実行時間・冪等性(2 回投入で行数不変)・復元可否(B 系を A 系へ戻せるか)を i4_result.md
+      へ。対象は snapshot の A=75 PF+B=全 FoF 77 で、ledger 全対象の manifest(plan が対象にした PF 集合)を別記し
+      11,922 を上限と呼ばない
+    id: AC3
+  final_checkpoint: null
+  investigation_contract: null
+  issued_cmd_id: cmd_4485
+  lesson_set:
+    ids:
+    - L255
+    - L277
+    mode: subset
+  parent_cmd: cmd_4485
+  project: dm-signal
+  purpose: '殿 2026-09-06 15:15『ユーザー可視の変化があり得るなら具体的にどのような変化かまで調査。1000 件と 1 件では重みが違う』+
+    家老 R10 APPROVE(P05 入力固定・隔離準備に限定)→ 設計書 docs/research/dm-signal-production-inconsistency-asis-tobe_20260906.md
+    v1.4 §9.2 定量化契約と §9.1.6 U1/U2/U8 を、cmd_4484 世代 2 snapshot(sha256 6ce8e549…)を local
+    PostgreSQL 専用 DB へ復元した A/B の 2 系で埋める。I6: 非 unit 行が世代 2 で 0 のため、候補 2 経路(選択外 weight
+    の非再正規化 / 欠損 child skip)の再現条件を隔離 DB で作り、再現しなければその証拠を残して本番修正へ進まない。I4: ledger 空(A)と
+    backfill dry-run plan 投入(B)で、動く量をラベル/weights/return/境界日/API 応答の 5 種別に PF-月で数える。隔離実験の結果は
+    §9.1.2 の①を数値付きに書換える入力であり、本番 DB 書込・DDL・deploy・ledger 復活・T7.5 再適用は全て非承認のまま'
+  reflux_commit_contract: null
+  seam_contract: null
+  task_id: cmd_4485_full
+reflux_commit_contract: null
+result:
+  summary: AC2 full-history 17622 PF-monthを全行保持して再分類し、AC3 full-history 14450 ledger
+    eventの5軸A/B差分を現行コードで実測。AC2の候補2経路は実行可能な1 PF-monthで再現、全候補期間の注入は未完のためFAIL継続。
+  details: 'AC2分類: success=13917、start_before_available=3085、child_holding_signal_null=620、unknown=0。例外面はcache=3085/DB-null=620。AC3:
+    holding_signal equal=14450、boundary equal=14450、weights_return diff=11641/equal=2809、MonthlyTrade
+    diff=11641/equal=2809、return delta nonzero=5427、最大絶対差=0.6001819102。A/B fresh local
+    cloneで実行しproduction fetch/write=0。'
+purpose_validation:
+  cmd_purpose: 隔離A/B実験でユーザー可視差分を数値化する目的に適合
+  fit: true
+  purpose_gap: AC2候補2経路の全PF-month注入 sweep とそのfull/recent分布は未完。既存の1実行可能PF-month差分を全期間へ拡張していない。
+simplicity_check: 既存snapshotと現行codeを再利用し参照code/launcherは変更していない
+assumption_check: AC2 errors are retained as measured exceptions; candidate two-path
+  values remain one executable PF-month and are not extrapolated to full-history injection
+  results. AC3 standard-PF history API is not_applicable, not unknown.
+task_clarity:
+  score: 82
+  unclear_points: AC1最小入力とAC2/3全期間入力の境界
+  discretion_fills: 対象PF-月を015e74dc-26f3-47c5-98ea-414dc4fdf579:2025-09に固定
+status_detail: WITH_CONCERNS
+test_triage: analysis-only scope; py_compile 4/4 PASS, JSON/CSV parse PASS, task test
+  selection 0 files and rc2 external_scope_no_mapped_tests
+causal_verification:
+  cause_checked: snapshot projectionとAC1 queryを確認し、価格は対象1 PF-月のみmaterialize。現行codeをA/B
+    local cloneで実行し未入力期間はunknown保持
+  design_intent_checked: production write/deploy/full recalculate=0。A pristine、B-only
+    ledger。参照code/launcher変更0
+  evidence: aa96ac781; restore_manifest.yaml; preflight.json; i6_repro.csv; i4_ab_diff.csv;
+    run_tests receipt
+  origin: '[[cmd_4485]] -> [[input_coverage_check]] -> [[honest_unknown_AC2_AC3]]'
+commit_contract:
+  required: true
+  reason: analysis artifacts committed only under analysis_runs/cmd_4485_isolated_impact
+  task_type: full
+  planned_paths:
+  - analysis_runs/cmd_4485_isolated_impact
+  repo_root: /mnt/c/Python_app/DM-Signal
+cross_repo_commits:
+- repo: /mnt/c/Python_app/DM-signal
+  commit_hash: 13a5624d75ef523f509e163f16e833ec8c74d8f3
+  paths:
+  - analysis_runs/cmd_4485_isolated_impact/ac3_compact_state_A.json
+  - analysis_runs/cmd_4485_isolated_impact/ac3_compact_state_B.json
+  - analysis_runs/cmd_4485_isolated_impact/ac3_full_5axis_diff.csv
+  - analysis_runs/cmd_4485_isolated_impact/ac3_full_5axis_diff.md
+  - analysis_runs/cmd_4485_isolated_impact/ac3_full_5axis_summary.json
+  - analysis_runs/cmd_4485_isolated_impact/ac3_full_state_A.json
+  - analysis_runs/cmd_4485_isolated_impact/ac3_full_state_B.json
+  - analysis_runs/cmd_4485_isolated_impact/classify_full_ac2_errors.py
+  - analysis_runs/cmd_4485_isolated_impact/compact_ac3_state.py
+  - analysis_runs/cmd_4485_isolated_impact/compare_ac3_full_axes.py
+  - analysis_runs/cmd_4485_isolated_impact/evaluate_ac3_full_axes.py
+  - analysis_runs/cmd_4485_isolated_impact/full_ac2_classification.md
+  - analysis_runs/cmd_4485_isolated_impact/full_ac2_classification_summary.json
+  - analysis_runs/cmd_4485_isolated_impact/full_ac2_classified.csv
+  - analysis_runs/cmd_4485_isolated_impact/full_ac2_rederive.md
+  - analysis_runs/cmd_4485_isolated_impact/full_history_i4_result.md
+  - analysis_runs/cmd_4485_isolated_impact/full_history_ledger_target_manifest.json
+ac_evidence_mapping:
+  AC1: restore_manifest.yaml, preflight.md, existing AC1 local PostgreSQL evidence
+  AC2: full_ac2_rederive_result.json, full_ac2_classified.csv, full_ac2_classification_summary.json,
+    full_ac2_candidate.json, i6_repro.csv
+  AC3: full_history_i4_result.json, full_history_ledger_target_manifest.json, ac3_full_5axis_diff.csv,
+    ac3_full_5axis_summary.json, ac3_full_5axis_diff.md
+semantic_validation:
+  classification_axis: full PF-month row classification plus AC3 five-axis A/B diff
+  recount: AC2 rows=17622; success=13917; start_before_available=3085; child_holding_signal_null=620;
+    unknown=0; AC3 events=14450; recent=1102
+  actual: full_ac2_classification_summary.json and ac3_full_5axis_summary.json agree
+    with CSV row counts; all artifacts parse and four analysis scripts py_compile
+    PASS
+  result: FAIL
+files_modified:
+- path: analysis_runs/cmd_4485_isolated_impact/classify_full_ac2_errors.py
+  change: 全AC2エラーを現行コードでトレース分類する分析器
+- path: analysis_runs/cmd_4485_isolated_impact/full_ac2_classified.csv
+  change: 89x198=17622行の分類結果
+- path: analysis_runs/cmd_4485_isolated_impact/full_ac2_classification_summary.json
+  change: AC2分類集計
+- path: analysis_runs/cmd_4485_isolated_impact/full_ac2_classification.md
+  change: AC2分類索引
+- path: analysis_runs/cmd_4485_isolated_impact/evaluate_ac3_full_axes.py
+  change: A/B全97 PF現行コード評価器
+- path: analysis_runs/cmd_4485_isolated_impact/compact_ac3_state.py
+  change: 比較用状態圧縮器
+- path: analysis_runs/cmd_4485_isolated_impact/compare_ac3_full_axes.py
+  change: AC3五軸比較器
+- path: analysis_runs/cmd_4485_isolated_impact/full_history_ledger_target_manifest.json
+  change: 14450 ledger event manifest
+- path: analysis_runs/cmd_4485_isolated_impact/ac3_full_state_A.json
+  change: A側隔離DB全量状態
+- path: analysis_runs/cmd_4485_isolated_impact/ac3_full_state_B.json
+  change: B側隔離DB全量状態
+- path: analysis_runs/cmd_4485_isolated_impact/ac3_compact_state_A.json
+  change: A側比較状態
+- path: analysis_runs/cmd_4485_isolated_impact/ac3_compact_state_B.json
+  change: B側比較状態
+- path: analysis_runs/cmd_4485_isolated_impact/ac3_full_5axis_diff.csv
+  change: 14450 eventの五軸差分
+- path: analysis_runs/cmd_4485_isolated_impact/ac3_full_5axis_summary.json
+  change: AC3五軸集計
+- path: analysis_runs/cmd_4485_isolated_impact/ac3_full_5axis_diff.md
+  change: AC3五軸索引
+- path: analysis_runs/cmd_4485_isolated_impact/full_ac2_rederive.md
+  change: AC2分類結果への索引追記
+- path: analysis_runs/cmd_4485_isolated_impact/full_history_i4_result.md
+  change: AC3五軸結果への索引追記
+lesson_candidate:
+  found: true
+  title: エラー件数と根因分類を分離し全行保持する
+  detail: cache/DB例外面と開始前・holding_signal NULLの根因を別軸で保存し、親月source absentを成功や0へ丸めない。次回は候補注入sweepにも同じ行保持契約を適用する。
+  project: dm-signal
+  origin: '[[cmd_4485]] -> [[ac2_error_surface_vs_root_cause]] -> [[full_row_preserving_classification]]'
+lessons_useful:
+- id: L255
+  useful: false
+  reason: monthly-returns fallback教訓は今回のfull local API指紋評価の主因ではない
+- id: L277
+  useful: false
+  reason: history UI教訓は今回のlocal API function評価では直接適用しない
+memory_references:
+- id: MEM001
+  source: search_unavailable
+  query: 殿 2026-09-06 15:15『ユーザー可視の変化があり得るなら具体的にどのような変化かまで調査。1000 件と 1 件では重みが違う』+
+    家老 R10 APPROVE(P05 入力固定・隔離準備に限定)→ 設計書 docs/research/dm-signal-production-inconsistency-
+  summary: ''
+  used: true
+  useful: true
+  reason: current task正本と未読current task一致補足の適用に使用
+skill_candidate:
+  found: false
+decision_candidate:
+  found: true
+  title: AC2/AC3全期間入力coverageの取得範囲
+  detail: AC1単一取得の最小範囲とAC2/3全期間要求が衝突。追加readonly取得許可か後段範囲縮退かは家老裁定が必要
+knowledge_candidate:
+  found: true
+  items:
+  - fact: 選択外weight omissionはΣ=0.75、leaf child signal削除はΣ=0.833333333333として同月return差を生む
+    source: analysis_runs/cmd_4485_isolated_impact/i6_repro.csv
+assumption_invalidation:
+  found: true
+  affected_cmds:
+  - cmd_4485
+  detail: full-history再導出もerror cellsを残した。subset2候補値をfull-historyへ拡張したとは主張しない
+hook_failures:
+  count: 0
+  details:
+    cause: run_tests task external_scope_no_mapped_tests rc2
+    independent_verification: py_compileと成果物parse
+    bypass_record: rc2をPASSへ置換せずreceipt記録
+    post_verification: artifact validation completed
+    post_verification_result: no_new_failure
+    post_verification_head: 1cb81d0
+post_deploy_evidence:
+  required: false
+  deploy_live_at: ''
+  evidence_run_start_at: ''
+  evidence_run_completed_at: ''
+  run_completed: false
+  source: ''
+operational_simulation:
+  command: classify_full_ac2_errors.py; evaluate_ac3_full_axes.py A/B; compact_ac3_state.py
+    A/B; compare_ac3_full_axes.py
+  expected: 全行分類とA/B current-code五軸差分、production fetch/write=0
+  actual: AC2 17622 rows分類完了; AC3 14450 events五軸比較完了; production fetch/write=0; task
+    test rc2 external_scope_no_mapped_tests
+  result: FAIL
+binary_checks:
+  AC1:
+  - check: 隔離local PostgreSQL復元・入力manifest・3 wallと本番副作用0
+    result: 'yes'
+  AC2:
+  - check: full-history全17622行を保持し候補2経路と全期間指標を実測
+    result: 'no'
+  AC3:
+  - check: B-only 14450 ledger eventsをA/B五軸・全期間/直近で比較し冪等性と本番副作用0を記録
+    result: 'yes'
+  commit:
+  - check: 任務成果物をスコープ限定commitした
+    result: 'yes'
+self_gate_check:
+  lesson_ref: PASS
+  lesson_candidate: PASS
+  status_valid: PASS
+  purpose_fit: PASS
+verdict: FAIL
+parent_ac_coverage:
+- AC1
+- AC2
+- AC3
+parent_contract_fingerprint: 8740a7556901b9a0
+commit_hash: 13a5624d75ef523f509e163f16e833ec8c74d8f3
+investigation_outcome:
+  outcome: found
+  method_completed: true
+  primary_evidence:
+  - source: analysis_runs/cmd_4485_isolated_impact/full_ac2_classified.csv
+    observation: 17622行の分類結果と全3705 error traceの再現
+  - source: analysis_runs/cmd_4485_isolated_impact/ac3_full_5axis_diff.csv
+    observation: 14450 ledger eventの五軸A/B比較
+  remaining_unknowns:
+  - AC2候補2経路の全PF-month注入分布
+  - run_testsの外部scope mapping（selected=0, rc=2）
+test_receipt_path: /home/simokitafresh/multi-agent-shogun/logs/test_receipts/run_tests_20260906T122305_1758965.json
+test_results:
+  command: classify_full_ac2_errors.py; evaluate_ac3_full_axes.py A/B; compact_ac3_state.py
+    A/B; compare_ac3_full_axes.py
+  expected: 全行分類とA/B current-code五軸差分、production fetch/write=0
+  actual: AC2 17622 rows分類完了; AC3 14450 events五軸比較完了; production fetch/write=0; task
+    test rc2 external_scope_no_mapped_tests
+  result: PASS_WITH_AC2_SCOPE_GAP
+diagnose_reason: AC2候補2経路の全PF-month注入sweepは未完のためterminal PASSにしない。分類・AC3 full axisは完了し、unknownを0へ変換していない。
+variation_checks:
+  normal_pass:
+    check: 正常実験
+    result: true
+  quoted_or_heredoc:
+    check: SQL入力
+    result: true
+  linked_worktree:
+    check: linked worktree
+    result: false
+  parallel_or_respawn:
+    check: 並列/respawn
+    result: false
+  abnormal_exit:
+    check: 異常終了再開
+    result: true
+completed_at: '2026-09-06T12:32:39+00:00'
