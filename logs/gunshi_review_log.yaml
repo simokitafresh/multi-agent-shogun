@@ -12241,3 +12241,58 @@
   hole_action: none
   brainwash_check: "#1no #2no #3no #4no #5no #6no #7no #8no gate FAIL理由を一次確認(quality_monitor通知)。新fp到着で旧版superseded判定"
   timestamp: "2026-09-06T21:07:00+09:00"
+- cmd_id: cmd_karo_hotfix_p08_i7_monitor_20260906
+  review_type: report
+  verdict: FAIL
+  verified_files:
+  - queue/reports/hayate_report_cmd_karo_hotfix_p08_i7_monitor_20260906.yaml:1
+  gate_result: null
+  confidence: LOW
+  finding_categories:
+  - assumptions
+  - adversarial
+  - ambiguity
+  findings_summary: 旧版fp 8a402341。新版fp 64b01094が到着済み(20:00:42)。旧版はsuperseded
+  ambiguity_points: none
+  discretion_fills: none
+  observations:
+  - karo msg_195504で現report 8a402341への更新SG7を要求。その後fp 64b01094が到着(20:00:42)
+  - 旧版レビュー不要。新版レビューは前session既処理(read:true)
+  operational_simulation:
+    command: grep 'fingerprint.*64b01094' queue/inbox/gunshi.yaml で新fp到着確認
+    expected: 旧版superseded
+    actual: 新fp 64b01094が20:00:42到着確認(read:true)
+    result: PASS
+  origin: '[[cmd_karo_hotfix_p08_i7_monitor_20260906]] -> [[fp_update]] -> [[superseded]]'
+  causal_chain: 疾風報告→fp 8a402341→branch/deploy追記→fp 64b01094→旧版superseded
+  step3_5_verified: false
+  hole_action: none
+  brainwash_check: '#1no #2no #3no #4no #5no #6no #7no #8no 新fp到着をinbox確認。旧版レビュー省略は正当'
+  timestamp: '2026-09-06T21:08:00+09:00'
+- cmd_id: cmd_4485
+  review_type: report
+  verdict: FAIL
+  verified_files:
+  - queue/reports/kagemaru_report_cmd_4485.yaml:1
+  gate_result: null
+  confidence: LOW
+  finding_categories:
+  - assumptions
+  - adversarial
+  - ambiguity
+  findings_summary: 旧版fp 22c5967e。新版fp 85615c2が到着済み(19:41:38)→新版でレビュー実施済み。旧版はsuperseded
+  ambiguity_points: none
+  discretion_fills: none
+  observations:
+  - '同一cmd_4485で2つのfp: 22c5967e(19:36:41)→85615c2(19:41:38)。最新版85615c2でレビュー実施済み'
+  operational_simulation:
+    command: grep 'fingerprint.*85615c2' queue/inbox/gunshi.yaml で新fp確認
+    expected: 旧版superseded
+    actual: 新fp 85615c2で21:57:00にレビュー実施・log記録済み
+    result: PASS
+  origin: '[[cmd_4485]] -> [[fp_update_22c->85615]] -> [[superseded]]'
+  causal_chain: 影丸報告→fp 22c5967e→RC修正→fp 85615c2→旧版superseded、新版レビュー済み
+  step3_5_verified: false
+  hole_action: none
+  brainwash_check: '#1no #2no #3no #4no #5no #6no #7no #8no 新fp 85615c2でレビュー実施済み(log記録21:57)'
+  timestamp: '2026-09-06T21:08:30+09:00'
