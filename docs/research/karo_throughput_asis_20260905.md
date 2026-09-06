@@ -1,5 +1,5 @@
 <!-- gist-master: aeaadf72f858a63ab8a1259d43d6aade karo_throughput_asis_20260905.md -->
-# 家老スループット — 配備・合流・待機のAsIs/ToBe設計 v3.3(2026-09-06 18:25 家老 R12 全採用: K3 3 軸 1 行、並列 4/6、✅=時点の配備成立。v3.2=18:10 K3 CLEAR→才蔵採否、並列利用 5/6、ナッジ効果 2 例。v3.1=12:15 日次表更新、K3 候補=root 合流の自動化(F-15 で 18 path 手動監査が発生)) / v3.0
+# 家老スループット — 配備・合流・待機のAsIs/ToBe設計 v3.4(2026-09-06 18:30 家老 R13: K3 重複記述除去・次の一手を再判定へ。v3.3=18:25 家老 R12 全採用: K3 3 軸 1 行、並列 4/6、✅=時点の配備成立。v3.2=18:10 K3 CLEAR→才蔵採否、並列利用 5/6、ナッジ効果 2 例。v3.1=12:15 日次表更新、K3 候補=root 合流の自動化(F-15 で 18 path 手動監査が発生)) / v3.0
 
 一次確認: 2026-09-05 23:26:06 JST。殿「同様にアップデートせよ」に基づく配備設計。
 旧v2.5全文は `docs/research/karo-throughput-v2-5-evidence-20260905.md` に保存。既存gist IDと過去の観測時刻を保持する。
@@ -8,14 +8,14 @@
 
 **一意案件 5 件** `████░░░░░░ 2/5` ✅完了 🟡走行中 ⏳待ち 🔴要判断
 状態集計: ✅ 2 / 🟡 2 / ⏳ 1 / 🔴 0(表の物理行 5=一意 ID 5。K3 は 1 行に統合、家老 R12-1)
-次の一手: K3 の 3 軸判定(コード採用/実行環境反映/root 適用可否)を才蔵 task の結果で確定→採用なら F-15 root drain と統合。並列利用は「時点の配備成立」を記録し続け、継続改善の完了とは別に扱う(家老 R12-3)
+次の一手: K3 は 3 軸確定済み(source yes/runtime no/root no)。F-15 保全統合後に runtime/root を再判定(家老 R13-3)。並列利用は「時点の配備成立」を記録し続け、継続改善の完了とは別に扱う(家老 R12-3)
 
 | ID | 状態(18:25) | 現在値 | 経緯(時点付き) |
 |---|---|---|---|
 | K2 deploy 準備・Python wrapper | ✅ | wrapper noop p50 5ms=律速でない。external worktree 準備を preflight.sh の v9fs materialize で p50 4553→1579ms(65% 短縮) | 結論+fix CLEAR 09:54 |
 | K0/K1/K4〜K7 | ⏳ 未配備 | 本日配備成功 35/BLOCK 31(試行の 47%)、09〜13 時は毎時 1〜2 配備で容量余剰(家老見解=十分でない) | 殿 15:30 の問い |
 | 日次表 karo_throughput_daily/2026-09-06.md | 🟡 毎 tick 更新 | root drain 待ちの retry 増が継続 | 15:15 再生成 |
-| K3 root 合流(Equivalent-Source marker の自動 account)= 3 軸 | 🟡 source ✅ / runtime ❌ / root ❌(18:20) | ①コード採用: 疾風 CLEAR 16:36(safe_shared_main_ff に patch-equivalent tree 保持検証 b443200、test 2 件、origin 収載) ②実行環境反映: 未確認 ②実行環境反映: **no** ③root 適用可否: **no**(才蔵 cmd_karo_recon2_k3_adoption、家老 18:20 確定: source yes / runtime no / root 適用 no。FAIL を保持して FAIL_CLOSE→archive→才蔵 idle、CLEAR 捏造なし)。∴ K3 は『コードは origin にあるが共有 root の runtime には効いていない』=F-15 と同じ壁。root drain 完了後に runtime 反映を再判定 | 配達held K3(旧 §4)とは別案件。15:41 疾風配備→軍師 RC→16:36 CLEAR→17:59 才蔵採否 |
+| K3 root 合流(Equivalent-Source marker の自動 account)= 3 軸 | 🟡 source ✅ / runtime ❌ / root ❌(18:20) | ①コード採用: 疾風 CLEAR 16:36(safe_shared_main_ff に patch-equivalent tree 保持検証 b443200、test 2 件、origin 収載) ②実行環境反映: **no** ③root 適用可否: **no**(才蔵 cmd_karo_recon2_k3_adoption、家老 18:20 確定: source yes / runtime no / root 適用 no。FAIL を保持して FAIL_CLOSE→archive→才蔵 idle、CLEAR 捏造なし)。∴ K3 は『コードは origin にあるが共有 root の runtime には効いていない』=F-15 と同じ壁。root drain 完了後に runtime 反映を再判定 | 配達held K3(旧 §4)とは別案件。15:41 疾風配備→軍師 RC→16:36 CLEAR→17:59 才蔵採否 |
 | 並列利用(殿 15:30/17:32『3 設計書を並列配備できているか』) | ✅ **時点の配備成立のみ**(継続改善は W6/K0 で観測継続) | 名簿(task yaml 一次): 17:21 稼働 3/idle 3 → 17:59 家老が半蔵(4485 AC3 準備)・才蔵(K3 採否)を配備 → **18:10 稼働 4(影丸 4485/半蔵 AC3 準備/疾風 F-15/才蔵 K3)・idle 2(飛猿 18:01 解放/小太郎 17:32 解放)=4/6**(家老 R12-2 訂正。5/6 は誤り) → 18:19 稼働 3(影丸/半蔵/疾風 failed 再走)・idle 3(才蔵 task idle/飛猿/小太郎) | ナッジ 17:27・17:55→配備 17:59(ナッジ後に配備を観測。因果は未測定) |
 
 §0 の結論表(『新コード未実装』『K3 配達 held』)は 09-05〜06 午前の AsIs を保存した履歴。現況は本節が正(家老 R12-5)。

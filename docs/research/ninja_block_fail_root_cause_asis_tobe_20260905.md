@@ -1,13 +1,13 @@
 <!-- gist-master: 70b946c022cd5f6f81195ab837b7a7eb ninja_block_fail_root_cause_asis_tobe_20260905.md -->
-# 忍者BLOCK/FAILの根因対策 — 家老配備設計 v3.4(2026-09-06 18:25 家老 R12 全採用: 一意 ID 表・時点付き経緯・failed=実体未達+形式不備・CI は run ID で別記。v3.3=18:10 F-13 golden CLEAR・F-15 疾風保全統合案・W6 4 例目・F-18 候補=報告契約の型不足。v3.2=12:15 F-15 root drain 追加: origin 収載済み hotfix が共有 root runtime に載らない構造、家老 18 path 監査 queue/notes/root_convergence_audit_20260906_1206.md) / v3.1
+# 忍者BLOCK/FAILの根因対策 — 家老配備設計 v3.5(2026-09-06 18:30 家老 R13: 別 task 証跡の転記誤り訂正・C3 後続 COMPLETE。v3.4=18:25 家老 R12 全採用: 一意 ID 表・時点付き経緯・failed=実体未達+形式不備・CI は run ID で別記。v3.3=18:10 F-13 golden CLEAR・F-15 疾風保全統合案・W6 4 例目・F-18 候補=報告契約の型不足。v3.2=12:15 F-15 root drain 追加: origin 収載済み hotfix が共有 root runtime に載らない構造、家老 18 path 監査 queue/notes/root_convergence_audit_20260906_1206.md) / v3.1
 
 更新: 2026-09-05 23:21:40 JST(家老 v3.1)。将軍追記 2026-09-06 00:40: §5 台帳に W0/W1 CLEAR、F-6 APPROVE、K2 走行、W5 閉を反映。一次確認の観測時点は23:13:50 JST。殿「読み込み覚醒してアップデート。家老が忍者を配備しやすい形式にしてよい」に基づく設計更新。
 正本は本書。既存gist IDを維持。旧v3.0の全数値・分類・レビュー履歴は `docs/research/ninja-block-fail-root-cause-v3-evidence-20260905.md` に保存した。過去の観測日時は変更しない。
 
 ## 進捗ビジュアル(将軍 loop 更新 2026-09-06 18:25。観測時刻を揃えた現在欄。1 行=一意案件 ID、履歴は同行の「経緯」欄に時点付きで残す)
 
-**一意案件 14 件** `███████░░░ 10/14` ✅完了 🟡走行中 ⏳待ち 🔴要判断
-状態集計: ✅ 10 / 🟡 2 / ⏳ 0 / 🔴 2(表の物理行 14=一意 ID 14。「続」行は廃止し経緯欄へ統合。家老 R12-1)
+**一意案件 14 件** `████████░░ 11/14` ✅完了 🟡走行中 ⏳待ち 🔴要判断
+状態集計: ✅ 11 / 🟡 2 / ⏳ 0 / 🔴 1(表の物理行 14=一意 ID 14、18:30 機械計数。「続」行は廃止し経緯欄へ統合。家老 R12-1)
 次の一手: F-15(疾風 保全統合案。18:01 failed は finding 欄欠落**と**target 保全統合案未達の両方=家老 18:06 RC)→root drain 実行→root runtime へ F-14 反映。F-18 は観測案件として採番のみ(新根因・新契約と確定しない、W0/W1 との対応を先に置く)
 
 | ID | 状態(18:25) | 現在値 | 経緯(時点付き) |
@@ -23,9 +23,9 @@
 | F-17 cmd_save check_ac_file_paths 偽 WARN 累計昇格 | ✅ 将軍 D0 | PATHS lookbehind(日本語句読点直後の絶対パス)+planned_paths awk 即 exit の 2 バグ、547deff1b、参照 bats 15/16 PASS | 15:5x |
 | F-18(観測案件) failed 2 件の報告契約不備 | 🔴 採番のみ・根因未確定 | 18:01 疾風=finding 欄(observation_target/result/evidence_path)欠落、18:04 影丸=commit_hash 非 40-hex+binary_checks result 空。**両者とも AC 実体未達が併存**(影丸: 全期間 price/calendar・API JSON 未達)。既存 W0 原因分類/W1 報告契約/report_field_set・テンプレ placeholder の有無を調べてから対応を決める(再実装しない、家老 R12-4) | 18:01/18:04 |
 | C1/C2 insight 実害 | ✅ | CLEAR、pending 38→22 | 午前 |
-| C3 publisher-deploy-ledger | 🔴 FAIL_CLOSE(旧 cmd) | coverage 0.95 未達・未命名 span 欠落、残 2 file。後続 cmd 未起票(旧 cmd の失敗と後続を区別) | 旧 cmd FAIL_CLOSE |
+| C3 publisher-deploy-ledger | ✅ 後続 COMPLETE | 旧 cmd は coverage 0.95 未達・未命名 span 欠落で FAIL_CLOSE。後続 cmd_karo_hotfix_c3_completion_span_20260906(source 1fb456f8、47 file 1,851 test)が CLEAR/COMPLETE(queue/gates/…/completion_tail.log、家老 R13-2) | 旧 FAIL_CLOSE→後続 COMPLETE |
 | E-1 Codex 上限 | ✅ | 解除 09:14 | 停止 07:5x〜09:14 |
-| 恒久契約『変更 script を参照する既存 bats 全列挙』 | ✅ 導入済み 17:32 | 小太郎 cmd_karo_hotfix_reference_test_contract CLEAR 17:32(5 file 567 test 分割証跡、main f0ae04578)。F-16 で将軍 D0 にも適用 | 未導入 13:5x→CLEAR 17:32 |
+| 恒久契約『変更 script を参照する既存 bats 全列挙』 | ✅ 導入済み 17:32 | 小太郎 cmd_karo_hotfix_reference_test_contract CLEAR 17:32(最終 be8b2ce30、38 file 538 test 相当、timeout 1 file は単独 7 PASS で解消、公開 f0ae04578)。※『5 file 567』は才蔵 readonly_probe_contract(80+487)の別 task 証跡=転記誤り(家老 R13-1)。F-16 で将軍 D0 にも適用 | 未導入 13:5x→CLEAR 17:32 |
 
 
 CI(取得 18:19 JST): shogun run 34024048028(6ea0c115f)in_progress、直前 34023932054 cancelled(6d936fd47、連続 push による自動 cancel) / DM-Signal run 34023047561 success(ca5dbbc5)。
