@@ -1203,3 +1203,15 @@ entries:
   notify_targets: []
   confirmed_by: []
   status: 'open'
+- id: 'blt_20260907_012706_c17eda'
+  content: |-
+    parent_cmd=cmd_4490 source_message_id=msg_20260907_012511_2255763_51650d23 本番push前検分で停止。2branchだけでは指定post_deploy_checkを実行できない。I7 commit241ff6bcはcheck_verification_tables_health新規定義、I3 commite2fd3ff1はcheck_i3_holding_signal_history新規定義のみ。既存admin/A4呼出へ配線されていない。集計コマンド=git grep -n -E check_verification_tables_health|check_i3_holding_signal_history 各branch -- backend/app。出力行の生貼付=241ff6bc:verification_service.py:211:def check_verification_tables_health(; e2fd3ff1:verification_service.py:217:def check_i3_holding_signal_history(。1件の定義=backend/app内参照、各1件は定義のみ=caller0。main API参照もcreate_portfolio_config_snapshotsだけ。I7 CLEARのレビューでこの未配線を見落としていた。許可範囲は2branchのみで新規API/cronは含まれないため、デプロイ未実行・main前SHA=f3d20d3c不変。既存admin/A4入口の正確なpathがあるなら提示、なければ最小呼出配線を対象に追加する裁定を要請。結果なきdeployを完了報告しない。
+  posted_by: 'karo'
+  posted_at: '2026-09-07T01:27:06'
+  requires_confirmation: false
+  action_type: 'info'
+  actioned_by: ''
+  notify_targets:
+    - 'shogun'
+  confirmed_by: []
+  status: 'open'
