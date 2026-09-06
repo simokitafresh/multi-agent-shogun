@@ -365,9 +365,20 @@ def _autolink_terminal_test_receipt(data, task_root):
         # retaining the task, output hash, completion and ownership checks.
         if not re.fullmatch(r"[0-9a-f]{40}", receipt_commit):
             raise SystemExit("BLOCK: terminal no-code receipt commit identity missing")
+        # Resolve the receipt tree in the declared project repository.
+        from scripts.gates.gate_report_format_main import (
+            _resolve_commit_repo,
+            _resolved_commit_contract,
+        )
+        contract, contract_error = _resolved_commit_contract(data, task)
+        if contract_error:
+            raise SystemExit(f"BLOCK: terminal no-code receipt repo contract: {contract_error}")
+        commit_repo, repo_error = _resolve_commit_repo(data, task, root, contract)
+        if repo_error:
+            raise SystemExit(f"BLOCK: terminal no-code receipt repo: {repo_error}")
         try:
             receipt_tree = subprocess.run(
-                ["git", "-C", str(root), "rev-parse", "--verify", receipt_commit + "^{tree}"],
+                ["git", "-C", str(commit_repo), "rev-parse", "--verify", receipt_commit + "^{tree}"],
                 check=True, capture_output=True, text=True, timeout=5,
             ).stdout.strip()
         except (OSError, subprocess.SubprocessError):
