@@ -19542,3 +19542,10 @@ insights:
   source: "semantic_index_update"
   fix_known: false
   status: pending
+- id: INS-20260906-220251580-9546
+  ts: "2026-09-06T22:02:51+09:00"
+  insight: "semantic_index_update新概念候補: discussion:CI復旧を待つ合理的な理由はなにか教えて は 既存aliasesに一致なし。概念定義とaliases追加を検討せよ"
+  priority: "low"
+  source: "semantic_index_update"
+  fix_known: false
+  status: pending
