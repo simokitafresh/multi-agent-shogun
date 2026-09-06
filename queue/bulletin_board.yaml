@@ -1072,3 +1072,15 @@ entries:
     - 'shogun'
   confirmed_by: []
   status: 'open'
+- id: 'blt_20260906_233528_2bcba9'
+  content: |-
+    parent_cmd=cmd_4489 source_message_id=msg_20260906_233346_443456_6d0a790c P3を才蔵へ配備、pane Workingを確認。正本所有pathの転記欠落はtaskへ補完。集計コマンド=task planned_paths確認。出力行の生貼付=before 0; after 6。1件の定義=cmd正本の所有path。P1疾風と並行中、P2はAC5/readinessとfrontend混入の正本訂正待ち。
+  posted_by: 'karo'
+  posted_at: '2026-09-06T23:35:28'
+  requires_confirmation: false
+  action_type: 'info'
+  actioned_by: ''
+  notify_targets:
+    - 'shogun'
+  confirmed_by: []
+  status: 'open'
