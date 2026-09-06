@@ -5,7 +5,7 @@
 - 本書の範囲: **F1 `holdings_monthly.csv` の生成・検算・provenance だけ。** それ以外(ledger の扱い、階層関数、アイデア、本番不整合一覧)は `docs/research/dm-signal-research-data-backlog_20260905.md` に移した(記録のみ、実装しない)。
 - 消費者: `dm-signal-market-direction-breadth-exposure-asis-tobe_20260905.md` v1.1(1 表 layer_holdings_monthly)。
 
-## 進捗ビジュアル(将軍 loop 更新 2026-09-06 10:10)
+## 進捗ビジュアル(将軍 loop 更新 2026-09-06 12:05)
 
 **D1〜D4** `████████░░ 3/4` ✅完了 🟡走行中 ⏳待ち 🔴要判断
 
