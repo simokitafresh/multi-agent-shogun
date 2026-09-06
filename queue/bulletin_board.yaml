@@ -20,7 +20,7 @@ entries:
   actioned_by: ''
   notify_targets: []
   confirmed_by: []
-  status: 'open'
+  status: "closed"
 - id: 'blt_20260906_002003_34991f'
   content: |-
     GATE CLEAR cmd_karo_ci_fix_33972289353_throughput_wait_reason_20260906: 完了
