@@ -32,7 +32,7 @@
 |---|---|
 | 何を出すか | 研究 lane の 1 表と同じ 6 列(`year_month, is_mtd, layer, ticker, weight, pf_count`)。`is_suspect` 列は出さない(母集団 75 PF 版では列なし。市場方向書 §1 参照) |
 | どこから計算するか | 本番 Postgres の `monthly_returns.holding_signal`(`backend/app/db/models.py:284`、PIT)を F1 と同じ規則で展開し、階層ごとに平均。CSV は本番に持ち込まない(CSV は検算の正本として使う) |
-| どこに置くか | 新結果表 `layer_holdings_monthly`(1 表、6 列+`calculated_at`)。`p_average_results` と同じ「batch job が書き、API が読むだけ」の型 |
+| どこに置くか | 新結果表layer_holdings_monthly（6業務列+calculated_at+nullable source_recalc_id）。結果表1つをbatch jobが書きAPIが読む。source_recalc_idは参照した再計算行の監査用ID |
 | いつ更新するか | 別cronから、対象月初runの完了・対象範囲・キャンセルなし・失敗なしを永続行で確認して集計する。modeだけで全PFを推定しない。詳細§4.4。条件不成立は旧結果保持 |
 | 誰が見るか | 初期はGlobal hidden_pagesにlayer-holdingsを入れ全Tier+Free viewerを403/nav非表示、adminは既存規則で閲覧可。後日の殿裁定でGlobalから外す1運用操作により公開 |
 | 画面 | `/layer-holdings`。artifact 27c1995d(`docs/dashboard/layer-holdings-monthly.html`、`scripts/layer_holdings_render.py`)のレイアウトを Next.js に移植: layer タブ 5+期間 3(12/36/全)+積み上げ横棒+直近 3 ヶ月の生表 |
@@ -82,7 +82,7 @@
 
 ### §4.1 P1 結果表+batch job
 
-- 表 `layer_holdings_monthly`: PK `(year_month, layer, ticker)`。列 `year_month String, layer String, ticker String, weight Float, pf_count Integer, is_mtd Boolean, calculated_at UTCDateTime`。既存表に列を足さない。migration は up/down 1 本。
+- 表 `layer_holdings_monthly`: PK(year_month,layer,ticker)。year_month String、layer String、ticker String、weight Float、pf_count Integer、is_mtd Boolean、calculated_at UTCDateTime、source_recalc_id Integer nullable。既存表への列追加はせずmigration up/down1本。固定入力の隔離検算はsource_recalc_id=null、本番実行はreadinessで確認したIDを全行へ保存する。
 - job `backend/app/jobs/layer_holdings_batch.py`: p_average_batch.py:20-38,64-73,102以降の一括load→純粋計算→transactionの型を流用する。portfolio単位merge/複数commitは移植しない。読む列はportfolios(id,name,type)とmonthly_returns(portfolio_id,year_month,holding_signal,monthly_return)、対象とcomponent閉包。研究CLIの固定日付・launcher・検算用signals/change_logは持ち込まない。
 - 一貫したsnapshotで全計算・key重複/有限値/合計/分母を検証し、新結果表のみを同一transactionでDELETE→INSERT。失敗・欠損・途中終了はrollbackし旧結果を保持。DB排他で並行jobを防ぎ、calculated_atは全行同一。APIは旧/新いずれか一世代のみを読む。
 - 変更境界: 結果表1・job1・migration up/down1・models登録。現3,525行を打切り上限としない。R3により既存recalc_status.pyへのsummary保存、etl_trigger.pyでのscope/result受渡しと共通readiness判定・admin endpoint、render cron登録を明記する。sync-status辞書+6行だけで足りるとは見積もらない。
@@ -151,7 +151,6 @@ R3追加の月次接続契約（§4.4の続き）:
 
 R3履歴（v0.4、2026-09-06 22:50家老）: 更新6点=modeとscope分離、summary成功根拠、interrupted/正常returnの失敗区別、古い成功へのfallback防止、UTC日付整合、再計算との排他。R2の「mode full+completedなら十分」「+6行」「JSTのままwait流用」は本仕様で訂正。将軍R4へ、未実装の受入検証は上記6項目。
 
-## §10 殿裁定（22:40記録）
 
 ## §9 実装パック(cmd 単位。忍者がそのまま着手でき、家老が配備で悩まない形。殿 22:50『利他の精神で実際に忍者が実装することをイメージして設計書は作れ。家老は配備するときに悩まないように』)
 
@@ -221,6 +220,8 @@ R3履歴（v0.4、2026-09-06 22:50家老）: 更新6点=modeとscope分離、sum
 §9取り込み時の家老補正: R3のscope/result/UTC/排他条件をP2へ反映。source_recalc_idは新結果表の監査列として§1/§4.1も更新する。P1の固定入力fixtureの所在、P2のreadiness関数配置は配備時に明示する必要がある。並行実装では各branchの所有pathを分け、統合検証はP1/P2/P3の統合時に1回行う。
 
 
+
+## §10 殿裁定（22:40記録）
 
 - 2026-09-06 22:30: 初期はL1 Global Page Visibilityで全Tier+Freeをhide。Settings/GlobalVisibilitySettingsのhidden_pages unionにlayer-holdingsを登録、admin閲覧可、viewer403/nav非表示。公開は殿裁定後、Globalの両保存元に当該idが残らないよう1運用操作で解除する。Tier設定は維持する。
 - 2026-09-06 22:34受領: wireframeはHTML gistを前提とする。冒頭の旧artifact取得失敗の留保は、発行者のローカルHTML来歴確認とU7解消により更新する。
