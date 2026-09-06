@@ -20795,3 +20795,17 @@ insights:
   source: "semantic_index_update"
   fix_known: false
   status: pending
+- id: INS-20260907-002307176-6a86
+  ts: "2026-09-07T00:23:07+09:00"
+  insight: "[[P07未使用8列とdetail historyの利用契約を確定し存廃判断へ渡す]] NO_MATCH purpose pending alias: cmd_complete時にdeploy_task.logでNO_MATCHだったpurpose。類似概念TOP3: known_unknowns_principle(無知の知; alias=root HEADへの祖先性だけで未commitを判定すると; score=3.6) / agent_formation_management(編成管理; alias=deploy taskの安全判定を維持したままpath履歴walkとstale report全走査を配送critical; score=3.6) / dmsignal_operations(DM-Signal運用; alias=全PFのticker×weightはdisplay_ticker_weightsに確定値として保存; score=3.5)。既存概念aliasesへの自動昇格候補"
+  priority: "low"
+  source: "semantic_index_update"
+  fix_known: false
+  status: pending
+- id: INS-20260907-002307782-1ebb
+  ts: "2026-09-07T00:23:07+09:00"
+  insight: "[[task report共通契約のversion付きschemaを既存consumerへ接続し旧task互換と契約snap]] NO_MATCH purpose pending alias: cmd_complete時にdeploy_task.logでNO_MATCHだったpurpose。類似概念TOP3: active_task_clear_fail_closed(作業中忍者clearの最下層防止; alias=task statusをidleにしてclearするな; score=20.2) / semantic_dictionary_design(セマンティック辞書構想; alias=task runner終端receiptを明示パスで検証する; score=20.2) / dm_signal_refactor_mission(DM-Signalリファクタ任務; alias=task failedおよびBLOCK系終端でも殿のretro原文promptを冪等配送し; score=20.2)。既存概念aliasesへの自動昇格候補"
+  priority: "low"
+  source: "semantic_index_update"
+  fix_known: false
+  status: pending
