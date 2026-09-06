@@ -1,17 +1,17 @@
 <!-- gist-master: e2219c69d927f32dc84d53e3e7daa97d dm-signal-market-direction-breadth-exposure-asis-tobe_20260905.md -->
-# DM-Signal 体系の保有 ticker×weight を月ごとに見る — 1 表設計書 v1.6(2026-09-06 03:10 cmd_4481 CLEAR 02:45・is_suspect 意味確定) / v1.5(2026-09-06 00:50 cmd_4481 delegated) / v1.4(2026-09-06 00:40 進捗整合: 入力 F1 CSV は 00:19 に生成済み(23,175 行、終端 approved_honest_fail)、新四つ目 3 体は is_suspect=true で別計上(家老 blt_002416 APPROVE)、実装 cmd は家老協議後に起票、cmd_4480 根因確定で is_suspect 解除) / v1.3(2026-09-05 22:55 家老 R3-2 の分母定義を明記) / v1.2(2026-09-05 22:50 家老 R3 途中指摘: 分母は manifest 総数−I7 ではなく『その月に F1 CSV に行がある PF 数』。未開始 layer(L3 は 2013-12 前)は自然に 0 行) / v1.1(2026-09-05 22:50 家老 R2-7: is_mtd 列追加、contract test を AC1/AC2 の 2 本に) / v1.0(2026-09-05 22:35、殿 22:29『シンプルにデータを見たいだけだ。L0,L1,L2,L3,全体でどの ticker をどの weight で持っているかを知りたいだけだ。複雑さはすべて捨てろ』で v0.1〜v0.5 の 6 表・asset class・前月差・仮想 PF・裁定 4 点を全て撤去)
+# DM-Signal 体系の保有 ticker×weight を月ごとに見る — 1 表設計書 v1.7(2026-09-06 12:15 殿裁定 11:46 で対象 78→75 PF(L2 21)、is_suspect 列は cmd_4483 で撤去・再生成中) / v1.6(2026-09-06 03:10 cmd_4481 CLEAR 02:45・is_suspect 意味確定) / v1.5(2026-09-06 00:50 cmd_4481 delegated) / v1.4(2026-09-06 00:40 進捗整合: 入力 F1 CSV は 00:19 に生成済み(23,175 行、終端 approved_honest_fail)、新四つ目 3 体は is_suspect=true で別計上(家老 blt_002416 APPROVE)、実装 cmd は家老協議後に起票、cmd_4480 根因確定で is_suspect 解除) / v1.3(2026-09-05 22:55 家老 R3-2 の分母定義を明記) / v1.2(2026-09-05 22:50 家老 R3 途中指摘: 分母は manifest 総数−I7 ではなく『その月に F1 CSV に行がある PF 数』。未開始 layer(L3 は 2013-12 前)は自然に 0 行) / v1.1(2026-09-05 22:50 家老 R2-7: is_mtd 列追加、contract test を AC1/AC2 の 2 本に) / v1.0(2026-09-05 22:35、殿 22:29『シンプルにデータを見たいだけだ。L0,L1,L2,L3,全体でどの ticker をどの weight で持っているかを知りたいだけだ。複雑さはすべて捨てろ』で v0.1〜v0.5 の 6 表・asset class・前月差・仮想 PF・裁定 4 点を全て撤去)
 
 - 発端: 殿 19:32(市場方向性の PIT 観測)→ 22:29 で目的を 1 文に固定。
 - 版履歴(歴史修正禁止のため記録のみ): v0.1 19:50 6 表設計 / v0.2〜v0.5 21:40〜22:40 weight 正本の訂正往復(display_ticker_weights 直接採用は 08-06 partial-turnover v1.10 で棄却済み→history.py L224-237 方式) / **v1.0 22:35 1 表へ縮約**。旧版本文は git 履歴(5498c0f9b 以前)にある。
 - 入力の正本: 基盤設計書 `docs/research/dm-signal-research-data-foundation-asis-tobe_20260905.md` v0.6 F1 `holdings_monthly.csv`(PF × 月 × ticker × weight。展開規則・検算・対象 78 PF・manifest は全てそこにある)。本書は展開しない、DB を読まない、パラメータを持たない。
 
-## 進捗ビジュアル(将軍 loop 更新 2026-09-06 12:05)
+## 進捗ビジュアル(将軍 loop 更新 2026-09-06 12:15)
 
 **AC1〜AC3** `██████████ 3/3` ✅完了 🟡走行中 ⏳待ち 🔴要判断
 
 | 項目 | 状態 | 現在値 |
 |---|---|---|
-| 単一表 layer_holdings_monthly | ✅ 02:45 | 4,493 行、pf_count/is_mtd/is_suspect 列付き |
+| 単一表 layer_holdings_monthly | 🟡 75 PF 版へ再生成中(cmd_4483 AC3) | v1.6 版=4,493 行(78 PF、is_suspect 列付き、02:45 CLEAR)。75 PF 版は is_suspect 列なし・L2 分母 ≤21 |
 | is_suspect 3 体(新四つ目) → 母集団から除外・列撤去 | 🟡 cmd_4483 走行中(殿 11:46『L2から新四つ目抜きの21体』、delegated 11:53) | 新四つ目 3 体は本表から除外し、is_suspect=false 側(75 PF)を正本として読む。列の物理削除は不要(false 側の行を使う) |
 | 契約 test AC1/AC2(weight 和・pf_count) | ✅ | CI 上で PASS(DM-Signal origin e045d337) |
 

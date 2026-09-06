@@ -1,10 +1,10 @@
 <!-- gist-master: 70b946c022cd5f6f81195ab837b7a7eb ninja_block_fail_root_cause_asis_tobe_20260905.md -->
-# 忍者BLOCK/FAILの根因対策 — 家老配備設計 v3.1
+# 忍者BLOCK/FAILの根因対策 — 家老配備設計 v3.2(2026-09-06 12:15 F-15 root drain 追加: origin 収載済み hotfix が共有 root runtime に載らない構造、家老 18 path 監査 queue/notes/root_convergence_audit_20260906_1206.md) / v3.1
 
 更新: 2026-09-05 23:21:40 JST(家老 v3.1)。将軍追記 2026-09-06 00:40: §5 台帳に W0/W1 CLEAR、F-6 APPROVE、K2 走行、W5 閉を反映。一次確認の観測時点は23:13:50 JST。殿「読み込み覚醒してアップデート。家老が忍者を配備しやすい形式にしてよい」に基づく設計更新。
 正本は本書。既存gist IDを維持。旧v3.0の全数値・分類・レビュー履歴は `docs/research/ninja-block-fail-root-cause-v3-evidence-20260905.md` に保存した。過去の観測日時は変更しない。
 
-## 進捗ビジュアル(将軍 loop 更新 2026-09-06 12:05)
+## 進捗ビジュアル(将軍 loop 更新 2026-09-06 12:15)
 
 **W カード** `██████░░░░ 4/7` ✅完了 🟡走行中 ⏳待ち 🔴要判断
 
@@ -13,14 +13,15 @@
 | W0/W1 契約/W1 core/W4/W5 | ✅ | 一意根拠表・routine_refs 注入・canonical 記録・バグ#6 は全て CLEAR |
 | W2/T1・W3/T2・W6 | ⏳ | W2 は P-4 CLEAR 後。W6 は既存監視で停滞なし |
 | F-6〜F-12 | ✅ | gate 偽 BLOCK/recon-dual 契約/K2 偽 CLEAR/insight 自動消火/hotfix 契約回帰 2 件=全て根治・CI 層 B 0 |
-| F-13 deploy_task 系 CI RED(deploy 8+FP 1) | 🟡 | 影丸 ci_fix 保存済み。P-4 の file 予約解除待ち |
+| F-13 deploy_task 系 CI RED(deploy 8+FP 1) | 🟡 | deploy 8 は P-4 CLEAR 後に再走行で判定。FP 1 は診断 run 34005978406 で PASS=flaky 確定、才蔵 ci_fix は正式 FAIL_CLOSE(11:30) |
 | P-4 recon_dual 投影・fixed base | 🟡 WAIT(root 同期待ち) | 本体 3d2b6c4d9 収載済み。cb3d9af23 は origin と 4/4 一致、残=lifecycle 1 行 606f8efe4。F-14 gate は origin c4b0989d3 へ収載済みだが共有 root への同期が not_descendant で skip(root 171 behind/23 ahead、safe_ff mismatch 18)=root の gate が旧版のまま→11:53 も external_wait。将軍 12:01 家老へ順序付き 1 通(mismatch 18 の二分→収束→P-4 再 GATE→deploy 8 再判定) |
+| F-15 root drain(F-14 の runtime 未反映) | 🔴 便の壁 | root 171 behind/23 ahead、safe_ff mismatch 18。家老監査 12:07: origin 上位 10 path/履歴 metadata 合流 8 path、insights は root resolved↔origin pending 96 件=F-9 同型ゆえ一括採用せず。gate 隔離実行の代替は補助 script 旧版で不可 |
 | C1/C2 insight 実害 | ✅ | CLEAR。pending 38→22 |
 | C3 publisher-deploy-ledger | 🔴 FAIL_CLOSE | coverage 0.95 未達・未命名 span 欠落。残件 2 file |
 | E-1 Codex 上限 | ✅ 解除 09:14 | 停止 07:5x〜09:14 |
 | 恒久契約『変更 script を参照する既存 bats 全列挙』 | 🔴 未導入 | F-11/12/13 3 連発の真因。家老 lane |
 
-CI: shogun `🔴 RED`(deploy 8+FP 1+flaky 3、層 B 9 は解消) / DM-Signal `🔴 RED 1`(golden cmd_3854、飛猿 ci_fix)
+CI: shogun `🔴 RED`(shard 1=deploy 8、FP は flaky、層 B 9 は解消) / DM-Signal `🔴 RED 1`(golden cmd_3854、飛猿 idle=再配備待ち)
 
 ## §0 家老が最初に見る結論
 
