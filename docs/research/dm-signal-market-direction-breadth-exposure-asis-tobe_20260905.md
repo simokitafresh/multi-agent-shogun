@@ -5,9 +5,11 @@
 - 版履歴(歴史修正禁止のため記録のみ): v0.1 19:50 6 表設計 / v0.2〜v0.5 21:40〜22:40 weight 正本の訂正往復(display_ticker_weights 直接採用は 08-06 partial-turnover v1.10 で棄却済み→history.py L224-237 方式) / **v1.0 22:35 1 表へ縮約**。旧版本文は git 履歴(5498c0f9b 以前)にある。
 - 入力の正本: 基盤設計書 `docs/research/dm-signal-research-data-foundation-asis-tobe_20260905.md` v0.6 F1 `holdings_monthly.csv`(PF × 月 × ticker × weight。展開規則・検算・対象 78 PF・manifest は全てそこにある)。本書は展開しない、DB を読まない、パラメータを持たない。
 
-## 進捗ビジュアル(将軍 loop 更新 2026-09-06 13:35)
+## 進捗ビジュアル(将軍 loop 更新 2026-09-06 13:40)
 
 **AC1〜AC3** `██████████ 3/3` ✅完了 🟡走行中 ⏳待ち 🔴要判断
+状態集計: ✅ 3 / 🟡 0 / ⏳ 0 / 🔴 0(表の 3 行)
+次の一手: 完了。artifact 27c1995d(75 PF 実値)を殿が閲覧、追加要望があれば再起票
 
 | 項目 | 状態 | 現在値 |
 |---|---|---|

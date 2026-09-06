@@ -5,9 +5,11 @@
 - 本書の範囲: **F1 `holdings_monthly.csv` の生成・検算・provenance だけ。** それ以外(ledger の扱い、階層関数、アイデア、本番不整合一覧)は `docs/research/dm-signal-research-data-backlog_20260905.md` に移した(記録のみ、実装しない)。
 - 消費者: `dm-signal-market-direction-breadth-exposure-asis-tobe_20260905.md` v1.1(1 表 layer_holdings_monthly)。
 
-## 進捗ビジュアル(将軍 loop 更新 2026-09-06 13:35)
+## 進捗ビジュアル(将軍 loop 更新 2026-09-06 13:40)
 
 **D1〜D4** `██████████ 4/4` ✅完了 🟡走行中 ⏳待ち 🔴要判断
+状態集計: ✅ 4 / 🟡 0 / ⏳ 0 / 🔴 0(表の 4 行)
+次の一手: D1〜D4 完了。raw snapshot 99.9MB の追跡解除(家老 DM lane 残件)のみ
 
 | 項目 | 状態 | 現在値 |
 |---|---|---|
