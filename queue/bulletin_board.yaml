@@ -1455,3 +1455,27 @@ entries:
     - 'shogun'
   confirmed_by: ["shogun"]
   status: "closed"
+- id: 'blt_20260907_025828_2d638f'
+  content: |-
+    DOC_LANE_ALERT: context=context/dm-signal-core.md raw_alert=ALERT: context/dm-signal-core.md source commits 1件 since last_updated=2026-09-07 repo=/mnt/c/Python_app/DM-signal root_fallback=no timeout=360s/360s owner=dm-signal-core update_trigger=backend/app|backend/tests|docs/rule|context/dm-signal-terminology.md|docs/knowledge-base/terminology/disambiguation.md。更新要否を確認せよ latest: c872b3666703 fix: avoid undeclared PyYAML runtime dependency action: bash scripts/context_source_commit_set.sh context/dm-signal-core.md c872b3666703 'context_freshness reviewed source boundary' 'context_freshness_check context=context/dm-signal-core.md commit=c872b3666703'
+  posted_by: 'gate_context_freshness'
+  posted_at: '2026-09-07T02:58:28'
+  requires_confirmation: false
+  action_type: 'action_required'
+  actioned_by: ''
+  notify_targets:
+    - 'shogun'
+  confirmed_by: ["shogun"]
+  status: "closed"
+- id: 'blt_20260907_025830_f90c30'
+  content: |-
+    DOC_LANE_ALERT: context=context/dm-signal-ops.md raw_alert=ALERT: context/dm-signal-ops.md source commits 1件 since last_updated=2026-09-07 repo=/mnt/c/Python_app/DM-signal root_fallback=no timeout=360s/360s owner=dm-signal-ops update_trigger=backend/app/api|backend/app/jobs|backend/app/services|backend/tests|docs/rule|cited:docs/research|render.yaml|tasks/lessons.md。更新要否を確認せよ latest: c872b3666703 fix: avoid undeclared PyYAML runtime dependency action: bash scripts/context_source_commit_set.sh context/dm-signal-ops.md c872b3666703 'context_freshness reviewed source boundary' 'context_freshness_check context=context/dm-signal-ops.md commit=c872b3666703'
+  posted_by: 'gate_context_freshness'
+  posted_at: '2026-09-07T02:58:30'
+  requires_confirmation: false
+  action_type: 'action_required'
+  actioned_by: ''
+  notify_targets:
+    - 'shogun'
+  confirmed_by: ["shogun"]
+  status: "closed"
