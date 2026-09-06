@@ -1159,6 +1159,12 @@ gate_detail_finish() {
         printf '%(%Y-%m-%dT%H:%M:%S)T\t%s\t%s\t%s\t%d.%03d\n' \
             -1 "$CMD_ID" "$GATE_DETAIL_CLASS" "$GATE_DETAIL_CURRENT" "$sec" "$ms" >> "$GATE_DETAIL_LOG"
     ) 9>"${GATE_DETAIL_LOG}.lock"
+    # The detail log write above is part of this synchronous measurement
+    # boundary.  Preserve its end timestamp so the next sequential span can
+    # start at the exact same instant; otherwise flock/append latency between
+    # spans is charged to the enclosing subphase but to no named child.
+    GATE_DETAIL_LAST_FINISH_US="$now_us"
+    GATE_DETAIL_LAST_FINISH_SUBPHASE="${GATE_SUBPHASE_CURRENT:-}"
     GATE_DETAIL_CURRENT=""
     GATE_DETAIL_CLASS=""
     GATE_DETAIL_START_US=""
@@ -1170,7 +1176,12 @@ gate_detail_begin() {
     gate_detail_finish
     GATE_DETAIL_CURRENT="$label"
     GATE_DETAIL_CLASS="$class"
-    GATE_DETAIL_START_US=$(gate_detail_now_us)
+    if [ "${GATE_DETAIL_LAST_FINISH_SUBPHASE:-}" = "${GATE_SUBPHASE_CURRENT:-}" ] \
+        && [ -n "${GATE_DETAIL_LAST_FINISH_US:-}" ]; then
+        GATE_DETAIL_START_US="$GATE_DETAIL_LAST_FINISH_US"
+    else
+        GATE_DETAIL_START_US=$(gate_detail_now_us)
+    fi
 }
 
 gate_detail_finish
@@ -16075,6 +16086,11 @@ if [ "$ALL_CLEAR" = true ] \
     gate_subphase_tick "source_publication_wait"
     gate_subphase_tick "runtime_publish_wait"
     gate_subphase_tick "post_source_checks"
+    # The subphase clock starts when the tick returns.  Keep the small
+    # heading/branch-dispatch interval before the first L4 span named too;
+    # under a short WAIT fixture this otherwise becomes a measurable gap and
+    # drives named coverage below the 95% floor.
+    gate_detail_begin "post_source_checks.preflight" pure_processing
 fi
 
 # The exact report commit is the immutable completion artifact. Later commits
@@ -16106,6 +16122,14 @@ if [ "$ALL_CLEAR" = true ]; then
     else
         gate_detail_finish
     fi
+fi
+
+# Keep the synchronous verdict-reconciliation interval between the L4 ancestry
+# decision and the WAIT/BLOCK finalizer inside a named span.  This is a
+# separate sequential span (never a parent of another detail span), so the
+# total remains comparable to the sum without double-counting child work.
+if [ "$ALL_CLEAR" != true ] && [ "${GATE_SUBPHASE_CURRENT:-}" = "post_source_checks" ]; then
+    gate_detail_begin "post_source_checks.wait_transition" pure_processing
 fi
 
 # ─── 判定結果 ───
