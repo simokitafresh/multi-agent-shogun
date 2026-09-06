@@ -88,7 +88,7 @@ if [ "${1:-}" = "--batch" ]; then
         RFS_PHASE_RECEIPT="$_rfs_phase_receipt" \
         RFS_BATCH_PAYLOAD="$_rfs_batch_payload" \
         python3 - "$_rfs_batch_report" "$_rfs_batch_root" "$_rfs_batch_task_root" <<'PY'
-import datetime, hashlib, json, os, pathlib, re, subprocess, sys, tempfile, time, yaml
+import copy, datetime, hashlib, json, os, pathlib, re, subprocess, sys, tempfile, time, yaml
 from typing import Any
 sys.path.insert(0, sys.argv[2])
 from scripts.lib.yaml_atomic import yaml_text
@@ -114,6 +114,7 @@ if not isinstance(updates, dict) or not updates:
 data = yaml.safe_load(path.read_text(encoding="utf-8")) if path.exists() else {}
 if not isinstance(data, dict):
     raise SystemExit("BLOCK: report must be a YAML mapping")
+original_data = copy.deepcopy(data)
 # Level 5 report scaffold: legacy/alternate publication paths may hand the
 # authoring lane a report created before operational_simulation became
 # mandatory.  Repair structure only; empty values deliberately remain invalid
@@ -125,8 +126,43 @@ if not isinstance(opsim, dict):
 for field in ("command", "expected", "actual", "result"):
     opsim.setdefault(field, "")
 old_status = str(data.get("status", "")).strip()
-if old_status in {"completed", "done"} and updates.get("status") != "revision_requested":
-    raise SystemExit("BLOCK: completed report is immutable; batch must first transition to revision_requested")
+
+def terminal_replay_identity(report):
+    """Hash review-relevant generation inputs, excluding delivery metadata.
+
+    A terminal publisher can fail after the report bytes are durable but before
+    its lifecycle notification is persisted.  Retrying the same terminal
+    request must repair that notification without rewriting the report.  The
+    identity deliberately keeps contract/input/source/evidence and substantive
+    fields, while report IDs, timestamps, status, and completion metadata remain
+    delivery metadata.  This is the local replay guard; inbox_write remains the
+    durable exactly-once boundary.
+    """
+    payload = copy.deepcopy(report)
+    for key in (
+        "report_id", "status", "timestamp", "created_at", "submitted_at",
+        "completed_at", "done_at", "updated_at", "acknowledged_at",
+        "deployed_at",
+    ):
+        payload.pop(key, None)
+    result = payload.get("result")
+    if isinstance(result, dict):
+        result.pop("commit_hash", None)
+    opsim = payload.get("operational_simulation")
+    if isinstance(opsim, dict) and not any(str(opsim.get(key) or "").strip()
+                                           for key in ("command", "expected", "actual", "result")):
+        payload.pop("operational_simulation", None)
+
+    def encode(value):
+        if hasattr(value, "isoformat"):
+            return value.isoformat()
+        raise TypeError(type(value))
+
+    serialized = json.dumps(
+        payload, default=encode, ensure_ascii=False, sort_keys=True,
+        separators=(",", ":"),
+    )
+    return hashlib.sha256(serialized.encode("utf-8")).hexdigest()
 
 def set_dot(root, dotted, value):
     keys = dotted.replace("[", ".").replace("]", "").split(".")
@@ -389,6 +425,24 @@ if results:
         # preserved so intermediate field updates don't trigger immutability.
         data["status"] = "completed"
 
+# A retry after the terminal bytes were written but before lifecycle delivery
+# reaches this entry with status=completed/done.  Permit it only when the
+# normalized generation is unchanged; restore the original mapping so a
+# timestamp/report-id-only retry cannot create a second report generation.
+terminal_replay = False
+if old_status in {"completed", "done"}:
+    requested_status = updates.get("status")
+    if requested_status not in {"completed", "done", "revision_requested"}:
+        raise SystemExit("BLOCK: completed report is immutable; batch must first transition to revision_requested")
+    same_generation = terminal_replay_identity(data) == terminal_replay_identity(original_data)
+    if same_generation:
+        # A formal revision envelope containing only a new delivery id or
+        # timestamp is still the same generation and must not rotate bytes.
+        data = original_data
+        terminal_replay = True
+    elif requested_status != "revision_requested":
+        raise SystemExit("BLOCK: completed report replay changes contract/input/source/evidence or substantive content")
+
 terminal = str(data.get("status", "")).strip() in {"completed", "done", "failed"}
 if str(data.get("status", "")).strip() in {"completed", "done"}:
     _autolink_terminal_test_receipt(data, task_root)
@@ -397,7 +451,7 @@ if str(data.get("status", "")).strip() in {"completed", "done"}:
 # publication by multiple review rounds. Record the real terminal edge in the
 # same atomic replace as the report status so downstream gap telemetry uses the
 # completion event rather than deployment time.
-if terminal:
+if terminal and not terminal_replay:
     data["completed_at"] = datetime.datetime.now(datetime.timezone.utc).isoformat(timespec="seconds")
 def lesson_feedback_task_path(report: dict[str, Any]) -> pathlib.Path | None:
     explicit = str(os.environ.get("RFS_TASK_FILE_PATH", "")).strip()
