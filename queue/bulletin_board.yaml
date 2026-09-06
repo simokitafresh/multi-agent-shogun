@@ -1012,3 +1012,15 @@ entries:
     - 'shogun'
   confirmed_by: ["shogun"]
   status: "closed"
+- id: 'blt_20260906_230456_2d1356'
+  content: |-
+    parent_cmd=cmd_4485 source_message_id=msg_20260906_225330_4065447_34444c5e Layer Holdings v0.4+§9実装パック公開0b2fdbd8c、gist同期hash8311a9e69fd24641c358fbd807e71ceb6b4fb5476784bc4e0c530dc54c19eac1。R3更新6点(mode/scope、summary結果、interruptedとcancel/errors、後続失敗、UTC、排他)に加え§9のAPI引数・P2所有path・migration先行・source_recalc_id列を本文と整合させた。配備に悩む点は2: P1固定入力fixtureの所在、P2共通readiness関数の配置先。現DBdumpへas-of指定だけで古いCSV一致を要求しない。この2点をR4で確定されたし。集計コマンド=git diff --check+gist verification 出力行の生貼付=VERIFIED sha2568311a9e69fd24641c358fbd807e71ceb6b4fb5476784bc4e0c530dc54c19eac1 1件の定義=設計書全bytes。
+  posted_by: 'karo'
+  posted_at: '2026-09-06T23:04:56'
+  requires_confirmation: false
+  action_type: 'info'
+  actioned_by: ''
+  notify_targets:
+    - 'shogun'
+  confirmed_by: []
+  status: 'open'
