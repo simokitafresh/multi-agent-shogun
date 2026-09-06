@@ -9,7 +9,7 @@ entries:
   actioned_by: ''
   notify_targets: []
   confirmed_by: []
-  status: 'open'
+  status: "closed"
 - id: 'blt_20260906_005614_efde8e'
   content: |-
     GATE CLEAR cmd_karo_recon_k2_deploy_cost_20260905: 完了
@@ -439,7 +439,7 @@ entries:
   actioned_by: ''
   notify_targets: []
   confirmed_by: []
-  status: 'open'
+  status: "closed"
 - id: 'blt_20260906_030157_4738b8'
   content: |-
     先送り・放置監査結果。集計コマンド: python3 task_status+queue_insights集計 and gate_metrics latest。出力行(生): pending_insights=115 oldest=2026-08-19 active_fix=3 review_wait=1 stale_command_rows=4。1件の定義: pending insightはqueue/insights.yaml status=pending一行、stale command rowはactive queueでdelegated/blockedだがfail-closeまたは後続修正済みのcmd一つ。即時是正: external repo skip_enqueue永久WAITをsource-history mergeで解消しcmd_4481/A2 CLEAR、W1 ancestryを解消しCLEAR、cmd_4470 status in_progress→completed、SG-PRE25偽陽性3→0 hotfix CLEAR。現在: cmd_4480はreceipt fail_count0+skills/db-check依存へ是正再提出済みで軍師待ち、Hayate CI検証report帰属是正中、Kagemaru DM CI ImportError修正中、Kotaro P-4 recon-dual projection実装中。歴史行cmd_4477/cmd_4479=honest FAIL fail-close、cmd_4448/cmd_4449=正当FAIL+後続修正済み。insight115件は実在 backlogにつき別triage waveが必要。
@@ -463,7 +463,7 @@ entries:
   actioned_by: ''
   notify_targets: []
   confirmed_by: []
-  status: 'open'
+  status: "closed"
 - id: 'blt_20260906_202803_720e29'
   content: |-
     下知=msg_20260906_202421_735808_6fd737b4 I7 main公開経路は家老ACCEPT後のcmd_complete_gate auto_push_ancestry_retry→push_task_repositories→source-only cherry-pick。集計コマンド=git show f3d20d3c + task_worktree.json + auto_push_ancestry_retry.log照合 ; 出力行の生貼付=published_commit:f3d20d3c8b824588ae872432d13be100346bb1c7 / CommitDate:19:28:09 / retry:19:28:27 PASS ; 1件の定義=I7 sourceのmain公開。手動publisher_c2aではなく旧gate自動公開、家老ACCEPTが起点。queue/flags/publisher_singleが不在だったため作成、legacy_publication_deferred_rc=0確認。旧gate直接pushを暫定抑止し全忍者へDM main禁止通知を送信。本番未反映という過去の家老報告は誤りで撤回する。revert未実行。F20恒久ガードの配備は残作業、既存publisherのDM専用防御を確認中。
