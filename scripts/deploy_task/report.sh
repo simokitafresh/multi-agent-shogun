@@ -277,11 +277,6 @@ if not ac_version:
     ac_version = hashlib.sha256(payload.encode()).hexdigest()[:16]
 
 snapshot = {
-    # cmd_karo_hotfix_contract_schema_20260907: explicit schema tag so a
-    # future incompatible snapshot shape is an error, never a silent
-    # misread; a snapshot with no key at all stays legacy-compatible
-    # (see scripts/lib/report_gate_contract.py contract_snapshot_version).
-    "contract_version": 1,
     "parent_cmd": resolved_parent,
     "task_id": resolved_task,
     "issued_cmd_id": issued_cmd,

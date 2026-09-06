@@ -125,3 +125,69 @@ YAML
     [ "$status" -eq 0 ]
     [[ "$output" == *"OK contract_version=1"* ]]
 }
+
+# test_necessity: inbox_write.sh's lesson_safety_net (inject_universal_lessons_if_missing)
+# can add related_lessons to the LIVE task file after the deploy-time snapshot
+# already froze an empty lesson_set. A report that correctly stays faithful to
+# the frozen (empty) snapshot must read as allowed/OK via the snapshot, not be
+# judged against the live task's post-injection lessons; a report that instead
+# reports the live post-injection lessons must be rejected as extra, since the
+# report's own generation never had those lessons assigned to it.
+@test "snapshot-authoritative lesson reads survive a post-deploy lesson_safety_net injection" {
+    cat > "$WORK_DIR/task_after_injection.yaml" <<'YAML'
+task:
+  task_id: cmd_p07_full
+  parent_cmd: cmd_p07
+  task_type: hotfix
+  related_lessons:
+  - id: L097
+  - id: L019
+YAML
+    cat > "$WORK_DIR/report_empty.yaml" <<'YAML'
+worker_id: kotaro
+parent_cmd: cmd_p07
+task_id: cmd_p07_full
+task_contract_snapshot:
+  parent_cmd: cmd_p07
+  task_id: cmd_p07_full
+  ac_fingerprint: abc12345
+  lesson_set:
+    mode: subset
+    ids: []
+lessons_useful: []
+YAML
+    cat > "$WORK_DIR/report_injected.yaml" <<'YAML'
+worker_id: kotaro
+parent_cmd: cmd_p07
+task_id: cmd_p07_full
+task_contract_snapshot:
+  parent_cmd: cmd_p07
+  task_id: cmd_p07_full
+  ac_fingerprint: abc12345
+  lesson_set:
+    mode: subset
+    ids: []
+lessons_useful:
+- id: L097
+  useful: true
+  reason: injected post-deploy by lesson_safety_net
+- id: L019
+  useful: true
+  reason: injected post-deploy by lesson_safety_net
+YAML
+
+    run python3 "$PROJECT_ROOT/scripts/lib/report_gate_contract.py" lesson-feedback-set \
+        "$WORK_DIR/task_after_injection.yaml" "$WORK_DIR/report_empty.yaml"
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"OK mode=subset allowed=0 reported=0"* ]]
+
+    run python3 "$PROJECT_ROOT/scripts/lib/report_gate_contract.py" lesson-empty-allowed \
+        "$WORK_DIR/task_after_injection.yaml" "$WORK_DIR/report_empty.yaml"
+    [ "$status" -eq 0 ]
+    [[ "$output" == "ALLOWED" ]]
+
+    run python3 "$PROJECT_ROOT/scripts/lib/report_gate_contract.py" lesson-feedback-set \
+        "$WORK_DIR/task_after_injection.yaml" "$WORK_DIR/report_injected.yaml"
+    [ "$status" -eq 1 ]
+    [[ "$output" == *"extra=L019,L097"* ]]
+}

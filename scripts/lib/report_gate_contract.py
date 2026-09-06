@@ -479,6 +479,10 @@ if __name__ == "__main__":
     contract_parser.add_argument("task_path")
     contract_parser.add_argument("report_path")
 
+    empty_parser = subparsers.add_parser("lesson-empty-allowed")
+    empty_parser.add_argument("task_path")
+    empty_parser.add_argument("report_path")
+
     args = parser.parse_args()
     if args.command == "ac-version":
         print(compute_task_ac_version(args.task_path))
@@ -491,6 +495,16 @@ if __name__ == "__main__":
         ok, message = contract_snapshot_status(args.task_path, args.report_path)
         print(message)
         raise SystemExit(0 if ok else 1)
+    if args.command == "lesson-empty-allowed":
+        # cmd_karo_hotfix_contract_schema_20260907: exposes lesson_empty_allowed
+        # (already the snapshot-authoritative rule inside this module) so a
+        # bash consumer such as cmd_complete_gate.sh's
+        # handle_empty_lessons_useful_check can consult it instead of
+        # blocking on an empty lessons_useful whenever the deploy-time
+        # snapshot's own lesson_set was legitimately empty.
+        allowed = lesson_empty_allowed(args.task_path, _load_yaml(args.report_path))
+        print("ALLOWED" if allowed else "NOT_ALLOWED")
+        raise SystemExit(0 if allowed else 1)
     ok, message = lesson_feedback_set_status(args.task_path, args.report_path)
     print(message)
     raise SystemExit(0 if ok else 1)
