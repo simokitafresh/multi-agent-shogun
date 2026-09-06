@@ -259,7 +259,7 @@ PY
     # reachable-commit snapshot so a stale task.project path cannot create a
     # false ancestry result.
     if [ -n "$task_file" ] && [ -f "$task_file" ] \
-        && [ -n "$report_identity" ] && [ "$report_identity" != "no-code-change" ]; then
+        && [ -n "$report_identity" ]; then
         resolved_repo="$(resolve_report_commit_repo "$report_file" "$task_file" "$repo_dir")" || {
             printf 'BLOCK: report commit main ancestry: repository resolution failed\n'
             return 1
