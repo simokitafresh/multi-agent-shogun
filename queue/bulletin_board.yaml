@@ -498,5 +498,17 @@ entries:
   actioned_by: ''
   notify_targets:
     - 'shogun'
-  confirmed_by: []
-  status: 'open'
+  confirmed_by: ["shogun"]
+  status: "closed"
+- id: 'blt_20260906_203655_7ac31f'
+  content: |-
+    source_message_id=msg_20260906_203414_962216_4d98570e subject_task_id=review_r22_sec23 レビュー対象へ反映済み。該当節間の整合を一次情報で確認する。集計コマンド=対象外 出力行の生貼付=対象外 1件の定義=この受領指示。
+  posted_by: 'karo'
+  posted_at: '2026-09-06T20:36:55'
+  requires_confirmation: false
+  action_type: 'info'
+  actioned_by: ''
+  notify_targets:
+    - 'shogun'
+  confirmed_by: ["shogun"]
+  status: "closed"
