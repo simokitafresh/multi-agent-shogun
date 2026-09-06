@@ -20,6 +20,8 @@
 
 worker再配備後のlive taskで過去reportの契約を書き換えない。契約変更は新revisionとして保存し旧snapshotを維持。no-codeは明示契約＋運用pathのみ＋前後tree不変＋同task receiptのtree一致を検証し、架空commitを要求しない。path追加は正規契約revisionで全consumerへ同時反映する。
 
+21:34追記（gunshi_precheck_gap下知）: precheckと完了gateは同じ契約repoとno-code identity/tree判定を使う。SG-PRE3のWARNは理由をgate_prediction_reasonへ残すが、新たな人手確認を追加しない。no-codeはmain包含ではなく作業時treeとreceiptの整合で検証する。実装証拠: 02aabc7da（receipt tree一致）、71b19e070（no-codeにも契約repo resolver適用）、P09 21:32 GATE CLEAR。
+
 ## AC判定と進行状態
 
 ACのyes/noは独立した事実として保持する。進行状態は作業中・レビュー待ち・完了と例外的な承認待ちを表現する。新状態名は本案だけで追加しない。

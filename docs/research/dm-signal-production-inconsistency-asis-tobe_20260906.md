@@ -312,14 +312,14 @@ flowchart LR
 - (f) 依存: 独立。I1 の DROP より先。
 - (h) 未検証: 一般化件数(2 件が新四つ目固有か全 FoF 共通か)。
 
-### I9(v0.3 追加) 本番 tree と設計文書の乖離: 08-13 rollback で 08-05〜08-12 の backend 変更 139 commit が現本番に無い
-- (a) 事象: DM-Signal origin/main の `backend/app/services/signal_decision_ledger.py` は 21e80e30(2026-08-04)と**同一**、T7.5 c13a56fe(08-12『downgrade ledger guard to detect-only』)とは**不一致**(14:2x 将軍 `git diff --quiet` 確認)。`233c2303`(08-13『rollback: restore production tree to 21e80e30』)が本番 tree を 08-04 へ戻した。`git rev-list --count 21e80e30..233c2303^ -- backend/app` = **139**(履歴 commit 数)。**限定**(家老 R2 追記 14:39): 同値が確認できたのは `signal_decision_ledger.py`(blob 0d71b153=21e80e30)のみで、backend 全体が 08-04 版・139 commit の効果が全て不存在とは未証明。rollback 後の origin/main は 21e80e30 から `38 files changed, 1794 insertions, 381 deletions`(家老実測)=一部は再適用・新規変更されている。T7.5 の 2 file(ledger/signal_flush)への再適用は 0。
+### I9(v0.3 追加) 本番 tree と設計文書の乖離: ledger/signal_flush の T7.5 変更が 08-13 rollback 後の固定treeに未適用（139 は backend/app 履歴件数）
+- (a) 事象: DM-Signal 固定点 `origin/main 0f2bfbcd1e34ea2fd5d794ba4da5332a09ba7d69`（`2026-09-06T13:30:05+09:00`）では、`backend/app/services/signal_decision_ledger.py` blob `0d71b153c02a…` と `backend/app/jobs/flush/signal_flush.py` blob `e35205f1a879…` がともに rollback restore point `21e80e30`（`2026-08-04T00:51:40+09:00`）と同一。T7.5 `c13a56fe`（`2026-08-12T02:16:58+09:00`）/`0e9d158d`（`2026-08-12T13:05:30+09:00`）は対象2 fileを変更したが、`233c2303`（`2026-08-13T01:52:36+09:00`）が両fileを `21e80e30` へ復帰させた。`git rev-list --count 21e80e30..233c2303^ -- backend/app` = **139** は履歴commit件数であり、固定treeの全backend効果消失を意味しない。実際、固定点の `git diff --quiet 21e80e30 0f2bfbcd -- backend/app` はFAIL（差分あり）。
 - (b) 本番影響: 挙動としては 08-04 版が本番の正=殿裁定 08-16『バグを直さず復帰点へ戻す』の結果であり、コード自体は不整合ではない。**不整合は文書側**: backlog B2『08-12 T7.5 は guard detect-only 化と alert 撤去』、本書 v0.1 の I2/I4 記述、`projects/dm-signal.yaml` PI-P06 周辺は、現本番に無いコードを前提にしている可能性がある。I2 の『run297 normalize change log insert rows』も現本番に無いため、change_log の重複挙動は 08-04 版のもの。
-- (c) 改善案: 本書と backlog・PI の該当記述に「現本番=08-04 版(233c2303)」の注記を付け、T7.5 等は『適用済み』ではなく『rollback で未適用(再適用は別裁定)』へ訂正。139 commit の再適用可否は本書の範囲外(別設計書、殿裁定)。
+- (c) 改善案: 本書と backlog・PI の該当記述に「固定点の対象2 fileは08-04版blob（233c2303 rollback後）」「T7.5はrollbackで未適用（再適用は別裁定）」を付ける。139件の個別効果、稼働deploy SHAとの一致、再適用可否は本書の範囲外（別設計書・殿裁定）。
 - (d) 改善時の本番変化: 文書訂正のみ=なし。
 - (e) 影響範囲: `docs/research/dm-signal-research-data-backlog_20260905.md` B2、本書 I2/I4、`projects/dm-signal.yaml` PI-P06、`context/dm-signal-ops.md` の該当 §。
 - (f) 依存: I2/I4 の記述の前提。偵察 cmd の担当忍者へ「services/signal_decision_ledger.py と jobs/flush/signal_flush.py の 2 file は 21e80e30 版(T7.5 未適用)、backend 全体は断定しない」を明示する(cmd_4484 正本と同文)。
-- (h) 未検証: 139 commit のうち docs/PI が『適用済み』として参照しているものの一覧。
+- (h) 未検証: 139件の各commitの個別効果、稼働deploy SHAとの一致、docs/PIが「適用済み」と参照する対象一覧、T7.5再適用の承認。ledger行数はDB read-only証跡の別軸で扱う。
 
 ## §6 設計の因果(殿 14:47『本番は過去の因果で今の形。明らかなバグ以外は、なぜその設計かをたどる』。origin/main の `git log -S` で導入 commit を特定。判定: 意図あり/バグ/意図が失効)
 

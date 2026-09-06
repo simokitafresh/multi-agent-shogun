@@ -1,5 +1,6 @@
 # DM-signal 運用コンテキスト
-<!-- last_updated: 2026-09-06 2026-09-06 04:50 将軍doc lane GA-589: DTB3 as-of replay/restore parity fixture 契約を §104 へ追記 -->
+<!-- last_updated: 2026-09-06 2026-09-06 20:27 将軍doc lane: I7 checker は隔離 branch isolated/p08-i7-monitor-20260906 のみ(main 未合流・本番未反映)。core に隔離 branch 注記、ops は本番挙動不変ゆえ本文変更なし -->
+<!-- source_commit:f3d20d3c8b82 reason:2026-09-06 20:27 将軍doc lane: I7 checker は隔離 branch isolated/p08-i7-monitor-20260906 のみ(main 未合流・本番未反映)。core に隔離 branch 注記、ops は本番挙動不変ゆえ本文変更なし evidence:git -C /mnt/c/Python_app/DM-signal branch -r --contains f3d20d3c = origin/isolated/p08-i7-monitor-20260906 のみ -->
 <!-- source_commit:1fe4cb1388d9 reason:2026-09-06 04:50 将軍doc lane GA-589: DTB3 as-of replay/restore parity fixture 契約を §104 へ追記 evidence:git -C /mnt/c/Python_app/DM-signal show 1fe4cb13 --stat = data_loader.py +9/-1 + integration fixture 3 path; gh run view 33985798406 = 1 failed/1935 passed -->
 <!-- source_commit:8af98631921c reason:context_freshness reviewed source boundary evidence:context_freshness_check context=context/dm-signal-ops.md commit=8af98631921c -->
 <!-- source_commit:c8b347140eee reason:context_freshness reviewed source boundary evidence:context_freshness_check context=context/dm-signal-ops.md commit=c8b347140eee -->
@@ -119,7 +120,7 @@ cdp_helper.screenshot(port=port, tab_id=tab_id, path="/tmp/dm_signal_screenshot.
 - PF選択: URLパス直指定(`/portfolio/{id}`)を優先。UI操作時はサイドバーPF一覧を開いて対象名を選択
 - 保有シグナル確認: `/signals`
 - L754: WeightedMultiViewMomentumFilterBlock追加はcontext/dm-signal-core.md §4 BB種別分類の即時更新対象（cmd_karo_hotfix_context_dm_core_ga102_20260620）
-<!-- last_synced_lesson: L1620 -->
+<!-- last_synced_lesson: L1633 -->
 - L862: cmd_3771 archive payloadとsnapshotの復元正本を区別する（cmd_3826）
 - L864: LayerTimer新Layer追加時は集計ハブへ同時登録する（cmd_3831）
 - L865: L1/L2/L3 cronは固定時間差や上流ロック解放を完了とみなさず、`EtlLayerStatus.last_success_date`が当日になった後だけ次層を実行せよ。cmd_3685でL0(sync-prices)が19s→~700-850sに増大しL1の固定5分起動が409で失敗、L1だけのロック待ちではL2/L3に障害が移るため、`scripts/etl_layer_sync_wait.sh`でL1→L2→L3を同一の実成功契約に統一した（cmd_3832、`docs/research/cmd_3832_sync_tickers_recon.md`）
@@ -167,6 +168,19 @@ cdp_helper.screenshot(port=port, tab_id=tab_id, path="/tmp/dm_signal_screenshot.
 - L1618: FoFのウェイト方式は終端ブロック型(is_ward)だけで判定するな。選択ブロックのcontext.final_weights書込みも確認せよ（cmd_4480_recon2）
 - L1619: FoFのウェイト方式は終端ブロック型(is_ward)だけで判定するな。選択ブロックのcontext.final_weights書込みも確認せよ（cmd_4480_recon2）
 - L1620: FoFのウェイト方式は終端ブロック型(is_ward)だけで判定するな。選択ブロックのcontext.final_weights書込みも確認せよ（cmd_4480_recon2）
+- L1621: DB snapshot projection must preserve downstream evidence keys（cmd_4484）
+- L1622: DB snapshot projection must preserve downstream evidence keys（cmd_4484）
+- L1623: DB snapshot projection must preserve downstream evidence keys（cmd_4484）
+- L1624: DB snapshot projection must preserve downstream evidence keys（cmd_4484）
+- L1625: DB snapshot projection must preserve downstream evidence keys（cmd_4484）
+- L1626: DB snapshot projection must preserve downstream evidence keys（cmd_4484）
+- L1627: DB snapshot projection must preserve downstream evidence keys（cmd_4484）
+- L1628: DB snapshot projection must preserve downstream evidence keys（cmd_4484）
+- L1629: DB snapshot projection must preserve downstream evidence keys（cmd_4484）
+- L1630: scripts/oneshot/cmd_3854_fof_golden_regression_check.pyのローカル実行経路が共有cmd3819_baselineテンプレートに依存していたため、CI(git管理ci_baseline経由)とlocalで異なる入力を比較していた。同一の_prepare_ci_template()をdbname引数化しCI/local両方で呼び出す形に統一することでこの乖離を構造的に解消した(LOCAL_CI_BASELINE_DBという専用名を使い共有テンプレートには一切触れない)。（cmd_karo_ci_fix_dm_33985798406_fof_golden_full_attribution_20260906）
+- L1631: scripts/oneshot/cmd_3854_fof_golden_regression_check.pyのローカル実行経路が共有cmd3819_baselineテンプレートに依存していたため、CI(git管理ci_baseline経由)とlocalで異なる入力を比較していた。同一の_prepare_ci_template()をdbname引数化しCI/local両方で呼び出す形に統一することでこの乖離を構造的に解消した(LOCAL_CI_BASELINE_DBという専用名を使い共有テンプレートには一切触れない)。（cmd_karo_ci_fix_dm_33985798406_fof_golden_full_attribution_20260906）
+- L1632: scripts/oneshot/cmd_3854_fof_golden_regression_check.pyのローカル実行経路が共有cmd3819_baselineテンプレートに依存していたため、CI(git管理ci_baseline経由)とlocalで異なる入力を比較していた。同一の_prepare_ci_template()をdbname引数化しCI/local両方で呼び出す形に統一することでこの乖離を構造的に解消した(LOCAL_CI_BASELINE_DBという専用名を使い共有テンプレートには一切触れない)。（cmd_karo_ci_fix_dm_33985798406_fof_golden_full_attribution_20260906）
+- L1633: scripts/oneshot/cmd_3854_fof_golden_regression_check.pyのローカル実行経路が共有cmd3819_baselineテンプレートに依存していたため、CI(git管理ci_baseline経由)とlocalで異なる入力を比較していた。同一の_prepare_ci_template()をdbname引数化しCI/local両方で呼び出す形に統一することでこの乖離を構造的に解消した(LOCAL_CI_BASELINE_DBという専用名を使い共有テンプレートには一切触れない)。（cmd_karo_ci_fix_dm_33985798406_fof_golden_full_attribution_20260906）
 
 ## §36 API認証
 - admin系API: Basic Auth(`ADMIN_API_KEY`)
@@ -1208,6 +1222,11 @@ GA-144原因: `dm-signal-ops.md`のlast_updatedは2026-06-26で、2026-06-26以�
 - 現行本番 `signal_decision_ledger=0行`、cmd3704 backup=0行、cmd3711 backup=102行。cmd3711 backupの102 PFは現行PFへ102/102一致（standard 24、FoF 78、active 102）。`signals=385090行/102PF`、`monthly_returns=16976行/102PF`。本番read-only一次証跡と詳細因果追跡→`/mnt/c/Python_app/DM-Signal/docs/research/cmd_4319_ledger_freeze_liveness_recon_20260815_saizo.md`。
 - 凍結機構はmodel append-only listener＋signals flush/monthly/FoFのledger reconcileとして現存。構築機構は`insert_initial_ledger_events()`＋admin endpointとして現存するが、`render.yaml` month-start cronはrecalculate-syncのみでinitial-events endpointへ未接続。ledger 0行の間はguardがpending pass-throughとなるため、保護を有効化する前にinitial-events運用配線を別途確定する必要がある。
 - 0行化の最後の実行イベントは、現行DBスキーマ・backup・runtime codeから特定不能。runtime全消去経路は検出されず、台帳補充・保護有効化・本番変更は本cmdで実施していない。因果リンク: `[[cmd_3711_historical_backfill_20260706]] -> [[cmd_4319_current_ledger_zero_readonly]] -> [[initial-events_cron_wiring未接続]]`。
+
+## §95.1 2026-09-06 I9 固定tree/文書整合（P09）
+- 固定比較点はDM-Signal `0f2bfbcd1e34ea2fd5d794ba4da5332a09ba7d69`（`2026-09-06T13:30:05+09:00`）。`signal_decision_ledger.py` blob `0d71b153c02a…` と `signal_flush.py` blob `e35205f1a879…` はともに `21e80e30`（`2026-08-04T00:51:40+09:00`）と同一。
+- T7.5 `c13a56fe`（`2026-08-12T02:16:58+09:00`）/`0e9d158d`（`2026-08-12T13:05:30+09:00`）は対象2 fileを変更したが、rollback `233c2303`（`2026-08-13T01:52:36+09:00`）が両fileを21e80e30へ復帰。したがって対象2 fileはT7.5未適用。再適用は別裁定であり、現状の適用済み事項として記録しない。
+- `git rev-list --count 21e80e30..233c2303^ -- backend/app = 139` は履歴件数のみ。固定点と21e80e30のbackend全体には差分があるため、139件の効果全消失へ一般化しない。cmd_3704/cmd_3711の挿入実績と§95のledger 0行read-only観測は過去記録/ runtime証跡として保持する。
 ## §96 cmd_4320 保存済み展開値vslegacy再展開 (2026-08-15)
 - L1596: 保存済み展開値は本番legacy同値性確認後に計算入力へ昇格する — fixture一致だけで昇格せず本番全件同値性を先行確認（cmd_4320、/lesson-sort 2026-08-18）
 - 本番保存値15,768組の突合は一致14,955、不一致813（ticker集合731、weight64、legacy空18）。保存値の無条件入力昇格は不可。詳細→`/mnt/c/Python_app/DM-Signal/docs/research/cmd_4320_saved_vs_legacy_weights_20260815.md`
