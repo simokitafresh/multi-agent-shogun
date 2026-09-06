@@ -1126,6 +1126,39 @@ check_deferral_language_warn() {
     record_warn_reason "先送り表現検出" "check=cmd_text_deferral_language"
 }
 
+# 殿裁定 2026-09-06 21:23/21:25(三者協議 fail 率): AC は配備時点の忍者権限で完結させ、
+# 権限外の段(本番書込/DDL/本番 deploy/共有 root 適用/main 合流)を AC に入れない。可逆で本番に
+# 触れない操作(readonly 取得・隔離 DB/worktree/非 main branch・反復実験)に『1 回だけ』等の
+# 回数制限を書かない。cmd_4485 の『readonly 1 回』が再提出 7 回の原因(FAIL 16 中 12 が再提出ループ)。
+# 環境埋込: 本 check は CLI/モデル/clear に依らず cmd_save 起票時に走る(WARN、起票を遅らせない)。
+check_ac_authority_scope_warn() {
+    local search_text="${1:-${CMD_BLOCK_NC:-}}"
+    [[ -n "$search_text" ]] || return 0
+    local ac_text
+    ac_text="$(awk '
+        /^[[:space:]]*acceptance_criteria:/ {inac=1; next}
+        inac && /^[[:space:]]{4}[a-z_]+:/ {inac=0}
+        inac {print}
+    ' <<< "$search_text")"
+    [[ -n "$ac_text" ]] || return 0
+    local lord_ok
+    lord_ok="$(grep -cE '^[[:space:]]*lord_ok:[[:space:]]*(true|yes|"?20[0-9]{2}-)' <<< "$search_text" || true)"
+    local hits_out
+    hits_out="$(grep -nE '本番[^。]{0,24}(書込|書き込|INSERT|UPDATE|DELETE|DDL|DROP|migration を適用|full recalc を実行)|本番 (deploy|デプロイ)を(実行|行)|(deploy|デプロイ)して本番|共有 root (へ|に)(適用|合流|push)|main (へ|に)(push|合流|merge)' <<< "$ac_text" | grep -vE '禁止|しない|行わない|未承認|殿 OK (なし|後|まで)|対象外|(書込|書き込|書込み)[ 　]*(0|０|=0|/|・)|write[ 　]*0' || true)"
+    if [[ -n "$hits_out" && "$lord_ok" -eq 0 ]]; then
+        echo "WARNING: AC に忍者権限外の段(本番書込/DDL/deploy/共有 root 適用/main 合流)を検出。殿裁定 09-06 21:23: 権限外は別 cmd か殿 OK 後の段へ(lord_ok: フィールドで明示可)" >&2
+        printf '%s\n' "$hits_out" | sed 's/^/  hit: /' >&2
+        record_warn_reason "AC権限外の段" "check=check_ac_authority_scope"
+    fi
+    local hits_limit
+    hits_limit="$(grep -nE '(1|一) ?回(だけ|のみ|に限|限り)|[0-9]+ ?回(まで|以内|に限)' <<< "$ac_text" | grep -E 'readonly|read-only|取得|snapshot|隔離|worktree|branch|実験|試行|再走' || true)"
+    if [[ -n "$hits_limit" ]]; then
+        echo "WARNING: AC に可逆操作(readonly 取得/隔離/反復実験)の回数制限を検出。殿裁定 09-06 21:23: 人工制限を作らない(cmd_4485『readonly 1 回』が再提出 7 回の原因)" >&2
+        printf '%s\n' "$hits_limit" | sed 's/^/  hit: /' >&2
+        record_warn_reason "AC可逆操作の回数制限" "check=check_ac_authority_scope"
+    fi
+}
+
 # LS083: 比較実験の同格性。cmd_3763 C3事故(殿指摘2026-07-08) — 旧新チャンピオン各3体の
 # 静的等ウェイト合成を「合成FoF比較」として扱ったが、本番pf_L1は選別層を持つ動的FoFであり
 # (1)選別層の欠如(2)本番に無い組合せ(3)構成差と基準差の交絡、の3点で比較不能だった。
@@ -4679,6 +4712,7 @@ QG_TEMPLATE
 
     # cmd全文の先送り表現検出。低優先/後で/次セッション/非致命的をWARNで露出する。
     check_deferral_language_warn "$CMD_BLOCK_NC"
+    check_ac_authority_scope_warn "$CMD_BLOCK_NC"
 
     # LS083: 比較実験cmd(合成/集計/代理実験)は同一生成パイプラインの同格性確認をWARNで促す
     # 起源: cmd_3763 C3事故 — 静的等ウェイト合成比較を本番動的FoFと同格に扱い殿指摘で訂正
