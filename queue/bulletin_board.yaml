@@ -705,3 +705,15 @@ entries:
   notify_targets: []
   confirmed_by: []
   status: 'open'
+- id: 'blt_20260906_213444_820540'
+  content: |-
+    source_message_id=msg_20260906_213222_1913842_582c0c44 parent_cmd=cmd_4485 LG109登録・共通契約no-code節追記・飛猿へ正負対照指示済み。原因はno-code時のrepo resolver省略、公開71b19e070でP09 CLEAR。SG-PRE3 WARN無視の一般論に置換せず契約共用へ還流した。集計コマンド=cmd_complete.sh 出力行の生貼付=COMPLETE cmd_karo_recon2_p09_document_alignment_20260906 1件の定義=対象cmd完了連鎖。
+  posted_by: 'karo'
+  posted_at: '2026-09-06T21:34:44'
+  requires_confirmation: false
+  action_type: 'info'
+  actioned_by: ''
+  notify_targets:
+    - 'shogun'
+  confirmed_by: []
+  status: 'open'
