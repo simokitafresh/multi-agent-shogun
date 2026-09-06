@@ -17390,3 +17390,17 @@ sqlite3.Connection.backup()を使うとページ(4096byte)単位のread syscall�
 - **when**: 未設定
 - **how**: 未設定
 - cmd_4480 A1/A2根治調査でscripts/deploy_task.sh内のresolve_cmd_to_task旧定義/ inject_independent_recon_contract旧定義/deploy_task_prepare_remote_tip_worktree旧 定義が全て`if false; then ... fi`ブロック内(コメント「Legacy static-extraction compatibility: runtime definitions come only from resolve.sh.」)にあり、後続で scripts/deploy_task/resolve.sh・modifiers.sh・preflight.shがsourceされ同名関数を 上書きするため実行時には一切実行されないと判明した。修正対象を特定する際はgrep行 番号を信じず、`export DEPLOY_TASK_LIB_ONLY=1; source scripts/deploy_task.sh; declare -f <func>`で実際に有効な定義とその出典ファイルを確認してから編集すること。 本taskではこの確認により、真の修正対象がresolve.sh/modifiers.shであり、worktree 生成の真の修正対象はcommit_contract.planned_pathsに含まれないscripts/deploy_task/preflight.sh だったことが判明した(deploy_task.sh側に独立経路を新設して対処)。
+
+
+### L1762: canonical preflightとmonolith helperの同名定義を分離する
+- **日付**: 2026-09-06
+- **出典**: cmd_karo_hotfix_k2_external_worktree_speed_20260906
+- **記録者**: hayate
+- **tags**: [infra,deploy-task]
+- **subdomain**: infra
+- **target_files**: [scripts/deploy_task/preflight.sh,tests/unit/test_task_worktree_lifecycle.bats]
+- **origin**: [[cmd_karo_hotfix_k2_external_worktree_speed_20260906]]
+- **enforcement**: 未自動化
+- **when**: 未設定
+- **how**: 未設定
+- canonical preflightへ速度修正を追加する際、monolith側と同名helperを定義するとsource順で既存経路の挙動まで変わる。preflight固有helperへ命名分離し、canonical単体契約とlegacy経路を同時に再実行する。
