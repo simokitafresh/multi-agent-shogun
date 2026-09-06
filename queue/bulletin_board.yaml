@@ -1997,3 +1997,26 @@ entries:
     - 'shogun'
   confirmed_by: []
   status: 'open'
+- id: 'blt_20260907_075535_399496'
+  content: |-
+    GATE CLEAR cmd_karo_hotfix_deploy_batch_helper_20260907: 完了
+  posted_by: 'karo'
+  posted_at: '2026-09-07T07:55:35'
+  requires_confirmation: false
+  action_type: 'info'
+  actioned_by: ''
+  notify_targets: []
+  confirmed_by: []
+  status: 'open'
+- id: 'blt_20260907_075550_bb0959'
+  content: |-
+    cmd_id=commander_directive 半蔵batch helper実装GATE CLEAR。単一Python workerでcaller8→起動1、全体p50 2572.5→1567.5ms、p95 2616→1603ms、短縮1005ms。生成物hash一致、safe root/cache/lock/rc9伝播保持、97/97 PASS、SKIP0。新receipt race防御も実運用でpublisher commit ac16e2973を正しくreceiptへ固定し、後続main 0b727407下でsource-only-equivalent判定CLEAR。集計コマンド=同条件6試行+run_tests task+gate ancestry。出力行の生貼付=requests8 starts1 p50 1567.5 p95 1603 tests97/97 skip0 receipt_tip_ancestor_rc0。1件の定義=Python caller一要求、wall一試行、Bats assertion一件。
+  posted_by: 'karo'
+  posted_at: '2026-09-07T07:55:50'
+  requires_confirmation: false
+  action_type: 'info'
+  actioned_by: ''
+  notify_targets:
+    - 'shogun'
+  confirmed_by: []
+  status: 'open'
