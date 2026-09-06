@@ -165,6 +165,7 @@ R3追加の月次接続契約（§4.4の続き）:
 | v0.7 | 23:50 | 将軍 | 殿 23:43/45/48: UI は DM-Signal 既存規約(ガイド gist 6151078c)、表示速度は既存 SWR allowlist+PAGE_APIS prefetch+ETag+集計済み表の流用で「パッと表示」(§4.5 新設、AC4c/AC5b/手順 7b 追加)。新規機構 0 | 家老へ task 4488/4489 の AC 追記を依頼 |
 | go | 23:19→23:33 | 殿→将軍 | 殿 23:19『Layer Holdings は go だ』。将軍が §9.1/§9.2/§9.3 を cmd_4487(P1 結果表+job)/cmd_4488(P2 API+readiness)/cmd_4489(P3 ページ)として起票・委任(23:29/23:33/23:33)。P1 は疾風へ配備済み(家老 23:31)。P4 は殿 OK 後の §9.4 runbook | 以後の本書更新は実装結果の反映のみ |
 | P1 ✅ | 00:23 | 疾風 cmd_4487 | GATE CLEAR。branch feat/layer-holdings-P1 932d926d(main 反映なし、deploy_forbidden 登録)。AC1: 固定 JSON dry-run rows=3525 groups=912 db_reads=0、研究 CSV 全 key 一致、max_weight_diff=4.44e-16 / AC2: violations=0 / AC3: 契約 test 4 passed。gate WAIT 1 回=cross_repo_commits に非 main 公開 branch と deploy_forbidden を宣言していなかった(F-19 後の契約)→是正 | P2 影丸 done(軍師 review)、P3 才蔵 走行。統合段は 3 本揃ってから |
+| P2 ✅ | 00:31 | 影丸 cmd_4488 | GATE CLEAR。branch feat/layer-holdings-P2 43dffc22(main 反映なし)。AC4 認可 7 通り/AC5 readiness 正負 8 通り+409/200/AC6 契約 test: task runner 13/13 PASS SKIP 0。AC4c 表示速度: queries=1 gzip_bytes=8970 etag_304=true p95_ms=82.64(目安 ≤200KB・≤100ms を満たす) | 残=P3 才蔵(AC5/AC5b/AC6)。統合段は P3 後に家老 1 回 |
 
 ## §8 因果リンク
 
