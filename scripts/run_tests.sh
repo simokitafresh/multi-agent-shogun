@@ -831,10 +831,28 @@ task = document.get("task", document)
 if not isinstance(task, dict):
     raise SystemExit(2)
 
+def valid_readonly_ref_item(value):
+    if isinstance(value, str):
+        return bool(value.strip())
+    if isinstance(value, dict):
+        return bool(str(value.get("path") or value.get("file") or "").strip())
+    return False
+
+def valid_readonly_ref_field(value):
+    if isinstance(value, dict):
+        return valid_readonly_ref_item(value)
+    if isinstance(value, list):
+        return bool(value) and all(valid_readonly_ref_item(item) for item in value)
+    return False
+
 commit = task.get("commit_contract")
 is_no_commit = isinstance(commit, dict) and commit.get("required") is False
 is_recon = task.get("task_type") in {"recon", "recon2", "scout"}
-has_inspection = bool(task.get("inspection_path") or task.get("readonly_refs"))
+has_inspection = bool(task.get("inspection_path"))
+has_inspection = has_inspection or any(
+    valid_readonly_ref_field(task.get(field))
+    for field in ("readonly_ref", "readonly_refs")
+)
 
 owned = []
 for key in ("target_path", "test_path", "files_to_modify", "files_modified", "owned_paths"):
