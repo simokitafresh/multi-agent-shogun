@@ -193,6 +193,259 @@ except Exception:
 ASSUMPTIONS_INJECT_PY
 }
 
+# ─── W2: explicit environment reference cards ───
+# The command carries only stable environment IDs.  The registry is the sole
+# source of paths/probes/freshness metadata; no card value is ever evaluated by
+# the shell and probes are deliberately not executed during deployment.
+inject_cmd_environment_refs() {
+    local task_file="$1"
+    local cmd_id="${2:-}"
+    local source_path="${3:-}"
+    local registry_root="${SCRIPT_DIR:-$(cd "$(dirname "$task_file")/../.." && pwd)}"
+
+    # Keep the caller contract scalar-only: some lifecycle tests extract
+    # resolve_cmd_to_task without its surrounding locals.  Resolve the source
+    # here when a command ID is available, while direct/preinjected callers
+    # intentionally remain task-local.
+    if [ -z "$source_path" ] && [ -n "$cmd_id" ] && declare -F resolve_cmd_source_path >/dev/null 2>&1; then
+        source_path=$(resolve_cmd_source_path "$cmd_id" 2>/dev/null || true)
+    fi
+
+    python3 - "$task_file" "$source_path" "$cmd_id" "$registry_root" <<'ENVIRONMENT_REFS_INJECT_PY'
+import datetime as dt
+import hashlib
+import json
+import os
+import re
+import subprocess
+import sys
+import tempfile
+from pathlib import Path
+
+import yaml
+
+task_path, source_path, cmd_id, root = sys.argv[1:]
+root = Path(root).resolve()
+
+with open(task_path, encoding="utf-8") as fh:
+    task_doc = yaml.safe_load(fh) or {}
+task = task_doc.get("task") if isinstance(task_doc, dict) else None
+if not isinstance(task, dict):
+    raise SystemExit("W2 BLOCK: task block missing")
+
+def explicit_refs(doc, command_id=""):
+    if command_id:
+        commands = doc.get("commands") if isinstance(doc, dict) else None
+        entry = commands.get(command_id) if isinstance(commands, dict) else None
+        if not isinstance(entry, dict):
+            raise SystemExit(f"W2 BLOCK: command not found: {command_id}")
+        value = entry.get("environment_refs", [])
+    else:
+        value = task.get("environment_refs", [])
+    if value is None:
+        value = []
+    if not isinstance(value, list) or any(not isinstance(item, str) or not item.strip() for item in value):
+        raise SystemExit("W2 BLOCK: environment_refs must be a list of non-empty IDs")
+    return [item.strip() for item in value]
+
+if source_path:
+    with open(source_path, encoding="utf-8") as fh:
+        source_doc = yaml.safe_load(fh) or {}
+    refs = explicit_refs(source_doc, cmd_id)
+else:
+    refs = explicit_refs({}, "")
+
+registry_file = root / "projects" / "infra.yaml"
+registry = {}
+if refs:
+    if not registry_file.is_file():
+        raise SystemExit(f"W2 BLOCK: environment registry missing: {registry_file}")
+    with open(registry_file, encoding="utf-8") as fh:
+        registry_doc = yaml.safe_load(fh) or {}
+    registry = registry_doc.get("environments") if isinstance(registry_doc, dict) else None
+    if not isinstance(registry, dict):
+        raise SystemExit("W2 BLOCK: projects/infra.yaml environments registry missing")
+
+secret_key = re.compile(r"(?:secret|password|token|credential|private|api[_-]?key)", re.I)
+probe_id_re = re.compile(r"^[A-Za-z0-9_.-]+$")
+sha_re = re.compile(r"^(?:[0-9a-fA-F]{40}|[0-9a-fA-F]{64})$")
+required = ("canonical_path", "probe_id", "verified_at", "ttl_seconds", "source_sha")
+
+def reject_secret_nodes(value, location="card"):
+    if isinstance(value, dict):
+        for key, nested in value.items():
+            if secret_key.search(str(key)):
+                raise SystemExit(f"W2 BLOCK: secret-bearing registry field: {location}.{key}")
+            reject_secret_nodes(nested, f"{location}.{key}")
+    elif isinstance(value, list):
+        for idx, nested in enumerate(value):
+            reject_secret_nodes(nested, f"{location}[{idx}]")
+    elif isinstance(value, str) and ("$" in value or "`" in value):
+        raise SystemExit(f"W2 BLOCK: shell-like value is not allowed: {location}")
+
+def parse_time(value):
+    text = str(value).strip()
+    if not text:
+        raise SystemExit("W2 BLOCK: verified_at is empty")
+    try:
+        parsed = dt.datetime.fromisoformat(text.replace("Z", "+00:00"))
+    except ValueError as exc:
+        raise SystemExit(f"W2 BLOCK: invalid verified_at: {text}") from exc
+    if parsed.tzinfo is None:
+        raise SystemExit("W2 BLOCK: verified_at must include timezone")
+    return parsed.astimezone(dt.timezone.utc)
+
+now_text = os.environ.get("DEPLOY_TASK_ENV_NOW", "")
+if now_text:
+    now = parse_time(now_text)
+else:
+    now = dt.datetime.now(dt.timezone.utc)
+
+def source_digest(path, expected):
+    if len(expected) == 64:
+        if not path.is_file():
+            raise SystemExit("W2 BLOCK: 64-hex source_sha requires a canonical file")
+        digest = hashlib.sha256(path.read_bytes()).hexdigest()
+        return digest
+    probe_dir = path if path.is_dir() else path.parent
+    try:
+        return subprocess.check_output(
+            ["git", "-C", str(probe_dir), "rev-parse", "HEAD"],
+            text=True,
+            stderr=subprocess.DEVNULL,
+        ).strip()
+    except (OSError, subprocess.CalledProcessError):
+        return ""
+
+cards = []
+for ref_id in refs:
+    if ref_id not in registry:
+        raise SystemExit(f"W2 BLOCK: unknown environment reference: {ref_id}")
+    card = registry[ref_id]
+    if not isinstance(card, dict):
+        raise SystemExit(f"W2 BLOCK: environment card must be a mapping: {ref_id}")
+    reject_secret_nodes(card, f"environments.{ref_id}")
+    missing = [key for key in required if key not in card or card[key] in (None, "")]
+    if missing:
+        raise SystemExit(f"W2 BLOCK: environment card {ref_id} missing: {','.join(missing)}")
+
+    canonical_raw = card["canonical_path"]
+    if not isinstance(canonical_raw, str) or not canonical_raw.strip():
+        raise SystemExit(f"W2 BLOCK: invalid canonical_path: {ref_id}")
+    canonical = Path(canonical_raw).expanduser() if os.path.isabs(canonical_raw) else root / canonical_raw
+    canonical = canonical.resolve()
+    if not canonical.exists():
+        raise SystemExit(f"W2 BLOCK: canonical_path does not exist: {ref_id}")
+
+    probe_id = card["probe_id"]
+    if not isinstance(probe_id, str) or not probe_id_re.fullmatch(probe_id):
+        raise SystemExit(f"W2 BLOCK: invalid probe_id: {ref_id}")
+    probe = (root / "scripts" / "probes" / f"{probe_id}.sh").resolve()
+    probes_root = (root / "scripts" / "probes").resolve()
+    if probes_root not in probe.parents or not probe.is_file():
+        raise SystemExit(f"W2 BLOCK: probe is not an allowlisted tracked file: {probe_id}")
+
+    try:
+        ttl = int(card["ttl_seconds"])
+    except (TypeError, ValueError) as exc:
+        raise SystemExit(f"W2 BLOCK: ttl_seconds must be a positive integer: {ref_id}") from exc
+    if ttl <= 0:
+        raise SystemExit(f"W2 BLOCK: ttl_seconds must be positive: {ref_id}")
+    verified = parse_time(card["verified_at"])
+    age = (now - verified).total_seconds()
+    if age < 0:
+        raise SystemExit(f"W2 BLOCK: verified_at is in the future: {ref_id}")
+    if age > ttl:
+        raise SystemExit(f"W2 BLOCK: environment card expired: {ref_id}")
+
+    source_sha = str(card["source_sha"]).strip().lower()
+    if not sha_re.fullmatch(source_sha):
+        raise SystemExit(f"W2 BLOCK: source_sha must be a 40/64-hex digest: {ref_id}")
+    actual_sha = source_digest(canonical, source_sha)
+    if actual_sha.lower() != source_sha:
+        raise SystemExit(f"W2 BLOCK: source_sha mismatch: {ref_id}")
+
+    cards.append({
+        "id": ref_id,
+        "canonical_path": canonical_raw,
+        "probe_id": probe_id,
+        "verified_at": str(card["verified_at"]),
+        "ttl_seconds": ttl,
+        "source_sha": source_sha,
+    })
+
+def scalar(value):
+    if isinstance(value, bool):
+        return "true" if value else "false"
+    if value is None:
+        return "null"
+    if isinstance(value, (int, float)):
+        return str(value)
+    return json.dumps(str(value), ensure_ascii=False)
+
+def emit(key, value, indent=2):
+    prefix = " " * indent
+    if isinstance(value, list):
+        lines = [prefix + key + ":"]
+        for item in value:
+            if isinstance(item, dict):
+                first = True
+                for nested_key, nested_value in item.items():
+                    marker = "- " if first else "  "
+                    first = False
+                    lines.append(prefix + marker + str(nested_key) + ": " + scalar(nested_value))
+            else:
+                lines.append(prefix + "- " + scalar(item))
+        return lines
+    return [prefix + key + ": " + scalar(value)]
+
+raw_lines = Path(task_path).read_text(encoding="utf-8").splitlines()
+fields = {"environment_refs", "environment"}
+cleaned = []
+skip = False
+for line in raw_lines:
+    stripped = line.lstrip(" ")
+    indent = len(line) - len(stripped)
+    if skip:
+        if indent <= 2 and re.match(r"^  [A-Za-z_][A-Za-z0-9_]*:", line):
+            skip = False
+        else:
+            continue
+    if indent == 2 and re.match(r"^  ([A-Za-z_][A-Za-z0-9_]*):", line):
+        key = re.match(r"^  ([A-Za-z_][A-Za-z0-9_]*):", line).group(1)
+        if key in fields:
+            skip = True
+            continue
+    cleaned.append(line)
+
+insert_at = next((idx + 1 for idx, line in enumerate(cleaned) if line == "task:"), None)
+if insert_at is None:
+    raise SystemExit("W2 BLOCK: task block missing")
+projection = []
+if refs:
+    projection.extend(emit("environment_refs", refs))
+    projection.extend(emit("environment", cards))
+cleaned[insert_at:insert_at] = projection
+rendered = "\n".join(cleaned).rstrip("\n") + "\n"
+yaml.safe_load(rendered)
+fd, tmp = tempfile.mkstemp(dir=os.path.dirname(task_path), suffix=".tmp")
+try:
+    with os.fdopen(fd, "w", encoding="utf-8") as fh:
+        fh.write(rendered)
+    os.replace(tmp, task_path)
+except Exception:
+    try:
+        os.unlink(tmp)
+    except OSError:
+        pass
+    raise
+ENVIRONMENT_REFS_INJECT_PY
+}
+
+# The mutation phase calls inject_task_id on every deployment path.  Validate
+# the already-projected IDs there as well, covering direct/preinjected and
+# same-command redeploys without adding another orchestration entry point.
+
 # ─── cmd_1157: flat→nested YAML正規化 ───
 # flat形式(task:ブロックなし)のtask YAMLをnested形式に変換する。
 # 変換失敗時はログ出力のみ（配備は継続。yaml_field_setのフォールバック対応あり）
@@ -255,6 +508,14 @@ inject_task_id() {
     if [ ! -f "$task_file" ]; then
         log "inject_task_id: task file not found: $task_file"
         return 1
+    fi
+
+    # W2 common mutation boundary: validate/project environment cards before
+    # any worker notification.  This also covers direct, preinjected, and
+    # same-command redeploy paths where resolve_cmd_to_task is skipped.
+    if declare -F inject_cmd_environment_refs >/dev/null 2>&1; then
+        inject_cmd_environment_refs "$task_file" "" "" \
+            || { log "FATAL: environment reference injection failed"; return 1; }
     fi
 
     local subtask_id existing_task_id task_id
