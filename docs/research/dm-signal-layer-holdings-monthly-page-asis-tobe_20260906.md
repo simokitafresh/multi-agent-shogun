@@ -37,7 +37,7 @@
 | いつ更新するか | 別cronから、対象月初runの完了・対象範囲・キャンセルなし・失敗なしを永続行で確認して集計する。modeだけで全PFを推定しない。詳細§4.4。条件不成立は旧結果保持 |
 | 誰が見るか | 初期はGlobal hidden_pagesにlayer-holdingsを入れ全Tier+Free viewerを403/nav非表示、adminは既存規則で閲覧可。後日の殿裁定でGlobalから外す1運用操作により公開 |
 | 画面 | `/layer-holdings`。artifact 27c1995d(`docs/dashboard/layer-holdings-monthly.html`、`scripts/layer_holdings_render.py`)のレイアウトを Next.js に移植: layer タブ 5+期間 3(12/36/全)+積み上げ横棒+直近 3 ヶ月の生表 |
-| 段 | P1 結果表+job(readonly 検算付き) → P2 API → P3 ページ+nav+visibility id → P4 本番 deploy(殿 OK)+post_deploy_check。各段 1 cmd |
+| 段 | P1 結果表+job(readonly 検算付き) → P2 API → P3 ページ+nav+visibility id → P4 本番 deploy(殿 OK 02:02 済)+post_deploy_check。各段 1 cmd |
 
 ## §2 AsIs(事実。file:行)
 
@@ -74,8 +74,8 @@
 |---|---|
 | Why | 毎月 1 日の再計算後、階層ごとの保有比率が本番で自動的に更新され、誰でも(Tier で隠せる)見られる。研究 lane の 1 表を人手で回す運用を終える |
 | What | (1) 結果表 `layer_holdings_monthly`(6 列+calculated_at) (2) batch job `layer_holdings_batch.py`(F1+1 表の規則を 1 本にまとめ、DB を読んで結果表に書く) (3) `GET /api/layer-holdings` (4) ページ `/layer-holdings`+nav+visibility id |
-| Who | 実装=忍者(cmd 単位)、レビュー=軍師→家老、本番 deploy と DDL=殿 OK 後に家老 lane、検算=将軍(研究 CSV との突合) |
-| When | P1〜P3は隔離branchで実装。P2の表定義・P3のJSON契約を事前固定すれば並行可能。P4は殿OK後。月次更新は対象回の全体再計算成功後（accepted応答直後や時刻差だけでは不可） |
+| Who | 実装=忍者(cmd 単位)、レビュー=軍師→家老、本番 deploy と DDL=殿 OK(02:02 済)後の家老 lane、検算=将軍(研究 CSV との突合) |
+| When | P1〜P3は隔離branchで実装。P2の表定義・P3のJSON契約を事前固定すれば並行可能。P4は殿OK(02:02 済)後、統合段の AC4c 是正+frontend PASS の後。月次更新は対象回の全体再計算成功後（accepted応答直後や時刻差だけでは不可） |
 | Where | backend: `app/db/models.py`(表 1 つ)、`app/jobs/layer_holdings_batch.py`(新規)、`app/api/layer_holdings.py`(新規)、`alembic` migration 1 本(up/down)。frontend: `app/layer-holdings/page.tsx`(新規)、`components/sidebar.tsx`・`mobile-menu.tsx`・`app/admin/visibility/page.tsx`・`lib/api-client.ts`(各 1 箇所追記)。render.yaml: cron `dm-signal-layer-holdings` 1 service 追加。`app/api/etl_trigger.py` sync-status 辞書に `L4_recalc` +6 行、admin endpoint `POST /admin/layer-holdings`(§4.4) |
 | How | 固定75 PF版expected_namesとlayer_forで75件・12/21/21/21を検証。Portfolioのtypeと参照先閉包を読み、monthly_return非NULLの同月holdingを1/N再帰。各層はPFごとのweight合計÷当月有効PF数、ALLは全有効PFで同様（層平均の単純平均ではない）。as-of業務日付はAsia/Tokyo、MTDは集計時点の当月と定義。開始前の不在と参照child欠損を分ける |
 
@@ -115,7 +115,7 @@
 
 ### §4.4 P4 本番
 
-- 順序: 殿OK→DDL up→新BE/API/job配備→初回job→認可を含むAPI確認→FE配備→承認済みTier設定→post_deploy_check。失敗時は公開停止・cron停止→FE/BEを旧版へ→新表を参照するprocessが無いことを確認→必要時だけdown。表を先に落とさない。
+- 順序: 殿OK(02:02 済)→統合段 SHA 固定→Global hide 登録→DDL up→新BE/API/job配備→初回job→認可を含むAPI確認→FE配備→承認済みTier設定→post_deploy_check。失敗時は公開停止・cron停止→FE/BEを旧版へ→新表を参照するprocessが無いことを確認→必要時だけdown。表を先に落とさない。
 - 月次(U5、R3是正): 別cron `dm-signal-layer-holdings` は既存 `etl_layer_sync_wait.sh L4_recalc layer-holdings` を利用する。月初09:00 UTCの既存全PF portfolio再計算を対象とし、mode=fullへの変更を新ページのためだけに要求しない。既存再計算入口が正規化した対象範囲・start/end期間をrecalculation_status.summaryへ開始時に、cancelled/errorsと必要なcoverage検証結果を終了時に記録する。新しい表・状態機械は作らない。
 
 ## §5 二値 AC(cmd に渡す)
@@ -167,7 +167,7 @@ R3追加の月次接続契約（§4.4の続き）:
 | P1 ✅ | 00:23 | 疾風 cmd_4487 | GATE CLEAR。branch feat/layer-holdings-P1 932d926d(main 反映なし、deploy_forbidden 登録)。AC1: 固定 JSON dry-run rows=3525 groups=912 db_reads=0、研究 CSV 全 key 一致、max_weight_diff=4.44e-16 / AC2: violations=0 / AC3: 契約 test 4 passed。gate WAIT 1 回=cross_repo_commits に非 main 公開 branch と deploy_forbidden を宣言していなかった(F-19 後の契約)→是正 | P2 影丸 done(軍師 review)、P3 才蔵 走行。統合段は 3 本揃ってから |
 | P2 ✅ | 00:31 | 影丸 cmd_4488 | GATE CLEAR。branch feat/layer-holdings-P2 43dffc22(main 反映なし)。AC4 認可 7 通り/AC5 readiness 正負 8 通り+409/200/AC6 契約 test: task runner 13/13 PASS SKIP 0。AC4c 表示速度: queries=1 gzip_bytes=8970 etag_304=true p95_ms=82.64(目安 ≤200KB・≤100ms を満たす) | 残=P3 才蔵(AC5/AC5b/AC6)。統合段は P3 後に家老 1 回 |
 | P4 go | 02:02 | 殿→将軍 | 殿 02:02『Layer Holdings P4 は go だ』。§9.4 runbook を家老 lane で着手(将軍下知 02:05)。前提=統合段 AC4c p95 是正(閾値 100ms 不変)+frontend test PASS を先に閉じる | 以後は §9.4 の順序 2〜9 の二値結果を §7 へ追記 |
-| P3 ✅ | 01:39 | 才蔵 cmd_4489 | GATE CLEAR。branch feat/layer-holdings-P3-saizo 08f68e39(main 反映なし)。UI ガイド(gist 6151078c)+AC5b(SWR allowlist/PAGE_APIS/client pivot 0)適用。gate BLOCK 2 回=receipt 形式と親 command の『docs/faq』表記(家老が『既存ドキュメントページと FAQ ページの型』へ訂正) | 統合段(家老、3 branch→feat/layer-holdings-integrated、契約 test 全本+固定 JSON dry-run 再実行)を 01:44 指示。P4 は殿 OK 待ち |
+| P3 ✅ | 01:39 | 才蔵 cmd_4489 | GATE CLEAR。branch feat/layer-holdings-P3-saizo 08f68e39(main 反映なし)。UI ガイド(gist 6151078c)+AC5b(SWR allowlist/PAGE_APIS/client pivot 0)適用。gate BLOCK 2 回=receipt 形式と親 command の『docs/faq』表記(家老が『既存ドキュメントページと FAQ ページの型』へ訂正) | 統合段(家老、3 branch→feat/layer-holdings-integrated、契約 test 全本+固定 JSON dry-run 再実行)を 01:44 指示。01:51 家老: SHA 992eb757 conflict 0、backend 16 PASS/1 FAIL(AC4c p95 146.48ms>100ms、単体 82.64ms)、queries 1/gzip 8,970/304 PASS、固定 JSON rows 3525/違反 0、frontend 実行中。Row 反復を 1 pass へ最小変更中(閾値不変) |
 
 ## §8 因果リンク
 
@@ -184,7 +184,7 @@ R3履歴（v0.4、2026-09-06 22:50家老）: 更新6点=modeとscope分離、sum
 ### §9.0 共通(全 cmd)
 - repo: DM-Signal(`/mnt/c/Python_app/DM-signal`)。作業は隔離 worktree+非 main branch `feat/layer-holdings-P<n>`。**main への push は本番 deploy 相当=禁止**。成果は branch push+報告 YAML。
 - 母集団・規則の正本: `0f2bfbcd:analysis_runs/cmd_4479_holdings_monthly/build_holdings_monthly.py`(`expected_names()` L48-55、`layer_for()` L57-66、`_resolve_weights()` L187-236)と `0f2bfbcd:analysis_runs/cmd_4481_layer_holdings/layer_holdings_monthly.csv`(3,525 行、sha256 04c4f56b…)。忍者は `git show 0f2bfbcd:<path>` で取り、作業 tree の 78 PF 版(4,493 行)を使わない。
-- 本番 DB: readonly 取得は 既存db-checkのreadonly capability発行→launcher→nonce監査の経路(既存 launcher、回数制限なし)。書込・DDL・deploy は行わない(P4 は殿 OK 後の家老 lane)。
+- 本番 DB: readonly 取得は 既存db-checkのreadonly capability発行→launcher→nonce監査の経路(既存 launcher、回数制限なし)。書込・DDL・deploy は行わない(P4 は殿 OK 02:02 後の家老 lane、§9.4)。
 - テスト: 契約 test は `test_necessity` 宣言付きで永続、実装用 test は同 cmd 内で削除。`pytest` は `backend/tests/` の既存 conftest に乗せる。SKIP 0。
 - 報告 YAML: `binary_checks` は下記 AC 番号ごとに yes/no+生出力 1 行。`files_modified` は path 形式。
 - 忍者が自分で決めてよいこと: 変数名・関数分割・test fixture の形・SQL の書き方。決めてはいけないこと: 表の列名/PK、API path と payload key、page id、cron 名、AC の閾値(全て本書が固定)。
@@ -225,10 +225,11 @@ R3履歴（v0.4、2026-09-06 22:50家老）: 更新6点=modeとscope分離、sum
 | 画面(固定) | wireframe gist 6ae60a9c(`docs/dashboard/layer-holdings-monthly.html`、multi-agent-shogun repo)と同じ: layer タブ 5(既定 ALL)+期間 3(12/36/全、既定 12)+積み上げ横棒(ticker 色は既存 palette があればそれ、無ければ HTML の `PALETTE`)+右端 pf_count+直近 3 ヶ月の生表+`is_mtd` 月は薄く MTD バッジ。PF 選択(`useSignals().selectedId`)を参照しない。状態 4 種を区別: 401/403(既存 error 表示)、503(『集計待ち』)、取得失敗(retry)、正常 |
 | AC(二値) | **AC5b(表示速度+UI ガイド、殿 23:45/23:48)**: `api-client.ts isSWRTarget()` に `/api/layer-holdings` を追加、`PAGE_APIS` に GET /api/layer-holdings を定義(monthly-returns と同型)、client 側 pivot 0、skeleton は `useDelayedLoading(300)`、UI ガイド(`docs/research/dm-signal-layer-holdings-ui-guide_20260906.md` §1-§4)準拠=新規 CSS/色トークン/フォント/カード 0(生出力 `swr_allowlist=true page_apis=1 client_pivot=0 new_css_files=0 glass_card_refs=0`)。AC5: `next build` エラー 0、fixture で描画し各行の weight 合計 100%±0.1(生出力: `rows=<n> sum_violations=0`)、hidden Tier の `hiddenPages` に `layer-holdings` があれば nav に出ない、admin では出る、未選択/選択変更でも表が同じ / AC6: 契約 test = 合計 100% と nav 非表示の 2 本、FAIL 0 SKIP 0 |
 
-### §9.4 cmd P4: 本番投入(家老 lane、殿の明示 OK 後)
+### §9.4 cmd P4: 本番投入(家老 lane、殿の明示 OK=02:02 充足。将軍下知 02:05 msg_020330)
 | 順序 | 操作 | 確認(二値) |
 |---|---|---|
-| 1 | 殿 OK(本番 DDL+deploy) | lord_conversation に時刻付き OK |
+| 1 | 殿 OK(本番 DDL+deploy) | ✅ lord_conversation 2026-09-07 02:02『Layer Holdings P4 は go だ』 |
+| 1b | 統合段: AC4c p95 是正(閾値 100ms 不変)→backend 17/17・frontend PASS・固定 JSON dry-run rows 3525/違反 0→統合 SHA を §7 へ | 全 PASS の生出力+SHA |
 | 2 | Global hidden_pages に `layer-holdings` を追加(admin visibility UI、Settings と GlobalVisibilitySettings の両方) | `GET /api/admin/...visibility` に id が両保存元で出る |
 | 3 | 承認済みP1 migrationを本番へ適用（新BE/FE公開より先） | 新表あり、他表DDL差分0 |
 | 4 | 承認済みP1/P2/P3をmain合流しBE/FE配備。Global hideとcron停止を維持 | BE/FE deploy success、参照tableあり |
@@ -244,7 +245,7 @@ R3履歴（v0.4、2026-09-06 22:50家老）: 更新6点=modeとscope分離、sum
 - P1・P2・P3 は **同時に 3 名へ配備可**(依存は本書の固定仕様で切ってある)。空き忍者が 1 名なら P1→P2→P3 の順。
 - 各 cmd の `related_lessons`: 契約 test の default-delete、cross_repo deploy_forbidden(F-19 後の gate)、readonly launcher 契約。
 - レビュー: 軍師一次→家老。AC の生出力行がない報告は差戻し(1 回で通す型)。
-- P4 は cmd ではなく家老 lane の runbook(§9.4)。殿 OK が無い間は着手しない。
+- P4 は cmd ではなく家老 lane の runbook(§9.4)。殿 OK は 02:02 に出た。着手条件は手順 1b(統合段 PASS)のみ。I1/I4 の DDL runbook(本番不整合 cmd_4495〜4497)とは直列。公開(Global hide 解除)は本裁定に含まず別裁定。
 
 §9配備条件（R5確認）: 固定入力の所在・hash・実キーは§9.1で実測済み、共通readiness配置は§9.2で確定。P1/P2/P3は所有pathを分けて並行実装し、統合検証は統合時に1回行う。source_recalc_idは新結果表の監査列で§1/§4.1と一致。input-jsonの巨大fixtureは同世代検算専用、通常の契約テストは合成fixtureで回す。
 
