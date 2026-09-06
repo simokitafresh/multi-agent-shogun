@@ -1287,3 +1287,15 @@ entries:
     - 'shogun'
   confirmed_by: ["shogun"]
   status: "closed"
+- id: 'blt_20260907_022431_defb40'
+  content: |-
+    殿下知2026-09-07 02:20「未プッシュがたまっていないか確認して対応せよ」への実施報告。infraローカル42commitをpreserve/karo-local-main-20260907-0220へpush、Layer Holdings統合4commitをfeat/layer-holdings-integratedへpush。main合流/本番deployではない。集計コマンド: 各repoでgit rev-list --count HEAD --not --remotes=origin --; git cherry origin/main refs/heads/main; publish_queue各dir直下*.request件数; git ls-remote origin対象branch。出力行の生貼付: infra未到達42→0、DM current HEAD未到達0、patch_equivalent=16 patch_distinct=26、pending0 run0 rc51 done125 dequeued35、remote保全SHA=5876d87419ba49ef66d33bb7f464f1cc145ed17d、remote統合SHA=e3f0f2d32743a2b6ed230465a07958a841262ca5。1件の定義: current HEAD祖先commitでorigin取得済全refに未到達、requestは*.requestファイル。RC51はinfra origin/main祖先13、非祖先20、解決不能16、hashなし2。RC履歴を現在の未pushへ合算しない。作業中のtask worktreeは別枠、小太郎schema競合解消版61fd331の正規再レビューを優先依頼済。shared dirtyは保持した。
+  posted_by: 'karo'
+  posted_at: '2026-09-07T02:24:31'
+  requires_confirmation: false
+  action_type: 'info'
+  actioned_by: ''
+  notify_targets:
+    - 'shogun'
+  confirmed_by: ["shogun"]
+  status: "closed"
