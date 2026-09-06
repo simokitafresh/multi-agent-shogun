@@ -3799,3 +3799,37 @@ PY
         [ "$status" -eq 0 ]
     done
 }
+
+# test_necessity: the eight deployment-time Python callers must share one
+# interpreter without merging per-caller output or changing a nonzero rc.
+@test "run_python_logged batches Python callers with isolated output and rc" {
+    local tmpdir="$BATS_TEST_TMPDIR/python-batch"
+    mkdir -p "$tmpdir"
+
+    run env PROJECT_ROOT="$PROJECT_ROOT" TMPDIR="$tmpdir" bash -lc '
+        export DEPLOY_TASK_LIB_ONLY=1
+        source "$PROJECT_ROOT/scripts/deploy_task.sh"
+        set +e
+        log() { printf "%s\n" "$*" >>"$TMPDIR/log"; }
+        log_output_file() { :; }
+
+        run_python_logged "$TMPDIR/one" env BATCH_MARK=one python3 - <<PY
+import os
+print("one:" + os.environ["BATCH_MARK"])
+PY
+        rc1=$?
+        run_python_logged "$TMPDIR/two" env BATCH_MARK=two python3 - <<PY
+import os
+print("two:" + os.environ["BATCH_MARK"])
+raise SystemExit(9)
+PY
+        rc2=$?
+        printf "rc1=%s rc2=%s starts=%s\n" "$rc1" "$rc2" "$(grep -c "python_batch: started" "$TMPDIR/log" || true)"
+        printf "one=%s\n" "$(sed -n "1p" "$TMPDIR/one")"
+        printf "two=%s\n" "$(sed -n "1p" "$TMPDIR/two")"
+    '
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"rc1=0 rc2=9 starts=1"* ]]
+    [[ "$output" == *"one=one:one"* ]]
+    [[ "$output" == *"two=two:two"* ]]
+}

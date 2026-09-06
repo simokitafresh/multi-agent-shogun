@@ -568,9 +568,141 @@ deploy_task_ensure_fallback_report_metadata() {
     log "fallback_report_metadata: ensured report_path/ac_version for ${ninja_name} ${parent_cmd}"
 }
 
+_deploy_task_python_batch_worker() {
+    # Keep the protocol on the worker stdout.  Individual snippets write to
+    # StringIO, so their diagnostics cannot corrupt the response stream.
+    python3 -u -c '
+import base64
+import contextlib
+import io
+import os
+import runpy
+import sys
+import traceback
+
+for raw in sys.stdin:
+    parts = raw.rstrip("\n").split("\t")
+    if len(parts) != 5:
+        continue
+    request_id, source_b64, path_b64, env_b64, argv_b64 = parts
+    old_env = os.environ.copy()
+    old_argv = sys.argv
+    old_path = list(sys.path)
+    old_cwd = os.getcwd()
+    old_stdin = sys.stdin
+    output = io.StringIO()
+    status = 0
+    try:
+        env_lines = base64.b64decode(env_b64).decode("utf-8").splitlines()
+        os.environ.update(
+            line.split("=", 1) for line in env_lines if "=" in line
+        )
+        argv = base64.b64decode(argv_b64).decode("utf-8").splitlines()
+        sys.argv = argv
+        sys.stdin = io.StringIO("")
+        with contextlib.redirect_stdout(output), contextlib.redirect_stderr(output):
+            source_path = base64.b64decode(path_b64).decode("utf-8")
+            if source_path:
+                runpy.run_path(source_path, run_name="__main__")
+            else:
+                source = base64.b64decode(source_b64).decode("utf-8")
+                exec(compile(source, "<stdin>", "exec"), {"__name__": "__main__", "__file__": "<stdin>"})
+    except SystemExit as exc:
+        value = exc.code
+        status = value if isinstance(value, int) else (0 if value is None else 1)
+    except BaseException:
+        traceback.print_exc(file=output)
+        status = 1
+    finally:
+        os.environ.clear()
+        os.environ.update(old_env)
+        sys.argv = old_argv
+        sys.path[:] = old_path
+        try:
+            os.chdir(old_cwd)
+        except OSError:
+            pass
+        sys.stdin = old_stdin
+    encoded = base64.b64encode(output.getvalue().encode("utf-8", "surrogateescape")).decode("ascii")
+    print(f"{request_id}\t{status}\t{encoded}", flush=True)
+'
+}
+
+deploy_task_python_batch_start() {
+    [ "${DEPLOY_TASK_PY_BATCH_DISABLE:-0}" = "1" ] && return 1
+    [ -n "${DEPLOY_TASK_PY_BATCH_PID:-}" ] && return 0
+
+    coproc DEPLOY_TASK_PY_BATCH_PROC { _deploy_task_python_batch_worker; }
+    DEPLOY_TASK_PY_BATCH_PID="$DEPLOY_TASK_PY_BATCH_PROC_PID"
+    DEPLOY_TASK_PY_BATCH_IN="${DEPLOY_TASK_PY_BATCH_PROC[1]}"
+    DEPLOY_TASK_PY_BATCH_OUT="${DEPLOY_TASK_PY_BATCH_PROC[0]}"
+    DEPLOY_TASK_PY_BATCH_REQUEST_ID=0
+    export DEPLOY_TASK_PY_BATCH_PID DEPLOY_TASK_PY_BATCH_IN DEPLOY_TASK_PY_BATCH_OUT
+    log "python_batch: started pid=${DEPLOY_TASK_PY_BATCH_PID}"
+}
+
+deploy_task_python_batch_command() {
+    DEPLOY_TASK_PY_BATCH_HANDLED=0
+    [ "${DEPLOY_TASK_PY_BATCH_DISABLE:-0}" = "1" ] && return 1
+    local output_file="$1"
+    shift
+    local -a args=("$@") env_pairs=() command_args=()
+    local index=0 token source_path source argv_payload env_payload response response_id response_rc response_output
+
+    if [ "${args[0]:-}" = "env" ]; then
+        index=1
+        while [ "$index" -lt "${#args[@]}" ] && [[ "${args[$index]}" == *=* ]]; do
+            env_pairs+=("${args[$index]}")
+            index=$((index + 1))
+        done
+    fi
+    [ "${args[$index]:-}" = "python3" ] || return 1
+    DEPLOY_TASK_PY_BATCH_HANDLED=1
+    command_args=("${args[@]:$index}")
+    source_path=""
+    if [ "${command_args[1]:--}" = "-" ]; then
+        source="$(cat)"
+        argv_payload="-"
+    else
+        source_path="${command_args[1]:-}"
+        [ -n "$source_path" ] || return 1
+        source=""
+        argv_payload="$source_path"
+    fi
+    if [ "${#command_args[@]}" -gt 2 ]; then
+        argv_payload+=$'\n'"$(printf '%s\n' "${command_args[@]:2}")"
+    fi
+
+    deploy_task_python_batch_start || return 1
+    DEPLOY_TASK_PY_BATCH_REQUEST_ID=$((DEPLOY_TASK_PY_BATCH_REQUEST_ID + 1))
+    source_b64="$(printf '%s' "$source" | base64 -w0)"
+    path_b64="$(printf '%s' "$source_path" | base64 -w0)"
+    env_payload="$(printf '%s\n' "${env_pairs[@]}" | base64 -w0)"
+    argv_b64="$(printf '%s' "$argv_payload" | base64 -w0)"
+    printf '%s\t%s\t%s\t%s\t%s\n' \
+        "$DEPLOY_TASK_PY_BATCH_REQUEST_ID" "$source_b64" "$path_b64" "$env_payload" "$argv_b64" \
+        >&"$DEPLOY_TASK_PY_BATCH_IN"
+
+    IFS= read -r response <&"$DEPLOY_TASK_PY_BATCH_OUT" || return 1
+    IFS=$'\t' read -r response_id response_rc response_output <<< "$response"
+    [ "$response_id" = "$DEPLOY_TASK_PY_BATCH_REQUEST_ID" ] || return 1
+    printf '%s' "$response_output" | base64 -d >"$output_file" || return 1
+    log_output_file "$output_file"
+    return "$response_rc"
+}
+
 run_python_logged() {
     local output_file="$1"
     shift
+
+    # All deployment-time Python snippets use this compatibility wrapper.  A
+    # single interpreter handles them in call order while each caller still
+    # receives its own output file and exact return code.
+    deploy_task_python_batch_command "$output_file" "$@"
+    local batch_status=$?
+    if [ "${DEPLOY_TASK_PY_BATCH_HANDLED:-0}" = "1" ]; then
+        return "$batch_status"
+    fi
 
     local status=0
     "$@" >"$output_file" 2>&1 || status=$?
