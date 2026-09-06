@@ -617,3 +617,36 @@ REPORTYAML
     [[ "$output" == *"[CRITICAL]"* ]]
     [[ "$output" == *"ALL_CLEAR=false"* ]]
 }
+
+# test_necessity(cmd_karo_hotfix_contract_schema_20260907, karo 01:39): the
+# writer's *live* code path (scripts/deploy_task/report.sh, sourced by
+# scripts/deploy_task.sh and therefore the definition that actually executes
+# at deploy time) must itself emit contract_version, not only the static
+# fallback bundle embedded directly in deploy_task.sh -- the fallback is
+# dead code whenever deploy_task/report.sh is present, so tagging only the
+# fallback would never reach a real generated snapshot.
+@test "deploy_task's live writer path emits contract_version in the generated snapshot" {
+    cat > "$WORK_DIR/live_writer_task.yaml" <<'YAML'
+task:
+  acceptance_criteria: [{id: AC1, description: dummy}]
+  related_lessons: []
+YAML
+
+    run env DEPLOY_TASK_LIB_ONLY=1 bash -c '
+        source "$1"
+        deploy_task_report_cold_plan "$2" cmd_smoke cmd_smoke_full cmd_smoke abcfingerprint dm-signal true "" hotfix "" "$3" ""
+    ' _ "$PROJECT_ROOT/scripts/deploy_task.sh" "$WORK_DIR/live_writer_task.yaml" "$PROJECT_ROOT"
+    [ "$status" -eq 0 ]
+
+    snapshot_line="$(printf '%s\n' "$output" | grep '^_plan_task_contract_snapshot=')"
+    [ -n "$snapshot_line" ]
+    contract_version="$(python3 -c "
+import shlex, json, sys
+line = sys.argv[1]
+val = shlex.split(line.split('=', 1)[1])[0]
+d = json.loads(val)
+print(d.get('contract_version'))
+print('lesson_set' in d)
+" "$snapshot_line")"
+    [[ "$contract_version" == $'1\nTrue' ]]
+}
