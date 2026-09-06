@@ -12296,3 +12296,35 @@
   hole_action: none
   brainwash_check: '#1no #2no #3no #4no #5no #6no #7no #8no 新fp 85615c2でレビュー実施済み(log記録21:57)'
   timestamp: '2026-09-06T21:08:30+09:00'
+- cmd_id: cmd_karo_recon2_p09_document_alignment_20260906
+  review_type: report
+  verdict: FAIL
+  verified_files:
+    - "queue/reports/saizo_report_cmd_karo_recon2_p09_document_alignment_20260906.yaml:105-106"
+  gate_result: null
+  confidence: MEDIUM
+  finding_categories:
+    - assumptions
+    - numbers
+    - premortem
+    - adversarial
+    - ambiguity
+  findings_summary: "SG-PRE9c ERROR: assumption_checkに『未確認』語→GATE BLOCK予測→FAIL。AC作業品質は高い。語彙修正で解消可能"
+  ambiguity_points: none
+  discretion_fills: none
+  observations:
+    - "assumption_check L105:『live deploy SHAや139件の効果は未確認とした』がLG043語彙検出に該当"
+    - "AC1/AC2は全bc:yes。investigation remaining_unknownsに4項目を明示。正直な調査境界報告"
+    - "semantic_validation PASS: 4分類軸(適用/撤回/過去実施/未確認)で整合"
+    - "adversarial: 共有4文書・DB・本番変更0。queue/notes提案patchのみ"
+  operational_simulation:
+    command: "grep '未確認' queue/reports/saizo_report_cmd_karo_recon2_p09_document_alignment_20260906.yaml"
+    expected: "assumption_checkの語彙検出箇所を特定"
+    actual: "L106: 'live deploy SHAや139件の効果は未確認とした'。ACの未達成委譲ではなく調査境界の明示"
+    result: PASS
+  origin: "[[cmd_karo_recon2_p09_document_alignment_20260906]] -> [[LG043_語彙検出]] -> [[assumption_check未確認語]]"
+  causal_chain: "assumption_checkに『未確認』語→SG-PRE9c ERROR→GATE BLOCK予測→FAIL。語彙を『scope外として分離、remaining_unknownsに明記済み』に書換えれば解消"
+  step3_5_verified: true
+  hole_action: none
+  brainwash_check: "#1no #2no #3no #4no #5no #6no #7no #8no SG-PRE9c ERRORを一次確認。偽陽性の可能性あるが語彙修正が安全。bc yes 8/8件確認"
+  timestamp: "2026-09-06T21:11:00+09:00"
