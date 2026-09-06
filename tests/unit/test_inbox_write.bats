@@ -1231,6 +1231,34 @@ YAML
     [ "$(grep -c "^  task_id: 'cmd_task_identity_003_normal'" "$TEST_TMPDIR/queue/inbox/testninja.yaml")" -eq 1 ]
 }
 
+# test_necessity: pending dedupe must compare the writer's scalar and block
+# scalar encodings exactly, while allowing a changed sender/content to append.
+@test "pending dedupe preserves multiline identity and changed messages" {
+    setup_basic_test_env
+    local multiline=$'line one\n\nline three'
+
+    run _run_inbox_write test_agent "$multiline" info sender speed
+    [ "$status" -eq 0 ]
+    run _run_inbox_write test_agent "$multiline" info sender speed
+    [ "$status" -eq 0 ]
+    run _run_inbox_write test_agent "$multiline" info other_sender speed
+    [ "$status" -eq 0 ]
+
+    run python3 - "$TEST_TMPDIR/queue/inbox/test_agent.yaml" <<'PY'
+import sys
+import yaml
+
+messages = (yaml.safe_load(open(sys.argv[1], encoding="utf-8")) or {}).get("messages") or []
+assert len(messages) == 2, messages
+assert messages[0]["from"] == "sender"
+assert messages[0]["content"] == "line one\n\nline three"
+assert messages[1]["from"] == "other_sender"
+assert messages[1]["content"] == "line one\n\nline three"
+print("same_sender_content=1 changed_sender=1 multiline_exact=1 messages=2")
+PY
+    [ "$status" -eq 0 ]
+}
+
 # ============================================================
 # Git uncommitted check tests (merged from tests/unit/ cmd_cycle_001)
 # ============================================================
