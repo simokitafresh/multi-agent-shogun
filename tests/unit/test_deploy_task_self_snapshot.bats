@@ -191,3 +191,127 @@ YAML
     [ "$status" -eq 1 ]
     [[ "$output" == *"extra=L019,L097"* ]]
 }
+
+# test_necessity(P07, cmd_karo_hotfix_contract_schema_20260907): a no-code
+# report whose commit_contract.repo_root names a different repository (e.g. a
+# DM-Signal cross-repo recon) must resolve its receipt commit's tree inside
+# THAT repository via the gate's canonical repo resolver
+# (gate_report_format_main._resolve_commit_repo), not always this repo's own
+# root; otherwise every cross-repo no-code terminal write fails-BLOCK with
+# "terminal no-code receipt tree unavailable" even when the receipt and
+# evidence genuinely agree. This file's own planned_paths does not list
+# tests/unit/test_report_field_set_terminal_readiness.bats (the more natural
+# home for this); placed here to stay within this task's authorized scope.
+@test "report_field_set no-code receipt tree check resolves commit_contract.repo_root, not always this repo" {
+    OTHER_REPO="$WORK_DIR/other_repo"
+    mkdir -p "$OTHER_REPO"
+    (cd "$OTHER_REPO" && git init -q)
+    BLOB=$(cd "$OTHER_REPO" && printf 'hello\n' | git hash-object -w --stdin)
+    TREE=$(cd "$OTHER_REPO" && printf '100644 blob %s\tf.txt\n' "$BLOB" | git mktree)
+    # A tree object peels to itself under ^{tree}, so this stands in for a
+    # receipt commit sha without creating an actual commit object.
+    run bash -c 'cd "$1" && git rev-parse --verify "$2^{tree}"' _ "$OTHER_REPO" "$TREE"
+    [ "$status" -eq 0 ]
+    [ "$output" = "$TREE" ]
+
+    FIXTURE_ROOT="$WORK_DIR/fixture_root"
+    mkdir -p "$FIXTURE_ROOT/tasks_dir"
+    RECEIPT_DIR="$WORK_DIR/receipt_dir"
+    mkdir -p "$RECEIPT_DIR"
+    printf 'artifact\n' > "$RECEIPT_DIR/artifact.txt"
+    SHA=$(sha256sum "$RECEIPT_DIR/artifact.txt" | awk '{print $1}')
+    cat > "$RECEIPT_DIR/receipt.json" <<JSON
+{"complete": true, "result": "PASS", "rc": 0, "skip_count": 0,
+ "test_paths": ["dummy_test_path"], "artifact": "$RECEIPT_DIR/artifact.txt",
+ "output_sha256": "$SHA", "task_id": "cmd_p07x_full", "commit_sha": "$TREE"}
+JSON
+
+    cat > "$FIXTURE_ROOT/tasks_dir/p07worker.yaml" <<TASKYAML
+task:
+  task_id: cmd_p07x_full
+  parent_cmd: cmd_p07x
+  project: infra
+  task_type: recon2
+  commit_contract:
+    required: false
+    reason: no_code_recon
+    task_type: recon2
+    planned_paths: []
+    repo_root: $OTHER_REPO
+TASKYAML
+
+    write_report() {
+        local before_tree="$1"
+        cat > "$FIXTURE_ROOT/p07worker_report.yaml" <<REPORTYAML
+worker_id: p07worker
+task_id: cmd_p07x_full
+parent_cmd: cmd_p07x
+ac_version_read: dummyac01
+status: in_progress
+commit_contract:
+  required: false
+  reason: no_code_recon
+  task_type: recon2
+  planned_paths: []
+  repo_root: $OTHER_REPO
+commit_hash: no-code-change
+no_code_change_evidence:
+  tree_unchanged: true
+  before_tree: "$before_tree"
+  after_tree: "$before_tree"
+binary_checks:
+  AC1:
+  - check: dummy check
+    result: 'yes'
+files_modified:
+  - path: queue/notes/p07_dummy_fixture.md
+lessons_useful: []
+lesson_candidate:
+  found: false
+  no_lesson_reason: n/a
+REPORTYAML
+    }
+
+    # Positive: repo_root resolves to the other repo and the tree matches.
+    write_report "$TREE"
+    run env RFS_TASK_FILE_PATH="$FIXTURE_ROOT/tasks_dir/p07worker.yaml" \
+        REPORT_FIELD_SET_TASK_ROOT="$FIXTURE_ROOT" \
+        bash "$PROJECT_ROOT/scripts/report_field_set.sh" --batch \
+        "$FIXTURE_ROOT/p07worker_report.yaml" <<EOF
+test_receipt_path: $RECEIPT_DIR/receipt.json
+status: completed
+EOF
+    # Downstream report-completeness prechecks (unrelated to this receipt
+    # check) still fail this minimal fixture; the fix under test is proven by
+    # the status/test_receipt_path having already been written before that.
+    grep -q '^status: completed$' "$FIXTURE_ROOT/p07worker_report.yaml"
+    grep -q "test_receipt_path: $RECEIPT_DIR/receipt.json" "$FIXTURE_ROOT/p07worker_report.yaml"
+
+    # Negative: same valid repo_root, but the recorded tree does not match.
+    write_report "ffffffffffffffffffffffffffffffffffffffff"
+    run env RFS_TASK_FILE_PATH="$FIXTURE_ROOT/tasks_dir/p07worker.yaml" \
+        REPORT_FIELD_SET_TASK_ROOT="$FIXTURE_ROOT" \
+        bash "$PROJECT_ROOT/scripts/report_field_set.sh" --batch \
+        "$FIXTURE_ROOT/p07worker_report.yaml" <<EOF
+test_receipt_path: $RECEIPT_DIR/receipt.json
+status: completed
+EOF
+    [ "$status" -ne 0 ]
+    [[ "$output" == *"terminal no-code receipt tree mismatch"* ]]
+
+    # Negative: repo_root itself does not resolve to a real git repository.
+    sed -i "s#repo_root: $OTHER_REPO#repo_root: $WORK_DIR/does-not-exist#" \
+        "$FIXTURE_ROOT/tasks_dir/p07worker.yaml"
+    write_report "$TREE"
+    sed -i "s#repo_root: $OTHER_REPO#repo_root: $WORK_DIR/does-not-exist#" \
+        "$FIXTURE_ROOT/p07worker_report.yaml"
+    run env RFS_TASK_FILE_PATH="$FIXTURE_ROOT/tasks_dir/p07worker.yaml" \
+        REPORT_FIELD_SET_TASK_ROOT="$FIXTURE_ROOT" \
+        bash "$PROJECT_ROOT/scripts/report_field_set.sh" --batch \
+        "$FIXTURE_ROOT/p07worker_report.yaml" <<EOF
+test_receipt_path: $RECEIPT_DIR/receipt.json
+status: completed
+EOF
+    [ "$status" -ne 0 ]
+    [[ "$output" == *"terminal no-code receipt repo"* ]]
+}
