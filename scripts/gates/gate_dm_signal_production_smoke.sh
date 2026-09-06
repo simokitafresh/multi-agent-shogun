@@ -72,7 +72,8 @@ if [ "${1:-}" = "import-check" ]; then
     IC_PYTHON_BIN="${DM_SIGNAL_PROD_IMPORT_PYTHON_BIN:-python3}"
     IC_PY_VERSION="$("$IC_PYTHON_BIN" -c 'import sys; print("%d.%d.%d" % sys.version_info[:3])' 2>/dev/null || echo unknown)"
     IC_CACHE_KEY="$(printf '%s|%s|%s' "$IC_REQ_HASH" "$IC_PY_VERSION" "$IC_SOURCE_SHA" | sha256sum | awk '{print $1}')"
-    IC_DEFAULT_CACHE_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)/.cache/dm_signal_prod_import"
+    IC_PROJECT_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
+    IC_DEFAULT_CACHE_DIR="$IC_PROJECT_ROOT/.cache/dm_signal_prod_import"
     IC_CACHE_DIR="${DM_SIGNAL_PROD_IMPORT_CACHE_DIR:-$IC_DEFAULT_CACHE_DIR}"
     mkdir -p "$IC_CACHE_DIR" 2>/dev/null || true
     IC_CACHE_MARKER="$IC_CACHE_DIR/${IC_CACHE_KEY}.result"
@@ -83,8 +84,29 @@ if [ "${1:-}" = "import-check" ]; then
         exit 0
     fi
 
-    IC_WORK_DIR="$(mktemp -d "${TMPDIR:-/tmp}/dm-signal-prod-import.XXXXXX")" || exit 1
-    ic_cleanup() { rm -rf "$IC_WORK_DIR"; }
+    # D002 (project-tree-only rm -rf): the scratch workspace must live under
+    # this project's owned cache tree, never bare TMPDIR/tmp. It is anchored
+    # to IC_PROJECT_ROOT (derived from this script's own resolved location),
+    # never to the overrideable DM_SIGNAL_PROD_IMPORT_CACHE_DIR -- a caller
+    # pointing that variable outside the project tree (as tests deliberately
+    # do, to keep result markers out of the real repo) must not be able to
+    # relocate the destructive scratch/cleanup workspace along with it. The
+    # cleanup trap re-resolves both paths with realpath and refuses to remove
+    # anything that does not resolve inside the owned root, so a symlink or
+    # a future edit that widens IC_WORK_ROOT cannot turn this into an
+    # out-of-tree rm -rf.
+    IC_WORK_ROOT="$IC_PROJECT_ROOT/.cache/dm_signal_prod_import/tmp"
+    mkdir -p "$IC_WORK_ROOT" 2>/dev/null || true
+    IC_WORK_DIR="$(mktemp -d "$IC_WORK_ROOT/import.XXXXXX")" || exit 1
+    ic_cleanup() {
+        local resolved_root resolved_work
+        resolved_root="$(cd "$IC_WORK_ROOT" 2>/dev/null && pwd -P)" || return 0
+        resolved_work="$(cd "$IC_WORK_DIR" 2>/dev/null && pwd -P)" || return 0
+        case "$resolved_work" in
+            "$resolved_root"/*) rm -rf -- "$resolved_work" ;;
+            *) echo "BLOCK: import_check_cleanup_refused path outside owned tmp root: $resolved_work" >&2 ;;
+        esac
+    }
     trap ic_cleanup EXIT
 
     IC_PIP_BIN="${DM_SIGNAL_PROD_IMPORT_PIP_BIN:-}"

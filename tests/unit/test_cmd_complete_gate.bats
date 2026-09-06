@@ -6906,6 +6906,33 @@ _prod_import_repo_init() {
     [[ "$output" != *"cache_hit=1"* ]]
 }
 
+# test_necessity: D002 forbids rm -rf outside the current project working
+# tree. DM_SIGNAL_PROD_IMPORT_CACHE_DIR is deliberately overrideable (tests
+# point it away from the real repo to keep result markers out of it), so the
+# destructive scratch/venv workspace that the EXIT trap rm -rf's must be
+# anchored independently of that override -- never derived from it -- or an
+# override pointed outside the tree would relocate the cleanup target there.
+@test "AC2: a cache-dir override cannot relocate the cleanup workspace outside the project tree" {
+    local base="$BATS_TEST_TMPDIR/prod-import-workroot-anchor"
+    _prod_import_repo_init "$base" "import sys" ""
+    local sha
+    sha="$(cat "$base/source.sha")"
+    local external_cache="$base/external-cache-outside-project"
+    local project_work_root="$PROJECT_ROOT/.cache/dm_signal_prod_import/tmp"
+
+    run env DM_SIGNAL_PROD_IMPORT_CACHE_DIR="$external_cache" \
+        bash "$PROJECT_ROOT/scripts/gates/gate_dm_signal_production_smoke.sh" \
+        import-check --repo "$base/repo" --source-sha "$sha"
+    [ "$status" -eq 0 ]
+    [ -d "$external_cache" ]
+    [ "$(ls "$external_cache"/*.result 2>/dev/null | wc -l)" -ge 1 ]
+    # the overridden dir must carry only the result marker, never the
+    # scratch workspace root the cleanup trap rm -rf's
+    [ ! -d "$external_cache/tmp" ]
+    # the project-owned root is where the workspace was actually anchored
+    [ -d "$project_work_root" ]
+}
+
 # test_necessity: backend/requirements.txt absent at the checked commit must
 # fail closed (BLOCK), never a silent SKIP that could mask an unreviewable
 # dependency manifest.
