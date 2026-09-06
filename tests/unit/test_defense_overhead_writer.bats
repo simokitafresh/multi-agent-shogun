@@ -409,3 +409,80 @@ PY
   [ "$status" -eq 0 ]
   grep -q '"agent": *"karo-inbox"' "$out/b.jsonl"
 }
+
+# test_necessity: report review accounting must use report fingerprints for
+# duplicate identity, preserve missing fingerprints as unknown, and keep the
+# lifecycle baseline independent from the CLI/model that invokes the script.
+@test "karo review metrics distinguish fingerprint duplicates and lifecycle baseline" {
+  local base="$TEST_TMP/karo-review-metrics"
+  mkdir -p "$base/tasks" "$base/out"
+  cat > "$base/reviews.yaml" <<'YAML'
+- review_type: report
+  report_task_id: task-a
+  report_fingerprint: fp-a
+  timestamp: '2026-09-06T00:01:00+09:00'
+  verdict: FAIL
+  gate_result: BLOCK
+- review_type: report
+  report_task_id: task-a
+  report_fingerprint: fp-a
+  timestamp: '2026-09-06T00:02:00+09:00'
+  verdict: FAIL
+  gate_result: BLOCK
+- review_type: report
+  report_task_id: task-a
+  report_fingerprint: fp-b
+  timestamp: '2026-09-06T00:03:00+09:00'
+  verdict: LGTM
+  gate_result: CLEAR
+- review_type: report
+  report_task_id: task-b
+  timestamp: '2026-09-06T00:04:00+09:00'
+  verdict: FAIL
+  gate_result: BLOCK
+- review_type: report
+  report_task_id: task-c
+  report_fingerprint: fp-c
+  timestamp: '2026-09-06T00:05:00+09:00'
+  verdict: LGTM
+  gate_result: CLEAR
+YAML
+  for id in task-a task-b task-c task-d task-e; do
+    cat > "$base/tasks/$id.yaml" <<YAML
+task:
+  task_id: $id
+  issued_at: '2026-09-06T00:00:00+09:00'
+  deployed_at: '2026-09-06T00:01:00+09:00'
+  completed_at: '2026-09-06T00:02:00+09:00'
+YAML
+  done
+
+  local -a report_env=(
+    "KARO_THROUGHPUT_OUTPUT_DIR=$base/out"
+    "KARO_THROUGHPUT_REVIEW_LOGS=$base/reviews.yaml"
+    "KARO_THROUGHPUT_TASK_DIRS=$base/tasks"
+    "KARO_THROUGHPUT_DEFENSE_LOG=$base/defense.jsonl"
+    "KARO_THROUGHPUT_TIMING_LOGS=$base/timing.jsonl"
+    "KARO_THROUGHPUT_GATE_LOG=$base/gate.log"
+    "KARO_THROUGHPUT_WATCHER_LOGS=$base/watcher.log"
+    "KARO_THROUGHPUT_RETRY_ROOT=$base/gates"
+  )
+  run env "${report_env[@]}" bash "$BATS_TEST_DIRNAME/../../scripts/karo_throughput_report.sh" 2026-09-06 --as-of 2026-09-06T23:59:00+09:00
+  [ "$status" -eq 0 ]
+  local report="$base/out/2026-09-06_2026-09-06T23:59:00+09:00.md"
+  [ -s "$report" ]
+  cp "$report" "$base/first.md"
+  run env "${report_env[@]}" bash "$BATS_TEST_DIRNAME/../../scripts/karo_throughput_report.sh" 2026-09-06 --as-of 2026-09-06T23:59:00+09:00
+  [ "$status" -eq 0 ]
+  cmp "$base/first.md" "$report"
+  grep -qF '| report reviews | 5 | - | - |' "$report"
+  grep -qF '| raw FAIL | 3 | 5 | 60.0% |' "$report"
+  grep -qF '| unique task FAIL | 2 | 3 | 66.7% |' "$report"
+  grep -qF '| same fingerprint duplicate rows | 1 | 5 | 20.0% |' "$report"
+  grep -qF '| fingerprint missing / unclassified | 1 | 5 | 20.0% |' "$report"
+  grep -qF '| substantive resubmissions | 1 | 2 | - |' "$report"
+  grep -qF '| additional judgments (same task; not duplicate claim) | 2 | 5 | - |' "$report"
+  grep -qF '| additional FAIL judgments | 1 | 3 | - |' "$report"
+  grep -qF 'observed tasks with issued_at and deployed_at on 2026-09-06: 5' "$report"
+  grep -qF 'required minimum: 5; status: PASS' "$report"
+}

@@ -117,6 +117,248 @@ def read_yaml_rows(path):
         return []
     return payload if isinstance(payload, list) else []
 
+def read_yaml_records(path):
+    """Read a YAML ledger without assuming the current list-only envelope."""
+    try:
+        payload = yaml.safe_load(path.read_text(encoding="utf-8")) or []
+    except (OSError, yaml.YAMLError):
+        return []
+    if isinstance(payload, list):
+        return [item for item in payload if isinstance(item, dict)]
+    if isinstance(payload, dict):
+        for key in ("reviews", "entries", "items", "tasks"):
+            value = payload.get(key)
+            if isinstance(value, list):
+                return [item for item in value if isinstance(item, dict)]
+        return [payload]
+    return []
+
+def configured_glob_paths(value, default_patterns):
+    patterns = [item for item in str(value).split(":") if item] if value else default_patterns
+    paths = []
+    for pattern in patterns:
+        candidate = Path(pattern)
+        if candidate.is_dir():
+            paths.extend(sorted(candidate.glob("*.yaml")))
+            continue
+        matches = sorted(Path(item) for item in glob.glob(pattern))
+        paths.extend(matches or ([candidate] if candidate.exists() else []))
+    return list(dict.fromkeys(paths))
+
+def review_ledger_paths():
+    root = os.environ["KARO_THROUGHPUT_ROOT"]
+    return configured_glob_paths(
+        os.environ.get("KARO_THROUGHPUT_REVIEW_LOGS"),
+        [f"{root}/logs/archive/gunshi_review_log*.yaml", f"{root}/logs/gunshi_review_log.yaml"],
+    )
+
+def task_ledger_paths():
+    root = os.environ["KARO_THROUGHPUT_ROOT"]
+    return configured_glob_paths(
+        os.environ.get("KARO_THROUGHPUT_TASK_DIRS"),
+        [f"{root}/queue/tasks", f"{root}/queue/archive/tasks"],
+    )
+
+def nested_value(item, *keys):
+    for key in keys:
+        value = item.get(key) if isinstance(item, dict) else None
+        if value not in (None, "", []):
+            return value
+    return None
+
+def review_timestamp(item):
+    review = item.get("review") if isinstance(item.get("review"), dict) else {}
+    return nested_value(item, "timestamp", "reviewed_at") or nested_value(review, "timestamp", "reviewed_at")
+
+def review_task_id(item):
+    review = item.get("review") if isinstance(item.get("review"), dict) else {}
+    return nested_value(item, "report_task_id", "task_id", "cmd_id") or nested_value(review, "report_task_id", "task_id", "cmd_id")
+
+def review_fingerprint(item):
+    review = item.get("review") if isinstance(item.get("review"), dict) else {}
+    value = nested_value(item, "report_fingerprint", "fingerprint") or nested_value(review, "report_fingerprint", "fingerprint")
+    return str(value).strip() if value is not None and str(value).strip() else None
+
+def review_verdict(item):
+    value = nested_value(item, "verdict", "report_verdict", "review_verdict")
+    if value is None and isinstance(item.get("review"), dict):
+        value = nested_value(item["review"], "verdict", "report_verdict", "review_verdict")
+    return str(value).strip().upper() if value is not None else ""
+
+def review_rows_for_day():
+    rows = []
+    for path in review_ledger_paths():
+        for item in read_yaml_records(path):
+            task_id = review_task_id(item)
+            review_type = str(item.get("review_type") or "").strip().lower()
+            if review_type and review_type != "report":
+                continue
+            if not review_type and not item.get("report_task_id"):
+                continue
+            stamp = review_timestamp(item)
+            parsed = parse_iso(stamp, JST)
+            if parsed is None or parsed.astimezone(JST).date().isoformat() != DATE:
+                continue
+            if cutoff is not None and parsed > cutoff:
+                continue
+            review = item.get("review") if isinstance(item.get("review"), dict) else {}
+            rows.append({
+                "task_id": str(task_id).strip() if task_id else None,
+                "fingerprint": review_fingerprint(item),
+                "verdict": review_verdict(item),
+                "gate_result": str(item.get("gate_result") or "").strip().upper(),
+                "timestamp": parsed,
+                "exception_wait_minutes": nested_value(item, "exception_wait_minutes", "approval_wait_minutes")
+                    or nested_value(review, "exception_wait_minutes", "approval_wait_minutes"),
+                "exception_wait_start": nested_value(item, "exception_approval_requested_at", "approval_wait_start")
+                    or nested_value(review, "exception_approval_requested_at", "approval_wait_start"),
+                "exception_wait_end": nested_value(item, "exception_approval_resolved_at", "approval_wait_end", "approved_at")
+                    or nested_value(review, "exception_approval_resolved_at", "approval_wait_end", "approved_at"),
+            })
+    return rows
+
+def task_rows_for_day(review_rows):
+    by_id = {}
+    for path in task_ledger_paths():
+        for item in read_yaml_records(path):
+            task = item.get("task") if isinstance(item.get("task"), dict) else item
+            task_id = str(task.get("task_id") or "").strip()
+            if not task_id:
+                continue
+            issued = parse_iso(task.get("issued_at"), JST)
+            deployed = parse_iso(task.get("deployed_at"), JST)
+            related = any(row["task_id"] == task_id for row in review_rows)
+            in_day = any(value is not None and value.astimezone(JST).date().isoformat() == DATE
+                         for value in (issued, deployed))
+            if not in_day and not related:
+                continue
+            by_id[task_id] = task
+    return list(by_id.values())
+
+def task_time(task, *keys):
+    for key in keys:
+        parsed = parse_iso(task.get(key), JST)
+        if parsed is not None:
+            return parsed
+    return None
+
+def explicit_release_time(task):
+    return task_time(task, "released_at", "release_at", "released_on")
+
+def duration_value(start, end):
+    if start is None or end is None or end < start:
+        return None
+    return (end - start).total_seconds() / 60.0
+
+def duration_table_row(label, values):
+    if not values:
+        return f"| {label} | 0 | - | - | 0 | - |"
+    return f"| {label} | {len(values)} | {fmt(percentile(values, .5))} | {fmt(percentile(values, .95))} | {fmt(sum(values))} | minutes |"
+
+def review_metrics(review_rows):
+    reports = len(review_rows)
+    failures = sum(row["verdict"] in {"FAIL", "REQUEST_CHANGES", "BLOCK"} for row in review_rows)
+    task_ids = {row["task_id"] for row in review_rows if row["task_id"]}
+    fail_tasks = {row["task_id"] for row in review_rows if row["task_id"] and row["verdict"] in {"FAIL", "REQUEST_CHANGES", "BLOCK"}}
+    fp_counts = Counter(row["fingerprint"] for row in review_rows if row["fingerprint"])
+    duplicate_rows = sum(max(0, count - 1) for count in fp_counts.values())
+    duplicate_groups = sum(count > 1 for count in fp_counts.values())
+    missing_fp = reports - sum(fp_counts.values())
+    revisions = 0
+    task_fps = defaultdict(set)
+    for row in review_rows:
+        if row["task_id"] and row["fingerprint"]:
+            task_fps[row["task_id"]].add(row["fingerprint"])
+    revisions = sum(max(0, len(fps) - 1) for fps in task_fps.values())
+    task_review_counts = Counter(row["task_id"] for row in review_rows if row["task_id"])
+    additional_judgments = sum(max(0, count - 1) for count in task_review_counts.values())
+    fail_task_review_counts = Counter(row["task_id"] for row in review_rows if row["task_id"] and row["verdict"] in {"FAIL", "REQUEST_CHANGES", "BLOCK"})
+    additional_fail_judgments = sum(max(0, count - 1) for count in fail_task_review_counts.values())
+    out = ["## review ledger metrics", "", "- source: report review rows only; same task is not treated as a duplicate without a fingerprint", "", "| 指標 | 件数 | 分母 | 率 |", "|---|---:|---:|---:|"]
+    rate = lambda numerator, denominator: f"{numerator / denominator * 100:.1f}%" if denominator else "-"
+    out.extend([
+        f"| report reviews | {reports} | - | - |",
+        f"| raw FAIL | {failures} | {reports} | {rate(failures, reports)} |",
+        f"| unique task FAIL | {len(fail_tasks)} | {len(task_ids)} | {rate(len(fail_tasks), len(task_ids))} |",
+        f"| same fingerprint duplicate rows | {duplicate_rows} | {reports} | {rate(duplicate_rows, reports)} |",
+        f"| same fingerprint duplicate groups | {duplicate_groups} | {len(fp_counts)} | - |",
+        f"| fingerprint missing / unclassified | {missing_fp} | {reports} | {rate(missing_fp, reports)} |",
+        f"| substantive resubmissions | {revisions} | {len(task_fps)} | - |",
+        f"| additional judgments (same task; not duplicate claim) | {additional_judgments} | {reports} | - |",
+        f"| additional FAIL judgments | {additional_fail_judgments} | {failures} | - |",
+    ])
+    return out, {"reports": reports, "failures": failures, "tasks": len(task_ids), "fail_tasks": len(fail_tasks), "duplicate_rows": duplicate_rows, "missing_fp": missing_fp}
+
+def lifecycle_metrics(review_rows, task_rows):
+    by_task = defaultdict(list)
+    for row in review_rows:
+        if row["task_id"]:
+            by_task[row["task_id"]].append(row)
+    for rows in by_task.values():
+        rows.sort(key=lambda row: row["timestamp"])
+    durations = defaultdict(list)
+    first_clear_ids = set()
+    first_review_ids = set(by_task)
+    exception_wait = []
+    for task in task_rows:
+        task_id = str(task.get("task_id") or "")
+        reviews = by_task.get(task_id, [])
+        issued = task_time(task, "issued_at")
+        deployed = task_time(task, "deployed_at")
+        completed = task_time(task, "completed_at", "done_at")
+        first_review = reviews[0]["timestamp"] if reviews else task_time(task, "reviewed_at", "review_at")
+        clear = task_time(task, "gate_clear_at", "clear_at")
+        if clear is None:
+            clear_rows = [row for row in reviews if row["gate_result"] == "CLEAR"]
+            clear = min((row["timestamp"] for row in clear_rows), default=None)
+        release = explicit_release_time(task)
+        if reviews and reviews[0]["gate_result"] == "CLEAR":
+            first_clear_ids.add(task_id)
+        pairs = {
+            "issued→deployment preparation": (issued, deployed),
+            "deployment→work completion": (deployed, completed),
+            "work completion→review": (completed, first_review),
+            "review→CLEAR": (first_review, clear),
+            "CLEAR→release": (clear, release),
+            "issued→release total": (issued, release),
+        }
+        for name, (start, end) in pairs.items():
+            value = duration_value(start, end)
+            if value is not None:
+                durations[name].append(value)
+        for row in reviews:
+            if row["exception_wait_minutes"] not in (None, ""):
+                try:
+                    exception_wait.append(float(row["exception_wait_minutes"]))
+                except (TypeError, ValueError):
+                    pass
+            else:
+                wait_value = duration_value(parse_iso(row["exception_wait_start"], JST), parse_iso(row["exception_wait_end"], JST))
+                if wait_value is not None:
+                    exception_wait.append(wait_value)
+    output = ["## task lifecycle timing", "", "- missing stage timestamps remain unknown; no timestamp is inferred from file order or status", "", "| 区間 | 件数 | p50分 | p95分 | 合計分 | 単位 |", "|---|---:|---:|---:|---:|---|"]
+    for name in ("issued→deployment preparation", "deployment→work completion", "work completion→review", "review→CLEAR", "CLEAR→release", "issued→release total"):
+        output.append(duration_table_row(name, durations[name]))
+    known_first = len([task_id for task_id in first_review_ids if by_task[task_id][0]["gate_result"]])
+    first_clear = len(first_clear_ids)
+    first_rate = f"{first_clear / known_first * 100:.1f}%" if known_first else "unknown"
+    output.extend(["", f"- one-shot CLEAR: {first_clear}/{known_first} ({first_rate}); denominator is tasks whose first report review has explicit gate_result", "- exception approval wait: " + (fmt(sum(exception_wait)) + " minutes across " + str(len(exception_wait)) + " explicit measurements" if exception_wait else "unknown (no explicit approval interval)"), ""])
+    baseline = []
+    for task in task_rows:
+        issued = parse_iso(task.get("issued_at"), JST)
+        deployed = parse_iso(task.get("deployed_at"), JST)
+        if issued is not None and issued.astimezone(JST).date().isoformat() == DATE and deployed is not None:
+            baseline.append(str(task.get("task_id")))
+    output.append("## daily baseline")
+    output.append("")
+    output.append(f"- observed tasks with issued_at and deployed_at on {DATE}: {len(baseline)}")
+    output.append(f"- required minimum: 5; status: {'PASS' if len(baseline) >= 5 else 'INSUFFICIENT'}")
+    if len(baseline) < 5:
+        output.append("- insufficiency basis: fewer than five tasks have both explicit timestamps in the selected window")
+    else:
+        output.append("- basis: task ledger timestamps; no CLI/model/fresh-process signal used")
+    return output, {"baseline": len(baseline), "one_shot_clear": first_clear, "one_shot_denominator": known_first}
+
 def failure_origin_counts():
     """Count report FAIL events without merging generations or old rows."""
     paths = sorted(Path(os.environ["KARO_THROUGHPUT_ROOT"]).glob("logs/archive/gunshi_review_log*.yaml"))
@@ -201,7 +443,15 @@ def agent_key(row_data):
     return agent if isinstance(agent, str) and re.fullmatch(r"[a-z0-9_-]{1,32}", agent) else "-"
 
 def main():
-    output = [f"# 家老スループット日次表 — {DATE}", "", f"- 対象日: `{DATE}`", f"- as-of: `{AS_OF or '終日確定'}`", "- 入力: append-only logs のみ（ネットワーク・live state 不使用）", ""]
+    output = [f"# 家老スループット日次表 — {DATE}", "", f"- 対象日: `{DATE}`", f"- as-of: `{AS_OF or '終日確定'}`", "- 入力: append-only logs/task ledgers のみ（ネットワーク・live state 不使用）", ""]
+    review_rows = review_rows_for_day()
+    task_rows = task_rows_for_day(review_rows)
+    review_section, _review_counts = review_metrics(review_rows)
+    lifecycle_section, _lifecycle_counts = lifecycle_metrics(review_rows, task_rows)
+    output.extend(review_section)
+    output.extend([""])
+    output.extend(lifecycle_section)
+    output.extend([""])
     output.append("## 経路別計測")
     table(output)
 
