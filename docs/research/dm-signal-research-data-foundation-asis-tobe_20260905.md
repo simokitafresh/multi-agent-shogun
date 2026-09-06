@@ -14,7 +14,7 @@
 | D1 F1 holdings_monthly(cmd_4479) | ✅ | approved_honest_fail 終端。CSV 23,175 行、parity 104 不一致(I8) |
 | D2 I8 根因偵察(cmd_4480 A1/A2/AC3) | ✅ 03:04 | explained 102(投票比例 FoF weight vs 1/N)+unexplained 2(2014-04 初月)=104 |
 | D3 市場 1 表(cmd_4481) | ✅ 02:45 | layer_holdings_monthly.csv 4,493 行。2026-08 ALL: GLD .439/XLU .386/TMV .174 |
-| D4 第 2 段の置き場(F1 を target_weight 読取へ拡張) | ⏳ 保留(殿 10:51『新四つ目の三つを除外すればいい。D4 は実装してから考える』) | 10:41『拡張』の cmd_4482 は cancelled(未配備)。市場 1 表は 3 体除外の 75 PF を正本に。拡張は必要になった時に再起票 |
+| D4 第 2 段の置き場 → 母集団 75 PF 確定(cmd_4483) | 🟡 走行中(殿 11:46『L2から新四つ目抜きの21体でやろう』→cmd_4483 delegated 11:53) | 10:41『拡張』の cmd_4482 は cancelled(未配備)。市場 1 表は 3 体除外の 75 PF を正本に。拡張は必要になった時に再起票 |
 
 ## §0.0 前提とスタイル
 
@@ -70,7 +70,7 @@
 |---|---|---|
 | L0 | standard かつ 名前が シン四神 系 | 12 |
 | L1 | fof かつ 名前 `GSシン忍法` | 21 |
-| L2 | fof かつ 名前 `奥義-` | 24 |
+| L2 | fof かつ 名前 `奥義-` かつ 名前に `新四つ目` を含まない(殿裁定 2026-09-06 11:46。除外 3 体=奥義-GS-新四つ目-激攻 75ae0957 / 常勝 015e74dc / 鉄壁 0206995c) | 21(v0.9 まで 24) |
 | L3 | fof かつ 名前 `秘奥義-` | 21 |
 
 ### §2.6 既存ツール棚卸し(殿 21:56『FoF 分解は既にある。徹底的に探せ』。v0.4 家老 6 件訂正+v0.5 R2-1 流用元一本化。repo `/mnt/c/Python_app/DM-signal`)
@@ -127,7 +127,7 @@
 | D1 | F1 cmd_4479(才蔵) | **終端(approved_honest_fail、00:3x)** | delegated 23:34→00:19 honest FAIL(AC2 parity のみ no)→軍師再 review AC 証拠 7/7→家老 approved_honest_fail(blt_003021)。成果物: holdings_monthly.csv 23,175 行(Σweight 違反 0)、universe_manifest、provenance、verify_blob_diff(意味差分 0)、verify_parity(12,268/12,372、不一致 104=新四つ目 3 体)、verify_display_weights(I6)、verify_change_log、i7_unexpandable(0)、contract test 2/2。再実行 0 |
 | D2 | I8 根因偵察 cmd_4480(A1 データ/A2 コード 2 名並行、readonly) | **GATE CLEAR 03:05**(A2 recon2 CLEAR 02:43、A1 半蔵 done、AC3 統合は将軍 D0 doc lane=DM-Signal origin 07632b14) | 結果=explained 102(fof_component_weights.target_weight 非1/N 102/102 ↔ 投票比例経路 weighted_multi_view_momentum_filter.py:230-237→engine.py:187-188→price_ratio_impl.py:1239-1250 vs build_holdings_monthly.py:219 の 1/N)+unexplained 2(015e74dc/2014-04, 0206995c/2014-04、root signal 不在)=104、重複0欠落0。正本=analysis_runs/cmd_4480_shin_yotsume_parity/root_cause_summary.md |
 | D3 | 市場 1 表 cmd_4481(v1.4、入力=F1 CSV、3 体 is_suspect) | **GATE CLEAR 02:45**(影丸、DM-Signal origin e045d337) | layer_holdings_monthly.csv 4,493 行。2026-08 ALL: GLD .439/XLU .386/TMV .174(75 PF)。is_suspect 3 体は D2 で「vote-weighted FoF」と意味確定 |
-| D4 | 第 2 段(DB 昇格)の置き場 | **保留(殿 10:51)**。10:41『拡張しよう』→cmd_4482 起票→10:51『新四つ目の三つを除外すればいい。D4 は実装してから考える』で cancelled(未配備) | F1 は 1/N 展開のまま。新四つ目 3 体は市場 1 表から除外(is_suspect=false 側=75 PF が正本)。target_weight 拡張の設計は cmd_4482 本文(cancelled)に保存済みで必要時に再起票 |
+| D4 | 第 2 段(DB 昇格)の置き場 → 母集団確定 | **cmd_4483 delegated 11:53(殿 11:46『L2から新四つ目抜きの21体でやろう』)**: 母集団 75 PF(12/21/21/21)に確定、F1+市場 1 表を readonly 再生成、is_suspect 撤去、parity 不一致 0 を AC。以下は経緯: **保留(殿 10:51)**。10:41『拡張しよう』→cmd_4482 起票→10:51『新四つ目の三つを除外すればいい。D4 は実装してから考える』で cancelled(未配備) | F1 は 1/N 展開のまま。新四つ目 3 体は市場 1 表から除外(is_suspect=false 側=75 PF が正本)。target_weight 拡張の設計は cmd_4482 本文(cancelled)に保存済みで必要時に再起票 |
 
 殿裁定を要する点: D3 の起票タイミング(協議結果を添えて 1 報)、D4 の置き場(4480 後)。
 

@@ -11,7 +11,7 @@
 | 項目 | 状態 | 現在値 |
 |---|---|---|
 | I8 新四つ目 parity 104 | ✅ 根因確定 | 102=投票比例 weight、残 2=015e74dc/0206995c の 2014-04(root signal 不在) |
-| B1 F2 holding_signal_expanded | ⏳ 記録のみ | D4 は保留(殿 10:51)。target_weight 拡張の設計は cmd_4482(cancelled)本文に保存 |
+| B1 F2 holding_signal_expanded | ⏳ 記録のみ | D4 は除外で決着(殿 11:46→cmd_4483: 母集団 75 PF、L2 21)。target_weight 拡張の設計は cmd_4482(cancelled)本文に保存 |
 | B2 F3 signal_decision_ledger | ⏳ 中立 | 変更なし |
 | B3 F4 layer_of 一元化 | ⏳ 記録のみ | |
 | B4 A1〜A11 | ⏳ 記録のみ | |
@@ -48,7 +48,7 @@
 |---|---|
 | I1 | `fof_component_weights` JSON 4 列 24,348 行 全 NULL |
 | I2 | `signal_change_log` 同日往復の二重行 |
-| I3 | `signal_change_log` に現れる対象 PF 66/78(L0 10/12・L1 17/21・L2 21/24・L3 18/21、nonce *-ro9) |
+| I3 | `signal_change_log` に現れる対象 PF 66/78(L0 10/12・L1 17/21・L2 21/24・L3 18/21、nonce *-ro9)。※ 殿裁定 11:46 で母集団は 75(L2 21)へ。新四つ目 3 体の change_log 有無は cmd_4483 の manifest excluded で再計上 |
 | I4 | `signal_detail_history` 0 行、`signal_decision_ledger` 0 行(0 行=未使用ではない。B2) |
 | I5 | 月初 `signals.holding_signal` と `monthly_returns.holding_signal` の不一致(F1 で計測) |
 | I6 | `display_ticker_weights` 非 unit 35 行・α=0 parity 不一致 29/2,096(08-06 v1.10) |

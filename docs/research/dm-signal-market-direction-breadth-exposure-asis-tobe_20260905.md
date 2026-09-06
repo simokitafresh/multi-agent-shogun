@@ -12,12 +12,12 @@
 | 項目 | 状態 | 現在値 |
 |---|---|---|
 | 単一表 layer_holdings_monthly | ✅ 02:45 | 4,493 行、pf_count/is_mtd/is_suspect 列付き |
-| is_suspect 3 体(新四つ目) | ✅ 除外で確定(殿 10:51) | 新四つ目 3 体は本表から除外し、is_suspect=false 側(75 PF)を正本として読む。列の物理削除は不要(false 側の行を使う) |
+| is_suspect 3 体(新四つ目) → 母集団から除外・列撤去 | 🟡 cmd_4483 走行中(殿 11:46『L2から新四つ目抜きの21体』、delegated 11:53) | 新四つ目 3 体は本表から除外し、is_suspect=false 側(75 PF)を正本として読む。列の物理削除は不要(false 側の行を使う) |
 | 契約 test AC1/AC2(weight 和・pf_count) | ✅ | CI 上で PASS(DM-Signal origin e045d337) |
 
 ## §0.0 前提とスタイル
 
-- 対象 78 PF(L0 シン四神 12 / L1 GSシン忍法 21 / L2 奥義-GS 24 / L3 秘奥義 21)。定義は基盤書 §2.4。
+- 対象 75 PF(L0 シン四神 12 / L1 GSシン忍法 21 / L2 奥義-GS 21 / L3 秘奥義 21)。定義は基盤書 §2.4。殿裁定 2026-09-06 11:46『L2から新四つ目抜きの21体でやろう』で L2 24→21(新四つ目 3 体を母集団から除外、cmd_4483 で再生成。v1.6 までは 78 PF+is_suspect)。
 - 保有 = `monthly_returns.holding_signal`(PIT)を展開した weight。基盤 F1 が作る。
 - 本番に触るのは殿の明示 OK のみ(殿 22:27)。本書の実装は CSV を読んで CSV を書くだけで、DB 接続を持たない。
 - 慌てて実装しない。基盤書が家老・軍師 APPROVE に到達し、F1 が CLEAR してから。
