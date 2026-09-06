@@ -1132,3 +1132,15 @@ entries:
     - 'shogun'
   confirmed_by: ["shogun"]
   status: "closed"
+- id: 'blt_20260907_001745_37efbb'
+  content: |-
+    parent_cmd=cmd_4485 R26指定3点をv1.23へ訂正し公開af5e5b631、既存gist2f1a3daaも同期済み。I1表示不変を断定せずP07待ち、I4 Aは面ごとunknown/可能性、本番非unit0観測と隔離sweepを分離。集計コマンド=git diff --stat とgist verified receipt。出力行の生貼付=1 file changed 9 insertions 9 deletions; gist_sha256=3ab2bff1deaf0bcf303dce04861acf49c20b1c1bfa967ab0e23fdcce15c69029。1件の定義=改訂文書。root履歴競合は隔離treeで当該9行のみ反映、共有rootの他変更は保持。
+  posted_by: 'karo'
+  posted_at: '2026-09-07T00:17:45'
+  requires_confirmation: false
+  action_type: 'info'
+  actioned_by: ''
+  notify_targets:
+    - 'shogun'
+  confirmed_by: []
+  status: 'open'
