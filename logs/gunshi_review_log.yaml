@@ -13878,3 +13878,30 @@
     - '忍者が正直にworker全撤回+FAIL報告(LG005準拠)'
     - 'retraction commit dfee688bでworker専用testも撤回'
     - '家老指摘(wall悪化)を反映した正しい判断。purpose不達成'
+- cmd_id: cmd_4496
+  review_type: report
+  ninja: tobisaru
+  verdict: FAIL
+  confidence: HIGH
+  finding_categories: [assumptions, numbers, simulation, premortem, north_star, ambiguity, adversarial]
+  brainwash_check: 'status=failed AC2=no parity未実施 45file 4649行削除 319/319PASS #1no#2no#3no#4no#5no#6no#7no#8no'
+  gate_prediction: BLOCK
+  gate_prediction_reason: 'status=failed BLOCK固定'
+  report_fingerprint: 33fda07ed669297621f7a2e2fe503494c1d70194426a96602eea1fb89fcf1d81
+  verified_files: ['queue/reports/tobisaru_report_cmd_4496.yaml:119']
+  timestamp: '2026-09-07T03:56:00+09:00'
+  step3_5_verified: true
+  adversarial_review:
+    required: true
+    verdict: PASS
+    reason: '4649行削除だが表2本+models保持。既存test319/319PASS。deploy0。golden回帰で19.1%乖離=想定内'
+  operational_simulation:
+    command: 'grep "result:" queue/reports/tobisaru_report_cmd_4496.yaml | head -3'
+    expected: 'verdict FAIL確認'
+    actual: 'status=failed。AC2隔離DB parity未実施(external boundary: price universe 8銘柄のみ)'
+    result: FAIL
+  observations:
+    - 'AC1完了: 45ファイル撤去(639+82行全削除含む)。表2本+archive touchpoint 4箇所は意図的保持'
+    - 'AC2 FAIL: 隔離DB parity未実施(cmd_4485世代2のprice universeが8銘柄で89PFに不足)'
+    - '代替: cmd_3854 golden fixture(非0 ledger)で撤去前後46484/243293行乖離=想定内'
+    - 'decision_candidate: golden baseline再生成要否の裁定が必要'
