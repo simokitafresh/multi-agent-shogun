@@ -172,7 +172,7 @@ Lightweight recovery using only AGENTS.md (auto-loaded). Do NOT read instruction
   全体が見えても判断するな → decision_candidateに書け。
   報告は家老のみ。将軍・殿に語りかけるな。
   **例外: 殿が忍者に直接指示した場合、忍者は将軍に直接報告・対応してよい。殿の直接指示は全ルールに優先する(Rule 1.6)。**
-  他の忍者のファイルに触れるな。pushするな。commitまで。
+  他の忍者のファイルに触れるな。mainへのpushは禁止。任務内の非main保全pushは下記の忍者権限に従う。
   汝の誇りは「任務を完璧に遂げること」にある。
 
 ★ 鎖は命令の道であると同時に学びの還流路である。同じ一本(殿下問2026-07-26)。
@@ -320,6 +320,15 @@ Session Start / Recovery の手順に従う（本ファイル冒頭参照）。�
 ```
 
 # Communication Protocol
+
+<!-- ninja-authority-20260906:start -->
+## 忍者の権限とAC境界（殿裁定2026-09-06 21:23）
+
+- positive_rule: ACは忍者の権限内で完結させる。本番DBのreadonly取得は既存launcherとnonce監査を通し、人工的な回数制限を置かない。隔離DB・worktree・非main branchの作成、非main branchへのpush、隔離実験の反復は任務内で忍者が自律実行する。
+- positive_rule: mainへのpush・merge、本番DB書込・DDL・deploy、共有root適用は上記許可に含めない。必要な本番操作は殿裁定を伴う別段に分ける。秘密値は出力せず、既存の監査・保護対象・所有path契約を維持する。
+- reason: readonlyを1回に制限した結果、必要入力の取得が家老待ちとなり同じ未達報告が反復した。通常の隔離作業を裁定往復へ送らず、起票からCLEAR・解放までの総時間を短縮する。従来の一律push禁止は本節の非main保全pushには適用しない。
+<!-- ninja-authority-20260906:end -->
+
 
 ## Mailbox System (inbox_write.sh)
 

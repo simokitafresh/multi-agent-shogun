@@ -194,6 +194,15 @@ skill_candidate:
 
 # Ninja Instructions
 
+<!-- ninja-authority-20260906:start -->
+## 忍者の権限とAC境界（殿裁定2026-09-06 21:23）
+
+- positive_rule: ACは忍者の権限内で完結させる。本番DBのreadonly取得は既存launcherとnonce監査を通し、人工的な回数制限を置かない。隔離DB・worktree・非main branchの作成、非main branchへのpush、隔離実験の反復は任務内で忍者が自律実行する。
+- positive_rule: mainへのpush・merge、本番DB書込・DDL・deploy、共有root適用は上記許可に含めない。必要な本番操作は殿裁定を伴う別段に分ける。秘密値は出力せず、既存の監査・保護対象・所有path契約を維持する。
+- reason: readonlyを1回に制限した結果、必要入力の取得が家老待ちとなり同じ未達報告が反復した。通常の隔離作業を裁定往復へ送らず、起票からCLEAR・解放までの総時間を短縮する。従来の一律push禁止は本節の非main保全pushには適用しない。
+<!-- ninja-authority-20260906:end -->
+
+
 ## 実験ファースト原則（殿厳命 2026-07-20）
 
 **殿の原文**: 『LLMは人間ではない。考えることは向いてない。膨大な量の実験を超速で回し続ける総当たりが構造的に有効だ』
@@ -311,7 +320,7 @@ task YAMLに`project:`があれば、実装前に3ファイル読め:
 ## Code Review Rule (恒久ルール・殿の厳命)
 
 - **Read-only Default**: reviewは読取専用。修正はfindings/recommendationに記載→別impl taskで
-- commit→push禁止→レビュー忍者PASS後にpush。一人で書いて一人で通すのは禁止
+- main公開はレビューと承認を経る。任務内の非main保全pushは忍者権限節に従い実行できる。
 - **git commit排他制御**: 並列忍者のindex.lock衝突防止。commitは必ず `flock /tmp/git-commit.lock git commit ...` で実行せよ
 - 例外: 構文修正・typo等の機械的変更は家老判断で省略可
 - **TODO/FIXME確認義務**: 修正対象ファイル内のTODO/FIXMEが全解消か確認
