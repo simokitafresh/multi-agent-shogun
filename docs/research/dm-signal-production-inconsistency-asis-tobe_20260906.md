@@ -1,5 +1,5 @@
 <!-- gist-master: 2f1a3daa07c336c90958b1287245318b dm-signal-production-inconsistency-asis-tobe_20260906.md -->
-# DM-Signal 本番の不整合 I1〜I8 — 事象・影響・改善時の本番変化・影響範囲・依存関係 設計書 v0.5(2026-09-06 14:55 殿 14:44『データの流れのフローチャート、粒度小・分割可・cron の日常再計算も』→§1.5 に F-A〜F-F 6 枚、★で I1〜I9 の発生点を明示) / v0.4(14:32 家老 R2 APPROVE(読取偵察のみ)・残訂正 6 点採用: I6 の Σ<1 断定撤回、I2/I3 の二重計上と直列依存を撤去、I5 六分類へ統一、I4 の実行 0 断定撤回、訂正 event で可逆性確定しない) / v0.3(14:40 家老 R1 REQUEST_CHANGES 6 点を全採用: I4 は writer 実装あり caller 0/ledger API は today 固定・append-only guard/I1 admin caller 実在・8 key/I2 ALERT filter 既存・相殺しない/I6 切替日検出と欠損 child skip も波及/偵察は親 1 本+成果物 A/B) / v0.2(14:35 将軍自己検証 3 点: I1 の frontend 参照あり・I6 は monthly_return 経路と同一関数・change_log 前方補完の一致率 26〜79%=change_log は履歴として再構成不能) / v0.1(14:25 起草、家老 R1 依頼)
+# DM-Signal 本番の不整合 I1〜I8 — 事象・影響・改善時の本番変化・影響範囲・依存関係 設計書 v0.6(2026-09-06 15:00 殿 14:45/14:47: §4 を『ユーザー可視/内部のみ/デッドコード』の 3 列へ、§2.5 設計の因果(導入 commit と意図、バグ/意図あり/失効の判定)、§2.6 デッドコード候補) / v0.5(14:55 殿 14:44『データの流れのフローチャート、粒度小・分割可・cron の日常再計算も』→§1.5 に F-A〜F-F 6 枚、★で I1〜I9 の発生点を明示) / v0.4(14:32 家老 R2 APPROVE(読取偵察のみ)・残訂正 6 点採用: I6 の Σ<1 断定撤回、I2/I3 の二重計上と直列依存を撤去、I5 六分類へ統一、I4 の実行 0 断定撤回、訂正 event で可逆性確定しない) / v0.3(14:40 家老 R1 REQUEST_CHANGES 6 点を全採用: I4 は writer 実装あり caller 0/ledger API は today 固定・append-only guard/I1 admin caller 実在・8 key/I2 ALERT filter 既存・相殺しない/I6 切替日検出と欠損 child skip も波及/偵察は親 1 本+成果物 A/B) / v0.2(14:35 将軍自己検証 3 点: I1 の frontend 参照あり・I6 は monthly_return 経路と同一関数・change_log 前方補完の一致率 26〜79%=change_log は履歴として再構成不能) / v0.1(14:25 起草、家老 R1 依頼)
 
 - 発端: 殿 2026-09-06 14:11『dm-signal-research-data-backlog_20260905.md を参考に DM-signal の本番の不整合について深く調査しよう。家老と繰り返しレビュー交換をせよ。本番の不整合、それによる影響、改善時にどのような変化が本番に起きるか、改善の影響範囲・依存関係なども明確にせよ』
 - 親: `docs/research/dm-signal-research-data-backlog_20260905.md` v1.5 §B5(I1〜I8)、`dm-signal-research-data-foundation-asis-tobe_20260905.md` v0.10 §2、`analysis_runs/cmd_4480_shin_yotsume_parity/root_cause_summary.md`(DM-Signal origin 07632b14)
@@ -11,7 +11,7 @@
 - 数値は一次情報(readonly launcher nonce、cmd 報告、CI 上の verify_*.md)に限る。本書で新規に測っていない数値は「未検証」と明記し、偵察 cmd の対象にする。
 - 改善時の本番変化は「誰が何を見る/どの job が何を書く」で書く。抽象語(整合性向上)は禁止。
 
-## 進捗ビジュアル(将軍 loop 更新 2026-09-06 14:55)
+## 進捗ビジュアル(将軍 loop 更新 2026-09-06 15:00)
 
 **全項目(I1〜I9)** `░░░░░░░░░░ 0/9` ✅完了 🟡走行中 ⏳待ち 🔴要判断
 状態集計: ✅ 0 / 🟡 0 / ⏳ 6 / 🔴 3(表の 9 行)
@@ -221,6 +221,34 @@ flowchart LR
 - (f) 依存: I2/I4 の全記述の前提。偵察 cmd の担当忍者へ「本番コードは 21e80e30 相当」を明示する。
 - (h) 未検証: 139 commit のうち docs/PI が『適用済み』として参照しているものの一覧。
 
+## §2.5 設計の因果(殿 14:47『本番は過去の因果で今の形。明らかなバグ以外は、なぜその設計かをたどる』。origin/main の `git log -S` で導入 commit を特定。判定: 意図あり/バグ/意図が失効)
+
+| # | 現在の形 | 導入 commit と意図 | 判定 |
+|---|---|---|---|
+| I1 | fof_component_weights に 8 列あるが writer は 3 列 | 表は e8191db7(2025-12-29『PipelineEngine と FoF リバランス決定モデル』)で drift 観測を見据えて 12 列で定義。writer は 2aee8e97(2026-01-10『FoF service helpers』、cmd_1101)で target/actual/drift のみ実装。API b682f21d(2026-03-30 cmd_1573『FoF ウェイト可視化 debug API 正式化+WeightBreakdown』)は admin 用の可視化 | **意図あり(未完の拡張)**。drift 観測(A8)を将来やる前提で列だけ先行。バグではない。DROP は「その将来を捨てる」判断=殿裁定 |
+| I2/I3 | change_log は UPDATE 差分のみ、INSERT を記録しない | c7e91634(2026-05-02 cmd_2455『signal change audit logging』)が「確定済み保有が後から書き換わる事故」を監査する目的で導入。INSERT 除外は『persisted old value が無い』ため(05a45d83 2026-07-14 hotfix の docstring)。changed_at 明示は ca170887(07-03 cmd_3679『確定保有の書換えを ALERT』) | **意図あり**。目的は「確定後の書換え検知」であり「保有履歴の再構成」ではない。∴ I2/I3 の『履歴として使えない』は用途違いで、設計変更ではなく用途の明文化(履歴の正本=F1)が筋。往復の重複だけが要調査 |
+| I4 detail_history | writer 実装あり・caller 0 | 0acd66f8(2026-01-07『verification 用 DB 拡張+admin visibility page+分析 script』)で検証用に導入。以後の recalc 高速化(OPT/P3a 等)で呼出し経路が外れた | **意図が失効**(検証用の副産物)。DROP 候補だが admin visibility page(0acd66f8)が読むか要確認 |
+| I4 ledger | 0 行、runtime は読むだけ | 5e9ea355(07-06 cmd_3700『decision ledger dry-run 基盤』)→c449c35d(07-06 cmd_3703『write guard+daily insertion flow』)で「確定月の保有を再計算で上書きしない」ために導入。08-12 T7.5 で detect-only 化・alert 撤去→08-13 rollback で未適用(I9)→08-16 PITR で 0 行 | **意図あり(保護)だが現在は無効**。復活/廃止は「確定月保護を本番で要るか」の裁定=殿 |
+| I5 | signals と monthly_returns の holding_signal が別々に持たれる | monthly_returns は generator が Signal から生成(recalculate_fof.py L533/L566 コメント『MonthlyReturn は _generate_monthly_returns() が Signal から生成する』)。二重保持は「月次表示を Signal から都度展開せず materialize する」速度設計(fullrecalculate 高速化 3566s→480s の系譜) | **意図あり(速度)**。差は生成タイミング・ledger・境界の副作用。二重保持自体を消す案は速度を戻すので採らない |
+| I6 | display_ticker_weights を momentum_data に事前計算 | 773efb9f(2026-04-25『Precompute FoF display weights for signals API』)=/api/signals の応答速度のため。絞込後の非再正規化は price_ratio_impl の原型(020f4a03 06-12 で facade 分割・移設、原型はそれ以前)にあり、『custom weights が無ければ均等』の分岐に選択外 weight の扱いが未定義 | **display の事前計算=意図あり(速度)。非再正規化=バグ寄り(未定義)**。ただし cash 相当を暗黙に残す意図の有無は cmd 履歴に無く、偵察 B と隔離実験で確定 |
+| I8 | 新四つ目 3 体は投票比例 weight | weighted_multi_view_momentum_filter(cmd_4480 A2)の設計どおり | **意図あり**。除外で決着(殿 11:46) |
+| I9 | 本番 tree は 08-04 版 | 殿裁定 08-16『バグを直さず復帰点へ戻す』→233c2303 | **意図あり(復旧方針)**。文書側を合わせる |
+
+- 結論: 明らかなバグは I6 の非再正規化(と I2 の往復重複、要分類)のみ。他は「意図ある設計が別用途に流用されて不整合に見える」か「保護機構が停止中」。改善案は用途の明文化と裁定を先に置き、コード変更は最小にする。
+
+## §2.6 デッドコード候補(殿 14:45『デッドコードもチェック』。静的確認のみ、削除は別 cmd)
+
+| 候補 | 根拠(origin/main) | 状態 | 次の確認 |
+|---|---|---|---|
+| verification_service.save_signal_detail / flush_signal_details_batch | 他 file からの import 0(create_portfolio_config_snapshots のみ import) | caller 0(静的) | 過去版・one-shot script・admin visibility page(0acd66f8)からの呼出し |
+| SignalDetailHistory 表 | 上記 writer の caller 0、reader 0(models/migrations のみ) | 0 行 | 同上 |
+| fof_component_weights の 8 列 | writer が書かない、reader は GET /fof-weights のみ | 常 NULL | WeightBreakdown が表示に使う列 |
+| _flush_fof_component_weights の actual_weight/drift | 常に None(recalculate_fof.py L1281) | 計算されない | A8 を実装するか列を落とすか |
+| ledger 依存 15 file の runtime 分岐 | 0 行のため全経路 no-op | 実行されるが効果 0 | I4 裁定 |
+| daily_etl.py | ops.md『冗長、廃止予定』 | 未確認 | cron/手順書からの参照 |
+| signal_change_log の is_pending_fill_transition 消費側 | ALERT filter L364-383 のみ | 使用中 | — (デッドではない) |
+- 方法: 次の偵察で `vulture`/import グラフ(pyan 等)を backend/app に当て、上記と突合する。削除は「意図が失効」と確認できたものだけ、1 file ずつ。
+
 ## §3 依存関係と順序(v0.3、家老 R1-6 採用)
 
 ```
@@ -246,16 +274,19 @@ I7: 監視 1 行(独立)
 6. B の I6 は静的な影響候補集合まで。リターン差分・切替日差分は後続の隔離実験へ分け、本偵察から再正規化実装や full recalc へ自動昇格しない。
 7. 担当忍者へ「本番コードは 21e80e30(08-04)相当、T7.5 等 139 commit は未適用」を明示(I9)。
 
-## §4 改善時に本番で起きる変化(要約表)
+## §4 改善時に本番で起きる変化(殿 14:45『ユーザーが見るデータが変わるか / 内部だけか』の 2 視点+デッドコード)
 
-| 改善 | 変わるもの | 変わらないもの | 可逆性 |
-|---|---|---|---|
-| I1 DROP | `GET /fof-weights` の最大 8 key、admin WeightBreakdown 表示、schema | リターン・シグナル | migration down+frontend revert |
-| I2 抑止 | 以後の change_log 行数、ALERT 件数 | 過去行、表示 | コード revert |
-| I4 復活 | 確定月の holding_signal 固定(差がある月の表示)、decision_ticker_weights・切替日境界、cache 無効化、ledger ALERT | pending 月 | **未確定**(append-only guard で行削除不可。訂正 event は coverage なしへ戻す保証なし。復元方法は別 dry-run) |
-| I4 廃止 | コード量 | 挙動 | revert |
-| I6 | 35 行の月の FoF weight 表示 Σ=1、同月 monthly_return と切替日境界(要実測) | 他の月 | revert+full recalc |
-| I8 初月修正 | 該当 FoF の初月 return(件数は偵察) | 2 ヶ月目以降 | revert+recalc |
+| 改善 | ① ユーザー可視(本番画面・API・LP/X の数値) | ② 内部のみ(表・job・ログ) | ③ 消えるデッドコード | 可逆性 |
+|---|---|---|---|---|
+| I1 DROP(列) | admin WeightBreakdown の表示項目が減る(顧客画面は変化なし) | schema 8 列、GET /fof-weights の応答 key | fof_flush の actual/drift 計算、API の 8 key 組立 | migration down+frontend revert |
+| I2 抑止(分類確定後) | なし | 以後の change_log 行数、ALERT 件数(filter 外側の経路のみ) | なし | revert |
+| I3 監視追加 | なし | ALERT 種別 +1 | なし | revert |
+| I4 復活 | **あり得る**: 確定月の holding_signal が ledger 値に固定→/api/history・LP の該当月ラベルと、decision_ticker_weights 置換で当月 return が変わる(件数は偵察 A の I5 分類で事前提示) | ledger 行、cache 無効化、ledger ALERT | なし | 未確定(append-only、別 dry-run) |
+| I4 廃止 | なし | コード 15 file、表 2 本 | ledger 依存の runtime 分岐、detail_history writer | revert |
+| I6 再正規化 | **あり**: 非 unit 行の月の /api/signals・monthly-trade の weight 表示 Σ=1、同月の monthly_return/切替日が動けば /api/history・LP・X の数値 | full recalc 1 回、signals.momentum_data 再生成 | なし | revert+full recalc |
+| I8 初月修正 | あり(該当 FoF の初月 return、件数は偵察 B) | recalculate_fof の初月処理 | なし | revert+recalc |
+| I9 文書訂正 | なし | 文書 | なし | — |
+- ①が「あり」の 3 つ(I4 復活・I6・I8)は、偵察で**変わる PF-月の一覧と差の分布**を先に出し、殿が見てから本番へ。②のみの改善は隔離 DB 検証後に順次。
 
 ## §5 家老レビュー往復台帳
 | R | 時刻 | 指摘 | 採否 | 反映 |
