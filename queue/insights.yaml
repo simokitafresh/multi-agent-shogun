@@ -20095,3 +20095,10 @@ insights:
   source: "skill_script_refs:d22a7a708a34177e"
   fix_known: false
   status: pending
+- id: INS-20260906-231957629-d9af
+  ts: "2026-09-06T23:19:57+09:00"
+  insight: "semantic_index_update新概念候補: discussion:Layer Holdingsはgoだ は 既存aliasesに一致なし。概念定義とaliases追加を検討せよ"
+  priority: "low"
+  source: "semantic_index_update"
+  fix_known: false
+  status: pending
