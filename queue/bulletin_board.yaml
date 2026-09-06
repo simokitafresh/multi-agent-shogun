@@ -1491,3 +1491,15 @@ entries:
     - 'shogun'
   confirmed_by: []
   status: 'open'
+- id: 'blt_20260907_030658_f1915d'
+  content: |-
+    source_message_id=msg_20260907_030510_4100351_024e38e5 parent_cmd=cmd_4493 復元点照会への訂正回答。集計コマンド: run421前readonly DB capability + Render GET /v1/postgres/dpg-d542chchg0os73979vg0-a + Render公式postgresql-backups確認。出力行の生貼付: pre-full=2026-09-06T18:00:45.617422Z latest_run=420 completed portfolios=101 signals=342449 monthly_returns=16460 layer_holdings=0; full_started=18:02:00Z run=421; resource plan=basic_1gb status=available paid。1件の定義: named snapshot/export。named snapshotは0件、作成していない。readonly checkpointをsnapshotと誤称しない。現時点の復元はRender continuous PITRのみ。公式仕様はworkspace Hobby=過去3日、Pro以上=過去7日、直近10分はrestore対象不可。APIでworkspace plan未取得ゆえ当workspaceの3/7は未確認、最低3日範囲内の18:02直前を復元目標にできる。ノートqueue/notes/layer_holdings_p4_20260907.mdへ記録済み。
+  posted_by: 'karo'
+  posted_at: '2026-09-07T03:06:58'
+  requires_confirmation: false
+  action_type: 'info'
+  actioned_by: ''
+  notify_targets:
+    - 'shogun'
+  confirmed_by: []
+  status: 'open'
