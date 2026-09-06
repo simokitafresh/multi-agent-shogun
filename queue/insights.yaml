@@ -19878,3 +19878,24 @@ insights:
   source: "skill_script_refs:d22a7a708a34177e"
   fix_known: false
   status: pending
+- id: INS-20260906-230021028-561f
+  ts: "2026-09-06T23:00:21+09:00"
+  insight: "SKILL.md追従task[d22a7a708a34177e]: gate_skill_script_refs.sh rc=2。以下のSKILL.md×変更script対を検分し、必要な追従更新と実測を行え: skills/cdp-browse/SKILL.md <- scripts/cdp/cdp_measure.sh; skills/cdp-browse/SKILL.md <- scripts/note_draft.sh; skills/cmd-complete/SKILL.md <- scripts/archive_completed.sh; skills/cmd-complete/SKILL.md <- scripts/gates/gate_context_freshness.sh; skills/cmd-complete/SKILL.md <- scripts/lib/yaml_field_set.sh; skills/cmd-complete/SKILL.md <- scripts/review_approval.sh; skills/cmd-complete/SKILL.md <- scripts/review_bundle.py; skills/codd-fix/SKILL.md <- scripts/cmd_complete_gate.sh; skills/codd-refactor/SKILL.md <- scripts/run_tests.sh; skills/dashboard-update/SKILL.md <- scripts/gates/gate_report_format.sh; skills/dream/SKILL.md <- scripts/gates/gate_lesson_health.sh; skills/dream/SKILL.md <- scripts/insight_write.sh; skills/dream/SKILL.md <- scripts/memory_db_query.sh; skills/gate-sync/SKILL.md <- scripts/bulletin_write.sh; skills/gate-sync/SKILL.md <- scripts/gates/gate_gunshi_accuracy.sh; skills/gate-sync/SKILL.md <- scripts/gunshi_gate_reflux.sh; skills/gate-sync/SKILL.md <- scripts/lib/yaml_field_set.sh; skills/hot-script-design/SKILL.md <- scripts/ninja_scope_commit.sh; skills/idle-persist/SKILL.md <- scripts/bulletin_write.sh; skills/idle-persist/SKILL.md <- scripts/inbox_write.sh; skills/idle-persist/SKILL.md <- scripts/lib/yaml_field_set.sh; skills/karo-direct/SKILL.md <- scripts/deploy_task.sh; skills/ninja-commit/SKILL.md <- scripts/ninja_scope_commit.sh; skills/ninja-commit/SKILL.md <- scripts/report_field_set.sh; skills/note-writer/SKILL.md <- scripts/note_draft.sh; skills/recon-dual/SKILL.md <- scripts/deploy_task.sh; skills/recon-dual/SKILL.md <- scripts/lib/yaml_field_set.sh; skills/report-write/SKILL.md <- scripts/report_field_set.sh; skills/review-bundle/SKILL.md <- scripts/bulletin_write.sh; skills/review-bundle/SKILL.md <- scripts/inbox_write.sh; skills/review-bundle/SKILL.md <- scripts/lib/yaml_field_set.sh; skills/review-bundle/SKILL.md <- scripts/review_bundle.py; skills/sengoku-writer/SKILL.md <- scripts/note_draft.sh; skills/shogun-cli-switch/SKILL.md <- scripts/agent_respawn.sh; skills/shogun-cli-switch/SKILL.md <- scripts/lib/cli_lookup.sh; skills/shogun-cli-switch/SKILL.md <- scripts/lib/yaml_field_set.sh; skills/shogun-cli-switch/SKILL.md <- scripts/ninja_monitor.sh; skills/shogun-teire/SKILL.md <- scripts/gates/gate_lesson_health.sh; skills/three-layer-penetrate/SKILL.md <- scripts/memory_db_query.sh; skills/three-layer-penetrate/SKILL.md <- scripts/semantic_map_generate.sh; skills/verdict-check/SKILL.md <- scripts/gates/gate_report_format.sh; skills/weekly-report-writer/SKILL.md <- scripts/note_draft.sh; skills/x-post-pipeline/SKILL.md <- scripts/x_ops/x_kpi_snapshot.py"
+  priority: "medium"
+  source: "skill_script_refs:d22a7a708a34177e"
+  fix_known: false
+  status: pending
+- id: INS-20260906-230040045-fada
+  ts: "2026-09-06T23:00:40+09:00"
+  insight: "[[同一実証世代の重複報告を既存receiptで冪等処理し修正版と失敗後再送を通す]] NO_MATCH purpose pending alias: cmd_complete時にdeploy_task.logでNO_MATCHだったpurpose。類似概念TOP3: gate_quality_framework(ゲート品質統合フレームワーク; alias=cmd completeのarchive成功後symlinkを未退避reportとして再計数する競合を修正し; score=2.5) / dm_signal_refactor_mission(DM-Signalリファクタ任務; alias=task failedおよびBLOCK系終端でも殿のretro原文promptを冪等配送し; score=2.3) / recalculate_pipeline(再計算パイプライン; alias=日次cronがfullrecalculateと同等の再計算を実行; score=2.2)。既存概念aliasesへの自動昇格候補"
+  priority: "low"
+  source: "semantic_index_update"
+  fix_known: false
+  status: pending
+- id: INS-20260906-230040407-0165
+  ts: "2026-09-06T23:00:40+09:00"
+  insight: "[[K8としてFAIL判定と重複と起票から解放の総時間を既存日次集計へ自動出力する]] NO_MATCH purpose pending alias: cmd_complete時にdeploy_task.logでNO_MATCHだったpurpose。類似概念TOP3: creator_brainwashing_defense(創造主の洗脳防御; alias=内容も目的もわからないものを起票しようとしているのか？; score=2.1) / semantic_dictionary_design(セマンティック辞書構想; alias=時間がかかるものはすべてバグとして扱い; score=2.0) / dmsignal_operations(DM-Signal運用; alias=DM Signalの実precommit経路からruff自動fixを除去し; score=2.0)。既存概念aliasesへの自動昇格候補"
+  priority: "low"
+  source: "semantic_index_update"
+  fix_known: false
+  status: pending
