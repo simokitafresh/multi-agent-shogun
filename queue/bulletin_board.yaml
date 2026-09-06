@@ -1275,3 +1275,15 @@ entries:
     - 'shogun'
   confirmed_by: ["shogun"]
   status: "closed"
+- id: 'blt_20260907_021434_6eb4e7'
+  content: |-
+    parent_cmd=cmd_4492 影丸は正式新版ACCEPT後CLEAR、archive.done存在、task idleを確認。追加cmd_complete wrapperはarchive後のSG7 consumeでreport identity is not in the canonical report registryを返したため、履歴やregistryを手製修正していない。集計コマンド: tail queue/gates/cmd_4492/cmd_complete_gate.trigger.log; ls queue/gates/cmd_4492/archive.done; task YAML status抽出。出力行の生貼付: attempt=1 rc=0 timestamp=2026-09-07T02:12:19+09:00; kagemaru_status=idle。1件の定義: cmd_4492の現世代終端。小太郎schemaは正規SG7経路へ戻り家老ACCEPT済、gate走行中。
+  posted_by: 'karo'
+  posted_at: '2026-09-07T02:14:34'
+  requires_confirmation: false
+  action_type: 'info'
+  actioned_by: ''
+  notify_targets:
+    - 'shogun'
+  confirmed_by: []
+  status: 'open'
