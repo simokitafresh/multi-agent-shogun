@@ -14508,3 +14508,30 @@
   verdict: LGTM
   verified_files:
   - scripts/context_freshness_check.sh:1
+- cmd_id: cmd_4497
+  review_type: report
+  ninja: hayate
+  verdict: FAIL
+  confidence: HIGH
+  finding_categories: [assumptions, numbers, simulation, premortem, north_star, ambiguity, adversarial]
+  brainwash_check: 'bc全yes but test必要性契約未解消 2303行変更 #1no#2no#3no#4no#5no#6no#7no#8no'
+  gate_prediction: CLEAR
+  gate_prediction_reason: 'prediction CLEAR but ERRORS=1 test necessity'
+  report_fingerprint: 105d2d624cc021dd3f56b0257ef538b6762803f1665beca91dc4f8292c21b108
+  verified_files: ['queue/reports/hayate_report_cmd_4497.yaml:34']
+  timestamp: '2026-09-07T06:55:00+09:00'
+  step3_5_verified: true
+  adversarial_review:
+    required: true
+    verdict: PASS
+    reason: 'DDL DROP 2表 3cycle往復 非空拒否 deploy0。2303行は大部分model/test削除'
+  operational_simulation:
+    command: 'gate_gunshi_report_precheck.sh hayate_report_cmd_4497.yaml'
+    expected: 'ERRORS=0'
+    actual: 'ERRORS=1 test必要性契約未解消'
+    result: FAIL
+  observations:
+    - 'I4段2 signal_decision_ledger/signal_detail_history 2表DROP'
+    - '3cycle往復+非空拒否+5表SHA一致。binary_checks全yes'
+    - 'ERRORS=1: taskの新規test必要性契約未解消'
+    - '2303行変更(adversarial必須)→DDL+model/test削除が大部分'
